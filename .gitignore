@@ -1,0 +1,7 @@
+/.DS_Store
+/awstester
+/*.yaml
+/kubetest/*.yaml
+*generated.yaml
+*.coverprofile
+*.log
