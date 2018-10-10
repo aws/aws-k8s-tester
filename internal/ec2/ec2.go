@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/aws/awstester/ec2deployer"
 	ec2config "github.com/aws/awstester/internal/ec2/config"
 	"github.com/aws/awstester/pkg/awsapi"
 	"github.com/aws/awstester/pkg/zaputil"
@@ -26,6 +25,15 @@ import (
 	"github.com/dustin/go-humanize"
 	"go.uber.org/zap"
 )
+
+// Deployer defines EC2 deployer.
+type Deployer interface {
+	Create() error
+	Stop()
+	Delete() error
+
+	SSHCommands() string
+}
 
 type embedded struct {
 	stopc chan struct{}
@@ -46,7 +54,7 @@ type embedded struct {
 // TODO: use cloudformation
 
 // NewDeployer creates a new EKS deployer.
-func NewDeployer(cfg *ec2config.Config) (ec2deployer.Interface, error) {
+func NewDeployer(cfg *ec2config.Config) (Deployer, error) {
 	if err := cfg.ValidateAndSetDefaults(); err != nil {
 		return nil, err
 	}

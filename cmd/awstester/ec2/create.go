@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/aws/awstester/ec2deployer"
 	"github.com/aws/awstester/internal/ec2"
 	ec2config "github.com/aws/awstester/internal/ec2/config"
 	"github.com/aws/awstester/pkg/fileutil"
@@ -68,7 +67,7 @@ func createInstancesFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	var dp ec2deployer.Interface
+	var dp ec2.Deployer
 	dp, err = ec2.NewDeployer(cfg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create EKS deployer %v\n", err)
