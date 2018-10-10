@@ -3,7 +3,7 @@ module go.amzn.com/eks/awstester
 require (
 	cloud.google.com/go v0.26.0 // indirect
 	contrib.go.opencensus.io/exporter/stackdriver v0.6.0 // indirect
-	github.com/aws/aws-sdk-go v1.15.43
+	github.com/aws/aws-sdk-go v1.15.51
 	github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dustin/go-humanize v0.0.0-20180713052910-9f541cc9db5d
