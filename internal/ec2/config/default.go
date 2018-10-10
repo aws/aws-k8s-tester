@@ -25,8 +25,9 @@ var defaultConfig = Config{
 	LogAutoUpload: true,
 
 	// Ubuntu Server 16.04 LTS (HVM), SSD Volume Type
-	ImageID:      "ami-ba602bc2",
-	InstanceType: "c5.xlarge",
+	ImageID: "ami-ba602bc2",
+	// 4 vCPU, 15 GB RAM
+	InstanceType: "m3.xlarge",
 	Count:        1,
 
 	AssociatePublicIPAddress: true,

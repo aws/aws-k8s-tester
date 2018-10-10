@@ -10,17 +10,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newAvg() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "avg [input wrk command output files...]",
+func newAverage() *cobra.Command {
+	return &cobra.Command{
+		Use:   "average [list of wrk command output files to get averages from]",
 		Short: "Combine wrk command outputs and return average values to a CSV file",
-		Run:   avgFunc,
+		Run:   averageFunc,
 	}
-	cmd.PersistentFlags().StringVar(&output, "output", "", "file path to store averaged output")
-	return cmd
 }
 
-func avgFunc(cmd *cobra.Command, args []string) {
+func averageFunc(cmd *cobra.Command, args []string) {
 	if len(args) < 1 {
 		fmt.Fprintf(os.Stderr, "expected at least 1 argument, but got %v\n", args)
 		os.Exit(1)

@@ -38,7 +38,7 @@ echo "Hello World!" > /home/ubuntu/sample.txt
 		t.Fatal(err)
 	}
 
-	fmt.Println(md.ShowSSHCommands())
+	fmt.Println(md.SSHCommands())
 
 	if err = md.Delete(); err != nil {
 		t.Fatal(err)

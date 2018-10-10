@@ -482,10 +482,10 @@ func (md *embedded) deleteInstances() (err error) {
 	return nil
 }
 
-func (md *embedded) ShowSSHCommands() (s string) {
+func (md *embedded) SSHCommands() (s string) {
 	s = fmt.Sprintf("\nchmod 600 %s\n\n", md.cfg.KeyPath)
-	for _, inst := range md.cfg.Instances {
-		s += fmt.Sprintf("ssh -i %s ubuntu@%s\n", md.cfg.KeyPath, inst.PublicDNS)
+	for _, v := range md.cfg.Instances {
+		s += fmt.Sprintf("ssh -i %s ubuntu@%s\n", md.cfg.KeyPath, v.PublicDNS)
 	}
 	return s
 }

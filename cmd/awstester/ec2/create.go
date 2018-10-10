@@ -85,5 +85,5 @@ func createInstancesFunc(cmd *cobra.Command, args []string) {
 	}
 	fmt.Println("'awstester ec2 create instances' success")
 
-	fmt.Println(dp.ShowSSHCommands())
+	fmt.Println(dp.SSHCommands())
 }

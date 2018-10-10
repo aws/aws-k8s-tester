@@ -10,16 +10,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newAppend() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "append [input wrk command output files...]",
-		Short: "Append wrk command outputs into one CSV file",
-		Run:   appendFunc,
+func newMerge() *cobra.Command {
+	return &cobra.Command{
+		Use:   "merge [list of wrk command output files to merge]",
+		Short: "Merge wrk command outputs into one CSV file",
+		Run:   mergeFunc,
 	}
-	return cmd
 }
 
-func appendFunc(cmd *cobra.Command, args []string) {
+func mergeFunc(cmd *cobra.Command, args []string) {
 	if len(args) < 1 {
 		fmt.Fprintf(os.Stderr, "expected at least 1 argument, but got %v\n", args)
 		os.Exit(1)

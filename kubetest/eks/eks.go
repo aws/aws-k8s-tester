@@ -292,7 +292,7 @@ func (tr *tester) TestQPS() error {
 		}
 	}
 
-	// just to load QPS and failures
+	// reload QPS and failures
 	rcfg, err := eksconfig.Load(testResultPath)
 	if err != nil {
 		return err

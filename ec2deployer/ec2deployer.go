@@ -7,5 +7,5 @@ type Interface interface {
 	Stop()
 	Delete() error
 
-	ShowSSHCommands() string
+	SSHCommands() string
 }
