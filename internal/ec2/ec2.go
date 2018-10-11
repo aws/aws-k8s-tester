@@ -262,10 +262,9 @@ func (md *embedded) createInstances() (err error) {
 	h, _ := os.Hostname()
 
 	if md.cfg.Count > len(md.cfg.SubnetIDs) {
-		subnetAllocBatch := md.cfg.Count / len(md.cfg.SubnetIDs)
-
 		// TODO: configure this per EC2 quota?
-		runInstancesBatch := 3
+		runInstancesBatch := 7
+		subnetAllocBatch := md.cfg.Count / len(md.cfg.SubnetIDs)
 
 		subnetIdx := 0
 		for left > 0 {
@@ -363,7 +362,7 @@ func (md *embedded) createInstances() (err error) {
 					tknToCnt[tkn] = x
 					md.lg.Info("launched a batch of instances", zap.Int("instance-count", x))
 
-					time.Sleep(15 * time.Second)
+					time.Sleep(10 * time.Second)
 				}
 			}
 
@@ -549,9 +548,10 @@ func (md *embedded) deleteInstances() (err error) {
 func (md *embedded) SSHCommands() (s string) {
 	s = fmt.Sprintf("\n\n# change SSH key permission\nchmod 600 %s\n\n", md.cfg.KeyPath)
 	for _, v := range md.cfg.Instances {
-		// s += fmt.Sprintf(`ssh -o "StrictHostKeyChecking no" -i %s ubuntu@%s\n`, md.cfg.KeyPath, v.PublicDNS)
-		s += fmt.Sprintf(`ssh -o "StrictHostKeyChecking no" -i ./ssh.key ubuntu@%s
-`, v.PublicDNS)
+		s += fmt.Sprintf(`ssh -o "StrictHostKeyChecking no" -i %s ubuntu@%s
+`, md.cfg.KeyPath, v.PublicDNS)
+		// s += fmt.Sprintf(`ssh -o "StrictHostKeyChecking no" -i ./ssh.key ubuntu@%s
+		// `, v.PublicDNS)
 	}
 	return s
 }
