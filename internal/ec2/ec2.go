@@ -550,7 +550,8 @@ func (md *embedded) SSHCommands() (s string) {
 	s = fmt.Sprintf("\n\n# change SSH key permission\nchmod 600 %s\n\n", md.cfg.KeyPath)
 	for _, v := range md.cfg.Instances {
 		// s += fmt.Sprintf(`ssh -o "StrictHostKeyChecking no" -i %s ubuntu@%s\n`, md.cfg.KeyPath, v.PublicDNS)
-		s += fmt.Sprintf(`ssh -o "StrictHostKeyChecking no" -i ./ssh.key ubuntu@%s\n`, v.PublicDNS)
+		s += fmt.Sprintf(`ssh -o "StrictHostKeyChecking no" -i ./ssh.key ubuntu@%s
+`, v.PublicDNS)
 	}
 	return s
 }
