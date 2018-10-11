@@ -112,7 +112,7 @@ func prowALBFunc(cmd *cobra.Command, args []string) {
 		AWSTESTER_EKS_WORKER_NODE_ASG_MIN:              fmt.Sprintf("%d", cfg.WorkderNodeASGMin),
 		AWSTESTER_EKS_WORKER_NODE_ASG_MAX:              fmt.Sprintf("%d", cfg.WorkderNodeASGMax),
 		AWSTESTER_EKS_ALB_ENABLE:                       fmt.Sprintf("%v", cfg.ALBIngressController.Enable),
-		AWSTESTER_EKS_ALB_ENABLE_SCALABILITY_TEST:      fmt.Sprintf("%v", cfg.ALBIngressController.EnableScalabilityTest),
+		AWSTESTER_EKS_ALB_TEST_SCALABILITY:             fmt.Sprintf("%v", cfg.ALBIngressController.TestScalability),
 		AWSTESTER_EKS_ALB_ALB_INGRESS_CONTROLLER_IMAGE: cfg.ALBIngressController.ALBIngressControllerImage,
 		AWSTESTER_EKS_ALB_TARGET_TYPE:                  cfg.ALBIngressController.TargetType,
 		AWSTESTER_EKS_ALB_TEST_MODE:                    cfg.ALBIngressController.TestMode,

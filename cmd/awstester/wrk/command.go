@@ -82,12 +82,13 @@ func runFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	if err := wrk.ToCSV(output, rs); err != nil {
+	if err = wrk.ToCSV(output, rs); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to convert to CSV %q (%v)\n", output, err)
 		os.Exit(1)
 	}
 
-	lg, err := zap.NewProduction()
+	var lg *zap.Logger
+	lg, err = zap.NewProduction()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create logger (%v)\n", err)
 		os.Exit(1)
@@ -104,7 +105,8 @@ func runFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 	st := sts.New(ss)
-	so, err := st.GetCallerIdentity(&sts.GetCallerIdentityInput{})
+	var so *sts.GetCallerIdentityOutput
+	so, err = st.GetCallerIdentity(&sts.GetCallerIdentityInput{})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to get caller identity (%v)\n", err)
 		os.Exit(1)

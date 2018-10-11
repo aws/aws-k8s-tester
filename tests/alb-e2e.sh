@@ -67,7 +67,6 @@ ginkgo \
   -r \
   -v \
   --failFast \
-  --randomizeAllSpecs \
   --noColor \
   --progress \
   --race \

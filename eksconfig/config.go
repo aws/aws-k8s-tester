@@ -214,8 +214,6 @@ type ALBIngressController struct {
 	// Enable is true to create an ALB Ingress Controller with sample ingress deployment.
 	// 'AWSCredentialToMountPath' must be provided to configure ALB Ingress Controller.
 	Enable bool `json:"enable"`
-	// EnableScalabilityTest is true to run scalability tests.
-	EnableScalabilityTest bool `json:"enable-scalability-test"`
 
 	// ALBIngressControllerImage is the ALB Ingress Controller container image.
 	ALBIngressControllerImage string `json:"alb-ingress-controller-image,omitempty"`
@@ -233,6 +231,8 @@ type ALBIngressController struct {
 	// TestMode is either "ingress-test-server" or "nginx".
 	TestMode string `json:"test-mode,omitempty"`
 
+	// TestScalability is true to run scalability tests.
+	TestScalability bool `json:"test-scalability"`
 	// TestServerReplicas is the number of ingress test server pods to deploy.
 	TestServerReplicas int `json:"test-server-replicas,omitempty"`
 	// TestServerRoutes is the number of ALB Ingress Controller routes to test.

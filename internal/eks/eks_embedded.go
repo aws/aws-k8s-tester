@@ -683,7 +683,7 @@ func (md *embedded) uploadALB() (err error) {
 	if err != nil {
 		return err
 	}
-	if md.cfg.ALBIngressController.EnableScalabilityTest {
+	if md.cfg.ALBIngressController.TestScalability {
 		err = md.s3Plugin.UploadToBucketForTests(
 			md.cfg.ALBIngressController.ScalabilityOutputToUploadPath,
 			md.cfg.ALBIngressController.ScalabilityOutputToUploadPathBucket,

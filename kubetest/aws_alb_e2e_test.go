@@ -65,6 +65,7 @@ func TestMain(m *testing.M) {
 
 func TestAWSTesterEKS(t *testing.T) {
 	RegisterFailHandler(Fail)
+	t.Logf("[DEBUG] Scalability test %v", cfg.ALBIngressController.TestScalability)
 	RunSpecs(t, "awstester eks ALB Ingress Controller e2e tests")
 }
 
@@ -183,15 +184,17 @@ var _ = Describe("EKS with ALB Ingress Controller on worker nodes", func() {
 	})
 
 	Context("Scalability of ALB Ingress Controller on worker nodes", func() {
-		if cfg.ALBIngressController.EnableScalabilityTest {
+		if cfg.ALBIngressController.TestScalability {
 			It(
-				fmt.Sprintf("ALB Ingress Controller expects to handle concurrent clients with expected QPS (ALBIngressController.EnableScalabilityTest %v)",
-					cfg.ALBIngressController.EnableScalabilityTest,
+				fmt.Sprintf(
+					"ALB Ingress Controller expects to handle concurrent clients with expected QPS (ALBIngressController.TestScalability %v)",
+					cfg.ALBIngressController.TestScalability,
 				),
 				func() {
 					err := kp.TestQPS()
 					Expect(err).ShouldNot(HaveOccurred())
-				})
+				},
+			)
 		}
 
 		// enough time to process metrics

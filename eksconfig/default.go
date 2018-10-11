@@ -46,8 +46,7 @@ var defaultConfig = Config{
 
 	ClusterState: &ClusterState{},
 	ALBIngressController: &ALBIngressController{
-		Enable:                true,
-		EnableScalabilityTest: true,
+		Enable: true,
 
 		ALBIngressControllerImage: "quay.io/coreos/alb-ingress-controller:1.0-beta.7",
 		// 'instance' to use node port
@@ -55,6 +54,7 @@ var defaultConfig = Config{
 		TargetType: "instance",
 		TestMode:   "nginx",
 
+		TestScalability:          true,
 		TestServerReplicas:       1,
 		TestServerRoutes:         3,
 		TestClients:              200,

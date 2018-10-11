@@ -19,7 +19,7 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWSTESTER_EKS_ALB_TEST_EXPECT_QPS", "123.45")
 	os.Setenv("AWSTESTER_EKS_ALB_TEST_MODE", "nginx")
 	os.Setenv("AWSTESTER_EKS_ALB_ENABLE", "true")
-	os.Setenv("AWSTESTER_EKS_ALB_ENABLE_SCALABILITY_TEST", "false")
+	os.Setenv("AWSTESTER_EKS_ALB_TEST_SCALABILITY", "false")
 
 	defer func() {
 		os.Unsetenv("AWSTESTER_EKS_CONFIG_PATH")
@@ -32,7 +32,7 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWSTESTER_EKS_ALB_TEST_EXPECT_QPS")
 		os.Unsetenv("AWSTESTER_EKS_ALB_TEST_MODE")
 		os.Unsetenv("AWSTESTER_EKS_ALB_ENABLE")
-		os.Unsetenv("AWSTESTER_EKS_ALB_ENABLE_SCALABILITY_TEST")
+		os.Unsetenv("AWSTESTER_EKS_ALB_TEST_SCALABILITY")
 	}()
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
@@ -69,7 +69,7 @@ func TestEnv(t *testing.T) {
 	if !cfg.ALBIngressController.Enable {
 		t.Fatalf("cfg.ALBIngressController.Enable expected 'true', got %v", cfg.ALBIngressController.Enable)
 	}
-	if cfg.ALBIngressController.EnableScalabilityTest {
-		t.Fatalf("cfg.ALBIngressController.EnableScalabilityTest expected 'false', got %v", cfg.ALBIngressController.EnableScalabilityTest)
+	if cfg.ALBIngressController.TestScalability {
+		t.Fatalf("cfg.ALBIngressController.TestScalability expected 'false', got %v", cfg.ALBIngressController.TestScalability)
 	}
 }
