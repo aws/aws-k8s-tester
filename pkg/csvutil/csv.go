@@ -7,7 +7,7 @@ import (
 )
 
 // Save writes data to CSV.
-func Save(output string, header []string, rows [][]string) error {
+func Save(header []string, rows [][]string, output string) error {
 	f, err := os.OpenFile(output, os.O_RDWR|os.O_TRUNC, 0600)
 	if err != nil {
 		f, err = os.Create(output)

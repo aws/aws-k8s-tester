@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/aws/awstester/cmd/awstester/accesslog"
+	"github.com/aws/awstester/cmd/awstester/alblog"
 	"github.com/aws/awstester/cmd/awstester/ec2"
 	"github.com/aws/awstester/cmd/awstester/ecr"
 	"github.com/aws/awstester/cmd/awstester/eks"
@@ -28,7 +28,7 @@ func init() {
 
 func init() {
 	rootCmd.AddCommand(
-		accesslog.NewCommand(),
+		alblog.NewCommand(),
 		ec2.NewCommand(),
 		ecr.NewCommand(),
 		eks.NewCommand(),

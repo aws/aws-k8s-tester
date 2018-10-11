@@ -1,10 +1,10 @@
-package accesslog
+package alblog
 
 import (
 	"fmt"
 	"os"
 
-	"github.com/aws/awstester/internal/accesslog"
+	"github.com/aws/awstester/internal/alblog"
 
 	"github.com/spf13/cobra"
 )
@@ -24,7 +24,7 @@ func albCountFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 	p := args[0]
-	logs, err := accesslog.ParseALB(p)
+	logs, err := alblog.Parse(p)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to parse %q (%v)\n", p, err)
 		os.Exit(1)

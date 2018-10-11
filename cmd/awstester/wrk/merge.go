@@ -77,7 +77,7 @@ func mergeFunc(cmd *cobra.Command, args []string) {
 			os.Exit(1)
 		}
 	} else {
-		if err := csvutil.Save(output, header, rows); err != nil {
+		if err := csvutil.Save(header, rows, output); err != nil {
 			fmt.Fprintf(os.Stderr, "failed to save CSV %q (%v)\n", output, err)
 			os.Exit(1)
 		}

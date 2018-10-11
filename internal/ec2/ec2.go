@@ -262,11 +262,15 @@ func (md *embedded) createInstances() (err error) {
 	h, _ := os.Hostname()
 
 	if md.cfg.Count > len(md.cfg.SubnetIDs) {
-		batch := md.cfg.Count / len(md.cfg.SubnetIDs)
+		subnetAllocBatch := md.cfg.Count / len(md.cfg.SubnetIDs)
+
+		// TODO: configure this per EC2 quota?
+		runInstancesBatch := 3
+
 		subnetIdx := 0
 		for left > 0 {
-			n := batch
-			if batch > left {
+			n := subnetAllocBatch
+			if subnetAllocBatch > left {
 				n = left
 			}
 			md.lg.Info(
@@ -278,7 +282,7 @@ func (md *embedded) createInstances() (err error) {
 
 			subnetID := md.cfg.SubnetIDs[subnetIdx%len(md.cfg.SubnetIDs)]
 
-			if n < 10 {
+			if n < runInstancesBatch {
 				tkn := md.cfg.ID + fmt.Sprintf("%X", time.Now().Nanosecond())
 				tokens = append(tokens, tkn)
 
@@ -312,7 +316,6 @@ func (md *embedded) createInstances() (err error) {
 				if err != nil {
 					return err
 				}
-
 				tknToCnt[tkn] = n
 			} else {
 				nLeft := n
@@ -320,8 +323,8 @@ func (md *embedded) createInstances() (err error) {
 					tkn := md.cfg.ID + fmt.Sprintf("%X", time.Now().Nanosecond())
 					tokens = append(tokens, tkn)
 
-					x := 10
-					if nLeft < 10 {
+					x := runInstancesBatch
+					if nLeft < runInstancesBatch {
 						x = nLeft
 					}
 					nLeft -= x
@@ -358,14 +361,14 @@ func (md *embedded) createInstances() (err error) {
 					}
 
 					tknToCnt[tkn] = x
-					md.lg.Info("launched a batch", zap.Int("instance-count", x))
+					md.lg.Info("launched a batch of instances", zap.Int("instance-count", x))
 
-					time.Sleep(10 * time.Second)
+					time.Sleep(15 * time.Second)
 				}
 			}
 
 			subnetIdx++
-			left -= batch
+			left -= subnetAllocBatch
 
 			md.lg.Info(
 				"created EC2 instance group",
@@ -544,9 +547,10 @@ func (md *embedded) deleteInstances() (err error) {
 }
 
 func (md *embedded) SSHCommands() (s string) {
-	s = fmt.Sprintf("\nchmod 600 %s\n\n", md.cfg.KeyPath)
+	s = fmt.Sprintf("\n\n# change SSH key permission\nchmod 600 %s\n\n", md.cfg.KeyPath)
 	for _, v := range md.cfg.Instances {
-		s += fmt.Sprintf("ssh -i %s ubuntu@%s\n", md.cfg.KeyPath, v.PublicDNS)
+		// s += fmt.Sprintf(`ssh -o "StrictHostKeyChecking no" -i %s ubuntu@%s\n`, md.cfg.KeyPath, v.PublicDNS)
+		s += fmt.Sprintf(`ssh -o "StrictHostKeyChecking no" -i ./ssh.key ubuntu@%s\n`, v.PublicDNS)
 	}
 	return s
 }

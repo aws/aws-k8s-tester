@@ -48,6 +48,9 @@ Transfer/sec:     40.14MB
 	if rs1.Connections != 200 {
 		t.Fatalf("Connections expected 200, got %d", rs1.Connections)
 	}
+	if rs1.LatencyAvgMs != 18650.00 {
+		t.Fatalf("LatencyAvg expected 18650ms, got %f", rs1.LatencyAvgMs)
+	}
 	if rs1.LatencyAvg != 18*time.Second+650*time.Millisecond {
 		t.Fatalf("LatencyAvg expected 18.65s, got %v", rs1.LatencyAvg)
 	}

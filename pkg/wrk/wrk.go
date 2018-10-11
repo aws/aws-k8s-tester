@@ -102,6 +102,7 @@ type Result struct {
 	Latency90Pct time.Duration
 	Latency99Pct time.Duration
 
+	LatencyAvgMs        float64
 	LatencyAvg          time.Duration
 	RequestsPerSecAvg   float64
 	LatencyStdev        time.Duration
@@ -133,6 +134,7 @@ var header = []string{
 	"latency-90pct",
 	"latency-99pct",
 
+	"latency-avg-ms",
 	"latency-avg",
 	"requests-per-sec-avg",
 	"latency-stdev",
@@ -195,6 +197,7 @@ func Parse(s string) (rs Result, err error) {
 				return Result{}, fmt.Errorf("expected 4 numbers from %q", old)
 			}
 			rs.LatencyAvg, _ = time.ParseDuration(fields[0])
+			rs.LatencyAvgMs = rs.LatencyAvg.Seconds() * 1000.0
 			rs.LatencyStdev, _ = time.ParseDuration(fields[1])
 			rs.LatencyMax, _ = time.ParseDuration(fields[2])
 			prevThreadStatsHeader = false
@@ -292,6 +295,8 @@ func Combine(rss ...Result) (rs Result) {
 		rs.TotalReadDataBytes /= 2.0
 		rs.TotalReadData = humanize.Bytes(rs.TotalReadDataBytes)
 
+		rs.LatencyAvgMs += v.LatencyAvgMs
+		rs.LatencyAvgMs /= 2
 		rs.LatencyAvg += v.LatencyAvg
 		rs.LatencyAvg /= 2
 		rs.RequestsPerSecAvg += v.RequestsPerSecAvg
@@ -343,6 +348,7 @@ func ToCSV(output string, rss ...Result) error {
 			fmt.Sprintf("%v", v.Latency90Pct), // "latency-90pct"
 			fmt.Sprintf("%v", v.Latency99Pct), // "latency-99pct"
 
+			fmt.Sprintf("%f", v.LatencyAvgMs),        // "latency-avg-ms"
 			fmt.Sprintf("%v", v.LatencyAvg),          // "latency-avg"
 			fmt.Sprintf("%f", v.RequestsPerSecAvg),   // "requests-per-sec-avg"
 			fmt.Sprintf("%v", v.LatencyStdev),        // "latency-stdev"
@@ -356,7 +362,7 @@ func ToCSV(output string, rss ...Result) error {
 			fmt.Sprintf("%d", v.ErrorsTimeout), // "errors-timeout"
 		})
 	}
-	return csvutil.Save(output, header, rows)
+	return csvutil.Save(header, rows, output)
 }
 
 // parses "9.2k" to 9200, "9.65k" to 9650

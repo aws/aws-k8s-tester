@@ -1,4 +1,4 @@
-package accesslog
+package alblog
 
 import (
 	"bufio"
@@ -8,9 +8,11 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/aws/awstester/pkg/csvutil"
 )
 
-var albHeader = []string{
+var logHeader = []string{
 	"type",
 	"timestamp",
 	"elb",
@@ -37,10 +39,10 @@ var albHeader = []string{
 	"redirect_url",
 }
 
-// ALBLog is an ALB log entry.
+// Log is an ALB log entry.
 // Defined in order from raw data.
 // https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-access-logs.html
-type ALBLog struct {
+type Log struct {
 	Type       string `json:"type,omitempty"`
 	Timestamp  string `json:"timestamp,omitempty"`
 	ELB        string `json:"elb,omitempty"`
@@ -83,15 +85,15 @@ type ALBLog struct {
 	RedirectURL         string `json:"redirect_url,omitempty"`
 }
 
-// ParseALB parses ALB access logs.
+// Parse parses ALB access logs.
 // https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-access-logs.html
-func ParseALB(p string) (logs []ALBLog, err error) {
+func Parse(p string) (logs []Log, err error) {
 	f, err := os.OpenFile(p, os.O_RDONLY, 0444)
 	if err != nil {
 		return nil, err
 	}
 	defer f.Close()
-	logs = make([]ALBLog, 0)
+	logs = make([]Log, 0)
 	br := bufio.NewReader(f)
 	for {
 		l, err := br.ReadString('\n')
@@ -102,14 +104,14 @@ func ParseALB(p string) (logs []ALBLog, err error) {
 			return nil, err
 		}
 		var fields []string
-		fields, err = splitALBLog(l)
+		fields, err = splitLog(l)
 		if err != nil {
 			return nil, err
 		}
 		if len(fields) != 24 {
 			return nil, fmt.Errorf("%s fields %d, expected 24", l, len(fields))
 		}
-		d := ALBLog{
+		d := Log{
 			Type:                   fields[0],
 			Timestamp:              fields[1],
 			ELB:                    fields[2],
@@ -143,38 +145,42 @@ func ParseALB(p string) (logs []ALBLog, err error) {
 	return logs, nil
 }
 
-// ConvertALBToCSV converts ALB access log file to CSV.
-func ConvertALBToCSV(p, output string) error {
-	f, err := os.OpenFile(p, os.O_RDONLY, 0444)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
+// ConvertToCSV converts ALB access log file to CSV.
+func ConvertToCSV(output string, ps ...string) error {
 	rows := make([][]string, 0)
-	br := bufio.NewReader(f)
-	for {
-		l, err := br.ReadString('\n')
-		if err == io.EOF {
-			break
-		}
+
+	for _, p := range ps {
+		f, err := os.OpenFile(p, os.O_RDONLY, 0444)
 		if err != nil {
 			return err
 		}
-		var row []string
-		row, err = splitALBLog(l)
-		if err != nil {
-			return err
+		defer f.Close()
+
+		br := bufio.NewReader(f)
+		for {
+			l, err := br.ReadString('\n')
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				return err
+			}
+			var row []string
+			row, err = splitLog(l)
+			if err != nil {
+				return err
+			}
+			if len(row) != 24 {
+				return fmt.Errorf("%s fields %d, expected 24", l, len(row))
+			}
+			rows = append(rows, row)
 		}
-		if len(row) != 24 {
-			return fmt.Errorf("%s fields %d, expected 24", l, len(row))
-		}
-		rows = append(rows, row)
 	}
-	return toCSV(albHeader, rows, output)
+
+	return csvutil.Save(logHeader, rows, output)
 }
 
-func splitALBLog(l string) (fields []string, err error) {
+func splitLog(l string) (fields []string, err error) {
 	rd := csv.NewReader(strings.NewReader(l))
 
 	// in case that rows have different number of fields
