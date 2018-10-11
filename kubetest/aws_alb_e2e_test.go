@@ -184,7 +184,7 @@ var _ = Describe("EKS with ALB Ingress Controller on worker nodes", func() {
 
 	Context("Scalability of ALB Ingress Controller on worker nodes", func() {
 		fmt.Fprintf(
-			os.Stderr,
+			os.Stdout,
 			"ALBIngressController.EnableScalabilityTest %v\n",
 			cfg.ALBIngressController.EnableScalabilityTest,
 		)
