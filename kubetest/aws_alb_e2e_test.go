@@ -74,7 +74,12 @@ var (
 )
 
 var _ = BeforeSuite(func() {
-	control = process.NewControl(*ginkgoTimeout, time.NewTimer(3*time.Hour), time.NewTimer(3*time.Hour), *ginkgoVerbose)
+	control = process.NewControl(
+		*ginkgoTimeout,
+		time.NewTimer(3*time.Hour),
+		time.NewTimer(3*time.Hour),
+		*ginkgoVerbose,
+	)
 
 	var err error
 	if cfg.Embedded {
@@ -121,7 +126,7 @@ var _ = AfterSuite(func() {
 	notifier := make(chan os.Signal, 1)
 	signal.Notify(notifier, syscall.SIGINT, syscall.SIGTERM)
 	interrupted := false
-	if cfg.WaitBeforeDown > 0 {
+	if cfg.Down && cfg.WaitBeforeDown > 0 {
 		fmt.Fprintf(os.Stderr, "\n\n\n%v: waiting %v before cluster tear down (if not interrupted)...\n\n\n", time.Now().UTC(), cfg.WaitBeforeDown)
 		select {
 		case sig := <-notifier:
@@ -178,6 +183,12 @@ var _ = Describe("EKS with ALB Ingress Controller on worker nodes", func() {
 	})
 
 	Context("Scalability of ALB Ingress Controller on worker nodes", func() {
+		fmt.Fprintf(
+			os.Stderr,
+			"ALBIngressController.EnableScalabilityTest %v\n",
+			cfg.ALBIngressController.EnableScalabilityTest,
+		)
+
 		if cfg.ALBIngressController.EnableScalabilityTest {
 			It("ALB Ingress Controller expects to handle concurrent clients with expected QPS", func() {
 				err := kp.TestQPS()
