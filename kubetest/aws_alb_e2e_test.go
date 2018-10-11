@@ -183,17 +183,15 @@ var _ = Describe("EKS with ALB Ingress Controller on worker nodes", func() {
 	})
 
 	Context("Scalability of ALB Ingress Controller on worker nodes", func() {
-		fmt.Fprintf(
-			os.Stdout,
-			"ALBIngressController.EnableScalabilityTest %v\n",
-			cfg.ALBIngressController.EnableScalabilityTest,
-		)
-
 		if cfg.ALBIngressController.EnableScalabilityTest {
-			It("ALB Ingress Controller expects to handle concurrent clients with expected QPS", func() {
-				err := kp.TestQPS()
-				Expect(err).ShouldNot(HaveOccurred())
-			})
+			It(
+				fmt.Sprintf("ALB Ingress Controller expects to handle concurrent clients with expected QPS (ALBIngressController.EnableScalabilityTest %v)",
+					cfg.ALBIngressController.EnableScalabilityTest,
+				),
+				func() {
+					err := kp.TestQPS()
+					Expect(err).ShouldNot(HaveOccurred())
+				})
 		}
 
 		// enough time to process metrics
