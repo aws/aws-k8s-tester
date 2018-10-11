@@ -213,7 +213,7 @@ func (md *embedded) deleteCluster(deleteKubeconfig bool) error {
 
 			md.lg.Info("deleting cluster",
 				zap.String("status", md.cfg.ClusterState.Status),
-				zap.String("created-ago", humanize.Time(md.cfg.ClusterState.Created)),
+				zap.String("created-ago", humanize.RelTime(md.cfg.ClusterState.Created, time.Now().UTC(), "ago", "from now")),
 				zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 			)
 

@@ -6,6 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 func TestRun(t *testing.T) {
@@ -17,6 +19,9 @@ func TestRun(t *testing.T) {
 	defer ts.Close()
 
 	rs, err := Run(Config{
+		Logger:        zap.NewExample(),
+		StartAtMinute: 18,
+
 		Threads:     1,
 		Connections: 5,
 		Duration:    5 * time.Second,

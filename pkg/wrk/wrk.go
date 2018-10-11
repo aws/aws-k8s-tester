@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/aws/awstester/pkg/csvutil"
+	"go.uber.org/zap"
 
 	"github.com/dustin/go-humanize"
 	"k8s.io/utils/exec"
@@ -18,6 +19,17 @@ import (
 // Config defines "wrk" command configuration.
 // See https://github.com/wg/wrk for more.
 type Config struct {
+	Logger *zap.Logger
+
+	// StartAtMinute is non-zero, to run "wrk" command
+	// when time.Now().Minute() == StartAtMinute.
+	// Useful for simulating multiple workers.
+	StartAtMinute int
+
+	/////////////////////////////////
+	// "wrk" command configuration //
+	/////////////////////////////////
+
 	Threads     int
 	Connections int
 	Duration    time.Duration
@@ -38,6 +50,35 @@ func Run(cfg Config) (rs Result, err error) {
 		return Result{}, fmt.Errorf("wrk is not found (%v)", err)
 	}
 
+	if cfg.StartAtMinute != 0 {
+		now := time.Now().UTC()
+		cfg.Logger.Info(
+			"waiting until minute matches",
+			zap.Int("target-minute", cfg.StartAtMinute),
+			zap.Int("current-minute", now.Minute()),
+		)
+		cnt := 0
+		for time.Now().Minute() != cfg.StartAtMinute {
+			cnt++
+			if cnt%5 == 0 {
+				cfg.Logger.Info(
+					"waiting until minute match",
+					zap.Int("target-minute", cfg.StartAtMinute),
+					zap.Int("current-minute", time.Now().UTC().Minute()),
+					zap.String("started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
+				)
+			}
+			time.Sleep(3 * time.Second)
+		}
+	}
+
+	cfg.Logger.Info(
+		"starting 'wrk' command",
+		zap.Int("threads", cfg.Threads),
+		zap.Int("connections", cfg.Connections),
+		zap.String("duration", fmt.Sprintf("%s", cfg.Duration)),
+		zap.String("endpoint", cfg.Endpoint),
+	)
 	args := []string{
 		"--threads", fmt.Sprintf("%d", cfg.Threads),
 		"--connections", fmt.Sprintf("%d", cfg.Connections),
@@ -52,6 +93,13 @@ func Run(cfg Config) (rs Result, err error) {
 		return Result{}, err
 	}
 	rs.Output = string(rbytes)
+	cfg.Logger.Info(
+		"completed 'wrk' command",
+		zap.Int("threads", cfg.Threads),
+		zap.Int("connections", cfg.Connections),
+		zap.String("duration", fmt.Sprintf("%s", cfg.Duration)),
+		zap.String("endpoint", cfg.Endpoint),
+	)
 
 	return Parse(string(rbytes))
 }

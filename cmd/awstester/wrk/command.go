@@ -44,11 +44,14 @@ func NewCommand() *cobra.Command {
 		newConvert(),
 	)
 	rootCmd.PersistentFlags().StringVar(&output, "output", "", "output file path")
+
 	rootCmd.PersistentFlags().BoolVar(&outputCSV, "output-csv", true, "'true' to output results in CSV")
 	rootCmd.PersistentFlags().BoolVar(&outputS3Upload, "output-s3-upload", false, "'true' to upload wrk outputs")
 	rootCmd.PersistentFlags().StringVar(&outputS3UploadDir, "output-s3-upload-directory", "test", "directory to upload output file")
 	rootCmd.PersistentFlags().StringVar(&outputS3UploadRegion, "output-s3-upload-region", "us-west-2", "AWS region for S3 uploads")
-	rootCmd.PersistentFlags().IntVar(&startMinute, "start-minute", 0, "minute to start the command (temporary dumb feature to be removed after batch integration...)")
+
+	rootCmd.PersistentFlags().IntVar(&wrkCfg.StartAtMinute, "start-at-minute", 0, "minute to start the command (temporary dumb feature to be removed after batch integration...)")
+
 	rootCmd.PersistentFlags().StringVar(&wrkCfg.Endpoint, "endpoint", "", "wrk command endpoint")
 	rootCmd.PersistentFlags().IntVar(&wrkCfg.Threads, "threads", 2, "number of threads")
 	rootCmd.PersistentFlags().IntVar(&wrkCfg.Connections, "connections", 200, "number of connections")
@@ -62,7 +65,6 @@ var (
 	outputS3Upload       bool
 	outputS3UploadDir    string
 	outputS3UploadRegion string
-	startMinute          int
 	wrkCfg               wrk.Config
 )
 
@@ -72,12 +74,12 @@ func runFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	if startMinute != 0 {
-		for time.Now().Minute() != startMinute {
-			fmt.Fprintf(os.Stdout, "wait until start minute matches target %d != current %d", startMinute, time.Now().Minute())
-			time.Sleep(5 * time.Second)
-		}
+	lg, err := zap.NewProduction()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to create logger (%v)\n", err)
+		os.Exit(1)
 	}
+	wrkCfg.Logger = lg
 
 	rs, err := wrk.Run(wrkCfg)
 	if err != nil {
@@ -91,7 +93,8 @@ func runFunc(cmd *cobra.Command, args []string) {
 			os.Exit(1)
 		}
 	} else {
-		f, err := os.OpenFile(output, os.O_RDWR|os.O_TRUNC, 0600)
+		var f *os.File
+		f, err = os.OpenFile(output, os.O_RDWR|os.O_TRUNC, 0600)
 		if err != nil {
 			f, err = os.Create(output)
 			if err != nil {
@@ -106,12 +109,6 @@ func runFunc(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	var lg *zap.Logger
-	lg, err = zap.NewProduction()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create logger (%v)\n", err)
-		os.Exit(1)
-	}
 	awsCfg := &awsapi.Config{
 		Logger:        lg,
 		DebugAPICalls: false,
