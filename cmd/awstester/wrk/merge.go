@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"github.com/aws/awstester/pkg/csvutil"
-
 	"github.com/aws/awstester/pkg/wrk"
 
 	"github.com/spf13/cobra"
