@@ -44,6 +44,7 @@ func NewCommand() *cobra.Command {
 		newConvert(),
 	)
 	rootCmd.PersistentFlags().StringVar(&output, "output", "", "output file path")
+	rootCmd.PersistentFlags().BoolVar(&outputCSV, "output-csv", true, "'true' to output results in CSV")
 	rootCmd.PersistentFlags().BoolVar(&outputS3Upload, "output-s3-upload", false, "'true' to upload wrk outputs")
 	rootCmd.PersistentFlags().StringVar(&outputS3UploadDir, "output-s3-upload-directory", "test", "directory to upload output file")
 	rootCmd.PersistentFlags().StringVar(&outputS3UploadRegion, "output-s3-upload-region", "us-west-2", "AWS region for S3 uploads")
@@ -57,6 +58,7 @@ func NewCommand() *cobra.Command {
 
 var (
 	output               string
+	outputCSV            bool
 	outputS3Upload       bool
 	outputS3UploadDir    string
 	outputS3UploadRegion string
@@ -83,9 +85,25 @@ func runFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	if err = wrk.ToCSV(output, rs); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to convert to CSV %q (%v)\n", output, err)
-		os.Exit(1)
+	if outputCSV {
+		if err = wrk.ToCSV(output, rs); err != nil {
+			fmt.Fprintf(os.Stderr, "failed to convert to CSV %q (%v)\n", output, err)
+			os.Exit(1)
+		}
+	} else {
+		f, err := os.OpenFile(output, os.O_RDWR|os.O_TRUNC, 0600)
+		if err != nil {
+			f, err = os.Create(output)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "failed to create file %q (%v)\n", output, err)
+				os.Exit(1)
+			}
+		}
+		defer f.Close()
+		if _, err = f.Write([]byte(rs.Output)); err != nil {
+			fmt.Fprintf(os.Stderr, "failed to write to file %q (%v)\n", output, err)
+			os.Exit(1)
+		}
 	}
 
 	var lg *zap.Logger

@@ -3,13 +3,13 @@ package wrk
 
 import (
 	"context"
-	"encoding/csv"
 	"errors"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/aws/awstester/pkg/csvutil"
 
 	"github.com/dustin/go-humanize"
 	"k8s.io/utils/exec"
@@ -356,7 +356,7 @@ func ToCSV(output string, rss ...Result) error {
 			fmt.Sprintf("%d", v.ErrorsTimeout), // "errors-timeout"
 		})
 	}
-	return toCSV(output, header, rows)
+	return csvutil.Save(output, header, rows)
 }
 
 // parses "9.2k" to 9200, "9.65k" to 9650
@@ -369,25 +369,4 @@ func parseWithK(s string) float64 {
 		return pv * 1000
 	}
 	return fv
-}
-
-func toCSV(output string, header []string, rows [][]string) error {
-	f, err := os.OpenFile(output, os.O_RDWR|os.O_TRUNC, 0600)
-	if err != nil {
-		f, err = os.Create(output)
-		if err != nil {
-			return err
-		}
-	}
-	defer f.Close()
-
-	wr := csv.NewWriter(f)
-	if err := wr.Write(header); err != nil {
-		return err
-	}
-	if err := wr.WriteAll(rows); err != nil {
-		return err
-	}
-	wr.Flush()
-	return wr.Error()
 }

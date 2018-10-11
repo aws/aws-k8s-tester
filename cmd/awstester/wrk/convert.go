@@ -11,12 +11,11 @@ import (
 )
 
 func newConvert() *cobra.Command {
-	cmd := &cobra.Command{
+	return &cobra.Command{
 		Use:   "convert [wrk command output file to convert]",
 		Short: "Convert wrk command output to a CSV file",
 		Run:   convertFunc,
 	}
-	return cmd
 }
 
 func convertFunc(cmd *cobra.Command, args []string) {
