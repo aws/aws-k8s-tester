@@ -278,7 +278,7 @@ func (md *embedded) createInstances() (err error) {
 
 			subnetID := md.cfg.SubnetIDs[subnetIdx%len(md.cfg.SubnetIDs)]
 
-			if n < 20 {
+			if n < 10 {
 				tkn := md.cfg.ID + fmt.Sprintf("%X", time.Now().Nanosecond())
 				tokens = append(tokens, tkn)
 
@@ -320,8 +320,8 @@ func (md *embedded) createInstances() (err error) {
 					tkn := md.cfg.ID + fmt.Sprintf("%X", time.Now().Nanosecond())
 					tokens = append(tokens, tkn)
 
-					x := 20
-					if nLeft < 20 {
+					x := 10
+					if nLeft < 10 {
 						x = nLeft
 					}
 					nLeft -= x
