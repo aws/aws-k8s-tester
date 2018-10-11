@@ -48,6 +48,7 @@ func NewCommand() *cobra.Command {
 	rootCmd.PersistentFlags().StringVar(&outputS3UploadDir, "output-s3-upload-directory", "test", "directory to upload output file")
 	rootCmd.PersistentFlags().StringVar(&outputS3UploadRegion, "output-s3-upload-region", "us-west-2", "AWS region for S3 uploads")
 	rootCmd.PersistentFlags().IntVar(&startMinute, "start-minute", 0, "minute to start the command (temporary dumb feature to be removed after batch integration...)")
+	rootCmd.PersistentFlags().StringVar(&wrkCfg.Endpoint, "endpoint", "", "wrk command endpoint")
 	rootCmd.PersistentFlags().IntVar(&wrkCfg.Threads, "threads", 2, "number of threads")
 	rootCmd.PersistentFlags().IntVar(&wrkCfg.Connections, "connections", 200, "number of connections")
 	rootCmd.PersistentFlags().DurationVar(&wrkCfg.Duration, "duration", 15*time.Second, "duration to run 'wrk' command")

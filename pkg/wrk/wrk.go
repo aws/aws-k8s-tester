@@ -4,6 +4,7 @@ package wrk
 import (
 	"context"
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -25,6 +26,13 @@ type Config struct {
 
 // Run runs "wrk" commands.
 func Run(cfg Config) (rs Result, err error) {
+	if cfg.Endpoint == "" {
+		return Result{}, errors.New("endpoint not found")
+	}
+	if cfg.Threads > cfg.Connections {
+		return Result{}, fmt.Errorf("expected threads <= connections, got threads %d > connections %d", cfg.Threads, cfg.Connections)
+	}
+
 	ex := exec.New()
 	if _, err = ex.LookPath("wrk"); err != nil {
 		return Result{}, fmt.Errorf("wrk is not found (%v)", err)
