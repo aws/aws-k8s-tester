@@ -19,11 +19,11 @@ func newMerge() *cobra.Command {
 		Short: "Merge wrk command outputs into one CSV file",
 		Run:   mergeFunc,
 	}
-	cmd.PersistentFlags().BoolVar(&mergeCSV, "csv", false, "'true' to merge CSV files")
+	cmd.PersistentFlags().BoolVar(&mergeInputCSV, "input-csv", false, "'true' to merge CSV files")
 	return cmd
 }
 
-var mergeCSV bool
+var mergeInputCSV bool
 
 func mergeFunc(cmd *cobra.Command, args []string) {
 	if len(args) < 1 {
@@ -39,7 +39,7 @@ func mergeFunc(cmd *cobra.Command, args []string) {
 	header := make([]string, 0)
 	rows := make([][]string, 0)
 	for _, p := range args {
-		if !mergeCSV {
+		if !mergeInputCSV {
 			d, err := ioutil.ReadFile(p)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "failed to read wrk output %q (%v)\n", p, err)
@@ -72,7 +72,7 @@ func mergeFunc(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	if !mergeCSV {
+	if !mergeInputCSV {
 		if err := wrk.ToCSV(output, ps...); err != nil {
 			fmt.Fprintf(os.Stderr, "failed to convert to CSV %q (%v)\n", output, err)
 			os.Exit(1)

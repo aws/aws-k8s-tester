@@ -73,8 +73,8 @@ func runFunc(cmd *cobra.Command, args []string) {
 	}
 
 	if startMinute != 0 {
-		for time.Now().Minute() == startMinute {
-			fmt.Fprintf(os.Stderr, "wait until start minute matches target %d != current %d", startMinute, time.Now().Minute())
+		for time.Now().Minute() != startMinute {
+			fmt.Fprintf(os.Stdout, "wait until start minute matches target %d != current %d", startMinute, time.Now().Minute())
 			time.Sleep(5 * time.Second)
 		}
 	}
@@ -135,7 +135,12 @@ func runFunc(cmd *cobra.Command, args []string) {
 		lg:     lg,
 		s3:     s3.New(ss),
 	}
-	if err = up.upload(output, filepath.Join(outputS3UploadDir, getName()+".csv")); err != nil {
+
+	s3Path := getName()
+	if outputCSV {
+		s3Path += ".csv"
+	}
+	if err = up.upload(output, filepath.Join(outputS3UploadDir, s3Path)); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to upload %q (%v)\n", output, err)
 		os.Exit(1)
 	}
