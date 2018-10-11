@@ -276,41 +276,93 @@ func (md *embedded) createInstances() (err error) {
 				zap.Int("target-total", md.cfg.Count),
 			)
 
-			tkn := md.cfg.ID + fmt.Sprintf("%X", time.Now().Nanosecond())
-			tokens = append(tokens, tkn)
-
 			subnetID := md.cfg.SubnetIDs[subnetIdx%len(md.cfg.SubnetIDs)]
-			_, err = md.ec2.RunInstances(&ec2.RunInstancesInput{
-				ClientToken:                       aws.String(tkn),
-				ImageId:                           aws.String(md.cfg.ImageID),
-				MinCount:                          aws.Int64(int64(n)),
-				MaxCount:                          aws.Int64(int64(n)),
-				InstanceType:                      aws.String(md.cfg.InstanceType),
-				KeyName:                           aws.String(md.cfg.KeyName),
-				SubnetId:                          aws.String(subnetID),
-				SecurityGroupIds:                  aws.StringSlice(md.cfg.SecurityGroupIDs),
-				InstanceInitiatedShutdownBehavior: aws.String("terminate"),
-				UserData:                          aws.String(md.cfg.UserData),
-				TagSpecifications: []*ec2.TagSpecification{
-					{
-						ResourceType: aws.String("instance"),
-						Tags: []*ec2.Tag{
-							{
-								Key:   aws.String(md.cfg.Tag),
-								Value: aws.String(md.cfg.Tag),
-							},
-							{
-								Key:   aws.String("HOSTNAME"),
-								Value: aws.String(h),
+
+			if n < 20 {
+				tkn := md.cfg.ID + fmt.Sprintf("%X", time.Now().Nanosecond())
+				tokens = append(tokens, tkn)
+
+				_, err = md.ec2.RunInstances(&ec2.RunInstancesInput{
+					ClientToken:                       aws.String(tkn),
+					ImageId:                           aws.String(md.cfg.ImageID),
+					MinCount:                          aws.Int64(int64(n)),
+					MaxCount:                          aws.Int64(int64(n)),
+					InstanceType:                      aws.String(md.cfg.InstanceType),
+					KeyName:                           aws.String(md.cfg.KeyName),
+					SubnetId:                          aws.String(subnetID),
+					SecurityGroupIds:                  aws.StringSlice(md.cfg.SecurityGroupIDs),
+					InstanceInitiatedShutdownBehavior: aws.String("terminate"),
+					UserData:                          aws.String(md.cfg.UserData),
+					TagSpecifications: []*ec2.TagSpecification{
+						{
+							ResourceType: aws.String("instance"),
+							Tags: []*ec2.Tag{
+								{
+									Key:   aws.String(md.cfg.Tag),
+									Value: aws.String(md.cfg.Tag),
+								},
+								{
+									Key:   aws.String("HOSTNAME"),
+									Value: aws.String(h),
+								},
 							},
 						},
 					},
-				},
-			})
-			if err != nil {
-				return err
+				})
+				if err != nil {
+					return err
+				}
+
+				tknToCnt[tkn] = n
+			} else {
+				nLeft := n
+				for nLeft > 0 {
+					tkn := md.cfg.ID + fmt.Sprintf("%X", time.Now().Nanosecond())
+					tokens = append(tokens, tkn)
+
+					x := 20
+					if nLeft < 20 {
+						x = nLeft
+					}
+					nLeft -= x
+
+					_, err = md.ec2.RunInstances(&ec2.RunInstancesInput{
+						ClientToken:                       aws.String(tkn),
+						ImageId:                           aws.String(md.cfg.ImageID),
+						MinCount:                          aws.Int64(int64(x)),
+						MaxCount:                          aws.Int64(int64(x)),
+						InstanceType:                      aws.String(md.cfg.InstanceType),
+						KeyName:                           aws.String(md.cfg.KeyName),
+						SubnetId:                          aws.String(subnetID),
+						SecurityGroupIds:                  aws.StringSlice(md.cfg.SecurityGroupIDs),
+						InstanceInitiatedShutdownBehavior: aws.String("terminate"),
+						UserData:                          aws.String(md.cfg.UserData),
+						TagSpecifications: []*ec2.TagSpecification{
+							{
+								ResourceType: aws.String("instance"),
+								Tags: []*ec2.Tag{
+									{
+										Key:   aws.String(md.cfg.Tag),
+										Value: aws.String(md.cfg.Tag),
+									},
+									{
+										Key:   aws.String("HOSTNAME"),
+										Value: aws.String(h),
+									},
+								},
+							},
+						},
+					})
+					if err != nil {
+						return err
+					}
+
+					tknToCnt[tkn] = x
+					md.lg.Info("launched a batch", zap.Int("instance-count", x))
+
+					time.Sleep(10 * time.Second)
+				}
 			}
-			tknToCnt[tkn] = n
 
 			subnetIdx++
 			left -= batch
@@ -323,6 +375,7 @@ func (md *embedded) createInstances() (err error) {
 			)
 		}
 	} else {
+		// create <1 instance per subnet
 		for i := 0; i < md.cfg.Count; i++ {
 			tkn := md.cfg.ID + fmt.Sprintf("%X", time.Now().Nanosecond())
 			tokens = append(tokens, tkn)
