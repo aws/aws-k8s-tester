@@ -32,12 +32,16 @@ var (
 	ginkgoVerbose = flag.Bool("ginkgo-verbose", true, "'true' to enable verbose in Ginkgo")
 )
 
-var cfg = eksconfig.NewDefault()
+var (
+	cfg            = eksconfig.NewDefault()
+	runScalability = false
+)
 
 func TestMain(m *testing.M) {
 	flag.Parse()
 
 	cfg.UpdateFromEnvs()
+	runScalability = cfg.ALBIngressController.TestScalability
 	cfg.Sync()
 
 	// auto-generate test configuration file
@@ -65,7 +69,6 @@ func TestMain(m *testing.M) {
 
 func TestAWSTesterEKS(t *testing.T) {
 	RegisterFailHandler(Fail)
-	t.Logf("[DEBUG] Scalability test %v", cfg.ALBIngressController.TestScalability)
 	RunSpecs(t, "awstester eks ALB Ingress Controller e2e tests")
 }
 
@@ -116,6 +119,55 @@ var _ = BeforeSuite(func() {
 	Expect(err).ShouldNot(HaveOccurred())
 })
 
+var _ = Describe("EKS with ALB Ingress Controller on worker nodes", func() {
+	Context("Correctness of EKS cluster", func() {
+		It("EKS expects worker nodes", func() {
+			if !cfg.Embedded {
+				// reload updated kubeconfig
+				var err error
+				cfg, err = eksconfig.Load(cfg.ConfigPath)
+				Expect(err).ShouldNot(HaveOccurred())
+			}
+
+			// TODO: run Kubernetes upstream e2e tests
+			co, err := control.Output(exec.Command(
+				"kubectl",
+				"--kubeconfig="+cfg.KubeConfigPath,
+				"get",
+				"nodes",
+			))
+			Expect(err).ShouldNot(HaveOccurred())
+			nn := strings.Count(string(co), "Ready")
+			Expect(nn).To(Equal(int(cfg.WorkderNodeASGMax)))
+		})
+	})
+
+	Context("Correctness of ALB Ingress Controller on worker nodes", func() {
+		It("ALB Ingress Controller expects Ingress rules", func() {
+			err := kp.TestCorrectness()
+			Expect(err).ShouldNot(HaveOccurred())
+		})
+	})
+
+	Context("Scalability of ALB Ingress Controller on worker nodes", func() {
+		if runScalability {
+			It("ALB Ingress Controller expects to handle concurrent clients with expected QPS", func() {
+				err := kp.TestQPS()
+				Expect(err).ShouldNot(HaveOccurred())
+			})
+		}
+
+		// enough time to process metrics
+		// and to not overload ingress controller
+		time.Sleep(3 * time.Second)
+
+		It("ALB Ingress Controller expects to serve '/metrics'", func() {
+			err := kp.TestMetrics()
+			Expect(err).ShouldNot(HaveOccurred())
+		})
+	})
+})
+
 var _ = AfterSuite(func() {
 	if !cfg.Embedded {
 		// reload updated kubeconfig
@@ -151,59 +203,4 @@ var _ = AfterSuite(func() {
 		err := kp.Down()
 		Expect(err).ShouldNot(HaveOccurred())
 	}
-})
-
-var _ = Describe("EKS with ALB Ingress Controller on worker nodes", func() {
-	Context("Correctness of EKS cluster", func() {
-		It("EKS expects worker nodes", func() {
-			if !cfg.Embedded {
-				// reload updated kubeconfig
-				var err error
-				cfg, err = eksconfig.Load(cfg.ConfigPath)
-				Expect(err).ShouldNot(HaveOccurred())
-			}
-
-			// TODO: run Kubernetes upstream e2e tests
-			co, err := control.Output(exec.Command(
-				"kubectl",
-				"--kubeconfig="+cfg.KubeConfigPath,
-				"get",
-				"nodes",
-			))
-			Expect(err).ShouldNot(HaveOccurred())
-			nn := strings.Count(string(co), "Ready")
-			Expect(nn).To(Equal(int(cfg.WorkderNodeASGMax)))
-		})
-	})
-
-	Context("Correctness of ALB Ingress Controller on worker nodes", func() {
-		It("ALB Ingress Controller expects Ingress rules", func() {
-			err := kp.TestCorrectness()
-			Expect(err).ShouldNot(HaveOccurred())
-		})
-	})
-
-	Context("Scalability of ALB Ingress Controller on worker nodes", func() {
-		if cfg.ALBIngressController.TestScalability {
-			It(
-				fmt.Sprintf(
-					"ALB Ingress Controller expects to handle concurrent clients with expected QPS (ALBIngressController.TestScalability %v)",
-					cfg.ALBIngressController.TestScalability,
-				),
-				func() {
-					err := kp.TestQPS()
-					Expect(err).ShouldNot(HaveOccurred())
-				},
-			)
-		}
-
-		// enough time to process metrics
-		// and to not overload ingress controller
-		time.Sleep(3 * time.Second)
-
-		It("ALB Ingress Controller expects to serve '/metrics'", func() {
-			err := kp.TestMetrics()
-			Expect(err).ShouldNot(HaveOccurred())
-		})
-	})
 })
