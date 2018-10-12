@@ -151,6 +151,7 @@ type uploader struct {
 
 func (up *uploader) upload(localPath, s3Path string) error {
 	bucket := up.bucket
+
 	_, err := up.s3.CreateBucket(&s3.CreateBucketInput{
 		Bucket: aws.String(bucket),
 		CreateBucketConfiguration: &s3.CreateBucketConfiguration{
@@ -178,18 +179,18 @@ func (up *uploader) upload(localPath, s3Path string) error {
 		if !exist {
 			return err
 		}
+	} else {
+		h, _ := os.Hostname()
+		tags := []*s3.Tag{{Key: aws.String("HOSTNAME"), Value: aws.String(h)}}
+		_, err = up.s3.PutBucketTagging(&s3.PutBucketTaggingInput{
+			Bucket:  aws.String(bucket),
+			Tagging: &s3.Tagging{TagSet: tags},
+		})
+		if err != nil {
+			return err
+		}
 	}
 	up.lg.Info("created bucket", zap.String("bucket", bucket))
-
-	h, _ := os.Hostname()
-	tags := []*s3.Tag{{Key: aws.String("HOSTNAME"), Value: aws.String(h)}}
-	_, err = up.s3.PutBucketTagging(&s3.PutBucketTaggingInput{
-		Bucket:  aws.String(bucket),
-		Tagging: &s3.Tagging{TagSet: tags},
-	})
-	if err != nil {
-		return err
-	}
 
 	d, err := ioutil.ReadFile(localPath)
 	if err != nil {
