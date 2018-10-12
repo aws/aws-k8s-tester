@@ -197,37 +197,53 @@ func (up *uploader) upload(localPath, s3Path string) error {
 	}
 
 	hn, _ := os.Hostname()
-	_, err = up.s3.PutObject(&s3.PutObjectInput{
-		Bucket:  aws.String(bucket),
-		Key:     aws.String(s3Path),
-		Body:    bytes.NewReader(d),
-		Expires: aws.Time(time.Now().UTC().Add(24 * time.Hour)),
+	for i := 0; i < 30; i++ {
+		_, err = up.s3.PutObject(&s3.PutObjectInput{
+			Bucket:  aws.String(bucket),
+			Key:     aws.String(s3Path),
+			Body:    bytes.NewReader(d),
+			Expires: aws.Time(time.Now().UTC().Add(24 * time.Hour)),
 
-		// TODO: enable this when open-sourced, to make all logs available to communities
-		// https://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html#canned-acl
-		// ACL: aws.String("public-read"),
-		ACL: aws.String("private"),
+			// TODO: enable this when open-sourced, to make all logs available to communities
+			// https://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html#canned-acl
+			// ACL: aws.String("public-read"),
+			ACL: aws.String("private"),
 
-		Metadata: map[string]*string{
-			bucket:     aws.String(bucket),
-			"HOSTNAME": aws.String(hn),
-		},
-	})
-	if err == nil {
-		up.lg.Debug("uploaded",
-			zap.String("bucket", bucket),
-			zap.String("local-path", localPath),
-			zap.String("remote-path", s3Path),
-			zap.String("size", humanize.Bytes(uint64(len(d)))),
-		)
-	} else {
-		up.lg.Warn("failed to upload",
-			zap.String("bucket", bucket),
-			zap.String("local-path", localPath),
-			zap.String("remote-path", s3Path),
-			zap.String("size", humanize.Bytes(uint64(len(d)))),
-			zap.Error(err),
-		)
+			Metadata: map[string]*string{
+				bucket:     aws.String(bucket),
+				"HOSTNAME": aws.String(hn),
+			},
+		})
+		if err == nil {
+			up.lg.Info("uploaded",
+				zap.String("bucket", bucket),
+				zap.String("local-path", localPath),
+				zap.String("remote-path", s3Path),
+				zap.String("size", humanize.Bytes(uint64(len(d)))),
+			)
+			break
+		}
+
+		if aerr, ok := err.(awserr.Error); ok {
+			up.lg.Warn("failed to upload",
+				zap.String("bucket", bucket),
+				zap.String("local-path", localPath),
+				zap.String("remote-path", s3Path),
+				zap.String("size", humanize.Bytes(uint64(len(d)))),
+				zap.String("error-code", aerr.Code()),
+				zap.Error(err),
+			)
+		} else {
+			up.lg.Warn("failed to upload",
+				zap.String("bucket", bucket),
+				zap.String("local-path", localPath),
+				zap.String("remote-path", s3Path),
+				zap.String("size", humanize.Bytes(uint64(len(d)))),
+				zap.Error(err),
+			)
+		}
+
+		time.Sleep(15 * time.Second)
 	}
 	return err
 }
