@@ -41,7 +41,7 @@ func (md *embedded) createNginxConfigMap() error {
 	return nil
 }
 
-func (md *embedded) DeployIngressTestServer() error {
+func (md *embedded) DeployBackend() error {
 	now := time.Now().UTC()
 
 	var name string

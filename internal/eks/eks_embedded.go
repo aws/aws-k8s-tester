@@ -59,8 +59,9 @@ type embedded struct {
 	eks eksiface.EKSAPI
 	ec2 ec2iface.EC2API
 
+	s3Plugin s3.Plugin
+
 	// for plugins, sub-project implementation
-	s3Plugin  s3.Plugin
 	albPlugin alb.Plugin
 
 	// TODO: add EBS (with CSI) plugin
@@ -314,7 +315,7 @@ func (md *embedded) Up() (err error) {
 	if md.cfg.ALBIngressController.Enable {
 		albStart := time.Now().UTC()
 
-		if err = catchStopc(md.lg, md.stopc, md.albPlugin.DeployIngressTestServer); err != nil {
+		if err = catchStopc(md.lg, md.stopc, md.albPlugin.DeployBackend); err != nil {
 			return err
 		}
 		if err = catchStopc(md.lg, md.stopc, md.albPlugin.CreateRBAC); err != nil {

@@ -1,5 +1,5 @@
 package alb
 
-func (ac *awsCli) DeployIngressTestServer() error {
+func (ac *awsCli) DeployBackend() error {
 	panic("TODO")
 }

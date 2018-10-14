@@ -7,10 +7,13 @@ import (
 	"github.com/aws/awstester/eksconfig"
 )
 
-// Interface defines 'kubetest' deployer.
-// Satisfies "k8s.io/test-infra/kubetest/main.go" 'deployer' and 'publisher" interfaces.
-// Reference https://github.com/kubernetes/test-infra/blob/master/kubetest/main.go.
+// Interface defines EKS deployer.
 type Interface interface {
+	///////////////////////////////////////////////////////////////////////////////////////////
+	// Satisfies "k8s.io/test-infra/kubetest/main.go" 'deployer' and 'publisher" interfaces. //
+	// Reference https://github.com/kubernetes/test-infra/blob/master/kubetest/main.go.      //
+	///////////////////////////////////////////////////////////////////////////////////////////
+
 	Up() error
 	IsUp() error
 	TestSetup() error
@@ -34,6 +37,7 @@ type Interface interface {
 	ALB
 }
 
+// ALB defines AWS application load balancer tester.
 type ALB interface {
 	// TestCorrectness checks if a test ingress service
 	// returns the expected output.

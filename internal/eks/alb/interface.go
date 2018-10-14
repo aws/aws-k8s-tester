@@ -3,7 +3,7 @@ package alb
 
 // Plugin defines ALB Ingress Controller deployer operations.
 type Plugin interface {
-	DeployIngressTestServer() error
+	DeployBackend() error
 	CreateRBAC() error
 	DeployIngressController() error
 	CreateSecurityGroup() error
