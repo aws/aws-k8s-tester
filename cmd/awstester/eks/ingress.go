@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/aws/awstester/eksconfig"
-	"github.com/aws/awstester/internal/eks/ingress/client"
-	"github.com/aws/awstester/internal/eks/ingress/server"
+	"github.com/aws/awstester/internal/eks/alb/ingress/client"
+	"github.com/aws/awstester/internal/eks/alb/ingress/server"
 
 	humanize "github.com/dustin/go-humanize"
 	"github.com/spf13/cobra"

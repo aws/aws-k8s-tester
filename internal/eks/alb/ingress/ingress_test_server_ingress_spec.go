@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/aws/awstester/internal/eks/ingress/path"
+	"github.com/aws/awstester/internal/eks/alb/ingress/path"
 
 	gyaml "github.com/ghodss/yaml"
 	"k8s.io/api/extensions/v1beta1"

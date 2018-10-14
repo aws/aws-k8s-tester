@@ -21,12 +21,9 @@ func TestEmbedded(t *testing.T) {
 	}
 
 	cfg := eksconfig.NewDefault()
-
-	p, perr := cfg.BackupConfig()
-	if perr != nil {
-		t.Fatal(perr)
+	if err := cfg.ValidateAndSetDefaults(); err != nil {
+		t.Fatal(err)
 	}
-	defer os.Rename(p, cfg.ConfigPath)
 
 	awsCfg := &awsapi.Config{
 		Logger:         zap.NewExample(),
@@ -40,7 +37,6 @@ func TestEmbedded(t *testing.T) {
 	}
 
 	sp := NewEmbedded(zap.NewExample(), cfg, s3.New(ss))
-
 	if err = sp.CreateBucketForAccessLogs(); err != nil {
 		t.Fatal(err)
 	}

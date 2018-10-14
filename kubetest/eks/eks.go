@@ -19,7 +19,7 @@ import (
 
 	"github.com/aws/awstester/eksconfig"
 	"github.com/aws/awstester/eksdeployer"
-	"github.com/aws/awstester/internal/eks/ingress/path"
+	"github.com/aws/awstester/internal/eks/alb/ingress/path"
 	"github.com/aws/awstester/pkg/wrk"
 
 	"k8s.io/test-infra/kubetest/process"

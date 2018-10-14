@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aws/awstester/internal/eks/ingress"
-	"github.com/aws/awstester/internal/eks/ingress/path"
+	"github.com/aws/awstester/internal/eks/alb/ingress"
+	"github.com/aws/awstester/internal/eks/alb/ingress/path"
 	"github.com/aws/awstester/pkg/httputil"
 
 	"github.com/aws/aws-sdk-go/aws"

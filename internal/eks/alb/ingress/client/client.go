@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/aws/awstester/internal/eks/ingress/path"
+	"github.com/aws/awstester/internal/eks/alb/ingress/path"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/atomic"
