@@ -1,2 +1,2 @@
-// Package alb implements AWS Application Load Balancer on EKS deployments.
+// Package alb implements ALB Ingress Controller plugin.
 package alb

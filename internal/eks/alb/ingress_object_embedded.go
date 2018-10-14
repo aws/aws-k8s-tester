@@ -139,8 +139,8 @@ func (md *embedded) CreateIngressObjects() error {
 		}
 		cfg2.GenTargetServiceName = "nginx-service"
 		cfg2.GenTargetServiceRoutesN = 0
-
 	}
+
 	if md.cfg.LogAccess {
 		cfg2.LogAccess = fmt.Sprintf(
 			"access_logs.s3.enabled=true,access_logs.s3.bucket=%s,access_logs.s3.prefix=%s-default",

@@ -15,32 +15,6 @@ import (
 	"go.uber.org/zap"
 )
 
-func (md *embedded) createNginxConfigMap() error {
-	d, err := ingress.CreateConfigMapNginx(md.cfg.ALBIngressController.TestResponseSize)
-	if err != nil {
-		return err
-	}
-	err = ioutil.WriteFile(md.cfg.ALBIngressController.IngressTestServerDeploymentServiceSpecPath, []byte(d), 0600)
-	if err != nil {
-		return err
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	cmd := md.kubectl.CommandContext(ctx,
-		md.kubectlPath,
-		"--kubeconfig="+md.cfg.KubeConfigPath,
-		"apply",
-		"--filename="+md.cfg.ALBIngressController.IngressTestServerDeploymentServiceSpecPath,
-	)
-	kexo, err := cmd.CombinedOutput()
-	cancel()
-	if err != nil {
-		return err
-	}
-	md.lg.Info("applied nginx config map", zap.String("output", string(kexo)))
-	return nil
-}
-
 func (md *embedded) DeployBackend() error {
 	now := time.Now().UTC()
 
@@ -74,7 +48,7 @@ func (md *embedded) DeployBackend() error {
 		name = "nginx-deployment"
 
 	default:
-		return fmt.Errorf("%q is unknown", md.cfg.ALBIngressController.TestMode)
+		err = fmt.Errorf("%q is unknown", md.cfg.ALBIngressController.TestMode)
 	}
 	if err != nil {
 		return err
@@ -175,5 +149,31 @@ func (md *embedded) DeployBackend() error {
 		zap.String("namespace", "default"),
 		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 	)
+	return nil
+}
+
+func (md *embedded) createNginxConfigMap() error {
+	d, err := ingress.CreateConfigMapNginx(md.cfg.ALBIngressController.TestResponseSize)
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(md.cfg.ALBIngressController.IngressTestServerDeploymentServiceSpecPath, []byte(d), 0600)
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	cmd := md.kubectl.CommandContext(ctx,
+		md.kubectlPath,
+		"--kubeconfig="+md.cfg.KubeConfigPath,
+		"apply",
+		"--filename="+md.cfg.ALBIngressController.IngressTestServerDeploymentServiceSpecPath,
+	)
+	kexo, err := cmd.CombinedOutput()
+	cancel()
+	if err != nil {
+		return err
+	}
+	md.lg.Info("applied nginx config map", zap.String("output", string(kexo)))
 	return nil
 }

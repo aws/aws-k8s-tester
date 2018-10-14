@@ -1,2 +1,2 @@
-// Package ingress implements Ingress API objects on EKS.
+// Package ingress implements various utilities for Kubernetes Ingress object.
 package ingress

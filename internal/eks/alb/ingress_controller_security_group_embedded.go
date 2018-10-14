@@ -52,6 +52,7 @@ func (md *embedded) CreateSecurityGroup() error {
 		md.cfg.Sync()
 		return err
 	}
+
 	_, err = md.ec2.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
 		GroupId:    aws.String(md.cfg.ALBIngressController.ELBv2SecurityGroupIDPortOpen),
 		IpProtocol: aws.String("tcp"),
@@ -64,6 +65,7 @@ func (md *embedded) CreateSecurityGroup() error {
 		md.cfg.Sync()
 		return err
 	}
+
 	md.lg.Info(
 		"authorized security group",
 		zap.String("name", "alb-sg"),
