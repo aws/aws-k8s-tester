@@ -520,7 +520,7 @@ func (md *embedded) LoadConfig() (eksconfig.Config, error) {
 	return *md.cfg, nil
 }
 
-func (md *embedded) TestCorrectness() error {
+func (md *embedded) TestALBCorrectness() error {
 	ep := "http://" + md.cfg.ALBIngressController.ELBv2NamespaceToDNSName["default"]
 	if md.cfg.ALBIngressController.TestMode == "ingress-test-server" {
 		ep += path.Path
@@ -537,7 +537,7 @@ func (md *embedded) TestCorrectness() error {
 	return nil
 }
 
-func (md *embedded) TestQPS() error {
+func (md *embedded) TestALBQPS() error {
 	ep := "http://" + md.cfg.ALBIngressController.ELBv2NamespaceToDNSName["default"]
 
 	var rs client.TestResult
@@ -576,7 +576,7 @@ func (md *embedded) TestQPS() error {
 		md.lg.Info("finished wrk", zap.String("command", strings.Join(args, " ")))
 	}
 
-	fmt.Printf("TestQPS Result: %q\n\n%s\n\n", ep, string(rbytes))
+	fmt.Printf("TestALBQPS Result: %q\n\n%s\n\n", ep, string(rbytes))
 
 	if err := ioutil.WriteFile(
 		md.cfg.ALBIngressController.ScalabilityOutputToUploadPath,
@@ -618,7 +618,7 @@ func (md *embedded) TestQPS() error {
 	return nil
 }
 
-func (md *embedded) TestMetrics() error {
+func (md *embedded) TestALBMetrics() error {
 	ep := "http://" + md.cfg.ALBIngressController.ELBv2NamespaceToDNSName["kube-system"] + "/metrics"
 
 	resp, err := http.Get(ep)

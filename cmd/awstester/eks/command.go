@@ -24,6 +24,7 @@ func NewCommand() *cobra.Command {
 		newS3Upload(),
 		newIngress(),
 		newSidecar(),
+		newTest(),
 	)
 	return rootCmd
 }

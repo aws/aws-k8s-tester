@@ -39,13 +39,13 @@ type Interface interface {
 
 // ALB defines AWS application load balancer tester.
 type ALB interface {
-	// TestCorrectness checks if a test ingress service
+	// TestALBCorrectness checks if a test ingress service
 	// returns the expected output.
-	TestCorrectness() error
-	// TestQPS runs ingress load testing.
+	TestALBCorrectness() error
+	// TestALBQPS runs ingress load testing.
 	// And returns an error if QPS is less than expected QPS.
-	TestQPS() error
-	// TestMetrics checks if ALB Ingress Controller
+	TestALBQPS() error
+	// TestALBMetrics checks if ALB Ingress Controller
 	// is serving /metrics endpoint.
-	TestMetrics() error
+	TestALBMetrics() error
 }

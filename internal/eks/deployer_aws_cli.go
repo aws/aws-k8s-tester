@@ -96,14 +96,14 @@ func (ac *awsCli) LoadConfig() (eksconfig.Config, error) {
 	panic("TODO")
 }
 
-func (ac *awsCli) TestCorrectness() error {
+func (ac *awsCli) TestALBCorrectness() error {
 	panic("TODO")
 }
 
-func (ac *awsCli) TestQPS() error {
+func (ac *awsCli) TestALBQPS() error {
 	panic("TODO")
 }
 
-func (ac *awsCli) TestMetrics() error {
+func (ac *awsCli) TestALBMetrics() error {
 	panic("TODO")
 }

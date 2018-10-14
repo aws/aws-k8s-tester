@@ -144,7 +144,7 @@ var _ = Describe("EKS with ALB Ingress Controller on worker nodes", func() {
 
 	Context("Correctness of ALB Ingress Controller on worker nodes", func() {
 		It("ALB Ingress Controller expects Ingress rules", func() {
-			err := kp.TestCorrectness()
+			err := kp.TestALBCorrectness()
 			Expect(err).ShouldNot(HaveOccurred())
 		})
 	})
@@ -152,7 +152,7 @@ var _ = Describe("EKS with ALB Ingress Controller on worker nodes", func() {
 	Context("Scalability of ALB Ingress Controller on worker nodes", func() {
 		if runScalability {
 			It("ALB Ingress Controller expects to handle concurrent clients with expected QPS", func() {
-				err := kp.TestQPS()
+				err := kp.TestALBQPS()
 				Expect(err).ShouldNot(HaveOccurred())
 			})
 		}
@@ -162,7 +162,7 @@ var _ = Describe("EKS with ALB Ingress Controller on worker nodes", func() {
 		time.Sleep(3 * time.Second)
 
 		It("ALB Ingress Controller expects to serve '/metrics'", func() {
-			err := kp.TestMetrics()
+			err := kp.TestALBMetrics()
 			Expect(err).ShouldNot(HaveOccurred())
 		})
 	})

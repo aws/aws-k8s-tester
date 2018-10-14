@@ -5,21 +5,15 @@
 package eks
 
 import (
-	"bytes"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 	"syscall"
 	"time"
 
 	"github.com/aws/awstester/eksconfig"
 	"github.com/aws/awstester/eksdeployer"
-	"github.com/aws/awstester/internal/eks/alb/ingress/path"
-	"github.com/aws/awstester/pkg/wrk"
 
 	"k8s.io/test-infra/kubetest/process"
 	kexec "k8s.io/utils/exec"
@@ -186,164 +180,41 @@ func (tr *tester) LoadConfig() (eksconfig.Config, error) {
 	return *tr.cfg, err
 }
 
-func (tr *tester) TestCorrectness() error {
+func (tr *tester) TestALBCorrectness() error {
 	if _, err := tr.LoadConfig(); err != nil {
 		return err
 	}
-
-	ep := "http://" + tr.cfg.ALBIngressController.ELBv2NamespaceToDNSName["default"]
-	if tr.cfg.ALBIngressController.TestMode == "ingress-test-server" {
-		ep += path.Path
-	}
-
-	resp, err := http.Get(ep)
-	if err != nil {
-		return fmt.Errorf("failed to HTTP Get %q (%v)", ep, err)
-	}
-
-	var d []byte
-	d, err = ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-	resp.Body.Close()
-
-	if !bytes.Equal(bytes.Repeat([]byte("0"), tr.cfg.ALBIngressController.TestResponseSize), d) {
-		return fmt.Errorf("HTTP Get %q returned unexpected (%q)", ep, string(d))
-	}
-	return nil
+	_, err := control.Output(exec.Command(
+		tr.awsTesterPath,
+		"eks",
+		"--path="+tr.cfg.ConfigPath,
+		"test", "alb", "correctness",
+	))
+	return err
 }
 
-func (tr *tester) TestQPS() error {
+func (tr *tester) TestALBQPS() error {
 	if _, err := tr.LoadConfig(); err != nil {
 		return err
 	}
-
-	f, err := ioutil.TempFile(os.TempDir(), "ingress-test-client")
-	if err != nil {
-		return err
-	}
-	testResultPath := f.Name()
-	f.Close()
-	os.RemoveAll(testResultPath)
-
-	ep := "http://" + tr.cfg.ALBIngressController.ELBv2NamespaceToDNSName["default"]
-	var output []byte
-	switch tr.cfg.ALBIngressController.TestMode {
-	case "ingress-test-server":
-		output, err = control.Output(exec.Command(
-			tr.awsTesterPath,
-			"eks",
-			"ingress",
-			"client",
-			"--endpoint="+ep,
-			"--routes="+fmt.Sprint(tr.cfg.ALBIngressController.TestServerRoutes),
-			"--clients="+fmt.Sprint(tr.cfg.ALBIngressController.TestClients),
-			"--requests="+fmt.Sprint(tr.cfg.ALBIngressController.TestClientRequests),
-			"--result-path="+testResultPath,
-		))
-		if err != nil {
-			return err
-		}
-
-	case "nginx":
-		// wrk --threads 2 --connections 200 --duration 15s --latency http://127.0.0.1
-		args := []string{
-			"--threads", "2",
-			"--connections", fmt.Sprintf("%d", tr.cfg.ALBIngressController.TestClients),
-			"--duration", "15s",
-			"--latency",
-			ep,
-		}
-		fmt.Printf("starting wrk command: wrk %s\n", strings.Join(args, " "))
-		output, err = control.Output(exec.Command("wrk", args...))
-		if err != nil {
-			return err
-		}
-		fmt.Printf("finished wrk command: wrk %s\n", strings.Join(args, " "))
-	}
-
-	fmt.Printf("TestQPS Result: %q\n\n%s\n\n", ep, string(output))
-
-	if err = ioutil.WriteFile(
-		tr.cfg.ALBIngressController.ScalabilityOutputToUploadPath,
-		output,
-		0600,
-	); err != nil {
-		return err
-	}
-	if tr.cfg.LogAutoUpload {
-		err = tr.DumpClusterLogs(
-			tr.cfg.ALBIngressController.ScalabilityOutputToUploadPath,
-			fmt.Sprintf("%s/alb.scalability.log", tr.cfg.ClusterName),
-		)
-		if err != nil {
-			return err
-		}
-	}
-
-	// reload QPS and failures
-	rcfg, err := eksconfig.Load(testResultPath)
-	if err != nil {
-		return err
-	}
-
-	if tr.cfg.ALBIngressController.TestMode == "ingress-test-server" {
-		tr.cfg.ALBIngressController.TestResultQPS = rcfg.ALBIngressController.TestResultQPS
-		tr.cfg.ALBIngressController.TestResultFailures = rcfg.ALBIngressController.TestResultFailures
-	} else {
-		pv, perr := wrk.Parse(string(output))
-		if perr == nil {
-			tr.cfg.ALBIngressController.TestResultQPS = pv.RequestsPerSec
-			tr.cfg.ALBIngressController.TestResultFailures = pv.ErrorsConnect + pv.ErrorsWrite + pv.ErrorsRead + pv.ErrorsTimeout
-		}
-	}
-	tr.cfg.Sync()
-
-	if rcfg.ALBIngressController.TestResultFailures > tr.cfg.ALBIngressController.TestClientErrorThreshold {
-		return fmt.Errorf("expected failures under threshold %d, got %d", tr.cfg.ALBIngressController.TestClientErrorThreshold, rcfg.ALBIngressController.TestResultFailures)
-	}
-	if tr.cfg.ALBIngressController.TestResultQPS > 0.0 &&
-		tr.cfg.ALBIngressController.TestResultQPS < tr.cfg.ALBIngressController.TestExpectQPS {
-		return fmt.Errorf("expected QPS %f, got %f",
-			tr.cfg.ALBIngressController.TestExpectQPS,
-			tr.cfg.ALBIngressController.TestResultQPS,
-		)
-	}
-	return nil
+	_, err := control.Output(exec.Command(
+		tr.awsTesterPath,
+		"eks",
+		"--path="+tr.cfg.ConfigPath,
+		"test", "alb", "qps",
+	))
+	return err
 }
 
-func (tr *tester) TestMetrics() error {
-	cfg, err := tr.LoadConfig()
-	if err != nil {
+func (tr *tester) TestALBMetrics() error {
+	if _, err := tr.LoadConfig(); err != nil {
 		return err
 	}
-
-	ep := "http://" + cfg.ALBIngressController.ELBv2NamespaceToDNSName["kube-system"] + "/metrics"
-	var resp *http.Response
-	resp, err = http.Get(ep)
-	if err != nil {
-		return fmt.Errorf("failed to HTTP Get %q (%v)", ep, err)
-	}
-	var d []byte
-	d, err = ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-	resp.Body.Close()
-
-	err = ioutil.WriteFile(tr.cfg.ALBIngressController.MetricsOutputToUploadPath, d, 0600)
-	if err != nil {
-		return err
-	}
-	if tr.cfg.LogAutoUpload {
-		err = tr.DumpClusterLogs(
-			tr.cfg.ALBIngressController.MetricsOutputToUploadPath,
-			fmt.Sprintf("%s/alb.metrics.log", tr.cfg.ClusterName),
-		)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	_, err := control.Output(exec.Command(
+		tr.awsTesterPath,
+		"eks",
+		"--path="+tr.cfg.ConfigPath,
+		"test", "alb", "metrics",
+	))
+	return err
 }
