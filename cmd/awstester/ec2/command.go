@@ -1,4 +1,3 @@
-// Package ec2 implements EC2 related commands.
 package ec2
 
 import "github.com/spf13/cobra"

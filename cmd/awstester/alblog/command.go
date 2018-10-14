@@ -1,9 +1,6 @@
-// Package alblog implements AWS Application Load Balancer utilities.
 package alblog
 
-import (
-	"github.com/spf13/cobra"
-)
+import "github.com/spf13/cobra"
 
 func init() {
 	cobra.EnablePrefixMatching = true

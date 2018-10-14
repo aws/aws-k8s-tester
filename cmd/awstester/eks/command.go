@@ -1,4 +1,3 @@
-// Package eks implements EKS related commands.
 package eks
 
 import "github.com/spf13/cobra"
@@ -16,13 +15,13 @@ func NewCommand() *cobra.Command {
 		Short:      "EKS commands",
 		SuggestFor: []string{"ekk", "ekstester"},
 	}
-	rootCmd.PersistentFlags().StringVarP(&path, "path", "p", "", "eks test configuration file path")
+	rootCmd.PersistentFlags().StringVarP(&path, "path", "p", "", "eks awstester configuration file path")
 	rootCmd.AddCommand(
 		newCreate(),
 		newDelete(),
 		newCheck(),
 		newProw(),
-		newUpload(),
+		newS3Upload(),
 		newIngress(),
 		newSidecar(),
 	)

@@ -13,7 +13,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"sync"
 	"syscall"
 	"time"
 
@@ -31,7 +30,6 @@ import (
 // Reference https://github.com/kubernetes/test-infra/blob/master/kubetest/main.go.
 type tester struct {
 	stopc         chan struct{}
-	mu            sync.RWMutex
 	cfg           *eksconfig.Config
 	awsTesterPath string
 	kubectlPath   string
@@ -67,9 +65,6 @@ var (
 
 // Up creates a new EKS cluster.
 func (tr *tester) Up() (err error) {
-	tr.mu.Lock()
-	defer tr.mu.Unlock()
-
 	createCmd := exec.Command(
 		tr.awsTesterPath,
 		"eks",
@@ -94,9 +89,6 @@ func (tr *tester) Up() (err error) {
 
 // Down tears down the existing EKS cluster.
 func (tr *tester) Down() (err error) {
-	tr.mu.Lock()
-	defer tr.mu.Unlock()
-
 	_, err = control.Output(exec.Command(
 		tr.awsTesterPath,
 		"eks",
@@ -158,8 +150,7 @@ func (tr *tester) DumpClusterLogs(localPath, s3Path string) (err error) {
 		tr.awsTesterPath,
 		"eks",
 		"--path="+tr.cfg.ConfigPath,
-		"upload",
-		"s3",
+		"s3-upload",
 		localPath,
 		s3Path,
 	))
@@ -174,8 +165,7 @@ func (tr *tester) Publish() error {
 		tr.awsTesterPath,
 		"eks",
 		"--path="+tr.cfg.ConfigPath,
-		"upload",
-		"s3",
+		"s3-upload",
 		tr.cfg.LogOutputToUploadPath,
 		logOutputS3,
 	))

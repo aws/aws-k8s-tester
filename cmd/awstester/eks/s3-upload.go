@@ -12,24 +12,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newUpload() *cobra.Command {
-	ac := &cobra.Command{
-		Use:   "upload <subcommand>",
-		Short: "Upload commands",
-	}
-	ac.AddCommand(newUploadS3())
-	return ac
-}
-
-func newUploadS3() *cobra.Command {
+func newS3Upload() *cobra.Command {
 	return &cobra.Command{
-		Use:   "s3 [local file path] [remote S3 path]",
+		Use:   "s3-upload [local file path] [remote S3 path]",
 		Short: "Upload a file to S3",
-		Run:   uploadS3Func,
+		Run:   s3UploadFunc,
 	}
 }
 
-func uploadS3Func(cmd *cobra.Command, args []string) {
+func s3UploadFunc(cmd *cobra.Command, args []string) {
 	if len(args) != 2 {
 		fmt.Fprintf(os.Stderr, "expected 2 arguments, got %v\n", args)
 		os.Exit(1)
