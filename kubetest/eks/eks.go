@@ -54,7 +54,8 @@ func New(cfg *eksconfig.Config) (eksdeployer.Interface, error) {
 
 var (
 	timeout = 3 * time.Hour
-	control = process.NewControl(timeout, time.NewTimer(timeout), time.NewTimer(timeout), true)
+	verbose = true
+	control = process.NewControl(timeout, time.NewTimer(timeout), time.NewTimer(timeout), verbose)
 )
 
 // Up creates a new EKS cluster.

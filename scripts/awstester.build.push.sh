@@ -12,8 +12,13 @@ if [[ -z "${GIT_COMMIT}" ]]; then
   GIT_COMMIT=$(git rev-parse --short=12 HEAD || echo "GitNotFound")
 fi
 
+_AWS_REGION=10h
+if [[ "${AWS_REGION}" ]]; then
+  _AWS_REGION=${AWS_REGION}
+fi
+
 if [[ -z "${REGISTRY}" ]]; then
-  REGISTRY=$(awstester ecr get-registry)
+  REGISTRY=$(awstester ecr --region=${_AWS_REGION} get-registry)
 fi
 
 echo "Building:" ${REGISTRY}/awstester:${GIT_COMMIT}
