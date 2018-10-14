@@ -50,7 +50,8 @@ var prowStatusPort string
 func prowStatusFunc(cmd *cobra.Command, args []string) {
 	lg, err := zap.NewProduction()
 	if err != nil {
-		panic(err)
+		fmt.Fprintf(os.Stderr, "failed to create logger (%v)\n", err)
+		os.Exit(1)
 	}
 
 	if !strings.HasPrefix(prowStatusPort, ":") {
@@ -102,27 +103,34 @@ func prowALBFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 	s, err := alb.CreateProwJobYAML(alb.ConfigProwJobYAML{
-		GINKGO_TIMEOUT:                                 "10h",
-		GINKGO_VERBOSE:                                 "true",
-		AWSTESTER_EKS_EMBEDDED:                         fmt.Sprintf("%v", cfg.Embedded),
-		AWSTESTER_EKS_WAIT_BEFORE_DOWN:                 fmt.Sprintf("%v", cfg.WaitBeforeDown),
-		AWSTESTER_EKS_DOWN:                             fmt.Sprintf("%v", cfg.Down),
-		AWSTESTER_EKS_AWSTESTER_IMAGE:                  fmt.Sprintf("%v", cfg.AWSTesterImage),
-		AWSTESTER_EKS_WORKER_NODE_INSTANCE_TYPE:        fmt.Sprintf("%v", cfg.WorkerNodeInstanceType),
-		AWSTESTER_EKS_WORKER_NODE_ASG_MIN:              fmt.Sprintf("%d", cfg.WorkderNodeASGMin),
-		AWSTESTER_EKS_WORKER_NODE_ASG_MAX:              fmt.Sprintf("%d", cfg.WorkderNodeASGMax),
-		AWSTESTER_EKS_ALB_ENABLE:                       fmt.Sprintf("%v", cfg.ALBIngressController.Enable),
-		AWSTESTER_EKS_ALB_TEST_SCALABILITY:             fmt.Sprintf("%v", cfg.ALBIngressController.TestScalability),
+		GINKGO_TIMEOUT: "10h",
+		GINKGO_VERBOSE: "true",
+
+		AWSTESTER_EKS_EMBEDDED:         fmt.Sprintf("%v", cfg.Embedded),
+		AWSTESTER_EKS_WAIT_BEFORE_DOWN: fmt.Sprintf("%v", cfg.WaitBeforeDown),
+		AWSTESTER_EKS_DOWN:             fmt.Sprintf("%v", cfg.Down),
+
+		AWSTESTER_EKS_AWSTESTER_IMAGE: fmt.Sprintf("%v", cfg.AWSTesterImage),
+
+		AWSTESTER_EKS_WORKER_NODE_INSTANCE_TYPE: fmt.Sprintf("%v", cfg.WorkerNodeInstanceType),
+		AWSTESTER_EKS_WORKER_NODE_ASG_MIN:       fmt.Sprintf("%d", cfg.WorkderNodeASGMin),
+		AWSTESTER_EKS_WORKER_NODE_ASG_MAX:       fmt.Sprintf("%d", cfg.WorkderNodeASGMax),
+
+		AWSTESTER_EKS_ALB_ENABLE: fmt.Sprintf("%v", cfg.ALBIngressController.Enable),
+
 		AWSTESTER_EKS_ALB_ALB_INGRESS_CONTROLLER_IMAGE: cfg.ALBIngressController.ALBIngressControllerImage,
-		AWSTESTER_EKS_ALB_TARGET_TYPE:                  cfg.ALBIngressController.TargetType,
-		AWSTESTER_EKS_ALB_TEST_MODE:                    cfg.ALBIngressController.TestMode,
-		AWSTESTER_EKS_ALB_TEST_SERVER_REPLICAS:         fmt.Sprintf("%d", cfg.ALBIngressController.TestServerReplicas),
-		AWSTESTER_EKS_ALB_TEST_SERVER_ROUTES:           fmt.Sprintf("%d", cfg.ALBIngressController.TestServerRoutes),
-		AWSTESTER_EKS_ALB_TEST_CLIENTS:                 fmt.Sprintf("%d", cfg.ALBIngressController.TestClients),
-		AWSTESTER_EKS_ALB_TEST_CLIENT_REQUESTS:         fmt.Sprintf("%d", cfg.ALBIngressController.TestClientRequests),
-		AWSTESTER_EKS_ALB_TEST_RESPONSE_SIZE:           fmt.Sprintf("%d", cfg.ALBIngressController.TestResponseSize),
-		AWSTESTER_EKS_ALB_TEST_CLIENT_ERROR_THRESHOLD:  fmt.Sprintf("%d", cfg.ALBIngressController.TestClientErrorThreshold),
-		AWSTESTER_EKS_ALB_TEST_EXPECT_QPS:              fmt.Sprintf("%f", cfg.ALBIngressController.TestExpectQPS),
+
+		AWSTESTER_EKS_ALB_TARGET_TYPE: cfg.ALBIngressController.TargetType,
+		AWSTESTER_EKS_ALB_TEST_MODE:   cfg.ALBIngressController.TestMode,
+
+		AWSTESTER_EKS_ALB_TEST_SCALABILITY:            fmt.Sprintf("%v", cfg.ALBIngressController.TestScalability),
+		AWSTESTER_EKS_ALB_TEST_SERVER_REPLICAS:        fmt.Sprintf("%d", cfg.ALBIngressController.TestServerReplicas),
+		AWSTESTER_EKS_ALB_TEST_SERVER_ROUTES:          fmt.Sprintf("%d", cfg.ALBIngressController.TestServerRoutes),
+		AWSTESTER_EKS_ALB_TEST_CLIENTS:                fmt.Sprintf("%d", cfg.ALBIngressController.TestClients),
+		AWSTESTER_EKS_ALB_TEST_CLIENT_REQUESTS:        fmt.Sprintf("%d", cfg.ALBIngressController.TestClientRequests),
+		AWSTESTER_EKS_ALB_TEST_RESPONSE_SIZE:          fmt.Sprintf("%d", cfg.ALBIngressController.TestResponseSize),
+		AWSTESTER_EKS_ALB_TEST_CLIENT_ERROR_THRESHOLD: fmt.Sprintf("%d", cfg.ALBIngressController.TestClientErrorThreshold),
+		AWSTESTER_EKS_ALB_TEST_EXPECT_QPS:             fmt.Sprintf("%f", cfg.ALBIngressController.TestExpectQPS),
 	})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create ALB Prow configuration %v\n", err)

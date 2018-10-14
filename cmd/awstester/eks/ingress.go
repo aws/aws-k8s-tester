@@ -51,7 +51,8 @@ var (
 func ingressServerFunc(cmd *cobra.Command, args []string) {
 	lg, err := zap.NewProduction()
 	if err != nil {
-		panic(err)
+		fmt.Fprintf(os.Stderr, "failed to create logger (%v)\n", err)
+		os.Exit(1)
 	}
 
 	lg.Info(
@@ -120,7 +121,8 @@ func ingressClientFunc(cmd *cobra.Command, args []string) {
 
 	lg, err := zap.NewProduction()
 	if err != nil {
-		panic(err)
+		fmt.Fprintf(os.Stderr, "failed to create logger (%v)\n", err)
+		os.Exit(1)
 	}
 
 	// send loads from client to server
