@@ -16,6 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// instance-types auto-generates EC2 instance types from AWS API.
 package main
 
 import (
