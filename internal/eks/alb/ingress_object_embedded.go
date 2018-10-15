@@ -440,6 +440,7 @@ func (md *embedded) DeleteIngressObjects() error {
 	if err != nil {
 		return err
 	}
+	md.lg.Info("deleted ingress objects", zap.String("output", string(kexo)))
 
 	retryStart := time.Now().UTC()
 	for time.Now().UTC().Sub(retryStart) < 5*time.Minute {
@@ -532,7 +533,7 @@ func (md *embedded) DeleteIngressObjects() error {
 		)
 		time.Sleep(5 * time.Second)
 	}
-	md.lg.Info("deleted ingress")
+	md.lg.Info("confirmed that ingress objects were deleted")
 
 	ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
 	cmd = md.kubectl.CommandContext(ctx,
@@ -545,6 +546,7 @@ func (md *embedded) DeleteIngressObjects() error {
 	if err != nil {
 		return err
 	}
+	md.lg.Info("deleted ingress controller", zap.String("output", string(kexo)))
 
 	retryStart = time.Now().UTC()
 	for time.Now().UTC().Sub(retryStart) < 5*time.Minute {
@@ -592,7 +594,7 @@ func (md *embedded) DeleteIngressObjects() error {
 		)
 		time.Sleep(5 * time.Second)
 	}
-	md.lg.Info("deleted ALB Ingress Controller deployment and service")
+	md.lg.Info("confirmed that ALB Ingress Controller deployment and service were deleted")
 
 	time.Sleep(5 * time.Second)
 
