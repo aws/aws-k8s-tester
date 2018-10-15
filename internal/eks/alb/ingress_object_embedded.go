@@ -437,6 +437,9 @@ func (md *embedded) DeleteIngressObjects() error {
 	)
 	kexo, err := cmd.CombinedOutput()
 	cancel()
+	if err != nil {
+		return err
+	}
 
 	retryStart := time.Now().UTC()
 	for time.Now().UTC().Sub(retryStart) < 5*time.Minute {
@@ -539,6 +542,9 @@ func (md *embedded) DeleteIngressObjects() error {
 	)
 	kexo, err = cmd.CombinedOutput()
 	cancel()
+	if err != nil {
+		return err
+	}
 
 	retryStart = time.Now().UTC()
 	for time.Now().UTC().Sub(retryStart) < 5*time.Minute {

@@ -242,13 +242,10 @@ func (md *embedded) upload() (err error) {
 	); err != nil {
 		return err
 	}
-	if err = md.toS3(
+	return md.toS3(
 		md.cfg.KeyPath,
 		md.cfg.KeyPathBucket,
-	); err != nil {
-		return err
-	}
-	return nil
+	)
 }
 
 func (md *embedded) createInstances() (err error) {
