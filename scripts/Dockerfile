@@ -30,8 +30,10 @@ RUN git clone https://github.com/wg/wrk.git \
 RUN curl -o /workspace/aws-bin/kubectl \
   https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-07-26/bin/linux/amd64/kubectl
 
-RUN curl -o /workspace/aws-bin/awstester \
-  https://s3-us-west-2.amazonaws.com/awstester-s3/awstester
+# RUN curl -o /workspace/aws-bin/awstester \
+# https://s3-us-west-2.amazonaws.com/awstester-s3/awstester
+
+COPY awstester /workspace/aws-bin/
 
 RUN chmod +x /workspace/aws-bin/*
 

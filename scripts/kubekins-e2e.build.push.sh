@@ -23,6 +23,11 @@ fi
 
 echo "Building:" ${REGISTRY}/kubekins-e2e:${GIT_COMMIT}
 
+CGO_ENABLED=0 GOOS=linux GOARCH=$(go env GOARCH) \
+  go build -v \
+  -o ./awstester \
+  ./cmd/awstester
+
 docker build \
   --tag ${REGISTRY}/kubekins-e2e:${GIT_COMMIT} \
   --file ./scripts/Dockerfile .
