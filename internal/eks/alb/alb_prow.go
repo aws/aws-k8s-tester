@@ -16,7 +16,8 @@ type ConfigProwJobYAML struct {
 	AWSTESTER_EKS_WAIT_BEFORE_DOWN string
 	AWSTESTER_EKS_DOWN             string
 
-	AWSTESTER_EKS_AWSTESTER_IMAGE string
+	AWSTESTER_EKS_KUBEKINS_E2E_IMAGE string
+	AWSTESTER_EKS_AWSTESTER_IMAGE    string
 
 	AWSTESTER_EKS_WORKER_NODE_INSTANCE_TYPE string
 	AWSTESTER_EKS_WORKER_NODE_ASG_MIN       string
@@ -101,7 +102,11 @@ func CreateProwJobYAML(cfg ConfigProwJobYAML) (string, error) {
 					Spec: &v1.PodSpec{
 						Containers: []v1.Container{
 							{
-								Image: "gcr.io/k8s-testimages/kubekins-e2e:v20181005-fd9cfb8b0-master",
+								// Image: "gcr.io/k8s-testimages/kubekins-e2e:v20181005-fd9cfb8b0-master",
+
+								// use custom built image to include "wrk", "awstester", etc.
+								// e.g. 607362164682.dkr.ecr.us-west-2.amazonaws.com/kubekins-e2e:ade682b5fc04
+								Image: cfg.AWSTESTER_EKS_KUBEKINS_E2E_IMAGE,
 
 								Args: []string{
 									"--repo=github.com/gyuho/$(REPO_NAME)=$(PULL_REFS)",

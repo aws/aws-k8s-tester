@@ -110,9 +110,10 @@ func prowALBFunc(cmd *cobra.Command, args []string) {
 		AWSTESTER_EKS_WAIT_BEFORE_DOWN: fmt.Sprintf("%v", cfg.WaitBeforeDown),
 		AWSTESTER_EKS_DOWN:             fmt.Sprintf("%v", cfg.Down),
 
-		AWSTESTER_EKS_AWSTESTER_IMAGE: fmt.Sprintf("%v", cfg.AWSTesterImage),
+		AWSTESTER_EKS_KUBEKINS_E2E_IMAGE: fmt.Sprintf("%s", cfg.KubekinsE2E),
+		AWSTESTER_EKS_AWSTESTER_IMAGE:    fmt.Sprintf("%s", cfg.AWSTesterImage),
 
-		AWSTESTER_EKS_WORKER_NODE_INSTANCE_TYPE: fmt.Sprintf("%v", cfg.WorkerNodeInstanceType),
+		AWSTESTER_EKS_WORKER_NODE_INSTANCE_TYPE: fmt.Sprintf("%s", cfg.WorkerNodeInstanceType),
 		AWSTESTER_EKS_WORKER_NODE_ASG_MIN:       fmt.Sprintf("%d", cfg.WorkderNodeASGMin),
 		AWSTESTER_EKS_WORKER_NODE_ASG_MAX:       fmt.Sprintf("%d", cfg.WorkderNodeASGMax),
 

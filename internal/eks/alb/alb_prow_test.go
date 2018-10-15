@@ -11,6 +11,7 @@ func TestALBProw(t *testing.T) {
 		GINKGO_VERBOSE:                                 "true",
 		AWSTESTER_EKS_WAIT_BEFORE_DOWN:                 "1m",
 		AWSTESTER_EKS_DOWN:                             "true",
+		AWSTESTER_EKS_KUBEKINS_E2E_IMAGE:               "ACCOUNT-ID.dkr.ecr.us-west-2.amazonaws.com/kubekins-e2e:latest",
 		AWSTESTER_EKS_AWSTESTER_IMAGE:                  "ACCOUNT-ID.dkr.ecr.us-west-2.amazonaws.com/awstester:latest",
 		AWSTESTER_EKS_WORKER_NODE_INSTANCE_TYPE:        "m3.xlarge",
 		AWSTESTER_EKS_WORKER_NODE_ASG_MIN:              "1",
