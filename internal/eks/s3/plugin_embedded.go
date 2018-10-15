@@ -64,10 +64,10 @@ func (md *embedded) CreateBucketForAccessLogs() error {
 			switch aerr.Code() {
 			case s3.ErrCodeBucketAlreadyExists:
 				md.lg.Warn("bucket already exists", zap.String("bucket", bucket), zap.Error(err))
-				exist = true
+				exist, err = true, nil
 			case s3.ErrCodeBucketAlreadyOwnedByYou:
 				md.lg.Warn("bucket already owned by me", zap.String("bucket", bucket), zap.Error(err))
-				exist = true
+				exist, err = true, nil
 			default:
 				md.lg.Warn("failed to create bucket", zap.String("bucket", bucket), zap.String("code", aerr.Code()), zap.Error(err))
 				return err
@@ -133,10 +133,10 @@ func (md *embedded) UploadToBucketForTests(localPath, s3Path string) error {
 				switch aerr.Code() {
 				case s3.ErrCodeBucketAlreadyExists:
 					md.lg.Warn("bucket already exists", zap.String("bucket", bucket), zap.Error(err))
-					exist = true
+					exist, err = true, nil
 				case s3.ErrCodeBucketAlreadyOwnedByYou:
 					md.lg.Warn("bucket already owned by me", zap.String("bucket", bucket), zap.Error(err))
-					exist = true
+					exist, err = true, nil
 				default:
 					md.lg.Warn("failed to create bucket", zap.String("bucket", bucket), zap.String("code", aerr.Code()), zap.Error(err))
 					return err
