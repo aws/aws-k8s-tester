@@ -1,3 +1,10 @@
+
+
+
+WARNING: Pre-alpha. Do not use this in production. Only for testing.
+
+
+
 # awstester
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/aws/awstester?style=flat-square)](https://goreportcard.com/report/github.com/aws/awstester)
