@@ -32,16 +32,12 @@ var (
 	ginkgoVerbose = flag.Bool("ginkgo-verbose", true, "'true' to enable verbose in Ginkgo")
 )
 
-var (
-	cfg            = eksconfig.NewDefault()
-	runScalability = false
-)
+var cfg = eksconfig.NewDefault()
 
 func TestMain(m *testing.M) {
 	flag.Parse()
 
 	cfg.UpdateFromEnvs()
-	runScalability = cfg.ALBIngressController.TestScalability
 	cfg.Sync()
 
 	// auto-generate test configuration file
@@ -150,7 +146,7 @@ var _ = Describe("EKS with ALB Ingress Controller on worker nodes", func() {
 	})
 
 	Context("Scalability of ALB Ingress Controller on worker nodes", func() {
-		if runScalability {
+		if cfg.ALBIngressController.TestScalability {
 			It("ALB Ingress Controller expects to handle concurrent clients with expected QPS", func() {
 				err := kp.TestALBQPS()
 				Expect(err).ShouldNot(HaveOccurred())
