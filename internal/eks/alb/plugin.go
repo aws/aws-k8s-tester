@@ -13,4 +13,6 @@ type Plugin interface {
 
 	CreateIngressObjects() error
 	DeleteIngressObjects() error
+
+	TestAWSResources() error
 }

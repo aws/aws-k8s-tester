@@ -635,9 +635,9 @@ func (md *embedded) DeleteIngressObjects() error {
 			LoadBalancerArn: aws.String(arn),
 		})
 		if err != nil {
-			md.lg.Debug("failed to describe target group", zap.Error(err))
+			md.lg.Debug("failed to describe target group", zap.String("elbv2-name", name), zap.Error(err))
 		} else {
-			md.lg.Warn("found target groups", zap.Int("groups", len(desc.TargetGroups)))
+			md.lg.Warn("found target groups", zap.String("elbv2-name", name), zap.Int("groups", len(desc.TargetGroups)))
 			if len(desc.TargetGroups) > 0 {
 				md.lg.Warn("ALB Ingress Controller garbage collection has not finished!")
 			}

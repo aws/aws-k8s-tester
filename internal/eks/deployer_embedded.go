@@ -534,7 +534,7 @@ func (md *embedded) TestALBCorrectness() error {
 		md.stopc) {
 		return fmt.Errorf("failed to HTTP Get %q", ep)
 	}
-	return nil
+	return md.albPlugin.TestAWSResources()
 }
 
 func (md *embedded) TestALBQPS() error {

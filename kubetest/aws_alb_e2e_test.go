@@ -155,11 +155,11 @@ var _ = Describe("EKS with ALB Ingress Controller on worker nodes", func() {
 				err := kp.TestALBQPS()
 				Expect(err).ShouldNot(HaveOccurred())
 			})
-		}
 
-		// enough time to process metrics
-		// and to not overload ingress controller
-		time.Sleep(3 * time.Second)
+			// enough time to process metrics
+			// and to not overload ingress controller
+			time.Sleep(3 * time.Second)
+		}
 
 		It("ALB Ingress Controller expects to serve '/metrics'", func() {
 			err := kp.TestALBMetrics()
