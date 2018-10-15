@@ -118,11 +118,11 @@ RUN chmod +x /workspace/aws-bin/*
 ##########################################
 
 ##########################################
-RUN awstester -h || true && which awstester \
-  && kubectl version --short --client || true && which kubectl \
+RUN kubectl version --short --client || true && which kubectl \
+  && aws --version || true && which aws \
   && docker --version || true && which docker \
   && wrk --version || true && which wrk \
-  && aws --version || true && which aws
+  && awstester -h || true && which awstester
 ##########################################
 
 ##########################################
