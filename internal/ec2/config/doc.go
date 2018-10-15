@@ -1,2 +1,2 @@
-// Package config defines EC@ configuration.
+// Package config defines EC2 configuration.
 package config
