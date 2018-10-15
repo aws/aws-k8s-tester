@@ -1,6 +1,8 @@
 package alb
 
 import (
+	"fmt"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/elbv2"
 	"go.uber.org/zap"
@@ -16,14 +18,19 @@ func (md *embedded) TestAWSResources() error {
 			LoadBalancerArn: aws.String(arn),
 		})
 		if err != nil {
-			md.lg.Debug("failed to describe target group", zap.String("elbv2-name", name), zap.Error(err))
-		} else {
-			n := len(desc.TargetGroups)
-			md.lg.Info("test found target groups", zap.String("elbv2-name", name), zap.Int("groups", n))
-			if n == 0 {
-				// TODO: return error
-				md.lg.Warn("failed to describe target groups")
-			}
+			md.lg.Warn("failed to describe target group", zap.String("elbv2-name", name), zap.Error(err))
+			return err
+		}
+		n := len(desc.TargetGroups)
+		md.lg.Info(
+			"test found target groups",
+			zap.String("elbv2-name", name),
+			zap.String("alb-target-tyope", md.cfg.ALBIngressController.TargetType),
+			zap.Int("server-replicas", md.cfg.ALBIngressController.TestServerReplicas),
+			zap.Int("groups", n),
+		)
+		if n == 0 {
+			return fmt.Errorf("found no target groups from %q", name)
 		}
 	}
 	md.lg.Info(
