@@ -332,10 +332,10 @@ type ALBIngressController struct {
 //
 // Example usage:
 //
-//	import "github.com/aws/awstester/eksconfig"
-//	cfg := eksconfig.Load("test.yaml")
+//  import "github.com/aws/awstester/eksconfig"
+//  cfg := eksconfig.Load("test.yaml")
 //  p, err := cfg.BackupConfig()
-//	err = cfg.ValidateAndSetDefaults()
+//  err = cfg.ValidateAndSetDefaults()
 //
 // Do not set default values in this function.
 // "ValidateAndSetDefaults" must be called separately,
