@@ -12,7 +12,7 @@ if [[ -z "${GIT_COMMIT}" ]]; then
   GIT_COMMIT=$(git rev-parse --short=12 HEAD || echo "GitNotFound")
 fi
 
-_AWS_REGION=10h
+_AWS_REGION=us-west-2
 if [[ "${AWS_REGION}" ]]; then
   _AWS_REGION=${AWS_REGION}
 fi
