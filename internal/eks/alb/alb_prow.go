@@ -102,25 +102,27 @@ func CreateProwJobYAML(cfg ConfigProwJobYAML) (string, error) {
 					Spec: &v1.PodSpec{
 						Containers: []v1.Container{
 							{
-								// Image: "gcr.io/k8s-testimages/kubekins-e2e:v20181005-fd9cfb8b0-master",
-
+								// TODO: enable after open-source
+								// "gcr.io/k8s-testimages/kubekins-e2e:v20181005-fd9cfb8b0-master"
+								//
 								// use custom built image to include "wrk", "awstester", etc.
 								// e.g. 607362164682.dkr.ecr.us-west-2.amazonaws.com/kubekins-e2e:ade682b5fc04
-								Image: cfg.AWSTESTER_EKS_KUBEKINS_E2E_IMAGE,
-
-								Args: []string{
-									"--repo=github.com/gyuho/$(REPO_NAME)=$(PULL_REFS)",
-									"--root=/go/src",
-									// "--upload=gs://kubernetes-jenkins/pr-logs",
-									"--scenario=execute",
-									"--",
-									"./test/build.sh",
-								},
-
-								// Command: []string{
-								// 	"/bin/echo",
-								// 	"pull-ingress-aws-alb-build",
+								//
+								// Image: cfg.AWSTESTER_EKS_KUBEKINS_E2E_IMAGE,
+								// Args: []string{
+								// 	"--repo=github.com/gyuho/$(REPO_NAME)=$(PULL_REFS)",
+								// 	"--root=/go/src",
+								// 	// "--upload=gs://kubernetes-jenkins/pr-logs",
+								// 	"--scenario=execute",
+								// 	"--",
+								// 	"./test/build.sh",
 								// },
+
+								Image: "alpine",
+								Command: []string{
+									"/bin/echo",
+									"pull-ingress-aws-alb-build",
+								},
 
 								// TODO: to build docker in docker
 								SecurityContext: &v1.SecurityContext{
