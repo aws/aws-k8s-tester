@@ -63,12 +63,13 @@ func (md *embedded) CreateBucketForAccessLogs() error {
 		if aerr, ok := err.(awserr.Error); ok {
 			switch aerr.Code() {
 			case s3.ErrCodeBucketAlreadyExists:
-				md.lg.Debug("bucket already exists", zap.String("bucket", bucket), zap.Error(err))
+				md.lg.Warn("bucket already exists", zap.String("bucket", bucket), zap.Error(err))
 				exist = true
 			case s3.ErrCodeBucketAlreadyOwnedByYou:
-				md.lg.Debug("bucket already owned by me", zap.String("bucket", bucket), zap.Error(err))
+				md.lg.Warn("bucket already owned by me", zap.String("bucket", bucket), zap.Error(err))
 				exist = true
 			default:
+				md.lg.Warn("failed to create bucket", zap.String("bucket", bucket), zap.String("code", aerr.Code()), zap.Error(err))
 				return err
 			}
 		}
@@ -131,12 +132,13 @@ func (md *embedded) UploadToBucketForTests(localPath, s3Path string) error {
 			if aerr, ok := err.(awserr.Error); ok {
 				switch aerr.Code() {
 				case s3.ErrCodeBucketAlreadyExists:
-					md.lg.Debug("bucket already exists", zap.String("bucket", bucket), zap.Error(err))
+					md.lg.Warn("bucket already exists", zap.String("bucket", bucket), zap.Error(err))
 					exist = true
 				case s3.ErrCodeBucketAlreadyOwnedByYou:
-					md.lg.Debug("bucket already owned by me", zap.String("bucket", bucket), zap.Error(err))
+					md.lg.Warn("bucket already owned by me", zap.String("bucket", bucket), zap.Error(err))
 					exist = true
 				default:
+					md.lg.Warn("failed to create bucket", zap.String("bucket", bucket), zap.String("code", aerr.Code()), zap.Error(err))
 					return err
 				}
 			}
