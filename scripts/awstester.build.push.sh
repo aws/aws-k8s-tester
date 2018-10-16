@@ -31,13 +31,15 @@ fi
 
 echo "Building:" ${REGISTRY}/awstester:${GIT_COMMIT}
 
+mkdir -p ./bin/
+
 CGO_ENABLED=0 GOOS=linux GOARCH=$(go env GOARCH) \
   go build -v \
   -ldflags "-s -w \
   -X github.com/aws/awstester/version.GitCommit=${GIT_COMMIT} \
   -X github.com/aws/awstester/version.ReleaseVersion=${RELEASE_VERSION} \
   -X github.com/aws/awstester/version.BuildTime=${BUILD_TIME}" \
-  -o ./awstester \
+  -o ./bin/awstester \
   ./cmd/awstester
 
 docker build \

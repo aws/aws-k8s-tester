@@ -5,3 +5,4 @@
 *generated.yaml
 *.coverprofile
 *.log
+/bin
