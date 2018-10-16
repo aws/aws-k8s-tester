@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/aws/awstester/version"
+
 	"github.com/spf13/cobra"
 )
 

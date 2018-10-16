@@ -6,7 +6,7 @@ See [code changes](https://github.com/coreos/etcd/compare/0.0.0...0.0.1).
 
 ### `awstester` CLI
 
-- Add `awstester version` command.
+- Add [`awstester version`](https://github.com/aws/awstester/commit/6d72c67fa1ae173fe211feb5d08aeaf596a7110e) command.
 
 ### Go
 
