@@ -60,7 +60,8 @@ RUN chmod +x /workspace/aws-bin/*
 ##########################################
 
 ##########################################
-RUN kubectl version --short --client || true && which kubectl \
+RUN go version || true && which go \
+  && kubectl version --short --client || true && which kubectl \
   && aws --version || true && which aws \
   && docker --version || true && which docker \
   && wrk --version || true && which wrk \
