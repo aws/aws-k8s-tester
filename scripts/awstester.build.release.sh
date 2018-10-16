@@ -34,3 +34,7 @@ for os in linux darwin; do
     -o ./bin/awstester-${RELEASE_VERSION}-${os}-$(go env GOARCH) \
     ./cmd/awstester
 done
+
+./bin/awstester-${RELEASE_VERSION}-${os}-$(go env GOARCH) version
+
+echo "Success!"

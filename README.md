@@ -80,7 +80,7 @@ cd ${GOPATH}/src/github.com/aws/awstester
 go install -v ./cmd/awstester
 
 cd ${GOPATH}/src/github.com/aws/awstester
-./scripts/awstester.build.push.sh
+./scripts/awstester.build.container.push.sh
 
 cd ${GOPATH}/src/github.com/aws/awstester
 GINKGO_TIMEOUT=10h \
