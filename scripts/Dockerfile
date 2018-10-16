@@ -60,7 +60,9 @@ RUN chmod +x /workspace/aws-bin/*
 ##########################################
 
 ##########################################
-RUN go version || true && which go \
+RUN echo ${HOME} \
+  && echo ${GOPATH} \
+  && go version || true && which go \
   && kubectl version --short --client || true && which kubectl \
   && aws --version || true && which aws \
   && docker --version || true && which docker \
