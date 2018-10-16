@@ -4,6 +4,10 @@
 
 See [code changes](https://github.com/coreos/etcd/compare/0.0.0...0.0.1).
 
+### `awstester` CLI
+
+- Add `awstester version` command.
+
 ### Go
 
 - Compile with [*Go 1.11.1*](https://golang.org/doc/devel/release.html#go1.11).

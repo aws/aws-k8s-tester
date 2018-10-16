@@ -9,6 +9,7 @@ import (
 	"github.com/aws/awstester/cmd/awstester/ec2"
 	"github.com/aws/awstester/cmd/awstester/ecr"
 	"github.com/aws/awstester/cmd/awstester/eks"
+	"github.com/aws/awstester/cmd/awstester/version"
 	"github.com/aws/awstester/cmd/awstester/wrk"
 
 	"github.com/spf13/cobra"
@@ -33,6 +34,7 @@ func init() {
 		ecr.NewCommand(),
 		eks.NewCommand(),
 		wrk.NewCommand(),
+		version.NewCommand(),
 	)
 }
 
