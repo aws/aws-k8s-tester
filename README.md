@@ -7,7 +7,7 @@ WARNING: Pre-alpha. Do not use this in production. Only for testing.
 
 # awstester
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/aws/awstester)](https://goreportcard.com/report/github.com/aws/awstester)
+[![Go Report Card](https://goreportcard.com/badge/github.com/aws/awstester?style=flat-square)](https://goreportcard.com/report/github.com/aws/awstester)
 [![Godoc](http://img.shields.io/badge/go-documentation-blue.svg?style=flat-square)](https://godoc.org/github.com/aws/awstester)
 [![Releases](https://img.shields.io/github/release/aws/awstester/all.svg?style=flat-square)](https://github.com/aws/awstester/releases)
 [![LICENSE](https://img.shields.io/github/license/aws/awstester.svg?style=flat-square)](https://github.com/aws/awstester/blob/master/LICENSE)
