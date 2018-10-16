@@ -25,7 +25,11 @@ echo "Building:" ${REGISTRY}/kubekins-e2e:${GIT_COMMIT}
 
 CGO_ENABLED=0 GOOS=linux GOARCH=$(go env GOARCH) \
   go build -v \
-  -o ./awstester \
+  -ldflags "-s -w \
+  -X github.com/aws/awstester/version.GitCommit=${GIT_COMMIT} \
+  -X github.com/aws/awstester/version.ReleaseVersion=${RELEASE_VERSION} \
+  -X github.com/aws/awstester/version.BuildTime=${BUILD_TIME}" \
+  -o ./bin/awstester \
   ./cmd/awstester
 
 docker build \

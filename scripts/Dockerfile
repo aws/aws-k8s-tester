@@ -1,7 +1,7 @@
 ##########################################
-# TODO: just use kubeins-e2e
 # "gcr.io/k8s-testimages/kubekins-e2e" already comes with docker
-FROM gcr.io/k8s-testimages/kubekins-e2e:v20181005-fd9cfb8b0-master
+# FROM gcr.io/k8s-testimages/kubekins-e2e:v20181005-fd9cfb8b0-master
+FROM gcr.io/k8s-testimages/kubekins-e2e:latest-master
 LABEL maintainer "leegyuho@amazon.com"
 
 RUN rm /bin/sh && ln -s /bin/bash /bin/sh
@@ -33,7 +33,7 @@ RUN curl -o /workspace/aws-bin/kubectl \
 # RUN curl -o /workspace/aws-bin/awstester \
 # https://s3-us-west-2.amazonaws.com/awstester-s3/awstester
 
-COPY awstester /workspace/aws-bin/
+COPY /bin/awstester /workspace/aws-bin/
 
 RUN chmod +x /workspace/aws-bin/*
 
