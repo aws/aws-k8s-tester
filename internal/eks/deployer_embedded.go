@@ -370,9 +370,6 @@ func catchStopc(lg *zap.Logger, stopc chan struct{}, run func() error) (err erro
 		lg.Info("interrupted", zap.Error(gerr))
 		err = fmt.Errorf("interrupted (run function returned %v)", gerr)
 	case err = <-errc:
-		if err != nil {
-			return err
-		}
 	}
 	return err
 }
