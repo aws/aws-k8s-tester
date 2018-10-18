@@ -61,7 +61,11 @@ func (md *embedded) CreateIngressObjects() error {
 
 		IngressPaths: []v1beta1.HTTPIngressPath{
 			{
-				Path: "/metrics",
+				// Path: "/metrics",
+
+				// for health checking, expose all
+				Path: "/*",
+
 				Backend: v1beta1.IngressBackend{
 					ServiceName: "alb-ingress-controller-service",
 					ServicePort: intstr.IntOrString{Type: intstr.Int, IntVal: int32(80)},
