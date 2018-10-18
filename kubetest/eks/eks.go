@@ -153,11 +153,16 @@ func (tr *tester) GetClusterCreated(v string) (time.Time, error) {
 }
 
 // DumpClusterLogs uploads local cluster logs to S3.
-func (tr *tester) DumpClusterLogs(localPath, s3Path string) (err error) {
+func (tr *tester) DumpClusterLogs(localPath, s3Path string) error {
 	if !tr.cfg.KubetestEnableDumpClusterLogs {
 		return nil
 	}
 
+	return tr.UploadToBucketForTests(localPath, s3Path)
+}
+
+// UploadToBucketForTests uploads a local file to awstester S3 bucket.
+func (tr *tester) UploadToBucketForTests(localPath, s3Path string) (err error) {
 	ctrl := process.NewControl(
 		tr.cfg.KubetestControlTimeout,
 		time.NewTimer(tr.cfg.KubetestControlTimeout),

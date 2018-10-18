@@ -29,6 +29,9 @@ type Interface interface {
 	// Extra methods for EKS specific operations //
 	///////////////////////////////////////////////
 
+	// UploadToBucketForTests uploads a local file to awstester S3 bucket.
+	UploadToBucketForTests(localPath, remotePath string) error
+
 	// Stop stops ongoing operation.
 	Stop()
 

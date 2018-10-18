@@ -498,6 +498,10 @@ func (md *embedded) DumpClusterLogs(localPath, remotePath string) error {
 	return md.s3Plugin.UploadToBucketForTests(localPath, remotePath)
 }
 
+func (md *embedded) UploadToBucketForTests(localPath, remotePath string) error {
+	return md.s3Plugin.UploadToBucketForTests(localPath, remotePath)
+}
+
 /*
 TODO: kubetest publish uploads a success file...
 Add this when required... See "kubetest/e2e.go".

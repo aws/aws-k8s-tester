@@ -45,7 +45,7 @@ func s3UploadFunc(cmd *cobra.Command, args []string) {
 	}
 
 	from, to := args[0], args[1]
-	if err = dp.DumpClusterLogs(from, to); err != nil {
+	if err = dp.UploadToBucketForTests(from, to); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to upload from %q to %q (%v)\n", from, to, err)
 		os.Exit(1)
 	}
