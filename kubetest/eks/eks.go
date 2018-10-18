@@ -1,4 +1,20 @@
-// Package eks implements 'kubetest' deployer and publisher interface.
+/*
+Copyright 2018 The Kubernetes Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+// Package eks implements 'kubetest' deployer interface.
 // It uses 'awstester' and 'kubectl' binaries, rather than importing
 // EKS packages directly. This is to eliminate the need of dependency
 // management, both in upstream and downstream.
@@ -17,7 +33,7 @@ import (
 	"k8s.io/test-infra/kubetest/process"
 )
 
-// tester implements EKS deployer using "awstester" binary.
+// tester implements EKS deployer interface using "awstester" binary.
 // Satisfies "k8s.io/test-infra/kubetest/main.go" 'deployer' and 'publisher" interfaces.
 // Reference https://github.com/kubernetes/test-infra/blob/master/kubetest/main.go.
 type tester struct {
