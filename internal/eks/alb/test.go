@@ -71,6 +71,8 @@ func (md *embedded) TestAWSResources() error {
 							zap.String("target-group-arn", *tgARN),
 							zap.String("target-state", hs),
 						)
+
+						time.Sleep(10 * time.Second)
 						continue
 					}
 
@@ -93,14 +95,12 @@ func (md *embedded) TestAWSResources() error {
 
 				delete(healthyARNs, *tgARN)
 				unhealthyARNs[*tgARN] = struct{}{}
-
 				time.Sleep(10 * time.Second)
 			}
 
 			if len(healthyARNs) == len(desc.TargetGroups) {
 				break
 			}
-
 			time.Sleep(10 * time.Second)
 		}
 
