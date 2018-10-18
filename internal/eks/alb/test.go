@@ -23,23 +23,28 @@ func (md *embedded) TestAWSResources() error {
 			md.lg.Warn("failed to describe target group", zap.String("elbv2-name", name), zap.Error(err))
 			return err
 		}
-		n := len(desc.TargetGroups)
+
 		md.lg.Info(
 			"test found target groups",
 			zap.String("elbv2-name", name),
 			zap.String("alb-target-tyope", md.cfg.ALBIngressController.TargetType),
 			zap.Int("server-replicas", md.cfg.ALBIngressController.TestServerReplicas),
-			zap.Int("groups", n),
+			zap.Int("groups", len(desc.TargetGroups)),
 		)
-		if n == 0 {
+		if len(desc.TargetGroups) == 0 {
 			return fmt.Errorf("found no target groups from %q", name)
 		}
 
+		healthyARNs := make(map[string]struct{})
 		unhealthyARNs := make(map[string]struct{})
+
 		retryStart := time.Now().UTC()
 		for time.Now().UTC().Sub(retryStart) < 10*time.Minute {
 			for _, tg := range desc.TargetGroups {
 				tgARN := tg.TargetGroupArn
+				if _, ok := healthyARNs[*tgARN]; ok {
+					continue
+				}
 
 				var healthOut *elbv2.DescribeTargetHealthOutput
 				healthOut, err = md.elbv2.DescribeTargetHealth(&elbv2.DescribeTargetHealthInput{
@@ -81,14 +86,24 @@ func (md *embedded) TestAWSResources() error {
 				}
 
 				if healthCnt == len(healthOut.TargetHealthDescriptions) {
+					healthyARNs[*tgARN] = struct{}{}
 					delete(unhealthyARNs, *tgARN)
 					break
 				}
 
+				delete(healthyARNs, *tgARN)
 				unhealthyARNs[*tgARN] = struct{}{}
+
 				time.Sleep(10 * time.Second)
 			}
+
+			if len(healthyARNs) == len(desc.TargetGroups) {
+				break
+			}
+
+			time.Sleep(10 * time.Second)
 		}
+
 		if len(unhealthyARNs) > 0 {
 			return fmt.Errorf("ALB %q has unhealthy target groups [%+v]", name, unhealthyARNs)
 		}
