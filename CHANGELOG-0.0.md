@@ -8,6 +8,11 @@ See [code changes](https://github.com/coreos/etcd/compare/0.0.0...0.0.1).
 
 - Add [`awstester version`](https://github.com/aws/awstester/commit/6d72c67fa1ae173fe211feb5d08aeaf596a7110e) command.
 
+### `eksconfig`
+
+- Add [`KubetestVerbose`](https://github.com/aws/awstester/commit/17189259558110b066a974f6ee6fb2b8242c03d5) field.
+- Add [`KubetestControlTimeout`](https://github.com/aws/awstester/commit/17189259558110b066a974f6ee6fb2b8242c03d5) field.
+
 ### Go
 
 - Compile with [*Go 1.11.1*](https://golang.org/doc/devel/release.html#go1.11).
