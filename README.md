@@ -54,12 +54,11 @@ cat ./awstester-eks.yaml
 
 Once complete, get the DNS names from `./awstester-eks.yaml`.
 
-And `curl` the `/ingress-test`, to see if it works.
+And `curl` the `kube-system` namespace's `/metrics` endpoint, to see if it works.
 
 ```bash
 # for example
 curl -L http://e5de0f6b-kubesystem-ingres-6aec-38954145.us-west-2.elb.amazonaws.com/metrics
-curl -L http://e5de0f6b-default-ingressfo-af34-1794949309.us-west-2.elb.amazonaws.com/ingress-test
 ```
 
 Tear down the cluster (takes about 10 minutes):
@@ -85,6 +84,8 @@ cd ${GOPATH}/src/github.com/aws/awstester
 cd ${GOPATH}/src/github.com/aws/awstester
 GINKGO_TIMEOUT=10h \
   GINKGO_VERBOSE=true \
+  AWSTESTER_EKS_KUBETEST_VERBOSE=true \
+  AWSTESTER_EKS_KUBETEST_CONTROL_TIMEOUT=3h \
   AWSTESTER_EKS_EMBEDDED=true \
   AWSTESTER_EKS_WAIT_BEFORE_DOWN=10m \
   AWSTESTER_EKS_DOWN=true \
