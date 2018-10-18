@@ -15,16 +15,17 @@ func TestCreateIngressTestServerIngressSpec(t *testing.T) {
 	cfg1 := ConfigIngressTestServerIngressSpec{
 		MetadataName:      "ingress-for-alb-ingress-controller-service",
 		MetadataNamespace: "kube-system",
-		TargetType:        "instance",
-		SubnetIDs: []string{
-			"subnet-03e98399a9f14192d",
-			"subnet-0b5f7e3100a32cdde",
-			"subnet-0da17fa86e91b5943",
+
+		Annotations: map[string]string{
+			"alb.ingress.kubernetes.io/scheme":       "internet-facing",
+			"alb.ingress.kubernetes.io/target-type":  "instance",
+			"alb.ingress.kubernetes.io/listen-ports": `[{"HTTP":80,"HTTPS": 443}]`,
+			"alb.ingress.kubernetes.io/subnets":      "a,b,c",
+
+			// TODO: support SSL
+			// alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-west-2:220355219862:certificate/fd0beb0d-2a1e-40e7-af04-e1354ea14143
 		},
-		SecurityGroupIDs: []string{
-			"sg-046b5c8dc0da4e6b7",
-			"sg-0f993f0955cf33720",
-		},
+
 		IngressPaths: []v1beta1.HTTPIngressPath{
 			{
 				Path: "/metrics",
@@ -47,16 +48,17 @@ func TestCreateIngressTestServerIngressSpec(t *testing.T) {
 	cfg2 := ConfigIngressTestServerIngressSpec{
 		MetadataName:      "ingress-for-ingress-test-server-service",
 		MetadataNamespace: "default",
-		TargetType:        "instance",
-		SubnetIDs: []string{
-			"subnet-03e98399a9f14192d",
-			"subnet-0b5f7e3100a32cdde",
-			"subnet-0da17fa86e91b5943",
+
+		Annotations: map[string]string{
+			"alb.ingress.kubernetes.io/scheme":       "internet-facing",
+			"alb.ingress.kubernetes.io/target-type":  "instance",
+			"alb.ingress.kubernetes.io/listen-ports": `[{"HTTP":80,"HTTPS": 443}]`,
+			"alb.ingress.kubernetes.io/subnets":      "a,b,c",
+
+			// TODO: support SSL
+			// alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-west-2:220355219862:certificate/fd0beb0d-2a1e-40e7-af04-e1354ea14143
 		},
-		SecurityGroupIDs: []string{
-			"sg-046b5c8dc0da4e6b7",
-			"sg-0f993f0955cf33720",
-		},
+
 		IngressPaths: []v1beta1.HTTPIngressPath{
 			{
 				Path: path.Path,

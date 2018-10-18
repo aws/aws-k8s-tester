@@ -2,9 +2,7 @@ package ingress
 
 import (
 	"errors"
-	"fmt"
 	"sort"
-	"strings"
 
 	"github.com/aws/awstester/internal/eks/alb/ingress/path"
 
@@ -21,22 +19,8 @@ type ConfigIngressTestServerIngressSpec struct {
 	// MetadataNamespace is the space to apply ingress to.
 	MetadataNamespace string
 
-	// LogAccess is non-empty to enable ALB access logs.
-	LogAccess string
-	// Tags is the tags to be added to ingress annotations.
-	Tags map[string]string
-
-	// TargetType specifies the target type for target groups:
-	// - 'instance' to use node port
-	// - 'ip' to use pod IP
-	TargetType string
-
-	// SubnetIDs is the list of subnet IDs for EKS control plane VPC stack.
-	SubnetIDs []string
-	// SecurityGroupIDs is the list of security group IDs for ALB with HTTP/HTTPS wide open.
-	// One is from EKS control plane VPC stack.
-	// The other is a new one with 80 and 443 TCP ports open.
-	SecurityGroupIDs []string
+	// Annotations to configure Ingress and Service resource objects.
+	Annotations map[string]string
 
 	// IngressPaths contains additional ingress paths
 	// that are manually constructed.
@@ -67,15 +51,6 @@ func CreateIngressTestServerIngressSpec(cfg ConfigIngressTestServerIngressSpec) 
 	if cfg.MetadataNamespace == "" {
 		return "", errors.New("empty MetadataNamespace")
 	}
-	if cfg.TargetType != "instance" && cfg.TargetType != "ip" {
-		return "", fmt.Errorf("unknown target type %q", cfg.TargetType)
-	}
-	if len(cfg.SubnetIDs) == 0 {
-		return "", errors.New("empty SubnetIDs")
-	}
-	if cfg.TargetType == "instance" && len(cfg.SecurityGroupIDs) == 0 {
-		return "", errors.New("empty SecurityGroupIDs for target type 'instance'")
-	}
 	if len(cfg.IngressPaths) == 0 && cfg.GenTargetServiceRoutesN == 0 {
 		return "", errors.New("empty routes")
 	}
@@ -98,17 +73,9 @@ func CreateIngressTestServerIngressSpec(cfg ConfigIngressTestServerIngressSpec) 
 			Kind:       "Ingress",
 		},
 		ObjectMeta: v1.ObjectMeta{
-			Name:      cfg.MetadataName,
-			Namespace: cfg.MetadataNamespace,
-			Annotations: map[string]string{
-				"alb.ingress.kubernetes.io/scheme":       "internet-facing",
-				"alb.ingress.kubernetes.io/target-type":  cfg.TargetType,
-				"alb.ingress.kubernetes.io/listen-ports": `[{"HTTP":80,"HTTPS": 443}]`,
-				"alb.ingress.kubernetes.io/subnets":      strings.Join(cfg.SubnetIDs, ","),
-
-				// TODO: support SSL
-				// alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-west-2:220355219862:certificate/fd0beb0d-2a1e-40e7-af04-e1354ea14143
-			},
+			Name:        cfg.MetadataName,
+			Namespace:   cfg.MetadataNamespace,
+			Annotations: cfg.Annotations,
 			Labels: map[string]string{
 				"app": cfg.MetadataName,
 			},
@@ -126,23 +93,6 @@ func CreateIngressTestServerIngressSpec(cfg ConfigIngressTestServerIngressSpec) 
 			},
 		},
 	}
-
-	if cfg.LogAccess != "" {
-		ing.ObjectMeta.Annotations["alb.ingress.kubernetes.io/load-balancer-attributes"] = cfg.LogAccess
-	}
-	if cfg.TargetType == "instance" {
-		ing.ObjectMeta.Annotations["alb.ingress.kubernetes.io/security-groups"] = strings.Join(cfg.SecurityGroupIDs, ",")
-	}
-
-	if len(cfg.Tags) > 0 {
-		// e.g. alb.ingress.kubernetes.io/tags: Environment=dev,Team=test
-		ss := []string{}
-		for k, v := range cfg.Tags {
-			ss = append(ss, fmt.Sprintf("%s=%s", k, v))
-		}
-		ing.ObjectMeta.Annotations["alb.ingress.kubernetes.io/tags"] = strings.Join(ss, ",")
-	}
-
 	d, err := gyaml.Marshal(ing)
 	if err != nil {
 		return "", err

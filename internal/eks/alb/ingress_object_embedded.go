@@ -20,9 +20,74 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// TODO: split into separate functions...
+func (md *embedded) createALBAnnotations(healthCheckPath string) (a map[string]string, err error) {
+	a = map[string]string{
+		"alb.ingress.kubernetes.io/scheme":       "internet-facing",
+		"alb.ingress.kubernetes.io/target-type":  md.cfg.ALBIngressController.TargetType,
+		"alb.ingress.kubernetes.io/listen-ports": `[{"HTTP":80,"HTTPS": 443}]`,
+		"alb.ingress.kubernetes.io/subnets":      strings.Join(md.cfg.ClusterState.CFStackVPCSubnetIDs, ","),
+	}
 
-func (md *embedded) CreateIngressObjects() error {
+	h, _ := os.Hostname()
+
+	// e.g. alb.ingress.kubernetes.io/tags: Environment=dev,Team=test
+	tags := map[string]string{
+		md.cfg.Tag: md.cfg.ClusterName,
+		"HOSTNAME": h,
+	}
+	ss := []string{}
+	for k, v := range tags {
+		ss = append(ss, fmt.Sprintf("%s=%s", k, v))
+	}
+	a["alb.ingress.kubernetes.io/tags"] = strings.Join(ss, ",")
+
+	switch md.cfg.ALBIngressController.TargetType {
+	case "instance":
+		// SecurityGroupIDs is the list of security group IDs for ALB with HTTP/HTTPS wide open.
+		// One is from EKS control plane VPC stack.
+		// The other is a new one with 80 and 443 TCP ports open.
+		a["alb.ingress.kubernetes.io/security-groups"] = strings.Join([]string{
+			md.cfg.ClusterState.CFStackVPCSecurityGroupID,
+			md.cfg.ALBIngressController.ELBv2SecurityGroupIDPortOpen,
+		}, ",")
+
+	case "ip":
+		// security group associated with an instance
+		// must allow traffic from the load balancer
+		// populate this only when the target type is "instance"
+		// pod "ip" model should let ingress controller create a new security group
+		delete(a, "alb.ingress.kubernetes.io/security-groups")
+
+	default:
+		return nil, fmt.Errorf("unknown ALB target type %q", md.cfg.ALBIngressController.TargetType)
+	}
+
+	if md.cfg.LogAccess {
+		// LogAccess is non-empty to enable ALB access logs.
+		a["alb.ingress.kubernetes.io/load-balancer-attributes"] = fmt.Sprintf(
+			"access_logs.s3.enabled=true,access_logs.s3.bucket=%s,access_logs.s3.prefix=%s-kube-system",
+			md.s3Plugin.BucketForAccessLogs(),
+			md.cfg.ClusterName,
+		)
+	}
+
+	// Default target group health check
+	// Protocol HTTP
+	// Path /
+	// Port traffic port
+	// Healthy threshold 2
+	// Unhealthy threshold 2
+	// Timeout 5
+	// Interval 15
+	// Success codes 200
+	// See https://github.com/kubernetes-sigs/aws-alb-ingress-controller/blob/master/docs/ingress-resources.md#annotations for more.
+	a["alb.ingress.kubernetes.io/healthcheck-protocol"] = "HTTP"
+	a["alb.ingress.kubernetes.io/healthcheck-path"] = healthCheckPath
+
+	return a, nil
+}
+
+func (md *embedded) CreateIngressObjects() (err error) {
 	if md.cfg.ClusterState.CFStackVPCID == "" {
 		return errors.New("cannot create Ingress object without VPC stack VPC ID")
 	}
@@ -42,30 +107,19 @@ func (md *embedded) CreateIngressObjects() error {
 
 	now := time.Now().UTC()
 
-	h, _ := os.Hostname()
 	cfg1 := ingress.ConfigIngressTestServerIngressSpec{
 		MetadataName:      "ingress-for-alb-ingress-controller-service",
 		MetadataNamespace: "kube-system",
-		Tags: map[string]string{
-			md.cfg.Tag: md.cfg.ClusterName,
-			"HOSTNAME": h,
+		Annotations: map[string]string{
+			"alb.ingress.kubernetes.io/scheme":       "internet-facing",
+			"alb.ingress.kubernetes.io/target-type":  md.cfg.ALBIngressController.TargetType,
+			"alb.ingress.kubernetes.io/listen-ports": `[{"HTTP":80,"HTTPS": 443}]`,
+			"alb.ingress.kubernetes.io/subnets":      strings.Join(md.cfg.ClusterState.CFStackVPCSubnetIDs, ","),
 		},
-		TargetType: md.cfg.ALBIngressController.TargetType,
-		SubnetIDs:  md.cfg.ClusterState.CFStackVPCSubnetIDs,
-
-		// security group associated with an instance
-		// must allow traffic from the load balancer
-		// populate this only when the target type is "instance"
-		// pod "ip" model should let ingress controller create a new security group
-		SecurityGroupIDs: nil,
-
 		IngressPaths: []v1beta1.HTTPIngressPath{
 			{
-				// Path: "/metrics",
-
-				// for health checking, expose all
-				Path: "/*",
-
+				// make sure health check annotation is configured
+				Path: "/metrics",
 				Backend: v1beta1.IngressBackend{
 					ServiceName: "alb-ingress-controller-service",
 					ServicePort: intstr.IntOrString{Type: intstr.Int, IntVal: int32(80)},
@@ -73,21 +127,12 @@ func (md *embedded) CreateIngressObjects() error {
 			},
 		},
 	}
-	if md.cfg.ALBIngressController.TargetType == "instance" {
-		cfg1.SecurityGroupIDs = []string{
-			md.cfg.ClusterState.CFStackVPCSecurityGroupID,
-			md.cfg.ALBIngressController.ELBv2SecurityGroupIDPortOpen,
-		}
+	cfg1.Annotations, err = md.createALBAnnotations("/metrics")
+	if err != nil {
+		return err
 	}
-	if md.cfg.LogAccess {
-		cfg1.LogAccess = fmt.Sprintf(
-			"access_logs.s3.enabled=true,access_logs.s3.bucket=%s,access_logs.s3.prefix=%s-kube-system",
-			md.s3Plugin.BucketForAccessLogs(),
-			md.cfg.ClusterName,
-		)
-	}
-
-	d1, err := ingress.CreateIngressTestServerIngressSpec(cfg1)
+	var d1 string
+	d1, err = ingress.CreateIngressTestServerIngressSpec(cfg1)
 	if err != nil {
 		md.cfg.ALBIngressController.IngressRuleStatusKubeSystem = err.Error()
 		md.cfg.ALBIngressController.IngressRuleStatusDefault = err.Error()
@@ -96,18 +141,9 @@ func (md *embedded) CreateIngressObjects() error {
 	}
 
 	cfg2 := ingress.ConfigIngressTestServerIngressSpec{
-		MetadataName:      "ingress-for-ingress-test-server-service",
-		MetadataNamespace: "default",
-		Tags: map[string]string{
-			md.cfg.Tag: md.cfg.ClusterName,
-			"HOSTNAME": h,
-		},
-		TargetType: md.cfg.ALBIngressController.TargetType,
-		SubnetIDs:  md.cfg.ClusterState.CFStackVPCSubnetIDs,
-		SecurityGroupIDs: []string{
-			md.cfg.ClusterState.CFStackVPCSecurityGroupID,
-			md.cfg.ALBIngressController.ELBv2SecurityGroupIDPortOpen,
-		},
+		MetadataName:         "ingress-for-ingress-test-server-service",
+		MetadataNamespace:    "default",
+		Annotations:          make(map[string]string),
 		GenTargetServicePort: 80,
 	}
 	switch md.cfg.ALBIngressController.TestMode {
@@ -144,14 +180,12 @@ func (md *embedded) CreateIngressObjects() error {
 		cfg2.GenTargetServiceName = "nginx-service"
 		cfg2.GenTargetServiceRoutesN = 0
 	}
-
-	if md.cfg.LogAccess {
-		cfg2.LogAccess = fmt.Sprintf(
-			"access_logs.s3.enabled=true,access_logs.s3.bucket=%s,access_logs.s3.prefix=%s-default",
-			md.s3Plugin.BucketForAccessLogs(),
-			md.cfg.ClusterName,
-		)
+	cfg2.Annotations, err = md.createALBAnnotations("/")
+	if err != nil {
+		return err
 	}
+
+	// TODO: split into separate functions...
 
 	d2, err := ingress.CreateIngressTestServerIngressSpec(cfg2)
 	if err != nil {
