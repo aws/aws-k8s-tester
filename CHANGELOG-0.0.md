@@ -9,6 +9,12 @@ See [code changes](https://github.com/coreos/etcd/compare/0.0.0...0.0.1).
 - Add [`KubetestVerbose`](https://github.com/aws/awstester/commit/17189259558110b066a974f6ee6fb2b8242c03d5) field.
 - Add [`KubetestControlTimeout`](https://github.com/aws/awstester/commit/17189259558110b066a974f6ee6fb2b8242c03d5) field.
 
+### `eksdeployer`
+
+- Remove [Publish](https://github.com/aws/awstester/commit/ad2a71dfc9687a9bd1a5869bd09a3f9eb771c504) method.
+  - Not needed for now (to be added back later).
+  - See [`kubetest/e2e.go`](https://github.com/kubernetes/test-infra/blob/fe0a9926c1c3d0a9d94e0d3c2f755dbdbc34d892/kubetest/e2e.go#L318-L322).
+
 ### `awstester` CLI
 
 - Add [`awstester version`](https://github.com/aws/awstester/commit/6d72c67fa1ae173fe211feb5d08aeaf596a7110e) command.
