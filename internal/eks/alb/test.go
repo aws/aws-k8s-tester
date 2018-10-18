@@ -2,7 +2,6 @@ package alb
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -17,16 +16,6 @@ func (md *embedded) TestAWSResources() error {
 	)
 
 	for name, arn := range md.cfg.ALBIngressController.ELBv2NameToARN {
-		// TODO: aws elbv2 describe-target-health --target-group-arn
-		// returns "State": "unhealthy",
-		// "Reason": "Target.ResponseCodeMismatch",
-		// "Description": "Health checks failed with these codes: [404]"
-		// path /* or /metrics does not work...
-		if strings.Contains(name, "kubesystem") {
-			md.lg.Info("skipping health check", zap.String("elbv2-name", name))
-			continue
-		}
-
 		desc, err := md.elbv2.DescribeTargetGroups(&elbv2.DescribeTargetGroupsInput{
 			LoadBalancerArn: aws.String(arn),
 		})
