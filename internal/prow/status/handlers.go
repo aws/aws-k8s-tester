@@ -13,8 +13,6 @@ import (
 const (
 	// Path to server upstream test status frontend.
 	Path = "/prow-status"
-	// PathRefresh to refresh upstream test status.
-	PathRefresh = "/prow-status-refresh"
 	// PathReadiness to serve readiness.
 	PathReadiness = "/prow-status-readiness"
 	// PathLiveness to serve liveness.
@@ -40,11 +38,6 @@ func NewMux(ctx context.Context, lg *zap.Logger) *http.ServeMux {
 		Ctx:     ctx,
 		Handler: ctxhandler.ContextHandlerFunc(handlerPath),
 	})
-	mux.Handle(PathRefresh, &ctxhandler.ContextAdapter{
-		Logger:  lg,
-		Ctx:     ctx,
-		Handler: ctxhandler.ContextHandlerFunc(handlerPathRefresh),
-	})
 	mux.Handle(PathReadiness, &ctxhandler.ContextAdapter{
 		Logger:  lg,
 		Ctx:     ctx,
@@ -59,26 +52,6 @@ func NewMux(ctx context.Context, lg *zap.Logger) *http.ServeMux {
 }
 
 func handlerPath(ctx context.Context, w http.ResponseWriter, req *http.Request) error {
-	switch req.Method {
-	case http.MethodGet:
-		s := ctx.Value(statusKey).(*status)
-		s.statusMu.RLock()
-		txt := s.statusHTMLHead +
-			s.statusHTMLUpdateMsg +
-			s.statusHTMLGitRows +
-			s.statusHTMLJobRows +
-			s.statusHTMLEnd
-		s.statusMu.RUnlock()
-		w.Write([]byte(txt))
-		return nil
-
-	default:
-		http.Error(w, "Method Not Allowed", 405)
-		return fmt.Errorf("Method %q Not Allowed", req.Method)
-	}
-}
-
-func handlerPathRefresh(ctx context.Context, w http.ResponseWriter, req *http.Request) error {
 	switch req.Method {
 	case http.MethodGet:
 		s := ctx.Value(statusKey).(*status)
