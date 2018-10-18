@@ -710,18 +710,8 @@ func (cfg *Config) SetClusterUpTook(d time.Duration) {
 	cfg.ClusterState.UpTook = d.String()
 }
 
-// GetClusterUpTook returns 'ClusterUpTook' field.
-func (cfg *Config) GetClusterUpTook() time.Duration {
-	return cfg.ClusterState.upTook
-}
-
 // SetIngressUpTook updates 'IngressUpTook' field.
 func (cfg *Config) SetIngressUpTook(d time.Duration) {
 	cfg.ALBIngressController.ingressUpTook = d
 	cfg.ALBIngressController.IngressUpTook = d.String()
-}
-
-// GetIngressUpTook returns 'IngressUpTook' field.
-func (cfg *Config) GetIngressUpTook() time.Duration {
-	return cfg.ALBIngressController.ingressUpTook
 }
