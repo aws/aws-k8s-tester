@@ -131,7 +131,7 @@ func CreateProwJobYAML(cfg ConfigProwJobYAML) (string, error) {
 		},
 
 		Postsubmits: map[string][]config.Postsubmit{
-			"gyuho/aws-alb-ingress-controller": []config.Postsubmit{
+			"gyuho/aws-alb-ingress-controller": {
 				{
 					Name: "aws-alb-ingress-controller-postsubmit",
 					Labels: map[string]string{
@@ -156,7 +156,7 @@ func CreateProwJobYAML(cfg ConfigProwJobYAML) (string, error) {
 		},
 
 		Presubmits: map[string][]config.Presubmit{
-			"gyuho/aws-alb-ingress-controller": []config.Presubmit{
+			"gyuho/aws-alb-ingress-controller": {
 				{
 					Name: "pull-ingress-aws-alb-build",
 					Labels: map[string]string{
