@@ -46,9 +46,77 @@ type ConfigProwJobYAML struct {
 // CreateProwJobYAML returns Prow job configurations.
 func CreateProwJobYAML(cfg ConfigProwJobYAML) (string, error) {
 	jcfg := config.JobConfig{
+		Presets: []config.Preset{
+			{
+				Labels: map[string]string{
+					"preset-e2e-aws-alb-ingress-controller": "true",
+				},
+
+				Env: []v1.EnvVar{
+					{Name: "GINKGO_TIMEOUT", Value: cfg.GINKGO_TIMEOUT},
+					{Name: "GINKGO_VERBOSE", Value: cfg.GINKGO_VERBOSE},
+
+					{Name: "AWSTESTER_EKS_KUBETEST_VERBOSE", Value: cfg.AWSTESTER_EKS_KUBETEST_VERBOSE},
+					{Name: "AWSTESTER_EKS_KUBETEST_CONTROL_TIMEOUT", Value: cfg.AWSTESTER_EKS_KUBETEST_CONTROL_TIMEOUT},
+
+					{Name: "AWSTESTER_EKS_EMBEDDED", Value: cfg.AWSTESTER_EKS_EMBEDDED},
+					{Name: "AWSTESTER_EKS_WAIT_BEFORE_DOWN", Value: cfg.AWSTESTER_EKS_WAIT_BEFORE_DOWN},
+					{Name: "AWSTESTER_EKS_DOWN", Value: cfg.AWSTESTER_EKS_DOWN},
+
+					{Name: "AWSTESTER_EKS_AWSTESTER_IMAGE", Value: cfg.AWSTESTER_EKS_AWSTESTER_IMAGE},
+
+					{Name: "AWSTESTER_EKS_WORKER_NODE_INSTANCE_TYPE", Value: cfg.AWSTESTER_EKS_WORKER_NODE_INSTANCE_TYPE},
+					{Name: "AWSTESTER_EKS_WORKER_NODE_ASG_MIN", Value: cfg.AWSTESTER_EKS_WORKER_NODE_ASG_MIN},
+					{Name: "AWSTESTER_EKS_WORKER_NODE_ASG_MAX", Value: cfg.AWSTESTER_EKS_WORKER_NODE_ASG_MAX},
+
+					{Name: "AWSTESTER_EKS_ALB_ENABLE", Value: cfg.AWSTESTER_EKS_ALB_ENABLE},
+
+					{Name: "AWSTESTER_EKS_ALB_ALB_INGRESS_CONTROLLER_IMAGE", Value: cfg.AWSTESTER_EKS_ALB_ALB_INGRESS_CONTROLLER_IMAGE},
+
+					{Name: "AWSTESTER_EKS_ALB_TARGET_TYPE", Value: cfg.AWSTESTER_EKS_ALB_TARGET_TYPE},
+					{Name: "AWSTESTER_EKS_ALB_TEST_MODE", Value: cfg.AWSTESTER_EKS_ALB_TEST_MODE},
+
+					{Name: "AWSTESTER_EKS_ALB_TEST_SCALABILITY", Value: cfg.AWSTESTER_EKS_ALB_TEST_SCALABILITY},
+					{Name: "AWSTESTER_EKS_ALB_TEST_SERVER_REPLICAS", Value: cfg.AWSTESTER_EKS_ALB_TEST_SERVER_REPLICAS},
+					{Name: "AWSTESTER_EKS_ALB_TEST_SERVER_ROUTES", Value: cfg.AWSTESTER_EKS_ALB_TEST_SERVER_ROUTES},
+					{Name: "AWSTESTER_EKS_ALB_TEST_CLIENTS", Value: cfg.AWSTESTER_EKS_ALB_TEST_CLIENTS},
+					{Name: "AWSTESTER_EKS_ALB_TEST_CLIENT_REQUESTS", Value: cfg.AWSTESTER_EKS_ALB_TEST_CLIENT_REQUESTS},
+					{Name: "AWSTESTER_EKS_ALB_TEST_RESPONSE_SIZE", Value: cfg.AWSTESTER_EKS_ALB_TEST_RESPONSE_SIZE},
+					{Name: "AWSTESTER_EKS_ALB_TEST_CLIENT_ERROR_THRESHOLD", Value: cfg.AWSTESTER_EKS_ALB_TEST_CLIENT_ERROR_THRESHOLD},
+					{Name: "AWSTESTER_EKS_ALB_TEST_EXPECT_QPS", Value: cfg.AWSTESTER_EKS_ALB_TEST_EXPECT_QPS},
+
+					{Name: "AWS_SHARED_CREDENTIALS_FILE", Value: "/etc/aws-cred-awstester/aws-cred-awstester"},
+				},
+
+				VolumeMounts: []v1.VolumeMount{
+					{
+						Name:      "aws-cred-awstester",
+						MountPath: "/etc/aws-cred-awstester",
+						ReadOnly:  true,
+					},
+				},
+
+				Volumes: []v1.Volume{
+					{
+						Name: "aws-cred-awstester",
+						VolumeSource: v1.VolumeSource{
+							Secret: &v1.SecretVolumeSource{
+								SecretName: "aws-cred-awstester",
+							},
+						},
+					},
+				},
+			},
+		},
+
 		Periodics: []config.Periodic{
 			{
-				Name:     "aws-alb-ingress-controller-periodics",
+				Name: "aws-alb-ingress-controller-periodics",
+				Labels: map[string]string{
+					"preset-dind-enabled":                   "true",
+					"preset-e2e-aws-alb-ingress-controller": "true",
+				},
+
 				Agent:    "kubernetes",
 				Interval: "72h",
 				Spec: &v1.PodSpec{
@@ -68,7 +136,12 @@ func CreateProwJobYAML(cfg ConfigProwJobYAML) (string, error) {
 		Postsubmits: map[string][]config.Postsubmit{
 			"gyuho/aws-alb-ingress-controller": []config.Postsubmit{
 				{
-					Name:  "aws-alb-ingress-controller-postsubmit",
+					Name: "aws-alb-ingress-controller-postsubmit",
+					Labels: map[string]string{
+						"preset-dind-enabled":                   "true",
+						"preset-e2e-aws-alb-ingress-controller": "true",
+					},
+
 					Agent: "kubernetes",
 					Spec: &v1.PodSpec{
 						Containers: []v1.Container{
@@ -88,16 +161,17 @@ func CreateProwJobYAML(cfg ConfigProwJobYAML) (string, error) {
 		Presubmits: map[string][]config.Presubmit{
 			"gyuho/aws-alb-ingress-controller": []config.Presubmit{
 				{
-					Name:    "pull-ingress-aws-alb-build",
+					Name: "pull-ingress-aws-alb-build",
+					Labels: map[string]string{
+						"preset-dind-enabled":                   "true",
+						"preset-e2e-aws-alb-ingress-controller": "true",
+					},
+
 					Agent:   "kubernetes",
 					Context: "test-presubmit",
 
 					Trigger:      "(?m)^/test pull-ingress-aws-alb-build",
 					RerunCommand: "/test pull-ingress-aws-alb-build",
-
-					Labels: map[string]string{
-						"preset-dind-enabled": "true",
-					},
 
 					AlwaysRun:  true,
 					SkipReport: false,
@@ -131,44 +205,23 @@ func CreateProwJobYAML(cfg ConfigProwJobYAML) (string, error) {
 								SecurityContext: &v1.SecurityContext{
 									Privileged: aws.Bool(true),
 								},
-
-								Env: []v1.EnvVar{
-									{Name: "AWS_SHARED_CREDENTIALS_FILE", Value: "/etc/aws-cred-awstester/aws-cred-awstester"},
-								},
-
-								VolumeMounts: []v1.VolumeMount{
-									{
-										Name:      "aws-cred-awstester",
-										MountPath: "/etc/aws-cred-awstester",
-										ReadOnly:  true,
-									},
-								},
-							},
-						},
-						Volumes: []v1.Volume{
-							{
-								Name: "aws-cred-awstester",
-								VolumeSource: v1.VolumeSource{
-									Secret: &v1.SecretVolumeSource{
-										SecretName: "aws-cred-awstester",
-									},
-								},
 							},
 						},
 					},
 
 					RunAfterSuccess: []config.Presubmit{
 						{
-							Name:    "pull-ingress-aws-alb-e2e",
+							Name: "pull-ingress-aws-alb-e2e",
+							Labels: map[string]string{
+								"preset-dind-enabled":                   "true",
+								"preset-e2e-aws-alb-ingress-controller": "true",
+							},
+
 							Agent:   "kubernetes",
 							Context: "test-presubmit",
 
 							Trigger:      "(?m)^/test pull-ingress-aws-alb-e2e",
 							RerunCommand: "/test pull-ingress-aws-alb-e2e",
-
-							Labels: map[string]string{
-								"preset-dind-enabled": "true",
-							},
 
 							AlwaysRun:  true,
 							SkipReport: false,
@@ -184,60 +237,6 @@ func CreateProwJobYAML(cfg ConfigProwJobYAML) (string, error) {
 										// TODO: to build docker in docker
 										SecurityContext: &v1.SecurityContext{
 											Privileged: aws.Bool(true),
-										},
-
-										Env: []v1.EnvVar{
-											{Name: "GINKGO_TIMEOUT", Value: cfg.GINKGO_TIMEOUT},
-											{Name: "GINKGO_VERBOSE", Value: cfg.GINKGO_VERBOSE},
-
-											{Name: "AWSTESTER_EKS_KUBETEST_VERBOSE", Value: cfg.AWSTESTER_EKS_KUBETEST_VERBOSE},
-											{Name: "AWSTESTER_EKS_KUBETEST_CONTROL_TIMEOUT", Value: cfg.AWSTESTER_EKS_KUBETEST_CONTROL_TIMEOUT},
-
-											{Name: "AWSTESTER_EKS_EMBEDDED", Value: cfg.AWSTESTER_EKS_EMBEDDED},
-											{Name: "AWSTESTER_EKS_WAIT_BEFORE_DOWN", Value: cfg.AWSTESTER_EKS_WAIT_BEFORE_DOWN},
-											{Name: "AWSTESTER_EKS_DOWN", Value: cfg.AWSTESTER_EKS_DOWN},
-
-											{Name: "AWSTESTER_EKS_AWSTESTER_IMAGE", Value: cfg.AWSTESTER_EKS_AWSTESTER_IMAGE},
-
-											{Name: "AWSTESTER_EKS_WORKER_NODE_INSTANCE_TYPE", Value: cfg.AWSTESTER_EKS_WORKER_NODE_INSTANCE_TYPE},
-											{Name: "AWSTESTER_EKS_WORKER_NODE_ASG_MIN", Value: cfg.AWSTESTER_EKS_WORKER_NODE_ASG_MIN},
-											{Name: "AWSTESTER_EKS_WORKER_NODE_ASG_MAX", Value: cfg.AWSTESTER_EKS_WORKER_NODE_ASG_MAX},
-
-											{Name: "AWSTESTER_EKS_ALB_ENABLE", Value: cfg.AWSTESTER_EKS_ALB_ENABLE},
-
-											{Name: "AWSTESTER_EKS_ALB_ALB_INGRESS_CONTROLLER_IMAGE", Value: cfg.AWSTESTER_EKS_ALB_ALB_INGRESS_CONTROLLER_IMAGE},
-
-											{Name: "AWSTESTER_EKS_ALB_TARGET_TYPE", Value: cfg.AWSTESTER_EKS_ALB_TARGET_TYPE},
-											{Name: "AWSTESTER_EKS_ALB_TEST_MODE", Value: cfg.AWSTESTER_EKS_ALB_TEST_MODE},
-
-											{Name: "AWSTESTER_EKS_ALB_TEST_SCALABILITY", Value: cfg.AWSTESTER_EKS_ALB_TEST_SCALABILITY},
-											{Name: "AWSTESTER_EKS_ALB_TEST_SERVER_REPLICAS", Value: cfg.AWSTESTER_EKS_ALB_TEST_SERVER_REPLICAS},
-											{Name: "AWSTESTER_EKS_ALB_TEST_SERVER_ROUTES", Value: cfg.AWSTESTER_EKS_ALB_TEST_SERVER_ROUTES},
-											{Name: "AWSTESTER_EKS_ALB_TEST_CLIENTS", Value: cfg.AWSTESTER_EKS_ALB_TEST_CLIENTS},
-											{Name: "AWSTESTER_EKS_ALB_TEST_CLIENT_REQUESTS", Value: cfg.AWSTESTER_EKS_ALB_TEST_CLIENT_REQUESTS},
-											{Name: "AWSTESTER_EKS_ALB_TEST_RESPONSE_SIZE", Value: cfg.AWSTESTER_EKS_ALB_TEST_RESPONSE_SIZE},
-											{Name: "AWSTESTER_EKS_ALB_TEST_CLIENT_ERROR_THRESHOLD", Value: cfg.AWSTESTER_EKS_ALB_TEST_CLIENT_ERROR_THRESHOLD},
-											{Name: "AWSTESTER_EKS_ALB_TEST_EXPECT_QPS", Value: cfg.AWSTESTER_EKS_ALB_TEST_EXPECT_QPS},
-
-											{Name: "AWS_SHARED_CREDENTIALS_FILE", Value: "/etc/aws-cred-awstester/aws-cred-awstester"},
-										},
-
-										VolumeMounts: []v1.VolumeMount{
-											{
-												Name:      "aws-cred-awstester",
-												MountPath: "/etc/aws-cred-awstester",
-												ReadOnly:  true,
-											},
-										},
-									},
-								},
-								Volumes: []v1.Volume{
-									{
-										Name: "aws-cred-awstester",
-										VolumeSource: v1.VolumeSource{
-											Secret: &v1.SecretVolumeSource{
-												SecretName: "aws-cred-awstester",
-											},
 										},
 									},
 								},
