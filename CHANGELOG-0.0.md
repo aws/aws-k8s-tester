@@ -7,6 +7,8 @@ See [code changes](https://github.com/coreos/etcd/compare/0.0.0...0.0.1).
 ### `awstester` CLI
 
 - Add [`awstester version`](https://github.com/aws/awstester/commit/6d72c67fa1ae173fe211feb5d08aeaf596a7110e) command.
+- Add ALB target health check to [`awstester eks test alb correctness`](https://github.com/aws/awstester/commit/152bb09d45b79d418e9069fbf86d3452fd027589).
+  - Implemented in package `internal/eks/alb`.
 
 ### `eksconfig`
 
