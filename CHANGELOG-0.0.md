@@ -1,6 +1,6 @@
 
 
-## [0.0.1](https://github.com/coreos/etcd/releases/tag/0.0.1) (TBD)
+## [0.0.1](https://github.com/coreos/etcd/releases/tag/0.0.1) (2018-10-18)
 
 See [code changes](https://github.com/coreos/etcd/compare/0.0.0...0.0.1).
 
