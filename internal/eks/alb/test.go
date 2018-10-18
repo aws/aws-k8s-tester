@@ -2,6 +2,7 @@ package alb
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/elbv2"
@@ -34,42 +35,62 @@ func (md *embedded) TestAWSResources() error {
 			return fmt.Errorf("found no target groups from %q", name)
 		}
 
-		for _, tg := range desc.TargetGroups {
-			var healthOut *elbv2.DescribeTargetHealthOutput
-			healthOut, err = md.elbv2.DescribeTargetHealth(&elbv2.DescribeTargetHealthInput{
-				TargetGroupArn: tg.TargetGroupArn,
-			})
-			if err != nil {
-				md.lg.Warn(
-					"failed to describe target group health",
-					zap.String("elbv2-name", name),
-					zap.Error(err),
-				)
-				return err
-			}
-			ta := *tg.TargetGroupArn
-			for _, hv := range healthOut.TargetHealthDescriptions {
-				hs := *hv.TargetHealth.State
-				if hs != "healthy" {
+		unhealthyARNs := make(map[string]struct{})
+		retryStart := time.Now().UTC()
+		for time.Now().UTC().Sub(retryStart) < 10*time.Minute {
+			for _, tg := range desc.TargetGroups {
+				tgARN := tg.TargetGroupArn
+
+				var healthOut *elbv2.DescribeTargetHealthOutput
+				healthOut, err = md.elbv2.DescribeTargetHealth(&elbv2.DescribeTargetHealthInput{
+					TargetGroupArn: tgARN,
+				})
+				if err != nil {
 					md.lg.Warn(
-						"found unhealthy target",
+						"failed to describe target group health",
 						zap.String("elbv2-name", name),
-						zap.String("elbv2-target-group-arn", ta),
+						zap.Error(err),
+					)
+					return err
+				}
+
+				healthCnt := 0
+				for _, hv := range healthOut.TargetHealthDescriptions {
+					hs := *hv.TargetHealth.State
+					if hs != "healthy" {
+						md.lg.Warn(
+							"found unhealthy target",
+							zap.String("elbv2-name", name),
+							zap.String("target-type", *tg.TargetType),
+							zap.Int64("target-port", *hv.Target.Port),
+							zap.String("target-group-arn", *tgARN),
+							zap.String("target-state", hs),
+						)
+						continue
+					}
+
+					healthCnt++
+					md.lg.Info(
+						"found healthy target",
+						zap.String("elbv2-name", name),
 						zap.String("target-type", *tg.TargetType),
 						zap.Int64("target-port", *hv.Target.Port),
+						zap.String("target-group-arn", *tgARN),
 						zap.String("target-state", hs),
 					)
-					return fmt.Errorf("found unhealthy target with state %q (target group ARN %q)", hs, ta)
 				}
-				md.lg.Info(
-					"found healthy target",
-					zap.String("elbv2-name", name),
-					zap.String("elbv2-target-group-arn", ta),
-					zap.String("target-type", *tg.TargetType),
-					zap.Int64("target-port", *hv.Target.Port),
-					zap.String("target-state", hs),
-				)
+
+				if healthCnt == len(healthOut.TargetHealthDescriptions) {
+					delete(unhealthyARNs, *tgARN)
+					break
+				}
+
+				unhealthyARNs[*tgARN] = struct{}{}
+				time.Sleep(10 * time.Second)
 			}
+		}
+		if len(unhealthyARNs) > 0 {
+			return fmt.Errorf("ALB %q has unhealthy target groups [%+v]", name, unhealthyARNs)
 		}
 	}
 
