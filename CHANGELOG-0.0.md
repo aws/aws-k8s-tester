@@ -15,6 +15,10 @@ See [code changes](https://github.com/coreos/etcd/compare/0.0.0...0.0.1).
 - Add [`KubetestVerbose`](https://github.com/aws/awstester/commit/17189259558110b066a974f6ee6fb2b8242c03d5) field.
 - Add [`KubetestControlTimeout`](https://github.com/aws/awstester/commit/17189259558110b066a974f6ee6fb2b8242c03d5) field.
 
+### Depency
+
+- Upgrade [`github.com/aws/aws-sdk-go`]() from [`v1.15.54`](https://github.com/aws/aws-sdk-go/releases/tag/v1.15.54) to [`v1.15.57`](https://github.com/aws/aws-sdk-go/releases/tag/v1.15.57).
+
 ### Go
 
 - Compile with [*Go 1.11.1*](https://golang.org/doc/devel/release.html#go1.11).
