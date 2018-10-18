@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"syscall"
 	"time"
 
@@ -172,7 +171,9 @@ func (tr *tester) DumpClusterLogs(localPath, s3Path string) (err error) {
 	return err
 }
 
+/*
 // Publish publishes a success file.
+// Add this when required... See "kubetest/e2e.go".
 func (tr *tester) Publish() (err error) {
 	tr.LoadConfig()
 	logOutputS3 := tr.cfg.ClusterName + "/" + filepath.Base(tr.cfg.LogOutputToUploadPath)
@@ -193,6 +194,7 @@ func (tr *tester) Publish() (err error) {
 	))
 	return err
 }
+*/
 
 ///////////////////////////////////////////////
 // Extra methods for EKS specific operations //
