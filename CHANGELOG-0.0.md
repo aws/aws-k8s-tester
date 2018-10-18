@@ -12,6 +12,7 @@ See [code changes](https://github.com/coreos/etcd/compare/0.0.0...0.0.1).
 
 ### `eksdeployer`
 
+- Add [`UploadToBucketForTests`](https://github.com/aws/awstester/commit/07e872a3b4b5758fc80d093d5a3b511b8bfe08f8) method.
 - Remove [Publish](https://github.com/aws/awstester/commit/ad2a71dfc9687a9bd1a5869bd09a3f9eb771c504) method.
   - Not needed for now (to be added back later).
   - See [`kubetest/e2e.go`](https://github.com/kubernetes/test-infra/blob/fe0a9926c1c3d0a9d94e0d3c2f755dbdbc34d892/kubetest/e2e.go#L318-L322).
