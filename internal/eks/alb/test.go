@@ -61,6 +61,14 @@ func (md *embedded) TestAWSResources() error {
 					)
 					return fmt.Errorf("found unhealthy target with state %q (target group ARN %q)", hs, ta)
 				}
+				md.lg.Info(
+					"found healthy target",
+					zap.String("elbv2-name", name),
+					zap.String("elbv2-target-group-arn", ta),
+					zap.String("target-type", *tg.TargetType),
+					zap.Int64("target-port", *hv.Target.Port),
+					zap.String("target-state", hs),
+				)
 			}
 		}
 	}
