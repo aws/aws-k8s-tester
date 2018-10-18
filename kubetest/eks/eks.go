@@ -157,27 +157,7 @@ func (tr *tester) DumpClusterLogs(localPath, s3Path string) error {
 	if !tr.cfg.KubetestEnableDumpClusterLogs {
 		return nil
 	}
-
 	return tr.UploadToBucketForTests(localPath, s3Path)
-}
-
-// UploadToBucketForTests uploads a local file to awstester S3 bucket.
-func (tr *tester) UploadToBucketForTests(localPath, s3Path string) (err error) {
-	ctrl := process.NewControl(
-		tr.cfg.KubetestControlTimeout,
-		time.NewTimer(tr.cfg.KubetestControlTimeout),
-		time.NewTimer(tr.cfg.KubetestControlTimeout),
-		tr.cfg.KubetestVerbose,
-	)
-	_, err = ctrl.Output(exec.Command(
-		tr.awsTesterPath,
-		"eks",
-		"--path="+tr.cfg.ConfigPath,
-		"s3-upload",
-		localPath,
-		s3Path,
-	))
-	return err
 }
 
 /*
@@ -208,6 +188,25 @@ func (tr *tester) Publish() (err error) {
 ///////////////////////////////////////////////
 // Extra methods for EKS specific operations //
 ///////////////////////////////////////////////
+
+// UploadToBucketForTests uploads a local file to awstester S3 bucket.
+func (tr *tester) UploadToBucketForTests(localPath, s3Path string) (err error) {
+	ctrl := process.NewControl(
+		tr.cfg.KubetestControlTimeout,
+		time.NewTimer(tr.cfg.KubetestControlTimeout),
+		time.NewTimer(tr.cfg.KubetestControlTimeout),
+		tr.cfg.KubetestVerbose,
+	)
+	_, err = ctrl.Output(exec.Command(
+		tr.awsTesterPath,
+		"eks",
+		"--path="+tr.cfg.ConfigPath,
+		"s3-upload",
+		localPath,
+		s3Path,
+	))
+	return err
+}
 
 func (tr *tester) Stop() {
 	close(tr.stopc)
