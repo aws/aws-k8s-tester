@@ -5,10 +5,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"os/signal"
 	"path/filepath"
-	"strings"
 	"syscall"
 	"testing"
 	"time"
@@ -19,7 +17,6 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"k8s.io/test-infra/kubetest/process"
 
 	// remove "internal" package imports
 	// when it gets contributed to upstream
@@ -27,10 +24,8 @@ import (
 )
 
 // http://onsi.github.io/ginkgo/#the-ginkgo-cli
-var (
-	ginkgoTimeout = flag.Duration("ginkgo-command-timeout", 10*time.Hour, "timeout for test commands")
-	ginkgoVerbose = flag.Bool("ginkgo-verbose", true, "'true' to enable verbose in Ginkgo")
-)
+// ginkgoTimeout = flag.Duration("ginkgo-command-timeout", 10*time.Hour, "timeout for test commands")
+// ginkgoVerbose = flag.Bool("ginkgo-verbose", true, "'true' to enable verbose in Ginkgo")
 
 var cfg = eksconfig.NewDefault()
 
@@ -68,19 +63,9 @@ func TestAWSTesterEKS(t *testing.T) {
 	RunSpecs(t, "awstester eks ALB Ingress Controller e2e tests")
 }
 
-var (
-	kp      eksdeployer.Interface
-	control *process.Control
-)
+var kp eksdeployer.Interface
 
 var _ = BeforeSuite(func() {
-	control = process.NewControl(
-		*ginkgoTimeout,
-		time.NewTimer(3*time.Hour),
-		time.NewTimer(3*time.Hour),
-		*ginkgoVerbose,
-	)
-
 	var err error
 	if cfg.Embedded {
 		kp, err = eks.NewEKSDeployer(cfg)
@@ -116,28 +101,6 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = Describe("EKS with ALB Ingress Controller on worker nodes", func() {
-	Context("Correctness of EKS cluster", func() {
-		It("EKS expects worker nodes", func() {
-			if !cfg.Embedded {
-				// reload updated kubeconfig
-				var err error
-				cfg, err = eksconfig.Load(cfg.ConfigPath)
-				Expect(err).ShouldNot(HaveOccurred())
-			}
-
-			// TODO: run Kubernetes upstream e2e tests
-			co, err := control.Output(exec.Command(
-				"kubectl",
-				"--kubeconfig="+cfg.KubeConfigPath,
-				"get",
-				"nodes",
-			))
-			Expect(err).ShouldNot(HaveOccurred())
-			nn := strings.Count(string(co), "Ready")
-			Expect(nn).To(Equal(int(cfg.WorkderNodeASGMax)))
-		})
-	})
-
 	Context("Correctness of ALB Ingress Controller on worker nodes", func() {
 		It("ALB Ingress Controller expects Ingress rules", func() {
 			err := kp.TestALBCorrectness()

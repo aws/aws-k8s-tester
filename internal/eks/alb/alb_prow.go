@@ -9,9 +9,6 @@ import (
 
 // ConfigProwJobYAML defines ALB Prow job configuration.
 type ConfigProwJobYAML struct {
-	GINKGO_TIMEOUT string
-	GINKGO_VERBOSE string
-
 	AWSTESTER_EKS_KUBEKINS_E2E_IMAGE       string
 	AWSTESTER_EKS_KUBETEST_VERBOSE         string
 	AWSTESTER_EKS_KUBETEST_CONTROL_TIMEOUT string
@@ -53,9 +50,6 @@ func CreateProwJobYAML(cfg ConfigProwJobYAML) (string, error) {
 				},
 
 				Env: []v1.EnvVar{
-					{Name: "GINKGO_TIMEOUT", Value: cfg.GINKGO_TIMEOUT},
-					{Name: "GINKGO_VERBOSE", Value: cfg.GINKGO_VERBOSE},
-
 					{Name: "AWSTESTER_EKS_KUBETEST_VERBOSE", Value: cfg.AWSTESTER_EKS_KUBETEST_VERBOSE},
 					{Name: "AWSTESTER_EKS_KUBETEST_CONTROL_TIMEOUT", Value: cfg.AWSTESTER_EKS_KUBETEST_CONTROL_TIMEOUT},
 

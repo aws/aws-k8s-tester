@@ -82,9 +82,7 @@ cd ${GOPATH}/src/github.com/aws/awstester
 ./scripts/awstester.build.container.push.sh
 
 cd ${GOPATH}/src/github.com/aws/awstester
-GINKGO_TIMEOUT=10h \
-  GINKGO_VERBOSE=true \
-  AWSTESTER_EKS_KUBETEST_VERBOSE=true \
+AWSTESTER_EKS_KUBETEST_VERBOSE=true \
   AWSTESTER_EKS_KUBETEST_CONTROL_TIMEOUT=3h \
   AWSTESTER_EKS_EMBEDDED=true \
   AWSTESTER_EKS_WAIT_BEFORE_DOWN=10m \

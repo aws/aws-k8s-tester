@@ -289,6 +289,14 @@ func (md *embedded) createWorkerNode() error {
 		time.Sleep(15 * time.Second)
 	}
 
+	if md.cfg.ClusterState.EC2NodeGroupStatus != "READY" {
+		return fmt.Errorf(
+			"worker nodes are not ready (status %q, ASG max %d)",
+			md.cfg.ClusterState.EC2NodeGroupStatus,
+			md.cfg.WorkderNodeASGMax,
+		)
+	}
+
 	md.lg.Info(
 		"enabled node group to join cluster",
 		zap.String("name", md.cfg.ClusterState.CFStackNodeGroupName),
