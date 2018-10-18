@@ -9,12 +9,15 @@ import (
 func TestEnv(t *testing.T) {
 	cfg := NewDefault()
 
+	os.Setenv("AWSTESTER_EKS_KUBETEST_VERBOSE", "true")
+	os.Setenv("AWSTESTER_EKS_KUBETEST_CONTROL_TIMEOUT", "1h")
 	os.Setenv("AWSTESTER_EKS_CONFIG_PATH", "test-path")
 	os.Setenv("AWSTESTER_EKS_DOWN", "false")
 	os.Setenv("AWSTESTER_EKS_ALB_TARGET_TYPE", "ip")
 	os.Setenv("AWSTESTER_EKS_WORKER_NODE_ASG_MIN", "10")
 	os.Setenv("AWSTESTER_EKS_WORKER_NODE_ASG_MAX", "10")
 	os.Setenv("AWSTESTER_EKS_EMBEDDED", "true")
+	os.Setenv("AWSTESTER_EKS_LOG_DEBUG", "true")
 	os.Setenv("AWSTESTER_EKS_WAIT_BEFORE_DOWN", "2h")
 	os.Setenv("AWSTESTER_EKS_ALB_TEST_EXPECT_QPS", "123.45")
 	os.Setenv("AWSTESTER_EKS_ALB_TEST_MODE", "nginx")
@@ -22,12 +25,15 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWSTESTER_EKS_ALB_TEST_SCALABILITY", "false")
 
 	defer func() {
+		os.Unsetenv("AWSTESTER_EKS_KUBETEST_VERBOSE")
+		os.Unsetenv("AWSTESTER_EKS_KUBETEST_CONTROL_TIMEOUT")
 		os.Unsetenv("AWSTESTER_EKS_CONFIG_PATH")
 		os.Unsetenv("AWSTESTER_EKS_DOWN")
 		os.Unsetenv("AWSTESTER_EKS_ALB_TARGET_TYPE")
 		os.Unsetenv("AWSTESTER_EKS_WORKER_NODE_ASG_MIN")
 		os.Unsetenv("AWSTESTER_EKS_WORKER_NODE_ASG_MAX")
 		os.Unsetenv("AWSTESTER_EKS_EMBEDDED")
+		os.Unsetenv("AWSTESTER_EKS_LOG_DEBUG")
 		os.Unsetenv("AWSTESTER_EKS_WAIT_BEFORE_DOWN")
 		os.Unsetenv("AWSTESTER_EKS_ALB_TEST_EXPECT_QPS")
 		os.Unsetenv("AWSTESTER_EKS_ALB_TEST_MODE")
@@ -39,6 +45,12 @@ func TestEnv(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	if !cfg.KubetestVerbose {
+		t.Fatalf("KubetestVerbose expected true, got %v", cfg.KubetestVerbose)
+	}
+	if cfg.KubetestControlTimeout != time.Hour {
+		t.Fatalf("KubetestControlTimeout expected '1h', got %q", cfg.KubetestControlTimeout)
+	}
 	if cfg.ConfigPath != "test-path" {
 		t.Fatalf("alb configuration path expected 'test-path', got %q", cfg.ConfigPath)
 	}
@@ -55,7 +67,10 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("alb target type expected ip, got %q", cfg.ALBIngressController.TargetType)
 	}
 	if !cfg.Embedded {
-		t.Fatalf("embedded expected true, got %v", cfg.Embedded)
+		t.Fatalf("Embedded expected true, got %v", cfg.Embedded)
+	}
+	if !cfg.LogDebug {
+		t.Fatalf("LogDebug expected true, got %v", cfg.LogDebug)
 	}
 	if cfg.WaitBeforeDown != 2*time.Hour {
 		t.Fatalf("wait before down expected 2h, got %v", cfg.WaitBeforeDown)

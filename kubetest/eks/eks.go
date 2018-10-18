@@ -16,7 +16,6 @@ import (
 	"github.com/aws/awstester/eksdeployer"
 
 	"k8s.io/test-infra/kubetest/process"
-	kexec "k8s.io/utils/exec"
 )
 
 // tester implements EKS deployer using "awstester" binary.
@@ -36,27 +35,24 @@ func New(cfg *eksconfig.Config) (eksdeployer.Interface, error) {
 		stopc: make(chan struct{}),
 		cfg:   cfg,
 	}
+
 	var err error
-	tr.awsTesterPath, err = kexec.New().LookPath("awstester")
+	tr.awsTesterPath, err = exec.LookPath("awstester")
 	if err != nil {
 		return nil, fmt.Errorf("cannot find 'awstester' executable (%v)", err)
 	}
-	tr.kubectlPath, err = kexec.New().LookPath("kubectl")
+	tr.kubectlPath, err = exec.LookPath("kubectl")
 	if err != nil {
 		return nil, fmt.Errorf("cannot find 'kubectl' executable (%v)", err)
 	}
-	_, err = kexec.New().LookPath("aws-iam-authenticator")
+	// TODO(gyuho): replace this kubernetes native Go client
+	_, err = exec.LookPath("aws-iam-authenticator")
 	if err != nil {
 		return nil, fmt.Errorf("cannot find 'aws-iam-authenticator' executable (%v)", err)
 	}
+
 	return tr, nil
 }
-
-var (
-	timeout = 3 * time.Hour
-	verbose = true
-	control = process.NewControl(timeout, time.NewTimer(timeout), time.NewTimer(timeout), verbose)
-)
 
 // Up creates a new EKS cluster.
 func (tr *tester) Up() (err error) {
@@ -69,7 +65,13 @@ func (tr *tester) Up() (err error) {
 	)
 	errc := make(chan error)
 	go func() {
-		_, oerr := control.Output(createCmd)
+		ctrl := process.NewControl(
+			tr.cfg.KubetestControlTimeout,
+			time.NewTimer(tr.cfg.KubetestControlTimeout),
+			time.NewTimer(tr.cfg.KubetestControlTimeout),
+			tr.cfg.KubetestVerbose,
+		)
+		_, oerr := ctrl.Output(createCmd)
 		errc <- oerr
 	}()
 	select {
@@ -84,7 +86,13 @@ func (tr *tester) Up() (err error) {
 
 // Down tears down the existing EKS cluster.
 func (tr *tester) Down() (err error) {
-	_, err = control.Output(exec.Command(
+	ctrl := process.NewControl(
+		tr.cfg.KubetestControlTimeout,
+		time.NewTimer(tr.cfg.KubetestControlTimeout),
+		time.NewTimer(tr.cfg.KubetestControlTimeout),
+		tr.cfg.KubetestVerbose,
+	)
+	_, err = ctrl.Output(exec.Command(
 		tr.awsTesterPath,
 		"eks",
 		"--path="+tr.cfg.ConfigPath,
@@ -96,7 +104,13 @@ func (tr *tester) Down() (err error) {
 
 // IsUp returns an error if the cluster is not up and running.
 func (tr *tester) IsUp() (err error) {
-	_, err = control.Output(exec.Command(
+	ctrl := process.NewControl(
+		tr.cfg.KubetestControlTimeout,
+		time.NewTimer(tr.cfg.KubetestControlTimeout),
+		time.NewTimer(tr.cfg.KubetestControlTimeout),
+		tr.cfg.KubetestVerbose,
+	)
+	_, err = ctrl.Output(exec.Command(
 		tr.awsTesterPath,
 		"eks",
 		"--path="+tr.cfg.ConfigPath,
@@ -141,7 +155,13 @@ func (tr *tester) GetClusterCreated(v string) (time.Time, error) {
 
 // DumpClusterLogs uploads local cluster logs to S3.
 func (tr *tester) DumpClusterLogs(localPath, s3Path string) (err error) {
-	_, err = control.Output(exec.Command(
+	ctrl := process.NewControl(
+		tr.cfg.KubetestControlTimeout,
+		time.NewTimer(tr.cfg.KubetestControlTimeout),
+		time.NewTimer(tr.cfg.KubetestControlTimeout),
+		tr.cfg.KubetestVerbose,
+	)
+	_, err = ctrl.Output(exec.Command(
 		tr.awsTesterPath,
 		"eks",
 		"--path="+tr.cfg.ConfigPath,
@@ -153,10 +173,17 @@ func (tr *tester) DumpClusterLogs(localPath, s3Path string) (err error) {
 }
 
 // Publish publishes a success file.
-func (tr *tester) Publish() error {
+func (tr *tester) Publish() (err error) {
 	tr.LoadConfig()
 	logOutputS3 := tr.cfg.ClusterName + "/" + filepath.Base(tr.cfg.LogOutputToUploadPath)
-	_, err := control.Output(exec.Command(
+
+	ctrl := process.NewControl(
+		tr.cfg.KubetestControlTimeout,
+		time.NewTimer(tr.cfg.KubetestControlTimeout),
+		time.NewTimer(tr.cfg.KubetestControlTimeout),
+		tr.cfg.KubetestVerbose,
+	)
+	_, err = ctrl.Output(exec.Command(
 		tr.awsTesterPath,
 		"eks",
 		"--path="+tr.cfg.ConfigPath,
@@ -181,11 +208,18 @@ func (tr *tester) LoadConfig() (eksconfig.Config, error) {
 	return *tr.cfg, err
 }
 
-func (tr *tester) TestALBCorrectness() error {
-	if _, err := tr.LoadConfig(); err != nil {
+func (tr *tester) TestALBCorrectness() (err error) {
+	if _, err = tr.LoadConfig(); err != nil {
 		return err
 	}
-	_, err := control.Output(exec.Command(
+
+	ctrl := process.NewControl(
+		tr.cfg.KubetestControlTimeout,
+		time.NewTimer(tr.cfg.KubetestControlTimeout),
+		time.NewTimer(tr.cfg.KubetestControlTimeout),
+		tr.cfg.KubetestVerbose,
+	)
+	_, err = ctrl.Output(exec.Command(
 		tr.awsTesterPath,
 		"eks",
 		"--path="+tr.cfg.ConfigPath,
@@ -194,11 +228,18 @@ func (tr *tester) TestALBCorrectness() error {
 	return err
 }
 
-func (tr *tester) TestALBQPS() error {
-	if _, err := tr.LoadConfig(); err != nil {
+func (tr *tester) TestALBQPS() (err error) {
+	if _, err = tr.LoadConfig(); err != nil {
 		return err
 	}
-	_, err := control.Output(exec.Command(
+
+	ctrl := process.NewControl(
+		tr.cfg.KubetestControlTimeout,
+		time.NewTimer(tr.cfg.KubetestControlTimeout),
+		time.NewTimer(tr.cfg.KubetestControlTimeout),
+		tr.cfg.KubetestVerbose,
+	)
+	_, err = ctrl.Output(exec.Command(
 		tr.awsTesterPath,
 		"eks",
 		"--path="+tr.cfg.ConfigPath,
@@ -207,11 +248,18 @@ func (tr *tester) TestALBQPS() error {
 	return err
 }
 
-func (tr *tester) TestALBMetrics() error {
-	if _, err := tr.LoadConfig(); err != nil {
+func (tr *tester) TestALBMetrics() (err error) {
+	if _, err = tr.LoadConfig(); err != nil {
 		return err
 	}
-	_, err := control.Output(exec.Command(
+
+	ctrl := process.NewControl(
+		tr.cfg.KubetestControlTimeout,
+		time.NewTimer(tr.cfg.KubetestControlTimeout),
+		time.NewTimer(tr.cfg.KubetestControlTimeout),
+		tr.cfg.KubetestVerbose,
+	)
+	_, err = ctrl.Output(exec.Command(
 		tr.awsTesterPath,
 		"eks",
 		"--path="+tr.cfg.ConfigPath,

@@ -13,6 +13,8 @@ func NewDefault() *Config {
 //  - omitting an entire field returns nil value
 //  - make sure to check both
 var defaultConfig = Config{
+	KubetestVerbose: true,
+
 	ConfigPath: "test.yaml",
 
 	Embedded: true,
@@ -38,6 +40,7 @@ var defaultConfig = Config{
 	KubernetesVersion: "1.10",
 
 	LogDebug: false,
+
 	// default, stderr, stdout, or file name
 	// log file named with cluster name will be added automatically
 	LogOutputs:    []string{"stderr"},
