@@ -1,8 +1,8 @@
 
 
-## [0.0.1](https://github.com/coreos/etcd/releases/tag/0.0.1) (2018-10-18)
+## [0.0.1](https://github.com/aws/awstester/releases/tag/0.0.1) (2018-10-18)
 
-See [code changes](https://github.com/coreos/etcd/compare/0.0.0...0.0.1).
+See [code changes](https://github.com/aws/awstester/compare/0.0.0...0.0.1).
 
 ### `eksconfig`
 
@@ -38,7 +38,7 @@ See [code changes](https://github.com/coreos/etcd/compare/0.0.0...0.0.1).
 - Compile with [*Go 1.11.1*](https://golang.org/doc/devel/release.html#go1.11).
 
 
-## [0.0.0](https://github.com/coreos/etcd/releases/tag/0.0.0) (2018-10-15)
+## [0.0.0](https://github.com/aws/awstester/releases/tag/0.0.0) (2018-10-15)
 
 Initial release.
 
