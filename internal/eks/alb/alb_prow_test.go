@@ -7,12 +7,11 @@ import (
 
 func TestALBProw(t *testing.T) {
 	s, err := CreateProwJobYAML(ConfigProwJobYAML{
-		GINKGO_TIMEOUT: "10h",
-		GINKGO_VERBOSE: "true",
+		AWSTESTER_EKS_KUBEKINS_E2E_IMAGE: "ACCOUNT-ID.dkr.ecr.us-west-2.amazonaws.com/kubekins-e2e:latest",
 
-		AWSTESTER_EKS_KUBEKINS_E2E_IMAGE:       "ACCOUNT-ID.dkr.ecr.us-west-2.amazonaws.com/kubekins-e2e:latest",
-		AWSTESTER_EKS_KUBETEST_VERBOSE:         "true",
-		AWSTESTER_EKS_KUBETEST_CONTROL_TIMEOUT: "3h",
+		AWSTESTER_EKS_KUBETEST_VERBOSE:                  "true",
+		AWSTESTER_EKS_KUBETEST_CONTROL_TIMEOUT:          "3h",
+		AWSTESTER_EKS_KUBETEST_ENABLE_DUMP_CLUSTER_LOGS: "false",
 
 		AWSTESTER_EKS_EMBEDDED: "true",
 

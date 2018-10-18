@@ -154,6 +154,10 @@ func (tr *tester) GetClusterCreated(v string) (time.Time, error) {
 
 // DumpClusterLogs uploads local cluster logs to S3.
 func (tr *tester) DumpClusterLogs(localPath, s3Path string) (err error) {
+	if !tr.cfg.KubetestEnableDumpClusterLogs {
+		return nil
+	}
+
 	ctrl := process.NewControl(
 		tr.cfg.KubetestControlTimeout,
 		time.NewTimer(tr.cfg.KubetestControlTimeout),
