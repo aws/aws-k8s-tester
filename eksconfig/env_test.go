@@ -10,7 +10,7 @@ func TestEnv(t *testing.T) {
 	cfg := NewDefault()
 
 	os.Setenv("AWSTESTER_EKS_KUBETEST_VERBOSE", "true")
-	os.Setenv("AWSTESTER_EKS_KUBETEST_CONTROL_TIMEOUT", "1h")
+	os.Setenv("AWSTESTER_EKS_KUBETEST_CONTROL_TIMEOUT", "3h")
 	os.Setenv("AWSTESTER_EKS_CONFIG_PATH", "test-path")
 	os.Setenv("AWSTESTER_EKS_DOWN", "false")
 	os.Setenv("AWSTESTER_EKS_ALB_TARGET_TYPE", "ip")
@@ -48,8 +48,8 @@ func TestEnv(t *testing.T) {
 	if !cfg.KubetestVerbose {
 		t.Fatalf("KubetestVerbose expected true, got %v", cfg.KubetestVerbose)
 	}
-	if cfg.KubetestControlTimeout != time.Hour {
-		t.Fatalf("KubetestControlTimeout expected '1h', got %q", cfg.KubetestControlTimeout)
+	if cfg.KubetestControlTimeout != 3*time.Hour {
+		t.Fatalf("KubetestControlTimeout expected '3h', got %q", cfg.KubetestControlTimeout)
 	}
 	if cfg.ConfigPath != "test-path" {
 		t.Fatalf("alb configuration path expected 'test-path', got %q", cfg.ConfigPath)
