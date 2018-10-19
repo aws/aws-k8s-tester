@@ -650,7 +650,7 @@ func (md *embedded) TestALBMetrics() error {
 	return nil
 }
 
-// SECURITY NOTE: MAKE SURE TO PRIVATE KEY NEVER GETS UPLOADED TO CLOUD STORAGE AND DLETE AFTER USE!!!
+// SECURITY NOTE: MAKE SURE PRIVATE KEY NEVER GETS UPLOADED TO CLOUD STORAGE AND DLETE AFTER USE!!!
 func (md *embedded) upload() (err error) {
 	err = md.s3Plugin.UploadToBucketForTests(
 		md.cfg.ConfigPath,

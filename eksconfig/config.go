@@ -196,7 +196,7 @@ type ClusterState struct {
 	CFStackNodeGroupKeyPairName string `json:"cf-stack-node-group-key-pair-name,omitempty"`
 	// CFStackNodeGroupKeyPairPrivateKeyPath is the file path to store node group key pair private key.
 	// Thus, deployer must delete the private key right after node group creation.
-	// MAKE SURE TO PRIVATE KEY NEVER GETS UPLOADED TO CLOUD STORAGE AND DLETE AFTER USE!!!
+	// MAKE SURE PRIVATE KEY NEVER GETS UPLOADED TO CLOUD STORAGE AND DLETE AFTER USE!!!
 	CFStackNodeGroupKeyPairPrivateKeyPath string `json:"cf-stack-node-group-key-pair-private-key-path,omitempty"`
 	// CFStackNodeGroupName is the name of cloudformation stack for worker node group.
 	CFStackNodeGroupName string `json:"cf-stack-node-group-name,omitempty"`
@@ -482,7 +482,7 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	cfg.ClusterState.ServiceRolePolicies = []string{serviceRolePolicyARNCluster, serviceRolePolicyARNService}
 	cfg.ClusterState.CFStackVPCName = genCFStackVPC(cfg.ClusterName)
 	cfg.ClusterState.CFStackNodeGroupKeyPairName = genNodeGroupKeyPairName(cfg.ClusterName)
-	// SECURITY NOTE: MAKE SURE TO PRIVATE KEY NEVER GETS UPLOADED TO CLOUD STORAGE AND DLETE AFTER USE!!!
+	// SECURITY NOTE: MAKE SURE PRIVATE KEY NEVER GETS UPLOADED TO CLOUD STORAGE AND DLETE AFTER USE!!!
 	cfg.ClusterState.CFStackNodeGroupKeyPairPrivateKeyPath = filepath.Join(
 		os.TempDir(),
 		cfg.ClusterState.CFStackNodeGroupKeyPairName+".private.key",

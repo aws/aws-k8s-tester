@@ -14,7 +14,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// SECURITY NOTE: MAKE SURE TO PRIVATE KEY NEVER GETS UPLOADED TO CLOUD STORAGE AND DLETE AFTER USE!!!
+// SECURITY NOTE: MAKE SURE PRIVATE KEY NEVER GETS UPLOADED TO CLOUD STORAGE AND DLETE AFTER USE!!!
 
 func (md *embedded) createKeyPair() (err error) {
 	if md.cfg.ClusterState.CFStackNodeGroupKeyPairName == "" {
