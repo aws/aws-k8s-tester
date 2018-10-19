@@ -34,6 +34,6 @@ CGO_ENABLED=0 GOOS=linux GOARCH=$(go env GOARCH) \
 
 docker build \
   --tag ${REGISTRY}/kubekins-e2e:${GIT_COMMIT} \
-  --file ./scripts/Dockerfile .
+  --file ./scripts/kubekins-e2e.Dockerfile .
 
 docker push ${REGISTRY}/kubekins-e2e:${GIT_COMMIT}
