@@ -22,6 +22,7 @@ type Config struct {
 
 	// LogDebug is true to enable debug level logging.
 	LogDebug bool `json:"log-debug"`
+
 	// LogOutputs is a list of log outputs. Valid values are 'default', 'stderr', 'stdout', or file names.
 	// Logs are appended to the existing file, if any.
 	// Multiple values are accepted. If empty, it sets to 'default', which outputs to stderr.

@@ -19,6 +19,7 @@ var defaultConfig = Config{
 	Down:           true,
 
 	LogDebug: false,
+
 	// default, stderr, stdout, or file name
 	// log file named with cluster name will be added automatically
 	LogOutputs:    []string{"stderr"},
@@ -26,6 +27,7 @@ var defaultConfig = Config{
 
 	// Ubuntu Server 16.04 LTS (HVM), SSD Volume Type
 	ImageID: "ami-ba602bc2",
+
 	// 4 vCPU, 15 GB RAM
 	InstanceType: "m3.xlarge",
 	Count:        1,
