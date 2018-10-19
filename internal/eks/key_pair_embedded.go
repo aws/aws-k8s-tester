@@ -3,6 +3,8 @@ package eks
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -12,8 +14,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// SECURITY NOTE: we do not need private key for tests,
-// so we do not even save the private key when created
+// SECURITY NOTE: MAKE SURE TO PRIVATE KEY NEVER GETS UPLOADED TO CLOUD STORAGE AND DLETE AFTER USE!!!
 
 func (md *embedded) createKeyPair() (err error) {
 	if md.cfg.ClusterState.CFStackNodeGroupKeyPairName == "" {
@@ -38,6 +39,13 @@ func (md *embedded) createKeyPair() (err error) {
 	if *output.KeyName != md.cfg.ClusterState.CFStackNodeGroupKeyPairName {
 		return fmt.Errorf("unexpected key name %q, expected %q", *output.KeyName, md.cfg.ClusterState.CFStackNodeGroupKeyPairName)
 	}
+	if err = ioutil.WriteFile(
+		md.cfg.ClusterState.CFStackNodeGroupKeyPairPrivateKeyPath,
+		[]byte(*output.KeyMaterial),
+		0600,
+	); err != nil {
+		return err
+	}
 
 	md.lg.Info(
 		"created key pair",
@@ -52,6 +60,7 @@ func (md *embedded) deleteKeyPair() error {
 		return nil
 	}
 	defer func() {
+		os.RemoveAll(md.cfg.ClusterState.CFStackNodeGroupKeyPairPrivateKeyPath)
 		md.cfg.ClusterState.StatusKeyPairCreated = false
 		md.cfg.Sync()
 	}()
