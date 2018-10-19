@@ -32,7 +32,7 @@ type Deployer interface {
 	Stop()
 	Delete() error
 
-	SSHCommands() string
+	GenerateSSHCommands() string
 }
 
 type embedded struct {
@@ -542,7 +542,7 @@ func (md *embedded) deleteInstances() (err error) {
 	return nil
 }
 
-func (md *embedded) SSHCommands() (s string) {
+func (md *embedded) GenerateSSHCommands() (s string) {
 	s = fmt.Sprintf("\n\n# change SSH key permission\nchmod 600 %s\n\n", md.cfg.KeyPath)
 	for _, v := range md.cfg.Instances {
 		s += fmt.Sprintf(`ssh -o "StrictHostKeyChecking no" -i %s ubuntu@%s
