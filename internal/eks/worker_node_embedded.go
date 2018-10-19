@@ -219,11 +219,11 @@ func (md *embedded) createWorkerNode() error {
 		}
 
 		// TODO: use "k8s.io/client-go"
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		cmd := md.kubectl.CommandContext(ctx,
 			md.kubectlPath,
 			"--kubeconfig="+kcfgPath,
-			"get", "nodes", "--output=yaml",
+			"get", "nodes", "-ojson",
 		)
 		var kexo []byte
 		kexo, err = cmd.CombinedOutput()
@@ -238,54 +238,34 @@ func (md *embedded) createWorkerNode() error {
 			time.Sleep(5 * time.Second)
 			continue
 		}
-		nn, nerr := countReadyNodesFromKubectlGetNodesOutputYAML(kexo)
-		if nerr != nil {
-			md.lg.Warn("failed to parse get nodes output", zap.Error(nerr))
-			md.cfg.ClusterState.EC2NodeGroupStatus = nerr.Error()
-			md.cfg.Sync()
-			time.Sleep(5 * time.Second)
-			continue
-		}
-		if nn == md.cfg.WorkderNodeASGMax {
-			md.lg.Info("created worker nodes", zap.Int("nodes", nn))
-			md.cfg.ClusterState.EC2NodeGroupStatus = "READY"
-			md.cfg.Sync()
-			break
-		}
-		ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
-		cmd = md.kubectl.CommandContext(ctx,
-			md.kubectlPath,
-			"--kubeconfig="+kcfgPath,
-			"get", "nodes",
-		)
-		kexo, err = cmd.CombinedOutput()
-		cancel()
+
+		var ns *nodeList
+		ns, err = kubectlGetNodes(kexo)
 		if err != nil {
-			if strings.Contains(err.Error(), "unknown flag:") {
-				return fmt.Errorf("unknown flag %s", string(kexo))
-			}
-			md.lg.Warn("failed to get nodes", zap.String("output", string(kexo)), zap.Error(err))
+			md.lg.Warn("failed to parse get nodes output", zap.Error(err))
 			md.cfg.ClusterState.EC2NodeGroupStatus = err.Error()
 			md.cfg.Sync()
-			time.Sleep(5 * time.Second)
+			time.Sleep(10 * time.Second)
 			continue
 		}
-		nn = countReadyNodesFromKubectlGetNodesOutputSimple(kexo)
-		if nn == md.cfg.WorkderNodeASGMax {
-			md.lg.Info(
-				"created worker nodes",
-				zap.String("output", string(kexo)),
-				zap.Int("nodes", nn),
-			)
+		nodesN := len(ns.Items)
+		readyN := countReadyNodes(ns)
+		md.lg.Info(
+			"created worker nodes",
+			zap.Int("created-nodes", nodesN),
+			zap.Int("ready-nodes", readyN),
+			zap.Int("worker-node-asg-min", md.cfg.WorkderNodeASGMin),
+			zap.Int("worker-node-asg-max", md.cfg.WorkderNodeASGMax),
+		)
+		if readyN == md.cfg.WorkderNodeASGMax {
 			md.cfg.ClusterState.EC2NodeGroupStatus = "READY"
 			md.cfg.Sync()
 			break
 		}
 
-		md.cfg.ClusterState.EC2NodeGroupStatus = fmt.Sprintf("%d AVAILABLE", nn)
+		md.cfg.ClusterState.EC2NodeGroupStatus = fmt.Sprintf("%d AVAILABLE", nodesN)
 		md.cfg.Sync()
 
-		md.lg.Info("creating worker nodes", zap.Int("nodes", nn))
 		time.Sleep(15 * time.Second)
 	}
 
