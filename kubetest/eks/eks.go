@@ -41,14 +41,16 @@ type tester struct {
 	cfg           *eksconfig.Config
 	awsTesterPath string
 	kubectlPath   string
+	ctrl          *process.Control
 }
 
 // New creates a new EKS deployer with AWS CLI.
-func New(cfg *eksconfig.Config) (eksdeployer.Interface, error) {
+func New(cfg *eksconfig.Config, ctrl *process.Control) (eksdeployer.Interface, error) {
 	cfg.Embedded = false
 	tr := &tester{
 		stopc: make(chan struct{}),
 		cfg:   cfg,
+		ctrl:  ctrl,
 	}
 
 	var err error
@@ -80,13 +82,7 @@ func (tr *tester) Up() (err error) {
 	)
 	errc := make(chan error)
 	go func() {
-		ctrl := process.NewControl(
-			tr.cfg.KubetestControlTimeout,
-			time.NewTimer(tr.cfg.KubetestControlTimeout),
-			time.NewTimer(tr.cfg.KubetestControlTimeout),
-			tr.cfg.KubetestVerbose,
-		)
-		_, oerr := ctrl.Output(createCmd)
+		_, oerr := tr.ctrl.Output(createCmd)
 		errc <- oerr
 	}()
 	select {
@@ -101,13 +97,7 @@ func (tr *tester) Up() (err error) {
 
 // Down tears down the existing EKS cluster.
 func (tr *tester) Down() (err error) {
-	ctrl := process.NewControl(
-		tr.cfg.KubetestControlTimeout,
-		time.NewTimer(tr.cfg.KubetestControlTimeout),
-		time.NewTimer(tr.cfg.KubetestControlTimeout),
-		tr.cfg.KubetestVerbose,
-	)
-	_, err = ctrl.Output(exec.Command(
+	_, err = tr.ctrl.Output(exec.Command(
 		tr.awsTesterPath,
 		"eks",
 		"--path="+tr.cfg.ConfigPath,
@@ -119,13 +109,7 @@ func (tr *tester) Down() (err error) {
 
 // IsUp returns an error if the cluster is not up and running.
 func (tr *tester) IsUp() (err error) {
-	ctrl := process.NewControl(
-		tr.cfg.KubetestControlTimeout,
-		time.NewTimer(tr.cfg.KubetestControlTimeout),
-		time.NewTimer(tr.cfg.KubetestControlTimeout),
-		tr.cfg.KubetestVerbose,
-	)
-	_, err = ctrl.Output(exec.Command(
+	_, err = tr.ctrl.Output(exec.Command(
 		tr.awsTesterPath,
 		"eks",
 		"--path="+tr.cfg.ConfigPath,
@@ -185,13 +169,7 @@ func (tr *tester) Publish() (err error) {
 	tr.LoadConfig()
 	logOutputS3 := tr.cfg.ClusterName + "/" + filepath.Base(tr.cfg.LogOutputToUploadPath)
 
-	ctrl := process.NewControl(
-		tr.cfg.KubetestControlTimeout,
-		time.NewTimer(tr.cfg.KubetestControlTimeout),
-		time.NewTimer(tr.cfg.KubetestControlTimeout),
-		tr.cfg.KubetestVerbose,
-	)
-	_, err = ctrl.Output(exec.Command(
+	_, err = tr.ctrl.Output(exec.Command(
 		tr.awsTesterPath,
 		"eks",
 		"--path="+tr.cfg.ConfigPath,
@@ -209,13 +187,7 @@ func (tr *tester) Publish() (err error) {
 
 // UploadToBucketForTests uploads a local file to awstester S3 bucket.
 func (tr *tester) UploadToBucketForTests(localPath, s3Path string) (err error) {
-	ctrl := process.NewControl(
-		tr.cfg.KubetestControlTimeout,
-		time.NewTimer(tr.cfg.KubetestControlTimeout),
-		time.NewTimer(tr.cfg.KubetestControlTimeout),
-		tr.cfg.KubetestVerbose,
-	)
-	_, err = ctrl.Output(exec.Command(
+	_, err = tr.ctrl.Output(exec.Command(
 		tr.awsTesterPath,
 		"eks",
 		"--path="+tr.cfg.ConfigPath,
@@ -240,14 +212,7 @@ func (tr *tester) TestALBCorrectness() (err error) {
 	if _, err = tr.LoadConfig(); err != nil {
 		return err
 	}
-
-	ctrl := process.NewControl(
-		tr.cfg.KubetestControlTimeout,
-		time.NewTimer(tr.cfg.KubetestControlTimeout),
-		time.NewTimer(tr.cfg.KubetestControlTimeout),
-		tr.cfg.KubetestVerbose,
-	)
-	_, err = ctrl.Output(exec.Command(
+	_, err = tr.ctrl.Output(exec.Command(
 		tr.awsTesterPath,
 		"eks",
 		"--path="+tr.cfg.ConfigPath,
@@ -260,14 +225,7 @@ func (tr *tester) TestALBQPS() (err error) {
 	if _, err = tr.LoadConfig(); err != nil {
 		return err
 	}
-
-	ctrl := process.NewControl(
-		tr.cfg.KubetestControlTimeout,
-		time.NewTimer(tr.cfg.KubetestControlTimeout),
-		time.NewTimer(tr.cfg.KubetestControlTimeout),
-		tr.cfg.KubetestVerbose,
-	)
-	_, err = ctrl.Output(exec.Command(
+	_, err = tr.ctrl.Output(exec.Command(
 		tr.awsTesterPath,
 		"eks",
 		"--path="+tr.cfg.ConfigPath,
@@ -280,14 +238,7 @@ func (tr *tester) TestALBMetrics() (err error) {
 	if _, err = tr.LoadConfig(); err != nil {
 		return err
 	}
-
-	ctrl := process.NewControl(
-		tr.cfg.KubetestControlTimeout,
-		time.NewTimer(tr.cfg.KubetestControlTimeout),
-		time.NewTimer(tr.cfg.KubetestControlTimeout),
-		tr.cfg.KubetestVerbose,
-	)
-	_, err = ctrl.Output(exec.Command(
+	_, err = tr.ctrl.Output(exec.Command(
 		tr.awsTesterPath,
 		"eks",
 		"--path="+tr.cfg.ConfigPath,

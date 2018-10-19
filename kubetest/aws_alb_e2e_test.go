@@ -17,6 +17,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"k8s.io/test-infra/kubetest/process"
 
 	// remove "internal" package imports
 	// when it gets contributed to upstream
@@ -70,7 +71,12 @@ var _ = BeforeSuite(func() {
 	if cfg.Embedded {
 		kp, err = eks.NewEKSDeployer(cfg)
 	} else {
-		kp, err = eksplugin.New(cfg)
+		kp, err = eksplugin.New(cfg, process.NewControl(
+			cfg.KubetestControlTimeout,
+			time.NewTimer(cfg.KubetestControlTimeout),
+			time.NewTimer(cfg.KubetestControlTimeout),
+			cfg.KubetestVerbose,
+		))
 	}
 	Expect(err).ShouldNot(HaveOccurred())
 
