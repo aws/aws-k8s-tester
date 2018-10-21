@@ -153,19 +153,24 @@ func (md *embedded) createWorkerNode() error {
 		}
 
 		for _, op := range do.Stacks[0].Outputs {
+			fmt.Println("*op.OutputKey:", len(do.Stacks), *op.OutputKey, *op.OutputValue)
+			md.lg.Info(
+				"described stack",
+				zap.String("output-key", *op.OutputKey),
+				zap.String("output-value", *op.OutputValue),
+			)
 			if *op.OutputKey == "NodeInstanceRole" {
-				md.lg.Info(
-					"found NodeInstanceRole",
-					zap.String("output", *op.OutputValue),
-				)
 				md.cfg.ClusterState.CFStackWorkerNodeGroupWorkerNodeInstanceRoleARN = *op.OutputValue
 			}
-			// not "SecurityGroups"
-			if *op.OutputKey == "NodeSecurityGroup" {
+			if *op.OutputKey == "NodeSecurityGroup" { // not "SecurityGroups"
 				md.cfg.ClusterState.CFStackWorkerNodeGroupSecurityGroupID = *op.OutputValue
 			}
 		}
 		md.cfg.Sync()
+
+		if md.cfg.ClusterState.CFStackWorkerNodeGroupSecurityGroupID == "" {
+			return fmt.Errorf("worker node security group ID not found")
+		}
 
 		if md.cfg.EnableNodeSSH {
 			md.lg.Info(
