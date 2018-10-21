@@ -152,10 +152,20 @@ func (tr *tester) GetClusterCreated(v string) (time.Time, error) {
 	return tr.cfg.ClusterState.Created, nil
 }
 
-func (tr *tester) DumpClusterLogs(artifactDir, _ string) error {
-	// Let default kubetest log dumper handle all artifact uploads.
-	// See https://github.com/kubernetes/test-infra/pull/9811/files#r225776067.
-	return nil
+// DumpClusterLogs dumps all logs to artifact directory.
+// Let default kubetest log dumper handle all artifact uploads.
+// See https://github.com/kubernetes/test-infra/pull/9811/files#r225776067.
+func (tr *tester) DumpClusterLogs(artifactDir, _ string) (err error) {
+	tr.LoadConfig()
+
+	_, err = tr.ctrl.Output(exec.Command(
+		tr.awsTesterPath,
+		"eks",
+		"--path="+tr.cfg.ConfigPath,
+		"test", "dump-cluster-logs",
+		artifactDir,
+	))
+	return err
 }
 
 /*

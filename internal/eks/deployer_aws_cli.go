@@ -72,6 +72,9 @@ func (ac *awsCli) GetClusterCreated(v string) (time.Time, error) {
 	panic("TODO")
 }
 
+// DumpClusterLogs dumps all logs to artifact directory.
+// Let default kubetest log dumper handle all artifact uploads.
+// See https://github.com/kubernetes/test-infra/pull/9811/files#r225776067.
 func (ac *awsCli) DumpClusterLogs(artifactDir, _ string) error {
 	panic("TODO")
 }
