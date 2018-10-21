@@ -209,6 +209,9 @@ type ClusterState struct {
 	CFStackWorkerNodeGroupKeyPairPrivateKeyPath string `json:"cf-stack-worker-node-group-key-pair-private-key-path,omitempty"`
 	// CFStackWorkerNodeGroupName is the name of cloudformation stack for worker node group.
 	CFStackWorkerNodeGroupName string `json:"cf-stack-worker-node-group-name,omitempty"`
+	// CFStackWorkerNodeGroupSecurityGroupID is the security group ID
+	// that worker node cloudformation stack created.
+	CFStackWorkerNodeGroupSecurityGroupID string `json:"cf-stack-worker-node-group-security-group-id,omitempty"`
 	// CFStackWorkerNodeGroupAutoScalingGroupName is the name of worker node auto scaling group.
 	CFStackWorkerNodeGroupAutoScalingGroupName string `json:"cf-stack-worker-node-group-auto-scaling-group-name,omitempty"`
 

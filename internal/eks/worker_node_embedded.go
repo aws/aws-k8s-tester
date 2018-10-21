@@ -154,14 +154,73 @@ func (md *embedded) createWorkerNode() error {
 
 		for _, op := range do.Stacks[0].Outputs {
 			if *op.OutputKey == "NodeInstanceRole" {
-				md.lg.Info("found NodeInstanceRole", zap.String("output", *op.OutputValue))
+				md.lg.Info(
+					"found NodeInstanceRole",
+					zap.String("output", *op.OutputValue),
+				)
 				md.cfg.ClusterState.CFStackWorkerNodeGroupWorkerNodeInstanceRoleARN = *op.OutputValue
+			}
+			if *op.OutputKey == "SecurityGroups" {
+				md.cfg.ClusterState.CFStackWorkerNodeGroupSecurityGroupID = *op.OutputValue
+			}
+		}
+		md.cfg.Sync()
+
+		if md.cfg.EnableNodeSSH {
+			md.lg.Info(
+				"checking worker node group security group",
+				zap.String("security-group-id", md.cfg.ClusterState.CFStackWorkerNodeGroupSecurityGroupID),
+			)
+			var sout *ec2.DescribeSecurityGroupsOutput
+			sout, err = md.ec2.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
+				GroupIds: aws.StringSlice([]string{md.cfg.ClusterState.CFStackWorkerNodeGroupSecurityGroupID}),
+			})
+			if err != nil {
+				md.lg.Info("failed to describe worker node group security group",
+					zap.String("stack-name", md.cfg.ClusterState.CFStackWorkerNodeGroupName),
+					zap.String("stack-status", md.cfg.ClusterState.CFStackWorkerNodeGroupStatus),
+					zap.String("security-group-id", md.cfg.ClusterState.CFStackWorkerNodeGroupSecurityGroupID),
+					zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
+					zap.Error(err),
+				)
+				return err
+			}
+			if len(sout.SecurityGroups) != 1 {
+				return fmt.Errorf(
+					"expected 1 worker node group security group, got %d (%+v)",
+					len(sout.SecurityGroups),
+					sout.SecurityGroups,
+				)
+			}
+			sg := sout.SecurityGroups[0]
+			foundSSHAccess := false
+			for _, perm := range sg.IpPermissions {
+				fromPort, toPort := *perm.FromPort, *perm.ToPort
+				rg := ""
+				if len(perm.IpRanges) == 1 {
+					rg = perm.IpRanges[0].String()
+				}
+				md.lg.Info(
+					"found security IP permission",
+					zap.String("security-group-id", md.cfg.ClusterState.CFStackWorkerNodeGroupSecurityGroupID),
+					zap.Int64("from-port", fromPort),
+					zap.Int64("to-port", toPort),
+					zap.String("cidr-ip", rg),
+				)
+				if fromPort == 22 && toPort == 22 && rg == "0.0.0.0/0" {
+					foundSSHAccess = true
+					break
+				}
+			}
+			if !foundSSHAccess {
+				return fmt.Errorf("expected SSH access enabled, got %+v", sg.IpPermissions)
 			}
 		}
 
-		md.cfg.Sync()
-		md.lg.Info("creating worker node", zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")))
-
+		md.lg.Info(
+			"worker node creation in progress",
+			zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
+		)
 		if md.cfg.ClusterState.CFStackWorkerNodeGroupStatus == "CREATE_COMPLETE" {
 			if err = md.updateASG(); err != nil {
 				md.lg.Warn("failed to check ASG", zap.Error(err))
@@ -384,7 +443,10 @@ func (md *embedded) deleteWorkerNode() error {
 }
 
 func (md *embedded) updateASG() (err error) {
-	md.lg.Info("e2e testing ASG", zap.String("name", md.cfg.ClusterState.CFStackWorkerNodeGroupAutoScalingGroupName))
+	md.lg.Info(
+		"e2e testing ASG",
+		zap.String("name", md.cfg.ClusterState.CFStackWorkerNodeGroupAutoScalingGroupName),
+	)
 
 	var rout *cloudformation.DescribeStackResourcesOutput
 	rout, err = md.cf.DescribeStackResources(&cloudformation.DescribeStackResourcesInput{
@@ -491,7 +553,10 @@ func (md *embedded) updateASG() (err error) {
 	md.cfg.ClusterState.WorkerNodes = ConvertEC2Instances(ec2Instances)
 	md.ec2InstancesMu.Unlock()
 
-	md.lg.Info("e2e tested ASG", zap.String("name", md.cfg.ClusterState.CFStackWorkerNodeGroupAutoScalingGroupName))
+	md.lg.Info(
+		"e2e tested ASG",
+		zap.String("name", md.cfg.ClusterState.CFStackWorkerNodeGroupAutoScalingGroupName),
+	)
 	return nil
 }
 

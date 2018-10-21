@@ -134,53 +134,6 @@ func (md *embedded) createVPC() error {
 		return err
 	}
 
-	if md.cfg.EnableNodeSSH {
-		md.lg.Info(
-			"checking security group",
-			zap.String("security-group-id", md.cfg.ClusterState.CFStackVPCSecurityGroupID),
-		)
-		var sout *ec2.DescribeSecurityGroupsOutput
-		sout, err = md.ec2.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
-			GroupIds: aws.StringSlice([]string{md.cfg.ClusterState.CFStackVPCSecurityGroupID}),
-		})
-		if err != nil {
-			md.lg.Info("failed to describe security group",
-				zap.String("stack-name", md.cfg.ClusterState.CFStackVPCName),
-				zap.String("stack-status", md.cfg.ClusterState.CFStackVPCStatus),
-				zap.String("security-group-id", md.cfg.ClusterState.CFStackVPCSecurityGroupID),
-				zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
-				zap.Error(err),
-			)
-			return err
-		}
-		if len(sout.SecurityGroups) != 1 {
-			return fmt.Errorf("expected 1 security group, got %+v", sout.SecurityGroups)
-		}
-		sg := sout.SecurityGroups[0]
-		foundSSHAccess := false
-		for _, perm := range sg.IpPermissions {
-			fromPort, toPort := *perm.FromPort, *perm.ToPort
-			rg := ""
-			if len(perm.IpRanges) == 1 {
-				rg = perm.IpRanges[0].String()
-			}
-			md.lg.Info(
-				"found security IP permission",
-				zap.String("security-group-id", md.cfg.ClusterState.CFStackVPCSecurityGroupID),
-				zap.Int64("from-port", fromPort),
-				zap.Int64("to-port", toPort),
-				zap.String("cidr-ip", rg),
-			)
-			if fromPort == 22 && toPort == 22 && rg == "0.0.0.0/0" {
-				foundSSHAccess = true
-				break
-			}
-		}
-		if !foundSSHAccess {
-			return fmt.Errorf("expected SSH access enabled, got %+v", sg.IpPermissions)
-		}
-	}
-
 	md.lg.Info("created VPC stack",
 		zap.String("stack-name", md.cfg.ClusterState.CFStackVPCName),
 		zap.String("stack-status", md.cfg.ClusterState.CFStackVPCStatus),
