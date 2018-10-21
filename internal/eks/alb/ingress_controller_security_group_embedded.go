@@ -21,10 +21,11 @@ func (md *embedded) CreateSecurityGroup() error {
 		return errors.New("cannot create security group without VPC stack Subnet IDs")
 	}
 
+	name := md.cfg.ClusterName + "-alb-open-80-443"
 	so, err := md.ec2.CreateSecurityGroup(&ec2.CreateSecurityGroupInput{
-		GroupName:   aws.String(md.cfg.ClusterName + "-alb-open-80-443"),
+		GroupName:   aws.String(name),
 		VpcId:       aws.String(md.cfg.ClusterState.CFStackVPCID),
-		Description: aws.String(md.cfg.ClusterName + "-alb-open-80-443"),
+		Description: aws.String(name),
 	})
 	if err != nil {
 		md.cfg.ALBIngressController.ELBv2SecurityGroupStatus = err.Error()
@@ -33,7 +34,7 @@ func (md *embedded) CreateSecurityGroup() error {
 	}
 	md.cfg.ALBIngressController.ELBv2SecurityGroupIDPortOpen = *so.GroupId
 	md.lg.Info("created security group",
-		zap.String("name", "alb-sg"),
+		zap.String("name", name),
 		zap.String("created-security-group-id", md.cfg.ALBIngressController.ELBv2SecurityGroupIDPortOpen),
 	)
 
