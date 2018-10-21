@@ -195,6 +195,7 @@ type ClusterState struct {
 	// WorkerNodeGroupStatus is the status Kubernetes worker node group.
 	// "READY" when they successfully join the EKS cluster as worker nodes.
 	WorkerNodeGroupStatus string `json:"worker-node-group-status,omitempty"`
+
 	// CFStackWorkerNodeGroupStatus is the last cloudformation status of node group stack.
 	CFStackWorkerNodeGroupStatus string `json:"cf-stack-worker-node-group-status,omitempty"`
 	// CFStackWorkerNodeGroupKeyPairName is required for node group creation.

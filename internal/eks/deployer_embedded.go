@@ -54,13 +54,14 @@ type embedded struct {
 	kubectl     exec.Interface
 	kubectlPath string
 
-	ss  *session.Session
-	im  iamiface.IAMAPI
-	sts stsiface.STSAPI
-	cf  cloudformationiface.CloudFormationAPI
-	asg autoscalingiface.AutoScalingAPI
-	eks eksiface.EKSAPI
-	ec2 ec2iface.EC2API
+	ss           *session.Session
+	im           iamiface.IAMAPI
+	sts          stsiface.STSAPI
+	cf           cloudformationiface.CloudFormationAPI
+	asg          autoscalingiface.AutoScalingAPI
+	eks          eksiface.EKSAPI
+	ec2          ec2iface.EC2API
+	ec2Instances []*ec2.Instance
 
 	s3Plugin s3.Plugin
 

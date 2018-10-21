@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aws/aws-sdk-go/service/autoscaling"
-
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/autoscaling"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
+	"github.com/aws/aws-sdk-go/service/ec2"
 	humanize "github.com/dustin/go-humanize"
 	"go.uber.org/zap"
 )
@@ -383,6 +383,8 @@ func (md *embedded) deleteWorkerNode() error {
 }
 
 func (md *embedded) updateASG() (err error) {
+	md.lg.Info("e2e testing ASG", zap.String("name", md.cfg.ClusterState.CFStackWorkerNodeGroupAutoScalingGroupName))
+
 	var rout *cloudformation.DescribeStackResourcesOutput
 	rout, err = md.cf.DescribeStackResources(&cloudformation.DescribeStackResourcesInput{
 		StackName: aws.String(md.cfg.ClusterState.CFStackWorkerNodeGroupName),
@@ -407,6 +409,8 @@ func (md *embedded) updateASG() (err error) {
 		return errors.New("can't find physical resource ID for ASG")
 	}
 
+	time.Sleep(5 * time.Second)
+
 	var aout *autoscaling.DescribeAutoScalingGroupsOutput
 	aout, err = md.asg.DescribeAutoScalingGroups(&autoscaling.DescribeAutoScalingGroupsInput{
 		AutoScalingGroupNames: aws.StringSlice([]string{md.cfg.ClusterState.CFStackWorkerNodeGroupAutoScalingGroupName}),
@@ -418,8 +422,6 @@ func (md *embedded) updateASG() (err error) {
 		return fmt.Errorf("expected only 1 ASG, got %+v", aout.AutoScalingGroups)
 	}
 	asg := aout.AutoScalingGroups[0]
-
-	md.lg.Info("e2e testing ASG", zap.String("name", md.cfg.ClusterState.CFStackWorkerNodeGroupAutoScalingGroupName))
 
 	if *asg.MinSize != int64(md.cfg.WorkderNodeASGMin) {
 		return fmt.Errorf("ASG min size expected %d, got %d", md.cfg.WorkderNodeASGMin, *asg.MinSize)
@@ -439,7 +441,48 @@ func (md *embedded) updateASG() (err error) {
 	if healthCnt != len(asg.Instances) {
 		return fmt.Errorf("instances health count expected %d, got %d", len(asg.Instances), healthCnt)
 	}
-	// md.instances = asg.Instances
+	ids := make([]string, 0, len(asg.Instances))
+	for _, iv := range asg.Instances {
+		ids = append(ids, *iv.InstanceId)
+	}
+
+	time.Sleep(3 * time.Second)
+
+	// batch by 10
+	for len(ids) > 0 {
+		iss := ids
+		if len(ids) > 10 {
+			iss = ids[:10]
+		}
+		var dout *ec2.DescribeInstancesOutput
+		dout, err = md.ec2.DescribeInstances(&ec2.DescribeInstancesInput{
+			InstanceIds: aws.StringSlice(iss),
+		})
+		if err != nil {
+			return fmt.Errorf("failed to describe instances %v", err)
+		}
+		if len(dout.Reservations) != 1 {
+			return fmt.Errorf("ec2 DescribeInstances returned len(Reservations) %d", len(dout.Reservations))
+		}
+		md.ec2Instances = append(md.ec2Instances, dout.Reservations[0].Instances...)
+
+		runningCnt := 0
+		for _, iv := range dout.Reservations[0].Instances {
+			if *iv.State.Name == "running" {
+				runningCnt++
+			}
+		}
+		if runningCnt != len(dout.Reservations[0].Instances) {
+			return fmt.Errorf("running instances expected %d, got %d", len(dout.Reservations[0].Instances), runningCnt)
+		}
+		md.lg.Info("EC2 instances are running", zap.Int("instances-so-far", len(md.ec2Instances)))
+
+		if len(ids) <= 10 {
+			break
+		}
+		ids = ids[:10]
+		time.Sleep(5 * time.Second)
+	}
 
 	md.lg.Info("e2e tested ASG", zap.String("name", md.cfg.ClusterState.CFStackWorkerNodeGroupAutoScalingGroupName))
 	return nil
