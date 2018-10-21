@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/autoscaling"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/awstester/eksconfig"
 	humanize "github.com/dustin/go-humanize"
 	"go.uber.org/zap"
 )
@@ -448,6 +449,7 @@ func (md *embedded) updateASG() (err error) {
 
 	time.Sleep(3 * time.Second)
 
+	ec2Instances := make([]*ec2.Instance, 0, len(ids))
 	// batch by 10
 	for len(ids) > 0 {
 		iss := ids
@@ -464,7 +466,7 @@ func (md *embedded) updateASG() (err error) {
 		if len(dout.Reservations) != 1 {
 			return fmt.Errorf("ec2 DescribeInstances returned len(Reservations) %d", len(dout.Reservations))
 		}
-		md.ec2Instances = append(md.ec2Instances, dout.Reservations[0].Instances...)
+		ec2Instances = append(ec2Instances, dout.Reservations[0].Instances...)
 
 		runningCnt := 0
 		for _, iv := range dout.Reservations[0].Instances {
@@ -475,7 +477,7 @@ func (md *embedded) updateASG() (err error) {
 		if runningCnt != len(dout.Reservations[0].Instances) {
 			return fmt.Errorf("running instances expected %d, got %d", len(dout.Reservations[0].Instances), runningCnt)
 		}
-		md.lg.Info("EC2 instances are running", zap.Int("instances-so-far", len(md.ec2Instances)))
+		md.lg.Info("EC2 instances are running", zap.Int("instances-so-far", len(ec2Instances)))
 
 		if len(ids) <= 10 {
 			break
@@ -484,6 +486,60 @@ func (md *embedded) updateASG() (err error) {
 		time.Sleep(5 * time.Second)
 	}
 
+	md.ec2Mu.Lock()
+	md.ec2Instances = ec2Instances
+	md.cfg.ClusterState.WorkerNodes = ConvertEC2Instances(ec2Instances)
+	md.ec2Mu.Unlock()
+
 	md.lg.Info("e2e tested ASG", zap.String("name", md.cfg.ClusterState.CFStackWorkerNodeGroupAutoScalingGroupName))
 	return nil
+}
+
+// ConvertEC2Instances converts "aws ec2 describe-instances" to "eksconfig.Instance".
+func ConvertEC2Instances(iss []*ec2.Instance) (instances []eksconfig.Instance) {
+	instances = make([]eksconfig.Instance, len(iss))
+	for i, v := range iss {
+		instances[i] = eksconfig.Instance{
+			ImageID:      *v.ImageId,
+			InstanceID:   *v.InstanceId,
+			InstanceType: *v.InstanceType,
+			KeyName:      *v.KeyName,
+			Placement: eksconfig.EC2Placement{
+				AvailabilityZone: *v.Placement.AvailabilityZone,
+				Tenancy:          *v.Placement.Tenancy,
+			},
+			PrivateDNSName: *v.PrivateDnsName,
+			PrivateIP:      *v.PrivateIpAddress,
+			PublicDNSName:  *v.PublicDnsName,
+			PublicIP:       *v.PublicIpAddress,
+			EC2State: eksconfig.EC2State{
+				Code: *v.State.Code,
+				Name: *v.State.Name,
+			},
+			SubnetID:               *v.SubnetId,
+			VPCID:                  *v.VpcId,
+			EC2BlockDeviceMappings: make([]eksconfig.EC2BlockDeviceMapping, len(v.BlockDeviceMappings)),
+			EBSOptimized:           *v.EbsOptimized,
+			RootDeviceName:         *v.RootDeviceName,
+			RootDeviceType:         *v.RootDeviceType,
+			SecurityGroups:         make([]eksconfig.EC2SecurityGroup, len(v.SecurityGroups)),
+		}
+		for j := range v.BlockDeviceMappings {
+			instances[i].EC2BlockDeviceMappings[j] = eksconfig.EC2BlockDeviceMapping{
+				DeviceName: *v.BlockDeviceMappings[j].DeviceName,
+				EBS: eksconfig.EBS{
+					DeleteOnTermination: *v.BlockDeviceMappings[j].Ebs.DeleteOnTermination,
+					Status:              *v.BlockDeviceMappings[j].Ebs.Status,
+					VolumeID:            *v.BlockDeviceMappings[j].Ebs.VolumeId,
+				},
+			}
+		}
+		for j := range v.SecurityGroups {
+			instances[i].SecurityGroups[j] = eksconfig.EC2SecurityGroup{
+				GroupName: *v.SecurityGroups[j].GroupName,
+				GroupID:   *v.SecurityGroups[j].GroupId,
+			}
+		}
+	}
+	return instances
 }

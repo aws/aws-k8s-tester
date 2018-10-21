@@ -16,9 +16,7 @@ import (
 	"github.com/aws/awstester/internal/eks/alb/ingress/client"
 	"github.com/aws/awstester/internal/eks/alb/ingress/path"
 	"github.com/aws/awstester/internal/eks/s3"
-	"github.com/aws/awstester/internal/ssh"
 	"github.com/aws/awstester/pkg/awsapi"
-	"github.com/aws/awstester/pkg/fileutil"
 	"github.com/aws/awstester/pkg/httputil"
 	"github.com/aws/awstester/pkg/wrk"
 	"github.com/aws/awstester/pkg/zaputil"
@@ -56,14 +54,17 @@ type embedded struct {
 	kubectl     exec.Interface
 	kubectlPath string
 
-	ss           *session.Session
-	im           iamiface.IAMAPI
-	sts          stsiface.STSAPI
-	cf           cloudformationiface.CloudFormationAPI
-	asg          autoscalingiface.AutoScalingAPI
-	eks          eksiface.EKSAPI
-	ec2          ec2iface.EC2API
+	ss  *session.Session
+	im  iamiface.IAMAPI
+	sts stsiface.STSAPI
+	cf  cloudformationiface.CloudFormationAPI
+	asg autoscalingiface.AutoScalingAPI
+	eks eksiface.EKSAPI
+	ec2 ec2iface.EC2API
+
+	ec2Mu        *sync.Mutex
 	ec2Instances []*ec2.Instance
+	ec2Logs      map[string]string
 
 	s3Plugin s3.Plugin
 
@@ -93,6 +94,7 @@ func NewEKSDeployer(cfg *eksconfig.Config) (eksdeployer.Interface, error) {
 		lg:      lg,
 		cfg:     cfg,
 		kubectl: exec.New(),
+		ec2Mu:   &sync.Mutex{},
 	}
 	md.kubectlPath, err = md.kubectl.LookPath("kubectl")
 	if err != nil {
@@ -401,6 +403,9 @@ func (md *embedded) Down() (err error) {
 
 	var errs []string
 	md.lg.Info("Down", zap.String("cluster-name", md.cfg.ClusterName))
+	if err = md.uploadWorkerNode(); err != nil {
+		md.lg.Warn("failed to upload worker node logs", zap.Error(err))
+	}
 	if md.cfg.ALBIngressController.Enable && md.cfg.ALBIngressController.Created {
 		if err = md.albPlugin.DeleteIngressObjects(); err != nil {
 			md.lg.Warn("failed to delete ALB Ingress Controller ELBv2", zap.Error(err))
@@ -679,138 +684,19 @@ func (md *embedded) upload() (err error) {
 	return nil
 }
 
-// https://github.com/kubernetes/test-infra/blob/master/kubetest/dump.go
-func (md *embedded) getWorkerNodeLogs() (paths map[string]string, err error) {
-	if !md.cfg.EnableNodeSSH {
-		return nil, errors.New("node SSH is not enabled")
-	}
-
-	paths = make(map[string]string)
-	for _, iv := range md.ec2Instances {
-		id, ip := *iv.InstanceId, *iv.PublicIpAddress
-
-		var sh ssh.SSH
-		sh, err = ssh.New(ssh.Config{
-			Logger:   md.lg,
-			KeyPath:  md.cfg.ClusterState.CFStackWorkerNodeGroupKeyPairPrivateKeyPath,
-			Addr:     ip + ":22",
-			UserName: "ubuntu",
-		})
-		if err != nil {
-			md.lg.Warn(
-				"failed to create SSH",
-				zap.String("instance-id", id),
-				zap.String("public-ip", ip),
-				zap.Error(err),
-			)
-			return nil, err
-		}
-		if err = sh.Connect(); err != nil {
-			md.lg.Warn(
-				"failed to connect",
-				zap.String("instance-id", id),
-				zap.String("public-ip", ip),
-				zap.Error(err),
-			)
-			return nil, err
-		}
-
-		var out []byte
-		var fpath string
-
-		md.lg.Info(
-			"fetching kube-proxy logs",
-			zap.String("instance-id", id),
-			zap.String("public-ip", ip),
-		)
-		// https://github.com/awslabs/amazon-eks-ami/blob/master/files/logrotate-kube-proxy
-		kubeProxyCmd := "cat /var/log/kube-proxy.log"
-		out, err = sh.Run(kubeProxyCmd)
-		if err != nil {
-			sh.Close()
-			md.lg.Warn(
-				"failed to run command",
-				zap.String("cmd", kubeProxyCmd),
-				zap.String("instance-id", id),
-				zap.String("public-ip", ip),
-				zap.Error(err),
-			)
-			return nil, err
-		}
-		fpath, err = fileutil.WriteTempFile(out)
-		if err != nil {
-			sh.Close()
-			md.lg.Warn(
-				"failed to write output",
-				zap.String("instance-id", id),
-				zap.String("public-ip", ip),
-				zap.Error(err),
-			)
-			return nil, err
-		}
-		paths[fpath] = strings.ToLower(strings.TrimSpace(fmt.Sprintf("kube-proxy-%s-%s.log", id, ip)))
-
-		md.lg.Info(
-			"fetch kubelet.service logs",
-			zap.String("instance-id", id),
-			zap.String("public-ip", ip),
-		)
-		// https://github.com/awslabs/amazon-eks-ami/blob/master/files/kubelet.service
-		kubeletCmd := ""
-		out, err = sh.Run(kubeletCmd)
-		if err != nil {
-			sh.Close()
-			md.lg.Warn(
-				"failed to run command",
-				zap.String("cmd", kubeletCmd),
-				zap.String("instance-id", id),
-				zap.String("public-ip", ip),
-				zap.Error(err),
-			)
-			return nil, err
-		}
-		fpath, err = fileutil.WriteTempFile(out)
-		if err != nil {
-			sh.Close()
-			md.lg.Warn(
-				"failed to write output",
-				zap.String("instance-id", id),
-				zap.String("public-ip", ip),
-				zap.Error(err),
-			)
-			return nil, err
-		}
-		paths[fpath] = strings.ToLower(strings.TrimSpace(fmt.Sprintf("kubelet-%s-%s.log", id, ip)))
-
-		// kernel logs
-		// TODO
-
-		// full journal logs (e.g. disk mounts)
-		// TODO
-
-		// other systemd services
-		// TODO
-
-		// other /var/log
-		// TODO
-
-		sh.Close()
-	}
-
-	return paths, nil
-}
-
 func (md *embedded) uploadWorkerNode() (err error) {
 	if !md.cfg.EnableNodeSSH {
 		return nil
 	}
 
-	var paths map[string]string
-	paths, err = md.getWorkerNodeLogs()
+	err = md.getWorkerNodeLogs()
 	if err != nil {
 		return err
 	}
-	for fpath, s3Path := range paths {
+
+	md.ec2Mu.Lock()
+	defer md.ec2Mu.Unlock()
+	for fpath, s3Path := range md.ec2Logs {
 		err = md.s3Plugin.UploadToBucketForTests(fpath, s3Path)
 		if err != nil {
 			return err
