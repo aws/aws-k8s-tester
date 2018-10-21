@@ -6,8 +6,9 @@ See [code changes](https://github.com/aws/awstester/compare/0.0.1...0.0.2).
 
 ### `eksconfig`
 
-- Add [`eksconfig.Config.WorkerNodes`](https://github.com/aws/awstester/pull/1) field.
+- Add [`eksconfig.ClusterState.WorkerNodes`](https://github.com/aws/awstester/pull/1) field.
   - Add [`eksconfig.Instance`](https://github.com/aws/awstester/pull/1) to represent worker node.
+- Add [`eksconfig.ClusterState.WorkerNodeLogs`](https://github.com/aws/awstester/pull/1) field.
 - Add [`eksconfig.Config.EnableNodeSSH`](https://github.com/aws/awstester/pull/1) field.
   - If true, worker node exposes port :22 for SSH access.
 - Rename [`eksconfig.ClusterState.EC2NodeGroupStatus` to `eksconfig.ClusterState.WorkerNodeGroupStatus`](https://github.com/aws/awstester/pull/1).
