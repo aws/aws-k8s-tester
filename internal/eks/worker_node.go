@@ -26,10 +26,6 @@ import (
 )
 
 // https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html
-// https://github.com/awslabs/amazon-eks-ami/blob/master/amazon-eks-nodegroup.yaml
-const nodeGroupStackTemplateURL = "https://amazon-eks.s3-us-west-2.amazonaws.com/cloudformation/2018-08-30/amazon-eks-nodegroup.yaml"
-
-// https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html
 const configMapNodeAuthTempl = `---
 apiVersion: v1
 kind: ConfigMap

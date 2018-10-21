@@ -23,11 +23,35 @@ func (md *embedded) createWorkerNode() error {
 	}
 
 	now := time.Now().UTC()
-
 	h, _ := os.Hostname()
-	_, err := md.cf.CreateStack(&cloudformation.CreateStackInput{
-		StackName:   aws.String(md.cfg.ClusterState.CFStackNodeGroupName),
-		TemplateURL: aws.String(nodeGroupStackTemplateURL),
+	v := workerNodeStack{
+		Description:   md.cfg.ClusterName + "-worker-node-stack",
+		TagKey:        md.cfg.Tag,
+		TagValue:      md.cfg.ClusterName,
+		Hostname:      h,
+		EnableNodeSSH: false,
+	}
+	s, err := createWorkerNodeTemplate(v)
+	if err != nil {
+		return err
+	}
+
+	_, err = md.cf.CreateStack(&cloudformation.CreateStackInput{
+		StackName: aws.String(md.cfg.ClusterState.CFStackNodeGroupName),
+		Tags: []*cloudformation.Tag{
+			{
+				Key:   aws.String(md.cfg.Tag),
+				Value: aws.String(md.cfg.ClusterName),
+			},
+			{
+				Key:   aws.String("HOSTNAME"),
+				Value: aws.String(h),
+			},
+		},
+
+		// TemplateURL: aws.String("https://amazon-eks.s3-us-west-2.amazonaws.com/cloudformation/2018-08-30/amazon-eks-nodegroup.yaml"),
+		TemplateBody: aws.String(s),
+
 		Parameters: []*cloudformation.Parameter{
 			{
 				ParameterKey:   aws.String("ClusterName"),
@@ -74,17 +98,8 @@ func (md *embedded) createWorkerNode() error {
 				ParameterValue: aws.String(md.cfg.ClusterState.CFStackVPCSecurityGroupID),
 			},
 		},
+
 		Capabilities: aws.StringSlice([]string{"CAPABILITY_IAM"}),
-		Tags: []*cloudformation.Tag{
-			{
-				Key:   aws.String(md.cfg.Tag),
-				Value: aws.String(md.cfg.ClusterName),
-			},
-			{
-				Key:   aws.String("HOSTNAME"),
-				Value: aws.String(h),
-			},
-		},
 	})
 	if err != nil {
 		return err
