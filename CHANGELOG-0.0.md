@@ -12,6 +12,7 @@ See [code changes](https://github.com/aws/awstester/compare/0.0.1...0.0.2).
   - If true, worker node exposes port :22 for SSH access.
 - Rename [`eksconfig.ClusterState.EC2NodeGroupStatus` to `eksconfig.ClusterState.WorkerNodeGroupStatus`](https://github.com/aws/awstester/pull/1).
 - Rename [`eksconfig.ClusterState.CFStackNode*` to `eksconfig.ClusterState.CFStackWorkerNode*`](https://github.com/aws/awstester/pull/1).
+- Remove [`KubetestEnableDumpClusterLogs`](https://github.com/aws/awstester/pull/1) field.
 
 ### `eksdeployer`
 

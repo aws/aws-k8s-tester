@@ -23,10 +23,6 @@ type Config struct {
 	KubetestVerbose bool `json:"kubetest-verbose"`
 	// KubetestControlTimeout is the timeout value for each kubetest commands (e.g. Up, Down, etc.).
 	KubetestControlTimeout time.Duration `json:"kubetest-control-timeout"`
-	// KubetestEnableDumpClusterLogs is true to enable kubetest.DumpClusterLogs.
-	// 'false' by default and let default kubetest log dumper handle all artifact uploads.
-	// See https://github.com/kubernetes/test-infra/pull/9811/files#r225776067.
-	KubetestEnableDumpClusterLogs bool `json:"kubetest-enable-dump-cluster-logs"`
 
 	// AWSTesterImage is the awstester container image.
 	// Required for "awstester ingress server" for ALB Ingress Controller tests.

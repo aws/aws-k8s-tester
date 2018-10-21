@@ -510,7 +510,8 @@ func (md *embedded) GetClusterCreated(v string) (time.Time, error) {
 }
 
 func (md *embedded) DumpClusterLogs(localPath, remotePath string) error {
-	return md.s3Plugin.UploadToBucketForTests(localPath, remotePath)
+	// TODO
+	return nil
 }
 
 func (md *embedded) UploadToBucketForTests(localPath, remotePath string) error {

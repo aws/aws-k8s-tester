@@ -13,10 +13,9 @@ func NewDefault() *Config {
 //  - omitting an entire field returns nil value
 //  - make sure to check both
 var defaultConfig = Config{
-	KubekinsE2E:                   "PLEASE-UPDATE/kubekins-e2e:PLEASE-UPDATE",
-	KubetestVerbose:               true,
-	KubetestControlTimeout:        3 * time.Hour,
-	KubetestEnableDumpClusterLogs: false,
+	KubekinsE2E:            "PLEASE-UPDATE/kubekins-e2e:PLEASE-UPDATE",
+	KubetestVerbose:        true,
+	KubetestControlTimeout: 3 * time.Hour,
 
 	ConfigPath: "test.yaml",
 

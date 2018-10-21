@@ -1,6 +1,7 @@
 package eks
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"strings"
@@ -24,6 +25,7 @@ func (md *embedded) getWorkerNodeLogs() (err error) {
 
 	for _, iv := range md.ec2Instances {
 		id, ip := *iv.InstanceId, *iv.PublicIpAddress
+		pfx := strings.TrimSpace(fmt.Sprintf("%s-%s", id, ip))
 
 		var sh ssh.SSH
 		sh, err = ssh.New(ssh.Config{
@@ -53,6 +55,7 @@ func (md *embedded) getWorkerNodeLogs() (err error) {
 
 		var out []byte
 		var fpath string
+		var cmd string
 
 		// https://github.com/awslabs/amazon-eks-ami/blob/master/files/logrotate-kube-proxy
 		md.lg.Info(
@@ -60,15 +63,15 @@ func (md *embedded) getWorkerNodeLogs() (err error) {
 			zap.String("instance-id", id),
 			zap.String("public-ip", ip),
 		)
-		kubeProxyCmd := "cat /var/log/kube-proxy.log"
-		out, err = sh.Run(kubeProxyCmd)
+		cmd = "cat /var/log/kube-proxy.log"
+		out, err = sh.Run(cmd)
 		if err != nil {
 			sh.Close()
 			md.lg.Warn(
 				"failed to run command",
-				zap.String("cmd", kubeProxyCmd),
 				zap.String("instance-id", id),
 				zap.String("public-ip", ip),
+				zap.String("cmd", cmd),
 				zap.Error(err),
 			)
 			return err
@@ -84,23 +87,23 @@ func (md *embedded) getWorkerNodeLogs() (err error) {
 			)
 			return err
 		}
-		paths[fpath] = strings.ToLower(strings.TrimSpace(fmt.Sprintf("kube-proxy-%s-%s.log", id, ip)))
+		paths[fpath] = pfx + ".kube-proxy.log"
 
-		// https://github.com/awslabs/amazon-eks-ami/blob/master/files/kubelet.service
+		// kernel logs
 		md.lg.Info(
-			"fetching kubelet.service logs",
+			"fetching kernel logs",
 			zap.String("instance-id", id),
 			zap.String("public-ip", ip),
 		)
-		kubeletCmd := ""
-		out, err = sh.Run(kubeletCmd)
+		cmd = "sudo journalctl --output=short-precise -k"
+		out, err = sh.Run(cmd)
 		if err != nil {
 			sh.Close()
 			md.lg.Warn(
 				"failed to run command",
-				zap.String("cmd", kubeletCmd),
 				zap.String("instance-id", id),
 				zap.String("public-ip", ip),
+				zap.String("cmd", cmd),
 				zap.Error(err),
 			)
 			return err
@@ -116,19 +119,162 @@ func (md *embedded) getWorkerNodeLogs() (err error) {
 			)
 			return err
 		}
-		paths[fpath] = strings.ToLower(strings.TrimSpace(fmt.Sprintf("kubelet-%s-%s.log", id, ip)))
-
-		// kernel logs
-		// TODO
+		paths[fpath] = pfx + ".kernel.log"
 
 		// full journal logs (e.g. disk mounts)
-		// TODO
+		md.lg.Info(
+			"fetching journal logs",
+			zap.String("instance-id", id),
+			zap.String("public-ip", ip),
+		)
+		cmd = "sudo journalctl --output=short-precise"
+		out, err = sh.Run(cmd)
+		if err != nil {
+			sh.Close()
+			md.lg.Warn(
+				"failed to run command",
+				zap.String("instance-id", id),
+				zap.String("public-ip", ip),
+				zap.String("cmd", cmd),
+				zap.Error(err),
+			)
+			return err
+		}
+		fpath, err = fileutil.WriteTempFile(out)
+		if err != nil {
+			sh.Close()
+			md.lg.Warn(
+				"failed to write output",
+				zap.String("instance-id", id),
+				zap.String("public-ip", ip),
+				zap.Error(err),
+			)
+			return err
+		}
+		paths[fpath] = pfx + ".journal.log"
 
 		// other systemd services
-		// TODO
+		md.lg.Info(
+			"fetching all systemd services",
+			zap.String("instance-id", id),
+			zap.String("public-ip", ip),
+		)
+		cmd = "sudo journalctl --output=short-precise"
+		out, err = sh.Run(cmd)
+		if err != nil {
+			sh.Close()
+			md.lg.Warn(
+				"failed to run command",
+				zap.String("instance-id", id),
+				zap.String("public-ip", ip),
+				zap.String("cmd", cmd),
+				zap.Error(err),
+			)
+			return err
+		}
+		var svcs []string
+		for _, line := range strings.Split(string(out), "\n") {
+			tokens := strings.Fields(line)
+			if len(tokens) == 0 || tokens[0] == "" {
+				continue
+			}
+			svcs = append(svcs, tokens[0])
+		}
+		for _, svc := range svcs {
+			name := svc + ".service"
+			md.lg.Info(
+				"fetching systemd service log",
+				zap.String("instance-id", id),
+				zap.String("public-ip", ip),
+				zap.String("name", name),
+			)
+			cmd = "sudo journalctl --output=cat -u " + name
+			out, err = sh.Run(cmd)
+			if err != nil {
+				sh.Close()
+				md.lg.Warn(
+					"failed to run command",
+					zap.String("instance-id", id),
+					zap.String("public-ip", ip),
+					zap.String("cmd", cmd),
+					zap.Error(err),
+				)
+				return err
+			}
+			fpath, err = fileutil.WriteTempFile(out)
+			if err != nil {
+				sh.Close()
+				md.lg.Warn(
+					"failed to write output",
+					zap.String("instance-id", id),
+					zap.String("public-ip", ip),
+					zap.Error(err),
+				)
+				return err
+			}
+			paths[fpath] = pfx + "." + name + ".log"
+		}
 
 		// other /var/log
-		// TODO
+		md.lg.Info(
+			"fetching all /var/log",
+			zap.String("instance-id", id),
+			zap.String("public-ip", ip),
+		)
+		cmd = "sudo find /var/log -print0"
+		out, err = sh.Run(cmd)
+		if err != nil {
+			sh.Close()
+			md.lg.Warn(
+				"failed to run command",
+				zap.String("instance-id", id),
+				zap.String("public-ip", ip),
+				zap.String("cmd", cmd),
+				zap.Error(err),
+			)
+			return err
+		}
+		var logPaths []string
+		for _, v := range bytes.Split(out, []byte{0}) {
+			if len(v) == 0 {
+				// last value
+				continue
+			}
+			logPaths = append(logPaths, string(v))
+		}
+		for _, p := range logPaths {
+			md.lg.Info(
+				"fetching /var/log",
+				zap.String("instance-id", id),
+				zap.String("public-ip", ip),
+				zap.String("path", p),
+			)
+			cmd = "sudo cat" + p
+			out, err = sh.Run(cmd)
+			if err != nil {
+				sh.Close()
+				md.lg.Warn(
+					"failed to run command",
+					zap.String("cmd", cmd),
+					zap.String("instance-id", id),
+					zap.String("public-ip", ip),
+					zap.Error(err),
+				)
+				return err
+			}
+			fpath, err = fileutil.WriteTempFile(out)
+			if err != nil {
+				sh.Close()
+				md.lg.Warn(
+					"failed to write output",
+					zap.String("instance-id", id),
+					zap.String("public-ip", ip),
+					zap.Error(err),
+				)
+				return err
+			}
+			paths[fpath] = pfx + "." + p
+		}
 
 		sh.Close()
 	}
@@ -136,3 +282,38 @@ func (md *embedded) getWorkerNodeLogs() (err error) {
 	md.ec2Logs = paths
 	return nil
 }
+
+/*
+// https://github.com/awslabs/amazon-eks-ami/blob/master/files/kubelet.service
+
+md.lg.Info(
+	"fetching kubelet.service logs",
+	zap.String("instance-id", id),
+	zap.String("public-ip", ip),
+)
+kubeletCmd := ""
+out, err = sh.Run(kubeletCmd)
+if err != nil {
+	sh.Close()
+	md.lg.Warn(
+		"failed to run command",
+		zap.String("cmd", kubeletCmd),
+		zap.String("instance-id", id),
+		zap.String("public-ip", ip),
+		zap.Error(err),
+	)
+	return err
+}
+fpath, err = fileutil.WriteTempFile(out)
+if err != nil {
+	sh.Close()
+	md.lg.Warn(
+		"failed to write output",
+		zap.String("instance-id", id),
+		zap.String("public-ip", ip),
+		zap.Error(err),
+	)
+	return err
+}
+paths[fpath] = strings.ToLower(strings.TrimSpace(fmt.Sprintf("%s-%s.kubelet.log", id, ip)))
+*/
