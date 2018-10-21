@@ -54,6 +54,12 @@ func TestEC2SSH(t *testing.T) {
 	}
 	fmt.Println("out2:", string(out))
 
+	out, err = sh.Run("curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone")
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Println("out3:", string(out))
+
 	notifier := make(chan os.Signal, 1)
 	signal.Notify(notifier, syscall.SIGINT, syscall.SIGTERM)
 	fmt.Println("received:", (<-notifier).String())
