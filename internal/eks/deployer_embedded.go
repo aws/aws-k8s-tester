@@ -23,6 +23,8 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/autoscaling"
+	"github.com/aws/aws-sdk-go/service/autoscaling/autoscalingiface"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/cloudformation/cloudformationiface"
 	"github.com/aws/aws-sdk-go/service/ec2"
@@ -56,6 +58,7 @@ type embedded struct {
 	im  iamiface.IAMAPI
 	sts stsiface.STSAPI
 	cf  cloudformationiface.CloudFormationAPI
+	asg autoscalingiface.AutoScalingAPI
 	eks eksiface.EKSAPI
 	ec2 ec2iface.EC2API
 
@@ -110,6 +113,7 @@ func NewEKSDeployer(cfg *eksconfig.Config) (eksdeployer.Interface, error) {
 	md.im = iam.New(md.ss)
 	md.sts = sts.New(md.ss)
 	md.cf = cloudformation.New(md.ss)
+	md.asg = autoscaling.New(md.ss)
 	md.eks = awseks.New(md.ss)
 	md.ec2 = ec2.New(md.ss)
 	md.s3Plugin = s3.NewEmbedded(md.lg, md.cfg, awss3.New(md.ss))

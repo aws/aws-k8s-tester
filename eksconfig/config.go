@@ -192,24 +192,26 @@ type ClusterState struct {
 	// CA is the EKS cluster CA, required for KUBECONFIG write.
 	CA string `json:"ca,omitempty"`
 
-	// CFStackNodeGroupStatus is the last cloudformation status of node group stack.
-	CFStackNodeGroupStatus string `json:"cf-stack-node-group-status,omitempty"`
-	// EC2NodeGroupStatus is the status of EC2 node group.
+	// WorkerNodeGroupStatus is the status Kubernetes worker node group.
 	// "READY" when they successfully join the EKS cluster as worker nodes.
-	EC2NodeGroupStatus string `json:"ec2-node-group-status,omitempty"`
-	// CFStackNodeGroupKeyPairName is required for node group creation.
-	CFStackNodeGroupKeyPairName string `json:"cf-stack-node-group-key-pair-name,omitempty"`
-	// CFStackNodeGroupKeyPairPrivateKeyPath is the file path to store node group key pair private key.
+	WorkerNodeGroupStatus string `json:"worker-node-group-status,omitempty"`
+	// CFStackWorkerNodeGroupStatus is the last cloudformation status of node group stack.
+	CFStackWorkerNodeGroupStatus string `json:"cf-stack-worker-node-group-status,omitempty"`
+	// CFStackWorkerNodeGroupKeyPairName is required for node group creation.
+	CFStackWorkerNodeGroupKeyPairName string `json:"cf-stack-worker-node-group-key-pair-name,omitempty"`
+	// CFStackWorkerNodeGroupKeyPairPrivateKeyPath is the file path to store node group key pair private key.
 	// Thus, deployer must delete the private key right after node group creation.
 	// MAKE SURE PRIVATE KEY NEVER GETS UPLOADED TO CLOUD STORAGE AND DLETE AFTER USE!!!
-	CFStackNodeGroupKeyPairPrivateKeyPath string `json:"cf-stack-node-group-key-pair-private-key-path,omitempty"`
-	// CFStackNodeGroupName is the name of cloudformation stack for worker node group.
-	CFStackNodeGroupName string `json:"cf-stack-node-group-name,omitempty"`
+	CFStackWorkerNodeGroupKeyPairPrivateKeyPath string `json:"cf-stack-worker-node-group-key-pair-private-key-path,omitempty"`
+	// CFStackWorkerNodeGroupName is the name of cloudformation stack for worker node group.
+	CFStackWorkerNodeGroupName string `json:"cf-stack-worker-node-group-name,omitempty"`
+	// CFStackWorkerNodeGroupAutoScalingGroupName is the name of worker node auto scaling group.
+	CFStackWorkerNodeGroupAutoScalingGroupName string `json:"cf-stack-worker-node-group-auto-scaling-group-name,omitempty"`
 
-	// CFStackNodeGroupWorkerNodeInstanceRoleARN is the ARN of NodeInstance role of node group.
+	// CFStackWorkerNodeGroupWorkerNodeInstanceRoleARN is the ARN of NodeInstance role of node group.
 	// Required to enable worker nodes to join cluster.
 	// Update this after creating node group stack
-	CFStackNodeGroupWorkerNodeInstanceRoleARN string `json:"cf-stack-node-group-worker-node-instance-role-arn,omitempty"`
+	CFStackWorkerNodeGroupWorkerNodeInstanceRoleARN string `json:"cf-stack-worker-node-group-worker-node-instance-role-arn,omitempty"`
 }
 
 const (
@@ -498,13 +500,13 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	cfg.ClusterState.ServiceRoleWithPolicyName = genServiceRoleWithPolicy(cfg.ClusterName)
 	cfg.ClusterState.ServiceRolePolicies = []string{serviceRolePolicyARNCluster, serviceRolePolicyARNService}
 	cfg.ClusterState.CFStackVPCName = genCFStackVPC(cfg.ClusterName)
-	cfg.ClusterState.CFStackNodeGroupKeyPairName = genNodeGroupKeyPairName(cfg.ClusterName)
+	cfg.ClusterState.CFStackWorkerNodeGroupKeyPairName = genNodeGroupKeyPairName(cfg.ClusterName)
 	// SECURITY NOTE: MAKE SURE PRIVATE KEY NEVER GETS UPLOADED TO CLOUD STORAGE AND DLETE AFTER USE!!!
-	cfg.ClusterState.CFStackNodeGroupKeyPairPrivateKeyPath = filepath.Join(
+	cfg.ClusterState.CFStackWorkerNodeGroupKeyPairPrivateKeyPath = filepath.Join(
 		os.TempDir(),
-		cfg.ClusterState.CFStackNodeGroupKeyPairName+".private.key",
+		cfg.ClusterState.CFStackWorkerNodeGroupKeyPairName+".private.key",
 	)
-	cfg.ClusterState.CFStackNodeGroupName = genCFStackNodeGroup(cfg.ClusterName)
+	cfg.ClusterState.CFStackWorkerNodeGroupName = genCFStackWorkerNodeGroup(cfg.ClusterName)
 
 	////////////////////////////////////////////////////////////////////////
 	// populate all paths on disks and on remote storage

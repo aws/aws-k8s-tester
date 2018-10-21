@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aws/aws-sdk-go/service/autoscaling"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	humanize "github.com/dustin/go-humanize"
@@ -15,10 +17,10 @@ import (
 )
 
 func (md *embedded) createWorkerNode() error {
-	if md.cfg.ClusterState.CFStackNodeGroupKeyPairName == "" {
+	if md.cfg.ClusterState.CFStackWorkerNodeGroupKeyPairName == "" {
 		return errors.New("cannot create worker node without key name")
 	}
-	if md.cfg.ClusterState.CFStackNodeGroupName == "" {
+	if md.cfg.ClusterState.CFStackWorkerNodeGroupName == "" {
 		return errors.New("cannot create empty worker node")
 	}
 
@@ -37,7 +39,7 @@ func (md *embedded) createWorkerNode() error {
 	}
 
 	_, err = md.cf.CreateStack(&cloudformation.CreateStackInput{
-		StackName: aws.String(md.cfg.ClusterState.CFStackNodeGroupName),
+		StackName: aws.String(md.cfg.ClusterState.CFStackWorkerNodeGroupName),
 		Tags: []*cloudformation.Tag{
 			{
 				Key:   aws.String(md.cfg.Tag),
@@ -59,11 +61,11 @@ func (md *embedded) createWorkerNode() error {
 			},
 			{
 				ParameterKey:   aws.String("NodeGroupName"),
-				ParameterValue: aws.String(md.cfg.ClusterState.CFStackNodeGroupName),
+				ParameterValue: aws.String(md.cfg.ClusterState.CFStackWorkerNodeGroupName),
 			},
 			{
 				ParameterKey:   aws.String("KeyName"),
-				ParameterValue: aws.String(md.cfg.ClusterState.CFStackNodeGroupKeyPairName),
+				ParameterValue: aws.String(md.cfg.ClusterState.CFStackWorkerNodeGroupKeyPairName),
 			},
 			{
 				ParameterKey:   aws.String("NodeImageId"),
@@ -127,68 +129,71 @@ func (md *embedded) createWorkerNode() error {
 
 		var do *cloudformation.DescribeStacksOutput
 		do, err = md.cf.DescribeStacks(&cloudformation.DescribeStacksInput{
-			StackName: aws.String(md.cfg.ClusterState.CFStackNodeGroupName),
+			StackName: aws.String(md.cfg.ClusterState.CFStackWorkerNodeGroupName),
 		})
 		if err != nil {
 			md.lg.Warn("failed to describe worker node", zap.Error(err))
-			md.cfg.ClusterState.CFStackNodeGroupStatus = err.Error()
+			md.cfg.ClusterState.CFStackWorkerNodeGroupStatus = err.Error()
 			md.cfg.Sync()
 			time.Sleep(5 * time.Second)
 			continue
 		}
 
 		if len(do.Stacks) != 1 {
-			return fmt.Errorf("%q expects 1 Stack, got %v", md.cfg.ClusterState.CFStackNodeGroupName, do.Stacks)
+			return fmt.Errorf("%q expects 1 Stack, got %v", md.cfg.ClusterState.CFStackWorkerNodeGroupName, do.Stacks)
 		}
 
-		md.cfg.ClusterState.CFStackNodeGroupStatus = *do.Stacks[0].StackStatus
-		if isCFCreateFailed(md.cfg.ClusterState.CFStackNodeGroupStatus) {
+		md.cfg.ClusterState.CFStackWorkerNodeGroupStatus = *do.Stacks[0].StackStatus
+		if isCFCreateFailed(md.cfg.ClusterState.CFStackWorkerNodeGroupStatus) {
 			return fmt.Errorf("failed to create %q (%q)",
-				md.cfg.ClusterState.CFStackNodeGroupName,
-				md.cfg.ClusterState.CFStackNodeGroupStatus,
+				md.cfg.ClusterState.CFStackWorkerNodeGroupName,
+				md.cfg.ClusterState.CFStackWorkerNodeGroupStatus,
 			)
 		}
 
 		for _, op := range do.Stacks[0].Outputs {
 			if *op.OutputKey == "NodeInstanceRole" {
 				md.lg.Info("found NodeInstanceRole", zap.String("output", *op.OutputValue))
-				md.cfg.ClusterState.CFStackNodeGroupWorkerNodeInstanceRoleARN = *op.OutputValue
+				md.cfg.ClusterState.CFStackWorkerNodeGroupWorkerNodeInstanceRoleARN = *op.OutputValue
 			}
 		}
 
-		if md.cfg.ClusterState.CFStackNodeGroupStatus == "CREATE_COMPLETE" {
+		md.cfg.Sync()
+		md.lg.Info("creating worker node", zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")))
+
+		if md.cfg.ClusterState.CFStackWorkerNodeGroupStatus == "CREATE_COMPLETE" {
+			if err = md.updateASG(); err != nil {
+				md.lg.Warn("failed to check ASG", zap.Error(err))
+				continue
+			}
 			break
 		}
-
-		md.cfg.Sync()
-
-		md.lg.Info("creating worker node", zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")))
 		time.Sleep(15 * time.Second)
 	}
 
 	if err != nil {
 		md.lg.Info("failed to create worker node",
-			zap.String("name", md.cfg.ClusterState.CFStackNodeGroupName),
-			zap.String("stack-status", md.cfg.ClusterState.CFStackNodeGroupStatus),
+			zap.String("name", md.cfg.ClusterState.CFStackWorkerNodeGroupName),
+			zap.String("stack-status", md.cfg.ClusterState.CFStackWorkerNodeGroupStatus),
 			zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 			zap.Error(err),
 		)
 		return err
 	}
 
-	if md.cfg.ClusterState.CFStackNodeGroupWorkerNodeInstanceRoleARN == "" {
+	if md.cfg.ClusterState.CFStackWorkerNodeGroupWorkerNodeInstanceRoleARN == "" {
 		return errors.New("cannot find node group instance role ARN")
 	}
 
 	md.lg.Info("created worker node",
-		zap.String("name", md.cfg.ClusterState.CFStackNodeGroupName),
-		zap.String("stack-status", md.cfg.ClusterState.CFStackNodeGroupStatus),
+		zap.String("name", md.cfg.ClusterState.CFStackWorkerNodeGroupName),
+		zap.String("stack-status", md.cfg.ClusterState.CFStackWorkerNodeGroupStatus),
 		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 	)
 
 	// write config map file
 	var cmPath string
-	cmPath, err = writeConfigMapNodeAuth(md.cfg.ClusterState.CFStackNodeGroupWorkerNodeInstanceRoleARN)
+	cmPath, err = writeConfigMapNodeAuth(md.cfg.ClusterState.CFStackWorkerNodeGroupWorkerNodeInstanceRoleARN)
 	if err != nil {
 		return err
 	}
@@ -220,11 +225,11 @@ func (md *embedded) createWorkerNode() error {
 					return fmt.Errorf("unknown flag %s", string(kexo))
 				}
 				md.lg.Warn("failed to apply config map",
-					zap.String("stack-name", md.cfg.ClusterState.CFStackNodeGroupName),
+					zap.String("stack-name", md.cfg.ClusterState.CFStackWorkerNodeGroupName),
 					zap.String("output", string(kexo)),
 					zap.Error(err),
 				)
-				md.cfg.ClusterState.EC2NodeGroupStatus = err.Error()
+				md.cfg.ClusterState.WorkerNodeGroupStatus = err.Error()
 				md.cfg.Sync()
 				time.Sleep(5 * time.Second)
 				continue
@@ -248,7 +253,7 @@ func (md *embedded) createWorkerNode() error {
 				return fmt.Errorf("unknown flag %s", string(kexo))
 			}
 			md.lg.Warn("failed to get nodes", zap.String("output", string(kexo)), zap.Error(err))
-			md.cfg.ClusterState.EC2NodeGroupStatus = err.Error()
+			md.cfg.ClusterState.WorkerNodeGroupStatus = err.Error()
 			md.cfg.Sync()
 			time.Sleep(5 * time.Second)
 			continue
@@ -258,7 +263,7 @@ func (md *embedded) createWorkerNode() error {
 		ns, err = kubectlGetNodes(kexo)
 		if err != nil {
 			md.lg.Warn("failed to parse get nodes output", zap.Error(err))
-			md.cfg.ClusterState.EC2NodeGroupStatus = err.Error()
+			md.cfg.ClusterState.WorkerNodeGroupStatus = err.Error()
 			md.cfg.Sync()
 			time.Sleep(10 * time.Second)
 			continue
@@ -273,28 +278,28 @@ func (md *embedded) createWorkerNode() error {
 			zap.Int("worker-node-asg-max", md.cfg.WorkderNodeASGMax),
 		)
 		if readyN == md.cfg.WorkderNodeASGMax {
-			md.cfg.ClusterState.EC2NodeGroupStatus = "READY"
+			md.cfg.ClusterState.WorkerNodeGroupStatus = "READY"
 			md.cfg.Sync()
 			break
 		}
 
-		md.cfg.ClusterState.EC2NodeGroupStatus = fmt.Sprintf("%d AVAILABLE", nodesN)
+		md.cfg.ClusterState.WorkerNodeGroupStatus = fmt.Sprintf("%d AVAILABLE", nodesN)
 		md.cfg.Sync()
 
 		time.Sleep(15 * time.Second)
 	}
 
-	if md.cfg.ClusterState.EC2NodeGroupStatus != "READY" {
+	if md.cfg.ClusterState.WorkerNodeGroupStatus != "READY" {
 		return fmt.Errorf(
 			"worker nodes are not ready (status %q, ASG max %d)",
-			md.cfg.ClusterState.EC2NodeGroupStatus,
+			md.cfg.ClusterState.WorkerNodeGroupStatus,
 			md.cfg.WorkderNodeASGMax,
 		)
 	}
 
 	md.lg.Info(
 		"enabled node group to join cluster",
-		zap.String("name", md.cfg.ClusterState.CFStackNodeGroupName),
+		zap.String("name", md.cfg.ClusterState.CFStackWorkerNodeGroupName),
 		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 	)
 	return md.cfg.Sync()
@@ -309,16 +314,16 @@ func (md *embedded) deleteWorkerNode() error {
 		md.cfg.Sync()
 	}()
 
-	if md.cfg.ClusterState.CFStackNodeGroupName == "" {
+	if md.cfg.ClusterState.CFStackWorkerNodeGroupName == "" {
 		return errors.New("cannot delete empty worker node")
 	}
 
 	_, err := md.cf.DeleteStack(&cloudformation.DeleteStackInput{
-		StackName: aws.String(md.cfg.ClusterState.CFStackNodeGroupName),
+		StackName: aws.String(md.cfg.ClusterState.CFStackWorkerNodeGroupName),
 	})
 	if err != nil {
-		md.cfg.ClusterState.CFStackNodeGroupStatus = err.Error()
-		md.cfg.ClusterState.EC2NodeGroupStatus = err.Error()
+		md.cfg.ClusterState.CFStackWorkerNodeGroupStatus = err.Error()
+		md.cfg.ClusterState.WorkerNodeGroupStatus = err.Error()
 		return err
 	}
 
@@ -330,8 +335,8 @@ func (md *embedded) deleteWorkerNode() error {
 	waitTime := 5*time.Minute + 2*time.Duration(md.cfg.WorkderNodeASGMax)*time.Minute
 	md.lg.Info(
 		"periodically fetching node stack status",
-		zap.String("name", md.cfg.ClusterState.CFStackNodeGroupName),
-		zap.String("stack-name", md.cfg.ClusterState.CFStackNodeGroupName),
+		zap.String("name", md.cfg.ClusterState.CFStackWorkerNodeGroupName),
+		zap.String("stack-name", md.cfg.ClusterState.CFStackWorkerNodeGroupName),
 		zap.Duration("duration", waitTime),
 	)
 
@@ -339,25 +344,25 @@ func (md *embedded) deleteWorkerNode() error {
 	for time.Now().UTC().Sub(retryStart) < waitTime {
 		var do *cloudformation.DescribeStacksOutput
 		do, err = md.cf.DescribeStacks(&cloudformation.DescribeStacksInput{
-			StackName: aws.String(md.cfg.ClusterState.CFStackNodeGroupName),
+			StackName: aws.String(md.cfg.ClusterState.CFStackWorkerNodeGroupName),
 		})
 		if err == nil {
-			md.cfg.ClusterState.CFStackNodeGroupStatus = *do.Stacks[0].StackStatus
-			md.cfg.ClusterState.EC2NodeGroupStatus = *do.Stacks[0].StackStatus
+			md.cfg.ClusterState.CFStackWorkerNodeGroupStatus = *do.Stacks[0].StackStatus
+			md.cfg.ClusterState.WorkerNodeGroupStatus = *do.Stacks[0].StackStatus
 			md.lg.Info("deleting worker node", zap.String("request-started", humanize.RelTime(retryStart, time.Now().UTC(), "ago", "from now")))
 			time.Sleep(5 * time.Second)
 			continue
 		}
 
-		if isCFDeletedGoClient(md.cfg.ClusterState.CFStackNodeGroupName, err) {
+		if isCFDeletedGoClient(md.cfg.ClusterState.CFStackWorkerNodeGroupName, err) {
 			err = nil
-			md.cfg.ClusterState.CFStackNodeGroupStatus = "DELETE_COMPLETE"
-			md.cfg.ClusterState.EC2NodeGroupStatus = "DELETE_COMPLETE"
+			md.cfg.ClusterState.CFStackWorkerNodeGroupStatus = "DELETE_COMPLETE"
+			md.cfg.ClusterState.WorkerNodeGroupStatus = "DELETE_COMPLETE"
 			break
 		}
 
-		md.cfg.ClusterState.CFStackNodeGroupStatus = err.Error()
-		md.cfg.ClusterState.EC2NodeGroupStatus = err.Error()
+		md.cfg.ClusterState.CFStackWorkerNodeGroupStatus = err.Error()
+		md.cfg.ClusterState.WorkerNodeGroupStatus = err.Error()
 
 		md.lg.Warn("failed to describe worker node", zap.Error(err))
 		md.cfg.Sync()
@@ -371,8 +376,71 @@ func (md *embedded) deleteWorkerNode() error {
 
 	md.lg.Info(
 		"deleted worker node",
-		zap.String("name", md.cfg.ClusterState.CFStackNodeGroupName),
+		zap.String("name", md.cfg.ClusterState.CFStackWorkerNodeGroupName),
 		zap.String("request-started", humanize.RelTime(retryStart, time.Now().UTC(), "ago", "from now")),
 	)
 	return md.cfg.Sync()
+}
+
+func (md *embedded) updateASG() (err error) {
+	var rout *cloudformation.DescribeStackResourcesOutput
+	rout, err = md.cf.DescribeStackResources(&cloudformation.DescribeStackResourcesInput{
+		StackName: aws.String(md.cfg.ClusterState.CFStackWorkerNodeGroupName),
+	})
+	if err != nil {
+		return err
+	}
+	if len(rout.StackResources) == 0 {
+		return fmt.Errorf("stack resources not found for %q", md.cfg.ClusterState.CFStackWorkerNodeGroupName)
+	}
+	for _, ro := range rout.StackResources {
+		if *ro.ResourceType == "AWS::AutoScaling::AutoScalingGroup" {
+			md.cfg.ClusterState.CFStackWorkerNodeGroupAutoScalingGroupName = *ro.PhysicalResourceId
+			md.lg.Info(
+				"found worker node ASG name",
+				zap.String("name", md.cfg.ClusterState.CFStackWorkerNodeGroupAutoScalingGroupName),
+			)
+			break
+		}
+	}
+	if md.cfg.ClusterState.CFStackWorkerNodeGroupAutoScalingGroupName == "" {
+		return errors.New("can't find physical resource ID for ASG")
+	}
+
+	var aout *autoscaling.DescribeAutoScalingGroupsOutput
+	aout, err = md.asg.DescribeAutoScalingGroups(&autoscaling.DescribeAutoScalingGroupsInput{
+		AutoScalingGroupNames: aws.StringSlice([]string{md.cfg.ClusterState.CFStackWorkerNodeGroupAutoScalingGroupName}),
+	})
+	if err != nil {
+		return fmt.Errorf("ASG not found for %q (%v)", md.cfg.ClusterState.CFStackWorkerNodeGroupAutoScalingGroupName, err)
+	}
+	if len(aout.AutoScalingGroups) != 1 {
+		return fmt.Errorf("expected only 1 ASG, got %+v", aout.AutoScalingGroups)
+	}
+	asg := aout.AutoScalingGroups[0]
+
+	md.lg.Info("e2e testing ASG", zap.String("name", md.cfg.ClusterState.CFStackWorkerNodeGroupAutoScalingGroupName))
+
+	if *asg.MinSize != int64(md.cfg.WorkderNodeASGMin) {
+		return fmt.Errorf("ASG min size expected %d, got %d", md.cfg.WorkderNodeASGMin, *asg.MinSize)
+	}
+	if *asg.MaxSize != int64(md.cfg.WorkderNodeASGMax) {
+		return fmt.Errorf("ASG max size expected %d, got %d", md.cfg.WorkderNodeASGMax, *asg.MaxSize)
+	}
+	if len(asg.Instances) != md.cfg.WorkderNodeASGMax {
+		return fmt.Errorf("instances expected %d, got %d", md.cfg.WorkderNodeASGMax, len(asg.Instances))
+	}
+	healthCnt := 0
+	for _, iv := range asg.Instances {
+		if *iv.HealthStatus == "Healthy" {
+			healthCnt++
+		}
+	}
+	if healthCnt != len(asg.Instances) {
+		return fmt.Errorf("instances health count expected %d, got %d", len(asg.Instances), healthCnt)
+	}
+	// md.instances = asg.Instances
+
+	md.lg.Info("e2e tested ASG", zap.String("name", md.cfg.ClusterState.CFStackWorkerNodeGroupAutoScalingGroupName))
+	return nil
 }
