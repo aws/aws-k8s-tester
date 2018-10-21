@@ -135,6 +135,10 @@ func (md *embedded) createVPC() error {
 	}
 
 	if md.cfg.EnableNodeSSH {
+		md.lg.Info(
+			"checking security group",
+			zap.String("security-group-id", md.cfg.ClusterState.CFStackVPCSecurityGroupID),
+		)
 		var sout *ec2.DescribeSecurityGroupsOutput
 		sout, err = md.ec2.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
 			GroupIds: aws.StringSlice([]string{md.cfg.ClusterState.CFStackVPCSecurityGroupID}),
