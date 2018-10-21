@@ -21,12 +21,10 @@ func (md *embedded) CreateSecurityGroup() error {
 		return errors.New("cannot create security group without VPC stack Subnet IDs")
 	}
 
-	now := time.Now().UTC()
-
 	so, err := md.ec2.CreateSecurityGroup(&ec2.CreateSecurityGroupInput{
-		GroupName:   aws.String(md.cfg.ClusterName + "-alb-sg"),
+		GroupName:   aws.String(md.cfg.ClusterName + "-alb-open-80-443"),
 		VpcId:       aws.String(md.cfg.ClusterState.CFStackVPCID),
-		Description: aws.String("ALB 80 443 open"),
+		Description: aws.String(md.cfg.ClusterName + "-alb-open-80-443"),
 	})
 	if err != nil {
 		md.cfg.ALBIngressController.ELBv2SecurityGroupStatus = err.Error()
@@ -37,40 +35,23 @@ func (md *embedded) CreateSecurityGroup() error {
 	md.lg.Info("created security group",
 		zap.String("name", "alb-sg"),
 		zap.String("created-security-group-id", md.cfg.ALBIngressController.ELBv2SecurityGroupIDPortOpen),
-		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 	)
 
-	_, err = md.ec2.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
-		GroupId:    aws.String(md.cfg.ALBIngressController.ELBv2SecurityGroupIDPortOpen),
-		IpProtocol: aws.String("tcp"),
-		CidrIp:     aws.String("0.0.0.0/0"),
-		FromPort:   aws.Int64(80),
-		ToPort:     aws.Int64(80),
-	})
-	if err != nil {
-		md.cfg.ALBIngressController.ELBv2SecurityGroupStatus = err.Error()
-		md.cfg.Sync()
-		return err
+	for _, port := range []int64{80, 443} {
+		_, err = md.ec2.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
+			GroupId:    aws.String(md.cfg.ALBIngressController.ELBv2SecurityGroupIDPortOpen),
+			IpProtocol: aws.String("tcp"),
+			CidrIp:     aws.String("0.0.0.0/0"),
+			FromPort:   aws.Int64(port),
+			ToPort:     aws.Int64(port),
+		})
+		if err != nil {
+			md.cfg.ALBIngressController.ELBv2SecurityGroupStatus = err.Error()
+			md.cfg.Sync()
+			return err
+		}
+		md.lg.Info("authorized ingress for ALB", zap.Int64("port", port))
 	}
-
-	_, err = md.ec2.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
-		GroupId:    aws.String(md.cfg.ALBIngressController.ELBv2SecurityGroupIDPortOpen),
-		IpProtocol: aws.String("tcp"),
-		CidrIp:     aws.String("0.0.0.0/0"),
-		FromPort:   aws.Int64(443),
-		ToPort:     aws.Int64(443),
-	})
-	if err != nil {
-		md.cfg.ALBIngressController.ELBv2SecurityGroupStatus = err.Error()
-		md.cfg.Sync()
-		return err
-	}
-
-	md.lg.Info(
-		"authorized security group",
-		zap.String("name", "alb-sg"),
-		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
-	)
 
 	md.cfg.ALBIngressController.ELBv2SecurityGroupStatus = "READY"
 	return md.cfg.Sync()
