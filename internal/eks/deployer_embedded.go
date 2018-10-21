@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -17,6 +18,7 @@ import (
 	"github.com/aws/awstester/internal/eks/alb/ingress/path"
 	"github.com/aws/awstester/internal/eks/s3"
 	"github.com/aws/awstester/pkg/awsapi"
+	"github.com/aws/awstester/pkg/fileutil"
 	"github.com/aws/awstester/pkg/httputil"
 	"github.com/aws/awstester/pkg/wrk"
 	"github.com/aws/awstester/pkg/zaputil"
@@ -62,9 +64,8 @@ type embedded struct {
 	eks eksiface.EKSAPI
 	ec2 ec2iface.EC2API
 
-	ec2Mu        *sync.Mutex
-	ec2Instances []*ec2.Instance
-	ec2Logs      map[string]string
+	ec2InstancesMu *sync.RWMutex
+	ec2Instances   []*ec2.Instance
 
 	s3Plugin s3.Plugin
 
@@ -90,11 +91,11 @@ func NewEKSDeployer(cfg *eksconfig.Config) (eksdeployer.Interface, error) {
 	}
 
 	md := &embedded{
-		stopc:   make(chan struct{}),
-		lg:      lg,
-		cfg:     cfg,
-		kubectl: exec.New(),
-		ec2Mu:   &sync.Mutex{},
+		stopc:          make(chan struct{}),
+		lg:             lg,
+		cfg:            cfg,
+		kubectl:        exec.New(),
+		ec2InstancesMu: &sync.RWMutex{},
 	}
 	md.kubectlPath, err = md.kubectl.LookPath("kubectl")
 	if err != nil {
@@ -509,9 +510,23 @@ func (md *embedded) GetClusterCreated(v string) (time.Time, error) {
 	return md.cfg.ClusterState.Created, nil
 }
 
-func (md *embedded) DumpClusterLogs(localPath, remotePath string) error {
-	// TODO
-	return nil
+// DumpClusterLogs dumps all logs to artifact directory.
+// Let default kubetest log dumper handle all artifact uploads.
+// See https://github.com/kubernetes/test-infra/pull/9811/files#r225776067.
+func (md *embedded) DumpClusterLogs(artifactDir, _ string) (err error) {
+	err = md.downloadWorkerNodeLogs()
+	if err != nil {
+		return err
+	}
+	for fpath, p := range md.cfg.GetWorkerNodeLogs() {
+		if err = fileutil.Copy(fpath, filepath.Join(artifactDir, p)); err != nil {
+			return err
+		}
+	}
+	if err = fileutil.Copy(md.cfg.ConfigPath, filepath.Join(artifactDir, md.cfg.ConfigPathBucket)); err != nil {
+		return err
+	}
+	return fileutil.Copy(md.cfg.LogOutputToUploadPath, filepath.Join(artifactDir, md.cfg.LogOutputToUploadPathBucket))
 }
 
 func (md *embedded) UploadToBucketForTests(localPath, remotePath string) error {
@@ -675,14 +690,10 @@ func (md *embedded) upload() (err error) {
 	if err != nil {
 		return err
 	}
-	err = md.s3Plugin.UploadToBucketForTests(
+	return md.s3Plugin.UploadToBucketForTests(
 		md.cfg.LogOutputToUploadPath,
 		md.cfg.LogOutputToUploadPathBucket,
 	)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func (md *embedded) uploadWorkerNode() (err error) {
@@ -690,14 +701,11 @@ func (md *embedded) uploadWorkerNode() (err error) {
 		return nil
 	}
 
-	err = md.getWorkerNodeLogs()
+	err = md.downloadWorkerNodeLogs()
 	if err != nil {
 		return err
 	}
-
-	md.ec2Mu.Lock()
-	defer md.ec2Mu.Unlock()
-	for fpath, s3Path := range md.ec2Logs {
+	for fpath, s3Path := range md.cfg.GetWorkerNodeLogs() {
 		err = md.s3Plugin.UploadToBucketForTests(fpath, s3Path)
 		if err != nil {
 			return err
@@ -706,7 +714,6 @@ func (md *embedded) uploadWorkerNode() (err error) {
 
 		time.Sleep(2 * time.Second)
 	}
-
 	return nil
 }
 
@@ -741,12 +748,8 @@ func (md *embedded) uploadALB() (err error) {
 			return err
 		}
 	}
-	err = md.s3Plugin.UploadToBucketForTests(
+	return md.s3Plugin.UploadToBucketForTests(
 		md.cfg.ALBIngressController.MetricsOutputToUploadPath,
 		md.cfg.ALBIngressController.MetricsOutputToUploadPathBucket,
 	)
-	if err != nil {
-		return err
-	}
-	return nil
 }

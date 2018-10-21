@@ -1,6 +1,9 @@
 package eksconfig
 
-import "time"
+import (
+	"sync"
+	"time"
+)
 
 // NewDefault returns a copy of the default configuration.
 func NewDefault() *Config {
@@ -51,7 +54,9 @@ var defaultConfig = Config{
 	LogAutoUpload: true,
 	LogAccess:     true,
 
-	ClusterState: &ClusterState{},
+	ClusterState: &ClusterState{
+		workerNodeLogsMu: &sync.RWMutex{},
+	},
 	ALBIngressController: &ALBIngressController{
 		Enable: true,
 

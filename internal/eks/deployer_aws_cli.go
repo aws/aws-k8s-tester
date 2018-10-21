@@ -72,8 +72,8 @@ func (ac *awsCli) GetClusterCreated(v string) (time.Time, error) {
 	panic("TODO")
 }
 
-func (ac *awsCli) DumpClusterLogs(localPath, remotePath string) error {
-	return ac.s3Plugin.UploadToBucketForTests(localPath, remotePath)
+func (ac *awsCli) DumpClusterLogs(artifactDir, _ string) error {
+	panic("TODO")
 }
 
 func (ac *awsCli) UploadToBucketForTests(localPath, remotePath string) error {

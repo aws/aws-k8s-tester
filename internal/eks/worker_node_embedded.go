@@ -486,10 +486,10 @@ func (md *embedded) updateASG() (err error) {
 		time.Sleep(5 * time.Second)
 	}
 
-	md.ec2Mu.Lock()
+	md.ec2InstancesMu.Lock()
 	md.ec2Instances = ec2Instances
 	md.cfg.ClusterState.WorkerNodes = ConvertEC2Instances(ec2Instances)
-	md.ec2Mu.Unlock()
+	md.ec2InstancesMu.Unlock()
 
 	md.lg.Info("e2e tested ASG", zap.String("name", md.cfg.ClusterState.CFStackWorkerNodeGroupAutoScalingGroupName))
 	return nil

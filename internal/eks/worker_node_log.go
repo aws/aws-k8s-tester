@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/aws/awstester/internal/ssh"
@@ -13,15 +14,15 @@ import (
 )
 
 // https://github.com/kubernetes/test-infra/blob/master/kubetest/dump.go
-func (md *embedded) getWorkerNodeLogs() (err error) {
+func (md *embedded) downloadWorkerNodeLogs() (err error) {
 	if !md.cfg.EnableNodeSSH {
 		return errors.New("node SSH is not enabled")
 	}
 
 	paths := make(map[string]string)
 
-	md.ec2Mu.Lock()
-	defer md.ec2Mu.Unlock()
+	md.ec2InstancesMu.RLock()
+	defer md.ec2InstancesMu.RUnlock()
 
 	for _, iv := range md.ec2Instances {
 		id, ip := *iv.InstanceId, *iv.PublicIpAddress
@@ -76,7 +77,7 @@ func (md *embedded) getWorkerNodeLogs() (err error) {
 			)
 			return err
 		}
-		fpath, err = fileutil.WriteTempFile(out)
+		fpath, err = fileutil.WriteToTempDir(pfx+".kube-proxy.log", out)
 		if err != nil {
 			sh.Close()
 			md.lg.Warn(
@@ -87,7 +88,7 @@ func (md *embedded) getWorkerNodeLogs() (err error) {
 			)
 			return err
 		}
-		paths[fpath] = pfx + ".kube-proxy.log"
+		paths[fpath] = filepath.Base(fpath)
 
 		// kernel logs
 		md.lg.Info(
@@ -108,7 +109,7 @@ func (md *embedded) getWorkerNodeLogs() (err error) {
 			)
 			return err
 		}
-		fpath, err = fileutil.WriteTempFile(out)
+		fpath, err = fileutil.WriteToTempDir(pfx+".kernel.log", out)
 		if err != nil {
 			sh.Close()
 			md.lg.Warn(
@@ -119,7 +120,7 @@ func (md *embedded) getWorkerNodeLogs() (err error) {
 			)
 			return err
 		}
-		paths[fpath] = pfx + ".kernel.log"
+		paths[fpath] = filepath.Base(fpath)
 
 		// full journal logs (e.g. disk mounts)
 		md.lg.Info(
@@ -140,7 +141,7 @@ func (md *embedded) getWorkerNodeLogs() (err error) {
 			)
 			return err
 		}
-		fpath, err = fileutil.WriteTempFile(out)
+		fpath, err = fileutil.WriteToTempDir(pfx+".journal.log", out)
 		if err != nil {
 			sh.Close()
 			md.lg.Warn(
@@ -151,7 +152,7 @@ func (md *embedded) getWorkerNodeLogs() (err error) {
 			)
 			return err
 		}
-		paths[fpath] = pfx + ".journal.log"
+		paths[fpath] = filepath.Base(fpath)
 
 		// other systemd services
 		md.lg.Info(
@@ -201,7 +202,7 @@ func (md *embedded) getWorkerNodeLogs() (err error) {
 				)
 				return err
 			}
-			fpath, err = fileutil.WriteTempFile(out)
+			fpath, err = fileutil.WriteToTempDir(pfx+"."+name+".log", out)
 			if err != nil {
 				sh.Close()
 				md.lg.Warn(
@@ -212,7 +213,7 @@ func (md *embedded) getWorkerNodeLogs() (err error) {
 				)
 				return err
 			}
-			paths[fpath] = pfx + "." + name + ".log"
+			paths[fpath] = filepath.Base(fpath)
 		}
 
 		// other /var/log
@@ -262,7 +263,7 @@ func (md *embedded) getWorkerNodeLogs() (err error) {
 				)
 				return err
 			}
-			fpath, err = fileutil.WriteTempFile(out)
+			fpath, err = fileutil.WriteToTempDir(pfx+"."+p, out)
 			if err != nil {
 				sh.Close()
 				md.lg.Warn(
@@ -273,13 +274,13 @@ func (md *embedded) getWorkerNodeLogs() (err error) {
 				)
 				return err
 			}
-			paths[fpath] = pfx + "." + p
+			paths[fpath] = filepath.Base(fpath)
 		}
 
 		sh.Close()
 	}
 
-	md.ec2Logs = paths
+	md.cfg.SetWorkerNodeLogs(paths)
 	return nil
 }
 
@@ -304,7 +305,7 @@ if err != nil {
 	)
 	return err
 }
-fpath, err = fileutil.WriteTempFile(out)
+fpath, err = fileutil.WriteToTempDir( pfx + "." + p,out)
 if err != nil {
 	sh.Close()
 	md.lg.Warn(

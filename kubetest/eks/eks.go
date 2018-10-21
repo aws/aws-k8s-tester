@@ -152,11 +152,9 @@ func (tr *tester) GetClusterCreated(v string) (time.Time, error) {
 	return tr.cfg.ClusterState.Created, nil
 }
 
-// DumpClusterLogs uploads local cluster logs to S3.
-// Let default kubetest log dumper handle all artifact uploads.
-// See https://github.com/kubernetes/test-infra/pull/9811/files#r225776067.
-func (tr *tester) DumpClusterLogs(localPath, s3Path string) error {
-	// TODO
+func (tr *tester) DumpClusterLogs(artifactDir, _ string) error {
+	// Let default kubetest log dumper handle all artifact uploads.
+	// See https://github.com/kubernetes/test-infra/pull/9811/files#r225776067.
 	return nil
 }
 
