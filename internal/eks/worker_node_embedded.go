@@ -29,7 +29,7 @@ func (md *embedded) createWorkerNode() error {
 		TagKey:        md.cfg.Tag,
 		TagValue:      md.cfg.ClusterName,
 		Hostname:      h,
-		EnableNodeSSH: false,
+		EnableNodeSSH: md.cfg.EnableNodeSSH,
 	}
 	s, err := createWorkerNodeTemplate(v)
 	if err != nil {

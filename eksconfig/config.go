@@ -39,6 +39,9 @@ type Config struct {
 	// This is meant to be used as a flag for test.
 	Down bool `json:"down"`
 
+	// EnableNodeSSH is true to enable SSH access to worker nodes.
+	EnableNodeSSH bool `json:"enable-node-ssh"`
+
 	// Tag is the tag used for all cloudformation stacks.
 	// Must be left empty, and let deployer auto-populate this field.
 	Tag string `json:"tag,omitempty"` // read-only to user

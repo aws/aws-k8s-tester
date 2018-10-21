@@ -25,6 +25,8 @@ var defaultConfig = Config{
 	WaitBeforeDown: 10 * time.Minute,
 	Down:           true,
 
+	EnableNodeSSH: true,
+
 	AWSTesterImage: "PLEASE-UPDATE/awstester:PLEASE-UPDATE",
 
 	AWSAccountID: "",
