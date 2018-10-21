@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aws/awstester/pkg/awsapi/ec2"
+
 	gyaml "github.com/ghodss/yaml"
 	"k8s.io/client-go/util/homedir"
 )
@@ -455,6 +457,18 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 	if !checkEC2InstanceType(cfg.WorkerNodeInstanceType) {
 		return fmt.Errorf("EKS WorkerNodeInstanceType %q is not valid", cfg.WorkerNodeInstanceType)
+	}
+	if cfg.ALBIngressController != nil && cfg.ALBIngressController.TestServerReplicas > 0 {
+		if !checkMaxPods(cfg.WorkerNodeInstanceType, cfg.WorkderNodeASGMax, cfg.ALBIngressController.TestServerReplicas) {
+			return fmt.Errorf(
+				"EKS WorkerNodeInstanceType %q only supports %d pods per node (ASG Max %d, allowed up to %d, test server replicas %d)",
+				cfg.WorkerNodeInstanceType,
+				ec2.InstanceTypes[cfg.WorkerNodeInstanceType].MaxPods,
+				cfg.WorkderNodeASGMax,
+				ec2.InstanceTypes[cfg.WorkerNodeInstanceType].MaxPods*int64(cfg.WorkderNodeASGMax),
+				cfg.ALBIngressController.TestServerReplicas,
+			)
+		}
 	}
 	if cfg.WorkderNodeASGMin == 0 {
 		return errors.New("EKS WorkderNodeASGMin is not specified")
