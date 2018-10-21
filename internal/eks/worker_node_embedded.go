@@ -185,35 +185,38 @@ func (md *embedded) createWorkerNode() error {
 				)
 				return err
 			}
-			if len(sout.SecurityGroups) != 1 {
+			if len(sout.SecurityGroups) < 2 {
 				return fmt.Errorf(
-					"expected 1 worker node group security group, got %d (%+v)",
+					"expected at least 2 worker node group security group, got %d (%+v)",
 					len(sout.SecurityGroups),
 					sout.SecurityGroups,
 				)
 			}
-			sg := sout.SecurityGroups[0]
+
 			foundSSHAccess := false
-			for _, perm := range sg.IpPermissions {
-				fromPort, toPort := *perm.FromPort, *perm.ToPort
-				rg := ""
-				if len(perm.IpRanges) == 1 {
-					rg = perm.IpRanges[0].String()
-				}
-				md.lg.Info(
-					"found security IP permission",
-					zap.String("security-group-id", md.cfg.ClusterState.CFStackWorkerNodeGroupSecurityGroupID),
-					zap.Int64("from-port", fromPort),
-					zap.Int64("to-port", toPort),
-					zap.String("cidr-ip", rg),
-				)
-				if fromPort == 22 && toPort == 22 && rg == "0.0.0.0/0" {
-					foundSSHAccess = true
-					break
+		_foundSSHAccess:
+			for _, sg := range sout.SecurityGroups {
+				for _, perm := range sg.IpPermissions {
+					fromPort, toPort := *perm.FromPort, *perm.ToPort
+					rg := ""
+					if len(perm.IpRanges) == 1 {
+						rg = perm.IpRanges[0].String()
+					}
+					md.lg.Info(
+						"found security IP permission",
+						zap.String("security-group-id", md.cfg.ClusterState.CFStackWorkerNodeGroupSecurityGroupID),
+						zap.Int64("from-port", fromPort),
+						zap.Int64("to-port", toPort),
+						zap.String("cidr-ip", rg),
+					)
+					if fromPort == 22 && toPort == 22 && rg == "0.0.0.0/0" {
+						foundSSHAccess = true
+						break _foundSSHAccess
+					}
 				}
 			}
 			if !foundSSHAccess {
-				return fmt.Errorf("expected SSH access enabled, got %+v", sg.IpPermissions)
+				return fmt.Errorf("expected SSH access enabled, got %+v", sout.SecurityGroups)
 			}
 		}
 
