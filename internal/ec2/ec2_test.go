@@ -26,14 +26,12 @@ func TestEC2(t *testing.T) {
 		t.Fatalf("expected '*embedded', got %v", reflect.TypeOf(ec))
 	}
 
-	md.cfg.Count = 10
 	md.cfg.UserData = base64.StdEncoding.EncodeToString([]byte(`
 #!/usr/bin/env bash
 set -e
 
 echo "Hello World!" > /home/ubuntu/sample.txt
 `))
-
 	if err = md.Create(); err != nil {
 		t.Fatal(err)
 	}

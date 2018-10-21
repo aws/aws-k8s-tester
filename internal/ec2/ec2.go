@@ -32,6 +32,7 @@ type Deployer interface {
 	Stop()
 	Delete() error
 
+	Logger() *zap.Logger
 	GenerateSSHCommands() string
 }
 
@@ -540,6 +541,10 @@ func (md *embedded) deleteInstances() (err error) {
 		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 	)
 	return nil
+}
+
+func (md *embedded) Logger() *zap.Logger {
+	return md.lg
 }
 
 func (md *embedded) GenerateSSHCommands() (s string) {
