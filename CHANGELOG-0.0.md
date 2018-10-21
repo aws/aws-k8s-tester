@@ -1,5 +1,33 @@
 
 
+## [0.0.2](https://github.com/aws/awstester/releases/tag/0.0.2) (2018-10-21)
+
+See [code changes](https://github.com/aws/awstester/compare/0.0.1...0.0.2).
+
+### `eksconfig`
+
+- Add [`eksconfig.Config.EnableNodeSSH`](https://github.com/aws/awstester/pull/1) field.
+  - If true, worker node exposes port :22 for SSH access.
+- Rename [`eksconfig.ClusterState.EC2NodeGroupStatus` to `eksconfig.ClusterState.WorkerNodeGroupStatus`](https://github.com/aws/awstester/pull/1).
+- Rename [`eksconfig.ClusterState.CFStackNode*` to `eksconfig.ClusterState.CFStackWorkerNode*`](https://github.com/aws/awstester/pull/1).
+
+### `eksdeployer`
+
+- Implement [`DumpClusterLogs`](https://github.com/aws/awstester/pull/1) to export worker node logs.
+
+### `internal`
+
+- Implement worker node log exporter in [`internal/eks`](https://github.com/aws/awstester/pull/1).
+
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.15.57`](https://github.com/aws/aws-sdk-go/releases/tag/v1.15.57) to [`v1.15.59`](https://github.com/aws/aws-sdk-go/releases/tag/v1.15.59).
+
+### Go
+
+- Compile with [*Go 1.11.1*](https://golang.org/doc/devel/release.html#go1.11).
+
+
 ## [0.0.1](https://github.com/aws/awstester/releases/tag/0.0.1) (2018-10-18)
 
 See [code changes](https://github.com/aws/awstester/compare/0.0.0...0.0.1).
@@ -31,7 +59,7 @@ See [code changes](https://github.com/aws/awstester/compare/0.0.0...0.0.1).
 
 ### Dependency
 
-- Upgrade [`github.com/aws/aws-sdk-go`]() from [`v1.15.54`](https://github.com/aws/aws-sdk-go/releases/tag/v1.15.54) to [`v1.15.57`](https://github.com/aws/aws-sdk-go/releases/tag/v1.15.57).
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.15.54`](https://github.com/aws/aws-sdk-go/releases/tag/v1.15.54) to [`v1.15.57`](https://github.com/aws/aws-sdk-go/releases/tag/v1.15.57).
 
 ### Go
 
