@@ -173,10 +173,10 @@ type ClusterState struct {
 	// ServiceRoleWithPolicyARN is the ARN of the created cluster service role.
 	ServiceRoleWithPolicyARN string `json:"service-role-with-policy-arn,omitempty"`
 
-	// CFStackVPCStatus is the last cloudformation status of VPC stack.
-	CFStackVPCStatus string `json:"cf-stack-vpc-status,omitempty"`
 	// CFStackVPCName is the name of VPC cloudformation stack.
 	CFStackVPCName string `json:"cf-stack-vpc-name,omitempty"`
+	// CFStackVPCStatus is the last cloudformation status of VPC stack.
+	CFStackVPCStatus string `json:"cf-stack-vpc-status,omitempty"`
 	// CFStackVPCID is the VPC ID that VPC cloudformation stack created.
 	CFStackVPCID string `json:"cf-stack-vpc-id,omitempty"`
 	// CFStackVPCSubnetIDs is the subnet IDS that VPC cloudformation stack created.
@@ -199,6 +199,8 @@ type ClusterState struct {
 	// WorkerNodeLogs is a list of worker node log file paths, fetched via SSH.
 	WorkerNodeLogs map[string]string `json:"worker-node-logs,omitempty"`
 
+	// CFStackWorkerNodeGroupName is the name of cloudformation stack for worker node group.
+	CFStackWorkerNodeGroupName string `json:"cf-stack-worker-node-group-name,omitempty"`
 	// CFStackWorkerNodeGroupStatus is the last cloudformation status of node group stack.
 	CFStackWorkerNodeGroupStatus string `json:"cf-stack-worker-node-group-status,omitempty"`
 	// CFStackWorkerNodeGroupKeyPairName is required for node group creation.
@@ -207,8 +209,6 @@ type ClusterState struct {
 	// Thus, deployer must delete the private key right after node group creation.
 	// MAKE SURE PRIVATE KEY NEVER GETS UPLOADED TO CLOUD STORAGE AND DLETE AFTER USE!!!
 	CFStackWorkerNodeGroupKeyPairPrivateKeyPath string `json:"cf-stack-worker-node-group-key-pair-private-key-path,omitempty"`
-	// CFStackWorkerNodeGroupName is the name of cloudformation stack for worker node group.
-	CFStackWorkerNodeGroupName string `json:"cf-stack-worker-node-group-name,omitempty"`
 	// CFStackWorkerNodeGroupSecurityGroupID is the security group ID
 	// that worker node cloudformation stack created.
 	CFStackWorkerNodeGroupSecurityGroupID string `json:"cf-stack-worker-node-group-security-group-id,omitempty"`
