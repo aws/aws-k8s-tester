@@ -160,7 +160,8 @@ func (md *embedded) createWorkerNode() error {
 				)
 				md.cfg.ClusterState.CFStackWorkerNodeGroupWorkerNodeInstanceRoleARN = *op.OutputValue
 			}
-			if *op.OutputKey == "SecurityGroups" {
+			// not "SecurityGroups"
+			if *op.OutputKey == "NodeSecurityGroup" {
 				md.cfg.ClusterState.CFStackWorkerNodeGroupSecurityGroupID = *op.OutputValue
 			}
 		}
