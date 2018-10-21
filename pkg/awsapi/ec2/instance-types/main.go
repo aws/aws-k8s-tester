@@ -66,6 +66,7 @@ type instanceType struct {
 	VCPU         int64
 	Memory       int64
 	GPU          int64
+	MaxPods      int64
 }
 
 var (
@@ -97,6 +98,7 @@ type InstanceType struct {
 	VCPU         int64
 	MemoryMb     int64
 	GPU          int64
+	MaxPods      int64
 }
 
 // InstanceTypes is a map of EC2 resources.
@@ -107,6 +109,7 @@ var InstanceTypes = map[string]*InstanceType{
 		VCPU:         {{ .VCPU }},
 		MemoryMb:     {{ .Memory }},
 		GPU:          {{ .GPU }},
+		MaxPods:      {{ .MaxPods }},
 	},
 {{- end }}
 }
@@ -116,6 +119,27 @@ var InstanceTypes = map[string]*InstanceType{
 )
 
 func main() {
+	maxPodsData, merr := httputil.Download(lg, os.Stdout, "https://raw.githubusercontent.com/awslabs/amazon-eks-ami/master/files/eni-max-pods.txt")
+	if merr != nil {
+		lg.Fatal("failed to download ENI max pods", zap.Error(merr))
+	}
+	instanceToMaxPods := make(map[string]int64)
+	for _, line := range strings.Split(string(maxPodsData), "\n") {
+		if strings.HasPrefix(line, "# ") {
+			continue
+		}
+		fields := strings.Fields(line)
+		if len(fields) != 2 {
+			lg.Warn("skipping line", zap.String("line", line))
+			continue
+		}
+		n, err := strconv.ParseInt(fields[1], 10, 64)
+		if err != nil {
+			lg.Fatal("failed to parse int", zap.Error(err))
+		}
+		instanceToMaxPods[fields[0]] = n
+	}
+
 	instanceTypes := make(map[string]*instanceType)
 
 	resolver := endpoints.DefaultResolver()
@@ -157,6 +181,14 @@ func main() {
 					if attr.GPU != "" {
 						instanceTypes[attr.InstanceType].GPU = parseCPU(attr.GPU)
 					}
+					if !strings.Contains(attr.InstanceType, ".") {
+						continue
+					}
+					v, ok := instanceToMaxPods[attr.InstanceType]
+					if !ok {
+						lg.Warn("failed to find max pods", zap.String("instance-type", attr.InstanceType))
+					}
+					instanceTypes[attr.InstanceType].MaxPods = v
 				}
 			}
 		}
