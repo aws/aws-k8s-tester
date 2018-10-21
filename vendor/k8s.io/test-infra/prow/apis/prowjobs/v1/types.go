@@ -168,9 +168,16 @@ type DecorationConfig struct {
 	// SSHKeySecrets are the names of Kubernetes secrets that contain
 	// SSK keys which should be used during the cloning process
 	SSHKeySecrets []string `json:"ssh_key_secrets,omitempty"`
+	// SSHHostFingerprints are the fingerprints of known ssh hosts
+	// that the cloning process can trust.
+	// Create with ssh-keyscan [-t rsa] host
+	SSHHostFingerprints []string `json:"ssh_host_fingerprints,omitempty"`
 	// SkipCloning determines if we should clone source code in the
 	// initcontainers for jobs that specify refs
 	SkipCloning bool `json:"skip_cloning,omitempty"`
+	// CookieFileSecret is the name of a kubernetes secret that contains
+	// a git http.cookiefile, which should be used during the cloning process.
+	CookiefileSecret string `json:"cookiefile_secret,omitempty"`
 }
 
 // UtilityImages holds pull specs for the utility images
@@ -186,7 +193,7 @@ type UtilityImages struct {
 	Sidecar string `json:"sidecar,omitempty"`
 }
 
-// PathStrategy specifies minutia about how to contruct the url.
+// PathStrategy specifies minutia about how to construct the url.
 // Usually consumed by gubernator/testgrid.
 const (
 	PathStrategyLegacy   = "legacy"
@@ -240,9 +247,9 @@ type ProwJobStatus struct {
 	// ProwJob.
 	JenkinsBuildID string `json:"jenkins_build_id,omitempty"`
 
-	// PrevReportState stores the previous reported prowjob state
+	// PrevReportStates stores the previous reported prowjob state per reporter
 	// So crier won't make duplicated report attempt
-	PrevReportState ProwJobState `json:"prev_report_state, omitempty"`
+	PrevReportStates map[string]ProwJobState `json:"prev_report_states,omitempty"`
 }
 
 // Complete returns true if the prow job has finished
@@ -301,6 +308,9 @@ type Refs struct {
 	// repository. If unset, will default to
 	// `https://github.com/org/repo.git`.
 	CloneURI string `json:"clone_uri,omitempty"`
+	// SkipSubmodules determines if submodules should be
+	// cloned when the job is run. Defaults to true.
+	SkipSubmodules bool `json:"skip_submodules,omitempty"`
 }
 
 func (r Refs) String() string {
@@ -319,7 +329,7 @@ func (r Refs) String() string {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// VirtualMachineList is a list of VirtualMachine resources
+// ProwJobList is a list of ProwJob resources
 type ProwJobList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
