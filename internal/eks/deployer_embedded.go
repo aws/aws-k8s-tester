@@ -700,12 +700,11 @@ func (md *embedded) uploadWorkerNode() (err error) {
 				zap.String("file-path", fpath),
 				zap.Error(err),
 			)
-			time.Sleep(2 * time.Second)
+			time.Sleep(3 * time.Second)
 			continue
 		}
-
 		md.lg.Info("uploaded", zap.String("s3-path", s3Path))
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(50 * time.Millisecond)
 	}
 	return nil
 }
