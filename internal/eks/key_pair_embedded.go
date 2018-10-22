@@ -42,8 +42,11 @@ func (md *embedded) createKeyPair() (err error) {
 	if err = ioutil.WriteFile(
 		md.cfg.ClusterState.CFStackWorkerNodeGroupKeyPairPrivateKeyPath,
 		[]byte(*output.KeyMaterial),
-		0600,
+		0644,
 	); err != nil {
+		return err
+	}
+	if err = os.Chmod(md.cfg.ClusterState.CFStackWorkerNodeGroupKeyPairPrivateKeyPath, 0644); err != nil {
 		return err
 	}
 
