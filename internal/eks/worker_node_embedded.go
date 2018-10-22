@@ -206,7 +206,7 @@ func (md *embedded) createWorkerNode() error {
 						md.lg.Info(
 							"found security IP permission",
 							zap.String("security-group-id", md.cfg.ClusterState.CFStackWorkerNodeGroupSecurityGroupID),
-							zap.Int64("permission", fmt.Sprintf("%+v", perm)),
+							zap.String("permission", fmt.Sprintf("%+v", perm)),
 						)
 						continue
 					}
