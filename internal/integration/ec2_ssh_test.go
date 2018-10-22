@@ -20,7 +20,7 @@ func TestEC2SSH(t *testing.T) {
 	cfg := ec2config.NewDefault()
 	cfg.InitScript = `#!/usr/bin/env bash
 
-echo "Hello World!" > /home/ubuntu/sample.txt
+echo "Hello World!" > /home/ubuntu/hello
 `
 
 	ec, err := ec2.NewDeployer(cfg)
@@ -68,7 +68,7 @@ echo "Hello World!" > /home/ubuntu/sample.txt
 	if err != nil {
 		t.Error(err)
 	}
-	if string(out) != "Hello World!" {
+	if string(out) != "Hello World!\n" {
 		t.Fatalf("unexpected output %q", string(out))
 	}
 
@@ -77,5 +77,4 @@ echo "Hello World!" > /home/ubuntu/sample.txt
 		t.Error(err)
 	}
 	fmt.Println("availability-zone:", string(out))
-
 }

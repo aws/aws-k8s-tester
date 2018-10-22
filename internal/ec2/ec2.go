@@ -549,7 +549,7 @@ func (md *embedded) Logger() *zap.Logger {
 }
 
 func (md *embedded) GenerateSSHCommands() (s string) {
-	s = fmt.Sprintf("\n\n# change SSH key permission\nchmod 600 %s\n\n", md.cfg.KeyPath)
+	s = fmt.Sprintf("\n\n# change SSH key permission\nchmod 400 %s\n\n", md.cfg.KeyPath)
 	for _, v := range md.cfg.Instances {
 		s += fmt.Sprintf(`ssh -o "StrictHostKeyChecking no" -i %s ubuntu@%s
 `, md.cfg.KeyPath, v.PublicDNS)

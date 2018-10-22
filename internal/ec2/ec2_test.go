@@ -19,7 +19,7 @@ func TestEC2(t *testing.T) {
 	cfg := ec2config.NewDefault()
 	cfg.InitScript = `#!/usr/bin/env bash
 
-echo "Hello World!" > /home/ubuntu/sample.txt
+echo "Hello World!" > /home/ubuntu/hello
 `
 
 	ec, err := NewDeployer(cfg)
