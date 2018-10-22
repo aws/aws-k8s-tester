@@ -51,7 +51,7 @@ func testGetWorkerNodeLogs(cmd *cobra.Command, args []string) {
 	}
 
 	if err = dp.GetWorkerNodeLogs(); err != nil {
-		fmt.Fprintf(os.Stderr, "failed correctness test %v\n", err)
+		fmt.Fprintf(os.Stderr, "failed to get worker node logs %v\n", err)
 		os.Exit(1)
 	}
 }
