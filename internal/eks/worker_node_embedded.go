@@ -470,10 +470,7 @@ func (md *embedded) deleteWorkerNode() error {
 }
 
 func (md *embedded) updateASG() (err error) {
-	md.lg.Info(
-		"e2e testing ASG",
-		zap.String("name", md.cfg.ClusterState.CFStackWorkerNodeGroupAutoScalingGroupName),
-	)
+	md.lg.Info("checking ASG")
 
 	var rout *cloudformation.DescribeStackResourcesOutput
 	rout, err = md.cf.DescribeStackResources(&cloudformation.DescribeStackResourcesInput{
@@ -581,7 +578,7 @@ func (md *embedded) updateASG() (err error) {
 	md.ec2InstancesMu.Unlock()
 
 	md.lg.Info(
-		"e2e tested ASG",
+		"checked ASG",
 		zap.String("name", md.cfg.ClusterState.CFStackWorkerNodeGroupAutoScalingGroupName),
 	)
 	return nil
