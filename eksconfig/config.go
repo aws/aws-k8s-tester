@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/aws/awstester/pkg/awsapi/ec2"
@@ -195,7 +194,6 @@ type ClusterState struct {
 	// WorkerNodes is a list of worker nodes.
 	WorkerNodes []Instance `json:"worker-nodes,omitempty"`
 
-	workerNodeLogsMu *sync.RWMutex
 	// WorkerNodeLogs is a list of worker node log file paths, fetched via SSH.
 	WorkerNodeLogs map[string]string `json:"worker-node-logs,omitempty"`
 
@@ -440,9 +438,6 @@ func (cfg *Config) BackupConfig() (p string, err error) {
 // And updates empty fields with default values.
 // At the end, it writes populated YAML to awstester config path.
 func (cfg *Config) ValidateAndSetDefaults() error {
-	if cfg.ClusterState.workerNodeLogsMu == nil {
-		cfg.ClusterState.workerNodeLogsMu = &sync.RWMutex{}
-	}
 	if len(cfg.LogOutputs) == 0 {
 		return errors.New("EKS LogOutputs is not specified")
 	}
@@ -747,20 +742,4 @@ func (cfg *Config) SetClusterUpTook(d time.Duration) {
 func (cfg *Config) SetIngressUpTook(d time.Duration) {
 	cfg.ALBIngressController.ingressUpTook = d
 	cfg.ALBIngressController.IngressUpTook = d.String()
-}
-
-// SetWorkerNodeLogs updates worker node logs.
-func (cfg *Config) SetWorkerNodeLogs(paths map[string]string) {
-	cfg.ClusterState.workerNodeLogsMu.Lock()
-	cfg.ClusterState.WorkerNodeLogs = paths
-	cfg.ClusterState.workerNodeLogsMu.Unlock()
-	cfg.Sync()
-}
-
-// GetWorkerNodeLogs returns worker node logs.
-func (cfg *Config) GetWorkerNodeLogs() (paths map[string]string) {
-	cfg.ClusterState.workerNodeLogsMu.RLock()
-	paths = cfg.ClusterState.WorkerNodeLogs
-	cfg.ClusterState.workerNodeLogsMu.RUnlock()
-	return paths
 }

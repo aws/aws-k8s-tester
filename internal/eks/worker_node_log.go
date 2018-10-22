@@ -14,7 +14,7 @@ import (
 
 // https://github.com/kubernetes/test-infra/blob/master/kubetest/dump.go
 // TODO: parallelize for >100 nodes?
-func (md *embedded) downloadWorkerNodeLogs() (err error) {
+func (md *embedded) fetchWorkerNodeLogs() (err error) {
 	if !md.cfg.EnableNodeSSH {
 		return errors.New("node SSH is not enabled")
 	}
@@ -295,6 +295,12 @@ func (md *embedded) downloadWorkerNodeLogs() (err error) {
 		sh.Close()
 	}
 
-	md.cfg.SetWorkerNodeLogs(paths)
+	md.ec2InstancesLogMu.Lock()
+	md.cfg.ClusterState.WorkerNodeLogs = paths
+	md.ec2InstancesLogMu.Unlock()
+
+	md.cfg.Sync()
+	md.lg.Info("updated worker node logs", zap.String("synced-at", md.cfg.ConfigPath))
+
 	return nil
 }

@@ -64,8 +64,9 @@ type embedded struct {
 	eks eksiface.EKSAPI
 	ec2 ec2iface.EC2API
 
-	ec2InstancesMu *sync.RWMutex
-	ec2Instances   []*ec2.Instance
+	ec2InstancesMu    *sync.RWMutex
+	ec2Instances      []*ec2.Instance
+	ec2InstancesLogMu *sync.RWMutex
 
 	s3Plugin s3.Plugin
 
@@ -91,11 +92,12 @@ func NewEKSDeployer(cfg *eksconfig.Config) (eksdeployer.Interface, error) {
 	}
 
 	md := &embedded{
-		stopc:          make(chan struct{}),
-		lg:             lg,
-		cfg:            cfg,
-		kubectl:        exec.New(),
-		ec2InstancesMu: &sync.RWMutex{},
+		stopc:             make(chan struct{}),
+		lg:                lg,
+		cfg:               cfg,
+		kubectl:           exec.New(),
+		ec2InstancesMu:    &sync.RWMutex{},
+		ec2InstancesLogMu: &sync.RWMutex{},
 	}
 	md.kubectlPath, err = md.kubectl.LookPath("kubectl")
 	if err != nil {
@@ -514,11 +516,15 @@ func (md *embedded) GetClusterCreated(v string) (time.Time, error) {
 // Let default kubetest log dumper handle all artifact uploads.
 // See https://github.com/kubernetes/test-infra/pull/9811/files#r225776067.
 func (md *embedded) DumpClusterLogs(artifactDir, _ string) (err error) {
-	err = md.downloadWorkerNodeLogs()
+	err = md.fetchWorkerNodeLogs()
 	if err != nil {
 		return err
 	}
-	for fpath, p := range md.cfg.GetWorkerNodeLogs() {
+
+	md.ec2InstancesLogMu.RLock()
+	defer md.ec2InstancesLogMu.RUnlock()
+
+	for fpath, p := range md.cfg.ClusterState.WorkerNodeLogs {
 		if err = fileutil.Copy(fpath, filepath.Join(artifactDir, p)); err != nil {
 			return err
 		}
@@ -688,11 +694,15 @@ func (md *embedded) uploadWorkerNode() (err error) {
 	if !md.cfg.EnableNodeSSH {
 		return nil
 	}
-	err = md.downloadWorkerNodeLogs()
+	err = md.fetchWorkerNodeLogs()
 	if err != nil {
 		return err
 	}
-	for fpath, s3Path := range md.cfg.GetWorkerNodeLogs() {
+
+	md.ec2InstancesLogMu.RLock()
+	defer md.ec2InstancesLogMu.RUnlock()
+
+	for fpath, s3Path := range md.cfg.ClusterState.WorkerNodeLogs {
 		err = md.s3Plugin.UploadToBucketForTests(fpath, s3Path)
 		if err != nil {
 			md.lg.Warn(
