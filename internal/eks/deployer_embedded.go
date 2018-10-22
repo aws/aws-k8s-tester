@@ -363,11 +363,11 @@ func (md *embedded) Up() (err error) {
 		if err = md.upload(); err != nil {
 			md.lg.Warn("failed to upload", zap.Error(err))
 		}
-		if err = md.uploadWorkerNode(); err != nil {
-			md.lg.Warn("failed to upload worker node logs", zap.Error(err))
-		}
 		if err = md.uploadALB(); err != nil {
 			md.lg.Warn("failed to upload ALB", zap.Error(err))
+		}
+		if err = md.uploadWorkerNode(); err != nil {
+			md.lg.Warn("failed to upload worker node logs", zap.Error(err))
 		}
 	}
 	return nil
@@ -404,11 +404,16 @@ func (md *embedded) Down() (err error) {
 
 	now := time.Now().UTC()
 
-	var errs []string
-	md.lg.Info("Down", zap.String("cluster-name", md.cfg.ClusterName))
+	md.lg.Info(
+		"uploading worker node logs before shutdown",
+		zap.String("cluster-name", md.cfg.ClusterName),
+	)
 	if err = md.uploadWorkerNode(); err != nil {
 		md.lg.Warn("failed to upload worker node logs", zap.Error(err))
 	}
+
+	md.lg.Info("Down", zap.String("cluster-name", md.cfg.ClusterName))
+	var errs []string
 	if md.cfg.ALBIngressController.Enable && md.cfg.ALBIngressController.Created {
 		if err = md.albPlugin.DeleteIngressObjects(); err != nil {
 			md.lg.Warn("failed to delete ALB Ingress Controller ELBv2", zap.Error(err))
@@ -714,7 +719,7 @@ func (md *embedded) uploadWorkerNode() (err error) {
 			continue
 		}
 		md.lg.Info("uploaded", zap.String("s3-path", s3Path))
-		time.Sleep(50 * time.Millisecond)
+		time.Sleep(30 * time.Millisecond)
 	}
 	return nil
 }

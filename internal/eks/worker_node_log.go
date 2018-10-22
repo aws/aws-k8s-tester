@@ -24,8 +24,8 @@ func (md *embedded) fetchWorkerNodeLogs() (err error) {
 	md.ec2InstancesMu.RLock()
 	defer md.ec2InstancesMu.RUnlock()
 
-	for _, iv := range md.ec2Instances {
-		id, ip := *iv.InstanceId, *iv.PublicIpAddress
+	for _, iv := range md.cfg.ClusterState.WorkerNodes {
+		id, ip := iv.InstanceID, iv.PublicIP
 		pfx := strings.TrimSpace(fmt.Sprintf("%s-%s", id, ip))
 
 		var sh ssh.SSH
