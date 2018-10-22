@@ -521,7 +521,7 @@ func (md *embedded) GetClusterCreated(v string) (time.Time, error) {
 // Let default kubetest log dumper handle all artifact uploads.
 // See https://github.com/kubernetes/test-infra/pull/9811/files#r225776067.
 func (md *embedded) DumpClusterLogs(artifactDir, _ string) (err error) {
-	err = md.fetchWorkerNodeLogs()
+	err = md.GetWorkerNodeLogs()
 	if err != nil {
 		return err
 	}
@@ -699,7 +699,7 @@ func (md *embedded) uploadWorkerNode() (err error) {
 	if !md.cfg.EnableNodeSSH {
 		return nil
 	}
-	err = md.fetchWorkerNodeLogs()
+	err = md.GetWorkerNodeLogs()
 	if err != nil {
 		return err
 	}

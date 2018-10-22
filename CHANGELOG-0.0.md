@@ -1,5 +1,22 @@
 
 
+## [0.0.3](https://github.com/aws/awstester/releases/tag/0.0.3) (2018-10-22)
+
+See [code changes](https://github.com/aws/awstester/compare/0.0.2...0.0.3).
+
+### `awstester` CLI
+
+- Add [`awstester eks test get-worker-node-logs`](https://github.com/aws/awstester/pull/6) command.
+
+### `eksdeployer`
+
+- Add [`GetWorkerNodeLogs`](https://github.com/aws/awstester/pull/6) to download worker node logs.
+
+### Go
+
+- Compile with [*Go 1.11.1*](https://golang.org/doc/devel/release.html#go1.11).
+
+
 ## [0.0.2](https://github.com/aws/awstester/releases/tag/0.0.2) (2018-10-22)
 
 See [code changes](https://github.com/aws/awstester/compare/0.0.1...0.0.2).

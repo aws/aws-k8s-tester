@@ -157,7 +157,15 @@ func (tr *tester) GetClusterCreated(v string) (time.Time, error) {
 // See https://github.com/kubernetes/test-infra/pull/9811/files#r225776067.
 func (tr *tester) DumpClusterLogs(artifactDir, _ string) (err error) {
 	tr.LoadConfig()
-
+	_, err = tr.ctrl.Output(exec.Command(
+		tr.awsTesterPath,
+		"eks",
+		"--path="+tr.cfg.ConfigPath,
+		"test", "get-worker-node-logs",
+	))
+	if err != nil {
+		return err
+	}
 	_, err = tr.ctrl.Output(exec.Command(
 		tr.awsTesterPath,
 		"eks",

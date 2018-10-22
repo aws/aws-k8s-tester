@@ -17,10 +17,43 @@ func newTest() *cobra.Command {
 		Short: "Test commands",
 	}
 	cmd.AddCommand(
+		newTestGetWorkerNodeLogs(),
 		newTestDumpClusterLogs(),
 		newTestALB(),
 	)
 	return cmd
+}
+
+func newTestGetWorkerNodeLogs() *cobra.Command {
+	return &cobra.Command{
+		Use:   "get-worker-node-logs",
+		Short: "Downloads all cluster logs",
+		Run:   testGetWorkerNodeLogs,
+	}
+}
+
+func testGetWorkerNodeLogs(cmd *cobra.Command, args []string) {
+	if path == "" {
+		fmt.Fprintln(os.Stderr, "'--path' flag is not specified")
+		os.Exit(1)
+	}
+
+	cfg, err := eksconfig.Load(path)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to load configuration %q (%v)\n", path, err)
+		os.Exit(1)
+	}
+	var dp eksdeployer.Interface
+	dp, err = eks.NewEKSDeployer(cfg)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to create EKS deployer %v\n", err)
+		os.Exit(1)
+	}
+
+	if err = dp.GetWorkerNodeLogs(); err != nil {
+		fmt.Fprintf(os.Stderr, "failed correctness test %v\n", err)
+		os.Exit(1)
+	}
 }
 
 func newTestDumpClusterLogs() *cobra.Command {
@@ -55,7 +88,7 @@ func testDumpClusterLogs(cmd *cobra.Command, args []string) {
 	}
 
 	if err = dp.DumpClusterLogs(dir, ""); err != nil {
-		fmt.Fprintf(os.Stderr, "failed correctness test %v\n", err)
+		fmt.Fprintf(os.Stderr, "failed to dump cluster logs %v\n", err)
 		os.Exit(1)
 	}
 }
