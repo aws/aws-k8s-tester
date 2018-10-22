@@ -34,7 +34,7 @@ type SSH interface {
 	// Close closes the session and connection to a remote server.
 	Close()
 	// Run runs the command and returns the output.
-	Run(cmd string) ([]byte, error)
+	Run(cmd string, opts ...OpOption) ([]byte, error)
 }
 
 type ssh struct {
@@ -153,7 +153,10 @@ func (sh *ssh) Close() {
 	sh.lg.Info("closed connection", zap.String("addr", sh.cfg.Addr), zap.Error(cerr))
 }
 
-func (sh *ssh) Run(cmd string) (out []byte, err error) {
+func (sh *ssh) Run(cmd string, opts ...OpOption) (out []byte, err error) {
+	ret := Op{verbose: true, envs: make(map[string]string)}
+	ret.applyOpts(opts)
+
 	now := time.Now().UTC()
 
 	// session only accepts one call to Run, Start, Shell, Output, or CombinedOutput
@@ -164,8 +167,16 @@ func (sh *ssh) Run(cmd string) (out []byte, err error) {
 	}
 	ss.Stderr = nil
 	ss.Stdout = nil
+
 	if len(sh.cfg.Envs) > 0 {
 		for k, v := range sh.cfg.Envs {
+			if err = ss.Setenv(k, v); err != nil {
+				return nil, err
+			}
+		}
+	}
+	if len(ret.envs) > 0 {
+		for k, v := range ret.envs {
 			if err = ss.Setenv(k, v); err != nil {
 				return nil, err
 			}
@@ -186,11 +197,13 @@ func (sh *ssh) Run(cmd string) (out []byte, err error) {
 	case <-donec:
 		ss.Close()
 	}
-	sh.lg.Info("ran command",
-		zap.String("cmd", cmd),
-		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
-		zap.Error(err),
-	)
+	if ret.verbose {
+		sh.lg.Info("ran command",
+			zap.String("cmd", cmd),
+			zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
+			zap.Error(err),
+		)
+	}
 
 	return out, err
 }
