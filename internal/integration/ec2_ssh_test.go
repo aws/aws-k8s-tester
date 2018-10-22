@@ -53,6 +53,17 @@ echo "Hello World!" > /home/ubuntu/sample.txt
 	}
 	fmt.Println("printenv:", string(out))
 
+	notifier := make(chan os.Signal, 1)
+	signal.Notify(notifier, syscall.SIGINT, syscall.SIGTERM)
+	fmt.Println("received:", (<-notifier).String())
+	signal.Stop(notifier)
+
+	out, err = sh.Run("cat /var/log/cloud-init-output.log")
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Println("cloud-init-output.log", string(out))
+
 	out, err = sh.Run("cat /home/ubuntu/sample.txt")
 	if err != nil {
 		t.Error(err)
@@ -67,8 +78,4 @@ echo "Hello World!" > /home/ubuntu/sample.txt
 	}
 	fmt.Println("availability-zone:", string(out))
 
-	notifier := make(chan os.Signal, 1)
-	signal.Notify(notifier, syscall.SIGINT, syscall.SIGTERM)
-	fmt.Println("received:", (<-notifier).String())
-	signal.Stop(notifier)
 }
