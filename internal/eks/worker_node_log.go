@@ -277,7 +277,7 @@ func (md *embedded) downloadWorkerNodeLogs() (err error) {
 				md.lg.Info("empty log", zap.String("path", p))
 				continue
 			}
-			fpath, err = fileutil.WriteToTempDir(pfx+"."+p, out)
+			fpath, err = fileutil.WriteToTempDir(pfx+strings.Replace(p, "/", ".", -1), out)
 			if err != nil {
 				sh.Close()
 				md.lg.Warn(

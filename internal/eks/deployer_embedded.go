@@ -356,6 +356,7 @@ func (md *embedded) Up() (err error) {
 	if err = md.cfg.Sync(); err != nil {
 		return err
 	}
+
 	if md.cfg.LogAutoUpload {
 		if err = md.upload(); err != nil {
 			md.lg.Warn("failed to upload", zap.Error(err))
@@ -367,7 +368,6 @@ func (md *embedded) Up() (err error) {
 			md.lg.Warn("failed to upload ALB", zap.Error(err))
 		}
 	}
-
 	return nil
 }
 
@@ -700,7 +700,6 @@ func (md *embedded) uploadWorkerNode() (err error) {
 	if !md.cfg.EnableNodeSSH {
 		return nil
 	}
-
 	err = md.downloadWorkerNodeLogs()
 	if err != nil {
 		return err
@@ -708,10 +707,16 @@ func (md *embedded) uploadWorkerNode() (err error) {
 	for fpath, s3Path := range md.cfg.GetWorkerNodeLogs() {
 		err = md.s3Plugin.UploadToBucketForTests(fpath, s3Path)
 		if err != nil {
-			return err
+			md.lg.Warn(
+				"failed to upload",
+				zap.String("file-path", fpath),
+				zap.Error(err),
+			)
+			time.Sleep(2 * time.Second)
+			continue
 		}
-		md.lg.Info("uploaded", zap.String("s3-path", s3Path))
 
+		md.lg.Info("uploaded", zap.String("s3-path", s3Path))
 		time.Sleep(2 * time.Second)
 	}
 	return nil
