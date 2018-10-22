@@ -45,17 +45,18 @@ func TestEC2SSH(t *testing.T) {
 	if err = sh.Connect(); err != nil {
 		t.Fatal(err)
 	}
-	var out []byte
-	out, err = sh.Run("printenv")
-	if err != nil {
-		t.Error(err)
-	}
-	fmt.Println("printenv:", string(out))
 
 	notifier := make(chan os.Signal, 1)
 	signal.Notify(notifier, syscall.SIGINT, syscall.SIGTERM)
 	fmt.Println("received:", (<-notifier).String())
 	signal.Stop(notifier)
+
+	var out []byte
+	out, err = sh.Run("printenv")
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Println("printenv", string(out))
 
 	out, err = sh.Run("cat /var/log/cloud-init-output.log")
 	if err != nil {

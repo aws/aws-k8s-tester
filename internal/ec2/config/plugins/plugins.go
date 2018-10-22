@@ -98,7 +98,8 @@ fi
 
 source ${HOME}/.bashrc
 export PATH=$PATH:/usr/local/go/bin:${HOME}/go/bin
-sudo echo PATH=\"${PATH}\" >> /etc/environment
+
+sudo echo PATH=${PATH} > /etc/environment
 sudo echo GOPATH=/home/ubuntu/go >> /etc/environment
 
 go version
