@@ -170,25 +170,6 @@ func (tr *tester) DumpClusterLogs(artifactDir, _ string) (err error) {
 	return err
 }
 
-/*
-// Publish publishes a success file.
-// Add this when required... See "kubetest/e2e.go".
-func (tr *tester) Publish() (err error) {
-	tr.LoadConfig()
-	logOutputS3 := tr.cfg.ClusterName + "/" + filepath.Base(tr.cfg.LogOutputToUploadPath)
-
-	_, err = tr.ctrl.Output(exec.Command(
-		tr.awsTesterPath,
-		"eks",
-		"--path="+tr.cfg.ConfigPath,
-		"s3-upload",
-		tr.cfg.LogOutputToUploadPath,
-		logOutputS3,
-	))
-	return err
-}
-*/
-
 ///////////////////////////////////////////////
 // Extra methods for EKS specific operations //
 ///////////////////////////////////////////////
