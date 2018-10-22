@@ -73,8 +73,6 @@ func New(cfg *eksconfig.Config, ctrl *process.Control) (eksdeployer.Interface, e
 
 // Up creates a new EKS cluster.
 func (tr *tester) Up() (err error) {
-	fmt.Println("Up using binary 'awstester'")
-
 	createCmd := exec.Command(
 		tr.awsTesterPath,
 		"eks",
