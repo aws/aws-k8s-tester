@@ -200,7 +200,6 @@ func (md *embedded) downloadWorkerNodeLogs() (err error) {
 			cmd = "sudo journalctl --output=cat -u " + svc
 			out, err = sh.Run(cmd)
 			if err != nil {
-				sh.Close()
 				md.lg.Warn(
 					"failed to run command",
 					zap.String("instance-id", id),
@@ -208,7 +207,7 @@ func (md *embedded) downloadWorkerNodeLogs() (err error) {
 					zap.String("cmd", cmd),
 					zap.Error(err),
 				)
-				return err
+				continue
 			}
 			if len(out) == 0 {
 				md.lg.Info("empty log", zap.String("service", svc))
@@ -262,10 +261,9 @@ func (md *embedded) downloadWorkerNodeLogs() (err error) {
 				zap.String("public-ip", ip),
 				zap.String("path", p),
 			)
-			cmd = "sudo cat" + p
+			cmd = "sudo cat " + p
 			out, err = sh.Run(cmd)
 			if err != nil {
-				sh.Close()
 				md.lg.Warn(
 					"failed to run command",
 					zap.String("cmd", cmd),
@@ -273,7 +271,7 @@ func (md *embedded) downloadWorkerNodeLogs() (err error) {
 					zap.String("public-ip", ip),
 					zap.Error(err),
 				)
-				return err
+				continue
 			}
 			if len(out) == 0 {
 				md.lg.Info("empty log", zap.String("path", p))
