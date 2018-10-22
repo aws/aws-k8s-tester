@@ -23,6 +23,7 @@ type Config struct {
 	KeyPath  string
 	Addr     string
 	UserName string
+	Envs     map[string]string
 }
 
 // SSH defines SSH operations.
@@ -163,6 +164,13 @@ func (sh *ssh) Run(cmd string) (out []byte, err error) {
 	}
 	ss.Stderr = nil
 	ss.Stdout = nil
+	if len(sh.cfg.Envs) > 0 {
+		for k, v := range sh.cfg.Envs {
+			if err = ss.Setenv(k, v); err != nil {
+				return nil, err
+			}
+		}
+	}
 
 	sh.lg.Info("created client session, running command", zap.String("cmd", cmd))
 	donec := make(chan error)
