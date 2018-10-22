@@ -297,38 +297,3 @@ func (md *embedded) downloadWorkerNodeLogs() (err error) {
 	md.cfg.SetWorkerNodeLogs(paths)
 	return nil
 }
-
-/*
-// https://github.com/awslabs/amazon-eks-ami/blob/master/files/kubelet.service
-
-md.lg.Info(
-	"fetching kubelet.service logs",
-	zap.String("instance-id", id),
-	zap.String("public-ip", ip),
-)
-kubeletCmd := ""
-out, err = sh.Run(kubeletCmd)
-if err != nil {
-	sh.Close()
-	md.lg.Warn(
-		"failed to run command",
-		zap.String("cmd", kubeletCmd),
-		zap.String("instance-id", id),
-		zap.String("public-ip", ip),
-		zap.Error(err),
-	)
-	return err
-}
-fpath, err = fileutil.WriteToTempDir( pfx + "." + p,out)
-if err != nil {
-	sh.Close()
-	md.lg.Warn(
-		"failed to write output",
-		zap.String("instance-id", id),
-		zap.String("public-ip", ip),
-		zap.Error(err),
-	)
-	return err
-}
-paths[fpath] = strings.ToLower(strings.TrimSpace(fmt.Sprintf("%s-%s.kubelet.log", id, ip)))
-*/
