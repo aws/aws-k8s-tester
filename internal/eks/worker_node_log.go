@@ -88,7 +88,7 @@ func (md *embedded) downloadWorkerNodeLogs() (err error) {
 			)
 			return err
 		}
-		paths[fpath] = filepath.Base(fpath)
+		paths[fpath] = filepath.Join(md.cfg.ClusterName, pfx, filepath.Base(fpath))
 
 		// kernel logs
 		md.lg.Info(
@@ -120,7 +120,7 @@ func (md *embedded) downloadWorkerNodeLogs() (err error) {
 			)
 			return err
 		}
-		paths[fpath] = filepath.Base(fpath)
+		paths[fpath] = filepath.Join(md.cfg.ClusterName, pfx, filepath.Base(fpath))
 
 		// full journal logs (e.g. disk mounts)
 		md.lg.Info(
@@ -152,7 +152,7 @@ func (md *embedded) downloadWorkerNodeLogs() (err error) {
 			)
 			return err
 		}
-		paths[fpath] = filepath.Base(fpath)
+		paths[fpath] = filepath.Join(md.cfg.ClusterName, pfx, filepath.Base(fpath))
 
 		// other systemd services
 		md.lg.Info(
@@ -225,7 +225,7 @@ func (md *embedded) downloadWorkerNodeLogs() (err error) {
 				)
 				return err
 			}
-			paths[fpath] = filepath.Base(fpath)
+			paths[fpath] = filepath.Join(md.cfg.ClusterName, pfx, filepath.Base(fpath))
 		}
 
 		// other /var/log
@@ -289,7 +289,7 @@ func (md *embedded) downloadWorkerNodeLogs() (err error) {
 				)
 				return err
 			}
-			paths[fpath] = filepath.Base(fpath)
+			paths[fpath] = filepath.Join(md.cfg.ClusterName, pfx, filepath.Base(fpath))
 		}
 
 		sh.Close()

@@ -533,19 +533,6 @@ func (md *embedded) UploadToBucketForTests(localPath, remotePath string) error {
 	return md.s3Plugin.UploadToBucketForTests(localPath, remotePath)
 }
 
-/*
-TODO: kubetest publish uploads a success file...
-Add this when required... See "kubetest/e2e.go".
-
-func (md *embedded) Publish() error {
-	// TODO: upload others?
-	return md.s3Plugin.UploadToBucketForTests(
-		md.cfg.LogOutputToUploadPath,
-		md.cfg.LogOutputToUploadPathBucket,
-	)
-}
-*/
-
 ///////////////////////////////////////////////
 // Extra methods for EKS specific operations //
 ///////////////////////////////////////////////

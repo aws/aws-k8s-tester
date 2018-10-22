@@ -83,19 +83,6 @@ func (ac *awsCli) UploadToBucketForTests(localPath, remotePath string) error {
 	return ac.s3Plugin.UploadToBucketForTests(localPath, remotePath)
 }
 
-/*
-TODO: kubetest publish uploads a success file...
-Add this when required... See "kubetest/e2e.go".
-
-func (ac *awsCli) Publish() error {
-	// TODO: follower the pattern implemented in 'embedded'
-	return ac.s3Plugin.UploadToBucketForTests(
-		ac.cfg.LogOutputToUploadPath,
-		ac.cfg.LogOutputToUploadPathBucket,
-	)
-}
-*/
-
 ///////////////////////////////////////////////
 // Extra methods for EKS specific operations //
 ///////////////////////////////////////////////
