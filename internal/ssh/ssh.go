@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
+	"os"
 	"reflect"
 	"strings"
 	"syscall"
@@ -124,6 +125,14 @@ func (sh *ssh) Connect() (err error) {
 	}
 	c, chans, reqs, err := cryptossh.NewClientConn(sh.conn, sh.cfg.Addr, sshConfig)
 	if err != nil {
+		fi, _ := os.Stat(sh.cfg.KeyPath)
+		sh.lg.Warn(
+			"failed to connect",
+			zap.String("addr", sh.cfg.Addr),
+			zap.String("file-mode", fi.Mode().String()),
+			zap.String("error-type", fmt.Sprintf("%v", reflect.TypeOf(err))),
+			zap.Error(err),
+		)
 		return err
 	}
 
