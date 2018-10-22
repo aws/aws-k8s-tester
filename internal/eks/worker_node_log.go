@@ -1,7 +1,6 @@
 package eks
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"path/filepath"
@@ -33,7 +32,7 @@ func (md *embedded) downloadWorkerNodeLogs() (err error) {
 			Logger:   md.lg,
 			KeyPath:  md.cfg.ClusterState.CFStackWorkerNodeGroupKeyPairPrivateKeyPath,
 			Addr:     ip + ":22",
-			UserName: "ubuntu",
+			UserName: "ec2-user", // for Amazon Linux 2
 		})
 		if err != nil {
 			md.lg.Warn(
@@ -160,7 +159,7 @@ func (md *embedded) downloadWorkerNodeLogs() (err error) {
 			zap.String("instance-id", id),
 			zap.String("public-ip", ip),
 		)
-		cmd = "sudo journalctl --output=short-precise"
+		cmd = "sudo systemctl list-units -t service --no-pager --no-legend --all"
 		out, err = sh.Run(cmd)
 		if err != nil {
 			sh.Close()
@@ -173,23 +172,32 @@ func (md *embedded) downloadWorkerNodeLogs() (err error) {
 			)
 			return err
 		}
+		/*
+			auditd.service                                        loaded    active   running Security Auditing Service
+			auth-rpcgss-module.service                            loaded    inactive dead    Kernel Module supporting RPCSEC_GSS
+		*/
 		var svcs []string
 		for _, line := range strings.Split(string(out), "\n") {
-			tokens := strings.Fields(line)
-			if len(tokens) == 0 || tokens[0] == "" {
+			fields := strings.Fields(line)
+			if len(fields) == 0 || fields[0] == "" || len(fields) < 5 {
 				continue
 			}
-			svcs = append(svcs, tokens[0])
+			if fields[1] == "not-found" {
+				continue
+			}
+			if fields[2] == "inactive" {
+				continue
+			}
+			svcs = append(svcs, fields[0])
 		}
 		for _, svc := range svcs {
-			name := svc + ".service"
 			md.lg.Info(
 				"fetching systemd service log",
 				zap.String("instance-id", id),
 				zap.String("public-ip", ip),
-				zap.String("name", name),
+				zap.String("service", svc),
 			)
-			cmd = "sudo journalctl --output=cat -u " + name
+			cmd = "sudo journalctl --output=cat -u " + svc
 			out, err = sh.Run(cmd)
 			if err != nil {
 				sh.Close()
@@ -202,7 +210,11 @@ func (md *embedded) downloadWorkerNodeLogs() (err error) {
 				)
 				return err
 			}
-			fpath, err = fileutil.WriteToTempDir(pfx+"."+name+".log", out)
+			if len(out) == 0 {
+				md.lg.Info("empty log", zap.String("service", svc))
+				continue
+			}
+			fpath, err = fileutil.WriteToTempDir(pfx+"."+svc+".log", out)
 			if err != nil {
 				sh.Close()
 				md.lg.Warn(
@@ -222,7 +234,7 @@ func (md *embedded) downloadWorkerNodeLogs() (err error) {
 			zap.String("instance-id", id),
 			zap.String("public-ip", ip),
 		)
-		cmd = "sudo find /var/log -print0"
+		cmd = "sudo find /var/log ! -type d"
 		out, err = sh.Run(cmd)
 		if err != nil {
 			sh.Close()
@@ -236,12 +248,12 @@ func (md *embedded) downloadWorkerNodeLogs() (err error) {
 			return err
 		}
 		var logPaths []string
-		for _, v := range bytes.Split(out, []byte{0}) {
-			if len(v) == 0 {
+		for _, line := range strings.Split(string(out), "\n") {
+			if len(line) == 0 {
 				// last value
 				continue
 			}
-			logPaths = append(logPaths, string(v))
+			logPaths = append(logPaths, line)
 		}
 		for _, p := range logPaths {
 			md.lg.Info(
@@ -262,6 +274,10 @@ func (md *embedded) downloadWorkerNodeLogs() (err error) {
 					zap.Error(err),
 				)
 				return err
+			}
+			if len(out) == 0 {
+				md.lg.Info("empty log", zap.String("path", p))
+				continue
 			}
 			fpath, err = fileutil.WriteToTempDir(pfx+"."+p, out)
 			if err != nil {

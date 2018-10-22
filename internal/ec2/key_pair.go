@@ -35,7 +35,7 @@ func (md *embedded) createKeyPair() (err error) {
 	if *output.KeyName != md.cfg.KeyName {
 		return fmt.Errorf("unexpected key name %q, expected %q", *output.KeyName, md.cfg.KeyName)
 	}
-	if err = ioutil.WriteFile(md.cfg.KeyPath, []byte(*output.KeyMaterial), 0600); err != nil {
+	if err = ioutil.WriteFile(md.cfg.KeyPath, []byte(*output.KeyMaterial), 0400); err != nil {
 		return err
 	}
 
