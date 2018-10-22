@@ -13,6 +13,7 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWSTESTER_EC2_CONFIG_PATH", "test-path")
 	os.Setenv("AWSTESTER_EC2_DOWN", "false")
 	os.Setenv("AWSTESTER_EC2_VPC_ID", "aaa")
+	os.Setenv("AWSTESTER_EC2_PLUGINS", "update-ubuntu,go1.11.1-ubuntu")
 	os.Setenv("AWSTESTER_EC2_INSTANCE_TYPE", "m5d.2xlarge")
 	os.Setenv("AWSTESTER_EC2_KEY_NAME", "test-key")
 	os.Setenv("AWSTESTER_EC2_ASSOCIATE_PUBLIC_IP_ADDRESS", "false")
@@ -24,6 +25,7 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWSTESTER_EC2_CONFIG_PATH")
 		os.Unsetenv("AWSTESTER_EC2_DOWN")
 		os.Unsetenv("AWSTESTER_EC2_VPC_ID")
+		os.Unsetenv("AWSTESTER_EC2_PLUGINS")
 		os.Unsetenv("AWSTESTER_EC2_INSTANCE_TYPE")
 		os.Unsetenv("AWSTESTER_EC2_KEY_NAME")
 		os.Unsetenv("AWSTESTER_EC2_ASSOCIATE_PUBLIC_IP_ADDRESS")
@@ -46,6 +48,9 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.VPCID != "aaa" {
 		t.Fatalf("VPCID unexpected %q", cfg.VPCID)
+	}
+	if !reflect.DeepEqual(cfg.Plugins, []string{"update-ubuntu", "go1.11.1-ubuntu"}) {
+		t.Fatalf("unexpected plugins, got %v", cfg.Plugins)
 	}
 	if cfg.InstanceType != "m5d.2xlarge" {
 		t.Fatalf("InstanceType unexpected %q", cfg.InstanceType)

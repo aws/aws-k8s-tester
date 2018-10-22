@@ -18,10 +18,9 @@ func TestEC2SSH(t *testing.T) {
 	}
 
 	cfg := ec2config.NewDefault()
-	cfg.InitScript = `#!/usr/bin/env bash
 
-echo "Hello World!" > /home/ubuntu/hello
-`
+	// tail -f /var/log/cloud-init-output.log
+	cfg.Plugins = []string{"update-ubuntu", "go1.11.1-ubuntu"}
 
 	ec, err := ec2.NewDeployer(cfg)
 	if err != nil {
@@ -38,7 +37,7 @@ echo "Hello World!" > /home/ubuntu/hello
 		Logger:   ec.Logger(),
 		KeyPath:  cfg.KeyPath,
 		Addr:     cfg.Instances[0].PublicIP + ":22",
-		UserName: "ubuntu",
+		UserName: cfg.UserName,
 	})
 	if serr != nil {
 		t.Fatal(err)
@@ -64,12 +63,18 @@ echo "Hello World!" > /home/ubuntu/hello
 	}
 	fmt.Println("cloud-init-output.log", string(out))
 
-	out, err = sh.Run("cat /home/ubuntu/sample.txt")
+	out, err = sh.Run("cat /etc/environment")
 	if err != nil {
 		t.Error(err)
 	}
-	if string(out) != "Hello World!\n" {
-		t.Fatalf("unexpected output %q", string(out))
+	fmt.Println("/etc/environment", string(out))
+
+	out, err = sh.Run("source /etc/environment && go version")
+	if err != nil {
+		t.Error(err)
+	}
+	if string(out) != "go version go1.11.1 linux/amd64\n" {
+		t.Fatalf("unexpected go version %q", string(out))
 	}
 
 	out, err = sh.Run("curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone")

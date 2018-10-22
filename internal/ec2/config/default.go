@@ -25,8 +25,15 @@ var defaultConfig = Config{
 	LogOutputs:    []string{"stderr"},
 	LogAutoUpload: true,
 
+	OSDistribution: "ubuntu",
+	UserName:       "ubuntu",
+
 	// Ubuntu Server 16.04 LTS (HVM), SSD Volume Type
 	ImageID: "ami-ba602bc2",
+	Plugins: []string{
+		"update-ubuntu",
+		"go1.11.1-ubuntu",
+	},
 
 	// 4 vCPU, 15 GB RAM
 	InstanceType: "m3.xlarge",

@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/aws/awstester/internal/ec2/config/plugins"
 	ec2types "github.com/aws/awstester/pkg/awsapi/ec2"
 
 	gyaml "github.com/ghodss/yaml"
@@ -62,8 +63,23 @@ type Config struct {
 	ConfigPathURL    string    `json:"config-path-url,omitempty"`    // read-only to user
 	UpdatedAt        time.Time `json:"updated-at,omitempty"`         // read-only to user
 
+	// OSDistribution is either ubuntu or Amazon Linux 2 for now.
+	OSDistribution string `json:"os-distribution,omitempty"`
+	// UserName is the user name used for running init scripts or SSH access.
+	UserName string `json:"user-name,omitempty"`
 	// ImageID is the Amazon Machine Image (AMI).
 	ImageID string `json:"image-id,omitempty"`
+	// Plugins is the list of plugins.
+	Plugins []string `json:"plugins,omitempty"`
+	// InitScript contains init scripts (run-instance UserData field).
+	// Script must be started with "#!/usr/bin/env bash".
+	// And will be base64-encoded. Do not base64-encode.
+	// Let "ec2" package base64-encode.
+	// Outputs are saved in "/var/log/cloud-init-output.log" in EC2 instance.
+	// "tail -f /var/log/cloud-init-output.log" to check the progress.
+	// Reference: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html
+	InitScript string `json:"init-script,omitempty"`
+
 	// InstanceType is the instance type.
 	InstanceType string `json:"instance-type,omitempty"`
 	// Count is the number of EC2 instances to create.
@@ -100,14 +116,6 @@ type Config struct {
 	// AssociatePublicIPAddress is true to associate a public IP address.
 	AssociatePublicIPAddress bool `json:"associate-public-ip-address"`
 
-	// InitScript contains init scripts (run-instance UserData field).
-	// Script must be started with "#!/usr/bin/env bash".
-	// And will be base64-encoded. Do not base64-encode.
-	// Let "ec2" package base64-encode.
-	// Outputs are saved in "/var/log/cloud-init-output.log" in EC2 instance.
-	// Reference: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html
-	InitScript string `json:"init-script,omitempty"`
-
 	// Instances is a set of EC2 instances created from this configuration.
 	Instances            []Instance          `json:"instances,omitempty"`
 	InstanceIDToInstance map[string]Instance `json:"instance-id-to-instance,omitempty"`
@@ -123,9 +131,26 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 	if cfg.AWSRegion == "" {
 		return errors.New("empty AWSRegion")
 	}
+	if cfg.OSDistribution == "" {
+		return errors.New("empty OSDistribution")
+	}
+	if cfg.UserName == "" {
+		return errors.New("empty UserName")
+	}
 	if cfg.ImageID == "" {
 		return errors.New("empty ImageID")
 	}
+
+	if len(cfg.Plugins) > 0 && cfg.InitScript != "" {
+		return errors.New("both Plugins and InitScript are not empty")
+	}
+	if len(cfg.Plugins) > 0 && cfg.InitScript == "" {
+		cfg.InitScript, err = plugins.Get(cfg.Plugins...)
+		if err != nil {
+			return err
+		}
+	}
+
 	if cfg.InstanceType == "" {
 		return errors.New("empty InstanceType")
 	}

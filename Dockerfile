@@ -28,9 +28,6 @@ RUN apt-get -y update \
   git \
   mercurial \
   openssh-client \
-  python3 \
-  python3-pip \
-  python3-setuptools \
   rsync \
   unzip \
   wget \
@@ -38,6 +35,9 @@ RUN apt-get -y update \
   zip \
   zlib1g-dev \
   lsb-release \
+  python3 \
+  python3-pip \
+  python3-setuptools \
   && apt-get clean \
   && pip3 install awscli --no-cache-dir --upgrade \
   && which aws && aws --version \
