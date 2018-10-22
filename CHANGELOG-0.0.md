@@ -6,23 +6,23 @@ See [code changes](https://github.com/aws/awstester/compare/0.0.1...0.0.2).
 
 ### `eksconfig`
 
-- Add [`eksconfig.ClusterState.WorkerNodes`](https://github.com/aws/awstester/pull/1) field.
-  - Add [`eksconfig.Instance`](https://github.com/aws/awstester/pull/1) to represent worker node.
-- Add [`eksconfig.ClusterState.WorkerNodeLogs`](https://github.com/aws/awstester/pull/1) field.
-- Add [`eksconfig.ClusterState.CFStackWorkerNodeGroupSecurityGroupID`](https://github.com/aws/awstester/pull/1) field.
-- Add [`eksconfig.Config.EnableNodeSSH`](https://github.com/aws/awstester/pull/1) field.
+- Add [`eksconfig.ClusterState.WorkerNodes`](https://github.com/aws/awstester/pull/5) field.
+  - Add [`eksconfig.Instance`](https://github.com/aws/awstester/pull/5) to represent worker node.
+- Add [`eksconfig.ClusterState.WorkerNodeLogs`](https://github.com/aws/awstester/pull/5) field.
+- Add [`eksconfig.ClusterState.CFStackWorkerNodeGroupSecurityGroupID`](https://github.com/aws/awstester/pull/5) field.
+- Add [`eksconfig.Config.EnableNodeSSH`](https://github.com/aws/awstester/pull/5) field.
   - If true, worker node exposes port :22 for SSH access.
-- Rename [`eksconfig.ClusterState.EC2NodeGroupStatus` to `eksconfig.ClusterState.WorkerNodeGroupStatus`](https://github.com/aws/awstester/pull/1).
-- Rename [`eksconfig.ClusterState.CFStackNode*` to `eksconfig.ClusterState.CFStackWorkerNode*`](https://github.com/aws/awstester/pull/1).
-- Remove [`KubetestEnableDumpClusterLogs`](https://github.com/aws/awstester/pull/1) field.
+- Rename [`eksconfig.ClusterState.EC2NodeGroupStatus` to `eksconfig.ClusterState.WorkerNodeGroupStatus`](https://github.com/aws/awstester/pull/5).
+- Rename [`eksconfig.ClusterState.CFStackNode*` to `eksconfig.ClusterState.CFStackWorkerNode*`](https://github.com/aws/awstester/pull/5).
+- Remove [`KubetestEnableDumpClusterLogs`](https://github.com/aws/awstester/pull/5) field.
 
 ### `eksdeployer`
 
-- Implement [`DumpClusterLogs`](https://github.com/aws/awstester/pull/1) to export worker node logs.
+- Implement [`DumpClusterLogs`](https://github.com/aws/awstester/pull/5) to export worker node logs.
 
 ### `internal`
 
-- Implement worker node log exporter in [`internal/eks`](https://github.com/aws/awstester/pull/1).
+- Implement worker node log exporter in [`internal/eks`](https://github.com/aws/awstester/pull/5).
 
 ### Dependency
 
