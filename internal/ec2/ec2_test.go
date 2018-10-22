@@ -4,7 +4,9 @@ import (
 	"encoding/base64"
 	"fmt"
 	"os"
+	"os/signal"
 	"reflect"
+	"syscall"
 	"testing"
 
 	ec2config "github.com/aws/awstester/internal/ec2/config"
@@ -27,9 +29,6 @@ func TestEC2(t *testing.T) {
 	}
 
 	md.cfg.UserData = base64.StdEncoding.EncodeToString([]byte(`
-#!/usr/bin/env bash
-set -e
-
 echo "Hello World!" > /home/ubuntu/sample.txt
 `))
 	if err = md.Create(); err != nil {
@@ -37,6 +36,11 @@ echo "Hello World!" > /home/ubuntu/sample.txt
 	}
 
 	fmt.Println(md.GenerateSSHCommands())
+
+	notifier := make(chan os.Signal, 1)
+	signal.Notify(notifier, syscall.SIGINT, syscall.SIGTERM)
+	fmt.Println("received:", (<-notifier).String())
+	signal.Stop(notifier)
 
 	if err = md.Delete(); err != nil {
 		t.Fatal(err)
