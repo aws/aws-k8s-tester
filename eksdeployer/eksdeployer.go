@@ -19,7 +19,7 @@ type Interface interface {
 	TestSetup() error
 	Down() error
 	GetClusterCreated(gcpProject string) (time.Time, error)
-	DumpClusterLogs(localPath, remotePath string) error
+	DumpClusterLogs(artifactDir, _ string) error
 
 	// TODO: kubetest publish uploads a success file...
 	// Add this when required... See "kubetest/e2e.go".

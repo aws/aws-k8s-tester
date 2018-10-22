@@ -21,12 +21,12 @@ func TestNewMux(t *testing.T) {
 	ts := httptest.NewServer(mux)
 	defer ts.Close()
 
-	_, err := http.Get(ts.URL + PathRefresh)
+	_, err := http.Get(ts.URL + Path)
 	if err != nil {
 		t.Fatal(err)
 	}
 	// expect rate limit
-	_, err = http.Get(ts.URL + PathRefresh)
+	_, err = http.Get(ts.URL + Path)
 	if err != nil {
 		t.Fatal(err)
 	}

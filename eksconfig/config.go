@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aws/awstester/pkg/awsapi/ec2"
+
 	gyaml "github.com/ghodss/yaml"
 	"k8s.io/client-go/util/homedir"
 )
@@ -21,10 +23,6 @@ type Config struct {
 	KubetestVerbose bool `json:"kubetest-verbose"`
 	// KubetestControlTimeout is the timeout value for each kubetest commands (e.g. Up, Down, etc.).
 	KubetestControlTimeout time.Duration `json:"kubetest-control-timeout"`
-	// KubetestEnableDumpClusterLogs is true to enable kubetest.DumpClusterLogs.
-	// 'false' by default and let default kubetest log dumper handle all artifact uploads.
-	// See https://github.com/kubernetes/test-infra/pull/9811/files#r225776067.
-	KubetestEnableDumpClusterLogs bool `json:"kubetest-enable-dump-cluster-logs"`
 
 	// AWSTesterImage is the awstester container image.
 	// Required for "awstester ingress server" for ALB Ingress Controller tests.
@@ -38,6 +36,9 @@ type Config struct {
 	// Deployer implementation should not call "Down" inside "Up" method.
 	// This is meant to be used as a flag for test.
 	Down bool `json:"down"`
+
+	// EnableNodeSSH is true to enable SSH access to worker nodes.
+	EnableNodeSSH bool `json:"enable-node-ssh"`
 
 	// Tag is the tag used for all cloudformation stacks.
 	// Must be left empty, and let deployer auto-populate this field.
@@ -171,10 +172,10 @@ type ClusterState struct {
 	// ServiceRoleWithPolicyARN is the ARN of the created cluster service role.
 	ServiceRoleWithPolicyARN string `json:"service-role-with-policy-arn,omitempty"`
 
-	// CFStackVPCStatus is the last cloudformation status of VPC stack.
-	CFStackVPCStatus string `json:"cf-stack-vpc-status,omitempty"`
 	// CFStackVPCName is the name of VPC cloudformation stack.
 	CFStackVPCName string `json:"cf-stack-vpc-name,omitempty"`
+	// CFStackVPCStatus is the last cloudformation status of VPC stack.
+	CFStackVPCStatus string `json:"cf-stack-vpc-status,omitempty"`
 	// CFStackVPCID is the VPC ID that VPC cloudformation stack created.
 	CFStackVPCID string `json:"cf-stack-vpc-id,omitempty"`
 	// CFStackVPCSubnetIDs is the subnet IDS that VPC cloudformation stack created.
@@ -187,24 +188,35 @@ type ClusterState struct {
 	// CA is the EKS cluster CA, required for KUBECONFIG write.
 	CA string `json:"ca,omitempty"`
 
-	// CFStackNodeGroupStatus is the last cloudformation status of node group stack.
-	CFStackNodeGroupStatus string `json:"cf-stack-node-group-status,omitempty"`
-	// EC2NodeGroupStatus is the status of EC2 node group.
+	// WorkerNodeGroupStatus is the status Kubernetes worker node group.
 	// "READY" when they successfully join the EKS cluster as worker nodes.
-	EC2NodeGroupStatus string `json:"ec2-node-group-status,omitempty"`
-	// CFStackNodeGroupKeyPairName is required for node group creation.
-	CFStackNodeGroupKeyPairName string `json:"cf-stack-node-group-key-pair-name,omitempty"`
-	// CFStackNodeGroupKeyPairPrivateKeyPath is the file path to store node group key pair private key.
-	// Tester does not need node instance private keys.
-	// Thus, deployer must delete the private key right after node group creation.
-	CFStackNodeGroupKeyPairPrivateKeyPath string `json:"cf-stack-node-group-key-pair-private-key-path,omitempty"`
-	// CFStackNodeGroupName is the name of cloudformation stack for worker node group.
-	CFStackNodeGroupName string `json:"cf-stack-node-group-name,omitempty"`
+	WorkerNodeGroupStatus string `json:"worker-node-group-status,omitempty"`
+	// WorkerNodes is a list of worker nodes.
+	WorkerNodes []Instance `json:"worker-nodes,omitempty"`
 
-	// CFStackNodeGroupWorkerNodeInstanceRoleARN is the ARN of NodeInstance role of node group.
+	// WorkerNodeLogs is a list of worker node log file paths, fetched via SSH.
+	WorkerNodeLogs map[string]string `json:"worker-node-logs,omitempty"`
+
+	// CFStackWorkerNodeGroupName is the name of cloudformation stack for worker node group.
+	CFStackWorkerNodeGroupName string `json:"cf-stack-worker-node-group-name,omitempty"`
+	// CFStackWorkerNodeGroupStatus is the last cloudformation status of node group stack.
+	CFStackWorkerNodeGroupStatus string `json:"cf-stack-worker-node-group-status,omitempty"`
+	// CFStackWorkerNodeGroupKeyPairName is required for node group creation.
+	CFStackWorkerNodeGroupKeyPairName string `json:"cf-stack-worker-node-group-key-pair-name,omitempty"`
+	// CFStackWorkerNodeGroupKeyPairPrivateKeyPath is the file path to store node group key pair private key.
+	// Thus, deployer must delete the private key right after node group creation.
+	// MAKE SURE PRIVATE KEY NEVER GETS UPLOADED TO CLOUD STORAGE AND DLETE AFTER USE!!!
+	CFStackWorkerNodeGroupKeyPairPrivateKeyPath string `json:"cf-stack-worker-node-group-key-pair-private-key-path,omitempty"`
+	// CFStackWorkerNodeGroupSecurityGroupID is the security group ID
+	// that worker node cloudformation stack created.
+	CFStackWorkerNodeGroupSecurityGroupID string `json:"cf-stack-worker-node-group-security-group-id,omitempty"`
+	// CFStackWorkerNodeGroupAutoScalingGroupName is the name of worker node auto scaling group.
+	CFStackWorkerNodeGroupAutoScalingGroupName string `json:"cf-stack-worker-node-group-auto-scaling-group-name,omitempty"`
+
+	// CFStackWorkerNodeGroupWorkerNodeInstanceRoleARN is the ARN of NodeInstance role of node group.
 	// Required to enable worker nodes to join cluster.
 	// Update this after creating node group stack
-	CFStackNodeGroupWorkerNodeInstanceRoleARN string `json:"cf-stack-node-group-worker-node-instance-role-arn,omitempty"`
+	CFStackWorkerNodeGroupWorkerNodeInstanceRoleARN string `json:"cf-stack-worker-node-group-worker-node-instance-role-arn,omitempty"`
 }
 
 const (
@@ -453,6 +465,18 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	if !checkEC2InstanceType(cfg.WorkerNodeInstanceType) {
 		return fmt.Errorf("EKS WorkerNodeInstanceType %q is not valid", cfg.WorkerNodeInstanceType)
 	}
+	if cfg.ALBIngressController != nil && cfg.ALBIngressController.TestServerReplicas > 0 {
+		if !checkMaxPods(cfg.WorkerNodeInstanceType, cfg.WorkderNodeASGMax, cfg.ALBIngressController.TestServerReplicas) {
+			return fmt.Errorf(
+				"EKS WorkerNodeInstanceType %q only supports %d pods per node (ASG Max %d, allowed up to %d, test server replicas %d)",
+				cfg.WorkerNodeInstanceType,
+				ec2.InstanceTypes[cfg.WorkerNodeInstanceType].MaxPods,
+				cfg.WorkderNodeASGMax,
+				ec2.InstanceTypes[cfg.WorkerNodeInstanceType].MaxPods*int64(cfg.WorkderNodeASGMax),
+				cfg.ALBIngressController.TestServerReplicas,
+			)
+		}
+	}
 	if cfg.WorkderNodeASGMin == 0 {
 		return errors.New("EKS WorkderNodeASGMin is not specified")
 	}
@@ -481,13 +505,13 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	cfg.ClusterState.ServiceRoleWithPolicyName = genServiceRoleWithPolicy(cfg.ClusterName)
 	cfg.ClusterState.ServiceRolePolicies = []string{serviceRolePolicyARNCluster, serviceRolePolicyARNService}
 	cfg.ClusterState.CFStackVPCName = genCFStackVPC(cfg.ClusterName)
-	cfg.ClusterState.CFStackNodeGroupKeyPairName = genNodeGroupKeyPairName(cfg.ClusterName)
-	// we do not actually store private keys... but to be consistent and for future use
-	cfg.ClusterState.CFStackNodeGroupKeyPairPrivateKeyPath = filepath.Join(
+	cfg.ClusterState.CFStackWorkerNodeGroupKeyPairName = genNodeGroupKeyPairName(cfg.ClusterName)
+	// SECURITY NOTE: MAKE SURE PRIVATE KEY NEVER GETS UPLOADED TO CLOUD STORAGE AND DLETE AFTER USE!!!
+	cfg.ClusterState.CFStackWorkerNodeGroupKeyPairPrivateKeyPath = filepath.Join(
 		os.TempDir(),
-		cfg.ClusterState.CFStackNodeGroupKeyPairName+".private.key",
+		cfg.ClusterState.CFStackWorkerNodeGroupKeyPairName+".private.key",
 	)
-	cfg.ClusterState.CFStackNodeGroupName = genCFStackNodeGroup(cfg.ClusterName)
+	cfg.ClusterState.CFStackWorkerNodeGroupName = genCFStackWorkerNodeGroup(cfg.ClusterName)
 
 	////////////////////////////////////////////////////////////////////////
 	// populate all paths on disks and on remote storage

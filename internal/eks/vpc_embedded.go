@@ -22,7 +22,7 @@ func (md *embedded) createVPC() error {
 	now := time.Now().UTC()
 	h, _ := os.Hostname()
 	v := vpcStack{
-		Description:       md.cfg.ClusterName + " VPC Stack",
+		Description:       md.cfg.ClusterName + "-vpc-stack",
 		TagKey:            md.cfg.Tag,
 		TagValue:          md.cfg.ClusterName,
 		Hostname:          h,
@@ -35,10 +35,6 @@ func (md *embedded) createVPC() error {
 
 	_, err = md.cf.CreateStack(&cloudformation.CreateStackInput{
 		StackName: aws.String(md.cfg.ClusterState.CFStackVPCName),
-
-		// TemplateURL: aws.String("https://amazon-eks.s3-us-west-2.amazonaws.com/cloudformation/2018-08-30/amazon-eks-vpc-sample.yaml"),
-		TemplateBody: aws.String(s),
-
 		Tags: []*cloudformation.Tag{
 			{
 				Key:   aws.String(md.cfg.Tag),
@@ -49,6 +45,9 @@ func (md *embedded) createVPC() error {
 				Value: aws.String(h),
 			},
 		},
+
+		// TemplateURL: aws.String("https://amazon-eks.s3-us-west-2.amazonaws.com/cloudformation/2018-08-30/amazon-eks-vpc-sample.yaml"),
+		TemplateBody: aws.String(s),
 	})
 	if err != nil {
 		return err
@@ -124,7 +123,6 @@ func (md *embedded) createVPC() error {
 
 		time.Sleep(10 * time.Second)
 	}
-
 	if err != nil {
 		md.lg.Info("failed to create VPC stack",
 			zap.String("stack-name", md.cfg.ClusterState.CFStackVPCName),

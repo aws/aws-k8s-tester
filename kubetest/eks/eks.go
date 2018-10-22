@@ -73,6 +73,8 @@ func New(cfg *eksconfig.Config, ctrl *process.Control) (eksdeployer.Interface, e
 
 // Up creates a new EKS cluster.
 func (tr *tester) Up() (err error) {
+	fmt.Println("Up using binary 'awstester'")
+
 	createCmd := exec.Command(
 		tr.awsTesterPath,
 		"eks",
@@ -152,34 +154,21 @@ func (tr *tester) GetClusterCreated(v string) (time.Time, error) {
 	return tr.cfg.ClusterState.Created, nil
 }
 
-// DumpClusterLogs uploads local cluster logs to S3.
-func (tr *tester) DumpClusterLogs(localPath, s3Path string) error {
-	if !tr.cfg.KubetestEnableDumpClusterLogs {
-		// let default kubetest log dumper handle all artifact uploads.
-		// See https://github.com/kubernetes/test-infra/pull/9811/files#r225776067.
-		return nil
-	}
-	return tr.UploadToBucketForTests(localPath, s3Path)
-}
-
-/*
-// Publish publishes a success file.
-// Add this when required... See "kubetest/e2e.go".
-func (tr *tester) Publish() (err error) {
+// DumpClusterLogs dumps all logs to artifact directory.
+// Let default kubetest log dumper handle all artifact uploads.
+// See https://github.com/kubernetes/test-infra/pull/9811/files#r225776067.
+func (tr *tester) DumpClusterLogs(artifactDir, _ string) (err error) {
 	tr.LoadConfig()
-	logOutputS3 := tr.cfg.ClusterName + "/" + filepath.Base(tr.cfg.LogOutputToUploadPath)
 
 	_, err = tr.ctrl.Output(exec.Command(
 		tr.awsTesterPath,
 		"eks",
 		"--path="+tr.cfg.ConfigPath,
-		"s3-upload",
-		tr.cfg.LogOutputToUploadPath,
-		logOutputS3,
+		"test", "dump-cluster-logs",
+		artifactDir,
 	))
 	return err
 }
-*/
 
 ///////////////////////////////////////////////
 // Extra methods for EKS specific operations //

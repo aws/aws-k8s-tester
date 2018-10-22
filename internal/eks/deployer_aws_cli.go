@@ -72,26 +72,16 @@ func (ac *awsCli) GetClusterCreated(v string) (time.Time, error) {
 	panic("TODO")
 }
 
-func (ac *awsCli) DumpClusterLogs(localPath, remotePath string) error {
-	return ac.s3Plugin.UploadToBucketForTests(localPath, remotePath)
+// DumpClusterLogs dumps all logs to artifact directory.
+// Let default kubetest log dumper handle all artifact uploads.
+// See https://github.com/kubernetes/test-infra/pull/9811/files#r225776067.
+func (ac *awsCli) DumpClusterLogs(artifactDir, _ string) error {
+	panic("TODO")
 }
 
 func (ac *awsCli) UploadToBucketForTests(localPath, remotePath string) error {
 	return ac.s3Plugin.UploadToBucketForTests(localPath, remotePath)
 }
-
-/*
-TODO: kubetest publish uploads a success file...
-Add this when required... See "kubetest/e2e.go".
-
-func (ac *awsCli) Publish() error {
-	// TODO: follower the pattern implemented in 'embedded'
-	return ac.s3Plugin.UploadToBucketForTests(
-		ac.cfg.LogOutputToUploadPath,
-		ac.cfg.LogOutputToUploadPathBucket,
-	)
-}
-*/
 
 ///////////////////////////////////////////////
 // Extra methods for EKS specific operations //

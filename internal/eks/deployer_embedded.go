@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -17,12 +18,15 @@ import (
 	"github.com/aws/awstester/internal/eks/alb/ingress/path"
 	"github.com/aws/awstester/internal/eks/s3"
 	"github.com/aws/awstester/pkg/awsapi"
+	"github.com/aws/awstester/pkg/fileutil"
 	"github.com/aws/awstester/pkg/httputil"
 	"github.com/aws/awstester/pkg/wrk"
 	"github.com/aws/awstester/pkg/zaputil"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/autoscaling"
+	"github.com/aws/aws-sdk-go/service/autoscaling/autoscalingiface"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/cloudformation/cloudformationiface"
 	"github.com/aws/aws-sdk-go/service/ec2"
@@ -56,8 +60,13 @@ type embedded struct {
 	im  iamiface.IAMAPI
 	sts stsiface.STSAPI
 	cf  cloudformationiface.CloudFormationAPI
+	asg autoscalingiface.AutoScalingAPI
 	eks eksiface.EKSAPI
 	ec2 ec2iface.EC2API
+
+	ec2InstancesMu    *sync.RWMutex
+	ec2Instances      []*ec2.Instance
+	ec2InstancesLogMu *sync.RWMutex
 
 	s3Plugin s3.Plugin
 
@@ -83,10 +92,12 @@ func NewEKSDeployer(cfg *eksconfig.Config) (eksdeployer.Interface, error) {
 	}
 
 	md := &embedded{
-		stopc:   make(chan struct{}),
-		lg:      lg,
-		cfg:     cfg,
-		kubectl: exec.New(),
+		stopc:             make(chan struct{}),
+		lg:                lg,
+		cfg:               cfg,
+		kubectl:           exec.New(),
+		ec2InstancesMu:    &sync.RWMutex{},
+		ec2InstancesLogMu: &sync.RWMutex{},
 	}
 	md.kubectlPath, err = md.kubectl.LookPath("kubectl")
 	if err != nil {
@@ -110,6 +121,7 @@ func NewEKSDeployer(cfg *eksconfig.Config) (eksdeployer.Interface, error) {
 	md.im = iam.New(md.ss)
 	md.sts = sts.New(md.ss)
 	md.cf = cloudformation.New(md.ss)
+	md.asg = autoscaling.New(md.ss)
 	md.eks = awseks.New(md.ss)
 	md.ec2 = ec2.New(md.ss)
 	md.s3Plugin = s3.NewEmbedded(md.lg, md.cfg, awss3.New(md.ss))
@@ -346,6 +358,7 @@ func (md *embedded) Up() (err error) {
 	if err = md.cfg.Sync(); err != nil {
 		return err
 	}
+
 	if md.cfg.LogAutoUpload {
 		if err = md.upload(); err != nil {
 			md.lg.Warn("failed to upload", zap.Error(err))
@@ -353,8 +366,10 @@ func (md *embedded) Up() (err error) {
 		if err = md.uploadALB(); err != nil {
 			md.lg.Warn("failed to upload ALB", zap.Error(err))
 		}
+		if err = md.uploadWorkerNode(); err != nil {
+			md.lg.Warn("failed to upload worker node logs", zap.Error(err))
+		}
 	}
-
 	return nil
 }
 
@@ -389,8 +404,16 @@ func (md *embedded) Down() (err error) {
 
 	now := time.Now().UTC()
 
-	var errs []string
+	md.lg.Info(
+		"uploading worker node logs before shutdown",
+		zap.String("cluster-name", md.cfg.ClusterName),
+	)
+	if err = md.uploadWorkerNode(); err != nil {
+		md.lg.Warn("failed to upload worker node logs", zap.Error(err))
+	}
+
 	md.lg.Info("Down", zap.String("cluster-name", md.cfg.ClusterName))
+	var errs []string
 	if md.cfg.ALBIngressController.Enable && md.cfg.ALBIngressController.Created {
 		if err = md.albPlugin.DeleteIngressObjects(); err != nil {
 			md.lg.Warn("failed to delete ALB Ingress Controller ELBv2", zap.Error(err))
@@ -494,26 +517,32 @@ func (md *embedded) GetClusterCreated(v string) (time.Time, error) {
 	return md.cfg.ClusterState.Created, nil
 }
 
-func (md *embedded) DumpClusterLogs(localPath, remotePath string) error {
-	return md.s3Plugin.UploadToBucketForTests(localPath, remotePath)
+// DumpClusterLogs dumps all logs to artifact directory.
+// Let default kubetest log dumper handle all artifact uploads.
+// See https://github.com/kubernetes/test-infra/pull/9811/files#r225776067.
+func (md *embedded) DumpClusterLogs(artifactDir, _ string) (err error) {
+	err = md.fetchWorkerNodeLogs()
+	if err != nil {
+		return err
+	}
+
+	md.ec2InstancesLogMu.RLock()
+	defer md.ec2InstancesLogMu.RUnlock()
+
+	for fpath, p := range md.cfg.ClusterState.WorkerNodeLogs {
+		if err = fileutil.Copy(fpath, filepath.Join(artifactDir, p)); err != nil {
+			return err
+		}
+	}
+	if err = fileutil.Copy(md.cfg.ConfigPath, filepath.Join(artifactDir, md.cfg.ConfigPathBucket)); err != nil {
+		return err
+	}
+	return fileutil.Copy(md.cfg.LogOutputToUploadPath, filepath.Join(artifactDir, md.cfg.LogOutputToUploadPathBucket))
 }
 
 func (md *embedded) UploadToBucketForTests(localPath, remotePath string) error {
 	return md.s3Plugin.UploadToBucketForTests(localPath, remotePath)
 }
-
-/*
-TODO: kubetest publish uploads a success file...
-Add this when required... See "kubetest/e2e.go".
-
-func (md *embedded) Publish() error {
-	// TODO: upload others?
-	return md.s3Plugin.UploadToBucketForTests(
-		md.cfg.LogOutputToUploadPath,
-		md.cfg.LogOutputToUploadPathBucket,
-	)
-}
-*/
 
 ///////////////////////////////////////////////
 // Extra methods for EKS specific operations //
@@ -650,6 +679,7 @@ func (md *embedded) TestALBMetrics() error {
 	return nil
 }
 
+// SECURITY NOTE: MAKE SURE PRIVATE KEY NEVER GETS UPLOADED TO CLOUD STORAGE AND DLETE AFTER USE!!!
 func (md *embedded) upload() (err error) {
 	err = md.s3Plugin.UploadToBucketForTests(
 		md.cfg.ConfigPath,
@@ -658,12 +688,38 @@ func (md *embedded) upload() (err error) {
 	if err != nil {
 		return err
 	}
-	err = md.s3Plugin.UploadToBucketForTests(
+	return md.s3Plugin.UploadToBucketForTests(
 		md.cfg.LogOutputToUploadPath,
 		md.cfg.LogOutputToUploadPathBucket,
 	)
+}
+
+// TODO: parallelize for >100 nodes?
+func (md *embedded) uploadWorkerNode() (err error) {
+	if !md.cfg.EnableNodeSSH {
+		return nil
+	}
+	err = md.fetchWorkerNodeLogs()
 	if err != nil {
 		return err
+	}
+
+	md.ec2InstancesLogMu.RLock()
+	defer md.ec2InstancesLogMu.RUnlock()
+
+	for fpath, s3Path := range md.cfg.ClusterState.WorkerNodeLogs {
+		err = md.s3Plugin.UploadToBucketForTests(fpath, s3Path)
+		if err != nil {
+			md.lg.Warn(
+				"failed to upload",
+				zap.String("file-path", fpath),
+				zap.Error(err),
+			)
+			time.Sleep(3 * time.Second)
+			continue
+		}
+		md.lg.Info("uploaded", zap.String("s3-path", s3Path))
+		time.Sleep(30 * time.Millisecond)
 	}
 	return nil
 }
@@ -699,12 +755,8 @@ func (md *embedded) uploadALB() (err error) {
 			return err
 		}
 	}
-	err = md.s3Plugin.UploadToBucketForTests(
+	return md.s3Plugin.UploadToBucketForTests(
 		md.cfg.ALBIngressController.MetricsOutputToUploadPath,
 		md.cfg.ALBIngressController.MetricsOutputToUploadPathBucket,
 	)
-	if err != nil {
-		return err
-	}
-	return nil
 }

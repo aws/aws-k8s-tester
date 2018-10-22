@@ -17,9 +17,47 @@ func newTest() *cobra.Command {
 		Short: "Test commands",
 	}
 	cmd.AddCommand(
+		newTestDumpClusterLogs(),
 		newTestALB(),
 	)
 	return cmd
+}
+
+func newTestDumpClusterLogs() *cobra.Command {
+	return &cobra.Command{
+		Use:   "dump-cluster-logs [artifact-directory]",
+		Short: "Dump all cluster logs to the artifact directory",
+		Run:   testDumpClusterLogs,
+	}
+}
+
+func testDumpClusterLogs(cmd *cobra.Command, args []string) {
+	if path == "" {
+		fmt.Fprintln(os.Stderr, "'--path' flag is not specified")
+		os.Exit(1)
+	}
+	if len(args) != 1 {
+		fmt.Fprintf(os.Stderr, "expected 1 argument, got %v\n", args)
+		os.Exit(1)
+	}
+	dir := args[0]
+
+	cfg, err := eksconfig.Load(path)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to load configuration %q (%v)\n", path, err)
+		os.Exit(1)
+	}
+	var dp eksdeployer.Interface
+	dp, err = eks.NewEKSDeployer(cfg)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to create EKS deployer %v\n", err)
+		os.Exit(1)
+	}
+
+	if err = dp.DumpClusterLogs(dir, ""); err != nil {
+		fmt.Fprintf(os.Stderr, "failed correctness test %v\n", err)
+		os.Exit(1)
+	}
 }
 
 func newTestALB() *cobra.Command {

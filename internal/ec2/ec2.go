@@ -1,6 +1,7 @@
 package ec2
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"os"
@@ -32,7 +33,8 @@ type Deployer interface {
 	Stop()
 	Delete() error
 
-	SSHCommands() string
+	Logger() *zap.Logger
+	GenerateSSHCommands() string
 }
 
 type embedded struct {
@@ -292,7 +294,7 @@ func (md *embedded) createInstances() (err error) {
 					SubnetId:                          aws.String(subnetID),
 					SecurityGroupIds:                  aws.StringSlice(md.cfg.SecurityGroupIDs),
 					InstanceInitiatedShutdownBehavior: aws.String("terminate"),
-					UserData:                          aws.String(md.cfg.UserData),
+					UserData:                          aws.String(base64.StdEncoding.EncodeToString([]byte(md.cfg.InitScript))),
 					TagSpecifications: []*ec2.TagSpecification{
 						{
 							ResourceType: aws.String("instance"),
@@ -335,7 +337,7 @@ func (md *embedded) createInstances() (err error) {
 						SubnetId:                          aws.String(subnetID),
 						SecurityGroupIds:                  aws.StringSlice(md.cfg.SecurityGroupIDs),
 						InstanceInitiatedShutdownBehavior: aws.String("terminate"),
-						UserData:                          aws.String(md.cfg.UserData),
+						UserData:                          aws.String(base64.StdEncoding.EncodeToString([]byte(md.cfg.InitScript))),
 						TagSpecifications: []*ec2.TagSpecification{
 							{
 								ResourceType: aws.String("instance"),
@@ -391,7 +393,7 @@ func (md *embedded) createInstances() (err error) {
 				SubnetId:                          aws.String(subnetID),
 				SecurityGroupIds:                  aws.StringSlice(md.cfg.SecurityGroupIDs),
 				InstanceInitiatedShutdownBehavior: aws.String("terminate"),
-				UserData:                          aws.String(md.cfg.UserData),
+				UserData:                          aws.String(base64.StdEncoding.EncodeToString([]byte(md.cfg.InitScript))),
 				TagSpecifications: []*ec2.TagSpecification{
 					{
 						ResourceType: aws.String("instance"),
@@ -542,8 +544,12 @@ func (md *embedded) deleteInstances() (err error) {
 	return nil
 }
 
-func (md *embedded) SSHCommands() (s string) {
-	s = fmt.Sprintf("\n\n# change SSH key permission\nchmod 600 %s\n\n", md.cfg.KeyPath)
+func (md *embedded) Logger() *zap.Logger {
+	return md.lg
+}
+
+func (md *embedded) GenerateSSHCommands() (s string) {
+	s = fmt.Sprintf("\n\n# change SSH key permission\nchmod 400 %s\n\n", md.cfg.KeyPath)
 	for _, v := range md.cfg.Instances {
 		s += fmt.Sprintf(`ssh -o "StrictHostKeyChecking no" -i %s ubuntu@%s
 `, md.cfg.KeyPath, v.PublicDNS)

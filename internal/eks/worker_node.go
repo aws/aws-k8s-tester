@@ -1,22 +1,29 @@
+/*
+Copyright 2017 The Kubernetes Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package eks
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
-	"reflect"
-	"strings"
 	"text/template"
 
 	"github.com/aws/awstester/pkg/fileutil"
-
-	gyaml "github.com/ghodss/yaml"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
-
-// https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html
-// https://github.com/awslabs/amazon-eks-ami/blob/master/amazon-eks-nodegroup.yaml
-const nodeGroupStackTemplateURL = "https://amazon-eks.s3-us-west-2.amazonaws.com/cloudformation/2018-08-30/amazon-eks-nodegroup.yaml"
 
 // https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html
 const configMapNodeAuthTempl = `---
@@ -53,57 +60,73 @@ func writeConfigMapNodeAuth(arn string) (p string, err error) {
 	return fileutil.WriteTempFile([]byte(txt))
 }
 
-/*
-expects:
-
-NAME                                           STATUS    ROLES     AGE       VERSION
-ip-192-168-192-77.us-west-2.compute.internal   Ready     <none>    2d        v1.10.3
-ip-192-168-87-77.us-west-2.compute.internal    Ready     <none>    2d        v1.10.3
-*/
-func countReadyNodesFromKubectlGetNodesOutputSimple(kubectlOutput []byte) int {
-	s := strings.Replace(string(kubectlOutput), "NotReady", "N.o.t.R.e.a.d.y", -1)
-	return strings.Count(s, "Ready")
-}
-
-type nodeConditions struct {
-	Conditions []corev1.NodeCondition `json:"conditions"`
-}
-
 // TODO: use k8s.io/client-go to list nodes
 
-func countReadyNodesFromKubectlGetNodesOutputYAML(kubectlOutput []byte) (int, error) {
-	ls := new(unstructured.UnstructuredList)
-	if err := gyaml.Unmarshal(kubectlOutput, ls); err != nil {
-		return 0, err
+// reference: https://github.com/kubernetes/test-infra/blob/master/kubetest/kubernetes.go
+
+// kubectlGetNodes lists nodes by executing kubectl get nodes, parsing the output into a nodeList object
+func kubectlGetNodes(out []byte) (*nodeList, error) {
+	nodes := &nodeList{}
+	if err := json.Unmarshal(out, nodes); err != nil {
+		return nil, fmt.Errorf("error parsing kubectl get nodes output: %v", err)
 	}
-	cnt := 0
-	for _, item := range ls.Items {
-		if item.GetKind() != "Node" {
-			return 0, fmt.Errorf("unexpected item type %q", item.GetKind())
-		}
-		sm, ok := item.UnstructuredContent()["status"]
-		if !ok {
-			return 0, fmt.Errorf("'status' key not found at %v", item)
-		}
-		mm, ok := sm.(map[string]interface{})
-		if !ok {
-			return 0, fmt.Errorf("expected map[string]interface{}, got %v", reflect.TypeOf(sm))
-		}
-		d, err := gyaml.Marshal(mm)
-		if err != nil {
-			return 0, fmt.Errorf("failed to parse node statuses (%v)", err)
-		}
-		ss := new(nodeConditions)
-		if err = gyaml.Unmarshal(d, ss); err != nil {
-			return 0, fmt.Errorf("failed to unmarshal node statuses (%v)", err)
-		}
-	done:
-		for _, cond := range ss.Conditions {
-			if cond.Reason == "KubeletReady" && cond.Type == corev1.NodeReady {
-				cnt++
-				break done
-			}
+	return nodes, nil
+}
+
+// isReady checks if the node has a Ready Condition that is True
+func isReady(node *node) bool {
+	for _, c := range node.Status.Conditions {
+		if c.Type == "Ready" {
+			return c.Status == "True"
 		}
 	}
-	return cnt, nil
+	return false
+}
+
+// countReadyNodes returns the number of nodes that have isReady == true
+func countReadyNodes(nodes *nodeList) int {
+	var ns []*node
+	for i := range nodes.Items {
+		nd := &nodes.Items[i]
+		if isReady(nd) {
+			ns = append(ns, nd)
+		}
+	}
+	return len(ns)
+}
+
+// nodeList is a simplified version of the v1.NodeList API type
+type nodeList struct {
+	Items []node `json:"items"`
+}
+
+// node is a simplified version of the v1.Node API type
+type node struct {
+	Metadata metadata   `json:"metadata"`
+	Status   nodeStatus `json:"status"`
+}
+
+// nodeStatus is a simplified version of the v1.NodeStatus API type
+type nodeStatus struct {
+	Addresses  []nodeAddress   `json:"addresses"`
+	Conditions []nodeCondition `json:"conditions"`
+}
+
+// nodeAddress is a simplified version of the v1.NodeAddress API type
+type nodeAddress struct {
+	Address string `json:"address"`
+	Type    string `json:"type"`
+}
+
+// nodeCondition is a simplified version of the v1.NodeCondition API type
+type nodeCondition struct {
+	Message string `json:"message"`
+	Reason  string `json:"reason"`
+	Status  string `json:"status"`
+	Type    string `json:"type"`
+}
+
+// metadata is a simplified version of the kubernetes metadata types
+type metadata struct {
+	Name string `json:"name"`
 }
