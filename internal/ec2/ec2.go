@@ -1,6 +1,7 @@
 package ec2
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"os"
@@ -293,7 +294,7 @@ func (md *embedded) createInstances() (err error) {
 					SubnetId:                          aws.String(subnetID),
 					SecurityGroupIds:                  aws.StringSlice(md.cfg.SecurityGroupIDs),
 					InstanceInitiatedShutdownBehavior: aws.String("terminate"),
-					UserData:                          aws.String(md.cfg.UserData),
+					UserData:                          aws.String(base64.StdEncoding.EncodeToString([]byte(md.cfg.InitScript))),
 					TagSpecifications: []*ec2.TagSpecification{
 						{
 							ResourceType: aws.String("instance"),
@@ -336,7 +337,7 @@ func (md *embedded) createInstances() (err error) {
 						SubnetId:                          aws.String(subnetID),
 						SecurityGroupIds:                  aws.StringSlice(md.cfg.SecurityGroupIDs),
 						InstanceInitiatedShutdownBehavior: aws.String("terminate"),
-						UserData:                          aws.String(md.cfg.UserData),
+						UserData:                          aws.String(base64.StdEncoding.EncodeToString([]byte(md.cfg.InitScript))),
 						TagSpecifications: []*ec2.TagSpecification{
 							{
 								ResourceType: aws.String("instance"),
@@ -392,7 +393,7 @@ func (md *embedded) createInstances() (err error) {
 				SubnetId:                          aws.String(subnetID),
 				SecurityGroupIds:                  aws.StringSlice(md.cfg.SecurityGroupIDs),
 				InstanceInitiatedShutdownBehavior: aws.String("terminate"),
-				UserData:                          aws.String(md.cfg.UserData),
+				UserData:                          aws.String(base64.StdEncoding.EncodeToString([]byte(md.cfg.InitScript))),
 				TagSpecifications: []*ec2.TagSpecification{
 					{
 						ResourceType: aws.String("instance"),

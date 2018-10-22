@@ -18,6 +18,11 @@ func TestEC2SSH(t *testing.T) {
 	}
 
 	cfg := ec2config.NewDefault()
+	cfg.InitScript = `#!/usr/bin/env bash
+
+echo "Hello World!" > /home/ubuntu/sample.txt
+`
+
 	ec, err := ec2.NewDeployer(cfg)
 	if err != nil {
 		t.Fatal(err)
@@ -46,19 +51,21 @@ func TestEC2SSH(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	fmt.Println("out1:", string(out))
+	fmt.Println("printenv:", string(out))
 
-	out, err = sh.Run("pwd")
+	out, err = sh.Run("cat /home/ubuntu/sample.txt")
 	if err != nil {
 		t.Error(err)
 	}
-	fmt.Println("out2:", string(out))
+	if string(out) != "Hello World!" {
+		t.Fatalf("unexpected output %q", string(out))
+	}
 
 	out, err = sh.Run("curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone")
 	if err != nil {
 		t.Error(err)
 	}
-	fmt.Println("out3:", string(out))
+	fmt.Println("availability-zone:", string(out))
 
 	notifier := make(chan os.Signal, 1)
 	signal.Notify(notifier, syscall.SIGINT, syscall.SIGTERM)

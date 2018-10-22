@@ -1,7 +1,6 @@
 package ec2
 
 import (
-	"encoding/base64"
 	"fmt"
 	"os"
 	"os/signal"
@@ -18,6 +17,10 @@ func TestEC2(t *testing.T) {
 	}
 
 	cfg := ec2config.NewDefault()
+	cfg.InitScript = `#!/usr/bin/env bash
+
+echo "Hello World!" > /home/ubuntu/sample.txt
+`
 
 	ec, err := NewDeployer(cfg)
 	if err != nil {
@@ -27,10 +30,6 @@ func TestEC2(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected '*embedded', got %v", reflect.TypeOf(ec))
 	}
-
-	md.cfg.UserData = base64.StdEncoding.EncodeToString([]byte(`
-echo "Hello World!" > /home/ubuntu/sample.txt
-`))
 	if err = md.Create(); err != nil {
 		t.Fatal(err)
 	}

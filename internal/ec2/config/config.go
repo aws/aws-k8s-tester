@@ -104,11 +104,13 @@ type Config struct {
 	Instances            []Instance          `json:"instances,omitempty"`
 	InstanceIDToInstance map[string]Instance `json:"instance-id-to-instance,omitempty"`
 
-	// UserData contains init scripts.
-	// Scripts must be base64-encoded.
-	// Outputs are saved in "/var/log/cloud-init-output.log".
+	// InitScript contains init scripts (run-instance UserData field).
+	// Script must be started with "#!/usr/bin/env bash".
+	// And will be base64-encoded. Do not base64-encode.
+	// Let "ec2" package base64-encode.
+	// Outputs are saved in "/var/log/cloud-init-output.log" in EC2 instance.
 	// Reference: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html
-	UserData string `json:"user-data,omitempty"`
+	InitScript string `json:"init-script,omitempty"`
 }
 
 // Instance represents an EC2 instance.
