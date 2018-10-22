@@ -2,7 +2,12 @@ package eks
 
 import (
 	"bytes"
+	"os"
 	"text/template"
+
+	"github.com/aws/awstester/pkg/httputil"
+
+	"go.uber.org/zap"
 )
 
 func createWorkerNodeTemplate(v workerNodeStack) (string, error) {
@@ -22,10 +27,26 @@ type workerNodeStack struct {
 	EnableNodeSSH bool
 }
 
+func createWorkerNodeTemplateFromURL(lg *zap.Logger) (string, error) {
+	d, err := httputil.Download(lg, os.Stdout, workerNodeStackTemplateURL)
+	if err != nil {
+		return "", nil
+	}
+	return string(d) + `
+  NodeSecurityGroup:
+    Description: The security group for the node group
+    Value: !Ref NodeSecurityGroup
+`, nil
+}
+
+const workerNodeStackTemplateURL = "https://amazon-eks.s3-us-west-2.amazonaws.com/cloudformation/2018-08-30/amazon-eks-nodegroup.yaml"
+
 // Make sure to keep this up-to-date
 // https://github.com/awslabs/amazon-eks-ami/blob/master/amazon-eks-nodegroup.yaml
 // https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html
 // https://amazon-eks.s3-us-west-2.amazonaws.com/cloudformation/2018-08-30/amazon-eks-nodegroup.yaml
+// TODO: this does not work...
+//  	CREATE_FAILED 	AWS::AutoScaling::AutoScalingGroup 	NodeGroup 	PropagateAtLaunch not found in properties
 const workerNodeStackTemplate = `---
 AWSTemplateFormatVersion: '2010-09-09'
 Description: {{ .Description }}
@@ -302,8 +323,7 @@ Resources:
       ToPort: 443
       FromPort: 443
 
-{{ if .EnableNodeSSH }}
-  ClusterControlPlaneSecurityGroupIngress22:
+{{ if .EnableNodeSSH }}  ClusterControlPlaneSecurityGroupIngress22:
     Type: AWS::EC2::SecurityGroupIngress
     DependsOn: NodeSecurityGroup
     Properties:
@@ -312,8 +332,7 @@ Resources:
       SourceSecurityGroupId: !Ref NodeSecurityGroup
       IpProtocol: tcp
       ToPort: 22
-      FromPort: 22
-{{ end }}
+      FromPort: 22{{ end }}
 
   NodeGroup:
     Type: AWS::AutoScaling::AutoScalingGroup

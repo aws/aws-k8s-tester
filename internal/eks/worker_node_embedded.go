@@ -27,14 +27,8 @@ func (md *embedded) createWorkerNode() error {
 
 	now := time.Now().UTC()
 	h, _ := os.Hostname()
-	v := workerNodeStack{
-		Description:   md.cfg.ClusterName + "-worker-node-stack",
-		TagKey:        md.cfg.Tag,
-		TagValue:      md.cfg.ClusterName,
-		Hostname:      h,
-		EnableNodeSSH: md.cfg.EnableNodeSSH,
-	}
-	s, err := createWorkerNodeTemplate(v)
+
+	s, err := createWorkerNodeTemplateFromURL(md.lg)
 	if err != nil {
 		return err
 	}
@@ -119,7 +113,7 @@ func (md *embedded) createWorkerNode() error {
 	case <-time.After(2 * time.Minute):
 	}
 
-	waitTime := 5*time.Minute + 2*time.Duration(md.cfg.WorkderNodeASGMax)*time.Minute
+	waitTime := 7*time.Minute + 2*time.Duration(md.cfg.WorkderNodeASGMax)*time.Minute
 	retryStart := time.Now().UTC()
 	for time.Now().UTC().Sub(retryStart) < waitTime {
 		select {
@@ -136,7 +130,7 @@ func (md *embedded) createWorkerNode() error {
 			md.lg.Warn("failed to describe worker node", zap.Error(err))
 			md.cfg.ClusterState.CFStackWorkerNodeGroupStatus = err.Error()
 			md.cfg.Sync()
-			time.Sleep(5 * time.Second)
+			time.Sleep(20 * time.Second)
 			continue
 		}
 
@@ -151,14 +145,17 @@ func (md *embedded) createWorkerNode() error {
 				md.cfg.ClusterState.CFStackWorkerNodeGroupStatus,
 			)
 		}
+		md.lg.Info(
+			"worker node cloud formation in progress",
+			zap.String("stack-name", md.cfg.ClusterState.CFStackWorkerNodeGroupName),
+			zap.String("stack-status", md.cfg.ClusterState.CFStackWorkerNodeGroupStatus),
+		)
+		if md.cfg.ClusterState.CFStackWorkerNodeGroupStatus != "CREATE_COMPLETE" {
+			time.Sleep(20 * time.Second)
+			continue
+		}
 
 		for _, op := range do.Stacks[0].Outputs {
-			fmt.Println("*op.OutputKey:", len(do.Stacks), *op.OutputKey, *op.OutputValue)
-			md.lg.Info(
-				"described stack",
-				zap.String("output-key", *op.OutputKey),
-				zap.String("output-value", *op.OutputValue),
-			)
 			if *op.OutputKey == "NodeInstanceRole" {
 				md.cfg.ClusterState.CFStackWorkerNodeGroupWorkerNodeInstanceRoleARN = *op.OutputValue
 			}
@@ -169,7 +166,9 @@ func (md *embedded) createWorkerNode() error {
 		md.cfg.Sync()
 
 		if md.cfg.ClusterState.CFStackWorkerNodeGroupSecurityGroupID == "" {
-			return fmt.Errorf("worker node security group ID not found")
+			md.lg.Warn("worker node security group ID not found")
+			time.Sleep(5 * time.Second)
+			continue
 		}
 
 		if md.cfg.EnableNodeSSH {
@@ -191,9 +190,9 @@ func (md *embedded) createWorkerNode() error {
 				)
 				return err
 			}
-			if len(sout.SecurityGroups) < 2 {
+			if len(sout.SecurityGroups) < 1 {
 				return fmt.Errorf(
-					"expected at least 2 worker node group security group, got %d (%+v)",
+					"expected at least 1 worker node group security group, got %d (%+v)",
 					len(sout.SecurityGroups),
 					sout.SecurityGroups,
 				)
@@ -203,6 +202,14 @@ func (md *embedded) createWorkerNode() error {
 		_foundSSHAccess:
 			for _, sg := range sout.SecurityGroups {
 				for _, perm := range sg.IpPermissions {
+					if perm.FromPort == nil || perm.ToPort == nil {
+						md.lg.Info(
+							"found security IP permission",
+							zap.String("security-group-id", md.cfg.ClusterState.CFStackWorkerNodeGroupSecurityGroupID),
+							zap.Int64("permission", fmt.Sprintf("%+v", perm)),
+						)
+						continue
+					}
 					fromPort, toPort := *perm.FromPort, *perm.ToPort
 					rg := ""
 					if len(perm.IpRanges) == 1 {
@@ -222,7 +229,18 @@ func (md *embedded) createWorkerNode() error {
 				}
 			}
 			if !foundSSHAccess {
-				return fmt.Errorf("expected SSH access enabled, got %+v", sout.SecurityGroups)
+				md.lg.Warn("authorizing SSH access", zap.Int64("port", 22))
+				_, aerr := md.ec2.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
+					GroupId:    aws.String(md.cfg.ClusterState.CFStackWorkerNodeGroupSecurityGroupID),
+					IpProtocol: aws.String("tcp"),
+					CidrIp:     aws.String("0.0.0.0/0"),
+					FromPort:   aws.Int64(22),
+					ToPort:     aws.Int64(22),
+				})
+				if aerr != nil {
+					return aerr
+				}
+				md.lg.Info("authorized SSH access ingress", zap.Int64("port", 22))
 			}
 		}
 
@@ -418,7 +436,7 @@ func (md *embedded) deleteWorkerNode() error {
 		if err == nil {
 			md.cfg.ClusterState.CFStackWorkerNodeGroupStatus = *do.Stacks[0].StackStatus
 			md.cfg.ClusterState.WorkerNodeGroupStatus = *do.Stacks[0].StackStatus
-			md.lg.Info("deleting worker node", zap.String("request-started", humanize.RelTime(retryStart, time.Now().UTC(), "ago", "from now")))
+			md.lg.Info("deleting worker node stack", zap.String("request-started", humanize.RelTime(retryStart, time.Now().UTC(), "ago", "from now")))
 			time.Sleep(5 * time.Second)
 			continue
 		}

@@ -12,7 +12,7 @@ func TestWorkerNodeTemplate(t *testing.T) {
 		TagKey:        "awstester",
 		TagValue:      "awstester",
 		Hostname:      "hostname",
-		EnableNodeSSH: false,
+		EnableNodeSSH: true,
 	}
 	s, err := createWorkerNodeTemplate(v)
 	if err != nil {
