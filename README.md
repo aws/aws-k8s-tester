@@ -31,7 +31,7 @@ vi ./awstester-eks.yaml
 ```
 
 ```bash
-awstester eks --path ./awstester-eks.yaml create cluster
+awstester eks create cluster --path ./awstester-eks.yaml
 ```
 
 This will create an EKS cluster with ALB Ingress Controller (takes about 20 minutes).
