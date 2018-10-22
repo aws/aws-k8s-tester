@@ -696,6 +696,7 @@ func (md *embedded) upload() (err error) {
 	)
 }
 
+// TODO: parallelize for >100 nodes?
 func (md *embedded) uploadWorkerNode() (err error) {
 	if !md.cfg.EnableNodeSSH {
 		return nil
@@ -717,7 +718,7 @@ func (md *embedded) uploadWorkerNode() (err error) {
 		}
 
 		md.lg.Info("uploaded", zap.String("s3-path", s3Path))
-		time.Sleep(2 * time.Second)
+		time.Sleep(500 * time.Millisecond)
 	}
 	return nil
 }

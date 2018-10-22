@@ -13,6 +13,7 @@ import (
 )
 
 // https://github.com/kubernetes/test-infra/blob/master/kubetest/dump.go
+// TODO: parallelize for >100 nodes?
 func (md *embedded) downloadWorkerNodeLogs() (err error) {
 	if !md.cfg.EnableNodeSSH {
 		return errors.New("node SSH is not enabled")
