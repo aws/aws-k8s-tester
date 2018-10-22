@@ -100,10 +100,6 @@ type Config struct {
 	// AssociatePublicIPAddress is true to associate a public IP address.
 	AssociatePublicIPAddress bool `json:"associate-public-ip-address"`
 
-	// Instances is a set of EC2 instances created from this configuration.
-	Instances            []Instance          `json:"instances,omitempty"`
-	InstanceIDToInstance map[string]Instance `json:"instance-id-to-instance,omitempty"`
-
 	// InitScript contains init scripts (run-instance UserData field).
 	// Script must be started with "#!/usr/bin/env bash".
 	// And will be base64-encoded. Do not base64-encode.
@@ -111,13 +107,10 @@ type Config struct {
 	// Outputs are saved in "/var/log/cloud-init-output.log" in EC2 instance.
 	// Reference: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html
 	InitScript string `json:"init-script,omitempty"`
-}
 
-// Instance represents an EC2 instance.
-type Instance struct {
-	ID        string `json:"id,omitempty"`
-	PublicIP  string `json:"public-ip,omitempty"`
-	PublicDNS string `json:"public-dns,omitempty"`
+	// Instances is a set of EC2 instances created from this configuration.
+	Instances            []Instance          `json:"instances,omitempty"`
+	InstanceIDToInstance map[string]Instance `json:"instance-id-to-instance,omitempty"`
 }
 
 // ValidateAndSetDefaults returns an error for invalid configurations.

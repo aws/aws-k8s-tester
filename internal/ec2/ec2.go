@@ -455,17 +455,13 @@ func (md *embedded) createInstances() (err error) {
 					if *inst.State.Name == "running" {
 						_, ok := md.cfg.InstanceIDToInstance[id]
 						if !ok {
-							iv := ec2config.Instance{
-								ID:        *inst.InstanceId,
-								PublicIP:  *inst.PublicIpAddress,
-								PublicDNS: *inst.PublicDnsName,
-							}
+							iv := ec2config.ConvertEC2Instance(inst)
 							md.cfg.Instances = append(md.cfg.Instances, iv)
 							md.cfg.InstanceIDToInstance[id] = iv
 							md.lg.Info("instance is ready",
-								zap.String("instance-id", iv.ID),
+								zap.String("instance-id", iv.InstanceID),
 								zap.String("instance-public-ip", iv.PublicIP),
-								zap.String("instance-public-dns", iv.PublicDNS),
+								zap.String("instance-public-dns", iv.PublicDNSName),
 							)
 							tknToCntRunning[tkn]++
 
@@ -488,7 +484,7 @@ func (md *embedded) createInstances() (err error) {
 		zap.Int("count", md.cfg.Count),
 		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 	)
-	return nil
+	return md.cfg.Sync()
 }
 
 func (md *embedded) deleteInstances() (err error) {
@@ -496,7 +492,7 @@ func (md *embedded) deleteInstances() (err error) {
 
 	ids := make([]string, 0, len(md.cfg.Instances))
 	for _, iv := range md.cfg.Instances {
-		ids = append(ids, iv.ID)
+		ids = append(ids, iv.InstanceID)
 	}
 	_, err = md.ec2.TerminateInstances(&ec2.TerminateInstancesInput{
 		InstanceIds: aws.StringSlice(ids),
@@ -552,9 +548,7 @@ func (md *embedded) GenerateSSHCommands() (s string) {
 	s = fmt.Sprintf("\n\n# change SSH key permission\nchmod 400 %s\n\n", md.cfg.KeyPath)
 	for _, v := range md.cfg.Instances {
 		s += fmt.Sprintf(`ssh -o "StrictHostKeyChecking no" -i %s ubuntu@%s
-`, md.cfg.KeyPath, v.PublicDNS)
-		// s += fmt.Sprintf(`ssh -o "StrictHostKeyChecking no" -i ./ssh.key ubuntu@%s
-		// `, v.PublicDNS)
+`, md.cfg.KeyPath, v.PublicDNSName)
 	}
 	return s
 }

@@ -574,7 +574,7 @@ func (md *embedded) updateASG() (err error) {
 
 	md.ec2InstancesMu.Lock()
 	md.ec2Instances = ec2Instances
-	md.cfg.ClusterState.WorkerNodes = ConvertEC2Instances(ec2Instances)
+	md.cfg.ClusterState.WorkerNodes = convertEC2Instances(ec2Instances)
 	md.ec2InstancesMu.Unlock()
 
 	md.lg.Info(
@@ -584,8 +584,8 @@ func (md *embedded) updateASG() (err error) {
 	return nil
 }
 
-// ConvertEC2Instances converts "aws ec2 describe-instances" to "eksconfig.Instance".
-func ConvertEC2Instances(iss []*ec2.Instance) (instances []eksconfig.Instance) {
+// convertEC2Instances converts "aws ec2 describe-instances" to "eksconfig.Instance".
+func convertEC2Instances(iss []*ec2.Instance) (instances []eksconfig.Instance) {
 	instances = make([]eksconfig.Instance, len(iss))
 	for i, v := range iss {
 		instances[i] = eksconfig.Instance{
