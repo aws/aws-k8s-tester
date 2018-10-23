@@ -45,7 +45,7 @@ tail -f /var/log/cloud-init-output.log
 
 AWS_SHARED_CREDENTIALS_FILE=~/.aws/credentials \
   awstester csi test e2e \
-  --terminate-on-exit true \
+  --terminate-on-exit false \
   --csi master \
   --timeout 20m
 */
@@ -250,5 +250,7 @@ ready:
 		os.Exit(1)
 	}
 
-	ec.Delete()
+	if terminateOnExit {
+		ec.Delete()
+	}
 }
