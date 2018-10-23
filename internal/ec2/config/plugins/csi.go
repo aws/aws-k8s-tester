@@ -1,6 +1,6 @@
 package plugins
 
-const csiCheckoutMaster = `
+const install_csi_master = `
 
 mkdir -p ${GOPATH}/src/github.com/kubernetes-sigs/
 cd ${GOPATH}/src/github.com/kubernetes-sigs/
@@ -15,7 +15,7 @@ git log --pretty=oneline -10
 
 `
 
-const csiCheckoutPR = `
+const install_csi_pr = `
 
 mkdir -p ${GOPATH}/src/github.com/kubernetes-sigs/
 cd ${GOPATH}/src/github.com/kubernetes-sigs/

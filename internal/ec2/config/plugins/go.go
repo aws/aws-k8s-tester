@@ -1,6 +1,6 @@
 package plugins
 
-const go1111Ubuntu = `
+const go_1_11_1_ubuntu = `
 export HOME=/home/ubuntu
 export GOPATH=/home/ubuntu/go
 

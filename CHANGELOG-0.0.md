@@ -4,6 +4,10 @@
 
 See [code changes](https://github.com/aws/awstester/compare/0.0.3...0.0.4).
 
+### `awstester` CLI
+
+- Add [`awstester csi test e2e`]() command.
+
 ### `internal`
 
 - Add `Envs` field to [`internal/ssh.Config`](https://github.com/aws/awstester/commit/0049fe0de6bf9ba009a813da74049cbb01758faf).

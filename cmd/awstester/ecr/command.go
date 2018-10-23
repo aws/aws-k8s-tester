@@ -12,7 +12,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// NewCommand returns a new 'account-id' command.
+// NewCommand returns a new 'ecr' command.
 func NewCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "ecr",
@@ -21,7 +21,7 @@ func NewCommand() *cobra.Command {
 	cmd.PersistentFlags().StringVar(&region, "region", "us-west-2", "AWS Region")
 	cmd.PersistentFlags().StringVar(&customEndpoint, "custom-endpoint", "", "AWS custom endpoint")
 	cmd.AddCommand(
-		getRegistry(),
+		newGetRegistry(),
 	)
 	return cmd
 }
@@ -31,7 +31,7 @@ var (
 	customEndpoint string
 )
 
-func getRegistry() *cobra.Command {
+func newGetRegistry() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "get-registry",
 		Short: "Returns registry name",

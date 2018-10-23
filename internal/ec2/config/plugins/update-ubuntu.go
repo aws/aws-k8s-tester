@@ -1,6 +1,6 @@
 package plugins
 
-const updateUbuntu = `
+const update_ubuntu = `
 export HOME=/home/ubuntu
 export GOPATH=/home/ubuntu/go
 

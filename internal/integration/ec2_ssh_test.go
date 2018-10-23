@@ -3,6 +3,7 @@ package integration_test
 import (
 	"fmt"
 	"os"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -14,22 +15,18 @@ import (
 )
 
 /*
-RUN_AWS_UNIT_TESTS=1 go test -v -run TestEC2SSHWithCSI
-RUN_AWS_UNIT_TESTS=1 AWS_SHARED_CREDENTIALS_FILE=~/.aws/credentials go test -v -timeout 2h -run TestEC2SSHWithCSI
+RUN_AWS_UNIT_TESTS=1 AWS_SHARED_CREDENTIALS_FILE=~/.aws/credentials go test -v -timeout 2h -run TestEC2SSH
+tail -f /var/log/cloud-init-output.log
 */
-func TestEC2SSHWithCSI(t *testing.T) {
+func TestEC2SSH(t *testing.T) {
 	if os.Getenv("RUN_AWS_UNIT_TESTS") != "1" {
 		t.Skip()
 	}
 
 	cfg := ec2config.NewDefault()
-
-	// tail -f /var/log/cloud-init-output.log
 	cfg.Plugins = []string{
 		"update-ubuntu",
-		"mount-aws-cred",
 		"install-go1.11.1-ubuntu",
-		"install-csi-master",
 	}
 
 	ec, err := ec2.NewDeployer(cfg)
@@ -57,8 +54,13 @@ func TestEC2SSHWithCSI(t *testing.T) {
 	}
 
 	var out []byte
+	out, err = sh.Run("curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone")
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Println("availability-zone:", string(out))
 
-	timer := time.NewTimer(10 * time.Minute)
+	timer := time.NewTimer(5 * time.Minute)
 ready:
 	for {
 		select {
@@ -68,8 +70,8 @@ ready:
 		default:
 			out, err = sh.Run("cat /var/log/cloud-init-output.log")
 			if err != nil {
-				t.Log(err)
-				time.Sleep(10 * time.Second)
+				fmt.Println(err, reflect.TypeOf(err))
+				time.Sleep(5 * time.Second)
 				continue
 			}
 
@@ -79,21 +81,8 @@ ready:
 			}
 
 			fmt.Println("cloud-init-output.log:", string(out))
-			time.Sleep(10 * time.Second)
+			time.Sleep(5 * time.Second)
 		}
-	}
-
-	out, err = sh.Run("cat /etc/environment")
-	if err != nil {
-		t.Error(err)
-	}
-	env := ""
-	for _, line := range strings.Split(string(out), "\n") {
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
-		}
-		env += line + " "
 	}
 
 	out, err = sh.Run("source /etc/environment && go version")
@@ -102,22 +91,5 @@ ready:
 	}
 	if string(out) != "go version go1.11.1 linux/amd64\n" {
 		t.Fatalf("unexpected go version %q", string(out))
-	}
-
-	out, err = sh.Run("curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone")
-	if err != nil {
-		t.Error(err)
-	}
-	fmt.Println("availability-zone:", string(out))
-
-	if os.Getenv("AWS_SHARED_CREDENTIALS_FILE") != "" {
-		cmd := fmt.Sprintf(`cd /home/ubuntu/go/src/github.com/kubernetes-sigs/aws-ebs-csi-driver \
-  && sudo sh -c '%s make test-e2e'
-`, env)
-		out, err = sh.Run(cmd)
-		if err != nil {
-			t.Error(err)
-		}
-		fmt.Println("CSI test:", string(out))
 	}
 }

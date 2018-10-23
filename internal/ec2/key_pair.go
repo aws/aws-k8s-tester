@@ -52,6 +52,12 @@ func (md *embedded) deleteKeyPair() error {
 		return errors.New("cannot delete key pair without key name")
 	}
 
+	os.RemoveAll(md.cfg.KeyPath)
+	md.lg.Info(
+		"removed private key on disk",
+		zap.String("key-path", md.cfg.KeyPath),
+	)
+
 	_, err := md.ec2.DeleteKeyPair(&ec2.DeleteKeyPairInput{
 		KeyName: aws.String(md.cfg.KeyName),
 	})

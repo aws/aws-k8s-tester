@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/aws/awstester/cmd/awstester/alblog"
+	"github.com/aws/awstester/cmd/awstester/csi"
 	"github.com/aws/awstester/cmd/awstester/ec2"
 	"github.com/aws/awstester/cmd/awstester/ecr"
 	"github.com/aws/awstester/cmd/awstester/eks"
@@ -30,6 +31,7 @@ func init() {
 func init() {
 	rootCmd.AddCommand(
 		alblog.NewCommand(),
+		csi.NewCommand(),
 		ec2.NewCommand(),
 		ecr.NewCommand(),
 		eks.NewCommand(),
