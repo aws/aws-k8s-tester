@@ -1,118 +1,98 @@
 package plugins
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+	"io/ioutil"
+	"os"
+	"strings"
+)
 
 // headerBash is the bash script header.
 const headerBash = `#!/usr/bin/env bash`
 
+// READY is appended on init script complete.
+const READY = "PLUGIN_READY"
+
+var pluginToTempl = map[string]string{
+	"update-ubuntu":           updateUbuntu,
+	"mount-aws-cred":          awsCred,
+	"install-go1.11.1-ubuntu": go1111Ubuntu,
+	"install-wrk":             wrk,
+	"install-csi-master":      csiCheckoutMaster,
+	"install-csi-":            csiCheckoutPR,
+}
+
 // Get returns the plugin.
 func Get(ps ...string) (ss string, err error) {
 	ss = headerBash
-	for _, plugin := range ps {
-		switch plugin {
-		case "update-ubuntu":
-			ss += updateUbuntu
-			continue
-		case "go1.11.1-ubuntu":
-			ss += go1111Ubuntu
-			continue
-		case "wrk":
-			ss += wrk
-			continue
+	pfxToKey := make(map[string]string)
+
+	for _, p := range ps {
+		switch {
+		case p == "update-ubuntu":
+			pfxToKey[p] = p
+		case p == "mount-aws-cred":
+			pfxToKey[p] = p
+		case p == "install-go1.11.1-ubuntu":
+			pfxToKey[p] = p
+		case p == "install-wrk":
+			pfxToKey[p] = p
+		case p == "install-csi-master":
+			pfxToKey[p] = p
+		case p == "install-csi-":
+			return "", errors.New("unknown CSI Pull Number")
+		case strings.HasPrefix(p, "install-csi-"):
+			pfxToKey["install-csi-"] = p
+		default:
+			return "", fmt.Errorf("plugin %q not found", p)
 		}
-		return "", fmt.Errorf("plugin %q not found", plugin)
 	}
+
+	// to ensure the ordering
+	csiMasterFound := false
+	userName := ""
+	for _, key := range []string{
+		"update-ubuntu",
+		"mount-aws-cred",
+		"install-go1.11.1-ubuntu",
+		"install-wrk",
+		"install-csi-master",
+		"install-csi-",
+	} {
+		if v, ok := pfxToKey[key]; ok {
+			if key == "install-csi-master" {
+				csiMasterFound = true
+			}
+
+			txt := pluginToTempl[key]
+			switch key {
+			case "update-ubuntu":
+				userName = "ubuntu"
+
+			case "mount-aws-cred":
+				if os.Getenv("AWS_SHARED_CREDENTIALS_FILE") == "" {
+					return "", errors.New("AWS_SHARED_CREDENTIALS_FILE is not defined")
+				}
+				d, derr := ioutil.ReadFile(os.Getenv("AWS_SHARED_CREDENTIALS_FILE"))
+				if derr != nil {
+					return "", derr
+				}
+				txt = fmt.Sprintf(txt, userName, userName, string(d))
+
+			case "install-csi-":
+				if csiMasterFound {
+					return "", errors.New("'install-csi-master' already specified")
+				}
+
+				pullNumber := strings.Split(v, "-")[2]
+				txt = fmt.Sprintf(txt, pullNumber, pullNumber)
+			}
+
+			ss += txt
+		}
+	}
+
+	ss += "\n\necho PLUGIN_READY\n\n"
 	return ss, nil
 }
-
-const updateUbuntu = `
-export HOME=/home/ubuntu
-export GOPATH=/home/ubuntu/go
-
-apt-get -y update \
-  && apt-get -y install \
-  build-essential \
-  gcc \
-  jq \
-  file \
-  apt-utils \
-  pkg-config \
-  software-properties-common \
-  apt-transport-https \
-  ca-certificates \
-  libssl-dev \
-  gnupg2 \
-  sudo \
-  bash \
-  curl \
-  wget \
-  tar \
-  git \
-  mercurial \
-  openssh-client \
-  rsync \
-  unzip \
-  wget \
-  xz-utils \
-  zip \
-  zlib1g-dev \
-  lsb-release \
-  python3 \
-  python3-pip \
-  python3-setuptools \
-  && apt-get clean \
-  && pip3 install awscli --no-cache-dir --upgrade \
-  && which aws && aws --version \
-  && apt-get -y install \
-  python \
-  python-dev \
-  python-openssl \
-  python-pip \
-  && pip install --upgrade pip setuptools wheel
-`
-
-const go1111Ubuntu = `
-export HOME=/home/ubuntu
-export GOPATH=/home/ubuntu/go
-
-GO_VERSION=1.11.1
-GOOGLE_URL=https://storage.googleapis.com/golang
-DOWNLOAD_URL=${GOOGLE_URL}
-
-sudo curl -s ${DOWNLOAD_URL}/go$GO_VERSION.linux-amd64.tar.gz | sudo tar -v -C /usr/local/ -xz
-
-mkdir -p ${GOPATH}/bin/
-mkdir -p ${GOPATH}/src/github.com
-mkdir -p ${GOPATH}/src/k8s.io
-mkdir -p ${GOPATH}/src/sigs.k8s.io
-
-if grep -q GOPATH "${HOME}/.bashrc"; then
-  echo "bashrc already has GOPATH";
-else
-  echo "adding GOPATH to bashrc";
-  echo "export GOPATH=${HOME}/go" >> ${HOME}/.bashrc;
-  PATH_VAR=$PATH":/usr/local/go/bin:${HOME}/go/bin";
-  echo "export PATH=$(echo $PATH_VAR)" >> ${HOME}/.bashrc;
-  source ${HOME}/.bashrc;
-fi
-
-source ${HOME}/.bashrc
-export PATH=$PATH:/usr/local/go/bin:${HOME}/go/bin
-
-sudo echo PATH=${PATH} > /etc/environment
-sudo echo GOPATH=/home/ubuntu/go >> /etc/environment
-
-go version
-`
-
-const wrk = `
-cd ${HOME} \
-  && git clone https://github.com/wg/wrk.git \
-  && pushd wrk \
-  && make all \
-  && sudo cp ./wrk /usr/local/bin/wrk \
-  && popd \
-  && rm -rf ./wrk \
-  && wrk --version || true && which wrk
-
-`
