@@ -29,11 +29,6 @@ func NewCommand() *cobra.Command {
 	return cmd
 }
 
-var (
-	region         string
-	customEndpoint string
-)
-
 func newTest() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "test",
@@ -62,14 +57,16 @@ func newTestE2E() *cobra.Command {
 		Run:   testE2EFunc,
 	}
 	cmd.PersistentFlags().BoolVar(&terminateOnExit, "terminate-on-exit", true, "true to terminate EC2 instance on test exit")
-	cmd.PersistentFlags().StringVar(&csiBranchOrPR, "csi", "master", "CSI branch name or PR number to check out")
-	cmd.PersistentFlags().DurationVar(&csiE2ETimeout, "timeout", 20*time.Minute, "CSI e2e test timeout")
+	cmd.PersistentFlags().StringVar(&branchOrPR, "csi", "master", "CSI branch name or PR number to check out")
+	cmd.PersistentFlags().DurationVar(&e2eTimeout, "timeout", 20*time.Minute, "e2e test timeout")
+	cmd.PersistentFlags().StringVar(&vpcID, "vpc-id", "", "existing VPC ID to use (empty to create a new one)")
 	return cmd
 }
 
 var terminateOnExit bool
-var csiBranchOrPR string
-var csiE2ETimeout time.Duration
+var branchOrPR string
+var e2eTimeout time.Duration
+var vpcID string
 
 func testE2EFunc(cmd *cobra.Command, args []string) {
 	credEnv := "AWS_SHARED_CREDENTIALS_FILE"
@@ -77,8 +74,8 @@ func testE2EFunc(cmd *cobra.Command, args []string) {
 		fmt.Fprintln(os.Stderr, "no AWS_SHARED_CREDENTIALS_FILE found")
 		os.Exit(1)
 	}
-	if csiE2ETimeout == time.Duration(0) {
-		fmt.Fprintf(os.Stderr, "no timeout specified (%q)\n", csiE2ETimeout)
+	if e2eTimeout == time.Duration(0) {
+		fmt.Fprintf(os.Stderr, "no timeout specified (%q)\n", e2eTimeout)
 		os.Exit(1)
 	}
 
@@ -89,17 +86,18 @@ func testE2EFunc(cmd *cobra.Command, args []string) {
 	}
 	lg.Info(
 		"starting CSI e2e tests",
-		zap.String("csi", csiBranchOrPR),
-		zap.Duration("timeout", csiE2ETimeout),
+		zap.String("csi", branchOrPR),
+		zap.Duration("timeout", e2eTimeout),
 	)
 
 	cfg := ec2config.NewDefault()
 	cfg.LogAutoUpload = false
+	cfg.VPCID = vpcID
 	cfg.Plugins = []string{
 		"update-ubuntu",
 		"mount-aws-cred-AWS_SHARED_CREDENTIALS_FILE",
 		"install-go1.11.1-ubuntu",
-		"install-csi-" + csiBranchOrPR,
+		"install-csi-" + branchOrPR,
 	}
 	if err = cfg.ValidateAndSetDefaults(); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to validate configuration (%v)\n", err)
@@ -148,13 +146,13 @@ func testE2EFunc(cmd *cobra.Command, args []string) {
 
 	var out []byte
 
-	timer := time.NewTimer(csiE2ETimeout)
+	timer := time.NewTimer(e2eTimeout)
 
 ready:
 	for {
 		select {
 		case <-timer.C:
-			fmt.Fprintf(os.Stderr, "test timed out (%v)\n", csiE2ETimeout)
+			fmt.Fprintf(os.Stderr, "test timed out (%v)\n", e2eTimeout)
 			if terminateOnExit {
 				ec.Delete()
 			} else {
