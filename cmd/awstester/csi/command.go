@@ -3,6 +3,7 @@ package csi
 import (
 	"fmt"
 	"os"
+	"reflect"
 	"strings"
 	"time"
 
@@ -93,13 +94,20 @@ func testE2EFunc(cmd *cobra.Command, args []string) {
 	)
 
 	cfg := ec2config.NewDefault()
+	cfg.LogAutoUpload = false
 	cfg.Plugins = []string{
 		"update-ubuntu",
 		"mount-aws-cred-AWS_SHARED_CREDENTIALS_FILE",
 		"install-go1.11.1-ubuntu",
 		"install-csi-" + csiBranchOrPR,
 	}
-	ec, err := ec2.NewDeployer(cfg)
+	if err = cfg.ValidateAndSetDefaults(); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to validate configuration (%v)\n", err)
+		os.Exit(1)
+	}
+
+	var ec ec2.Deployer
+	ec, err = ec2.NewDeployer(cfg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create EC2 deployer (%v)\n", err)
 		os.Exit(1)
@@ -220,7 +228,8 @@ ready:
 		ssh.WithTimeout(10*time.Minute),
 	)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "CSI e2e test FAILED (%v)\n", err)
+		// handle "Process exited with status 2" error
+		fmt.Fprintf(os.Stderr, "CSI e2e test FAILED (%v, %v)\n", err, reflect.TypeOf(err))
 		if terminateOnExit {
 			ec.Delete()
 		} else {
