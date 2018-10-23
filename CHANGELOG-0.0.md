@@ -1,5 +1,22 @@
 
 
+## [0.0.5](https://github.com/aws/awstester/releases/tag/0.0.5) (2018-10-23)
+
+See [code changes](https://github.com/aws/awstester/compare/0.0.3...0.0.5).
+
+### `awstester` CLI
+
+- Add [`awstester csi test e2e --vpc-id` flag](https://github.com/aws/awstester/commit/0d38677bc80e9466d9903190009eb3e78bd6a825).
+
+### `internal`
+
+- Add retries [`internal/ssh`](https://github.com/aws/awstester/commit/c89001098bce7557bc9e15fc90fab0f340d6a146).
+
+### Go
+
+- Compile with [*Go 1.11.1*](https://golang.org/doc/devel/release.html#go1.11).
+
+
 ## [0.0.4](https://github.com/aws/awstester/releases/tag/0.0.4) (2018-10-23)
 
 See [code changes](https://github.com/aws/awstester/compare/0.0.3...0.0.4).
