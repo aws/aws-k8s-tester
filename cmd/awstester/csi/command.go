@@ -99,11 +99,6 @@ func testE2EFunc(cmd *cobra.Command, args []string) {
 		"install-go1.11.1-ubuntu",
 		"install-csi-" + branchOrPR,
 	}
-	if err = cfg.ValidateAndSetDefaults(); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to validate configuration (%v)\n", err)
-		os.Exit(1)
-	}
-
 	var ec ec2.Deployer
 	ec, err = ec2.NewDeployer(cfg)
 	if err != nil {
