@@ -3,16 +3,21 @@ package integration_test
 import (
 	"fmt"
 	"os"
-	"os/signal"
-	"syscall"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/aws/awstester/internal/ec2"
 	ec2config "github.com/aws/awstester/internal/ec2/config"
+	"github.com/aws/awstester/internal/ec2/config/plugins"
 	"github.com/aws/awstester/internal/ssh"
 )
 
-func TestEC2SSH(t *testing.T) {
+/*
+RUN_AWS_UNIT_TESTS=1 go test -v -run TestEC2SSHWithCSI
+RUN_AWS_UNIT_TESTS=1 AWS_SHARED_CREDENTIALS_FILE=~/.aws/credentials go test -v -timeout 2h -run TestEC2SSHWithCSI
+*/
+func TestEC2SSHWithCSI(t *testing.T) {
 	if os.Getenv("RUN_AWS_UNIT_TESTS") != "1" {
 		t.Skip()
 	}
@@ -20,7 +25,12 @@ func TestEC2SSH(t *testing.T) {
 	cfg := ec2config.NewDefault()
 
 	// tail -f /var/log/cloud-init-output.log
-	cfg.Plugins = []string{"update-ubuntu", "go1.11.1-ubuntu"}
+	cfg.Plugins = []string{
+		"update-ubuntu",
+		"mount-aws-cred",
+		"install-go1.11.1-ubuntu",
+		"install-csi-master",
+	}
 
 	ec, err := ec2.NewDeployer(cfg)
 	if err != nil {
@@ -46,29 +56,45 @@ func TestEC2SSH(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	notifier := make(chan os.Signal, 1)
-	signal.Notify(notifier, syscall.SIGINT, syscall.SIGTERM)
-	fmt.Println("received:", (<-notifier).String())
-	signal.Stop(notifier)
-
 	var out []byte
-	out, err = sh.Run("printenv")
-	if err != nil {
-		t.Error(err)
-	}
-	fmt.Println("printenv", string(out))
 
-	out, err = sh.Run("cat /var/log/cloud-init-output.log")
-	if err != nil {
-		t.Error(err)
+	timer := time.NewTimer(10 * time.Minute)
+ready:
+	for {
+		select {
+		case <-timer.C:
+			t.Fatal("not ready")
+
+		default:
+			out, err = sh.Run("cat /var/log/cloud-init-output.log")
+			if err != nil {
+				t.Log(err)
+				time.Sleep(10 * time.Second)
+				continue
+			}
+
+			if strings.Contains(string(out), plugins.READY) {
+				fmt.Println("cloud-init-output.log READY:", string(out))
+				break ready
+			}
+
+			fmt.Println("cloud-init-output.log:", string(out))
+			time.Sleep(10 * time.Second)
+		}
 	}
-	fmt.Println("cloud-init-output.log", string(out))
 
 	out, err = sh.Run("cat /etc/environment")
 	if err != nil {
 		t.Error(err)
 	}
-	fmt.Println("/etc/environment", string(out))
+	env := ""
+	for _, line := range strings.Split(string(out), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		env += line + " "
+	}
 
 	out, err = sh.Run("source /etc/environment && go version")
 	if err != nil {
@@ -83,4 +109,15 @@ func TestEC2SSH(t *testing.T) {
 		t.Error(err)
 	}
 	fmt.Println("availability-zone:", string(out))
+
+	if os.Getenv("AWS_SHARED_CREDENTIALS_FILE") != "" {
+		cmd := fmt.Sprintf(`cd /home/ubuntu/go/src/github.com/kubernetes-sigs/aws-ebs-csi-driver \
+  && sudo sh -c '%s make test-e2e'
+`, env)
+		out, err = sh.Run(cmd)
+		if err != nil {
+			t.Error(err)
+		}
+		fmt.Println("CSI test:", string(out))
+	}
 }
