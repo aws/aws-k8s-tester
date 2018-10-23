@@ -47,8 +47,9 @@ func newTest() *cobra.Command {
 /*
 tail -f /var/log/cloud-init-output.log
 
-awstester csi test e2e \
-  --cred-env AWS_SHARED_CREDENTIALS_FILE \
+AWS_SHARED_CREDENTIALS_FILE=~/.aws/credentials \
+  awstester csi test e2e \
+  --terminate-on-exit true \
   --csi master \
   --timeout 10m
 */
@@ -59,21 +60,20 @@ func newTestE2E() *cobra.Command {
 		Short: "Test CSI e2e without container and Kubernetes",
 		Run:   testE2EFunc,
 	}
-	cmd.PersistentFlags().StringVar(&credEnv, "cred-env", "AWS_SHARED_CREDENTIALS_FILE", "environmental variable of AWS credential path")
 	cmd.PersistentFlags().BoolVar(&terminateOnExit, "terminate-on-exit", true, "true to terminate EC2 instance on test exit")
 	cmd.PersistentFlags().StringVar(&csiBranchOrPR, "csi", "master", "CSI branch name or PR number to check out")
 	cmd.PersistentFlags().DurationVar(&csiE2ETimeout, "timeout", 10*time.Minute, "CSI e2e test timeout")
 	return cmd
 }
 
-var credEnv string
 var terminateOnExit bool
 var csiBranchOrPR string
 var csiE2ETimeout time.Duration
 
 func testE2EFunc(cmd *cobra.Command, args []string) {
-	if credEnv == "" || fileutil.Exist(os.Getenv(credEnv)) {
-		fmt.Fprintf(os.Stderr, "no AWS credential found (%q)\n", credEnv)
+	credEnv := "AWS_SHARED_CREDENTIALS_FILE"
+	if os.Getenv(credEnv) == "" || !fileutil.Exist(os.Getenv(credEnv)) {
+		fmt.Fprintln(os.Stderr, "no AWS_SHARED_CREDENTIALS_FILE found")
 		os.Exit(1)
 	}
 	if csiE2ETimeout == time.Duration(0) {
@@ -88,7 +88,6 @@ func testE2EFunc(cmd *cobra.Command, args []string) {
 	}
 	lg.Info(
 		"starting CSI e2e tests",
-		zap.String("cred-env", credEnv),
 		zap.String("csi", csiBranchOrPR),
 		zap.Duration("timeout", csiE2ETimeout),
 	)
@@ -96,7 +95,7 @@ func testE2EFunc(cmd *cobra.Command, args []string) {
 	cfg := ec2config.NewDefault()
 	cfg.Plugins = []string{
 		"update-ubuntu",
-		"mount-aws-cred-" + credEnv,
+		"mount-aws-cred-AWS_SHARED_CREDENTIALS_FILE",
 		"install-go1.11.1-ubuntu",
 		"install-csi-" + csiBranchOrPR,
 	}
@@ -153,7 +152,7 @@ ready:
 			os.Exit(1)
 
 		default:
-			out, err = sh.Run("cat /var/log/cloud-init-output.log")
+			out, err = sh.Run("tail -20 /var/log/cloud-init-output.log")
 			if err != nil {
 				lg.Warn("failed to fetch cloud-init-output.log", zap.Error(err))
 				time.Sleep(7 * time.Second)
@@ -212,5 +211,14 @@ ready:
 		fmt.Println(ec.GenerateSSHCommands())
 	}
 
-	// TODO: check test success or failure
+	/*
+	   expects
+
+	   Ran 1 of 1 Specs in 25.028 seconds
+	   SUCCESS! -- 1 Passed | 0 Failed | 0 Pending | 0 Skipped
+	*/
+	if !strings.Contains(testOutput, "SUCCESS! -- 1 Passed | 0 Failed | 0 Pending | 0 Skipped") {
+		fmt.Fprintln(os.Stderr, "CSI e2e test FAILED")
+		os.Exit(1)
+	}
 }

@@ -6,7 +6,7 @@ See [code changes](https://github.com/aws/awstester/compare/0.0.3...0.0.4).
 
 ### `awstester` CLI
 
-- Add [`awstester csi test e2e`]() command.
+- Add [`awstester csi test e2e`](https://github.com/aws/awstester/commit/b8cc23d43f4cc0b1ffe8d98c15f43df9af33bbdd) command.
 
 ### `internal`
 
