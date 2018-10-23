@@ -149,6 +149,7 @@ func (md *embedded) Create() (err error) {
 			return err
 		}
 		md.cfg.VPCCreated = true
+		md.cfg.Sync()
 		if err = catchStopc(md.lg, md.stopc, md.createSubnets); err != nil {
 			return err
 		}
