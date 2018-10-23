@@ -176,14 +176,14 @@ ready:
 				continue
 			}
 
+			fmt.Printf("\n\n%s\n\n", string(out))
+
 			if strings.Contains(string(out), plugins.READY) {
 				lg.Info("cloud-init-output.log READY!")
 				break ready
 			}
 
 			lg.Info("cloud-init-output NOT READY")
-			fmt.Printf("\n\n%s\n\n", string(out))
-
 			time.Sleep(7 * time.Second)
 		}
 	}
@@ -247,4 +247,6 @@ ready:
 		}
 		os.Exit(1)
 	}
+
+	ec.Delete()
 }
