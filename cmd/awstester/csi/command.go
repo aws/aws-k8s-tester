@@ -51,7 +51,7 @@ AWS_SHARED_CREDENTIALS_FILE=~/.aws/credentials \
   awstester csi test e2e \
   --terminate-on-exit true \
   --csi master \
-  --timeout 10m
+  --timeout 20m
 */
 
 func newTestE2E() *cobra.Command {
@@ -62,7 +62,7 @@ func newTestE2E() *cobra.Command {
 	}
 	cmd.PersistentFlags().BoolVar(&terminateOnExit, "terminate-on-exit", true, "true to terminate EC2 instance on test exit")
 	cmd.PersistentFlags().StringVar(&csiBranchOrPR, "csi", "master", "CSI branch name or PR number to check out")
-	cmd.PersistentFlags().DurationVar(&csiE2ETimeout, "timeout", 10*time.Minute, "CSI e2e test timeout")
+	cmd.PersistentFlags().DurationVar(&csiE2ETimeout, "timeout", 20*time.Minute, "CSI e2e test timeout")
 	return cmd
 }
 
@@ -126,6 +126,8 @@ func testE2EFunc(cmd *cobra.Command, args []string) {
 		}
 		os.Exit(1)
 	}
+	defer sh.Close()
+
 	if err = sh.Connect(); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to connect SSH (%v)\n", err)
 		if terminateOnExit {
@@ -139,6 +141,7 @@ func testE2EFunc(cmd *cobra.Command, args []string) {
 	var out []byte
 
 	timer := time.NewTimer(csiE2ETimeout)
+
 ready:
 	for {
 		select {
@@ -152,9 +155,23 @@ ready:
 			os.Exit(1)
 
 		default:
-			out, err = sh.Run("tail -20 /var/log/cloud-init-output.log")
+			out, err = sh.Run(
+				"tail -20 /var/log/cloud-init-output.log",
+				ssh.WithRetry(100, 5*time.Second),
+				ssh.WithTimeout(30*time.Second),
+			)
 			if err != nil {
 				lg.Warn("failed to fetch cloud-init-output.log", zap.Error(err))
+				sh.Close()
+				if serr := sh.Connect(); serr != nil {
+					fmt.Fprintf(os.Stderr, "failed to connect SSH (%v)\n", serr)
+					if terminateOnExit {
+						ec.Delete()
+					} else {
+						fmt.Println(ec.GenerateSSHCommands())
+					}
+					os.Exit(1)
+				}
 				time.Sleep(7 * time.Second)
 				continue
 			}
@@ -165,13 +182,19 @@ ready:
 			}
 
 			lg.Info("cloud-init-output NOT READY")
+			fmt.Printf("\n\n%s\n\n", string(out))
+
 			time.Sleep(7 * time.Second)
 		}
 	}
 
-	out, err = sh.Run("cat /etc/environment")
+	out, err = sh.Run(
+		"cat /etc/environment",
+		ssh.WithRetry(30, 5*time.Second),
+		ssh.WithTimeout(30*time.Second),
+	)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to fetch /etc/environment (%v)\n", err)
+		fmt.Fprintf(os.Stderr, "failed to read /etc/environment (%v)\n", err)
 		if terminateOnExit {
 			ec.Delete()
 		} else {
@@ -179,6 +202,7 @@ ready:
 		}
 		os.Exit(1)
 	}
+
 	env := ""
 	for _, line := range strings.Split(string(out), "\n") {
 		line = strings.TrimSpace(line)
@@ -191,9 +215,12 @@ ready:
 	testCmd := fmt.Sprintf(`cd /home/ubuntu/go/src/github.com/kubernetes-sigs/aws-ebs-csi-driver \
   && sudo sh -c '%s make test-e2e'
 `, env)
-	out, err = sh.Run(testCmd)
+	out, err = sh.Run(
+		testCmd,
+		ssh.WithTimeout(10*time.Minute),
+	)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to run test (%v)\n", err)
+		fmt.Fprintf(os.Stderr, "CSI e2e test FAILED (%v)\n", err)
 		if terminateOnExit {
 			ec.Delete()
 		} else {
@@ -205,20 +232,19 @@ ready:
 	testOutput := string(out)
 	fmt.Printf("CSI test output:\n\n%s\n\n", testOutput)
 
-	if terminateOnExit {
-		ec.Delete()
-	} else {
-		fmt.Println(ec.GenerateSSHCommands())
-	}
-
 	/*
 	   expects
 
 	   Ran 1 of 1 Specs in 25.028 seconds
 	   SUCCESS! -- 1 Passed | 0 Failed | 0 Pending | 0 Skipped
 	*/
-	if !strings.Contains(testOutput, "SUCCESS! -- 1 Passed | 0 Failed | 0 Pending | 0 Skipped") {
+	if !strings.Contains(testOutput, "1 Passed") {
 		fmt.Fprintln(os.Stderr, "CSI e2e test FAILED")
+		if terminateOnExit {
+			ec.Delete()
+		} else {
+			fmt.Println(ec.GenerateSSHCommands())
+		}
 		os.Exit(1)
 	}
 }

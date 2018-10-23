@@ -50,32 +50,34 @@ type ssh struct {
 
 	conn net.Conn
 	cli  *cryptossh.Client
+
+	cmdToRetries map[string]int
 }
 
 // New returns a new SSH.
 func New(cfg Config) (s SSH, err error) {
 	sh := &ssh{
-		cfg: cfg,
-		lg:  cfg.Logger,
+		cfg:          cfg,
+		lg:           cfg.Logger,
+		cmdToRetries: make(map[string]int),
 	}
 	if sh.lg == nil {
 		sh.lg = zap.NewNop()
 	}
-
-	sh.ctx, sh.cancel = context.WithCancel(context.Background())
-	sh.key, err = ioutil.ReadFile(cfg.KeyPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read private key %v", err)
-	}
-	sh.signer, err = cryptossh.ParsePrivateKey(sh.key)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse private key %v", err)
-	}
-
 	return sh, nil
 }
 
 func (sh *ssh) Connect() (err error) {
+	sh.ctx, sh.cancel = context.WithCancel(context.Background())
+	sh.key, err = ioutil.ReadFile(sh.cfg.KeyPath)
+	if err != nil {
+		return fmt.Errorf("failed to read private key %v", err)
+	}
+	sh.signer, err = cryptossh.ParsePrivateKey(sh.key)
+	if err != nil {
+		return fmt.Errorf("failed to parse private key %v", err)
+	}
+
 	sh.lg.Info("dialing", zap.String("addr", sh.cfg.Addr))
 	for i := 0; i < 15; i++ {
 		select {
@@ -145,17 +147,16 @@ func (sh *ssh) Connect() (err error) {
 
 func (sh *ssh) Close() {
 	sh.cancel()
-
-	err := sh.cli.Close()
-	sh.lg.Info("closed client", zap.String("addr", sh.cfg.Addr), zap.Error(err))
-
 	cerr := sh.conn.Close()
 	sh.lg.Info("closed connection", zap.String("addr", sh.cfg.Addr), zap.Error(cerr))
 }
 
 func (sh *ssh) Run(cmd string, opts ...OpOption) (out []byte, err error) {
-	ret := Op{verbose: true, envs: make(map[string]string)}
+	ret := Op{verbose: true, retries: 0, retryInterval: time.Duration(0), timeout: 0, envs: make(map[string]string)}
 	ret.applyOpts(opts)
+	if _, ok := sh.cmdToRetries[cmd]; !ok {
+		sh.cmdToRetries[cmd] = ret.retries
+	}
 
 	now := time.Now().UTC()
 
@@ -167,6 +168,7 @@ func (sh *ssh) Run(cmd string, opts ...OpOption) (out []byte, err error) {
 	}
 	ss.Stderr = nil
 	ss.Stdout = nil
+	sh.lg.Info("created client session, running command", zap.String("cmd", cmd))
 
 	if len(sh.cfg.Envs) > 0 {
 		for k, v := range sh.cfg.Envs {
@@ -183,27 +185,51 @@ func (sh *ssh) Run(cmd string, opts ...OpOption) (out []byte, err error) {
 		}
 	}
 
-	sh.lg.Info("created client session, running command", zap.String("cmd", cmd))
+	var ctx context.Context
+	var cancel context.CancelFunc
+	if ret.timeout == 0 {
+		ctx, cancel = context.WithCancel(sh.ctx)
+	} else {
+		ctx, cancel = context.WithTimeout(sh.ctx, ret.timeout)
+	}
+
 	donec := make(chan error)
 	go func() {
 		out, err = ss.CombinedOutput(cmd)
 		close(donec)
 	}()
 	select {
-	case <-sh.ctx.Done():
+	case <-ctx.Done():
 		ss.Close()
+		cancel()
 		<-donec
-		out, err = nil, sh.ctx.Err()
+		out, err = nil, ctx.Err()
 	case <-donec:
 		ss.Close()
+		cancel()
 	}
+
 	if ret.verbose {
 		sh.lg.Info("ran command",
 			zap.String("cmd", cmd),
 			zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
-			zap.Error(err),
 		)
 	}
 
+	if err != nil {
+		sh.lg.Warn("command failed", zap.Error(err))
+
+		if sh.cmdToRetries[cmd] != 0 {
+			sh.lg.Warn("retrying", zap.Int("retries", sh.cmdToRetries[cmd]))
+			sh.Close()
+			connErr := errors.New("")
+			for connErr != nil {
+				sh.cmdToRetries[cmd]--
+				connErr = sh.Connect()
+			}
+			time.Sleep(ret.retryInterval)
+			out, err = sh.Run(cmd, opts...)
+		}
+	}
 	return out, err
 }
