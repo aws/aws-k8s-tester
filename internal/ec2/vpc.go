@@ -123,22 +123,47 @@ func (md *embedded) deleteVPC() error {
 	if err != nil {
 		return err
 	}
-	_, err = md.ec2.DeleteVpc(&ec2.DeleteVpcInput{
-		VpcId: aws.String(md.cfg.VPCID),
-	})
-	if err != nil {
-		awsErr, ok := err.(awserr.Error)
-		if ok && awsErr.Code() == "InvalidVpcID.NotFound" {
-			md.lg.Info(
-				"VPC does not exist",
-				zap.String("vpc-id", md.cfg.VPCID),
-			)
-			return nil
-		}
-	}
 	md.lg.Info(
 		"deleted internet gateway",
 		zap.String("internet-gateway-id", md.cfg.InternetGatewayID),
+	)
+
+	for i := 0; i < 10; i++ {
+		_, err = md.ec2.DeleteVpc(&ec2.DeleteVpcInput{
+			VpcId: aws.String(md.cfg.VPCID),
+		})
+		if err != nil {
+			awsErr, ok := err.(awserr.Error)
+			if ok {
+				if awsErr.Code() == "InvalidVpcID.NotFound" {
+					md.lg.Info(
+						"VPC does not exist",
+						zap.String("vpc-id", md.cfg.VPCID),
+					)
+					return nil
+				}
+				md.lg.Warn("failed to delete VPC",
+					zap.String("vpc-id", md.cfg.VPCID),
+					zap.String("aws-error-code", awsErr.Code()),
+					zap.Error(err),
+				)
+			} else {
+				md.lg.Warn("failed to delete VPC",
+					zap.String("vpc-id", md.cfg.VPCID),
+					zap.Error(err),
+				)
+			}
+			time.Sleep(5 * time.Second)
+			continue
+		}
+		break
+	}
+	if err != nil {
+		return err
+	}
+	md.lg.Info(
+		"deleted VPC",
+		zap.String("vpc-id", md.cfg.VPCID),
 	)
 
 	time.Sleep(2 * time.Second)

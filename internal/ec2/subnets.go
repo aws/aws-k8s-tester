@@ -67,18 +67,38 @@ func (md *embedded) deleteSubnet() (err error) {
 	}
 
 	for _, id := range md.cfg.SubnetIDs {
-		_, err = md.ec2.DeleteSubnet(&ec2.DeleteSubnetInput{
-			SubnetId: aws.String(id),
-		})
-		if err != nil {
-			awsErr, ok := err.(awserr.Error)
-			if ok && awsErr.Code() == "InvalidSubnetID.NotFound" {
-				md.lg.Info(
-					"subnet does not exist",
-					zap.String("subnet-id", id),
-				)
-				return nil
+		for i := 0; i < 10; i++ {
+			// TODO: handle "DependencyViolation: The subnet 'subnet-034524cbada087b8d' has dependencies and cannot be deleted"
+			_, err = md.ec2.DeleteSubnet(&ec2.DeleteSubnetInput{
+				SubnetId: aws.String(id),
+			})
+			if err != nil {
+				awsErr, ok := err.(awserr.Error)
+				if ok {
+					if awsErr.Code() == "InvalidSubnetID.NotFound" {
+						md.lg.Info(
+							"subnet does not exist",
+							zap.String("subnet-id", id),
+						)
+						return nil
+					}
+					md.lg.Warn("failed to delete subnet",
+						zap.String("subnet-id", id),
+						zap.String("aws-error-code", awsErr.Code()),
+						zap.Error(err),
+					)
+				} else {
+					md.lg.Warn("failed to delete subnet",
+						zap.String("subnet-id", id),
+						zap.Error(err),
+					)
+				}
+				time.Sleep(5 * time.Second)
+				continue
 			}
+			break
+		}
+		if err != nil {
 			return err
 		}
 		md.lg.Info(
