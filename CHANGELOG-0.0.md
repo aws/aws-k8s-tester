@@ -8,6 +8,7 @@ See [code changes](https://github.com/aws/awstester/compare/0.0.3...0.0.4).
 
 - Add `Envs` field to [`internal/ssh.Config`](https://github.com/aws/awstester/commit/0049fe0de6bf9ba009a813da74049cbb01758faf).
 - Add `OpOption` to [`internal/ssh`](https://github.com/aws/awstester/commit/85e335337e6f814cd3327cfea3ce7a5784184026).
+- Add [`internal/ec2/config.Plugins`](https://github.com/aws/awstester/commit/a00f5a0742ed26d266d4a0c7c6299bc817ea2d6f) to provision EC2 instances.
 
 ### Go
 
