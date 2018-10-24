@@ -32,7 +32,7 @@ var defaultConfig = Config{
 	ImageID: "ami-ba602bc2",
 	Plugins: []string{
 		"update-ubuntu",
-		"install-go1.11.1-ubuntu",
+		"install-go1.11.1",
 	},
 
 	// 4 vCPU, 15 GB RAM

@@ -105,7 +105,7 @@ func testE2EFunc(cmd *cobra.Command, args []string) {
 	cfg.Plugins = []string{
 		"update-ubuntu",
 		"mount-aws-cred-AWS_SHARED_CREDENTIALS_FILE",
-		"install-go1.11.1-ubuntu",
+		"install-go1.11.1",
 		"install-csi-" + branchOrPR,
 	}
 	var ec ec2.Deployer
