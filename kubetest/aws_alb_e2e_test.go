@@ -3,59 +3,29 @@ package kubetest_test
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"syscall"
 	"testing"
 	"time"
 
-	"github.com/aws/awstester/eksconfig"
 	"github.com/aws/awstester/eksdeployer"
 	eksplugin "github.com/aws/awstester/kubetest/eks"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"k8s.io/test-infra/kubetest/process"
-
 	// remove "internal" package imports
 	// when it gets contributed to upstream
-	"github.com/aws/awstester/internal/eks"
 )
 
 // http://onsi.github.io/ginkgo/#the-ginkgo-cli
-// ginkgoTimeout = flag.Duration("ginkgo-command-timeout", 10*time.Hour, "timeout for test commands")
-// ginkgoVerbose = flag.Bool("ginkgo-verbose", true, "'true' to enable verbose in Ginkgo")
-
-var cfg = eksconfig.NewDefault()
+var (
+	timeout = flag.Duration("ginkgo-timeout", 10*time.Hour, "timeout for test commands")
+	verbose = flag.Bool("ginkgo-verbose", true, "'true' to enable verbose in Ginkgo")
+)
 
 func TestMain(m *testing.M) {
 	flag.Parse()
-
-	cfg.UpdateFromEnvs()
-	cfg.Sync()
-
-	// auto-generate test configuration file
-	// so that tester does not need write one for kubetest
-	f, err := ioutil.TempFile(os.TempDir(), "awstester")
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to save temporary file %v\n", err)
-		os.Exit(1)
-	}
-	outputPath := f.Name()
-	f.Close()
-	cfg.ConfigPath, err = filepath.Abs(outputPath)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to expand output path %v\n", err)
-		os.Exit(1)
-	}
-
-	if err = cfg.Sync(); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to fsync %v\n", err)
-		os.Exit(1)
-	}
-
 	os.Exit(m.Run())
 }
 
@@ -66,18 +36,11 @@ func TestAWSTesterEKS(t *testing.T) {
 
 var kp eksdeployer.Interface
 
+// to use embedded eks
+// kp, err = eks.NewEKSDeployer(cfg)
 var _ = BeforeSuite(func() {
 	var err error
-	if cfg.Embedded {
-		kp, err = eks.NewEKSDeployer(cfg)
-	} else {
-		kp, err = eksplugin.New(cfg, process.NewControl(
-			cfg.KubetestControlTimeout,
-			time.NewTimer(cfg.KubetestControlTimeout),
-			time.NewTimer(cfg.KubetestControlTimeout),
-			cfg.KubetestVerbose,
-		))
-	}
+	kp, err = eksplugin.New(*timeout, *verbose)
 	Expect(err).ShouldNot(HaveOccurred())
 
 	notifier := make(chan os.Signal, 1)
@@ -86,11 +49,12 @@ var _ = BeforeSuite(func() {
 	go func() {
 		select {
 		case <-donec:
-			fmt.Fprintf(os.Stderr, "finished 'Up'")
+			fmt.Fprintf(os.Stderr, "finished 'Up'\n")
 		case sig := <-notifier:
 			fmt.Fprintf(os.Stderr, "received signal %q in BeforeSuite\n", sig)
 			kp.Stop()
-			var derr error
+			cfg, derr := kp.LoadConfig()
+			Expect(derr).ShouldNot(HaveOccurred())
 			if cfg.Down {
 				derr = kp.Down()
 			}
@@ -115,6 +79,8 @@ var _ = Describe("EKS with ALB Ingress Controller on worker nodes", func() {
 	})
 
 	Context("Scalability of ALB Ingress Controller on worker nodes", func() {
+		cfg, derr := kp.LoadConfig()
+		Expect(derr).ShouldNot(HaveOccurred())
 		if cfg.ALBIngressController.TestScalability {
 			It("ALB Ingress Controller expects to handle concurrent clients with expected QPS", func() {
 				err := kp.TestALBQPS()
@@ -134,12 +100,9 @@ var _ = Describe("EKS with ALB Ingress Controller on worker nodes", func() {
 })
 
 var _ = AfterSuite(func() {
-	if !cfg.Embedded {
-		// reload updated kubeconfig
-		var err error
-		cfg, err = eksconfig.Load(cfg.ConfigPath)
-		Expect(err).ShouldNot(HaveOccurred())
-	}
+	// reload updated kubeconfig
+	cfg, err := kp.LoadConfig()
+	Expect(err).ShouldNot(HaveOccurred())
 
 	notifier := make(chan os.Signal, 1)
 	signal.Notify(notifier, syscall.SIGINT, syscall.SIGTERM)

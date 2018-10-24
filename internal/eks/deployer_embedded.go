@@ -79,7 +79,6 @@ type embedded struct {
 
 // NewEKSDeployer creates a new EKS deployer.
 func NewEKSDeployer(cfg *eksconfig.Config) (eksdeployer.Interface, error) {
-	cfg.Embedded = true
 	if err := cfg.ValidateAndSetDefaults(); err != nil {
 		return nil, err
 	}

@@ -22,8 +22,10 @@ package eks
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -45,15 +47,38 @@ type tester struct {
 }
 
 // New creates a new EKS deployer with AWS CLI.
-func New(cfg *eksconfig.Config, ctrl *process.Control) (eksdeployer.Interface, error) {
-	cfg.Embedded = false
+func New(timeout time.Duration, verbose bool) (eksdeployer.Interface, error) {
+	cfg := eksconfig.NewDefault()
+	err := cfg.UpdateFromEnvs()
+	if err != nil {
+		return nil, err
+	}
+	var f *os.File
+	f, err = ioutil.TempFile(os.TempDir(), "awstester")
+	if err != nil {
+		return nil, err
+	}
+	outputPath := f.Name()
+	f.Close()
+	cfg.ConfigPath, err = filepath.Abs(outputPath)
+	if err != nil {
+		return nil, err
+	}
+	if err = cfg.Sync(); err != nil {
+		return nil, err
+	}
+
 	tr := &tester{
 		stopc: make(chan struct{}),
 		cfg:   cfg,
-		ctrl:  ctrl,
+		ctrl: process.NewControl(
+			timeout,
+			time.NewTimer(timeout),
+			time.NewTimer(timeout),
+			verbose,
+		),
 	}
 
-	var err error
 	tr.awsTesterPath, err = exec.LookPath("awstester")
 	if err != nil {
 		return nil, fmt.Errorf("cannot find 'awstester' executable (%v)", err)

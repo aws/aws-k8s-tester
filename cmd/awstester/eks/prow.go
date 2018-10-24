@@ -103,12 +103,6 @@ func prowALBFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 	s, err := alb.CreateProwJobYAML(alb.ConfigProwJobYAML{
-		AWSTESTER_EKS_KUBEKINS_E2E_IMAGE: fmt.Sprintf("%s", cfg.KubekinsE2E),
-
-		AWSTESTER_EKS_KUBETEST_VERBOSE:         fmt.Sprintf("%v", cfg.KubetestVerbose),
-		AWSTESTER_EKS_KUBETEST_CONTROL_TIMEOUT: fmt.Sprintf("%v", cfg.KubetestControlTimeout),
-
-		AWSTESTER_EKS_EMBEDDED:         fmt.Sprintf("%v", cfg.Embedded),
 		AWSTESTER_EKS_WAIT_BEFORE_DOWN: fmt.Sprintf("%v", cfg.WaitBeforeDown),
 		AWSTESTER_EKS_DOWN:             fmt.Sprintf("%v", cfg.Down),
 

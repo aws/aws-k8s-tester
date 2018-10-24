@@ -17,19 +17,10 @@ import (
 
 // Config defines EKS testing configuration.
 type Config struct {
-	// KubekinsE2E is the custom-built Kubernetes e2e test container image.
-	KubekinsE2E string `json:"kubekins-e2e-image,omitempty"`
-	// KubetestVerbose is true to enable verbose logging in kubetest.
-	KubetestVerbose bool `json:"kubetest-verbose"`
-	// KubetestControlTimeout is the timeout value for each kubetest commands (e.g. Up, Down, etc.).
-	KubetestControlTimeout time.Duration `json:"kubetest-control-timeout"`
-
 	// AWSTesterImage is the awstester container image.
 	// Required for "awstester ingress server" for ALB Ingress Controller tests.
 	AWSTesterImage string `json:"awstester-image,omitempty"`
 
-	// Embedded is true if EKS deployer is embedded type.
-	Embedded bool `json:"embedded"`
 	// WaitBeforeDown is the duration to sleep before cluster tear down.
 	WaitBeforeDown time.Duration `json:"wait-before-down,omitempty"`
 	// Down is true to automatically tear down cluster in "test".
