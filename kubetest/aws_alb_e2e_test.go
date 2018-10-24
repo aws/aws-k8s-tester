@@ -38,6 +38,7 @@ var kp eksdeployer.Tester
 
 // to use embedded eks
 // kp, err = eks.NewDeployer(cfg)
+
 var _ = BeforeSuite(func() {
 	var err error
 	kp, err = eks.NewTester(*timeout, *verbose)
@@ -79,6 +80,11 @@ var _ = Describe("EKS with ALB Ingress Controller on worker nodes", func() {
 	})
 
 	Context("Scalability of ALB Ingress Controller on worker nodes", func() {
+		if kp == nil {
+			// ginkgo/internal/suite.(*Suite).PushContainerNode
+			return
+		}
+
 		cfg, derr := kp.LoadConfig()
 		Expect(derr).ShouldNot(HaveOccurred())
 		if cfg.ALBIngressController.TestScalability {
