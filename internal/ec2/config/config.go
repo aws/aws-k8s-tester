@@ -47,10 +47,11 @@ type Config struct {
 	ID string `json:"id,omitempty"` // read-only to user
 
 	// WaitBeforeDown is the duration to sleep before EC2 tear down.
+	// This is for "test".
 	WaitBeforeDown time.Duration `json:"wait-before-down,omitempty"`
 	// Down is true to automatically tear down EC2 in "test".
+	// Note that this is meant to be used as a flag in "test".
 	// Deployer implementation should not call "Down" inside "Up" method.
-	// This is meant to be used as a flag for test.
 	Down bool `json:"down"`
 
 	// ConfigPath is the configuration file path.
@@ -77,7 +78,9 @@ type Config struct {
 	// Let "ec2" package base64-encode.
 	// Outputs are saved in "/var/log/cloud-init-output.log" in EC2 instance.
 	// "tail -f /var/log/cloud-init-output.log" to check the progress.
-	// Reference: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html
+	// Reference: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html.
+	// Note that if both "Plugins" and "InitScript" are not empty,
+	// "InitScript" field is always overwritten by "Plugins" field.
 	InitScript string `json:"init-script,omitempty"`
 
 	// InstanceType is the instance type.
@@ -141,10 +144,7 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 		return errors.New("empty ImageID")
 	}
 
-	if len(cfg.Plugins) > 0 && cfg.InitScript != "" {
-		return errors.New("both Plugins and InitScript are not empty")
-	}
-	if len(cfg.Plugins) > 0 && cfg.InitScript == "" {
+	if len(cfg.Plugins) > 0 {
 		cfg.InitScript, err = plugins.Get(cfg.Plugins...)
 		if err != nil {
 			return err
