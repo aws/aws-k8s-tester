@@ -42,12 +42,21 @@ func newTest() *cobra.Command {
 
 /*
 go install -v ./cmd/awstester
+
+
 AWS_SHARED_CREDENTIALS_FILE=~/.aws/credentials \
   awstester csi test e2e \
-  --terminate-on-exit false \
-  --csi master \
-  --timeout 20m \
-  --vpc-id
+  --terminate-on-exit=false \
+  --csi=master \
+  --timeout=20m \
+  --vpc-id=vpc-0c59620d91b2e1f92
+
+
+AWS_SHARED_CREDENTIALS_FILE=~/.aws/credentials \
+  awstester csi test e2e \
+  --terminate-on-exit=true \
+  --csi=master \
+  --timeout=20m
 */
 
 func newTestE2E() *cobra.Command {
@@ -59,7 +68,7 @@ func newTestE2E() *cobra.Command {
 	cmd.PersistentFlags().BoolVar(&terminateOnExit, "terminate-on-exit", true, "true to terminate EC2 instance on test exit")
 	cmd.PersistentFlags().StringVar(&branchOrPR, "csi", "master", "CSI branch name or PR number to check out")
 	cmd.PersistentFlags().DurationVar(&e2eTimeout, "timeout", 20*time.Minute, "e2e test timeout")
-	cmd.PersistentFlags().StringVar(&vpcID, "vpc-id", "", "existing VPC ID to use (empty to create a new one)")
+	cmd.PersistentFlags().StringVar(&vpcID, "vpc-id", "vpc-0c59620d91b2e1f92", "existing VPC ID to use (provided default VPC ID belongs to awstester test account, leave empty to create a new one)")
 	return cmd
 }
 
@@ -157,7 +166,7 @@ ready:
 
 		default:
 			out, err = sh.Run(
-				"tail -20 /var/log/cloud-init-output.log",
+				"tail -10 /var/log/cloud-init-output.log",
 				ssh.WithRetry(100, 5*time.Second),
 				ssh.WithTimeout(30*time.Second),
 			)
