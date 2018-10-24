@@ -19,6 +19,10 @@ See [code changes](https://github.com/aws/awstester/compare/0.0.5...0.0.6).
 - Make [`internal/ec2/config.Config.LogAutoUpload` false by default](https://github.com/aws/awstester/commit/31abeb2189951af17360a76bb47e811ac47617c5).
 - `internal/ec2/config.Config.Plugins`, if not empty, always [overwrites `internal/ec2/config.Config.InitScript`](https://github.com/aws/awstester/commit/cd04fdbcd6fe583d8e3331d882c5c88b98698fee#diff-144560acd519ff2592df00db3e840fd0).
 
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.15.59`](https://github.com/aws/aws-sdk-go/releases/tag/v1.15.59) to [`v1.15.62`](https://github.com/aws/aws-sdk-go/releases/tag/v1.15.62).
+
 ### Go
 
 - Compile with [*Go 1.11.1*](https://golang.org/doc/devel/release.html#go1.11).

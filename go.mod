@@ -2,7 +2,7 @@ module github.com/aws/awstester
 
 require (
 	cloud.google.com/go v0.30.0 // indirect
-	github.com/aws/aws-sdk-go v1.15.59
+	github.com/aws/aws-sdk-go v1.15.62
 	github.com/dustin/go-humanize v1.0.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-yaml/yaml v2.1.0+incompatible // indirect
