@@ -1,12 +1,15 @@
 
 
+<hr>
+
+
 ## [0.0.6](https://github.com/aws/awstester/releases/tag/0.0.6) (2018-10-24)
 
 See [code changes](https://github.com/aws/awstester/compare/0.0.5...0.0.6).
 
 ### `eksconfig`
 
-- Add [`KubetestEmbeddedBinary`]() field.
+- Add [`KubetestEmbeddedBinary`](https://github.com/aws/awstester/commit/fed39903638dba3a96e83dca6c3dcbe0687317d1) field.
 - Remove [`KubetestVerbose`](https://github.com/aws/awstester/commit/6a7d73febaa3d962621031832774c698a2684b39) field.
 - Remove [`KubetestControlTimeout`](https://github.com/aws/awstester/commit/6a7d73febaa3d962621031832774c698a2684b39) field.
 
