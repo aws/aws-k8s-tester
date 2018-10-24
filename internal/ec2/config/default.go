@@ -23,7 +23,7 @@ var defaultConfig = Config{
 	// default, stderr, stdout, or file name
 	// log file named with cluster name will be added automatically
 	LogOutputs:    []string{"stderr"},
-	LogAutoUpload: true,
+	LogAutoUpload: false,
 
 	OSDistribution: "ubuntu",
 	UserName:       "ubuntu",
