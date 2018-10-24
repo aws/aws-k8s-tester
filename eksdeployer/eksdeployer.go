@@ -8,12 +8,9 @@ import (
 )
 
 // Interface defines EKS deployer.
+// Satisfies "k8s.io/test-infra/kubetest/main.go" 'deployer' interfaces.
+// Reference https://github.com/kubernetes/test-infra/blob/master/kubetest/main.go.
 type Interface interface {
-	///////////////////////////////////////////////////////////////////////////////////////////
-	// Satisfies "k8s.io/test-infra/kubetest/main.go" 'deployer' and 'publisher" interfaces. //
-	// Reference https://github.com/kubernetes/test-infra/blob/master/kubetest/main.go.      //
-	///////////////////////////////////////////////////////////////////////////////////////////
-
 	Up() error
 	IsUp() error
 	TestSetup() error
@@ -21,14 +18,12 @@ type Interface interface {
 	GetClusterCreated(gcpProject string) (time.Time, error)
 	DumpClusterLogs(artifactDir, _ string) error
 
-	// TODO: kubetest publish uploads a success file...
-	// Add this when required... See "kubetest/e2e.go".
-	// Publish() error
+	AWSTester
+	ALB
+}
 
-	///////////////////////////////////////////////
-	// Extra methods for EKS specific operations //
-	///////////////////////////////////////////////
-
+// AWSTester defines awstester eks specific operations.
+type AWSTester interface {
 	// GetWorkerNodeLogs downloads logs from worker node machines.
 	GetWorkerNodeLogs() error
 
@@ -42,8 +37,6 @@ type Interface interface {
 	// It's either returned from embedded EKS deployer
 	// or reloaded from disk.
 	LoadConfig() (eksconfig.Config, error)
-
-	ALB
 }
 
 // ALB defines AWS application load balancer tester.
