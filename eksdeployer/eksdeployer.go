@@ -7,10 +7,20 @@ import (
 	"github.com/aws/awstester/eksconfig"
 )
 
-// Interface defines EKS deployer.
+// Tester defines awstester eks specific operations.
+type Tester interface {
+	Deployer
+
+	ALB
+
+	// UploadToBucketForTests uploads a local file to awstester S3 bucket.
+	UploadToBucketForTests(localPath, remotePath string) error
+}
+
+// Deployer defines EKS deployer.
 // Satisfies "k8s.io/test-infra/kubetest/main.go" 'deployer' interfaces.
 // Reference https://github.com/kubernetes/test-infra/blob/master/kubetest/main.go.
-type Interface interface {
+type Deployer interface {
 	Up() error
 	IsUp() error
 	TestSetup() error
@@ -18,17 +28,8 @@ type Interface interface {
 	GetClusterCreated(gcpProject string) (time.Time, error)
 	DumpClusterLogs(artifactDir, _ string) error
 
-	AWSTester
-	ALB
-}
-
-// AWSTester defines awstester eks specific operations.
-type AWSTester interface {
 	// GetWorkerNodeLogs downloads logs from worker node machines.
 	GetWorkerNodeLogs() error
-
-	// UploadToBucketForTests uploads a local file to awstester S3 bucket.
-	UploadToBucketForTests(localPath, remotePath string) error
 
 	// Stop stops ongoing operation.
 	Stop()

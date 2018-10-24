@@ -14,7 +14,7 @@ func TestEmbeddedVPCStack(t *testing.T) {
 	}
 
 	cfg := eksconfig.NewDefault()
-	ek, err := NewEKSDeployer(cfg)
+	ek, err := NewAWSTester(cfg)
 	if err != nil {
 		t.Fatal(err)
 	}

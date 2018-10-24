@@ -37,14 +37,14 @@ func checkClusterFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	var dp eksdeployer.Interface
-	dp, err = eks.NewEKSDeployer(cfg)
+	var tester eksdeployer.Tester
+	tester, err = eks.New(cfg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create EKS deployer %v\n", err)
 		os.Exit(1)
 	}
 
-	err = dp.IsUp()
+	err = tester.IsUp()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to check cluster status %v\n", err)
 		os.Exit(1)

@@ -71,8 +71,8 @@ func createClusterFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	var dp eksdeployer.Interface
-	dp, err = eks.NewEKSDeployer(cfg)
+	var tester eksdeployer.Tester
+	tester, err = eks.New(cfg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create EKS deployer %v\n", err)
 		os.Exit(1)
@@ -82,14 +82,14 @@ func createClusterFunc(cmd *cobra.Command, args []string) {
 		fmt.Fprintf(os.Stderr, "failed to back up original config file %v\n", err)
 		os.Exit(1)
 	}
-	if err = dp.Up(); err != nil {
+	if err = tester.Up(); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create cluster %v\n", err)
 		os.Exit(1)
 	}
 	fmt.Println("'awstester eks create cluster' success")
 
 	if clusterCreateAutoDelete {
-		if err = dp.Down(); err != nil {
+		if err = tester.Down(); err != nil {
 			fmt.Fprintf(os.Stderr, "failed to delete cluster %v\n", err)
 			os.Exit(1)
 		}

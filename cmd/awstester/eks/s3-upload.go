@@ -37,15 +37,15 @@ func s3UploadFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	var dp eksdeployer.Interface
-	dp, err = eks.NewEKSDeployer(cfg)
+	var tester eksdeployer.Tester
+	tester, err = eks.New(cfg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create EKS deployer %v\n", err)
 		os.Exit(1)
 	}
 
 	from, to := args[0], args[1]
-	if err = dp.UploadToBucketForTests(from, to); err != nil {
+	if err = tester.UploadToBucketForTests(from, to); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to upload from %q to %q (%v)\n", from, to, err)
 		os.Exit(1)
 	}

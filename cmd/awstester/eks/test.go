@@ -43,14 +43,14 @@ func testGetWorkerNodeLogs(cmd *cobra.Command, args []string) {
 		fmt.Fprintf(os.Stderr, "failed to load configuration %q (%v)\n", path, err)
 		os.Exit(1)
 	}
-	var dp eksdeployer.Interface
-	dp, err = eks.NewEKSDeployer(cfg)
+	var tester eksdeployer.Tester
+	tester, err = eks.New(cfg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create EKS deployer %v\n", err)
 		os.Exit(1)
 	}
 
-	if err = dp.GetWorkerNodeLogs(); err != nil {
+	if err = tester.GetWorkerNodeLogs(); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to get worker node logs %v\n", err)
 		os.Exit(1)
 	}
@@ -80,14 +80,14 @@ func testDumpClusterLogs(cmd *cobra.Command, args []string) {
 		fmt.Fprintf(os.Stderr, "failed to load configuration %q (%v)\n", path, err)
 		os.Exit(1)
 	}
-	var dp eksdeployer.Interface
-	dp, err = eks.NewEKSDeployer(cfg)
+	var tester eksdeployer.Tester
+	tester, err = eks.New(cfg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create EKS deployer %v\n", err)
 		os.Exit(1)
 	}
 
-	if err = dp.DumpClusterLogs(dir, ""); err != nil {
+	if err = tester.DumpClusterLogs(dir, ""); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to dump cluster logs %v\n", err)
 		os.Exit(1)
 	}
@@ -125,14 +125,14 @@ func testALBCorrectness(cmd *cobra.Command, args []string) {
 		fmt.Fprintf(os.Stderr, "failed to load configuration %q (%v)\n", path, err)
 		os.Exit(1)
 	}
-	var dp eksdeployer.Interface
-	dp, err = eks.NewEKSDeployer(cfg)
+	var tester eksdeployer.Tester
+	tester, err = eks.New(cfg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create EKS deployer %v\n", err)
 		os.Exit(1)
 	}
 
-	if err = dp.TestALBCorrectness(); err != nil {
+	if err = tester.TestALBCorrectness(); err != nil {
 		fmt.Fprintf(os.Stderr, "failed correctness test %v\n", err)
 		os.Exit(1)
 	}
@@ -157,14 +157,14 @@ func testALBQPS(cmd *cobra.Command, args []string) {
 		fmt.Fprintf(os.Stderr, "failed to load configuration %q (%v)\n", path, err)
 		os.Exit(1)
 	}
-	var dp eksdeployer.Interface
-	dp, err = eks.NewEKSDeployer(cfg)
+	var tester eksdeployer.Tester
+	tester, err = eks.New(cfg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create EKS deployer %v\n", err)
 		os.Exit(1)
 	}
 
-	if err = dp.TestALBQPS(); err != nil {
+	if err = tester.TestALBQPS(); err != nil {
 		fmt.Fprintf(os.Stderr, "failed scalability QPS test %v\n", err)
 		os.Exit(1)
 	}
@@ -189,14 +189,14 @@ func testALBMetrics(cmd *cobra.Command, args []string) {
 		fmt.Fprintf(os.Stderr, "failed to load configuration %q (%v)\n", path, err)
 		os.Exit(1)
 	}
-	var dp eksdeployer.Interface
-	dp, err = eks.NewEKSDeployer(cfg)
+	var tester eksdeployer.Tester
+	tester, err = eks.New(cfg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create EKS deployer %v\n", err)
 		os.Exit(1)
 	}
 
-	if err = dp.TestALBMetrics(); err != nil {
+	if err = tester.TestALBMetrics(); err != nil {
 		fmt.Fprintf(os.Stderr, "failed metrics test %v\n", err)
 		os.Exit(1)
 	}

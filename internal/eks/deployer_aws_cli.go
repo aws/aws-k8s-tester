@@ -31,7 +31,7 @@ type awsCli struct {
 }
 
 // NewAWSCLIDeployer creates a new EKS deployer with AWS CLI.
-func NewAWSCLIDeployer(cfg *eksconfig.Config) (eksdeployer.Interface, error) {
+func NewAWSCLIDeployer(cfg *eksconfig.Config) (eksdeployer.Deployer, error) {
 	if err := cfg.ValidateAndSetDefaults(); err != nil {
 		return nil, err
 	}

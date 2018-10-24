@@ -14,11 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package eks implements 'kubetest' deployer interface.
+// Package ekstester implements 'kubetest' deployer and eksdeployer.Tester interface.
 // It uses 'awstester' and 'kubectl' binaries, rather than importing
 // EKS packages directly. This is to eliminate the need of dependency
 // management, both in upstream and downstream.
-package eks
+package ekstester
 
 import (
 	"fmt"
@@ -47,7 +47,7 @@ type tester struct {
 }
 
 // New creates a new EKS deployer with AWS CLI.
-func New(timeout time.Duration, verbose bool) (eksdeployer.Deployer, error) {
+func New(timeout time.Duration, verbose bool) (eksdeployer.Tester, error) {
 	cfg := eksconfig.NewDefault()
 	err := cfg.UpdateFromEnvs()
 	if err != nil {
@@ -240,43 +240,4 @@ func (tr *tester) LoadConfig() (eksconfig.Config, error) {
 	var err error
 	tr.cfg, err = eksconfig.Load(tr.cfg.ConfigPath)
 	return *tr.cfg, err
-}
-
-func (tr *tester) TestALBCorrectness() (err error) {
-	if _, err = tr.LoadConfig(); err != nil {
-		return err
-	}
-	_, err = tr.ctrl.Output(exec.Command(
-		tr.awsTesterPath,
-		"eks",
-		"--path="+tr.cfg.ConfigPath,
-		"test", "alb", "correctness",
-	))
-	return err
-}
-
-func (tr *tester) TestALBQPS() (err error) {
-	if _, err = tr.LoadConfig(); err != nil {
-		return err
-	}
-	_, err = tr.ctrl.Output(exec.Command(
-		tr.awsTesterPath,
-		"eks",
-		"--path="+tr.cfg.ConfigPath,
-		"test", "alb", "qps",
-	))
-	return err
-}
-
-func (tr *tester) TestALBMetrics() (err error) {
-	if _, err = tr.LoadConfig(); err != nil {
-		return err
-	}
-	_, err = tr.ctrl.Output(exec.Command(
-		tr.awsTesterPath,
-		"eks",
-		"--path="+tr.cfg.ConfigPath,
-		"test", "alb", "metrics",
-	))
-	return err
 }

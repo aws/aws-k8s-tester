@@ -77,8 +77,8 @@ type embedded struct {
 	// TODO: add KMS plugin
 }
 
-// NewEKSDeployer creates a new EKS deployer.
-func NewEKSDeployer(cfg *eksconfig.Config) (eksdeployer.Interface, error) {
+// New creates a new AWS tester.
+func New(cfg *eksconfig.Config) (eksdeployer.Tester, error) {
 	if err := cfg.ValidateAndSetDefaults(); err != nil {
 		return nil, err
 	}
