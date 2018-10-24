@@ -64,7 +64,7 @@ curl -L http://e5de0f6b-kubesystem-ingres-6aec-38954145.us-west-2.elb.amazonaws.
 Tear down the cluster (takes about 10 minutes):
 
 ```bash
-awstester eks --path ./awstester-eks.yaml delete cluster
+awstester eks delete cluster --path ./awstester-eks.yaml
 ```
 
 ### `awstester eks` e2e tests
