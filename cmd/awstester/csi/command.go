@@ -49,7 +49,7 @@ AWS_SHARED_CREDENTIALS_FILE=~/.aws/credentials \
   --terminate-on-exit=false \
   --csi=master \
   --timeout=20m \
-  --vpc-id=vpc-0c59620d91b2e1f92
+  --vpc-id=""
 
 
 AWS_SHARED_CREDENTIALS_FILE=~/.aws/credentials \
