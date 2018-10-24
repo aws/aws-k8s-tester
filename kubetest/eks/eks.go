@@ -219,19 +219,6 @@ func (tr *tester) DumpClusterLogs(artifactDir, _ string) (err error) {
 	return err
 }
 
-// UploadToBucketForTests uploads a local file to awstester S3 bucket.
-func (tr *tester) UploadToBucketForTests(localPath, s3Path string) (err error) {
-	_, err = tr.ctrl.Output(exec.Command(
-		tr.awsTesterPath,
-		"eks",
-		"--path="+tr.cfg.ConfigPath,
-		"s3-upload",
-		localPath,
-		s3Path,
-	))
-	return err
-}
-
 func (tr *tester) Stop() {
 	close(tr.stopc)
 }
