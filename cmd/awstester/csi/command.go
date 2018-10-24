@@ -41,13 +41,13 @@ func newTest() *cobra.Command {
 }
 
 /*
-tail -f /var/log/cloud-init-output.log
-
+go install -v ./cmd/awstester
 AWS_SHARED_CREDENTIALS_FILE=~/.aws/credentials \
   awstester csi test e2e \
   --terminate-on-exit false \
   --csi master \
-  --timeout 20m
+  --timeout 20m \
+  --vpc-id
 */
 
 func newTestE2E() *cobra.Command {
