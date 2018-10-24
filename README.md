@@ -81,10 +81,11 @@ go install -v ./cmd/awstester
 cd ${GOPATH}/src/github.com/aws/awstester
 ./scripts/awstester.build.container.push.sh
 
+
 cd ${GOPATH}/src/github.com/aws/awstester
-AWSTESTER_EKS_KUBETEST_VERBOSE=true \
-  AWSTESTER_EKS_KUBETEST_CONTROL_TIMEOUT=3h \
-  AWSTESTER_EKS_WAIT_BEFORE_DOWN=10m \
+
+AWSTESTER_EKS_KUBETEST_EMBEDDED_BINARY=true \
+  AWSTESTER_EKS_WAIT_BEFORE_DOWN=1m \
   AWSTESTER_EKS_DOWN=true \
   AWSTESTER_EKS_ENABLE_NODE_SSH=true \
   AWSTESTER_EKS_AWSTESTER_IMAGE=[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/awstester:[TAG] \
