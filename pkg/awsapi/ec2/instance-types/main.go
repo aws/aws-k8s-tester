@@ -22,12 +22,12 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"os"
 	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
+	"text/template"
 	"time"
 
 	"github.com/aws/awstester/pkg/httputil"

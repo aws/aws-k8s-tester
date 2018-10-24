@@ -2,9 +2,9 @@ package eks
 
 import (
 	"bytes"
-	"html/template"
 	"io/ioutil"
 	"strings"
+	"text/template"
 )
 
 // isEKSDeletedGoClient returns true if error from EKS API indicates that
