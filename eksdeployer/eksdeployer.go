@@ -31,7 +31,10 @@ type Deployer interface {
 	// GetWorkerNodeLogs downloads logs from worker node machines.
 	GetWorkerNodeLogs() error
 
-	// Stop stops ongoing "Up" operation.
+	// Stop stops ongoing operations.
+	// This is useful for local development.
+	// For example, one may run "Up" but have to cancel onging "Up"
+	// operation. Then, it can just send syscall.SIGINT to trigger "Stop".
 	Stop()
 
 	// LoadConfig reloads or returns the current config and its state.

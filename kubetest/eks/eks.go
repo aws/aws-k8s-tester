@@ -98,6 +98,9 @@ func NewDeployer(timeout time.Duration, verbose bool) (eksdeployer.Deployer, err
 
 // Up creates a new EKS cluster.
 func (dp *deployer) Up() (err error) {
+	// "create cluster" command outputs cluster information
+	// in the configuraion file (e.g. VPC ID, ALB DNS names, etc.)
+	// this needs be reloaded for other deployer method calls
 	createCmd := exec.Command(
 		dp.awsTesterPath,
 		"eks",
@@ -219,7 +222,10 @@ func (dp *deployer) DumpClusterLogs(artifactDir, _ string) (err error) {
 	return err
 }
 
-// Stop stops ongoing "Up" operation.
+// Stop stops ongoing operations.
+// This is useful for local development.
+// For example, one may run "Up" but have to cancel onging "Up"
+// operation. Then, it can just send syscall.SIGINT to trigger "Stop".
 func (dp *deployer) Stop() {
 	close(dp.stopc)
 }
