@@ -145,7 +145,7 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 	}
 
 	if len(cfg.Plugins) > 0 {
-		cfg.InitScript, err = plugins.Get(cfg.Plugins...)
+		cfg.InitScript, err = plugins.Get(cfg.UserName, cfg.Plugins)
 		if err != nil {
 			return err
 		}
