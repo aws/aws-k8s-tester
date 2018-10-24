@@ -31,7 +31,7 @@ type Deployer interface {
 	// GetWorkerNodeLogs downloads logs from worker node machines.
 	GetWorkerNodeLogs() error
 
-	// Stop stops ongoing operation.
+	// Stop stops ongoing "Up" operation.
 	Stop()
 
 	// LoadConfig reloads or returns the current config and its state.

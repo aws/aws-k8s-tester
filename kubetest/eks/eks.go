@@ -35,10 +35,10 @@ import (
 	"k8s.io/test-infra/kubetest/process"
 )
 
-// tester implements EKS deployer interface using "awstester" binary.
+// deployer implements EKS deployer interface using "awstester" binary.
 // Satisfies "k8s.io/test-infra/kubetest/main.go" 'deployer' and 'publisher" interfaces.
 // Reference https://github.com/kubernetes/test-infra/blob/master/kubetest/main.go.
-type tester struct {
+type deployer struct {
 	stopc         chan struct{}
 	cfg           *eksconfig.Config
 	awsTesterPath string
@@ -46,8 +46,8 @@ type tester struct {
 	ctrl          *process.Control
 }
 
-// New creates a new EKS deployer with AWS CLI.
-func New(timeout time.Duration, verbose bool) (eksdeployer.Deployer, error) {
+// NewDeployer creates a new EKS deployer.
+func NewDeployer(timeout time.Duration, verbose bool) (eksdeployer.Deployer, error) {
 	cfg := eksconfig.NewDefault()
 	err := cfg.UpdateFromEnvs()
 	if err != nil {
@@ -68,7 +68,7 @@ func New(timeout time.Duration, verbose bool) (eksdeployer.Deployer, error) {
 		return nil, err
 	}
 
-	tr := &tester{
+	dp := &deployer{
 		stopc: make(chan struct{}),
 		cfg:   cfg,
 		ctrl: process.NewControl(
@@ -79,11 +79,11 @@ func New(timeout time.Duration, verbose bool) (eksdeployer.Deployer, error) {
 		),
 	}
 
-	tr.awsTesterPath, err = exec.LookPath("awstester")
+	dp.awsTesterPath, err = exec.LookPath("awstester")
 	if err != nil {
 		return nil, fmt.Errorf("cannot find 'awstester' executable (%v)", err)
 	}
-	tr.kubectlPath, err = exec.LookPath("kubectl")
+	dp.kubectlPath, err = exec.LookPath("kubectl")
 	if err != nil {
 		return nil, fmt.Errorf("cannot find 'kubectl' executable (%v)", err)
 	}
@@ -93,25 +93,25 @@ func New(timeout time.Duration, verbose bool) (eksdeployer.Deployer, error) {
 		return nil, fmt.Errorf("cannot find 'aws-iam-authenticator' executable (%v)", err)
 	}
 
-	return tr, nil
+	return dp, nil
 }
 
 // Up creates a new EKS cluster.
-func (tr *tester) Up() (err error) {
+func (dp *deployer) Up() (err error) {
 	createCmd := exec.Command(
-		tr.awsTesterPath,
+		dp.awsTesterPath,
 		"eks",
-		"--path="+tr.cfg.ConfigPath,
+		"--path="+dp.cfg.ConfigPath,
 		"create",
 		"cluster",
 	)
 	errc := make(chan error)
 	go func() {
-		_, oerr := tr.ctrl.Output(createCmd)
+		_, oerr := dp.ctrl.Output(createCmd)
 		errc <- oerr
 	}()
 	select {
-	case <-tr.stopc:
+	case <-dp.stopc:
 		fmt.Fprintln(os.Stderr, "received stop signal, interrupting 'create cluster' command...")
 		ierr := createCmd.Process.Signal(syscall.SIGINT)
 		err = fmt.Errorf("'create cluster' command interrupted (interrupt error %v)", ierr)
@@ -121,14 +121,15 @@ func (tr *tester) Up() (err error) {
 }
 
 // Down tears down the existing EKS cluster.
-func (tr *tester) Down() (err error) {
-	if _, err = tr.LoadConfig(); err != nil {
+func (dp *deployer) Down() (err error) {
+	// reload configuration from disk to read the latest configuration
+	if _, err = dp.LoadConfig(); err != nil {
 		return err
 	}
-	_, err = tr.ctrl.Output(exec.Command(
-		tr.awsTesterPath,
+	_, err = dp.ctrl.Output(exec.Command(
+		dp.awsTesterPath,
 		"eks",
-		"--path="+tr.cfg.ConfigPath,
+		"--path="+dp.cfg.ConfigPath,
 		"delete",
 		"cluster",
 	))
@@ -136,58 +137,56 @@ func (tr *tester) Down() (err error) {
 }
 
 // IsUp returns an error if the cluster is not up and running.
-func (tr *tester) IsUp() (err error) {
-	if _, err = tr.LoadConfig(); err != nil {
+func (dp *deployer) IsUp() (err error) {
+	// reload configuration from disk to read the latest configuration
+	if _, err = dp.LoadConfig(); err != nil {
 		return err
 	}
-	_, err = tr.ctrl.Output(exec.Command(
-		tr.awsTesterPath,
+	_, err = dp.ctrl.Output(exec.Command(
+		dp.awsTesterPath,
 		"eks",
-		"--path="+tr.cfg.ConfigPath,
+		"--path="+dp.cfg.ConfigPath,
 		"check",
 		"cluster",
 	))
 	if err != nil {
 		return err
 	}
-	if _, err = tr.LoadConfig(); err != nil {
+	if _, err = dp.LoadConfig(); err != nil {
 		return err
 	}
-	if tr.cfg.ClusterState.Status != "ACTIVE" {
+	if dp.cfg.ClusterState.Status != "ACTIVE" {
 		return fmt.Errorf("cluster %q status is %q",
-			tr.cfg.ClusterName,
-			tr.cfg.ClusterState.Status,
+			dp.cfg.ClusterName,
+			dp.cfg.ClusterState.Status,
 		)
 	}
 	return nil
 }
 
 // TestSetup checks if EKS testing cluster has been set up or not.
-func (tr *tester) TestSetup() error {
-	return tr.IsUp()
+func (dp *deployer) TestSetup() error {
+	return dp.IsUp()
 }
 
 // GetClusterCreated returns EKS cluster creation time and error (if any).
-func (tr *tester) GetClusterCreated(v string) (time.Time, error) {
-	err := tr.IsUp()
+func (dp *deployer) GetClusterCreated(v string) (time.Time, error) {
+	err := dp.IsUp()
 	if err != nil {
 		return time.Time{}, err
 	}
-	tr.cfg, err = eksconfig.Load(tr.cfg.ConfigPath)
-	if err != nil {
-		return time.Time{}, err
-	}
-	return tr.cfg.ClusterState.Created, nil
+	return dp.cfg.ClusterState.Created, nil
 }
 
-func (tr *tester) GetWorkerNodeLogs() (err error) {
-	if _, err = tr.LoadConfig(); err != nil {
+func (dp *deployer) GetWorkerNodeLogs() (err error) {
+	// reload configuration from disk to read the latest configuration
+	if _, err = dp.LoadConfig(); err != nil {
 		return err
 	}
-	_, err = tr.ctrl.Output(exec.Command(
-		tr.awsTesterPath,
+	_, err = dp.ctrl.Output(exec.Command(
+		dp.awsTesterPath,
 		"eks",
-		"--path="+tr.cfg.ConfigPath,
+		"--path="+dp.cfg.ConfigPath,
 		"test", "get-worker-node-logs",
 	))
 	return err
@@ -196,74 +195,37 @@ func (tr *tester) GetWorkerNodeLogs() (err error) {
 // DumpClusterLogs dumps all logs to artifact directory.
 // Let default kubetest log dumper handle all artifact uploads.
 // See https://github.com/kubernetes/test-infra/pull/9811/files#r225776067.
-func (tr *tester) DumpClusterLogs(artifactDir, _ string) (err error) {
-	if _, err = tr.LoadConfig(); err != nil {
+func (dp *deployer) DumpClusterLogs(artifactDir, _ string) (err error) {
+	// reload configuration from disk to read the latest configuration
+	if _, err = dp.LoadConfig(); err != nil {
 		return err
 	}
-	_, err = tr.ctrl.Output(exec.Command(
-		tr.awsTesterPath,
+	_, err = dp.ctrl.Output(exec.Command(
+		dp.awsTesterPath,
 		"eks",
-		"--path="+tr.cfg.ConfigPath,
+		"--path="+dp.cfg.ConfigPath,
 		"test", "get-worker-node-logs",
 	))
 	if err != nil {
 		return err
 	}
-	_, err = tr.ctrl.Output(exec.Command(
-		tr.awsTesterPath,
+	_, err = dp.ctrl.Output(exec.Command(
+		dp.awsTesterPath,
 		"eks",
-		"--path="+tr.cfg.ConfigPath,
+		"--path="+dp.cfg.ConfigPath,
 		"test", "dump-cluster-logs",
 		artifactDir,
 	))
 	return err
 }
 
-func (tr *tester) Stop() {
-	close(tr.stopc)
+// Stop stops ongoing "Up" operation.
+func (dp *deployer) Stop() {
+	close(dp.stopc)
 }
 
-func (tr *tester) LoadConfig() (eksconfig.Config, error) {
+func (dp *deployer) LoadConfig() (eksconfig.Config, error) {
 	var err error
-	tr.cfg, err = eksconfig.Load(tr.cfg.ConfigPath)
-	return *tr.cfg, err
-}
-
-func (tr *tester) TestALBCorrectness() (err error) {
-	if _, err = tr.LoadConfig(); err != nil {
-		return err
-	}
-	_, err = tr.ctrl.Output(exec.Command(
-		tr.awsTesterPath,
-		"eks",
-		"--path="+tr.cfg.ConfigPath,
-		"test", "alb", "correctness",
-	))
-	return err
-}
-
-func (tr *tester) TestALBQPS() (err error) {
-	if _, err = tr.LoadConfig(); err != nil {
-		return err
-	}
-	_, err = tr.ctrl.Output(exec.Command(
-		tr.awsTesterPath,
-		"eks",
-		"--path="+tr.cfg.ConfigPath,
-		"test", "alb", "qps",
-	))
-	return err
-}
-
-func (tr *tester) TestALBMetrics() (err error) {
-	if _, err = tr.LoadConfig(); err != nil {
-		return err
-	}
-	_, err = tr.ctrl.Output(exec.Command(
-		tr.awsTesterPath,
-		"eks",
-		"--path="+tr.cfg.ConfigPath,
-		"test", "alb", "metrics",
-	))
-	return err
+	dp.cfg, err = eksconfig.Load(dp.cfg.ConfigPath)
+	return *dp.cfg, err
 }

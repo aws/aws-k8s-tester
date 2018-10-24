@@ -44,7 +44,7 @@ func testGetWorkerNodeLogs(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 	var tester eksdeployer.Tester
-	tester, err = eks.New(cfg)
+	tester, err = eks.NewDeployer(cfg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create EKS deployer %v\n", err)
 		os.Exit(1)
@@ -81,7 +81,7 @@ func testDumpClusterLogs(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 	var tester eksdeployer.Tester
-	tester, err = eks.New(cfg)
+	tester, err = eks.NewDeployer(cfg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create EKS deployer %v\n", err)
 		os.Exit(1)
@@ -126,7 +126,7 @@ func testALBCorrectness(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 	var tester eksdeployer.Tester
-	tester, err = eks.New(cfg)
+	tester, err = eks.NewDeployer(cfg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create EKS deployer %v\n", err)
 		os.Exit(1)
@@ -158,7 +158,7 @@ func testALBQPS(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 	var tester eksdeployer.Tester
-	tester, err = eks.New(cfg)
+	tester, err = eks.NewDeployer(cfg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create EKS deployer %v\n", err)
 		os.Exit(1)
@@ -190,7 +190,7 @@ func testALBMetrics(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 	var tester eksdeployer.Tester
-	tester, err = eks.New(cfg)
+	tester, err = eks.NewDeployer(cfg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create EKS deployer %v\n", err)
 		os.Exit(1)

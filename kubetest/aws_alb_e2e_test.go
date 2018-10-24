@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/aws/awstester/eksdeployer"
-	ekstesterplugin "github.com/aws/awstester/kubetest/ekstester"
+	"github.com/aws/awstester/kubetest/eks"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -37,10 +37,10 @@ func TestAWSTesterEKS(t *testing.T) {
 var kp eksdeployer.Tester
 
 // to use embedded eks
-// kp, err = eks.New(cfg)
+// kp, err = eks.NewDeployer(cfg)
 var _ = BeforeSuite(func() {
 	var err error
-	kp, err = ekstesterplugin.New(*timeout, *verbose)
+	kp, err = eks.NewTester(*timeout, *verbose)
 	Expect(err).ShouldNot(HaveOccurred())
 
 	notifier := make(chan os.Signal, 1)
