@@ -122,6 +122,9 @@ func (tr *tester) Up() (err error) {
 
 // Down tears down the existing EKS cluster.
 func (tr *tester) Down() (err error) {
+	if _, err = tr.LoadConfig(); err != nil {
+		return err
+	}
 	_, err = tr.ctrl.Output(exec.Command(
 		tr.awsTesterPath,
 		"eks",
@@ -134,6 +137,9 @@ func (tr *tester) Down() (err error) {
 
 // IsUp returns an error if the cluster is not up and running.
 func (tr *tester) IsUp() (err error) {
+	if _, err = tr.LoadConfig(); err != nil {
+		return err
+	}
 	_, err = tr.ctrl.Output(exec.Command(
 		tr.awsTesterPath,
 		"eks",
@@ -144,12 +150,9 @@ func (tr *tester) IsUp() (err error) {
 	if err != nil {
 		return err
 	}
-
-	tr.cfg, err = eksconfig.Load(tr.cfg.ConfigPath)
-	if err != nil {
+	if _, err = tr.LoadConfig(); err != nil {
 		return err
 	}
-
 	if tr.cfg.ClusterState.Status != "ACTIVE" {
 		return fmt.Errorf("cluster %q status is %q",
 			tr.cfg.ClusterName,
@@ -177,9 +180,11 @@ func (tr *tester) GetClusterCreated(v string) (time.Time, error) {
 	return tr.cfg.ClusterState.Created, nil
 }
 
-func (tr *tester) GetWorkerNodeLogs() error {
-	tr.LoadConfig()
-	_, err := tr.ctrl.Output(exec.Command(
+func (tr *tester) GetWorkerNodeLogs() (err error) {
+	if _, err = tr.LoadConfig(); err != nil {
+		return err
+	}
+	_, err = tr.ctrl.Output(exec.Command(
 		tr.awsTesterPath,
 		"eks",
 		"--path="+tr.cfg.ConfigPath,
@@ -192,7 +197,9 @@ func (tr *tester) GetWorkerNodeLogs() error {
 // Let default kubetest log dumper handle all artifact uploads.
 // See https://github.com/kubernetes/test-infra/pull/9811/files#r225776067.
 func (tr *tester) DumpClusterLogs(artifactDir, _ string) (err error) {
-	tr.LoadConfig()
+	if _, err = tr.LoadConfig(); err != nil {
+		return err
+	}
 	_, err = tr.ctrl.Output(exec.Command(
 		tr.awsTesterPath,
 		"eks",
@@ -211,10 +218,6 @@ func (tr *tester) DumpClusterLogs(artifactDir, _ string) (err error) {
 	))
 	return err
 }
-
-///////////////////////////////////////////////
-// Extra methods for EKS specific operations //
-///////////////////////////////////////////////
 
 // UploadToBucketForTests uploads a local file to awstester S3 bucket.
 func (tr *tester) UploadToBucketForTests(localPath, s3Path string) (err error) {

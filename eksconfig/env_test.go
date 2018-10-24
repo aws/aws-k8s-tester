@@ -9,6 +9,7 @@ import (
 func TestEnv(t *testing.T) {
 	cfg := NewDefault()
 
+	os.Setenv("AWSTESTER_EKS_KUBETEST_EMBEDDED_BINARY", "false")
 	os.Setenv("AWSTESTER_EKS_CONFIG_PATH", "test-path")
 	os.Setenv("AWSTESTER_EKS_DOWN", "false")
 	os.Setenv("AWSTESTER_EKS_ENABLE_NODE_SSH", "true")
@@ -23,6 +24,7 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWSTESTER_EKS_ALB_TEST_SCALABILITY", "false")
 
 	defer func() {
+		os.Unsetenv("AWSTESTER_EKS_KUBETEST_EMBEDDED_BINARY")
 		os.Unsetenv("AWSTESTER_EKS_CONFIG_PATH")
 		os.Unsetenv("AWSTESTER_EKS_DOWN")
 		os.Unsetenv("AWSTESTER_EKS_ENABLE_NODE_SSH")
@@ -41,6 +43,9 @@ func TestEnv(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	if cfg.KubetestEmbeddedBinary {
+		t.Fatalf("cfg.KubetestEmbeddedBinary expected 'false', got %v", cfg.KubetestEmbeddedBinary)
+	}
 	if cfg.ConfigPath != "test-path" {
 		t.Fatalf("alb configuration path expected 'test-path', got %q", cfg.ConfigPath)
 	}

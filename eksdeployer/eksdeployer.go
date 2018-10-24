@@ -33,9 +33,8 @@ type AWSTester interface {
 	// Stop stops ongoing operation.
 	Stop()
 
-	// LoadConfig returns the current config and its state.
-	// It's either returned from embedded EKS deployer
-	// or reloaded from disk.
+	// LoadConfig reloads or returns the current config and its state.
+	// It's either reloaded from disk or returned from embedded EKS deployer.
 	LoadConfig() (eksconfig.Config, error)
 }
 

@@ -13,15 +13,17 @@ func NewDefault() *Config {
 //  - omitting an entire field returns nil value
 //  - make sure to check both
 var defaultConfig = Config{
-	ConfigPath: "test.yaml",
+	KubetestEmbeddedBinary: true,
+
+	AWSTesterImage: "PLEASE-UPDATE/awstester:PLEASE-UPDATE",
 
 	// enough time for ALB access log
 	WaitBeforeDown: 10 * time.Minute,
 	Down:           true,
 
-	EnableNodeSSH: true,
+	ConfigPath: "test.yaml",
 
-	AWSTesterImage: "PLEASE-UPDATE/awstester:PLEASE-UPDATE",
+	EnableNodeSSH: true,
 
 	AWSAccountID: "",
 	// to be overwritten by AWS_SHARED_CREDENTIALS_FILE

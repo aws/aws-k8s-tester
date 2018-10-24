@@ -6,6 +6,7 @@ See [code changes](https://github.com/aws/awstester/compare/0.0.5...0.0.6).
 
 ### `eksconfig`
 
+- Add [`KubetestEmbeddedBinary`]() field.
 - Remove [`KubetestVerbose`](https://github.com/aws/awstester/commit/6a7d73febaa3d962621031832774c698a2684b39) field.
 - Remove [`KubetestControlTimeout`](https://github.com/aws/awstester/commit/6a7d73febaa3d962621031832774c698a2684b39) field.
 
@@ -18,6 +19,9 @@ See [code changes](https://github.com/aws/awstester/compare/0.0.5...0.0.6).
 ### Go
 
 - Compile with [*Go 1.11.1*](https://golang.org/doc/devel/release.html#go1.11).
+
+
+<hr>
 
 
 ## [0.0.5](https://github.com/aws/awstester/releases/tag/0.0.5) (2018-10-23)
@@ -35,6 +39,9 @@ See [code changes](https://github.com/aws/awstester/compare/0.0.4...0.0.5).
 ### Go
 
 - Compile with [*Go 1.11.1*](https://golang.org/doc/devel/release.html#go1.11).
+
+
+<hr>
 
 
 ## [0.0.4](https://github.com/aws/awstester/releases/tag/0.0.4) (2018-10-23)
@@ -56,6 +63,9 @@ See [code changes](https://github.com/aws/awstester/compare/0.0.3...0.0.4).
 - Compile with [*Go 1.11.1*](https://golang.org/doc/devel/release.html#go1.11).
 
 
+<hr>
+
+
 ## [0.0.3](https://github.com/aws/awstester/releases/tag/0.0.3) (2018-10-22)
 
 See [code changes](https://github.com/aws/awstester/compare/0.0.2...0.0.3).
@@ -71,6 +81,9 @@ See [code changes](https://github.com/aws/awstester/compare/0.0.2...0.0.3).
 ### Go
 
 - Compile with [*Go 1.11.1*](https://golang.org/doc/devel/release.html#go1.11).
+
+
+<hr>
 
 
 ## [0.0.2](https://github.com/aws/awstester/releases/tag/0.0.2) (2018-10-22)
@@ -104,6 +117,9 @@ See [code changes](https://github.com/aws/awstester/compare/0.0.1...0.0.2).
 ### Go
 
 - Compile with [*Go 1.11.1*](https://golang.org/doc/devel/release.html#go1.11).
+
+
+<hr>
 
 
 ## [0.0.1](https://github.com/aws/awstester/releases/tag/0.0.1) (2018-10-18)
@@ -144,6 +160,9 @@ See [code changes](https://github.com/aws/awstester/compare/0.0.0...0.0.1).
 - Compile with [*Go 1.11.1*](https://golang.org/doc/devel/release.html#go1.11).
 
 
+<hr>
+
+
 ## [0.0.0](https://github.com/aws/awstester/releases/tag/0.0.0) (2018-10-15)
 
 Initial release.
@@ -151,4 +170,7 @@ Initial release.
 ### Go
 
 - Compile with [*Go 1.11.1*](https://golang.org/doc/devel/release.html#go1.11).
+
+
+<hr>
 

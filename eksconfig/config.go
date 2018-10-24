@@ -17,6 +17,10 @@ import (
 
 // Config defines EKS testing configuration.
 type Config struct {
+	// KubetestEmbeddedBinary is true to use "awstester eks test" binary to run kubetest.
+	// TODO: If false, use AWS CLI.
+	KubetestEmbeddedBinary bool `json:"kubetest-embedded-binary,omitempty"`
+
 	// AWSTesterImage is the awstester container image.
 	// Required for "awstester ingress server" for ALB Ingress Controller tests.
 	AWSTesterImage string `json:"awstester-image,omitempty"`

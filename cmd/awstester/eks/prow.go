@@ -103,6 +103,8 @@ func prowALBFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 	s, err := alb.CreateProwJobYAML(alb.ConfigProwJobYAML{
+		AWSTESTER_EKS_KUBETEST_EMBEDDED_BINARY: fmt.Sprintf("%v", cfg.KubetestEmbeddedBinary),
+
 		AWSTESTER_EKS_WAIT_BEFORE_DOWN: fmt.Sprintf("%v", cfg.WaitBeforeDown),
 		AWSTESTER_EKS_DOWN:             fmt.Sprintf("%v", cfg.Down),
 

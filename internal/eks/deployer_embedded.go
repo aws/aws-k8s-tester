@@ -543,10 +543,6 @@ func (md *embedded) UploadToBucketForTests(localPath, remotePath string) error {
 	return md.s3Plugin.UploadToBucketForTests(localPath, remotePath)
 }
 
-///////////////////////////////////////////////
-// Extra methods for EKS specific operations //
-///////////////////////////////////////////////
-
 func (md *embedded) Stop() { close(md.stopc) }
 
 // LoadConfig returns the current configuration and its states.

@@ -83,10 +83,6 @@ func (ac *awsCli) UploadToBucketForTests(localPath, remotePath string) error {
 	return ac.s3Plugin.UploadToBucketForTests(localPath, remotePath)
 }
 
-///////////////////////////////////////////////
-// Extra methods for EKS specific operations //
-///////////////////////////////////////////////
-
 func (ac *awsCli) Stop() {
 	panic("TODO")
 }
