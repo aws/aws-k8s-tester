@@ -1,8 +1,23 @@
 
 
+## [0.0.6](https://github.com/aws/awstester/releases/tag/0.0.6) (2018-10-24)
+
+See [code changes](https://github.com/aws/awstester/compare/0.0.5...0.0.6).
+
+### `internal`
+
+- Refactor [`internal/ec2/config/plugins`](https://github.com/aws/awstester/commit/50a6d2999925220c23dac744942952ad2685b8aa).
+- Make [`internal/ec2/config.Config.LogAutoUpload` false by default](https://github.com/aws/awstester/commit/31abeb2189951af17360a76bb47e811ac47617c5).
+- `internal/ec2/config.Config.Plugins`, if not empty, always [overwrites `internal/ec2/config.Config.InitScript`](https://github.com/aws/awstester/commit/cd04fdbcd6fe583d8e3331d882c5c88b98698fee#diff-144560acd519ff2592df00db3e840fd0).
+
+### Go
+
+- Compile with [*Go 1.11.1*](https://golang.org/doc/devel/release.html#go1.11).
+
+
 ## [0.0.5](https://github.com/aws/awstester/releases/tag/0.0.5) (2018-10-23)
 
-See [code changes](https://github.com/aws/awstester/compare/0.0.3...0.0.5).
+See [code changes](https://github.com/aws/awstester/compare/0.0.4...0.0.5).
 
 ### `awstester` CLI
 
