@@ -62,10 +62,6 @@ func createInstancesFunc(cmd *cobra.Command, args []string) {
 		fmt.Fprintf(os.Stderr, "failed to load configuration %q (%v)\n", path, err)
 		os.Exit(1)
 	}
-	if err = cfg.ValidateAndSetDefaults(); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to validate configuration %q (%v)\n", path, err)
-		os.Exit(1)
-	}
 
 	var dp ec2.Deployer
 	dp, err = ec2.NewDeployer(cfg)
