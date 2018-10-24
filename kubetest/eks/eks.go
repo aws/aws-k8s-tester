@@ -152,6 +152,17 @@ func (tr *tester) GetClusterCreated(v string) (time.Time, error) {
 	return tr.cfg.ClusterState.Created, nil
 }
 
+func (tr *tester) GetWorkerNodeLogs() error {
+	tr.LoadConfig()
+	_, err := tr.ctrl.Output(exec.Command(
+		tr.awsTesterPath,
+		"eks",
+		"--path="+tr.cfg.ConfigPath,
+		"test", "get-worker-node-logs",
+	))
+	return err
+}
+
 // DumpClusterLogs dumps all logs to artifact directory.
 // Let default kubetest log dumper handle all artifact uploads.
 // See https://github.com/kubernetes/test-infra/pull/9811/files#r225776067.
