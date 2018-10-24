@@ -37,7 +37,8 @@ type Deployer interface {
 	// operation. Then, it can just send syscall.SIGINT to trigger "Stop".
 	Stop()
 
-	// LoadConfig reloads or returns the current config and its state.
+	// LoadConfig reloads configuration from disk to read the latest
+	// cluster configuration and its states.
 	// It's either reloaded from disk or returned from embedded EKS deployer.
 	LoadConfig() (eksconfig.Config, error)
 }

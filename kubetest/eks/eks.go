@@ -230,6 +230,8 @@ func (dp *deployer) Stop() {
 	close(dp.stopc)
 }
 
+// LoadConfig reloads configuration from disk to read the latest
+// cluster configuration and its states.
 func (dp *deployer) LoadConfig() (eksconfig.Config, error) {
 	var err error
 	dp.cfg, err = eksconfig.Load(dp.cfg.ConfigPath)
