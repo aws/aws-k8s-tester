@@ -6,8 +6,8 @@ See [code changes](https://github.com/aws/awstester/compare/0.0.5...0.0.6).
 
 ### `eksconfig`
 
-- Remove [`KubetestVerbose`](https://github.com/aws/awstester/commit/17189259558110b066a974f6ee6fb2b8242c03d5) field.
-- Remove [`KubetestControlTimeout`](https://github.com/aws/awstester/commit/17189259558110b066a974f6ee6fb2b8242c03d5) field.
+- Remove [`KubetestVerbose`](https://github.com/aws/awstester/commit/6a7d73febaa3d962621031832774c698a2684b39) field.
+- Remove [`KubetestControlTimeout`](https://github.com/aws/awstester/commit/6a7d73febaa3d962621031832774c698a2684b39) field.
 
 ### `internal`
 
