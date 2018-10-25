@@ -22,7 +22,9 @@ type Config struct {
 	KubetestEmbeddedBinary bool `json:"kubetest-embedded-binary,omitempty"`
 
 	// AWSTesterImage is the awstester container image.
-	// Required for "awstester ingress server" for ALB Ingress Controller tests.
+	// Required for "awstester ingress server" for ALB Ingress
+	// Controller tests. Only required when ALB Ingress "TestMode"
+	// is "ingress-test-server".
 	AWSTesterImage string `json:"awstester-image,omitempty"`
 
 	// WaitBeforeDown is the duration to sleep before cluster tear down.
