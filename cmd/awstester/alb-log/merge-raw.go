@@ -32,7 +32,7 @@ func mergeRawFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	f, err := os.OpenFile(output, os.O_RDWR|os.O_APPEND, 0660)
+	f, err := os.Create(output)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create a file %q (%v)\n", output, err)
 		os.Exit(1)
