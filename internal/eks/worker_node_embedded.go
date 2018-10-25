@@ -248,8 +248,9 @@ func (md *embedded) createWorkerNode() error {
 			"worker node creation in progress",
 			zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 		)
+
 		if md.cfg.ClusterState.CFStackWorkerNodeGroupStatus == "CREATE_COMPLETE" {
-			if err = md.updateASG(); err != nil {
+			if err = md.checkASG(); err != nil {
 				md.lg.Warn("failed to check ASG", zap.Error(err))
 				continue
 			}
@@ -469,7 +470,7 @@ func (md *embedded) deleteWorkerNode() error {
 	return md.cfg.Sync()
 }
 
-func (md *embedded) updateASG() (err error) {
+func (md *embedded) checkASG() (err error) {
 	md.lg.Info("checking ASG")
 
 	var rout *cloudformation.DescribeStackResourcesOutput
@@ -552,18 +553,23 @@ func (md *embedded) updateASG() (err error) {
 		if len(dout.Reservations) != 1 {
 			return fmt.Errorf("ec2 DescribeInstances returned len(Reservations) %d", len(dout.Reservations))
 		}
-		ec2Instances = append(ec2Instances, dout.Reservations[0].Instances...)
 
 		runningCnt := 0
-		for _, iv := range dout.Reservations[0].Instances {
-			if *iv.State.Name == "running" {
-				runningCnt++
+		for _, rsrv := range dout.Reservations {
+			ec2Instances = append(ec2Instances, rsrv.Instances...)
+			for _, iv := range rsrv.Instances {
+				if *iv.State.Name == "running" {
+					runningCnt++
+				}
 			}
 		}
-		if runningCnt != len(dout.Reservations[0].Instances) {
-			return fmt.Errorf("running instances expected %d, got %d", len(dout.Reservations[0].Instances), runningCnt)
+		if runningCnt != len(iss) {
+			return fmt.Errorf("running instances expected %d, got %d", len(iss), runningCnt)
 		}
-		md.lg.Info("EC2 instances are running", zap.Int("instances-so-far", len(ec2Instances)))
+		md.lg.Info("EC2 instances are running",
+			zap.Int("reservations", len(dout.Reservations)),
+			zap.Int("instances-so-far", len(ec2Instances)),
+		)
 
 		if len(ids) <= 10 {
 			break
