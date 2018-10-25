@@ -550,9 +550,6 @@ func (md *embedded) checkASG() (err error) {
 		if err != nil {
 			return fmt.Errorf("failed to describe instances %v", err)
 		}
-		if len(dout.Reservations) != 1 {
-			return fmt.Errorf("ec2 DescribeInstances returned len(Reservations) %d", len(dout.Reservations))
-		}
 
 		runningCnt := 0
 		for _, rsrv := range dout.Reservations {
