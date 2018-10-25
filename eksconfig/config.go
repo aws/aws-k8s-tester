@@ -654,8 +654,8 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		if cfg.ALBIngressController.Enable {
 			return errors.New("cannot create AWS ALB Ingress Controller without AWS credential")
 		}
-		if cfg.AWSTesterImage == "" {
-			return errors.New("cannot create AWS ALB Ingress Controller without ingress test server image")
+		if cfg.ALBIngressController.TestMode == "ingress-test-server" && cfg.AWSTesterImage == "" {
+			return errors.New("cannot create AWS ALB Ingress Controller without ingress test server image for 'ingress-test-server'")
 		}
 		if cfg.ALBIngressController.ALBIngressControllerImage == "" {
 			return errors.New("cannot create AWS ALB Ingress Controller without ingress controller test image")
@@ -677,14 +677,14 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	if cfg.ALBIngressController != nil && cfg.ALBIngressController.Enable {
 		switch cfg.ALBIngressController.TestMode {
 		case "ingress-test-server":
+			if cfg.AWSTesterImage == "" {
+				return errors.New("awstester image not specified")
+			}
 		case "nginx":
 		default:
 			return fmt.Errorf("ALB Ingress test mode %q is not supported", cfg.ALBIngressController.TestMode)
 		}
 
-		if cfg.AWSTesterImage == "" {
-			return errors.New("awstester image not specified")
-		}
 		if cfg.ALBIngressController.TargetType != "instance" &&
 			cfg.ALBIngressController.TargetType != "ip" {
 			return fmt.Errorf("ALB Ingress Controller target type not found %q", cfg.ALBIngressController.TargetType)

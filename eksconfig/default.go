@@ -15,8 +15,6 @@ func NewDefault() *Config {
 var defaultConfig = Config{
 	KubetestEmbeddedBinary: true,
 
-	AWSTesterImage: "PLEASE-UPDATE/awstester:PLEASE-UPDATE",
-
 	// enough time for ALB access log
 	WaitBeforeDown: 10 * time.Minute,
 	Down:           true,
