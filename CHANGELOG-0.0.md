@@ -7,6 +7,13 @@
 
 See [code changes](https://github.com/aws/awstester/compare/0.0.6...0.0.7).
 
+### `awstester` CLI
+
+- Rename to [`awstester wrk average-raw`](https://github.com/aws/awstester/commit/b79a4717d33046ce90cccf0c6138c78105a4ac3d).
+- Rename to [`awstester wrk convert-to-csv`](https://github.com/aws/awstester/commit/b79a4717d33046ce90cccf0c6138c78105a4ac3d).
+- Rename to [`awstester wrk merge-csv`](https://github.com/aws/awstester/commit/b79a4717d33046ce90cccf0c6138c78105a4ac3d).
+- Rename to [`awstester wrk merge-raw`](https://github.com/aws/awstester/commit/b79a4717d33046ce90cccf0c6138c78105a4ac3d).
+
 ### `eksconfig`
 
 - Change [default `ALBIngressController.TestServerRoutes` value to 1](https://github.com/aws/awstester/commit/0a4e1cf26735e5c09cb0c81be7a9c6ec757318f8).
