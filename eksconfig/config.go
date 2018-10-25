@@ -681,7 +681,7 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 				return errors.New("'ingress-test-server' requires AWSTesterImage")
 			}
 		case "nginx":
-			if cfg.ALBIngressController.TestServerRoutes > 1 {
+			if cfg.ALBIngressController.TestServerRoutes != 1 {
 				return errors.New("'nginx' only needs 1 server route")
 			}
 		default:
