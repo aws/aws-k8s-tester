@@ -3,7 +3,7 @@
 <hr>
 
 
-## [0.0.7](https://github.com/aws/awstester/releases/tag/0.0.7) (TODO)
+## [0.0.7](https://github.com/aws/awstester/releases/tag/0.0.7) (2018-10-25)
 
 See [code changes](https://github.com/aws/awstester/compare/0.0.6...0.0.7).
 
