@@ -6,7 +6,7 @@ func init() {
 	cobra.EnablePrefixMatching = true
 }
 
-// NewCommand implements "awstest alblog" command.
+// NewCommand implements "awstest alb-log" command.
 func NewCommand() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "alb-log",
