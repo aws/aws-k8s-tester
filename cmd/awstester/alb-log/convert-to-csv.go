@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/aws/awstester/internal/alblog"
+	alblog "github.com/aws/awstester/internal/alb-log"
 
 	"github.com/spf13/cobra"
 )
