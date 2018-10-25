@@ -47,4 +47,5 @@ func mergeRawFunc(cmd *cobra.Command, args []string) {
 		fmt.Fprintf(os.Stderr, "failed to convert to CSV %q (%v)\n", output, err)
 		os.Exit(1)
 	}
+	fmt.Printf("merged %q to %q\n", args, output)
 }
