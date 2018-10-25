@@ -40,10 +40,12 @@ func NewCommand() *cobra.Command {
 		Run:   runFunc,
 	}
 	rootCmd.AddCommand(
-		newAverage(),
-		newMerge(),
-		newConvert(),
+		newAverageRaw(),
+		newMergeRaw(),
+		newMergeCSV(),
+		newConvertToCSV(),
 	)
+
 	rootCmd.PersistentFlags().StringVar(&output, "output", "", "output file path")
 
 	rootCmd.PersistentFlags().BoolVar(&outputCSV, "output-csv", true, "'true' to output results in CSV")
@@ -57,6 +59,7 @@ func NewCommand() *cobra.Command {
 	rootCmd.PersistentFlags().IntVar(&wrkCfg.Threads, "threads", 2, "number of threads")
 	rootCmd.PersistentFlags().IntVar(&wrkCfg.Connections, "connections", 200, "number of connections")
 	rootCmd.PersistentFlags().DurationVar(&wrkCfg.Duration, "duration", 15*time.Second, "duration to run 'wrk' command")
+
 	return rootCmd
 }
 

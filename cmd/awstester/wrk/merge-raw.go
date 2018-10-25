@@ -10,15 +10,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newAverage() *cobra.Command {
+func newMergeRaw() *cobra.Command {
 	return &cobra.Command{
-		Use:   "average [list of wrk command output files to get averages from]",
-		Short: "Combine wrk command outputs and return average values to a CSV file",
-		Run:   averageFunc,
+		Use:   "merge-raw [list of wrk command raw output files to merge]",
+		Short: "Merge wrk command outputs into one CSV file",
+		Run:   mergeRawFunc,
 	}
 }
 
-func averageFunc(cmd *cobra.Command, args []string) {
+func mergeRawFunc(cmd *cobra.Command, args []string) {
 	if len(args) < 1 {
 		fmt.Fprintf(os.Stderr, "expected at least 1 argument, but got %v\n", args)
 		os.Exit(1)
@@ -42,8 +42,8 @@ func averageFunc(cmd *cobra.Command, args []string) {
 		}
 		ps = append(ps, op)
 	}
-	rs := wrk.Combine(ps...)
-	if err := wrk.ToCSV(output, rs); err != nil {
+
+	if err := wrk.ToCSV(output, ps...); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to convert to CSV %q (%v)\n", output, err)
 		os.Exit(1)
 	}

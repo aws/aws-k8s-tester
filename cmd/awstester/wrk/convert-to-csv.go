@@ -10,15 +10,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newConvert() *cobra.Command {
+func newConvertToCSV() *cobra.Command {
 	return &cobra.Command{
-		Use:   "convert [wrk command output file to convert]",
+		Use:   "convert-to-csv [wrk command result file to convert]",
 		Short: "Convert wrk command output to a CSV file",
-		Run:   convertFunc,
+		Run:   convertToCSVFunc,
 	}
 }
 
-func convertFunc(cmd *cobra.Command, args []string) {
+func convertToCSVFunc(cmd *cobra.Command, args []string) {
 	if len(args) != 1 {
 		fmt.Fprintf(os.Stderr, "expected 1 arguments but got %v\n", args)
 		os.Exit(1)
