@@ -9,12 +9,16 @@ func init() {
 // NewCommand implements "awstest alblog" command.
 func NewCommand() *cobra.Command {
 	rootCmd := &cobra.Command{
-		Use:   "alblog",
+		Use:   "alb-log",
 		Short: "ALB access log commands",
 	}
+	rootCmd.PersistentFlags().StringVar(&output, "output", "", "output file path")
 	rootCmd.AddCommand(
-		newALBConvert(),
-		newALBCount(),
+		newConvertToCSV(),
+		newCountTargets(),
+		newMergeRaw(),
 	)
 	return rootCmd
 }
+
+var output string

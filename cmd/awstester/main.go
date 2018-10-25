@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/aws/awstester/cmd/awstester/alblog"
+	alblog "github.com/aws/awstester/cmd/awstester/alb-log"
 	"github.com/aws/awstester/cmd/awstester/csi"
 	"github.com/aws/awstester/cmd/awstester/ec2"
 	"github.com/aws/awstester/cmd/awstester/ecr"

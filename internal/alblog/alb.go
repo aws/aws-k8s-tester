@@ -145,7 +145,7 @@ func Parse(p string) (logs []Log, err error) {
 	return logs, nil
 }
 
-// ConvertToCSV converts ALB access log file to CSV.
+// ConvertToCSV converts ALB access log files to CSV.
 func ConvertToCSV(output string, ps ...string) error {
 	rows := make([][]string, 0)
 
