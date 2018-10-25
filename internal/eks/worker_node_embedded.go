@@ -213,7 +213,7 @@ func (md *embedded) createWorkerNode() error {
 					fromPort, toPort := *perm.FromPort, *perm.ToPort
 					rg := ""
 					if len(perm.IpRanges) == 1 {
-						rg = perm.IpRanges[0].String()
+						rg = *perm.IpRanges[0].CidrIp
 					}
 					md.lg.Info(
 						"found security IP permission",
