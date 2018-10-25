@@ -3,6 +3,23 @@
 <hr>
 
 
+## [0.0.7](https://github.com/aws/awstester/releases/tag/0.0.7) (TODO)
+
+See [code changes](https://github.com/aws/awstester/compare/0.0.6...0.0.7).
+
+### `eksconfig`
+
+- Change [default `ALBIngressController.TestServerRoutes` value to 1](https://github.com/aws/awstester/commit/0a4e1cf26735e5c09cb0c81be7a9c6ec757318f8).
+- Do not require [`AWSTesterImage` when `ALBIngressController.TestMode` is `"ingress-test-server"`](https://github.com/aws/awstester/commit/d9403b196961ec2d473e11127670da411dd19050).
+
+### Go
+
+- Compile with [*Go 1.11.1*](https://golang.org/doc/devel/release.html#go1.11).
+
+
+<hr>
+
+
 ## [0.0.6](https://github.com/aws/awstester/releases/tag/0.0.6) (2018-10-24)
 
 See [code changes](https://github.com/aws/awstester/compare/0.0.5...0.0.6).
