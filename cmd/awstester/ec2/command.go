@@ -2,12 +2,6 @@ package ec2
 
 import "github.com/spf13/cobra"
 
-func init() {
-	cobra.EnablePrefixMatching = true
-}
-
-var path string
-
 // NewCommand implements "awstest ec2" command.
 func NewCommand() *cobra.Command {
 	rootCmd := &cobra.Command{
@@ -22,3 +16,5 @@ func NewCommand() *cobra.Command {
 	)
 	return rootCmd
 }
+
+var path string
