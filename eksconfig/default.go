@@ -1,6 +1,11 @@
 package eksconfig
 
-import "time"
+import (
+	"path/filepath"
+	"time"
+
+	"k8s.io/client-go/util/homedir"
+)
 
 // NewDefault returns a copy of the default configuration.
 func NewDefault() *Config {
@@ -25,7 +30,7 @@ var defaultConfig = Config{
 
 	AWSAccountID: "",
 	// to be overwritten by AWS_SHARED_CREDENTIALS_FILE
-	AWSCredentialToMountPath: "~/.aws/credentials",
+	AWSCredentialToMountPath: filepath.Join(homedir.HomeDir(), ".aws", "credentials"),
 	AWSRegion:                "us-west-2",
 	AWSCustomEndpoint:        "",
 
