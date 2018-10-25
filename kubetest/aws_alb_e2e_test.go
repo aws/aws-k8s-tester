@@ -34,14 +34,14 @@ func TestAWSTesterEKS(t *testing.T) {
 	RunSpecs(t, "awstester eks ALB Ingress Controller e2e tests")
 }
 
-var kp eksdeployer.Tester
+var tester eksdeployer.Tester
 
 // to use embedded eks
-// kp, err = eks.NewDeployer(cfg)
+// tester, err = eks.NewTester(cfg)
 
 var _ = BeforeSuite(func() {
 	var err error
-	kp, err = eks.NewTester(*timeout, *verbose)
+	tester, err = eks.NewTester(*timeout, *verbose)
 	Expect(err).ShouldNot(HaveOccurred())
 
 	notifier := make(chan os.Signal, 1)
@@ -53,11 +53,11 @@ var _ = BeforeSuite(func() {
 			fmt.Fprintf(os.Stderr, "finished 'Up'\n")
 		case sig := <-notifier:
 			fmt.Fprintf(os.Stderr, "received signal %q in BeforeSuite\n", sig)
-			kp.Stop()
-			cfg, derr := kp.LoadConfig()
+			tester.Stop()
+			cfg, derr := tester.LoadConfig()
 			Expect(derr).ShouldNot(HaveOccurred())
 			if cfg.Down {
-				derr = kp.Down()
+				derr = tester.Down()
 			}
 			signal.Stop(notifier)
 			<-donec // wait until 'Up' complete
@@ -66,7 +66,7 @@ var _ = BeforeSuite(func() {
 		}
 	}()
 
-	err = kp.Up()
+	err = tester.Up()
 	close(donec)
 	Expect(err).ShouldNot(HaveOccurred())
 })
@@ -74,22 +74,22 @@ var _ = BeforeSuite(func() {
 var _ = Describe("EKS with ALB Ingress Controller on worker nodes", func() {
 	Context("Correctness of ALB Ingress Controller on worker nodes", func() {
 		It("ALB Ingress Controller expects Ingress rules", func() {
-			err := kp.TestALBCorrectness()
+			err := tester.TestALBCorrectness()
 			Expect(err).ShouldNot(HaveOccurred())
 		})
 	})
 
 	Context("Scalability of ALB Ingress Controller on worker nodes", func() {
-		if kp == nil {
+		if tester == nil {
 			// ginkgo/internal/suite.(*Suite).PushContainerNode
 			return
 		}
 
-		cfg, derr := kp.LoadConfig()
+		cfg, derr := tester.LoadConfig()
 		Expect(derr).ShouldNot(HaveOccurred())
 		if cfg.ALBIngressController.TestScalability {
 			It("ALB Ingress Controller expects to handle concurrent clients with expected QPS", func() {
-				err := kp.TestALBQPS()
+				err := tester.TestALBQPS()
 				Expect(err).ShouldNot(HaveOccurred())
 			})
 
@@ -99,7 +99,7 @@ var _ = Describe("EKS with ALB Ingress Controller on worker nodes", func() {
 		}
 
 		It("ALB Ingress Controller expects to serve '/metrics'", func() {
-			err := kp.TestALBMetrics()
+			err := tester.TestALBMetrics()
 			Expect(err).ShouldNot(HaveOccurred())
 		})
 	})
@@ -107,7 +107,7 @@ var _ = Describe("EKS with ALB Ingress Controller on worker nodes", func() {
 
 var _ = AfterSuite(func() {
 	// reload updated kubeconfig
-	cfg, err := kp.LoadConfig()
+	cfg, err := tester.LoadConfig()
 	Expect(err).ShouldNot(HaveOccurred())
 
 	notifier := make(chan os.Signal, 1)
@@ -120,7 +120,7 @@ var _ = AfterSuite(func() {
 			fmt.Fprintf(os.Stderr, "received signal %q in AfterSuite\n", sig)
 			var derr error
 			if cfg.Down {
-				derr = kp.Down()
+				derr = tester.Down()
 			}
 			signal.Stop(notifier)
 			fmt.Fprintf(os.Stderr, "shut down cluster with %q (with %v) in AfterSuite\n", sig, derr)
@@ -134,7 +134,7 @@ var _ = AfterSuite(func() {
 	}
 
 	if cfg.Down {
-		err := kp.Down()
+		err := tester.Down()
 		Expect(err).ShouldNot(HaveOccurred())
 	}
 })
