@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"strings"
 	"time"
@@ -226,7 +227,8 @@ func (up *uploader) upload(localPath, s3Path string) error {
 			break
 		}
 
-		if aerr, ok := err.(awserr.Error); ok {
+		aerr, ok := err.(awserr.Error)
+		if ok {
 			up.lg.Warn("failed to upload",
 				zap.String("bucket", bucket),
 				zap.String("local-path", localPath),
@@ -241,6 +243,7 @@ func (up *uploader) upload(localPath, s3Path string) error {
 				zap.String("local-path", localPath),
 				zap.String("remote-path", s3Path),
 				zap.String("size", humanize.Bytes(uint64(len(d)))),
+				zap.String("error-type", fmt.Sprintf("%v", reflect.TypeOf(err))),
 				zap.Error(err),
 			)
 		}
