@@ -58,7 +58,7 @@ var defaultConfig = Config{
 
 		TestScalability:          true,
 		TestServerReplicas:       1,
-		TestServerRoutes:         3,
+		TestServerRoutes:         1,
 		TestClients:              200,
 		TestClientRequests:       20000,
 		TestResponseSize:         40 * 1024, // 40 KB

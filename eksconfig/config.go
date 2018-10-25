@@ -22,9 +22,8 @@ type Config struct {
 	KubetestEmbeddedBinary bool `json:"kubetest-embedded-binary,omitempty"`
 
 	// AWSTesterImage is the awstester container image.
-	// Required for "awstester ingress server" for ALB Ingress
-	// Controller tests. Only required when ALB Ingress "TestMode"
-	// is "ingress-test-server".
+	// Required for "awstester ingress server" for ALB Ingress Controller tests.
+	// Only required when ALB Ingress "TestMode" is "ingress-test-server".
 	AWSTesterImage string `json:"awstester-image,omitempty"`
 
 	// WaitBeforeDown is the duration to sleep before cluster tear down.
@@ -258,6 +257,8 @@ type ALBIngressController struct {
 	// TestServerRoutes is the number of ALB Ingress Controller routes to test.
 	// It will be auto-generated starting with '/ingress-test-0000000'.
 	// Supports up to 30.
+	// Only required when ALB Ingress "TestMode" is "ingress-test-server".
+	// Otherwise, set it to 1.
 	TestServerRoutes int `json:"test-server-routes,omitempty"`
 	// TestClients is the number of concurrent ALB Ingress Controller test clients.
 	// Supports up to 300.
@@ -656,9 +657,6 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		if cfg.ALBIngressController.Enable {
 			return errors.New("cannot create AWS ALB Ingress Controller without AWS credential")
 		}
-		if cfg.ALBIngressController.TestMode == "ingress-test-server" && cfg.AWSTesterImage == "" {
-			return errors.New("cannot create AWS ALB Ingress Controller without ingress test server image for 'ingress-test-server'")
-		}
 		if cfg.ALBIngressController.ALBIngressControllerImage == "" {
 			return errors.New("cannot create AWS ALB Ingress Controller without ingress controller test image")
 		}
@@ -680,9 +678,12 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		switch cfg.ALBIngressController.TestMode {
 		case "ingress-test-server":
 			if cfg.AWSTesterImage == "" {
-				return errors.New("awstester image not specified")
+				return errors.New("'ingress-test-server' requires AWSTesterImage")
 			}
 		case "nginx":
+			if cfg.ALBIngressController.TestServerRoutes > 1 {
+				return errors.New("'nginx' only needs 1 server route")
+			}
 		default:
 			return fmt.Errorf("ALB Ingress test mode %q is not supported", cfg.ALBIngressController.TestMode)
 		}
