@@ -243,6 +243,7 @@ export PATH=$PATH:/usr/local/go/bin:${HOME}/go/bin
 
 sudo echo PATH=${PATH} > /etc/environment
 sudo echo GOPATH=/home/{{ .UserName }}/go >> /etc/environment
+echo "source /etc/environment" >> ${HOME}/.bashrc;
 
 go version
 
