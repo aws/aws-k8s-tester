@@ -133,6 +133,7 @@ func (md *embedded) deleteVPC() error {
 			VpcId: aws.String(md.cfg.VPCID),
 		})
 		if err != nil {
+			// https://docs.aws.amazon.com/AWSEC2/latest/APIReference/errors-overview.html
 			awsErr, ok := err.(awserr.Error)
 			if ok {
 				if awsErr.Code() == "InvalidVpcID.NotFound" {
@@ -173,6 +174,7 @@ func (md *embedded) deleteVPC() error {
 			RouteTableId: aws.String(id),
 		})
 		if err != nil {
+			// https://docs.aws.amazon.com/AWSEC2/latest/APIReference/errors-overview.html
 			awsErr, ok := err.(awserr.Error)
 			if ok && awsErr.Code() == "InvalidRouteTableID.NotFound" {
 				md.lg.Info(
@@ -193,6 +195,7 @@ func (md *embedded) deleteVPC() error {
 		VpcIds: aws.StringSlice([]string{md.cfg.VPCID}),
 	})
 	if err != nil {
+		// https://docs.aws.amazon.com/AWSEC2/latest/APIReference/errors-overview.html
 		awsErr, ok := err.(awserr.Error)
 		if ok && awsErr.Code() == "InvalidVpcID.NotFound" {
 			md.lg.Info(

@@ -84,6 +84,7 @@ func (md *embedded) deleteKeyPair() error {
 		KeyNames: aws.StringSlice([]string{md.cfg.ClusterState.CFStackWorkerNodeGroupKeyPairName}),
 	})
 	if err != nil {
+		// https://docs.aws.amazon.com/AWSEC2/latest/APIReference/errors-overview.html
 		awsErr, ok := err.(awserr.Error)
 		if ok && awsErr.Code() == "InvalidKeyPair.NotFound" {
 			md.lg.Info(

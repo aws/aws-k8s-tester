@@ -73,6 +73,7 @@ func (md *embedded) deleteSubnet() (err error) {
 				SubnetId: aws.String(id),
 			})
 			if err != nil {
+				// https://docs.aws.amazon.com/AWSEC2/latest/APIReference/errors-overview.html
 				awsErr, ok := err.(awserr.Error)
 				if ok {
 					if awsErr.Code() == "InvalidSubnetID.NotFound" {
@@ -114,6 +115,7 @@ func (md *embedded) deleteSubnet() (err error) {
 		SubnetIds: aws.StringSlice(md.cfg.SubnetIDs),
 	})
 	if err != nil {
+		// https://docs.aws.amazon.com/AWSEC2/latest/APIReference/errors-overview.html
 		awsErr, ok := err.(awserr.Error)
 		if ok && awsErr.Code() == "InvalidSubnetID.NotFound" {
 			return nil

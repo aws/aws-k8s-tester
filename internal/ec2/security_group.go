@@ -60,6 +60,7 @@ func (md *embedded) deleteSecurityGroup() error {
 			GroupId: aws.String(id),
 		})
 		if err != nil {
+			// https://docs.aws.amazon.com/AWSEC2/latest/APIReference/errors-overview.html
 			awsErr, ok := err.(awserr.Error)
 			if ok && awsErr.Code() == "InvalidGroup.NotFound" {
 				md.lg.Info(
@@ -79,6 +80,7 @@ func (md *embedded) deleteSecurityGroup() error {
 		GroupIds: aws.StringSlice(md.cfg.SecurityGroupIDs),
 	})
 	if err != nil {
+		// https://docs.aws.amazon.com/AWSEC2/latest/APIReference/errors-overview.html
 		awsErr, ok := err.(awserr.Error)
 		if ok && awsErr.Code() == "InvalidGroup.NotFound" {
 			md.lg.Info(

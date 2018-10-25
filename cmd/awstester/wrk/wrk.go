@@ -168,6 +168,7 @@ func (up *uploader) upload(localPath, s3Path string) error {
 	})
 	if err != nil {
 		exist := false
+		// https://docs.aws.amazon.com/AWSEC2/latest/APIReference/errors-overview.html
 		if aerr, ok := err.(awserr.Error); ok {
 			switch aerr.Code() {
 			case s3.ErrCodeBucketAlreadyExists:
@@ -230,6 +231,7 @@ func (up *uploader) upload(localPath, s3Path string) error {
 			break
 		}
 
+		// https://docs.aws.amazon.com/AWSEC2/latest/APIReference/errors-overview.html
 		aerr, ok := err.(awserr.Error)
 		if ok {
 			up.lg.Warn("failed to upload",
