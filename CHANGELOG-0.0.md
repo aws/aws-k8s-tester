@@ -12,6 +12,7 @@ See [code changes](https://github.com/aws/awstester/compare/0.0.6...0.0.7).
 - Rename to [`awstester alb-log convert-to-csv`](https://github.com/aws/awstester/commit/0b57ef14f43e086038880a4711b9e86017b76b0c).
 - Rename to [`awstester alb-log count-targets`](https://github.com/aws/awstester/commit/0b57ef14f43e086038880a4711b9e86017b76b0c).
 - Add [`awstester alb-log merge-raw`](https://github.com/aws/awstester/commit/0b57ef14f43e086038880a4711b9e86017b76b0c).
+- Rename to [`awstester csi test integration`](https://github.com/aws/awstester/commit/b9d077fe06e59c56859a5f7524b7ef7584f2511a).
 - Rename to [`awstester wrk average-raw`](https://github.com/aws/awstester/commit/b79a4717d33046ce90cccf0c6138c78105a4ac3d).
 - Rename to [`awstester wrk convert-to-csv`](https://github.com/aws/awstester/commit/b79a4717d33046ce90cccf0c6138c78105a4ac3d).
 - Rename to [`awstester wrk merge-csv`](https://github.com/aws/awstester/commit/b79a4717d33046ce90cccf0c6138c78105a4ac3d).
