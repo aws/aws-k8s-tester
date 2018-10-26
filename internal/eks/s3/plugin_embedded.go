@@ -85,6 +85,9 @@ func (md *embedded) CreateBucketForAccessLogs() error {
 			if !retry && !exist {
 				return err
 			}
+			if err == nil {
+				break
+			}
 			time.Sleep(5 * time.Second)
 			continue
 		} else {
@@ -169,6 +172,9 @@ func (md *embedded) UploadToBucketForTests(localPath, s3Path string) error {
 				}
 				if !retry && !exist {
 					return err
+				}
+				if err == nil {
+					break
 				}
 				time.Sleep(5 * time.Second)
 				continue
