@@ -29,12 +29,13 @@ func (ss scripts) Swap(i, j int)      { ss[i], ss[j] = ss[j], ss[i] }
 func (ss scripts) Less(i, j int) bool { return keyPriorities[ss[i].key] < keyPriorities[ss[j].key] }
 
 var keyPriorities = map[string]int{ // in the order of:
-	"update-ubuntu":  1,
-	"mount-aws-cred": 2,
-	"install-go":     3,
-	"install-csi":    4,
-	"install-wrk":    5,
-	"install-alb":    6,
+	"update-ubuntu":         1,
+	"mount-aws-cred":        2,
+	"install-go":            3,
+	"install-csi":           4,
+	"install-wrk":           5,
+	"install-alb":           6,
+	"install-docker-ubuntu": 7,
 }
 
 func convertToScript(userName, plugin string) (script, error) {
@@ -77,7 +78,7 @@ EOT`, userName, userName, string(d)),
 	case plugin == "install-wrk":
 		return script{
 			key:  plugin,
-			data: wrk,
+			data: installWrk,
 		}, nil
 
 	case strings.HasPrefix(plugin, "install-csi-"):
@@ -113,6 +114,12 @@ EOT`, userName, userName, string(d)),
 			return script{}, err
 		}
 		return script{key: "install-alb", data: s}, nil
+
+	case plugin == "install-docker-ubuntu":
+		return script{
+			key:  plugin,
+			data: installDockerUbuntu,
+		}, nil
 	}
 
 	return script{}, fmt.Errorf("unknown plugin %q", plugin)
@@ -251,7 +258,7 @@ go version
 
 `
 
-const wrk = `
+const installWrk = `
 
 ################################## install wrk
 
@@ -344,6 +351,32 @@ git remote -v
 git branch
 git log --pretty=oneline -5
 
+##################################
+
+`
+
+const installDockerUbuntu = `
+
+################################## install Docker on Ubuntu
+sudo apt update -y
+sudo apt install -y apt-transport-https ca-certificates curl software-properties-common
+
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+
+sudo apt update -y
+apt-cache policy docker-ce || true
+sudo apt install -y docker-ce
+
+sudo systemctl start docker || true
+sudo systemctl status docker --full --no-pager || true
+sudo usermod -aG docker ubuntu || true
+
+# su - ubuntu
+# or logout and login to use docker without 'sudo'
+
+id -nG
+sudo docker version
 ##################################
 
 `
