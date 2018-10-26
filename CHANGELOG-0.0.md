@@ -34,6 +34,10 @@ See [code changes](https://github.com/aws/awstester/compare/0.0.6...0.0.7).
 - Fix [security group check with CIDR in `internal/eks`](https://github.com/aws/awstester/commit/2341499d666be3aa0aadde40bd81f1ec3751481e).
 - Fix [auto scaling group checks on worker nodes](https://github.com/aws/awstester/commit/588d2634dbb3af43046d988abc6a09b8264e84c8).
 
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.15.62`](https://github.com/aws/aws-sdk-go/releases/tag/v1.15.62) to [`v1.15.64`](https://github.com/aws/aws-sdk-go/releases/tag/v1.15.64).
+
 ### Go
 
 - Compile with [*Go 1.11.1*](https://golang.org/doc/devel/release.html#go1.11).
