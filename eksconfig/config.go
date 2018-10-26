@@ -241,7 +241,7 @@ type ALBIngressController struct {
 
 	// ALBIngressControllerImage is the ALB Ingress Controller container image.
 	ALBIngressControllerImage string `json:"alb-ingress-controller-image,omitempty"`
-
+	// UploadTesterLogs is true to auto-upload ALB tester logs.
 	UploadTesterLogs bool `json:"upload-tester-logs"`
 
 	// TargetType specifies the target type for target groups:
