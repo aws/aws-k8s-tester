@@ -154,6 +154,9 @@ func (md *embedded) Create() (err error) {
 			if err != nil {
 				return err
 			}
+			if md.cfg.SubnetIDToAvailibilityZone == nil {
+				md.cfg.SubnetIDToAvailibilityZone = make(map[string]string)
+			}
 			for _, sv := range output.Subnets {
 				md.cfg.SubnetIDToAvailibilityZone[*sv.SubnetId] = *sv.AvailabilityZone
 			}
