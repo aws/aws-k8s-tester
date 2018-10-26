@@ -26,6 +26,7 @@ var defaultConfig = Config{
 
 	ConfigPath: "test.yaml",
 
+	EnableHA:      true,
 	EnableNodeSSH: true,
 
 	AWSAccountID: "",

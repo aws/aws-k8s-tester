@@ -9,6 +9,8 @@ import (
 
 // ConfigProwJobYAML defines ALB Prow job configuration.
 type ConfigProwJobYAML struct {
+	AWSTESTER_EKS_ENABLE_HA string
+
 	AWSTESTER_EKS_KUBETEST_EMBEDDED_BINARY string
 
 	AWSTESTER_EKS_WAIT_BEFORE_DOWN string
@@ -49,6 +51,8 @@ func CreateProwJobYAML(cfg ConfigProwJobYAML) (string, error) {
 				},
 
 				Env: []v1.EnvVar{
+					{Name: "AWSTESTER_EKS_ENABLE_HA", Value: cfg.AWSTESTER_EKS_ENABLE_HA},
+
 					{Name: "AWSTESTER_EKS_KUBETEST_EMBEDDED_BINARY", Value: cfg.AWSTESTER_EKS_KUBETEST_EMBEDDED_BINARY},
 
 					{Name: "AWSTESTER_EKS_WAIT_BEFORE_DOWN", Value: cfg.AWSTESTER_EKS_WAIT_BEFORE_DOWN},

@@ -33,6 +33,8 @@ type Config struct {
 	// This is meant to be used as a flag for test.
 	Down bool `json:"down"`
 
+	// EnableHA is true to create 3 subnets across 3 availability zones in a VPC.
+	EnableHA bool `json:"enable-ha"`
 	// EnableNodeSSH is true to enable SSH access to worker nodes.
 	EnableNodeSSH bool `json:"enable-node-ssh"`
 
