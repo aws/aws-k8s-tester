@@ -161,6 +161,11 @@ func (md *embedded) Create() (err error) {
 				md.cfg.SubnetIDToAvailibilityZone[*sv.SubnetId] = *sv.AvailabilityZone
 			}
 		}
+
+		md.lg.Info("modifying subnets to allow SSH access")
+		if err = md.modifySubnets(); err != nil {
+			return err
+		}
 		md.lg.Info(
 			"found subnets",
 			zap.String("vpc-id", md.cfg.VPCID),

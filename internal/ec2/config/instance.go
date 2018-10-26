@@ -67,8 +67,6 @@ func ConvertEC2Instance(iv *ec2.Instance) (instance Instance) {
 		},
 		PrivateDNSName: *iv.PrivateDnsName,
 		PrivateIP:      *iv.PrivateIpAddress,
-		PublicDNSName:  *iv.PublicDnsName,
-		PublicIP:       *iv.PublicIpAddress,
 		State: State{
 			Code: *iv.State.Code,
 			Name: *iv.State.Name,
@@ -80,6 +78,12 @@ func ConvertEC2Instance(iv *ec2.Instance) (instance Instance) {
 		RootDeviceName:      *iv.RootDeviceName,
 		RootDeviceType:      *iv.RootDeviceType,
 		SecurityGroups:      make([]SecurityGroup, len(iv.SecurityGroups)),
+	}
+	if iv.PublicDnsName != nil {
+		instance.PublicDNSName = *iv.PublicDnsName
+	}
+	if iv.PublicIpAddress != nil {
+		instance.PublicIP = *iv.PublicIpAddress
 	}
 	for j := range iv.BlockDeviceMappings {
 		instance.BlockDeviceMappings[j] = BlockDeviceMapping{

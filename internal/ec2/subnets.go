@@ -54,8 +54,10 @@ func (md *embedded) createSubnets() (err error) {
 		)
 	}
 
-	if err = md.modifySubnets(); err != nil {
-		return err
+	if md.cfg.AssociatePublicIPAddress {
+		if err = md.modifySubnets(); err != nil {
+			return err
+		}
 	}
 	sort.Strings(md.cfg.SubnetIDs)
 	return md.cfg.Sync()
@@ -159,11 +161,11 @@ func (md *embedded) getSubnets() (err error) {
 		md.cfg.SubnetIDToAvailibilityZone[*sv.SubnetId] = *sv.AvailabilityZone
 	}
 
-	if err = md.modifySubnets(); err != nil {
-		return err
-	}
-	sort.Strings(md.cfg.SubnetIDs)
-	md.lg.Info("found subnets", zap.String("vpc-id", md.cfg.VPCID), zap.Strings("subnets", md.cfg.SubnetIDs))
+	md.lg.Info(
+		"found subnets",
+		zap.String("vpc-id", md.cfg.VPCID),
+		zap.Strings("subnets", md.cfg.SubnetIDs),
+	)
 	return md.cfg.Sync()
 }
 
