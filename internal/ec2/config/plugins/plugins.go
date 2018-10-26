@@ -177,6 +177,7 @@ apt-get -y update \
   wget \
   tar \
   git \
+  screen \
   mercurial \
   openssh-client \
   rsync \
