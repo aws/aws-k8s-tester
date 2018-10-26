@@ -119,8 +119,8 @@ type Config struct {
 	LogAccess bool `json:"log-access"`
 
 	// UploadAWSTesterLogs is true to auto-upload log files.
-	UploadAWSTesterLogs  bool `json:"upload-aws-tester-logs"`
-	UploadALBTesterLogs  bool `json:"upload-alb-tester-logs"`
+	UploadAWSTesterLogs bool `json:"upload-aws-tester-logs"`
+	// UploadWorkerNodeLogs is true to auto-upload worker node log files.
 	UploadWorkerNodeLogs bool `json:"upload-worker-node-logs"`
 
 	// UpdatedAt is the timestamp when the configuration has been updated.
@@ -241,6 +241,8 @@ type ALBIngressController struct {
 
 	// ALBIngressControllerImage is the ALB Ingress Controller container image.
 	ALBIngressControllerImage string `json:"alb-ingress-controller-image,omitempty"`
+
+	UploadTesterLogs bool `json:"upload-tester-logs"`
 
 	// TargetType specifies the target type for target groups:
 	// - 'instance' to use node port

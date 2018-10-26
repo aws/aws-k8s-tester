@@ -363,7 +363,7 @@ func (md *embedded) Up() (err error) {
 			md.lg.Warn("failed to upload", zap.Error(err))
 		}
 	}
-	if md.cfg.UploadALBTesterLogs {
+	if md.cfg.ALBIngressController.UploadTesterLogs {
 		if err = md.uploadALB(); err != nil {
 			md.lg.Warn("failed to upload ALB", zap.Error(err))
 		}
@@ -622,7 +622,7 @@ func (md *embedded) TestALBQPS() error {
 		return err
 	}
 
-	if md.cfg.UploadALBTesterLogs {
+	if md.cfg.ALBIngressController.UploadTesterLogs {
 		if err := md.uploadALB(); err != nil {
 			md.lg.Warn("failed to upload ALB", zap.Error(err))
 		}
@@ -672,7 +672,7 @@ func (md *embedded) TestALBMetrics() error {
 	if err != nil {
 		return err
 	}
-	if md.cfg.UploadALBTesterLogs {
+	if md.cfg.ALBIngressController.UploadTesterLogs {
 		if err = md.uploadALB(); err != nil {
 			md.lg.Warn("failed to upload ALB", zap.Error(err))
 		}

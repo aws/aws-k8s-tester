@@ -19,9 +19,9 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWSTESTER_EKS_WORKER_NODE_ASG_MAX", "10")
 	os.Setenv("AWSTESTER_EKS_LOG_DEBUG", "true")
 	os.Setenv("AWSTESTER_EKS_UPLOAD_AWS_TESTER_LOGS", "false")
-	os.Setenv("AWSTESTER_EKS_UPLOAD_ALB_TESTER_LOGS", "false")
 	os.Setenv("AWSTESTER_EKS_UPLOAD_WORKER_NODE_LOGS", "false")
 	os.Setenv("AWSTESTER_EKS_WAIT_BEFORE_DOWN", "2h")
+	os.Setenv("AWSTESTER_EKS_ALB_UPLOAD_TESTER_LOGS", "false")
 	os.Setenv("AWSTESTER_EKS_ALB_TEST_EXPECT_QPS", "123.45")
 	os.Setenv("AWSTESTER_EKS_ALB_TEST_MODE", "nginx")
 	os.Setenv("AWSTESTER_EKS_ALB_ENABLE", "true")
@@ -39,9 +39,9 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWSTESTER_EKS_WORKER_NODE_ASG_MAX")
 		os.Unsetenv("AWSTESTER_EKS_LOG_DEBUG")
 		os.Unsetenv("AWSTESTER_EKS_UPLOAD_AWS_TESTER_LOGS")
-		os.Unsetenv("AWSTESTER_EKS_UPLOAD_ALB_TESTER_LOGS")
 		os.Unsetenv("AWSTESTER_EKS_UPLOAD_WORKER_NODE_LOGS")
 		os.Unsetenv("AWSTESTER_EKS_WAIT_BEFORE_DOWN")
+		os.Unsetenv("AWSTESTER_EKS_ALB_UPLOAD_TESTER_LOGS")
 		os.Unsetenv("AWSTESTER_EKS_ALB_TEST_EXPECT_QPS")
 		os.Unsetenv("AWSTESTER_EKS_ALB_TEST_MODE")
 		os.Unsetenv("AWSTESTER_EKS_ALB_ENABLE")
@@ -83,8 +83,8 @@ func TestEnv(t *testing.T) {
 	if cfg.UploadAWSTesterLogs {
 		t.Fatalf("UploadAWSTesterLogs expected false, got %v", cfg.UploadAWSTesterLogs)
 	}
-	if cfg.UploadALBTesterLogs {
-		t.Fatalf("UploadALBTesterLogs expected false, got %v", cfg.UploadALBTesterLogs)
+	if cfg.ALBIngressController.UploadTesterLogs {
+		t.Fatalf("UploadTesterLogs expected false, got %v", cfg.ALBIngressController.UploadTesterLogs)
 	}
 	if cfg.UploadWorkerNodeLogs {
 		t.Fatalf("UploadWorkerNodeLogs expected false, got %v", cfg.UploadWorkerNodeLogs)

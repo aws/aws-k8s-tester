@@ -51,14 +51,15 @@ var defaultConfig = Config{
 	LogOutputs:           []string{"stderr"},
 	LogAccess:            true,
 	UploadAWSTesterLogs:  true,
-	UploadALBTesterLogs:  true,
 	UploadWorkerNodeLogs: true,
 
 	ClusterState: &ClusterState{},
 	ALBIngressController: &ALBIngressController{
-		Enable: true,
+		Enable:           true,
+		UploadTesterLogs: true,
 
 		ALBIngressControllerImage: "quay.io/coreos/alb-ingress-controller:1.0-beta.7",
+
 		// 'instance' to use node port
 		// 'ip' to use pod IP
 		TargetType: "instance",

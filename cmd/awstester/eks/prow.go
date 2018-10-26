@@ -122,7 +122,7 @@ func prowALBFunc(cmd *cobra.Command, args []string) {
 		AWSTESTER_EKS_LOG_DEBUG:               fmt.Sprintf("%v", cfg.LogDebug),
 		AWSTESTER_EKS_LOG_ACCESS:              fmt.Sprintf("%v", cfg.LogAccess),
 		AWSTESTER_EKS_UPLOAD_AWS_TESTER_LOGS:  fmt.Sprintf("%v", cfg.UploadAWSTesterLogs),
-		AWSTESTER_EKS_UPLOAD_ALB_TESTER_LOGS:  fmt.Sprintf("%v", cfg.UploadALBTesterLogs),
+		AWSTESTER_EKS_ALB_UPLOAD_TESTER_LOGS:  fmt.Sprintf("%v", cfg.ALBIngressController.UploadTesterLogs),
 		AWSTESTER_EKS_UPLOAD_WORKER_NODE_LOGS: fmt.Sprintf("%v", cfg.UploadWorkerNodeLogs),
 
 		AWSTESTER_EKS_ALB_ALB_INGRESS_CONTROLLER_IMAGE: cfg.ALBIngressController.ALBIngressControllerImage,
