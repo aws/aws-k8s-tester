@@ -12,7 +12,6 @@ func TestVPCTemplate(t *testing.T) {
 		TagValue:          "awstester",
 		Hostname:          "hostname",
 		SecurityGroupName: "security",
-		EnableHA:          true,
 	}
 	s, err := createVPCTemplate(v)
 	if err != nil {

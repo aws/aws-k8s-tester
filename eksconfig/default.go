@@ -26,8 +26,8 @@ var defaultConfig = Config{
 
 	ConfigPath: "test.yaml",
 
-	EnableHA:      true,
-	EnableNodeSSH: true,
+	EnableWorkerNodeHA: true,
+	EnableNodeSSH:      true,
 
 	AWSAccountID: "",
 	// to be overwritten by AWS_SHARED_CREDENTIALS_FILE

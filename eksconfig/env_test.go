@@ -9,7 +9,7 @@ import (
 func TestEnv(t *testing.T) {
 	cfg := NewDefault()
 
-	os.Setenv("AWSTESTER_EKS_ENABLE_HA", "false")
+	os.Setenv("AWSTESTER_EKS_ENABLE_WORKER_NODE_HA", "false")
 	os.Setenv("AWSTESTER_EKS_KUBETEST_EMBEDDED_BINARY", "false")
 	os.Setenv("AWSTESTER_EKS_CONFIG_PATH", "test-path")
 	os.Setenv("AWSTESTER_EKS_DOWN", "false")
@@ -29,7 +29,7 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWSTESTER_EKS_ALB_TEST_METRICS", "false")
 
 	defer func() {
-		os.Unsetenv("AWSTESTER_EKS_ENABLE_HA")
+		os.Unsetenv("AWSTESTER_EKS_ENABLE_WORKER_NODE_HA")
 		os.Unsetenv("AWSTESTER_EKS_KUBETEST_EMBEDDED_BINARY")
 		os.Unsetenv("AWSTESTER_EKS_CONFIG_PATH")
 		os.Unsetenv("AWSTESTER_EKS_DOWN")
@@ -53,8 +53,8 @@ func TestEnv(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if cfg.EnableHA {
-		t.Fatalf("cfg.EnableHA expected 'false', got %v", cfg.EnableHA)
+	if cfg.EnableWorkerNodeHA {
+		t.Fatalf("cfg.EnableWorkerNodeHA expected 'false', got %v", cfg.EnableWorkerNodeHA)
 	}
 	if cfg.KubetestEmbeddedBinary {
 		t.Fatalf("cfg.KubetestEmbeddedBinary expected 'false', got %v", cfg.KubetestEmbeddedBinary)

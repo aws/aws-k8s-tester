@@ -8,11 +8,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aws/awstester/eksconfig"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/autoscaling"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/aws/awstester/eksconfig"
 	humanize "github.com/dustin/go-humanize"
 	"go.uber.org/zap"
 )
@@ -31,6 +32,12 @@ func (md *embedded) createWorkerNode() error {
 	s, err := createWorkerNodeTemplateFromURL(md.lg)
 	if err != nil {
 		return err
+	}
+
+	subnetIDs := md.cfg.ClusterState.CFStackVPCSubnetIDs
+	if !md.cfg.EnableWorkerNodeHA {
+		subnetIDs = subnetIDs[:1]
+		md.lg.Info("HA mode is disabled", zap.Strings("subnet-ids", subnetIDs))
 	}
 
 	_, err = md.cf.CreateStack(&cloudformation.CreateStackInput{
@@ -88,7 +95,7 @@ func (md *embedded) createWorkerNode() error {
 			},
 			{
 				ParameterKey:   aws.String("Subnets"),
-				ParameterValue: aws.String(strings.Join(md.cfg.ClusterState.CFStackVPCSubnetIDs, ",")),
+				ParameterValue: aws.String(strings.Join(subnetIDs, ",")),
 			},
 			{
 				ParameterKey:   aws.String("ClusterControlPlaneSecurityGroup"),
