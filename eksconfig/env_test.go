@@ -9,6 +9,7 @@ import (
 func TestEnv(t *testing.T) {
 	cfg := NewDefault()
 
+	os.Setenv("AWSTESTER_EKS_KUBERNETES_VERSION", "1.11")
 	os.Setenv("AWSTESTER_EKS_ENABLE_WORKER_NODE_HA", "false")
 	os.Setenv("AWSTESTER_EKS_KUBETEST_EMBEDDED_BINARY", "false")
 	os.Setenv("AWSTESTER_EKS_CONFIG_PATH", "test-path")
@@ -29,6 +30,7 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWSTESTER_EKS_ALB_TEST_METRICS", "false")
 
 	defer func() {
+		os.Unsetenv("AWSTESTER_EKS_KUBERNETES_VERSION")
 		os.Unsetenv("AWSTESTER_EKS_ENABLE_WORKER_NODE_HA")
 		os.Unsetenv("AWSTESTER_EKS_KUBETEST_EMBEDDED_BINARY")
 		os.Unsetenv("AWSTESTER_EKS_CONFIG_PATH")
@@ -53,6 +55,9 @@ func TestEnv(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	if cfg.KubernetesVersion != "1.11" {
+		t.Fatalf("KubernetesVersion 1.11, got %q", cfg.KubernetesVersion)
+	}
 	if cfg.EnableWorkerNodeHA {
 		t.Fatalf("cfg.EnableWorkerNodeHA expected 'false', got %v", cfg.EnableWorkerNodeHA)
 	}
