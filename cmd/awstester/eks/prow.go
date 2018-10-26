@@ -116,8 +116,8 @@ func prowALBFunc(cmd *cobra.Command, args []string) {
 		AWSTESTER_EKS_WORKER_NODE_ASG_MIN:       fmt.Sprintf("%d", cfg.WorkderNodeASGMin),
 		AWSTESTER_EKS_WORKER_NODE_ASG_MAX:       fmt.Sprintf("%d", cfg.WorkderNodeASGMax),
 
-		AWSTESTER_EKS_ENABLE_WORKER_NODE_HA:  fmt.Sprintf("%v", cfg.EnableWorkerNodeHA),
-		AWSTESTER_EKS_ALB_ENABLE: fmt.Sprintf("%v", cfg.ALBIngressController.Enable),
+		AWSTESTER_EKS_ENABLE_WORKER_NODE_HA: fmt.Sprintf("%v", cfg.EnableWorkerNodeHA),
+		AWSTESTER_EKS_ALB_ENABLE:            fmt.Sprintf("%v", cfg.ALBIngressController.Enable),
 
 		AWSTESTER_EKS_LOG_DEBUG:               fmt.Sprintf("%v", cfg.LogDebug),
 		AWSTESTER_EKS_LOG_ACCESS:              fmt.Sprintf("%v", cfg.LogAccess),
