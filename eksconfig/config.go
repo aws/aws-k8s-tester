@@ -111,14 +111,17 @@ type Config struct {
 	LogOutputToUploadPath       string `json:"log-output-to-upload-path,omitempty"`
 	LogOutputToUploadPathBucket string `json:"log-output-to-upload-path-bucket,omitempty"`
 	LogOutputToUploadPathURL    string `json:"log-output-to-upload-path-url,omitempty"`
-	// LogAutoUpload is true to auto-upload log files.
-	LogAutoUpload bool `json:"log-auto-upload"`
 
 	// LogAccess is true to enable AWS API access logs (e.g. ALB access logs).
 	// Automatically uploaded to S3 bucket named by cluster name.
 	// https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-access-logs.html
 	// https://github.com/kubernetes-sigs/aws-alb-ingress-controller/blob/master/docs/ingress-resources.md
 	LogAccess bool `json:"log-access"`
+
+	// UploadAWSTesterLogs is true to auto-upload log files.
+	UploadAWSTesterLogs  bool `json:"upload-aws-tester-logs"`
+	UploadALBTesterLogs  bool `json:"upload-alb-tester-logs"`
+	UploadWorkerNodeLogs bool `json:"upload-worker-node-logs"`
 
 	// UpdatedAt is the timestamp when the configuration has been updated.
 	// Read only to 'Config' struct users.

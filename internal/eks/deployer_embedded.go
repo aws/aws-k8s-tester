@@ -358,13 +358,17 @@ func (md *embedded) Up() (err error) {
 		return err
 	}
 
-	if md.cfg.LogAutoUpload {
+	if md.cfg.UploadAWSTesterLogs {
 		if err = md.upload(); err != nil {
 			md.lg.Warn("failed to upload", zap.Error(err))
 		}
+	}
+	if md.cfg.UploadALBTesterLogs {
 		if err = md.uploadALB(); err != nil {
 			md.lg.Warn("failed to upload ALB", zap.Error(err))
 		}
+	}
+	if md.cfg.UploadWorkerNodeLogs {
 		if err = md.uploadWorkerNode(); err != nil {
 			md.lg.Warn("failed to upload worker node logs", zap.Error(err))
 		}
@@ -403,12 +407,14 @@ func (md *embedded) Down() (err error) {
 
 	now := time.Now().UTC()
 
-	md.lg.Info(
-		"uploading worker node logs before shutdown",
-		zap.String("cluster-name", md.cfg.ClusterName),
-	)
-	if err = md.uploadWorkerNode(); err != nil {
-		md.lg.Warn("failed to upload worker node logs", zap.Error(err))
+	if md.cfg.UploadWorkerNodeLogs {
+		md.lg.Info(
+			"uploading worker node logs before shutdown",
+			zap.String("cluster-name", md.cfg.ClusterName),
+		)
+		if err = md.uploadWorkerNode(); err != nil {
+			md.lg.Warn("failed to upload worker node logs", zap.Error(err))
+		}
 	}
 
 	md.lg.Info("Down", zap.String("cluster-name", md.cfg.ClusterName))
@@ -466,7 +472,7 @@ func (md *embedded) Down() (err error) {
 	if err = md.cfg.Sync(); err != nil {
 		return err
 	}
-	if md.cfg.LogAutoUpload {
+	if md.cfg.UploadAWSTesterLogs {
 		if err = md.upload(); err != nil {
 			md.lg.Warn("failed to upload", zap.Error(err))
 		}
@@ -616,7 +622,7 @@ func (md *embedded) TestALBQPS() error {
 		return err
 	}
 
-	if md.cfg.LogAutoUpload {
+	if md.cfg.UploadALBTesterLogs {
 		if err := md.uploadALB(); err != nil {
 			md.lg.Warn("failed to upload ALB", zap.Error(err))
 		}
@@ -666,7 +672,7 @@ func (md *embedded) TestALBMetrics() error {
 	if err != nil {
 		return err
 	}
-	if md.cfg.LogAutoUpload {
+	if md.cfg.UploadALBTesterLogs {
 		if err = md.uploadALB(); err != nil {
 			md.lg.Warn("failed to upload ALB", zap.Error(err))
 		}

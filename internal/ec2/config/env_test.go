@@ -12,6 +12,8 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWSTESTER_EC2_AWS_REGION", "us-east-1")
 	os.Setenv("AWSTESTER_EC2_CONFIG_PATH", "test-path")
 	os.Setenv("AWSTESTER_EC2_DOWN", "false")
+	os.Setenv("AWSTESTER_EC2_LOG_DEBUG", "false")
+	os.Setenv("AWSTESTER_EC2_UPLOAD_AWS_TESTER_LOGS", "false")
 	os.Setenv("AWSTESTER_EC2_VPC_ID", "aaa")
 	os.Setenv("AWSTESTER_EC2_PLUGINS", "update-ubuntu,install-go1.11.1-ubuntu")
 	os.Setenv("AWSTESTER_EC2_INSTANCE_TYPE", "m5d.2xlarge")
@@ -24,6 +26,8 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWSTESTER_EC2_AWS_REGION")
 		os.Unsetenv("AWSTESTER_EC2_CONFIG_PATH")
 		os.Unsetenv("AWSTESTER_EC2_DOWN")
+		os.Unsetenv("AWSTESTER_EC2_LOG_DEBUG")
+		os.Unsetenv("AWSTESTER_EC2_UPLOAD_AWS_TESTER_LOGS")
 		os.Unsetenv("AWSTESTER_EC2_VPC_ID")
 		os.Unsetenv("AWSTESTER_EC2_PLUGINS")
 		os.Unsetenv("AWSTESTER_EC2_INSTANCE_TYPE")
@@ -45,6 +49,12 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.Down {
 		t.Fatalf("Down unexpected %v", cfg.Down)
+	}
+	if cfg.LogDebug {
+		t.Fatalf("LogDebug unexpected %v", cfg.LogDebug)
+	}
+	if cfg.UploadAWSTesterLogs {
+		t.Fatalf("UploadAWSTesterLogs unexpected %v", cfg.UploadAWSTesterLogs)
 	}
 	if cfg.VPCID != "aaa" {
 		t.Fatalf("VPCID unexpected %q", cfg.VPCID)

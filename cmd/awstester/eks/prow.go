@@ -103,8 +103,6 @@ func prowALBFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 	s, err := alb.CreateProwJobYAML(alb.ConfigProwJobYAML{
-		AWSTESTER_EKS_ENABLE_HA: fmt.Sprintf("%v", cfg.EnableHA),
-
 		AWSTESTER_EKS_KUBETEST_EMBEDDED_BINARY: fmt.Sprintf("%v", cfg.KubetestEmbeddedBinary),
 
 		AWSTESTER_EKS_WAIT_BEFORE_DOWN: fmt.Sprintf("%v", cfg.WaitBeforeDown),
@@ -118,7 +116,14 @@ func prowALBFunc(cmd *cobra.Command, args []string) {
 		AWSTESTER_EKS_WORKER_NODE_ASG_MIN:       fmt.Sprintf("%d", cfg.WorkderNodeASGMin),
 		AWSTESTER_EKS_WORKER_NODE_ASG_MAX:       fmt.Sprintf("%d", cfg.WorkderNodeASGMax),
 
+		AWSTESTER_EKS_ENABLE_HA:  fmt.Sprintf("%v", cfg.EnableHA),
 		AWSTESTER_EKS_ALB_ENABLE: fmt.Sprintf("%v", cfg.ALBIngressController.Enable),
+
+		AWSTESTER_EKS_LOG_DEBUG:               fmt.Sprintf("%v", cfg.LogDebug),
+		AWSTESTER_EKS_LOG_ACCESS:              fmt.Sprintf("%v", cfg.LogAccess),
+		AWSTESTER_EKS_UPLOAD_AWS_TESTER_LOGS:  fmt.Sprintf("%v", cfg.UploadAWSTesterLogs),
+		AWSTESTER_EKS_UPLOAD_ALB_TESTER_LOGS:  fmt.Sprintf("%v", cfg.UploadALBTesterLogs),
+		AWSTESTER_EKS_UPLOAD_WORKER_NODE_LOGS: fmt.Sprintf("%v", cfg.UploadWorkerNodeLogs),
 
 		AWSTESTER_EKS_ALB_ALB_INGRESS_CONTROLLER_IMAGE: cfg.ALBIngressController.ALBIngressControllerImage,
 
