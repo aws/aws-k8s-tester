@@ -141,9 +141,12 @@ func (md *embedded) Create() (err error) {
 		return err
 	}
 	if md.cfg.VPCID != "" { // use existing VPC
-		if err = catchStopc(md.lg, md.stopc, md.getSubnets); err != nil {
-			return err
+		if len(md.cfg.SubnetIDs) > 0 {
+			if err = catchStopc(md.lg, md.stopc, md.getSubnets); err != nil {
+				return err
+			}
 		}
+		// otherwise, use specified subnet ID
 	} else {
 		if err = catchStopc(md.lg, md.stopc, md.createVPC); err != nil {
 			return err
@@ -279,7 +282,10 @@ func (md *embedded) createInstances() (err error) {
 				zap.Int("target-total", md.cfg.Count),
 			)
 
-			subnetID := md.cfg.SubnetIDs[subnetIdx%len(md.cfg.SubnetIDs)]
+			subnetID := md.cfg.SubnetIDs[0]
+			if len(md.cfg.SubnetIDs) > 1 {
+				subnetID = md.cfg.SubnetIDs[subnetIdx%len(md.cfg.SubnetIDs)]
+			}
 
 			if n < runInstancesBatch {
 				tkn := md.cfg.ID + fmt.Sprintf("%X", time.Now().Nanosecond())
@@ -383,7 +389,12 @@ func (md *embedded) createInstances() (err error) {
 			tokens = append(tokens, tkn)
 			tknToCnt[tkn] = 1
 
-			subnetID := md.cfg.SubnetIDs[i%len(md.cfg.SubnetIDs)]
+
+			subnetID := md.cfg.SubnetIDs[0]
+			if len(md.cfg.SubnetIDs) > 1 {
+				subnetID = md.cfg.SubnetIDs[i%len(md.cfg.SubnetIDs)]
+			}
+
 			_, err = md.ec2.RunInstances(&ec2.RunInstancesInput{
 				ClientToken:                       aws.String(tkn),
 				ImageId:                           aws.String(md.cfg.ImageID),

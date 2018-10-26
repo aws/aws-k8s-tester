@@ -106,8 +106,7 @@ type Config struct {
 	RouteTableIDs []string `json:"route-table-ids,omitempty"`
 
 	// SubnetIDs is a list of subnet IDs to use.
-	// Leave empty, read-only to user.
-	// It will fetch subnets from a given or created VPC.
+	// If empty, it will fetch subnets from a given or created VPC.
 	// And randomly assign them to instances.
 	SubnetIDs                  []string          `json:"subnet-ids,omitempty"`
 	SubnetIDToAvailibilityZone map[string]string `json:"subnet-id-to-availability-zone,omitempty"` // read-only to user

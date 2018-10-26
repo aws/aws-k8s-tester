@@ -24,6 +24,9 @@ func (md *embedded) createSubnets() (err error) {
 	if md.cfg.VPCID == "" {
 		return errors.New("cannot create subnets without VPC ID")
 	}
+	if len(md.cfg.SubnetIDs) > 0 {
+		return fmt.Errorf("subnets already exist (%q)", md.cfg.SubnetIDs)
+	}
 
 	md.cfg.SubnetIDs = make([]string, 0, 3)
 	md.cfg.SubnetIDToAvailibilityZone = make(map[string]string, 3)
@@ -130,7 +133,7 @@ func (md *embedded) getSubnets() (err error) {
 		return errors.New("cannot get subnets without VPC ID")
 	}
 	if len(md.cfg.SubnetIDs) > 0 {
-		return fmt.Errorf("subnets already exist (%v)", md.cfg.SubnetIDs)
+		return fmt.Errorf("subnets already exist (%q)", md.cfg.SubnetIDs)
 	}
 
 	if err = md.modifyVPC(); err != nil {
