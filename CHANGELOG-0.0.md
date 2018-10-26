@@ -3,7 +3,7 @@
 <hr>
 
 
-## [0.0.7](https://github.com/aws/awstester/releases/tag/0.0.7) (2018-10-25)
+## [0.0.7](https://github.com/aws/awstester/releases/tag/0.0.7) (2018-10-26)
 
 See [code changes](https://github.com/aws/awstester/compare/0.0.6...0.0.7).
 
@@ -20,6 +20,8 @@ See [code changes](https://github.com/aws/awstester/compare/0.0.6...0.0.7).
 
 ### `eksconfig`
 
+- Add [`EnableHA`](https://github.com/aws/awstester/commit/9b3f220477725bd57df169ba6b253e6d0d63f59a) field.
+- Add [`ALBIngressController.TestMetrics`](https://github.com/aws/awstester/commit/4e5b676a9be4db2b28084dfb75484f428e67dc59) field.
 - Change [default `ALBIngressController.TestServerRoutes` value to 1](https://github.com/aws/awstester/commit/0a4e1cf26735e5c09cb0c81be7a9c6ec757318f8).
 - Do not require [`AWSTesterImage` when `ALBIngressController.TestMode` is `"ingress-test-server"`](https://github.com/aws/awstester/commit/d9403b196961ec2d473e11127670da411dd19050).
 
