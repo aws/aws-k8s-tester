@@ -141,12 +141,29 @@ func (md *embedded) Create() (err error) {
 		return err
 	}
 	if md.cfg.VPCID != "" { // use existing VPC
-		if len(md.cfg.SubnetIDs) > 0 {
+		if len(md.cfg.SubnetIDs) == 0 {
 			if err = catchStopc(md.lg, md.stopc, md.getSubnets); err != nil {
 				return err
 			}
+		} else {
+			// otherwise, use specified subnet ID
+			var output *ec2.DescribeSubnetsOutput
+			output, err = md.ec2.DescribeSubnets(&ec2.DescribeSubnetsInput{
+				SubnetIds: aws.StringSlice(md.cfg.SubnetIDs),
+			})
+			if err != nil {
+				return err
+			}
+			for _, sv := range output.Subnets {
+				md.cfg.SubnetIDToAvailibilityZone[*sv.SubnetId] = *sv.AvailabilityZone
+			}
 		}
-		// otherwise, use specified subnet ID
+		md.lg.Info(
+			"found subnets",
+			zap.String("vpc-id", md.cfg.VPCID),
+			zap.Strings("subnet-ids", md.cfg.SubnetIDs),
+			zap.String("availability-zones", fmt.Sprintf("%v", md.cfg.SubnetIDToAvailibilityZone)),
+		)
 	} else {
 		if err = catchStopc(md.lg, md.stopc, md.createVPC); err != nil {
 			return err
@@ -388,7 +405,6 @@ func (md *embedded) createInstances() (err error) {
 			tkn := md.cfg.ID + fmt.Sprintf("%X", time.Now().Nanosecond())
 			tokens = append(tokens, tkn)
 			tknToCnt[tkn] = 1
-
 
 			subnetID := md.cfg.SubnetIDs[0]
 			if len(md.cfg.SubnetIDs) > 1 {
