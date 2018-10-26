@@ -156,44 +156,54 @@ type uploader struct {
 func (up *uploader) upload(localPath, s3Path string) error {
 	bucket := up.bucket
 
-	_, err := up.s3.CreateBucket(&s3.CreateBucketInput{
-		Bucket: aws.String(bucket),
-		CreateBucketConfiguration: &s3.CreateBucketConfiguration{
-			LocationConstraint: aws.String(outputS3UploadRegion),
-		},
-		// TODO: enable this when open-sourced, to make all logs available to communities
-		// https://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html#canned-acl
-		// ACL: aws.String("public-read"),
-		ACL: aws.String("private"),
-	})
-	if err != nil {
-		exist := false
-		// https://docs.aws.amazon.com/AWSEC2/latest/APIReference/errors-overview.html
-		if aerr, ok := err.(awserr.Error); ok {
-			switch aerr.Code() {
-			case s3.ErrCodeBucketAlreadyExists:
-				up.lg.Warn("bucket already exists", zap.String("bucket", bucket), zap.Error(err))
-				exist, err = true, nil
-			case s3.ErrCodeBucketAlreadyOwnedByYou:
-				up.lg.Warn("bucket already owned by me", zap.String("bucket", bucket), zap.Error(err))
-				exist, err = true, nil
-			default:
-				up.lg.Warn("failed to create bucket", zap.String("bucket", bucket), zap.String("code", aerr.Code()), zap.Error(err))
-				return err
-			}
-		}
-		if !exist {
-			return err
-		}
-	} else {
-		h, _ := os.Hostname()
-		tags := []*s3.Tag{{Key: aws.String("HOSTNAME"), Value: aws.String(h)}}
-		_, err = up.s3.PutBucketTagging(&s3.PutBucketTaggingInput{
-			Bucket:  aws.String(bucket),
-			Tagging: &s3.Tagging{TagSet: tags},
+	for i := 0; i < 30; i++ {
+		retry := false
+		_, err := up.s3.CreateBucket(&s3.CreateBucketInput{
+			Bucket: aws.String(bucket),
+			CreateBucketConfiguration: &s3.CreateBucketConfiguration{
+				LocationConstraint: aws.String(outputS3UploadRegion),
+			},
+			// TODO: enable this when open-sourced, to make all logs available to communities
+			// https://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html#canned-acl
+			// ACL: aws.String("public-read"),
+			ACL: aws.String("private"),
 		})
 		if err != nil {
-			return err
+			exist := false
+			// https://docs.aws.amazon.com/AWSEC2/latest/APIReference/errors-overview.html
+			if aerr, ok := err.(awserr.Error); ok {
+				switch aerr.Code() {
+				case s3.ErrCodeBucketAlreadyExists:
+					up.lg.Warn("bucket already exists", zap.String("bucket", bucket), zap.Error(err))
+					exist, err = true, nil
+				case s3.ErrCodeBucketAlreadyOwnedByYou:
+					up.lg.Warn("bucket already owned by me", zap.String("bucket", bucket), zap.Error(err))
+					exist, err = true, nil
+				default:
+					if strings.Contains(err.Error(), "OperationAborted: A conflicting conditional operation is currently in progress against this resource. Please try again.") {
+						retry = true
+						continue
+					}
+					up.lg.Warn("failed to create bucket", zap.String("bucket", bucket), zap.String("code", aerr.Code()), zap.Error(err))
+					return err
+				}
+			}
+			if !retry && !exist {
+				return err
+			}
+			time.Sleep(5 * time.Second)
+			continue
+		} else {
+			h, _ := os.Hostname()
+			tags := []*s3.Tag{{Key: aws.String("HOSTNAME"), Value: aws.String(h)}}
+			_, err = up.s3.PutBucketTagging(&s3.PutBucketTaggingInput{
+				Bucket:  aws.String(bucket),
+				Tagging: &s3.Tagging{TagSet: tags},
+			})
+			if err != nil {
+				return err
+			}
+			break
 		}
 	}
 	up.lg.Info("created bucket", zap.String("bucket", bucket))
