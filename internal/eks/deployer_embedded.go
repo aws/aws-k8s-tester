@@ -750,8 +750,11 @@ func (md *embedded) uploadALB() (err error) {
 			return err
 		}
 	}
-	return md.s3Plugin.UploadToBucketForTests(
-		md.cfg.ALBIngressController.MetricsOutputToUploadPath,
-		md.cfg.ALBIngressController.MetricsOutputToUploadPathBucket,
-	)
+	if md.cfg.ALBIngressController.TestMetrics {
+		return md.s3Plugin.UploadToBucketForTests(
+			md.cfg.ALBIngressController.MetricsOutputToUploadPath,
+			md.cfg.ALBIngressController.MetricsOutputToUploadPathBucket,
+		)
+	}
+	return nil
 }

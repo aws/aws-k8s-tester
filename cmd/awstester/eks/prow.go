@@ -126,6 +126,7 @@ func prowALBFunc(cmd *cobra.Command, args []string) {
 		AWSTESTER_EKS_ALB_TEST_MODE:   cfg.ALBIngressController.TestMode,
 
 		AWSTESTER_EKS_ALB_TEST_SCALABILITY:            fmt.Sprintf("%v", cfg.ALBIngressController.TestScalability),
+		AWSTESTER_EKS_ALB_TEST_METRICS:                fmt.Sprintf("%v", cfg.ALBIngressController.TestMetrics),
 		AWSTESTER_EKS_ALB_TEST_SERVER_REPLICAS:        fmt.Sprintf("%d", cfg.ALBIngressController.TestServerReplicas),
 		AWSTESTER_EKS_ALB_TEST_SERVER_ROUTES:          fmt.Sprintf("%d", cfg.ALBIngressController.TestServerRoutes),
 		AWSTESTER_EKS_ALB_TEST_CLIENTS:                fmt.Sprintf("%d", cfg.ALBIngressController.TestClients),

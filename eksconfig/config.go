@@ -254,6 +254,8 @@ type ALBIngressController struct {
 
 	// TestScalability is true to run scalability tests.
 	TestScalability bool `json:"test-scalability"`
+	// TestMetrics is true to run metrics tests.
+	TestMetrics bool `json:"test-metrics"`
 	// TestServerReplicas is the number of ingress test server pods to deploy.
 	TestServerReplicas int `json:"test-server-replicas,omitempty"`
 	// TestServerRoutes is the number of ALB Ingress Controller routes to test.

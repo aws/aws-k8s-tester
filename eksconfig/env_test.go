@@ -23,6 +23,7 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWSTESTER_EKS_ALB_TEST_MODE", "nginx")
 	os.Setenv("AWSTESTER_EKS_ALB_ENABLE", "true")
 	os.Setenv("AWSTESTER_EKS_ALB_TEST_SCALABILITY", "false")
+	os.Setenv("AWSTESTER_EKS_ALB_TEST_METRICS", "false")
 
 	defer func() {
 		os.Unsetenv("AWSTESTER_EKS_ENABLE_HA")
@@ -39,6 +40,7 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWSTESTER_EKS_ALB_TEST_MODE")
 		os.Unsetenv("AWSTESTER_EKS_ALB_ENABLE")
 		os.Unsetenv("AWSTESTER_EKS_ALB_TEST_SCALABILITY")
+		os.Unsetenv("AWSTESTER_EKS_ALB_TEST_METRICS")
 	}()
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
@@ -86,5 +88,8 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.ALBIngressController.TestScalability {
 		t.Fatalf("cfg.ALBIngressController.TestScalability expected 'false', got %v", cfg.ALBIngressController.TestScalability)
+	}
+	if cfg.ALBIngressController.TestMetrics {
+		t.Fatalf("cfg.ALBIngressController.TestMetrics expected 'false', got %v", cfg.ALBIngressController.TestMetrics)
 	}
 }

@@ -63,6 +63,7 @@ var defaultConfig = Config{
 		TestMode:   "nginx",
 
 		TestScalability:          true,
+		TestMetrics:              true,
 		TestServerReplicas:       1,
 		TestServerRoutes:         1,
 		TestClients:              200,
