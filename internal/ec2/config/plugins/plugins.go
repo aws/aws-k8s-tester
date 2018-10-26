@@ -125,8 +125,8 @@ EOT`, userName, userName, string(d)),
 	return script{}, fmt.Errorf("unknown plugin %q", plugin)
 }
 
-// Get returns the plugin.
-func Get(userName string, plugins []string) (data string, err error) {
+// Create returns the plugin.
+func Create(userName string, plugins []string) (data string, err error) {
 	sts := make([]script, 0, len(plugins))
 	for _, plugin := range plugins {
 		if plugin == "update-ubuntu" {
