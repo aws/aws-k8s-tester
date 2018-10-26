@@ -20,6 +20,9 @@ type vpcStack struct {
 	TagValue          string
 	Hostname          string
 	SecurityGroupName string
+
+	// EnableHA is true to create 3 subnets
+	EnableHA bool
 }
 
 // https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html
@@ -37,9 +40,10 @@ Parameters:
 
   Subnet01Block:
     Type: String
-    Default: 192.168.64.0/18
+    Default: {{ if .EnableHA }}192.168.64.0/18{{ else }}192.168.0.0/16{{ end }}
     Description: CidrBlock for subnet 01 within the VPC
 
+{{ if .EnableHA }}
   Subnet02Block:
     Type: String
     Default: 192.168.128.0/18
@@ -49,6 +53,7 @@ Parameters:
     Type: String
     Default: 192.168.192.0/18
     Description: CidrBlock for subnet 03 within the VPC
+{{ end }}
 
 Metadata:
   AWS::CloudFormation::Interface:
@@ -59,8 +64,8 @@ Metadata:
         Parameters:
           - VpcBlock
           - Subnet01Block
-          - Subnet02Block
-          - Subnet03Block
+          {{ if .EnableHA }}          - Subnet02Block
+          - Subnet03Block{{ end }}
 
 Resources:
   VPC:
@@ -136,6 +141,7 @@ Resources:
       - Key: HOSTNAME
         Value: {{ .Hostname }}
 
+{{ if .EnableHA }}
   Subnet02:
     Type: AWS::EC2::Subnet
     Metadata:
@@ -179,6 +185,7 @@ Resources:
         Value: {{ .TagValue }}
       - Key: HOSTNAME
         Value: {{ .Hostname }}
+{{ end }}
 
   Subnet01RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
@@ -186,6 +193,7 @@ Resources:
       SubnetId: !Ref Subnet01
       RouteTableId: !Ref RouteTable
 
+{{ if .EnableHA }}
   Subnet02RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
@@ -197,6 +205,7 @@ Resources:
     Properties:
       SubnetId: !Ref Subnet03
       RouteTableId: !Ref RouteTable
+{{ end }}
 
   ControlPlaneSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -214,7 +223,7 @@ Outputs:
 
   SubnetIds:
     Description: All subnets in the VPC
-    Value: !Join [ ",", [ !Ref Subnet01, !Ref Subnet02, !Ref Subnet03 ] ]
+    Value: {{ if .EnableHA }}!Join [ ",", [ !Ref Subnet01, !Ref Subnet02, !Ref Subnet03 ] ]{{ else }}!Ref Subnet01{{ end }}
 
   SecurityGroups:
     Description: Security group for the cluster control plane communication with worker nodes

@@ -14,7 +14,7 @@ func TestEmbeddedVPCStack(t *testing.T) {
 	}
 
 	cfg := eksconfig.NewDefault()
-	ek, err := NewAWSTester(cfg)
+	ek, err := NewTester(cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -26,6 +26,7 @@ func TestEmbeddedVPCStack(t *testing.T) {
 	if err = md.createVPC(); err != nil {
 		t.Fatal(err)
 	}
+
 	if err = md.deleteVPC(); err != nil {
 		t.Fatal(err)
 	}

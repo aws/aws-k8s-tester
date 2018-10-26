@@ -15,7 +15,7 @@ func TestEmbeddedServiceRole(t *testing.T) {
 
 	cfg := eksconfig.NewDefault()
 
-	ek, err := NewAWSTester(cfg)
+	ek, err := NewTester(cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
