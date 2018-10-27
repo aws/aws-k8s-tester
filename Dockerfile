@@ -1,6 +1,4 @@
 ##########################################
-# TODO: just use kubeins-e2e
-# "gcr.io/k8s-testimages/kubekins-e2e" already comes with docker
 FROM ubuntu:18.04
 LABEL maintainer "leegyuho@amazon.com"
 
@@ -77,31 +75,6 @@ RUN go get -v -u github.com/kubernetes-sigs/aws-iam-authenticator/cmd/aws-iam-au
 ##########################################
 
 ##########################################
-# Docker in Docker
-# install docker to launch sibling container
-# https://github.com/kubernetes/test-infra/bslob/master/images/bootstrap/Dockerfile
-# https://github.com/kubernetes/test-infra/blob/master/images/kubekins-e2e/Dockerfile
-
-RUN curl -fsSL https://download.docker.com/linux/$(. /etc/os-release; echo "$ID")/gpg \
-  | apt-key add - && \
-  add-apt-repository \
-  "deb [arch=amd64] https://download.docker.com/linux/$(. /etc/os-release; echo "$ID") \
-  $(lsb_release -cs) stable"
-
-RUN apt-get update && \
-  apt-get install -y --no-install-recommends docker-ce=18.06.0* && \
-  sed -i 's/cgroupfs_mount$/#cgroupfs_mount\n/' /etc/init.d/docker
-
-# Move Docker's storage location
-RUN echo 'DOCKER_OPTS="${DOCKER_OPTS} --data-root=/docker-graph"' | \
-  tee --append /etc/default/docker
-# NOTE this should be mounted and persisted as a volume ideally (!)
-# We will make a fallback one now just in case
-
-RUN mkdir /docker-graph
-##########################################
-
-##########################################
 RUN git clone https://github.com/wg/wrk.git \
   && pushd wrk \
   && make all \
@@ -120,7 +93,6 @@ RUN chmod +x /workspace/aws-bin/*
 ##########################################
 RUN kubectl version --short --client || true && which kubectl \
   && aws --version || true && which aws \
-  && docker --version || true && which docker \
   && wrk --version || true && which wrk \
   && awstester -h || true && which awstester
 ##########################################
