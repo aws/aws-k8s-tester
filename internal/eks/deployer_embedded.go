@@ -359,18 +359,18 @@ func (md *embedded) Up() (err error) {
 	}
 
 	if md.cfg.UploadAWSTesterLogs {
-		if err = md.upload(); err != nil {
+		if err = md.uploadAWSTesterLogs(); err != nil {
 			md.lg.Warn("failed to upload", zap.Error(err))
 		}
 	}
-	if md.cfg.ALBIngressController.UploadTesterLogs {
-		if err = md.uploadALB(); err != nil {
-			md.lg.Warn("failed to upload ALB", zap.Error(err))
+	if md.cfg.UploadWorkerNodeLogs {
+		if err = md.uploadWorkerNodeLogs(); err != nil {
+			md.lg.Warn("failed to upload worker node logs", zap.Error(err))
 		}
 	}
-	if md.cfg.UploadWorkerNodeLogs {
-		if err = md.uploadWorkerNode(); err != nil {
-			md.lg.Warn("failed to upload worker node logs", zap.Error(err))
+	if md.cfg.ALBIngressController.Enable && md.cfg.ALBIngressController.UploadTesterLogs {
+		if err = md.uploadALBTesterLogs(); err != nil {
+			md.lg.Warn("failed to upload ALB", zap.Error(err))
 		}
 	}
 	return nil
@@ -412,7 +412,7 @@ func (md *embedded) Down() (err error) {
 			"uploading worker node logs before shutdown",
 			zap.String("cluster-name", md.cfg.ClusterName),
 		)
-		if err = md.uploadWorkerNode(); err != nil {
+		if err = md.uploadWorkerNodeLogs(); err != nil {
 			md.lg.Warn("failed to upload worker node logs", zap.Error(err))
 		}
 	}
@@ -473,7 +473,7 @@ func (md *embedded) Down() (err error) {
 		return err
 	}
 	if md.cfg.UploadAWSTesterLogs {
-		if err = md.upload(); err != nil {
+		if err = md.uploadAWSTesterLogs(); err != nil {
 			md.lg.Warn("failed to upload", zap.Error(err))
 		}
 	}
@@ -623,7 +623,7 @@ func (md *embedded) TestALBQPS() error {
 	}
 
 	if md.cfg.ALBIngressController.UploadTesterLogs {
-		if err := md.uploadALB(); err != nil {
+		if err := md.uploadALBTesterLogs(); err != nil {
 			md.lg.Warn("failed to upload ALB", zap.Error(err))
 		}
 	}
@@ -673,7 +673,7 @@ func (md *embedded) TestALBMetrics() error {
 		return err
 	}
 	if md.cfg.ALBIngressController.UploadTesterLogs {
-		if err = md.uploadALB(); err != nil {
+		if err = md.uploadALBTesterLogs(); err != nil {
 			md.lg.Warn("failed to upload ALB", zap.Error(err))
 		}
 	}
@@ -681,7 +681,7 @@ func (md *embedded) TestALBMetrics() error {
 }
 
 // SECURITY NOTE: MAKE SURE PRIVATE KEY NEVER GETS UPLOADED TO CLOUD STORAGE AND DLETE AFTER USE!!!
-func (md *embedded) upload() (err error) {
+func (md *embedded) uploadAWSTesterLogs() (err error) {
 	err = md.s3Plugin.UploadToBucketForTests(
 		md.cfg.ConfigPath,
 		md.cfg.ConfigPathBucket,
@@ -696,7 +696,7 @@ func (md *embedded) upload() (err error) {
 }
 
 // TODO: parallelize for >100 nodes?
-func (md *embedded) uploadWorkerNode() (err error) {
+func (md *embedded) uploadWorkerNodeLogs() (err error) {
 	if !md.cfg.EnableNodeSSH {
 		return nil
 	}
@@ -725,7 +725,7 @@ func (md *embedded) uploadWorkerNode() (err error) {
 	return nil
 }
 
-func (md *embedded) uploadALB() (err error) {
+func (md *embedded) uploadALBTesterLogs() (err error) {
 	err = md.s3Plugin.UploadToBucketForTests(
 		md.cfg.ALBIngressController.IngressTestServerDeploymentServiceSpecPath,
 		md.cfg.ALBIngressController.IngressTestServerDeploymentServiceSpecPathBucket,

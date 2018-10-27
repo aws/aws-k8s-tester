@@ -19,11 +19,16 @@ import (
 
 // Config defines SSH configuration.
 type Config struct {
-	Logger   *zap.Logger
-	KeyPath  string
-	Addr     string
+	Logger  *zap.Logger
+	KeyPath string
+	Addr    string
+
+	// UserName is the user name to use for log-in.
+	// "ec2-user" for Amazon Linux 2
+	// "ubuntu" for ubuntu
 	UserName string
-	Envs     map[string]string
+
+	Envs map[string]string
 }
 
 // SSH defines SSH operations.

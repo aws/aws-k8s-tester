@@ -43,7 +43,7 @@ make server
 }
 
 func TestPlugins(t *testing.T) {
-	script, err := Get(
+	script, err := Create(
 		"ubuntu",
 		[]string{
 			"install-csi-101",
