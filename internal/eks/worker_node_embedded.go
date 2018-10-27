@@ -178,7 +178,7 @@ func (md *embedded) createWorkerNode() error {
 			continue
 		}
 
-		if md.cfg.EnableNodeSSH {
+		if md.cfg.EnableWorkerNodeSSH {
 			md.lg.Info(
 				"checking worker node group security group",
 				zap.String("security-group-id", md.cfg.ClusterState.CFStackWorkerNodeGroupSecurityGroupID),

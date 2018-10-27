@@ -11,15 +11,15 @@ func TestEnv(t *testing.T) {
 
 	os.Setenv("AWSTESTER_EKS_KUBERNETES_VERSION", "1.11")
 	os.Setenv("AWSTESTER_EKS_ENABLE_WORKER_NODE_HA", "false")
+	os.Setenv("AWSTESTER_EKS_ENABLE_WORKER_NODE_SSH", "true")
 	os.Setenv("AWSTESTER_EKS_KUBETEST_EMBEDDED_BINARY", "false")
 	os.Setenv("AWSTESTER_EKS_CONFIG_PATH", "test-path")
 	os.Setenv("AWSTESTER_EKS_DOWN", "false")
-	os.Setenv("AWSTESTER_EKS_ENABLE_NODE_SSH", "true")
 	os.Setenv("AWSTESTER_EKS_ALB_TARGET_TYPE", "ip")
 	os.Setenv("AWSTESTER_EKS_WORKER_NODE_ASG_MIN", "10")
 	os.Setenv("AWSTESTER_EKS_WORKER_NODE_ASG_MAX", "10")
 	os.Setenv("AWSTESTER_EKS_LOG_DEBUG", "true")
-	os.Setenv("AWSTESTER_EKS_UPLOAD_AWS_TESTER_LOGS", "false")
+	os.Setenv("AWSTESTER_EKS_UPLOAD_TESTER_LOGS", "false")
 	os.Setenv("AWSTESTER_EKS_UPLOAD_WORKER_NODE_LOGS", "false")
 	os.Setenv("AWSTESTER_EKS_WAIT_BEFORE_DOWN", "2h")
 	os.Setenv("AWSTESTER_EKS_ALB_UPLOAD_TESTER_LOGS", "false")
@@ -28,19 +28,20 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWSTESTER_EKS_ALB_ENABLE", "true")
 	os.Setenv("AWSTESTER_EKS_ALB_TEST_SCALABILITY", "false")
 	os.Setenv("AWSTESTER_EKS_ALB_TEST_METRICS", "false")
+	os.Setenv("AWSTESTER_EKS_ALB_INGRESS_CONTROLLER_IMAGE", "quay.io/coreos/alb-ingress-controller:1.0-beta.7")
 
 	defer func() {
 		os.Unsetenv("AWSTESTER_EKS_KUBERNETES_VERSION")
 		os.Unsetenv("AWSTESTER_EKS_ENABLE_WORKER_NODE_HA")
+		os.Unsetenv("AWSTESTER_EKS_ENABLE_WORKER_NODE_SSH")
 		os.Unsetenv("AWSTESTER_EKS_KUBETEST_EMBEDDED_BINARY")
 		os.Unsetenv("AWSTESTER_EKS_CONFIG_PATH")
 		os.Unsetenv("AWSTESTER_EKS_DOWN")
-		os.Unsetenv("AWSTESTER_EKS_ENABLE_NODE_SSH")
 		os.Unsetenv("AWSTESTER_EKS_ALB_TARGET_TYPE")
 		os.Unsetenv("AWSTESTER_EKS_WORKER_NODE_ASG_MIN")
 		os.Unsetenv("AWSTESTER_EKS_WORKER_NODE_ASG_MAX")
 		os.Unsetenv("AWSTESTER_EKS_LOG_DEBUG")
-		os.Unsetenv("AWSTESTER_EKS_UPLOAD_AWS_TESTER_LOGS")
+		os.Unsetenv("AWSTESTER_EKS_UPLOAD_TESTER_LOGS")
 		os.Unsetenv("AWSTESTER_EKS_UPLOAD_WORKER_NODE_LOGS")
 		os.Unsetenv("AWSTESTER_EKS_WAIT_BEFORE_DOWN")
 		os.Unsetenv("AWSTESTER_EKS_ALB_UPLOAD_TESTER_LOGS")
@@ -49,6 +50,7 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWSTESTER_EKS_ALB_ENABLE")
 		os.Unsetenv("AWSTESTER_EKS_ALB_TEST_SCALABILITY")
 		os.Unsetenv("AWSTESTER_EKS_ALB_TEST_METRICS")
+		os.Unsetenv("AWSTESTER_EKS_ALB_INGRESS_CONTROLLER_IMAGE")
 	}()
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
@@ -57,9 +59,6 @@ func TestEnv(t *testing.T) {
 
 	if cfg.KubernetesVersion != "1.11" {
 		t.Fatalf("KubernetesVersion 1.11, got %q", cfg.KubernetesVersion)
-	}
-	if cfg.EnableWorkerNodeHA {
-		t.Fatalf("cfg.EnableWorkerNodeHA expected 'false', got %v", cfg.EnableWorkerNodeHA)
 	}
 	if cfg.KubetestEmbeddedBinary {
 		t.Fatalf("cfg.KubetestEmbeddedBinary expected 'false', got %v", cfg.KubetestEmbeddedBinary)
@@ -70,8 +69,11 @@ func TestEnv(t *testing.T) {
 	if cfg.Down {
 		t.Fatalf("cfg.Down expected 'false', got %v", cfg.Down)
 	}
-	if !cfg.EnableNodeSSH {
-		t.Fatalf("cfg.EnableNodeSSH expected 'true', got %v", cfg.EnableNodeSSH)
+	if cfg.EnableWorkerNodeHA {
+		t.Fatalf("cfg.EnableWorkerNodeHA expected 'false', got %v", cfg.EnableWorkerNodeHA)
+	}
+	if !cfg.EnableWorkerNodeSSH {
+		t.Fatalf("cfg.EnableWorkerNodeSSH expected 'true', got %v", cfg.EnableWorkerNodeSSH)
 	}
 	if cfg.WorkderNodeASGMin != 10 {
 		t.Fatalf("worker nodes min expected 10, got %q", cfg.WorkderNodeASGMin)
@@ -85,8 +87,8 @@ func TestEnv(t *testing.T) {
 	if !cfg.LogDebug {
 		t.Fatalf("LogDebug expected true, got %v", cfg.LogDebug)
 	}
-	if cfg.UploadAWSTesterLogs {
-		t.Fatalf("UploadAWSTesterLogs expected false, got %v", cfg.UploadAWSTesterLogs)
+	if cfg.UploadTesterLogs {
+		t.Fatalf("UploadTesterLogs expected false, got %v", cfg.UploadTesterLogs)
 	}
 	if cfg.ALBIngressController.UploadTesterLogs {
 		t.Fatalf("UploadTesterLogs expected false, got %v", cfg.ALBIngressController.UploadTesterLogs)
@@ -96,6 +98,9 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.WaitBeforeDown != 2*time.Hour {
 		t.Fatalf("wait before down expected 2h, got %v", cfg.WaitBeforeDown)
+	}
+	if cfg.ALBIngressController.IngressControllerImage != "quay.io/coreos/alb-ingress-controller:1.0-beta.7" {
+		t.Fatalf("cfg.ALBIngressController.IngressControllerImage expected 'quay.io/coreos/alb-ingress-controller:1.0-beta.7', got %q", cfg.ALBIngressController.IngressControllerImage)
 	}
 	if cfg.ALBIngressController.TestExpectQPS != 123.45 {
 		t.Fatalf("cfg.ALBIngressController.TestExpectQPS expected 123.45, got %v", cfg.ALBIngressController.TestExpectQPS)

@@ -358,7 +358,7 @@ func (md *embedded) Up() (err error) {
 		return err
 	}
 
-	if md.cfg.UploadAWSTesterLogs {
+	if md.cfg.UploadTesterLogs {
 		if err = md.uploadAWSTesterLogs(); err != nil {
 			md.lg.Warn("failed to upload", zap.Error(err))
 		}
@@ -472,7 +472,7 @@ func (md *embedded) Down() (err error) {
 	if err = md.cfg.Sync(); err != nil {
 		return err
 	}
-	if md.cfg.UploadAWSTesterLogs {
+	if md.cfg.UploadTesterLogs {
 		if err = md.uploadAWSTesterLogs(); err != nil {
 			md.lg.Warn("failed to upload", zap.Error(err))
 		}
@@ -697,7 +697,7 @@ func (md *embedded) uploadAWSTesterLogs() (err error) {
 
 // TODO: parallelize for >100 nodes?
 func (md *embedded) uploadWorkerNodeLogs() (err error) {
-	if !md.cfg.EnableNodeSSH {
+	if !md.cfg.EnableWorkerNodeSSH {
 		return nil
 	}
 	err = md.GetWorkerNodeLogs()

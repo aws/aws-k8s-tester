@@ -7,7 +7,7 @@ import (
 )
 
 func (md *embedded) GetWorkerNodeLogs() (err error) {
-	if !md.cfg.EnableNodeSSH {
+	if !md.cfg.EnableWorkerNodeSSH {
 		return errors.New("node SSH is not enabled")
 	}
 

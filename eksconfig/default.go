@@ -26,8 +26,8 @@ var defaultConfig = Config{
 
 	ConfigPath: "test.yaml",
 
-	EnableWorkerNodeHA: true,
-	EnableNodeSSH:      true,
+	EnableWorkerNodeHA:  true,
+	EnableWorkerNodeSSH: true,
 
 	AWSAccountID: "",
 	// to be overwritten by AWS_SHARED_CREDENTIALS_FILE
@@ -50,7 +50,7 @@ var defaultConfig = Config{
 	// log file named with cluster name will be added automatically
 	LogOutputs:           []string{"stderr"},
 	LogAccess:            true,
-	UploadAWSTesterLogs:  true,
+	UploadTesterLogs:     true,
 	UploadWorkerNodeLogs: true,
 
 	ClusterState: &ClusterState{},
@@ -58,7 +58,7 @@ var defaultConfig = Config{
 		Enable:           true,
 		UploadTesterLogs: true,
 
-		ALBIngressControllerImage: "quay.io/coreos/alb-ingress-controller:1.0-beta.7",
+		IngressControllerImage: "quay.io/coreos/alb-ingress-controller:1.0-beta.7",
 
 		// 'instance' to use node port
 		// 'ip' to use pod IP

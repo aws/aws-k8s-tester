@@ -136,10 +136,11 @@ func (md *embedded) UploadToBucketForTests(localPath, s3Path string) error {
 
 	bucket := md.bucketForTests
 
+	_, ok := md.existing[bucket]
 	var err error
-	for i := 0; i < 30; i++ {
-		retry := false
-		if _, ok := md.existing[bucket]; !ok {
+	if !ok {
+		for i := 0; i < 30; i++ {
+			retry := false
 			_, err = md.s3.CreateBucket(&s3.CreateBucketInput{
 				Bucket: aws.String(bucket),
 				CreateBucketConfiguration: &s3.CreateBucketConfiguration{
@@ -191,11 +192,11 @@ func (md *embedded) UploadToBucketForTests(localPath, s3Path string) error {
 				if err != nil {
 					return err
 				}
+				md.existing[bucket] = struct{}{}
+				md.lg.Info("created bucket", zap.String("bucket", bucket))
 				break
 			}
 		}
-		md.existing[bucket] = struct{}{}
-		md.lg.Info("created bucket", zap.String("bucket", bucket))
 	}
 
 	var d []byte

@@ -35,8 +35,8 @@ type Config struct {
 	LogOutputToUploadPath       string `json:"log-output-to-upload-path,omitempty"`
 	LogOutputToUploadPathBucket string `json:"log-output-to-upload-path-bucket,omitempty"`
 	LogOutputToUploadPathURL    string `json:"log-output-to-upload-path-url,omitempty"`
-	// UploadAWSTesterLogs is true to auto-upload log files.
-	UploadAWSTesterLogs bool `json:"upload-aws-tester-logs"`
+	// UploadTesterLogs is true to auto-upload log files.
+	UploadTesterLogs bool `json:"upload-tester-logs"`
 
 	// Tag is the tag used for all cloudformation stacks.
 	// Must be left empty, and let deployer auto-populate this field.

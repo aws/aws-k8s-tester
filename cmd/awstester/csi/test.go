@@ -85,7 +85,7 @@ func testIntegrationFunc(cmd *cobra.Command, args []string) {
 	)
 
 	cfg := ec2config.NewDefault()
-	cfg.UploadAWSTesterLogs = false
+	cfg.UploadTesterLogs = false
 	cfg.VPCID = vpcID
 	cfg.Plugins = []string{
 		"update-ubuntu",

@@ -40,7 +40,7 @@ See [code changes](https://github.com/aws/awstester/compare/0.0.6...0.0.7).
 
 ### `eksconfig`
 
-- Rename to [`eksconfig.Config.UploadAWSTesterLogs`](https://github.com/aws/awstester/commit/e88759aaaf12a217ab24ceae4288e1f2f084b6cf).
+- Rename to [`eksconfig.Config.UploadTesterLogs`](https://github.com/aws/awstester/commit/e88759aaaf12a217ab24ceae4288e1f2f084b6cf).
 - Add [`eksconfig.Config.UploadWorkerNodeLogs`](https://github.com/aws/awstester/commit/e88759aaaf12a217ab24ceae4288e1f2f084b6cf).
 - Add [`ALBIngressController.UploadALBTesterLogs`](https://github.com/aws/awstester/commit/e88759aaaf12a217ab24ceae4288e1f2f084b6cf).
 - Add [`eksconfig.Config.EnableWorkerNodeHA`](https://github.com/aws/awstester/commit/9b3f220477725bd57df169ba6b253e6d0d63f59a) field.

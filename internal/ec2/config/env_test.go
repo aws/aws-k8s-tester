@@ -53,8 +53,8 @@ func TestEnv(t *testing.T) {
 	if cfg.LogDebug {
 		t.Fatalf("LogDebug unexpected %v", cfg.LogDebug)
 	}
-	if cfg.UploadAWSTesterLogs {
-		t.Fatalf("UploadAWSTesterLogs unexpected %v", cfg.UploadAWSTesterLogs)
+	if cfg.UploadTesterLogs {
+		t.Fatalf("UploadTesterLogs unexpected %v", cfg.UploadTesterLogs)
 	}
 	if cfg.VPCID != "aaa" {
 		t.Fatalf("VPCID unexpected %q", cfg.VPCID)

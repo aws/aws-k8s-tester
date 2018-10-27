@@ -20,11 +20,11 @@ func createWorkerNodeTemplate(v workerNodeStack) (string, error) {
 }
 
 type workerNodeStack struct {
-	Description   string
-	TagKey        string
-	TagValue      string
-	Hostname      string
-	EnableNodeSSH bool
+	Description         string
+	TagKey              string
+	TagValue            string
+	Hostname            string
+	EnableWorkerNodeSSH bool
 }
 
 func createWorkerNodeTemplateFromURL(lg *zap.Logger) (string, error) {
@@ -323,7 +323,7 @@ Resources:
       ToPort: 443
       FromPort: 443
 
-{{ if .EnableNodeSSH }}  ClusterControlPlaneSecurityGroupIngress22:
+{{ if .EnableWorkerNodeSSH }}  ClusterControlPlaneSecurityGroupIngress22:
     Type: AWS::EC2::SecurityGroupIngress
     DependsOn: NodeSecurityGroup
     Properties:

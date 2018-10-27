@@ -23,7 +23,7 @@ func (md *embedded) DeployIngressController() error {
 		Name:        "alb-ingress-controller",
 		ServiceName: "alb-ingress-controller-service",
 		Namespace:   "kube-system",
-		Image:       md.cfg.ALBIngressController.ALBIngressControllerImage,
+		Image:       md.cfg.ALBIngressController.IngressControllerImage,
 		ClusterName: md.cfg.ClusterName,
 	}
 	d, err := ingress.CreateDeploymentServiceALBIngressController(cfg)

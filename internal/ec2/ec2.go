@@ -197,7 +197,7 @@ func (md *embedded) Create() (err error) {
 	if err = md.cfg.Sync(); err != nil {
 		return err
 	}
-	if md.cfg.UploadAWSTesterLogs {
+	if md.cfg.UploadTesterLogs {
 		if err = md.uploadAWSTesterLogs(); err != nil {
 			md.lg.Warn("failed to upload", zap.Error(err))
 		}
@@ -251,7 +251,7 @@ func (md *embedded) Delete() (err error) {
 	if err = md.cfg.Sync(); err != nil {
 		return err
 	}
-	if md.cfg.UploadAWSTesterLogs {
+	if md.cfg.UploadTesterLogs {
 		if err = md.uploadAWSTesterLogs(); err != nil {
 			md.lg.Warn("failed to upload", zap.Error(err))
 		}

@@ -33,10 +33,11 @@ type Config struct {
 	// This is meant to be used as a flag for test.
 	Down bool `json:"down"`
 
+	// EnableWorkerNodeSSH is true to enable SSH access to worker nodes.
+	EnableWorkerNodeSSH bool `json:"enable-worker-node-ssh"`
 	// EnableWorkerNodeHA is true to use all 3 subnets to create worker nodes.
+	// Note that at least 2 subnets are required for EKS cluster.
 	EnableWorkerNodeHA bool `json:"enable-worker-node-ha"`
-	// EnableNodeSSH is true to enable SSH access to worker nodes.
-	EnableNodeSSH bool `json:"enable-node-ssh"`
 
 	// Tag is the tag used for all cloudformation stacks.
 	// Must be left empty, and let deployer auto-populate this field.
@@ -118,8 +119,8 @@ type Config struct {
 	// https://github.com/kubernetes-sigs/aws-alb-ingress-controller/blob/master/docs/ingress-resources.md
 	LogAccess bool `json:"log-access"`
 
-	// UploadAWSTesterLogs is true to auto-upload log files.
-	UploadAWSTesterLogs bool `json:"upload-aws-tester-logs"`
+	// UploadTesterLogs is true to auto-upload log files.
+	UploadTesterLogs bool `json:"upload-tester-logs"`
 	// UploadWorkerNodeLogs is true to auto-upload worker node log files.
 	UploadWorkerNodeLogs bool `json:"upload-worker-node-logs"`
 
@@ -239,8 +240,8 @@ type ALBIngressController struct {
 	// 'AWSCredentialToMountPath' must be provided to configure ALB Ingress Controller.
 	Enable bool `json:"enable"`
 
-	// ALBIngressControllerImage is the ALB Ingress Controller container image.
-	ALBIngressControllerImage string `json:"alb-ingress-controller-image,omitempty"`
+	// IngressControllerImage is the ALB Ingress Controller container image.
+	IngressControllerImage string `json:"ingress-controller-image,omitempty"`
 	// UploadTesterLogs is true to auto-upload ALB tester logs.
 	UploadTesterLogs bool `json:"upload-tester-logs"`
 
@@ -666,7 +667,7 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		if cfg.ALBIngressController.Enable {
 			return errors.New("cannot create AWS ALB Ingress Controller without AWS credential")
 		}
-		if cfg.ALBIngressController.ALBIngressControllerImage == "" {
+		if cfg.ALBIngressController.IngressControllerImage == "" {
 			return errors.New("cannot create AWS ALB Ingress Controller without ingress controller test image")
 		}
 		if cfg.ALBIngressController.TestServerRoutes > 0 {
@@ -701,7 +702,7 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 			cfg.ALBIngressController.TargetType != "ip" {
 			return fmt.Errorf("ALB Ingress Controller target type not found %q", cfg.ALBIngressController.TargetType)
 		}
-		if cfg.ALBIngressController.ALBIngressControllerImage == "" {
+		if cfg.ALBIngressController.IngressControllerImage == "" {
 			return errors.New("ALB Ingress Controller image not specified")
 		}
 		cfg.ALBIngressController.ScalabilityOutputToUploadPath = fmt.Sprintf("%s.alb-ingress-controller.scalability.log", cfg.ConfigPath)
