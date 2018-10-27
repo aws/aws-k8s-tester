@@ -11,6 +11,13 @@ See [code changes](https://github.com/aws/awstester/compare/0.0.7...0.0.8).
 
 - Remove [`awstester eks prow alb`](https://github.com/aws/awstester/commit/86e4db7e341681ece0e4b89b1f747024c157d2f3).
 
+### `eksconfig`
+
+- Rename to [`eksconfig.Config.EnableWorkerNodeSSH`](https://github.com/aws/awstester/commit/650e7caf867d62454d2219d1a1f104b51962e7c8).
+- Rename to [`eksconfig.Config.UploadTesterLogs`](https://github.com/aws/awstester/commit/650e7caf867d62454d2219d1a1f104b51962e7c8).
+- Rename to [`ALBIngressController.UploadTesterLogs`](https://github.com/aws/awstester/commit/650e7caf867d62454d2219d1a1f104b51962e7c8).
+- Rename to [`ALBIngressController.IngressControllerImage`](https://github.com/aws/awstester/commit/650e7caf867d62454d2219d1a1f104b51962e7c8).
+
 ### `internal`
 
 - Refactor [worker node log fetch operation in `internal/eks`](https://github.com/aws/awstester/commit/77d318a449e52b2f9550d2e3e7586181b117da36).
