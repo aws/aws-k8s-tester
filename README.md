@@ -69,18 +69,9 @@ awstester eks delete cluster --path ./awstester-eks.yaml
 
 ### `awstester eks` e2e tests
 
-To run locally:
+To test locally:
 
 ```bash
-aws ecr create-repository --repository-name awstester
-aws ecr list-images --repository-name awstester
-
-cd ${GOPATH}/src/github.com/aws/awstester
-go install -v ./cmd/awstester
-
-cd ${GOPATH}/src/github.com/aws/awstester
-./scripts/awstester.build.container.push.sh
-
 cd ${GOPATH}/src/github.com/aws/awstester
 AWSTESTER_EKS_KUBETEST_EMBEDDED_BINARY=true \
   AWSTESTER_EKS_KUBERNETES_VERSION=1.10 \
