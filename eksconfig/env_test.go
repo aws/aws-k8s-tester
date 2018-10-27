@@ -10,6 +10,7 @@ func TestEnv(t *testing.T) {
 	cfg := NewDefault()
 
 	os.Setenv("AWSTESTER_EKS_KUBERNETES_VERSION", "1.11")
+	os.Setenv("AWSTESTER_EKS_TAG", "my-test")
 	os.Setenv("AWSTESTER_EKS_ENABLE_WORKER_NODE_HA", "false")
 	os.Setenv("AWSTESTER_EKS_ENABLE_WORKER_NODE_SSH", "true")
 	os.Setenv("AWSTESTER_EKS_KUBETEST_EMBEDDED_BINARY", "false")
@@ -32,6 +33,7 @@ func TestEnv(t *testing.T) {
 
 	defer func() {
 		os.Unsetenv("AWSTESTER_EKS_KUBERNETES_VERSION")
+		os.Unsetenv("AWSTESTER_EKS_TAG")
 		os.Unsetenv("AWSTESTER_EKS_ENABLE_WORKER_NODE_HA")
 		os.Unsetenv("AWSTESTER_EKS_ENABLE_WORKER_NODE_SSH")
 		os.Unsetenv("AWSTESTER_EKS_KUBETEST_EMBEDDED_BINARY")
@@ -59,6 +61,9 @@ func TestEnv(t *testing.T) {
 
 	if cfg.KubernetesVersion != "1.11" {
 		t.Fatalf("KubernetesVersion 1.11, got %q", cfg.KubernetesVersion)
+	}
+	if cfg.Tag != "my-test" {
+		t.Fatalf("Tag my-test, got %q", cfg.Tag)
 	}
 	if cfg.KubetestEmbeddedBinary {
 		t.Fatalf("cfg.KubetestEmbeddedBinary expected 'false', got %v", cfg.KubetestEmbeddedBinary)
