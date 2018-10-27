@@ -461,6 +461,12 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	if !checkRegion(cfg.AWSRegion) {
 		return fmt.Errorf("EKS Region %q is not valid", cfg.AWSRegion)
 	}
+	if cfg.Tag == "" {
+		return errors.New("Tag is empty")
+	}
+	if cfg.ClusterName == "" {
+		return errors.New("ClusterName is empty")
+	}
 	if cfg.WorkerNodeAMI == "" {
 		return errors.New("EKS WorkerNodeAMI is not specified")
 	}
@@ -499,13 +505,6 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 	if ok := checkEKSEp(cfg.AWSCustomEndpoint); !ok {
 		return fmt.Errorf("AWSCustomEndpoint %q is not valid", cfg.AWSCustomEndpoint)
-	}
-
-	if cfg.Tag == "" {
-		cfg.Tag = GenTag()
-	}
-	if cfg.ClusterName == "" {
-		cfg.ClusterName = genClusterName()
 	}
 
 	// resources created from awstester always follow

@@ -13,6 +13,16 @@ func NewDefault() *Config {
 	return &vv
 }
 
+var (
+	testerTag         string
+	testerClusterName string
+)
+
+func init() {
+	testerTag = genTag()
+	testerClusterName = genClusterName(testerTag)
+}
+
 // defaultConfig is the default configuration.
 //  - empty string creates a non-nil object for pointer-type field
 //  - omitting an entire field returns nil value
@@ -28,6 +38,9 @@ var defaultConfig = Config{
 
 	EnableWorkerNodeHA:  true,
 	EnableWorkerNodeSSH: true,
+
+	Tag:         testerTag,
+	ClusterName: testerClusterName,
 
 	AWSAccountID: "",
 	// to be overwritten by AWS_SHARED_CREDENTIALS_FILE

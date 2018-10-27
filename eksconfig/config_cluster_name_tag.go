@@ -9,20 +9,25 @@ import (
 	"time"
 )
 
-// GenTag generates a tag for cluster name, CloudFormation, and S3 bucket.
-func GenTag() string {
+// genTag generates a tag for cluster name, CloudFormation, and S3 bucket.
+// Note that this would be used as S3 bucket name to upload tester logs.
+func genTag() string {
 	// use UTC time for everything
 	now := time.Now().UTC()
 	return fmt.Sprintf("awstester-eks-%d%02d%02d", now.Year(), now.Month(), now.Day())
 }
 
-func genClusterName() string {
+func genClusterName(tag string) string {
 	h, _ := os.Hostname()
 	h = strings.TrimSpace(reg.ReplaceAllString(h, ""))
 	if len(h) > 12 {
 		h = h[:12]
 	}
-	return fmt.Sprintf("%s-%s-%s", GenTag(), h, randString(7))
+	name := tag
+	if len(name) > 0 {
+		name += "-"
+	}
+	return fmt.Sprintf("%s%s-%s", name, h, randString(7))
 }
 
 var reg *regexp.Regexp
