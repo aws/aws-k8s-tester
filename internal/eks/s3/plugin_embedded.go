@@ -140,7 +140,7 @@ func (md *embedded) UploadToBucketForTests(localPath, s3Path string) error {
 	for i := 0; i < 30; i++ {
 		retry := false
 		if _, ok := md.existing[bucket]; !ok {
-			_, err := md.s3.CreateBucket(&s3.CreateBucketInput{
+			_, err = md.s3.CreateBucket(&s3.CreateBucketInput{
 				Bucket: aws.String(bucket),
 				CreateBucketConfiguration: &s3.CreateBucketConfiguration{
 					LocationConstraint: aws.String(md.cfg.AWSRegion),
