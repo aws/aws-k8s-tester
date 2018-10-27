@@ -3,7 +3,6 @@ package eks
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/signal"
@@ -11,8 +10,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/aws/awstester/eksconfig"
-	"github.com/aws/awstester/internal/eks/alb"
 	"github.com/aws/awstester/internal/prow/status"
 
 	"github.com/spf13/cobra"
@@ -26,7 +23,6 @@ func newProw() *cobra.Command {
 	}
 	ac.AddCommand(
 		newProwStatus(),
-		newProwALB(),
 	)
 	return ac
 }
@@ -82,70 +78,4 @@ func prowStatusFunc(cmd *cobra.Command, args []string) {
 	lg.Info("shut down server", zap.Error(<-errc))
 
 	signal.Stop(notifier)
-}
-
-func newProwALB() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "alb",
-		Short: "Generates ALB Ingress Controller prow job",
-		Run:   prowALBFunc,
-	}
-	cmd.PersistentFlags().StringVar(&prowALBOutputPath, "output-path", "", "file path to output generated Prow job configuration")
-	return cmd
-}
-
-var prowALBOutputPath string
-
-func prowALBFunc(cmd *cobra.Command, args []string) {
-	cfg := eksconfig.NewDefault()
-	if err := cfg.UpdateFromEnvs(); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to update eksconfig.Config %v\n", err)
-		os.Exit(1)
-	}
-	s, err := alb.CreateProwJobYAML(alb.ConfigProwJobYAML{
-		AWSTESTER_EKS_KUBETEST_EMBEDDED_BINARY: fmt.Sprintf("%v", cfg.KubetestEmbeddedBinary),
-
-		AWSTESTER_EKS_WAIT_BEFORE_DOWN: fmt.Sprintf("%v", cfg.WaitBeforeDown),
-		AWSTESTER_EKS_DOWN:             fmt.Sprintf("%v", cfg.Down),
-
-		AWSTESTER_EKS_ENABLE_NODE_SSH: fmt.Sprintf("%v", cfg.EnableNodeSSH),
-
-		AWSTESTER_EKS_AWSTESTER_IMAGE: fmt.Sprintf("%s", cfg.AWSTesterImage),
-
-		AWSTESTER_EKS_WORKER_NODE_INSTANCE_TYPE: fmt.Sprintf("%s", cfg.WorkerNodeInstanceType),
-		AWSTESTER_EKS_WORKER_NODE_ASG_MIN:       fmt.Sprintf("%d", cfg.WorkderNodeASGMin),
-		AWSTESTER_EKS_WORKER_NODE_ASG_MAX:       fmt.Sprintf("%d", cfg.WorkderNodeASGMax),
-
-		AWSTESTER_EKS_ENABLE_WORKER_NODE_HA: fmt.Sprintf("%v", cfg.EnableWorkerNodeHA),
-		AWSTESTER_EKS_ALB_ENABLE:            fmt.Sprintf("%v", cfg.ALBIngressController.Enable),
-
-		AWSTESTER_EKS_LOG_DEBUG:               fmt.Sprintf("%v", cfg.LogDebug),
-		AWSTESTER_EKS_LOG_ACCESS:              fmt.Sprintf("%v", cfg.LogAccess),
-		AWSTESTER_EKS_UPLOAD_AWS_TESTER_LOGS:  fmt.Sprintf("%v", cfg.UploadAWSTesterLogs),
-		AWSTESTER_EKS_ALB_UPLOAD_TESTER_LOGS:  fmt.Sprintf("%v", cfg.ALBIngressController.UploadTesterLogs),
-		AWSTESTER_EKS_UPLOAD_WORKER_NODE_LOGS: fmt.Sprintf("%v", cfg.UploadWorkerNodeLogs),
-
-		AWSTESTER_EKS_ALB_ALB_INGRESS_CONTROLLER_IMAGE: cfg.ALBIngressController.ALBIngressControllerImage,
-
-		AWSTESTER_EKS_ALB_TARGET_TYPE: cfg.ALBIngressController.TargetType,
-		AWSTESTER_EKS_ALB_TEST_MODE:   cfg.ALBIngressController.TestMode,
-
-		AWSTESTER_EKS_ALB_TEST_SCALABILITY:            fmt.Sprintf("%v", cfg.ALBIngressController.TestScalability),
-		AWSTESTER_EKS_ALB_TEST_METRICS:                fmt.Sprintf("%v", cfg.ALBIngressController.TestMetrics),
-		AWSTESTER_EKS_ALB_TEST_SERVER_REPLICAS:        fmt.Sprintf("%d", cfg.ALBIngressController.TestServerReplicas),
-		AWSTESTER_EKS_ALB_TEST_SERVER_ROUTES:          fmt.Sprintf("%d", cfg.ALBIngressController.TestServerRoutes),
-		AWSTESTER_EKS_ALB_TEST_CLIENTS:                fmt.Sprintf("%d", cfg.ALBIngressController.TestClients),
-		AWSTESTER_EKS_ALB_TEST_CLIENT_REQUESTS:        fmt.Sprintf("%d", cfg.ALBIngressController.TestClientRequests),
-		AWSTESTER_EKS_ALB_TEST_RESPONSE_SIZE:          fmt.Sprintf("%d", cfg.ALBIngressController.TestResponseSize),
-		AWSTESTER_EKS_ALB_TEST_CLIENT_ERROR_THRESHOLD: fmt.Sprintf("%d", cfg.ALBIngressController.TestClientErrorThreshold),
-		AWSTESTER_EKS_ALB_TEST_EXPECT_QPS:             fmt.Sprintf("%f", cfg.ALBIngressController.TestExpectQPS),
-	})
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create ALB Prow configuration %v\n", err)
-		os.Exit(1)
-	}
-	if err = ioutil.WriteFile(prowALBOutputPath, []byte(s), 0600); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to write ALB Prow configuration %v\n", err)
-		os.Exit(1)
-	}
 }
