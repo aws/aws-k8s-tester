@@ -29,7 +29,7 @@ if [[ -z "${REGISTRY}" ]]; then
   REGISTRY=$(awstester ecr --region=${_AWS_REGION} get-registry)
 fi
 
-TAG=`date +%Y%m%d`${GIT_COMMIT}
+TAG=`date +%Y%m%d`-${GIT_COMMIT}
 echo "Building:" ${REGISTRY}/awstester:${TAG}
 
 mkdir -p ./bin/

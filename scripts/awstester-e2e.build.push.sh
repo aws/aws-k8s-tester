@@ -26,7 +26,7 @@ if [[ -z "${REGISTRY}" ]]; then
   REGISTRY=$(awstester ecr --region=${_AWS_REGION} get-registry)
 fi
 
-TAG=`date +%Y%m%d`${GIT_COMMIT}
+TAG=`date +%Y%m%d`-${GIT_COMMIT}
 echo "Building:" ${REGISTRY}/awstester-e2e:${TAG}
 
 CGO_ENABLED=0 GOOS=linux GOARCH=$(go env GOARCH) \
