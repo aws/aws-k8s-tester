@@ -29,7 +29,8 @@ if [[ -z "${REGISTRY}" ]]; then
   REGISTRY=$(awstester ecr --region=${_AWS_REGION} get-registry)
 fi
 
-echo "Building:" ${REGISTRY}/awstester:${GIT_COMMIT}
+TAG=`date +%Y%m%d`${GIT_COMMIT}
+echo "Building:" ${REGISTRY}/awstester:${TAG}
 
 mkdir -p ./bin/
 
@@ -43,7 +44,7 @@ CGO_ENABLED=0 GOOS=linux GOARCH=$(go env GOARCH) \
   ./cmd/awstester
 
 docker build \
-  --tag ${REGISTRY}/awstester:${GIT_COMMIT} \
+  --tag ${REGISTRY}/awstester:${TAG} \
   --file ./Dockerfile .
 
-docker push ${REGISTRY}/awstester:${GIT_COMMIT}
+docker push ${REGISTRY}/awstester:${TAG}
