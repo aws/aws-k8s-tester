@@ -31,10 +31,10 @@ RUN curl -o /workspace/aws-bin/kubectl \
 
 # For ALB Ingress Controller scalability tests
 RUN git clone https://github.com/wg/wrk.git \
-  && pushd wrk \
+  && cd wrk \
   && make all \
   && cp ./wrk /workspace/aws-bin/wrk \
-  && popd \
+  && cd - \
   && rm -rf ./wrk
 
 # For "kubetest" EKS plugin
