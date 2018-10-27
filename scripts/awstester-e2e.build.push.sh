@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 set -e
 
-if ! [[ "$0" =~ scripts/kubekins-e2e.build.push.sh ]]; then
+<<COMMENT
+aws ecr create-repository --repository-name awstester-e2e
+aws ecr list-images --repository-name awstester-e2e
+COMMENT
+
+if ! [[ "$0" =~ scripts/awstester-e2e.build.push.sh ]]; then
   echo "must be run from repository root"
   exit 255
 fi
@@ -21,7 +26,8 @@ if [[ -z "${REGISTRY}" ]]; then
   REGISTRY=$(awstester ecr --region=${_AWS_REGION} get-registry)
 fi
 
-echo "Building:" ${REGISTRY}/kubekins-e2e:${GIT_COMMIT}
+TAG=`date +%Y%m%d`${GIT_COMMIT}
+echo "Building:" ${REGISTRY}/awstester-e2e:${TAG}
 
 CGO_ENABLED=0 GOOS=linux GOARCH=$(go env GOARCH) \
   go build -v \
@@ -33,7 +39,7 @@ CGO_ENABLED=0 GOOS=linux GOARCH=$(go env GOARCH) \
   ./cmd/awstester
 
 docker build \
-  --tag ${REGISTRY}/kubekins-e2e:${GIT_COMMIT} \
-  --file ./scripts/kubekins-e2e.Dockerfile .
+  --tag ${REGISTRY}/awstester-e2e:${TAG} \
+  --file ./scripts/awstester-e2e.Dockerfile .
 
-docker push ${REGISTRY}/kubekins-e2e:${GIT_COMMIT}
+docker push ${REGISTRY}/awstester-e2e:${TAG}
