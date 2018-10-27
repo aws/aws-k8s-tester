@@ -3,6 +3,26 @@
 <hr>
 
 
+## [0.0.8](https://github.com/aws/awstester/releases/tag/0.0.8) (2018-10-27)
+
+See [code changes](https://github.com/aws/awstester/compare/0.0.7...0.0.8).
+
+### `awstester` CLI
+
+- Remove [`awstester eks prow alb`](https://github.com/aws/awstester/commit/86e4db7e341681ece0e4b89b1f747024c157d2f3).
+
+### `internal`
+
+- Refactor [worker node log fetch operation in `internal/eks`](https://github.com/aws/awstester/commit/77d318a449e52b2f9550d2e3e7586181b117da36).
+
+### Go
+
+- Compile with [*Go 1.11.1*](https://golang.org/doc/devel/release.html#go1.11).
+
+
+<hr>
+
+
 ## [0.0.7](https://github.com/aws/awstester/releases/tag/0.0.7) (2018-10-26)
 
 See [code changes](https://github.com/aws/awstester/compare/0.0.6...0.0.7).
