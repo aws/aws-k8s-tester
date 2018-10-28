@@ -163,9 +163,8 @@ func (up *uploader) upload(localPath, s3Path string) error {
 			CreateBucketConfiguration: &s3.CreateBucketConfiguration{
 				LocationConstraint: aws.String(outputS3UploadRegion),
 			},
-			// TODO: enable this when open-sourced, to make all logs available to communities
 			// https://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html#canned-acl
-			// ACL: aws.String("public-read"),
+			// vs. "public-read"
 			ACL: aws.String("private"),
 		})
 		if err != nil {
@@ -224,9 +223,8 @@ func (up *uploader) upload(localPath, s3Path string) error {
 			Body:    bytes.NewReader(d),
 			Expires: aws.Time(time.Now().UTC().Add(24 * time.Hour)),
 
-			// TODO: enable this when open-sourced, to make all logs available to communities
 			// https://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html#canned-acl
-			// ACL: aws.String("public-read"),
+			// vs. "public-read"
 			ACL: aws.String("private"),
 
 			Metadata: map[string]*string{
