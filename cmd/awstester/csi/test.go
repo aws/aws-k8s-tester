@@ -101,12 +101,6 @@ func testIntegrationFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	deleteFunc := func() {
-		os.RemoveAll(cfg.KeyPath)
-		lg.Warn("removed private key", zap.String("path", cfg.KeyPath))
-		ec.Delete()
-	}
-
 	fmt.Println(ec.GenerateSSHCommands())
 
 	sh, serr := ssh.New(ssh.Config{
@@ -118,7 +112,7 @@ func testIntegrationFunc(cmd *cobra.Command, args []string) {
 	if serr != nil {
 		fmt.Fprintf(os.Stderr, "failed to create SSH (%v)\n", err)
 		if terminateOnExit {
-			deleteFunc()
+			ec.Delete()
 		} else {
 			fmt.Println(ec.GenerateSSHCommands())
 		}
@@ -129,7 +123,7 @@ func testIntegrationFunc(cmd *cobra.Command, args []string) {
 	if err = sh.Connect(); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to connect SSH (%v)\n", err)
 		if terminateOnExit {
-			deleteFunc()
+			ec.Delete()
 		} else {
 			fmt.Println(ec.GenerateSSHCommands())
 		}
@@ -146,7 +140,7 @@ ready:
 		case <-timer.C:
 			fmt.Fprintf(os.Stderr, "test timed out (%v)\n", timeout)
 			if terminateOnExit {
-				deleteFunc()
+				ec.Delete()
 			} else {
 				fmt.Println(ec.GenerateSSHCommands())
 			}
@@ -164,7 +158,7 @@ ready:
 				if serr := sh.Connect(); serr != nil {
 					fmt.Fprintf(os.Stderr, "failed to connect SSH (%v)\n", serr)
 					if terminateOnExit {
-						deleteFunc()
+						ec.Delete()
 					} else {
 						fmt.Println(ec.GenerateSSHCommands())
 					}
@@ -194,7 +188,7 @@ ready:
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to read /etc/environment (%v)\n", err)
 		if terminateOnExit {
-			deleteFunc()
+			ec.Delete()
 		} else {
 			fmt.Println(ec.GenerateSSHCommands())
 		}
@@ -221,7 +215,7 @@ ready:
 		// handle "Process exited with status 2" error
 		fmt.Fprintf(os.Stderr, "CSI integration test FAILED (%v, %v)\n", err, reflect.TypeOf(err))
 		if terminateOnExit {
-			deleteFunc()
+			ec.Delete()
 		} else {
 			fmt.Println(ec.GenerateSSHCommands())
 		}
@@ -240,7 +234,7 @@ ready:
 	if !strings.Contains(testOutput, "1 Passed") {
 		fmt.Fprintln(os.Stderr, "CSI integration test FAILED")
 		if terminateOnExit {
-			deleteFunc()
+			ec.Delete()
 		} else {
 			fmt.Println(ec.GenerateSSHCommands())
 		}
@@ -264,6 +258,6 @@ ready:
 	}
 
 	if terminateOnExit {
-		deleteFunc()
+		ec.Delete()
 	}
 }
