@@ -13,6 +13,7 @@ See [code changes](https://github.com/aws/awstester/compare/0.0.7...0.0.8).
 
 ### `eksconfig`
 
+- Set [defaults for `eksconfig.Config.Tag` and `eksconfig.Config.ClusterName`](https://github.com/aws/awstester/commit/f10113e0d1b22998c2bebb65d8e84bc1d96b2ab3).
 - Rename to [`eksconfig.Config.EnableWorkerNodeSSH`](https://github.com/aws/awstester/commit/650e7caf867d62454d2219d1a1f104b51962e7c8).
 - Rename to [`eksconfig.Config.UploadTesterLogs`](https://github.com/aws/awstester/commit/650e7caf867d62454d2219d1a1f104b51962e7c8).
 - Rename to [`ALBIngressController.UploadTesterLogs`](https://github.com/aws/awstester/commit/650e7caf867d62454d2219d1a1f104b51962e7c8).
@@ -21,6 +22,7 @@ See [code changes](https://github.com/aws/awstester/compare/0.0.7...0.0.8).
 ### `internal`
 
 - Refactor [worker node log fetch operation in `internal/eks`](https://github.com/aws/awstester/commit/77d318a449e52b2f9550d2e3e7586181b117da36).
+- Fix [S3 create bucket retries](https://github.com/aws/awstester/commit/b5d7d7ef513d22b895222fb82a3d8d46fcf5bd5e).
 
 ### Go
 
