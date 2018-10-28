@@ -10,6 +10,7 @@ See [code changes](https://github.com/aws/awstester/compare/0.0.7...0.0.8).
 ### `awstester` CLI
 
 - Remove [`awstester eks prow alb`](https://github.com/aws/awstester/commit/86e4db7e341681ece0e4b89b1f747024c157d2f3).
+- Add [`awstester csi test integration --journalctl-logs` flag](https://github.com/aws/awstester/commit/0d02bb1fa430fae37b15fe4600ebf421d55748b8).
 
 ### `eksconfig`
 
