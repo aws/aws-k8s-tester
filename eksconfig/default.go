@@ -19,8 +19,8 @@ var (
 )
 
 func init() {
-	testerTag = genTag()
-	testerClusterName = genClusterName(testerTag)
+	defaultConfig.Tag = genTag()
+	defaultConfig.ClusterName = genClusterName(defaultConfig.Tag)
 }
 
 // defaultConfig is the default configuration.
@@ -38,9 +38,6 @@ var defaultConfig = Config{
 
 	EnableWorkerNodeHA:  true,
 	EnableWorkerNodeSSH: true,
-
-	Tag:         testerTag,
-	ClusterName: testerClusterName,
 
 	AWSAccountID: "",
 	// to be overwritten by AWS_SHARED_CREDENTIALS_FILE
