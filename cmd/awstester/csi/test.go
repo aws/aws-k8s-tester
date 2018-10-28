@@ -22,10 +22,13 @@ func newTest() *cobra.Command {
 		Use:   "test",
 		Short: "Run CSI tests",
 	}
+
 	cmd.PersistentFlags().BoolVar(&terminateOnExit, "terminate-on-exit", true, "true to terminate EC2 instance on test exit")
 	cmd.PersistentFlags().StringVar(&branchOrPR, "csi", "master", "CSI branch name or PR number to check out")
 	cmd.PersistentFlags().DurationVar(&timeout, "timeout", 20*time.Minute, "e2e test timeout")
 	cmd.PersistentFlags().StringVar(&vpcID, "vpc-id", "vpc-0c59620d91b2e1f92", "existing VPC ID to use (provided default VPC ID belongs to awstester test account, leave empty to create a new one)")
+	cmd.PersistentFlags().BoolVar(&journalctlLogs, "journalctl-logs", true, "true to get journalctl logs from EC2 instance")
+
 	cmd.AddCommand(
 		newTestIntegration(),
 	)
@@ -36,16 +39,10 @@ var terminateOnExit bool
 var branchOrPR string
 var timeout time.Duration
 var vpcID string
+var journalctlLogs bool
 
 /*
 go install -v ./cmd/awstester
-
-AWS_SHARED_CREDENTIALS_FILE=~/.aws/credentials \
-  awstester csi test integration \
-  --terminate-on-exit=false \
-  --csi=master \
-  --timeout=20m \
-  --vpc-id=""
 
 AWS_SHARED_CREDENTIALS_FILE=~/.aws/credentials \
   awstester csi test integration \
@@ -242,6 +239,22 @@ ready:
 			fmt.Println(ec.GenerateSSHCommands())
 		}
 		os.Exit(1)
+	}
+
+	if journalctlLogs {
+		// full journal logs (e.g. disk mounts)
+		lg.Info("fetching journal logs")
+		journalCmd := "sudo journalctl --output=short-precise"
+		out, err = sh.Run(journalCmd)
+		if err != nil {
+			lg.Warn(
+				"failed to run journalctl",
+				zap.String("cmd", journalCmd),
+				zap.Error(err),
+			)
+		} else {
+			fmt.Printf("journalctl logs:\n\n%s\n\n", string(out))
+		}
 	}
 
 	if terminateOnExit {
