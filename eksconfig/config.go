@@ -4,8 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"os"
 	"path/filepath"
+	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -749,4 +752,184 @@ func (cfg *Config) SetClusterUpTook(d time.Duration) {
 func (cfg *Config) SetIngressUpTook(d time.Duration) {
 	cfg.ALBIngressController.ingressUpTook = d
 	cfg.ALBIngressController.IngressUpTook = d.String()
+}
+
+// genTag generates a tag for cluster name, CloudFormation, and S3 bucket.
+// Note that this would be used as S3 bucket name to upload tester logs.
+func genTag() string {
+	// use UTC time for everything
+	now := time.Now().UTC()
+	return fmt.Sprintf("awstester-eks-%d%02d%02d", now.Year(), now.Month(), now.Day())
+}
+
+func genClusterName(tag string) string {
+	h, _ := os.Hostname()
+	h = strings.TrimSpace(reg.ReplaceAllString(h, ""))
+	if len(h) > 12 {
+		h = h[:12]
+	}
+	name := tag
+	if len(name) > 0 {
+		name += "-"
+	}
+	return fmt.Sprintf("%s%s-%s", name, h, randString(7))
+}
+
+// supportedKubernetesVersions is a list of EKS supported Kubernets versions.
+var supportedKubernetesVersions = map[string]struct{}{
+	"1.10": {},
+}
+
+func checkKubernetesVersion(s string) (ok bool) {
+	_, ok = supportedKubernetesVersions[s]
+	return ok
+}
+
+var (
+	// supportedRegions is a list of currently EKS supported AWS regions.
+	// See https://aws.amazon.com/about-aws/global-infrastructure/regional-product-services.
+	supportedRegions = map[string]struct{}{
+		"us-west-2": {},
+		"us-east-1": {},
+		"eu-west-1": {},
+	}
+)
+
+func checkRegion(s string) (ok bool) {
+	_, ok = supportedRegions[s]
+	return ok
+}
+
+// https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html
+// https://docs.aws.amazon.com/eks/latest/userguide/eks-optimized-ami.html
+var regionToAMICPU = map[string]string{
+	"us-west-2": "ami-0a54c984b9f908c81",
+	"us-east-1": "ami-0440e4f6b9713faf6",
+	"eu-west-1": "ami-0c7a4976cb6fafd3a",
+}
+
+// https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html
+// https://docs.aws.amazon.com/eks/latest/userguide/eks-optimized-ami.html
+var regionToAMIGPU = map[string]string{
+	"us-west-2": "ami-0731694d53ef9604b",
+	"us-east-1": "ami-058bfb8c236caae89",
+	"eu-west-1": "ami-0706dc8a5eed2eed9",
+}
+
+func checkAMI(region, imageID string) (ok bool) {
+	var id string
+	id, ok = regionToAMICPU[region]
+	if !ok {
+		id, ok = regionToAMIGPU[region]
+		if !ok {
+			return false
+		}
+	}
+	return id == imageID
+}
+
+func checkEC2InstanceType(s string) (ok bool) {
+	_, ok = ec2.InstanceTypes[s]
+	return ok
+}
+
+func checkMaxPods(s string, nodesN, serverReplicas int) (ok bool) {
+	var v *ec2.InstanceType
+	v, ok = ec2.InstanceTypes[s]
+	if !ok {
+		return false
+	}
+	maxPods := v.MaxPods * int64(nodesN)
+	if int64(serverReplicas) > maxPods {
+		return false
+	}
+	return true
+}
+
+const (
+	defaultASGMin = 2
+	defaultASGMax = 2
+)
+
+func checkWorkderNodeASG(min, max int) (ok bool) {
+	if min == 0 || max == 0 {
+		return false
+	}
+	if min > max {
+		return false
+	}
+	return true
+}
+
+const (
+	serviceRolePolicyARNService = "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
+	serviceRolePolicyARNCluster = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
+)
+
+func genServiceRoleWithPolicy(clusterName string) string {
+	return fmt.Sprintf("%s-SERVICE-ROLE", clusterName)
+}
+
+func genCFStackVPC(clusterName string) string {
+	return fmt.Sprintf("%s-VPC-STACK", clusterName)
+}
+
+func genNodeGroupKeyPairName(clusterName string) string {
+	return fmt.Sprintf("%s-KEY-PAIR", clusterName)
+}
+
+func genCFStackWorkerNodeGroup(clusterName string) string {
+	return fmt.Sprintf("%s-NODE-GROUP-STACK", clusterName)
+}
+
+var (
+	// supportedEKSEps maps each test environments to EKS endpoint.
+	supportedEKSEps = map[string]struct{}{
+		// TODO: support EKS testing endpoint
+		// https://docs.aws.amazon.com/sdk-for-go/v1/developer-guide/configuring-sdk.html#custom-endpoint
+		// "https://test.us-west-2.amazonaws.com" : struct{}{},
+	}
+
+	allEKSEps = []string{}
+)
+
+func init() {
+	allEKSEps = make([]string, 0, len(supportedEKSEps))
+	for k := range supportedEKSEps {
+		allEKSEps = append(allEKSEps, k)
+	}
+	sort.Strings(allEKSEps)
+}
+
+func checkEKSEp(s string) (ok bool) {
+	if s == "" { // prod
+		return true
+	}
+	_, ok = supportedEKSEps[s]
+	return ok
+}
+
+// defaultWorkderNodeVolumeSizeGB is the default EKS worker node volume size in gigabytes.
+// https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html
+const defaultWorkderNodeVolumeSizeGB = 20
+
+var reg *regexp.Regexp
+
+func init() {
+	var err error
+	reg, err = regexp.Compile("[^a-zA-Z]+")
+	if err != nil {
+		panic(err)
+	}
+}
+
+const ll = "0123456789abcdefghijklmnopqrstuvwxyz"
+
+func randString(n int) string {
+	b := make([]byte, n)
+	for i := range b {
+		rand.Seed(time.Now().UTC().UnixNano())
+		b[i] = ll[rand.Intn(len(ll))]
+	}
+	return string(b)
 }
