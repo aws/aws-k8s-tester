@@ -46,7 +46,7 @@ func (md *embedded) createCluster() error {
 	md.cfg.Sync()
 
 	if md.cfg.UploadTesterLogs {
-		if err = md.uploadAWSTesterLogs(); err != nil {
+		if err = md.uploadTesterLogs(); err != nil {
 			md.lg.Warn("failed to upload", zap.Error(err))
 		}
 	}
@@ -106,7 +106,7 @@ func (md *embedded) createCluster() error {
 		)
 
 		if md.cfg.UploadTesterLogs {
-			if err = md.uploadAWSTesterLogs(); err != nil {
+			if err = md.uploadTesterLogs(); err != nil {
 				md.lg.Warn("failed to upload", zap.Error(err))
 			}
 		}
@@ -218,7 +218,7 @@ func (md *embedded) deleteCluster(deleteKubeconfig bool) error {
 			)
 
 			if md.cfg.UploadTesterLogs {
-				if err = md.uploadAWSTesterLogs(); err != nil {
+				if err = md.uploadTesterLogs(); err != nil {
 					md.lg.Warn("failed to upload", zap.Error(err))
 				}
 			}

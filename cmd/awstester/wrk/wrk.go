@@ -191,23 +191,23 @@ func (up *uploader) upload(localPath, s3Path string) error {
 			if !retry && !exist {
 				return err
 			}
-			if err == nil {
-				break
-			}
-			time.Sleep(5 * time.Second)
-			continue
-		} else {
-			h, _ := os.Hostname()
-			tags := []*s3.Tag{{Key: aws.String("HOSTNAME"), Value: aws.String(h)}}
-			_, err = up.s3.PutBucketTagging(&s3.PutBucketTaggingInput{
-				Bucket:  aws.String(bucket),
-				Tagging: &s3.Tagging{TagSet: tags},
-			})
 			if err != nil {
-				return err
+				up.lg.Warn("retrying S3 bucket creation", zap.Error(err))
+				time.Sleep(5 * time.Second)
+				continue
 			}
-			break
 		}
+		h, _ := os.Hostname()
+		tags := []*s3.Tag{{Key: aws.String("HOSTNAME"), Value: aws.String(h)}}
+		_, err = up.s3.PutBucketTagging(&s3.PutBucketTaggingInput{
+			Bucket:  aws.String(bucket),
+			Tagging: &s3.Tagging{TagSet: tags},
+		})
+		if err != nil {
+			return err
+		}
+		up.lg.Info("updated bucket policy", zap.Error(err))
+		break
 	}
 	up.lg.Info("created bucket", zap.String("bucket", bucket))
 

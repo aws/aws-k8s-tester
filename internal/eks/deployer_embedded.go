@@ -315,13 +315,19 @@ func (md *embedded) Up() (err error) {
 	}
 
 	if md.cfg.AWSCredentialToMountPath != "" {
-		if err = md.mountAWSCredential(); err != nil {
+		if err = md.createAWSCredentialSecret(); err != nil {
 			return err
 		}
 	}
 
 	md.cfg.Sync()
 	md.cfg.SetClusterUpTook(time.Now().UTC().Sub(now))
+
+	if md.cfg.UploadWorkerNodeLogs {
+		if err = md.uploadWorkerNodeLogs(); err != nil {
+			md.lg.Warn("failed to upload worker node logs", zap.Error(err))
+		}
+	}
 
 	if md.cfg.ALBIngressController.Enable {
 		albStart := time.Now().UTC()
@@ -359,13 +365,8 @@ func (md *embedded) Up() (err error) {
 	}
 
 	if md.cfg.UploadTesterLogs {
-		if err = md.uploadAWSTesterLogs(); err != nil {
+		if err = md.uploadTesterLogs(); err != nil {
 			md.lg.Warn("failed to upload", zap.Error(err))
-		}
-	}
-	if md.cfg.UploadWorkerNodeLogs {
-		if err = md.uploadWorkerNodeLogs(); err != nil {
-			md.lg.Warn("failed to upload worker node logs", zap.Error(err))
 		}
 	}
 	if md.cfg.ALBIngressController.Enable && md.cfg.ALBIngressController.UploadTesterLogs {
@@ -473,7 +474,7 @@ func (md *embedded) Down() (err error) {
 		return err
 	}
 	if md.cfg.UploadTesterLogs {
-		if err = md.uploadAWSTesterLogs(); err != nil {
+		if err = md.uploadTesterLogs(); err != nil {
 			md.lg.Warn("failed to upload", zap.Error(err))
 		}
 	}
@@ -681,7 +682,7 @@ func (md *embedded) TestALBMetrics() error {
 }
 
 // SECURITY NOTE: MAKE SURE PRIVATE KEY NEVER GETS UPLOADED TO CLOUD STORAGE AND DLETE AFTER USE!!!
-func (md *embedded) uploadAWSTesterLogs() (err error) {
+func (md *embedded) uploadTesterLogs() (err error) {
 	err = md.s3Plugin.UploadToBucketForTests(
 		md.cfg.ConfigPath,
 		md.cfg.ConfigPathBucket,

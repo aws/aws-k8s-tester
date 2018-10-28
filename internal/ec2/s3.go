@@ -54,26 +54,26 @@ func (md *embedded) toS3(localPath, s3Path string) error {
 				if !retry && !exist {
 					return err
 				}
-				if err == nil {
-					break
-				}
-				time.Sleep(5 * time.Second)
-				continue
-			} else {
-				h, _ := os.Hostname()
-				tags := []*s3.Tag{{Key: aws.String("HOSTNAME"), Value: aws.String(h)}}
-				if md.cfg.Tag != "" && md.cfg.ID != "" {
-					tags = append(tags, &s3.Tag{Key: aws.String(md.cfg.Tag), Value: aws.String(md.cfg.ID)})
-				}
-				_, err := md.s3.PutBucketTagging(&s3.PutBucketTaggingInput{
-					Bucket:  aws.String(bucket),
-					Tagging: &s3.Tagging{TagSet: tags},
-				})
 				if err != nil {
-					return err
+					md.lg.Warn("retrying S3 bucket creation", zap.Error(err))
+					time.Sleep(5 * time.Second)
+					continue
 				}
-				break
 			}
+			h, _ := os.Hostname()
+			tags := []*s3.Tag{{Key: aws.String("HOSTNAME"), Value: aws.String(h)}}
+			if md.cfg.Tag != "" && md.cfg.ID != "" {
+				tags = append(tags, &s3.Tag{Key: aws.String(md.cfg.Tag), Value: aws.String(md.cfg.ID)})
+			}
+			_, err = md.s3.PutBucketTagging(&s3.PutBucketTaggingInput{
+				Bucket:  aws.String(bucket),
+				Tagging: &s3.Tagging{TagSet: tags},
+			})
+			if err != nil {
+				return err
+			}
+			md.lg.Info("updated bucket policy", zap.Error(err))
+			break
 		}
 		md.s3Buckets[bucket] = struct{}{}
 		md.lg.Info("created bucket", zap.String("bucket", bucket))

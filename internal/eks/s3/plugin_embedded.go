@@ -85,11 +85,11 @@ func (md *embedded) CreateBucketForAccessLogs() error {
 			if !retry && !exist {
 				return err
 			}
-			if err == nil {
-				break
+			if err != nil {
+				md.lg.Warn("retrying S3 bucket creation", zap.Error(err))
+				time.Sleep(5 * time.Second)
+				continue
 			}
-			time.Sleep(5 * time.Second)
-			continue
 		}
 
 		h, _ := os.Hostname()
@@ -175,11 +175,11 @@ func (md *embedded) UploadToBucketForTests(localPath, s3Path string) error {
 				if !retry && !exist {
 					return err
 				}
-				if err == nil {
-					break
+				if err != nil {
+					md.lg.Warn("retrying S3 bucket creation", zap.Error(err))
+					time.Sleep(5 * time.Second)
+					continue
 				}
-				time.Sleep(5 * time.Second)
-				continue
 			}
 
 			h, _ := os.Hostname()

@@ -1,5 +1,5 @@
 package eks
 
-func (ac *awsCli) mountAWSCredential() error {
+func (ac *awsCli) createAWSCredentialSecret() error {
 	panic("TODO")
 }

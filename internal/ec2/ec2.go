@@ -198,7 +198,7 @@ func (md *embedded) Create() (err error) {
 		return err
 	}
 	if md.cfg.UploadTesterLogs {
-		if err = md.uploadAWSTesterLogs(); err != nil {
+		if err = md.uploadTesterLogs(); err != nil {
 			md.lg.Warn("failed to upload", zap.Error(err))
 		}
 	}
@@ -252,7 +252,7 @@ func (md *embedded) Delete() (err error) {
 		return err
 	}
 	if md.cfg.UploadTesterLogs {
-		if err = md.uploadAWSTesterLogs(); err != nil {
+		if err = md.uploadTesterLogs(); err != nil {
 			md.lg.Warn("failed to upload", zap.Error(err))
 		}
 	}
@@ -260,7 +260,7 @@ func (md *embedded) Delete() (err error) {
 	return nil
 }
 
-func (md *embedded) uploadAWSTesterLogs() (err error) {
+func (md *embedded) uploadTesterLogs() (err error) {
 	if err = md.toS3(
 		md.cfg.ConfigPath,
 		md.cfg.ConfigPathBucket,

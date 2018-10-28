@@ -12,7 +12,7 @@ import (
 )
 
 // TODO: use "k8s.io/client-go" with "aws-iam-authenticator"
-func (md *embedded) mountAWSCredential() error {
+func (md *embedded) createAWSCredentialSecret() error {
 	if md.cfg.AWSCredentialToMountPath == "" {
 		md.lg.Info("no AWS credentials to mount")
 		return nil
