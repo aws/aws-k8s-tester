@@ -156,6 +156,7 @@ func (md *embedded) getSubnets() (err error) {
 	}
 
 	md.cfg.SubnetIDs = make([]string, 0, len(output.Subnets))
+	md.cfg.SubnetIDToAvailibilityZone = make(map[string]string)
 	for _, sv := range output.Subnets {
 		md.cfg.SubnetIDs = append(md.cfg.SubnetIDs, *sv.SubnetId)
 		md.cfg.SubnetIDToAvailibilityZone[*sv.SubnetId] = *sv.AvailabilityZone
