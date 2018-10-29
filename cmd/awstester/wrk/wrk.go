@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/rand"
-	"net/http"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -15,6 +14,7 @@ import (
 	"time"
 
 	"github.com/aws/awstester/pkg/awsapi"
+	"github.com/aws/awstester/pkg/awsapi/ec2/metadata"
 	"github.com/aws/awstester/pkg/wrk"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -137,7 +137,12 @@ func runFunc(cmd *cobra.Command, args []string) {
 		s3:     s3.New(ss),
 	}
 
-	s3Path := getName()
+	var s3Path string
+	s3Path, err = metadata.InstanceID(lg)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to get metadata (%v)\n", err)
+		os.Exit(1)
+	}
 	if outputCSV {
 		s3Path += ".csv"
 	}
@@ -272,44 +277,6 @@ func (up *uploader) upload(localPath, s3Path string) error {
 func getBucket(accountID string) string {
 	now := time.Now().UTC()
 	return fmt.Sprintf("%s-awstester-wrk-%d%02d%02d", accountID, now.Year(), now.Month(), now.Day())
-}
-
-func getName() (name string) {
-	resp, err := http.Get("http://169.254.169.254/latest/meta-data/public-ipv4")
-	if err != nil {
-		resp, err = http.Get("http://169.254.169.254/latest/meta-data/local-ipv4")
-		if err != nil {
-			name = randString(15)
-			return name
-		}
-	}
-
-	d, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		resp.Body.Close()
-		name = randString(15)
-		return name
-	}
-
-	if len(d) == 0 {
-		resp, err = http.Get("http://169.254.169.254/latest/meta-data/local-ipv4")
-		if err != nil {
-			name = randString(15)
-			return name
-		}
-
-		d, err = ioutil.ReadAll(resp.Body)
-		if err != nil {
-			resp.Body.Close()
-			name = randString(15)
-			return name
-		}
-	}
-
-	resp.Body.Close()
-
-	name = strings.TrimSpace(reg.ReplaceAllString(string(d), ""))
-	return name
 }
 
 var reg *regexp.Regexp
