@@ -10,7 +10,7 @@ See [code changes](https://github.com/aws/awstester/compare/0.0.8...0.0.9).
 
 ### `eksconfig`
 
-- Move [`eksconfig.Config.VPCID`, `eksconfig.Config.SubnetIDs`, and `eksconfig.Config.SecurityGroupID`](https://github.com/aws/awstester/commit/fac53f08a76ee0d664006fe92bd8823ea7d21789) field.
+- Move [`eksconfig.Config.VPCID`, `eksconfig.Config.SubnetIDs`, and `eksconfig.Config.SecurityGroupID`](https://github.com/aws/awstester/commit/fac53f08a76ee0d664006fe92bd8823ea7d21789) fields.
 - Add [`eksconfig.Config.TestMode` to replace `KubetestEmbeddedBinary`](https://github.com/aws/awstester/commit/3227894a3ff68c63ccf417f8e1aa14e08bfb5665) field.
 
 ### Go
