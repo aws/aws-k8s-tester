@@ -36,9 +36,6 @@ func TestAWSTesterEKS(t *testing.T) {
 
 var tester eksdeployer.Tester
 
-// to use embedded eks
-// tester, err = eks.NewTester(cfg)
-
 var _ = BeforeSuite(func() {
 	var err error
 	tester, err = eks.NewTester(*timeout, *verbose)
