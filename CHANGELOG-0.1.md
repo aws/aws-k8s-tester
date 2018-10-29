@@ -3,6 +3,22 @@
 <hr>
 
 
+## [0.1.1](https://github.com/aws/awstester/releases/tag/0.1.1) (2018-10-29)
+
+See [code changes](https://github.com/aws/awstester/compare/0.1.0...0.1.1).
+
+### `internal`
+
+- Add [`internal/ec2/config.Config.InitScriptCreated`](https://github.com/aws/awstester/commit/793935db2418a7c960d89512372f534996adcb19) flag.
+
+### Go
+
+- Compile with [*Go 1.11.1*](https://golang.org/doc/devel/release.html#go1.11).
+
+
+<hr>
+
+
 ## [0.1.0](https://github.com/aws/awstester/releases/tag/0.1.0) (2018-10-29)
 
 See [code changes](https://github.com/aws/awstester/compare/0.0.9...0.1.0).
