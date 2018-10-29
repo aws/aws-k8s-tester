@@ -7,6 +7,10 @@
 
 See [code changes](https://github.com/aws/awstester/compare/0.1.0...0.1.1).
 
+### `awstester` CLI
+
+- Use EC2 metadata to name [`awstester wrk` output](https://github.com/aws/awstester/commit/03ec0af6e12d4ca85e539905b7ec3da2729c1f3f).
+
 ### `internal`
 
 - Add [`internal/ec2/config.Config.InitScriptCreated`](https://github.com/aws/awstester/commit/793935db2418a7c960d89512372f534996adcb19) flag.
