@@ -26,10 +26,21 @@ func newProw() *cobra.Command {
 		Short: "Prow commands",
 	}
 	ac.AddCommand(
+		newProwStatus(),
+	)
+	return ac
+}
+
+func newProwStatus() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "status",
+		Short: "Serve Kubernetes upstream test status",
+	}
+	cmd.AddCommand(
 		newProwStatusServe(),
 		newProwStatusGet(),
 	)
-	return ac
+	return cmd
 }
 
 /*
@@ -37,7 +48,7 @@ http://localhost:32010/eks-test-status-upstream
 */
 func newProwStatusServe() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "status-serve",
+		Use:   "serve",
 		Short: "Serve Kubernetes upstream test status",
 		Run:   prowStatusServeFunc,
 	}
@@ -86,7 +97,7 @@ func prowStatusServeFunc(cmd *cobra.Command, args []string) {
 
 func newProwStatusGet() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "status-get",
+		Use:   "get",
 		Short: "Output Kubernetes upstream test status",
 		Run:   prowStatusGetFunc,
 	}
