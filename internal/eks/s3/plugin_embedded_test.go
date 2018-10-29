@@ -13,10 +13,10 @@ import (
 )
 
 /*
-RUN_AWS_UNIT_TESTS=1 go test -v -run TestEmbedded
+RUN_AWS_TESTS=1 go test -v -run TestEmbedded
 */
 func TestEmbedded(t *testing.T) {
-	if os.Getenv("RUN_AWS_UNIT_TESTS") != "1" {
+	if os.Getenv("RUN_AWS_TESTS") != "1" {
 		t.Skip()
 	}
 

@@ -15,11 +15,11 @@ import (
 )
 
 /*
-RUN_AWS_UNIT_TESTS=1 AWS_SHARED_CREDENTIALS_FILE=~/.aws/credentials go test -v -timeout 2h -run TestEC2SSH
+RUN_AWS_TESTS=1 AWS_SHARED_CREDENTIALS_FILE=~/.aws/credentials go test -v -timeout 2h -run TestEC2SSH
 tail -f /var/log/cloud-init-output.log
 */
 func TestEC2SSH(t *testing.T) {
-	if os.Getenv("RUN_AWS_UNIT_TESTS") != "1" {
+	if os.Getenv("RUN_AWS_TESTS") != "1" {
 		t.Skip()
 	}
 
