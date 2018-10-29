@@ -72,6 +72,8 @@ awstester eks delete cluster --path ./awstester-eks.yaml
 To test locally:
 
 ```bash
+# set "AWSTESTER_EKS_TAG" to avoid S3 bucket conflicts
+# or just disable log uploads with "AWSTESTER_EKS_UPLOAD_TESTER_LOGS=false"
 cd ${GOPATH}/src/github.com/aws/awstester
 AWSTESTER_EKS_KUBETEST_EMBEDDED_BINARY=true \
   AWSTESTER_EKS_KUBERNETES_VERSION=1.10 \
