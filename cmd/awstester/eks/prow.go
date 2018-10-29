@@ -8,11 +8,13 @@ import (
 	"net/http/httptest"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
 
 	"github.com/aws/awstester/internal/prow/status"
+	"github.com/aws/awstester/pkg/fileutil"
 
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -83,12 +85,21 @@ func prowStatusServeFunc(cmd *cobra.Command, args []string) {
 }
 
 func newProwStatusGet() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "status-get",
 		Short: "Output Kubernetes upstream test status",
 		Run:   prowStatusGetFunc,
 	}
+	wd, err := os.Getwd()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to get working directory %v\n", err)
+		os.Exit(1)
+	}
+	cmd.PersistentFlags().StringVar(&prowStatusGetDataDir, "data-dir", filepath.Join(wd, "data"), "target directory to output test status")
+	return cmd
 }
+
+var prowStatusGetDataDir string
 
 /*
 go install -v ./cmd/awstester
@@ -99,6 +110,12 @@ awstester \
   status-get
 */
 func prowStatusGetFunc(cmd *cobra.Command, args []string) {
+	if !fileutil.Exist(prowStatusGetDataDir) {
+		if err := os.MkdirAll(prowStatusGetDataDir, 0600); err != nil {
+			fmt.Fprintf(os.Stderr, "failed to mkdir %v\n", err)
+			os.Exit(1)
+		}
+	}
 	now := time.Now().UTC()
 	p := fmt.Sprintf("prow-status-%d%02d%02d", now.Year(), now.Month(), now.Day())
 
