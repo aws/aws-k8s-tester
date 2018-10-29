@@ -3,7 +3,9 @@ package eks
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"os/signal"
 	"strings"
@@ -22,47 +24,47 @@ func newProw() *cobra.Command {
 		Short: "Prow commands",
 	}
 	ac.AddCommand(
-		newProwStatus(),
+		newProwStatusServe(),
+		newProwStatusGet(),
 	)
 	return ac
 }
 
 /*
 http://localhost:32010/eks-test-status-upstream
-http://localhost:32010/eks-test-status-upstream-refresh
 */
-func newProwStatus() *cobra.Command {
+func newProwStatusServe() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "status",
-		Short: "Check Kubernetes upstream test status",
-		Run:   prowStatusFunc,
+		Use:   "status-serve",
+		Short: "Serve Kubernetes upstream test status",
+		Run:   prowStatusServeFunc,
 	}
-	cmd.PersistentFlags().StringVar(&prowStatusPort, "port", ":32010", "port to serve /eks-test-status-upstream")
+	cmd.PersistentFlags().StringVar(&prowStatusServePort, "port", ":32010", "port to serve /eks-test-status-upstream")
 	return cmd
 }
 
-var prowStatusPort string
+var prowStatusServePort string
 
-func prowStatusFunc(cmd *cobra.Command, args []string) {
+func prowStatusServeFunc(cmd *cobra.Command, args []string) {
 	lg, err := zap.NewProduction()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create logger (%v)\n", err)
 		os.Exit(1)
 	}
 
-	if !strings.HasPrefix(prowStatusPort, ":") {
-		fmt.Fprintf(os.Stderr, "invalid prow status port %q\n", prowStatusPort)
+	if !strings.HasPrefix(prowStatusServePort, ":") {
+		fmt.Fprintf(os.Stderr, "invalid prow status port %q\n", prowStatusServePort)
 		os.Exit(1)
 	}
 
-	lg.Info("starting server", zap.String("port", prowStatusPort))
+	lg.Info("starting server", zap.String("port", prowStatusServePort))
 
 	notifier := make(chan os.Signal, 1)
 	signal.Notify(notifier, syscall.SIGINT, syscall.SIGTERM)
 
 	rootCtx, rootCancel := context.WithCancel(context.Background())
 	srv := &http.Server{
-		Addr:    prowStatusPort,
+		Addr:    prowStatusServePort,
 		Handler: status.NewMux(rootCtx, lg),
 	}
 	errc := make(chan error)
@@ -78,4 +80,64 @@ func prowStatusFunc(cmd *cobra.Command, args []string) {
 	lg.Info("shut down server", zap.Error(<-errc))
 
 	signal.Stop(notifier)
+}
+
+func newProwStatusGet() *cobra.Command {
+	return &cobra.Command{
+		Use:   "status-get",
+		Short: "Output Kubernetes upstream test status",
+		Run:   prowStatusGetFunc,
+	}
+}
+
+/*
+go install -v ./cmd/awstester
+
+awstester \
+  eks \
+  prow \
+  status-get
+*/
+func prowStatusGetFunc(cmd *cobra.Command, args []string) {
+	now := time.Now().UTC()
+	p := fmt.Sprintf("prow-status-%d%02d%02d", now.Year(), now.Month(), now.Day())
+
+	mux := status.NewMux(context.Background(), zap.NewExample())
+	ts := httptest.NewServer(mux)
+	defer ts.Close()
+
+	resp, err := http.Get(ts.URL + status.Path)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to get %q (%v)\n", status.Path, err)
+		os.Exit(1)
+	}
+	var d []byte
+	d, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to read %q (%v)\n", status.Path, err)
+		os.Exit(1)
+	}
+	resp.Body.Close()
+	if err = ioutil.WriteFile(p+".html", d, 0600); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to write %q (%v)\n", p+".html", err)
+		os.Exit(1)
+	}
+
+	resp, err = http.Get(ts.URL + status.PathSummary)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to get %q (%v)\n", status.PathSummary, err)
+		os.Exit(1)
+	}
+	d, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to read %q (%v)\n", status.PathSummary, err)
+		os.Exit(1)
+	}
+	resp.Body.Close()
+	if err = ioutil.WriteFile(p+".txt", d, 0600); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to write %q (%v)\n", p+".txt", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("saved to %q and %q\n", p+".html", p+".txt")
 }

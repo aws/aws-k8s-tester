@@ -13,10 +13,12 @@ import (
 const (
 	// Path to server upstream test status frontend.
 	Path = "/prow-status"
-	// PathReadiness to serve readiness.
-	PathReadiness = "/prow-status-readiness"
-	// PathLiveness to serve liveness.
-	PathLiveness = "/prow-status-liveness"
+	// PathSummary serves prow status summary in plain text.
+	PathSummary = "/prow-status-summary"
+	// pathReadiness to serve readiness.
+	pathReadiness = "/prow-status-readiness"
+	// pathLiveness to serve liveness.
+	pathLiveness = "/prow-status-liveness"
 )
 
 type key int
@@ -38,12 +40,17 @@ func NewMux(ctx context.Context, lg *zap.Logger) *http.ServeMux {
 		Ctx:     ctx,
 		Handler: ctxhandler.ContextHandlerFunc(handlerPath),
 	})
-	mux.Handle(PathReadiness, &ctxhandler.ContextAdapter{
+	mux.Handle(PathSummary, &ctxhandler.ContextAdapter{
+		Logger:  lg,
+		Ctx:     ctx,
+		Handler: ctxhandler.ContextHandlerFunc(handlerPathSummary),
+	})
+	mux.Handle(pathReadiness, &ctxhandler.ContextAdapter{
 		Logger:  lg,
 		Ctx:     ctx,
 		Handler: ctxhandler.ContextHandlerFunc(handlerPathReadiness),
 	})
-	mux.Handle(PathLiveness, &ctxhandler.ContextAdapter{
+	mux.Handle(pathLiveness, &ctxhandler.ContextAdapter{
 		Logger:  lg,
 		Ctx:     ctx,
 		Handler: ctxhandler.ContextHandlerFunc(handlerPathLiveness),
@@ -64,6 +71,19 @@ func handlerPath(ctx context.Context, w http.ResponseWriter, req *http.Request) 
 			s.statusHTMLEnd
 		s.statusMu.RUnlock()
 		w.Write([]byte(txt))
+		return nil
+
+	default:
+		http.Error(w, "Method Not Allowed", 405)
+		return fmt.Errorf("Method %q Not Allowed", req.Method)
+	}
+}
+
+func handlerPathSummary(ctx context.Context, w http.ResponseWriter, req *http.Request) error {
+	switch req.Method {
+	case http.MethodGet:
+		s := ctx.Value(statusKey).(*status)
+		w.Write([]byte(s.getSummary()))
 		return nil
 
 	default:

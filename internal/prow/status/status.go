@@ -45,6 +45,29 @@ func newStatus(lg *zap.Logger) *status {
 	}
 }
 
+func (s *status) getSummary() string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	n := int64(len(s.all))
+	awsN, gcpN, notCategorizedN := int64(0), int64(0), int64(0)
+	for _, v := range s.all {
+		switch v.Provider {
+		case prow.ProviderAWS:
+			awsN++
+		case prow.ProviderGCP:
+			gcpN++
+		case prow.ProviderNotCategorized:
+			notCategorizedN++
+		}
+	}
+	awsPct := (float64(awsN) / float64(n)) * 100
+	gcpPct := (float64(gcpN) / float64(n)) * 100
+	notCategorizedPct := (float64(notCategorizedN) / float64(n)) * 100
+
+	return createUpdateMsgSummary(n, awsN, gcpN, notCategorizedN, awsPct, gcpPct, notCategorizedPct)
+}
+
 func (s *status) refresh() {
 	s.mu.Lock()
 	s.lg.Info("refreshing")

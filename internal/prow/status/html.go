@@ -6,6 +6,7 @@ import (
 	"html"
 	"html/template"
 	"sort"
+	texttemplate "text/template"
 	"time"
 
 	"github.com/aws/awstester/internal/prow"
@@ -77,6 +78,34 @@ func createUpdateMsg(n, awsN, gcpN, notCategorizedN int64, awsPct, gcpPct, notCa
 		panic(err)
 	}
 	return html.UnescapeString(buf.String())
+}
+
+const tmplUpdateMsgSummary = `EKS Testing Status: Upstream
+
+Total: {{.TestsN}} tests
+AWS: {{.TestsAWS}} tests ({{.TestsAWSPct}})
+GCP: {{.TestsGCP}} tests ({{.TestsGCPPct}})
+Not-Categorized: {{.TestsNotCategorized}} tests ({{.TestsNotCategorizedPct}})
+Date: {{.UpdateMsg}}
+`
+
+func createUpdateMsgSummary(n, awsN, gcpN, notCategorizedN int64, awsPct, gcpPct, notCategorizedPct float64) string {
+	tmpl := texttemplate.Must(texttemplate.New("tmplUpdateMsgSummary").Parse(tmplUpdateMsgSummary))
+	msg := updateMsg{
+		TestsN:                 humanize.Comma(n),
+		TestsAWS:               humanize.Comma(awsN),
+		TestsAWSPct:            fmt.Sprintf("%.3f %%", awsPct),
+		TestsGCP:               humanize.Comma(gcpN),
+		TestsGCPPct:            fmt.Sprintf("%.3f %%", gcpPct),
+		TestsNotCategorized:    humanize.Comma(notCategorizedN),
+		TestsNotCategorizedPct: fmt.Sprintf("%.3f %%", notCategorizedPct),
+		UpdateMsg:              time.Now().UTC().String(),
+	}
+	buf := bytes.NewBuffer(nil)
+	if err := tmpl.Execute(buf, &msg); err != nil {
+		panic(err)
+	}
+	return buf.String()
 }
 
 const tmplGitRows = `
