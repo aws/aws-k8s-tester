@@ -13,6 +13,7 @@ See [code changes](https://github.com/aws/awstester/compare/0.1.0...0.1.1).
 
 ### `internal`
 
+- Add [`"install-kubeadm"` plugin to `internal/ec2/config/plugins`](https://github.com/aws/awstester/commit/e103c1ca68742bb56a8c43d3508d0c09423bb6b5).
 - Add [`internal/ec2/config.Config.InitScriptCreated`](https://github.com/aws/awstester/commit/793935db2418a7c960d89512372f534996adcb19) flag.
 
 ### Go
