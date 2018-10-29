@@ -16,13 +16,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	rootCmd = &cobra.Command{
-		Use:        "awstester",
-		Short:      "AWS test CLI",
-		SuggestFor: []string{"awstest"},
-	}
-)
+var rootCmd = &cobra.Command{
+	Use:        "awstester",
+	Short:      "AWS test CLI",
+	SuggestFor: []string{"awstest"},
+}
 
 func init() {
 	cobra.EnablePrefixMatching = true
