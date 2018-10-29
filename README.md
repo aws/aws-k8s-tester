@@ -75,7 +75,7 @@ To test locally:
 # set "AWSTESTER_EKS_TAG" to avoid S3 bucket conflicts
 # or just disable log uploads with "AWSTESTER_EKS_UPLOAD_TESTER_LOGS=false"
 cd ${GOPATH}/src/github.com/aws/awstester
-AWSTESTER_EKS_KUBETEST_EMBEDDED_BINARY=true \
+AWSTESTER_EKS_TEST_MODE=embedded \
   AWSTESTER_EKS_KUBERNETES_VERSION=1.10 \
   AWSTESTER_EKS_WAIT_BEFORE_DOWN=1m \
   AWSTESTER_EKS_DOWN=true \
