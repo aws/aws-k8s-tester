@@ -25,11 +25,11 @@ func TestConfig(t *testing.T) {
 func TestEnv(t *testing.T) {
 	cfg := NewDefault()
 
+	os.Setenv("AWSTESTER_EKS_TEST_MODE", "aws-cli")
 	os.Setenv("AWSTESTER_EKS_KUBERNETES_VERSION", "1.11")
 	os.Setenv("AWSTESTER_EKS_TAG", "my-test")
 	os.Setenv("AWSTESTER_EKS_ENABLE_WORKER_NODE_HA", "false")
 	os.Setenv("AWSTESTER_EKS_ENABLE_WORKER_NODE_SSH", "true")
-	os.Setenv("AWSTESTER_EKS_KUBETEST_EMBEDDED_BINARY", "false")
 	os.Setenv("AWSTESTER_EKS_CONFIG_PATH", "test-path")
 	os.Setenv("AWSTESTER_EKS_DOWN", "false")
 	os.Setenv("AWSTESTER_EKS_ALB_TARGET_TYPE", "ip")
@@ -48,11 +48,11 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWSTESTER_EKS_ALB_INGRESS_CONTROLLER_IMAGE", "quay.io/coreos/alb-ingress-controller:1.0-beta.7")
 
 	defer func() {
+		os.Unsetenv("AWSTESTER_EKS_TEST_MODE")
 		os.Unsetenv("AWSTESTER_EKS_KUBERNETES_VERSION")
 		os.Unsetenv("AWSTESTER_EKS_TAG")
 		os.Unsetenv("AWSTESTER_EKS_ENABLE_WORKER_NODE_HA")
 		os.Unsetenv("AWSTESTER_EKS_ENABLE_WORKER_NODE_SSH")
-		os.Unsetenv("AWSTESTER_EKS_KUBETEST_EMBEDDED_BINARY")
 		os.Unsetenv("AWSTESTER_EKS_CONFIG_PATH")
 		os.Unsetenv("AWSTESTER_EKS_DOWN")
 		os.Unsetenv("AWSTESTER_EKS_ALB_TARGET_TYPE")
@@ -75,14 +75,14 @@ func TestEnv(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	if cfg.TestMode != "aws-cli" {
+		t.Fatalf("cfg.TestMode expected 'aws-cli', got %q", cfg.TestMode)
+	}
 	if cfg.KubernetesVersion != "1.11" {
 		t.Fatalf("KubernetesVersion 1.11, got %q", cfg.KubernetesVersion)
 	}
 	if cfg.Tag != "my-test" {
 		t.Fatalf("Tag my-test, got %q", cfg.Tag)
-	}
-	if cfg.KubetestEmbeddedBinary {
-		t.Fatalf("cfg.KubetestEmbeddedBinary expected 'false', got %v", cfg.KubetestEmbeddedBinary)
 	}
 	if cfg.ConfigPath != "test-path" {
 		t.Fatalf("alb configuration path expected 'test-path', got %q", cfg.ConfigPath)

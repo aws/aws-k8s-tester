@@ -21,9 +21,8 @@ import (
 
 // Config defines EKS testing configuration.
 type Config struct {
-	// KubetestEmbeddedBinary is true to use "awstester eks test" binary to run kubetest.
-	// TODO: If false, use AWS CLI.
-	KubetestEmbeddedBinary bool `json:"kubetest-embedded-binary,omitempty"`
+	// TestMode is "embedded" or "aws-cli".
+	TestMode string `json:"test-mode,omitempty"`
 
 	// AWSTesterImage is the awstester container image.
 	// Required for "awstester ingress server" for ALB Ingress Controller tests.
@@ -449,7 +448,7 @@ func genClusterName(tag string) string {
 //  - omitting an entire field returns nil value
 //  - make sure to check both
 var defaultConfig = Config{
-	KubetestEmbeddedBinary: true,
+	TestMode: "embedded",
 
 	// enough time for ALB access log
 	WaitBeforeDown: 10 * time.Minute,
@@ -609,6 +608,14 @@ const (
 // And updates empty fields with default values.
 // At the end, it writes populated YAML to awstester config path.
 func (cfg *Config) ValidateAndSetDefaults() error {
+	switch cfg.TestMode {
+	case "embedded":
+	case "aws-cli":
+		// TODO: remove this
+		return errors.New("TestMode 'aws-cli' is not implemented yet")
+	default:
+		return fmt.Errorf("TestMode %q unknown", cfg.TestMode)
+	}
 	if len(cfg.LogOutputs) == 0 {
 		return errors.New("EKS LogOutputs is not specified")
 	}
