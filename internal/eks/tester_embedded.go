@@ -170,19 +170,19 @@ func newTesterEmbedded(cfg *eksconfig.Config) (eksdeployer.Tester, error) {
 	if err == nil && len(do.Stacks) == 1 {
 		for _, op := range do.Stacks[0].Outputs {
 			if *op.OutputKey == "VpcId" {
-				md.cfg.ClusterState.CFStackVPCID = *op.OutputValue
-				lg.Info("found existing VPC stack VPC ID", zap.String("id", md.cfg.ClusterState.CFStackVPCID))
+				md.cfg.VPCID = *op.OutputValue
+				lg.Info("found existing VPC stack VPC ID", zap.String("id", md.cfg.VPCID))
 				continue
 			}
 			if *op.OutputKey == "SubnetIds" {
 				vv := *op.OutputValue
-				md.cfg.ClusterState.CFStackVPCSubnetIDs = strings.Split(vv, ",")
-				lg.Info("found existing VPC stack Subnet IDs", zap.Strings("ids", md.cfg.ClusterState.CFStackVPCSubnetIDs))
+				md.cfg.SubnetIDs = strings.Split(vv, ",")
+				lg.Info("found existing VPC stack Subnet IDs", zap.Strings("ids", md.cfg.SubnetIDs))
 				continue
 			}
 			if *op.OutputKey == "SecurityGroups" {
-				md.cfg.ClusterState.CFStackVPCSecurityGroupID = *op.OutputValue
-				lg.Info("found existing VPC stack security group", zap.String("id", md.cfg.ClusterState.CFStackVPCSecurityGroupID))
+				md.cfg.SecurityGroupID = *op.OutputValue
+				lg.Info("found existing VPC stack security group", zap.String("id", md.cfg.SecurityGroupID))
 			}
 		}
 	}

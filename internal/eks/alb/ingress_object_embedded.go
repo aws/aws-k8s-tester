@@ -25,7 +25,7 @@ func (md *embedded) createALBAnnotations(healthCheckPath string) (a map[string]s
 		"alb.ingress.kubernetes.io/scheme":       "internet-facing",
 		"alb.ingress.kubernetes.io/target-type":  md.cfg.ALBIngressController.TargetType,
 		"alb.ingress.kubernetes.io/listen-ports": `[{"HTTP":80,"HTTPS": 443}]`,
-		"alb.ingress.kubernetes.io/subnets":      strings.Join(md.cfg.ClusterState.CFStackVPCSubnetIDs, ","),
+		"alb.ingress.kubernetes.io/subnets":      strings.Join(md.cfg.SubnetIDs, ","),
 	}
 
 	h, _ := os.Hostname()
@@ -43,13 +43,11 @@ func (md *embedded) createALBAnnotations(healthCheckPath string) (a map[string]s
 
 	switch md.cfg.ALBIngressController.TargetType {
 	case "instance":
-		// SecurityGroupIDs is the list of security group IDs for ALB with HTTP/HTTPS wide open.
+		// list of security group IDs for ALB with HTTP/HTTPS wide open.
 		// One is from EKS control plane VPC stack.
 		// The other is a new one with 80 and 443 TCP ports open.
-		a["alb.ingress.kubernetes.io/security-groups"] = strings.Join([]string{
-			md.cfg.ClusterState.CFStackVPCSecurityGroupID,
-			md.cfg.ALBIngressController.ELBv2SecurityGroupIDPortOpen,
-		}, ",")
+		ss := []string{md.cfg.SecurityGroupID, md.cfg.ALBIngressController.ELBv2SecurityGroupIDPortOpen}
+		a["alb.ingress.kubernetes.io/security-groups"] = strings.Join(ss, ",")
 
 	case "ip":
 		// security group associated with an instance
@@ -88,13 +86,13 @@ func (md *embedded) createALBAnnotations(healthCheckPath string) (a map[string]s
 }
 
 func (md *embedded) CreateIngressObjects() (err error) {
-	if md.cfg.ClusterState.CFStackVPCID == "" {
+	if md.cfg.VPCID == "" {
 		return errors.New("cannot create Ingress object without VPC stack VPC ID")
 	}
-	if md.cfg.ClusterState.CFStackVPCSecurityGroupID == "" {
+	if md.cfg.SecurityGroupID == "" {
 		return errors.New("cannot create Ingress object without VPC stack Security Group ID")
 	}
-	if len(md.cfg.ClusterState.CFStackVPCSubnetIDs) == 0 {
+	if len(md.cfg.SubnetIDs) == 0 {
 		return errors.New("cannot create Ingress object without VPC stack Subnet IDs")
 	}
 	if md.cfg.ALBIngressController.ELBv2SecurityGroupIDPortOpen == "" {
@@ -114,7 +112,7 @@ func (md *embedded) CreateIngressObjects() (err error) {
 			"alb.ingress.kubernetes.io/scheme":       "internet-facing",
 			"alb.ingress.kubernetes.io/target-type":  md.cfg.ALBIngressController.TargetType,
 			"alb.ingress.kubernetes.io/listen-ports": `[{"HTTP":80,"HTTPS": 443}]`,
-			"alb.ingress.kubernetes.io/subnets":      strings.Join(md.cfg.ClusterState.CFStackVPCSubnetIDs, ","),
+			"alb.ingress.kubernetes.io/subnets":      strings.Join(md.cfg.SubnetIDs, ","),
 		},
 		IngressPaths: []v1beta1.HTTPIngressPath{
 			{
@@ -664,7 +662,7 @@ func (md *embedded) DeleteIngressObjects() error {
 		}
 		md.lg.Info(
 			"deleted ELBv2 listener",
-			zap.String("vpc-id", md.cfg.ClusterState.CFStackVPCID),
+			zap.String("vpc-id", md.cfg.VPCID),
 			zap.String("alb-name", name),
 			zap.String("alb-arn", arn),
 		)
@@ -708,7 +706,7 @@ func (md *embedded) DeleteIngressObjects() error {
 		} else {
 			md.lg.Info("all target groups", zap.Int("groups", len(desc.TargetGroups)))
 			for _, tg := range desc.TargetGroups {
-				if *tg.VpcId != md.cfg.ClusterState.CFStackVPCID {
+				if *tg.VpcId != md.cfg.VPCID {
 					continue
 				}
 				_, err = md.elbv2.DeleteTargetGroup(&elbv2.DeleteTargetGroupInput{
@@ -726,7 +724,7 @@ func (md *embedded) DeleteIngressObjects() error {
 		}
 		md.lg.Info(
 			"deleted ELBv2 target group",
-			zap.String("vpc-id", md.cfg.ClusterState.CFStackVPCID),
+			zap.String("vpc-id", md.cfg.VPCID),
 			zap.String("alb-name", name),
 			zap.String("alb-arn", arn),
 		)

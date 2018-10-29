@@ -64,6 +64,13 @@ type Config struct {
 	KubeConfigPathBucket string `json:"kubeconfig-path-bucket,omitempty"` // read-only to user
 	KubeConfigPathURL    string `json:"kubeconfig-path-url,omitempty"`    // read-only to user
 
+	// VPCID is the VPC ID.
+	VPCID string `json:"vpc-id,omitempty"`
+	// SubnetIDs is the subnet IDs.
+	SubnetIDs []string `json:"subnet-ids,omitempty"`
+	// SecurityGroupID is the default security group ID.
+	SecurityGroupID string `json:"security-group-id,omitempty"`
+
 	// AWSAccountID is the AWS account ID.
 	AWSAccountID string `json:"aws-account-id,omitempty"`
 	// AWSCredentialToMountPath is the file path to AWS credential.
@@ -181,12 +188,6 @@ type ClusterState struct {
 	CFStackVPCName string `json:"cf-stack-vpc-name,omitempty"`
 	// CFStackVPCStatus is the last cloudformation status of VPC stack.
 	CFStackVPCStatus string `json:"cf-stack-vpc-status,omitempty"`
-	// CFStackVPCID is the VPC ID that VPC cloudformation stack created.
-	CFStackVPCID string `json:"cf-stack-vpc-id,omitempty"`
-	// CFStackVPCSubnetIDs is the subnet IDS that VPC cloudformation stack created.
-	CFStackVPCSubnetIDs []string `json:"cf-stack-vpc-subnet-ids,omitempty"`
-	// CFStackVPCSecurityGroupID is the security group ID that VPC cloudformation stack created.
-	CFStackVPCSecurityGroupID string `json:"cf-stack-vpc-security-group-id,omitempty"`
 
 	// Endpoint is the cluster endpoint of the EKS cluster, required for KUBECONFIG write.
 	Endpoint string `json:"endpoint,omitempty"`
@@ -353,7 +354,7 @@ type ALBIngressController struct {
 	//  - Security Group IDs
 	//    - one from "aws ec2 describe-security-groups" with VPC stack VPC ID
 	//    - the other from "aws ec2 create-security-group" for ALB port wide open
-	// Thus, pass "CFStackVPCSecurityGroupID" and "SecurityGroupIDPortOpen" for Ingress object
+	// Thus, pass "SecurityGroupID" and "SecurityGroupIDPortOpen" for Ingress object
 
 	// ELBv2SecurityGroupIDPortOpen is the security group ID created to
 	// open 80 and 443 ports for ALB Ingress Controller.

@@ -97,16 +97,16 @@ func (md *embedded) createVPC() error {
 
 		for _, op := range do.Stacks[0].Outputs {
 			if *op.OutputKey == "VpcId" {
-				md.cfg.ClusterState.CFStackVPCID = *op.OutputValue
+				md.cfg.VPCID = *op.OutputValue
 				continue
 			}
 			if *op.OutputKey == "SubnetIds" {
 				vv := *op.OutputValue
-				md.cfg.ClusterState.CFStackVPCSubnetIDs = strings.Split(vv, ",")
+				md.cfg.SubnetIDs = strings.Split(vv, ",")
 				continue
 			}
 			if *op.OutputKey == "SecurityGroups" {
-				md.cfg.ClusterState.CFStackVPCSecurityGroupID = *op.OutputValue
+				md.cfg.SecurityGroupID = *op.OutputValue
 			}
 		}
 
@@ -117,7 +117,7 @@ func (md *embedded) createVPC() error {
 		md.lg.Info("creating VPC stack",
 			zap.String("stack-name", md.cfg.ClusterState.CFStackVPCName),
 			zap.String("stack-status", md.cfg.ClusterState.CFStackVPCStatus),
-			zap.String("vpc-id", md.cfg.ClusterState.CFStackVPCID),
+			zap.String("vpc-id", md.cfg.VPCID),
 			zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 		)
 
@@ -127,7 +127,7 @@ func (md *embedded) createVPC() error {
 		md.lg.Info("failed to create VPC stack",
 			zap.String("stack-name", md.cfg.ClusterState.CFStackVPCName),
 			zap.String("stack-status", md.cfg.ClusterState.CFStackVPCStatus),
-			zap.String("vpc-id", md.cfg.ClusterState.CFStackVPCID),
+			zap.String("vpc-id", md.cfg.VPCID),
 			zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 			zap.Error(err),
 		)
@@ -137,7 +137,7 @@ func (md *embedded) createVPC() error {
 	md.lg.Info("created VPC stack",
 		zap.String("stack-name", md.cfg.ClusterState.CFStackVPCName),
 		zap.String("stack-status", md.cfg.ClusterState.CFStackVPCStatus),
-		zap.String("vpc-id", md.cfg.ClusterState.CFStackVPCID),
+		zap.String("vpc-id", md.cfg.VPCID),
 		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 	)
 	return md.cfg.Sync()
@@ -195,11 +195,11 @@ func (md *embedded) deleteVPC() error {
 					md.lg.Info("current VPC connections", zap.Int("number", len(ids)))
 				}
 				_, verr := md.ec2.DeleteVpc(&ec2.DeleteVpcInput{
-					VpcId: aws.String(md.cfg.ClusterState.CFStackVPCID),
+					VpcId: aws.String(md.cfg.VPCID),
 				})
 				md.lg.Info(
 					"manually tried to delete VPC",
-					zap.String("vpc-id", md.cfg.ClusterState.CFStackVPCID),
+					zap.String("vpc-id", md.cfg.VPCID),
 					zap.Error(verr),
 				)
 				if verr != nil && strings.Contains(verr.Error(), "does not exist") {
@@ -226,7 +226,7 @@ func (md *embedded) deleteVPC() error {
 		md.lg.Info("failed to delete VPC stack",
 			zap.String("stack-name", md.cfg.ClusterState.CFStackVPCName),
 			zap.String("stack-status", md.cfg.ClusterState.CFStackVPCStatus),
-			zap.String("vpc-id", md.cfg.ClusterState.CFStackVPCID),
+			zap.String("vpc-id", md.cfg.VPCID),
 			zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 			zap.Error(err),
 		)
@@ -236,7 +236,7 @@ func (md *embedded) deleteVPC() error {
 	md.lg.Info("deleted VPC stack",
 		zap.String("stack-name", md.cfg.ClusterState.CFStackVPCName),
 		zap.String("stack-status", md.cfg.ClusterState.CFStackVPCStatus),
-		zap.String("vpc-id", md.cfg.ClusterState.CFStackVPCID),
+		zap.String("vpc-id", md.cfg.VPCID),
 		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 	)
 	return md.cfg.Sync()

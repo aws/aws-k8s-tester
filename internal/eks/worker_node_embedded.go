@@ -34,7 +34,7 @@ func (md *embedded) createWorkerNode() error {
 		return err
 	}
 
-	subnetIDs := md.cfg.ClusterState.CFStackVPCSubnetIDs
+	subnetIDs := md.cfg.SubnetIDs
 	if !md.cfg.EnableWorkerNodeHA {
 		subnetIDs = subnetIDs[:1]
 		md.lg.Info("HA mode is disabled", zap.Strings("subnet-ids", subnetIDs))
@@ -91,7 +91,7 @@ func (md *embedded) createWorkerNode() error {
 			},
 			{
 				ParameterKey:   aws.String("VpcId"),
-				ParameterValue: aws.String(md.cfg.ClusterState.CFStackVPCID),
+				ParameterValue: aws.String(md.cfg.VPCID),
 			},
 			{
 				ParameterKey:   aws.String("Subnets"),
@@ -99,7 +99,7 @@ func (md *embedded) createWorkerNode() error {
 			},
 			{
 				ParameterKey:   aws.String("ClusterControlPlaneSecurityGroup"),
-				ParameterValue: aws.String(md.cfg.ClusterState.CFStackVPCSecurityGroupID),
+				ParameterValue: aws.String(md.cfg.SecurityGroupID),
 			},
 		},
 

@@ -20,10 +20,10 @@ func (md *embedded) createCluster() error {
 	if md.cfg.ClusterState.ServiceRoleWithPolicyARN == "" {
 		return errors.New("can't create cluster without service role ARN")
 	}
-	if len(md.cfg.ClusterState.CFStackVPCSubnetIDs) == 0 {
+	if len(md.cfg.SubnetIDs) == 0 {
 		return errors.New("can't create cluster without subnet IDs")
 	}
-	if md.cfg.ClusterState.CFStackVPCSecurityGroupID == "" {
+	if md.cfg.SecurityGroupID == "" {
 		return errors.New("can't create cluster without security group ID")
 	}
 
@@ -34,8 +34,8 @@ func (md *embedded) createCluster() error {
 		Version: aws.String(md.cfg.KubernetesVersion),
 		RoleArn: aws.String(md.cfg.ClusterState.ServiceRoleWithPolicyARN),
 		ResourcesVpcConfig: &awseks.VpcConfigRequest{
-			SubnetIds:        aws.StringSlice(md.cfg.ClusterState.CFStackVPCSubnetIDs),
-			SecurityGroupIds: aws.StringSlice([]string{md.cfg.ClusterState.CFStackVPCSecurityGroupID}),
+			SubnetIds:        aws.StringSlice(md.cfg.SubnetIDs),
+			SecurityGroupIds: aws.StringSlice([]string{md.cfg.SecurityGroupID}),
 		},
 	})
 	if err != nil {

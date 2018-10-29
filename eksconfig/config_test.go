@@ -2,6 +2,7 @@ package eksconfig
 
 import (
 	"os"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -28,6 +29,9 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWSTESTER_EKS_TEST_MODE", "aws-cli")
 	os.Setenv("AWSTESTER_EKS_KUBERNETES_VERSION", "1.11")
 	os.Setenv("AWSTESTER_EKS_TAG", "my-test")
+	os.Setenv("AWSTESTER_EKS_VPC_ID", "my-vpc-id")
+	os.Setenv("AWSTESTER_EKS_SUBNET_IDS", "a,b,c")
+	os.Setenv("AWSTESTER_EKS_SECURITY_GROUP_ID", "my-security-id")
 	os.Setenv("AWSTESTER_EKS_ENABLE_WORKER_NODE_HA", "false")
 	os.Setenv("AWSTESTER_EKS_ENABLE_WORKER_NODE_SSH", "true")
 	os.Setenv("AWSTESTER_EKS_CONFIG_PATH", "test-path")
@@ -51,6 +55,9 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWSTESTER_EKS_TEST_MODE")
 		os.Unsetenv("AWSTESTER_EKS_KUBERNETES_VERSION")
 		os.Unsetenv("AWSTESTER_EKS_TAG")
+		os.Unsetenv("AWSTESTER_EKS_VPC_ID")
+		os.Unsetenv("AWSTESTER_EKS_SUBNET_IDs")
+		os.Unsetenv("AWSTESTER_EKS_SECURITY_GROUP_ID")
 		os.Unsetenv("AWSTESTER_EKS_ENABLE_WORKER_NODE_HA")
 		os.Unsetenv("AWSTESTER_EKS_ENABLE_WORKER_NODE_SSH")
 		os.Unsetenv("AWSTESTER_EKS_CONFIG_PATH")
@@ -83,6 +90,15 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.Tag != "my-test" {
 		t.Fatalf("Tag my-test, got %q", cfg.Tag)
+	}
+	if cfg.VPCID != "my-vpc-id" {
+		t.Fatalf("VPCID my-vpc-id, got %q", cfg.VPCID)
+	}
+	if !reflect.DeepEqual(cfg.SubnetIDs, []string{"a", "b", "c"}) {
+		t.Fatalf("SubnetIDs expected a,b,c, got %q", cfg.SubnetIDs)
+	}
+	if cfg.SecurityGroupID != "my-security-id" {
+		t.Fatalf("SecurityGroupID my-id, got %q", cfg.SecurityGroupID)
 	}
 	if cfg.ConfigPath != "test-path" {
 		t.Fatalf("alb configuration path expected 'test-path', got %q", cfg.ConfigPath)

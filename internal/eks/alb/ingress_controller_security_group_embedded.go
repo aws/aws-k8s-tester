@@ -11,20 +11,20 @@ import (
 )
 
 func (md *embedded) CreateSecurityGroup() error {
-	if md.cfg.ClusterState.CFStackVPCID == "" {
+	if md.cfg.VPCID == "" {
 		return errors.New("cannot create security group without VPC stack VPC ID")
 	}
-	if md.cfg.ClusterState.CFStackVPCSecurityGroupID == "" {
+	if md.cfg.SecurityGroupID == "" {
 		return errors.New("cannot create security group without VPC stack Security Group ID")
 	}
-	if len(md.cfg.ClusterState.CFStackVPCSubnetIDs) == 0 {
+	if len(md.cfg.SubnetIDs) == 0 {
 		return errors.New("cannot create security group without VPC stack Subnet IDs")
 	}
 
 	name := md.cfg.ClusterName + "-alb-open-80-443"
 	so, err := md.ec2.CreateSecurityGroup(&ec2.CreateSecurityGroupInput{
 		GroupName:   aws.String(name),
-		VpcId:       aws.String(md.cfg.ClusterState.CFStackVPCID),
+		VpcId:       aws.String(md.cfg.VPCID),
 		Description: aws.String(name),
 	})
 	if err != nil {
