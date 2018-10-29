@@ -4,11 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"math/rand"
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -224,16 +225,57 @@ type ClusterState struct {
 	CFStackWorkerNodeGroupWorkerNodeInstanceRoleARN string `json:"cf-stack-worker-node-group-worker-node-instance-role-arn,omitempty"`
 }
 
-const (
-	// MaxTestServerRoutes is the maximum number of routes.
-	MaxTestServerRoutes = 30
-	// MaxTestClients is the maximum number of clients.
-	MaxTestClients = 1000
-	// MaxTestClientRequests is the maximum number of requests.
-	MaxTestClientRequests = 50000
-	// MaxTestResponseSize is the maximum response size for ingress test server.
-	MaxTestResponseSize = 500 * 1024 // 500 KB == 4000 Kbit
-)
+// Instance represents an EC2 instance.
+type Instance struct {
+	ImageID                string                  `json:"image-id,omitempty"`
+	InstanceID             string                  `json:"instance-id,omitempty"`
+	InstanceType           string                  `json:"instance-type,omitempty"`
+	KeyName                string                  `json:"key-name,omitempty"`
+	Placement              EC2Placement            `json:"placement,omitempty"`
+	PrivateDNSName         string                  `json:"private-dns-name,omitempty"`
+	PrivateIP              string                  `json:"private-ip,omitempty"`
+	PublicDNSName          string                  `json:"public-dns-name,omitempty"`
+	PublicIP               string                  `json:"public-ip,omitempty"`
+	EC2State               EC2State                `json:"state,omitempty"`
+	SubnetID               string                  `json:"subnet-id,omitempty"`
+	VPCID                  string                  `json:"vpc-id,omitempty"`
+	EC2BlockDeviceMappings []EC2BlockDeviceMapping `json:"block-device-mappings,omitempty"`
+	EBSOptimized           bool                    `json:"ebs-optimized"`
+	RootDeviceName         string                  `json:"root-device-name,omitempty"`
+	RootDeviceType         string                  `json:"root-device-type,omitempty"`
+	SecurityGroups         []EC2SecurityGroup      `json:"security-groups,omitempty"`
+}
+
+// EC2Placement defines EC2 placement.
+type EC2Placement struct {
+	AvailabilityZone string `json:"availability-zone,omitempty"`
+	Tenancy          string `json:"tenancy,omitempty"`
+}
+
+// EC2State defines an EC2 state.
+type EC2State struct {
+	Code int64  `json:"code,omitempty"`
+	Name string `json:"name,omitempty"`
+}
+
+// EC2BlockDeviceMapping defines a block device mapping.
+type EC2BlockDeviceMapping struct {
+	DeviceName string `json:"device-name,omitempty"`
+	EBS        EBS    `json:"ebs,omitempty"`
+}
+
+// EBS defines an EBS volume.
+type EBS struct {
+	DeleteOnTermination bool   `json:"delete-on-termination,omitempty"`
+	Status              string `json:"status,omitempty"`
+	VolumeID            string `json:"volume-id,omitempty"`
+}
+
+// EC2SecurityGroup defines a security group.
+type EC2SecurityGroup struct {
+	GroupName string `json:"group-name,omitempty"`
+	GroupID   string `json:"group-id,omitempty"`
+}
 
 // ALBIngressController configures ingress controller for EKS.
 type ALBIngressController struct {
@@ -359,6 +401,113 @@ type ALBIngressController struct {
 	MetricsOutputToUploadPathURL    string `json:"metrics-output-to-upload-path-url,omitempty"`
 }
 
+// NewDefault returns a copy of the default configuration.
+func NewDefault() *Config {
+	vv := defaultConfig
+	return &vv
+}
+
+var (
+	reg               *regexp.Regexp
+	testerTag         string
+	testerClusterName string
+)
+
+func init() {
+	var err error
+	reg, err = regexp.Compile("[^a-zA-Z]+")
+	if err != nil {
+		panic(err)
+	}
+	defaultConfig.Tag = genTag()
+	defaultConfig.ClusterName = genClusterName(defaultConfig.Tag)
+}
+
+// genTag generates a tag for cluster name, CloudFormation, and S3 bucket.
+// Note that this would be used as S3 bucket name to upload tester logs.
+func genTag() string {
+	// use UTC time for everything
+	now := time.Now().UTC()
+	return fmt.Sprintf("awstester-eks-%d%02d%02d", now.Year(), now.Month(), now.Day())
+}
+
+func genClusterName(tag string) string {
+	h, _ := os.Hostname()
+	h = strings.TrimSpace(reg.ReplaceAllString(h, ""))
+	if len(h) > 12 {
+		h = h[:12]
+	}
+	name := tag
+	if len(name) > 0 {
+		name += "-"
+	}
+	return fmt.Sprintf("%s%s-%s", name, h, randString(7))
+}
+
+// defaultConfig is the default configuration.
+//  - empty string creates a non-nil object for pointer-type field
+//  - omitting an entire field returns nil value
+//  - make sure to check both
+var defaultConfig = Config{
+	KubetestEmbeddedBinary: true,
+
+	// enough time for ALB access log
+	WaitBeforeDown: 10 * time.Minute,
+	Down:           true,
+
+	ConfigPath: "test.yaml",
+
+	EnableWorkerNodeHA:  true,
+	EnableWorkerNodeSSH: true,
+
+	AWSAccountID: "",
+	// to be overwritten by AWS_SHARED_CREDENTIALS_FILE
+	AWSCredentialToMountPath: filepath.Join(homedir.HomeDir(), ".aws", "credentials"),
+	AWSRegion:                "us-west-2",
+	AWSCustomEndpoint:        "",
+
+	// https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html
+	WorkerNodeAMI:          "ami-0a54c984b9f908c81",
+	WorkerNodeInstanceType: "m5.large",
+	WorkderNodeASGMin:      1,
+	WorkderNodeASGMax:      1,
+	WorkerNodeVolumeSizeGB: 20,
+
+	KubernetesVersion: "1.10",
+
+	LogDebug: false,
+
+	// default, stderr, stdout, or file name
+	// log file named with cluster name will be added automatically
+	LogOutputs:           []string{"stderr"},
+	LogAccess:            true,
+	UploadTesterLogs:     true,
+	UploadWorkerNodeLogs: true,
+
+	ClusterState: &ClusterState{},
+	ALBIngressController: &ALBIngressController{
+		Enable:           true,
+		UploadTesterLogs: true,
+
+		IngressControllerImage: "quay.io/coreos/alb-ingress-controller:1.0-beta.7",
+
+		// 'instance' to use node port
+		// 'ip' to use pod IP
+		TargetType: "instance",
+		TestMode:   "nginx",
+
+		TestScalability:          true,
+		TestMetrics:              true,
+		TestServerReplicas:       1,
+		TestServerRoutes:         1,
+		TestClients:              200,
+		TestClientRequests:       20000,
+		TestResponseSize:         40 * 1024, // 40 KB
+		TestClientErrorThreshold: 10,
+		TestExpectQPS:            20000,
+	},
+}
+
 // Load loads configuration from YAML.
 // Useful when injecting shared configuration via ConfigMap.
 //
@@ -444,6 +593,17 @@ func (cfg *Config) BackupConfig() (p string, err error) {
 	)
 	return p, ioutil.WriteFile(p, d, 0600)
 }
+
+const (
+	// maxTestServerRoutes is the maximum number of routes.
+	maxTestServerRoutes = 30
+	// maxTestClients is the maximum number of clients.
+	maxTestClients = 1000
+	// maxTestClientRequests is the maximum number of requests.
+	maxTestClientRequests = 50000
+	// maxTestResponseSize is the maximum response size for ingress test server.
+	maxTestResponseSize = 500 * 1024 // 500 KB == 4000 Kbit
+)
 
 // ValidateAndSetDefaults returns an error for invalid configurations.
 // And updates empty fields with default values.
@@ -713,29 +873,29 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		if cfg.ALBIngressController.TestServerRoutes == 0 {
 			return fmt.Errorf("cannot create AWS ALB Ingress Controller with empty test response size %d", cfg.ALBIngressController.TestServerRoutes)
 		}
-		if cfg.ALBIngressController.TestServerRoutes > MaxTestServerRoutes {
-			return fmt.Errorf("cannot create AWS ALB Ingress Controller with test routes %d (> max size %d)", cfg.ALBIngressController.TestServerRoutes, MaxTestServerRoutes)
+		if cfg.ALBIngressController.TestServerRoutes > maxTestServerRoutes {
+			return fmt.Errorf("cannot create AWS ALB Ingress Controller with test routes %d (> max size %d)", cfg.ALBIngressController.TestServerRoutes, maxTestServerRoutes)
 		}
 
 		if cfg.ALBIngressController.TestClients == 0 {
 			return fmt.Errorf("cannot create AWS ALB Ingress Controller with empty test response size %d", cfg.ALBIngressController.TestClients)
 		}
-		if cfg.ALBIngressController.TestClients > MaxTestClients {
-			return fmt.Errorf("cannot create AWS ALB Ingress Controller with test clients %d (> max size %d)", cfg.ALBIngressController.TestClients, MaxTestClients)
+		if cfg.ALBIngressController.TestClients > maxTestClients {
+			return fmt.Errorf("cannot create AWS ALB Ingress Controller with test clients %d (> max size %d)", cfg.ALBIngressController.TestClients, maxTestClients)
 		}
 
 		if cfg.ALBIngressController.TestClientRequests == 0 {
 			return fmt.Errorf("cannot create AWS ALB Ingress Controller with empty test response size %d", cfg.ALBIngressController.TestClientRequests)
 		}
-		if cfg.ALBIngressController.TestClientRequests > MaxTestClientRequests {
-			return fmt.Errorf("cannot create AWS ALB Ingress Controller with test requests %d (> max size %d)", cfg.ALBIngressController.TestClientRequests, MaxTestClientRequests)
+		if cfg.ALBIngressController.TestClientRequests > maxTestClientRequests {
+			return fmt.Errorf("cannot create AWS ALB Ingress Controller with test requests %d (> max size %d)", cfg.ALBIngressController.TestClientRequests, maxTestClientRequests)
 		}
 
 		if cfg.ALBIngressController.TestResponseSize == 0 {
 			return fmt.Errorf("cannot create AWS ALB Ingress Controller with empty test response size %d", cfg.ALBIngressController.TestResponseSize)
 		}
-		if cfg.ALBIngressController.TestResponseSize > MaxTestResponseSize {
-			return fmt.Errorf("cannot create AWS ALB Ingress Controller with test response size %d (> max size %d)", cfg.ALBIngressController.TestResponseSize, MaxTestResponseSize)
+		if cfg.ALBIngressController.TestResponseSize > maxTestResponseSize {
+			return fmt.Errorf("cannot create AWS ALB Ingress Controller with test response size %d (> max size %d)", cfg.ALBIngressController.TestResponseSize, maxTestResponseSize)
 		}
 	}
 
@@ -754,25 +914,138 @@ func (cfg *Config) SetIngressUpTook(d time.Duration) {
 	cfg.ALBIngressController.IngressUpTook = d.String()
 }
 
-// genTag generates a tag for cluster name, CloudFormation, and S3 bucket.
-// Note that this would be used as S3 bucket name to upload tester logs.
-func genTag() string {
-	// use UTC time for everything
-	now := time.Now().UTC()
-	return fmt.Sprintf("awstester-eks-%d%02d%02d", now.Year(), now.Month(), now.Day())
-}
+const (
+	envPfxAWSTesterEKS    = "AWSTESTER_EKS_"
+	envPfxAWSTesterEKSALB = "AWSTESTER_EKS_ALB_"
+)
 
-func genClusterName(tag string) string {
-	h, _ := os.Hostname()
-	h = strings.TrimSpace(reg.ReplaceAllString(h, ""))
-	if len(h) > 12 {
-		h = h[:12]
+// UpdateFromEnvs updates fields from environmental variables.
+func (cfg *Config) UpdateFromEnvs() error {
+	cc := *cfg
+
+	tp1, vv1 := reflect.TypeOf(&cc).Elem(), reflect.ValueOf(&cc).Elem()
+	for i := 0; i < tp1.NumField(); i++ {
+		jv := tp1.Field(i).Tag.Get("json")
+		if jv == "" {
+			continue
+		}
+		jv = strings.Replace(jv, ",omitempty", "", -1)
+		jv = strings.Replace(jv, "-", "_", -1)
+		jv = strings.ToUpper(strings.Replace(jv, "-", "_", -1))
+		env := envPfxAWSTesterEKS + jv
+		if os.Getenv(env) == "" {
+			continue
+		}
+		sv := os.Getenv(env)
+
+		switch vv1.Field(i).Type().Kind() {
+		case reflect.String:
+			vv1.Field(i).SetString(sv)
+
+		case reflect.Bool:
+			bb, err := strconv.ParseBool(sv)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vv1.Field(i).SetBool(bb)
+
+		case reflect.Int, reflect.Int32, reflect.Int64:
+			if tp1.Field(i).Name == "WaitBeforeDown" {
+				dv, err := time.ParseDuration(sv)
+				if err != nil {
+					return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+				}
+				vv1.Field(i).SetInt(int64(dv))
+				continue
+			}
+			iv, err := strconv.ParseInt(sv, 10, 64)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vv1.Field(i).SetInt(iv)
+
+		case reflect.Uint, reflect.Uint32, reflect.Uint64:
+			iv, err := strconv.ParseUint(sv, 10, 64)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vv1.Field(i).SetUint(iv)
+
+		case reflect.Float32, reflect.Float64:
+			fv, err := strconv.ParseFloat(sv, 64)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vv1.Field(i).SetFloat(fv)
+
+		case reflect.Slice:
+			ss := strings.Split(sv, ",")
+			slice := reflect.MakeSlice(reflect.TypeOf([]string{}), len(ss), len(ss))
+			for i := range ss {
+				slice.Index(i).SetString(ss[i])
+			}
+			vv1.Field(i).Set(slice)
+
+		default:
+			return fmt.Errorf("%q (%v) is not supported as an env", env, vv1.Field(i).Type())
+		}
 	}
-	name := tag
-	if len(name) > 0 {
-		name += "-"
+	*cfg = cc
+
+	av := *cc.ALBIngressController
+	tp2, vv2 := reflect.TypeOf(&av).Elem(), reflect.ValueOf(&av).Elem()
+	for i := 0; i < tp2.NumField(); i++ {
+		jv := tp2.Field(i).Tag.Get("json")
+		if jv == "" {
+			continue
+		}
+		jv = strings.Replace(jv, ",omitempty", "", -1)
+		jv = strings.ToUpper(strings.Replace(jv, "-", "_", -1))
+		env := envPfxAWSTesterEKSALB + jv
+		if os.Getenv(env) == "" {
+			continue
+		}
+		sv := os.Getenv(env)
+
+		switch vv2.Field(i).Type().Kind() {
+		case reflect.String:
+			vv2.Field(i).SetString(sv)
+
+		case reflect.Bool:
+			bb, err := strconv.ParseBool(sv)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vv2.Field(i).SetBool(bb)
+
+		case reflect.Int, reflect.Int32, reflect.Int64:
+			iv, err := strconv.ParseInt(sv, 10, 64)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vv2.Field(i).SetInt(iv)
+
+		case reflect.Uint, reflect.Uint32, reflect.Uint64:
+			iv, err := strconv.ParseUint(sv, 10, 64)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vv2.Field(i).SetUint(iv)
+
+		case reflect.Float32, reflect.Float64:
+			fv, err := strconv.ParseFloat(sv, 64)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vv2.Field(i).SetFloat(fv)
+
+		default:
+			return fmt.Errorf("%q (%v) is not supported as an env", env, vv2.Field(i).Type())
+		}
 	}
-	return fmt.Sprintf("%s%s-%s", name, h, randString(7))
+	cfg.ALBIngressController = &av
+
+	return nil
 }
 
 // supportedKubernetesVersions is a list of EKS supported Kubernets versions.
@@ -866,6 +1139,12 @@ const (
 	serviceRolePolicyARNCluster = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
 )
 
+// genS3URL returns S3 URL path.
+// e.g. https://s3-us-west-2.amazonaws.com/awstester-20180925/hello-world
+func genS3URL(region, bucket, s3Path string) string {
+	return fmt.Sprintf("https://s3-%s.amazonaws.com/%s/%s", region, bucket, s3Path)
+}
+
 func genServiceRoleWithPolicy(clusterName string) string {
 	return fmt.Sprintf("%s-SERVICE-ROLE", clusterName)
 }
@@ -912,24 +1191,3 @@ func checkEKSEp(s string) (ok bool) {
 // defaultWorkderNodeVolumeSizeGB is the default EKS worker node volume size in gigabytes.
 // https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html
 const defaultWorkderNodeVolumeSizeGB = 20
-
-var reg *regexp.Regexp
-
-func init() {
-	var err error
-	reg, err = regexp.Compile("[^a-zA-Z]+")
-	if err != nil {
-		panic(err)
-	}
-}
-
-const ll = "0123456789abcdefghijklmnopqrstuvwxyz"
-
-func randString(n int) string {
-	b := make([]byte, n)
-	for i := range b {
-		rand.Seed(time.Now().UTC().UnixNano())
-		b[i] = ll[rand.Intn(len(ll))]
-	}
-	return string(b)
-}
