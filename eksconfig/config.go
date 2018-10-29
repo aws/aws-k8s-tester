@@ -65,11 +65,11 @@ type Config struct {
 	KubeConfigPathURL    string `json:"kubeconfig-path-url,omitempty"`    // read-only to user
 
 	// VPCID is the VPC ID.
-	VPCID string `json:"vpc-id,omitempty"`
+	VPCID string `json:"vpc-id"`
 	// SubnetIDs is the subnet IDs.
-	SubnetIDs []string `json:"subnet-ids,omitempty"`
+	SubnetIDs []string `json:"subnet-ids"`
 	// SecurityGroupID is the default security group ID.
-	SecurityGroupID string `json:"security-group-id,omitempty"`
+	SecurityGroupID string `json:"security-group-id"`
 
 	// AWSAccountID is the AWS account ID.
 	AWSAccountID string `json:"aws-account-id,omitempty"`
