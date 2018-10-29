@@ -13,6 +13,7 @@ func NewCommand() *cobra.Command {
 	rootCmd.AddCommand(
 		newCreate(),
 		newDelete(),
+		newWait(),
 	)
 	return rootCmd
 }

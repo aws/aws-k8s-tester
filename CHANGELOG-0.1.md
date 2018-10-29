@@ -9,8 +9,9 @@ See [code changes](https://github.com/aws/awstester/compare/0.1.0...0.1.1).
 
 ### `awstester` CLI
 
+- Add [`awstester ec2 wait` command](TODO).
 - Use EC2 metadata to name [`awstester wrk` output](https://github.com/aws/awstester/commit/03ec0af6e12d4ca85e539905b7ec3da2729c1f3f).
-- Split [`awstester eks prow status-get/serve` to `awstester eks prow status get` and `awstester eks prow status serve`](https://github.com/aws/awstester/commit/297bf2795c4bc62c55de121b47e0a1bb62ad6108).
+- Split [`awstester eks prow status-serve/get` to `awstester eks prow status serve` and `awstester eks prow status get`](https://github.com/aws/awstester/commit/297bf2795c4bc62c55de121b47e0a1bb62ad6108).
 
 ### `internal`
 

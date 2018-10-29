@@ -170,7 +170,7 @@ ready:
 
 			fmt.Printf("\n\n%s\n\n", string(out))
 
-			if strings.Contains(string(out), plugins.READY) {
+			if isReady(string(out)) {
 				lg.Info("cloud-init-output.log READY!")
 				break ready
 			}
@@ -260,4 +260,17 @@ ready:
 	if terminateOnExit {
 		ec.Delete()
 	}
+}
+
+/*
+to match:
+
+AWSTESTER_EC2_PLUGIN_READY
+Cloud-init v. 18.2 running 'modules:final' at Mon, 29 Oct 2018 22:40:13 +0000. Up 21.89 seconds.
+Cloud-init v. 18.2 finished at Mon, 29 Oct 2018 22:43:59 +0000. Datasource DataSourceEc2Local.  Up 246.57 seconds
+*/
+func isReady(txt string) bool {
+	return strings.Contains(txt, plugins.READY) ||
+		(strings.Contains(txt, `Cloud-init v.`) &&
+			strings.Contains(txt, `finished at`))
 }
