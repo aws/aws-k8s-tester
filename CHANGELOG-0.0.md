@@ -1,5 +1,23 @@
 
 
+
+<hr>
+
+
+## [0.0.9](https://github.com/aws/awstester/releases/tag/0.0.9) (2018-10-29)
+
+See [code changes](https://github.com/aws/awstester/compare/0.0.8...0.0.9).
+
+### `eksconfig`
+
+- Move [`eksconfig.Config.VPCID`, `eksconfig.Config.SubnetIDs`, and `eksconfig.Config.SecurityGroupID`](https://github.com/aws/awstester/commit/fac53f08a76ee0d664006fe92bd8823ea7d21789) field.
+- Add [`eksconfig.Config.TestMode` to replace `KubetestEmbeddedBinary`](https://github.com/aws/awstester/commit/3227894a3ff68c63ccf417f8e1aa14e08bfb5665) field.
+
+### Go
+
+- Compile with [*Go 1.11.1*](https://golang.org/doc/devel/release.html#go1.11).
+
+
 <hr>
 
 
@@ -82,9 +100,9 @@ See [code changes](https://github.com/aws/awstester/compare/0.0.5...0.0.6).
 
 ### `eksconfig`
 
-- Add [`KubetestEmbeddedBinary`](https://github.com/aws/awstester/commit/fed39903638dba3a96e83dca6c3dcbe0687317d1) field.
-- Remove [`KubetestVerbose`](https://github.com/aws/awstester/commit/6a7d73febaa3d962621031832774c698a2684b39) field.
-- Remove [`KubetestControlTimeout`](https://github.com/aws/awstester/commit/6a7d73febaa3d962621031832774c698a2684b39) field.
+- Add [`eksconfig.Config.KubetestEmbeddedBinary`](https://github.com/aws/awstester/commit/fed39903638dba3a96e83dca6c3dcbe0687317d1) field.
+- Remove [`eksconfig.Config.KubetestVerbose`](https://github.com/aws/awstester/commit/6a7d73febaa3d962621031832774c698a2684b39) field.
+- Remove [`eksconfig.Config.KubetestControlTimeout`](https://github.com/aws/awstester/commit/6a7d73febaa3d962621031832774c698a2684b39) field.
 
 ### `internal`
 
@@ -180,7 +198,7 @@ See [code changes](https://github.com/aws/awstester/compare/0.0.1...0.0.2).
   - If true, worker node exposes port :22 for SSH access.
 - Rename [`eksconfig.ClusterState.EC2NodeGroupStatus` to `eksconfig.ClusterState.WorkerNodeGroupStatus`](https://github.com/aws/awstester/pull/5).
 - Rename [`eksconfig.ClusterState.CFStackNode*` to `eksconfig.ClusterState.CFStackWorkerNode*`](https://github.com/aws/awstester/pull/5).
-- Remove [`KubetestEnableDumpClusterLogs`](https://github.com/aws/awstester/pull/5) field.
+- Remove [`eksconfig.Config.KubetestEnableDumpClusterLogs`](https://github.com/aws/awstester/pull/5) field.
 
 ### `eksdeployer`
 
@@ -208,9 +226,9 @@ See [code changes](https://github.com/aws/awstester/compare/0.0.0...0.0.1).
 
 ### `eksconfig`
 
-- Add [`KubetestVerbose`](https://github.com/aws/awstester/commit/17189259558110b066a974f6ee6fb2b8242c03d5) field.
-- Add [`KubetestControlTimeout`](https://github.com/aws/awstester/commit/17189259558110b066a974f6ee6fb2b8242c03d5) field.
-- Add [`KubetestEnableDumpClusterLogs`](https://github.com/aws/awstester/commit/aa4ab00bec7523bf154c0928727b62271758d93b) field.
+- Add [`eksconfig.Config.KubetestVerbose`](https://github.com/aws/awstester/commit/17189259558110b066a974f6ee6fb2b8242c03d5) field.
+- Add [`eksconfig.Config.KubetestControlTimeout`](https://github.com/aws/awstester/commit/17189259558110b066a974f6ee6fb2b8242c03d5) field.
+- Add [`eksconfig.Config.KubetestEnableDumpClusterLogs`](https://github.com/aws/awstester/commit/aa4ab00bec7523bf154c0928727b62271758d93b) field.
 
 ### `eksdeployer`
 
