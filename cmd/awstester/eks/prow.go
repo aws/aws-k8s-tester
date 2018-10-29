@@ -111,13 +111,13 @@ awstester \
 */
 func prowStatusGetFunc(cmd *cobra.Command, args []string) {
 	if !fileutil.Exist(prowStatusGetDataDir) {
-		if err := os.MkdirAll(prowStatusGetDataDir, 0600); err != nil {
+		if err := os.MkdirAll(prowStatusGetDataDir, 0666); err != nil {
 			fmt.Fprintf(os.Stderr, "failed to mkdir %v\n", err)
 			os.Exit(1)
 		}
 	}
 	now := time.Now().UTC()
-	p := fmt.Sprintf("prow-status-%d%02d%02d", now.Year(), now.Month(), now.Day())
+	p := filepath.Join(prowStatusGetDataDir, fmt.Sprintf("prow-status-%d%02d%02d", now.Year(), now.Month(), now.Day()))
 
 	mux := status.NewMux(context.Background(), zap.NewExample())
 	ts := httptest.NewServer(mux)
@@ -135,7 +135,7 @@ func prowStatusGetFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 	resp.Body.Close()
-	if err = ioutil.WriteFile(p+".html", d, 0600); err != nil {
+	if err = ioutil.WriteFile(p+".html", d, 0666); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to write %q (%v)\n", p+".html", err)
 		os.Exit(1)
 	}
@@ -151,7 +151,7 @@ func prowStatusGetFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 	resp.Body.Close()
-	if err = ioutil.WriteFile(p+".txt", d, 0600); err != nil {
+	if err = ioutil.WriteFile(p+".txt", d, 0666); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to write %q (%v)\n", p+".txt", err)
 		os.Exit(1)
 	}
