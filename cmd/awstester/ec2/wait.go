@@ -114,7 +114,7 @@ func waitFunc(cmd *cobra.Command, args []string) {
 							sh.Close()
 							lg.Info("cloud-init-output.log READY!", zap.String("instance-id", id))
 							delete(mm, id)
-							break doneAll
+							continue doneAll
 						}
 
 						lg.Info("cloud-init-output NOT READY", zap.String("instance-id", id))
