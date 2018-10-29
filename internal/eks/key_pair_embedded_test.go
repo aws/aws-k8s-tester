@@ -15,7 +15,7 @@ func TestEmbeddedCreateKeyPair(t *testing.T) {
 
 	cfg := eksconfig.NewDefault()
 
-	ek, err := NewTester(cfg)
+	ek, err := newTesterEmbedded(cfg)
 	if err != nil {
 		t.Fatal(err)
 	}

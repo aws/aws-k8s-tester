@@ -77,12 +77,8 @@ type embedded struct {
 	// TODO: add KMS plugin
 }
 
-// NewTester creates a new AWS tester.
-func NewTester(cfg *eksconfig.Config) (eksdeployer.Tester, error) {
-	if err := cfg.ValidateAndSetDefaults(); err != nil {
-		return nil, err
-	}
-
+// newTesterEmbedded creates a new embedded AWS tester.
+func newTesterEmbedded(cfg *eksconfig.Config) (eksdeployer.Tester, error) {
 	now := time.Now().UTC()
 
 	lg, err := zaputil.New(cfg.LogDebug, cfg.LogOutputs)

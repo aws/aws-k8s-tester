@@ -30,12 +30,8 @@ type awsCli struct {
 	// TODO: add KMS plugin
 }
 
-// NewAWSCLIDeployer creates a new EKS deployer with AWS CLI.
-func NewAWSCLIDeployer(cfg *eksconfig.Config) (eksdeployer.Deployer, error) {
-	if err := cfg.ValidateAndSetDefaults(); err != nil {
-		return nil, err
-	}
-
+// newTesterAWSCLI creates a new EKS tester with AWS CLI.
+func newTesterAWSCLI(cfg *eksconfig.Config) (eksdeployer.Tester, error) {
 	_, err := zaputil.New(cfg.LogDebug, cfg.LogOutputs)
 	if err != nil {
 		return nil, err

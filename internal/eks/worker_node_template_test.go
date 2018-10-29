@@ -14,7 +14,7 @@ func TestWorkerNodeTemplate(t *testing.T) {
 		Hostname:            "hostname",
 		EnableWorkerNodeSSH: true,
 	}
-	s, err := createWorkerNodeTemplate(v)
+	s, err := _createWorkerNodeTemplate(v)
 	if err != nil {
 		t.Fatal(err)
 	}

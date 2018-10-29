@@ -10,7 +10,38 @@ import (
 	"go.uber.org/zap"
 )
 
-func createWorkerNodeTemplate(v workerNodeStack) (string, error) {
+func createWorkerNodeTemplateFromURL(lg *zap.Logger) (string, error) {
+	d, err := httputil.Download(lg, os.Stdout, workerNodeStackTemplateURL)
+	if err != nil {
+		return "", nil
+	}
+	return string(d) + `
+  NodeSecurityGroup:
+    Description: The security group for the node group
+    Value: !Ref NodeSecurityGroup
+`, nil
+}
+
+const workerNodeStackTemplateURL = "https://amazon-eks.s3-us-west-2.amazonaws.com/cloudformation/2018-08-30/amazon-eks-nodegroup.yaml"
+
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+
+// TODO: not working...
+func _createWorkerNodeTemplate(v workerNodeStack) (string, error) {
 	tpl := template.Must(template.New("workerNodeStackTemplate").Parse(workerNodeStackTemplate))
 	buf := bytes.NewBuffer(nil)
 	if err := tpl.Execute(buf, v); err != nil {
@@ -26,20 +57,6 @@ type workerNodeStack struct {
 	Hostname            string
 	EnableWorkerNodeSSH bool
 }
-
-func createWorkerNodeTemplateFromURL(lg *zap.Logger) (string, error) {
-	d, err := httputil.Download(lg, os.Stdout, workerNodeStackTemplateURL)
-	if err != nil {
-		return "", nil
-	}
-	return string(d) + `
-  NodeSecurityGroup:
-    Description: The security group for the node group
-    Value: !Ref NodeSecurityGroup
-`, nil
-}
-
-const workerNodeStackTemplateURL = "https://amazon-eks.s3-us-west-2.amazonaws.com/cloudformation/2018-08-30/amazon-eks-nodegroup.yaml"
 
 // Make sure to keep this up-to-date
 // https://github.com/awslabs/amazon-eks-ami/blob/master/amazon-eks-nodegroup.yaml
