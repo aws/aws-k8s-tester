@@ -33,9 +33,10 @@ var keyPriorities = map[string]int{ // in the order of:
 	"mount-aws-cred":        2,
 	"install-go":            3,
 	"install-csi":           4,
-	"install-wrk":           5,
-	"install-alb":           6,
-	"install-docker-ubuntu": 7,
+	"install-kubeadm":       5,
+	"install-wrk":           6,
+	"install-alb":           7,
+	"install-docker-ubuntu": 8,
 }
 
 func convertToScript(userName, plugin string) (script, error) {
@@ -73,6 +74,12 @@ EOT`, userName, userName, string(d)),
 		return script{
 			key:  "install-go",
 			data: s,
+		}, nil
+
+	case plugin == "install-kubeadm":
+		return script{
+			key:  plugin,
+			data: installKubeadmn,
 		}, nil
 
 	case plugin == "install-wrk":
@@ -254,6 +261,34 @@ sudo echo GOPATH=/home/{{ .UserName }}/go >> /etc/environment
 echo "source /etc/environment" >> ${HOME}/.bashrc;
 
 go version
+
+##################################
+
+`
+
+const installKubeadmn = `
+
+################################## install kubeadm
+
+cd ${HOME}
+
+sudo apt-get update -y && sudo apt-get install -y apt-transport-https curl
+curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+
+cat <<EOF >/tmp/kubernetes.list
+deb https://apt.kubernetes.io/ kubernetes-$(lsb_release -cs) main
+EOF
+
+sudo cp /tmp/kubernetes.list /etc/apt/sources.list.d/kubernetes.list
+
+sudo apt-get update -y
+sudo apt-get install -y kubelet kubeadm kubectl || true
+sudo apt-mark hold kubelet kubeadm kubectl || true
+
+sudo systemctl enable kubelet
+sudo systemctl start kubelet
+
+sudo journalctl --output=cat -u kubelet
 
 ##################################
 
