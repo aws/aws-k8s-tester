@@ -80,7 +80,7 @@ func (md *embedded) createCluster() error {
 
 		md.cfg.ClusterState.Status = *do.Cluster.Status
 		md.cfg.ClusterState.Created = *do.Cluster.CreatedAt
-		md.cfg.ClusterState.PlatformVersion = *do.Cluster.PlatformVersion
+		md.cfg.PlatformVersion = *do.Cluster.PlatformVersion
 		md.cfg.Sync()
 
 		if md.cfg.ClusterState.Status == "FAILED" {
@@ -208,7 +208,7 @@ func (md *embedded) deleteCluster(deleteKubeconfig bool) error {
 		if err == nil {
 			md.cfg.ClusterState.Status = *do.Cluster.Status
 			md.cfg.ClusterState.Created = *do.Cluster.CreatedAt
-			md.cfg.ClusterState.PlatformVersion = *do.Cluster.PlatformVersion
+			md.cfg.PlatformVersion = *do.Cluster.PlatformVersion
 			md.cfg.Sync()
 
 			md.lg.Info("deleting cluster",

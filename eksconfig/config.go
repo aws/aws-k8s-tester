@@ -108,6 +108,9 @@ type Config struct {
 	// KubernetesVersion is the version of Kubernetes cluster.
 	// If empty, set default version.
 	KubernetesVersion string `json:"kubernetes-version,omitempty"`
+	// PlatformVersion is the platform version of EKS.
+	// Read-only to user.
+	PlatformVersion string `json:"platform-version,omitempty"`
 
 	// LogDebug is true to enable debug level logging.
 	LogDebug bool `json:"log-debug"`
@@ -172,9 +175,6 @@ type ClusterState struct {
 	// Does not include sub-project resource creation (e.g. ALB Ingress Controller).
 	UpTook string        `json:"up-took,omitempty"` // read-only to user
 	upTook time.Duration // read-only to user
-
-	// PlatformVersion is the platform version of EKS.
-	PlatformVersion string `json:"platform-version,omitempty"` // read-only to user
 
 	// ServiceRoleWithPolicyName is the name of the EKS cluster service role with policy.
 	// Prefixed with cluster name and suffixed with 'SERVICE-ROLE'.

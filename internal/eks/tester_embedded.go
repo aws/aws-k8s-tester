@@ -194,7 +194,7 @@ func newTesterEmbedded(cfg *eksconfig.Config) (eksdeployer.Tester, error) {
 	if err == nil {
 		md.cfg.ClusterState.Status = *co.Cluster.Status
 		md.cfg.ClusterState.Created = *co.Cluster.CreatedAt
-		md.cfg.ClusterState.PlatformVersion = *co.Cluster.PlatformVersion
+		md.cfg.PlatformVersion = *co.Cluster.PlatformVersion
 		if md.cfg.ClusterState.Status == "ACTIVE" {
 			// cluster is already created
 			// if up command failed, separate down command would need
@@ -495,7 +495,7 @@ func (md *embedded) IsUp() (err error) {
 	}
 	md.cfg.ClusterState.Status = *do.Cluster.Status
 	md.cfg.ClusterState.Created = *do.Cluster.CreatedAt
-	md.cfg.ClusterState.PlatformVersion = *do.Cluster.PlatformVersion
+	md.cfg.PlatformVersion = *do.Cluster.PlatformVersion
 	if md.cfg.ClusterState.Status == "ACTIVE" {
 		return md.cfg.Sync()
 	}
