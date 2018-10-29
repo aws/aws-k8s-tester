@@ -8,6 +8,10 @@
 
 See [code changes](https://github.com/aws/awstester/compare/0.0.8...0.0.9).
 
+### `awstester` CLI
+
+- Add [`awstester eks prow status-get`](https://github.com/aws/awstester/commit/04d3be2d2019eb3c5b1e81ac9ec68854b2acbc89) command.
+
 ### `eksconfig`
 
 - Move [`eksconfig.Config.VPCID`, `eksconfig.Config.SubnetIDs`, and `eksconfig.Config.SecurityGroupID`](https://github.com/aws/awstester/commit/fac53f08a76ee0d664006fe92bd8823ea7d21789) fields.
@@ -129,7 +133,7 @@ See [code changes](https://github.com/aws/awstester/compare/0.0.4...0.0.5).
 
 ### `awstester` CLI
 
-- Add [`awstester csi test e2e --vpc-id` flag](https://github.com/aws/awstester/commit/0d38677bc80e9466d9903190009eb3e78bd6a825).
+- Add [`awstester csi test e2e --vpc-id`](https://github.com/aws/awstester/commit/0d38677bc80e9466d9903190009eb3e78bd6a825) flag.
 
 ### `internal`
 
@@ -225,6 +229,13 @@ See [code changes](https://github.com/aws/awstester/compare/0.0.1...0.0.2).
 
 See [code changes](https://github.com/aws/awstester/compare/0.0.0...0.0.1).
 
+### `awstester` CLI
+
+- Add [`awstester version`](https://github.com/aws/awstester/commit/6d72c67fa1ae173fe211feb5d08aeaf596a7110e) command.
+- Add ALB target health check to [`awstester eks test alb correctness`](https://github.com/aws/awstester/commit/152bb09d45b79d418e9069fbf86d3452fd027589).
+- Add presets to [`awstester eks prow alb`](https://github.com/aws/awstester/commit/6ed769cb9a0685e13a36e4dd83f14210a253b758) output.
+  - Fix [issue#4](https://github.com/aws/awstester/issues/4).
+
 ### `eksconfig`
 
 - Add [`eksconfig.Config.KubetestVerbose`](https://github.com/aws/awstester/commit/17189259558110b066a974f6ee6fb2b8242c03d5) field.
@@ -237,13 +248,6 @@ See [code changes](https://github.com/aws/awstester/compare/0.0.0...0.0.1).
 - Remove [Publish](https://github.com/aws/awstester/commit/ad2a71dfc9687a9bd1a5869bd09a3f9eb771c504) method.
   - Not needed for now (to be added back later).
   - See [`kubetest/e2e.go`](https://github.com/kubernetes/test-infra/blob/fe0a9926c1c3d0a9d94e0d3c2f755dbdbc34d892/kubetest/e2e.go#L318-L322).
-
-### `awstester` CLI
-
-- Add [`awstester version`](https://github.com/aws/awstester/commit/6d72c67fa1ae173fe211feb5d08aeaf596a7110e) command.
-- Add ALB target health check to [`awstester eks test alb correctness`](https://github.com/aws/awstester/commit/152bb09d45b79d418e9069fbf86d3452fd027589).
-- Add presets to [`awstester eks prow alb`](https://github.com/aws/awstester/commit/6ed769cb9a0685e13a36e4dd83f14210a253b758) output.
-  - Fix [issue#4](https://github.com/aws/awstester/issues/4).
 
 ### `internal`
 
