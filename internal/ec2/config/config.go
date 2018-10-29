@@ -6,11 +6,15 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"reflect"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/aws/awstester/internal/ec2/config/plugins"
 	ec2types "github.com/aws/awstester/pkg/awsapi/ec2"
 
+	"github.com/aws/aws-sdk-go/service/ec2"
 	gyaml "github.com/ghodss/yaml"
 )
 
@@ -124,6 +128,218 @@ type Config struct {
 	// Instances is a set of EC2 instances created from this configuration.
 	Instances            []Instance          `json:"instances,omitempty"`
 	InstanceIDToInstance map[string]Instance `json:"instance-id-to-instance,omitempty"`
+}
+
+// Instance represents an EC2 instance.
+type Instance struct {
+	ImageID             string               `json:"image-id,omitempty"`
+	InstanceID          string               `json:"instance-id,omitempty"`
+	InstanceType        string               `json:"instance-type,omitempty"`
+	KeyName             string               `json:"key-name,omitempty"`
+	Placement           Placement            `json:"placement,omitempty"`
+	PrivateDNSName      string               `json:"private-dns-name,omitempty"`
+	PrivateIP           string               `json:"private-ip,omitempty"`
+	PublicDNSName       string               `json:"public-dns-name,omitempty"`
+	PublicIP            string               `json:"public-ip,omitempty"`
+	State               State                `json:"state,omitempty"`
+	SubnetID            string               `json:"subnet-id,omitempty"`
+	VPCID               string               `json:"vpc-id,omitempty"`
+	BlockDeviceMappings []BlockDeviceMapping `json:"block-device-mappings,omitempty"`
+	EBSOptimized        bool                 `json:"ebs-optimized"`
+	RootDeviceName      string               `json:"root-device-name,omitempty"`
+	RootDeviceType      string               `json:"root-device-type,omitempty"`
+	SecurityGroups      []SecurityGroup      `json:"security-groups,omitempty"`
+}
+
+// Placement defines EC2 placement.
+type Placement struct {
+	AvailabilityZone string `json:"availability-zone,omitempty"`
+	Tenancy          string `json:"tenancy,omitempty"`
+}
+
+// State defines an EC2 state.
+type State struct {
+	Code int64  `json:"code,omitempty"`
+	Name string `json:"name,omitempty"`
+}
+
+// BlockDeviceMapping defines a block device mapping.
+type BlockDeviceMapping struct {
+	DeviceName string `json:"device-name,omitempty"`
+	EBS        EBS    `json:"ebs,omitempty"`
+}
+
+// EBS defines an EBS volume.
+type EBS struct {
+	DeleteOnTermination bool   `json:"delete-on-termination,omitempty"`
+	Status              string `json:"status,omitempty"`
+	VolumeID            string `json:"volume-id,omitempty"`
+}
+
+// SecurityGroup defines a security group.
+type SecurityGroup struct {
+	GroupName string `json:"group-name,omitempty"`
+	GroupID   string `json:"group-id,omitempty"`
+}
+
+// ConvertEC2Instance converts "aws ec2 describe-instances" to "config.Instance".
+func ConvertEC2Instance(iv *ec2.Instance) (instance Instance) {
+	instance = Instance{
+		ImageID:      *iv.ImageId,
+		InstanceID:   *iv.InstanceId,
+		InstanceType: *iv.InstanceType,
+		KeyName:      *iv.KeyName,
+		Placement: Placement{
+			AvailabilityZone: *iv.Placement.AvailabilityZone,
+			Tenancy:          *iv.Placement.Tenancy,
+		},
+		PrivateDNSName: *iv.PrivateDnsName,
+		PrivateIP:      *iv.PrivateIpAddress,
+		State: State{
+			Code: *iv.State.Code,
+			Name: *iv.State.Name,
+		},
+		SubnetID:            *iv.SubnetId,
+		VPCID:               *iv.VpcId,
+		BlockDeviceMappings: make([]BlockDeviceMapping, len(iv.BlockDeviceMappings)),
+		EBSOptimized:        *iv.EbsOptimized,
+		RootDeviceName:      *iv.RootDeviceName,
+		RootDeviceType:      *iv.RootDeviceType,
+		SecurityGroups:      make([]SecurityGroup, len(iv.SecurityGroups)),
+	}
+	if iv.PublicDnsName != nil {
+		instance.PublicDNSName = *iv.PublicDnsName
+	}
+	if iv.PublicIpAddress != nil {
+		instance.PublicIP = *iv.PublicIpAddress
+	}
+	for j := range iv.BlockDeviceMappings {
+		instance.BlockDeviceMappings[j] = BlockDeviceMapping{
+			DeviceName: *iv.BlockDeviceMappings[j].DeviceName,
+			EBS: EBS{
+				DeleteOnTermination: *iv.BlockDeviceMappings[j].Ebs.DeleteOnTermination,
+				Status:              *iv.BlockDeviceMappings[j].Ebs.Status,
+				VolumeID:            *iv.BlockDeviceMappings[j].Ebs.VolumeId,
+			},
+		}
+	}
+	for j := range iv.SecurityGroups {
+		instance.SecurityGroups[j] = SecurityGroup{
+			GroupName: *iv.SecurityGroups[j].GroupName,
+			GroupID:   *iv.SecurityGroups[j].GroupId,
+		}
+	}
+	return instance
+}
+
+// NewDefault returns a copy of the default configuration.
+func NewDefault() *Config {
+	vv := defaultConfig
+	return &vv
+}
+
+// defaultConfig is the default configuration.
+//  - empty string creates a non-nil object for pointer-type field
+//  - omitting an entire field returns nil value
+//  - make sure to check both
+var defaultConfig = Config{
+	AWSRegion: "us-west-2",
+
+	WaitBeforeDown: 10 * time.Minute,
+	Down:           true,
+
+	LogDebug: false,
+
+	// default, stderr, stdout, or file name
+	// log file named with cluster name will be added automatically
+	LogOutputs:       []string{"stderr"},
+	UploadTesterLogs: false,
+
+	OSDistribution: "ubuntu",
+	UserName:       "ubuntu",
+
+	// Ubuntu Server 16.04 LTS (HVM), SSD Volume Type
+	ImageID: "ami-ba602bc2",
+	Plugins: []string{
+		"update-ubuntu",
+		"install-go1.11.1",
+	},
+
+	// 4 vCPU, 15 GB RAM
+	InstanceType: "m3.xlarge",
+	Count:        1,
+
+	AssociatePublicIPAddress: true,
+}
+
+const envPfxAWSTesterEC2 = "AWSTESTER_EC2_"
+
+// UpdateFromEnvs updates fields from environmental variables.
+func (cfg *Config) UpdateFromEnvs() error {
+	cc := *cfg
+
+	tp1, vv1 := reflect.TypeOf(&cc).Elem(), reflect.ValueOf(&cc).Elem()
+	for i := 0; i < tp1.NumField(); i++ {
+		jv := tp1.Field(i).Tag.Get("json")
+		if jv == "" {
+			continue
+		}
+		jv = strings.Replace(jv, ",omitempty", "", -1)
+		jv = strings.Replace(jv, "-", "_", -1)
+		jv = strings.ToUpper(strings.Replace(jv, "-", "_", -1))
+		env := envPfxAWSTesterEC2 + jv
+		if os.Getenv(env) == "" {
+			continue
+		}
+		sv := os.Getenv(env)
+
+		switch vv1.Field(i).Type().Kind() {
+		case reflect.String:
+			vv1.Field(i).SetString(sv)
+
+		case reflect.Bool:
+			bb, err := strconv.ParseBool(sv)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vv1.Field(i).SetBool(bb)
+
+		case reflect.Int, reflect.Int32, reflect.Int64:
+			iv, err := strconv.ParseInt(sv, 10, 64)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vv1.Field(i).SetInt(iv)
+
+		case reflect.Uint, reflect.Uint32, reflect.Uint64:
+			iv, err := strconv.ParseUint(sv, 10, 64)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vv1.Field(i).SetUint(iv)
+
+		case reflect.Float32, reflect.Float64:
+			fv, err := strconv.ParseFloat(sv, 64)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vv1.Field(i).SetFloat(fv)
+
+		case reflect.Slice:
+			ss := strings.Split(sv, ",")
+			slice := reflect.MakeSlice(reflect.TypeOf([]string{}), len(ss), len(ss))
+			for i := range ss {
+				slice.Index(i).SetString(ss[i])
+			}
+			vv1.Field(i).Set(slice)
+
+		default:
+			return fmt.Errorf("%q (%v) is not supported as an env", env, vv1.Field(i).Type())
+		}
+	}
+	*cfg = cc
+
+	return nil
 }
 
 // ValidateAndSetDefaults returns an error for invalid configurations.
