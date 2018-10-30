@@ -9,8 +9,11 @@ See [code changes](https://github.com/aws/awstester/compare/0.1.1...0.1.2).
 
 ### `awstester` CLI
 
-- Add [`awstester ec2 create instances --wait`](https://github.com/aws/awstester/commit/9a62f8d69347cfe3b65b9862e2f5faf4c50f972b) flag.
 - Remove [`awstester ec2 wait`](https://github.com/aws/awstester/commit/36a74c699819d92abdf7f89028ea95b54f19fc98) command.
+
+### `internal`
+
+- Add [`internal/ec2/config.Config.Wait`](https://github.com/aws/awstester/commit/6073c2de289e352c5454d4b17380022168bcbac6) flag.
 
 ### Go
 
