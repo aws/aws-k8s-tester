@@ -350,7 +350,7 @@ func (md *embedded) createInstances() (err error) {
 			} else {
 				nLeft := n
 				for nLeft > 0 {
-					tkn := md.cfg.ID + fmt.Sprintf("%X", time.Now().Nanosecond())
+					tkn := md.cfg.ID + fmt.Sprintf("%X", time.Now().UTC().Nanosecond())
 					tokens = append(tokens, tkn)
 
 					x := runInstancesBatch
