@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -514,6 +515,9 @@ func (md *embedded) createInstances() (err error) {
 			time.Sleep(5 * time.Second)
 		}
 	}
+
+	// sort that first launched EC2 instance is at front
+	sort.Sort(ec2config.Instances(md.cfg.Instances))
 
 	md.lg.Info(
 		"created EC2 instances",
