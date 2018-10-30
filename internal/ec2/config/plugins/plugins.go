@@ -308,7 +308,7 @@ while [[ ${COUNT} -lt ${RETRIES} ]]; do
   git clone https://github.com/wg/wrk.git
   if [[ $? -eq 0 ]]; then
     RETRIES=0
-    echo "Successully git cloned!"
+    echo "Successfully git cloned!"
     break
   fi
   let COUNT=${COUNT}+1
@@ -364,7 +364,7 @@ while [[ ${COUNT} -lt ${RETRIES} ]]; do
   git clone https://github.com/{{ .GitName }}/{{ .GitRepoName }}.git
   if [[ $? -eq 0 ]]; then
     RETRIES=0
-    echo "Successully git cloned!"
+    echo "Successfully git cloned!"
     break
   fi
   let COUNT=${COUNT}+1
