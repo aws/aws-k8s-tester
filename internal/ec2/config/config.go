@@ -128,6 +128,9 @@ type Config struct {
 	// Instances is a set of EC2 instances created from this configuration.
 	Instances            []Instance          `json:"instances,omitempty"`
 	InstanceIDToInstance map[string]Instance `json:"instance-id-to-instance,omitempty"`
+
+	// Wait is true to wait until all EC2 instances are ready.
+	Wait bool `json:"wait"`
 }
 
 // Instance represents an EC2 instance.
@@ -282,6 +285,8 @@ var defaultConfig = Config{
 	Count:        1,
 
 	AssociatePublicIPAddress: true,
+
+	Wait: false,
 }
 
 const envPfxAWSTesterEC2 = "AWSTESTER_EC2_"

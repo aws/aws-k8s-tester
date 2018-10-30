@@ -11,6 +11,8 @@ import (
 	"time"
 
 	ec2config "github.com/aws/awstester/internal/ec2/config"
+	"github.com/aws/awstester/internal/ec2/config/plugins"
+	"github.com/aws/awstester/internal/ssh"
 	"github.com/aws/awstester/pkg/awsapi"
 	"github.com/aws/awstester/pkg/zaputil"
 
@@ -524,7 +526,95 @@ func (md *embedded) createInstances() (err error) {
 		zap.Int("count", md.cfg.Count),
 		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 	)
+
+	if md.cfg.Wait {
+		md.cfg.Sync()
+		md.lg.Info(
+			"waiting for EC2 instances",
+			zap.Int("count", md.cfg.Count),
+			zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
+		)
+	}
 	return md.cfg.Sync()
+}
+
+func (md *embedded) wait() {
+	mm := make(map[string]ec2config.Instance, len(md.cfg.InstanceIDToInstance))
+	for k, v := range md.cfg.InstanceIDToInstance {
+		mm[k] = v
+	}
+
+	for {
+	done:
+		for id, iv := range mm {
+			md.lg.Info("waiting for EC2", zap.String("instance-id", id))
+			sh, serr := ssh.New(ssh.Config{
+				Logger:   md.lg,
+				KeyPath:  md.cfg.KeyPath,
+				Addr:     iv.PublicIP + ":22",
+				UserName: md.cfg.UserName,
+			})
+			if serr != nil {
+				fmt.Fprintf(os.Stderr, "failed to create SSH (%v)\n", serr)
+				os.Exit(1)
+			}
+
+			if err := sh.Connect(); err != nil {
+				fmt.Fprintf(os.Stderr, "failed to connect SSH (%v)\n", err)
+				os.Exit(1)
+			}
+
+			var out []byte
+			var err error
+			for {
+				select {
+				case <-time.After(5 * time.Second):
+					out, err = sh.Run(
+						"tail -10 /var/log/cloud-init-output.log",
+						ssh.WithRetry(100, 5*time.Second),
+						ssh.WithTimeout(30*time.Second),
+					)
+					if err != nil {
+						md.lg.Warn("failed to fetch cloud-init-output.log", zap.Error(err))
+						sh.Close()
+						if serr := sh.Connect(); serr != nil {
+							fmt.Fprintf(os.Stderr, "failed to connect SSH (%v)\n", serr)
+							continue done
+						}
+						continue
+					}
+
+					fmt.Printf("\n\n%s\n\n", string(out))
+
+					if isReady(string(out)) {
+						sh.Close()
+						md.lg.Info("cloud-init-output.log READY!", zap.String("instance-id", id))
+						delete(mm, id)
+						continue done
+					}
+
+					md.lg.Info("cloud-init-output NOT READY", zap.String("instance-id", id))
+				}
+			}
+		}
+		if len(mm) == 0 {
+			md.lg.Info("all EC2 instances are ready")
+			break
+		}
+	}
+}
+
+/*
+to match:
+
+AWSTESTER_EC2_PLUGIN_READY
+Cloud-init v. 18.2 running 'modules:final' at Mon, 29 Oct 2018 22:40:13 +0000. Up 21.89 seconds.
+Cloud-init v. 18.2 finished at Mon, 29 Oct 2018 22:43:59 +0000. Datasource DataSourceEc2Local.  Up 246.57 seconds
+*/
+func isReady(txt string) bool {
+	return strings.Contains(txt, plugins.READY) ||
+		(strings.Contains(txt, `Cloud-init v.`) &&
+			strings.Contains(txt, `finished at`))
 }
 
 func (md *embedded) deleteInstances() (err error) {

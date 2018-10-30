@@ -21,6 +21,7 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWSTESTER_EC2_ASSOCIATE_PUBLIC_IP_ADDRESS", "false")
 	os.Setenv("AWSTESTER_EC2_SUBNET_IDS", "a,b,c")
 	os.Setenv("AWSTESTER_EC2_SECURITY_GROUP_IDS", "d,e,f")
+	os.Setenv("AWSTESTER_EC2_WAIT", "true")
 
 	defer func() {
 		os.Unsetenv("AWSTESTER_EC2_AWS_REGION")
@@ -35,6 +36,7 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWSTESTER_EC2_ASSOCIATE_PUBLIC_IP_ADDRESS")
 		os.Unsetenv("AWSTESTER_EC2_SUBNET_IDS")
 		os.Unsetenv("AWSTESTER_EC2_SECURITY_GROUP_IDS")
+		os.Unsetenv("AWSTESTER_EC2_WAIT")
 	}()
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
@@ -76,5 +78,8 @@ func TestEnv(t *testing.T) {
 	}
 	if !reflect.DeepEqual(cfg.SecurityGroupIDs, []string{"d", "e", "f"}) {
 		t.Fatalf("SecurityGroupIDs unexpected %v", cfg.SecurityGroupIDs)
+	}
+	if !cfg.Wait {
+		t.Fatalf("Wait expected true, got %v", cfg.Wait)
 	}
 }
