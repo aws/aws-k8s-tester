@@ -9,11 +9,11 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.1...0.1.2).
 
 ### Project
 
-- Rename to [`aws-k8s-tester`](TODO).
+- Rename to [`aws-k8s-tester`](https://github.com/aws/aws-k8s-tester/commit/1512e69443705eafe0ad5b4440e325d2f374cf73).
 
 ### `aws-k8s-tester` CLI
 
-- Rename to [`aws-k8s-tester` from `awstester`](TODO).
+- Rename to [`aws-k8s-tester` from `awstester`](https://github.com/aws/aws-k8s-tester/commit/1512e69443705eafe0ad5b4440e325d2f374cf73).
 - Remove [`aws-k8s-tester ec2 wait`](https://github.com/aws/aws-k8s-tester/commit/36a74c699819d92abdf7f89028ea95b54f19fc98) command.
 
 ### `internal`
