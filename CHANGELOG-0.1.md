@@ -3,6 +3,22 @@
 <hr>
 
 
+## [0.1.2](https://github.com/aws/awstester/releases/tag/0.1.2) (2018-10-30)
+
+See [code changes](https://github.com/aws/awstester/compare/0.1.1...0.1.2).
+
+### `awstester` CLI
+
+- Add [`awstester ec2 create instances --wait`](https://github.com/aws/awstester/commit/9a62f8d69347cfe3b65b9862e2f5faf4c50f972b) flag.
+
+### Go
+
+- Compile with [*Go 1.11.1*](https://golang.org/doc/devel/release.html#go1.11).
+
+
+<hr>
+
+
 ## [0.1.1](https://github.com/aws/awstester/releases/tag/0.1.1) (2018-10-29)
 
 See [code changes](https://github.com/aws/awstester/compare/0.1.0...0.1.1).
@@ -10,7 +26,6 @@ See [code changes](https://github.com/aws/awstester/compare/0.1.0...0.1.1).
 ### `awstester` CLI
 
 - Add [`awstester ec2 wait`](https://github.com/aws/awstester/commit/8f66f7413f8f32a8479888ba3ae53449e75d05cc) command.
-- Add [`awstester ec2 wait --all`](https://github.com/aws/awstester/commit/0fe8edd3c4755ba7ef78e55809b2fcf19cc54abd) flag.
 - Use EC2 metadata to name [`awstester wrk` output](https://github.com/aws/awstester/commit/03ec0af6e12d4ca85e539905b7ec3da2729c1f3f).
 - Split [`awstester eks prow status-serve/get` to `awstester eks prow status serve` and `awstester eks prow status get`](https://github.com/aws/awstester/commit/297bf2795c4bc62c55de121b47e0a1bb62ad6108).
 
