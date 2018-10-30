@@ -13,9 +13,9 @@ import (
 	"github.com/aws/awstester/internal/ec2/config/plugins"
 	"github.com/aws/awstester/internal/ssh"
 	"github.com/aws/awstester/pkg/fileutil"
-	"go.uber.org/zap"
 
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 )
 
 func newCreate() *cobra.Command {
@@ -88,13 +88,14 @@ func createInstancesFunc(cmd *cobra.Command, args []string) {
 		fmt.Fprintf(os.Stderr, "failed to create instances %v\n", err)
 		os.Exit(1)
 	}
-	fmt.Println("'awstester ec2 create instances' success")
 
 	fmt.Println(dp.GenerateSSHCommands())
 
 	if createWait {
 		wait(cfg)
 	}
+
+	fmt.Println(dp.GenerateSSHCommands())
 }
 
 func wait(cfg *ec2config.Config) {
