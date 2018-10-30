@@ -244,6 +244,17 @@ type Instance struct {
 	RootDeviceName         string                  `json:"root-device-name,omitempty"`
 	RootDeviceType         string                  `json:"root-device-type,omitempty"`
 	SecurityGroups         []EC2SecurityGroup      `json:"security-groups,omitempty"`
+	LaunchTime             time.Time               `json:"launch-time,omitempty"`
+}
+
+// Instances is a list of EC2 instances.
+type Instances []Instance
+
+func (ss Instances) Len() int      { return len(ss) }
+func (ss Instances) Swap(i, j int) { ss[i], ss[j] = ss[j], ss[i] }
+func (ss Instances) Less(i, j int) bool {
+	// first launched instances in front
+	return ss[i].LaunchTime.Before(ss[j].LaunchTime)
 }
 
 // EC2Placement defines EC2 placement.

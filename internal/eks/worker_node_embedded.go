@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 	"time"
 
@@ -595,6 +596,7 @@ func (md *embedded) checkASG() (err error) {
 }
 
 // convertEC2Instances converts "aws ec2 describe-instances" to "eksconfig.Instance".
+// And it sorts in a way that the last launched instance is at front.
 func convertEC2Instances(iss []*ec2.Instance) (instances []eksconfig.Instance) {
 	instances = make([]eksconfig.Instance, len(iss))
 	for i, v := range iss {
@@ -622,6 +624,7 @@ func convertEC2Instances(iss []*ec2.Instance) (instances []eksconfig.Instance) {
 			RootDeviceName:         *v.RootDeviceName,
 			RootDeviceType:         *v.RootDeviceType,
 			SecurityGroups:         make([]eksconfig.EC2SecurityGroup, len(v.SecurityGroups)),
+			LaunchTime:             *v.LaunchTime,
 		}
 		for j := range v.BlockDeviceMappings {
 			instances[i].EC2BlockDeviceMappings[j] = eksconfig.EC2BlockDeviceMapping{
@@ -640,5 +643,9 @@ func convertEC2Instances(iss []*ec2.Instance) (instances []eksconfig.Instance) {
 			}
 		}
 	}
+
+	// sort that first launched EC2 instance is at front
+	sort.Sort(eksconfig.Instances(instances))
+
 	return instances
 }
