@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"os"
 
-	alblog "github.com/aws/aws-k8s-tester/cmd/alb-log"
-	"github.com/aws/aws-k8s-tester/cmd/csi"
-	"github.com/aws/aws-k8s-tester/cmd/ec2"
-	"github.com/aws/aws-k8s-tester/cmd/ecr"
-	"github.com/aws/aws-k8s-tester/cmd/eks"
-	"github.com/aws/aws-k8s-tester/cmd/version"
-	"github.com/aws/aws-k8s-tester/cmd/wrk"
+	alblog "github.com/aws/aws-k8s-tester/cmd/aws-k8s-tester/alb-log"
+	"github.com/aws/aws-k8s-tester/cmd/aws-k8s-tester/csi"
+	"github.com/aws/aws-k8s-tester/cmd/aws-k8s-tester/ec2"
+	"github.com/aws/aws-k8s-tester/cmd/aws-k8s-tester/ecr"
+	"github.com/aws/aws-k8s-tester/cmd/aws-k8s-tester/eks"
+	"github.com/aws/aws-k8s-tester/cmd/aws-k8s-tester/version"
+	"github.com/aws/aws-k8s-tester/cmd/aws-k8s-tester/wrk"
 
 	"github.com/spf13/cobra"
 )
