@@ -48,8 +48,11 @@ func newCreateInstances() *cobra.Command {
 		Short: "Create EC2 instances",
 		Run:   createInstancesFunc,
 	}
+	cmd.PersistentFlags().BoolVar(&createWait, "wait", false, "true to wait until EC2 instances are ready")
 	return cmd
 }
+
+var createWait bool
 
 func createInstancesFunc(cmd *cobra.Command, args []string) {
 	if !fileutil.Exist(path) {
@@ -81,4 +84,8 @@ func createInstancesFunc(cmd *cobra.Command, args []string) {
 	fmt.Println("'awstester ec2 create instances' success")
 
 	fmt.Println(dp.GenerateSSHCommands())
+
+	if createWait {
+		wait(cfg)
+	}
 }
