@@ -7,11 +7,11 @@ if ! [[ "$0" =~ tests/ginkgo.sh ]]; then
 fi
 
 make clean
-go install -v ./cmd/awstester
+go install -v ./cmd/aws-k8s-tester
 
 
 
-pushd ${GOPATH}/src/github.com/aws/awstester/kubetest/
+pushd ${GOPATH}/src/github.com/aws/aws-k8s-tester/kubetest/
 
 ginkgo \
   -r \

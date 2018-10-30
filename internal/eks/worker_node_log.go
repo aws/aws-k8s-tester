@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/aws/awstester/eksconfig"
-	"github.com/aws/awstester/internal/ssh"
-	"github.com/aws/awstester/pkg/fileutil"
+	"github.com/aws/aws-k8s-tester/eksconfig"
+	"github.com/aws/aws-k8s-tester/internal/ssh"
+	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 
 	"go.uber.org/zap"
 )

@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/aws/awstester/eksdeployer"
-	"github.com/aws/awstester/kubetest/eks"
+	"github.com/aws/aws-k8s-tester/eksdeployer"
+	"github.com/aws/aws-k8s-tester/kubetest/eks"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -31,7 +31,7 @@ func TestMain(m *testing.M) {
 
 func TestAWSTesterEKS(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "awstester eks ALB Ingress Controller e2e tests")
+	RunSpecs(t, "aws-k8s-tester eks ALB Ingress Controller e2e tests")
 }
 
 var tester eksdeployer.Tester

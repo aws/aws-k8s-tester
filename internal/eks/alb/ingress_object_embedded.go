@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aws/awstester/internal/eks/alb/ingress"
-	"github.com/aws/awstester/internal/eks/alb/ingress/path"
-	"github.com/aws/awstester/pkg/httputil"
+	"github.com/aws/aws-k8s-tester/internal/eks/alb/ingress"
+	"github.com/aws/aws-k8s-tester/internal/eks/alb/ingress/path"
+	"github.com/aws/aws-k8s-tester/pkg/httputil"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/elbv2"

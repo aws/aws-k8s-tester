@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/aws/awstester/eksdeployer"
+	"github.com/aws/aws-k8s-tester/eksdeployer"
 )
 
 // NewTester creates a new EKS tester.
@@ -31,7 +31,7 @@ func (tr *tester) TestALBCorrectness() (err error) {
 		return err
 	}
 	_, err = tr.ctrl.Output(exec.Command(
-		tr.awsTesterPath,
+		tr.awsK8sTesterPath,
 		"eks",
 		"--path="+tr.cfg.ConfigPath,
 		"test", "alb", "correctness",
@@ -44,7 +44,7 @@ func (tr *tester) TestALBQPS() (err error) {
 		return err
 	}
 	_, err = tr.ctrl.Output(exec.Command(
-		tr.awsTesterPath,
+		tr.awsK8sTesterPath,
 		"eks",
 		"--path="+tr.cfg.ConfigPath,
 		"test", "alb", "qps",
@@ -57,7 +57,7 @@ func (tr *tester) TestALBMetrics() (err error) {
 		return err
 	}
 	_, err = tr.ctrl.Output(exec.Command(
-		tr.awsTesterPath,
+		tr.awsK8sTesterPath,
 		"eks",
 		"--path="+tr.cfg.ConfigPath,
 		"test", "alb", "metrics",
@@ -65,10 +65,10 @@ func (tr *tester) TestALBMetrics() (err error) {
 	return err
 }
 
-// UploadToBucketForTests uploads a local file to awstester S3 bucket.
+// UploadToBucketForTests uploads a local file to aws-k8s-tester S3 bucket.
 func (tr *tester) UploadToBucketForTests(localPath, s3Path string) (err error) {
 	_, err = tr.ctrl.Output(exec.Command(
-		tr.awsTesterPath,
+		tr.awsK8sTesterPath,
 		"eks",
 		"--path="+tr.cfg.ConfigPath,
 		"s3-upload",

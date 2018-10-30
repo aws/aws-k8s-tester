@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/aws/awstester/pkg/csvutil"
+	"github.com/aws/aws-k8s-tester/pkg/csvutil"
 )
 
 var logHeader = []string{

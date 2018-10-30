@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aws/awstester/pkg/fileutil"
+	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 
 	humanize "github.com/dustin/go-humanize"
 	"go.uber.org/zap"

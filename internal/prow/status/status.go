@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/aws/awstester/internal/prow"
+	"github.com/aws/aws-k8s-tester/internal/prow"
 
 	"go.uber.org/zap"
 )

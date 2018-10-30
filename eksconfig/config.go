@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aws/awstester/pkg/awsapi/ec2"
+	"github.com/aws/aws-k8s-tester/pkg/awsapi/ec2"
 
 	gyaml "github.com/ghodss/yaml"
 	"k8s.io/client-go/util/homedir"
@@ -24,10 +24,10 @@ type Config struct {
 	// TestMode is "embedded" or "aws-cli".
 	TestMode string `json:"test-mode,omitempty"`
 
-	// AWSTesterImage is the awstester container image.
-	// Required for "awstester ingress server" for ALB Ingress Controller tests.
+	// AWSTesterImage is the aws-k8s-tester container image.
+	// Required for "aws-k8s-tester ingress server" for ALB Ingress Controller tests.
 	// Only required when ALB Ingress "TestMode" is "ingress-test-server".
-	AWSTesterImage string `json:"awstester-image,omitempty"`
+	AWSTesterImage string `json:"aws-k8s-tester-image,omitempty"`
 
 	// WaitBeforeDown is the duration to sleep before cluster tear down.
 	WaitBeforeDown time.Duration `json:"wait-before-down,omitempty"`
@@ -75,8 +75,8 @@ type Config struct {
 	AWSAccountID string `json:"aws-account-id,omitempty"`
 	// AWSCredentialToMountPath is the file path to AWS credential.
 	// Required for AWS ALB Ingress Controller deployments and other AWS specific tests.
-	// If not empty, deployer is expected to mount the file as a secret object "aws-cred-awstester",
-	// to the path "/etc/aws-cred-awstester/aws-cred-awstester", under "kube-system" namespace.
+	// If not empty, deployer is expected to mount the file as a secret object "aws-cred-aws-k8s-tester",
+	// to the path "/etc/aws-cred-aws-k8s-tester/aws-cred-aws-k8s-tester", under "kube-system" namespace.
 	// Path must be an absolute path, although it will try to parse '~/.aws' or '${HOME}/.aws'.
 	// If "AWS_SHARED_CREDENTIALS_FILE" is specified, this field will overwritten.
 	AWSCredentialToMountPath string `json:"aws-credential-to-mount-path,omitempty"`
@@ -119,7 +119,7 @@ type Config struct {
 	// Multiple values are accepted. If empty, it sets to 'default', which outputs to stderr.
 	// See https://godoc.org/go.uber.org/zap#Open and https://godoc.org/go.uber.org/zap#Config for more details.
 	LogOutputs []string `json:"log-outputs,omitempty"`
-	// LogOutputToUploadPath is the awstester log file path to upload to cloud storage.
+	// LogOutputToUploadPath is the aws-k8s-tester log file path to upload to cloud storage.
 	// Must be left empty.
 	// This will be overwritten by cluster name.
 	LogOutputToUploadPath       string `json:"log-output-to-upload-path,omitempty"`
@@ -439,7 +439,7 @@ func init() {
 func genTag() string {
 	// use UTC time for everything
 	now := time.Now().UTC()
-	return fmt.Sprintf("awstester-eks-%d%02d%02d", now.Year(), now.Month(), now.Day())
+	return fmt.Sprintf("aws-k8s-tester-eks-%d%02d%02d", now.Year(), now.Month(), now.Day())
 }
 
 func genClusterName(tag string) string {
@@ -524,7 +524,7 @@ var defaultConfig = Config{
 //
 // Example usage:
 //
-//  import "github.com/aws/awstester/eksconfig"
+//  import "github.com/aws/aws-k8s-tester/eksconfig"
 //  cfg := eksconfig.Load("test.yaml")
 //  p, err := cfg.BackupConfig()
 //  err = cfg.ValidateAndSetDefaults()
@@ -587,7 +587,7 @@ func (cfg *Config) Sync() (err error) {
 	return ioutil.WriteFile(cfg.ConfigPath, d, 0600)
 }
 
-// BackupConfig stores the original awstester configuration
+// BackupConfig stores the original aws-k8s-tester configuration
 // file to backup, suffixed with ".backup.yaml".
 // Otherwise, deployer will overwrite its state back to YAML.
 // Useful when the original configuration would be reused
@@ -618,7 +618,7 @@ const (
 
 // ValidateAndSetDefaults returns an error for invalid configurations.
 // And updates empty fields with default values.
-// At the end, it writes populated YAML to awstester config path.
+// At the end, it writes populated YAML to aws-k8s-tester config path.
 func (cfg *Config) ValidateAndSetDefaults() error {
 	switch cfg.TestMode {
 	case "embedded":
@@ -689,7 +689,7 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		return fmt.Errorf("AWSCustomEndpoint %q is not valid", cfg.AWSCustomEndpoint)
 	}
 
-	// resources created from awstester always follow
+	// resources created from aws-k8s-tester always follow
 	// the same naming convention
 	cfg.ClusterState.ServiceRoleWithPolicyName = genServiceRoleWithPolicy(cfg.ClusterName)
 	cfg.ClusterState.ServiceRolePolicies = []string{serviceRolePolicyARNCluster, serviceRolePolicyARNService}
@@ -704,7 +704,7 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 
 	////////////////////////////////////////////////////////////////////////
 	// populate all paths on disks and on remote storage
-	cfg.ConfigPathBucket = filepath.Join(cfg.ClusterName, "awstester-eks.config.yaml")
+	cfg.ConfigPathBucket = filepath.Join(cfg.ClusterName, "aws-k8s-tester-eks.config.yaml")
 	cfg.ConfigPathURL = genS3URL(cfg.AWSRegion, cfg.Tag, cfg.ConfigPathBucket)
 
 	cfg.LogOutputToUploadPath = filepath.Join(os.TempDir(), fmt.Sprintf("%s.log", cfg.ClusterName))
@@ -719,7 +719,7 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		// auto-insert generated log output paths to zap logger output list
 		cfg.LogOutputs = append(cfg.LogOutputs, cfg.LogOutputToUploadPath)
 	}
-	cfg.LogOutputToUploadPathBucket = filepath.Join(cfg.ClusterName, "awstester-eks.log")
+	cfg.LogOutputToUploadPathBucket = filepath.Join(cfg.ClusterName, "aws-k8s-tester-eks.log")
 	cfg.LogOutputToUploadPathURL = genS3URL(cfg.AWSRegion, cfg.Tag, cfg.LogOutputToUploadPathBucket)
 
 	cfg.KubeConfigPath = fmt.Sprintf(
@@ -934,8 +934,8 @@ func (cfg *Config) SetIngressUpTook(d time.Duration) {
 }
 
 const (
-	envPfxAWSTesterEKS    = "AWSTESTER_EKS_"
-	envPfxAWSTesterEKSALB = "AWSTESTER_EKS_ALB_"
+	envPfxAWSTesterEKS    = "AWS_K8S_TESTER_EKS_"
+	envPfxAWSTesterEKSALB = "AWS_K8S_TESTER_EKS_ALB_"
 )
 
 // UpdateFromEnvs updates fields from environmental variables.
@@ -1159,7 +1159,7 @@ const (
 )
 
 // genS3URL returns S3 URL path.
-// e.g. https://s3-us-west-2.amazonaws.com/awstester-20180925/hello-world
+// e.g. https://s3-us-west-2.amazonaws.com/aws-k8s-tester-20180925/hello-world
 func genS3URL(region, bucket, s3Path string) string {
 	return fmt.Sprintf("https://s3-%s.amazonaws.com/%s/%s", region, bucket, s3Path)
 }

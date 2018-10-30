@@ -5,11 +5,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/aws/awstester/eksconfig"
-	"github.com/aws/awstester/eksdeployer"
-	"github.com/aws/awstester/internal/eks/alb"
-	"github.com/aws/awstester/internal/eks/s3"
-	"github.com/aws/awstester/pkg/zaputil"
+	"github.com/aws/aws-k8s-tester/eksconfig"
+	"github.com/aws/aws-k8s-tester/eksdeployer"
+	"github.com/aws/aws-k8s-tester/internal/eks/alb"
+	"github.com/aws/aws-k8s-tester/internal/eks/s3"
+	"github.com/aws/aws-k8s-tester/pkg/zaputil"
 
 	"go.uber.org/zap"
 	"k8s.io/utils/exec"

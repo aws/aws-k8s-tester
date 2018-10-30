@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aws/awstester/pkg/csvutil"
+	"github.com/aws/aws-k8s-tester/pkg/csvutil"
 	"go.uber.org/zap"
 
 	"github.com/dustin/go-humanize"

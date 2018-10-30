@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/aws/awstester/internal/eks/alb/ingress/path"
+	"github.com/aws/aws-k8s-tester/internal/eks/alb/ingress/path"
 
 	"k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/util/intstr"

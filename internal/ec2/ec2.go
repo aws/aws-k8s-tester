@@ -10,11 +10,11 @@ import (
 	"sync"
 	"time"
 
-	ec2config "github.com/aws/awstester/internal/ec2/config"
-	"github.com/aws/awstester/internal/ec2/config/plugins"
-	"github.com/aws/awstester/internal/ssh"
-	"github.com/aws/awstester/pkg/awsapi"
-	"github.com/aws/awstester/pkg/zaputil"
+	ec2config "github.com/aws/aws-k8s-tester/internal/ec2/config"
+	"github.com/aws/aws-k8s-tester/internal/ec2/config/plugins"
+	"github.com/aws/aws-k8s-tester/internal/ssh"
+	"github.com/aws/aws-k8s-tester/pkg/awsapi"
+	"github.com/aws/aws-k8s-tester/pkg/zaputil"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -103,7 +103,7 @@ func NewDeployer(cfg *ec2config.Config) (Deployer, error) {
 	lg.Info(
 		"created EC2 deployer",
 		zap.String("id", cfg.ID),
-		zap.String("awstester-ec2-config-path", cfg.ConfigPath),
+		zap.String("aws-k8s-tester-ec2-config-path", cfg.ConfigPath),
 		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 	)
 	return md, md.cfg.Sync()
@@ -607,7 +607,7 @@ func (md *embedded) wait() {
 /*
 to match:
 
-AWSTESTER_EC2_PLUGIN_READY
+AWS_K8S_TESTER_EC2_PLUGIN_READY
 Cloud-init v. 18.2 running 'modules:final' at Mon, 29 Oct 2018 22:40:13 +0000. Up 21.89 seconds.
 Cloud-init v. 18.2 finished at Mon, 29 Oct 2018 22:43:59 +0000. Datasource DataSourceEc2Local.  Up 246.57 seconds
 */

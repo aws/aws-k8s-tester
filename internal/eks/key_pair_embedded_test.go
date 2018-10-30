@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/aws/awstester/eksconfig"
+	"github.com/aws/aws-k8s-tester/eksconfig"
 )
 
 func TestEmbeddedCreateKeyPair(t *testing.T) {

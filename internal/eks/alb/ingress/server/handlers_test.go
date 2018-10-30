@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/aws/awstester/internal/eks/alb/ingress/path"
+	"github.com/aws/aws-k8s-tester/internal/eks/alb/ingress/path"
 	"go.uber.org/zap"
 )
 

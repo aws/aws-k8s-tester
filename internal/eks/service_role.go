@@ -23,8 +23,8 @@ func isIAMRoleDeletedGoClient(err error) bool {
 	if err == nil {
 		return false
 	}
-	// NoSuchEntity: The user with name awstester-155479CED0B80EE801-SERVICE-ROLE-POLICY cannot be found.
-	// NoSuchEntity: The role with name awstester-20180918-TESTID-4RHA3tT-SERVICE-ROLE cannot be found.
+	// NoSuchEntity: The user with name aws-k8s-tester-155479CED0B80EE801-SERVICE-ROLE-POLICY cannot be found.
+	// NoSuchEntity: The role with name aws-k8s-tester-20180918-TESTID-4RHA3tT-SERVICE-ROLE cannot be found.
 	// TODO: use aweerr.Code
 	return strings.Contains(err.Error(), "cannot be found")
 }

@@ -4,16 +4,16 @@ package eksdeployer
 import (
 	"time"
 
-	"github.com/aws/awstester/eksconfig"
+	"github.com/aws/aws-k8s-tester/eksconfig"
 )
 
-// Tester defines awstester eks specific operations.
+// Tester defines aws-k8s-tester eks specific operations.
 type Tester interface {
 	Deployer
 
 	ALB
 
-	// UploadToBucketForTests uploads a local file to awstester S3 bucket.
+	// UploadToBucketForTests uploads a local file to aws-k8s-tester S3 bucket.
 	UploadToBucketForTests(localPath, remotePath string) error
 }
 

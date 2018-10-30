@@ -1,2 +1,2 @@
-// Package version defines awstester version.
+// Package version defines aws-k8s-tester version.
 package version

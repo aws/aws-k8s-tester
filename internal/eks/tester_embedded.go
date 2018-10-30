@@ -11,17 +11,17 @@ import (
 	"sync"
 	"time"
 
-	"github.com/aws/awstester/eksconfig"
-	"github.com/aws/awstester/eksdeployer"
-	"github.com/aws/awstester/internal/eks/alb"
-	"github.com/aws/awstester/internal/eks/alb/ingress/client"
-	"github.com/aws/awstester/internal/eks/alb/ingress/path"
-	"github.com/aws/awstester/internal/eks/s3"
-	"github.com/aws/awstester/pkg/awsapi"
-	"github.com/aws/awstester/pkg/fileutil"
-	"github.com/aws/awstester/pkg/httputil"
-	"github.com/aws/awstester/pkg/wrk"
-	"github.com/aws/awstester/pkg/zaputil"
+	"github.com/aws/aws-k8s-tester/eksconfig"
+	"github.com/aws/aws-k8s-tester/eksdeployer"
+	"github.com/aws/aws-k8s-tester/internal/eks/alb"
+	"github.com/aws/aws-k8s-tester/internal/eks/alb/ingress/client"
+	"github.com/aws/aws-k8s-tester/internal/eks/alb/ingress/path"
+	"github.com/aws/aws-k8s-tester/internal/eks/s3"
+	"github.com/aws/aws-k8s-tester/pkg/awsapi"
+	"github.com/aws/aws-k8s-tester/pkg/fileutil"
+	"github.com/aws/aws-k8s-tester/pkg/httputil"
+	"github.com/aws/aws-k8s-tester/pkg/wrk"
+	"github.com/aws/aws-k8s-tester/pkg/zaputil"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -220,7 +220,7 @@ func newTesterEmbedded(cfg *eksconfig.Config) (eksdeployer.Tester, error) {
 	lg.Info(
 		"created EKS deployer",
 		zap.String("cluster-name", cfg.ClusterName),
-		zap.String("awstester-eks-config-path", cfg.ConfigPath),
+		zap.String("aws-k8s-tester-eks-config-path", cfg.ConfigPath),
 		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 	)
 	return md, md.cfg.Sync()

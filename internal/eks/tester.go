@@ -3,8 +3,8 @@ package eks
 import (
 	"fmt"
 
-	"github.com/aws/awstester/eksconfig"
-	"github.com/aws/awstester/eksdeployer"
+	"github.com/aws/aws-k8s-tester/eksconfig"
+	"github.com/aws/aws-k8s-tester/eksdeployer"
 )
 
 // NewTester returns a new EKS tester.

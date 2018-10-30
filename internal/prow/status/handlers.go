@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/aws/awstester/pkg/ctxhandler"
+	"github.com/aws/aws-k8s-tester/pkg/ctxhandler"
 
 	"go.uber.org/zap"
 )

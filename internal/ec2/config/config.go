@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aws/awstester/internal/ec2/config/plugins"
-	ec2types "github.com/aws/awstester/pkg/awsapi/ec2"
+	"github.com/aws/aws-k8s-tester/internal/ec2/config/plugins"
+	ec2types "github.com/aws/aws-k8s-tester/pkg/awsapi/ec2"
 
 	"github.com/aws/aws-sdk-go/service/ec2"
 	gyaml "github.com/ghodss/yaml"
@@ -33,7 +33,7 @@ type Config struct {
 	// Multiple values are accepted. If empty, it sets to 'default', which outputs to stderr.
 	// See https://godoc.org/go.uber.org/zap#Open and https://godoc.org/go.uber.org/zap#Config for more details.
 	LogOutputs []string `json:"log-outputs,omitempty"`
-	// LogOutputToUploadPath is the awstester log file path to upload to cloud storage.
+	// LogOutputToUploadPath is the aws-k8s-tester log file path to upload to cloud storage.
 	// Must be left empty.
 	// This will be overwritten by cluster name.
 	LogOutputToUploadPath       string `json:"log-output-to-upload-path,omitempty"`
@@ -289,7 +289,7 @@ var defaultConfig = Config{
 	Wait: false,
 }
 
-const envPfxAWSTesterEC2 = "AWSTESTER_EC2_"
+const envPfxAWSTesterEC2 = "AWS_K8S_TESTER_EC2_"
 
 // UpdateFromEnvs updates fields from environmental variables.
 func (cfg *Config) UpdateFromEnvs() error {
@@ -361,7 +361,7 @@ func (cfg *Config) UpdateFromEnvs() error {
 
 // ValidateAndSetDefaults returns an error for invalid configurations.
 // And updates empty fields with default values.
-// At the end, it writes populated YAML to awstester config path.
+// At the end, it writes populated YAML to aws-k8s-tester config path.
 func (cfg *Config) ValidateAndSetDefaults() (err error) {
 	if len(cfg.LogOutputs) == 0 {
 		return errors.New("EKS LogOutputs is not specified")
@@ -403,14 +403,14 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 
 	if cfg.ConfigPath == "" {
 		var f *os.File
-		f, err = ioutil.TempFile(os.TempDir(), "awstester-ec2-config")
+		f, err = ioutil.TempFile(os.TempDir(), "aws-k8s-tester-ec2-config")
 		if err != nil {
 			return err
 		}
 		cfg.ConfigPath, _ = filepath.Abs(f.Name())
 		f.Close()
 		os.RemoveAll(cfg.ConfigPath)
-		cfg.ConfigPathBucket = filepath.Join(cfg.ID, "awstester-ec2.config.yaml")
+		cfg.ConfigPathBucket = filepath.Join(cfg.ID, "aws-k8s-tester-ec2.config.yaml")
 		cfg.ConfigPathURL = genS3URL(cfg.AWSRegion, cfg.Tag, cfg.ConfigPathBucket)
 	}
 
@@ -426,20 +426,20 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 		// auto-insert generated log output paths to zap logger output list
 		cfg.LogOutputs = append(cfg.LogOutputs, cfg.LogOutputToUploadPath)
 	}
-	cfg.LogOutputToUploadPathBucket = filepath.Join(cfg.ID, "awstester-ec2.log")
+	cfg.LogOutputToUploadPathBucket = filepath.Join(cfg.ID, "aws-k8s-tester-ec2.log")
 	cfg.LogOutputToUploadPathURL = genS3URL(cfg.AWSRegion, cfg.Tag, cfg.LogOutputToUploadPathBucket)
 
 	if cfg.KeyName == "" {
 		cfg.KeyName = cfg.ID
 		var f *os.File
-		f, err = ioutil.TempFile(os.TempDir(), "awstester-ec2.key")
+		f, err = ioutil.TempFile(os.TempDir(), "aws-k8s-tester-ec2.key")
 		if err != nil {
 			return err
 		}
 		cfg.KeyPath, _ = filepath.Abs(f.Name())
 		f.Close()
 		os.RemoveAll(cfg.KeyPath)
-		cfg.KeyPathBucket = filepath.Join(cfg.ID, "awstester-ec2.key")
+		cfg.KeyPathBucket = filepath.Join(cfg.ID, "aws-k8s-tester-ec2.key")
 		cfg.KeyPathURL = genS3URL(cfg.AWSRegion, cfg.Tag, cfg.KeyPathBucket)
 	}
 
@@ -454,7 +454,7 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 //
 // Example usage:
 //
-//	import "github.com/aws/awstester/internal/ec2/config"
+//	import "github.com/aws/aws-k8s-tester/internal/ec2/config"
 //	cfg := config.Load("test.yaml")
 //  p, err := cfg.BackupConfig()
 //	err = cfg.ValidateAndSetDefaults()
@@ -503,7 +503,7 @@ func (cfg *Config) Sync() (err error) {
 	return ioutil.WriteFile(cfg.ConfigPath, d, 0600)
 }
 
-// BackupConfig stores the original awstester configuration
+// BackupConfig stores the original aws-k8s-tester configuration
 // file to backup, suffixed with ".backup.yaml".
 // Otherwise, deployer will overwrite its state back to YAML.
 // Useful when the original configuration would be reused

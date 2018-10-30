@@ -4,7 +4,7 @@ import (
 	"errors"
 	"sort"
 
-	"github.com/aws/awstester/internal/eks/alb/ingress/path"
+	"github.com/aws/aws-k8s-tester/internal/eks/alb/ingress/path"
 
 	gyaml "github.com/ghodss/yaml"
 	"k8s.io/api/extensions/v1beta1"

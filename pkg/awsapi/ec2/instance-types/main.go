@@ -30,7 +30,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/aws/awstester/pkg/httputil"
+	"github.com/aws/aws-k8s-tester/pkg/httputil"
 
 	"github.com/aws/aws-sdk-go/aws/endpoints"
 	"go.uber.org/zap"

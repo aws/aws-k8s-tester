@@ -1,5 +1,5 @@
 /.DS_Store
-/awstester
+/aws-k8-tester
 /*.yaml
 /kubetest/*.yaml
 *generated.yaml

@@ -15,7 +15,7 @@ import (
 const headerBash = `#!/usr/bin/env bash`
 
 // READY is appended on init script complete.
-const READY = "AWSTESTER_EC2_PLUGIN_READY"
+const READY = "AWS_K8S_TESTER_EC2_PLUGIN_READY"
 
 type script struct {
 	key  string

@@ -86,7 +86,7 @@ RUN git clone https://github.com/wg/wrk.git \
 RUN curl -o /workspace/aws-bin/kubectl \
   https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-07-26/bin/linux/amd64/kubectl
 
-COPY /bin/awstester /workspace/aws-bin/
+COPY /bin/aws-k8-tester /workspace/aws-bin/
 RUN chmod +x /workspace/aws-bin/*
 ##########################################
 
@@ -94,19 +94,19 @@ RUN chmod +x /workspace/aws-bin/*
 RUN kubectl version --short --client || true && which kubectl \
   && aws --version || true && which aws \
   && wrk --version || true && which wrk \
-  && awstester -h || true && which awstester
+  && aws-k8-tester -h || true && which aws-k8-tester
 ##########################################
 
 ##########################################
-# add source code and vendor to run e2e tests implemented in "awstester"
+# add source code and vendor to run e2e tests implemented in "aws-k8-tester"
 # remove this once tests are contributed back to upstream
-RUN mkdir -p ${GOPATH}/src/github.com/aws/awstester
-ADD . ${GOPATH}/src/github.com/aws/awstester
+RUN mkdir -p ${GOPATH}/src/github.com/aws/aws-k8s-tester
+ADD . ${GOPATH}/src/github.com/aws/aws-k8s-tester
 
 # clean up locally built binaries
-RUN rm -f ${GOPATH}/src/github.com/aws/awstester/awstester
+RUN rm -f ${GOPATH}/src/github.com/aws/aws-k8s-tester/aws-k8-tester
 ##########################################
 
 ##########################################
-WORKDIR ${GOPATH}/src/github.com/aws/awstester
+WORKDIR ${GOPATH}/src/github.com/aws/aws-k8s-tester
 ##########################################

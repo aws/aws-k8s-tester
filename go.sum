@@ -2,8 +2,8 @@ cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMT
 cloud.google.com/go v0.30.0 h1:xKvyLgk56d0nksWq49J0UyGEeUIicTl4+UBiX1NPX9g=
 cloud.google.com/go v0.30.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 git.apache.org/thrift.git v0.0.0-20180902110319-2566ecd5d999/go.mod h1:fPE2ZNJGynbRyZ4dJvy6G277gSllfV2HJqblrnkyeyg=
-github.com/aws/aws-sdk-go v1.15.64 h1:xI5HhxebTF+jVqVOraUDqI3kr24n+yTvslwZCo3OhGA=
-github.com/aws/aws-sdk-go v1.15.64/go.mod h1:E3/ieXAlvM0XWO57iftYVDLLvQ824smPP3ATZkfNZeM=
+github.com/aws/aws-sdk-go v1.15.65 h1:Y6VOuOo8pz8BoUhDToahOn8dGs92QPIylYgaIOcBgh4=
+github.com/aws/aws-sdk-go v1.15.65/go.mod h1:E3/ieXAlvM0XWO57iftYVDLLvQ824smPP3ATZkfNZeM=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973 h1:xJ4a3vCFaGF/jqvzLMYoU8P317H5OQ+Via4RmuPwCS0=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=

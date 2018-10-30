@@ -11,7 +11,7 @@ func TestCreateDeploymentServiceIngressTestServer(t *testing.T) {
 		Name:         "ingress-test-server",
 		ServiceName:  "ingress-test-server-service",
 		Namespace:    "default",
-		Image:        "607362164682.dkr.ecr.us-west-2.amazonaws.com/awstester",
+		Image:        "607362164682.dkr.ecr.us-west-2.amazonaws.com/aws-k8s-tester",
 		Replicas:     1,
 		Routes:       10,
 		ResponseSize: 10,

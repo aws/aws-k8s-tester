@@ -3,8 +3,8 @@ package alb
 import (
 	"fmt"
 
-	"github.com/aws/awstester/eksconfig"
-	"github.com/aws/awstester/internal/eks/s3"
+	"github.com/aws/aws-k8s-tester/eksconfig"
+	"github.com/aws/aws-k8s-tester/internal/eks/s3"
 
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	"github.com/aws/aws-sdk-go/service/elbv2/elbv2iface"

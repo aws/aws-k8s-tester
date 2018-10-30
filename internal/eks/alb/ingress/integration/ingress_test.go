@@ -6,8 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/aws/awstester/internal/eks/alb/ingress/client"
-	"github.com/aws/awstester/internal/eks/alb/ingress/server"
+	"github.com/aws/aws-k8s-tester/internal/eks/alb/ingress/client"
+	"github.com/aws/aws-k8s-tester/internal/eks/alb/ingress/server"
 
 	"go.uber.org/zap"
 )

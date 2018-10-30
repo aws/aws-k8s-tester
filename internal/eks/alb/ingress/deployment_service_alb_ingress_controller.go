@@ -89,11 +89,11 @@ func CreateDeploymentServiceALBIngressController(cfg ConfigDeploymentServiceALBI
 				Spec: v1.PodSpec{
 					Volumes: []v1.Volume{
 						{
-							Name: "aws-cred-awstester",
+							Name: "aws-cred-aws-k8s-tester",
 							// VolumeSource represents the location and type of the mounted volume.
 							VolumeSource: v1.VolumeSource{
 								Secret: &v1.SecretVolumeSource{
-									SecretName: "aws-cred-awstester",
+									SecretName: "aws-cred-aws-k8s-tester",
 								},
 							},
 						},
@@ -163,13 +163,13 @@ func CreateDeploymentServiceALBIngressController(cfg ConfigDeploymentServiceALBI
 								},
 								{
 									Name:  "AWS_SHARED_CREDENTIALS_FILE",
-									Value: "/etc/aws-cred-awstester/aws-cred-awstester",
+									Value: "/etc/aws-cred-aws-k8s-tester/aws-cred-aws-k8s-tester",
 								},
 							},
 							VolumeMounts: []v1.VolumeMount{
 								{
-									Name:      "aws-cred-awstester",
-									MountPath: "/etc/aws-cred-awstester",
+									Name:      "aws-cred-aws-k8s-tester",
+									MountPath: "/etc/aws-cred-aws-k8s-tester",
 									ReadOnly:  true,
 								},
 							},

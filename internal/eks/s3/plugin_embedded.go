@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/aws/awstester/eksconfig"
+	"github.com/aws/aws-k8s-tester/eksconfig"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"

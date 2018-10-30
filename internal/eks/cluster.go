@@ -21,7 +21,7 @@ func isEKSDeletedGoClient(err error) bool {
 	   DELETING
 	   FAILED
 	*/
-	// ResourceNotFoundException: No cluster found for name: awstester-155468BC717E03B003\n\tstatus code: 404, request id: 1e3fe41c-b878-11e8-adca-b503e0ba731d
+	// ResourceNotFoundException: No cluster found for name: aws-k8s-tester-155468BC717E03B003\n\tstatus code: 404, request id: 1e3fe41c-b878-11e8-adca-b503e0ba731d
 	return strings.Contains(err.Error(), "No cluster found for name: ")
 }
 

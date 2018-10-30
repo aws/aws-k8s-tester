@@ -55,7 +55,7 @@ items:
             apiVersion: v1
             fieldPath: metadata.namespace
       - name: AWS_SHARED_CREDENTIALS_FILE
-        value: /etc/aws-cred-awstester/aws-cred-awstester
+        value: /etc/aws-cred-aws-k8s-tester/aws-cred-aws-k8s-tester
       image: quay.io/coreos/alb-ingress-controller:1.0-beta.7
       imagePullPolicy: Always
       livenessProbe:
@@ -86,8 +86,8 @@ items:
       terminationMessagePath: /dev/termination-log
       terminationMessagePolicy: File
       volumeMounts:
-      - mountPath: /etc/aws-cred-awstester
-        name: aws-cred-awstester
+      - mountPath: /etc/aws-cred-aws-k8s-tester
+        name: aws-cred-aws-k8s-tester
         readOnly: true
       - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
         name: alb-ingress-token-h5q44
@@ -110,10 +110,10 @@ items:
       operator: Exists
       tolerationSeconds: 300
     volumes:
-    - name: aws-cred-awstester
+    - name: aws-cred-aws-k8s-tester
       secret:
         defaultMode: 420
-        secretName: aws-cred-awstester
+        secretName: aws-cred-aws-k8s-tester
     - name: alb-ingress-token-h5q44
       secret:
         defaultMode: 420

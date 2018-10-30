@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aws/awstester/internal/eks/alb/ingress"
+	"github.com/aws/aws-k8s-tester/internal/eks/alb/ingress"
 
 	humanize "github.com/dustin/go-humanize"
 	"go.uber.org/zap"

@@ -95,7 +95,7 @@ func CreateDeploymentServiceIngressTestServer(cfg ConfigDeploymentServiceIngress
 							Image:           cfg.Image,
 							ImagePullPolicy: v1.PullAlways,
 							Args: []string{
-								"awstester",
+								"aws-k8s-tester",
 								"eks",
 								"ingress",
 								"server",

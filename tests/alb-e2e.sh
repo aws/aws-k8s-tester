@@ -51,7 +51,7 @@ echo 'RELEASE_VERSION:' ${RELEASE_VERSION}
 
 
 
-pushd ${GOPATH}/src/github.com/aws/awstester/kubetest/
+pushd ${GOPATH}/src/github.com/aws/aws-k8s-tester/kubetest/
 
 ginkgo \
   -r \

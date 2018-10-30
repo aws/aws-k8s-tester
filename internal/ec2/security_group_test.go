@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	ec2config "github.com/aws/awstester/internal/ec2/config"
+	ec2config "github.com/aws/aws-k8s-tester/internal/ec2/config"
 )
 
 func TestSecurityGroup(t *testing.T) {

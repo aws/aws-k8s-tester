@@ -5,7 +5,7 @@ import (
 	"os"
 	"text/template"
 
-	"github.com/aws/awstester/pkg/httputil"
+	"github.com/aws/aws-k8s-tester/pkg/httputil"
 
 	"go.uber.org/zap"
 )

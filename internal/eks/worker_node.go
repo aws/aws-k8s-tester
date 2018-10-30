@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"text/template"
 
-	"github.com/aws/awstester/pkg/fileutil"
+	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 )
 
 // https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html

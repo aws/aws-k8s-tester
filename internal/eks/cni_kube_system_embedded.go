@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aws/awstester/pkg/httputil"
+	"github.com/aws/aws-k8s-tester/pkg/httputil"
 
 	"go.uber.org/zap"
 )

@@ -5,33 +5,33 @@ WARNING: Pre-alpha. Do not use this in production. Only for testing.
 
 
 
-# awstester
+# aws-k8s-tester
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/aws/awstester)](https://goreportcard.com/report/github.com/aws/awstester)
-[![Godoc](http://img.shields.io/badge/go-documentation-blue.svg?style=flat-square)](https://godoc.org/github.com/aws/awstester)
-[![Releases](https://img.shields.io/github/release/aws/awstester/all.svg?style=flat-square)](https://github.com/aws/awstester/releases)
-[![LICENSE](https://img.shields.io/github/license/aws/awstester.svg?style=flat-square)](https://github.com/aws/awstester/blob/master/LICENSE)
+[![Go Report Card](https://goreportcard.com/badge/github.com/aws/aws-k8s-tester)](https://goreportcard.com/report/github.com/aws/aws-k8s-tester)
+[![Godoc](http://img.shields.io/badge/go-documentation-blue.svg?style=flat-square)](https://godoc.org/github.com/aws/aws-k8s-tester)
+[![Releases](https://img.shields.io/github/release/aws/aws-k8s-tester/all.svg?style=flat-square)](https://github.com/aws/aws-k8s-tester/releases)
+[![LICENSE](https://img.shields.io/github/license/aws/aws-k8s-tester.svg?style=flat-square)](https://github.com/aws/aws-k8s-tester/blob/master/LICENSE)
 
-## `awstester eks`
+## `aws-k8s-tester eks`
 
 To install
 
 ```bash
-go install -v ./cmd/awstester
-awstester eks create cluster -h
+go install -v ./cmd/aws-k8s-tester
+aws-k8s-tester eks create cluster -h
 ```
 
 To create an EKS testing cluster with ALB Ingress Controller
 
 ```bash
-awstester eks create config --path ./awstester-eks.yaml
+aws-k8s-tester eks create config --path ./aws-k8s-tester-eks.yaml
 
 # change default configurations
-vi ./awstester-eks.yaml
+vi ./aws-k8s-tester-eks.yaml
 ```
 
 ```bash
-awstester eks create cluster --path ./awstester-eks.yaml
+aws-k8s-tester eks create cluster --path ./aws-k8s-tester-eks.yaml
 ```
 
 This will create an EKS cluster with ALB Ingress Controller (takes about 20 minutes).
@@ -40,7 +40,7 @@ Once cluster is created, check cluster state using AWS CLI:
 
 ```bash
 aws eks describe-cluster \
-  --name awstester-20180928-efeaantamazonco-Os0xhhKodH \
+  --name aws-k8s-tester-20180928-efeaantamazonco-Os0xhhKodH \
   --query cluster.status
 
 "ACTIVE"
@@ -49,10 +49,10 @@ aws eks describe-cluster \
 Cluser states are persisted on disk as well. EKS tester uses this file to track status.
 
 ```bash
-cat ./awstester-eks.yaml
+cat ./aws-k8s-tester-eks.yaml
 ```
 
-Once complete, get the DNS names from `./awstester-eks.yaml`.
+Once complete, get the DNS names from `./aws-k8s-tester-eks.yaml`.
 
 And `curl` the `kube-system` namespace's `/metrics` endpoint, to see if it works.
 
@@ -64,42 +64,42 @@ curl -L http://e5de0f6b-kubesystem-ingres-6aec-38954145.us-west-2.elb.amazonaws.
 Tear down the cluster (takes about 10 minutes):
 
 ```bash
-awstester eks delete cluster --path ./awstester-eks.yaml
+aws-k8s-tester eks delete cluster --path ./aws-k8s-tester-eks.yaml
 ```
 
-### `awstester eks` e2e tests
+### `aws-k8s-tester eks` e2e tests
 
 To test locally:
 
 ```bash
-# set "AWSTESTER_EKS_TAG" to avoid S3 bucket conflicts
-# or just disable log uploads with "AWSTESTER_EKS_UPLOAD_TESTER_LOGS=false"
-cd ${GOPATH}/src/github.com/aws/awstester
-AWSTESTER_EKS_TEST_MODE=embedded \
-  AWSTESTER_EKS_KUBERNETES_VERSION=1.10 \
-  AWSTESTER_EKS_WAIT_BEFORE_DOWN=1m \
-  AWSTESTER_EKS_DOWN=true \
-  AWSTESTER_EKS_ENABLE_WORKER_NODE_HA=true \
-  AWSTESTER_EKS_ENABLE_NODE_SSH=true \
-  AWSTESTER_EKS_ENABLE_LOG_ACCESS=true \
-  AWSTESTER_EKS_UPLOAD_TESTER_LOGS=false \
-  AWSTESTER_EKS_UPLOAD_WORKER_NODE_LOGS=false \
-  AWSTESTER_EKS_WORKER_NODE_INSTANCE_TYPE=m3.xlarge \
-  AWSTESTER_EKS_WORKER_NODE_ASG_MIN=1 \
-  AWSTESTER_EKS_WORKER_NODE_ASG_MAX=1 \
-  AWSTESTER_EKS_ALB_ENABLE=true \
-  AWSTESTER_EKS_ALB_UPLOAD_TESTER_LOGS=false \
-  AWSTESTER_EKS_ALB_TARGET_TYPE=ip \
-  AWSTESTER_EKS_ALB_TEST_MODE=nginx \
-  AWSTESTER_EKS_ALB_TEST_SCALABILITY=true \
-  AWSTESTER_EKS_ALB_TEST_METRICS=true \
-  AWSTESTER_EKS_ALB_TEST_SERVER_REPLICAS=3 \
-  AWSTESTER_EKS_ALB_TEST_SERVER_ROUTES=1 \
-  AWSTESTER_EKS_ALB_TEST_CLIENTS=20 \
-  AWSTESTER_EKS_ALB_TEST_CLIENT_REQUESTS=200 \
-  AWSTESTER_EKS_ALB_TEST_RESPONSE_SIZE=20000 \
-  AWSTESTER_EKS_ALB_TEST_CLIENT_ERROR_THRESHOLD=50 \
-  AWSTESTER_EKS_ALB_TEST_EXPECT_QPS=100 \
-  AWSTESTER_EKS_ALB_INGRESS_CONTROLLER_IMAGE=quay.io/coreos/alb-ingress-controller:1.0-beta.7 \
+# set "AWS_K8S_TESTER_EKS_TAG" to avoid S3 bucket conflicts
+# or just disable log uploads with "AWS_K8S_TESTER_EKS_UPLOAD_TESTER_LOGS=false"
+cd ${GOPATH}/src/github.com/aws/aws-k8s-tester
+AWS_K8S_TESTER_EKS_TEST_MODE=embedded \
+  AWS_K8S_TESTER_EKS_KUBERNETES_VERSION=1.10 \
+  AWS_K8S_TESTER_EKS_WAIT_BEFORE_DOWN=1m \
+  AWS_K8S_TESTER_EKS_DOWN=true \
+  AWS_K8S_TESTER_EKS_ENABLE_WORKER_NODE_HA=true \
+  AWS_K8S_TESTER_EKS_ENABLE_NODE_SSH=true \
+  AWS_K8S_TESTER_EKS_ENABLE_LOG_ACCESS=true \
+  AWS_K8S_TESTER_EKS_UPLOAD_TESTER_LOGS=false \
+  AWS_K8S_TESTER_EKS_UPLOAD_WORKER_NODE_LOGS=false \
+  AWS_K8S_TESTER_EKS_WORKER_NODE_INSTANCE_TYPE=m3.xlarge \
+  AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_MIN=1 \
+  AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_MAX=1 \
+  AWS_K8S_TESTER_EKS_ALB_ENABLE=true \
+  AWS_K8S_TESTER_EKS_ALB_UPLOAD_TESTER_LOGS=false \
+  AWS_K8S_TESTER_EKS_ALB_TARGET_TYPE=ip \
+  AWS_K8S_TESTER_EKS_ALB_TEST_MODE=nginx \
+  AWS_K8S_TESTER_EKS_ALB_TEST_SCALABILITY=true \
+  AWS_K8S_TESTER_EKS_ALB_TEST_METRICS=true \
+  AWS_K8S_TESTER_EKS_ALB_TEST_SERVER_REPLICAS=3 \
+  AWS_K8S_TESTER_EKS_ALB_TEST_SERVER_ROUTES=1 \
+  AWS_K8S_TESTER_EKS_ALB_TEST_CLIENTS=20 \
+  AWS_K8S_TESTER_EKS_ALB_TEST_CLIENT_REQUESTS=200 \
+  AWS_K8S_TESTER_EKS_ALB_TEST_RESPONSE_SIZE=20000 \
+  AWS_K8S_TESTER_EKS_ALB_TEST_CLIENT_ERROR_THRESHOLD=50 \
+  AWS_K8S_TESTER_EKS_ALB_TEST_EXPECT_QPS=100 \
+  AWS_K8S_TESTER_EKS_ALB_INGRESS_CONTROLLER_IMAGE=quay.io/coreos/alb-ingress-controller:1.0-beta.7 \
   ./tests/ginkgo.sh
 ```

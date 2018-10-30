@@ -10,7 +10,7 @@ import (
 )
 
 // genS3URL returns S3 URL path.
-// e.g. https://s3-us-west-2.amazonaws.com/awstester-20180925/hello-world
+// e.g. https://s3-us-west-2.amazonaws.com/aws-k8s-tester-20180925/hello-world
 func genS3URL(region, bucket, s3Path string) string {
 	return fmt.Sprintf("https://s3-%s.amazonaws.com/%s/%s", region, bucket, s3Path)
 }
@@ -19,7 +19,7 @@ func genS3URL(region, bucket, s3Path string) string {
 func genTag() string {
 	// use UTC time for everything
 	now := time.Now().UTC()
-	return fmt.Sprintf("awstester-ec2-%d%02d%02d", now.Year(), now.Month(), now.Day())
+	return fmt.Sprintf("aws-k8s-tester-ec2-%d%02d%02d", now.Year(), now.Month(), now.Day())
 }
 
 func genID() string {
