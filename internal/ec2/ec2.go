@@ -534,6 +534,7 @@ func (md *embedded) createInstances() (err error) {
 			zap.Int("count", md.cfg.Count),
 			zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 		)
+		md.wait()
 	}
 	return md.cfg.Sync()
 }
