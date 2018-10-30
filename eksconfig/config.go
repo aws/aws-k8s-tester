@@ -316,6 +316,9 @@ type ALBIngressController struct {
 
 	// TestScalability is true to run scalability tests.
 	TestScalability bool `json:"test-scalability"`
+	// TestScalabilityMinutes is the number of minutes to send scalability test workloads.
+	// Reference: https://github.com/wg/wrk#command-line-options.
+	TestScalabilityMinutes int `json:"test-scalability-minutes"`
 	// TestMetrics is true to run metrics tests.
 	TestMetrics bool `json:"test-metrics"`
 	// TestServerReplicas is the number of ingress test server pods to deploy.
@@ -508,6 +511,7 @@ var defaultConfig = Config{
 		TestMode:   "nginx",
 
 		TestScalability:          true,
+		TestScalabilityMinutes:   1,
 		TestMetrics:              true,
 		TestServerReplicas:       1,
 		TestServerRoutes:         1,

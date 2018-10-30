@@ -595,7 +595,7 @@ func (md *embedded) TestALBQPS() error {
 		args := []string{
 			"--threads", "2",
 			"--connections", fmt.Sprintf("%d", md.cfg.ALBIngressController.TestClients),
-			"--duration", "15s",
+			"--duration", fmt.Sprintf("%s", time.Duration(md.cfg.ALBIngressController.TestScalabilityMinutes)*time.Minute),
 			"--latency",
 			ep,
 		}

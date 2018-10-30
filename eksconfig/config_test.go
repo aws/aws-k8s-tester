@@ -43,6 +43,7 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_UPLOAD_TESTER_LOGS", "false")
 	os.Setenv("AWS_K8S_TESTER_EKS_UPLOAD_WORKER_NODE_LOGS", "false")
 	os.Setenv("AWS_K8S_TESTER_EKS_WAIT_BEFORE_DOWN", "2h")
+	os.Setenv("AWS_K8S_TESTER_EKS_ALB_TEST_SCALABILITY_MINUTES", "3")
 	os.Setenv("AWS_K8S_TESTER_EKS_ALB_UPLOAD_TESTER_LOGS", "false")
 	os.Setenv("AWS_K8S_TESTER_EKS_ALB_TEST_EXPECT_QPS", "123.45")
 	os.Setenv("AWS_K8S_TESTER_EKS_ALB_TEST_MODE", "nginx")
@@ -69,6 +70,7 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWS_K8S_TESTER_EKS_UPLOAD_TESTER_LOGS")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_UPLOAD_WORKER_NODE_LOGS")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_WAIT_BEFORE_DOWN")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_ALB_TEST_SCALABILITY_MINUTES")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_ALB_UPLOAD_TESTER_LOGS")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_ALB_TEST_EXPECT_QPS")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_ALB_TEST_MODE")
@@ -117,6 +119,9 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.WorkderNodeASGMax != 10 {
 		t.Fatalf("worker nodes min expected 10, got %q", cfg.WorkderNodeASGMax)
+	}
+	if cfg.ALBIngressController.TestScalabilityMinutes != 3 {
+		t.Fatalf("alb target type expected 3, got %d", cfg.ALBIngressController.TestScalabilityMinutes)
 	}
 	if cfg.ALBIngressController.TargetType != "ip" {
 		t.Fatalf("alb target type expected ip, got %q", cfg.ALBIngressController.TargetType)
