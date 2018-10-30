@@ -39,8 +39,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.0.7...0.0.8).
 - Set [defaults for `eksconfig.Config.Tag` and `eksconfig.Config.ClusterName`](https://github.com/aws/aws-k8s-tester/commit/f10113e0d1b22998c2bebb65d8e84bc1d96b2ab3).
 - Rename to [`eksconfig.Config.EnableWorkerNodeSSH`](https://github.com/aws/aws-k8s-tester/commit/650e7caf867d62454d2219d1a1f104b51962e7c8).
 - Rename to [`eksconfig.Config.UploadTesterLogs`](https://github.com/aws/aws-k8s-tester/commit/650e7caf867d62454d2219d1a1f104b51962e7c8).
-- Rename to [`ALBIngressController.UploadTesterLogs`](https://github.com/aws/aws-k8s-tester/commit/650e7caf867d62454d2219d1a1f104b51962e7c8).
-- Rename to [`ALBIngressController.IngressControllerImage`](https://github.com/aws/aws-k8s-tester/commit/650e7caf867d62454d2219d1a1f104b51962e7c8).
+- Rename to [`eksconfig.ALBIngressController.UploadTesterLogs`](https://github.com/aws/aws-k8s-tester/commit/650e7caf867d62454d2219d1a1f104b51962e7c8).
+- Rename to [`eksconfig.ALBIngressController.IngressControllerImage`](https://github.com/aws/aws-k8s-tester/commit/650e7caf867d62454d2219d1a1f104b51962e7c8).
 
 ### `internal`
 
@@ -74,11 +74,11 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.0.6...0.0.7).
 
 - Rename to [`eksconfig.Config.UploadTesterLogs`](https://github.com/aws/aws-k8s-tester/commit/e88759aaaf12a217ab24ceae4288e1f2f084b6cf).
 - Add [`eksconfig.Config.UploadWorkerNodeLogs`](https://github.com/aws/aws-k8s-tester/commit/e88759aaaf12a217ab24ceae4288e1f2f084b6cf).
-- Add [`ALBIngressController.UploadALBTesterLogs`](https://github.com/aws/aws-k8s-tester/commit/e88759aaaf12a217ab24ceae4288e1f2f084b6cf).
+- Add [`eksconfig.ALBIngressController.UploadALBTesterLogs`](https://github.com/aws/aws-k8s-tester/commit/e88759aaaf12a217ab24ceae4288e1f2f084b6cf).
 - Add [`eksconfig.Config.EnableWorkerNodeHA`](https://github.com/aws/aws-k8s-tester/commit/9b3f220477725bd57df169ba6b253e6d0d63f59a) field.
-- Add [`ALBIngressController.TestMetrics`](https://github.com/aws/aws-k8s-tester/commit/4e5b676a9be4db2b28084dfb75484f428e67dc59) field.
-- Change [default `eksconfig.Config.ALBIngressController.TestServerRoutes` value to 1](https://github.com/aws/aws-k8s-tester/commit/0a4e1cf26735e5c09cb0c81be7a9c6ec757318f8).
-- Do not require [`AWSTesterImage` when `ALBIngressController.TestMode` is `"ingress-test-server"`](https://github.com/aws/aws-k8s-tester/commit/d9403b196961ec2d473e11127670da411dd19050).
+- Add [`eksconfig.ALBIngressController.TestMetrics`](https://github.com/aws/aws-k8s-tester/commit/4e5b676a9be4db2b28084dfb75484f428e67dc59) field.
+- Change [default `eksconfig.ALBIngressController.TestServerRoutes` value to 1](https://github.com/aws/aws-k8s-tester/commit/0a4e1cf26735e5c09cb0c81be7a9c6ec757318f8).
+- Do not require [`AWSTesterImage` when `eksconfig.ALBIngressController.TestMode` is `"ingress-test-server"`](https://github.com/aws/aws-k8s-tester/commit/d9403b196961ec2d473e11127670da411dd19050).
 
 ### `internal`
 
