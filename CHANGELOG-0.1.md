@@ -16,6 +16,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.1...0.1.2).
 - Rename to [`aws-k8s-tester` from `awstester`](https://github.com/aws/aws-k8s-tester/commit/1512e69443705eafe0ad5b4440e325d2f374cf73).
 - Remove [`aws-k8s-tester ec2 wait`](https://github.com/aws/aws-k8s-tester/commit/36a74c699819d92abdf7f89028ea95b54f19fc98) command.
 - Add [`aws-k8s-tester wrk --run-in-ec2`](https://github.com/aws/aws-k8s-tester/commit/3f62032c0fe5aecda5f69a64fe528d46807cb5a5) flag.
+- Change [`aws-k8s-tester wrk --duration` to `aws-k8s-tester wrk --minutes`](https://github.com/aws/aws-k8s-tester/commit/8c04dd324ae1e8c915779af4f8c0e8f5b3ca3ecc) flag.
 
 ### `eksconfig`
 
@@ -24,6 +25,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.1...0.1.2).
 ### `internal`
 
 - Add [`internal/ec2/config.Config.Wait`](https://github.com/aws/aws-k8s-tester/commit/6073c2de289e352c5454d4b17380022168bcbac6) flag.
+
+### `pkg/wrk`
+
+- Change [`wrk.Config.Duration` to `wrk.Config.Minutes`](https://github.com/aws/aws-k8s-tester/commit/133f7945e297a01c367d021b924c7a04ff992a9e) flag.
 
 ### Dependency
 
