@@ -23,6 +23,15 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.1...0.1.2).
 
 - Add [`eksconfig.ALBIngressController.TestScalabilityMinutes`](https://github.com/aws/aws-k8s-tester/commit/10240a423f62e991bf4ef0f051f7a24d9340daf6gqq) field.
 
+### `etcdconfig`
+
+- Add [`etcdconfig`](https://github.com/aws/aws-k8s-tester/commit/TODO) package for etcd conformance tests.
+
+### `etcdtester`
+
+- Add [`etcdtester`](https://github.com/aws/aws-k8s-tester/commit/TODO) package for etcd conformance tests.
+  - To be moved to upstream etcd test project.
+
 ### `internal`
 
 - Rename to [`ec2config` from `internal/ec2/config`](https://github.com/aws/aws-k8s-tester/commit/f8b5d466966862658dff6bc254d7491ba2333aa6).
