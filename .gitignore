@@ -4,5 +4,5 @@
 /kubetest/*.yaml
 *generated.yaml
 *.coverprofile
-*.log
+/*.log
 /bin

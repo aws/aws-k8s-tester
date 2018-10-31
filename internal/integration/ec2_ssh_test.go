@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/aws/aws-k8s-tester/ec2config"
+	"github.com/aws/aws-k8s-tester/ec2config/plugins"
 	"github.com/aws/aws-k8s-tester/internal/ec2"
-	ec2config "github.com/aws/aws-k8s-tester/internal/ec2/config"
-	"github.com/aws/aws-k8s-tester/internal/ec2/config/plugins"
 	"github.com/aws/aws-k8s-tester/internal/ssh"
 )
 

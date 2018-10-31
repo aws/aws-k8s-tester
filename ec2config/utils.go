@@ -1,4 +1,4 @@
-package config
+package ec2config
 
 import (
 	"fmt"

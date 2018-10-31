@@ -1,4 +1,4 @@
-package config
+package ec2config
 
 import (
 	"errors"
@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aws/aws-k8s-tester/internal/ec2/config/plugins"
+	"github.com/aws/aws-k8s-tester/ec2config/plugins"
 	ec2types "github.com/aws/aws-k8s-tester/pkg/awsapi/ec2"
 
 	"github.com/aws/aws-sdk-go/service/ec2"
