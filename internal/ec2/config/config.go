@@ -289,7 +289,7 @@ var defaultConfig = Config{
 	Wait: false,
 }
 
-const envPfxAWSTesterEC2 = "AWS_K8S_TESTER_EC2_"
+const envPfx = "AWS_K8S_TESTER_EC2_"
 
 // UpdateFromEnvs updates fields from environmental variables.
 func (cfg *Config) UpdateFromEnvs() error {
@@ -304,7 +304,7 @@ func (cfg *Config) UpdateFromEnvs() error {
 		jv = strings.Replace(jv, ",omitempty", "", -1)
 		jv = strings.Replace(jv, "-", "_", -1)
 		jv = strings.ToUpper(strings.Replace(jv, "-", "_", -1))
-		env := envPfxAWSTesterEC2 + jv
+		env := envPfx + jv
 		if os.Getenv(env) == "" {
 			continue
 		}

@@ -938,8 +938,8 @@ func (cfg *Config) SetIngressUpTook(d time.Duration) {
 }
 
 const (
-	envPfxAWSTesterEKS    = "AWS_K8S_TESTER_EKS_"
-	envPfxAWSTesterEKSALB = "AWS_K8S_TESTER_EKS_ALB_"
+	envPfx    = "AWS_K8S_TESTER_EKS_"
+	envPfxALB = "AWS_K8S_TESTER_EKS_ALB_"
 )
 
 // UpdateFromEnvs updates fields from environmental variables.
@@ -955,7 +955,7 @@ func (cfg *Config) UpdateFromEnvs() error {
 		jv = strings.Replace(jv, ",omitempty", "", -1)
 		jv = strings.Replace(jv, "-", "_", -1)
 		jv = strings.ToUpper(strings.Replace(jv, "-", "_", -1))
-		env := envPfxAWSTesterEKS + jv
+		env := envPfx + jv
 		if os.Getenv(env) == "" {
 			continue
 		}
@@ -1024,7 +1024,7 @@ func (cfg *Config) UpdateFromEnvs() error {
 		}
 		jv = strings.Replace(jv, ",omitempty", "", -1)
 		jv = strings.ToUpper(strings.Replace(jv, "-", "_", -1))
-		env := envPfxAWSTesterEKSALB + jv
+		env := envPfxALB + jv
 		if os.Getenv(env) == "" {
 			continue
 		}
