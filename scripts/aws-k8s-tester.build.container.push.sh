@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-if ! [[ "$0" =~ scripts/aws-k8-tester.build.container.push.sh ]]; then
+if ! [[ "$0" =~ scripts/aws-k8s-tester.build.container.push.sh ]]; then
   echo "must be run from repository root"
   exit 255
 fi
@@ -26,11 +26,11 @@ if [[ "${AWS_REGION}" ]]; then
 fi
 
 if [[ -z "${REGISTRY}" ]]; then
-  REGISTRY=$(aws-k8-tester ecr --region=${_AWS_REGION} get-registry)
+  REGISTRY=$(aws-k8s-tester ecr --region=${_AWS_REGION} get-registry)
 fi
 
 TAG=`date +%Y%m%d`-${GIT_COMMIT}
-echo "Building:" ${REGISTRY}/aws-k8-tester:${TAG}
+echo "Building:" ${REGISTRY}/aws-k8s-tester:${TAG}
 
 mkdir -p ./bin/
 
@@ -40,11 +40,11 @@ CGO_ENABLED=0 GOOS=linux GOARCH=$(go env GOARCH) \
   -X github.com/aws/aws-k8s-tester/version.GitCommit=${GIT_COMMIT} \
   -X github.com/aws/aws-k8s-tester/version.ReleaseVersion=${RELEASE_VERSION} \
   -X github.com/aws/aws-k8s-tester/version.BuildTime=${BUILD_TIME}" \
-  -o ./bin/aws-k8-tester \
-  ./cmd/aws-k8-tester
+  -o ./bin/aws-k8s-tester \
+  ./cmd/aws-k8s-tester
 
 docker build \
-  --tag ${REGISTRY}/aws-k8-tester:${TAG} \
+  --tag ${REGISTRY}/aws-k8s-tester:${TAG} \
   --file ./Dockerfile .
 
-docker push ${REGISTRY}/aws-k8-tester:${TAG}
+docker push ${REGISTRY}/aws-k8s-tester:${TAG}

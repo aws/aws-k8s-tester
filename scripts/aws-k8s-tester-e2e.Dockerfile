@@ -38,7 +38,7 @@ RUN git clone https://github.com/wg/wrk.git \
   && rm -rf ./wrk
 
 # For "kubetest" EKS plugin
-COPY /bin/aws-k8-tester /workspace/aws-bin/
+COPY /bin/aws-k8s-tester /workspace/aws-bin/
 ##########################################
 
 ##########################################
@@ -53,6 +53,6 @@ RUN echo ${HOME} \
   && aws --version || true && which aws \
   && docker --version || true && which docker \
   && wrk --version || true && which wrk \
-  && aws-k8-tester version || true && which aws-k8-tester \
+  && aws-k8s-tester version || true && which aws-k8s-tester \
   && kubetest -h || true && which kubetest
 ##########################################

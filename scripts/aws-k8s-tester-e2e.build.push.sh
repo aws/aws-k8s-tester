@@ -2,11 +2,11 @@
 set -e
 
 <<COMMENT
-aws ecr create-repository --repository-name aws-k8-tester-e2e
-aws ecr list-images --repository-name aws-k8-tester-e2e
+aws ecr create-repository --repository-name aws-k8s-tester-e2e
+aws ecr list-images --repository-name aws-k8s-tester-e2e
 COMMENT
 
-if ! [[ "$0" =~ scripts/aws-k8-tester-e2e.build.push.sh ]]; then
+if ! [[ "$0" =~ scripts/aws-k8s-tester-e2e.build.push.sh ]]; then
   echo "must be run from repository root"
   exit 255
 fi
@@ -23,11 +23,11 @@ if [[ "${AWS_REGION}" ]]; then
 fi
 
 if [[ -z "${REGISTRY}" ]]; then
-  REGISTRY=$(aws-k8-tester ecr --region=${_AWS_REGION} get-registry)
+  REGISTRY=$(aws-k8s-tester ecr --region=${_AWS_REGION} get-registry)
 fi
 
 TAG=`date +%Y%m%d`-${GIT_COMMIT}
-echo "Building:" ${REGISTRY}/aws-k8-tester-e2e:${TAG}
+echo "Building:" ${REGISTRY}/aws-k8s-tester-e2e:${TAG}
 
 CGO_ENABLED=0 GOOS=linux GOARCH=$(go env GOARCH) \
   go build -v \
@@ -35,11 +35,11 @@ CGO_ENABLED=0 GOOS=linux GOARCH=$(go env GOARCH) \
   -X github.com/aws/aws-k8s-tester/version.GitCommit=${GIT_COMMIT} \
   -X github.com/aws/aws-k8s-tester/version.ReleaseVersion=${RELEASE_VERSION} \
   -X github.com/aws/aws-k8s-tester/version.BuildTime=${BUILD_TIME}" \
-  -o ./bin/aws-k8-tester \
-  ./cmd/aws-k8-tester
+  -o ./bin/aws-k8s-tester \
+  ./cmd/aws-k8s-tester
 
 docker build \
-  --tag ${REGISTRY}/aws-k8-tester-e2e:${TAG} \
-  --file ./scripts/aws-k8-tester-e2e.Dockerfile .
+  --tag ${REGISTRY}/aws-k8s-tester-e2e:${TAG} \
+  --file ./scripts/aws-k8s-tester-e2e.Dockerfile .
 
-docker push ${REGISTRY}/aws-k8-tester-e2e:${TAG}
+docker push ${REGISTRY}/aws-k8s-tester-e2e:${TAG}
