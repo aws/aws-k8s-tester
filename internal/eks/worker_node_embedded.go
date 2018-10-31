@@ -5,11 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"sort"
 	"strings"
 	"time"
 
-	"github.com/aws/aws-k8s-tester/eksconfig"
+	"github.com/aws/aws-k8s-tester/ec2config"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/autoscaling"
@@ -585,7 +584,7 @@ func (md *embedded) checkASG() (err error) {
 
 	md.ec2InstancesMu.Lock()
 	md.ec2Instances = ec2Instances
-	md.cfg.ClusterState.WorkerNodes = convertEC2Instances(ec2Instances)
+	md.cfg.ClusterState.WorkerNodes = ec2config.ConvertEC2Instances(ec2Instances)
 	md.ec2InstancesMu.Unlock()
 
 	md.lg.Info(
@@ -593,59 +592,4 @@ func (md *embedded) checkASG() (err error) {
 		zap.String("name", md.cfg.ClusterState.CFStackWorkerNodeGroupAutoScalingGroupName),
 	)
 	return nil
-}
-
-// convertEC2Instances converts "aws ec2 describe-instances" to "eksconfig.Instance".
-// And it sorts in a way that the last launched instance is at front.
-func convertEC2Instances(iss []*ec2.Instance) (instances []eksconfig.Instance) {
-	instances = make([]eksconfig.Instance, len(iss))
-	for i, v := range iss {
-		instances[i] = eksconfig.Instance{
-			ImageID:      *v.ImageId,
-			InstanceID:   *v.InstanceId,
-			InstanceType: *v.InstanceType,
-			KeyName:      *v.KeyName,
-			Placement: eksconfig.EC2Placement{
-				AvailabilityZone: *v.Placement.AvailabilityZone,
-				Tenancy:          *v.Placement.Tenancy,
-			},
-			PrivateDNSName: *v.PrivateDnsName,
-			PrivateIP:      *v.PrivateIpAddress,
-			PublicDNSName:  *v.PublicDnsName,
-			PublicIP:       *v.PublicIpAddress,
-			EC2State: eksconfig.EC2State{
-				Code: *v.State.Code,
-				Name: *v.State.Name,
-			},
-			SubnetID:               *v.SubnetId,
-			VPCID:                  *v.VpcId,
-			EC2BlockDeviceMappings: make([]eksconfig.EC2BlockDeviceMapping, len(v.BlockDeviceMappings)),
-			EBSOptimized:           *v.EbsOptimized,
-			RootDeviceName:         *v.RootDeviceName,
-			RootDeviceType:         *v.RootDeviceType,
-			SecurityGroups:         make([]eksconfig.EC2SecurityGroup, len(v.SecurityGroups)),
-			LaunchTime:             *v.LaunchTime,
-		}
-		for j := range v.BlockDeviceMappings {
-			instances[i].EC2BlockDeviceMappings[j] = eksconfig.EC2BlockDeviceMapping{
-				DeviceName: *v.BlockDeviceMappings[j].DeviceName,
-				EBS: eksconfig.EBS{
-					DeleteOnTermination: *v.BlockDeviceMappings[j].Ebs.DeleteOnTermination,
-					Status:              *v.BlockDeviceMappings[j].Ebs.Status,
-					VolumeID:            *v.BlockDeviceMappings[j].Ebs.VolumeId,
-				},
-			}
-		}
-		for j := range v.SecurityGroups {
-			instances[i].SecurityGroups[j] = eksconfig.EC2SecurityGroup{
-				GroupName: *v.SecurityGroups[j].GroupName,
-				GroupID:   *v.SecurityGroups[j].GroupId,
-			}
-		}
-	}
-
-	// sort that first launched EC2 instance is at front
-	sort.Sort(eksconfig.Instances(instances))
-
-	return instances
 }

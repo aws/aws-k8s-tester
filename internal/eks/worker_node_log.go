@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/aws/aws-k8s-tester/eksconfig"
+	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/internal/ssh"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 
@@ -17,7 +17,7 @@ func fetchWorkerNodeLog(
 	userName string,
 	clusterName string,
 	privateKeyPath string,
-	workerNode eksconfig.Instance) (fpathToS3Path map[string]string, err error) {
+	workerNode ec2config.Instance) (fpathToS3Path map[string]string, err error) {
 	fpathToS3Path = make(map[string]string)
 
 	id, ip := workerNode.InstanceID, workerNode.PublicIP
@@ -299,7 +299,7 @@ func fetchWorkerNodeLogs(
 	userName string,
 	clusterName string,
 	privateKeyPath string,
-	workerNodes []eksconfig.Instance) (fpathToS3Path map[string]string, err error) {
+	workerNodes []ec2config.Instance) (fpathToS3Path map[string]string, err error) {
 	fpathToS3Path = make(map[string]string)
 
 	// TODO: parallelize

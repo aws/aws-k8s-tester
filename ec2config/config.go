@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -245,6 +246,18 @@ func ConvertEC2Instance(iv *ec2.Instance) (instance Instance) {
 		}
 	}
 	return instance
+}
+
+// ConvertEC2Instances converts "aws ec2 describe-instances" to "ec2config.Instance".
+// And it sorts in a way that the first launched instance is at front.
+func ConvertEC2Instances(iss []*ec2.Instance) (instances []Instance) {
+	instances = make([]Instance, len(iss))
+	for i, v := range iss {
+		instances[i] = ConvertEC2Instance(v)
+	}
+	// sort that first launched EC2 instance is at front
+	sort.Sort(Instances(instances))
+	return instances
 }
 
 // NewDefault returns a copy of the default configuration.
