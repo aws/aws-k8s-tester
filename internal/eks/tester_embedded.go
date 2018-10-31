@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
-	"github.com/aws/aws-k8s-tester/eksdeployer"
+	"github.com/aws/aws-k8s-tester/ekstester"
 	"github.com/aws/aws-k8s-tester/internal/eks/alb"
 	"github.com/aws/aws-k8s-tester/internal/eks/alb/ingress/client"
 	"github.com/aws/aws-k8s-tester/internal/eks/alb/ingress/path"
@@ -78,7 +78,7 @@ type embedded struct {
 }
 
 // newTesterEmbedded creates a new embedded AWS tester.
-func newTesterEmbedded(cfg *eksconfig.Config) (eksdeployer.Tester, error) {
+func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 	now := time.Now().UTC()
 
 	lg, err := zaputil.New(cfg.LogDebug, cfg.LogOutputs)

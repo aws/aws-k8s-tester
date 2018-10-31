@@ -30,7 +30,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
-	"github.com/aws/aws-k8s-tester/eksdeployer"
+	"github.com/aws/aws-k8s-tester/ekstester"
 
 	"k8s.io/test-infra/kubetest/process"
 )
@@ -47,7 +47,7 @@ type deployer struct {
 }
 
 // NewDeployer creates a new EKS deployer.
-func NewDeployer(timeout time.Duration, verbose bool) (eksdeployer.Deployer, error) {
+func NewDeployer(timeout time.Duration, verbose bool) (ekstester.Deployer, error) {
 	cfg := eksconfig.NewDefault()
 	err := cfg.UpdateFromEnvs()
 	if err != nil {

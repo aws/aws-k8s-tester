@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/aws/aws-k8s-tester/eksdeployer"
+	"github.com/aws/aws-k8s-tester/ekstester"
 	"github.com/aws/aws-k8s-tester/kubetest/eks"
 
 	. "github.com/onsi/ginkgo"
@@ -34,7 +34,7 @@ func TestAWSTesterEKS(t *testing.T) {
 	RunSpecs(t, "aws-k8s-tester eks ALB Ingress Controller e2e tests")
 }
 
-var tester eksdeployer.Tester
+var tester ekstester.Tester
 
 var _ = BeforeSuite(func() {
 	var err error

@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
-	"github.com/aws/aws-k8s-tester/eksdeployer"
+	"github.com/aws/aws-k8s-tester/ekstester"
 	"github.com/aws/aws-k8s-tester/internal/eks"
 
 	"github.com/spf13/cobra"
@@ -37,7 +37,7 @@ func checkClusterFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	var tester eksdeployer.Tester
+	var tester ekstester.Tester
 	tester, err = eks.NewTester(cfg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create EKS deployer %v\n", err)

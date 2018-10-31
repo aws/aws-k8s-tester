@@ -118,7 +118,8 @@ go install -v ./cmd/aws-k8s-tester
 aws-k8s-tester \
   eks \
   prow \
-  status-get
+  status \
+  get
 */
 func prowStatusGetFunc(cmd *cobra.Command, args []string) {
 	if !fileutil.Exist(prowStatusGetDataDir) {

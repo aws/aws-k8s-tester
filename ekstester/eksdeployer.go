@@ -1,5 +1,5 @@
-// Package eksdeployer defines interface EKS cluster deployer.
-package eksdeployer
+// Package ekstester defines interface EKS cluster tester and deployer.
+package ekstester
 
 import (
 	"time"

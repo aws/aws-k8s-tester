@@ -6,11 +6,11 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/aws/aws-k8s-tester/eksdeployer"
+	"github.com/aws/aws-k8s-tester/ekstester"
 )
 
 // NewTester creates a new EKS tester.
-func NewTester(timeout time.Duration, verbose bool) (eksdeployer.Tester, error) {
+func NewTester(timeout time.Duration, verbose bool) (ekstester.Tester, error) {
 	dp, err := NewDeployer(timeout, verbose)
 	if err != nil {
 		return nil, err

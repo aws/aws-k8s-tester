@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
-	"github.com/aws/aws-k8s-tester/eksdeployer"
+	"github.com/aws/aws-k8s-tester/ekstester"
 	"github.com/aws/aws-k8s-tester/internal/eks/alb"
 	"github.com/aws/aws-k8s-tester/internal/eks/s3"
 	"github.com/aws/aws-k8s-tester/pkg/zaputil"
@@ -31,7 +31,7 @@ type awsCli struct {
 }
 
 // newTesterAWSCLI creates a new EKS tester with AWS CLI.
-func newTesterAWSCLI(cfg *eksconfig.Config) (eksdeployer.Tester, error) {
+func newTesterAWSCLI(cfg *eksconfig.Config) (ekstester.Tester, error) {
 	_, err := zaputil.New(cfg.LogDebug, cfg.LogOutputs)
 	if err != nil {
 		return nil, err

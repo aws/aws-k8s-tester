@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
-	"github.com/aws/aws-k8s-tester/eksdeployer"
+	"github.com/aws/aws-k8s-tester/ekstester"
 	"github.com/aws/aws-k8s-tester/internal/eks"
 
 	"github.com/spf13/cobra"
@@ -43,7 +43,7 @@ func testGetWorkerNodeLogs(cmd *cobra.Command, args []string) {
 		fmt.Fprintf(os.Stderr, "failed to load configuration %q (%v)\n", path, err)
 		os.Exit(1)
 	}
-	var tester eksdeployer.Tester
+	var tester ekstester.Tester
 	tester, err = eks.NewTester(cfg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create EKS deployer %v\n", err)
@@ -80,7 +80,7 @@ func testDumpClusterLogs(cmd *cobra.Command, args []string) {
 		fmt.Fprintf(os.Stderr, "failed to load configuration %q (%v)\n", path, err)
 		os.Exit(1)
 	}
-	var tester eksdeployer.Tester
+	var tester ekstester.Tester
 	tester, err = eks.NewTester(cfg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create EKS deployer %v\n", err)
@@ -125,7 +125,7 @@ func testALBCorrectness(cmd *cobra.Command, args []string) {
 		fmt.Fprintf(os.Stderr, "failed to load configuration %q (%v)\n", path, err)
 		os.Exit(1)
 	}
-	var tester eksdeployer.Tester
+	var tester ekstester.Tester
 	tester, err = eks.NewTester(cfg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create EKS deployer %v\n", err)
@@ -157,7 +157,7 @@ func testALBQPS(cmd *cobra.Command, args []string) {
 		fmt.Fprintf(os.Stderr, "failed to load configuration %q (%v)\n", path, err)
 		os.Exit(1)
 	}
-	var tester eksdeployer.Tester
+	var tester ekstester.Tester
 	tester, err = eks.NewTester(cfg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create EKS deployer %v\n", err)
@@ -189,7 +189,7 @@ func testALBMetrics(cmd *cobra.Command, args []string) {
 		fmt.Fprintf(os.Stderr, "failed to load configuration %q (%v)\n", path, err)
 		os.Exit(1)
 	}
-	var tester eksdeployer.Tester
+	var tester ekstester.Tester
 	tester, err = eks.NewTester(cfg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create EKS deployer %v\n", err)
