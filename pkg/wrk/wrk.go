@@ -41,6 +41,9 @@ func Run(cfg Config) (rs Result, err error) {
 	if cfg.Endpoint == "" {
 		return Result{}, errors.New("endpoint not found")
 	}
+	if cfg.Minutes == 0 {
+		return Result{}, errors.New("Minutes is 0")
+	}
 	if cfg.Threads > cfg.Connections {
 		return Result{}, fmt.Errorf("expected threads <= connections, got threads %d > connections %d", cfg.Threads, cfg.Connections)
 	}
