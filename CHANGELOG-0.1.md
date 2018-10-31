@@ -22,6 +22,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.1...0.1.2).
 ### `eksconfig`
 
 - Add [`eksconfig.ALBIngressController.TestScalabilityMinutes`](https://github.com/aws/aws-k8s-tester/commit/10240a423f62e991bf4ef0f051f7a24d9340daf6gqq) field.
+- Remove [`eksconfig.Instance` field and replace it with `ec2config.Instance](https://github.com/aws/aws-k8s-tester/commit/5156d0df502fe43a89b9c45fcfd3cecb96856d74)
 
 ### `etcdconfig`
 
