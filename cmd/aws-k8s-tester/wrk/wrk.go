@@ -58,7 +58,7 @@ func NewCommand() *cobra.Command {
 	rootCmd.PersistentFlags().StringVar(&wrkCfg.Endpoint, "endpoint", "", "wrk command endpoint")
 	rootCmd.PersistentFlags().IntVar(&wrkCfg.Threads, "threads", 2, "number of threads")
 	rootCmd.PersistentFlags().IntVar(&wrkCfg.Connections, "connections", 200, "number of connections")
-	rootCmd.PersistentFlags().DurationVar(&wrkCfg.Duration, "duration", 15*time.Second, "duration to run 'wrk' command")
+	rootCmd.PersistentFlags().IntVar(&wrkCfg.Minutes, "minutes", 1, "number of minutes to run 'wrk' command")
 
 	rootCmd.PersistentFlags().BoolVar(&runInEC2, "run-in-ec2", false, "'true' if run in EC2")
 
