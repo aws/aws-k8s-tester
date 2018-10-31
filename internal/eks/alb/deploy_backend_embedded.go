@@ -27,7 +27,7 @@ func (md *embedded) DeployBackend() error {
 			Name:         "ingress-test-server",
 			ServiceName:  "ingress-test-server-service",
 			Namespace:    "default",
-			Image:        md.cfg.AWSTesterImage,
+			Image:        md.cfg.AWSK8sTesterImage,
 			Replicas:     md.cfg.ALBIngressController.TestServerReplicas,
 			Routes:       md.cfg.ALBIngressController.TestServerRoutes,
 			ResponseSize: md.cfg.ALBIngressController.TestResponseSize,

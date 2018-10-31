@@ -24,10 +24,10 @@ type Config struct {
 	// TestMode is "embedded" or "aws-cli".
 	TestMode string `json:"test-mode,omitempty"`
 
-	// AWSTesterImage is the aws-k8s-tester container image.
+	// AWSK8sTesterImage is the aws-k8s-tester container image.
 	// Required for "aws-k8s-tester ingress server" for ALB Ingress Controller tests.
 	// Only required when ALB Ingress "TestMode" is "ingress-test-server".
-	AWSTesterImage string `json:"aws-k8s-tester-image,omitempty"`
+	AWSK8sTesterImage string `json:"aws-k8s-tester-image,omitempty"`
 
 	// WaitBeforeDown is the duration to sleep before cluster tear down.
 	WaitBeforeDown time.Duration `json:"wait-before-down,omitempty"`
@@ -872,8 +872,8 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	if cfg.ALBIngressController != nil && cfg.ALBIngressController.Enable {
 		switch cfg.ALBIngressController.TestMode {
 		case "ingress-test-server":
-			if cfg.AWSTesterImage == "" {
-				return errors.New("'ingress-test-server' requires AWSTesterImage")
+			if cfg.AWSK8sTesterImage == "" {
+				return errors.New("'ingress-test-server' requires AWSK8sTesterImage")
 			}
 		case "nginx":
 			if cfg.ALBIngressController.TestServerRoutes != 1 {
