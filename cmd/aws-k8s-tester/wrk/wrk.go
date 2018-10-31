@@ -60,6 +60,8 @@ func NewCommand() *cobra.Command {
 	rootCmd.PersistentFlags().IntVar(&wrkCfg.Connections, "connections", 200, "number of connections")
 	rootCmd.PersistentFlags().DurationVar(&wrkCfg.Duration, "duration", 15*time.Second, "duration to run 'wrk' command")
 
+	rootCmd.PersistentFlags().BoolVar(&runInEC2, "run-in-ec2", false, "'true' if run in EC2")
+
 	return rootCmd
 }
 
@@ -70,6 +72,7 @@ var (
 	outputS3UploadDir    string
 	outputS3UploadRegion string
 	wrkCfg               wrk.Config
+	runInEC2             bool
 )
 
 func runFunc(cmd *cobra.Command, args []string) {
@@ -137,11 +140,13 @@ func runFunc(cmd *cobra.Command, args []string) {
 		s3:     s3.New(ss),
 	}
 
-	var s3Path string
-	s3Path, err = metadata.InstanceID(lg)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to get metadata (%v)\n", err)
-		os.Exit(1)
+	s3Path := randString(25)
+	if runInEC2 {
+		s3Path, err = metadata.InstanceID(lg)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to get metadata (%v)\n", err)
+			os.Exit(1)
+		}
 	}
 	if outputCSV {
 		s3Path += ".csv"
