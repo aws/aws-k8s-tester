@@ -32,7 +32,7 @@ type Config struct {
 
 	Threads     int
 	Connections int
-	Duration    time.Duration
+	Minutes     int
 	Endpoint    string
 }
 
@@ -76,13 +76,13 @@ func Run(cfg Config) (rs Result, err error) {
 		"starting 'wrk' command",
 		zap.Int("threads", cfg.Threads),
 		zap.Int("connections", cfg.Connections),
-		zap.String("duration", fmt.Sprintf("%s", cfg.Duration)),
+		zap.Int("minutes", cfg.Minutes),
 		zap.String("endpoint", cfg.Endpoint),
 	)
 	args := []string{
 		"--threads", fmt.Sprintf("%d", cfg.Threads),
 		"--connections", fmt.Sprintf("%d", cfg.Connections),
-		"--duration", fmt.Sprintf("%s", cfg.Duration),
+		"--duration", fmt.Sprintf("%dm", cfg.Minutes),
 		"--latency",
 		cfg.Endpoint,
 	}
@@ -97,7 +97,7 @@ func Run(cfg Config) (rs Result, err error) {
 		"completed 'wrk' command",
 		zap.Int("threads", cfg.Threads),
 		zap.Int("connections", cfg.Connections),
-		zap.String("duration", fmt.Sprintf("%s", cfg.Duration)),
+		zap.Int("minutes", cfg.Minutes),
 		zap.String("endpoint", cfg.Endpoint),
 	)
 
