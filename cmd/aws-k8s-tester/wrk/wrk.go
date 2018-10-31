@@ -142,7 +142,7 @@ func runFunc(cmd *cobra.Command, args []string) {
 
 	s3Path := randString(25)
 	if runInEC2 {
-		s3Path, err = metadata.InstanceID(lg)
+		s3Path, err = metadata.InstanceID(lg, time.Second)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "failed to get metadata (%v)\n", err)
 			os.Exit(1)

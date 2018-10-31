@@ -37,13 +37,17 @@ security-groups
 services/
 */
 
-func getMeta(lg *zap.Logger, key string) (s string, err error) {
+func getMeta(lg *zap.Logger, timeout time.Duration, key string) (s string, err error) {
 	addr := fmt.Sprintf("http://169.254.169.254/latest/meta-data/%s", key)
+	cli := http.DefaultClient
+	if timeout > 0 {
+		cli.Timeout = timeout
+	}
 	for i := 0; i < 10; i++ {
 		var resp *http.Response
-		resp, err = http.Get(addr)
+		resp, err = cli.Get(addr)
 		if err != nil {
-			lg.Warn("failed to get public IPv4", zap.Error(err))
+			lg.Warn("failed to get metadata", zap.String("key", key), zap.Error(err))
 			time.Sleep(3 * time.Second)
 			continue
 		}
@@ -51,7 +55,7 @@ func getMeta(lg *zap.Logger, key string) (s string, err error) {
 		var d []byte
 		d, err = ioutil.ReadAll(resp.Body)
 		if err != nil {
-			lg.Warn("failed to get public IPv4", zap.Error(err))
+			lg.Warn("failed to get metadata", zap.String("key", key), zap.Error(err))
 			time.Sleep(3 * time.Second)
 			continue
 		}
@@ -64,16 +68,16 @@ func getMeta(lg *zap.Logger, key string) (s string, err error) {
 }
 
 // PublicIPv4 returns the public IPv4 address of an EC2 instance.
-func PublicIPv4(lg *zap.Logger) (s string, err error) {
-	return getMeta(lg, "public-ipv4")
+func PublicIPv4(lg *zap.Logger, timeout time.Duration) (s string, err error) {
+	return getMeta(lg, timeout, "public-ipv4")
 }
 
 // PrivateIPv4 returns the private IPv4 address of an EC2 instance.
-func PrivateIPv4(lg *zap.Logger) (s string, err error) {
-	return getMeta(lg, "local-ipv4")
+func PrivateIPv4(lg *zap.Logger, timeout time.Duration) (s string, err error) {
+	return getMeta(lg, timeout, "local-ipv4")
 }
 
 // InstanceID returns the instance ID of an EC2 instance.
-func InstanceID(lg *zap.Logger) (s string, err error) {
-	return getMeta(lg, "instance-id")
+func InstanceID(lg *zap.Logger, timeout time.Duration) (s string, err error) {
+	return getMeta(lg, timeout, "instance-id")
 }
