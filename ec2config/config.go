@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -15,7 +14,6 @@ import (
 	"github.com/aws/aws-k8s-tester/ec2config/plugins"
 	ec2types "github.com/aws/aws-k8s-tester/pkg/awsapi/ec2"
 
-	"github.com/aws/aws-sdk-go/service/ec2"
 	gyaml "github.com/ghodss/yaml"
 )
 
@@ -197,69 +195,6 @@ type SecurityGroup struct {
 	GroupID   string `json:"group-id,omitempty"`
 }
 
-// ConvertEC2Instance converts "aws ec2 describe-instances" to "config.Instance".
-func ConvertEC2Instance(iv *ec2.Instance) (instance Instance) {
-	instance = Instance{
-		ImageID:      *iv.ImageId,
-		InstanceID:   *iv.InstanceId,
-		InstanceType: *iv.InstanceType,
-		KeyName:      *iv.KeyName,
-		Placement: Placement{
-			AvailabilityZone: *iv.Placement.AvailabilityZone,
-			Tenancy:          *iv.Placement.Tenancy,
-		},
-		PrivateDNSName: *iv.PrivateDnsName,
-		PrivateIP:      *iv.PrivateIpAddress,
-		State: State{
-			Code: *iv.State.Code,
-			Name: *iv.State.Name,
-		},
-		SubnetID:            *iv.SubnetId,
-		VPCID:               *iv.VpcId,
-		BlockDeviceMappings: make([]BlockDeviceMapping, len(iv.BlockDeviceMappings)),
-		EBSOptimized:        *iv.EbsOptimized,
-		RootDeviceName:      *iv.RootDeviceName,
-		RootDeviceType:      *iv.RootDeviceType,
-		SecurityGroups:      make([]SecurityGroup, len(iv.SecurityGroups)),
-		LaunchTime:          *iv.LaunchTime,
-	}
-	if iv.PublicDnsName != nil {
-		instance.PublicDNSName = *iv.PublicDnsName
-	}
-	if iv.PublicIpAddress != nil {
-		instance.PublicIP = *iv.PublicIpAddress
-	}
-	for j := range iv.BlockDeviceMappings {
-		instance.BlockDeviceMappings[j] = BlockDeviceMapping{
-			DeviceName: *iv.BlockDeviceMappings[j].DeviceName,
-			EBS: EBS{
-				DeleteOnTermination: *iv.BlockDeviceMappings[j].Ebs.DeleteOnTermination,
-				Status:              *iv.BlockDeviceMappings[j].Ebs.Status,
-				VolumeID:            *iv.BlockDeviceMappings[j].Ebs.VolumeId,
-			},
-		}
-	}
-	for j := range iv.SecurityGroups {
-		instance.SecurityGroups[j] = SecurityGroup{
-			GroupName: *iv.SecurityGroups[j].GroupName,
-			GroupID:   *iv.SecurityGroups[j].GroupId,
-		}
-	}
-	return instance
-}
-
-// ConvertEC2Instances converts "aws ec2 describe-instances" to "ec2config.Instance".
-// And it sorts in a way that the first launched instance is at front.
-func ConvertEC2Instances(iss []*ec2.Instance) (instances []Instance) {
-	instances = make([]Instance, len(iss))
-	for i, v := range iss {
-		instances[i] = ConvertEC2Instance(v)
-	}
-	// sort that first launched EC2 instance is at front
-	sort.Sort(Instances(instances))
-	return instances
-}
-
 // NewDefault returns a copy of the default configuration.
 func NewDefault() *Config {
 	vv := defaultConfig
@@ -406,7 +341,7 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 		return errors.New("empty InstanceType")
 	}
 	if cfg.Count < 1 {
-		return errors.New("wrong Count")
+		return errors.New("unexpected Count")
 	}
 
 	if cfg.ID == "" {
@@ -416,14 +351,14 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 
 	if cfg.ConfigPath == "" {
 		var f *os.File
-		f, err = ioutil.TempFile(os.TempDir(), "aws-k8s-tester-ec2-config")
+		f, err = ioutil.TempFile(os.TempDir(), "aws-k8s-tester-ec2config")
 		if err != nil {
 			return err
 		}
 		cfg.ConfigPath, _ = filepath.Abs(f.Name())
 		f.Close()
 		os.RemoveAll(cfg.ConfigPath)
-		cfg.ConfigPathBucket = filepath.Join(cfg.ID, "aws-k8s-tester-ec2.config.yaml")
+		cfg.ConfigPathBucket = filepath.Join(cfg.ID, "aws-k8s-tester-ec2config.yaml")
 		cfg.ConfigPathURL = genS3URL(cfg.AWSRegion, cfg.Tag, cfg.ConfigPathBucket)
 	}
 

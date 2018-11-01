@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/aws/aws-k8s-tester/pkg/fileutil"
+
 	"go.uber.org/zap"
 )
 
@@ -56,7 +58,7 @@ func DownloadJobsUpstream(lg *zap.Logger) (dir string, paths []string, err error
 	// but this is being moved to "config/jobs/*"
 	// see https://github.com/kubernetes/test-infra/issues/8485
 	cp := filepath.Join(dir, "prow/config.yaml")
-	if exist(cp) {
+	if fileutil.Exist(cp) {
 		paths = []string{cp}
 	}
 

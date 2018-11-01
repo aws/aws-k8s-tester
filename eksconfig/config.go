@@ -1,3 +1,4 @@
+// Package eksconfig defines EKS test configuration.
 package eksconfig
 
 import (
@@ -25,6 +26,13 @@ type Config struct {
 	// TestMode is "embedded" or "aws-cli".
 	TestMode string `json:"test-mode,omitempty"`
 
+	// Tag is the tag used for S3 bucket name.
+	// If empty, deployer auto-populates it.
+	Tag string `json:"tag,omitempty"`
+	// ClusterName is the cluster name.
+	// If empty, deployer auto-populates it.
+	ClusterName string `json:"cluster-name,omitempty"`
+
 	// AWSK8sTesterImage is the aws-k8s-tester container image.
 	// Required for "aws-k8s-tester ingress server" for ALB Ingress Controller tests.
 	// Only required when ALB Ingress "TestMode" is "ingress-test-server".
@@ -43,12 +51,6 @@ type Config struct {
 	// Note that at least 2 subnets are required for EKS cluster.
 	EnableWorkerNodeHA bool `json:"enable-worker-node-ha"`
 
-	// Tag is the tag used for all cloudformation stacks.
-	// Must be left empty, and let deployer auto-populate this field.
-	Tag string `json:"tag,omitempty"` // read-only to user
-	// ClusterName is the EKS cluster name.
-	// Must be left empty, and let deployer auto-populate this field.
-	ClusterName string `json:"cluster-name,omitempty"` // read-only to user
 	// ConfigPath is the configuration file path.
 	// Must be left empty, and let deployer auto-populate this field.
 	// Deployer is expected to update this file with latest status,
@@ -404,10 +406,8 @@ var defaultConfig = Config{
 	TestMode: "embedded",
 
 	// enough time for ALB access log
-	WaitBeforeDown: 10 * time.Minute,
+	WaitBeforeDown: time.Minute,
 	Down:           true,
-
-	ConfigPath: "test.yaml",
 
 	EnableWorkerNodeHA:  true,
 	EnableWorkerNodeSSH: true,
@@ -646,8 +646,17 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 
 	////////////////////////////////////////////////////////////////////////
 	// populate all paths on disks and on remote storage
-	cfg.ConfigPathBucket = filepath.Join(cfg.ClusterName, "aws-k8s-tester-eks.config.yaml")
-	cfg.ConfigPathURL = genS3URL(cfg.AWSRegion, cfg.Tag, cfg.ConfigPathBucket)
+	if cfg.ConfigPath == "" {
+		f, err := ioutil.TempFile(os.TempDir(), "aws-k8s-tester-eksconfig")
+		if err != nil {
+			return err
+		}
+		cfg.ConfigPath, _ = filepath.Abs(f.Name())
+		f.Close()
+		os.RemoveAll(cfg.ConfigPath)
+		cfg.ConfigPathBucket = filepath.Join(cfg.ClusterName, "aws-k8s-tester-eksconfig.yaml")
+		cfg.ConfigPathURL = genS3URL(cfg.AWSRegion, cfg.Tag, cfg.ConfigPathBucket)
+	}
 
 	cfg.LogOutputToUploadPath = filepath.Join(os.TempDir(), fmt.Sprintf("%s.log", cfg.ClusterName))
 	logOutputExist := false

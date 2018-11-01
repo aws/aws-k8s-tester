@@ -1,4 +1,4 @@
-package eksconfig
+package etcdconfig
 
 import (
 	"math/rand"

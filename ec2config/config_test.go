@@ -9,6 +9,7 @@ import (
 func TestEnv(t *testing.T) {
 	cfg := NewDefault()
 
+	os.Setenv("AWS_K8S_TESTER_EC2_COUNT", "100")
 	os.Setenv("AWS_K8S_TESTER_EC2_AWS_REGION", "us-east-1")
 	os.Setenv("AWS_K8S_TESTER_EC2_CONFIG_PATH", "test-path")
 	os.Setenv("AWS_K8S_TESTER_EC2_DOWN", "false")
@@ -24,6 +25,7 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EC2_WAIT", "true")
 
 	defer func() {
+		os.Unsetenv("AWS_K8S_TESTER_EC2_COUNT")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_AWS_REGION")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_CONFIG_PATH")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_DOWN")
@@ -43,6 +45,9 @@ func TestEnv(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	if cfg.Count != 100 {
+		t.Fatalf("Count expected 100, got %d", cfg.Count)
+	}
 	if cfg.AWSRegion != "us-east-1" {
 		t.Fatalf("AWSRegion unexpected %q", cfg.AWSRegion)
 	}

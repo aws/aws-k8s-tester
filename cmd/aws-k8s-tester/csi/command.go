@@ -1,3 +1,4 @@
+// Package csi implements CSI related commands.
 package csi
 
 import "github.com/spf13/cobra"
