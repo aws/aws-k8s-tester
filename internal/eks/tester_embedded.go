@@ -279,6 +279,15 @@ func (md *embedded) Up() (err error) {
 		}
 	}()
 
+	if md.cfg.WaitBeforeDown > 0 {
+		md.lg.Info("waiting before cluster tear down", zap.Duration("wait", md.cfg.WaitBeforeDown))
+		select {
+		case <-time.After(md.cfg.WaitBeforeDown):
+			// TODO: handle interrupt syscall
+		}
+		md.lg.Info("waited before cluster tear down", zap.Duration("wait", md.cfg.WaitBeforeDown))
+	}
+
 	now := time.Now().UTC()
 
 	md.lg.Info("Up",

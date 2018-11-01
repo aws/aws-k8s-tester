@@ -107,29 +107,6 @@ var _ = AfterSuite(func() {
 	cfg, err := tester.LoadConfig()
 	Expect(err).ShouldNot(HaveOccurred())
 
-	notifier := make(chan os.Signal, 1)
-	signal.Notify(notifier, syscall.SIGINT, syscall.SIGTERM)
-	interrupted := false
-	if cfg.Down && cfg.WaitBeforeDown > 0 {
-		fmt.Fprintf(os.Stderr, "\n\n\n%v: waiting %v before cluster tear down (if not interrupted)...\n\n\n", time.Now().UTC(), cfg.WaitBeforeDown)
-		select {
-		case sig := <-notifier:
-			fmt.Fprintf(os.Stderr, "received signal %q in AfterSuite\n", sig)
-			var derr error
-			if cfg.Down {
-				derr = tester.Down()
-			}
-			signal.Stop(notifier)
-			fmt.Fprintf(os.Stderr, "shut down cluster with %q (with %v) in AfterSuite\n", sig, derr)
-			interrupted = true
-		case <-time.After(cfg.WaitBeforeDown):
-			// Note: takes about 5~10 minutes for ALB access logs be available in S3
-		}
-	}
-	if interrupted {
-		return
-	}
-
 	if cfg.Down {
 		err := tester.Down()
 		Expect(err).ShouldNot(HaveOccurred())
