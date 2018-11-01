@@ -75,4 +75,6 @@ func TestEC2SSH(t *testing.T) {
 	if string(out) != "go version go1.11.1 linux/amd64\n" {
 		t.Fatalf("unexpected go version %q", string(out))
 	}
+
+	time.Sleep(5 * time.Minute)
 }

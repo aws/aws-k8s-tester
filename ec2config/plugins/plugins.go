@@ -129,7 +129,7 @@ EOT`, userName, userName, string(d)),
 		_, perr := strconv.ParseInt(id, 10, 64)
 		isPR := perr == nil
 		s, err := createInstallGit(gitInfo{
-			GitClonePath: "${GOPATH}/src/go.etcd.com",
+			GitClonePath: "${GOPATH}/src/go.etcd.io",
 			GitCloneURL:  "https://github.com/etcd-io/etcd.git",
 			GitRepo:      "etcd",
 			IsPR:         isPR,
@@ -162,7 +162,7 @@ ETCDCTL_API=3 etcdctl version`,
 			IsPR:         isPR,
 			GitBranch:    gitBranch,
 			InstallScript: `GO111MODULE=on go mod vendor -v
-			make server
+make server
 			`,
 		})
 		if err != nil {
