@@ -14,8 +14,6 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	// remove "internal" package imports
-	// when it gets contributed to upstream
 )
 
 // http://onsi.github.io/ginkgo/#the-ginkgo-cli
