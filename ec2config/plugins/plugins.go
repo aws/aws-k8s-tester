@@ -136,6 +136,7 @@ EOT`, userName, userName, string(d)),
 			GitBranch:    id,
 			InstallScript: `make build
 sudo cp ./bin/etcd /usr/local/bin/etcd
+sudo cp ./bin/etcdctl /usr/local/bin/etcdctl
 
 etcd --version
 ETCDCTL_API=3 etcdctl version`,
