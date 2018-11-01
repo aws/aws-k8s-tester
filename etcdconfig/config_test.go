@@ -77,6 +77,7 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_ETCD_UPLOAD_TESTER_LOGS", "false")
 	os.Setenv("AWS_K8S_TESTER_ETCD_WAIT_BEFORE_DOWN", "2h")
 	os.Setenv("AWS_K8S_TESTER_ETCD_TOP_ETCD_VERSION", "v3.1.12")
+	os.Setenv("AWS_K8S_TESTER_ETCD_TOP_ETCD_TOP_LEVEL", "true")
 
 	defer func() {
 		os.Unsetenv("AWS_K8S_TESTER_ETCD_TAG")
@@ -86,6 +87,7 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWS_K8S_TESTER_ETCD_UPLOAD_TESTER_LOGS")
 		os.Unsetenv("AWS_K8S_TESTER_ETCD_WAIT_BEFORE_DOWN")
 		os.Unsetenv("AWS_K8S_TESTER_ETCD_TOP_ETCD_VERSION")
+		os.Unsetenv("AWS_K8S_TESTER_ETCD_TOP_ETCD_TOP_LEVEL")
 	}()
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
@@ -115,5 +117,8 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.TopETCD.Version != "v3.1.12" {
 		t.Fatalf("unexpected TopETCD.Version, got %q", cfg.TopETCD.Version)
+	}
+	if !cfg.TopETCD.TopLevel {
+		t.Fatalf("unexpected TopETCD.TopLevel, got %v", cfg.TopETCD.TopLevel)
 	}
 }

@@ -82,8 +82,8 @@ type Config struct {
 type ETCD struct {
 	Version string `json:"version"`
 
-	// ForBootstrap is true if this is only used for top-level configuration.
-	ForBootstrap bool `json:"for-bootstrap"`
+	// TopLevel is true if this is only used for top-level configuration.
+	TopLevel bool `json:"top-level"`
 
 	DataDir             string `json:"data-dir,omitempty"`
 	ListenClientURLs    string `json:"listen-client-urls,omitempty"`
@@ -287,7 +287,7 @@ func (e *ETCD) Flags() (flags []string, err error) {
 			flags = append(flags, fmt.Sprintf("--%s=%s", k, vv.Field(i).String()))
 
 		case reflect.Bool:
-			if tp.Field(i).Name == "ForBootstrap" {
+			if tp.Field(i).Name == "TopLevel" {
 				continue
 			}
 			flags = append(flags, fmt.Sprintf("--%s=%v", k, vv.Field(i).Bool()))
@@ -325,27 +325,27 @@ func (e *ETCD) ValidateAndSetDefaults() (err error) {
 		return fmt.Errorf("expected >= %s, got %s", minEtcdVer, ver)
 	}
 
-	if e.ForBootstrap {
+	if e.TopLevel {
 		if e.DataDir != "" {
-			return fmt.Errorf("unexpected DataDir %q with 'ForBootstrap'", e.DataDir)
+			return fmt.Errorf("unexpected DataDir %q with 'TopLevel {'", e.DataDir)
 		}
 		if e.ListenClientURLs != "" {
-			return fmt.Errorf("unexpected ListenClientURLs %q with 'ForBootstrap'", e.ListenClientURLs)
+			return fmt.Errorf("unexpected ListenClientURLs %q with 'TopLevel {'", e.ListenClientURLs)
 		}
 		if e.AdvertiseClientURLs != "" {
-			return fmt.Errorf("unexpected AdvertiseClientURLs %q with 'ForBootstrap'", e.AdvertiseClientURLs)
+			return fmt.Errorf("unexpected AdvertiseClientURLs %q with 'TopLevel {'", e.AdvertiseClientURLs)
 		}
 		if e.ListenPeerURLs != "" {
-			return fmt.Errorf("unexpected ListenPeerURLs %q with 'ForBootstrap'", e.ListenPeerURLs)
+			return fmt.Errorf("unexpected ListenPeerURLs %q with 'TopLevel {'", e.ListenPeerURLs)
 		}
 		if e.AdvertisePeerURLs != "" {
-			return fmt.Errorf("unexpected AdvertisePeerURLs %q with 'ForBootstrap'", e.AdvertisePeerURLs)
+			return fmt.Errorf("unexpected AdvertisePeerURLs %q with 'TopLevel {'", e.AdvertisePeerURLs)
 		}
 		if e.InitialCluster != "" {
-			return fmt.Errorf("unexpected InitialCluster %q with 'ForBootstrap'", e.InitialCluster)
+			return fmt.Errorf("unexpected InitialCluster %q with 'TopLevel {'", e.InitialCluster)
 		}
 		if e.InitialClusterState != "" {
-			return fmt.Errorf("unexpected InitialClusterState %q with 'ForBootstrap'", e.InitialClusterState)
+			return fmt.Errorf("unexpected InitialClusterState %q with 'TopLevel {'", e.InitialClusterState)
 		}
 	} else {
 		if e.DataDir == "" {
@@ -477,7 +477,7 @@ var defaultConfig = Config{
 }
 
 var defaultETCD = ETCD{
-	ForBootstrap:        true,
+	TopLevel:            true,
 	InitialClusterToken: "tkn",
 
 	SnapshotCount: 10000,
@@ -748,6 +748,12 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 	cfg.LogOutputToUploadPathBucket = filepath.Join(cfg.ClusterName, "aws-k8s-tester-etcd.log")
 	if cfg.UploadTesterLogs {
 		cfg.LogOutputToUploadPathURL = genS3URL(cfg.EC2.AWSRegion, cfg.Tag, cfg.LogOutputToUploadPathBucket)
+	}
+
+	for k, v := range cfg.ClusterState {
+		if v.TopLevel {
+			return fmt.Errorf("ClusterState has TopLevel set %q=%v", k, v)
+		}
 	}
 
 	return cfg.Sync()
