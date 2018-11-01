@@ -3,20 +3,16 @@ package integration_test
 import (
 	"fmt"
 	"os"
-	"reflect"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
-	"github.com/aws/aws-k8s-tester/ec2config/plugins"
 	"github.com/aws/aws-k8s-tester/internal/ec2"
 	"github.com/aws/aws-k8s-tester/internal/ssh"
 )
 
 /*
-RUN_AWS_TESTS=1 AWS_SHARED_CREDENTIALS_FILE=~/.aws/credentials go test -v -timeout 2h -run TestEC2SSH
-tail -f /var/log/cloud-init-output.log
+RUN_AWS_TESTS=1 go test -v -timeout 2h -run TestEC2SSH
 */
 func TestEC2SSH(t *testing.T) {
 	if os.Getenv("RUN_AWS_TESTS") != "1" {
@@ -24,9 +20,9 @@ func TestEC2SSH(t *testing.T) {
 	}
 
 	cfg := ec2config.NewDefault()
+	cfg.Wait = true
 	cfg.Plugins = []string{
-		"update-ubuntu",
-		"install-go1.11.1-ubuntu",
+		"install-go1.11.1",
 	}
 
 	ec, err := ec2.NewDeployer(cfg)
@@ -54,38 +50,21 @@ func TestEC2SSH(t *testing.T) {
 	}
 
 	var out []byte
-	out, err = sh.Run("curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone")
+	out, err = sh.Run(
+		"curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone",
+		ssh.WithRetry(100, 5*time.Second),
+		ssh.WithTimeout(30*time.Second),
+	)
 	if err != nil {
 		t.Error(err)
 	}
 	fmt.Println("availability-zone:", string(out))
 
-	timer := time.NewTimer(5 * time.Minute)
-ready:
-	for {
-		select {
-		case <-timer.C:
-			t.Fatal("not ready")
-
-		default:
-			out, err = sh.Run("cat /var/log/cloud-init-output.log")
-			if err != nil {
-				fmt.Println(err, reflect.TypeOf(err))
-				time.Sleep(5 * time.Second)
-				continue
-			}
-
-			if strings.Contains(string(out), plugins.READY) {
-				fmt.Println("cloud-init-output.log READY:", string(out))
-				break ready
-			}
-
-			fmt.Println("cloud-init-output.log:", string(out))
-			time.Sleep(5 * time.Second)
-		}
-	}
-
-	out, err = sh.Run("source /etc/environment && go version")
+	out, err = sh.Run(
+		"source /etc/environment && go version",
+		ssh.WithRetry(100, 5*time.Second),
+		ssh.WithTimeout(30*time.Second),
+	)
 	if err != nil {
 		t.Error(err)
 	}

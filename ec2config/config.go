@@ -67,8 +67,6 @@ type Config struct {
 	ConfigPathURL    string    `json:"config-path-url,omitempty"`    // read-only to user
 	UpdatedAt        time.Time `json:"updated-at,omitempty"`         // read-only to user
 
-	// OSDistribution is either ubuntu or Amazon Linux 2 for now.
-	OSDistribution string `json:"os-distribution,omitempty"`
 	// UserName is the user name used for running init scripts or SSH access.
 	UserName string `json:"user-name,omitempty"`
 	// ImageID is the Amazon Machine Image (AMI).
@@ -218,13 +216,16 @@ var defaultConfig = Config{
 	LogOutputs:       []string{"stderr"},
 	UploadTesterLogs: false,
 
-	OSDistribution: "ubuntu",
-	UserName:       "ubuntu",
-
 	// Ubuntu Server 16.04 LTS (HVM), SSD Volume Type
-	ImageID: "ami-ba602bc2",
+	// ImageID: "ami-ba602bc2",
+	// UserName: "ubuntu",
+
+	// Amazon Linux 2 AMI (HVM), SSD Volume Type
+	ImageID:  "ami-061e7ebbc234015fe",
+	UserName: "ec2-user",
+
 	Plugins: []string{
-		"update-ubuntu",
+		// "update-ubuntu",
 		"install-go1.11.1",
 	},
 
@@ -316,9 +317,6 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 	}
 	if cfg.AWSRegion == "" {
 		return errors.New("empty AWSRegion")
-	}
-	if cfg.OSDistribution == "" {
-		return errors.New("empty OSDistribution")
 	}
 	if cfg.UserName == "" {
 		return errors.New("empty UserName")

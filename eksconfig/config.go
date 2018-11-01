@@ -418,8 +418,9 @@ var defaultConfig = Config{
 	AWSRegion:                "us-west-2",
 	AWSCustomEndpoint:        "",
 
-	// https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html
-	WorkerNodeAMI:          "ami-0a54c984b9f908c81",
+	// Amazon EKS-optimized AMI, https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html
+	WorkerNodeAMI: "ami-0a54c984b9f908c81",
+
 	WorkerNodeInstanceType: "m5.large",
 	WorkderNodeASGMin:      1,
 	WorkderNodeASGMax:      1,
