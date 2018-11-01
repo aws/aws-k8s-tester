@@ -29,18 +29,23 @@ func (ss scripts) Swap(i, j int)      { ss[i], ss[j] = ss[j], ss[i] }
 func (ss scripts) Less(i, j int) bool { return keyPriorities[ss[i].key] < keyPriorities[ss[j].key] }
 
 var keyPriorities = map[string]int{ // in the order of:
-	"update-ubuntu":         1,
-	"mount-aws-cred":        2,
-	"install-go":            3,
-	"install-csi":           4,
-	"install-kubeadm":       5,
-	"install-wrk":           6,
-	"install-alb":           7,
-	"install-docker-ubuntu": 8,
+	"update-amazon-linux-2":         1,
+	"update-ubuntu":                 2,
+	"mount-aws-cred":                3, // TODO: use instance role instead
+	"install-go":                    4,
+	"install-csi":                   5,
+	"install-kubeadm":               6,
+	"install-wrk":                   7,
+	"install-alb":                   8,
+	"install-docker-amazon-linux-2": 9,
+	"install-docker-ubuntu":         10,
 }
 
 func convertToScript(userName, plugin string) (script, error) {
 	switch {
+	case plugin == "update-amazon-linux-2":
+		return script{key: "update-amazon-linux-2", data: updateAmazonLinux2}, nil
+
 	case plugin == "update-ubuntu":
 		return script{key: "update-ubuntu", data: updateUbuntu}, nil
 
@@ -127,6 +132,12 @@ EOT`, userName, userName, string(d)),
 			key:  plugin,
 			data: installDockerUbuntu,
 		}, nil
+
+	case plugin == "install-docker-amazon-linux-2":
+		return script{
+			key:  plugin,
+			data: installDockerAmazonLinux2,
+		}, nil
 	}
 
 	return script{}, fmt.Errorf("unknown plugin %q", plugin)
@@ -158,6 +169,31 @@ func Create(userName string, plugins []string) (data string, err error) {
 	return data, nil
 }
 
+const updateAmazonLinux2 = `
+
+################################## update Amazon Linux 2
+
+export HOME=/home/ec2-user
+export GOPATH=/home/ec2-user/go
+
+sudo yum update -y \
+  && sudo yum install -y \
+  gcc \
+  zlib-devel \
+  openssl-devel \
+  ncurses-devel \
+  git \
+  wget \
+  jq \
+  tar \
+  curl \
+  unzip \
+  screen \
+  mercurial
+
+##################################
+
+`
 const updateUbuntu = `
 
 ################################## update Ubuntu
@@ -413,6 +449,28 @@ sudo usermod -aG docker ubuntu || true
 
 id -nG
 sudo docker version
+sudo docker info
+##################################
+
+`
+
+// https://docs.aws.amazon.com/AmazonECS/latest/developerguide/docker-basics.html
+const installDockerAmazonLinux2 = `
+
+################################## install Docker on Amazon Linux 2
+sudo yum update -y
+sudo yum install -y docker
+
+sudo systemctl start docker || true
+sudo systemctl status docker --full --no-pager || true
+sudo usermod -aG docker ec2-user || true
+
+# su - ec2-user
+# or logout and login to use docker without 'sudo'
+
+id -nG
+sudo docker version
+sudo docker info
 ##################################
 
 `

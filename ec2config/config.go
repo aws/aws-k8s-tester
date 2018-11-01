@@ -67,12 +67,13 @@ type Config struct {
 	ConfigPathURL    string    `json:"config-path-url,omitempty"`    // read-only to user
 	UpdatedAt        time.Time `json:"updated-at,omitempty"`         // read-only to user
 
-	// UserName is the user name used for running init scripts or SSH access.
-	UserName string `json:"user-name,omitempty"`
 	// ImageID is the Amazon Machine Image (AMI).
 	ImageID string `json:"image-id,omitempty"`
+	// UserName is the user name used for running init scripts or SSH access.
+	UserName string `json:"user-name,omitempty"`
 	// Plugins is the list of plugins.
 	Plugins []string `json:"plugins,omitempty"`
+
 	// InitScript contains init scripts (run-instance UserData field).
 	// Script must be started with "#!/usr/bin/env bash" IF "Plugins" field is not defined.
 	// And will be base64-encoded. Do not base64-encode. Just configure as plain-text.
@@ -216,18 +217,19 @@ var defaultConfig = Config{
 	LogOutputs:       []string{"stderr"},
 	UploadTesterLogs: false,
 
-	// Ubuntu Server 16.04 LTS (HVM), SSD Volume Type
-	// ImageID: "ami-ba602bc2",
-	// UserName: "ubuntu",
-
 	// Amazon Linux 2 AMI (HVM), SSD Volume Type
 	ImageID:  "ami-061e7ebbc234015fe",
 	UserName: "ec2-user",
-
 	Plugins: []string{
-		// "update-ubuntu",
+		"update-amazon-linux-2",
 		"install-go1.11.1",
+		"install-docker-amazon-linux-2",
 	},
+
+	// Ubuntu Server 16.04 LTS (HVM), SSD Volume Type
+	// ImageID: "ami-ba602bc2",
+	// UserName: "ubuntu",
+	// Plugins: []string{"update-ubuntu"},
 
 	// 4 vCPU, 15 GB RAM
 	InstanceType: "m3.xlarge",
