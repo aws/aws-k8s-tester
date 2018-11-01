@@ -64,8 +64,9 @@ type embedded struct {
 	eks eksiface.EKSAPI
 	ec2 ec2iface.EC2API
 
-	ec2InstancesMu    *sync.RWMutex
-	ec2Instances      []*ec2.Instance
+	ec2InstancesMu *sync.RWMutex
+	ec2Instances   []*ec2.Instance
+
 	ec2InstancesLogMu *sync.RWMutex
 
 	s3Plugin s3.Plugin

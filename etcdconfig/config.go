@@ -83,6 +83,7 @@ type ETCD struct {
 	// TopLevel is true if this is only used for top-level configuration.
 	TopLevel bool `json:"top-level"`
 
+	Name                string `json:"name,omitempty"`
 	DataDir             string `json:"data-dir,omitempty"`
 	ListenClientURLs    string `json:"listen-client-urls,omitempty"`
 	AdvertiseClientURLs string `json:"advertise-client-urls,omitempty"`
@@ -324,6 +325,9 @@ func (e *ETCD) ValidateAndSetDefaults() (err error) {
 	}
 
 	if e.TopLevel {
+		if e.Name != "" {
+			return fmt.Errorf("unexpected Name %q with 'TopLevel {'", e.Name)
+		}
 		if e.DataDir != "" {
 			return fmt.Errorf("unexpected DataDir %q with 'TopLevel {'", e.DataDir)
 		}
@@ -346,6 +350,9 @@ func (e *ETCD) ValidateAndSetDefaults() (err error) {
 			return fmt.Errorf("unexpected InitialClusterState %q with 'TopLevel {'", e.InitialClusterState)
 		}
 	} else {
+		if e.Name == "" {
+			return errors.New("expected non-empty Name")
+		}
 		if e.DataDir == "" {
 			return errors.New("expected non-empty DataDir")
 		}
@@ -474,7 +481,8 @@ var defaultConfig = Config{
 }
 
 var defaultETCD = ETCD{
-	TopLevel:            true,
+	TopLevel: true,
+
 	InitialClusterToken: "tkn",
 
 	SnapshotCount: 10000,
