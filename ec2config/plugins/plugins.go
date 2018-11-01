@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 	"text/template"
+
+	"github.com/blang/semver"
 )
 
 // headerBash is the bash script header.
@@ -34,11 +36,12 @@ var keyPriorities = map[string]int{ // in the order of:
 	"mount-aws-cred":                3, // TODO: use instance role instead
 	"install-go":                    4,
 	"install-csi":                   5,
-	"install-kubeadm":               6,
+	"install-etcd":                  6,
 	"install-wrk":                   7,
 	"install-alb":                   8,
-	"install-docker-amazon-linux-2": 9,
-	"install-docker-ubuntu":         10,
+	"install-kubeadm-ubuntu":        9,
+	"install-docker-amazon-linux-2": 10,
+	"install-docker-ubuntu":         11,
 }
 
 func convertToScript(userName, plugin string) (script, error) {
@@ -50,6 +53,7 @@ func convertToScript(userName, plugin string) (script, error) {
 		return script{key: "update-ubuntu", data: updateUbuntu}, nil
 
 	case strings.HasPrefix(plugin, "mount-aws-cred-"):
+		// TODO: use instance role instead
 		env := strings.Replace(plugin, "mount-aws-cred-", "", -1)
 		if os.Getenv(env) == "" {
 			return script{}, fmt.Errorf("%q is not defined", env)
@@ -81,18 +85,6 @@ EOT`, userName, userName, string(d)),
 			data: s,
 		}, nil
 
-	case plugin == "install-kubeadm":
-		return script{
-			key:  plugin,
-			data: installKubeadmn,
-		}, nil
-
-	case plugin == "install-wrk":
-		return script{
-			key:  plugin,
-			data: installWrk,
-		}, nil
-
 	case strings.HasPrefix(plugin, "install-csi-"):
 		gitBranch := strings.Replace(plugin, "install-csi-", "", -1)
 		_, perr := strconv.ParseInt(gitBranch, 10, 64)
@@ -108,6 +100,45 @@ EOT`, userName, userName, string(d)),
 			return script{}, err
 		}
 		return script{key: "install-csi", data: s}, nil
+
+	case strings.HasPrefix(plugin, "install-etcd-"):
+		id := strings.Replace(plugin, "install-etcd-", "", -1)
+		if id != "master" {
+			if strings.HasPrefix(id, "v") {
+				id = id[1:]
+			}
+			ver, err := semver.Make(id)
+			if err != nil {
+				return script{}, fmt.Errorf("failed to parse etcd version %q (%v)", id, err)
+			}
+			s, err := createInstallEtcd(etcdInfo{
+				Version: ver.String(),
+			})
+			if err != nil {
+				return script{}, err
+			}
+			return script{
+				key:  "install-etcd",
+				data: s,
+			}, nil
+		}
+		s, err := createInstallGit(gitInfo{
+			GitName:       "etcd-io",
+			GitRepoName:   "etcd",
+			IsPR:          false,
+			GitBranch:     "master",
+			InstallScript: `make build && sudo cp ./bin/etcd /usr/local/bin/etcd`,
+		})
+		if err != nil {
+			return script{}, err
+		}
+		return script{key: "install-etcd", data: s}, nil
+
+	case plugin == "install-wrk":
+		return script{
+			key:  plugin,
+			data: installWrk,
+		}, nil
 
 	case strings.HasPrefix(plugin, "install-alb-"):
 		gitBranch := strings.Replace(plugin, "install-alb-", "", -1)
@@ -127,16 +158,22 @@ EOT`, userName, userName, string(d)),
 		}
 		return script{key: "install-alb", data: s}, nil
 
-	case plugin == "install-docker-ubuntu":
+	case plugin == "install-kubeadm-ubuntu":
 		return script{
 			key:  plugin,
-			data: installDockerUbuntu,
+			data: installKubeadmnUbuntu,
 		}, nil
 
 	case plugin == "install-docker-amazon-linux-2":
 		return script{
 			key:  plugin,
 			data: installDockerAmazonLinux2,
+		}, nil
+
+	case plugin == "install-docker-ubuntu":
+		return script{
+			key:  plugin,
+			data: installDockerUbuntu,
 		}, nil
 	}
 
@@ -302,7 +339,7 @@ go version
 
 `
 
-const installKubeadmn = `
+const installKubeadmnUbuntu = `
 
 ################################## install kubeadm
 
@@ -330,6 +367,49 @@ sudo journalctl --output=cat -u kubelet
 
 `
 
+func createInstallEtcd(g etcdInfo) (string, error) {
+	tpl := template.Must(template.New("installEtcdTemplate").Parse(installEtcdTemplate))
+	buf := bytes.NewBuffer(nil)
+	if err := tpl.Execute(buf, g); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
+type etcdInfo struct {
+	Version string
+}
+
+const installEtcdTemplate = `
+
+################################## install etcd
+
+ETCD_VER={{ .Version }}
+
+# choose either URL
+GOOGLE_URL=https://storage.googleapis.com/etcd
+GITHUB_URL=https://github.com/etcd-io/etcd/releases/download
+DOWNLOAD_URL=${GOOGLE_URL}
+
+rm -f /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz
+rm -rf /tmp/etcd-download-test && mkdir -p /tmp/etcd-download-test
+
+curl -L ${DOWNLOAD_URL}/${ETCD_VER}/etcd-${ETCD_VER}-linux-amd64.tar.gz -o /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz
+tar xzvf /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz -C /tmp/etcd-download-test --strip-components=1
+rm -f /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz
+
+/tmp/etcd-download-test/etcd --version
+ETCDCTL_API=3 /tmp/etcd-download-test/etcdctl version
+
+sudo cp /tmp/etcd-download-test/etcd /usr/local/bin/etcd
+
+etcd --version
+ETCDCTL_API=3 etcdctl version
+
+##################################
+
+`
+
 const installWrk = `
 
 ################################## install wrk
@@ -351,10 +431,10 @@ while [[ ${COUNT} -lt ${RETRIES} ]]; do
   sleep ${DELAY}
 done
 
-pushd wrk \
+cd ./wrk \
   && make all \
   && sudo cp ./wrk /usr/local/bin/wrk \
-  && popd \
+  && cd .. \
   && rm -rf ./wrk \
   && wrk --version || true && which wrk
 
