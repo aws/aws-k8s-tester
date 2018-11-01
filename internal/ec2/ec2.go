@@ -571,7 +571,7 @@ func (md *embedded) wait() {
 				select {
 				case <-time.After(5 * time.Second):
 					out, err = sh.Run(
-						"tail -10 /var/log/cloud-init-output.log",
+						"tail -15 /var/log/cloud-init-output.log",
 						ssh.WithRetry(100, 5*time.Second),
 						ssh.WithTimeout(30*time.Second),
 					)

@@ -22,7 +22,11 @@ func TestEC2SSH(t *testing.T) {
 	cfg := ec2config.NewDefault()
 	cfg.Wait = true
 	cfg.Plugins = []string{
+		"update-amazon-linux-2",
 		"install-go1.11.1",
+
+		// "install-etcd-3.1.12",
+		"install-etcd-master",
 	}
 
 	ec, err := ec2.NewDeployer(cfg)

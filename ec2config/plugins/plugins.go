@@ -90,8 +90,9 @@ EOT`, userName, userName, string(d)),
 		_, perr := strconv.ParseInt(gitBranch, 10, 64)
 		isPR := perr == nil
 		s, err := createInstallGit(gitInfo{
-			GitName:       "kubernetes-sigs",
-			GitRepoName:   "aws-ebs-csi-driver",
+			GitClonePath:  "${GOPATH}/src/github.com/kubernetes-sigs",
+			GitCloneURL:   "https://github.com/kubernetes-sigs/aws-ebs-csi-driver.git",
+			GitRepo:       "aws-ebs-csi-driver",
 			IsPR:          isPR,
 			GitBranch:     gitBranch,
 			InstallScript: `go install -v ./cmd/aws-ebs-csi-driver`,
@@ -103,7 +104,7 @@ EOT`, userName, userName, string(d)),
 
 	case strings.HasPrefix(plugin, "install-etcd-"):
 		id := strings.Replace(plugin, "install-etcd-", "", -1)
-		if id != "master" {
+		if id != "master" && !strings.HasPrefix(id, "pr-") {
 			if strings.HasPrefix(id, "v") {
 				id = id[1:]
 			}
@@ -122,12 +123,22 @@ EOT`, userName, userName, string(d)),
 				data: s,
 			}, nil
 		}
+		if strings.HasPrefix(id, "pr-") {
+			id = strings.Replace(plugin, "pr-", "", -1)
+		}
+		_, perr := strconv.ParseInt(id, 10, 64)
+		isPR := perr == nil
 		s, err := createInstallGit(gitInfo{
-			GitName:       "etcd-io",
-			GitRepoName:   "etcd",
-			IsPR:          false,
-			GitBranch:     "master",
-			InstallScript: `make build && sudo cp ./bin/etcd /usr/local/bin/etcd`,
+			GitClonePath: "${GOPATH}/src/go.etcd.com",
+			GitCloneURL:  "https://github.com/etcd-io/etcd.git",
+			GitRepo:      "etcd",
+			IsPR:         isPR,
+			GitBranch:    id,
+			InstallScript: `make build
+sudo cp ./bin/etcd /usr/local/bin/etcd
+
+etcd --version
+ETCDCTL_API=3 etcdctl version`,
 		})
 		if err != nil {
 			return script{}, err
@@ -145,10 +156,11 @@ EOT`, userName, userName, string(d)),
 		_, perr := strconv.ParseInt(gitBranch, 10, 64)
 		isPR := perr == nil
 		s, err := createInstallGit(gitInfo{
-			GitName:     "kubernetes-sigs",
-			GitRepoName: "aws-alb-ingress-controller",
-			IsPR:        isPR,
-			GitBranch:   gitBranch,
+			GitClonePath: "${GOPATH}/src/github.com/kubernetes-sigs",
+			GitCloneURL:  "https://github.com/kubernetes-sigs/aws-alb-ingress-controller.git",
+			GitRepo:      "aws-alb-ingress-controller",
+			IsPR:         isPR,
+			GitBranch:    gitBranch,
 			InstallScript: `GO111MODULE=on go mod vendor -v
 			make server
 			`,
@@ -341,7 +353,7 @@ go version
 
 const installKubeadmnUbuntu = `
 
-################################## install kubeadm
+################################## install kubeadm on Ubuntu
 
 cd ${HOME}
 
@@ -384,7 +396,7 @@ const installEtcdTemplate = `
 
 ################################## install etcd
 
-ETCD_VER={{ .Version }}
+ETCD_VER=v{{ .Version }}
 
 # choose either URL
 GOOGLE_URL=https://storage.googleapis.com/etcd
@@ -398,10 +410,8 @@ curl -L ${DOWNLOAD_URL}/${ETCD_VER}/etcd-${ETCD_VER}-linux-amd64.tar.gz -o /tmp/
 tar xzvf /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz -C /tmp/etcd-download-test --strip-components=1
 rm -f /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz
 
-/tmp/etcd-download-test/etcd --version
-ETCDCTL_API=3 /tmp/etcd-download-test/etcdctl version
-
 sudo cp /tmp/etcd-download-test/etcd /usr/local/bin/etcd
+sudo cp /tmp/etcd-download-test/etcdctl /usr/local/bin/etcdctl
 
 etcd --version
 ETCDCTL_API=3 etcdctl version
@@ -458,26 +468,30 @@ func createInstallGit(g gitInfo) (string, error) {
 }
 
 type gitInfo struct {
-	GitName       string
-	GitRepoName   string
-	IsPR          bool
-	GitBranch     string
+	GitClonePath string
+	GitCloneURL  string
+	GitRepo      string
+	IsPR         bool
+
+	// GitBranch name or PR number
+	GitBranch string
+
 	InstallScript string
 }
 
 const installGitTemplate = `
 
-################################## install {{ .GitRepoName }} via git
+################################## install {{ .GitRepo }} via git
 
-mkdir -p ${GOPATH}/src/github.com/{{ .GitName }}/
-cd ${GOPATH}/src/github.com/{{ .GitName }}/
+mkdir -p {{ .GitClonePath }}/
+cd {{ .GitClonePath }}/
 
 RETRIES=10
 DELAY=10
 COUNT=1
 while [[ ${COUNT} -lt ${RETRIES} ]]; do
-  rm -rf ./{{ .GitRepoName }}
-  git clone https://github.com/{{ .GitName }}/{{ .GitRepoName }}.git
+  rm -rf ./{{ .GitRepo }}
+  git clone {{ .GitCloneURL }}
   if [[ $? -eq 0 ]]; then
     RETRIES=0
     echo "Successfully git cloned!"
@@ -487,7 +501,7 @@ while [[ ${COUNT} -lt ${RETRIES} ]]; do
   sleep ${DELAY}
 done
 
-cd ${GOPATH}/src/github.com/{{ .GitName }}/{{ .GitRepoName }}
+cd {{ .GitClonePath }}/{{ .GitRepo }}
 
 {{ if .IsPR }}echo 'git fetching:' pull/{{ .GitBranch }}/head 'to test branch'
 git fetch origin pull/{{ .GitBranch }}/head:test
@@ -497,11 +511,12 @@ git checkout origin/{{ .GitBranch }}
 git checkout -B {{ .GitBranch }}
 {{ end }}
 
-{{ .InstallScript }}
-
 git remote -v
 git branch
 git log --pretty=oneline -5
+
+pwd
+{{ .InstallScript }}
 
 ##################################
 
