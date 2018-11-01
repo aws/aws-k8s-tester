@@ -47,14 +47,14 @@ func TestETCD(t *testing.T) {
 
 func TestValidateAndSetDefaults(t *testing.T) {
 	cfg := NewDefault()
-	cfg.TopETCD.Version = "v3.1.0"
+	cfg.Cluster.Version = "v3.1.0"
 
 	err := cfg.ValidateAndSetDefaults()
 	if err.Error() != "expected >= 3.1.12, got 3.1.0" {
 		t.Fatalf("unexpected error %v", err)
 	}
 
-	cfg.TopETCD.Version = "v3.1.12"
+	cfg.Cluster.Version = "v3.1.12"
 	err = cfg.ValidateAndSetDefaults()
 	if err != nil {
 		t.Fatal(err)
@@ -76,8 +76,8 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_ETCD_LOG_DEBUG", "true")
 	os.Setenv("AWS_K8S_TESTER_ETCD_UPLOAD_TESTER_LOGS", "false")
 	os.Setenv("AWS_K8S_TESTER_ETCD_WAIT_BEFORE_DOWN", "2h")
-	os.Setenv("AWS_K8S_TESTER_ETCD_TOP_ETCD_VERSION", "v3.1.12")
-	os.Setenv("AWS_K8S_TESTER_ETCD_TOP_ETCD_TOP_LEVEL", "true")
+	os.Setenv("AWS_K8S_TESTER_ETCD__VERSION", "v3.1.12")
+	os.Setenv("AWS_K8S_TESTER_ETCD__TOP_LEVEL", "true")
 
 	defer func() {
 		os.Unsetenv("AWS_K8S_TESTER_ETCD_TAG")
@@ -86,8 +86,8 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWS_K8S_TESTER_ETCD_LOG_DEBUG")
 		os.Unsetenv("AWS_K8S_TESTER_ETCD_UPLOAD_TESTER_LOGS")
 		os.Unsetenv("AWS_K8S_TESTER_ETCD_WAIT_BEFORE_DOWN")
-		os.Unsetenv("AWS_K8S_TESTER_ETCD_TOP_ETCD_VERSION")
-		os.Unsetenv("AWS_K8S_TESTER_ETCD_TOP_ETCD_TOP_LEVEL")
+		os.Unsetenv("AWS_K8S_TESTER_ETCD__VERSION")
+		os.Unsetenv("AWS_K8S_TESTER_ETCD__TOP_LEVEL")
 	}()
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
@@ -115,10 +115,10 @@ func TestEnv(t *testing.T) {
 	if cfg.WaitBeforeDown != 2*time.Hour {
 		t.Fatalf("unexpected WaitBeforeDown, got %v", cfg.WaitBeforeDown)
 	}
-	if cfg.TopETCD.Version != "v3.1.12" {
-		t.Fatalf("unexpected TopETCD.Version, got %q", cfg.TopETCD.Version)
+	if cfg.Cluster.Version != "v3.1.12" {
+		t.Fatalf("unexpected Cluster.Version, got %q", cfg.Cluster.Version)
 	}
-	if !cfg.TopETCD.TopLevel {
-		t.Fatalf("unexpected TopETCD.TopLevel, got %v", cfg.TopETCD.TopLevel)
+	if !cfg.Cluster.TopLevel {
+		t.Fatalf("unexpected Cluster.TopLevel, got %v", cfg.Cluster.TopLevel)
 	}
 }

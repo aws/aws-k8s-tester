@@ -61,27 +61,25 @@ type Config struct {
 	// UploadTesterLogs is true to auto-upload log files.
 	UploadTesterLogs bool `json:"upload-tester-logs"`
 
-	// ClusterSize is the number of etcd nodes.
-	ClusterSize int `json:"cluster-size"`
-
-	// TopETCD is the shared etcd configuration for initial cluster setup.
-	// "DataDir" and "URLs" fields should not be set.
-	// Will automatically be updated after EC2 creation.
-	TopETCD *ETCD `json:"top-etcd"`
-
 	// EC2 defines ec2 instance configuration.
 	// Ignored for local tests.
 	EC2 *ec2config.Config `json:"ec2"`
 
-	// ClusterState maps EC2 instance ID to etcd.
-	ClusterState map[string]ETCD `json:"instance-id-to-etcd"`
+	// ClusterSize is the number of etcd nodes.
+	ClusterSize int `json:"cluster-size"`
+	// Cluster is the shared etcd configuration for initial cluster setup.
+	// "DataDir" and "URLs" fields should not be set.
+	// Will automatically be updated after EC2 creation.
+	Cluster *ETCD `json:"cluster"`
+	// ClusterState maps ID to etcd instance.
+	ClusterState map[string]ETCD `json:"cluster-state"`
 }
 
 // ETCD defines etcd-specific configuration.
 // TODO: support TLS
 type ETCD struct {
+	// Version is the etcd version.
 	Version string `json:"version"`
-
 	// TopLevel is true if this is only used for top-level configuration.
 	TopLevel bool `json:"top-level"`
 
@@ -434,7 +432,7 @@ func init() {
 		panic(err)
 	}
 	defaultETCD.Version = minEtcdVer.String()
-	defaultConfig.TopETCD = &defaultETCD
+	defaultConfig.Cluster = &defaultETCD
 	defaultConfig.Tag = genTag()
 	defaultConfig.ClusterName = genClusterName(defaultConfig.Tag)
 }
@@ -470,9 +468,8 @@ var defaultConfig = Config{
 	LogOutputs:       []string{"stderr"},
 	UploadTesterLogs: true,
 
-	ClusterSize: 1,
-
 	EC2:          ec2config.NewDefault(),
+	ClusterSize:  1,
 	ClusterState: make(map[string]ETCD),
 }
 
@@ -558,7 +555,7 @@ func (cfg *Config) BackupConfig() (p string, err error) {
 
 const (
 	envPfx        = "AWS_K8S_TESTER_ETCD_"
-	envPfxTopETCD = "AWS_K8S_TESTER_ETCD_TOP_ETCD_"
+	envPfxCluster = "AWS_K8S_TESTER_ETCD_TOP_ETCD_"
 )
 
 // UpdateFromEnvs updates fields from environmental variables.
@@ -638,7 +635,7 @@ func (cfg *Config) UpdateFromEnvs() error {
 	}
 	*cfg = cc
 
-	av := *cc.TopETCD
+	av := *cc.Cluster
 	tp2, vv2 := reflect.TypeOf(&av).Elem(), reflect.ValueOf(&av).Elem()
 	for i := 0; i < tp2.NumField(); i++ {
 		jv := tp2.Field(i).Tag.Get("json")
@@ -647,7 +644,7 @@ func (cfg *Config) UpdateFromEnvs() error {
 		}
 		jv = strings.Replace(jv, ",omitempty", "", -1)
 		jv = strings.ToUpper(strings.Replace(jv, "-", "_", -1))
-		env := envPfxTopETCD + jv
+		env := envPfxCluster + jv
 		if os.Getenv(env) == "" {
 			continue
 		}
@@ -689,7 +686,7 @@ func (cfg *Config) UpdateFromEnvs() error {
 			return fmt.Errorf("%q (%v) is not supported as an env", env, vv2.Field(i).Type())
 		}
 	}
-	cfg.TopETCD = &av
+	cfg.Cluster = &av
 
 	return nil
 }
@@ -698,7 +695,7 @@ func (cfg *Config) UpdateFromEnvs() error {
 // And updates empty fields with default values.
 // At the end, it writes populated YAML to aws-k8s-tester config path.
 func (cfg *Config) ValidateAndSetDefaults() (err error) {
-	if err = cfg.TopETCD.ValidateAndSetDefaults(); err != nil {
+	if err = cfg.Cluster.ValidateAndSetDefaults(); err != nil {
 		return err
 	}
 	if err = cfg.EC2.ValidateAndSetDefaults(); err != nil {
