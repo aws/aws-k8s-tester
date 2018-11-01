@@ -750,6 +750,9 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 		cfg.LogOutputToUploadPathURL = genS3URL(cfg.EC2.AWSRegion, cfg.Tag, cfg.LogOutputToUploadPathBucket)
 	}
 
+	if len(cfg.ClusterState) > 0 && cfg.ClusterSize != len(cfg.ClusterState) {
+		return fmt.Errorf("ClusterSize %d != len(ClusterState) %d", cfg.ClusterSize, len(cfg.ClusterState))
+	}
 	for k, v := range cfg.ClusterState {
 		if v.TopLevel {
 			return fmt.Errorf("ClusterState has TopLevel set %q=%v", k, v)
