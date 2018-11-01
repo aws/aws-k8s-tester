@@ -90,9 +90,9 @@ EOT`, userName, userName, string(d)),
 		_, perr := strconv.ParseInt(gitBranch, 10, 64)
 		isPR := perr == nil
 		s, err := createInstallGit(gitInfo{
+			GitRepo:       "aws-ebs-csi-driver",
 			GitClonePath:  "${GOPATH}/src/github.com/kubernetes-sigs",
 			GitCloneURL:   "https://github.com/kubernetes-sigs/aws-ebs-csi-driver.git",
-			GitRepo:       "aws-ebs-csi-driver",
 			IsPR:          isPR,
 			GitBranch:     gitBranch,
 			InstallScript: `go install -v ./cmd/aws-ebs-csi-driver`,
@@ -129,9 +129,9 @@ EOT`, userName, userName, string(d)),
 		_, perr := strconv.ParseInt(id, 10, 64)
 		isPR := perr == nil
 		s, err := createInstallGit(gitInfo{
+			GitRepo:      "etcd",
 			GitClonePath: "${GOPATH}/src/go.etcd.io",
 			GitCloneURL:  "https://github.com/etcd-io/etcd.git",
-			GitRepo:      "etcd",
 			IsPR:         isPR,
 			GitBranch:    id,
 			InstallScript: `make build
@@ -156,9 +156,9 @@ ETCDCTL_API=3 etcdctl version`,
 		_, perr := strconv.ParseInt(gitBranch, 10, 64)
 		isPR := perr == nil
 		s, err := createInstallGit(gitInfo{
+			GitRepo:      "aws-alb-ingress-controller",
 			GitClonePath: "${GOPATH}/src/github.com/kubernetes-sigs",
 			GitCloneURL:  "https://github.com/kubernetes-sigs/aws-alb-ingress-controller.git",
-			GitRepo:      "aws-alb-ingress-controller",
 			IsPR:         isPR,
 			GitBranch:    gitBranch,
 			InstallScript: `GO111MODULE=on go mod vendor -v
@@ -468,9 +468,9 @@ func createInstallGit(g gitInfo) (string, error) {
 }
 
 type gitInfo struct {
+	GitRepo      string
 	GitClonePath string
 	GitCloneURL  string
-	GitRepo      string
 	IsPR         bool
 
 	// GitBranch name or PR number
