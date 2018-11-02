@@ -71,7 +71,7 @@ Resources:
       EnableDnsHostnames: true
       Tags:
       - Key: Name
-        Value: !Sub '{{ .TagValue }}-vpc'
+        Value: {{ .TagValue }}
       - Key: HOSTNAME
         Value: {{ .Hostname }}
 

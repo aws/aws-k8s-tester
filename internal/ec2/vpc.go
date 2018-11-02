@@ -3,6 +3,7 @@ package ec2
 import (
 	"errors"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -24,6 +25,28 @@ func (md *embedded) createVPC() (err error) {
 	md.cfg.VPCID = *output.Vpc.VpcId
 	md.lg.Info(
 		"created VPC",
+		zap.String("vpc-id", md.cfg.VPCID),
+	)
+
+	h, _ := os.Hostname()
+	_, err = md.ec2.CreateTags(&ec2.CreateTagsInput{
+		Resources: aws.StringSlice([]string{md.cfg.VPCID}),
+		Tags: []*ec2.Tag{
+			{
+				Key:   aws.String("Name"),
+				Value: aws.String(md.cfg.Tag),
+			},
+			{
+				Key:   aws.String("HOSTNAME"),
+				Value: aws.String(h),
+			},
+		},
+	})
+	if err != nil {
+		return err
+	}
+	md.lg.Info(
+		"created VPC tag",
 		zap.String("vpc-id", md.cfg.VPCID),
 	)
 
