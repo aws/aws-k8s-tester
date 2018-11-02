@@ -338,7 +338,7 @@ func (md *embedded) createInstances() (err error) {
 							ResourceType: aws.String("instance"),
 							Tags: []*ec2.Tag{
 								{
-									Key:   aws.String(md.cfg.Tag),
+									Key:   aws.String("Name"),
 									Value: aws.String(md.cfg.Tag),
 								},
 								{
@@ -381,7 +381,7 @@ func (md *embedded) createInstances() (err error) {
 								ResourceType: aws.String("instance"),
 								Tags: []*ec2.Tag{
 									{
-										Key:   aws.String(md.cfg.Tag),
+										Key:   aws.String("Name"),
 										Value: aws.String(md.cfg.Tag),
 									},
 									{
@@ -441,7 +441,7 @@ func (md *embedded) createInstances() (err error) {
 						ResourceType: aws.String("instance"),
 						Tags: []*ec2.Tag{
 							{
-								Key:   aws.String(md.cfg.Tag),
+								Key:   aws.String("Name"),
 								Value: aws.String(md.cfg.Tag),
 							},
 							{

@@ -44,7 +44,11 @@ func (md *embedded) createWorkerNode() error {
 		StackName: aws.String(md.cfg.ClusterState.CFStackWorkerNodeGroupName),
 		Tags: []*cloudformation.Tag{
 			{
-				Key:   aws.String(md.cfg.Tag),
+				Key:   aws.String("Name"),
+				Value: aws.String(md.cfg.Tag + "-worker-node"),
+			},
+			{
+				Key:   aws.String("ClusterName"),
 				Value: aws.String(md.cfg.ClusterName),
 			},
 			{

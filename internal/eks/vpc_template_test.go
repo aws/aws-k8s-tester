@@ -8,7 +8,7 @@ import (
 func TestVPCTemplate(t *testing.T) {
 	v := vpcStack{
 		Description:       "test",
-		TagKey:            "aws-k8s-tester",
+		Tag:               "aws-k8s-tester",
 		TagValue:          "aws-k8s-tester",
 		Hostname:          "hostname",
 		SecurityGroupName: "security",

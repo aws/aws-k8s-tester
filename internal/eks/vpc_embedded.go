@@ -23,7 +23,7 @@ func (md *embedded) createVPC() error {
 	h, _ := os.Hostname()
 	v := vpcStack{
 		Description:       md.cfg.ClusterName + "-vpc-stack",
-		TagKey:            md.cfg.Tag,
+		Tag:               md.cfg.Tag,
 		TagValue:          md.cfg.ClusterName,
 		Hostname:          h,
 		SecurityGroupName: md.cfg.ClusterName + "-security-group",
@@ -37,7 +37,11 @@ func (md *embedded) createVPC() error {
 		StackName: aws.String(md.cfg.ClusterState.CFStackVPCName),
 		Tags: []*cloudformation.Tag{
 			{
-				Key:   aws.String(md.cfg.Tag),
+				Key:   aws.String("Name"),
+				Value: aws.String(md.cfg.Tag + "-vpc"),
+			},
+			{
+				Key:   aws.String("ClusterName"),
 				Value: aws.String(md.cfg.ClusterName),
 			},
 			{

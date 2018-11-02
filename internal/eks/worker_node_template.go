@@ -52,18 +52,19 @@ func _createWorkerNodeTemplate(v workerNodeStack) (string, error) {
 
 type workerNodeStack struct {
 	Description         string
-	TagKey              string
+	Tag                 string
 	TagValue            string
 	Hostname            string
 	EnableWorkerNodeSSH bool
 }
 
+// TODO: this does not work...
+//  	CREATE_FAILED 	AWS::AutoScaling::AutoScalingGroup 	NodeGroup 	PropagateAtLaunch not found in properties
+//
 // Make sure to keep this up-to-date
 // https://github.com/awslabs/amazon-eks-ami/blob/master/amazon-eks-nodegroup.yaml
 // https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html
 // https://amazon-eks.s3-us-west-2.amazonaws.com/cloudformation/2018-08-30/amazon-eks-nodegroup.yaml
-// TODO: this does not work...
-//  	CREATE_FAILED 	AWS::AutoScaling::AutoScalingGroup 	NodeGroup 	PropagateAtLaunch not found in properties
 const workerNodeStackTemplate = `---
 AWSTemplateFormatVersion: '2010-09-09'
 Description: {{ .Description }}
@@ -269,7 +270,7 @@ Resources:
       Tags:
       - Key: !Sub "kubernetes.io/cluster/${ClusterName}"
         Value: 'owned'
-      - Key: {{ .TagKey }}
+      - Key: {{ .Tag }}
         Value: {{ .TagValue }}
       - Key: HOSTNAME
         Value: {{ .Hostname }}
@@ -367,7 +368,7 @@ Resources:
       - Key: !Sub 'kubernetes.io/cluster/${ClusterName}'
         Value: 'owned'
         PropagateAtLaunch: 'true'
-      - Key: {{ .TagKey }}
+      - Key: {{ .Tag }}
         Value: {{ .TagValue }}
       - Key: HOSTNAME
         Value: {{ .Hostname }}

@@ -16,7 +16,7 @@ func createVPCTemplate(v vpcStack) (string, error) {
 
 type vpcStack struct {
 	Description       string
-	TagKey            string
+	Tag               string
 	TagValue          string
 	Hostname          string
 	SecurityGroupName string
@@ -71,9 +71,7 @@ Resources:
       EnableDnsHostnames: true
       Tags:
       - Key: Name
-        Value: !Sub '${AWS::StackName}-VPC'
-      - Key: {{ .TagKey }}
-        Value: {{ .TagValue }}
+        Value: !Sub '{{ .TagValue }}-vpc'
       - Key: HOSTNAME
         Value: {{ .Hostname }}
 
@@ -81,7 +79,7 @@ Resources:
     Type: "AWS::EC2::InternetGateway"
     Properties:
       Tags:
-      - Key: {{ .TagKey }}
+      - Key: Name
         Value: {{ .TagValue }}
       - Key: HOSTNAME
         Value: {{ .Hostname }}
@@ -101,7 +99,7 @@ Resources:
         Value: Public Subnets
       - Key: Network
         Value: Public
-      - Key: {{ .TagKey }}
+      - Key: {{ .Tag }}
         Value: {{ .TagValue }}
       - Key: HOSTNAME
         Value: {{ .Hostname }}
@@ -130,8 +128,8 @@ Resources:
         Ref: VPC
       Tags:
       - Key: Name
-        Value: !Sub "${AWS::StackName}-Subnet01"
-      - Key: {{ .TagKey }}
+        Value: !Sub "{{ .TagValue }}-Subnet01"
+      - Key: {{ .Tag }}
         Value: {{ .TagValue }}
       - Key: HOSTNAME
         Value: {{ .Hostname }}
@@ -152,8 +150,8 @@ Resources:
         Ref: VPC
       Tags:
       - Key: Name
-        Value: !Sub "${AWS::StackName}-Subnet02"
-      - Key: {{ .TagKey }}
+        Value: !Sub "{{ .TagValue }}-Subnet02"
+      - Key: {{ .Tag }}
         Value: {{ .TagValue }}
       - Key: HOSTNAME
         Value: {{ .Hostname }}
@@ -174,8 +172,8 @@ Resources:
         Ref: VPC
       Tags:
       - Key: Name
-        Value: !Sub "${AWS::StackName}-Subnet03"
-      - Key: {{ .TagKey }}
+        Value: !Sub "{{ .TagValue }}-Subnet03"
+      - Key: {{ .Tag }}
         Value: {{ .TagValue }}
       - Key: HOSTNAME
         Value: {{ .Hostname }}
@@ -205,7 +203,7 @@ Resources:
       GroupDescription: Cluster communication with worker nodes
       VpcId: !Ref VPC
       Tags:
-      - Key: {{ .TagKey }}
+      - Key: {{ .Tag }}
         Value: {{ .TagValue }}
       - Key: HOSTNAME
         Value: {{ .Hostname }}
