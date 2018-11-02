@@ -316,8 +316,8 @@ func (e *ETCD) Service() (s string, err error) {
 		return "", err
 	}
 	return createSvcInfo(svcInfo{
-		ETCDExec: "/usr/local/bin/etcd",
-		ETCDFlags: strings.Join(fs, ` \
+		Exec: "/usr/local/bin/etcd",
+		Flags: strings.Join(fs, ` \
   `),
 	})
 }
@@ -332,8 +332,8 @@ func createSvcInfo(svc svcInfo) (string, error) {
 }
 
 type svcInfo struct {
-	ETCDExec  string
-	ETCDFlags string
+	Exec  string
+	Flags string
 }
 
 const svcTmpl = `#!/usr/bin/env bash
@@ -355,7 +355,7 @@ RestartSec=5s
 LimitNOFILE=40000
 TimeoutStartSec=0
 
-ExecStart={{ .ETCDExec }} {{ .ETCDFlags }}
+ExecStart={{ .Exec }} {{ .Flags }}
 
 [Install]
 WantedBy=multi-user.target
@@ -508,9 +508,19 @@ func init() {
 		panic(err)
 	}
 	defaultETCD.Version = minEtcdVer.String()
+
 	defaultConfig.Cluster = &defaultETCD
 	defaultConfig.Tag = genTag()
 	defaultConfig.ClusterName = genClusterName(defaultConfig.Tag)
+
+	// package "internal/ec2" defaults
+	// Amazon Linux 2 AMI (HVM), SSD Volume Type
+	// ImageID:  "ami-061e7ebbc234015fe"
+	// UserName: "ec2-user"
+	defaultConfig.EC2.Plugins = []string{
+		"update-amazon-linux-2",
+		"install-etcd-3.1.12",
+	}
 }
 
 // genTag generates a tag for cluster name, CloudFormation, and S3 bucket.
@@ -778,6 +788,26 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 	if err = cfg.EC2.ValidateAndSetDefaults(); err != nil {
 		return err
 	}
+
+	// expect
+	// "update-amazon-linux-2"
+	// "install-etcd-3.1.12"
+	okAMZLnx, okEtcd := false, false
+	for _, v := range cfg.EC2.Plugins {
+		if v == "update-amazon-linux-2" {
+			okAMZLnx = true
+		}
+		if strings.HasPrefix(v, "install-etcd-") {
+			okEtcd = true
+		}
+	}
+	if !okAMZLnx {
+		return errors.New("EC2 Plugin 'update-amazon-linux-2' not found")
+	}
+	if !okEtcd {
+		return errors.New("EC2 Plugin 'install-etcd' not found")
+	}
+
 	if cfg.ClusterSize != cfg.EC2.Count {
 		return fmt.Errorf("ClusterSize %d != EC2.Count %d", cfg.ClusterSize, cfg.EC2.Count)
 	}

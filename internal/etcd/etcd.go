@@ -47,7 +47,13 @@ func (md *embedded) Deploy() (err error) {
 
 	now := time.Now().UTC()
 
-	md.lg.Info("deploying EC2")
+	// expect the following in Plugins
+	// "update-amazon-linux-2"
+	// "install-etcd-3.1.12"
+	md.lg.Info(
+		"deploying EC2",
+		zap.Strings("plugins", md.cfg.EC2.Plugins),
+	)
 	var ec2Deployer ec2.Deployer
 	ec2Deployer, err = ec2.NewDeployer(md.cfg.EC2)
 	if err != nil {
@@ -59,8 +65,13 @@ func (md *embedded) Deploy() (err error) {
 	md.cfg.Sync()
 	md.lg.Info(
 		"deployed EC2",
+		zap.Strings("plugins", md.cfg.EC2.Plugins),
 		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 	)
+
+	if md.cfg.LogDebug {
+		fmt.Println(ec2Deployer.GenerateSSHCommands())
+	}
 
 	tc := *md.cfg.Cluster
 	for _, iv := range md.cfg.EC2.Instances {
@@ -76,11 +87,13 @@ func (md *embedded) Deploy() (err error) {
 		ev.InitialClusterState = "new"
 		md.cfg.ClusterState[iv.InstanceID] = ev
 	}
+
 	initialCluster := ""
 	for k, v := range md.cfg.ClusterState {
 		initialCluster += fmt.Sprintf(",%s=%s", k, v.AdvertisePeerURLs)
 	}
 	initialCluster = initialCluster[1:]
+
 	for id, v := range md.cfg.ClusterState {
 		v.InitialCluster = initialCluster
 		md.cfg.ClusterState[id] = v
@@ -88,6 +101,16 @@ func (md *embedded) Deploy() (err error) {
 	if err = md.cfg.ValidateAndSetDefaults(); err != nil {
 		return err
 	}
+
+	// SCP to each EC2 instance
+	md.lg.Info("deploying etcd",
+		zap.String("initial-cluster", initialCluster),
+	)
+
+	md.lg.Info("deployed etcd",
+		zap.String("initial-cluster", initialCluster),
+		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
+	)
 
 	return md.cfg.ValidateAndSetDefaults()
 }
