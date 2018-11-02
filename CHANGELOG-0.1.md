@@ -26,17 +26,18 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.1...0.1.2).
 
 ### `etcdconfig`
 
-- Add [`etcdconfig`](https://github.com/aws/aws-k8s-tester/commit/TODO) package for etcd conformance tests.
+- Add [`etcdconfig`](https://github.com/aws/aws-k8s-tester/pull/7) package for etcd conformance tests.
 
 ### `etcdtester`
 
-- Add [`etcdtester`](https://github.com/aws/aws-k8s-tester/commit/TODO) package for etcd conformance tests.
+- Add [`etcdtester`](https://github.com/aws/aws-k8s-tester/pull/7) package for etcd conformance tests.
   - To be moved to upstream etcd test project.
 
 ### `internal`
 
 - Rename to [`ec2config` from `internal/ec2/config`](https://github.com/aws/aws-k8s-tester/commit/f8b5d466966862658dff6bc254d7491ba2333aa6).
 - Add [`internal/ec2/config.Config.Wait`](https://github.com/aws/aws-k8s-tester/commit/6073c2de289e352c5454d4b17380022168bcbac6) field.
+- Add [`internal/ssh.SSH.Send/Download` using SCP protocol](https://github.com/aws/aws-k8s-tester/commit/84e4363ad658cc6db8e0bf979f6f6bb841795eec).
 
 ### `pkg/wrk`
 
