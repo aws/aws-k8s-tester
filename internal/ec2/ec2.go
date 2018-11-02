@@ -550,10 +550,11 @@ func (md *embedded) wait() {
 		for id, iv := range mm {
 			md.lg.Info("waiting for EC2", zap.String("instance-id", id))
 			sh, serr := ssh.New(ssh.Config{
-				Logger:   md.lg,
-				KeyPath:  md.cfg.KeyPath,
-				Addr:     iv.PublicIP + ":22",
-				UserName: md.cfg.UserName,
+				Logger:        md.lg,
+				KeyPath:       md.cfg.KeyPath,
+				PublicIP:      iv.PublicIP,
+				PublicDNSName: iv.PublicDNSName,
+				UserName:      md.cfg.UserName,
 			})
 			if serr != nil {
 				fmt.Fprintf(os.Stderr, "failed to create SSH (%v)\n", serr)

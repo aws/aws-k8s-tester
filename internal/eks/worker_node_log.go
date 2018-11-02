@@ -25,10 +25,11 @@ func fetchWorkerNodeLog(
 
 	var sh ssh.SSH
 	sh, err = ssh.New(ssh.Config{
-		Logger:   lg,
-		KeyPath:  privateKeyPath,
-		Addr:     ip + ":22",
-		UserName: userName,
+		Logger:        lg,
+		KeyPath:       privateKeyPath,
+		PublicIP:      ip,
+		PublicDNSName: workerNode.PublicDNSName,
+		UserName:      userName,
 	})
 	if err != nil {
 		lg.Warn(

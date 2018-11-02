@@ -221,7 +221,7 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 	lg.Info(
 		"created EKS deployer",
 		zap.String("cluster-name", cfg.ClusterName),
-		zap.String("aws-k8s-tester-eks-config-path", cfg.ConfigPath),
+		zap.String("aws-k8s-tester-eksconfig-path", cfg.ConfigPath),
 		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 	)
 	return md, md.cfg.Sync()

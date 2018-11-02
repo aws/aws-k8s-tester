@@ -1,8 +1,11 @@
 package integration_test
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -26,7 +29,7 @@ func TestEC2SSH(t *testing.T) {
 		"install-go1.11.1",
 
 		// "install-etcd-3.1.12",
-		"install-etcd-master",
+		// "install-etcd-master",
 	}
 
 	ec, err := ec2.NewDeployer(cfg)
@@ -41,10 +44,11 @@ func TestEC2SSH(t *testing.T) {
 	fmt.Println(ec.GenerateSSHCommands())
 
 	sh, serr := ssh.New(ssh.Config{
-		Logger:   ec.Logger(),
-		KeyPath:  cfg.KeyPath,
-		Addr:     cfg.Instances[0].PublicIP + ":22",
-		UserName: cfg.UserName,
+		Logger:        ec.Logger(),
+		KeyPath:       cfg.KeyPath,
+		PublicIP:      cfg.Instances[0].PublicIP,
+		PublicDNSName: cfg.Instances[0].PublicDNSName,
+		UserName:      cfg.UserName,
 	})
 	if serr != nil {
 		t.Fatal(err)
@@ -75,4 +79,45 @@ func TestEC2SSH(t *testing.T) {
 	if string(out) != "go version go1.11.1 linux/amd64\n" {
 		t.Fatalf("unexpected go version %q", string(out))
 	}
+
+	f, ferr := ioutil.TempFile(os.TempDir(), "testfile")
+	if ferr != nil {
+		t.Fatal(ferr)
+	}
+	if _, err = f.Write([]byte("Hello World!")); err != nil {
+		t.Fatal(err)
+	}
+	localPath1, remotePath := f.Name(), fmt.Sprintf("/home/%s/aws-k8s-tester.txt", cfg.UserName)
+	f.Sync()
+
+	if err = sh.Send(
+		localPath1,
+		remotePath,
+		ssh.WithRetry(10, 5*time.Second),
+		ssh.WithTimeout(10*time.Second),
+	); err != nil {
+		t.Error(err)
+	}
+
+	localPath2 := filepath.Join(os.TempDir(), "testfile.txt")
+	defer os.RemoveAll(localPath2)
+
+	if err = sh.Download(
+		remotePath,
+		localPath2,
+		ssh.WithRetry(10, 5*time.Second),
+		ssh.WithTimeout(10*time.Second),
+	); err != nil {
+		t.Error(err)
+	}
+
+	d, derr := ioutil.ReadFile(localPath2)
+	if derr != nil {
+		t.Fatal(derr)
+	}
+	if !bytes.Equal(d, []byte("Hello World!")) {
+		t.Fatalf("expected 'Hello World!', got %q", string(d))
+	}
+
+	time.Sleep(3 * time.Minute)
 }
