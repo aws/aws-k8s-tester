@@ -11,6 +11,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.1...0.1.2).
 
 - Rename to [`aws-k8s-tester`](https://github.com/aws/aws-k8s-tester/commit/1512e69443705eafe0ad5b4440e325d2f374cf73).
 - Rename to [`ekstester` from `eksdeployer`](https://github.com/aws/aws-k8s-tester/commit/e56f2bd4554ebe26421c896d6b3ae2993d19e6ac).
+- Add [`bill-of-materials.json`](https://github.com/aws/aws-k8s-tester/pull/7).
 
 ### `aws-k8s-tester` CLI
 
