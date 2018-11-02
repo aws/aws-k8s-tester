@@ -42,11 +42,11 @@ type SSH interface {
 	// Close closes the session and connection to a remote server.
 	Close()
 	// Run runs the command and returns the output.
-	Run(cmd string, opts ...OpOption) ([]byte, error)
+	Run(cmd string, opts ...OpOption) (out []byte, err error)
 	// Send sends a file to the remote host using SCP protocol.
-	Send(localPath, remotePath string, opts ...OpOption) error
+	Send(localPath, remotePath string, opts ...OpOption) (out []byte, err error)
 	// Download downloads a file from the remote host using SCP protocol.
-	Download(remotePath, localPath string, opts ...OpOption) error
+	Download(remotePath, localPath string, opts ...OpOption) (out []byte, err error)
 }
 
 type ssh struct {
@@ -293,7 +293,7 @@ scp -oStrictHostKeyChecking=no \
   ./test2.txt
 */
 
-func (sh *ssh) Send(localPath, remotePath string, opts ...OpOption) (err error) {
+func (sh *ssh) Send(localPath, remotePath string, opts ...OpOption) (out []byte, err error) {
 	ret := Op{verbose: true, retries: 0, retryInterval: time.Duration(0), timeout: 0, envs: make(map[string]string)}
 	ret.applyOpts(opts)
 
@@ -364,16 +364,16 @@ func (sh *ssh) Send(localPath, remotePath string, opts ...OpOption) (err error) 
 				connErr = sh.Connect()
 			}
 			time.Sleep(ret.retryInterval)
-			err = sh.Send(localPath, remotePath, opts...)
+			out, err = sh.Send(localPath, remotePath, opts...)
 		}
 	}
 	if err == nil {
 		delete(sh.retries, key)
 	}
-	return err
+	return out, err
 }
 
-func (sh *ssh) Download(remotePath, localPath string, opts ...OpOption) (err error) {
+func (sh *ssh) Download(remotePath, localPath string, opts ...OpOption) (out []byte, err error) {
 	ret := Op{verbose: true, retries: 0, retryInterval: time.Duration(0), timeout: 0, envs: make(map[string]string)}
 	ret.applyOpts(opts)
 
@@ -443,11 +443,11 @@ func (sh *ssh) Download(remotePath, localPath string, opts ...OpOption) (err err
 				connErr = sh.Connect()
 			}
 			time.Sleep(ret.retryInterval)
-			err = sh.Download(remotePath, localPath, opts...)
+			out, err = sh.Download(remotePath, localPath, opts...)
 		}
 	}
 	if err == nil {
 		delete(sh.retries, key)
 	}
-	return err
+	return out, err
 }

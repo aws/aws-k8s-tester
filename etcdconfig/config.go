@@ -85,6 +85,10 @@ type ETCD struct {
 	// TopLevel is true if this is only used for top-level configuration.
 	TopLevel bool `json:"top-level"`
 
+	SSHPrivateKeyPath string `json:"ssh-private-key-path,omitempty"`
+	PublicIP          string `json:"public-ip,omitempty"`
+	PublicDNSName     string `json:"public-dns-name,omitempty"`
+
 	Name                string `json:"name,omitempty"`
 	DataDir             string `json:"data-dir,omitempty"`
 	ListenClientURLs    string `json:"listen-client-urls,omitempty"`
@@ -106,9 +110,17 @@ type ETCD struct {
 	InitialElectionTickAdvance bool `json:"initial-election-tick-advance"`
 }
 
+var skipFlags = map[string]struct{}{
+	"Version":           struct{}{},
+	"TopLevel":          struct{}{},
+	"SSHPrivateKeyPath": struct{}{},
+	"PublicIP":          struct{}{},
+	"PublicDNSName":     struct{}{},
+}
+
 var etcdVersions = map[string]map[uint64]map[string]bool{
 	// master branch
-	// https://github.com/etcd-io/etcd/blob/master/CHANGELOG-3.3.md
+	// https://github.com/etcd-io/etcd/blob/master/CHANGELOG-3.4.md
 	"3.4": {
 		0: {
 			"initial-election-tick-advance": true,
@@ -280,22 +292,20 @@ func (e *ETCD) Flags() (flags []string, err error) {
 			k = strings.Replace(ek, ",omitempty", "", -1)
 		}
 
+		fieldName := tp.Field(i).Name
+		if _, ok := skipFlags[fieldName]; ok {
+			continue
+		}
 		switch vv.Field(i).Type().Kind() {
 		case reflect.String:
-			if tp.Field(i).Name == "Version" {
-				continue
-			}
 			flags = append(flags, fmt.Sprintf("--%s=%s", k, vv.Field(i).String()))
 
 		case reflect.Bool:
-			if tp.Field(i).Name == "TopLevel" {
-				continue
-			}
 			flags = append(flags, fmt.Sprintf("--%s=%v", k, vv.Field(i).Bool()))
 
 		case reflect.Int, reflect.Int32, reflect.Int64:
 			v := vv.Field(i).Int()
-			if tp.Field(i).Name == "QuotaBackendGB" {
+			if fieldName == "QuotaBackendGB" {
 				// 2 * 1024 * 1024 * 1024 == 2147483648 == 2 GB
 				v = v * 1024 * 1024 * 1024
 			}
@@ -806,6 +816,13 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 	}
 	if !okEtcd {
 		return errors.New("EC2 Plugin 'install-etcd' not found")
+	}
+
+	if !cfg.EC2.Wait {
+		return errors.New("Set EC2 Wait to true")
+	}
+	if cfg.EC2.UserName != "ec2-user" {
+		return fmt.Errorf("expected 'ec2-user' user name, got %q", cfg.EC2.UserName)
 	}
 
 	if cfg.ClusterSize != cfg.EC2.Count {

@@ -16,7 +16,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func (md *embedded) toS3(localPath, s3Path string) error {
+func (md *embedded) UploadToBucketForTests(localPath, s3Path string) error {
 	bucket := md.cfg.Tag
 	if _, ok := md.s3Buckets[bucket]; !ok {
 		for i := 0; i < 30; i++ {

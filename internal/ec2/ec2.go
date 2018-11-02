@@ -38,6 +38,9 @@ type Deployer interface {
 
 	Logger() *zap.Logger
 	GenerateSSHCommands() string
+
+	// UploadToBucketForTests uploads a local file to aws-k8s-tester S3 bucket.
+	UploadToBucketForTests(localPath, remotePath string) error
 }
 
 type embedded struct {
@@ -264,19 +267,19 @@ func (md *embedded) Delete() (err error) {
 }
 
 func (md *embedded) uploadTesterLogs() (err error) {
-	if err = md.toS3(
+	if err = md.UploadToBucketForTests(
 		md.cfg.ConfigPath,
 		md.cfg.ConfigPathBucket,
 	); err != nil {
 		return err
 	}
-	if err = md.toS3(
+	if err = md.UploadToBucketForTests(
 		md.cfg.LogOutputToUploadPath,
 		md.cfg.LogOutputToUploadPathBucket,
 	); err != nil {
 		return err
 	}
-	return md.toS3(
+	return md.UploadToBucketForTests(
 		md.cfg.KeyPath,
 		md.cfg.KeyPathBucket,
 	)
