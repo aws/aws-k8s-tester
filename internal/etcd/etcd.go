@@ -85,6 +85,9 @@ func (md *embedded) Deploy() (err error) {
 		v.InitialCluster = initialCluster
 		md.cfg.ClusterState[id] = v
 	}
+	if err = md.cfg.ValidateAndSetDefaults(); err != nil {
+		return err
+	}
 
 	return md.cfg.ValidateAndSetDefaults()
 }

@@ -1,6 +1,7 @@
 package etcdconfig
 
 import (
+	"fmt"
 	"os"
 	"reflect"
 	"testing"
@@ -9,6 +10,7 @@ import (
 
 func TestETCD(t *testing.T) {
 	e := defaultETCD
+	e.Name = "s1"
 	e.DataDir = "/tmp/etcd/s1"
 	e.ListenClientURLs = "http://localhost:2379"
 	e.AdvertiseClientURLs = "http://localhost:2379"
@@ -24,6 +26,7 @@ func TestETCD(t *testing.T) {
 	}
 
 	dst := []string{
+		`--name=s1`,
 		`--data-dir=/tmp/etcd/s1`,
 		`--listen-client-urls=http://localhost:2379`,
 		`--advertise-client-urls=http://localhost:2379`,
@@ -43,6 +46,12 @@ func TestETCD(t *testing.T) {
 	if !reflect.DeepEqual(flags, dst) {
 		t.Fatalf("expected %q, got %q", dst, flags)
 	}
+
+	s, serr := e.Service()
+	if serr != nil {
+		t.Fatal(serr)
+	}
+	fmt.Println(s)
 }
 
 func TestValidateAndSetDefaults(t *testing.T) {

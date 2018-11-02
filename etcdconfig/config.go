@@ -2,6 +2,7 @@
 package etcdconfig
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -11,6 +12,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"text/template"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
@@ -305,6 +307,73 @@ func (e *ETCD) Flags() (flags []string, err error) {
 	}
 	return flags, nil
 }
+
+// Service returns the service file setup script.
+func (e *ETCD) Service() (s string, err error) {
+	var fs []string
+	fs, err = e.Flags()
+	if err != nil {
+		return "", err
+	}
+	return createSvcInfo(svcInfo{
+		ETCDExec: "/usr/local/bin/etcd",
+		ETCDFlags: strings.Join(fs, ` \
+  `),
+	})
+}
+
+func createSvcInfo(svc svcInfo) (string, error) {
+	tpl := template.Must(template.New("svcTmpl").Parse(svcTmpl))
+	buf := bytes.NewBuffer(nil)
+	if err := tpl.Execute(buf, svc); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
+type svcInfo struct {
+	ETCDExec  string
+	ETCDFlags string
+}
+
+const svcTmpl = `#!/usr/bin/env bash
+
+# to write service file for etcd
+rm -f /tmp/etcd.service
+
+cat > /tmp/etcd.service <<EOF
+[Unit]
+Description=etcd
+Documentation=https://github.com/etcd-io/etcd
+Conflicts=etcd.service
+Conflicts=etcd2.service
+
+[Service]
+Type=notify
+Restart=always
+RestartSec=5s
+LimitNOFILE=40000
+TimeoutStartSec=0
+
+ExecStart={{ .ETCDExec }} {{ .ETCDFlags }}
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo mv /tmp/etcd.service /etc/systemd/system/etcd.service
+
+# to start service
+sudo systemctl daemon-reload
+sudo systemctl cat etcd.service
+sudo systemctl enable etcd.service
+sudo systemctl start etcd.service
+
+sleep 3s
+
+# to get logs from service
+sudo journalctl --output=cat -u etcd.service
+`
 
 // ValidateAndSetDefaults returns an error for invalid configurations.
 // And updates empty fields with default values.
