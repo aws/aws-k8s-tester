@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aws/aws-k8s-tester/ec2config"
+	internalec2 "github.com/aws/aws-k8s-tester/internal/ec2"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/autoscaling"
@@ -584,7 +584,7 @@ func (md *embedded) checkASG() (err error) {
 
 	md.ec2InstancesMu.Lock()
 	md.ec2Instances = ec2Instances
-	md.cfg.ClusterState.WorkerNodes = ec2config.ConvertEC2Instances(ec2Instances)
+	md.cfg.ClusterState.WorkerNodes = internalec2.ConvertEC2Instances(ec2Instances)
 	md.ec2InstancesMu.Unlock()
 
 	md.lg.Info(

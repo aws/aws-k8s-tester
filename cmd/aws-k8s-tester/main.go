@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-k8s-tester/cmd/aws-k8s-tester/ec2"
 	"github.com/aws/aws-k8s-tester/cmd/aws-k8s-tester/ecr"
 	"github.com/aws/aws-k8s-tester/cmd/aws-k8s-tester/eks"
+	"github.com/aws/aws-k8s-tester/cmd/aws-k8s-tester/etcd"
 	"github.com/aws/aws-k8s-tester/cmd/aws-k8s-tester/version"
 	"github.com/aws/aws-k8s-tester/cmd/aws-k8s-tester/wrk"
 
@@ -33,6 +34,7 @@ func init() {
 		ec2.NewCommand(),
 		ecr.NewCommand(),
 		eks.NewCommand(),
+		etcd.NewCommand(),
 		wrk.NewCommand(),
 		version.NewCommand(),
 	)

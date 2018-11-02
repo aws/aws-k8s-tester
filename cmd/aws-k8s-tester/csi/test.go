@@ -104,10 +104,11 @@ func testIntegrationFunc(cmd *cobra.Command, args []string) {
 	fmt.Println(ec.GenerateSSHCommands())
 
 	sh, serr := ssh.New(ssh.Config{
-		Logger:   ec.Logger(),
-		KeyPath:  cfg.KeyPath,
-		Addr:     cfg.Instances[0].PublicIP + ":22",
-		UserName: cfg.UserName,
+		Logger:        ec.Logger(),
+		KeyPath:       cfg.KeyPath,
+		PublicIP:      cfg.Instances[0].PublicIP,
+		PublicDNSName: cfg.Instances[0].PublicDNSName,
+		UserName:      cfg.UserName,
 	})
 	if serr != nil {
 		fmt.Fprintf(os.Stderr, "failed to create SSH (%v)\n", err)

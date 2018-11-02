@@ -16,8 +16,9 @@ func Test_createInstall(t *testing.T) {
 	fmt.Println(s1)
 
 	s2, err := createInstallGit(gitInfo{
-		GitName:       "kubernetes-sigs",
-		GitRepoName:   "aws-ebs-csi-driver",
+		GitRepo:       "aws-ebs-csi-driver",
+		GitClonePath:  "${GOPATH}/src/github.com/kubernetes-sigs",
+		GitCloneURL:   "https://github.com/kubernetes-sigs/aws-ebs-csi-driver.git",
 		IsPR:          false,
 		GitBranch:     "master",
 		InstallScript: "go install -v ./cmd/aws-ebs-csi-driver",
@@ -28,10 +29,11 @@ func Test_createInstall(t *testing.T) {
 	fmt.Println(s2)
 
 	s3, err := createInstallGit(gitInfo{
-		GitName:     "kubernetes-sigs",
-		GitRepoName: "aws-alb-ingress-controller",
-		IsPR:        true,
-		GitBranch:   "123",
+		GitRepo:      "aws-alb-ingress-controller",
+		GitClonePath: "${GOPATH}/src/github.com/kubernetes-sigs",
+		GitCloneURL:  "https://github.com/kubernetes-sigs/aws-alb-ingress-controller.git",
+		IsPR:         true,
+		GitBranch:    "123",
 		InstallScript: `GO111MODULE=on go mod vendor -v
 make server
 `,

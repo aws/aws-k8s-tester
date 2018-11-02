@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 	"text/template"
+
+	"github.com/blang/semver"
 )
 
 // headerBash is the bash script header.
@@ -29,22 +31,29 @@ func (ss scripts) Swap(i, j int)      { ss[i], ss[j] = ss[j], ss[i] }
 func (ss scripts) Less(i, j int) bool { return keyPriorities[ss[i].key] < keyPriorities[ss[j].key] }
 
 var keyPriorities = map[string]int{ // in the order of:
-	"update-ubuntu":         1,
-	"mount-aws-cred":        2,
-	"install-go":            3,
-	"install-csi":           4,
-	"install-kubeadm":       5,
-	"install-wrk":           6,
-	"install-alb":           7,
-	"install-docker-ubuntu": 8,
+	"update-amazon-linux-2":         1,
+	"update-ubuntu":                 2,
+	"mount-aws-cred":                3, // TODO: use instance role instead
+	"install-go":                    4,
+	"install-csi":                   5,
+	"install-etcd":                  6,
+	"install-wrk":                   7,
+	"install-alb":                   8,
+	"install-kubeadm-ubuntu":        9,
+	"install-docker-amazon-linux-2": 10,
+	"install-docker-ubuntu":         11,
 }
 
 func convertToScript(userName, plugin string) (script, error) {
 	switch {
+	case plugin == "update-amazon-linux-2":
+		return script{key: "update-amazon-linux-2", data: updateAmazonLinux2}, nil
+
 	case plugin == "update-ubuntu":
 		return script{key: "update-ubuntu", data: updateUbuntu}, nil
 
 	case strings.HasPrefix(plugin, "mount-aws-cred-"):
+		// TODO: use instance role instead
 		env := strings.Replace(plugin, "mount-aws-cred-", "", -1)
 		if os.Getenv(env) == "" {
 			return script{}, fmt.Errorf("%q is not defined", env)
@@ -76,25 +85,14 @@ EOT`, userName, userName, string(d)),
 			data: s,
 		}, nil
 
-	case plugin == "install-kubeadm":
-		return script{
-			key:  plugin,
-			data: installKubeadmn,
-		}, nil
-
-	case plugin == "install-wrk":
-		return script{
-			key:  plugin,
-			data: installWrk,
-		}, nil
-
 	case strings.HasPrefix(plugin, "install-csi-"):
 		gitBranch := strings.Replace(plugin, "install-csi-", "", -1)
 		_, perr := strconv.ParseInt(gitBranch, 10, 64)
 		isPR := perr == nil
 		s, err := createInstallGit(gitInfo{
-			GitName:       "kubernetes-sigs",
-			GitRepoName:   "aws-ebs-csi-driver",
+			GitRepo:       "aws-ebs-csi-driver",
+			GitClonePath:  "${GOPATH}/src/github.com/kubernetes-sigs",
+			GitCloneURL:   "https://github.com/kubernetes-sigs/aws-ebs-csi-driver.git",
 			IsPR:          isPR,
 			GitBranch:     gitBranch,
 			InstallScript: `go install -v ./cmd/aws-ebs-csi-driver`,
@@ -104,23 +102,86 @@ EOT`, userName, userName, string(d)),
 		}
 		return script{key: "install-csi", data: s}, nil
 
+	case strings.HasPrefix(plugin, "install-etcd-"):
+		id := strings.Replace(plugin, "install-etcd-", "", -1)
+		if id != "master" && !strings.HasPrefix(id, "pr-") {
+			if strings.HasPrefix(id, "v") {
+				id = id[1:]
+			}
+			ver, err := semver.Make(id)
+			if err != nil {
+				return script{}, fmt.Errorf("failed to parse etcd version %q (%v)", id, err)
+			}
+			s, err := createInstallEtcd(etcdInfo{
+				Version: ver.String(),
+			})
+			if err != nil {
+				return script{}, err
+			}
+			return script{
+				key:  "install-etcd",
+				data: s,
+			}, nil
+		}
+		if strings.HasPrefix(id, "pr-") {
+			id = strings.Replace(plugin, "pr-", "", -1)
+		}
+		_, perr := strconv.ParseInt(id, 10, 64)
+		isPR := perr == nil
+		s, err := createInstallGit(gitInfo{
+			GitRepo:      "etcd",
+			GitClonePath: "${GOPATH}/src/go.etcd.io",
+			GitCloneURL:  "https://github.com/etcd-io/etcd.git",
+			IsPR:         isPR,
+			GitBranch:    id,
+			InstallScript: `make build
+sudo cp ./bin/etcd /usr/local/bin/etcd
+sudo cp ./bin/etcdctl /usr/local/bin/etcdctl
+
+etcd --version
+ETCDCTL_API=3 etcdctl version`,
+		})
+		if err != nil {
+			return script{}, err
+		}
+		return script{key: "install-etcd", data: s}, nil
+
+	case plugin == "install-wrk":
+		return script{
+			key:  plugin,
+			data: installWrk,
+		}, nil
+
 	case strings.HasPrefix(plugin, "install-alb-"):
 		gitBranch := strings.Replace(plugin, "install-alb-", "", -1)
 		_, perr := strconv.ParseInt(gitBranch, 10, 64)
 		isPR := perr == nil
 		s, err := createInstallGit(gitInfo{
-			GitName:     "kubernetes-sigs",
-			GitRepoName: "aws-alb-ingress-controller",
-			IsPR:        isPR,
-			GitBranch:   gitBranch,
+			GitRepo:      "aws-alb-ingress-controller",
+			GitClonePath: "${GOPATH}/src/github.com/kubernetes-sigs",
+			GitCloneURL:  "https://github.com/kubernetes-sigs/aws-alb-ingress-controller.git",
+			IsPR:         isPR,
+			GitBranch:    gitBranch,
 			InstallScript: `GO111MODULE=on go mod vendor -v
-			make server
+make server
 			`,
 		})
 		if err != nil {
 			return script{}, err
 		}
 		return script{key: "install-alb", data: s}, nil
+
+	case plugin == "install-kubeadm-ubuntu":
+		return script{
+			key:  plugin,
+			data: installKubeadmnUbuntu,
+		}, nil
+
+	case plugin == "install-docker-amazon-linux-2":
+		return script{
+			key:  plugin,
+			data: installDockerAmazonLinux2,
+		}, nil
 
 	case plugin == "install-docker-ubuntu":
 		return script{
@@ -158,6 +219,31 @@ func Create(userName string, plugins []string) (data string, err error) {
 	return data, nil
 }
 
+const updateAmazonLinux2 = `
+
+################################## update Amazon Linux 2
+
+export HOME=/home/ec2-user
+export GOPATH=/home/ec2-user/go
+
+sudo yum update -y \
+  && sudo yum install -y \
+  gcc \
+  zlib-devel \
+  openssl-devel \
+  ncurses-devel \
+  git \
+  wget \
+  jq \
+  tar \
+  curl \
+  unzip \
+  screen \
+  mercurial
+
+##################################
+
+`
 const updateUbuntu = `
 
 ################################## update Ubuntu
@@ -266,9 +352,9 @@ go version
 
 `
 
-const installKubeadmn = `
+const installKubeadmnUbuntu = `
 
-################################## install kubeadm
+################################## install kubeadm on Ubuntu
 
 cd ${HOME}
 
@@ -289,6 +375,47 @@ sudo systemctl enable kubelet
 sudo systemctl start kubelet
 
 sudo journalctl --output=cat -u kubelet
+
+##################################
+
+`
+
+func createInstallEtcd(g etcdInfo) (string, error) {
+	tpl := template.Must(template.New("installEtcdTemplate").Parse(installEtcdTemplate))
+	buf := bytes.NewBuffer(nil)
+	if err := tpl.Execute(buf, g); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
+type etcdInfo struct {
+	Version string
+}
+
+const installEtcdTemplate = `
+
+################################## install etcd
+
+ETCD_VER=v{{ .Version }}
+
+# choose either URL
+GOOGLE_URL=https://storage.googleapis.com/etcd
+GITHUB_URL=https://github.com/etcd-io/etcd/releases/download
+DOWNLOAD_URL=${GOOGLE_URL}
+
+rm -f /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz
+rm -rf /tmp/etcd-download-test && mkdir -p /tmp/etcd-download-test
+
+curl -L ${DOWNLOAD_URL}/${ETCD_VER}/etcd-${ETCD_VER}-linux-amd64.tar.gz -o /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz
+tar xzvf /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz -C /tmp/etcd-download-test --strip-components=1
+rm -f /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz
+
+sudo cp /tmp/etcd-download-test/etcd /usr/local/bin/etcd
+sudo cp /tmp/etcd-download-test/etcdctl /usr/local/bin/etcdctl
+
+etcd --version
+ETCDCTL_API=3 etcdctl version
 
 ##################################
 
@@ -315,10 +442,10 @@ while [[ ${COUNT} -lt ${RETRIES} ]]; do
   sleep ${DELAY}
 done
 
-pushd wrk \
+cd ./wrk \
   && make all \
   && sudo cp ./wrk /usr/local/bin/wrk \
-  && popd \
+  && cd .. \
   && rm -rf ./wrk \
   && wrk --version || true && which wrk
 
@@ -342,26 +469,30 @@ func createInstallGit(g gitInfo) (string, error) {
 }
 
 type gitInfo struct {
-	GitName       string
-	GitRepoName   string
-	IsPR          bool
-	GitBranch     string
+	GitRepo      string
+	GitClonePath string
+	GitCloneURL  string
+	IsPR         bool
+
+	// GitBranch name or PR number
+	GitBranch string
+
 	InstallScript string
 }
 
 const installGitTemplate = `
 
-################################## install {{ .GitRepoName }} via git
+################################## install {{ .GitRepo }} via git
 
-mkdir -p ${GOPATH}/src/github.com/{{ .GitName }}/
-cd ${GOPATH}/src/github.com/{{ .GitName }}/
+mkdir -p {{ .GitClonePath }}/
+cd {{ .GitClonePath }}/
 
 RETRIES=10
 DELAY=10
 COUNT=1
 while [[ ${COUNT} -lt ${RETRIES} ]]; do
-  rm -rf ./{{ .GitRepoName }}
-  git clone https://github.com/{{ .GitName }}/{{ .GitRepoName }}.git
+  rm -rf ./{{ .GitRepo }}
+  git clone {{ .GitCloneURL }}
   if [[ $? -eq 0 ]]; then
     RETRIES=0
     echo "Successfully git cloned!"
@@ -371,7 +502,7 @@ while [[ ${COUNT} -lt ${RETRIES} ]]; do
   sleep ${DELAY}
 done
 
-cd ${GOPATH}/src/github.com/{{ .GitName }}/{{ .GitRepoName }}
+cd {{ .GitClonePath }}/{{ .GitRepo }}
 
 {{ if .IsPR }}echo 'git fetching:' pull/{{ .GitBranch }}/head 'to test branch'
 git fetch origin pull/{{ .GitBranch }}/head:test
@@ -381,11 +512,12 @@ git checkout origin/{{ .GitBranch }}
 git checkout -B {{ .GitBranch }}
 {{ end }}
 
-{{ .InstallScript }}
-
 git remote -v
 git branch
 git log --pretty=oneline -5
+
+pwd
+{{ .InstallScript }}
 
 ##################################
 
@@ -413,6 +545,28 @@ sudo usermod -aG docker ubuntu || true
 
 id -nG
 sudo docker version
+sudo docker info
+##################################
+
+`
+
+// https://docs.aws.amazon.com/AmazonECS/latest/developerguide/docker-basics.html
+const installDockerAmazonLinux2 = `
+
+################################## install Docker on Amazon Linux 2
+sudo yum update -y
+sudo yum install -y docker
+
+sudo systemctl start docker || true
+sudo systemctl status docker --full --no-pager || true
+sudo usermod -aG docker ec2-user || true
+
+# su - ec2-user
+# or logout and login to use docker without 'sudo'
+
+id -nG
+sudo docker version
+sudo docker info
 ##################################
 
 `

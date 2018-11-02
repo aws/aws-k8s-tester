@@ -1,22 +1,21 @@
 package integration_test
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
 	"os"
-	"reflect"
-	"strings"
+	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
-	"github.com/aws/aws-k8s-tester/ec2config/plugins"
 	"github.com/aws/aws-k8s-tester/internal/ec2"
 	"github.com/aws/aws-k8s-tester/internal/ssh"
 )
 
 /*
-RUN_AWS_TESTS=1 AWS_SHARED_CREDENTIALS_FILE=~/.aws/credentials go test -v -timeout 2h -run TestEC2SSH
-tail -f /var/log/cloud-init-output.log
+RUN_AWS_TESTS=1 go test -v -timeout 2h -run TestEC2SSH
 */
 func TestEC2SSH(t *testing.T) {
 	if os.Getenv("RUN_AWS_TESTS") != "1" {
@@ -24,9 +23,13 @@ func TestEC2SSH(t *testing.T) {
 	}
 
 	cfg := ec2config.NewDefault()
+	cfg.Wait = true
 	cfg.Plugins = []string{
-		"update-ubuntu",
-		"install-go1.11.1-ubuntu",
+		"update-amazon-linux-2",
+		"install-go1.11.1",
+
+		// "install-etcd-3.1.12",
+		// "install-etcd-master",
 	}
 
 	ec, err := ec2.NewDeployer(cfg)
@@ -41,10 +44,11 @@ func TestEC2SSH(t *testing.T) {
 	fmt.Println(ec.GenerateSSHCommands())
 
 	sh, serr := ssh.New(ssh.Config{
-		Logger:   ec.Logger(),
-		KeyPath:  cfg.KeyPath,
-		Addr:     cfg.Instances[0].PublicIP + ":22",
-		UserName: cfg.UserName,
+		Logger:        ec.Logger(),
+		KeyPath:       cfg.KeyPath,
+		PublicIP:      cfg.Instances[0].PublicIP,
+		PublicDNSName: cfg.Instances[0].PublicDNSName,
+		UserName:      cfg.UserName,
 	})
 	if serr != nil {
 		t.Fatal(err)
@@ -54,42 +58,66 @@ func TestEC2SSH(t *testing.T) {
 	}
 
 	var out []byte
-	out, err = sh.Run("curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone")
+	out, err = sh.Run(
+		"curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone",
+		ssh.WithRetry(100, 5*time.Second),
+		ssh.WithTimeout(30*time.Second),
+	)
 	if err != nil {
 		t.Error(err)
 	}
 	fmt.Println("availability-zone:", string(out))
 
-	timer := time.NewTimer(5 * time.Minute)
-ready:
-	for {
-		select {
-		case <-timer.C:
-			t.Fatal("not ready")
-
-		default:
-			out, err = sh.Run("cat /var/log/cloud-init-output.log")
-			if err != nil {
-				fmt.Println(err, reflect.TypeOf(err))
-				time.Sleep(5 * time.Second)
-				continue
-			}
-
-			if strings.Contains(string(out), plugins.READY) {
-				fmt.Println("cloud-init-output.log READY:", string(out))
-				break ready
-			}
-
-			fmt.Println("cloud-init-output.log:", string(out))
-			time.Sleep(5 * time.Second)
-		}
-	}
-
-	out, err = sh.Run("source /etc/environment && go version")
+	out, err = sh.Run(
+		"source /etc/environment && go version",
+		ssh.WithRetry(100, 5*time.Second),
+		ssh.WithTimeout(30*time.Second),
+	)
 	if err != nil {
 		t.Error(err)
 	}
 	if string(out) != "go version go1.11.1 linux/amd64\n" {
 		t.Fatalf("unexpected go version %q", string(out))
 	}
+
+	f, ferr := ioutil.TempFile(os.TempDir(), "testfile")
+	if ferr != nil {
+		t.Fatal(ferr)
+	}
+	if _, err = f.Write([]byte("Hello World!")); err != nil {
+		t.Fatal(err)
+	}
+	localPath1, remotePath := f.Name(), fmt.Sprintf("/home/%s/aws-k8s-tester.txt", cfg.UserName)
+	f.Sync()
+
+	if err = sh.Send(
+		localPath1,
+		remotePath,
+		ssh.WithRetry(10, 5*time.Second),
+		ssh.WithTimeout(10*time.Second),
+	); err != nil {
+		t.Error(err)
+	}
+
+	localPath2 := filepath.Join(os.TempDir(), "testfile.txt")
+	defer os.RemoveAll(localPath2)
+
+	if err = sh.Download(
+		remotePath,
+		localPath2,
+		ssh.WithRetry(10, 5*time.Second),
+		ssh.WithTimeout(10*time.Second),
+	); err != nil {
+		t.Error(err)
+	}
+
+	d, derr := ioutil.ReadFile(localPath2)
+	if derr != nil {
+		t.Fatal(derr)
+	}
+	if !bytes.Equal(d, []byte("Hello World!")) {
+		t.Fatalf("expected 'Hello World!', got %q", string(d))
+	}
+
+	time.Sleep(3 * time.Minute)
 }

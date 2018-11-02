@@ -38,6 +38,9 @@ type Deployer interface {
 
 	Logger() *zap.Logger
 	GenerateSSHCommands() string
+
+	// UploadToBucketForTests uploads a local file to aws-k8s-tester S3 bucket.
+	UploadToBucketForTests(localPath, remotePath string) error
 }
 
 type embedded struct {
@@ -103,7 +106,7 @@ func NewDeployer(cfg *ec2config.Config) (Deployer, error) {
 	lg.Info(
 		"created EC2 deployer",
 		zap.String("id", cfg.ID),
-		zap.String("aws-k8s-tester-ec2-config-path", cfg.ConfigPath),
+		zap.String("aws-k8s-tester-ec2config-path", cfg.ConfigPath),
 		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 	)
 	return md, md.cfg.Sync()
@@ -264,19 +267,19 @@ func (md *embedded) Delete() (err error) {
 }
 
 func (md *embedded) uploadTesterLogs() (err error) {
-	if err = md.toS3(
+	if err = md.UploadToBucketForTests(
 		md.cfg.ConfigPath,
 		md.cfg.ConfigPathBucket,
 	); err != nil {
 		return err
 	}
-	if err = md.toS3(
+	if err = md.UploadToBucketForTests(
 		md.cfg.LogOutputToUploadPath,
 		md.cfg.LogOutputToUploadPathBucket,
 	); err != nil {
 		return err
 	}
-	return md.toS3(
+	return md.UploadToBucketForTests(
 		md.cfg.KeyPath,
 		md.cfg.KeyPathBucket,
 	)
@@ -494,7 +497,7 @@ func (md *embedded) createInstances() (err error) {
 					if *inst.State.Name == "running" {
 						_, ok := md.cfg.InstanceIDToInstance[id]
 						if !ok {
-							iv := ec2config.ConvertEC2Instance(inst)
+							iv := ConvertEC2Instance(inst)
 							md.cfg.Instances = append(md.cfg.Instances, iv)
 							md.cfg.InstanceIDToInstance[id] = iv
 							md.lg.Info("instance is ready",
@@ -550,10 +553,11 @@ func (md *embedded) wait() {
 		for id, iv := range mm {
 			md.lg.Info("waiting for EC2", zap.String("instance-id", id))
 			sh, serr := ssh.New(ssh.Config{
-				Logger:   md.lg,
-				KeyPath:  md.cfg.KeyPath,
-				Addr:     iv.PublicIP + ":22",
-				UserName: md.cfg.UserName,
+				Logger:        md.lg,
+				KeyPath:       md.cfg.KeyPath,
+				PublicIP:      iv.PublicIP,
+				PublicDNSName: iv.PublicDNSName,
+				UserName:      md.cfg.UserName,
 			})
 			if serr != nil {
 				fmt.Fprintf(os.Stderr, "failed to create SSH (%v)\n", serr)
@@ -571,7 +575,7 @@ func (md *embedded) wait() {
 				select {
 				case <-time.After(5 * time.Second):
 					out, err = sh.Run(
-						"tail -10 /var/log/cloud-init-output.log",
+						"tail -15 /var/log/cloud-init-output.log",
 						ssh.WithRetry(100, 5*time.Second),
 						ssh.WithTimeout(30*time.Second),
 					)
@@ -701,4 +705,67 @@ func catchStopc(lg *zap.Logger, stopc chan struct{}, run func() error) (err erro
 		}
 	}
 	return err
+}
+
+// ConvertEC2Instance converts "aws ec2 describe-instances" to "config.Instance".
+func ConvertEC2Instance(iv *ec2.Instance) (instance ec2config.Instance) {
+	instance = ec2config.Instance{
+		ImageID:      *iv.ImageId,
+		InstanceID:   *iv.InstanceId,
+		InstanceType: *iv.InstanceType,
+		KeyName:      *iv.KeyName,
+		Placement: ec2config.Placement{
+			AvailabilityZone: *iv.Placement.AvailabilityZone,
+			Tenancy:          *iv.Placement.Tenancy,
+		},
+		PrivateDNSName: *iv.PrivateDnsName,
+		PrivateIP:      *iv.PrivateIpAddress,
+		State: ec2config.State{
+			Code: *iv.State.Code,
+			Name: *iv.State.Name,
+		},
+		SubnetID:            *iv.SubnetId,
+		VPCID:               *iv.VpcId,
+		BlockDeviceMappings: make([]ec2config.BlockDeviceMapping, len(iv.BlockDeviceMappings)),
+		EBSOptimized:        *iv.EbsOptimized,
+		RootDeviceName:      *iv.RootDeviceName,
+		RootDeviceType:      *iv.RootDeviceType,
+		SecurityGroups:      make([]ec2config.SecurityGroup, len(iv.SecurityGroups)),
+		LaunchTime:          *iv.LaunchTime,
+	}
+	if iv.PublicDnsName != nil {
+		instance.PublicDNSName = *iv.PublicDnsName
+	}
+	if iv.PublicIpAddress != nil {
+		instance.PublicIP = *iv.PublicIpAddress
+	}
+	for j := range iv.BlockDeviceMappings {
+		instance.BlockDeviceMappings[j] = ec2config.BlockDeviceMapping{
+			DeviceName: *iv.BlockDeviceMappings[j].DeviceName,
+			EBS: ec2config.EBS{
+				DeleteOnTermination: *iv.BlockDeviceMappings[j].Ebs.DeleteOnTermination,
+				Status:              *iv.BlockDeviceMappings[j].Ebs.Status,
+				VolumeID:            *iv.BlockDeviceMappings[j].Ebs.VolumeId,
+			},
+		}
+	}
+	for j := range iv.SecurityGroups {
+		instance.SecurityGroups[j] = ec2config.SecurityGroup{
+			GroupName: *iv.SecurityGroups[j].GroupName,
+			GroupID:   *iv.SecurityGroups[j].GroupId,
+		}
+	}
+	return instance
+}
+
+// ConvertEC2Instances converts "aws ec2 describe-instances" to "ec2config.Instance".
+// And it sorts in a way that the first launched instance is at front.
+func ConvertEC2Instances(iss []*ec2.Instance) (instances []ec2config.Instance) {
+	instances = make([]ec2config.Instance, len(iss))
+	for i, v := range iss {
+		instances[i] = ConvertEC2Instance(v)
+	}
+	// sort that first launched EC2 instance is at front
+	sort.Sort(ec2config.Instances(instances))
+	return instances
 }
