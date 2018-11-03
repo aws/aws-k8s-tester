@@ -206,9 +206,9 @@ ready:
 		env += line + " "
 	}
 
-	testCmd := fmt.Sprintf(`cd /home/ubuntu/go/src/github.com/kubernetes-sigs/aws-ebs-csi-driver \
+	testCmd := fmt.Sprintf(`cd /home/%s/go/src/github.com/kubernetes-sigs/aws-ebs-csi-driver \
   && sudo sh -c '%s make test-integration'
-`, env)
+`, cfg.UserName, env)
 	out, err = sh.Run(
 		testCmd,
 		ssh.WithTimeout(10*time.Minute),
