@@ -45,6 +45,24 @@
 		]
 	},
 	{
+		"project": "github.com/coreos/go-systemd/journal",
+		"licenses": [
+			{
+				"type": "Apache License 2.0",
+				"confidence": 0.9966703662597114
+			}
+		]
+	},
+	{
+		"project": "github.com/coreos/pkg/capnslog",
+		"licenses": [
+			{
+				"type": "Apache License 2.0",
+				"confidence": 1
+			}
+		]
+	},
+	{
 		"project": "github.com/dustin/go-humanize",
 		"licenses": [
 			{
@@ -108,6 +126,15 @@
 		]
 	},
 	{
+		"project": "github.com/google/uuid",
+		"licenses": [
+			{
+				"type": "BSD 3-clause \"New\" or \"Revised\" License",
+				"confidence": 0.9663865546218487
+			}
+		]
+	},
+	{
 		"project": "github.com/googleapis/gax-go",
 		"licenses": [
 			{
@@ -140,6 +167,15 @@
 			{
 				"type": "BSD 3-clause \"New\" or \"Revised\" License",
 				"confidence": 0.9663865546218487
+			}
+		]
+	},
+	{
+		"project": "github.com/grpc-ecosystem/go-grpc-middleware/util/backoffutils",
+		"licenses": [
+			{
+				"type": "Apache License 2.0",
+				"confidence": 1
 			}
 		]
 	},
@@ -261,6 +297,15 @@
 			{
 				"type": "BSD 3-clause \"New\" or \"Revised\" License",
 				"confidence": 0.9663865546218487
+			}
+		]
+	},
+	{
+		"project": "go.etcd.io/etcd",
+		"licenses": [
+			{
+				"type": "Apache License 2.0",
+				"confidence": 1
 			}
 		]
 	},
