@@ -7,8 +7,12 @@ import (
 
 // NewCommand returns a new 'etcd' command.
 func NewCommand() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "etcd",
 		Short: "etcd commands",
 	}
+	cmd.AddCommand(
+		newTest(),
+	)
+	return cmd
 }

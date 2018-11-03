@@ -24,8 +24,6 @@ import (
 )
 
 type embedded struct {
-	stopc chan struct{}
-
 	mu  sync.RWMutex
 	lg  *zap.Logger
 	cfg *etcdconfig.Config
@@ -44,11 +42,24 @@ func NewTester(cfg *etcdconfig.Config) (etcdtester.Tester, error) {
 		return nil, err
 	}
 
+	// expect the following in Plugins
+	// "update-amazon-linux-2"
+	// "install-etcd-3.1.12"
+	lg.Info(
+		"deploying EC2",
+		zap.Strings("plugins", cfg.EC2.Plugins),
+	)
+	var ec2Deployer ec2.Deployer
+	ec2Deployer, err = ec2.NewDeployer(cfg.EC2)
+	if err != nil {
+		return nil, err
+	}
+
 	return &embedded{
-		stopc: make(chan struct{}),
-		lg:    lg,
-		cfg:   cfg,
-	}, nil
+		lg:          lg,
+		cfg:         cfg,
+		ec2Deployer: ec2Deployer,
+	}, cfg.Sync()
 }
 
 func (md *embedded) Deploy() (err error) {
@@ -57,17 +68,6 @@ func (md *embedded) Deploy() (err error) {
 
 	now := time.Now().UTC()
 
-	// expect the following in Plugins
-	// "update-amazon-linux-2"
-	// "install-etcd-3.1.12"
-	md.lg.Info(
-		"deploying EC2",
-		zap.Strings("plugins", md.cfg.EC2.Plugins),
-	)
-	md.ec2Deployer, err = ec2.NewDeployer(md.cfg.EC2)
-	if err != nil {
-		return err
-	}
 	if err = md.ec2Deployer.Create(); err != nil {
 		return err
 	}
@@ -283,7 +283,16 @@ func (md *embedded) Terminate() error {
 	defer md.mu.Unlock()
 
 	if md.cfg.UploadTesterLogs {
-
+		fpathToS3Path, err := fetchLogs(
+			md.lg,
+			md.cfg.EC2.UserName,
+			md.cfg.ClusterName,
+			md.cfg.EC2.KeyPath,
+			md.cfg.EC2.Instances,
+		)
+		md.cfg.Logs = fpathToS3Path
+		err = md.uploadLogs()
+		md.lg.Info("uploaded", zap.Error(err))
 	}
 
 	return md.ec2Deployer.Delete()
