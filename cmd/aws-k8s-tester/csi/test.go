@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
-	"github.com/aws/aws-k8s-tester/ec2config/plugins"
 	"github.com/aws/aws-k8s-tester/internal/ec2"
 	"github.com/aws/aws-k8s-tester/internal/ssh"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
@@ -51,6 +50,7 @@ AWS_SHARED_CREDENTIALS_FILE=~/.aws/credentials \
   --timeout=20m
 */
 
+// TODO: use instance role, and get rid of credential mount
 func newTestIntegration() *cobra.Command {
 	return &cobra.Command{
 		Use:   "integration",
@@ -84,8 +84,9 @@ func testIntegrationFunc(cmd *cobra.Command, args []string) {
 	cfg := ec2config.NewDefault()
 	cfg.UploadTesterLogs = false
 	cfg.VPCID = vpcID
+	cfg.IngressCIDRs = map[int64]string{22: "0.0.0.0/0"}
 	cfg.Plugins = []string{
-		"update-ubuntu",
+		"update-amazon-linux-2",
 		"mount-aws-cred-AWS_SHARED_CREDENTIALS_FILE",
 		"install-go1.11.2",
 		"install-csi-" + branchOrPR,
@@ -171,7 +172,7 @@ ready:
 
 			fmt.Printf("\n\n%s\n\n", string(out))
 
-			if isReady(string(out)) {
+			if ec2.IsReady(string(out)) {
 				lg.Info("cloud-init-output.log READY!")
 				break ready
 			}
@@ -261,17 +262,4 @@ ready:
 	if terminateOnExit {
 		ec.Delete()
 	}
-}
-
-/*
-to match:
-
-AWS_K8S_TESTER_EC2_PLUGIN_READY
-Cloud-init v. 18.2 running 'modules:final' at Mon, 29 Oct 2018 22:40:13 +0000. Up 21.89 seconds.
-Cloud-init v. 18.2 finished at Mon, 29 Oct 2018 22:43:59 +0000. Datasource DataSourceEc2Local.  Up 246.57 seconds
-*/
-func isReady(txt string) bool {
-	return strings.Contains(txt, plugins.READY) ||
-		(strings.Contains(txt, `Cloud-init v.`) &&
-			strings.Contains(txt, `finished at`))
 }
