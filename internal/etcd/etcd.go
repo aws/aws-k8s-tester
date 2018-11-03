@@ -172,8 +172,8 @@ func (md *embedded) Deploy() (err error) {
 
 		_, err = sh.Run(
 			fmt.Sprintf("sudo bash %s", remotePath),
-			ssh.WithRetry(100, 5*time.Second),
-			ssh.WithTimeout(3*time.Minute),
+			ssh.WithRetry(3, 5*time.Second),
+			ssh.WithTimeout(5*time.Second),
 		)
 		if err != nil {
 			return err
