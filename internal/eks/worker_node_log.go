@@ -93,7 +93,7 @@ func fetchWorkerNodeLog(
 		zap.String("instance-id", id),
 		zap.String("public-ip", ip),
 	)
-	cmd = "sudo journalctl --output=short-precise -k"
+	cmd = "sudo journalctl --no-pager --output=short-precise -k"
 	out, err = sh.Run(cmd)
 	if err != nil {
 		sh.Close()
@@ -125,7 +125,7 @@ func fetchWorkerNodeLog(
 		zap.String("instance-id", id),
 		zap.String("public-ip", ip),
 	)
-	cmd = "sudo journalctl --output=short-precise"
+	cmd = "sudo journalctl --no-pager --output=short-precise"
 	out, err = sh.Run(cmd)
 	if err != nil {
 		sh.Close()
@@ -196,7 +196,7 @@ func fetchWorkerNodeLog(
 			zap.String("public-ip", ip),
 			zap.String("service", svc),
 		)
-		cmd = "sudo journalctl --output=cat -u " + svc
+		cmd = "sudo journalctl --no-pager --output=cat -u " + svc
 		out, err = sh.Run(cmd)
 		if err != nil {
 			lg.Warn(

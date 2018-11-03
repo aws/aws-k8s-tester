@@ -387,7 +387,7 @@ sudo systemctl start etcd.service
 sleep 3s
 
 # to get logs from service
-sudo journalctl --output=cat -u etcd.service
+sudo journalctl --no-pager --output=cat -u etcd.service
 `
 
 // ValidateAndSetDefaults returns an error for invalid configurations.

@@ -245,7 +245,7 @@ ready:
 	if journalctlLogs {
 		// full journal logs (e.g. disk mounts)
 		lg.Info("fetching journal logs")
-		journalCmd := "sudo journalctl --output=short-precise"
+		journalCmd := "sudo journalctl --no-pager --output=short-precise"
 		out, err = sh.Run(journalCmd)
 		if err != nil {
 			lg.Warn(

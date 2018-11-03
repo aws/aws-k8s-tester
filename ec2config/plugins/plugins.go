@@ -374,7 +374,7 @@ sudo apt-mark hold kubelet kubeadm kubectl || true
 sudo systemctl enable kubelet
 sudo systemctl start kubelet
 
-sudo journalctl --output=cat -u kubelet
+sudo journalctl --no-pager --output=cat -u kubelet
 
 ##################################
 

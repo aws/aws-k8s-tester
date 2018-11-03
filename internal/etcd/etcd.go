@@ -404,7 +404,7 @@ func fetchLog(
 
 	var out []byte
 	out, err = sh.Run(
-		"sudo journalctl --output=cat -u etcd.service",
+		"sudo journalctl --no-pager -u etcd.service",
 		ssh.WithRetry(100, 5*time.Second),
 		ssh.WithTimeout(3*time.Minute),
 	)
