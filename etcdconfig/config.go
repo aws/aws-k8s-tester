@@ -779,6 +779,10 @@ func (cfg *Config) UpdateFromEnvs() error {
 // And updates empty fields with default values.
 // At the end, it writes populated YAML to aws-k8s-tester config path.
 func (cfg *Config) ValidateAndSetDefaults() (err error) {
+	if cfg.EC2 == nil {
+		return errors.New("EC2 configuration not found")
+	}
+	cfg.EC2.Count = cfg.ClusterSize
 	if err = cfg.Cluster.ValidateAndSetDefaults(); err != nil {
 		return err
 	}
@@ -812,9 +816,6 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 		return fmt.Errorf("expected 'ec2-user' user name, got %q", cfg.EC2.UserName)
 	}
 
-	if cfg.ClusterSize != cfg.EC2.Count {
-		return fmt.Errorf("ClusterSize %d != EC2.Count %d", cfg.ClusterSize, cfg.EC2.Count)
-	}
 	if cfg.ClusterSize < 1 || cfg.ClusterSize > 5 {
 		return fmt.Errorf("ClusterSize expected between 1 and 5, got %d", cfg.ClusterSize)
 	}

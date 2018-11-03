@@ -32,7 +32,6 @@ func newTestE2E() *cobra.Command {
 
 func testE2EFunc(cmd *cobra.Command, args []string) {
 	cfg := etcdconfig.NewDefault()
-	cfg.LogDebug = true
 
 	tester, err := etcd.NewTester(cfg)
 	if err != nil {

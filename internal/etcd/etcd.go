@@ -190,6 +190,22 @@ func (md *embedded) Deploy() (err error) {
 		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 	)
 
+	ready := 0
+	for i := 0; i < 10; i++ {
+		hh := md.checkHealth()
+		for k, v := range hh {
+			md.lg.Info("status", zap.String("id", k), zap.String("status", fmt.Sprintf("%+v", v)))
+			if v.Error == nil {
+				ready++
+			}
+		}
+		if ready == md.cfg.ClusterSize {
+			break
+		}
+		ready = 0
+		time.Sleep(5 * time.Second)
+	}
+
 	if md.cfg.UploadTesterLogs {
 		var fpathToS3Path map[string]string
 		fpathToS3Path, err = fetchLogs(
@@ -203,8 +219,12 @@ func (md *embedded) Deploy() (err error) {
 		err = md.uploadLogs()
 		md.lg.Info("uploaded", zap.Error(err))
 	}
+	md.cfg.ValidateAndSetDefaults()
 
-	return md.cfg.ValidateAndSetDefaults()
+	if ready != md.cfg.ClusterSize {
+		return fmt.Errorf("cluster is not ready; expect %d ready, got %d", md.cfg.ClusterSize, ready)
+	}
+	return nil
 }
 
 func (md *embedded) CheckHealth() map[string]etcdtester.Health {
@@ -229,7 +249,7 @@ func (md *embedded) checkHealth() (hh map[string]etcdtester.Health) {
 			health.Error = err
 		} else {
 			defer cli.Close()
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 			sresp, serr := cli.Status(ctx, ep)
 			cancel()
 			if serr != nil {
