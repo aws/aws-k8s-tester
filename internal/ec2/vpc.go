@@ -50,7 +50,7 @@ func (md *embedded) createVPC() (err error) {
 		zap.String("vpc-id", md.cfg.VPCID),
 	)
 
-	if err = md.modifyVPC(); err != nil {
+	if err = md.enableDNSHostnames(); err != nil {
 		return err
 	}
 
@@ -108,7 +108,7 @@ func (md *embedded) createVPC() (err error) {
 	return md.cfg.Sync()
 }
 
-func (md *embedded) modifyVPC() (err error) {
+func (md *embedded) enableDNSHostnames() (err error) {
 	_, err = md.ec2.ModifyVpcAttribute(&ec2.ModifyVpcAttributeInput{
 		EnableDnsHostnames: &ec2.AttributeBooleanValue{Value: aws.Bool(true)},
 		VpcId:              aws.String(md.cfg.VPCID),

@@ -55,7 +55,7 @@ func (md *embedded) createSubnets() (err error) {
 	}
 
 	if md.cfg.AssociatePublicIPAddress {
-		if err = md.modifySubnets(); err != nil {
+		if err = md.associatePublicIP(); err != nil {
 			return err
 		}
 	}
@@ -138,7 +138,7 @@ func (md *embedded) getSubnets() (err error) {
 		return fmt.Errorf("subnets already exist (%q)", md.cfg.SubnetIDs)
 	}
 
-	if err = md.modifyVPC(); err != nil {
+	if err = md.enableDNSHostnames(); err != nil {
 		return err
 	}
 
@@ -170,7 +170,7 @@ func (md *embedded) getSubnets() (err error) {
 	return md.cfg.Sync()
 }
 
-func (md *embedded) modifySubnets() (err error) {
+func (md *embedded) associatePublicIP() (err error) {
 	for _, id := range md.cfg.SubnetIDs {
 		_, err = md.ec2.ModifySubnetAttribute(&ec2.ModifySubnetAttributeInput{
 			MapPublicIpOnLaunch: &ec2.AttributeBooleanValue{

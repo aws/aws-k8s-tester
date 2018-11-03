@@ -168,8 +168,7 @@ func (md *embedded) Create() (err error) {
 			}
 		}
 
-		md.lg.Info("modifying subnets to allow SSH access")
-		if err = md.modifySubnets(); err != nil {
+		if err = md.associatePublicIP(); err != nil {
 			return err
 		}
 		md.lg.Info(

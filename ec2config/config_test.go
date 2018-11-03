@@ -24,6 +24,8 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EC2_SECURITY_GROUP_IDS", "d,e,f")
 	os.Setenv("AWS_K8S_TESTER_EC2_WAIT", "true")
 	os.Setenv("AWS_K8S_TESTER_EC2_INGRESS_TCP_PORTS", "22,80,443")
+	os.Setenv("AWS_K8S_TESTER_EC2_INGRESS_WITHIN_VPC", "false")
+	os.Setenv("AWS_K8S_TESTER_EC2_VPC_CIDR", "192.168.0.0/8")
 
 	defer func() {
 		os.Unsetenv("AWS_K8S_TESTER_EC2_COUNT")
@@ -41,6 +43,8 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWS_K8S_TESTER_EC2_SECURITY_GROUP_IDS")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_WAIT")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_INGRESS_TCP_PORTS")
+		os.Unsetenv("AWS_K8S_TESTER_EC2_INGRESS_WITHIN_VPC")
+		os.Unsetenv("AWS_K8S_TESTER_EC2_VPC_CIDR")
 	}()
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
@@ -91,5 +95,11 @@ func TestEnv(t *testing.T) {
 	}
 	if !reflect.DeepEqual(cfg.IngressTCPPorts, []int64{22, 80, 443}) {
 		t.Fatalf("IngressTCPPorts expected %v, got %v", []int64{22, 80, 443}, cfg.IngressTCPPorts)
+	}
+	if cfg.IngressWithinVPC {
+		t.Fatalf("IngressWithinVPC expected false, got %v", cfg.IngressWithinVPC)
+	}
+	if cfg.VPCCIDR != "192.168.0.0/8" {
+		t.Fatalf("VPCCIDR expected '192.168.0.0/8', got %q", cfg.VPCCIDR)
 	}
 }

@@ -98,6 +98,8 @@ type Config struct {
 	KeyPathBucket string `json:"key-path-bucket,omitempty"`
 	KeyPathURL    string `json:"key-path-url,omitempty"`
 
+	// VPCCIDR is the VPC CIDR.
+	VPCCIDR string `json:"vpc-cidr"`
 	// VPCID is the VPC ID to use.
 	// Leave empty to create a temporary one.
 	VPCID      string `json:"vpc-id"`
@@ -113,6 +115,8 @@ type Config struct {
 	SubnetIDs                  []string          `json:"subnet-ids,omitempty"`
 	SubnetIDToAvailibilityZone map[string]string `json:"subnet-id-to-availability-zone,omitempty"` // read-only to user
 
+	// IngressWithinVPC is true to enable security group ingress only within VPC CIDR.
+	IngressWithinVPC bool `json:"ingress-within-vpc,omitempty"`
 	// IngressTCPPorts is a list of TCP port to open within VPC security group.
 	IngressTCPPorts []int64 `json:"ingress-tcp-ports,omitempty"`
 
@@ -236,6 +240,11 @@ var defaultConfig = Config{
 	Count:        1,
 
 	AssociatePublicIPAddress: true,
+
+	VPCCIDR: "192.168.0.0/16",
+
+	// TODO: make it true by default
+	IngressWithinVPC: false,
 
 	IngressTCPPorts: []int64{22, 80, 443},
 	Wait:            false,
