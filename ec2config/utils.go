@@ -3,9 +3,7 @@ package ec2config
 import (
 	"fmt"
 	"math/rand"
-	"os"
 	"regexp"
-	"strings"
 	"time"
 )
 
@@ -20,15 +18,6 @@ func genTag() string {
 	// use UTC time for everything
 	now := time.Now().UTC()
 	return fmt.Sprintf("aws-k8s-tester-ec2-%d%02d%02d", now.Year(), now.Month(), now.Day())
-}
-
-func genID() string {
-	h, _ := os.Hostname()
-	h = strings.TrimSpace(reg.ReplaceAllString(h, ""))
-	if len(h) > 12 {
-		h = h[:12]
-	}
-	return fmt.Sprintf("%s-%s-%s", genTag(), h, randString(7))
 }
 
 var reg *regexp.Regexp

@@ -21,8 +21,8 @@ func (md *embedded) createSecurityGroup() (err error) {
 
 	var output *ec2.CreateSecurityGroupOutput
 	output, err = md.ec2.CreateSecurityGroup(&ec2.CreateSecurityGroupInput{
-		GroupName:   aws.String(md.cfg.ID),
-		Description: aws.String(md.cfg.ID),
+		GroupName:   aws.String(md.cfg.ClusterName),
+		Description: aws.String(md.cfg.ClusterName),
 		VpcId:       aws.String(md.cfg.VPCID),
 	})
 	if err != nil {

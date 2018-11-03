@@ -105,7 +105,7 @@ func NewDeployer(cfg *ec2config.Config) (Deployer, error) {
 
 	lg.Info(
 		"created EC2 deployer",
-		zap.String("id", cfg.ID),
+		zap.String("id", cfg.ClusterName),
 		zap.String("aws-k8s-tester-ec2config-path", cfg.ConfigPath),
 		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 	)
@@ -117,7 +117,7 @@ func (md *embedded) Create() (err error) {
 	defer md.mu.Unlock()
 
 	now := time.Now().UTC()
-	md.lg.Info("creating", zap.String("id", md.cfg.ID))
+	md.lg.Info("creating", zap.String("cluster-name", md.cfg.ClusterName))
 
 	defer func() {
 		if err != nil {
@@ -196,7 +196,7 @@ func (md *embedded) Create() (err error) {
 	}
 
 	md.lg.Info("created",
-		zap.String("id", md.cfg.ID),
+		zap.String("id", md.cfg.ClusterName),
 		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 	)
 
@@ -219,7 +219,7 @@ func (md *embedded) Delete() (err error) {
 	defer md.mu.Unlock()
 
 	now := time.Now().UTC()
-	md.lg.Info("deleting", zap.String("id", md.cfg.ID))
+	md.lg.Info("deleting", zap.String("cluster-name", md.cfg.ClusterName))
 
 	var errs []string
 	if err = md.deleteInstances(); err != nil {
@@ -250,7 +250,7 @@ func (md *embedded) Delete() (err error) {
 	}
 
 	md.lg.Info("deleted",
-		zap.String("id", md.cfg.ID),
+		zap.String("id", md.cfg.ClusterName),
 		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 	)
 
@@ -319,7 +319,7 @@ func (md *embedded) createInstances() (err error) {
 			}
 
 			if n < runInstancesBatch {
-				tkn := md.cfg.ID + fmt.Sprintf("%X", time.Now().Nanosecond())
+				tkn := md.cfg.ClusterName + fmt.Sprintf("%X", time.Now().Nanosecond())
 				tokens = append(tokens, tkn)
 
 				_, err = md.ec2.RunInstances(&ec2.RunInstancesInput{
@@ -356,7 +356,7 @@ func (md *embedded) createInstances() (err error) {
 			} else {
 				nLeft := n
 				for nLeft > 0 {
-					tkn := md.cfg.ID + fmt.Sprintf("%X", time.Now().UTC().Nanosecond())
+					tkn := md.cfg.ClusterName + fmt.Sprintf("%X", time.Now().UTC().Nanosecond())
 					tokens = append(tokens, tkn)
 
 					x := runInstancesBatch
@@ -416,7 +416,7 @@ func (md *embedded) createInstances() (err error) {
 	} else {
 		// create <1 instance per subnet
 		for i := 0; i < md.cfg.Count; i++ {
-			tkn := md.cfg.ID + fmt.Sprintf("%X", time.Now().Nanosecond())
+			tkn := md.cfg.ClusterName + fmt.Sprintf("%X", time.Now().Nanosecond())
 			tokens = append(tokens, tkn)
 			tknToCnt[tkn] = 1
 

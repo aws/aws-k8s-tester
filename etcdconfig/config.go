@@ -114,11 +114,11 @@ type ETCD struct {
 }
 
 var skipFlags = map[string]struct{}{
-	"Version":           struct{}{},
-	"TopLevel":          struct{}{},
-	"SSHPrivateKeyPath": struct{}{},
-	"PublicIP":          struct{}{},
-	"PublicDNSName":     struct{}{},
+	"Version":           {},
+	"TopLevel":          {},
+	"SSHPrivateKeyPath": {},
+	"PublicIP":          {},
+	"PublicDNSName":     {},
 }
 
 var etcdVersions = map[string]map[uint64]map[string]bool{
@@ -534,6 +534,9 @@ func init() {
 		"update-amazon-linux-2",
 		"install-etcd-3.1.12",
 	}
+
+	defaultConfig.EC2.Tag = defaultConfig.Tag
+	defaultConfig.EC2.ClusterName = defaultConfig.Tag
 }
 
 // genTag generates a tag for cluster name, CloudFormation, and S3 bucket.

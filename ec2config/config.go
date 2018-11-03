@@ -42,12 +42,9 @@ type Config struct {
 	UploadTesterLogs bool `json:"upload-tester-logs"`
 
 	// Tag is the tag used for all cloudformation stacks.
-	// Must be left empty, and let deployer auto-populate this field.
-	Tag string `json:"tag,omitempty"` // read-only to user
-	// ID is an unique ID for this configuration.
-	// Meant to be auto-generated.
-	// Used for debugging purposes only.
-	ID string `json:"id,omitempty"` // read-only to user
+	Tag string `json:"tag,omitempty"`
+	// ClusterName is an unique ID for cluster.
+	ClusterName string `json:"cluster-name,omitempty"`
 
 	// WaitBeforeDown is the duration to sleep before EC2 tear down.
 	// This is for "test".
@@ -344,9 +341,9 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 		return errors.New("unexpected Count")
 	}
 
-	if cfg.ID == "" {
+	if cfg.ClusterName == "" {
 		cfg.Tag = genTag()
-		cfg.ID = genID()
+		cfg.ClusterName = cfg.Tag + "-" + randString(7)
 	}
 
 	if cfg.ConfigPath == "" {
@@ -358,11 +355,11 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 		cfg.ConfigPath, _ = filepath.Abs(f.Name())
 		f.Close()
 		os.RemoveAll(cfg.ConfigPath)
-		cfg.ConfigPathBucket = filepath.Join(cfg.ID, "aws-k8s-tester-ec2config.yaml")
+		cfg.ConfigPathBucket = filepath.Join(cfg.ClusterName, "aws-k8s-tester-ec2config.yaml")
 		cfg.ConfigPathURL = genS3URL(cfg.AWSRegion, cfg.Tag, cfg.ConfigPathBucket)
 	}
 
-	cfg.LogOutputToUploadPath = filepath.Join(os.TempDir(), fmt.Sprintf("%s.log", cfg.ID))
+	cfg.LogOutputToUploadPath = filepath.Join(os.TempDir(), fmt.Sprintf("%s.log", cfg.ClusterName))
 	logOutputExist := false
 	for _, lv := range cfg.LogOutputs {
 		if cfg.LogOutputToUploadPath == lv {
@@ -374,11 +371,11 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 		// auto-insert generated log output paths to zap logger output list
 		cfg.LogOutputs = append(cfg.LogOutputs, cfg.LogOutputToUploadPath)
 	}
-	cfg.LogOutputToUploadPathBucket = filepath.Join(cfg.ID, "aws-k8s-tester-ec2.log")
+	cfg.LogOutputToUploadPathBucket = filepath.Join(cfg.ClusterName, "aws-k8s-tester-ec2.log")
 	cfg.LogOutputToUploadPathURL = genS3URL(cfg.AWSRegion, cfg.Tag, cfg.LogOutputToUploadPathBucket)
 
 	if cfg.KeyName == "" {
-		cfg.KeyName = cfg.ID
+		cfg.KeyName = cfg.ClusterName
 		var f *os.File
 		f, err = ioutil.TempFile(os.TempDir(), "aws-k8s-tester-ec2.key")
 		if err != nil {
@@ -387,7 +384,7 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 		cfg.KeyPath, _ = filepath.Abs(f.Name())
 		f.Close()
 		os.RemoveAll(cfg.KeyPath)
-		cfg.KeyPathBucket = filepath.Join(cfg.ID, "aws-k8s-tester-ec2.key")
+		cfg.KeyPathBucket = filepath.Join(cfg.ClusterName, "aws-k8s-tester-ec2.key")
 		cfg.KeyPathURL = genS3URL(cfg.AWSRegion, cfg.Tag, cfg.KeyPathBucket)
 	}
 

@@ -37,7 +37,7 @@ func TestS3(t *testing.T) {
 	f.Close()
 	defer os.RemoveAll(localPath)
 
-	if err = md.toS3(localPath, "hello-world"); err != nil {
+	if err = md.UploadToBucketForTests(localPath, "hello-world"); err != nil {
 		t.Fatal(err)
 	}
 	if err = md.deleteBucket(); err != nil {

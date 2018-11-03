@@ -61,8 +61,8 @@ func (md *embedded) UploadToBucketForTests(localPath, s3Path string) error {
 			}
 			h, _ := os.Hostname()
 			tags := []*s3.Tag{{Key: aws.String("HOSTNAME"), Value: aws.String(h)}}
-			if md.cfg.Tag != "" && md.cfg.ID != "" {
-				tags = append(tags, &s3.Tag{Key: aws.String(md.cfg.Tag), Value: aws.String(md.cfg.ID)})
+			if md.cfg.Tag != "" && md.cfg.ClusterName != "" {
+				tags = append(tags, &s3.Tag{Key: aws.String(md.cfg.Tag), Value: aws.String(md.cfg.ClusterName)})
 			}
 			_, err = md.s3.PutBucketTagging(&s3.PutBucketTaggingInput{
 				Bucket:  aws.String(bucket),

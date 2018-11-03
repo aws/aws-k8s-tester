@@ -90,26 +90,30 @@ func TestEC2SSH(t *testing.T) {
 	localPath1, remotePath := f.Name(), fmt.Sprintf("/home/%s/aws-k8s-tester.txt", cfg.UserName)
 	f.Sync()
 
-	if err = sh.Send(
+	out, err = sh.Send(
 		localPath1,
 		remotePath,
 		ssh.WithRetry(10, 5*time.Second),
 		ssh.WithTimeout(10*time.Second),
-	); err != nil {
+	)
+	if err != nil {
 		t.Error(err)
 	}
+	fmt.Println("Send output:", string(out))
 
 	localPath2 := filepath.Join(os.TempDir(), "testfile.txt")
 	defer os.RemoveAll(localPath2)
 
-	if err = sh.Download(
+	out, err = sh.Download(
 		remotePath,
 		localPath2,
 		ssh.WithRetry(10, 5*time.Second),
 		ssh.WithTimeout(10*time.Second),
-	); err != nil {
+	)
+	if err != nil {
 		t.Error(err)
 	}
+	fmt.Println("Download output:", string(out))
 
 	d, derr := ioutil.ReadFile(localPath2)
 	if derr != nil {
