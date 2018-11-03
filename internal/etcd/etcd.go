@@ -172,14 +172,9 @@ func (md *embedded) Deploy() (err error) {
 
 		_, err = sh.Run(
 			fmt.Sprintf("sudo bash %s", remotePath),
-			ssh.WithRetry(3, 5*time.Second),
-			ssh.WithTimeout(5*time.Second),
+			ssh.WithTimeout(7*time.Second),
 		)
-		if err != nil {
-			return err
-		}
-
-		md.lg.Info("started", zap.String("id", id), zap.String("public-dns-name", iv.PublicDNSName))
+		md.lg.Info("started", zap.String("id", id), zap.String("public-dns-name", iv.PublicDNSName), zap.Error(err))
 	}
 	md.lg.Info("deployed etcd",
 		zap.String("initial-cluster", initialCluster),
