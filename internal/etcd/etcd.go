@@ -179,7 +179,7 @@ func (md *embedded) Deploy() (err error) {
 			return err
 		}
 
-		if md.cfg.LogDebug || true { // TODO
+		if md.cfg.LogDebug {
 			fmt.Printf("\n\noutput for %q:\n\n%s\n\n", id, string(out))
 		}
 

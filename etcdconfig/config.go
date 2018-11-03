@@ -535,6 +535,7 @@ func init() {
 		"install-etcd-3.1.12",
 	}
 
+	defaultConfig.EC2.Wait = true
 	defaultConfig.EC2.Tag = defaultConfig.Tag
 	defaultConfig.EC2.ClusterName = defaultConfig.Tag
 }
