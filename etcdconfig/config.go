@@ -378,17 +378,17 @@ EOF
 
 sudo mv /tmp/etcd.service /etc/systemd/system/etcd.service
 
-# to start service
 sudo systemctl daemon-reload
-# sudo systemctl cat etcd.service
 sudo systemctl enable etcd.service
-sudo systemctl start etcd.service
+sudo systemctl start etcd.service &
 
-sleep 3s
-
-# to get logs from service
-sudo journalctl --no-pager --output=cat -u etcd.service
+sudo journalctl --no-pager -u etcd.service
 `
+
+/*
+sudo systemctl cat etcd.service
+sudo journalctl --no-pager -u etcd.service
+*/
 
 // ValidateAndSetDefaults returns an error for invalid configurations.
 // And updates empty fields with default values.
