@@ -19,6 +19,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.1...0.1.2).
 - Remove [`aws-k8s-tester ec2 wait`](https://github.com/aws/aws-k8s-tester/commit/36a74c699819d92abdf7f89028ea95b54f19fc98) command.
 - Add [`aws-k8s-tester wrk --run-in-ec2`](https://github.com/aws/aws-k8s-tester/commit/3f62032c0fe5aecda5f69a64fe528d46807cb5a5) flag.
 - Change [`aws-k8s-tester wrk --duration` to `aws-k8s-tester wrk --minutes`](https://github.com/aws/aws-k8s-tester/commit/8c04dd324ae1e8c915779af4f8c0e8f5b3ca3ecc) flag.
+- Add [`aws-k8s-tester etcd`](https://github.com/aws/aws-k8s-tester/commit/3af0d30bc9b85ca800122ff732502d9f820249bb) command.
 
 ### `eksconfig`
 
