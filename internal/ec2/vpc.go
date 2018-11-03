@@ -24,6 +24,7 @@ func (md *embedded) createVPC() (err error) {
 	md.lg.Info(
 		"created VPC",
 		zap.String("vpc-id", md.cfg.VPCID),
+		zap.String("vpc-cidr", *output.Vpc.CidrBlock),
 	)
 
 	h, _ := os.Hostname()
@@ -46,6 +47,7 @@ func (md *embedded) createVPC() (err error) {
 	md.lg.Info(
 		"created VPC tag",
 		zap.String("vpc-id", md.cfg.VPCID),
+		zap.String("vpc-cidr", *output.Vpc.CidrBlock),
 	)
 
 	if err = md.enableDNSHostnames(); err != nil {

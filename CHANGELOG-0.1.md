@@ -3,7 +3,7 @@
 <hr>
 
 
-## [0.1.2](https://github.com/aws/aws-k8s-tester/releases/tag/0.1.2) (2018-10-30)
+## [0.1.2](https://github.com/aws/aws-k8s-tester/releases/tag/0.1.2) (2018-11-05)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.1...0.1.2).
 
@@ -20,6 +20,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.1...0.1.2).
 - Add [`aws-k8s-tester wrk --run-in-ec2`](https://github.com/aws/aws-k8s-tester/commit/3f62032c0fe5aecda5f69a64fe528d46807cb5a5) flag.
 - Change [`aws-k8s-tester wrk --duration` to `aws-k8s-tester wrk --minutes`](https://github.com/aws/aws-k8s-tester/commit/8c04dd324ae1e8c915779af4f8c0e8f5b3ca3ecc) flag.
 - Add [`aws-k8s-tester etcd`](https://github.com/aws/aws-k8s-tester/commit/3af0d30bc9b85ca800122ff732502d9f820249bb) command.
+- Use [Amazon Linux 2 for `aws-k8s-tester csi test integration`](https://github.com/aws/aws-k8s-tester/commit/88a90939d1fc4f798e3ff2a35c10b2aa1b562c14) command.
 
 ### `eksconfig`
 
@@ -33,12 +34,13 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.1...0.1.2).
 ### `etcdtester`
 
 - Add [`etcdtester`](https://github.com/aws/aws-k8s-tester/pull/7) package for etcd conformance tests.
+  - Use [bastion instance to run test operations](https://github.com/aws/aws-k8s-tester/commit/f0f9dbf808a7eb26d63b089d0ba5e4a58b8bccc0).
   - To be moved to upstream etcd test project.
 
 ### `internal`
 
 - Rename to [`ec2config` from `internal/ec2/config`](https://github.com/aws/aws-k8s-tester/commit/f8b5d466966862658dff6bc254d7491ba2333aa6).
-- Add [`internal/ec2/config.Config.IngressTCPPorts`](https://github.com/aws/aws-k8s-tester/commit/f0f9dbf808a7eb26d63b089d0ba5e4a58b8bccc0) field.
+- Add [`internal/ec2/config.Config.IngressCIDRs`](https://github.com/aws/aws-k8s-tester/commit/f0f9dbf808a7eb26d63b089d0ba5e4a58b8bccc0) field.
 - Add [`internal/ec2/config.Config.Wait`](https://github.com/aws/aws-k8s-tester/commit/6073c2de289e352c5454d4b17380022168bcbac6) field.
 - Add [`internal/ssh.SSH.Send/Download` using SCP protocol](https://github.com/aws/aws-k8s-tester/commit/84e4363ad658cc6db8e0bf979f6f6bb841795eec).
 

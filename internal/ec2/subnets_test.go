@@ -3,6 +3,7 @@ package ec2
 import (
 	"os"
 	"reflect"
+	"sort"
 	"testing"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
@@ -38,6 +39,9 @@ func TestSubnets(t *testing.T) {
 		t.Fatal(err)
 	}
 	subnets2 := md.cfg.SubnetIDs
+
+	sort.Strings(subnets1)
+	sort.Strings(subnets2)
 
 	if !reflect.DeepEqual(subnets1, subnets2) {
 		t.Fatalf("subnets are different %v != %v", subnets1, subnets2)

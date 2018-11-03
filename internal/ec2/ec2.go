@@ -171,9 +171,20 @@ func (md *embedded) Create() (err error) {
 		if err = md.associatePublicIP(); err != nil {
 			return err
 		}
+
+		var do *ec2.DescribeVpcsOutput
+		do, err = md.ec2.DescribeVpcs(&ec2.DescribeVpcsInput{
+			VpcIds: aws.StringSlice([]string{md.cfg.VPCID}),
+		})
+		if err != nil {
+			md.lg.Warn("failed to describe VPC", zap.String("vpc-id", md.cfg.VPCID), zap.Error(err))
+		} else {
+			md.cfg.VPCCIDR = *do.Vpcs[0].CidrBlock
+		}
 		md.lg.Info(
 			"found subnets",
 			zap.String("vpc-id", md.cfg.VPCID),
+			zap.String("vpc-cidr", md.cfg.VPCCIDR),
 			zap.Strings("subnet-ids", md.cfg.SubnetIDs),
 			zap.String("availability-zones", fmt.Sprintf("%v", md.cfg.SubnetIDToAvailibilityZone)),
 		)
@@ -590,7 +601,7 @@ func (md *embedded) wait() {
 
 					fmt.Printf("\n\n%s\n\n", string(out))
 
-					if isReady(string(out)) {
+					if IsReady(string(out)) {
 						sh.Close()
 						md.lg.Info("cloud-init-output.log READY!", zap.String("instance-id", id))
 						delete(mm, id)
@@ -608,14 +619,15 @@ func (md *embedded) wait() {
 	}
 }
 
-/*
-to match:
+// IsReady returns true if the instance cloud init logs indicate it's ready.
+func IsReady(txt string) bool {
+	/*
+		to match:
 
-AWS_K8S_TESTER_EC2_PLUGIN_READY
-Cloud-init v. 18.2 running 'modules:final' at Mon, 29 Oct 2018 22:40:13 +0000. Up 21.89 seconds.
-Cloud-init v. 18.2 finished at Mon, 29 Oct 2018 22:43:59 +0000. Datasource DataSourceEc2Local.  Up 246.57 seconds
-*/
-func isReady(txt string) bool {
+		AWS_K8S_TESTER_EC2_PLUGIN_READY
+		Cloud-init v. 18.2 running 'modules:final' at Mon, 29 Oct 2018 22:40:13 +0000. Up 21.89 seconds.
+		Cloud-init v. 18.2 finished at Mon, 29 Oct 2018 22:43:59 +0000. Datasource DataSourceEc2Local.  Up 246.57 seconds
+	*/
 	return strings.Contains(txt, plugins.READY) ||
 		(strings.Contains(txt, `Cloud-init v.`) &&
 			strings.Contains(txt, `finished at`))

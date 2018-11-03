@@ -66,8 +66,9 @@ type Config struct {
 	UploadTesterLogs bool `json:"upload-tester-logs"`
 
 	// EC2 defines ec2 instance configuration.
-	// Ignored for local tests.
 	EC2 *ec2config.Config `json:"ec2"`
+	// EC2Bastion is used for etcd test clients.
+	EC2Bastion *ec2config.Config `json:"ec2-bastion"`
 
 	// ClusterSize is the number of etcd nodes.
 	ClusterSize int `json:"cluster-size"`
@@ -500,11 +501,9 @@ func NewDefault() *Config {
 	return &vv
 }
 
-var (
-	// minimum recommended etcd versions to run in production is 3.1.11+, 3.2.10+, and 3.3.0+
-	// https://groups.google.com/forum/#!msg/etcd-dev/nZQl17RjxHQ/FkC_rZ_4AwAJT
-	minEtcdVer semver.Version
-)
+// minimum recommended etcd versions to run in production is 3.1.11+, 3.2.10+, and 3.3.0+
+// https://groups.google.com/forum/#!msg/etcd-dev/nZQl17RjxHQ/FkC_rZ_4AwAJT
+var minEtcdVer semver.Version
 
 func init() {
 	var err error
@@ -526,11 +525,28 @@ func init() {
 		"update-amazon-linux-2",
 		"install-etcd-3.1.12",
 	}
-
+	defaultConfig.EC2.Count = 3
 	defaultConfig.EC2.Wait = true
 	defaultConfig.EC2.Tag = defaultConfig.Tag
 	defaultConfig.EC2.ClusterName = defaultConfig.ClusterName
-	defaultConfig.EC2.IngressTCPPorts = etcdPorts
+	defaultConfig.EC2.IngressCIDRs = map[int64]string{
+		22:   "0.0.0.0/0",
+		2379: "192.168.0.0/8",
+		2380: "192.168.0.0/8",
+	}
+
+	defaultConfig.EC2Bastion.Plugins = []string{
+		"update-amazon-linux-2",
+		"install-etcd-3.1.12",
+		// TODO: install "aws-k8s-tester"
+	}
+	defaultConfig.EC2Bastion.Count = 1
+	defaultConfig.EC2Bastion.Wait = true
+	defaultConfig.EC2Bastion.Tag = defaultConfig.Tag + "-bastion"
+	defaultConfig.EC2Bastion.ClusterName = defaultConfig.ClusterName + "-bastion"
+	defaultConfig.EC2Bastion.IngressCIDRs = map[int64]string{
+		22: "0.0.0.0/0",
+	}
 }
 
 // genTag generates a tag for cluster name, CloudFormation, and S3 bucket.
@@ -551,8 +567,10 @@ var defaultConfig = Config{
 	LogOutputs:       []string{"stderr"},
 	UploadTesterLogs: true,
 
-	EC2:          ec2config.NewDefault(),
-	ClusterSize:  1,
+	EC2:        ec2config.NewDefault(),
+	EC2Bastion: ec2config.NewDefault(),
+
+	ClusterSize:  3,
 	ClusterState: make(map[string]ETCD),
 }
 
@@ -785,20 +803,22 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 		return errors.New("EC2 configuration not found")
 	}
 	cfg.EC2.Count = cfg.ClusterSize
+	if cfg.EC2Bastion == nil {
+		return errors.New("EC2Bastion configuration not found")
+	}
+	if cfg.EC2Bastion.Count != 1 {
+		return fmt.Errorf("EC2Bastion.Count expected 1, got %d", cfg.EC2Bastion.Count)
+	}
 	if err = cfg.Cluster.ValidateAndSetDefaults(); err != nil {
 		return err
 	}
 	if err = cfg.EC2.ValidateAndSetDefaults(); err != nil {
 		return err
 	}
-	pm := make(map[int64]struct{})
-	for _, p := range cfg.EC2.IngressTCPPorts {
-		pm[p] = struct{}{}
-	}
 	for _, p := range etcdPorts {
-		_, ok := pm[p]
+		_, ok := cfg.EC2.IngressCIDRs[p]
 		if !ok {
-			return fmt.Errorf("etcd expects port %d but not found from %v", p, cfg.EC2.IngressTCPPorts)
+			return fmt.Errorf("etcd expects port %d but not found from %v", p, cfg.EC2.IngressCIDRs)
 		}
 	}
 

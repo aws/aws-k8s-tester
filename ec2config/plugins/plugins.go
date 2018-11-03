@@ -75,7 +75,7 @@ EOT`, userName, userName, string(d)),
 	case plugin == "install-go1.11.2":
 		s, err := createInstallGo(goInfo{
 			UserName:  userName,
-			GoVersion: "1.11.1",
+			GoVersion: "1.11.2",
 		})
 		if err != nil {
 			return script{}, err
@@ -95,7 +95,7 @@ EOT`, userName, userName, string(d)),
 			GitCloneURL:   "https://github.com/kubernetes-sigs/aws-ebs-csi-driver.git",
 			IsPR:          isPR,
 			GitBranch:     gitBranch,
-			InstallScript: `go install -v ./cmd/aws-ebs-csi-driver`,
+			InstallScript: `make aws-ebs-csi-driver && sudo cp ./bin/aws-ebs-csi-driver /usr/local/bin/aws-ebs-csi-driver`,
 		})
 		if err != nil {
 			return script{}, err

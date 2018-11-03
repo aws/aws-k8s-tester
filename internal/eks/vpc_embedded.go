@@ -111,6 +111,18 @@ func (md *embedded) createVPC() error {
 		}
 
 		if md.cfg.ClusterState.CFStackVPCStatus == "CREATE_COMPLETE" {
+			_, err = md.ec2.CreateTags(&ec2.CreateTagsInput{
+				Resources: aws.StringSlice([]string{md.cfg.SecurityGroupID}),
+				Tags: []*ec2.Tag{
+					{
+						Key:   aws.String("Name"),
+						Value: aws.String(md.cfg.ClusterName),
+					},
+				},
+			})
+			if err != nil {
+				md.lg.Warn("failed to tag security group", zap.String("group-id", md.cfg.SecurityGroupID), zap.Error(err))
+			}
 			break
 		}
 

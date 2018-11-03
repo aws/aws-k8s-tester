@@ -19,6 +19,10 @@ import (
 
 // Config defines EC2 configuration.
 type Config struct {
+	// EnvPrefix is used to update configuration via environmental variables.
+	// The default is "AWS_K8S_TESTER_EC2_".
+	EnvPrefix string
+
 	// AWSAccountID is the AWS account ID.
 	AWSAccountID string `json:"aws-account-id,omitempty"`
 	// AWSRegion is the AWS region.
@@ -115,10 +119,8 @@ type Config struct {
 	SubnetIDs                  []string          `json:"subnet-ids,omitempty"`
 	SubnetIDToAvailibilityZone map[string]string `json:"subnet-id-to-availability-zone,omitempty"` // read-only to user
 
-	// IngressWithinVPC is true to enable security group ingress only within VPC CIDR.
-	IngressWithinVPC bool `json:"ingress-within-vpc,omitempty"`
-	// IngressTCPPorts is a list of TCP port to open within VPC security group.
-	IngressTCPPorts []int64 `json:"ingress-tcp-ports,omitempty"`
+	// IngressCIDRs is a map from TCP port to CIDR to allow via security groups.
+	IngressCIDRs map[int64]string `json:"ingress-cidrs,omitempty"`
 
 	// SecurityGroupIDs is the list of security group IDs.
 	// Leave empty to create a temporary one.
@@ -209,6 +211,7 @@ func NewDefault() *Config {
 //  - omitting an entire field returns nil value
 //  - make sure to check both
 var defaultConfig = Config{
+	EnvPrefix: "AWS_K8S_TESTER_EC2_",
 	AWSRegion: "us-west-2",
 
 	WaitBeforeDown: 10 * time.Minute,
@@ -242,15 +245,12 @@ var defaultConfig = Config{
 	AssociatePublicIPAddress: true,
 
 	VPCCIDR: "192.168.0.0/16",
+	IngressCIDRs: map[int64]string{
+		22: "0.0.0.0/0",
+	},
 
-	// TODO: make it true by default
-	IngressWithinVPC: false,
-
-	IngressTCPPorts: []int64{22, 80, 443},
-	Wait:            false,
+	Wait: false,
 }
-
-const envPfx = "AWS_K8S_TESTER_EC2_"
 
 // UpdateFromEnvs updates fields from environmental variables.
 func (cfg *Config) UpdateFromEnvs() error {
@@ -265,7 +265,7 @@ func (cfg *Config) UpdateFromEnvs() error {
 		jv = strings.Replace(jv, ",omitempty", "", -1)
 		jv = strings.Replace(jv, "-", "_", -1)
 		jv = strings.ToUpper(strings.Replace(jv, "-", "_", -1))
-		env := envPfx + jv
+		env := cfg.EnvPrefix + jv
 		if os.Getenv(env) == "" {
 			continue
 		}
@@ -305,9 +305,27 @@ func (cfg *Config) UpdateFromEnvs() error {
 			}
 			vv.Field(i).SetFloat(fv)
 
+		case reflect.Map:
+			ss := strings.Split(sv, ",")
+			switch fieldName {
+			case "IngressCIDRs":
+				m := reflect.MakeMap(reflect.TypeOf(map[int64]string{}))
+				for i := range ss {
+					fields := strings.Split(ss[i], "=")
+					nv, nerr := strconv.ParseInt(fields[0], 10, 64)
+					if nerr != nil {
+						return fmt.Errorf("failed to parse IngressTCPPort %s (%v)", fields[0], nerr)
+					}
+					m.SetMapIndex(reflect.ValueOf(nv), reflect.ValueOf(fields[1]))
+				}
+				vv.Field(i).Set(m)
+
+			default:
+				return fmt.Errorf("parsing field name %q not supported", fieldName)
+			}
+
 		case reflect.Slice:
 			ss := strings.Split(sv, ",")
-
 			switch fieldName {
 			case "Plugins",
 				"SubnetIDs",
@@ -315,17 +333,6 @@ func (cfg *Config) UpdateFromEnvs() error {
 				slice := reflect.MakeSlice(reflect.TypeOf([]string{}), len(ss), len(ss))
 				for i := range ss {
 					slice.Index(i).SetString(ss[i])
-				}
-				vv.Field(i).Set(slice)
-
-			case "IngressTCPPorts":
-				slice := reflect.MakeSlice(reflect.TypeOf([]int64{}), len(ss), len(ss))
-				for i := range ss {
-					nv, nerr := strconv.ParseInt(ss[i], 10, 64)
-					if nerr != nil {
-						return fmt.Errorf("failed to parse IngressTCPPort %s (%v)", ss[i], nerr)
-					}
-					slice.Index(i).SetInt(nv)
 				}
 				vv.Field(i).Set(slice)
 

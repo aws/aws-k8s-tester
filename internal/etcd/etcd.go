@@ -28,7 +28,8 @@ type embedded struct {
 	lg  *zap.Logger
 	cfg *etcdconfig.Config
 
-	ec2Deployer ec2.Deployer
+	ec2Deployer        ec2.Deployer
+	ec2BastionDeployer ec2.Deployer
 }
 
 // NewTester creates a new embedded etcd tester.
@@ -41,25 +42,7 @@ func NewTester(cfg *etcdconfig.Config) (etcdtester.Tester, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	// expect the following in Plugins
-	// "update-amazon-linux-2"
-	// "install-etcd-3.1.12"
-	lg.Info(
-		"deploying EC2",
-		zap.Strings("plugins", cfg.EC2.Plugins),
-	)
-	var ec2Deployer ec2.Deployer
-	ec2Deployer, err = ec2.NewDeployer(cfg.EC2)
-	if err != nil {
-		return nil, err
-	}
-
-	return &embedded{
-		lg:          lg,
-		cfg:         cfg,
-		ec2Deployer: ec2Deployer,
-	}, cfg.Sync()
+	return &embedded{lg: lg, cfg: cfg}, cfg.Sync()
 }
 
 func (md *embedded) Deploy() (err error) {
@@ -68,6 +51,17 @@ func (md *embedded) Deploy() (err error) {
 
 	now := time.Now().UTC()
 
+	// expect the following in Plugins
+	// "update-amazon-linux-2"
+	// "install-etcd-3.1.12"
+	md.lg.Info(
+		"deploying EC2",
+		zap.Strings("plugins", md.cfg.EC2.Plugins),
+	)
+	md.ec2Deployer, err = ec2.NewDeployer(md.cfg.EC2)
+	if err != nil {
+		return err
+	}
 	if err = md.ec2Deployer.Create(); err != nil {
 		return err
 	}
@@ -75,11 +69,33 @@ func (md *embedded) Deploy() (err error) {
 	md.lg.Info(
 		"deployed EC2",
 		zap.Strings("plugins", md.cfg.EC2.Plugins),
+		zap.String("vpc-id", md.cfg.EC2.VPCID),
 		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 	)
-
 	if md.cfg.LogDebug {
 		fmt.Println(md.ec2Deployer.GenerateSSHCommands())
+	}
+
+	md.lg.Info(
+		"deploying EC2 bastion",
+		zap.Strings("plugins", md.cfg.EC2Bastion.Plugins),
+	)
+	md.cfg.EC2Bastion.VPCID = md.cfg.EC2.VPCID
+	md.ec2BastionDeployer, err = ec2.NewDeployer(md.cfg.EC2Bastion)
+	if err != nil {
+		return err
+	}
+	if err = md.ec2BastionDeployer.Create(); err != nil {
+		return err
+	}
+	md.lg.Info(
+		"deployed EC2 bastion",
+		zap.Strings("plugins", md.cfg.EC2Bastion.Plugins),
+		zap.String("vpc-id", md.cfg.EC2Bastion.VPCID),
+		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
+	)
+	if md.cfg.LogDebug {
+		fmt.Println(md.ec2BastionDeployer.GenerateSSHCommands())
 	}
 
 	tc := *md.cfg.Cluster
@@ -92,9 +108,9 @@ func (md *embedded) Deploy() (err error) {
 		ev.Name = iv.InstanceID
 		ev.DataDir = fmt.Sprintf("/home/%s/etcd.data", md.cfg.EC2.UserName)
 		ev.ListenClientURLs = fmt.Sprintf("http://%s:2379", iv.PrivateIP)
-		ev.AdvertiseClientURLs = fmt.Sprintf("http://%s:2379", iv.PublicIP)
+		ev.AdvertiseClientURLs = fmt.Sprintf("http://%s:2379", iv.PrivateIP)
 		ev.ListenPeerURLs = fmt.Sprintf("http://%s:2380", iv.PrivateIP)
-		ev.AdvertisePeerURLs = fmt.Sprintf("http://%s:2380", iv.PublicIP)
+		ev.AdvertisePeerURLs = fmt.Sprintf("http://%s:2380", iv.PrivateIP)
 		ev.InitialCluster = ""
 		ev.InitialClusterState = "new"
 		md.cfg.ClusterState[iv.InstanceID] = ev
@@ -226,6 +242,71 @@ func (md *embedded) CheckHealth() map[string]etcdtester.Health {
 
 func (md *embedded) checkHealth() (hh map[string]etcdtester.Health) {
 	hh = make(map[string]etcdtester.Health, len(md.cfg.ClusterState))
+
+	sh, err := ssh.New(ssh.Config{
+		Logger:        md.lg,
+		KeyPath:       md.cfg.EC2Bastion.KeyPath,
+		UserName:      md.cfg.EC2Bastion.UserName,
+		PublicIP:      md.cfg.EC2Bastion.Instances[0].PublicIP,
+		PublicDNSName: md.cfg.EC2Bastion.Instances[0].PublicDNSName,
+	})
+	if err != nil {
+		md.lg.Warn(
+			"failed to create SSH",
+			zap.Error(err),
+		)
+		for k := range md.cfg.ClusterState {
+			hh[k] = etcdtester.Health{
+				Status: fmt.Sprintf("failed to create SSH to bastion (%v)", err),
+				Error:  err,
+			}
+		}
+		return hh
+	}
+
+	if err = sh.Connect(); err != nil {
+		md.lg.Warn(
+			"failed to connect SSH",
+			zap.Error(err),
+		)
+		for k := range md.cfg.ClusterState {
+			hh[k] = etcdtester.Health{
+				Status: fmt.Sprintf("failed to create SSH to bastion (%v)", err),
+				Error:  err,
+			}
+		}
+		return hh
+	}
+
+	for k, v := range md.cfg.ClusterState {
+		ep := v.AdvertiseClientURLs
+		health := etcdtester.Health{
+			Status: "",
+			Error:  nil,
+		}
+
+		var out []byte
+		out, err = sh.Run(
+			fmt.Sprintf("curl -sL %s/health", ep),
+			ssh.WithRetry(10, 3*time.Second),
+			ssh.WithTimeout(5*time.Second),
+		)
+		if err != nil {
+			health.Status = fmt.Sprintf("status check for %q failed %v", ep, err)
+			health.Error = err
+		} else {
+			health.Status = string(out)
+			health.Error = nil
+		}
+
+		hh[k] = health
+	}
+	return hh
+}
+
+// TODO
+func (md *embedded) checkETCDHealth() (hh map[string]etcdtester.Health) {
+	hh = make(map[string]etcdtester.Health, len(md.cfg.ClusterState))
 	for k, v := range md.cfg.ClusterState {
 		ep := v.AdvertiseClientURLs
 		health := etcdtester.Health{
@@ -254,14 +335,6 @@ func (md *embedded) checkHealth() (hh map[string]etcdtester.Health) {
 		hh[k] = health
 	}
 	return hh
-}
-
-func (md *embedded) clientEps() (eps []string) {
-	eps = make([]string, 0, len(md.cfg.ClusterState))
-	for _, v := range md.cfg.ClusterState {
-		eps = append(eps, v.AdvertiseClientURLs)
-	}
-	return eps
 }
 
 func (md *embedded) IDToClientURL() (rm map[string]string) {
@@ -306,7 +379,28 @@ func (md *embedded) Terminate() error {
 		md.lg.Info("uploaded", zap.Error(err))
 	}
 
-	return md.ec2Deployer.Delete()
+	errc := make(chan error)
+	go func() {
+		errc <- md.ec2Deployer.Delete()
+
+	}()
+	go func() {
+		errc <- md.ec2BastionDeployer.Delete()
+	}()
+	errEC2 := <-errc
+	errEC2Bastion := <-errc
+
+	ev := ""
+	if errEC2 != nil {
+		ev += fmt.Sprintf(",failed to terminate etcd EC2 instances (%v)", errEC2)
+	}
+	if errEC2Bastion != nil {
+		ev += fmt.Sprintf(",failed to terminate etcd bastion EC2 instances (%v)", errEC2Bastion)
+	}
+	if ev != "" {
+		return errors.New(ev[1:])
+	}
+	return nil
 }
 
 func (md *embedded) MemberAdd(id string) error {

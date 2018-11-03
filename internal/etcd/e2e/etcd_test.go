@@ -20,7 +20,6 @@ func TestETCD(t *testing.T) {
 
 	cfg := etcdconfig.NewDefault()
 	cfg.LogDebug = true
-	cfg.ClusterSize = 3
 
 	tester, err := etcd.NewTester(cfg)
 	if err != nil {
@@ -28,6 +27,7 @@ func TestETCD(t *testing.T) {
 	}
 
 	if err = tester.Deploy(); err != nil {
+		tester.Terminate()
 		t.Fatal(err)
 	}
 

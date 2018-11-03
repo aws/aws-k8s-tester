@@ -54,6 +54,19 @@ func (md *embedded) CreateSecurityGroup() error {
 		md.lg.Info("authorized ingress for ALB", zap.Int64("port", port))
 	}
 
+	_, err = md.ec2.CreateTags(&ec2.CreateTagsInput{
+		Resources: aws.StringSlice([]string{md.cfg.ALBIngressController.ELBv2SecurityGroupIDPortOpen}),
+		Tags: []*ec2.Tag{
+			{
+				Key:   aws.String("Name"),
+				Value: aws.String(md.cfg.ClusterName),
+			},
+		},
+	})
+	if err != nil {
+		md.lg.Warn("failed to tag security group", zap.String("group-id", md.cfg.ALBIngressController.ELBv2SecurityGroupIDPortOpen), zap.Error(err))
+	}
+
 	md.cfg.ALBIngressController.ELBv2SecurityGroupStatus = "READY"
 	return md.cfg.Sync()
 }

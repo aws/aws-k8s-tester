@@ -34,23 +34,33 @@ func (md *embedded) createSecurityGroup() (err error) {
 		zap.Strings("group-id", md.cfg.SecurityGroupIDs),
 	)
 
-	cidr := aws.String("0.0.0.0/0")
-	if md.cfg.IngressWithinVPC {
-		cidr = aws.String(md.cfg.VPCCIDR)
-	}
-	for _, port := range md.cfg.IngressTCPPorts {
+	for port, cidr := range md.cfg.IngressCIDRs {
 		_, err = md.ec2.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
 			GroupId:    output.GroupId,
 			IpProtocol: aws.String("tcp"),
-			CidrIp:     cidr,
+			CidrIp:     aws.String(cidr),
 			FromPort:   aws.Int64(port),
 			ToPort:     aws.Int64(port),
 		})
 		if err != nil {
 			return err
 		}
-		md.lg.Info("authorized ingress", zap.Int64("port", port))
+		md.lg.Info("authorized ingress", zap.Int64("port", port), zap.String("cidr", cidr))
 	}
+
+	_, err = md.ec2.CreateTags(&ec2.CreateTagsInput{
+		Resources: aws.StringSlice([]string{*output.GroupId}),
+		Tags: []*ec2.Tag{
+			{
+				Key:   aws.String("Name"),
+				Value: aws.String(md.cfg.ClusterName),
+			},
+		},
+	})
+	if err != nil {
+		md.lg.Warn("failed to tag security group", zap.String("group-id", *output.GroupId), zap.Error(err))
+	}
+
 	return md.cfg.Sync()
 }
 
