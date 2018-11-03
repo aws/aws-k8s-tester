@@ -282,7 +282,7 @@ func (md *embedded) Terminate() error {
 	md.mu.Lock()
 	defer md.mu.Unlock()
 
-	if md.cfg.UploadTesterLogs {
+	if md.cfg.UploadTesterLogs && len(md.cfg.ClusterState) > 0 {
 		fpathToS3Path, err := fetchLogs(
 			md.lg,
 			md.cfg.EC2.UserName,

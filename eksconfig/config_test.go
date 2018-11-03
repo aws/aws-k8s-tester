@@ -160,12 +160,3 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("cfg.ALBIngressController.TestMetrics expected 'false', got %v", cfg.ALBIngressController.TestMetrics)
 	}
 }
-
-func Test_genClusterName(t *testing.T) {
-	id1, id2 := genClusterName(genTag()), genClusterName(genTag())
-	if id1 == id2 {
-		t.Fatalf("expected %q != %q", id1, id2)
-	}
-	t.Log(id1)
-	t.Log(id2)
-}

@@ -40,6 +40,11 @@ func testE2EFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
+	if err = tester.Deploy(); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to deploy etcd tester %v\n", err)
+		os.Exit(1)
+	}
+
 	time.Sleep(cfg.WaitBeforeDown)
 
 	if err = tester.Terminate(); err != nil {
