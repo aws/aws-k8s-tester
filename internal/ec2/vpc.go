@@ -12,12 +12,10 @@ import (
 	"go.uber.org/zap"
 )
 
-const vpcCIDR = "192.168.0.0/16"
-
 func (md *embedded) createVPC() (err error) {
 	var output *ec2.CreateVpcOutput
 	output, err = md.ec2.CreateVpc(&ec2.CreateVpcInput{
-		CidrBlock: aws.String(vpcCIDR),
+		CidrBlock: aws.String(md.cfg.VPCCIDR),
 	})
 	if err != nil {
 		return err
