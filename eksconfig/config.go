@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -361,18 +360,7 @@ func NewDefault() *Config {
 	return &vv
 }
 
-var (
-	reg               *regexp.Regexp
-	testerTag         string
-	testerClusterName string
-)
-
 func init() {
-	var err error
-	reg, err = regexp.Compile("[^a-zA-Z]+")
-	if err != nil {
-		panic(err)
-	}
 	defaultConfig.Tag = genTag()
 	defaultConfig.ClusterName = defaultConfig.Tag + "-" + randString(7)
 }

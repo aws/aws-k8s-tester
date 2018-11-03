@@ -16,7 +16,7 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EC2_LOG_DEBUG", "false")
 	os.Setenv("AWS_K8S_TESTER_EC2_UPLOAD_AWS_TESTER_LOGS", "false")
 	os.Setenv("AWS_K8S_TESTER_EC2_VPC_ID", "aaa")
-	os.Setenv("AWS_K8S_TESTER_EC2_PLUGINS", "update-ubuntu,install-go1.11.1-ubuntu")
+	os.Setenv("AWS_K8S_TESTER_EC2_PLUGINS", "update-ubuntu,install-go1.11.2-ubuntu")
 	os.Setenv("AWS_K8S_TESTER_EC2_INSTANCE_TYPE", "m5d.2xlarge")
 	os.Setenv("AWS_K8S_TESTER_EC2_KEY_NAME", "test-key")
 	os.Setenv("AWS_K8S_TESTER_EC2_ASSOCIATE_PUBLIC_IP_ADDRESS", "false")
@@ -66,7 +66,7 @@ func TestEnv(t *testing.T) {
 	if cfg.VPCID != "aaa" {
 		t.Fatalf("VPCID unexpected %q", cfg.VPCID)
 	}
-	if !reflect.DeepEqual(cfg.Plugins, []string{"update-ubuntu", "install-go1.11.1-ubuntu"}) {
+	if !reflect.DeepEqual(cfg.Plugins, []string{"update-ubuntu", "install-go1.11.2-ubuntu"}) {
 		t.Fatalf("unexpected plugins, got %v", cfg.Plugins)
 	}
 	if cfg.InstanceType != "m5d.2xlarge" {

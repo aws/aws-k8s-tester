@@ -9,7 +9,6 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"regexp"
 	"strconv"
 	"strings"
 	"text/template"
@@ -84,7 +83,8 @@ type Config struct {
 // TODO: support TLS
 type ETCD struct {
 	// Version is the etcd version.
-	Version string `json:"version"`
+	Version  string `json:"version"`
+	features map[string]bool
 	// TopLevel is true if this is only used for top-level configuration.
 	TopLevel bool `json:"top-level"`
 
@@ -294,6 +294,9 @@ func (e *ETCD) Flags() (flags []string, err error) {
 		if ek := tp.Field(i).Tag.Get("etcd"); ek != "" {
 			k = strings.Replace(ek, ",omitempty", "", -1)
 		}
+		if v, ok := e.features[k]; ok && !v {
+			continue
+		}
 
 		fieldName := tp.Field(i).Name
 		if _, ok := skipFlags[fieldName]; ok {
@@ -329,9 +332,8 @@ func (e *ETCD) Service() (s string, err error) {
 		return "", err
 	}
 	return createSvcInfo(svcInfo{
-		Exec: "/usr/local/bin/etcd",
-		Flags: strings.Join(fs, ` \
-  `),
+		Exec:  "/usr/local/bin/etcd",
+		Flags: strings.Join(fs, " "),
 	})
 }
 
@@ -406,30 +408,46 @@ func (e *ETCD) ValidateAndSetDefaults() (err error) {
 		return fmt.Errorf("expected >= %s, got %s", minEtcdVer, ver)
 	}
 
+	majorMinor, patch := fmt.Sprintf("%d.%d", ver.Major, ver.Minor), ver.Patch
+	ps, ok := etcdVersions[majorMinor]
+	if !ok {
+		return fmt.Errorf("unknown version %q", majorMinor)
+	}
+	e.features, ok = ps[patch]
+	if !ok {
+		return fmt.Errorf("unknown version %q", ver)
+	}
+	if e.InitialElectionTickAdvance {
+		added, exist := e.features["initial-election-tick-advance"]
+		if !exist || !added {
+			return fmt.Errorf("InitialElectionTickAdvance invalid for %q", ver)
+		}
+	}
+
 	if e.TopLevel {
 		if e.Name != "" {
-			return fmt.Errorf("unexpected Name %q with 'TopLevel {'", e.Name)
+			return fmt.Errorf("unexpected Name %q with 'TopLevel'", e.Name)
 		}
 		if e.DataDir != "" {
-			return fmt.Errorf("unexpected DataDir %q with 'TopLevel {'", e.DataDir)
+			return fmt.Errorf("unexpected DataDir %q with 'TopLevel'", e.DataDir)
 		}
 		if e.ListenClientURLs != "" {
-			return fmt.Errorf("unexpected ListenClientURLs %q with 'TopLevel {'", e.ListenClientURLs)
+			return fmt.Errorf("unexpected ListenClientURLs %q with 'TopLevel'", e.ListenClientURLs)
 		}
 		if e.AdvertiseClientURLs != "" {
-			return fmt.Errorf("unexpected AdvertiseClientURLs %q with 'TopLevel {'", e.AdvertiseClientURLs)
+			return fmt.Errorf("unexpected AdvertiseClientURLs %q with 'TopLevel'", e.AdvertiseClientURLs)
 		}
 		if e.ListenPeerURLs != "" {
-			return fmt.Errorf("unexpected ListenPeerURLs %q with 'TopLevel {'", e.ListenPeerURLs)
+			return fmt.Errorf("unexpected ListenPeerURLs %q with 'TopLevel'", e.ListenPeerURLs)
 		}
 		if e.AdvertisePeerURLs != "" {
-			return fmt.Errorf("unexpected AdvertisePeerURLs %q with 'TopLevel {'", e.AdvertisePeerURLs)
+			return fmt.Errorf("unexpected AdvertisePeerURLs %q with 'TopLevel'", e.AdvertisePeerURLs)
 		}
 		if e.InitialCluster != "" {
-			return fmt.Errorf("unexpected InitialCluster %q with 'TopLevel {'", e.InitialCluster)
+			return fmt.Errorf("unexpected InitialCluster %q with 'TopLevel'", e.InitialCluster)
 		}
 		if e.InitialClusterState != "" {
-			return fmt.Errorf("unexpected InitialClusterState %q with 'TopLevel {'", e.InitialClusterState)
+			return fmt.Errorf("unexpected InitialClusterState %q with 'TopLevel'", e.InitialClusterState)
 		}
 	} else {
 		if e.Name == "" {
@@ -474,23 +492,6 @@ func (e *ETCD) ValidateAndSetDefaults() (err error) {
 		return errors.New("got zero ETCD.QuotaBackendGB")
 	}
 
-	majorMinor, patch := fmt.Sprintf("%d.%d", ver.Major, ver.Minor), ver.Patch
-	ps, ok := etcdVersions[majorMinor]
-	if !ok {
-		return fmt.Errorf("unknown version %q", majorMinor)
-	}
-	var features map[string]bool
-	features, ok = ps[patch]
-	if !ok {
-		return fmt.Errorf("unknown version %q", ver)
-	}
-	if e.InitialElectionTickAdvance {
-		added, exist := features["initial-election-tick-advance"]
-		if !exist || !added {
-			return fmt.Errorf("InitialElectionTickAdvance invalid for %q", ver)
-		}
-	}
-
 	return nil
 }
 
@@ -501,10 +502,6 @@ func NewDefault() *Config {
 }
 
 var (
-	reg               *regexp.Regexp
-	testerTag         string
-	testerClusterName string
-
 	// minimum recommended etcd versions to run in production is 3.1.11+, 3.2.10+, and 3.3.0+
 	// https://groups.google.com/forum/#!msg/etcd-dev/nZQl17RjxHQ/FkC_rZ_4AwAJT
 	minEtcdVer semver.Version
@@ -512,10 +509,6 @@ var (
 
 func init() {
 	var err error
-	reg, err = regexp.Compile("[^a-zA-Z]+")
-	if err != nil {
-		panic(err)
-	}
 	minEtcdVer, err = semver.Make("3.1.12")
 	if err != nil {
 		panic(err)

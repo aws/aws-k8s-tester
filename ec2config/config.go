@@ -219,7 +219,7 @@ var defaultConfig = Config{
 	UserName: "ec2-user",
 	Plugins: []string{
 		"update-amazon-linux-2",
-		"install-go1.11.1",
+		"install-go1.11.2",
 		"install-docker-amazon-linux-2",
 	},
 

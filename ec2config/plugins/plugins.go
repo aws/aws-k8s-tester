@@ -72,7 +72,7 @@ cat << EOT > /home/%s/.aws/credentials
 EOT`, userName, userName, string(d)),
 		}, nil
 
-	case plugin == "install-go1.11.1":
+	case plugin == "install-go1.11.2":
 		s, err := createInstallGo(goInfo{
 			UserName:  userName,
 			GoVersion: "1.11.1",
