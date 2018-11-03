@@ -170,17 +170,13 @@ func (md *embedded) Deploy() (err error) {
 			return err
 		}
 
-		out, err = sh.Run(
+		_, err = sh.Run(
 			fmt.Sprintf("sudo bash %s", remotePath),
 			ssh.WithRetry(100, 5*time.Second),
 			ssh.WithTimeout(3*time.Minute),
 		)
 		if err != nil {
 			return err
-		}
-
-		if md.cfg.LogDebug {
-			fmt.Printf("\n\noutput for %q:\n\n%s\n\n", id, string(out))
 		}
 
 		md.lg.Info("started", zap.String("id", id), zap.String("public-dns-name", iv.PublicDNSName))

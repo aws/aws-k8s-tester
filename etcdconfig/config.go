@@ -381,8 +381,6 @@ sudo mv /tmp/etcd.service /etc/systemd/system/etcd.service
 sudo systemctl daemon-reload
 sudo systemctl enable etcd.service
 sudo systemctl start etcd.service &
-
-sudo journalctl --no-pager -u etcd.service
 `
 
 /*
