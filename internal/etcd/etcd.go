@@ -2,11 +2,15 @@
 package etcd
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/etcdconfig"
 	"github.com/aws/aws-k8s-tester/etcdtester"
 	"github.com/aws/aws-k8s-tester/internal/ec2"
@@ -15,6 +19,7 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/zaputil"
 
 	"github.com/dustin/go-humanize"
+	"go.etcd.io/etcd/clientv3"
 	"go.uber.org/zap"
 )
 
@@ -121,7 +126,7 @@ func (md *embedded) Deploy() (err error) {
 			return err
 		}
 
-		md.lg.Info("ssh-ing", zap.String("id", id), zap.String("public-dns-name", iv.PublicDNSName))
+		md.lg.Info("starting", zap.String("id", id), zap.String("public-dns-name", iv.PublicDNSName))
 		var sh ssh.SSH
 		sh, err = ssh.New(ssh.Config{
 			Logger:        md.lg,
@@ -153,7 +158,7 @@ func (md *embedded) Deploy() (err error) {
 			ssh.WithTimeout(30*time.Second),
 		)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to send %q (%v)", string(out), err)
 		}
 
 		_, err = sh.Run(
@@ -173,25 +178,31 @@ func (md *embedded) Deploy() (err error) {
 		if err != nil {
 			return err
 		}
-		md.lg.Info("started etcd", zap.String("id", id))
 
-		if md.cfg.UploadTesterLogs {
-			var etcdLogPath string
-			etcdLogPath, err = fileutil.WriteTempFile(out)
-			if err != nil {
-				return err
-			}
-			err = md.ec2Deployer.UploadTesterLogs(etcdLogPath, fmt.Sprintf("%s-etcd.server.log", id))
-			md.lg.Info("uploaded etcd log", zap.Error(err))
+		if md.cfg.LogDebug || true { // TODO
+			fmt.Printf("\n\noutput for %q:\n\n%s\n\n", id, string(out))
 		}
 
-		md.lg.Info("ssh-ed", zap.String("id", id), zap.String("public-dns-name", iv.PublicDNSName))
+		md.lg.Info("started", zap.String("id", id), zap.String("public-dns-name", iv.PublicDNSName))
 	}
-
 	md.lg.Info("deployed etcd",
 		zap.String("initial-cluster", initialCluster),
 		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 	)
+
+	if md.cfg.UploadTesterLogs {
+		var fpathToS3Path map[string]string
+		fpathToS3Path, err = fetchLogs(
+			md.lg,
+			md.cfg.EC2.UserName,
+			md.cfg.ClusterName,
+			md.cfg.EC2.KeyPath,
+			md.cfg.EC2.Instances,
+		)
+		md.cfg.Logs = fpathToS3Path
+		err = md.uploadLogs()
+		md.lg.Info("uploaded", zap.Error(err))
+	}
 
 	return md.cfg.ValidateAndSetDefaults()
 }
@@ -199,8 +210,47 @@ func (md *embedded) Deploy() (err error) {
 func (md *embedded) CheckHealth() map[string]etcdtester.Health {
 	md.mu.RLock()
 	defer md.mu.RUnlock()
+	return md.checkHealth()
+}
 
-	return nil
+func (md *embedded) checkHealth() (hh map[string]etcdtester.Health) {
+	hh = make(map[string]etcdtester.Health, len(md.cfg.ClusterState))
+	for k, v := range md.cfg.ClusterState {
+		ep := v.AdvertiseClientURLs
+		health := etcdtester.Health{
+			Status: "",
+			Error:  nil,
+		}
+		cli, err := clientv3.New(clientv3.Config{
+			Endpoints: []string{ep},
+		})
+		if err != nil {
+			health.Status = fmt.Sprintf("status check for %q failed %v", ep, err)
+			health.Error = err
+		} else {
+			defer cli.Close()
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			sresp, serr := cli.Status(ctx, ep)
+			cancel()
+			if serr != nil {
+				health.Status = fmt.Sprintf("status check for %q failed %v", ep, serr)
+				health.Error = serr
+			} else {
+				health.Status = fmt.Sprintf("status check for %q: %+v", ep, sresp)
+				health.Error = nil
+			}
+		}
+		hh[k] = health
+	}
+	return hh
+}
+
+func (md *embedded) clientEps() (eps []string) {
+	eps = make([]string, 0, len(md.cfg.ClusterState))
+	for _, v := range md.cfg.ClusterState {
+		eps = append(eps, v.AdvertiseClientURLs)
+	}
+	return eps
 }
 
 func (md *embedded) IDToClientURL() (rm map[string]string) {
@@ -233,7 +283,7 @@ func (md *embedded) Terminate() error {
 	defer md.mu.Unlock()
 
 	if md.cfg.UploadTesterLogs {
-		md.getLogs()
+
 	}
 
 	return md.ec2Deployer.Delete()
@@ -253,45 +303,93 @@ func (md *embedded) MemberRemove(id string) error {
 	return nil
 }
 
-func (md *embedded) getLogs() (err error) {
-	md.lg.Info("getting etcd logs")
-	for id, iv := range md.cfg.ClusterState {
-		var svc string
-		svc, err = iv.Service()
-		if err != nil {
-			return err
-		}
-
-		md.lg.Info("ssh-ing", zap.String("id", id), zap.String("public-dns-name", iv.PublicDNSName))
-		var sh ssh.SSH
-		sh, err = ssh.New(ssh.Config{
-			Logger:        md.lg,
-			KeyPath:       iv.SSHPrivateKeyPath,
-			PublicIP:      iv.PublicIP,
-			PublicDNSName: iv.PublicDNSName,
-			UserName:      md.cfg.EC2.UserName,
-		})
-		if err != nil {
-			return err
-		}
-		if err = sh.Connect(); err != nil {
-			return err
-		}
-
-		out, err = sh.Run(
-			"sudo journalctl --output=cat -u etcd.service",
-			ssh.WithRetry(100, 5*time.Second),
-			ssh.WithTimeout(3*time.Minute),
-		)
-		if err != nil {
-			return err
-		}
-		var etcdLogPath string
-		etcdLogPath, err = fileutil.WriteTempFile(out)
-		if err != nil {
-			return err
-		}
-		err = md.ec2Deployer.UploadTesterLogs(etcdLogPath, fmt.Sprintf("%s-etcd.server.log", id))
+func (md *embedded) uploadLogs() (err error) {
+	ess := []string{}
+	for k, v := range md.cfg.Logs {
+		err = md.ec2Deployer.UploadToBucketForTests(k, v)
 		md.lg.Info("uploaded etcd log", zap.Error(err))
+		if err != nil {
+			ess = append(ess, err.Error())
+		}
 	}
+	return errors.New(strings.Join(ess, ", "))
+}
+
+// TODO: parallelize
+func fetchLogs(
+	lg *zap.Logger,
+	userName string,
+	clusterName string,
+	privateKeyPath string,
+	nodes []ec2config.Instance) (fpathToS3Path map[string]string, err error) {
+	fpathToS3Path = make(map[string]string)
+	for _, iv := range nodes {
+		var fm map[string]string
+		fm, err = fetchLog(lg, userName, clusterName, privateKeyPath, iv)
+		if err != nil {
+			return nil, err
+		}
+		for k, v := range fm {
+			fpathToS3Path[k] = v
+		}
+	}
+	return fpathToS3Path, nil
+}
+
+// TODO: get more system level logs, disk stats?
+func fetchLog(
+	lg *zap.Logger,
+	userName string,
+	clusterName string,
+	privateKeyPath string,
+	inst ec2config.Instance) (fpathToS3Path map[string]string, err error) {
+	id, ip := inst.InstanceID, inst.PublicIP
+
+	var sh ssh.SSH
+	sh, err = ssh.New(ssh.Config{
+		Logger:        lg,
+		KeyPath:       privateKeyPath,
+		UserName:      userName,
+		PublicIP:      inst.PublicIP,
+		PublicDNSName: inst.PublicDNSName,
+	})
+	if err != nil {
+		lg.Warn(
+			"failed to create SSH",
+			zap.String("instance-id", id),
+			zap.String("public-ip", ip),
+			zap.Error(err),
+		)
+		return nil, err
+	}
+
+	if err = sh.Connect(); err != nil {
+		lg.Warn(
+			"failed to connect",
+			zap.String("instance-id", id),
+			zap.String("public-ip", ip),
+			zap.Error(err),
+		)
+		return nil, err
+	}
+
+	var out []byte
+	out, err = sh.Run(
+		"sudo journalctl --output=cat -u etcd.service",
+		ssh.WithRetry(100, 5*time.Second),
+		ssh.WithTimeout(3*time.Minute),
+	)
+	if err != nil {
+		return nil, err
+	}
+	var etcdLogPath string
+	etcdLogPath, err = fileutil.WriteTempFile(out)
+	if err != nil {
+		return nil, err
+	}
+
+	lg.Info("downloaded etcd log", zap.String("path", etcdLogPath))
+	fpathToS3Path = make(map[string]string)
+	fpathToS3Path[etcdLogPath] = fmt.Sprintf("%s/%s-etcd.server.log", clusterName, id)
+	return fpathToS3Path, nil
 }

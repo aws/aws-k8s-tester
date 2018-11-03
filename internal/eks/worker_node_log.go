@@ -302,7 +302,6 @@ func fetchWorkerNodeLogs(
 	privateKeyPath string,
 	workerNodes []ec2config.Instance) (fpathToS3Path map[string]string, err error) {
 	fpathToS3Path = make(map[string]string)
-
 	// TODO: parallelize
 	for _, iv := range workerNodes {
 		var fm map[string]string
@@ -314,6 +313,5 @@ func fetchWorkerNodeLogs(
 			fpathToS3Path[k] = v
 		}
 	}
-
 	return fpathToS3Path, nil
 }

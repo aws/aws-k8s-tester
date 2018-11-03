@@ -60,6 +60,9 @@ type Config struct {
 	LogOutputToUploadPathBucket string `json:"log-output-to-upload-path-bucket,omitempty"`
 	LogOutputToUploadPathURL    string `json:"log-output-to-upload-path-url,omitempty"`
 
+	// Logs is a list of etcd node log file paths, fetched via SSH.
+	Logs map[string]string `json:"logs,omitempty"`
+
 	// UploadTesterLogs is true to auto-upload log files.
 	UploadTesterLogs bool `json:"upload-tester-logs"`
 

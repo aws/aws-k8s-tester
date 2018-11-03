@@ -317,11 +317,11 @@ func (sh *ssh) Send(localPath, remotePath string, opts ...OpOption) (out []byte,
 	scpPath, err = scpCmd.LookPath("scp")
 	if err != nil {
 		cancel()
-		return err
+		return nil, err
 	}
 	if err = os.Chmod(sh.cfg.KeyPath, 0400); err != nil {
 		cancel()
-		return err
+		return nil, err
 	}
 
 	cmd := scpCmd.CommandContext(ctx,
@@ -331,7 +331,6 @@ func (sh *ssh) Send(localPath, remotePath string, opts ...OpOption) (out []byte,
 		localPath,
 		fmt.Sprintf("%s@%s:%s", sh.cfg.UserName, sh.cfg.PublicDNSName, remotePath),
 	)
-	var out []byte
 	out, err = cmd.CombinedOutput()
 	cancel()
 
@@ -397,11 +396,11 @@ func (sh *ssh) Download(remotePath, localPath string, opts ...OpOption) (out []b
 	scpPath, err = scpCmd.LookPath("scp")
 	if err != nil {
 		cancel()
-		return err
+		return nil, err
 	}
 	if err = os.Chmod(sh.cfg.KeyPath, 0400); err != nil {
 		cancel()
-		return err
+		return nil, err
 	}
 	cmd := scpCmd.CommandContext(ctx,
 		scpPath,
@@ -410,7 +409,6 @@ func (sh *ssh) Download(remotePath, localPath string, opts ...OpOption) (out []b
 		fmt.Sprintf("%s@%s:%s", sh.cfg.UserName, sh.cfg.PublicDNSName, remotePath),
 		localPath,
 	)
-	var out []byte
 	out, err = cmd.CombinedOutput()
 	cancel()
 
