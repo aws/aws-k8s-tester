@@ -87,10 +87,11 @@ func testIntegrationFunc(cmd *cobra.Command, args []string) {
 	cfg.IngressCIDRs = map[int64]string{22: "0.0.0.0/0"}
 	cfg.Plugins = []string{
 		"update-amazon-linux-2",
-		"mount-aws-cred-AWS_SHARED_CREDENTIALS_FILE",
+		"set-env-aws-cred-AWS_SHARED_CREDENTIALS_FILE",
 		"install-go1.11.2",
 		"install-csi-" + branchOrPR,
 	}
+	cfg.Wait = true
 	var ec ec2.Deployer
 	ec, err = ec2.NewDeployer(cfg)
 	if err != nil {
@@ -132,84 +133,8 @@ func testIntegrationFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	var out []byte
-
-	timer := time.NewTimer(timeout)
-
-ready:
-	for {
-		select {
-		case <-timer.C:
-			fmt.Fprintf(os.Stderr, "test timed out (%v)\n", timeout)
-			if terminateOnExit {
-				ec.Delete()
-			} else {
-				fmt.Println(ec.GenerateSSHCommands())
-			}
-			os.Exit(1)
-
-		default:
-			out, err = sh.Run(
-				"tail -10 /var/log/cloud-init-output.log",
-				ssh.WithRetry(100, 5*time.Second),
-				ssh.WithTimeout(30*time.Second),
-			)
-			if err != nil {
-				lg.Warn("failed to fetch cloud-init-output.log", zap.Error(err))
-				sh.Close()
-				if serr := sh.Connect(); serr != nil {
-					fmt.Fprintf(os.Stderr, "failed to connect SSH (%v)\n", serr)
-					if terminateOnExit {
-						ec.Delete()
-					} else {
-						fmt.Println(ec.GenerateSSHCommands())
-					}
-					os.Exit(1)
-				}
-				time.Sleep(7 * time.Second)
-				continue
-			}
-
-			fmt.Printf("\n\n%s\n\n", string(out))
-
-			if ec2.IsReady(string(out)) {
-				lg.Info("cloud-init-output.log READY!")
-				break ready
-			}
-
-			lg.Info("cloud-init-output NOT READY")
-			time.Sleep(7 * time.Second)
-		}
-	}
-
-	out, err = sh.Run(
-		"cat /etc/environment",
-		ssh.WithRetry(30, 5*time.Second),
-		ssh.WithTimeout(30*time.Second),
-	)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to read /etc/environment (%v)\n", err)
-		if terminateOnExit {
-			ec.Delete()
-		} else {
-			fmt.Println(ec.GenerateSSHCommands())
-		}
-		os.Exit(1)
-	}
-
-	env := ""
-	for _, line := range strings.Split(string(out), "\n") {
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
-		}
-		env += line + " "
-	}
-
-	testCmd := fmt.Sprintf(`cd /home/%s/go/src/github.com/kubernetes-sigs/aws-ebs-csi-driver \
-  && sudo sh -c '%s make test-integration'
-`, cfg.UserName, env)
-	out, err = sh.Run(
+	testCmd := fmt.Sprintf(`cd /home/%s/go/src/github.com/kubernetes-sigs/aws-ebs-csi-driver && sudo sh -c 'source /home/%s/.bashrc && make test-integration'`, cfg.UserName, cfg.UserName)
+	out, err := sh.Run(
 		testCmd,
 		ssh.WithTimeout(10*time.Minute),
 	)

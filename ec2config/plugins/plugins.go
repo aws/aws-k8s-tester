@@ -33,15 +33,16 @@ func (ss scripts) Less(i, j int) bool { return keyPriorities[ss[i].key] < keyPri
 var keyPriorities = map[string]int{ // in the order of:
 	"update-amazon-linux-2":         1,
 	"update-ubuntu":                 2,
-	"mount-aws-cred":                3, // TODO: use instance role instead
-	"install-go":                    4,
-	"install-csi":                   5,
-	"install-etcd":                  6,
-	"install-wrk":                   7,
-	"install-alb":                   8,
-	"install-kubeadm-ubuntu":        9,
-	"install-docker-amazon-linux-2": 10,
-	"install-docker-ubuntu":         11,
+	"set-env-aws-cred":              3, // TODO: use instance role instead
+	"mount-aws-cred":                4, // TODO: use instance role instead
+	"install-go":                    5,
+	"install-csi":                   6,
+	"install-etcd":                  7,
+	"install-wrk":                   8,
+	"install-alb":                   9,
+	"install-kubeadm-ubuntu":        10,
+	"install-docker-amazon-linux-2": 11,
+	"install-docker-ubuntu":         12,
 }
 
 func convertToScript(userName, plugin string) (script, error) {
@@ -51,6 +52,45 @@ func convertToScript(userName, plugin string) (script, error) {
 
 	case plugin == "update-ubuntu":
 		return script{key: "update-ubuntu", data: updateUbuntu}, nil
+
+	case strings.HasPrefix(plugin, "set-env-aws-cred-"):
+		// TODO: use instance role instead
+		env := strings.Replace(plugin, "set-env-aws-cred-", "", -1)
+		if os.Getenv(env) == "" {
+			return script{}, fmt.Errorf("%q is not defined", env)
+		}
+		d, derr := ioutil.ReadFile(os.Getenv(env))
+		if derr != nil {
+			return script{}, derr
+		}
+		lines := strings.Split(string(d), "\n")
+		prevDefault := false
+		accessKey, accessSecret := "", ""
+		for _, line := range lines {
+			line = strings.TrimSpace(line)
+			if line == "" {
+				continue
+			}
+			if line == "[default]" {
+				prevDefault = true
+				continue
+			}
+			if prevDefault {
+				if strings.HasPrefix(line, "aws_access_key_id = ") {
+					accessKey = strings.Replace(line, "aws_access_key_id = ", "", -1)
+				}
+				if strings.HasPrefix(line, "aws_secret_access_key = ") {
+					accessSecret = strings.Replace(line, "aws_secret_access_key = ", "", -1)
+					break
+				}
+			}
+		}
+		return script{
+			key: "set-env-aws-cred",
+			data: fmt.Sprintf(`echo "export AWS_ACCESS_KEY_ID=%s" >> /home/%s/.bashrc
+echo "export AWS_SECRET_ACCESS_KEY=%s" >> /home/%s/.bashrc
+`, accessKey, userName, accessSecret, userName),
+		}, nil
 
 	case strings.HasPrefix(plugin, "mount-aws-cred-"):
 		// TODO: use instance role instead
