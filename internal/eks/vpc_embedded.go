@@ -38,10 +38,6 @@ func (md *embedded) createVPC() error {
 		Tags: []*cloudformation.Tag{
 			{
 				Key:   aws.String("Name"),
-				Value: aws.String(md.cfg.Tag + "-vpc"),
-			},
-			{
-				Key:   aws.String("ClusterName"),
 				Value: aws.String(md.cfg.ClusterName),
 			},
 			{

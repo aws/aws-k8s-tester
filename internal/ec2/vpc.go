@@ -34,7 +34,7 @@ func (md *embedded) createVPC() (err error) {
 		Tags: []*ec2.Tag{
 			{
 				Key:   aws.String("Name"),
-				Value: aws.String(md.cfg.Tag),
+				Value: aws.String(md.cfg.ClusterName),
 			},
 			{
 				Key:   aws.String("HOSTNAME"),
