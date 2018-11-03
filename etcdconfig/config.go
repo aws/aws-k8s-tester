@@ -530,7 +530,7 @@ func init() {
 	defaultConfig.EC2.Wait = true
 	defaultConfig.EC2.Tag = defaultConfig.Tag
 	defaultConfig.EC2.ClusterName = defaultConfig.ClusterName
-	defaultConfig.EC2.IngressTCPPorts = []int64{2379, 2380}
+	defaultConfig.EC2.IngressTCPPorts = []int64{22, 2379, 2380}
 }
 
 // genTag generates a tag for cluster name, CloudFormation, and S3 bucket.
