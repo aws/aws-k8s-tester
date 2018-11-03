@@ -34,11 +34,11 @@ func (md *embedded) createSecurityGroup() (err error) {
 		zap.Strings("group-id", md.cfg.SecurityGroupIDs),
 	)
 
-	for _, port := range []int64{22, 80, 443} {
+	for _, port := range md.cfg.IngressTCPPorts {
 		_, err = md.ec2.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
 			GroupId:    output.GroupId,
 			IpProtocol: aws.String("tcp"),
-			CidrIp:     aws.String("0.0.0.0/0"),
+			CidrIp:     aws.String("0.0.0.0/0"), // TODO: CIDR within VPC
 			FromPort:   aws.Int64(port),
 			ToPort:     aws.Int64(port),
 		})

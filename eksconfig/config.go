@@ -884,6 +884,8 @@ func (cfg *Config) UpdateFromEnvs() error {
 		}
 		sv := os.Getenv(env)
 
+		fieldName := tp1.Field(i).Name
+
 		switch vv1.Field(i).Type().Kind() {
 		case reflect.String:
 			vv1.Field(i).SetString(sv)
@@ -896,7 +898,7 @@ func (cfg *Config) UpdateFromEnvs() error {
 			vv1.Field(i).SetBool(bb)
 
 		case reflect.Int, reflect.Int32, reflect.Int64:
-			if tp1.Field(i).Name == "WaitBeforeDown" {
+			if fieldName == "WaitBeforeDown" {
 				dv, err := time.ParseDuration(sv)
 				if err != nil {
 					return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)

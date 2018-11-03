@@ -302,6 +302,7 @@ func (e *ETCD) Flags() (flags []string, err error) {
 		if _, ok := skipFlags[fieldName]; ok {
 			continue
 		}
+
 		switch vv.Field(i).Type().Kind() {
 		case reflect.String:
 			flags = append(flags, fmt.Sprintf("--%s=%s", k, vv.Field(i).String()))
@@ -529,6 +530,7 @@ func init() {
 	defaultConfig.EC2.Wait = true
 	defaultConfig.EC2.Tag = defaultConfig.Tag
 	defaultConfig.EC2.ClusterName = defaultConfig.ClusterName
+	defaultConfig.EC2.IngressTCPPorts = []int64{2379, 2380}
 }
 
 // genTag generates a tag for cluster name, CloudFormation, and S3 bucket.

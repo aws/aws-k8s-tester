@@ -113,6 +113,9 @@ type Config struct {
 	SubnetIDs                  []string          `json:"subnet-ids,omitempty"`
 	SubnetIDToAvailibilityZone map[string]string `json:"subnet-id-to-availability-zone,omitempty"` // read-only to user
 
+	// IngressTCPPorts is a list of TCP port to open within VPC security group.
+	IngressTCPPorts []int64 `json:"ingress-tcp-ports,omitempty"`
+
 	// SecurityGroupIDs is the list of security group IDs.
 	// Leave empty to create a temporary one.
 	SecurityGroupIDs []string `json:"security-group-ids,omitempty"`
@@ -234,7 +237,8 @@ var defaultConfig = Config{
 
 	AssociatePublicIPAddress: true,
 
-	Wait: false,
+	IngressTCPPorts: []int64{22, 80, 443},
+	Wait:            false,
 }
 
 const envPfx = "AWS_K8S_TESTER_EC2_"
@@ -243,9 +247,9 @@ const envPfx = "AWS_K8S_TESTER_EC2_"
 func (cfg *Config) UpdateFromEnvs() error {
 	cc := *cfg
 
-	tp1, vv1 := reflect.TypeOf(&cc).Elem(), reflect.ValueOf(&cc).Elem()
-	for i := 0; i < tp1.NumField(); i++ {
-		jv := tp1.Field(i).Tag.Get("json")
+	tp, vv := reflect.TypeOf(&cc).Elem(), reflect.ValueOf(&cc).Elem()
+	for i := 0; i < tp.NumField(); i++ {
+		jv := tp.Field(i).Tag.Get("json")
 		if jv == "" {
 			continue
 		}
@@ -258,48 +262,70 @@ func (cfg *Config) UpdateFromEnvs() error {
 		}
 		sv := os.Getenv(env)
 
-		switch vv1.Field(i).Type().Kind() {
+		fieldName := tp.Field(i).Name
+
+		switch vv.Field(i).Type().Kind() {
 		case reflect.String:
-			vv1.Field(i).SetString(sv)
+			vv.Field(i).SetString(sv)
 
 		case reflect.Bool:
 			bb, err := strconv.ParseBool(sv)
 			if err != nil {
 				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
 			}
-			vv1.Field(i).SetBool(bb)
+			vv.Field(i).SetBool(bb)
 
 		case reflect.Int, reflect.Int32, reflect.Int64:
 			iv, err := strconv.ParseInt(sv, 10, 64)
 			if err != nil {
 				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
 			}
-			vv1.Field(i).SetInt(iv)
+			vv.Field(i).SetInt(iv)
 
 		case reflect.Uint, reflect.Uint32, reflect.Uint64:
 			iv, err := strconv.ParseUint(sv, 10, 64)
 			if err != nil {
 				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
 			}
-			vv1.Field(i).SetUint(iv)
+			vv.Field(i).SetUint(iv)
 
 		case reflect.Float32, reflect.Float64:
 			fv, err := strconv.ParseFloat(sv, 64)
 			if err != nil {
 				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
 			}
-			vv1.Field(i).SetFloat(fv)
+			vv.Field(i).SetFloat(fv)
 
 		case reflect.Slice:
 			ss := strings.Split(sv, ",")
-			slice := reflect.MakeSlice(reflect.TypeOf([]string{}), len(ss), len(ss))
-			for i := range ss {
-				slice.Index(i).SetString(ss[i])
+
+			switch fieldName {
+			case "Plugins",
+				"SubnetIDs",
+				"SecurityGroupIDs":
+				slice := reflect.MakeSlice(reflect.TypeOf([]string{}), len(ss), len(ss))
+				for i := range ss {
+					slice.Index(i).SetString(ss[i])
+				}
+				vv.Field(i).Set(slice)
+
+			case "IngressTCPPorts":
+				slice := reflect.MakeSlice(reflect.TypeOf([]int64{}), len(ss), len(ss))
+				for i := range ss {
+					nv, nerr := strconv.ParseInt(ss[i], 10, 64)
+					if nerr != nil {
+						return fmt.Errorf("failed to parse IngressTCPPort %s (%v)", ss[i], nerr)
+					}
+					slice.Index(i).SetInt(nv)
+				}
+				vv.Field(i).Set(slice)
+
+			default:
+				return fmt.Errorf("parsing field name %q not supported", fieldName)
 			}
-			vv1.Field(i).Set(slice)
 
 		default:
-			return fmt.Errorf("%q (%v) is not supported as an env", env, vv1.Field(i).Type())
+			return fmt.Errorf("%q (%v) is not supported as an env", env, vv.Field(i).Type())
 		}
 	}
 	*cfg = cc

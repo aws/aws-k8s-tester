@@ -23,6 +23,7 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EC2_SUBNET_IDS", "a,b,c")
 	os.Setenv("AWS_K8S_TESTER_EC2_SECURITY_GROUP_IDS", "d,e,f")
 	os.Setenv("AWS_K8S_TESTER_EC2_WAIT", "true")
+	os.Setenv("AWS_K8S_TESTER_EC2_INGRESS_TCP_PORTS", "22,80,443")
 
 	defer func() {
 		os.Unsetenv("AWS_K8S_TESTER_EC2_COUNT")
@@ -39,6 +40,7 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWS_K8S_TESTER_EC2_SUBNET_IDS")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_SECURITY_GROUP_IDS")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_WAIT")
+		os.Unsetenv("AWS_K8S_TESTER_EC2_INGRESS_TCP_PORTS")
 	}()
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
@@ -86,5 +88,8 @@ func TestEnv(t *testing.T) {
 	}
 	if !cfg.Wait {
 		t.Fatalf("Wait expected true, got %v", cfg.Wait)
+	}
+	if !reflect.DeepEqual(cfg.IngressTCPPorts, []int64{22, 80, 443}) {
+		t.Fatalf("IngressTCPPorts expected %v, got %v", []int64{22, 80, 443}, cfg.IngressTCPPorts)
 	}
 }
