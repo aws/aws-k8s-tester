@@ -380,7 +380,7 @@ sudo mv /tmp/etcd.service /etc/systemd/system/etcd.service
 
 # to start service
 sudo systemctl daemon-reload
-sudo systemctl cat etcd.service
+# sudo systemctl cat etcd.service
 sudo systemctl enable etcd.service
 sudo systemctl start etcd.service
 
