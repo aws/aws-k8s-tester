@@ -530,7 +530,7 @@ func init() {
 	defaultConfig.EC2.Wait = true
 	defaultConfig.EC2.Tag = defaultConfig.Tag
 	defaultConfig.EC2.ClusterName = defaultConfig.ClusterName
-	defaultConfig.EC2.IngressTCPPorts = []int64{22, 2379, 2380}
+	defaultConfig.EC2.IngressTCPPorts = etcdPorts
 }
 
 // genTag generates a tag for cluster name, CloudFormation, and S3 bucket.
@@ -775,6 +775,8 @@ func (cfg *Config) UpdateFromEnvs() error {
 	return nil
 }
 
+var etcdPorts = []int64{22, 2379, 2380}
+
 // ValidateAndSetDefaults returns an error for invalid configurations.
 // And updates empty fields with default values.
 // At the end, it writes populated YAML to aws-k8s-tester config path.
@@ -788,6 +790,16 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 	}
 	if err = cfg.EC2.ValidateAndSetDefaults(); err != nil {
 		return err
+	}
+	pm := make(map[int64]struct{})
+	for _, p := range cfg.EC2.IngressTCPPorts {
+		pm[p] = struct{}{}
+	}
+	for _, p := range etcdPorts {
+		_, ok := pm[p]
+		if !ok {
+			return fmt.Errorf("etcd expects port %d but not found from %v", p, cfg.EC2.IngressTCPPorts)
+		}
 	}
 
 	// expect
