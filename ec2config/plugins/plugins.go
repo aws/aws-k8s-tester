@@ -38,11 +38,12 @@ var keyPriorities = map[string]int{ // in the order of:
 	"install-go":                    5,
 	"install-csi":                   6,
 	"install-etcd":                  7,
-	"install-wrk":                   8,
-	"install-alb":                   9,
-	"install-kubeadm-ubuntu":        10,
-	"install-docker-amazon-linux-2": 11,
-	"install-docker-ubuntu":         12,
+	"install-aws-k8s-tester":        8,
+	"install-wrk":                   9,
+	"install-alb":                   10,
+	"install-kubeadm-ubuntu":        11,
+	"install-docker-amazon-linux-2": 12,
+	"install-docker-ubuntu":         13,
 }
 
 func convertToScript(userName, plugin string) (script, error) {
@@ -185,6 +186,20 @@ ETCDCTL_API=3 etcdctl version`,
 			return script{}, err
 		}
 		return script{key: "install-etcd", data: s}, nil
+
+	case plugin == "install-aws-k8s-tester":
+		s, err := createInstallGit(gitInfo{
+			GitRepo:       "aws-k8s-tester",
+			GitClonePath:  "${GOPATH}/src/github.com/aws",
+			GitCloneURL:   "https://github.com/aws/aws-k8s-tester.git",
+			IsPR:          false,
+			GitBranch:     "master",
+			InstallScript: `make build && sudo cp ./aws-k8s-tester /usr/local/bin/aws-k8s-tester`,
+		})
+		if err != nil {
+			return script{}, err
+		}
+		return script{key: "install-aws-k8s-tester", data: s}, nil
 
 	case plugin == "install-wrk":
 		return script{
