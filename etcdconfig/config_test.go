@@ -78,7 +78,7 @@ func TestValidateAndSetDefaults(t *testing.T) {
 func TestEnv(t *testing.T) {
 	cfg := NewDefault()
 
-	os.Setenv("AWS_K8S_TESTER_EC2_COUNT", "100")
+	os.Setenv("AWS_K8S_TESTER_EC2_CLUSTER_SIZE", "100")
 	os.Setenv("AWS_K8S_TESTER_ETCD_TAG", "my-test")
 	os.Setenv("AWS_K8S_TESTER_ETCD_CLUSTER_NAME", "my-cluster")
 	os.Setenv("AWS_K8S_TESTER_ETCD_DOWN", "false")
@@ -89,6 +89,7 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_ETCD_CLUSTER_TOP_LEVEL", "true")
 
 	defer func() {
+		os.Unsetenv("AWS_K8S_TESTER_EC2_CLUSTER_SIZE")
 		os.Unsetenv("AWS_K8S_TESTER_ETCD_TAG")
 		os.Unsetenv("AWS_K8S_TESTER_ETCD_CLUSTER_NAME")
 		os.Unsetenv("AWS_K8S_TESTER_ETCD_DOWN")
@@ -103,8 +104,8 @@ func TestEnv(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if cfg.EC2.Count != 100 {
-		t.Fatalf("EC2.Count expected 100, got %d", cfg.EC2.Count)
+	if cfg.EC2.ClusterSize != 100 {
+		t.Fatalf("EC2.ClusterSize expected 100, got %d", cfg.EC2.ClusterSize)
 	}
 	if cfg.Tag != "my-test" {
 		t.Fatalf("unexpected Tag, got %q", cfg.Tag)

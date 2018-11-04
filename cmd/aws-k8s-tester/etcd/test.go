@@ -57,7 +57,8 @@ func testStatusFunc(cmd *cobra.Command, args []string) {
 			Status:    "",
 			OK:        false,
 		}
-		cli, err := clientv3.New(clientv3.Config{
+		var cli *clientv3.Client
+		cli, err = clientv3.New(clientv3.Config{
 			Endpoints: []string{ep},
 		})
 		if err != nil {
