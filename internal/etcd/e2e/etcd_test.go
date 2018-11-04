@@ -19,8 +19,6 @@ func TestETCD(t *testing.T) {
 	}
 
 	cfg := etcdconfig.NewDefault()
-	cfg.LogDebug = true
-
 	tester, err := etcd.NewTester(cfg)
 	if err != nil {
 		t.Fatal(err)
@@ -31,7 +29,7 @@ func TestETCD(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	fmt.Printf("%+v\n", tester.CheckHealth())
+	fmt.Printf("%+v\n", tester.Check())
 
 	time.Sleep(cfg.WaitBeforeDown)
 
