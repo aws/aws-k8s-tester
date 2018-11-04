@@ -34,7 +34,7 @@ func TestETCD(t *testing.T) {
 	fmt.Printf("EC2 SSH:\n%s\n\n", cfg.EC2.SSHCommands())
 	fmt.Printf("EC2Bastion SSH:\n%s\n\n", cfg.EC2Bastion.SSHCommands())
 
-	fmt.Printf("%+v\n", tester.Check())
+	fmt.Printf("%+v\n", tester.CheckHealth())
 
 	notifier := make(chan os.Signal, 1)
 	signal.Notify(notifier, syscall.SIGINT, syscall.SIGTERM)

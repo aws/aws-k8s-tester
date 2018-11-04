@@ -84,7 +84,7 @@ func createClusterFunc(cmd *cobra.Command, args []string) {
 		fmt.Fprintf(os.Stderr, "failed to create instances %v\n", err)
 		os.Exit(1)
 	}
-	fmt.Printf("%+v\n", tester.Check())
+	fmt.Printf("%+v\n", tester.CheckHealth())
 
 	fmt.Printf("EC2 SSH:\n%s\n\n", cfg.EC2.SSHCommands())
 	fmt.Printf("EC2Bastion SSH:\n%s\n\n", cfg.EC2Bastion.SSHCommands())

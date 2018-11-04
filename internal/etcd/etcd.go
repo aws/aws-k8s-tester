@@ -197,7 +197,7 @@ func (md *embedded) Create() (err error) {
 
 	ready := 0
 	for i := 0; i < 10; i++ {
-		c := md.check()
+		c := md.checkHealth()
 		for id, v := range c.Members {
 			md.lg.Info("counting status", zap.String("id", id), zap.String("status", v.Status))
 			if v.OK {
@@ -232,13 +232,13 @@ func (md *embedded) Create() (err error) {
 	return nil
 }
 
-func (md *embedded) Check() etcdtester.Cluster {
+func (md *embedded) CheckHealth() etcdtester.Cluster {
 	md.mu.RLock()
 	defer md.mu.RUnlock()
-	return md.check()
+	return md.checkHealth()
 }
 
-func (md *embedded) check() (c etcdtester.Cluster) {
+func (md *embedded) checkHealth() (c etcdtester.Cluster) {
 	c.Members = make(map[string]etcdtester.Member, len(md.cfg.ClusterState))
 	for k, v := range md.cfg.ClusterState {
 		c.Members[k] = etcdtester.Member{

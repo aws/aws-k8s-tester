@@ -4,17 +4,16 @@ package etcdtester
 // Tester defines etcd specific operations.
 type Tester interface {
 	Deployer
-
-	// Check checks the cluster status.
-	Check() Cluster
 }
 
 // Deployer defines etcd deployer.
 type Deployer interface {
 	// Create starts the etcd cluster the very first time.
 	Create() error
-	// Cluster returns the cluster information.
+	// Cluster returns the cluster information without health check.
 	Cluster() Cluster
+	// CheckHealth checks the cluster status with '/health' endpoints.
+	CheckHealth() Cluster
 	// Stop stops the specified node.
 	Stop(id string) error
 	// Restart restarts the specified node.
