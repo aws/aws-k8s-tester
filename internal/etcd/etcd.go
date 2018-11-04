@@ -358,6 +358,8 @@ func (md *embedded) CheckStatus() (c etcdtester.Cluster) {
 }
 
 func (md *embedded) checkStatus() (c etcdtester.Cluster) {
+	md.cfg.Sync()
+
 	c.Members = make(map[string]etcdtester.Member, len(md.cfg.ClusterState))
 	for id, v := range md.cfg.ClusterState {
 		c.Members[id] = etcdtester.Member{
