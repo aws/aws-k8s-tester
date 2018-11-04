@@ -430,10 +430,10 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 //
 // Example usage:
 //
-//	import "github.com/aws/aws-k8s-tester/internal/ec2/config"
-//	cfg := config.Load("test.yaml")
+//  import "github.com/aws/aws-k8s-tester/internal/ec2/config"
+//  cfg := config.Load("test.yaml")
 //  p, err := cfg.BackupConfig()
-//	err = cfg.ValidateAndSetDefaults()
+//  err = cfg.ValidateAndSetDefaults()
 //
 // Do not set default values in this function.
 // "ValidateAndSetDefaults" must be called separately,
