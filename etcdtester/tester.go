@@ -5,22 +5,16 @@ package etcdtester
 type Tester interface {
 	Deployer
 
-	// CheckHealth checks the health endpoints.
-	CheckHealth() map[string]Health
-}
-
-// Health is the health status of an etcd node.
-type Health struct {
-	Status string
-	Error  error
+	// Check checks the cluster status.
+	Check() Cluster
 }
 
 // Deployer defines etcd deployer.
 type Deployer interface {
 	// Deploy starts the etcd cluster the very first time.
 	Deploy() error
-	// IDToClientURL returns the map from ID to client URL.
-	IDToClientURL() map[string]string
+	// Cluster returns the cluster information.
+	Cluster() Cluster
 	// Stop stops the specified node.
 	Stop(id string) error
 	// Restart restarts the specified node.
@@ -31,4 +25,17 @@ type Deployer interface {
 	MemberAdd(id string) error
 	// MemberRemove removes a member from the cluster.
 	MemberRemove(id string) error
+}
+
+// Cluster is the cluster state.
+type Cluster struct {
+	Members map[string]Member `json:"members"`
+}
+
+// Member is the member status information.
+type Member struct {
+	ID        string `json:"id"`
+	ClientURL string `json:"client-url"`
+	Status    string `json:"status"`
+	OK        bool   `json:"ok"`
 }

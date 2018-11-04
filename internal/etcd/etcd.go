@@ -2,7 +2,6 @@
 package etcd
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -199,10 +198,10 @@ func (md *embedded) Deploy() (err error) {
 
 	ready := 0
 	for i := 0; i < 10; i++ {
-		hh := md.checkHealth()
-		for k, v := range hh {
-			md.lg.Info("status", zap.String("id", k), zap.String("status", fmt.Sprintf("%+v", v)))
-			if v.Error == nil {
+		c := md.check()
+		for id, v := range c.Members {
+			md.lg.Info("counting status", zap.String("id", id), zap.String("status", v.Status))
+			if v.OK {
 				ready++
 			}
 		}
@@ -234,14 +233,20 @@ func (md *embedded) Deploy() (err error) {
 	return nil
 }
 
-func (md *embedded) CheckHealth() map[string]etcdtester.Health {
+func (md *embedded) Check() etcdtester.Cluster {
 	md.mu.RLock()
 	defer md.mu.RUnlock()
-	return md.checkHealth()
+	return md.check()
 }
 
-func (md *embedded) checkHealth() (hh map[string]etcdtester.Health) {
-	hh = make(map[string]etcdtester.Health, len(md.cfg.ClusterState))
+func (md *embedded) check() (c etcdtester.Cluster) {
+	c.Members = make(map[string]etcdtester.Member, len(md.cfg.ClusterState))
+	for k, v := range md.cfg.ClusterState {
+		c.Members[k] = etcdtester.Member{
+			ID:        k,
+			ClientURL: v.AdvertiseClientURLs,
+		}
+	}
 
 	var iv ec2config.Instance
 	for _, v := range md.cfg.EC2Bastion.Instances {
@@ -260,13 +265,19 @@ func (md *embedded) checkHealth() (hh map[string]etcdtester.Health) {
 			"failed to create SSH",
 			zap.Error(err),
 		)
-		for k := range md.cfg.ClusterState {
-			hh[k] = etcdtester.Health{
-				Status: fmt.Sprintf("failed to create SSH to bastion (%v)", err),
-				Error:  err,
+		for id := range md.cfg.ClusterState {
+			vv, ok := c.Members[id]
+			vv.ID = id
+			if !ok {
+				vv.Status = fmt.Sprintf("%s not found", id)
+				vv.OK = false
+			} else {
+				vv.Status = fmt.Sprintf("failed to create SSH to bastion (%v)", err)
+				vv.OK = false
 			}
+			c.Members[id] = vv
 		}
-		return hh
+		return c
 	}
 
 	if err = sh.Connect(); err != nil {
@@ -274,20 +285,34 @@ func (md *embedded) checkHealth() (hh map[string]etcdtester.Health) {
 			"failed to connect SSH",
 			zap.Error(err),
 		)
-		for k := range md.cfg.ClusterState {
-			hh[k] = etcdtester.Health{
-				Status: fmt.Sprintf("failed to create SSH to bastion (%v)", err),
-				Error:  err,
+		for id := range md.cfg.ClusterState {
+			vv, ok := c.Members[id]
+			vv.ID = id
+			if !ok {
+				vv.Status = fmt.Sprintf("%s not found", id)
+				vv.OK = false
+			} else {
+				vv.Status = fmt.Sprintf("failed to connect SSH to bastion (%v)", err)
+				vv.OK = false
 			}
+			c.Members[id] = vv
 		}
-		return hh
+		return c
 	}
 
-	for k, v := range md.cfg.ClusterState {
+	for id, v := range md.cfg.ClusterState {
 		ep := v.AdvertiseClientURLs
-		health := etcdtester.Health{
-			Status: "",
-			Error:  nil,
+		vv, ok := c.Members[id]
+		vv.ID = id
+		vv.ClientURL = ep
+		if !ok {
+			vv.Status = fmt.Sprintf("%s not found", id)
+			vv.OK = false
+			c.Members[id] = vv
+			continue
+		} else {
+			vv.Status = fmt.Sprintf("failed to connect SSH to bastion (%v)", err)
+			vv.OK = false
 		}
 
 		var out []byte
@@ -297,60 +322,33 @@ func (md *embedded) checkHealth() (hh map[string]etcdtester.Health) {
 			ssh.WithTimeout(5*time.Second),
 		)
 		if err != nil {
-			health.Status = fmt.Sprintf("status check for %q failed %v", ep, err)
-			health.Error = err
+			vv.Status = fmt.Sprintf("status check for %q failed %v", ep, err)
+			vv.OK = false
 		} else {
-			health.Status = string(out)
-			health.Error = nil
+			vv.Status = string(out)
+			vv.OK = true
 		}
 
-		hh[k] = health
+		c.Members[id] = vv
 	}
-	return hh
+	return c
 }
 
-// TODO
-func (md *embedded) checkETCDHealth() (hh map[string]etcdtester.Health) {
-	hh = make(map[string]etcdtester.Health, len(md.cfg.ClusterState))
-	for k, v := range md.cfg.ClusterState {
-		ep := v.AdvertiseClientURLs
-		health := etcdtester.Health{
-			Status: "",
-			Error:  nil,
-		}
-		cli, err := clientv3.New(clientv3.Config{
-			Endpoints: []string{ep},
-		})
-		if err != nil {
-			health.Status = fmt.Sprintf("status check for %q failed %v", ep, err)
-			health.Error = err
-		} else {
-			defer cli.Close()
-			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-			sresp, serr := cli.Status(ctx, ep)
-			cancel()
-			if serr != nil {
-				health.Status = fmt.Sprintf("status check for %q failed %v", ep, serr)
-				health.Error = serr
-			} else {
-				health.Status = fmt.Sprintf("status check for %q: %+v", ep, sresp)
-				health.Error = nil
-			}
-		}
-		hh[k] = health
-	}
-	return hh
-}
-
-func (md *embedded) IDToClientURL() (rm map[string]string) {
+func (md *embedded) Cluster() (c etcdtester.Cluster) {
 	md.mu.RLock()
 	defer md.mu.RUnlock()
+	return md.cluster()
+}
 
-	rm = make(map[string]string, len(md.cfg.ClusterState))
+func (md *embedded) cluster() (c etcdtester.Cluster) {
+	c.Members = make(map[string]etcdtester.Member, len(md.cfg.ClusterState))
 	for k, v := range md.cfg.ClusterState {
-		rm[k] = v.AdvertiseClientURLs
+		c.Members[k] = etcdtester.Member{
+			ID:        k,
+			ClientURL: v.AdvertiseClientURLs,
+		}
 	}
-	return rm
+	return c
 }
 
 func (md *embedded) Stop(id string) error {
@@ -511,4 +509,39 @@ func fetchLog(
 	fpathToS3Path = make(map[string]string)
 	fpathToS3Path[etcdLogPath] = fmt.Sprintf("%s/%s-etcd.server.log", clusterName, id)
 	return fpathToS3Path, nil
+}
+
+// TODO
+func (md *embedded) checkETCDHealth() {
+	_ = clientv3.Config{}
+
+	// hh = make(map[string]etcdtester.Health, len(md.cfg.ClusterState))
+	// for k, v := range md.cfg.ClusterState {
+	// 	ep := v.AdvertiseClientURLs
+	// 	health := etcdtester.Health{
+	// 		Status: "",
+	// 		Error:  nil,
+	// 	}
+	// 	cli, err := clientv3.New(clientv3.Config{
+	// 		Endpoints: []string{ep},
+	// 	})
+	// 	if err != nil {
+	// 		health.Status = fmt.Sprintf("status check for %q failed %v", ep, err)
+	// 		vv.OK = false
+	// 	} else {
+	// 		defer cli.Close()
+	// 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	// 		sresp, serr := cli.Status(ctx, ep)
+	// 		cancel()
+	// 		if serr != nil {
+	// 			health.Status = fmt.Sprintf("status check for %q failed %v", ep, serr)
+	// 			health.Error = serr
+	// 		} else {
+	// 			health.Status = fmt.Sprintf("status check for %q: %+v", ep, sresp)
+	// 			health.Error = nil
+	// 		}
+	// 	}
+	// 	hh[k] = health
+	// }
+	// return hh
 }
