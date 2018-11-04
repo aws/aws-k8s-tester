@@ -44,7 +44,7 @@ func NewTester(cfg *etcdconfig.Config) (etcdtester.Tester, error) {
 	return &embedded{lg: lg, cfg: cfg}, cfg.Sync()
 }
 
-func (md *embedded) Deploy() (err error) {
+func (md *embedded) Create() (err error) {
 	md.mu.Lock()
 	defer md.mu.Unlock()
 
@@ -384,11 +384,11 @@ func (md *embedded) Terminate() error {
 
 	errc := make(chan error)
 	go func() {
-		errc <- md.ec2Deployer.Delete()
+		errc <- md.ec2Deployer.Terminate()
 
 	}()
 	go func() {
-		errc <- md.ec2BastionDeployer.Delete()
+		errc <- md.ec2BastionDeployer.Terminate()
 	}()
 	errEC2 := <-errc
 	errEC2Bastion := <-errc

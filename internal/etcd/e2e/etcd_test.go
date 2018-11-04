@@ -24,7 +24,7 @@ func TestETCD(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err = tester.Deploy(); err != nil {
+	if err = tester.Create(); err != nil {
 		tester.Terminate()
 		t.Fatal(err)
 	}

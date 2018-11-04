@@ -42,14 +42,14 @@ func deleteClusterFunc(cmd *cobra.Command, args []string) {
 	}
 
 	var tester etcdtester.Tester
-	tester, err = etcd.NewDeployer(cfg)
+	tester, err = etcd.NewTester(cfg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create etcd cluster %v\n", err)
 		os.Exit(1)
 	}
 
-	if err = tester.Delete(); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to delete cluster %v", err)
+	if err = tester.Terminate(); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to terminate cluster %v", err)
 		os.Exit(1)
 	}
 

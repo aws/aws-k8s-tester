@@ -11,8 +11,8 @@ type Tester interface {
 
 // Deployer defines etcd deployer.
 type Deployer interface {
-	// Deploy starts the etcd cluster the very first time.
-	Deploy() error
+	// Create starts the etcd cluster the very first time.
+	Create() error
 	// Cluster returns the cluster information.
 	Cluster() Cluster
 	// Stop stops the specified node.

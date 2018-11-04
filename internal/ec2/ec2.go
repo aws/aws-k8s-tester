@@ -33,7 +33,7 @@ import (
 type Deployer interface {
 	Create() error
 	Stop()
-	Delete() error
+	Terminate() error
 
 	Logger() *zap.Logger
 
@@ -222,7 +222,7 @@ func (md *embedded) Create() (err error) {
 
 func (md *embedded) Stop() { close(md.stopc) }
 
-func (md *embedded) Delete() (err error) {
+func (md *embedded) Terminate() (err error) {
 	md.mu.Lock()
 	defer md.mu.Unlock()
 

@@ -13,16 +13,19 @@ import (
 )
 
 func newCreate() *cobra.Command {
-	ac := &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "create <subcommand>",
 		Short: "Create commands",
 	}
-	ac.AddCommand(
+	cmd.PersistentFlags().BoolVar(&terminateOnExit, "terminate-on-exit", false, "true to terminate etcd cluster on test exit")
+	cmd.AddCommand(
 		newCreateConfig(),
 		newCreateCluster(),
 	)
-	return ac
+	return cmd
 }
+
+var terminateOnExit bool
 
 func newCreateConfig() *cobra.Command {
 	return &cobra.Command{
@@ -74,21 +77,21 @@ func createClusterFunc(cmd *cobra.Command, args []string) {
 		fmt.Fprintf(os.Stderr, "failed to back up original config file %v\n", err)
 		os.Exit(1)
 	}
-	if err = tester.Deploy(); err != nil {
+	if err = tester.Create(); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create instances %v\n", err)
 		os.Exit(1)
 	}
 	fmt.Printf("%+v\n", tester.Check())
 
-	fmt.Printf("EC2 SSH:\n%s\n\n",cfg.EC2.SSHCommands())
-	fmt.Printf("EC2Bastion SSH:\n%s\n\n",cfg.EC2Bastion.SSHCommands())
+	fmt.Printf("EC2 SSH:\n%s\n\n", cfg.EC2.SSHCommands())
+	fmt.Printf("EC2Bastion SSH:\n%s\n\n", cfg.EC2Bastion.SSHCommands())
 
 	if terminateOnExit {
-		if err = dp.Delete(); err != nil {
-			fmt.Fprintf(os.Stderr, "failed to delete cluster %v\n", err)
+		if err = tester.Terminate(); err != nil {
+			fmt.Fprintf(os.Stderr, "failed to terminate cluster %v\n", err)
 			os.Exit(1)
 		} else {
-			fmt.Fprintf(os.Stderr, "deleted cluster\n")
+			fmt.Fprintf(os.Stderr, "terminated cluster\n")
 		}
 	}
 }

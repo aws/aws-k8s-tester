@@ -84,7 +84,7 @@ func createClusterFunc(cmd *cobra.Command, args []string) {
 	fmt.Println(cfg.SSHCommands())
 
 	if terminateOnExit {
-		if err = dp.Delete(); err != nil {
+		if err = dp.Terminate(); err != nil {
 			fmt.Fprintf(os.Stderr, "failed to delete cluster %v\n", err)
 			os.Exit(1)
 		} else {

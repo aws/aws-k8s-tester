@@ -47,8 +47,8 @@ func deleteClusterFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	if err = dp.Delete(); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to delete cluster %v", err)
+	if err = dp.Terminate(); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to terminate cluster %v", err)
 		os.Exit(1)
 	}
 

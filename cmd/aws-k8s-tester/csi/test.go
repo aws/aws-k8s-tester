@@ -123,7 +123,7 @@ func testIntegrationFunc(cmd *cobra.Command, args []string) {
 	if serr != nil {
 		fmt.Fprintf(os.Stderr, "failed to create SSH (%v)\n", err)
 		if terminateOnExit {
-			ec.Delete()
+			ec.Terminate()
 		} else {
 			fmt.Println(cfg.SSHCommands())
 		}
@@ -134,7 +134,7 @@ func testIntegrationFunc(cmd *cobra.Command, args []string) {
 	if err = sh.Connect(); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to connect SSH (%v)\n", err)
 		if terminateOnExit {
-			ec.Delete()
+			ec.Terminate()
 		} else {
 			fmt.Println(cfg.SSHCommands())
 		}
@@ -150,7 +150,7 @@ func testIntegrationFunc(cmd *cobra.Command, args []string) {
 		// handle "Process exited with status 2" error
 		fmt.Fprintf(os.Stderr, "CSI integration test FAILED (%v, %v)\n", err, reflect.TypeOf(err))
 		if terminateOnExit {
-			ec.Delete()
+			ec.Terminate()
 		} else {
 			fmt.Println(cfg.SSHCommands())
 		}
@@ -169,7 +169,7 @@ func testIntegrationFunc(cmd *cobra.Command, args []string) {
 	if !strings.Contains(testOutput, "1 Passed") {
 		fmt.Fprintln(os.Stderr, "CSI integration test FAILED")
 		if terminateOnExit {
-			ec.Delete()
+			ec.Terminate()
 		} else {
 			fmt.Println(cfg.SSHCommands())
 		}
@@ -193,6 +193,6 @@ func testIntegrationFunc(cmd *cobra.Command, args []string) {
 	}
 
 	if terminateOnExit {
-		ec.Delete()
+		ec.Terminate()
 	}
 }

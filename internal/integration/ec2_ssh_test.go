@@ -39,15 +39,20 @@ func TestEC2SSH(t *testing.T) {
 	if err = ec.Create(); err != nil {
 		t.Fatal(err)
 	}
-	defer ec.Delete()
+	defer ec.Terminate()
 
 	fmt.Println(cfg.SSHCommands())
 
+	var iv ec2config.Instance
+	for _, v := range cfg.Instances {
+		iv = v
+		break
+	}
 	sh, serr := ssh.New(ssh.Config{
 		Logger:        ec.Logger(),
 		KeyPath:       cfg.KeyPath,
-		PublicIP:      cfg.Instances[0].PublicIP,
-		PublicDNSName: cfg.Instances[0].PublicDNSName,
+		PublicIP:      iv.PublicIP,
+		PublicDNSName: iv.PublicDNSName,
 		UserName:      cfg.UserName,
 	})
 	if serr != nil {
