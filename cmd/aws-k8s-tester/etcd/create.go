@@ -1,35 +1,33 @@
-package ec2
+package etcd
 
 import (
 	"fmt"
 	"os"
 
-	"github.com/aws/aws-k8s-tester/ec2config"
-	"github.com/aws/aws-k8s-tester/internal/ec2"
+	"github.com/aws/aws-k8s-tester/etcdconfig"
+	"github.com/aws/aws-k8s-tester/etcdtester"
+	"github.com/aws/aws-k8s-tester/internal/etcd"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 
 	"github.com/spf13/cobra"
 )
 
 func newCreate() *cobra.Command {
-	cmd := &cobra.Command{
+	ac := &cobra.Command{
 		Use:   "create <subcommand>",
 		Short: "Create commands",
 	}
-	cmd.PersistentFlags().BoolVar(&terminateOnExit, "terminate-on-exit", false, "true to terminate EC2 instance on test exit")
-	cmd.AddCommand(
+	ac.AddCommand(
 		newCreateConfig(),
 		newCreateCluster(),
 	)
-	return cmd
+	return ac
 }
-
-var terminateOnExit bool
 
 func newCreateConfig() *cobra.Command {
 	return &cobra.Command{
 		Use:   "config",
-		Short: "Writes an aws-k8s-tester eks configuration with default values",
+		Short: "Writes an aws-k8s-tester etcd configuration with default values",
 		Run:   configFunc,
 	}
 }
@@ -39,16 +37,16 @@ func configFunc(cmd *cobra.Command, args []string) {
 		fmt.Fprintln(os.Stderr, "'--path' flag is not specified")
 		os.Exit(1)
 	}
-	cfg := ec2config.NewDefault()
+	cfg := etcdconfig.NewDefault()
 	cfg.ConfigPath = path
 	cfg.Sync()
-	fmt.Fprintf(os.Stderr, "wrote aws-k8s-tester eks configuration to %q\n", cfg.ConfigPath)
+	fmt.Fprintf(os.Stderr, "wrote aws-k8s-tester etcd configuration to %q\n", cfg.ConfigPath)
 }
 
 func newCreateCluster() *cobra.Command {
 	return &cobra.Command{
 		Use:   "cluster",
-		Short: "Create EC2 instances",
+		Short: "Create etcd instances",
 		Run:   createClusterFunc,
 	}
 }
@@ -59,16 +57,16 @@ func createClusterFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	cfg, err := ec2config.Load(path)
+	cfg, err := etcdconfig.Load(path)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to load configuration %q (%v)\n", path, err)
 		os.Exit(1)
 	}
 
-	var dp ec2.Deployer
-	dp, err = ec2.NewDeployer(cfg)
+	var tester etcdtester.Tester
+	tester, err = etcd.NewTester(cfg)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create EKS deployer %v\n", err)
+		fmt.Fprintf(os.Stderr, "failed to create etcd deployer %v\n", err)
 		os.Exit(1)
 	}
 
@@ -76,12 +74,14 @@ func createClusterFunc(cmd *cobra.Command, args []string) {
 		fmt.Fprintf(os.Stderr, "failed to back up original config file %v\n", err)
 		os.Exit(1)
 	}
-	if err = dp.Create(); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create cluster %v\n", err)
+	if err = tester.Deploy(); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to create instances %v\n", err)
 		os.Exit(1)
 	}
+	fmt.Printf("%+v\n", tester.Check())
 
-	fmt.Println(cfg.SSHCommands())
+	fmt.Printf("EC2 SSH:\n%s\n\n",cfg.EC2.SSHCommands())
+	fmt.Printf("EC2Bastion SSH:\n%s\n\n",cfg.EC2Bastion.SSHCommands())
 
 	if terminateOnExit {
 		if err = dp.Delete(); err != nil {

@@ -462,6 +462,16 @@ func Load(p string) (cfg *Config, err error) {
 	return cfg, nil
 }
 
+// SSHCommands returns the SSH commands.
+func (cfg *Config) SSHCommands() (s string) {
+	s = fmt.Sprintf("\n\n# change SSH key permission\nchmod 400 %s\n\n", cfg.KeyPath)
+	for _, v := range cfg.Instances {
+		s += fmt.Sprintf(`ssh -o "StrictHostKeyChecking no" -i %s %s@%s
+`, cfg.KeyPath, cfg.UserName, v.PublicDNSName)
+	}
+	return s
+}
+
 // Sync persists current configuration and states to disk.
 func (cfg *Config) Sync() (err error) {
 	if !filepath.IsAbs(cfg.ConfigPath) {

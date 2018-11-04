@@ -49,11 +49,11 @@ func newCreateCluster() *cobra.Command {
 		Short: "Create an EKS cluster",
 		Run:   createClusterFunc,
 	}
-	cmd.PersistentFlags().BoolVar(&clusterCreateAutoDelete, "down", false, "'true' to automatically delete cluster after creation (useful for testing)")
+	cmd.PersistentFlags().BoolVar(&terminateOnExit, "terminate-on-exit", false, "true to terminate EKS cluster on exit")
 	return cmd
 }
 
-var clusterCreateAutoDelete bool
+var terminateOnExit bool
 
 func createClusterFunc(cmd *cobra.Command, args []string) {
 	if !fileutil.Exist(path) {
@@ -88,7 +88,7 @@ func createClusterFunc(cmd *cobra.Command, args []string) {
 	}
 	fmt.Println("'aws-k8s-tester eks create cluster' success")
 
-	if clusterCreateAutoDelete {
+	if terminateOnExit {
 		if err = tester.Down(); err != nil {
 			fmt.Fprintf(os.Stderr, "failed to delete cluster %v\n", err)
 			os.Exit(1)

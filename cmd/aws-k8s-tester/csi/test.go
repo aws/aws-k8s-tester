@@ -34,11 +34,13 @@ func newTest() *cobra.Command {
 	return cmd
 }
 
-var terminateOnExit bool
-var branchOrPR string
-var timeout time.Duration
-var vpcID string
-var journalctlLogs bool
+var (
+	terminateOnExit bool
+	branchOrPR      string
+	timeout         time.Duration
+	vpcID           string
+	journalctlLogs  bool
+)
 
 /*
 go install -v ./cmd/aws-k8s-tester
@@ -103,7 +105,7 @@ func testIntegrationFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	fmt.Println(ec.GenerateSSHCommands())
+	fmt.Println(cfg.SSHCommands())
 
 	var iv ec2config.Instance
 	for _, v := range cfg.Instances {
@@ -123,7 +125,7 @@ func testIntegrationFunc(cmd *cobra.Command, args []string) {
 		if terminateOnExit {
 			ec.Delete()
 		} else {
-			fmt.Println(ec.GenerateSSHCommands())
+			fmt.Println(cfg.SSHCommands())
 		}
 		os.Exit(1)
 	}
@@ -134,7 +136,7 @@ func testIntegrationFunc(cmd *cobra.Command, args []string) {
 		if terminateOnExit {
 			ec.Delete()
 		} else {
-			fmt.Println(ec.GenerateSSHCommands())
+			fmt.Println(cfg.SSHCommands())
 		}
 		os.Exit(1)
 	}
@@ -150,7 +152,7 @@ func testIntegrationFunc(cmd *cobra.Command, args []string) {
 		if terminateOnExit {
 			ec.Delete()
 		} else {
-			fmt.Println(ec.GenerateSSHCommands())
+			fmt.Println(cfg.SSHCommands())
 		}
 		os.Exit(1)
 	}
@@ -169,7 +171,7 @@ func testIntegrationFunc(cmd *cobra.Command, args []string) {
 		if terminateOnExit {
 			ec.Delete()
 		} else {
-			fmt.Println(ec.GenerateSSHCommands())
+			fmt.Println(cfg.SSHCommands())
 		}
 		os.Exit(1)
 	}

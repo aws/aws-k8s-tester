@@ -41,7 +41,7 @@ func TestEC2SSH(t *testing.T) {
 	}
 	defer ec.Delete()
 
-	fmt.Println(ec.GenerateSSHCommands())
+	fmt.Println(cfg.SSHCommands())
 
 	sh, serr := ssh.New(ssh.Config{
 		Logger:        ec.Logger(),

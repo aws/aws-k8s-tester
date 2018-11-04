@@ -525,7 +525,7 @@ func init() {
 		"update-amazon-linux-2",
 		"install-etcd-3.1.12",
 	}
-	defaultConfig.EC2.Count = 3
+	defaultConfig.EC2.ClusterSize = 3
 	defaultConfig.EC2.Wait = true
 	defaultConfig.EC2.Tag = defaultConfig.Tag
 	defaultConfig.EC2.ClusterName = defaultConfig.ClusterName
@@ -540,7 +540,7 @@ func init() {
 		"install-etcd-3.1.12",
 		"install-aws-k8s-tester",
 	}
-	defaultConfig.EC2Bastion.Count = 1
+	defaultConfig.EC2Bastion.ClusterSize = 1
 	defaultConfig.EC2Bastion.Wait = true
 	defaultConfig.EC2Bastion.Tag = defaultConfig.Tag + "-bastion"
 	defaultConfig.EC2Bastion.ClusterName = defaultConfig.ClusterName + "-bastion"
@@ -802,12 +802,12 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 	if cfg.EC2 == nil {
 		return errors.New("EC2 configuration not found")
 	}
-	cfg.EC2.Count = cfg.ClusterSize
+	cfg.EC2.ClusterSize = cfg.ClusterSize
 	if cfg.EC2Bastion == nil {
 		return errors.New("EC2Bastion configuration not found")
 	}
-	if cfg.EC2Bastion.Count != 1 {
-		return fmt.Errorf("EC2Bastion.Count expected 1, got %d", cfg.EC2Bastion.Count)
+	if cfg.EC2Bastion.ClusterSize != 1 {
+		return fmt.Errorf("EC2Bastion.ClusterSize expected 1, got %d", cfg.EC2Bastion.ClusterSize)
 	}
 	if err = cfg.Cluster.ValidateAndSetDefaults(); err != nil {
 		return err

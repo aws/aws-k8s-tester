@@ -72,7 +72,7 @@ func (md *embedded) Deploy() (err error) {
 		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 	)
 	if md.cfg.LogDebug {
-		fmt.Println(md.ec2Deployer.GenerateSSHCommands())
+		fmt.Println(md.cfg.EC2.SSHCommands())
 	}
 
 	md.lg.Info(
@@ -94,7 +94,7 @@ func (md *embedded) Deploy() (err error) {
 		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 	)
 	if md.cfg.LogDebug {
-		fmt.Println(md.ec2BastionDeployer.GenerateSSHCommands())
+		fmt.Println(md.cfg.EC2Bastion.SSHCommands())
 	}
 
 	tc := *md.cfg.Cluster

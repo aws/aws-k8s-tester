@@ -1,29 +1,30 @@
-package ec2
+package etcd
 
 import (
 	"fmt"
 	"os"
 
-	"github.com/aws/aws-k8s-tester/ec2config"
-	"github.com/aws/aws-k8s-tester/internal/ec2"
+	"github.com/aws/aws-k8s-tester/etcdconfig"
+	"github.com/aws/aws-k8s-tester/etcdtester"
+	"github.com/aws/aws-k8s-tester/internal/etcd"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 
 	"github.com/spf13/cobra"
 )
 
 func newDelete() *cobra.Command {
-	cmd := &cobra.Command{
+	ac := &cobra.Command{
 		Use:   "delete <subcommand>",
 		Short: "Delete commands",
 	}
-	cmd.AddCommand(newDeleteCluster())
-	return cmd
+	ac.AddCommand(newDeleteCluster())
+	return ac
 }
 
 func newDeleteCluster() *cobra.Command {
 	return &cobra.Command{
 		Use:   "cluster",
-		Short: "Delete EC2 cluster",
+		Short: "Delete etcd cluster",
 		Run:   deleteClusterFunc,
 	}
 }
@@ -34,23 +35,23 @@ func deleteClusterFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	cfg, err := ec2config.Load(path)
+	cfg, err := etcdconfig.Load(path)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to load configuration %q (%v)\n", path, err)
 		os.Exit(1)
 	}
 
-	var dp ec2.Deployer
-	dp, err = ec2.NewDeployer(cfg)
+	var tester etcdtester.Tester
+	tester, err = etcd.NewDeployer(cfg)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create EC2 cluster %v\n", err)
+		fmt.Fprintf(os.Stderr, "failed to create etcd cluster %v\n", err)
 		os.Exit(1)
 	}
 
-	if err = dp.Delete(); err != nil {
+	if err = tester.Delete(); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to delete cluster %v", err)
 		os.Exit(1)
 	}
 
-	fmt.Println("'aws-k8s-tester ec2 delete cluster' success")
+	fmt.Println("'aws-k8s-tester etcd delete cluster' success")
 }

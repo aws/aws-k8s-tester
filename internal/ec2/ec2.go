@@ -36,7 +36,6 @@ type Deployer interface {
 	Delete() error
 
 	Logger() *zap.Logger
-	GenerateSSHCommands() string
 
 	// UploadToBucketForTests uploads a local file to aws-k8s-tester S3 bucket.
 	UploadToBucketForTests(localPath, remotePath string) error
@@ -298,16 +297,16 @@ func (md *embedded) createInstances() (err error) {
 	now := time.Now().UTC()
 
 	// evenly distribute per subnet
-	left := md.cfg.Count
+	left := md.cfg.ClusterSize
 
 	tokens := []string{}
 	tknToCnt := make(map[string]int)
 	h, _ := os.Hostname()
 
-	if md.cfg.Count > len(md.cfg.SubnetIDs) {
+	if md.cfg.ClusterSize > len(md.cfg.SubnetIDs) {
 		// TODO: configure this per EC2 quota?
 		runInstancesBatch := 7
-		subnetAllocBatch := md.cfg.Count / len(md.cfg.SubnetIDs)
+		subnetAllocBatch := md.cfg.ClusterSize / len(md.cfg.SubnetIDs)
 
 		subnetIdx := 0
 		for left > 0 {
@@ -319,7 +318,7 @@ func (md *embedded) createInstances() (err error) {
 				"creating an EC2 instance",
 				zap.Int("count", n),
 				zap.Int("left", left),
-				zap.Int("target-total", md.cfg.Count),
+				zap.Int("target-total", md.cfg.ClusterSize),
 			)
 
 			subnetID := md.cfg.SubnetIDs[0]
@@ -424,7 +423,7 @@ func (md *embedded) createInstances() (err error) {
 		}
 	} else {
 		// create <1 instance per subnet
-		for i := 0; i < md.cfg.Count; i++ {
+		for i := 0; i < md.cfg.ClusterSize; i++ {
 			tkn := md.cfg.ClusterName + fmt.Sprintf("%X", time.Now().Nanosecond())
 			tokens = append(tokens, tkn)
 			tknToCnt[tkn] = 1
@@ -477,8 +476,8 @@ func (md *embedded) createInstances() (err error) {
 	tknToCntRunning := make(map[string]int)
 
 	retryStart := time.Now().UTC()
-	for len(md.cfg.Instances) != md.cfg.Count &&
-		time.Now().UTC().Sub(retryStart) < time.Duration(md.cfg.Count)*2*time.Minute {
+	for len(md.cfg.Instances) != md.cfg.ClusterSize &&
+		time.Now().UTC().Sub(retryStart) < time.Duration(md.cfg.ClusterSize)*2*time.Minute {
 		for _, tkn := range tokens {
 			if v, ok := tknToCntRunning[tkn]; ok {
 				if v == tknToCnt[tkn] {
@@ -531,7 +530,7 @@ func (md *embedded) createInstances() (err error) {
 
 	md.lg.Info(
 		"created EC2 instances",
-		zap.Int("count", md.cfg.Count),
+		zap.Int("cluster-size", md.cfg.ClusterSize),
 		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 	)
 
@@ -539,7 +538,7 @@ func (md *embedded) createInstances() (err error) {
 		md.cfg.Sync()
 		md.lg.Info(
 			"waiting for EC2 instances",
-			zap.Int("count", md.cfg.Count),
+			zap.Int("cluster-size", md.cfg.ClusterSize),
 			zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 		)
 		md.wait()
@@ -640,7 +639,7 @@ func (md *embedded) deleteInstances() (err error) {
 	})
 	md.lg.Info("terminating", zap.Strings("instance-ids", ids), zap.Error(err))
 
-	sleepDur := 5 * time.Second * time.Duration(md.cfg.Count)
+	sleepDur := 5 * time.Second * time.Duration(md.cfg.ClusterSize)
 	if sleepDur > 3*time.Minute {
 		sleepDur = 3 * time.Minute
 	}
@@ -648,8 +647,8 @@ func (md *embedded) deleteInstances() (err error) {
 
 	retryStart := time.Now().UTC()
 	terminated := make(map[string]struct{})
-	for len(terminated) != md.cfg.Count &&
-		time.Now().UTC().Sub(retryStart) < time.Duration(md.cfg.Count)*2*time.Minute {
+	for len(terminated) != md.cfg.ClusterSize &&
+		time.Now().UTC().Sub(retryStart) < time.Duration(md.cfg.ClusterSize)*2*time.Minute {
 		var output *ec2.DescribeInstancesOutput
 		output, err = md.ec2.DescribeInstances(&ec2.DescribeInstancesInput{
 			InstanceIds: aws.StringSlice(ids),
@@ -683,15 +682,6 @@ func (md *embedded) deleteInstances() (err error) {
 
 func (md *embedded) Logger() *zap.Logger {
 	return md.lg
-}
-
-func (md *embedded) GenerateSSHCommands() (s string) {
-	s = fmt.Sprintf("\n\n# change SSH key permission\nchmod 400 %s\n\n", md.cfg.KeyPath)
-	for _, v := range md.cfg.Instances {
-		s += fmt.Sprintf(`ssh -o "StrictHostKeyChecking no" -i %s %s@%s
-`, md.cfg.KeyPath, md.cfg.UserName, v.PublicDNSName)
-	}
-	return s
 }
 
 func catchStopc(lg *zap.Logger, stopc chan struct{}, run func() error) (err error) {
