@@ -12,7 +12,6 @@ func (md *embedded) GetWorkerNodeLogs() (err error) {
 	}
 
 	var fpathToS3Path map[string]string
-	md.ec2InstancesMu.RLock()
 	fpathToS3Path, err = fetchWorkerNodeLogs(
 		md.lg,
 		"ec2-user", // for Amazon Linux 2
@@ -20,7 +19,6 @@ func (md *embedded) GetWorkerNodeLogs() (err error) {
 		md.cfg.ClusterState.CFStackWorkerNodeGroupKeyPairPrivateKeyPath,
 		md.cfg.ClusterState.WorkerNodes,
 	)
-	md.ec2InstancesMu.RUnlock()
 
 	md.ec2InstancesLogMu.Lock()
 	md.cfg.ClusterState.WorkerNodeLogs = fpathToS3Path

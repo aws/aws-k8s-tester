@@ -64,9 +64,6 @@ type embedded struct {
 	eks eksiface.EKSAPI
 	ec2 ec2iface.EC2API
 
-	ec2InstancesMu *sync.RWMutex
-	ec2Instances   []*ec2.Instance
-
 	ec2InstancesLogMu *sync.RWMutex
 
 	s3Plugin s3.Plugin
@@ -92,7 +89,6 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 		lg:                lg,
 		cfg:               cfg,
 		kubectl:           exec.New(),
-		ec2InstancesMu:    &sync.RWMutex{},
 		ec2InstancesLogMu: &sync.RWMutex{},
 	}
 	md.kubectlPath, err = md.kubectl.LookPath("kubectl")
@@ -546,10 +542,17 @@ func (md *embedded) DumpClusterLogs(artifactDir, _ string) (err error) {
 			return err
 		}
 	}
-	if err = fileutil.Copy(md.cfg.ConfigPath, filepath.Join(artifactDir, md.cfg.ConfigPathBucket)); err != nil {
+
+	if err = fileutil.Copy(
+		md.cfg.ConfigPath,
+		filepath.Join(artifactDir, md.cfg.ConfigPathBucket),
+	); err != nil {
 		return err
 	}
-	return fileutil.Copy(md.cfg.LogOutputToUploadPath, filepath.Join(artifactDir, md.cfg.LogOutputToUploadPathBucket))
+	return fileutil.Copy(
+		md.cfg.LogOutputToUploadPath,
+		filepath.Join(artifactDir, md.cfg.LogOutputToUploadPathBucket),
+	)
 }
 
 func (md *embedded) UploadToBucketForTests(localPath, remotePath string) error {

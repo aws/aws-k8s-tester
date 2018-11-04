@@ -200,7 +200,7 @@ type ClusterState struct {
 	// "READY" when they successfully join the EKS cluster as worker nodes.
 	WorkerNodeGroupStatus string `json:"worker-node-group-status,omitempty"`
 	// WorkerNodes is a list of worker nodes.
-	WorkerNodes []ec2config.Instance `json:"worker-nodes,omitempty"`
+	WorkerNodes map[string]ec2config.Instance `json:"worker-nodes,omitempty"`
 
 	// WorkerNodeLogs is a list of worker node log file paths, fetched via SSH.
 	WorkerNodeLogs map[string]string `json:"worker-node-logs,omitempty"`

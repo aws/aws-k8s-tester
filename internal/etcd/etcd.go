@@ -243,12 +243,17 @@ func (md *embedded) CheckHealth() map[string]etcdtester.Health {
 func (md *embedded) checkHealth() (hh map[string]etcdtester.Health) {
 	hh = make(map[string]etcdtester.Health, len(md.cfg.ClusterState))
 
+	var iv ec2config.Instance
+	for _, v := range md.cfg.EC2Bastion.Instances {
+		iv = v
+		break
+	}
 	sh, err := ssh.New(ssh.Config{
 		Logger:        md.lg,
 		KeyPath:       md.cfg.EC2Bastion.KeyPath,
 		UserName:      md.cfg.EC2Bastion.UserName,
-		PublicIP:      md.cfg.EC2Bastion.Instances[0].PublicIP,
-		PublicDNSName: md.cfg.EC2Bastion.Instances[0].PublicDNSName,
+		PublicIP:      iv.PublicIP,
+		PublicDNSName: iv.PublicDNSName,
 	})
 	if err != nil {
 		md.lg.Warn(
@@ -435,7 +440,7 @@ func fetchLogs(
 	userName string,
 	clusterName string,
 	privateKeyPath string,
-	nodes []ec2config.Instance) (fpathToS3Path map[string]string, err error) {
+	nodes map[string]ec2config.Instance) (fpathToS3Path map[string]string, err error) {
 	fpathToS3Path = make(map[string]string)
 	for _, iv := range nodes {
 		var fm map[string]string

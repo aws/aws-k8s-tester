@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -474,9 +473,9 @@ func (md *embedded) createInstances() (err error) {
 		}
 	}
 
-	md.cfg.InstanceIDToInstance = make(map[string]ec2config.Instance)
-
+	md.cfg.Instances = make(map[string]ec2config.Instance)
 	tknToCntRunning := make(map[string]int)
+
 	retryStart := time.Now().UTC()
 	for len(md.cfg.Instances) != md.cfg.Count &&
 		time.Now().UTC().Sub(retryStart) < time.Duration(md.cfg.Count)*2*time.Minute {
@@ -505,11 +504,10 @@ func (md *embedded) createInstances() (err error) {
 				for _, inst := range rv.Instances {
 					id := *inst.InstanceId
 					if *inst.State.Name == "running" {
-						_, ok := md.cfg.InstanceIDToInstance[id]
+						_, ok := md.cfg.Instances[id]
 						if !ok {
 							iv := ConvertEC2Instance(inst)
-							md.cfg.Instances = append(md.cfg.Instances, iv)
-							md.cfg.InstanceIDToInstance[id] = iv
+							md.cfg.Instances[id] = iv
 							md.lg.Info("instance is ready",
 								zap.String("instance-id", iv.InstanceID),
 								zap.String("instance-public-ip", iv.PublicIP),
@@ -531,9 +529,6 @@ func (md *embedded) createInstances() (err error) {
 		}
 	}
 
-	// sort that first launched EC2 instance is at front
-	sort.Sort(ec2config.Instances(md.cfg.Instances))
-
 	md.lg.Info(
 		"created EC2 instances",
 		zap.Int("count", md.cfg.Count),
@@ -553,8 +548,8 @@ func (md *embedded) createInstances() (err error) {
 }
 
 func (md *embedded) wait() {
-	mm := make(map[string]ec2config.Instance, len(md.cfg.InstanceIDToInstance))
-	for k, v := range md.cfg.InstanceIDToInstance {
+	mm := make(map[string]ec2config.Instance, len(md.cfg.Instances))
+	for k, v := range md.cfg.Instances {
 		mm[k] = v
 	}
 
@@ -637,8 +632,8 @@ func (md *embedded) deleteInstances() (err error) {
 	now := time.Now().UTC()
 
 	ids := make([]string, 0, len(md.cfg.Instances))
-	for _, iv := range md.cfg.Instances {
-		ids = append(ids, iv.InstanceID)
+	for id := range md.cfg.Instances {
+		ids = append(ids, id)
 	}
 	_, err = md.ec2.TerminateInstances(&ec2.TerminateInstancesInput{
 		InstanceIds: aws.StringSlice(ids),
@@ -767,16 +762,4 @@ func ConvertEC2Instance(iv *ec2.Instance) (instance ec2config.Instance) {
 		}
 	}
 	return instance
-}
-
-// ConvertEC2Instances converts "aws ec2 describe-instances" to "ec2config.Instance".
-// And it sorts in a way that the first launched instance is at front.
-func ConvertEC2Instances(iss []*ec2.Instance) (instances []ec2config.Instance) {
-	instances = make([]ec2config.Instance, len(iss))
-	for i, v := range iss {
-		instances[i] = ConvertEC2Instance(v)
-	}
-	// sort that first launched EC2 instance is at front
-	sort.Sort(ec2config.Instances(instances))
-	return instances
 }

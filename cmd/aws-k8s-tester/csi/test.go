@@ -105,11 +105,17 @@ func testIntegrationFunc(cmd *cobra.Command, args []string) {
 
 	fmt.Println(ec.GenerateSSHCommands())
 
+	var iv ec2config.Instance
+	for _, v := range cfg.Instances {
+		iv = v
+		break
+	}
+
 	sh, serr := ssh.New(ssh.Config{
 		Logger:        ec.Logger(),
 		KeyPath:       cfg.KeyPath,
-		PublicIP:      cfg.Instances[0].PublicIP,
-		PublicDNSName: cfg.Instances[0].PublicDNSName,
+		PublicIP:      iv.PublicIP,
+		PublicDNSName: iv.PublicDNSName,
 		UserName:      cfg.UserName,
 	})
 	if serr != nil {

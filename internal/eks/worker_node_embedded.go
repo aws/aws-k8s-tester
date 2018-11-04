@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aws/aws-k8s-tester/ec2config"
+
 	internalec2 "github.com/aws/aws-k8s-tester/internal/ec2"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -582,10 +584,10 @@ func (md *embedded) checkASG() (err error) {
 		time.Sleep(5 * time.Second)
 	}
 
-	md.ec2InstancesMu.Lock()
-	md.ec2Instances = ec2Instances
-	md.cfg.ClusterState.WorkerNodes = internalec2.ConvertEC2Instances(ec2Instances)
-	md.ec2InstancesMu.Unlock()
+	md.cfg.ClusterState.WorkerNodes = make(map[string]ec2config.Instance)
+	for _, v := range ec2Instances {
+		md.cfg.ClusterState.WorkerNodes[*v.InstanceId] = internalec2.ConvertEC2Instance(v)
+	}
 
 	md.lg.Info(
 		"checked ASG",

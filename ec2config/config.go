@@ -130,8 +130,7 @@ type Config struct {
 	AssociatePublicIPAddress bool `json:"associate-public-ip-address"`
 
 	// Instances is a set of EC2 instances created from this configuration.
-	Instances            []Instance          `json:"instances,omitempty"`
-	InstanceIDToInstance map[string]Instance `json:"instance-id-to-instance,omitempty"`
+	Instances map[string]Instance `json:"instances,omitempty"`
 
 	// Wait is true to wait until all EC2 instances are ready.
 	Wait bool `json:"wait"`
@@ -157,16 +156,6 @@ type Instance struct {
 	RootDeviceType      string               `json:"root-device-type,omitempty"`
 	SecurityGroups      []SecurityGroup      `json:"security-groups,omitempty"`
 	LaunchTime          time.Time            `json:"launch-time,omitempty"`
-}
-
-// Instances is a list of EC2 instances.
-type Instances []Instance
-
-func (ss Instances) Len() int      { return len(ss) }
-func (ss Instances) Swap(i, j int) { ss[i], ss[j] = ss[j], ss[i] }
-func (ss Instances) Less(i, j int) bool {
-	// first launched instances in front
-	return ss[i].LaunchTime.Before(ss[j].LaunchTime)
 }
 
 // Placement defines EC2 placement.
@@ -461,7 +450,7 @@ func Load(p string) (cfg *Config, err error) {
 	}
 
 	if cfg.Instances == nil {
-		cfg.Instances = make([]Instance, 0)
+		cfg.Instances = make(map[string]Instance)
 	}
 
 	if !filepath.IsAbs(cfg.ConfigPath) {
