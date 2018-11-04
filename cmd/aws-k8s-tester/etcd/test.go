@@ -3,6 +3,8 @@ package etcd
 import (
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/etcdconfig"
@@ -44,7 +46,13 @@ func testE2EFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	time.Sleep(cfg.WaitBeforeDown)
+	notifier := make(chan os.Signal, 1)
+	signal.Notify(notifier, syscall.SIGINT, syscall.SIGTERM)
+	select {
+	case <-time.After(cfg.WaitBeforeDown):
+	case sig := <-notifier:
+		fmt.Fprintf(os.Stderr, "received %s\n", sig)
+	}
 
 	if err = tester.Terminate(); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create etcd tester %v\n", err)

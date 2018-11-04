@@ -3,6 +3,9 @@ package etcd
 import (
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/aws/aws-k8s-tester/etcdconfig"
 	"github.com/aws/aws-k8s-tester/etcdtester"
@@ -87,6 +90,13 @@ func createClusterFunc(cmd *cobra.Command, args []string) {
 	fmt.Printf("EC2Bastion SSH:\n%s\n\n", cfg.EC2Bastion.SSHCommands())
 
 	if terminateOnExit {
+		notifier := make(chan os.Signal, 1)
+		signal.Notify(notifier, syscall.SIGINT, syscall.SIGTERM)
+		select {
+		case <-time.After(cfg.WaitBeforeDown):
+		case sig := <-notifier:
+			fmt.Fprintf(os.Stderr, "received %s\n", sig)
+		}
 		if err = tester.Terminate(); err != nil {
 			fmt.Fprintf(os.Stderr, "failed to terminate cluster %v\n", err)
 			os.Exit(1)

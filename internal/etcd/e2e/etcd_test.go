@@ -3,6 +3,8 @@ package e2e
 import (
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 	"testing"
 	"time"
 
@@ -29,9 +31,18 @@ func TestETCD(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	fmt.Printf("EC2 SSH:\n%s\n\n", cfg.EC2.SSHCommands())
+	fmt.Printf("EC2Bastion SSH:\n%s\n\n", cfg.EC2Bastion.SSHCommands())
+
 	fmt.Printf("%+v\n", tester.Check())
 
-	time.Sleep(cfg.WaitBeforeDown)
+	notifier := make(chan os.Signal, 1)
+	signal.Notify(notifier, syscall.SIGINT, syscall.SIGTERM)
+	select {
+	case <-time.After(cfg.WaitBeforeDown):
+	case sig := <-notifier:
+		fmt.Fprintf(os.Stderr, "received %s\n", sig)
+	}
 
 	if err = tester.Terminate(); err != nil {
 		t.Fatal(err)
