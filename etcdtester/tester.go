@@ -19,7 +19,7 @@ type Deployer interface {
 	Stop(id string) error
 	// Restart restarts the specified node.
 	Restart(id string) error
-	// Terminate terminates the etcd cluster, deleting all provider resources (e.g. EC2).
+	// Terminate terminates the etcd cluster, deleting all provider resources (e.g. GCE, EC2, etc.).
 	Terminate() error
 	// MemberAdd adds a new member to the cluster.
 	MemberAdd(id string) error
