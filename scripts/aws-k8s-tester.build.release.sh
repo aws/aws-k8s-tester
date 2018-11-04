@@ -35,7 +35,13 @@ for os in linux darwin; do
     ./cmd/aws-k8s-tester
 done
 
-CGO_ENABLED=0 GOOS=${os} GOARCH=$(go env GOARCH) \
+if [[ "${OSTYPE}" == "linux-gnu" ]]; then
+  ./bin/aws-k8s-tester-${RELEASE_VERSION}-linux-$(go env GOARCH) version
+elif [[ "${OSTYPE}" == "darwin"* ]]; then
+  ./bin/aws-k8s-tester-${RELEASE_VERSION}-darwin-$(go env GOARCH) version
+fi
+
+CGO_ENABLED=0 GOARCH=$(go env GOARCH) \
   go build -v \
   -ldflags "-s -w \
   -X github.com/aws/aws-k8s-tester/version.GitCommit=${GIT_COMMIT} \
@@ -44,6 +50,6 @@ CGO_ENABLED=0 GOOS=${os} GOARCH=$(go env GOARCH) \
   -o ./bin/aws-k8s-tester \
   ./cmd/aws-k8s-tester
 
-./bin/aws-k8s-tester-${RELEASE_VERSION}-${os}-$(go env GOARCH) version
+./bin/aws-k8s-tester version
 
 echo "Success!"
