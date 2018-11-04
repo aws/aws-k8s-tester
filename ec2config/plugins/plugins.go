@@ -194,7 +194,7 @@ ETCDCTL_API=3 etcdctl version`,
 			GitCloneURL:   "https://github.com/aws/aws-k8s-tester.git",
 			IsPR:          false,
 			GitBranch:     "master",
-			InstallScript: `make build && sudo cp ./aws-k8s-tester /usr/local/bin/aws-k8s-tester`,
+			InstallScript: `make release && sudo cp ./bin/aws-k8s-tester /usr/local/bin/aws-k8s-tester`,
 		})
 		if err != nil {
 			return script{}, err

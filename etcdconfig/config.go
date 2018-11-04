@@ -538,7 +538,7 @@ func init() {
 	defaultConfig.EC2Bastion.Plugins = []string{
 		"update-amazon-linux-2",
 		"install-etcd-3.1.12",
-		// TODO: install "aws-k8s-tester"
+		"install-aws-k8s-tester",
 	}
 	defaultConfig.EC2Bastion.Count = 1
 	defaultConfig.EC2Bastion.Wait = true

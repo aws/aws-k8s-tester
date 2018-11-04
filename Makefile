@@ -1,7 +1,7 @@
 
-.PHONY: build
-build:
-	go build -v ./cmd/aws-k8s-tester
+.PHONY: release
+release:
+	./scripts/aws-k8s-tester.build.release.sh
 
 clean:
 	rm -rf ./bin
