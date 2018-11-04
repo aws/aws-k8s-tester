@@ -4,6 +4,8 @@ package etcdtester
 // Tester defines etcd specific operations.
 type Tester interface {
 	Deployer
+	// CheckStatus checks the cluster status with etcd 'Status' API.
+	CheckStatus() Cluster
 }
 
 // Deployer defines etcd deployer.

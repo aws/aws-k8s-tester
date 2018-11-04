@@ -2,6 +2,7 @@
 package etcd
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -232,6 +233,23 @@ func (md *embedded) Create() (err error) {
 	return nil
 }
 
+func (md *embedded) Cluster() (c etcdtester.Cluster) {
+	md.mu.RLock()
+	defer md.mu.RUnlock()
+	return md.cluster()
+}
+
+func (md *embedded) cluster() (c etcdtester.Cluster) {
+	c.Members = make(map[string]etcdtester.Member, len(md.cfg.ClusterState))
+	for id, v := range md.cfg.ClusterState {
+		c.Members[id] = etcdtester.Member{
+			ID:        id,
+			ClientURL: v.AdvertiseClientURLs,
+		}
+	}
+	return c
+}
+
 func (md *embedded) CheckHealth() etcdtester.Cluster {
 	md.mu.RLock()
 	defer md.mu.RUnlock()
@@ -240,9 +258,9 @@ func (md *embedded) CheckHealth() etcdtester.Cluster {
 
 func (md *embedded) checkHealth() (c etcdtester.Cluster) {
 	c.Members = make(map[string]etcdtester.Member, len(md.cfg.ClusterState))
-	for k, v := range md.cfg.ClusterState {
-		c.Members[k] = etcdtester.Member{
-			ID:        k,
+	for id, v := range md.cfg.ClusterState {
+		c.Members[id] = etcdtester.Member{
+			ID:        id,
 			ClientURL: v.AdvertiseClientURLs,
 		}
 	}
@@ -333,18 +351,111 @@ func (md *embedded) checkHealth() (c etcdtester.Cluster) {
 	return c
 }
 
-func (md *embedded) Cluster() (c etcdtester.Cluster) {
+func (md *embedded) CheckStatus() (c etcdtester.Cluster) {
 	md.mu.RLock()
 	defer md.mu.RUnlock()
-	return md.cluster()
+	return md.checkStatus()
 }
 
-func (md *embedded) cluster() (c etcdtester.Cluster) {
+func (md *embedded) checkStatus() (c etcdtester.Cluster) {
 	c.Members = make(map[string]etcdtester.Member, len(md.cfg.ClusterState))
-	for k, v := range md.cfg.ClusterState {
-		c.Members[k] = etcdtester.Member{
-			ID:        k,
+	for id, v := range md.cfg.ClusterState {
+		c.Members[id] = etcdtester.Member{
+			ID:        id,
 			ClientURL: v.AdvertiseClientURLs,
+		}
+	}
+
+	var iv ec2config.Instance
+	for _, v := range md.cfg.EC2Bastion.Instances {
+		iv = v
+		break
+	}
+	sh, err := ssh.New(ssh.Config{
+		Logger:        md.lg,
+		KeyPath:       md.cfg.EC2Bastion.KeyPath,
+		UserName:      md.cfg.EC2Bastion.UserName,
+		PublicIP:      iv.PublicIP,
+		PublicDNSName: iv.PublicDNSName,
+	})
+	if err != nil {
+		md.lg.Warn(
+			"failed to create SSH",
+			zap.Error(err),
+		)
+		for id := range md.cfg.ClusterState {
+			vv, ok := c.Members[id]
+			vv.ID = id
+			if !ok {
+				vv.Status = fmt.Sprintf("%s not found", id)
+				vv.OK = false
+			} else {
+				vv.Status = fmt.Sprintf("failed to create SSH to bastion (%v)", err)
+				vv.OK = false
+			}
+			c.Members[id] = vv
+		}
+		return c
+	}
+
+	if err = sh.Connect(); err != nil {
+		md.lg.Warn(
+			"failed to connect SSH",
+			zap.Error(err),
+		)
+		for id := range md.cfg.ClusterState {
+			vv, ok := c.Members[id]
+			vv.ID = id
+			if !ok {
+				vv.Status = fmt.Sprintf("%s not found", id)
+				vv.OK = false
+			} else {
+				vv.Status = fmt.Sprintf("failed to connect SSH to bastion (%v)", err)
+				vv.OK = false
+			}
+			c.Members[id] = vv
+		}
+		return c
+	}
+
+	remotePath := fmt.Sprintf("/home/%s/aws-k8s-tester.etcd.yaml", md.cfg.EC2Bastion.UserName)
+	_, err = sh.Send(
+		md.cfg.ConfigPath,
+		remotePath,
+		ssh.WithRetry(10, 3*time.Second),
+		ssh.WithTimeout(5*time.Second),
+	)
+	if err != nil {
+		for id, m := range c.Members {
+			m.Status = fmt.Sprintf("status check failed to send configuration file (%v)", err)
+			m.OK = false
+			c.Members[id] = m
+		}
+	} else {
+		var out []byte
+		out, err = sh.Run(
+			fmt.Sprintf("aws-k8s-tester etcd test status --path=%s", remotePath),
+			ssh.WithRetry(10, 3*time.Second),
+			ssh.WithTimeout(5*time.Second),
+		)
+		if err != nil {
+			for id, m := range c.Members {
+				m.Status = fmt.Sprintf("status check failed to run 'test status' commands (%v)", err)
+				m.OK = false
+				c.Members[id] = m
+			}
+		} else {
+			c2 := etcdtester.Cluster{}
+			err = json.Unmarshal(out, &c2)
+			if err != nil {
+				for id, m := range c.Members {
+					m.Status = fmt.Sprintf("status check failed to decode 'test status' output (%v)", err)
+					m.OK = false
+					c.Members[id] = m
+				}
+			} else {
+				c = c2
+			}
 		}
 	}
 	return c
