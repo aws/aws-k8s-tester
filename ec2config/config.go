@@ -91,8 +91,8 @@ type Config struct {
 
 	// InstanceType is the instance type.
 	InstanceType string `json:"instance-type,omitempty"`
-	// Count is the number of EC2 instances to create.
-	Count int `json:"count,omitempty"`
+	// ClusterSize is the number of EC2 instances to create.
+	ClusterSize int `json:"cluster-size"`
 
 	// KeyName is the name of the key pair used for SSH access.
 	// Leave empty to create a temporary one.
@@ -229,7 +229,7 @@ var defaultConfig = Config{
 
 	// 4 vCPU, 15 GB RAM
 	InstanceType: "m3.xlarge",
-	Count:        1,
+	ClusterSize:  1,
 
 	AssociatePublicIPAddress: true,
 
@@ -368,8 +368,8 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 	if cfg.InstanceType == "" {
 		return errors.New("empty InstanceType")
 	}
-	if cfg.Count < 1 {
-		return errors.New("unexpected Count")
+	if cfg.ClusterSize < 1 {
+		return errors.New("unexpected ClusterSize")
 	}
 
 	if cfg.ClusterName == "" {
