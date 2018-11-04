@@ -9,7 +9,7 @@ func NewCommand() *cobra.Command {
 		Use:   "etcd",
 		Short: "etcd commands",
 	}
-	cmd.PersistentFlags().StringVarP(&path, "path", "p", "", "ec2 test configuration file path")
+	cmd.PersistentFlags().StringVarP(&path, "path", "p", "", "etcd test configuration file path")
 	cmd.AddCommand(
 		newTest(),
 		newCreate(),

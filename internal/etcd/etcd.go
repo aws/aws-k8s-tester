@@ -18,7 +18,6 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/zaputil"
 
 	"github.com/dustin/go-humanize"
-	"go.etcd.io/etcd/clientv3"
 	"go.uber.org/zap"
 )
 
@@ -509,39 +508,4 @@ func fetchLog(
 	fpathToS3Path = make(map[string]string)
 	fpathToS3Path[etcdLogPath] = fmt.Sprintf("%s/%s-etcd.server.log", clusterName, id)
 	return fpathToS3Path, nil
-}
-
-// TODO
-func (md *embedded) checkETCDHealth() {
-	_ = clientv3.Config{}
-
-	// hh = make(map[string]etcdtester.Health, len(md.cfg.ClusterState))
-	// for k, v := range md.cfg.ClusterState {
-	// 	ep := v.AdvertiseClientURLs
-	// 	health := etcdtester.Health{
-	// 		Status: "",
-	// 		Error:  nil,
-	// 	}
-	// 	cli, err := clientv3.New(clientv3.Config{
-	// 		Endpoints: []string{ep},
-	// 	})
-	// 	if err != nil {
-	// 		health.Status = fmt.Sprintf("status check for %q failed %v", ep, err)
-	// 		vv.OK = false
-	// 	} else {
-	// 		defer cli.Close()
-	// 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	// 		sresp, serr := cli.Status(ctx, ep)
-	// 		cancel()
-	// 		if serr != nil {
-	// 			health.Status = fmt.Sprintf("status check for %q failed %v", ep, serr)
-	// 			health.Error = serr
-	// 		} else {
-	// 			health.Status = fmt.Sprintf("status check for %q: %+v", ep, sresp)
-	// 			health.Error = nil
-	// 		}
-	// 	}
-	// 	hh[k] = health
-	// }
-	// return hh
 }

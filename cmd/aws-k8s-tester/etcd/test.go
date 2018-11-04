@@ -1,16 +1,18 @@
 package etcd
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/etcdconfig"
-	"github.com/aws/aws-k8s-tester/internal/etcd"
+	"github.com/aws/aws-k8s-tester/etcdtester"
+	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 
 	"github.com/spf13/cobra"
+	"go.etcd.io/etcd/clientv3"
 )
 
 func newTest() *cobra.Command {
@@ -19,43 +21,67 @@ func newTest() *cobra.Command {
 		Short: "Run etcd tests",
 	}
 	cmd.AddCommand(
-		newTestE2E(),
+		newTestStatus(),
 	)
 	return cmd
 }
 
-func newTestE2E() *cobra.Command {
+func newTestStatus() *cobra.Command {
 	return &cobra.Command{
-		Use:   "e2e",
-		Short: "Run etcd e2e tests",
-		Run:   testE2EFunc,
+		Use:   "status",
+		Short: "Run etcd status tests from a bastion EC2",
+		Run:   testStatusFunc,
 	}
 }
 
-func testE2EFunc(cmd *cobra.Command, args []string) {
-	cfg := etcdconfig.NewDefault()
+func testStatusFunc(cmd *cobra.Command, args []string) {
+	if !fileutil.Exist(path) {
+		fmt.Fprintf(os.Stderr, "cannot find configuration %q\n", path)
+		os.Exit(1)
+	}
 
-	tester, err := etcd.NewTester(cfg)
+	cfg, err := etcdconfig.Load(path)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create etcd tester %v\n", err)
+		fmt.Fprintf(os.Stderr, "failed to load configuration %q (%v)\n", path, err)
 		os.Exit(1)
 	}
 
-	if err = tester.Create(); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to deploy etcd tester %v\n", err)
+	c := etcdtester.Cluster{
+		Members: make(map[string]etcdtester.Member),
+	}
+	for id, v := range cfg.ClusterState {
+		ep := v.AdvertiseClientURLs
+		mm := etcdtester.Member{
+			ID:        id,
+			ClientURL: ep,
+			Status:    "",
+			OK:        false,
+		}
+		cli, err := clientv3.New(clientv3.Config{
+			Endpoints: []string{ep},
+		})
+		if err != nil {
+			mm.Status = fmt.Sprintf("status check for %q failed %v", ep, err)
+			mm.OK = false
+		} else {
+			defer cli.Close()
+			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+			sresp, serr := cli.Status(ctx, ep)
+			cancel()
+			if serr != nil {
+				mm.Status = fmt.Sprintf("status check for %q failed %v", ep, serr)
+				mm.OK = false
+			} else {
+				mm.Status = fmt.Sprintf("status check for %q: %+v", ep, sresp)
+				mm.OK = true
+			}
+		}
+		c.Members[id] = mm
+	}
+	d, err := json.Marshal(c)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to marshal %+v (%v)\n", c, err)
 		os.Exit(1)
 	}
-
-	notifier := make(chan os.Signal, 1)
-	signal.Notify(notifier, syscall.SIGINT, syscall.SIGTERM)
-	select {
-	case <-time.After(cfg.WaitBeforeDown):
-	case sig := <-notifier:
-		fmt.Fprintf(os.Stderr, "received %s\n", sig)
-	}
-
-	if err = tester.Terminate(); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create etcd tester %v\n", err)
-		os.Exit(1)
-	}
+	fmt.Println(string(d))
 }
