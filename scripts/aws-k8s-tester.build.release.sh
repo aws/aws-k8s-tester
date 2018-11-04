@@ -41,15 +41,4 @@ elif [[ "${OSTYPE}" == "darwin"* ]]; then
   ./bin/aws-k8s-tester-${RELEASE_VERSION}-darwin-$(go env GOARCH) version
 fi
 
-CGO_ENABLED=0 GOARCH=$(go env GOARCH) \
-  go build -v \
-  -ldflags "-s -w \
-  -X github.com/aws/aws-k8s-tester/version.GitCommit=${GIT_COMMIT} \
-  -X github.com/aws/aws-k8s-tester/version.ReleaseVersion=${RELEASE_VERSION} \
-  -X github.com/aws/aws-k8s-tester/version.BuildTime=${BUILD_TIME}" \
-  -o ./bin/aws-k8s-tester \
-  ./cmd/aws-k8s-tester
-
-./bin/aws-k8s-tester version
-
 echo "Success!"
