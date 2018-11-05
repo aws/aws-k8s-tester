@@ -189,6 +189,13 @@ type SecurityGroup struct {
 	GroupID   string `json:"group-id,omitempty"`
 }
 
+// genTag generates a tag for cluster name, CloudFormation, and S3 bucket.
+func genTag() string {
+	// use UTC time for everything
+	now := time.Now().UTC()
+	return fmt.Sprintf("aws-k8s-tester-ec2-%d%02d%02d%02d", now.Year(), now.Month(), now.Day(), now.Hour()/12)
+}
+
 // NewDefault returns a copy of the default configuration.
 func NewDefault() *Config {
 	vv := defaultConfig
