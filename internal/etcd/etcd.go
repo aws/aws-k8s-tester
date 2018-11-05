@@ -495,7 +495,6 @@ func (md *embedded) memberList() (*etcdserverpb.MemberListResponse, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	md.lg.Info("connecting to EC2 bastion to run 'member list'")
 	if err = sh.Connect(); err != nil {
 		return nil, err
@@ -558,7 +557,6 @@ func (md *embedded) Stop(id string) error {
 	if err != nil {
 		return err
 	}
-
 	md.lg.Info("connecting to EC2 instance to stop")
 	if err = sh.Connect(); err != nil {
 		return err
@@ -607,7 +605,6 @@ func (md *embedded) Restart(id string) error {
 	if err != nil {
 		return err
 	}
-
 	md.lg.Info("connecting to EC2 instance to restart")
 	if err = sh.Connect(); err != nil {
 		return err
@@ -680,19 +677,16 @@ func (md *embedded) MemberRemove(id string) error {
 	if !ok {
 		return fmt.Errorf("%q does not exist, can't remove", id)
 	}
-	var iv ec2config.Instance
-	iv, ok = md.cfg.EC2.Instances[id]
+	_, ok = md.cfg.EC2.Instances[id]
 	if !ok {
 		return fmt.Errorf("%q does not exist, can't remove", id)
 	}
-	eps := []string{}
-	for id2, v := range md.cfg.ClusterState {
-		if id == id2 {
-			continue
-		}
-		eps = append(eps, v.AdvertiseClientURLs)
-	}
 
+	var iv ec2config.Instance
+	for _, v := range md.cfg.EC2Bastion.Instances {
+		iv = v
+		break
+	}
 	sh, err := ssh.New(ssh.Config{
 		Logger:        md.lg,
 		KeyPath:       md.cfg.EC2Bastion.KeyPath,
@@ -703,12 +697,19 @@ func (md *embedded) MemberRemove(id string) error {
 	if err != nil {
 		return err
 	}
-
 	md.lg.Info("connecting to EC2 bastion to run 'member remove' command")
 	if err = sh.Connect(); err != nil {
 		return err
 	}
 	defer sh.Close()
+
+	eps := []string{}
+	for id2, v := range md.cfg.ClusterState {
+		if id == id2 {
+			continue
+		}
+		eps = append(eps, v.AdvertiseClientURLs)
+	}
 
 	var out []byte
 	out, err = sh.Run(
