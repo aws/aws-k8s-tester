@@ -171,7 +171,7 @@ func (md *embedded) Create() (err error) {
 			localPath,
 			remotePath,
 			ssh.WithRetry(100, 5*time.Second),
-			ssh.WithTimeout(30*time.Second),
+			ssh.WithTimeout(15*time.Second),
 		)
 		if err != nil {
 			return fmt.Errorf("failed to send %q (%v)", string(out), err)
@@ -180,7 +180,7 @@ func (md *embedded) Create() (err error) {
 		_, err = sh.Run(
 			fmt.Sprintf("chmod +x %s", remotePath),
 			ssh.WithRetry(100, 5*time.Second),
-			ssh.WithTimeout(30*time.Second),
+			ssh.WithTimeout(15*time.Second),
 		)
 		if err != nil {
 			return err
@@ -188,7 +188,7 @@ func (md *embedded) Create() (err error) {
 
 		_, err = sh.Run(
 			fmt.Sprintf("sudo bash %s", remotePath),
-			ssh.WithTimeout(7*time.Second),
+			ssh.WithTimeout(15*time.Second),
 		)
 		md.lg.Info("started", zap.String("id", id), zap.String("public-dns-name", iv.PublicDNSName), zap.Error(err))
 	}
@@ -338,7 +338,7 @@ func (md *embedded) checkHealth() (c etcdtester.Cluster) {
 		out, err = sh.Run(
 			fmt.Sprintf("curl -sL %s/health", ep),
 			ssh.WithRetry(10, 3*time.Second),
-			ssh.WithTimeout(5*time.Second),
+			ssh.WithTimeout(15*time.Second),
 		)
 		if err != nil {
 			vv.Status = fmt.Sprintf("status check for %q failed %v", ep, err)
@@ -428,7 +428,7 @@ func (md *embedded) checkStatus() (c etcdtester.Cluster) {
 		md.cfg.ConfigPath,
 		remotePath,
 		ssh.WithRetry(10, 3*time.Second),
-		ssh.WithTimeout(5*time.Second),
+		ssh.WithTimeout(15*time.Second),
 	)
 	if err != nil {
 		for id, m := range c.Members {
@@ -441,7 +441,7 @@ func (md *embedded) checkStatus() (c etcdtester.Cluster) {
 		out, err = sh.Run(
 			fmt.Sprintf("aws-k8s-tester etcd test status --path=%s", remotePath),
 			ssh.WithRetry(10, 3*time.Second),
-			ssh.WithTimeout(5*time.Second),
+			ssh.WithTimeout(15*time.Second),
 		)
 		if err != nil {
 			for id, m := range c.Members {
@@ -501,7 +501,7 @@ func (md *embedded) Stop(id string) error {
 	_, err = sh.Run(
 		"sudo systemctl stop etcd.service",
 		ssh.WithRetry(100, 5*time.Second),
-		ssh.WithTimeout(3*time.Minute),
+		ssh.WithTimeout(15*time.Second),
 	)
 	if err != nil {
 		md.lg.Info("failed to stop etcd", zap.String("id", id))
@@ -552,9 +552,8 @@ func (md *embedded) Restart(id string) error {
 		ssh.WithTimeout(3*time.Minute),
 	)
 	if err != nil {
-		md.lg.Info("failed to restart etcd", zap.String("id", id))
+		md.lg.Info("failed to restart etcd", zap.String("id", id), zap.Error(err))
 	}
-
 	c := md.checkHealth()
 	for id, v := range c.Members {
 		md.lg.Info("checked health status after restart", zap.String("id", id), zap.String("status", v.Status))
@@ -582,7 +581,6 @@ func (md *embedded) Terminate() error {
 	errc := make(chan error)
 	go func() {
 		errc <- md.ec2Deployer.Terminate()
-
 	}()
 	go func() {
 		errc <- md.ec2BastionDeployer.Terminate()
@@ -603,16 +601,84 @@ func (md *embedded) Terminate() error {
 	return nil
 }
 
+func (md *embedded) MemberRemove(id string) error {
+	md.mu.Lock()
+	defer md.mu.Unlock()
+
+	md.cfg.Sync()
+	md.lg.Info("removing etcd", zap.String("id", id))
+
+	_, ok := md.cfg.ClusterState[id]
+	if !ok {
+		return fmt.Errorf("%q does not exist, can't remove", id)
+	}
+	var iv ec2config.Instance
+	iv, ok = md.cfg.EC2.Instances[id]
+	if !ok {
+		return fmt.Errorf("%q does not exist, can't remove", id)
+	}
+	eps := []string{}
+	for id2, v := range md.cfg.ClusterState {
+		if id == id2 {
+			continue
+		}
+		eps = append(eps, v.AdvertiseClientURLs)
+	}
+
+	sh, err := ssh.New(ssh.Config{
+		Logger:        md.lg,
+		KeyPath:       md.cfg.EC2Bastion.KeyPath,
+		UserName:      md.cfg.EC2Bastion.UserName,
+		PublicIP:      iv.PublicIP,
+		PublicDNSName: iv.PublicDNSName,
+	})
+	if err != nil {
+		return err
+	}
+	if err = sh.Connect(); err != nil {
+		return err
+	}
+	defer sh.Close()
+
+	var out []byte
+	out, err = sh.Run(
+		fmt.Sprintf("ETCDCTL_API=3 etcdctl --endpoints=%s member remove %s", strings.Join(eps, ","), id),
+		ssh.WithRetry(100, 5*time.Second),
+		ssh.WithTimeout(15*time.Second),
+	)
+	if err != nil {
+		md.lg.Info("failed to member remove", zap.String("id", id), zap.Error(err))
+	} else {
+		md.lg.Info("removed member", zap.String("id", id), zap.String("output", string(out)))
+		delete(md.cfg.ClusterState, id)
+		md.cfg.ClusterSize--
+	}
+
+	defer func() {
+		fmt.Println("after delete, len(md.cfg.ClusterState):", len(md.cfg.ClusterState))
+		fmt.Println("after delete, md.cfg.ClusterSize:", md.cfg.ClusterSize)
+		fmt.Println("after delete, len(md.cfg.EC2.Instances):", len(md.cfg.EC2.Instances))
+		fmt.Println("after delete, md.cfg.EC2.ClusterSize:", md.cfg.EC2.ClusterSize)
+	}()
+
+	md.cfg.Sync()
+	return md.ec2Deployer.Delete(id)
+}
+
 func (md *embedded) MemberAdd(id string) error {
 	md.mu.Lock()
 	defer md.mu.Unlock()
 
-	return nil
-}
-
-func (md *embedded) MemberRemove(id string) error {
-	md.mu.Lock()
-	defer md.mu.Unlock()
+	_, ok := md.cfg.ClusterState[id]
+	if ok {
+		return fmt.Errorf("%q already exist, can't add", id)
+	}
+	var iv ec2config.Instance
+	iv, ok = md.cfg.EC2.Instances[id]
+	if ok {
+		return fmt.Errorf("%q already exist, can't add", id)
+	}
+	_ = iv
 
 	return nil
 }
@@ -692,7 +758,7 @@ func fetchLog(
 	out, err = sh.Run(
 		"sudo journalctl --no-pager -u etcd.service",
 		ssh.WithRetry(100, 5*time.Second),
-		ssh.WithTimeout(3*time.Minute),
+		ssh.WithTimeout(15*time.Second),
 	)
 	if err != nil {
 		return nil, err

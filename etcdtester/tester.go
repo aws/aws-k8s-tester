@@ -22,10 +22,10 @@ type Deployer interface {
 	Restart(id string) error
 	// Terminate terminates the etcd cluster, deleting all provider resources (e.g. GCE, EC2, etc.).
 	Terminate() error
-	// MemberAdd adds a new member to the cluster.
-	MemberAdd(id string) error
 	// MemberRemove removes a member from the cluster.
 	MemberRemove(id string) error
+	// MemberAdd adds a new member to the cluster.
+	MemberAdd(id string) error
 }
 
 // Cluster is the cluster state.
