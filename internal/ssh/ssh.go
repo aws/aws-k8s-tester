@@ -146,17 +146,36 @@ func (sh *ssh) Connect() (err error) {
 		},
 		HostKeyCallback: cryptossh.InsecureIgnoreHostKey(),
 	}
-	c, chans, reqs, err := cryptossh.NewClientConn(sh.conn, sh.cfg.PublicIP+":22", sshConfig)
+	var (
+		c     cryptossh.Conn
+		chans <-chan cryptossh.NewChannel
+		reqs  <-chan *cryptossh.Request
+	)
+	for i := 0; i < 15; i++ {
+		select {
+		case <-sh.ctx.Done():
+			return errors.New("stopped")
+		default:
+		}
+		c, chans, reqs, err = cryptossh.NewClientConn(sh.conn, sh.cfg.PublicIP+":22", sshConfig)
+		if err != nil {
+			fi, _ := os.Stat(sh.cfg.KeyPath)
+			sh.lg.Warn(
+				"failed to connect",
+				zap.String("public-ip", sh.cfg.PublicIP),
+				zap.String("public-dns-name", sh.cfg.PublicDNSName),
+				zap.String("file-mode", fi.Mode().String()),
+				zap.String("error-type", fmt.Sprintf("%v", reflect.TypeOf(err))),
+				zap.Error(err),
+			)
+			if strings.Contains(err.Error(), "ssh: handshake failed") {
+				time.Sleep(5 * time.Second)
+			}
+			continue
+		}
+		break
+	}
 	if err != nil {
-		fi, _ := os.Stat(sh.cfg.KeyPath)
-		sh.lg.Warn(
-			"failed to connect",
-			zap.String("public-ip", sh.cfg.PublicIP),
-			zap.String("public-dns-name", sh.cfg.PublicDNSName),
-			zap.String("file-mode", fi.Mode().String()),
-			zap.String("error-type", fmt.Sprintf("%v", reflect.TypeOf(err))),
-			zap.Error(err),
-		)
 		return err
 	}
 
@@ -165,8 +184,7 @@ func (sh *ssh) Connect() (err error) {
 		zap.String("public-ip", sh.cfg.PublicIP),
 		zap.String("public-dns-name", sh.cfg.PublicDNSName),
 	)
-
-	return err
+	return nil
 }
 
 func (sh *ssh) Close() {
