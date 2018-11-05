@@ -6,6 +6,9 @@ import "go.etcd.io/etcd/etcdserver/etcdserverpb"
 // Tester defines etcd specific operations.
 type Tester interface {
 	Deployer
+
+	// CheckHealth checks the cluster status with '/health' endpoints.
+	CheckHealth() Cluster
 	// CheckStatus checks the cluster status with etcd 'Status' API.
 	CheckStatus() Cluster
 	// MemberList returns the member list from an etcd cluster.
@@ -18,8 +21,6 @@ type Deployer interface {
 	Create() error
 	// Cluster returns the cluster information without health check.
 	Cluster() Cluster
-	// CheckHealth checks the cluster status with '/health' endpoints.
-	CheckHealth() Cluster
 	// Stop stops the specified node.
 	Stop(id string) error
 	// Restart restarts the specified node.
