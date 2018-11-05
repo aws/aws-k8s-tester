@@ -90,62 +90,6 @@ func (sh *ssh) Connect() (err error) {
 		return fmt.Errorf("failed to parse private key %v", err)
 	}
 
-	sh.lg.Info("dialing",
-		zap.String("public-ip", sh.cfg.PublicIP),
-		zap.String("public-dns-name", sh.cfg.PublicDNSName),
-	)
-	for i := 0; i < 15; i++ {
-		select {
-		case <-sh.ctx.Done():
-			return errors.New("stopped")
-		default:
-		}
-
-		d := net.Dialer{}
-		ctx, cancel := context.WithTimeout(sh.ctx, 15*time.Second)
-		sh.conn, err = d.DialContext(ctx, "tcp", sh.cfg.PublicIP+":22")
-		cancel()
-		if err == nil {
-			break
-		}
-
-		oerr, ok := err.(*net.OpError)
-		if ok {
-			// connect: connection refused
-			if strings.Contains(oerr.Err.Error(), syscall.ECONNREFUSED.Error()) {
-				sh.lg.Warn(
-					"failed to dial (instance might not be ready yet)",
-					zap.String("public-ip", sh.cfg.PublicIP),
-					zap.String("public-dns-name", sh.cfg.PublicDNSName),
-					zap.Error(err),
-				)
-			}
-		} else {
-			sh.lg.Warn(
-				"failed to dial",
-				zap.String("public-ip", sh.cfg.PublicIP),
-				zap.String("public-dns-name", sh.cfg.PublicDNSName),
-				zap.String("error-type", fmt.Sprintf("%v", reflect.TypeOf(err))),
-				zap.Error(err),
-			)
-		}
-		time.Sleep(5 * time.Second)
-	}
-	if err != nil {
-		return err
-	}
-	sh.lg.Info("dialed",
-		zap.String("public-ip", sh.cfg.PublicIP),
-		zap.String("public-dns-name", sh.cfg.PublicDNSName),
-	)
-
-	sshConfig := &cryptossh.ClientConfig{
-		User: sh.cfg.UserName,
-		Auth: []cryptossh.AuthMethod{
-			cryptossh.PublicKeys(sh.signer),
-		},
-		HostKeyCallback: cryptossh.InsecureIgnoreHostKey(),
-	}
 	var (
 		c     cryptossh.Conn
 		chans <-chan cryptossh.NewChannel
@@ -156,6 +100,51 @@ func (sh *ssh) Connect() (err error) {
 		case <-sh.ctx.Done():
 			return errors.New("stopped")
 		default:
+		}
+
+		sh.lg.Info("dialing",
+			zap.String("public-ip", sh.cfg.PublicIP),
+			zap.String("public-dns-name", sh.cfg.PublicDNSName),
+		)
+		d := net.Dialer{}
+		ctx, cancel := context.WithTimeout(sh.ctx, 15*time.Second)
+		sh.conn, err = d.DialContext(ctx, "tcp", sh.cfg.PublicIP+":22")
+		cancel()
+		if err != nil {
+			oerr, ok := err.(*net.OpError)
+			if ok {
+				// connect: connection refused
+				if strings.Contains(oerr.Err.Error(), syscall.ECONNREFUSED.Error()) {
+					sh.lg.Warn(
+						"failed to dial (instance might not be ready yet)",
+						zap.String("public-ip", sh.cfg.PublicIP),
+						zap.String("public-dns-name", sh.cfg.PublicDNSName),
+						zap.Error(err),
+					)
+				}
+			} else {
+				sh.lg.Warn(
+					"failed to dial",
+					zap.String("public-ip", sh.cfg.PublicIP),
+					zap.String("public-dns-name", sh.cfg.PublicDNSName),
+					zap.String("error-type", fmt.Sprintf("%v", reflect.TypeOf(err))),
+					zap.Error(err),
+				)
+			}
+			time.Sleep(5 * time.Second)
+			continue
+		}
+		sh.lg.Info("dialed",
+			zap.String("public-ip", sh.cfg.PublicIP),
+			zap.String("public-dns-name", sh.cfg.PublicDNSName),
+		)
+
+		sshConfig := &cryptossh.ClientConfig{
+			User: sh.cfg.UserName,
+			Auth: []cryptossh.AuthMethod{
+				cryptossh.PublicKeys(sh.signer),
+			},
+			HostKeyCallback: cryptossh.InsecureIgnoreHostKey(),
 		}
 		c, chans, reqs, err = cryptossh.NewClientConn(sh.conn, sh.cfg.PublicIP+":22", sshConfig)
 		if err != nil {
