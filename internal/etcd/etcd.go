@@ -176,7 +176,7 @@ func (md *embedded) Create() (err error) {
 			return err
 		}
 		defer os.RemoveAll(localPath)
-		remotePath := fmt.Sprintf("/home/%s/etcd.sh", md.cfg.EC2.UserName)
+		remotePath := fmt.Sprintf("/home/%s/etcd.create.svc.sh", md.cfg.EC2.UserName)
 
 		_, err = sh.Send(
 			localPath,
@@ -685,7 +685,7 @@ func (md *embedded) Restart(id, ver string) (err error) {
 		return err
 	}
 	defer os.RemoveAll(installScriptPath)
-	installScriptPathRemote := fmt.Sprintf("/home/%s/etcd.install.sh", md.cfg.EC2.UserName)
+	installScriptPathRemote := fmt.Sprintf("/home/%s/etcd.restart.install.sh", md.cfg.EC2.UserName)
 	var sh ssh.SSH
 	sh, err = ssh.New(ssh.Config{
 		Logger:        md.lg,
@@ -723,7 +723,10 @@ func (md *embedded) Restart(id, ver string) (err error) {
 		fmt.Sprintf("sudo bash %s", installScriptPathRemote),
 		ssh.WithTimeout(15*time.Second),
 	)
-	md.lg.Info("installed etcd", zap.String("id", id), zap.String("ver", ver), zap.String("output", string(out)), zap.Error(err))
+	if err != nil {
+		md.lg.Warn("failed to install etcd", zap.String("output", string(out)), zap.Error(err))
+	}
+	md.lg.Info("installed etcd", zap.String("id", id), zap.String("ver", ver))
 
 	md.lg.Info("restarting etcd", zap.String("id", id), zap.String("ver", ver))
 	var svc string
@@ -737,7 +740,7 @@ func (md *embedded) Restart(id, ver string) (err error) {
 		return err
 	}
 	defer os.RemoveAll(svcPath)
-	svcPathRemote := fmt.Sprintf("/home/%s/etcd.svc.sh", md.cfg.EC2.UserName)
+	svcPathRemote := fmt.Sprintf("/home/%s/etcd.restart.svc.sh", md.cfg.EC2.UserName)
 	_, err = sh.Send(
 		svcPath,
 		svcPathRemote,
@@ -962,7 +965,7 @@ func (md *embedded) MemberAdd(ver string) (err error) {
 		return err
 	}
 	defer os.RemoveAll(installScriptPath)
-	remotePath := fmt.Sprintf("/home/%s/etcd.sh", md.cfg.EC2.UserName)
+	remotePath := fmt.Sprintf("/home/%s/etcd.member-add.install.sh", md.cfg.EC2.UserName)
 	var sh ssh.SSH
 	sh, err = ssh.New(ssh.Config{
 		Logger:        md.lg,
