@@ -38,6 +38,13 @@ type Config struct {
 	// Only required when ALB Ingress "TestMode" is "ingress-test-server".
 	AWSK8sTesterImage string `json:"aws-k8s-tester-image,omitempty"`
 
+	// AWSK8sTesterDownloadURL is the URL to download the "aws-k8s-tester" from.
+	// This is required for Kubernetes kubetest plugin.
+	AWSK8sTesterDownloadURL string `json:"aws-k8s-tester-download-url,omitempty"`
+	// AWSIAMAuthenticatorDownloadURL is the URL to download the "aws-iam-authenticator" from.
+	// This is required for Kubernetes kubetest plugin.
+	AWSIAMAuthenticatorDownloadURL string `json:"aws-iam-authenticator-download-url,omitempty"`
+
 	// WaitBeforeDown is the duration to sleep before cluster tear down.
 	WaitBeforeDown time.Duration `json:"wait-before-down,omitempty"`
 	// Down is true to automatically tear down cluster in "test".
@@ -380,6 +387,9 @@ func genTag() string {
 //  - make sure to check both
 var defaultConfig = Config{
 	TestMode: "embedded",
+
+	AWSK8sTesterDownloadURL:        "https://github.com/aws/aws-k8s-tester/releases/download/0.1.2/aws-k8s-tester-0.1.2-linux-amd64",
+	AWSIAMAuthenticatorDownloadURL: "https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-07-26/bin/linux/amd64/aws-iam-authenticator",
 
 	// enough time for ALB access log
 	WaitBeforeDown: time.Minute,
