@@ -19,6 +19,7 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/zaputil"
 
 	"github.com/dustin/go-humanize"
+	"go.etcd.io/etcd/etcdserver/etcdserverpb"
 	"go.uber.org/zap"
 )
 
@@ -464,6 +465,64 @@ func (md *embedded) checkStatus() (c etcdtester.Cluster) {
 		}
 	}
 	return c
+}
+
+func (md *embedded) MemberList() (*etcdserverpb.MemberListResponse, error) {
+	md.mu.RLock()
+	defer md.mu.RUnlock()
+	return md.memberList()
+}
+
+func (md *embedded) memberList() (*etcdserverpb.MemberListResponse, error) {
+	md.cfg.Sync()
+
+	var iv ec2config.Instance
+	for _, v := range md.cfg.EC2Bastion.Instances {
+		iv = v
+		break
+	}
+	sh, err := ssh.New(ssh.Config{
+		Logger:        md.lg,
+		KeyPath:       md.cfg.EC2Bastion.KeyPath,
+		UserName:      md.cfg.EC2Bastion.UserName,
+		PublicIP:      iv.PublicIP,
+		PublicDNSName: iv.PublicDNSName,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if err = sh.Connect(); err != nil {
+		return nil, err
+	}
+	defer sh.Close()
+
+	remotePath := fmt.Sprintf("/home/%s/aws-k8s-tester.etcd.yaml", md.cfg.EC2Bastion.UserName)
+	_, err = sh.Send(
+		md.cfg.ConfigPath,
+		remotePath,
+		ssh.WithRetry(10, 3*time.Second),
+		ssh.WithTimeout(15*time.Second),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	var out []byte
+	out, err = sh.Run(
+		fmt.Sprintf("aws-k8s-tester etcd test member list --path=%s", remotePath),
+		ssh.WithRetry(10, 3*time.Second),
+		ssh.WithTimeout(15*time.Second),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	var presp *etcdserverpb.MemberListResponse
+	if err = presp.Unmarshal(out); err != nil {
+		return nil, err
+	}
+	return presp, nil
 }
 
 func (md *embedded) Stop(id string) error {

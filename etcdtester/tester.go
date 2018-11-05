@@ -1,11 +1,15 @@
 // Package etcdtester defines etcd test operations.
 package etcdtester
 
+import "go.etcd.io/etcd/etcdserver/etcdserverpb"
+
 // Tester defines etcd specific operations.
 type Tester interface {
 	Deployer
 	// CheckStatus checks the cluster status with etcd 'Status' API.
 	CheckStatus() Cluster
+	// MemberList returns the member list from an etcd cluster.
+	MemberList() (*etcdserverpb.MemberListResponse, error)
 }
 
 // Deployer defines etcd deployer.
