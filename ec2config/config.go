@@ -274,6 +274,14 @@ func (cfg *Config) UpdateFromEnvs() error {
 			vv.Field(i).SetBool(bb)
 
 		case reflect.Int, reflect.Int32, reflect.Int64:
+			if fieldName == "WaitBeforeDown" {
+				dv, err := time.ParseDuration(sv)
+				if err != nil {
+					return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+				}
+				vv.Field(i).SetInt(int64(dv))
+				continue
+			}
 			iv, err := strconv.ParseInt(sv, 10, 64)
 			if err != nil {
 				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)

@@ -4,11 +4,13 @@ import (
 	"os"
 	"reflect"
 	"testing"
+	"time"
 )
 
 func TestEnv(t *testing.T) {
 	cfg := NewDefault()
 
+	os.Setenv("AWS_K8S_TESTER_EC2_WAIT_BEFORE_DOWN", "2h")
 	os.Setenv("AWS_K8S_TESTER_EC2_CLUSTER_SIZE", "100")
 	os.Setenv("AWS_K8S_TESTER_EC2_AWS_REGION", "us-east-1")
 	os.Setenv("AWS_K8S_TESTER_EC2_CONFIG_PATH", "test-path")
@@ -27,6 +29,7 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EC2_VPC_CIDR", "192.168.0.0/8")
 
 	defer func() {
+		os.Unsetenv("AWS_K8S_TESTER_EC2_WAIT_BEFORE_DOWN")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_CLUSTER_SIZE")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_AWS_REGION")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_CONFIG_PATH")
@@ -49,6 +52,9 @@ func TestEnv(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	if cfg.WaitBeforeDown != 2*time.Hour {
+		t.Fatalf("unexpected WaitBeforeDown, got %v", cfg.WaitBeforeDown)
+	}
 	if cfg.ClusterSize != 100 {
 		t.Fatalf("ClusterSize expected 100, got %d", cfg.ClusterSize)
 	}
