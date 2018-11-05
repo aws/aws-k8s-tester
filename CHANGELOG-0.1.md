@@ -40,9 +40,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.1...0.1.2).
 ### `internal`
 
 - Rename to [`ec2config` from `internal/ec2/config`](https://github.com/aws/aws-k8s-tester/commit/f8b5d466966862658dff6bc254d7491ba2333aa6).
-- Add [`internal/ec2/config.Config.IngressCIDRs`](https://github.com/aws/aws-k8s-tester/commit/8e7fd780a16433adce69c54c1d995a53a34d60e9) field.
-- Add [`internal/ec2/config.Config.Wait`](https://github.com/aws/aws-k8s-tester/commit/6073c2de289e352c5454d4b17380022168bcbac6) field.
+- Add [`ec2config.Config.IngressCIDRs`](https://github.com/aws/aws-k8s-tester/commit/8e7fd780a16433adce69c54c1d995a53a34d60e9) field.
+- Add [`ec2config.Config.Wait`](https://github.com/aws/aws-k8s-tester/commit/6073c2de289e352c5454d4b17380022168bcbac6) field.
 - Add [`internal/ssh.SSH.Send/Download` using SCP protocol](https://github.com/aws/aws-k8s-tester/commit/84e4363ad658cc6db8e0bf979f6f6bb841795eec).
+- Implement [`internal/ec2.Deployer.Delete`](https://github.com/aws/aws-k8s-tester/commit/000d2292d6108e1ea46ce359f6ac9a08214b592f) method.
 
 ### `pkg/wrk`
 
@@ -77,8 +78,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.0...0.1.1).
 ### `internal`
 
 - Add [`"install-kubeadm"` plugin to `internal/ec2/config/plugins`](https://github.com/aws/aws-k8s-tester/commit/e103c1ca68742bb56a8c43d3508d0c09423bb6b5).
-- Add [`internal/ec2/config.Config.InitScriptCreated`](https://github.com/aws/aws-k8s-tester/commit/793935db2418a7c960d89512372f534996adcb19) flag.
-- Add [`internal/ec2/config.Instance.LaunchTime`](https://github.com/aws/aws-k8s-tester/commit/36fe5579ffb719d108272640c22f478127295dac) field.
+- Add [`ec2config.Config.InitScriptCreated`](https://github.com/aws/aws-k8s-tester/commit/793935db2418a7c960d89512372f534996adcb19) flag.
+- Add [`ec2config.Instance.LaunchTime`](https://github.com/aws/aws-k8s-tester/commit/36fe5579ffb719d108272640c22f478127295dac) field.
 
 ### Go
 
