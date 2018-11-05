@@ -90,12 +90,17 @@ type ETCD struct {
 	// Version is the etcd version.
 	Version  string `json:"version"`
 	features map[string]bool
+
 	// TopLevel is true if this is only used for top-level configuration.
 	TopLevel bool `json:"top-level"`
 
 	SSHPrivateKeyPath string `json:"ssh-private-key-path,omitempty"`
 	PublicIP          string `json:"public-ip,omitempty"`
 	PublicDNSName     string `json:"public-dns-name,omitempty"`
+
+	// MemberID is the etcd node ID in hexadecimal unit.
+	// It is different than ID or Name which is set with instance ID.
+	MemberID string `json:"member-id,omitempty"`
 
 	Name                string `json:"name,omitempty"`
 	DataDir             string `json:"data-dir,omitempty"`
@@ -124,6 +129,7 @@ var skipFlags = map[string]struct{}{
 	"SSHPrivateKeyPath": {},
 	"PublicIP":          {},
 	"PublicDNSName":     {},
+	"MemberID":          {},
 }
 
 var etcdVersions = map[string]map[uint64]map[string]bool{

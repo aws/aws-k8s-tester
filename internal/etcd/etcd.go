@@ -213,6 +213,8 @@ func (md *embedded) Create() (err error) {
 		ready = 0
 		time.Sleep(5 * time.Second)
 	}
+	md.memberList()
+	md.cfg.Sync()
 
 	if md.cfg.UploadTesterLogs {
 		var fpathToS3Path map[string]string
@@ -479,7 +481,6 @@ func (md *embedded) memberList() (*etcdserverpb.MemberListResponse, error) {
 	md.cfg.Sync()
 
 	md.lg.Info("getting member list")
-
 	var iv ec2config.Instance
 	for _, v := range md.cfg.EC2Bastion.Instances {
 		iv = v
@@ -528,7 +529,24 @@ func (md *embedded) memberList() (*etcdserverpb.MemberListResponse, error) {
 	if err = json.Unmarshal(out, presp); err != nil {
 		return nil, err
 	}
-	return presp, nil
+	for _, mem := range presp.Members {
+		nameID, memberID := "", ""
+		for id, v := range md.cfg.ClusterState {
+			if v.AdvertiseClientURLs == mem.ClientURLs[0] {
+				nameID, memberID = id, fmt.Sprintf("%x", mem.ID)
+			}
+		}
+		if nameID == "" || memberID == "" {
+			return nil, fmt.Errorf("no cluster state ETCD found for member %+v", mem)
+		}
+		v, ok := md.cfg.ClusterState[nameID]
+		if !ok {
+			return nil, fmt.Errorf("no cluster state ETCD found for name ID %q", nameID)
+		}
+		v.MemberID = memberID
+		md.cfg.ClusterState[nameID] = v
+	}
+	return presp, md.cfg.Sync()
 }
 
 func (md *embedded) Stop(id string) error {
@@ -666,17 +684,21 @@ func (md *embedded) Terminate() error {
 	return nil
 }
 
-func (md *embedded) MemberRemove(id string) error {
+func (md *embedded) MemberRemove(id string) (err error) {
 	md.mu.Lock()
 	defer md.mu.Unlock()
 
-	md.cfg.Sync()
 	md.lg.Info("removing etcd", zap.String("id", id))
+	if _, err = md.memberList(); err != nil {
+		return err
+	}
 
-	_, ok := md.cfg.ClusterState[id]
+	e, ok := md.cfg.ClusterState[id]
 	if !ok {
 		return fmt.Errorf("%q does not exist, can't remove", id)
 	}
+	memberID := e.MemberID
+
 	_, ok = md.cfg.EC2.Instances[id]
 	if !ok {
 		return fmt.Errorf("%q does not exist, can't remove", id)
@@ -687,7 +709,8 @@ func (md *embedded) MemberRemove(id string) error {
 		iv = v
 		break
 	}
-	sh, err := ssh.New(ssh.Config{
+	var sh ssh.SSH
+	sh, err = ssh.New(ssh.Config{
 		Logger:        md.lg,
 		KeyPath:       md.cfg.EC2Bastion.KeyPath,
 		UserName:      md.cfg.EC2Bastion.UserName,
@@ -711,18 +734,25 @@ func (md *embedded) MemberRemove(id string) error {
 		eps = append(eps, v.AdvertiseClientURLs)
 	}
 
+	/*
+		ETCDCTL_API=3 etcdctl --endpoints=http://192.168.182.84:2379,http://192.168.65.236:2379 member remove 6880345acaba6c00
+		Member 6880345acaba6c00 removed from cluster 3f9b5afcc7c33e1c
+	*/
 	var out []byte
 	out, err = sh.Run(
-		fmt.Sprintf("ETCDCTL_API=3 etcdctl --endpoints=%s member remove %s", strings.Join(eps, ","), id),
+		fmt.Sprintf("ETCDCTL_API=3 etcdctl --endpoints=%s member remove %s", strings.Join(eps, ","), memberID),
 		ssh.WithRetry(100, 5*time.Second),
 		ssh.WithTimeout(15*time.Second),
 	)
 	if err != nil {
-		md.lg.Info("failed to member remove", zap.String("id", id), zap.Error(err))
-	} else {
+		md.lg.Warn("failed to member remove", zap.String("id", id), zap.Error(err))
+	} else if strings.Contains(string(out), "removed from cluster") {
 		md.lg.Info("removed member", zap.String("id", id), zap.String("output", string(out)))
 		delete(md.cfg.ClusterState, id)
 		md.cfg.ClusterSize--
+	} else {
+		md.lg.Warn("failed to member remove", zap.String("id", id), zap.String("output", string(out)))
+		return fmt.Errorf("failed to remove member %q (member ID %q, output %s)", id, memberID, string(out))
 	}
 
 	defer func() {
