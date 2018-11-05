@@ -132,7 +132,8 @@ var skipFlags = map[string]struct{}{
 	"MemberID":          {},
 }
 
-var etcdVersions = map[string]map[uint64]map[string]bool{
+// Versions lists all new features per release version.
+var Versions = map[string]map[uint64]map[string]bool{
 	// master branch
 	// https://github.com/etcd-io/etcd/blob/master/CHANGELOG-3.4.md
 	"3.4": {
@@ -292,6 +293,32 @@ var etcdVersions = map[string]map[uint64]map[string]bool{
 	},
 }
 
+// CheckInitialElectionTickAdvance returns true if "--initial-election-tick-advance" is supported.
+func CheckInitialElectionTickAdvance(ver string) (ok bool) {
+	if ver == "master" {
+		return true
+	}
+	vv, err := semver.Make(ver)
+	if err != nil {
+		return false
+	}
+	majorMinor, patch := fmt.Sprintf("%d.%d", vv.Major, vv.Minor), vv.Patch
+	ps, ok := Versions[majorMinor]
+	if !ok {
+		return false
+	}
+	var features map[string]bool
+	features, ok = ps[patch]
+	if !ok {
+		return false
+	}
+	added, exist := features["initial-election-tick-advance"]
+	if !exist {
+		return false
+	}
+	return added
+}
+
 // Flags returns the list of etcd flags.
 // Make sure to validate the configuration with "ValidateAndSetDefaults".
 func (e *ETCD) Flags() (flags []string, err error) {
@@ -365,6 +392,8 @@ type svcInfo struct {
 
 const svcTmpl = `#!/usr/bin/env bash
 
+sudo systemctl stop etcd.service || true
+
 # to write service file for etcd
 rm -f /tmp/etcd.service
 
@@ -419,7 +448,7 @@ func (e *ETCD) ValidateAndSetDefaults() (err error) {
 	}
 
 	majorMinor, patch := fmt.Sprintf("%d.%d", ver.Major, ver.Minor), ver.Patch
-	ps, ok := etcdVersions[majorMinor]
+	ps, ok := Versions[majorMinor]
 	if !ok {
 		return fmt.Errorf("unknown version %q", majorMinor)
 	}

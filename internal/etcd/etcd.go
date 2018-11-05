@@ -12,6 +12,7 @@ import (
 
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/etcdconfig"
+	etcdplugin "github.com/aws/aws-k8s-tester/etcdconfig/plugins"
 	"github.com/aws/aws-k8s-tester/etcdtester"
 	"github.com/aws/aws-k8s-tester/internal/ec2"
 	"github.com/aws/aws-k8s-tester/internal/ssh"
@@ -114,15 +115,18 @@ func (md *embedded) Create() (err error) {
 		ev.AdvertisePeerURLs = fmt.Sprintf("http://%s:2380", iv.PrivateIP)
 		ev.InitialCluster = ""
 		ev.InitialClusterState = "new"
+		if ok := etcdconfig.CheckInitialElectionTickAdvance(tc.Version); ok {
+			ev.InitialElectionTickAdvance = true
+		} else {
+			ev.InitialElectionTickAdvance = false
+		}
 		md.cfg.ClusterState[iv.InstanceID] = ev
 	}
-
 	initialCluster := ""
 	for k, v := range md.cfg.ClusterState {
 		initialCluster += fmt.Sprintf(",%s=%s", k, v.AdvertisePeerURLs)
 	}
 	initialCluster = initialCluster[1:]
-
 	for id, v := range md.cfg.ClusterState {
 		v.InitialCluster = initialCluster
 		md.cfg.ClusterState[id] = v
@@ -168,15 +172,14 @@ func (md *embedded) Create() (err error) {
 		defer os.RemoveAll(localPath)
 		remotePath := fmt.Sprintf("/home/%s/etcd.sh", md.cfg.EC2.UserName)
 
-		var out []byte
-		out, err = sh.Send(
+		_, err = sh.Send(
 			localPath,
 			remotePath,
 			ssh.WithRetry(100, 5*time.Second),
 			ssh.WithTimeout(15*time.Second),
 		)
 		if err != nil {
-			return fmt.Errorf("failed to send %q (%v)", string(out), err)
+			return fmt.Errorf("failed to send (%v)", err)
 		}
 
 		_, err = sh.Run(
@@ -214,7 +217,12 @@ func (md *embedded) Create() (err error) {
 		ready = 0
 		time.Sleep(5 * time.Second)
 	}
-	md.memberList()
+	if err = md.waitLeader(); err != nil {
+		return err
+	}
+	if _, err = md.memberList(); err != nil {
+		return err
+	}
 	md.cfg.Sync()
 
 	if md.cfg.UploadTesterLogs {
@@ -470,6 +478,78 @@ func (md *embedded) checkStatus() (c etcdtester.Cluster) {
 		}
 	}
 	return c
+}
+
+func (md *embedded) Put(k, v string) error {
+	var iv ec2config.Instance
+	for _, v := range md.cfg.EC2Bastion.Instances {
+		iv = v
+		break
+	}
+	sh, err := ssh.New(ssh.Config{
+		Logger:        md.lg,
+		KeyPath:       md.cfg.EC2Bastion.KeyPath,
+		UserName:      md.cfg.EC2Bastion.UserName,
+		PublicIP:      iv.PublicIP,
+		PublicDNSName: iv.PublicDNSName,
+	})
+	md.lg.Info("connecting to EC2 bastion to run 'get' command")
+	if err = sh.Connect(); err != nil {
+		return err
+	}
+	defer sh.Close()
+
+	eps := make([]string, 0, len(md.cfg.ClusterState))
+	for _, v := range md.cfg.ClusterState {
+		ep := v.AdvertiseClientURLs
+		eps = append(eps, ep)
+	}
+	var out []byte
+	out, err = sh.Run(
+		fmt.Sprintf("ETCDCTL_API=3 etcdctl --endpoints=%s put %q %q", strings.Join(eps, ","), k, v),
+		ssh.WithRetry(100, 5*time.Second),
+		ssh.WithTimeout(15*time.Second),
+	)
+	md.lg.Info("wrote", zap.String("output", string(out)), zap.Error(err))
+	return err
+}
+
+func (md *embedded) waitLeader() error {
+	var iv ec2config.Instance
+	for _, v := range md.cfg.EC2Bastion.Instances {
+		iv = v
+		break
+	}
+	sh, err := ssh.New(ssh.Config{
+		Logger:        md.lg,
+		KeyPath:       md.cfg.EC2Bastion.KeyPath,
+		UserName:      md.cfg.EC2Bastion.UserName,
+		PublicIP:      iv.PublicIP,
+		PublicDNSName: iv.PublicDNSName,
+	})
+	md.lg.Info("connecting to EC2 bastion to run 'get' command")
+	if err = sh.Connect(); err != nil {
+		return err
+	}
+	defer sh.Close()
+
+	for _, v := range md.cfg.ClusterState {
+		ep := v.AdvertiseClientURLs
+		for i := 0; i < 10; i++ {
+			var out []byte
+			out, err = sh.Run(
+				fmt.Sprintf("ETCDCTL_API=3 etcdctl --endpoints=%s get foo", ep),
+				ssh.WithRetry(100, 5*time.Second),
+				ssh.WithTimeout(15*time.Second),
+			)
+			md.lg.Info("ready", zap.String("ep", ep), zap.String("output", string(out)), zap.Error(err))
+			if err == nil {
+				break
+			}
+			time.Sleep(3 * time.Second)
+		}
+	}
+	return nil
 }
 
 func (md *embedded) MemberList() (*etcdserverpb.MemberListResponse, error) {
@@ -760,18 +840,200 @@ func (md *embedded) MemberRemove(id string) (err error) {
 	return md.ec2Deployer.Delete(id)
 }
 
-func (md *embedded) MemberAdd(id string) error {
+func (md *embedded) MemberAdd(ver string) (err error) {
 	md.mu.Lock()
 	defer md.mu.Unlock()
 
-	_, ok := md.cfg.ClusterState[id]
-	if ok {
-		return fmt.Errorf("%q already exist, can't add", id)
+	old := make(map[string]struct{})
+	for id := range md.cfg.EC2.Instances {
+		old[id] = struct{}{}
 	}
-	if _, ok = md.cfg.EC2.Instances[id]; ok {
-		return fmt.Errorf("%q already exist, can't add", id)
+	if err = md.ec2Deployer.Add(); err != nil {
+		return err
+	}
+	newID, newEC2 := "", ec2config.Instance{}
+	for id, v := range md.cfg.EC2.Instances {
+		if _, ok := old[id]; !ok {
+			newID, newEC2 = id, v
+			break
+		}
 	}
 
+	// set up the etcd configuration for a new node
+	newETCD := etcdconfig.ETCD{}
+	for id := range md.cfg.EC2.Instances {
+		newETCD = md.cfg.ClusterState[id]
+		break
+	}
+	newETCD.Version = ver
+	newETCD.TopLevel = false
+	newETCD.SSHPrivateKeyPath = md.cfg.EC2.KeyPath
+	newETCD.PublicIP = newEC2.PublicIP
+	newETCD.PublicDNSName = newEC2.PublicDNSName
+	newETCD.Name = newEC2.InstanceID
+	newETCD.DataDir = fmt.Sprintf("/home/%s/etcd.data", md.cfg.EC2.UserName)
+	newETCD.ListenClientURLs = fmt.Sprintf("http://%s:2379", newEC2.PrivateIP)
+	newETCD.AdvertiseClientURLs = fmt.Sprintf("http://%s:2379", newEC2.PrivateIP)
+	newETCD.ListenPeerURLs = fmt.Sprintf("http://%s:2380", newEC2.PrivateIP)
+	newETCD.AdvertisePeerURLs = fmt.Sprintf("http://%s:2380", newEC2.PrivateIP)
+	initialCluster := ""
+	for k, v := range md.cfg.ClusterState {
+		initialCluster += fmt.Sprintf(",%s=%s", k, v.AdvertisePeerURLs)
+	}
+	initialCluster = initialCluster[1:]
+	newETCD.InitialCluster = fmt.Sprintf("%s,%s=http://%s:2380", initialCluster, newID, newEC2.PrivateIP)
+	newETCD.InitialClusterState = "existing"
+	if ok := etcdconfig.CheckInitialElectionTickAdvance(ver); ok {
+		newETCD.InitialElectionTickAdvance = true
+	} else {
+		newETCD.InitialElectionTickAdvance = false
+	}
+	md.cfg.ClusterState[newID] = newETCD
+	md.cfg.ClusterSize++
+	md.cfg.Sync()
+	if err = md.cfg.ValidateAndSetDefaults(); err != nil {
+		return err
+	}
+
+	md.lg.Info("installing etcd", zap.String("ver", ver))
+	var installScript string
+	installScript, err = etcdplugin.CreateInstallScript(ver)
+	if err != nil {
+		return err
+	}
+	var sh ssh.SSH
+	sh, err = ssh.New(ssh.Config{
+		Logger:        md.lg,
+		KeyPath:       md.cfg.EC2.KeyPath,
+		UserName:      md.cfg.EC2.UserName,
+		PublicIP:      newEC2.PublicIP,
+		PublicDNSName: newEC2.PublicDNSName,
+	})
+	if err != nil {
+		return err
+	}
+	if err = sh.Connect(); err != nil {
+		return err
+	}
+	defer sh.Close()
+	var installScriptPath string
+	installScriptPath, err = fileutil.WriteTempFile([]byte(installScript))
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(installScriptPath)
+	remotePath := fmt.Sprintf("/home/%s/etcd.sh", md.cfg.EC2.UserName)
+	_, err = sh.Send(
+		installScriptPath,
+		remotePath,
+		ssh.WithRetry(100, 5*time.Second),
+		ssh.WithTimeout(15*time.Second),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to send (%v)", err)
+	}
+	_, err = sh.Run(
+		fmt.Sprintf("chmod +x %s", remotePath),
+		ssh.WithRetry(100, 5*time.Second),
+		ssh.WithTimeout(15*time.Second),
+	)
+	if err != nil {
+		return err
+	}
+	_, err = sh.Run(
+		fmt.Sprintf("sudo bash %s", remotePath),
+		ssh.WithTimeout(15*time.Second),
+	)
+	md.lg.Info("installed etcd", zap.String("ver", ver), zap.Error(err))
+
+	md.lg.Info("starting 'member add' command", zap.String("ver", ver))
+	var bastion ec2config.Instance
+	for _, v := range md.cfg.EC2Bastion.Instances {
+		bastion = v
+		break
+	}
+	var bastionSSH ssh.SSH
+	bastionSSH, err = ssh.New(ssh.Config{
+		Logger:        md.lg,
+		KeyPath:       md.cfg.EC2Bastion.KeyPath,
+		UserName:      md.cfg.EC2Bastion.UserName,
+		PublicIP:      bastion.PublicIP,
+		PublicDNSName: bastion.PublicDNSName,
+	})
+	if err != nil {
+		return err
+	}
+	md.lg.Info("connecting to EC2 bastion to run 'member add' command")
+	if err = bastionSSH.Connect(); err != nil {
+		return err
+	}
+	defer bastionSSH.Close()
+	eps := []string{}
+	for _, v := range md.cfg.ClusterState {
+		eps = append(eps, v.AdvertiseClientURLs)
+	}
+	/*
+		ETCDCTL_API=3 etcdctl member add s1 --peer-urls=...
+		Member 6880345acaba6c00 added cluster 3f9b5afcc7c33e1c
+	*/
+	var out []byte
+	out, err = bastionSSH.Run(
+		fmt.Sprintf("ETCDCTL_API=3 etcdctl --endpoints=%s member add %s --peer-urls=%s", strings.Join(eps, ","), newEC2.InstanceID, newETCD.AdvertisePeerURLs),
+		ssh.WithRetry(100, 5*time.Second),
+		ssh.WithTimeout(15*time.Second),
+	)
+	if err != nil {
+		md.lg.Warn("failed to member add", zap.String("id", newEC2.InstanceID), zap.Error(err))
+	} else if strings.Contains(string(out), "added to cluster") {
+		md.lg.Info("added member", zap.String("id", newEC2.InstanceID), zap.String("output", string(out)))
+	} else {
+		md.lg.Warn("failed to member add", zap.String("id", newEC2.InstanceID), zap.String("output", string(out)))
+		return fmt.Errorf("failed to add member %q (output %s)", newEC2.InstanceID, string(out))
+	}
+	md.cfg.Sync()
+	md.lg.Info("finished 'member add' command", zap.String("ver", ver))
+
+	md.lg.Info("starting the new etcd", zap.String("ver", ver))
+	var svc string
+	svc, err = newETCD.Service()
+	if err != nil {
+		return err
+	}
+	var svcPath string
+	svcPath, err = fileutil.WriteTempFile([]byte(svc))
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(svcPath)
+	_, err = sh.Send(
+		svcPath,
+		remotePath,
+		ssh.WithRetry(100, 5*time.Second),
+		ssh.WithTimeout(15*time.Second),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to send (%v)", err)
+	}
+	_, err = sh.Run(
+		fmt.Sprintf("chmod +x %s", remotePath),
+		ssh.WithRetry(100, 5*time.Second),
+		ssh.WithTimeout(15*time.Second),
+	)
+	if err != nil {
+		return err
+	}
+	_, err = sh.Run(
+		fmt.Sprintf("sudo bash %s", remotePath),
+		ssh.WithTimeout(15*time.Second),
+	)
+	md.lg.Info("started the new etcd", zap.String("ver", ver), zap.Error(err))
+
+	if _, err = md.memberList(); err != nil {
+		return err
+	}
+	for id, ee := range md.cfg.ClusterState {
+		fmt.Printf("after member add: %s, %s\n", id, ee.MemberID)
+	}
 	return nil
 }
 

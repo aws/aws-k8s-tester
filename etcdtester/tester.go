@@ -11,6 +11,8 @@ type Tester interface {
 	CheckHealth() Cluster
 	// CheckStatus checks the cluster status with etcd 'Status' API.
 	CheckStatus() Cluster
+	// Put writes a key-value pair.
+	Put(k, v string) error
 	// MemberList returns the member list from an etcd cluster.
 	MemberList() (*etcdserverpb.MemberListResponse, error)
 }
@@ -30,7 +32,7 @@ type Deployer interface {
 	// MemberRemove removes a member from the cluster.
 	MemberRemove(id string) error
 	// MemberAdd adds a new member to the cluster.
-	MemberAdd(id string) error
+	MemberAdd(ver string) error
 }
 
 // Cluster is the cluster state.

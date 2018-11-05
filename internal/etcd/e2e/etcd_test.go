@@ -88,6 +88,13 @@ func TestETCD(t *testing.T) {
 		fmt.Fprintf(os.Stderr, "received %s\n", sig)
 	}
 
+	if err = tester.Put("foo", "bar"); err != nil {
+		t.Errorf("failed write %v", err)
+	}
+	if err = tester.MemberAdd("3.2.25"); err != nil {
+		t.Errorf("failed to add member %v", err)
+	}
+
 	if err = tester.Terminate(); err != nil {
 		t.Fatal(err)
 	}
