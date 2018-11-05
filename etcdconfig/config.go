@@ -78,6 +78,9 @@ type Config struct {
 	Cluster *ETCD `json:"cluster"`
 	// ClusterState maps ID to etcd instance.
 	ClusterState map[string]ETCD `json:"cluster-state"`
+
+	// TestTimeout is the test operation timeout.
+	TestTimeout time.Duration `json:"test-timeout,omitempty"`
 }
 
 // ETCD defines etcd-specific configuration.
@@ -535,6 +538,7 @@ func init() {
 		2380: "192.168.0.0/8",
 	}
 
+	defaultConfig.EC2Bastion.EnvPrefix = "AWS_K8S_TESTER_EC2_BASTION_"
 	defaultConfig.EC2Bastion.Plugins = []string{
 		"update-amazon-linux-2",
 		"install-etcd-3.1.12",
@@ -573,6 +577,8 @@ var defaultConfig = Config{
 
 	ClusterSize:  3,
 	ClusterState: make(map[string]ETCD),
+
+	TestTimeout: 10 * time.Second,
 }
 
 var defaultETCD = ETCD{
@@ -586,7 +592,7 @@ var defaultETCD = ETCD{
 	ElectionTimeoutMS: 1000,
 
 	QuotaBackendGB: 2,
-	EnablePprof:    true,
+	EnablePprof:    false,
 }
 
 // Load loads configuration from YAML.
@@ -658,12 +664,15 @@ func (cfg *Config) BackupConfig() (p string, err error) {
 
 const (
 	envPfx        = "AWS_K8S_TESTER_ETCD_"
-	envPfxCluster = "AWS_K8S_TESTER_ETCD_TOP_ETCD_"
+	envPfxCluster = "AWS_K8S_TESTER_ETCD_CLUSTER_"
 )
 
 // UpdateFromEnvs updates fields from environmental variables.
 func (cfg *Config) UpdateFromEnvs() error {
 	if err := cfg.EC2.UpdateFromEnvs(); err != nil {
+		return err
+	}
+	if err := cfg.EC2Bastion.UpdateFromEnvs(); err != nil {
 		return err
 	}
 
@@ -696,7 +705,8 @@ func (cfg *Config) UpdateFromEnvs() error {
 			vv1.Field(i).SetBool(bb)
 
 		case reflect.Int, reflect.Int32, reflect.Int64:
-			if tp1.Field(i).Name == "WaitBeforeDown" {
+			if tp1.Field(i).Name == "WaitBeforeDown" ||
+				tp1.Field(i).Name == "TestTimeout" {
 				dv, err := time.ParseDuration(sv)
 				if err != nil {
 					return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
@@ -800,6 +810,9 @@ var etcdPorts = []int64{22, 2379, 2380}
 // And updates empty fields with default values.
 // At the end, it writes populated YAML to aws-k8s-tester config path.
 func (cfg *Config) ValidateAndSetDefaults() (err error) {
+	if err = cfg.Cluster.ValidateAndSetDefaults(); err != nil {
+		return err
+	}
 	if cfg.EC2 == nil {
 		return errors.New("EC2 configuration not found")
 	}

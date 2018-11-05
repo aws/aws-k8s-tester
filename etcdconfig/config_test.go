@@ -9,7 +9,9 @@ import (
 )
 
 func TestETCD(t *testing.T) {
-	e := defaultETCD
+	ee := NewDefault().Cluster
+	e := *ee
+	e.ValidateAndSetDefaults()
 	e.Name = "s1"
 	e.DataDir = "/tmp/etcd/s1"
 	e.ListenClientURLs = "http://localhost:2379"
@@ -34,14 +36,13 @@ func TestETCD(t *testing.T) {
 		`--initial-advertise-peer-urls=http://localhost:2380`,
 		`--initial-cluster=s1=http://localhost:2380`,
 		`--initial-cluster-state=new`,
-
 		`--initial-cluster-token=tkn`,
 		`--snapshot-count=10000`,
 		`--heartbeat-interval=100`,
 		`--election-timeout=1000`,
 		`--quota-backend-bytes=2147483648`,
-		`--enable-pprof=true`,
-		`--initial-election-tick-advance=true`,
+		`--enable-pprof=false`,
+		// `--initial-election-tick-advance=true`,
 	}
 	if !reflect.DeepEqual(flags, dst) {
 		t.Fatalf("expected %q, got %q", dst, flags)
@@ -64,11 +65,17 @@ func TestValidateAndSetDefaults(t *testing.T) {
 	}
 
 	cfg.Cluster.Version = "v3.1.12"
+	cfg.Cluster.InitialElectionTickAdvance = true
+	err = cfg.ValidateAndSetDefaults()
+	if err.Error() != `InitialElectionTickAdvance invalid for "3.1.12"` {
+		t.Fatalf("unexpected error %v", err)
+	}
+
+	cfg.Cluster.Version = "v3.1.16"
 	err = cfg.ValidateAndSetDefaults()
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	if err = cfg.Sync(); err != nil {
 		t.Fatal(err)
 	}
@@ -78,24 +85,34 @@ func TestValidateAndSetDefaults(t *testing.T) {
 func TestEnv(t *testing.T) {
 	cfg := NewDefault()
 
+	os.Setenv("AWS_K8S_TESTER_ETCD_CLUSTER_SNAPSHOT_COUNT", "100")
+	os.Setenv("AWS_K8S_TESTER_EC2_BASTION_CLUSTER_SIZE", "2")
+	os.Setenv("AWS_K8S_TESTER_ETCD_TEST_TIMEOUT", "20s")
+	os.Setenv("AWS_K8S_TESTER_EC2_WAIT_BEFORE_DOWN", "3h")
+	os.Setenv("AWS_K8S_TESTER_ETCD_WAIT_BEFORE_DOWN", "2h")
 	os.Setenv("AWS_K8S_TESTER_EC2_CLUSTER_SIZE", "100")
+	os.Setenv("AWS_K8S_TESTER_ETCD_CLUSTER_SIZE", "100")
 	os.Setenv("AWS_K8S_TESTER_ETCD_TAG", "my-test")
 	os.Setenv("AWS_K8S_TESTER_ETCD_CLUSTER_NAME", "my-cluster")
 	os.Setenv("AWS_K8S_TESTER_ETCD_DOWN", "false")
 	os.Setenv("AWS_K8S_TESTER_ETCD_LOG_DEBUG", "true")
 	os.Setenv("AWS_K8S_TESTER_ETCD_UPLOAD_TESTER_LOGS", "false")
-	os.Setenv("AWS_K8S_TESTER_ETCD_WAIT_BEFORE_DOWN", "2h")
 	os.Setenv("AWS_K8S_TESTER_ETCD_CLUSTER_VERSION", "v3.1.12")
 	os.Setenv("AWS_K8S_TESTER_ETCD_CLUSTER_TOP_LEVEL", "true")
 
 	defer func() {
+		os.Unsetenv("AWS_K8S_TESTER_ETCD_CLUSTER_SNAPSHOT_COUNT")
+		os.Unsetenv("AWS_K8S_TESTER_EC2_BASTION_CLUSTER_SIZE")
+		os.Unsetenv("AWS_K8S_TESTER_ETCD_TEST_TIMEOUT")
+		os.Unsetenv("AWS_K8S_TESTER_EC2_WAIT_BEFORE_DOWN")
+		os.Unsetenv("AWS_K8S_TESTER_ETCD_WAIT_BEFORE_DOWN")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_CLUSTER_SIZE")
+		os.Unsetenv("AWS_K8S_TESTER_ETCD_CLUSTER_SIZE")
 		os.Unsetenv("AWS_K8S_TESTER_ETCD_TAG")
 		os.Unsetenv("AWS_K8S_TESTER_ETCD_CLUSTER_NAME")
 		os.Unsetenv("AWS_K8S_TESTER_ETCD_DOWN")
 		os.Unsetenv("AWS_K8S_TESTER_ETCD_LOG_DEBUG")
 		os.Unsetenv("AWS_K8S_TESTER_ETCD_UPLOAD_TESTER_LOGS")
-		os.Unsetenv("AWS_K8S_TESTER_ETCD_WAIT_BEFORE_DOWN")
 		os.Unsetenv("AWS_K8S_TESTER_ETCD_CLUSTER_VERSION")
 		os.Unsetenv("AWS_K8S_TESTER_ETCD_CLUSTER_TOP_LEVEL")
 	}()
@@ -103,9 +120,28 @@ func TestEnv(t *testing.T) {
 	if err := cfg.UpdateFromEnvs(); err != nil {
 		t.Fatal(err)
 	}
+	fmt.Println(cfg.ValidateAndSetDefaults())
 
+	if cfg.Cluster.SnapshotCount != 100 {
+		t.Fatalf("expected Cluster.SnapshotCount 100, got %d", cfg.Cluster.SnapshotCount)
+	}
+	if cfg.EC2Bastion.ClusterSize != 2 {
+		t.Fatalf("expected EC2Bastion.ClusterSize 2, got %d", cfg.EC2Bastion.ClusterSize)
+	}
+	if cfg.TestTimeout != 20*time.Second {
+		t.Fatalf("unexpected TestTimeout, got %v", cfg.TestTimeout)
+	}
+	if cfg.EC2.WaitBeforeDown != 3*time.Hour {
+		t.Fatalf("unexpected WaitBeforeDown, got %v", cfg.EC2.WaitBeforeDown)
+	}
+	if cfg.WaitBeforeDown != 2*time.Hour {
+		t.Fatalf("unexpected WaitBeforeDown, got %v", cfg.WaitBeforeDown)
+	}
 	if cfg.EC2.ClusterSize != 100 {
 		t.Fatalf("EC2.ClusterSize expected 100, got %d", cfg.EC2.ClusterSize)
+	}
+	if cfg.ClusterSize != 100 {
+		t.Fatalf("ClusterSize expected 100, got %d", cfg.ClusterSize)
 	}
 	if cfg.Tag != "my-test" {
 		t.Fatalf("unexpected Tag, got %q", cfg.Tag)
@@ -121,9 +157,6 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.UploadTesterLogs {
 		t.Fatalf("unexpected UploadTesterLogs, got %v", cfg.UploadTesterLogs)
-	}
-	if cfg.WaitBeforeDown != 2*time.Hour {
-		t.Fatalf("unexpected WaitBeforeDown, got %v", cfg.WaitBeforeDown)
 	}
 	if cfg.Cluster.Version != "3.1.12" {
 		t.Fatalf("unexpected Cluster.Version, got %q", cfg.Cluster.Version)
