@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -1139,3 +1140,19 @@ func checkEKSEp(s string) (ok bool) {
 // defaultWorkderNodeVolumeSizeGB is the default EKS worker node volume size in gigabytes.
 // https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html
 const defaultWorkderNodeVolumeSizeGB = 20
+
+func exist(name string) bool {
+	_, err := os.Stat(name)
+	return err == nil
+}
+
+const ll = "0123456789abcdefghijklmnopqrstuvwxyz"
+
+func randString(n int) string {
+	b := make([]byte, n)
+	for i := range b {
+		rand.Seed(time.Now().UTC().UnixNano())
+		b[i] = ll[rand.Intn(len(ll))]
+	}
+	return string(b)
+}
