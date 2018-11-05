@@ -15,7 +15,7 @@ import (
 )
 
 /*
-RUN_AWS_TESTS=1 go test -v -run TestETCD
+RUN_AWS_TESTS=1 go test -v -v -timeout 2h -run TestETCD
 */
 func TestETCD(t *testing.T) {
 	if os.Getenv("RUN_AWS_TESTS") != "1" {
@@ -115,6 +115,7 @@ func TestETCD(t *testing.T) {
 		}
 	}
 
+	fmt.Println("upgrading:", idsToUpgrade)
 	for _, id := range idsToUpgrade {
 		if err = tester.Restart(id, versionToUgradeTxt); err != nil {
 			t.Error(err)

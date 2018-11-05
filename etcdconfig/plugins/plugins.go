@@ -38,8 +38,8 @@ func CreateInstallScript(ver string) (s string, err error) {
 sudo cp ./bin/etcd /usr/local/bin/etcd
 sudo cp ./bin/etcdctl /usr/local/bin/etcdctl
 
-etcd --version
-ETCDCTL_API=3 etcdctl version`,
+/usr/local/bin/etcd --version
+ETCDCTL_API=3 /usr/local/bin/etcdctl version`,
 	})
 }
 
@@ -60,6 +60,8 @@ const installRelease = `
 
 ################################## install etcd
 
+sudo systemctl stop etcd.service || true
+
 ETCD_VER=v{{ .Version }}
 
 # choose either URL
@@ -77,8 +79,8 @@ rm -f /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz
 sudo cp /tmp/etcd-download-test/etcd /usr/local/bin/etcd
 sudo cp /tmp/etcd-download-test/etcdctl /usr/local/bin/etcdctl
 
-etcd --version
-ETCDCTL_API=3 etcdctl version
+/usr/local/bin/etcd --version
+ETCDCTL_API=3 /usr/local/bin/etcdctl version
 
 ##################################
 

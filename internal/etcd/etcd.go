@@ -685,7 +685,7 @@ func (md *embedded) Restart(id, ver string) (err error) {
 		return err
 	}
 	defer os.RemoveAll(installScriptPath)
-	remotePath := fmt.Sprintf("/home/%s/etcd.sh", md.cfg.EC2.UserName)
+	installScriptPathRemote := fmt.Sprintf("/home/%s/etcd.install.sh", md.cfg.EC2.UserName)
 	var sh ssh.SSH
 	sh, err = ssh.New(ssh.Config{
 		Logger:        md.lg,
@@ -703,7 +703,7 @@ func (md *embedded) Restart(id, ver string) (err error) {
 	defer sh.Close()
 	_, err = sh.Send(
 		installScriptPath,
-		remotePath,
+		installScriptPathRemote,
 		ssh.WithRetry(100, 5*time.Second),
 		ssh.WithTimeout(15*time.Second),
 	)
@@ -711,18 +711,19 @@ func (md *embedded) Restart(id, ver string) (err error) {
 		return fmt.Errorf("failed to send (%v)", err)
 	}
 	_, err = sh.Run(
-		fmt.Sprintf("chmod +x %s", remotePath),
+		fmt.Sprintf("chmod +x %s", installScriptPathRemote),
 		ssh.WithRetry(100, 5*time.Second),
 		ssh.WithTimeout(15*time.Second),
 	)
 	if err != nil {
 		return err
 	}
-	_, err = sh.Run(
-		fmt.Sprintf("sudo bash %s", remotePath),
+	var out []byte
+	out, err = sh.Run(
+		fmt.Sprintf("sudo bash %s", installScriptPathRemote),
 		ssh.WithTimeout(15*time.Second),
 	)
-	md.lg.Info("installed etcd", zap.String("id", id), zap.String("ver", ver), zap.Error(err))
+	md.lg.Info("installed etcd", zap.String("id", id), zap.String("ver", ver), zap.String("output", string(out)), zap.Error(err))
 
 	md.lg.Info("restarting etcd", zap.String("id", id), zap.String("ver", ver))
 	var svc string
@@ -736,9 +737,10 @@ func (md *embedded) Restart(id, ver string) (err error) {
 		return err
 	}
 	defer os.RemoveAll(svcPath)
+	svcPathRemote := fmt.Sprintf("/home/%s/etcd.svc.sh", md.cfg.EC2.UserName)
 	_, err = sh.Send(
 		svcPath,
-		remotePath,
+		svcPathRemote,
 		ssh.WithRetry(100, 5*time.Second),
 		ssh.WithTimeout(15*time.Second),
 	)
@@ -746,7 +748,7 @@ func (md *embedded) Restart(id, ver string) (err error) {
 		return fmt.Errorf("failed to send (%v)", err)
 	}
 	_, err = sh.Run(
-		fmt.Sprintf("chmod +x %s", remotePath),
+		fmt.Sprintf("chmod +x %s", svcPathRemote),
 		ssh.WithRetry(100, 5*time.Second),
 		ssh.WithTimeout(15*time.Second),
 	)
@@ -754,7 +756,7 @@ func (md *embedded) Restart(id, ver string) (err error) {
 		return err
 	}
 	_, err = sh.Run(
-		fmt.Sprintf("sudo bash %s", remotePath),
+		fmt.Sprintf("sudo bash %s", svcPathRemote),
 		ssh.WithTimeout(15*time.Second),
 	)
 	md.lg.Info("restarted", zap.String("id", id), zap.String("ver", ver), zap.Error(err))
