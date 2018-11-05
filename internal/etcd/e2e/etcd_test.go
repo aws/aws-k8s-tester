@@ -37,11 +37,7 @@ func TestETCD(t *testing.T) {
 	fmt.Printf("CheckHealth: %+v\n", tester.CheckHealth())
 	fmt.Printf("CheckStatus: %+v\n", tester.CheckStatus())
 	presp, err := tester.MemberList()
-	if err != nil {
-		t.Error(err)
-	} else {
-		fmt.Printf("MemberList before member remove: %+v\n", presp)
-	}
+	fmt.Printf("MemberList before member remove: %+v (error: %v)\n", presp, err)
 
 	notifier := make(chan os.Signal, 1)
 	signal.Notify(notifier, syscall.SIGINT, syscall.SIGTERM)
@@ -69,11 +65,7 @@ func TestETCD(t *testing.T) {
 	}
 
 	presp, err = tester.MemberList()
-	if err != nil {
-		t.Error(err)
-	} else {
-		fmt.Printf("MemberList after member remove: %+v\n", presp)
-	}
+	fmt.Printf("MemberList after member remove: %+v (error: %v)\n", presp, err)
 
 	notifier = make(chan os.Signal, 1)
 	signal.Notify(notifier, syscall.SIGINT, syscall.SIGTERM)

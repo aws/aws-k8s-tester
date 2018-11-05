@@ -299,6 +299,7 @@ func (md *embedded) checkHealth() (c etcdtester.Cluster) {
 		return c
 	}
 
+	md.lg.Info("connecting to EC2 bastion to check '/health'")
 	if err = sh.Connect(); err != nil {
 		md.lg.Warn(
 			"failed to connect SSH",
@@ -403,6 +404,7 @@ func (md *embedded) checkStatus() (c etcdtester.Cluster) {
 		return c
 	}
 
+	md.lg.Info("connecting to EC2 bastion to run 'member status'")
 	if err = sh.Connect(); err != nil {
 		md.lg.Warn(
 			"failed to connect SSH",
@@ -476,6 +478,8 @@ func (md *embedded) MemberList() (*etcdserverpb.MemberListResponse, error) {
 func (md *embedded) memberList() (*etcdserverpb.MemberListResponse, error) {
 	md.cfg.Sync()
 
+	md.lg.Info("getting member list")
+
 	var iv ec2config.Instance
 	for _, v := range md.cfg.EC2Bastion.Instances {
 		iv = v
@@ -492,6 +496,7 @@ func (md *embedded) memberList() (*etcdserverpb.MemberListResponse, error) {
 		return nil, err
 	}
 
+	md.lg.Info("connecting to EC2 bastion to run 'member list'")
 	if err = sh.Connect(); err != nil {
 		return nil, err
 	}
@@ -552,6 +557,7 @@ func (md *embedded) Stop(id string) error {
 		return err
 	}
 
+	md.lg.Info("connecting to EC2 instance to stop")
 	if err = sh.Connect(); err != nil {
 		return err
 	}
@@ -600,6 +606,7 @@ func (md *embedded) Restart(id string) error {
 		return err
 	}
 
+	md.lg.Info("connecting to EC2 instance to restart")
 	if err = sh.Connect(); err != nil {
 		return err
 	}
@@ -694,6 +701,8 @@ func (md *embedded) MemberRemove(id string) error {
 	if err != nil {
 		return err
 	}
+
+	md.lg.Info("connecting to EC2 bastion to run 'member remove' command")
 	if err = sh.Connect(); err != nil {
 		return err
 	}
