@@ -67,6 +67,19 @@ func TestETCD(t *testing.T) {
 	presp, err = tester.MemberList()
 	fmt.Printf("MemberList after member remove: %+v (error: %v)\n", presp, err)
 
+	if len(cfg.ClusterState) != 2 {
+		t.Errorf("len(cfg.ClusterState) expected 2, got %d", len(cfg.ClusterState))
+	}
+	if cfg.ClusterSize != 2 {
+		t.Errorf("cfg.ClusterSize expected 2, got %d", cfg.ClusterSize)
+	}
+	if len(cfg.EC2.Instances) != 2 {
+		t.Errorf("len(cfg.EC2.Instances) expected 2, got %d", len(cfg.EC2.Instances))
+	}
+	if cfg.EC2.ClusterSize != 2 {
+		t.Errorf("cfg.EC2.ClusterSize expected 2, got %d", cfg.EC2.ClusterSize)
+	}
+
 	notifier = make(chan os.Signal, 1)
 	signal.Notify(notifier, syscall.SIGINT, syscall.SIGTERM)
 	select {

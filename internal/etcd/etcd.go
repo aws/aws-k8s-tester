@@ -755,13 +755,6 @@ func (md *embedded) MemberRemove(id string) (err error) {
 		return fmt.Errorf("failed to remove member %q (member ID %q, output %s)", id, memberID, string(out))
 	}
 
-	defer func() {
-		fmt.Println("after delete, len(md.cfg.ClusterState):", len(md.cfg.ClusterState))
-		fmt.Println("after delete, md.cfg.ClusterSize:", md.cfg.ClusterSize)
-		fmt.Println("after delete, len(md.cfg.EC2.Instances):", len(md.cfg.EC2.Instances))
-		fmt.Println("after delete, md.cfg.EC2.ClusterSize:", md.cfg.EC2.ClusterSize)
-	}()
-
 	md.cfg.Sync()
 	return md.ec2Deployer.Delete(id)
 }
