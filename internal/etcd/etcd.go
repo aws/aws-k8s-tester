@@ -156,6 +156,7 @@ func (md *embedded) Create() (err error) {
 		if err = sh.Connect(); err != nil {
 			return err
 		}
+		defer sh.Close()
 
 		var localPath string
 		localPath, err = fileutil.WriteTempFile([]byte(svc))
@@ -316,6 +317,7 @@ func (md *embedded) checkHealth() (c etcdtester.Cluster) {
 		}
 		return c
 	}
+	defer sh.Close()
 
 	for id, v := range md.cfg.ClusterState {
 		ep := v.AdvertiseClientURLs
@@ -419,6 +421,7 @@ func (md *embedded) checkStatus() (c etcdtester.Cluster) {
 		}
 		return c
 	}
+	defer sh.Close()
 
 	remotePath := fmt.Sprintf("/home/%s/aws-k8s-tester.etcd.yaml", md.cfg.EC2Bastion.UserName)
 	_, err = sh.Send(
@@ -467,14 +470,96 @@ func (md *embedded) Stop(id string) error {
 	md.mu.Lock()
 	defer md.mu.Unlock()
 
-	return nil
+	md.lg.Info("stopping etcd", zap.String("id", id))
+
+	_, ok := md.cfg.ClusterState[id]
+	if !ok {
+		return fmt.Errorf("%q does not exist, can't stop", id)
+	}
+	var iv ec2config.Instance
+	iv, ok = md.cfg.EC2.Instances[id]
+	if !ok {
+		return fmt.Errorf("%q does not exist, can't stop", id)
+	}
+
+	sh, err := ssh.New(ssh.Config{
+		Logger:        md.lg,
+		KeyPath:       md.cfg.EC2.KeyPath,
+		UserName:      md.cfg.EC2.UserName,
+		PublicIP:      iv.PublicIP,
+		PublicDNSName: iv.PublicDNSName,
+	})
+	if err != nil {
+		return err
+	}
+
+	if err = sh.Connect(); err != nil {
+		return err
+	}
+	defer sh.Close()
+
+	_, err = sh.Run(
+		"sudo systemctl stop etcd.service",
+		ssh.WithRetry(100, 5*time.Second),
+		ssh.WithTimeout(3*time.Minute),
+	)
+	if err != nil {
+		md.lg.Info("failed to stop etcd", zap.String("id", id))
+	}
+
+	c := md.checkHealth()
+	for id, v := range c.Members {
+		md.lg.Info("checked health status after stop", zap.String("id", id), zap.String("status", v.Status))
+	}
+	return err
 }
 
 func (md *embedded) Restart(id string) error {
 	md.mu.Lock()
 	defer md.mu.Unlock()
 
-	return nil
+	md.lg.Info("restarting etcd", zap.String("id", id))
+
+	_, ok := md.cfg.ClusterState[id]
+	if !ok {
+		return fmt.Errorf("%q does not exist, can't restart", id)
+	}
+	var iv ec2config.Instance
+	iv, ok = md.cfg.EC2.Instances[id]
+	if !ok {
+		return fmt.Errorf("%q does not exist, can't restart", id)
+	}
+
+	sh, err := ssh.New(ssh.Config{
+		Logger:        md.lg,
+		KeyPath:       md.cfg.EC2.KeyPath,
+		UserName:      md.cfg.EC2.UserName,
+		PublicIP:      iv.PublicIP,
+		PublicDNSName: iv.PublicDNSName,
+	})
+	if err != nil {
+		return err
+	}
+
+	if err = sh.Connect(); err != nil {
+		return err
+	}
+	defer sh.Close()
+
+	_, err = sh.Run(
+		"sudo systemctl enable etcd.service && sudo systemctl start etcd.service &",
+		ssh.WithRetry(100, 5*time.Second),
+		ssh.WithTimeout(3*time.Minute),
+	)
+	if err != nil {
+		md.lg.Info("failed to restart etcd", zap.String("id", id))
+	}
+
+	c := md.checkHealth()
+	for id, v := range c.Members {
+		md.lg.Info("checked health status after restart", zap.String("id", id), zap.String("status", v.Status))
+	}
+	return err
 }
 
 func (md *embedded) Terminate() error {
@@ -601,6 +686,7 @@ func fetchLog(
 		)
 		return nil, err
 	}
+	defer sh.Close()
 
 	var out []byte
 	out, err = sh.Run(
