@@ -621,14 +621,11 @@ var defaultETCD = ETCD{
 	TopLevel: true,
 
 	InitialClusterToken: "tkn",
-
-	SnapshotCount: 10000,
-
-	HeartbeatMS:       100,
-	ElectionTimeoutMS: 1000,
-
-	QuotaBackendGB: 2,
-	EnablePprof:    false,
+	SnapshotCount:       10000,
+	HeartbeatMS:         100,
+	ElectionTimeoutMS:   1000,
+	QuotaBackendGB:      2,
+	EnablePprof:         false,
 }
 
 // Load loads configuration from YAML.

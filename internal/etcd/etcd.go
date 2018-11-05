@@ -120,6 +120,12 @@ func (md *embedded) Create() (err error) {
 		} else {
 			ev.InitialElectionTickAdvance = false
 		}
+		ev.InitialClusterToken = tc.InitialClusterToken
+		ev.SnapshotCount = tc.SnapshotCount
+		ev.HeartbeatMS = tc.HeartbeatMS
+		ev.ElectionTimeoutMS = tc.ElectionTimeoutMS
+		ev.QuotaBackendGB = tc.QuotaBackendGB
+		ev.EnablePprof = tc.EnablePprof
 		md.cfg.ClusterState[iv.InstanceID] = ev
 	}
 	initialCluster := ""
@@ -574,7 +580,7 @@ func (md *embedded) memberList() (*etcdserverpb.MemberListResponse, error) {
 	for _, mem := range presp.Members {
 		nameID, memberID := "", ""
 		for id, v := range md.cfg.ClusterState {
-			if v.AdvertiseClientURLs == mem.ClientURLs[0] {
+			if mem.Name != "" && v.AdvertiseClientURLs == mem.ClientURLs[0] {
 				nameID, memberID = id, fmt.Sprintf("%x", mem.ID)
 			}
 		}
@@ -929,6 +935,12 @@ func (md *embedded) MemberAdd(ver string) (err error) {
 	} else {
 		newETCD.InitialElectionTickAdvance = false
 	}
+	newETCD.InitialClusterToken = md.cfg.Cluster.InitialClusterToken
+	newETCD.SnapshotCount = md.cfg.Cluster.SnapshotCount
+	newETCD.HeartbeatMS = md.cfg.Cluster.HeartbeatMS
+	newETCD.ElectionTimeoutMS = md.cfg.Cluster.ElectionTimeoutMS
+	newETCD.QuotaBackendGB = md.cfg.Cluster.QuotaBackendGB
+	newETCD.EnablePprof = md.cfg.Cluster.EnablePprof
 	md.cfg.ClusterState[newID] = newETCD
 	md.cfg.ClusterSize++
 	md.cfg.Sync()
