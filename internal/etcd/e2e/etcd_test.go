@@ -10,6 +10,8 @@ import (
 
 	"github.com/aws/aws-k8s-tester/etcdconfig"
 	"github.com/aws/aws-k8s-tester/internal/etcd"
+
+	"github.com/blang/semver"
 )
 
 /*
@@ -34,8 +36,8 @@ func TestETCD(t *testing.T) {
 	fmt.Printf("EC2 SSH:\n%s\n\n", cfg.EC2.SSHCommands())
 	fmt.Printf("EC2Bastion SSH:\n%s\n\n", cfg.EC2Bastion.SSHCommands())
 
-	fmt.Printf("CheckHealth: %+v\n", tester.CheckHealth())
-	fmt.Printf("CheckStatus: %+v\n", tester.CheckStatus())
+	fmt.Printf("Cluster: %+v\n", tester.Cluster())
+	fmt.Printf("ClusterStatus: %+v\n", tester.ClusterStatus())
 	presp, err := tester.MemberList()
 	fmt.Printf("MemberList before member remove: %+v (error: %v)\n", presp, err)
 
@@ -91,8 +93,32 @@ func TestETCD(t *testing.T) {
 	if err = tester.Put("foo", "bar"); err != nil {
 		t.Errorf("failed write %v", err)
 	}
-	if err = tester.MemberAdd("3.2.25"); err != nil {
+	versionToUgradeTxt := "3.2.25"
+	versionToUgrade, verr := semver.Make(versionToUgradeTxt)
+	if verr != nil {
+		t.Fatal(err)
+	}
+	if err = tester.MemberAdd(versionToUgradeTxt); err != nil {
 		t.Errorf("failed to add member %v", err)
+	}
+
+	idsToUpgrade := []string{}
+	status := tester.ClusterStatus()
+	for id, st := range status.Members {
+		v, perr := semver.Make(st.Version)
+		if perr != nil {
+			t.Error(perr)
+			break
+		}
+		if v.LT(versionToUgrade) {
+			idsToUpgrade = append(idsToUpgrade, id)
+		}
+	}
+
+	for _, id := range idsToUpgrade {
+		if err = tester.Restart(id, versionToUgradeTxt); err != nil {
+			t.Error(err)
+		}
 	}
 
 	if err = tester.Terminate(); err != nil {

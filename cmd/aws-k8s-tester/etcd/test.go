@@ -47,38 +47,28 @@ func testStatusFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	c := etcdtester.Cluster{
-		Members: make(map[string]etcdtester.Member),
+	c := etcdtester.ClusterStatus{
+		Members: make(map[string]*etcdserverpb.StatusResponse),
 	}
 	for id, v := range cfg.ClusterState {
 		ep := v.AdvertiseClientURLs
-		mm := etcdtester.Member{
-			ID:        id,
-			ClientURL: ep,
-			Status:    "",
-			OK:        false,
-		}
 		var cli *clientv3.Client
 		cli, err = clientv3.New(clientv3.Config{
 			Endpoints: []string{ep},
 		})
-		if err != nil {
-			mm.Status = fmt.Sprintf("status check for %q failed %v", ep, err)
-			mm.OK = false
-		} else {
+		if err == nil {
 			defer cli.Close()
 			ctx, cancel := context.WithTimeout(context.Background(), cfg.TestTimeout)
 			sresp, serr := cli.Status(ctx, ep)
 			cancel()
-			if serr != nil {
-				mm.Status = fmt.Sprintf("status check for %q failed %v", ep, serr)
-				mm.OK = false
+			if serr == nil {
+				c.Members[id] = (*etcdserverpb.StatusResponse)(sresp)
 			} else {
-				mm.Status = fmt.Sprintf("status check for %q: %+v", ep, sresp)
-				mm.OK = true
+				c.Members[id] = &etcdserverpb.StatusResponse{Errors: []string{serr.Error()}}
 			}
+		} else {
+			c.Members[id] = &etcdserverpb.StatusResponse{Errors: []string{err.Error()}}
 		}
-		c.Members[id] = mm
 	}
 	d, err := json.Marshal(c)
 	if err != nil {

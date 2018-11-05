@@ -204,7 +204,7 @@ func (md *embedded) Create() (err error) {
 
 	ready := 0
 	for i := 0; i < 10; i++ {
-		c := md.checkHealth()
+		c := md.checkCluster()
 		for id, v := range c.Members {
 			md.lg.Info("counting status", zap.String("id", id), zap.String("status", v.Status))
 			if v.OK {
@@ -249,27 +249,10 @@ func (md *embedded) Create() (err error) {
 func (md *embedded) Cluster() (c etcdtester.Cluster) {
 	md.mu.RLock()
 	defer md.mu.RUnlock()
-	return md.cluster()
+	return md.checkCluster()
 }
 
-func (md *embedded) cluster() (c etcdtester.Cluster) {
-	c.Members = make(map[string]etcdtester.Member, len(md.cfg.ClusterState))
-	for id, v := range md.cfg.ClusterState {
-		c.Members[id] = etcdtester.Member{
-			ID:        id,
-			ClientURL: v.AdvertiseClientURLs,
-		}
-	}
-	return c
-}
-
-func (md *embedded) CheckHealth() etcdtester.Cluster {
-	md.mu.RLock()
-	defer md.mu.RUnlock()
-	return md.checkHealth()
-}
-
-func (md *embedded) checkHealth() (c etcdtester.Cluster) {
+func (md *embedded) checkCluster() (c etcdtester.Cluster) {
 	c.Members = make(map[string]etcdtester.Member, len(md.cfg.ClusterState))
 	for id, v := range md.cfg.ClusterState {
 		c.Members[id] = etcdtester.Member{
@@ -366,21 +349,18 @@ func (md *embedded) checkHealth() (c etcdtester.Cluster) {
 	return c
 }
 
-func (md *embedded) CheckStatus() (c etcdtester.Cluster) {
+func (md *embedded) ClusterStatus() (c etcdtester.ClusterStatus) {
 	md.mu.RLock()
 	defer md.mu.RUnlock()
-	return md.checkStatus()
+	return md.checkClusterStatus()
 }
 
-func (md *embedded) checkStatus() (c etcdtester.Cluster) {
+func (md *embedded) checkClusterStatus() (c etcdtester.ClusterStatus) {
 	md.cfg.Sync()
 
-	c.Members = make(map[string]etcdtester.Member, len(md.cfg.ClusterState))
-	for id, v := range md.cfg.ClusterState {
-		c.Members[id] = etcdtester.Member{
-			ID:        id,
-			ClientURL: v.AdvertiseClientURLs,
-		}
+	c.Members = make(map[string]*etcdserverpb.StatusResponse, len(md.cfg.ClusterState))
+	for id := range md.cfg.ClusterState {
+		c.Members[id] = &etcdserverpb.StatusResponse{}
 	}
 
 	var iv ec2config.Instance
@@ -400,17 +380,9 @@ func (md *embedded) checkStatus() (c etcdtester.Cluster) {
 			"failed to create SSH",
 			zap.Error(err),
 		)
+		es := []string{err.Error()}
 		for id := range md.cfg.ClusterState {
-			vv, ok := c.Members[id]
-			vv.ID = id
-			if !ok {
-				vv.Status = fmt.Sprintf("%s not found", id)
-				vv.OK = false
-			} else {
-				vv.Status = fmt.Sprintf("failed to create SSH to bastion (%v)", err)
-				vv.OK = false
-			}
-			c.Members[id] = vv
+			c.Members[id].Errors = es
 		}
 		return c
 	}
@@ -421,17 +393,9 @@ func (md *embedded) checkStatus() (c etcdtester.Cluster) {
 			"failed to connect SSH",
 			zap.Error(err),
 		)
+		es := []string{err.Error()}
 		for id := range md.cfg.ClusterState {
-			vv, ok := c.Members[id]
-			vv.ID = id
-			if !ok {
-				vv.Status = fmt.Sprintf("%s not found", id)
-				vv.OK = false
-			} else {
-				vv.Status = fmt.Sprintf("failed to connect SSH to bastion (%v)", err)
-				vv.OK = false
-			}
-			c.Members[id] = vv
+			c.Members[id].Errors = es
 		}
 		return c
 	}
@@ -445,10 +409,9 @@ func (md *embedded) checkStatus() (c etcdtester.Cluster) {
 		ssh.WithTimeout(15*time.Second),
 	)
 	if err != nil {
-		for id, m := range c.Members {
-			m.Status = fmt.Sprintf("status check failed to send configuration file (%v)", err)
-			m.OK = false
-			c.Members[id] = m
+		es := []string{err.Error()}
+		for id := range md.cfg.ClusterState {
+			c.Members[id].Errors = es
 		}
 	} else {
 		var out []byte
@@ -458,19 +421,17 @@ func (md *embedded) checkStatus() (c etcdtester.Cluster) {
 			ssh.WithTimeout(15*time.Second),
 		)
 		if err != nil {
-			for id, m := range c.Members {
-				m.Status = fmt.Sprintf("status check failed to run 'test status' commands (%v)", err)
-				m.OK = false
-				c.Members[id] = m
+			es := []string{err.Error()}
+			for id := range md.cfg.ClusterState {
+				c.Members[id].Errors = es
 			}
 		} else {
-			c2 := etcdtester.Cluster{}
+			c2 := etcdtester.ClusterStatus{}
 			err = json.Unmarshal(out, &c2)
 			if err != nil {
-				for id, m := range c.Members {
-					m.Status = fmt.Sprintf("status check failed to decode 'test status' output (%v)", err)
-					m.OK = false
-					c.Members[id] = m
+				es := []string{err.Error()}
+				for id := range md.cfg.ClusterState {
+					c.Members[id].Errors = es
 				}
 			} else {
 				c = c2
@@ -645,6 +606,10 @@ func (md *embedded) Stop(id string) error {
 	if !ok {
 		return fmt.Errorf("%q does not exist, can't stop", id)
 	}
+	_, ok = md.cfg.ClusterState[id]
+	if !ok {
+		return fmt.Errorf("%q does not exist, can't restart", id)
+	}
 
 	sh, err := ssh.New(ssh.Config{
 		Logger:        md.lg,
@@ -671,18 +636,20 @@ func (md *embedded) Stop(id string) error {
 		md.lg.Info("failed to stop etcd", zap.String("id", id))
 	}
 
-	c := md.checkHealth()
-	for id, v := range c.Members {
+	c1 := md.checkCluster()
+	for id, v := range c1.Members {
 		md.lg.Info("checked health status after stop", zap.String("id", id), zap.String("status", v.Status))
+	}
+	c2 := md.checkClusterStatus()
+	for id, v := range c2.Members {
+		md.lg.Info("checked status after stop", zap.String("id", id), zap.String("status", fmt.Sprintf("%+v", v)))
 	}
 	return err
 }
 
-func (md *embedded) Restart(id string) error {
+func (md *embedded) Restart(id, ver string) (err error) {
 	md.mu.Lock()
 	defer md.mu.Unlock()
-
-	md.lg.Info("restarting etcd", zap.String("id", id))
 
 	_, ok := md.cfg.ClusterState[id]
 	if !ok {
@@ -693,8 +660,28 @@ func (md *embedded) Restart(id string) error {
 	if !ok {
 		return fmt.Errorf("%q does not exist, can't restart", id)
 	}
+	var etcdNode etcdconfig.ETCD
+	etcdNode, ok = md.cfg.ClusterState[id]
+	if !ok {
+		return fmt.Errorf("%q does not exist, can't restart", id)
+	}
+	etcdNode.Version = ver
 
-	sh, err := ssh.New(ssh.Config{
+	md.lg.Info("installing etcd", zap.String("ver", ver))
+	var installScript string
+	installScript, err = etcdplugin.CreateInstallScript(ver)
+	if err != nil {
+		return err
+	}
+	var installScriptPath string
+	installScriptPath, err = fileutil.WriteTempFile([]byte(installScript))
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(installScriptPath)
+	remotePath := fmt.Sprintf("/home/%s/etcd.sh", md.cfg.EC2.UserName)
+	var sh ssh.SSH
+	sh, err = ssh.New(ssh.Config{
 		Logger:        md.lg,
 		KeyPath:       md.cfg.EC2.KeyPath,
 		UserName:      md.cfg.EC2.UserName,
@@ -704,23 +691,76 @@ func (md *embedded) Restart(id string) error {
 	if err != nil {
 		return err
 	}
-	md.lg.Info("connecting to EC2 instance to restart")
 	if err = sh.Connect(); err != nil {
 		return err
 	}
 	defer sh.Close()
-
-	_, err = sh.Run(
-		"sudo systemctl enable etcd.service && sudo systemctl start etcd.service &",
+	_, err = sh.Send(
+		installScriptPath,
+		remotePath,
 		ssh.WithRetry(100, 5*time.Second),
-		ssh.WithTimeout(3*time.Minute),
+		ssh.WithTimeout(15*time.Second),
 	)
 	if err != nil {
-		md.lg.Info("failed to restart etcd", zap.String("id", id), zap.Error(err))
+		return fmt.Errorf("failed to send (%v)", err)
 	}
-	c := md.checkHealth()
-	for id, v := range c.Members {
+	_, err = sh.Run(
+		fmt.Sprintf("chmod +x %s", remotePath),
+		ssh.WithRetry(100, 5*time.Second),
+		ssh.WithTimeout(15*time.Second),
+	)
+	if err != nil {
+		return err
+	}
+	_, err = sh.Run(
+		fmt.Sprintf("sudo bash %s", remotePath),
+		ssh.WithTimeout(15*time.Second),
+	)
+	md.lg.Info("installed etcd", zap.String("id", id), zap.String("ver", ver), zap.Error(err))
+
+	md.lg.Info("restarting etcd", zap.String("id", id), zap.String("ver", ver))
+	var svc string
+	svc, err = etcdNode.Service()
+	if err != nil {
+		return err
+	}
+	var svcPath string
+	svcPath, err = fileutil.WriteTempFile([]byte(svc))
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(svcPath)
+	_, err = sh.Send(
+		svcPath,
+		remotePath,
+		ssh.WithRetry(100, 5*time.Second),
+		ssh.WithTimeout(15*time.Second),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to send (%v)", err)
+	}
+	_, err = sh.Run(
+		fmt.Sprintf("chmod +x %s", remotePath),
+		ssh.WithRetry(100, 5*time.Second),
+		ssh.WithTimeout(15*time.Second),
+	)
+	if err != nil {
+		return err
+	}
+	_, err = sh.Run(
+		fmt.Sprintf("sudo bash %s", remotePath),
+		ssh.WithTimeout(15*time.Second),
+	)
+	md.lg.Info("restarted", zap.String("id", id), zap.String("ver", ver), zap.Error(err))
+
+	md.waitLeader()
+	c1 := md.checkCluster()
+	for id, v := range c1.Members {
 		md.lg.Info("checked health status after restart", zap.String("id", id), zap.String("status", v.Status))
+	}
+	c2 := md.checkClusterStatus()
+	for id, v := range c2.Members {
+		md.lg.Info("checked status after restart", zap.String("id", id), zap.String("status", fmt.Sprintf("%+v", v)))
 	}
 	return err
 }
@@ -729,6 +769,7 @@ func (md *embedded) Terminate() error {
 	md.mu.Lock()
 	defer md.mu.Unlock()
 
+	md.lg.Info("terminating etcd")
 	if md.cfg.UploadTesterLogs && len(md.cfg.ClusterState) > 0 {
 		fpathToS3Path, err := fetchLogs(
 			md.lg,
@@ -901,6 +942,13 @@ func (md *embedded) MemberAdd(ver string) (err error) {
 	if err != nil {
 		return err
 	}
+	var installScriptPath string
+	installScriptPath, err = fileutil.WriteTempFile([]byte(installScript))
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(installScriptPath)
+	remotePath := fmt.Sprintf("/home/%s/etcd.sh", md.cfg.EC2.UserName)
 	var sh ssh.SSH
 	sh, err = ssh.New(ssh.Config{
 		Logger:        md.lg,
@@ -916,13 +964,6 @@ func (md *embedded) MemberAdd(ver string) (err error) {
 		return err
 	}
 	defer sh.Close()
-	var installScriptPath string
-	installScriptPath, err = fileutil.WriteTempFile([]byte(installScript))
-	if err != nil {
-		return err
-	}
-	defer os.RemoveAll(installScriptPath)
-	remotePath := fmt.Sprintf("/home/%s/etcd.sh", md.cfg.EC2.UserName)
 	_, err = sh.Send(
 		installScriptPath,
 		remotePath,
@@ -1032,7 +1073,7 @@ func (md *embedded) MemberAdd(ver string) (err error) {
 		return err
 	}
 	for id, ee := range md.cfg.ClusterState {
-		fmt.Printf("after member add: %s, %s\n", id, ee.MemberID)
+		md.lg.Info("after member add", zap.String("id", id), zap.String("member-id", ee.MemberID))
 	}
 	return nil
 }
