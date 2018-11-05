@@ -171,6 +171,7 @@ func (sh *ssh) Connect() (err error) {
 			if strings.Contains(err.Error(), "ssh: handshake failed") {
 				time.Sleep(5 * time.Second)
 			}
+			time.Sleep(2 * time.Second)
 			continue
 		}
 		break

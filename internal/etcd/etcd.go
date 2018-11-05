@@ -518,7 +518,7 @@ func (md *embedded) memberList() (*etcdserverpb.MemberListResponse, error) {
 		return nil, err
 	}
 
-	var presp *etcdserverpb.MemberListResponse
+	presp := &etcdserverpb.MemberListResponse{}
 	if err = presp.Unmarshal(out); err != nil {
 		return nil, err
 	}
