@@ -145,7 +145,9 @@ func testMemberListFunc(cmd *cobra.Command, args []string) {
 	}
 
 	var d []byte
-	d, err = presp.Marshal()
+	// unexpected EOF
+	// d, err = presp.Marshal()
+	d, err = json.Marshal(presp)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to marshal %+v (%v)\n", presp, err)
 		os.Exit(1)

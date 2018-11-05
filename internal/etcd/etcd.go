@@ -523,8 +523,10 @@ func (md *embedded) memberList() (*etcdserverpb.MemberListResponse, error) {
 		return nil, err
 	}
 
+	// presp.Unmarshal(out) if marshaled via proto
+	// in "aws-k8s-tester etcd test member list"
 	presp := &etcdserverpb.MemberListResponse{}
-	if err = presp.Unmarshal(out); err != nil {
+	if err = json.Unmarshal(out, presp); err != nil {
 		return nil, err
 	}
 	return presp, nil
