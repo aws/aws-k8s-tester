@@ -15,7 +15,7 @@ import (
 )
 
 /*
-RUN_AWS_TESTS=1 go test -v -v -timeout 2h -run TestETCD
+RUN_AWS_TESTS=1 go test -v -timeout 2h -run TestETCD
 */
 func TestETCD(t *testing.T) {
 	if os.Getenv("RUN_AWS_TESTS") != "1" {
