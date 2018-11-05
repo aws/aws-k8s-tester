@@ -8,7 +8,7 @@ import (
 func Test_createInstall(t *testing.T) {
 	s1, err := createInstallGo(goInfo{
 		UserName:  "ubuntu",
-		GoVersion: "1.11.1",
+		GoVersion: "1.11.2",
 	})
 	if err != nil {
 		t.Fatal(err)

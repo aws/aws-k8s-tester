@@ -203,7 +203,7 @@ var defaultConfig = Config{
 	EnvPrefix: "AWS_K8S_TESTER_EC2_",
 	AWSRegion: "us-west-2",
 
-	WaitBeforeDown: 10 * time.Minute,
+	WaitBeforeDown: time.Minute,
 	Down:           true,
 
 	LogDebug: false,

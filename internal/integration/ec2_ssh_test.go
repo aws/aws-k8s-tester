@@ -23,11 +23,11 @@ func TestEC2SSH(t *testing.T) {
 	}
 
 	cfg := ec2config.NewDefault()
+	cfg.ClusterSize = 2
 	cfg.Wait = true
 	cfg.Plugins = []string{
 		"update-amazon-linux-2",
 		"install-go1.11.2",
-
 		// "install-etcd-3.1.12",
 		// "install-etcd-master",
 	}
@@ -61,6 +61,7 @@ func TestEC2SSH(t *testing.T) {
 	if err = sh.Connect(); err != nil {
 		t.Fatal(err)
 	}
+	defer sh.Close()
 
 	var out []byte
 	out, err = sh.Run(
@@ -81,8 +82,8 @@ func TestEC2SSH(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if string(out) != "go version go1.11.1 linux/amd64\n" {
-		t.Fatalf("unexpected go version %q", string(out))
+	if string(out) != "go version go1.11.2 linux/amd64\n" {
+		t.Errorf("unexpected go version %q", string(out))
 	}
 
 	f, ferr := ioutil.TempFile(os.TempDir(), "testfile")
@@ -125,8 +126,23 @@ func TestEC2SSH(t *testing.T) {
 		t.Fatal(derr)
 	}
 	if !bytes.Equal(d, []byte("Hello World!")) {
-		t.Fatalf("expected 'Hello World!', got %q", string(d))
+		t.Errorf("expected 'Hello World!', got %q", string(d))
 	}
 
-	time.Sleep(3 * time.Minute)
+	time.Sleep(cfg.WaitBeforeDown)
+
+	id := ""
+	for id2 := range cfg.Instances {
+		id = id2
+		break
+	}
+	if err = ec.Delete(id); err != nil {
+		t.Error(err)
+	}
+	if cfg.ClusterSize != 1 {
+		t.Errorf("expected ClusterSize 1, got %d", cfg.ClusterSize)
+	}
+	if len(cfg.Instances) != 1 {
+		t.Errorf("expected len(cfg.Instances) 1, got %d", len(cfg.Instances))
+	}
 }

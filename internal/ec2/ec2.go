@@ -33,6 +33,7 @@ import (
 type Deployer interface {
 	Create() error
 	Stop()
+	Delete(id string) error
 	Terminate() error
 
 	Logger() *zap.Logger
@@ -221,6 +222,121 @@ func (md *embedded) Create() (err error) {
 }
 
 func (md *embedded) Stop() { close(md.stopc) }
+
+func (md *embedded) Delete(id string) (err error) {
+	md.mu.Lock()
+	defer md.mu.Unlock()
+
+	if len(md.cfg.Instances) != md.cfg.ClusterSize {
+		return fmt.Errorf("len(Instances) %d != ClusterSize %d", len(md.cfg.Instances), md.cfg.ClusterSize)
+	}
+
+	now := time.Now().UTC()
+	md.lg.Info("deleting an instance", zap.String("cluster-name", md.cfg.ClusterName), zap.String("instance-id", id))
+
+	_, ok := md.cfg.Instances[id]
+	if !ok {
+		return fmt.Errorf("failed to delete an instance, id %q not found", id)
+	}
+	_, err = md.ec2.TerminateInstances(&ec2.TerminateInstancesInput{
+		InstanceIds: aws.StringSlice([]string{id}),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to delete an instance (%v)", id)
+	}
+
+	retryStart := time.Now().UTC()
+done:
+	for time.Now().UTC().Sub(retryStart) < 3*time.Minute {
+		var output *ec2.DescribeInstancesOutput
+		output, err = md.ec2.DescribeInstances(&ec2.DescribeInstancesInput{
+			InstanceIds: aws.StringSlice([]string{id}),
+		})
+		if err != nil {
+			return err
+		}
+
+		for _, rv := range output.Reservations {
+			for _, inst := range rv.Instances {
+				if *inst.InstanceId != id {
+					return fmt.Errorf("unexpected instance id %q, expected %q", *inst.InstanceId, id)
+				}
+				if *inst.State.Name == "terminated" {
+					break done
+				}
+				md.lg.Info("deleting an instance", zap.String("instance-id", id), zap.String("state", *inst.State.Name))
+			}
+		}
+
+		time.Sleep(5 * time.Second)
+	}
+
+	prev := len(md.cfg.Instances)
+	delete(md.cfg.Instances, id)
+	md.cfg.ClusterSize--
+	md.lg.Info(
+		"deleted an instance",
+		zap.String("cluster-name", md.cfg.ClusterName),
+		zap.String("instance-id", id),
+		zap.Int("previous-cluster-size", prev),
+		zap.Int("current-cluster-size", len(md.cfg.Instances)),
+		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
+	)
+	return nil
+}
+
+func (md *embedded) deleteInstances() (err error) {
+	now := time.Now().UTC()
+
+	ids := make([]string, 0, len(md.cfg.Instances))
+	for id := range md.cfg.Instances {
+		ids = append(ids, id)
+	}
+	_, err = md.ec2.TerminateInstances(&ec2.TerminateInstancesInput{
+		InstanceIds: aws.StringSlice(ids),
+	})
+	md.lg.Info("terminating", zap.Strings("instance-ids", ids), zap.Error(err))
+
+	sleepDur := 5 * time.Second * time.Duration(md.cfg.ClusterSize)
+	if sleepDur > 3*time.Minute {
+		sleepDur = 3 * time.Minute
+	}
+	time.Sleep(sleepDur)
+
+	retryStart := time.Now().UTC()
+	terminated := make(map[string]struct{})
+	for len(terminated) != md.cfg.ClusterSize &&
+		time.Now().UTC().Sub(retryStart) < time.Duration(md.cfg.ClusterSize)*2*time.Minute {
+		var output *ec2.DescribeInstancesOutput
+		output, err = md.ec2.DescribeInstances(&ec2.DescribeInstancesInput{
+			InstanceIds: aws.StringSlice(ids),
+		})
+		if err != nil {
+			return err
+		}
+
+		for _, rv := range output.Reservations {
+			for _, inst := range rv.Instances {
+				id := *inst.InstanceId
+				if _, ok := terminated[id]; ok {
+					continue
+				}
+				if *inst.State.Name == "terminated" {
+					terminated[id] = struct{}{}
+					md.lg.Info("terminated", zap.String("instance-id", id))
+				}
+			}
+		}
+
+		time.Sleep(5 * time.Second)
+	}
+
+	md.lg.Info("terminated",
+		zap.Strings("instance-ids", ids),
+		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
+	)
+	return nil
+}
 
 func (md *embedded) Terminate() (err error) {
 	md.mu.Lock()
@@ -625,59 +741,6 @@ func IsReady(txt string) bool {
 	return strings.Contains(txt, plugins.READY) ||
 		(strings.Contains(txt, `Cloud-init v.`) &&
 			strings.Contains(txt, `finished at`))
-}
-
-func (md *embedded) deleteInstances() (err error) {
-	now := time.Now().UTC()
-
-	ids := make([]string, 0, len(md.cfg.Instances))
-	for id := range md.cfg.Instances {
-		ids = append(ids, id)
-	}
-	_, err = md.ec2.TerminateInstances(&ec2.TerminateInstancesInput{
-		InstanceIds: aws.StringSlice(ids),
-	})
-	md.lg.Info("terminating", zap.Strings("instance-ids", ids), zap.Error(err))
-
-	sleepDur := 5 * time.Second * time.Duration(md.cfg.ClusterSize)
-	if sleepDur > 3*time.Minute {
-		sleepDur = 3 * time.Minute
-	}
-	time.Sleep(sleepDur)
-
-	retryStart := time.Now().UTC()
-	terminated := make(map[string]struct{})
-	for len(terminated) != md.cfg.ClusterSize &&
-		time.Now().UTC().Sub(retryStart) < time.Duration(md.cfg.ClusterSize)*2*time.Minute {
-		var output *ec2.DescribeInstancesOutput
-		output, err = md.ec2.DescribeInstances(&ec2.DescribeInstancesInput{
-			InstanceIds: aws.StringSlice(ids),
-		})
-		if err != nil {
-			return err
-		}
-
-		for _, rv := range output.Reservations {
-			for _, inst := range rv.Instances {
-				id := *inst.InstanceId
-				if _, ok := terminated[id]; ok {
-					continue
-				}
-				if *inst.State.Name == "terminated" {
-					terminated[id] = struct{}{}
-					md.lg.Info("terminated", zap.String("instance-id", id))
-				}
-			}
-		}
-
-		time.Sleep(5 * time.Second)
-	}
-
-	md.lg.Info("terminated",
-		zap.Strings("instance-ids", ids),
-		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
-	)
-	return nil
 }
 
 func (md *embedded) Logger() *zap.Logger {
