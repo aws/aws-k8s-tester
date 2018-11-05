@@ -101,6 +101,7 @@ func (md *embedded) Create() (err error) {
 	tc := *md.cfg.Cluster
 	for _, iv := range md.cfg.EC2.Instances {
 		ev := tc
+		ev.Version = tc.Version
 		ev.TopLevel = false
 		ev.SSHPrivateKeyPath = md.cfg.EC2.KeyPath
 		ev.PublicIP = iv.PublicIP
@@ -767,12 +768,9 @@ func (md *embedded) MemberAdd(id string) error {
 	if ok {
 		return fmt.Errorf("%q already exist, can't add", id)
 	}
-	var iv ec2config.Instance
-	iv, ok = md.cfg.EC2.Instances[id]
-	if ok {
+	if _, ok = md.cfg.EC2.Instances[id]; ok {
 		return fmt.Errorf("%q already exist, can't add", id)
 	}
-	_ = iv
 
 	return nil
 }

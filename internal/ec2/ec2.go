@@ -31,13 +31,18 @@ import (
 
 // Deployer defines EC2 deployer.
 type Deployer interface {
+	// Create creates a cluster of EC2 instances.
 	Create() error
+	// Add creates one more instance to the cluster.
+	Add() error
+	// Stop stops create operation.å
 	Stop()
+	// Delete deletes one instance.
 	Delete(id string) error
+	// Terminate terminates all EC2 instances in the cluster.
 	Terminate() error
-
+	// Logger returns the logger.
 	Logger() *zap.Logger
-
 	// UploadToBucketForTests uploads a local file to aws-k8s-tester S3 bucket.
 	UploadToBucketForTests(localPath, remotePath string) error
 }
@@ -205,7 +210,7 @@ func (md *embedded) Create() (err error) {
 	}
 
 	md.lg.Info("created",
-		zap.String("id", md.cfg.ClusterName),
+		zap.String("cluster-name", md.cfg.ClusterName),
 		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 	)
 
@@ -219,6 +224,111 @@ func (md *embedded) Create() (err error) {
 	}
 
 	return nil
+}
+
+func (md *embedded) Add() (err error) {
+	md.mu.Lock()
+	defer md.mu.Unlock()
+
+	if md.cfg.KeyName == "" {
+		return errors.New("cannot add without key name")
+	}
+	if len(md.cfg.SubnetIDs) == 0 {
+		return errors.New("cannot add without SubnetIDs")
+	}
+	if len(md.cfg.SecurityGroupIDs) == 0 {
+		return errors.New("cannot add without SecurityGroupIDs")
+	}
+
+	now := time.Now().UTC()
+	md.lg.Info("creating one EC2 instance", zap.String("cluster-name", md.cfg.ClusterName))
+
+	tkn := md.cfg.ClusterName + fmt.Sprintf("%X", time.Now().Nanosecond())
+	_, err = md.ec2.RunInstances(&ec2.RunInstancesInput{
+		ClientToken:                       aws.String(tkn),
+		ImageId:                           aws.String(md.cfg.ImageID),
+		MinCount:                          aws.Int64(1),
+		MaxCount:                          aws.Int64(1),
+		InstanceType:                      aws.String(md.cfg.InstanceType),
+		KeyName:                           aws.String(md.cfg.KeyName),
+		SubnetId:                          aws.String(md.cfg.SubnetIDs[0]),
+		SecurityGroupIds:                  aws.StringSlice(md.cfg.SecurityGroupIDs),
+		InstanceInitiatedShutdownBehavior: aws.String("terminate"),
+		UserData:                          aws.String(base64.StdEncoding.EncodeToString([]byte(md.cfg.InitScript))),
+		TagSpecifications: []*ec2.TagSpecification{
+			{
+				ResourceType: aws.String("instance"),
+				Tags: []*ec2.Tag{
+					{
+						Key:   aws.String("Name"),
+						Value: aws.String(md.cfg.ClusterName),
+					},
+				},
+			},
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	ready, iv := false, ec2config.Instance{}
+	retryStart := time.Now().UTC()
+done:
+	for time.Now().UTC().Sub(retryStart) < 5*time.Minute {
+		var output *ec2.DescribeInstancesOutput
+		output, err = md.ec2.DescribeInstances(&ec2.DescribeInstancesInput{
+			Filters: []*ec2.Filter{
+				{
+					Name:   aws.String("client-token"),
+					Values: aws.StringSlice([]string{tkn}),
+				},
+			},
+		})
+		if err != nil {
+			md.lg.Warn("failed to describe instances", zap.Error(err))
+			time.Sleep(3 * time.Second)
+			continue
+		}
+
+		for _, rv := range output.Reservations {
+			for _, inst := range rv.Instances {
+				id := *inst.InstanceId
+				if *inst.State.Name == "running" {
+					_, ok := md.cfg.Instances[id]
+					if !ok {
+						iv = ConvertEC2Instance(inst)
+						md.cfg.Instances[id] = iv
+						md.cfg.ClusterSize++
+						md.lg.Info("instance is ready",
+							zap.String("instance-id", iv.InstanceID),
+							zap.String("instance-public-ip", iv.PublicIP),
+							zap.String("instance-public-dns", iv.PublicDNSName),
+						)
+						ready = true
+						break done
+					}
+				}
+			}
+		}
+		time.Sleep(5 * time.Second)
+	}
+	if ready {
+		md.lg.Info("created one EC2 instance",
+			zap.String("cluster-name", md.cfg.ClusterName),
+			zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
+		)
+	} else {
+		md.lg.Warn("created one EC2 instance but not ready",
+			zap.String("cluster-name", md.cfg.ClusterName),
+			zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
+		)
+	}
+
+	mm := make(map[string]ec2config.Instance, 1)
+	mm[iv.InstanceID] = iv
+	md.wait(mm)
+
+	return md.cfg.Sync()
 }
 
 func (md *embedded) Stop() { close(md.stopc) }
@@ -314,7 +424,6 @@ func (md *embedded) deleteInstances() (err error) {
 		if err != nil {
 			return err
 		}
-
 		for _, rv := range output.Reservations {
 			for _, inst := range rv.Instances {
 				id := *inst.InstanceId
@@ -327,7 +436,6 @@ func (md *embedded) deleteInstances() (err error) {
 				}
 			}
 		}
-
 		time.Sleep(5 * time.Second)
 	}
 
@@ -374,7 +482,7 @@ func (md *embedded) Terminate() (err error) {
 	}
 
 	md.lg.Info("deleted",
-		zap.String("id", md.cfg.ClusterName),
+		zap.String("cluster-name", md.cfg.ClusterName),
 		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 	)
 
@@ -417,7 +525,6 @@ func (md *embedded) createInstances() (err error) {
 
 	tokens := []string{}
 	tknToCnt := make(map[string]int)
-	h, _ := os.Hostname()
 
 	if md.cfg.ClusterSize > len(md.cfg.SubnetIDs) {
 		// TODO: configure this per EC2 quota?
@@ -465,10 +572,6 @@ func (md *embedded) createInstances() (err error) {
 									Key:   aws.String("Name"),
 									Value: aws.String(md.cfg.ClusterName),
 								},
-								{
-									Key:   aws.String("HOSTNAME"),
-									Value: aws.String(h),
-								},
 							},
 						},
 					},
@@ -507,10 +610,6 @@ func (md *embedded) createInstances() (err error) {
 									{
 										Key:   aws.String("Name"),
 										Value: aws.String(md.cfg.ClusterName),
-									},
-									{
-										Key:   aws.String("HOSTNAME"),
-										Value: aws.String(h),
 									},
 								},
 							},
@@ -568,10 +667,6 @@ func (md *embedded) createInstances() (err error) {
 								Key:   aws.String("Name"),
 								Value: aws.String(md.cfg.ClusterName),
 							},
-							{
-								Key:   aws.String("HOSTNAME"),
-								Value: aws.String(h),
-							},
 						},
 					},
 				},
@@ -612,6 +707,7 @@ func (md *embedded) createInstances() (err error) {
 			})
 			if err != nil {
 				md.lg.Warn("failed to describe instances", zap.Error(err))
+				time.Sleep(3 * time.Second)
 				continue
 			}
 
@@ -657,17 +753,16 @@ func (md *embedded) createInstances() (err error) {
 			zap.Int("cluster-size", md.cfg.ClusterSize),
 			zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 		)
-		md.wait()
+		mm := make(map[string]ec2config.Instance, len(md.cfg.Instances))
+		for k, v := range md.cfg.Instances {
+			mm[k] = v
+		}
+		md.wait(mm)
 	}
 	return md.cfg.Sync()
 }
 
-func (md *embedded) wait() {
-	mm := make(map[string]ec2config.Instance, len(md.cfg.Instances))
-	for k, v := range md.cfg.Instances {
-		mm[k] = v
-	}
-
+func (md *embedded) wait(mm map[string]ec2config.Instance) {
 	for {
 	done:
 		for id, iv := range mm {

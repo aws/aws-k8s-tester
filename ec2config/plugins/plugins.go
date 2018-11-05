@@ -10,7 +10,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/blang/semver"
+	etcdplugin "github.com/aws/aws-k8s-tester/etcdconfig/plugins"
 )
 
 // headerBash is the bash script header.
@@ -145,43 +145,7 @@ EOT`, userName, userName, string(d)),
 
 	case strings.HasPrefix(plugin, "install-etcd-"):
 		id := strings.Replace(plugin, "install-etcd-", "", -1)
-		if id != "master" && !strings.HasPrefix(id, "pr-") {
-			if strings.HasPrefix(id, "v") {
-				id = id[1:]
-			}
-			ver, err := semver.Make(id)
-			if err != nil {
-				return script{}, fmt.Errorf("failed to parse etcd version %q (%v)", id, err)
-			}
-			s, err := createInstallEtcd(etcdInfo{
-				Version: ver.String(),
-			})
-			if err != nil {
-				return script{}, err
-			}
-			return script{
-				key:  "install-etcd",
-				data: s,
-			}, nil
-		}
-		if strings.HasPrefix(id, "pr-") {
-			id = strings.Replace(plugin, "pr-", "", -1)
-		}
-		_, perr := strconv.ParseInt(id, 10, 64)
-		isPR := perr == nil
-		s, err := createInstallGit(gitInfo{
-			GitRepo:      "etcd",
-			GitClonePath: "${GOPATH}/src/go.etcd.io",
-			GitCloneURL:  "https://github.com/etcd-io/etcd.git",
-			IsPR:         isPR,
-			GitBranch:    id,
-			InstallScript: `make build
-sudo cp ./bin/etcd /usr/local/bin/etcd
-sudo cp ./bin/etcdctl /usr/local/bin/etcdctl
-
-etcd --version
-ETCDCTL_API=3 etcdctl version`,
-		})
+		s, err := etcdplugin.CreateInstallScript(id)
 		if err != nil {
 			return script{}, err
 		}

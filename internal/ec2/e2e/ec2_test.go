@@ -15,9 +15,9 @@ import (
 )
 
 /*
-RUN_AWS_TESTS=1 go test -v -timeout 2h -run TestEC2SSH
+RUN_AWS_TESTS=1 go test -v -timeout 2h -run TestEC2
 */
-func TestEC2SSH(t *testing.T) {
+func TestEC2(t *testing.T) {
 	if os.Getenv("RUN_AWS_TESTS") != "1" {
 		t.Skip()
 	}
@@ -67,7 +67,7 @@ func TestEC2SSH(t *testing.T) {
 	out, err = sh.Run(
 		"curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone",
 		ssh.WithRetry(100, 5*time.Second),
-		ssh.WithTimeout(30*time.Second),
+		ssh.WithTimeout(15*time.Second),
 	)
 	if err != nil {
 		t.Error(err)
@@ -144,5 +144,15 @@ func TestEC2SSH(t *testing.T) {
 	}
 	if len(cfg.Instances) != 1 {
 		t.Errorf("expected len(cfg.Instances) 1, got %d", len(cfg.Instances))
+	}
+
+	if err = ec.Add(); err != nil {
+		t.Errorf("failed to add an EC2 %v", err)
+	}
+	if cfg.ClusterSize != 2 {
+		t.Errorf("expected ClusterSize 2, got %d", cfg.ClusterSize)
+	}
+	if len(cfg.Instances) != 2 {
+		t.Errorf("expected len(cfg.Instances) 2, got %d", len(cfg.Instances))
 	}
 }
