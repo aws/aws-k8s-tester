@@ -1,7 +1,9 @@
 package eks
 
 import (
+	"io/ioutil"
 	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
 
@@ -14,6 +16,14 @@ func TestEmbeddedCreateKeyPair(t *testing.T) {
 	}
 
 	cfg := eksconfig.NewDefault()
+	f, err := ioutil.TempFile(os.TempDir(), "aws-k8s-tester-eksconfig")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg.ConfigPath, _ = filepath.Abs(f.Name())
+	f.Close()
+	os.RemoveAll(cfg.ConfigPath)
+	cfg.ValidateAndSetDefaults()
 
 	ek, err := newTesterEmbedded(cfg)
 	if err != nil {

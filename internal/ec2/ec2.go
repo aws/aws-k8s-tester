@@ -107,6 +107,24 @@ func NewDeployer(cfg *ec2config.Config) (Deployer, error) {
 	}
 	md.cfg.AWSAccountID = *output.Account
 
+	// up to 63 characters
+	// https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-s3-bucket-naming-requirements.html
+	md.cfg.Tag += "-" + strings.ToLower(*output.UserId)
+	h, _ := os.Hostname()
+	if len(h) > 5 {
+		h = strings.ToLower(h)
+		h = strings.Replace(h, ".", "", -1)
+		h = strings.Replace(h, "-", "", -1)
+		h = strings.Replace(h, "_", "", -1)
+		md.cfg.Tag += h
+	}
+	if len(md.cfg.Tag) > 40 {
+		md.cfg.Tag = md.cfg.Tag[:40]
+	}
+	md.cfg.ConfigPathURL = genS3URL(md.cfg.AWSRegion, md.cfg.Tag, md.cfg.ConfigPathBucket)
+	md.cfg.LogOutputToUploadPathURL = genS3URL(md.cfg.AWSRegion, md.cfg.Tag, md.cfg.LogOutputToUploadPathBucket)
+	md.cfg.KeyPathURL = genS3URL(md.cfg.AWSRegion, md.cfg.Tag, md.cfg.KeyPathBucket)
+
 	lg.Info(
 		"created EC2 deployer",
 		zap.String("id", cfg.ClusterName),
@@ -910,4 +928,10 @@ func ConvertEC2Instance(iv *ec2.Instance) (instance ec2config.Instance) {
 		}
 	}
 	return instance
+}
+
+// genS3URL returns S3 URL path.
+// e.g. https://s3-us-west-2.amazonaws.com/aws-k8s-tester-20180925/hello-world
+func genS3URL(region, bucket, s3Path string) string {
+	return fmt.Sprintf("https://s3-%s.amazonaws.com/%s/%s", region, bucket, s3Path)
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -116,13 +117,38 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 	md.asg = autoscaling.New(md.ss)
 	md.eks = awseks.New(md.ss)
 	md.ec2 = ec2.New(md.ss)
-	md.s3Plugin = s3.NewEmbedded(md.lg, md.cfg, awss3.New(md.ss))
 
 	output, oerr := md.sts.GetCallerIdentity(&sts.GetCallerIdentityInput{})
 	if oerr != nil {
 		return nil, oerr
 	}
 	md.cfg.AWSAccountID = *output.Account
+
+	// up to 63 characters
+	// https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-s3-bucket-naming-requirements.html
+	md.cfg.Tag += "-" + strings.ToLower(*output.UserId)
+	h, _ := os.Hostname()
+	if len(h) > 5 {
+		h = strings.ToLower(h)
+		h = strings.Replace(h, ".", "", -1)
+		h = strings.Replace(h, "-", "", -1)
+		h = strings.Replace(h, "_", "", -1)
+		md.cfg.Tag += h
+	}
+	if len(md.cfg.Tag) > 40 {
+		md.cfg.Tag = md.cfg.Tag[:40]
+	}
+	md.cfg.LogOutputToUploadPathURL = genS3URL(md.cfg.AWSRegion, md.cfg.Tag, md.cfg.LogOutputToUploadPathBucket)
+	md.cfg.ConfigPathURL = genS3URL(md.cfg.AWSRegion, md.cfg.Tag, md.cfg.ConfigPathBucket)
+	md.cfg.KubeConfigPathURL = genS3URL(md.cfg.AWSRegion, md.cfg.Tag, md.cfg.KubeConfigPathBucket)
+	if md.cfg.ALBIngressController != nil {
+		md.cfg.ALBIngressController.IngressTestServerDeploymentServiceSpecPathURL = genS3URL(md.cfg.AWSRegion, md.cfg.Tag, md.cfg.ALBIngressController.IngressTestServerDeploymentServiceSpecPathBucket)
+		md.cfg.ALBIngressController.IngressControllerSpecPathURL = genS3URL(md.cfg.AWSRegion, md.cfg.Tag, md.cfg.ALBIngressController.IngressControllerSpecPathBucket)
+		md.cfg.ALBIngressController.IngressObjectSpecPathURL = genS3URL(md.cfg.AWSRegion, md.cfg.Tag, md.cfg.ALBIngressController.IngressObjectSpecPathBucket)
+		md.cfg.ALBIngressController.ScalabilityOutputToUploadPathURL = genS3URL(md.cfg.AWSRegion, md.cfg.Tag, md.cfg.ALBIngressController.ScalabilityOutputToUploadPathBucket)
+		md.cfg.ALBIngressController.MetricsOutputToUploadPathURL = genS3URL(md.cfg.AWSRegion, md.cfg.Tag, md.cfg.ALBIngressController.MetricsOutputToUploadPathBucket)
+	}
+	md.s3Plugin = s3.NewEmbedded(md.lg, md.cfg, awss3.New(md.ss))
 
 	if cfg.ALBIngressController.Enable {
 		md.albPlugin, err = alb.NewEmbedded(md.stopc, lg, md.cfg, md.im, md.ec2, elbv2.New(md.ss), md.s3Plugin)
@@ -773,4 +799,10 @@ func (md *embedded) uploadALBTesterLogs() (err error) {
 		)
 	}
 	return nil
+}
+
+// genS3URL returns S3 URL path.
+// e.g. https://s3-us-west-2.amazonaws.com/aws-k8s-tester-20180925/hello-world
+func genS3URL(region, bucket, s3Path string) string {
+	return fmt.Sprintf("https://s3-%s.amazonaws.com/%s/%s", region, bucket, s3Path)
 }

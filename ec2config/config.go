@@ -195,7 +195,7 @@ type SecurityGroup struct {
 func genTag() string {
 	// use UTC time for everything
 	now := time.Now().UTC()
-	return fmt.Sprintf("aws-k8s-tester-ec2-%d%02d%02d%02d", now.Year(), now.Month(), now.Day(), now.Hour()/12)
+	return fmt.Sprintf("awsk8stester-ec2-%d%02d%02d", now.Year(), now.Month(), now.Day())
 }
 
 // NewDefault returns a copy of the default configuration.
@@ -396,16 +396,15 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 
 	if cfg.ConfigPath == "" {
 		var f *os.File
-		f, err = ioutil.TempFile(os.TempDir(), "aws-k8s-tester-ec2config")
+		f, err = ioutil.TempFile(os.TempDir(), "awsk8stester-ec2config")
 		if err != nil {
 			return err
 		}
 		cfg.ConfigPath, _ = filepath.Abs(f.Name())
 		f.Close()
 		os.RemoveAll(cfg.ConfigPath)
-		cfg.ConfigPathBucket = filepath.Join(cfg.ClusterName, "aws-k8s-tester-ec2config.yaml")
-		cfg.ConfigPathURL = genS3URL(cfg.AWSRegion, cfg.Tag, cfg.ConfigPathBucket)
 	}
+	cfg.ConfigPathBucket = filepath.Join(cfg.ClusterName, "awsk8stester-ec2config.yaml")
 
 	cfg.LogOutputToUploadPath = filepath.Join(os.TempDir(), fmt.Sprintf("%s.log", cfg.ClusterName))
 	logOutputExist := false
@@ -419,22 +418,20 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 		// auto-insert generated log output paths to zap logger output list
 		cfg.LogOutputs = append(cfg.LogOutputs, cfg.LogOutputToUploadPath)
 	}
-	cfg.LogOutputToUploadPathBucket = filepath.Join(cfg.ClusterName, "aws-k8s-tester-ec2.log")
-	cfg.LogOutputToUploadPathURL = genS3URL(cfg.AWSRegion, cfg.Tag, cfg.LogOutputToUploadPathBucket)
+	cfg.LogOutputToUploadPathBucket = filepath.Join(cfg.ClusterName, "awsk8stester-ec2.log")
 
 	if cfg.KeyName == "" {
 		cfg.KeyName = cfg.ClusterName
 		var f *os.File
-		f, err = ioutil.TempFile(os.TempDir(), "aws-k8s-tester-ec2.key")
+		f, err = ioutil.TempFile(os.TempDir(), "awsk8stester-ec2.key")
 		if err != nil {
 			return err
 		}
 		cfg.KeyPath, _ = filepath.Abs(f.Name())
 		f.Close()
 		os.RemoveAll(cfg.KeyPath)
-		cfg.KeyPathBucket = filepath.Join(cfg.ClusterName, "aws-k8s-tester-ec2.key")
-		cfg.KeyPathURL = genS3URL(cfg.AWSRegion, cfg.Tag, cfg.KeyPathBucket)
 	}
+	cfg.KeyPathBucket = filepath.Join(cfg.ClusterName, "awsk8stester-ec2.key")
 
 	if _, ok := ec2types.InstanceTypes[cfg.InstanceType]; !ok {
 		return fmt.Errorf("unexpected InstanceType %q", cfg.InstanceType)
@@ -522,12 +519,6 @@ func (cfg *Config) BackupConfig() (p string, err error) {
 		time.Now().UTC().UnixNano(),
 	)
 	return p, ioutil.WriteFile(p, d, 0600)
-}
-
-// genS3URL returns S3 URL path.
-// e.g. https://s3-us-west-2.amazonaws.com/aws-k8s-tester-20180925/hello-world
-func genS3URL(region, bucket, s3Path string) string {
-	return fmt.Sprintf("https://s3-%s.amazonaws.com/%s/%s", region, bucket, s3Path)
 }
 
 const ll = "0123456789abcdefghijklmnopqrstuvwxyz"

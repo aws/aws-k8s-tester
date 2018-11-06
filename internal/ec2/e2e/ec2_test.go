@@ -31,6 +31,7 @@ func TestEC2(t *testing.T) {
 		// "install-etcd-3.1.12",
 		// "install-etcd-master",
 	}
+	cfg.UploadTesterLogs = false
 
 	ec, err := ec2.NewDeployer(cfg)
 	if err != nil {

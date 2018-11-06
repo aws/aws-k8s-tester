@@ -38,7 +38,6 @@ func NewTester(cfg *etcdconfig.Config) (etcdtester.Tester, error) {
 	if err := cfg.ValidateAndSetDefaults(); err != nil {
 		return nil, err
 	}
-
 	lg, err := zaputil.New(cfg.LogDebug, cfg.LogOutputs)
 	if err != nil {
 		return nil, err
@@ -63,6 +62,10 @@ func (md *embedded) Create() (err error) {
 	if err != nil {
 		return err
 	}
+	md.cfg.Tag = md.cfg.EC2.Tag + "-etcd"
+	md.cfg.ConfigPathURL = genS3URL(md.cfg.EC2.AWSRegion, md.cfg.Tag, md.cfg.EC2.ConfigPathBucket)
+	md.cfg.LogOutputToUploadPathURL = genS3URL(md.cfg.EC2.AWSRegion, md.cfg.Tag, md.cfg.EC2.LogOutputToUploadPathBucket)
+
 	if err = md.ec2Deployer.Create(); err != nil {
 		return err
 	}
@@ -1185,4 +1188,10 @@ func fetchLog(
 	fpathToS3Path = make(map[string]string)
 	fpathToS3Path[etcdLogPath] = fmt.Sprintf("%s/%s-etcd.server.log", clusterName, id)
 	return fpathToS3Path, nil
+}
+
+// genS3URL returns S3 URL path.
+// e.g. https://s3-us-west-2.amazonaws.com/aws-k8s-tester-20180925/hello-world
+func genS3URL(region, bucket, s3Path string) string {
+	return fmt.Sprintf("https://s3-%s.amazonaws.com/%s/%s", region, bucket, s3Path)
 }

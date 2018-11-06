@@ -378,7 +378,7 @@ func init() {
 func genTag() string {
 	// use UTC time for everything
 	now := time.Now().UTC()
-	return fmt.Sprintf("aws-k8s-tester-eks-%d%02d%02d%02d", now.Year(), now.Month(), now.Day(), now.Hour()/12)
+	return fmt.Sprintf("awsk8stester-eks-%d%02d%02d", now.Year(), now.Month(), now.Day())
 }
 
 // defaultConfig is the default configuration.
@@ -513,6 +513,7 @@ func (cfg *Config) Sync() (err error) {
 	if err != nil {
 		return err
 	}
+	fmt.Println("writing to:", cfg.ConfigPath)
 	return ioutil.WriteFile(cfg.ConfigPath, d, 0600)
 }
 
@@ -634,16 +635,15 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	////////////////////////////////////////////////////////////////////////
 	// populate all paths on disks and on remote storage
 	if cfg.ConfigPath == "" {
-		f, err := ioutil.TempFile(os.TempDir(), "aws-k8s-tester-eksconfig")
+		f, err := ioutil.TempFile(os.TempDir(), "awsk8stester-eksconfig")
 		if err != nil {
 			return err
 		}
 		cfg.ConfigPath, _ = filepath.Abs(f.Name())
 		f.Close()
 		os.RemoveAll(cfg.ConfigPath)
-		cfg.ConfigPathBucket = filepath.Join(cfg.ClusterName, "aws-k8s-tester-eksconfig.yaml")
-		cfg.ConfigPathURL = genS3URL(cfg.AWSRegion, cfg.Tag, cfg.ConfigPathBucket)
 	}
+	cfg.ConfigPathBucket = filepath.Join(cfg.ClusterName, "awsk8stester-eksconfig.yaml")
 
 	cfg.LogOutputToUploadPath = filepath.Join(os.TempDir(), fmt.Sprintf("%s.log", cfg.ClusterName))
 	logOutputExist := false
@@ -657,23 +657,10 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		// auto-insert generated log output paths to zap logger output list
 		cfg.LogOutputs = append(cfg.LogOutputs, cfg.LogOutputToUploadPath)
 	}
-	cfg.LogOutputToUploadPathBucket = filepath.Join(cfg.ClusterName, "aws-k8s-tester-eks.log")
-	cfg.LogOutputToUploadPathURL = genS3URL(cfg.AWSRegion, cfg.Tag, cfg.LogOutputToUploadPathBucket)
+	cfg.LogOutputToUploadPathBucket = filepath.Join(cfg.ClusterName, "awsk8stester-eks.log")
 
-	cfg.KubeConfigPath = fmt.Sprintf(
-		"%s.%s.kubeconfig.generated.yaml",
-		cfg.ConfigPath,
-		cfg.ClusterName,
-	)
-	cfg.KubeConfigPathBucket = filepath.Join(
-		cfg.ClusterName,
-		"kubeconfig",
-	)
-	cfg.KubeConfigPathURL = genS3URL(
-		cfg.AWSRegion,
-		cfg.Tag,
-		cfg.KubeConfigPathBucket,
-	)
+	cfg.KubeConfigPath = fmt.Sprintf("%s.%s.kubeconfig.generated.yaml", cfg.ConfigPath, cfg.ClusterName)
+	cfg.KubeConfigPathBucket = filepath.Join(cfg.ClusterName, "kubeconfig")
 
 	cfg.ALBIngressController.IngressTestServerDeploymentServiceSpecPath = fmt.Sprintf(
 		"%s.%s.alb.ingress-test-server.yaml",
@@ -683,11 +670,6 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	cfg.ALBIngressController.IngressTestServerDeploymentServiceSpecPathBucket = filepath.Join(
 		cfg.ClusterName,
 		"alb.ingress-test-server.deployment.service.yaml",
-	)
-	cfg.ALBIngressController.IngressTestServerDeploymentServiceSpecPathURL = genS3URL(
-		cfg.AWSRegion,
-		cfg.Tag,
-		cfg.ALBIngressController.IngressTestServerDeploymentServiceSpecPathBucket,
 	)
 
 	cfg.ALBIngressController.IngressControllerSpecPath = fmt.Sprintf(
@@ -699,11 +681,6 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		cfg.ClusterName,
 		"alb.controller.deployment.service.yaml",
 	)
-	cfg.ALBIngressController.IngressControllerSpecPathURL = genS3URL(
-		cfg.AWSRegion,
-		cfg.Tag,
-		cfg.ALBIngressController.IngressControllerSpecPathBucket,
-	)
 
 	cfg.ALBIngressController.IngressObjectSpecPath = fmt.Sprintf(
 		"%s.%s.alb.ingress.yaml",
@@ -713,11 +690,6 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	cfg.ALBIngressController.IngressObjectSpecPathBucket = filepath.Join(
 		cfg.ClusterName,
 		"alb.ingress.yaml",
-	)
-	cfg.ALBIngressController.IngressObjectSpecPathURL = genS3URL(
-		cfg.AWSRegion,
-		cfg.Tag,
-		cfg.ALBIngressController.IngressObjectSpecPathBucket,
 	)
 
 	cfg.ALBIngressController.ScalabilityOutputToUploadPath = fmt.Sprintf(
@@ -729,11 +701,6 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		cfg.ClusterName,
 		"alb.scalability.txt",
 	)
-	cfg.ALBIngressController.ScalabilityOutputToUploadPathURL = genS3URL(
-		cfg.AWSRegion,
-		cfg.Tag,
-		cfg.ALBIngressController.ScalabilityOutputToUploadPathBucket,
-	)
 
 	cfg.ALBIngressController.MetricsOutputToUploadPath = fmt.Sprintf(
 		"%s.%s.alb.metrics.txt",
@@ -743,11 +710,6 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	cfg.ALBIngressController.MetricsOutputToUploadPathBucket = filepath.Join(
 		cfg.ClusterName,
 		"alb.metrics.txt",
-	)
-	cfg.ALBIngressController.MetricsOutputToUploadPathURL = genS3URL(
-		cfg.AWSRegion,
-		cfg.Tag,
-		cfg.ALBIngressController.MetricsOutputToUploadPathBucket,
 	)
 	////////////////////////////////////////////////////////////////////////
 
@@ -1097,12 +1059,6 @@ const (
 	serviceRolePolicyARNService = "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
 	serviceRolePolicyARNCluster = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
 )
-
-// genS3URL returns S3 URL path.
-// e.g. https://s3-us-west-2.amazonaws.com/aws-k8s-tester-20180925/hello-world
-func genS3URL(region, bucket, s3Path string) string {
-	return fmt.Sprintf("https://s3-%s.amazonaws.com/%s/%s", region, bucket, s3Path)
-}
 
 func genServiceRoleWithPolicy(clusterName string) string {
 	return fmt.Sprintf("%s-SERVICE-ROLE", clusterName)

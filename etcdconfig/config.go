@@ -595,7 +595,7 @@ func init() {
 func genTag() string {
 	// use UTC time for everything
 	now := time.Now().UTC()
-	return fmt.Sprintf("aws-k8s-tester-etcd-%d%02d%02d%02d", now.Year(), now.Month(), now.Day(), now.Hour()/12)
+	return fmt.Sprintf("awsk8stester-etcd-%d%02d%02d", now.Year(), now.Month(), now.Day())
 }
 
 var defaultConfig = Config{
@@ -668,7 +668,6 @@ func (cfg *Config) Sync() (err error) {
 			return err
 		}
 	}
-	// cfg.UpdatedAt = time.Now().UTC()
 	var d []byte
 	d, err = gyaml.Marshal(cfg)
 	if err != nil {
@@ -908,18 +907,15 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 
 	// populate all paths on disks and on remote storage
 	if cfg.ConfigPath == "" {
-		f, err := ioutil.TempFile(os.TempDir(), "aws-k8s-tester-etcdconfig")
+		f, err := ioutil.TempFile(os.TempDir(), "awsk8stester-etcdconfig")
 		if err != nil {
 			return err
 		}
 		cfg.ConfigPath, _ = filepath.Abs(f.Name())
 		f.Close()
 		os.RemoveAll(cfg.ConfigPath)
-		cfg.ConfigPathBucket = filepath.Join(cfg.ClusterName, "aws-k8s-tester-etcdconfig.yaml")
-		if cfg.UploadTesterLogs {
-			cfg.ConfigPathURL = genS3URL(cfg.EC2.AWSRegion, cfg.Tag, cfg.ConfigPathBucket)
-		}
 	}
+	cfg.ConfigPathBucket = filepath.Join(cfg.ClusterName, "awsk8stester-etcdconfig.yaml")
 
 	cfg.LogOutputToUploadPath = filepath.Join(os.TempDir(), fmt.Sprintf("%s.log", cfg.ClusterName))
 	logOutputExist := false
@@ -933,10 +929,7 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 		// auto-insert generated log output paths to zap logger output list
 		cfg.LogOutputs = append(cfg.LogOutputs, cfg.LogOutputToUploadPath)
 	}
-	cfg.LogOutputToUploadPathBucket = filepath.Join(cfg.ClusterName, "aws-k8s-tester-etcd.log")
-	if cfg.UploadTesterLogs {
-		cfg.LogOutputToUploadPathURL = genS3URL(cfg.EC2.AWSRegion, cfg.Tag, cfg.LogOutputToUploadPathBucket)
-	}
+	cfg.LogOutputToUploadPathBucket = filepath.Join(cfg.ClusterName, "awsk8stester-etcd.log")
 
 	if len(cfg.ClusterState) > 0 && cfg.ClusterSize != len(cfg.ClusterState) {
 		return fmt.Errorf("ClusterSize %d != len(ClusterState) %d", cfg.ClusterSize, len(cfg.ClusterState))
@@ -948,12 +941,6 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 	}
 
 	return cfg.Sync()
-}
-
-// genS3URL returns S3 URL path.
-// e.g. https://s3-us-west-2.amazonaws.com/aws-k8s-tester-20180925/hello-world
-func genS3URL(region, bucket, s3Path string) string {
-	return fmt.Sprintf("https://s3-%s.amazonaws.com/%s/%s", region, bucket, s3Path)
 }
 
 const ll = "0123456789abcdefghijklmnopqrstuvwxyz"
