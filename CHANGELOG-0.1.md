@@ -39,7 +39,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.1...0.1.2).
 
 ### `internal`
 
-- Update [`Tag` field to suffix S3 bucket name with user ID and hostname](https://github.com/aws/aws-k8s-tester/commit/f8b5d466966862658dff6bc254d7491ba2333aa6).
+- Update [`Tag` field to suffix S3 bucket name with user ID and hostname](https://github.com/aws/aws-k8s-tester/commit/7bfdd6417bcb7128cc00ab1e7810a106bac94347).
 - Rename to [`ec2config` from `internal/ec2/config`](https://github.com/aws/aws-k8s-tester/commit/f8b5d466966862658dff6bc254d7491ba2333aa6).
 - Add [`ec2config.Config.IngressCIDRs`](https://github.com/aws/aws-k8s-tester/commit/8e7fd780a16433adce69c54c1d995a53a34d60e9) field.
 - Add [`ec2config.Config.Wait`](https://github.com/aws/aws-k8s-tester/commit/6073c2de289e352c5454d4b17380022168bcbac6) field.
