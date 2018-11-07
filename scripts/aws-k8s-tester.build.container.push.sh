@@ -45,6 +45,6 @@ CGO_ENABLED=0 GOOS=linux GOARCH=$(go env GOARCH) \
 
 docker build \
   --tag ${REGISTRY}/aws-k8s-tester:${TAG} \
-  --file ./Dockerfile .
+  --file ./scripts/aws-k8s-tester.Dockerfile .
 
 docker push ${REGISTRY}/aws-k8s-tester:${TAG}
