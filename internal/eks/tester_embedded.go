@@ -96,7 +96,12 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 		ec2InstancesLogMu: &sync.RWMutex{},
 	}
 
-	if cfg.KubectlDownloadURL != "" {
+	if cfg.KubectlDownloadURL != "" || true {
+		if cfg.KubectlDownloadURL == "" {
+			cfg.KubectlDownloadURL = "https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-07-26/bin/linux/amd64/kubectl"
+			fmt.Println("overwriting cfg.KubectlDownloadURL:", cfg.KubectlDownloadURL)
+		}
+		// TODO: for now overwrite with Amazon vendored 'kubectl'
 		md.kubectlPath = filepath.Join(os.TempDir(), "kubectl")
 		var f *os.File
 		f, err = os.Create(md.kubectlPath)
@@ -135,9 +140,11 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 	md.lg.Info(
 		"checking kubectl and aws-iam-authenticator",
 		zap.String("kubectl", md.kubectlPath),
+		zap.String("kubectl-download-url", md.cfg.KubectlDownloadURL),
 		zap.String("kubectl-version", string(kvOut)),
 		zap.String("kubectl-version-err", fmt.Sprintf("%v", kvOutErr)),
 		zap.String("aws-iam-authenticator", md.awsIAMAuthenticatorPath),
+		zap.String("aws-iam-authenticator-download-url", md.cfg.AWSIAMAuthenticatorDownloadURL),
 		zap.String("aws-iam-authenticator-help", string(iamOut)),
 		zap.String("aws-iam-authenticator-help-error", fmt.Sprintf("%v", iamOutErr)),
 	)

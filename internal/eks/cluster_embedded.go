@@ -175,9 +175,11 @@ func (md *embedded) createCluster() error {
 		md.lg.Info(
 			"'kubectl get all'",
 			zap.String("kubectl", kubectlPath),
+			zap.String("kubectl-download-url", md.cfg.KubectlDownloadURL),
 			zap.String("kubectl-version", string(kvOut)),
 			zap.String("kubectl-version-err", fmt.Sprintf("%v", kvOutErr)),
 			zap.String("aws-iam-authenticator", iamPath),
+			zap.String("aws-iam-authenticator-download-url", md.cfg.AWSIAMAuthenticatorDownloadURL),
 			zap.String("aws-iam-authenticator-help", string(iamOut)),
 			zap.String("aws-iam-authenticator-help-error", fmt.Sprintf("%v", iamOutErr)),
 		)
