@@ -139,21 +139,28 @@ func (md *embedded) createCluster() error {
 
 	time.Sleep(3 * time.Second)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	cmd := md.kubectl.CommandContext(ctx,
-		md.kubectlPath,
-		"--kubeconfig="+md.cfg.KubeConfigPath,
-		"get", "all",
-	)
-	var kubectlOutput []byte
-	kubectlOutput, err = cmd.CombinedOutput()
-	cancel()
-	kubectlOutputTxt := string(kubectlOutput)
-
-	md.lg.Info("kubectl get all", zap.String("output", kubectlOutputTxt), zap.Error(err))
-
-	if err == nil && !isKubernetesControlPlaneReadyKubectl(kubectlOutputTxt) {
-		return fmt.Errorf("'kubectl get all' output unexpected: %s", kubectlOutputTxt)
+	// retry
+	retryStart = time.Now().UTC()
+	kubectlOutputTxt := ""
+	for time.Now().UTC().Sub(retryStart) < 10*time.Minute {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		cmd := md.kubectl.CommandContext(ctx,
+			md.kubectlPath,
+			"--kubeconfig="+md.cfg.KubeConfigPath,
+			"get", "all",
+		)
+		var kubectlOutput []byte
+		kubectlOutput, err = cmd.CombinedOutput()
+		cancel()
+		kubectlOutputTxt = string(kubectlOutput)
+		md.lg.Info("kubectl get all", zap.String("output", kubectlOutputTxt), zap.Error(err))
+		if err == nil && isKubernetesControlPlaneReadyKubectl(kubectlOutputTxt) {
+			break
+		}
+		time.Sleep(10 * time.Second)
+	}
+	if err != nil {
+		return fmt.Errorf("'kubectl get all' output unexpected: %s (%v)", kubectlOutputTxt, err)
 	}
 
 	md.lg.Info("created cluster",
