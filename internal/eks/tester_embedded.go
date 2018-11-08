@@ -96,9 +96,22 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot find 'kubectl' executable (%v)", err)
 	}
-	if _, err = exec.New().LookPath("aws-iam-authenticator"); err != nil {
+	iamPath, iamPathErr := exec.New().LookPath("aws-iam-authenticator")
+	if iamPathErr != nil {
 		return nil, fmt.Errorf("cannot find 'aws-iam-authenticator' executable (%v)", err)
 	}
+
+	kvOut, kvOutErr := exec.New().CommandContext(context.Background(), md.kubectlPath, "version").CombinedOutput()
+	iamOut, iamOutErr := exec.New().CommandContext(context.Background(), iamPath, "help").CombinedOutput()
+	md.lg.Info(
+		"checking kubectl and aws-iam-authenticator",
+		zap.String("kubectl", md.kubectlPath),
+		zap.String("kubectl-version", string(kvOut)),
+		zap.String("kubectl-version-err", fmt.Sprintf("%v", kvOutErr)),
+		zap.String("aws-iam-authenticator", iamPath),
+		zap.String("aws-iam-authenticator-help", string(iamOut)),
+		zap.String("aws-iam-authenticator-help-error", fmt.Sprintf("%v", iamOutErr)),
+	)
 
 	awsCfg := &awsapi.Config{
 		Logger:         md.lg,

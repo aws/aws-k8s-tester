@@ -143,7 +143,7 @@ func (md *embedded) createCluster() error {
 	// retry
 	retryStart = time.Now().UTC()
 	kubectlOutputTxt := ""
-	for time.Now().UTC().Sub(retryStart) < 10*time.Minute {
+	for time.Now().UTC().Sub(retryStart) < 20*time.Minute {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		cmd := md.kubectl.CommandContext(ctx,
 			md.kubectlPath,
@@ -159,21 +159,28 @@ func (md *embedded) createCluster() error {
 			break
 		}
 
-		var kubectlPath string
-		kubectlPath, err = exec.New().LookPath("kubectl")
-		if err != nil {
-			return fmt.Errorf("cannot find 'kubectl' executable from 'kubectl get all' (%v)", err)
+		kubectlPath, kubectlPathErr := exec.New().LookPath("kubectl")
+		if kubectlPathErr != nil {
+			return fmt.Errorf("cannot find 'kubectl' executable from 'kubectl get all' (%v)", kubectlPathErr)
 		}
-		var authPath string
-		authPath, err = exec.New().LookPath("aws-iam-authenticator")
-		if err != nil {
-			return fmt.Errorf("cannot find 'aws-iam-authenticator' executable from 'kubectl get all' (%v)", err)
+		kvOut, kvOutErr := exec.New().CommandContext(context.Background(), kubectlPath, "version").CombinedOutput()
+
+		iamPath, iamPathErr := exec.New().LookPath("aws-iam-authenticator")
+		if iamPathErr != nil {
+			return fmt.Errorf("cannot find 'aws-iam-authenticator' executable from 'kubectl get all' (%v)", iamPathErr)
 		}
+		iamOut, iamOutErr := exec.New().CommandContext(context.Background(), iamPath, "help").CombinedOutput()
+
 		md.lg.Info(
-			"retrying 'kubectl get all' in 10 seconds",
+			"retrying 'kubectl get all'",
 			zap.String("kubectl", kubectlPath),
-			zap.String("aws-iam-authenticator", authPath),
+			zap.String("kubectl-version", string(kvOut)),
+			zap.String("kubectl-version-err", fmt.Sprintf("%v", kvOutErr)),
+			zap.String("aws-iam-authenticator", iamPath),
+			zap.String("aws-iam-authenticator-help", string(iamOut)),
+			zap.String("aws-iam-authenticator-help-error", fmt.Sprintf("%v", iamOutErr)),
 		)
+
 		time.Sleep(10 * time.Second)
 	}
 	if err != nil {
