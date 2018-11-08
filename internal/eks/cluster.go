@@ -45,7 +45,7 @@ users:
   user:
     exec:
       apiVersion: client.authentication.k8s.io/v1alpha1
-      command: aws-iam-authenticator
+      command: {{ .AWSIAMAuthenticatorPath }}
       args:
         - token
         - -i
@@ -54,16 +54,18 @@ users:
 `
 
 type kubeConfig struct {
-	ClusterEndpoint string
-	ClusterCA       string
-	ClusterName     string
+	AWSIAMAuthenticatorPath string
+	ClusterEndpoint         string
+	ClusterCA               string
+	ClusterName             string
 }
 
-func writeKubeConfig(ep, ca, clusterName, p string) (err error) {
+func writeKubeConfig(awsIAMAuthenticatorPath, ep, ca, clusterName, p string) (err error) {
 	kc := kubeConfig{
-		ClusterEndpoint: ep,
-		ClusterCA:       ca,
-		ClusterName:     clusterName,
+		AWSIAMAuthenticatorPath: awsIAMAuthenticatorPath,
+		ClusterEndpoint:         ep,
+		ClusterCA:               ca,
+		ClusterName:             clusterName,
 	}
 	tpl := template.Must(template.New("kubeCfgTempl").Parse(kubeConfigTempl))
 	buf := bytes.NewBuffer(nil)

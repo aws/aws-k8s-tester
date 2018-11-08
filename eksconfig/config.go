@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -41,6 +42,8 @@ type Config struct {
 	// AWSK8sTesterDownloadURL is the URL to download the "aws-k8s-tester" from.
 	// This is required for Kubernetes kubetest plugin.
 	AWSK8sTesterDownloadURL string `json:"aws-k8s-tester-download-url,omitempty"`
+	// KubectlDownloadURL is the URL to download the "kubectl" from.
+	KubectlDownloadURL string `json:"kubectl-download-url,omitempty"`
 	// AWSIAMAuthenticatorDownloadURL is the URL to download the "aws-iam-authenticator" from.
 	// This is required for Kubernetes kubetest plugin.
 	AWSIAMAuthenticatorDownloadURL string `json:"aws-iam-authenticator-download-url,omitempty"`
@@ -371,6 +374,10 @@ func NewDefault() *Config {
 func init() {
 	defaultConfig.Tag = genTag()
 	defaultConfig.ClusterName = defaultConfig.Tag + "-" + randString(7)
+	if runtime.GOOS == "darwin" {
+		defaultConfig.KubectlDownloadURL = strings.Replace(defaultConfig.KubectlDownloadURL, "linux", "darwin", -1)
+		defaultConfig.AWSIAMAuthenticatorDownloadURL = strings.Replace(defaultConfig.AWSIAMAuthenticatorDownloadURL, "linux", "darwin", -1)
+	}
 }
 
 // genTag generates a tag for cluster name, CloudFormation, and S3 bucket.
@@ -389,6 +396,7 @@ var defaultConfig = Config{
 	TestMode: "embedded",
 
 	AWSK8sTesterDownloadURL:        "https://github.com/aws/aws-k8s-tester/releases/download/0.1.2/aws-k8s-tester-0.1.2-linux-amd64",
+	KubectlDownloadURL:             "https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-07-26/bin/linux/amd64/kubectl",
 	AWSIAMAuthenticatorDownloadURL: "https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-07-26/bin/linux/amd64/aws-iam-authenticator",
 
 	// enough time for ALB access log

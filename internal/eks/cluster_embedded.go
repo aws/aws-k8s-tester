@@ -123,6 +123,7 @@ func (md *embedded) createCluster() error {
 	}
 
 	if err = writeKubeConfig(
+		md.awsIAMAuthenticatorPath,
 		md.cfg.ClusterState.Endpoint,
 		md.cfg.ClusterState.CA,
 		md.cfg.ClusterName,
@@ -143,7 +144,7 @@ func (md *embedded) createCluster() error {
 	// retry
 	retryStart = time.Now().UTC()
 	kubectlOutputTxt := ""
-	for time.Now().UTC().Sub(retryStart) < 20*time.Minute {
+	for time.Now().UTC().Sub(retryStart) < 5*time.Minute {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		cmd := md.kubectl.CommandContext(ctx,
 			md.kubectlPath,
@@ -172,7 +173,7 @@ func (md *embedded) createCluster() error {
 		iamOut, iamOutErr := exec.New().CommandContext(context.Background(), iamPath, "help").CombinedOutput()
 
 		md.lg.Info(
-			"retrying 'kubectl get all'",
+			"'kubectl get all'",
 			zap.String("kubectl", kubectlPath),
 			zap.String("kubectl-version", string(kvOut)),
 			zap.String("kubectl-version-err", fmt.Sprintf("%v", kvOutErr)),

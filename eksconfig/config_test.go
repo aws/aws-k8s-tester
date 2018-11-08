@@ -27,6 +27,7 @@ func TestEnv(t *testing.T) {
 	cfg := NewDefault()
 
 	os.Setenv("AWS_K8S_TESTER_EKS_AWS_K8S_TESTER_DOWNLOAD_URL", "https://github.com/aws/aws-k8s-tester/releases/download/0.1.3/aws-k8s-tester-0.1.3-linux-amd64")
+	os.Setenv("AWS_K8S_TESTER_EKS_KUBECTL_DOWNLOAD_URL", "https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-07-26/bin/linux/amd64/kubectl")
 	os.Setenv("AWS_K8S_TESTER_EKS_AWS_IAM_AUTHENTICATOR_DOWNLOAD_URL", "https://amazon-eks.s3-us-west-2.amazonaws.com/1.13.0/2018-12-31/bin/linux/amd64/aws-iam-authenticator")
 	os.Setenv("AWS_K8S_TESTER_EKS_TEST_MODE", "aws-cli")
 	os.Setenv("AWS_K8S_TESTER_EKS_KUBERNETES_VERSION", "1.11")
@@ -57,6 +58,7 @@ func TestEnv(t *testing.T) {
 
 	defer func() {
 		os.Unsetenv("AWS_K8S_TESTER_EKS_AWS_K8S_TESTER_DOWNLOAD_URL")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_KUBECTL_DOWNLOAD_URL")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_AWS_IAM_AUTHENTICATOR_DOWNLOAD_URL")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_TEST_MODE")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_KUBERNETES_VERSION")
@@ -92,6 +94,9 @@ func TestEnv(t *testing.T) {
 
 	if cfg.AWSK8sTesterDownloadURL != "https://github.com/aws/aws-k8s-tester/releases/download/0.1.3/aws-k8s-tester-0.1.3-linux-amd64" {
 		t.Fatalf("unexpected AWSK8sTesterDownloadURL %q", cfg.AWSK8sTesterDownloadURL)
+	}
+	if cfg.KubectlDownloadURL != "https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-07-26/bin/linux/amd64/kubectl" {
+		t.Fatalf("unexpected KubectlDownloadURL %q", cfg.KubectlDownloadURL)
 	}
 	if cfg.AWSIAMAuthenticatorDownloadURL != "https://amazon-eks.s3-us-west-2.amazonaws.com/1.13.0/2018-12-31/bin/linux/amd64/aws-iam-authenticator" {
 		t.Fatalf("unexpected AWSIAMAuthenticatorDownloadURL %q", cfg.AWSIAMAuthenticatorDownloadURL)

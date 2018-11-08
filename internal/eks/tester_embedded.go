@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -42,6 +43,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/sts/stsiface"
 	"github.com/dustin/go-humanize"
 	"go.uber.org/zap"
+	"k8s.io/test-infra/kubetest/util"
 	"k8s.io/utils/exec"
 )
 
@@ -54,8 +56,9 @@ type embedded struct {
 
 	// TODO: move this "kubectl" to AWS CLI deployer
 	// and instead use "k8s.io/client-go" with STS token
-	kubectl     exec.Interface
-	kubectlPath string
+	kubectl                 exec.Interface
+	kubectlPath             string
+	awsIAMAuthenticatorPath string
 
 	ss  *session.Session
 	im  iamiface.IAMAPI
@@ -92,23 +95,49 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 		kubectl:           exec.New(),
 		ec2InstancesLogMu: &sync.RWMutex{},
 	}
-	md.kubectlPath, err = md.kubectl.LookPath("kubectl")
-	if err != nil {
-		return nil, fmt.Errorf("cannot find 'kubectl' executable (%v)", err)
+
+	if cfg.KubectlDownloadURL != "" {
+		md.kubectlPath = filepath.Join(os.TempDir(), "kubectl")
+		var f *os.File
+		f, err = os.Create(md.kubectlPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create %q (%v)", md.kubectlPath, err)
+		}
+		defer f.Close()
+		if err = httpRead(md.lg, cfg.KubectlDownloadURL, f); err != nil {
+			return nil, err
+		}
+		if err = util.EnsureExecutable(md.kubectlPath); err != nil {
+			return nil, err
+		}
+		md.kubectlPath, err = md.kubectl.LookPath("kubectl")
+		if err != nil {
+		}
 	}
-	iamPath, iamPathErr := exec.New().LookPath("aws-iam-authenticator")
-	if iamPathErr != nil {
-		return nil, fmt.Errorf("cannot find 'aws-iam-authenticator' executable (%v)", err)
+	if cfg.AWSIAMAuthenticatorDownloadURL != "" {
+		md.awsIAMAuthenticatorPath = filepath.Join(os.TempDir(), "aws-iam-authenticator")
+		var f *os.File
+		f, err = os.Create(md.awsIAMAuthenticatorPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create %q (%v)", md.awsIAMAuthenticatorPath, err)
+		}
+		defer f.Close()
+		if err = httpRead(md.lg, cfg.AWSIAMAuthenticatorDownloadURL, f); err != nil {
+			return nil, err
+		}
+		if err = util.EnsureExecutable(md.awsIAMAuthenticatorPath); err != nil {
+			return nil, err
+		}
 	}
 
 	kvOut, kvOutErr := exec.New().CommandContext(context.Background(), md.kubectlPath, "version").CombinedOutput()
-	iamOut, iamOutErr := exec.New().CommandContext(context.Background(), iamPath, "help").CombinedOutput()
+	iamOut, iamOutErr := exec.New().CommandContext(context.Background(), md.awsIAMAuthenticatorPath, "help").CombinedOutput()
 	md.lg.Info(
 		"checking kubectl and aws-iam-authenticator",
 		zap.String("kubectl", md.kubectlPath),
 		zap.String("kubectl-version", string(kvOut)),
 		zap.String("kubectl-version-err", fmt.Sprintf("%v", kvOutErr)),
-		zap.String("aws-iam-authenticator", iamPath),
+		zap.String("aws-iam-authenticator", md.awsIAMAuthenticatorPath),
 		zap.String("aws-iam-authenticator-help", string(iamOut)),
 		zap.String("aws-iam-authenticator-help-error", fmt.Sprintf("%v", iamOutErr)),
 	)
@@ -238,6 +267,7 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 			md.cfg.ClusterState.Endpoint = *co.Cluster.Endpoint
 			md.cfg.ClusterState.CA = *co.Cluster.CertificateAuthority.Data
 			if err = writeKubeConfig(
+				md.awsIAMAuthenticatorPath,
 				md.cfg.ClusterState.Endpoint,
 				md.cfg.ClusterState.CA,
 				md.cfg.ClusterName,
@@ -818,4 +848,28 @@ func (md *embedded) uploadALBTesterLogs() (err error) {
 // e.g. https://s3-us-west-2.amazonaws.com/aws-k8s-tester-20180925/hello-world
 func genS3URL(region, bucket, s3Path string) string {
 	return fmt.Sprintf("https://s3-%s.amazonaws.com/%s/%s", region, bucket, s3Path)
+}
+
+var httpTransport *http.Transport
+
+func init() {
+	httpTransport = new(http.Transport)
+	httpTransport.RegisterProtocol("file", http.NewFileTransport(http.Dir("/")))
+}
+
+// curl -L [URL] | writer
+func httpRead(lg *zap.Logger, u string, wr io.Writer) error {
+	lg.Info("downloading", zap.String("url", u))
+	cli := &http.Client{Transport: httpTransport}
+	r, err := cli.Get(u)
+	if err != nil {
+		return err
+	}
+	defer r.Body.Close()
+	if r.StatusCode >= 400 {
+		return fmt.Errorf("%q returned %d", u, r.StatusCode)
+	}
+	_, err = io.Copy(wr, r.Body)
+	lg.Info("downloaded", zap.String("url", u), zap.Error(err))
+	return err
 }
