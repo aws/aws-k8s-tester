@@ -1,5 +1,23 @@
 
 
+
+
+<hr>
+
+
+## [0.1.3](https://github.com/aws/aws-k8s-tester/releases/tag/0.1.3) (2018-11-07)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.2...0.1.3).
+
+### `internal`
+
+- Add [retries on `kubectl get all` fail](https://github.com/aws/aws-k8s-tester/pull/8).
+
+### Go
+
+- Compile with [*Go 1.11.2*](https://golang.org/doc/devel/release.html#go1.11).
+
+
 <hr>
 
 
