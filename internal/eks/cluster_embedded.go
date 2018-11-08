@@ -11,6 +11,7 @@ import (
 	awseks "github.com/aws/aws-sdk-go/service/eks"
 	humanize "github.com/dustin/go-humanize"
 	"go.uber.org/zap"
+	"k8s.io/utils/exec"
 )
 
 func (md *embedded) createCluster() error {
@@ -157,6 +158,22 @@ func (md *embedded) createCluster() error {
 		if err == nil && isKubernetesControlPlaneReadyKubectl(kubectlOutputTxt) {
 			break
 		}
+
+		var kubectlPath string
+		kubectlPath, err = exec.New().LookPath("kubectl")
+		if err != nil {
+			return fmt.Errorf("cannot find 'kubectl' executable from 'kubectl get all' (%v)", err)
+		}
+		var authPath string
+		authPath, err = exec.New().LookPath("aws-iam-authenticator")
+		if err != nil {
+			return fmt.Errorf("cannot find 'aws-iam-authenticator' executable from 'kubectl get all' (%v)", err)
+		}
+		md.lg.Info(
+			"retrying 'kubectl get all' in 10 seconds",
+			zap.String("kubectl", kubectlPath),
+			zap.String("aws-iam-authenticator", authPath),
+		)
 		time.Sleep(10 * time.Second)
 	}
 	if err != nil {
