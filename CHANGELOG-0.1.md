@@ -1,13 +1,15 @@
 
 
-
-
 <hr>
 
 
-## [0.1.3](https://github.com/aws/aws-k8s-tester/releases/tag/0.1.3) (2018-11-07)
+## [0.1.3](https://github.com/aws/aws-k8s-tester/releases/tag/0.1.3) (2018-11-08)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.2...0.1.3).
+
+### `eksconfig`
+
+- Add [`eksconfig.Config.KubectlDownloadURL`](https://github.com/aws/aws-k8s-tester/commit/3b8704fcf0c15229fc3480caca41b4ddec1497a1) field.
 
 ### `internal`
 
