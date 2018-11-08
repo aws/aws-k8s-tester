@@ -115,9 +115,6 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 		if err = util.EnsureExecutable(md.kubectlPath); err != nil {
 			return nil, err
 		}
-		md.kubectlPath, err = md.kubectl.LookPath("kubectl")
-		if err != nil {
-		}
 	}
 	if cfg.AWSIAMAuthenticatorDownloadURL != "" {
 		md.awsIAMAuthenticatorPath = filepath.Join(os.TempDir(), "aws-iam-authenticator")
