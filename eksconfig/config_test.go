@@ -33,6 +33,7 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_TAG", "my-test")
 	os.Setenv("AWS_K8S_TESTER_EKS_VPC_ID", "my-vpc-id")
 	os.Setenv("AWS_K8S_TESTER_EKS_SUBNET_IDS", "a,b,c")
+	os.Setenv("AWS_K8S_TESTER_EKS_LOG_ACCESS", "true")
 	os.Setenv("AWS_K8S_TESTER_EKS_SECURITY_GROUP_ID", "my-security-id")
 	os.Setenv("AWS_K8S_TESTER_EKS_ENABLE_WORKER_NODE_HA", "false")
 	os.Setenv("AWS_K8S_TESTER_EKS_ENABLE_WORKER_NODE_SSH", "true")
@@ -62,6 +63,7 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWS_K8S_TESTER_EKS_TAG")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_VPC_ID")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_SUBNET_IDs")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_LOG_ACCESS")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_SECURITY_GROUP_ID")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_ENABLE_WORKER_NODE_HA")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_ENABLE_WORKER_NODE_SSH")
@@ -108,6 +110,9 @@ func TestEnv(t *testing.T) {
 	}
 	if !reflect.DeepEqual(cfg.SubnetIDs, []string{"a", "b", "c"}) {
 		t.Fatalf("SubnetIDs expected a,b,c, got %q", cfg.SubnetIDs)
+	}
+	if !cfg.LogAccess {
+		t.Fatalf("LogAccess expected true, got %v", cfg.LogAccess)
 	}
 	if cfg.SecurityGroupID != "my-security-id" {
 		t.Fatalf("SecurityGroupID my-id, got %q", cfg.SecurityGroupID)
