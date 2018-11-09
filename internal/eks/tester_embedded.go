@@ -104,17 +104,17 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 			cfg.KubectlDownloadURL = strings.Replace(cfg.KubectlDownloadURL, "linux", "darwin", -1)
 		}
 
-		md.kubectlPath = filepath.Join(os.TempDir(), "kubectl")
-		os.RemoveAll(md.kubectlPath)
 		var f *os.File
-		f, err = os.Create(md.kubectlPath)
+		f, err = ioutil.TempFile(os.TempDir(), "kubectl")
 		if err != nil {
 			return nil, fmt.Errorf("failed to create %q (%v)", md.kubectlPath, err)
 		}
-		defer f.Close()
+		md.kubectlPath = f.Name()
+		md.kubectlPath, _ = filepath.Abs(md.kubectlPath)
 		if err = httpRead(md.lg, cfg.KubectlDownloadURL, f); err != nil {
 			return nil, err
 		}
+		f.Close()
 		if err = util.EnsureExecutable(md.kubectlPath); err != nil {
 			return nil, err
 		}
@@ -125,17 +125,17 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 			cfg.AWSIAMAuthenticatorDownloadURL = strings.Replace(cfg.AWSIAMAuthenticatorDownloadURL, "linux", "darwin", -1)
 		}
 
-		md.awsIAMAuthenticatorPath = filepath.Join(os.TempDir(), "aws-iam-authenticator")
-		os.RemoveAll(md.awsIAMAuthenticatorPath)
 		var f *os.File
-		f, err = os.Create(md.awsIAMAuthenticatorPath)
+		f, err = ioutil.TempFile(os.TempDir(), "aws-iam-authenticator")
 		if err != nil {
 			return nil, fmt.Errorf("failed to create %q (%v)", md.awsIAMAuthenticatorPath, err)
 		}
-		defer f.Close()
+		md.awsIAMAuthenticatorPath = f.Name()
+		md.awsIAMAuthenticatorPath, _ = filepath.Abs(md.awsIAMAuthenticatorPath)
 		if err = httpRead(md.lg, cfg.AWSIAMAuthenticatorDownloadURL, f); err != nil {
 			return nil, err
 		}
+		f.Close()
 		if err = util.EnsureExecutable(md.awsIAMAuthenticatorPath); err != nil {
 			return nil, err
 		}
