@@ -139,6 +139,13 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 		if err = util.EnsureExecutable(md.awsIAMAuthenticatorPath); err != nil {
 			return nil, err
 		}
+		err = fileutil.Copy(md.awsIAMAuthenticatorPath, "/usr/local/bin")
+		if err != nil {
+			md.lg.Warn("failed to copy",
+				zap.String("aws-iam-authenticator", md.awsIAMAuthenticatorPath),
+				zap.Error(err),
+			)
+		}
 	}
 
 	md.lg.Info(
