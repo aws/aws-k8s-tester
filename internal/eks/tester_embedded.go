@@ -103,6 +103,7 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 		}
 		// TODO: for now overwrite with Amazon vendored 'kubectl'
 		md.kubectlPath = filepath.Join(os.TempDir(), "kubectl")
+		os.RemoveAll(md.kubectlPath)
 		var f *os.File
 		f, err = os.Create(md.kubectlPath)
 		if err != nil {
@@ -118,6 +119,7 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 	}
 	if cfg.AWSIAMAuthenticatorDownloadURL != "" {
 		md.awsIAMAuthenticatorPath = filepath.Join(os.TempDir(), "aws-iam-authenticator")
+		os.RemoveAll(md.awsIAMAuthenticatorPath)
 		var f *os.File
 		f, err = os.Create(md.awsIAMAuthenticatorPath)
 		if err != nil {
@@ -132,18 +134,12 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 		}
 	}
 
-	kvOut, kvOutErr := exec.New().CommandContext(context.Background(), md.kubectlPath, "version").CombinedOutput()
-	iamOut, iamOutErr := exec.New().CommandContext(context.Background(), md.awsIAMAuthenticatorPath, "help").CombinedOutput()
 	md.lg.Info(
 		"checking kubectl and aws-iam-authenticator",
 		zap.String("kubectl", md.kubectlPath),
 		zap.String("kubectl-download-url", md.cfg.KubectlDownloadURL),
-		zap.String("kubectl-version", string(kvOut)),
-		zap.String("kubectl-version-err", fmt.Sprintf("%v", kvOutErr)),
 		zap.String("aws-iam-authenticator", md.awsIAMAuthenticatorPath),
 		zap.String("aws-iam-authenticator-download-url", md.cfg.AWSIAMAuthenticatorDownloadURL),
-		zap.String("aws-iam-authenticator-help", string(iamOut)),
-		zap.String("aws-iam-authenticator-help-error", fmt.Sprintf("%v", iamOutErr)),
 	)
 
 	awsCfg := &awsapi.Config{
@@ -197,7 +193,7 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 	md.s3Plugin = s3.NewEmbedded(md.lg, md.cfg, awss3.New(md.ss))
 
 	if cfg.ALBIngressController.Enable {
-		md.albPlugin, err = alb.NewEmbedded(md.stopc, lg, md.cfg, md.im, md.ec2, elbv2.New(md.ss), md.s3Plugin)
+		md.albPlugin = alb.NewEmbedded(md.stopc, lg, md.cfg, md.kubectlPath, md.im, md.ec2, elbv2.New(md.ss), md.s3Plugin)
 		if err != nil {
 			return nil, err
 		}
@@ -283,6 +279,20 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 				"overwrote KUBECONFIG from an existing cluster",
 				zap.String("KUBECONFIG", md.cfg.KubeConfigPath),
 				zap.String("cluster-name", md.cfg.ClusterName),
+			)
+
+			kvOut, kvOutErr := exec.New().CommandContext(
+				context.Background(),
+				md.kubectlPath,
+				"--kubeconfig="+md.cfg.KubeConfigPath,
+				"version",
+			).CombinedOutput()
+			md.lg.Info(
+				"checking kubectl after cluster creation",
+				zap.String("kubectl", md.kubectlPath),
+				zap.String("kubectl-download-url", md.cfg.KubectlDownloadURL),
+				zap.String("kubectl-version", string(kvOut)),
+				zap.String("kubectl-version-err", fmt.Sprintf("%v", kvOutErr)),
 			)
 		}
 	}

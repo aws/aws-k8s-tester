@@ -11,7 +11,6 @@ import (
 	awseks "github.com/aws/aws-sdk-go/service/eks"
 	humanize "github.com/dustin/go-humanize"
 	"go.uber.org/zap"
-	"k8s.io/utils/exec"
 )
 
 func (md *embedded) createCluster() error {
@@ -141,9 +140,8 @@ func (md *embedded) createCluster() error {
 
 	time.Sleep(3 * time.Second)
 
-	// retry
 	retryStart = time.Now().UTC()
-	kubectlOutputTxt := ""
+	kubectlOutputTxt, done := "", false
 	for time.Now().UTC().Sub(retryStart) < 5*time.Minute {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		cmd := md.kubectl.CommandContext(ctx,
@@ -155,38 +153,21 @@ func (md *embedded) createCluster() error {
 		kubectlOutput, err = cmd.CombinedOutput()
 		cancel()
 		kubectlOutputTxt = string(kubectlOutput)
-		md.lg.Info("kubectl get all", zap.String("output", kubectlOutputTxt), zap.Error(err))
+		md.lg.Info("kubectl get all",
+			zap.String("kubectl-path", md.kubectlPath),
+			zap.String("aws-iam-authenticator-path", md.awsIAMAuthenticatorPath),
+			zap.String("output", kubectlOutputTxt),
+			zap.Error(err),
+		)
+
 		if err == nil && isKubernetesControlPlaneReadyKubectl(kubectlOutputTxt) {
+			done = true
 			break
 		}
 
-		kubectlPath, kubectlPathErr := exec.New().LookPath("kubectl")
-		if kubectlPathErr != nil {
-			return fmt.Errorf("cannot find 'kubectl' executable from 'kubectl get all' (%v)", kubectlPathErr)
-		}
-		kvOut, kvOutErr := exec.New().CommandContext(context.Background(), kubectlPath, "version").CombinedOutput()
-
-		iamPath, iamPathErr := exec.New().LookPath("aws-iam-authenticator")
-		if iamPathErr != nil {
-			return fmt.Errorf("cannot find 'aws-iam-authenticator' executable from 'kubectl get all' (%v)", iamPathErr)
-		}
-		iamOut, iamOutErr := exec.New().CommandContext(context.Background(), iamPath, "help").CombinedOutput()
-
-		md.lg.Info(
-			"'kubectl get all'",
-			zap.String("kubectl", kubectlPath),
-			zap.String("kubectl-download-url", md.cfg.KubectlDownloadURL),
-			zap.String("kubectl-version", string(kvOut)),
-			zap.String("kubectl-version-err", fmt.Sprintf("%v", kvOutErr)),
-			zap.String("aws-iam-authenticator", iamPath),
-			zap.String("aws-iam-authenticator-download-url", md.cfg.AWSIAMAuthenticatorDownloadURL),
-			zap.String("aws-iam-authenticator-help", string(iamOut)),
-			zap.String("aws-iam-authenticator-help-error", fmt.Sprintf("%v", iamOutErr)),
-		)
-
 		time.Sleep(10 * time.Second)
 	}
-	if err != nil {
+	if err != nil || !done {
 		return fmt.Errorf("'kubectl get all' output unexpected: %s (%v)", kubectlOutputTxt, err)
 	}
 

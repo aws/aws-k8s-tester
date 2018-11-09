@@ -1,8 +1,6 @@
 package alb
 
 import (
-	"fmt"
-
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/internal/eks/s3"
 
@@ -35,30 +33,21 @@ func NewEmbedded(
 	stopc chan struct{},
 	lg *zap.Logger,
 	cfg *eksconfig.Config,
+	kubectlPath string,
 	im iamiface.IAMAPI,
 	ec2 ec2iface.EC2API,
 	elbv2 elbv2iface.ELBV2API,
 	s3Plugin s3.Plugin,
-) (Plugin, error) {
-	md := &embedded{
-		stopc:    stopc,
-		lg:       lg,
-		cfg:      cfg,
-		kubectl:  exec.New(),
-		im:       im,
-		ec2:      ec2,
-		elbv2:    elbv2,
-		s3Plugin: s3Plugin,
+) Plugin {
+	return &embedded{
+		stopc:       stopc,
+		lg:          lg,
+		cfg:         cfg,
+		kubectlPath: kubectlPath,
+		kubectl:     exec.New(),
+		im:          im,
+		ec2:         ec2,
+		elbv2:       elbv2,
+		s3Plugin:    s3Plugin,
 	}
-
-	var err error
-	md.kubectlPath, err = md.kubectl.LookPath("kubectl")
-	if err != nil {
-		return nil, fmt.Errorf("cannot find 'kubectl' executable (%v)", err)
-	}
-	if _, err = exec.New().LookPath("aws-iam-authenticator"); err != nil {
-		return nil, fmt.Errorf("cannot find 'aws-iam-authenticator' executable (%v)", err)
-	}
-
-	return md, nil
 }
