@@ -95,13 +95,14 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 		ec2InstancesLogMu: &sync.RWMutex{},
 	}
 
+	md.kubectlPath, _ = exec.New().LookPath("kubectl")
 	// TODO: update after this gets picked up in upstream
-	if cfg.KubectlDownloadURL != "" || true {
+	if cfg.KubectlDownloadURL != "" {
 		// TODO: update after this gets picked up in upstream
-		cfg.KubectlDownloadURL = "https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-07-26/bin/linux/amd64/kubectl"
-		if runtime.GOOS == "darwin" {
-			cfg.KubectlDownloadURL = strings.Replace(cfg.KubectlDownloadURL, "linux", "darwin", -1)
-		}
+		// cfg.KubectlDownloadURL = "https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-07-26/bin/linux/amd64/kubectl"
+		// if runtime.GOOS == "darwin" {
+		// 	cfg.KubectlDownloadURL = strings.Replace(cfg.KubectlDownloadURL, "linux", "darwin", -1)
+		// }
 
 		md.kubectlPath = filepath.Join(os.TempDir(), "kubectl")
 		os.RemoveAll(md.kubectlPath)
@@ -183,8 +184,8 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 		h = strings.Replace(h, "_", "", -1)
 		md.cfg.Tag += h
 	}
-	if len(md.cfg.Tag) > 40 {
-		md.cfg.Tag = md.cfg.Tag[:40]
+	if len(md.cfg.Tag) > 42 {
+		md.cfg.Tag = md.cfg.Tag[:42]
 	}
 	md.cfg.LogOutputToUploadPathURL = genS3URL(md.cfg.AWSRegion, md.cfg.Tag, md.cfg.LogOutputToUploadPathBucket)
 	md.cfg.ConfigPathURL = genS3URL(md.cfg.AWSRegion, md.cfg.Tag, md.cfg.ConfigPathBucket)

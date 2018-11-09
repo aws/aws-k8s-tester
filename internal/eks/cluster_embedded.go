@@ -175,6 +175,13 @@ func (md *embedded) createCluster() error {
 			zap.Error(err),
 		)
 
+		if err == nil &&
+			strings.Contains(string(out1), "-eks") &&
+			strings.Contains(string(out2), "is running") {
+			done = true
+			break
+		}
+
 		ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
 		var out3 []byte
 		out3, err = exec.New().CommandContext(ctx,
@@ -190,11 +197,6 @@ func (md *embedded) createCluster() error {
 			zap.String("output", string(out3)),
 			zap.Error(err),
 		)
-
-		if err == nil && strings.Contains(string(out1), "-eks") {
-			done = true
-			break
-		}
 
 		time.Sleep(10 * time.Second)
 	}
