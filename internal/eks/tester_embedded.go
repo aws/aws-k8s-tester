@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -96,6 +97,12 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 
 	// TODO: update after this gets picked up in upstream
 	if cfg.KubectlDownloadURL != "" || true {
+		// TODO: update after this gets picked up in upstream
+		cfg.KubectlDownloadURL = "https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-07-26/bin/linux/amd64/kubectl"
+		if runtime.GOOS == "darwin" {
+			cfg.KubectlDownloadURL = strings.Replace(cfg.KubectlDownloadURL, "linux", "darwin", -1)
+		}
+
 		md.kubectlPath = filepath.Join(os.TempDir(), "kubectl")
 		os.RemoveAll(md.kubectlPath)
 		var f *os.File
@@ -112,6 +119,11 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 		}
 	}
 	if cfg.AWSIAMAuthenticatorDownloadURL != "" {
+		// TODO: update after this gets picked up in upstream
+		if runtime.GOOS == "darwin" {
+			cfg.AWSIAMAuthenticatorDownloadURL = strings.Replace(cfg.AWSIAMAuthenticatorDownloadURL, "linux", "darwin", -1)
+		}
+
 		md.awsIAMAuthenticatorPath = filepath.Join(os.TempDir(), "aws-iam-authenticator")
 		os.RemoveAll(md.awsIAMAuthenticatorPath)
 		var f *os.File
