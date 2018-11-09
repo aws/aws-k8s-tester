@@ -156,6 +156,7 @@ func (md *embedded) createCluster() error {
 		md.lg.Info("ran kubectl version",
 			zap.String("kubectl-path", md.kubectlPath),
 			zap.String("aws-iam-authenticator-path", md.awsIAMAuthenticatorPath),
+			zap.String("output", string(out1)),
 			zap.Error(err),
 		)
 
@@ -170,6 +171,7 @@ func (md *embedded) createCluster() error {
 		md.lg.Info("ran kubectl cluster-info",
 			zap.String("kubectl-path", md.kubectlPath),
 			zap.String("aws-iam-authenticator-path", md.awsIAMAuthenticatorPath),
+			zap.String("output", string(out2)),
 			zap.Error(err),
 		)
 
@@ -185,15 +187,9 @@ func (md *embedded) createCluster() error {
 		md.lg.Info("ran kubectl cluster-info dump",
 			zap.String("kubectl-path", md.kubectlPath),
 			zap.String("aws-iam-authenticator-path", md.awsIAMAuthenticatorPath),
+			zap.String("output", string(out3)),
 			zap.Error(err),
 		)
-
-		// TODO: remove
-		if md.cfg.LogDebug || true {
-			fmt.Printf("\n\nkubectl version:\n\n%s\n\n", string(out1))
-			fmt.Printf("\n\nkubectl cluster-info:\n\n%s\n\n", string(out2))
-			fmt.Printf("\n\nkubectl cluster-info dump:\n\n%s\n\n", string(out3))
-		}
 
 		if err == nil && strings.Contains(string(out1), "-eks") {
 			done = true

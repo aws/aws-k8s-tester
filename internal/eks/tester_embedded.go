@@ -94,8 +94,8 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 		ec2InstancesLogMu: &sync.RWMutex{},
 	}
 
-	// TODO: debugging
-	if cfg.KubectlDownloadURL != "" {
+	// TODO: update after this gets picked up in upstream
+	if cfg.KubectlDownloadURL != "" || true {
 		md.kubectlPath = filepath.Join(os.TempDir(), "kubectl")
 		os.RemoveAll(md.kubectlPath)
 		var f *os.File
