@@ -104,7 +104,6 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 		if runtime.GOOS == "darwin" {
 			cfg.KubectlDownloadURL = strings.Replace(cfg.KubectlDownloadURL, "linux", "darwin", -1)
 		}
-
 		var f *os.File
 		f, err = ioutil.TempFile(os.TempDir(), "kubectl")
 		if err != nil {
@@ -127,7 +126,6 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 		if runtime.GOOS == "darwin" {
 			cfg.AWSIAMAuthenticatorDownloadURL = strings.Replace(cfg.AWSIAMAuthenticatorDownloadURL, "linux", "darwin", -1)
 		}
-
 		var f *os.File
 		f, err = ioutil.TempFile(os.TempDir(), "aws-iam-authenticator")
 		if err != nil {
