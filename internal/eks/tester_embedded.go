@@ -99,10 +99,10 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 	// TODO: update after this gets picked up in upstream
 	if cfg.KubectlDownloadURL != "" {
 		// TODO: update after this gets picked up in upstream
-		// cfg.KubectlDownloadURL = "https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-07-26/bin/linux/amd64/kubectl"
-		// if runtime.GOOS == "darwin" {
-		// 	cfg.KubectlDownloadURL = strings.Replace(cfg.KubectlDownloadURL, "linux", "darwin", -1)
-		// }
+		cfg.KubectlDownloadURL = "https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-07-26/bin/linux/amd64/kubectl"
+		if runtime.GOOS == "darwin" {
+			cfg.KubectlDownloadURL = strings.Replace(cfg.KubectlDownloadURL, "linux", "darwin", -1)
+		}
 
 		md.kubectlPath = filepath.Join(os.TempDir(), "kubectl")
 		os.RemoveAll(md.kubectlPath)
