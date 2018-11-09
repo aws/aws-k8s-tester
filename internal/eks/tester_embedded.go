@@ -56,7 +56,6 @@ type embedded struct {
 
 	// TODO: move this "kubectl" to AWS CLI deployer
 	// and instead use "k8s.io/client-go" with STS token
-	kubectl                 exec.Interface
 	kubectlPath             string
 	awsIAMAuthenticatorPath string
 
@@ -92,16 +91,11 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 		stopc:             make(chan struct{}),
 		lg:                lg,
 		cfg:               cfg,
-		kubectl:           exec.New(),
 		ec2InstancesLogMu: &sync.RWMutex{},
 	}
 
-	if cfg.KubectlDownloadURL != "" || true {
-		if cfg.KubectlDownloadURL == "" {
-			cfg.KubectlDownloadURL = "https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-07-26/bin/linux/amd64/kubectl"
-			fmt.Println("overwriting cfg.KubectlDownloadURL:", cfg.KubectlDownloadURL)
-		}
-		// TODO: for now overwrite with Amazon vendored 'kubectl'
+	// TODO: debugging
+	if cfg.KubectlDownloadURL != "" {
 		md.kubectlPath = filepath.Join(os.TempDir(), "kubectl")
 		os.RemoveAll(md.kubectlPath)
 		var f *os.File

@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/httputil"
 
 	"go.uber.org/zap"
+	"k8s.io/utils/exec"
 )
 
 // https://github.com/aws/amazon-vpc-cni-k8s/releases
@@ -41,13 +42,12 @@ func (md *embedded) upgradeCNI() error {
 
 		// TODO: use "k8s.io/client-go"
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		cmd := md.kubectl.CommandContext(ctx,
+		var kexo []byte
+		kexo, err = exec.New().CommandContext(ctx,
 			md.kubectlPath,
 			"--kubeconfig="+kcfgPath,
 			"apply", "--filename="+cmPath,
-		)
-		var kexo []byte
-		kexo, err = cmd.CombinedOutput()
+		).CombinedOutput()
 		cancel()
 		if err != nil {
 			if strings.Contains(err.Error(), "unknown flag:") {

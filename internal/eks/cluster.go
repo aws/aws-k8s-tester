@@ -2,6 +2,7 @@ package eks
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"strings"
 	"text/template"
@@ -72,6 +73,12 @@ func writeKubeConfig(awsIAMAuthenticatorPath, ep, ca, clusterName, p string) (er
 	if err = tpl.Execute(buf, kc); err != nil {
 		return err
 	}
+
+	// TODO: remove
+	if true {
+		fmt.Printf("\n\nKUBECONFIG:\n\n%s\n\n", buf.String())
+	}
+
 	return ioutil.WriteFile(p, buf.Bytes(), 0600)
 }
 
@@ -80,7 +87,8 @@ expect:
 
 NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
 service/kubernetes   ClusterIP   10.100.0.1   <none>        443/TCP   1m
-*/
+
 func isKubernetesControlPlaneReadyKubectl(kubectlOutput string) bool {
 	return strings.Contains(kubectlOutput, "service/kubernetes") && strings.Contains(kubectlOutput, "ClusterIP")
 }
+*/

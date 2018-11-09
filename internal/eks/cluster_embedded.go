@@ -5,12 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	awseks "github.com/aws/aws-sdk-go/service/eks"
 	humanize "github.com/dustin/go-humanize"
 	"go.uber.org/zap"
+	"k8s.io/utils/exec"
 )
 
 func (md *embedded) createCluster() error {
@@ -138,29 +140,62 @@ func (md *embedded) createCluster() error {
 	}
 	md.lg.Info("wrote KUBECONFIG", zap.String("env", fmt.Sprintf("KUBECONFIG=%s", md.cfg.KubeConfigPath)))
 
-	time.Sleep(3 * time.Second)
+	time.Sleep(5 * time.Second)
 
 	retryStart = time.Now().UTC()
-	kubectlOutputTxt, done := "", false
+	txt, done := "", false
 	for time.Now().UTC().Sub(retryStart) < 5*time.Minute {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		cmd := md.kubectl.CommandContext(ctx,
+		var out1 []byte
+		out1, err = exec.New().CommandContext(ctx,
 			md.kubectlPath,
 			"--kubeconfig="+md.cfg.KubeConfigPath,
-			"get", "all",
-		)
-		var kubectlOutput []byte
-		kubectlOutput, err = cmd.CombinedOutput()
+			"version",
+		).CombinedOutput()
 		cancel()
-		kubectlOutputTxt = string(kubectlOutput)
-		md.lg.Info("kubectl get all",
+		md.lg.Info("ran kubectl version",
 			zap.String("kubectl-path", md.kubectlPath),
 			zap.String("aws-iam-authenticator-path", md.awsIAMAuthenticatorPath),
-			zap.String("output", kubectlOutputTxt),
 			zap.Error(err),
 		)
 
-		if err == nil && isKubernetesControlPlaneReadyKubectl(kubectlOutputTxt) {
+		ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
+		var out2 []byte
+		out2, err = exec.New().CommandContext(ctx,
+			md.kubectlPath,
+			"--kubeconfig="+md.cfg.KubeConfigPath,
+			"cluster-info",
+		).CombinedOutput()
+		cancel()
+		md.lg.Info("ran kubectl cluster-info",
+			zap.String("kubectl-path", md.kubectlPath),
+			zap.String("aws-iam-authenticator-path", md.awsIAMAuthenticatorPath),
+			zap.Error(err),
+		)
+
+		ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
+		var out3 []byte
+		out3, err = exec.New().CommandContext(ctx,
+			md.kubectlPath,
+			"--kubeconfig="+md.cfg.KubeConfigPath,
+			"cluster-info",
+			"dump",
+		).CombinedOutput()
+		cancel()
+		md.lg.Info("ran kubectl cluster-info dump",
+			zap.String("kubectl-path", md.kubectlPath),
+			zap.String("aws-iam-authenticator-path", md.awsIAMAuthenticatorPath),
+			zap.Error(err),
+		)
+
+		// TODO: remove
+		if md.cfg.LogDebug || true {
+			fmt.Printf("\n\nkubectl version:\n\n%s\n\n", string(out1))
+			fmt.Printf("\n\nkubectl cluster-info:\n\n%s\n\n", string(out2))
+			fmt.Printf("\n\nkubectl cluster-info dump:\n\n%s\n\n", string(out3))
+		}
+
+		if err == nil && strings.Contains(string(out1), "-eks") {
 			done = true
 			break
 		}
@@ -168,7 +203,7 @@ func (md *embedded) createCluster() error {
 		time.Sleep(10 * time.Second)
 	}
 	if err != nil || !done {
-		return fmt.Errorf("'kubectl get all' output unexpected: %s (%v)", kubectlOutputTxt, err)
+		return fmt.Errorf("'kubectl get all' output unexpected: %s (%v)", txt, err)
 	}
 
 	md.lg.Info("created cluster",

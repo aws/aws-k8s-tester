@@ -9,6 +9,7 @@ import (
 
 	humanize "github.com/dustin/go-humanize"
 	"go.uber.org/zap"
+	"k8s.io/utils/exec"
 )
 
 // TODO: use "k8s.io/client-go" with "aws-iam-authenticator"
@@ -32,14 +33,13 @@ func (md *embedded) createAWSCredentialSecret() error {
 	retryStart := time.Now().UTC()
 	for time.Now().UTC().Sub(retryStart) < 5*time.Minute {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		cmd := md.kubectl.CommandContext(ctx,
+		kexo, err = exec.New().CommandContext(ctx,
 			md.kubectlPath,
 			"--kubeconfig="+kcfgPath,
 			"create", "secret", "generic", awsCredentialSecretName,
 			"--namespace=kube-system",
 			fmt.Sprintf("--from-file=%s=%s", awsCredentialSecretName, md.cfg.AWSCredentialToMountPath),
-		)
-		kexo, err = cmd.CombinedOutput()
+		).CombinedOutput()
 		cancel()
 		if err != nil {
 			if strings.Contains(err.Error(), "unknown flag:") {
@@ -61,14 +61,13 @@ func (md *embedded) createAWSCredentialSecret() error {
 	retryStart = time.Now().UTC()
 	for time.Now().UTC().Sub(retryStart) < 5*time.Minute {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		cmd := md.kubectl.CommandContext(ctx,
+		kexo, err = exec.New().CommandContext(ctx,
 			md.kubectlPath,
 			"--kubeconfig="+kcfgPath,
 			"get", "secret", awsCredentialSecretName,
 			"--output=yaml",
 			"--namespace=kube-system",
-		)
-		kexo, err = cmd.CombinedOutput()
+		).CombinedOutput()
 		cancel()
 		if err != nil {
 			md.lg.Warn("failed to get secret", zap.Error(err))

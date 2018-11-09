@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
-
 	internalec2 "github.com/aws/aws-k8s-tester/internal/ec2"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -18,6 +17,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 	humanize "github.com/dustin/go-humanize"
 	"go.uber.org/zap"
+	"k8s.io/utils/exec"
 )
 
 func (md *embedded) createWorkerNode() error {
@@ -309,13 +309,12 @@ func (md *embedded) createWorkerNode() error {
 		// TODO: use "k8s.io/client-go"
 		if !applied {
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-			cmd := md.kubectl.CommandContext(ctx,
+			var kexo []byte
+			kexo, err = exec.New().CommandContext(ctx,
 				md.kubectlPath,
 				"--kubeconfig="+kcfgPath,
 				"apply", "--filename="+cmPath,
-			)
-			var kexo []byte
-			kexo, err = cmd.CombinedOutput()
+			).CombinedOutput()
 			cancel()
 			if err != nil {
 				if strings.Contains(err.Error(), "unknown flag:") {
@@ -337,13 +336,12 @@ func (md *embedded) createWorkerNode() error {
 
 		// TODO: use "k8s.io/client-go"
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		cmd := md.kubectl.CommandContext(ctx,
+		var kexo []byte
+		kexo, err = exec.New().CommandContext(ctx,
 			md.kubectlPath,
 			"--kubeconfig="+kcfgPath,
 			"get", "nodes", "-ojson",
-		)
-		var kexo []byte
-		kexo, err = cmd.CombinedOutput()
+		).CombinedOutput()
 		cancel()
 		if err != nil {
 			if strings.Contains(err.Error(), "unknown flag:") {
