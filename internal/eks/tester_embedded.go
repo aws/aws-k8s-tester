@@ -96,6 +96,7 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 	}
 
 	md.kubectlPath, _ = exec.New().LookPath("kubectl")
+
 	// TODO: update after this gets picked up in upstream
 	if cfg.KubectlDownloadURL != "" {
 		// TODO: update after this gets picked up in upstream
@@ -119,6 +120,8 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 			return nil, err
 		}
 	}
+
+	// TODO: update after this gets picked up in upstream
 	if cfg.AWSIAMAuthenticatorDownloadURL != "" {
 		// TODO: update after this gets picked up in upstream
 		if runtime.GOOS == "darwin" {
