@@ -49,7 +49,7 @@ func TestPlugins(t *testing.T) {
 		"ubuntu",
 		[]string{
 			"install-csi-101",
-			"update-ubuntu",
+			"update-amazon-linux-2",
 			"install-go-1.11.2",
 			"install-wrk",
 		},
