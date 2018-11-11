@@ -31,19 +31,18 @@ func (ss scripts) Swap(i, j int)      { ss[i], ss[j] = ss[j], ss[i] }
 func (ss scripts) Less(i, j int) bool { return keyPriorities[ss[i].key] < keyPriorities[ss[j].key] }
 
 var keyPriorities = map[string]int{ // in the order of:
-	"update-amazon-linux-2":         1,
-	"update-ubuntu":                 2,
-	"set-env-aws-cred":              3, // TODO: use instance role instead
-	"mount-aws-cred":                4, // TODO: use instance role instead
-	"install-go":                    5,
-	"install-csi":                   6,
-	"install-etcd":                  7,
-	"install-aws-k8s-tester":        8,
-	"install-wrk":                   9,
-	"install-alb":                   10,
-	"install-kubeadm-ubuntu":        11,
-	"install-docker-amazon-linux-2": 12,
-	"install-docker-ubuntu":         13,
+	"update-amazon-linux-2":                1,
+	"update-ubuntu":                        2,
+	"set-env-aws-cred":                     3, // TODO: use instance role instead
+	"mount-aws-cred":                       4, // TODO: use instance role instead
+	"install-go":                           5,
+	"install-csi":                          6,
+	"install-etcd":                         7,
+	"install-aws-k8s-tester":               8,
+	"install-wrk":                          9,
+	"install-alb":                          10,
+	"install-start-docker-amazon-linux-2":  11,
+	"install-start-kubeadm-amazon-linux-2": 12,
 }
 
 func convertToScript(userName, plugin string) (script, error) {
@@ -190,22 +189,16 @@ make server
 		}
 		return script{key: "install-alb", data: s}, nil
 
-	case plugin == "install-kubeadm-ubuntu":
+	case plugin == "install-start-docker-amazon-linux-2":
 		return script{
 			key:  plugin,
-			data: installKubeadmnUbuntu,
+			data: installStartDockerAmazonLinux2,
 		}, nil
 
-	case plugin == "install-docker-amazon-linux-2":
+	case plugin == "install-start-kubeadm-amazon-linux-2":
 		return script{
 			key:  plugin,
-			data: installDockerAmazonLinux2,
-		}, nil
-
-	case plugin == "install-docker-ubuntu":
-		return script{
-			key:  plugin,
-			data: installDockerUbuntu,
+			data: installStartKubeadmAmazonLinux2,
 		}, nil
 	}
 
@@ -371,34 +364,6 @@ go version
 
 `
 
-const installKubeadmnUbuntu = `
-
-################################## install kubeadm on Ubuntu
-
-cd ${HOME}
-
-sudo apt-get update -y && sudo apt-get install -y apt-transport-https curl
-curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
-
-cat <<EOF >/tmp/kubernetes.list
-deb https://apt.kubernetes.io/ kubernetes-$(lsb_release -cs) main
-EOF
-
-sudo cp /tmp/kubernetes.list /etc/apt/sources.list.d/kubernetes.list
-
-sudo apt-get update -y
-sudo apt-get install -y kubelet kubeadm kubectl || true
-sudo apt-mark hold kubelet kubeadm kubectl || true
-
-sudo systemctl enable kubelet
-sudo systemctl start kubelet
-
-sudo journalctl --no-pager --output=cat -u kubelet
-
-##################################
-
-`
-
 func createInstallEtcd(g etcdInfo) (string, error) {
 	tpl := template.Must(template.New("installEtcdTemplate").Parse(installEtcdTemplate))
 	buf := bytes.NewBuffer(nil)
@@ -542,40 +507,14 @@ pwd
 
 `
 
-const installDockerUbuntu = `
-
-################################## install Docker on Ubuntu
-sudo apt update -y
-sudo apt install -y apt-transport-https ca-certificates curl software-properties-common
-
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-
-sudo apt update -y
-apt-cache policy docker-ce || true
-sudo apt install -y docker-ce
-
-sudo systemctl start docker || true
-sudo systemctl status docker --full --no-pager || true
-sudo usermod -aG docker ubuntu || true
-
-# su - ubuntu
-# or logout and login to use docker without 'sudo'
-
-id -nG
-sudo docker version
-sudo docker info
-##################################
-
-`
-
 // https://docs.aws.amazon.com/AmazonECS/latest/developerguide/docker-basics.html
-const installDockerAmazonLinux2 = `
+const installStartDockerAmazonLinux2 = `
 
 ################################## install Docker on Amazon Linux 2
 sudo yum update -y
 sudo yum install -y docker
 
+sudo systemctl enable docker || true
 sudo systemctl start docker || true
 sudo systemctl status docker --full --no-pager || true
 sudo usermod -aG docker ec2-user || true
@@ -586,6 +525,40 @@ sudo usermod -aG docker ec2-user || true
 id -nG
 sudo docker version
 sudo docker info
+##################################
+
+`
+
+// https://kubernetes.io/docs/setup/independent/install-kubeadm/
+const installStartKubeadmAmazonLinux2 = `
+
+################################## install kubeadm on Amazon Linux 2
+
+cat <<EOF > /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+exclude=kube*
+EOF
+
+# Set SELinux in permissive mode (effectively disabling it)
+setenforce 0
+sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
+
+sudo yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes
+
+sudo systemctl enable kubelet && sudo systemctl start kubelet
+sudo systemctl status kubelet --full --no-pager || true
+sudo journalctl --no-pager --output=cat -u kubelet
+
+kubeadm version || true
+kubelet --version || true
+kubectl version --client || true
+
 ##################################
 
 `

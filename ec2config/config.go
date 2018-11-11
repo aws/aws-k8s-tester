@@ -227,14 +227,7 @@ var defaultConfig = Config{
 	UserName: "ec2-user",
 	Plugins: []string{
 		"update-amazon-linux-2",
-		"install-go1.11.2",
-		"install-docker-amazon-linux-2",
 	},
-
-	// Ubuntu Server 16.04 LTS (HVM), SSD Volume Type
-	// ImageID: "ami-ba602bc2",
-	// UserName: "ubuntu",
-	// Plugins: []string{"update-ubuntu"},
 
 	// 4 vCPU, 15 GB RAM
 	InstanceType: "m3.xlarge",
@@ -247,7 +240,7 @@ var defaultConfig = Config{
 		22: "0.0.0.0/0",
 	},
 
-	Wait: false,
+	Wait: true,
 }
 
 // UpdateFromEnvs updates fields from environmental variables.

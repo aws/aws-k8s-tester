@@ -118,8 +118,8 @@ func NewDeployer(cfg *ec2config.Config) (Deployer, error) {
 		h = strings.Replace(h, "_", "", -1)
 		md.cfg.Tag += h
 	}
-	if len(md.cfg.Tag) > 40 {
-		md.cfg.Tag = md.cfg.Tag[:40]
+	if len(md.cfg.Tag) > 42 {
+		md.cfg.Tag = md.cfg.Tag[:42]
 	}
 	md.cfg.ConfigPathURL = genS3URL(md.cfg.AWSRegion, md.cfg.Tag, md.cfg.ConfigPathBucket)
 	md.cfg.LogOutputToUploadPathURL = genS3URL(md.cfg.AWSRegion, md.cfg.Tag, md.cfg.LogOutputToUploadPathBucket)

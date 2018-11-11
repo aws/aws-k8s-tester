@@ -30,8 +30,8 @@ const kubeConfigTempl = `---
 apiVersion: v1
 clusters:
 - cluster:
-    server: {{.ClusterEndpoint}}
-    certificate-authority-data: {{.ClusterCA}}
+    server: {{ .ClusterEndpoint }}
+    certificate-authority-data: {{ .ClusterCA }}
   name: kubernetes
 contexts:
 - context:
@@ -50,7 +50,7 @@ users:
       args:
         - token
         - -i
-        - {{.ClusterName}}
+        - {{ .ClusterName }}
 
 `
 
@@ -73,6 +73,10 @@ func writeKubeConfig(awsIAMAuthenticatorPath, ep, ca, clusterName, p string) (er
 	if err = tpl.Execute(buf, kc); err != nil {
 		return err
 	}
+
+	// for kubetest
+	// TODO: not working...
 	os.Setenv("DEFAULT_KUBECONFIG", p)
+
 	return ioutil.WriteFile(p, buf.Bytes(), 0600)
 }
