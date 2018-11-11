@@ -340,9 +340,7 @@ DOWNLOAD_URL=${GOOGLE_URL}
 sudo curl -s ${DOWNLOAD_URL}/go$GO_VERSION.linux-amd64.tar.gz | sudo tar -v -C /usr/local/ -xz
 
 mkdir -p ${GOPATH}/bin/
-mkdir -p ${GOPATH}/src/github.com/kubernetes-sigs
-mkdir -p ${GOPATH}/src/k8s.io
-mkdir -p ${GOPATH}/src/sigs.k8s.io
+mkdir -p ${GOPATH}/src/
 
 if grep -q GOPATH "${HOME}/.bashrc"; then
   echo "bashrc already has GOPATH";
@@ -515,9 +513,9 @@ pwd
 const installStartDockerAmazonLinux2 = `
 
 ################################## install Docker on Amazon Linux 2
+
 sudo yum update -y
 sudo yum install -y docker
-
 sudo yum install -y yum-utils device-mapper-persistent-data lvm2
 
 sudo yum-config-manager \
@@ -555,6 +553,7 @@ sudo usermod -aG docker ec2-user || true
 id -nG
 sudo docker version
 sudo docker info
+
 ##################################
 
 `
