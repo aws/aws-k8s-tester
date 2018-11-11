@@ -6,7 +6,7 @@ cloud.google.com/go/internal/optional
 cloud.google.com/go/internal/trace
 cloud.google.com/go/internal/version
 cloud.google.com/go/compute/metadata
-# github.com/aws/aws-sdk-go v1.15.65
+# github.com/aws/aws-sdk-go v1.15.73
 github.com/aws/aws-sdk-go/aws/session
 github.com/aws/aws-sdk-go/service/sts
 github.com/aws/aws-sdk-go/aws
@@ -364,6 +364,7 @@ k8s.io/apimachinery/pkg/util/validation/field
 # k8s.io/client-go v9.0.0+incompatible
 k8s.io/client-go/util/homedir
 # k8s.io/test-infra v0.0.0-20181019233642-2e10a0bbe9b3
+k8s.io/test-infra/kubetest/util
 k8s.io/test-infra/prow/config
 k8s.io/test-infra/kubetest/process
 k8s.io/test-infra/prow/config/org
@@ -371,7 +372,6 @@ k8s.io/test-infra/prow/github
 k8s.io/test-infra/prow/kube
 k8s.io/test-infra/prow/pod-utils/decorate
 k8s.io/test-infra/prow/pod-utils/downwardapi
-k8s.io/test-infra/kubetest/util
 k8s.io/test-infra/prow/errorutil
 k8s.io/test-infra/prow/apis/prowjobs/v1
 k8s.io/test-infra/prow/clonerefs
