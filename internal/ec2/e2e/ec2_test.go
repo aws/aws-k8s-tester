@@ -27,9 +27,7 @@ func TestEC2(t *testing.T) {
 	cfg.Wait = true
 	cfg.Plugins = []string{
 		"update-amazon-linux-2",
-		"install-go1.11.2",
-		// "install-etcd-3.1.12",
-		// "install-etcd-master",
+		"install-go-1.11.2",
 	}
 	cfg.UploadTesterLogs = false
 

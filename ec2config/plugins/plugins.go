@@ -114,10 +114,11 @@ cat << EOT > /home/%s/.aws/credentials
 EOT`, userName, userName, string(d)),
 		}, nil
 
-	case plugin == "install-go1.11.2":
+	case strings.HasPrefix(plugin, "install-go-"):
+		goVer := strings.Replace(plugin, "install-go-", "", -1)
 		s, err := createInstallGo(goInfo{
 			UserName:  userName,
-			GoVersion: "1.11.2",
+			GoVersion: goVer,
 		})
 		if err != nil {
 			return script{}, err

@@ -90,7 +90,7 @@ func testIntegrationFunc(cmd *cobra.Command, args []string) {
 	cfg.Plugins = []string{
 		"update-amazon-linux-2",
 		"set-env-aws-cred-AWS_SHARED_CREDENTIALS_FILE",
-		"install-go1.11.2",
+		"install-go-1.11.2",
 		"install-csi-" + branchOrPR,
 	}
 	cfg.Wait = true
