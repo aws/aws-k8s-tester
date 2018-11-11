@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/pkg/csvutil"
-	"go.uber.org/zap"
 
 	"github.com/dustin/go-humanize"
+	"go.uber.org/zap"
 	"k8s.io/utils/exec"
 )
 
