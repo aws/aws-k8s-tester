@@ -198,10 +198,17 @@ make server
 			data: installStartDockerAmazonLinux2,
 		}, nil
 
-	case plugin == "install-start-kubeadm-amazon-linux-2":
+	case strings.HasPrefix(plugin, "install-start-kubeadm-amazon-linux-2-"):
+		kv := strings.Replace(plugin, "install-start-kubeadm-amazon-linux-2-", "", -1)
+		s, err := createInstallStartKubeadm(kubeadmInfo{
+			Version: kv,
+		})
+		if err != nil {
+			return script{}, err
+		}
 		return script{
-			key:  plugin,
-			data: installStartKubeadmAmazonLinux2,
+			key:  "install-start-kubeadm-amazon-linux-2",
+			data: s,
 		}, nil
 	}
 
@@ -217,7 +224,6 @@ func Create(userName string, plugins []string) (data string, err error) {
 				return "", fmt.Errorf("'update-ubuntu' requires 'ubuntu' user name, got %q", userName)
 			}
 		}
-
 		script, err := convertToScript(userName, plugin)
 		if err != nil {
 			return "", err
@@ -558,10 +564,58 @@ sudo docker info
 
 `
 
+func createInstallStartKubeadm(kv kubeadmInfo) (string, error) {
+	tpl := template.Must(template.New("installStartKubeadmAmazonLinux2Template").Parse(installStartKubeadmAmazonLinux2Template))
+	buf := bytes.NewBuffer(nil)
+	if err := tpl.Execute(buf, kv); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
+type kubeadmInfo struct {
+	Version string
+}
+
 // https://kubernetes.io/docs/setup/independent/install-kubeadm/
-const installStartKubeadmAmazonLinux2 = `
+const installStartKubeadmAmazonLinux2Template = `
 
 ################################## install kubeadm on Amazon Linux 2
+
+RELEASE=v{{ .Version }}
+
+cd /usr/bin
+sudo rm -f /usr/bin/{kubeadm,kubelet,kubectl}
+
+sudo curl -L --remote-name-all https://storage.googleapis.com/kubernetes-release/release/${RELEASE}/bin/linux/amd64/{kubeadm,kubelet,kubectl}
+sudo chmod +x {kubeadm,kubelet,kubectl}
+
+curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/kubelet.service" > /tmp/kubelet.service
+cat /tmp/kubelet.service
+curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/10-kubeadm.conf" > /tmp/10-kubeadm.conf
+cat /tmp/10-kubeadm.conf
+
+sudo mkdir -p /etc/systemd/system/kubelet.service.d
+sudo cp /tmp/kubelet.service /etc/systemd/system/kubelet.service
+sudo cp /tmp/10-kubeadm.conf /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+
+sudo systemctl daemon-reload
+systemctl cat kubelet.service
+
+sudo systemctl enable kubelet && sudo systemctl restart kubelet
+sudo systemctl status kubelet --full --no-pager || true
+sudo journalctl --no-pager --output=cat -u kubelet
+
+kubeadm version
+kubelet --version
+kubectl version --client
+
+##################################
+
+`
+
+/*
+TODO: does not work in Amazon Linux 2
 
 cat <<EOF > /etc/yum.repos.d/kubernetes.repo
 [kubernetes]
@@ -580,6 +634,7 @@ sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
 
 sudo yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes
 
+sudo systemctl daemon-reload
 sudo systemctl enable kubelet && sudo systemctl start kubelet
 sudo systemctl status kubelet --full --no-pager || true
 sudo journalctl --no-pager --output=cat -u kubelet
@@ -588,6 +643,4 @@ kubeadm version || true
 kubelet --version || true
 kubectl version --client || true
 
-##################################
-
-`
+*/
