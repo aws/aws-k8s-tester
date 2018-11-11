@@ -52,9 +52,7 @@ Cluser states are persisted on disk as well. EKS tester uses this file to track 
 cat ./aws-k8s-tester-eks.yaml
 ```
 
-Once complete, get the DNS names from `./aws-k8s-tester-eks.yaml`.
-
-And `curl` the `kube-system` namespace's `/metrics` endpoint, to see if it works.
+Once complete and `alb-ingress-controller.enable == true`, get the DNS names from `./aws-k8s-tester-eks.yaml`: `curl` the `kube-system` namespace's `/metrics` endpoint, to see if it works.
 
 ```bash
 # for example

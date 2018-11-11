@@ -427,14 +427,14 @@ var defaultConfig = Config{
 	// default, stderr, stdout, or file name
 	// log file named with cluster name will be added automatically
 	LogOutputs:           []string{"stderr"},
-	LogAccess:            true,
-	UploadTesterLogs:     true,
-	UploadWorkerNodeLogs: true,
+	LogAccess:            false,
+	UploadTesterLogs:     false,
+	UploadWorkerNodeLogs: false,
 
 	ClusterState: &ClusterState{},
 	ALBIngressController: &ALBIngressController{
-		Enable:           true,
-		UploadTesterLogs: true,
+		Enable:           false,
+		UploadTesterLogs: false,
 
 		IngressControllerImage: "quay.io/coreos/alb-ingress-controller:1.0-beta.7",
 
