@@ -476,7 +476,7 @@ func (cfg *Config) SSHCommands() (s string) {
 		s += fmt.Sprintf(`ssh -o "StrictHostKeyChecking no" -i %s %s@%s
 `, cfg.KeyPath, cfg.UserName, v.PublicDNSName)
 	}
-	return s
+	return s + "\n"
 }
 
 // Sync persists current configuration and states to disk.

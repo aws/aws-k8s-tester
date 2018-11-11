@@ -833,6 +833,7 @@ func (md *embedded) wait(mm map[string]ec2config.Instance) {
 					}
 
 					md.lg.Info("cloud-init-output NOT READY", zap.String("instance-id", id))
+					fmt.Println(md.cfg.SSHCommands())
 				}
 			}
 		}
