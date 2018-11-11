@@ -97,10 +97,7 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 
 	md.kubectlPath, _ = exec.New().LookPath("kubectl")
 
-	// TODO: update after this gets picked up in upstream
-	if cfg.KubectlDownloadURL != "" {
-		// TODO: update after this gets picked up in upstream
-		cfg.KubectlDownloadURL = "https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-07-26/bin/linux/amd64/kubectl"
+	if cfg.KubectlDownloadURL != "" { // overwrite
 		if runtime.GOOS == "darwin" {
 			cfg.KubectlDownloadURL = strings.Replace(cfg.KubectlDownloadURL, "linux", "darwin", -1)
 		}
@@ -118,11 +115,16 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 		if err = util.EnsureExecutable(md.kubectlPath); err != nil {
 			return nil, err
 		}
+		err = fileutil.Copy(md.kubectlPath, "/usr/local/bin/kubectl")
+		if err != nil {
+			md.lg.Warn("failed to copy",
+				zap.String("kubectl", md.kubectlPath),
+				zap.Error(err),
+			)
+		}
 	}
 
-	// TODO: update after this gets picked up in upstream
-	if cfg.AWSIAMAuthenticatorDownloadURL != "" {
-		// TODO: update after this gets picked up in upstream
+	if cfg.AWSIAMAuthenticatorDownloadURL != "" { // overwrite
 		if runtime.GOOS == "darwin" {
 			cfg.AWSIAMAuthenticatorDownloadURL = strings.Replace(cfg.AWSIAMAuthenticatorDownloadURL, "linux", "darwin", -1)
 		}
