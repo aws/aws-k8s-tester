@@ -511,20 +511,47 @@ pwd
 `
 
 // https://docs.aws.amazon.com/AmazonECS/latest/developerguide/docker-basics.html
+// https://kubernetes.io/docs/setup/cri/#docker
 const installStartDockerAmazonLinux2 = `
 
 ################################## install Docker on Amazon Linux 2
 sudo yum update -y
 sudo yum install -y docker
 
+sudo yum install -y yum-utils device-mapper-persistent-data lvm2
+
+sudo yum-config-manager \
+  --add-repo \
+  https://download.docker.com/linux/centos/docker-ce.repo
+
+sudo yum update && sudo yum install -y docker-ce-18.06.1.ce
+sudo mkdir -p /etc/docker
+
+cat > /etc/docker/daemon.json <<EOF
+{
+  "exec-opts": ["native.cgroupdriver=systemd"],
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "100m"
+  },
+  "storage-driver": "overlay2",
+  "storage-opts": [
+    "overlay2.override_kernel_check=true"
+  ]
+}
+EOF
+mkdir -p /etc/systemd/system/docker.service.d
+
+sudo systemctl daemon-reload
 sudo systemctl enable docker || true
 sudo systemctl start docker || true
+sudo systemctl restart docker || true
+
 sudo systemctl status docker --full --no-pager || true
 sudo usermod -aG docker ec2-user || true
 
 # su - ec2-user
 # or logout and login to use docker without 'sudo'
-
 id -nG
 sudo docker version
 sudo docker info
