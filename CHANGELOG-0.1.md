@@ -11,6 +11,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.2...0.1.3).
 
 - Add [`"install-start-kubeadm-amazon-linux-2"` plugin](https://github.com/aws/aws-k8s-tester/commit/fe378db6e272ce37430d07dfddfa84d7c0d1199b).
 - Rename to [`"install-start-docker-amazon-linux-2"` and `"install-start-docker-ubuntu"`](https://github.com/aws/aws-k8s-tester/commit/fe378db6e272ce37430d07dfddfa84d7c0d1199b).
+- Rename to [`"install-go1.11.2"` to `"install-go-1.11.2"`](https://github.com/aws/aws-k8s-tester/commit/2a9ae7cd967dbd9e67c899de81c05f64ae634db9)
 - Remove [`"install-docker-ubuntu"`](https://github.com/aws/aws-k8s-tester/commit/fe378db6e272ce37430d07dfddfa84d7c0d1199b).
 - Remove [`"install-start-kubeadm-ubuntu"`](https://github.com/aws/aws-k8s-tester/commit/fe378db6e272ce37430d07dfddfa84d7c0d1199b).
 - Set [`ec2config.Config.Wait` to true by default](https://github.com/aws/aws-k8s-tester/commit/fe378db6e272ce37430d07dfddfa84d7c0d1199b).
