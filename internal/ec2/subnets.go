@@ -8,6 +8,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"go.uber.org/zap"
 )
@@ -77,32 +78,28 @@ func (md *embedded) deleteSubnet() (err error) {
 			_, err = md.ec2.DeleteSubnet(&ec2.DeleteSubnetInput{
 				SubnetId: aws.String(id),
 			})
-			if err != nil {
-				// https://docs.aws.amazon.com/AWSEC2/latest/APIReference/errors-overview.html
-				awsErr, ok := err.(awserr.Error)
-				if ok {
-					if awsErr.Code() == "InvalidSubnetID.NotFound" {
-						md.lg.Info(
-							"subnet does not exist",
-							zap.String("subnet-id", id),
-						)
-						return nil
-					}
-					md.lg.Warn("failed to delete subnet",
-						zap.String("subnet-id", id),
-						zap.String("aws-error-code", awsErr.Code()),
-						zap.Error(err),
-					)
-				} else {
-					md.lg.Warn("failed to delete subnet",
-						zap.String("subnet-id", id),
-						zap.Error(err),
-					)
-				}
+			if err == nil {
+				break
+			}
+
+			if request.IsErrorRetryable(err) || request.IsErrorThrottle(err) {
+				md.lg.Warn("failed to delete subnet, retrying...", zap.Error(err))
 				time.Sleep(5 * time.Second)
 				continue
 			}
-			break
+
+			// https://docs.aws.amazon.com/AWSEC2/latest/APIReference/errors-overview.html
+			awsErr, ok := err.(awserr.Error)
+			if ok {
+				if awsErr.Code() == "InvalidSubnetID.NotFound" {
+					md.lg.Info(
+						"subnet does not exist",
+						zap.String("subnet-id", id),
+					)
+					return nil
+				}
+			}
+			return err
 		}
 		if err != nil {
 			return err

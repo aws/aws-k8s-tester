@@ -9,7 +9,9 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/ec2"
+
 	humanize "github.com/dustin/go-humanize"
 	"go.uber.org/zap"
 )
@@ -80,10 +82,20 @@ func (md *embedded) deleteKeyPair() error {
 
 	time.Sleep(time.Second)
 
-	_, err = md.ec2.DescribeKeyPairs(&ec2.DescribeKeyPairsInput{
-		KeyNames: aws.StringSlice([]string{md.cfg.ClusterState.CFStackWorkerNodeGroupKeyPairName}),
-	})
-	if err != nil {
+	for i := 0; i < 10; i++ {
+		_, err = md.ec2.DescribeKeyPairs(&ec2.DescribeKeyPairsInput{
+			KeyNames: aws.StringSlice([]string{md.cfg.ClusterState.CFStackWorkerNodeGroupKeyPairName}),
+		})
+		if err == nil {
+			break
+		}
+
+		if request.IsErrorRetryable(err) || request.IsErrorThrottle(err) {
+			md.lg.Warn("failed to describe key pair, retrying...", zap.Error(err))
+			time.Sleep(5 * time.Second)
+			continue
+		}
+
 		// https://docs.aws.amazon.com/AWSEC2/latest/APIReference/errors-overview.html
 		awsErr, ok := err.(awserr.Error)
 		if ok && awsErr.Code() == "InvalidKeyPair.NotFound" {

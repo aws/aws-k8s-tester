@@ -19,6 +19,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
@@ -189,7 +190,9 @@ func (up *uploader) upload(localPath, s3Path string) error {
 					up.lg.Warn("bucket already owned by me", zap.String("bucket", bucket), zap.Error(err))
 					exist, err = true, nil
 				default:
-					if strings.Contains(err.Error(), "OperationAborted: A conflicting conditional operation is currently in progress against this resource. Please try again.") {
+					if strings.Contains(err.Error(), "OperationAborted: A conflicting conditional operation is currently in progress against this resource. Please try again.") ||
+						request.IsErrorRetryable(err) ||
+						request.IsErrorThrottle(err) {
 						retry = true
 						continue
 					}

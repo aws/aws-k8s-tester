@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/ec2"
+
 	"go.uber.org/zap"
 )
 
@@ -155,32 +156,32 @@ func (md *embedded) deleteVPC() error {
 		_, err = md.ec2.DeleteVpc(&ec2.DeleteVpcInput{
 			VpcId: aws.String(md.cfg.VPCID),
 		})
-		if err != nil {
-			// https://docs.aws.amazon.com/AWSEC2/latest/APIReference/errors-overview.html
-			awsErr, ok := err.(awserr.Error)
-			if ok {
-				if awsErr.Code() == "InvalidVpcID.NotFound" {
-					md.lg.Info(
-						"VPC does not exist",
-						zap.String("vpc-id", md.cfg.VPCID),
-					)
-					return nil
-				}
-				md.lg.Warn("failed to delete VPC",
-					zap.String("vpc-id", md.cfg.VPCID),
-					zap.String("aws-error-code", awsErr.Code()),
-					zap.Error(err),
-				)
-			} else {
-				md.lg.Warn("failed to delete VPC",
-					zap.String("vpc-id", md.cfg.VPCID),
-					zap.Error(err),
-				)
-			}
-			time.Sleep(5 * time.Second)
-			continue
+		if err == nil {
+			break
 		}
-		break
+
+		// https://docs.aws.amazon.com/AWSEC2/latest/APIReference/errors-overview.html
+		awsErr, ok := err.(awserr.Error)
+		if ok {
+			if awsErr.Code() == "InvalidVpcID.NotFound" {
+				md.lg.Info(
+					"VPC does not exist",
+					zap.String("vpc-id", md.cfg.VPCID),
+				)
+				return nil
+			}
+			md.lg.Warn("failed to delete VPC",
+				zap.String("vpc-id", md.cfg.VPCID),
+				zap.String("aws-error-code", awsErr.Code()),
+				zap.Error(err),
+			)
+		} else {
+			md.lg.Warn("failed to delete VPC",
+				zap.String("vpc-id", md.cfg.VPCID),
+				zap.Error(err),
+			)
+		}
+		time.Sleep(5 * time.Second)
 	}
 	if err != nil {
 		return err

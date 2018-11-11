@@ -42,7 +42,9 @@ func (md *embedded) UploadToBucketForTests(localPath, s3Path string) error {
 						md.lg.Warn("bucket already owned by me", zap.String("bucket", bucket), zap.Error(err))
 						exist, err = true, nil
 					default:
-						if strings.Contains(err.Error(), "OperationAborted: A conflicting conditional operation is currently in progress against this resource. Please try again.") {
+						if strings.Contains(err.Error(), "OperationAborted: A conflicting conditional operation is currently in progress against this resource. Please try again.") ||
+							request.IsErrorRetryable(err) ||
+							request.IsErrorThrottle(err) {
 							retry = true
 							continue
 						}

@@ -9,7 +9,9 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/ec2"
+
 	"go.uber.org/zap"
 )
 
@@ -26,10 +28,18 @@ func (md *embedded) createKeyPair() (err error) {
 	}()
 
 	var output *ec2.CreateKeyPairOutput
-	output, err = md.ec2.CreateKeyPair(&ec2.CreateKeyPairInput{
-		KeyName: aws.String(md.cfg.KeyName),
-	})
-	if err != nil {
+	for i := 0; i < 30; i++ {
+		output, err = md.ec2.CreateKeyPair(&ec2.CreateKeyPairInput{
+			KeyName: aws.String(md.cfg.KeyName),
+		})
+		if err == nil {
+			break
+		}
+		if request.IsErrorRetryable(err) || request.IsErrorThrottle(err) {
+			md.lg.Warn("retryable error, retrying...", zap.Error(err))
+			time.Sleep(5 * time.Second)
+			continue
+		}
 		return err
 	}
 	if *output.KeyName != md.cfg.KeyName {
