@@ -434,7 +434,7 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 	}
 
 	okAMZLnx, okDocker, okKubeadm := false, false, false
-	for _, v := range cfg.EC2.Plugins {
+	for i, v := range cfg.EC2.Plugins {
 		if v == "update-amazon-linux-2" {
 			okAMZLnx = true
 			continue
@@ -445,6 +445,7 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 		}
 		if strings.HasPrefix(v, "install-start-kubeadm-amazon-linux-2-") {
 			okKubeadm = true
+			cfg.EC2.Plugins[i] = "install-start-kubeadm-amazon-linux-2-" + cfg.Cluster.Version
 			continue
 		}
 	}
