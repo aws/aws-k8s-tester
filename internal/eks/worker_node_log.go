@@ -301,17 +301,65 @@ func fetchWorkerNodeLogs(
 	clusterName string,
 	privateKeyPath string,
 	workerNodes map[string]ec2config.Instance) (fpathToS3Path map[string]string, err error) {
-	fpathToS3Path = make(map[string]string)
-	// TODO: parallelize
+
+	// create new channel for multiple goroutines. and a tokens channel to limit parallelism
+	c := make(chan map[string]string)
+	tokens := make(chan string, 200)
+
+	// loop through nodes and send goroutine
 	for _, iv := range workerNodes {
-		var fm map[string]string
-		fm, err = fetchWorkerNodeLog(lg, userName, clusterName, privateKeyPath, iv)
-		if err != nil {
-			return nil, err
-		}
-		for k, v := range fm {
-			fpathToS3Path[k] = v
+		go concurrentFetchLog(lg, userName, clusterName, privateKeyPath, iv, c, tokens)
+	}
+
+	// create new map fpathToS3Path to join all the data
+	fpathToS3Path = make(map[string]string)
+
+	// join data from each goroutine and report to new channel when done
+	done := make(chan bool, 1)
+	go joinData(c, done, fpathToS3Path, len(workerNodes))
+	<-done
+
+	// return map of all data collected
+	return fpathToS3Path, nil
+}
+
+func concurrentFetchLog(
+	lg *zap.Logger,
+	userName string,
+	clusterName string,
+	privateKeyPath string,
+	workerNode ec2config.Instance,
+	channel chan map[string]string,
+	tokens chan string) {
+
+	// push something into tokens channel, to signal that resources are now being used.
+	tokens <- "token"
+
+	// send request to fetchWorkerLog
+	fm, err := fetchWorkerNodeLog(lg, userName, clusterName, privateKeyPath, workerNode)
+	if err != nil {
+		// TODO: Handle error
+	}
+
+	// take back token from channel, to signal that we're done using resouces.
+	<-tokens
+	// send map received to channel
+	channel <- fm
+
+}
+
+func joinData(
+	channel chan map[string]string,
+	done chan<- bool,
+	joinedData map[string]string,
+	desired int) {
+
+	for i := 0; i < desired; i++ {
+		dataSubset := <-channel
+		for k, v := range dataSubset {
+			joinedData[k] = v
 		}
 	}
-	return fpathToS3Path, nil
+
+	done <- true
 }
