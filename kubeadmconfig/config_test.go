@@ -91,5 +91,7 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("expected EC2.Plugins %v, got %v", exp, cfg.EC2.Plugins)
 	}
 
-	fmt.Println(cfg.Cluster.Flags())
+	fmt.Println(cfg.Cluster.FlagsInit())
+	cfg.Cluster.JoinTarget = "192.168.116.240:6443"
+	fmt.Println(cfg.Cluster.FlagsJoin())
 }
