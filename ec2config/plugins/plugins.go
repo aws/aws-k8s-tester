@@ -582,6 +582,19 @@ const installStartKubeadmAmazonLinux2Template = `
 
 ################################## install kubeadm on Amazon Linux 2
 
+sudo yum install -y cri-tools ebtables kubernetes-cni socat iproute-tc
+
+cat <<EOF > /tmp/k8s.conf
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+EOF
+sudo cp /tmp/k8s.conf /etc/sysctl.d/k8s.conf
+sudo sysctl --system
+
+# Set SELinux in permissive mode (effectively disabling it)
+setenforce 0
+sudo sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
+
 RELEASE=v{{ .Version }}
 
 cd /usr/bin
@@ -590,24 +603,36 @@ sudo rm -f /usr/bin/{kubeadm,kubelet,kubectl}
 sudo curl -L --remote-name-all https://storage.googleapis.com/kubernetes-release/release/${RELEASE}/bin/linux/amd64/{kubeadm,kubelet,kubectl}
 sudo chmod +x {kubeadm,kubelet,kubectl}
 
-curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/kubelet.service" > /tmp/kubelet.service
+# curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/kubelet.service" > /tmp/kubelet.service
+cat <<EOF > /tmp/kubelet.service
+[Unit]
+Description=kubelet: The Kubernetes Node Agent
+Documentation=http://kubernetes.io/docs/
+
+[Service]
+ExecStart=/usr/bin/kubelet
+Restart=always
+StartLimitInterval=0
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+EOF
 cat /tmp/kubelet.service
 
 # curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/10-kubeadm.conf" > /tmp/10-kubeadm.conf
 cat <<EOF > /tmp/10-kubeadm.conf
+# Note: This dropin only works with kubeadm and kubelet v1.11+
 [Service]
 Environment="KUBELET_KUBECONFIG_ARGS=--bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubelet.conf --kubeconfig=/etc/kubernetes/kubelet.conf"
-Environment="KUBELET_SYSTEM_PODS_ARGS=--pod-manifest-path=/etc/kubernetes/manifests --allow-privileged=true"
-Environment="KUBELET_NETWORK_ARGS=--network-plugin=cni --cni-conf-dir=/etc/cni/net.d --cni-bin-dir=/opt/cni/bin"
-Environment="KUBELET_DNS_ARGS=--cluster-dns=10.96.0.10 --cluster-domain=cluster.local"
-Environment="KUBELET_AUTHZ_ARGS=--authorization-mode=Webhook --client-ca-file=/etc/kubernetes/pki/ca.crt"
-# Value should match Docker daemon settings.
-# Defaults are "cgroupfs" for Debian/Ubuntu/OpenSUSE and "systemd" for Fedora/CentOS/RHEL
-Environment="KUBELET_CGROUP_ARGS=--cgroup-driver=systemd"
-Environment="KUBELET_CADVISOR_ARGS=--cadvisor-port=0"
-Environment="KUBELET_CERTIFICATE_ARGS=--rotate-certificates=true"
+Environment="KUBELET_CONFIG_ARGS=--config=/var/lib/kubelet/config.yaml"
+# This is a file that "kubeadm init" and "kubeadm join" generates at runtime, populating the KUBELET_KUBEADM_ARGS variable dynamically
+EnvironmentFile=-/var/lib/kubelet/kubeadm-flags.env
+# This is a file that the user can use for overrides of the kubelet args as a last resort. Preferably, the user should use
+# the .NodeRegistration.KubeletExtraArgs object in the configuration files instead. KUBELET_EXTRA_ARGS should be sourced from this file.
+EnvironmentFile=-/etc/sysconfig/kubelet
 ExecStart=
-ExecStart=/usr/bin/kubelet $KUBELET_KUBECONFIG_ARGS $KUBELET_SYSTEM_PODS_ARGS $KUBELET_NETWORK_ARGS $KUBELET_DNS_ARGS $KUBELET_AUTHZ_ARGS $KUBELET_CGROUP_ARGS $KUBELET_CADVISOR_ARGS $KUBELET_CERTIFICATE_ARGS $KUBELET_EXTRA_ARGS
+ExecStart=/usr/bin/kubelet $KUBELET_KUBECONFIG_ARGS $KUBELET_CONFIG_ARGS $KUBELET_KUBEADM_ARGS $KUBELET_EXTRA_ARGS
 EOF
 cat /tmp/10-kubeadm.conf
 
@@ -616,8 +641,7 @@ sudo cp /tmp/kubelet.service /etc/systemd/system/kubelet.service
 sudo cp /tmp/10-kubeadm.conf /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
 
 sudo systemctl daemon-reload
-systemctl cat kubelet.service
-
+sudo systemctl cat kubelet.service
 sudo systemctl enable kubelet && sudo systemctl restart kubelet
 sudo systemctl status kubelet --full --no-pager || true
 sudo journalctl --no-pager --output=cat -u kubelet
@@ -630,33 +654,41 @@ kubectl version --client
 
 `
 
+// to download stable versions
 /*
-TODO: does not work in Amazon Linux 2
-
-cat <<EOF > /etc/yum.repos.d/kubernetes.repo
+cat <<EOF > /tmp/kubernetes.repo
 [kubernetes]
 name=Kubernetes
 baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
 enabled=1
 gpgcheck=1
-repo_gpgcheck=1
+repo_gpgcheck=0
 gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
 exclude=kube*
 EOF
+sudo cp /tmp/kubernetes.repo /etc/yum.repos.d/kubernetes.repo
+
+cat <<EOF > /tmp/k8s.conf
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+EOF
+sudo cp /tmp/k8s.conf /etc/sysctl.d/k8s.conf
+sudo sysctl --system
 
 # Set SELinux in permissive mode (effectively disabling it)
 setenforce 0
-sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
+sudo sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
 
+sudo mkdir -p /var/lib/kubelet/
 sudo yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes
 
 sudo systemctl daemon-reload
-sudo systemctl enable kubelet && sudo systemctl start kubelet
+sudo systemctl cat kubelet.service
+sudo systemctl enable kubelet && sudo systemctl restart kubelet
 sudo systemctl status kubelet --full --no-pager || true
 sudo journalctl --no-pager --output=cat -u kubelet
 
-kubeadm version || true
-kubelet --version || true
-kubectl version --client || true
-
+kubeadm version
+kubelet --version
+kubectl version --client
 */
