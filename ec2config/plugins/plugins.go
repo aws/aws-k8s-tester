@@ -618,8 +618,28 @@ sudo chmod +x {kubeadm,kubelet,kubectl}
 curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/kubelet.service" > /tmp/kubelet.service
 cat /tmp/kubelet.service
 
-curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/10-kubeadm.conf" > /tmp/10-kubeadm.conf
-sudo sed -i 's/cgroup-driver=cgroupfs/cgroup-driver=systemd/' /tmp/10-kubeadm.conf
+# curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/10-kubeadm.conf" > /tmp/10-kubeadm.conf
+# sudo sed -i 's/cgroup-driver=cgroupfs/cgroup-driver=systemd/' /tmp/10-kubeadm.conf
+
+# delete cni binary
+# https://github.com/coreos/coreos-kubernetes/issues/874
+cat << EOT > /tmp/10-kubeadm.conf
+[Service]
+Environment="KUBELET_KUBECONFIG_ARGS=--bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubelet.conf --kubeconfig=/etc/kubernetes/kubelet.conf"
+Environment="KUBELET_SYSTEM_PODS_ARGS=--pod-manifest-path=/etc/kubernetes/manifests --allow-privileged=true"
+Environment="KUBELET_NETWORK_ARGS="
+Environment="KUBELET_DNS_ARGS=--cluster-dns=10.96.0.10 --cluster-domain=cluster.local"
+Environment="KUBELET_AUTHZ_ARGS=--authorization-mode=Webhook --client-ca-file=/etc/kubernetes/pki/ca.crt"
+# Value should match Docker daemon settings.
+# Defaults are "cgroupfs" for Debian/Ubuntu/OpenSUSE and "systemd" for Fedora/CentOS/RHEL
+Environment="KUBELET_CGROUP_ARGS=--cgroup-driver=systemd"
+Environment="KUBELET_CADVISOR_ARGS=--cadvisor-port=0"
+Environment="KUBELET_CERTIFICATE_ARGS=--rotate-certificates=true"
+ExecStart=
+ExecStart=/usr/bin/kubelet __KUBELET_KUBECONFIG_ARGS __KUBELET_SYSTEM_PODS_ARGS __KUBELET_NETWORK_ARGS __KUBELET_DNS_ARGS __KUBELET_AUTHZ_ARGS __KUBELET_CGROUP_ARGS __KUBELET_CADVISOR_ARGS __KUBELET_CERTIFICATE_ARGS __KUBELET_EXTRA_ARGS
+EOT
+cat /tmp/10-kubeadm.conf
+sed -i.bak 's|__KUBELET|\$KUBELET|g' /tmp/10-kubeadm.conf
 cat /tmp/10-kubeadm.conf
 
 sudo mkdir -p /etc/systemd/system/kubelet.service.d
