@@ -23,6 +23,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.2...0.1.3).
 - Add [`eksconfig.Config.KubectlDownloadURL`](https://github.com/aws/aws-k8s-tester/commit/3b8704fcf0c15229fc3480caca41b4ddec1497a1) field.
 - Add [`eksconfig.Config.AWSIAMAuthenticatorDownloadURL`](https://github.com/aws/aws-k8s-tester/commit/3b8704fcf0c15229fc3480caca41b4ddec1497a1) field.
 
+### `kubeadmconfig`
+
+- Add [`kubeadmconfig`](https://github.com/aws/aws-k8s-tester/commit/857de963f493202b1b89d4d7c26e01c7cc304da0).
+
 ### `internal`
 
 - Add [retries on `kubectl get all` fail](https://github.com/aws/aws-k8s-tester/pull/8).
