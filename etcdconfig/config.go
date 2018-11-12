@@ -60,7 +60,7 @@ type Config struct {
 	LogOutputToUploadPathBucket string `json:"log-output-to-upload-path-bucket,omitempty"`
 	LogOutputToUploadPathURL    string `json:"log-output-to-upload-path-url,omitempty"`
 
-	// Logs is a list of etcd node log file paths, fetched via SSH.
+	// Logs is a list of node log file paths, fetched via SSH.
 	Logs map[string]string `json:"logs,omitempty"`
 
 	// UploadTesterLogs is true to auto-upload log files.
@@ -68,12 +68,12 @@ type Config struct {
 
 	// EC2 defines ec2 instance configuration.
 	EC2 *ec2config.Config `json:"ec2"`
-	// EC2Bastion is used for etcd test clients.
+	// EC2Bastion is used for test clients.
 	EC2Bastion *ec2config.Config `json:"ec2-bastion"`
 
-	// ClusterSize is the number of etcd nodes.
+	// ClusterSize is the number of nodes.
 	ClusterSize int `json:"cluster-size"`
-	// Cluster is the shared etcd configuration for initial cluster setup.
+	// Cluster is the shared configuration for initial cluster setup.
 	// "DataDir" and "URLs" fields should not be set.
 	// Will automatically be updated after EC2 creation.
 	Cluster *ETCD `json:"cluster"`
@@ -867,16 +867,15 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 		}
 	}
 
-	// expect
-	// "update-amazon-linux-2"
-	// "install-etcd-3.1.12"
 	okAMZLnx, okEtcd := false, false
 	for _, v := range cfg.EC2.Plugins {
 		if v == "update-amazon-linux-2" {
 			okAMZLnx = true
+			continue
 		}
 		if strings.HasPrefix(v, "install-etcd-") {
 			okEtcd = true
+			continue
 		}
 	}
 	if !okAMZLnx {
