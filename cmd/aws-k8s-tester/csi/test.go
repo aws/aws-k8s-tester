@@ -86,7 +86,7 @@ func testIntegrationFunc(cmd *cobra.Command, args []string) {
 	cfg := ec2config.NewDefault()
 	cfg.UploadTesterLogs = false
 	cfg.VPCID = vpcID
-	cfg.IngressCIDRs = map[int64]string{22: "0.0.0.0/0"}
+	cfg.IngressRulesTCP = map[string]string{"22": "0.0.0.0/0"}
 	cfg.Plugins = []string{
 		"update-amazon-linux-2",
 		"set-env-aws-cred-AWS_SHARED_CREDENTIALS_FILE",

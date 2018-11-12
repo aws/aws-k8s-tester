@@ -568,10 +568,9 @@ func init() {
 	defaultConfig.EC2.Wait = true
 	defaultConfig.EC2.Tag = defaultConfig.Tag
 	defaultConfig.EC2.ClusterName = defaultConfig.ClusterName
-	defaultConfig.EC2.IngressCIDRs = map[int64]string{
-		22:   "0.0.0.0/0",
-		2379: "192.168.0.0/8",
-		2380: "192.168.0.0/8",
+	defaultConfig.EC2.IngressRulesTCP = map[string]string{
+		"22":        "0.0.0.0/0",
+		"2379-2380": "192.168.0.0/8",
 	}
 
 	defaultConfig.EC2Bastion.EnvPrefix = "AWS_K8S_TESTER_EC2_BASTION_"
@@ -585,8 +584,8 @@ func init() {
 	defaultConfig.EC2Bastion.Wait = true
 	defaultConfig.EC2Bastion.Tag = defaultConfig.Tag + "-bastion"
 	defaultConfig.EC2Bastion.ClusterName = defaultConfig.ClusterName + "-bastion"
-	defaultConfig.EC2Bastion.IngressCIDRs = map[int64]string{
-		22: "0.0.0.0/0",
+	defaultConfig.EC2Bastion.IngressRulesTCP = map[string]string{
+		"22": "0.0.0.0/0",
 	}
 }
 
@@ -836,7 +835,7 @@ func (cfg *Config) UpdateFromEnvs() error {
 	return nil
 }
 
-var etcdPorts = []int64{22, 2379, 2380}
+var etcdPorts = []string{"22", "2379-2380"}
 
 // ValidateAndSetDefaults returns an error for invalid configurations.
 // And updates empty fields with default values.
@@ -862,9 +861,9 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 		return err
 	}
 	for _, p := range etcdPorts {
-		_, ok := cfg.EC2.IngressCIDRs[p]
+		_, ok := cfg.EC2.IngressRulesTCP[p]
 		if !ok {
-			return fmt.Errorf("etcd expects port %d but not found from %v", p, cfg.EC2.IngressCIDRs)
+			return fmt.Errorf("etcd expects port %q but not found from %v", p, cfg.EC2.IngressRulesTCP)
 		}
 	}
 

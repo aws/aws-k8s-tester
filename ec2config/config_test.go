@@ -25,7 +25,7 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EC2_SUBNET_IDS", "a,b,c")
 	os.Setenv("AWS_K8S_TESTER_EC2_SECURITY_GROUP_IDS", "d,e,f")
 	os.Setenv("AWS_K8S_TESTER_EC2_WAIT", "true")
-	os.Setenv("AWS_K8S_TESTER_EC2_INGRESS_CIDRS", "22=0.0.0.0/0,2379=192.168.0.0/8,2380=192.168.0.0/8")
+	os.Setenv("AWS_K8S_TESTER_EC2_INGRESS_RULES_TCP", "22=0.0.0.0/0,2379-2380=192.168.0.0/8")
 	os.Setenv("AWS_K8S_TESTER_EC2_VPC_CIDR", "192.168.0.0/8")
 
 	defer func() {
@@ -44,7 +44,7 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWS_K8S_TESTER_EC2_SUBNET_IDS")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_SECURITY_GROUP_IDS")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_WAIT")
-		os.Unsetenv("AWS_K8S_TESTER_EC2_INGRESS_TCP_PORTS")
+		os.Unsetenv("AWS_K8S_TESTER_EC2_INGRESS_RULES_TCP")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_VPC_CIDR")
 	}()
 
@@ -97,13 +97,12 @@ func TestEnv(t *testing.T) {
 	if !cfg.Wait {
 		t.Fatalf("Wait expected true, got %v", cfg.Wait)
 	}
-	m := map[int64]string{
-		22:   "0.0.0.0/0",
-		2379: "192.168.0.0/8",
-		2380: "192.168.0.0/8",
+	m := map[string]string{
+		"22":        "0.0.0.0/0",
+		"2379-2380": "192.168.0.0/8",
 	}
-	if !reflect.DeepEqual(cfg.IngressCIDRs, m) {
-		t.Fatalf("IngressCIDRs expected %v, got %v", m, cfg.IngressCIDRs)
+	if !reflect.DeepEqual(cfg.IngressRulesTCP, m) {
+		t.Fatalf("IngressRulesTCP expected %v, got %v", m, cfg.IngressRulesTCP)
 	}
 	if cfg.VPCCIDR != "192.168.0.0/8" {
 		t.Fatalf("VPCCIDR expected '192.168.0.0/8', got %q", cfg.VPCCIDR)

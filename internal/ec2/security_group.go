@@ -3,6 +3,8 @@ package ec2
 import (
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -34,18 +36,31 @@ func (md *embedded) createSecurityGroup() (err error) {
 		zap.Strings("group-id", md.cfg.SecurityGroupIDs),
 	)
 
-	for port, cidr := range md.cfg.IngressCIDRs {
+	for ports, cidr := range md.cfg.IngressRulesTCP {
+		ps := strings.Split(ports, "-")
+		var fromPort int64
+		fromPort, err = strconv.ParseInt(ps[0], 10, 64)
+		if err != nil {
+			return fmt.Errorf("failed to parse %q", ports)
+		}
+		toPort := fromPort
+		if len(ps) > 1 {
+			toPort, err = strconv.ParseInt(ps[1], 10, 64)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q", ps[1])
+			}
+		}
 		_, err = md.ec2.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
 			GroupId:    output.GroupId,
 			IpProtocol: aws.String("tcp"),
 			CidrIp:     aws.String(cidr),
-			FromPort:   aws.Int64(port),
-			ToPort:     aws.Int64(port),
+			FromPort:   aws.Int64(fromPort),
+			ToPort:     aws.Int64(toPort),
 		})
 		if err != nil {
 			return err
 		}
-		md.lg.Info("authorized ingress", zap.Int64("port", port), zap.String("cidr", cidr))
+		md.lg.Info("authorized ingress", zap.String("port", ports), zap.String("cidr", cidr))
 	}
 
 	_, err = md.ec2.CreateTags(&ec2.CreateTagsInput{
