@@ -321,7 +321,9 @@ done:
 						md.lg.Info("instance is ready",
 							zap.String("instance-id", iv.InstanceID),
 							zap.String("instance-public-ip", iv.PublicIP),
+							zap.String("instance-private-ip", iv.PrivateIP),
 							zap.String("instance-public-dns", iv.PublicDNSName),
+							zap.String("instance-private-dns", iv.PrivateDNSName),
 						)
 						ready = true
 						break done
@@ -741,7 +743,9 @@ func (md *embedded) createInstances() (err error) {
 							md.lg.Info("instance is ready",
 								zap.String("instance-id", iv.InstanceID),
 								zap.String("instance-public-ip", iv.PublicIP),
+								zap.String("instance-private-ip", iv.PrivateIP),
 								zap.String("instance-public-dns", iv.PublicDNSName),
+								zap.String("instance-private-dns", iv.PrivateDNSName),
 							)
 							tknToCntRunning[tkn]++
 
