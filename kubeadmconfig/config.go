@@ -19,7 +19,7 @@ import (
 	gyaml "github.com/ghodss/yaml"
 )
 
-// Config defines etcd test configuration.
+// Config defines kubeadm test configuration.
 type Config struct {
 	// Tag is the tag used for S3 bucket name.
 	// If empty, deployer auto-populates it.
@@ -81,7 +81,7 @@ type Config struct {
 // Kubeadm defines kubeadm-specific configuration.
 // TODO: support TLS
 type Kubeadm struct {
-	// Version is the etcd version.
+	// Version is the kubeadm version.
 	Version string `json:"version"`
 
 	InitPodNetworkCIDR string `json:"init-pod-network-cidr,omitempty" kubeadm:"pod-network-cidr"`
@@ -91,7 +91,7 @@ var skipFlags = map[string]struct{}{
 	"Version": {},
 }
 
-// Flags returns the list of etcd flags.
+// Flags returns the list of kubeadm flags.
 // Make sure to validate the configuration with "ValidateAndSetDefaults".
 func (ka *Kubeadm) Flags() (flags []string, err error) {
 	tp, vv := reflect.TypeOf(ka).Elem(), reflect.ValueOf(ka).Elem()
@@ -210,8 +210,8 @@ var defaultKubeadm = Kubeadm{
 //
 // Example usage:
 //
-//  import "github.com/aws/aws-k8s-tester/etcdconfig"
-//  cfg := etcdconfig.Load("test.yaml")
+//  import "github.com/aws/aws-k8s-tester/kubeadmconfig"
+//  cfg := kubeadmconfig.Load("test.yaml")
 //  p, err := cfg.BackupConfig()
 //  err = cfg.ValidateAndSetDefaults()
 //
@@ -429,7 +429,7 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 	for _, p := range kubeadmPorts {
 		_, ok := cfg.EC2.IngressRulesTCP[p]
 		if !ok {
-			return fmt.Errorf("etcd expects port %q but not found from %v", p, cfg.EC2.IngressRulesTCP)
+			return fmt.Errorf("kubeadm expects port %q but not found from %v", p, cfg.EC2.IngressRulesTCP)
 		}
 	}
 
@@ -500,7 +500,7 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 		// auto-insert generated log output paths to zap logger output list
 		cfg.LogOutputs = append(cfg.LogOutputs, cfg.LogOutputToUploadPath)
 	}
-	cfg.LogOutputToUploadPathBucket = filepath.Join(cfg.ClusterName, "awsk8stester-etcd.log")
+	cfg.LogOutputToUploadPathBucket = filepath.Join(cfg.ClusterName, "awsk8stester-kubeadm.log")
 
 	return cfg.Sync()
 }
