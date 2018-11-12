@@ -582,7 +582,17 @@ const installStartKubeadmAmazonLinux2Template = `
 
 ################################## install kubeadm on Amazon Linux 2
 
-sudo yum install -y cri-tools ebtables kubernetes-cni socat iproute-tc
+cat <<EOF > /tmp/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+enabled=1
+gpgcheck=1
+repo_gpgcheck=0
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+exclude=kube*
+EOF
+sudo cp /tmp/kubernetes.repo /etc/yum.repos.d/kubernetes.repo
 
 cat <<EOF > /tmp/k8s.conf
 net.bridge.bridge-nf-call-ip6tables = 1
@@ -595,6 +605,8 @@ sudo sysctl --system
 setenforce 0
 sudo sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
 
+sudo yum install -y cri-tools ebtables kubernetes-cni socat iproute-tc
+
 RELEASE=v{{ .Version }}
 
 cd /usr/bin
@@ -603,37 +615,11 @@ sudo rm -f /usr/bin/{kubeadm,kubelet,kubectl}
 sudo curl -L --remote-name-all https://storage.googleapis.com/kubernetes-release/release/${RELEASE}/bin/linux/amd64/{kubeadm,kubelet,kubectl}
 sudo chmod +x {kubeadm,kubelet,kubectl}
 
-# curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/kubelet.service" > /tmp/kubelet.service
-cat <<EOF > /tmp/kubelet.service
-[Unit]
-Description=kubelet: The Kubernetes Node Agent
-Documentation=http://kubernetes.io/docs/
-
-[Service]
-ExecStart=/usr/bin/kubelet
-Restart=always
-StartLimitInterval=0
-RestartSec=10
-
-[Install]
-WantedBy=multi-user.target
-EOF
+curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/kubelet.service" > /tmp/kubelet.service
 cat /tmp/kubelet.service
 
-# curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/10-kubeadm.conf" > /tmp/10-kubeadm.conf
-cat <<EOF > /tmp/10-kubeadm.conf
-# Note: This dropin only works with kubeadm and kubelet v1.11+
-[Service]
-Environment="KUBELET_KUBECONFIG_ARGS=--bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubelet.conf --kubeconfig=/etc/kubernetes/kubelet.conf"
-Environment="KUBELET_CONFIG_ARGS=--config=/var/lib/kubelet/config.yaml"
-# This is a file that "kubeadm init" and "kubeadm join" generates at runtime, populating the KUBELET_KUBEADM_ARGS variable dynamically
-EnvironmentFile=-/var/lib/kubelet/kubeadm-flags.env
-# This is a file that the user can use for overrides of the kubelet args as a last resort. Preferably, the user should use
-# the .NodeRegistration.KubeletExtraArgs object in the configuration files instead. KUBELET_EXTRA_ARGS should be sourced from this file.
-EnvironmentFile=-/etc/sysconfig/kubelet
-ExecStart=
-ExecStart=/usr/bin/kubelet $KUBELET_KUBECONFIG_ARGS $KUBELET_CONFIG_ARGS $KUBELET_KUBEADM_ARGS $KUBELET_EXTRA_ARGS
-EOF
+curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/10-kubeadm.conf" > /tmp/10-kubeadm.conf
+sudo sed -i 's/cgroup-driver=cgroupfs/cgroup-driver=systemd/' /tmp/10-kubeadm.conf
 cat /tmp/10-kubeadm.conf
 
 sudo mkdir -p /etc/systemd/system/kubelet.service.d
@@ -649,6 +635,7 @@ sudo journalctl --no-pager --output=cat -u kubelet
 kubeadm version
 kubelet --version
 kubectl version --client
+crictl --version
 
 ##################################
 
@@ -680,6 +667,7 @@ setenforce 0
 sudo sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
 
 sudo mkdir -p /var/lib/kubelet/
+sudo yum install -y cri-tools ebtables kubernetes-cni socat iproute-tc
 sudo yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes
 
 sudo systemctl daemon-reload
@@ -691,4 +679,5 @@ sudo journalctl --no-pager --output=cat -u kubelet
 kubeadm version
 kubelet --version
 kubectl version --client
+crictl --version
 */
