@@ -85,15 +85,20 @@ type Kubeadm struct {
 	Version string `json:"version"`
 
 	InitPodNetworkCIDR string `json:"init-pod-network-cidr,omitempty" kubeadm:"pod-network-cidr"`
+
+	JoinTarget                   string
+	JoinToken                    string `json:"join-token,omitempty" kubeadm:"token"`
+	JoinDiscoveryTokenCACertHash string `json:"join-discovery-token-ca-cert-hash,omitempty" kubeadm:"discovery-token-ca-cert-hash"`
+	JoinIgnorePreflightErrors    string `json:"join-ignore-preflight-errors,omitempty" kubeadm:"ignore-preflight-errors"`
 }
 
 var skipFlags = map[string]struct{}{
 	"Version": {},
 }
 
-// Flags returns the list of kubeadm flags.
+// FlagsInit returns the list of "kubeadm init" flags.
 // Make sure to validate the configuration with "ValidateAndSetDefaults".
-func (ka *Kubeadm) Flags() (flags []string, err error) {
+func (ka *Kubeadm) FlagsInit() (flags []string, err error) {
 	tp, vv := reflect.TypeOf(ka).Elem(), reflect.ValueOf(ka).Elem()
 	for i := 0; i < tp.NumField(); i++ {
 		k := tp.Field(i).Tag.Get("json")
@@ -109,6 +114,9 @@ func (ka *Kubeadm) Flags() (flags []string, err error) {
 		if _, ok := skipFlags[fieldName]; ok {
 			continue
 		}
+		if !strings.HasPrefix(fieldName, "Init") {
+			continue
+		}
 
 		switch vv.Field(i).Type().Kind() {
 		case reflect.String:
@@ -122,6 +130,46 @@ func (ka *Kubeadm) Flags() (flags []string, err error) {
 		}
 	}
 	return flags, nil
+}
+
+// FlagsJoin returns the list of "kubeadm join" flags.
+// Make sure to validate the configuration with "ValidateAndSetDefaults".
+func (ka *Kubeadm) FlagsJoin() (flags []string, err error) {
+	arg := ka.JoinTarget
+	if arg == "" {
+		return nil, errors.New("unknown 'kubeadm join' target")
+	}
+	tp, vv := reflect.TypeOf(ka).Elem(), reflect.ValueOf(ka).Elem()
+	for i := 0; i < tp.NumField(); i++ {
+		k := tp.Field(i).Tag.Get("json")
+		if k == "" {
+			continue
+		}
+		k = strings.Replace(k, ",omitempty", "", -1)
+		if ek := tp.Field(i).Tag.Get("kubeadm"); ek != "" {
+			k = strings.Replace(ek, ",omitempty", "", -1)
+		}
+
+		fieldName := tp.Field(i).Name
+		if _, ok := skipFlags[fieldName]; ok {
+			continue
+		}
+		if !strings.HasPrefix(fieldName, "Join") {
+			continue
+		}
+
+		switch vv.Field(i).Type().Kind() {
+		case reflect.String:
+			flags = append(flags, fmt.Sprintf("--%s=%s", k, vv.Field(i).String()))
+
+		case reflect.Bool:
+			flags = append(flags, fmt.Sprintf("--%s=%v", k, vv.Field(i).Bool()))
+
+		default:
+			return nil, fmt.Errorf("unknown %q", k)
+		}
+	}
+	return append([]string{arg}, flags...), nil
 }
 
 // ValidateAndSetDefaults returns an error for invalid configurations.
@@ -202,7 +250,8 @@ var defaultConfig = Config{
 }
 
 var defaultKubeadm = Kubeadm{
-	Version: "1.10.9",
+	Version:                   "1.10.9",
+	JoinIgnorePreflightErrors: "cri",
 }
 
 // Load loads configuration from YAML.
