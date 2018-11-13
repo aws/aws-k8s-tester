@@ -95,7 +95,8 @@ type Kubeadm struct {
 }
 
 var skipFlags = map[string]struct{}{
-	"Version": {},
+	"Version":    {},
+	"JoinTarget": {},
 }
 
 // ScriptInit returns the service file setup script.
