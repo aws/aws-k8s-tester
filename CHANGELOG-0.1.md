@@ -26,6 +26,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.2...0.1.3).
 - Disable [log uploads by default](https://github.com/aws/aws-k8s-tester/commit/cebd3bb6ac5a0d94076c53eb25d8597631fc5c43).
 - Add [`eksconfig.Config.KubectlDownloadURL`](https://github.com/aws/aws-k8s-tester/commit/3b8704fcf0c15229fc3480caca41b4ddec1497a1) field.
 - Add [`eksconfig.Config.AWSIAMAuthenticatorDownloadURL`](https://github.com/aws/aws-k8s-tester/commit/3b8704fcf0c15229fc3480caca41b4ddec1497a1) field.
+- [Add new regions, update AMIs](https://github.com/aws/aws-k8s-tester/commit/017b53add758cb6ad8e74eda69bb09bc80c76faa).
 
 ### `kubeadmconfig`
 
