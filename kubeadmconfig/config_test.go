@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	gyaml "github.com/ghodss/yaml"
 )
 
 func TestEnv(t *testing.T) {
@@ -94,4 +96,11 @@ func TestEnv(t *testing.T) {
 	fmt.Println(cfg.Cluster.FlagsInit())
 	cfg.Cluster.JoinTarget = "192.168.116.240:6443"
 	fmt.Println(cfg.Cluster.FlagsJoin())
+
+	var d []byte
+	d, err := gyaml.Marshal(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println(string(d))
 }
