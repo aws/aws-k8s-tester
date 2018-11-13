@@ -83,6 +83,8 @@ type Config struct {
 // Kubeadm defines kubeadm-specific configuration.
 // TODO: support TLS
 type Kubeadm struct {
+	userName string
+
 	// Version is the kubeadm version.
 	Version string `json:"version"`
 
@@ -107,8 +109,9 @@ func (ka *Kubeadm) ScriptInit() (s string, err error) {
 		return "", err
 	}
 	return createScriptInit(scriptInit{
-		Exec:  "/usr/bin/kubeadm",
-		Flags: strings.Join(fs, " "),
+		Exec:     "/usr/bin/kubeadm",
+		Flags:    strings.Join(fs, " "),
+		UserName: ka.userName,
 	})
 }
 
@@ -122,8 +125,9 @@ func createScriptInit(si scriptInit) (string, error) {
 }
 
 type scriptInit struct {
-	Exec  string
-	Flags string
+	Exec     string
+	Flags    string
+	UserName string
 }
 
 const scriptInitTmpl = `#!/usr/bin/env bash
@@ -134,6 +138,7 @@ sudo kubeadm init {{ .Flags }} 1>>/var/log/kubeadm-init.log 2>&1
 mkdir -p /home/ec2-user/.kube
 sudo cp -i /etc/kubernetes/admin.conf /home/ec2-user/.kube/config
 sudo chown $(id -u):$(id -g) /home/ec2-user/.kube/config
+sudo chown {{ .UserName }}:{{ .UserName }} /home/ec2-user/.kube/config
 find /home/ec2-user/.kube/ 1>>/var/log/kubeadm-init.log 2>&1
 `
 
@@ -293,6 +298,7 @@ var defaultConfig = Config{
 }
 
 var defaultKubeadm = Kubeadm{
+	userName:                  "ec2-user",
 	Version:                   "1.10.9",
 	InitPodNetworkCIDR:        "10.244.0.0/16",
 	JoinIgnorePreflightErrors: "cri",
@@ -516,6 +522,7 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 		return errors.New("EC2 configuration not found")
 	}
 	cfg.EC2.ClusterSize = cfg.ClusterSize
+	cfg.Cluster.userName = cfg.EC2.UserName
 	if err = cfg.EC2.ValidateAndSetDefaults(); err != nil {
 		return err
 	}

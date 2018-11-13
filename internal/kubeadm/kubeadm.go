@@ -52,9 +52,9 @@ func NewTester(cfg *kubeadmconfig.Config) (Tester, error) {
 }
 
 /*
-sudo kubectl --kubeconfig=/home/ec2-user/.kube/config cluster-info
-sudo kubectl --kubeconfig=/home/ec2-user/.kube/config get nodes
-sudo kubectl --kubeconfig=/home/ec2-user/.kube/config get pods --all-namespaces
+kubectl --kubeconfig=/home/ec2-user/.kube/config cluster-info
+kubectl --kubeconfig=/home/ec2-user/.kube/config get nodes
+kubectl --kubeconfig=/home/ec2-user/.kube/config get pods --all-namespaces
 sudo find /etc/kubernetes/manifests/
 sudo docker ps
 */
@@ -220,7 +220,7 @@ joinReady:
 	if err != nil {
 		return err
 	}
-	kubeadmJoinCmd = fmt.Sprintf("sudo kubeadm join %s", strings.Join(joinFlags, " "))
+	kubeadmJoinCmd = fmt.Sprintf("kubeadm join %s", strings.Join(joinFlags, " "))
 	md.lg.Info("kubeadm join flags are ready", zap.String("command", kubeadmJoinCmd))
 
 	md.lg.Info("checking kube-controller-manager")
@@ -247,7 +247,7 @@ joinReady:
 	for time.Now().UTC().Sub(retryStart) < 10*time.Minute {
 		var podsOutput []byte
 		podsOutput, err = masterSSH.Run(
-			"sudo kubectl --kubeconfig=/home/ec2-user/.kube/config get pods --all-namespaces",
+			"kubectl --kubeconfig=/home/ec2-user/.kube/config get pods --all-namespaces",
 			ssh.WithRetry(100, 5*time.Second),
 			ssh.WithTimeout(15*time.Second),
 		)
@@ -264,7 +264,7 @@ joinReady:
 
 	var flannelOutputRole []byte
 	flannelOutputRole, err = masterSSH.Run(
-		"sudo kubectl --kubeconfig=/home/ec2-user/.kube/config apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/k8s-manifests/kube-flannel-rbac.yml",
+		"kubectl --kubeconfig=/home/ec2-user/.kube/config apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/k8s-manifests/kube-flannel-rbac.yml",
 		ssh.WithRetry(100, 5*time.Second),
 		ssh.WithTimeout(15*time.Second),
 	)
@@ -274,7 +274,7 @@ joinReady:
 	fmt.Println("flannelOutputRole:", string(flannelOutputRole))
 	var flannelOutput []byte
 	flannelOutput, err = masterSSH.Run(
-		"sudo kubectl --kubeconfig=/home/ec2-user/.kube/config apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml",
+		"kubectl --kubeconfig=/home/ec2-user/.kube/config apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml",
 		ssh.WithRetry(100, 5*time.Second),
 		ssh.WithTimeout(15*time.Second),
 	)
@@ -288,7 +288,7 @@ joinReady:
 	for time.Now().UTC().Sub(retryStart) < 10*time.Minute {
 		var podsOutput []byte
 		podsOutput, err = masterSSH.Run(
-			"sudo kubectl --kubeconfig=/home/ec2-user/.kube/config get pods --all-namespaces",
+			"kubectl --kubeconfig=/home/ec2-user/.kube/config get pods --all-namespaces",
 			ssh.WithRetry(100, 5*time.Second),
 			ssh.WithTimeout(15*time.Second),
 		)
@@ -346,7 +346,7 @@ joinReady:
 
 	var nodesOutput []byte
 	nodesOutput, err = masterSSH.Run(
-		"sudo kubectl --kubeconfig=/home/ec2-user/.kube/config get nodes",
+		"kubectl --kubeconfig=/home/ec2-user/.kube/config get nodes",
 		ssh.WithRetry(100, 5*time.Second),
 		ssh.WithTimeout(15*time.Second),
 	)
