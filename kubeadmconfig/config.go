@@ -88,7 +88,7 @@ type Kubeadm struct {
 
 	InitPodNetworkCIDR string `json:"init-pod-network-cidr,omitempty" kubeadm:"pod-network-cidr"`
 
-	JoinTarget                   string
+	JoinTarget                   string `json:"join-target"`
 	JoinToken                    string `json:"join-token,omitempty" kubeadm:"token"`
 	JoinDiscoveryTokenCACertHash string `json:"join-discovery-token-ca-cert-hash,omitempty" kubeadm:"discovery-token-ca-cert-hash"`
 	JoinIgnorePreflightErrors    string `json:"join-ignore-preflight-errors,omitempty" kubeadm:"ignore-preflight-errors"`
