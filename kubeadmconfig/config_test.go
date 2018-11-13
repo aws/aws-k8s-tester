@@ -96,6 +96,7 @@ func TestEnv(t *testing.T) {
 	fmt.Println(cfg.Cluster.FlagsInit())
 	cfg.Cluster.JoinTarget = "192.168.116.240:6443"
 	fmt.Println(cfg.Cluster.FlagsJoin())
+	fmt.Println(cfg.Cluster.CommandJoin())
 
 	var d []byte
 	d, err := gyaml.Marshal(cfg)

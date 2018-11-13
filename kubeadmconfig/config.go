@@ -130,6 +130,7 @@ type scriptInit struct {
 	UserName string
 }
 
+// make sure to run as root, otherwise "[ERROR IsPrivilegedUser]: user is not running as root".
 const scriptInitTmpl = `#!/usr/bin/env bash
 
 printf "\n"
@@ -182,6 +183,7 @@ func (ka *Kubeadm) FlagsInit() (flags []string, err error) {
 
 // FlagsJoin returns the list of "kubeadm join" flags.
 // Make sure to validate the configuration with "ValidateAndSetDefaults".
+// Make sure to run as root, otherwise "[ERROR IsPrivilegedUser]: user is not running as root".
 func (ka *Kubeadm) FlagsJoin() (flags []string, err error) {
 	arg := ka.JoinTarget
 	if arg == "" {
@@ -208,7 +210,9 @@ func (ka *Kubeadm) FlagsJoin() (flags []string, err error) {
 
 		switch vv.Field(i).Type().Kind() {
 		case reflect.String:
-			flags = append(flags, fmt.Sprintf("--%s=%s", k, vv.Field(i).String()))
+			if vv.Field(i).String() != "" {
+				flags = append(flags, fmt.Sprintf("--%s=%s", k, vv.Field(i).String()))
+			}
 
 		case reflect.Bool:
 			flags = append(flags, fmt.Sprintf("--%s=%v", k, vv.Field(i).Bool()))
@@ -218,6 +222,17 @@ func (ka *Kubeadm) FlagsJoin() (flags []string, err error) {
 		}
 	}
 	return append([]string{arg}, flags...), nil
+}
+
+// CommandJoin returns the "kubectl join" command.
+func (ka *Kubeadm) CommandJoin() (cmd string, err error) {
+	var joinFlags []string
+	joinFlags, err = ka.FlagsJoin()
+	if err != nil {
+		return "", err
+	}
+	cmd = fmt.Sprintf("sudo kubeadm join %s", strings.Join(joinFlags, " "))
+	return cmd, nil
 }
 
 // ValidateAndSetDefaults returns an error for invalid configurations.
@@ -259,7 +274,7 @@ func init() {
 		"install-start-docker-amazon-linux-2",
 		"install-start-kubeadm-amazon-linux-2-" + defaultKubeadm.Version,
 	}
-	defaultConfig.EC2.ClusterSize = 2
+	defaultConfig.EC2.ClusterSize = 3
 	defaultConfig.EC2.Wait = true
 	defaultConfig.EC2.Tag = defaultConfig.Tag
 	defaultConfig.EC2.ClusterName = defaultConfig.ClusterName
@@ -292,7 +307,7 @@ var defaultConfig = Config{
 
 	EC2: ec2config.NewDefault(),
 
-	ClusterSize: 2,
+	ClusterSize: 3,
 
 	TestTimeout: 10 * time.Second,
 }
