@@ -254,7 +254,7 @@ func init() {
 		"install-start-docker-amazon-linux-2",
 		"install-start-kubeadm-amazon-linux-2-" + defaultKubeadm.Version,
 	}
-	defaultConfig.EC2.ClusterSize = 3
+	defaultConfig.EC2.ClusterSize = 2
 	defaultConfig.EC2.Wait = true
 	defaultConfig.EC2.Tag = defaultConfig.Tag
 	defaultConfig.EC2.ClusterName = defaultConfig.ClusterName
