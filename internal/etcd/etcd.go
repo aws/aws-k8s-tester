@@ -42,7 +42,16 @@ func NewTester(cfg *etcdconfig.Config) (etcdtester.Tester, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &embedded{lg: lg, cfg: cfg}, cfg.Sync()
+	md := &embedded{lg: lg, cfg: cfg}
+	md.ec2Deployer, err = ec2.NewDeployer(md.cfg.EC2)
+	if err != nil {
+		return nil, err
+	}
+	md.ec2BastionDeployer, err = ec2.NewDeployer(md.cfg.EC2Bastion)
+	if err != nil {
+		return nil, err
+	}
+	return md, cfg.Sync()
 }
 
 func (md *embedded) Create() (err error) {
@@ -51,17 +60,10 @@ func (md *embedded) Create() (err error) {
 
 	now := time.Now().UTC()
 
-	// expect the following in Plugins
-	// "update-amazon-linux-2"
-	// "install-etcd-3.1.12"
 	md.lg.Info(
 		"deploying EC2",
 		zap.Strings("plugins", md.cfg.EC2.Plugins),
 	)
-	md.ec2Deployer, err = ec2.NewDeployer(md.cfg.EC2)
-	if err != nil {
-		return err
-	}
 	md.cfg.Tag = md.cfg.EC2.Tag + "-etcd"
 	md.cfg.ConfigPathURL = genS3URL(md.cfg.EC2.AWSRegion, md.cfg.Tag, md.cfg.EC2.ConfigPathBucket)
 	md.cfg.LogOutputToUploadPathURL = genS3URL(md.cfg.EC2.AWSRegion, md.cfg.Tag, md.cfg.EC2.LogOutputToUploadPathBucket)
@@ -72,6 +74,7 @@ func (md *embedded) Create() (err error) {
 	md.cfg.Sync()
 	md.lg.Info(
 		"deployed EC2",
+		zap.Int("cluster-size", md.cfg.ClusterSize),
 		zap.Strings("plugins", md.cfg.EC2.Plugins),
 		zap.String("vpc-id", md.cfg.EC2.VPCID),
 		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
@@ -85,10 +88,6 @@ func (md *embedded) Create() (err error) {
 		zap.Strings("plugins", md.cfg.EC2Bastion.Plugins),
 	)
 	md.cfg.EC2Bastion.VPCID = md.cfg.EC2.VPCID
-	md.ec2BastionDeployer, err = ec2.NewDeployer(md.cfg.EC2Bastion)
-	if err != nil {
-		return err
-	}
 	if err = md.ec2BastionDeployer.Create(); err != nil {
 		return err
 	}

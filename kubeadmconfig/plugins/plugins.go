@@ -44,6 +44,7 @@ net.bridge.bridge-nf-call-iptables = 1
 EOF
 sudo cp /tmp/k8s.conf /etc/sysctl.d/k8s.conf
 sudo sysctl --system
+sudo sysctl net.bridge.bridge-nf-call-iptables=1
 
 # Set SELinux in permissive mode (effectively disabling it)
 setenforce 0
