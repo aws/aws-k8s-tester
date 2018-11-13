@@ -2,6 +2,7 @@
 package kubeadmconfig
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -11,6 +12,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"text/template"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
@@ -96,6 +98,44 @@ var skipFlags = map[string]struct{}{
 	"Version": {},
 }
 
+// ScriptInit returns the service file setup script.
+func (ka *Kubeadm) ScriptInit() (s string, err error) {
+	var fs []string
+	fs, err = ka.FlagsInit()
+	if err != nil {
+		return "", err
+	}
+	return createScriptInit(scriptInit{
+		Exec:  "/usr/bin/kubeadm",
+		Flags: strings.Join(fs, " "),
+	})
+}
+
+func createScriptInit(si scriptInit) (string, error) {
+	tpl := template.Must(template.New("scriptInitTmpl").Parse(scriptInitTmpl))
+	buf := bytes.NewBuffer(nil)
+	if err := tpl.Execute(buf, si); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
+type scriptInit struct {
+	Exec  string
+	Flags string
+}
+
+const scriptInitTmpl = `#!/usr/bin/env bash
+
+printf "\n"
+sudo kubeadm init {{ .Flags }} 1>>/var/log/kubeadm-init.log 2>&1
+
+mkdir -p /home/ec2-user/.kube
+sudo cp -i /etc/kubernetes/admin.conf /home/ec2-user/.kube/config
+sudo chown $(id -u):$(id -g) /home/ec2-user/.kube/config
+find /home/ec2-user/.kube/ 1>>/var/log/kubeadm-init.log 2>&1
+`
+
 // FlagsInit returns the list of "kubeadm init" flags.
 // Make sure to validate the configuration with "ValidateAndSetDefaults".
 func (ka *Kubeadm) FlagsInit() (flags []string, err error) {
@@ -120,7 +160,9 @@ func (ka *Kubeadm) FlagsInit() (flags []string, err error) {
 
 		switch vv.Field(i).Type().Kind() {
 		case reflect.String:
-			flags = append(flags, fmt.Sprintf("--%s=%s", k, vv.Field(i).String()))
+			if vv.Field(i).String() != "" {
+				flags = append(flags, fmt.Sprintf("--%s=%s", k, vv.Field(i).String()))
+			}
 
 		case reflect.Bool:
 			flags = append(flags, fmt.Sprintf("--%s=%v", k, vv.Field(i).Bool()))
@@ -240,17 +282,18 @@ var defaultConfig = Config{
 	// default, stderr, stdout, or file name
 	// log file named with cluster name will be added automatically
 	LogOutputs:       []string{"stderr"},
-	UploadTesterLogs: true,
+	UploadTesterLogs: false,
 
 	EC2: ec2config.NewDefault(),
 
-	ClusterSize: 3,
+	ClusterSize: 2,
 
 	TestTimeout: 10 * time.Second,
 }
 
 var defaultKubeadm = Kubeadm{
 	Version:                   "1.10.9",
+	InitPodNetworkCIDR:        "10.244.0.0/16",
 	JoinIgnorePreflightErrors: "cri",
 }
 

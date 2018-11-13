@@ -605,7 +605,7 @@ var defaultConfig = Config{
 	// default, stderr, stdout, or file name
 	// log file named with cluster name will be added automatically
 	LogOutputs:       []string{"stderr"},
-	UploadTesterLogs: true,
+	UploadTesterLogs: false,
 
 	EC2:        ec2config.NewDefault(),
 	EC2Bastion: ec2config.NewDefault(),

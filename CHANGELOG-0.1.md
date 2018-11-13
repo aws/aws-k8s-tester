@@ -3,9 +3,13 @@
 <hr>
 
 
-## [0.1.3](https://github.com/aws/aws-k8s-tester/releases/tag/0.1.3) (2018-11-12)
+## [0.1.3](https://github.com/aws/aws-k8s-tester/releases/tag/0.1.3) (2018-11-13)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.2...0.1.3).
+
+### `aws-k8s-tester` CLI
+
+- Add [`aws-k8s-tester kubeadm`](https://github.com/aws/aws-k8s-tester/commit/TODO) command.
 
 ### `ec2config`
 
