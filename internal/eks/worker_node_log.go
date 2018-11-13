@@ -12,6 +12,11 @@ import (
 	"go.uber.org/zap"
 )
 
+type fetchResponse struct {
+	data map[string]string
+	err  error
+}
+
 func fetchWorkerNodeLog(
 	lg *zap.Logger,
 	userName string,
@@ -302,25 +307,28 @@ func fetchWorkerNodeLogs(
 	privateKeyPath string,
 	workerNodes map[string]ec2config.Instance) (fpathToS3Path map[string]string, err error) {
 
-	// create new channel for multiple goroutines. and a tokens channel to limit parallelism
-	c := make(chan map[string]string)
-	tokens := make(chan string, 200)
+	// create new channel for multiple goroutines. and a buffer channel to limit parallelism
+	c := make(chan fetchResponse)
+	const MAXGOROUTINES = 200
+	buffer := make(chan string, MAXGOROUTINES)
 
 	// loop through nodes and send goroutine
 	for _, iv := range workerNodes {
-		go concurrentFetchLog(lg, userName, clusterName, privateKeyPath, iv, c, tokens)
+		go concurrentFetchLog(lg, userName, clusterName, privateKeyPath, iv, c, buffer)
 	}
 
-	// create new map fpathToS3Path to join all the data
+	// create new map fpathToS3Path to join all the data and slice to hold any errors
 	fpathToS3Path = make(map[string]string)
+	possibleErrors := []error{}
 
-	// join data from each goroutine and report to new channel when done
-	done := make(chan bool, 1)
-	go joinData(c, done, fpathToS3Path, len(workerNodes))
-	<-done
+	// join data and any errors from each goroutine
+	joinData(c, fpathToS3Path, len(workerNodes), possibleErrors)
+	if len(possibleErrors) > 0 {
+		err = possibleErrors[0]
+	}
 
 	// return map of all data collected
-	return fpathToS3Path, nil
+	return fpathToS3Path, err
 }
 
 func concurrentFetchLog(
@@ -329,37 +337,38 @@ func concurrentFetchLog(
 	clusterName string,
 	privateKeyPath string,
 	workerNode ec2config.Instance,
-	channel chan map[string]string,
-	tokens chan string) {
+	channel chan fetchResponse,
+	buffer chan string) {
 
-	// push something into tokens channel, to signal that resources are now being used.
-	tokens <- "token"
+	// add something into buffer channel, to signal that resources are now being used.
+	buffer <- "add"
 
 	// send request to fetchWorkerLog
-	fm, err := fetchWorkerNodeLog(lg, userName, clusterName, privateKeyPath, workerNode)
-	if err != nil {
-		// TODO: Handle error
+	fm, e := fetchWorkerNodeLog(lg, userName, clusterName, privateKeyPath, workerNode)
+	resp := fetchResponse{
+		data: fm,
+		err:  e,
 	}
 
-	// take back token from channel, to signal that we're done using resouces.
-	<-tokens
+	// remove from buffer channel, to signal that we're done using resources.
+	<-buffer
 	// send map received to channel
-	channel <- fm
-
+	channel <- resp
 }
 
 func joinData(
-	channel chan map[string]string,
-	done chan<- bool,
+	channel chan fetchResponse,
 	joinedData map[string]string,
-	desired int) {
-
+	desired int,
+	errCollection []error) {
 	for i := 0; i < desired; i++ {
-		dataSubset := <-channel
+		resp := <-channel
+		dataSubset := resp.data
 		for k, v := range dataSubset {
 			joinedData[k] = v
 		}
+		if resp.err != nil {
+			errCollection = append(errCollection, resp.err)
+		}
 	}
-
-	done <- true
 }
