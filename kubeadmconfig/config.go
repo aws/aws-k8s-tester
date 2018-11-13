@@ -46,6 +46,13 @@ type Config struct {
 	ConfigPathBucket string `json:"config-path-bucket,omitempty"`
 	ConfigPathURL    string `json:"config-path-url,omitempty"`
 
+	// KubeConfigPath is the file path of KUBECONFIG for the kubeadm cluster.
+	// If empty, auto-generate one.
+	// Deployer is expected to delete this on cluster tear down.
+	KubeConfigPath       string `json:"kubeconfig-path,omitempty"`        // read-only to user
+	KubeConfigPathBucket string `json:"kubeconfig-path-bucket,omitempty"` // read-only to user
+	KubeConfigPathURL    string `json:"kubeconfig-path-url,omitempty"`    // read-only to user
+
 	// LogDebug is true to enable debug level logging.
 	LogDebug bool `json:"log-debug"`
 	// LogOutputs is a list of log outputs. Valid values are 'default', 'stderr', 'stdout', or file names.
@@ -617,6 +624,9 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 		cfg.LogOutputs = append(cfg.LogOutputs, cfg.LogOutputToUploadPath)
 	}
 	cfg.LogOutputToUploadPathBucket = filepath.Join(cfg.ClusterName, "awsk8stester-kubeadm.log")
+
+	cfg.KubeConfigPath = fmt.Sprintf("%s.%s.kubeconfig.generated.yaml", cfg.ConfigPath, cfg.ClusterName)
+	cfg.KubeConfigPathBucket = filepath.Join(cfg.ClusterName, "kubeconfig")
 
 	return cfg.Sync()
 }

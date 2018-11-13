@@ -4,6 +4,7 @@ package kubeadm
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 	"sync"
@@ -63,6 +64,7 @@ func (md *embedded) Create() (err error) {
 	)
 	md.cfg.Tag = md.cfg.EC2.Tag + "-kubeadm"
 	md.cfg.ConfigPathURL = genS3URL(md.cfg.EC2.AWSRegion, md.cfg.Tag, md.cfg.EC2.ConfigPathBucket)
+	md.cfg.KubeConfigPathURL = genS3URL(md.cfg.EC2.AWSRegion, md.cfg.Tag, md.cfg.KubeConfigPathBucket)
 	md.cfg.LogOutputToUploadPathURL = genS3URL(md.cfg.EC2.AWSRegion, md.cfg.Tag, md.cfg.EC2.LogOutputToUploadPathBucket)
 
 	if err = md.ec2Deployer.Create(); err != nil {
@@ -124,7 +126,7 @@ func (md *embedded) Create() (err error) {
 	_, err = masterSSH.Send(
 		localPath,
 		remotePath,
-		ssh.WithRetry(100, 5*time.Second),
+		ssh.WithRetry(15, 5*time.Second),
 		ssh.WithTimeout(15*time.Second),
 	)
 	if err != nil {
@@ -133,7 +135,7 @@ func (md *embedded) Create() (err error) {
 
 	_, err = masterSSH.Run(
 		fmt.Sprintf("chmod +x %s", remotePath),
-		ssh.WithRetry(100, 5*time.Second),
+		ssh.WithRetry(15, 5*time.Second),
 		ssh.WithTimeout(15*time.Second),
 	)
 	if err != nil {
@@ -156,7 +158,7 @@ joinReady:
 		var kubeadmInitOut []byte
 		kubeadmInitOut, err = masterSSH.Run(
 			"cat /var/log/kubeadm-init.log",
-			ssh.WithRetry(100, 5*time.Second),
+			ssh.WithRetry(15, 5*time.Second),
 			ssh.WithTimeout(15*time.Second),
 		)
 		output := string(kubeadmInitOut)
@@ -220,7 +222,7 @@ joinReady:
 		var dockerPsOutput []byte
 		dockerPsOutput, err = masterSSH.Run(
 			"sudo docker ps",
-			ssh.WithRetry(100, 5*time.Second),
+			ssh.WithRetry(15, 5*time.Second),
 			ssh.WithTimeout(15*time.Second),
 		)
 		output := string(dockerPsOutput)
@@ -239,7 +241,7 @@ joinReady:
 		var podsOutput []byte
 		podsOutput, err = masterSSH.Run(
 			"kubectl --kubeconfig=/home/ec2-user/.kube/config get pods --all-namespaces",
-			ssh.WithRetry(100, 5*time.Second),
+			ssh.WithRetry(15, 5*time.Second),
 			ssh.WithTimeout(15*time.Second),
 		)
 		if err != nil {
@@ -256,7 +258,7 @@ joinReady:
 	var flannelOutputRole []byte
 	flannelOutputRole, err = masterSSH.Run(
 		"kubectl --kubeconfig=/home/ec2-user/.kube/config apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/k8s-manifests/kube-flannel-rbac.yml",
-		ssh.WithRetry(100, 5*time.Second),
+		ssh.WithRetry(15, 5*time.Second),
 		ssh.WithTimeout(15*time.Second),
 	)
 	if err != nil {
@@ -266,7 +268,7 @@ joinReady:
 	var flannelOutput []byte
 	flannelOutput, err = masterSSH.Run(
 		"kubectl --kubeconfig=/home/ec2-user/.kube/config apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml",
-		ssh.WithRetry(100, 5*time.Second),
+		ssh.WithRetry(15, 5*time.Second),
 		ssh.WithTimeout(15*time.Second),
 	)
 	if err != nil {
@@ -280,7 +282,7 @@ joinReady:
 		var podsOutput []byte
 		podsOutput, err = masterSSH.Run(
 			"kubectl --kubeconfig=/home/ec2-user/.kube/config get pods --all-namespaces",
-			ssh.WithRetry(100, 5*time.Second),
+			ssh.WithRetry(15, 5*time.Second),
 			ssh.WithTimeout(15*time.Second),
 		)
 		if err != nil {
@@ -318,9 +320,9 @@ joinReady:
 
 		var joinOutput []byte
 		joinOutput, err = nodeSSH.Run(
-			kubeadmJoinCmd,
-			ssh.WithRetry(100, 5*time.Second),
-			ssh.WithTimeout(2*time.Minute),
+			joinCmd,
+			ssh.WithRetry(15, 5*time.Second),
+			ssh.WithTimeout(3*time.Minute),
 		)
 		if err != nil {
 			return err
@@ -338,7 +340,7 @@ joinReady:
 	var nodesOutput []byte
 	nodesOutput, err = masterSSH.Run(
 		"kubectl --kubeconfig=/home/ec2-user/.kube/config get nodes",
-		ssh.WithRetry(100, 5*time.Second),
+		ssh.WithRetry(15, 5*time.Second),
 		ssh.WithTimeout(15*time.Second),
 	)
 	if err != nil {
@@ -346,7 +348,23 @@ joinReady:
 	}
 	fmt.Println("nodesOutput:", string(nodesOutput))
 
+	md.lg.Info("fetching KUBECONFIG", zap.String("KUBECONFIG", md.cfg.KubeConfigPath))
+	var kubeconfigOutput []byte
+	kubeconfigOutput, err = masterSSH.Run(
+		"cat /home/ec2-user/.kube/config",
+		ssh.WithRetry(15, 5*time.Second),
+		ssh.WithTimeout(15*time.Second),
+	)
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(md.cfg.KubeConfigPath, kubeconfigOutput, 0600)
+	md.lg.Info("fetched KUBECONFIG", zap.String("KUBECONFIG", md.cfg.KubeConfigPath), zap.Error(err))
+
 	if md.cfg.UploadTesterLogs {
+		err = md.ec2Deployer.UploadToBucketForTests(md.cfg.KubeConfigPath, md.cfg.KubeConfigPathBucket)
+		md.lg.Info("uploaded KUBECONFIG", zap.Error(err))
+
 		var fpathToS3Path map[string]string
 		fpathToS3Path, err = fetchLogs(
 			md.lg,
@@ -370,7 +388,11 @@ func (md *embedded) Terminate() error {
 
 	md.lg.Info("terminating kubeadm")
 	if md.cfg.UploadTesterLogs && len(md.cfg.EC2.Instances) > 0 {
-		fpathToS3Path, err := fetchLogs(
+		err := md.ec2Deployer.UploadToBucketForTests(md.cfg.KubeConfigPath, md.cfg.KubeConfigPathBucket)
+		md.lg.Info("uploaded KUBECONFIG", zap.Error(err))
+
+		var fpathToS3Path map[string]string
+		fpathToS3Path, err = fetchLogs(
 			md.lg,
 			md.cfg.EC2.UserName,
 			md.cfg.ClusterName,
@@ -458,7 +480,7 @@ func fetchLog(
 	var out []byte
 	out, err = sh.Run(
 		"sudo journalctl --no-pager -u kubelet.service",
-		ssh.WithRetry(100, 5*time.Second),
+		ssh.WithRetry(15, 5*time.Second),
 		ssh.WithTimeout(15*time.Second),
 	)
 	if err != nil {
