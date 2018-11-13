@@ -12,6 +12,11 @@ import (
 	"go.uber.org/zap"
 )
 
+type fetchResponse struct {
+	data map[string]string
+	err  error
+}
+
 func fetchWorkerNodeLog(
 	lg *zap.Logger,
 	userName string,
@@ -301,17 +306,71 @@ func fetchWorkerNodeLogs(
 	clusterName string,
 	privateKeyPath string,
 	workerNodes map[string]ec2config.Instance) (fpathToS3Path map[string]string, err error) {
+
+	// create channel
+	c := make(chan fetchResponse)
+	const BATCHSIZE = 200
+
+	// create new map fpathToS3Path to join all the data and slice to hold any errors
 	fpathToS3Path = make(map[string]string)
-	// TODO: parallelize
+	possibleErrors := []error{}
+
+	// loop through nodes and send goroutine
+	i := 0
 	for _, iv := range workerNodes {
-		var fm map[string]string
-		fm, err = fetchWorkerNodeLog(lg, userName, clusterName, privateKeyPath, iv)
-		if err != nil {
-			return nil, err
-		}
-		for k, v := range fm {
-			fpathToS3Path[k] = v
+		go concurrentFetchLog(lg, userName, clusterName, privateKeyPath, iv, c)
+		i++
+		// batch and join data from batch, then reset counter.
+		if i == BATCHSIZE {
+			joinData(c, fpathToS3Path, i, possibleErrors)
+			i = 0
 		}
 	}
-	return fpathToS3Path, nil
+	remainder := len(workerNodes) % BATCHSIZE
+	joinData(c, fpathToS3Path, remainder, possibleErrors)
+
+	// once join-goroutine is complete verify if there was an error
+	if len(possibleErrors) > 0 {
+		err = possibleErrors[0]
+	}
+
+	// return map of all data collected
+	return fpathToS3Path, err
+}
+
+func concurrentFetchLog(
+	lg *zap.Logger,
+	userName string,
+	clusterName string,
+	privateKeyPath string,
+	workerNode ec2config.Instance,
+	channel chan fetchResponse) {
+
+	// send request to fetchWorkerLog
+	fm, e := fetchWorkerNodeLog(lg, userName, clusterName, privateKeyPath, workerNode)
+	resp := fetchResponse{
+		data: fm,
+		err:  e,
+	}
+
+	// send map received to channel
+	channel <- resp
+}
+
+func joinData(
+	channel chan fetchResponse,
+	joinedData map[string]string,
+	desired int,
+	errCollection []error) {
+
+	for i := 0; i < desired; i++ {
+		resp := <-channel
+		dataSubset := resp.data
+		for k, v := range dataSubset {
+			joinedData[k] = v
+		}
+		if resp.err != nil {
+			errCollection = append(errCollection, resp.err)
+		}
+	}
 }
