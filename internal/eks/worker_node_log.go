@@ -307,22 +307,29 @@ func fetchWorkerNodeLogs(
 	privateKeyPath string,
 	workerNodes map[string]ec2config.Instance) (fpathToS3Path map[string]string, err error) {
 
-	// create new channel for multiple goroutines. and a buffer channel to limit parallelism
+	// create channel
 	c := make(chan fetchResponse)
-	const MAXGOROUTINES = 200
-	buffer := make(chan string, MAXGOROUTINES)
-
-	// loop through nodes and send goroutine
-	for _, iv := range workerNodes {
-		go concurrentFetchLog(lg, userName, clusterName, privateKeyPath, iv, c, buffer)
-	}
+	const BATCHSIZE = 200
 
 	// create new map fpathToS3Path to join all the data and slice to hold any errors
 	fpathToS3Path = make(map[string]string)
 	possibleErrors := []error{}
 
-	// join data and any errors from each goroutine
-	joinData(c, fpathToS3Path, len(workerNodes), possibleErrors)
+	// loop through nodes and send goroutine
+	i := 0
+	for _, iv := range workerNodes {
+		go concurrentFetchLog(lg, userName, clusterName, privateKeyPath, iv, c)
+		i++
+		// batch and join data from batch, then reset counter.
+		if i == BATCHSIZE {
+			joinData(c, fpathToS3Path, i, possibleErrors)
+			i = 0
+		}
+	}
+	remainder := len(workerNodes) % BATCHSIZE
+	joinData(c, fpathToS3Path, remainder, possibleErrors)
+
+	// once join-goroutine is complete verify if there was an error
 	if len(possibleErrors) > 0 {
 		err = possibleErrors[0]
 	}
@@ -337,11 +344,7 @@ func concurrentFetchLog(
 	clusterName string,
 	privateKeyPath string,
 	workerNode ec2config.Instance,
-	channel chan fetchResponse,
-	buffer chan string) {
-
-	// add something into buffer channel, to signal that resources are now being used.
-	buffer <- "add"
+	channel chan fetchResponse) {
 
 	// send request to fetchWorkerLog
 	fm, e := fetchWorkerNodeLog(lg, userName, clusterName, privateKeyPath, workerNode)
@@ -350,8 +353,6 @@ func concurrentFetchLog(
 		err:  e,
 	}
 
-	// remove from buffer channel, to signal that we're done using resources.
-	<-buffer
 	// send map received to channel
 	channel <- resp
 }
@@ -361,6 +362,7 @@ func joinData(
 	joinedData map[string]string,
 	desired int,
 	errCollection []error) {
+
 	for i := 0; i < desired; i++ {
 		resp := <-channel
 		dataSubset := resp.data
