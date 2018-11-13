@@ -413,7 +413,7 @@ var defaultConfig = Config{
 	AWSCustomEndpoint:        "",
 
 	// Amazon EKS-optimized AMI, https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html
-	WorkerNodeAMI: "ami-0a54c984b9f908c81",
+	WorkerNodeAMI: "ami-0f54a2f7d2e9c88b3",
 
 	WorkerNodeInstanceType: "m5.large",
 	WorkderNodeASGMin:      1,
@@ -987,15 +987,14 @@ func checkKubernetesVersion(s string) (ok bool) {
 	return ok
 }
 
-var (
-	// supportedRegions is a list of currently EKS supported AWS regions.
-	// See https://aws.amazon.com/about-aws/global-infrastructure/regional-product-services.
-	supportedRegions = map[string]struct{}{
-		"us-west-2": {},
-		"us-east-1": {},
-		"eu-west-1": {},
-	}
-)
+// supportedRegions is a list of currently EKS supported AWS regions.
+// See https://aws.amazon.com/about-aws/global-infrastructure/regional-product-services.
+var supportedRegions = map[string]struct{}{
+	"us-west-2": {},
+	"us-east-1": {},
+	"us-east-2": {},
+	"eu-west-1": {},
+}
 
 func checkRegion(s string) (ok bool) {
 	_, ok = supportedRegions[s]
@@ -1005,17 +1004,19 @@ func checkRegion(s string) (ok bool) {
 // https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html
 // https://docs.aws.amazon.com/eks/latest/userguide/eks-optimized-ami.html
 var regionToAMICPU = map[string]string{
-	"us-west-2": "ami-0a54c984b9f908c81",
-	"us-east-1": "ami-0440e4f6b9713faf6",
-	"eu-west-1": "ami-0c7a4976cb6fafd3a",
+	"us-west-2": "ami-0f54a2f7d2e9c88b3",
+	"us-east-1": "ami-0a0b913ef3249b655",
+	"us-east-2": "ami-0958a76db2d150238",
+	"eu-west-1": "ami-00c3b2d35bddd4f5c",
 }
 
 // https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html
 // https://docs.aws.amazon.com/eks/latest/userguide/eks-optimized-ami.html
 var regionToAMIGPU = map[string]string{
-	"us-west-2": "ami-0731694d53ef9604b",
-	"us-east-1": "ami-058bfb8c236caae89",
-	"eu-west-1": "ami-0706dc8a5eed2eed9",
+	"us-west-2": "ami-08156e8fd65879a13",
+	"us-east-1": "ami-0c974dde3f6d691a1",
+	"us-east-2": "ami-089849e811ace242f",
+	"eu-west-1": "ami-0c3479bcd739094f0",
 }
 
 func checkAMI(region, imageID string) (ok bool) {
