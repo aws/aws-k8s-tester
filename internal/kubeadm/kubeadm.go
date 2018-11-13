@@ -51,14 +51,6 @@ func NewTester(cfg *kubeadmconfig.Config) (Tester, error) {
 	return md, cfg.Sync()
 }
 
-/*
-kubectl --kubeconfig=/home/ec2-user/.kube/config cluster-info
-kubectl --kubeconfig=/home/ec2-user/.kube/config get nodes
-kubectl --kubeconfig=/home/ec2-user/.kube/config get pods --all-namespaces
-sudo find /etc/kubernetes/manifests/
-sudo docker ps
-*/
-
 func (md *embedded) Create() (err error) {
 	md.mu.Lock()
 	defer md.mu.Unlock()
@@ -215,13 +207,12 @@ joinReady:
 			continue
 		}
 	}
-	var joinFlags []string
-	joinFlags, err = md.cfg.Cluster.FlagsJoin()
+	var joinCmd string
+	joinCmd, err = md.cfg.Cluster.CommandJoin()
 	if err != nil {
 		return err
 	}
-	kubeadmJoinCmd = fmt.Sprintf("kubeadm join %s", strings.Join(joinFlags, " "))
-	md.lg.Info("kubeadm join flags are ready", zap.String("command", kubeadmJoinCmd))
+	md.lg.Info("kubeadm join command is ready", zap.String("command", joinCmd))
 
 	md.lg.Info("checking kube-controller-manager")
 	retryStart = time.Now().UTC()
