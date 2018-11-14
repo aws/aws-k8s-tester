@@ -13,11 +13,11 @@ import (
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/etcdconfig"
 	etcdplugin "github.com/aws/aws-k8s-tester/etcdconfig/plugins"
-	"github.com/aws/aws-k8s-tester/etcdtester"
 	"github.com/aws/aws-k8s-tester/internal/ec2"
 	"github.com/aws/aws-k8s-tester/internal/ssh"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/pkg/zaputil"
+	"github.com/aws/aws-k8s-tester/storagetester"
 
 	"github.com/dustin/go-humanize"
 	"go.etcd.io/etcd/etcdserver/etcdserverpb"
@@ -34,7 +34,7 @@ type embedded struct {
 }
 
 // NewTester creates a new embedded etcd tester.
-func NewTester(cfg *etcdconfig.Config) (etcdtester.Tester, error) {
+func NewTester(cfg *etcdconfig.Config) (storagetester.Tester, error) {
 	if err := cfg.ValidateAndSetDefaults(); err != nil {
 		return nil, err
 	}
@@ -254,16 +254,16 @@ func (md *embedded) Create() (err error) {
 	return nil
 }
 
-func (md *embedded) Cluster() (c etcdtester.Cluster) {
+func (md *embedded) Cluster() (c storagetester.Cluster) {
 	md.mu.RLock()
 	defer md.mu.RUnlock()
 	return md.checkCluster()
 }
 
-func (md *embedded) checkCluster() (c etcdtester.Cluster) {
-	c.Members = make(map[string]etcdtester.Member, len(md.cfg.ClusterState))
+func (md *embedded) checkCluster() (c storagetester.Cluster) {
+	c.Members = make(map[string]storagetester.Member, len(md.cfg.ClusterState))
 	for id, v := range md.cfg.ClusterState {
-		c.Members[id] = etcdtester.Member{
+		c.Members[id] = storagetester.Member{
 			ID:        id,
 			ClientURL: v.AdvertiseClientURLs,
 		}
@@ -357,13 +357,13 @@ func (md *embedded) checkCluster() (c etcdtester.Cluster) {
 	return c
 }
 
-func (md *embedded) ClusterStatus() (c etcdtester.ClusterStatus) {
+func (md *embedded) ClusterStatus() (c storagetester.ClusterStatus) {
 	md.mu.RLock()
 	defer md.mu.RUnlock()
 	return md.checkClusterStatus()
 }
 
-func (md *embedded) checkClusterStatus() (c etcdtester.ClusterStatus) {
+func (md *embedded) checkClusterStatus() (c storagetester.ClusterStatus) {
 	md.cfg.Sync()
 
 	c.Members = make(map[string]*etcdserverpb.StatusResponse, len(md.cfg.ClusterState))
@@ -434,7 +434,7 @@ func (md *embedded) checkClusterStatus() (c etcdtester.ClusterStatus) {
 				c.Members[id].Errors = es
 			}
 		} else {
-			c2 := etcdtester.ClusterStatus{}
+			c2 := storagetester.ClusterStatus{}
 			err = json.Unmarshal(out, &c2)
 			if err != nil {
 				es := []string{err.Error()}

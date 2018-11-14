@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/etcdconfig"
-	"github.com/aws/aws-k8s-tester/etcdtester"
 	"github.com/aws/aws-k8s-tester/internal/etcd"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
+	"github.com/aws/aws-k8s-tester/storagetester"
 
 	"github.com/spf13/cobra"
 )
@@ -69,7 +69,7 @@ func createClusterFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	var tester etcdtester.Tester
+	var tester storagetester.Tester
 	tester, err = etcd.NewTester(cfg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create etcd deployer %v\n", err)

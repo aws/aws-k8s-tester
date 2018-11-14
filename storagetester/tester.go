@@ -1,9 +1,9 @@
-// Package etcdtester defines etcd test operations.
-package etcdtester
+// Package storagetester defines Kubernetes storage test operations.
+package storagetester
 
 import "go.etcd.io/etcd/etcdserver/etcdserverpb"
 
-// Tester defines etcd specific operations.
+// Tester defines Kubernetes storage specific operations.
 type Tester interface {
 	Deployer
 
@@ -16,7 +16,7 @@ type Tester interface {
 	Put(k, v string) error
 }
 
-// Deployer defines etcd deployer.
+// Deployer defines Kubernetes storage deployer.
 type Deployer interface {
 	// Create starts the etcd cluster the very first time.
 	Create() error

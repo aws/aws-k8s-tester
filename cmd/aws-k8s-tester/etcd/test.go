@@ -7,8 +7,8 @@ import (
 	"os"
 
 	"github.com/aws/aws-k8s-tester/etcdconfig"
-	"github.com/aws/aws-k8s-tester/etcdtester"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
+	"github.com/aws/aws-k8s-tester/storagetester"
 
 	"github.com/spf13/cobra"
 	"go.etcd.io/etcd/clientv3"
@@ -47,7 +47,7 @@ func testStatusFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	c := etcdtester.ClusterStatus{
+	c := storagetester.ClusterStatus{
 		Members: make(map[string]*etcdserverpb.StatusResponse),
 	}
 	for id, v := range cfg.ClusterState {
