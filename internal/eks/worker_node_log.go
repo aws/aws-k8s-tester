@@ -1,6 +1,7 @@
 package eks
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -313,7 +314,7 @@ func fetchWorkerNodeLogs(
 
 	// create new map fpathToS3Path to join all the data and slice to hold any errors
 	fpathToS3Path = make(map[string]string)
-	possibleErrors := []error{}
+	possibleErrors := make(map[string]int)
 
 	// loop through nodes and send goroutine
 	i := 0
@@ -327,11 +328,18 @@ func fetchWorkerNodeLogs(
 		}
 	}
 	remainder := len(workerNodes) % BATCHSIZE
-	joinData(c, fpathToS3Path, remainder, possibleErrors)
+	if remainder > 0 {
+		joinData(c, fpathToS3Path, remainder, possibleErrors)
+	}
 
-	// once join-goroutine is complete verify if there was an error
+	// once joinData is complete, join possibleErrors into one
 	if len(possibleErrors) > 0 {
-		err = possibleErrors[0]
+		var sb strings.Builder
+		for strErr, occ := range possibleErrors {
+			str := fmt.Sprintf("%v: %v, ", strErr, occ)
+			sb.WriteString(str)
+		}
+		err = errors.New(sb.String())
 	}
 
 	// return map of all data collected
@@ -348,20 +356,16 @@ func concurrentFetchLog(
 
 	// send request to fetchWorkerLog
 	fm, e := fetchWorkerNodeLog(lg, userName, clusterName, privateKeyPath, workerNode)
-	resp := fetchResponse{
-		data: fm,
-		err:  e,
-	}
 
 	// send map received to channel
-	channel <- resp
+	channel <- fetchResponse{data: fm, err: e}
 }
 
 func joinData(
 	channel chan fetchResponse,
 	joinedData map[string]string,
 	desired int,
-	errCollection []error) {
+	errCollection map[string]int) {
 
 	for i := 0; i < desired; i++ {
 		resp := <-channel
@@ -370,7 +374,7 @@ func joinData(
 			joinedData[k] = v
 		}
 		if resp.err != nil {
-			errCollection = append(errCollection, resp.err)
+			errCollection[resp.err.Error()]++
 		}
 	}
 }
