@@ -88,14 +88,17 @@ type Config struct {
 }
 
 // Kubeadm defines kubeadm-specific configuration.
-// TODO: support TLS
+// https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm-init/
 type Kubeadm struct {
 	userName string
 
 	// Version is the kubeadm version.
 	Version string `json:"version"`
 
-	InitPodNetworkCIDR string `json:"init-pod-network-cidr,omitempty" kubeadm:"pod-network-cidr"`
+	InitAPIServerAdvertiseAddress string `json:"init-apiserver-advertise-address,omitempty" kubeadm:"apiserver-advertise-address"`
+	InitAPIServerBindPort         int    `json:"init-apiserver-bind-port,omitempty" kubeadm:"apiserver-bind-port"`
+	InitPodNetworkCIDR            string `json:"init-pod-network-cidr,omitempty" kubeadm:"pod-network-cidr"`
+	InitServiceCIDR               string `json:"init-service-cidr,omitempty" kubeadm:"service-cidr"`
 
 	JoinTarget                   string `json:"join-target"`
 	JoinToken                    string `json:"join-token,omitempty" kubeadm:"token"`
@@ -140,7 +143,6 @@ type scriptInit struct {
 // make sure to run as root, otherwise "[ERROR IsPrivilegedUser]: user is not running as root".
 const scriptInitTmpl = `#!/usr/bin/env bash
 
-printf "\n"
 sudo kubeadm init {{ .Flags }} 1>>/var/log/kubeadm-init.log 2>&1
 
 mkdir -p /home/ec2-user/.kube
@@ -177,6 +179,9 @@ func (ka *Kubeadm) FlagsInit() (flags []string, err error) {
 			if vv.Field(i).String() != "" {
 				flags = append(flags, fmt.Sprintf("--%s=%s", k, vv.Field(i).String()))
 			}
+
+		case reflect.Int, reflect.Int32, reflect.Int64:
+			flags = append(flags, fmt.Sprintf("--%s=%d", k, vv.Field(i).Int()))
 
 		case reflect.Bool:
 			flags = append(flags, fmt.Sprintf("--%s=%v", k, vv.Field(i).Bool()))
@@ -220,6 +225,9 @@ func (ka *Kubeadm) FlagsJoin() (flags []string, err error) {
 			if vv.Field(i).String() != "" {
 				flags = append(flags, fmt.Sprintf("--%s=%s", k, vv.Field(i).String()))
 			}
+
+		case reflect.Int, reflect.Int32, reflect.Int64:
+			flags = append(flags, fmt.Sprintf("--%s=%d", k, vv.Field(i).Int()))
 
 		case reflect.Bool:
 			flags = append(flags, fmt.Sprintf("--%s=%v", k, vv.Field(i).Bool()))
@@ -320,9 +328,16 @@ var defaultConfig = Config{
 }
 
 var defaultKubeadm = Kubeadm{
-	userName:                  "ec2-user",
-	Version:                   "1.10.9",
-	InitPodNetworkCIDR:        "10.244.0.0/16",
+	userName: "ec2-user",
+	Version:  "1.10.9",
+
+	InitAPIServerAdvertiseAddress: "0.0.0.0/0",
+	InitAPIServerBindPort:         6443,
+	// 10.244.0.0/16 for flannel
+	InitPodNetworkCIDR: "10.244.0.0/16",
+	// 10.96.0.0/12 for default
+	InitServiceCIDR: "10.96.0.0/12",
+
 	JoinIgnorePreflightErrors: "cri",
 }
 
