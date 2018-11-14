@@ -30,7 +30,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.2...0.1.3).
 
 ### `storagetester`
 
-- Rename to [`storagetester` from `etcdtester`](https://github.com/aws/aws-k8s-tester/commit/017b53add758cb6ad8e74eda69bb09bc80c76faa).
+- Rename to [`storagetester` from `etcdtester`](https://github.com/aws/aws-k8s-tester/commit/81f38f66690f6f0616b809c4fe8e1860d78b4346).
 
 ### `kubeadmconfig`
 
