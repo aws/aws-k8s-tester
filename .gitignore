@@ -6,3 +6,4 @@
 *.coverprofile
 /*.log
 /bin
+/.idea
