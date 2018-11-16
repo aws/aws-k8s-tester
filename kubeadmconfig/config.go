@@ -269,8 +269,11 @@ func NewDefault() *Config {
 	return &vv
 }
 
+// curl -sSL https://dl.k8s.io/release/stable.txt
+var defaultVer = "1.12.2"
+
 func init() {
-	kubeadmVer, err := semver.Make("1.10.9")
+	kubeadmVer, err := semver.Make(defaultVer)
 	if err != nil {
 		panic(err)
 	}
@@ -294,11 +297,17 @@ func init() {
 	defaultConfig.EC2.Tag = defaultConfig.Tag
 	defaultConfig.EC2.ClusterName = defaultConfig.ClusterName
 	defaultConfig.EC2.IngressRulesTCP = map[string]string{
-		"22":          "0.0.0.0/0",
-		"6443":        "192.168.0.0/16",
-		"2379-2380":   "192.168.0.0/16",
-		"10250-10252": "192.168.0.0/16",
-		"30000-32767": "192.168.0.0/16",
+		"22": "0.0.0.0/0", // SSH
+
+		"6443": "192.168.0.0/16", // Kubernetes API server
+
+		"2379-2380": "192.168.0.0/16", // etcd server client API
+
+		"10250": "192.168.0.0/16", // Kubelet API
+		"10251": "192.168.0.0/16", // kube-scheduler
+		"10252": "192.168.0.0/16", // kube-controller-manager
+
+		"30000-32767": "192.168.0.0/16", // NodePort Services
 	}
 }
 
@@ -329,10 +338,11 @@ var defaultConfig = Config{
 
 var defaultKubeadm = Kubeadm{
 	userName: "ec2-user",
-	Version:  "1.10.9",
+	Version:  defaultVer,
 
 	InitAPIServerAdvertiseAddress: "0.0.0.0/0",
 	InitAPIServerBindPort:         6443,
+
 	// 10.244.0.0/16 for flannel
 	InitPodNetworkCIDR: "10.244.0.0/16",
 	// 10.96.0.0/12 for default
