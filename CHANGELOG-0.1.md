@@ -1,4 +1,11 @@
+<hr>
 
+## [0.1.4]() (TBD)
+
+
+### `internal`
+
+- Improve [worker node log fetcher](https://github.com/aws/aws-k8s-tester/pull/10) with concurrency.
 
 <hr>
 
