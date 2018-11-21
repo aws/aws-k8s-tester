@@ -84,7 +84,8 @@ func writeKUBECONFIG(
 
 	// TODO: not working for kubetest
 	os.Setenv("KUBE_MASTER_URL", ep)
-	lg.Info("set KUBE_MASTER_URL environmental variable for kubetest", zap.Strings("envs", os.Environ()))
+	os.Setenv("KUBECONFIG", outputPath)
+	lg.Info("set KUBE_MASTER_URL and KUBECONFIG environmental variables for kubetest", zap.Strings("envs", os.Environ()))
 
 	return ioutil.WriteFile(outputPath, buf.Bytes(), 0600)
 }
