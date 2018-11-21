@@ -1,16 +1,7 @@
 <hr>
 
-## [0.1.4]() (TBD)
 
-
-### `internal`
-
-- Improve [worker node log fetcher](https://github.com/aws/aws-k8s-tester/pull/10) with concurrency.
-
-<hr>
-
-
-## [0.1.3](https://github.com/aws/aws-k8s-tester/releases/tag/0.1.3) (2018-11-15)
+## [0.1.3](https://github.com/aws/aws-k8s-tester/releases/tag/0.1.3) (2018-11-20)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.2...0.1.3).
 
@@ -45,6 +36,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.2...0.1.3).
 
 ### `internal`
 
+- Improve [worker node log fetcher](https://github.com/aws/aws-k8s-tester/pull/10) with concurrency.
 - Add [retries on `kubectl get all` fail](https://github.com/aws/aws-k8s-tester/pull/8).
 - Add [`kubectl` and `aws-iam-authenticator` downloader](https://github.com/aws/aws-k8s-tester/commit/3b8704fcf0c15229fc3480caca41b4ddec1497a1).
 
