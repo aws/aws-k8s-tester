@@ -294,6 +294,7 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 				md.cfg.ClusterState.CA,
 				md.cfg.ClusterName,
 				md.cfg.KubeConfigPath,
+				md.kubectlPath,
 			); err != nil {
 				return nil, err
 			}

@@ -130,6 +130,7 @@ func (md *embedded) createCluster() error {
 		md.cfg.ClusterState.CA,
 		md.cfg.ClusterName,
 		md.cfg.KubeConfigPath,
+		md.kubectlPath,
 	); err != nil {
 		return err
 	}

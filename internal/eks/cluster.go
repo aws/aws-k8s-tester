@@ -69,7 +69,8 @@ func writeKUBECONFIG(
 	ep string,
 	ca string,
 	clusterName string,
-	outputPath string) (err error) {
+	outputPath string,
+	kubectlPath string) (err error) {
 	kc := kubeConfig{
 		AWSIAMAuthenticatorPath: awsIAMAuthenticatorPath,
 		ClusterEndpoint:         ep,
@@ -85,6 +86,7 @@ func writeKUBECONFIG(
 	// TODO: not working for kubetest
 	os.Setenv("KUBE_MASTER_URL", ep)
 	os.Setenv("KUBECONFIG", outputPath)
+	os.Setenv("KUBE_CONFIG_FILE", outputPath)
 	lg.Info("set KUBE_MASTER_URL and KUBECONFIG environmental variables for kubetest", zap.Strings("envs", os.Environ()))
 
 	return ioutil.WriteFile(outputPath, buf.Bytes(), 0600)
