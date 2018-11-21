@@ -117,10 +117,6 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 			return nil, err
 		}
 
-		lg.Info("setting KUBECTL_PATH environmental variable for kubetest", zap.Strings("envs", os.Environ()))
-		os.Setenv("KUBECTL_PATH", md.kubectlPath)
-		lg.Info("set KUBECTL_PATH environmental variable for kubetest", zap.Strings("envs", os.Environ()))
-
 		err = fileutil.Copy(md.kubectlPath, "/usr/local/bin/kubectl")
 		if err != nil {
 			md.lg.Warn("failed to copy",
@@ -129,6 +125,10 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 			)
 		}
 	}
+	lg.Info("setting KUBECTL_PATH environmental variable for kubetest", zap.Strings("envs", os.Environ()))
+	os.Setenv("KUBECTL_PATH", md.kubectlPath)
+	os.Setenv("kubectl", md.kubectlPath)
+	lg.Info("set KUBECTL_PATH environmental variable for kubetest", zap.Strings("envs", os.Environ()))
 
 	if cfg.AWSIAMAuthenticatorDownloadURL != "" { // overwrite
 		if runtime.GOOS == "darwin" {

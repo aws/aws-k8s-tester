@@ -2,6 +2,7 @@ package eks
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -85,6 +86,7 @@ func writeKUBECONFIG(
 	// TODO: not working for kubetest
 	lg.Info("setting KUBECONFIG environmental variable for kubetest", zap.Strings("envs", os.Environ()))
 	os.Setenv("KUBECONFIG", outputPath)
+	os.Setenv("config", fmt.Sprintf("--server=%s --kubeconfig=%s", ep, outputPath))
 	lg.Info("set KUBECONFIG environmental variable for kubetest", zap.Strings("envs", os.Environ()))
 
 	return ioutil.WriteFile(outputPath, buf.Bytes(), 0600)
