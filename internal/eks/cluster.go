@@ -87,7 +87,8 @@ func writeKUBECONFIG(
 	os.Setenv("KUBE_MASTER_URL", ep)
 	os.Setenv("KUBECONFIG", outputPath)
 	os.Setenv("KUBE_CONFIG_FILE", outputPath)
-	lg.Info("set KUBE_MASTER_URL and KUBECONFIG environmental variables for kubetest", zap.Strings("envs", os.Environ()))
+	os.Setenv("KUBECTL", kubectlPath)
+	lg.Info("set KUBE_* environmental variables for kubetest", zap.Strings("envs", os.Environ()))
 
 	return ioutil.WriteFile(outputPath, buf.Bytes(), 0600)
 }
