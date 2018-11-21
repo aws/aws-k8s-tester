@@ -8,10 +8,12 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
@@ -393,6 +395,10 @@ func (md *embedded) Up() (err error) {
 		}
 	}()
 
+	var termChan = make(chan os.Signal)
+	signal.Notify(termChan, syscall.SIGTERM)
+	signal.Notify(termChan, syscall.SIGINT)
+
 	if md.cfg.WaitBeforeDown > 0 {
 		md.lg.Info("waiting before cluster tear down", zap.Duration("wait", md.cfg.WaitBeforeDown))
 		select {
@@ -411,25 +417,25 @@ func (md *embedded) Up() (err error) {
 	)
 	defer md.cfg.Sync()
 
-	if err = catchStopc(md.lg, md.stopc, md.createAWSServiceRoleForAmazonEKS); err != nil {
+	if err = catchStopc(md.lg, md.stopc, termChan, md.createAWSServiceRoleForAmazonEKS); err != nil {
 		return err
 	}
-	if err = catchStopc(md.lg, md.stopc, md.attachPolicyForAWSServiceRoleForAmazonEKS); err != nil {
+	if err = catchStopc(md.lg, md.stopc, termChan, md.attachPolicyForAWSServiceRoleForAmazonEKS); err != nil {
 		return err
 	}
-	if err = catchStopc(md.lg, md.stopc, md.createVPC); err != nil {
+	if err = catchStopc(md.lg, md.stopc, termChan, md.createVPC); err != nil {
 		return err
 	}
-	if err = catchStopc(md.lg, md.stopc, md.createCluster); err != nil {
+	if err = catchStopc(md.lg, md.stopc, termChan, md.createCluster); err != nil {
 		return err
 	}
-	if err = catchStopc(md.lg, md.stopc, md.upgradeCNI); err != nil {
+	if err = catchStopc(md.lg, md.stopc, termChan, md.upgradeCNI); err != nil {
 		return err
 	}
-	if err = catchStopc(md.lg, md.stopc, md.createKeyPair); err != nil {
+	if err = catchStopc(md.lg, md.stopc, termChan, md.createKeyPair); err != nil {
 		return err
 	}
-	if err = catchStopc(md.lg, md.stopc, md.createWorkerNode); err != nil {
+	if err = catchStopc(md.lg, md.stopc, termChan, md.createWorkerNode); err != nil {
 		return err
 	}
 
@@ -451,19 +457,19 @@ func (md *embedded) Up() (err error) {
 	if md.cfg.ALBIngressController.Enable {
 		albStart := time.Now().UTC()
 
-		if err = catchStopc(md.lg, md.stopc, md.albPlugin.DeployBackend); err != nil {
+		if err = catchStopc(md.lg, md.stopc, termChan, md.albPlugin.DeployBackend); err != nil {
 			return err
 		}
-		if err = catchStopc(md.lg, md.stopc, md.albPlugin.CreateRBAC); err != nil {
+		if err = catchStopc(md.lg, md.stopc, termChan, md.albPlugin.CreateRBAC); err != nil {
 			return err
 		}
-		if err = catchStopc(md.lg, md.stopc, md.albPlugin.DeployIngressController); err != nil {
+		if err = catchStopc(md.lg, md.stopc, termChan, md.albPlugin.DeployIngressController); err != nil {
 			return err
 		}
-		if err = catchStopc(md.lg, md.stopc, md.albPlugin.CreateSecurityGroup); err != nil {
+		if err = catchStopc(md.lg, md.stopc, termChan, md.albPlugin.CreateSecurityGroup); err != nil {
 			return err
 		}
-		if err = catchStopc(md.lg, md.stopc, md.albPlugin.CreateIngressObjects); err != nil {
+		if err = catchStopc(md.lg, md.stopc, termChan, md.albPlugin.CreateIngressObjects); err != nil {
 			return err
 		}
 		md.cfg.ALBIngressController.Created = true
@@ -496,7 +502,7 @@ func (md *embedded) Up() (err error) {
 	return nil
 }
 
-func catchStopc(lg *zap.Logger, stopc chan struct{}, run func() error) (err error) {
+func catchStopc(lg *zap.Logger, stopc chan struct{}, termc chan os.Signal, run func() error) (err error) {
 	errc := make(chan error)
 	go func() {
 		errc <- run()
@@ -507,6 +513,8 @@ func catchStopc(lg *zap.Logger, stopc chan struct{}, run func() error) (err erro
 		gerr := <-errc
 		lg.Info("interrupted", zap.Error(gerr))
 		err = fmt.Errorf("interrupted (run function returned %v)", gerr)
+	case sig := <-termc:
+		err = fmt.Errorf("operating system: %v", sig)
 	case err = <-errc:
 	}
 	return err
