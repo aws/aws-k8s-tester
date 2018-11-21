@@ -95,8 +95,10 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 		ec2InstancesLogMu: &sync.RWMutex{},
 	}
 
+	// TODO: "kubernetes/kubernetes"/cluster/kubectl.sh not working
+	// "process.go:153: Running: ./cluster/kubectl.sh —match-server-version=false version"
+	// TODO: Overwrite kubectl path or make it configurable?
 	md.kubectlPath, _ = exec.New().LookPath("kubectl")
-
 	if cfg.KubectlDownloadURL != "" { // overwrite
 		if runtime.GOOS == "darwin" {
 			cfg.KubectlDownloadURL = strings.Replace(cfg.KubectlDownloadURL, "linux", "darwin", -1)
@@ -125,10 +127,6 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 			)
 		}
 	}
-	lg.Info("setting KUBECTL_PATH environmental variable for kubetest", zap.Strings("envs", os.Environ()))
-	os.Setenv("KUBECTL_PATH", md.kubectlPath)
-	os.Setenv("kubectl", md.kubectlPath)
-	lg.Info("set KUBECTL_PATH environmental variable for kubetest", zap.Strings("envs", os.Environ()))
 
 	if cfg.AWSIAMAuthenticatorDownloadURL != "" { // overwrite
 		if runtime.GOOS == "darwin" {
