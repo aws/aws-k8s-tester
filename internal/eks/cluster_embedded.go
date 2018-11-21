@@ -123,7 +123,8 @@ func (md *embedded) createCluster() error {
 		return errors.New("cannot find cluster endpoint or cluster CA")
 	}
 
-	if err = writeKubeConfig(
+	if err = writeKUBECONFIG(
+		md.lg,
 		md.awsIAMAuthenticatorPath,
 		md.cfg.ClusterState.Endpoint,
 		md.cfg.ClusterState.CA,

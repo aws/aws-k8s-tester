@@ -6,6 +6,8 @@ import (
 	"os"
 	"strings"
 	"text/template"
+
+	"go.uber.org/zap"
 )
 
 // isEKSDeletedGoClient returns true if error from EKS API indicates that
@@ -61,7 +63,13 @@ type kubeConfig struct {
 	ClusterName             string
 }
 
-func writeKubeConfig(awsIAMAuthenticatorPath, ep, ca, clusterName, p string) (err error) {
+func writeKUBECONFIG(
+	lg *zap.Logger,
+	awsIAMAuthenticatorPath string,
+	ep string,
+	ca string,
+	clusterName string,
+	outputPath string) (err error) {
 	kc := kubeConfig{
 		AWSIAMAuthenticatorPath: awsIAMAuthenticatorPath,
 		ClusterEndpoint:         ep,
@@ -74,9 +82,10 @@ func writeKubeConfig(awsIAMAuthenticatorPath, ep, ca, clusterName, p string) (er
 		return err
 	}
 
-	// for kubetest
-	// TODO: not working...
-	os.Setenv("DEFAULT_KUBECONFIG", p)
+	// TODO: not working for kubetest
+	lg.Info("setting KUBECONFIG environmental variable for kubetest", zap.Strings("envs", os.Environ()))
+	os.Setenv("KUBECONFIG", outputPath)
+	lg.Info("set KUBECONFIG environmental variable for kubetest", zap.Strings("envs", os.Environ()))
 
-	return ioutil.WriteFile(p, buf.Bytes(), 0600)
+	return ioutil.WriteFile(outputPath, buf.Bytes(), 0600)
 }

@@ -106,6 +106,7 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to create %q (%v)", md.kubectlPath, err)
 		}
+
 		md.kubectlPath = f.Name()
 		md.kubectlPath, _ = filepath.Abs(md.kubectlPath)
 		if err = httpRead(md.lg, cfg.KubectlDownloadURL, f); err != nil {
@@ -115,6 +116,11 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 		if err = util.EnsureExecutable(md.kubectlPath); err != nil {
 			return nil, err
 		}
+
+		lg.Info("setting KUBECTL_PATH environmental variable for kubetest", zap.Strings("envs", os.Environ()))
+		os.Setenv("KUBECTL_PATH", md.kubectlPath)
+		lg.Info("set KUBECTL_PATH environmental variable for kubetest", zap.Strings("envs", os.Environ()))
+
 		err = fileutil.Copy(md.kubectlPath, "/usr/local/bin/kubectl")
 		if err != nil {
 			md.lg.Warn("failed to copy",
@@ -283,7 +289,8 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 			// fetch cluster information with cluster name
 			md.cfg.ClusterState.Endpoint = *co.Cluster.Endpoint
 			md.cfg.ClusterState.CA = *co.Cluster.CertificateAuthority.Data
-			if err = writeKubeConfig(
+			if err = writeKUBECONFIG(
+				md.lg,
 				md.awsIAMAuthenticatorPath,
 				md.cfg.ClusterState.Endpoint,
 				md.cfg.ClusterState.CA,
