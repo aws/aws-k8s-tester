@@ -81,11 +81,11 @@ func (md *embedded) createWorkerNode() error {
 			},
 			{
 				ParameterKey:   aws.String("NodeAutoScalingGroupMinSize"),
-				ParameterValue: aws.String(fmt.Sprintf("%d", md.cfg.WorkderNodeASGMin)),
+				ParameterValue: aws.String(fmt.Sprintf("%d", md.cfg.WorkerNodeASGMin)),
 			},
 			{
 				ParameterKey:   aws.String("NodeAutoScalingGroupMaxSize"),
-				ParameterValue: aws.String(fmt.Sprintf("%d", md.cfg.WorkderNodeASGMax)),
+				ParameterValue: aws.String(fmt.Sprintf("%d", md.cfg.WorkerNodeASGMax)),
 			},
 			{
 				ParameterKey:   aws.String("NodeVolumeSize"),
@@ -122,7 +122,7 @@ func (md *embedded) createWorkerNode() error {
 	case <-time.After(2 * time.Minute):
 	}
 
-	waitTime := 7*time.Minute + 2*time.Duration(md.cfg.WorkderNodeASGMax)*time.Minute
+	waitTime := 7*time.Minute + 2*time.Duration(md.cfg.WorkerNodeASGMax)*time.Minute
 	retryStart := time.Now().UTC()
 	for time.Now().UTC().Sub(retryStart) < waitTime {
 		select {
@@ -368,10 +368,10 @@ func (md *embedded) createWorkerNode() error {
 			"created worker nodes",
 			zap.Int("created-nodes", nodesN),
 			zap.Int("ready-nodes", readyN),
-			zap.Int("worker-node-asg-min", md.cfg.WorkderNodeASGMin),
-			zap.Int("worker-node-asg-max", md.cfg.WorkderNodeASGMax),
+			zap.Int("worker-node-asg-min", md.cfg.WorkerNodeASGMin),
+			zap.Int("worker-node-asg-max", md.cfg.WorkerNodeASGMax),
 		)
-		if readyN == md.cfg.WorkderNodeASGMax {
+		if readyN == md.cfg.WorkerNodeASGMax {
 			md.cfg.ClusterState.WorkerNodeGroupStatus = "READY"
 			md.cfg.Sync()
 			break
@@ -387,7 +387,7 @@ func (md *embedded) createWorkerNode() error {
 		return fmt.Errorf(
 			"worker nodes are not ready (status %q, ASG max %d)",
 			md.cfg.ClusterState.WorkerNodeGroupStatus,
-			md.cfg.WorkderNodeASGMax,
+			md.cfg.WorkerNodeASGMax,
 		)
 	}
 
@@ -426,7 +426,7 @@ func (md *embedded) deleteWorkerNode() error {
 	md.lg.Info("waiting for 1-minute")
 	time.Sleep(time.Minute)
 
-	waitTime := 5*time.Minute + 2*time.Duration(md.cfg.WorkderNodeASGMax)*time.Minute
+	waitTime := 5*time.Minute + 2*time.Duration(md.cfg.WorkerNodeASGMax)*time.Minute
 	md.lg.Info(
 		"periodically fetching node stack status",
 		zap.String("name", md.cfg.ClusterState.CFStackWorkerNodeGroupName),
@@ -517,14 +517,14 @@ func (md *embedded) checkASG() (err error) {
 	}
 	asg := aout.AutoScalingGroups[0]
 
-	if *asg.MinSize != int64(md.cfg.WorkderNodeASGMin) {
-		return fmt.Errorf("ASG min size expected %d, got %d", md.cfg.WorkderNodeASGMin, *asg.MinSize)
+	if *asg.MinSize != int64(md.cfg.WorkerNodeASGMin) {
+		return fmt.Errorf("ASG min size expected %d, got %d", md.cfg.WorkerNodeASGMin, *asg.MinSize)
 	}
-	if *asg.MaxSize != int64(md.cfg.WorkderNodeASGMax) {
-		return fmt.Errorf("ASG max size expected %d, got %d", md.cfg.WorkderNodeASGMax, *asg.MaxSize)
+	if *asg.MaxSize != int64(md.cfg.WorkerNodeASGMax) {
+		return fmt.Errorf("ASG max size expected %d, got %d", md.cfg.WorkerNodeASGMax, *asg.MaxSize)
 	}
-	if len(asg.Instances) != md.cfg.WorkderNodeASGMax {
-		return fmt.Errorf("instances expected %d, got %d", md.cfg.WorkderNodeASGMax, len(asg.Instances))
+	if len(asg.Instances) != md.cfg.WorkerNodeASGMax {
+		return fmt.Errorf("instances expected %d, got %d", md.cfg.WorkerNodeASGMax, len(asg.Instances))
 	}
 	healthCnt := 0
 	for _, iv := range asg.Instances {

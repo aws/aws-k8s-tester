@@ -113,10 +113,10 @@ type Config struct {
 	WorkerNodeAMI string `json:"worker-node-ami,omitempty"`
 	// WorkerNodeInstanceType is the EC2 instance type for worker nodes.
 	WorkerNodeInstanceType string `json:"worker-node-instance-type,omitempty"`
-	// WorkderNodeASGMin is the minimum number of nodes in worker node ASG.
-	WorkderNodeASGMin int `json:"worker-node-asg-min,omitempty"`
-	// WorkderNodeASGMax is the maximum number of nodes in worker node ASG.
-	WorkderNodeASGMax int `json:"worker-node-asg-max,omitempty"`
+	// WorkerNodeASGMin is the minimum number of nodes in worker node ASG.
+	WorkerNodeASGMin int `json:"worker-node-asg-min,omitempty"`
+	// WorkerNodeASGMax is the maximum number of nodes in worker node ASG.
+	WorkerNodeASGMax int `json:"worker-node-asg-max,omitempty"`
 	// WorkerNodeVolumeSizeGB is the maximum number of nodes in worker node ASG.
 	// If empty, set default value.
 	WorkerNodeVolumeSizeGB int `json:"worker-node-volume-size-gb,omitempty"`
@@ -422,8 +422,8 @@ var defaultConfig = Config{
 	WorkerNodeAMI: "ami-0f54a2f7d2e9c88b3",
 
 	WorkerNodeInstanceType: "m5.large",
-	WorkderNodeASGMin:      1,
-	WorkderNodeASGMax:      1,
+	WorkerNodeASGMin:       1,
+	WorkerNodeASGMax:       1,
 	WorkerNodeVolumeSizeGB: 20,
 
 	KubernetesVersion: "1.10",
@@ -606,25 +606,25 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		return fmt.Errorf("EKS WorkerNodeInstanceType %q is not valid", cfg.WorkerNodeInstanceType)
 	}
 	if cfg.ALBIngressController != nil && cfg.ALBIngressController.TestServerReplicas > 0 {
-		if !checkMaxPods(cfg.WorkerNodeInstanceType, cfg.WorkderNodeASGMax, cfg.ALBIngressController.TestServerReplicas) {
+		if !checkMaxPods(cfg.WorkerNodeInstanceType, cfg.WorkerNodeASGMax, cfg.ALBIngressController.TestServerReplicas) {
 			return fmt.Errorf(
 				"EKS WorkerNodeInstanceType %q only supports %d pods per node (ASG Max %d, allowed up to %d, test server replicas %d)",
 				cfg.WorkerNodeInstanceType,
 				ec2.InstanceTypes[cfg.WorkerNodeInstanceType].MaxPods,
-				cfg.WorkderNodeASGMax,
-				ec2.InstanceTypes[cfg.WorkerNodeInstanceType].MaxPods*int64(cfg.WorkderNodeASGMax),
+				cfg.WorkerNodeASGMax,
+				ec2.InstanceTypes[cfg.WorkerNodeInstanceType].MaxPods*int64(cfg.WorkerNodeASGMax),
 				cfg.ALBIngressController.TestServerReplicas,
 			)
 		}
 	}
-	if cfg.WorkderNodeASGMin == 0 {
-		return errors.New("EKS WorkderNodeASGMin is not specified")
+	if cfg.WorkerNodeASGMin == 0 {
+		return errors.New("EKS WorkerNodeASGMin is not specified")
 	}
-	if cfg.WorkderNodeASGMax == 0 {
-		return errors.New("EKS WorkderNodeASGMax is not specified")
+	if cfg.WorkerNodeASGMax == 0 {
+		return errors.New("EKS WorkerNodeASGMax is not specified")
 	}
-	if !checkWorkderNodeASG(cfg.WorkderNodeASGMin, cfg.WorkderNodeASGMax) {
-		return fmt.Errorf("EKS WorkderNodeASG %d and %d is not valid", cfg.WorkderNodeASGMin, cfg.WorkderNodeASGMax)
+	if !checkWorkderNodeASG(cfg.WorkerNodeASGMin, cfg.WorkerNodeASGMax) {
+		return fmt.Errorf("EKS WorkderNodeASG %d and %d is not valid", cfg.WorkerNodeASGMin, cfg.WorkerNodeASGMax)
 	}
 	if cfg.WorkerNodeVolumeSizeGB == 0 {
 		cfg.WorkerNodeVolumeSizeGB = defaultWorkderNodeVolumeSizeGB

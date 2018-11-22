@@ -12,8 +12,8 @@ func TestConfig(t *testing.T) {
 
 	// supports only 58 pods per node
 	cfg.WorkerNodeInstanceType = "m5.xlarge"
-	cfg.WorkderNodeASGMin = 10
-	cfg.WorkderNodeASGMax = 10
+	cfg.WorkerNodeASGMin = 10
+	cfg.WorkerNodeASGMax = 10
 	cfg.ALBIngressController.TestServerReplicas = 600
 
 	err := cfg.ValidateAndSetDefaults()
@@ -154,11 +154,11 @@ func TestEnv(t *testing.T) {
 	if !cfg.EnableWorkerNodeSSH {
 		t.Fatalf("cfg.EnableWorkerNodeSSH expected 'true', got %v", cfg.EnableWorkerNodeSSH)
 	}
-	if cfg.WorkderNodeASGMin != 10 {
-		t.Fatalf("worker nodes min expected 10, got %q", cfg.WorkderNodeASGMin)
+	if cfg.WorkerNodeASGMin != 10 {
+		t.Fatalf("worker nodes min expected 10, got %q", cfg.WorkerNodeASGMin)
 	}
-	if cfg.WorkderNodeASGMax != 10 {
-		t.Fatalf("worker nodes min expected 10, got %q", cfg.WorkderNodeASGMax)
+	if cfg.WorkerNodeASGMax != 10 {
+		t.Fatalf("worker nodes min expected 10, got %q", cfg.WorkerNodeASGMax)
 	}
 	if cfg.ALBIngressController.TestScalabilityMinutes != 3 {
 		t.Fatalf("alb target type expected 3, got %d", cfg.ALBIngressController.TestScalabilityMinutes)
