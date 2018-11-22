@@ -31,7 +31,7 @@ func (md *embedded) createAWSCredentialSecret() error {
 	for time.Now().UTC().Sub(retryStart) < 5*time.Minute {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		kexo, err = exec.New().CommandContext(ctx,
-			md.cfg.KubectlDownloadPath,
+			md.cfg.KubectlPath,
 			"--kubeconfig="+md.cfg.KubeConfigPath,
 			"create", "secret", "generic", awsCredentialSecretName,
 			"--namespace=kube-system",
@@ -59,7 +59,7 @@ func (md *embedded) createAWSCredentialSecret() error {
 	for time.Now().UTC().Sub(retryStart) < 5*time.Minute {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		kexo, err = exec.New().CommandContext(ctx,
-			md.cfg.KubectlDownloadPath,
+			md.cfg.KubectlPath,
 			"--kubeconfig="+md.cfg.KubeConfigPath,
 			"get", "secret", awsCredentialSecretName,
 			"--output=yaml",

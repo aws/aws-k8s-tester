@@ -41,15 +41,15 @@ type Config struct {
 
 	// AWSK8sTesterDownloadURL is the URL to download the "aws-k8s-tester" from.
 	// This is required for Kubernetes kubetest plugin.
-	AWSK8sTesterDownloadURL  string `json:"aws-k8s-tester-download-url,omitempty"`
-	AWSK8sTesterDownloadPath string `json:"aws-k8s-tester-download-path,omitempty"`
+	AWSK8sTesterDownloadURL string `json:"aws-k8s-tester-download-url,omitempty"`
+	AWSK8sTesterPath        string `json:"aws-k8s-tester-path,omitempty"`
 	// KubectlDownloadURL is the URL to download the "kubectl" from.
-	KubectlDownloadURL  string `json:"kubectl-download-url,omitempty"`
-	KubectlDownloadPath string `json:"kubectl-download-path,omitempty"`
+	KubectlDownloadURL string `json:"kubectl-download-url,omitempty"`
+	KubectlPath        string `json:"kubectl-path,omitempty"`
 	// AWSIAMAuthenticatorDownloadURL is the URL to download the "aws-iam-authenticator" from.
 	// This is required for Kubernetes kubetest plugin.
-	AWSIAMAuthenticatorDownloadURL  string `json:"aws-iam-authenticator-download-url,omitempty"`
-	AWSIAMAuthenticatorDownloadPath string `json:"aws-iam-authenticator-download-path,omitempty"`
+	AWSIAMAuthenticatorDownloadURL string `json:"aws-iam-authenticator-download-url,omitempty"`
+	AWSIAMAuthenticatorPath        string `json:"aws-iam-authenticator-path,omitempty"`
 
 	// WaitBeforeDown is the duration to sleep before cluster tear down.
 	WaitBeforeDown time.Duration `json:"wait-before-down,omitempty"`
@@ -398,12 +398,12 @@ func genTag() string {
 var defaultConfig = Config{
 	TestMode: "embedded",
 
-	AWSK8sTesterDownloadURL:         "https://github.com/aws/aws-k8s-tester/releases/download/0.1.2/aws-k8s-tester-0.1.2-linux-amd64",
-	AWSK8sTesterDownloadPath:        "/tmp/aws-k8s-tester/aws-k8s-tester",
-	KubectlDownloadURL:              "https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-07-26/bin/linux/amd64/kubectl",
-	KubectlDownloadPath:             "/tmp/aws-k8s-tester/kubectl",
-	AWSIAMAuthenticatorDownloadURL:  "https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-07-26/bin/linux/amd64/aws-iam-authenticator",
-	AWSIAMAuthenticatorDownloadPath: "/tmp/aws-k8s-tester/aws-iam-authenticator",
+	AWSK8sTesterDownloadURL:        "https://github.com/aws/aws-k8s-tester/releases/download/0.1.2/aws-k8s-tester-0.1.2-linux-amd64",
+	AWSK8sTesterPath:               "/tmp/aws-k8s-tester/aws-k8s-tester",
+	KubectlDownloadURL:             "https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-07-26/bin/linux/amd64/kubectl",
+	KubectlPath:                    "/tmp/aws-k8s-tester/kubectl",
+	AWSIAMAuthenticatorDownloadURL: "https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-07-26/bin/linux/amd64/aws-iam-authenticator",
+	AWSIAMAuthenticatorPath:        "/tmp/aws-k8s-tester/aws-iam-authenticator",
 
 	// enough time for ALB access log
 	WaitBeforeDown: time.Minute,

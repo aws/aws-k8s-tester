@@ -90,76 +90,76 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 		ec2InstancesLogMu: &sync.RWMutex{},
 	}
 
-	md.cfg.KubectlDownloadPath = "/tmp/aws-k8s-tester/kubectl"
-	if md.cfg.KubectlDownloadPath == "" {
-		md.cfg.KubectlDownloadPath, _ = exec.New().LookPath("kubectl")
+	md.cfg.KubectlPath = "/tmp/aws-k8s-tester/kubectl"
+	if md.cfg.KubectlPath == "" {
+		md.cfg.KubectlPath, _ = exec.New().LookPath("kubectl")
 	} else {
-		if err = os.MkdirAll(filepath.Dir(md.cfg.KubectlDownloadPath), 0700); err != nil {
-			return nil, fmt.Errorf("could not create %q (%v)", filepath.Dir(md.cfg.KubectlDownloadPath), err)
+		if err = os.MkdirAll(filepath.Dir(md.cfg.KubectlPath), 0700); err != nil {
+			return nil, fmt.Errorf("could not create %q (%v)", filepath.Dir(md.cfg.KubectlPath), err)
 		}
 	}
 	if md.cfg.KubectlDownloadURL != "" { // overwrite
 		if runtime.GOOS == "darwin" {
 			md.cfg.KubectlDownloadURL = strings.Replace(md.cfg.KubectlDownloadURL, "linux", "darwin", -1)
 		}
-		if err = os.RemoveAll(md.cfg.KubectlDownloadPath); err != nil {
+		if err = os.RemoveAll(md.cfg.KubectlPath); err != nil {
 			return nil, err
 		}
 		var f *os.File
-		f, err = os.Create(md.cfg.KubectlDownloadPath)
+		f, err = os.Create(md.cfg.KubectlPath)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create %q (%v)", md.cfg.KubectlDownloadPath, err)
+			return nil, fmt.Errorf("failed to create %q (%v)", md.cfg.KubectlPath, err)
 		}
-		md.cfg.KubectlDownloadPath = f.Name()
-		md.cfg.KubectlDownloadPath, _ = filepath.Abs(md.cfg.KubectlDownloadPath)
+		md.cfg.KubectlPath = f.Name()
+		md.cfg.KubectlPath, _ = filepath.Abs(md.cfg.KubectlPath)
 		if err = httpRead(md.lg, md.cfg.KubectlDownloadURL, f); err != nil {
 			return nil, err
 		}
 		if err = f.Close(); err != nil {
 			return nil, fmt.Errorf("failed to close kubectl %v", err)
 		}
-		if err = util.EnsureExecutable(md.cfg.KubectlDownloadPath); err != nil {
+		if err = util.EnsureExecutable(md.cfg.KubectlPath); err != nil {
 			return nil, err
 		}
 	}
 
 	// TODO: remove this once new "eksconfig" gets merged in upstream test-infra
 	// so that it can pick up the default value and environmental variable for this field
-	md.cfg.AWSIAMAuthenticatorDownloadPath = "/tmp/aws-k8s-tester/aws-iam-authenticator"
-	if md.cfg.AWSIAMAuthenticatorDownloadPath == "" {
-		md.cfg.AWSIAMAuthenticatorDownloadPath, _ = exec.New().LookPath("aws-iam-authenticator")
+	md.cfg.AWSIAMAuthenticatorPath = "/tmp/aws-k8s-tester/aws-iam-authenticator"
+	if md.cfg.AWSIAMAuthenticatorPath == "" {
+		md.cfg.AWSIAMAuthenticatorPath, _ = exec.New().LookPath("aws-iam-authenticator")
 	} else {
-		if err = os.MkdirAll(filepath.Dir(md.cfg.AWSIAMAuthenticatorDownloadPath), 0700); err != nil {
-			return nil, fmt.Errorf("could not create %q (%v)", filepath.Dir(md.cfg.AWSIAMAuthenticatorDownloadPath), err)
+		if err = os.MkdirAll(filepath.Dir(md.cfg.AWSIAMAuthenticatorPath), 0700); err != nil {
+			return nil, fmt.Errorf("could not create %q (%v)", filepath.Dir(md.cfg.AWSIAMAuthenticatorPath), err)
 		}
 	}
 	if md.cfg.AWSIAMAuthenticatorDownloadURL != "" { // overwrite
 		if runtime.GOOS == "darwin" {
 			md.cfg.AWSIAMAuthenticatorDownloadURL = strings.Replace(md.cfg.AWSIAMAuthenticatorDownloadURL, "linux", "darwin", -1)
 		}
-		if err = os.RemoveAll(md.cfg.AWSIAMAuthenticatorDownloadPath); err != nil {
+		if err = os.RemoveAll(md.cfg.AWSIAMAuthenticatorPath); err != nil {
 			return nil, err
 		}
 		var f *os.File
-		f, err = os.Create(md.cfg.AWSIAMAuthenticatorDownloadPath)
+		f, err = os.Create(md.cfg.AWSIAMAuthenticatorPath)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create %q (%v)", md.cfg.AWSIAMAuthenticatorDownloadPath, err)
+			return nil, fmt.Errorf("failed to create %q (%v)", md.cfg.AWSIAMAuthenticatorPath, err)
 		}
-		md.cfg.AWSIAMAuthenticatorDownloadPath = f.Name()
-		md.cfg.AWSIAMAuthenticatorDownloadPath, _ = filepath.Abs(md.cfg.AWSIAMAuthenticatorDownloadPath)
+		md.cfg.AWSIAMAuthenticatorPath = f.Name()
+		md.cfg.AWSIAMAuthenticatorPath, _ = filepath.Abs(md.cfg.AWSIAMAuthenticatorPath)
 		if err = httpRead(md.lg, md.cfg.AWSIAMAuthenticatorDownloadURL, f); err != nil {
 			return nil, err
 		}
 		if err = f.Close(); err != nil {
 			return nil, err
 		}
-		if err = util.EnsureExecutable(md.cfg.AWSIAMAuthenticatorDownloadPath); err != nil {
+		if err = util.EnsureExecutable(md.cfg.AWSIAMAuthenticatorPath); err != nil {
 			return nil, err
 		}
-		err = fileutil.Copy(md.cfg.AWSIAMAuthenticatorDownloadPath, "/usr/local/bin/aws-iam-authenticator")
+		err = fileutil.Copy(md.cfg.AWSIAMAuthenticatorPath, "/usr/local/bin/aws-iam-authenticator")
 		if err != nil {
 			md.lg.Warn("failed to copy",
-				zap.String("aws-iam-authenticator", md.cfg.AWSIAMAuthenticatorDownloadPath),
+				zap.String("aws-iam-authenticator", md.cfg.AWSIAMAuthenticatorPath),
 				zap.Error(err),
 			)
 		}
@@ -167,9 +167,9 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 
 	md.lg.Info(
 		"checking kubectl and aws-iam-authenticator",
-		zap.String("kubectl", md.cfg.KubectlDownloadPath),
+		zap.String("kubectl", md.cfg.KubectlPath),
 		zap.String("kubectl-download-url", md.cfg.KubectlDownloadURL),
-		zap.String("aws-iam-authenticator", md.cfg.AWSIAMAuthenticatorDownloadPath),
+		zap.String("aws-iam-authenticator", md.cfg.AWSIAMAuthenticatorPath),
 		zap.String("aws-iam-authenticator-download-url", md.cfg.AWSIAMAuthenticatorDownloadURL),
 	)
 
@@ -225,7 +225,7 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 	md.s3Plugin = s3.NewEmbedded(md.lg, md.cfg, awss3.New(md.ss))
 
 	if cfg.ALBIngressController.Enable {
-		md.albPlugin = alb.NewEmbedded(md.stopc, lg, md.cfg, md.cfg.KubectlDownloadPath, md.im, md.ec2, elbv2.New(md.ss), md.s3Plugin)
+		md.albPlugin = alb.NewEmbedded(md.stopc, lg, md.cfg, md.cfg.KubectlPath, md.im, md.ec2, elbv2.New(md.ss), md.s3Plugin)
 		if err != nil {
 			return nil, err
 		}
@@ -300,8 +300,8 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 			md.cfg.ClusterState.CA = *co.Cluster.CertificateAuthority.Data
 			if err = writeKUBECONFIG(
 				md.lg,
-				md.cfg.KubectlDownloadPath,
-				md.cfg.AWSIAMAuthenticatorDownloadPath,
+				md.cfg.KubectlPath,
+				md.cfg.AWSIAMAuthenticatorPath,
 				md.cfg.ClusterState.Endpoint,
 				md.cfg.ClusterState.CA,
 				md.cfg.ClusterName,
@@ -317,13 +317,13 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 
 			kvOut, kvOutErr := exec.New().CommandContext(
 				context.Background(),
-				md.cfg.KubectlDownloadPath,
+				md.cfg.KubectlPath,
 				"--kubeconfig="+md.cfg.KubeConfigPath,
 				"version",
 			).CombinedOutput()
 			md.lg.Info(
 				"checking kubectl after cluster creation",
-				zap.String("kubectl", cfg.KubectlDownloadPath),
+				zap.String("kubectl", cfg.KubectlPath),
 				zap.String("kubectl-download-url", md.cfg.KubectlDownloadURL),
 				zap.String("kubectl-version", string(kvOut)),
 				zap.String("kubectl-version-err", fmt.Sprintf("%v", kvOutErr)),

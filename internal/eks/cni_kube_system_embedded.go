@@ -43,7 +43,7 @@ func (md *embedded) upgradeCNI() error {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		var kexo []byte
 		kexo, err = exec.New().CommandContext(ctx,
-			md.cfg.KubectlDownloadPath,
+			md.cfg.KubectlPath,
 			"--kubeconfig="+md.cfg.KubeConfigPath,
 			"apply", "--filename="+cmPath,
 		).CombinedOutput()
