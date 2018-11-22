@@ -39,30 +39,17 @@ type Config struct {
 	// Only required when ALB Ingress "TestMode" is "ingress-test-server".
 	AWSK8sTesterImage string `json:"aws-k8s-tester-image,omitempty"`
 
-	// AWSK8sTesterDownloadURL is the URL to download the "aws-k8s-tester" from.
+	// AWSK8sTesterPath is the path to download the "aws-k8s-tester".
 	// This is required for Kubernetes kubetest plugin.
-	AWSK8sTesterDownloadURL string `json:"aws-k8s-tester-download-url,omitempty"`
 	AWSK8sTesterPath        string `json:"aws-k8s-tester-path,omitempty"`
-	// KubectlDownloadURL is the URL to download the "kubectl" from.
-	KubectlDownloadURL string `json:"kubectl-download-url,omitempty"`
+	AWSK8sTesterDownloadURL string `json:"aws-k8s-tester-download-url,omitempty"`
+	// KubectlPath is the path to download the "kubectl".
 	KubectlPath        string `json:"kubectl-path,omitempty"`
-	// AWSIAMAuthenticatorDownloadURL is the URL to download the "aws-iam-authenticator" from.
+	KubectlDownloadURL string `json:"kubectl-download-url,omitempty"`
+	// AWSIAMAuthenticatorPath is the path to download the "aws-iam-authenticator".
 	// This is required for Kubernetes kubetest plugin.
-	AWSIAMAuthenticatorDownloadURL string `json:"aws-iam-authenticator-download-url,omitempty"`
 	AWSIAMAuthenticatorPath        string `json:"aws-iam-authenticator-path,omitempty"`
-
-	// WaitBeforeDown is the duration to sleep before cluster tear down.
-	WaitBeforeDown time.Duration `json:"wait-before-down,omitempty"`
-	// Down is true to automatically tear down cluster in "test".
-	// Deployer implementation should not call "Down" inside "Up" method.
-	// This is meant to be used as a flag for test.
-	Down bool `json:"down"`
-
-	// EnableWorkerNodeSSH is true to enable SSH access to worker nodes.
-	EnableWorkerNodeSSH bool `json:"enable-worker-node-ssh"`
-	// EnableWorkerNodeHA is true to use all 3 subnets to create worker nodes.
-	// Note that at least 2 subnets are required for EKS cluster.
-	EnableWorkerNodeHA bool `json:"enable-worker-node-ha"`
+	AWSIAMAuthenticatorDownloadURL string `json:"aws-iam-authenticator-download-url,omitempty"`
 
 	// ConfigPath is the configuration file path.
 	// Must be left empty, and let deployer auto-populate this field.
@@ -79,6 +66,19 @@ type Config struct {
 	KubeConfigPath       string `json:"kubeconfig-path,omitempty"`        // read-only to user
 	KubeConfigPathBucket string `json:"kubeconfig-path-bucket,omitempty"` // read-only to user
 	KubeConfigPathURL    string `json:"kubeconfig-path-url,omitempty"`    // read-only to user
+
+	// WaitBeforeDown is the duration to sleep before cluster tear down.
+	WaitBeforeDown time.Duration `json:"wait-before-down,omitempty"`
+	// Down is true to automatically tear down cluster in "test".
+	// Deployer implementation should not call "Down" inside "Up" method.
+	// This is meant to be used as a flag for test.
+	Down bool `json:"down"`
+
+	// EnableWorkerNodeSSH is true to enable SSH access to worker nodes.
+	EnableWorkerNodeSSH bool `json:"enable-worker-node-ssh"`
+	// EnableWorkerNodeHA is true to use all 3 subnets to create worker nodes.
+	// Note that at least 2 subnets are required for EKS cluster.
+	EnableWorkerNodeHA bool `json:"enable-worker-node-ha"`
 
 	// VPCID is the VPC ID.
 	VPCID string `json:"vpc-id"`
