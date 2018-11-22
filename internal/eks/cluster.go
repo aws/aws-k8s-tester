@@ -65,12 +65,12 @@ type kubeConfig struct {
 
 func writeKUBECONFIG(
 	lg *zap.Logger,
+	kubectlPath string,
 	awsIAMAuthenticatorPath string,
 	ep string,
 	ca string,
 	clusterName string,
-	outputPath string,
-	kubectlPath string) (err error) {
+	outputPath string) (err error) {
 	kc := kubeConfig{
 		AWSIAMAuthenticatorPath: awsIAMAuthenticatorPath,
 		ClusterEndpoint:         ep,
@@ -83,11 +83,11 @@ func writeKUBECONFIG(
 		return err
 	}
 
-	// TODO: not working for kubetest
+	// TODO: not working for "kubetest/e2e.go", "getKubectlVersion"
+	os.Setenv("KUBECTL", kubectlPath)
 	os.Setenv("KUBE_MASTER_URL", ep)
 	os.Setenv("KUBECONFIG", outputPath)
 	os.Setenv("KUBE_CONFIG_FILE", outputPath)
-	os.Setenv("KUBECTL", kubectlPath)
 	lg.Info("set KUBE_* environmental variables for kubetest", zap.Strings("envs", os.Environ()))
 
 	return ioutil.WriteFile(outputPath, buf.Bytes(), 0600)

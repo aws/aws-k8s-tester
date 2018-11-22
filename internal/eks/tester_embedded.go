@@ -289,12 +289,12 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 			md.cfg.ClusterState.CA = *co.Cluster.CertificateAuthority.Data
 			if err = writeKUBECONFIG(
 				md.lg,
+				md.kubectlPath,
 				md.awsIAMAuthenticatorPath,
 				md.cfg.ClusterState.Endpoint,
 				md.cfg.ClusterState.CA,
 				md.cfg.ClusterName,
 				md.cfg.KubeConfigPath,
-				md.kubectlPath,
 			); err != nil {
 				return nil, err
 			}

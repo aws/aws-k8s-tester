@@ -125,12 +125,12 @@ func (md *embedded) createCluster() error {
 
 	if err = writeKUBECONFIG(
 		md.lg,
+		md.kubectlPath,
 		md.awsIAMAuthenticatorPath,
 		md.cfg.ClusterState.Endpoint,
 		md.cfg.ClusterState.CA,
 		md.cfg.ClusterName,
 		md.cfg.KubeConfigPath,
-		md.kubectlPath,
 	); err != nil {
 		return err
 	}
