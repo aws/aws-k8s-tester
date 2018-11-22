@@ -1,0 +1,294 @@
+package csi
+
+import (
+	"fmt"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/iam"
+	"go.uber.org/zap"
+	"strings"
+	"time"
+)
+
+const (
+	assumeRoleDocument = `{
+  "Version": "2012-10-17",
+  "Statement": {
+    "Effect": "Allow",
+    "Principal": {"Service": "ec2.amazonaws.com"},
+    "Action": "sts:AssumeRole"
+  }
+}`
+
+	policyDocument = `{
+   "Version": "2012-10-17",
+   "Statement": [
+       {
+           "Action": "ec2:*",
+           "Effect": "Allow",
+           "Resource": "*"
+       },
+       {
+           "Effect": "Allow",
+           "Action": "elasticloadbalancing:*",
+           "Resource": "*"
+       },
+       {
+           "Effect": "Allow",
+           "Action": "cloudwatch:*",
+           "Resource": "*"
+       },
+       {
+           "Effect": "Allow",
+           "Action": "autoscaling:*",
+           "Resource": "*"
+       },
+       {
+           "Effect": "Allow",
+           "Action": "iam:CreateServiceLinkedRole",
+           "Resource": "*",
+           "Condition": {
+               "StringEquals": {
+                   "iam:AWSServiceName": [
+                       "autoscaling.amazonaws.com",
+                       "ec2scheduled.amazonaws.com",
+                       "elasticloadbalancing.amazonaws.com",
+                       "spot.amazonaws.com",
+                       "spotfleet.amazonaws.com"
+                   ]
+               }
+           }
+       }
+   ]
+}`
+)
+
+type iamResources struct {
+	svc             *iam.IAM
+	instanceProfile *iamResource
+	policy          *iamResource
+	role            *iamResource
+
+	lg *zap.Logger
+}
+
+type iamResource struct {
+	name *string
+	arn  *string
+}
+
+func createIAM(awsRegion string) (*iam.IAM, error) {
+	sess, err := session.NewSession(&aws.Config{Region: aws.String(awsRegion)})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create a new session (%v)\n", err)
+	}
+	return iam.New(sess), nil
+}
+
+// awsRegion must be a valid AWS region for ec2 instances.
+// For a complete list, see entries under "Region" on the table "Amazon Elastic Compute Cloud (Amazon EC2)":
+// https://docs.aws.amazon.com/general/latest/gr/rande.html#ec2_region
+func CreateIAMResources(awsRegion string) (resources *iamResources, err error) {
+	resources = &iamResources{}
+
+	defer func() {
+		if err != nil {
+			resources.DeleteIAMResources()
+		}
+	}()
+
+	// Creates new logger
+	lg, err := zap.NewProduction()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create logger (%v)\n", err)
+	}
+	resources.lg = lg
+
+	// Creates new session and IAM client
+	svc, err := createIAM(awsRegion)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create session and IAM client (%v)\n", err)
+	}
+	resources.svc = svc
+	resources.lg.Info("created session and IAM client")
+
+	// AWS does not allow ':' in the names of instances for its services
+	uniqueSuffix := strings.Replace(time.Now().Format(time.RFC3339), ":", "-", -1)
+
+	// Creates instance profile
+	instanceOutput, err := resources.svc.CreateInstanceProfile(&iam.CreateInstanceProfileInput{
+		InstanceProfileName: aws.String(fmt.Sprintf("aws-k8s-tester-instance-profile-%s", uniqueSuffix)),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to add role to create new instance profile (%v)\n", err)
+	}
+	resources.instanceProfile = &iamResource{
+		name: instanceOutput.InstanceProfile.InstanceProfileName,
+		arn:  instanceOutput.InstanceProfile.Arn,
+	}
+	resources.lg.Info("created instance profile", zap.String("instance-profile-name", *resources.instanceProfile.name))
+
+	// Creates policy
+	policyOutput, err := resources.svc.CreatePolicy(&iam.CreatePolicyInput{
+		Description:    aws.String("awe-k8s-tester generated policy for testing EC2"),
+		PolicyDocument: aws.String(policyDocument),
+		PolicyName:     aws.String(fmt.Sprintf("aws-k8s-tester-policy-%s", uniqueSuffix)),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to add role to create new policy(%v)\n", err)
+	}
+	resources.policy = &iamResource{
+		name: policyOutput.Policy.PolicyName,
+		arn:  policyOutput.Policy.Arn,
+	}
+	resources.lg.Info("created policy", zap.String("policy-name", *resources.policy.name))
+
+	// Creates role
+	roleOutput, err := resources.svc.CreateRole(&iam.CreateRoleInput{
+		AssumeRolePolicyDocument: aws.String(assumeRoleDocument),
+		RoleName:                 aws.String(fmt.Sprintf("aws-k8s-tester-role-%s", uniqueSuffix)),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create new role (%v)\n", err)
+	}
+	resources.role = &iamResource{
+		name: roleOutput.Role.RoleName,
+		arn:  roleOutput.Role.Arn,
+	}
+	resources.lg.Info("created role", zap.String("role-name", *resources.role.name))
+
+	// Attaches role to policy
+	_, err = resources.svc.AttachRolePolicy(&iam.AttachRolePolicyInput{
+		PolicyArn: resources.policy.arn,
+		RoleName:  resources.role.name,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to attach role to policy (%v)\n", err)
+	}
+	resources.lg.Info("attached role to policy")
+
+	// Adds role to instance profile
+	_, err = resources.svc.AddRoleToInstanceProfile(&iam.AddRoleToInstanceProfileInput{
+		InstanceProfileName: resources.instanceProfile.name,
+		RoleName:            resources.role.name,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to add role to instance profile (%v)\n", err)
+	}
+	resources.lg.Info("attached role to instance policy")
+
+	// TODO: make separate method and change so that only prints that commands need to be run
+	fmt.Printf("\nManually delete profile, role, and policy:\n%s && %s && %s && %s && %s\n\n",
+		fmt.Sprintf("aws iam remove-role-from-instance-profile --instance-profile-name %s --role-name %s",
+			*resources.instanceProfile.name,
+			*resources.role.name),
+		fmt.Sprintf("aws iam detach-role-policy --role-name %s --policy-arn %s",
+			*resources.role.name,
+			*resources.policy.arn),
+		fmt.Sprintf("aws iam delete-role --role-name %s", *resources.role.name),
+		fmt.Sprintf("aws iam delete-policy --policy-arn %s", *resources.policy.arn),
+		fmt.Sprintf("aws iam delete-instance-profile --instance-profile-name %s", *resources.instanceProfile.name),
+	)
+
+	// Delay is needed to ensure that permissions have been propagated.
+	// See the section "Launching an Instance with an IAM Role" at
+	// https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html
+	time.Sleep(10 * time.Second)
+
+	return resources, nil
+}
+
+func (resources *iamResources) GetInstanceProfileName() *string {
+	return resources.instanceProfile.name
+}
+
+// Deletes instance profile, policy, and role from provided resources.
+func (resources *iamResources) DeleteIAMResources() {
+	// Removes role from instance profile and deletes instance profile.
+	// AWS does not allow instance profile to be deleted with role still attached.
+	// https://docs.aws.amazon.com/IAM/latest/APIReference/API_DeleteInstanceProfile.html
+	if resources.instanceProfile != nil {
+		// Removes role from instance profile.
+		_, err := resources.svc.RemoveRoleFromInstanceProfile(&iam.RemoveRoleFromInstanceProfileInput{
+			InstanceProfileName: resources.instanceProfile.name,
+			RoleName:            resources.role.name,
+		})
+		if err != nil {
+			resources.lg.Error("failed to remove role from instance profile",
+				zap.String("role-name", *resources.role.name),
+				zap.String("instance-profile-name", *resources.instanceProfile.name),
+				zap.Error(err),
+			)
+		} else {
+			resources.lg.Info("removed role from instance profile",
+				zap.String("role-name", *resources.role.name),
+				zap.String("instance-profile-name", *resources.instanceProfile.name),
+			)
+			// Deletes instance profile.
+			_, err := resources.svc.DeleteInstanceProfile(&iam.DeleteInstanceProfileInput{
+				InstanceProfileName: resources.instanceProfile.name,
+			})
+			if err != nil {
+				resources.lg.Error("failed to delete instance profile",
+					zap.String("instance-profile-name", *resources.instanceProfile.name),
+					zap.Error(err),
+				)
+			} else {
+				resources.lg.Info("deleted instance profile")
+				resources.instanceProfile = nil
+			}
+		}
+	}
+
+	// Detaches policy from role and deletes policy.
+	if resources.policy != nil {
+		// Detaches policy from role.
+		// AWS does not allow policy to be deleted with role still attached.
+		_, err := resources.svc.DetachRolePolicy(&iam.DetachRolePolicyInput{
+			PolicyArn: resources.policy.arn,
+			RoleName:  resources.role.name,
+		})
+		if err != nil {
+			resources.lg.Error("failed to detach policy from role",
+				zap.String("policy-name", *resources.policy.name),
+				zap.String("role-name", *resources.role.name),
+				zap.Error(err),
+			)
+		} else {
+			resources.lg.Info("detached policy from role",
+				zap.String("policy-name", *resources.policy.name),
+				zap.String("role-name", *resources.role.name),
+			)
+			// Deletes policy.
+			_, err := resources.svc.DeletePolicy(&iam.DeletePolicyInput{
+				PolicyArn: resources.policy.arn,
+			})
+			if err != nil {
+				resources.lg.Error("failed to delete policy",
+					zap.String("policy-name", *resources.policy.name),
+					zap.Error(err),
+				)
+			} else {
+				resources.lg.Info("deleted policy")
+				resources.policy = nil
+			}
+		}
+	}
+
+	// Deletes role.
+	if resources.role != nil {
+		_, err := resources.svc.DeleteRole(&iam.DeleteRoleInput{
+			RoleName: resources.role.name,
+		})
+		if err != nil {
+			resources.lg.Error("failed to delete role",
+				zap.String("role-name", *resources.role.name),
+				zap.String("error", err.Error()),
+				zap.Error(err),
+			)
+		} else {
+			resources.lg.Info("deleted role")
+			resources.role = nil
+		}
+	}
+}
