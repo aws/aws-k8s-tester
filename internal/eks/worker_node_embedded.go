@@ -296,7 +296,6 @@ func (md *embedded) createWorkerNode() error {
 	}
 	defer os.RemoveAll(cmPath)
 
-	kcfgPath := md.cfg.KubeConfigPath
 	applied := false
 	retryStart = time.Now().UTC()
 	for time.Now().UTC().Sub(retryStart) < waitTime {
@@ -311,8 +310,8 @@ func (md *embedded) createWorkerNode() error {
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			var kexo []byte
 			kexo, err = exec.New().CommandContext(ctx,
-				md.kubectlPath,
-				"--kubeconfig="+kcfgPath,
+				md.cfg.KubectlDownloadPath,
+				"--kubeconfig="+md.cfg.KubeConfigPath,
 				"apply", "--filename="+cmPath,
 			).CombinedOutput()
 			cancel()
@@ -338,8 +337,8 @@ func (md *embedded) createWorkerNode() error {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		var kexo []byte
 		kexo, err = exec.New().CommandContext(ctx,
-			md.kubectlPath,
-			"--kubeconfig="+kcfgPath,
+			md.cfg.KubectlDownloadPath,
+			"--kubeconfig="+md.cfg.KubeConfigPath,
 			"get", "nodes", "-ojson",
 		).CombinedOutput()
 		cancel()

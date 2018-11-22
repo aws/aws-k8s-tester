@@ -55,11 +55,6 @@ type embedded struct {
 	lg  *zap.Logger
 	cfg *eksconfig.Config
 
-	// TODO: move this "kubectl" to AWS CLI deployer
-	// and instead use "k8s.io/client-go" with STS token
-	kubectlPath             string
-	awsIAMAuthenticatorPath string
-
 	ss  *session.Session
 	im  iamiface.IAMAPI
 	sts stsiface.STSAPI
@@ -95,61 +90,76 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 		ec2InstancesLogMu: &sync.RWMutex{},
 	}
 
-	// TODO: "kubernetes/kubernetes"/cluster/kubectl.sh not working
-	// "process.go:153: Running: ./cluster/kubectl.sh —match-server-version=false version"
-	// TODO: Overwrite kubectl path or make it configurable?
-	md.kubectlPath, _ = exec.New().LookPath("kubectl")
-	if cfg.KubectlDownloadURL != "" { // overwrite
+	md.cfg.KubectlDownloadPath = "/tmp/aws-k8s-tester/kubectl"
+	if md.cfg.KubectlDownloadPath == "" {
+		md.cfg.KubectlDownloadPath, _ = exec.New().LookPath("kubectl")
+	} else {
+		if err = os.MkdirAll(filepath.Dir(md.cfg.KubectlDownloadPath), 0700); err != nil {
+			return nil, fmt.Errorf("could not create %q (%v)", filepath.Dir(md.cfg.KubectlDownloadPath), err)
+		}
+	}
+	if md.cfg.KubectlDownloadURL != "" { // overwrite
 		if runtime.GOOS == "darwin" {
-			cfg.KubectlDownloadURL = strings.Replace(cfg.KubectlDownloadURL, "linux", "darwin", -1)
+			md.cfg.KubectlDownloadURL = strings.Replace(md.cfg.KubectlDownloadURL, "linux", "darwin", -1)
+		}
+		if err = os.RemoveAll(md.cfg.KubectlDownloadPath); err != nil {
+			return nil, err
 		}
 		var f *os.File
-		f, err = ioutil.TempFile(os.TempDir(), "kubectl")
+		f, err = os.Create(md.cfg.KubectlDownloadPath)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create %q (%v)", md.kubectlPath, err)
+			return nil, fmt.Errorf("failed to create %q (%v)", md.cfg.KubectlDownloadPath, err)
 		}
-
-		md.kubectlPath = f.Name()
-		md.kubectlPath, _ = filepath.Abs(md.kubectlPath)
-		if err = httpRead(md.lg, cfg.KubectlDownloadURL, f); err != nil {
+		md.cfg.KubectlDownloadPath = f.Name()
+		md.cfg.KubectlDownloadPath, _ = filepath.Abs(md.cfg.KubectlDownloadPath)
+		if err = httpRead(md.lg, md.cfg.KubectlDownloadURL, f); err != nil {
 			return nil, err
 		}
-		f.Close()
-		if err = util.EnsureExecutable(md.kubectlPath); err != nil {
-			return nil, err
+		if err = f.Close(); err != nil {
+			return nil, fmt.Errorf("failed to close kubectl %v", err)
 		}
-
-		err = fileutil.Copy(md.kubectlPath, "/usr/local/bin/kubectl")
-		if err != nil {
-			md.lg.Warn("failed to copy",
-				zap.String("kubectl", md.kubectlPath),
-				zap.Error(err),
-			)
+		if err = util.EnsureExecutable(md.cfg.KubectlDownloadPath); err != nil {
+			return nil, err
 		}
 	}
 
-	if cfg.AWSIAMAuthenticatorDownloadURL != "" { // overwrite
+	// TODO: remove this once new "eksconfig" gets merged in upstream test-infra
+	// so that it can pick up the default value and environmental variable for this field
+	md.cfg.AWSIAMAuthenticatorDownloadPath = "/tmp/aws-k8s-tester/aws-iam-authenticator"
+	if md.cfg.AWSIAMAuthenticatorDownloadPath == "" {
+		md.cfg.AWSIAMAuthenticatorDownloadPath, _ = exec.New().LookPath("aws-iam-authenticator")
+	} else {
+		if err = os.MkdirAll(filepath.Dir(md.cfg.AWSIAMAuthenticatorDownloadPath), 0700); err != nil {
+			return nil, fmt.Errorf("could not create %q (%v)", filepath.Dir(md.cfg.AWSIAMAuthenticatorDownloadPath), err)
+		}
+	}
+	if md.cfg.AWSIAMAuthenticatorDownloadURL != "" { // overwrite
 		if runtime.GOOS == "darwin" {
-			cfg.AWSIAMAuthenticatorDownloadURL = strings.Replace(cfg.AWSIAMAuthenticatorDownloadURL, "linux", "darwin", -1)
+			md.cfg.AWSIAMAuthenticatorDownloadURL = strings.Replace(md.cfg.AWSIAMAuthenticatorDownloadURL, "linux", "darwin", -1)
+		}
+		if err = os.RemoveAll(md.cfg.AWSIAMAuthenticatorDownloadPath); err != nil {
+			return nil, err
 		}
 		var f *os.File
-		f, err = ioutil.TempFile(os.TempDir(), "aws-iam-authenticator")
+		f, err = os.Create(md.cfg.AWSIAMAuthenticatorDownloadPath)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create %q (%v)", md.awsIAMAuthenticatorPath, err)
+			return nil, fmt.Errorf("failed to create %q (%v)", md.cfg.AWSIAMAuthenticatorDownloadPath, err)
 		}
-		md.awsIAMAuthenticatorPath = f.Name()
-		md.awsIAMAuthenticatorPath, _ = filepath.Abs(md.awsIAMAuthenticatorPath)
-		if err = httpRead(md.lg, cfg.AWSIAMAuthenticatorDownloadURL, f); err != nil {
+		md.cfg.AWSIAMAuthenticatorDownloadPath = f.Name()
+		md.cfg.AWSIAMAuthenticatorDownloadPath, _ = filepath.Abs(md.cfg.AWSIAMAuthenticatorDownloadPath)
+		if err = httpRead(md.lg, md.cfg.AWSIAMAuthenticatorDownloadURL, f); err != nil {
 			return nil, err
 		}
-		f.Close()
-		if err = util.EnsureExecutable(md.awsIAMAuthenticatorPath); err != nil {
+		if err = f.Close(); err != nil {
 			return nil, err
 		}
-		err = fileutil.Copy(md.awsIAMAuthenticatorPath, "/usr/local/bin/aws-iam-authenticator")
+		if err = util.EnsureExecutable(md.cfg.AWSIAMAuthenticatorDownloadPath); err != nil {
+			return nil, err
+		}
+		err = fileutil.Copy(md.cfg.AWSIAMAuthenticatorDownloadPath, "/usr/local/bin/aws-iam-authenticator")
 		if err != nil {
 			md.lg.Warn("failed to copy",
-				zap.String("aws-iam-authenticator", md.awsIAMAuthenticatorPath),
+				zap.String("aws-iam-authenticator", md.cfg.AWSIAMAuthenticatorDownloadPath),
 				zap.Error(err),
 			)
 		}
@@ -157,17 +167,17 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 
 	md.lg.Info(
 		"checking kubectl and aws-iam-authenticator",
-		zap.String("kubectl", md.kubectlPath),
+		zap.String("kubectl", md.cfg.KubectlDownloadPath),
 		zap.String("kubectl-download-url", md.cfg.KubectlDownloadURL),
-		zap.String("aws-iam-authenticator", md.awsIAMAuthenticatorPath),
+		zap.String("aws-iam-authenticator", md.cfg.AWSIAMAuthenticatorDownloadPath),
 		zap.String("aws-iam-authenticator-download-url", md.cfg.AWSIAMAuthenticatorDownloadURL),
 	)
 
 	awsCfg := &awsapi.Config{
 		Logger:         md.lg,
-		DebugAPICalls:  cfg.LogDebug,
-		Region:         cfg.AWSRegion,
-		CustomEndpoint: cfg.AWSCustomEndpoint,
+		DebugAPICalls:  md.cfg.LogDebug,
+		Region:         md.cfg.AWSRegion,
+		CustomEndpoint: md.cfg.AWSCustomEndpoint,
 	}
 	md.ss, err = awsapi.New(awsCfg)
 	if err != nil {
@@ -181,15 +191,16 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 	md.eks = awseks.New(md.ss)
 	md.ec2 = ec2.New(md.ss)
 
-	output, oerr := md.sts.GetCallerIdentity(&sts.GetCallerIdentityInput{})
-	if oerr != nil {
-		return nil, oerr
+	var stsOutput *sts.GetCallerIdentityOutput
+	stsOutput, err = md.sts.GetCallerIdentity(&sts.GetCallerIdentityInput{})
+	if err != nil {
+		return nil, err
 	}
-	md.cfg.AWSAccountID = *output.Account
+	md.cfg.AWSAccountID = *stsOutput.Account
 
 	// up to 63 characters
 	// https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-s3-bucket-naming-requirements.html
-	md.cfg.Tag += "-" + strings.ToLower(*output.UserId)
+	md.cfg.Tag += "-" + strings.ToLower(*stsOutput.UserId)
 	h, _ := os.Hostname()
 	if len(h) > 5 {
 		h = strings.ToLower(h)
@@ -214,7 +225,7 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 	md.s3Plugin = s3.NewEmbedded(md.lg, md.cfg, awss3.New(md.ss))
 
 	if cfg.ALBIngressController.Enable {
-		md.albPlugin = alb.NewEmbedded(md.stopc, lg, md.cfg, md.kubectlPath, md.im, md.ec2, elbv2.New(md.ss), md.s3Plugin)
+		md.albPlugin = alb.NewEmbedded(md.stopc, lg, md.cfg, md.cfg.KubectlDownloadPath, md.im, md.ec2, elbv2.New(md.ss), md.s3Plugin)
 		if err != nil {
 			return nil, err
 		}
@@ -289,8 +300,8 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 			md.cfg.ClusterState.CA = *co.Cluster.CertificateAuthority.Data
 			if err = writeKUBECONFIG(
 				md.lg,
-				md.kubectlPath,
-				md.awsIAMAuthenticatorPath,
+				md.cfg.KubectlDownloadPath,
+				md.cfg.AWSIAMAuthenticatorDownloadPath,
 				md.cfg.ClusterState.Endpoint,
 				md.cfg.ClusterState.CA,
 				md.cfg.ClusterName,
@@ -306,13 +317,13 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 
 			kvOut, kvOutErr := exec.New().CommandContext(
 				context.Background(),
-				md.kubectlPath,
+				md.cfg.KubectlDownloadPath,
 				"--kubeconfig="+md.cfg.KubeConfigPath,
 				"version",
 			).CombinedOutput()
 			md.lg.Info(
 				"checking kubectl after cluster creation",
-				zap.String("kubectl", md.kubectlPath),
+				zap.String("kubectl", cfg.KubectlDownloadPath),
 				zap.String("kubectl-download-url", md.cfg.KubectlDownloadURL),
 				zap.String("kubectl-version", string(kvOut)),
 				zap.String("kubectl-version-err", fmt.Sprintf("%v", kvOutErr)),

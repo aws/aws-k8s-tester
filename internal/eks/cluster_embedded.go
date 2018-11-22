@@ -125,8 +125,8 @@ func (md *embedded) createCluster() error {
 
 	if err = writeKUBECONFIG(
 		md.lg,
-		md.kubectlPath,
-		md.awsIAMAuthenticatorPath,
+		md.cfg.KubectlDownloadPath,
+		md.cfg.AWSIAMAuthenticatorDownloadPath,
 		md.cfg.ClusterState.Endpoint,
 		md.cfg.ClusterState.CA,
 		md.cfg.ClusterName,
@@ -150,14 +150,14 @@ func (md *embedded) createCluster() error {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		var out1 []byte
 		out1, err = exec.New().CommandContext(ctx,
-			md.kubectlPath,
+			md.cfg.KubectlDownloadPath,
 			"--kubeconfig="+md.cfg.KubeConfigPath,
 			"version",
 		).CombinedOutput()
 		cancel()
 		md.lg.Info("ran kubectl version",
-			zap.String("kubectl-path", md.kubectlPath),
-			zap.String("aws-iam-authenticator-path", md.awsIAMAuthenticatorPath),
+			zap.String("kubectl-path", md.cfg.KubectlDownloadPath),
+			zap.String("aws-iam-authenticator-path", md.cfg.AWSIAMAuthenticatorDownloadPath),
 			zap.String("output", string(out1)),
 			zap.Error(err),
 		)
@@ -165,14 +165,14 @@ func (md *embedded) createCluster() error {
 		ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
 		var out2 []byte
 		out2, err = exec.New().CommandContext(ctx,
-			md.kubectlPath,
+			md.cfg.KubectlDownloadPath,
 			"--kubeconfig="+md.cfg.KubeConfigPath,
 			"cluster-info",
 		).CombinedOutput()
 		cancel()
 		md.lg.Info("ran kubectl cluster-info",
-			zap.String("kubectl-path", md.kubectlPath),
-			zap.String("aws-iam-authenticator-path", md.awsIAMAuthenticatorPath),
+			zap.String("kubectl-path", md.cfg.KubectlDownloadPath),
+			zap.String("aws-iam-authenticator-path", md.cfg.AWSIAMAuthenticatorDownloadPath),
 			zap.String("output", string(out2)),
 			zap.Error(err),
 		)
@@ -187,15 +187,15 @@ func (md *embedded) createCluster() error {
 		ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
 		var out3 []byte
 		out3, err = exec.New().CommandContext(ctx,
-			md.kubectlPath,
+			md.cfg.KubectlDownloadPath,
 			"--kubeconfig="+md.cfg.KubeConfigPath,
 			"cluster-info",
 			"dump",
 		).CombinedOutput()
 		cancel()
 		md.lg.Info("ran kubectl cluster-info dump",
-			zap.String("kubectl-path", md.kubectlPath),
-			zap.String("aws-iam-authenticator-path", md.awsIAMAuthenticatorPath),
+			zap.String("kubectl-path", md.cfg.KubectlDownloadPath),
+			zap.String("aws-iam-authenticator-path", md.cfg.AWSIAMAuthenticatorDownloadPath),
 			zap.String("output", string(out3)),
 			zap.Error(err),
 		)
