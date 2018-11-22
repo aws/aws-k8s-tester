@@ -8,10 +8,9 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
+	"github.com/aws/aws-k8s-tester/internal/csi"
 	"github.com/aws/aws-k8s-tester/internal/ec2"
 	"github.com/aws/aws-k8s-tester/internal/ssh"
-	"github.com/aws/aws-k8s-tester/pkg/fileutil"
-
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
@@ -52,7 +51,6 @@ AWS_SHARED_CREDENTIALS_FILE=~/.aws/credentials \
   --timeout=20m
 */
 
-// TODO: use instance role, and get rid of credential mount
 func newTestIntegration() *cobra.Command {
 	return &cobra.Command{
 		Use:   "integration",
@@ -61,12 +59,8 @@ func newTestIntegration() *cobra.Command {
 	}
 }
 
+// TODO: move most of this to internal/csi
 func testIntegrationFunc(cmd *cobra.Command, args []string) {
-	credEnv := "AWS_SHARED_CREDENTIALS_FILE"
-	if os.Getenv(credEnv) == "" || !fileutil.Exist(os.Getenv(credEnv)) {
-		fmt.Fprintln(os.Stderr, "no AWS_SHARED_CREDENTIALS_FILE found")
-		os.Exit(1)
-	}
 	if timeout == time.Duration(0) {
 		fmt.Fprintf(os.Stderr, "no timeout specified (%q)\n", timeout)
 		os.Exit(1)
@@ -89,19 +83,29 @@ func testIntegrationFunc(cmd *cobra.Command, args []string) {
 	cfg.IngressRulesTCP = map[string]string{"22": "0.0.0.0/0"}
 	cfg.Plugins = []string{
 		"update-amazon-linux-2",
-		"set-env-aws-cred-AWS_SHARED_CREDENTIALS_FILE",
 		"install-go-1.11.2",
 		"install-csi-" + branchOrPR,
 	}
 	cfg.Wait = true
+
+	resources, err := csi.CreateIAMResources(cfg.AWSRegion)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to create IAM resources (%v)\n", err)
+		resources.DeleteIAMResources()
+	} else {
+		cfg.InstanceProfileName = *resources.GetInstanceProfileName()
+	}
+
 	var ec ec2.Deployer
 	ec, err = ec2.NewDeployer(cfg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create EC2 deployer (%v)\n", err)
+		resources.DeleteIAMResources()
 		os.Exit(1)
 	}
 	if err = ec.Create(); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create EC2 instance (%v)\n", err)
+		resources.DeleteIAMResources()
 		os.Exit(1)
 	}
 
@@ -120,10 +124,12 @@ func testIntegrationFunc(cmd *cobra.Command, args []string) {
 		PublicDNSName: iv.PublicDNSName,
 		UserName:      cfg.UserName,
 	})
+	// TODO: dry up the repeated `if terminateOnExit {...}`
 	if serr != nil {
 		fmt.Fprintf(os.Stderr, "failed to create SSH (%v)\n", err)
 		if terminateOnExit {
 			ec.Terminate()
+			resources.DeleteIAMResources()
 		} else {
 			fmt.Println(cfg.SSHCommands())
 		}
@@ -135,6 +141,7 @@ func testIntegrationFunc(cmd *cobra.Command, args []string) {
 		fmt.Fprintf(os.Stderr, "failed to connect SSH (%v)\n", err)
 		if terminateOnExit {
 			ec.Terminate()
+			resources.DeleteIAMResources()
 		} else {
 			fmt.Println(cfg.SSHCommands())
 		}
@@ -151,6 +158,7 @@ func testIntegrationFunc(cmd *cobra.Command, args []string) {
 		fmt.Fprintf(os.Stderr, "CSI integration test FAILED (%v, %v)\n", err, reflect.TypeOf(err))
 		if terminateOnExit {
 			ec.Terminate()
+			resources.DeleteIAMResources()
 		} else {
 			fmt.Println(cfg.SSHCommands())
 		}
@@ -170,6 +178,7 @@ func testIntegrationFunc(cmd *cobra.Command, args []string) {
 		fmt.Fprintln(os.Stderr, "CSI integration test FAILED")
 		if terminateOnExit {
 			ec.Terminate()
+			resources.DeleteIAMResources()
 		} else {
 			fmt.Println(cfg.SSHCommands())
 		}
@@ -194,5 +203,8 @@ func testIntegrationFunc(cmd *cobra.Command, args []string) {
 
 	if terminateOnExit {
 		ec.Terminate()
+		resources.DeleteIAMResources()
 	}
+
+	// TODO: print manual commands to delete instance profile, role, and policy
 }
