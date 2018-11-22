@@ -26,6 +26,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.2...0.1.3).
 - Add [`eksconfig.Config.KubectlPath`](https://github.com/aws/aws-k8s-tester/commit/c5826538bac54764c5368f86b85ab46fcf4c54a5) field.
 - Add [`eksconfig.Config.AWSIAMAuthenticatorDownloadURL`](https://github.com/aws/aws-k8s-tester/commit/3b8704fcf0c15229fc3480caca41b4ddec1497a1) field.
 - Add [`eksconfig.Config.AWSIAMAuthenticatorPath`](https://github.com/aws/aws-k8s-tester/commit/c5826538bac54764c5368f86b85ab46fcf4c54a5) field.
+- Fix a typo in [`eksconfig.Config.WorkerNodeASG*`](https://github.com/aws/aws-k8s-tester/commit/e2ed8f45da472660f20743701b266fa79b5611d8) field.
 - [Add new regions, update AMIs](https://github.com/aws/aws-k8s-tester/commit/017b53add758cb6ad8e74eda69bb09bc80c76faa).
 
 ### `storagetester`
