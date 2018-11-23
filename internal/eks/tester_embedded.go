@@ -395,9 +395,8 @@ func (md *embedded) Up() (err error) {
 		}
 	}()
 
-	var termChan = make(chan os.Signal)
-	signal.Notify(termChan, syscall.SIGTERM)
-	signal.Notify(termChan, syscall.SIGINT)
+	termChan := make(chan os.Signal)
+	signal.Notify(termChan, syscall.SIGTERM, syscall.SIGINT)
 
 	if md.cfg.WaitBeforeDown > 0 {
 		md.lg.Info("waiting before cluster tear down", zap.Duration("wait", md.cfg.WaitBeforeDown))
