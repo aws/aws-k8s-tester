@@ -183,11 +183,11 @@ func (md *embedded) Create() (err error) {
 			if err != nil {
 				return err
 			}
-			if md.cfg.SubnetIDToAvailibilityZone == nil {
-				md.cfg.SubnetIDToAvailibilityZone = make(map[string]string)
+			if md.cfg.SubnetIDToAvailabilityZone == nil {
+				md.cfg.SubnetIDToAvailabilityZone = make(map[string]string)
 			}
 			for _, sv := range output.Subnets {
-				md.cfg.SubnetIDToAvailibilityZone[*sv.SubnetId] = *sv.AvailabilityZone
+				md.cfg.SubnetIDToAvailabilityZone[*sv.SubnetId] = *sv.AvailabilityZone
 			}
 		}
 
@@ -209,7 +209,7 @@ func (md *embedded) Create() (err error) {
 			zap.String("vpc-id", md.cfg.VPCID),
 			zap.String("vpc-cidr", md.cfg.VPCCIDR),
 			zap.Strings("subnet-ids", md.cfg.SubnetIDs),
-			zap.String("availability-zones", fmt.Sprintf("%v", md.cfg.SubnetIDToAvailibilityZone)),
+			zap.String("availability-zones", fmt.Sprintf("%v", md.cfg.SubnetIDToAvailabilityZone)),
 		)
 	} else {
 		if err = catchStopc(md.lg, md.stopc, md.createVPC); err != nil {
@@ -653,7 +653,7 @@ func (md *embedded) createInstances() (err error) {
 			md.lg.Info(
 				"created EC2 instance group",
 				zap.String("subnet-id", subnetID),
-				zap.String("availability-zone", md.cfg.SubnetIDToAvailibilityZone[subnetID]),
+				zap.String("availability-zone", md.cfg.SubnetIDToAvailabilityZone[subnetID]),
 				zap.Int("instance-count", n),
 			)
 		}
@@ -699,7 +699,7 @@ func (md *embedded) createInstances() (err error) {
 			md.lg.Info(
 				"created EC2 instance group",
 				zap.String("subnet-id", subnetID),
-				zap.String("availability-zone", md.cfg.SubnetIDToAvailibilityZone[subnetID]),
+				zap.String("availability-zone", md.cfg.SubnetIDToAvailabilityZone[subnetID]),
 			)
 		}
 	}
