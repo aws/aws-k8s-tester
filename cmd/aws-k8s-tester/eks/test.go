@@ -19,6 +19,7 @@ func newTest() *cobra.Command {
 	cmd.AddCommand(
 		newTestGetWorkerNodeLogs(),
 		newTestDumpClusterLogs(),
+		newTestGetKubectlVersion(),
 		newTestALB(),
 	)
 	return cmd
@@ -89,6 +90,38 @@ func testDumpClusterLogs(cmd *cobra.Command, args []string) {
 
 	if err = tester.DumpClusterLogs(dir, ""); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to dump cluster logs %v\n", err)
+		os.Exit(1)
+	}
+}
+
+func newTestGetKubectlVersion() *cobra.Command {
+	return &cobra.Command{
+		Use:   "get-kubectl-version",
+		Short: "Runs kubectl version",
+		Run:   testGetKubectlVersion,
+	}
+}
+
+func testGetKubectlVersion(cmd *cobra.Command, args []string) {
+	if path == "" {
+		fmt.Fprintln(os.Stderr, "'--path' flag is not specified")
+		os.Exit(1)
+	}
+
+	cfg, err := eksconfig.Load(path)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to load configuration %q (%v)\n", path, err)
+		os.Exit(1)
+	}
+	var tester ekstester.Tester
+	tester, err = eks.NewTester(cfg)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to create EKS deployer %v\n", err)
+		os.Exit(1)
+	}
+
+	if err = tester.GetKubectlVersion(); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to get kubectl version %v\n", err)
 		os.Exit(1)
 	}
 }

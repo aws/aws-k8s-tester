@@ -9,6 +9,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.2...0.1.3).
 ### `aws-k8s-tester` CLI
 
 - Add [`aws-k8s-tester kubeadm`](https://github.com/aws/aws-k8s-tester/commit/7339ba312212eff2afed720be0e8b0484f50c7bc) command.
+- Add [`aws-k8s-tester test get-kubectl-version`](https://github.com/aws/aws-k8s-tester/pull/17) command.
 
 ### `ec2config`
 
