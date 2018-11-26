@@ -32,6 +32,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.2...0.1.3).
 - Fix a typo in [`eksconfig.Config.WorkerNodeASG*`](https://github.com/aws/aws-k8s-tester/commit/e2ed8f45da472660f20743701b266fa79b5611d8) field.
 - [Add new regions, update AMIs](https://github.com/aws/aws-k8s-tester/commit/017b53add758cb6ad8e74eda69bb09bc80c76faa).
 
+### `ekstester`
+
+- Add [`ekstester.Tester.GetKubectlVersion`](https://github.com/aws/aws-k8s-tester/pull/16) method.
+
 ### `storagetester`
 
 - Rename to [`storagetester` from `etcdtester`](https://github.com/aws/aws-k8s-tester/commit/81f38f66690f6f0616b809c4fe8e1860d78b4346).
@@ -49,7 +53,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.2...0.1.3).
 
 ### Dependency
 
-- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.15.65`](https://github.com/aws/aws-sdk-go/releases/tag/v1.15.65) to [`v1.15.81`](https://github.com/aws/aws-sdk-go/releases/tag/v1.15.81).
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.15.65`](https://github.com/aws/aws-sdk-go/releases/tag/v1.15.65) to [`v1.15.82`](https://github.com/aws/aws-sdk-go/releases/tag/v1.15.82).
 
 ### Go
 
