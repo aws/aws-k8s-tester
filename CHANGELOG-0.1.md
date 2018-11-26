@@ -1,11 +1,3 @@
-<hr>
-
-
-## [0.1.4]() (TBD)
-
-### `internal`
-
-- Handle [interrupt and terminate signals when creating a cluster](https://github.com/aws/aws-k8s-tester/pull/14).
 
 <hr>
 
@@ -51,6 +43,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.2...0.1.3).
 - Improve [worker node log fetcher](https://github.com/aws/aws-k8s-tester/pull/10) with concurrency.
 - Add [retries on `kubectl get all` fail](https://github.com/aws/aws-k8s-tester/pull/8).
 - Add [`kubectl` and `aws-iam-authenticator` downloader](https://github.com/aws/aws-k8s-tester/commit/3b8704fcf0c15229fc3480caca41b4ddec1497a1).
+- Handle [interrupt and terminate signals when creating a cluster](https://github.com/aws/aws-k8s-tester/pull/14).
 
 ### Dependency
 
