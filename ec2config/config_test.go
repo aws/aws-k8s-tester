@@ -27,6 +27,7 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EC2_WAIT", "true")
 	os.Setenv("AWS_K8S_TESTER_EC2_INGRESS_RULES_TCP", "22=0.0.0.0/0,2379-2380=192.168.0.0/8")
 	os.Setenv("AWS_K8S_TESTER_EC2_VPC_CIDR", "192.168.0.0/8")
+	os.Setenv("AWS_K8S_TESTER_EC2_INSTANCE_PROFILE_NAME", "aws-k8s-tester-ec2")
 
 	defer func() {
 		os.Unsetenv("AWS_K8S_TESTER_EC2_WAIT_BEFORE_DOWN")
@@ -46,6 +47,7 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWS_K8S_TESTER_EC2_WAIT")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_INGRESS_RULES_TCP")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_VPC_CIDR")
+		os.Unsetenv("AWS_K8S_TESTER_EC2_INSTANCE_PROFILE_NAME")
 	}()
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
@@ -106,5 +108,8 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.VPCCIDR != "192.168.0.0/8" {
 		t.Fatalf("VPCCIDR expected '192.168.0.0/8', got %q", cfg.VPCCIDR)
+	}
+	if cfg.InstanceProfileName != "aws-k8s-tester-ec2" {
+		t.Fatalf("InstanceProfileName expected 'aws-k8s-tester-ec2', got %q", cfg.InstanceProfileName)
 	}
 }
