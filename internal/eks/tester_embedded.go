@@ -325,7 +325,7 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 			).CombinedOutput()
 			md.lg.Info(
 				"checking kubectl after cluster creation",
-				zap.String("kubectl", cfg.KubectlPath),
+				zap.String("kubectl", md.cfg.KubectlPath),
 				zap.String("kubectl-download-url", md.cfg.KubectlDownloadURL),
 				zap.String("kubectl-version", string(kvOut)),
 				zap.String("kubectl-version-err", fmt.Sprintf("%v", kvOutErr)),
@@ -340,6 +340,26 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 	)
 	return md, md.cfg.Sync()
+}
+
+// GetKubectlVersion runs "kubectl version" tests.
+func (md *embedded) GetKubectlVersion() (err error) {
+	var out []byte
+	out, err = exec.New().CommandContext(
+		context.Background(),
+		md.cfg.KubectlPath,
+		"--kubeconfig="+md.cfg.KubeConfigPath,
+		"--match-server-version=false",
+		"version",
+	).CombinedOutput()
+	md.lg.Info(
+		"checking kubectl",
+		zap.String("kubectl", md.cfg.KubectlPath),
+		zap.String("kubectl-download-url", md.cfg.KubectlDownloadURL),
+		zap.String("kubectl-version", string(out)),
+		zap.String("kubectl-version-err", fmt.Sprintf("%v", err)),
+	)
+	return err
 }
 
 // Up creates an EKS cluster for 'kubetest'.
