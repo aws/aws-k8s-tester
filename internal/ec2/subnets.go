@@ -30,7 +30,7 @@ func (md *embedded) createSubnets() (err error) {
 	}
 
 	md.cfg.SubnetIDs = make([]string, 0, 3)
-	md.cfg.SubnetIDToAvailibilityZone = make(map[string]string, 3)
+	md.cfg.SubnetIDToAvailabilityZone = make(map[string]string, 3)
 	for i, cidr := range []string{subnetCIDR1, subnetCIDR2, subnetCIDR3} {
 		var output *ec2.CreateSubnetOutput
 		output, err = md.ec2.CreateSubnet(&ec2.CreateSubnetInput{
@@ -45,7 +45,7 @@ func (md *embedded) createSubnets() (err error) {
 		az := *output.Subnet.AvailabilityZone
 
 		md.cfg.SubnetIDs = append(md.cfg.SubnetIDs, id)
-		md.cfg.SubnetIDToAvailibilityZone[id] = az
+		md.cfg.SubnetIDToAvailabilityZone[id] = az
 
 		md.lg.Info(
 			"created subnet",
@@ -153,10 +153,10 @@ func (md *embedded) getSubnets() (err error) {
 	}
 
 	md.cfg.SubnetIDs = make([]string, 0, len(output.Subnets))
-	md.cfg.SubnetIDToAvailibilityZone = make(map[string]string)
+	md.cfg.SubnetIDToAvailabilityZone = make(map[string]string)
 	for _, sv := range output.Subnets {
 		md.cfg.SubnetIDs = append(md.cfg.SubnetIDs, *sv.SubnetId)
-		md.cfg.SubnetIDToAvailibilityZone[*sv.SubnetId] = *sv.AvailabilityZone
+		md.cfg.SubnetIDToAvailabilityZone[*sv.SubnetId] = *sv.AvailabilityZone
 	}
 
 	md.lg.Info(

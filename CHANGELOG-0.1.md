@@ -19,6 +19,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.2...0.1.3).
 - Remove [`"install-docker-ubuntu"`](https://github.com/aws/aws-k8s-tester/commit/fe378db6e272ce37430d07dfddfa84d7c0d1199b).
 - Remove [`"install-start-kubeadm-ubuntu"`](https://github.com/aws/aws-k8s-tester/commit/fe378db6e272ce37430d07dfddfa84d7c0d1199b).
 - Set [`ec2config.Config.Wait` to true by default](https://github.com/aws/aws-k8s-tester/commit/fe378db6e272ce37430d07dfddfa84d7c0d1199b).
+- Add [`ec2config.Config.InstanceProfileName`](https://github.com/aws/aws-k8s-tester/pull/15/commits/2f7f19c775faea8b6244b8e579716b6bea297f3c)
+- Fix a typo in [`ec2config.Config.SubnetIDToAvailabilityZone`](https://github.com/aws/aws-k8s-tester/pull/15/commits/06269a8c296fd28aacd80588982b787f62c0a14d) field.
 
 ### `eksconfig`
 

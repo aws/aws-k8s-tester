@@ -119,7 +119,7 @@ type Config struct {
 	// If empty, it will fetch subnets from a given or created VPC.
 	// And randomly assign them to instances.
 	SubnetIDs                  []string          `json:"subnet-ids,omitempty"`
-	SubnetIDToAvailibilityZone map[string]string `json:"subnet-id-to-availability-zone,omitempty"` // read-only to user
+	SubnetIDToAvailabilityZone map[string]string `json:"subnet-id-to-availability-zone,omitempty"` // read-only to user
 
 	// IngressRulesTCP is a map from TCP port range to CIDR to allow via security groups.
 	IngressRulesTCP map[string]string `json:"ingress-rules-tcp,omitempty"`
@@ -136,6 +136,9 @@ type Config struct {
 
 	// Wait is true to wait until all EC2 instances are ready.
 	Wait bool `json:"wait"`
+
+	// InstanceProfileName is the name of an instance profile with permissions to manage EC2 instances.
+	InstanceProfileName string `json:"instance-profile-name,omitempty"`
 }
 
 // Instance represents an EC2 instance.
