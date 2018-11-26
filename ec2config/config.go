@@ -136,6 +136,9 @@ type Config struct {
 
 	// Wait is true to wait until all EC2 instances are ready.
 	Wait bool `json:"wait"`
+
+	// InstanceProfileName is the name of an instance profile with permissions to manage EC2 instances.
+	InstanceProfileName string `json:"instance-profile-name,omitempty"`
 }
 
 // Instance represents an EC2 instance.
