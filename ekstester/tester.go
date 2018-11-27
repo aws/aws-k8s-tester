@@ -40,8 +40,8 @@ type Deployer interface {
 	// It's either reloaded from disk or returned from embedded EKS deployer.
 	LoadConfig() (eksconfig.Config, error)
 
-	// GetKubectlVersion runs "kubectl version" tests.
-	GetKubectlVersion() error
+	// KubectlArgs returns the parameters to "kubectl" tests.
+	KubectlArgs() ([]string, error)
 }
 
 // ALB defines AWS application load balancer tester.

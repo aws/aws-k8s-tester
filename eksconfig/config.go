@@ -984,6 +984,16 @@ func (cfg *Config) UpdateFromEnvs() error {
 	return nil
 }
 
+// ArgsKubectlVersion returns the parameters to "kubectl" tests.
+func (cfg *Config) ArgsKubectlVersion() []string {
+	return []string{
+		cfg.KubectlPath,
+		"--kubeconfig=" + cfg.KubeConfigPath,
+		"--match-server-version=false",
+		"version",
+	}
+}
+
 // supportedKubernetesVersions is a list of EKS supported Kubernets versions.
 var supportedKubernetesVersions = map[string]struct{}{
 	"1.10": {},
