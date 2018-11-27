@@ -344,21 +344,28 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 
 // GetKubectlVersion runs "kubectl version" tests.
 func (md *embedded) GetKubectlVersion() (err error) {
+	retryStart := time.Now().UTC()
 	var out []byte
-	out, err = exec.New().CommandContext(
-		context.Background(),
-		md.cfg.KubectlPath,
-		"--kubeconfig="+md.cfg.KubeConfigPath,
-		"--match-server-version=false",
-		"version",
-	).CombinedOutput()
-	md.lg.Info(
-		"checking kubectl",
-		zap.String("kubectl", md.cfg.KubectlPath),
-		zap.String("kubectl-download-url", md.cfg.KubectlDownloadURL),
-		zap.String("kubectl-version", string(out)),
-		zap.String("kubectl-version-err", fmt.Sprintf("%v", err)),
-	)
+	for time.Now().UTC().Sub(retryStart) < 5*time.Minute {
+		out, err = exec.New().CommandContext(
+			context.Background(),
+			md.cfg.KubectlPath,
+			"--kubeconfig="+md.cfg.KubeConfigPath,
+			"--match-server-version=false",
+			"version",
+		).CombinedOutput()
+		md.lg.Info(
+			"checking kubectl",
+			zap.String("kubectl", md.cfg.KubectlPath),
+			zap.String("kubectl-download-url", md.cfg.KubectlDownloadURL),
+			zap.String("kubectl-version", string(out)),
+			zap.String("kubectl-version-err", fmt.Sprintf("%v", err)),
+		)
+		if err == nil {
+			break
+		}
+		time.Sleep(10 * time.Second)
+	}
 	return err
 }
 
