@@ -73,8 +73,8 @@ type iamResources struct {
 }
 
 type iamResource struct {
-	name *string
-	arn  *string
+	name string
+	arn  string
 }
 
 func createIAM(awsRegion string) (*iam.IAM, error) {
@@ -123,10 +123,10 @@ func CreateIAMResources(awsRegion string) (resources *iamResources, err error) {
 		return nil, fmt.Errorf("failed to add role to create new instance profile (%v)\n", err)
 	}
 	resources.instanceProfile = &iamResource{
-		name: instanceOutput.InstanceProfile.InstanceProfileName,
-		arn:  instanceOutput.InstanceProfile.Arn,
+		name: *instanceOutput.InstanceProfile.InstanceProfileName,
+		arn:  *instanceOutput.InstanceProfile.Arn,
 	}
-	resources.lg.Info("created instance profile", zap.String("instance-profile-name", *resources.instanceProfile.name))
+	resources.lg.Info("created instance profile", zap.String("instance-profile-name", resources.instanceProfile.name))
 
 	// Creates policy
 	policyOutput, err := resources.svc.CreatePolicy(&iam.CreatePolicyInput{
@@ -138,10 +138,10 @@ func CreateIAMResources(awsRegion string) (resources *iamResources, err error) {
 		return nil, fmt.Errorf("failed to add role to create new policy(%v)\n", err)
 	}
 	resources.policy = &iamResource{
-		name: policyOutput.Policy.PolicyName,
-		arn:  policyOutput.Policy.Arn,
+		name: *policyOutput.Policy.PolicyName,
+		arn:  *policyOutput.Policy.Arn,
 	}
-	resources.lg.Info("created policy", zap.String("policy-name", *resources.policy.name))
+	resources.lg.Info("created policy", zap.String("policy-name", resources.policy.name))
 
 	// Creates role
 	roleOutput, err := resources.svc.CreateRole(&iam.CreateRoleInput{
@@ -152,15 +152,15 @@ func CreateIAMResources(awsRegion string) (resources *iamResources, err error) {
 		return nil, fmt.Errorf("failed to create new role (%v)\n", err)
 	}
 	resources.role = &iamResource{
-		name: roleOutput.Role.RoleName,
-		arn:  roleOutput.Role.Arn,
+		name: *roleOutput.Role.RoleName,
+		arn:  *roleOutput.Role.Arn,
 	}
-	resources.lg.Info("created role", zap.String("role-name", *resources.role.name))
+	resources.lg.Info("created role", zap.String("role-name", resources.role.name))
 
 	// Attaches role to policy
 	_, err = resources.svc.AttachRolePolicy(&iam.AttachRolePolicyInput{
-		PolicyArn: resources.policy.arn,
-		RoleName:  resources.role.name,
+		PolicyArn: &resources.policy.arn,
+		RoleName:  &resources.role.name,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to attach role to policy (%v)\n", err)
@@ -169,8 +169,8 @@ func CreateIAMResources(awsRegion string) (resources *iamResources, err error) {
 
 	// Adds role to instance profile
 	_, err = resources.svc.AddRoleToInstanceProfile(&iam.AddRoleToInstanceProfileInput{
-		InstanceProfileName: resources.instanceProfile.name,
-		RoleName:            resources.role.name,
+		InstanceProfileName: &resources.instanceProfile.name,
+		RoleName:            &resources.role.name,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to add role to instance profile (%v)\n", err)
@@ -180,14 +180,14 @@ func CreateIAMResources(awsRegion string) (resources *iamResources, err error) {
 	// TODO: make separate method and change so that only prints that commands need to be run
 	fmt.Printf("\nManually delete profile, role, and policy:\n%s && %s && %s && %s && %s\n\n",
 		fmt.Sprintf("aws iam remove-role-from-instance-profile --instance-profile-name %s --role-name %s",
-			*resources.instanceProfile.name,
-			*resources.role.name),
+			resources.instanceProfile.name,
+			resources.role.name),
 		fmt.Sprintf("aws iam detach-role-policy --role-name %s --policy-arn %s",
-			*resources.role.name,
-			*resources.policy.arn),
-		fmt.Sprintf("aws iam delete-role --role-name %s", *resources.role.name),
-		fmt.Sprintf("aws iam delete-policy --policy-arn %s", *resources.policy.arn),
-		fmt.Sprintf("aws iam delete-instance-profile --instance-profile-name %s", *resources.instanceProfile.name),
+			resources.role.name,
+			resources.policy.arn),
+		fmt.Sprintf("aws iam delete-role --role-name %s", resources.role.name),
+		fmt.Sprintf("aws iam delete-policy --policy-arn %s", resources.policy.arn),
+		fmt.Sprintf("aws iam delete-instance-profile --instance-profile-name %s", resources.instanceProfile.name),
 	)
 
 	// Delay is needed to ensure that permissions have been propagated.
@@ -198,7 +198,7 @@ func CreateIAMResources(awsRegion string) (resources *iamResources, err error) {
 	return resources, nil
 }
 
-func (resources *iamResources) GetInstanceProfileName() *string {
+func (resources *iamResources) GetInstanceProfileName() string {
 	return resources.instanceProfile.name
 }
 
@@ -210,27 +210,27 @@ func (resources *iamResources) DeleteIAMResources() {
 	if resources.instanceProfile != nil {
 		// Removes role from instance profile.
 		_, err := resources.svc.RemoveRoleFromInstanceProfile(&iam.RemoveRoleFromInstanceProfileInput{
-			InstanceProfileName: resources.instanceProfile.name,
-			RoleName:            resources.role.name,
+			InstanceProfileName: &resources.instanceProfile.name,
+			RoleName:            &resources.role.name,
 		})
 		if err != nil {
 			resources.lg.Error("failed to remove role from instance profile",
-				zap.String("role-name", *resources.role.name),
-				zap.String("instance-profile-name", *resources.instanceProfile.name),
+				zap.String("role-name", resources.role.name),
+				zap.String("instance-profile-name", resources.instanceProfile.name),
 				zap.Error(err),
 			)
 		} else {
 			resources.lg.Info("removed role from instance profile",
-				zap.String("role-name", *resources.role.name),
-				zap.String("instance-profile-name", *resources.instanceProfile.name),
+				zap.String("role-name", resources.role.name),
+				zap.String("instance-profile-name", resources.instanceProfile.name),
 			)
 			// Deletes instance profile.
 			_, err := resources.svc.DeleteInstanceProfile(&iam.DeleteInstanceProfileInput{
-				InstanceProfileName: resources.instanceProfile.name,
+				InstanceProfileName: &resources.instanceProfile.name,
 			})
 			if err != nil {
 				resources.lg.Error("failed to delete instance profile",
-					zap.String("instance-profile-name", *resources.instanceProfile.name),
+					zap.String("instance-profile-name", resources.instanceProfile.name),
 					zap.Error(err),
 				)
 			} else {
@@ -245,27 +245,27 @@ func (resources *iamResources) DeleteIAMResources() {
 		// Detaches policy from role.
 		// AWS does not allow policy to be deleted with role still attached.
 		_, err := resources.svc.DetachRolePolicy(&iam.DetachRolePolicyInput{
-			PolicyArn: resources.policy.arn,
-			RoleName:  resources.role.name,
+			PolicyArn: &resources.policy.arn,
+			RoleName:  &resources.role.name,
 		})
 		if err != nil {
 			resources.lg.Error("failed to detach policy from role",
-				zap.String("policy-name", *resources.policy.name),
-				zap.String("role-name", *resources.role.name),
+				zap.String("policy-name", resources.policy.name),
+				zap.String("role-name", resources.role.name),
 				zap.Error(err),
 			)
 		} else {
 			resources.lg.Info("detached policy from role",
-				zap.String("policy-name", *resources.policy.name),
-				zap.String("role-name", *resources.role.name),
+				zap.String("policy-name", resources.policy.name),
+				zap.String("role-name", resources.role.name),
 			)
 			// Deletes policy.
 			_, err := resources.svc.DeletePolicy(&iam.DeletePolicyInput{
-				PolicyArn: resources.policy.arn,
+				PolicyArn: &resources.policy.arn,
 			})
 			if err != nil {
 				resources.lg.Error("failed to delete policy",
-					zap.String("policy-name", *resources.policy.name),
+					zap.String("policy-name", resources.policy.name),
 					zap.Error(err),
 				)
 			} else {
@@ -278,12 +278,11 @@ func (resources *iamResources) DeleteIAMResources() {
 	// Deletes role.
 	if resources.role != nil {
 		_, err := resources.svc.DeleteRole(&iam.DeleteRoleInput{
-			RoleName: resources.role.name,
+			RoleName: &resources.role.name,
 		})
 		if err != nil {
 			resources.lg.Error("failed to delete role",
-				zap.String("role-name", *resources.role.name),
-				zap.String("error", err.Error()),
+				zap.String("role-name", resources.role.name),
 				zap.Error(err),
 			)
 		} else {
