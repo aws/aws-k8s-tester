@@ -223,7 +223,7 @@ func (dp *deployer) DumpClusterLogs(artifactDir, _ string) (err error) {
 	return err
 }
 
-// KubectlArgs returns the parameters to "kubectl" tests.
+// KubectlArgs returns the parameters to "kubectl" for API reachability tests.
 func (dp *deployer) KubectlArgs() (args []string, err error) {
 	// reload configuration from disk to read the latest configuration
 	if _, err = dp.LoadConfig(); err != nil {

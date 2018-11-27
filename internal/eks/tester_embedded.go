@@ -342,7 +342,7 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 	return md, md.cfg.Sync()
 }
 
-// KubectlArgs returns the parameters to "kubectl" tests.
+// KubectlArgs returns the parameters to "kubectl" for API reachability tests.
 func (md *embedded) KubectlArgs() ([]string, error) {
 	return md.cfg.ArgsKubectlVersion(), nil
 }

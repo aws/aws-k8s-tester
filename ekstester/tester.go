@@ -40,7 +40,7 @@ type Deployer interface {
 	// It's either reloaded from disk or returned from embedded EKS deployer.
 	LoadConfig() (eksconfig.Config, error)
 
-	// KubectlArgs returns the parameters to "kubectl" tests.
+	// KubectlArgs returns the parameters to "kubectl" for API reachability tests.
 	KubectlArgs() ([]string, error)
 }
 
