@@ -223,19 +223,13 @@ func (dp *deployer) DumpClusterLogs(artifactDir, _ string) (err error) {
 	return err
 }
 
-// GetKubectlVersion runs "kubectl version" tests.
-func (dp *deployer) GetKubectlVersion() (err error) {
+// KubectlArgs returns the parameters to "kubectl" tests.
+func (dp *deployer) KubectlArgs() (args []string, err error) {
 	// reload configuration from disk to read the latest configuration
 	if _, err = dp.LoadConfig(); err != nil {
-		return err
+		return nil, err
 	}
-	_, err = dp.ctrl.Output(exec.Command(
-		dp.cfg.AWSK8sTesterPath,
-		"eks",
-		"--path="+dp.cfg.ConfigPath,
-		"test", "get-kubectl-version",
-	))
-	return err
+	return dp.cfg.ArgsKubectlVersion(), nil
 }
 
 // Stop stops ongoing operations.
