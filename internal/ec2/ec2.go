@@ -259,7 +259,7 @@ func (md *embedded) Add() (err error) {
 		return errors.New("cannot add without SecurityGroupIDs")
 	}
 
-	InstanceProfileSpecifics := &ec2.IamInstanceProfileSpecification{Name: &md.cfg.InstanceProfileName}
+	instanceProfileSpecifics := &ec2.IamInstanceProfileSpecification{Name: &md.cfg.InstanceProfileName}
 
 	now := time.Now().UTC()
 	md.lg.Info("creating one EC2 instance", zap.String("cluster-name", md.cfg.ClusterName))
@@ -276,7 +276,7 @@ func (md *embedded) Add() (err error) {
 		SecurityGroupIds:                  aws.StringSlice(md.cfg.SecurityGroupIDs),
 		InstanceInitiatedShutdownBehavior: aws.String("terminate"),
 		UserData:                          aws.String(base64.StdEncoding.EncodeToString([]byte(md.cfg.InitScript))),
-		IamInstanceProfile:                InstanceProfileSpecifics,
+		IamInstanceProfile:                instanceProfileSpecifics,
 		TagSpecifications: []*ec2.TagSpecification{
 			{
 				ResourceType: aws.String("instance"),
@@ -544,7 +544,7 @@ func (md *embedded) uploadTesterLogs() (err error) {
 func (md *embedded) createInstances() (err error) {
 	now := time.Now().UTC()
 
-	InstanceProfileSpecifics := &ec2.IamInstanceProfileSpecification{Name: &md.cfg.InstanceProfileName}
+	instanceProfileSpecifics := &ec2.IamInstanceProfileSpecification{Name: &md.cfg.InstanceProfileName}
 
 	// evenly distribute per subnet
 	left := md.cfg.ClusterSize
@@ -590,7 +590,7 @@ func (md *embedded) createInstances() (err error) {
 					SecurityGroupIds:                  aws.StringSlice(md.cfg.SecurityGroupIDs),
 					InstanceInitiatedShutdownBehavior: aws.String("terminate"),
 					UserData:                          aws.String(base64.StdEncoding.EncodeToString([]byte(md.cfg.InitScript))),
-					IamInstanceProfile:                InstanceProfileSpecifics,
+					IamInstanceProfile:                instanceProfileSpecifics,
 					TagSpecifications: []*ec2.TagSpecification{
 						{
 							ResourceType: aws.String("instance"),
@@ -630,7 +630,7 @@ func (md *embedded) createInstances() (err error) {
 						SecurityGroupIds:                  aws.StringSlice(md.cfg.SecurityGroupIDs),
 						InstanceInitiatedShutdownBehavior: aws.String("terminate"),
 						UserData:                          aws.String(base64.StdEncoding.EncodeToString([]byte(md.cfg.InitScript))),
-						IamInstanceProfile:                InstanceProfileSpecifics,
+						IamInstanceProfile:                instanceProfileSpecifics,
 						TagSpecifications: []*ec2.TagSpecification{
 							{
 								ResourceType: aws.String("instance"),
@@ -687,7 +687,7 @@ func (md *embedded) createInstances() (err error) {
 				SecurityGroupIds:                  aws.StringSlice(md.cfg.SecurityGroupIDs),
 				InstanceInitiatedShutdownBehavior: aws.String("terminate"),
 				UserData:                          aws.String(base64.StdEncoding.EncodeToString([]byte(md.cfg.InitScript))),
-				IamInstanceProfile:                InstanceProfileSpecifics,
+				IamInstanceProfile:                instanceProfileSpecifics,
 				TagSpecifications: []*ec2.TagSpecification{
 					{
 						ResourceType: aws.String("instance"),
