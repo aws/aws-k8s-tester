@@ -27,7 +27,7 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
+	osexec "os/exec"
 	"syscall"
 	"time"
 
@@ -102,7 +102,7 @@ func (dp *deployer) Up() (err error) {
 	// "create cluster" command outputs cluster information
 	// in the configuration file (e.g. VPC ID, ALB DNS names, etc.)
 	// this needs be reloaded for other deployer method calls
-	createCmd := exec.Command(
+	createCmd := osexec.Command(
 		dp.cfg.AWSK8sTesterPath,
 		"eks",
 		"--path="+dp.cfg.ConfigPath,
@@ -130,7 +130,7 @@ func (dp *deployer) Down() (err error) {
 	if _, err = dp.LoadConfig(); err != nil {
 		return err
 	}
-	_, err = dp.ctrl.Output(exec.Command(
+	_, err = dp.ctrl.Output(osexec.Command(
 		dp.cfg.AWSK8sTesterPath,
 		"eks",
 		"--path="+dp.cfg.ConfigPath,
@@ -146,7 +146,7 @@ func (dp *deployer) IsUp() (err error) {
 	if _, err = dp.LoadConfig(); err != nil {
 		return err
 	}
-	_, err = dp.ctrl.Output(exec.Command(
+	_, err = dp.ctrl.Output(osexec.Command(
 		dp.cfg.AWSK8sTesterPath,
 		"eks",
 		"--path="+dp.cfg.ConfigPath,
@@ -187,7 +187,7 @@ func (dp *deployer) GetWorkerNodeLogs() (err error) {
 	if _, err = dp.LoadConfig(); err != nil {
 		return err
 	}
-	_, err = dp.ctrl.Output(exec.Command(
+	_, err = dp.ctrl.Output(osexec.Command(
 		dp.cfg.AWSK8sTesterPath,
 		"eks",
 		"--path="+dp.cfg.ConfigPath,
@@ -204,7 +204,7 @@ func (dp *deployer) DumpClusterLogs(artifactDir, _ string) (err error) {
 	if _, err = dp.LoadConfig(); err != nil {
 		return err
 	}
-	_, err = dp.ctrl.Output(exec.Command(
+	_, err = dp.ctrl.Output(osexec.Command(
 		dp.cfg.AWSK8sTesterPath,
 		"eks",
 		"--path="+dp.cfg.ConfigPath,
@@ -213,7 +213,7 @@ func (dp *deployer) DumpClusterLogs(artifactDir, _ string) (err error) {
 	if err != nil {
 		return err
 	}
-	_, err = dp.ctrl.Output(exec.Command(
+	_, err = dp.ctrl.Output(osexec.Command(
 		dp.cfg.AWSK8sTesterPath,
 		"eks",
 		"--path="+dp.cfg.ConfigPath,
@@ -224,7 +224,7 @@ func (dp *deployer) DumpClusterLogs(artifactDir, _ string) (err error) {
 }
 
 // KubectlCommand returns "kubectl" command object for API reachability tests.
-func (dp *deployer) KubectlCommand() (*exec.Cmd, error) {
+func (dp *deployer) KubectlCommand() (*osexec.Cmd, error) {
 	// reload configuration from disk to read the latest configuration
 	if _, err := dp.LoadConfig(); err != nil {
 		return nil, err
@@ -233,7 +233,7 @@ func (dp *deployer) KubectlCommand() (*exec.Cmd, error) {
 	if len(args) < 1 {
 		return nil, errors.New("empty kubectl arguments")
 	}
-	return exec.Command(args[0], args[1:]...), nil
+	return osexec.Command(args[0], args[1:]...), nil
 }
 
 // Stop stops ongoing operations.
