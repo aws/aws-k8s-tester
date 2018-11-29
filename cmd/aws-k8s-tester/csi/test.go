@@ -40,8 +40,7 @@ var (
 /*
 go install -v ./cmd/aws-k8s-tester
 
-AWS_SHARED_CREDENTIALS_FILE=~/.aws/credentials \
-  aws-k8s-tester csi test integration \
+aws-k8s-tester csi test integration \
   --terminate-on-exit=true \
   --csi=master \
   --timeout=20m
