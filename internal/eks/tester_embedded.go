@@ -344,11 +344,7 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 
 // KubectlCommand returns "kubectl" command object for API reachability tests.
 func (md *embedded) KubectlCommand() (*osexec.Cmd, error) {
-	args := md.cfg.ArgsKubectlVersion()
-	if len(args) < 1 {
-		return nil, errors.New("empty kubectl arguments")
-	}
-	return osexec.Command(args[0], args[1:]...), nil
+	return osexec.Command(md.cfg.KubectlPath, "--kubeconfig="+md.cfg.KubeConfigPath), nil
 }
 
 // Up creates an EKS cluster for 'kubetest'.

@@ -20,7 +20,6 @@ limitations under the License.
 package eks
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -229,11 +228,7 @@ func (dp *deployer) KubectlCommand() (*osexec.Cmd, error) {
 	if _, err := dp.LoadConfig(); err != nil {
 		return nil, err
 	}
-	args := dp.cfg.ArgsKubectlVersion()
-	if len(args) < 1 {
-		return nil, errors.New("empty kubectl arguments")
-	}
-	return osexec.Command(args[0], args[1:]...), nil
+	return osexec.Command(dp.cfg.KubectlPath, "--kubeconfig="+dp.cfg.KubeConfigPath), nil
 }
 
 // Stop stops ongoing operations.
