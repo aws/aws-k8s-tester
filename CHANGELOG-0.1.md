@@ -34,7 +34,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.2...0.1.3).
 
 ### `ekstester`
 
-- Add [`ekstester.Tester.KubectlArgs`](https://github.com/aws/aws-k8s-tester/pull/18) method.
+- Add [`ekstester.Tester.KubectlCommand`](https://github.com/aws/aws-k8s-tester/commit/8608df45d6e6cb07c06cd84504a1ae52fb08a1f6) method.
 
 ### `storagetester`
 
