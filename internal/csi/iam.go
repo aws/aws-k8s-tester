@@ -88,12 +88,17 @@ func createIAM(awsRegion string) (*iam.IAM, error) {
 // awsRegion must be a valid AWS region for ec2 instances.
 // For a complete list, see entries under "Region" on the table "Amazon Elastic Compute Cloud (Amazon EC2)":
 // https://docs.aws.amazon.com/general/latest/gr/rande.html#ec2_region
-func CreateIAMResources(awsRegion string) (resources *iamResources, err error) {
+func createIAMResources(awsRegion string) (resources *iamResources, err error) {
 	resources = &iamResources{}
 
 	defer func() {
+		// Delay is needed to ensure that permissions have been propagated.
+		// See the section "Launching an Instance with an IAM Role" at
+		// https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html
+		time.Sleep(10 * time.Second)
+
 		if err != nil {
-			resources.DeleteIAMResources()
+			resources.deleteIAMResources()
 		}
 	}()
 
@@ -177,18 +182,11 @@ func CreateIAMResources(awsRegion string) (resources *iamResources, err error) {
 	}
 	resources.lg.Info("attached role to instance policy")
 
-	fmt.Printf("Manually delete profile, role, and policy:\n%s\n", resources.getManualDeleteCommands())
-
-	// Delay is needed to ensure that permissions have been propagated.
-	// See the section "Launching an Instance with an IAM Role" at
-	// https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html
-	time.Sleep(10 * time.Second)
-
 	return resources, nil
 }
 
 // Deletes instance profile, policy, and role from provided resources.
-func (resources *iamResources) DeleteIAMResources() error {
+func (resources *iamResources) deleteIAMResources() error {
 	errors := []string{}
 	// Removes role from instance profile and deletes instance profile.
 	// AWS does not allow instance profile to be deleted with role still attached.
