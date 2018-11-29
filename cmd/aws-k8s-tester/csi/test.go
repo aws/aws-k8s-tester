@@ -3,14 +3,9 @@ package csi
 import (
 	"fmt"
 	"os"
-	"reflect"
-	"strings"
 	"time"
 
-	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/internal/csi"
-	"github.com/aws/aws-k8s-tester/internal/ec2"
-	"github.com/aws/aws-k8s-tester/internal/ssh"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
@@ -59,7 +54,6 @@ func newTestIntegration() *cobra.Command {
 	}
 }
 
-// TODO: move most of this to internal/csi
 func testIntegrationFunc(cmd *cobra.Command, args []string) {
 	if timeout == time.Duration(0) {
 		fmt.Fprintf(os.Stderr, "no timeout specified (%q)\n", timeout)
@@ -77,134 +71,15 @@ func testIntegrationFunc(cmd *cobra.Command, args []string) {
 		zap.Duration("timeout", timeout),
 	)
 
-	cfg := ec2config.NewDefault()
-	cfg.UploadTesterLogs = false
-	cfg.VPCID = vpcID
-	cfg.IngressRulesTCP = map[string]string{"22": "0.0.0.0/0"}
-	cfg.Plugins = []string{
-		"update-amazon-linux-2",
-		"install-go-1.11.2",
-		"install-csi-" + branchOrPR,
-	}
-	cfg.Wait = true
-
-	resources, err := csi.CreateIAMResources(cfg.AWSRegion)
+	cfg := csi.CreateConfig(vpcID, branchOrPR)
+	tester, err := csi.NewTester(cfg, terminateOnExit, journalctlLogs)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create IAM resources (%v)\n", err)
-		resources.DeleteIAMResources()
-	} else {
-		cfg.InstanceProfileName = *resources.GetInstanceProfileName()
-	}
-
-	var ec ec2.Deployer
-	ec, err = ec2.NewDeployer(cfg)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create EC2 deployer (%v)\n", err)
-		resources.DeleteIAMResources()
-		os.Exit(1)
-	}
-	if err = ec.Create(); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create EC2 instance (%v)\n", err)
-		resources.DeleteIAMResources()
+		fmt.Fprintf(os.Stderr, "error while creating new tester: (%v)\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Println(cfg.SSHCommands())
-
-	var iv ec2config.Instance
-	for _, v := range cfg.Instances {
-		iv = v
-		break
-	}
-
-	sh, serr := ssh.New(ssh.Config{
-		Logger:        ec.Logger(),
-		KeyPath:       cfg.KeyPath,
-		PublicIP:      iv.PublicIP,
-		PublicDNSName: iv.PublicDNSName,
-		UserName:      cfg.UserName,
-	})
-	// TODO: dry up the repeated `if terminateOnExit {...}`
-	if serr != nil {
-		fmt.Fprintf(os.Stderr, "failed to create SSH (%v)\n", err)
-		if terminateOnExit {
-			ec.Terminate()
-			resources.DeleteIAMResources()
-		} else {
-			fmt.Println(cfg.SSHCommands())
-		}
+	if err = tester.RunCSIIntegrationTest(); err != nil {
+		fmt.Fprintf(os.Stderr, "error with CSI integration test (%v)\n", err)
 		os.Exit(1)
 	}
-	defer sh.Close()
-
-	if err = sh.Connect(); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to connect SSH (%v)\n", err)
-		if terminateOnExit {
-			ec.Terminate()
-			resources.DeleteIAMResources()
-		} else {
-			fmt.Println(cfg.SSHCommands())
-		}
-		os.Exit(1)
-	}
-
-	testCmd := fmt.Sprintf(`cd /home/%s/go/src/github.com/kubernetes-sigs/aws-ebs-csi-driver && sudo sh -c 'source /home/%s/.bashrc && make test-integration'`, cfg.UserName, cfg.UserName)
-	out, err := sh.Run(
-		testCmd,
-		ssh.WithTimeout(10*time.Minute),
-	)
-	if err != nil {
-		// handle "Process exited with status 2" error
-		fmt.Fprintf(os.Stderr, "CSI integration test FAILED (%v, %v)\n", err, reflect.TypeOf(err))
-		if terminateOnExit {
-			ec.Terminate()
-			resources.DeleteIAMResources()
-		} else {
-			fmt.Println(cfg.SSHCommands())
-		}
-		os.Exit(1)
-	}
-
-	testOutput := string(out)
-	fmt.Printf("CSI test output:\n\n%s\n\n", testOutput)
-
-	/*
-	   expects
-
-	   Ran 1 of 1 Specs in 25.028 seconds
-	   SUCCESS! -- 1 Passed | 0 Failed | 0 Pending | 0 Skipped
-	*/
-	if !strings.Contains(testOutput, "1 Passed") {
-		fmt.Fprintln(os.Stderr, "CSI integration test FAILED")
-		if terminateOnExit {
-			ec.Terminate()
-			resources.DeleteIAMResources()
-		} else {
-			fmt.Println(cfg.SSHCommands())
-		}
-		os.Exit(1)
-	}
-
-	if journalctlLogs {
-		// full journal logs (e.g. disk mounts)
-		lg.Info("fetching journal logs")
-		journalCmd := "sudo journalctl --no-pager --output=short-precise"
-		out, err = sh.Run(journalCmd)
-		if err != nil {
-			lg.Warn(
-				"failed to run journalctl",
-				zap.String("cmd", journalCmd),
-				zap.Error(err),
-			)
-		} else {
-			fmt.Printf("journalctl logs:\n\n%s\n\n", string(out))
-		}
-	}
-
-	if terminateOnExit {
-		ec.Terminate()
-		resources.DeleteIAMResources()
-	}
-
-	// TODO: print manual commands to delete instance profile, role, and policy
 }
