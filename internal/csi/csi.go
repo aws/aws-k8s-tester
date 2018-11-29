@@ -32,19 +32,19 @@ func NewTester(cfg *ec2config.Config, terminateOnExit, journalctlLogs bool) (tes
 
 	permissions, permissionsErr := createPermissions(tester.cfg)
 	if permissionsErr != nil {
-		return nil, fmt.Errorf("failed to create iamResources (%v)\n", permissionsErr)
+		return nil, fmt.Errorf("failed to create iamResources (%v)", permissionsErr)
 	}
 	tester.iam = permissions
 
 	ec, err := ec2.NewDeployer(tester.cfg)
 	if err != nil {
 		tester.iam.deleteIAMResources()
-		return nil, fmt.Errorf("failed to create EC2 deployer (%v)\n", err)
+		return nil, fmt.Errorf("failed to create EC2 deployer (%v)", err)
 	}
 	tester.ec = ec
 	if err = ec.Create(); err != nil {
 		tester.iam.deleteIAMResources()
-		return nil, fmt.Errorf("failed to create EC2 instance (%v)\n", err)
+		return nil, fmt.Errorf("failed to create EC2 instance (%v)", err)
 	}
 	return tester, nil
 }
@@ -108,13 +108,13 @@ func (tester *Tester) RunCSIIntegrationTest() error {
 
 	if serr != nil {
 		downOrPrintCommands()
-		return fmt.Errorf("failed to create SSH (%v)\n", serr)
+		return fmt.Errorf("failed to create SSH (%v)", serr)
 	}
 	defer sh.Close()
 
 	if err := sh.Connect(); err != nil {
 		downOrPrintCommands()
-		return fmt.Errorf("failed to connect SSH (%v)\n", err)
+		return fmt.Errorf("failed to connect SSH (%v)", err)
 	}
 
 	testCmd := fmt.Sprintf(`cd /home/%s/go/src/github.com/kubernetes-sigs/aws-ebs-csi-driver && sudo sh -c 'source /home/%s/.bashrc && make test-integration'`, tester.cfg.UserName, tester.cfg.UserName)
@@ -125,7 +125,7 @@ func (tester *Tester) RunCSIIntegrationTest() error {
 	if err != nil {
 		// handle "Process exited with status 2" error
 		downOrPrintCommands()
-		return fmt.Errorf("CSI integration test FAILED (%v, %v)\n", err, reflect.TypeOf(err))
+		return fmt.Errorf("CSI integration test FAILED (%v, %v)", err, reflect.TypeOf(err))
 	}
 
 	testOutput := string(out)
