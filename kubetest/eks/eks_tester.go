@@ -2,7 +2,7 @@ package eks
 
 import (
 	"fmt"
-	"os/exec"
+	osexec "os/exec"
 	"reflect"
 	"time"
 
@@ -30,7 +30,7 @@ func (tr *tester) TestALBCorrectness() (err error) {
 	if _, err = tr.LoadConfig(); err != nil {
 		return err
 	}
-	_, err = tr.ctrl.Output(exec.Command(
+	_, err = tr.ctrl.Output(osexec.Command(
 		tr.cfg.AWSK8sTesterPath,
 		"eks",
 		"--path="+tr.cfg.ConfigPath,
@@ -43,7 +43,7 @@ func (tr *tester) TestALBQPS() (err error) {
 	if _, err = tr.LoadConfig(); err != nil {
 		return err
 	}
-	_, err = tr.ctrl.Output(exec.Command(
+	_, err = tr.ctrl.Output(osexec.Command(
 		tr.cfg.AWSK8sTesterPath,
 		"eks",
 		"--path="+tr.cfg.ConfigPath,
@@ -56,7 +56,7 @@ func (tr *tester) TestALBMetrics() (err error) {
 	if _, err = tr.LoadConfig(); err != nil {
 		return err
 	}
-	_, err = tr.ctrl.Output(exec.Command(
+	_, err = tr.ctrl.Output(osexec.Command(
 		tr.cfg.AWSK8sTesterPath,
 		"eks",
 		"--path="+tr.cfg.ConfigPath,
@@ -67,7 +67,7 @@ func (tr *tester) TestALBMetrics() (err error) {
 
 // UploadToBucketForTests uploads a local file to aws-k8s-tester S3 bucket.
 func (tr *tester) UploadToBucketForTests(localPath, s3Path string) (err error) {
-	_, err = tr.ctrl.Output(exec.Command(
+	_, err = tr.ctrl.Output(osexec.Command(
 		tr.cfg.AWSK8sTesterPath,
 		"eks",
 		"--path="+tr.cfg.ConfigPath,
