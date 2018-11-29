@@ -2,12 +2,13 @@ package csi
 
 import (
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/iam"
 	"go.uber.org/zap"
-	"strings"
-	"time"
 )
 
 const (
