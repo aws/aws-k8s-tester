@@ -177,18 +177,7 @@ func CreateIAMResources(awsRegion string) (resources *iamResources, err error) {
 	}
 	resources.lg.Info("attached role to instance policy")
 
-	// TODO: make separate method and change so that only prints that commands need to be run
-	fmt.Printf("\nManually delete profile, role, and policy:\n%s && %s && %s && %s && %s\n\n",
-		fmt.Sprintf("aws iam remove-role-from-instance-profile --instance-profile-name %s --role-name %s",
-			resources.instanceProfile.name,
-			resources.role.name),
-		fmt.Sprintf("aws iam detach-role-policy --role-name %s --policy-arn %s",
-			resources.role.name,
-			resources.policy.arn),
-		fmt.Sprintf("aws iam delete-role --role-name %s", resources.role.name),
-		fmt.Sprintf("aws iam delete-policy --policy-arn %s", resources.policy.arn),
-		fmt.Sprintf("aws iam delete-instance-profile --instance-profile-name %s", resources.instanceProfile.name),
-	)
+	fmt.Printf("Manually delete profile, role, and policy:\n%s\n", resources.getManualDeleteCommands())
 
 	// Delay is needed to ensure that permissions have been propagated.
 	// See the section "Launching an Instance with an IAM Role" at
@@ -290,4 +279,39 @@ func (resources *iamResources) DeleteIAMResources() {
 			resources.role = nil
 		}
 	}
+}
+
+func (resources *iamResources) getManualDeleteCommands() string {
+	deleteCommands := []string{}
+
+	if resources.instanceProfile != nil {
+		if resources.role != nil {
+			deleteCommands = append(deleteCommands,
+				fmt.Sprintf("aws iam remove-role-from-instance-profile --instance-profile-name %s --role-name %s",
+					resources.instanceProfile.name,
+					resources.role.name,
+				),
+			)
+		}
+		deleteCommands = append(deleteCommands,
+			fmt.Sprintf("aws iam delete-instance-profile --instance-profile-name %s", resources.instanceProfile.name))
+	}
+
+	if resources.role != nil {
+		if resources.policy != nil {
+			deleteCommands = append(deleteCommands,
+				fmt.Sprintf("aws iam detach-role-policy --role-name %s --policy-arn %s",
+					resources.role.name,
+					resources.policy.arn,
+				),
+			)
+		}
+		deleteCommands = append(deleteCommands, fmt.Sprintf("aws iam delete-role --role-name %s", resources.role.name))
+	}
+
+	if resources.policy != nil {
+		deleteCommands = append(deleteCommands, fmt.Sprintf("aws iam delete-policy --policy-arn %s", resources.policy.arn))
+	}
+
+	return strings.Join(deleteCommands, " && ")
 }
