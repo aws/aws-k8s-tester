@@ -81,7 +81,7 @@ type iamResource struct {
 func createIAM(awsRegion string) (*iam.IAM, error) {
 	sess, err := session.NewSession(&aws.Config{Region: aws.String(awsRegion)})
 	if err != nil {
-		return nil, fmt.Errorf("failed to create a new session (%v)\n", err)
+		return nil, fmt.Errorf("failed to create a new session (%v)", err)
 	}
 	return iam.New(sess), nil
 }
@@ -106,14 +106,14 @@ func createIAMResources(awsRegion string) (resources *iamResources, err error) {
 	// Creates new logger
 	lg, err := zap.NewProduction()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create logger (%v)\n", err)
+		return nil, fmt.Errorf("failed to create logger (%v)", err)
 	}
 	resources.lg = lg
 
 	// Creates new session and IAM client
 	svc, err := createIAM(awsRegion)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create session and IAM client (%v)\n", err)
+		return nil, fmt.Errorf("failed to create session and IAM client (%v)", err)
 	}
 	resources.svc = svc
 	resources.lg.Info("created session and IAM client")
@@ -126,7 +126,7 @@ func createIAMResources(awsRegion string) (resources *iamResources, err error) {
 		InstanceProfileName: aws.String(fmt.Sprintf("aws-k8s-tester-instance-profile-%s", uniqueSuffix)),
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to add role to create new instance profile (%v)\n", err)
+		return nil, fmt.Errorf("failed to add role to create new instance profile (%v)", err)
 	}
 	resources.instanceProfile = &iamResource{
 		name: *instanceOutput.InstanceProfile.InstanceProfileName,
@@ -141,7 +141,7 @@ func createIAMResources(awsRegion string) (resources *iamResources, err error) {
 		PolicyName:     aws.String(fmt.Sprintf("aws-k8s-tester-policy-%s", uniqueSuffix)),
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to add role to create new policy(%v)\n", err)
+		return nil, fmt.Errorf("failed to add role to create new policy(%v)", err)
 	}
 	resources.policy = &iamResource{
 		name: *policyOutput.Policy.PolicyName,
@@ -155,7 +155,7 @@ func createIAMResources(awsRegion string) (resources *iamResources, err error) {
 		RoleName:                 aws.String(fmt.Sprintf("aws-k8s-tester-role-%s", uniqueSuffix)),
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to create new role (%v)\n", err)
+		return nil, fmt.Errorf("failed to create new role (%v)", err)
 	}
 	resources.role = &iamResource{
 		name: *roleOutput.Role.RoleName,
@@ -169,7 +169,7 @@ func createIAMResources(awsRegion string) (resources *iamResources, err error) {
 		RoleName:  &resources.role.name,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to attach role to policy (%v)\n", err)
+		return nil, fmt.Errorf("failed to attach role to policy (%v)", err)
 	}
 	resources.lg.Info("attached role to policy")
 
@@ -179,7 +179,7 @@ func createIAMResources(awsRegion string) (resources *iamResources, err error) {
 		RoleName:            &resources.role.name,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to add role to instance profile (%v)\n", err)
+		return nil, fmt.Errorf("failed to add role to instance profile (%v)", err)
 	}
 	resources.lg.Info("attached role to instance policy")
 
@@ -269,7 +269,7 @@ func (resources *iamResources) deleteIAMResources() error {
 	}
 
 	if len(errors) != 0 {
-		return fmt.Errorf("failures when deleting IAM resources:\n* %s\n", strings.Join(errors, "\n* "))
+		return fmt.Errorf("failures when deleting IAM resources:\n* %s", strings.Join(errors, "\n* "))
 	}
 	return nil
 }
