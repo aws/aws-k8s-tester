@@ -1,6 +1,7 @@
 package csi
 
 import (
+	"os"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -13,6 +14,10 @@ import (
 // TODO: create tests for deleteIAMResources() when invalid iamResources
 
 func TestIAM(t *testing.T) {
+	if os.Getenv("RUN_AWS_TESTS") != "1" {
+		t.Skip()
+	}
+
 	// TESTS CREATE
 	resource, err := createIAMResources("us-west-2")
 	if err != nil {
