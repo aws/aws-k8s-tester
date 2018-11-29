@@ -126,7 +126,7 @@ func CreateIAMResources(awsRegion string) (resources *iamResources, err error) {
 		name: *instanceOutput.InstanceProfile.InstanceProfileName,
 		arn:  *instanceOutput.InstanceProfile.Arn,
 	}
-	resources.lg.Info("created instance profile", zap.String("instance-profile-name", resources.instanceProfile.name))
+	resources.lg.Info("created instance profile", zap.String("name", resources.instanceProfile.name))
 
 	// Creates policy
 	policyOutput, err := resources.svc.CreatePolicy(&iam.CreatePolicyInput{
@@ -141,7 +141,7 @@ func CreateIAMResources(awsRegion string) (resources *iamResources, err error) {
 		name: *policyOutput.Policy.PolicyName,
 		arn:  *policyOutput.Policy.Arn,
 	}
-	resources.lg.Info("created policy", zap.String("policy-name", resources.policy.name))
+	resources.lg.Info("created policy", zap.String("name", resources.policy.name))
 
 	// Creates role
 	roleOutput, err := resources.svc.CreateRole(&iam.CreateRoleInput{
@@ -155,7 +155,7 @@ func CreateIAMResources(awsRegion string) (resources *iamResources, err error) {
 		name: *roleOutput.Role.RoleName,
 		arn:  *roleOutput.Role.Arn,
 	}
-	resources.lg.Info("created role", zap.String("role-name", resources.role.name))
+	resources.lg.Info("created role", zap.String("name", resources.role.name))
 
 	// Attaches role to policy
 	_, err = resources.svc.AttachRolePolicy(&iam.AttachRolePolicyInput{
@@ -187,12 +187,9 @@ func CreateIAMResources(awsRegion string) (resources *iamResources, err error) {
 	return resources, nil
 }
 
-func (resources *iamResources) GetInstanceProfileName() string {
-	return resources.instanceProfile.name
-}
-
 // Deletes instance profile, policy, and role from provided resources.
-func (resources *iamResources) DeleteIAMResources() {
+func (resources *iamResources) DeleteIAMResources() error {
+	errors := []string{}
 	// Removes role from instance profile and deletes instance profile.
 	// AWS does not allow instance profile to be deleted with role still attached.
 	// https://docs.aws.amazon.com/IAM/latest/APIReference/API_DeleteInstanceProfile.html
@@ -203,10 +200,11 @@ func (resources *iamResources) DeleteIAMResources() {
 			RoleName:            &resources.role.name,
 		})
 		if err != nil {
-			resources.lg.Error("failed to remove role from instance profile",
-				zap.String("role-name", resources.role.name),
-				zap.String("instance-profile-name", resources.instanceProfile.name),
-				zap.Error(err),
+			errors = append(errors,
+				fmt.Sprintf("failed to remove role %q from instance profile %q (%v)",
+					resources.role.name,
+					resources.instanceProfile.name, err,
+				),
 			)
 		} else {
 			resources.lg.Info("removed role from instance profile",
@@ -218,10 +216,9 @@ func (resources *iamResources) DeleteIAMResources() {
 				InstanceProfileName: &resources.instanceProfile.name,
 			})
 			if err != nil {
-				resources.lg.Error("failed to delete instance profile",
-					zap.String("instance-profile-name", resources.instanceProfile.name),
-					zap.Error(err),
-				)
+				errors = append(errors,
+					fmt.Sprintf("failed to delete instance profile %q (%v)",
+						resources.instanceProfile.name, err))
 			} else {
 				resources.lg.Info("deleted instance profile")
 				resources.instanceProfile = nil
@@ -238,11 +235,8 @@ func (resources *iamResources) DeleteIAMResources() {
 			RoleName:  &resources.role.name,
 		})
 		if err != nil {
-			resources.lg.Error("failed to detach policy from role",
-				zap.String("policy-name", resources.policy.name),
-				zap.String("role-name", resources.role.name),
-				zap.Error(err),
-			)
+			errors = append(errors, fmt.Sprintf("failed to detach policy %q from role %q (%v)",
+				resources.policy.name, resources.role.name, err))
 		} else {
 			resources.lg.Info("detached policy from role",
 				zap.String("policy-name", resources.policy.name),
@@ -253,10 +247,8 @@ func (resources *iamResources) DeleteIAMResources() {
 				PolicyArn: &resources.policy.arn,
 			})
 			if err != nil {
-				resources.lg.Error("failed to delete policy",
-					zap.String("policy-name", resources.policy.name),
-					zap.Error(err),
-				)
+				errors = append(errors, fmt.Sprintf("failed to delete policy %q (%v)",
+					resources.policy.name, err))
 			} else {
 				resources.lg.Info("deleted policy")
 				resources.policy = nil
@@ -270,15 +262,17 @@ func (resources *iamResources) DeleteIAMResources() {
 			RoleName: &resources.role.name,
 		})
 		if err != nil {
-			resources.lg.Error("failed to delete role",
-				zap.String("role-name", resources.role.name),
-				zap.Error(err),
-			)
+			errors = append(errors, fmt.Sprintf("failed to delete role %q (%v)", resources.role.name, err))
 		} else {
 			resources.lg.Info("deleted role")
 			resources.role = nil
 		}
 	}
+
+	if len(errors) != 0 {
+		return fmt.Errorf("failures when deleting IAM resources:\n* %s\n", strings.Join(errors, "\n* "))
+	}
+	return nil
 }
 
 func (resources *iamResources) getManualDeleteCommands() string {
