@@ -14,6 +14,7 @@ github.com/aws/aws-sdk-go/aws/awserr
 github.com/aws/aws-sdk-go/aws/request
 github.com/aws/aws-sdk-go/service/s3
 github.com/aws/aws-sdk-go/service/s3/s3iface
+github.com/aws/aws-sdk-go/service/iam
 github.com/aws/aws-sdk-go/service/cloudformation
 github.com/aws/aws-sdk-go/service/cloudformation/cloudformationiface
 github.com/aws/aws-sdk-go/service/ec2
@@ -25,7 +26,6 @@ github.com/aws/aws-sdk-go/service/autoscaling/autoscalingiface
 github.com/aws/aws-sdk-go/service/eks
 github.com/aws/aws-sdk-go/service/eks/eksiface
 github.com/aws/aws-sdk-go/service/elbv2
-github.com/aws/aws-sdk-go/service/iam
 github.com/aws/aws-sdk-go/service/iam/iamiface
 github.com/aws/aws-sdk-go/service/elbv2/elbv2iface
 github.com/aws/aws-sdk-go/aws/endpoints
@@ -386,3 +386,5 @@ k8s.io/test-infra/prow/pod-utils/gcs
 k8s.io/test-infra/testgrid/util/gcs
 # k8s.io/utils v0.0.0-20181019225348-5e321f9a457c
 k8s.io/utils/exec
+# sigs.k8s.io/yaml v1.1.0
+sigs.k8s.io/yaml

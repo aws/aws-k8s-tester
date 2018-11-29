@@ -4,11 +4,11 @@ import (
 	"errors"
 	"fmt"
 
-	gyaml "github.com/ghodss/yaml"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"sigs.k8s.io/yaml"
 )
 
 // ConfigDeploymentServiceIngressTestServer defines ingress-test-server deployment and service configuration.
@@ -152,11 +152,11 @@ func CreateDeploymentServiceIngressTestServer(cfg ConfigDeploymentServiceIngress
 		},
 	}
 
-	d1, err := gyaml.Marshal(dp)
+	d1, err := yaml.Marshal(dp)
 	if err != nil {
 		return "", err
 	}
-	d2, err := gyaml.Marshal(svc)
+	d2, err := yaml.Marshal(svc)
 	if err != nil {
 		return "", err
 	}

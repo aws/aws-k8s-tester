@@ -15,8 +15,7 @@ import (
 
 	"github.com/aws/aws-k8s-tester/ec2config/plugins"
 	ec2types "github.com/aws/aws-k8s-tester/pkg/awsapi/ec2"
-
-	gyaml "github.com/ghodss/yaml"
+	"sigs.k8s.io/yaml"
 )
 
 // Config defines EC2 configuration.
@@ -451,7 +450,7 @@ func Load(p string) (cfg *Config, err error) {
 		return nil, err
 	}
 	cfg = new(Config)
-	if err = gyaml.Unmarshal(d, cfg); err != nil {
+	if err = yaml.Unmarshal(d, cfg); err != nil {
 		return nil, err
 	}
 
@@ -488,7 +487,7 @@ func (cfg *Config) Sync() (err error) {
 	}
 	cfg.UpdatedAt = time.Now().UTC()
 	var d []byte
-	d, err = gyaml.Marshal(cfg)
+	d, err = yaml.Marshal(cfg)
 	if err != nil {
 		return err
 	}

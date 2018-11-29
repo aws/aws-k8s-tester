@@ -1,15 +1,15 @@
 package alb
 
 import (
-	gyaml "github.com/ghodss/yaml"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"sigs.k8s.io/yaml"
 )
 
 func getHostnameFromKubectlGetIngressOutput(kubectlOutput []byte, serviceName string) string {
 	ls := new(unstructured.UnstructuredList)
-	if err := gyaml.Unmarshal(kubectlOutput, ls); err != nil {
+	if err := yaml.Unmarshal(kubectlOutput, ls); err != nil {
 		return "*"
 	}
 	for _, item := range ls.Items {
@@ -24,12 +24,12 @@ func getHostnameFromKubectlGetIngressOutput(kubectlOutput []byte, serviceName st
 		if !ok {
 			return "*"
 		}
-		d, err := gyaml.Marshal(mm)
+		d, err := yaml.Marshal(mm)
 		if err != nil {
 			return "*"
 		}
 		ss := new(v1beta1.IngressSpec)
-		if err = gyaml.Unmarshal(d, ss); err != nil {
+		if err = yaml.Unmarshal(d, ss); err != nil {
 			return "*"
 		}
 		found := false
@@ -51,12 +51,12 @@ func getHostnameFromKubectlGetIngressOutput(kubectlOutput []byte, serviceName st
 		if !ok {
 			return "*"
 		}
-		d, err = gyaml.Marshal(svv)
+		d, err = yaml.Marshal(svv)
 		if err != nil {
 			return "*"
 		}
 		st := new(v1.ServiceStatus)
-		if err = gyaml.Unmarshal(d, st); err != nil {
+		if err = yaml.Unmarshal(d, st); err != nil {
 			return "*"
 		}
 		if len(st.LoadBalancer.Ingress) < 1 {

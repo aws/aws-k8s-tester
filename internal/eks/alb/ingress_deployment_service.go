@@ -3,9 +3,9 @@ package alb
 import (
 	"strings"
 
-	gyaml "github.com/ghodss/yaml"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"sigs.k8s.io/yaml"
 )
 
 type podConditions struct {
@@ -14,7 +14,7 @@ type podConditions struct {
 
 func findReadyPodsFromKubectlGetPodsOutputYAML(kubectlOutput []byte, podPrefix string) bool {
 	ls := new(unstructured.UnstructuredList)
-	if err := gyaml.Unmarshal(kubectlOutput, ls); err != nil {
+	if err := yaml.Unmarshal(kubectlOutput, ls); err != nil {
 		return false
 	}
 	for _, item := range ls.Items {
@@ -48,12 +48,12 @@ func findReadyPodsFromKubectlGetPodsOutputYAML(kubectlOutput []byte, podPrefix s
 		if !ok {
 			return false
 		}
-		d, err := gyaml.Marshal(mm)
+		d, err := yaml.Marshal(mm)
 		if err != nil {
 			return false
 		}
 		ss := new(podConditions)
-		if err = gyaml.Unmarshal(d, ss); err != nil {
+		if err = yaml.Unmarshal(d, ss); err != nil {
 			return false
 		}
 		for _, cond := range ss.Conditions {

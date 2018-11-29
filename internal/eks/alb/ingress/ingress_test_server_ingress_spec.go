@@ -5,11 +5,10 @@ import (
 	"sort"
 
 	"github.com/aws/aws-k8s-tester/internal/eks/alb/ingress/path"
-
-	gyaml "github.com/ghodss/yaml"
 	"k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"sigs.k8s.io/yaml"
 )
 
 // ConfigIngressTestServerIngressSpec defines ingress-test-server Ingress spec configuration.
@@ -93,7 +92,7 @@ func CreateIngressTestServerIngressSpec(cfg ConfigIngressTestServerIngressSpec) 
 			},
 		},
 	}
-	d, err := gyaml.Marshal(ing)
+	d, err := yaml.Marshal(ing)
 	if err != nil {
 		return "", err
 	}

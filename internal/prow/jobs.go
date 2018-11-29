@@ -6,9 +6,9 @@ import (
 	"sort"
 	"time"
 
-	gyaml "github.com/ghodss/yaml"
 	"go.uber.org/zap"
 	prowconfig "k8s.io/test-infra/prow/config"
+	"sigs.k8s.io/yaml"
 )
 
 // Jobs is a list of prow configurations.
@@ -77,7 +77,7 @@ func LoadJobs(lg *zap.Logger, paths []string) (
 		}
 
 		var cfg jobConfig
-		if err = gyaml.Unmarshal(d, &cfg); err != nil {
+		if err = yaml.Unmarshal(d, &cfg); err != nil {
 			return nil, nil, nil, fmt.Errorf("failed to parse %q (%v)", prowPath, err)
 		}
 

@@ -16,9 +16,8 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
-
 	"github.com/blang/semver"
-	gyaml "github.com/ghodss/yaml"
+	"sigs.k8s.io/yaml"
 )
 
 // Config defines kubeadm test configuration.
@@ -371,7 +370,7 @@ func Load(p string) (cfg *Config, err error) {
 		return nil, err
 	}
 	cfg = new(Config)
-	if err = gyaml.Unmarshal(d, cfg); err != nil {
+	if err = yaml.Unmarshal(d, cfg); err != nil {
 		return nil, err
 	}
 
@@ -392,7 +391,7 @@ func (cfg *Config) Sync() (err error) {
 		}
 	}
 	var d []byte
-	d, err = gyaml.Marshal(cfg)
+	d, err = yaml.Marshal(cfg)
 	if err != nil {
 		return err
 	}
@@ -556,7 +555,7 @@ func (cfg *Config) UpdateFromEnvs() error {
 	return nil
 }
 
-var kubeadmPorts = []string{"22", "6443", "2379-2380", "10250-10252", "30000-32767"}
+var kubeadmPorts = []string{"22", "6443", "2379-2380", "10250", "10251", "10252", "30000-32767"}
 
 // ValidateAndSetDefaults returns an error for invalid configurations.
 // And updates empty fields with default values.

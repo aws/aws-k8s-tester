@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	gyaml "github.com/ghodss/yaml"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 )
 
 const configMapNginxTempl = `---
@@ -71,11 +71,11 @@ func CreateConfigMapNginx(responseSize int) (string, error) {
 		},
 	}
 
-	d1, err := gyaml.Marshal(cm1)
+	d1, err := yaml.Marshal(cm1)
 	if err != nil {
 		return "", err
 	}
-	d2, err := gyaml.Marshal(cm2)
+	d2, err := yaml.Marshal(cm2)
 	if err != nil {
 		return "", err
 	}

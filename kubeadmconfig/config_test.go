@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	gyaml "github.com/ghodss/yaml"
+	"sigs.k8s.io/yaml"
 )
 
 func TestEnv(t *testing.T) {
@@ -99,7 +99,7 @@ func TestEnv(t *testing.T) {
 	fmt.Println(cfg.Cluster.CommandJoin())
 
 	var d []byte
-	d, err := gyaml.Marshal(cfg)
+	d, err := yaml.Marshal(cfg)
 	if err != nil {
 		t.Fatal(err)
 	}

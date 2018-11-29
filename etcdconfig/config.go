@@ -16,9 +16,8 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
-
 	"github.com/blang/semver"
-	gyaml "github.com/ghodss/yaml"
+	"sigs.k8s.io/yaml"
 )
 
 // Config defines etcd test configuration.
@@ -647,7 +646,7 @@ func Load(p string) (cfg *Config, err error) {
 		return nil, err
 	}
 	cfg = new(Config)
-	if err = gyaml.Unmarshal(d, cfg); err != nil {
+	if err = yaml.Unmarshal(d, cfg); err != nil {
 		return nil, err
 	}
 
@@ -668,7 +667,7 @@ func (cfg *Config) Sync() (err error) {
 		}
 	}
 	var d []byte
-	d, err = gyaml.Marshal(cfg)
+	d, err = yaml.Marshal(cfg)
 	if err != nil {
 		return err
 	}
