@@ -100,12 +100,11 @@ func (tester *Tester) RunCSIIntegrationTest() error {
 	}
 
 	sh, serr := ssh.New(ssh.Config{
-		Logger:        tester.ec.Logger(),
+		Logger:        lg,
 		KeyPath:       tester.cfg.KeyPath,
 		PublicIP:      iv.PublicIP,
 		PublicDNSName: iv.PublicDNSName,
-		UserName:      tester.cfg.UserName,
-	})
+		UserName:      tester.cfg.UserName})
 
 	if serr != nil {
 		downOrPrintCommands()
