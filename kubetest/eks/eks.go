@@ -20,6 +20,7 @@ limitations under the License.
 package eks
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -32,7 +33,6 @@ import (
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/ekstester"
-
 	"k8s.io/test-infra/kubetest/process"
 	"k8s.io/test-infra/kubetest/util"
 )
@@ -223,13 +223,17 @@ func (dp *deployer) DumpClusterLogs(artifactDir, _ string) (err error) {
 	return err
 }
 
-// KubectlArgs returns the parameters to "kubectl" for API reachability tests.
-func (dp *deployer) KubectlArgs() (args []string, err error) {
+// KubectlCommand returns "kubectl" command object for API reachability tests.
+func (dp *deployer) KubectlCommand() (*exec.Cmd, error) {
 	// reload configuration from disk to read the latest configuration
-	if _, err = dp.LoadConfig(); err != nil {
+	if _, err := dp.LoadConfig(); err != nil {
 		return nil, err
 	}
-	return dp.cfg.ArgsKubectlVersion(), nil
+	args := dp.cfg.ArgsKubectlVersion()
+	if len(args) < 1 {
+		return nil, errors.New("empty kubectl arguments")
+	}
+	return exec.Command(args[0], args[1:]...), nil
 }
 
 // Stop stops ongoing operations.

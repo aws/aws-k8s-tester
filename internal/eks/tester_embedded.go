@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	osexec "os/exec"
 	"os/signal"
 	"path/filepath"
 	"runtime"
@@ -27,7 +28,6 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/httputil"
 	"github.com/aws/aws-k8s-tester/pkg/wrk"
 	"github.com/aws/aws-k8s-tester/pkg/zaputil"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/autoscaling"
@@ -342,9 +342,13 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 	return md, md.cfg.Sync()
 }
 
-// KubectlArgs returns the parameters to "kubectl" for API reachability tests.
-func (md *embedded) KubectlArgs() ([]string, error) {
-	return md.cfg.ArgsKubectlVersion(), nil
+// KubectlCommand returns "kubectl" command object for API reachability tests.
+func (md *embedded) KubectlCommand() (*osexec.Cmd, error) {
+	args := md.cfg.ArgsKubectlVersion()
+	if len(args) < 1 {
+		return nil, errors.New("empty kubectl arguments")
+	}
+	return osexec.Command(args[0], args[1:]...), nil
 }
 
 // Up creates an EKS cluster for 'kubetest'.

@@ -2,6 +2,7 @@
 package ekstester
 
 import (
+	osexec "os/exec"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
@@ -40,8 +41,8 @@ type Deployer interface {
 	// It's either reloaded from disk or returned from embedded EKS deployer.
 	LoadConfig() (eksconfig.Config, error)
 
-	// KubectlArgs returns the parameters to "kubectl" for API reachability tests.
-	KubectlArgs() ([]string, error)
+	// KubectlCommand returns "kubectl" command object for API reachability tests.
+	KubectlCommand() (*osexec.Cmd, error)
 }
 
 // ALB defines AWS application load balancer tester.
