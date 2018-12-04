@@ -107,6 +107,9 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 		if err = os.RemoveAll(md.cfg.KubectlPath); err != nil {
 			return nil, err
 		}
+		if err = os.MkdirAll(filepath.Dir(cfg.KubectlPath), 0700); err != nil {
+			return nil, err
+		}
 		var f *os.File
 		f, err = os.Create(md.cfg.KubectlPath)
 		if err != nil {
@@ -140,6 +143,9 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 			md.cfg.AWSIAMAuthenticatorDownloadURL = strings.Replace(md.cfg.AWSIAMAuthenticatorDownloadURL, "linux", "darwin", -1)
 		}
 		if err = os.RemoveAll(md.cfg.AWSIAMAuthenticatorPath); err != nil {
+			return nil, err
+		}
+		if err = os.MkdirAll(filepath.Dir(cfg.AWSIAMAuthenticatorPath), 0700); err != nil {
 			return nil, err
 		}
 		var f *os.File
