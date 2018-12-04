@@ -1,13 +1,4 @@
 
-<hr>
-
-
-## [0.1.4](https://github.com/aws/aws-k8s-tester/releases/tag/0.1.4) (2018-12-TBD)
-
-See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.3...0.1.4).
-
-TODO
-
 
 <hr>
 
@@ -18,7 +9,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.3...0.1.4).
 
 ### `internal`
 
-- [mkdir before downloading binaries]().
+- [mkdir before downloading binaries](https://github.com/aws/aws-k8s-tester/commit/0b4e0177ea8669cafee870b19c105d80c9549cd5).
+
 
 <hr>
 
