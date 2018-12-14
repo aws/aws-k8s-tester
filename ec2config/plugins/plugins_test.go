@@ -8,7 +8,7 @@ import (
 func Test_createInstall(t *testing.T) {
 	s1, err := createInstallGo(goInfo{
 		UserName:  "ubuntu",
-		GoVersion: "1.11.2",
+		GoVersion: "1.11.3",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -50,7 +50,7 @@ func TestPlugins(t *testing.T) {
 		[]string{
 			"install-csi-101",
 			"update-amazon-linux-2",
-			"install-go-1.11.2",
+			"install-go-1.11.3",
 			"install-wrk",
 		},
 	)

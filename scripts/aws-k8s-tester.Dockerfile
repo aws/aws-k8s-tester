@@ -61,7 +61,7 @@ RUN mkdir -p /workspace/aws-bin/ && mkdir -p ${HOME}/.aws/
 ENV GOROOT /usr/local/go
 ENV GOPATH /go
 ENV PATH ${GOPATH}/bin:${GOROOT}/bin:${PATH}
-ENV GO_VERSION 1.11.2
+ENV GO_VERSION 1.11.3
 ENV GO_DOWNLOAD_URL https://storage.googleapis.com/golang
 RUN rm -rf ${GOROOT} \
   && curl -s ${GO_DOWNLOAD_URL}/go${GO_VERSION}.linux-amd64.tar.gz | tar -v -C /usr/local/ -xz \

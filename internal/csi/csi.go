@@ -57,7 +57,7 @@ func CreateConfig(vpcID, branchOrPR string) *ec2config.Config {
 	cfg.IngressRulesTCP = map[string]string{"22": "0.0.0.0/0"}
 	cfg.Plugins = []string{
 		"update-amazon-linux-2",
-		"install-go-1.11.2",
+		"install-go-1.11.3",
 		"install-csi-" + branchOrPR,
 	}
 	cfg.Wait = true
