@@ -6,7 +6,7 @@ cloud.google.com/go/internal/optional
 cloud.google.com/go/internal/trace
 cloud.google.com/go/internal/version
 cloud.google.com/go/compute/metadata
-# github.com/aws/aws-sdk-go v1.15.87
+# github.com/aws/aws-sdk-go v1.16.5
 github.com/aws/aws-sdk-go/aws/session
 github.com/aws/aws-sdk-go/service/sts
 github.com/aws/aws-sdk-go/aws
@@ -32,6 +32,7 @@ github.com/aws/aws-sdk-go/aws/endpoints
 github.com/aws/aws-sdk-go/aws/client
 github.com/aws/aws-sdk-go/aws/corehandlers
 github.com/aws/aws-sdk-go/aws/credentials
+github.com/aws/aws-sdk-go/aws/credentials/processcreds
 github.com/aws/aws-sdk-go/aws/credentials/stscreds
 github.com/aws/aws-sdk-go/aws/csm
 github.com/aws/aws-sdk-go/aws/defaults
@@ -109,7 +110,7 @@ github.com/hpcloud/tail/watch
 github.com/hpcloud/tail/winfile
 # github.com/inconshreveable/mousetrap v1.0.0
 github.com/inconshreveable/mousetrap
-# github.com/jmespath/go-jmespath v0.0.0-20160202185014-0b12d6b521d8
+# github.com/jmespath/go-jmespath v0.0.0-20180206201540-c2b33e8439af
 github.com/jmespath/go-jmespath
 # github.com/knative/build v0.1.2
 github.com/knative/build/pkg/apis/build/v1alpha1

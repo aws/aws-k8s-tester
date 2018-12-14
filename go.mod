@@ -2,7 +2,7 @@ module github.com/aws/aws-k8s-tester
 
 require (
 	cloud.google.com/go v0.30.0 // indirect
-	github.com/aws/aws-sdk-go v1.15.87
+	github.com/aws/aws-sdk-go v1.16.5
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/dustin/go-humanize v1.0.0
 	github.com/go-yaml/yaml v2.1.0+incompatible // indirect
