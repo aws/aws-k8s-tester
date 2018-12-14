@@ -3,6 +3,18 @@
 <hr>
 
 
+## [0.1.5](https://github.com/aws/aws-k8s-tester/releases/tag/0.1.5) (2018-12-14)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.4...0.1.5).
+
+### `eksconfig`
+
+- Require [Kubernetes v1.11](https://github.com/aws/aws-k8s-tester/commit/62cbfe2ba32d1faf752cb336b9665aa6726bc286).
+
+
+<hr>
+
+
 ## [0.1.4](https://github.com/aws/aws-k8s-tester/releases/tag/0.1.4) (2018-12-03)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.3...0.1.4).
