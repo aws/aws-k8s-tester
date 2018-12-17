@@ -11,6 +11,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.4...0.1.5).
 
 - Require [Kubernetes v1.11](https://github.com/aws/aws-k8s-tester/commit/62cbfe2ba32d1faf752cb336b9665aa6726bc286).
 
+### Go
+
+- Compile with [*Go 1.11.4*](https://golang.org/doc/devel/release.html#go1.11).
+
 
 <hr>
 
@@ -22,6 +26,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.3...0.1.4).
 ### `internal`
 
 - [mkdir before downloading binaries](https://github.com/aws/aws-k8s-tester/commit/0b4e0177ea8669cafee870b19c105d80c9549cd5).
+
+### Go
+
+- Compile with [*Go 1.11.2*](https://golang.org/doc/devel/release.html#go1.11).
 
 
 <hr>
