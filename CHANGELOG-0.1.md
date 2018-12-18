@@ -3,6 +3,22 @@
 <hr>
 
 
+## [0.1.6](https://github.com/aws/aws-k8s-tester/releases/tag/0.1.6) (2018-12-18)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.5...0.1.6).
+
+### `internal`
+
+- Use [CNI v1.3 for worker nodes](https://github.com/aws/aws-k8s-tester/commit/09229e31b2fff47d1385c8ee237065b42e5e757f).
+
+### Go
+
+- Compile with [*Go 1.11.4*](https://golang.org/doc/devel/release.html#go1.11).
+
+
+<hr>
+
+
 ## [0.1.5](https://github.com/aws/aws-k8s-tester/releases/tag/0.1.5) (2018-12-14)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.4...0.1.5).
