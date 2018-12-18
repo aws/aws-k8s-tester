@@ -29,7 +29,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.4...0.1.5).
 
 ### Go
 
-- Compile with [*Go 1.11.4*](https://golang.org/doc/devel/release.html#go1.11).
+- Compile with [*Go 1.11.3*](https://golang.org/doc/devel/release.html#go1.11).
 
 
 <hr>
