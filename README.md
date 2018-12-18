@@ -75,7 +75,7 @@ To test locally:
 cd ${GOPATH}/src/github.com/aws/aws-k8s-tester
 
 # use darwin to run local tests on Mac
-AWS_K8S_TESTER_EKS_AWS_K8S_TESTER_DOWNLOAD_URL=https://github.com/aws/aws-k8s-tester/releases/download/0.1.5/aws-k8s-tester-0.1.5-linux-amd64 \
+AWS_K8S_TESTER_EKS_AWS_K8S_TESTER_DOWNLOAD_URL=https://github.com/aws/aws-k8s-tester/releases/download/0.1.6/aws-k8s-tester-0.1.6-linux-amd64 \
   AWS_K8S_TESTER_EKS_AWS_K8S_TESTER_PATH=/tmp/aws-k8s-tester/aws-k8s-tester \
   AWS_K8S_TESTER_EKS_KUBECTL_DOWNLOAD_URL=https://amazon-eks.s3-us-west-2.amazonaws.com/1.11.5/2018-12-06/bin/linux/amd64/kubectl \
   AWS_K8S_TESTER_EKS_KUBECTL_PATH=/tmp/aws-k8s-tester/kubectl \
