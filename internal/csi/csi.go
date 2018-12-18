@@ -117,7 +117,7 @@ func (tester *Tester) RunCSIIntegrationTest() error {
 		return fmt.Errorf("failed to connect SSH (%v)", err)
 	}
 
-	testCmd := fmt.Sprintf(`cd /home/%s/go/src/github.com/kubernetes-sigs/aws-ebs-csi-driver && sudo sh -c 'source /home/%s/.bashrc && make test-integration'`, tester.cfg.UserName, tester.cfg.UserName)
+	testCmd := fmt.Sprintf(`cd /home/%s/go/src/github.com/kubernetes-sigs/aws-ebs-csi-driver && sudo sh -c 'source /home/%s/.bashrc && ./hack/test-integration.sh'`, tester.cfg.UserName, tester.cfg.UserName)
 	out, err := sh.Run(
 		testCmd,
 		ssh.WithTimeout(10*time.Minute),
