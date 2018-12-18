@@ -16,12 +16,12 @@ import (
 
 // https://github.com/aws/amazon-vpc-cni-k8s/releases
 func (md *embedded) upgradeCNI() error {
-	d, err := httputil.Download(md.lg, os.Stdout, "https://raw.githubusercontent.com/aws/amazon-vpc-cni-k8s/master/config/v1.2/aws-k8s-cni.yaml")
+	d, err := httputil.Download(md.lg, os.Stdout, "https://raw.githubusercontent.com/aws/amazon-vpc-cni-k8s/master/config/v1.3/aws-k8s-cni.yaml")
 	if err != nil {
 		return err
 	}
 	var f *os.File
-	f, err = ioutil.TempFile(os.TempDir(), "cni-v1.2.yaml")
+	f, err = ioutil.TempFile(os.TempDir(), "cni-v1.3.yaml")
 	if err != nil {
 		return err
 	}
