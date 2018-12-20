@@ -115,6 +115,12 @@ func (md *embedded) CreateBucketForAccessLogs() error {
 		if err != nil {
 			return err
 		}
+
+		// add lifecycle of 2 days
+		if err = md.addLifecycle(bucket, 2); err != nil {
+			return err
+		}
+
 		md.lg.Info("updated bucket policy", zap.Error(err))
 		break
 	}
@@ -210,6 +216,11 @@ func (md *embedded) UploadToBucketForTests(localPath, s3Path string) error {
 		return err
 	}
 
+	// add lifecycle of 2 days
+	if err = md.addLifecycle(bucket, 2); err != nil {
+		return err
+	}
+
 	h, _ := os.Hostname()
 	_, err = md.s3.PutObject(&s3.PutObjectInput{
 		Bucket:  aws.String(bucket),
@@ -280,4 +291,30 @@ func (md *embedded) DeleteBucket(bucket string) error {
 		md.lg.Warn("failed to delete bucket", zap.String("bucket", bucket), zap.Error(err))
 	}
 	return err
+}
+
+func (md *embedded) addLifecycle(bucket string, days int) error {
+	daysUntilExp := int64(days)
+	input := &s3.PutBucketLifecycleConfigurationInput{
+		Bucket: aws.String(bucket),
+		LifecycleConfiguration: &s3.BucketLifecycleConfiguration{
+			Rules: []*s3.LifecycleRule{
+				{
+					AbortIncompleteMultipartUpload: &s3.AbortIncompleteMultipartUpload{
+						DaysAfterInitiation: &daysUntilExp,
+					},
+					Expiration: &s3.LifecycleExpiration{
+						Days: &daysUntilExp,
+					},
+					ID:     aws.String("TwoDayObjectLife"),
+					Status: aws.String("Enabled"),
+				},
+			},
+		},
+	}
+
+	if _, err := md.s3.PutBucketLifecycleConfiguration(input); err != nil {
+		return err
+	}
+	return nil
 }
