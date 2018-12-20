@@ -46,7 +46,7 @@ aws eks describe-cluster \
 "ACTIVE"
 ```
 
-Cluser states are persisted on disk as well. EKS tester uses this file to track status.
+Cluster states are persisted on disk as well. EKS tester uses this file to track status.
 
 ```bash
 cat ./aws-k8s-tester-eks.yaml
@@ -75,11 +75,11 @@ To test locally:
 cd ${GOPATH}/src/github.com/aws/aws-k8s-tester
 
 # use darwin to run local tests on Mac
-AWS_K8S_TESTER_EKS_AWS_K8S_TESTER_DOWNLOAD_URL=https://github.com/aws/aws-k8s-tester/releases/download/0.1.7/aws-k8s-tester-0.1.7-linux-amd64 \
+AWS_K8S_TESTER_EKS_AWS_K8S_TESTER_DOWNLOAD_URL=https://github.com/aws/aws-k8s-tester/releases/download/0.1.7/aws-k8s-tester-0.1.7-$(go env GOOS)-amd64 \
   AWS_K8S_TESTER_EKS_AWS_K8S_TESTER_PATH=/tmp/aws-k8s-tester/aws-k8s-tester \
-  AWS_K8S_TESTER_EKS_KUBECTL_DOWNLOAD_URL=https://amazon-eks.s3-us-west-2.amazonaws.com/1.11.5/2018-12-06/bin/linux/amd64/kubectl \
+  AWS_K8S_TESTER_EKS_KUBECTL_DOWNLOAD_URL=https://amazon-eks.s3-us-west-2.amazonaws.com/1.11.5/2018-12-06/bin/$(go env GOOS)/amd64/kubectl \
   AWS_K8S_TESTER_EKS_KUBECTL_PATH=/tmp/aws-k8s-tester/kubectl \
-  AWS_K8S_TESTER_EKS_AWS_IAM_AUTHENTICATOR_DOWNLOAD_URL=https://amazon-eks.s3-us-west-2.amazonaws.com/1.11.5/2018-12-06/bin/linux/amd64/aws-iam-authenticator \
+  AWS_K8S_TESTER_EKS_AWS_IAM_AUTHENTICATOR_DOWNLOAD_URL=https://amazon-eks.s3-us-west-2.amazonaws.com/1.11.5/2018-12-06/bin/$(go env GOOS)/amd64/aws-iam-authenticator \
   AWS_K8S_TESTER_EKS_AWS_IAM_AUTHENTICATOR_PATH=/tmp/aws-k8s-tester/aws-iam-authenticator \
   AWS_K8S_TESTER_EKS_TEST_MODE=embedded \
   AWS_K8S_TESTER_EKS_KUBERNETES_VERSION=1.11 \

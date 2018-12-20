@@ -1,4 +1,13 @@
 
+<hr>
+
+## [0.1.7](https://github.com/aws/aws-k8s-tester/releases/tag/0.1.7) (2018-12-18)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.6...0.1.7).
+
+### `internal`
+
+- Change [`aws-ebs-csi-driver` command](https://github.com/aws/aws-k8s-tester/commit/09229e31b2fff47d1385c8ee237065b42e5e757f) for csi.
 
 <hr>
 
