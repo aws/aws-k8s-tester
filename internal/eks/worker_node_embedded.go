@@ -10,7 +10,6 @@ import (
 
 	"github.com/aws/aws-k8s-tester/ec2config"
 	internalec2 "github.com/aws/aws-k8s-tester/internal/ec2"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/autoscaling"
 	"github.com/aws/aws-sdk-go/service/cloudformation"

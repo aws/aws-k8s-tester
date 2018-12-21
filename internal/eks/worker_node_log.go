@@ -68,7 +68,7 @@ func fetchWorkerNodeLog(
 		zap.String("public-ip", ip),
 		zap.String("cmd", cmd),
 	)
-	out, err = sh.Run(cmd)
+	out, err = sh.Run(cmd, ssh.WithVerbose(false))
 	if err != nil {
 		sh.Close()
 		lg.Warn(
@@ -100,7 +100,7 @@ func fetchWorkerNodeLog(
 		zap.String("public-ip", ip),
 	)
 	cmd = "sudo journalctl --no-pager --output=short-precise -k"
-	out, err = sh.Run(cmd)
+	out, err = sh.Run(cmd, ssh.WithVerbose(false))
 	if err != nil {
 		sh.Close()
 		lg.Warn(
@@ -132,7 +132,7 @@ func fetchWorkerNodeLog(
 		zap.String("public-ip", ip),
 	)
 	cmd = "sudo journalctl --no-pager --output=short-precise"
-	out, err = sh.Run(cmd)
+	out, err = sh.Run(cmd, ssh.WithVerbose(false))
 	if err != nil {
 		sh.Close()
 		lg.Warn(
@@ -165,7 +165,7 @@ func fetchWorkerNodeLog(
 		zap.String("public-ip", ip),
 		zap.String("cmd", cmd),
 	)
-	out, err = sh.Run(cmd)
+	out, err = sh.Run(cmd, ssh.WithVerbose(false))
 	if err != nil {
 		sh.Close()
 		lg.Warn(
@@ -205,7 +205,7 @@ func fetchWorkerNodeLog(
 			zap.String("service", svc),
 			zap.String("cmd", cmd),
 		)
-		out, err = sh.Run(cmd)
+		out, err = sh.Run(cmd, ssh.WithVerbose(false))
 		if err != nil {
 			lg.Warn(
 				"failed to run command",
@@ -242,7 +242,7 @@ func fetchWorkerNodeLog(
 		zap.String("public-ip", ip),
 		zap.String("cmd", cmd),
 	)
-	out, err = sh.Run(cmd)
+	out, err = sh.Run(cmd, ssh.WithVerbose(false))
 	if err != nil {
 		sh.Close()
 		lg.Warn(
@@ -270,7 +270,7 @@ func fetchWorkerNodeLog(
 			zap.String("public-ip", ip),
 			zap.String("cmd", cmd),
 		)
-		out, err = sh.Run(cmd)
+		out, err = sh.Run(cmd, ssh.WithVerbose(false))
 		if err != nil {
 			lg.Warn(
 				"failed to run command",
