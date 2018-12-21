@@ -1,6 +1,16 @@
 
 <hr>
 
+## [0.1.8](https://github.com/aws/aws-k8s-tester/releases/tag/0.1.8) (2018-12-TBD)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.7...0.1.8).
+
+### `internal`
+
+- Make [`eks` worker node log fetcher less noisier](https://github.com/aws/aws-k8s-tester/commit/c7cc28d17b08276e5a583f6e6cb0ca76040f1625).
+
+<hr>
+
 ## [0.1.7](https://github.com/aws/aws-k8s-tester/releases/tag/0.1.7) (2018-12-18)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.6...0.1.7).
