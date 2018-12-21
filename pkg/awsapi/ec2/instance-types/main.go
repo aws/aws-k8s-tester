@@ -140,6 +140,11 @@ func main() {
 		instanceToMaxPods[fields[0]] = n
 	}
 
+	reg, err := regexp.Compile("[^0-9\\.]+")
+	if err != nil {
+		lg.Fatal("failed to compile regex", zap.Error(err))
+	}
+
 	instanceTypes := make(map[string]*instanceType)
 
 	resolver := endpoints.DefaultResolver()
@@ -168,28 +173,45 @@ func main() {
 
 			for _, product := range rs.Products {
 				attr := product.Attributes
-				if attr.InstanceType != "" {
-					instanceTypes[attr.InstanceType] = &instanceType{
-						InstanceType: attr.InstanceType,
-					}
-					if attr.Memory != "" && attr.Memory != "NA" {
-						instanceTypes[attr.InstanceType].Memory = parseMemory(attr.Memory)
-					}
-					if attr.VCPU != "" {
-						instanceTypes[attr.InstanceType].VCPU = parseCPU(attr.VCPU)
-					}
-					if attr.GPU != "" {
-						instanceTypes[attr.InstanceType].GPU = parseCPU(attr.GPU)
-					}
-					if !strings.Contains(attr.InstanceType, ".") {
-						continue
-					}
-					v, ok := instanceToMaxPods[attr.InstanceType]
-					if !ok {
-						lg.Warn("failed to find max pods", zap.String("instance-type", attr.InstanceType))
-					}
-					instanceTypes[attr.InstanceType].MaxPods = v
+				if attr.InstanceType == "" || strings.Contains(attr.InstanceType, " ") || (strings.ToLower(attr.InstanceType) != attr.InstanceType) {
+					continue
 				}
+				instanceTypes[attr.InstanceType] = &instanceType{
+					InstanceType: attr.InstanceType,
+				}
+				if attr.Memory != "" && attr.Memory != "NA" && !strings.HasSuffix(attr.Memory, " Mbps") {
+					parsed := strings.TrimSpace(reg.ReplaceAllString(attr.Memory, ""))
+					mem, err := strconv.ParseFloat(parsed, 64)
+					if err == nil {
+						instanceTypes[attr.InstanceType].Memory = int64(mem * float64(1024))
+					} else {
+						lg.Warn("failed to parse float", zap.String("string", attr.Memory), zap.Error(err))
+					}
+				}
+				if attr.VCPU != "" {
+					iv, err := strconv.ParseInt(attr.VCPU, 10, 64)
+					if err == nil {
+						instanceTypes[attr.InstanceType].VCPU = iv
+					} else {
+						lg.Warn("failed to parse integer", zap.String("string", attr.VCPU), zap.Error(err))
+					}
+				}
+				if attr.GPU != "" {
+					iv, err := strconv.ParseInt(attr.GPU, 10, 64)
+					if err == nil {
+						instanceTypes[attr.InstanceType].GPU = iv
+					} else {
+						lg.Warn("failed to parse integer", zap.String("string", attr.GPU), zap.Error(err))
+					}
+				}
+				if !strings.Contains(attr.InstanceType, ".") {
+					continue
+				}
+				v, ok := instanceToMaxPods[attr.InstanceType]
+				if !ok {
+					lg.Warn("failed to find max pods", zap.String("instance-type", attr.InstanceType))
+				}
+				instanceTypes[attr.InstanceType].MaxPods = v
 			}
 		}
 	}
@@ -213,27 +235,4 @@ func main() {
 	}
 
 	lg.Info("done!")
-}
-
-func parseMemory(memory string) int64 {
-	reg, err := regexp.Compile("[^0-9\\.]+")
-	if err != nil {
-		lg.Fatal("failed to compile regex", zap.Error(err))
-	}
-
-	parsed := strings.TrimSpace(reg.ReplaceAllString(memory, ""))
-	mem, err := strconv.ParseFloat(parsed, 64)
-	if err != nil {
-		lg.Fatal("failed to parse float", zap.Error(err))
-	}
-
-	return int64(mem * float64(1024))
-}
-
-func parseCPU(cpu string) int64 {
-	i, err := strconv.ParseInt(cpu, 10, 64)
-	if err != nil {
-		lg.Fatal("failed to parse integer", zap.Error(err))
-	}
-	return i
 }
