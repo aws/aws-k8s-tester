@@ -61,12 +61,13 @@ func fetchWorkerNodeLog(
 	var cmd string
 
 	// https://github.com/awslabs/amazon-eks-ami/blob/master/files/logrotate-kube-proxy
-	lg.Info(
+	cmd = "cat /var/log/kube-proxy.log"
+	lg.Debug(
 		"fetching kube-proxy logs",
 		zap.String("instance-id", id),
 		zap.String("public-ip", ip),
+		zap.String("cmd", cmd),
 	)
-	cmd = "cat /var/log/kube-proxy.log"
 	out, err = sh.Run(cmd)
 	if err != nil {
 		sh.Close()
@@ -125,7 +126,7 @@ func fetchWorkerNodeLog(
 	fpathToS3Path[fpath] = filepath.Join(clusterName, pfx, filepath.Base(fpath))
 
 	// full journal logs (e.g. disk mounts)
-	lg.Info(
+	lg.Debug(
 		"fetching journal logs",
 		zap.String("instance-id", id),
 		zap.String("public-ip", ip),
@@ -157,12 +158,13 @@ func fetchWorkerNodeLog(
 	fpathToS3Path[fpath] = filepath.Join(clusterName, pfx, filepath.Base(fpath))
 
 	// other systemd services
-	lg.Info(
+	cmd = "sudo systemctl list-units -t service --no-pager --no-legend --all"
+	lg.Debug(
 		"fetching all systemd services",
 		zap.String("instance-id", id),
 		zap.String("public-ip", ip),
+		zap.String("cmd", cmd),
 	)
-	cmd = "sudo systemctl list-units -t service --no-pager --no-legend --all"
 	out, err = sh.Run(cmd)
 	if err != nil {
 		sh.Close()
@@ -195,13 +197,14 @@ func fetchWorkerNodeLog(
 		svcs = append(svcs, fields[0])
 	}
 	for _, svc := range svcs {
-		lg.Info(
+		cmd = "sudo journalctl --no-pager --output=cat -u " + svc
+		lg.Debug(
 			"fetching systemd service log",
 			zap.String("instance-id", id),
 			zap.String("public-ip", ip),
 			zap.String("service", svc),
+			zap.String("cmd", cmd),
 		)
-		cmd = "sudo journalctl --no-pager --output=cat -u " + svc
 		out, err = sh.Run(cmd)
 		if err != nil {
 			lg.Warn(
@@ -232,12 +235,13 @@ func fetchWorkerNodeLog(
 	}
 
 	// other /var/log
-	lg.Info(
+	cmd = "sudo find /var/log ! -type d"
+	lg.Debug(
 		"fetching all /var/log",
 		zap.String("instance-id", id),
 		zap.String("public-ip", ip),
+		zap.String("cmd", cmd),
 	)
-	cmd = "sudo find /var/log ! -type d"
 	out, err = sh.Run(cmd)
 	if err != nil {
 		sh.Close()
@@ -259,20 +263,20 @@ func fetchWorkerNodeLog(
 		varLogs = append(varLogs, line)
 	}
 	for _, p := range varLogs {
-		lg.Info(
+		cmd = "sudo cat " + p
+		lg.Debug(
 			"fetching /var/log",
 			zap.String("instance-id", id),
 			zap.String("public-ip", ip),
-			zap.String("path", p),
+			zap.String("cmd", cmd),
 		)
-		cmd = "sudo cat " + p
 		out, err = sh.Run(cmd)
 		if err != nil {
 			lg.Warn(
 				"failed to run command",
-				zap.String("cmd", cmd),
 				zap.String("instance-id", id),
 				zap.String("public-ip", ip),
+				zap.String("cmd", cmd),
 				zap.Error(err),
 			)
 			continue
@@ -309,7 +313,7 @@ func fetchWorkerNodeLogs(
 
 	// create channel
 	c := make(chan fetchResponse)
-	const BATCHSIZE = 200
+	const batchN = 200
 
 	// create new map fpathToS3Path to join all the data and slice to hold any errors
 	fpathToS3Path = make(map[string]string)
@@ -321,12 +325,12 @@ func fetchWorkerNodeLogs(
 		go concurrentFetchLog(lg, userName, clusterName, privateKeyPath, iv, c)
 		i++
 		// batch and join data from batch, then reset counter.
-		if i == BATCHSIZE {
+		if i == batchN {
 			joinData(c, fpathToS3Path, i, possibleErrors)
 			i = 0
 		}
 	}
-	remainder := len(workerNodes) % BATCHSIZE
+	remainder := len(workerNodes) % batchN
 	if remainder > 0 {
 		joinData(c, fpathToS3Path, remainder, possibleErrors)
 	}
@@ -351,13 +355,13 @@ func concurrentFetchLog(
 	clusterName string,
 	privateKeyPath string,
 	workerNode ec2config.Instance,
-	channel chan fetchResponse) {
+	ch chan fetchResponse) {
 
 	// send request to fetchWorkerLog
 	fm, e := fetchWorkerNodeLog(lg, userName, clusterName, privateKeyPath, workerNode)
 
 	// send map received to channel
-	channel <- fetchResponse{data: fm, err: e}
+	ch <- fetchResponse{data: fm, err: e}
 }
 
 func joinData(

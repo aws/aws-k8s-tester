@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"go.uber.org/zap"
