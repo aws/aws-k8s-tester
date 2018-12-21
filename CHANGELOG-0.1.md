@@ -7,6 +7,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.7...0.1.8).
 
 ### `internal`
 
+- Add [lifecycle rule to S3 buckets](https://github.com/aws/aws-k8s-tester/pull/21).
 - Make [`eks` worker node log fetcher less noisier](https://github.com/aws/aws-k8s-tester/commit/c7cc28d17b08276e5a583f6e6cb0ca76040f1625).
 
 <hr>
