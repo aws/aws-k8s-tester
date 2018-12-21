@@ -313,8 +313,6 @@ func (md *embedded) addLifecycle(bucket string, days int) error {
 		},
 	}
 
-	if _, err := md.s3.PutBucketLifecycleConfiguration(input); err != nil {
-		return err
-	}
-	return nil
+	_, err := md.s3.PutBucketLifecycleConfiguration(input)
+	return err
 }
