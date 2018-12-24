@@ -203,7 +203,9 @@ func (sh *ssh) Run(cmd string, opts ...OpOption) (out []byte, err error) {
 	}
 	ss.Stderr = nil
 	ss.Stdout = nil
-	sh.lg.Info("created client session, running command", zap.String("cmd", cmd))
+	if ret.verbose {
+		sh.lg.Info("created client session, running command", zap.String("cmd", cmd))
+	}
 
 	if len(sh.cfg.Envs) > 0 {
 		for k, v := range sh.cfg.Envs {
@@ -348,7 +350,7 @@ func (sh *ssh) Send(localPath, remotePath string, opts ...OpOption) (out []byte,
 				zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 			)
 		} else {
-			sh.lg.Info("failed to send",
+			sh.lg.Warn("failed to send",
 				zap.String("output", string(out)),
 				zap.Error(ferr),
 				zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
@@ -426,7 +428,7 @@ func (sh *ssh) Download(remotePath, localPath string, opts ...OpOption) (out []b
 				zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 			)
 		} else {
-			sh.lg.Info("failed to download",
+			sh.lg.Warn("failed to download",
 				zap.String("output", string(out)),
 				zap.Error(ferr),
 				zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
