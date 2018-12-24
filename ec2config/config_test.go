@@ -17,6 +17,7 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EC2_DOWN", "false")
 	os.Setenv("AWS_K8S_TESTER_EC2_LOG_DEBUG", "false")
 	os.Setenv("AWS_K8S_TESTER_EC2_UPLOAD_AWS_TESTER_LOGS", "false")
+	os.Setenv("AWS_K8S_TESTER_EC2_UPLOAD_BUCKET_EXPIRE_DAYS", "3")
 	os.Setenv("AWS_K8S_TESTER_EC2_VPC_ID", "aaa")
 	os.Setenv("AWS_K8S_TESTER_EC2_PLUGINS", "update-amazon-linux-2,install-go-1.11.3")
 	os.Setenv("AWS_K8S_TESTER_EC2_INSTANCE_TYPE", "m5d.2xlarge")
@@ -37,6 +38,7 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWS_K8S_TESTER_EC2_DOWN")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_LOG_DEBUG")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_UPLOAD_AWS_TESTER_LOGS")
+		os.Unsetenv("AWS_K8S_TESTER_EC2_UPLOAD_BUCKET_EXPIRE_DAYS")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_VPC_ID")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_PLUGINS")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_INSTANCE_TYPE")
@@ -74,6 +76,9 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.UploadTesterLogs {
 		t.Fatalf("UploadTesterLogs unexpected %v", cfg.UploadTesterLogs)
+	}
+	if cfg.UploadBucketExpireDays != 3 {
+		t.Fatalf("UploadBucketExpireDays expected 3, got %d", cfg.UploadBucketExpireDays)
 	}
 	if cfg.VPCID != "aaa" {
 		t.Fatalf("VPCID unexpected %q", cfg.VPCID)

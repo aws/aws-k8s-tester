@@ -2,6 +2,7 @@ package ec2
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -72,6 +73,12 @@ func (md *embedded) UploadToBucketForTests(localPath, s3Path string) error {
 			})
 			if err != nil {
 				return err
+			}
+
+			if md.cfg.UploadBucketExpireDays > 0 {
+				if err = md.addLifecycle(bucket, md.cfg.UploadBucketExpireDays); err != nil {
+					return err
+				}
 			}
 
 			break
@@ -154,5 +161,28 @@ func (md *embedded) deleteBucket() error {
 	} else {
 		md.lg.Warn("failed to delete bucket", zap.String("bucket", bucket), zap.Error(err))
 	}
+	return err
+}
+
+func (md *embedded) addLifecycle(bucket string, days int) error {
+	daysUntilExp := int64(days)
+	input := &s3.PutBucketLifecycleConfigurationInput{
+		Bucket: aws.String(bucket),
+		LifecycleConfiguration: &s3.BucketLifecycleConfiguration{
+			Rules: []*s3.LifecycleRule{
+				{
+					AbortIncompleteMultipartUpload: &s3.AbortIncompleteMultipartUpload{
+						DaysAfterInitiation: &daysUntilExp,
+					},
+					Expiration: &s3.LifecycleExpiration{
+						Days: &daysUntilExp,
+					},
+					ID:     aws.String(fmt.Sprintf("ObjectLifecycleOf%vDays", days)),
+					Status: aws.String("Enabled"),
+				},
+			},
+		},
+	}
+	_, err := md.s3.PutBucketLifecycleConfiguration(input)
 	return err
 }
