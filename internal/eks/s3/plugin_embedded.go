@@ -2,6 +2,7 @@ package s3
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -306,7 +307,7 @@ func (md *embedded) addLifecycle(bucket string, days int) error {
 					Expiration: &s3.LifecycleExpiration{
 						Days: &daysUntilExp,
 					},
-					ID:     aws.String("TwoDayObjectLife"),
+					ID:     aws.String(fmt.Sprintf("ObjectLifecycleOf%vDays", days)),
 					Status: aws.String("Enabled"),
 				},
 			},
