@@ -78,10 +78,10 @@ func (md *embedded) CreateBucketForAccessLogs() error {
 						request.IsErrorRetryable(err) ||
 						request.IsErrorThrottle(err) {
 						retry = true
-						continue
+					} else {
+						md.lg.Warn("failed to create bucket", zap.String("bucket", bucket), zap.String("code", aerr.Code()), zap.Error(err))
+						return err
 					}
-					md.lg.Warn("failed to create bucket", zap.String("bucket", bucket), zap.String("code", aerr.Code()), zap.Error(err))
-					return err
 				}
 			}
 			if !retry && !exist {
@@ -122,12 +122,10 @@ func (md *embedded) CreateBucketForAccessLogs() error {
 			}
 		}
 
-		md.lg.Info("updated bucket policy", zap.Error(err))
+		md.existing[bucket] = struct{}{}
+		md.lg.Info("created bucket", zap.String("bucket", bucket))
 		break
 	}
-
-	md.existing[bucket] = struct{}{}
-	md.lg.Info("created bucket", zap.String("bucket", bucket))
 
 	return err
 }
@@ -176,10 +174,10 @@ func (md *embedded) UploadToBucketForTests(localPath, s3Path string) error {
 							request.IsErrorRetryable(err) ||
 							request.IsErrorThrottle(err) {
 							retry = true
-							continue
+						} else {
+							md.lg.Warn("failed to create bucket", zap.String("bucket", bucket), zap.String("code", aerr.Code()), zap.Error(err))
+							return err
 						}
-						md.lg.Warn("failed to create bucket", zap.String("bucket", bucket), zap.String("code", aerr.Code()), zap.Error(err))
-						return err
 					}
 				}
 				if !retry && !exist {
