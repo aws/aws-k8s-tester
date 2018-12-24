@@ -7,12 +7,12 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.7...0.1.8).
 
 ### `eksconfig`
 
-- Add [`ec2config.Config.UploadBucketExpireDays`](https://github.com/aws/aws-k8s-tester/commit/TODO) field.
+- Add [`ec2config.Config.UploadBucketExpireDays`](https://github.com/aws/aws-k8s-tester/pull/23/commits/085593db14da33808cf4c4aa73653d0c9f6ecb91) field.
 - Add [`eksconfig.Config.UploadBucketExpireDays`](https://github.com/aws/aws-k8s-tester/commit/3937183b986c75b50f4293f93e4de664766d6dac) field.
 
 ### `internal`
 
-- Add [lifecycle rule to S3 buckets in `internal/ec2` package](https://github.com/aws/aws-k8s-tester/TODO).
+- Add [lifecycle rule to S3 buckets in `internal/ec2` package](https://github.com/aws/aws-k8s-tester/pull/23/commits/8471d495fb9fa4ffbef25c84edcedcadca9036a5).
 - Add [lifecycle rule to S3 buckets in `internal/eks` package](https://github.com/aws/aws-k8s-tester/pull/21).
 - Make [`eks` worker node log fetcher less noisier](https://github.com/aws/aws-k8s-tester/commit/c7cc28d17b08276e5a583f6e6cb0ca76040f1625).
 
