@@ -205,6 +205,12 @@ func (md *embedded) UploadToBucketForTests(localPath, s3Path string) error {
 				return err
 			}
 
+			if md.cfg.UploadBucketExpireDays > 0 {
+				if err = md.addLifecycle(bucket, md.cfg.UploadBucketExpireDays); err != nil {
+					return err
+				}
+			}
+
 			md.existing[bucket] = struct{}{}
 			md.lg.Info("created bucket", zap.String("bucket", bucket))
 			break
@@ -215,12 +221,6 @@ func (md *embedded) UploadToBucketForTests(localPath, s3Path string) error {
 	d, err = ioutil.ReadFile(localPath)
 	if err != nil {
 		return err
-	}
-
-	if md.cfg.UploadBucketExpireDays > 0 {
-		if err = md.addLifecycle(bucket, md.cfg.UploadBucketExpireDays); err != nil {
-			return err
-		}
 	}
 
 	h, _ := os.Hostname()
