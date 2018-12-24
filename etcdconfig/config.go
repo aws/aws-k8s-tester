@@ -576,7 +576,7 @@ func init() {
 	defaultConfig.EC2Bastion.Plugins = []string{
 		"update-amazon-linux-2",
 		"install-etcd-3.1.12",
-		"install-go-1.11.3",
+		"install-go-1.11.4",
 		"install-aws-k8s-tester",
 	}
 	defaultConfig.EC2Bastion.ClusterSize = 1
