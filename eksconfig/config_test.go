@@ -30,6 +30,7 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_AWS_K8S_TESTER_PATH", "/tmp/aws-k8s-tester-test/aws-k8s-tester")
 	os.Setenv("AWS_K8S_TESTER_EKS_KUBECTL_DOWNLOAD_URL", "https://amazon-eks.s3-us-west-2.amazonaws.com/1.11.5/2018-12-06/bin/linux/amd64/kubectl")
 	os.Setenv("AWS_K8S_TESTER_EKS_KUBECTL_PATH", "/tmp/aws-k8s-tester-test/kubectl")
+	os.Setenv("AWS_K8S_TESTER_EKS_KUBECONFIG_PATH", "/tmp/aws-k8s-tester/kubeconfig2")
 	os.Setenv("AWS_K8S_TESTER_EKS_AWS_IAM_AUTHENTICATOR_DOWNLOAD_URL", "https://amazon-eks.s3-us-west-2.amazonaws.com/1.11.5/2018-12-06/bin/linux/amd64/aws-iam-authenticator")
 	os.Setenv("AWS_K8S_TESTER_EKS_AWS_IAM_AUTHENTICATOR_PATH", "/tmp/aws-k8s-tester-test/aws-iam-authenticator")
 	os.Setenv("AWS_K8S_TESTER_EKS_TEST_MODE", "aws-cli")
@@ -65,6 +66,7 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWS_K8S_TESTER_EKS_AWS_K8S_TESTER_PATH")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_KUBECTL_DOWNLOAD_URL")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_KUBECTL_PATH")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_KUBECONFIG_PATH")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_AWS_IAM_AUTHENTICATOR_DOWNLOAD_URL")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_AWS_IAM_AUTHENTICATOR_PATH")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_TEST_MODE")
@@ -111,6 +113,9 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.KubectlPath != "/tmp/aws-k8s-tester-test/kubectl" {
 		t.Fatalf("unexpected KubectlPath %q", cfg.KubectlPath)
+	}
+	if cfg.KubeConfigPath != "/tmp/aws-k8s-tester/kubeconfig2" {
+		t.Fatalf("unexpected KubeConfigPath %q", cfg.KubeConfigPath)
 	}
 	if cfg.AWSIAMAuthenticatorDownloadURL != "https://amazon-eks.s3-us-west-2.amazonaws.com/1.11.5/2018-12-06/bin/linux/amd64/aws-iam-authenticator" {
 		t.Fatalf("unexpected AWSIAMAuthenticatorDownloadURL %q", cfg.AWSIAMAuthenticatorDownloadURL)

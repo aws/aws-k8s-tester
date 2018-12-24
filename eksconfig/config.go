@@ -401,6 +401,7 @@ var defaultConfig = Config{
 	AWSK8sTesterPath:               "/tmp/aws-k8s-tester/aws-k8s-tester",
 	KubectlDownloadURL:             "https://amazon-eks.s3-us-west-2.amazonaws.com/1.11.5/2018-12-06/bin/linux/amd64/kubectl",
 	KubectlPath:                    "/tmp/aws-k8s-tester/kubectl",
+	KubeConfigPath:                 "/tmp/aws-k8s-tester/kubeconfig",
 	AWSIAMAuthenticatorDownloadURL: "https://amazon-eks.s3-us-west-2.amazonaws.com/1.11.5/2018-12-06/bin/linux/amd64/aws-iam-authenticator",
 	AWSIAMAuthenticatorPath:        "/tmp/aws-k8s-tester/aws-iam-authenticator",
 
@@ -672,8 +673,6 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 	cfg.LogOutputToUploadPathBucket = filepath.Join(cfg.ClusterName, "awsk8stester-eks.log")
 
-	// cfg.KubeConfigPath = fmt.Sprintf("%s.%s.kubeconfig.generated.yaml", cfg.ConfigPath, cfg.ClusterName)
-	cfg.KubeConfigPath = "/tmp/aws-k8s-tester/kubeconfig"
 	cfg.KubeConfigPathBucket = filepath.Join(cfg.ClusterName, "kubeconfig")
 
 	cfg.ALBIngressController.IngressTestServerDeploymentServiceSpecPath = fmt.Sprintf(
