@@ -1,6 +1,20 @@
 
 <hr>
 
+## [0.1.9](https://github.com/aws/aws-k8s-tester/releases/tag/0.1.9) (2018-12-24)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.8...0.1.9).
+
+### `internal`
+
+- Make [`internal/ssh` client session log less noisier](https://github.com/aws/aws-k8s-tester/commit/174bb161b7db325df7b03fb76f8cb317e6172682).
+
+### Go
+
+- Compile with [*Go 1.11.4*](https://golang.org/doc/devel/release.html#go1.11).
+
+<hr>
+
 ## [0.1.8](https://github.com/aws/aws-k8s-tester/releases/tag/0.1.8) (2018-12-24)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.7...0.1.8).
