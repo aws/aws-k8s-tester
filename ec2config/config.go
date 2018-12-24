@@ -213,12 +213,14 @@ func NewDefault() *Config {
 	return &vv
 }
 
+const envPfx = "AWS_K8S_TESTER_EC2_"
+
 // defaultConfig is the default configuration.
 //  - empty string creates a non-nil object for pointer-type field
 //  - omitting an entire field returns nil value
 //  - make sure to check both
 var defaultConfig = Config{
-	EnvPrefix: "AWS_K8S_TESTER_EC2_",
+	EnvPrefix: envPfx,
 	AWSRegion: "us-west-2",
 
 	WaitBeforeDown: time.Minute,

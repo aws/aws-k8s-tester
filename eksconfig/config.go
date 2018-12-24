@@ -995,13 +995,18 @@ func (cfg *Config) UpdateFromEnvs() error {
 	return nil
 }
 
+func checkKubernetesVersion(s string) (ok bool) {
+	_, ok = supportedKubernetesVersions[s]
+	return ok
+}
+
 // supportedKubernetesVersions is a list of EKS supported Kubernets versions.
 var supportedKubernetesVersions = map[string]struct{}{
 	"1.11": {},
 }
 
-func checkKubernetesVersion(s string) (ok bool) {
-	_, ok = supportedKubernetesVersions[s]
+func checkRegion(s string) (ok bool) {
+	_, ok = supportedRegions[s]
 	return ok
 }
 
@@ -1013,11 +1018,6 @@ var supportedRegions = map[string]struct{}{
 	"us-east-2":  {},
 	"eu-west-1":  {},
 	"eu-north-1": {},
-}
-
-func checkRegion(s string) (ok bool) {
-	_, ok = supportedRegions[s]
-	return ok
 }
 
 // https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html
