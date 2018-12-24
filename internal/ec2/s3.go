@@ -73,9 +73,10 @@ func (md *embedded) UploadToBucketForTests(localPath, s3Path string) error {
 			if err != nil {
 				return err
 			}
-			md.lg.Info("updated bucket policy", zap.Error(err))
+
 			break
 		}
+
 		md.s3Buckets[bucket] = struct{}{}
 		md.lg.Info("created bucket", zap.String("bucket", bucket))
 	}

@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/request"
@@ -122,12 +121,12 @@ func (md *embedded) CreateBucketForAccessLogs() error {
 			}
 		}
 
-		md.existing[bucket] = struct{}{}
-		md.lg.Info("created bucket", zap.String("bucket", bucket))
 		break
 	}
 
-	return err
+	md.existing[bucket] = struct{}{}
+	md.lg.Info("created bucket", zap.String("bucket", bucket))
+	return nil
 }
 
 func (md *embedded) BucketForTests() string {
@@ -209,10 +208,11 @@ func (md *embedded) UploadToBucketForTests(localPath, s3Path string) error {
 				}
 			}
 
-			md.existing[bucket] = struct{}{}
-			md.lg.Info("created bucket", zap.String("bucket", bucket))
 			break
 		}
+
+		md.existing[bucket] = struct{}{}
+		md.lg.Info("created bucket", zap.String("bucket", bucket))
 	}
 
 	var d []byte
@@ -312,7 +312,6 @@ func (md *embedded) addLifecycle(bucket string, days int) error {
 			},
 		},
 	}
-
 	_, err := md.s3.PutBucketLifecycleConfiguration(input)
 	return err
 }
