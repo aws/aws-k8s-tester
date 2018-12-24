@@ -151,6 +151,9 @@ type Config struct {
 	UploadTesterLogs bool `json:"upload-tester-logs"`
 	// UploadWorkerNodeLogs is true to auto-upload worker node log files.
 	UploadWorkerNodeLogs bool `json:"upload-worker-node-logs"`
+	// UploadBucketExpireDays is the number of days for a S3 bucket to expire.
+	// Set 0 to not expire.
+	UploadBucketExpireDays int `json:"upload-bucket-expire-days"`
 
 	// UpdatedAt is the timestamp when the configuration has been updated.
 	// Read only to 'Config' struct users.
@@ -432,10 +435,11 @@ var defaultConfig = Config{
 
 	// default, stderr, stdout, or file name
 	// log file named with cluster name will be added automatically
-	LogOutputs:           []string{"stderr"},
-	LogAccess:            false,
-	UploadTesterLogs:     false,
-	UploadWorkerNodeLogs: false,
+	LogOutputs:             []string{"stderr"},
+	LogAccess:              false,
+	UploadTesterLogs:       false,
+	UploadWorkerNodeLogs:   false,
+	UploadBucketExpireDays: 2,
 
 	ClusterState: &ClusterState{},
 	ALBIngressController: &ALBIngressController{

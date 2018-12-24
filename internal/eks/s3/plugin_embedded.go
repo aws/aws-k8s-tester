@@ -116,9 +116,10 @@ func (md *embedded) CreateBucketForAccessLogs() error {
 			return err
 		}
 
-		// add lifecycle of 2 days
-		if err = md.addLifecycle(bucket, 2); err != nil {
-			return err
+		if md.cfg.UploadBucketExpireDays > 0 {
+			if err = md.addLifecycle(bucket, md.cfg.UploadBucketExpireDays); err != nil {
+				return err
+			}
 		}
 
 		md.lg.Info("updated bucket policy", zap.Error(err))
@@ -216,9 +217,10 @@ func (md *embedded) UploadToBucketForTests(localPath, s3Path string) error {
 		return err
 	}
 
-	// add lifecycle of 2 days
-	if err = md.addLifecycle(bucket, 2); err != nil {
-		return err
+	if md.cfg.UploadBucketExpireDays > 0 {
+		if err = md.addLifecycle(bucket, md.cfg.UploadBucketExpireDays); err != nil {
+			return err
+		}
 	}
 
 	h, _ := os.Hostname()

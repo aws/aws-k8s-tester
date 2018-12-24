@@ -51,6 +51,7 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_LOG_DEBUG", "true")
 	os.Setenv("AWS_K8S_TESTER_EKS_UPLOAD_TESTER_LOGS", "false")
 	os.Setenv("AWS_K8S_TESTER_EKS_UPLOAD_WORKER_NODE_LOGS", "false")
+	os.Setenv("AWS_K8S_TESTER_EKS_UPLOAD_BUCKET_EXPIRE_DAYS", "3")
 	os.Setenv("AWS_K8S_TESTER_EKS_WAIT_BEFORE_DOWN", "2h")
 	os.Setenv("AWS_K8S_TESTER_EKS_ALB_TEST_SCALABILITY_MINUTES", "3")
 	os.Setenv("AWS_K8S_TESTER_EKS_ALB_UPLOAD_TESTER_LOGS", "false")
@@ -87,6 +88,7 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWS_K8S_TESTER_EKS_LOG_DEBUG")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_UPLOAD_TESTER_LOGS")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_UPLOAD_WORKER_NODE_LOGS")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_UPLOAD_BUCKET_EXPIRE_DAYS")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_WAIT_BEFORE_DOWN")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_ALB_TEST_SCALABILITY_MINUTES")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_ALB_UPLOAD_TESTER_LOGS")
@@ -182,6 +184,9 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.UploadWorkerNodeLogs {
 		t.Fatalf("UploadWorkerNodeLogs expected false, got %v", cfg.UploadWorkerNodeLogs)
+	}
+	if cfg.UploadBucketExpireDays != 3 {
+		t.Fatalf("UploadBucketExpireDays expected 3, got %d", cfg.UploadBucketExpireDays)
 	}
 	if cfg.WaitBeforeDown != 2*time.Hour {
 		t.Fatalf("wait before down expected 2h, got %v", cfg.WaitBeforeDown)
