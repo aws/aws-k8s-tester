@@ -39,6 +39,7 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_VPC_ID", "my-vpc-id")
 	os.Setenv("AWS_K8S_TESTER_EKS_SUBNET_IDS", "a,b,c")
 	os.Setenv("AWS_K8S_TESTER_EKS_LOG_ACCESS", "true")
+	os.Setenv("AWS_K8S_TESTER_EKS_WORKER_NODE_PRIVATE_KEY_PATH", "/tmp/aws-k8s-tester/worker-node.ssh.private.key.3")
 	os.Setenv("AWS_K8S_TESTER_EKS_WORKER_NODE_AMI", "test-ami")
 	os.Setenv("AWS_K8S_TESTER_EKS_SECURITY_GROUP_ID", "my-security-id")
 	os.Setenv("AWS_K8S_TESTER_EKS_ENABLE_WORKER_NODE_HA", "false")
@@ -76,6 +77,7 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWS_K8S_TESTER_EKS_VPC_ID")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_SUBNET_IDs")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_LOG_ACCESS")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_WORKER_NODE_PRIVATE_KEY_PATH")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_WORKER_NODE_AMI")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_SECURITY_GROUP_ID")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_ENABLE_WORKER_NODE_HA")
@@ -142,6 +144,9 @@ func TestEnv(t *testing.T) {
 	}
 	if !cfg.LogAccess {
 		t.Fatalf("LogAccess expected true, got %v", cfg.LogAccess)
+	}
+	if cfg.WorkerNodePrivateKeyPath != "/tmp/aws-k8s-tester/worker-node.ssh.private.key.3" {
+		t.Fatalf("WorkerNodePrivateKeyPath expected /tmp/aws-k8s-tester/worker-node.ssh.private.key.3, got %q", cfg.WorkerNodePrivateKeyPath)
 	}
 	if cfg.WorkerNodeAMI != "test-ami" {
 		t.Fatalf("WorkerNodeAMI expected test-ami, got %q", cfg.WorkerNodeAMI)

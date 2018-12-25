@@ -73,19 +73,6 @@ type Config struct {
 	// This is meant to be used as a flag for test.
 	Down bool `json:"down"`
 
-	// EnableWorkerNodeSSH is true to enable SSH access to worker nodes.
-	EnableWorkerNodeSSH bool `json:"enable-worker-node-ssh"`
-	// EnableWorkerNodeHA is true to use all 3 subnets to create worker nodes.
-	// Note that at least 2 subnets are required for EKS cluster.
-	EnableWorkerNodeHA bool `json:"enable-worker-node-ha"`
-
-	// VPCID is the VPC ID.
-	VPCID string `json:"vpc-id"`
-	// SubnetIDs is the subnet IDs.
-	SubnetIDs []string `json:"subnet-ids"`
-	// SecurityGroupID is the default security group ID.
-	SecurityGroupID string `json:"security-group-id"`
-
 	// AWSAccountID is the AWS account ID.
 	AWSAccountID string `json:"aws-account-id,omitempty"`
 	// AWSCredentialToMountPath is the file path to AWS credential.
@@ -107,6 +94,24 @@ type Config struct {
 	// TODO: define custom endpoints for CloudFormation, EC2, STS
 	AWSCustomEndpoint string `json:"aws-custom-endpoint,omitempty"`
 
+
+	// EnableWorkerNodeSSH is true to enable SSH access to worker nodes.
+	EnableWorkerNodeSSH bool `json:"enable-worker-node-ssh"`
+	// EnableWorkerNodeHA is true to use all 3 subnets to create worker nodes.
+	// Note that at least 2 subnets are required for EKS cluster.
+	EnableWorkerNodeHA bool `json:"enable-worker-node-ha"`
+
+	// VPCID is the VPC ID.
+	VPCID string `json:"vpc-id"`
+	// SubnetIDs is the subnet IDs.
+	SubnetIDs []string `json:"subnet-ids"`
+	// SecurityGroupID is the default security group ID.
+	SecurityGroupID string `json:"security-group-id"`
+
+	// WorkerNodePrivateKeyPath is the file path to store node group key pair private key.
+	// Thus, deployer must delete the private key right after node group creation.
+	// MAKE SURE PRIVATE KEY NEVER GETS UPLOADED TO CLOUD STORAGE AND DLETE AFTER USE!!!
+	WorkerNodePrivateKeyPath string `json:"worker-node-private-key-path,omitempty"`
 	// WorkerNodeAMI is the Amazon EKS worker node AMI ID for the specified Region.
 	// Reference https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html.
 	WorkerNodeAMI string `json:"worker-node-ami,omitempty"`
@@ -227,10 +232,6 @@ type ClusterState struct {
 	CFStackWorkerNodeGroupStatus string `json:"cf-stack-worker-node-group-status,omitempty"`
 	// CFStackWorkerNodeGroupKeyPairName is required for node group creation.
 	CFStackWorkerNodeGroupKeyPairName string `json:"cf-stack-worker-node-group-key-pair-name,omitempty"`
-	// CFStackWorkerNodeGroupKeyPairPrivateKeyPath is the file path to store node group key pair private key.
-	// Thus, deployer must delete the private key right after node group creation.
-	// MAKE SURE PRIVATE KEY NEVER GETS UPLOADED TO CLOUD STORAGE AND DLETE AFTER USE!!!
-	CFStackWorkerNodeGroupKeyPairPrivateKeyPath string `json:"cf-stack-worker-node-group-key-pair-private-key-path,omitempty"`
 	// CFStackWorkerNodeGroupSecurityGroupID is the security group ID
 	// that worker node cloudformation stack created.
 	CFStackWorkerNodeGroupSecurityGroupID string `json:"cf-stack-worker-node-group-security-group-id,omitempty"`
@@ -412,18 +413,17 @@ var defaultConfig = Config{
 	WaitBeforeDown: time.Minute,
 	Down:           true,
 
-	EnableWorkerNodeHA:  true,
-	EnableWorkerNodeSSH: true,
-
 	AWSAccountID: "",
 	// to be overwritten by AWS_SHARED_CREDENTIALS_FILE
 	AWSCredentialToMountPath: filepath.Join(homedir.HomeDir(), ".aws", "credentials"),
 	AWSRegion:                "us-west-2",
 	AWSCustomEndpoint:        "",
 
+	EnableWorkerNodeHA:  true,
+	EnableWorkerNodeSSH: true,
+	WorkerNodePrivateKeyPath: "/tmp/aws-k8s-tester/worker-node.ssh.private.key",
 	// Amazon EKS-optimized AMI, https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html
 	WorkerNodeAMI: "ami-094fa4044a2a3cf52",
-
 	WorkerNodeInstanceType: "m5.large",
 	WorkerNodeASGMin:       1,
 	WorkerNodeASGMax:       1,
@@ -644,10 +644,12 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	cfg.ClusterState.CFStackVPCName = genCFStackVPC(cfg.ClusterName)
 	cfg.ClusterState.CFStackWorkerNodeGroupKeyPairName = genNodeGroupKeyPairName(cfg.ClusterName)
 	// SECURITY NOTE: MAKE SURE PRIVATE KEY NEVER GETS UPLOADED TO CLOUD STORAGE AND DLETE AFTER USE!!!
-	cfg.ClusterState.CFStackWorkerNodeGroupKeyPairPrivateKeyPath = filepath.Join(
-		os.TempDir(),
-		cfg.ClusterState.CFStackWorkerNodeGroupKeyPairName+".private.key",
-	)
+	if cfg.WorkerNodePrivateKeyPath == "" {
+		cfg.WorkerNodePrivateKeyPath = filepath.Join(
+			os.TempDir(),
+			cfg.ClusterState.CFStackWorkerNodeGroupKeyPairName+".private.key",
+		)
+	}
 	cfg.ClusterState.CFStackWorkerNodeGroupName = genCFStackWorkerNodeGroup(cfg.ClusterName)
 
 	////////////////////////////////////////////////////////////////////////

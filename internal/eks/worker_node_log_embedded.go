@@ -16,7 +16,7 @@ func (md *embedded) GetWorkerNodeLogs() (err error) {
 		md.lg,
 		"ec2-user", // for Amazon Linux 2
 		md.cfg.ClusterName,
-		md.cfg.ClusterState.CFStackWorkerNodeGroupKeyPairPrivateKeyPath,
+		md.cfg.WorkerNodePrivateKeyPath,
 		md.cfg.ClusterState.WorkerNodes,
 	)
 
