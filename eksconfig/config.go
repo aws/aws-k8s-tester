@@ -94,7 +94,6 @@ type Config struct {
 	// TODO: define custom endpoints for CloudFormation, EC2, STS
 	AWSCustomEndpoint string `json:"aws-custom-endpoint,omitempty"`
 
-
 	// EnableWorkerNodeSSH is true to enable SSH access to worker nodes.
 	EnableWorkerNodeSSH bool `json:"enable-worker-node-ssh"`
 	// EnableWorkerNodeHA is true to use all 3 subnets to create worker nodes.
@@ -384,6 +383,10 @@ func init() {
 		defaultConfig.KubectlDownloadURL = strings.Replace(defaultConfig.KubectlDownloadURL, "linux", "darwin", -1)
 		defaultConfig.AWSIAMAuthenticatorDownloadURL = strings.Replace(defaultConfig.AWSIAMAuthenticatorDownloadURL, "linux", "darwin", -1)
 	}
+	sshDir := filepath.Join(homedir.HomeDir(), ".ssh")
+	if err := os.MkdirAll(sshDir, 0700); err != nil {
+		panic(fmt.Errorf("failed to mkdir %q (%v)", sshDir, err))
+	}
 }
 
 // genTag generates a tag for cluster name, CloudFormation, and S3 bucket.
@@ -421,9 +424,13 @@ var defaultConfig = Config{
 
 	EnableWorkerNodeHA:  true,
 	EnableWorkerNodeSSH: true,
-	WorkerNodePrivateKeyPath: "/tmp/aws-k8s-tester/worker-node.ssh.private.key",
+
+	// keep in-sync with the default value of
+	// https://godoc.org/k8s.io/kubernetes/test/e2e/framework#GetSigner
+	WorkerNodePrivateKeyPath: filepath.Join(homedir.HomeDir(), ".ssh", "kube_aws_rsa"),
+
 	// Amazon EKS-optimized AMI, https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html
-	WorkerNodeAMI: "ami-094fa4044a2a3cf52",
+	WorkerNodeAMI:          "ami-094fa4044a2a3cf52",
 	WorkerNodeInstanceType: "m5.large",
 	WorkerNodeASGMin:       1,
 	WorkerNodeASGMax:       1,
