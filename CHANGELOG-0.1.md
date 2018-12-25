@@ -9,6 +9,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.8...0.1.9).
 
 - Make [worker node SSH private key path configurable](https://github.com/aws/aws-k8s-tester/pull/25).
   - Add `AWS_K8S_TESTER_EKS_WORKER_NODE_PRIVATE_KEY_PATH`.
+  - Default value is [`${HOME}/.ssh/kube_aws_rsa`](https://github.com/aws/aws-k8s-tester/commit/363b48288a9d448d29ee25ab806890ca4c25e16f) to be consistent with [`GetSigner`](https://godoc.org/k8s.io/kubernetes/test/e2e/framework#GetSigner).
 
 ### `internal`
 
