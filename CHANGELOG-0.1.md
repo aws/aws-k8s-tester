@@ -5,6 +5,11 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.8...0.1.9).
 
+### `eksconfig`
+
+- Make [worker node SSH private key path configurable](https://github.com/aws/aws-k8s-tester/pull/25).
+  - Add `AWS_K8S_TESTER_EKS_WORKER_NODE_PRIVATE_KEY_PATH`.
+
 ### `internal`
 
 - Make [`internal/ssh` client session log less noisier](https://github.com/aws/aws-k8s-tester/commit/174bb161b7db325df7b03fb76f8cb317e6172682).
