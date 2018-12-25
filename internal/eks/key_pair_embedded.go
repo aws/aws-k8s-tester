@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -21,7 +22,7 @@ func (md *embedded) createKeyPair() (err error) {
 	if md.cfg.ClusterState.CFStackWorkerNodeGroupKeyPairName == "" {
 		return errors.New("cannot create key pair without key name")
 	}
-	if md.cfg.ClusterState.CFStackWorkerNodeGroupKeyPairPrivateKeyPath == "" {
+	if md.cfg.WorkerNodePrivateKeyPath == "" {
 		return errors.New("cannot create key pair without private key path")
 	}
 
@@ -40,8 +41,11 @@ func (md *embedded) createKeyPair() (err error) {
 	if *output.KeyName != md.cfg.ClusterState.CFStackWorkerNodeGroupKeyPairName {
 		return fmt.Errorf("unexpected key name %q, expected %q", *output.KeyName, md.cfg.ClusterState.CFStackWorkerNodeGroupKeyPairName)
 	}
+	if err = os.MkdirAll(filepath.Dir(md.cfg.WorkerNodePrivateKeyPath), 0700); err != nil {
+		return err
+	}
 	if err = ioutil.WriteFile(
-		md.cfg.ClusterState.CFStackWorkerNodeGroupKeyPairPrivateKeyPath,
+		md.cfg.WorkerNodePrivateKeyPath,
 		[]byte(*output.KeyMaterial),
 		0400,
 	); err != nil {
@@ -61,7 +65,7 @@ func (md *embedded) deleteKeyPair() error {
 		return nil
 	}
 	defer func() {
-		os.RemoveAll(md.cfg.ClusterState.CFStackWorkerNodeGroupKeyPairPrivateKeyPath)
+		os.RemoveAll(md.cfg.WorkerNodePrivateKeyPath)
 		md.cfg.ClusterState.StatusKeyPairCreated = false
 		md.cfg.Sync()
 	}()
