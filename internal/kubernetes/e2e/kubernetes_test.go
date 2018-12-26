@@ -21,13 +21,13 @@ func TestKubernetes(t *testing.T) {
 	}
 
 	cfg := kubernetesconfig.NewDefault()
-	tester, err := kubernetes.NewTester(cfg)
+	dp, err := kubernetes.NewDeployer(cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if err = tester.Create(); err != nil {
-		tester.Terminate()
+	if err = dp.Create(); err != nil {
+		dp.Terminate()
 		t.Fatal(err)
 	}
 
@@ -42,7 +42,7 @@ func TestKubernetes(t *testing.T) {
 		fmt.Fprintf(os.Stderr, "received %s\n", sig)
 	}
 
-	if err = tester.Terminate(); err != nil {
+	if err = dp.Terminate(); err != nil {
 		t.Fatal(err)
 	}
 }

@@ -106,6 +106,8 @@ type Config struct {
 	KeyPath       string `json:"key-path,omitempty"`
 	KeyPathBucket string `json:"key-path-bucket,omitempty"`
 	KeyPathURL    string `json:"key-path-url,omitempty"`
+	// KeyCreated is true to indicate that EC2 key pair has already been created.
+	KeyCreated bool `json:"key-created,omitempty"`
 
 	// VPCCIDR is the VPC CIDR.
 	VPCCIDR string `json:"vpc-cidr"`
@@ -423,6 +425,9 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 
 	if cfg.KeyName == "" {
 		cfg.KeyName = cfg.ClusterName
+	}
+	cfg.KeyPathBucket = filepath.Join(cfg.ClusterName, "awsk8stester-ec2.key")
+	if cfg.KeyPath == "" {
 		var f *os.File
 		f, err = ioutil.TempFile(os.TempDir(), "awsk8stester-ec2.key")
 		if err != nil {
@@ -432,7 +437,6 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 		f.Close()
 		os.RemoveAll(cfg.KeyPath)
 	}
-	cfg.KeyPathBucket = filepath.Join(cfg.ClusterName, "awsk8stester-ec2.key")
 
 	if _, ok := ec2types.InstanceTypes[cfg.InstanceType]; !ok {
 		return fmt.Errorf("unexpected InstanceType %q", cfg.InstanceType)

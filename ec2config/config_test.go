@@ -22,6 +22,8 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EC2_PLUGINS", "update-amazon-linux-2,install-go-1.11.3")
 	os.Setenv("AWS_K8S_TESTER_EC2_INSTANCE_TYPE", "m5d.2xlarge")
 	os.Setenv("AWS_K8S_TESTER_EC2_KEY_NAME", "test-key")
+	os.Setenv("AWS_K8S_TESTER_EC2_KEY_PATH", "/root/.ssh/kube_aws_rsa")
+	os.Setenv("AWS_K8S_TESTER_EC2_KEY_CREATED", "true")
 	os.Setenv("AWS_K8S_TESTER_EC2_ASSOCIATE_PUBLIC_IP_ADDRESS", "false")
 	os.Setenv("AWS_K8S_TESTER_EC2_SUBNET_IDS", "a,b,c")
 	os.Setenv("AWS_K8S_TESTER_EC2_SECURITY_GROUP_IDS", "d,e,f")
@@ -43,6 +45,8 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWS_K8S_TESTER_EC2_PLUGINS")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_INSTANCE_TYPE")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_KEY_NAME")
+		os.Unsetenv("AWS_K8S_TESTER_EC2_KEY_PATH")
+		os.Unsetenv("AWS_K8S_TESTER_EC2_KEY_CREATED")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_ASSOCIATE_PUBLIC_IP_ADDRESS")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_SUBNET_IDS")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_SECURITY_GROUP_IDS")
@@ -91,6 +95,12 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.KeyName != "test-key" {
 		t.Fatalf("KeyName unexpected %q", cfg.KeyName)
+	}
+	if cfg.KeyPath != "/root/.ssh/kube_aws_rsa" {
+		t.Fatalf("KeyPath unexpected %q", cfg.KeyPath)
+	}
+	if !cfg.KeyCreated {
+		t.Fatalf("KeyCreated unexpected %v", cfg.KeyCreated)
 	}
 	if cfg.AssociatePublicIPAddress {
 		t.Fatalf("AssociatePublicIPAddress unexpected %v", cfg.AssociatePublicIPAddress)

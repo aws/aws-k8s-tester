@@ -64,7 +64,7 @@ type embedded struct {
 	s3Buckets map[string]struct{}
 }
 
-// TODO: use cloudformation
+// TODO: use cloudformation, ASG
 
 // NewDeployer creates a new EKS deployer.
 func NewDeployer(cfg *ec2config.Config) (Deployer, error) {

@@ -425,8 +425,7 @@ var defaultConfig = Config{
 	EnableWorkerNodeHA:  true,
 	EnableWorkerNodeSSH: true,
 
-	// keep in-sync with the default value of
-	// https://godoc.org/k8s.io/kubernetes/test/e2e/framework#GetSigner
+	// keep in-sync with the default value in https://godoc.org/k8s.io/kubernetes/test/e2e/framework#GetSigner
 	WorkerNodePrivateKeyPath: filepath.Join(homedir.HomeDir(), ".ssh", "kube_aws_rsa"),
 
 	// Amazon EKS-optimized AMI, https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html

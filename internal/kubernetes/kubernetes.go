@@ -18,8 +18,8 @@ import (
 	"go.uber.org/zap"
 )
 
-// Tester defines kubernetes test operation.
-type Tester interface {
+// Deployer defines kubernetes test operation.
+type Deployer interface {
 	Create() error
 	Terminate() error
 }
@@ -33,8 +33,8 @@ type embedded struct {
 	ec2WorkerNodesDeployer ec2.Deployer
 }
 
-// NewTester creates a new embedded kubernetes tester.
-func NewTester(cfg *kubernetesconfig.Config) (Tester, error) {
+// NewDeployer creates a new embedded kubernetes tester.
+func NewDeployer(cfg *kubernetesconfig.Config) (Deployer, error) {
 	if err := cfg.ValidateAndSetDefaults(); err != nil {
 		return nil, err
 	}

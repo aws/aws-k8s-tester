@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
+	"k8s.io/client-go/util/homedir"
 	"sigs.k8s.io/yaml"
 )
 
@@ -89,7 +90,7 @@ func NewDefault() *Config {
 
 func init() {
 	defaultConfig.Tag = genTag()
-	defaultConfig.ClusterName = defaultConfig.Tag + "-" + randString(7)
+	defaultConfig.ClusterName = defaultConfig.Tag + "-" + randString(5)
 
 	// package "internal/ec2" defaults
 	// Amazon Linux 2 AMI (HVM), SSD Volume Type
@@ -102,7 +103,7 @@ func init() {
 	defaultConfig.EC2MasterNodes.ClusterSize = 1
 	defaultConfig.EC2MasterNodes.Wait = true
 	defaultConfig.EC2MasterNodes.Tag = defaultConfig.Tag + "-master-nodes"
-	defaultConfig.EC2MasterNodes.ClusterName = defaultConfig.ClusterName
+	defaultConfig.EC2MasterNodes.ClusterName = defaultConfig.ClusterName + "-master-nodes"
 	defaultConfig.EC2MasterNodes.IngressRulesTCP = map[string]string{
 		"22":          "0.0.0.0/0",      // SSH
 		"6443":        "192.168.0.0/16", // Kubernetes API server
@@ -113,6 +114,10 @@ func init() {
 		"30000-32767": "192.168.0.0/16", // NodePort Services
 	}
 
+	// keep in-sync with the default value in https://godoc.org/k8s.io/kubernetes/test/e2e/framework#GetSigner
+	defaultConfig.EC2MasterNodes.KeyPath = filepath.Join(homedir.HomeDir(), ".ssh", "kube_aws_rsa")
+	defaultConfig.EC2WorkerNodes.KeyPath = defaultConfig.EC2MasterNodes.KeyPath
+
 	defaultConfig.EC2WorkerNodes.Plugins = []string{
 		"update-amazon-linux-2",
 		"install-start-docker-amazon-linux-2",
@@ -120,7 +125,7 @@ func init() {
 	defaultConfig.EC2WorkerNodes.ClusterSize = 1
 	defaultConfig.EC2WorkerNodes.Wait = true
 	defaultConfig.EC2WorkerNodes.Tag = defaultConfig.Tag + "-worker-nodes"
-	defaultConfig.EC2WorkerNodes.ClusterName = defaultConfig.ClusterName
+	defaultConfig.EC2WorkerNodes.ClusterName = defaultConfig.ClusterName + "-master-nodes"
 	defaultConfig.EC2WorkerNodes.IngressRulesTCP = map[string]string{
 		"22":          "0.0.0.0/0",      // SSH
 		"30000-32767": "192.168.0.0/16", // NodePort Services
@@ -345,6 +350,13 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 	if cfg.EC2WorkerNodes == nil {
 		return errors.New("EC2WorkerNodes configuration not found")
 	}
+
+	// let master node EC2 deployer create SSH key
+	// and share the same SSH key for master and worker nodes
+	cfg.EC2WorkerNodes.KeyName = cfg.EC2MasterNodes.KeyName
+	cfg.EC2WorkerNodes.KeyPath = cfg.EC2MasterNodes.KeyPath
+	cfg.EC2WorkerNodes.KeyCreated = true
+
 	if err = cfg.EC2WorkerNodes.ValidateAndSetDefaults(); err != nil {
 		return err
 	}
@@ -394,13 +406,13 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 		return errors.New("Set EC2MasterNodes Wait to true")
 	}
 	if cfg.EC2MasterNodes.UserName != "ec2-user" {
-		return fmt.Errorf("expected 'ec2-user' user name, got %q", cfg.EC2MasterNodes.UserName)
+		return fmt.Errorf("EC2MasterNodes.UserName expected 'ec2-user' user name, got %q", cfg.EC2MasterNodes.UserName)
 	}
 	if !cfg.EC2WorkerNodes.Wait {
 		return errors.New("Set EC2WorkerNodes Wait to true")
 	}
 	if cfg.EC2WorkerNodes.UserName != "ec2-user" {
-		return fmt.Errorf("expected 'ec2-user' user name, got %q", cfg.EC2WorkerNodes.UserName)
+		return fmt.Errorf("EC2WorkerNodes.UserName expected 'ec2-user' user name, got %q", cfg.EC2WorkerNodes.UserName)
 	}
 
 	if cfg.Tag == "" {
