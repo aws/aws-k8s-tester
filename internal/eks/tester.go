@@ -16,7 +16,7 @@ func NewTester(cfg *eksconfig.Config) (ekstester.Tester, error) {
 	case "embedded":
 		return newTesterEmbedded(cfg)
 	case "aws-cli":
-		return newTesterAWSCLI(cfg)
+		panic("aws-cli not supported")
 	default:
 		return nil, fmt.Errorf("unknown TestMode %q", cfg.TestMode)
 	}
