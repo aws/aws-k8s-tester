@@ -462,6 +462,27 @@ const installStartDockerAmazonLinux2 = `
 
 ################################## install Docker on Amazon Linux 2
 
+sudo amazon-linux-extras install docker -y
+
+sudo systemctl daemon-reload
+sudo systemctl enable docker || true
+sudo systemctl start docker || true
+sudo systemctl restart docker || true
+
+sudo systemctl status docker --full --no-pager || true
+sudo usermod -aG docker ec2-user || true
+
+# su - ec2-user
+# or logout and login to use docker without 'sudo'
+id -nG
+sudo docker version
+sudo docker info
+
+##################################
+
+`
+
+/*
 sudo yum update -y
 sudo yum install -y docker
 sudo yum install -y yum-utils device-mapper-persistent-data lvm2
@@ -487,21 +508,4 @@ cat > /etc/docker/daemon.json <<EOF
 }
 EOF
 mkdir -p /etc/systemd/system/docker.service.d
-
-sudo systemctl daemon-reload
-sudo systemctl enable docker || true
-sudo systemctl start docker || true
-sudo systemctl restart docker || true
-
-sudo systemctl status docker --full --no-pager || true
-sudo usermod -aG docker ec2-user || true
-
-# su - ec2-user
-# or logout and login to use docker without 'sudo'
-id -nG
-sudo docker version
-sudo docker info
-
-##################################
-
-`
+*/
