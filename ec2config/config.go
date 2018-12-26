@@ -236,8 +236,8 @@ var defaultConfig = Config{
 	UploadTesterLogs:       false,
 	UploadBucketExpireDays: 2,
 
-	// Amazon Linux 2 AMI (HVM), SSD Volume Type
-	ImageID:  "ami-061e7ebbc234015fe",
+	// Amazon Linux 2 AMI (HVM), SSD Volume Type, amzn2-ami-hvm-2.0.20181114-x86_64-gp2
+	ImageID:  "ami-01bbe152bf19d0289",
 	UserName: "ec2-user",
 	Plugins: []string{
 		"update-amazon-linux-2",
