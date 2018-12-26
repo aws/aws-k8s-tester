@@ -5,8 +5,8 @@ import (
 	"testing"
 )
 
-func TestCreateInstallStart(t *testing.T) {
-	s1, err := CreateInstallStart("1.13.0")
+func TestCreateInstall(t *testing.T) {
+	s1, err := CreateInstall("1.13.0")
 	if err != nil {
 		t.Fatal(err)
 	}
