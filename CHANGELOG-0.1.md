@@ -1,5 +1,7 @@
 
+
 <hr>
+
 
 ## [0.1.9](https://github.com/aws/aws-k8s-tester/releases/tag/0.1.9) (2018-12-24)
 
@@ -19,7 +21,9 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.8...0.1.9).
 
 - Compile with [*Go 1.11.4*](https://golang.org/doc/devel/release.html#go1.11).
 
+
 <hr>
+
 
 ## [0.1.8](https://github.com/aws/aws-k8s-tester/releases/tag/0.1.8) (2018-12-24)
 
@@ -40,7 +44,9 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.7...0.1.8).
 
 - Compile with [*Go 1.11.4*](https://golang.org/doc/devel/release.html#go1.11).
 
+
 <hr>
+
 
 ## [0.1.7](https://github.com/aws/aws-k8s-tester/releases/tag/0.1.7) (2018-12-18)
 
@@ -53,6 +59,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.6...0.1.7).
 ### Go
 
 - Compile with [*Go 1.11.4*](https://golang.org/doc/devel/release.html#go1.11).
+
 
 <hr>
 
