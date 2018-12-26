@@ -195,10 +195,14 @@ func (md *embedded) createCluster() error {
 			"dump",
 		).CombinedOutput()
 		cancel()
+		do := string(out3)
+		if !md.cfg.LogDebug && len(do) > 30 {
+			do = do[:30] + "..."
+		}
 		md.lg.Info("ran kubectl cluster-info dump",
 			zap.String("kubectl-path", md.cfg.KubectlPath),
 			zap.String("aws-iam-authenticator-path", md.cfg.AWSIAMAuthenticatorPath),
-			zap.String("output", string(out3)),
+			zap.String("output", do),
 			zap.Error(err),
 		)
 
