@@ -64,8 +64,10 @@ type Config struct {
 	LogOutputToUploadPathBucket string `json:"log-output-to-upload-path-bucket,omitempty"`
 	LogOutputToUploadPathURL    string `json:"log-output-to-upload-path-url,omitempty"`
 
-	// Logs is a list of node log file paths, fetched via SSH.
-	Logs map[string]string `json:"logs,omitempty"`
+	// LogsMasterNodes is a list of master node log file paths, fetched via SSH.
+	LogsMasterNodes map[string]string `json:"logs-master-nodes,omitempty"`
+	// LogsWorkerNodes is a list of worker node log file paths, fetched via SSH.
+	LogsWorkerNodes map[string]string `json:"logs-worker-nodes,omitempty"`
 
 	// UploadTesterLogs is true to auto-upload log files.
 	UploadTesterLogs bool `json:"upload-tester-logs"`
@@ -113,7 +115,7 @@ func init() {
 	defaultConfig.EC2WorkerNodes.ClusterSize = 1
 	defaultConfig.EC2WorkerNodes.Wait = true
 	defaultConfig.EC2WorkerNodes.Tag = defaultConfig.Tag + "-worker-nodes"
-	defaultConfig.EC2WorkerNodes.ClusterName = defaultConfig.ClusterName + "-master-nodes"
+	defaultConfig.EC2WorkerNodes.ClusterName = defaultConfig.ClusterName + "-worker-nodes"
 	defaultConfig.EC2WorkerNodes.IngressRulesTCP = map[string]string{
 		"22":          "0.0.0.0/0",      // SSH
 		"30000-32767": "192.168.0.0/16", // NodePort Services
@@ -126,12 +128,12 @@ func init() {
 	defaultConfig.EC2MasterNodes.Plugins = []string{
 		"update-amazon-linux-2",
 		"install-start-docker-amazon-linux-2",
-		"install-kubernetes-amazon-linux-2-1.13.0",
+		"install-kubernetes-amazon-linux-2-1.13.1",
 	}
 	defaultConfig.EC2WorkerNodes.Plugins = []string{
 		"update-amazon-linux-2",
 		"install-start-docker-amazon-linux-2",
-		"install-kubernetes-amazon-linux-2-1.13.0",
+		"install-kubernetes-amazon-linux-2-1.13.1",
 	}
 }
 

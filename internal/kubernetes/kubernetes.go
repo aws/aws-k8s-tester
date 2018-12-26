@@ -68,6 +68,13 @@ func (md *embedded) Create() (err error) {
 		return err
 	}
 	md.cfg.Sync()
+
+	md.lg.Info("reusing VPC from master nodes for worker nodes", zap.String("vpc-id", md.cfg.EC2MasterNodes.VPCID))
+	// share/reuse VPC from master nodes
+	md.cfg.EC2WorkerNodes.VPCID = md.cfg.EC2MasterNodes.VPCID
+	// prevent VPC double-delete
+	md.cfg.EC2WorkerNodes.VPCCreated = false
+
 	if err = md.ec2WorkerNodesDeployer.Create(); err != nil {
 		return err
 	}
@@ -158,30 +165,62 @@ func (md *embedded) Terminate() error {
 		err := md.ec2MasterNodesDeployer.UploadToBucketForTests(md.cfg.KubeConfigPath, md.cfg.KubeConfigPathBucket)
 		md.lg.Info("uploaded KUBECONFIG", zap.Error(err))
 
-		var fpathToS3Path map[string]string
-		fpathToS3Path, err = fetchLogs(
+		var fpathToS3PathMasterNodes map[string]string
+		fpathToS3PathMasterNodes, err = fetchLogs(
 			md.lg,
 			md.cfg.EC2MasterNodes.UserName,
 			md.cfg.ClusterName,
 			md.cfg.EC2MasterNodes.KeyPath,
 			md.cfg.EC2MasterNodes.Instances,
 		)
-		md.cfg.Logs = fpathToS3Path
+		md.cfg.LogsMasterNodes = fpathToS3PathMasterNodes
+		var fpathToS3PathWorkerNodes map[string]string
+		fpathToS3PathWorkerNodes, err = fetchLogs(
+			md.lg,
+			md.cfg.EC2MasterNodes.UserName,
+			md.cfg.ClusterName,
+			md.cfg.EC2MasterNodes.KeyPath,
+			md.cfg.EC2MasterNodes.Instances,
+		)
+		md.cfg.LogsWorkerNodes = fpathToS3PathWorkerNodes
 		err = md.uploadLogs()
 		md.lg.Info("uploaded", zap.Error(err))
 	}
 
-	return md.ec2MasterNodesDeployer.Terminate()
+	ess := make([]string, 0)
+	// terminate worker nodes first, since VPC is shared
+	if err := md.ec2WorkerNodesDeployer.Terminate(); err != nil {
+		md.lg.Warn("failed to terminate EC2 worker nodes", zap.Error(err))
+		ess = append(ess, err.Error())
+	}
+	if err := md.ec2MasterNodesDeployer.Terminate(); err != nil {
+		md.lg.Warn("failed to terminate EC2 master nodes", zap.Error(err))
+		ess = append(ess, err.Error())
+	}
+	if len(ess) == 0 {
+		return nil
+	}
+	return errors.New(strings.Join(ess, ", "))
 }
 
 func (md *embedded) uploadLogs() (err error) {
-	ess := []string{}
-	for k, v := range md.cfg.Logs {
+	ess := make([]string, 0)
+	for k, v := range md.cfg.LogsMasterNodes {
 		err = md.ec2MasterNodesDeployer.UploadToBucketForTests(k, v)
-		md.lg.Info("uploaded kubernetes log", zap.Error(err))
 		if err != nil {
+			md.lg.Warn("failed to upload kubernetes master node log", zap.String("file-path", k), zap.Error(err))
 			ess = append(ess, err.Error())
 		}
+	}
+	for k, v := range md.cfg.LogsWorkerNodes {
+		err = md.ec2WorkerNodesDeployer.UploadToBucketForTests(k, v)
+		if err != nil {
+			md.lg.Warn("failed to upload kubernetes worker node log", zap.String("file-path", k), zap.Error(err))
+			ess = append(ess, err.Error())
+		}
+	}
+	if len(ess) == 0 {
+		return nil
 	}
 	return errors.New(strings.Join(ess, ", "))
 }

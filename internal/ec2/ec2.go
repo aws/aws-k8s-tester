@@ -36,7 +36,7 @@ type Deployer interface {
 	Create() error
 	// Add creates one more instance to the cluster.
 	Add() error
-	// Stop stops create operation.å
+	// Stop stops create operation.
 	Stop()
 	// Delete deletes one instance.
 	Delete(id string) error
@@ -549,7 +549,7 @@ func (md *embedded) createInstances() (err error) {
 	// evenly distribute per subnet
 	left := md.cfg.ClusterSize
 
-	tokens := []string{}
+	tokens := make([]string, 0)
 	tknToCnt := make(map[string]int)
 
 	if md.cfg.ClusterSize > len(md.cfg.SubnetIDs) {
