@@ -12,6 +12,7 @@ import (
 
 	etcdplugin "github.com/aws/aws-k8s-tester/etcdconfig/plugins"
 	kubeadmplugin "github.com/aws/aws-k8s-tester/kubeadmconfig/plugins"
+	kubernetesplugin "github.com/aws/aws-k8s-tester/kubernetesconfig/plugins"
 )
 
 // headerBash is the bash script header.
@@ -42,6 +43,7 @@ var keyPriorities = map[string]int{ // in the order of:
 	"install-alb":                          8,
 	"install-start-docker-amazon-linux-2":  9,
 	"install-start-kubeadm-amazon-linux-2": 10,
+	"install-kubernetes-amazon-linux-2":    11,
 }
 
 func convertToScript(userName, plugin string) (script, error) {
@@ -141,6 +143,14 @@ make server
 			return script{}, err
 		}
 		return script{key: "install-start-kubeadm-amazon-linux-2", data: s}, nil
+
+	case strings.HasPrefix(plugin, "install-kubernetes-amazon-linux-2-"):
+		id := strings.Replace(plugin, "install-kubernetes-amazon-linux-2-", "", -1)
+		s, err := kubernetesplugin.CreateInstall(id)
+		if err != nil {
+			return script{}, err
+		}
+		return script{key: "install-kubernetes-amazon-linux-2", data: s}, nil
 	}
 
 	return script{}, fmt.Errorf("unknown plugin %q", plugin)

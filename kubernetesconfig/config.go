@@ -92,14 +92,6 @@ func init() {
 	defaultConfig.Tag = genTag()
 	defaultConfig.ClusterName = defaultConfig.Tag + "-" + randString(5)
 
-	// package "internal/ec2" defaults
-	// Amazon Linux 2 AMI (HVM), SSD Volume Type
-	// ImageID:  "ami-01bbe152bf19d0289"
-	// UserName: "ec2-user"
-	defaultConfig.EC2MasterNodes.Plugins = []string{
-		"update-amazon-linux-2",
-		"install-start-docker-amazon-linux-2",
-	}
 	defaultConfig.EC2MasterNodes.ClusterSize = 1
 	defaultConfig.EC2MasterNodes.Wait = true
 	defaultConfig.EC2MasterNodes.Tag = defaultConfig.Tag + "-master-nodes"
@@ -118,10 +110,6 @@ func init() {
 	defaultConfig.EC2MasterNodes.KeyPath = filepath.Join(homedir.HomeDir(), ".ssh", "kube_aws_rsa")
 	defaultConfig.EC2WorkerNodes.KeyPath = defaultConfig.EC2MasterNodes.KeyPath
 
-	defaultConfig.EC2WorkerNodes.Plugins = []string{
-		"update-amazon-linux-2",
-		"install-start-docker-amazon-linux-2",
-	}
 	defaultConfig.EC2WorkerNodes.ClusterSize = 1
 	defaultConfig.EC2WorkerNodes.Wait = true
 	defaultConfig.EC2WorkerNodes.Tag = defaultConfig.Tag + "-worker-nodes"
@@ -129,6 +117,21 @@ func init() {
 	defaultConfig.EC2WorkerNodes.IngressRulesTCP = map[string]string{
 		"22":          "0.0.0.0/0",      // SSH
 		"30000-32767": "192.168.0.0/16", // NodePort Services
+	}
+
+	// package "internal/ec2" defaults
+	// Amazon Linux 2 AMI (HVM), SSD Volume Type
+	// ImageID:  "ami-01bbe152bf19d0289"
+	// UserName: "ec2-user"
+	defaultConfig.EC2MasterNodes.Plugins = []string{
+		"update-amazon-linux-2",
+		"install-start-docker-amazon-linux-2",
+		"install-kubernetes-amazon-linux-2-1.13.0",
+	}
+	defaultConfig.EC2WorkerNodes.Plugins = []string{
+		"update-amazon-linux-2",
+		"install-start-docker-amazon-linux-2",
+		"install-kubernetes-amazon-linux-2-1.13.0",
 	}
 }
 
@@ -367,7 +370,7 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 		}
 	}
 
-	okAMZLnx, okDocker := false, false
+	okAMZLnx, okDocker, okKubernetes := false, false, false
 	for _, v := range cfg.EC2MasterNodes.Plugins {
 		if v == "update-amazon-linux-2" {
 			okAMZLnx = true
@@ -377,6 +380,10 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 			okDocker = true
 			continue
 		}
+		if strings.HasPrefix(v, "install-kubernetes-amazon-linux-2") {
+			okKubernetes = true
+			continue
+		}
 	}
 	if !okAMZLnx {
 		return errors.New("EC2MasterNodes Plugin 'update-amazon-linux-2' not found")
@@ -384,7 +391,10 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 	if !okDocker {
 		return errors.New("EC2MasterNodes Plugin 'install-start-docker-amazon-linux-2' not found")
 	}
-	okAMZLnx, okDocker = false, false
+	if !okKubernetes {
+		return errors.New("EC2MasterNodes Plugin 'install-kubernetes-amazon-linux-2' not found")
+	}
+	okAMZLnx, okDocker, okKubernetes = false, false, false
 	for _, v := range cfg.EC2WorkerNodes.Plugins {
 		if v == "update-amazon-linux-2" {
 			okAMZLnx = true
@@ -394,12 +404,19 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 			okDocker = true
 			continue
 		}
+		if strings.HasPrefix(v, "install-kubernetes-amazon-linux-2") {
+			okKubernetes = true
+			continue
+		}
 	}
 	if !okAMZLnx {
 		return errors.New("EC2WorkerNodes Plugin 'update-amazon-linux-2' not found")
 	}
 	if !okDocker {
 		return errors.New("EC2WorkerNodes Plugin 'install-start-docker-amazon-linux-2' not found")
+	}
+	if !okKubernetes {
+		return errors.New("EC2MasterNodes Plugin 'install-kubernetes-amazon-linux-2' not found")
 	}
 
 	if !cfg.EC2MasterNodes.Wait {

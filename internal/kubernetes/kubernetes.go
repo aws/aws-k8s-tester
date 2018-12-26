@@ -83,22 +83,20 @@ func (md *embedded) Create() (err error) {
 	)
 
 	if md.cfg.LogDebug {
-		fmt.Println(md.cfg.EC2MasterNodes.SSHCommands())
-		fmt.Println(md.cfg.EC2WorkerNodes.SSHCommands())
+		fmt.Println("EC2MasterNodes.SSHCommands:", md.cfg.EC2MasterNodes.SSHCommands())
+		fmt.Println("EC2WorkerNodes.SSHCommands:", md.cfg.EC2WorkerNodes.SSHCommands())
 	}
 	if err = md.cfg.ValidateAndSetDefaults(); err != nil {
 		return err
 	}
 
 	// SCP to each EC2MasterNodes instance
-	// TODO: HA master
-	md.lg.Info("deploying kubernetes master")
+	md.lg.Info("deploying kubernetes master nodes")
 	var masterEC2 ec2config.Instance
 	for _, iv := range md.cfg.EC2MasterNodes.Instances {
 		masterEC2 = iv
 		break
 	}
-
 	var masterSSH ssh.SSH
 	masterSSH, err = ssh.New(ssh.Config{
 		Logger:        md.lg,
@@ -114,15 +112,39 @@ func (md *embedded) Create() (err error) {
 		return err
 	}
 	defer masterSSH.Close()
-
-	_, err = masterSSH.Run(
-		"ls",
+	var out []byte
+	out, err = masterSSH.Run(
+		"ls /usr/bin",
 		ssh.WithTimeout(15*time.Second),
 	)
-	md.lg.Info("started kubernetes init",
-		zap.String("id", masterEC2.InstanceID),
-		zap.Error(err),
+	fmt.Println("masterSSH /usr/bin:", string(out))
+
+	md.lg.Info("deploying kubernetes worker nodes")
+	var workerEC2 ec2config.Instance
+	for _, iv := range md.cfg.EC2WorkerNodes.Instances {
+		workerEC2 = iv
+		break
+	}
+	var workerSSH ssh.SSH
+	workerSSH, err = ssh.New(ssh.Config{
+		Logger:        md.lg,
+		KeyPath:       md.cfg.EC2WorkerNodes.KeyPath,
+		PublicIP:      workerEC2.PublicIP,
+		PublicDNSName: workerEC2.PublicDNSName,
+		UserName:      md.cfg.EC2WorkerNodes.UserName,
+	})
+	if err != nil {
+		return err
+	}
+	if err = workerSSH.Connect(); err != nil {
+		return err
+	}
+	defer workerSSH.Close()
+	out, err = workerSSH.Run(
+		"ls /usr/bin",
+		ssh.WithTimeout(15*time.Second),
 	)
+	fmt.Println("workerSSH /usr/bin:", string(out))
 
 	return md.cfg.Sync()
 }
