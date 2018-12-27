@@ -18,7 +18,6 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/pkg/zaputil"
 	"github.com/aws/aws-k8s-tester/storagetester"
-
 	"github.com/dustin/go-humanize"
 	"go.etcd.io/etcd/etcdserver/etcdserverpb"
 	"go.uber.org/zap"
@@ -113,7 +112,7 @@ func (md *embedded) Create() (err error) {
 		ev.DataDir = fmt.Sprintf("/home/%s/etcd.data", md.cfg.EC2.UserName)
 		ev.ListenClientURLs = fmt.Sprintf("http://localhost:2379,http://%s:2379", iv.PrivateIP)
 		ev.AdvertiseClientURLs = fmt.Sprintf("http://%s:2379", iv.PrivateIP)
-		ev.ListenPeerURLs = fmt.Sprintf("http://%s:2380", iv.PrivateIP)
+		ev.ListenPeerURLs = fmt.Sprintf("http://localhost:2380,http://%s:2380", iv.PrivateIP)
 		ev.AdvertisePeerURLs = fmt.Sprintf("http://%s:2380", iv.PrivateIP)
 		ev.InitialCluster = ""
 		ev.InitialClusterState = "new"
@@ -928,7 +927,7 @@ func (md *embedded) MemberAdd(ver string) (err error) {
 	newETCD.DataDir = fmt.Sprintf("/home/%s/etcd.data", md.cfg.EC2.UserName)
 	newETCD.ListenClientURLs = fmt.Sprintf("http://localhost:2379,http://%s:2379", newEC2.PrivateIP)
 	newETCD.AdvertiseClientURLs = fmt.Sprintf("http://%s:2379", newEC2.PrivateIP)
-	newETCD.ListenPeerURLs = fmt.Sprintf("http://%s:2380", newEC2.PrivateIP)
+	newETCD.ListenPeerURLs = fmt.Sprintf("http://localhost:2380,http://%s:2380", newEC2.PrivateIP)
 	newETCD.AdvertisePeerURLs = fmt.Sprintf("http://%s:2380", newEC2.PrivateIP)
 	initialCluster := ""
 	for k, v := range md.cfg.ClusterState {
