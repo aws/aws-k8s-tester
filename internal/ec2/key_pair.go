@@ -18,7 +18,7 @@ func (md *embedded) createKeyPair() (err error) {
 	if md.cfg.KeyName == "" {
 		return errors.New("cannot delete key pair without key name")
 	}
-	if md.cfg.KeyCreated {
+	if md.cfg.KeyCreateSkip || md.cfg.KeyCreated {
 		md.lg.Info("EC2 key pair has already been created", zap.String("ec2-key-pair-name", md.cfg.KeyName))
 		return nil
 	}

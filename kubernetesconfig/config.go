@@ -13,6 +13,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aws/aws-k8s-tester/etcdconfig"
+
 	"k8s.io/client-go/util/homedir"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
@@ -76,6 +78,8 @@ type Config struct {
 	// Set 0 to not expire.
 	UploadBucketExpireDays int `json:"upload-bucket-expire-days"`
 
+	// ETCDNodes defines etcd cluster.
+	ETCDNodes *etcdconfig.Config `json:"etcd-nodes"`
 	// EC2MasterNodes defines ec2 instance configuration for Kubernetes master components.
 	EC2MasterNodes *ec2config.Config `json:"ec2-master-nodes"`
 	// EC2WorkerNodes defines ec2 instance configuration for Kubernetes worker nodes.
@@ -95,14 +99,26 @@ func init() {
 	defaultConfig.Tag = genTag()
 	defaultConfig.ClusterName = defaultConfig.Tag + "-" + randString(5)
 
+	defaultConfig.ETCDNodes.EC2.Tag = defaultConfig.Tag + "-etcd-nodes"
+	defaultConfig.ETCDNodes.EC2.ClusterName = defaultConfig.ClusterName + "-etcd-nodes"
+	defaultConfig.ETCDNodes.EC2Bastion.Tag = defaultConfig.Tag + "-etcd-bastion-nodes"
+	defaultConfig.ETCDNodes.EC2Bastion.ClusterName = defaultConfig.ClusterName + "-etcd-bastion-nodes"
+	defaultConfig.EC2MasterNodes.Tag = defaultConfig.Tag + "-master-nodes"
+	defaultConfig.EC2MasterNodes.ClusterName = defaultConfig.ClusterName + "-master-nodes"
+	defaultConfig.EC2WorkerNodes.Tag = defaultConfig.Tag + "-worker-nodes"
+	defaultConfig.EC2WorkerNodes.ClusterName = defaultConfig.ClusterName + "-worker-nodes"
+
+	// TODO: use single node cluster for now
+	defaultConfig.ETCDNodes.ClusterSize = 1
+
 	// keep in-sync with the default value in https://godoc.org/k8s.io/kubernetes/test/e2e/framework#GetSigner
 	defaultConfig.EC2MasterNodes.KeyPath = filepath.Join(homedir.HomeDir(), ".ssh", "kube_aws_rsa")
+	defaultConfig.ETCDNodes.EC2.KeyPath = defaultConfig.EC2MasterNodes.KeyPath
+	defaultConfig.ETCDNodes.EC2Bastion.KeyPath = defaultConfig.EC2MasterNodes.KeyPath
 	defaultConfig.EC2WorkerNodes.KeyPath = defaultConfig.EC2MasterNodes.KeyPath
 
 	defaultConfig.EC2MasterNodes.ClusterSize = 1
 	defaultConfig.EC2MasterNodes.Wait = true
-	defaultConfig.EC2MasterNodes.Tag = defaultConfig.Tag + "-master-nodes"
-	defaultConfig.EC2MasterNodes.ClusterName = defaultConfig.ClusterName + "-master-nodes"
 	defaultConfig.EC2MasterNodes.IngressRulesTCP = map[string]string{
 		"22":          "0.0.0.0/0",      // SSH
 		"6443":        "192.168.0.0/16", // Kubernetes API server
@@ -115,8 +131,6 @@ func init() {
 
 	defaultConfig.EC2WorkerNodes.ClusterSize = 1
 	defaultConfig.EC2WorkerNodes.Wait = true
-	defaultConfig.EC2WorkerNodes.Tag = defaultConfig.Tag + "-worker-nodes"
-	defaultConfig.EC2WorkerNodes.ClusterName = defaultConfig.ClusterName + "-worker-nodes"
 	defaultConfig.EC2WorkerNodes.IngressRulesTCP = map[string]string{
 		"22":          "0.0.0.0/0",      // SSH
 		"30000-32767": "192.168.0.0/16", // NodePort Services
@@ -174,6 +188,7 @@ var defaultConfig = Config{
 
 	KubeConfigPath: "/tmp/aws-k8s-tester/kubeconfig",
 
+	ETCDNodes:      etcdconfig.NewDefault(),
 	EC2MasterNodes: ec2config.NewDefault(),
 	EC2WorkerNodes: ec2config.NewDefault(),
 
@@ -254,6 +269,9 @@ const (
 
 // UpdateFromEnvs updates fields from environmental variables.
 func (cfg *Config) UpdateFromEnvs() error {
+	if err := cfg.ETCDNodes.UpdateFromEnvs(); err != nil {
+		return err
+	}
 	cfg.EC2MasterNodes.EnvPrefix = envPfxMasterNodes
 	cfg.EC2WorkerNodes.EnvPrefix = envPfxWorkerNodes
 	if err := cfg.EC2MasterNodes.UpdateFromEnvs(); err != nil {
@@ -359,9 +377,25 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 
 	// let master node EC2 deployer create SSH key
 	// and share the same SSH key for master and worker nodes
+	cfg.ETCDNodes.EC2.KeyName = cfg.EC2MasterNodes.KeyName
+	cfg.ETCDNodes.EC2.KeyPath = cfg.EC2MasterNodes.KeyPath
+	cfg.ETCDNodes.EC2.KeyCreateSkip = true
+	cfg.ETCDNodes.EC2.KeyCreated = false
+	cfg.ETCDNodes.EC2Bastion.KeyName = cfg.EC2MasterNodes.KeyName
+	cfg.ETCDNodes.EC2Bastion.KeyPath = cfg.EC2MasterNodes.KeyPath
+	cfg.ETCDNodes.EC2Bastion.KeyCreateSkip = true
+	cfg.ETCDNodes.EC2Bastion.KeyCreated = false
 	cfg.EC2WorkerNodes.KeyName = cfg.EC2MasterNodes.KeyName
 	cfg.EC2WorkerNodes.KeyPath = cfg.EC2MasterNodes.KeyPath
-	cfg.EC2WorkerNodes.KeyCreated = true
+	cfg.EC2WorkerNodes.KeyCreateSkip = true
+	cfg.EC2WorkerNodes.KeyCreated = false
+
+	if cfg.ETCDNodes == nil {
+		return errors.New("ETCDNodes configuration not found")
+	}
+	if err = cfg.ETCDNodes.ValidateAndSetDefaults(); err != nil {
+		return err
+	}
 
 	if err = cfg.EC2WorkerNodes.ValidateAndSetDefaults(); err != nil {
 		return err

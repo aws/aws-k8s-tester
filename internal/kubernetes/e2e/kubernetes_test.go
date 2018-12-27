@@ -31,6 +31,8 @@ func TestKubernetes(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	fmt.Printf("ETCDNodes.EC2 SSH:\n%s\n\n", cfg.ETCDNodes.EC2.SSHCommands())
+	fmt.Printf("ETCDNodes.EC2Bastion SSH:\n%s\n\n", cfg.ETCDNodes.EC2Bastion.SSHCommands())
 	fmt.Printf("EC2MasterNodes SSH:\n%s\n\n", cfg.EC2MasterNodes.SSHCommands())
 	fmt.Printf("EC2WorkerNodes SSH:\n%s\n\n", cfg.EC2WorkerNodes.SSHCommands())
 

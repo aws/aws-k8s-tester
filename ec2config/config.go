@@ -106,15 +106,19 @@ type Config struct {
 	KeyPath       string `json:"key-path,omitempty"`
 	KeyPathBucket string `json:"key-path-bucket,omitempty"`
 	KeyPathURL    string `json:"key-path-url,omitempty"`
-	// KeyCreated is true to indicate that EC2 key pair has already been created.
+	// KeyCreateSkip is true to indicate that EC2 key pair has been created, so needs no creation.
+	KeyCreateSkip bool `json:"key-created,omitempty"`
+	// KeyCreated is true to indicate that EC2 key pair has been created, so needs be cleaned later.
 	KeyCreated bool `json:"key-created,omitempty"`
 
 	// VPCCIDR is the VPC CIDR.
 	VPCCIDR string `json:"vpc-cidr"`
 	// VPCID is the VPC ID to use.
 	// Leave empty to create a temporary one.
-	VPCID      string `json:"vpc-id"`
-	VPCCreated bool   `json:"vpc-created"`
+	VPCID string `json:"vpc-id"`
+	// VPCCreated is true to indicate that EC2 VPC has been created, so needs be cleaned later.
+	// Set this to false, if the VPC is reused from somewhere else, so the original VPC creator deletes the VPC.
+	VPCCreated bool `json:"vpc-created"`
 	// InternetGatewayID is the internet gateway ID.
 	InternetGatewayID string `json:"internet-gateway-id,omitempty"`
 	// RouteTableIDs is the list of route table IDs.
@@ -248,6 +252,9 @@ var defaultConfig = Config{
 	ClusterSize:  1,
 
 	AssociatePublicIPAddress: true,
+
+	KeyCreateSkip: false,
+	KeyCreated:    false,
 
 	VPCCIDR: "192.168.0.0/16",
 	IngressRulesTCP: map[string]string{

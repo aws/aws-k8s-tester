@@ -25,7 +25,9 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_DOWN", "false")
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_LOG_DEBUG", "true")
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_UPLOAD_TESTER_LOGS", "false")
-	os.Setenv("AWS_K8S_TESTER_EC2_MASTER_NODES_PLUGINS", "update-amazon-linux-2,install-start-docker-amazon-linux-2")
+	os.Setenv("AWS_K8S_TESTER_EC2_MASTER_NODES_PLUGINS", "update-amazon-linux-2,install-start-docker-amazon-linux-2,install-kubernetes-amazon-linux-2-1.13.1")
+	os.Setenv("AWS_K8S_TESTER_ETCD_CLUSTER_SIZE", "5")
+	os.Setenv("AWS_K8S_TESTER_ETCD_CLUSTER_VERSION", "v3.2.15")
 
 	defer func() {
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_CLUSTER_SNAPSHOT_COUNT")
@@ -42,6 +44,8 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_LOG_DEBUG")
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_UPLOAD_TESTER_LOGS")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_MASTER_NODES_PLUGINS")
+		os.Unsetenv("AWS_K8S_TESTER_ETCD_CLUSTER_SIZE")
+		os.Unsetenv("AWS_K8S_TESTER_ETCD_CLUSTER_VERSION")
 	}()
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
@@ -84,9 +88,15 @@ func TestEnv(t *testing.T) {
 	if cfg.UploadTesterLogs {
 		t.Fatalf("unexpected UploadTesterLogs, got %v", cfg.UploadTesterLogs)
 	}
-	exp := []string{"update-amazon-linux-2", "install-start-docker-amazon-linux-2"}
+	exp := []string{"update-amazon-linux-2", "install-start-docker-amazon-linux-2", "install-kubernetes-amazon-linux-2-1.13.1"}
 	if !reflect.DeepEqual(cfg.EC2MasterNodes.Plugins, exp) {
 		t.Fatalf("expected EC2MasterNodes.Plugins %v, got %v", exp, cfg.EC2MasterNodes.Plugins)
+	}
+	if cfg.ETCDNodes.ClusterSize != 5 {
+		t.Fatalf("expected ETCDNodes.ClusterSize 5, got %v", cfg.ETCDNodes.ClusterSize)
+	}
+	if cfg.ETCDNodes.Cluster.Version != "3.2.15" {
+		t.Fatalf("unexpected ETCDNodes.Cluster.Version, got %q", cfg.ETCDNodes.Cluster.Version)
 	}
 
 	var d []byte

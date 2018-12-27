@@ -10,10 +10,12 @@ import (
 
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/internal/ec2"
+	"github.com/aws/aws-k8s-tester/internal/etcd"
 	"github.com/aws/aws-k8s-tester/internal/ssh"
 	"github.com/aws/aws-k8s-tester/kubernetesconfig"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/pkg/zaputil"
+	"github.com/aws/aws-k8s-tester/storagetester"
 	"github.com/dustin/go-humanize"
 	"go.uber.org/zap"
 )
@@ -29,6 +31,7 @@ type embedded struct {
 	lg  *zap.Logger
 	cfg *kubernetesconfig.Config
 
+	etcdTester             storagetester.Tester
 	ec2MasterNodesDeployer ec2.Deployer
 	ec2WorkerNodesDeployer ec2.Deployer
 }
@@ -43,6 +46,10 @@ func NewDeployer(cfg *kubernetesconfig.Config) (Deployer, error) {
 		return nil, err
 	}
 	md := &embedded{lg: lg, cfg: cfg}
+	md.etcdTester, err = etcd.NewTester(md.cfg.ETCDNodes)
+	if err != nil {
+		return nil, err
+	}
 	md.ec2MasterNodesDeployer, err = ec2.NewDeployer(md.cfg.EC2MasterNodes)
 	if err != nil {
 		return nil, err
@@ -71,9 +78,18 @@ func (md *embedded) Create() (err error) {
 
 	md.lg.Info("reusing VPC from master nodes for worker nodes", zap.String("vpc-id", md.cfg.EC2MasterNodes.VPCID))
 	// share/reuse VPC from master nodes
+	md.cfg.ETCDNodes.EC2.VPCID = md.cfg.EC2MasterNodes.VPCID
+	md.cfg.ETCDNodes.EC2Bastion.VPCID = md.cfg.EC2MasterNodes.VPCID
 	md.cfg.EC2WorkerNodes.VPCID = md.cfg.EC2MasterNodes.VPCID
 	// prevent VPC double-delete
+	md.cfg.ETCDNodes.EC2.VPCCreated = false
+	md.cfg.ETCDNodes.EC2Bastion.VPCCreated = false
 	md.cfg.EC2WorkerNodes.VPCCreated = false
+
+	if err = md.etcdTester.Create(); err != nil {
+		return err
+	}
+	md.cfg.Sync()
 
 	if err = md.ec2WorkerNodesDeployer.Create(); err != nil {
 		return err
@@ -121,7 +137,7 @@ func (md *embedded) Create() (err error) {
 	defer masterSSH.Close()
 	var out []byte
 	out, err = masterSSH.Run(
-		"ls /usr/bin",
+		"kubelet --help",
 		ssh.WithTimeout(15*time.Second),
 	)
 	fmt.Println("masterSSH /usr/bin:", string(out))
@@ -188,7 +204,11 @@ func (md *embedded) Terminate() error {
 	}
 
 	ess := make([]string, 0)
-	// terminate worker nodes first, since VPC is shared
+	// terminate etcd and worker nodes first in order to remove VPC dependency safely
+	if err := md.etcdTester.Terminate(); err != nil {
+		md.lg.Warn("failed to terminate etcd nodes", zap.Error(err))
+		ess = append(ess, err.Error())
+	}
 	if err := md.ec2WorkerNodesDeployer.Terminate(); err != nil {
 		md.lg.Warn("failed to terminate EC2 worker nodes", zap.Error(err))
 		ess = append(ess, err.Error())

@@ -159,8 +159,10 @@ func (md *embedded) Create() (err error) {
 					md.lg.Warn("failed to revert VPC creation", zap.Error(derr))
 				}
 			}
-			if derr := md.deleteKeyPair(); derr != nil {
-				md.lg.Warn("failed to revert key pair creation", zap.Error(derr))
+			if md.cfg.KeyCreated {
+				if derr := md.deleteKeyPair(); derr != nil {
+					md.lg.Warn("failed to revert key pair creation", zap.Error(derr))
+				}
 			}
 		}
 	}()
@@ -169,6 +171,7 @@ func (md *embedded) Create() (err error) {
 	if err = catchStopc(md.lg, md.stopc, md.createKeyPair); err != nil {
 		return err
 	}
+
 	if md.cfg.VPCID != "" { // use existing VPC
 		if len(md.cfg.SubnetIDs) == 0 {
 			if err = catchStopc(md.lg, md.stopc, md.getSubnets); err != nil {
@@ -496,9 +499,11 @@ func (md *embedded) Terminate() (err error) {
 			errs = append(errs, err.Error())
 		}
 	}
-	if err = md.deleteKeyPair(); err != nil {
-		md.lg.Warn("failed to delete key pair", zap.Error(err))
-		errs = append(errs, err.Error())
+	if md.cfg.KeyCreated {
+		if err = md.deleteKeyPair(); err != nil {
+			md.lg.Warn("failed to delete key pair", zap.Error(err))
+			errs = append(errs, err.Error())
+		}
 	}
 
 	if len(errs) > 0 {
