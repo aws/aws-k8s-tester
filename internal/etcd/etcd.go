@@ -111,7 +111,7 @@ func (md *embedded) Create() (err error) {
 		ev.PublicDNSName = iv.PublicDNSName
 		ev.Name = iv.InstanceID
 		ev.DataDir = fmt.Sprintf("/home/%s/etcd.data", md.cfg.EC2.UserName)
-		ev.ListenClientURLs = fmt.Sprintf("http://%s:2379", iv.PrivateIP)
+		ev.ListenClientURLs = fmt.Sprintf("http://localhost:2379,http://%s:2379", iv.PrivateIP)
 		ev.AdvertiseClientURLs = fmt.Sprintf("http://%s:2379", iv.PrivateIP)
 		ev.ListenPeerURLs = fmt.Sprintf("http://%s:2380", iv.PrivateIP)
 		ev.AdvertisePeerURLs = fmt.Sprintf("http://%s:2380", iv.PrivateIP)
@@ -926,7 +926,7 @@ func (md *embedded) MemberAdd(ver string) (err error) {
 	newETCD.PublicDNSName = newEC2.PublicDNSName
 	newETCD.Name = newEC2.InstanceID
 	newETCD.DataDir = fmt.Sprintf("/home/%s/etcd.data", md.cfg.EC2.UserName)
-	newETCD.ListenClientURLs = fmt.Sprintf("http://%s:2379", newEC2.PrivateIP)
+	newETCD.ListenClientURLs = fmt.Sprintf("http://localhost:2379,http://%s:2379", newEC2.PrivateIP)
 	newETCD.AdvertiseClientURLs = fmt.Sprintf("http://%s:2379", newEC2.PrivateIP)
 	newETCD.ListenPeerURLs = fmt.Sprintf("http://%s:2380", newEC2.PrivateIP)
 	newETCD.AdvertisePeerURLs = fmt.Sprintf("http://%s:2380", newEC2.PrivateIP)

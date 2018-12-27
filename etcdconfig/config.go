@@ -370,7 +370,7 @@ func (e *ETCD) Service() (s string, err error) {
 		return "", err
 	}
 	return createSvcInfo(svcInfo{
-		Exec:  "/usr/local/bin/etcd",
+		Exec:  "/usr/bin/etcd",
 		Flags: strings.Join(fs, " "),
 	})
 }
