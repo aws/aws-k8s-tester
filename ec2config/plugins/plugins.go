@@ -36,14 +36,15 @@ var keyPriorities = map[string]int{ // in the order of:
 	"update-amazon-linux-2":                1,
 	"update-ubuntu":                        2,
 	"install-go":                           3,
-	"install-csi":                          4,
-	"install-etcd":                         5,
-	"install-aws-k8s-tester":               6,
-	"install-wrk":                          7,
-	"install-alb":                          8,
-	"install-start-docker-amazon-linux-2":  9,
-	"install-start-kubeadm-amazon-linux-2": 10,
-	"install-kubernetes-amazon-linux-2":    11,
+	"install-go-amazon-linux-2":            4,
+	"install-csi":                          5,
+	"install-etcd":                         6,
+	"install-aws-k8s-tester":               7,
+	"install-wrk":                          8,
+	"install-alb":                          9,
+	"install-start-docker-amazon-linux-2":  10,
+	"install-start-kubeadm-amazon-linux-2": 11,
+	"install-kubernetes-amazon-linux-2":    12,
 }
 
 func convertToScript(userName, plugin string) (script, error) {
@@ -54,9 +55,25 @@ func convertToScript(userName, plugin string) (script, error) {
 	case plugin == "update-ubuntu":
 		return script{key: "update-ubuntu", data: updateUbuntu}, nil
 
+	case strings.HasPrefix(plugin, "install-go-amazon-linux-2-"):
+		goVer := strings.Replace(plugin, "install-go-amazon-linux-2-", "", -1)
+		gss := strings.Split(goVer, ".")
+		goVer = strings.Join(gss[:2], ".")
+		s, err := createInstallGoAmazonLinux2(goInfo{
+			UserName:  userName,
+			GoVersion: goVer,
+		})
+		if err != nil {
+			return script{}, err
+		}
+		return script{
+			key:  "install-go-amazon-linux-2",
+			data: s,
+		}, nil
+
 	case strings.HasPrefix(plugin, "install-go-"):
 		goVer := strings.Replace(plugin, "install-go-", "", -1)
-		s, err := createInstallGo(goInfo{
+		s, err := createInstallGoLinux(goInfo{
 			UserName:  userName,
 			GoVersion: goVer,
 		})
@@ -260,8 +277,17 @@ apt-get -y update \
 
 `
 
-func createInstallGo(g goInfo) (string, error) {
-	tpl := template.Must(template.New("installGoTemplate").Parse(installGoTemplate))
+func createInstallGoAmazonLinux2(g goInfo) (string, error) {
+	tpl := template.Must(template.New("installGoAmazonLinux2Template").Parse(installGoAmazonLinux2Template))
+	buf := bytes.NewBuffer(nil)
+	if err := tpl.Execute(buf, g); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
+func createInstallGoLinux(g goInfo) (string, error) {
+	tpl := template.Must(template.New("installGoLinuxTemplate").Parse(installGoLinuxTemplate))
 	buf := bytes.NewBuffer(nil)
 	if err := tpl.Execute(buf, g); err != nil {
 		return "", err
@@ -274,12 +300,45 @@ type goInfo struct {
 	GoVersion string
 }
 
-const installGoTemplate = `
+const installGoAmazonLinux2Template = `
+
+################################## install Go in Amazon Linux 2
+
+sudo amazon-linux-extras install golang{{ .GoVersion }} -y
+which go
+
+export GOPATH=/home/{{ .UserName }}/go
+mkdir -p ${GOPATH}/bin/
+mkdir -p ${GOPATH}/src/
+
+if grep -q GOPATH "${HOME}/.bashrc"; then
+  echo "bashrc already has GOPATH";
+else
+  echo "adding GOPATH to bashrc";
+  echo "export GOPATH=${HOME}/go" >> ${HOME}/.bashrc;
+  PATH_VAR=$PATH":/usr/local/go/bin:${HOME}/go/bin";
+  echo "export PATH=$(echo $PATH_VAR)" >> ${HOME}/.bashrc;
+  source ${HOME}/.bashrc;
+fi
+
+source ${HOME}/.bashrc
+export PATH=$PATH:/usr/local/go/bin:${HOME}/go/bin
+
+sudo echo PATH=${PATH} > /etc/environment
+sudo echo GOPATH=/home/{{ .UserName }}/go >> /etc/environment
+echo "source /etc/environment" >> ${HOME}/.bashrc;
+
+go version
+
+##################################
+
+`
+
+const installGoLinuxTemplate = `
 
 ################################## install Go
 
 export HOME=/home/{{ .UserName }}
-export GOPATH=/home/{{ .UserName }}/go
 
 GO_VERSION={{ .GoVersion }}
 GOOGLE_URL=https://storage.googleapis.com/golang
@@ -287,6 +346,7 @@ DOWNLOAD_URL=${GOOGLE_URL}
 
 sudo curl -s ${DOWNLOAD_URL}/go$GO_VERSION.linux-amd64.tar.gz | sudo tar -v -C /usr/local/ -xz
 
+export GOPATH=/home/{{ .UserName }}/go
 mkdir -p ${GOPATH}/bin/
 mkdir -p ${GOPATH}/src/
 

@@ -545,7 +545,7 @@ var minEtcdVer semver.Version
 
 func init() {
 	var err error
-	minEtcdVer, err = semver.Make("3.1.12")
+	minEtcdVer, err = semver.Make("3.2.15")
 	if err != nil {
 		panic(err)
 	}
@@ -561,7 +561,7 @@ func init() {
 	// UserName: "ec2-user"
 	defaultConfig.EC2.Plugins = []string{
 		"update-amazon-linux-2",
-		"install-etcd-3.1.12",
+		"install-etcd-3.2.25",
 	}
 	defaultConfig.EC2.ClusterSize = 3
 	defaultConfig.EC2.Wait = true
@@ -572,11 +572,10 @@ func init() {
 		"2379-2380": "192.168.0.0/8",
 	}
 
-	defaultConfig.EC2Bastion.EnvPrefix = "AWS_K8S_TESTER_EC2_BASTION_"
 	defaultConfig.EC2Bastion.Plugins = []string{
 		"update-amazon-linux-2",
-		"install-etcd-3.1.12",
-		"install-go-1.11.4",
+		"install-etcd-3.2.25",
+		"install-go-amazon-linux-2-1.11",
 		"install-aws-k8s-tester",
 	}
 	defaultConfig.EC2Bastion.ClusterSize = 1
@@ -693,12 +692,17 @@ func (cfg *Config) BackupConfig() (p string, err error) {
 }
 
 const (
-	envPfx        = "AWS_K8S_TESTER_ETCD_"
-	envPfxCluster = "AWS_K8S_TESTER_ETCD_CLUSTER_"
+	envPfx                 = "AWS_K8S_TESTER_ETCD_"
+	envPfxCluster          = "AWS_K8S_TESTER_ETCD_CLUSTER_"
+	envPfxEtcdNodes        = "AWS_K8S_TESTER_EC2_ETCD_NODES_"
+	envPfxEtcdBastionNodes = "AWS_K8S_TESTER_EC2_ETCD_BASTION_NODES_"
 )
 
 // UpdateFromEnvs updates fields from environmental variables.
 func (cfg *Config) UpdateFromEnvs() error {
+	cfg.EC2.EnvPrefix = envPfxEtcdNodes
+	cfg.EC2Bastion.EnvPrefix = envPfxEtcdBastionNodes
+
 	if err := cfg.EC2.UpdateFromEnvs(); err != nil {
 		return err
 	}

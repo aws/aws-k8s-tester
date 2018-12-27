@@ -13,8 +13,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aws/aws-k8s-tester/ec2config"
 	"k8s.io/client-go/util/homedir"
+
+	"github.com/aws/aws-k8s-tester/ec2config"
 	"sigs.k8s.io/yaml"
 )
 
@@ -94,6 +95,10 @@ func init() {
 	defaultConfig.Tag = genTag()
 	defaultConfig.ClusterName = defaultConfig.Tag + "-" + randString(5)
 
+	// keep in-sync with the default value in https://godoc.org/k8s.io/kubernetes/test/e2e/framework#GetSigner
+	defaultConfig.EC2MasterNodes.KeyPath = filepath.Join(homedir.HomeDir(), ".ssh", "kube_aws_rsa")
+	defaultConfig.EC2WorkerNodes.KeyPath = defaultConfig.EC2MasterNodes.KeyPath
+
 	defaultConfig.EC2MasterNodes.ClusterSize = 1
 	defaultConfig.EC2MasterNodes.Wait = true
 	defaultConfig.EC2MasterNodes.Tag = defaultConfig.Tag + "-master-nodes"
@@ -107,10 +112,6 @@ func init() {
 		"10252":       "192.168.0.0/16", // kube-controller-manager
 		"30000-32767": "192.168.0.0/16", // NodePort Services
 	}
-
-	// keep in-sync with the default value in https://godoc.org/k8s.io/kubernetes/test/e2e/framework#GetSigner
-	defaultConfig.EC2MasterNodes.KeyPath = filepath.Join(homedir.HomeDir(), ".ssh", "kube_aws_rsa")
-	defaultConfig.EC2WorkerNodes.KeyPath = defaultConfig.EC2MasterNodes.KeyPath
 
 	defaultConfig.EC2WorkerNodes.ClusterSize = 1
 	defaultConfig.EC2WorkerNodes.Wait = true
