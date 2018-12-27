@@ -15,6 +15,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.9...0.2.0).
 
 - Use [`amazon-linux-extras install` command to install Docker in Amazon Linux 2](https://github.com/aws/aws-k8s-tester/commit/f9d9aa93e989f74ddce5ec87f126b55447c2bf9a).
 
+### `etcdconfig`
+
+- Use [`"AWS_K8S_TESTER_EC2_ETCD_NODES_"` and `"AWS_K8S_TESTER_EC2_ETCD_BASTION_NODES_"` for etcd environmental variable configuration](https://github.com/aws/aws-k8s-tester/commit/fd9545d6acd56a2c1c0eef4da344014af7eb266a).
+
 ### `internal`
 
 - Add [`internal/kubernetes` to run Kubernetes e2e tests with vanilla Kubernetes cluster on top of AWS](https://github.com/aws/aws-k8s-tester/commit/TODO).
