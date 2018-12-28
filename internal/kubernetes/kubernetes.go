@@ -115,13 +115,13 @@ func (md *embedded) Create() (err error) {
 
 	errc, ess := make(chan error), make([]string, 0)
 	downloads := [][]string{
-		{md.cfg.KubeProxyPath, md.cfg.KubeProxyDownloadURL},
-		{md.cfg.KubectlPath, md.cfg.KubectlDownloadURL},
-		{md.cfg.KubeletPath, md.cfg.KubeletDownloadURL},
-		{md.cfg.KubeAPIServerPath, md.cfg.KubeAPIServerDownloadURL},
-		{md.cfg.KubeControllerManagerPath, md.cfg.KubeControllerManagerDownloadURL},
-		{md.cfg.KubeSchedulerPath, md.cfg.KubeSchedulerDownloadURL},
-		{md.cfg.CloudControllerManagerPath, md.cfg.CloudControllerManagerDownloadURL},
+		{md.cfg.KubeProxyPath, md.cfg.KubeProxyDownloadURL, fmt.Sprintf("%s --version", md.cfg.KubeProxyPath)},
+		{md.cfg.KubectlPath, md.cfg.KubectlDownloadURL, fmt.Sprintf("%s version --client", md.cfg.KubectlPath)},
+		{md.cfg.KubeletPath, md.cfg.KubeletDownloadURL, fmt.Sprintf("%s --version", md.cfg.KubeletPath)},
+		{md.cfg.KubeAPIServerPath, md.cfg.KubeAPIServerDownloadURL, fmt.Sprintf("%s --version", md.cfg.KubeAPIServerPath)},
+		{md.cfg.KubeControllerManagerPath, md.cfg.KubeControllerManagerDownloadURL, fmt.Sprintf("%s --version", md.cfg.KubeControllerManagerPath)},
+		{md.cfg.KubeSchedulerPath, md.cfg.KubeSchedulerDownloadURL, fmt.Sprintf("%s --version", md.cfg.KubeSchedulerPath)},
+		{md.cfg.CloudControllerManagerPath, md.cfg.CloudControllerManagerDownloadURL, fmt.Sprintf("%s --version", md.cfg.CloudControllerManagerPath)},
 	}
 
 	// TODO: create vanilla Kubernetes cluster and persists KUBECONFIG
@@ -148,8 +148,8 @@ func (md *embedded) Create() (err error) {
 			for _, p := range downloads {
 				md.lg.Info("downloading", zap.String("path", p[0]), zap.String("download-url", p[1]))
 				installCmd := fmt.Sprintf(
-					"sudo rm -f %s && sudo curl -L --remote-name-all %s -o %s && sudo chmod +x %s && %s --version",
-					p[0], p[1], p[0], p[0], p[0],
+					"sudo rm -f %s && sudo curl -L --remote-name-all %s -o %s && sudo chmod +x %s && %s",
+					p[0], p[1], p[0], p[0], p[2],
 				)
 				out, oerr := instSSH.Run(
 					installCmd,
@@ -197,8 +197,8 @@ func (md *embedded) Create() (err error) {
 			for _, p := range downloads {
 				md.lg.Info("downloading", zap.String("path", p[0]), zap.String("download-url", p[1]))
 				installCmd := fmt.Sprintf(
-					"sudo rm -f %s && sudo curl -L --remote-name-all %s -o %s && sudo chmod +x %s && %s --version",
-					p[0], p[1], p[0], p[0], p[0],
+					"sudo rm -f %s && sudo curl -L --remote-name-all %s -o %s && sudo chmod +x %s && %s",
+					p[0], p[1], p[0], p[0], p[2],
 				)
 				out, oerr := instSSH.Run(
 					installCmd,
