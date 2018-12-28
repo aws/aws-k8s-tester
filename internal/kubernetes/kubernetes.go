@@ -113,71 +113,116 @@ func (md *embedded) Create() (err error) {
 		return err
 	}
 
-	//
-	//
-	//
-	// TODO: create vanilla Kubernetes cluster and persists KUBECONFIG
-	//
-	//
-	//
-	// SCP to each EC2MasterNodes instance
-	md.lg.Info("deploying kubernetes master nodes")
-	var masterEC2 ec2config.Instance
-	for _, iv := range md.cfg.EC2MasterNodes.Instances {
-		masterEC2 = iv
-		break
+	errc, ess := make(chan error), make([]string, 0)
+	downloads := [][]string{
+		{md.cfg.KubeProxyPath, md.cfg.KubeProxyDownloadURL},
+		{md.cfg.KubectlPath, md.cfg.KubectlDownloadURL},
+		{md.cfg.KubeletPath, md.cfg.KubeletDownloadURL},
+		{md.cfg.KubeAPIServerPath, md.cfg.KubeAPIServerDownloadURL},
+		{md.cfg.KubeControllerManagerPath, md.cfg.KubeControllerManagerDownloadURL},
+		{md.cfg.KubeSchedulerPath, md.cfg.KubeSchedulerDownloadURL},
+		{md.cfg.CloudControllerManagerPath, md.cfg.CloudControllerManagerDownloadURL},
 	}
-	var masterSSH ssh.SSH
-	masterSSH, err = ssh.New(ssh.Config{
-		Logger:        md.lg,
-		KeyPath:       md.cfg.EC2MasterNodes.KeyPath,
-		PublicIP:      masterEC2.PublicIP,
-		PublicDNSName: masterEC2.PublicDNSName,
-		UserName:      md.cfg.EC2MasterNodes.UserName,
-	})
-	if err != nil {
-		return err
-	}
-	if err = masterSSH.Connect(); err != nil {
-		return err
-	}
-	defer masterSSH.Close()
-	var out []byte
-	out, err = masterSSH.Run(
-		"kubelet --help",
-		ssh.WithTimeout(15*time.Second),
-	)
-	fmt.Println("masterSSH /usr/bin:", string(out))
 
+	// TODO: create vanilla Kubernetes cluster and persists KUBECONFIG
+	md.lg.Info("deploying kubernetes master nodes")
+	for _, masterEC2 := range md.cfg.EC2MasterNodes.Instances {
+		go func(inst ec2config.Instance) {
+			instSSH, serr := ssh.New(ssh.Config{
+				Logger:        md.lg,
+				KeyPath:       md.cfg.EC2MasterNodes.KeyPath,
+				PublicIP:      inst.PublicIP,
+				PublicDNSName: inst.PublicDNSName,
+				UserName:      md.cfg.EC2MasterNodes.UserName,
+			})
+			if serr != nil {
+				errc <- fmt.Errorf("failed to create a SSH to master node %q(%q) (error %v)", inst.InstanceID, inst.PublicIP, serr)
+				return
+			}
+			if serr = instSSH.Connect(); serr != nil {
+				errc <- fmt.Errorf("failed to connect to master node %q(%q) (error %v)", inst.InstanceID, inst.PublicIP, serr)
+				return
+			}
+			defer instSSH.Close()
+
+			for _, p := range downloads {
+				md.lg.Info("downloading", zap.String("path", p[0]), zap.String("download-url", p[1]))
+				installCmd := fmt.Sprintf(
+					"sudo rm -f %s && sudo curl -L --remote-name-all %s -o %s && sudo chmod +x %s && %s --version",
+					p[0], p[1], p[0], p[0], p[0],
+				)
+				out, oerr := instSSH.Run(
+					installCmd,
+					ssh.WithTimeout(15*time.Second),
+					ssh.WithRetry(3, 3*time.Second),
+				)
+				fmt.Println("master node download:", p[0], inst.InstanceID, inst.PublicIP, string(out))
+				if oerr != nil {
+					errc <- fmt.Errorf("failed to install %q to master node %q(%q) (error %v)", p[1], inst.InstanceID, inst.PublicIP, oerr)
+					return
+				}
+			}
+			errc <- nil
+		}(masterEC2)
+	}
+	for range md.cfg.EC2MasterNodes.Instances {
+		err = <-errc
+		if err != nil {
+			ess = append(ess, err.Error())
+		}
+	}
+	if len(ess) > 0 {
+		return errors.New(strings.Join(ess, ", "))
+	}
 	md.lg.Info("deploying kubernetes worker nodes")
-	var workerEC2 ec2config.Instance
-	for _, iv := range md.cfg.EC2WorkerNodes.Instances {
-		workerEC2 = iv
-		break
+	for _, workerEC2 := range md.cfg.EC2WorkerNodes.Instances {
+		go func(inst ec2config.Instance) {
+			instSSH, serr := ssh.New(ssh.Config{
+				Logger:        md.lg,
+				KeyPath:       md.cfg.EC2WorkerNodes.KeyPath,
+				PublicIP:      inst.PublicIP,
+				PublicDNSName: inst.PublicDNSName,
+				UserName:      md.cfg.EC2WorkerNodes.UserName,
+			})
+			if serr != nil {
+				errc <- fmt.Errorf("failed to create a SSH to worker node %q(%q) (error %v)", inst.InstanceID, inst.PublicIP, serr)
+				return
+			}
+			if serr = instSSH.Connect(); serr != nil {
+				errc <- fmt.Errorf("failed to connect to worker node %q(%q) (error %v)", inst.InstanceID, inst.PublicIP, serr)
+				return
+			}
+			defer instSSH.Close()
+
+			for _, p := range downloads {
+				md.lg.Info("downloading", zap.String("path", p[0]), zap.String("download-url", p[1]))
+				installCmd := fmt.Sprintf(
+					"sudo rm -f %s && sudo curl -L --remote-name-all %s -o %s && sudo chmod +x %s && %s --version",
+					p[0], p[1], p[0], p[0], p[0],
+				)
+				out, oerr := instSSH.Run(
+					installCmd,
+					ssh.WithTimeout(15*time.Second),
+					ssh.WithRetry(3, 3*time.Second),
+				)
+				fmt.Println("worker node download:", p[0], inst.InstanceID, inst.PublicIP, string(out))
+				if oerr != nil {
+					errc <- fmt.Errorf("failed to install %q to worker node %q(%q) (error %v)", p[1], inst.InstanceID, inst.PublicIP, oerr)
+					return
+				}
+			}
+			errc <- nil
+		}(workerEC2)
 	}
-	var workerSSH ssh.SSH
-	workerSSH, err = ssh.New(ssh.Config{
-		Logger:        md.lg,
-		KeyPath:       md.cfg.EC2WorkerNodes.KeyPath,
-		PublicIP:      workerEC2.PublicIP,
-		PublicDNSName: workerEC2.PublicDNSName,
-		UserName:      md.cfg.EC2WorkerNodes.UserName,
-	})
-	if err != nil {
-		return err
+	for range md.cfg.EC2WorkerNodes.Instances {
+		err = <-errc
+		if err != nil {
+			ess = append(ess, err.Error())
+		}
 	}
-	if err = workerSSH.Connect(); err != nil {
-		return err
+	if len(ess) > 0 {
+		return errors.New(strings.Join(ess, ", "))
 	}
-	defer workerSSH.Close()
-	out, err = workerSSH.Run(
-		"kubelet --help",
-		ssh.WithTimeout(15*time.Second),
-	)
-	fmt.Println("workerSSH /usr/bin:", string(out))
-	//
-	//
-	//
 
 	if md.cfg.UploadKubeConfig {
 		err := md.ec2MasterNodesDeployer.UploadToBucketForTests(md.cfg.KubeConfigPath, md.cfg.KubeConfigPathBucket)
@@ -190,6 +235,62 @@ func (md *embedded) Create() (err error) {
 
 	return md.cfg.Sync()
 }
+
+/*
+# keep in sync with
+# https://github.com/kubernetes/kubernetes/blob/master/build/debs/kubelet.service
+cat <<EOF > /tmp/kubelet.service
+[Unit]
+Description=kubelet: The Kubernetes Node Agent
+Documentation=http://kubernetes.io/docs/
+
+[Service]
+ExecStart=/usr/bin/kubelet
+Restart=always
+StartLimitInterval=0
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+EOF
+cat /tmp/kubelet.service
+
+sudo mkdir -p /etc/systemd/system/kubelet.service.d
+sudo cp /tmp/kubelet.service /etc/systemd/system/kubelet.service
+
+sudo systemctl daemon-reload
+sudo systemctl cat kubelet.service
+
+
+// CreateInstall creates Kubernetes install script.
+func CreateInstall(ver string) (string, error) {
+	tpl := template.Must(template.New("installKubernetesAmazonLinux2Template").Parse(installKubernetesAmazonLinux2Template))
+	buf := bytes.NewBuffer(nil)
+	kv := kubernetesInfo{Version: ver}
+	if err := tpl.Execute(buf, kv); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
+type kubernetesInfo struct {
+	Version string
+}
+
+RELEASE=v{{ .Version }}
+
+cd /usr/bin
+sudo rm -f /usr/bin/{kube-proxy,kubectl,kubelet,kube-apiserver,kube-controller-manager,kube-scheduler,cloud-controller-manager}
+
+sudo curl -L --remote-name-all https://storage.googleapis.com/kubernetes-release/release/v1.13.0/bin/linux/amd64/{kube-proxy,kubectl,kubelet,kube-apiserver,kube-controller-manager,kube-scheduler,cloud-controller-manager}
+sudo chmod +x {kube-proxy,kubectl,kubelet,kube-apiserver,kube-controller-manager,kube-scheduler,cloud-controller-manager}
+
+https://github.com/kubernetes/kubernetes/blob/master/build/debs/kubelet.service
+
+sudo systemctl enable kubelet && sudo systemctl restart kubelet
+sudo systemctl status kubelet --full --no-pager || true
+sudo journalctl --no-pager --output=cat -u kubelet
+*/
 
 func (md *embedded) Terminate() error {
 	md.mu.Lock()
@@ -207,7 +308,7 @@ func (md *embedded) Terminate() error {
 	md.lg.Info("terminating kubernetes")
 	if md.cfg.UploadTesterLogs && len(md.cfg.EC2MasterNodes.Instances) > 0 {
 		var fpathToS3PathMasterNodes map[string]string
-		fpathToS3PathMasterNodes, err = fetchLogs(
+		fpathToS3PathMasterNodes, err := fetchLogs(
 			md.lg,
 			md.cfg.EC2MasterNodes.UserName,
 			md.cfg.ClusterName,

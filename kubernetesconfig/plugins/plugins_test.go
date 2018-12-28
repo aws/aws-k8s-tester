@@ -6,9 +6,6 @@ import (
 )
 
 func TestCreateInstall(t *testing.T) {
-	s1, err := CreateInstall("1.13.0")
-	if err != nil {
-		t.Fatal(err)
-	}
+	s1 := CreateInstall()
 	fmt.Println(s1)
 }
