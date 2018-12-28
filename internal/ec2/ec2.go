@@ -582,6 +582,10 @@ func (md *embedded) createInstances() (err error) {
 
 			if n < runInstancesBatch {
 				tkn := md.cfg.ClusterName + fmt.Sprintf("%X", time.Now().Nanosecond())
+				// otherwise, "InvalidParameterValue: Client token must be less than or equal to 64 characters"
+				if len(tkn) > 63 {
+					tkn = tkn[len(tkn)-63:]
+				}
 				tokens = append(tokens, tkn)
 
 				_, err = md.ec2.RunInstances(&ec2.RunInstancesInput{
@@ -616,6 +620,10 @@ func (md *embedded) createInstances() (err error) {
 				nLeft := n
 				for nLeft > 0 {
 					tkn := md.cfg.ClusterName + fmt.Sprintf("%X", time.Now().UTC().Nanosecond())
+					// otherwise, "InvalidParameterValue: Client token must be less than or equal to 64 characters"
+					if len(tkn) > 63 {
+						tkn = tkn[len(tkn)-63:]
+					}
 					tokens = append(tokens, tkn)
 
 					x := runInstancesBatch
@@ -673,6 +681,10 @@ func (md *embedded) createInstances() (err error) {
 		// create <1 instance per subnet
 		for i := 0; i < md.cfg.ClusterSize; i++ {
 			tkn := md.cfg.ClusterName + fmt.Sprintf("%X", time.Now().Nanosecond())
+			// otherwise, "InvalidParameterValue: Client token must be less than or equal to 64 characters"
+			if len(tkn) > 63 {
+				tkn = tkn[len(tkn)-63:]
+			}
 			tokens = append(tokens, tkn)
 			tknToCnt[tkn] = 1
 
