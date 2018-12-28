@@ -153,6 +153,8 @@ type Config struct {
 
 	// UploadTesterLogs is true to auto-upload log files.
 	UploadTesterLogs bool `json:"upload-tester-logs"`
+	// UploadKubeConfig is true to auto-upload KUBECONFIG file.
+	UploadKubeConfig bool `json:"upload-kubeconfig"`
 	// UploadWorkerNodeLogs is true to auto-upload worker node log files.
 	UploadWorkerNodeLogs bool `json:"upload-worker-node-logs"`
 	// UploadBucketExpireDays is the number of days for a S3 bucket to expire.
@@ -444,6 +446,7 @@ var defaultConfig = Config{
 	LogOutputs:             []string{"stderr"},
 	LogAccess:              false,
 	UploadTesterLogs:       false,
+	UploadKubeConfig:       false,
 	UploadWorkerNodeLogs:   false,
 	UploadBucketExpireDays: 2,
 
@@ -576,9 +579,6 @@ const (
 func (cfg *Config) ValidateAndSetDefaults() error {
 	switch cfg.TestMode {
 	case "embedded":
-	case "aws-cli":
-		// TODO: remove this
-		return errors.New("TestMode 'aws-cli' is not implemented yet")
 	default:
 		return fmt.Errorf("TestMode %q unknown", cfg.TestMode)
 	}

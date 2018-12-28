@@ -97,7 +97,7 @@ func (md *embedded) Create() (err error) {
 	md.cfg.Sync()
 
 	md.lg.Info(
-		"deployed EC2",
+		"deployed EC2 instances",
 		zap.Strings("plugins-master-nodes", md.cfg.EC2MasterNodes.Plugins),
 		zap.String("vpc-id-master-nodes", md.cfg.EC2MasterNodes.VPCID),
 		zap.Strings("plugins-worker-nodes", md.cfg.EC2WorkerNodes.Plugins),
@@ -113,6 +113,13 @@ func (md *embedded) Create() (err error) {
 		return err
 	}
 
+	//
+	//
+	//
+	// TODO: create vanilla Kubernetes cluster and persists KUBECONFIG
+	//
+	//
+	//
 	// SCP to each EC2MasterNodes instance
 	md.lg.Info("deploying kubernetes master nodes")
 	var masterEC2 ec2config.Instance
@@ -164,10 +171,22 @@ func (md *embedded) Create() (err error) {
 	}
 	defer workerSSH.Close()
 	out, err = workerSSH.Run(
-		"ls /usr/bin",
+		"kubelet --help",
 		ssh.WithTimeout(15*time.Second),
 	)
 	fmt.Println("workerSSH /usr/bin:", string(out))
+	//
+	//
+	//
+
+	if md.cfg.UploadKubeConfig {
+		err := md.ec2MasterNodesDeployer.UploadToBucketForTests(md.cfg.KubeConfigPath, md.cfg.KubeConfigPathBucket)
+		if err == nil {
+			md.lg.Info("uploaded KUBECONFIG", zap.String("path", md.cfg.KubeConfigPath))
+		} else {
+			md.lg.Warn("failed to upload KUBECONFIG", zap.String("path", md.cfg.KubeConfigPath), zap.Error(err))
+		}
+	}
 
 	return md.cfg.Sync()
 }
@@ -176,11 +195,17 @@ func (md *embedded) Terminate() error {
 	md.mu.Lock()
 	defer md.mu.Unlock()
 
+	if md.cfg.UploadKubeConfig {
+		err := md.ec2MasterNodesDeployer.UploadToBucketForTests(md.cfg.KubeConfigPath, md.cfg.KubeConfigPathBucket)
+		if err == nil {
+			md.lg.Info("uploaded KUBECONFIG", zap.String("path", md.cfg.KubeConfigPath))
+		} else {
+			md.lg.Warn("failed to upload KUBECONFIG", zap.String("path", md.cfg.KubeConfigPath), zap.Error(err))
+		}
+	}
+
 	md.lg.Info("terminating kubernetes")
 	if md.cfg.UploadTesterLogs && len(md.cfg.EC2MasterNodes.Instances) > 0 {
-		err := md.ec2MasterNodesDeployer.UploadToBucketForTests(md.cfg.KubeConfigPath, md.cfg.KubeConfigPathBucket)
-		md.lg.Info("uploaded KUBECONFIG", zap.Error(err))
-
 		var fpathToS3PathMasterNodes map[string]string
 		fpathToS3PathMasterNodes, err = fetchLogs(
 			md.lg,
@@ -190,6 +215,12 @@ func (md *embedded) Terminate() error {
 			md.cfg.EC2MasterNodes.Instances,
 		)
 		md.cfg.LogsMasterNodes = fpathToS3PathMasterNodes
+		if err == nil {
+			md.lg.Info("fetched master nodes logs")
+		} else {
+			md.lg.Warn("failed to fetch master nodes logs", zap.Error(err))
+		}
+
 		var fpathToS3PathWorkerNodes map[string]string
 		fpathToS3PathWorkerNodes, err = fetchLogs(
 			md.lg,
@@ -199,8 +230,18 @@ func (md *embedded) Terminate() error {
 			md.cfg.EC2MasterNodes.Instances,
 		)
 		md.cfg.LogsWorkerNodes = fpathToS3PathWorkerNodes
+		if err == nil {
+			md.lg.Info("fetched worker nodes logs")
+		} else {
+			md.lg.Warn("failed to fetch worker nodes logs", zap.Error(err))
+		}
+
 		err = md.uploadLogs()
-		md.lg.Info("uploaded", zap.Error(err))
+		if err == nil {
+			md.lg.Info("uploaded all nodes logs")
+		} else {
+			md.lg.Warn("failed to upload all nodes logs", zap.Error(err))
+		}
 	}
 
 	ess := make([]string, 0)

@@ -135,13 +135,15 @@ func (md *embedded) createCluster() error {
 		return err
 	}
 
-	if err = md.s3Plugin.UploadToBucketForTests(
-		md.cfg.KubeConfigPath,
-		md.cfg.KubeConfigPathBucket,
-	); err != nil {
-		md.lg.Warn("failed to upload KUBECONFIG", zap.Error(err))
-	} else {
-		md.lg.Info("uploaded KUBECONFIG", zap.String("KUBECONFIG", md.cfg.KubeConfigPath))
+	if md.cfg.UploadKubeConfig {
+		if err = md.s3Plugin.UploadToBucketForTests(
+			md.cfg.KubeConfigPath,
+			md.cfg.KubeConfigPathBucket,
+		); err != nil {
+			md.lg.Warn("failed to upload KUBECONFIG", zap.Error(err))
+		} else {
+			md.lg.Info("uploaded KUBECONFIG", zap.String("KUBECONFIG", md.cfg.KubeConfigPath))
+		}
 	}
 
 	time.Sleep(5 * time.Second)

@@ -24,7 +24,8 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_CLUSTER_NAME", "my-cluster")
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_DOWN", "false")
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_LOG_DEBUG", "true")
-	os.Setenv("AWS_K8S_TESTER_KUBERNETES_UPLOAD_TESTER_LOGS", "false")
+	os.Setenv("AWS_K8S_TESTER_KUBERNETES_UPLOAD_TESTER_LOGS", "true")
+	os.Setenv("AWS_K8S_TESTER_KUBERNETES_UPLOAD_KUBECONFIG", "true")
 	os.Setenv("AWS_K8S_TESTER_EC2_MASTER_NODES_PLUGINS", "update-amazon-linux-2,install-start-docker-amazon-linux-2,install-kubernetes-amazon-linux-2-1.13.1")
 	os.Setenv("AWS_K8S_TESTER_ETCD_CLUSTER_SIZE", "5")
 	os.Setenv("AWS_K8S_TESTER_ETCD_CLUSTER_VERSION", "v3.2.15")
@@ -43,6 +44,7 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_DOWN")
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_LOG_DEBUG")
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_UPLOAD_TESTER_LOGS")
+		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_UPLOAD_KUBECONFIG")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_MASTER_NODES_PLUGINS")
 		os.Unsetenv("AWS_K8S_TESTER_ETCD_CLUSTER_SIZE")
 		os.Unsetenv("AWS_K8S_TESTER_ETCD_CLUSTER_VERSION")
@@ -85,8 +87,11 @@ func TestEnv(t *testing.T) {
 	if !cfg.LogDebug {
 		t.Fatalf("unexpected LogDebug, got %v", cfg.LogDebug)
 	}
-	if cfg.UploadTesterLogs {
+	if !cfg.UploadTesterLogs {
 		t.Fatalf("unexpected UploadTesterLogs, got %v", cfg.UploadTesterLogs)
+	}
+	if !cfg.UploadKubeConfig {
+		t.Fatalf("unexpected UploadKubeConfig, got %v", cfg.UploadKubeConfig)
 	}
 	exp := []string{"update-amazon-linux-2", "install-start-docker-amazon-linux-2", "install-kubernetes-amazon-linux-2-1.13.1"}
 	if !reflect.DeepEqual(cfg.EC2MasterNodes.Plugins, exp) {

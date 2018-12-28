@@ -74,6 +74,8 @@ type Config struct {
 
 	// UploadTesterLogs is true to auto-upload log files.
 	UploadTesterLogs bool `json:"upload-tester-logs"`
+	// UploadKubeConfig is true to auto-upload KUBECONFIG file.
+	UploadKubeConfig bool `json:"upload-kubeconfig"`
 	// UploadBucketExpireDays is the number of days for a S3 bucket to expire.
 	// Set 0 to not expire.
 	UploadBucketExpireDays int `json:"upload-bucket-expire-days"`
@@ -184,6 +186,7 @@ var defaultConfig = Config{
 	// log file named with cluster name will be added automatically
 	LogOutputs:             []string{"stderr"},
 	UploadTesterLogs:       false,
+	UploadKubeConfig:       false,
 	UploadBucketExpireDays: 2,
 
 	KubeConfigPath: "/tmp/aws-k8s-tester/kubeconfig",
