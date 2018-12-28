@@ -17,7 +17,11 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.9...0.2.0).
 
 ### `etcdconfig`
 
-- Use [`"AWS_K8S_TESTER_EC2_ETCD_NODES_"` and `"AWS_K8S_TESTER_EC2_ETCD_BASTION_NODES_"` for etcd environmental variable configuration](https://github.com/aws/aws-k8s-tester/commit/fd9545d6acd56a2c1c0eef4da344014af7eb266a).
+- Use [`"AWS_K8S_TESTER_EC2_ETCD_NODES_"` and `"AWS_K8S_TESTER_EC2_ETCD_BASTION_NODES_"` for etcd environmental variable configuration prefix](https://github.com/aws/aws-k8s-tester/commit/fd9545d6acd56a2c1c0eef4da344014af7eb266a).
+
+### `eksconfig`
+
+- Add [`eksconfig.UploadKubeConfig` field to disable `KUBECONFIG` S3 bucket upload by default](https://github.com/aws/aws-k8s-tester/commit/73f6c8037c949cfca03be4e776c06f9c1c76b6a0).
 
 ### `internal`
 
