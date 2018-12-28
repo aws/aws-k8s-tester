@@ -13,11 +13,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aws/aws-k8s-tester/etcdconfig"
-
-	"k8s.io/client-go/util/homedir"
-
 	"github.com/aws/aws-k8s-tester/ec2config"
+	"github.com/aws/aws-k8s-tester/etcdconfig"
+	"k8s.io/client-go/util/homedir"
 	"sigs.k8s.io/yaml"
 )
 
@@ -37,19 +35,50 @@ type Config struct {
 	// This is meant to be used as a flag for test.
 	Down bool `json:"down"`
 
+	// KubeProxyPath is the path to download the "kubectl".
+	KubeProxyPath string `json:"kube-proxy-path,omitempty"`
+	// KubeProxyDownloadURL is the download URL to download "kube-proxy" binary from.
+	KubeProxyDownloadURL string `json:"kube-proxy-download-url,omitempty"`
+	// KubectlPath is the path to download the "kubectl".
+	KubectlPath string `json:"kubectl-path,omitempty"`
+	// KubectlDownloadURL is the download URL to download "kubectl" binary from.
+	KubectlDownloadURL string `json:"kubectl-download-url,omitempty"`
+	// KubeletPath is the path to download the "kubelet".
+	KubeletPath string `json:"kubelet-path,omitempty"`
+	// KubeletDownloadURL is the download URL to download "kubelet" binary from.
+	KubeletDownloadURL string `json:"kubelet-download-url,omitempty"`
+	// KubeAPIServerPath is the path to download the "kube-apiserver".
+	KubeAPIServerPath string `json:"kube-apiserver-path,omitempty"`
+	// KubeAPIServerDownloadURL is the download URL to download "kube-apiserver" binary from.
+	KubeAPIServerDownloadURL string `json:"kube-apiserver-download-url,omitempty"`
+	// KubeControllerManagerPath is the path to download the "kube-controller-manager".
+	KubeControllerManagerPath string `json:"kube-controller-manager-path,omitempty"`
+	// KubeControllerManagerDownloadURL is the download URL to download "kube-controller-manager" binary from.
+	KubeControllerManagerDownloadURL string `json:"kube-controller-manager-download-url,omitempty"`
+	// KubeSchedulerPath is the path to download the "kube-scheduler".
+	KubeSchedulerPath string `json:"kube-scheduler-path,omitempty"`
+	// KubeSchedulerDownloadURL is the download URL to download "kube-scheduler" binary from.
+	KubeSchedulerDownloadURL string `json:"kube-scheduler-download-url,omitempty"`
+	// CloudControllerManagerPath is the path to download the Kubernetes "cloud-controller-manager".
+	CloudControllerManagerPath string `json:"cloud-controller-manager-path,omitempty"`
+	// CloudControllerManagerDownloadURL is the download URL to download Kubernetes "cloud-controller-manager" binary from.
+	CloudControllerManagerDownloadURL string `json:"cloud-controller-manager-download-url,omitempty"`
+
 	// ConfigPath is the configuration file path.
 	// Must be left empty, and let deployer auto-populate this field.
 	// Deployer is expected to update this file with latest status,
 	// and to make a backup of original configuration
 	// with the filename suffix ".backup.yaml" in the same directory.
-	ConfigPath       string `json:"config-path,omitempty"`
+	ConfigPath string `json:"config-path,omitempty"`
+	// ConfigPathBucket is the path inside S3 bucket.
 	ConfigPathBucket string `json:"config-path-bucket,omitempty"`
 	ConfigPathURL    string `json:"config-path-url,omitempty"`
 
 	// KubeConfigPath is the file path of KUBECONFIG for the kubeadm cluster.
 	// If empty, auto-generate one.
 	// Deployer is expected to delete this on cluster tear down.
-	KubeConfigPath       string `json:"kubeconfig-path,omitempty"`        // read-only to user
+	KubeConfigPath string `json:"kubeconfig-path,omitempty"` // read-only to user
+	// KubeConfigPathBucket is the path inside S3 bucket.
 	KubeConfigPathBucket string `json:"kubeconfig-path-bucket,omitempty"` // read-only to user
 	KubeConfigPathURL    string `json:"kubeconfig-path-url,omitempty"`    // read-only to user
 
@@ -145,12 +174,12 @@ func init() {
 	defaultConfig.EC2MasterNodes.Plugins = []string{
 		"update-amazon-linux-2",
 		"install-start-docker-amazon-linux-2",
-		"install-kubernetes-amazon-linux-2-1.13.1",
+		"install-kubernetes-amazon-linux-2",
 	}
 	defaultConfig.EC2WorkerNodes.Plugins = []string{
 		"update-amazon-linux-2",
 		"install-start-docker-amazon-linux-2",
-		"install-kubernetes-amazon-linux-2-1.13.1",
+		"install-kubernetes-amazon-linux-2",
 	}
 }
 
@@ -180,6 +209,21 @@ func genTag() string {
 var defaultConfig = Config{
 	WaitBeforeDown: time.Minute,
 	Down:           true,
+
+	KubeProxyPath:                     "/usr/bin/kube-proxy",
+	KubeProxyDownloadURL:              "https://storage.googleapis.com/kubernetes-release/release/v1.13.0/bin/linux/amd64/kube-proxy",
+	KubectlPath:                       "/usr/bin/kubectl",
+	KubectlDownloadURL:                "https://storage.googleapis.com/kubernetes-release/release/v1.13.0/bin/linux/amd64/kubectl",
+	KubeletPath:                       "/usr/bin/kubelet",
+	KubeletDownloadURL:                "https://storage.googleapis.com/kubernetes-release/release/v1.13.0/bin/linux/amd64/kubelet",
+	KubeAPIServerPath:                 "/usr/bin/kube-apiserver",
+	KubeAPIServerDownloadURL:          "https://storage.googleapis.com/kubernetes-release/release/v1.13.0/bin/linux/amd64/kube-apiserver",
+	KubeControllerManagerPath:         "/usr/bin/kube-controller-manager",
+	KubeControllerManagerDownloadURL:  "https://storage.googleapis.com/kubernetes-release/release/v1.13.0/bin/linux/amd64/kube-controller-manager",
+	KubeSchedulerPath:                 "/usr/bin/kube-scheduler",
+	KubeSchedulerDownloadURL:          "https://storage.googleapis.com/kubernetes-release/release/v1.13.0/bin/linux/amd64/kube-scheduler",
+	CloudControllerManagerPath:        "/usr/bin/cloud-controller-manager",
+	CloudControllerManagerDownloadURL: "https://storage.googleapis.com/kubernetes-release/release/v1.13.0/bin/linux/amd64/cloud-controller-manager",
 
 	LogDebug: false,
 	// default, stderr, stdout, or file name

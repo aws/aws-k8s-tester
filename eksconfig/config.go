@@ -40,14 +40,17 @@ type Config struct {
 
 	// AWSK8sTesterPath is the path to download the "aws-k8s-tester".
 	// This is required for Kubernetes kubetest plugin.
-	AWSK8sTesterPath        string `json:"aws-k8s-tester-path,omitempty"`
+	AWSK8sTesterPath string `json:"aws-k8s-tester-path,omitempty"`
+	// AWSK8sTesterDownloadURL is the download URL to download "aws-k8s-tester" binary from.
 	AWSK8sTesterDownloadURL string `json:"aws-k8s-tester-download-url,omitempty"`
 	// KubectlPath is the path to download the "kubectl".
-	KubectlPath        string `json:"kubectl-path,omitempty"`
+	KubectlPath string `json:"kubectl-path,omitempty"`
+	// KubectlDownloadURL is the download URL to download "kubectl" binary from.
 	KubectlDownloadURL string `json:"kubectl-download-url,omitempty"`
 	// AWSIAMAuthenticatorPath is the path to download the "aws-iam-authenticator".
 	// This is required for Kubernetes kubetest plugin.
-	AWSIAMAuthenticatorPath        string `json:"aws-iam-authenticator-path,omitempty"`
+	AWSIAMAuthenticatorPath string `json:"aws-iam-authenticator-path,omitempty"`
+	// AWSIAMAuthenticatorDownloadURL is the download URL to download "aws-iam-authenticator" binary from.
 	AWSIAMAuthenticatorDownloadURL string `json:"aws-iam-authenticator-download-url,omitempty"`
 
 	// ConfigPath is the configuration file path.
@@ -55,14 +58,16 @@ type Config struct {
 	// Deployer is expected to update this file with latest status,
 	// and to make a backup of original configuration
 	// with the filename suffix ".backup.yaml" in the same directory.
-	ConfigPath       string `json:"config-path,omitempty"`
+	ConfigPath string `json:"config-path,omitempty"`
+	// ConfigPathBucket is the path inside S3 bucket.
 	ConfigPathBucket string `json:"config-path-bucket,omitempty"` // read-only to user
 	ConfigPathURL    string `json:"config-path-url,omitempty"`    // read-only to user
 
 	// KubeConfigPath is the file path of KUBECONFIG for the EKS cluster.
 	// If empty, auto-generate one.
 	// Deployer is expected to delete this on cluster tear down.
-	KubeConfigPath       string `json:"kubeconfig-path,omitempty"`        // read-only to user
+	KubeConfigPath string `json:"kubeconfig-path,omitempty"` // read-only to user
+	// KubeConfigPathBucket is the path inside S3 bucket.
 	KubeConfigPathBucket string `json:"kubeconfig-path-bucket,omitempty"` // read-only to user
 	KubeConfigPathURL    string `json:"kubeconfig-path-url,omitempty"`    // read-only to user
 

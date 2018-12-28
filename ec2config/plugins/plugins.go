@@ -43,8 +43,8 @@ var keyPriorities = map[string]int{ // in the order of:
 	"install-wrk":                          8,
 	"install-alb":                          9,
 	"install-start-docker-amazon-linux-2":  10,
-	"install-start-kubeadm-amazon-linux-2": 11,
-	"install-kubernetes-amazon-linux-2":    12,
+	"install-kubernetes-amazon-linux-2":    11,
+	"install-start-kubeadm-amazon-linux-2": 12,
 }
 
 func convertToScript(userName, plugin string) (script, error) {
@@ -153,6 +153,9 @@ make server
 			data: installStartDockerAmazonLinux2,
 		}, nil
 
+	case plugin == "install-kubernetes-amazon-linux-2":
+		return script{key: "install-kubernetes-amazon-linux-2", data: kubernetesplugin.CreateInstall()}, nil
+
 	case strings.HasPrefix(plugin, "install-start-kubeadm-amazon-linux-2-"):
 		id := strings.Replace(plugin, "install-start-kubeadm-amazon-linux-2-", "", -1)
 		s, err := kubeadmplugin.CreateInstallStart(id)
@@ -160,14 +163,6 @@ make server
 			return script{}, err
 		}
 		return script{key: "install-start-kubeadm-amazon-linux-2", data: s}, nil
-
-	case strings.HasPrefix(plugin, "install-kubernetes-amazon-linux-2-"):
-		id := strings.Replace(plugin, "install-kubernetes-amazon-linux-2-", "", -1)
-		s, err := kubernetesplugin.CreateInstall(id)
-		if err != nil {
-			return script{}, err
-		}
-		return script{key: "install-kubernetes-amazon-linux-2", data: s}, nil
 	}
 
 	return script{}, fmt.Errorf("unknown plugin %q", plugin)
