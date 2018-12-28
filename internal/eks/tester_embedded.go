@@ -92,7 +92,6 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 		ec2InstancesLogMu: &sync.RWMutex{},
 	}
 
-	md.cfg.KubectlPath = "/tmp/aws-k8s-tester/kubectl"
 	if md.cfg.KubectlPath == "" {
 		md.cfg.KubectlPath, _ = exec.New().LookPath("kubectl")
 	} else {
@@ -128,9 +127,6 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 		}
 	}
 
-	// TODO: remove this once new "eksconfig" gets merged in upstream test-infra
-	// so that it can pick up the default value and environmental variable for this field
-	md.cfg.AWSIAMAuthenticatorPath = "/tmp/aws-k8s-tester/aws-iam-authenticator"
 	if md.cfg.AWSIAMAuthenticatorPath == "" {
 		md.cfg.AWSIAMAuthenticatorPath, _ = exec.New().LookPath("aws-iam-authenticator")
 	} else {
@@ -164,7 +160,7 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 		if err = util.EnsureExecutable(md.cfg.AWSIAMAuthenticatorPath); err != nil {
 			return nil, err
 		}
-		err = fileutil.Copy(md.cfg.AWSIAMAuthenticatorPath, "/usr/local/bin/aws-iam-authenticator")
+		err = fileutil.Copy(md.cfg.AWSIAMAuthenticatorPath, "/usr/bin/aws-iam-authenticator")
 		if err != nil {
 			md.lg.Warn("failed to copy",
 				zap.String("aws-iam-authenticator", md.cfg.AWSIAMAuthenticatorPath),
