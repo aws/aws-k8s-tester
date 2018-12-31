@@ -113,8 +113,8 @@ func (md *embedded) Create() (err error) {
 		return err
 	}
 
-	downloadsMaster := md.getInstallMaster()
-	downloadsWorker := md.getInstallWorker()
+	downloadsMaster := md.cfg.DownloadsMaster()
+	downloadsWorker := md.cfg.DownloadsWorker()
 	errc, ess := make(chan error), make([]string, 0)
 
 	// TODO: create vanilla Kubernetes cluster and persists KUBECONFIG
@@ -138,19 +138,15 @@ func (md *embedded) Create() (err error) {
 			}
 			defer instSSH.Close()
 
-			for _, is := range downloadsMaster {
-				md.lg.Info("downloading at master node", zap.String("instance-id", inst.InstanceID), zap.String("path", is.path), zap.String("download-url", is.downloadURL))
-				installCmd := fmt.Sprintf(
-					"sudo rm -f %s && sudo curl --silent -L --remote-name-all %s -o %s && sudo chmod +x %s && %s",
-					is.path, is.downloadURL, is.path, is.path, is.versionCmd,
-				)
+			for _, v := range downloadsMaster {
+				md.lg.Info("downloading at master node", zap.String("instance-id", inst.InstanceID), zap.String("path", v.Path), zap.String("download-url", v.DownloadURL))
 				out, oerr := instSSH.Run(
-					installCmd,
+					v.DownloadCommand,
 					ssh.WithTimeout(15*time.Second),
 					ssh.WithRetry(3, 3*time.Second),
 				)
 				if oerr != nil {
-					errc <- fmt.Errorf("failed %q to master node %q(%q) (error %v)", installCmd, inst.InstanceID, inst.PublicIP, oerr)
+					errc <- fmt.Errorf("failed %q to master node %q(%q) (error %v)", v.DownloadCommand, inst.InstanceID, inst.PublicIP, oerr)
 					return
 				}
 				md.lg.Info("downloaded at master node", zap.String("instance-id", inst.InstanceID), zap.String("output", string(out)))
@@ -190,19 +186,15 @@ func (md *embedded) Create() (err error) {
 			}
 			defer instSSH.Close()
 
-			for _, is := range downloadsWorker {
-				md.lg.Info("downloading at worker node", zap.String("instance-id", inst.InstanceID), zap.String("path", is.path), zap.String("download-url", is.downloadURL))
-				installCmd := fmt.Sprintf(
-					"sudo rm -f %s && sudo curl --silent -L --remote-name-all %s -o %s && sudo chmod +x %s && %s",
-					is.path, is.downloadURL, is.path, is.path, is.versionCmd,
-				)
+			for _, v := range downloadsWorker {
+				md.lg.Info("downloading at worker node", zap.String("instance-id", inst.InstanceID), zap.String("path", v.Path), zap.String("download-url", v.DownloadURL))
 				out, oerr := instSSH.Run(
-					installCmd,
+					v.DownloadCommand,
 					ssh.WithTimeout(15*time.Second),
 					ssh.WithRetry(3, 3*time.Second),
 				)
 				if oerr != nil {
-					errc <- fmt.Errorf("failed %q to worker node %q(%q) (error %v)", installCmd, inst.InstanceID, inst.PublicIP, oerr)
+					errc <- fmt.Errorf("failed %q to worker node %q(%q) (error %v)", v.DownloadCommand, inst.InstanceID, inst.PublicIP, oerr)
 					return
 				}
 				md.lg.Info("downloaded at worker node", zap.String("instance-id", inst.InstanceID), zap.String("output", string(out)))
@@ -233,62 +225,6 @@ func (md *embedded) Create() (err error) {
 	}
 
 	return md.cfg.Sync()
-}
-
-type install struct {
-	path        string
-	downloadURL string
-	versionCmd  string
-}
-
-func (md *embedded) getInstallMaster() []install {
-	return []install{
-		{
-			path:        md.cfg.KubeProxyPath,
-			downloadURL: md.cfg.KubeProxyDownloadURL,
-			versionCmd:  fmt.Sprintf("%s --version", md.cfg.KubeProxyPath),
-		},
-		{
-			path:        md.cfg.KubectlPath,
-			downloadURL: md.cfg.KubectlDownloadURL,
-			versionCmd:  fmt.Sprintf("%s version --client", md.cfg.KubectlPath),
-		},
-		{
-			path:        md.cfg.KubeletPath,
-			downloadURL: md.cfg.KubeletDownloadURL,
-			versionCmd:  fmt.Sprintf("%s --version", md.cfg.KubeletPath),
-		},
-		{
-			path:        md.cfg.KubeAPIServerPath,
-			downloadURL: md.cfg.KubeAPIServerDownloadURL,
-			versionCmd:  fmt.Sprintf("%s --version", md.cfg.KubeAPIServerPath),
-		},
-		{
-			path:        md.cfg.KubeControllerManagerPath,
-			downloadURL: md.cfg.KubeControllerManagerDownloadURL,
-			versionCmd:  fmt.Sprintf("%s --version", md.cfg.KubeControllerManagerPath),
-		},
-		{
-			path:        md.cfg.KubeSchedulerPath,
-			downloadURL: md.cfg.KubeSchedulerDownloadURL,
-			versionCmd:  fmt.Sprintf("%s --version", md.cfg.KubeSchedulerPath),
-		},
-		{
-			path:        md.cfg.CloudControllerManagerPath,
-			downloadURL: md.cfg.CloudControllerManagerDownloadURL,
-			versionCmd:  fmt.Sprintf("%s --version", md.cfg.CloudControllerManagerPath),
-		},
-	}
-}
-
-func (md *embedded) getInstallWorker() (iss []install) {
-	for _, v := range md.getInstallMaster() {
-		if strings.Contains(v.path, "kube-apiserver") {
-			continue
-		}
-		iss = append(iss, v)
-	}
-	return iss
 }
 
 /*
