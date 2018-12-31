@@ -371,34 +371,8 @@ func (md *embedded) Up() (err error) {
 
 	defer func() {
 		if err != nil {
-			md.lg.Warn("failed Up", zap.Error(err))
-			if md.cfg.ALBIngressController.Enable && md.cfg.ALBIngressController.Created {
-				if err = md.albPlugin.DeleteIngressObjects(); err != nil {
-					md.lg.Warn("failed to delete ALB Ingress Controller ELBv2", zap.Error(err))
-				}
-				if derr := md.albPlugin.DeleteSecurityGroup(); derr != nil {
-					md.lg.Warn("failed to delete ALB Ingress Controller security group", zap.Error(derr))
-				}
-			}
-			if derr := md.deleteWorkerNode(); derr != nil {
-				md.lg.Warn("failed to delete node group stack", zap.Error(derr))
-			}
-			if derr := md.deleteKeyPair(); derr != nil {
-				md.lg.Warn("failed to delete key pair", zap.Error(derr))
-			}
-			if derr := md.deleteCluster(false); derr != nil {
-				md.lg.Warn("failed to delete cluster", zap.Error(derr))
-			}
-			if derr := md.deleteVPC(); derr != nil {
-				md.lg.Warn("failed to delete VPC stack", zap.Error(derr))
-			}
-			if derr := md.detachPolicyForAWSServiceRoleForAmazonEKS(); derr != nil {
-				md.lg.Warn("failed to delete service role policy", zap.Error(derr))
-			}
-			if derr := md.deleteAWSServiceRoleForAmazonEKS(); derr != nil {
-				md.lg.Warn("failed to delete service role", zap.Error(derr))
-			}
-			md.lg.Warn("reverted Up", zap.Error(err))
+			md.lg.Warn("failed to create EKS, reverting", zap.Error(err))
+			md.lg.Warn("failed to create EKS, reverted", zap.Error(md.down()))
 		}
 	}()
 
@@ -530,7 +504,10 @@ func catchStopc(lg *zap.Logger, stopc chan struct{}, termc chan os.Signal, run f
 func (md *embedded) Down() (err error) {
 	md.mu.Lock()
 	defer md.mu.Unlock()
+	return md.down()
+}
 
+func (md *embedded) down() (err error) {
 	if md.cfg.ClusterState.Status == "DELETING" ||
 		md.cfg.ClusterState.Status == "FAILED" {
 		return fmt.Errorf("cluster %q status is already %q",
