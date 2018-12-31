@@ -120,18 +120,36 @@ func (md *embedded) Create() (err error) {
 	md.cfg.EC2WorkerNodes.VPCCreated = false
 	md.cfg.Sync()
 
-	if err = md.etcdTester.Create(); err != nil {
-		return err
+	errc, ess := make(chan error), make([]string, 0)
+	var mu sync.Mutex
+	go func() {
+		if err = md.etcdTester.Create(); err != nil {
+			errc <- fmt.Errorf("failed to create etcd cluster (%v)", err)
+		}
+		mu.Lock()
+		md.cfg.ETCDNodesCreated = true
+		mu.Unlock()
+		md.cfg.Sync()
+		errc <- nil
+	}()
+	go func() {
+		if err = md.ec2WorkerNodesDeployer.Create(); err != nil {
+			errc <- fmt.Errorf("failed to create worker nodes (%v)", err)
+		}
+		mu.Lock()
+		md.cfg.EC2WorkerNodesCreated = true
+		mu.Unlock()
+		md.cfg.Sync()
+		errc <- nil
+	}()
+	for range []int{0, 1} {
+		if err = <-errc; err != nil {
+			ess = append(ess, err.Error())
+		}
 	}
-	md.cfg.ETCDNodesCreated = true
-	md.cfg.Sync()
-
-	if err = md.ec2WorkerNodesDeployer.Create(); err != nil {
-		return err
+	if len(ess) > 0 {
+		return errors.New(strings.Join(ess, ", "))
 	}
-	md.cfg.EC2WorkerNodesCreated = true
-	md.cfg.Sync()
-
 	md.lg.Info(
 		"deployed EC2 instances",
 		zap.Strings("plugins-master-nodes", md.cfg.EC2MasterNodes.Plugins),
@@ -195,7 +213,6 @@ func (md *embedded) Create() (err error) {
 
 	downloadsMaster := md.cfg.DownloadsMaster()
 	downloadsWorker := md.cfg.DownloadsWorker()
-	errc, ess := make(chan error), make([]string, 0)
 	for _, masterEC2 := range md.cfg.EC2MasterNodes.Instances {
 		go func(inst ec2config.Instance) {
 			instSSH, serr := ssh.New(ssh.Config{
@@ -448,6 +465,7 @@ func (md *embedded) terminate() error {
 			ess = append(ess, err.Error())
 		}
 		md.cfg.LoadBalancerCreated = false
+		md.lg.Info("deleted load balancer", zap.String("name", md.cfg.LoadBalancerName))
 	}
 
 	if md.cfg.ETCDNodesCreated {
