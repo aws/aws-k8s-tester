@@ -50,7 +50,7 @@ func NewTester(cfg *ec2config.Config, terminateOnExit, journalctlLogs bool) (tes
 	return tester, nil
 }
 
-func CreateConfig(vpcID, branchOrPR string) *ec2config.Config {
+func CreateConfig(vpcID, branchOrPR, githubAccount string) *ec2config.Config {
 	cfg := ec2config.NewDefault()
 	cfg.UploadTesterLogs = false
 	cfg.VPCID = vpcID
@@ -58,7 +58,7 @@ func CreateConfig(vpcID, branchOrPR string) *ec2config.Config {
 	cfg.Plugins = []string{
 		"update-amazon-linux-2",
 		"install-go-1.11.3",
-		"install-csi-" + branchOrPR,
+		"install-csi-" + branchOrPR + "/github-account-" + githubAccount,
 	}
 	cfg.Wait = true
 	return cfg
