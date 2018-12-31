@@ -27,6 +27,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.9...0.2.0).
 
 - Add [`internal/kubernetes` to run Kubernetes e2e tests with vanilla Kubernetes cluster on top of AWS](https://github.com/aws/aws-k8s-tester/pull/26).
 - Remove [`internal/eks` `"aws-cli"` option for now](https://github.com/aws/aws-k8s-tester/commit/8079d8a96c85f2edc57da87c8b839ba67fd67f64).
+- Simplify [`internal/eks` roll-back operation in `"Up"` call](https://github.com/aws/aws-k8s-tester/commit/91f9f9bc1dc88520e68a73fb132e37bfac34e6ba).
 - Remove [hard-coded `kubectl` and `aws-iam-authenticator` paths in `internal/eks`](https://github.com/aws/aws-k8s-tester/commit/b8a5508589c08b9b1f256991d0d8e7513bdea5b8).
 - Allow [`internal/ec2` to reuse existing SSH keys](https://github.com/aws/aws-k8s-tester/commit/99459f742ff78ba061b4cf9ef17fa697ee070613).
 - Make [`internal/ec2` logging less verbose](https://github.com/aws/aws-k8s-tester/commit/1ad8b1c1718874ea51812583d5463863db4617a9).
