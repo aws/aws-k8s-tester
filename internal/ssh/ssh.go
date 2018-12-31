@@ -102,7 +102,7 @@ func (sh *ssh) Connect() (err error) {
 		default:
 		}
 
-		sh.lg.Info("dialing",
+		sh.lg.Debug("dialing",
 			zap.String("public-ip", sh.cfg.PublicIP),
 			zap.String("public-dns-name", sh.cfg.PublicDNSName),
 		)
@@ -254,7 +254,7 @@ func (sh *ssh) Run(cmd string, opts ...OpOption) (out []byte, err error) {
 	}
 
 	if err != nil {
-		sh.lg.Warn("command failed", zap.Error(err))
+		sh.lg.Warn("command failed", zap.String("cmd", cmd), zap.Error(err))
 		if sh.retries[key] != 0 {
 			sh.lg.Warn("retrying", zap.Int("retries", sh.retries[key]))
 			sh.Close()
@@ -339,6 +339,18 @@ func (sh *ssh) Send(localPath, remotePath string, opts ...OpOption) (out []byte,
 		fmt.Sprintf("%s@%s:%s", sh.cfg.UserName, sh.cfg.PublicDNSName, remotePath),
 	)
 	out, err = cmd.CombinedOutput()
+	for i := 0; i < 3; i++ {
+		if err == nil {
+			break
+		}
+		if !strings.Contains(err.Error(), "Process exited with status") {
+			break
+		}
+
+		time.Sleep(2 * time.Second)
+		sh.lg.Warn("retrying SCP for send", zap.Error(err))
+		out, err = cmd.CombinedOutput()
+	}
 	cancel()
 
 	fi, ferr := os.Stat(localPath)
@@ -359,7 +371,7 @@ func (sh *ssh) Send(localPath, remotePath string, opts ...OpOption) (out []byte,
 	}
 
 	if err != nil {
-		sh.lg.Warn("command failed", zap.Error(err))
+		sh.lg.Warn("SCP send command failed", zap.Error(err))
 
 		if sh.retries[key] != 0 {
 			sh.lg.Warn("retrying", zap.Int("retries", sh.retries[key]))
@@ -417,6 +429,18 @@ func (sh *ssh) Download(remotePath, localPath string, opts ...OpOption) (out []b
 		localPath,
 	)
 	out, err = cmd.CombinedOutput()
+	for i := 0; i < 3; i++ {
+		if err == nil {
+			break
+		}
+		if !strings.Contains(err.Error(), "Process exited with status") {
+			break
+		}
+
+		time.Sleep(2 * time.Second)
+		sh.lg.Warn("retrying SCP for download", zap.Error(err))
+		out, err = cmd.CombinedOutput()
+	}
 	cancel()
 
 	fi, ferr := os.Stat(localPath)
@@ -437,7 +461,7 @@ func (sh *ssh) Download(remotePath, localPath string, opts ...OpOption) (out []b
 	}
 
 	if err != nil {
-		sh.lg.Warn("command failed", zap.Error(err))
+		sh.lg.Warn("SCP download command failed", zap.Error(err))
 
 		if sh.retries[key] != 0 {
 			sh.lg.Warn("retrying", zap.Int("retries", sh.retries[key]))
