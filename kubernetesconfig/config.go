@@ -172,7 +172,7 @@ func NewDefault() *Config {
 
 func init() {
 	defaultConfig.Tag = genTag()
-	defaultConfig.ClusterName = defaultConfig.Tag + "-" + randString(5)
+	defaultConfig.ClusterName = defaultConfig.Tag + "-" + randString(7)
 	defaultConfig.LoadBalancerName = defaultConfig.ClusterName + "-lb"
 
 	defaultConfig.ETCDNodes.EC2.AWSRegion = defaultConfig.AWSRegion
@@ -251,7 +251,7 @@ var workerNodesPorts = []string{
 func genTag() string {
 	// use UTC time for everything
 	now := time.Now().UTC()
-	return fmt.Sprintf("awsk8stester-k8s-%d%02d%02d", now.Year(), now.Month(), now.Day())
+	return fmt.Sprintf("a8t-k8s-%d%02d%02d", now.Year(), now.Month(), now.Day())
 }
 
 var defaultConfig = Config{

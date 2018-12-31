@@ -210,7 +210,7 @@ type SecurityGroup struct {
 func genTag() string {
 	// use UTC time for everything
 	now := time.Now().UTC()
-	return fmt.Sprintf("awsk8stester-ec2-%d%02d%02d", now.Year(), now.Month(), now.Day())
+	return fmt.Sprintf("a8t-ec2-%d%02d%02d", now.Year(), now.Month(), now.Day())
 }
 
 // NewDefault returns a copy of the default configuration.
