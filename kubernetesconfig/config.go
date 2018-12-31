@@ -126,18 +126,6 @@ type Config struct {
 	TestTimeout time.Duration `json:"test-timeout,omitempty"`
 }
 
-type KubeProxy struct {
-	Path           string `json:"path"`
-	DownloadURL    string `json:"download-url"`
-	VersionCommand string `json:"version-command"`
-}
-
-type Kubectl struct {
-	Path           string `json:"path"`
-	DownloadURL    string `json:"download-url"`
-	VersionCommand string `json:"version-command"`
-}
-
 type Kubelet struct {
 	Path           string `json:"path"`
 	DownloadURL    string `json:"download-url"`
@@ -146,30 +134,38 @@ type Kubelet struct {
 	AllowPrivileged bool   `json:"allow-privileged" kubelet:"allow-privileged"`
 	AnonymousAuth   bool   `json:"anonymous-auth" kubelet:"anonymous-auth"`
 	CgroupRoot      string `json:"cgroup-root" kubelet:"cgroup-root"`
+	PodManifestPath string `json:"pod-manifest-path" kubelet:"pod-manifest-path"`
+}
+
+type KubeProxy struct {
+	// Image is the container image name and tag for kube-proxy to run as a static pod.
+	Image string `json:"image"`
+}
+
+type Kubectl struct {
+	Path           string `json:"path"`
+	DownloadURL    string `json:"download-url"`
+	VersionCommand string `json:"version-command"`
 }
 
 type KubeAPIServer struct {
-	Path           string `json:"path"`
-	DownloadURL    string `json:"download-url"`
-	VersionCommand string `json:"version-command"`
+	// Image is the container image name and tag for kube-apiserver to run as a static pod.
+	Image string `json:"image"`
 }
 
 type KubeControllerManager struct {
-	Path           string `json:"path"`
-	DownloadURL    string `json:"download-url"`
-	VersionCommand string `json:"version-command"`
+	// Image is the container image name and tag for kube-controller-manager to run as a static pod.
+	Image string `json:"image"`
 }
 
 type KubeScheduler struct {
-	Path           string `json:"path"`
-	DownloadURL    string `json:"download-url"`
-	VersionCommand string `json:"version-command"`
+	// Image is the container image name and tag for kube-scheduler to run as a static pod.
+	Image string `json:"image"`
 }
 
 type CloudControllerManager struct {
-	Path           string `json:"path"`
-	DownloadURL    string `json:"download-url"`
-	VersionCommand string `json:"version-command"`
+	// Image is the container image name and tag for cloud-controller-manager to run as a static pod.
+	Image string `json:"image"`
 }
 
 // NewDefault returns a copy of the default configuration.
@@ -274,47 +270,36 @@ var defaultConfig = Config{
 		AllowPrivileged: true,
 		AnonymousAuth:   false,
 		CgroupRoot:      "/",
+		PodManifestPath: "/etc/kubernetes/manifests",
 	},
 	KubeletWorkerNodes: &Kubelet{
 		Path:           "/usr/bin/kubelet",
 		DownloadURL:    "https://storage.googleapis.com/kubernetes-release/release/v1.13.1/bin/linux/amd64/kubelet",
 		VersionCommand: "/usr/bin/kubelet --version",
+
+		AllowPrivileged: true,
+		AnonymousAuth:   false,
+		CgroupRoot:      "/",
+		PodManifestPath: "/etc/kubernetes/manifests",
 	},
+
 	KubeProxyMasterNodes: &KubeProxy{
-		Path:           "/usr/bin/kube-proxy",
-		DownloadURL:    "https://storage.googleapis.com/kubernetes-release/release/v1.13.1/bin/linux/amd64/kube-proxy",
-		VersionCommand: "/usr/bin/kube-proxy --version",
+		Image: "k8s.gcr.io/kube-proxy:v1.13.1",
 	},
 	KubeProxyWorkerNodes: &KubeProxy{
-		Path:           "/usr/bin/kube-proxy",
-		DownloadURL:    "https://storage.googleapis.com/kubernetes-release/release/v1.13.1/bin/linux/amd64/kube-proxy",
-		VersionCommand: "/usr/bin/kube-proxy --version",
+		Image: "k8s.gcr.io/kube-proxy:v1.13.1",
 	},
+
 	Kubectl: &Kubectl{
 		Path:           "/usr/bin/kubectl",
 		DownloadURL:    "https://storage.googleapis.com/kubernetes-release/release/v1.13.1/bin/linux/amd64/kubectl",
 		VersionCommand: "/usr/bin/kubectl version --client",
 	},
-	KubeAPIServer: &KubeAPIServer{
-		Path:           "/usr/bin/kube-apiserver",
-		DownloadURL:    "https://storage.googleapis.com/kubernetes-release/release/v1.13.1/bin/linux/amd64/kube-apiserver",
-		VersionCommand: "/usr/bin/kube-apiserver --version",
-	},
-	KubeControllerManager: &KubeControllerManager{
-		Path:           "/usr/bin/kube-controller-manager",
-		DownloadURL:    "https://storage.googleapis.com/kubernetes-release/release/v1.13.1/bin/linux/amd64/kube-controller-manager",
-		VersionCommand: "/usr/bin/kube-controller-manager --version",
-	},
-	KubeScheduler: &KubeScheduler{
-		Path:           "/usr/bin/kube-scheduler",
-		DownloadURL:    "https://storage.googleapis.com/kubernetes-release/release/v1.13.1/bin/linux/amd64/kube-scheduler",
-		VersionCommand: "/usr/bin/kube-scheduler --version",
-	},
-	CloudControllerManager: &CloudControllerManager{
-		Path:           "/usr/bin/cloud-controller-manager",
-		DownloadURL:    "https://storage.googleapis.com/kubernetes-release/release/v1.13.1/bin/linux/amd64/cloud-controller-manager",
-		VersionCommand: "/usr/bin/cloud-controller-manager --version",
-	},
+
+	KubeAPIServer:          &KubeAPIServer{},
+	KubeControllerManager:  &KubeControllerManager{},
+	KubeScheduler:          &KubeScheduler{},
+	CloudControllerManager: &CloudControllerManager{},
 
 	AWSRegion: "us-west-2",
 
@@ -1267,15 +1252,6 @@ func (cfg *Config) DownloadsMaster() []Download {
 			VersionCommand: cfg.KubeletMasterNodes.VersionCommand,
 		},
 		{
-			Path:        cfg.KubeProxyMasterNodes.Path,
-			DownloadURL: cfg.KubeProxyMasterNodes.DownloadURL,
-			DownloadCommand: fmt.Sprintf(
-				"sudo rm -f %s && sudo curl --silent -L --remote-name-all %s -o %s && sudo chmod +x %s && %s",
-				cfg.KubeProxyMasterNodes.Path, cfg.KubeProxyMasterNodes.DownloadURL, cfg.KubeProxyMasterNodes.Path, cfg.KubeProxyMasterNodes.Path, cfg.KubeProxyMasterNodes.VersionCommand,
-			),
-			VersionCommand: cfg.KubeProxyMasterNodes.VersionCommand,
-		},
-		{
 			Path:        cfg.Kubectl.Path,
 			DownloadURL: cfg.Kubectl.DownloadURL,
 			DownloadCommand: fmt.Sprintf(
@@ -1283,43 +1259,6 @@ func (cfg *Config) DownloadsMaster() []Download {
 				cfg.Kubectl.Path, cfg.Kubectl.DownloadURL, cfg.Kubectl.Path, cfg.Kubectl.Path, cfg.Kubectl.VersionCommand,
 			),
 			VersionCommand: cfg.Kubectl.VersionCommand,
-		},
-
-		{
-			Path:        cfg.KubeAPIServer.Path,
-			DownloadURL: cfg.KubeAPIServer.DownloadURL,
-			DownloadCommand: fmt.Sprintf(
-				"sudo rm -f %s && sudo curl --silent -L --remote-name-all %s -o %s && sudo chmod +x %s && %s",
-				cfg.KubeAPIServer.Path, cfg.KubeAPIServer.DownloadURL, cfg.KubeAPIServer.Path, cfg.KubeAPIServer.Path, cfg.KubeAPIServer.VersionCommand,
-			),
-			VersionCommand: cfg.KubeAPIServer.VersionCommand,
-		},
-		{
-			Path:        cfg.KubeControllerManager.Path,
-			DownloadURL: cfg.KubeControllerManager.DownloadURL,
-			DownloadCommand: fmt.Sprintf(
-				"sudo rm -f %s && sudo curl --silent -L --remote-name-all %s -o %s && sudo chmod +x %s && %s",
-				cfg.KubeControllerManager.Path, cfg.KubeControllerManager.DownloadURL, cfg.KubeControllerManager.Path, cfg.KubeControllerManager.Path, cfg.KubeControllerManager.VersionCommand,
-			),
-			VersionCommand: cfg.KubeControllerManager.VersionCommand,
-		},
-		{
-			Path:        cfg.KubeScheduler.Path,
-			DownloadURL: cfg.KubeScheduler.DownloadURL,
-			DownloadCommand: fmt.Sprintf(
-				"sudo rm -f %s && sudo curl --silent -L --remote-name-all %s -o %s && sudo chmod +x %s && %s",
-				cfg.KubeScheduler.Path, cfg.KubeScheduler.DownloadURL, cfg.KubeScheduler.Path, cfg.KubeScheduler.Path, cfg.KubeScheduler.VersionCommand,
-			),
-			VersionCommand: cfg.KubeScheduler.VersionCommand,
-		},
-		{
-			Path:        cfg.CloudControllerManager.Path,
-			DownloadURL: cfg.CloudControllerManager.DownloadURL,
-			DownloadCommand: fmt.Sprintf(
-				"sudo rm -f %s && sudo curl --silent -L --remote-name-all %s -o %s && sudo chmod +x %s && %s",
-				cfg.CloudControllerManager.Path, cfg.CloudControllerManager.DownloadURL, cfg.CloudControllerManager.Path, cfg.CloudControllerManager.Path, cfg.CloudControllerManager.VersionCommand,
-			),
-			VersionCommand: cfg.CloudControllerManager.VersionCommand,
 		},
 	}
 }
@@ -1335,15 +1274,6 @@ func (cfg *Config) DownloadsWorker() (ds []Download) {
 				cfg.KubeletWorkerNodes.Path, cfg.KubeletWorkerNodes.DownloadURL, cfg.KubeletWorkerNodes.Path, cfg.KubeletWorkerNodes.Path, cfg.KubeletWorkerNodes.VersionCommand,
 			),
 			VersionCommand: cfg.KubeletWorkerNodes.VersionCommand,
-		},
-		{
-			Path:        cfg.KubeProxyWorkerNodes.Path,
-			DownloadURL: cfg.KubeProxyWorkerNodes.DownloadURL,
-			DownloadCommand: fmt.Sprintf(
-				"sudo rm -f %s && sudo curl --silent -L --remote-name-all %s -o %s && sudo chmod +x %s && %s",
-				cfg.KubeProxyWorkerNodes.Path, cfg.KubeProxyWorkerNodes.DownloadURL, cfg.KubeProxyWorkerNodes.Path, cfg.KubeProxyWorkerNodes.Path, cfg.KubeProxyWorkerNodes.VersionCommand,
-			),
-			VersionCommand: cfg.KubeProxyWorkerNodes.VersionCommand,
 		},
 		{
 			Path:        cfg.Kubectl.Path,
@@ -1463,3 +1393,73 @@ func (kb *Kubelet) Sysconfig() (s string, err error) {
 HOME="/root"
 `, strings.Join(fs, " ")), nil
 }
+
+/*
+KubeProxyWorkerNodes: &KubeProxy{
+	Path:           "/usr/bin/kube-proxy",
+	DownloadURL:    "https://storage.googleapis.com/kubernetes-release/release/v1.13.1/bin/linux/amd64/kube-proxy",
+	VersionCommand: "/usr/bin/kube-proxy --version",
+},
+Kubectl: &Kubectl{
+	Path:           "/usr/bin/kubectl",
+	DownloadURL:    "https://storage.googleapis.com/kubernetes-release/release/v1.13.1/bin/linux/amd64/kubectl",
+	VersionCommand: "/usr/bin/kubectl version --client",
+},
+KubeAPIServer: &KubeAPIServer{
+	Path:           "/usr/bin/kube-apiserver",
+	DownloadURL:    "https://storage.googleapis.com/kubernetes-release/release/v1.13.1/bin/linux/amd64/kube-apiserver",
+	VersionCommand: "/usr/bin/kube-apiserver --version",
+},
+KubeControllerManager: &KubeControllerManager{
+	Path:           "/usr/bin/kube-controller-manager",
+	DownloadURL:    "https://storage.googleapis.com/kubernetes-release/release/v1.13.1/bin/linux/amd64/kube-controller-manager",
+	VersionCommand: "/usr/bin/kube-controller-manager --version",
+},
+KubeScheduler: &KubeScheduler{
+	Path:           "/usr/bin/kube-scheduler",
+	DownloadURL:    "https://storage.googleapis.com/kubernetes-release/release/v1.13.1/bin/linux/amd64/kube-scheduler",
+	VersionCommand: "/usr/bin/kube-scheduler --version",
+},
+CloudControllerManager: &CloudControllerManager{
+	Path:           "/usr/bin/cloud-controller-manager",
+	DownloadURL:    "https://storage.googleapis.com/kubernetes-release/release/v1.13.1/bin/linux/amd64/cloud-controller-manager",
+	VersionCommand: "/usr/bin/cloud-controller-manager --version",
+},
+
+{
+	Path:        cfg.KubeAPIServer.Path,
+	DownloadURL: cfg.KubeAPIServer.DownloadURL,
+	DownloadCommand: fmt.Sprintf(
+		"sudo rm -f %s && sudo curl --silent -L --remote-name-all %s -o %s && sudo chmod +x %s && %s",
+		cfg.KubeAPIServer.Path, cfg.KubeAPIServer.DownloadURL, cfg.KubeAPIServer.Path, cfg.KubeAPIServer.Path, cfg.KubeAPIServer.VersionCommand,
+	),
+	VersionCommand: cfg.KubeAPIServer.VersionCommand,
+},
+{
+	Path:        cfg.KubeControllerManager.Path,
+	DownloadURL: cfg.KubeControllerManager.DownloadURL,
+	DownloadCommand: fmt.Sprintf(
+		"sudo rm -f %s && sudo curl --silent -L --remote-name-all %s -o %s && sudo chmod +x %s && %s",
+		cfg.KubeControllerManager.Path, cfg.KubeControllerManager.DownloadURL, cfg.KubeControllerManager.Path, cfg.KubeControllerManager.Path, cfg.KubeControllerManager.VersionCommand,
+	),
+	VersionCommand: cfg.KubeControllerManager.VersionCommand,
+},
+{
+	Path:        cfg.KubeScheduler.Path,
+	DownloadURL: cfg.KubeScheduler.DownloadURL,
+	DownloadCommand: fmt.Sprintf(
+		"sudo rm -f %s && sudo curl --silent -L --remote-name-all %s -o %s && sudo chmod +x %s && %s",
+		cfg.KubeScheduler.Path, cfg.KubeScheduler.DownloadURL, cfg.KubeScheduler.Path, cfg.KubeScheduler.Path, cfg.KubeScheduler.VersionCommand,
+	),
+	VersionCommand: cfg.KubeScheduler.VersionCommand,
+},
+{
+	Path:        cfg.CloudControllerManager.Path,
+	DownloadURL: cfg.CloudControllerManager.DownloadURL,
+	DownloadCommand: fmt.Sprintf(
+		"sudo rm -f %s && sudo curl --silent -L --remote-name-all %s -o %s && sudo chmod +x %s && %s",
+		cfg.CloudControllerManager.Path, cfg.CloudControllerManager.DownloadURL, cfg.CloudControllerManager.Path, cfg.CloudControllerManager.Path, cfg.CloudControllerManager.VersionCommand,
+	),
+	VersionCommand: cfg.CloudControllerManager.VersionCommand,
+},
+*/
