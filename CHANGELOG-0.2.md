@@ -11,6 +11,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.9...0.2.0).
 
 - [Initial commits to run Kubernetes e2e tests with vanilla Kubernetes cluster on top of AWS](https://github.com/aws/aws-k8s-tester/pull/26).
 
+### `kubeadmconfig`
+
+- Remove [`kubeadm`](https://github.com/aws/aws-k8s-tester/commit/aa0590623f0b537484720d49175044661eda7cdb).
+
 ### `ec2config`
 
 - Use [`amazon-linux-extras install` command to install Docker in Amazon Linux 2](https://github.com/aws/aws-k8s-tester/commit/f9d9aa93e989f74ddce5ec87f126b55447c2bf9a).
@@ -29,6 +33,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.9...0.2.0).
 
 ### `internal`
 
+- Remove [`internal/kubeadm`](https://github.com/aws/aws-k8s-tester/commit/aa0590623f0b537484720d49175044661eda7cdb).
 - Add [`internal/kubernetes` to run Kubernetes e2e tests with vanilla Kubernetes cluster on top of AWS](https://github.com/aws/aws-k8s-tester/pull/26).
 - Remove [`internal/eks` `"aws-cli"` option for now](https://github.com/aws/aws-k8s-tester/commit/8079d8a96c85f2edc57da87c8b839ba67fd67f64).
 - Simplify [`internal/eks` roll-back operation in `"Up"` call](https://github.com/aws/aws-k8s-tester/commit/91f9f9bc1dc88520e68a73fb132e37bfac34e6ba).
