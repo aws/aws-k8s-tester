@@ -35,13 +35,14 @@ var keyPriorities = map[string]int{ // in the order of:
 	"update-amazon-linux-2":                1,
 	"update-ubuntu":                        2,
 	"install-go":                           3,
-	"install-csi":                          4,
-	"install-etcd":                         5,
-	"install-aws-k8s-tester":               6,
-	"install-wrk":                          7,
-	"install-alb":                          8,
-	"install-start-docker-amazon-linux-2":  9,
-	"install-start-kubeadm-amazon-linux-2": 10,
+	"install-csi-github-account":           4,
+	"install-csi":                          5,
+	"install-etcd":                         6,
+	"install-aws-k8s-tester":               7,
+	"install-wrk":                          8,
+	"install-alb":                          9,
+	"install-start-docker-amazon-linux-2":  10,
+	"install-start-kubeadm-amazon-linux-2": 11,
 }
 
 func convertToScript(userName, plugin string) (script, error) {
@@ -66,14 +67,28 @@ func convertToScript(userName, plugin string) (script, error) {
 			data: s,
 		}, nil
 
+	case strings.HasPrefix(plugin, "install-csi-github-account-"):
+		envVarValue := strings.Replace(plugin, "install-csi-github-account-", "", -1)
+		s, err := createSetEnvVar(envVar{
+			Name:  "CSI_GITHUB_ACCOUNT",
+			Value: envVarValue,
+		})
+		if err != nil {
+			return script{}, err
+		}
+		return script{
+			key:  "install-csi-github-account",
+			data: s,
+		}, nil
+
 	case strings.HasPrefix(plugin, "install-csi-"):
 		gitBranch := strings.Replace(plugin, "install-csi-", "", -1)
 		_, perr := strconv.ParseInt(gitBranch, 10, 64)
 		isPR := perr == nil
 		s, err := createInstallGit(gitInfo{
 			GitRepo:       "aws-ebs-csi-driver",
-			GitClonePath:  "${GOPATH}/src/github.com/kubernetes-sigs",
-			GitCloneURL:   "https://github.com/kubernetes-sigs/aws-ebs-csi-driver.git",
+			GitClonePath:  fmt.Sprintf("${GOPATH}/src/github.com/${CSI_GITHUB_ACCOUNT}"),
+			GitCloneURL:   fmt.Sprintf("https://github.com/${CSI_GITHUB_ACCOUNT}/aws-ebs-csi-driver.git"),
 			IsPR:          isPR,
 			GitBranch:     gitBranch,
 			InstallScript: `make aws-ebs-csi-driver && sudo cp ./bin/aws-ebs-csi-driver /usr/local/bin/aws-ebs-csi-driver`,
@@ -372,6 +387,30 @@ cd ./wrk \
   && cd .. \
   && rm -rf ./wrk \
   && wrk --version || true && which wrk
+
+##################################
+
+`
+
+type envVar struct {
+	Name  string
+	Value string
+}
+
+func createSetEnvVar(e envVar) (string, error) {
+	tpl := template.Must(template.New("setEnvVar").Parse(setEnvVar))
+	buf := bytes.NewBuffer(nil)
+	if err := tpl.Execute(buf, e); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
+const setEnvVar = `
+
+################################## set {{ .Name }}
+
+export {{ .Name }}={{ .Value }}
 
 ##################################
 
