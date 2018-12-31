@@ -61,6 +61,9 @@ type Config struct {
 	KubeConfigPathBucket string `json:"kubeconfig-path-bucket,omitempty"` // read-only to user
 	KubeConfigPathURL    string `json:"kubeconfig-path-url,omitempty"`    // read-only to user
 
+	// AWSRegion is the AWS region.
+	AWSRegion string `json:"aws-region,omitempty"`
+
 	// LogDebug is true to enable debug level logging.
 	LogDebug bool `json:"log-debug"`
 	// LogOutputs is a list of log outputs. Valid values are 'default', 'stderr', 'stdout', or file names.
@@ -151,12 +154,15 @@ func init() {
 	defaultConfig.Tag = genTag()
 	defaultConfig.ClusterName = defaultConfig.Tag + "-" + randString(5)
 
+	defaultConfig.ETCDNodes.EC2.AWSRegion = defaultConfig.AWSRegion
 	defaultConfig.ETCDNodes.EC2.Tag = defaultConfig.Tag + "-etcd-nodes"
 	defaultConfig.ETCDNodes.EC2.ClusterName = defaultConfig.ClusterName + "-etcd-nodes"
 	defaultConfig.ETCDNodes.EC2Bastion.Tag = defaultConfig.Tag + "-etcd-bastion-nodes"
 	defaultConfig.ETCDNodes.EC2Bastion.ClusterName = defaultConfig.ClusterName + "-etcd-bastion-nodes"
+	defaultConfig.EC2MasterNodes.AWSRegion = defaultConfig.AWSRegion
 	defaultConfig.EC2MasterNodes.Tag = defaultConfig.Tag + "-master-nodes"
 	defaultConfig.EC2MasterNodes.ClusterName = defaultConfig.ClusterName + "-master-nodes"
+	defaultConfig.EC2WorkerNodes.AWSRegion = defaultConfig.AWSRegion
 	defaultConfig.EC2WorkerNodes.Tag = defaultConfig.Tag + "-worker-nodes"
 	defaultConfig.EC2WorkerNodes.ClusterName = defaultConfig.ClusterName + "-worker-nodes"
 
@@ -267,6 +273,8 @@ var defaultConfig = Config{
 		VersionCommand: "/usr/bin/cloud-controller-manager --version",
 	},
 
+	AWSRegion: "us-west-2",
+
 	LogDebug: false,
 	// default, stderr, stdout, or file name
 	// log file named with cluster name will be added automatically
@@ -365,17 +373,24 @@ const (
 
 // UpdateFromEnvs updates fields from environmental variables.
 func (cfg *Config) UpdateFromEnvs() error {
+	cfg.ETCDNodes.EC2.AWSRegion = cfg.AWSRegion
+	cfg.EC2MasterNodes.AWSRegion = cfg.AWSRegion
+	cfg.EC2WorkerNodes.AWSRegion = cfg.AWSRegion
+
 	if err := cfg.ETCDNodes.UpdateFromEnvs(); err != nil {
 		return err
 	}
+
 	cfg.EC2MasterNodes.EnvPrefix = envPfxMasterNodes
-	cfg.EC2WorkerNodes.EnvPrefix = envPfxWorkerNodes
 	if err := cfg.EC2MasterNodes.UpdateFromEnvs(); err != nil {
 		return err
 	}
+
+	cfg.EC2WorkerNodes.EnvPrefix = envPfxWorkerNodes
 	if err := cfg.EC2WorkerNodes.UpdateFromEnvs(); err != nil {
 		return err
 	}
+
 	cc := *cfg
 
 	tpTop, vvTop := reflect.TypeOf(&cc).Elem(), reflect.ValueOf(&cc).Elem()

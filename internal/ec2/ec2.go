@@ -15,7 +15,6 @@ import (
 	"github.com/aws/aws-k8s-tester/internal/ssh"
 	"github.com/aws/aws-k8s-tester/pkg/awsapi"
 	"github.com/aws/aws-k8s-tester/pkg/zaputil"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
@@ -96,7 +95,6 @@ func NewDeployer(cfg *ec2config.Config) (Deployer, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	md.sts = sts.New(md.ss)
 	md.cf = cloudformation.New(md.ss)
 	md.ec2 = ec2.New(md.ss)

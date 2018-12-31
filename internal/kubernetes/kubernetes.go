@@ -13,9 +13,15 @@ import (
 	"github.com/aws/aws-k8s-tester/internal/etcd"
 	"github.com/aws/aws-k8s-tester/internal/ssh"
 	"github.com/aws/aws-k8s-tester/kubernetesconfig"
+	"github.com/aws/aws-k8s-tester/pkg/awsapi"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/pkg/zaputil"
 	"github.com/aws/aws-k8s-tester/storagetester"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/elb"
+	"github.com/aws/aws-sdk-go/service/elb/elbiface"
+	"github.com/aws/aws-sdk-go/service/elbv2"
+	"github.com/aws/aws-sdk-go/service/elbv2/elbv2iface"
 	"github.com/dustin/go-humanize"
 	"go.uber.org/zap"
 )
@@ -34,6 +40,10 @@ type embedded struct {
 	etcdTester             storagetester.Tester
 	ec2MasterNodesDeployer ec2.Deployer
 	ec2WorkerNodesDeployer ec2.Deployer
+
+	ss    *session.Session
+	elbv1 elbiface.ELBAPI     // for classic ELB
+	elbv2 elbv2iface.ELBV2API // for ALB or NLB
 }
 
 // NewDeployer creates a new embedded kubernetes tester.
@@ -46,6 +56,20 @@ func NewDeployer(cfg *kubernetesconfig.Config) (Deployer, error) {
 		return nil, err
 	}
 	md := &embedded{lg: lg, cfg: cfg}
+
+	awsCfg := &awsapi.Config{
+		Logger:         md.lg,
+		DebugAPICalls:  cfg.LogDebug,
+		Region:         cfg.AWSRegion,
+		CustomEndpoint: "",
+	}
+	md.ss, err = awsapi.New(awsCfg)
+	if err != nil {
+		return nil, err
+	}
+	md.elbv1 = elb.New(md.ss)
+	md.elbv2 = elbv2.New(md.ss)
+
 	md.etcdTester, err = etcd.NewTester(md.cfg.ETCDNodes)
 	if err != nil {
 		return nil, err
@@ -117,8 +141,6 @@ func (md *embedded) Create() (err error) {
 	downloadsWorker := md.cfg.DownloadsWorker()
 	errc, ess := make(chan error), make([]string, 0)
 
-	// TODO: create vanilla Kubernetes cluster and persists KUBECONFIG
-	md.lg.Info("deploying kubernetes master nodes")
 	for _, masterEC2 := range md.cfg.EC2MasterNodes.Instances {
 		go func(inst ec2config.Instance) {
 			instSSH, serr := ssh.New(ssh.Config{
@@ -152,7 +174,7 @@ func (md *embedded) Create() (err error) {
 				md.lg.Info("downloaded at master node", zap.String("instance-id", inst.InstanceID), zap.String("output", string(out)))
 			}
 
-			// TODO: installed binaries, now set up service file
+			// TODO: now that binaries are installed, now set up service file
 
 			errc <- nil
 		}(masterEC2)
@@ -166,7 +188,8 @@ func (md *embedded) Create() (err error) {
 	if len(ess) > 0 {
 		return errors.New(strings.Join(ess, ", "))
 	}
-	md.lg.Info("deploying kubernetes worker nodes")
+	md.lg.Info("deployed kubernetes master nodes")
+
 	for _, workerEC2 := range md.cfg.EC2WorkerNodes.Instances {
 		go func(inst ec2config.Instance) {
 			instSSH, serr := ssh.New(ssh.Config{
@@ -200,7 +223,7 @@ func (md *embedded) Create() (err error) {
 				md.lg.Info("downloaded at worker node", zap.String("instance-id", inst.InstanceID), zap.String("output", string(out)))
 			}
 
-			// TODO: installed binaries, now set up service file
+			// TODO
 
 			errc <- nil
 		}(workerEC2)
@@ -214,6 +237,7 @@ func (md *embedded) Create() (err error) {
 	if len(ess) > 0 {
 		return errors.New(strings.Join(ess, ", "))
 	}
+	md.lg.Info("deployed kubernetes worker nodes")
 
 	if md.cfg.UploadKubeConfig {
 		err := md.ec2MasterNodesDeployer.UploadToBucketForTests(md.cfg.KubeConfigPath, md.cfg.KubeConfigPathBucket)
