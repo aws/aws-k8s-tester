@@ -114,7 +114,7 @@ func TestPlugins(t *testing.T) {
 			GitCloneURL:   fmt.Sprintf("https://github.com/%s/aws-ebs-csi-driver.git", testGitHubAccount),
 			IsPR:          isPR,
 			GitBranch:     testBranchOrPR,
-			InstallScript: `make aws-ebs-csi-driver && sudo cp ./bin/aws-ebs-csi-driver /usr/local/bin/aws-ebs-csi-driver`,
+			InstallScript: fmt.Sprintf(`[[ %q != "kubernetes-sigs" ]] && mv ../../%s/ ../../kubernetes-sigs && cd ../../kubernetes-sigs/aws-ebs-csi-driver; make aws-ebs-csi-driver && sudo cp ./bin/aws-ebs-csi-driver /usr/local/bin/aws-ebs-csi-driver`, testGitHubAccount, testGitHubAccount),
 		})
 		if err != nil {
 			t.Fatal(err)
