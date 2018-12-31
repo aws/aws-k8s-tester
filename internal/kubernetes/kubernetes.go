@@ -300,8 +300,35 @@ func (md *embedded) Create() (err error) {
 				zap.String("instance-id", inst.InstanceID),
 			)
 
-			// TODO: write /etc/sysconfig/kubelet
-			// TODO: run other components with kubelet
+			var sysConfigKubelet string
+			sysConfigKubelet, err = md.cfg.KubeletMasterNodes.Sysconfig()
+			if err != nil {
+				errc <- fmt.Errorf("failed to create Kubelet sysconfig at master node (%v)", err)
+				return
+			}
+			var sysConfigKubeletPath string
+			sysConfigKubeletPath, err = fileutil.WriteTempFile([]byte(sysConfigKubelet))
+			if err != nil {
+				errc <- fmt.Errorf("failed to write Kubelet sysconfig file at master node (%v)", err)
+				return
+			}
+			defer os.RemoveAll(sysConfigKubeletPath)
+			_, err = instSSH.Send(
+				sysConfigKubeletPath,
+				"/etc/sysconfig/kubelet",
+				ssh.WithTimeout(15*time.Second),
+				ssh.WithRetry(3, 3*time.Second),
+			)
+			if err != nil {
+				errc <- fmt.Errorf("failed to send %q to '/etc/sysconfig/kubelet' at master node %q(%q) (error %v)", sysConfigKubeletPath, inst.InstanceID, inst.PublicIP, err)
+				return
+			}
+			md.lg.Info(
+				"wrote kubelet environment file at master node",
+				zap.String("instance-id", inst.InstanceID),
+			)
+
+			// TODO: run other components
 
 			errc <- nil
 		}(md.cfg.EC2MasterNodes.UserName, masterEC2)
@@ -399,8 +426,35 @@ func (md *embedded) Create() (err error) {
 				zap.String("instance-id", inst.InstanceID),
 			)
 
-			// TODO: write /etc/sysconfig/kubelet
-			// TODO: run other components with kubelet
+			var sysConfigKubelet string
+			sysConfigKubelet, err = md.cfg.KubeletWorkerNodes.Sysconfig()
+			if err != nil {
+				errc <- fmt.Errorf("failed to create Kubelet sysconfig at worker node (%v)", err)
+				return
+			}
+			var sysConfigKubeletPath string
+			sysConfigKubeletPath, err = fileutil.WriteTempFile([]byte(sysConfigKubelet))
+			if err != nil {
+				errc <- fmt.Errorf("failed to write Kubelet sysconfig file at worker node (%v)", err)
+				return
+			}
+			defer os.RemoveAll(sysConfigKubeletPath)
+			_, err = instSSH.Send(
+				sysConfigKubeletPath,
+				"/etc/sysconfig/kubelet",
+				ssh.WithTimeout(15*time.Second),
+				ssh.WithRetry(3, 3*time.Second),
+			)
+			if err != nil {
+				errc <- fmt.Errorf("failed to send %q to '/etc/sysconfig/kubelet' at worker node %q(%q) (error %v)", sysConfigKubeletPath, inst.InstanceID, inst.PublicIP, err)
+				return
+			}
+			md.lg.Info(
+				"wrote kubelet environment file at worker node",
+				zap.String("instance-id", inst.InstanceID),
+			)
+
+			// TODO: run other components
 
 			errc <- nil
 		}(md.cfg.EC2WorkerNodes.UserName, workerEC2)

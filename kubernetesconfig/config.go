@@ -142,7 +142,9 @@ type Kubelet struct {
 	DownloadURL    string `json:"download-url"`
 	VersionCommand string `json:"version-command"`
 
-	AllowPrivileged bool `json:"allow-privileged" kubelet:"allow-privileged"`
+	AllowPrivileged bool   `json:"allow-privileged" kubelet:"allow-privileged"`
+	AnonymousAuth   bool   `json:"anonymous-auth" kubelet:"anonymous-auth"`
+	CgroupRoot      string `json:"cgroup-root" kubelet:"cgroup-root"`
 }
 
 type KubeAPIServer struct {
@@ -277,6 +279,10 @@ var defaultConfig = Config{
 		Path:           "/usr/bin/kubelet",
 		DownloadURL:    "https://storage.googleapis.com/kubernetes-release/release/v1.13.1/bin/linux/amd64/kubelet",
 		VersionCommand: "/usr/bin/kubelet --version",
+
+		AllowPrivileged: true,
+		AnonymousAuth:   false,
+		CgroupRoot:      "/",
 	},
 	KubeletWorkerNodes: &Kubelet{
 		Path:           "/usr/bin/kubelet",
@@ -1401,4 +1407,15 @@ func (kb *Kubelet) Flags() (flags []string, err error) {
 		}
 	}
 	return flags, nil
+}
+
+func (kb *Kubelet) Sysconfig() (s string, err error) {
+	var fs []string
+	fs, err = kb.Flags()
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf(`DAEMON_ARGS="%s"
+HOME="/root"
+`, strings.Join(fs, " ")), nil
 }
