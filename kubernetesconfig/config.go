@@ -2,6 +2,7 @@
 package kubernetesconfig
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -11,6 +12,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"text/template"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
@@ -37,7 +39,8 @@ type Config struct {
 
 	KubeProxy              *KubeProxy              `json:"kube-proxy"`
 	Kubectl                *Kubectl                `json:"kubectl"`
-	Kubelet                *Kubelet                `json:"kubelet"`
+	KubeletMasterNodes     *Kubelet                `json:"kubelet-master-nodes"`
+	KubeletWorkerNodes     *Kubelet                `json:"kubelet-worker-nodes"`
 	KubeAPIServer          *KubeAPIServer          `json:"kube-apiserver"`
 	KubeControllerManager  *KubeControllerManager  `json:"kube-controller-manager"`
 	KubeScheduler          *KubeScheduler          `json:"kube-scheduler"`
@@ -268,7 +271,12 @@ var defaultConfig = Config{
 		DownloadURL:    "https://storage.googleapis.com/kubernetes-release/release/v1.13.1/bin/linux/amd64/kubectl",
 		VersionCommand: "/usr/bin/kubectl version --client",
 	},
-	Kubelet: &Kubelet{
+	KubeletMasterNodes: &Kubelet{
+		Path:           "/usr/bin/kubelet",
+		DownloadURL:    "https://storage.googleapis.com/kubernetes-release/release/v1.13.1/bin/linux/amd64/kubelet",
+		VersionCommand: "/usr/bin/kubelet --version",
+	},
+	KubeletWorkerNodes: &Kubelet{
 		Path:           "/usr/bin/kubelet",
 		DownloadURL:    "https://storage.googleapis.com/kubernetes-release/release/v1.13.1/bin/linux/amd64/kubelet",
 		VersionCommand: "/usr/bin/kubelet --version",
@@ -383,7 +391,8 @@ const (
 	envPfx                       = "AWS_K8S_TESTER_KUBERNETES_"
 	envPfxKubeProxy              = envPfx + "KUBE_PROXY_"
 	envPfxKubectl                = envPfx + "KUBECTL_"
-	envPfxKubelet                = envPfx + "KUBELET_"
+	envPfxKubeletMasterNodes     = envPfx + "KUBELET_MASTER_NODES_"
+	envPfxKubeletWorkerNodes     = envPfx + "KUBELET_WORKER_NODES_"
 	envPfxKubeAPIServer          = envPfx + "KUBE_APISERVER_"
 	envPfxKubeControllerManager  = envPfx + "KUBE_CONTROLLER_MANAGER_"
 	envPfxKubeScheduler          = envPfx + "KUBE_SCHEDULER_"
@@ -609,54 +618,54 @@ func (cfg *Config) UpdateFromEnvs() error {
 	}
 	cc.Kubectl = &kubectl
 
-	kubelet := *cc.Kubelet
-	tpKubelet, vvKubelet := reflect.TypeOf(&kubelet).Elem(), reflect.ValueOf(&kubelet).Elem()
-	for i := 0; i < tpKubelet.NumField(); i++ {
-		jv := tpKubelet.Field(i).Tag.Get("json")
+	kubeletMasterNodes := *cc.KubeletMasterNodes
+	tpKubeletMasterNodes, vvKubeletMasterNodes := reflect.TypeOf(&kubeletMasterNodes).Elem(), reflect.ValueOf(&kubeletMasterNodes).Elem()
+	for i := 0; i < tpKubeletMasterNodes.NumField(); i++ {
+		jv := tpKubeletMasterNodes.Field(i).Tag.Get("json")
 		if jv == "" {
 			continue
 		}
 		jv = strings.Replace(jv, ",omitempty", "", -1)
 		jv = strings.Replace(jv, "-", "_", -1)
 		jv = strings.ToUpper(strings.Replace(jv, "-", "_", -1))
-		env := envPfxKubelet + jv
+		env := envPfxKubeletMasterNodes + jv
 		if os.Getenv(env) == "" {
 			continue
 		}
 		sv := os.Getenv(env)
 
-		switch vvKubelet.Field(i).Type().Kind() {
+		switch vvKubeletMasterNodes.Field(i).Type().Kind() {
 		case reflect.String:
-			vvKubelet.Field(i).SetString(sv)
+			vvKubeletMasterNodes.Field(i).SetString(sv)
 
 		case reflect.Bool:
 			bb, err := strconv.ParseBool(sv)
 			if err != nil {
 				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
 			}
-			vvKubelet.Field(i).SetBool(bb)
+			vvKubeletMasterNodes.Field(i).SetBool(bb)
 
 		case reflect.Int, reflect.Int32, reflect.Int64:
-			// if tpKubelet.Field(i).Name { continue }
+			// if tpKubeletMasterNodes.Field(i).Name { continue }
 			iv, err := strconv.ParseInt(sv, 10, 64)
 			if err != nil {
 				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
 			}
-			vvKubelet.Field(i).SetInt(iv)
+			vvKubeletMasterNodes.Field(i).SetInt(iv)
 
 		case reflect.Uint, reflect.Uint32, reflect.Uint64:
 			iv, err := strconv.ParseUint(sv, 10, 64)
 			if err != nil {
 				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
 			}
-			vvKubelet.Field(i).SetUint(iv)
+			vvKubeletMasterNodes.Field(i).SetUint(iv)
 
 		case reflect.Float32, reflect.Float64:
 			fv, err := strconv.ParseFloat(sv, 64)
 			if err != nil {
 				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
 			}
-			vvKubelet.Field(i).SetFloat(fv)
+			vvKubeletMasterNodes.Field(i).SetFloat(fv)
 
 		case reflect.Slice:
 			ss := strings.Split(sv, ",")
@@ -664,13 +673,76 @@ func (cfg *Config) UpdateFromEnvs() error {
 			for i := range ss {
 				slice.Index(i).SetString(ss[i])
 			}
-			vvKubelet.Field(i).Set(slice)
+			vvKubeletMasterNodes.Field(i).Set(slice)
 
 		default:
-			return fmt.Errorf("%q (%v) is not supported as an env", env, vvKubelet.Field(i).Type())
+			return fmt.Errorf("%q (%v) is not supported as an env", env, vvKubeletMasterNodes.Field(i).Type())
 		}
 	}
-	cc.Kubelet = &kubelet
+	cc.KubeletMasterNodes = &kubeletMasterNodes
+
+	kubeletWorkerNodes := *cc.KubeletWorkerNodes
+	tpKubeletWorkerNodes, vvKubeletWorkerNodes := reflect.TypeOf(&kubeletWorkerNodes).Elem(), reflect.ValueOf(&kubeletWorkerNodes).Elem()
+	for i := 0; i < tpKubeletWorkerNodes.NumField(); i++ {
+		jv := tpKubeletWorkerNodes.Field(i).Tag.Get("json")
+		if jv == "" {
+			continue
+		}
+		jv = strings.Replace(jv, ",omitempty", "", -1)
+		jv = strings.Replace(jv, "-", "_", -1)
+		jv = strings.ToUpper(strings.Replace(jv, "-", "_", -1))
+		env := envPfxKubeletWorkerNodes + jv
+		if os.Getenv(env) == "" {
+			continue
+		}
+		sv := os.Getenv(env)
+
+		switch vvKubeletWorkerNodes.Field(i).Type().Kind() {
+		case reflect.String:
+			vvKubeletWorkerNodes.Field(i).SetString(sv)
+
+		case reflect.Bool:
+			bb, err := strconv.ParseBool(sv)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vvKubeletWorkerNodes.Field(i).SetBool(bb)
+
+		case reflect.Int, reflect.Int32, reflect.Int64:
+			// if tpKubeletWorkerNodes.Field(i).Name { continue }
+			iv, err := strconv.ParseInt(sv, 10, 64)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vvKubeletWorkerNodes.Field(i).SetInt(iv)
+
+		case reflect.Uint, reflect.Uint32, reflect.Uint64:
+			iv, err := strconv.ParseUint(sv, 10, 64)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vvKubeletWorkerNodes.Field(i).SetUint(iv)
+
+		case reflect.Float32, reflect.Float64:
+			fv, err := strconv.ParseFloat(sv, 64)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vvKubeletWorkerNodes.Field(i).SetFloat(fv)
+
+		case reflect.Slice:
+			ss := strings.Split(sv, ",")
+			slice := reflect.MakeSlice(reflect.TypeOf([]string{}), len(ss), len(ss))
+			for i := range ss {
+				slice.Index(i).SetString(ss[i])
+			}
+			vvKubeletWorkerNodes.Field(i).Set(slice)
+
+		default:
+			return fmt.Errorf("%q (%v) is not supported as an env", env, vvKubeletWorkerNodes.Field(i).Type())
+		}
+	}
+	cc.KubeletWorkerNodes = &kubeletWorkerNodes
 
 	kubeAPIServer := *cc.KubeAPIServer
 	tpKubeAPIServer, vvKubeAPIServer := reflect.TypeOf(&kubeAPIServer).Elem(), reflect.ValueOf(&kubeAPIServer).Elem()
@@ -1126,13 +1198,13 @@ func (cfg *Config) DownloadsMaster() []Download {
 			VersionCommand: cfg.Kubectl.VersionCommand,
 		},
 		{
-			Path:        cfg.Kubelet.Path,
-			DownloadURL: cfg.Kubelet.DownloadURL,
+			Path:        cfg.KubeletMasterNodes.Path,
+			DownloadURL: cfg.KubeletMasterNodes.DownloadURL,
 			DownloadCommand: fmt.Sprintf(
 				"sudo rm -f %s && sudo curl --silent -L --remote-name-all %s -o %s && sudo chmod +x %s && %s",
-				cfg.Kubelet.Path, cfg.Kubelet.DownloadURL, cfg.Kubelet.Path, cfg.Kubelet.Path, cfg.Kubelet.VersionCommand,
+				cfg.KubeletMasterNodes.Path, cfg.KubeletMasterNodes.DownloadURL, cfg.KubeletMasterNodes.Path, cfg.KubeletMasterNodes.Path, cfg.KubeletMasterNodes.VersionCommand,
 			),
-			VersionCommand: cfg.Kubelet.VersionCommand,
+			VersionCommand: cfg.KubeletMasterNodes.VersionCommand,
 		},
 		{
 			Path:        cfg.KubeAPIServer.Path,
@@ -1175,11 +1247,127 @@ func (cfg *Config) DownloadsMaster() []Download {
 
 // DownloadsWorker returns all download commands for Kubernetes worker.
 func (cfg *Config) DownloadsWorker() (ds []Download) {
-	for _, v := range cfg.DownloadsMaster() {
-		if strings.HasSuffix(v.Path, "kube-apiserver") {
-			continue
-		}
-		ds = append(ds, v)
+	return []Download{
+		{
+			Path:        cfg.KubeProxy.Path,
+			DownloadURL: cfg.KubeProxy.DownloadURL,
+			DownloadCommand: fmt.Sprintf(
+				"sudo rm -f %s && sudo curl --silent -L --remote-name-all %s -o %s && sudo chmod +x %s && %s",
+				cfg.KubeProxy.Path, cfg.KubeProxy.DownloadURL, cfg.KubeProxy.Path, cfg.KubeProxy.Path, cfg.KubeProxy.VersionCommand,
+			),
+			VersionCommand: cfg.KubeProxy.VersionCommand,
+		},
+		{
+			Path:        cfg.Kubectl.Path,
+			DownloadURL: cfg.Kubectl.DownloadURL,
+			DownloadCommand: fmt.Sprintf(
+				"sudo rm -f %s && sudo curl --silent -L --remote-name-all %s -o %s && sudo chmod +x %s && %s",
+				cfg.Kubectl.Path, cfg.Kubectl.DownloadURL, cfg.Kubectl.Path, cfg.Kubectl.Path, cfg.Kubectl.VersionCommand,
+			),
+			VersionCommand: cfg.Kubectl.VersionCommand,
+		},
+		{
+			Path:        cfg.KubeletWorkerNodes.Path,
+			DownloadURL: cfg.KubeletWorkerNodes.DownloadURL,
+			DownloadCommand: fmt.Sprintf(
+				"sudo rm -f %s && sudo curl --silent -L --remote-name-all %s -o %s && sudo chmod +x %s && %s",
+				cfg.KubeletWorkerNodes.Path, cfg.KubeletWorkerNodes.DownloadURL, cfg.KubeletWorkerNodes.Path, cfg.KubeletWorkerNodes.Path, cfg.KubeletWorkerNodes.VersionCommand,
+			),
+			VersionCommand: cfg.KubeletWorkerNodes.VersionCommand,
+		},
+		{
+			Path:        cfg.KubeControllerManager.Path,
+			DownloadURL: cfg.KubeControllerManager.DownloadURL,
+			DownloadCommand: fmt.Sprintf(
+				"sudo rm -f %s && sudo curl --silent -L --remote-name-all %s -o %s && sudo chmod +x %s && %s",
+				cfg.KubeControllerManager.Path, cfg.KubeControllerManager.DownloadURL, cfg.KubeControllerManager.Path, cfg.KubeControllerManager.Path, cfg.KubeControllerManager.VersionCommand,
+			),
+			VersionCommand: cfg.KubeControllerManager.VersionCommand,
+		},
+		{
+			Path:        cfg.KubeScheduler.Path,
+			DownloadURL: cfg.KubeScheduler.DownloadURL,
+			DownloadCommand: fmt.Sprintf(
+				"sudo rm -f %s && sudo curl --silent -L --remote-name-all %s -o %s && sudo chmod +x %s && %s",
+				cfg.KubeScheduler.Path, cfg.KubeScheduler.DownloadURL, cfg.KubeScheduler.Path, cfg.KubeScheduler.Path, cfg.KubeScheduler.VersionCommand,
+			),
+			VersionCommand: cfg.KubeScheduler.VersionCommand,
+		},
+		{
+			Path:        cfg.CloudControllerManager.Path,
+			DownloadURL: cfg.CloudControllerManager.DownloadURL,
+			DownloadCommand: fmt.Sprintf(
+				"sudo rm -f %s && sudo curl --silent -L --remote-name-all %s -o %s && sudo chmod +x %s && %s",
+				cfg.CloudControllerManager.Path, cfg.CloudControllerManager.DownloadURL, cfg.CloudControllerManager.Path, cfg.CloudControllerManager.Path, cfg.CloudControllerManager.VersionCommand,
+			),
+			VersionCommand: cfg.CloudControllerManager.VersionCommand,
+		},
 	}
-	return ds
 }
+
+// Service returns a script to configure Kubernetes Kubelet systemd service file.
+func (kb *Kubelet) Service() (s string, err error) {
+	tpl := template.Must(template.New("kubeletTemplate").Parse(kubeletTemplate))
+	buf := bytes.NewBuffer(nil)
+	kv := kubeletTemplateInfo{KubeletPath: kb.Path}
+	if err := tpl.Execute(buf, kv); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
+type kubeletTemplateInfo struct {
+	KubeletPath string
+}
+
+const kubeletTemplate = `#!/usr/bin/env bash
+
+sudo systemctl stop kubelet.service || true
+
+sudo mkdir -p /etc/sysconfig/
+sudo rm -f /etc/sysconfig/kubelet
+sudo touch /etc/sysconfig/kubelet
+
+sudo rm -rf /var/lib/kubelet/
+sudo mkdir -p /var/lib/kubelet/
+sudo rm -f /var/lib/kubelet/kubeconfig
+
+sudo rm -rf /srv/kubernetes/
+sudo mkdir -p /srv/kubernetes/
+
+sudo rm -rf /etc/kubernetes/manifests/
+sudo mkdir -p /etc/kubernetes/manifests/
+
+sudo rm -rf /opt/cni/bin/
+sudo mkdir -p /opt/cni/bin/
+
+sudo rm -rf /etc/cni/net.d/
+sudo mkdir -p /etc/cni/net.d/
+
+rm -f /tmp/kubelet.service
+cat <<EOF > /tmp/kubelet.service
+[Unit]
+Description=kubelet: The Kubernetes Node Agent
+Documentation=http://kubernetes.io/docs/
+After=docker.service
+
+[Service]
+EnvironmentFile=/etc/sysconfig/kubelet
+ExecStart={{ .KubeletPath }} "$DAEMON_ARGS"
+Restart=always
+RestartSec=2s
+StartLimitInterval=0
+KillMode=process
+User=root
+
+[Install]
+WantedBy=multi-user.target
+EOF
+cat /tmp/kubelet.service
+
+sudo mkdir -p /etc/systemd/system/kubelet.service.d
+sudo cp /tmp/kubelet.service /etc/systemd/system/kubelet.service
+
+sudo systemctl daemon-reload
+sudo systemctl cat kubelet.service
+`
