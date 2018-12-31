@@ -331,13 +331,14 @@ func (sh *ssh) Send(localPath, remotePath string, opts ...OpOption) (out []byte,
 		return nil, err
 	}
 
-	cmd := scpCmd.CommandContext(ctx,
+	scpArgs := []string{
 		scpPath,
 		"-oStrictHostKeyChecking=no",
 		"-i", sh.cfg.KeyPath,
 		localPath,
 		fmt.Sprintf("%s@%s:%s", sh.cfg.UserName, sh.cfg.PublicDNSName, remotePath),
-	)
+	}
+	cmd := scpCmd.CommandContext(ctx, scpArgs[0], scpArgs[1:]...)
 	out, err = cmd.CombinedOutput()
 	for i := 0; i < 3; i++ {
 		if err == nil {
@@ -348,7 +349,7 @@ func (sh *ssh) Send(localPath, remotePath string, opts ...OpOption) (out []byte,
 		}
 
 		time.Sleep(2 * time.Second)
-		sh.lg.Warn("retrying SCP for send", zap.Error(err))
+		sh.lg.Warn("retrying SCP for send", zap.String("cmd", strings.Join(scpArgs, " ")), zap.Error(err))
 		out, err = cmd.CombinedOutput()
 	}
 	cancel()
@@ -421,13 +422,14 @@ func (sh *ssh) Download(remotePath, localPath string, opts ...OpOption) (out []b
 		cancel()
 		return nil, err
 	}
-	cmd := scpCmd.CommandContext(ctx,
+	scpArgs := []string{
 		scpPath,
 		"-oStrictHostKeyChecking=no",
 		"-i", sh.cfg.KeyPath,
 		fmt.Sprintf("%s@%s:%s", sh.cfg.UserName, sh.cfg.PublicDNSName, remotePath),
 		localPath,
-	)
+	}
+	cmd := scpCmd.CommandContext(ctx, scpArgs[0], scpArgs[1:]...)
 	out, err = cmd.CombinedOutput()
 	for i := 0; i < 3; i++ {
 		if err == nil {
@@ -438,7 +440,7 @@ func (sh *ssh) Download(remotePath, localPath string, opts ...OpOption) (out []b
 		}
 
 		time.Sleep(2 * time.Second)
-		sh.lg.Warn("retrying SCP for download", zap.Error(err))
+		sh.lg.Warn("retrying SCP for download", zap.String("cmd", strings.Join(scpArgs, " ")), zap.Error(err))
 		out, err = cmd.CombinedOutput()
 	}
 	cancel()
