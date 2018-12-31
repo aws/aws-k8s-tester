@@ -67,13 +67,17 @@ func convertToScript(userName, plugin string) (script, error) {
 		}, nil
 
 	case strings.HasPrefix(plugin, "install-csi-"):
-		gitBranch := strings.Replace(plugin, "install-csi-", "", -1)
+		gitHubAccountAndBranchOrPR := strings.Split(strings.Replace(plugin, "install-csi-", "", -1), "/github-account-")
+		if len(gitHubAccountAndBranchOrPR) != 2 {
+			return script{}, fmt.Errorf("expected two strings (GitHub account and branch/PR) but got %v", len(gitHubAccountAndBranchOrPR))
+		}
+		gitBranch, gitHubAccount := gitHubAccountAndBranchOrPR[0], gitHubAccountAndBranchOrPR[1]
 		_, perr := strconv.ParseInt(gitBranch, 10, 64)
 		isPR := perr == nil
 		s, err := createInstallGit(gitInfo{
 			GitRepo:       "aws-ebs-csi-driver",
-			GitClonePath:  "${GOPATH}/src/github.com/kubernetes-sigs",
-			GitCloneURL:   "https://github.com/kubernetes-sigs/aws-ebs-csi-driver.git",
+			GitClonePath:  fmt.Sprintf("${GOPATH}/src/github.com/%s", gitHubAccount),
+			GitCloneURL:   fmt.Sprintf("https://github.com/%s/aws-ebs-csi-driver.git", gitHubAccount),
 			IsPR:          isPR,
 			GitBranch:     gitBranch,
 			InstallScript: `make aws-ebs-csi-driver && sudo cp ./bin/aws-ebs-csi-driver /usr/local/bin/aws-ebs-csi-driver`,
