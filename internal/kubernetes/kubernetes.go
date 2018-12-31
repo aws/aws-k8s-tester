@@ -245,7 +245,12 @@ func (md *embedded) Create() (err error) {
 					errc <- fmt.Errorf("failed %q to master node %q(%q) (error %v)", v.DownloadCommand, inst.InstanceID, inst.PublicIP, oerr)
 					return
 				}
-				md.lg.Info("downloaded at master node", zap.String("instance-id", inst.InstanceID), zap.String("output", string(out)))
+				md.lg.Info(
+					"installed at master node",
+					zap.String("instance-id", inst.InstanceID),
+					zap.String("path", v.Path),
+					zap.String("output", string(out)),
+				)
 			}
 
 			// TODO: now that binaries are installed, now set up service file
@@ -293,7 +298,12 @@ func (md *embedded) Create() (err error) {
 					errc <- fmt.Errorf("failed %q to worker node %q(%q) (error %v)", v.DownloadCommand, inst.InstanceID, inst.PublicIP, oerr)
 					return
 				}
-				md.lg.Info("downloaded at worker node", zap.String("instance-id", inst.InstanceID), zap.String("output", string(out)))
+				md.lg.Info(
+					"installed at worker node",
+					zap.String("instance-id", inst.InstanceID),
+					zap.String("path", v.Path),
+					zap.String("output", string(out)),
+				)
 			}
 
 			// TODO
