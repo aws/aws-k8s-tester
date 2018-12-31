@@ -96,10 +96,18 @@ func (md *embedded) Create() (err error) {
 	md.cfg.KubeConfigPathURL = genS3URL(md.cfg.EC2MasterNodes.AWSRegion, md.cfg.Tag, md.cfg.KubeConfigPathBucket)
 	md.cfg.LogOutputToUploadPathURL = genS3URL(md.cfg.EC2MasterNodes.AWSRegion, md.cfg.Tag, md.cfg.EC2MasterNodes.LogOutputToUploadPathBucket)
 
+	defer func() {
+		if err != nil {
+			md.lg.Warn("failed to create Kubernetes, reverting", zap.Error(err))
+			md.lg.Warn("failed to create Kubernetes, reverted", zap.Error(md.Terminate()))
+		}
+	}()
+
 	// shared master node VPC and subnets for: etcd nodes, worker nodes
 	if err = md.ec2MasterNodesDeployer.Create(); err != nil {
 		return err
 	}
+	md.cfg.EC2MasterNodesCreated = true
 	md.cfg.Sync()
 
 	md.cfg.ETCDNodes.EC2.VPCID = md.cfg.EC2MasterNodes.VPCID
@@ -115,11 +123,13 @@ func (md *embedded) Create() (err error) {
 	if err = md.etcdTester.Create(); err != nil {
 		return err
 	}
+	md.cfg.ETCDNodesCreated = true
 	md.cfg.Sync()
 
 	if err = md.ec2WorkerNodesDeployer.Create(); err != nil {
 		return err
 	}
+	md.cfg.EC2WorkerNodesCreated = true
 	md.cfg.Sync()
 
 	md.lg.Info(
@@ -130,7 +140,6 @@ func (md *embedded) Create() (err error) {
 		zap.String("vpc-id-worker-nodes", md.cfg.EC2WorkerNodes.VPCID),
 		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 	)
-
 	if md.cfg.LogDebug {
 		fmt.Println("EC2MasterNodes.SSHCommands:", md.cfg.EC2MasterNodes.SSHCommands())
 		fmt.Println("EC2WorkerNodes.SSHCommands:", md.cfg.EC2WorkerNodes.SSHCommands())
@@ -139,7 +148,8 @@ func (md *embedded) Create() (err error) {
 		return err
 	}
 
-	elbOut, elbErr := md.elbv1.CreateLoadBalancer(&elb.CreateLoadBalancerInput{
+	var elbOut *elb.CreateLoadBalancerOutput
+	elbOut, err = md.elbv1.CreateLoadBalancer(&elb.CreateLoadBalancerInput{
 		LoadBalancerName: aws.String(md.cfg.LoadBalancerName),
 		SecurityGroups:   aws.StringSlice(md.cfg.EC2MasterNodes.SecurityGroupIDs),
 		Subnets:          aws.StringSlice(md.cfg.EC2MasterNodes.SubnetIDs),
@@ -155,10 +165,33 @@ func (md *embedded) Create() (err error) {
 			{Key: aws.String("Name"), Value: aws.String(md.cfg.LoadBalancerName)},
 		},
 	})
-	if elbErr != nil {
-		return elbErr
+	if err != nil {
+		return err
 	}
+	md.cfg.LoadBalancerCreated = true
+	md.cfg.Sync()
 	md.lg.Info("created load balancer", zap.String("name", md.cfg.LoadBalancerName), zap.String("dns-name", *elbOut.DNSName))
+
+	instances := make([]*elb.Instance, 0, len(md.cfg.EC2MasterNodes.Instances)+len(md.cfg.EC2WorkerNodes.Instances))
+	for _, iv := range md.cfg.EC2MasterNodes.Instances {
+		instances = append(instances, &elb.Instance{
+			InstanceId: aws.String(iv.InstanceID),
+		})
+	}
+	for _, iv := range md.cfg.EC2WorkerNodes.Instances {
+		instances = append(instances, &elb.Instance{
+			InstanceId: aws.String(iv.InstanceID),
+		})
+	}
+	if _, err = md.elbv1.RegisterInstancesWithLoadBalancer(&elb.RegisterInstancesWithLoadBalancerInput{
+		LoadBalancerName: aws.String(md.cfg.LoadBalancerName),
+		Instances:        instances,
+	}); err != nil {
+		return err
+	}
+	md.cfg.LoadBalancerRegistered = true
+	md.cfg.Sync()
+	md.lg.Info("registered instances to load balancer", zap.String("name", md.cfg.LoadBalancerName), zap.Int("instances", len(instances)))
 
 	downloadsMaster := md.cfg.DownloadsMaster()
 	downloadsWorker := md.cfg.DownloadsWorker()
@@ -183,7 +216,6 @@ func (md *embedded) Create() (err error) {
 			defer instSSH.Close()
 
 			for _, v := range downloadsMaster {
-				md.lg.Info("downloading at master node", zap.String("instance-id", inst.InstanceID), zap.String("path", v.Path), zap.String("download-url", v.DownloadURL))
 				out, oerr := instSSH.Run(
 					v.DownloadCommand,
 					ssh.WithTimeout(15*time.Second),
@@ -232,7 +264,6 @@ func (md *embedded) Create() (err error) {
 			defer instSSH.Close()
 
 			for _, v := range downloadsWorker {
-				md.lg.Info("downloading at worker node", zap.String("instance-id", inst.InstanceID), zap.String("path", v.Path), zap.String("download-url", v.DownloadURL))
 				out, oerr := instSSH.Run(
 					v.DownloadCommand,
 					ssh.WithTimeout(15*time.Second),
@@ -333,7 +364,7 @@ func (md *embedded) Terminate() error {
 	md.mu.Lock()
 	defer md.mu.Unlock()
 
-	if md.cfg.UploadKubeConfig {
+	if md.cfg.UploadKubeConfig && md.cfg.EC2MasterNodesCreated {
 		err := md.ec2MasterNodesDeployer.UploadToBucketForTests(md.cfg.KubeConfigPath, md.cfg.KubeConfigPathBucket)
 		if err == nil {
 			md.lg.Info("uploaded KUBECONFIG", zap.String("path", md.cfg.KubeConfigPath))
@@ -343,8 +374,7 @@ func (md *embedded) Terminate() error {
 	}
 
 	md.lg.Info("terminating kubernetes")
-	if md.cfg.UploadTesterLogs && len(md.cfg.EC2MasterNodes.Instances) > 0 {
-		fpathToS3PathMasterNodes := make(map[string]string)
+	if md.cfg.UploadTesterLogs && len(md.cfg.EC2MasterNodes.Instances) > 0 && md.cfg.EC2MasterNodesCreated {
 		fpathToS3PathMasterNodes, err := fetchLogs(
 			md.lg,
 			md.cfg.EC2MasterNodes.UserName,
@@ -358,9 +388,10 @@ func (md *embedded) Terminate() error {
 		} else {
 			md.lg.Warn("failed to fetch master nodes logs", zap.Error(err))
 		}
+	}
 
-		fpathToS3PathWorkerNodes := make(map[string]string)
-		fpathToS3PathWorkerNodes, err = fetchLogs(
+	if md.cfg.UploadTesterLogs && len(md.cfg.EC2WorkerNodes.Instances) > 0 && md.cfg.EC2WorkerNodesCreated {
+		fpathToS3PathWorkerNodes, err := fetchLogs(
 			md.lg,
 			md.cfg.EC2MasterNodes.UserName,
 			md.cfg.ClusterName,
@@ -384,27 +415,61 @@ func (md *embedded) Terminate() error {
 
 	ess := make([]string, 0)
 
-	if _, err := md.elbv1.DeleteLoadBalancer(&elb.DeleteLoadBalancerInput{
-		LoadBalancerName: aws.String(md.cfg.LoadBalancerName),
-	}); err != nil {
-		md.lg.Warn("failed to delete load balancer", zap.Error(err))
-		ess = append(ess, err.Error())
+	if md.cfg.LoadBalancerRegistered {
+		instances := make([]*elb.Instance, 0, len(md.cfg.EC2MasterNodes.Instances)+len(md.cfg.EC2WorkerNodes.Instances))
+		for _, iv := range md.cfg.EC2MasterNodes.Instances {
+			instances = append(instances, &elb.Instance{
+				InstanceId: aws.String(iv.InstanceID),
+			})
+		}
+		for _, iv := range md.cfg.EC2WorkerNodes.Instances {
+			instances = append(instances, &elb.Instance{
+				InstanceId: aws.String(iv.InstanceID),
+			})
+		}
+		if _, err := md.elbv1.DeregisterInstancesFromLoadBalancer(&elb.DeregisterInstancesFromLoadBalancerInput{
+			LoadBalancerName: aws.String(md.cfg.LoadBalancerName),
+			Instances:        instances,
+		}); err != nil {
+			return err
+		}
+		md.cfg.LoadBalancerRegistered = false
+		md.lg.Info("de-registered instances to load balancer", zap.String("name", md.cfg.LoadBalancerName), zap.Int("instances", len(instances)))
 	}
 
-	// terminate etcd and worker nodes first in order to remove VPC dependency safely
-	if err := md.etcdTester.Terminate(); err != nil {
-		md.lg.Warn("failed to terminate etcd nodes", zap.Error(err))
-		ess = append(ess, err.Error())
+	if md.cfg.LoadBalancerCreated {
+		if _, err := md.elbv1.DeleteLoadBalancer(&elb.DeleteLoadBalancerInput{
+			LoadBalancerName: aws.String(md.cfg.LoadBalancerName),
+		}); err != nil {
+			md.lg.Warn("failed to delete load balancer", zap.Error(err))
+			ess = append(ess, err.Error())
+		}
+		md.cfg.LoadBalancerCreated = false
 	}
 
-	if err := md.ec2WorkerNodesDeployer.Terminate(); err != nil {
-		md.lg.Warn("failed to terminate EC2 worker nodes", zap.Error(err))
-		ess = append(ess, err.Error())
+	if md.cfg.ETCDNodesCreated {
+		// terminate etcd and worker nodes first in order to remove VPC dependency safely
+		if err := md.etcdTester.Terminate(); err != nil {
+			md.lg.Warn("failed to terminate etcd nodes", zap.Error(err))
+			ess = append(ess, err.Error())
+		}
+		md.cfg.ETCDNodesCreated = false
 	}
 
-	if err := md.ec2MasterNodesDeployer.Terminate(); err != nil {
-		md.lg.Warn("failed to terminate EC2 master nodes", zap.Error(err))
-		ess = append(ess, err.Error())
+	if md.cfg.EC2WorkerNodesCreated {
+		if err := md.ec2WorkerNodesDeployer.Terminate(); err != nil {
+			md.lg.Warn("failed to terminate EC2 worker nodes", zap.Error(err))
+			ess = append(ess, err.Error())
+		}
+		md.cfg.EC2WorkerNodesCreated = false
+	}
+
+	if md.cfg.EC2MasterNodesCreated {
+		if err := md.ec2MasterNodesDeployer.Terminate(); err != nil {
+			md.lg.Warn("failed to terminate EC2 master nodes", zap.Error(err))
+			ess = append(ess, err.Error())
+		}
+		md.cfg.EC2MasterNodesCreated = false
 	}
 
 	if len(ess) == 0 {

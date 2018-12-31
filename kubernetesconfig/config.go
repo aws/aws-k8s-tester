@@ -93,15 +93,30 @@ type Config struct {
 
 	// ETCDNodes defines etcd cluster.
 	ETCDNodes *etcdconfig.Config `json:"etcd-nodes"`
+	// ETCDNodesCreated is true to indicate that etcd nodes have been created,
+	// thus needs clean-up on test complete.
+	ETCDNodesCreated bool `json:"etcd-nodes-created"`
 	// EC2MasterNodes defines ec2 instance configuration for Kubernetes master components.
 	EC2MasterNodes *ec2config.Config `json:"ec2-master-nodes"`
+	// EC2MasterNodesCreated is true to indicate that master nodes have been created,
+	// thus needs clean-up on test complete.
+	EC2MasterNodesCreated bool `json:"ec2-master-nodes-created"`
 	// EC2WorkerNodes defines ec2 instance configuration for Kubernetes worker nodes.
 	EC2WorkerNodes *ec2config.Config `json:"ec2-worker-nodes"`
+	// EC2WorkerNodesCreated is true to indicate that worker nodes have been created,
+	// thus needs clean-up on test complete.
+	EC2WorkerNodesCreated bool `json:"ec2-worker-nodes-created"`
 
 	// LoadBalancerName is the name of the load balancer.
 	LoadBalancerName string `json:"load-balancer-name,omitempty"`
 	// LoadBalancerDNSName is the DNS name output from load balancer creation.
 	LoadBalancerDNSName string `json:"load-balancer-dns-name,omitempty"`
+	// LoadBalancerCreated is true to indicate that load balancer has been created,
+	// thus needs clean-up on test complete.
+	LoadBalancerCreated bool `json:"load-balancer-created"`
+	// LoadBalancerRegistered is true to indicate that load balancer has registered EC2 instances,
+	// thus needs de-registration on test complete.
+	LoadBalancerRegistered bool `json:"load-balancer-registered"`
 
 	// TestTimeout is the test operation timeout.
 	TestTimeout time.Duration `json:"test-timeout,omitempty"`
