@@ -427,6 +427,11 @@ func (md *embedded) deleteInstances() (err error) {
 	for id := range md.cfg.Instances {
 		ids = append(ids, id)
 	}
+	if len(ids) == 0 {
+		md.lg.Warn("no EC2 instance found, nothing to delete")
+		return nil
+	}
+
 	_, err = md.ec2.TerminateInstances(&ec2.TerminateInstancesInput{
 		InstanceIds: aws.StringSlice(ids),
 	})
