@@ -58,4 +58,83 @@ func TestPlugins(t *testing.T) {
 		t.Fatal(err)
 	}
 	fmt.Println(script)
+
+	// -----------------------------------------------------------------------------------------------------------------
+	// For 'install-csi', get expected string when provided valid input for branch.
+	testBranch := "test-branch"
+	testPR := "42"
+	testGitHubAccount := "test-github-account"
+	getFullResults := func(result string) string {
+		return headerBash + result + fmt.Sprintf("\n\necho %s\n\n", READY)
+	}
+
+	expectedInstallCSIGitHubAccount := func() string {
+		expectedResult, err := createSetEnvVar(envVar{
+			Name:  "CSI_GITHUB_ACCOUNT",
+			Value: testGitHubAccount,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return expectedResult
+	}()
+
+	getExpectedInstallCSI := func(isPR bool) string {
+		testBranchOrPR := ""
+		if isPR {
+			testBranchOrPR = testPR
+		} else {
+			testBranchOrPR = testBranch
+		}
+
+		expectedResult, err := createInstallGit(gitInfo{
+			GitRepo:       "aws-ebs-csi-driver",
+			GitClonePath:  "${GOPATH}/src/github.com/${CSI_GITHUB_ACCOUNT}",
+			GitCloneURL:   "https://github.com/${CSI_GITHUB_ACCOUNT}/aws-ebs-csi-driver.git",
+			IsPR:          isPR,
+			GitBranch:     testBranchOrPR,
+			InstallScript: `make aws-ebs-csi-driver && sudo cp ./bin/aws-ebs-csi-driver /usr/local/bin/aws-ebs-csi-driver`,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		return expectedResult
+	}
+
+	// Gets expected results when using a branch
+	actualResult, err := Create(
+		"ubuntu",
+		[]string{
+			fmt.Sprintf("install-csi-github-account-%s", testGitHubAccount),
+			fmt.Sprintf("install-csi-%s", testBranch),
+		},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expectedResult := getFullResults(expectedInstallCSIGitHubAccount + getExpectedInstallCSI(false))
+
+	if actualResult != expectedResult {
+		t.Fatalf("EXPECTED:\n%s\nGOT:\n%s", actualResult, expectedResult)
+	}
+
+	// Gets expected results when using a PR
+	actualResult, err = Create(
+		"ubuntu",
+		[]string{
+			fmt.Sprintf("install-csi-github-account-%s", testGitHubAccount),
+			fmt.Sprintf("install-csi-%s", testPR),
+		},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expectedResult = getFullResults(expectedInstallCSIGitHubAccount + getExpectedInstallCSI(true))
+
+	if actualResult != expectedResult {
+		t.Fatalf("EXPECTED:\n%s\nGOT:\n%s", actualResult, expectedResult)
+	}
 }
