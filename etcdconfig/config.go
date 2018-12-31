@@ -101,21 +101,21 @@ type ETCD struct {
 	// It is different than ID or Name which is set with instance ID.
 	MemberID string `json:"member-id,omitempty"`
 
-	Name                string `json:"name,omitempty"`
-	DataDir             string `json:"data-dir,omitempty"`
-	ListenClientURLs    string `json:"listen-client-urls,omitempty"`
-	AdvertiseClientURLs string `json:"advertise-client-urls,omitempty"`
-	ListenPeerURLs      string `json:"listen-peer-urls,omitempty"`
+	Name                string `json:"name,omitempty" etcd:"name"`
+	DataDir             string `json:"data-dir,omitempty" etcd:"data-dir"`
+	ListenClientURLs    string `json:"listen-client-urls,omitempty" etcd:"listen-client-urls"`
+	AdvertiseClientURLs string `json:"advertise-client-urls,omitempty" etcd:"advertise-client-urls"`
+	ListenPeerURLs      string `json:"listen-peer-urls,omitempty" etcd:"listen-peer-urls"`
 	AdvertisePeerURLs   string `json:"advertise-peer-urls,omitempty" etcd:"initial-advertise-peer-urls"`
-	InitialCluster      string `json:"initial-cluster,omitempty"`
-	InitialClusterState string `json:"initial-cluster-state,omitempty"`
+	InitialCluster      string `json:"initial-cluster,omitempty" etcd:"initial-cluster"`
+	InitialClusterState string `json:"initial-cluster-state,omitempty" etcd:"initial-cluster-state"`
 
-	InitialClusterToken string `json:"initial-cluster-token"`
-	SnapshotCount       int    `json:"snapshot-count"`
+	InitialClusterToken string `json:"initial-cluster-token" etcd:"initial-cluster-token"`
+	SnapshotCount       int    `json:"snapshot-count" etcd:"snapshot-count"`
 	HeartbeatMS         int    `json:"heartbeat-ms" etcd:"heartbeat-interval"`
 	ElectionTimeoutMS   int    `json:"election-timeout-ms" etcd:"election-timeout"`
 	QuotaBackendGB      int    `json:"quota-backend-gb" etcd:"quota-backend-bytes"`
-	EnablePprof         bool   `json:"enable-pprof"`
+	EnablePprof         bool   `json:"enable-pprof" etcd:"enable-pprof"`
 
 	// flags for each version
 
@@ -323,22 +323,14 @@ func CheckInitialElectionTickAdvance(ver string) (ok bool) {
 func (e *ETCD) Flags() (flags []string, err error) {
 	tp, vv := reflect.TypeOf(e).Elem(), reflect.ValueOf(e).Elem()
 	for i := 0; i < tp.NumField(); i++ {
-		k := tp.Field(i).Tag.Get("json")
+		k := tp.Field(i).Tag.Get("etcd")
 		if k == "" {
 			continue
-		}
-		k = strings.Replace(k, ",omitempty", "", -1)
-		if ek := tp.Field(i).Tag.Get("etcd"); ek != "" {
-			k = strings.Replace(ek, ",omitempty", "", -1)
 		}
 		if v, ok := e.features[k]; ok && !v {
 			continue
 		}
-
 		fieldName := tp.Field(i).Name
-		if _, ok := skipFlags[fieldName]; ok {
-			continue
-		}
 
 		switch vv.Field(i).Type().Kind() {
 		case reflect.String:
