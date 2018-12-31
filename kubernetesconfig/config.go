@@ -239,7 +239,7 @@ var defaultConfig = Config{
 	Kubectl: &Kubectl{
 		Path:           "/usr/bin/kubectl",
 		DownloadURL:    "https://storage.googleapis.com/kubernetes-release/release/v1.13.1/bin/linux/amd64/kubectl",
-		VersionCommand: "/usr/bin/Kubectl version --client",
+		VersionCommand: "/usr/bin/kubectl version --client",
 	},
 	Kubelet: &Kubelet{
 		Path:           "/usr/bin/kubelet",
