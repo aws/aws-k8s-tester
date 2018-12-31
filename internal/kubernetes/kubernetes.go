@@ -514,25 +514,21 @@ func (md *embedded) terminate() error {
 			errc <- nil
 		}()
 	}
-
-	if md.cfg.EC2MasterNodesCreated {
-		cnt++
-		go func() {
-			if err := md.ec2MasterNodesDeployer.Terminate(); err != nil {
-				md.lg.Warn("failed to terminate EC2 master nodes", zap.Error(err))
-				errc <- fmt.Errorf("failed to terminate EC2 master nodes (%v)", err)
-				return
-			}
-			mu.Lock()
-			md.cfg.EC2MasterNodesCreated = false
-			mu.Unlock()
-			errc <- nil
-		}()
-	}
-
 	for i := 0; i < cnt; i++ {
 		if err := <-errc; err != nil {
 			ess = append(ess, err.Error())
+		}
+	}
+	if len(ess) == 0 {
+		return nil
+	}
+
+	if md.cfg.EC2MasterNodesCreated {
+		if err := md.ec2MasterNodesDeployer.Terminate(); err != nil {
+			md.lg.Warn("failed to terminate EC2 master nodes", zap.Error(err))
+			ess = append(ess, fmt.Sprintf("failed to terminate EC2 master nodes (%v)", err))
+		} else {
+			md.cfg.EC2MasterNodesCreated = false
 		}
 	}
 	if len(ess) == 0 {
