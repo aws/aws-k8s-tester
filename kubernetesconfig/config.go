@@ -1313,7 +1313,9 @@ func (kb *Kubelet) Service() (s string, err error) {
 	if err := tpl.Execute(buf, kv); err != nil {
 		return "", err
 	}
-	return buf.String(), nil
+	txt := buf.String()
+	txt = strings.Replace(txt, "___DAEMON_ARGS", `"$DAEMON_ARGS"`, 1)
+	return txt, nil
 }
 
 type kubeletTemplateInfo struct {
@@ -1353,7 +1355,7 @@ After=docker.service
 
 [Service]
 EnvironmentFile=/etc/sysconfig/kubelet
-ExecStart={{ .KubeletPath }} "$DAEMON_ARGS"
+ExecStart={{ .KubeletPath }} ___DAEMON_ARGS
 Restart=always
 RestartSec=2s
 StartLimitInterval=0

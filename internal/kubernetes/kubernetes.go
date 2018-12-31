@@ -296,7 +296,7 @@ func (md *embedded) Create() (err error) {
 				return
 			}
 			md.lg.Info(
-				"installed Kubelet at master node",
+				"wrote kubelet service file at master node",
 				zap.String("instance-id", inst.InstanceID),
 			)
 
@@ -395,7 +395,7 @@ func (md *embedded) Create() (err error) {
 				return
 			}
 			md.lg.Info(
-				"installed Kubelet at worker node",
+				"wrote kubelet service file at worker node",
 				zap.String("instance-id", inst.InstanceID),
 			)
 
