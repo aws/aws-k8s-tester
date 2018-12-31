@@ -1373,3 +1373,32 @@ sudo cp /tmp/kubelet.service /etc/systemd/system/kubelet.service
 sudo systemctl daemon-reload
 sudo systemctl cat kubelet.service
 `
+
+// Flags returns the list of "kubelet" flags.
+// Make sure to validate the configuration with "ValidateAndSetDefaults".
+func (kb *Kubelet) Flags() (flags []string, err error) {
+	tp, vv := reflect.TypeOf(kb).Elem(), reflect.ValueOf(kb).Elem()
+	for i := 0; i < tp.NumField(); i++ {
+		k := tp.Field(i).Tag.Get("kubelet")
+		if k == "" {
+			continue
+		}
+
+		switch vv.Field(i).Type().Kind() {
+		case reflect.String:
+			if vv.Field(i).String() != "" {
+				flags = append(flags, fmt.Sprintf("--%s=%s", k, vv.Field(i).String()))
+			}
+
+		case reflect.Int, reflect.Int32, reflect.Int64:
+			flags = append(flags, fmt.Sprintf("--%s=%d", k, vv.Field(i).Int()))
+
+		case reflect.Bool:
+			flags = append(flags, fmt.Sprintf("--%s=%v", k, vv.Field(i).Bool()))
+
+		default:
+			return nil, fmt.Errorf("unknown %q", k)
+		}
+	}
+	return flags, nil
+}
