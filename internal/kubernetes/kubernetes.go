@@ -141,7 +141,7 @@ func (md *embedded) Create() (err error) {
 			for _, is := range downloadsMaster {
 				md.lg.Info("downloading at master node", zap.String("instance-id", inst.InstanceID), zap.String("path", is.path), zap.String("download-url", is.downloadURL))
 				installCmd := fmt.Sprintf(
-					"sudo rm -f %s && sudo curl --show-error --silent --output /dev/null -L --remote-name-all %s -o %s && sudo chmod +x %s && %s",
+					"sudo rm -f %s && sudo curl --silent -L --remote-name-all %s -o %s && sudo chmod +x %s && %s",
 					is.path, is.downloadURL, is.path, is.path, is.versionCmd,
 				)
 				out, oerr := instSSH.Run(
@@ -150,7 +150,7 @@ func (md *embedded) Create() (err error) {
 					ssh.WithRetry(3, 3*time.Second),
 				)
 				if oerr != nil {
-					errc <- fmt.Errorf("failed to install %q to master node %q(%q) (error %v)", is.downloadURL, inst.InstanceID, inst.PublicIP, oerr)
+					errc <- fmt.Errorf("failed %q to master node %q(%q) (error %v)", installCmd, inst.InstanceID, inst.PublicIP, oerr)
 					return
 				}
 				md.lg.Info("downloaded at master node", zap.String("instance-id", inst.InstanceID), zap.String("output", string(out)))
@@ -193,7 +193,7 @@ func (md *embedded) Create() (err error) {
 			for _, is := range downloadsWorker {
 				md.lg.Info("downloading at worker node", zap.String("instance-id", inst.InstanceID), zap.String("path", is.path), zap.String("download-url", is.downloadURL))
 				installCmd := fmt.Sprintf(
-					"sudo rm -f %s && sudo curl --show-error --silent --output /dev/null -L --remote-name-all %s -o %s && sudo chmod +x %s && %s",
+					"sudo rm -f %s && sudo curl --silent -L --remote-name-all %s -o %s && sudo chmod +x %s && %s",
 					is.path, is.downloadURL, is.path, is.path, is.versionCmd,
 				)
 				out, oerr := instSSH.Run(
@@ -202,7 +202,7 @@ func (md *embedded) Create() (err error) {
 					ssh.WithRetry(3, 3*time.Second),
 				)
 				if oerr != nil {
-					errc <- fmt.Errorf("failed to install %q to worker node %q(%q) (error %v)", is.downloadURL, inst.InstanceID, inst.PublicIP, oerr)
+					errc <- fmt.Errorf("failed %q to worker node %q(%q) (error %v)", installCmd, inst.InstanceID, inst.PublicIP, oerr)
 					return
 				}
 				md.lg.Info("downloaded at worker node", zap.String("instance-id", inst.InstanceID), zap.String("output", string(out)))
@@ -337,7 +337,7 @@ RELEASE=v{{ .Version }}
 cd /usr/bin
 sudo rm -f /usr/bin/{kube-proxy,kubectl,kubelet,kube-apiserver,kube-controller-manager,kube-scheduler,cloud-controller-manager}
 
-sudo curl --show-error --silent --output /dev/null -L --remote-name-all https://storage.googleapis.com/kubernetes-release/release/v1.13.0/bin/linux/amd64/{kube-proxy,kubectl,kubelet,kube-apiserver,kube-controller-manager,kube-scheduler,cloud-controller-manager}
+sudo curl --silent -L --remote-name-all https://storage.googleapis.com/kubernetes-release/release/v1.13.0/bin/linux/amd64/{kube-proxy,kubectl,kubelet,kube-apiserver,kube-controller-manager,kube-scheduler,cloud-controller-manager}
 sudo chmod +x {kube-proxy,kubectl,kubelet,kube-apiserver,kube-controller-manager,kube-scheduler,cloud-controller-manager}
 
 https://github.com/kubernetes/kubernetes/blob/master/build/debs/kubelet.service

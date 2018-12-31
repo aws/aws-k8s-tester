@@ -167,7 +167,7 @@ func (sh *ssh) Connect() (err error) {
 	}
 
 	sh.cli = cryptossh.NewClient(c, chans, reqs)
-	sh.lg.Info("created client",
+	sh.lg.Debug("created client",
 		zap.String("public-ip", sh.cfg.PublicIP),
 		zap.String("public-dns-name", sh.cfg.PublicDNSName),
 	)
