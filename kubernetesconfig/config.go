@@ -141,6 +141,8 @@ type Kubelet struct {
 	Path           string `json:"path"`
 	DownloadURL    string `json:"download-url"`
 	VersionCommand string `json:"version-command"`
+
+	AllowPrivileged bool `json:"allow-privileged" kubelet:"allow-privileged"`
 }
 
 type KubeAPIServer struct {
@@ -1313,9 +1315,7 @@ func (kb *Kubelet) Service() (s string, err error) {
 	if err := tpl.Execute(buf, kv); err != nil {
 		return "", err
 	}
-	txt := buf.String()
-	txt = strings.Replace(txt, "___DAEMON_ARGS", `"$DAEMON_ARGS"`, 1)
-	return txt, nil
+	return buf.String(), nil
 }
 
 type kubeletTemplateInfo struct {
@@ -1355,7 +1355,7 @@ After=docker.service
 
 [Service]
 EnvironmentFile=/etc/sysconfig/kubelet
-ExecStart={{ .KubeletPath }} ___DAEMON_ARGS
+ExecStart={{ .KubeletPath }} "\$DAEMON_ARGS"
 Restart=always
 RestartSec=2s
 StartLimitInterval=0
