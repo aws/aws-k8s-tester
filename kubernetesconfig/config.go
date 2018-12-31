@@ -35,34 +35,13 @@ type Config struct {
 	// This is meant to be used as a flag for test.
 	Down bool `json:"down"`
 
-	// KubeProxyPath is the path to download the "kubectl".
-	KubeProxyPath string `json:"kube-proxy-path,omitempty"`
-	// KubeProxyDownloadURL is the download URL to download "kube-proxy" binary from.
-	KubeProxyDownloadURL string `json:"kube-proxy-download-url,omitempty"`
-	// KubectlPath is the path to download the "kubectl".
-	KubectlPath string `json:"kubectl-path,omitempty"`
-	// KubectlDownloadURL is the download URL to download "kubectl" binary from.
-	KubectlDownloadURL string `json:"kubectl-download-url,omitempty"`
-	// KubeletPath is the path to download the "kubelet".
-	KubeletPath string `json:"kubelet-path,omitempty"`
-	// KubeletDownloadURL is the download URL to download "kubelet" binary from.
-	KubeletDownloadURL string `json:"kubelet-download-url,omitempty"`
-	// KubeAPIServerPath is the path to download the "kube-apiserver".
-	KubeAPIServerPath string `json:"kube-apiserver-path,omitempty"`
-	// KubeAPIServerDownloadURL is the download URL to download "kube-apiserver" binary from.
-	KubeAPIServerDownloadURL string `json:"kube-apiserver-download-url,omitempty"`
-	// KubeControllerManagerPath is the path to download the "kube-controller-manager".
-	KubeControllerManagerPath string `json:"kube-controller-manager-path,omitempty"`
-	// KubeControllerManagerDownloadURL is the download URL to download "kube-controller-manager" binary from.
-	KubeControllerManagerDownloadURL string `json:"kube-controller-manager-download-url,omitempty"`
-	// KubeSchedulerPath is the path to download the "kube-scheduler".
-	KubeSchedulerPath string `json:"kube-scheduler-path,omitempty"`
-	// KubeSchedulerDownloadURL is the download URL to download "kube-scheduler" binary from.
-	KubeSchedulerDownloadURL string `json:"kube-scheduler-download-url,omitempty"`
-	// CloudControllerManagerPath is the path to download the Kubernetes "cloud-controller-manager".
-	CloudControllerManagerPath string `json:"cloud-controller-manager-path,omitempty"`
-	// CloudControllerManagerDownloadURL is the download URL to download Kubernetes "cloud-controller-manager" binary from.
-	CloudControllerManagerDownloadURL string `json:"cloud-controller-manager-download-url,omitempty"`
+	KubeProxy              *KubeProxy              `json:"kube-proxy"`
+	Kubectl                *Kubectl                `json:"kubectl"`
+	Kubelet                *Kubelet                `json:"kubelet"`
+	KubeAPIServer          *KubeAPIServer          `json:"kube-apiserver"`
+	KubeControllerManager  *KubeControllerManager  `json:"kube-controller-manager"`
+	KubeScheduler          *KubeScheduler          `json:"kube-scheduler"`
+	CloudControllerManager *CloudControllerManager `json:"cloud-controller-manager"`
 
 	// ConfigPath is the configuration file path.
 	// Must be left empty, and let deployer auto-populate this field.
@@ -118,6 +97,48 @@ type Config struct {
 
 	// TestTimeout is the test operation timeout.
 	TestTimeout time.Duration `json:"test-timeout,omitempty"`
+}
+
+type KubeProxy struct {
+	Path           string `json:"path"`
+	DownloadURL    string `json:"download-url"`
+	VersionCommand string `json:"version-command"`
+}
+
+type Kubectl struct {
+	Path           string `json:"path"`
+	DownloadURL    string `json:"download-url"`
+	VersionCommand string `json:"version-command"`
+}
+
+type Kubelet struct {
+	Path           string `json:"path"`
+	DownloadURL    string `json:"download-url"`
+	VersionCommand string `json:"version-command"`
+}
+
+type KubeAPIServer struct {
+	Path           string `json:"path"`
+	DownloadURL    string `json:"download-url"`
+	VersionCommand string `json:"version-command"`
+}
+
+type KubeControllerManager struct {
+	Path           string `json:"path"`
+	DownloadURL    string `json:"download-url"`
+	VersionCommand string `json:"version-command"`
+}
+
+type KubeScheduler struct {
+	Path           string `json:"path"`
+	DownloadURL    string `json:"download-url"`
+	VersionCommand string `json:"version-command"`
+}
+
+type CloudControllerManager struct {
+	Path           string `json:"path"`
+	DownloadURL    string `json:"download-url"`
+	VersionCommand string `json:"version-command"`
 }
 
 // NewDefault returns a copy of the default configuration.
@@ -210,20 +231,41 @@ var defaultConfig = Config{
 	WaitBeforeDown: time.Minute,
 	Down:           true,
 
-	KubeProxyPath:                     "/usr/bin/kube-proxy",
-	KubeProxyDownloadURL:              "https://storage.googleapis.com/kubernetes-release/release/v1.13.1/bin/linux/amd64/kube-proxy",
-	KubectlPath:                       "/usr/bin/kubectl",
-	KubectlDownloadURL:                "https://storage.googleapis.com/kubernetes-release/release/v1.13.1/bin/linux/amd64/kubectl",
-	KubeletPath:                       "/usr/bin/kubelet",
-	KubeletDownloadURL:                "https://storage.googleapis.com/kubernetes-release/release/v1.13.1/bin/linux/amd64/kubelet",
-	KubeAPIServerPath:                 "/usr/bin/kube-apiserver",
-	KubeAPIServerDownloadURL:          "https://storage.googleapis.com/kubernetes-release/release/v1.13.1/bin/linux/amd64/kube-apiserver",
-	KubeControllerManagerPath:         "/usr/bin/kube-controller-manager",
-	KubeControllerManagerDownloadURL:  "https://storage.googleapis.com/kubernetes-release/release/v1.13.1/bin/linux/amd64/kube-controller-manager",
-	KubeSchedulerPath:                 "/usr/bin/kube-scheduler",
-	KubeSchedulerDownloadURL:          "https://storage.googleapis.com/kubernetes-release/release/v1.13.1/bin/linux/amd64/kube-scheduler",
-	CloudControllerManagerPath:        "/usr/bin/cloud-controller-manager",
-	CloudControllerManagerDownloadURL: "https://storage.googleapis.com/kubernetes-release/release/v1.13.1/bin/linux/amd64/cloud-controller-manager",
+	KubeProxy: &KubeProxy{
+		Path:           "/usr/bin/kube-proxy",
+		DownloadURL:    "https://storage.googleapis.com/kubernetes-release/release/v1.13.1/bin/linux/amd64/kube-proxy",
+		VersionCommand: "/usr/bin/kube-proxy --version",
+	},
+	Kubectl: &Kubectl{
+		Path:           "/usr/bin/kubectl",
+		DownloadURL:    "https://storage.googleapis.com/kubernetes-release/release/v1.13.1/bin/linux/amd64/kubectl",
+		VersionCommand: "/usr/bin/Kubectl version --client",
+	},
+	Kubelet: &Kubelet{
+		Path:           "/usr/bin/kubelet",
+		DownloadURL:    "https://storage.googleapis.com/kubernetes-release/release/v1.13.1/bin/linux/amd64/kubelet",
+		VersionCommand: "/usr/bin/kubelet --version",
+	},
+	KubeAPIServer: &KubeAPIServer{
+		Path:           "/usr/bin/kube-apiserver",
+		DownloadURL:    "https://storage.googleapis.com/kubernetes-release/release/v1.13.1/bin/linux/amd64/kube-apiserver",
+		VersionCommand: "/usr/bin/kube-apiserver --version",
+	},
+	KubeControllerManager: &KubeControllerManager{
+		Path:           "/usr/bin/kube-controller-manager",
+		DownloadURL:    "https://storage.googleapis.com/kubernetes-release/release/v1.13.1/bin/linux/amd64/kube-controller-manager",
+		VersionCommand: "/usr/bin/kube-controller-manager --version",
+	},
+	KubeScheduler: &KubeScheduler{
+		Path:           "/usr/bin/kube-scheduler",
+		DownloadURL:    "https://storage.googleapis.com/kubernetes-release/release/v1.13.1/bin/linux/amd64/kube-scheduler",
+		VersionCommand: "/usr/bin/kube-scheduler --version",
+	},
+	CloudControllerManager: &CloudControllerManager{
+		Path:           "/usr/bin/cloud-controller-manager",
+		DownloadURL:    "https://storage.googleapis.com/kubernetes-release/release/v1.13.1/bin/linux/amd64/cloud-controller-manager",
+		VersionCommand: "/usr/bin/cloud-controller-manager --version",
+	},
 
 	LogDebug: false,
 	// default, stderr, stdout, or file name
@@ -309,9 +351,16 @@ func (cfg *Config) BackupConfig() (p string, err error) {
 }
 
 const (
-	envPfx            = "AWS_K8S_TESTER_KUBERNETES_"
-	envPfxMasterNodes = "AWS_K8S_TESTER_EC2_MASTER_NODES_"
-	envPfxWorkerNodes = "AWS_K8S_TESTER_EC2_WORKER_NODES_"
+	envPfx                       = "AWS_K8S_TESTER_KUBERNETES_"
+	envPfxKubeProxy              = envPfx + "KUBE_PROXY_"
+	envPfxKubectl                = envPfx + "KUBECTL_"
+	envPfxKubelet                = envPfx + "KUBELET_"
+	envPfxKubeAPIServer          = envPfx + "KUBE_APISERVER_"
+	envPfxKubeControllerManager  = envPfx + "KUBE_CONTROLLER_MANAGER_"
+	envPfxKubeScheduler          = envPfx + "KUBE_SCHEDULER_"
+	envPfxCloudControllerManager = envPfx + "CLOUD_CONTROLLER_MANAGER_"
+	envPfxMasterNodes            = "AWS_K8S_TESTER_EC2_MASTER_NODES_"
+	envPfxWorkerNodes            = "AWS_K8S_TESTER_EC2_WORKER_NODES_"
 )
 
 // UpdateFromEnvs updates fields from environmental variables.
@@ -329,9 +378,9 @@ func (cfg *Config) UpdateFromEnvs() error {
 	}
 	cc := *cfg
 
-	tp1, vv1 := reflect.TypeOf(&cc).Elem(), reflect.ValueOf(&cc).Elem()
-	for i := 0; i < tp1.NumField(); i++ {
-		jv := tp1.Field(i).Tag.Get("json")
+	tpTop, vvTop := reflect.TypeOf(&cc).Elem(), reflect.ValueOf(&cc).Elem()
+	for i := 0; i < tpTop.NumField(); i++ {
+		jv := tpTop.Field(i).Tag.Get("json")
 		if jv == "" {
 			continue
 		}
@@ -344,46 +393,46 @@ func (cfg *Config) UpdateFromEnvs() error {
 		}
 		sv := os.Getenv(env)
 
-		switch vv1.Field(i).Type().Kind() {
+		switch vvTop.Field(i).Type().Kind() {
 		case reflect.String:
-			vv1.Field(i).SetString(sv)
+			vvTop.Field(i).SetString(sv)
 
 		case reflect.Bool:
 			bb, err := strconv.ParseBool(sv)
 			if err != nil {
 				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
 			}
-			vv1.Field(i).SetBool(bb)
+			vvTop.Field(i).SetBool(bb)
 
 		case reflect.Int, reflect.Int32, reflect.Int64:
-			if tp1.Field(i).Name == "WaitBeforeDown" ||
-				tp1.Field(i).Name == "TestTimeout" {
+			if tpTop.Field(i).Name == "WaitBeforeDown" ||
+				tpTop.Field(i).Name == "TestTimeout" {
 				dv, err := time.ParseDuration(sv)
 				if err != nil {
 					return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
 				}
-				vv1.Field(i).SetInt(int64(dv))
+				vvTop.Field(i).SetInt(int64(dv))
 				continue
 			}
 			iv, err := strconv.ParseInt(sv, 10, 64)
 			if err != nil {
 				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
 			}
-			vv1.Field(i).SetInt(iv)
+			vvTop.Field(i).SetInt(iv)
 
 		case reflect.Uint, reflect.Uint32, reflect.Uint64:
 			iv, err := strconv.ParseUint(sv, 10, 64)
 			if err != nil {
 				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
 			}
-			vv1.Field(i).SetUint(iv)
+			vvTop.Field(i).SetUint(iv)
 
 		case reflect.Float32, reflect.Float64:
 			fv, err := strconv.ParseFloat(sv, 64)
 			if err != nil {
 				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
 			}
-			vv1.Field(i).SetFloat(fv)
+			vvTop.Field(i).SetFloat(fv)
 
 		case reflect.Slice:
 			ss := strings.Split(sv, ",")
@@ -391,14 +440,455 @@ func (cfg *Config) UpdateFromEnvs() error {
 			for i := range ss {
 				slice.Index(i).SetString(ss[i])
 			}
-			vv1.Field(i).Set(slice)
+			vvTop.Field(i).Set(slice)
 
 		default:
-			return fmt.Errorf("%q (%v) is not supported as an env", env, vv1.Field(i).Type())
+			return fmt.Errorf("%q (%v) is not supported as an env", env, vvTop.Field(i).Type())
 		}
 	}
-	*cfg = cc
 
+	kubeProxy := *cc.KubeProxy
+	tpKubeProxy, vvKubeProxy := reflect.TypeOf(&kubeProxy).Elem(), reflect.ValueOf(&kubeProxy).Elem()
+	for i := 0; i < tpKubeProxy.NumField(); i++ {
+		jv := tpKubeProxy.Field(i).Tag.Get("json")
+		if jv == "" {
+			continue
+		}
+		jv = strings.Replace(jv, ",omitempty", "", -1)
+		jv = strings.Replace(jv, "-", "_", -1)
+		jv = strings.ToUpper(strings.Replace(jv, "-", "_", -1))
+		env := envPfxKubeProxy + jv
+		if os.Getenv(env) == "" {
+			continue
+		}
+		sv := os.Getenv(env)
+
+		switch vvKubeProxy.Field(i).Type().Kind() {
+		case reflect.String:
+			vvKubeProxy.Field(i).SetString(sv)
+
+		case reflect.Bool:
+			bb, err := strconv.ParseBool(sv)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vvKubeProxy.Field(i).SetBool(bb)
+
+		case reflect.Int, reflect.Int32, reflect.Int64:
+			// if tpKubeProxy.Field(i).Name { continue }
+			iv, err := strconv.ParseInt(sv, 10, 64)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vvKubeProxy.Field(i).SetInt(iv)
+
+		case reflect.Uint, reflect.Uint32, reflect.Uint64:
+			iv, err := strconv.ParseUint(sv, 10, 64)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vvKubeProxy.Field(i).SetUint(iv)
+
+		case reflect.Float32, reflect.Float64:
+			fv, err := strconv.ParseFloat(sv, 64)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vvKubeProxy.Field(i).SetFloat(fv)
+
+		case reflect.Slice:
+			ss := strings.Split(sv, ",")
+			slice := reflect.MakeSlice(reflect.TypeOf([]string{}), len(ss), len(ss))
+			for i := range ss {
+				slice.Index(i).SetString(ss[i])
+			}
+			vvKubeProxy.Field(i).Set(slice)
+
+		default:
+			return fmt.Errorf("%q (%v) is not supported as an env", env, vvKubeProxy.Field(i).Type())
+		}
+	}
+	cc.KubeProxy = &kubeProxy
+
+	kubectl := *cc.Kubectl
+	tpKubectl, vvKubectl := reflect.TypeOf(&kubectl).Elem(), reflect.ValueOf(&kubectl).Elem()
+	for i := 0; i < tpKubectl.NumField(); i++ {
+		jv := tpKubectl.Field(i).Tag.Get("json")
+		if jv == "" {
+			continue
+		}
+		jv = strings.Replace(jv, ",omitempty", "", -1)
+		jv = strings.Replace(jv, "-", "_", -1)
+		jv = strings.ToUpper(strings.Replace(jv, "-", "_", -1))
+		env := envPfxKubectl + jv
+		if os.Getenv(env) == "" {
+			continue
+		}
+		sv := os.Getenv(env)
+
+		switch vvKubectl.Field(i).Type().Kind() {
+		case reflect.String:
+			vvKubectl.Field(i).SetString(sv)
+
+		case reflect.Bool:
+			bb, err := strconv.ParseBool(sv)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vvKubectl.Field(i).SetBool(bb)
+
+		case reflect.Int, reflect.Int32, reflect.Int64:
+			// if tpKubectl.Field(i).Name { continue }
+			iv, err := strconv.ParseInt(sv, 10, 64)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vvKubectl.Field(i).SetInt(iv)
+
+		case reflect.Uint, reflect.Uint32, reflect.Uint64:
+			iv, err := strconv.ParseUint(sv, 10, 64)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vvKubectl.Field(i).SetUint(iv)
+
+		case reflect.Float32, reflect.Float64:
+			fv, err := strconv.ParseFloat(sv, 64)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vvKubectl.Field(i).SetFloat(fv)
+
+		case reflect.Slice:
+			ss := strings.Split(sv, ",")
+			slice := reflect.MakeSlice(reflect.TypeOf([]string{}), len(ss), len(ss))
+			for i := range ss {
+				slice.Index(i).SetString(ss[i])
+			}
+			vvKubectl.Field(i).Set(slice)
+
+		default:
+			return fmt.Errorf("%q (%v) is not supported as an env", env, vvKubectl.Field(i).Type())
+		}
+	}
+	cc.Kubectl = &kubectl
+
+	kubelet := *cc.Kubelet
+	tpKubelet, vvKubelet := reflect.TypeOf(&kubelet).Elem(), reflect.ValueOf(&kubelet).Elem()
+	for i := 0; i < tpKubelet.NumField(); i++ {
+		jv := tpKubelet.Field(i).Tag.Get("json")
+		if jv == "" {
+			continue
+		}
+		jv = strings.Replace(jv, ",omitempty", "", -1)
+		jv = strings.Replace(jv, "-", "_", -1)
+		jv = strings.ToUpper(strings.Replace(jv, "-", "_", -1))
+		env := envPfxKubelet + jv
+		if os.Getenv(env) == "" {
+			continue
+		}
+		sv := os.Getenv(env)
+
+		switch vvKubelet.Field(i).Type().Kind() {
+		case reflect.String:
+			vvKubelet.Field(i).SetString(sv)
+
+		case reflect.Bool:
+			bb, err := strconv.ParseBool(sv)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vvKubelet.Field(i).SetBool(bb)
+
+		case reflect.Int, reflect.Int32, reflect.Int64:
+			// if tpKubelet.Field(i).Name { continue }
+			iv, err := strconv.ParseInt(sv, 10, 64)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vvKubelet.Field(i).SetInt(iv)
+
+		case reflect.Uint, reflect.Uint32, reflect.Uint64:
+			iv, err := strconv.ParseUint(sv, 10, 64)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vvKubelet.Field(i).SetUint(iv)
+
+		case reflect.Float32, reflect.Float64:
+			fv, err := strconv.ParseFloat(sv, 64)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vvKubelet.Field(i).SetFloat(fv)
+
+		case reflect.Slice:
+			ss := strings.Split(sv, ",")
+			slice := reflect.MakeSlice(reflect.TypeOf([]string{}), len(ss), len(ss))
+			for i := range ss {
+				slice.Index(i).SetString(ss[i])
+			}
+			vvKubelet.Field(i).Set(slice)
+
+		default:
+			return fmt.Errorf("%q (%v) is not supported as an env", env, vvKubelet.Field(i).Type())
+		}
+	}
+	cc.Kubelet = &kubelet
+
+	kubeAPIServer := *cc.KubeAPIServer
+	tpKubeAPIServer, vvKubeAPIServer := reflect.TypeOf(&kubeAPIServer).Elem(), reflect.ValueOf(&kubeAPIServer).Elem()
+	for i := 0; i < tpKubeAPIServer.NumField(); i++ {
+		jv := tpKubeAPIServer.Field(i).Tag.Get("json")
+		if jv == "" {
+			continue
+		}
+		jv = strings.Replace(jv, ",omitempty", "", -1)
+		jv = strings.Replace(jv, "-", "_", -1)
+		jv = strings.ToUpper(strings.Replace(jv, "-", "_", -1))
+		env := envPfxKubeAPIServer + jv
+		if os.Getenv(env) == "" {
+			continue
+		}
+		sv := os.Getenv(env)
+
+		switch vvKubeAPIServer.Field(i).Type().Kind() {
+		case reflect.String:
+			vvKubeAPIServer.Field(i).SetString(sv)
+
+		case reflect.Bool:
+			bb, err := strconv.ParseBool(sv)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vvKubeAPIServer.Field(i).SetBool(bb)
+
+		case reflect.Int, reflect.Int32, reflect.Int64:
+			// if tpKubeAPIServer.Field(i).Name { continue }
+			iv, err := strconv.ParseInt(sv, 10, 64)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vvKubeAPIServer.Field(i).SetInt(iv)
+
+		case reflect.Uint, reflect.Uint32, reflect.Uint64:
+			iv, err := strconv.ParseUint(sv, 10, 64)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vvKubeAPIServer.Field(i).SetUint(iv)
+
+		case reflect.Float32, reflect.Float64:
+			fv, err := strconv.ParseFloat(sv, 64)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vvKubeAPIServer.Field(i).SetFloat(fv)
+
+		case reflect.Slice:
+			ss := strings.Split(sv, ",")
+			slice := reflect.MakeSlice(reflect.TypeOf([]string{}), len(ss), len(ss))
+			for i := range ss {
+				slice.Index(i).SetString(ss[i])
+			}
+			vvKubeAPIServer.Field(i).Set(slice)
+
+		default:
+			return fmt.Errorf("%q (%v) is not supported as an env", env, vvKubeAPIServer.Field(i).Type())
+		}
+	}
+	cc.KubeAPIServer = &kubeAPIServer
+
+	kubeControllerManager := *cc.KubeControllerManager
+	tpKubeControllerManager, vvKubeControllerManager := reflect.TypeOf(&kubeControllerManager).Elem(), reflect.ValueOf(&kubeControllerManager).Elem()
+	for i := 0; i < tpKubeControllerManager.NumField(); i++ {
+		jv := tpKubeControllerManager.Field(i).Tag.Get("json")
+		if jv == "" {
+			continue
+		}
+		jv = strings.Replace(jv, ",omitempty", "", -1)
+		jv = strings.Replace(jv, "-", "_", -1)
+		jv = strings.ToUpper(strings.Replace(jv, "-", "_", -1))
+		env := envPfxKubeControllerManager + jv
+		if os.Getenv(env) == "" {
+			continue
+		}
+		sv := os.Getenv(env)
+
+		switch vvKubeControllerManager.Field(i).Type().Kind() {
+		case reflect.String:
+			vvKubeControllerManager.Field(i).SetString(sv)
+
+		case reflect.Bool:
+			bb, err := strconv.ParseBool(sv)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vvKubeControllerManager.Field(i).SetBool(bb)
+
+		case reflect.Int, reflect.Int32, reflect.Int64:
+			// if tpKubeControllerManager.Field(i).Name { continue }
+			iv, err := strconv.ParseInt(sv, 10, 64)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vvKubeControllerManager.Field(i).SetInt(iv)
+
+		case reflect.Uint, reflect.Uint32, reflect.Uint64:
+			iv, err := strconv.ParseUint(sv, 10, 64)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vvKubeControllerManager.Field(i).SetUint(iv)
+
+		case reflect.Float32, reflect.Float64:
+			fv, err := strconv.ParseFloat(sv, 64)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vvKubeControllerManager.Field(i).SetFloat(fv)
+
+		case reflect.Slice:
+			ss := strings.Split(sv, ",")
+			slice := reflect.MakeSlice(reflect.TypeOf([]string{}), len(ss), len(ss))
+			for i := range ss {
+				slice.Index(i).SetString(ss[i])
+			}
+			vvKubeControllerManager.Field(i).Set(slice)
+
+		default:
+			return fmt.Errorf("%q (%v) is not supported as an env", env, vvKubeControllerManager.Field(i).Type())
+		}
+	}
+	cc.KubeControllerManager = &kubeControllerManager
+
+	kubeScheduler := *cc.KubeScheduler
+	tpKubeScheduler, vvKubeScheduler := reflect.TypeOf(&kubeScheduler).Elem(), reflect.ValueOf(&kubeScheduler).Elem()
+	for i := 0; i < tpKubeScheduler.NumField(); i++ {
+		jv := tpKubeScheduler.Field(i).Tag.Get("json")
+		if jv == "" {
+			continue
+		}
+		jv = strings.Replace(jv, ",omitempty", "", -1)
+		jv = strings.Replace(jv, "-", "_", -1)
+		jv = strings.ToUpper(strings.Replace(jv, "-", "_", -1))
+		env := envPfxKubeScheduler + jv
+		if os.Getenv(env) == "" {
+			continue
+		}
+		sv := os.Getenv(env)
+
+		switch vvKubeScheduler.Field(i).Type().Kind() {
+		case reflect.String:
+			vvKubeScheduler.Field(i).SetString(sv)
+
+		case reflect.Bool:
+			bb, err := strconv.ParseBool(sv)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vvKubeScheduler.Field(i).SetBool(bb)
+
+		case reflect.Int, reflect.Int32, reflect.Int64:
+			// if tpKubeScheduler.Field(i).Name { continue }
+			iv, err := strconv.ParseInt(sv, 10, 64)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vvKubeScheduler.Field(i).SetInt(iv)
+
+		case reflect.Uint, reflect.Uint32, reflect.Uint64:
+			iv, err := strconv.ParseUint(sv, 10, 64)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vvKubeScheduler.Field(i).SetUint(iv)
+
+		case reflect.Float32, reflect.Float64:
+			fv, err := strconv.ParseFloat(sv, 64)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vvKubeScheduler.Field(i).SetFloat(fv)
+
+		case reflect.Slice:
+			ss := strings.Split(sv, ",")
+			slice := reflect.MakeSlice(reflect.TypeOf([]string{}), len(ss), len(ss))
+			for i := range ss {
+				slice.Index(i).SetString(ss[i])
+			}
+			vvKubeScheduler.Field(i).Set(slice)
+
+		default:
+			return fmt.Errorf("%q (%v) is not supported as an env", env, vvKubeScheduler.Field(i).Type())
+		}
+	}
+	cc.KubeScheduler = &kubeScheduler
+
+	cloudControllerManager := *cc.CloudControllerManager
+	tpCloudControllerManager, vvCloudControllerManager := reflect.TypeOf(&cloudControllerManager).Elem(), reflect.ValueOf(&cloudControllerManager).Elem()
+	for i := 0; i < tpCloudControllerManager.NumField(); i++ {
+		jv := tpCloudControllerManager.Field(i).Tag.Get("json")
+		if jv == "" {
+			continue
+		}
+		jv = strings.Replace(jv, ",omitempty", "", -1)
+		jv = strings.Replace(jv, "-", "_", -1)
+		jv = strings.ToUpper(strings.Replace(jv, "-", "_", -1))
+		env := envPfxCloudControllerManager + jv
+		if os.Getenv(env) == "" {
+			continue
+		}
+		sv := os.Getenv(env)
+
+		switch vvCloudControllerManager.Field(i).Type().Kind() {
+		case reflect.String:
+			vvCloudControllerManager.Field(i).SetString(sv)
+
+		case reflect.Bool:
+			bb, err := strconv.ParseBool(sv)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vvCloudControllerManager.Field(i).SetBool(bb)
+
+		case reflect.Int, reflect.Int32, reflect.Int64:
+			// if tpCloudControllerManager.Field(i).Name { continue }
+			iv, err := strconv.ParseInt(sv, 10, 64)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vvCloudControllerManager.Field(i).SetInt(iv)
+
+		case reflect.Uint, reflect.Uint32, reflect.Uint64:
+			iv, err := strconv.ParseUint(sv, 10, 64)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vvCloudControllerManager.Field(i).SetUint(iv)
+
+		case reflect.Float32, reflect.Float64:
+			fv, err := strconv.ParseFloat(sv, 64)
+			if err != nil {
+				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vvCloudControllerManager.Field(i).SetFloat(fv)
+
+		case reflect.Slice:
+			ss := strings.Split(sv, ",")
+			slice := reflect.MakeSlice(reflect.TypeOf([]string{}), len(ss), len(ss))
+			for i := range ss {
+				slice.Index(i).SetString(ss[i])
+			}
+			vvCloudControllerManager.Field(i).Set(slice)
+
+		default:
+			return fmt.Errorf("%q (%v) is not supported as an env", env, vvCloudControllerManager.Field(i).Type())
+		}
+	}
+	cc.CloudControllerManager = &cloudControllerManager
+
+	*cfg = cc
 	return nil
 }
 
@@ -563,4 +1053,92 @@ func randString(n int) string {
 		b[i] = ll[rand.Intn(len(ll))]
 	}
 	return string(b)
+}
+
+// Download contains fields for downloading a Kubernetes component.
+type Download struct {
+	Path            string
+	DownloadURL     string
+	DownloadCommand string
+	VersionCommand  string
+}
+
+// DownloadsMaster returns all download commands for Kubernetes master.
+func (cfg *Config) DownloadsMaster() []Download {
+	return []Download{
+		{
+			Path:        cfg.KubeProxy.Path,
+			DownloadURL: cfg.KubeProxy.DownloadURL,
+			DownloadCommand: fmt.Sprintf(
+				"sudo rm -f %s && sudo curl --silent -L --remote-name-all %s -o %s && sudo chmod +x %s && %s",
+				cfg.KubeProxy.Path, cfg.KubeProxy.DownloadURL, cfg.KubeProxy.Path, cfg.KubeProxy.Path, cfg.KubeProxy.VersionCommand,
+			),
+			VersionCommand: cfg.KubeProxy.VersionCommand,
+		},
+		{
+			Path:        cfg.Kubectl.Path,
+			DownloadURL: cfg.Kubectl.DownloadURL,
+			DownloadCommand: fmt.Sprintf(
+				"sudo rm -f %s && sudo curl --silent -L --remote-name-all %s -o %s && sudo chmod +x %s && %s",
+				cfg.Kubectl.Path, cfg.Kubectl.DownloadURL, cfg.Kubectl.Path, cfg.Kubectl.Path, cfg.Kubectl.VersionCommand,
+			),
+			VersionCommand: cfg.Kubectl.VersionCommand,
+		},
+		{
+			Path:        cfg.Kubelet.Path,
+			DownloadURL: cfg.Kubelet.DownloadURL,
+			DownloadCommand: fmt.Sprintf(
+				"sudo rm -f %s && sudo curl --silent -L --remote-name-all %s -o %s && sudo chmod +x %s && %s",
+				cfg.Kubelet.Path, cfg.Kubelet.DownloadURL, cfg.Kubelet.Path, cfg.Kubelet.Path, cfg.Kubelet.VersionCommand,
+			),
+			VersionCommand: cfg.Kubelet.VersionCommand,
+		},
+		{
+			Path:        cfg.KubeAPIServer.Path,
+			DownloadURL: cfg.KubeAPIServer.DownloadURL,
+			DownloadCommand: fmt.Sprintf(
+				"sudo rm -f %s && sudo curl --silent -L --remote-name-all %s -o %s && sudo chmod +x %s && %s",
+				cfg.KubeAPIServer.Path, cfg.KubeAPIServer.DownloadURL, cfg.KubeAPIServer.Path, cfg.KubeAPIServer.Path, cfg.KubeAPIServer.VersionCommand,
+			),
+			VersionCommand: cfg.KubeAPIServer.VersionCommand,
+		},
+		{
+			Path:        cfg.KubeControllerManager.Path,
+			DownloadURL: cfg.KubeControllerManager.DownloadURL,
+			DownloadCommand: fmt.Sprintf(
+				"sudo rm -f %s && sudo curl --silent -L --remote-name-all %s -o %s && sudo chmod +x %s && %s",
+				cfg.KubeControllerManager.Path, cfg.KubeControllerManager.DownloadURL, cfg.KubeControllerManager.Path, cfg.KubeControllerManager.Path, cfg.KubeControllerManager.VersionCommand,
+			),
+			VersionCommand: cfg.KubeControllerManager.VersionCommand,
+		},
+		{
+			Path:        cfg.KubeScheduler.Path,
+			DownloadURL: cfg.KubeScheduler.DownloadURL,
+			DownloadCommand: fmt.Sprintf(
+				"sudo rm -f %s && sudo curl --silent -L --remote-name-all %s -o %s && sudo chmod +x %s && %s",
+				cfg.KubeScheduler.Path, cfg.KubeScheduler.DownloadURL, cfg.KubeScheduler.Path, cfg.KubeScheduler.Path, cfg.KubeScheduler.VersionCommand,
+			),
+			VersionCommand: cfg.KubeScheduler.VersionCommand,
+		},
+		{
+			Path:        cfg.CloudControllerManager.Path,
+			DownloadURL: cfg.CloudControllerManager.DownloadURL,
+			DownloadCommand: fmt.Sprintf(
+				"sudo rm -f %s && sudo curl --silent -L --remote-name-all %s -o %s && sudo chmod +x %s && %s",
+				cfg.CloudControllerManager.Path, cfg.CloudControllerManager.DownloadURL, cfg.CloudControllerManager.Path, cfg.CloudControllerManager.Path, cfg.CloudControllerManager.VersionCommand,
+			),
+			VersionCommand: cfg.CloudControllerManager.VersionCommand,
+		},
+	}
+}
+
+// DownloadsWorker returns all download commands for Kubernetes worker.
+func (cfg *Config) DownloadsWorker() (ds []Download) {
+	for _, v := range cfg.DownloadsMaster() {
+		if strings.HasSuffix(v.Path, "kube-apiserver") {
+			continue
+		}
+		ds = append(ds, v)
+	}
+	return ds
 }
