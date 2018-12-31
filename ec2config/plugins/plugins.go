@@ -11,7 +11,6 @@ import (
 	"text/template"
 
 	etcdplugin "github.com/aws/aws-k8s-tester/etcdconfig/plugins"
-	kubeadmplugin "github.com/aws/aws-k8s-tester/kubeadmconfig/plugins"
 	kubernetesplugin "github.com/aws/aws-k8s-tester/kubernetesconfig/plugins"
 )
 
@@ -33,18 +32,17 @@ func (ss scripts) Swap(i, j int)      { ss[i], ss[j] = ss[j], ss[i] }
 func (ss scripts) Less(i, j int) bool { return keyPriorities[ss[i].key] < keyPriorities[ss[j].key] }
 
 var keyPriorities = map[string]int{ // in the order of:
-	"update-amazon-linux-2":                1,
-	"update-ubuntu":                        2,
-	"install-go":                           3,
-	"install-go-amazon-linux-2":            4,
-	"install-csi":                          5,
-	"install-etcd":                         6,
-	"install-aws-k8s-tester":               7,
-	"install-wrk":                          8,
-	"install-alb":                          9,
-	"install-start-docker-amazon-linux-2":  10,
-	"install-kubernetes-amazon-linux-2":    11,
-	"install-start-kubeadm-amazon-linux-2": 12,
+	"update-amazon-linux-2":               1,
+	"update-ubuntu":                       2,
+	"install-go":                          3,
+	"install-go-amazon-linux-2":           4,
+	"install-csi":                         5,
+	"install-etcd":                        6,
+	"install-aws-k8s-tester":              7,
+	"install-wrk":                         8,
+	"install-alb":                         9,
+	"install-start-docker-amazon-linux-2": 10,
+	"install-kubernetes-amazon-linux-2":   11,
 }
 
 func convertToScript(userName, plugin string) (script, error) {
@@ -155,14 +153,6 @@ make server
 
 	case plugin == "install-kubernetes-amazon-linux-2":
 		return script{key: "install-kubernetes-amazon-linux-2", data: kubernetesplugin.CreateInstall()}, nil
-
-	case strings.HasPrefix(plugin, "install-start-kubeadm-amazon-linux-2-"):
-		id := strings.Replace(plugin, "install-start-kubeadm-amazon-linux-2-", "", -1)
-		s, err := kubeadmplugin.CreateInstallStart(id)
-		if err != nil {
-			return script{}, err
-		}
-		return script{key: "install-start-kubeadm-amazon-linux-2", data: s}, nil
 	}
 
 	return script{}, fmt.Errorf("unknown plugin %q", plugin)
