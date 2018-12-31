@@ -313,14 +313,23 @@ func (md *embedded) Create() (err error) {
 				return
 			}
 			defer os.RemoveAll(sysConfigKubeletPath)
+			remotePath = fmt.Sprintf("/home/%s/kubelet.sysconfig", userName)
 			_, err = instSSH.Send(
 				sysConfigKubeletPath,
-				"/etc/sysconfig/kubelet",
+				remotePath,
 				ssh.WithTimeout(15*time.Second),
 				ssh.WithRetry(3, 3*time.Second),
 			)
 			if err != nil {
-				errc <- fmt.Errorf("failed to send %q to '/etc/sysconfig/kubelet' at master node %q(%q) (error %v)", sysConfigKubeletPath, inst.InstanceID, inst.PublicIP, err)
+				errc <- fmt.Errorf("failed to send %q to %q at master node %q(%q) (error %v)", sysConfigKubeletPath, remotePath, inst.InstanceID, inst.PublicIP, err)
+				return
+			}
+			_, err = instSSH.Run(
+				fmt.Sprintf("sudo cp %s /etc/sysconfig/kubelet", remotePath),
+				ssh.WithTimeout(15*time.Second),
+			)
+			if err != nil {
+				errc <- fmt.Errorf("failed to copy %q to /etc/sysconfig/kubelet at worker node %q(%q) (error %v)", remotePath, inst.InstanceID, inst.PublicIP, err)
 				return
 			}
 			md.lg.Info(
@@ -439,14 +448,23 @@ func (md *embedded) Create() (err error) {
 				return
 			}
 			defer os.RemoveAll(sysConfigKubeletPath)
+			remotePath = fmt.Sprintf("/home/%s/kubelet.sysconfig", userName)
 			_, err = instSSH.Send(
 				sysConfigKubeletPath,
-				"/etc/sysconfig/kubelet",
+				remotePath,
 				ssh.WithTimeout(15*time.Second),
 				ssh.WithRetry(3, 3*time.Second),
 			)
 			if err != nil {
-				errc <- fmt.Errorf("failed to send %q to '/etc/sysconfig/kubelet' at worker node %q(%q) (error %v)", sysConfigKubeletPath, inst.InstanceID, inst.PublicIP, err)
+				errc <- fmt.Errorf("failed to send %q to %q at worker node %q(%q) (error %v)", sysConfigKubeletPath, remotePath, inst.InstanceID, inst.PublicIP, err)
+				return
+			}
+			_, err = instSSH.Run(
+				fmt.Sprintf("sudo cp %s /etc/sysconfig/kubelet", remotePath),
+				ssh.WithTimeout(15*time.Second),
+			)
+			if err != nil {
+				errc <- fmt.Errorf("failed to copy %q to /etc/sysconfig/kubelet at worker node %q(%q) (error %v)", remotePath, inst.InstanceID, inst.PublicIP, err)
 				return
 			}
 			md.lg.Info(
