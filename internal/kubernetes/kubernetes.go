@@ -104,6 +104,7 @@ func (md *embedded) Create() (err error) {
 	}()
 
 	// shared master node VPC and subnets for: etcd nodes, worker nodes
+	// do not run this in goroutine, since VPC for master nodes have to be created at first
 	if err = md.ec2MasterNodesDeployer.Create(); err != nil {
 		return err
 	}
@@ -125,6 +126,7 @@ func (md *embedded) Create() (err error) {
 	go func() {
 		if err = md.etcdTester.Create(); err != nil {
 			errc <- fmt.Errorf("failed to create etcd cluster (%v)", err)
+			return
 		}
 		mu.Lock()
 		md.cfg.ETCDNodesCreated = true
@@ -135,6 +137,7 @@ func (md *embedded) Create() (err error) {
 	go func() {
 		if err = md.ec2WorkerNodesDeployer.Create(); err != nil {
 			errc <- fmt.Errorf("failed to create worker nodes (%v)", err)
+			return
 		}
 		mu.Lock()
 		md.cfg.EC2WorkerNodesCreated = true
@@ -451,7 +454,8 @@ func (md *embedded) terminate() error {
 			LoadBalancerName: aws.String(md.cfg.LoadBalancerName),
 			Instances:        instances,
 		}); err != nil {
-			return err
+			md.lg.Warn("failed to de-register load balancer", zap.Error(err))
+			ess = append(ess, err.Error())
 		}
 		md.cfg.LoadBalancerRegistered = false
 		md.lg.Info("de-registered instances to load balancer", zap.String("name", md.cfg.LoadBalancerName), zap.Int("instances", len(instances)))
@@ -468,31 +472,59 @@ func (md *embedded) terminate() error {
 		md.lg.Info("deleted load balancer", zap.String("name", md.cfg.LoadBalancerName))
 	}
 
+	errc, cnt := make(chan error), 0
+	var mu sync.Mutex
 	if md.cfg.ETCDNodesCreated {
+		cnt++
 		// terminate etcd and worker nodes first in order to remove VPC dependency safely
-		if err := md.etcdTester.Terminate(); err != nil {
-			md.lg.Warn("failed to terminate etcd nodes", zap.Error(err))
-			ess = append(ess, err.Error())
-		}
-		md.cfg.ETCDNodesCreated = false
+		go func() {
+			if err := md.etcdTester.Terminate(); err != nil {
+				md.lg.Warn("failed to terminate etcd nodes", zap.Error(err))
+				errc <- fmt.Errorf("failed to terminate etcd nodes (%v)", err)
+				return
+			}
+			mu.Lock()
+			md.cfg.ETCDNodesCreated = false
+			mu.Unlock()
+			errc <- nil
+		}()
 	}
 
 	if md.cfg.EC2WorkerNodesCreated {
-		if err := md.ec2WorkerNodesDeployer.Terminate(); err != nil {
-			md.lg.Warn("failed to terminate EC2 worker nodes", zap.Error(err))
-			ess = append(ess, err.Error())
-		}
-		md.cfg.EC2WorkerNodesCreated = false
+		cnt++
+		go func() {
+			if err := md.ec2WorkerNodesDeployer.Terminate(); err != nil {
+				md.lg.Warn("failed to terminate EC2 worker nodes", zap.Error(err))
+				errc <- fmt.Errorf("failed to terminate EC2 worker nodes (%v)", err)
+				return
+			}
+			mu.Lock()
+			md.cfg.EC2WorkerNodesCreated = false
+			mu.Unlock()
+			errc <- nil
+		}()
 	}
 
 	if md.cfg.EC2MasterNodesCreated {
-		if err := md.ec2MasterNodesDeployer.Terminate(); err != nil {
-			md.lg.Warn("failed to terminate EC2 master nodes", zap.Error(err))
-			ess = append(ess, err.Error())
-		}
-		md.cfg.EC2MasterNodesCreated = false
+		cnt++
+		go func() {
+			if err := md.ec2MasterNodesDeployer.Terminate(); err != nil {
+				md.lg.Warn("failed to terminate EC2 master nodes", zap.Error(err))
+				errc <- fmt.Errorf("failed to terminate EC2 master nodes (%v)", err)
+				return
+			}
+			mu.Lock()
+			md.cfg.EC2MasterNodesCreated = false
+			mu.Unlock()
+			errc <- nil
+		}()
 	}
 
+	for i := 0; i < cnt; i++ {
+		if err := <-errc; err != nil {
+			ess = append(ess, err.Error())
+		}
+	}
 	if len(ess) == 0 {
 		return nil
 	}
