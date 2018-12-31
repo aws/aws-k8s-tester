@@ -21,7 +21,7 @@ import (
 
 // Config defines kubeadm test configuration.
 type Config struct {
-	// Tag is the tag used for S3 bucket name.
+	// Tag is the tag used for S3 bucket name and load balancer name.
 	// If empty, deployer auto-populates it.
 	Tag string `json:"tag,omitempty"`
 	// ClusterName is the cluster name.
@@ -98,6 +98,11 @@ type Config struct {
 	// EC2WorkerNodes defines ec2 instance configuration for Kubernetes worker nodes.
 	EC2WorkerNodes *ec2config.Config `json:"ec2-worker-nodes"`
 
+	// LoadBalancerName is the name of the load balancer.
+	LoadBalancerName string `json:"load-balancer-name,omitempty"`
+	// LoadBalancerDNSName is the DNS name output from load balancer creation.
+	LoadBalancerDNSName string `json:"load-balancer-dns-name,omitempty"`
+
 	// TestTimeout is the test operation timeout.
 	TestTimeout time.Duration `json:"test-timeout,omitempty"`
 }
@@ -152,6 +157,7 @@ func NewDefault() *Config {
 
 func init() {
 	defaultConfig.Tag = genTag()
+	defaultConfig.LoadBalancerName = defaultConfig.Tag + "-lb"
 	defaultConfig.ClusterName = defaultConfig.Tag + "-" + randString(5)
 
 	defaultConfig.ETCDNodes.EC2.AWSRegion = defaultConfig.AWSRegion

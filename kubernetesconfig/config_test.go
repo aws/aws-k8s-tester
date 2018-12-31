@@ -13,6 +13,7 @@ import (
 func TestEnv(t *testing.T) {
 	cfg := NewDefault()
 
+	os.Setenv("AWS_K8S_TESTER_KUBERNETES_LOAD_BALANCER_NAME", "hello")
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_DOWN", "false")
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBE_PROXY_PATH", "/usr/local/bin/kube-proxy")
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBE_PROXY_DOWNLOAD_URL", "https://storage.googleapis.com/kubernetes-release/release/v1.20.0/bin/linux/amd64/kube-proxy")
@@ -54,6 +55,7 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_ETCD_CLUSTER_VERSION", "v3.2.15")
 
 	defer func() {
+		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_LOAD_BALANCER_NAME")
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_DOWN")
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBE_PROXY_PATH")
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBE_PROXY_DOWNLOAD_URL")
@@ -101,6 +103,10 @@ func TestEnv(t *testing.T) {
 	}
 	if err := cfg.ValidateAndSetDefaults(); err != nil {
 		t.Fatal(err)
+	}
+
+	if cfg.LoadBalancerName != "hello" {
+		t.Fatalf("unexpected LoadBalancerName, got %q", cfg.LoadBalancerName)
 	}
 
 	if cfg.Down {

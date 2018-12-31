@@ -1,4 +1,4 @@
-// Package kubernetes implements Kubernetes test operations.
+// Package kubernetes implements Kubernetes operations.
 package kubernetes
 
 import (
@@ -17,6 +17,7 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/pkg/zaputil"
 	"github.com/aws/aws-k8s-tester/storagetester"
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/elb"
 	"github.com/aws/aws-sdk-go/service/elb/elbiface"
@@ -95,20 +96,21 @@ func (md *embedded) Create() (err error) {
 	md.cfg.KubeConfigPathURL = genS3URL(md.cfg.EC2MasterNodes.AWSRegion, md.cfg.Tag, md.cfg.KubeConfigPathBucket)
 	md.cfg.LogOutputToUploadPathURL = genS3URL(md.cfg.EC2MasterNodes.AWSRegion, md.cfg.Tag, md.cfg.EC2MasterNodes.LogOutputToUploadPathBucket)
 
+	// shared master node VPC and subnets for: etcd nodes, worker nodes
 	if err = md.ec2MasterNodesDeployer.Create(); err != nil {
 		return err
 	}
 	md.cfg.Sync()
 
-	md.lg.Info("reusing VPC from master nodes for worker nodes", zap.String("vpc-id", md.cfg.EC2MasterNodes.VPCID))
-	// share/reuse VPC from master nodes
 	md.cfg.ETCDNodes.EC2.VPCID = md.cfg.EC2MasterNodes.VPCID
 	md.cfg.ETCDNodes.EC2Bastion.VPCID = md.cfg.EC2MasterNodes.VPCID
 	md.cfg.EC2WorkerNodes.VPCID = md.cfg.EC2MasterNodes.VPCID
+
 	// prevent VPC double-delete
 	md.cfg.ETCDNodes.EC2.VPCCreated = false
 	md.cfg.ETCDNodes.EC2Bastion.VPCCreated = false
 	md.cfg.EC2WorkerNodes.VPCCreated = false
+	md.cfg.Sync()
 
 	if err = md.etcdTester.Create(); err != nil {
 		return err
@@ -137,10 +139,30 @@ func (md *embedded) Create() (err error) {
 		return err
 	}
 
+	elbOut, elbErr := md.elbv1.CreateLoadBalancer(&elb.CreateLoadBalancerInput{
+		LoadBalancerName: aws.String(md.cfg.LoadBalancerName),
+		SecurityGroups:   aws.StringSlice(md.cfg.EC2MasterNodes.SecurityGroupIDs),
+		Subnets:          aws.StringSlice(md.cfg.EC2MasterNodes.SubnetIDs),
+		Listeners: []*elb.Listener{
+			{
+				InstancePort:     aws.Int64(443),
+				InstanceProtocol: aws.String("TCP"),
+				LoadBalancerPort: aws.Int64(443),
+				Protocol:         aws.String("TCP"),
+			},
+		},
+		Tags: []*elb.Tag{
+			{Key: aws.String("Name"), Value: aws.String(md.cfg.LoadBalancerName)},
+		},
+	})
+	if elbErr != nil {
+		return elbErr
+	}
+	md.lg.Info("created load balancer", zap.String("name", md.cfg.LoadBalancerName), zap.String("dns-name", *elbOut.DNSName))
+
 	downloadsMaster := md.cfg.DownloadsMaster()
 	downloadsWorker := md.cfg.DownloadsWorker()
 	errc, ess := make(chan error), make([]string, 0)
-
 	for _, masterEC2 := range md.cfg.EC2MasterNodes.Instances {
 		go func(inst ec2config.Instance) {
 			instSSH, serr := ssh.New(ssh.Config{
@@ -322,7 +344,7 @@ func (md *embedded) Terminate() error {
 
 	md.lg.Info("terminating kubernetes")
 	if md.cfg.UploadTesterLogs && len(md.cfg.EC2MasterNodes.Instances) > 0 {
-		var fpathToS3PathMasterNodes map[string]string
+		fpathToS3PathMasterNodes := make(map[string]string)
 		fpathToS3PathMasterNodes, err := fetchLogs(
 			md.lg,
 			md.cfg.EC2MasterNodes.UserName,
@@ -337,7 +359,7 @@ func (md *embedded) Terminate() error {
 			md.lg.Warn("failed to fetch master nodes logs", zap.Error(err))
 		}
 
-		var fpathToS3PathWorkerNodes map[string]string
+		fpathToS3PathWorkerNodes := make(map[string]string)
 		fpathToS3PathWorkerNodes, err = fetchLogs(
 			md.lg,
 			md.cfg.EC2MasterNodes.UserName,
@@ -361,19 +383,30 @@ func (md *embedded) Terminate() error {
 	}
 
 	ess := make([]string, 0)
+
+	if _, err := md.elbv1.DeleteLoadBalancer(&elb.DeleteLoadBalancerInput{
+		LoadBalancerName: aws.String(md.cfg.LoadBalancerName),
+	}); err != nil {
+		md.lg.Warn("failed to delete load balancer", zap.Error(err))
+		ess = append(ess, err.Error())
+	}
+
 	// terminate etcd and worker nodes first in order to remove VPC dependency safely
 	if err := md.etcdTester.Terminate(); err != nil {
 		md.lg.Warn("failed to terminate etcd nodes", zap.Error(err))
 		ess = append(ess, err.Error())
 	}
+
 	if err := md.ec2WorkerNodesDeployer.Terminate(); err != nil {
 		md.lg.Warn("failed to terminate EC2 worker nodes", zap.Error(err))
 		ess = append(ess, err.Error())
 	}
+
 	if err := md.ec2MasterNodesDeployer.Terminate(); err != nil {
 		md.lg.Warn("failed to terminate EC2 master nodes", zap.Error(err))
 		ess = append(ess, err.Error())
 	}
+
 	if len(ess) == 0 {
 		return nil
 	}
