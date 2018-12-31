@@ -36,6 +36,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.9...0.2.0).
 - Make [`internal/ec2` logging less verbose](https://github.com/aws/aws-k8s-tester/commit/1ad8b1c1718874ea51812583d5463863db4617a9).
 - Make [`kubectl cluster-info dump` output less verbose](https://github.com/aws/aws-k8s-tester/commit/9a7775552ecad300783e609a0ed3677e87f2e54e).
 - Make [`internal/ssh` `"verbose"` field `false` by default](https://github.com/aws/aws-k8s-tester/commit/1ad8b1c1718874ea51812583d5463863db4617a9).
+- Return [error on `internal/etcd` `"MemberAdd"` operation failure](https://github.com/aws/aws-k8s-tester/commit/d03985668fd0afbabb43f46269c6daf2a779d376).
 
 ### Other
 
