@@ -530,6 +530,8 @@ func (md *embedded) terminate() error {
 		} else {
 			md.cfg.EC2MasterNodesCreated = false
 		}
+	} else {
+		md.lg.Warn("master nodes were never created")
 	}
 	if len(ess) == 0 {
 		return nil
