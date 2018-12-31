@@ -428,7 +428,7 @@ func (md *embedded) deleteInstances() (err error) {
 		ids = append(ids, id)
 	}
 	if len(ids) == 0 {
-		md.lg.Warn("no EC2 instance found, nothing to delete")
+		md.lg.Warn("no EC2 instance found, nothing to delete", zap.String("cluster-name", md.cfg.ClusterName))
 		return nil
 	}
 
@@ -462,7 +462,7 @@ func (md *embedded) deleteInstances() (err error) {
 				}
 				if *inst.State.Name == "terminated" {
 					terminated[id] = struct{}{}
-					md.lg.Info("terminated", zap.String("instance-id", id))
+					md.lg.Info("terminated", zap.String("cluster-name", md.cfg.ClusterName), zap.String("instance-id", id))
 				}
 			}
 		}

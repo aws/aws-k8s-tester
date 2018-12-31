@@ -519,9 +519,6 @@ func (md *embedded) terminate() error {
 			ess = append(ess, err.Error())
 		}
 	}
-	if len(ess) == 0 {
-		return nil
-	}
 
 	if md.cfg.EC2MasterNodesCreated {
 		if err := md.ec2MasterNodesDeployer.Terminate(); err != nil {
@@ -533,6 +530,7 @@ func (md *embedded) terminate() error {
 	} else {
 		md.lg.Warn("master nodes were never created")
 	}
+
 	if len(ess) == 0 {
 		return nil
 	}
