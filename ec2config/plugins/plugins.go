@@ -80,7 +80,7 @@ func convertToScript(userName, plugin string) (script, error) {
 			GitCloneURL:   fmt.Sprintf("https://github.com/%s/aws-ebs-csi-driver.git", gitHubAccount),
 			IsPR:          isPR,
 			GitBranch:     gitBranch,
-			InstallScript: `make aws-ebs-csi-driver && sudo cp ./bin/aws-ebs-csi-driver /usr/local/bin/aws-ebs-csi-driver`,
+			InstallScript: fmt.Sprintf(`[[ %q != "kubernetes-sigs" ]] && mv ../../%s/ ../../kubernetes-sigs && cd ../../kubernetes-sigs/aws-ebs-csi-driver; make aws-ebs-csi-driver && sudo cp ./bin/aws-ebs-csi-driver /usr/local/bin/aws-ebs-csi-driver`, gitHubAccount, gitHubAccount),
 		})
 		if err != nil {
 			return script{}, err
