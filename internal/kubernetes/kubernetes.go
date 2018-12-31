@@ -99,7 +99,7 @@ func (md *embedded) Create() (err error) {
 	defer func() {
 		if err != nil {
 			md.lg.Warn("failed to create Kubernetes, reverting", zap.Error(err))
-			md.lg.Warn("failed to create Kubernetes, reverted", zap.Error(md.Terminate()))
+			md.lg.Warn("failed to create Kubernetes, reverted", zap.Error(md.terminate()))
 		}
 	}()
 
@@ -363,7 +363,10 @@ sudo journalctl --no-pager --output=cat -u kubelet
 func (md *embedded) Terminate() error {
 	md.mu.Lock()
 	defer md.mu.Unlock()
+	return md.terminate()
+}
 
+func (md *embedded) terminate() error {
 	if md.cfg.UploadKubeConfig && md.cfg.EC2MasterNodesCreated {
 		err := md.ec2MasterNodesDeployer.UploadToBucketForTests(md.cfg.KubeConfigPath, md.cfg.KubeConfigPathBucket)
 		if err == nil {

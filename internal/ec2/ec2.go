@@ -205,7 +205,7 @@ func (md *embedded) Create() (err error) {
 		} else {
 			md.cfg.VPCCIDR = *do.Vpcs[0].CidrBlock
 		}
-		md.lg.Info(
+		md.lg.Debug(
 			"found subnets",
 			zap.String("vpc-id", md.cfg.VPCID),
 			zap.String("vpc-cidr", md.cfg.VPCCIDR),
@@ -367,7 +367,7 @@ func (md *embedded) Delete(id string) (err error) {
 	}
 
 	now := time.Now().UTC()
-	md.lg.Info("deleting an instance", zap.String("cluster-name", md.cfg.ClusterName), zap.String("instance-id", id))
+	md.lg.Debug("deleting an instance", zap.String("cluster-name", md.cfg.ClusterName), zap.String("instance-id", id))
 
 	_, ok := md.cfg.Instances[id]
 	if !ok {
@@ -670,6 +670,7 @@ func (md *embedded) createInstances() (err error) {
 
 			md.lg.Info(
 				"created EC2 instance group",
+				zap.String("cluster-name", md.cfg.ClusterName),
 				zap.String("subnet-id", subnetID),
 				zap.String("availability-zone", md.cfg.SubnetIDToAvailabilityZone[subnetID]),
 				zap.Int("instance-count", n),
@@ -721,6 +722,7 @@ func (md *embedded) createInstances() (err error) {
 
 			md.lg.Info(
 				"created EC2 instance group",
+				zap.String("cluster-name", md.cfg.ClusterName),
 				zap.String("subnet-id", subnetID),
 				zap.String("availability-zone", md.cfg.SubnetIDToAvailabilityZone[subnetID]),
 			)
@@ -764,6 +766,7 @@ func (md *embedded) createInstances() (err error) {
 							iv := ConvertEC2Instance(inst)
 							md.cfg.Instances[id] = iv
 							md.lg.Info("instance is ready",
+								zap.String("cluster-name", md.cfg.ClusterName),
 								zap.String("instance-id", iv.InstanceID),
 								zap.String("instance-public-ip", iv.PublicIP),
 								zap.String("instance-private-ip", iv.PrivateIP),
@@ -788,6 +791,7 @@ func (md *embedded) createInstances() (err error) {
 
 	md.lg.Info(
 		"created EC2 instances",
+		zap.String("cluster-name", md.cfg.ClusterName),
 		zap.Int("cluster-size", md.cfg.ClusterSize),
 		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 	)
@@ -796,6 +800,7 @@ func (md *embedded) createInstances() (err error) {
 		md.cfg.Sync()
 		md.lg.Info(
 			"waiting for EC2 instances",
+			zap.String("cluster-name", md.cfg.ClusterName),
 			zap.Int("cluster-size", md.cfg.ClusterSize),
 			zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 		)
@@ -854,12 +859,12 @@ func (md *embedded) wait(mm map[string]ec2config.Instance) {
 
 					if IsReady(string(out)) {
 						sh.Close()
-						md.lg.Info("cloud-init-output.log READY!", zap.String("instance-id", id))
+						md.lg.Info("cloud-init-output.log READY!", zap.String("cluster-name", md.cfg.ClusterName), zap.String("instance-id", id))
 						delete(mm, id)
 						continue done
 					}
 
-					md.lg.Info("cloud-init-output NOT READY", zap.String("instance-id", id))
+					md.lg.Info("cloud-init-output NOT READY", zap.String("cluster-name", md.cfg.ClusterName), zap.String("instance-id", id))
 					fmt.Println(md.cfg.SSHCommands())
 				}
 			}

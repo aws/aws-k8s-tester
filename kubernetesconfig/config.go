@@ -251,7 +251,7 @@ var workerNodesPorts = []string{
 func genTag() string {
 	// use UTC time for everything
 	now := time.Now().UTC()
-	return fmt.Sprintf("awsk8stester-kubernetes-%d%02d%02d", now.Year(), now.Month(), now.Day())
+	return fmt.Sprintf("awsk8stester-k8s-%d%02d%02d", now.Year(), now.Month(), now.Day())
 }
 
 var defaultConfig = Config{
@@ -1040,6 +1040,11 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 	}
 	if cfg.EC2WorkerNodes.UserName != "ec2-user" {
 		return fmt.Errorf("EC2WorkerNodes.UserName expected 'ec2-user' user name, got %q", cfg.EC2WorkerNodes.UserName)
+	}
+
+	// to prevent "ValidationError: LoadBalancer name cannot be longer than 32 characters"
+	if len(cfg.LoadBalancerName) > 31 {
+		cfg.LoadBalancerName = cfg.LoadBalancerName[len(cfg.LoadBalancerName)-31:]
 	}
 
 	if cfg.Tag == "" {
