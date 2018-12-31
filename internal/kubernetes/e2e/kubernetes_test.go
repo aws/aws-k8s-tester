@@ -13,7 +13,7 @@ import (
 )
 
 /*
-RUN_AWS_TESTS=1 go test -v -timeout 2h -run TestKubernetes
+GO111MODULE=on RUN_AWS_TESTS=1 go test -v -timeout 2h -run TestKubernetes
 */
 func TestKubernetes(t *testing.T) {
 	if os.Getenv("RUN_AWS_TESTS") != "1" {

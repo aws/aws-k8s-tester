@@ -4,6 +4,7 @@ package kubernetes
 import (
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -105,6 +106,7 @@ func (md *embedded) Create() (err error) {
 
 	// shared master node VPC and subnets for: etcd nodes, worker nodes
 	// do not run this in goroutine, since VPC for master nodes have to be created at first
+	os.RemoveAll(md.cfg.EC2MasterNodes.KeyPath)
 	if err = md.ec2MasterNodesDeployer.Create(); err != nil {
 		return err
 	}
