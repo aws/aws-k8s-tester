@@ -15,18 +15,21 @@ func TestEnv(t *testing.T) {
 
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_LOAD_BALANCER_NAME", "hello")
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_DOWN", "false")
-	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBE_PROXY_PATH", "/usr/local/bin/kube-proxy")
-	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBE_PROXY_DOWNLOAD_URL", "https://storage.googleapis.com/kubernetes-release/release/v1.20.0/bin/linux/amd64/kube-proxy")
-	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBE_PROXY_VERSION_COMMAND", "/usr/local/bin/kube-proxy --version || true")
-	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBECTL_PATH", "/usr/local/bin/kubectl")
-	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBECTL_DOWNLOAD_URL", "https://storage.googleapis.com/kubernetes-release/release/v1.20.0/bin/linux/amd64/kubectl")
-	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBECTL_VERSION_COMMAND", "/usr/local/bin/kubectl version --client || true")
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBELET_MASTER_NODES_PATH", "/usr/local/bin/kubelet")
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBELET_MASTER_NODES_DOWNLOAD_URL", "https://storage.googleapis.com/kubernetes-release/release/v1.20.0/bin/linux/amd64/kubelet")
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBELET_MASTER_NODES_VERSION_COMMAND", "/usr/local/bin/kubelet --version || true")
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBELET_WORKER_NODES_PATH", "/usr/local/bin/kubelet")
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBELET_WORKER_NODES_DOWNLOAD_URL", "https://storage.googleapis.com/kubernetes-release/release/v1.20.0/bin/linux/amd64/kubelet")
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBELET_WORKER_NODES_VERSION_COMMAND", "/usr/local/bin/kubelet --version || true")
+	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBE_PROXY_MASTER_NODES_PATH", "/usr/local/bin/kube-proxy")
+	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBE_PROXY_MASTER_NODES_DOWNLOAD_URL", "https://storage.googleapis.com/kubernetes-release/release/v1.20.0/bin/linux/amd64/kube-proxy")
+	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBE_PROXY_MASTER_NODES_VERSION_COMMAND", "/usr/local/bin/kube-proxy --version || true")
+	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBE_PROXY_WORKER_NODES_PATH", "/usr/local/bin/kube-proxy")
+	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBE_PROXY_WORKER_NODES_DOWNLOAD_URL", "https://storage.googleapis.com/kubernetes-release/release/v1.20.0/bin/linux/amd64/kube-proxy")
+	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBE_PROXY_WORKER_NODES_VERSION_COMMAND", "/usr/local/bin/kube-proxy --version || true")
+	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBECTL_PATH", "/usr/local/bin/kubectl")
+	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBECTL_DOWNLOAD_URL", "https://storage.googleapis.com/kubernetes-release/release/v1.20.0/bin/linux/amd64/kubectl")
+	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBECTL_VERSION_COMMAND", "/usr/local/bin/kubectl version --client || true")
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBE_APISERVER_PATH", "/usr/local/bin/kube-apiserver")
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBE_APISERVER_DOWNLOAD_URL", "https://storage.googleapis.com/kubernetes-release/release/v1.20.0/bin/linux/amd64/kube-apiserver")
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBE_APISERVER_VERSION_COMMAND", "/usr/local/bin/kube-apiserver --version || true")
@@ -60,18 +63,21 @@ func TestEnv(t *testing.T) {
 	defer func() {
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_LOAD_BALANCER_NAME")
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_DOWN")
-		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBE_PROXY_PATH")
-		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBE_PROXY_DOWNLOAD_URL")
-		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBE_PROXY_VERSION_COMMAND")
-		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBECTL_PATH")
-		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBECTL_DOWNLOAD_URL")
-		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBECTL_VERSION_COMMAND")
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBELET_MASTER_NODES_PATH")
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBELET_MASTER_NODES_DOWNLOAD_URL")
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBELET_MASTER_NODES_VERSION_COMMAND")
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBELET_WORKER_NODES_PATH")
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBELET_WORKER_NODES_DOWNLOAD_URL")
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBELET_WORKER_NODES_VERSION_COMMAND")
+		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBE_PROXY_MASTER_NODES_PATH")
+		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBE_PROXY_MASTER_NODES_DOWNLOAD_URL")
+		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBE_PROXY_MASTER_NODES_VERSION_COMMAND")
+		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBE_PROXY_WORKER_NODES_PATH")
+		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBE_PROXY_WORKER_NODES_DOWNLOAD_URL")
+		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBE_PROXY_WORKER_NODES_VERSION_COMMAND")
+		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBECTL_PATH")
+		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBECTL_DOWNLOAD_URL")
+		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBECTL_VERSION_COMMAND")
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBE_APISERVER_PATH")
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBE_APISERVER_DOWNLOAD_URL")
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBE_APISERVER_VERSION_COMMAND")
@@ -119,24 +125,6 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("unexpected Down, got %v", cfg.Down)
 	}
 
-	if cfg.KubeProxy.Path != "/usr/local/bin/kube-proxy" {
-		t.Fatalf("unexpected KubeProxy.Path, got %q", cfg.KubeProxy.Path)
-	}
-	if cfg.KubeProxy.DownloadURL != "https://storage.googleapis.com/kubernetes-release/release/v1.20.0/bin/linux/amd64/kube-proxy" {
-		t.Fatalf("unexpected KubeProxy.DownloadURL, got %q", cfg.KubeProxy.DownloadURL)
-	}
-	if cfg.KubeProxy.VersionCommand != "/usr/local/bin/kube-proxy --version || true" {
-		t.Fatalf("unexpected KubeProxy.VersionCommand, got %q", cfg.KubeProxy.DownloadURL)
-	}
-	if cfg.Kubectl.Path != "/usr/local/bin/kubectl" {
-		t.Fatalf("unexpected Kubectl.Path, got %q", cfg.Kubectl.Path)
-	}
-	if cfg.Kubectl.DownloadURL != "https://storage.googleapis.com/kubernetes-release/release/v1.20.0/bin/linux/amd64/kubectl" {
-		t.Fatalf("unexpected Kubectl.DownloadURL, got %q", cfg.Kubectl.DownloadURL)
-	}
-	if cfg.Kubectl.VersionCommand != "/usr/local/bin/kubectl version --client || true" {
-		t.Fatalf("unexpected Kubectl.VersionCommand, got %q", cfg.Kubectl.VersionCommand)
-	}
 	if cfg.KubeletMasterNodes.Path != "/usr/local/bin/kubelet" {
 		t.Fatalf("unexpected KubeletMasterNodes.Path, got %q", cfg.KubeletMasterNodes.Path)
 	}
@@ -154,6 +142,33 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.KubeletWorkerNodes.VersionCommand != "/usr/local/bin/kubelet --version || true" {
 		t.Fatalf("unexpected KubeletWorkerNodes.VersionCommand, got %q", cfg.KubeletWorkerNodes.VersionCommand)
+	}
+	if cfg.KubeProxyMasterNodes.Path != "/usr/local/bin/kube-proxy" {
+		t.Fatalf("unexpected KubeProxyMasterNodes.Path, got %q", cfg.KubeProxyMasterNodes.Path)
+	}
+	if cfg.KubeProxyMasterNodes.DownloadURL != "https://storage.googleapis.com/kubernetes-release/release/v1.20.0/bin/linux/amd64/kube-proxy" {
+		t.Fatalf("unexpected KubeProxyMasterNodes.DownloadURL, got %q", cfg.KubeProxyMasterNodes.DownloadURL)
+	}
+	if cfg.KubeProxyMasterNodes.VersionCommand != "/usr/local/bin/kube-proxy --version || true" {
+		t.Fatalf("unexpected KubeProxyMasterNodes.VersionCommand, got %q", cfg.KubeProxyMasterNodes.DownloadURL)
+	}
+	if cfg.KubeProxyWorkerNodes.Path != "/usr/local/bin/kube-proxy" {
+		t.Fatalf("unexpected KubeProxyWorkerNodes.Path, got %q", cfg.KubeProxyWorkerNodes.Path)
+	}
+	if cfg.KubeProxyWorkerNodes.DownloadURL != "https://storage.googleapis.com/kubernetes-release/release/v1.20.0/bin/linux/amd64/kube-proxy" {
+		t.Fatalf("unexpected KubeProxyWorkerNodes.DownloadURL, got %q", cfg.KubeProxyWorkerNodes.DownloadURL)
+	}
+	if cfg.KubeProxyWorkerNodes.VersionCommand != "/usr/local/bin/kube-proxy --version || true" {
+		t.Fatalf("unexpected KubeProxyWorkerNodes.VersionCommand, got %q", cfg.KubeProxyWorkerNodes.DownloadURL)
+	}
+	if cfg.Kubectl.Path != "/usr/local/bin/kubectl" {
+		t.Fatalf("unexpected Kubectl.Path, got %q", cfg.Kubectl.Path)
+	}
+	if cfg.Kubectl.DownloadURL != "https://storage.googleapis.com/kubernetes-release/release/v1.20.0/bin/linux/amd64/kubectl" {
+		t.Fatalf("unexpected Kubectl.DownloadURL, got %q", cfg.Kubectl.DownloadURL)
+	}
+	if cfg.Kubectl.VersionCommand != "/usr/local/bin/kubectl version --client || true" {
+		t.Fatalf("unexpected Kubectl.VersionCommand, got %q", cfg.Kubectl.VersionCommand)
 	}
 	if cfg.KubeAPIServer.Path != "/usr/local/bin/kube-apiserver" {
 		t.Fatalf("unexpected KubeAPIServer.Path, got %q", cfg.KubeAPIServer.Path)
