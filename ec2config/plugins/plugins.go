@@ -87,8 +87,8 @@ func convertToScript(userName, plugin string) (script, error) {
 		isPR := perr == nil
 		s, err := createInstallGit(gitInfo{
 			GitRepo:       "aws-ebs-csi-driver",
-			GitClonePath:  fmt.Sprintf("${GOPATH}/src/github.com/${CSI_GITHUB_ACCOUNT}"),
-			GitCloneURL:   fmt.Sprintf("https://github.com/${CSI_GITHUB_ACCOUNT}/aws-ebs-csi-driver.git"),
+			GitClonePath:  "${GOPATH}/src/github.com/${CSI_GITHUB_ACCOUNT}",
+			GitCloneURL:   "https://github.com/${CSI_GITHUB_ACCOUNT}/aws-ebs-csi-driver.git",
 			IsPR:          isPR,
 			GitBranch:     gitBranch,
 			InstallScript: `[[ "${CSI_GITHUB_ACCOUNT}" != "kubernetes-sigs" ]] && mv ../../${CSI_GITHUB_ACCOUNT}/ ../../kubernetes-sigs && cd ../../kubernetes-sigs/aws-ebs-csi-driver; make aws-ebs-csi-driver && sudo cp ./bin/aws-ebs-csi-driver /usr/local/bin/aws-ebs-csi-driver`,
