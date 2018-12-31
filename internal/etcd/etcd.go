@@ -1003,6 +1003,9 @@ func (md *embedded) MemberAdd(ver string) (err error) {
 		fmt.Sprintf("sudo bash %s", remotePath),
 		ssh.WithTimeout(15*time.Second),
 	)
+	if err != nil {
+		return fmt.Errorf("failed to run etcd install script (%v)", err)
+	}
 	md.lg.Info("installed etcd", zap.String("ver", ver), zap.Error(err))
 
 	md.lg.Info("starting 'member add' command", zap.String("ver", ver))
