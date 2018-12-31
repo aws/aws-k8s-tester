@@ -435,7 +435,7 @@ func (md *embedded) deleteInstances() (err error) {
 	_, err = md.ec2.TerminateInstances(&ec2.TerminateInstancesInput{
 		InstanceIds: aws.StringSlice(ids),
 	})
-	md.lg.Info("terminating", zap.Strings("instance-ids", ids), zap.Error(err))
+	md.lg.Info("terminating", zap.String("cluster-name", md.cfg.ClusterName), zap.Strings("instance-ids", ids), zap.Error(err))
 
 	sleepDur := 5 * time.Second * time.Duration(md.cfg.ClusterSize)
 	if sleepDur > 3*time.Minute {
@@ -470,6 +470,7 @@ func (md *embedded) deleteInstances() (err error) {
 	}
 
 	md.lg.Info("terminated",
+		zap.String("cluster-name", md.cfg.ClusterName),
 		zap.Strings("instance-ids", ids),
 		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 	)
