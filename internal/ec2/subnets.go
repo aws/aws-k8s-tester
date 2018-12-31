@@ -176,9 +176,9 @@ func (md *embedded) associatePublicIP() (err error) {
 			SubnetId: aws.String(id),
 		})
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to allow public IP assign for subnet %q (%v)", id, err)
 		}
-		md.lg.Info("allowed public IP assign for subnet", zap.String("subnet-id", id))
+		md.lg.Debug("allowed public IP assign for subnet", zap.String("subnet-id", id))
 	}
 	return nil
 }
