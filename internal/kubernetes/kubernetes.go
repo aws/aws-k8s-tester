@@ -216,6 +216,23 @@ func (md *embedded) Create() (err error) {
 	md.cfg.Sync()
 	md.lg.Info("registered instances to load balancer", zap.String("name", md.cfg.LoadBalancerName), zap.Int("instances", len(instances)))
 
+	// TODO: generate certs
+	// TODO: send certs to nodes
+	// TODO: write KUBECONFIG for master nodes
+	// TODO: send KUBECONFIG to master nodes
+	// TODO: write KUBECONFIG for worker nodes
+	// TODO: send KUBECONFIG to worker nodes
+	// TODO: write kubelet environment file for master nodes
+	// TODO: write kubelet environment file for worker nodes
+	// TODO: write kube-proxy static pod manifest for master nodes
+	// TODO: write kube-proxy static pod manifest for worker nodes
+	// TODO: write kube-scheduler static pod manifest for master nodes
+	// TODO: write kube-controller-manager static pod manifest for master nodes
+	// TODO: write kube-apiserver static pod manifest for master nodes
+	// TODO: start kubelet for master nodes
+	// TODO: start kubelet for worker nodes
+	// TODO: write KUBECONFIG for client
+
 	downloadsMaster := md.cfg.DownloadsMaster()
 	downloadsWorker := md.cfg.DownloadsWorker()
 	for _, masterEC2 := range md.cfg.EC2MasterNodes.Instances {
