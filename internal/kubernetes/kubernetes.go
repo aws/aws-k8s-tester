@@ -155,6 +155,22 @@ func (md *embedded) Create() (err error) {
 	if len(ess) > 0 {
 		return errors.New(strings.Join(ess, ", "))
 	}
+
+	// TODO: what if >1 master nodes
+	var masterNodePrivateDNS string
+	for _, v := range md.cfg.EC2MasterNodes.Instances {
+		masterNodePrivateDNS = v.PrivateDNSName
+	}
+	md.cfg.KubeletMasterNodes.HostnameOverride = masterNodePrivateDNS
+	md.cfg.KubeProxyMasterNodes.HostnameOverride = masterNodePrivateDNS
+	// TODO: what if >2 worker nodes
+	var workerNodePrivateDNS string
+	for _, v := range md.cfg.EC2WorkerNodes.Instances {
+		workerNodePrivateDNS = v.PrivateDNSName
+	}
+	md.cfg.KubeletWorkerNodes.HostnameOverride = workerNodePrivateDNS
+	md.cfg.Sync()
+
 	md.lg.Info(
 		"deployed EC2 instances",
 		zap.Strings("plugins-master-nodes", md.cfg.EC2MasterNodes.Plugins),

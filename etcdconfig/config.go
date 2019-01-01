@@ -330,11 +330,16 @@ func (e *ETCD) Flags() (flags []string, err error) {
 		if v, ok := e.features[k]; ok && !v {
 			continue
 		}
+		allowZeroValue := tp.Field(i).Tag.Get("allow-zero-value") == "true"
 		fieldName := tp.Field(i).Name
 
 		switch vv.Field(i).Type().Kind() {
 		case reflect.String:
-			flags = append(flags, fmt.Sprintf("--%s=%s", k, vv.Field(i).String()))
+			if vv.Field(i).String() != "" {
+				flags = append(flags, fmt.Sprintf("--%s=%s", k, vv.Field(i).String()))
+			} else if allowZeroValue {
+				flags = append(flags, fmt.Sprintf(`--%s=""`, k))
+			}
 
 		case reflect.Bool:
 			flags = append(flags, fmt.Sprintf("--%s=%v", k, vv.Field(i).Bool()))
@@ -345,7 +350,11 @@ func (e *ETCD) Flags() (flags []string, err error) {
 				// 2 * 1024 * 1024 * 1024 == 2147483648 == 2 GB
 				v = v * 1024 * 1024 * 1024
 			}
-			flags = append(flags, fmt.Sprintf("--%s=%d", k, v))
+			if v != 0 {
+				flags = append(flags, fmt.Sprintf("--%s=%d", k, v))
+			} else if allowZeroValue {
+				flags = append(flags, fmt.Sprintf(`--%s=0`, k))
+			}
 
 		default:
 			return nil, fmt.Errorf("unknown %q", k)
