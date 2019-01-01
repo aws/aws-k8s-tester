@@ -18,6 +18,7 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBELET_MASTER_NODES_PATH", "/usr/local/bin/kubelet")
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBELET_MASTER_NODES_DOWNLOAD_URL", "https://storage.googleapis.com/kubernetes-release/release/v1.20.0/bin/linux/amd64/kubelet")
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBELET_MASTER_NODES_VERSION_COMMAND", "/usr/local/bin/kubelet --version || true")
+	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBELET_MASTER_NODES_NODE_LABELS", "new-label")
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBELET_WORKER_NODES_PATH", "/usr/local/bin/kubelet")
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBELET_WORKER_NODES_DOWNLOAD_URL", "https://storage.googleapis.com/kubernetes-release/release/v1.20.0/bin/linux/amd64/kubelet")
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBELET_WORKER_NODES_VERSION_COMMAND", "/usr/local/bin/kubelet --version || true")
@@ -54,6 +55,7 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBELET_MASTER_NODES_PATH")
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBELET_MASTER_NODES_DOWNLOAD_URL")
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBELET_MASTER_NODES_VERSION_COMMAND")
+		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBELET_MASTER_NODES_NODE_LABELS")
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBELET_WORKER_NODES_PATH")
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBELET_WORKER_NODES_DOWNLOAD_URL")
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBELET_WORKER_NODES_VERSION_COMMAND")
@@ -109,6 +111,9 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.KubeletMasterNodes.VersionCommand != "/usr/local/bin/kubelet --version || true" {
 		t.Fatalf("unexpected KubeletMasterNodes.VersionCommand, got %q", cfg.KubeletMasterNodes.VersionCommand)
+	}
+	if cfg.KubeletMasterNodes.NodeLabels != "new-label" {
+		t.Fatalf("unexpected KubeletMasterNodes.NodeLabels, got %q", cfg.KubeletMasterNodes.NodeLabels)
 	}
 	if cfg.KubeletWorkerNodes.Path != "/usr/local/bin/kubelet" {
 		t.Fatalf("unexpected KubeletWorkerNodes.Path, got %q", cfg.KubeletWorkerNodes.Path)

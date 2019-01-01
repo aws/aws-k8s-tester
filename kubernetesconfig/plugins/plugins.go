@@ -37,6 +37,18 @@ sudo sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
 sudo yum install -y cri-tools ebtables kubernetes-cni socat iproute-tc
 crictl --version
 
+sudo rm -rf /srv/kubernetes/
+sudo mkdir -p /srv/kubernetes/
+
+sudo rm -rf /etc/kubernetes/manifests/
+sudo mkdir -p /etc/kubernetes/manifests/
+
+sudo rm -rf /opt/cni/bin/
+sudo mkdir -p /opt/cni/bin/
+
+sudo rm -rf /etc/cni/net.d/
+sudo mkdir -p /etc/cni/net.d/
+
 ##################################
 
 `
