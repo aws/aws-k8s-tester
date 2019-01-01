@@ -159,6 +159,14 @@ type Kubelet struct {
 type KubeProxy struct {
 	// Image is the container image name and tag for kube-proxy to run as a static pod.
 	Image string `json:"image"`
+
+	ClusterCIDR         string `json:"cluster-cidr" kube-proxy:"cluster-cidr"`
+	ConntrackMaxPerCore int64  `json:"conntrack-max-per-core" kube-proxy:"conntrack-max-per-core"`
+	HostnameOverride    string `json:"hostname-override" kube-proxy:"hostname-override"`
+	Kubeconfig          string `json:"kubeconfig" kube-proxy:"kubeconfig"`
+	Master              string `json:"master" kube-proxy:"master"`
+	OOMScoreAdj         int    `json:"oom-score-adj" kube-proxy:"oom-score-adj"`
+	ResourceContainer   string `json:"resource-container" kube-proxy:"resource-container"`
 }
 
 type Kubectl struct {
@@ -1448,6 +1456,36 @@ func (kb *Kubelet) Sysconfig() (s string, err error) {
 	return fmt.Sprintf(`DAEMON_ARGS="%s"
 HOME="/root"
 `, strings.Join(fs, " ")), nil
+}
+
+// Flags returns the list of "kube-proxy" flags.
+// Make sure to validate the configuration with "ValidateAndSetDefaults".
+func (kb *KubeProxy) Flags() (flags []string, err error) {
+	tp, vv := reflect.TypeOf(kb).Elem(), reflect.ValueOf(kb).Elem()
+	for i := 0; i < tp.NumField(); i++ {
+		k := tp.Field(i).Tag.Get("kube-proxy")
+		if k == "" {
+			continue
+		}
+
+		switch vv.Field(i).Type().Kind() {
+		case reflect.String:
+			// TODO: handle --resource-container=""
+			if vv.Field(i).String() != "" {
+				flags = append(flags, fmt.Sprintf("--%s=%s", k, vv.Field(i).String()))
+			}
+
+		case reflect.Int, reflect.Int32, reflect.Int64:
+			flags = append(flags, fmt.Sprintf("--%s=%d", k, vv.Field(i).Int()))
+
+		case reflect.Bool:
+			flags = append(flags, fmt.Sprintf("--%s=%v", k, vv.Field(i).Bool()))
+
+		default:
+			return nil, fmt.Errorf("unknown %q", k)
+		}
+	}
+	return flags, nil
 }
 
 /*
