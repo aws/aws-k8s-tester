@@ -156,6 +156,8 @@ type Kubelet struct {
 	CNIConfDir              string `json:"cni-conf-dir" kubelet:"cni-conf-dir"`
 }
 
+// KubeProxy defines kube-proxy configuration.
+// Reference: https://godoc.org/k8s.io/kube-proxy/config/v1alpha1#KubeProxyConfiguration.
 type KubeProxy struct {
 	// Image is the container image name and tag for kube-proxy to run as a static pod.
 	Image string `json:"image"`
@@ -166,7 +168,7 @@ type KubeProxy struct {
 	Kubeconfig          string `json:"kubeconfig" kube-proxy:"kubeconfig"`
 	Master              string `json:"master" kube-proxy:"master"`
 	OOMScoreAdj         int    `json:"oom-score-adj" kube-proxy:"oom-score-adj"`
-	ResourceContainer   string `json:"resource-container" kube-proxy:"resource-container"`
+	ResourceContainer   string `json:"resource-container" kube-proxy:"resource-container" allow-empty:"true"`
 }
 
 type Kubectl struct {
@@ -1467,12 +1469,15 @@ func (kb *KubeProxy) Flags() (flags []string, err error) {
 		if k == "" {
 			continue
 		}
+		allowEmpty := tp.Field(i).Tag.Get("allow-empty") == "true"
 
 		switch vv.Field(i).Type().Kind() {
 		case reflect.String:
-			// TODO: handle --resource-container=""
 			if vv.Field(i).String() != "" {
 				flags = append(flags, fmt.Sprintf("--%s=%s", k, vv.Field(i).String()))
+			} else if allowEmpty {
+				// e.g. handle --resource-container=""
+				flags = append(flags, fmt.Sprintf(`--%s=""`, k))
 			}
 
 		case reflect.Int, reflect.Int32, reflect.Int64:
