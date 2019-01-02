@@ -28,6 +28,8 @@ github.com/aws/aws-sdk-go/service/eks/eksiface
 github.com/aws/aws-sdk-go/service/elbv2
 github.com/aws/aws-sdk-go/service/iam/iamiface
 github.com/aws/aws-sdk-go/service/elbv2/elbv2iface
+github.com/aws/aws-sdk-go/service/elb
+github.com/aws/aws-sdk-go/service/elb/elbiface
 github.com/aws/aws-sdk-go/aws/endpoints
 github.com/aws/aws-sdk-go/aws/client
 github.com/aws/aws-sdk-go/aws/corehandlers
