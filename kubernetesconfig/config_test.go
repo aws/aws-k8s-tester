@@ -31,6 +31,7 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBECTL_VERSION_COMMAND", "/usr/local/bin/kubectl version --client || true")
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBE_APISERVER_IMAGE", "k8s.gcr.io/kube-apiserver:v1.20.0")
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBE_APISERVER_INSECURE_PORT", "1")
+	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBE_APISERVER_STORAGE_BACKEND", "etcd4")
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBE_CONTROLLER_MANAGER_IMAGE", "k8s.gcr.io/kube-controller-manager:v1.20.0")
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBE_SCHEDULER_IMAGE", "k8s.gcr.io/kube-scheduler:v1.20.0")
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_CLOUD_CONTROLLER_MANAGER_IMAGE", "k8s.gcr.io/cloud-controller-manager:v1.20.0")
@@ -71,6 +72,7 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBECTL_VERSION_COMMAND")
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBE_APISERVER_IMAGE")
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBE_APISERVER_INSECURE_PORT")
+		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBE_APISERVER_STORAGE_BACKEND")
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBE_CONTROLLER_MANAGER_IMAGE")
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBE_SCHEDULER_IMAGE")
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_CLOUD_CONTROLLER_MANAGER_IMAGE")
@@ -149,7 +151,10 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("unexpected KubeAPIServer.Image, got %q", cfg.KubeAPIServer.Image)
 	}
 	if cfg.KubeAPIServer.InsecurePort != 1 {
-		t.Fatalf("unexpected KubeAPIServer.Image, got %d", cfg.KubeAPIServer.InsecurePort)
+		t.Fatalf("unexpected KubeAPIServer.InsecurePort, got %d", cfg.KubeAPIServer.InsecurePort)
+	}
+	if cfg.KubeAPIServer.StorageBackend != "etcd4" {
+		t.Fatalf("unexpected KubeAPIServer.StorageBackend, got %q", cfg.KubeAPIServer.StorageBackend)
 	}
 	if cfg.KubeControllerManager.Image != "k8s.gcr.io/kube-controller-manager:v1.20.0" {
 		t.Fatalf("unexpected KubeControllerManager.Image, got %q", cfg.KubeControllerManager.Image)
