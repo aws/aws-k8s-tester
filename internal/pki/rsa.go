@@ -153,7 +153,7 @@ func (k *RSA) VerifyPayloadWithPublicKey(payload []byte, sig []byte) (err error)
 	return nil
 }
 
-// SignRootCertificate self-signs a new root certificate.
+// SignRootCertificate self-signs a new root certificate with its public and private key.
 // The root certificate authority (root CA) issues a new certificate
 // to the subscriber. The certificate vouches for the binding between
 // an existing public key and the name.
