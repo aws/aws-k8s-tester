@@ -52,4 +52,9 @@ func TestRSA(t *testing.T) {
 	if !bytes.Equal(msg, decrypted2) {
 		t.Fatalf("expected %q, got %q", string(msg), string(decrypted2))
 	}
+
+	if err = k.SignRootCertificate(); err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println(string(k.RootCertificateBytes()))
 }
