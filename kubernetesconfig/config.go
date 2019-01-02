@@ -145,7 +145,7 @@ func init() {
 	}
 
 	defaultConfig.Tag = genTag()
-	defaultConfig.ClusterName = defaultConfig.Tag + "-" + randString(7)
+	defaultConfig.ClusterName = defaultConfig.Tag + "-" + randString(5)
 	defaultConfig.LoadBalancerName = defaultConfig.ClusterName + "-lb"
 
 	defaultConfig.ETCDNodes.EC2.AWSRegion = defaultConfig.AWSRegion
