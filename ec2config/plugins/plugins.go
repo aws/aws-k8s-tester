@@ -67,15 +67,13 @@ func convertToScript(userName, plugin string) (script, error) {
 		}, nil
 
 	case strings.HasPrefix(plugin, "install-csi-"):
-		gitBranch := strings.Replace(plugin, "install-csi-", "", -1)
-		_, perr := strconv.ParseInt(gitBranch, 10, 64)
-		isPR := perr == nil
+		prNum := strings.Replace(plugin, "install-csi-", "", -1)
 		s, err := createInstallGit(gitInfo{
 			GitRepo:       "aws-ebs-csi-driver",
 			GitClonePath:  "${GOPATH}/src/github.com/kubernetes-sigs",
 			GitCloneURL:   "https://github.com/kubernetes-sigs/aws-ebs-csi-driver.git",
-			IsPR:          isPR,
-			GitBranch:     gitBranch,
+			IsPR:          true,
+			GitBranch:     prNum,
 			InstallScript: `make aws-ebs-csi-driver && sudo cp ./bin/aws-ebs-csi-driver /usr/local/bin/aws-ebs-csi-driver`,
 		})
 		if err != nil {
@@ -149,7 +147,7 @@ make server
 }
 
 // Create returns the plugin.
-func Create(userName string, plugins []string) (data string, err error) {
+func Create(userName, customScript string, plugins []string) (data string, err error) {
 	sts := make([]script, 0, len(plugins))
 	for _, plugin := range plugins {
 		if plugin == "update-ubuntu" {
@@ -169,6 +167,7 @@ func Create(userName string, plugins []string) (data string, err error) {
 	for _, s := range sts {
 		data += s.data
 	}
+	data += customScript
 	data += fmt.Sprintf("\n\necho %s\n\n", READY)
 	return data, nil
 }
