@@ -248,6 +248,7 @@ func (md *embedded) Create() (err error) {
 	// TODO: start kubelet for master nodes
 	// TODO: start kubelet for worker nodes
 	// TODO: write KUBECONFIG for client
+	// TODO: use EC2 instance profile to do all this?
 
 	downloadsMaster := md.cfg.DownloadsMaster()
 	downloadsWorker := md.cfg.DownloadsWorker()

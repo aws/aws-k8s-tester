@@ -52,7 +52,7 @@ var defaultKubeAPIServer = KubeAPIServer{
 	AnonymousAuth:                   false,
 	APIServerCount:                  1,
 	AuthorizationMode:               "RBAC",
-	BasicAuthFile:                   "/srv/kubernetes/basic_auth.csv",
+	BasicAuthFile:                   "",
 	BindAddress:                     "0.0.0.0",
 	ClientCAFile:                    "/srv/kubernetes/ca.crt",
 	CloudProvider:                   "aws",
