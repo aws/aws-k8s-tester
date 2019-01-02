@@ -345,10 +345,12 @@ const (
 
 // UpdateFromEnvs updates fields from environmental variables.
 func (cfg *Config) UpdateFromEnvs() error {
+	// move these to "ValidateAndSetDefaults"
 	cfg.ETCDNodes.EC2.AWSRegion = cfg.AWSRegion
 	cfg.EC2MasterNodes.AWSRegion = cfg.AWSRegion
 	cfg.EC2WorkerNodes.AWSRegion = cfg.AWSRegion
 	cfg.KubeletMasterNodes.NodeLabels = fmt.Sprintf("aws-k8s-tester.k8s.io/instancegroup=master-%s,kubernetes.io/role=master,node-role.kubernetes.io/master=", cfg.AWSRegion)
+	cfg.KubeProxyWorkerNodes.Master = "https://api.internal." + cfg.ClusterName
 
 	if err := cfg.ETCDNodes.UpdateFromEnvs(); err != nil {
 		return err
