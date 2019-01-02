@@ -142,6 +142,9 @@ type Config struct {
 
 	// InstanceProfileName is the name of an instance profile with permissions to manage EC2 instances.
 	InstanceProfileName string `json:"instance-profile-name,omitempty"`
+
+	// CustomScript is executed at the end of EC2 init script.
+	CustomScript string `json:"custom-script,omitempty"`
 }
 
 // Instance represents an EC2 instance.
@@ -370,7 +373,7 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 
 	if len(cfg.Plugins) > 0 && !cfg.InitScriptCreated {
 		txt := cfg.InitScript
-		cfg.InitScript, err = plugins.Create(cfg.UserName, cfg.Plugins)
+		cfg.InitScript, err = plugins.Create(cfg.UserName, cfg.CustomScript, cfg.Plugins)
 		if err != nil {
 			return err
 		}
