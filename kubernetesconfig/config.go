@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -39,6 +40,12 @@ type Config struct {
 
 	// AWSRegion is the AWS region.
 	AWSRegion string `json:"aws-region,omitempty"`
+
+	// AWSK8sTesterPath is the path to download the "aws-k8s-tester".
+	// This is required for Kubernetes kubetest plugin.
+	AWSK8sTesterPath string `json:"aws-k8s-tester-path,omitempty"`
+	// AWSK8sTesterDownloadURL is the download URL to download "aws-k8s-tester" binary from.
+	AWSK8sTesterDownloadURL string `json:"aws-k8s-tester-download-url,omitempty"`
 
 	KubeletMasterNodes     *Kubelet                `json:"kubelet-master-nodes"`
 	KubeletWorkerNodes     *Kubelet                `json:"kubelet-worker-nodes"`
@@ -133,6 +140,10 @@ func NewDefault() *Config {
 }
 
 func init() {
+	if runtime.GOOS == "darwin" {
+		defaultConfig.AWSK8sTesterDownloadURL = strings.Replace(defaultConfig.AWSK8sTesterDownloadURL, "linux", "darwin", -1)
+	}
+
 	defaultConfig.Tag = genTag()
 	defaultConfig.ClusterName = defaultConfig.Tag + "-" + randString(7)
 	defaultConfig.LoadBalancerName = defaultConfig.ClusterName + "-lb"
@@ -220,7 +231,9 @@ var defaultConfig = Config{
 	WaitBeforeDown: time.Minute,
 	Down:           true,
 
-	AWSRegion: "us-west-2",
+	AWSRegion:               "us-west-2",
+	AWSK8sTesterDownloadURL: "https://github.com/aws/aws-k8s-tester/releases/download/0.2.0/aws-k8s-tester-0.2.0-linux-amd64",
+	AWSK8sTesterPath:        "/tmp/aws-k8s-tester/aws-k8s-tester",
 
 	KubeletMasterNodes:     newDefaultKubeletMasterNodes(),
 	KubeletWorkerNodes:     newDefaultKubeletWorkerNodes(),

@@ -13,6 +13,8 @@ import (
 func TestEnv(t *testing.T) {
 	cfg := NewDefault()
 
+	os.Setenv("AWS_K8S_TESTER_KUBERNETES_AWS_K8S_TESTER_DOWNLOAD_URL", "https://github.com/aws/aws-k8s-tester/releases/download/0.2.0/aws-k8s-tester-0.2.0-linux-amd64")
+	os.Setenv("AWS_K8S_TESTER_KUBERNETES_AWS_K8S_TESTER_PATH", "/tmp/aws-k8s-tester-test/aws-k8s-tester")
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_LOAD_BALANCER_NAME", "hello")
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_DOWN", "false")
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBELET_MASTER_NODES_PATH", "/usr/local/bin/kubelet")
@@ -51,6 +53,8 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_ETCD_CLUSTER_VERSION", "v3.2.15")
 
 	defer func() {
+		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_AWS_K8S_TESTER_DOWNLOAD_URL")
+		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_AWS_K8S_TESTER_PATH")
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_LOAD_BALANCER_NAME")
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_DOWN")
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBELET_MASTER_NODES_PATH")

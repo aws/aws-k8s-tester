@@ -12,4 +12,6 @@ type Deployer interface {
 	Create() error
 	// Terminate terminates the Kubernetes cluster, deleting all provider resources (e.g. GCE, EC2, etc.).
 	Terminate() error
+	// KubeConfig returns the file path to KUBECONFIG.
+	KubeConfig() (string, error)
 }
