@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-k8s-tester/cmd/aws-k8s-tester/ecr"
 	"github.com/aws/aws-k8s-tester/cmd/aws-k8s-tester/eks"
 	"github.com/aws/aws-k8s-tester/cmd/aws-k8s-tester/etcd"
+	"github.com/aws/aws-k8s-tester/cmd/aws-k8s-tester/kubernetes"
 	"github.com/aws/aws-k8s-tester/cmd/aws-k8s-tester/version"
 	"github.com/aws/aws-k8s-tester/cmd/aws-k8s-tester/wrk"
 	"github.com/spf13/cobra"
@@ -34,6 +35,7 @@ func init() {
 		ecr.NewCommand(),
 		eks.NewCommand(),
 		etcd.NewCommand(),
+		kubernetes.NewCommand(),
 		wrk.NewCommand(),
 		version.NewCommand(),
 	)

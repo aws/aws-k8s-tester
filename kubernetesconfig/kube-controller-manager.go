@@ -13,6 +13,8 @@ type KubeControllerManager struct {
 	// Image is the container image name and tag for kube-controller-manager to run as a static pod.
 	Image string `json:"image"`
 
+	// TODO: support running as a systemd service?
+
 	AllocateNodeCIDRs               bool   `json:"allocate-node-cidrs" kube-controller-manager:"allocate-node-cidrs"`
 	AttachDetachReconcileSyncPeriod string `json:"attach-detach-reconcile-sync-period" kube-controller-manager:"attach-detach-reconcile-sync-period"`
 	CloudProvider                   string `json:"cloud-provider" kube-controller-manager:"cloud-provider"`

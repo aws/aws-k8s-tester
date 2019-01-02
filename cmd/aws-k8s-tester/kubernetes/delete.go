@@ -1,13 +1,12 @@
-package etcd
+package kubernetes
 
 import (
 	"fmt"
 	"os"
 
-	"github.com/aws/aws-k8s-tester/etcdconfig"
-	"github.com/aws/aws-k8s-tester/internal/etcd"
+	"github.com/aws/aws-k8s-tester/internal/kubernetes"
+	"github.com/aws/aws-k8s-tester/kubernetesconfig"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
-	"github.com/aws/aws-k8s-tester/storagetester"
 	"github.com/spf13/cobra"
 )
 
@@ -23,7 +22,7 @@ func newDelete() *cobra.Command {
 func newDeleteCluster() *cobra.Command {
 	return &cobra.Command{
 		Use:   "cluster",
-		Short: "Delete etcd cluster",
+		Short: "Delete Kubernetes cluster",
 		Run:   deleteClusterFunc,
 	}
 }
@@ -34,23 +33,23 @@ func deleteClusterFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	cfg, err := etcdconfig.Load(path)
+	cfg, err := kubernetesconfig.Load(path)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to load configuration %q (%v)\n", path, err)
 		os.Exit(1)
 	}
 
-	var tester storagetester.Tester
-	tester, err = etcd.NewTester(cfg)
+	var dp kubernetes.Deployer
+	dp, err = kubernetes.NewDeployer(cfg)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create etcd cluster %v\n", err)
+		fmt.Fprintf(os.Stderr, "failed to create kubernetes cluster %v\n", err)
 		os.Exit(1)
 	}
 
-	if err = tester.Terminate(); err != nil {
+	if err = dp.Terminate(); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to terminate cluster %v", err)
 		os.Exit(1)
 	}
 
-	fmt.Println("'aws-k8s-tester etcd delete cluster' success")
+	fmt.Println("'aws-k8s-tester kubernetes delete cluster' success")
 }

@@ -13,6 +13,8 @@ type KubeScheduler struct {
 	// Image is the container image name and tag for kube-scheduler to run as a static pod.
 	Image string `json:"image"`
 
+	// TODO: support running as a systemd service?
+
 	Kubeconfig  string `json:"kubeconfig" kube-scheduler:"kubeconfig"`
 	LeaderElect bool   `json:"leader-elect" kube-scheduler:"leader-elect"`
 }

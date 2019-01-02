@@ -13,6 +13,8 @@ type KubeAPIServer struct {
 	// Image is the container image name and tag for kube-apiserver to run as a static pod.
 	Image string `json:"image"`
 
+	// TODO: support running as a systemd service?
+
 	AllowPrivileged                 bool   `json:"allow-privileged" kube-apiserver:"allow-privileged"`
 	AnonymousAuth                   bool   `json:"anonymous-auth" kube-apiserver:"anonymous-auth"`
 	APIServerCount                  int    `json:"apiserver-count" kube-apiserver:"apiserver-count"`
@@ -55,8 +57,8 @@ var defaultKubeAPIServer = KubeAPIServer{
 	ClientCAFile:                    "/srv/kubernetes/ca.crt",
 	CloudProvider:                   "aws",
 	EnableAdmissionPlugins:          "Initializers,NamespaceLifecycle,LimitRanger,ServiceAccount,PersistentVolumeLabel,DefaultStorageClass,DefaultTolerationSeconds,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,NodeRestriction,ResourceQuota",
-	EtcdServersOverrides:            "/events#http://127.0.0.1:4002",
-	EtcdServers:                     "http://127.0.0.1:4001",
+	EtcdServersOverrides:            "",
+	EtcdServers:                     "http://127.0.0.1:2379",
 	InsecureBindAddress:             "127.0.0.1",
 	InsecurePort:                    8080,
 	KubeletClientCertificate:        "/srv/kubernetes/kubelet-api.pem",

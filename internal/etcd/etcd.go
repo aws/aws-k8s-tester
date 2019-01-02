@@ -467,11 +467,7 @@ func (md *embedded) Put(k, v string) error {
 	}
 	defer sh.Close()
 
-	eps := make([]string, 0, len(md.cfg.ClusterState))
-	for _, v := range md.cfg.ClusterState {
-		ep := v.AdvertiseClientURLs
-		eps = append(eps, ep)
-	}
+	eps := md.cfg.ClientURLs()
 	var out []byte
 	out, err = sh.Run(
 		fmt.Sprintf("ETCDCTL_API=3 etcdctl --endpoints=%s put %q %q", strings.Join(eps, ","), k, v),

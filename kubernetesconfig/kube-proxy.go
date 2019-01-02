@@ -14,6 +14,8 @@ type KubeProxy struct {
 	// Image is the container image name and tag for kube-proxy to run as a static pod.
 	Image string `json:"image"`
 
+	// TODO: support running as a systemd service?
+
 	ClusterCIDR         string `json:"cluster-cidr" kube-proxy:"cluster-cidr"`
 	ConntrackMaxPerCore int64  `json:"conntrack-max-per-core" kube-proxy:"conntrack-max-per-core"`
 	HostnameOverride    string `json:"hostname-override" kube-proxy:"hostname-override"`

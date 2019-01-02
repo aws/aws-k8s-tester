@@ -1,4 +1,4 @@
-package etcd
+package kubernetes
 
 import (
 	"fmt"
@@ -7,10 +7,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/aws/aws-k8s-tester/etcdconfig"
-	"github.com/aws/aws-k8s-tester/internal/etcd"
+	"github.com/aws/aws-k8s-tester/internal/kubernetes"
+	"github.com/aws/aws-k8s-tester/kubernetesconfig"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
-	"github.com/aws/aws-k8s-tester/storagetester"
 	"github.com/spf13/cobra"
 )
 
@@ -19,7 +18,7 @@ func newCreate() *cobra.Command {
 		Use:   "create <subcommand>",
 		Short: "Create commands",
 	}
-	cmd.PersistentFlags().BoolVar(&terminateOnExit, "terminate-on-exit", false, "true to terminate etcd cluster on test exit")
+	cmd.PersistentFlags().BoolVar(&terminateOnExit, "terminate-on-exit", false, "true to terminate kubernetes cluster on test exit")
 	cmd.AddCommand(
 		newCreateConfig(),
 		newCreateCluster(),
@@ -32,7 +31,7 @@ var terminateOnExit bool
 func newCreateConfig() *cobra.Command {
 	return &cobra.Command{
 		Use:   "config",
-		Short: "Writes an aws-k8s-tester etcd configuration with default values",
+		Short: "Writes an aws-k8s-tester kubernetes configuration with default values",
 		Run:   configFunc,
 	}
 }
@@ -42,16 +41,16 @@ func configFunc(cmd *cobra.Command, args []string) {
 		fmt.Fprintln(os.Stderr, "'--path' flag is not specified")
 		os.Exit(1)
 	}
-	cfg := etcdconfig.NewDefault()
+	cfg := kubernetesconfig.NewDefault()
 	cfg.ConfigPath = path
 	cfg.Sync()
-	fmt.Fprintf(os.Stderr, "wrote aws-k8s-tester etcd configuration to %q\n", cfg.ConfigPath)
+	fmt.Fprintf(os.Stderr, "wrote aws-k8s-tester kubernetes configuration to %q\n", cfg.ConfigPath)
 }
 
 func newCreateCluster() *cobra.Command {
 	return &cobra.Command{
 		Use:   "cluster",
-		Short: "Create etcd instances",
+		Short: "Create Kubernetes cluster",
 		Run:   createClusterFunc,
 	}
 }
@@ -62,16 +61,16 @@ func createClusterFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	cfg, err := etcdconfig.Load(path)
+	cfg, err := kubernetesconfig.Load(path)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to load configuration %q (%v)\n", path, err)
 		os.Exit(1)
 	}
 
-	var tester storagetester.Tester
-	tester, err = etcd.NewTester(cfg)
+	var dp kubernetes.Deployer
+	dp, err = kubernetes.NewDeployer(cfg)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create etcd deployer %v\n", err)
+		fmt.Fprintf(os.Stderr, "failed to create kubernetes deployer %v\n", err)
 		os.Exit(1)
 	}
 
@@ -79,24 +78,46 @@ func createClusterFunc(cmd *cobra.Command, args []string) {
 		fmt.Fprintf(os.Stderr, "failed to back up original config file %v\n", err)
 		os.Exit(1)
 	}
-	if err = tester.Create(); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create instances %v\n", err)
+	errc := make(chan error)
+	go func() {
+		errc <- dp.Create()
+	}()
+	notifier := make(chan os.Signal, 1)
+	signal.Notify(notifier, syscall.SIGINT, syscall.SIGTERM)
+	terminate := false
+	select {
+	case err = <-errc:
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to create Kubernetes cluster %v\n", err)
+			terminate = true
+		}
+	case sig := <-notifier:
+		fmt.Fprintf(os.Stderr, "received %s\n", sig)
+		terminate = true
+	}
+
+	if terminate {
+		if err = dp.Terminate(); err != nil {
+			fmt.Fprintf(os.Stderr, "failed to terminate cluster %v\n", err)
+		} else {
+			fmt.Fprintf(os.Stderr, "terminated cluster\n")
+		}
 		os.Exit(1)
 	}
-	fmt.Printf("Cluster: %+v\n", tester.Cluster())
 
-	fmt.Printf("EC2 SSH:\n%s\n\n", cfg.EC2.SSHCommands())
-	fmt.Printf("EC2Bastion SSH:\n%s\n\n", cfg.EC2Bastion.SSHCommands())
+	fmt.Println("'aws-k8s-tester kubernetes create cluster' success")
+	fmt.Printf("EC2 Master Nodes SSH:\n%s\n\n", cfg.EC2MasterNodes.SSHCommands())
+	fmt.Printf("EC2 Worker Nodes SSH:\n%s\n\n", cfg.EC2WorkerNodes.SSHCommands())
 
 	if terminateOnExit {
-		notifier := make(chan os.Signal, 1)
+		notifier = make(chan os.Signal, 1)
 		signal.Notify(notifier, syscall.SIGINT, syscall.SIGTERM)
 		select {
 		case <-time.After(cfg.WaitBeforeDown):
 		case sig := <-notifier:
 			fmt.Fprintf(os.Stderr, "received %s\n", sig)
 		}
-		if err = tester.Terminate(); err != nil {
+		if err = dp.Terminate(); err != nil {
 			fmt.Fprintf(os.Stderr, "failed to terminate cluster %v\n", err)
 			os.Exit(1)
 		} else {

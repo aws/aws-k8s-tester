@@ -83,6 +83,14 @@ type Config struct {
 	TestTimeout time.Duration `json:"test-timeout,omitempty"`
 }
 
+func (cfg *Config) ClientURLs() (eps []string) {
+	eps = make([]string, 0, len(cfg.ClusterState))
+	for _, v := range cfg.ClusterState {
+		eps = append(eps, strings.Split(v.AdvertiseClientURLs, ",")...)
+	}
+	return eps
+}
+
 // ETCD defines etcd-specific configuration.
 // TODO: support TLS
 type ETCD struct {
