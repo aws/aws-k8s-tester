@@ -9,11 +9,20 @@ import (
 )
 
 type CloudControllerManager struct {
+	Path           string `json:"path"`
+	DownloadURL    string `json:"download-url"`
+	VersionCommand string `json:"version-command"`
+
+	// TODO: support running as a static pod
 	// Image is the container image name and tag for cloud-controller-manager to run as a static pod.
-	Image string `json:"image"`
+	// Image string `json:"image"`
 }
 
-var defaultCloudControllerManager = CloudControllerManager{}
+var defaultCloudControllerManager = CloudControllerManager{
+	Path:           "/usr/bin/cloud-controller-manager",
+	DownloadURL:    fmt.Sprintf("https://storage.googleapis.com/kubernetes-release/release/v%s/bin/linux/amd64/cloud-controller-manager", defaultKubernetesVersion),
+	VersionCommand: "/usr/bin/cloud-controller-manager --version",
+}
 
 func newDefaultCloudControllerManager() *CloudControllerManager {
 	copied := defaultCloudControllerManager

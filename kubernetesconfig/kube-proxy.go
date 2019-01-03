@@ -11,10 +11,13 @@ import (
 // KubeProxy defines "kube-proxy" configuration.
 // Reference: https://godoc.org/k8s.io/kube-proxy/config/v1alpha1#KubeProxyConfiguration.
 type KubeProxy struct {
-	// Image is the container image name and tag for kube-proxy to run as a static pod.
-	Image string `json:"image"`
+	Path           string `json:"path"`
+	DownloadURL    string `json:"download-url"`
+	VersionCommand string `json:"version-command"`
 
-	// TODO: support running as a systemd service?
+	// TODO: support running as a static pod
+	// Image is the container image name and tag for kube-proxy to run as a static pod.
+	// Image string `json:"image"`
 
 	ClusterCIDR         string `json:"cluster-cidr" kube-proxy:"cluster-cidr"`
 	ConntrackMaxPerCore int64  `json:"conntrack-max-per-core" kube-proxy:"conntrack-max-per-core"`
@@ -27,7 +30,11 @@ type KubeProxy struct {
 }
 
 var defaultKubeProxyMasterNodes = KubeProxy{
-	Image: fmt.Sprintf("k8s.gcr.io/kube-proxy:v%s", defaultKubernetesVersion),
+	Path:           "/usr/bin/kube-proxy",
+	DownloadURL:    fmt.Sprintf("https://storage.googleapis.com/kubernetes-release/release/v%s/bin/linux/amd64/kube-proxy", defaultKubernetesVersion),
+	VersionCommand: "/usr/bin/kube-proxy --version",
+
+	// Image: fmt.Sprintf("k8s.gcr.io/kube-proxy:v%s", defaultKubernetesVersion),
 
 	ClusterCIDR:         "100.96.0.0/11",
 	ConntrackMaxPerCore: 131072,

@@ -10,10 +10,13 @@ import (
 
 // KubeControllerManager represents "kube-controller-manager" configuration.
 type KubeControllerManager struct {
-	// Image is the container image name and tag for kube-controller-manager to run as a static pod.
-	Image string `json:"image"`
+	Path           string `json:"path"`
+	DownloadURL    string `json:"download-url"`
+	VersionCommand string `json:"version-command"`
 
-	// TODO: support running as a systemd service?
+	// TODO: support running as a static pod
+	// Image is the container image name and tag for kube-controller-manager to run as a static pod.
+	// Image string `json:"image"`
 
 	AllocateNodeCIDRs               bool   `json:"allocate-node-cidrs" kube-controller-manager:"allocate-node-cidrs"`
 	AttachDetachReconcileSyncPeriod string `json:"attach-detach-reconcile-sync-period" kube-controller-manager:"attach-detach-reconcile-sync-period"`
@@ -32,6 +35,10 @@ type KubeControllerManager struct {
 }
 
 var defaultKubeControllerManager = KubeControllerManager{
+	Path:           "/usr/bin/kube-controller-manager",
+	DownloadURL:    fmt.Sprintf("https://storage.googleapis.com/kubernetes-release/release/v%s/bin/linux/amd64/kube-controller-manager", defaultKubernetesVersion),
+	VersionCommand: "/usr/bin/kube-controller-manager --version",
+
 	AllocateNodeCIDRs:               true,
 	AttachDetachReconcileSyncPeriod: "1m0s",
 	CloudProvider:                   "aws",

@@ -10,10 +10,13 @@ import (
 
 // KubeAPIServer represents "kube-apiserver" configuration.
 type KubeAPIServer struct {
-	// Image is the container image name and tag for kube-apiserver to run as a static pod.
-	Image string `json:"image"`
+	Path           string `json:"path"`
+	DownloadURL    string `json:"download-url"`
+	VersionCommand string `json:"version-command"`
 
-	// TODO: support running as a systemd service?
+	// TODO: support running as a static pod
+	// Image is the container image name and tag for kube-apiserver to run as a static pod.
+	// Image string `json:"image"`
 
 	AllowPrivileged                 bool   `json:"allow-privileged" kube-apiserver:"allow-privileged"`
 	AnonymousAuth                   bool   `json:"anonymous-auth" kube-apiserver:"anonymous-auth"`
@@ -48,6 +51,10 @@ type KubeAPIServer struct {
 }
 
 var defaultKubeAPIServer = KubeAPIServer{
+	Path:           "/usr/bin/kube-apiserver",
+	DownloadURL:    fmt.Sprintf("https://storage.googleapis.com/kubernetes-release/release/v%s/bin/linux/amd64/kube-apiserver", defaultKubernetesVersion),
+	VersionCommand: "/usr/bin/kube-apiserver --version",
+
 	AllowPrivileged:                 true,
 	AnonymousAuth:                   false,
 	APIServerCount:                  1,

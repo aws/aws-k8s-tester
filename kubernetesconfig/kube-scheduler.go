@@ -10,17 +10,23 @@ import (
 
 // KubeScheduler represents "kube-scheduler" configuration.
 type KubeScheduler struct {
-	// Image is the container image name and tag for kube-scheduler to run as a static pod.
-	Image string `json:"image"`
+	Path           string `json:"path"`
+	DownloadURL    string `json:"download-url"`
+	VersionCommand string `json:"version-command"`
 
-	// TODO: support running as a systemd service?
+	// TODO: support running as a static pod
+	// Image is the container image name and tag for kube-scheduler to run as a static pod.
+	// Image string `json:"image"`
 
 	Kubeconfig  string `json:"kubeconfig" kube-scheduler:"kubeconfig"`
 	LeaderElect bool   `json:"leader-elect" kube-scheduler:"leader-elect"`
 }
 
 var defaultKubeScheduler = KubeScheduler{
-	Image:       fmt.Sprintf("k8s.gcr.io/kube-apiserver:v%s", defaultKubernetesVersion),
+	Path:           "/usr/bin/kube-scheduler",
+	DownloadURL:    fmt.Sprintf("https://storage.googleapis.com/kubernetes-release/release/v%s/bin/linux/amd64/kube-scheduler", defaultKubernetesVersion),
+	VersionCommand: "/usr/bin/kube-scheduler --version",
+
 	Kubeconfig:  "/var/lib/kube-scheduler/kubeconfig",
 	LeaderElect: true,
 }
