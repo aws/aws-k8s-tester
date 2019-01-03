@@ -89,8 +89,9 @@ func createIAM(awsRegion string) (*iam.IAM, error) {
 // awsRegion must be a valid AWS region for ec2 instances.
 // For a complete list, see entries under "Region" on the table "Amazon Elastic Compute Cloud (Amazon EC2)":
 // https://docs.aws.amazon.com/general/latest/gr/rande.html#ec2_region
-func createIAMResources(awsRegion string) (resources *iamResources, err error) {
-	resources = &iamResources{}
+func createIAMResources(awsRegion string) (*iamResources, error) {
+	resources := &iamResources{}
+	var err error
 
 	defer func() {
 		// Delay is needed to ensure that permissions have been propagated.
