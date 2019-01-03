@@ -47,6 +47,7 @@ make server
 func TestPlugins(t *testing.T) {
 	script, err := Create(
 		"ubuntu",
+		"",
 		[]string{
 			"install-csi-101",
 			"update-amazon-linux-2",
