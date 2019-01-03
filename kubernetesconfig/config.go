@@ -350,6 +350,8 @@ func (cfg *Config) UpdateFromEnvs() error {
 	cfg.EC2MasterNodes.AWSRegion = cfg.AWSRegion
 	cfg.EC2WorkerNodes.AWSRegion = cfg.AWSRegion
 	cfg.KubeletMasterNodes.NodeLabels = fmt.Sprintf("aws-k8s-tester.k8s.io/instancegroup=master-%s,kubernetes.io/role=master,node-role.kubernetes.io/master=", cfg.AWSRegion)
+	cfg.KubeletMasterNodes.UserName = cfg.EC2MasterNodes.UserName
+	cfg.KubeletWorkerNodes.UserName = cfg.EC2WorkerNodes.UserName
 	cfg.KubeProxyWorkerNodes.Master = "https://api.internal." + cfg.ClusterName
 	cfg.KubeControllerManager.ClusterName = cfg.ClusterName
 

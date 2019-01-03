@@ -34,8 +34,6 @@ var defaultKubeProxyMasterNodes = KubeProxy{
 	DownloadURL:    fmt.Sprintf("https://storage.googleapis.com/kubernetes-release/release/v%s/bin/linux/amd64/kube-proxy", defaultKubernetesVersion),
 	VersionCommand: "/usr/bin/kube-proxy --version",
 
-	// Image: fmt.Sprintf("k8s.gcr.io/kube-proxy:v%s", defaultKubernetesVersion),
-
 	ClusterCIDR:         "100.96.0.0/11",
 	ConntrackMaxPerCore: 131072,
 	HostnameOverride:    "PRIVATE_DNS",
@@ -51,7 +49,9 @@ func newDefaultKubeProxyMasterNodes() *KubeProxy {
 }
 
 var defaultKubeProxyWorkerNodes = KubeProxy{
-	Image: fmt.Sprintf("k8s.gcr.io/kube-proxy:v%s", defaultKubernetesVersion),
+	Path:           "/usr/bin/kube-proxy",
+	DownloadURL:    fmt.Sprintf("https://storage.googleapis.com/kubernetes-release/release/v%s/bin/linux/amd64/kube-proxy", defaultKubernetesVersion),
+	VersionCommand: "/usr/bin/kube-proxy --version",
 
 	ClusterCIDR:         "100.96.0.0/11",
 	ConntrackMaxPerCore: 131072,

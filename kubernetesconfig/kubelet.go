@@ -16,6 +16,9 @@ type Kubelet struct {
 	DownloadURL    string `json:"download-url"`
 	VersionCommand string `json:"version-command"`
 
+	// UserName is the user name used for running init scripts or SSH access.
+	UserName string `json:"user-name,omitempty"`
+
 	AllowPrivileged         bool   `json:"allow-privileged" kubelet:"allow-privileged"`
 	AnonymousAuth           bool   `json:"anonymous-auth" kubelet:"anonymous-auth"`
 	CgroupRoot              string `json:"cgroup-root" kubelet:"cgroup-root"`
@@ -212,7 +215,7 @@ After=docker.service
 
 [Service]
 EnvironmentFile=/etc/sysconfig/kubelet
-ExecStart={{ .KubeletPath }} "\$DAEMON_ARGS"
+ExecStart={{ .KubeletPath }} "\$KUBELET_FLAGS"
 Restart=always
 RestartSec=2s
 StartLimitInterval=0
@@ -230,6 +233,20 @@ sudo cp /tmp/kubelet.service /etc/systemd/system/kubelet.service
 sudo systemctl daemon-reload
 sudo systemctl cat kubelet.service
 `
+
+// Sysconfig returns "/etc/sysconfig/kubelet" file.
+func (kb *Kubelet) Sysconfig() (s string, err error) {
+	var fs []string
+	fs, err = kb.Flags()
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf(`KUBELET_FLAGS="%s"
+HOME="/home/%s"
+`, strings.Join(fs, " "),
+		kb.UserName,
+	), nil
+}
 
 // Flags returns the list of "kubelet" flags.
 // Make sure to validate the configuration with "ValidateAndSetDefaults".
@@ -265,16 +282,4 @@ func (kb *Kubelet) Flags() (flags []string, err error) {
 		}
 	}
 	return flags, nil
-}
-
-// Sysconfig returns "/etc/sysconfig/kubelet" file.
-func (kb *Kubelet) Sysconfig() (s string, err error) {
-	var fs []string
-	fs, err = kb.Flags()
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf(`DAEMON_ARGS="%s"
-HOME="/root"
-`, strings.Join(fs, " ")), nil
 }

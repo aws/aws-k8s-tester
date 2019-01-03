@@ -24,17 +24,17 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBELET_WORKER_NODES_PATH", "/usr/local/bin/kubelet")
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBELET_WORKER_NODES_DOWNLOAD_URL", "https://storage.googleapis.com/kubernetes-release/release/v1.20.0/bin/linux/amd64/kubelet")
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBELET_WORKER_NODES_VERSION_COMMAND", "/usr/local/bin/kubelet --version || true")
-	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBE_PROXY_MASTER_NODES_IMAGE", "k8s.gcr.io/kube-proxy:v1.20.0")
-	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBE_PROXY_WORKER_NODES_IMAGE", "k8s.gcr.io/kube-proxy:v1.20.0")
+	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBE_PROXY_MASTER_NODES_DOWNLOAD_URL", "https://storage.googleapis.com/kubernetes-release/release/v1.20.0/bin/linux/amd64/kube-proxy")
+	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBE_PROXY_WORKER_NODES_DOWNLOAD_URL", "https://storage.googleapis.com/kubernetes-release/release/v1.20.0/bin/linux/amd64/kube-proxy")
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBECTL_PATH", "/usr/local/bin/kubectl")
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBECTL_DOWNLOAD_URL", "https://storage.googleapis.com/kubernetes-release/release/v1.20.0/bin/linux/amd64/kubectl")
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBECTL_VERSION_COMMAND", "/usr/local/bin/kubectl version --client || true")
-	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBE_APISERVER_IMAGE", "k8s.gcr.io/kube-apiserver:v1.20.0")
+	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBE_APISERVER_DOWNLOAD_URL", "https://storage.googleapis.com/kubernetes-release/release/v1.20.0/bin/linux/amd64/kube-apiserver")
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBE_APISERVER_INSECURE_PORT", "1")
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBE_APISERVER_STORAGE_BACKEND", "etcd4")
-	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBE_CONTROLLER_MANAGER_IMAGE", "k8s.gcr.io/kube-controller-manager:v1.20.0")
-	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBE_SCHEDULER_IMAGE", "k8s.gcr.io/kube-scheduler:v1.20.0")
-	os.Setenv("AWS_K8S_TESTER_KUBERNETES_CLOUD_CONTROLLER_MANAGER_IMAGE", "k8s.gcr.io/cloud-controller-manager:v1.20.0")
+	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBE_CONTROLLER_MANAGER_DOWNLOAD_URL", "https://storage.googleapis.com/kubernetes-release/release/v1.20.0/bin/linux/amd64/kube-controller-manager")
+	os.Setenv("AWS_K8S_TESTER_KUBERNETES_KUBE_SCHEDULER_DOWNLOAD_URL", "https://storage.googleapis.com/kubernetes-release/release/v1.20.0/bin/linux/amd64/kube-scheduler")
+	os.Setenv("AWS_K8S_TESTER_KUBERNETES_CLOUD_CONTROLLER_MANAGER_DOWNLOAD_URL", "https://storage.googleapis.com/kubernetes-release/release/v1.20.0/bin/linux/amd64/cloud-controller-manager")
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_CLUSTER_SNAPSHOT_COUNT", "100")
 	os.Setenv("AWS_K8S_TESTER_KUBERNETES_TEST_TIMEOUT", "20s")
 	os.Setenv("AWS_K8S_TESTER_EC2_MASTER_NODES_WAIT_BEFORE_DOWN", "3h")
@@ -65,17 +65,17 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBELET_WORKER_NODES_PATH")
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBELET_WORKER_NODES_DOWNLOAD_URL")
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBELET_WORKER_NODES_VERSION_COMMAND")
-		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBE_PROXY_MASTER_NODES_IMAGE")
-		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBE_PROXY_WORKER_NODES_IMAGE")
+		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBE_PROXY_MASTER_NODES_DOWNLOAD_URL")
+		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBE_PROXY_WORKER_NODES_DOWNLOAD_URL")
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBECTL_PATH")
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBECTL_DOWNLOAD_URL")
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBECTL_VERSION_COMMAND")
-		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBE_APISERVER_IMAGE")
+		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBE_APISERVER_DOWNLOAD_URL")
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBE_APISERVER_INSECURE_PORT")
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBE_APISERVER_STORAGE_BACKEND")
-		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBE_CONTROLLER_MANAGER_IMAGE")
-		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBE_SCHEDULER_IMAGE")
-		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_CLOUD_CONTROLLER_MANAGER_IMAGE")
+		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBE_CONTROLLER_MANAGER_DOWNLOAD_URL")
+		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_KUBE_SCHEDULER_DOWNLOAD_URL")
+		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_CLOUD_CONTROLLER_MANAGER_DOWNLOAD_URL")
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_CLUSTER_SNAPSHOT_COUNT")
 		os.Unsetenv("AWS_K8S_TESTER_KUBERNETES_TEST_TIMEOUT")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_MASTER_NODES_WAIT_BEFORE_DOWN")
@@ -132,11 +132,11 @@ func TestEnv(t *testing.T) {
 	if cfg.KubeletWorkerNodes.VersionCommand != "/usr/local/bin/kubelet --version || true" {
 		t.Fatalf("unexpected KubeletWorkerNodes.VersionCommand, got %q", cfg.KubeletWorkerNodes.VersionCommand)
 	}
-	if cfg.KubeProxyMasterNodes.Image != "k8s.gcr.io/kube-proxy:v1.20.0" {
-		t.Fatalf("unexpected KubeProxyMasterNodes.Image, got %q", cfg.KubeProxyMasterNodes.Image)
+	if cfg.KubeProxyMasterNodes.DownloadURL != "https://storage.googleapis.com/kubernetes-release/release/v1.20.0/bin/linux/amd64/kube-proxy" {
+		t.Fatalf("unexpected KubeProxyMasterNodes.DownloadURL, got %q", cfg.KubeProxyMasterNodes.DownloadURL)
 	}
-	if cfg.KubeProxyWorkerNodes.Image != "k8s.gcr.io/kube-proxy:v1.20.0" {
-		t.Fatalf("unexpected KubeProxyWorkerNodes.Image, got %q", cfg.KubeProxyWorkerNodes.Image)
+	if cfg.KubeProxyWorkerNodes.DownloadURL != "https://storage.googleapis.com/kubernetes-release/release/v1.20.0/bin/linux/amd64/kube-proxy" {
+		t.Fatalf("unexpected KubeProxyWorkerNodes.DownloadURL, got %q", cfg.KubeProxyWorkerNodes.DownloadURL)
 	}
 	if cfg.Kubectl.Path != "/usr/local/bin/kubectl" {
 		t.Fatalf("unexpected Kubectl.Path, got %q", cfg.Kubectl.Path)
@@ -147,8 +147,8 @@ func TestEnv(t *testing.T) {
 	if cfg.Kubectl.VersionCommand != "/usr/local/bin/kubectl version --client || true" {
 		t.Fatalf("unexpected Kubectl.VersionCommand, got %q", cfg.Kubectl.VersionCommand)
 	}
-	if cfg.KubeAPIServer.Image != "k8s.gcr.io/kube-apiserver:v1.20.0" {
-		t.Fatalf("unexpected KubeAPIServer.Image, got %q", cfg.KubeAPIServer.Image)
+	if cfg.KubeAPIServer.DownloadURL != "https://storage.googleapis.com/kubernetes-release/release/v1.20.0/bin/linux/amd64/kube-apiserver" {
+		t.Fatalf("unexpected KubeAPIServer.DownloadURL, got %q", cfg.KubeAPIServer.DownloadURL)
 	}
 	if cfg.KubeAPIServer.InsecurePort != 1 {
 		t.Fatalf("unexpected KubeAPIServer.InsecurePort, got %d", cfg.KubeAPIServer.InsecurePort)
@@ -156,14 +156,14 @@ func TestEnv(t *testing.T) {
 	if cfg.KubeAPIServer.StorageBackend != "etcd4" {
 		t.Fatalf("unexpected KubeAPIServer.StorageBackend, got %q", cfg.KubeAPIServer.StorageBackend)
 	}
-	if cfg.KubeControllerManager.Image != "k8s.gcr.io/kube-controller-manager:v1.20.0" {
-		t.Fatalf("unexpected KubeControllerManager.Image, got %q", cfg.KubeControllerManager.Image)
+	if cfg.KubeControllerManager.DownloadURL != "https://storage.googleapis.com/kubernetes-release/release/v1.20.0/bin/linux/amd64/kube-controller-manager" {
+		t.Fatalf("unexpected KubeControllerManager.DownloadURL, got %q", cfg.KubeControllerManager.DownloadURL)
 	}
-	if cfg.KubeScheduler.Image != "k8s.gcr.io/kube-scheduler:v1.20.0" {
-		t.Fatalf("unexpected KubeScheduler.Image, got %q", cfg.KubeScheduler.Image)
+	if cfg.KubeScheduler.DownloadURL != "https://storage.googleapis.com/kubernetes-release/release/v1.20.0/bin/linux/amd64/kube-scheduler" {
+		t.Fatalf("unexpected KubeScheduler.DownloadURL, got %q", cfg.KubeScheduler.DownloadURL)
 	}
-	if cfg.CloudControllerManager.Image != "k8s.gcr.io/cloud-controller-manager:v1.20.0" {
-		t.Fatalf("unexpected CloudControllerManager.Image, got %q", cfg.CloudControllerManager.Image)
+	if cfg.CloudControllerManager.DownloadURL != "https://storage.googleapis.com/kubernetes-release/release/v1.20.0/bin/linux/amd64/cloud-controller-manager" {
+		t.Fatalf("unexpected CloudControllerManager.DownloadURL, got %q", cfg.CloudControllerManager.DownloadURL)
 	}
 
 	if cfg.TestTimeout != 20*time.Second {
