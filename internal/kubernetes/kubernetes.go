@@ -386,7 +386,6 @@ func (md *embedded) Create() (err error) {
 
 	////////////////////////////////////////////////////////////////////////
 	md.lg.Info("step 6-1. 'master node kube-proxy' configuration")
-	md.lg.Info("TODO step 6-2. successfully sent 'master node kube-proxy' PKI assets")
 	md.lg.Info("TODO step 6-3. successfully wrote 'master node kube-proxy' KUBECONFIG")
 	md.lg.Info("TODO step 6-4. successfully sent 'master node kube-proxy' KUBECONFIG")
 	md.lg.Info("TODO step 6-5. successfully wrote 'master node kube-proxy' environment file")
@@ -397,7 +396,6 @@ func (md *embedded) Create() (err error) {
 
 	////////////////////////////////////////////////////////////////////////
 	md.lg.Info("step 7-1. 'worker node kube-proxy' configuration")
-	md.lg.Info("TODO step 7-2. successfully sent 'worker node kube-proxy' PKI assets")
 	md.lg.Info("TODO step 7-3. successfully wrote 'worker node kube-proxy' KUBECONFIG")
 	md.lg.Info("TODO step 7-4. successfully sent 'worker node kube-proxy' KUBECONFIG")
 	md.lg.Info("TODO step 7-5. successfully wrote 'worker node kube-proxy' environment file")
