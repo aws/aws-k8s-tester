@@ -113,7 +113,7 @@ func (md *embedded) deleteSecurityGroup() error {
 		awsErr, ok := err.(awserr.Error)
 		if ok && awsErr.Code() == "InvalidGroup.NotFound" {
 			md.lg.Info(
-				"deleted all security group",
+				"deleted all security groups",
 				zap.Strings("group-ids", md.cfg.SecurityGroupIDs),
 			)
 			return nil
