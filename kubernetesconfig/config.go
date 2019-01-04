@@ -345,16 +345,6 @@ const (
 
 // UpdateFromEnvs updates fields from environmental variables.
 func (cfg *Config) UpdateFromEnvs() error {
-	// move these to "ValidateAndSetDefaults"
-	cfg.ETCDNodes.EC2.AWSRegion = cfg.AWSRegion
-	cfg.EC2MasterNodes.AWSRegion = cfg.AWSRegion
-	cfg.EC2WorkerNodes.AWSRegion = cfg.AWSRegion
-	cfg.KubeletMasterNodes.NodeLabels = fmt.Sprintf("aws-k8s-tester.k8s.io/instancegroup=master-%s,kubernetes.io/role=master,node-role.kubernetes.io/master=", cfg.AWSRegion)
-	cfg.KubeletMasterNodes.UserName = cfg.EC2MasterNodes.UserName
-	cfg.KubeletWorkerNodes.UserName = cfg.EC2WorkerNodes.UserName
-	cfg.KubeProxyWorkerNodes.Master = "https://api.internal." + cfg.ClusterName
-	cfg.KubeControllerManager.ClusterName = cfg.ClusterName
-
 	if err := cfg.ETCDNodes.UpdateFromEnvs(); err != nil {
 		return err
 	}
@@ -479,6 +469,19 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 	if cfg.EC2MasterNodes == nil {
 		return errors.New("EC2MasterNodes configuration not found")
 	}
+	if cfg.EC2WorkerNodes == nil {
+		return errors.New("EC2WorkerNodes configuration not found")
+	}
+	if cfg.ETCDNodes == nil {
+		return errors.New("ETCDNodes configuration not found")
+	}
+
+	// let master node EC2 deployer create SSH key
+	// and share the same SSH key for master and worker nodes
+	cfg.ETCDNodes.EC2.AWSRegion = cfg.AWSRegion
+	cfg.EC2MasterNodes.AWSRegion = cfg.AWSRegion
+	cfg.EC2WorkerNodes.AWSRegion = cfg.AWSRegion
+
 	if err = cfg.EC2MasterNodes.ValidateAndSetDefaults(); err != nil {
 		return err
 	}
@@ -487,9 +490,6 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 		if !ok {
 			return fmt.Errorf("master node expects port %q but not found from %v", p, cfg.EC2MasterNodes.IngressRulesTCP)
 		}
-	}
-	if cfg.EC2WorkerNodes == nil {
-		return errors.New("EC2WorkerNodes configuration not found")
 	}
 
 	// let master node EC2 deployer create SSH key
@@ -506,14 +506,15 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 	cfg.EC2WorkerNodes.KeyPath = cfg.EC2MasterNodes.KeyPath
 	cfg.EC2WorkerNodes.KeyCreateSkip = true
 	cfg.EC2WorkerNodes.KeyCreated = false
+	cfg.KubeletMasterNodes.NodeLabels = fmt.Sprintf("aws-k8s-tester.k8s.io/instancegroup=master-%s,kubernetes.io/role=master,node-role.kubernetes.io/master=", cfg.AWSRegion)
+	cfg.KubeletMasterNodes.UserName = cfg.EC2MasterNodes.UserName
+	cfg.KubeletWorkerNodes.UserName = cfg.EC2WorkerNodes.UserName
+	cfg.KubeProxyWorkerNodes.Master = "https://api.internal." + cfg.ClusterName
+	cfg.KubeControllerManager.ClusterName = cfg.ClusterName
 
-	if cfg.ETCDNodes == nil {
-		return errors.New("ETCDNodes configuration not found")
-	}
 	if err = cfg.ETCDNodes.ValidateAndSetDefaults(); err != nil {
 		return err
 	}
-
 	if err = cfg.EC2WorkerNodes.ValidateAndSetDefaults(); err != nil {
 		return err
 	}

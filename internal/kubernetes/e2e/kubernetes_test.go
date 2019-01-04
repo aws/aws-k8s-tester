@@ -21,10 +21,6 @@ func TestKubernetes(t *testing.T) {
 	}
 
 	cfg := kubernetesconfig.NewDefault()
-	if err := cfg.UpdateFromEnvs(); err != nil {
-		t.Fatal(err)
-	}
-
 	dp, err := kubernetes.NewDeployer(cfg)
 	if err != nil {
 		t.Fatal(err)
