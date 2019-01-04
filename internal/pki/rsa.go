@@ -10,8 +10,9 @@ import (
 	"fmt"
 	"math/big"
 	"os"
-	"path/filepath"
 	"time"
+
+	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 )
 
 type RSA struct {
@@ -71,36 +72,30 @@ func (k *RSA) PublicKeyBytes() []byte {
 	})
 }
 
-// SavePrivateKey saves the private key to the path.
-// Give the extension ".key".
-func (k *RSA) SavePrivateKey(p string) (err error) {
-	if err = os.MkdirAll(filepath.Dir(p), 0600); err != nil {
-		return err
-	}
-	var f *os.File
-	f, err = os.OpenFile(p, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+// SavePrivateKey saves the private key to a temporary file path.
+// Private key should have the extension ".key".
+func (k *RSA) SavePrivateKey() (p string, err error) {
+	p, err = fileutil.WriteTempFile(k.PrivateKeyBytes())
 	if err != nil {
-		return err
+		return "", err
 	}
-	defer f.Close()
-	_, err = f.Write(k.PrivateKeyBytes())
-	return err
+	if err = os.Chmod(p, 0600); err != nil {
+		return "", err
+	}
+	return p, nil
 }
 
-// SavePublicKey saves the public key to the path.
-// Give the extension ".pem".
-func (k *RSA) SavePublicKey(p string) (err error) {
-	if err = os.MkdirAll(filepath.Dir(p), 0600); err != nil {
-		return err
-	}
-	var f *os.File
-	f, err = os.OpenFile(p, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+// SavePublicKey saves the public key to a temporary file path.
+// Public key should have the extension ".pem".
+func (k *RSA) SavePublicKey() (p string, err error) {
+	p, err = fileutil.WriteTempFile(k.PublicKeyBytes())
 	if err != nil {
-		return err
+		return "", err
 	}
-	defer f.Close()
-	_, err = f.Write(k.PublicKeyBytes())
-	return err
+	if err = os.Chmod(p, 0600); err != nil {
+		return "", err
+	}
+	return p, nil
 }
 
 // EncryptWithPublicKey encrypts data with the public key.
@@ -199,18 +194,15 @@ func (k *RSA) RootCertificateBytes() []byte {
 	})
 }
 
-// SaveRootCertificate saves the root certificate to the path.
-// Give the extension ".crt".
-func (k *RSA) SaveRootCertificate(p string) (err error) {
-	if err = os.MkdirAll(filepath.Dir(p), 0600); err != nil {
-		return err
-	}
-	var f *os.File
-	f, err = os.OpenFile(p, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+// SaveRootCertificate saves the root certificate to a temporary file.
+// Certificate should have the extension ".crt".
+func (k *RSA) SaveRootCertificate() (p string, err error) {
+	p, err = fileutil.WriteTempFile(k.RootCertificateBytes())
 	if err != nil {
-		return err
+		return "", err
 	}
-	defer f.Close()
-	_, err = f.Write(k.RootCertificateBytes())
-	return err
+	if err = os.Chmod(p, 0600); err != nil {
+		return "", err
+	}
+	return p, nil
 }
