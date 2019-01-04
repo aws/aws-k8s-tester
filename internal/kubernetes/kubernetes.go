@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/internal/ec2"
 	"github.com/aws/aws-k8s-tester/internal/etcd"
+	"github.com/aws/aws-k8s-tester/internal/pki"
 	"github.com/aws/aws-k8s-tester/internal/ssh"
 	"github.com/aws/aws-k8s-tester/kubernetesconfig"
 	"github.com/aws/aws-k8s-tester/pkg/awsapi"
@@ -272,13 +273,44 @@ func (md *embedded) Create() (err error) {
 	////////////////////////////////////////////////////////////////////////
 
 	////////////////////////////////////////////////////////////////////////
+	// TODO: different CA chain per component?
+
 	md.lg.Info("step 3-1. PKI assets")
-	md.lg.Info("TODO step 3-2. successfully generated PKI assets")
+	var rsa *pki.RSA
+	rsa, err = pki.NewRSA(2048)
+	if err != nil {
+		return err
+	}
+	if err = rsa.SignRootCertificate(); err != nil {
+		return err
+	}
+	var privateKeyPath string
+	privateKeyPath, err = rsa.SavePrivateKey()
+	if err != nil {
+		return err
+	}
+	var publicKeyPath string
+	publicKeyPath, err = rsa.SavePublicKey()
+	if err != nil {
+		return err
+	}
+	var rootCAPath string
+	rootCAPath, err = rsa.SaveRootCertificate()
+	if err != nil {
+		return err
+	}
+	md.lg.Info("step 3-2. successfully generated PKI assets")
 	////////////////////////////////////////////////////////////////////////
 
 	////////////////////////////////////////////////////////////////////////
 	md.lg.Info("step 4-1. 'master node kubelet' configuration")
-	md.lg.Info("TODO step 4-2. successfully sent 'master node kubelet' PKI assets")
+
+	for _, target := range md.cfg.EC2MasterNodes.Instances {
+		if err = sendKubeletPKI(md.lg, *md.cfg.EC2MasterNodes, target, rootCAPath, *md.cfg.KubeletMasterNodes); err != nil {
+			return err
+		}
+	}
+	md.lg.Info("step 4-2. successfully sent 'master node kubelet' PKI assets")
 	md.lg.Info("TODO step 4-3. successfully wrote 'master node kubelet' KUBECONFIG")
 	md.lg.Info("TODO step 4-4. successfully sent 'master node kubelet' KUBECONFIG")
 
@@ -313,7 +345,13 @@ func (md *embedded) Create() (err error) {
 
 	////////////////////////////////////////////////////////////////////////
 	md.lg.Info("step 5-1. 'worker node kubelet' configuration")
-	md.lg.Info("TODO step 5-2. successfully sent 'worker node kubelet' PKI assets")
+
+	for _, target := range md.cfg.EC2WorkerNodes.Instances {
+		if err = sendKubeletPKI(md.lg, *md.cfg.EC2WorkerNodes, target, rootCAPath, *md.cfg.KubeletWorkerNodes); err != nil {
+			return err
+		}
+	}
+	md.lg.Info("step 5-2. successfully sent 'worker node kubelet' PKI assets")
 	md.lg.Info("TODO step 5-3. successfully wrote 'worker node kubelet' KUBECONFIG")
 	md.lg.Info("TODO step 5-4. successfully sent 'worker node kubelet' KUBECONFIG")
 
@@ -391,7 +429,13 @@ func (md *embedded) Create() (err error) {
 
 	////////////////////////////////////////////////////////////////////////
 	md.lg.Info("step 10-1. 'master node kube-apiserver' configuration")
-	md.lg.Info("TODO step 10-2. successfully sent 'master node kube-apiserver' PKI assets")
+
+	for _, target := range md.cfg.EC2MasterNodes.Instances {
+		if err = sendKubeAPIServerPKI(md.lg, *md.cfg.EC2MasterNodes, target, privateKeyPath, publicKeyPath, rootCAPath, *md.cfg.KubeAPIServer); err != nil {
+			return err
+		}
+	}
+	md.lg.Info("step 10-2. successfully sent 'master node kube-apiserver' PKI assets")
 	md.lg.Info("TODO step 10-3. successfully wrote 'master node kube-apiserver' environment file")
 	md.lg.Info("TODO step 10-4. successfully sent 'master node kube-apiserver' environment file")
 	md.lg.Info("TODO step 10-5. successfully wrote 'master node kube-apiserver' systemd file")

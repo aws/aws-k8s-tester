@@ -83,7 +83,7 @@ var defaultKubeAPIServer = KubeAPIServer{
 	StorageBackend:                  "etcd3",
 	TLSCertFile:                     "/srv/kubernetes/server.cert",
 	TLSPrivateKeyFile:               "/srv/kubernetes/server.key",
-	TokenAuthFile:                   "/srv/kubernetes/known_tokens.csv",
+	TokenAuthFile:                   "",
 	V:                               2,
 }
 
