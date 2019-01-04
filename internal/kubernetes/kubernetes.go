@@ -87,6 +87,8 @@ func NewDeployer(cfg *kubernetesconfig.Config) (Deployer, error) {
 	return md, cfg.Sync()
 }
 
+// TODO: use EC2 instance profile to do all this?
+
 func (md *embedded) Create() (err error) {
 	md.mu.Lock()
 	defer md.mu.Unlock()
@@ -232,24 +234,7 @@ func (md *embedded) Create() (err error) {
 	md.cfg.Sync()
 	md.lg.Info("registered instances to load balancer", zap.String("name", md.cfg.LoadBalancerName), zap.Int("instances", len(instances)))
 
-	// TODO: generate certs
-	// TODO: send certs to nodes
-	// TODO: write KUBECONFIG for master nodes
-	// TODO: send KUBECONFIG to master nodes
-	// TODO: write KUBECONFIG for worker nodes
-	// TODO: send KUBECONFIG to worker nodes
-	// TODO: write kubelet environment file for master nodes
-	// TODO: write kubelet environment file for worker nodes
-	// TODO: write kube-proxy static pod manifest for master nodes
-	// TODO: write kube-proxy static pod manifest for worker nodes
-	// TODO: write kube-scheduler static pod manifest for master nodes
-	// TODO: write kube-controller-manager static pod manifest for master nodes
-	// TODO: write kube-apiserver static pod manifest for master nodes
-	// TODO: start kubelet for master nodes
-	// TODO: start kubelet for worker nodes
-	// TODO: write KUBECONFIG for client
-	// TODO: use EC2 instance profile to do all this?
-
+	md.lg.Info("step 1-1. downloading master node kubernetes components")
 	downloadsMaster := md.cfg.DownloadsMaster()
 	errc = make(chan error)
 	for _, target := range md.cfg.EC2MasterNodes.Instances {
@@ -264,11 +249,12 @@ func (md *embedded) Create() (err error) {
 	if len(ess) > 0 {
 		return errors.New(strings.Join(ess, ", "))
 	}
-	md.lg.Info("deployed kubernetes master nodes")
+	md.lg.Info("step 1-2. downloaded master node kubernetes components")
 
+	md.lg.Info("step 2-1. downloading worker node kubernetes components")
 	downloadsWorker := md.cfg.DownloadsWorker()
 	for _, target := range md.cfg.EC2WorkerNodes.Instances {
-		go downloadInstall(md.lg, *md.cfg.EC2WorkerNodes, target, downloadsWorker, *md.cfg.KubeletMasterNodes, errc)
+		go downloadInstall(md.lg, *md.cfg.EC2WorkerNodes, target, downloadsWorker, *md.cfg.KubeletWorkerNodes, errc)
 	}
 	for range md.cfg.EC2WorkerNodes.Instances {
 		err = <-errc
@@ -279,7 +265,123 @@ func (md *embedded) Create() (err error) {
 	if len(ess) > 0 {
 		return errors.New(strings.Join(ess, ", "))
 	}
-	md.lg.Info("deployed kubernetes worker nodes")
+	md.lg.Info("step 2-2. downloaded worker node kubernetes components")
+
+	md.lg.Info("step 3-1. PKI assets")
+	fmt.Println("TODO")
+	md.lg.Info("step 3-2. generated PKI assets")
+
+	md.lg.Info("step 4-1. master node kubelet configuration")
+	fmt.Println("TODO")
+	md.lg.Info("step 4-2. sent master node kubelet PKI assets")
+	fmt.Println("TODO")
+	md.lg.Info("step 4-3. wrote master node kubelet KUBECONFIG")
+	fmt.Println("TODO")
+	md.lg.Info("step 4-4. sent master node kubelet KUBECONFIG")
+	fmt.Println("TODO")
+	md.lg.Info("step 4-5. wrote master node kubelet environment file")
+	fmt.Println("TODO")
+	md.lg.Info("step 4-6. sent master node kubelet environment file")
+	fmt.Println("TODO")
+	md.lg.Info("step 4-7. wrote master node kubelet systemd file")
+	fmt.Println("TODO")
+	md.lg.Info("step 4-8. sent master node kubelet systemd file")
+
+	md.lg.Info("step 5-1. worker node kubelet configuration")
+	fmt.Println("TODO")
+	md.lg.Info("step 5-2. sent worker node kubelet PKI assets")
+	fmt.Println("TODO")
+	md.lg.Info("step 5-3. wrote worker node kubelet KUBECONFIG")
+	fmt.Println("TODO")
+	md.lg.Info("step 5-4. sent worker node kubelet KUBECONFIG")
+	fmt.Println("TODO")
+	md.lg.Info("step 5-5. wrote worker node kubelet environment file")
+	fmt.Println("TODO")
+	md.lg.Info("step 5-6. sent worker node kubelet environment file")
+	fmt.Println("TODO")
+	md.lg.Info("step 5-7. wrote worker node kubelet systemd file")
+	fmt.Println("TODO")
+	md.lg.Info("step 5-8. sent worker node kubelet systemd file")
+
+	md.lg.Info("step 6-1. master node kube-proxy configuration")
+	fmt.Println("TODO")
+	md.lg.Info("step 6-2. sent master node kube-proxy PKI assets")
+	fmt.Println("TODO")
+	md.lg.Info("step 6-3. wrote master node kube-proxy KUBECONFIG")
+	fmt.Println("TODO")
+	md.lg.Info("step 6-4. sent master node kube-proxy KUBECONFIG")
+	fmt.Println("TODO")
+	md.lg.Info("step 6-5. wrote master node kube-proxy environment file")
+	fmt.Println("TODO")
+	md.lg.Info("step 6-6. sent master node kube-proxy environment file")
+	fmt.Println("TODO")
+	md.lg.Info("step 6-7. wrote master node kube-proxy systemd file")
+	fmt.Println("TODO")
+	md.lg.Info("step 6-8. sent master node kube-proxy systemd file")
+
+	md.lg.Info("step 7-1. worker node kube-proxy configuration")
+	fmt.Println("TODO")
+	md.lg.Info("step 7-2. sent worker node kube-proxy PKI assets")
+	fmt.Println("TODO")
+	md.lg.Info("step 7-3. wrote worker node kube-proxy KUBECONFIG")
+	fmt.Println("TODO")
+	md.lg.Info("step 7-4. sent worker node kube-proxy KUBECONFIG")
+	fmt.Println("TODO")
+	md.lg.Info("step 7-5. wrote worker node kube-proxy environment file")
+	fmt.Println("TODO")
+	md.lg.Info("step 7-6. sent worker node kube-proxy environment file")
+	fmt.Println("TODO")
+	md.lg.Info("step 7-7. wrote worker node kube-proxy systemd file")
+	fmt.Println("TODO")
+	md.lg.Info("step 7-8. sent worker node kube-proxy systemd file")
+
+	md.lg.Info("step 8-1. master node kube-scheduler configuration")
+	fmt.Println("TODO")
+	md.lg.Info("step 8-2. wrote master node kube-scheduler KUBECONFIG")
+	fmt.Println("TODO")
+	md.lg.Info("step 8-3. sent master node kube-scheduler KUBECONFIG")
+	fmt.Println("TODO")
+	md.lg.Info("step 8-4. wrote master node kube-scheduler environment file")
+	fmt.Println("TODO")
+	md.lg.Info("step 8-5. sent master node kube-scheduler environment file")
+	fmt.Println("TODO")
+	md.lg.Info("step 8-6. wrote master node kube-scheduler systemd file")
+	fmt.Println("TODO")
+	md.lg.Info("step 8-7. sent master node kube-scheduler systemd file")
+
+	md.lg.Info("step 9-1. master node kube-controller-manager configuration")
+	fmt.Println("TODO")
+	md.lg.Info("step 9-2. sent master node kube-controller-manager PKI assets")
+	fmt.Println("TODO")
+	md.lg.Info("step 9-3. wrote master node kube-controller-manager KUBECONFIG")
+	fmt.Println("TODO")
+	md.lg.Info("step 9-4. sent master node kube-controller-manager KUBECONFIG")
+	fmt.Println("TODO")
+	md.lg.Info("step 9-5. wrote master node kube-controller-manager environment file")
+	fmt.Println("TODO")
+	md.lg.Info("step 9-6. sent master node kube-controller-manager environment file")
+	fmt.Println("TODO")
+	md.lg.Info("step 9-7. wrote master node kube-controller-manager systemd file")
+	fmt.Println("TODO")
+	md.lg.Info("step 9-8. sent master node kube-controller-manager systemd file")
+
+	md.lg.Info("step 10-1. master node kube-apiserver configuration")
+	fmt.Println("TODO")
+	md.lg.Info("step 10-2. sent master node kube-apiserver PKI assets")
+	fmt.Println("TODO")
+	md.lg.Info("step 10-3. wrote master node kube-apiserver environment file")
+	fmt.Println("TODO")
+	md.lg.Info("step 10-4. sent master node kube-apiserver environment file")
+	fmt.Println("TODO")
+	md.lg.Info("step 10-5. wrote master node kube-apiserver systemd file")
+	fmt.Println("TODO")
+	md.lg.Info("step 10-6. sent master node kube-apiserver systemd file")
+
+	md.lg.Info("step 11-1. client-side kubectl configuration")
+	fmt.Println("TODO")
+	md.lg.Info("step 11-2. wrote client-side kubectl KUBECONFIG")
+	fmt.Println("TODO")
+	md.lg.Info("step 11-3. run client-side kubectl get all")
 
 	if md.cfg.UploadKubeConfig {
 		err := md.ec2MasterNodesDeployer.UploadToBucketForTests(md.cfg.KubeConfigPath, md.cfg.KubeConfigPathBucket)
