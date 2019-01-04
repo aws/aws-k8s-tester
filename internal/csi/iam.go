@@ -78,6 +78,7 @@ type iamResource struct {
 	arn  string
 }
 
+// awsRegion must be a valid AWS region for ec2 instances.
 func createIAM(awsRegion string) (*iam.IAM, error) {
 	sess, err := session.NewSession(&aws.Config{Region: aws.String(awsRegion)})
 	if err != nil {
@@ -86,23 +87,13 @@ func createIAM(awsRegion string) (*iam.IAM, error) {
 	return iam.New(sess), nil
 }
 
-// awsRegion must be a valid AWS region for ec2 instances.
-// For a complete list, see entries under "Region" on the table "Amazon Elastic Compute Cloud (Amazon EC2)":
-// https://docs.aws.amazon.com/general/latest/gr/rande.html#ec2_region
+// createIAMResources creates IAM resources needed to run CSI tests. If an error occurs, any created IAm resources are
+// automatically deleted and the returned *iamResources is nil.
+// awsRegion must be a valid AWS region for ec2 instances. For a complete list, see entries under "Region" on the table
+// "Amazon Elastic Compute Cloud (Amazon EC2)": https://docs.aws.amazon.com/general/latest/gr/rande.html#ec2_region
 func createIAMResources(awsRegion string) (*iamResources, error) {
 	resources := &iamResources{}
 	var err error
-
-	defer func() {
-		// Delay is needed to ensure that permissions have been propagated.
-		// See the section "Launching an Instance with an IAM Role" at
-		// https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html
-		time.Sleep(10 * time.Second)
-
-		if err != nil {
-			resources.deleteIAMResources()
-		}
-	}()
 
 	// Creates new logger
 	lg, err := zap.NewProduction()
@@ -112,15 +103,27 @@ func createIAMResources(awsRegion string) (*iamResources, error) {
 	resources.lg = lg
 
 	// Creates new session and IAM client
-	svc, err := createIAM(awsRegion)
+	resources.svc, err = createIAM(awsRegion)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create session and IAM client (%v)", err)
 	}
-	resources.svc = svc
 	resources.lg.Info("created session and IAM client")
 
+	defer func() {
+		// Delay is needed to ensure that permissions have been propagated.
+		// See the section "Launching an Instance with an IAM Role" at
+		// https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html
+		time.Sleep(10 * time.Second)
+
+		if err != nil {
+			if deleteErr := resources.deleteIAMResources(); deleteErr != nil {
+				resources.lg.Error("failed to delete all IAM resources", zap.Error(deleteErr))
+			}
+		}
+	}()
+
 	now := time.Now().UTC()
-	uniqueSuffix := fmt.Sprintf("%d%02d%02d%02d", now.Year(), now.Month(), now.Day(), now.Minute())
+	uniqueSuffix := fmt.Sprintf("%d%02d%02d%02d%02d", now.Year(), now.Month(), now.Day(), now.Minute(), now.Second())
 
 	// Creates instance profile
 	instanceOutput, err := resources.svc.CreateInstanceProfile(&iam.CreateInstanceProfileInput{
@@ -184,6 +187,7 @@ func createIAMResources(awsRegion string) (*iamResources, error) {
 	}
 	resources.lg.Info("attached role to instance policy")
 
+	resources.lg.Info("successfully created all IAM resources")
 	return resources, nil
 }
 
@@ -270,8 +274,10 @@ func (resources *iamResources) deleteIAMResources() error {
 	}
 
 	if len(errors) != 0 {
-		return fmt.Errorf("failures when deleting IAM resources:\n* %s", strings.Join(errors, "\n* "))
+		return fmt.Errorf(strings.Join(errors, ", "))
 	}
+
+	resources.lg.Info("successfully deleted all IAM resources")
 	return nil
 }
 
@@ -307,5 +313,5 @@ func (resources *iamResources) getManualDeleteCommands() string {
 		deleteCommands = append(deleteCommands, fmt.Sprintf("aws iam delete-policy --policy-arn %s", resources.policy.arn))
 	}
 
-	return strings.Join(deleteCommands, " && ")
+	return strings.Join(deleteCommands, " \\\n  ")
 }

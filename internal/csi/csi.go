@@ -2,9 +2,11 @@
 package csi
 
 import (
+	"bytes"
 	"fmt"
 	"reflect"
 	"strings"
+	"text/template"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
@@ -31,48 +33,55 @@ func NewTester(cfg *ec2config.Config, terminateOnExit, journalctlLogs bool) (tes
 		cfg:             cfg,
 	}
 
-	permissions, permissionsErr := createPermissions(tester.cfg)
-	if permissionsErr != nil {
-		return nil, fmt.Errorf("failed to create iamResources (%v)", permissionsErr)
+	if tester.iam, err = createIAMResources(cfg.AWSRegion); err != nil {
+		return nil, fmt.Errorf("failed to create iamResources (%v)", err)
 	}
-	tester.iam = permissions
+	cfg.InstanceProfileName = tester.iam.instanceProfile.name
 
-	ec, err := ec2.NewDeployer(tester.cfg)
-	if err != nil {
-		tester.iam.deleteIAMResources()
+	defer func() {
+		if err != nil {
+			if deleteErr := tester.iam.deleteIAMResources(); deleteErr != nil {
+				tester.iam.lg.Error("failed to delete all IAM resources", zap.Error(deleteErr))
+			}
+		}
+	}()
+
+	if tester.ec, err = ec2.NewDeployer(tester.cfg); err != nil {
 		return nil, fmt.Errorf("failed to create EC2 deployer (%v)", err)
 	}
-	tester.ec = ec
-	if err = ec.Create(); err != nil {
-		tester.iam.deleteIAMResources()
+	if err = tester.ec.Create(); err != nil {
 		return nil, fmt.Errorf("failed to create EC2 instance (%v)", err)
 	}
 	return tester, nil
 }
 
-func CreateConfig(vpcID, branchOrPR string) *ec2config.Config {
-	cfg := ec2config.NewDefault()
+func CreateConfig(vpcID, prNum, githubAccount, githubBranch string) (cfg *ec2config.Config, err error) {
+	cfg = ec2config.NewDefault()
 	cfg.UploadTesterLogs = false
 	cfg.VPCID = vpcID
 	cfg.IngressRulesTCP = map[string]string{"22": "0.0.0.0/0"}
 	cfg.Plugins = []string{
 		"update-amazon-linux-2",
 		"install-go-1.11.3",
-		"install-csi-" + branchOrPR,
+	}
+	// If prNum is set to an non-empty string, the master branch of kubernetes-sigs/aws-ebs-csi-driver is used,
+	// regardless of whether or not githubAccount and githubBranch have different values.
+	if prNum != "" {
+		if githubAccount != "kubernetes-sigs" || githubBranch != "master" {
+			fmt.Printf("WARNING: PR number %s takes precedence over non-default GitHub account and/or branch.\n", prNum)
+		}
+		cfg.Plugins = append(cfg.Plugins, "install-csi-"+prNum)
+	} else {
+		cfg.CustomScript, err = createCustomScript(gitAccountAndBranch{
+			Account: githubAccount,
+			Branch:  githubBranch,
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
 	cfg.Wait = true
-	return cfg
-}
-
-func createPermissions(cfg *ec2config.Config) (resources *iamResources, err error) {
-	resources, err = createIAMResources(cfg.AWSRegion)
-	if err != nil {
-		resources.deleteIAMResources()
-		return nil, err
-	} else {
-		cfg.InstanceProfileName = resources.instanceProfile.name
-	}
-	return resources, nil
+	return cfg, nil
 }
 
 func (tester *Tester) RunCSIIntegrationTest() error {
@@ -172,3 +181,55 @@ func (tester *Tester) Down() error {
 	tester.ec.Terminate()
 	return tester.iam.deleteIAMResources()
 }
+
+type gitAccountAndBranch struct {
+	Account string
+	Branch  string
+}
+
+func createCustomScript(g gitAccountAndBranch) (string, error) {
+	tpl := template.Must(template.New("installGitAccountAndBranchTemplate").Parse(installGitAccountAndBranchTemplate))
+	buf := bytes.NewBuffer(nil)
+	if err := tpl.Execute(buf, g); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
+const installGitAccountAndBranchTemplate = `
+
+################################## install kubernetes-sigs from account {{ .Account }}, branch {{ .Branch }}
+
+mkdir -p ${GOPATH}/src/github.com/kubernetes-sigs/
+cd ${GOPATH}/src/github.com/kubernetes-sigs/
+
+RETRIES=10
+DELAY=10
+COUNT=1
+while [[ ${COUNT} -lt ${RETRIES} ]]; do
+  rm -rf ./aws-ebs-csi-driver
+  git clone "https://github.com/{{ .Account }}/aws-ebs-csi-driver.git"
+  if [[ $? -eq 0 ]]; then
+    RETRIES=0
+    echo "Successfully git cloned!"
+    break
+  fi
+  let COUNT=${COUNT}+1
+  sleep ${DELAY}
+done
+
+cd ${GOPATH}/src/github.com/kubernetes-sigs/aws-ebs-csi-driver
+
+git checkout origin/{{ .Branch }}
+git checkout -B {{ .Branch }}
+
+git remote -v
+git branch
+git log --pretty=oneline -5
+
+pwd
+make aws-ebs-csi-driver && sudo cp ./bin/aws-ebs-csi-driver /usr/local/bin/aws-ebs-csi-driver
+
+##################################
+
+`
