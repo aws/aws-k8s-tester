@@ -16,6 +16,9 @@ type CloudControllerManager struct {
 	// TODO: support running as a static pod
 	// Image is the container image name and tag for cloud-controller-manager to run as a static pod.
 	// Image string `json:"image"`
+
+	// UserName is the user name used for running init scripts or SSH access.
+	UserName string `json:"user-name,omitempty"`
 }
 
 var defaultCloudControllerManager = CloudControllerManager{

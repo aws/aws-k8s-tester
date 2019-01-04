@@ -507,8 +507,16 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 	cfg.EC2WorkerNodes.KeyCreateSkip = true
 	cfg.EC2WorkerNodes.KeyCreated = false
 	cfg.KubeletMasterNodes.NodeLabels = fmt.Sprintf("aws-k8s-tester.k8s.io/instancegroup=master-%s,kubernetes.io/role=master,node-role.kubernetes.io/master=", cfg.AWSRegion)
+
+	cfg.CloudControllerManager.UserName = cfg.EC2MasterNodes.UserName
 	cfg.KubeletMasterNodes.UserName = cfg.EC2MasterNodes.UserName
 	cfg.KubeletWorkerNodes.UserName = cfg.EC2WorkerNodes.UserName
+	cfg.KubeProxyMasterNodes.UserName = cfg.EC2MasterNodes.UserName
+	cfg.KubeProxyWorkerNodes.UserName = cfg.EC2WorkerNodes.UserName
+	cfg.KubeAPIServer.UserName = cfg.EC2MasterNodes.UserName
+	cfg.KubeControllerManager.UserName = cfg.EC2WorkerNodes.UserName
+	cfg.KubeScheduler.UserName = cfg.EC2WorkerNodes.UserName
+
 	cfg.KubeProxyWorkerNodes.Master = "https://api.internal." + cfg.ClusterName
 	cfg.KubeControllerManager.ClusterName = cfg.ClusterName
 

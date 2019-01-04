@@ -1,11 +1,13 @@
 package kubernetesconfig
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"reflect"
 	"strconv"
 	"strings"
+	"text/template"
 )
 
 // KubeScheduler represents "kube-scheduler" configuration.
@@ -17,6 +19,9 @@ type KubeScheduler struct {
 	// TODO: support running as a static pod
 	// Image is the container image name and tag for kube-scheduler to run as a static pod.
 	// Image string `json:"image"`
+
+	// UserName is the user name used for running init scripts or SSH access.
+	UserName string `json:"user-name,omitempty"`
 
 	Kubeconfig  string `json:"kubeconfig" kube-scheduler:"kubeconfig"`
 	LeaderElect bool   `json:"leader-elect" kube-scheduler:"leader-elect"`
@@ -100,6 +105,71 @@ func (kb *KubeScheduler) updateFromEnvs(pfx string) error {
 	}
 	*kb = cc
 	return nil
+}
+
+// Service returns a script to configure kube-scheduler systemd service file.
+func (kb *KubeScheduler) Service() (s string, err error) {
+	tpl := template.Must(template.New("kubeSchedulerTemplate").Parse(kubeSchedulerTemplate))
+	buf := bytes.NewBuffer(nil)
+	kv := kubeSchedulerTemplateInfo{KubeSchedulerPath: kb.Path}
+	if err := tpl.Execute(buf, kv); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
+type kubeSchedulerTemplateInfo struct {
+	KubeSchedulerPath string
+}
+
+const kubeSchedulerTemplate = `#!/usr/bin/env bash
+
+sudo systemctl stop kube-scheduler.service || true
+
+sudo rm -rf /var/lib/kube-scheduler/
+sudo mkdir -p /var/lib/kube-scheduler/
+sudo rm -f /var/lib/kube-scheduler/kubeconfig
+
+rm -f /tmp/kube-scheduler.service
+cat <<EOF > /tmp/kube-scheduler.service
+[Unit]
+Description=kube-scheduler: The Kubernetes API Server
+Documentation=http://kubernetes.io/docs/
+After=docker.service
+
+[Service]
+EnvironmentFile=/etc/sysconfig/kube-scheduler
+ExecStart={{ .KubeSchedulerPath }} "\$KUBE_SCHEDULER_FLAGS"
+Restart=always
+RestartSec=2s
+StartLimitInterval=0
+KillMode=process
+User=root
+
+[Install]
+WantedBy=multi-user.target
+EOF
+cat /tmp/kube-scheduler.service
+
+sudo mkdir -p /etc/systemd/system/kube-scheduler.service.d
+sudo cp /tmp/kube-scheduler.service /etc/systemd/system/kube-scheduler.service
+
+sudo systemctl daemon-reload
+sudo systemctl cat kube-scheduler.service
+`
+
+// Sysconfig returns "/etc/sysconfig/kube-scheduler" file.
+func (kb *KubeScheduler) Sysconfig() (s string, err error) {
+	var fs []string
+	fs, err = kb.Flags()
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf(`KUBE_SCHEDULER_FLAGS="%s"
+HOME="/home/%s"
+`, strings.Join(fs, " "),
+		kb.UserName,
+	), nil
 }
 
 // Flags returns the list of "kube-scheduler" flags.

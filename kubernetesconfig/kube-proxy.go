@@ -1,11 +1,13 @@
 package kubernetesconfig
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"reflect"
 	"strconv"
 	"strings"
+	"text/template"
 )
 
 // KubeProxy defines "kube-proxy" configuration.
@@ -18,6 +20,9 @@ type KubeProxy struct {
 	// TODO: support running as a static pod
 	// Image is the container image name and tag for kube-proxy to run as a static pod.
 	// Image string `json:"image"`
+
+	// UserName is the user name used for running init scripts or SSH access.
+	UserName string `json:"user-name,omitempty"`
 
 	ClusterCIDR         string `json:"cluster-cidr" kube-proxy:"cluster-cidr"`
 	ConntrackMaxPerCore int64  `json:"conntrack-max-per-core" kube-proxy:"conntrack-max-per-core"`
@@ -132,6 +137,71 @@ func (kb *KubeProxy) updateFromEnvs(pfx string) error {
 	}
 	*kb = cc
 	return nil
+}
+
+// Service returns a script to configure kube-proxy systemd service file.
+func (kb *KubeProxy) Service() (s string, err error) {
+	tpl := template.Must(template.New("kubeProxyTemplate").Parse(kubeProxyTemplate))
+	buf := bytes.NewBuffer(nil)
+	kv := kubeProxyTemplateInfo{KubeProxyPath: kb.Path}
+	if err := tpl.Execute(buf, kv); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
+type kubeProxyTemplateInfo struct {
+	KubeProxyPath string
+}
+
+const kubeProxyTemplate = `#!/usr/bin/env bash
+
+sudo systemctl stop kube-proxy.service || true
+
+sudo rm -rf /var/lib/kube-proxy/
+sudo mkdir -p /var/lib/kube-proxy/
+sudo rm -f /var/lib/kube-proxy/kubeconfig
+
+rm -f /tmp/kube-proxy.service
+cat <<EOF > /tmp/kube-proxy.service
+[Unit]
+Description=kube-proxy: The Kubernetes API Server
+Documentation=http://kubernetes.io/docs/
+After=docker.service
+
+[Service]
+EnvironmentFile=/etc/sysconfig/kube-proxy
+ExecStart={{ .KubeProxyPath }} "\$KUBE_PROXY_FLAGS"
+Restart=always
+RestartSec=2s
+StartLimitInterval=0
+KillMode=process
+User=root
+
+[Install]
+WantedBy=multi-user.target
+EOF
+cat /tmp/kube-proxy.service
+
+sudo mkdir -p /etc/systemd/system/kube-proxy.service.d
+sudo cp /tmp/kube-proxy.service /etc/systemd/system/kube-proxy.service
+
+sudo systemctl daemon-reload
+sudo systemctl cat kube-proxy.service
+`
+
+// Sysconfig returns "/etc/sysconfig/kube-proxy" file.
+func (kb *KubeProxy) Sysconfig() (s string, err error) {
+	var fs []string
+	fs, err = kb.Flags()
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf(`KUBE_PROXY_FLAGS="%s"
+HOME="/home/%s"
+`, strings.Join(fs, " "),
+		kb.UserName,
+	), nil
 }
 
 // Flags returns the list of "kube-proxy" flags.

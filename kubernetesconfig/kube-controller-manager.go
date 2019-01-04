@@ -1,11 +1,13 @@
 package kubernetesconfig
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"reflect"
 	"strconv"
 	"strings"
+	"text/template"
 )
 
 // KubeControllerManager represents "kube-controller-manager" configuration.
@@ -17,6 +19,9 @@ type KubeControllerManager struct {
 	// TODO: support running as a static pod
 	// Image is the container image name and tag for kube-controller-manager to run as a static pod.
 	// Image string `json:"image"`
+
+	// UserName is the user name used for running init scripts or SSH access.
+	UserName string `json:"user-name,omitempty"`
 
 	AllocateNodeCIDRs               bool   `json:"allocate-node-cidrs" kube-controller-manager:"allocate-node-cidrs"`
 	AttachDetachReconcileSyncPeriod string `json:"attach-detach-reconcile-sync-period" kube-controller-manager:"attach-detach-reconcile-sync-period"`
@@ -124,6 +129,71 @@ func (kb *KubeControllerManager) updateFromEnvs(pfx string) error {
 	}
 	*kb = cc
 	return nil
+}
+
+// Service returns a script to configure Kubernetes controller manager systemd service file.
+func (kb *KubeControllerManager) Service() (s string, err error) {
+	tpl := template.Must(template.New("kubeControllerManagerTemplate").Parse(kubeControllerManagerTemplate))
+	buf := bytes.NewBuffer(nil)
+	kv := kubeControllerManagerTemplateInfo{KubeControllerManagerPath: kb.Path}
+	if err := tpl.Execute(buf, kv); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
+type kubeControllerManagerTemplateInfo struct {
+	KubeControllerManagerPath string
+}
+
+const kubeControllerManagerTemplate = `#!/usr/bin/env bash
+
+sudo systemctl stop kube-controller-manager.service || true
+
+sudo rm -rf /var/lib/kube-controller-manager/
+sudo mkdir -p /var/lib/kube-controller-manager/
+sudo rm -f /var/lib/kube-controller-manager/kubeconfig
+
+rm -f /tmp/kube-controller-manager.service
+cat <<EOF > /tmp/kube-controller-manager.service
+[Unit]
+Description=kube-controller-manager: The Kubernetes API Server
+Documentation=http://kubernetes.io/docs/
+After=docker.service
+
+[Service]
+EnvironmentFile=/etc/sysconfig/kube-controller-manager
+ExecStart={{ .KubeControllerManagerPath }} "\$KUBE_CONTROLLER_MANAGER_FLAGS"
+Restart=always
+RestartSec=2s
+StartLimitInterval=0
+KillMode=process
+User=root
+
+[Install]
+WantedBy=multi-user.target
+EOF
+cat /tmp/kube-controller-manager.service
+
+sudo mkdir -p /etc/systemd/system/kube-controller-manager.service.d
+sudo cp /tmp/kube-controller-manager.service /etc/systemd/system/kube-controller-manager.service
+
+sudo systemctl daemon-reload
+sudo systemctl cat kube-controller-manager.service
+`
+
+// Sysconfig returns "/etc/sysconfig/kube-controller-manager" file.
+func (kb *KubeControllerManager) Sysconfig() (s string, err error) {
+	var fs []string
+	fs, err = kb.Flags()
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf(`KUBE_CONTROLLER_MANAGER_FLAGS="%s"
+HOME="/home/%s"
+`, strings.Join(fs, " "),
+		kb.UserName,
+	), nil
 }
 
 // Flags returns the list of "kube-controller-manager" flags.

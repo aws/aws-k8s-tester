@@ -1,11 +1,13 @@
 package kubernetesconfig
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"reflect"
 	"strconv"
 	"strings"
+	"text/template"
 )
 
 // KubeAPIServer represents "kube-apiserver" configuration.
@@ -17,6 +19,9 @@ type KubeAPIServer struct {
 	// TODO: support running as a static pod
 	// Image is the container image name and tag for kube-apiserver to run as a static pod.
 	// Image string `json:"image"`
+
+	// UserName is the user name used for running init scripts or SSH access.
+	UserName string `json:"user-name,omitempty"`
 
 	AllowPrivileged                 bool   `json:"allow-privileged" kube-apiserver:"allow-privileged"`
 	AnonymousAuth                   bool   `json:"anonymous-auth" kube-apiserver:"anonymous-auth"`
@@ -156,6 +161,71 @@ func (kb *KubeAPIServer) updateFromEnvs(pfx string) error {
 	}
 	*kb = cc
 	return nil
+}
+
+// Service returns a script to configure Kubernetes API server systemd service file.
+func (kb *KubeAPIServer) Service() (s string, err error) {
+	tpl := template.Must(template.New("kubeAPIServerTemplate").Parse(kubeAPIServerTemplate))
+	buf := bytes.NewBuffer(nil)
+	kv := kubeAPIServerTemplateInfo{KubeAPIServerPath: kb.Path}
+	if err := tpl.Execute(buf, kv); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
+type kubeAPIServerTemplateInfo struct {
+	KubeAPIServerPath string
+}
+
+const kubeAPIServerTemplate = `#!/usr/bin/env bash
+
+sudo systemctl stop kube-apiserver.service || true
+
+sudo rm -rf /var/lib/kube-apiserver/
+sudo mkdir -p /var/lib/kube-apiserver/
+sudo rm -f /var/lib/kube-apiserver/kubeconfig
+
+rm -f /tmp/kube-apiserver.service
+cat <<EOF > /tmp/kube-apiserver.service
+[Unit]
+Description=kube-apiserver: The Kubernetes API Server
+Documentation=http://kubernetes.io/docs/
+After=docker.service
+
+[Service]
+EnvironmentFile=/etc/sysconfig/kube-apiserver
+ExecStart={{ .KubeAPIServerPath }} "\$KUBE_APISERVER_FLAGS"
+Restart=always
+RestartSec=2s
+StartLimitInterval=0
+KillMode=process
+User=root
+
+[Install]
+WantedBy=multi-user.target
+EOF
+cat /tmp/kube-apiserver.service
+
+sudo mkdir -p /etc/systemd/system/kube-apiserver.service.d
+sudo cp /tmp/kube-apiserver.service /etc/systemd/system/kube-apiserver.service
+
+sudo systemctl daemon-reload
+sudo systemctl cat kube-apiserver.service
+`
+
+// Sysconfig returns "/etc/sysconfig/kube-apiserver" file.
+func (kb *KubeAPIServer) Sysconfig() (s string, err error) {
+	var fs []string
+	fs, err = kb.Flags()
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf(`KUBE_APISERVER_FLAGS="%s"
+HOME="/home/%s"
+`, strings.Join(fs, " "),
+		kb.UserName,
+	), nil
 }
 
 // Flags returns the list of "kube-apiserver" flags.
