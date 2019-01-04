@@ -24,19 +24,6 @@ func writeKubeSchedulerEnvFile(kubeSchedulerConfig kubernetesconfig.KubeSchedule
 	return p, nil
 }
 
-func writeKubeSchedulerServiceFile(kubeSchedulerConfig kubernetesconfig.KubeScheduler) (p string, err error) {
-	var sc string
-	sc, err = kubeSchedulerConfig.Service()
-	if err != nil {
-		return "", fmt.Errorf("failed to create kube-scheduler service file (%v)", err)
-	}
-	p, err = fileutil.WriteTempFile([]byte(sc))
-	if err != nil {
-		return "", fmt.Errorf("failed to write kube-scheduler service file (%v)", err)
-	}
-	return p, nil
-}
-
 func sendKubeSchedulerEnvFile(
 	lg *zap.Logger,
 	ec2Config ec2config.Config,
@@ -91,6 +78,19 @@ func sendKubeSchedulerEnvFile(
 		return fmt.Errorf("failed to %q for %q(%q) (error %v)", catCmd, ec2Config.ClusterName, target.InstanceID, err)
 	}
 	return nil
+}
+
+func writeKubeSchedulerServiceFile(kubeSchedulerConfig kubernetesconfig.KubeScheduler) (p string, err error) {
+	var sc string
+	sc, err = kubeSchedulerConfig.Service()
+	if err != nil {
+		return "", fmt.Errorf("failed to create kube-scheduler service file (%v)", err)
+	}
+	p, err = fileutil.WriteTempFile([]byte(sc))
+	if err != nil {
+		return "", fmt.Errorf("failed to write kube-scheduler service file (%v)", err)
+	}
+	return p, nil
 }
 
 func sendKubeSchedulerServiceFile(

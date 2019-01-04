@@ -24,19 +24,6 @@ func writeKubeProxyEnvFile(kubeProxyConfig kubernetesconfig.KubeProxy) (p string
 	return p, nil
 }
 
-func writeKubeProxyServiceFile(kubeProxyConfig kubernetesconfig.KubeProxy) (p string, err error) {
-	var sc string
-	sc, err = kubeProxyConfig.Service()
-	if err != nil {
-		return "", fmt.Errorf("failed to create kube-proxy service file (%v)", err)
-	}
-	p, err = fileutil.WriteTempFile([]byte(sc))
-	if err != nil {
-		return "", fmt.Errorf("failed to write kube-proxy service file (%v)", err)
-	}
-	return p, nil
-}
-
 func sendKubeProxyEnvFile(
 	lg *zap.Logger,
 	ec2Config ec2config.Config,
@@ -91,6 +78,19 @@ func sendKubeProxyEnvFile(
 		return fmt.Errorf("failed to %q for %q(%q) (error %v)", catCmd, ec2Config.ClusterName, target.InstanceID, err)
 	}
 	return nil
+}
+
+func writeKubeProxyServiceFile(kubeProxyConfig kubernetesconfig.KubeProxy) (p string, err error) {
+	var sc string
+	sc, err = kubeProxyConfig.Service()
+	if err != nil {
+		return "", fmt.Errorf("failed to create kube-proxy service file (%v)", err)
+	}
+	p, err = fileutil.WriteTempFile([]byte(sc))
+	if err != nil {
+		return "", fmt.Errorf("failed to write kube-proxy service file (%v)", err)
+	}
+	return p, nil
 }
 
 func sendKubeProxyServiceFile(
