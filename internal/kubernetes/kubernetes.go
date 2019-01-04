@@ -418,7 +418,13 @@ func (md *embedded) Create() (err error) {
 
 	////////////////////////////////////////////////////////////////////////
 	md.lg.Info("step 9-1. 'master node kube-controller-manager' configuration")
-	md.lg.Info("TODO step 9-2. successfully sent 'master node kube-controller-manager' PKI assets")
+
+	for _, target := range md.cfg.EC2MasterNodes.Instances {
+		if err = sendKubeControllerManagerPKI(md.lg, *md.cfg.EC2MasterNodes, target, privateKeyPath, rootCAPath, *md.cfg.KubeControllerManager); err != nil {
+			return err
+		}
+	}
+	md.lg.Info("step 9-2. successfully sent 'master node kube-controller-manager' PKI assets")
 	md.lg.Info("TODO step 9-3. successfully wrote 'master node kube-controller-manager' KUBECONFIG")
 	md.lg.Info("TODO step 9-4. successfully sent 'master node kube-controller-manager' KUBECONFIG")
 	md.lg.Info("TODO step 9-5. successfully wrote 'master node kube-controller-manager' environment file")
