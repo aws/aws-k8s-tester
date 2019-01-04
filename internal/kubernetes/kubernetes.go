@@ -290,7 +290,7 @@ func (md *embedded) Create() (err error) {
 	md.lg.Info("step 4-5. successfully wrote 'master node kubelet' environment file")
 
 	for _, target := range md.cfg.EC2MasterNodes.Instances {
-		if err = sendKubeletEnvirontFile(md.lg, *md.cfg.EC2MasterNodes, target, kubeletEnvMaster); err != nil {
+		if err = sendKubeletEnvFile(md.lg, *md.cfg.EC2MasterNodes, target, kubeletEnvMaster); err != nil {
 			return err
 		}
 	}
@@ -325,7 +325,7 @@ func (md *embedded) Create() (err error) {
 	md.lg.Info("step 5-5. successfully wrote 'worker node kubelet' environment file")
 
 	for _, target := range md.cfg.EC2WorkerNodes.Instances {
-		if err = sendKubeletEnvirontFile(md.lg, *md.cfg.EC2WorkerNodes, target, kubeletEnvWorker); err != nil {
+		if err = sendKubeletEnvFile(md.lg, *md.cfg.EC2WorkerNodes, target, kubeletEnvWorker); err != nil {
 			return err
 		}
 	}

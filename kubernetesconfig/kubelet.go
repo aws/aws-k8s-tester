@@ -198,10 +198,6 @@ const kubeletTemplate = `#!/usr/bin/env bash
 
 sudo systemctl stop kubelet.service || true
 
-sudo mkdir -p /etc/sysconfig/
-sudo rm -f /etc/sysconfig/kubelet
-sudo touch /etc/sysconfig/kubelet
-
 sudo rm -rf /var/lib/kubelet/
 sudo mkdir -p /var/lib/kubelet/
 sudo rm -f /var/lib/kubelet/kubeconfig
