@@ -311,11 +311,12 @@ func (md *embedded) Create() (err error) {
 		}
 	}
 	md.lg.Info("step 4-2. successfully sent 'master node kubelet' PKI assets")
+
 	md.lg.Info("TODO step 4-3. successfully wrote 'master node kubelet' KUBECONFIG")
 	md.lg.Info("TODO step 4-4. successfully sent 'master node kubelet' KUBECONFIG")
 
 	var kubeletEnvMaster string
-	if kubeletEnvMaster, err = writeKubeletEnvirontFile(*md.cfg.KubeletMasterNodes); err != nil {
+	if kubeletEnvMaster, err = writeKubeletEnvFile(*md.cfg.KubeletMasterNodes); err != nil {
 		return err
 	}
 	defer os.RemoveAll(kubeletEnvMaster)
@@ -352,11 +353,12 @@ func (md *embedded) Create() (err error) {
 		}
 	}
 	md.lg.Info("step 5-2. successfully sent 'worker node kubelet' PKI assets")
+
 	md.lg.Info("TODO step 5-3. successfully wrote 'worker node kubelet' KUBECONFIG")
 	md.lg.Info("TODO step 5-4. successfully sent 'worker node kubelet' KUBECONFIG")
 
 	var kubeletEnvWorker string
-	if kubeletEnvWorker, err = writeKubeletEnvirontFile(*md.cfg.KubeletWorkerNodes); err != nil {
+	if kubeletEnvWorker, err = writeKubeletEnvFile(*md.cfg.KubeletWorkerNodes); err != nil {
 		return err
 	}
 	defer os.RemoveAll(kubeletEnvWorker)
@@ -386,32 +388,107 @@ func (md *embedded) Create() (err error) {
 
 	////////////////////////////////////////////////////////////////////////
 	md.lg.Info("step 6-1. 'master node kube-proxy' configuration")
+
 	md.lg.Info("TODO step 6-3. successfully wrote 'master node kube-proxy' KUBECONFIG")
 	md.lg.Info("TODO step 6-4. successfully sent 'master node kube-proxy' KUBECONFIG")
-	md.lg.Info("TODO step 6-5. successfully wrote 'master node kube-proxy' environment file")
-	md.lg.Info("TODO step 6-6. successfully sent 'master node kube-proxy' environment file")
-	md.lg.Info("TODO step 6-7. successfully wrote 'master node kube-proxy' systemd file")
-	md.lg.Info("TODO step 6-8. successfully sent 'master node kube-proxy' systemd file")
+
+	var kubeProxyMasterEnv string
+	if kubeProxyMasterEnv, err = writeKubeProxyEnvFile(*md.cfg.KubeProxyMasterNodes); err != nil {
+		return err
+	}
+	defer os.RemoveAll(kubeProxyMasterEnv)
+	md.lg.Info("step 6-5. successfully wrote 'master node kube-proxy' environment file")
+
+	for _, target := range md.cfg.EC2MasterNodes.Instances {
+		if err = sendKubeProxyEnvFile(md.lg, *md.cfg.EC2MasterNodes, target, kubeProxyMasterEnv); err != nil {
+			return err
+		}
+	}
+	md.lg.Info("step 6-6. successfully sent 'master node kube-proxy' environment file")
+
+	var kubeProxyMasterSvc string
+	if kubeProxyMasterSvc, err = writeKubeProxyServiceFile(*md.cfg.KubeProxyMasterNodes); err != nil {
+		return err
+	}
+	defer os.RemoveAll(kubeProxyMasterSvc)
+	md.lg.Info("step 6-7. successfully wrote 'master node kube-proxy' systemd file")
+
+	for _, target := range md.cfg.EC2MasterNodes.Instances {
+		if err = sendKubeProxyServiceFile(md.lg, *md.cfg.EC2MasterNodes, target, kubeProxyMasterSvc); err != nil {
+			return err
+		}
+	}
+	md.lg.Info("step 6-8. successfully sent 'master node kube-proxy' systemd file")
 	////////////////////////////////////////////////////////////////////////
 
 	////////////////////////////////////////////////////////////////////////
 	md.lg.Info("step 7-1. 'worker node kube-proxy' configuration")
+
 	md.lg.Info("TODO step 7-3. successfully wrote 'worker node kube-proxy' KUBECONFIG")
 	md.lg.Info("TODO step 7-4. successfully sent 'worker node kube-proxy' KUBECONFIG")
-	md.lg.Info("TODO step 7-5. successfully wrote 'worker node kube-proxy' environment file")
-	md.lg.Info("TODO step 7-6. successfully sent 'worker node kube-proxy' environment file")
-	md.lg.Info("TODO step 7-7. successfully wrote 'worker node kube-proxy' systemd file")
-	md.lg.Info("TODO step 7-8. successfully sent 'worker node kube-proxy' systemd file")
+
+	var kubeProxyWorkerEnv string
+	if kubeProxyWorkerEnv, err = writeKubeProxyEnvFile(*md.cfg.KubeProxyWorkerNodes); err != nil {
+		return err
+	}
+	defer os.RemoveAll(kubeProxyWorkerEnv)
+	md.lg.Info("step 7-5. successfully wrote 'worker node kube-proxy' environment file")
+
+	for _, target := range md.cfg.EC2WorkerNodes.Instances {
+		if err = sendKubeProxyEnvFile(md.lg, *md.cfg.EC2WorkerNodes, target, kubeProxyWorkerEnv); err != nil {
+			return err
+		}
+	}
+	md.lg.Info("step 7-6. successfully sent 'worker node kube-proxy' environment file")
+
+	var kubeProxyWorkerSvc string
+	if kubeProxyWorkerSvc, err = writeKubeProxyEnvFile(*md.cfg.KubeProxyWorkerNodes); err != nil {
+		return err
+	}
+	defer os.RemoveAll(kubeProxyWorkerSvc)
+	md.lg.Info("step 7-7. successfully wrote 'worker node kube-proxy' systemd file")
+
+	for _, target := range md.cfg.EC2WorkerNodes.Instances {
+		if err = sendKubeProxyServiceFile(md.lg, *md.cfg.EC2WorkerNodes, target, kubeProxyWorkerSvc); err != nil {
+			return err
+		}
+	}
+	md.lg.Info("step 7-8. successfully sent 'worker node kube-proxy' systemd file")
 	////////////////////////////////////////////////////////////////////////
 
 	////////////////////////////////////////////////////////////////////////
 	md.lg.Info("step 8-1. 'master node kube-scheduler' configuration")
+
 	md.lg.Info("TODO step 8-2. successfully wrote 'master node kube-scheduler' KUBECONFIG")
 	md.lg.Info("TODO step 8-3. successfully sent 'master node kube-scheduler' KUBECONFIG")
-	md.lg.Info("TODO step 8-4. successfully wrote 'master node kube-scheduler' environment file")
-	md.lg.Info("TODO step 8-5. successfully sent 'master node kube-scheduler' environment file")
-	md.lg.Info("TODO step 8-6. successfully wrote 'master node kube-scheduler' systemd file")
-	md.lg.Info("TODO step 8-7. successfully sent 'master node kube-scheduler' systemd file")
+
+	var kubeSchedulerEnv string
+	if kubeSchedulerEnv, err = writeKubeSchedulerEnvFile(*md.cfg.KubeScheduler); err != nil {
+		return err
+	}
+	defer os.RemoveAll(kubeSchedulerEnv)
+	md.lg.Info("step 8-4. successfully wrote 'master node kube-scheduler' environment file")
+
+	for _, target := range md.cfg.EC2MasterNodes.Instances {
+		if err = sendKubeSchedulerEnvFile(md.lg, *md.cfg.EC2MasterNodes, target, kubeSchedulerEnv); err != nil {
+			return err
+		}
+	}
+	md.lg.Info("step 8-5. successfully sent 'master node kube-scheduler' environment file")
+
+	var kubeSchedulerSvc string
+	if kubeSchedulerSvc, err = writeKubeSchedulerServiceFile(*md.cfg.KubeScheduler); err != nil {
+		return err
+	}
+	defer os.RemoveAll(kubeSchedulerSvc)
+	md.lg.Info("step 8-6. successfully wrote 'master node kube-scheduler' systemd file")
+
+	for _, target := range md.cfg.EC2MasterNodes.Instances {
+		if err = sendKubeSchedulerServiceFile(md.lg, *md.cfg.EC2MasterNodes, target, kubeSchedulerSvc); err != nil {
+			return err
+		}
+	}
+	md.lg.Info("step 8-7. successfully sent 'master node kube-scheduler' systemd file")
 	////////////////////////////////////////////////////////////////////////
 
 	////////////////////////////////////////////////////////////////////////
@@ -423,12 +500,37 @@ func (md *embedded) Create() (err error) {
 		}
 	}
 	md.lg.Info("step 9-2. successfully sent 'master node kube-controller-manager' PKI assets")
+
 	md.lg.Info("TODO step 9-3. successfully wrote 'master node kube-controller-manager' KUBECONFIG")
 	md.lg.Info("TODO step 9-4. successfully sent 'master node kube-controller-manager' KUBECONFIG")
-	md.lg.Info("TODO step 9-5. successfully wrote 'master node kube-controller-manager' environment file")
-	md.lg.Info("TODO step 9-6. successfully sent 'master node kube-controller-manager' environment file")
-	md.lg.Info("TODO step 9-7. successfully wrote 'master node kube-controller-manager' systemd file")
-	md.lg.Info("TODO step 9-8. successfully sent 'master node kube-controller-manager' systemd file")
+
+	var kubeControllerManagerEnv string
+	if kubeControllerManagerEnv, err = writeKubeControllerManagerEnvFile(*md.cfg.KubeControllerManager); err != nil {
+		return err
+	}
+	defer os.RemoveAll(kubeControllerManagerEnv)
+	md.lg.Info("step 9-5. successfully wrote 'master node kube-controller-manager' environment file")
+
+	for _, target := range md.cfg.EC2MasterNodes.Instances {
+		if err = sendKubeControllerManagerEnvFile(md.lg, *md.cfg.EC2MasterNodes, target, kubeControllerManagerEnv); err != nil {
+			return err
+		}
+	}
+	md.lg.Info("step 9-6. successfully sent 'master node kube-controller-manager' environment file")
+
+	var kubeControllerManagerSvc string
+	if kubeControllerManagerSvc, err = writeKubeControllerManagerServiceFile(*md.cfg.KubeControllerManager); err != nil {
+		return err
+	}
+	defer os.RemoveAll(kubeControllerManagerSvc)
+	md.lg.Info("step 9-7. successfully wrote 'master node kube-controller-manager' systemd file")
+
+	for _, target := range md.cfg.EC2MasterNodes.Instances {
+		if err = sendKubeControllerManagerServiceFile(md.lg, *md.cfg.EC2MasterNodes, target, kubeControllerManagerSvc); err != nil {
+			return err
+		}
+	}
+	md.lg.Info("step 9-8. successfully sent 'master node kube-controller-manager' systemd file")
 	////////////////////////////////////////////////////////////////////////
 
 	////////////////////////////////////////////////////////////////////////
@@ -440,10 +542,34 @@ func (md *embedded) Create() (err error) {
 		}
 	}
 	md.lg.Info("step 10-2. successfully sent 'master node kube-apiserver' PKI assets")
-	md.lg.Info("TODO step 10-3. successfully wrote 'master node kube-apiserver' environment file")
-	md.lg.Info("TODO step 10-4. successfully sent 'master node kube-apiserver' environment file")
-	md.lg.Info("TODO step 10-5. successfully wrote 'master node kube-apiserver' systemd file")
-	md.lg.Info("TODO step 10-6. successfully sent 'master node kube-apiserver' systemd file")
+
+	var kubeAPIServerEnv string
+	if kubeAPIServerEnv, err = writeKubeAPIServerEnvFile(*md.cfg.KubeAPIServer); err != nil {
+		return err
+	}
+	defer os.RemoveAll(kubeAPIServerEnv)
+	md.lg.Info("step 10-3. successfully wrote 'master node kube-apiserver' environment file")
+
+	for _, target := range md.cfg.EC2MasterNodes.Instances {
+		if err = sendKubeAPIServerEnvFile(md.lg, *md.cfg.EC2MasterNodes, target, kubeAPIServerEnv); err != nil {
+			return err
+		}
+	}
+	md.lg.Info("step 10-4. successfully sent 'master node kube-apiserver' environment file")
+
+	var kubeAPIServerSvc string
+	if kubeAPIServerSvc, err = writeKubeAPIServerServiceFile(*md.cfg.KubeAPIServer); err != nil {
+		return err
+	}
+	defer os.RemoveAll(kubeAPIServerSvc)
+	md.lg.Info("step 10-5. successfully wrote 'master node kube-apiserver' systemd file")
+
+	for _, target := range md.cfg.EC2MasterNodes.Instances {
+		if err = sendKubeAPIServerServiceFile(md.lg, *md.cfg.EC2MasterNodes, target, kubeAPIServerSvc); err != nil {
+			return err
+		}
+	}
+	md.lg.Info("step 10-6. successfully sent 'master node kube-apiserver' systemd file")
 	////////////////////////////////////////////////////////////////////////
 
 	////////////////////////////////////////////////////////////////////////

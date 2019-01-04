@@ -12,7 +12,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func writeKubeletEnvirontFile(kubeletConfig kubernetesconfig.Kubelet) (p string, err error) {
+func writeKubeletEnvFile(kubeletConfig kubernetesconfig.Kubelet) (p string, err error) {
 	var sc string
 	sc, err = kubeletConfig.Sysconfig()
 	if err != nil {
