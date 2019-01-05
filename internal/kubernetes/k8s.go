@@ -647,23 +647,72 @@ func (md *embedded) Create() (err error) {
 
 	////////////////////////////////////////////////////////////////////////
 	md.lg.Info("step 11-1. starting master node components")
+
 	md.lg.Info("TODO step 11-2. starting 'master node kubelet'")
+	/*
+		sudo systemctl cat kubelet
+		sudo systemctl enable kubelet && sudo systemctl restart kubelet
+		sudo systemctl status kubelet --full --no-pager || true
+		sudo journalctl --no-pager --output=cat -u kubelet
+	*/
 	md.lg.Info("TODO step 11-3. successfully started 'master node kubelet'")
+
 	md.lg.Info("TODO step 11-4. starting 'master node kube-proxy'")
+	/*
+		sudo systemctl cat kube-proxy
+		sudo systemctl enable kube-proxy && sudo systemctl restart kube-proxy
+		sudo systemctl status kube-proxy --full --no-pager || true
+		sudo journalctl --no-pager --output=cat -u kube-proxy
+	*/
 	md.lg.Info("TODO step 11-5. successfully started 'master node kube-proxy'")
+
 	md.lg.Info("TODO step 11-6. starting 'master node kube-scheduler'")
+	/*
+		sudo systemctl cat kube-scheduler
+		sudo systemctl enable kube-scheduler && sudo systemctl restart kube-scheduler
+		sudo systemctl status kube-scheduler --full --no-pager || true
+		sudo journalctl --no-pager --output=cat -u kube-scheduler
+	*/
 	md.lg.Info("TODO step 11-7. successfully started 'master node kube-scheduler'")
+
 	md.lg.Info("TODO step 11-8. starting 'master node kube-controller-manager'")
+	/*
+		sudo systemctl cat kube-controller-manager
+		sudo systemctl enable kube-controller-manager && sudo systemctl restart kube-controller-manager
+		sudo systemctl status kube-controller-manager --full --no-pager || true
+		sudo journalctl --no-pager --output=cat -u kube-controller-manager
+	*/
 	md.lg.Info("TODO step 11-9. successfully started 'master node kube-controller-manager'")
+
 	md.lg.Info("TODO step 11-10. starting 'master node kube-apiserver'")
+	/*
+		sudo systemctl cat kube-apiserver
+		sudo systemctl enable kube-apiserver && sudo systemctl restart kube-apiserver
+		sudo systemctl status kube-apiserver --full --no-pager || true
+		sudo journalctl --no-pager --output=cat -u kube-apiserver
+	*/
 	md.lg.Info("TODO step 11-11. successfully started 'master node kube-apiserver'")
 	////////////////////////////////////////////////////////////////////////
 
 	////////////////////////////////////////////////////////////////////////
 	md.lg.Info("step 12-1. starting worker node components")
+
 	md.lg.Info("TODO step 12-2. starting 'worker node kubelet'")
+	/*
+		sudo systemctl cat kubelet
+		sudo systemctl enable kubelet && sudo systemctl restart kubelet
+		sudo systemctl status kubelet --full --no-pager || true
+		sudo journalctl --no-pager --output=cat -u kubelet
+	*/
 	md.lg.Info("TODO step 12-3. successfully started 'worker node kubelet'")
+
 	md.lg.Info("TODO step 12-4. starting 'worker node kube-proxy'")
+	/*
+		sudo systemctl cat kube-proxy
+		sudo systemctl enable kube-proxy && sudo systemctl restart kube-proxy
+		sudo systemctl status kube-proxy --full --no-pager || true
+		sudo journalctl --no-pager --output=cat -u kube-proxy
+	*/
 	md.lg.Info("TODO step 12-5. successfully started 'worker node kube-proxy'")
 	////////////////////////////////////////////////////////////////////////
 
@@ -685,12 +734,6 @@ func (md *embedded) Create() (err error) {
 
 	return md.cfg.Sync()
 }
-
-/*
-sudo systemctl enable kubelet && sudo systemctl restart kubelet
-sudo systemctl status kubelet --full --no-pager || true
-sudo journalctl --no-pager --output=cat -u kubelet
-*/
 
 func (md *embedded) Terminate() error {
 	md.mu.Lock()
