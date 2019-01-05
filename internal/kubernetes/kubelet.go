@@ -151,7 +151,8 @@ func sendKubeletKubeConfigFile(
 	return nil
 }
 
-func writeKubeletEnvFile(kubeletConfig kubernetesconfig.Kubelet) (p string, err error) {
+func writeKubeletEnvFile(target ec2config.Instance, kubeletConfig kubernetesconfig.Kubelet) (p string, err error) {
+	kubeletConfig.HostnameOverride = target.PrivateDNSName
 	var sc string
 	sc, err = kubeletConfig.Sysconfig()
 	if err != nil {

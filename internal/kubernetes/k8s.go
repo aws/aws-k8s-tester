@@ -159,21 +159,6 @@ func (md *embedded) Create() (err error) {
 		return errors.New(strings.Join(ess, ", "))
 	}
 
-	// TODO: what if >1 master nodes
-	var masterNodePrivateDNS string
-	for _, v := range md.cfg.EC2MasterNodes.Instances {
-		masterNodePrivateDNS = v.PrivateDNSName
-	}
-	md.cfg.KubeletMasterNodes.HostnameOverride = masterNodePrivateDNS
-	md.cfg.KubeProxyMasterNodes.HostnameOverride = masterNodePrivateDNS
-	// TODO: what if >2 worker nodes
-	var workerNodePrivateDNS string
-	for _, v := range md.cfg.EC2WorkerNodes.Instances {
-		workerNodePrivateDNS = v.PrivateDNSName
-	}
-	md.cfg.KubeletWorkerNodes.HostnameOverride = workerNodePrivateDNS
-	md.cfg.Sync()
-
 	md.lg.Info(
 		"deployed EC2 instances",
 		zap.Strings("plugins-master-nodes", md.cfg.EC2MasterNodes.Plugins),
@@ -332,14 +317,13 @@ func (md *embedded) Create() (err error) {
 	}
 	md.lg.Info("step 4-4. successfully sent 'master node kubelet' KUBECONFIG")
 
-	var kubeletEnvMaster string
-	if kubeletEnvMaster, err = writeKubeletEnvFile(*md.cfg.KubeletMasterNodes); err != nil {
-		return err
-	}
-	defer os.RemoveAll(kubeletEnvMaster)
-	md.lg.Info("step 4-5. successfully wrote 'master node kubelet' environment file")
-
-	for _, target := range md.cfg.EC2MasterNodes.Instances {
+	for idx, target := range md.cfg.EC2MasterNodes.Instances {
+		var kubeletEnvMaster string
+		if kubeletEnvMaster, err = writeKubeletEnvFile(target, *md.cfg.KubeletMasterNodes); err != nil {
+			return err
+		}
+		defer os.RemoveAll(kubeletEnvMaster)
+		md.lg.Info("step 4-5. successfully wrote 'master node kubelet' environment file", zap.String("index", idx), zap.String("private-dns", target.PrivateDNSName))
 		if err = sendKubeletEnvFile(md.lg, *md.cfg.EC2MasterNodes, target, kubeletEnvMaster); err != nil {
 			return err
 		}
@@ -391,14 +375,13 @@ func (md *embedded) Create() (err error) {
 	}
 	md.lg.Info("step 5-4. successfully sent 'worker node kubelet' KUBECONFIG")
 
-	var kubeletEnvWorker string
-	if kubeletEnvWorker, err = writeKubeletEnvFile(*md.cfg.KubeletWorkerNodes); err != nil {
-		return err
-	}
-	defer os.RemoveAll(kubeletEnvWorker)
-	md.lg.Info("step 5-5. successfully wrote 'worker node kubelet' environment file")
-
-	for _, target := range md.cfg.EC2WorkerNodes.Instances {
+	for idx, target := range md.cfg.EC2WorkerNodes.Instances {
+		var kubeletEnvWorker string
+		if kubeletEnvWorker, err = writeKubeletEnvFile(target, *md.cfg.KubeletWorkerNodes); err != nil {
+			return err
+		}
+		defer os.RemoveAll(kubeletEnvWorker)
+		md.lg.Info("step 5-5. successfully wrote 'worker node kubelet' environment file", zap.String("index", idx), zap.String("private-dns", target.PrivateDNSName))
 		if err = sendKubeletEnvFile(md.lg, *md.cfg.EC2WorkerNodes, target, kubeletEnvWorker); err != nil {
 			return err
 		}
@@ -443,14 +426,13 @@ func (md *embedded) Create() (err error) {
 	}
 	md.lg.Info("step 6-4. successfully sent 'master node kube-proxy' KUBECONFIG")
 
-	var kubeProxyMasterEnv string
-	if kubeProxyMasterEnv, err = writeKubeProxyEnvFile(*md.cfg.KubeProxyMasterNodes); err != nil {
-		return err
-	}
-	defer os.RemoveAll(kubeProxyMasterEnv)
-	md.lg.Info("step 6-5. successfully wrote 'master node kube-proxy' environment file")
-
-	for _, target := range md.cfg.EC2MasterNodes.Instances {
+	for idx, target := range md.cfg.EC2MasterNodes.Instances {
+		var kubeProxyMasterEnv string
+		if kubeProxyMasterEnv, err = writeKubeProxyEnvFile(target, *md.cfg.KubeProxyMasterNodes); err != nil {
+			return err
+		}
+		defer os.RemoveAll(kubeProxyMasterEnv)
+		md.lg.Info("step 6-5. successfully wrote 'master node kube-proxy' environment file", zap.String("index", idx), zap.String("private-dns", target.PrivateDNSName))
 		if err = sendKubeProxyEnvFile(md.lg, *md.cfg.EC2MasterNodes, target, kubeProxyMasterEnv); err != nil {
 			return err
 		}
@@ -495,14 +477,13 @@ func (md *embedded) Create() (err error) {
 	}
 	md.lg.Info("step 7-4. successfully sent 'worker node kube-proxy' KUBECONFIG")
 
-	var kubeProxyWorkerEnv string
-	if kubeProxyWorkerEnv, err = writeKubeProxyEnvFile(*md.cfg.KubeProxyWorkerNodes); err != nil {
-		return err
-	}
-	defer os.RemoveAll(kubeProxyWorkerEnv)
-	md.lg.Info("step 7-5. successfully wrote 'worker node kube-proxy' environment file")
-
-	for _, target := range md.cfg.EC2WorkerNodes.Instances {
+	for idx, target := range md.cfg.EC2WorkerNodes.Instances {
+		var kubeProxyWorkerEnv string
+		if kubeProxyWorkerEnv, err = writeKubeProxyEnvFile(target, *md.cfg.KubeProxyWorkerNodes); err != nil {
+			return err
+		}
+		defer os.RemoveAll(kubeProxyWorkerEnv)
+		md.lg.Info("step 7-5. successfully wrote 'worker node kube-proxy' environment file", zap.String("index", idx), zap.String("private-dns", target.PrivateDNSName))
 		if err = sendKubeProxyEnvFile(md.lg, *md.cfg.EC2WorkerNodes, target, kubeProxyWorkerEnv); err != nil {
 			return err
 		}
@@ -510,7 +491,7 @@ func (md *embedded) Create() (err error) {
 	md.lg.Info("step 7-6. successfully sent 'worker node kube-proxy' environment file")
 
 	var kubeProxyWorkerSvc string
-	if kubeProxyWorkerSvc, err = writeKubeProxyEnvFile(*md.cfg.KubeProxyWorkerNodes); err != nil {
+	if kubeProxyWorkerSvc, err = writeKubeProxyServiceFile(*md.cfg.KubeProxyWorkerNodes); err != nil {
 		return err
 	}
 	defer os.RemoveAll(kubeProxyWorkerSvc)

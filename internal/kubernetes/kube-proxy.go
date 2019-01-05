@@ -105,7 +105,8 @@ func sendKubeProxyKubeConfigFile(
 	return nil
 }
 
-func writeKubeProxyEnvFile(kubeProxyConfig kubernetesconfig.KubeProxy) (p string, err error) {
+func writeKubeProxyEnvFile(target ec2config.Instance, kubeProxyConfig kubernetesconfig.KubeProxy) (p string, err error) {
+	kubeProxyConfig.HostnameOverride = target.PrivateDNSName
 	var sc string
 	sc, err = kubeProxyConfig.Sysconfig()
 	if err != nil {
