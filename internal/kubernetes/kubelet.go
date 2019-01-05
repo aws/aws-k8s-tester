@@ -148,6 +148,8 @@ func sendKubeletKubeConfigFile(
 	if err != nil || len(out) == 0 {
 		return fmt.Errorf("failed to %q for %q(%q) (error %v)", catCmd, ec2Config.ClusterName, target.InstanceID, err)
 	}
+	fmt.Println("kubelet KUBECONFIG:", kubeletConfig.Kubeconfig, string(out))
+
 	return nil
 }
 
