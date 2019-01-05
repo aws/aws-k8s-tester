@@ -196,8 +196,9 @@ func (md *embedded) Create() (err error) {
 		return err
 	}
 	md.cfg.LoadBalancerCreated = true
+	md.cfg.LoadBalancerDNSName = *elbOut.DNSName
 	md.cfg.Sync()
-	md.lg.Info("created load balancer", zap.String("name", md.cfg.LoadBalancerName), zap.String("dns-name", *elbOut.DNSName))
+	md.lg.Info("created load balancer", zap.String("name", md.cfg.LoadBalancerName), zap.String("dns-name", md.cfg.LoadBalancerDNSName))
 
 	instances := make([]*elb.Instance, 0, len(md.cfg.EC2MasterNodes.Instances)+len(md.cfg.EC2WorkerNodes.Instances))
 	for _, iv := range md.cfg.EC2MasterNodes.Instances {

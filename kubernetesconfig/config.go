@@ -30,9 +30,10 @@ type Config struct {
 	// ClusterName is the cluster name.
 	// If empty, deployer auto-populates it.
 	ClusterName string `json:"cluster-name,omitempty"`
+
 	// InternalServerURL is the internal server URL.
 	// If empty, deployer auto-populates it with cluster name.
-	InternalServerURL string `json:"cluster-name,omitempty"`
+	InternalServerURL string `json:"internal-server-url,omitempty"`
 
 	// WaitBeforeDown is the duration to sleep before cluster tear down.
 	WaitBeforeDown time.Duration `json:"wait-before-down,omitempty"`
@@ -124,6 +125,7 @@ type Config struct {
 	// LoadBalancerName is the name of the AWS load balancer.
 	LoadBalancerName string `json:"load-balancer-name,omitempty"`
 	// LoadBalancerDNSName is the DNS name output from load balancer creation.
+	// Used for client-side KUBECONFIG access.
 	LoadBalancerDNSName string `json:"load-balancer-dns-name,omitempty"`
 	// LoadBalancerCreated is true to indicate that load balancer has been created,
 	// thus needs clean-up on test complete.
