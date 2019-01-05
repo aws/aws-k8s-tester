@@ -312,8 +312,20 @@ func (md *embedded) Create() (err error) {
 	}
 	md.lg.Info("step 4-2. successfully sent 'master node kubelet' PKI assets")
 
-	md.lg.Info("TODO step 4-3. successfully wrote 'master node kubelet' KUBECONFIG")
-	md.lg.Info("TODO step 4-4. successfully sent 'master node kubelet' KUBECONFIG")
+	var kubeletKubeConfigMaster string
+	kubeletKubeConfigMaster, err = writeKubeletKubeConfigFile(rsa.PrivateKeyBytes(), rsa.PublicKeyBytes(), rsa.RootCertificateBytes())
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(kubeletKubeConfigMaster)
+	md.lg.Info("step 4-3. successfully wrote 'master node kubelet' KUBECONFIG")
+
+	for _, target := range md.cfg.EC2MasterNodes.Instances {
+		if err = sendKubeletKubeConfigFile(md.lg, *md.cfg.EC2MasterNodes, target, kubeletKubeConfigMaster, *md.cfg.KubeletMasterNodes); err != nil {
+			return err
+		}
+	}
+	md.lg.Info("step 4-4. successfully sent 'master node kubelet' KUBECONFIG")
 
 	var kubeletEnvMaster string
 	if kubeletEnvMaster, err = writeKubeletEnvFile(*md.cfg.KubeletMasterNodes); err != nil {
@@ -354,8 +366,20 @@ func (md *embedded) Create() (err error) {
 	}
 	md.lg.Info("step 5-2. successfully sent 'worker node kubelet' PKI assets")
 
-	md.lg.Info("TODO step 5-3. successfully wrote 'worker node kubelet' KUBECONFIG")
-	md.lg.Info("TODO step 5-4. successfully sent 'worker node kubelet' KUBECONFIG")
+	var kubeletKubeConfigWorker string
+	kubeletKubeConfigWorker, err = writeKubeletKubeConfigFile(rsa.PrivateKeyBytes(), rsa.PublicKeyBytes(), rsa.RootCertificateBytes())
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(kubeletKubeConfigWorker)
+	md.lg.Info("step 5-3. successfully wrote 'worker node kubelet' KUBECONFIG")
+
+	for _, target := range md.cfg.EC2WorkerNodes.Instances {
+		if err = sendKubeletKubeConfigFile(md.lg, *md.cfg.EC2WorkerNodes, target, kubeletKubeConfigWorker, *md.cfg.KubeletWorkerNodes); err != nil {
+			return err
+		}
+	}
+	md.lg.Info("step 5-4. successfully sent 'worker node kubelet' KUBECONFIG")
 
 	var kubeletEnvWorker string
 	if kubeletEnvWorker, err = writeKubeletEnvFile(*md.cfg.KubeletWorkerNodes); err != nil {

@@ -60,7 +60,7 @@ func sendKubeletPKI(
 	return nil
 }
 
-func writeKubeletKubeconfig(
+func writeKubeletKubeConfigFile(
 	privateKey []byte,
 	publicKey []byte,
 	rootCA []byte,
@@ -86,12 +86,68 @@ func writeKubeletKubeconfig(
 	if err != nil {
 		return "", err
 	}
-	fmt.Println(string(d))
 	p, err = fileutil.WriteTempFile(d)
 	if err != nil {
 		return "", fmt.Errorf("failed to write kubelet KUBECONFIG file (%v)", err)
 	}
 	return p, nil
+}
+
+func sendKubeletKubeConfigFile(
+	lg *zap.Logger,
+	ec2Config ec2config.Config,
+	target ec2config.Instance,
+	filePathToSend string,
+	kubeletConfig kubernetesconfig.Kubelet,
+) (err error) {
+	var ss ssh.SSH
+	ss, err = ssh.New(ssh.Config{
+		Logger:        lg,
+		KeyPath:       ec2Config.KeyPath,
+		PublicIP:      target.PublicIP,
+		PublicDNSName: target.PublicDNSName,
+		UserName:      ec2Config.UserName,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create a SSH to %q(%q) (error %v)", ec2Config.ClusterName, target.InstanceID, err)
+	}
+	if err = ss.Connect(); err != nil {
+		return fmt.Errorf("failed to connect to %q(%q) (error %v)", ec2Config.ClusterName, target.InstanceID, err)
+	}
+	defer ss.Close()
+
+	remotePath := fmt.Sprintf("/home/%s/kubelet.kubeconfig", ec2Config.UserName)
+	_, err = ss.Send(
+		filePathToSend,
+		remotePath,
+		ssh.WithTimeout(15*time.Second),
+		ssh.WithRetry(3, 3*time.Second),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to send %q to %q for %q(%q) (error %v)", filePathToSend, remotePath, ec2Config.ClusterName, target.InstanceID, err)
+	}
+
+	copyCmd := fmt.Sprintf("sudo mkdir -p /etc/sysconfig/ && sudo cp %s %s", remotePath, kubeletConfig.Kubeconfig)
+	_, err = ss.Run(
+		copyCmd,
+		ssh.WithTimeout(15*time.Second),
+		ssh.WithRetry(3, 3*time.Second),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to %q for %q(%q) (error %v)", copyCmd, ec2Config.ClusterName, target.InstanceID, err)
+	}
+
+	catCmd := fmt.Sprintf("sudo cat %s", kubeletConfig.Kubeconfig)
+	var out []byte
+	out, err = ss.Run(
+		catCmd,
+		ssh.WithTimeout(15*time.Second),
+		ssh.WithRetry(3, 3*time.Second),
+	)
+	if err != nil || len(out) == 0 {
+		return fmt.Errorf("failed to %q for %q(%q) (error %v)", catCmd, ec2Config.ClusterName, target.InstanceID, err)
+	}
+	return nil
 }
 
 func writeKubeletEnvFile(kubeletConfig kubernetesconfig.Kubelet) (p string, err error) {
