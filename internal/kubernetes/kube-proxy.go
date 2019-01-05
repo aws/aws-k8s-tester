@@ -18,13 +18,14 @@ func writeKubeProxyKubeConfigFile(
 	privateKey []byte,
 	publicKey []byte,
 	rootCA []byte,
+	internalServerURL string,
 ) (p string, err error) {
 	cfg := clientcmdapi.NewConfig()
 	cfg.APIVersion = "v1"
 	cfg.Kind = "Config"
 	cfg.Clusters["local"] = &clientcmdapi.Cluster{
 		CertificateAuthorityData: rootCA,
-		Server:                   "https://127.0.0.1",
+		Server:                   internalServerURL,
 	}
 	cfg.Contexts["service-account-context"] = &clientcmdapi.Context{
 		Cluster:  "local",

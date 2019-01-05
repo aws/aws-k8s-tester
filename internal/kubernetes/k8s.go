@@ -313,7 +313,12 @@ func (md *embedded) Create() (err error) {
 	md.lg.Info("step 4-2. successfully sent 'master node kubelet' PKI assets")
 
 	var kubeletKubeConfigMaster string
-	kubeletKubeConfigMaster, err = writeKubeletKubeConfigFile(rsa.PrivateKeyBytes(), rsa.PublicKeyBytes(), rsa.RootCertificateBytes())
+	kubeletKubeConfigMaster, err = writeKubeletKubeConfigFile(
+		rsa.PrivateKeyBytes(),
+		rsa.PublicKeyBytes(),
+		rsa.RootCertificateBytes(),
+		"https://127.0.0.1",
+	)
 	if err != nil {
 		return err
 	}
@@ -367,7 +372,12 @@ func (md *embedded) Create() (err error) {
 	md.lg.Info("step 5-2. successfully sent 'worker node kubelet' PKI assets")
 
 	var kubeletKubeConfigWorker string
-	kubeletKubeConfigWorker, err = writeKubeletKubeConfigFile(rsa.PrivateKeyBytes(), rsa.PublicKeyBytes(), rsa.RootCertificateBytes())
+	kubeletKubeConfigWorker, err = writeKubeletKubeConfigFile(
+		rsa.PrivateKeyBytes(),
+		rsa.PublicKeyBytes(),
+		rsa.RootCertificateBytes(),
+		md.cfg.InternalServerURL,
+	)
 	if err != nil {
 		return err
 	}
@@ -414,7 +424,12 @@ func (md *embedded) Create() (err error) {
 	md.lg.Info("step 6-1. 'master node kube-proxy' configuration")
 
 	var kubeProxyKubeConfigMaster string
-	kubeProxyKubeConfigMaster, err = writeKubeProxyKubeConfigFile(rsa.PrivateKeyBytes(), rsa.PublicKeyBytes(), rsa.RootCertificateBytes())
+	kubeProxyKubeConfigMaster, err = writeKubeProxyKubeConfigFile(
+		rsa.PrivateKeyBytes(),
+		rsa.PublicKeyBytes(),
+		rsa.RootCertificateBytes(),
+		"https://127.0.0.1",
+	)
 	if err != nil {
 		return err
 	}
@@ -461,7 +476,12 @@ func (md *embedded) Create() (err error) {
 	md.lg.Info("step 7-1. 'worker node kube-proxy' configuration")
 
 	var kubeProxyKubeConfigWorker string
-	kubeProxyKubeConfigWorker, err = writeKubeProxyKubeConfigFile(rsa.PrivateKeyBytes(), rsa.PublicKeyBytes(), rsa.RootCertificateBytes())
+	kubeProxyKubeConfigWorker, err = writeKubeProxyKubeConfigFile(
+		rsa.PrivateKeyBytes(),
+		rsa.PublicKeyBytes(),
+		rsa.RootCertificateBytes(),
+		md.cfg.InternalServerURL,
+	)
 	if err != nil {
 		return err
 	}

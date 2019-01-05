@@ -30,6 +30,9 @@ type Config struct {
 	// ClusterName is the cluster name.
 	// If empty, deployer auto-populates it.
 	ClusterName string `json:"cluster-name,omitempty"`
+	// InternalServerURL is the internal server URL.
+	// If empty, deployer auto-populates it with cluster name.
+	InternalServerURL string `json:"cluster-name,omitempty"`
 
 	// WaitBeforeDown is the duration to sleep before cluster tear down.
 	WaitBeforeDown time.Duration `json:"wait-before-down,omitempty"`
@@ -146,6 +149,7 @@ func init() {
 
 	defaultConfig.Tag = genTag()
 	defaultConfig.ClusterName = defaultConfig.Tag + "-" + randString(5)
+	defaultConfig.InternalServerURL = "https://api.internal." + defaultConfig.ClusterName + ".k8s.local"
 	defaultConfig.LoadBalancerName = defaultConfig.ClusterName + "-lb"
 
 	defaultConfig.ETCDNodes.EC2.AWSRegion = defaultConfig.AWSRegion
@@ -466,6 +470,7 @@ func (cfg *Config) UpdateFromEnvs() error {
 // And updates empty fields with default values.
 // At the end, it writes populated YAML to aws-k8s-tester config path.
 func (cfg *Config) ValidateAndSetDefaults() (err error) {
+	cfg.InternalServerURL = "https://api.internal." + cfg.ClusterName + ".k8s.local"
 	if cfg.EC2MasterNodes == nil {
 		return errors.New("EC2MasterNodes configuration not found")
 	}
