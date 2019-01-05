@@ -197,6 +197,10 @@ func (md *embedded) Create() (err error) {
 	}
 	md.cfg.LoadBalancerCreated = true
 	md.cfg.LoadBalancerDNSName = *elbOut.DNSName
+	md.cfg.LoadBalancerURL = md.cfg.LoadBalancerDNSName
+	if !strings.HasPrefix(md.cfg.LoadBalancerURL, "https://") {
+		md.cfg.LoadBalancerURL = "https://" + md.cfg.LoadBalancerURL
+	}
 	md.cfg.Sync()
 	md.lg.Info("created load balancer", zap.String("name", md.cfg.LoadBalancerName), zap.String("dns-name", md.cfg.LoadBalancerDNSName))
 
@@ -719,9 +723,29 @@ func (md *embedded) Create() (err error) {
 
 	////////////////////////////////////////////////////////////////////////
 	md.lg.Info("step 13-1. 'client-side kubectl' configuration")
-	md.lg.Info("TODO step 13-2. successfully wrote 'client-side kubectl' KUBECONFIG")
-	md.lg.Info("TODO step 13-3. running 'client-side kubectl' get all")
-	md.lg.Info("TODO step 13-4. successfully ran 'client-side kubectl' get all")
+
+	var kubectlKubeConfig string
+	kubectlKubeConfig, err = writeKubectlKubeConfigFile(rsa.PrivateKeyBytes(), rsa.PublicKeyBytes(), rsa.RootCertificateBytes(), md.cfg.ClusterName, md.cfg.LoadBalancerURL)
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(kubectlKubeConfig)
+	md.lg.Info("step 13-2. successfully wrote 'client-side kubectl' KUBECONFIG")
+
+	for _, target := range md.cfg.EC2MasterNodes.Instances {
+		if err = sendKubectlKubeConfigFile(md.lg, *md.cfg.EC2MasterNodes, target, kubectlKubeConfig, *md.cfg.Kubectl); err != nil {
+			return err
+		}
+	}
+	for _, target := range md.cfg.EC2WorkerNodes.Instances {
+		if err = sendKubectlKubeConfigFile(md.lg, *md.cfg.EC2WorkerNodes, target, kubectlKubeConfig, *md.cfg.Kubectl); err != nil {
+			return err
+		}
+	}
+	md.lg.Info("step 13-3. successfully sent 'client-side kubectl' KUBECONFIG")
+
+	md.lg.Info("TODO step 13-4. running 'client-side kubectl' get all")
+	md.lg.Info("TODO step 13-5. successfully ran 'client-side kubectl' get all")
 	////////////////////////////////////////////////////////////////////////
 
 	if md.cfg.UploadKubeConfig {

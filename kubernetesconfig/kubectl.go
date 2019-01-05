@@ -13,12 +13,14 @@ type Kubectl struct {
 	Path           string `json:"path"`
 	DownloadURL    string `json:"download-url"`
 	VersionCommand string `json:"version-command"`
+	Kubeconfig     string `json:"kubeconfig"`
 }
 
 var defaultKubectl = Kubectl{
 	Path:           "/usr/bin/kubectl",
 	DownloadURL:    fmt.Sprintf("https://storage.googleapis.com/kubernetes-release/release/v%s/bin/linux/amd64/kubectl", defaultKubernetesVersion),
 	VersionCommand: "/usr/bin/kubectl version --client",
+	Kubeconfig:     "/var/lib/kubectl/kubeconfig",
 }
 
 func newDefaultKubectl() *Kubectl {

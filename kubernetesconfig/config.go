@@ -125,8 +125,10 @@ type Config struct {
 	// LoadBalancerName is the name of the AWS load balancer.
 	LoadBalancerName string `json:"load-balancer-name,omitempty"`
 	// LoadBalancerDNSName is the DNS name output from load balancer creation.
-	// Used for client-side KUBECONFIG access.
 	LoadBalancerDNSName string `json:"load-balancer-dns-name,omitempty"`
+	// LoadBalancerURL is the URL of the AWS load balancer.
+	// Used for client-side KUBECONFIG access.
+	LoadBalancerURL string `json:"load-balancer-dns-name,omitempty"`
 	// LoadBalancerCreated is true to indicate that load balancer has been created,
 	// thus needs clean-up on test complete.
 	LoadBalancerCreated bool `json:"load-balancer-created"`
