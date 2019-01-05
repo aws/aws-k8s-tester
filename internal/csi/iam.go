@@ -123,7 +123,7 @@ func createIAMResources(awsRegion string) (*iamResources, error) {
 	}()
 
 	now := time.Now().UTC()
-	uniqueSuffix := fmt.Sprintf("%d%02d%02d%02d%02d", now.Year(), now.Month(), now.Day(), now.Minute(), now.Second())
+	uniqueSuffix := fmt.Sprintf("%x%x%x%x%x", now.Year(), int(now.Month()), now.Day(), now.Minute(), now.Second())
 
 	// Creates instance profile
 	instanceOutput, err := resources.svc.CreateInstanceProfile(&iam.CreateInstanceProfileInput{
