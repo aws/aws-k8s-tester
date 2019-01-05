@@ -7,6 +7,13 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.9...0.2.0).
 
+### `aws-k8s-tester`
+
+- Add [`aws-k8s-tester csi test integration --github-account` flag](https://github.com/aws/aws-k8s-tester/pull/31).
+- Add [`aws-k8s-tester csi test integration --github-branch` flag](https://github.com/aws/aws-k8s-tester/pull/31).
+- Add [`aws-k8s-tester csi test integration --pr-num` flag](https://github.com/aws/aws-k8s-tester/pull/31).
+- Remove [`aws-k8s-tester csi test integration --csi` flag](https://github.com/aws/aws-k8s-tester/pull/31).
+
 ### `kubernetesconfig`
 
 - [Initial commits to run Kubernetes e2e tests with vanilla Kubernetes cluster on top of AWS](https://github.com/aws/aws-k8s-tester/pull/26).
@@ -17,6 +24,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.9...0.2.0).
 
 ### `ec2config`
 
+- Add [`ec2config.CustomScript` field to support custom CSI EBS volume install scripts](https://github.com/aws/aws-k8s-tester/pull/31).
 - Use [`amazon-linux-extras install` command to install Docker in Amazon Linux 2](https://github.com/aws/aws-k8s-tester/commit/f9d9aa93e989f74ddce5ec87f126b55447c2bf9a).
 - Shorten [AWS resource tag prefix from `"awsk8stester-"` to `"a8t-"`](https://github.com/aws/aws-k8s-tester/commit/5cd0e6c0d7ec73e4d647db2c5b70f0e019994c06).
 
@@ -33,6 +41,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.9...0.2.0).
 
 ### `internal`
 
+- Support [custom script for `internal/ec2` cloud init operation](https://github.com/aws/aws-k8s-tester/pull/31).
 - Remove [`internal/kubeadm`](https://github.com/aws/aws-k8s-tester/commit/aa0590623f0b537484720d49175044661eda7cdb).
 - Add [`internal/kubernetes` to run Kubernetes e2e tests with vanilla Kubernetes cluster on top of AWS](https://github.com/aws/aws-k8s-tester/pull/26).
 - Remove [`internal/eks` `"aws-cli"` option for now](https://github.com/aws/aws-k8s-tester/commit/8079d8a96c85f2edc57da87c8b839ba67fd67f64).
