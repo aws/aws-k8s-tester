@@ -408,6 +408,8 @@ func (md *embedded) Create() (err error) {
 	md.lg.Info("step 5-8. successfully sent 'worker node kubelet' systemd file")
 	////////////////////////////////////////////////////////////////////////
 
+	// TODO(gyuho), FIXME: empty are /var/lib/kubelet/kubeconfig and /var/lib/kube-proxy/kubeconfig
+
 	////////////////////////////////////////////////////////////////////////
 	md.lg.Info("step 6-1. 'master node kube-proxy' configuration")
 
@@ -656,6 +658,7 @@ func (md *embedded) Create() (err error) {
 	md.lg.Info("TODO step 11-2. starting 'master node kubelet'")
 	/*
 		sudo systemctl cat kubelet
+		sudo cat /etc/sysconfig/kubelet
 		sudo systemctl enable kubelet && sudo systemctl restart kubelet
 		sudo systemctl status kubelet --full --no-pager || true
 		sudo journalctl --no-pager --output=cat -u kubelet
@@ -665,6 +668,7 @@ func (md *embedded) Create() (err error) {
 	md.lg.Info("TODO step 11-4. starting 'master node kube-proxy'")
 	/*
 		sudo systemctl cat kube-proxy
+		sudo cat /etc/sysconfig/kube-proxy
 		sudo systemctl enable kube-proxy && sudo systemctl restart kube-proxy
 		sudo systemctl status kube-proxy --full --no-pager || true
 		sudo journalctl --no-pager --output=cat -u kube-proxy
@@ -674,6 +678,7 @@ func (md *embedded) Create() (err error) {
 	md.lg.Info("TODO step 11-6. starting 'master node kube-scheduler'")
 	/*
 		sudo systemctl cat kube-scheduler
+		sudo cat /etc/sysconfig/kube-scheduler
 		sudo systemctl enable kube-scheduler && sudo systemctl restart kube-scheduler
 		sudo systemctl status kube-scheduler --full --no-pager || true
 		sudo journalctl --no-pager --output=cat -u kube-scheduler
@@ -683,6 +688,7 @@ func (md *embedded) Create() (err error) {
 	md.lg.Info("TODO step 11-8. starting 'master node kube-controller-manager'")
 	/*
 		sudo systemctl cat kube-controller-manager
+		sudo cat /etc/sysconfig/kube-controller-manager
 		sudo systemctl enable kube-controller-manager && sudo systemctl restart kube-controller-manager
 		sudo systemctl status kube-controller-manager --full --no-pager || true
 		sudo journalctl --no-pager --output=cat -u kube-controller-manager
@@ -692,6 +698,7 @@ func (md *embedded) Create() (err error) {
 	md.lg.Info("TODO step 11-10. starting 'master node kube-apiserver'")
 	/*
 		sudo systemctl cat kube-apiserver
+		sudo cat /etc/sysconfig/kube-apiserver
 		sudo systemctl enable kube-apiserver && sudo systemctl restart kube-apiserver
 		sudo systemctl status kube-apiserver --full --no-pager || true
 		sudo journalctl --no-pager --output=cat -u kube-apiserver
@@ -705,6 +712,7 @@ func (md *embedded) Create() (err error) {
 	md.lg.Info("TODO step 12-2. starting 'worker node kubelet'")
 	/*
 		sudo systemctl cat kubelet
+		sudo cat /etc/sysconfig/kubelet
 		sudo systemctl enable kubelet && sudo systemctl restart kubelet
 		sudo systemctl status kubelet --full --no-pager || true
 		sudo journalctl --no-pager --output=cat -u kubelet
@@ -714,6 +722,7 @@ func (md *embedded) Create() (err error) {
 	md.lg.Info("TODO step 12-4. starting 'worker node kube-proxy'")
 	/*
 		sudo systemctl cat kube-proxy
+		sudo cat /etc/sysconfig/kube-proxy
 		sudo systemctl enable kube-proxy && sudo systemctl restart kube-proxy
 		sudo systemctl status kube-proxy --full --no-pager || true
 		sudo journalctl --no-pager --output=cat -u kube-proxy
