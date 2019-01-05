@@ -127,7 +127,7 @@ func sendKubeletKubeConfigFile(
 		return fmt.Errorf("failed to send %q to %q for %q(%q) (error %v)", filePathToSend, remotePath, ec2Config.ClusterName, target.InstanceID, err)
 	}
 
-	copyCmd := fmt.Sprintf("sudo mkdir -p /etc/sysconfig/ && sudo cp %s %s", remotePath, kubeletConfig.Kubeconfig)
+	copyCmd := fmt.Sprintf("sudo mkdir -p %s && sudo cp %s %s", filepath.Dir(kubeletConfig.Kubeconfig), remotePath, kubeletConfig.Kubeconfig)
 	_, err = ss.Run(
 		copyCmd,
 		ssh.WithTimeout(15*time.Second),

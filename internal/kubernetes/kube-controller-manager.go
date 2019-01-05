@@ -10,6 +10,8 @@ import (
 	"github.com/aws/aws-k8s-tester/kubernetesconfig"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"go.uber.org/zap"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
+	"sigs.k8s.io/yaml"
 )
 
 func sendKubeControllerManagerPKI(
@@ -94,6 +96,96 @@ func sendKubeControllerManagerPKI(
 		return fmt.Errorf("failed to %q for %q(%q) (error %v)", copyCmd, ec2Config.ClusterName, target.InstanceID, err)
 	}
 
+	return nil
+}
+
+func writeKubeControllerManagerKubeConfigFile(
+	privateKey []byte,
+	publicKey []byte,
+	rootCA []byte,
+) (p string, err error) {
+	cfg := clientcmdapi.NewConfig()
+	cfg.APIVersion = "v1"
+	cfg.Kind = "Config"
+	cfg.Clusters["local"] = &clientcmdapi.Cluster{
+		CertificateAuthorityData: rootCA,
+		Server:                   "https://127.0.0.1",
+	}
+	cfg.Contexts["service-account-context"] = &clientcmdapi.Context{
+		Cluster:  "local",
+		AuthInfo: "kube-controller-manager",
+	}
+	cfg.CurrentContext = "service-account-context"
+	cfg.AuthInfos["kube-controller-manager"] = &clientcmdapi.AuthInfo{
+		ClientCertificateData: publicKey,
+		ClientKeyData:         privateKey,
+	}
+	var d []byte
+	d, err = yaml.Marshal(&cfg)
+	if err != nil {
+		return "", err
+	}
+	p, err = fileutil.WriteTempFile(d)
+	if err != nil {
+		return "", fmt.Errorf("failed to write kube-controller-manager KUBECONFIG file (%v)", err)
+	}
+	return p, nil
+}
+
+func sendKubeControllerManagerKubeConfigFile(
+	lg *zap.Logger,
+	ec2Config ec2config.Config,
+	target ec2config.Instance,
+	filePathToSend string,
+	kubeControllerManagerConfig kubernetesconfig.KubeControllerManager,
+) (err error) {
+	var ss ssh.SSH
+	ss, err = ssh.New(ssh.Config{
+		Logger:        lg,
+		KeyPath:       ec2Config.KeyPath,
+		PublicIP:      target.PublicIP,
+		PublicDNSName: target.PublicDNSName,
+		UserName:      ec2Config.UserName,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create a SSH to %q(%q) (error %v)", ec2Config.ClusterName, target.InstanceID, err)
+	}
+	if err = ss.Connect(); err != nil {
+		return fmt.Errorf("failed to connect to %q(%q) (error %v)", ec2Config.ClusterName, target.InstanceID, err)
+	}
+	defer ss.Close()
+
+	remotePath := fmt.Sprintf("/home/%s/kube-controller-manager.kubeconfig", ec2Config.UserName)
+	_, err = ss.Send(
+		filePathToSend,
+		remotePath,
+		ssh.WithTimeout(15*time.Second),
+		ssh.WithRetry(3, 3*time.Second),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to send %q to %q for %q(%q) (error %v)", filePathToSend, remotePath, ec2Config.ClusterName, target.InstanceID, err)
+	}
+
+	copyCmd := fmt.Sprintf("sudo mkdir -p %s && sudo cp %s %s", filepath.Dir(kubeControllerManagerConfig.Kubeconfig), remotePath, kubeControllerManagerConfig.Kubeconfig)
+	_, err = ss.Run(
+		copyCmd,
+		ssh.WithTimeout(15*time.Second),
+		ssh.WithRetry(3, 3*time.Second),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to %q for %q(%q) (error %v)", copyCmd, ec2Config.ClusterName, target.InstanceID, err)
+	}
+
+	catCmd := fmt.Sprintf("sudo cat %s", kubeControllerManagerConfig.Kubeconfig)
+	var out []byte
+	out, err = ss.Run(
+		catCmd,
+		ssh.WithTimeout(15*time.Second),
+		ssh.WithRetry(3, 3*time.Second),
+	)
+	if err != nil || len(out) == 0 {
+		return fmt.Errorf("failed to %q for %q(%q) (error %v)", catCmd, ec2Config.ClusterName, target.InstanceID, err)
+	}
 	return nil
 }
 
