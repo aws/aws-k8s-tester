@@ -3,7 +3,7 @@
 <hr>
 
 
-## [0.2.0](https://github.com/aws/aws-k8s-tester/releases/tag/0.2.0) (2018-01)
+## [0.2.0](https://github.com/aws/aws-k8s-tester/releases/tag/0.2.0)(2018-01-07)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.9...0.2.0).
 
@@ -15,6 +15,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.9...0.2.0).
 - Remove [`aws-k8s-tester csi test integration --csi` flag](https://github.com/aws/aws-k8s-tester/pull/31).
 
 ### `kubernetesconfig`
+
+Experimenting.
 
 - [Initial commits to run Kubernetes e2e tests with vanilla Kubernetes cluster on top of AWS](https://github.com/aws/aws-k8s-tester/pull/26).
 
