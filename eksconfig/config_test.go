@@ -50,12 +50,13 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_MIN", "10")
 	os.Setenv("AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_MAX", "10")
 	os.Setenv("AWS_K8S_TESTER_EKS_LOG_DEBUG", "true")
-	os.Setenv("AWS_K8S_TESTER_EKS_UPLOAD_TESTER_LOGS", "false")
-	os.Setenv("AWS_K8S_TESTER_EKS_UPLOAD_WORKER_NODE_LOGS", "false")
+	os.Setenv("AWS_K8S_TESTER_EKS_UPLOAD_TESTER_LOGS", "true")
+	os.Setenv("AWS_K8S_TESTER_EKS_UPLOAD_KUBECONFIG", "true")
+	os.Setenv("AWS_K8S_TESTER_EKS_UPLOAD_WORKER_NODE_LOGS", "true")
 	os.Setenv("AWS_K8S_TESTER_EKS_UPLOAD_BUCKET_EXPIRE_DAYS", "3")
 	os.Setenv("AWS_K8S_TESTER_EKS_WAIT_BEFORE_DOWN", "2h")
 	os.Setenv("AWS_K8S_TESTER_EKS_ALB_TEST_SCALABILITY_MINUTES", "3")
-	os.Setenv("AWS_K8S_TESTER_EKS_ALB_UPLOAD_TESTER_LOGS", "false")
+	os.Setenv("AWS_K8S_TESTER_EKS_ALB_UPLOAD_TESTER_LOGS", "true")
 	os.Setenv("AWS_K8S_TESTER_EKS_ALB_TEST_EXPECT_QPS", "123.45")
 	os.Setenv("AWS_K8S_TESTER_EKS_ALB_TEST_MODE", "nginx")
 	os.Setenv("AWS_K8S_TESTER_EKS_ALB_ENABLE", "true")
@@ -89,6 +90,7 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_MAX")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_LOG_DEBUG")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_UPLOAD_TESTER_LOGS")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_UPLOAD_KUBECONFIG")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_UPLOAD_WORKER_NODE_LOGS")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_UPLOAD_BUCKET_EXPIRE_DAYS")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_WAIT_BEFORE_DOWN")
@@ -181,14 +183,17 @@ func TestEnv(t *testing.T) {
 	if !cfg.LogDebug {
 		t.Fatalf("LogDebug expected true, got %v", cfg.LogDebug)
 	}
-	if cfg.UploadTesterLogs {
-		t.Fatalf("UploadTesterLogs expected false, got %v", cfg.UploadTesterLogs)
+	if !cfg.UploadTesterLogs {
+		t.Fatalf("UploadTesterLogs expected true, got %v", cfg.UploadTesterLogs)
 	}
-	if cfg.ALBIngressController.UploadTesterLogs {
-		t.Fatalf("UploadTesterLogs expected false, got %v", cfg.ALBIngressController.UploadTesterLogs)
+	if !cfg.UploadKubeConfig {
+		t.Fatalf("UploadKubeConfig expected true, got %v", cfg.UploadKubeConfig)
 	}
-	if cfg.UploadWorkerNodeLogs {
-		t.Fatalf("UploadWorkerNodeLogs expected false, got %v", cfg.UploadWorkerNodeLogs)
+	if !cfg.ALBIngressController.UploadTesterLogs {
+		t.Fatalf("ALBIngressController.UploadTesterLogs expected true, got %v", cfg.ALBIngressController.UploadTesterLogs)
+	}
+	if !cfg.UploadWorkerNodeLogs {
+		t.Fatalf("UploadWorkerNodeLogs expected true, got %v", cfg.UploadWorkerNodeLogs)
 	}
 	if cfg.UploadBucketExpireDays != 3 {
 		t.Fatalf("UploadBucketExpireDays expected 3, got %d", cfg.UploadBucketExpireDays)

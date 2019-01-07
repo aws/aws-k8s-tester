@@ -18,7 +18,6 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/pkg/zaputil"
 	"github.com/aws/aws-k8s-tester/storagetester"
-
 	"github.com/dustin/go-humanize"
 	"go.etcd.io/etcd/etcdserver/etcdserverpb"
 	"go.uber.org/zap"
@@ -111,9 +110,9 @@ func (md *embedded) Create() (err error) {
 		ev.PublicDNSName = iv.PublicDNSName
 		ev.Name = iv.InstanceID
 		ev.DataDir = fmt.Sprintf("/home/%s/etcd.data", md.cfg.EC2.UserName)
-		ev.ListenClientURLs = fmt.Sprintf("http://%s:2379", iv.PrivateIP)
+		ev.ListenClientURLs = fmt.Sprintf("http://localhost:2379,http://%s:2379", iv.PrivateIP)
 		ev.AdvertiseClientURLs = fmt.Sprintf("http://%s:2379", iv.PrivateIP)
-		ev.ListenPeerURLs = fmt.Sprintf("http://%s:2380", iv.PrivateIP)
+		ev.ListenPeerURLs = fmt.Sprintf("http://localhost:2380,http://%s:2380", iv.PrivateIP)
 		ev.AdvertisePeerURLs = fmt.Sprintf("http://%s:2380", iv.PrivateIP)
 		ev.InitialCluster = ""
 		ev.InitialClusterState = "new"
@@ -468,11 +467,7 @@ func (md *embedded) Put(k, v string) error {
 	}
 	defer sh.Close()
 
-	eps := make([]string, 0, len(md.cfg.ClusterState))
-	for _, v := range md.cfg.ClusterState {
-		ep := v.AdvertiseClientURLs
-		eps = append(eps, ep)
-	}
+	eps := md.cfg.ClientURLs()
 	var out []byte
 	out, err = sh.Run(
 		fmt.Sprintf("ETCDCTL_API=3 etcdctl --endpoints=%s put %q %q", strings.Join(eps, ","), k, v),
@@ -926,9 +921,9 @@ func (md *embedded) MemberAdd(ver string) (err error) {
 	newETCD.PublicDNSName = newEC2.PublicDNSName
 	newETCD.Name = newEC2.InstanceID
 	newETCD.DataDir = fmt.Sprintf("/home/%s/etcd.data", md.cfg.EC2.UserName)
-	newETCD.ListenClientURLs = fmt.Sprintf("http://%s:2379", newEC2.PrivateIP)
+	newETCD.ListenClientURLs = fmt.Sprintf("http://localhost:2379,http://%s:2379", newEC2.PrivateIP)
 	newETCD.AdvertiseClientURLs = fmt.Sprintf("http://%s:2379", newEC2.PrivateIP)
-	newETCD.ListenPeerURLs = fmt.Sprintf("http://%s:2380", newEC2.PrivateIP)
+	newETCD.ListenPeerURLs = fmt.Sprintf("http://localhost:2380,http://%s:2380", newEC2.PrivateIP)
 	newETCD.AdvertisePeerURLs = fmt.Sprintf("http://%s:2380", newEC2.PrivateIP)
 	initialCluster := ""
 	for k, v := range md.cfg.ClusterState {
@@ -1004,6 +999,9 @@ func (md *embedded) MemberAdd(ver string) (err error) {
 		fmt.Sprintf("sudo bash %s", remotePath),
 		ssh.WithTimeout(15*time.Second),
 	)
+	if err != nil {
+		return fmt.Errorf("failed to run etcd install script (%v)", err)
+	}
 	md.lg.Info("installed etcd", zap.String("ver", ver), zap.Error(err))
 
 	md.lg.Info("starting 'member add' command", zap.String("ver", ver))

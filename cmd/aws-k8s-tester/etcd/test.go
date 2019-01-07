@@ -9,7 +9,6 @@ import (
 	"github.com/aws/aws-k8s-tester/etcdconfig"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/storagetester"
-
 	"github.com/spf13/cobra"
 	"go.etcd.io/etcd/clientv3"
 	"go.etcd.io/etcd/etcdserver/etcdserverpb"

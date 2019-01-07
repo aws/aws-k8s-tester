@@ -135,13 +135,15 @@ func (md *embedded) createCluster() error {
 		return err
 	}
 
-	if err = md.s3Plugin.UploadToBucketForTests(
-		md.cfg.KubeConfigPath,
-		md.cfg.KubeConfigPathBucket,
-	); err != nil {
-		md.lg.Warn("failed to upload KUBECONFIG", zap.Error(err))
-	} else {
-		md.lg.Info("uploaded KUBECONFIG", zap.String("KUBECONFIG", md.cfg.KubeConfigPath))
+	if md.cfg.UploadKubeConfig {
+		if err = md.s3Plugin.UploadToBucketForTests(
+			md.cfg.KubeConfigPath,
+			md.cfg.KubeConfigPathBucket,
+		); err != nil {
+			md.lg.Warn("failed to upload KUBECONFIG", zap.Error(err))
+		} else {
+			md.lg.Info("uploaded KUBECONFIG", zap.String("KUBECONFIG", md.cfg.KubeConfigPath))
+		}
 	}
 
 	time.Sleep(5 * time.Second)
@@ -195,10 +197,14 @@ func (md *embedded) createCluster() error {
 			"dump",
 		).CombinedOutput()
 		cancel()
+		do := string(out3)
+		if !md.cfg.LogDebug && len(do) > 30 {
+			do = do[:30] + "..."
+		}
 		md.lg.Info("ran kubectl cluster-info dump",
 			zap.String("kubectl-path", md.cfg.KubectlPath),
 			zap.String("aws-iam-authenticator-path", md.cfg.AWSIAMAuthenticatorPath),
-			zap.String("output", string(out3)),
+			zap.String("output", do),
 			zap.Error(err),
 		)
 

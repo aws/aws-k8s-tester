@@ -284,7 +284,7 @@ func (up *uploader) upload(localPath, s3Path string) error {
 
 func getBucket(accountID string) string {
 	now := time.Now().UTC()
-	return fmt.Sprintf("%s-aws-k8s-tester-wrk-%d%02d%02d", accountID, now.Year(), now.Month(), now.Day())
+	return fmt.Sprintf("%s-a8t-wrk-%d%x%x", accountID, now.Year()-2000, int(now.Month()), now.Day())
 }
 
 var reg *regexp.Regexp

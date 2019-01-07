@@ -93,7 +93,7 @@ func TestETCD(t *testing.T) {
 	if err = tester.Put("foo", "bar"); err != nil {
 		t.Errorf("failed write %v", err)
 	}
-	versionToUgradeTxt := "3.2.25"
+	versionToUgradeTxt := "3.3.10"
 	versionToUgrade, verr := semver.Make(versionToUgradeTxt)
 	if verr != nil {
 		t.Fatal(err)

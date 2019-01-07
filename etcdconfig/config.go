@@ -83,6 +83,14 @@ type Config struct {
 	TestTimeout time.Duration `json:"test-timeout,omitempty"`
 }
 
+func (cfg *Config) ClientURLs() (eps []string) {
+	eps = make([]string, 0, len(cfg.ClusterState))
+	for _, v := range cfg.ClusterState {
+		eps = append(eps, strings.Split(v.AdvertiseClientURLs, ",")...)
+	}
+	return eps
+}
+
 // ETCD defines etcd-specific configuration.
 // TODO: support TLS
 type ETCD struct {
@@ -101,21 +109,21 @@ type ETCD struct {
 	// It is different than ID or Name which is set with instance ID.
 	MemberID string `json:"member-id,omitempty"`
 
-	Name                string `json:"name,omitempty"`
-	DataDir             string `json:"data-dir,omitempty"`
-	ListenClientURLs    string `json:"listen-client-urls,omitempty"`
-	AdvertiseClientURLs string `json:"advertise-client-urls,omitempty"`
-	ListenPeerURLs      string `json:"listen-peer-urls,omitempty"`
+	Name                string `json:"name,omitempty" etcd:"name"`
+	DataDir             string `json:"data-dir,omitempty" etcd:"data-dir"`
+	ListenClientURLs    string `json:"listen-client-urls,omitempty" etcd:"listen-client-urls"`
+	AdvertiseClientURLs string `json:"advertise-client-urls,omitempty" etcd:"advertise-client-urls"`
+	ListenPeerURLs      string `json:"listen-peer-urls,omitempty" etcd:"listen-peer-urls"`
 	AdvertisePeerURLs   string `json:"advertise-peer-urls,omitempty" etcd:"initial-advertise-peer-urls"`
-	InitialCluster      string `json:"initial-cluster,omitempty"`
-	InitialClusterState string `json:"initial-cluster-state,omitempty"`
+	InitialCluster      string `json:"initial-cluster,omitempty" etcd:"initial-cluster"`
+	InitialClusterState string `json:"initial-cluster-state,omitempty" etcd:"initial-cluster-state"`
 
-	InitialClusterToken string `json:"initial-cluster-token"`
-	SnapshotCount       int    `json:"snapshot-count"`
+	InitialClusterToken string `json:"initial-cluster-token" etcd:"initial-cluster-token"`
+	SnapshotCount       int    `json:"snapshot-count" etcd:"snapshot-count"`
 	HeartbeatMS         int    `json:"heartbeat-ms" etcd:"heartbeat-interval"`
 	ElectionTimeoutMS   int    `json:"election-timeout-ms" etcd:"election-timeout"`
 	QuotaBackendGB      int    `json:"quota-backend-gb" etcd:"quota-backend-bytes"`
-	EnablePprof         bool   `json:"enable-pprof"`
+	EnablePprof         bool   `json:"enable-pprof" etcd:"enable-pprof"`
 
 	// flags for each version
 
@@ -323,26 +331,23 @@ func CheckInitialElectionTickAdvance(ver string) (ok bool) {
 func (e *ETCD) Flags() (flags []string, err error) {
 	tp, vv := reflect.TypeOf(e).Elem(), reflect.ValueOf(e).Elem()
 	for i := 0; i < tp.NumField(); i++ {
-		k := tp.Field(i).Tag.Get("json")
+		k := tp.Field(i).Tag.Get("etcd")
 		if k == "" {
 			continue
-		}
-		k = strings.Replace(k, ",omitempty", "", -1)
-		if ek := tp.Field(i).Tag.Get("etcd"); ek != "" {
-			k = strings.Replace(ek, ",omitempty", "", -1)
 		}
 		if v, ok := e.features[k]; ok && !v {
 			continue
 		}
-
+		allowZeroValue := tp.Field(i).Tag.Get("allow-zero-value") == "true"
 		fieldName := tp.Field(i).Name
-		if _, ok := skipFlags[fieldName]; ok {
-			continue
-		}
 
 		switch vv.Field(i).Type().Kind() {
 		case reflect.String:
-			flags = append(flags, fmt.Sprintf("--%s=%s", k, vv.Field(i).String()))
+			if vv.Field(i).String() != "" {
+				flags = append(flags, fmt.Sprintf("--%s=%s", k, vv.Field(i).String()))
+			} else if allowZeroValue {
+				flags = append(flags, fmt.Sprintf(`--%s=""`, k))
+			}
 
 		case reflect.Bool:
 			flags = append(flags, fmt.Sprintf("--%s=%v", k, vv.Field(i).Bool()))
@@ -353,7 +358,11 @@ func (e *ETCD) Flags() (flags []string, err error) {
 				// 2 * 1024 * 1024 * 1024 == 2147483648 == 2 GB
 				v = v * 1024 * 1024 * 1024
 			}
-			flags = append(flags, fmt.Sprintf("--%s=%d", k, v))
+			if v != 0 {
+				flags = append(flags, fmt.Sprintf("--%s=%d", k, v))
+			} else if allowZeroValue {
+				flags = append(flags, fmt.Sprintf(`--%s=0`, k))
+			}
 
 		default:
 			return nil, fmt.Errorf("unknown %q", k)
@@ -370,7 +379,7 @@ func (e *ETCD) Service() (s string, err error) {
 		return "", err
 	}
 	return createSvcInfo(svcInfo{
-		Exec:  "/usr/local/bin/etcd",
+		Exec:  "/usr/bin/etcd",
 		Flags: strings.Join(fs, " "),
 	})
 }
@@ -545,7 +554,7 @@ var minEtcdVer semver.Version
 
 func init() {
 	var err error
-	minEtcdVer, err = semver.Make("3.1.12")
+	minEtcdVer, err = semver.Make("3.2.15")
 	if err != nil {
 		panic(err)
 	}
@@ -557,11 +566,11 @@ func init() {
 
 	// package "internal/ec2" defaults
 	// Amazon Linux 2 AMI (HVM), SSD Volume Type
-	// ImageID:  "ami-061e7ebbc234015fe"
+	// ImageID:  "ami-01bbe152bf19d0289"
 	// UserName: "ec2-user"
 	defaultConfig.EC2.Plugins = []string{
 		"update-amazon-linux-2",
-		"install-etcd-3.1.12",
+		"install-etcd-3.2.25",
 	}
 	defaultConfig.EC2.ClusterSize = 3
 	defaultConfig.EC2.Wait = true
@@ -572,11 +581,10 @@ func init() {
 		"2379-2380": "192.168.0.0/8",
 	}
 
-	defaultConfig.EC2Bastion.EnvPrefix = "AWS_K8S_TESTER_EC2_BASTION_"
 	defaultConfig.EC2Bastion.Plugins = []string{
 		"update-amazon-linux-2",
-		"install-etcd-3.1.12",
-		"install-go-1.11.4",
+		"install-etcd-3.2.25",
+		"install-go-amazon-linux-2-1.11",
 		"install-aws-k8s-tester",
 	}
 	defaultConfig.EC2Bastion.ClusterSize = 1
@@ -593,7 +601,7 @@ func init() {
 func genTag() string {
 	// use UTC time for everything
 	now := time.Now().UTC()
-	return fmt.Sprintf("awsk8stester-etcd-%d%02d%02d", now.Year(), now.Month(), now.Day())
+	return fmt.Sprintf("a8t-etcd-%d%x%x", now.Year()-2000, int(now.Month()), now.Day())
 }
 
 var defaultConfig = Config{
@@ -693,12 +701,17 @@ func (cfg *Config) BackupConfig() (p string, err error) {
 }
 
 const (
-	envPfx        = "AWS_K8S_TESTER_ETCD_"
-	envPfxCluster = "AWS_K8S_TESTER_ETCD_CLUSTER_"
+	envPfx                 = "AWS_K8S_TESTER_ETCD_"
+	envPfxCluster          = "AWS_K8S_TESTER_ETCD_CLUSTER_"
+	envPfxEtcdNodes        = "AWS_K8S_TESTER_EC2_ETCD_NODES_"
+	envPfxEtcdBastionNodes = "AWS_K8S_TESTER_EC2_ETCD_BASTION_NODES_"
 )
 
 // UpdateFromEnvs updates fields from environmental variables.
 func (cfg *Config) UpdateFromEnvs() error {
+	cfg.EC2.EnvPrefix = envPfxEtcdNodes
+	cfg.EC2Bastion.EnvPrefix = envPfxEtcdBastionNodes
+
 	if err := cfg.EC2.UpdateFromEnvs(); err != nil {
 		return err
 	}
@@ -904,7 +917,7 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 
 	// populate all paths on disks and on remote storage
 	if cfg.ConfigPath == "" {
-		f, err := ioutil.TempFile(os.TempDir(), "awsk8stester-etcdconfig")
+		f, err := ioutil.TempFile(os.TempDir(), "a8t-etcdconfig")
 		if err != nil {
 			return err
 		}
@@ -912,7 +925,7 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 		f.Close()
 		os.RemoveAll(cfg.ConfigPath)
 	}
-	cfg.ConfigPathBucket = filepath.Join(cfg.ClusterName, "awsk8stester-etcdconfig.yaml")
+	cfg.ConfigPathBucket = filepath.Join(cfg.ClusterName, "a8t-etcdconfig.yaml")
 
 	cfg.LogOutputToUploadPath = filepath.Join(os.TempDir(), fmt.Sprintf("%s.log", cfg.ClusterName))
 	logOutputExist := false
@@ -926,7 +939,7 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 		// auto-insert generated log output paths to zap logger output list
 		cfg.LogOutputs = append(cfg.LogOutputs, cfg.LogOutputToUploadPath)
 	}
-	cfg.LogOutputToUploadPathBucket = filepath.Join(cfg.ClusterName, "awsk8stester-etcd.log")
+	cfg.LogOutputToUploadPathBucket = filepath.Join(cfg.ClusterName, "a8t-etcd.log")
 
 	if len(cfg.ClusterState) > 0 && cfg.ClusterSize != len(cfg.ClusterState) {
 		return fmt.Errorf("ClusterSize %d != len(ClusterState) %d", cfg.ClusterSize, len(cfg.ClusterState))

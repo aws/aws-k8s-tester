@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/pkg/httputil"
-
 	"go.uber.org/zap"
 	"k8s.io/utils/exec"
 )

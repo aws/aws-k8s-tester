@@ -55,58 +55,31 @@ func TestETCD(t *testing.T) {
 	fmt.Println(s)
 }
 
-func TestValidateAndSetDefaults(t *testing.T) {
-	cfg := NewDefault()
-	cfg.Cluster.Version = "v3.1.0"
-
-	err := cfg.ValidateAndSetDefaults()
-	if err.Error() != "expected >= 3.1.12, got 3.1.0" {
-		t.Fatalf("unexpected error %v", err)
-	}
-
-	cfg.Cluster.Version = "v3.1.12"
-	cfg.Cluster.InitialElectionTickAdvance = true
-	err = cfg.ValidateAndSetDefaults()
-	if err.Error() != `InitialElectionTickAdvance invalid for "3.1.12"` {
-		t.Fatalf("unexpected error %v", err)
-	}
-
-	cfg.Cluster.Version = "v3.1.16"
-	err = cfg.ValidateAndSetDefaults()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err = cfg.Sync(); err != nil {
-		t.Fatal(err)
-	}
-	os.RemoveAll(cfg.ConfigPath)
-}
-
 func TestEnv(t *testing.T) {
 	cfg := NewDefault()
 
 	os.Setenv("AWS_K8S_TESTER_ETCD_CLUSTER_SNAPSHOT_COUNT", "100")
-	os.Setenv("AWS_K8S_TESTER_EC2_BASTION_CLUSTER_SIZE", "2")
+	os.Setenv("AWS_K8S_TESTER_EC2_ETCD_BASTION_NODES_CLUSTER_SIZE", "2")
 	os.Setenv("AWS_K8S_TESTER_ETCD_TEST_TIMEOUT", "20s")
-	os.Setenv("AWS_K8S_TESTER_EC2_WAIT_BEFORE_DOWN", "3h")
+	os.Setenv("AWS_K8S_TESTER_EC2_ETCD_NODES_WAIT_BEFORE_DOWN", "3h")
 	os.Setenv("AWS_K8S_TESTER_ETCD_WAIT_BEFORE_DOWN", "2h")
-	os.Setenv("AWS_K8S_TESTER_EC2_CLUSTER_SIZE", "100")
+	os.Setenv("AWS_K8S_TESTER_EC2_ETCD_NODES_CLUSTER_SIZE", "100")
 	os.Setenv("AWS_K8S_TESTER_ETCD_CLUSTER_SIZE", "100")
 	os.Setenv("AWS_K8S_TESTER_ETCD_TAG", "my-test")
 	os.Setenv("AWS_K8S_TESTER_ETCD_CLUSTER_NAME", "my-cluster")
 	os.Setenv("AWS_K8S_TESTER_ETCD_DOWN", "false")
 	os.Setenv("AWS_K8S_TESTER_ETCD_LOG_DEBUG", "true")
 	os.Setenv("AWS_K8S_TESTER_ETCD_UPLOAD_TESTER_LOGS", "false")
-	os.Setenv("AWS_K8S_TESTER_ETCD_CLUSTER_VERSION", "v3.1.12")
+	os.Setenv("AWS_K8S_TESTER_ETCD_CLUSTER_VERSION", "v3.2.15")
 	os.Setenv("AWS_K8S_TESTER_ETCD_CLUSTER_TOP_LEVEL", "true")
 
 	defer func() {
 		os.Unsetenv("AWS_K8S_TESTER_ETCD_CLUSTER_SNAPSHOT_COUNT")
-		os.Unsetenv("AWS_K8S_TESTER_EC2_BASTION_CLUSTER_SIZE")
+		os.Unsetenv("AWS_K8S_TESTER_EC2_ETCD_BASTION_NODES_CLUSTER_SIZE")
 		os.Unsetenv("AWS_K8S_TESTER_ETCD_TEST_TIMEOUT")
-		os.Unsetenv("AWS_K8S_TESTER_EC2_WAIT_BEFORE_DOWN")
+		os.Unsetenv("AWS_K8S_TESTER_EC2_ETCD_NODES_WAIT_BEFORE_DOWN")
 		os.Unsetenv("AWS_K8S_TESTER_ETCD_WAIT_BEFORE_DOWN")
-		os.Unsetenv("AWS_K8S_TESTER_EC2_CLUSTER_SIZE")
+		os.Unsetenv("AWS_K8S_TESTER_EC2_ETCD_NODES_CLUSTER_SIZE")
 		os.Unsetenv("AWS_K8S_TESTER_ETCD_CLUSTER_SIZE")
 		os.Unsetenv("AWS_K8S_TESTER_ETCD_TAG")
 		os.Unsetenv("AWS_K8S_TESTER_ETCD_CLUSTER_NAME")
@@ -158,7 +131,7 @@ func TestEnv(t *testing.T) {
 	if cfg.UploadTesterLogs {
 		t.Fatalf("unexpected UploadTesterLogs, got %v", cfg.UploadTesterLogs)
 	}
-	if cfg.Cluster.Version != "3.1.12" {
+	if cfg.Cluster.Version != "3.2.15" {
 		t.Fatalf("unexpected Cluster.Version, got %q", cfg.Cluster.Version)
 	}
 	if !cfg.Cluster.TopLevel {

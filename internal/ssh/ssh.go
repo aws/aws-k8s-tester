@@ -102,7 +102,7 @@ func (sh *ssh) Connect() (err error) {
 		default:
 		}
 
-		sh.lg.Info("dialing",
+		sh.lg.Debug("dialing",
 			zap.String("public-ip", sh.cfg.PublicIP),
 			zap.String("public-dns-name", sh.cfg.PublicDNSName),
 		)
@@ -167,7 +167,7 @@ func (sh *ssh) Connect() (err error) {
 	}
 
 	sh.cli = cryptossh.NewClient(c, chans, reqs)
-	sh.lg.Info("created client",
+	sh.lg.Debug("created client",
 		zap.String("public-ip", sh.cfg.PublicIP),
 		zap.String("public-dns-name", sh.cfg.PublicDNSName),
 	)
@@ -185,7 +185,7 @@ func (sh *ssh) Close() {
 }
 
 func (sh *ssh) Run(cmd string, opts ...OpOption) (out []byte, err error) {
-	ret := Op{verbose: true, retries: 0, retryInterval: time.Duration(0), timeout: 0, envs: make(map[string]string)}
+	ret := Op{verbose: false, retries: 0, retryInterval: time.Duration(0), timeout: 0, envs: make(map[string]string)}
 	ret.applyOpts(opts)
 
 	key := fmt.Sprintf("%s%s", sh.cfg.PublicDNSName, cmd)
@@ -254,7 +254,7 @@ func (sh *ssh) Run(cmd string, opts ...OpOption) (out []byte, err error) {
 	}
 
 	if err != nil {
-		sh.lg.Warn("command failed", zap.Error(err))
+		sh.lg.Warn("command failed", zap.String("cmd", cmd), zap.Error(err))
 		if sh.retries[key] != 0 {
 			sh.lg.Warn("retrying", zap.Int("retries", sh.retries[key]))
 			sh.Close()
@@ -301,7 +301,7 @@ scp -oStrictHostKeyChecking=no \
 */
 
 func (sh *ssh) Send(localPath, remotePath string, opts ...OpOption) (out []byte, err error) {
-	ret := Op{verbose: true, retries: 0, retryInterval: time.Duration(0), timeout: 0, envs: make(map[string]string)}
+	ret := Op{verbose: false, retries: 0, retryInterval: time.Duration(0), timeout: 0, envs: make(map[string]string)}
 	ret.applyOpts(opts)
 
 	key := fmt.Sprintf("%s%s", sh.cfg.PublicDNSName, localPath)
@@ -331,35 +331,48 @@ func (sh *ssh) Send(localPath, remotePath string, opts ...OpOption) (out []byte,
 		return nil, err
 	}
 
-	cmd := scpCmd.CommandContext(ctx,
+	scpArgs := []string{
 		scpPath,
 		"-oStrictHostKeyChecking=no",
 		"-i", sh.cfg.KeyPath,
 		localPath,
 		fmt.Sprintf("%s@%s:%s", sh.cfg.UserName, sh.cfg.PublicDNSName, remotePath),
-	)
+	}
+	cmd := scpCmd.CommandContext(ctx, scpArgs[0], scpArgs[1:]...)
 	out, err = cmd.CombinedOutput()
+	for i := 0; i < 3; i++ {
+		if err == nil {
+			break
+		}
+		if !strings.Contains(err.Error(), "Process exited with status") {
+			break
+		}
+
+		time.Sleep(2 * time.Second)
+		sh.lg.Warn("retrying SCP for send", zap.String("cmd", strings.Join(scpArgs, " ")), zap.Error(err))
+		out, err = cmd.CombinedOutput()
+	}
 	cancel()
 
-	if ret.verbose {
-		fi, ferr := os.Stat(localPath)
-		if ferr == nil {
+	fi, ferr := os.Stat(localPath)
+	if ferr == nil {
+		if ret.verbose {
 			sh.lg.Info("sent",
 				zap.String("size", humanize.Bytes(uint64(fi.Size()))),
 				zap.String("output", string(out)),
 				zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 			)
-		} else {
-			sh.lg.Warn("failed to send",
-				zap.String("output", string(out)),
-				zap.Error(ferr),
-				zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
-			)
 		}
+	} else {
+		sh.lg.Warn("failed to send",
+			zap.String("output", string(out)),
+			zap.Error(ferr),
+			zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
+		)
 	}
 
 	if err != nil {
-		sh.lg.Warn("command failed", zap.Error(err))
+		sh.lg.Warn("SCP send command failed", zap.Error(err))
 
 		if sh.retries[key] != 0 {
 			sh.lg.Warn("retrying", zap.Int("retries", sh.retries[key]))
@@ -380,7 +393,7 @@ func (sh *ssh) Send(localPath, remotePath string, opts ...OpOption) (out []byte,
 }
 
 func (sh *ssh) Download(remotePath, localPath string, opts ...OpOption) (out []byte, err error) {
-	ret := Op{verbose: true, retries: 0, retryInterval: time.Duration(0), timeout: 0, envs: make(map[string]string)}
+	ret := Op{verbose: false, retries: 0, retryInterval: time.Duration(0), timeout: 0, envs: make(map[string]string)}
 	ret.applyOpts(opts)
 
 	key := fmt.Sprintf("%s%s", sh.cfg.PublicDNSName, localPath)
@@ -409,35 +422,48 @@ func (sh *ssh) Download(remotePath, localPath string, opts ...OpOption) (out []b
 		cancel()
 		return nil, err
 	}
-	cmd := scpCmd.CommandContext(ctx,
+	scpArgs := []string{
 		scpPath,
 		"-oStrictHostKeyChecking=no",
 		"-i", sh.cfg.KeyPath,
 		fmt.Sprintf("%s@%s:%s", sh.cfg.UserName, sh.cfg.PublicDNSName, remotePath),
 		localPath,
-	)
+	}
+	cmd := scpCmd.CommandContext(ctx, scpArgs[0], scpArgs[1:]...)
 	out, err = cmd.CombinedOutput()
+	for i := 0; i < 3; i++ {
+		if err == nil {
+			break
+		}
+		if !strings.Contains(err.Error(), "Process exited with status") {
+			break
+		}
+
+		time.Sleep(2 * time.Second)
+		sh.lg.Warn("retrying SCP for download", zap.String("cmd", strings.Join(scpArgs, " ")), zap.Error(err))
+		out, err = cmd.CombinedOutput()
+	}
 	cancel()
 
-	if ret.verbose {
-		fi, ferr := os.Stat(localPath)
-		if ferr == nil {
+	fi, ferr := os.Stat(localPath)
+	if ferr == nil {
+		if ret.verbose {
 			sh.lg.Info("downloaded",
 				zap.String("size", humanize.Bytes(uint64(fi.Size()))),
 				zap.String("output", string(out)),
 				zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 			)
-		} else {
-			sh.lg.Warn("failed to download",
-				zap.String("output", string(out)),
-				zap.Error(ferr),
-				zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
-			)
 		}
+	} else {
+		sh.lg.Warn("failed to download",
+			zap.String("output", string(out)),
+			zap.Error(ferr),
+			zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
+		)
 	}
 
 	if err != nil {
-		sh.lg.Warn("command failed", zap.Error(err))
+		sh.lg.Warn("SCP download command failed", zap.Error(err))
 
 		if sh.retries[key] != 0 {
 			sh.lg.Warn("retrying", zap.Int("retries", sh.retries[key]))

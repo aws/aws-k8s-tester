@@ -11,13 +11,16 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/ec2"
-
 	"go.uber.org/zap"
 )
 
 func (md *embedded) createKeyPair() (err error) {
 	if md.cfg.KeyName == "" {
 		return errors.New("cannot delete key pair without key name")
+	}
+	if md.cfg.KeyCreateSkip || md.cfg.KeyCreated {
+		md.lg.Info("EC2 key pair has already been created", zap.String("ec2-key-pair-name", md.cfg.KeyName))
+		return nil
 	}
 
 	defer func() {
@@ -51,9 +54,10 @@ func (md *embedded) createKeyPair() (err error) {
 
 	md.lg.Info(
 		"created key pair",
-		zap.String("key-name", md.cfg.KeyName),
-		zap.String("key-path", md.cfg.KeyPath),
+		zap.String("ec2-key-pair-name", md.cfg.KeyName),
+		zap.String("ec2-private-key-path", md.cfg.KeyPath),
 	)
+	md.cfg.KeyCreated = true
 	return md.cfg.Sync()
 }
 

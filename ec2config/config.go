@@ -106,13 +106,19 @@ type Config struct {
 	KeyPath       string `json:"key-path,omitempty"`
 	KeyPathBucket string `json:"key-path-bucket,omitempty"`
 	KeyPathURL    string `json:"key-path-url,omitempty"`
+	// KeyCreateSkip is true to indicate that EC2 key pair has been created, so needs no creation.
+	KeyCreateSkip bool `json:"key-created,omitempty"`
+	// KeyCreated is true to indicate that EC2 key pair has been created, so needs be cleaned later.
+	KeyCreated bool `json:"key-created,omitempty"`
 
 	// VPCCIDR is the VPC CIDR.
 	VPCCIDR string `json:"vpc-cidr"`
 	// VPCID is the VPC ID to use.
 	// Leave empty to create a temporary one.
-	VPCID      string `json:"vpc-id"`
-	VPCCreated bool   `json:"vpc-created"`
+	VPCID string `json:"vpc-id"`
+	// VPCCreated is true to indicate that EC2 VPC has been created, so needs be cleaned later.
+	// Set this to false, if the VPC is reused from somewhere else, so the original VPC creator deletes the VPC.
+	VPCCreated bool `json:"vpc-created"`
 	// InternetGatewayID is the internet gateway ID.
 	InternetGatewayID string `json:"internet-gateway-id,omitempty"`
 	// RouteTableIDs is the list of route table IDs.
@@ -204,7 +210,7 @@ type SecurityGroup struct {
 func genTag() string {
 	// use UTC time for everything
 	now := time.Now().UTC()
-	return fmt.Sprintf("awsk8stester-ec2-%d%02d%02d", now.Year(), now.Month(), now.Day())
+	return fmt.Sprintf("a8t-ec2-%d%x%x", now.Year()-2000, int(now.Month()), now.Day())
 }
 
 // NewDefault returns a copy of the default configuration.
@@ -213,12 +219,14 @@ func NewDefault() *Config {
 	return &vv
 }
 
+const envPfx = "AWS_K8S_TESTER_EC2_"
+
 // defaultConfig is the default configuration.
 //  - empty string creates a non-nil object for pointer-type field
 //  - omitting an entire field returns nil value
 //  - make sure to check both
 var defaultConfig = Config{
-	EnvPrefix: "AWS_K8S_TESTER_EC2_",
+	EnvPrefix: envPfx,
 	AWSRegion: "us-west-2",
 
 	WaitBeforeDown: time.Minute,
@@ -232,8 +240,8 @@ var defaultConfig = Config{
 	UploadTesterLogs:       false,
 	UploadBucketExpireDays: 2,
 
-	// Amazon Linux 2 AMI (HVM), SSD Volume Type
-	ImageID:  "ami-061e7ebbc234015fe",
+	// Amazon Linux 2 AMI (HVM), SSD Volume Type, amzn2-ami-hvm-2.0.20181114-x86_64-gp2
+	ImageID:  "ami-01bbe152bf19d0289",
 	UserName: "ec2-user",
 	Plugins: []string{
 		"update-amazon-linux-2",
@@ -244,6 +252,9 @@ var defaultConfig = Config{
 	ClusterSize:  1,
 
 	AssociatePublicIPAddress: true,
+
+	KeyCreateSkip: false,
+	KeyCreated:    false,
 
 	VPCCIDR: "192.168.0.0/16",
 	IngressRulesTCP: map[string]string{
@@ -395,7 +406,7 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 
 	if cfg.ConfigPath == "" {
 		var f *os.File
-		f, err = ioutil.TempFile(os.TempDir(), "awsk8stester-ec2config")
+		f, err = ioutil.TempFile(os.TempDir(), "a8t-ec2config")
 		if err != nil {
 			return err
 		}
@@ -403,7 +414,7 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 		f.Close()
 		os.RemoveAll(cfg.ConfigPath)
 	}
-	cfg.ConfigPathBucket = filepath.Join(cfg.ClusterName, "awsk8stester-ec2config.yaml")
+	cfg.ConfigPathBucket = filepath.Join(cfg.ClusterName, "a8t-ec2config.yaml")
 
 	cfg.LogOutputToUploadPath = filepath.Join(os.TempDir(), fmt.Sprintf("%s.log", cfg.ClusterName))
 	logOutputExist := false
@@ -417,12 +428,15 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 		// auto-insert generated log output paths to zap logger output list
 		cfg.LogOutputs = append(cfg.LogOutputs, cfg.LogOutputToUploadPath)
 	}
-	cfg.LogOutputToUploadPathBucket = filepath.Join(cfg.ClusterName, "awsk8stester-ec2.log")
+	cfg.LogOutputToUploadPathBucket = filepath.Join(cfg.ClusterName, "a8t-ec2.log")
 
 	if cfg.KeyName == "" {
 		cfg.KeyName = cfg.ClusterName
+	}
+	cfg.KeyPathBucket = filepath.Join(cfg.ClusterName, "a8t-ec2.key")
+	if cfg.KeyPath == "" {
 		var f *os.File
-		f, err = ioutil.TempFile(os.TempDir(), "awsk8stester-ec2.key")
+		f, err = ioutil.TempFile(os.TempDir(), "a8t-ec2.key")
 		if err != nil {
 			return err
 		}
@@ -430,7 +444,6 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 		f.Close()
 		os.RemoveAll(cfg.KeyPath)
 	}
-	cfg.KeyPathBucket = filepath.Join(cfg.ClusterName, "awsk8stester-ec2.key")
 
 	if _, ok := ec2types.InstanceTypes[cfg.InstanceType]; !ok {
 		return fmt.Errorf("unexpected InstanceType %q", cfg.InstanceType)

@@ -105,11 +105,6 @@ type Kubeadm struct {
 	JoinIgnorePreflightErrors    string `json:"join-ignore-preflight-errors,omitempty" kubeadm:"ignore-preflight-errors"`
 }
 
-var skipFlags = map[string]struct{}{
-	"Version":    {},
-	"JoinTarget": {},
-}
-
 // ScriptInit returns the service file setup script.
 func (ka *Kubeadm) ScriptInit() (s string, err error) {
 	var fs []string
@@ -156,19 +151,12 @@ find /home/ec2-user/.kube/ 1>>/var/log/kubeadm-init.log 2>&1
 func (ka *Kubeadm) FlagsInit() (flags []string, err error) {
 	tp, vv := reflect.TypeOf(ka).Elem(), reflect.ValueOf(ka).Elem()
 	for i := 0; i < tp.NumField(); i++ {
-		k := tp.Field(i).Tag.Get("json")
+		k := tp.Field(i).Tag.Get("kubeadm")
 		if k == "" {
 			continue
 		}
-		k = strings.Replace(k, ",omitempty", "", -1)
-		if ek := tp.Field(i).Tag.Get("kubeadm"); ek != "" {
-			k = strings.Replace(ek, ",omitempty", "", -1)
-		}
-
+		allowZeroValue := tp.Field(i).Tag.Get("allow-zero-value") == "true"
 		fieldName := tp.Field(i).Name
-		if _, ok := skipFlags[fieldName]; ok {
-			continue
-		}
 		if !strings.HasPrefix(fieldName, "Init") {
 			continue
 		}
@@ -177,10 +165,16 @@ func (ka *Kubeadm) FlagsInit() (flags []string, err error) {
 		case reflect.String:
 			if vv.Field(i).String() != "" {
 				flags = append(flags, fmt.Sprintf("--%s=%s", k, vv.Field(i).String()))
+			} else if allowZeroValue {
+				flags = append(flags, fmt.Sprintf(`--%s=""`, k))
 			}
 
 		case reflect.Int, reflect.Int32, reflect.Int64:
-			flags = append(flags, fmt.Sprintf("--%s=%d", k, vv.Field(i).Int()))
+			if vv.Field(i).Int() != 0 {
+				flags = append(flags, fmt.Sprintf("--%s=%d", k, vv.Field(i).Int()))
+			} else if allowZeroValue {
+				flags = append(flags, fmt.Sprintf(`--%s=0`, k))
+			}
 
 		case reflect.Bool:
 			flags = append(flags, fmt.Sprintf("--%s=%v", k, vv.Field(i).Bool()))
@@ -202,19 +196,12 @@ func (ka *Kubeadm) FlagsJoin() (flags []string, err error) {
 	}
 	tp, vv := reflect.TypeOf(ka).Elem(), reflect.ValueOf(ka).Elem()
 	for i := 0; i < tp.NumField(); i++ {
-		k := tp.Field(i).Tag.Get("json")
+		k := tp.Field(i).Tag.Get("kubeadm")
 		if k == "" {
 			continue
 		}
-		k = strings.Replace(k, ",omitempty", "", -1)
-		if ek := tp.Field(i).Tag.Get("kubeadm"); ek != "" {
-			k = strings.Replace(ek, ",omitempty", "", -1)
-		}
-
+		allowZeroValue := tp.Field(i).Tag.Get("allow-zero-value") == "true"
 		fieldName := tp.Field(i).Name
-		if _, ok := skipFlags[fieldName]; ok {
-			continue
-		}
 		if !strings.HasPrefix(fieldName, "Join") {
 			continue
 		}
@@ -223,10 +210,16 @@ func (ka *Kubeadm) FlagsJoin() (flags []string, err error) {
 		case reflect.String:
 			if vv.Field(i).String() != "" {
 				flags = append(flags, fmt.Sprintf("--%s=%s", k, vv.Field(i).String()))
+			} else if allowZeroValue {
+				flags = append(flags, fmt.Sprintf(`--%s=""`, k))
 			}
 
 		case reflect.Int, reflect.Int32, reflect.Int64:
-			flags = append(flags, fmt.Sprintf("--%s=%d", k, vv.Field(i).Int()))
+			if vv.Field(i).Int() != 0 {
+				flags = append(flags, fmt.Sprintf("--%s=%d", k, vv.Field(i).Int()))
+			} else if allowZeroValue {
+				flags = append(flags, fmt.Sprintf(`--%s=0`, k))
+			}
 
 		case reflect.Bool:
 			flags = append(flags, fmt.Sprintf("--%s=%v", k, vv.Field(i).Bool()))
@@ -289,7 +282,7 @@ func init() {
 	defaultConfig.EC2.Plugins = []string{
 		"update-amazon-linux-2",
 		"install-start-docker-amazon-linux-2",
-		"install-start-kubeadm-amazon-linux-2-" + defaultKubeadm.Version,
+		"install-kubeadm-amazon-linux-2-" + defaultKubeadm.Version,
 	}
 	defaultConfig.EC2.ClusterSize = 3
 	defaultConfig.EC2.Wait = true
@@ -315,7 +308,7 @@ func init() {
 func genTag() string {
 	// use UTC time for everything
 	now := time.Now().UTC()
-	return fmt.Sprintf("awsk8stester-kubeadm-%d%02d%02d", now.Year(), now.Month(), now.Day())
+	return fmt.Sprintf("a8t-kubeadm-%d%x%x", now.Year()-2000, int(now.Month()), now.Day())
 }
 
 var defaultConfig = Config{
@@ -339,7 +332,7 @@ var defaultKubeadm = Kubeadm{
 	userName: "ec2-user",
 	Version:  defaultVer,
 
-	InitAPIServerAdvertiseAddress: "0.0.0.0/0",
+	InitAPIServerAdvertiseAddress: "",
 	InitAPIServerBindPort:         6443,
 
 	// 10.244.0.0/16 for flannel
@@ -589,9 +582,9 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 			okDocker = true
 			continue
 		}
-		if strings.HasPrefix(v, "install-start-kubeadm-amazon-linux-2-") {
+		if strings.HasPrefix(v, "install-kubeadm-amazon-linux-2-") {
 			okKubeadm = true
-			cfg.EC2.Plugins[i] = "install-start-kubeadm-amazon-linux-2-" + cfg.Cluster.Version
+			cfg.EC2.Plugins[i] = "install-kubeadm-amazon-linux-2-" + cfg.Cluster.Version
 			continue
 		}
 	}
@@ -602,7 +595,7 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 		return errors.New("EC2 Plugin 'install-start-docker-amazon-linux-2' not found")
 	}
 	if !okKubeadm {
-		return errors.New("EC2 Plugin 'install-start-kubeadm-amazon-linux-2' not found")
+		return errors.New("EC2 Plugin 'install-kubeadm-amazon-linux-2' not found")
 	}
 
 	if !cfg.EC2.Wait {

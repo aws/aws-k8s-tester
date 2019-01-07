@@ -11,7 +11,6 @@ import (
 	"github.com/aws/aws-k8s-tester/internal/etcd"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/storagetester"
-
 	"github.com/spf13/cobra"
 )
 

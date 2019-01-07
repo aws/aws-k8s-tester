@@ -6,7 +6,7 @@ import (
 )
 
 func TestCreateInstallStart(t *testing.T) {
-	s1, err := CreateInstallStart("1.10.9")
+	s1, err := CreateInstall("1.13.1")
 	if err != nil {
 		t.Fatal(err)
 	}

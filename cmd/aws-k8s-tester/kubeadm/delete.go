@@ -7,7 +7,6 @@ import (
 	"github.com/aws/aws-k8s-tester/internal/kubeadm"
 	"github.com/aws/aws-k8s-tester/kubeadmconfig"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
-
 	"github.com/spf13/cobra"
 )
 

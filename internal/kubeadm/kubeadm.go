@@ -16,7 +16,6 @@ import (
 	"github.com/aws/aws-k8s-tester/kubeadmconfig"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/pkg/zaputil"
-
 	"github.com/dustin/go-humanize"
 	"go.uber.org/zap"
 )
@@ -84,9 +83,33 @@ func (md *embedded) Create() (err error) {
 		return err
 	}
 
+	// TODO
+	/*
+		for idx, target := range md.cfg.EC2.Instances {
+			var kubeletEnvWorker string
+			if kubeletEnvWorker, err = writeKubeletEnvFile(); err != nil {
+				return err
+			}
+			defer os.RemoveAll(kubeletEnvWorker)
+			md.lg.Info("successfully wrote 'kubelet' environment file", zap.String("index", idx), zap.String("private-dns", target.PrivateDNSName))
+			if err = sendKubeletEnvFile(md.lg, *md.cfg.EC2, target, kubeletEnvWorker); err != nil {
+				return err
+			}
+		}
+		md.lg.Info("successfully sent 'kubelet' environment file")
+
+		for idx, target := range md.cfg.EC2.Instances {
+			if err = startKubeletService(md.lg, *md.cfg.EC2, target); err != nil {
+				return err
+			}
+			md.lg.Info("successfully started 'kubelet' service", zap.String("index", idx), zap.String("private-dns", target.PrivateDNSName))
+		}
+		md.lg.Info("successfully started 'kubelet' service")
+	*/
+
 	// SCP to each EC2 instance
 	// TODO: HA master
-	md.lg.Info("deploying kubeadm master")
+	md.lg.Info("running kubeadm init at master node")
 	var masterEC2 ec2config.Instance
 	for _, iv := range md.cfg.EC2.Instances {
 		masterEC2 = iv

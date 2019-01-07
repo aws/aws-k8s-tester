@@ -58,9 +58,9 @@ func (md *embedded) createSecurityGroup() (err error) {
 			ToPort:     aws.Int64(toPort),
 		})
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to authorize ingress for port %q and cidr %q (%v)", ports, cidr, err)
 		}
-		md.lg.Info("authorized ingress", zap.String("port", ports), zap.String("cidr", cidr))
+		md.lg.Debug("authorized ingress", zap.String("port", ports), zap.String("cidr", cidr))
 	}
 
 	_, err = md.ec2.CreateTags(&ec2.CreateTagsInput{
@@ -113,7 +113,7 @@ func (md *embedded) deleteSecurityGroup() error {
 		awsErr, ok := err.(awserr.Error)
 		if ok && awsErr.Code() == "InvalidGroup.NotFound" {
 			md.lg.Info(
-				"deleted security group",
+				"deleted all security groups",
 				zap.Strings("group-ids", md.cfg.SecurityGroupIDs),
 			)
 			return nil

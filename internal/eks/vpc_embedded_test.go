@@ -16,7 +16,7 @@ func TestEmbeddedVPCStack(t *testing.T) {
 	}
 
 	cfg := eksconfig.NewDefault()
-	f, err := ioutil.TempFile(os.TempDir(), "awsk8stester-eksconfig")
+	f, err := ioutil.TempFile(os.TempDir(), "a8t-eksconfig")
 	if err != nil {
 		t.Fatal(err)
 	}

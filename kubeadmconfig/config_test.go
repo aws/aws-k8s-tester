@@ -26,7 +26,7 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_KUBEADM_UPLOAD_TESTER_LOGS", "false")
 	os.Setenv("AWS_K8S_TESTER_KUBEADM_CLUSTER_VERSION", "v1.10.9")
 	os.Setenv("AWS_K8S_TESTER_KUBEADM_CLUSTER_INIT_POD_NETWORK_CIDR", "10.244.0.0/16")
-	os.Setenv("AWS_K8S_TESTER_EC2_PLUGINS", "update-amazon-linux-2,install-start-docker-amazon-linux-2,install-start-kubeadm-amazon-linux-2-1.6.0")
+	os.Setenv("AWS_K8S_TESTER_EC2_PLUGINS", "update-amazon-linux-2,install-start-docker-amazon-linux-2,install-kubeadm-amazon-linux-2-1.6.0")
 
 	defer func() {
 		os.Unsetenv("AWS_K8S_TESTER_KUBEADM_CLUSTER_SNAPSHOT_COUNT")
@@ -88,7 +88,7 @@ func TestEnv(t *testing.T) {
 	if cfg.Cluster.InitPodNetworkCIDR != "10.244.0.0/16" {
 		t.Fatalf("unexpected Cluster.InitPodNetworkCIDR, got %q", cfg.Cluster.InitPodNetworkCIDR)
 	}
-	exp := []string{"update-amazon-linux-2", "install-start-docker-amazon-linux-2", "install-start-kubeadm-amazon-linux-2-1.10.9"}
+	exp := []string{"update-amazon-linux-2", "install-start-docker-amazon-linux-2", "install-kubeadm-amazon-linux-2-1.10.9"}
 	if !reflect.DeepEqual(cfg.EC2.Plugins, exp) {
 		t.Fatalf("expected EC2.Plugins %v, got %v", exp, cfg.EC2.Plugins)
 	}
