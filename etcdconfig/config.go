@@ -601,7 +601,7 @@ func init() {
 func genTag() string {
 	// use UTC time for everything
 	now := time.Now().UTC()
-	return fmt.Sprintf("a8t-etcd-%x%x%x", now.Year()-2000, int(now.Month()), now.Day())
+	return fmt.Sprintf("a8t-etcd-%d%x%x", now.Year()-2000, int(now.Month()), now.Day())
 }
 
 var defaultConfig = Config{
