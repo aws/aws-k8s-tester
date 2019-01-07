@@ -526,6 +526,7 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 	cfg.KubeControllerManager.UserName = cfg.EC2WorkerNodes.UserName
 	cfg.KubeScheduler.UserName = cfg.EC2WorkerNodes.UserName
 
+	cfg.KubeAPIServer.EtcdServers = strings.Join(cfg.ETCDNodes.ClientURLs(), ",")
 	cfg.KubeProxyWorkerNodes.Master = "https://api.internal." + cfg.ClusterName
 	cfg.KubeControllerManager.ClusterName = cfg.ClusterName
 
