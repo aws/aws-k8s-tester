@@ -126,9 +126,7 @@ const kubeSchedulerTemplate = `#!/usr/bin/env bash
 
 sudo systemctl stop kube-scheduler.service || true
 
-sudo rm -rf /var/lib/kube-scheduler/
 sudo mkdir -p /var/lib/kube-scheduler/
-sudo rm -f /var/lib/kube-scheduler/kubeconfig
 
 rm -f /tmp/kube-scheduler.service
 cat <<EOF > /tmp/kube-scheduler.service

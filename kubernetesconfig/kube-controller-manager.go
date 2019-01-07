@@ -150,9 +150,7 @@ const kubeControllerManagerTemplate = `#!/usr/bin/env bash
 
 sudo systemctl stop kube-controller-manager.service || true
 
-sudo rm -rf /var/lib/kube-controller-manager/
 sudo mkdir -p /var/lib/kube-controller-manager/
-sudo rm -f /var/lib/kube-controller-manager/kubeconfig
 
 rm -f /tmp/kube-controller-manager.service
 cat <<EOF > /tmp/kube-controller-manager.service

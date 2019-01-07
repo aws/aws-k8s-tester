@@ -182,9 +182,7 @@ const kubeAPIServerTemplate = `#!/usr/bin/env bash
 
 sudo systemctl stop kube-apiserver.service || true
 
-sudo rm -rf /var/lib/kube-apiserver/
 sudo mkdir -p /var/lib/kube-apiserver/
-sudo rm -f /var/lib/kube-apiserver/kubeconfig
 
 rm -f /tmp/kube-apiserver.service
 cat <<EOF > /tmp/kube-apiserver.service

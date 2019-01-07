@@ -198,9 +198,7 @@ const kubeletTemplate = `#!/usr/bin/env bash
 
 sudo systemctl stop kubelet.service || true
 
-sudo rm -rf /var/lib/kubelet/
 sudo mkdir -p /var/lib/kubelet/
-sudo rm -f /var/lib/kubelet/kubeconfig
 
 rm -f /tmp/kubelet.service
 cat <<EOF > /tmp/kubelet.service

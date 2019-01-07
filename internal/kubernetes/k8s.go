@@ -408,8 +408,6 @@ func (md *embedded) Create() (err error) {
 	md.lg.Info("step 5-8. successfully sent 'worker node kubelet' systemd file")
 	////////////////////////////////////////////////////////////////////////
 
-	// TODO(gyuho), FIXME: empty are /var/lib/kubelet/kubeconfig and /var/lib/kube-proxy/kubeconfig
-
 	////////////////////////////////////////////////////////////////////////
 	md.lg.Info("step 6-1. 'master node kube-proxy' configuration")
 

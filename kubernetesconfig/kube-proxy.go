@@ -158,9 +158,7 @@ const kubeProxyTemplate = `#!/usr/bin/env bash
 
 sudo systemctl stop kube-proxy.service || true
 
-sudo rm -rf /var/lib/kube-proxy/
 sudo mkdir -p /var/lib/kube-proxy/
-sudo rm -f /var/lib/kube-proxy/kubeconfig
 
 rm -f /tmp/kube-proxy.service
 cat <<EOF > /tmp/kube-proxy.service
