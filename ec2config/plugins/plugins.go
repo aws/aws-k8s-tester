@@ -11,6 +11,7 @@ import (
 	"text/template"
 
 	etcdplugin "github.com/aws/aws-k8s-tester/etcdconfig/plugins"
+	kubeadmplugin "github.com/aws/aws-k8s-tester/kubeadmconfig/plugins"
 	kubernetesplugin "github.com/aws/aws-k8s-tester/kubernetesconfig/plugins"
 )
 
@@ -32,17 +33,18 @@ func (ss scripts) Swap(i, j int)      { ss[i], ss[j] = ss[j], ss[i] }
 func (ss scripts) Less(i, j int) bool { return keyPriorities[ss[i].key] < keyPriorities[ss[j].key] }
 
 var keyPriorities = map[string]int{ // in the order of:
-	"update-amazon-linux-2":               1,
-	"update-ubuntu":                       2,
-	"install-go":                          3,
-	"install-go-amazon-linux-2":           4,
-	"install-csi":                         5,
-	"install-etcd":                        6,
-	"install-aws-k8s-tester":              7,
-	"install-wrk":                         8,
-	"install-alb":                         9,
-	"install-start-docker-amazon-linux-2": 10,
-	"install-kubernetes-amazon-linux-2":   11,
+	"update-amazon-linux-2":                1,
+	"update-ubuntu":                        2,
+	"install-go":                           3,
+	"install-go-amazon-linux-2":            4,
+	"install-csi":                          5,
+	"install-etcd":                         6,
+	"install-aws-k8s-tester":               7,
+	"install-wrk":                          8,
+	"install-alb":                          9,
+	"install-start-docker-amazon-linux-2":  10,
+	"install-kubeadm-amazon-linux-2": 11,
+	"install-kubernetes-amazon-linux-2":    12,
 }
 
 func convertToScript(userName, plugin string) (script, error) {
@@ -91,7 +93,7 @@ func convertToScript(userName, plugin string) (script, error) {
 			GitCloneURL:   "https://github.com/kubernetes-sigs/aws-ebs-csi-driver.git",
 			IsPR:          true,
 			GitBranch:     prNum,
-			InstallScript: `make aws-ebs-csi-driver && sudo cp ./bin/aws-ebs-csi-driver /usr/local/bin/aws-ebs-csi-driver`,
+			InstallScript: `make aws-ebs-csi-driver && sudo cp ./bin/aws-ebs-csi-driver /usr/bin/aws-ebs-csi-driver`,
 		})
 		if err != nil {
 			return script{}, err
@@ -113,7 +115,7 @@ func convertToScript(userName, plugin string) (script, error) {
 			GitCloneURL:   "https://github.com/aws/aws-k8s-tester.git",
 			IsPR:          false,
 			GitBranch:     "master",
-			InstallScript: `go build -v ./cmd/aws-k8s-tester && sudo cp ./aws-k8s-tester /usr/local/bin/aws-k8s-tester`,
+			InstallScript: `go build -v ./cmd/aws-k8s-tester && sudo cp ./aws-k8s-tester /usr/bin/aws-k8s-tester`,
 		})
 		if err != nil {
 			return script{}, err
@@ -150,6 +152,14 @@ make server
 			key:  plugin,
 			data: installStartDockerAmazonLinux2,
 		}, nil
+
+	case strings.HasPrefix(plugin, "install-kubeadm-amazon-linux-2-"):
+		id := strings.Replace(plugin, "install-kubeadm-amazon-linux-2-", "", -1)
+		s, err := kubeadmplugin.CreateInstall(id)
+		if err != nil {
+			return script{}, err
+		}
+		return script{key: "install-kubeadm-amazon-linux-2", data: s}, nil
 
 	case plugin == "install-kubernetes-amazon-linux-2":
 		return script{key: "install-kubernetes-amazon-linux-2", data: kubernetesplugin.CreateInstall()}, nil
@@ -389,8 +399,8 @@ curl -L ${DOWNLOAD_URL}/${ETCD_VER}/etcd-${ETCD_VER}-linux-amd64.tar.gz -o /tmp/
 tar xzvf /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz -C /tmp/etcd-download-test --strip-components=1
 rm -f /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz
 
-sudo cp /tmp/etcd-download-test/etcd /usr/local/bin/etcd
-sudo cp /tmp/etcd-download-test/etcdctl /usr/local/bin/etcdctl
+sudo cp /tmp/etcd-download-test/etcd /usr/bin/etcd
+sudo cp /tmp/etcd-download-test/etcdctl /usr/bin/etcdctl
 
 etcd --version
 ETCDCTL_API=3 etcdctl version
@@ -422,7 +432,7 @@ done
 
 cd ./wrk \
   && make all \
-  && sudo cp ./wrk /usr/local/bin/wrk \
+  && sudo cp ./wrk /usr/bin/wrk \
   && cd .. \
   && rm -rf ./wrk \
   && wrk --version || true && which wrk
