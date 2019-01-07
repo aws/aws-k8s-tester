@@ -269,7 +269,7 @@ func NewDefault() *Config {
 }
 
 // curl -sSL https://dl.k8s.io/release/stable.txt
-var defaultVer = "1.12.2"
+var defaultVer = "1.13.1"
 
 func init() {
 	kubeadmVer, err := semver.Make(defaultVer)
