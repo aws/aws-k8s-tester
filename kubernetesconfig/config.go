@@ -232,7 +232,7 @@ var workerNodesPorts = []string{
 func genTag() string {
 	// use UTC time for everything
 	now := time.Now().UTC()
-	return fmt.Sprintf("a8t-k8s-%x%x%x", now.Year(), int(now.Month()), now.Day())
+	return fmt.Sprintf("a8t-k8s-%x%x%x", 2000-now.Year(), int(now.Month()), now.Day())
 }
 
 var defaultConfig = Config{
