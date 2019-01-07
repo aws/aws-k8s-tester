@@ -83,26 +83,29 @@ func (md *embedded) Create() (err error) {
 		return err
 	}
 
-	for idx, target := range md.cfg.EC2.Instances {
-		var kubeletEnvWorker string
-		if kubeletEnvWorker, err = writeKubeletEnvFile(); err != nil {
-			return err
+	// TODO
+	/*
+		for idx, target := range md.cfg.EC2.Instances {
+			var kubeletEnvWorker string
+			if kubeletEnvWorker, err = writeKubeletEnvFile(); err != nil {
+				return err
+			}
+			defer os.RemoveAll(kubeletEnvWorker)
+			md.lg.Info("successfully wrote 'kubelet' environment file", zap.String("index", idx), zap.String("private-dns", target.PrivateDNSName))
+			if err = sendKubeletEnvFile(md.lg, *md.cfg.EC2, target, kubeletEnvWorker); err != nil {
+				return err
+			}
 		}
-		defer os.RemoveAll(kubeletEnvWorker)
-		md.lg.Info("successfully wrote 'kubelet' environment file", zap.String("index", idx), zap.String("private-dns", target.PrivateDNSName))
-		if err = sendKubeletEnvFile(md.lg, *md.cfg.EC2, target, kubeletEnvWorker); err != nil {
-			return err
-		}
-	}
-	md.lg.Info("successfully sent 'kubelet' environment file")
+		md.lg.Info("successfully sent 'kubelet' environment file")
 
-	for idx, target := range md.cfg.EC2.Instances {
-		if err = startKubeletService(md.lg, *md.cfg.EC2, target); err != nil {
-			return err
+		for idx, target := range md.cfg.EC2.Instances {
+			if err = startKubeletService(md.lg, *md.cfg.EC2, target); err != nil {
+				return err
+			}
+			md.lg.Info("successfully started 'kubelet' service", zap.String("index", idx), zap.String("private-dns", target.PrivateDNSName))
 		}
-		md.lg.Info("successfully started 'kubelet' service", zap.String("index", idx), zap.String("private-dns", target.PrivateDNSName))
-	}
-	md.lg.Info("successfully started 'kubelet' service")
+		md.lg.Info("successfully started 'kubelet' service")
+	*/
 
 	// SCP to each EC2 instance
 	// TODO: HA master

@@ -105,11 +105,6 @@ type Kubeadm struct {
 	JoinIgnorePreflightErrors    string `json:"join-ignore-preflight-errors,omitempty" kubeadm:"ignore-preflight-errors"`
 }
 
-var skipFlags = map[string]struct{}{
-	"Version":    {},
-	"JoinTarget": {},
-}
-
 // ScriptInit returns the service file setup script.
 func (ka *Kubeadm) ScriptInit() (s string, err error) {
 	var fs []string
@@ -156,19 +151,12 @@ find /home/ec2-user/.kube/ 1>>/var/log/kubeadm-init.log 2>&1
 func (ka *Kubeadm) FlagsInit() (flags []string, err error) {
 	tp, vv := reflect.TypeOf(ka).Elem(), reflect.ValueOf(ka).Elem()
 	for i := 0; i < tp.NumField(); i++ {
-		k := tp.Field(i).Tag.Get("json")
+		k := tp.Field(i).Tag.Get("kubeadm")
 		if k == "" {
 			continue
 		}
-		k = strings.Replace(k, ",omitempty", "", -1)
-		if ek := tp.Field(i).Tag.Get("kubeadm"); ek != "" {
-			k = strings.Replace(ek, ",omitempty", "", -1)
-		}
-
+		allowZeroValue := tp.Field(i).Tag.Get("allow-zero-value") == "true"
 		fieldName := tp.Field(i).Name
-		if _, ok := skipFlags[fieldName]; ok {
-			continue
-		}
 		if !strings.HasPrefix(fieldName, "Init") {
 			continue
 		}
@@ -177,10 +165,16 @@ func (ka *Kubeadm) FlagsInit() (flags []string, err error) {
 		case reflect.String:
 			if vv.Field(i).String() != "" {
 				flags = append(flags, fmt.Sprintf("--%s=%s", k, vv.Field(i).String()))
+			} else if allowZeroValue {
+				flags = append(flags, fmt.Sprintf(`--%s=""`, k))
 			}
 
 		case reflect.Int, reflect.Int32, reflect.Int64:
-			flags = append(flags, fmt.Sprintf("--%s=%d", k, vv.Field(i).Int()))
+			if vv.Field(i).Int() != 0 {
+				flags = append(flags, fmt.Sprintf("--%s=%d", k, vv.Field(i).Int()))
+			} else if allowZeroValue {
+				flags = append(flags, fmt.Sprintf(`--%s=0`, k))
+			}
 
 		case reflect.Bool:
 			flags = append(flags, fmt.Sprintf("--%s=%v", k, vv.Field(i).Bool()))
@@ -202,19 +196,12 @@ func (ka *Kubeadm) FlagsJoin() (flags []string, err error) {
 	}
 	tp, vv := reflect.TypeOf(ka).Elem(), reflect.ValueOf(ka).Elem()
 	for i := 0; i < tp.NumField(); i++ {
-		k := tp.Field(i).Tag.Get("json")
+		k := tp.Field(i).Tag.Get("kubeadm")
 		if k == "" {
 			continue
 		}
-		k = strings.Replace(k, ",omitempty", "", -1)
-		if ek := tp.Field(i).Tag.Get("kubeadm"); ek != "" {
-			k = strings.Replace(ek, ",omitempty", "", -1)
-		}
-
+		allowZeroValue := tp.Field(i).Tag.Get("allow-zero-value") == "true"
 		fieldName := tp.Field(i).Name
-		if _, ok := skipFlags[fieldName]; ok {
-			continue
-		}
 		if !strings.HasPrefix(fieldName, "Join") {
 			continue
 		}
@@ -223,10 +210,16 @@ func (ka *Kubeadm) FlagsJoin() (flags []string, err error) {
 		case reflect.String:
 			if vv.Field(i).String() != "" {
 				flags = append(flags, fmt.Sprintf("--%s=%s", k, vv.Field(i).String()))
+			} else if allowZeroValue {
+				flags = append(flags, fmt.Sprintf(`--%s=""`, k))
 			}
 
 		case reflect.Int, reflect.Int32, reflect.Int64:
-			flags = append(flags, fmt.Sprintf("--%s=%d", k, vv.Field(i).Int()))
+			if vv.Field(i).Int() != 0 {
+				flags = append(flags, fmt.Sprintf("--%s=%d", k, vv.Field(i).Int()))
+			} else if allowZeroValue {
+				flags = append(flags, fmt.Sprintf(`--%s=0`, k))
+			}
 
 		case reflect.Bool:
 			flags = append(flags, fmt.Sprintf("--%s=%v", k, vv.Field(i).Bool()))
@@ -269,7 +262,7 @@ func NewDefault() *Config {
 }
 
 // curl -sSL https://dl.k8s.io/release/stable.txt
-var defaultVer = "1.13.1"
+var defaultVer = "1.12.2"
 
 func init() {
 	kubeadmVer, err := semver.Make(defaultVer)
@@ -339,7 +332,7 @@ var defaultKubeadm = Kubeadm{
 	userName: "ec2-user",
 	Version:  defaultVer,
 
-	InitAPIServerAdvertiseAddress: "0.0.0.0/0",
+	InitAPIServerAdvertiseAddress: "",
 	InitAPIServerBindPort:         6443,
 
 	// 10.244.0.0/16 for flannel

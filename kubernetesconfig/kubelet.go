@@ -266,7 +266,7 @@ func (kb *Kubelet) Flags() (flags []string, err error) {
 			}
 
 		case reflect.Int, reflect.Int32, reflect.Int64:
-			if vv.Field(i).String() != "" {
+			if vv.Field(i).Int() != 0 {
 				flags = append(flags, fmt.Sprintf("--%s=%d", k, vv.Field(i).Int()))
 			} else if allowZeroValue {
 				flags = append(flags, fmt.Sprintf(`--%s=0`, k))

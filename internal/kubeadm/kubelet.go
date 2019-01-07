@@ -11,7 +11,7 @@ import (
 )
 
 func writeKubeletEnvFile() (p string, err error) {
-	sc := `KUBELET_FLAGS="--bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubelet.conf --kubeconfig=/etc/kubernetes/kubelet.conf --pod-manifest-path=/etc/kubernetes/manifests --allow-privileged=true --cluster-dns=10.96.0.10 --cluster-domain=cluster.local --authorization-mode=Webhook --client-ca-file=/etc/kubernetes/pki/ca.crt --cgroup-driver=systemd --rotate-certificates=true"
+	sc := `KUBELET_FLAGS="--bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubelet.conf --kubeconfig=/etc/kubernetes/kubelet.conf --pod-manifest-path=/etc/kubernetes/manifests --allow-privileged=true --cluster-dns=10.96.0.10 --cluster-domain=cluster.local --authorization-mode=Webhook --client-ca-file=/etc/kubernetes/pki/ca.crt --cgroup-driver=systemd --cadvisor-port=0 --rotate-certificates=true"
 HOME="/home/ec2-user"
 `
 	p, err = fileutil.WriteTempFile([]byte(sc))
