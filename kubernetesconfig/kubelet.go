@@ -19,12 +19,16 @@ type Kubelet struct {
 	// UserName is the user name used for running init scripts or SSH access.
 	UserName string `json:"user-name,omitempty"`
 
-	AllowPrivileged         bool   `json:"allow-privileged" kubelet:"allow-privileged"`
-	AnonymousAuth           bool   `json:"anonymous-auth" kubelet:"anonymous-auth"`
-	CgroupRoot              string `json:"cgroup-root" kubelet:"cgroup-root"`
-	ClientCAFile            string `json:"client-ca-file" kubelet:"client-ca-file"`
-	CloudProvider           string `json:"cloud-provider" kubelet:"cloud-provider"`
-	ClusterDNS              string `json:"cluster-dns" kubelet:"cluster-dns"`
+	AllowPrivileged bool   `json:"allow-privileged" kubelet:"allow-privileged"`
+	AnonymousAuth   bool   `json:"anonymous-auth" kubelet:"anonymous-auth"`
+	CgroupRoot      string `json:"cgroup-root" kubelet:"cgroup-root"`
+	ClientCAFile    string `json:"client-ca-file" kubelet:"client-ca-file"`
+	CloudProvider   string `json:"cloud-provider" kubelet:"cloud-provider"`
+	// ClusterDNS is a comma-separated list of DNS server IP addresses.
+	// See https://kubernetes.io/docs/tasks/administer-cluster/dns-custom-nameservers/#introduction for more detail.
+	ClusterDNS string `json:"cluster-dns" kubelet:"cluster-dns"`
+	// ClusterDomain is by default "cluster.local".
+	// See https://kubernetes.io/docs/tasks/administer-cluster/dns-custom-nameservers/#introduction for more detail.
 	ClusterDomain           string `json:"cluster-domain" kubelet:"cluster-domain"`
 	EnableDebuggingHandlers bool   `json:"enable-debugging-handlers" kubelet:"enable-debugging-handlers"`
 	EvictionHard            string `json:"eviction-hard" kubelet:"eviction-hard"`
