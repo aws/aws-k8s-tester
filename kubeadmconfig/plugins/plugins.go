@@ -61,12 +61,7 @@ sudo rm -f /usr/bin/{kubeadm,kubelet,kubectl}
 sudo curl -L --remote-name-all https://storage.googleapis.com/kubernetes-release/release/${RELEASE}/bin/linux/amd64/{kubeadm,kubelet,kubectl}
 sudo chmod +x {kubeadm,kubelet,kubectl}
 
-curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/kubelet.service" > /tmp/kubelet.service
-cat /tmp/kubelet.service
-
-
 sudo systemctl stop kubelet.service || true
-
 sudo mkdir -p /var/lib/kubelet/
 
 rm -f /tmp/kubelet.service
@@ -78,7 +73,7 @@ After=docker.service
 
 [Service]
 EnvironmentFile=/etc/sysconfig/kubelet
-ExecStart={{ .KubeletPath }} "\$KUBELET_KUBECONFIG_ARGS" "\$KUBELET_SYSTEM_PODS_ARGS" "\$KUBELET_NETWORK_ARGS" "\$KUBELET_DNS_ARGS" "\$KUBELET_AUTHZ_ARGS" "\$KUBELET_CGROUP_ARGS" "\$KUBELET_CADVISOR_ARGS" "\$KUBELET_CERTIFICATE_ARGS"
+ExecStart={{ .KubeletPath }} "\$KUBELET_FLAGS"
 Restart=always
 RestartSec=2s
 StartLimitInterval=0

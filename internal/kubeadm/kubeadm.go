@@ -16,7 +16,6 @@ import (
 	"github.com/aws/aws-k8s-tester/kubeadmconfig"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/pkg/zaputil"
-
 	"github.com/dustin/go-humanize"
 	"go.uber.org/zap"
 )
