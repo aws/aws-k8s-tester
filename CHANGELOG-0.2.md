@@ -18,10 +18,6 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.9...0.2.0).
 
 - [Initial commits to run Kubernetes e2e tests with vanilla Kubernetes cluster on top of AWS](https://github.com/aws/aws-k8s-tester/pull/26).
 
-### `kubeadmconfig`
-
-- Remove [`kubeadm`](https://github.com/aws/aws-k8s-tester/commit/aa0590623f0b537484720d49175044661eda7cdb).
-
 ### `ec2config`
 
 - Add [`ec2config.CustomScript` field to support custom CSI EBS volume install scripts](https://github.com/aws/aws-k8s-tester/pull/31).
