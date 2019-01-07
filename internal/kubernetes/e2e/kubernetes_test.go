@@ -41,7 +41,7 @@ func TestKubernetes(t *testing.T) {
 	notifier := make(chan os.Signal, 1)
 	signal.Notify(notifier, syscall.SIGINT, syscall.SIGTERM)
 	select {
-	case <-time.After(15 * time.Minute):
+	case <-time.After(2 * time.Hour):
 	case sig := <-notifier:
 		fmt.Fprintf(os.Stderr, "received %s\n", sig)
 	}
