@@ -44,6 +44,7 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_SECURITY_GROUP_ID", "my-security-id")
 	os.Setenv("AWS_K8S_TESTER_EKS_ENABLE_WORKER_NODE_HA", "false")
 	os.Setenv("AWS_K8S_TESTER_EKS_ENABLE_WORKER_NODE_SSH", "true")
+	os.Setenv("AWS_K8S_TESTER_EKS_ENABLE_WORKER_NODE_PRIVILEGED_PORT_ACCESS", "true")
 	os.Setenv("AWS_K8S_TESTER_EKS_CONFIG_PATH", "test-path")
 	os.Setenv("AWS_K8S_TESTER_EKS_DOWN", "false")
 	os.Setenv("AWS_K8S_TESTER_EKS_ALB_TARGET_TYPE", "ip")
@@ -83,6 +84,7 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWS_K8S_TESTER_EKS_SECURITY_GROUP_ID")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_ENABLE_WORKER_NODE_HA")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_ENABLE_WORKER_NODE_SSH")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_ENABLE_WORKER_NODE_PRIVILEGED_PORT_ACCESS")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_CONFIG_PATH")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_DOWN")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_ALB_TARGET_TYPE")
@@ -167,6 +169,9 @@ func TestEnv(t *testing.T) {
 	}
 	if !cfg.EnableWorkerNodeSSH {
 		t.Fatalf("cfg.EnableWorkerNodeSSH expected 'true', got %v", cfg.EnableWorkerNodeSSH)
+	}
+	if !cfg.EnableWorkerNodePrivilegedPortAccess {
+		t.Fatalf("cfg.EnableWorkerNodePrivilegedPortAccess expected 'true', got %v", cfg.EnableWorkerNodePrivilegedPortAccess)
 	}
 	if cfg.WorkerNodeASGMin != 10 {
 		t.Fatalf("worker nodes min expected 10, got %q", cfg.WorkerNodeASGMin)
