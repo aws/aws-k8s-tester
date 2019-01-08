@@ -267,7 +267,7 @@ func (md *embedded) createWorkerNode() error {
 			_, err = md.ec2.AuthorizeSecurityGroupEgress(&ec2.AuthorizeSecurityGroupEgressInput{
 				GroupId: aws.String(md.cfg.SecurityGroupID),
 				IpPermissions: []*ec2.IpPermission{
-					&ec2.IpPermission{
+					{
 						IpProtocol: aws.String("tcp"),
 						FromPort:   aws.Int64(1),
 						ToPort:     aws.Int64(1024),
