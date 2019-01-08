@@ -262,23 +262,23 @@ func (md *embedded) createWorkerNode() error {
 				ToPort:     aws.Int64(1024),
 			})
 			if err != nil {
-				return aerr
+				return err
 			}
 			_, err = md.ec2.AuthorizeSecurityGroupEgress(&ec2.AuthorizeSecurityGroupEgressInput{
-				GroupId:       aws.String(md.cfg.SecurityGroupID),
-				IpPermissions: []*aws.IpPermission{
-					&aws.IpPermission{
+				GroupId: aws.String(md.cfg.SecurityGroupID),
+				IpPermissions: []*ec2.IpPermission{
+					&ec2.IpPermission{
 						IpProtocol: aws.String("tcp"),
 						FromPort:   aws.Int64(1),
 						ToPort:     aws.Int64(1024),
-						IpRanges:   []*aws.IpRange{
-							CidrIp: aws.String("0.0.0.0/0"),
+						IpRanges: []*ec2.IpRange{
+							{CidrIp: aws.String("0.0.0.0/0")},
 						},
 					},
 				},
 			})
 			if err != nil {
-				return aerr
+				return err
 			}
 			md.lg.Warn("authorizing worker node privileged port access for control plane", zap.String("port-range", "1-1024"))
 		}
