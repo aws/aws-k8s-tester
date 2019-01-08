@@ -3,6 +3,26 @@
 <hr>
 
 
+## [0.2.0](https://github.com/aws/aws-k8s-tester/releases/tag/0.2.1)(2018-01-08)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.2.0...0.2.1).
+
+### `eksconfig`
+
+- Add [`eksconfig.EnableWorkerNodePrivilegedPortAccess`](https://github.com/aws/aws-k8s-tester/pull/33).
+
+### Go
+
+- Compile with [*Go 1.11.4*](https://golang.org/doc/devel/release.html#go1.11).
+
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.16.14`](https://github.com/aws/aws-sdk-go/releases/tag/v1.16.14) to [`v1.16.15`](https://github.com/aws/aws-sdk-go/releases/tag/v1.16.15).
+
+
+<hr>
+
+
 ## [0.2.0](https://github.com/aws/aws-k8s-tester/releases/tag/0.2.0)(2018-01-07)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.9...0.2.0).
