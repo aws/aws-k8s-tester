@@ -252,6 +252,37 @@ func (md *embedded) createWorkerNode() error {
 			}
 		}
 
+		if md.cfg.EnableWorkerNodePrivilegedPortAccess {
+			md.lg.Warn("authorizing worker node privileged port access for control plane", zap.String("port-range", "1-1024"))
+			_, err = md.ec2.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
+				GroupId:    aws.String(md.cfg.ClusterState.CFStackWorkerNodeGroupSecurityGroupID),
+				IpProtocol: aws.String("tcp"),
+				CidrIp:     aws.String("0.0.0.0/0"),
+				FromPort:   aws.Int64(1),
+				ToPort:     aws.Int64(1024),
+			})
+			if err != nil {
+				return aerr
+			}
+			_, err = md.ec2.AuthorizeSecurityGroupEgress(&ec2.AuthorizeSecurityGroupEgressInput{
+				GroupId:       aws.String(md.cfg.SecurityGroupID),
+				IpPermissions: []*aws.IpPermission{
+					&aws.IpPermission{
+						IpProtocol: aws.String("tcp"),
+						FromPort:   aws.Int64(1),
+						ToPort:     aws.Int64(1024),
+						IpRanges:   []*aws.IpRange{
+							CidrIp: aws.String("0.0.0.0/0"),
+						},
+					},
+				},
+			})
+			if err != nil {
+				return aerr
+			}
+			md.lg.Warn("authorizing worker node privileged port access for control plane", zap.String("port-range", "1-1024"))
+		}
+
 		md.lg.Info(
 			"worker node creation in progress",
 			zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),

@@ -50,11 +50,12 @@ func _createWorkerNodeTemplate(v workerNodeStack) (string, error) {
 }
 
 type workerNodeStack struct {
-	Description         string
-	Tag                 string
-	TagValue            string
-	Hostname            string
-	EnableWorkerNodeSSH bool
+	Description                          string
+	Tag                                  string
+	TagValue                             string
+	Hostname                             string
+	EnableWorkerNodeSSH                  bool
+	EnableWorkerNodePrivilegedPortAccess bool
 }
 
 // TODO: this does not work...
@@ -293,7 +294,7 @@ Resources:
       GroupId: !Ref NodeSecurityGroup
       SourceSecurityGroupId: !Ref ClusterControlPlaneSecurityGroup
       IpProtocol: tcp
-      FromPort: 1025
+      FromPort: {{ if .EnableWorkerNodePrivilegedPortAccess }} 1 {{else}} 1025 {{end}}
       ToPort: 65535
 
   ControlPlaneEgressToNodeSecurityGroup:
@@ -304,7 +305,7 @@ Resources:
       GroupId: !Ref ClusterControlPlaneSecurityGroup
       DestinationSecurityGroupId: !Ref NodeSecurityGroup
       IpProtocol: tcp
-      FromPort: 1025
+      FromPort: {{ if .EnableWorkerNodePrivilegedPortAccess }} 1 {{else}} 1025 {{end}}
       ToPort: 65535
 
   NodeSecurityGroupFromControlPlaneOn443Ingress:
