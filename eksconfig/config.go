@@ -1011,6 +1011,7 @@ func checkKubernetesVersion(s string) (ok bool) {
 
 // supportedKubernetesVersions is a list of EKS supported Kubernets versions.
 var supportedKubernetesVersions = map[string]struct{}{
+	"1.10": {},
 	"1.11": {},
 }
 
