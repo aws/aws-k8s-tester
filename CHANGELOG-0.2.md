@@ -3,6 +3,27 @@
 <hr>
 
 
+
+## [0.2.2](https://github.com/aws/aws-k8s-tester/releases/tag/0.2.2)(2018-01-14)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.2.1...0.2.2).
+
+### `eksconfig`
+
+- Add [more regions](https://github.com/aws/aws-k8s-tester/commit/630b0a02f7f9dad07ac5492f34f5be006c45138e).
+
+### Go
+
+- Compile with [*Go 1.11.4*](https://golang.org/doc/devel/release.html#go1.11).
+
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.16.15`](https://github.com/aws/aws-sdk-go/releases/tag/v1.16.15) to [`v1.16.18`](https://github.com/aws/aws-sdk-go/releases/tag/v1.16.18).
+
+
+<hr>
+
+
 ## [0.2.1](https://github.com/aws/aws-k8s-tester/releases/tag/0.2.1)(2018-01-08)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.2.0...0.2.1).
