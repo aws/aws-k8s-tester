@@ -442,7 +442,7 @@ var defaultConfig = Config{
 
 	// Amazon EKS-optimized AMI, https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html
 	WorkerNodeAMI:          "ami-0a2abab4107669c1b",
-	WorkerNodeInstanceType: "m5.large",
+	WorkerNodeInstanceType: "m3.xlarge",
 	WorkerNodeASGMin:       1,
 	WorkerNodeASGMax:       1,
 	WorkerNodeVolumeSizeGB: 20,
