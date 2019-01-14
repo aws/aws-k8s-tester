@@ -3,6 +3,21 @@
 <hr>
 
 
+## [0.2.3](https://github.com/aws/aws-k8s-tester/releases/tag/0.2.3)(2018-01-14)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.2.2...0.2.3).
+
+### `eksconfig`
+
+- Remove [AMI check](https://github.com/aws/aws-k8s-tester/pull/35).
+
+### Go
+
+- Compile with [*Go 1.11.4*](https://golang.org/doc/devel/release.html#go1.11).
+
+
+<hr>
+
 
 ## [0.2.2](https://github.com/aws/aws-k8s-tester/releases/tag/0.2.2)(2018-01-14)
 
