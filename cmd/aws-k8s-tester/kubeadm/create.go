@@ -67,8 +67,8 @@ func createClusterFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	var tester kubeadm.Tester
-	tester, err = kubeadm.NewTester(cfg)
+	var dp kubeadm.Deployer
+	dp, err = kubeadm.NewDeployer(cfg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create kubeadm deployer %v\n", err)
 		os.Exit(1)
@@ -78,11 +78,12 @@ func createClusterFunc(cmd *cobra.Command, args []string) {
 		fmt.Fprintf(os.Stderr, "failed to back up original config file %v\n", err)
 		os.Exit(1)
 	}
-	if err = tester.Create(); err != nil {
+	if err = dp.Create(); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create instances %v\n", err)
 		os.Exit(1)
 	}
-	fmt.Printf("EC2 SSH:\n%s\n\n", cfg.EC2.SSHCommands())
+	fmt.Printf("EC2MasterNodes SSH:\n%s\n\n", cfg.EC2MasterNodes.SSHCommands())
+	fmt.Printf("EC2WorkerNodes SSH:\n%s\n\n", cfg.EC2WorkerNodes.SSHCommands())
 
 	if terminateOnExit {
 		notifier := make(chan os.Signal, 1)
@@ -92,7 +93,7 @@ func createClusterFunc(cmd *cobra.Command, args []string) {
 		case sig := <-notifier:
 			fmt.Fprintf(os.Stderr, "received %s\n", sig)
 		}
-		if err = tester.Terminate(); err != nil {
+		if err = dp.Terminate(); err != nil {
 			fmt.Fprintf(os.Stderr, "failed to terminate cluster %v\n", err)
 			os.Exit(1)
 		} else {

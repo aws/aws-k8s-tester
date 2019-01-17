@@ -39,14 +39,14 @@ func deleteClusterFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	var tester kubeadm.Tester
-	tester, err = kubeadm.NewTester(cfg)
+	var dp kubeadm.Deployer
+	dp, err = kubeadm.NewDeployer(cfg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create kubeadm cluster %v\n", err)
 		os.Exit(1)
 	}
 
-	if err = tester.Terminate(); err != nil {
+	if err = dp.Terminate(); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to terminate cluster %v", err)
 		os.Exit(1)
 	}

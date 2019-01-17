@@ -90,6 +90,20 @@ type Config struct {
 	// UploadTesterLogs is true to auto-upload log files.
 	UploadTesterLogs bool `json:"upload-tester-logs"`
 
+	// LoadBalancerName is the name of the AWS load balancer.
+	LoadBalancerName string `json:"load-balancer-name,omitempty"`
+	// LoadBalancerDNSName is the DNS name output from load balancer creation.
+	LoadBalancerDNSName string `json:"load-balancer-dns-name,omitempty"`
+	// LoadBalancerURL is the URL of the AWS load balancer.
+	// Used for client-side KUBECONFIG access.
+	LoadBalancerURL string `json:"load-balancer-dns-name,omitempty"`
+	// LoadBalancerCreated is true to indicate that load balancer has been created,
+	// thus needs clean-up on test complete.
+	LoadBalancerCreated bool `json:"load-balancer-created"`
+	// LoadBalancerRegistered is true to indicate that load balancer has registered EC2 instances,
+	// thus needs de-registration on test complete.
+	LoadBalancerRegistered bool `json:"load-balancer-registered"`
+
 	// TestTimeout is the test operation timeout.
 	TestTimeout time.Duration `json:"test-timeout,omitempty"`
 }
@@ -114,6 +128,7 @@ func init() {
 
 	defaultConfig.Tag = genTag()
 	defaultConfig.ClusterName = defaultConfig.Tag + "-" + randString(5)
+	defaultConfig.LoadBalancerName = defaultConfig.ClusterName + "-lb"
 
 	defaultConfig.EC2MasterNodes.AWSRegion = defaultConfig.AWSRegion
 	defaultConfig.EC2MasterNodes.Tag = defaultConfig.Tag + "-master-nodes"
@@ -469,6 +484,11 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 	}
 	if cfg.EC2WorkerNodes.UserName != "ec2-user" {
 		return fmt.Errorf("EC2WorkerNodes.UserName expected 'ec2-user' user name, got %q", cfg.EC2WorkerNodes.UserName)
+	}
+
+	// to prevent "ValidationError: LoadBalancer name cannot be longer than 32 characters"
+	if len(cfg.LoadBalancerName) > 31 {
+		cfg.LoadBalancerName = cfg.LoadBalancerName[len(cfg.LoadBalancerName)-31:]
 	}
 
 	if cfg.Tag == "" {

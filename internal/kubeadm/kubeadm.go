@@ -10,18 +10,27 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws"
+
+	"github.com/aws/aws-k8s-tester/pkg/awsapi"
+	"github.com/aws/aws-sdk-go/service/elb"
+	"github.com/aws/aws-sdk-go/service/elbv2"
+
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/internal/ec2"
 	"github.com/aws/aws-k8s-tester/internal/ssh"
 	"github.com/aws/aws-k8s-tester/kubeadmconfig"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/pkg/zaputil"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/elb/elbiface"
+	"github.com/aws/aws-sdk-go/service/elbv2/elbv2iface"
 	"github.com/dustin/go-humanize"
 	"go.uber.org/zap"
 )
 
-// Tester defines kubeadm test operation.
-type Tester interface {
+// Deployer defines kubeadm test operation.
+type Deployer interface {
 	Create() error
 	Terminate() error
 }
@@ -31,11 +40,16 @@ type embedded struct {
 	lg  *zap.Logger
 	cfg *kubeadmconfig.Config
 
-	ec2Deployer ec2.Deployer
+	ec2MasterNodesDeployer ec2.Deployer
+	ec2WorkerNodesDeployer ec2.Deployer
+
+	ss    *session.Session
+	elbv1 elbiface.ELBAPI     // for classic ELB
+	elbv2 elbv2iface.ELBV2API // for ALB or NLB
 }
 
-// NewTester creates a new embedded kubeadm tester.
-func NewTester(cfg *kubeadmconfig.Config) (Tester, error) {
+// NewDeployer creates a new embedded kubeadm tester.
+func NewDeployer(cfg *kubeadmconfig.Config) (Deployer, error) {
 	if err := cfg.ValidateAndSetDefaults(); err != nil {
 		return nil, err
 	}
@@ -44,10 +58,29 @@ func NewTester(cfg *kubeadmconfig.Config) (Tester, error) {
 		return nil, err
 	}
 	md := &embedded{lg: lg, cfg: cfg}
-	md.ec2Deployer, err = ec2.NewDeployer(md.cfg.EC2)
+
+	awsCfg := &awsapi.Config{
+		Logger:         md.lg,
+		DebugAPICalls:  cfg.LogDebug,
+		Region:         cfg.AWSRegion,
+		CustomEndpoint: "",
+	}
+	md.ss, err = awsapi.New(awsCfg)
 	if err != nil {
 		return nil, err
 	}
+	md.elbv1 = elb.New(md.ss)
+	md.elbv2 = elbv2.New(md.ss)
+
+	md.ec2MasterNodesDeployer, err = ec2.NewDeployer(md.cfg.EC2MasterNodes)
+	if err != nil {
+		return nil, err
+	}
+	md.ec2WorkerNodesDeployer, err = ec2.NewDeployer(md.cfg.EC2WorkerNodes)
+	if err != nil {
+		return nil, err
+	}
+
 	return md, cfg.Sync()
 }
 
@@ -57,33 +90,116 @@ func (md *embedded) Create() (err error) {
 
 	now := time.Now().UTC()
 
-	md.lg.Info(
-		"deploying EC2",
-		zap.Strings("plugins", md.cfg.EC2.Plugins),
-	)
-	md.cfg.Tag = md.cfg.EC2.Tag + "-kubeadm"
-	md.cfg.ConfigPathURL = genS3URL(md.cfg.EC2.AWSRegion, md.cfg.Tag, md.cfg.EC2.ConfigPathBucket)
-	md.cfg.KubeConfigPathURL = genS3URL(md.cfg.EC2.AWSRegion, md.cfg.Tag, md.cfg.KubeConfigPathBucket)
-	md.cfg.LogOutputToUploadPathURL = genS3URL(md.cfg.EC2.AWSRegion, md.cfg.Tag, md.cfg.EC2.LogOutputToUploadPathBucket)
+	md.cfg.ConfigPathURL = genS3URL(md.cfg.AWSRegion, md.cfg.Tag, md.cfg.EC2MasterNodes.ConfigPathBucket)
+	md.cfg.KubeConfigPathURL = genS3URL(md.cfg.AWSRegion, md.cfg.Tag, md.cfg.KubeConfigPathBucket)
+	md.cfg.LogOutputToUploadPathURL = genS3URL(md.cfg.AWSRegion, md.cfg.Tag, md.cfg.EC2MasterNodes.LogOutputToUploadPathBucket)
 
-	if err = md.ec2Deployer.Create(); err != nil {
+	defer func() {
+		if err != nil {
+			md.lg.Warn("failed to create Kubernetes, reverting", zap.Error(err))
+			md.lg.Warn("failed to create Kubernetes, reverted", zap.Error(md.terminate()))
+		}
+	}()
+
+	// shared master node VPC and subnets for: etcd nodes, worker nodes
+	// do not run this in goroutine, since VPC for master nodes have to be created at first
+	os.RemoveAll(md.cfg.EC2MasterNodes.KeyPath)
+	if err = md.ec2MasterNodesDeployer.Create(); err != nil {
 		return err
 	}
+	md.cfg.EC2MasterNodesCreated = true
 	md.cfg.Sync()
+
+	md.cfg.EC2WorkerNodes.VPCID = md.cfg.EC2MasterNodes.VPCID
+	// prevent VPC double-delete
+	md.cfg.EC2WorkerNodes.VPCCreated = false
+	md.cfg.Sync()
+
+	if err = md.ec2WorkerNodesDeployer.Create(); err != nil {
+		return err
+	}
+	md.cfg.EC2WorkerNodesCreated = true
+	md.cfg.Sync()
+
 	md.lg.Info(
-		"deployed EC2",
-		zap.Strings("plugins", md.cfg.EC2.Plugins),
-		zap.String("vpc-id", md.cfg.EC2.VPCID),
+		"deployed EC2 instances",
+		zap.Strings("plugins-master-nodes", md.cfg.EC2MasterNodes.Plugins),
+		zap.String("vpc-id-master-nodes", md.cfg.EC2MasterNodes.VPCID),
+		zap.Strings("plugins-worker-nodes", md.cfg.EC2WorkerNodes.Plugins),
+		zap.String("vpc-id-worker-nodes", md.cfg.EC2WorkerNodes.VPCID),
 		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 	)
 	if md.cfg.LogDebug {
-		fmt.Println(md.cfg.EC2.SSHCommands())
+		fmt.Println("EC2MasterNodes.SSHCommands:", md.cfg.EC2MasterNodes.SSHCommands())
+		fmt.Println("EC2WorkerNodes.SSHCommands:", md.cfg.EC2WorkerNodes.SSHCommands())
 	}
 	if err = md.cfg.ValidateAndSetDefaults(); err != nil {
 		return err
 	}
 
+	var elbOut *elb.CreateLoadBalancerOutput
+	elbOut, err = md.elbv1.CreateLoadBalancer(&elb.CreateLoadBalancerInput{
+		LoadBalancerName: aws.String(md.cfg.LoadBalancerName),
+		SecurityGroups:   aws.StringSlice(md.cfg.EC2MasterNodes.SecurityGroupIDs),
+		Subnets:          aws.StringSlice(md.cfg.EC2MasterNodes.SubnetIDs),
+		Listeners: []*elb.Listener{
+			{
+				InstancePort:     aws.Int64(443),
+				InstanceProtocol: aws.String("TCP"),
+				LoadBalancerPort: aws.Int64(443),
+				Protocol:         aws.String("TCP"),
+			},
+		},
+		Tags: []*elb.Tag{
+			{Key: aws.String("Name"), Value: aws.String(md.cfg.LoadBalancerName)},
+		},
+	})
+	if err != nil {
+		return err
+	}
+	md.cfg.LoadBalancerCreated = true
+	md.cfg.LoadBalancerDNSName = *elbOut.DNSName
+	md.cfg.LoadBalancerURL = md.cfg.LoadBalancerDNSName
+	if !strings.HasPrefix(md.cfg.LoadBalancerURL, "https://") {
+		md.cfg.LoadBalancerURL = "https://" + md.cfg.LoadBalancerURL
+	}
+	md.cfg.Sync()
+	md.lg.Info("created load balancer", zap.String("name", md.cfg.LoadBalancerName), zap.String("dns-name", md.cfg.LoadBalancerDNSName))
+
+	instances := make([]*elb.Instance, 0, len(md.cfg.EC2MasterNodes.Instances)+len(md.cfg.EC2WorkerNodes.Instances))
+	for _, iv := range md.cfg.EC2MasterNodes.Instances {
+		instances = append(instances, &elb.Instance{
+			InstanceId: aws.String(iv.InstanceID),
+		})
+	}
+	for _, iv := range md.cfg.EC2WorkerNodes.Instances {
+		instances = append(instances, &elb.Instance{
+			InstanceId: aws.String(iv.InstanceID),
+		})
+	}
+	if _, err = md.elbv1.RegisterInstancesWithLoadBalancer(&elb.RegisterInstancesWithLoadBalancerInput{
+		LoadBalancerName: aws.String(md.cfg.LoadBalancerName),
+		Instances:        instances,
+	}); err != nil {
+		return err
+	}
+	md.cfg.LoadBalancerRegistered = true
+	md.cfg.Sync()
+	md.lg.Info("registered instances to load balancer", zap.String("name", md.cfg.LoadBalancerName), zap.Int("instances", len(instances)))
+
 	// TODO
+	////////////////////////////////////////////////////////////////////////
+	md.lg.Info("step 1-1. 'master node kubelet' configuration")
+	md.lg.Info("step 1-2. successfully sent 'master node kubelet' environment file")
+	md.lg.Info("step 1-3. successfully ran 'master node kubeadm init'")
+	////////////////////////////////////////////////////////////////////////
+
+	////////////////////////////////////////////////////////////////////////
+	md.lg.Info("step 2-1. 'worker node kubelet' configuration")
+	md.lg.Info("step 2-2. successfully sent 'worker node kubelet' environment file")
+	md.lg.Info("step 3-3. successfully ran 'worker node kubeadm join'")
+	////////////////////////////////////////////////////////////////////////
+
 	/*
 		for idx, target := range md.cfg.EC2.Instances {
 			var kubeletEnvWorker string
@@ -385,7 +501,7 @@ joinReady:
 	md.lg.Info("fetched KUBECONFIG", zap.String("KUBECONFIG", md.cfg.KubeConfigPath), zap.Error(err))
 
 	if md.cfg.UploadTesterLogs {
-		err = md.ec2Deployer.UploadToBucketForTests(md.cfg.KubeConfigPath, md.cfg.KubeConfigPathBucket)
+		err = md.ec2MasterNodesDeployer.UploadToBucketForTests(md.cfg.KubeConfigPath, md.cfg.KubeConfigPathBucket)
 		md.lg.Info("uploaded KUBECONFIG", zap.Error(err))
 
 		var fpathToS3Path map[string]string
@@ -408,10 +524,13 @@ joinReady:
 func (md *embedded) Terminate() error {
 	md.mu.Lock()
 	defer md.mu.Unlock()
+	return md.terminate()
+}
 
+func (md *embedded) terminate() error {
 	md.lg.Info("terminating kubeadm")
 	if md.cfg.UploadTesterLogs && len(md.cfg.EC2.Instances) > 0 {
-		err := md.ec2Deployer.UploadToBucketForTests(md.cfg.KubeConfigPath, md.cfg.KubeConfigPathBucket)
+		err := md.ec2MasterNodesDeployer.UploadToBucketForTests(md.cfg.KubeConfigPath, md.cfg.KubeConfigPathBucket)
 		md.lg.Info("uploaded KUBECONFIG", zap.Error(err))
 
 		var fpathToS3Path map[string]string
@@ -427,13 +546,13 @@ func (md *embedded) Terminate() error {
 		md.lg.Info("uploaded", zap.Error(err))
 	}
 
-	return md.ec2Deployer.Terminate()
+	return md.ec2MasterNodesDeployer.Terminate()
 }
 
 func (md *embedded) uploadLogs() (err error) {
 	ess := []string{}
 	for k, v := range md.cfg.Logs {
-		err = md.ec2Deployer.UploadToBucketForTests(k, v)
+		err = md.ec2MasterNodesDeployer.UploadToBucketForTests(k, v)
 		md.lg.Info("uploaded kubeadm log", zap.Error(err))
 		if err != nil {
 			ess = append(ess, err.Error())
