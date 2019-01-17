@@ -11,7 +11,6 @@ import (
 
 	"github.com/aws/aws-k8s-tester/ekstester"
 	"github.com/aws/aws-k8s-tester/kubetest/eks"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
