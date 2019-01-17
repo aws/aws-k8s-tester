@@ -49,6 +49,11 @@ func (in *DecorationConfig) DeepCopyInto(out *DecorationConfig) {
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
+	if in.SkipCloning != nil {
+		in, out := &in.SkipCloning, &out.SkipCloning
+		*out = new(bool)
+		**out = **in
+	}
 	return
 }
 
@@ -149,13 +154,9 @@ func (in *ProwJobSpec) DeepCopyInto(out *ProwJobSpec) {
 	}
 	if in.ExtraRefs != nil {
 		in, out := &in.ExtraRefs, &out.ExtraRefs
-		*out = make([]*Refs, len(*in))
+		*out = make([]Refs, len(*in))
 		for i := range *in {
-			if (*in)[i] != nil {
-				in, out := &(*in)[i], &(*out)[i]
-				*out = new(Refs)
-				(*in).DeepCopyInto(*out)
-			}
+			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
 	if in.PodSpec != nil {

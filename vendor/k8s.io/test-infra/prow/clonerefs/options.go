@@ -47,7 +47,7 @@ type Options struct {
 	GitUserEmail string `json:"git_user_email,omitempty"`
 
 	// GitRefs are the refs to clone
-	GitRefs []*kube.Refs `json:"refs"`
+	GitRefs []kube.Refs `json:"refs"`
 	// KeyFiles are files containing SSH keys to be used
 	// when cloning. Will be added to `ssh-agent`.
 	KeyFiles []string `json:"key_files,omitempty"`
@@ -152,11 +152,11 @@ func (o *Options) AddFlags(fs *flag.FlagSet) {
 	fs.Var(&o.clonePath, "clone-alias", "Format string for the path to clone to")
 	fs.Var(&o.cloneURI, "uri-prefix", "Format string for the URI prefix to clone from")
 	fs.IntVar(&o.MaxParallelWorkers, "max-workers", 0, "Maximum number of parallel workers, unset for unlimited.")
-	fs.StringVar(&o.CookiePath, "cookiefile", "", "Path to git http.coookiefile")
+	fs.StringVar(&o.CookiePath, "cookiefile", "", "Path to git http.cookiefile")
 }
 
 type gitRefs struct {
-	gitRefs []*kube.Refs
+	gitRefs []kube.Refs
 }
 
 func (r *gitRefs) String() string {
@@ -178,7 +178,7 @@ func (r *gitRefs) Set(value string) error {
 	if err != nil {
 		return err
 	}
-	r.gitRefs = append(r.gitRefs, gitRef)
+	r.gitRefs = append(r.gitRefs, *gitRef)
 	return nil
 }
 
