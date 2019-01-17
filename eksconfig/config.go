@@ -388,7 +388,7 @@ func NewDefault() *Config {
 
 func init() {
 	defaultConfig.Tag = genTag()
-	defaultConfig.ClusterName = defaultConfig.Tag + "-" + randString(7)
+	defaultConfig.ClusterName = defaultConfig.Tag + "-" + randString(5)
 	if runtime.GOOS == "darwin" {
 		defaultConfig.AWSK8sTesterDownloadURL = strings.Replace(defaultConfig.AWSK8sTesterDownloadURL, "linux", "darwin", -1)
 		defaultConfig.KubectlDownloadURL = strings.Replace(defaultConfig.KubectlDownloadURL, "linux", "darwin", -1)

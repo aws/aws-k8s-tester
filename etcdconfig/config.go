@@ -562,7 +562,7 @@ func init() {
 
 	defaultConfig.Cluster = &defaultETCD
 	defaultConfig.Tag = genTag()
-	defaultConfig.ClusterName = defaultConfig.Tag + "-" + randString(7)
+	defaultConfig.ClusterName = defaultConfig.Tag + "-" + randString(5)
 
 	// package "internal/ec2" defaults
 	// Amazon Linux 2 AMI (HVM), SSD Volume Type

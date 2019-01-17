@@ -10,7 +10,7 @@ import (
 func CreateInstall(ver string) (string, error) {
 	tpl := template.Must(template.New("installKubeadmAmazonLinux2Template").Parse(installKubeadmAmazonLinux2Template))
 	buf := bytes.NewBuffer(nil)
-	kv := kubeadmInfo{Version: ver, KubeletPath: "/usr/bin/kubelet"}
+	kv := kubeadmInfo{Version: ver}
 	if err := tpl.Execute(buf, kv); err != nil {
 		return "", err
 	}
@@ -18,8 +18,7 @@ func CreateInstall(ver string) (string, error) {
 }
 
 type kubeadmInfo struct {
-	Version     string
-	KubeletPath string
+	Version string
 }
 
 // https://kubernetes.io/docs/setup/independent/install-kubeadm/
@@ -73,7 +72,7 @@ After=docker.service
 
 [Service]
 EnvironmentFile=/etc/sysconfig/kubelet
-ExecStart={{ .KubeletPath }} "\$KUBELET_FLAGS"
+ExecStart=/usr/bin/kubelet "\$KUBELET_FLAGS"
 Restart=always
 RestartSec=2s
 StartLimitInterval=0

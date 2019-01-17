@@ -619,7 +619,7 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 
 	// populate all paths on disks and on remote storage
 	if cfg.ConfigPath == "" {
-		f, err := ioutil.TempFile(os.TempDir(), "awsk8stester-kubernetesconfig")
+		f, err := ioutil.TempFile(os.TempDir(), "a8-kubernetesconfig")
 		if err != nil {
 			return err
 		}
@@ -627,7 +627,7 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 		f.Close()
 		os.RemoveAll(cfg.ConfigPath)
 	}
-	cfg.ConfigPathBucket = filepath.Join(cfg.ClusterName, "awsk8stester-kubernetesconfig.yaml")
+	cfg.ConfigPathBucket = filepath.Join(cfg.ClusterName, "a8-kubernetesconfig.yaml")
 
 	cfg.LogOutputToUploadPath = filepath.Join(os.TempDir(), fmt.Sprintf("%s.log", cfg.ClusterName))
 	logOutputExist := false
@@ -641,7 +641,7 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 		// auto-insert generated log output paths to zap logger output list
 		cfg.LogOutputs = append(cfg.LogOutputs, cfg.LogOutputToUploadPath)
 	}
-	cfg.LogOutputToUploadPathBucket = filepath.Join(cfg.ClusterName, "awsk8stester-kubernetes.log")
+	cfg.LogOutputToUploadPathBucket = filepath.Join(cfg.ClusterName, "a8-kubernetes.log")
 
 	cfg.KubeConfigPathBucket = filepath.Join(cfg.ClusterName, "kubeconfig")
 
