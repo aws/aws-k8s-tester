@@ -123,11 +123,11 @@ func createIAMResources(awsRegion string) (*iamResources, error) {
 	}()
 
 	now := time.Now().UTC()
-	uniqueSuffix := fmt.Sprintf("%d%x%x%x%x", now.Year()-2000, int(now.Month()), now.Day(), now.Minute(), now.Second())
+	uniqueSuffix := fmt.Sprintf("%d%02d%02d%x%x", now.Year()-2000, int(now.Month()), now.Day(), now.Minute(), now.Second())
 
 	// Creates instance profile
 	instanceOutput, err := resources.svc.CreateInstanceProfile(&iam.CreateInstanceProfileInput{
-		InstanceProfileName: aws.String(fmt.Sprintf("a8t-csi-instance-profile-%s", uniqueSuffix)),
+		InstanceProfileName: aws.String(fmt.Sprintf("a8-csi-instance-profile-%s", uniqueSuffix)),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to add role to create new instance profile (%v)", err)
@@ -142,7 +142,7 @@ func createIAMResources(awsRegion string) (*iamResources, error) {
 	policyOutput, err := resources.svc.CreatePolicy(&iam.CreatePolicyInput{
 		Description:    aws.String("awe-k8s-tester generated policy for testing EC2"),
 		PolicyDocument: aws.String(policyDocument),
-		PolicyName:     aws.String(fmt.Sprintf("a8t-csi-policy-%s", uniqueSuffix)),
+		PolicyName:     aws.String(fmt.Sprintf("a8-csi-policy-%s", uniqueSuffix)),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to add role to create new policy(%v)", err)
@@ -156,7 +156,7 @@ func createIAMResources(awsRegion string) (*iamResources, error) {
 	// Creates role
 	roleOutput, err := resources.svc.CreateRole(&iam.CreateRoleInput{
 		AssumeRolePolicyDocument: aws.String(assumeRoleDocument),
-		RoleName:                 aws.String(fmt.Sprintf("a8t-csi-role-%s", uniqueSuffix)),
+		RoleName:                 aws.String(fmt.Sprintf("a8-csi-role-%s", uniqueSuffix)),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new role (%v)", err)

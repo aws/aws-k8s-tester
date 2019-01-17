@@ -97,18 +97,18 @@ Experimenting.
 
 - Add [`ec2config.CustomScript` field to support custom CSI EBS volume install scripts](https://github.com/aws/aws-k8s-tester/pull/31).
 - Use [`amazon-linux-extras install` command to install Docker in Amazon Linux 2](https://github.com/aws/aws-k8s-tester/commit/f9d9aa93e989f74ddce5ec87f126b55447c2bf9a).
-- Shorten [AWS resource tag prefix from `"awsk8stester-"` to `"a8t-"`](https://github.com/aws/aws-k8s-tester/commit/5cd0e6c0d7ec73e4d647db2c5b70f0e019994c06).
+- Shorten [AWS resource tag prefix from `"awsk8stester-"` to `"a8-"`](https://github.com/aws/aws-k8s-tester/commit/5cd0e6c0d7ec73e4d647db2c5b70f0e019994c06).
 
 ### `etcdconfig`
 
 - Use [`"AWS_K8S_TESTER_EC2_ETCD_NODES_"` and `"AWS_K8S_TESTER_EC2_ETCD_BASTION_NODES_"` for etcd environmental variable configuration prefix](https://github.com/aws/aws-k8s-tester/commit/fd9545d6acd56a2c1c0eef4da344014af7eb266a).
-- Shorten [AWS resource tag prefix from `"awsk8stester-"` to `"a8t-"`](https://github.com/aws/aws-k8s-tester/commit/5cd0e6c0d7ec73e4d647db2c5b70f0e019994c06).
+- Shorten [AWS resource tag prefix from `"awsk8stester-"` to `"a8-"`](https://github.com/aws/aws-k8s-tester/commit/5cd0e6c0d7ec73e4d647db2c5b70f0e019994c06).
 - Add [`"etcd"` tag to every etcd flag field](https://github.com/aws/aws-k8s-tester/commit/caac7dee6e5984ba92c340addd0404edeb4bf0cd).
 
 ### `eksconfig`
 
 - Add [`eksconfig.UploadKubeConfig` field to disable `KUBECONFIG` S3 bucket upload by default](https://github.com/aws/aws-k8s-tester/commit/73f6c8037c949cfca03be4e776c06f9c1c76b6a0).
-- Shorten [AWS resource tag prefix from `"awsk8stester-"` to `"a8t-"`](https://github.com/aws/aws-k8s-tester/commit/5cd0e6c0d7ec73e4d647db2c5b70f0e019994c06).
+- Shorten [AWS resource tag prefix from `"awsk8stester-"` to `"a8-"`](https://github.com/aws/aws-k8s-tester/commit/5cd0e6c0d7ec73e4d647db2c5b70f0e019994c06).
 
 ### `internal`
 

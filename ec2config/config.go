@@ -210,7 +210,7 @@ type SecurityGroup struct {
 func genTag() string {
 	// use UTC time for everything
 	now := time.Now().UTC()
-	return fmt.Sprintf("a8t-ec2-%d%x%x", now.Year()-2000, int(now.Month()), now.Day())
+	return fmt.Sprintf("a8-ec2-%d%02d%02d", now.Year()-2000, int(now.Month()), now.Day())
 }
 
 // NewDefault returns a copy of the default configuration.
@@ -406,7 +406,7 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 
 	if cfg.ConfigPath == "" {
 		var f *os.File
-		f, err = ioutil.TempFile(os.TempDir(), "a8t-ec2config")
+		f, err = ioutil.TempFile(os.TempDir(), "a8-ec2config")
 		if err != nil {
 			return err
 		}
@@ -414,7 +414,7 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 		f.Close()
 		os.RemoveAll(cfg.ConfigPath)
 	}
-	cfg.ConfigPathBucket = filepath.Join(cfg.ClusterName, "a8t-ec2config.yaml")
+	cfg.ConfigPathBucket = filepath.Join(cfg.ClusterName, "a8-ec2config.yaml")
 
 	cfg.LogOutputToUploadPath = filepath.Join(os.TempDir(), fmt.Sprintf("%s.log", cfg.ClusterName))
 	logOutputExist := false
@@ -428,15 +428,15 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 		// auto-insert generated log output paths to zap logger output list
 		cfg.LogOutputs = append(cfg.LogOutputs, cfg.LogOutputToUploadPath)
 	}
-	cfg.LogOutputToUploadPathBucket = filepath.Join(cfg.ClusterName, "a8t-ec2.log")
+	cfg.LogOutputToUploadPathBucket = filepath.Join(cfg.ClusterName, "a8-ec2.log")
 
 	if cfg.KeyName == "" {
 		cfg.KeyName = cfg.ClusterName
 	}
-	cfg.KeyPathBucket = filepath.Join(cfg.ClusterName, "a8t-ec2.key")
+	cfg.KeyPathBucket = filepath.Join(cfg.ClusterName, "a8-ec2.key")
 	if cfg.KeyPath == "" {
 		var f *os.File
-		f, err = ioutil.TempFile(os.TempDir(), "a8t-ec2.key")
+		f, err = ioutil.TempFile(os.TempDir(), "a8-ec2.key")
 		if err != nil {
 			return err
 		}

@@ -405,7 +405,7 @@ func init() {
 func genTag() string {
 	// use UTC time for everything
 	now := time.Now().UTC()
-	return fmt.Sprintf("a8t-eks-%d%x%x", now.Year()-2000, int(now.Month()), now.Day())
+	return fmt.Sprintf("a8-eks-%d%02d%02d", now.Year()-2000, int(now.Month()), now.Day())
 }
 
 // defaultConfig is the default configuration.
@@ -668,7 +668,7 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	////////////////////////////////////////////////////////////////////////
 	// populate all paths on disks and on remote storage
 	if cfg.ConfigPath == "" {
-		f, err := ioutil.TempFile(os.TempDir(), "a8t-eksconfig")
+		f, err := ioutil.TempFile(os.TempDir(), "a8-eksconfig")
 		if err != nil {
 			return err
 		}
@@ -676,7 +676,7 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		f.Close()
 		os.RemoveAll(cfg.ConfigPath)
 	}
-	cfg.ConfigPathBucket = filepath.Join(cfg.ClusterName, "a8t-eksconfig.yaml")
+	cfg.ConfigPathBucket = filepath.Join(cfg.ClusterName, "a8-eksconfig.yaml")
 
 	cfg.LogOutputToUploadPath = filepath.Join(os.TempDir(), fmt.Sprintf("%s.log", cfg.ClusterName))
 	logOutputExist := false
@@ -690,7 +690,7 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		// auto-insert generated log output paths to zap logger output list
 		cfg.LogOutputs = append(cfg.LogOutputs, cfg.LogOutputToUploadPath)
 	}
-	cfg.LogOutputToUploadPathBucket = filepath.Join(cfg.ClusterName, "a8t-eks.log")
+	cfg.LogOutputToUploadPathBucket = filepath.Join(cfg.ClusterName, "a8-eks.log")
 
 	cfg.KubeConfigPathBucket = filepath.Join(cfg.ClusterName, "kubeconfig")
 
