@@ -7,6 +7,22 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.2.3...0.2.4).
 
+### `ec2config`
+
+- Shorten [AWS resource tag prefix from `"a8t-"` to `"a8-"`](https://github.com/aws/aws-k8s-tester/commit/043ccec9fb92f449a0b9bc85e0cd9adc56731701).
+
+### `eksconfig`
+
+- Shorten [AWS resource tag prefix from `"a8t-"` to `"a8-"`](https://github.com/aws/aws-k8s-tester/commit/043ccec9fb92f449a0b9bc85e0cd9adc56731701).
+
+### `etcdconfig`
+
+- Shorten [AWS resource tag prefix from `"a8t-"` to `"a8-"`](https://github.com/aws/aws-k8s-tester/commit/043ccec9fb92f449a0b9bc85e0cd9adc56731701).
+
+### `kubeadmconfig`
+
+- Shorten [AWS resource tag prefix from `"a8t-"` to `"a8-"`](https://github.com/aws/aws-k8s-tester/commit/043ccec9fb92f449a0b9bc85e0cd9adc56731701).
+
 ### Dependency
 
 - Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.16.18`](https://github.com/aws/aws-sdk-go/releases/tag/v1.16.18) to [`v1.16.20`](https://github.com/aws/aws-sdk-go/releases/tag/v1.16.20).
