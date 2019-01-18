@@ -6,14 +6,17 @@ import (
 
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/internal/ssh"
+	"github.com/aws/aws-k8s-tester/kubeadmconfig"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"go.uber.org/zap"
 )
 
-func writeKubeletEnvFile() (p string, err error) {
-	sc := `KUBELET_FLAGS="--bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubelet.conf --kubeconfig=/etc/kubernetes/kubelet.conf --pod-manifest-path=/etc/kubernetes/manifests --allow-privileged=true --cluster-dns=10.96.0.10 --cluster-domain=cluster.local --authorization-mode=Webhook --client-ca-file=/etc/kubernetes/pki/ca.crt --cgroup-driver=systemd --cadvisor-port=0 --rotate-certificates=true"
-HOME="/home/ec2-user"
-`
+func writeKubeletEnvFile(kubeletConfig kubeadmconfig.Kubelet) (p string, err error) {
+	var sc string
+	sc, err = kubeletConfig.Sysconfig()
+	if err != nil {
+		return "", fmt.Errorf("failed to create kubelet sysconfig (%v)", err)
+	}
 	p, err = fileutil.WriteTempFile([]byte(sc))
 	if err != nil {
 		return "", fmt.Errorf("failed to write kubelet sysconfig file (%v)", err)

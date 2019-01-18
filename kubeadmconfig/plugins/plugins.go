@@ -87,9 +87,10 @@ cat /tmp/kubelet.service
 sudo mkdir -p /etc/systemd/system/kubelet.service.d
 sudo cp /tmp/kubelet.service /etc/systemd/system/kubelet.service
 
+crictl --version
+
 sudo systemctl daemon-reload
 sudo systemctl cat kubelet.service
-
 ##################################
 
 `

@@ -814,13 +814,13 @@ func (md *embedded) terminate() error {
 		} else {
 			md.lg.Warn("failed to fetch worker nodes logs", zap.Error(err))
 		}
+	}
 
-		err = md.uploadLogs()
-		if err == nil {
-			md.lg.Info("uploaded all nodes logs")
-		} else {
-			md.lg.Warn("failed to upload all nodes logs", zap.Error(err))
-		}
+	err := md.uploadLogs()
+	if err == nil {
+		md.lg.Info("uploaded all nodes logs")
+	} else {
+		md.lg.Warn("failed to upload all nodes logs", zap.Error(err))
 	}
 
 	ess := make([]string, 0)

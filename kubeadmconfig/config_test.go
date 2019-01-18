@@ -24,6 +24,7 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_KUBEADM_UPLOAD_TESTER_LOGS", "false")
 	os.Setenv("AWS_K8S_TESTER_KUBEADM_KUBEADM_INIT_POD_NETWORK_CIDR", "10.244.0.0/16")
 	os.Setenv("AWS_K8S_TESTER_EC2_MASTER_NODES_PLUGINS", "update-amazon-linux-2,install-start-docker-amazon-linux-2,install-kubeadm-amazon-linux-2-1.6.0")
+	os.Setenv("AWS_K8S_TESTER_KUBEADM_KUBELET_ALLOW_PRIVILEGED", "false")
 
 	defer func() {
 		os.Unsetenv("AWS_K8S_TESTER_KUBEADM_AWS_REGION")
@@ -37,6 +38,7 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWS_K8S_TESTER_KUBEADM_UPLOAD_TESTER_LOGS")
 		os.Unsetenv("AWS_K8S_TESTER_KUBEADM_KUBEADM_INIT_POD_NETWORK_CIDR")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_MASTER_NODES_PLUGINS")
+		os.Unsetenv("AWS_K8S_TESTER_KUBEADM_KUBELET_ALLOW_PRIVILEGED")
 	}()
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
@@ -77,11 +79,15 @@ func TestEnv(t *testing.T) {
 	if cfg.KubeadmInit.PodNetworkCIDR != "10.244.0.0/16" {
 		t.Fatalf("unexpected KubeadmInit.InitPodNetworkCIDR, got %q", cfg.KubeadmInit.PodNetworkCIDR)
 	}
+	if cfg.Kubelet.AllowPrivileged {
+		t.Fatalf("expected Kubelet.AllowPrivileged false, got %v", cfg.Kubelet.AllowPrivileged)
+	}
 	exp := []string{"update-amazon-linux-2", "install-start-docker-amazon-linux-2", "install-kubeadm-amazon-linux-2-1.6.0"}
 	if !reflect.DeepEqual(cfg.EC2MasterNodes.Plugins, exp) {
 		t.Fatalf("expected EC2.Plugins %v, got %v", exp, cfg.EC2MasterNodes.Plugins)
 	}
 
+	fmt.Println(cfg.Kubelet.Sysconfig())
 	fmt.Println(cfg.KubeadmInit.Flags())
 	cfg.KubeadmJoin.Target = "192.168.116.240:6443"
 	fmt.Println(cfg.KubeadmJoin.Flags())

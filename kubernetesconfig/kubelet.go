@@ -273,7 +273,11 @@ func (kb *Kubelet) Flags() (flags []string, err error) {
 			}
 
 		case reflect.Bool:
-			flags = append(flags, fmt.Sprintf("--%s=%v", k, vv.Field(i).Bool()))
+			if vv.Field(i).Bool() {
+				flags = append(flags, fmt.Sprintf("--%s=%v", k, vv.Field(i).Bool()))
+			} else if allowZeroValue {
+				flags = append(flags, fmt.Sprintf(`--%s=false`, k))
+			}
 
 		default:
 			return nil, fmt.Errorf("unknown %q", k)
