@@ -12,6 +12,7 @@ import (
 // KubeadmJoin defines "kubeadm join" configuration.
 // https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm-join/
 type KubeadmJoin struct {
+	RawCommand               string `json:"raw-command"`
 	Target                   string `json:"target"`
 	Token                    string `json:"token,omitempty" kubeadm-join:"token"`
 	DiscoveryTokenCACertHash string `json:"discovery-token-ca-cert-hash,omitempty" kubeadm-join:"discovery-token-ca-cert-hash"`

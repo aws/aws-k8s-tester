@@ -49,6 +49,7 @@ type Config struct {
 	// thus needs clean-up on test complete.
 	EC2WorkerNodesCreated bool `json:"ec2-worker-nodes-created"`
 
+	Kubelet *Kubelet `json:"kubelet"`
 	// KubeadmInit is the "kubeadm init" configuration for initial cluster setup.
 	KubeadmInit *KubeadmInit `json:"kubeadm-init"`
 	// KubeadmJoin is the "kubeadm join" configuration.
@@ -84,11 +85,15 @@ type Config struct {
 	LogOutputToUploadPathBucket string `json:"log-output-to-upload-path-bucket,omitempty"`
 	LogOutputToUploadPathURL    string `json:"log-output-to-upload-path-url,omitempty"`
 
-	// Logs is a list of node log file paths, fetched via SSH.
-	Logs map[string]string `json:"logs,omitempty"`
+	// LogsMasterNodes is a list of master node log file paths, fetched via SSH.
+	LogsMasterNodes map[string]string `json:"logs-master-nodes,omitempty"`
+	// LogsWorkerNodes is a list of worker node log file paths, fetched via SSH.
+	LogsWorkerNodes map[string]string `json:"logs-worker-nodes,omitempty"`
 
 	// UploadTesterLogs is true to auto-upload log files.
 	UploadTesterLogs bool `json:"upload-tester-logs"`
+	// UploadKubeConfig is true to auto-upload KUBECONFIG file.
+	UploadKubeConfig bool `json:"upload-kubeconfig"`
 
 	// LoadBalancerName is the name of the AWS load balancer.
 	LoadBalancerName string `json:"load-balancer-name,omitempty"`
@@ -212,6 +217,7 @@ var defaultConfig = Config{
 
 	AWSRegion: "us-west-2",
 
+	Kubelet:     newDefaultKubelet(),
 	KubeadmInit: newDefaultKubeadmInit(),
 	KubeadmJoin: newDefaultKubeadmJoin(),
 
@@ -295,6 +301,7 @@ func (cfg *Config) BackupConfig() (p string, err error) {
 
 const (
 	envPfx            = "AWS_K8S_TESTER_KUBEADM_"
+	envPfxKubelet     = "AWS_K8S_TESTER_KUBEADM_KUBELET_"
 	envPfxKubeadmInit = "AWS_K8S_TESTER_KUBEADM_KUBEADM_INIT_"
 	envPfxKubeadmJoin = "AWS_K8S_TESTER_KUBEADM_KUBEADM_JOIN_"
 	envPfxMasterNodes = "AWS_K8S_TESTER_EC2_MASTER_NODES_"
@@ -384,6 +391,9 @@ func (cfg *Config) UpdateFromEnvs() error {
 		}
 	}
 
+	if err := cc.Kubelet.updateFromEnvs(envPfxKubelet); err != nil {
+		return err
+	}
 	if err := cc.KubeadmInit.updateFromEnvs(envPfxKubeadmInit); err != nil {
 		return err
 	}
