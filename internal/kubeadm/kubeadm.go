@@ -335,6 +335,17 @@ func (md *embedded) terminate() (err error) {
 		md.lg.Info("deleted load balancer", zap.String("name", md.cfg.LoadBalancerName))
 	}
 
+	if err = md.ec2WorkerNodesDeployer.Terminate(); err != nil {
+		md.lg.Warn("failed to terminate EC2 worker nodes", zap.Error(err))
+	}
+	if merr := md.ec2MasterNodesDeployer.Terminate(); merr != nil {
+		md.lg.Warn("failed to terminate EC2 master nodes", zap.Error(merr))
+		if err != nil {
+			err = fmt.Errorf("worker nodes error %v, master nodes error %v", err, merr)
+		} else {
+			err = merr
+		}
+	}
 	return err
 }
 
