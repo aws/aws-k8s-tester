@@ -423,6 +423,7 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 
 	// let master node EC2 deployer create SSH key
 	// and share the same SSH key for master and worker nodes
+	cfg.EC2MasterNodes.KeyName = cfg.ClusterName
 	cfg.EC2WorkerNodes.KeyName = cfg.EC2MasterNodes.KeyName
 	cfg.EC2WorkerNodes.KeyPath = cfg.EC2MasterNodes.KeyPath
 	cfg.EC2WorkerNodes.KeyCreateSkip = true
