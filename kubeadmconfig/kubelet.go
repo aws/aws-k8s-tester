@@ -20,16 +20,18 @@ type Kubelet struct {
 	AnonymousAuth       bool   `json:"anonymous-auth,omitempty" kubelet:"anonymous-auth"`
 	CgroupDriver        string `json:"cgroup-driver,omitempty" kubelet:"cgroup-driver"`
 	CgroupRoot          string `json:"cgroup-root,omitempty" kubelet:"cgroup-root"`
-	CadvisorPort        int    `json:"cadvisor-port,omitempty" kubelet:"cadvisor-port" allow-zero-value:"true"`
-	RotateCertificates  bool   `json:"rotate-certificates,omitempty" kubelet:"rotate-certificates"`
-	ClientCAFile        string `json:"client-ca-file,omitempty" kubelet:"client-ca-file"`
-	CloudProvider       string `json:"cloud-provider,omitempty" kubelet:"cloud-provider"`
+	// CadvisorPort int `json:"cadvisor-port,omitempty" kubelet:"cadvisor-port" allow-zero-value:"true"`
+	RotateCertificates bool   `json:"rotate-certificates,omitempty" kubelet:"rotate-certificates"`
+	ClientCAFile       string `json:"client-ca-file,omitempty" kubelet:"client-ca-file"`
+	CloudProvider      string `json:"cloud-provider,omitempty" kubelet:"cloud-provider"`
+
 	// ClusterDNS is a comma-separated list of DNS server IP addresses.
 	// See https://kubernetes.io/docs/tasks/administer-cluster/dns-custom-nameservers/#introduction for more detail.
 	ClusterDNS string `json:"cluster-dns,omitempty" kubelet:"cluster-dns"`
 	// ClusterDomain is by default "cluster.local".
 	// See https://kubernetes.io/docs/tasks/administer-cluster/dns-custom-nameservers/#introduction for more detail.
-	ClusterDomain           string `json:"cluster-domain,omitempty" kubelet:"cluster-domain"`
+	ClusterDomain string `json:"cluster-domain,omitempty" kubelet:"cluster-domain"`
+
 	AuthorizationMode       string `json:"authorization-mode,omitempty" kubelet:"authorization-mode"`
 	EnableDebuggingHandlers bool   `json:"enable-debugging-handlers,omitempty" kubelet:"enable-debugging-handlers"`
 	EvictionHard            string `json:"eviction-hard,omitempty" kubelet:"eviction-hard"`
@@ -58,7 +60,6 @@ var defaultKubelet = Kubelet{
 	AuthorizationMode:   "Webhook",
 	ClientCAFile:        "/etc/kubernetes/pki/ca.crt",
 	CgroupDriver:        "systemd",
-	CadvisorPort:        0,
 	RotateCertificates:  true,
 	V:                   2,
 }
