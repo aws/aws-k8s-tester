@@ -21,6 +21,10 @@ func TestKubeadm(t *testing.T) {
 	}
 
 	cfg := kubeadmconfig.NewDefault()
+	if err := cfg.ValidateAndSetDefaults(); err != nil {
+		t.Fatal(err)
+	}
+
 	dp, err := kubeadm.NewDeployer(cfg)
 	if err != nil {
 		t.Fatal(err)
