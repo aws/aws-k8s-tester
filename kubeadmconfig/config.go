@@ -421,6 +421,13 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 	cfg.EC2MasterNodes.AWSRegion = cfg.AWSRegion
 	cfg.EC2WorkerNodes.AWSRegion = cfg.AWSRegion
 
+	// let master node EC2 deployer create SSH key
+	// and share the same SSH key for master and worker nodes
+	cfg.EC2WorkerNodes.KeyName = cfg.EC2MasterNodes.KeyName
+	cfg.EC2WorkerNodes.KeyPath = cfg.EC2MasterNodes.KeyPath
+	cfg.EC2WorkerNodes.KeyCreateSkip = true
+	cfg.EC2WorkerNodes.KeyCreated = false
+
 	for _, p := range masterNodesPorts {
 		_, ok := cfg.EC2MasterNodes.IngressRulesTCP[p]
 		if !ok {

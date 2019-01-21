@@ -816,10 +816,7 @@ func (md *embedded) terminate() error {
 		}
 	}
 
-	err := md.uploadLogs()
-	if err == nil {
-		md.lg.Info("uploaded all nodes logs")
-	} else {
+	if err := md.uploadLogs(); err != nil {
 		md.lg.Warn("failed to upload all nodes logs", zap.Error(err))
 	}
 

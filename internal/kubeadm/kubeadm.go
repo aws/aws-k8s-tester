@@ -272,8 +272,9 @@ func (md *embedded) Create() (err error) {
 	////////////////////////////////////////////////////////////////////////
 
 	////////////////////////////////////////////////////////////////////////
-	err = md.uploadLogs()
-	md.lg.Info("uploaded logs", zap.Error(err))
+	if err = md.uploadLogs(); err != nil {
+		md.lg.Warn("failed to upload logs", zap.Error(err))
+	}
 	////////////////////////////////////////////////////////////////////////
 
 	////////////////////////////////////////////////////////////////////////
@@ -292,8 +293,9 @@ func (md *embedded) Terminate() error {
 }
 
 func (md *embedded) terminate() (err error) {
-	err = md.uploadLogs()
-	md.lg.Info("uploaded logs", zap.Error(err))
+	if err = md.uploadLogs(); err != nil {
+		md.lg.Warn("failed to upload logs", zap.Error(err))
+	}
 
 	md.lg.Info("terminating kubeadm")
 
