@@ -66,14 +66,18 @@ type scriptInit struct {
 // make sure to run as root, otherwise "[ERROR IsPrivilegedUser]: user is not running as root".
 const scriptInitTmpl = `#!/usr/bin/env bash
 
-sudo kubeadm init {{ .Flags }} 1>>/var/log/kubeadm-init.log 2>&1
-
+touch /var/log/kubeadm-init.log
 mkdir -p /home/ec2-user/.kube
+mkdir -p /etc/kubernetes/pki/
+sudo kubeadm init {{ .Flags }} 1>>/var/log/kubeadm-init.log 2>&1
+`
+
+/*
 sudo cp -i /etc/kubernetes/admin.conf /home/ec2-user/.kube/config
 sudo chown $(id -u):$(id -g) /home/ec2-user/.kube/config
 sudo chown {{ .UserName }}:{{ .UserName }} /home/ec2-user/.kube/config
 find /home/ec2-user/.kube/ 1>>/var/log/kubeadm-init.log 2>&1
-`
+*/
 
 // Flags returns the list of "kubeadm init" flags.
 // Make sure to validate the configuration with "ValidateAndSetDefaults".
