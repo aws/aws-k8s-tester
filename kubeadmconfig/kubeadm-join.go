@@ -43,10 +43,6 @@ func (ka *KubeadmJoin) Flags() (flags []string, err error) {
 			continue
 		}
 		allowZeroValue := tp.Field(i).Tag.Get("allow-zero-value") == "true"
-		fieldName := tp.Field(i).Name
-		if !strings.HasPrefix(fieldName, "Join") {
-			continue
-		}
 
 		switch vv.Field(i).Type().Kind() {
 		case reflect.String:

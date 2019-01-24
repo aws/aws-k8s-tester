@@ -66,9 +66,9 @@ type scriptInit struct {
 // make sure to run as root, otherwise "[ERROR IsPrivilegedUser]: user is not running as root".
 const scriptInitTmpl = `#!/usr/bin/env bash
 
-touch /var/log/kubeadm-init.log
-mkdir -p /home/ec2-user/.kube
-mkdir -p /etc/kubernetes/pki/
+sudo touch /var/log/kubeadm-init.log
+sudo mkdir -p /home/ec2-user/.kube
+sudo mkdir -p /etc/kubernetes/pki/
 sudo kubeadm init {{ .Flags }} 1>>/var/log/kubeadm-init.log 2>&1
 `
 
@@ -89,10 +89,6 @@ func (ka *KubeadmInit) Flags() (flags []string, err error) {
 			continue
 		}
 		allowZeroValue := tp.Field(i).Tag.Get("allow-zero-value") == "true"
-		fieldName := tp.Field(i).Name
-		if !strings.HasPrefix(fieldName, "Init") {
-			continue
-		}
 
 		switch vv.Field(i).Type().Kind() {
 		case reflect.String:

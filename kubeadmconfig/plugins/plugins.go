@@ -43,6 +43,7 @@ net.bridge.bridge-nf-call-ip6tables = 1
 net.bridge.bridge-nf-call-iptables = 1
 EOF
 sudo cp /tmp/k8s.conf /etc/sysctl.d/k8s.conf
+
 sudo sysctl --system
 sudo sysctl net.bridge.bridge-nf-call-iptables=1
 
@@ -56,11 +57,14 @@ RELEASE=v{{ .Version }}
 
 cd /usr/bin
 sudo rm -f /usr/bin/{kubeadm,kubelet,kubectl}
-
 sudo curl -L --remote-name-all https://storage.googleapis.com/kubernetes-release/release/${RELEASE}/bin/linux/amd64/{kubeadm,kubelet,kubectl}
 sudo chmod +x {kubeadm,kubelet,kubectl}
+cd ${HOME}
 
 sudo systemctl stop kubelet.service || true
+sudo systemctl enable kubelet.service || true
+
+sudo mkdir -p /var/lib/kubernetes/
 sudo mkdir -p /var/lib/kubelet/
 
 rm -f /tmp/kubelet.service
@@ -84,13 +88,15 @@ WantedBy=multi-user.target
 EOF
 cat /tmp/kubelet.service
 
+sudo rm -f /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
 sudo mkdir -p /etc/systemd/system/kubelet.service.d
 sudo cp /tmp/kubelet.service /etc/systemd/system/kubelet.service
 
-crictl --version
-
 sudo systemctl daemon-reload
+sudo systemctl stop kubelet.service || true
 sudo systemctl cat kubelet.service
+
+crictl --version
 ##################################
 
 `

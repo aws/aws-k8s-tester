@@ -20,10 +20,9 @@ type Kubelet struct {
 	AnonymousAuth       bool   `json:"anonymous-auth,omitempty" kubelet:"anonymous-auth"`
 	CgroupDriver        string `json:"cgroup-driver,omitempty" kubelet:"cgroup-driver"`
 	CgroupRoot          string `json:"cgroup-root,omitempty" kubelet:"cgroup-root"`
-	// CadvisorPort int `json:"cadvisor-port,omitempty" kubelet:"cadvisor-port" allow-zero-value:"true"`
-	RotateCertificates bool   `json:"rotate-certificates,omitempty" kubelet:"rotate-certificates"`
-	ClientCAFile       string `json:"client-ca-file,omitempty" kubelet:"client-ca-file"`
-	CloudProvider      string `json:"cloud-provider,omitempty" kubelet:"cloud-provider"`
+	RotateCertificates  bool   `json:"rotate-certificates,omitempty" kubelet:"rotate-certificates"`
+	ClientCAFile        string `json:"client-ca-file,omitempty" kubelet:"client-ca-file"`
+	CloudProvider       string `json:"cloud-provider,omitempty" kubelet:"cloud-provider"`
 
 	// ClusterDNS is a comma-separated list of DNS server IP addresses.
 	// See https://kubernetes.io/docs/tasks/administer-cluster/dns-custom-nameservers/#introduction for more detail.
@@ -58,10 +57,13 @@ var defaultKubelet = Kubelet{
 	ClusterDNS:          "10.96.0.10",
 	ClusterDomain:       "cluster.local",
 	AuthorizationMode:   "Webhook",
-	ClientCAFile:        "/etc/kubernetes/pki/ca.crt",
-	CgroupDriver:        "systemd",
-	RotateCertificates:  true,
-	V:                   2,
+
+	CgroupDriver: "systemd",
+
+	// ClientCAFile: "/etc/kubernetes/pki/ca.crt",
+	RotateCertificates: true,
+
+	V: 2,
 }
 
 func newDefaultKubelet() *Kubelet {

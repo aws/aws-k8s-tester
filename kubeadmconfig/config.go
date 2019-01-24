@@ -120,7 +120,7 @@ func NewDefault() *Config {
 }
 
 // curl -sSL https://dl.k8s.io/release/stable.txt
-var defaultVer = "1.12.2"
+var defaultVer = "1.13.0"
 
 func init() {
 	if strings.HasPrefix(defaultVer, "v") {
@@ -174,7 +174,7 @@ func init() {
 
 	// package "internal/ec2" defaults
 	// Amazon Linux 2 AMI (HVM), SSD Volume Type
-	// ImageID:  "ami-01bbe152bf19d0289"
+	// ImageID:  "ami-032509850cf9ee54e"
 	// UserName: "ec2-user"
 	defaultConfig.EC2MasterNodes.Plugins = []string{
 		"update-amazon-linux-2",

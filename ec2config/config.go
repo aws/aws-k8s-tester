@@ -107,9 +107,9 @@ type Config struct {
 	KeyPathBucket string `json:"key-path-bucket,omitempty"`
 	KeyPathURL    string `json:"key-path-url,omitempty"`
 	// KeyCreateSkip is true to indicate that EC2 key pair has been created, so needs no creation.
-	KeyCreateSkip bool `json:"key-created,omitempty"`
+	KeyCreateSkip bool `json:"key-create-skip"`
 	// KeyCreated is true to indicate that EC2 key pair has been created, so needs be cleaned later.
-	KeyCreated bool `json:"key-created,omitempty"`
+	KeyCreated bool `json:"key-created"`
 
 	// VPCCIDR is the VPC CIDR.
 	VPCCIDR string `json:"vpc-cidr"`
@@ -120,9 +120,9 @@ type Config struct {
 	// Set this to false, if the VPC is reused from somewhere else, so the original VPC creator deletes the VPC.
 	VPCCreated bool `json:"vpc-created"`
 	// InternetGatewayID is the internet gateway ID.
-	InternetGatewayID string `json:"internet-gateway-id,omitempty"`
+	InternetGatewayID string `json:"internet-gateway-id"`
 	// RouteTableIDs is the list of route table IDs.
-	RouteTableIDs []string `json:"route-table-ids,omitempty"`
+	RouteTableIDs []string `json:"route-table-ids"`
 
 	// SubnetIDs is a list of subnet IDs to use.
 	// If empty, it will fetch subnets from a given or created VPC.
@@ -240,15 +240,17 @@ var defaultConfig = Config{
 	UploadTesterLogs:       false,
 	UploadBucketExpireDays: 2,
 
-	// Amazon Linux 2 AMI (HVM), SSD Volume Type, amzn2-ami-hvm-2.0.20181114-x86_64-gp2
-	ImageID:  "ami-01bbe152bf19d0289",
+	// Amazon Linux 2 AMI (HVM), SSD Volume Type
+	ImageID:  "ami-032509850cf9ee54e",
 	UserName: "ec2-user",
 	Plugins: []string{
 		"update-amazon-linux-2",
+		"install-start-docker-amazon-linux-2",
+		// "install-kubeadm-amazon-linux-2-1.13.0",
 	},
 
-	// 4 vCPU, 15 GB RAM
-	InstanceType: "m3.xlarge",
+	// 2 vCPU, 8 GB RAM
+	InstanceType: "m5.large",
 	ClusterSize:  1,
 
 	AssociatePublicIPAddress: true,

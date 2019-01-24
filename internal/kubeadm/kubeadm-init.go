@@ -9,81 +9,8 @@ import (
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/internal/ssh"
 	"github.com/aws/aws-k8s-tester/kubeadmconfig"
-	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"go.uber.org/zap"
 )
-
-func writeKubeadmInitScript(kubeadmConfiog kubeadmconfig.KubeadmInit) (p string, err error) {
-	var sc string
-	sc, err = kubeadmConfiog.Script()
-	if err != nil {
-		return "", fmt.Errorf("failed to create kubelet sysconfig (%v)", err)
-	}
-	p, err = fileutil.WriteTempFile([]byte(sc))
-	if err != nil {
-		return "", fmt.Errorf("failed to write kubelet sysconfig file (%v)", err)
-	}
-	return p, nil
-}
-
-func sendKubeadmInitScript(
-	lg *zap.Logger,
-	ec2Config ec2config.Config,
-	target ec2config.Instance,
-	filePathToSend string,
-) (err error) {
-	var ss ssh.SSH
-	ss, err = ssh.New(ssh.Config{
-		Logger:        lg,
-		KeyPath:       ec2Config.KeyPath,
-		PublicIP:      target.PublicIP,
-		PublicDNSName: target.PublicDNSName,
-		UserName:      ec2Config.UserName,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to create a SSH to %q(%q) (error %v)", ec2Config.ClusterName, target.InstanceID, err)
-	}
-	if err = ss.Connect(); err != nil {
-		return fmt.Errorf("failed to connect to %q(%q) (error %v)", ec2Config.ClusterName, target.InstanceID, err)
-	}
-	defer ss.Close()
-
-	remotePath := fmt.Sprintf("/home/%s/kubelet.sysconfig", ec2Config.UserName)
-	_, err = ss.Send(
-		filePathToSend,
-		remotePath,
-		ssh.WithTimeout(15*time.Second),
-		ssh.WithRetry(3, 3*time.Second),
-	)
-	if err != nil {
-		return fmt.Errorf("failed to send %q to %q for %q(%q) (error %v)", filePathToSend, remotePath, ec2Config.ClusterName, target.InstanceID, err)
-	}
-
-	copyCmd := fmt.Sprintf("sudo mkdir -p /etc/sysconfig/ && sudo cp %s /etc/sysconfig/kubelet", remotePath)
-	_, err = ss.Run(
-		copyCmd,
-		ssh.WithTimeout(15*time.Second),
-		ssh.WithRetry(3, 3*time.Second),
-	)
-	if err != nil {
-		return fmt.Errorf("failed to %q for %q(%q) (error %v)", copyCmd, ec2Config.ClusterName, target.InstanceID, err)
-	}
-
-	catCmd := "sudo cat /etc/sysconfig/kubelet"
-	var out []byte
-	out, err = ss.Run(
-		catCmd,
-		ssh.WithTimeout(15*time.Second),
-		ssh.WithRetry(3, 3*time.Second),
-	)
-	if err != nil || len(out) == 0 {
-		return fmt.Errorf("failed to %q for %q(%q) (error %v)", catCmd, ec2Config.ClusterName, target.InstanceID, err)
-	}
-
-	fmt.Println("/etc/sysconfig/kubelet:", string(out))
-
-	return nil
-}
 
 func runKubeadmInit(
 	lg *zap.Logger,
@@ -143,7 +70,7 @@ joinReady:
 	for time.Now().UTC().Sub(retryStart) < 10*time.Minute {
 		var kubeadmInitOut []byte
 		kubeadmInitOut, err = ss.Run(
-			"cat /var/log/kubeadm-init.log",
+			"sudo cat /var/log/kubeadm-init.log",
 			ssh.WithRetry(15, 5*time.Second),
 			ssh.WithTimeout(15*time.Second),
 		)
