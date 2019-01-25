@@ -33,18 +33,19 @@ func (ss scripts) Swap(i, j int)      { ss[i], ss[j] = ss[j], ss[i] }
 func (ss scripts) Less(i, j int) bool { return keyPriorities[ss[i].key] < keyPriorities[ss[j].key] }
 
 var keyPriorities = map[string]int{ // in the order of:
-	"update-amazon-linux-2":                1,
-	"update-ubuntu":                        2,
-	"install-go":                           3,
-	"install-go-amazon-linux-2":            4,
-	"install-csi":                          5,
-	"install-etcd":                         6,
-	"install-aws-k8s-tester":               7,
-	"install-wrk":                          8,
-	"install-alb":                          9,
-	"install-start-docker-amazon-linux-2":  10,
-	"install-kubeadm-amazon-linux-2": 11,
-	"install-kubernetes-amazon-linux-2":    12,
+	"update-amazon-linux-2":               1,
+	"update-ubuntu":                       2,
+	"install-go":                          3,
+	"install-go-amazon-linux-2":           4,
+	"install-csi":                         5,
+	"install-etcd":                        6,
+	"install-aws-k8s-tester":              7,
+	"install-wrk":                         8,
+	"install-alb":                         9,
+	"install-start-docker-amazon-linux-2": 10,
+	"install-start-docker-ubuntu":         11,
+	"install-kubeadm-amazon-linux-2":      12,
+	"install-kubernetes-amazon-linux-2":   13,
 }
 
 func convertToScript(userName, plugin string) (script, error) {
@@ -151,6 +152,12 @@ make server
 		return script{
 			key:  plugin,
 			data: installStartDockerAmazonLinux2,
+		}, nil
+
+	case plugin == "install-start-docker-ubuntu":
+		return script{
+			key:  plugin,
+			data: installStartDockerUbuntu,
 		}, nil
 
 	case strings.HasPrefix(plugin, "install-kubeadm-amazon-linux-2-"):
@@ -564,3 +571,30 @@ cat > /etc/docker/daemon.json <<EOF
 EOF
 mkdir -p /etc/systemd/system/docker.service.d
 */
+
+const installStartDockerUbuntu = `
+
+################################## install Docker on Ubuntu
+sudo apt update -y
+sudo apt install -y apt-transport-https ca-certificates curl software-properties-common
+
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+
+sudo apt update -y
+apt-cache policy docker-ce || true
+sudo apt install -y docker-ce
+
+sudo systemctl start docker || true
+sudo systemctl status docker --full --no-pager || true
+sudo usermod -aG docker ubuntu || true
+
+# su - ubuntu
+# or logout and login to use docker without 'sudo'
+id -nG
+sudo docker version
+sudo docker info
+
+##################################
+
+`
