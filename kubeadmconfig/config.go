@@ -23,20 +23,20 @@ import (
 type Config struct {
 	// Tag is the tag used for S3 bucket name.
 	// If empty, deployer auto-populates it.
-	Tag string `json:"tag,omitempty"`
+	Tag string `json:"tag"`
 	// ClusterName is the cluster name.
 	// If empty, deployer auto-populates it.
-	ClusterName string `json:"cluster-name,omitempty"`
+	ClusterName string `json:"cluster-name"`
 
 	// WaitBeforeDown is the duration to sleep before cluster tear down.
-	WaitBeforeDown time.Duration `json:"wait-before-down,omitempty"`
+	WaitBeforeDown time.Duration `json:"wait-before-down"`
 	// Down is true to automatically tear down cluster in "test".
 	// Deployer implementation should not call "Down" inside "Up" method.
 	// This is meant to be used as a flag for test.
 	Down bool `json:"down"`
 
 	// AWSRegion is the AWS region.
-	AWSRegion string `json:"aws-region,omitempty"`
+	AWSRegion string `json:"aws-region"`
 
 	// EC2MasterNodes defines ec2 instance configuration for Kubernetes master components.
 	EC2MasterNodes *ec2config.Config `json:"ec2-master-nodes"`
@@ -60,16 +60,16 @@ type Config struct {
 	// Deployer is expected to update this file with latest status,
 	// and to make a backup of original configuration
 	// with the filename suffix ".backup.yaml" in the same directory.
-	ConfigPath       string `json:"config-path,omitempty"`
-	ConfigPathBucket string `json:"config-path-bucket,omitempty"`
-	ConfigPathURL    string `json:"config-path-url,omitempty"`
+	ConfigPath       string `json:"config-path"`
+	ConfigPathBucket string `json:"config-path-bucket"`
+	ConfigPathURL    string `json:"config-path-url"`
 
 	// KubeConfigPath is the file path of KUBECONFIG for the kubeadm cluster.
 	// If empty, auto-generate one.
 	// Deployer is expected to delete this on cluster tear down.
-	KubeConfigPath       string `json:"kubeconfig-path,omitempty"`        // read-only to user
-	KubeConfigPathBucket string `json:"kubeconfig-path-bucket,omitempty"` // read-only to user
-	KubeConfigPathURL    string `json:"kubeconfig-path-url,omitempty"`    // read-only to user
+	KubeConfigPath       string `json:"kubeconfig-path"`        // read-only to user
+	KubeConfigPathBucket string `json:"kubeconfig-path-bucket"` // read-only to user
+	KubeConfigPathURL    string `json:"kubeconfig-path-url"`    // read-only to user
 
 	// LogDebug is true to enable debug level logging.
 	LogDebug bool `json:"log-debug"`
@@ -77,18 +77,18 @@ type Config struct {
 	// Logs are appended to the existing file, if any.
 	// Multiple values are accepted. If empty, it sets to 'default', which outputs to stderr.
 	// See https://godoc.org/go.uber.org/zap#Open and https://godoc.org/go.uber.org/zap#Config for more details.
-	LogOutputs []string `json:"log-outputs,omitempty"`
+	LogOutputs []string `json:"log-outputs"`
 	// LogOutputToUploadPath is the aws-k8s-tester log file path to upload to cloud storage.
 	// Must be left empty.
 	// This will be overwritten by cluster name.
-	LogOutputToUploadPath       string `json:"log-output-to-upload-path,omitempty"`
-	LogOutputToUploadPathBucket string `json:"log-output-to-upload-path-bucket,omitempty"`
-	LogOutputToUploadPathURL    string `json:"log-output-to-upload-path-url,omitempty"`
+	LogOutputToUploadPath       string `json:"log-output-to-upload-path"`
+	LogOutputToUploadPathBucket string `json:"log-output-to-upload-path-bucket"`
+	LogOutputToUploadPathURL    string `json:"log-output-to-upload-path-url"`
 
 	// LogsMasterNodes is a list of master node log file paths, fetched via SSH.
-	LogsMasterNodes map[string]string `json:"logs-master-nodes,omitempty"`
+	LogsMasterNodes map[string]string `json:"logs-master-nodes"`
 	// LogsWorkerNodes is a list of worker node log file paths, fetched via SSH.
-	LogsWorkerNodes map[string]string `json:"logs-worker-nodes,omitempty"`
+	LogsWorkerNodes map[string]string `json:"logs-worker-nodes"`
 
 	// UploadTesterLogs is true to auto-upload log files.
 	UploadTesterLogs bool `json:"upload-tester-logs"`
@@ -96,12 +96,12 @@ type Config struct {
 	UploadKubeConfig bool `json:"upload-kubeconfig"`
 
 	// LoadBalancerName is the name of the AWS load balancer.
-	LoadBalancerName string `json:"load-balancer-name,omitempty"`
+	LoadBalancerName string `json:"load-balancer-name"`
 	// LoadBalancerDNSName is the DNS name output from load balancer creation.
-	LoadBalancerDNSName string `json:"load-balancer-dns-name,omitempty"`
+	LoadBalancerDNSName string `json:"load-balancer-dns-name"`
 	// LoadBalancerURL is the URL of the AWS load balancer.
 	// Used for client-side KUBECONFIG access.
-	LoadBalancerURL string `json:"load-balancer-dns-name,omitempty"`
+	LoadBalancerURL string `json:"load-balancer-dns-name"`
 	// LoadBalancerCreated is true to indicate that load balancer has been created,
 	// thus needs clean-up on test complete.
 	LoadBalancerCreated bool `json:"load-balancer-created"`
@@ -110,7 +110,7 @@ type Config struct {
 	LoadBalancerRegistered bool `json:"load-balancer-registered"`
 
 	// TestTimeout is the test operation timeout.
-	TestTimeout time.Duration `json:"test-timeout,omitempty"`
+	TestTimeout time.Duration `json:"test-timeout"`
 }
 
 // NewDefault returns a copy of the default configuration.

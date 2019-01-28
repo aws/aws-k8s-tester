@@ -49,7 +49,9 @@ type Kubelet struct {
 }
 
 var defaultKubelet = Kubelet{
-	UserName:            "ec2-user",
+	// TODO: use Amazon Linux 2 with "ec2-user"
+	UserName:            "ubuntu",
+
 	BootstrapKubeconfig: "/etc/kubernetes/bootstrap-kubelet.conf",
 	Kubeconfig:          "/etc/kubernetes/kubelet.conf",
 	PodManifestPath:     "/etc/kubernetes/manifests",
