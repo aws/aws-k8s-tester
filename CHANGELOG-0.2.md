@@ -3,7 +3,7 @@
 <hr>
 
 
-## [0.2.4](https://github.com/aws/aws-k8s-tester/releases/tag/0.2.4)(2018-01)
+## [0.2.4](https://github.com/aws/aws-k8s-tester/releases/tag/0.2.4)(2018-02-01)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.2.3...0.2.4).
 
@@ -25,7 +25,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.2.3...0.2.4).
 
 ### Dependency
 
-- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.16.18`](https://github.com/aws/aws-sdk-go/releases/tag/v1.16.18) to [`v1.16.20`](https://github.com/aws/aws-sdk-go/releases/tag/v1.16.20).
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.16.26`](https://github.com/aws/aws-sdk-go/releases/tag/v1.16.26) to [`v1.16.20`](https://github.com/aws/aws-sdk-go/releases/tag/v1.16.20).
 - Upgrade `k8s.io/*` to `kubernetes-1.14.0-alpha.1`.
 
 ### Go
