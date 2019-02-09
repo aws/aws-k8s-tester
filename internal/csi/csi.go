@@ -62,7 +62,7 @@ func CreateConfig(vpcID, prNum, githubAccount, githubBranch string) (cfg *ec2con
 	cfg.IngressRulesTCP = map[string]string{"22": "0.0.0.0/0"}
 	cfg.Plugins = []string{
 		"update-amazon-linux-2",
-		"install-go-1.11.3",
+		"install-go-1.11.4",
 	}
 	// If prNum is set to an non-empty string, the master branch of kubernetes-sigs/aws-ebs-csi-driver is used,
 	// regardless of whether or not githubAccount and githubBranch have different values.
