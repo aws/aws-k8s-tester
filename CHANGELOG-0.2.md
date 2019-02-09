@@ -3,7 +3,27 @@
 <hr>
 
 
-## [0.2.4](https://github.com/aws/aws-k8s-tester/releases/tag/0.2.4)(2018-02-01)
+## [0.2.5](https://github.com/aws/aws-k8s-tester/releases/tag/0.2.5)(2019-02-08)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.2.4...0.2.5).
+
+### `internal`
+
+- Use [Go 1.11.4 for CSI testing](https://github.com/aws/aws-k8s-tester/pull/41).
+
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.16.26`](https://github.com/aws/aws-sdk-go/releases/tag/v1.16.26) to [`v1.16.31`](https://github.com/aws/aws-sdk-go/releases/tag/v1.16.31).
+
+### Go
+
+- Compile with [*Go 1.11.5*](https://golang.org/doc/devel/release.html#go1.11).
+
+
+<hr>
+
+
+## [0.2.4](https://github.com/aws/aws-k8s-tester/releases/tag/0.2.4)(2019-02-01)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.2.3...0.2.4).
 
@@ -25,7 +45,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.2.3...0.2.4).
 
 ### Dependency
 
-- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.16.26`](https://github.com/aws/aws-sdk-go/releases/tag/v1.16.26) to [`v1.16.20`](https://github.com/aws/aws-sdk-go/releases/tag/v1.16.20).
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.16.18`](https://github.com/aws/aws-sdk-go/releases/tag/v1.16.18) to [`v1.16.26`](https://github.com/aws/aws-sdk-go/releases/tag/v1.16.26).
 - Upgrade `k8s.io/*` to `kubernetes-1.14.0-alpha.1`.
 
 ### Go
@@ -36,7 +56,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.2.3...0.2.4).
 <hr>
 
 
-## [0.2.3](https://github.com/aws/aws-k8s-tester/releases/tag/0.2.3)(2018-01-14)
+## [0.2.3](https://github.com/aws/aws-k8s-tester/releases/tag/0.2.3)(2019-01-14)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.2.2...0.2.3).
 
@@ -52,7 +72,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.2.2...0.2.3).
 <hr>
 
 
-## [0.2.2](https://github.com/aws/aws-k8s-tester/releases/tag/0.2.2)(2018-01-14)
+## [0.2.2](https://github.com/aws/aws-k8s-tester/releases/tag/0.2.2)(2019-01-14)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.2.1...0.2.2).
 
@@ -72,7 +92,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.2.1...0.2.2).
 <hr>
 
 
-## [0.2.1](https://github.com/aws/aws-k8s-tester/releases/tag/0.2.1)(2018-01-08)
+## [0.2.1](https://github.com/aws/aws-k8s-tester/releases/tag/0.2.1)(2019-01-08)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.2.0...0.2.1).
 
@@ -92,7 +112,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.2.0...0.2.1).
 <hr>
 
 
-## [0.2.0](https://github.com/aws/aws-k8s-tester/releases/tag/0.2.0)(2018-01-07)
+## [0.2.0](https://github.com/aws/aws-k8s-tester/releases/tag/0.2.0)(2019-01-07)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.1.9...0.2.0).
 
