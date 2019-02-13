@@ -504,11 +504,26 @@ func Load(p string) (cfg *Config, err error) {
 
 // SSHCommands returns the SSH commands.
 func (cfg *Config) SSHCommands() (s string) {
-	s = fmt.Sprintf("\n\n# change SSH key permission\nchmod 400 %s\n\n", cfg.KeyPath)
+	s = fmt.Sprintf(`
+# change SSH key permission
+chmod 400 %s
+`, cfg.KeyPath)
+
 	for _, v := range cfg.Instances {
-		s += fmt.Sprintf(`ssh -o "StrictHostKeyChecking no" -i %s %s@%s
-`, cfg.KeyPath, cfg.UserName, v.PublicDNSName)
+		s += fmt.Sprintf(`# ssh into the machine
+ssh -o "StrictHostKeyChecking no" -i %s %s@%s
+# download to local machine
+scp -i %s %s@%s:REMOTE_FILE_PATH LOCAL_FILE_PATH
+# upload to remote machine
+scp -i %s LOCAL_FILE_PATH %s@%s:REMOTE_FILE_PATH
+
+`,
+			cfg.KeyPath, cfg.UserName, v.PublicDNSName,
+			cfg.KeyPath, cfg.UserName, v.PublicDNSName,
+			cfg.KeyPath, cfg.UserName, v.PublicDNSName,
+		)
 	}
+
 	return s + "\n"
 }
 
