@@ -241,7 +241,7 @@ var defaultConfig = Config{
 	UploadBucketExpireDays: 2,
 
 	// Amazon Linux 2 AMI (HVM), SSD Volume Type
-	ImageID:  "ami-032509850cf9ee54e",
+	ImageID:  "ami-0291b991e70d83d33",
 	UserName: "ec2-user",
 	Plugins: []string{
 		"update-amazon-linux-2",
