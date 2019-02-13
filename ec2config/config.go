@@ -240,8 +240,9 @@ var defaultConfig = Config{
 	UploadTesterLogs:       false,
 	UploadBucketExpireDays: 2,
 
+	// TODO: use Amazon EKS-optimized AMI, https://docs.aws.amazon.com/eks/latest/userguide/eks-optimized-ami.html
 	// Amazon Linux 2 AMI (HVM), SSD Volume Type
-	ImageID:  "ami-0291b991e70d83d33",
+	ImageID:  "ami-032509850cf9ee54e",
 	UserName: "ec2-user",
 	Plugins: []string{
 		"update-amazon-linux-2",

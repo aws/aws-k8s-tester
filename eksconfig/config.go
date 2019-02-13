@@ -415,7 +415,8 @@ func genTag() string {
 var defaultConfig = Config{
 	TestMode: "embedded",
 
-	AWSK8sTesterDownloadURL:        "https://github.com/aws/aws-k8s-tester/releases/download/0.2.4/aws-k8s-tester-0.2.4-linux-amd64",
+	// https://github.com/aws/aws-k8s-tester/releases
+	AWSK8sTesterDownloadURL:        "https://github.com/aws/aws-k8s-tester/releases/download/0.2.5/aws-k8s-tester-0.2.5-linux-amd64",
 	AWSK8sTesterPath:               "/tmp/aws-k8s-tester/aws-k8s-tester",
 	KubectlDownloadURL:             "https://amazon-eks.s3-us-west-2.amazonaws.com/1.11.5/2018-12-06/bin/linux/amd64/kubectl",
 	KubectlPath:                    "/tmp/aws-k8s-tester/kubectl",
@@ -440,8 +441,8 @@ var defaultConfig = Config{
 	// keep in-sync with the default value in https://godoc.org/k8s.io/kubernetes/test/e2e/framework#GetSigner
 	WorkerNodePrivateKeyPath: filepath.Join(homedir.HomeDir(), ".ssh", "kube_aws_rsa"),
 
-	// Amazon EKS-optimized AMI, https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html
-	WorkerNodeAMI:          "ami-0a2abab4107669c1b",
+	// Amazon EKS-optimized AMI, https://docs.aws.amazon.com/eks/latest/userguide/eks-optimized-ami.html
+	WorkerNodeAMI:          "ami-081099ec932b99961",
 	WorkerNodeInstanceType: "m3.xlarge",
 	WorkerNodeASGMin:       1,
 	WorkerNodeASGMax:       1,
