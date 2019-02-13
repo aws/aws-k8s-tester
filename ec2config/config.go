@@ -511,7 +511,7 @@ chmod 400 %s
 `, cfg.KeyPath)
 
 	for _, v := range cfg.Instances {
-		s += fmt.Sprintf(`# ssh into the machine
+		s += fmt.Sprintf(`# ssh into remote machine (private IP %q)
 ssh -o "StrictHostKeyChecking no" -i %s %s@%s
 # download to local machine
 scp -i %s %s@%s:_REMOTE_PATH_ _LOCAL_PATH_
@@ -519,6 +519,7 @@ scp -i %s %s@%s:_REMOTE_PATH_ _LOCAL_PATH_
 scp -i %s _LOCAL_PATH_ %s@%s:_REMOTE_PATH_
 
 `,
+			v.PrivateIP,
 			cfg.KeyPath, cfg.UserName, v.PublicDNSName,
 			cfg.KeyPath, cfg.UserName, v.PublicDNSName,
 			cfg.KeyPath, cfg.UserName, v.PublicDNSName,
