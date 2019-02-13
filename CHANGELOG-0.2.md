@@ -1,5 +1,30 @@
 
 
+
+<hr>
+
+
+## [0.2.6](https://github.com/aws/aws-k8s-tester/releases/tag/0.2.6)(2019-02-13)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.2.5...0.2.6).
+
+### `ec2config`
+
+- Update [default Amazon Linux 2 AMI](https://github.com/aws/aws-k8s-tester/commit/8a5b9d93c911d1b4d32d87b16714ce18d22b7c19).
+
+### `eksconfig`
+
+- Update [default Amazon Linux 2 AMI](https://github.com/aws/aws-k8s-tester/commit/8a5b9d93c911d1b4d32d87b16714ce18d22b7c19).
+
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.16.31`](https://github.com/aws/aws-sdk-go/releases/tag/v1.16.31) to [`v1.16.33`](https://github.com/aws/aws-sdk-go/releases/tag/v1.16.33).
+
+### Go
+
+- Compile with [*Go 1.11.5*](https://golang.org/doc/devel/release.html#go1.11).
+
+
 <hr>
 
 
