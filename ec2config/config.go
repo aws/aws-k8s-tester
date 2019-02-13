@@ -507,15 +507,16 @@ func (cfg *Config) SSHCommands() (s string) {
 	s = fmt.Sprintf(`
 # change SSH key permission
 chmod 400 %s
+
 `, cfg.KeyPath)
 
 	for _, v := range cfg.Instances {
 		s += fmt.Sprintf(`# ssh into the machine
 ssh -o "StrictHostKeyChecking no" -i %s %s@%s
 # download to local machine
-scp -i %s %s@%s:REMOTE_FILE_PATH LOCAL_FILE_PATH
+scp -i %s %s@%s:_REMOTE_PATH_ _LOCAL_PATH_
 # upload to remote machine
-scp -i %s LOCAL_FILE_PATH %s@%s:REMOTE_FILE_PATH
+scp -i %s _LOCAL_PATH_ %s@%s:_REMOTE_PATH_
 
 `,
 			cfg.KeyPath, cfg.UserName, v.PublicDNSName,
