@@ -1,5 +1,20 @@
 
 
+<hr>
+
+
+## [0.2.8](https://github.com/aws/aws-k8s-tester/releases/tag/0.2.8)(2019-02-20)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.2.7...0.2.8).
+
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.16.35`](https://github.com/aws/aws-sdk-go/releases/tag/v1.16.35) to [`v1.17.1`](https://github.com/aws/aws-sdk-go/releases/tag/v1.17.1).
+
+### Go
+
+- Compile with [*Go 1.11.5*](https://golang.org/doc/devel/release.html#go1.11).
+
 
 <hr>
 
