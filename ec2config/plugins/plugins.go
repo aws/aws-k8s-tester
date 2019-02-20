@@ -201,6 +201,7 @@ func Create(userName, customScript string, plugins []string) (data string, err e
 	return data, nil
 }
 
+// https://github.com/awslabs/amazon-eks-ami/blob/master/install-worker.sh
 const updateAmazonLinux2 = `
 
 ################################## update Amazon Linux 2
@@ -221,9 +222,39 @@ sudo yum update -y \
   curl \
   unzip \
   screen \
-  mercurial
+  mercurial \
+  aws-cfn-bootstrap \
+  chrony \
+  conntrack \
+  nfs-utils \
+  socat
 
-##################################
+# Make sure Amazon Time Sync Service starts on boot.
+sudo chkconfig chronyd on
+
+# Make sure that chronyd syncs RTC clock to the kernel.
+cat <<EOF | sudo tee -a /etc/chrony.conf
+# This directive enables kernel synchronisation (every 11 minutes) of the
+# real-time clock. Note that it can’t be used along with the 'rtcfile' directive.
+rtcsync
+EOF
+
+curl "https://bootstrap.pypa.io/get-pip.py" -o "get-pip.py"
+sudo python get-pip.py
+rm get-pip.py
+sudo pip install --upgrade awscli
+
+################################################################################
+### iptables ###################################################################
+################################################################################
+
+# Enable forwarding via iptables
+sudo bash -c "/sbin/iptables-save > /etc/sysconfig/iptables"
+
+sudo mv $TEMPLATE_DIR/iptables-restore.service /etc/systemd/system/iptables-restore.service
+
+sudo systemctl daemon-reload
+sudo systemctl enable iptables-restore
 
 `
 const updateUbuntu = `
@@ -524,6 +555,7 @@ const installStartDockerAmazonLinux2 = `
 
 ################################## install Docker on Amazon Linux 2
 
+sudo yum install -y yum-utils device-mapper-persistent-data lvm2
 sudo amazon-linux-extras install docker -y
 
 sudo systemctl daemon-reload
