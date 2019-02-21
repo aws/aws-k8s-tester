@@ -537,10 +537,10 @@ chmod 400 %s
 		s += fmt.Sprintf(`# ssh into remote machine (public IP %q, private IP %q)
 ssh -o "StrictHostKeyChecking no" -i %s %s@%s
 # download to local machine
-scp -i %s %s@%s:_REMOTE_FILE_PATH _LOCAL_FILE_PATH
+scp -i %s %s@%s:REMOTE_FILE_PATH LOCAL_FILE_PATH
 scp -i %s -r %s@%s:REMOTE_DIRECTORY_PATH LOCAL_DIRECTORY_PATH
 # upload to remote machine
-scp -i %s _LOCAL_FILE_PATH %s@%s:_REMOTE_FILE_PATH
+scp -i %s LOCAL_FILE_PATH %s@%s:REMOTE_FILE_PATH
 scp -i %s -r LOCAL_DIRECTORY_PATH %s@%s:REMOTE_DIRECTORY_PATH
 
 `,
