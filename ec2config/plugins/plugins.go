@@ -239,11 +239,14 @@ cat <<EOF | sudo tee -a /etc/chrony.conf
 rtcsync
 EOF
 
+
 curl "https://bootstrap.pypa.io/get-pip.py" -o "get-pip.py"
 sudo python get-pip.py
 rm get-pip.py
 sudo pip install --upgrade awscli
 mkdir -p /home/ec2-user/.aws
+sudo chown -R ec2-user:ec2-user /home/ec2-user/.aws
+
 
 ################################################################################
 ### iptables ###################################################################
