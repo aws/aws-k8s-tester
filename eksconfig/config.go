@@ -442,7 +442,8 @@ var defaultConfig = Config{
 	WorkerNodePrivateKeyPath: filepath.Join(homedir.HomeDir(), ".ssh", "kube_aws_rsa"),
 
 	// Amazon EKS-optimized AMI, https://docs.aws.amazon.com/eks/latest/userguide/eks-optimized-ami.html
-	WorkerNodeAMI:          "ami-081099ec932b99961",
+	// for the corresponding region and version
+	WorkerNodeAMI:          "ami-0c28139856aaf9c3b",
 	WorkerNodeInstanceType: "m3.xlarge",
 	WorkerNodeASGMin:       1,
 	WorkerNodeASGMax:       1,
@@ -768,7 +769,7 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		cfg.AWSCredentialToMountPath = p
 	}
 
-	// overwrite with env
+	// overwrite "AWSCredentialToMountPath" from env "AWS_SHARED_CREDENTIALS_FILE"
 	if os.Getenv("AWS_SHARED_CREDENTIALS_FILE") != "" {
 		p := os.Getenv("AWS_SHARED_CREDENTIALS_FILE")
 		var err error
