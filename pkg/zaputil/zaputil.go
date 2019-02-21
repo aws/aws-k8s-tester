@@ -21,7 +21,10 @@ func New(debug bool, outputs []string) (*zap.Logger, error) {
 			Initial:    100,
 			Thereafter: 100,
 		},
-		Encoding: "json",
+
+		// 'json' or 'console'
+		Encoding: "console",
+
 		EncoderConfig: zapcore.EncoderConfig{
 			TimeKey:        "ts",
 			LevelKey:       "level",
@@ -31,8 +34,8 @@ func New(debug bool, outputs []string) (*zap.Logger, error) {
 			StacktraceKey:  "stacktrace",
 			LineEnding:     zapcore.DefaultLineEnding,
 			EncodeLevel:    zapcore.LowercaseLevelEncoder,
-			EncodeTime:     iso8601TimeEncoder,
-			EncodeDuration: zapcore.SecondsDurationEncoder,
+			EncodeTime:     iso8601UTCTimeEncoder,
+			EncodeDuration: zapcore.StringDurationEncoder,
 			EncodeCaller:   zapcore.ShortCallerEncoder,
 		},
 		OutputPaths:      outputs,
@@ -41,6 +44,6 @@ func New(debug bool, outputs []string) (*zap.Logger, error) {
 	return lcfg.Build()
 }
 
-func iso8601TimeEncoder(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
+func iso8601UTCTimeEncoder(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
 	enc.AppendString(t.UTC().Format("2006-01-02T15:04:05.000Z0700"))
 }
