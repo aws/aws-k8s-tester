@@ -243,6 +243,7 @@ curl "https://bootstrap.pypa.io/get-pip.py" -o "get-pip.py"
 sudo python get-pip.py
 rm get-pip.py
 sudo pip install --upgrade awscli
+mkdir -p /home/ec2-user/.aws
 
 ################################################################################
 ### iptables ###################################################################
