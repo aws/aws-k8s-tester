@@ -23,7 +23,7 @@ func New(debug bool, outputs []string) (*zap.Logger, error) {
 		},
 
 		// 'json' or 'console'
-		Encoding: "console",
+		Encoding: "json",
 
 		EncoderConfig: zapcore.EncoderConfig{
 			TimeKey:        "ts",
