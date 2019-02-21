@@ -42,6 +42,7 @@ type Config struct {
 	// This is required for Kubernetes kubetest plugin.
 	AWSK8sTesterPath string `json:"aws-k8s-tester-path,omitempty"`
 	// AWSK8sTesterDownloadURL is the download URL to download "aws-k8s-tester" binary from.
+	// It's only used for "kubetest" deployer interface.
 	AWSK8sTesterDownloadURL string `json:"aws-k8s-tester-download-url,omitempty"`
 	// KubectlPath is the path to download the "kubectl".
 	KubectlPath string `json:"kubectl-path,omitempty"`
