@@ -755,8 +755,13 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	if cfg.AWSCredentialToMountPath != "" && os.Getenv("AWS_SHARED_CREDENTIALS_FILE") == "" {
 		p := cfg.AWSCredentialToMountPath
 		if filepath.IsAbs(p) && !exist(p) {
-			return fmt.Errorf("AWSCredentialToMountPath %q does not exist", cfg.AWSCredentialToMountPath)
+			// TODO: if defined, overwrite/create credential file from environmental variables
+			if os.Getenv("AWS_ACCESS_KEY_ID") != "" && os.Getenv("AWS_SECRET_ACCESS_KEY") != "" {
+				return fmt.Errorf("'AWS_ACCESS_KEY_ID' and 'AWS_SECRET_ACCESS_KEY' are defined but not 'AWS_SHARED_CREDENTIALS_FILE', please write those file to %q", cfg.AWSCredentialToMountPath)
+			}
+			return fmt.Errorf("AWSCredentialToMountPath or 'AWS_SHARED_CREDENTIALS_FILE' %q does not exist on disk", cfg.AWSCredentialToMountPath)
 		}
+
 		// expand manually
 		if strings.HasPrefix(p, "~/.aws") ||
 			strings.HasPrefix(p, "$HOME/.aws") ||
@@ -764,7 +769,11 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 			p = filepath.Join(homedir.HomeDir(), ".aws", filepath.Base(p))
 		}
 		if !exist(p) {
-			return fmt.Errorf("AWSCredentialToMountPath %q does not exist", p)
+			// TODO: if defined, overwrite/create credential file from environmental variables
+			if os.Getenv("AWS_ACCESS_KEY_ID") != "" && os.Getenv("AWS_SECRET_ACCESS_KEY") != "" {
+				return fmt.Errorf("'AWS_ACCESS_KEY_ID' and 'AWS_SECRET_ACCESS_KEY' are defined but not 'AWS_SHARED_CREDENTIALS_FILE', please write those file to %q", cfg.AWSCredentialToMountPath)
+			}
+			return fmt.Errorf("AWSCredentialToMountPath or 'AWS_SHARED_CREDENTIALS_FILE' %q does not exist", p)
 		}
 		cfg.AWSCredentialToMountPath = p
 	}

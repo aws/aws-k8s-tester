@@ -73,7 +73,7 @@ To test locally:
 cd ${GOPATH}/src/github.com/aws/aws-k8s-tester
 
 # use darwin to run local tests on Mac
-AWS_K8S_TESTER_EKS_AWS_K8S_TESTER_DOWNLOAD_URL=https://github.com/aws/aws-k8s-tester/releases/download/0.1.9/aws-k8s-tester-0.1.9-$(go env GOOS)-amd64 \
+AWS_K8S_TESTER_EKS_AWS_K8S_TESTER_DOWNLOAD_URL=https://github.com/aws/aws-k8s-tester/releases/download/0.2.9/aws-k8s-tester-0.2.9-$(go env GOOS)-amd64 \
   AWS_K8S_TESTER_EKS_AWS_K8S_TESTER_PATH=/tmp/aws-k8s-tester/aws-k8s-tester \
   AWS_K8S_TESTER_EKS_KUBECTL_DOWNLOAD_URL=https://amazon-eks.s3-us-west-2.amazonaws.com/1.11.5/2018-12-06/bin/$(go env GOOS)/amd64/kubectl \
   AWS_K8S_TESTER_EKS_KUBECTL_PATH=/tmp/aws-k8s-tester/kubectl \
@@ -91,7 +91,7 @@ AWS_K8S_TESTER_EKS_AWS_K8S_TESTER_DOWNLOAD_URL=https://github.com/aws/aws-k8s-te
   AWS_K8S_TESTER_EKS_UPLOAD_TESTER_LOGS=false \
   AWS_K8S_TESTER_EKS_UPLOAD_WORKER_NODE_LOGS=false \
   AWS_K8S_TESTER_EKS_WORKER_NODE_PRIVATE_KEY_PATH=~/.ssh/kube_aws_rsa \
-  AWS_K8S_TESTER_EKS_WORKER_NODE_AMI=ami-094fa4044a2a3cf52 \
+  AWS_K8S_TESTER_EKS_WORKER_NODE_AMI=ami-0c28139856aaf9c3b \
   AWS_K8S_TESTER_EKS_WORKER_NODE_INSTANCE_TYPE=m3.xlarge \
   AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_MIN=1 \
   AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_MAX=1 \
@@ -109,6 +109,6 @@ AWS_K8S_TESTER_EKS_AWS_K8S_TESTER_DOWNLOAD_URL=https://github.com/aws/aws-k8s-te
   AWS_K8S_TESTER_EKS_ALB_TEST_RESPONSE_SIZE=20000 \
   AWS_K8S_TESTER_EKS_ALB_TEST_CLIENT_ERROR_THRESHOLD=500 \
   AWS_K8S_TESTER_EKS_ALB_TEST_EXPECT_QPS=100 \
-  AWS_K8S_TESTER_EKS_ALB_INGRESS_CONTROLLER_IMAGE=quay.io/coreos/alb-ingress-controller:1.0-beta.7 \
+  AWS_K8S_TESTER_EKS_ALB_INGRESS_CONTROLLER_IMAGE=docker.io/amazon/aws-alb-ingress-controller:v1.1.1 \
   ./tests/ginkgo.sh
 ```
