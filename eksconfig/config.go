@@ -518,10 +518,14 @@ func Load(p string) (cfg *Config, err error) {
 		cfg.ALBIngressController = &ALBIngressController{}
 	}
 
+	if cfg.ConfigPath != p {
+		cfg.ConfigPath = p
+	}
 	cfg.ConfigPath, err = filepath.Abs(p)
 	if err != nil {
 		return nil, err
 	}
+
 	if cfg.ClusterState.UpTook != "" {
 		cfg.ClusterState.upTook, err = time.ParseDuration(cfg.ClusterState.UpTook)
 		if err != nil {
@@ -546,13 +550,13 @@ func (cfg *Config) Sync() (err error) {
 			return err
 		}
 	}
+
 	cfg.UpdatedAt = time.Now().UTC()
 	var d []byte
 	d, err = yaml.Marshal(cfg)
 	if err != nil {
 		return err
 	}
-	fmt.Println("writing to:", cfg.ConfigPath)
 	return ioutil.WriteFile(cfg.ConfigPath, d, 0600)
 }
 

@@ -241,7 +241,10 @@ var defaultConfig = Config{
 	UploadBucketExpireDays: 2,
 
 	// TODO: use Amazon EKS-optimized AMI, https://docs.aws.amazon.com/eks/latest/userguide/eks-optimized-ami.html
+
 	// Amazon Linux 2 AMI (HVM), SSD Volume Type
+	// NOTE: make sure to use the latest AMI for the region
+	// e.g. https://us-west-2.console.aws.amazon.com/ec2/v2/home?region=us-west-2#LaunchInstanceWizard:
 	ImageID:  "ami-032509850cf9ee54e",
 	UserName: "ec2-user",
 	Plugins: []string{
@@ -384,7 +387,7 @@ func (cfg *Config) UpdateFromEnvs() error {
 // At the end, it writes populated YAML to aws-k8s-tester config path.
 func (cfg *Config) ValidateAndSetDefaults() (err error) {
 	if len(cfg.LogOutputs) == 0 {
-		return errors.New("EKS LogOutputs is not specified")
+		return errors.New("EC2 LogOutputs is not specified")
 	}
 	if cfg.AWSRegion == "" {
 		return errors.New("empty AWSRegion")
@@ -493,13 +496,33 @@ func Load(p string) (cfg *Config, err error) {
 		cfg.Instances = make(map[string]Instance)
 	}
 
+	if cfg.ConfigPath != p {
+		cfg.ConfigPath = p
+	}
+	cfg.ConfigPath, err = filepath.Abs(p)
+	if err != nil {
+		return nil, err
+	}
+
+	return cfg, nil
+}
+
+// Sync persists current configuration and states to disk.
+func (cfg *Config) Sync() (err error) {
 	if !filepath.IsAbs(cfg.ConfigPath) {
-		cfg.ConfigPath, err = filepath.Abs(p)
+		cfg.ConfigPath, err = filepath.Abs(cfg.ConfigPath)
 		if err != nil {
-			return nil, err
+			return err
 		}
 	}
-	return cfg, nil
+
+	cfg.UpdatedAt = time.Now().UTC()
+	var d []byte
+	d, err = yaml.Marshal(cfg)
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(cfg.ConfigPath, d, 0600)
 }
 
 // SSHCommands returns the SSH commands.
@@ -531,23 +554,6 @@ scp -i %s -r LOCAL_DIRECTORY_PATH %s@%s:REMOTE_DIRECTORY_PATH
 	}
 
 	return s + "\n"
-}
-
-// Sync persists current configuration and states to disk.
-func (cfg *Config) Sync() (err error) {
-	if !filepath.IsAbs(cfg.ConfigPath) {
-		cfg.ConfigPath, err = filepath.Abs(cfg.ConfigPath)
-		if err != nil {
-			return err
-		}
-	}
-	cfg.UpdatedAt = time.Now().UTC()
-	var d []byte
-	d, err = yaml.Marshal(cfg)
-	if err != nil {
-		return err
-	}
-	return ioutil.WriteFile(cfg.ConfigPath, d, 0600)
 }
 
 // BackupConfig stores the original aws-k8s-tester configuration

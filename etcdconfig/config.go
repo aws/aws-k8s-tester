@@ -658,6 +658,9 @@ func Load(p string) (cfg *Config, err error) {
 		return nil, err
 	}
 
+	if cfg.ConfigPath != p {
+		cfg.ConfigPath = p
+	}
 	cfg.ConfigPath, err = filepath.Abs(p)
 	if err != nil {
 		return nil, err
@@ -674,6 +677,7 @@ func (cfg *Config) Sync() (err error) {
 			return err
 		}
 	}
+
 	var d []byte
 	d, err = yaml.Marshal(cfg)
 	if err != nil {
