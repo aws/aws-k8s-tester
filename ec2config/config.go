@@ -525,6 +525,8 @@ scp -i %s -r LOCAL_DIRECTORY_PATH %s@%s:REMOTE_DIRECTORY_PATH
 			cfg.KeyPath, cfg.UserName, v.PublicDNSName,
 			cfg.KeyPath, cfg.UserName, v.PublicDNSName,
 			cfg.KeyPath, cfg.UserName, v.PublicDNSName,
+			cfg.KeyPath, cfg.UserName, v.PublicDNSName,
+			cfg.KeyPath, cfg.UserName, v.PublicDNSName,
 		)
 	}
 
