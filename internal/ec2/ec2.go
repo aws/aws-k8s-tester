@@ -278,17 +278,7 @@ func (md *embedded) Add() (err error) {
 		InstanceInitiatedShutdownBehavior: aws.String("terminate"),
 		UserData:                          aws.String(base64.StdEncoding.EncodeToString([]byte(md.cfg.InitScript))),
 		IamInstanceProfile:                instanceProfileSpecifics,
-		TagSpecifications: []*ec2.TagSpecification{
-			{
-				ResourceType: aws.String("instance"),
-				Tags: []*ec2.Tag{
-					{
-						Key:   aws.String("Name"),
-						Value: aws.String(md.cfg.ClusterName),
-					},
-				},
-			},
-		},
+		TagSpecifications:                 getTags(md.cfg),
 	})
 	if err != nil {
 		return err
@@ -604,17 +594,7 @@ func (md *embedded) createInstances() (err error) {
 					InstanceInitiatedShutdownBehavior: aws.String("terminate"),
 					UserData:                          aws.String(base64.StdEncoding.EncodeToString([]byte(md.cfg.InitScript))),
 					IamInstanceProfile:                instanceProfileSpecifics,
-					TagSpecifications: []*ec2.TagSpecification{
-						{
-							ResourceType: aws.String("instance"),
-							Tags: []*ec2.Tag{
-								{
-									Key:   aws.String("Name"),
-									Value: aws.String(md.cfg.ClusterName),
-								},
-							},
-						},
-					},
+					TagSpecifications:                 getTags(md.cfg),
 				})
 				if err != nil {
 					return err
@@ -648,17 +628,7 @@ func (md *embedded) createInstances() (err error) {
 						InstanceInitiatedShutdownBehavior: aws.String("terminate"),
 						UserData:                          aws.String(base64.StdEncoding.EncodeToString([]byte(md.cfg.InitScript))),
 						IamInstanceProfile:                instanceProfileSpecifics,
-						TagSpecifications: []*ec2.TagSpecification{
-							{
-								ResourceType: aws.String("instance"),
-								Tags: []*ec2.Tag{
-									{
-										Key:   aws.String("Name"),
-										Value: aws.String(md.cfg.ClusterName),
-									},
-								},
-							},
-						},
+						TagSpecifications:                 getTags(md.cfg),
 					})
 					if err != nil {
 						return err
@@ -710,17 +680,7 @@ func (md *embedded) createInstances() (err error) {
 				InstanceInitiatedShutdownBehavior: aws.String("terminate"),
 				UserData:                          aws.String(base64.StdEncoding.EncodeToString([]byte(md.cfg.InitScript))),
 				IamInstanceProfile:                instanceProfileSpecifics,
-				TagSpecifications: []*ec2.TagSpecification{
-					{
-						ResourceType: aws.String("instance"),
-						Tags: []*ec2.Tag{
-							{
-								Key:   aws.String("Name"),
-								Value: aws.String(md.cfg.ClusterName),
-							},
-						},
-					},
-				},
+				TagSpecifications:                 getTags(md.cfg),
 			})
 			if err != nil {
 				return err
@@ -817,6 +777,33 @@ func (md *embedded) createInstances() (err error) {
 		md.wait(mm)
 	}
 	return md.cfg.Sync()
+}
+
+func getTags(cfg *ec2config.Config) (tags []*ec2.TagSpecification) {
+	tags = []*ec2.TagSpecification{
+		{
+			ResourceType: aws.String("instance"),
+			Tags: []*ec2.Tag{
+				{
+					Key:   aws.String("Name"),
+					Value: aws.String(cfg.ClusterName),
+				},
+				{
+					Key:   aws.String(fmt.Sprintf("kubernetes.io/cluster/%s", cfg.ClusterName)),
+					Value: aws.String("owned"),
+				},
+			},
+		},
+	}
+	if len(cfg.Tags) > 0 {
+		for k, v := range cfg.Tags {
+			tags[0].Tags = append(tags[0].Tags, &ec2.Tag{
+				Key:   aws.String(k),
+				Value: aws.String(v),
+			})
+		}
+	}
+	return tags
 }
 
 func (md *embedded) wait(mm map[string]ec2config.Instance) {
