@@ -52,6 +52,8 @@ type Config struct {
 
 	// Tag is the tag used for all cloudformation stacks.
 	Tag string `json:"tag"`
+	// Tags to add additional tags to the EC2 instances.
+	Tags map[string]string `json:"tags"`
 	// ClusterName is an unique ID for cluster.
 	ClusterName string `json:"cluster-name"`
 
@@ -345,7 +347,7 @@ func (cfg *Config) UpdateFromEnvs() error {
 		case reflect.Map:
 			ss := strings.Split(sv, ",")
 			switch fieldName {
-			case "IngressRulesTCP":
+			case "Tags", "IngressRulesTCP":
 				m := reflect.MakeMap(reflect.TypeOf(map[string]string{}))
 				for i := range ss {
 					fields := strings.Split(ss[i], "=")

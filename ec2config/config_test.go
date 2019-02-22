@@ -28,6 +28,7 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EC2_SUBNET_IDS", "a,b,c")
 	os.Setenv("AWS_K8S_TESTER_EC2_SECURITY_GROUP_IDS", "d,e,f")
 	os.Setenv("AWS_K8S_TESTER_EC2_WAIT", "true")
+	os.Setenv("AWS_K8S_TESTER_EC2_TAGS", "kubernetes.io/cluster/a8-ec2-190222-9dxccww=owned")
 	os.Setenv("AWS_K8S_TESTER_EC2_INGRESS_RULES_TCP", "22=0.0.0.0/0,2379-2380=192.168.0.0/8")
 	os.Setenv("AWS_K8S_TESTER_EC2_VPC_CIDR", "192.168.0.0/8")
 	os.Setenv("AWS_K8S_TESTER_EC2_INSTANCE_PROFILE_NAME", "aws-k8s-tester-ec2")
@@ -51,6 +52,7 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWS_K8S_TESTER_EC2_SUBNET_IDS")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_SECURITY_GROUP_IDS")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_WAIT")
+		os.Unsetenv("AWS_K8S_TESTER_EC2_TAGS")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_INGRESS_RULES_TCP")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_VPC_CIDR")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_INSTANCE_PROFILE_NAME")
@@ -113,6 +115,12 @@ func TestEnv(t *testing.T) {
 	}
 	if !cfg.Wait {
 		t.Fatalf("Wait expected true, got %v", cfg.Wait)
+	}
+	tt := map[string]string{
+		"kubernetes.io/cluster/a8-ec2-190222-9dxccww": "owned",
+	}
+	if !reflect.DeepEqual(cfg.Tags, tt) {
+		t.Fatalf("Tags expected %v, got %v", tt, cfg.Tags)
 	}
 	m := map[string]string{
 		"22":        "0.0.0.0/0",
