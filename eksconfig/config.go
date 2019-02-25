@@ -412,11 +412,14 @@ func genTag() string {
 //  - make sure to check both
 var defaultConfig = Config{
 	// https://github.com/aws/aws-k8s-tester/releases
-	AWSK8sTesterDownloadURL:        "https://github.com/aws/aws-k8s-tester/releases/download/0.2.9/aws-k8s-tester-0.2.9-linux-amd64",
-	AWSK8sTesterPath:               "/tmp/aws-k8s-tester/aws-k8s-tester",
-	KubectlDownloadURL:             "https://amazon-eks.s3-us-west-2.amazonaws.com/1.11.5/2018-12-06/bin/linux/amd64/kubectl",
-	KubectlPath:                    "/tmp/aws-k8s-tester/kubectl",
-	KubeConfigPath:                 "/tmp/aws-k8s-tester/kubeconfig",
+	AWSK8sTesterDownloadURL: "https://github.com/aws/aws-k8s-tester/releases/download/0.2.9/aws-k8s-tester-0.2.9-linux-amd64",
+	AWSK8sTesterPath:        "/tmp/aws-k8s-tester/aws-k8s-tester",
+
+	KubectlDownloadURL: "https://amazon-eks.s3-us-west-2.amazonaws.com/1.11.5/2018-12-06/bin/linux/amd64/kubectl",
+	KubectlPath:        "/tmp/aws-k8s-tester/kubectl",
+
+	KubeConfigPath: "/tmp/aws-k8s-tester/kubeconfig",
+
 	AWSIAMAuthenticatorDownloadURL: "https://amazon-eks.s3-us-west-2.amazonaws.com/1.11.5/2018-12-06/bin/linux/amd64/aws-iam-authenticator",
 	AWSIAMAuthenticatorPath:        "/tmp/aws-k8s-tester/aws-iam-authenticator",
 
