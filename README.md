@@ -15,6 +15,7 @@ WARNING: Pre-alpha. Do not use this in production. Only for testing.
 To install
 
 ```bash
+cd ${GOPATH}/src/github.com/aws/aws-k8s-tester
 go install -v ./cmd/aws-k8s-tester
 aws-k8s-tester eks create cluster -h
 ```
