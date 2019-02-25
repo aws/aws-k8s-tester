@@ -15,6 +15,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.2.8...0.2.9).
 
 - Remove [`TestMode` field](https://github.com/aws/aws-k8s-tester/commit/c55ffe8c79f866774e1f684007b9d610769cea6d).
 
+### `internal`
+
+- Clean up [`internal/eks`](https://github.com/aws/aws-k8s-tester/commit/a3c5696236d507160c575f134ac3958462996b9b).
+
 ### `pkg`
 
 - Use [local timezone instead of UTC in `pkg/zaputil`](https://github.com/aws/aws-k8s-tester/commit/2905a5d2fdc03df9d065f876c57394d4d292b561).
