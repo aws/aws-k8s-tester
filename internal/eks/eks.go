@@ -184,32 +184,13 @@ func (md *embedded) createCluster() error {
 			zap.Error(err),
 		)
 
-		if err == nil &&
-			strings.Contains(string(out1), "-eks") &&
-			strings.Contains(string(out2), "is running") {
+		if strings.Contains(string(out2), "is running at") {
 			done = true
 			break
 		}
 
-		ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
-		var out3 []byte
-		out3, err = exec.New().CommandContext(ctx,
-			md.cfg.KubectlPath,
-			"--kubeconfig="+md.cfg.KubeConfigPath,
-			"cluster-info",
-			"dump",
-		).CombinedOutput()
-		cancel()
-		do := string(out3)
-		if !md.cfg.LogDebug && len(do) > 30 {
-			do = do[:30] + "..."
-		}
-		md.lg.Info("ran kubectl cluster-info dump",
-			zap.String("kubectl-path", md.cfg.KubectlPath),
-			zap.String("aws-iam-authenticator-path", md.cfg.AWSIAMAuthenticatorPath),
-			zap.String("output", do),
-			zap.Error(err),
-		)
+		// Or run
+		// kubectl cluster-info dump --kubeconfig /tmp/aws-k8s-tester/kubeconfig
 
 		time.Sleep(10 * time.Second)
 	}

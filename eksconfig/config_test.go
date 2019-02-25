@@ -47,8 +47,9 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_CONFIG_PATH", "test-path")
 	os.Setenv("AWS_K8S_TESTER_EKS_DOWN", "false")
 	os.Setenv("AWS_K8S_TESTER_EKS_ALB_TARGET_TYPE", "ip")
-	os.Setenv("AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_MIN", "10")
+	os.Setenv("AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_MIN", "5")
 	os.Setenv("AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_MAX", "10")
+	os.Setenv("AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_DESIRED_CAPACITY", "7")
 	os.Setenv("AWS_K8S_TESTER_EKS_LOG_DEBUG", "true")
 	os.Setenv("AWS_K8S_TESTER_EKS_UPLOAD_TESTER_LOGS", "true")
 	os.Setenv("AWS_K8S_TESTER_EKS_UPLOAD_KUBECONFIG", "true")
@@ -88,6 +89,7 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWS_K8S_TESTER_EKS_ALB_TARGET_TYPE")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_MIN")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_MAX")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_DESIRED_CAPACITY")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_LOG_DEBUG")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_UPLOAD_TESTER_LOGS")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_UPLOAD_KUBECONFIG")
@@ -168,11 +170,14 @@ func TestEnv(t *testing.T) {
 	if !cfg.EnableWorkerNodePrivilegedPortAccess {
 		t.Fatalf("cfg.EnableWorkerNodePrivilegedPortAccess expected 'true', got %v", cfg.EnableWorkerNodePrivilegedPortAccess)
 	}
-	if cfg.WorkerNodeASGMin != 10 {
-		t.Fatalf("worker nodes min expected 10, got %q", cfg.WorkerNodeASGMin)
+	if cfg.WorkerNodeASGMin != 5 {
+		t.Fatalf("worker nodes min expected 5, got %q", cfg.WorkerNodeASGMin)
 	}
 	if cfg.WorkerNodeASGMax != 10 {
-		t.Fatalf("worker nodes min expected 10, got %q", cfg.WorkerNodeASGMax)
+		t.Fatalf("worker nodes max expected 10, got %q", cfg.WorkerNodeASGMax)
+	}
+	if cfg.WorkerNodeASGDesiredCapacity != 7 {
+		t.Fatalf("worker nodes desired capacity expected 7, got %q", cfg.WorkerNodeASGDesiredCapacity)
 	}
 	if cfg.ALBIngressController.TestScalabilityMinutes != 3 {
 		t.Fatalf("alb target type expected 3, got %d", cfg.ALBIngressController.TestScalabilityMinutes)

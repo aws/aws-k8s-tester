@@ -58,7 +58,6 @@ func (md *embedded) createWorkerNode() error {
 			},
 		},
 
-		// TemplateURL: aws.String("https://amazon-eks.s3-us-west-2.amazonaws.com/cloudformation/2018-08-30/amazon-eks-nodegroup.yaml"),
 		TemplateBody: aws.String(s),
 
 		Parameters: []*cloudformation.Parameter{
@@ -89,6 +88,10 @@ func (md *embedded) createWorkerNode() error {
 			{
 				ParameterKey:   aws.String("NodeAutoScalingGroupMaxSize"),
 				ParameterValue: aws.String(fmt.Sprintf("%d", md.cfg.WorkerNodeASGMax)),
+			},
+			{
+				ParameterKey:   aws.String("NodeAutoScalingGroupDesiredCapacity"),
+				ParameterValue: aws.String(fmt.Sprintf("%d", md.cfg.WorkerNodeASGDesiredCapacity)),
 			},
 			{
 				ParameterKey:   aws.String("NodeVolumeSize"),

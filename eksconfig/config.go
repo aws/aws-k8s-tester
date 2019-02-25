@@ -126,6 +126,9 @@ type Config struct {
 	WorkerNodeASGMin int `json:"worker-node-asg-min,omitempty"`
 	// WorkerNodeASGMax is the maximum number of nodes in worker node ASG.
 	WorkerNodeASGMax int `json:"worker-node-asg-max,omitempty"`
+	// WorkerNodeASGDesiredCapacity is the desired capacity of Node Group ASG.
+	WorkerNodeASGDesiredCapacity int `json:"worker-node-asg-desired-capacity,omitempty"`
+
 	// WorkerNodeVolumeSizeGB is the maximum number of nodes in worker node ASG.
 	// If empty, set default value.
 	WorkerNodeVolumeSizeGB int `json:"worker-node-volume-size-gb,omitempty"`
@@ -443,11 +446,12 @@ var defaultConfig = Config{
 
 	// Amazon EKS-optimized AMI, https://docs.aws.amazon.com/eks/latest/userguide/eks-optimized-ami.html
 	// for the corresponding region and version
-	WorkerNodeAMI:          "ami-0c28139856aaf9c3b",
-	WorkerNodeInstanceType: "m3.xlarge",
-	WorkerNodeASGMin:       1,
-	WorkerNodeASGMax:       1,
-	WorkerNodeVolumeSizeGB: 20,
+	WorkerNodeAMI:                "ami-0c28139856aaf9c3b",
+	WorkerNodeInstanceType:       "m3.xlarge",
+	WorkerNodeASGMin:             1,
+	WorkerNodeASGMax:             1,
+	WorkerNodeASGDesiredCapacity: 1,
+	WorkerNodeVolumeSizeGB:       20,
 
 	KubernetesVersion: "1.11",
 
