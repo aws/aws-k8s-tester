@@ -13,7 +13,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.2.8...0.2.9).
 
 ### `eksconfig`
 
-- Add [`WorkerNodeASGDesiredCapacity` field to configure `NodeAutoScalingGroupDesiredCapacity` for EKS worker nodes](https://github.com/aws/aws-k8s-tester/commit/5f4fbb8d9e602d93c21b5c4f2728aec139288ba7).
+- Add [`WorkerNodeASGDesiredCapacity` field to configure `NodeAutoScalingGroupDesiredCapacity` for EKS worker nodes](https://github.com/aws/aws-k8s-tester/commit/dd2764bf29b242b4313ee1b4a16b3c592b84c6bb).
 - Remove [`TestMode` field](https://github.com/aws/aws-k8s-tester/commit/c55ffe8c79f866774e1f684007b9d610769cea6d).
 
 ### `internal`
