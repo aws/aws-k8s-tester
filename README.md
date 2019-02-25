@@ -29,6 +29,14 @@ aws-k8s-tester eks create config --path ./aws-k8s-tester-eks.yaml
 vi ./aws-k8s-tester-eks.yaml
 ```
 
+```diff
+alb-ingress-controller:
+  created: false
+- enable: false
++ enable: true
+  ...
+```
+
 ```bash
 aws-k8s-tester eks create cluster --path ./aws-k8s-tester-eks.yaml
 ```
