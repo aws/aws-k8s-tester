@@ -80,7 +80,6 @@ AWS_K8S_TESTER_EKS_AWS_K8S_TESTER_DOWNLOAD_URL=https://github.com/aws/aws-k8s-te
   AWS_K8S_TESTER_EKS_KUBECONFIG_PATH=/tmp/aws-k8s-tester/kubeconfig \
   AWS_K8S_TESTER_EKS_AWS_IAM_AUTHENTICATOR_DOWNLOAD_URL=https://amazon-eks.s3-us-west-2.amazonaws.com/1.11.5/2018-12-06/bin/$(go env GOOS)/amd64/aws-iam-authenticator \
   AWS_K8S_TESTER_EKS_AWS_IAM_AUTHENTICATOR_PATH=/tmp/aws-k8s-tester/aws-iam-authenticator \
-  AWS_K8S_TESTER_EKS_TEST_MODE=embedded \
   AWS_K8S_TESTER_EKS_KUBERNETES_VERSION=1.11 \
   AWS_K8S_TESTER_EKS_WAIT_BEFORE_DOWN=1m \
   AWS_K8S_TESTER_EKS_DOWN=true \

@@ -33,7 +33,6 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_KUBECONFIG_PATH", "/tmp/aws-k8s-tester/kubeconfig2")
 	os.Setenv("AWS_K8S_TESTER_EKS_AWS_IAM_AUTHENTICATOR_DOWNLOAD_URL", "https://amazon-eks.s3-us-west-2.amazonaws.com/1.11.5/2018-12-06/bin/linux/amd64/aws-iam-authenticator")
 	os.Setenv("AWS_K8S_TESTER_EKS_AWS_IAM_AUTHENTICATOR_PATH", "/tmp/aws-k8s-tester-test/aws-iam-authenticator")
-	os.Setenv("AWS_K8S_TESTER_EKS_TEST_MODE", "aws-cli")
 	os.Setenv("AWS_K8S_TESTER_EKS_KUBERNETES_VERSION", "1.11")
 	os.Setenv("AWS_K8S_TESTER_EKS_TAG", "my-test")
 	os.Setenv("AWS_K8S_TESTER_EKS_VPC_ID", "my-vpc-id")
@@ -73,7 +72,6 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWS_K8S_TESTER_EKS_KUBECONFIG_PATH")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_AWS_IAM_AUTHENTICATOR_DOWNLOAD_URL")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_AWS_IAM_AUTHENTICATOR_PATH")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_TEST_MODE")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_KUBERNETES_VERSION")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_TAG")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_VPC_ID")
@@ -130,9 +128,6 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.AWSIAMAuthenticatorPath != "/tmp/aws-k8s-tester-test/aws-iam-authenticator" {
 		t.Fatalf("unexpected AWSIAMAuthenticatorPath %q", cfg.AWSIAMAuthenticatorPath)
-	}
-	if cfg.TestMode != "aws-cli" {
-		t.Fatalf("cfg.TestMode expected 'aws-cli', got %q", cfg.TestMode)
 	}
 	if cfg.KubernetesVersion != "1.11" {
 		t.Fatalf("KubernetesVersion 1.11, got %q", cfg.KubernetesVersion)

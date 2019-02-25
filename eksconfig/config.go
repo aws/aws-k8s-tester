@@ -23,9 +23,6 @@ import (
 
 // Config defines EKS test configuration.
 type Config struct {
-	// TestMode is "embedded" or "aws-cli".
-	TestMode string `json:"test-mode,omitempty"`
-
 	// Tag is the tag used for S3 bucket name.
 	// If empty, deployer auto-populates it.
 	Tag string `json:"tag,omitempty"`
@@ -414,8 +411,6 @@ func genTag() string {
 //  - omitting an entire field returns nil value
 //  - make sure to check both
 var defaultConfig = Config{
-	TestMode: "embedded",
-
 	// https://github.com/aws/aws-k8s-tester/releases
 	AWSK8sTesterDownloadURL:        "https://github.com/aws/aws-k8s-tester/releases/download/0.2.9/aws-k8s-tester-0.2.9-linux-amd64",
 	AWSK8sTesterPath:               "/tmp/aws-k8s-tester/aws-k8s-tester",
@@ -430,6 +425,7 @@ var defaultConfig = Config{
 	Down:           true,
 
 	AWSAccountID: "",
+
 	// to be overwritten by AWS_SHARED_CREDENTIALS_FILE
 	AWSCredentialToMountPath: filepath.Join(homedir.HomeDir(), ".aws", "credentials"),
 	AWSRegion:                "us-west-2",
@@ -595,11 +591,6 @@ const (
 // And updates empty fields with default values.
 // At the end, it writes populated YAML to aws-k8s-tester config path.
 func (cfg *Config) ValidateAndSetDefaults() error {
-	switch cfg.TestMode {
-	case "embedded":
-	default:
-		return fmt.Errorf("TestMode %q unknown", cfg.TestMode)
-	}
 	if len(cfg.LogOutputs) == 0 {
 		return errors.New("EKS LogOutputs is not specified")
 	}
