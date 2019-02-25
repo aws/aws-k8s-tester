@@ -4,7 +4,7 @@ require (
 	cloud.google.com/go v0.30.0 // indirect
 	contrib.go.opencensus.io/exporter/ocagent v0.4.2 // indirect
 	github.com/Azure/go-autorest v11.3.1+incompatible // indirect
-	github.com/aws/aws-sdk-go v1.17.1
+	github.com/aws/aws-sdk-go v1.17.5
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/dustin/go-humanize v1.0.0
 	github.com/go-yaml/yaml v2.1.0+incompatible // indirect
