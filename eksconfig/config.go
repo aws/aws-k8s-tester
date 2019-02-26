@@ -30,11 +30,6 @@ type Config struct {
 	// If empty, deployer auto-populates it.
 	ClusterName string `json:"cluster-name,omitempty"`
 
-	// AWSK8sTesterImage is the aws-k8s-tester container image.
-	// Required for "aws-k8s-tester ingress server" for ALB Ingress Controller tests.
-	// Only required when ALB Ingress "TestMode" is "ingress-test-server".
-	AWSK8sTesterImage string `json:"aws-k8s-tester-image,omitempty"`
-
 	// AWSK8sTesterPath is the path to download the "aws-k8s-tester".
 	// This is required for Kubernetes kubetest plugin.
 	AWSK8sTesterPath string `json:"aws-k8s-tester-path,omitempty"`
@@ -277,8 +272,6 @@ type ALBIngressController struct {
 	// ip is to be used when the pod network is routable and can be reached by the ALB.
 	// https://github.com/kubernetes-sigs/aws-alb-ingress-controller/blob/master/docs/ingress-resources.md
 	TargetType string `json:"target-type,omitempty"`
-	// TestMode is either "ingress-test-server" or "nginx".
-	TestMode string `json:"test-mode,omitempty"`
 
 	// TestScalability is true to run scalability tests.
 	TestScalability bool `json:"test-scalability"`
@@ -289,18 +282,9 @@ type ALBIngressController struct {
 	TestMetrics bool `json:"test-metrics"`
 	// TestServerReplicas is the number of ingress test server pods to deploy.
 	TestServerReplicas int `json:"test-server-replicas,omitempty"`
-	// TestServerRoutes is the number of ALB Ingress Controller routes to test.
-	// It will be auto-generated starting with '/ingress-test-0000000'.
-	// Supports up to 30.
-	// Only required when ALB Ingress "TestMode" is "ingress-test-server".
-	// Otherwise, set it to 1.
-	TestServerRoutes int `json:"test-server-routes,omitempty"`
 	// TestClients is the number of concurrent ALB Ingress Controller test clients.
 	// Supports up to 300.
 	TestClients int `json:"test-clients,omitempty"`
-	// TestClientRequests is the number of ALB Ingress Controller test requests.
-	// This is ignored when test mode is nginx (because it will use "wrk" for QPS tests).
-	TestClientRequests int `json:"test-client-requests,omitempty"`
 	// TestResponseSize is the response payload size.
 	// Ingress test server always returns '0' x response size.
 	// Supports up to 500 KB.
@@ -477,15 +461,12 @@ var defaultConfig = Config{
 		// 'instance' to use node port
 		// 'ip' to use pod IP
 		TargetType: "instance",
-		TestMode:   "nginx",
 
 		TestScalability:          true,
 		TestScalabilityMinutes:   1,
 		TestMetrics:              true,
 		TestServerReplicas:       1,
-		TestServerRoutes:         1,
 		TestClients:              200,
-		TestClientRequests:       20000,
 		TestResponseSize:         40 * 1024, // 40 KB
 		TestClientErrorThreshold: 10,
 		TestExpectQPS:            20000,
@@ -584,12 +565,8 @@ func (cfg *Config) BackupConfig() (p string, err error) {
 }
 
 const (
-	// maxTestServerRoutes is the maximum number of routes.
-	maxTestServerRoutes = 30
 	// maxTestClients is the maximum number of clients.
 	maxTestClients = 1000
-	// maxTestClientRequests is the maximum number of requests.
-	maxTestClientRequests = 50000
 	// maxTestResponseSize is the maximum response size for ingress test server.
 	maxTestResponseSize = 500 * 1024 // 500 KB == 4000 Kbit
 )
@@ -798,14 +775,8 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		if cfg.ALBIngressController.IngressControllerImage == "" {
 			return errors.New("cannot create AWS ALB Ingress Controller without ingress controller test image")
 		}
-		if cfg.ALBIngressController.TestServerRoutes > 0 {
-			return errors.New("cannot create AWS ALB Ingress Controller routes without test routes")
-		}
 		if cfg.ALBIngressController.TestClients > 0 {
 			return errors.New("cannot create AWS ALB Ingress Controller clients without test clients")
-		}
-		if cfg.ALBIngressController.TestClientRequests > 0 {
-			return errors.New("cannot create AWS ALB Ingress Controller requests without test requests")
 		}
 		if cfg.ALBIngressController.TestResponseSize > 0 {
 			return errors.New("cannot create AWS ALB Ingress Controller requests without test response size")
@@ -813,19 +784,6 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 
 	if cfg.ALBIngressController != nil && cfg.ALBIngressController.Enable {
-		switch cfg.ALBIngressController.TestMode {
-		case "ingress-test-server":
-			if cfg.AWSK8sTesterImage == "" {
-				return errors.New("'ingress-test-server' requires AWSK8sTesterImage")
-			}
-		case "nginx":
-			if cfg.ALBIngressController.TestServerRoutes != 1 {
-				return errors.New("'nginx' only needs 1 server route")
-			}
-		default:
-			return fmt.Errorf("ALB Ingress test mode %q is not supported", cfg.ALBIngressController.TestMode)
-		}
-
 		if cfg.ALBIngressController.TargetType != "instance" &&
 			cfg.ALBIngressController.TargetType != "ip" {
 			return fmt.Errorf("ALB Ingress Controller target type not found %q", cfg.ALBIngressController.TargetType)
@@ -836,25 +794,11 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		cfg.ALBIngressController.ScalabilityOutputToUploadPath = fmt.Sprintf("%s.alb-ingress-controller.scalability.log", cfg.ConfigPath)
 		cfg.ALBIngressController.MetricsOutputToUploadPath = fmt.Sprintf("%s.alb-ingress-controller.metrics.log", cfg.ConfigPath)
 
-		if cfg.ALBIngressController.TestServerRoutes == 0 {
-			return fmt.Errorf("cannot create AWS ALB Ingress Controller with empty test response size %d", cfg.ALBIngressController.TestServerRoutes)
-		}
-		if cfg.ALBIngressController.TestServerRoutes > maxTestServerRoutes {
-			return fmt.Errorf("cannot create AWS ALB Ingress Controller with test routes %d (> max size %d)", cfg.ALBIngressController.TestServerRoutes, maxTestServerRoutes)
-		}
-
 		if cfg.ALBIngressController.TestClients == 0 {
 			return fmt.Errorf("cannot create AWS ALB Ingress Controller with empty test response size %d", cfg.ALBIngressController.TestClients)
 		}
 		if cfg.ALBIngressController.TestClients > maxTestClients {
 			return fmt.Errorf("cannot create AWS ALB Ingress Controller with test clients %d (> max size %d)", cfg.ALBIngressController.TestClients, maxTestClients)
-		}
-
-		if cfg.ALBIngressController.TestClientRequests == 0 {
-			return fmt.Errorf("cannot create AWS ALB Ingress Controller with empty test response size %d", cfg.ALBIngressController.TestClientRequests)
-		}
-		if cfg.ALBIngressController.TestClientRequests > maxTestClientRequests {
-			return fmt.Errorf("cannot create AWS ALB Ingress Controller with test requests %d (> max size %d)", cfg.ALBIngressController.TestClientRequests, maxTestClientRequests)
 		}
 
 		if cfg.ALBIngressController.TestResponseSize == 0 {

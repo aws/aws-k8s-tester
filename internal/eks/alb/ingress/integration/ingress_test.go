@@ -8,7 +8,6 @@ import (
 
 	"github.com/aws/aws-k8s-tester/internal/eks/alb/ingress/client"
 	"github.com/aws/aws-k8s-tester/internal/eks/alb/ingress/server"
-
 	"go.uber.org/zap"
 )
 

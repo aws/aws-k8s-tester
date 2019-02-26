@@ -21,7 +21,6 @@ import (
 	"github.com/aws/aws-k8s-tester/ekstester"
 	"github.com/aws/aws-k8s-tester/internal/eks/alb"
 	"github.com/aws/aws-k8s-tester/internal/eks/alb/ingress/client"
-	"github.com/aws/aws-k8s-tester/internal/eks/alb/ingress/path"
 	"github.com/aws/aws-k8s-tester/internal/eks/s3"
 	"github.com/aws/aws-k8s-tester/pkg/awsapi"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
@@ -380,15 +379,6 @@ func (md *embedded) Up() (err error) {
 	termChan := make(chan os.Signal)
 	signal.Notify(termChan, syscall.SIGTERM, syscall.SIGINT)
 
-	if md.cfg.WaitBeforeDown > 0 {
-		md.lg.Info("waiting before cluster tear down", zap.Duration("wait", md.cfg.WaitBeforeDown))
-		select {
-		case <-time.After(md.cfg.WaitBeforeDown):
-			// TODO: handle interrupt syscall
-		}
-		md.lg.Info("waited before cluster tear down", zap.Duration("wait", md.cfg.WaitBeforeDown))
-	}
-
 	now := time.Now().UTC()
 
 	md.lg.Info("Up",
@@ -677,9 +667,6 @@ func (md *embedded) LoadConfig() (eksconfig.Config, error) {
 
 func (md *embedded) TestALBCorrectness() error {
 	ep := "http://" + md.cfg.ALBIngressController.ELBv2NamespaceToDNSName["default"]
-	if md.cfg.ALBIngressController.TestMode == "ingress-test-server" {
-		ep += path.Path
-	}
 	if !httputil.CheckGet(
 		md.lg,
 		ep,
@@ -697,39 +684,23 @@ func (md *embedded) TestALBQPS() error {
 
 	var rs client.TestResult
 	var rbytes []byte
-	switch md.cfg.ALBIngressController.TestMode {
-	case "ingress-test-server":
-		cli, err := client.New(
-			md.lg,
-			ep,
-			md.cfg.ALBIngressController.TestServerRoutes,
-			md.cfg.ALBIngressController.TestClients,
-			md.cfg.ALBIngressController.TestClientRequests,
-		)
-		if err != nil {
-			return err
-		}
-		rs = cli.Run()
-		rbytes = []byte(rs.Result)
 
-	case "nginx":
-		// wrk --threads 2 --connections 200 --duration 15s --latency http://127.0.0.1
-		args := []string{
-			"--threads", "2",
-			"--connections", fmt.Sprintf("%d", md.cfg.ALBIngressController.TestClients),
-			"--duration", fmt.Sprintf("%s", time.Duration(md.cfg.ALBIngressController.TestScalabilityMinutes)*time.Minute),
-			"--latency",
-			ep,
-		}
-		md.lg.Info("starting wrk", zap.String("command", strings.Join(args, " ")))
-		cmd := exec.New().CommandContext(context.Background(), "wrk", args...)
-		var err error
-		rbytes, err = cmd.CombinedOutput()
-		if err != nil {
-			return err
-		}
-		md.lg.Info("finished wrk", zap.String("command", strings.Join(args, " ")))
+	// wrk --threads 2 --connections 200 --duration 15s --latency http://127.0.0.1
+	args := []string{
+		"--threads", "2",
+		"--connections", fmt.Sprintf("%d", md.cfg.ALBIngressController.TestClients),
+		"--duration", fmt.Sprintf("%s", time.Duration(md.cfg.ALBIngressController.TestScalabilityMinutes)*time.Minute),
+		"--latency",
+		ep,
 	}
+	md.lg.Info("starting wrk", zap.String("command", strings.Join(args, " ")))
+	cmd := exec.New().CommandContext(context.Background(), "wrk", args...)
+	var err error
+	rbytes, err = cmd.CombinedOutput()
+	if err != nil {
+		return err
+	}
+	md.lg.Info("finished wrk", zap.String("command", strings.Join(args, " ")))
 
 	fmt.Printf("TestALBQPS Result: %q\n\n%s\n\n", ep, string(rbytes))
 
@@ -747,17 +718,12 @@ func (md *embedded) TestALBQPS() error {
 		}
 	}
 
-	if md.cfg.ALBIngressController.TestMode == "ingress-test-server" {
-		md.cfg.ALBIngressController.TestResultQPS = rs.QPS
-		md.cfg.ALBIngressController.TestResultFailures = rs.Failure
-	} else {
-		pv, perr := wrk.Parse(string(rbytes))
-		if perr != nil {
-			md.lg.Warn("failed to parse 'wrk' command output", zap.String("output", string(rbytes)), zap.Error(perr))
-		}
-		md.cfg.ALBIngressController.TestResultQPS = pv.RequestsPerSec
-		md.cfg.ALBIngressController.TestResultFailures = pv.ErrorsConnect + pv.ErrorsWrite + pv.ErrorsRead + pv.ErrorsTimeout
+	pv, perr := wrk.Parse(string(rbytes))
+	if perr != nil {
+		md.lg.Warn("failed to parse 'wrk' command output", zap.String("output", string(rbytes)), zap.Error(perr))
 	}
+	md.cfg.ALBIngressController.TestResultQPS = pv.RequestsPerSec
+	md.cfg.ALBIngressController.TestResultFailures = pv.ErrorsConnect + pv.ErrorsWrite + pv.ErrorsRead + pv.ErrorsTimeout
 	md.cfg.Sync()
 
 	if int64(len(rs.Errors)) > md.cfg.ALBIngressController.TestClientErrorThreshold {

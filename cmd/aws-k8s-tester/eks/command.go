@@ -23,7 +23,6 @@ func NewCommand() *cobra.Command {
 		newCheck(),
 		newProw(),
 		newS3Upload(),
-		newIngress(),
 		newSidecar(),
 		newTest(),
 	)

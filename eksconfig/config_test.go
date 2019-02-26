@@ -59,7 +59,6 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_ALB_TEST_SCALABILITY_MINUTES", "3")
 	os.Setenv("AWS_K8S_TESTER_EKS_ALB_UPLOAD_TESTER_LOGS", "true")
 	os.Setenv("AWS_K8S_TESTER_EKS_ALB_TEST_EXPECT_QPS", "123.45")
-	os.Setenv("AWS_K8S_TESTER_EKS_ALB_TEST_MODE", "nginx")
 	os.Setenv("AWS_K8S_TESTER_EKS_ALB_ENABLE", "true")
 	os.Setenv("AWS_K8S_TESTER_EKS_ALB_TEST_SCALABILITY", "false")
 	os.Setenv("AWS_K8S_TESTER_EKS_ALB_TEST_METRICS", "false")
@@ -99,7 +98,6 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWS_K8S_TESTER_EKS_ALB_TEST_SCALABILITY_MINUTES")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_ALB_UPLOAD_TESTER_LOGS")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_ALB_TEST_EXPECT_QPS")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_ALB_TEST_MODE")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_ALB_ENABLE")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_ALB_TEST_SCALABILITY")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_ALB_TEST_METRICS")
@@ -211,9 +209,6 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.ALBIngressController.TestExpectQPS != 123.45 {
 		t.Fatalf("cfg.ALBIngressController.TestExpectQPS expected 123.45, got %v", cfg.ALBIngressController.TestExpectQPS)
-	}
-	if cfg.ALBIngressController.TestMode != "nginx" {
-		t.Fatalf("cfg.ALBIngressController.TestMode expected 'nginx', got %v", cfg.ALBIngressController.TestMode)
 	}
 	if !cfg.ALBIngressController.Enable {
 		t.Fatalf("cfg.ALBIngressController.Enable expected 'true', got %v", cfg.ALBIngressController.Enable)

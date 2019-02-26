@@ -185,7 +185,7 @@ func (md *embedded) createCluster() error {
 		)
 
 		if strings.Contains(string(out2), "is running at") {
-			done = true
+			err, done = nil, true
 			break
 		}
 
