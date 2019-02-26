@@ -12,7 +12,16 @@ WARNING: Pre-alpha. Do not use this in production. Only for testing.
 
 ## `aws-k8s-tester eks`
 
-To install
+Make sure AWS credential is located in your machine:
+
+```sh
+cat ~/.aws/credentials
+
+# confirm credential is valid
+aws s3 ls
+```
+
+To install:
 
 ```bash
 cd ${GOPATH}/src/github.com/aws/aws-k8s-tester
