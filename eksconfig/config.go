@@ -87,10 +87,11 @@ type Config struct {
 	// - eu-west-1; EU West (Dublin)
 	// If empty, set default region.
 	AWSRegion string `json:"aws-region,omitempty"`
-	// AWSCustomEndpoint defines AWS custom endpoint for pre-release versions.
+
+	// EKSCustomEndpoint defines AWS custom endpoint for pre-release versions.
 	// Must be left empty to use production EKS service.
 	// TODO: define custom endpoints for CloudFormation, EC2, STS
-	AWSCustomEndpoint string `json:"aws-custom-endpoint"`
+	EKSCustomEndpoint string `json:"eks-custom-endpoint"`
 
 	// EnableWorkerNodeSSH is true to enable SSH access to worker nodes.
 	EnableWorkerNodeSSH bool `json:"enable-worker-node-ssh"`
@@ -419,7 +420,7 @@ var defaultConfig = Config{
 	// to be overwritten by AWS_SHARED_CREDENTIALS_FILE
 	AWSCredentialToMountPath: filepath.Join(homedir.HomeDir(), ".aws", "credentials"),
 	AWSRegion:                "us-west-2",
-	AWSCustomEndpoint:        "",
+	EKSCustomEndpoint:        "",
 
 	EnableWorkerNodeHA:                   true,
 	EnableWorkerNodeSSH:                  true,
@@ -629,8 +630,8 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	if cfg.WorkerNodeVolumeSizeGB == 0 {
 		cfg.WorkerNodeVolumeSizeGB = defaultWorkderNodeVolumeSizeGB
 	}
-	if ok := checkEKSEp(cfg.AWSCustomEndpoint); !ok {
-		return fmt.Errorf("AWSCustomEndpoint %q is not valid", cfg.AWSCustomEndpoint)
+	if ok := checkEKSEp(cfg.EKSCustomEndpoint); !ok {
+		return fmt.Errorf("EKSCustomEndpoint %q is not valid", cfg.EKSCustomEndpoint)
 	}
 
 	// resources created from aws-k8s-tester always follow
@@ -1051,6 +1052,8 @@ var (
 		// TODO: support EKS testing endpoint
 		// https://docs.aws.amazon.com/sdk-for-go/v1/developer-guide/configuring-sdk.html#custom-endpoint
 		// "https://test.us-west-2.amazonaws.com" : struct{}{},
+
+		"https://api.beta.us-west-2.wesley.amazonaws.com": struct{}{},
 	}
 
 	allEKSEps = []string{}

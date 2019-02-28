@@ -29,7 +29,7 @@ func TestEmbedded(t *testing.T) {
 		Logger:         zap.NewExample(),
 		DebugAPICalls:  cfg.LogDebug,
 		Region:         cfg.AWSRegion,
-		CustomEndpoint: cfg.AWSCustomEndpoint,
+		CustomEndpoint: cfg.EKSCustomEndpoint,
 	}
 	ss, err := awsapi.New(awsCfg)
 	if err != nil {
