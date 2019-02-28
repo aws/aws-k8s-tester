@@ -90,7 +90,7 @@ type Config struct {
 	// AWSCustomEndpoint defines AWS custom endpoint for pre-release versions.
 	// Must be left empty to use production EKS service.
 	// TODO: define custom endpoints for CloudFormation, EC2, STS
-	AWSCustomEndpoint string `json:"aws-custom-endpoint,omitempty"`
+	AWSCustomEndpoint string `json:"aws-custom-endpoint"`
 
 	// EnableWorkerNodeSSH is true to enable SSH access to worker nodes.
 	EnableWorkerNodeSSH bool `json:"enable-worker-node-ssh"`
