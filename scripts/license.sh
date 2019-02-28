@@ -2,7 +2,7 @@
 
 set -e
 
-if ! [[ "$0" =~ scripts/update.vendor.license.sh ]]; then
+if ! [[ "$0" =~ scripts/license.sh ]]; then
   echo "must be run from repository root"
   exit 255
 fi
