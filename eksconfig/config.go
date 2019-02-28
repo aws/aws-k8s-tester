@@ -961,6 +961,18 @@ func (cfg *Config) UpdateFromEnvs() error {
 	return nil
 }
 
+// SSHCommands returns the SSH commands.
+func (cfg *Config) SSHCommands() (s string) {
+	if cfg.ClusterState == nil || len(cfg.ClusterState.WorkerNodes) == 0 {
+		return ""
+	}
+	ec := &ec2config.Config{
+		KeyPath:   cfg.WorkerNodePrivateKeyPath,
+		Instances: cfg.ClusterState.WorkerNodes,
+	}
+	return ec.SSHCommands()
+}
+
 func checkKubernetesVersion(s string) (ok bool) {
 	_, ok = supportedKubernetesVersions[s]
 	return ok

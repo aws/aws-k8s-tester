@@ -513,8 +513,10 @@ func (md *embedded) deleteWorkerNode() error {
 	return md.cfg.Sync()
 }
 
+// aws cloudformation describe-stack-resources --stack-name a8-eks-190226-mqitl-NODE-GROUP-STACK
+// aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names a8-eks-190226-mqitl-NODE-GROUP-STACK-NodeGroup-S70MNA2WIO4E
 func (md *embedded) checkASG() (err error) {
-	md.lg.Info("checking ASG")
+	md.lg.Info("checking auto scaling groups for worker node instance information")
 
 	var rout *cloudformation.DescribeStackResourcesOutput
 	rout, err = md.cf.DescribeStackResources(&cloudformation.DescribeStackResourcesInput{
@@ -622,9 +624,10 @@ func (md *embedded) checkASG() (err error) {
 	for _, v := range ec2Instances {
 		md.cfg.ClusterState.WorkerNodes[*v.InstanceId] = internalec2.ConvertEC2Instance(v)
 	}
+	fmt.Println(md.cfg.SSHCommands())
 
 	md.lg.Info(
-		"checked ASG",
+		"checking auto scaling groups for worker node instance information",
 		zap.String("name", md.cfg.ClusterState.CFStackWorkerNodeGroupAutoScalingGroupName),
 	)
 	return nil
