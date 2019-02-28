@@ -1077,7 +1077,7 @@ func (md *embedded) deleteCluster(deleteKubeconfig bool) error {
 	// only delete on "Down" call
 	if deleteKubeconfig && md.cfg.KubeConfigPath != "" {
 		rerr := os.RemoveAll(md.cfg.KubeConfigPath)
-		md.lg.Info("deleted kubeconfig", zap.Error(rerr))
+		md.lg.Info("deleted kubeconfig from local disk", zap.Error(rerr))
 	}
 
 	_, err := md.eks.DeleteCluster(&awseks.DeleteClusterInput{
@@ -1089,7 +1089,7 @@ func (md *embedded) deleteCluster(deleteKubeconfig bool) error {
 	}
 
 	// usually takes 5-minute
-	md.lg.Info("waiting for 4-minute")
+	md.lg.Info("waiting for 4-minute after cluster delete request")
 	time.Sleep(4 * time.Minute)
 
 	retryStart := time.Now().UTC()

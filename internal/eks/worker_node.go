@@ -480,7 +480,11 @@ func (md *embedded) deleteWorkerNode() error {
 		if err == nil {
 			md.cfg.ClusterState.CFStackWorkerNodeGroupStatus = *do.Stacks[0].StackStatus
 			md.cfg.ClusterState.WorkerNodeGroupStatus = *do.Stacks[0].StackStatus
-			md.lg.Info("deleting worker node stack", zap.String("request-started", humanize.RelTime(retryStart, time.Now().UTC(), "ago", "from now")))
+			md.lg.Info(
+				"deleting worker node stack",
+				zap.String("stack-status", md.cfg.ClusterState.WorkerNodeGroupStatus),
+				zap.String("request-started", humanize.RelTime(retryStart, time.Now().UTC(), "ago", "from now")),
+			)
 			time.Sleep(5 * time.Second)
 			continue
 		}

@@ -104,7 +104,7 @@ func (md *embedded) deleteKeyPair() error {
 		awsErr, ok := err.(awserr.Error)
 		if ok && awsErr.Code() == "InvalidKeyPair.NotFound" {
 			md.lg.Info(
-				"deleted key pair",
+				"deleted key pair from AWS resources",
 				zap.String("key-name", md.cfg.ClusterState.CFStackWorkerNodeGroupKeyPairName),
 				zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 			)
