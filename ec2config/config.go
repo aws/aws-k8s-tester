@@ -142,6 +142,18 @@ type Config struct {
 	// AssociatePublicIPAddress is true to associate a public IP address.
 	AssociatePublicIPAddress bool `json:"associate-public-ip-address"`
 
+	// VolumeSize is the size of the default volume, in GiB.
+	//
+	// Constraints: 1-16384 for General Purpose SSD (gp2), 4-16384 for Provisioned
+	// IOPS SSD (io1), 500-16384 for Throughput Optimized HDD (st1), 500-16384 for
+	// Cold HDD (sc1), and 1-1024 for Magnetic (standard) volumes. If you specify
+	// a snapshot, the volume size must be equal to or larger than the snapshot
+	// size.
+	//
+	// Default: If you're creating the volume from a snapshot and don't specify
+	// a volume size, the default is the snapshot size.
+	VolumeSize int64 `json:"volume-size"`
+
 	// Instances is a set of EC2 instances created from this configuration.
 	Instances map[string]Instance `json:"instances"`
 
@@ -279,6 +291,8 @@ var defaultConfig = Config{
 	IngressRulesTCP: map[string]string{
 		"22": "0.0.0.0/0",
 	},
+
+	VolumeSize: 40,
 
 	Wait: true,
 }

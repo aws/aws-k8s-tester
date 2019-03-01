@@ -267,8 +267,17 @@ func (md *embedded) Add() (err error) {
 
 	tkn := md.cfg.ClusterName + fmt.Sprintf("%X", time.Now().Nanosecond())
 	_, err = md.ec2.RunInstances(&ec2.RunInstancesInput{
-		ClientToken:                       aws.String(tkn),
-		ImageId:                           aws.String(md.cfg.ImageID),
+		ClientToken: aws.String(tkn),
+		ImageId:     aws.String(md.cfg.ImageID),
+		BlockDeviceMappings: []*ec2.BlockDeviceMapping{
+			{
+				DeviceName: aws.String("/dev/xvda"),
+				Ebs: &ec2.EbsBlockDevice{
+					DeleteOnTermination: aws.Bool(true),
+					VolumeSize:          aws.Int64(md.cfg.VolumeSize),
+				},
+			},
+		},
 		MinCount:                          aws.Int64(1),
 		MaxCount:                          aws.Int64(1),
 		InstanceType:                      aws.String(md.cfg.InstanceType),
@@ -583,8 +592,17 @@ func (md *embedded) createInstances() (err error) {
 				tokens = append(tokens, tkn)
 
 				_, err = md.ec2.RunInstances(&ec2.RunInstancesInput{
-					ClientToken:                       aws.String(tkn),
-					ImageId:                           aws.String(md.cfg.ImageID),
+					ClientToken: aws.String(tkn),
+					ImageId:     aws.String(md.cfg.ImageID),
+					BlockDeviceMappings: []*ec2.BlockDeviceMapping{
+						{
+							DeviceName: aws.String("/dev/xvda"),
+							Ebs: &ec2.EbsBlockDevice{
+								DeleteOnTermination: aws.Bool(true),
+								VolumeSize:          aws.Int64(md.cfg.VolumeSize),
+							},
+						},
+					},
 					MinCount:                          aws.Int64(int64(n)),
 					MaxCount:                          aws.Int64(int64(n)),
 					InstanceType:                      aws.String(md.cfg.InstanceType),
@@ -617,8 +635,17 @@ func (md *embedded) createInstances() (err error) {
 					nLeft -= x
 
 					_, err = md.ec2.RunInstances(&ec2.RunInstancesInput{
-						ClientToken:                       aws.String(tkn),
-						ImageId:                           aws.String(md.cfg.ImageID),
+						ClientToken: aws.String(tkn),
+						ImageId:     aws.String(md.cfg.ImageID),
+						BlockDeviceMappings: []*ec2.BlockDeviceMapping{
+							{
+								DeviceName: aws.String("/dev/xvda"),
+								Ebs: &ec2.EbsBlockDevice{
+									DeleteOnTermination: aws.Bool(true),
+									VolumeSize:          aws.Int64(md.cfg.VolumeSize),
+								},
+							},
+						},
 						MinCount:                          aws.Int64(int64(x)),
 						MaxCount:                          aws.Int64(int64(x)),
 						InstanceType:                      aws.String(md.cfg.InstanceType),
@@ -669,8 +696,17 @@ func (md *embedded) createInstances() (err error) {
 			}
 
 			_, err = md.ec2.RunInstances(&ec2.RunInstancesInput{
-				ClientToken:                       aws.String(tkn),
-				ImageId:                           aws.String(md.cfg.ImageID),
+				ClientToken: aws.String(tkn),
+				ImageId:     aws.String(md.cfg.ImageID),
+				BlockDeviceMappings: []*ec2.BlockDeviceMapping{
+					{
+						DeviceName: aws.String("/dev/xvda"),
+						Ebs: &ec2.EbsBlockDevice{
+							DeleteOnTermination: aws.Bool(true),
+							VolumeSize:          aws.Int64(md.cfg.VolumeSize),
+						},
+					},
+				},
 				MinCount:                          aws.Int64(1),
 				MaxCount:                          aws.Int64(1),
 				InstanceType:                      aws.String(md.cfg.InstanceType),
