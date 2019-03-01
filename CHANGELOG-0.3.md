@@ -5,10 +5,11 @@
 
 ## [0.3.0](https://github.com/aws/aws-k8s-tester/releases/tag/0.3.0)(2019-03)
 
-See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.2.8...0.3.0).
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.2.9...0.3.0).
 
 ### `ec2config`
 
+- Add [`VolumeSize` field](https://github.com/aws/aws-k8s-tester/commit/c2d4e39af832e9369c801cfcd5fd97dbf1e41d43).
 - Add [`Tags` field](https://github.com/aws/aws-k8s-tester/commit/c8b6f67a7bb712b89a4d08c4afcd00c240ba4051).
 
 ### `eksconfig`
