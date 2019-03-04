@@ -162,6 +162,8 @@ type Config struct {
 
 	// InstanceProfileName is the name of an instance profile with permissions to manage EC2 instances.
 	InstanceProfileName string `json:"instance-profile-name"`
+	// InstanceProfileFilePath is the JSON file path that defines the instance profile.
+	InstanceProfileFilePath string `json:"instance-profile-file-path"`
 
 	// CustomScript is executed at the end of EC2 init script.
 	CustomScript string `json:"custom-script"`
@@ -480,6 +482,19 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 
 	if _, ok := ec2types.InstanceTypes[cfg.InstanceType]; !ok {
 		return fmt.Errorf("unexpected InstanceType %q", cfg.InstanceType)
+	}
+
+	if cfg.InstanceProfileName != "" && cfg.InstanceProfileFilePath != "" {
+		return fmt.Errorf(
+			"both instance profile name %q and instance profile file %q are not empty",
+			cfg.InstanceProfileName,
+			cfg.InstanceProfileFilePath,
+		)
+	}
+	if cfg.InstanceProfileFilePath != "" {
+		if _, err := os.Stat(cfg.InstanceProfileFilePath); err != nil {
+			return fmt.Errorf("instance profile name %q does not exist (%v)", cfg.InstanceProfileFilePath, err)
+		}
 	}
 
 	return nil
