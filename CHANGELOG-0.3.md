@@ -9,6 +9,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.2.9...0.3.0).
 
 ### `ec2config`
 
+- Add [`InstanceProfileFilePath` field](https://github.com/aws/aws-k8s-tester/commit/78ef8e10a6a4a09456a4895f0b30a3b8f5ca8d2b).
 - Add [`VolumeSize` field](https://github.com/aws/aws-k8s-tester/commit/c2d4e39af832e9369c801cfcd5fd97dbf1e41d43).
 - Add [`Tags` field](https://github.com/aws/aws-k8s-tester/commit/c8b6f67a7bb712b89a4d08c4afcd00c240ba4051).
 
