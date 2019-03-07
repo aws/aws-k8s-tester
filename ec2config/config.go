@@ -164,6 +164,8 @@ type Config struct {
 	InstanceProfileName string `json:"instance-profile-name"`
 	// InstanceProfileFilePath is the JSON file path that defines the instance profile.
 	InstanceProfileFilePath string `json:"instance-profile-file-path"`
+	// InstanceProfilePolicyARN is the ARN of instance profile.
+	InstanceProfilePolicyARN string `json:"instance-profile-policy-arn"`
 
 	// CustomScript is executed at the end of EC2 init script.
 	CustomScript string `json:"custom-script"`

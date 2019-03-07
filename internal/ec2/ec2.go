@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 	"sync"
@@ -21,6 +22,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/cloudformation/cloudformationiface"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
+	"github.com/aws/aws-sdk-go/service/iam"
+	"github.com/aws/aws-sdk-go/service/iam/iamiface"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"github.com/aws/aws-sdk-go/service/sts"
@@ -58,6 +61,7 @@ type embedded struct {
 	sts stsiface.STSAPI
 	cf  cloudformationiface.CloudFormationAPI
 	ec2 ec2iface.EC2API
+	iam iamiface.IAMAPI
 
 	s3        s3iface.S3API
 	s3Buckets map[string]struct{}
@@ -98,6 +102,7 @@ func NewDeployer(cfg *ec2config.Config) (Deployer, error) {
 	md.sts = sts.New(md.ss)
 	md.cf = cloudformation.New(md.ss)
 	md.ec2 = ec2.New(md.ss)
+	md.iam = iam.New(md.ss)
 	md.s3 = s3.New(md.ss)
 
 	output, oerr := md.sts.GetCallerIdentity(&sts.GetCallerIdentityInput{})
@@ -260,7 +265,33 @@ func (md *embedded) Add() (err error) {
 		return errors.New("cannot add without SecurityGroupIDs")
 	}
 
-	instanceProfileSpecifics := &ec2.IamInstanceProfileSpecification{Name: &md.cfg.InstanceProfileName}
+	var istSpec *ec2.IamInstanceProfileSpecification
+	if md.cfg.InstanceProfileName != "" {
+		istSpec = &ec2.IamInstanceProfileSpecification{
+			Name: &md.cfg.InstanceProfileName,
+		}
+	} else if md.cfg.InstanceProfileFilePath != "" {
+		instanceProfileName := md.cfg.Tag + "-instance-profile"
+		istSpec = &ec2.IamInstanceProfileSpecification{
+			Name: aws.String(instanceProfileName),
+		}
+		var policyDoc []byte
+		policyDoc, err = ioutil.ReadFile(md.cfg.InstanceProfileFilePath)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			if err != nil {
+				md.lg.Warn("failed to create an instance profile, rolling back", zap.Error(err))
+				if derr := deleteInstanceProfile(md.lg, md.iam, instanceProfileName, md.cfg.InstanceProfilePolicyARN); derr != nil {
+					md.lg.Warn("failed to roll back instance profile creation", zap.Error(derr))
+				}
+			}
+		}()
+		if md.cfg.InstanceProfilePolicyARN, err = createInstanceProfile(md.lg, md.iam, policyDoc, instanceProfileName); err != nil {
+			return err
+		}
+	}
 
 	now := time.Now().UTC()
 	md.lg.Info("creating one EC2 instance", zap.String("cluster-name", md.cfg.ClusterName))
@@ -286,7 +317,7 @@ func (md *embedded) Add() (err error) {
 		SecurityGroupIds:                  aws.StringSlice(md.cfg.SecurityGroupIDs),
 		InstanceInitiatedShutdownBehavior: aws.String("terminate"),
 		UserData:                          aws.String(base64.StdEncoding.EncodeToString([]byte(md.cfg.InitScript))),
-		IamInstanceProfile:                instanceProfileSpecifics,
+		IamInstanceProfile:                istSpec,
 		TagSpecifications:                 getTags(md.cfg),
 	})
 	if err != nil {
@@ -484,6 +515,12 @@ func (md *embedded) Terminate() (err error) {
 	md.lg.Info("deleting", zap.String("cluster-name", md.cfg.ClusterName))
 
 	var errs []string
+
+	if err = deleteInstanceProfile(md.lg, md.iam, md.cfg.Tag+"-instance-profile", md.cfg.InstanceProfilePolicyARN); err != nil {
+		md.lg.Warn("failed to delete instance profile", zap.Error(err))
+		errs = append(errs, err.Error())
+	}
+
 	if err = md.deleteInstances(); err != nil {
 		md.lg.Warn("failed to delete instances", zap.Error(err))
 		errs = append(errs, err.Error())
@@ -549,10 +586,214 @@ func (md *embedded) uploadTesterLogs() (err error) {
 	)
 }
 
+const (
+	assumeRoleDocument = `{
+  "Version": "2012-10-17",
+  "Statement": {
+    "Effect": "Allow",
+    "Principal": {"Service": "ec2.amazonaws.com"},
+    "Action": "sts:AssumeRole"
+  }
+}`
+)
+
+func createInstanceProfile(
+	lg *zap.Logger,
+	iamIf iamiface.IAMAPI,
+	policyDoc []byte,
+	instanceProfileName string) (policyArn string, err error) {
+	var profileOutput *iam.CreateInstanceProfileOutput
+	profileOutput, err = iamIf.CreateInstanceProfile(&iam.CreateInstanceProfileInput{
+		InstanceProfileName: aws.String(instanceProfileName),
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to create a new instance profile (%v)", err)
+	}
+	if instanceProfileName != *profileOutput.InstanceProfile.InstanceProfileName {
+		return "", fmt.Errorf("got different instance profile name %q (expected %q)", *profileOutput.InstanceProfile.InstanceProfileName, instanceProfileName)
+	}
+	lg.Info(
+		"created instance profile",
+		zap.String("instance-profile-name", *profileOutput.InstanceProfile.InstanceProfileName),
+	)
+
+	var policyOutput *iam.CreatePolicyOutput
+	policyOutput, err = iamIf.CreatePolicy(&iam.CreatePolicyInput{
+		Description:    aws.String("awe-k8s-tester generated policy for testing EC2"),
+		PolicyDocument: aws.String(string(policyDoc)),
+		PolicyName:     aws.String(instanceProfileName + "-policy"),
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to create a new instance profile policy (%v)", err)
+	}
+	lg.Info(
+		"created instance policy",
+		zap.String("instance-profile-policy-name", instanceProfileName+"-policy"),
+	)
+	policyArn = *policyOutput.Policy.Arn
+
+	var roleOutput *iam.CreateRoleOutput
+	roleOutput, err = iamIf.CreateRole(&iam.CreateRoleInput{
+		AssumeRolePolicyDocument: aws.String(assumeRoleDocument),
+		RoleName:                 aws.String(instanceProfileName + "-role"),
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to create new role (%v)", err)
+	}
+	lg.Info("created instance role",
+		zap.String("instance-profile-role-name", instanceProfileName+"-role"),
+	)
+
+	_, err = iamIf.AttachRolePolicy(&iam.AttachRolePolicyInput{
+		PolicyArn: policyOutput.Policy.Arn,
+		RoleName:  roleOutput.Role.RoleName,
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to attach role to policy (%v)", err)
+	}
+	lg.Info(
+		"attached role to policy",
+		zap.String("instance-profile-name", instanceProfileName),
+	)
+
+	_, err = iamIf.AddRoleToInstanceProfile(&iam.AddRoleToInstanceProfileInput{
+		InstanceProfileName: profileOutput.InstanceProfile.InstanceProfileName,
+		RoleName:            roleOutput.Role.RoleName,
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to add role to instance profile (%v)", err)
+	}
+	lg.Info(
+		"attached role to instance profile",
+		zap.String("instance-profile-name", instanceProfileName),
+		zap.String("instance-profile-role-name", instanceProfileName+"-role"),
+	)
+
+	return policyArn, nil
+}
+
+func deleteInstanceProfile(
+	lg *zap.Logger,
+	iamIf iamiface.IAMAPI,
+	instanceProfileName string,
+	policyArn string) (err error) {
+	if instanceProfileName == "" {
+		return nil
+	}
+	_, err = iamIf.RemoveRoleFromInstanceProfile(&iam.RemoveRoleFromInstanceProfileInput{
+		InstanceProfileName: aws.String(instanceProfileName),
+		RoleName:            aws.String(instanceProfileName + "-role"),
+	})
+	if err != nil {
+		lg.Warn("failed to remove role from instance profile", zap.Error(err))
+	} else {
+		lg.Info(
+			"removed role from instance profile",
+			zap.String("instance-profile-name", instanceProfileName),
+		)
+	}
+
+	_, err = iamIf.DeleteInstanceProfile(&iam.DeleteInstanceProfileInput{
+		InstanceProfileName: aws.String(instanceProfileName),
+	})
+	if err != nil {
+		lg.Warn(
+			"failed to delete instance profile",
+			zap.String("instance-profile-name", instanceProfileName),
+			zap.Error(err),
+		)
+	} else {
+		lg.Info(
+			"deleted instance profile",
+			zap.String("instance-profile-name", instanceProfileName),
+		)
+	}
+
+	if instanceProfileName == "" {
+		return err
+	}
+	_, err = iamIf.DetachRolePolicy(&iam.DetachRolePolicyInput{
+		PolicyArn: aws.String(policyArn),
+		RoleName:  aws.String(instanceProfileName + "-role"),
+	})
+	if err != nil {
+		lg.Warn(
+			"failed to delete role policy",
+			zap.String("instance-profile-name", instanceProfileName),
+			zap.Error(err),
+		)
+	} else {
+		lg.Info(
+			"deleted role policy",
+			zap.String("instance-profile-name", instanceProfileName),
+		)
+	}
+
+	_, err = iamIf.DeletePolicy(&iam.DeletePolicyInput{
+		PolicyArn: aws.String(policyArn),
+	})
+	if err != nil {
+		lg.Warn(
+			"failed to delete policy",
+			zap.String("instance-profile-name", instanceProfileName),
+			zap.Error(err),
+		)
+	} else {
+		lg.Info(
+			"deleted policy",
+			zap.String("instance-profile-name", instanceProfileName),
+		)
+	}
+
+	_, err = iamIf.DeleteRole(&iam.DeleteRoleInput{
+		RoleName: aws.String(instanceProfileName + "-role"),
+	})
+	if err != nil {
+		lg.Warn(
+			"failed to delete role",
+			zap.String("instance-profile-name", instanceProfileName),
+			zap.Error(err),
+		)
+	} else {
+		lg.Info(
+			"deleted role",
+			zap.String("instance-profile-name", instanceProfileName),
+		)
+	}
+
+	return nil
+}
+
 func (md *embedded) createInstances() (err error) {
 	now := time.Now().UTC()
 
-	instanceProfileSpecifics := &ec2.IamInstanceProfileSpecification{Name: &md.cfg.InstanceProfileName}
+	var istSpec *ec2.IamInstanceProfileSpecification
+	if md.cfg.InstanceProfileName != "" {
+		istSpec = &ec2.IamInstanceProfileSpecification{
+			Name: &md.cfg.InstanceProfileName,
+		}
+	} else if md.cfg.InstanceProfileFilePath != "" {
+		instanceProfileName := md.cfg.Tag + "-instance-profile"
+		istSpec = &ec2.IamInstanceProfileSpecification{
+			Name: aws.String(instanceProfileName),
+		}
+		var policyDoc []byte
+		policyDoc, err = ioutil.ReadFile(md.cfg.InstanceProfileFilePath)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			if err != nil {
+				md.lg.Warn("failed to create an instance profile, rolling back", zap.Error(err))
+				if derr := deleteInstanceProfile(md.lg, md.iam, instanceProfileName, md.cfg.InstanceProfilePolicyARN); derr != nil {
+					md.lg.Warn("failed to roll back instance profile creation", zap.Error(derr))
+				}
+			}
+		}()
+		if md.cfg.InstanceProfilePolicyARN, err = createInstanceProfile(md.lg, md.iam, policyDoc, instanceProfileName); err != nil {
+			return err
+		}
+	}
 
 	// evenly distribute per subnet
 	left := md.cfg.ClusterSize
@@ -611,7 +852,7 @@ func (md *embedded) createInstances() (err error) {
 					SecurityGroupIds:                  aws.StringSlice(md.cfg.SecurityGroupIDs),
 					InstanceInitiatedShutdownBehavior: aws.String("terminate"),
 					UserData:                          aws.String(base64.StdEncoding.EncodeToString([]byte(md.cfg.InitScript))),
-					IamInstanceProfile:                instanceProfileSpecifics,
+					IamInstanceProfile:                istSpec,
 					TagSpecifications:                 getTags(md.cfg),
 				})
 				if err != nil {
@@ -654,7 +895,7 @@ func (md *embedded) createInstances() (err error) {
 						SecurityGroupIds:                  aws.StringSlice(md.cfg.SecurityGroupIDs),
 						InstanceInitiatedShutdownBehavior: aws.String("terminate"),
 						UserData:                          aws.String(base64.StdEncoding.EncodeToString([]byte(md.cfg.InitScript))),
-						IamInstanceProfile:                instanceProfileSpecifics,
+						IamInstanceProfile:                istSpec,
 						TagSpecifications:                 getTags(md.cfg),
 					})
 					if err != nil {
@@ -715,7 +956,7 @@ func (md *embedded) createInstances() (err error) {
 				SecurityGroupIds:                  aws.StringSlice(md.cfg.SecurityGroupIDs),
 				InstanceInitiatedShutdownBehavior: aws.String("terminate"),
 				UserData:                          aws.String(base64.StdEncoding.EncodeToString([]byte(md.cfg.InitScript))),
-				IamInstanceProfile:                instanceProfileSpecifics,
+				IamInstanceProfile:                istSpec,
 				TagSpecifications:                 getTags(md.cfg),
 			})
 			if err != nil {
