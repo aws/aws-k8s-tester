@@ -4,6 +4,7 @@ package csi
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"reflect"
 	"strings"
 	"text/template"
@@ -12,48 +13,86 @@ import (
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/internal/ec2"
 	"github.com/aws/aws-k8s-tester/internal/ssh"
+	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"go.uber.org/zap"
 )
 
-type Tester struct {
+const policyDocument = `{
+	"Version": "2012-10-17",
+	"Statement": [
+		{
+			"Action": "ec2:*",
+			"Effect": "Allow",
+			"Resource": "*"
+		},
+		{
+			"Effect": "Allow",
+			"Action": "elasticloadbalancing:*",
+			"Resource": "*"
+		},
+		{
+			"Effect": "Allow",
+			"Action": "cloudwatch:*",
+			"Resource": "*"
+		},
+		{
+			"Effect": "Allow",
+			"Action": "autoscaling:*",
+			"Resource": "*"
+		},
+		{
+			"Effect": "Allow",
+			"Action": "iam:CreateServiceLinkedRole",
+			"Resource": "*",
+			"Condition": {
+				"StringEquals": {
+					"iam:AWSServiceName": [
+						"autoscaling.amazonaws.com",
+						"ec2scheduled.amazonaws.com",
+						"elasticloadbalancing.amazonaws.com",
+						"spot.amazonaws.com",
+						"spotfleet.amazonaws.com"
+					]
+				}
+			}
+		}
+	]
+}
+`
+
+type csiTester struct {
 	cfg *ec2config.Config
-	iam *iamResources
 	ec  ec2.Deployer
 
 	terminateOnExit bool
 	journalctlLogs  bool
 }
 
-func NewTester(cfg *ec2config.Config, terminateOnExit, journalctlLogs bool) (tester *Tester, err error) {
+// Tester defines CSI test interface.
+type Tester interface {
+	RunIntegration() error
+	Down() error
+}
+
+// NewTester creates a new tester.
+func NewTester(cfg *ec2config.Config, terminateOnExit, journalctlLogs bool) (ct *csiTester, err error) {
 	// TODO: some sort of validations check
-	tester = &Tester{
+	ct = &csiTester{
 		terminateOnExit: terminateOnExit,
 		journalctlLogs:  journalctlLogs,
 		cfg:             cfg,
 	}
 
-	if tester.iam, err = createIAMResources(cfg.AWSRegion); err != nil {
-		return nil, fmt.Errorf("failed to create iamResources (%v)", err)
-	}
-	cfg.InstanceProfileName = tester.iam.instanceProfile.name
-
-	defer func() {
-		if err != nil {
-			if deleteErr := tester.iam.deleteIAMResources(); deleteErr != nil {
-				tester.iam.lg.Error("failed to delete all IAM resources", zap.Error(deleteErr))
-			}
-		}
-	}()
-
-	if tester.ec, err = ec2.NewDeployer(tester.cfg); err != nil {
+	if ct.ec, err = ec2.NewDeployer(ct.cfg); err != nil {
 		return nil, fmt.Errorf("failed to create EC2 deployer (%v)", err)
 	}
-	if err = tester.ec.Create(); err != nil {
+	if err = ct.ec.Create(); err != nil {
 		return nil, fmt.Errorf("failed to create EC2 instance (%v)", err)
 	}
-	return tester, nil
+	return ct, nil
 }
 
+// CreateConfig creates a new configuration.
 func CreateConfig(vpcID, prNum, githubAccount, githubBranch string) (cfg *ec2config.Config, err error) {
 	cfg = ec2config.NewDefault()
 	cfg.UploadTesterLogs = false
@@ -63,6 +102,11 @@ func CreateConfig(vpcID, prNum, githubAccount, githubBranch string) (cfg *ec2con
 		"update-amazon-linux-2",
 		"install-go-1.11.4",
 	}
+	cfg.InstanceProfileFilePath, err = fileutil.WriteTempFile([]byte(policyDocument))
+	if err != nil {
+		return nil, err
+	}
+
 	// If prNum is set to an non-empty string, the master branch of kubernetes-sigs/aws-ebs-csi-driver is used,
 	// regardless of whether or not githubAccount and githubBranch have different values.
 	if prNum != "" {
@@ -83,36 +127,34 @@ func CreateConfig(vpcID, prNum, githubAccount, githubBranch string) (cfg *ec2con
 	return cfg, nil
 }
 
-func (tester *Tester) RunCSIIntegrationTest() error {
-	lg := tester.ec.Logger()
+func (ct *csiTester) RunIntegration() error {
+	lg := ct.ec.Logger()
 
 	downOrPrintCommands := func() {
-		if tester.terminateOnExit {
-			err := tester.Down()
+		if ct.terminateOnExit {
+			err := ct.Down()
 			if err != nil {
 				lg.Warn("failed to take down all resources", zap.Error(err))
 			}
 		} else {
-			fmt.Println(tester.cfg.SSHCommands())
-			fmt.Println(tester.iam.getManualDeleteCommands())
+			fmt.Println(ct.cfg.SSHCommands())
 		}
 	}
 
-	fmt.Println(tester.cfg.SSHCommands())
-	fmt.Println(tester.iam.getManualDeleteCommands())
+	fmt.Println(ct.cfg.SSHCommands())
 
 	var iv ec2config.Instance
-	for _, v := range tester.cfg.Instances {
+	for _, v := range ct.cfg.Instances {
 		iv = v
 		break
 	}
 
 	sh, serr := ssh.New(ssh.Config{
 		Logger:        lg,
-		KeyPath:       tester.cfg.KeyPath,
+		KeyPath:       ct.cfg.KeyPath,
 		PublicIP:      iv.PublicIP,
 		PublicDNSName: iv.PublicDNSName,
-		UserName:      tester.cfg.UserName})
+		UserName:      ct.cfg.UserName})
 
 	if serr != nil {
 		downOrPrintCommands()
@@ -125,7 +167,7 @@ func (tester *Tester) RunCSIIntegrationTest() error {
 		return fmt.Errorf("failed to connect SSH (%v)", err)
 	}
 
-	testCmd := fmt.Sprintf(`cd /home/%s/go/src/github.com/kubernetes-sigs/aws-ebs-csi-driver && sudo sh -c 'source /home/%s/.bashrc && ./hack/test-integration.sh'`, tester.cfg.UserName, tester.cfg.UserName)
+	testCmd := fmt.Sprintf(`cd /home/%s/go/src/github.com/kubernetes-sigs/aws-ebs-csi-driver && sudo sh -c 'source /home/%s/.bashrc && ./hack/test-integration.sh'`, ct.cfg.UserName, ct.cfg.UserName)
 	out, err := sh.Run(
 		testCmd,
 		ssh.WithTimeout(10*time.Minute),
@@ -150,7 +192,7 @@ func (tester *Tester) RunCSIIntegrationTest() error {
 		return fmt.Errorf("CSI integration test FAILED")
 	}
 
-	if tester.journalctlLogs {
+	if ct.journalctlLogs {
 		// full journal logs (e.g. disk mounts)
 		lg.Info("fetching journal logs")
 		journalCmd := "sudo journalctl --no-pager --output=short-precise"
@@ -166,19 +208,19 @@ func (tester *Tester) RunCSIIntegrationTest() error {
 		}
 	}
 
-	if tester.terminateOnExit {
-		err = tester.Down()
+	if ct.terminateOnExit {
+		err = ct.Down()
 		if err != nil {
 			lg.Warn("failed to take down all resources", zap.Error(err))
 		}
+		os.RemoveAll(ct.cfg.InstanceProfileFilePath)
 	}
 
 	return nil
 }
 
-func (tester *Tester) Down() error {
-	tester.ec.Terminate()
-	return tester.iam.deleteIAMResources()
+func (ct *csiTester) Down() error {
+	return ct.ec.Terminate()
 }
 
 type gitAccountAndBranch struct {

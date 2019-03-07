@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/internal/csi"
-
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
@@ -83,13 +82,13 @@ func testIntegrationFunc(cmd *cobra.Command, args []string) {
 		fmt.Fprintf(os.Stderr, "error while config: (%v)\n", err)
 		os.Exit(1)
 	}
-	tester, err := csi.NewTester(cfg, terminateOnExit, journalctlLogs)
+	ct, err := csi.NewTester(cfg, terminateOnExit, journalctlLogs)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error while creating new tester: (%v)\n", err)
 		os.Exit(1)
 	}
 
-	if err = tester.RunCSIIntegrationTest(); err != nil {
+	if err = ct.RunIntegration(); err != nil {
 		fmt.Fprintf(os.Stderr, "error with CSI integration test (%v)\n", err)
 		os.Exit(1)
 	}
