@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"reflect"
 	"strings"
 	"sync"
 	"time"
@@ -271,7 +272,7 @@ func (md *embedded) Add() (err error) {
 			Name: &md.cfg.InstanceProfileName,
 		}
 	} else if md.cfg.InstanceProfileFilePath != "" {
-		instanceProfileName := md.cfg.Tag + "-instance-profile"
+		instanceProfileName := md.cfg.ClusterName + "-instance-profile"
 		istSpec = &ec2.IamInstanceProfileSpecification{
 			Name: aws.String(instanceProfileName),
 		}
@@ -280,16 +281,17 @@ func (md *embedded) Add() (err error) {
 		if err != nil {
 			return err
 		}
-		defer func() {
-			if err != nil {
-				md.lg.Warn("failed to create an instance profile, rolling back", zap.Error(err))
-				if derr := deleteInstanceProfile(md.lg, md.iam, instanceProfileName, md.cfg.InstanceProfilePolicyARN); derr != nil {
-					md.lg.Warn("failed to roll back instance profile creation", zap.Error(derr))
-				}
+		var ierr error
+		md.cfg.InstanceProfilePolicyARN, ierr = createInstanceProfile(md.lg, md.iam, policyDoc, instanceProfileName)
+		if ierr != nil {
+			// TODO
+			if strings.Contains(ierr.Error(), "parameter iamInstanceProfile.name is invalid. Invalid IAM Instance Profile name") {
+				md.lg.Warn("failed to create instance profile or consistency issue",
+					zap.String("error-type", fmt.Sprintf("%v", reflect.TypeOf(ierr))),
+					zap.Error(ierr),
+				)
+				err = nil
 			}
-		}()
-		if md.cfg.InstanceProfilePolicyARN, err = createInstanceProfile(md.lg, md.iam, policyDoc, instanceProfileName); err != nil {
-			return err
 		}
 	}
 
@@ -515,12 +517,12 @@ func (md *embedded) Terminate() (err error) {
 	md.lg.Info("deleting", zap.String("cluster-name", md.cfg.ClusterName))
 
 	var errs []string
-
-	if err = deleteInstanceProfile(md.lg, md.iam, md.cfg.Tag+"-instance-profile", md.cfg.InstanceProfilePolicyARN); err != nil {
-		md.lg.Warn("failed to delete instance profile", zap.Error(err))
-		errs = append(errs, err.Error())
+	if md.cfg.InstanceProfileFilePath != "" {
+		if err = deleteInstanceProfile(md.lg, md.iam, md.cfg.ClusterName+"-instance-profile", md.cfg.InstanceProfilePolicyARN); err != nil {
+			md.lg.Warn("failed to delete instance profile", zap.Error(err))
+			errs = append(errs, err.Error())
+		}
 	}
-
 	if err = md.deleteInstances(); err != nil {
 		md.lg.Warn("failed to delete instances", zap.Error(err))
 		errs = append(errs, err.Error())
@@ -669,6 +671,11 @@ func createInstanceProfile(
 		zap.String("instance-profile-role-name", instanceProfileName+"-role"),
 	)
 
+	// Delay is needed to ensure that permissions have been propagated.
+	// See the section "Launching an Instance with an IAM Role" at
+	// https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html
+	time.Sleep(20 * time.Second)
+
 	return policyArn, nil
 }
 
@@ -773,7 +780,7 @@ func (md *embedded) createInstances() (err error) {
 			Name: &md.cfg.InstanceProfileName,
 		}
 	} else if md.cfg.InstanceProfileFilePath != "" {
-		instanceProfileName := md.cfg.Tag + "-instance-profile"
+		instanceProfileName := md.cfg.ClusterName + "-instance-profile"
 		istSpec = &ec2.IamInstanceProfileSpecification{
 			Name: aws.String(instanceProfileName),
 		}
@@ -782,16 +789,17 @@ func (md *embedded) createInstances() (err error) {
 		if err != nil {
 			return err
 		}
-		defer func() {
-			if err != nil {
-				md.lg.Warn("failed to create an instance profile, rolling back", zap.Error(err))
-				if derr := deleteInstanceProfile(md.lg, md.iam, instanceProfileName, md.cfg.InstanceProfilePolicyARN); derr != nil {
-					md.lg.Warn("failed to roll back instance profile creation", zap.Error(derr))
-				}
+		var ierr error
+		md.cfg.InstanceProfilePolicyARN, ierr = createInstanceProfile(md.lg, md.iam, policyDoc, instanceProfileName)
+		if ierr != nil {
+			// TODO
+			if strings.Contains(ierr.Error(), "parameter iamInstanceProfile.name is invalid. Invalid IAM Instance Profile name") {
+				md.lg.Warn("failed to create instance profile or consistency issue",
+					zap.String("error-type", fmt.Sprintf("%v", reflect.TypeOf(ierr))),
+					zap.Error(ierr),
+				)
+				err = nil
 			}
-		}()
-		if md.cfg.InstanceProfilePolicyARN, err = createInstanceProfile(md.lg, md.iam, policyDoc, instanceProfileName); err != nil {
-			return err
 		}
 	}
 
