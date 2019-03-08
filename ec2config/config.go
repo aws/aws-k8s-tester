@@ -160,12 +160,25 @@ type Config struct {
 	// Wait is true to wait until all EC2 instances are ready.
 	Wait bool `json:"wait"`
 
-	// InstanceProfileName is the name of an instance profile with permissions to manage EC2 instances.
-	InstanceProfileName string `json:"instance-profile-name"`
 	// InstanceProfileFilePath is the JSON file path that defines the instance profile.
 	InstanceProfileFilePath string `json:"instance-profile-file-path"`
+	// InstanceProfileName is the name of an instance profile with permissions to manage EC2 instances.
+	// NOTE THAT this always gets overwritten by 'ClusterName' and 'InstanceProfileFilePath'.
+	InstanceProfileName string `json:"instance-profile-name"`
+	// InstanceProfileCreated is true to indicate that instance profile has been created, so needs be cleaned later.
+	InstanceProfileCreated bool `json:"instance-profile-created"`
+	// InstanceProfilePolicyName is the name of instance profile.
+	InstanceProfilePolicyName string `json:"instance-profile-policy-name"`
 	// InstanceProfilePolicyARN is the ARN of instance profile.
 	InstanceProfilePolicyARN string `json:"instance-profile-policy-arn"`
+	// InstanceProfilePolicy is the instance profile policy.
+	InstanceProfilePolicy string `json:"instance-profile-policy"`
+	// InstanceProfilePolicyCreated is true to indicate that instance profile policy has been created, so needs be cleaned later.
+	InstanceProfilePolicyCreated bool `json:"instance-profile-policy-created"`
+	// InstanceProfileRoleName is the instance profile role name.
+	InstanceProfileRoleName string `json:"instance-profile-role-name"`
+	// InstanceProfileRoleCreated is true to indicate that instance profile role has been created, so needs be cleaned later.
+	InstanceProfileRoleCreated bool `json:"instance-profile-role-created"`
 
 	// CustomScript is executed at the end of EC2 init script.
 	CustomScript string `json:"custom-script"`
@@ -486,17 +499,13 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 		return fmt.Errorf("unexpected InstanceType %q", cfg.InstanceType)
 	}
 
-	if cfg.InstanceProfileName != "" && cfg.InstanceProfileFilePath != "" {
-		return fmt.Errorf(
-			"both instance profile name %q and instance profile file %q are not empty",
-			cfg.InstanceProfileName,
-			cfg.InstanceProfileFilePath,
-		)
-	}
 	if cfg.InstanceProfileFilePath != "" {
 		if _, err := os.Stat(cfg.InstanceProfileFilePath); err != nil {
 			return fmt.Errorf("instance profile name %q does not exist (%v)", cfg.InstanceProfileFilePath, err)
 		}
+		cfg.InstanceProfileName = cfg.ClusterName + "-instance-profile"
+		cfg.InstanceProfileRoleName = cfg.InstanceProfileName + "-role"
+		cfg.InstanceProfilePolicyName = cfg.InstanceProfileName + "-policy"
 	}
 
 	return nil
