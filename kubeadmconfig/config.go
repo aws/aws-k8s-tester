@@ -303,7 +303,7 @@ var workerNodesPorts = []string{
 func genTag() string {
 	// use UTC time for everything
 	now := time.Now().UTC()
-	return fmt.Sprintf("a8-kubeadm-%d%02d%02d", now.Year()-2000, int(now.Month()), now.Day())
+	return fmt.Sprintf("a8-kdm-%d%02d%02d", now.Year()-2000, int(now.Month()), now.Day())
 }
 
 var defaultConfig = Config{
@@ -608,7 +608,7 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 
 	// populate all paths on disks and on remote storage
 	if cfg.ConfigPath == "" {
-		f, err := ioutil.TempFile(os.TempDir(), "a8-kubeadmconfig")
+		f, err := ioutil.TempFile(os.TempDir(), "a8-kdmconfig")
 		if err != nil {
 			return err
 		}
@@ -616,7 +616,7 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 		f.Close()
 		os.RemoveAll(cfg.ConfigPath)
 	}
-	cfg.ConfigPathBucket = filepath.Join(cfg.ClusterName, "a8-kubeadmconfig.yaml")
+	cfg.ConfigPathBucket = filepath.Join(cfg.ClusterName, "a8-kdmconfig.yaml")
 
 	cfg.LogOutputToUploadPath = filepath.Join(os.TempDir(), fmt.Sprintf("%s.log", cfg.ClusterName))
 	logOutputExist := false
@@ -630,7 +630,7 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 		// auto-insert generated log output paths to zap logger output list
 		cfg.LogOutputs = append(cfg.LogOutputs, cfg.LogOutputToUploadPath)
 	}
-	cfg.LogOutputToUploadPathBucket = filepath.Join(cfg.ClusterName, "a8-kubeadm.log")
+	cfg.LogOutputToUploadPathBucket = filepath.Join(cfg.ClusterName, "a8-kdm.log")
 
 	cfg.KubeConfigPath = fmt.Sprintf("%s.%s.kubeconfig.generated.yaml", cfg.ConfigPath, cfg.ClusterName)
 	cfg.KubeConfigPathBucket = filepath.Join(cfg.ClusterName, "kubeconfig")

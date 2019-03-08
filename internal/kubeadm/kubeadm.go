@@ -96,6 +96,8 @@ func (md *embedded) Create() (err error) {
 
 	defer func() {
 		if err != nil {
+			fmt.Println("waiting!!!!!!!!", err)
+			time.Sleep(5 * time.Minute)
 			md.lg.Warn("failed to create Kubernetes, reverting", zap.Error(err))
 			md.lg.Warn("failed to create Kubernetes, reverted", zap.Error(md.terminate()))
 		}
