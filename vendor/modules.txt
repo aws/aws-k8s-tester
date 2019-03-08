@@ -15,7 +15,7 @@ github.com/Azure/go-autorest/autorest/azure
 github.com/Azure/go-autorest/logger
 github.com/Azure/go-autorest/tracing
 github.com/Azure/go-autorest/autorest/date
-# github.com/aws/aws-sdk-go v1.17.5
+# github.com/aws/aws-sdk-go v1.17.13
 github.com/aws/aws-sdk-go/aws/session
 github.com/aws/aws-sdk-go/service/sts
 github.com/aws/aws-sdk-go/aws
@@ -23,11 +23,12 @@ github.com/aws/aws-sdk-go/aws/awserr
 github.com/aws/aws-sdk-go/aws/request
 github.com/aws/aws-sdk-go/service/s3
 github.com/aws/aws-sdk-go/service/s3/s3iface
-github.com/aws/aws-sdk-go/service/iam
 github.com/aws/aws-sdk-go/service/cloudformation
 github.com/aws/aws-sdk-go/service/cloudformation/cloudformationiface
 github.com/aws/aws-sdk-go/service/ec2
 github.com/aws/aws-sdk-go/service/ec2/ec2iface
+github.com/aws/aws-sdk-go/service/iam
+github.com/aws/aws-sdk-go/service/iam/iamiface
 github.com/aws/aws-sdk-go/service/s3/s3manager
 github.com/aws/aws-sdk-go/service/sts/stsiface
 github.com/aws/aws-sdk-go/service/autoscaling
@@ -35,7 +36,6 @@ github.com/aws/aws-sdk-go/service/autoscaling/autoscalingiface
 github.com/aws/aws-sdk-go/service/eks
 github.com/aws/aws-sdk-go/service/eks/eksiface
 github.com/aws/aws-sdk-go/service/elbv2
-github.com/aws/aws-sdk-go/service/iam/iamiface
 github.com/aws/aws-sdk-go/service/elbv2/elbv2iface
 github.com/aws/aws-sdk-go/service/elb
 github.com/aws/aws-sdk-go/service/elb/elbiface

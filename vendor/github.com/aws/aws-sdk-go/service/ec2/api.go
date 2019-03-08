@@ -3142,7 +3142,7 @@ func (c *EC2) CopySnapshotRequest(input *CopySnapshotInput) (req *request.Reques
 // CopySnapshot API operation for Amazon Elastic Compute Cloud.
 //
 // Copies a point-in-time snapshot of an EBS volume and stores it in Amazon
-// S3. You can copy the snapshot within the same region or from one region to
+// S3. You can copy the snapshot within the same Region or from one Region to
 // another. You can use the snapshot to create EBS volumes or Amazon Machine
 // Images (AMIs). The snapshot is copied to the regional endpoint that you send
 // the HTTP request to.
@@ -5160,9 +5160,8 @@ func (c *EC2) CreateReservedInstancesListingRequest(input *CreateReservedInstanc
 // listing at a time. To get a list of your Standard Reserved Instances, you
 // can use the DescribeReservedInstances operation.
 //
-// Only Standard Reserved Instances with a capacity reservation can be sold
-// in the Reserved Instance Marketplace. Convertible Reserved Instances and
-// Standard Reserved Instances with a regional benefit cannot be sold.
+// Only Standard Reserved Instances can be sold in the Reserved Instance Marketplace.
+// Convertible Reserved Instances cannot be sold.
 //
 // The Reserved Instance Marketplace matches sellers who want to resell Standard
 // Reserved Instance capacity that they no longer need with buyers who want
@@ -13249,6 +13248,12 @@ func (c *EC2) DescribeInternetGatewaysRequest(input *DescribeInternetGatewaysInp
 		Name:       opDescribeInternetGateways,
 		HTTPMethod: "POST",
 		HTTPPath:   "/",
+		Paginator: &request.Paginator{
+			InputTokens:     []string{"NextToken"},
+			OutputTokens:    []string{"NextToken"},
+			LimitToken:      "MaxResults",
+			TruncationToken: "",
+		},
 	}
 
 	if input == nil {
@@ -13290,6 +13295,56 @@ func (c *EC2) DescribeInternetGatewaysWithContext(ctx aws.Context, input *Descri
 	req.SetContext(ctx)
 	req.ApplyOptions(opts...)
 	return out, req.Send()
+}
+
+// DescribeInternetGatewaysPages iterates over the pages of a DescribeInternetGateways operation,
+// calling the "fn" function with the response data for each page. To stop
+// iterating, return false from the fn function.
+//
+// See DescribeInternetGateways method for more information on how to use this operation.
+//
+// Note: This operation can generate multiple requests to a service.
+//
+//    // Example iterating over at most 3 pages of a DescribeInternetGateways operation.
+//    pageNum := 0
+//    err := client.DescribeInternetGatewaysPages(params,
+//        func(page *DescribeInternetGatewaysOutput, lastPage bool) bool {
+//            pageNum++
+//            fmt.Println(page)
+//            return pageNum <= 3
+//        })
+//
+func (c *EC2) DescribeInternetGatewaysPages(input *DescribeInternetGatewaysInput, fn func(*DescribeInternetGatewaysOutput, bool) bool) error {
+	return c.DescribeInternetGatewaysPagesWithContext(aws.BackgroundContext(), input, fn)
+}
+
+// DescribeInternetGatewaysPagesWithContext same as DescribeInternetGatewaysPages except
+// it takes a Context and allows setting request options on the pages.
+//
+// The context must be non-nil and will be used for request cancellation. If
+// the context is nil a panic will occur. In the future the SDK may create
+// sub-contexts for http.Requests. See https://golang.org/pkg/context/
+// for more information on using Contexts.
+func (c *EC2) DescribeInternetGatewaysPagesWithContext(ctx aws.Context, input *DescribeInternetGatewaysInput, fn func(*DescribeInternetGatewaysOutput, bool) bool, opts ...request.Option) error {
+	p := request.Pagination{
+		NewRequest: func() (*request.Request, error) {
+			var inCpy *DescribeInternetGatewaysInput
+			if input != nil {
+				tmp := *input
+				inCpy = &tmp
+			}
+			req, _ := c.DescribeInternetGatewaysRequest(inCpy)
+			req.SetContext(ctx)
+			req.ApplyOptions(opts...)
+			return req, nil
+		},
+	}
+
+	cont := true
+	for p.Next() && cont {
+		cont = fn(p.Page().(*DescribeInternetGatewaysOutput), !p.HasNextPage())
+	}
+	return p.Err()
 }
 
 const opDescribeKeyPairs = "DescribeKeyPairs"
@@ -13755,6 +13810,12 @@ func (c *EC2) DescribeNetworkAclsRequest(input *DescribeNetworkAclsInput) (req *
 		Name:       opDescribeNetworkAcls,
 		HTTPMethod: "POST",
 		HTTPPath:   "/",
+		Paginator: &request.Paginator{
+			InputTokens:     []string{"NextToken"},
+			OutputTokens:    []string{"NextToken"},
+			LimitToken:      "MaxResults",
+			TruncationToken: "",
+		},
 	}
 
 	if input == nil {
@@ -13799,6 +13860,56 @@ func (c *EC2) DescribeNetworkAclsWithContext(ctx aws.Context, input *DescribeNet
 	req.SetContext(ctx)
 	req.ApplyOptions(opts...)
 	return out, req.Send()
+}
+
+// DescribeNetworkAclsPages iterates over the pages of a DescribeNetworkAcls operation,
+// calling the "fn" function with the response data for each page. To stop
+// iterating, return false from the fn function.
+//
+// See DescribeNetworkAcls method for more information on how to use this operation.
+//
+// Note: This operation can generate multiple requests to a service.
+//
+//    // Example iterating over at most 3 pages of a DescribeNetworkAcls operation.
+//    pageNum := 0
+//    err := client.DescribeNetworkAclsPages(params,
+//        func(page *DescribeNetworkAclsOutput, lastPage bool) bool {
+//            pageNum++
+//            fmt.Println(page)
+//            return pageNum <= 3
+//        })
+//
+func (c *EC2) DescribeNetworkAclsPages(input *DescribeNetworkAclsInput, fn func(*DescribeNetworkAclsOutput, bool) bool) error {
+	return c.DescribeNetworkAclsPagesWithContext(aws.BackgroundContext(), input, fn)
+}
+
+// DescribeNetworkAclsPagesWithContext same as DescribeNetworkAclsPages except
+// it takes a Context and allows setting request options on the pages.
+//
+// The context must be non-nil and will be used for request cancellation. If
+// the context is nil a panic will occur. In the future the SDK may create
+// sub-contexts for http.Requests. See https://golang.org/pkg/context/
+// for more information on using Contexts.
+func (c *EC2) DescribeNetworkAclsPagesWithContext(ctx aws.Context, input *DescribeNetworkAclsInput, fn func(*DescribeNetworkAclsOutput, bool) bool, opts ...request.Option) error {
+	p := request.Pagination{
+		NewRequest: func() (*request.Request, error) {
+			var inCpy *DescribeNetworkAclsInput
+			if input != nil {
+				tmp := *input
+				inCpy = &tmp
+			}
+			req, _ := c.DescribeNetworkAclsRequest(inCpy)
+			req.SetContext(ctx)
+			req.ApplyOptions(opts...)
+			return req, nil
+		},
+	}
+
+	cont := true
+	for p.Next() && cont {
+		cont = fn(p.Page().(*DescribeNetworkAclsOutput), !p.HasNextPage())
+	}
+	return p.Err()
 }
 
 const opDescribeNetworkInterfaceAttribute = "DescribeNetworkInterfaceAttribute"
@@ -15558,9 +15669,9 @@ func (c *EC2) DescribeSnapshotsRequest(input *DescribeSnapshotsInput) (req *requ
 // DescribeSnapshots API operation for Amazon Elastic Compute Cloud.
 //
 // Describes one or more of the EBS snapshots available to you. Available snapshots
-// include public snapshots available for any AWS account to launch, private
-// snapshots that you own, and private snapshots owned by another AWS account
-// but for which you've been given explicit create volume permissions.
+// include public snapshots available for use by any AWS account, private snapshots
+// that you own, and private snapshots owned by another AWS account for which
+// you've been given explicit create volume permissions.
 //
 // The create volume permissions fall into the following categories:
 //
@@ -18037,6 +18148,12 @@ func (c *EC2) DescribeVpcPeeringConnectionsRequest(input *DescribeVpcPeeringConn
 		Name:       opDescribeVpcPeeringConnections,
 		HTTPMethod: "POST",
 		HTTPPath:   "/",
+		Paginator: &request.Paginator{
+			InputTokens:     []string{"NextToken"},
+			OutputTokens:    []string{"NextToken"},
+			LimitToken:      "MaxResults",
+			TruncationToken: "",
+		},
 	}
 
 	if input == nil {
@@ -18080,6 +18197,56 @@ func (c *EC2) DescribeVpcPeeringConnectionsWithContext(ctx aws.Context, input *D
 	return out, req.Send()
 }
 
+// DescribeVpcPeeringConnectionsPages iterates over the pages of a DescribeVpcPeeringConnections operation,
+// calling the "fn" function with the response data for each page. To stop
+// iterating, return false from the fn function.
+//
+// See DescribeVpcPeeringConnections method for more information on how to use this operation.
+//
+// Note: This operation can generate multiple requests to a service.
+//
+//    // Example iterating over at most 3 pages of a DescribeVpcPeeringConnections operation.
+//    pageNum := 0
+//    err := client.DescribeVpcPeeringConnectionsPages(params,
+//        func(page *DescribeVpcPeeringConnectionsOutput, lastPage bool) bool {
+//            pageNum++
+//            fmt.Println(page)
+//            return pageNum <= 3
+//        })
+//
+func (c *EC2) DescribeVpcPeeringConnectionsPages(input *DescribeVpcPeeringConnectionsInput, fn func(*DescribeVpcPeeringConnectionsOutput, bool) bool) error {
+	return c.DescribeVpcPeeringConnectionsPagesWithContext(aws.BackgroundContext(), input, fn)
+}
+
+// DescribeVpcPeeringConnectionsPagesWithContext same as DescribeVpcPeeringConnectionsPages except
+// it takes a Context and allows setting request options on the pages.
+//
+// The context must be non-nil and will be used for request cancellation. If
+// the context is nil a panic will occur. In the future the SDK may create
+// sub-contexts for http.Requests. See https://golang.org/pkg/context/
+// for more information on using Contexts.
+func (c *EC2) DescribeVpcPeeringConnectionsPagesWithContext(ctx aws.Context, input *DescribeVpcPeeringConnectionsInput, fn func(*DescribeVpcPeeringConnectionsOutput, bool) bool, opts ...request.Option) error {
+	p := request.Pagination{
+		NewRequest: func() (*request.Request, error) {
+			var inCpy *DescribeVpcPeeringConnectionsInput
+			if input != nil {
+				tmp := *input
+				inCpy = &tmp
+			}
+			req, _ := c.DescribeVpcPeeringConnectionsRequest(inCpy)
+			req.SetContext(ctx)
+			req.ApplyOptions(opts...)
+			return req, nil
+		},
+	}
+
+	cont := true
+	for p.Next() && cont {
+		cont = fn(p.Page().(*DescribeVpcPeeringConnectionsOutput), !p.HasNextPage())
+	}
+	return p.Err()
+}
+
 const opDescribeVpcs = "DescribeVpcs"
 
 // DescribeVpcsRequest generates a "aws/request.Request" representing the
@@ -18111,6 +18278,12 @@ func (c *EC2) DescribeVpcsRequest(input *DescribeVpcsInput) (req *request.Reques
 		Name:       opDescribeVpcs,
 		HTTPMethod: "POST",
 		HTTPPath:   "/",
+		Paginator: &request.Paginator{
+			InputTokens:     []string{"NextToken"},
+			OutputTokens:    []string{"NextToken"},
+			LimitToken:      "MaxResults",
+			TruncationToken: "",
+		},
 	}
 
 	if input == nil {
@@ -18152,6 +18325,56 @@ func (c *EC2) DescribeVpcsWithContext(ctx aws.Context, input *DescribeVpcsInput,
 	req.SetContext(ctx)
 	req.ApplyOptions(opts...)
 	return out, req.Send()
+}
+
+// DescribeVpcsPages iterates over the pages of a DescribeVpcs operation,
+// calling the "fn" function with the response data for each page. To stop
+// iterating, return false from the fn function.
+//
+// See DescribeVpcs method for more information on how to use this operation.
+//
+// Note: This operation can generate multiple requests to a service.
+//
+//    // Example iterating over at most 3 pages of a DescribeVpcs operation.
+//    pageNum := 0
+//    err := client.DescribeVpcsPages(params,
+//        func(page *DescribeVpcsOutput, lastPage bool) bool {
+//            pageNum++
+//            fmt.Println(page)
+//            return pageNum <= 3
+//        })
+//
+func (c *EC2) DescribeVpcsPages(input *DescribeVpcsInput, fn func(*DescribeVpcsOutput, bool) bool) error {
+	return c.DescribeVpcsPagesWithContext(aws.BackgroundContext(), input, fn)
+}
+
+// DescribeVpcsPagesWithContext same as DescribeVpcsPages except
+// it takes a Context and allows setting request options on the pages.
+//
+// The context must be non-nil and will be used for request cancellation. If
+// the context is nil a panic will occur. In the future the SDK may create
+// sub-contexts for http.Requests. See https://golang.org/pkg/context/
+// for more information on using Contexts.
+func (c *EC2) DescribeVpcsPagesWithContext(ctx aws.Context, input *DescribeVpcsInput, fn func(*DescribeVpcsOutput, bool) bool, opts ...request.Option) error {
+	p := request.Pagination{
+		NewRequest: func() (*request.Request, error) {
+			var inCpy *DescribeVpcsInput
+			if input != nil {
+				tmp := *input
+				inCpy = &tmp
+			}
+			req, _ := c.DescribeVpcsRequest(inCpy)
+			req.SetContext(ctx)
+			req.ApplyOptions(opts...)
+			return req, nil
+		},
+	}
+
+	cont := true
+	for p.Next() && cont {
+		cont = fn(p.Page().(*DescribeVpcsOutput), !p.HasNextPage())
+	}
+	return p.Err()
 }
 
 const opDescribeVpnConnections = "DescribeVpnConnections"
@@ -22258,6 +22481,80 @@ func (c *EC2) ModifyInstanceCreditSpecification(input *ModifyInstanceCreditSpeci
 // for more information on using Contexts.
 func (c *EC2) ModifyInstanceCreditSpecificationWithContext(ctx aws.Context, input *ModifyInstanceCreditSpecificationInput, opts ...request.Option) (*ModifyInstanceCreditSpecificationOutput, error) {
 	req, out := c.ModifyInstanceCreditSpecificationRequest(input)
+	req.SetContext(ctx)
+	req.ApplyOptions(opts...)
+	return out, req.Send()
+}
+
+const opModifyInstanceEventStartTime = "ModifyInstanceEventStartTime"
+
+// ModifyInstanceEventStartTimeRequest generates a "aws/request.Request" representing the
+// client's request for the ModifyInstanceEventStartTime operation. The "output" return
+// value will be populated with the request's response once the request completes
+// successfully.
+//
+// Use "Send" method on the returned Request to send the API call to the service.
+// the "output" return value is not valid until after Send returns without error.
+//
+// See ModifyInstanceEventStartTime for more information on using the ModifyInstanceEventStartTime
+// API call, and error handling.
+//
+// This method is useful when you want to inject custom logic or configuration
+// into the SDK's request lifecycle. Such as custom headers, or retry logic.
+//
+//
+//    // Example sending a request using the ModifyInstanceEventStartTimeRequest method.
+//    req, resp := client.ModifyInstanceEventStartTimeRequest(params)
+//
+//    err := req.Send()
+//    if err == nil { // resp is now filled
+//        fmt.Println(resp)
+//    }
+//
+// See also, https://docs.aws.amazon.com/goto/WebAPI/ec2-2016-11-15/ModifyInstanceEventStartTime
+func (c *EC2) ModifyInstanceEventStartTimeRequest(input *ModifyInstanceEventStartTimeInput) (req *request.Request, output *ModifyInstanceEventStartTimeOutput) {
+	op := &request.Operation{
+		Name:       opModifyInstanceEventStartTime,
+		HTTPMethod: "POST",
+		HTTPPath:   "/",
+	}
+
+	if input == nil {
+		input = &ModifyInstanceEventStartTimeInput{}
+	}
+
+	output = &ModifyInstanceEventStartTimeOutput{}
+	req = c.newRequest(op, input, output)
+	return
+}
+
+// ModifyInstanceEventStartTime API operation for Amazon Elastic Compute Cloud.
+//
+// Modifies the start time for a scheduled Amazon EC2 instance event.
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for Amazon Elastic Compute Cloud's
+// API operation ModifyInstanceEventStartTime for usage and error information.
+// See also, https://docs.aws.amazon.com/goto/WebAPI/ec2-2016-11-15/ModifyInstanceEventStartTime
+func (c *EC2) ModifyInstanceEventStartTime(input *ModifyInstanceEventStartTimeInput) (*ModifyInstanceEventStartTimeOutput, error) {
+	req, out := c.ModifyInstanceEventStartTimeRequest(input)
+	return out, req.Send()
+}
+
+// ModifyInstanceEventStartTimeWithContext is the same as ModifyInstanceEventStartTime with the addition of
+// the ability to pass a context and additional request options.
+//
+// See ModifyInstanceEventStartTime for details on how to use this API operation.
+//
+// The context must be non-nil and will be used for request cancellation. If
+// the context is nil a panic will occur. In the future the SDK may create
+// sub-contexts for http.Requests. See https://golang.org/pkg/context/
+// for more information on using Contexts.
+func (c *EC2) ModifyInstanceEventStartTimeWithContext(ctx aws.Context, input *ModifyInstanceEventStartTimeInput, opts ...request.Option) (*ModifyInstanceEventStartTimeOutput, error) {
+	req, out := c.ModifyInstanceEventStartTimeRequest(input)
 	req.SetContext(ctx)
 	req.ApplyOptions(opts...)
 	return out, req.Send()
@@ -31868,7 +32165,10 @@ func (s *CertificateAuthenticationRequest) SetClientRootCertificateChainArn(v st
 }
 
 // Provides authorization for Amazon to bring a specific IP address range to
-// a specific AWS account using bring your own IP addresses (BYOIP).
+// a specific AWS account using bring your own IP addresses (BYOIP). For more
+// information, see Prepare to Bring Your Address Range to Your AWS Account
+// (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-byoip.html#prepare-for-byoip)
+// in the Amazon Elastic Compute Cloud User Guide.
 type CidrAuthorizationContext struct {
 	_ struct{} `type:"structure"`
 
@@ -32178,8 +32478,8 @@ func (s *ClientData) SetUploadStart(v time.Time) *ClientData {
 
 // Describes the authentication methods used by a Client VPN endpoint. Client
 // VPN supports Active Directory and mutual authentication. For more information,
-// see Authentication (vpn/latest/clientvpn-admin/authentication-authrization.html#client-authentication)
-// in the AWS Client VPN Admin Guide.
+// see Authentication (https://docs.aws.amazon.com/vpn/latest/clientvpn-admin/authentication-authrization.html#client-authentication)
+// in the AWS Client VPN Administrator Guide.
 type ClientVpnAuthentication struct {
 	_ struct{} `type:"structure"`
 
@@ -32223,8 +32523,8 @@ func (s *ClientVpnAuthentication) SetType(v string) *ClientVpnAuthentication {
 
 // Describes the authentication method to be used by a Client VPN endpoint.
 // Client VPN supports Active Directory and mutual authentication. For more
-// information, see Authentication (vpn/latest/clientvpn-admin/authentication-authrization.html#client-authentication)
-// in the AWS Client VPN Admin Guide.
+// information, see Authentication (https://docs.aws.amazon.com/vpn/latest/clientvpn-admin/authentication-authrization.html#client-authentication)
+// in the AWS Client VPN Administrator Guide.
 type ClientVpnAuthenticationRequest struct {
 	_ struct{} `type:"structure"`
 
@@ -33437,13 +33737,13 @@ type CopySnapshotInput struct {
 	// A description for the EBS snapshot.
 	Description *string `type:"string"`
 
-	// The destination region to use in the PresignedUrl parameter of a snapshot
+	// The destination Region to use in the PresignedUrl parameter of a snapshot
 	// copy operation. This parameter is only valid for specifying the destination
-	// region in a PresignedUrl parameter, where it is required.
+	// Region in a PresignedUrl parameter, where it is required.
 	//
 	// The snapshot copy is sent to the regional endpoint that you sent the HTTP
 	// request to (for example, ec2.us-east-1.amazonaws.com). With the AWS CLI,
-	// this is specified using the --region parameter or the default region in your
+	// this is specified using the --region parameter or the default Region in your
 	// AWS configuration file.
 	DestinationRegion *string `locationName:"destinationRegion" type:"string"`
 
@@ -33503,7 +33803,7 @@ type CopySnapshotInput struct {
 	// and the snapshot will move to an error state.
 	PresignedUrl *string `locationName:"presignedUrl" type:"string"`
 
-	// The ID of the region that contains the snapshot to be copied.
+	// The ID of the Region that contains the snapshot to be copied.
 	//
 	// SourceRegion is a required field
 	SourceRegion *string `type:"string" required:"true"`
@@ -33970,7 +34270,7 @@ type CreateClientVpnEndpointInput struct {
 	DryRun *bool `type:"boolean"`
 
 	// The ARN of the server certificate. For more information, see the AWS Certificate
-	// Manager User Guide (acm/latest/userguide/acm-overview.html) .
+	// Manager User Guide (https://docs.aws.amazon.com/acm/latest/userguide/).
 	//
 	// ServerCertificateArn is a required field
 	ServerCertificateArn *string `type:"string" required:"true"`
@@ -34752,7 +35052,7 @@ type CreateFleetInput struct {
 
 	// The end date and time of the request, in UTC format (for example, YYYY-MM-DDTHH:MM:SSZ).
 	// At this point, no new EC2 Fleet requests are placed or able to fulfill the
-	// request. The default end date is 7 days from the current date.
+	// request. If no value is specified, the request remains until you cancel it.
 	ValidUntil *time.Time `type:"timestamp"`
 }
 
@@ -37818,8 +38118,8 @@ type CreateVolumeInput struct {
 
 	// The number of I/O operations per second (IOPS) to provision for the volume,
 	// with a maximum ratio of 50 IOPS/GiB. Range is 100 to 64,000 IOPS for volumes
-	// in most regions. Maximum IOPS of 64,000 is guaranteed only on Nitro-based
-	// instances (AWSEC2/latest/UserGuide/instance-types.html#ec2-nitro-instances).
+	// in most Regions. Maximum IOPS of 64,000 is guaranteed only on Nitro-based
+	// instances (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-types.html#ec2-nitro-instances).
 	// Other instance families guarantee performance up to 32,000 IOPS. For more
 	// information, see Amazon EBS Volume Types (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSVolumeTypes.html)
 	// in the Amazon Elastic Compute Cloud User Guide.
@@ -37881,7 +38181,7 @@ type CreateVolumeInput struct {
 	// Defaults: If no volume type is specified, the default is standard in us-east-1,
 	// eu-west-1, eu-central-1, us-west-2, us-west-1, sa-east-1, ap-northeast-1,
 	// ap-northeast-2, ap-southeast-1, ap-southeast-2, ap-south-1, us-gov-west-1,
-	// and cn-north-1. In all other regions, EBS defaults to gp2.
+	// and cn-north-1. In all other Regions, EBS defaults to gp2.
 	VolumeType *string `type:"string" enum:"VolumeType"`
 }
 
@@ -37962,17 +38262,15 @@ func (s *CreateVolumeInput) SetVolumeType(v string) *CreateVolumeInput {
 	return s
 }
 
-// Describes the user or group to be added or removed from the permissions for
-// a volume.
+// Describes the user or group to be added or removed from the list of create
+// volume permissions for a volume.
 type CreateVolumePermission struct {
 	_ struct{} `type:"structure"`
 
-	// The specific group that is to be added or removed from a volume's list of
-	// create volume permissions.
+	// The group to be added or removed. The possible value is all.
 	Group *string `locationName:"group" type:"string" enum:"PermissionGroup"`
 
-	// The specific AWS account ID that is to be added or removed from a volume's
-	// list of create volume permissions.
+	// The AWS account ID to be added or removed.
 	UserId *string `locationName:"userId" type:"string"`
 }
 
@@ -37998,16 +38296,14 @@ func (s *CreateVolumePermission) SetUserId(v string) *CreateVolumePermission {
 	return s
 }
 
-// Describes modifications to the permissions for a volume.
+// Describes modifications to the list of create volume permissions for a volume.
 type CreateVolumePermissionModifications struct {
 	_ struct{} `type:"structure"`
 
-	// Adds a specific AWS account ID or group to a volume's list of create volume
-	// permissions.
+	// Adds the specified AWS account ID or group to the list.
 	Add []*CreateVolumePermission `locationNameList:"item" type:"list"`
 
-	// Removes a specific AWS account ID or group from a volume's list of create
-	// volume permissions.
+	// Removes the specified AWS account ID or group from the list.
 	Remove []*CreateVolumePermission `locationNameList:"item" type:"list"`
 }
 
@@ -38173,10 +38469,9 @@ type CreateVpcEndpointInput struct {
 	// it is UnauthorizedOperation.
 	DryRun *bool `type:"boolean"`
 
-	// (Gateway endpoint) A policy to attach to the endpoint that controls access
-	// to the service. The policy must be in valid JSON format. If this parameter
-	// is not specified, we attach a default policy that allows full access to the
-	// service.
+	// A policy to attach to the endpoint that controls access to the service. The
+	// policy must be in valid JSON format. If this parameter is not specified,
+	// we attach a default policy that allows full access to the service.
 	PolicyDocument *string `type:"string"`
 
 	// (Interface endpoint) Indicate whether to associate a private hosted zone
@@ -42782,17 +43077,13 @@ type DescribeClassicLinkInstancesInput struct {
 	// One or more instance IDs. Must be instances linked to a VPC through ClassicLink.
 	InstanceIds []*string `locationName:"InstanceId" locationNameList:"InstanceId" type:"list"`
 
-	// The maximum number of results to return for the request in a single page.
-	// The remaining results of the initial request can be seen by sending another
-	// request with the returned NextToken value. This value can be between 5 and
-	// 1000. If MaxResults is given a value larger than 1000, only 1000 results
-	// are returned. You cannot specify this parameter and the instance IDs parameter
-	// in the same request.
+	// The maximum number of results to return with a single call. To retrieve the
+	// remaining results, make another call with the returned nextToken value.
 	//
 	// Constraint: If the value is greater than 1000, we return only 1000 items.
 	MaxResults *int64 `locationName:"maxResults" type:"integer"`
 
-	// The token to retrieve the next page of results.
+	// The token for the next page of results.
 	NextToken *string `locationName:"nextToken" type:"string"`
 }
 
@@ -43717,13 +44008,11 @@ type DescribeEgressOnlyInternetGatewaysInput struct {
 	// One or more egress-only internet gateway IDs.
 	EgressOnlyInternetGatewayIds []*string `locationName:"EgressOnlyInternetGatewayId" locationNameList:"item" type:"list"`
 
-	// The maximum number of results to return for the request in a single page.
-	// The remaining results can be seen by sending another request with the returned
-	// NextToken value. This value can be between 5 and 1000. If MaxResults is given
-	// a value larger than 1000, only 1000 results are returned.
+	// The maximum number of results to return with a single call. To retrieve the
+	// remaining results, make another call with the returned nextToken value.
 	MaxResults *int64 `type:"integer"`
 
-	// The token to retrieve the next page of results.
+	// The token for the next page of results.
 	NextToken *string `type:"string"`
 }
 
@@ -43767,7 +44056,8 @@ type DescribeEgressOnlyInternetGatewaysOutput struct {
 	// Information about the egress-only internet gateways.
 	EgressOnlyInternetGateways []*EgressOnlyInternetGateway `locationName:"egressOnlyInternetGatewaySet" locationNameList:"item" type:"list"`
 
-	// The token to use to retrieve the next page of results.
+	// The token to use to retrieve the next page of results. This value is null
+	// when there are no more results to return.
 	NextToken *string `locationName:"nextToken" type:"string"`
 }
 
@@ -44500,14 +44790,11 @@ type DescribeFlowLogsInput struct {
 	// One or more flow log IDs.
 	FlowLogIds []*string `locationName:"FlowLogId" locationNameList:"item" type:"list"`
 
-	// The maximum number of results to return for the request in a single page.
-	// The remaining results can be seen by sending another request with the returned
-	// NextToken value. This value can be between 5 and 1000. If MaxResults is given
-	// a value larger than 1000, only 1000 results are returned. You cannot specify
-	// this parameter and the flow log IDs parameter in the same request.
+	// The maximum number of results to return with a single call. To retrieve the
+	// remaining results, make another call with the returned nextToken value.
 	MaxResults *int64 `type:"integer"`
 
-	// The token to retrieve the next page of results.
+	// The token for the next page of results.
 	NextToken *string `type:"string"`
 }
 
@@ -46146,7 +46433,7 @@ type DescribeInstanceCreditSpecificationsInput struct {
 	// remaining results, make another call with the returned NextToken value. This
 	// value can be between 5 and 1000. You cannot specify this parameter and the
 	// instance IDs parameter in the same call.
-	MaxResults *int64 `type:"integer"`
+	MaxResults *int64 `min:"5" type:"integer"`
 
 	// The token to retrieve the next page of results.
 	NextToken *string `type:"string"`
@@ -46160,6 +46447,19 @@ func (s DescribeInstanceCreditSpecificationsInput) String() string {
 // GoString returns the string representation
 func (s DescribeInstanceCreditSpecificationsInput) GoString() string {
 	return s.String()
+}
+
+// Validate inspects the fields of the type to determine if they are valid.
+func (s *DescribeInstanceCreditSpecificationsInput) Validate() error {
+	invalidParams := request.ErrInvalidParams{Context: "DescribeInstanceCreditSpecificationsInput"}
+	if s.MaxResults != nil && *s.MaxResults < 5 {
+		invalidParams.Add(request.NewErrParamMinValue("MaxResults", 5))
+	}
+
+	if invalidParams.Len() > 0 {
+		return invalidParams
+	}
+	return nil
 }
 
 // SetDryRun sets the DryRun field's value.
@@ -46243,10 +46543,16 @@ type DescribeInstanceStatusInput struct {
 	//
 	//    * event.description - A description of the event.
 	//
+	//    * event.instance-event-id - The ID of the event whose date and time you
+	//    are modifying.
+	//
 	//    * event.not-after - The latest end time for the scheduled event (for example,
 	//    2014-09-15T17:15:20.000Z).
 	//
 	//    * event.not-before - The earliest start time for the scheduled event (for
+	//    example, 2014-09-15T17:15:20.000Z).
+	//
+	//    * event.not-before-deadline - The deadline for starting the event (for
 	//    example, 2014-09-15T17:15:20.000Z).
 	//
 	//    * instance-state-code - The code for the instance state, as a 16-bit unsigned
@@ -46747,6 +47053,13 @@ type DescribeInternetGatewaysInput struct {
 	//
 	// Default: Describes all your internet gateways.
 	InternetGatewayIds []*string `locationName:"internetGatewayId" locationNameList:"item" type:"list"`
+
+	// The maximum number of results to return with a single call. To retrieve the
+	// remaining results, make another call with the returned nextToken value.
+	MaxResults *int64 `min:"5" type:"integer"`
+
+	// The token for the next page of results.
+	NextToken *string `type:"string"`
 }
 
 // String returns the string representation
@@ -46757,6 +47070,19 @@ func (s DescribeInternetGatewaysInput) String() string {
 // GoString returns the string representation
 func (s DescribeInternetGatewaysInput) GoString() string {
 	return s.String()
+}
+
+// Validate inspects the fields of the type to determine if they are valid.
+func (s *DescribeInternetGatewaysInput) Validate() error {
+	invalidParams := request.ErrInvalidParams{Context: "DescribeInternetGatewaysInput"}
+	if s.MaxResults != nil && *s.MaxResults < 5 {
+		invalidParams.Add(request.NewErrParamMinValue("MaxResults", 5))
+	}
+
+	if invalidParams.Len() > 0 {
+		return invalidParams
+	}
+	return nil
 }
 
 // SetDryRun sets the DryRun field's value.
@@ -46777,11 +47103,27 @@ func (s *DescribeInternetGatewaysInput) SetInternetGatewayIds(v []*string) *Desc
 	return s
 }
 
+// SetMaxResults sets the MaxResults field's value.
+func (s *DescribeInternetGatewaysInput) SetMaxResults(v int64) *DescribeInternetGatewaysInput {
+	s.MaxResults = &v
+	return s
+}
+
+// SetNextToken sets the NextToken field's value.
+func (s *DescribeInternetGatewaysInput) SetNextToken(v string) *DescribeInternetGatewaysInput {
+	s.NextToken = &v
+	return s
+}
+
 type DescribeInternetGatewaysOutput struct {
 	_ struct{} `type:"structure"`
 
 	// Information about one or more internet gateways.
 	InternetGateways []*InternetGateway `locationName:"internetGatewaySet" locationNameList:"item" type:"list"`
+
+	// The token to use to retrieve the next page of results. This value is null
+	// when there are no more results to return.
+	NextToken *string `locationName:"nextToken" type:"string"`
 }
 
 // String returns the string representation
@@ -46797,6 +47139,12 @@ func (s DescribeInternetGatewaysOutput) GoString() string {
 // SetInternetGateways sets the InternetGateways field's value.
 func (s *DescribeInternetGatewaysOutput) SetInternetGateways(v []*InternetGateway) *DescribeInternetGatewaysOutput {
 	s.InternetGateways = v
+	return s
+}
+
+// SetNextToken sets the NextToken field's value.
+func (s *DescribeInternetGatewaysOutput) SetNextToken(v string) *DescribeInternetGatewaysOutput {
+	s.NextToken = &v
 	return s
 }
 
@@ -47287,18 +47635,14 @@ type DescribeNatGatewaysInput struct {
 	//    * vpc-id - The ID of the VPC in which the NAT gateway resides.
 	Filter []*Filter `locationNameList:"Filter" type:"list"`
 
-	// The maximum number of items to return for this request. The request returns
-	// a token that you can specify in a subsequent call to get the next set of
-	// results.
-	//
-	// Constraint: If the value specified is greater than 1000, we return only 1000
-	// items.
+	// The maximum number of results to return with a single call. To retrieve the
+	// remaining results, make another call with the returned nextToken value.
 	MaxResults *int64 `type:"integer"`
 
 	// One or more NAT gateway IDs.
 	NatGatewayIds []*string `locationName:"NatGatewayId" locationNameList:"item" type:"list"`
 
-	// The token to retrieve the next page of results.
+	// The token for the next page of results.
 	NextToken *string `type:"string"`
 }
 
@@ -47429,10 +47773,17 @@ type DescribeNetworkAclsInput struct {
 	//    * vpc-id - The ID of the VPC for the network ACL.
 	Filters []*Filter `locationName:"Filter" locationNameList:"Filter" type:"list"`
 
+	// The maximum number of results to return with a single call. To retrieve the
+	// remaining results, make another call with the returned nextToken value.
+	MaxResults *int64 `min:"5" type:"integer"`
+
 	// One or more network ACL IDs.
 	//
 	// Default: Describes all your network ACLs.
 	NetworkAclIds []*string `locationName:"NetworkAclId" locationNameList:"item" type:"list"`
+
+	// The token for the next page of results.
+	NextToken *string `type:"string"`
 }
 
 // String returns the string representation
@@ -47443,6 +47794,19 @@ func (s DescribeNetworkAclsInput) String() string {
 // GoString returns the string representation
 func (s DescribeNetworkAclsInput) GoString() string {
 	return s.String()
+}
+
+// Validate inspects the fields of the type to determine if they are valid.
+func (s *DescribeNetworkAclsInput) Validate() error {
+	invalidParams := request.ErrInvalidParams{Context: "DescribeNetworkAclsInput"}
+	if s.MaxResults != nil && *s.MaxResults < 5 {
+		invalidParams.Add(request.NewErrParamMinValue("MaxResults", 5))
+	}
+
+	if invalidParams.Len() > 0 {
+		return invalidParams
+	}
+	return nil
 }
 
 // SetDryRun sets the DryRun field's value.
@@ -47457,9 +47821,21 @@ func (s *DescribeNetworkAclsInput) SetFilters(v []*Filter) *DescribeNetworkAclsI
 	return s
 }
 
+// SetMaxResults sets the MaxResults field's value.
+func (s *DescribeNetworkAclsInput) SetMaxResults(v int64) *DescribeNetworkAclsInput {
+	s.MaxResults = &v
+	return s
+}
+
 // SetNetworkAclIds sets the NetworkAclIds field's value.
 func (s *DescribeNetworkAclsInput) SetNetworkAclIds(v []*string) *DescribeNetworkAclsInput {
 	s.NetworkAclIds = v
+	return s
+}
+
+// SetNextToken sets the NextToken field's value.
+func (s *DescribeNetworkAclsInput) SetNextToken(v string) *DescribeNetworkAclsInput {
+	s.NextToken = &v
 	return s
 }
 
@@ -47468,6 +47844,10 @@ type DescribeNetworkAclsOutput struct {
 
 	// Information about one or more network ACLs.
 	NetworkAcls []*NetworkAcl `locationName:"networkAclSet" locationNameList:"item" type:"list"`
+
+	// The token to use to retrieve the next page of results. This value is null
+	// when there are no more results to return.
+	NextToken *string `locationName:"nextToken" type:"string"`
 }
 
 // String returns the string representation
@@ -47483,6 +47863,12 @@ func (s DescribeNetworkAclsOutput) GoString() string {
 // SetNetworkAcls sets the NetworkAcls field's value.
 func (s *DescribeNetworkAclsOutput) SetNetworkAcls(v []*NetworkAcl) *DescribeNetworkAclsOutput {
 	s.NetworkAcls = v
+	return s
+}
+
+// SetNextToken sets the NextToken field's value.
+func (s *DescribeNetworkAclsOutput) SetNextToken(v string) *DescribeNetworkAclsOutput {
+	s.NextToken = &v
 	return s
 }
 
@@ -48002,16 +48388,11 @@ type DescribePrefixListsInput struct {
 	//    * prefix-list-name: The name of a prefix list.
 	Filters []*Filter `locationName:"Filter" locationNameList:"Filter" type:"list"`
 
-	// The maximum number of items to return for this request. The request returns
-	// a token that you can specify in a subsequent call to get the next set of
-	// results.
-	//
-	// Constraint: If the value specified is greater than 1000, we return only 1000
-	// items.
+	// The maximum number of results to return with a single call. To retrieve the
+	// remaining results, make another call with the returned nextToken value.
 	MaxResults *int64 `type:"integer"`
 
-	// The token for the next set of items to return. (You received this token from
-	// a prior call.)
+	// The token for the next page of results.
 	NextToken *string `type:"string"`
 
 	// One or more prefix list IDs.
@@ -48061,8 +48442,8 @@ func (s *DescribePrefixListsInput) SetPrefixListIds(v []*string) *DescribePrefix
 type DescribePrefixListsOutput struct {
 	_ struct{} `type:"structure"`
 
-	// The token to use when requesting the next set of items. If there are no additional
-	// items to return, the string is empty.
+	// The token to use to retrieve the next page of results. This value is null
+	// when there are no more results to return.
 	NextToken *string `locationName:"nextToken" type:"string"`
 
 	// All available prefix lists.
@@ -48987,12 +49368,11 @@ type DescribeRouteTablesInput struct {
 	//    * vpc-id - The ID of the VPC for the route table.
 	Filters []*Filter `locationName:"Filter" locationNameList:"Filter" type:"list"`
 
-	// The maximum number of results to return in a single call. To retrieve the
-	// remaining results, make another call with the returned NextToken value. This
-	// value can be between 5 and 100.
+	// The maximum number of results to return with a single call. To retrieve the
+	// remaining results, make another call with the returned nextToken value.
 	MaxResults *int64 `type:"integer"`
 
-	// The token to retrieve the next page of results.
+	// The token for the next page of results.
 	NextToken *string `type:"string"`
 
 	// One or more route table IDs.
@@ -49687,10 +50067,11 @@ func (s *DescribeSnapshotAttributeInput) SetSnapshotId(v string) *DescribeSnapsh
 type DescribeSnapshotAttributeOutput struct {
 	_ struct{} `type:"structure"`
 
-	// A list of permissions for creating volumes from the snapshot.
+	// The users and groups that have the permissions for creating volumes from
+	// the snapshot.
 	CreateVolumePermissions []*CreateVolumePermission `locationName:"createVolumePermission" locationNameList:"item" type:"list"`
 
-	// A list of product codes.
+	// The product codes.
 	ProductCodes []*ProductCode `locationName:"productCodes" locationNameList:"item" type:"list"`
 
 	// The ID of the EBS snapshot.
@@ -49787,8 +50168,7 @@ type DescribeSnapshotsInput struct {
 	// to return.
 	NextToken *string `type:"string"`
 
-	// Returns the snapshots owned by the specified owner. Multiple owners can be
-	// specified.
+	// Describes the snapshots owned by one or more owners.
 	OwnerIds []*string `locationName:"Owner" locationNameList:"Owner" type:"list"`
 
 	// One or more AWS accounts IDs that can create volumes from the snapshot.
@@ -49796,7 +50176,7 @@ type DescribeSnapshotsInput struct {
 
 	// One or more snapshot IDs.
 	//
-	// Default: Describes snapshots for which you have launch permissions.
+	// Default: Describes the snapshots for which you have create volume permissions.
 	SnapshotIds []*string `locationName:"SnapshotId" locationNameList:"SnapshotId" type:"list"`
 }
 
@@ -52113,13 +52493,11 @@ func (s *DescribeVpcAttributeOutput) SetVpcId(v string) *DescribeVpcAttributeOut
 type DescribeVpcClassicLinkDnsSupportInput struct {
 	_ struct{} `type:"structure"`
 
-	// The maximum number of items to return for this request. The request returns
-	// a token that you can specify in a subsequent call to get the next set of
-	// results.
+	// The maximum number of results to return with a single call. To retrieve the
+	// remaining results, make another call with the returned nextToken value.
 	MaxResults *int64 `locationName:"maxResults" min:"5" type:"integer"`
 
-	// The token for the next set of items to return. (You received this token from
-	// a prior call.)
+	// The token for the next page of results.
 	NextToken *string `locationName:"nextToken" min:"1" type:"string"`
 
 	// One or more VPC IDs.
@@ -52173,7 +52551,8 @@ func (s *DescribeVpcClassicLinkDnsSupportInput) SetVpcIds(v []*string) *Describe
 type DescribeVpcClassicLinkDnsSupportOutput struct {
 	_ struct{} `type:"structure"`
 
-	// The token to use when requesting the next set of items.
+	// The token to use to retrieve the next page of results. This value is null
+	// when there are no more results to return.
 	NextToken *string `locationName:"nextToken" min:"1" type:"string"`
 
 	// Information about the ClassicLink DNS support status of the VPCs.
@@ -52986,13 +53365,11 @@ type DescribeVpcPeeringConnectionsInput struct {
 	//    * vpc-peering-connection-id - The ID of the VPC peering connection.
 	Filters []*Filter `locationName:"Filter" locationNameList:"Filter" type:"list"`
 
-	// The maximum number of results to return for this request. The request returns
-	// a token that you can specify in a subsequent call to get the next set of
-	// results.
+	// The maximum number of results to return with a single call. To retrieve the
+	// remaining results, make another call with the returned nextToken value.
 	MaxResults *int64 `min:"5" type:"integer"`
 
-	// The token to request the next page of results. (You received this token from
-	// a prior call.)
+	// The token for the next page of results.
 	NextToken *string `type:"string"`
 
 	// One or more VPC peering connection IDs.
@@ -53142,6 +53519,13 @@ type DescribeVpcsInput struct {
 	//    * vpc-id - The ID of the VPC.
 	Filters []*Filter `locationName:"Filter" locationNameList:"Filter" type:"list"`
 
+	// The maximum number of results to return with a single call. To retrieve the
+	// remaining results, make another call with the returned nextToken value.
+	MaxResults *int64 `min:"5" type:"integer"`
+
+	// The token for the next page of results.
+	NextToken *string `type:"string"`
+
 	// One or more VPC IDs.
 	//
 	// Default: Describes all your VPCs.
@@ -53158,6 +53542,19 @@ func (s DescribeVpcsInput) GoString() string {
 	return s.String()
 }
 
+// Validate inspects the fields of the type to determine if they are valid.
+func (s *DescribeVpcsInput) Validate() error {
+	invalidParams := request.ErrInvalidParams{Context: "DescribeVpcsInput"}
+	if s.MaxResults != nil && *s.MaxResults < 5 {
+		invalidParams.Add(request.NewErrParamMinValue("MaxResults", 5))
+	}
+
+	if invalidParams.Len() > 0 {
+		return invalidParams
+	}
+	return nil
+}
+
 // SetDryRun sets the DryRun field's value.
 func (s *DescribeVpcsInput) SetDryRun(v bool) *DescribeVpcsInput {
 	s.DryRun = &v
@@ -53170,6 +53567,18 @@ func (s *DescribeVpcsInput) SetFilters(v []*Filter) *DescribeVpcsInput {
 	return s
 }
 
+// SetMaxResults sets the MaxResults field's value.
+func (s *DescribeVpcsInput) SetMaxResults(v int64) *DescribeVpcsInput {
+	s.MaxResults = &v
+	return s
+}
+
+// SetNextToken sets the NextToken field's value.
+func (s *DescribeVpcsInput) SetNextToken(v string) *DescribeVpcsInput {
+	s.NextToken = &v
+	return s
+}
+
 // SetVpcIds sets the VpcIds field's value.
 func (s *DescribeVpcsInput) SetVpcIds(v []*string) *DescribeVpcsInput {
 	s.VpcIds = v
@@ -53178,6 +53587,10 @@ func (s *DescribeVpcsInput) SetVpcIds(v []*string) *DescribeVpcsInput {
 
 type DescribeVpcsOutput struct {
 	_ struct{} `type:"structure"`
+
+	// The token to use to retrieve the next page of results. This value is null
+	// when there are no more results to return.
+	NextToken *string `locationName:"nextToken" type:"string"`
 
 	// Information about one or more VPCs.
 	Vpcs []*Vpc `locationName:"vpcSet" locationNameList:"item" type:"list"`
@@ -53191,6 +53604,12 @@ func (s DescribeVpcsOutput) String() string {
 // GoString returns the string representation
 func (s DescribeVpcsOutput) GoString() string {
 	return s.String()
+}
+
+// SetNextToken sets the NextToken field's value.
+func (s *DescribeVpcsOutput) SetNextToken(v string) *DescribeVpcsOutput {
+	s.NextToken = &v
+	return s
 }
 
 // SetVpcs sets the Vpcs field's value.
@@ -55045,19 +55464,16 @@ type EbsBlockDevice struct {
 	Encrypted *bool `locationName:"encrypted" type:"boolean"`
 
 	// The number of I/O operations per second (IOPS) that the volume supports.
-	// For io1, this represents the number of IOPS that are provisioned for the
-	// volume. For gp2, this represents the baseline performance of the volume and
-	// the rate at which the volume accumulates I/O credits for bursting. For more
-	// information about General Purpose SSD baseline performance, I/O credits,
-	// and bursting, see Amazon EBS Volume Types (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSVolumeTypes.html)
+	// For io1 volumes, this represents the number of IOPS that are provisioned
+	// for the volume. For gp2 volumes, this represents the baseline performance
+	// of the volume and the rate at which the volume accumulates I/O credits for
+	// bursting. For more information, see Amazon EBS Volume Types (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSVolumeTypes.html)
 	// in the Amazon Elastic Compute Cloud User Guide.
 	//
 	// Constraints: Range is 100-16,000 IOPS for gp2 volumes and 100 to 64,000IOPS
-	// for io1 volumes in most Regions. Maximum io1IOPS of 64,000 is guaranteed
-	// only on Nitro-based instances (AWSEC2/latest/UserGuide/instance-types.html#ec2-nitro-instances).
-	// Other instance families guarantee performance up to 32,000 IOPS. For more
-	// information, see Amazon EBS Volume Types (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSVolumeTypes.html)
-	// in the Amazon Elastic Compute Cloud User Guide.
+	// for io1 volumes, in most Regions. The maximum IOPS for io1 of 64,000 is guaranteed
+	// only on Nitro-based instances (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-types.html#ec2-nitro-instances).
+	// Other instance families guarantee performance up to 32,000 IOPS.
 	//
 	// Condition: This parameter is required for requests to create io1 volumes;
 	// it is not used in requests to create gp2, st1, sc1, or standard volumes.
@@ -55915,10 +56331,6 @@ type EventInformation struct {
 	//    * iamFleetRoleInvalid - The Spot Fleet did not have the required permissions
 	//    either to launch or terminate an instance.
 	//
-	//    * launchSpecTemporarilyBlacklisted - The configuration is not valid and
-	//    several attempts to launch instances have failed. For more information,
-	//    see the description of the event.
-	//
 	//    * spotFleetRequestConfigurationInvalid - The configuration is not valid.
 	//    For more information, see the description of the event.
 	//
@@ -55962,6 +56374,10 @@ type EventInformation struct {
 	//    * terminated - An instance was terminated by the user.
 	//
 	// The following are the Information events:
+	//
+	//    * launchSpecTemporarilyBlacklisted - The configuration is not valid and
+	//    several attempts to launch instances have failed. For more information,
+	//    see the description of the event.
 	//
 	//    * launchSpecUnusable - The price in a launch specification is not valid
 	//    because it is below the Spot price or the Spot price is above the On-Demand
@@ -59583,8 +59999,8 @@ type ImportClientVpnClientCertificateRevocationListInput struct {
 	_ struct{} `type:"structure"`
 
 	// The client certificate revocation list file. For more information, see Generate
-	// a Client Certificate Revocation List (vpn/latest/clientvpn-admin/cvpn-working-certificates.html#cvpn-working-certificates-generate)
-	// in the AWS Client VPN Admin Guide.
+	// a Client Certificate Revocation List (https://docs.aws.amazon.com/vpn/latest/clientvpn-admin/cvpn-working-certificates.html#cvpn-working-certificates-generate)
+	// in the AWS Client VPN Administrator Guide.
 	//
 	// CertificateRevocationList is a required field
 	CertificateRevocationList *string `type:"string" required:"true"`
@@ -62235,8 +62651,17 @@ func (s *InstancePrivateIpAddress) SetPrivateIpAddress(v string) *InstancePrivat
 type InstanceState struct {
 	_ struct{} `type:"structure"`
 
-	// The low byte represents the state. The high byte is used for internal purposes
-	// and should be ignored.
+	// The state of the instance as a 16-bit unsigned integer.
+	//
+	// The high byte is all of the bits between 2^8 and (2^16)-1, which equals decimal
+	// values between 256 and 65,535. These numerical values are used for internal
+	// purposes and should be ignored.
+	//
+	// The low byte is all of the bits between 2^0 and (2^8)-1, which equals decimal
+	// values between 0 and 255.
+	//
+	// The valid values for instance-state-code will all be in the range of the
+	// low byte and they are:
 	//
 	//    * 0 : pending
 	//
@@ -62249,6 +62674,9 @@ type InstanceState struct {
 	//    * 64 : stopping
 	//
 	//    * 80 : stopped
+	//
+	// You can ignore the high byte value by zeroing out all of the bits above 2^8
+	// or 256 in decimal.
 	Code *int64 `locationName:"code" type:"integer"`
 
 	// The current state of the instance.
@@ -62449,11 +62877,17 @@ type InstanceStatusEvent struct {
 	// following text: [Completed].
 	Description *string `locationName:"description" type:"string"`
 
+	// The ID of the event.
+	InstanceEventId *string `locationName:"instanceEventId" type:"string"`
+
 	// The latest scheduled end time for the event.
 	NotAfter *time.Time `locationName:"notAfter" type:"timestamp"`
 
 	// The earliest scheduled start time for the event.
 	NotBefore *time.Time `locationName:"notBefore" type:"timestamp"`
+
+	// The deadline for starting the event.
+	NotBeforeDeadline *time.Time `locationName:"notBeforeDeadline" type:"timestamp"`
 }
 
 // String returns the string representation
@@ -62478,6 +62912,12 @@ func (s *InstanceStatusEvent) SetDescription(v string) *InstanceStatusEvent {
 	return s
 }
 
+// SetInstanceEventId sets the InstanceEventId field's value.
+func (s *InstanceStatusEvent) SetInstanceEventId(v string) *InstanceStatusEvent {
+	s.InstanceEventId = &v
+	return s
+}
+
 // SetNotAfter sets the NotAfter field's value.
 func (s *InstanceStatusEvent) SetNotAfter(v time.Time) *InstanceStatusEvent {
 	s.NotAfter = &v
@@ -62487,6 +62927,12 @@ func (s *InstanceStatusEvent) SetNotAfter(v time.Time) *InstanceStatusEvent {
 // SetNotBefore sets the NotBefore field's value.
 func (s *InstanceStatusEvent) SetNotBefore(v time.Time) *InstanceStatusEvent {
 	s.NotBefore = &v
+	return s
+}
+
+// SetNotBeforeDeadline sets the NotBeforeDeadline field's value.
+func (s *InstanceStatusEvent) SetNotBeforeDeadline(v time.Time) *InstanceStatusEvent {
+	s.NotBeforeDeadline = &v
 	return s
 }
 
@@ -66296,6 +66742,107 @@ func (s *ModifyInstanceCreditSpecificationOutput) SetUnsuccessfulInstanceCreditS
 	return s
 }
 
+type ModifyInstanceEventStartTimeInput struct {
+	_ struct{} `type:"structure"`
+
+	// Checks whether you have the required permissions for the action, without
+	// actually making the request, and provides an error response. If you have
+	// the required permissions, the error response is DryRunOperation. Otherwise,
+	// it is UnauthorizedOperation.
+	DryRun *bool `type:"boolean"`
+
+	// The ID of the event whose date and time you are modifying.
+	//
+	// InstanceEventId is a required field
+	InstanceEventId *string `type:"string" required:"true"`
+
+	// The ID of the instance with the scheduled event.
+	//
+	// InstanceId is a required field
+	InstanceId *string `type:"string" required:"true"`
+
+	// The new date and time when the event will take place.
+	//
+	// NotBefore is a required field
+	NotBefore *time.Time `type:"timestamp" required:"true"`
+}
+
+// String returns the string representation
+func (s ModifyInstanceEventStartTimeInput) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s ModifyInstanceEventStartTimeInput) GoString() string {
+	return s.String()
+}
+
+// Validate inspects the fields of the type to determine if they are valid.
+func (s *ModifyInstanceEventStartTimeInput) Validate() error {
+	invalidParams := request.ErrInvalidParams{Context: "ModifyInstanceEventStartTimeInput"}
+	if s.InstanceEventId == nil {
+		invalidParams.Add(request.NewErrParamRequired("InstanceEventId"))
+	}
+	if s.InstanceId == nil {
+		invalidParams.Add(request.NewErrParamRequired("InstanceId"))
+	}
+	if s.NotBefore == nil {
+		invalidParams.Add(request.NewErrParamRequired("NotBefore"))
+	}
+
+	if invalidParams.Len() > 0 {
+		return invalidParams
+	}
+	return nil
+}
+
+// SetDryRun sets the DryRun field's value.
+func (s *ModifyInstanceEventStartTimeInput) SetDryRun(v bool) *ModifyInstanceEventStartTimeInput {
+	s.DryRun = &v
+	return s
+}
+
+// SetInstanceEventId sets the InstanceEventId field's value.
+func (s *ModifyInstanceEventStartTimeInput) SetInstanceEventId(v string) *ModifyInstanceEventStartTimeInput {
+	s.InstanceEventId = &v
+	return s
+}
+
+// SetInstanceId sets the InstanceId field's value.
+func (s *ModifyInstanceEventStartTimeInput) SetInstanceId(v string) *ModifyInstanceEventStartTimeInput {
+	s.InstanceId = &v
+	return s
+}
+
+// SetNotBefore sets the NotBefore field's value.
+func (s *ModifyInstanceEventStartTimeInput) SetNotBefore(v time.Time) *ModifyInstanceEventStartTimeInput {
+	s.NotBefore = &v
+	return s
+}
+
+type ModifyInstanceEventStartTimeOutput struct {
+	_ struct{} `type:"structure"`
+
+	// Describes a scheduled event for an instance.
+	Event *InstanceStatusEvent `locationName:"event" type:"structure"`
+}
+
+// String returns the string representation
+func (s ModifyInstanceEventStartTimeOutput) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s ModifyInstanceEventStartTimeOutput) GoString() string {
+	return s.String()
+}
+
+// SetEvent sets the Event field's value.
+func (s *ModifyInstanceEventStartTimeOutput) SetEvent(v *InstanceStatusEvent) *ModifyInstanceEventStartTimeOutput {
+	s.Event = v
+	return s
+}
+
 type ModifyInstancePlacementInput struct {
 	_ struct{} `type:"structure"`
 
@@ -67493,8 +68040,9 @@ type ModifyVpcEndpointInput struct {
 	// it is UnauthorizedOperation.
 	DryRun *bool `type:"boolean"`
 
-	// (Gateway endpoint) A policy document to attach to the endpoint. The policy
-	// must be in valid JSON format.
+	// A policy to attach to the endpoint that controls access to the service. The
+	// policy must be in valid JSON format. If this parameter is not specified,
+	// we attach a default policy that allows full access to the service.
 	PolicyDocument *string `type:"string"`
 
 	// (Interface endpoint) Indicate whether a private hosted zone is associated
@@ -78536,7 +79084,8 @@ type SpotFleetRequestConfigData struct {
 
 	// The end date and time of the request, in UTC format (for example, YYYY-MM-DDTHH:MM:SSZ).
 	// At this point, no new Spot Instance requests are placed or able to fulfill
-	// the request. The default end date is 7 days from the current date.
+	// the request. If no value is specified, the Spot Fleet request remains until
+	// you cancel it.
 	ValidUntil *time.Time `locationName:"validUntil" type:"timestamp"`
 }
 
@@ -82531,17 +83080,14 @@ type Volume struct {
 	// For Provisioned IOPS SSD volumes, this represents the number of IOPS that
 	// are provisioned for the volume. For General Purpose SSD volumes, this represents
 	// the baseline performance of the volume and the rate at which the volume accumulates
-	// I/O credits for bursting. For more information about General Purpose SSD
-	// baseline performance, I/O credits, and bursting, see Amazon EBS Volume Types
+	// I/O credits for bursting. For more information, see Amazon EBS Volume Types
 	// (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSVolumeTypes.html)
 	// in the Amazon Elastic Compute Cloud User Guide.
 	//
 	// Constraints: Range is 100-16,000 IOPS for gp2 volumes and 100 to 64,000IOPS
-	// for io1 volumes in most regions. Maximum io1IOPS of 64,000 is guaranteed
-	// only on Nitro-based instances (AWSEC2/latest/UserGuide/instance-types.html#ec2-nitro-instances).
-	// Other instance families guarantee performance up to 32,000 IOPS. For more
-	// information, see Amazon EBS Volume Types (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSVolumeTypes.html)
-	// in the Amazon Elastic Compute Cloud User Guide.
+	// for io1 volumes, in most Regions. The maximum IOPS for io1 of 64,000 is guaranteed
+	// only on Nitro-based instances (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-types.html#ec2-nitro-instances).
+	// Other instance families guarantee performance up to 32,000 IOPS.
 	//
 	// Condition: This parameter is required for requests to create io1 volumes;
 	// it is not used in requests to create gp2, st1, sc1, or standard volumes.
