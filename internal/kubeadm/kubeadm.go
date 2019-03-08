@@ -203,7 +203,7 @@ func (md *embedded) Create() (err error) {
 		}
 		break
 	}
-	md.lg.Info("step 1-1. successfully ran 'master node kubeadm init'")
+	md.lg.Info("step 1-1. successfully ran 'master node' 'kubeadm init'")
 	////////////////////////////////////////////////////////////////////////
 
 	////////////////////////////////////////////////////////////////////////
@@ -213,7 +213,7 @@ func (md *embedded) Create() (err error) {
 			return err
 		}
 	}
-	md.lg.Info("step 2-4. successfully ran 'worker node kubeadm join'")
+	md.lg.Info("step 2-1. successfully ran 'worker node' 'kubeadm join'")
 	////////////////////////////////////////////////////////////////////////
 
 	////////////////////////////////////////////////////////////////////////
