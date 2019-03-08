@@ -58,12 +58,6 @@ controllerManager:
 EOF
 cat /tmp/cluster.yaml
 
+
 sudo kubeadm init --config /tmp/cluster.yaml 1>>/var/log/kubeadm-init.log 2>&1
 `
-
-/*
-sudo cp -i /etc/kubernetes/admin.conf /home/ec2-user/.kube/config
-sudo chown $(id -u):$(id -g) /home/ec2-user/.kube/config
-sudo chown {{ .UserName }}:{{ .UserName }} /home/ec2-user/.kube/config
-find /home/ec2-user/.kube/ 1>>/var/log/kubeadm-init.log 2>&1
-*/

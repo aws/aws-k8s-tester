@@ -57,11 +57,10 @@ sudo iptables --list
 sudo echo '{ "bip": "192.168.255.1/24" }' > /etc/docker/daemon.json
 
 sudo systemctl daemon-reload
-sudo systemctl stop kubelet.service || true
 sudo systemctl cat kubelet.service
 
-sudo systemctl enable docker && sudo systemctl start docker
-sudo systemctl enable kubelet.service && sudo systemctl start kubelet.service
+sudo systemctl enable docker
+sudo systemctl start docker
 
 ##################################
 
