@@ -87,17 +87,12 @@ func (md *embedded) Create() (err error) {
 
 	now := time.Now().UTC()
 
-	if err = md.cfg.WriteInstanceProfile(); err != nil {
-		return err
-	}
 	md.cfg.ConfigPathURL = genS3URL(md.cfg.AWSRegion, md.cfg.Tag, md.cfg.EC2MasterNodes.ConfigPathBucket)
 	md.cfg.KubeConfigPathURL = genS3URL(md.cfg.AWSRegion, md.cfg.Tag, md.cfg.KubeConfigPathBucket)
 	md.cfg.LogOutputToUploadPathURL = genS3URL(md.cfg.AWSRegion, md.cfg.Tag, md.cfg.EC2MasterNodes.LogOutputToUploadPathBucket)
 
 	defer func() {
 		if err != nil {
-			fmt.Println("waiting!!!!!!!!", err)
-			time.Sleep(5 * time.Minute)
 			md.lg.Warn("failed to create Kubernetes, reverting", zap.Error(err))
 			md.lg.Warn("failed to create Kubernetes, reverted", zap.Error(md.terminate()))
 		}

@@ -204,19 +204,6 @@ const (
 }`
 )
 
-// WriteInstanceProfile writes instance profiles to temporary directories.
-func (cfg *Config) WriteInstanceProfile() (err error) {
-	cfg.EC2MasterNodes.InstanceProfileFilePath, err = fileutil.WriteTempFile([]byte(policyMasterNodes))
-	if err != nil {
-		return err
-	}
-	cfg.EC2WorkerNodes.InstanceProfileFilePath, err = fileutil.WriteTempFile([]byte(policyWorkerNodes))
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func init() {
 	if strings.HasPrefix(defaultVer, "v") {
 		defaultVer = defaultVer[1:]
@@ -504,6 +491,15 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 	}
 	if cfg.EC2WorkerNodes == nil {
 		return errors.New("EC2WorkerNodes configuration not found")
+	}
+
+	cfg.EC2MasterNodes.InstanceProfileFilePath, err = fileutil.WriteTempFile([]byte(policyMasterNodes))
+	if err != nil {
+		return err
+	}
+	cfg.EC2WorkerNodes.InstanceProfileFilePath, err = fileutil.WriteTempFile([]byte(policyWorkerNodes))
+	if err != nil {
+		return err
 	}
 
 	// let master node EC2 deployer create SSH key

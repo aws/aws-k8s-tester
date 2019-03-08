@@ -34,10 +34,7 @@ type scriptInit struct {
 // make sure to run as root, otherwise "[ERROR IsPrivilegedUser]: user is not running as root".
 const scriptInitTmpl = `#!/usr/bin/env bash
 
-sudo touch /home/ec2-user/kubeadm-init.log
-sudo mkdir -p /home/ec2-user/.kube
-sudo mkdir -p /etc/kubernetes/pki/
-
+mkdir -p /home/ec2-user/.kube
 
 cat > /tmp/cluster.yaml <<EOF
 apiVersion: kubeadm.k8s.io/v1beta1
@@ -57,7 +54,6 @@ controllerManager:
     cloud-provider: aws
 EOF
 cat /tmp/cluster.yaml
-
 
 sudo kubeadm init --config /tmp/cluster.yaml 1>>/home/ec2-user/kubeadm-init.log 2>&1
 `
