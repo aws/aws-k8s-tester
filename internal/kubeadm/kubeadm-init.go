@@ -100,7 +100,7 @@ joinReady:
 	}
 
 	if kubeadmJoin.RawCommand == "" {
-		return errors.New("kubeadm join failed")
+		return errors.New("failed to find kubeadm join command from 'kubeadm init'")
 	}
 	prevToken, prevHash := false, false
 	for _, field := range strings.Fields(kubeadmJoin.RawCommand) {
@@ -123,6 +123,43 @@ joinReady:
 			continue
 		}
 	}
+
+	lg.Info("setting up KUBECONFIG")
+	retryStart = time.Now().UTC()
+	for time.Now().UTC().Sub(retryStart) < 10*time.Minute {
+		var oo []byte
+		oo, err = ss.Run(
+			"mkdir -p $HOME/.kube",
+			ssh.WithRetry(15, 5*time.Second),
+			ssh.WithTimeout(15*time.Second),
+		)
+		if err != nil {
+			lg.Warn("failed to mkdir", zap.Error(err))
+			continue
+		}
+		oo, err = ss.Run(
+			"sudo cp /etc/kubernetes/admin.conf $HOME/.kube/config",
+			ssh.WithRetry(15, 5*time.Second),
+			ssh.WithTimeout(15*time.Second),
+		)
+		if err != nil {
+			lg.Warn("failed to copy admin.conf", zap.Error(err))
+			continue
+		}
+		oo, err = ss.Run(
+			"sudo chown $(id -u):$(id -g) $HOME/.kube/config",
+			ssh.WithRetry(15, 5*time.Second),
+			ssh.WithTimeout(15*time.Second),
+		)
+		if err != nil {
+			lg.Warn("failed to copy admin.conf", zap.Error(err))
+			continue
+		}
+
+		lg.Info("waiting on kube-controller-manager")
+		time.Sleep(15 * time.Second)
+	}
+	lg.Info("set up KUBECONFIG")
 
 	lg.Info("checking kube-controller-manager")
 	retryStart = time.Now().UTC()

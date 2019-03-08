@@ -78,7 +78,6 @@ func NewDeployer(cfg *kubeadmconfig.Config) (Deployer, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return md, cfg.Sync()
 }
 
@@ -88,6 +87,9 @@ func (md *embedded) Create() (err error) {
 
 	now := time.Now().UTC()
 
+	if err = md.cfg.WriteInstanceProfile(); err != nil {
+		return err
+	}
 	md.cfg.ConfigPathURL = genS3URL(md.cfg.AWSRegion, md.cfg.Tag, md.cfg.EC2MasterNodes.ConfigPathBucket)
 	md.cfg.KubeConfigPathURL = genS3URL(md.cfg.AWSRegion, md.cfg.Tag, md.cfg.KubeConfigPathBucket)
 	md.cfg.LogOutputToUploadPathURL = genS3URL(md.cfg.AWSRegion, md.cfg.Tag, md.cfg.EC2MasterNodes.LogOutputToUploadPathBucket)
@@ -186,29 +188,7 @@ func (md *embedded) Create() (err error) {
 	md.lg.Info("registered instances to load balancer", zap.String("name", md.cfg.LoadBalancerName), zap.Int("instances", len(instances)))
 
 	////////////////////////////////////////////////////////////////////////
-	// init script already installed "kubelet", just need write env file for "kubelet"
-	var kubeletEnvFilePathMasterNodes string
-	kubeletEnvFilePathMasterNodes, err = writeKubeletEnvFile(*md.cfg.Kubelet)
-	if err != nil {
-		return err
-	}
-	defer os.RemoveAll(kubeletEnvFilePathMasterNodes)
-	md.lg.Info("step 1-1. successfully wrote 'master node kubelet' configuration")
-
-	for _, target := range md.cfg.EC2MasterNodes.Instances {
-		if err = sendKubeletEnvFile(md.lg, *md.cfg.EC2MasterNodes, target, kubeletEnvFilePathMasterNodes); err != nil {
-			return err
-		}
-	}
-	md.lg.Info("step 1-2. successfully sent 'master node kubelet' environment file")
-
-	for _, target := range md.cfg.EC2MasterNodes.Instances {
-		if err = startKubeletService(md.lg, *md.cfg.EC2MasterNodes, target); err != nil {
-			return err
-		}
-	}
-	md.lg.Info("step 1-3. successfully ran 'master node kubelet'")
-
+	// init script already installed everything, just write cluster configuration file and run "kubeadm init"
 	var kubeadmInitScript string
 	kubeadmInitScript, err = md.cfg.KubeadmInit.Script()
 	if err != nil {
@@ -220,33 +200,11 @@ func (md *embedded) Create() (err error) {
 		}
 		break
 	}
-	md.lg.Info("step 1-4. successfully ran 'master node kubeadm init'")
+	md.lg.Info("step 1-1. successfully ran 'master node kubeadm init'")
 	////////////////////////////////////////////////////////////////////////
 
 	////////////////////////////////////////////////////////////////////////
 	// init script already installed "kubelet", just need write env file for "kubelet"
-	var kubeletEnvFilePathWorkerNodes string
-	kubeletEnvFilePathWorkerNodes, err = writeKubeletEnvFile(*md.cfg.Kubelet)
-	if err != nil {
-		return err
-	}
-	defer os.RemoveAll(kubeletEnvFilePathWorkerNodes)
-	md.lg.Info("step 2-1. successfully wrote 'worker node kubelet' configuration")
-
-	for _, target := range md.cfg.EC2WorkerNodes.Instances {
-		if err = sendKubeletEnvFile(md.lg, *md.cfg.EC2WorkerNodes, target, kubeletEnvFilePathWorkerNodes); err != nil {
-			return err
-		}
-	}
-	md.lg.Info("step 2-2. successfully sent 'worker node kubelet' environment file")
-
-	for _, target := range md.cfg.EC2WorkerNodes.Instances {
-		if err = startKubeletService(md.lg, *md.cfg.EC2WorkerNodes, target); err != nil {
-			return err
-		}
-	}
-	md.lg.Info("step 2-3. successfully ran 'master node kubelet'")
-
 	for _, target := range md.cfg.EC2WorkerNodes.Instances {
 		if err = runKubeadmJoin(md.lg, *md.cfg.EC2WorkerNodes, target, md.cfg.KubeadmJoin); err != nil {
 			return err
