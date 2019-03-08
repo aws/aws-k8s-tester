@@ -40,6 +40,24 @@ func runKubeadmJoin(
 	}
 	defer ss.Close()
 
+	_, err = ss.Run(
+		"sudo systemctl enable kubelet.service",
+		ssh.WithRetry(100, 5*time.Second),
+		ssh.WithTimeout(15*time.Second),
+	)
+	if err != nil {
+		return err
+	}
+	_, err = ss.Run(
+		"sudo systemctl start kubelet.service",
+		ssh.WithRetry(100, 5*time.Second),
+		ssh.WithTimeout(15*time.Second),
+	)
+	if err != nil {
+		return err
+	}
+	lg.Info("started kubelet", zap.String("id", target.InstanceID))
+
 	var joinOutput []byte
 	joinOutput, err = ss.Run(
 		joinCmd,

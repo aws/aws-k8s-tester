@@ -36,6 +36,24 @@ func runKubeadmInit(
 	}
 	defer ss.Close()
 
+	_, err = ss.Run(
+		"sudo systemctl enable kubelet.service",
+		ssh.WithRetry(100, 5*time.Second),
+		ssh.WithTimeout(15*time.Second),
+	)
+	if err != nil {
+		return err
+	}
+	_, err = ss.Run(
+		"sudo systemctl start kubelet.service",
+		ssh.WithRetry(100, 5*time.Second),
+		ssh.WithTimeout(15*time.Second),
+	)
+	if err != nil {
+		return err
+	}
+	lg.Info("started kubelet", zap.String("id", target.InstanceID))
+
 	remotePath := fmt.Sprintf("/home/%s/kubeadm.init.sh", ec2Config.UserName)
 	_, err = ss.Send(
 		filePathToSend,
@@ -46,7 +64,6 @@ func runKubeadmInit(
 	if err != nil {
 		return fmt.Errorf("failed to send %q to %q for %q(%q) (error %v)", filePathToSend, remotePath, ec2Config.ClusterName, target.InstanceID, err)
 	}
-
 	_, err = ss.Run(
 		fmt.Sprintf("chmod +x %s", remotePath),
 		ssh.WithRetry(100, 5*time.Second),
@@ -55,7 +72,6 @@ func runKubeadmInit(
 	if err != nil {
 		return err
 	}
-
 	_, err = ss.Run(
 		fmt.Sprintf("sudo bash %s", remotePath),
 		ssh.WithTimeout(15*time.Second),
@@ -125,39 +141,32 @@ joinReady:
 	}
 
 	lg.Info("setting up KUBECONFIG")
-	retryStart = time.Now().UTC()
-	for time.Now().UTC().Sub(retryStart) < 10*time.Minute {
-		var oo []byte
-		oo, err = ss.Run(
-			"mkdir -p $HOME/.kube",
-			ssh.WithRetry(15, 5*time.Second),
-			ssh.WithTimeout(15*time.Second),
-		)
-		if err != nil {
-			lg.Warn("failed to mkdir", zap.Error(err))
-			continue
-		}
-		oo, err = ss.Run(
-			"sudo cp /etc/kubernetes/admin.conf $HOME/.kube/config",
-			ssh.WithRetry(15, 5*time.Second),
-			ssh.WithTimeout(15*time.Second),
-		)
-		if err != nil {
-			lg.Warn("failed to copy admin.conf", zap.Error(err))
-			continue
-		}
-		oo, err = ss.Run(
-			"sudo chown $(id -u):$(id -g) $HOME/.kube/config",
-			ssh.WithRetry(15, 5*time.Second),
-			ssh.WithTimeout(15*time.Second),
-		)
-		if err != nil {
-			lg.Warn("failed to copy admin.conf", zap.Error(err))
-			continue
-		}
-
-		lg.Info("waiting on kube-controller-manager")
-		time.Sleep(15 * time.Second)
+	_, err = ss.Run(
+		"mkdir -p $HOME/.kube",
+		ssh.WithRetry(15, 5*time.Second),
+		ssh.WithTimeout(15*time.Second),
+	)
+	if err != nil {
+		lg.Warn("failed to mkdir", zap.Error(err))
+		return err
+	}
+	_, err = ss.Run(
+		"sudo cp /etc/kubernetes/admin.conf $HOME/.kube/config",
+		ssh.WithRetry(15, 5*time.Second),
+		ssh.WithTimeout(15*time.Second),
+	)
+	if err != nil {
+		lg.Warn("failed to copy admin.conf", zap.Error(err))
+		return err
+	}
+	_, err = ss.Run(
+		"sudo chown $(id -u):$(id -g) $HOME/.kube/config",
+		ssh.WithRetry(15, 5*time.Second),
+		ssh.WithTimeout(15*time.Second),
+	)
+	if err != nil {
+		lg.Warn("failed to copy admin.conf", zap.Error(err))
+		return err
 	}
 	lg.Info("set up KUBECONFIG")
 

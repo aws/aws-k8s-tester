@@ -188,7 +188,10 @@ func (md *embedded) Create() (err error) {
 	md.lg.Info("registered instances to load balancer", zap.String("name", md.cfg.LoadBalancerName), zap.Int("instances", len(instances)))
 
 	////////////////////////////////////////////////////////////////////////
-	// init script already installed everything, just write cluster configuration file and run "kubeadm init"
+	// init script already installed everything
+	// 1. start kubelet,
+	// 2. write cluster configuration file,
+	// 3. run "kubeadm init"
 	var kubeadmInitScript string
 	kubeadmInitScript, err = md.cfg.KubeadmInit.Script()
 	if err != nil {
