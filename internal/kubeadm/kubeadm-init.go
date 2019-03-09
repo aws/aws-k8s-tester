@@ -47,13 +47,14 @@ func runKubeadmInit(
 	_, err = ss.Run(
 		"sudo systemctl start kubelet.service",
 		ssh.WithRetry(100, 5*time.Second),
-		ssh.WithTimeout(15*time.Second),
+		ssh.WithTimeout(30*time.Second),
 	)
 	if err != nil {
 		return err
 	}
 	lg.Info("started kubelet", zap.String("id", target.InstanceID))
 
+	lg.Info("starting 'kubeadm init'", zap.String("id", target.InstanceID))
 	remotePath := fmt.Sprintf("/home/%s/kubeadm.init.sh", ec2Config.UserName)
 	_, err = ss.Send(
 		filePathToSend,
@@ -74,12 +75,12 @@ func runKubeadmInit(
 	}
 	_, err = ss.Run(
 		fmt.Sprintf("sudo bash %s", remotePath),
-		ssh.WithTimeout(15*time.Second),
+		ssh.WithTimeout(5*time.Minute),
 	)
 	if err != nil {
 		return err
 	}
-	lg.Info("started kubeadm init", zap.String("id", target.InstanceID))
+	lg.Info("started 'kubeadm init'", zap.String("id", target.InstanceID))
 
 	retryStart := time.Now().UTC()
 joinReady:
