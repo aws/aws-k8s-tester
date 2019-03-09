@@ -1,17 +1,19 @@
 package kubeadmconfig
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
-	"os"
 	"reflect"
-	"strconv"
 	"strings"
+	"text/template"
 )
 
 // KubeadmJoin defines "kubeadm join" configuration.
 // https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm-join/
 type KubeadmJoin struct {
+	WorkerNodePrivateDNS string `json:"worker-node-private-dns"`
+
 	RawCommand               string `json:"raw-command"`
 	Target                   string `json:"target"`
 	Token                    string `json:"token,omitempty" kubeadm-join:"token"`
@@ -80,68 +82,40 @@ func (ka *KubeadmJoin) Command() (cmd string, err error) {
 	return cmd, nil
 }
 
-func (ka *KubeadmJoin) updateFromEnvs(pfx string) error {
-	cc := *ka
-	tp, vv := reflect.TypeOf(&cc).Elem(), reflect.ValueOf(&cc).Elem()
-	for i := 0; i < tp.NumField(); i++ {
-		jv := tp.Field(i).Tag.Get("json")
-		if jv == "" {
-			continue
-		}
-		jv = strings.Replace(jv, ",omitempty", "", -1)
-		jv = strings.Replace(jv, "-", "_", -1)
-		jv = strings.ToUpper(strings.Replace(jv, "-", "_", -1))
-		env := pfx + jv
-		if os.Getenv(env) == "" {
-			continue
-		}
-		sv := os.Getenv(env)
-
-		switch vv.Field(i).Type().Kind() {
-		case reflect.String:
-			vv.Field(i).SetString(sv)
-
-		case reflect.Bool:
-			bb, err := strconv.ParseBool(sv)
-			if err != nil {
-				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
-			}
-			vv.Field(i).SetBool(bb)
-
-		case reflect.Int, reflect.Int32, reflect.Int64:
-			// if tp.Field(i).Name { continue }
-			iv, err := strconv.ParseInt(sv, 10, 64)
-			if err != nil {
-				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
-			}
-			vv.Field(i).SetInt(iv)
-
-		case reflect.Uint, reflect.Uint32, reflect.Uint64:
-			iv, err := strconv.ParseUint(sv, 10, 64)
-			if err != nil {
-				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
-			}
-			vv.Field(i).SetUint(iv)
-
-		case reflect.Float32, reflect.Float64:
-			fv, err := strconv.ParseFloat(sv, 64)
-			if err != nil {
-				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
-			}
-			vv.Field(i).SetFloat(fv)
-
-		case reflect.Slice:
-			ss := strings.Split(sv, ",")
-			slice := reflect.MakeSlice(reflect.TypeOf([]string{}), len(ss), len(ss))
-			for i := range ss {
-				slice.Index(i).SetString(ss[i])
-			}
-			vv.Field(i).Set(slice)
-
-		default:
-			return fmt.Errorf("%q (%v) is not supported as an env", env, vv.Field(i).Type())
-		}
+// Script returns the service file setup script.
+func (ka *KubeadmJoin) Script() (s string, err error) {
+	tpl := template.Must(template.New("scriptJoinTmpl").Parse(scriptJoinTmpl))
+	buf := bytes.NewBuffer(nil)
+	if err = tpl.Execute(buf, ka); err != nil {
+		return "", err
 	}
-	*ka = cc
-	return nil
+	return buf.String(), nil
 }
+
+// make sure to run as root, otherwise "[ERROR IsPrivilegedUser]: user is not running as root".
+const scriptJoinTmpl = `#!/usr/bin/env bash
+
+mkdir -p /home/ec2-user/.kube
+
+cat > /home/ec2-user/kubeadm.join.yaml <<EOF
+---
+apiVersion: kubeadm.k8s.io/v1beta1
+kind: JoinConfiguration
+nodeRegistration:
+  name: {{ .WorkerNodePrivateDNS }}
+  kubeletExtraArgs:
+    cloud-provider: aws
+
+discovery:
+  bootstrapToken:
+    apiServerEndpoint: {{ .Target }}
+    token: {{ .Token }}
+    caCertHashes:
+    - {{ .DiscoveryTokenCACertHash }}
+
+EOF
+cat /home/ec2-user/kubeadm.join.yaml
+
+sudo kubeadm join --config /home/ec2-user/kubeadm.join.yaml 1>>/var/log/kubeadm.join.log 2>&1
+
+`

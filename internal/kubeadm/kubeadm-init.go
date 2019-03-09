@@ -9,30 +9,44 @@ import (
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/internal/ssh"
 	"github.com/aws/aws-k8s-tester/kubeadmconfig"
+	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"go.uber.org/zap"
 )
 
 func runKubeadmInit(
 	lg *zap.Logger,
-	ec2Config ec2config.Config,
-	target ec2config.Instance,
-	filePathToSend string,
+	targetEC2 ec2config.Config,
+	targetInstance ec2config.Instance,
+	kubeadmInit *kubeadmconfig.KubeadmInit,
 	kubeadmJoin *kubeadmconfig.KubeadmJoin,
 ) (err error) {
-	kubeadmJoin.Target = fmt.Sprintf("%s:6443", target.PrivateIP)
+	kubeadmInit.MasterNodePrivateDNS = targetInstance.PrivateDNSName
+	kubeadmJoin.Target = fmt.Sprintf("%s:6443", targetInstance.PrivateIP)
+
+	var kubeadmInitScript string
+	kubeadmInitScript, err = kubeadmInit.Script()
+	if err != nil {
+		return err
+	}
+	var kubeadmInitScriptPath string
+	kubeadmInitScriptPath, err = fileutil.WriteTempFile([]byte(kubeadmInitScript))
+	if err != nil {
+		return err
+	}
+
 	var ss ssh.SSH
 	ss, err = ssh.New(ssh.Config{
 		Logger:        lg,
-		KeyPath:       ec2Config.KeyPath,
-		PublicIP:      target.PublicIP,
-		PublicDNSName: target.PublicDNSName,
-		UserName:      ec2Config.UserName,
+		KeyPath:       targetEC2.KeyPath,
+		PublicIP:      targetInstance.PublicIP,
+		PublicDNSName: targetInstance.PublicDNSName,
+		UserName:      targetEC2.UserName,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to create a SSH to %q(%q) (error %v)", ec2Config.ClusterName, target.InstanceID, err)
+		return fmt.Errorf("failed to create a SSH to %q(%q) (error %v)", targetEC2.ClusterName, targetInstance.InstanceID, err)
 	}
 	if err = ss.Connect(); err != nil {
-		return fmt.Errorf("failed to connect to %q(%q) (error %v)", ec2Config.ClusterName, target.InstanceID, err)
+		return fmt.Errorf("failed to connect to %q(%q) (error %v)", targetEC2.ClusterName, targetInstance.InstanceID, err)
 	}
 	defer ss.Close()
 
@@ -52,18 +66,18 @@ func runKubeadmInit(
 	if err != nil {
 		return err
 	}
-	lg.Info("started kubelet", zap.String("id", target.InstanceID))
+	lg.Info("started kubelet", zap.String("id", targetInstance.InstanceID))
 
-	lg.Info("starting 'kubeadm init'", zap.String("id", target.InstanceID))
-	remotePath := fmt.Sprintf("/home/%s/kubeadm.init.sh", ec2Config.UserName)
+	lg.Info("starting 'kubeadm init'", zap.String("id", targetInstance.InstanceID))
+	remotePath := fmt.Sprintf("/home/%s/kubeadm.init.sh", targetEC2.UserName)
 	_, err = ss.Send(
-		filePathToSend,
+		kubeadmInitScriptPath,
 		remotePath,
 		ssh.WithTimeout(15*time.Second),
 		ssh.WithRetry(3, 3*time.Second),
 	)
 	if err != nil {
-		return fmt.Errorf("failed to send %q to %q for %q(%q) (error %v)", filePathToSend, remotePath, ec2Config.ClusterName, target.InstanceID, err)
+		return fmt.Errorf("failed to send %q to %q for %q(%q) (error %v)", kubeadmInitScriptPath, remotePath, targetEC2.ClusterName, targetInstance.InstanceID, err)
 	}
 	_, err = ss.Run(
 		fmt.Sprintf("chmod +x %s", remotePath),
@@ -80,18 +94,18 @@ func runKubeadmInit(
 	if err != nil {
 		return err
 	}
-	lg.Info("started 'kubeadm init'", zap.String("id", target.InstanceID))
+	lg.Info("started 'kubeadm init'", zap.String("id", targetInstance.InstanceID))
 
 	retryStart := time.Now().UTC()
 joinReady:
 	for time.Now().UTC().Sub(retryStart) < 10*time.Minute {
-		var kubeadmInitOut []byte
-		kubeadmInitOut, err = ss.Run(
+		var co []byte
+		co, err = ss.Run(
 			"sudo cat /var/log/kubeadm-init.log",
 			ssh.WithRetry(15, 5*time.Second),
 			ssh.WithTimeout(15*time.Second),
 		)
-		output := string(kubeadmInitOut)
+		output := string(co)
 		debugLines := strings.Split(output, "\n")
 		lines := make([]string, len(debugLines))
 		copy(lines, debugLines)

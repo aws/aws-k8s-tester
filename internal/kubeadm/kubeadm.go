@@ -189,18 +189,14 @@ func (md *embedded) Create() (err error) {
 	// 1. start kubelet,
 	// 2. write cluster configuration file,
 	// 3. run "kubeadm init"
-	var kubeadmInitScript string
-	kubeadmInitScript, err = md.cfg.KubeadmInit.Script()
-	if err != nil {
-		return err
-	}
-	var kubeadmInitScriptPath string
-	kubeadmInitScriptPath, err = fileutil.WriteTempFile([]byte(kubeadmInitScript))
-	if err != nil {
-		return err
-	}
-	for _, target := range md.cfg.EC2MasterNodes.Instances {
-		if err = runKubeadmInit(md.lg, *md.cfg.EC2MasterNodes, target, kubeadmInitScriptPath, md.cfg.KubeadmJoin); err != nil {
+	for _, targetInstance := range md.cfg.EC2MasterNodes.Instances {
+		if err = runKubeadmInit(
+			md.lg,
+			*md.cfg.EC2MasterNodes,
+			targetInstance,
+			md.cfg.KubeadmInit,
+			md.cfg.KubeadmJoin,
+		); err != nil {
 			return err
 		}
 		break
@@ -210,8 +206,12 @@ func (md *embedded) Create() (err error) {
 
 	////////////////////////////////////////////////////////////////////////
 	// init script already installed "kubelet", just need write env file for "kubelet"
-	for _, target := range md.cfg.EC2WorkerNodes.Instances {
-		if err = runKubeadmJoin(md.lg, *md.cfg.EC2WorkerNodes, target, md.cfg.KubeadmJoin); err != nil {
+	for _, targetInstance := range md.cfg.EC2WorkerNodes.Instances {
+		if err = runKubeadmJoin(
+			md.lg,
+			*md.cfg.EC2WorkerNodes,
+			targetInstance,
+			md.cfg.KubeadmJoin); err != nil {
 			return err
 		}
 	}

@@ -386,7 +386,6 @@ func (cfg *Config) BackupConfig() (p string, err error) {
 
 const (
 	envPfx            = "AWS_K8S_TESTER_KUBEADM_"
-	envPfxKubeadmJoin = "AWS_K8S_TESTER_KUBEADM_KUBEADM_JOIN_"
 	envPfxMasterNodes = "AWS_K8S_TESTER_EC2_MASTER_NODES_"
 	envPfxWorkerNodes = "AWS_K8S_TESTER_EC2_WORKER_NODES_"
 )
@@ -472,10 +471,6 @@ func (cfg *Config) UpdateFromEnvs() error {
 		default:
 			return fmt.Errorf("%q (%v) is not supported as an env", env, vvTop.Field(i).Type())
 		}
-	}
-
-	if err := cc.KubeadmJoin.updateFromEnvs(envPfxKubeadmJoin); err != nil {
-		return err
 	}
 
 	*cfg = cc
