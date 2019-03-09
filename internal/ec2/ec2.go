@@ -266,13 +266,8 @@ func (md *embedded) Add() (err error) {
 		return errors.New("cannot add without SecurityGroupIDs")
 	}
 
-	var istSpec *ec2.IamInstanceProfileSpecification
-	if md.cfg.InstanceProfileName != "" {
-		istSpec = &ec2.IamInstanceProfileSpecification{
-			Name: &md.cfg.InstanceProfileName,
-		}
-	} else if md.cfg.InstanceProfileFilePath != "" {
-		md.cfg.InstanceProfileName = md.cfg.ClusterName + "-instance-profile"
+	istSpec := new(ec2.IamInstanceProfileSpecification)
+	if md.cfg.InstanceProfileFilePath != "" {
 		istSpec = &ec2.IamInstanceProfileSpecification{
 			Name: aws.String(md.cfg.InstanceProfileName),
 		}
@@ -772,12 +767,8 @@ func (md *embedded) deleteInstanceProfile() (err error) {
 func (md *embedded) createInstances() (err error) {
 	now := time.Now().UTC()
 
-	var istSpec *ec2.IamInstanceProfileSpecification
-	if md.cfg.InstanceProfileName != "" {
-		istSpec = &ec2.IamInstanceProfileSpecification{
-			Name: &md.cfg.InstanceProfileName,
-		}
-	} else if md.cfg.InstanceProfileFilePath != "" {
+	istSpec := new(ec2.IamInstanceProfileSpecification)
+	if md.cfg.InstanceProfileFilePath != "" {
 		istSpec = &ec2.IamInstanceProfileSpecification{
 			Name: aws.String(md.cfg.InstanceProfileName),
 		}
