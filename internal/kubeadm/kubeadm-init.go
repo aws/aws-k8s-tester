@@ -36,6 +36,25 @@ func runKubeadmInit(
 	}
 	defer ss.Close()
 
+	_, err = ss.Run(
+		"sudo systemctl enable kubelet.service",
+		ssh.WithRetry(100, 5*time.Second),
+		ssh.WithTimeout(15*time.Second),
+	)
+	if err != nil {
+		return err
+	}
+	_, err = ss.Run(
+		"sudo systemctl start kubelet.service",
+		ssh.WithRetry(100, 5*time.Second),
+		ssh.WithTimeout(30*time.Second),
+	)
+	if err != nil {
+		return err
+	}
+	lg.Info("started kubelet", zap.String("id", target.InstanceID))
+
+	lg.Info("starting 'kubeadm init'", zap.String("id", target.InstanceID))
 	remotePath := fmt.Sprintf("/home/%s/kubeadm.init.sh", ec2Config.UserName)
 	_, err = ss.Send(
 		filePathToSend,
@@ -46,7 +65,6 @@ func runKubeadmInit(
 	if err != nil {
 		return fmt.Errorf("failed to send %q to %q for %q(%q) (error %v)", filePathToSend, remotePath, ec2Config.ClusterName, target.InstanceID, err)
 	}
-
 	_, err = ss.Run(
 		fmt.Sprintf("chmod +x %s", remotePath),
 		ssh.WithRetry(100, 5*time.Second),
@@ -55,15 +73,14 @@ func runKubeadmInit(
 	if err != nil {
 		return err
 	}
-
 	_, err = ss.Run(
 		fmt.Sprintf("sudo bash %s", remotePath),
-		ssh.WithTimeout(15*time.Second),
+		ssh.WithTimeout(5*time.Minute),
 	)
 	if err != nil {
 		return err
 	}
-	lg.Info("started kubeadm init", zap.String("id", target.InstanceID))
+	lg.Info("started 'kubeadm init'", zap.String("id", target.InstanceID))
 
 	retryStart := time.Now().UTC()
 joinReady:
@@ -100,7 +117,7 @@ joinReady:
 	}
 
 	if kubeadmJoin.RawCommand == "" {
-		return errors.New("kubeadm join failed")
+		return errors.New("failed to find kubeadm join command from 'kubeadm init'")
 	}
 	prevToken, prevHash := false, false
 	for _, field := range strings.Fields(kubeadmJoin.RawCommand) {
@@ -123,6 +140,36 @@ joinReady:
 			continue
 		}
 	}
+
+	lg.Info("setting up KUBECONFIG")
+	_, err = ss.Run(
+		"mkdir -p $HOME/.kube",
+		ssh.WithRetry(15, 5*time.Second),
+		ssh.WithTimeout(15*time.Second),
+	)
+	if err != nil {
+		lg.Warn("failed to mkdir", zap.Error(err))
+		return err
+	}
+	_, err = ss.Run(
+		"sudo cp /etc/kubernetes/admin.conf $HOME/.kube/config",
+		ssh.WithRetry(15, 5*time.Second),
+		ssh.WithTimeout(15*time.Second),
+	)
+	if err != nil {
+		lg.Warn("failed to copy admin.conf", zap.Error(err))
+		return err
+	}
+	_, err = ss.Run(
+		"sudo chown $(id -u):$(id -g) $HOME/.kube/config",
+		ssh.WithRetry(15, 5*time.Second),
+		ssh.WithTimeout(15*time.Second),
+	)
+	if err != nil {
+		lg.Warn("failed to copy admin.conf", zap.Error(err))
+		return err
+	}
+	lg.Info("set up KUBECONFIG")
 
 	lg.Info("checking kube-controller-manager")
 	retryStart = time.Now().UTC()
@@ -163,33 +210,23 @@ joinReady:
 	}
 	lg.Info("kube-controller-manager pod is ready")
 
-	var flannelOutputRole []byte
-	flannelOutputRole, err = ss.Run(
-		"kubectl --kubeconfig=/home/ec2-user/.kube/config apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/k8s-manifests/kube-flannel-rbac.yml",
-		ssh.WithRetry(15, 5*time.Second),
-		ssh.WithTimeout(15*time.Second),
-	)
-	if err != nil {
-		return fmt.Errorf("failed to apply flannel role (%v)", err)
-	}
-	fmt.Println("flannelOutputRole:", string(flannelOutputRole))
-	var flannelOutput []byte
-	flannelOutput, err = ss.Run(
-		"kubectl --kubeconfig=/home/ec2-user/.kube/config apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml",
+	var cniOutput []byte
+	cniOutput, err = ss.Run(
+		"kubectl --kubeconfig=/home/ec2-user/.kube/config create -f https://raw.githubusercontent.com/aws/amazon-vpc-cni-k8s/master/config/v1.3/aws-k8s-cni.yaml",
 		ssh.WithRetry(15, 5*time.Second),
 		ssh.WithTimeout(15*time.Second),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to apply flannel (%v)", err)
 	}
-	fmt.Println("flannelOutput:", string(flannelOutput))
+	fmt.Println("cniOutput:", string(cniOutput))
 
-	lg.Info("checking flannel pod")
+	lg.Info("checking AWS CNI pod")
 	retryStart = time.Now().UTC()
 	for time.Now().UTC().Sub(retryStart) < 10*time.Minute {
 		var podsOutput []byte
 		podsOutput, err = ss.Run(
-			"kubectl --kubeconfig=/home/ec2-user/.kube/config get pods --all-namespaces",
+			"kubectl --kubeconfig=/home/ec2-user/.kube/config get pods --namespace kube-system",
 			ssh.WithRetry(15, 5*time.Second),
 			ssh.WithTimeout(15*time.Second),
 		)
@@ -198,12 +235,33 @@ joinReady:
 		}
 		fmt.Println("podsOutput:", string(podsOutput))
 
-		if strings.Contains(string(podsOutput), "kube-flannel-") {
+		if strings.Contains(string(podsOutput), "aws-node-") {
 			break
 		}
 		time.Sleep(15 * time.Second)
 	}
-	lg.Info("flannel pod is ready")
+	lg.Info("AWS CNI pod is ready")
+
+	lg.Info("checking kube-proxy pod")
+	retryStart = time.Now().UTC()
+	for time.Now().UTC().Sub(retryStart) < 10*time.Minute {
+		var podsOutput []byte
+		podsOutput, err = ss.Run(
+			"kubectl --kubeconfig=/home/ec2-user/.kube/config get pods --namespace kube-system",
+			ssh.WithRetry(15, 5*time.Second),
+			ssh.WithTimeout(15*time.Second),
+		)
+		if err != nil {
+			return err
+		}
+		fmt.Println("podsOutput:", string(podsOutput))
+
+		if strings.Contains(string(podsOutput), "kube-proxy-") {
+			break
+		}
+		time.Sleep(15 * time.Second)
+	}
+	lg.Info("kube-proxy pod is ready")
 
 	return nil
 }

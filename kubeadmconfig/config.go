@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
+	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/blang/semver"
 	"k8s.io/client-go/util/homedir"
 	"sigs.k8s.io/yaml"
@@ -49,7 +50,6 @@ type Config struct {
 	// thus needs clean-up on test complete.
 	EC2WorkerNodesCreated bool `json:"ec2-worker-nodes-created"`
 
-	Kubelet *Kubelet `json:"kubelet"`
 	// KubeadmInit is the "kubeadm init" configuration for initial cluster setup.
 	KubeadmInit *KubeadmInit `json:"kubeadm-init"`
 	// KubeadmJoin is the "kubeadm join" configuration.
@@ -120,7 +120,89 @@ func NewDefault() *Config {
 }
 
 // curl -sSL https://dl.k8s.io/release/stable.txt
-var defaultVer = "1.13.0"
+var defaultVer = "1.13.4"
+
+const (
+	policyMasterNodes = `{
+	"Version": "2012-10-17",
+	"Statement": [
+		{
+			"Effect": "Allow",
+			"Resource": "*",
+			"Action": [
+				"ec2:CreateNetworkInterface",
+				"ec2:AttachNetworkInterface",
+				"ec2:DeleteNetworkInterface",
+				"ec2:DetachNetworkInterface",
+				"ec2:DescribeNetworkInterfaces",
+				"ec2:DescribeInstances",
+				"ec2:ModifyNetworkInterfaceAttribute",
+				"ec2:AssignPrivateIpAddresses"
+			]
+		},
+		{
+			"Effect": "Allow",
+			"Action": "ec2:CreateTags",
+			"Resource": "arn:aws:ec2:*:*:network-interface/*"
+		},
+		{
+			"Effect": "Allow",
+			"Resource": "*",
+			"Action": [
+				"ec2:*",
+				"elasticloadbalancing:*",
+				"ecr:GetAuthorizationToken",
+				"ecr:BatchCheckLayerAvailability",
+				"ecr:GetDownloadUrlForLayer",
+				"ecr:GetRepositoryPolicy",
+				"ecr:DescribeRepositories",
+				"ecr:ListImages",
+				"ecr:BatchGetImage",
+				"autoscaling:DescribeAutoScalingGroups",
+				"autoscaling:UpdateAutoScalingGroup"
+			]
+		}
+	]
+}`
+	policyWorkerNodes = `{
+	"Version": "2012-10-17",
+	"Statement": [
+		{
+			"Effect": "Allow",
+			"Resource": "*",
+			"Action": [
+				"ec2:CreateNetworkInterface",
+				"ec2:AttachNetworkInterface",
+				"ec2:DeleteNetworkInterface",
+				"ec2:DetachNetworkInterface",
+				"ec2:DescribeNetworkInterfaces",
+				"ec2:DescribeInstances",
+				"ec2:ModifyNetworkInterfaceAttribute",
+				"ec2:AssignPrivateIpAddresses"
+			]
+		},
+		{
+			"Effect": "Allow",
+			"Resource": "arn:aws:ec2:*:*:network-interface/*",
+			"Action": "ec2:CreateTags"
+		},
+		{
+			"Effect": "Allow",
+			"Resource": "*",
+			"Action": [
+				"ec2:Describe*",
+				"ecr:GetAuthorizationToken",
+				"ecr:BatchCheckLayerAvailability",
+				"ecr:GetDownloadUrlForLayer",
+				"ecr:GetRepositoryPolicy",
+				"ecr:DescribeRepositories",
+				"ecr:ListImages",
+				"ecr:BatchGetImage"
+			]
+		}
+	]
+}`
+)
 
 func init() {
 	if strings.HasPrefix(defaultVer, "v") {
@@ -208,7 +290,7 @@ var workerNodesPorts = []string{
 func genTag() string {
 	// use UTC time for everything
 	now := time.Now().UTC()
-	return fmt.Sprintf("a8-kubeadm-%d%02d%02d", now.Year()-2000, int(now.Month()), now.Day())
+	return fmt.Sprintf("a8-kdm-%d%02d%02d", now.Year()-2000, int(now.Month()), now.Day())
 }
 
 var defaultConfig = Config{
@@ -217,8 +299,7 @@ var defaultConfig = Config{
 
 	AWSRegion: "us-west-2",
 
-	Kubelet:     newDefaultKubelet(),
-	KubeadmInit: newDefaultKubeadmInit(),
+	KubeadmInit: &KubeadmInit{},
 	KubeadmJoin: newDefaultKubeadmJoin(),
 
 	LogDebug: false,
@@ -305,8 +386,6 @@ func (cfg *Config) BackupConfig() (p string, err error) {
 
 const (
 	envPfx            = "AWS_K8S_TESTER_KUBEADM_"
-	envPfxKubelet     = "AWS_K8S_TESTER_KUBEADM_KUBELET_"
-	envPfxKubeadmInit = "AWS_K8S_TESTER_KUBEADM_KUBEADM_INIT_"
 	envPfxKubeadmJoin = "AWS_K8S_TESTER_KUBEADM_KUBEADM_JOIN_"
 	envPfxMasterNodes = "AWS_K8S_TESTER_EC2_MASTER_NODES_"
 	envPfxWorkerNodes = "AWS_K8S_TESTER_EC2_WORKER_NODES_"
@@ -395,12 +474,6 @@ func (cfg *Config) UpdateFromEnvs() error {
 		}
 	}
 
-	if err := cc.Kubelet.updateFromEnvs(envPfxKubelet); err != nil {
-		return err
-	}
-	if err := cc.KubeadmInit.updateFromEnvs(envPfxKubeadmInit); err != nil {
-		return err
-	}
 	if err := cc.KubeadmJoin.updateFromEnvs(envPfxKubeadmJoin); err != nil {
 		return err
 	}
@@ -418,6 +491,15 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 	}
 	if cfg.EC2WorkerNodes == nil {
 		return errors.New("EC2WorkerNodes configuration not found")
+	}
+
+	cfg.EC2MasterNodes.InstanceProfileFilePath, err = fileutil.WriteTempFile([]byte(policyMasterNodes))
+	if err != nil {
+		return err
+	}
+	cfg.EC2WorkerNodes.InstanceProfileFilePath, err = fileutil.WriteTempFile([]byte(policyWorkerNodes))
+	if err != nil {
+		return err
 	}
 
 	// let master node EC2 deployer create SSH key
@@ -522,7 +604,7 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 
 	// populate all paths on disks and on remote storage
 	if cfg.ConfigPath == "" {
-		f, err := ioutil.TempFile(os.TempDir(), "a8-kubeadmconfig")
+		f, err := ioutil.TempFile(os.TempDir(), "a8-kdmconfig")
 		if err != nil {
 			return err
 		}
@@ -530,7 +612,7 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 		f.Close()
 		os.RemoveAll(cfg.ConfigPath)
 	}
-	cfg.ConfigPathBucket = filepath.Join(cfg.ClusterName, "a8-kubeadmconfig.yaml")
+	cfg.ConfigPathBucket = filepath.Join(cfg.ClusterName, "a8-kdmconfig.yaml")
 
 	cfg.LogOutputToUploadPath = filepath.Join(os.TempDir(), fmt.Sprintf("%s.log", cfg.ClusterName))
 	logOutputExist := false
@@ -544,7 +626,7 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 		// auto-insert generated log output paths to zap logger output list
 		cfg.LogOutputs = append(cfg.LogOutputs, cfg.LogOutputToUploadPath)
 	}
-	cfg.LogOutputToUploadPathBucket = filepath.Join(cfg.ClusterName, "a8-kubeadm.log")
+	cfg.LogOutputToUploadPathBucket = filepath.Join(cfg.ClusterName, "a8-kdm.log")
 
 	cfg.KubeConfigPath = fmt.Sprintf("%s.%s.kubeconfig.generated.yaml", cfg.ConfigPath, cfg.ClusterName)
 	cfg.KubeConfigPathBucket = filepath.Join(cfg.ClusterName, "kubeconfig")

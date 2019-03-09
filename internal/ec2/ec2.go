@@ -266,29 +266,17 @@ func (md *embedded) Add() (err error) {
 		return errors.New("cannot add without SecurityGroupIDs")
 	}
 
-	var istSpec *ec2.IamInstanceProfileSpecification
-	if md.cfg.InstanceProfileName != "" {
+	istSpec := new(ec2.IamInstanceProfileSpecification)
+	if md.cfg.InstanceProfileFilePath != "" {
 		istSpec = &ec2.IamInstanceProfileSpecification{
-			Name: &md.cfg.InstanceProfileName,
+			Name: aws.String(md.cfg.InstanceProfileName),
 		}
-	} else if md.cfg.InstanceProfileFilePath != "" {
-		instanceProfileName := md.cfg.ClusterName + "-instance-profile"
-		istSpec = &ec2.IamInstanceProfileSpecification{
-			Name: aws.String(instanceProfileName),
-		}
-		var policyDoc []byte
-		policyDoc, err = ioutil.ReadFile(md.cfg.InstanceProfileFilePath)
-		if err != nil {
-			return err
-		}
-		var ierr error
-		md.cfg.InstanceProfilePolicyARN, ierr = createInstanceProfile(md.lg, md.iam, policyDoc, instanceProfileName)
-		if ierr != nil {
+		if err = md.createInstanceProfile(); err != nil {
 			// TODO
-			if strings.Contains(ierr.Error(), "parameter iamInstanceProfile.name is invalid. Invalid IAM Instance Profile name") {
+			if strings.Contains(err.Error(), "parameter iamInstanceProfile.name is invalid. Invalid IAM Instance Profile name") {
 				md.lg.Warn("failed to create instance profile or consistency issue",
-					zap.String("error-type", fmt.Sprintf("%v", reflect.TypeOf(ierr))),
-					zap.Error(ierr),
+					zap.String("error-type", fmt.Sprintf("%v", reflect.TypeOf(err))),
+					zap.Error(err),
 				)
 				err = nil
 			}
@@ -518,7 +506,7 @@ func (md *embedded) Terminate() (err error) {
 
 	var errs []string
 	if md.cfg.InstanceProfileFilePath != "" {
-		if err = deleteInstanceProfile(md.lg, md.iam, md.cfg.ClusterName+"-instance-profile", md.cfg.InstanceProfilePolicyARN); err != nil {
+		if err = md.deleteInstanceProfile(); err != nil {
 			md.lg.Warn("failed to delete instance profile", zap.Error(err))
 			errs = append(errs, err.Error())
 		}
@@ -599,76 +587,81 @@ const (
 }`
 )
 
-func createInstanceProfile(
-	lg *zap.Logger,
-	iamIf iamiface.IAMAPI,
-	policyDoc []byte,
-	instanceProfileName string) (policyArn string, err error) {
+func (md *embedded) createInstanceProfile() (err error) {
+	var policyDoc []byte
+	policyDoc, err = ioutil.ReadFile(md.cfg.InstanceProfileFilePath)
+	if err != nil {
+		return err
+	}
+	md.cfg.InstanceProfilePolicy = string(policyDoc)
 	var profileOutput *iam.CreateInstanceProfileOutput
-	profileOutput, err = iamIf.CreateInstanceProfile(&iam.CreateInstanceProfileInput{
-		InstanceProfileName: aws.String(instanceProfileName),
+	profileOutput, err = md.iam.CreateInstanceProfile(&iam.CreateInstanceProfileInput{
+		InstanceProfileName: aws.String(md.cfg.InstanceProfileName),
 	})
 	if err != nil {
-		return "", fmt.Errorf("failed to create a new instance profile (%v)", err)
+		return fmt.Errorf("failed to create a new instance profile (%v)", err)
 	}
-	if instanceProfileName != *profileOutput.InstanceProfile.InstanceProfileName {
-		return "", fmt.Errorf("got different instance profile name %q (expected %q)", *profileOutput.InstanceProfile.InstanceProfileName, instanceProfileName)
+	md.cfg.InstanceProfileCreated = true
+	if md.cfg.InstanceProfileName != *profileOutput.InstanceProfile.InstanceProfileName {
+		return fmt.Errorf("got different instance profile name %q (expected %q)", *profileOutput.InstanceProfile.InstanceProfileName, md.cfg.InstanceProfileName)
 	}
-	lg.Info(
+	md.lg.Info(
 		"created instance profile",
 		zap.String("instance-profile-name", *profileOutput.InstanceProfile.InstanceProfileName),
 	)
 
 	var policyOutput *iam.CreatePolicyOutput
-	policyOutput, err = iamIf.CreatePolicy(&iam.CreatePolicyInput{
+	policyOutput, err = md.iam.CreatePolicy(&iam.CreatePolicyInput{
 		Description:    aws.String("awe-k8s-tester generated policy for testing EC2"),
-		PolicyDocument: aws.String(string(policyDoc)),
-		PolicyName:     aws.String(instanceProfileName + "-policy"),
+		PolicyDocument: aws.String(md.cfg.InstanceProfilePolicy),
+		PolicyName:     aws.String(md.cfg.InstanceProfilePolicyName),
 	})
 	if err != nil {
-		return "", fmt.Errorf("failed to create a new instance profile policy (%v)", err)
+		return fmt.Errorf("failed to create a new instance profile policy (%v)", err)
 	}
-	lg.Info(
+	md.cfg.InstanceProfilePolicyCreated = true
+	md.lg.Info(
 		"created instance policy",
-		zap.String("instance-profile-policy-name", instanceProfileName+"-policy"),
+		zap.String("instance-profile-policy-name", md.cfg.InstanceProfilePolicyName),
 	)
-	policyArn = *policyOutput.Policy.Arn
+	md.cfg.InstanceProfilePolicyARN = *policyOutput.Policy.Arn
 
 	var roleOutput *iam.CreateRoleOutput
-	roleOutput, err = iamIf.CreateRole(&iam.CreateRoleInput{
+	roleOutput, err = md.iam.CreateRole(&iam.CreateRoleInput{
 		AssumeRolePolicyDocument: aws.String(assumeRoleDocument),
-		RoleName:                 aws.String(instanceProfileName + "-role"),
+		RoleName:                 aws.String(md.cfg.InstanceProfileRoleName),
 	})
 	if err != nil {
-		return "", fmt.Errorf("failed to create new role (%v)", err)
+		return fmt.Errorf("failed to create new role (%v)", err)
 	}
-	lg.Info("created instance role",
-		zap.String("instance-profile-role-name", instanceProfileName+"-role"),
+	md.cfg.InstanceProfileRoleCreated = true
+	md.lg.Info("created instance role",
+		zap.String("instance-profile-role-name", md.cfg.InstanceProfileRoleName),
 	)
 
-	_, err = iamIf.AttachRolePolicy(&iam.AttachRolePolicyInput{
+	_, err = md.iam.AttachRolePolicy(&iam.AttachRolePolicyInput{
 		PolicyArn: policyOutput.Policy.Arn,
 		RoleName:  roleOutput.Role.RoleName,
 	})
 	if err != nil {
-		return "", fmt.Errorf("failed to attach role to policy (%v)", err)
+		return fmt.Errorf("failed to attach role to policy (%v)", err)
 	}
-	lg.Info(
+	md.lg.Info(
 		"attached role to policy",
-		zap.String("instance-profile-name", instanceProfileName),
+		zap.String("instance-profile-name", md.cfg.InstanceProfileName),
 	)
 
-	_, err = iamIf.AddRoleToInstanceProfile(&iam.AddRoleToInstanceProfileInput{
+	_, err = md.iam.AddRoleToInstanceProfile(&iam.AddRoleToInstanceProfileInput{
 		InstanceProfileName: profileOutput.InstanceProfile.InstanceProfileName,
 		RoleName:            roleOutput.Role.RoleName,
 	})
 	if err != nil {
-		return "", fmt.Errorf("failed to add role to instance profile (%v)", err)
+		return fmt.Errorf("failed to add role to instance profile (%v)", err)
 	}
-	lg.Info(
+	md.lg.Info(
 		"attached role to instance profile",
-		zap.String("instance-profile-name", instanceProfileName),
-		zap.String("instance-profile-role-name", instanceProfileName+"-role"),
+		zap.String("instance-profile-name", md.cfg.InstanceProfileName),
+		zap.String("instance-profile-role-name", md.cfg.InstanceProfileRoleName),
 	)
 
 	// Delay is needed to ensure that permissions have been propagated.
@@ -676,96 +669,96 @@ func createInstanceProfile(
 	// https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html
 	time.Sleep(20 * time.Second)
 
-	return policyArn, nil
+	return nil
 }
 
-func deleteInstanceProfile(
-	lg *zap.Logger,
-	iamIf iamiface.IAMAPI,
-	instanceProfileName string,
-	policyArn string) (err error) {
-	if instanceProfileName == "" {
-		return nil
-	}
-	_, err = iamIf.RemoveRoleFromInstanceProfile(&iam.RemoveRoleFromInstanceProfileInput{
-		InstanceProfileName: aws.String(instanceProfileName),
-		RoleName:            aws.String(instanceProfileName + "-role"),
-	})
-	if err != nil {
-		lg.Warn("failed to remove role from instance profile", zap.Error(err))
-	} else {
-		lg.Info(
-			"removed role from instance profile",
-			zap.String("instance-profile-name", instanceProfileName),
-		)
+func (md *embedded) deleteInstanceProfile() (err error) {
+	if md.cfg.InstanceProfileRoleCreated && md.cfg.InstanceProfileCreated {
+		_, err = md.iam.RemoveRoleFromInstanceProfile(&iam.RemoveRoleFromInstanceProfileInput{
+			InstanceProfileName: aws.String(md.cfg.InstanceProfileName),
+			RoleName:            aws.String(md.cfg.InstanceProfileRoleName),
+		})
+		if err != nil {
+			md.lg.Warn("failed to remove role from instance profile", zap.Error(err))
+		} else {
+			md.lg.Info(
+				"removed role from instance profile",
+				zap.String("instance-profile-name", md.cfg.InstanceProfileName),
+			)
+		}
 	}
 
-	_, err = iamIf.DeleteInstanceProfile(&iam.DeleteInstanceProfileInput{
-		InstanceProfileName: aws.String(instanceProfileName),
-	})
-	if err != nil {
-		lg.Warn(
-			"failed to delete instance profile",
-			zap.String("instance-profile-name", instanceProfileName),
-			zap.Error(err),
-		)
-	} else {
-		lg.Info(
-			"deleted instance profile",
-			zap.String("instance-profile-name", instanceProfileName),
-		)
+	if md.cfg.InstanceProfileCreated {
+		_, err = md.iam.DeleteInstanceProfile(&iam.DeleteInstanceProfileInput{
+			InstanceProfileName: aws.String(md.cfg.InstanceProfileName),
+		})
+		if err != nil {
+			md.lg.Warn(
+				"failed to delete instance profile",
+				zap.String("instance-profile-name", md.cfg.InstanceProfileName),
+				zap.Error(err),
+			)
+		} else {
+			md.lg.Info(
+				"deleted instance profile",
+				zap.String("instance-profile-name", md.cfg.InstanceProfileName),
+			)
+		}
 	}
 
-	if instanceProfileName == "" {
-		return err
-	}
-	_, err = iamIf.DetachRolePolicy(&iam.DetachRolePolicyInput{
-		PolicyArn: aws.String(policyArn),
-		RoleName:  aws.String(instanceProfileName + "-role"),
-	})
-	if err != nil {
-		lg.Warn(
-			"failed to delete role policy",
-			zap.String("instance-profile-name", instanceProfileName),
-			zap.Error(err),
-		)
-	} else {
-		lg.Info(
-			"deleted role policy",
-			zap.String("instance-profile-name", instanceProfileName),
-		)
-	}
-
-	_, err = iamIf.DeletePolicy(&iam.DeletePolicyInput{
-		PolicyArn: aws.String(policyArn),
-	})
-	if err != nil {
-		lg.Warn(
-			"failed to delete policy",
-			zap.String("instance-profile-name", instanceProfileName),
-			zap.Error(err),
-		)
-	} else {
-		lg.Info(
-			"deleted policy",
-			zap.String("instance-profile-name", instanceProfileName),
-		)
+	if md.cfg.InstanceProfileRoleCreated && md.cfg.InstanceProfilePolicyCreated {
+		_, err = md.iam.DetachRolePolicy(&iam.DetachRolePolicyInput{
+			PolicyArn: aws.String(md.cfg.InstanceProfilePolicyARN),
+			RoleName:  aws.String(md.cfg.InstanceProfileRoleName),
+		})
+		if err != nil {
+			md.lg.Warn(
+				"failed to detach role policy",
+				zap.String("instance-profile-name", md.cfg.InstanceProfileName),
+				zap.Error(err),
+			)
+		} else {
+			md.lg.Info(
+				"detached role policy",
+				zap.String("instance-profile-name", md.cfg.InstanceProfileName),
+			)
+		}
 	}
 
-	_, err = iamIf.DeleteRole(&iam.DeleteRoleInput{
-		RoleName: aws.String(instanceProfileName + "-role"),
-	})
-	if err != nil {
-		lg.Warn(
-			"failed to delete role",
-			zap.String("instance-profile-name", instanceProfileName),
-			zap.Error(err),
-		)
-	} else {
-		lg.Info(
-			"deleted role",
-			zap.String("instance-profile-name", instanceProfileName),
-		)
+	if md.cfg.InstanceProfilePolicyCreated {
+		_, err = md.iam.DeletePolicy(&iam.DeletePolicyInput{
+			PolicyArn: aws.String(md.cfg.InstanceProfilePolicyARN),
+		})
+		if err != nil {
+			md.lg.Warn(
+				"failed to delete policy",
+				zap.String("instance-profile-name", md.cfg.InstanceProfileName),
+				zap.Error(err),
+			)
+		} else {
+			md.lg.Info(
+				"deleted policy",
+				zap.String("instance-profile-name", md.cfg.InstanceProfileName),
+			)
+		}
+	}
+
+	if md.cfg.InstanceProfileRoleCreated {
+		_, err = md.iam.DeleteRole(&iam.DeleteRoleInput{
+			RoleName: aws.String(md.cfg.InstanceProfileRoleName),
+		})
+		if err != nil {
+			md.lg.Warn(
+				"failed to delete role",
+				zap.String("instance-profile-name", md.cfg.InstanceProfileName),
+				zap.Error(err),
+			)
+		} else {
+			md.lg.Info(
+				"deleted role",
+				zap.String("instance-profile-name", md.cfg.InstanceProfileName),
+			)
+		}
 	}
 
 	return nil
@@ -774,29 +767,17 @@ func deleteInstanceProfile(
 func (md *embedded) createInstances() (err error) {
 	now := time.Now().UTC()
 
-	var istSpec *ec2.IamInstanceProfileSpecification
-	if md.cfg.InstanceProfileName != "" {
+	istSpec := new(ec2.IamInstanceProfileSpecification)
+	if md.cfg.InstanceProfileFilePath != "" {
 		istSpec = &ec2.IamInstanceProfileSpecification{
-			Name: &md.cfg.InstanceProfileName,
+			Name: aws.String(md.cfg.InstanceProfileName),
 		}
-	} else if md.cfg.InstanceProfileFilePath != "" {
-		instanceProfileName := md.cfg.ClusterName + "-instance-profile"
-		istSpec = &ec2.IamInstanceProfileSpecification{
-			Name: aws.String(instanceProfileName),
-		}
-		var policyDoc []byte
-		policyDoc, err = ioutil.ReadFile(md.cfg.InstanceProfileFilePath)
-		if err != nil {
-			return err
-		}
-		var ierr error
-		md.cfg.InstanceProfilePolicyARN, ierr = createInstanceProfile(md.lg, md.iam, policyDoc, instanceProfileName)
-		if ierr != nil {
+		if err = md.createInstanceProfile(); err != nil {
 			// TODO
-			if strings.Contains(ierr.Error(), "parameter iamInstanceProfile.name is invalid. Invalid IAM Instance Profile name") {
+			if strings.Contains(err.Error(), "parameter iamInstanceProfile.name is invalid. Invalid IAM Instance Profile name") {
 				md.lg.Warn("failed to create instance profile or consistency issue",
-					zap.String("error-type", fmt.Sprintf("%v", reflect.TypeOf(ierr))),
-					zap.Error(ierr),
+					zap.String("error-type", fmt.Sprintf("%v", reflect.TypeOf(err))),
+					zap.Error(err),
 				)
 				err = nil
 			}

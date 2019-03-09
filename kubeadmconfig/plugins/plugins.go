@@ -30,73 +30,38 @@ cat <<EOF > /tmp/kubernetes.repo
 [kubernetes]
 name=Kubernetes
 baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+#baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-aarch64
 enabled=1
 gpgcheck=1
 repo_gpgcheck=0
 gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
 exclude=kube*
 EOF
-sudo cp /tmp/kubernetes.repo /etc/yum.repos.d/kubernetes.repo
+sudo mv /tmp/kubernetes.repo /etc/yum.repos.d/kubernetes.repo
 
-cat <<EOF > /tmp/k8s.conf
-net.bridge.bridge-nf-call-ip6tables = 1
-net.bridge.bridge-nf-call-iptables = 1
-EOF
-sudo cp /tmp/k8s.conf /etc/sysctl.d/k8s.conf
+sudo yum install --disableexcludes=kubernetes -y \
+  kubelet-{{ .Version }} \
+  kubeadm-{{ .Version }} \
+  kubectl-{{ .Version }} \
+  iproute-tc
 
-sudo sysctl --system
-sudo sysctl net.bridge.bridge-nf-call-iptables=1
 
-# Set SELinux in permissive mode (effectively disabling it)
-setenforce 0
-sudo sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
+kubelet --version
+kubeadm version
+kubectl version --client=true
 
-sudo yum install -y cri-tools ebtables kubernetes-cni socat iproute-tc
+sudo iptables --list
+sudo iptables -P FORWARD ACCEPT
+sudo iptables --list
 
-RELEASE=v{{ .Version }}
-
-cd /usr/bin
-sudo rm -f /usr/bin/{kubeadm,kubelet,kubectl}
-sudo curl -L --remote-name-all https://storage.googleapis.com/kubernetes-release/release/${RELEASE}/bin/linux/amd64/{kubeadm,kubelet,kubectl}
-sudo chmod +x {kubeadm,kubelet,kubectl}
-cd ${HOME}
-
-sudo systemctl stop kubelet.service || true
-sudo systemctl enable kubelet.service || true
-
-sudo mkdir -p /var/lib/kubernetes/
-sudo mkdir -p /var/lib/kubelet/
-
-rm -f /tmp/kubelet.service
-cat <<EOF > /tmp/kubelet.service
-[Unit]
-Description=kubelet
-Documentation=http://kubernetes.io/docs/
-After=docker.service
-
-[Service]
-EnvironmentFile=/etc/sysconfig/kubelet
-ExecStart=/usr/bin/kubelet "\$KUBELET_FLAGS"
-Restart=always
-RestartSec=2s
-StartLimitInterval=0
-KillMode=process
-User=root
-
-[Install]
-WantedBy=multi-user.target
-EOF
-cat /tmp/kubelet.service
-
-sudo rm -f /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
-sudo mkdir -p /etc/systemd/system/kubelet.service.d
-sudo cp /tmp/kubelet.service /etc/systemd/system/kubelet.service
+sudo echo '{ "bip": "192.168.255.1/24" }' > /etc/docker/daemon.json
 
 sudo systemctl daemon-reload
-sudo systemctl stop kubelet.service || true
 sudo systemctl cat kubelet.service
 
-crictl --version
+sudo systemctl enable docker
+sudo systemctl start docker
+
 ##################################
 
 `
