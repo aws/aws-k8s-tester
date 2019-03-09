@@ -194,8 +194,13 @@ func (md *embedded) Create() (err error) {
 	if err != nil {
 		return err
 	}
+	var kubeadmInitScriptPath string
+	kubeadmInitScriptPath, err = fileutil.WriteTempFile([]byte(kubeadmInitScript))
+	if err != nil {
+		return err
+	}
 	for _, target := range md.cfg.EC2MasterNodes.Instances {
-		if err = runKubeadmInit(md.lg, *md.cfg.EC2MasterNodes, target, kubeadmInitScript, md.cfg.KubeadmJoin); err != nil {
+		if err = runKubeadmInit(md.lg, *md.cfg.EC2MasterNodes, target, kubeadmInitScriptPath, md.cfg.KubeadmJoin); err != nil {
 			return err
 		}
 		break

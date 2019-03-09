@@ -86,7 +86,7 @@ joinReady:
 	for time.Now().UTC().Sub(retryStart) < 10*time.Minute {
 		var kubeadmInitOut []byte
 		kubeadmInitOut, err = ss.Run(
-			"sudo cat /home/ec2-user/kubeadm-init.log",
+			"sudo cat /var/log/kubeadm-init.log",
 			ssh.WithRetry(15, 5*time.Second),
 			ssh.WithTimeout(15*time.Second),
 		)

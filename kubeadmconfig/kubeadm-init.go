@@ -55,5 +55,5 @@ controllerManager:
 EOF
 cat /tmp/cluster.yaml
 
-sudo kubeadm init --config /tmp/cluster.yaml 1>>/home/ec2-user/kubeadm-init.log 2>&1
+sudo kubeadm init --config /tmp/cluster.yaml 1>>/var/log/kubeadm-init.log 2>&1
 `
