@@ -235,6 +235,7 @@ joinReady:
 	}
 	fmt.Println("cniOutput:", string(cniOutput))
 
+	// TODO: not working...
 	lg.Info("checking AWS CNI pod")
 	retryStart = time.Now().UTC()
 	for time.Now().UTC().Sub(retryStart) < 10*time.Minute {
@@ -255,6 +256,50 @@ joinReady:
 		time.Sleep(15 * time.Second)
 	}
 	lg.Info("AWS CNI pod is ready")
+	/*
+		var flannelOutputRole []byte
+		flannelOutputRole, err = ss.Run(
+			"kubectl --kubeconfig=/home/ec2-user/.kube/config apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/k8s-manifests/kube-flannel-rbac.yml",
+			ssh.WithRetry(15, 5*time.Second),
+			ssh.WithTimeout(15*time.Second),
+		)
+		if err != nil {
+			return fmt.Errorf("failed to apply flannel role (%v)", err)
+		}
+		fmt.Println("flannelOutputRole:", string(flannelOutputRole))
+
+		var flannelOutput []byte
+		flannelOutput, err = ss.Run(
+			"kubectl --kubeconfig=/home/ec2-user/.kube/config apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml",
+			ssh.WithRetry(15, 5*time.Second),
+			ssh.WithTimeout(15*time.Second),
+		)
+		if err != nil {
+			return fmt.Errorf("failed to apply flannel (%v)", err)
+		}
+		fmt.Println("flannelOutput:", string(flannelOutput))
+
+		lg.Info("checking flannel pod")
+		retryStart = time.Now().UTC()
+		for time.Now().UTC().Sub(retryStart) < 10*time.Minute {
+			var podsOutput []byte
+			podsOutput, err = ss.Run(
+				"kubectl --kubeconfig=/home/ec2-user/.kube/config get pods --all-namespaces",
+				ssh.WithRetry(15, 5*time.Second),
+				ssh.WithTimeout(15*time.Second),
+			)
+			if err != nil {
+				return err
+			}
+			fmt.Println("podsOutput:", string(podsOutput))
+
+			if strings.Contains(string(podsOutput), "kube-flannel-") {
+				break
+			}
+			time.Sleep(15 * time.Second)
+		}
+		lg.Info("flannel pod is ready")
+	*/
 
 	lg.Info("checking kube-proxy pod")
 	retryStart = time.Now().UTC()
