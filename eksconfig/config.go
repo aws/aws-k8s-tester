@@ -438,14 +438,14 @@ var defaultConfig = Config{
 
 	// Amazon EKS-optimized AMI, https://docs.aws.amazon.com/eks/latest/userguide/eks-optimized-ami.html
 	// for the corresponding region and version
-	WorkerNodeAMI:                "ami-0c28139856aaf9c3b",
+	WorkerNodeAMI:                "ami-0923e4b35a30a5f53",
 	WorkerNodeInstanceType:       "m3.xlarge",
 	WorkerNodeASGMin:             1,
 	WorkerNodeASGMax:             1,
 	WorkerNodeASGDesiredCapacity: 1,
 	WorkerNodeVolumeSizeGB:       20,
 
-	KubernetesVersion: "1.11",
+	KubernetesVersion: "1.12",
 
 	LogDebug: false,
 
@@ -1005,6 +1005,7 @@ func checkKubernetesVersion(s string) (ok bool) {
 var supportedKubernetesVersions = map[string]struct{}{
 	"1.10": {},
 	"1.11": {},
+	"1.12": {},
 }
 
 func checkRegion(s string) (ok bool) {
