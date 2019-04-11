@@ -15,7 +15,7 @@ import (
 
 // https://github.com/aws/amazon-vpc-cni-k8s/releases
 func (md *embedded) upgradeCNI() error {
-	d, err := httputil.Download(md.lg, os.Stdout, "https://raw.githubusercontent.com/aws/amazon-vpc-cni-k8s/master/config/v1.3/aws-k8s-cni.yaml")
+	d, err := httputil.Download(md.lg, os.Stdout, "https://raw.githubusercontent.com/aws/amazon-vpc-cni-k8s/master/config/v1.4/aws-k8s-cni.yaml")
 	if err != nil {
 		return err
 	}
