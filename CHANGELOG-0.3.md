@@ -3,7 +3,7 @@
 <hr>
 
 
-## [0.3.0](https://github.com/aws/aws-k8s-tester/releases/tag/0.3.0)(2019-03)
+## [0.3.0](https://github.com/aws/aws-k8s-tester/releases/tag/0.3.0)(2019-04-TBD)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.2.9...0.3.0).
 
@@ -19,6 +19,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.2.9...0.3.0).
 - Add [`WorkerNodeASGDesiredCapacity` field to configure `NodeAutoScalingGroupDesiredCapacity` for EKS worker nodes](https://github.com/aws/aws-k8s-tester/commit/dd2764bf29b242b4313ee1b4a16b3c592b84c6bb).
 - Remove [`TestMode` field](https://github.com/aws/aws-k8s-tester/commit/c55ffe8c79f866774e1f684007b9d610769cea6d).
 - Rename [`EKSCustomEndpoint` field to `EKSCustomEndpoint`](https://github.com/aws/aws-k8s-tester/commit/a3a700700b8708be6f34a1896b3b8793e602db6d).
+- Move [`CFStackVPC*` to `eksconfig`, and add custom VPC/Subnet CIDR ranges](https://github.com/aws/aws-k8s-tester/commit/1a59b454beb24a6f088d1e374ccb25768341d2e9).
+- Make [EKS 1.12 by default](https://github.com/aws/aws-k8s-tester/commit/bd4f3a2bfac3d635933ee614a0423efdb5b504f3).
 
 ### `internal`
 
@@ -31,7 +33,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.2.9...0.3.0).
 
 ### Dependency
 
-- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.17.1`](https://github.com/aws/aws-sdk-go/releases/tag/v1.17.1) to [`v1.17.13`](https://github.com/aws/aws-sdk-go/releases/tag/v1.17.13).
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.17.1`](https://github.com/aws/aws-sdk-go/releases/tag/v1.17.1) to [`v1.19.11`](https://github.com/aws/aws-sdk-go/releases/tag/v1.19.11).
 
 ### Go
 
