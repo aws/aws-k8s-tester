@@ -35,6 +35,10 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_AWS_IAM_AUTHENTICATOR_PATH", "/tmp/aws-k8s-tester-test/aws-iam-authenticator")
 	os.Setenv("AWS_K8S_TESTER_EKS_KUBERNETES_VERSION", "1.11")
 	os.Setenv("AWS_K8S_TESTER_EKS_TAG", "my-test")
+	os.Setenv("AWS_K8S_TESTER_EKS_CF_STACK_VPC_PARAMETER_VPC_BLOCK", "192.168.0.0/8")
+	os.Setenv("AWS_K8S_TESTER_EKS_CF_STACK_VPC_PARAMETER_SUBNET_01_BLOCK", "192.168.64.0/8")
+	os.Setenv("AWS_K8S_TESTER_EKS_CF_STACK_VPC_PARAMETER_SUBNET_02_BLOCK", "192.168.128.0/8")
+	os.Setenv("AWS_K8S_TESTER_EKS_CF_STACK_VPC_PARAMETER_SUBNET_03_BLOCK", "192.168.192.0/8")
 	os.Setenv("AWS_K8S_TESTER_EKS_VPC_ID", "my-vpc-id")
 	os.Setenv("AWS_K8S_TESTER_EKS_SUBNET_IDS", "a,b,c")
 	os.Setenv("AWS_K8S_TESTER_EKS_LOG_ACCESS", "true")
@@ -74,6 +78,10 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWS_K8S_TESTER_EKS_AWS_IAM_AUTHENTICATOR_PATH")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_KUBERNETES_VERSION")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_TAG")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_CF_STACK_VPC_PARAMETER_VPC_BLOCK")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_CF_STACK_VPC_PARAMETER_SUBNET_01_BLOCK")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_CF_STACK_VPC_PARAMETER_SUBNET_02_BLOCK")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_CF_STACK_VPC_PARAMETER_SUBNET_03_BLOCK")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_VPC_ID")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_SUBNET_IDs")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_LOG_ACCESS")
@@ -134,6 +142,18 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.Tag != "my-test" {
 		t.Fatalf("Tag my-test, got %q", cfg.Tag)
+	}
+	if cfg.CFStackVPCParameterVPCBlock != "192.168.0.0/8" {
+		t.Fatalf("CFStackVPCParameterVPCBlock unexpected %q", cfg.CFStackVPCParameterVPCBlock)
+	}
+	if cfg.CFStackVPCParameterSubnet01Block != "192.168.64.0/8" {
+		t.Fatalf("CFStackVPCParameterSubnet01Block unexpected %q", cfg.CFStackVPCParameterSubnet01Block)
+	}
+	if cfg.CFStackVPCParameterSubnet02Block != "192.168.128.0/8" {
+		t.Fatalf("CFStackVPCParameterSubnet02Block unexpected %q", cfg.CFStackVPCParameterSubnet02Block)
+	}
+	if cfg.CFStackVPCParameterSubnet03Block != "192.168.192.0/8" {
+		t.Fatalf("CFStackVPCParameterSubnet03Block unexpected %q", cfg.CFStackVPCParameterSubnet03Block)
 	}
 	if cfg.VPCID != "my-vpc-id" {
 		t.Fatalf("VPCID my-vpc-id, got %q", cfg.VPCID)

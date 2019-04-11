@@ -15,7 +15,7 @@ import (
 )
 
 func (md *embedded) createVPC() error {
-	if md.cfg.ClusterState.CFStackVPCName == "" {
+	if md.cfg.CFStackVPCName == "" {
 		return errors.New("cannot create empty VPC stack")
 	}
 
@@ -33,8 +33,8 @@ func (md *embedded) createVPC() error {
 		return err
 	}
 
-	_, err = md.cf.CreateStack(&cloudformation.CreateStackInput{
-		StackName: aws.String(md.cfg.ClusterState.CFStackVPCName),
+	cfnInput := &cloudformation.CreateStackInput{
+		StackName: aws.String(md.cfg.CFStackVPCName),
 		Tags: []*cloudformation.Tag{
 			{
 				Key:   aws.String("Name"),
@@ -48,7 +48,31 @@ func (md *embedded) createVPC() error {
 
 		// TemplateURL: aws.String("https://amazon-eks.s3-us-west-2.amazonaws.com/cloudformation/2018-08-30/amazon-eks-vpc-sample.yaml"),
 		TemplateBody: aws.String(s),
-	})
+	}
+	if md.cfg.CFStackVPCParameterVPCBlock != "" &&
+		md.cfg.CFStackVPCParameterSubnet01Block != "" &&
+		md.cfg.CFStackVPCParameterSubnet02Block != "" &&
+		md.cfg.CFStackVPCParameterSubnet03Block != "" {
+		cfnInput.Parameters = []*cloudformation.Parameter{
+			{
+				ParameterKey:   aws.String("VpcBlock"),
+				ParameterValue: aws.String(md.cfg.CFStackVPCParameterVPCBlock),
+			},
+			{
+				ParameterKey:   aws.String("Subnet01Block"),
+				ParameterValue: aws.String(md.cfg.CFStackVPCParameterSubnet01Block),
+			},
+			{
+				ParameterKey:   aws.String("Subnet02Block"),
+				ParameterValue: aws.String(md.cfg.CFStackVPCParameterSubnet02Block),
+			},
+			{
+				ParameterKey:   aws.String("Subnet03Block"),
+				ParameterValue: aws.String(md.cfg.CFStackVPCParameterSubnet03Block),
+			},
+		}
+	}
+	_, err = md.cf.CreateStack(cfnInput)
 	if err != nil {
 		return err
 	}
@@ -74,25 +98,25 @@ func (md *embedded) createVPC() error {
 
 		var do *cloudformation.DescribeStacksOutput
 		do, err = md.cf.DescribeStacks(&cloudformation.DescribeStacksInput{
-			StackName: aws.String(md.cfg.ClusterState.CFStackVPCName),
+			StackName: aws.String(md.cfg.CFStackVPCName),
 		})
 		if err != nil {
 			md.lg.Warn("failed to describe VPC stack",
-				zap.String("stack-name", md.cfg.ClusterState.CFStackVPCName),
+				zap.String("stack-name", md.cfg.CFStackVPCName),
 				zap.Error(err),
 			)
-			md.cfg.ClusterState.CFStackVPCStatus = err.Error()
+			md.cfg.CFStackVPCStatus = err.Error()
 			time.Sleep(10 * time.Second)
 			continue
 		}
 
 		if len(do.Stacks) != 1 {
-			return fmt.Errorf("%q expects 1 Stack, got %v", md.cfg.ClusterState.CFStackVPCName, do.Stacks)
+			return fmt.Errorf("%q expects 1 Stack, got %v", md.cfg.CFStackVPCName, do.Stacks)
 		}
 
-		md.cfg.ClusterState.CFStackVPCStatus = *do.Stacks[0].StackStatus
-		if isCFCreateFailed(md.cfg.ClusterState.CFStackVPCStatus) {
-			return fmt.Errorf("failed to create %q (%q)", md.cfg.ClusterState.CFStackVPCName, md.cfg.ClusterState.CFStackVPCStatus)
+		md.cfg.CFStackVPCStatus = *do.Stacks[0].StackStatus
+		if isCFCreateFailed(md.cfg.CFStackVPCStatus) {
+			return fmt.Errorf("failed to create %q (%q)", md.cfg.CFStackVPCName, md.cfg.CFStackVPCStatus)
 		}
 
 		for _, op := range do.Stacks[0].Outputs {
@@ -110,7 +134,7 @@ func (md *embedded) createVPC() error {
 			}
 		}
 
-		if md.cfg.ClusterState.CFStackVPCStatus == "CREATE_COMPLETE" {
+		if md.cfg.CFStackVPCStatus == "CREATE_COMPLETE" {
 			_, err = md.ec2.CreateTags(&ec2.CreateTagsInput{
 				Resources: aws.StringSlice([]string{md.cfg.SecurityGroupID}),
 				Tags: []*ec2.Tag{
@@ -127,8 +151,8 @@ func (md *embedded) createVPC() error {
 		}
 
 		md.lg.Info("creating VPC stack",
-			zap.String("stack-name", md.cfg.ClusterState.CFStackVPCName),
-			zap.String("stack-status", md.cfg.ClusterState.CFStackVPCStatus),
+			zap.String("stack-name", md.cfg.CFStackVPCName),
+			zap.String("stack-status", md.cfg.CFStackVPCStatus),
 			zap.String("vpc-id", md.cfg.VPCID),
 			zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 		)
@@ -137,8 +161,8 @@ func (md *embedded) createVPC() error {
 	}
 	if err != nil {
 		md.lg.Info("failed to create VPC stack",
-			zap.String("stack-name", md.cfg.ClusterState.CFStackVPCName),
-			zap.String("stack-status", md.cfg.ClusterState.CFStackVPCStatus),
+			zap.String("stack-name", md.cfg.CFStackVPCName),
+			zap.String("stack-status", md.cfg.CFStackVPCStatus),
 			zap.String("vpc-id", md.cfg.VPCID),
 			zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 			zap.Error(err),
@@ -147,8 +171,8 @@ func (md *embedded) createVPC() error {
 	}
 
 	md.lg.Info("created VPC stack",
-		zap.String("stack-name", md.cfg.ClusterState.CFStackVPCName),
-		zap.String("stack-status", md.cfg.ClusterState.CFStackVPCStatus),
+		zap.String("stack-name", md.cfg.CFStackVPCName),
+		zap.String("stack-status", md.cfg.CFStackVPCStatus),
 		zap.String("vpc-id", md.cfg.VPCID),
 		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 	)
@@ -164,15 +188,15 @@ func (md *embedded) deleteVPC() error {
 		md.cfg.Sync()
 	}()
 
-	if md.cfg.ClusterState.CFStackVPCName == "" {
+	if md.cfg.CFStackVPCName == "" {
 		return errors.New("cannot delete empty VPC stack")
 	}
 
 	_, err := md.cf.DeleteStack(&cloudformation.DeleteStackInput{
-		StackName: aws.String(md.cfg.ClusterState.CFStackVPCName),
+		StackName: aws.String(md.cfg.CFStackVPCName),
 	})
 	if err != nil {
-		md.cfg.ClusterState.CFStackVPCStatus = err.Error()
+		md.cfg.CFStackVPCStatus = err.Error()
 		return err
 	}
 
@@ -184,12 +208,12 @@ func (md *embedded) deleteVPC() error {
 	for time.Now().UTC().Sub(now) < 5*time.Minute {
 		var do *cloudformation.DescribeStacksOutput
 		do, err = md.cf.DescribeStacks(&cloudformation.DescribeStacksInput{
-			StackName: aws.String(md.cfg.ClusterState.CFStackVPCName),
+			StackName: aws.String(md.cfg.CFStackVPCName),
 		})
 		if err == nil {
-			md.cfg.ClusterState.CFStackVPCStatus = *do.Stacks[0].StackStatus
+			md.cfg.CFStackVPCStatus = *do.Stacks[0].StackStatus
 			md.lg.Info("deleting VPC stack",
-				zap.String("stack-status", md.cfg.ClusterState.CFStackVPCStatus),
+				zap.String("stack-status", md.cfg.CFStackVPCStatus),
 				zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 			)
 			time.Sleep(10 * time.Second)
@@ -216,28 +240,28 @@ func (md *embedded) deleteVPC() error {
 				)
 				if verr != nil && strings.Contains(verr.Error(), "does not exist") {
 					err = nil
-					md.cfg.ClusterState.CFStackVPCStatus = "DELETE_COMPLETE"
+					md.cfg.CFStackVPCStatus = "DELETE_COMPLETE"
 					break
 				}
 			}
 			continue
 		}
 
-		if isCFDeletedGoClient(md.cfg.ClusterState.CFStackVPCName, err) {
+		if isCFDeletedGoClient(md.cfg.CFStackVPCName, err) {
 			err = nil
-			md.cfg.ClusterState.CFStackVPCStatus = "DELETE_COMPLETE"
+			md.cfg.CFStackVPCStatus = "DELETE_COMPLETE"
 			break
 		}
-		md.cfg.ClusterState.CFStackVPCStatus = err.Error()
+		md.cfg.CFStackVPCStatus = err.Error()
 
-		md.lg.Warn("failed to describe VPC stack", zap.String("stack-name", md.cfg.ClusterState.CFStackVPCName), zap.Error(err))
+		md.lg.Warn("failed to describe VPC stack", zap.String("stack-name", md.cfg.CFStackVPCName), zap.Error(err))
 		time.Sleep(10 * time.Second)
 	}
 
 	if err != nil {
 		md.lg.Info("failed to delete VPC stack",
-			zap.String("stack-name", md.cfg.ClusterState.CFStackVPCName),
-			zap.String("stack-status", md.cfg.ClusterState.CFStackVPCStatus),
+			zap.String("stack-name", md.cfg.CFStackVPCName),
+			zap.String("stack-status", md.cfg.CFStackVPCStatus),
 			zap.String("vpc-id", md.cfg.VPCID),
 			zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 			zap.Error(err),
@@ -246,8 +270,8 @@ func (md *embedded) deleteVPC() error {
 	}
 
 	md.lg.Info("deleted VPC stack",
-		zap.String("stack-name", md.cfg.ClusterState.CFStackVPCName),
-		zap.String("stack-status", md.cfg.ClusterState.CFStackVPCStatus),
+		zap.String("stack-name", md.cfg.CFStackVPCName),
+		zap.String("stack-status", md.cfg.CFStackVPCStatus),
 		zap.String("vpc-id", md.cfg.VPCID),
 		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 	)

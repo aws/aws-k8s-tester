@@ -175,6 +175,18 @@ type Config struct {
 	// Read-only to kubetest.
 	ClusterState *ClusterState `json:"cluster-state,omitempty"`
 
+	// CFStackVPCName is the name of VPC cloudformation stack.
+	// Read-only. Only used to create a new one.
+	CFStackVPCName string `json:"cf-stack-vpc-name,omitempty"`
+	// CFStackVPCStatus is the last cloudformation status of VPC stack.
+	CFStackVPCStatus string `json:"cf-stack-vpc-status,omitempty"`
+	// CFStackVPCParameterVPCBlock is CIDR range for the VPC.
+	// This should be a valid private (RFC 1918) CIDR range.
+	CFStackVPCParameterVPCBlock      string `json:"cf-stack-vpc-parameter-vpc-block"`
+	CFStackVPCParameterSubnet01Block string `json:"cf-stack-vpc-parameter-subnet-01-block"`
+	CFStackVPCParameterSubnet02Block string `json:"cf-stack-vpc-parameter-subnet-02-block"`
+	CFStackVPCParameterSubnet03Block string `json:"cf-stack-vpc-parameter-subnet-03-block"`
+
 	// ALBIngressController is the EKS ALB Ingress Controller configuration and its state.
 	// Deployer is expected to keep this in sync.
 	// Read-only to kubetest.
@@ -212,11 +224,6 @@ type ClusterState struct {
 	ServiceRolePolicies []string `json:"service-role-policies,omitempty"`
 	// ServiceRoleWithPolicyARN is the ARN of the created cluster service role.
 	ServiceRoleWithPolicyARN string `json:"service-role-with-policy-arn,omitempty"`
-
-	// CFStackVPCName is the name of VPC cloudformation stack.
-	CFStackVPCName string `json:"cf-stack-vpc-name,omitempty"`
-	// CFStackVPCStatus is the last cloudformation status of VPC stack.
-	CFStackVPCStatus string `json:"cf-stack-vpc-status,omitempty"`
 
 	// Endpoint is the cluster endpoint of the EKS cluster, required for KUBECONFIG write.
 	Endpoint string `json:"endpoint,omitempty"`
@@ -638,7 +645,23 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	// the same naming convention
 	cfg.ClusterState.ServiceRoleWithPolicyName = genServiceRoleWithPolicy(cfg.ClusterName)
 	cfg.ClusterState.ServiceRolePolicies = []string{serviceRolePolicyARNCluster, serviceRolePolicyARNService}
-	cfg.ClusterState.CFStackVPCName = genCFStackVPC(cfg.ClusterName)
+	cfg.CFStackVPCName = genCFStackVPC(cfg.ClusterName)
+	if cfg.CFStackVPCParameterVPCBlock != "" ||
+		cfg.CFStackVPCParameterSubnet01Block != "" ||
+		cfg.CFStackVPCParameterSubnet02Block != "" ||
+		cfg.CFStackVPCParameterSubnet03Block != "" {
+		if cfg.CFStackVPCParameterVPCBlock == "" ||
+			cfg.CFStackVPCParameterSubnet01Block == "" ||
+			cfg.CFStackVPCParameterSubnet02Block == "" ||
+			cfg.CFStackVPCParameterSubnet03Block == "" {
+			return fmt.Errorf("CFStackVPC parameters must be all empty or non-empty (got %q | %q | %q | %q)",
+				cfg.CFStackVPCParameterVPCBlock,
+				cfg.CFStackVPCParameterSubnet01Block,
+				cfg.CFStackVPCParameterSubnet02Block,
+				cfg.CFStackVPCParameterSubnet03Block,
+			)
+		}
+	}
 	cfg.ClusterState.CFStackWorkerNodeGroupKeyPairName = genNodeGroupKeyPairName(cfg.ClusterName)
 	// SECURITY NOTE: MAKE SURE PRIVATE KEY NEVER GETS UPLOADED TO CLOUD STORAGE AND DLETE AFTER USE!!!
 	if cfg.WorkerNodePrivateKeyPath == "" {

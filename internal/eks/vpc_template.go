@@ -23,7 +23,7 @@ type vpcStack struct {
 }
 
 // https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html
-// https://amazon-eks.s3-us-west-2.amazonaws.com/cloudformation/2018-08-30/amazon-eks-vpc-sample.yaml
+// https://amazon-eks.s3-us-west-2.amazonaws.com/cloudformation/2019-02-11/amazon-eks-vpc-sample.yaml
 const vpcStackTemplate = `---
 AWSTemplateFormatVersion: '2010-09-09'
 Description: {{ .Description }}
@@ -33,7 +33,7 @@ Parameters:
   VpcBlock:
     Type: String
     Default: 192.168.0.0/16
-    Description: The CIDR range for the VPC. This should be a valid private (RFC 1918) CIDR range
+    Description: The CIDR range for the VPC. This should be a valid private (RFC 1918) CIDR range.
 
   Subnet01Block:
     Type: String
@@ -48,7 +48,7 @@ Parameters:
   Subnet03Block:
     Type: String
     Default: 192.168.192.0/18
-    Description: CidrBlock for subnet 03 within the VPC
+    Description: CidrBlock for subnet 03 within the VPC. This is used only if the region has more than 2 AZs.
 
 Metadata:
   AWS::CloudFormation::Interface:
@@ -62,11 +62,31 @@ Metadata:
           - Subnet02Block
           - Subnet03Block
 
+Conditions:
+  Has2Azs:
+    Fn::Or:
+      - Fn::Equals:
+        - {Ref: 'AWS::Region'}
+        - ap-south-1
+      - Fn::Equals:
+        - {Ref: 'AWS::Region'}
+        - ap-northeast-2
+      - Fn::Equals:
+        - {Ref: 'AWS::Region'}
+        - ca-central-1
+      - Fn::Equals:
+        - {Ref: 'AWS::Region'}
+        - cn-north-1
+
+  HasMoreThan2Azs:
+    Fn::Not:
+      - Condition: Has2Azs
+
 Resources:
   VPC:
     Type: AWS::EC2::VPC
     Properties:
-      CidrBlock: !Ref VpcBlock
+      CidrBlock:  !Ref VpcBlock
       EnableDnsSupport: true
       EnableDnsHostnames: true
       Tags:
@@ -157,6 +177,7 @@ Resources:
         Value: {{ .Hostname }}
 
   Subnet03:
+    Condition: HasMoreThan2Azs
     Type: AWS::EC2::Subnet
     Metadata:
       Comment: Subnet 03
@@ -191,6 +212,7 @@ Resources:
       RouteTableId: !Ref RouteTable
 
   Subnet03RouteTableAssociation:
+    Condition: HasMoreThan2Azs
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       SubnetId: !Ref Subnet03
@@ -199,20 +221,18 @@ Resources:
   ControlPlaneSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: {{ .SecurityGroupName }}
       GroupDescription: Cluster communication with worker nodes
       VpcId: !Ref VPC
-      Tags:
-      - Key: {{ .Tag }}
-        Value: {{ .TagValue }}
-      - Key: HOSTNAME
-        Value: {{ .Hostname }}
 
 Outputs:
 
   SubnetIds:
     Description: All subnets in the VPC
-    Value: !Join [ ",", [ !Ref Subnet01, !Ref Subnet02, !Ref Subnet03 ] ]
+    Value:
+      Fn::If:
+      - HasMoreThan2Azs
+      - !Join [ ",", [ !Ref Subnet01, !Ref Subnet02, !Ref Subnet03 ] ]
+      - !Join [ ",", [ !Ref Subnet01, !Ref Subnet02 ] ]
 
   SecurityGroups:
     Description: Security group for the cluster control plane communication with worker nodes

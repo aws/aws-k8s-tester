@@ -279,7 +279,7 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 
 	// to connect to an existing cluster
 	do, err := md.cf.DescribeStacks(&cloudformation.DescribeStacksInput{
-		StackName: aws.String(md.cfg.ClusterState.CFStackVPCName),
+		StackName: aws.String(md.cfg.CFStackVPCName),
 	})
 	if err == nil && len(do.Stacks) == 1 {
 		for _, op := range do.Stacks[0].Outputs {
