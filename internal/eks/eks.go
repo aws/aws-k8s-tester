@@ -21,13 +21,9 @@ import (
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/ekstester"
-	"github.com/aws/aws-k8s-tester/internal/eks/alb"
-	"github.com/aws/aws-k8s-tester/internal/eks/alb/ingress/client"
 	"github.com/aws/aws-k8s-tester/internal/eks/s3"
 	"github.com/aws/aws-k8s-tester/pkg/awsapi"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
-	"github.com/aws/aws-k8s-tester/pkg/httputil"
-	"github.com/aws/aws-k8s-tester/pkg/wrk"
 	"github.com/aws/aws-k8s-tester/pkg/zaputil"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -39,7 +35,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	awseks "github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
-	"github.com/aws/aws-sdk-go/service/elbv2"
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/aws/aws-sdk-go/service/iam/iamiface"
 	awss3 "github.com/aws/aws-sdk-go/service/s3"
@@ -79,9 +74,6 @@ type embedded struct {
 	ec2InstancesLogMu *sync.RWMutex
 
 	s3Plugin s3.Plugin
-
-	// for plugins, sub-project implementation
-	albPlugin alb.Plugin
 
 	// TODO: add EBS (with CSI) plugin
 	// TODO: add KMS plugin
@@ -232,41 +224,7 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 	md.cfg.LogOutputToUploadPathURL = genS3URL(md.cfg.AWSRegion, md.cfg.Tag, md.cfg.LogOutputToUploadPathBucket)
 	md.cfg.ConfigPathURL = genS3URL(md.cfg.AWSRegion, md.cfg.Tag, md.cfg.ConfigPathBucket)
 	md.cfg.KubeConfigPathURL = genS3URL(md.cfg.AWSRegion, md.cfg.Tag, md.cfg.KubeConfigPathBucket)
-	if md.cfg.ALBIngressController != nil {
-		md.cfg.ALBIngressController.IngressTestServerDeploymentServiceSpecPathURL = genS3URL(md.cfg.AWSRegion, md.cfg.Tag, md.cfg.ALBIngressController.IngressTestServerDeploymentServiceSpecPathBucket)
-		md.cfg.ALBIngressController.IngressControllerSpecPathURL = genS3URL(md.cfg.AWSRegion, md.cfg.Tag, md.cfg.ALBIngressController.IngressControllerSpecPathBucket)
-		md.cfg.ALBIngressController.IngressObjectSpecPathURL = genS3URL(md.cfg.AWSRegion, md.cfg.Tag, md.cfg.ALBIngressController.IngressObjectSpecPathBucket)
-		md.cfg.ALBIngressController.ScalabilityOutputToUploadPathURL = genS3URL(md.cfg.AWSRegion, md.cfg.Tag, md.cfg.ALBIngressController.ScalabilityOutputToUploadPathBucket)
-		md.cfg.ALBIngressController.MetricsOutputToUploadPathURL = genS3URL(md.cfg.AWSRegion, md.cfg.Tag, md.cfg.ALBIngressController.MetricsOutputToUploadPathBucket)
-	}
 	md.s3Plugin = s3.NewEmbedded(md.lg, md.cfg, awss3.New(md.ss))
-
-	if cfg.ALBIngressController.Enable {
-		md.albPlugin = alb.NewEmbedded(md.stopc, lg, md.cfg, md.cfg.KubectlPath, md.im, md.ec2, elbv2.New(md.ss), md.s3Plugin)
-		if err != nil {
-			return nil, err
-		}
-
-		// TODO
-		// build binary
-
-		// TODO
-		// construct container image name
-		// TODO: use git sha to tag image?
-		// name := fmt.Sprintf("%s/alb:%s", md.cont.GetRegistry(), md.cfg.ClusterName)
-
-		// TODO
-		// push container image to repository
-
-		// TODO
-		// once complete, remove all Go build and container build commands
-		// and replace them with container image name
-		// in order to indicate to next run that image has already been built
-		// and to just reuse the image rather than building and pushing again
-
-		// for now, assume previous commands or Prow jobs already built
-		// corresponding binary and container image to current branch
-	}
 
 	// to connect to an existing cluster
 	op, err := md.im.GetRole(&iam.GetRoleInput{
@@ -438,30 +396,6 @@ func (md *embedded) Up() (err error) {
 		}
 	}
 
-	if md.cfg.ALBIngressController.Enable {
-		albStart := time.Now().UTC()
-
-		if err = catchStopc(md.lg, md.stopc, termChan, md.albPlugin.DeployBackend); err != nil {
-			return err
-		}
-		if err = catchStopc(md.lg, md.stopc, termChan, md.albPlugin.CreateRBAC); err != nil {
-			return err
-		}
-		if err = catchStopc(md.lg, md.stopc, termChan, md.albPlugin.DeployIngressController); err != nil {
-			return err
-		}
-		if err = catchStopc(md.lg, md.stopc, termChan, md.albPlugin.CreateSecurityGroup); err != nil {
-			return err
-		}
-		if err = catchStopc(md.lg, md.stopc, termChan, md.albPlugin.CreateIngressObjects); err != nil {
-			return err
-		}
-		md.cfg.ALBIngressController.Created = true
-
-		md.cfg.Sync()
-		md.cfg.SetIngressUpTook(time.Now().UTC().Sub(albStart))
-	}
-
 	md.lg.Info("Up finished",
 		zap.String("cluster-name", md.cfg.ClusterName),
 		zap.String("custom-endpoint", md.cfg.EKSCustomEndpoint),
@@ -476,11 +410,6 @@ func (md *embedded) Up() (err error) {
 	if md.cfg.UploadTesterLogs {
 		if err = md.uploadTesterLogs(); err != nil {
 			md.lg.Warn("failed to upload", zap.Error(err))
-		}
-	}
-	if md.cfg.ALBIngressController.Enable && md.cfg.ALBIngressController.UploadTesterLogs {
-		if err = md.uploadALBTesterLogs(); err != nil {
-			md.lg.Warn("failed to upload ALB", zap.Error(err))
 		}
 	}
 	return nil
@@ -534,29 +463,9 @@ func (md *embedded) down() (err error) {
 
 	md.lg.Info("Down", zap.String("cluster-name", md.cfg.ClusterName))
 	var errs []string
-	if md.cfg.ALBIngressController.Enable && md.cfg.ALBIngressController.Created {
-		if err = md.albPlugin.DeleteIngressObjects(); err != nil {
-			md.lg.Warn("failed to delete ALB Ingress Controller ELBv2", zap.Error(err))
-			errs = append(errs, err.Error())
-		}
-		// fail without deleting worker node group
-		// since worker node EC2 instance has dependency on this security group
-		// e.g. DependencyViolation: resource sg-01a2f9aef81a857f6 has a dependent object
-		// so try again after deleting node group stack
-		if err = md.albPlugin.DeleteSecurityGroup(); err != nil {
-			md.lg.Warn("tried to delete ALB Ingress Controller security group", zap.Error(err))
-		}
-	}
 	if err = md.deleteWorkerNode(); err != nil {
 		md.lg.Warn("failed to delete node group stack", zap.Error(err))
 		errs = append(errs, err.Error())
-	}
-	if md.cfg.ALBIngressController.Enable && md.cfg.ALBIngressController.Created {
-		if err = md.albPlugin.DeleteSecurityGroup(); err != nil {
-			md.lg.Warn("failed to delete ALB Ingress Controller security group", zap.Error(err))
-			errs = append(errs, err.Error())
-		}
-		md.cfg.ALBIngressController.Created = false
 	}
 	if err = md.deleteKeyPair(); err != nil {
 		md.lg.Warn("failed to delete key pair", zap.Error(err))
@@ -678,106 +587,6 @@ func (md *embedded) LoadConfig() (eksconfig.Config, error) {
 	return *md.cfg, nil
 }
 
-func (md *embedded) TestALBCorrectness() error {
-	ep := "http://" + md.cfg.ALBIngressController.ELBv2NamespaceToDNSName["default"]
-	if !httputil.CheckGet(
-		md.lg,
-		ep,
-		strings.Repeat("0", md.cfg.ALBIngressController.TestResponseSize),
-		30,
-		5*time.Second,
-		md.stopc) {
-		return fmt.Errorf("failed to HTTP Get %q", ep)
-	}
-	return md.albPlugin.TestAWSResources()
-}
-
-func (md *embedded) TestALBQPS() error {
-	ep := "http://" + md.cfg.ALBIngressController.ELBv2NamespaceToDNSName["default"]
-
-	var rs client.TestResult
-	var rbytes []byte
-
-	// wrk --threads 2 --connections 200 --duration 15s --latency http://127.0.0.1
-	args := []string{
-		"--threads", "2",
-		"--connections", fmt.Sprintf("%d", md.cfg.ALBIngressController.TestClients),
-		"--duration", fmt.Sprintf("%s", time.Duration(md.cfg.ALBIngressController.TestScalabilityMinutes)*time.Minute),
-		"--latency",
-		ep,
-	}
-	md.lg.Info("starting wrk", zap.String("command", strings.Join(args, " ")))
-	cmd := exec.New().CommandContext(context.Background(), "wrk", args...)
-	var err error
-	rbytes, err = cmd.CombinedOutput()
-	if err != nil {
-		return err
-	}
-	md.lg.Info("finished wrk", zap.String("command", strings.Join(args, " ")))
-
-	fmt.Printf("TestALBQPS Result: %q\n\n%s\n\n", ep, string(rbytes))
-
-	if err := ioutil.WriteFile(
-		md.cfg.ALBIngressController.ScalabilityOutputToUploadPath,
-		rbytes,
-		0600,
-	); err != nil {
-		return err
-	}
-
-	if md.cfg.ALBIngressController.UploadTesterLogs {
-		if err := md.uploadALBTesterLogs(); err != nil {
-			md.lg.Warn("failed to upload ALB", zap.Error(err))
-		}
-	}
-
-	pv, perr := wrk.Parse(string(rbytes))
-	if perr != nil {
-		md.lg.Warn("failed to parse 'wrk' command output", zap.String("output", string(rbytes)), zap.Error(perr))
-	}
-	md.cfg.ALBIngressController.TestResultQPS = pv.RequestsPerSec
-	md.cfg.ALBIngressController.TestResultFailures = pv.ErrorsConnect + pv.ErrorsWrite + pv.ErrorsRead + pv.ErrorsTimeout
-	md.cfg.Sync()
-
-	if int64(len(rs.Errors)) > md.cfg.ALBIngressController.TestClientErrorThreshold {
-		return fmt.Errorf("expected errors under threshold %d, got %v", md.cfg.ALBIngressController.TestClientErrorThreshold, rs.Errors)
-	}
-	if md.cfg.ALBIngressController.TestResultFailures > md.cfg.ALBIngressController.TestClientErrorThreshold {
-		return fmt.Errorf("expected failures under threshold %d, got %d", md.cfg.ALBIngressController.TestClientErrorThreshold, md.cfg.ALBIngressController.TestResultFailures)
-	}
-	if md.cfg.ALBIngressController.TestExpectQPS > 0.0 &&
-		md.cfg.ALBIngressController.TestResultQPS < md.cfg.ALBIngressController.TestExpectQPS {
-		return fmt.Errorf("expected QPS %f, got %f", md.cfg.ALBIngressController.TestExpectQPS, md.cfg.ALBIngressController.TestResultQPS)
-	}
-	return nil
-}
-
-func (md *embedded) TestALBMetrics() error {
-	ep := "http://" + md.cfg.ALBIngressController.ELBv2NamespaceToDNSName["kube-system"] + "/metrics"
-
-	resp, err := http.Get(ep)
-	if err != nil {
-		return fmt.Errorf("failed to HTTP Get %q (%v)", ep, err)
-	}
-	var d []byte
-	d, err = ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-	resp.Body.Close()
-
-	err = ioutil.WriteFile(md.cfg.ALBIngressController.MetricsOutputToUploadPath, d, 0600)
-	if err != nil {
-		return err
-	}
-	if md.cfg.ALBIngressController.UploadTesterLogs {
-		if err = md.uploadALBTesterLogs(); err != nil {
-			md.lg.Warn("failed to upload ALB", zap.Error(err))
-		}
-	}
-	return nil
-}
-
 // SECURITY NOTE: MAKE SURE PRIVATE KEY NEVER GETS UPLOADED TO CLOUD STORAGE AND DLETE AFTER USE!!!
 func (md *embedded) uploadTesterLogs() (err error) {
 	err = md.s3Plugin.UploadToBucketForTests(
@@ -819,46 +628,6 @@ func (md *embedded) uploadWorkerNodeLogs() (err error) {
 		}
 		md.lg.Info("uploaded", zap.String("s3-path", s3Path))
 		time.Sleep(30 * time.Millisecond)
-	}
-	return nil
-}
-
-func (md *embedded) uploadALBTesterLogs() (err error) {
-	err = md.s3Plugin.UploadToBucketForTests(
-		md.cfg.ALBIngressController.IngressTestServerDeploymentServiceSpecPath,
-		md.cfg.ALBIngressController.IngressTestServerDeploymentServiceSpecPathBucket,
-	)
-	if err != nil {
-		return err
-	}
-	err = md.s3Plugin.UploadToBucketForTests(
-		md.cfg.ALBIngressController.IngressControllerSpecPath,
-		md.cfg.ALBIngressController.IngressControllerSpecPathBucket,
-	)
-	if err != nil {
-		return err
-	}
-	err = md.s3Plugin.UploadToBucketForTests(
-		md.cfg.ALBIngressController.IngressObjectSpecPath,
-		md.cfg.ALBIngressController.IngressObjectSpecPathBucket,
-	)
-	if err != nil {
-		return err
-	}
-	if md.cfg.ALBIngressController.TestScalability {
-		err = md.s3Plugin.UploadToBucketForTests(
-			md.cfg.ALBIngressController.ScalabilityOutputToUploadPath,
-			md.cfg.ALBIngressController.ScalabilityOutputToUploadPathBucket,
-		)
-		if err != nil {
-			return err
-		}
-	}
-	if md.cfg.ALBIngressController.TestMetrics {
-		return md.s3Plugin.UploadToBucketForTests(
-			md.cfg.ALBIngressController.MetricsOutputToUploadPath,
-			md.cfg.ALBIngressController.MetricsOutputToUploadPathBucket,
-		)
 	}
 	return nil
 }

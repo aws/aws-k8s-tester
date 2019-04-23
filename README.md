@@ -29,23 +29,11 @@ go install -v ./cmd/aws-k8s-tester
 aws-k8s-tester eks create cluster -h
 ```
 
-To create an EKS testing cluster with ALB Ingress Controller
-
 ```bash
 aws-k8s-tester eks create config --path ./aws-k8s-tester-eks.yaml
 
 # change default configurations
 vi ./aws-k8s-tester-eks.yaml
-```
-
-```diff
-alb-ingress-controller:
-  created: false
-- enable: false
-+ enable: true
-  ...
-
-# not working now...
 ```
 
 ```bash
@@ -68,13 +56,6 @@ Cluster states are persisted on disk as well. EKS tester uses this file to track
 
 ```bash
 cat ./aws-k8s-tester-eks.yaml
-```
-
-Once complete and `alb-ingress-controller.enable == true`, get the DNS names from `./aws-k8s-tester-eks.yaml`: `curl` the `kube-system` namespace's `/metrics` endpoint, to see if it works.
-
-```bash
-# for example
-curl -L http://e5de0f6b-kubesystem-ingres-6aec-38954145.us-west-2.elb.amazonaws.com/metrics
 ```
 
 Tear down the cluster (takes about 10 minutes):
@@ -111,18 +92,5 @@ AWS_K8S_TESTER_EKS_KUBECTL_DOWNLOAD_URL=https://amazon-eks.s3-us-west-2.amazonaw
   AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_MIN=1 \
   AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_MAX=1 \
   AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_DESIRED_CAPACITY=1 \
-  AWS_K8S_TESTER_EKS_ALB_ENABLE=true \
-  AWS_K8S_TESTER_EKS_ALB_UPLOAD_TESTER_LOGS=false \
-  AWS_K8S_TESTER_EKS_ALB_TARGET_TYPE=ip \
-  AWS_K8S_TESTER_EKS_ALB_TEST_SCALABILITY=true \
-  AWS_K8S_TESTER_EKS_ALB_TEST_SCALABILITY_MINUTES=3 \
-  AWS_K8S_TESTER_EKS_ALB_TEST_METRICS=true \
-  AWS_K8S_TESTER_EKS_ALB_TEST_SERVER_REPLICAS=3 \
-  AWS_K8S_TESTER_EKS_ALB_TEST_SERVER_ROUTES=1 \
-  AWS_K8S_TESTER_EKS_ALB_TEST_CLIENTS=200 \
-  AWS_K8S_TESTER_EKS_ALB_TEST_RESPONSE_SIZE=20000 \
-  AWS_K8S_TESTER_EKS_ALB_TEST_CLIENT_ERROR_THRESHOLD=500 \
-  AWS_K8S_TESTER_EKS_ALB_TEST_EXPECT_QPS=100 \
-  AWS_K8S_TESTER_EKS_ALB_INGRESS_CONTROLLER_IMAGE=docker.io/amazon/aws-alb-ingress-controller:v1.1.1 \
   ./tests/ginkgo.sh
 ```

@@ -11,7 +11,6 @@ import (
 // Tester defines aws-k8s-tester eks specific operations.
 type Tester interface {
 	Deployer
-	ALB
 	// UploadToBucketForTests uploads a local file to aws-k8s-tester S3 bucket.
 	UploadToBucketForTests(localPath, remotePath string) error
 }
@@ -43,17 +42,4 @@ type Deployer interface {
 
 	// KubectlCommand returns "kubectl" command object for API reachability tests.
 	KubectlCommand() (*osexec.Cmd, error)
-}
-
-// ALB defines AWS application load balancer tester.
-type ALB interface {
-	// TestALBCorrectness checks if a test ingress service
-	// returns the expected output.
-	TestALBCorrectness() error
-	// TestALBQPS runs ingress load testing.
-	// And returns an error if QPS is less than expected QPS.
-	TestALBQPS() error
-	// TestALBMetrics checks if ALB Ingress Controller
-	// is serving /metrics endpoint.
-	TestALBMetrics() error
 }

@@ -50,7 +50,6 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_ENABLE_WORKER_NODE_PRIVILEGED_PORT_ACCESS", "true")
 	os.Setenv("AWS_K8S_TESTER_EKS_CONFIG_PATH", "test-path")
 	os.Setenv("AWS_K8S_TESTER_EKS_DOWN", "false")
-	os.Setenv("AWS_K8S_TESTER_EKS_ALB_TARGET_TYPE", "ip")
 	os.Setenv("AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_MIN", "5")
 	os.Setenv("AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_MAX", "10")
 	os.Setenv("AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_DESIRED_CAPACITY", "7")
@@ -60,13 +59,6 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_UPLOAD_WORKER_NODE_LOGS", "true")
 	os.Setenv("AWS_K8S_TESTER_EKS_UPLOAD_BUCKET_EXPIRE_DAYS", "3")
 	os.Setenv("AWS_K8S_TESTER_EKS_WAIT_BEFORE_DOWN", "2h")
-	os.Setenv("AWS_K8S_TESTER_EKS_ALB_TEST_SCALABILITY_MINUTES", "3")
-	os.Setenv("AWS_K8S_TESTER_EKS_ALB_UPLOAD_TESTER_LOGS", "true")
-	os.Setenv("AWS_K8S_TESTER_EKS_ALB_TEST_EXPECT_QPS", "123.45")
-	os.Setenv("AWS_K8S_TESTER_EKS_ALB_ENABLE", "true")
-	os.Setenv("AWS_K8S_TESTER_EKS_ALB_TEST_SCALABILITY", "false")
-	os.Setenv("AWS_K8S_TESTER_EKS_ALB_TEST_METRICS", "false")
-	os.Setenv("AWS_K8S_TESTER_EKS_ALB_INGRESS_CONTROLLER_IMAGE", "quay.io/coreos/alb-ingress-controller:1.0-beta.7")
 
 	defer func() {
 		os.Unsetenv("AWS_K8S_TESTER_EKS_AWS_K8S_TESTER_DOWNLOAD_URL")
@@ -93,7 +85,6 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWS_K8S_TESTER_EKS_ENABLE_WORKER_NODE_PRIVILEGED_PORT_ACCESS")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_CONFIG_PATH")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_DOWN")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_ALB_TARGET_TYPE")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_MIN")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_MAX")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_DESIRED_CAPACITY")
@@ -103,13 +94,6 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWS_K8S_TESTER_EKS_UPLOAD_WORKER_NODE_LOGS")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_UPLOAD_BUCKET_EXPIRE_DAYS")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_WAIT_BEFORE_DOWN")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_ALB_TEST_SCALABILITY_MINUTES")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_ALB_UPLOAD_TESTER_LOGS")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_ALB_TEST_EXPECT_QPS")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_ALB_ENABLE")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_ALB_TEST_SCALABILITY")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_ALB_TEST_METRICS")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_ALB_INGRESS_CONTROLLER_IMAGE")
 	}()
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
@@ -197,9 +181,6 @@ func TestEnv(t *testing.T) {
 	if cfg.WorkerNodeASGDesiredCapacity != 7 {
 		t.Fatalf("worker nodes desired capacity expected 7, got %q", cfg.WorkerNodeASGDesiredCapacity)
 	}
-	if cfg.ALBIngressController.TestScalabilityMinutes != 3 {
-		t.Fatalf("alb target type expected 3, got %d", cfg.ALBIngressController.TestScalabilityMinutes)
-	}
 	if cfg.ALBIngressController.TargetType != "ip" {
 		t.Fatalf("alb target type expected ip, got %q", cfg.ALBIngressController.TargetType)
 	}
@@ -212,9 +193,6 @@ func TestEnv(t *testing.T) {
 	if !cfg.UploadKubeConfig {
 		t.Fatalf("UploadKubeConfig expected true, got %v", cfg.UploadKubeConfig)
 	}
-	if !cfg.ALBIngressController.UploadTesterLogs {
-		t.Fatalf("ALBIngressController.UploadTesterLogs expected true, got %v", cfg.ALBIngressController.UploadTesterLogs)
-	}
 	if !cfg.UploadWorkerNodeLogs {
 		t.Fatalf("UploadWorkerNodeLogs expected true, got %v", cfg.UploadWorkerNodeLogs)
 	}
@@ -223,20 +201,5 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.WaitBeforeDown != 2*time.Hour {
 		t.Fatalf("wait before down expected 2h, got %v", cfg.WaitBeforeDown)
-	}
-	if cfg.ALBIngressController.IngressControllerImage != "quay.io/coreos/alb-ingress-controller:1.0-beta.7" {
-		t.Fatalf("cfg.ALBIngressController.IngressControllerImage expected 'quay.io/coreos/alb-ingress-controller:1.0-beta.7', got %q", cfg.ALBIngressController.IngressControllerImage)
-	}
-	if cfg.ALBIngressController.TestExpectQPS != 123.45 {
-		t.Fatalf("cfg.ALBIngressController.TestExpectQPS expected 123.45, got %v", cfg.ALBIngressController.TestExpectQPS)
-	}
-	if !cfg.ALBIngressController.Enable {
-		t.Fatalf("cfg.ALBIngressController.Enable expected 'true', got %v", cfg.ALBIngressController.Enable)
-	}
-	if cfg.ALBIngressController.TestScalability {
-		t.Fatalf("cfg.ALBIngressController.TestScalability expected 'false', got %v", cfg.ALBIngressController.TestScalability)
-	}
-	if cfg.ALBIngressController.TestMetrics {
-		t.Fatalf("cfg.ALBIngressController.TestMetrics expected 'false', got %v", cfg.ALBIngressController.TestMetrics)
 	}
 }
