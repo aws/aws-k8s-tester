@@ -459,26 +459,6 @@ var defaultConfig = Config{
 	UploadBucketExpireDays: 2,
 
 	ClusterState: &ClusterState{},
-	ALBIngressController: &ALBIngressController{
-		Enable:           false,
-		UploadTesterLogs: false,
-
-		// https://github.com/kubernetes-sigs/aws-alb-ingress-controller/releases
-		IngressControllerImage: "docker.io/amazon/aws-alb-ingress-controller:v1.1.1",
-
-		// 'instance' to use node port
-		// 'ip' to use pod IP
-		TargetType: "instance",
-
-		TestScalability:          true,
-		TestScalabilityMinutes:   1,
-		TestMetrics:              true,
-		TestServerReplicas:       1,
-		TestClients:              200,
-		TestResponseSize:         40 * 1024, // 40 KB
-		TestClientErrorThreshold: 10,
-		TestExpectQPS:            20000,
-	},
 }
 
 // Load loads configuration from YAML.
@@ -508,9 +488,6 @@ func Load(p string) (cfg *Config, err error) {
 	if cfg.ClusterState == nil {
 		cfg.ClusterState = &ClusterState{}
 	}
-	if cfg.ALBIngressController == nil {
-		cfg.ALBIngressController = &ALBIngressController{}
-	}
 
 	if cfg.ConfigPath != p {
 		cfg.ConfigPath = p
@@ -522,12 +499,6 @@ func Load(p string) (cfg *Config, err error) {
 
 	if cfg.ClusterState.UpTook != "" {
 		cfg.ClusterState.upTook, err = time.ParseDuration(cfg.ClusterState.UpTook)
-		if err != nil {
-			return nil, err
-		}
-	}
-	if cfg.ALBIngressController.IngressUpTook != "" {
-		cfg.ALBIngressController.ingressUpTook, err = time.ParseDuration(cfg.ALBIngressController.IngressUpTook)
 		if err != nil {
 			return nil, err
 		}
@@ -612,18 +583,6 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 	if !checkEC2InstanceType(cfg.WorkerNodeInstanceType) {
 		return fmt.Errorf("EKS WorkerNodeInstanceType %q is not valid", cfg.WorkerNodeInstanceType)
-	}
-	if cfg.ALBIngressController != nil && cfg.ALBIngressController.TestServerReplicas > 0 {
-		if !checkMaxPods(cfg.WorkerNodeInstanceType, cfg.WorkerNodeASGMax, cfg.ALBIngressController.TestServerReplicas) {
-			return fmt.Errorf(
-				"EKS WorkerNodeInstanceType %q only supports %d pods per node (ASG Max %d, allowed up to %d, test server replicas %d)",
-				cfg.WorkerNodeInstanceType,
-				ec2.InstanceTypes[cfg.WorkerNodeInstanceType].MaxPods,
-				cfg.WorkerNodeASGMax,
-				ec2.InstanceTypes[cfg.WorkerNodeInstanceType].MaxPods*int64(cfg.WorkerNodeASGMax),
-				cfg.ALBIngressController.TestServerReplicas,
-			)
-		}
 	}
 	if cfg.WorkerNodeASGMin == 0 {
 		return errors.New("EKS WorkerNodeASGMin is not specified")
