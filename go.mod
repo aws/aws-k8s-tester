@@ -4,7 +4,7 @@ require (
 	cloud.google.com/go v0.30.0 // indirect
 	contrib.go.opencensus.io/exporter/ocagent v0.4.2 // indirect
 	github.com/Azure/go-autorest v11.3.1+incompatible // indirect
-	github.com/aws/aws-sdk-go v1.19.11
+	github.com/aws/aws-sdk-go v1.19.15
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/dustin/go-humanize v1.0.0
 	github.com/go-yaml/yaml v2.1.0+incompatible // indirect
@@ -25,7 +25,7 @@ require (
 	github.com/onsi/ginkgo v1.6.0
 	github.com/onsi/gomega v1.4.2
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
-	github.com/prometheus/client_golang v0.9.0
+	github.com/prometheus/client_golang v0.9.0 // indirect
 	github.com/prometheus/common v0.0.0-20181020173914-7e9e6cabbd39 // indirect
 	github.com/prometheus/procfs v0.0.0-20181005140218-185b4288413d // indirect
 	github.com/shurcooL/githubv4 v0.0.0-20180925043049-51d7b505e2e9 // indirect
@@ -35,7 +35,6 @@ require (
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/pflag v1.0.3 // indirect
 	go.etcd.io/etcd v0.0.0-20181031231232-83304cfc808c
-	go.uber.org/atomic v1.3.2
 	go.uber.org/zap v1.9.1
 	golang.org/x/crypto v0.0.0-20181015023909-0c41d7ab0a0e
 	golang.org/x/oauth2 v0.0.0-20181017192945-9dcd33a902f4 // indirect
@@ -44,8 +43,8 @@ require (
 	google.golang.org/genproto v0.0.0-20181016170114-94acd270e44e // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5 // indirect
-	k8s.io/api v0.0.0-20190115191648-dd23d9f710e2
-	k8s.io/apimachinery v0.0.0-20190111195121-fa6ddc151d63
+	k8s.io/api v0.0.0-20190115191648-dd23d9f710e2 // indirect
+	k8s.io/apimachinery v0.0.0-20190111195121-fa6ddc151d63 // indirect
 	k8s.io/client-go v2.0.0-alpha.0.0.20190112054256-b831b8de7155+incompatible
 	k8s.io/klog v0.1.0 // indirect
 	k8s.io/test-infra v0.0.0-20190117095820-81934b1c32c2
