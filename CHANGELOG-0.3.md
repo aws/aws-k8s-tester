@@ -22,11 +22,13 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.2.9...0.3.0).
 - Move [`CFStackVPC*` to `eksconfig`, and add custom VPC/Subnet CIDR ranges](https://github.com/aws/aws-k8s-tester/commit/6df3c2497127da9bf06794c5519e4e4b245764af).
 - Make [EKS 1.12 by default](https://github.com/aws/aws-k8s-tester/commit/bd4f3a2bfac3d635933ee614a0423efdb5b504f3).
 - Upgrade to [CNI 1.4](https://github.com/aws/aws-k8s-tester/commit/3379f1063d1a00b60687e5be33a1b77753fb58d7).
+- Remove all [ALB plugin code](https://github.com/aws/aws-k8s-tester/commit/229c321b8a9a044a1726d4c23e7383036e36b753).
 
 ### `internal`
 
 - Clean up [`internal/eks`](https://github.com/aws/aws-k8s-tester/commit/a3c5696236d507160c575f134ac3958462996b9b).
 - Refactor [`internal/csi` test package](https://github.com/aws/aws-k8s-tester/commit/ac63cc9b3a5ae806b8b5bd8b8d37d4a1c6208cb6).
+- Remove all [ALB plugin code](https://github.com/aws/aws-k8s-tester/commit/229c321b8a9a044a1726d4c23e7383036e36b753).
 
 ### `pkg`
 
