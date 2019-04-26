@@ -7,22 +7,6 @@ import (
 	"time"
 )
 
-func TestConfig(t *testing.T) {
-	cfg := NewDefault()
-
-	// supports only 58 pods per node
-	cfg.WorkerNodeInstanceType = "m5.xlarge"
-	cfg.WorkerNodeASGMin = 10
-	cfg.WorkerNodeASGMax = 10
-	cfg.ALBIngressController.TestServerReplicas = 600
-
-	err := cfg.ValidateAndSetDefaults()
-	if err == nil {
-		t.Fatal("expected error")
-	}
-	t.Log(err)
-}
-
 func TestEnv(t *testing.T) {
 	cfg := NewDefault()
 
@@ -180,9 +164,6 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.WorkerNodeASGDesiredCapacity != 7 {
 		t.Fatalf("worker nodes desired capacity expected 7, got %q", cfg.WorkerNodeASGDesiredCapacity)
-	}
-	if cfg.ALBIngressController.TargetType != "ip" {
-		t.Fatalf("alb target type expected ip, got %q", cfg.ALBIngressController.TargetType)
 	}
 	if !cfg.LogDebug {
 		t.Fatalf("LogDebug expected true, got %v", cfg.LogDebug)
