@@ -186,11 +186,6 @@ type Config struct {
 	CFStackVPCParameterSubnet01Block string `json:"cf-stack-vpc-parameter-subnet-01-block"`
 	CFStackVPCParameterSubnet02Block string `json:"cf-stack-vpc-parameter-subnet-02-block"`
 	CFStackVPCParameterSubnet03Block string `json:"cf-stack-vpc-parameter-subnet-03-block"`
-
-	// ALBIngressController is the EKS ALB Ingress Controller configuration and its state.
-	// Deployer is expected to keep this in sync.
-	// Read-only to kubetest.
-	ALBIngressController *ALBIngressController `json:"alb-ingress-controller,omitempty"`
 }
 
 // ClusterState contains EKS cluster specific states.
@@ -255,122 +250,6 @@ type ClusterState struct {
 	// Required to enable worker nodes to join cluster.
 	// Update this after creating node group stack
 	CFStackWorkerNodeGroupWorkerNodeInstanceRoleARN string `json:"cf-stack-worker-node-group-worker-node-instance-role-arn,omitempty"`
-}
-
-// ALBIngressController configures ingress controller for EKS.
-type ALBIngressController struct {
-	// Created is true if ALB had started its creation operation.
-	Created bool `json:"created"`
-	// Enable is true to create an ALB Ingress Controller with sample ingress deployment.
-	// 'AWSCredentialToMountPath' must be provided to configure ALB Ingress Controller.
-	Enable bool `json:"enable"`
-
-	// IngressControllerImage is the ALB Ingress Controller container image.
-	IngressControllerImage string `json:"ingress-controller-image,omitempty"`
-	// UploadTesterLogs is true to auto-upload ALB tester logs.
-	UploadTesterLogs bool `json:"upload-tester-logs"`
-
-	// TargetType specifies the target type for target groups:
-	// - 'instance' to use node port
-	// - 'ip' to use pod IP
-	// e.g. alb.ingress.kubernetes.io/target-type: instance
-	// e.g. alb.ingress.kubernetes.io/target-type: ip
-	// With instance the Target Group targets are <ec2 instance id>:<node port>,
-	// for ip the targets are <pod ip>:<pod port>.
-	// ip is to be used when the pod network is routable and can be reached by the ALB.
-	// https://github.com/kubernetes-sigs/aws-alb-ingress-controller/blob/master/docs/ingress-resources.md
-	TargetType string `json:"target-type,omitempty"`
-
-	// TestScalability is true to run scalability tests.
-	TestScalability bool `json:"test-scalability"`
-	// TestScalabilityMinutes is the number of minutes to send scalability test workloads.
-	// Reference: https://github.com/wg/wrk#command-line-options.
-	TestScalabilityMinutes int `json:"test-scalability-minutes"`
-	// TestMetrics is true to run metrics tests.
-	TestMetrics bool `json:"test-metrics"`
-	// TestServerReplicas is the number of ingress test server pods to deploy.
-	TestServerReplicas int `json:"test-server-replicas,omitempty"`
-	// TestClients is the number of concurrent ALB Ingress Controller test clients.
-	// Supports up to 300.
-	TestClients int `json:"test-clients,omitempty"`
-	// TestResponseSize is the response payload size.
-	// Ingress test server always returns '0' x response size.
-	// Supports up to 500 KB.
-	TestResponseSize int `json:"test-response-size,omitempty"`
-	// TestClientErrorThreshold is the maximum errors that are ok to happen before failing the tests.
-	TestClientErrorThreshold int64 `json:"test-client-error-threshold,omitempty"`
-	// TestExpectQPS is the expected QPS.
-	// It is used as a scalability test lower bound.
-	TestExpectQPS float64 `json:"test-expect-qps,omitempty"`
-	// TestResultQPS is the QPS of last test run.
-	TestResultQPS float64 `json:"test-result-qps,omitempty"`
-	// TestResultFailures is the number of failed requests of last test run.
-	TestResultFailures int64 `json:"test-result-failures,omitempty"`
-
-	// IngressTestServerDeploymentServiceSpecPath is the file path to test pod deployment and service YAML spec.
-	IngressTestServerDeploymentServiceSpecPath       string `json:"ingress-test-server-deployment-service-spec-path,omitempty"`
-	IngressTestServerDeploymentServiceSpecPathBucket string `json:"ingress-test-server-deployment-service-spec-path-bucket,omitempty"`
-	IngressTestServerDeploymentServiceSpecPathURL    string `json:"ingress-test-server-deployment-service-spec-path-url,omitempty"`
-	// IngressControllerSpecPath is the file path to ALB Ingress Controller YAML spec.
-	IngressControllerSpecPath       string `json:"ingress-controller-spec-path,omitempty"`
-	IngressControllerSpecPathBucket string `json:"ingress-controller-spec-path-bucket,omitempty"`
-	IngressControllerSpecPathURL    string `json:"ingress-controller-spec-path-url,omitempty"`
-	// IngressObjectSpecPath is the file path to Ingress object YAML spec.
-	IngressObjectSpecPath       string `json:"ingress-object-spec-path,omitempty"`
-	IngressObjectSpecPathBucket string `json:"ingress-object-spec-path-bucket,omitempty"`
-	IngressObjectSpecPathURL    string `json:"ingress-object-spec-path-url,omitempty"`
-
-	// required for ALB Ingress Controller
-	// Ingress object requires:
-	//  - Subnet IDs from VPC stack
-	//  - Security Group IDs
-	//    - one from "aws ec2 describe-security-groups" with VPC stack VPC ID
-	//    - the other from "aws ec2 create-security-group" for ALB port wide open
-	// Thus, pass "SecurityGroupID" and "SecurityGroupIDPortOpen" for Ingress object
-
-	// ELBv2SecurityGroupIDPortOpen is the security group ID created to
-	// open 80 and 443 ports for ALB Ingress Controller.
-	ELBv2SecurityGroupIDPortOpen string `json:"elbv2-security-group-id-port-open,omitempty"`
-	// ELBv2NamespaceToDNSName maps each namespace to ALB Ingress DNS name (address).
-	ELBv2NamespaceToDNSName map[string]string `json:"elbv2-namespace-to-dns-name,omitempty"`
-	// ELBv2NameToDNSName maps each ALB name to its DNS name.
-	// e.g. address is 431f09fb-default-ingressfo-0222-899555794.us-west-2.elb.amazonaws.com,
-	// then AWS ELBv2 name is 431f09fb-default-ingressfo-0222.
-	ELBv2NameToDNSName map[string]string `json:"elbv2-name-to-dns-name,omitempty"`
-	// ELBv2NameToARN maps each ALB name to its ARN.
-	// Useful for garbage collection.
-	ELBv2NameToARN map[string]string `json:"elbv2-name-to-arn,omitempty"`
-	// ELBv2SecurityGroupStatus is the status of ALB Ingress Controller security group creation.
-	ELBv2SecurityGroupStatus string `json:"elbv2-security-group-status,omitempty"`
-
-	// DeploymentStatus is the deployment status of ALB Ingress Controller itself.
-	DeploymentStatus string `json:"deployment-status,omitempty"`
-	// IngressRuleStatusKubeSystem is the status of ALB Ingress Controller Ingress
-	// rule creation for default namespace.
-	IngressRuleStatusKubeSystem string `json:"ingress-rule-status-kube-system,omitempty"`
-	// IngressRuleStatusDefault is the status of ALB Ingress Controller Ingress
-	// rule creation for default namespace.
-	IngressRuleStatusDefault string `json:"ingress-rule-status-default,omitempty"`
-
-	// IngressUpTook is total duration that took to set up ALB Ingress Controller.
-	// Include Ingress object creation and DNS propagation.
-	IngressUpTook string `json:"ingress-up-took,omitempty"`
-	ingressUpTook time.Duration
-
-	// ScalabilityOutputToUploadPath is the ALB Ingress Controller scalability
-	// test output file path to upload to cloud storage.
-	// Must be left empty.
-	// This will be overwritten by cluster name.
-	ScalabilityOutputToUploadPath       string `json:"scalability-output-to-upload-path,omitempty"`
-	ScalabilityOutputToUploadPathBucket string `json:"scalability-output-to-upload-path-bucket,omitempty"`
-	ScalabilityOutputToUploadPathURL    string `json:"scalability-output-to-upload-path-url,omitempty"`
-	// MetricsOutputToUploadPath is the ALB Ingress Controller metrics output
-	// file path to upload to cloud storage.
-	// Must be left empty.
-	// This will be overwritten by cluster name.
-	MetricsOutputToUploadPath       string `json:"metrics-output-to-upload-path,omitempty"`
-	MetricsOutputToUploadPathBucket string `json:"metrics-output-to-upload-path-bucket,omitempty"`
-	MetricsOutputToUploadPathURL    string `json:"metrics-output-to-upload-path-url,omitempty"`
 }
 
 // NewDefault returns a copy of the default configuration.
@@ -659,56 +538,6 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	cfg.LogOutputToUploadPathBucket = filepath.Join(cfg.ClusterName, "a8-eks.log")
 
 	cfg.KubeConfigPathBucket = filepath.Join(cfg.ClusterName, "kubeconfig")
-
-	cfg.ALBIngressController.IngressTestServerDeploymentServiceSpecPath = fmt.Sprintf(
-		"%s.%s.alb.ingress-test-server.yaml",
-		cfg.ConfigPath,
-		cfg.ClusterName,
-	)
-	cfg.ALBIngressController.IngressTestServerDeploymentServiceSpecPathBucket = filepath.Join(
-		cfg.ClusterName,
-		"alb.ingress-test-server.deployment.service.yaml",
-	)
-
-	cfg.ALBIngressController.IngressControllerSpecPath = fmt.Sprintf(
-		"%s.%s.alb.controller.deployment.service.yaml",
-		cfg.ConfigPath,
-		cfg.ClusterName,
-	)
-	cfg.ALBIngressController.IngressControllerSpecPathBucket = filepath.Join(
-		cfg.ClusterName,
-		"alb.controller.deployment.service.yaml",
-	)
-
-	cfg.ALBIngressController.IngressObjectSpecPath = fmt.Sprintf(
-		"%s.%s.alb.ingress.yaml",
-		cfg.ConfigPath,
-		cfg.ClusterName,
-	)
-	cfg.ALBIngressController.IngressObjectSpecPathBucket = filepath.Join(
-		cfg.ClusterName,
-		"alb.ingress.yaml",
-	)
-
-	cfg.ALBIngressController.ScalabilityOutputToUploadPath = fmt.Sprintf(
-		"%s.%s.alb.scalability.txt",
-		cfg.ConfigPath,
-		cfg.ClusterName,
-	)
-	cfg.ALBIngressController.ScalabilityOutputToUploadPathBucket = filepath.Join(
-		cfg.ClusterName,
-		"alb.scalability.txt",
-	)
-
-	cfg.ALBIngressController.MetricsOutputToUploadPath = fmt.Sprintf(
-		"%s.%s.alb.metrics.txt",
-		cfg.ConfigPath,
-		cfg.ClusterName,
-	)
-	cfg.ALBIngressController.MetricsOutputToUploadPathBucket = filepath.Join(
-		cfg.ClusterName,
-		"alb.metrics.txt",
-	)
 	////////////////////////////////////////////////////////////////////////
 
 	if cfg.AWSCredentialToMountPath != "" && os.Getenv("AWS_SHARED_CREDENTIALS_FILE") == "" {
@@ -751,47 +580,6 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		cfg.AWSCredentialToMountPath = p
 	}
 
-	if cfg.AWSCredentialToMountPath == "" && cfg.ALBIngressController != nil {
-		if cfg.ALBIngressController.Enable {
-			return errors.New("cannot create AWS ALB Ingress Controller without AWS credential")
-		}
-		if cfg.ALBIngressController.IngressControllerImage == "" {
-			return errors.New("cannot create AWS ALB Ingress Controller without ingress controller test image")
-		}
-		if cfg.ALBIngressController.TestClients > 0 {
-			return errors.New("cannot create AWS ALB Ingress Controller clients without test clients")
-		}
-		if cfg.ALBIngressController.TestResponseSize > 0 {
-			return errors.New("cannot create AWS ALB Ingress Controller requests without test response size")
-		}
-	}
-
-	if cfg.ALBIngressController != nil && cfg.ALBIngressController.Enable {
-		if cfg.ALBIngressController.TargetType != "instance" &&
-			cfg.ALBIngressController.TargetType != "ip" {
-			return fmt.Errorf("ALB Ingress Controller target type not found %q", cfg.ALBIngressController.TargetType)
-		}
-		if cfg.ALBIngressController.IngressControllerImage == "" {
-			return errors.New("ALB Ingress Controller image not specified")
-		}
-		cfg.ALBIngressController.ScalabilityOutputToUploadPath = fmt.Sprintf("%s.alb-ingress-controller.scalability.log", cfg.ConfigPath)
-		cfg.ALBIngressController.MetricsOutputToUploadPath = fmt.Sprintf("%s.alb-ingress-controller.metrics.log", cfg.ConfigPath)
-
-		if cfg.ALBIngressController.TestClients == 0 {
-			return fmt.Errorf("cannot create AWS ALB Ingress Controller with empty test response size %d", cfg.ALBIngressController.TestClients)
-		}
-		if cfg.ALBIngressController.TestClients > maxTestClients {
-			return fmt.Errorf("cannot create AWS ALB Ingress Controller with test clients %d (> max size %d)", cfg.ALBIngressController.TestClients, maxTestClients)
-		}
-
-		if cfg.ALBIngressController.TestResponseSize == 0 {
-			return fmt.Errorf("cannot create AWS ALB Ingress Controller with empty test response size %d", cfg.ALBIngressController.TestResponseSize)
-		}
-		if cfg.ALBIngressController.TestResponseSize > maxTestResponseSize {
-			return fmt.Errorf("cannot create AWS ALB Ingress Controller with test response size %d (> max size %d)", cfg.ALBIngressController.TestResponseSize, maxTestResponseSize)
-		}
-	}
-
 	return cfg.Sync()
 }
 
@@ -799,12 +587,6 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 func (cfg *Config) SetClusterUpTook(d time.Duration) {
 	cfg.ClusterState.upTook = d
 	cfg.ClusterState.UpTook = d.String()
-}
-
-// SetIngressUpTook updates 'IngressUpTook' field.
-func (cfg *Config) SetIngressUpTook(d time.Duration) {
-	cfg.ALBIngressController.ingressUpTook = d
-	cfg.ALBIngressController.IngressUpTook = d.String()
 }
 
 const (
@@ -886,59 +668,6 @@ func (cfg *Config) UpdateFromEnvs() error {
 		}
 	}
 	*cfg = cc
-
-	av := *cc.ALBIngressController
-	tp2, vv2 := reflect.TypeOf(&av).Elem(), reflect.ValueOf(&av).Elem()
-	for i := 0; i < tp2.NumField(); i++ {
-		jv := tp2.Field(i).Tag.Get("json")
-		if jv == "" {
-			continue
-		}
-		jv = strings.Replace(jv, ",omitempty", "", -1)
-		jv = strings.ToUpper(strings.Replace(jv, "-", "_", -1))
-		env := envPfxALB + jv
-		if os.Getenv(env) == "" {
-			continue
-		}
-		sv := os.Getenv(env)
-
-		switch vv2.Field(i).Type().Kind() {
-		case reflect.String:
-			vv2.Field(i).SetString(sv)
-
-		case reflect.Bool:
-			bb, err := strconv.ParseBool(sv)
-			if err != nil {
-				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
-			}
-			vv2.Field(i).SetBool(bb)
-
-		case reflect.Int, reflect.Int32, reflect.Int64:
-			iv, err := strconv.ParseInt(sv, 10, 64)
-			if err != nil {
-				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
-			}
-			vv2.Field(i).SetInt(iv)
-
-		case reflect.Uint, reflect.Uint32, reflect.Uint64:
-			iv, err := strconv.ParseUint(sv, 10, 64)
-			if err != nil {
-				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
-			}
-			vv2.Field(i).SetUint(iv)
-
-		case reflect.Float32, reflect.Float64:
-			fv, err := strconv.ParseFloat(sv, 64)
-			if err != nil {
-				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
-			}
-			vv2.Field(i).SetFloat(fv)
-
-		default:
-			return fmt.Errorf("%q (%v) is not supported as an env", env, vv2.Field(i).Type())
-		}
-	}
-	cfg.ALBIngressController = &av
 
 	return nil
 }
