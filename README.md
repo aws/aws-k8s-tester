@@ -40,7 +40,7 @@ vi ./aws-k8s-tester-eks.yaml
 aws-k8s-tester eks create cluster --path ./aws-k8s-tester-eks.yaml
 ```
 
-This will create an EKS cluster with ALB Ingress Controller (takes about 20 minutes).
+This will create an EKS cluster with a worker node (takes about 20 minutes).
 
 Once cluster is created, check cluster state using AWS CLI:
 
