@@ -21,7 +21,7 @@ import (
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/ekstester"
-	"github.com/aws/aws-k8s-tester/internal/eks/s3"
+	"github.com/aws/aws-k8s-tester/eks/s3"
 	"github.com/aws/aws-k8s-tester/pkg/awsapi"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/pkg/zaputil"
