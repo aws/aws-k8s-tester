@@ -13,6 +13,11 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.2.9...0.3.0).
 - Add [`VolumeSize` field](https://github.com/aws/aws-k8s-tester/commit/c2d4e39af832e9369c801cfcd5fd97dbf1e41d43).
 - Add [`Tags` field](https://github.com/aws/aws-k8s-tester/commit/c8b6f67a7bb712b89a4d08c4afcd00c240ba4051).
 
+### `eks`
+
+- Move [out of `internal` package](https://github.com/aws/aws-k8s-tester/commit/b4015a63d24887f06c7ec9e42c1ea5ac5e8d1831).
+  - [Use case](https://github.com/aws/aws-k8s-tester/issues/47).
+
 ### `eksconfig`
 
 - Add [`SSHCommands` method](https://github.com/aws/aws-k8s-tester/commit/f2ba0a997054282045deb042c38fbb3d63212eb9).
