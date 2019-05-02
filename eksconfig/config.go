@@ -2,6 +2,7 @@
 package eksconfig
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -13,6 +14,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"text/template"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
@@ -683,6 +685,55 @@ func (cfg *Config) SSHCommands() (s string) {
 	}
 	return ec.SSHCommands()
 }
+
+// KubectlCommands returns the SSH commands.
+func (cfg *Config) KubectlCommands() (s string) {
+	if cfg.KubeConfigPath == "" {
+		return ""
+	}
+	tpl := template.Must(template.New("kubectlCmdTmpl").Parse(kubectlCmdTmpl))
+	buf := bytes.NewBuffer(nil)
+	if err := tpl.Execute(buf, struct {
+		KubeConfigPath    string
+		KubernetesVersion string
+	}{
+		cfg.KubeConfigPath,
+		cfg.KubernetesVersion,
+	}); err != nil {
+		return ""
+	}
+	return buf.String()
+}
+
+const kubectlCmdTmpl = `# to test
+KUBECTL_CMD="kubectl --kubeconfig={{ .KubeConfigPath }}"
+${KUBECTL_CMD} cluster-info
+${KUBECTL_CMD} get all --all-namespaces
+${KUBECTL_CMD} get nodes
+${KUBECTL_CMD} get psp
+${KUBECTL_CMD} get pods -n kube-system
+${KUBECTL_CMD} get ds -n kube-system
+
+go get -v -u github.com/heptio/sonobuoy
+sonobuoy delete --wait --kubeconfig={{ .KubeConfigPath }}
+
+sonobuoy run \
+  --mode Quick \
+  --wait \
+  --kube-conformance-image gcr.io/heptio-images/kube-conformance:v{{ .KubernetesVersion }}.0 \
+  --kubeconfig={{ .KubeConfigPath }}
+
+sonobuoy run \
+  --wait \
+  --kube-conformance-image gcr.io/heptio-images/kube-conformance:v{{ .KubernetesVersion }}.0 \
+  --kubeconfig={{ .KubeConfigPath }}
+
+sonobuoy status --kubeconfig={{ .KubeConfigPath }}
+
+results=$(sonobuoy retrieve --kubeconfig={{ .KubeConfigPath }})
+sonobuoy e2e --kubeconfig={{ .KubeConfigPath }} $results --show all
+sonobuoy e2e --kubeconfig={{ .KubeConfigPath }} $results
+`
 
 func checkKubernetesVersion(s string) (ok bool) {
 	_, ok = supportedKubernetesVersions[s]

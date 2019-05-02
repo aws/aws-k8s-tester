@@ -1,6 +1,7 @@
 package eksconfig
 
 import (
+	"fmt"
 	"os"
 	"reflect"
 	"testing"
@@ -183,4 +184,6 @@ func TestEnv(t *testing.T) {
 	if cfg.WaitBeforeDown != 2*time.Hour {
 		t.Fatalf("wait before down expected 2h, got %v", cfg.WaitBeforeDown)
 	}
+
+	fmt.Println(cfg.KubectlCommands())
 }

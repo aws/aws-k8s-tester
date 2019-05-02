@@ -403,6 +403,12 @@ func (md *embedded) Up() (err error) {
 		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 	)
 
+	println()
+	fmt.Println(md.cfg.SSHCommands())
+	println()
+	fmt.Println(md.cfg.KubectlCommands())
+	println()
+
 	if err = md.cfg.Sync(); err != nil {
 		return err
 	}
