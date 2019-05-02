@@ -284,16 +284,14 @@ var defaultConfig = Config{
 		// "install-kubeadm-amazon-linux-2-1.13.0",
 	},
 
-	/*
-	   // Ubuntu Server 16.04 LTS, SSD Volume Type
-	   ImageID:  "ami-076e276d85f524150",
-	   UserName: "ubuntu",
-	   Plugins: []string{
-	   	"update-ubuntu",
-	   	"install-start-docker-ubuntu",
-	   	// "install-kubeadm-ubuntu-1.13.0",
-	   },
-	*/
+	// Ubuntu Server 16.04 LTS, SSD Volume Type
+	// ImageID:  "ami-076e276d85f524150",
+	// UserName: "ubuntu",
+	// Plugins: []string{
+	// 	"update-ubuntu",
+	// 	"install-start-docker-ubuntu",
+	// 	// "install-kubeadm-ubuntu-1.13.0",
+	// },
 
 	// 2 vCPU, 8 GB RAM
 	InstanceType: "m5.large",
