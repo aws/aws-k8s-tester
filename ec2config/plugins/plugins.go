@@ -45,7 +45,8 @@ var keyPriorities = map[string]int{ // in the order of:
 	"install-start-docker-amazon-linux-2": 10,
 	"install-start-docker-ubuntu":         11,
 	"install-kubeadm-amazon-linux-2":      12,
-	"install-kubernetes-amazon-linux-2":   13,
+	"install-kubeadm-ubuntu":              13,
+	"install-kubernetes-amazon-linux-2":   14,
 }
 
 func convertToScript(userName, plugin string) (script, error) {
@@ -162,11 +163,19 @@ make server
 
 	case strings.HasPrefix(plugin, "install-kubeadm-amazon-linux-2-"):
 		id := strings.Replace(plugin, "install-kubeadm-amazon-linux-2-", "", -1)
-		s, err := kubeadmplugin.CreateInstall(id)
+		s, err := kubeadmplugin.CreateInstallAL2(id)
 		if err != nil {
 			return script{}, err
 		}
 		return script{key: "install-kubeadm-amazon-linux-2", data: s}, nil
+
+	case strings.HasPrefix(plugin, "install-kubeadm-ubuntu-"):
+		id := strings.Replace(plugin, "install-kubeadm-ubuntu-", "", -1)
+		s, err := kubeadmplugin.CreateInstallUbuntu(id)
+		if err != nil {
+			return script{}, err
+		}
+		return script{key: "install-kubeadm-ubuntu", data: s}, nil
 
 	case plugin == "install-kubernetes-amazon-linux-2":
 		return script{key: "install-kubernetes-amazon-linux-2", data: kubernetesplugin.CreateInstall()}, nil
