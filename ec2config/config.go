@@ -22,7 +22,7 @@ import (
 type Config struct {
 	// EnvPrefix is used to update configuration via environmental variables.
 	// The default is "AWS_K8S_TESTER_EC2_".
-	EnvPrefix string
+	EnvPrefix string `json:"env-prefix"`
 
 	// AWSAccountID is the AWS account ID.
 	AWSAccountID string `json:"aws-account-id"`
