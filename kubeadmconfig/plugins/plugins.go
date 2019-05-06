@@ -50,12 +50,12 @@ exclude=kube*
 EOF
 sudo mv /tmp/kubernetes.repo /etc/yum.repos.d/kubernetes.repo
 
-sudo yum install --disableexcludes=kubernetes -y \
+sudo yum install \
+  --disableexcludes=kubernetes -y \
   kubelet-{{ .Version }} \
   kubeadm-{{ .Version }} \
   kubectl-{{ .Version }} \
   iproute-tc
-
 
 kubelet --version
 kubeadm version
@@ -89,6 +89,7 @@ sudo apt-get install -y apt-transport-https curl
 curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
 
 sudo mkdir -p /etc/apt/sources.list.d/
+sudo rm -f /etc/apt/sources.list.d/kubernetes.list
 
 # environment variable for correct distribution
 export UBUNTU_RELEASE="kubernetes-$(lsb_release -c -s)"
@@ -96,7 +97,10 @@ echo "deb https://apt.kubernetes.io/ $UBUNTU_RELEASE main" | sudo tee -a /etc/ap
 sudo cat /etc/apt/sources.list.d/kubernetes.list
 
 sudo apt-get update -y
-sudo apt-get install -y kubelet-{{ .Version }} kubeadm-{{ .Version }} kubectl-{{ .Version }}
+sudo apt-get install -y \
+  kubelet={{ .Version }} \
+  kubeadm={{ .Version }} \
+  kubectl={{ .Version }}
 sudo apt-mark hold kubelet kubeadm kubectl
 
 kubelet --version
@@ -106,9 +110,6 @@ kubectl version --client=true
 sudo iptables --list
 sudo systemctl daemon-reload
 sudo systemctl cat kubelet.service
-
-sudo systemctl enable docker
-sudo systemctl start docker
 
 ##################################
 
