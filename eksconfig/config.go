@@ -291,12 +291,12 @@ var defaultConfig = Config{
 	AWSK8sTesterDownloadURL: "https://github.com/aws/aws-k8s-tester/releases/download/0.2.9/aws-k8s-tester-0.2.9-linux-amd64",
 	AWSK8sTesterPath:        "/tmp/aws-k8s-tester/aws-k8s-tester",
 
-	KubectlDownloadURL: "https://amazon-eks.s3-us-west-2.amazonaws.com/1.12.7/2019-03-27/bin/linux/amd64/kubectl",
+	KubectlDownloadURL: "https://amazon-eks.s3-us-west-2.amazonaws.com/1.13.7/2019-06-11/bin/linux/amd64/kubectl",
 	KubectlPath:        "/tmp/aws-k8s-tester/kubectl",
 
 	KubeConfigPath: "/tmp/aws-k8s-tester/kubeconfig",
 
-	AWSIAMAuthenticatorDownloadURL: "https://amazon-eks.s3-us-west-2.amazonaws.com/1.12.7/2019-03-27/bin/linux/amd64/aws-iam-authenticator",
+	AWSIAMAuthenticatorDownloadURL: "https://amazon-eks.s3-us-west-2.amazonaws.com/1.13.7/2019-06-11/bin/linux/amd64/aws-iam-authenticator",
 	AWSIAMAuthenticatorPath:        "/tmp/aws-k8s-tester/aws-iam-authenticator",
 
 	// enough time for ALB access log
@@ -319,14 +319,14 @@ var defaultConfig = Config{
 
 	// Amazon EKS-optimized AMI, https://docs.aws.amazon.com/eks/latest/userguide/eks-optimized-ami.html
 	// for the corresponding region and version
-	WorkerNodeAMI:                "ami-0923e4b35a30a5f53",
+	WorkerNodeAMI:                "ami-03a55127c613349a7",
 	WorkerNodeInstanceType:       "m3.xlarge",
 	WorkerNodeASGMin:             1,
 	WorkerNodeASGMax:             1,
 	WorkerNodeASGDesiredCapacity: 1,
 	WorkerNodeVolumeSizeGB:       20,
 
-	KubernetesVersion: "1.12",
+	KubernetesVersion: "1.13",
 
 	LogDebug: false,
 
@@ -742,9 +742,7 @@ func checkKubernetesVersion(s string) (ok bool) {
 
 // supportedKubernetesVersions is a list of EKS supported Kubernets versions.
 var supportedKubernetesVersions = map[string]struct{}{
-	"1.10": {},
-	"1.11": {},
-	"1.12": {},
+	"1.13": {},
 }
 
 func checkRegion(s string) (ok bool) {
