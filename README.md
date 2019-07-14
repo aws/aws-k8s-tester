@@ -74,10 +74,10 @@ To test locally:
 cd ${GOPATH}/src/github.com/aws/aws-k8s-tester
 
 # use darwin to run local tests on Mac
-AWS_K8S_TESTER_EKS_KUBECTL_DOWNLOAD_URL=https://amazon-eks.s3-us-west-2.amazonaws.com/1.11.5/2018-12-06/bin/$(go env GOOS)/amd64/kubectl \
+AWS_K8S_TESTER_EKS_KUBECTL_DOWNLOAD_URL=https://amazon-eks.s3-us-west-2.amazonaws.com/1.13.7/2019-06-11/bin/$(go env GOOS)/amd64/kubectl \
   AWS_K8S_TESTER_EKS_KUBECONFIG_PATH=/tmp/aws-k8s-tester/kubeconfig \
-  AWS_K8S_TESTER_EKS_AWS_IAM_AUTHENTICATOR_DOWNLOAD_URL=https://amazon-eks.s3-us-west-2.amazonaws.com/1.11.5/2018-12-06/bin/$(go env GOOS)/amd64/aws-iam-authenticator \
-  AWS_K8S_TESTER_EKS_KUBERNETES_VERSION=1.11 \
+  AWS_K8S_TESTER_EKS_AWS_IAM_AUTHENTICATOR_DOWNLOAD_URL=https://amazon-eks.s3-us-west-2.amazonaws.com/1.13.7/2019-06-11/bin/$(go env GOOS)/amd64/aws-iam-authenticator \
+  AWS_K8S_TESTER_EKS_KUBERNETES_VERSION=1.13 \
   AWS_K8S_TESTER_EKS_WAIT_BEFORE_DOWN=1m \
   AWS_K8S_TESTER_EKS_DOWN=true \
   AWS_K8S_TESTER_EKS_ENABLE_WORKER_NODE_HA=true \
@@ -87,7 +87,7 @@ AWS_K8S_TESTER_EKS_KUBECTL_DOWNLOAD_URL=https://amazon-eks.s3-us-west-2.amazonaw
   AWS_K8S_TESTER_EKS_UPLOAD_TESTER_LOGS=false \
   AWS_K8S_TESTER_EKS_UPLOAD_WORKER_NODE_LOGS=false \
   AWS_K8S_TESTER_EKS_WORKER_NODE_PRIVATE_KEY_PATH=~/.ssh/kube_aws_rsa \
-  AWS_K8S_TESTER_EKS_WORKER_NODE_AMI=ami-0c28139856aaf9c3b \
+  AWS_K8S_TESTER_EKS_WORKER_NODE_AMI=ami-03a55127c613349a7 \
   AWS_K8S_TESTER_EKS_WORKER_NODE_INSTANCE_TYPE=m3.xlarge \
   AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_MIN=1 \
   AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_MAX=1 \
