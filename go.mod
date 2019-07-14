@@ -4,7 +4,7 @@ require (
 	cloud.google.com/go v0.30.0 // indirect
 	contrib.go.opencensus.io/exporter/ocagent v0.4.2 // indirect
 	github.com/Azure/go-autorest v11.3.1+incompatible // indirect
-	github.com/aws/aws-sdk-go v1.19.22
+	github.com/aws/aws-sdk-go v1.20.20
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/dustin/go-humanize v1.0.0
 	github.com/go-yaml/yaml v2.1.0+incompatible // indirect
@@ -35,7 +35,7 @@ require (
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/pflag v1.0.3 // indirect
 	go.etcd.io/etcd v0.0.0-20181031231232-83304cfc808c
-	go.uber.org/zap v1.9.1
+	go.uber.org/zap v1.10.0
 	golang.org/x/crypto v0.0.0-20181015023909-0c41d7ab0a0e
 	golang.org/x/oauth2 v0.0.0-20181017192945-9dcd33a902f4 // indirect
 	google.golang.org/api v0.0.0-20181021000519-a2651947f503 // indirect

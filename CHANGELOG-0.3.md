@@ -3,7 +3,7 @@
 <hr>
 
 
-## [0.3.0](https://github.com/aws/aws-k8s-tester/releases/tag/0.3.0)(2019-04-TBD)
+## [0.3.0](https://github.com/aws/aws-k8s-tester/releases/tag/0.3.0)(2019-07-TBD)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.2.9...0.3.0).
 
@@ -42,7 +42,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.2.9...0.3.0).
 
 ### Dependency
 
-- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.17.1`](https://github.com/aws/aws-sdk-go/releases/tag/v1.17.1) to [`v1.19.22`](https://github.com/aws/aws-sdk-go/releases/tag/v1.19.22).
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.17.1`](https://github.com/aws/aws-sdk-go/releases/tag/v1.17.1) to [`v1.20.20`](https://github.com/aws/aws-sdk-go/releases/tag/v1.20.20).
+- Upgrade [`go.uber.org/zap`](https://github.com/aws/aws-sdk-go/releases) from [`v1.9.1`](https://github.com/uber-go/zap/releases/tag/v1.9.1) to [`v1.10.0`](https://github.com/uber-go/zap/releases/tag/v1.10.0).
 
 ### Go
 
