@@ -75,10 +75,6 @@ func createClusterFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	if _, err = cfg.BackupConfig(); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to back up original config file %v\n", err)
-		os.Exit(1)
-	}
 	if err = tester.Create(); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create instances %v\n", err)
 		os.Exit(1)

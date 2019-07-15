@@ -321,8 +321,7 @@ var defaultConfig = Config{
 //
 //  import "github.com/aws/aws-k8s-tester/kubeadmconfig"
 //  cfg := kubeadmconfig.Load("test.yaml")
-//  p, err := cfg.BackupConfig()
-//  err = cfg.ValidateAndSetDefaults()
+//  err := cfg.ValidateAndSetDefaults()
 //
 // Do not set default values in this function.
 // "ValidateAndSetDefaults" must be called separately,
@@ -364,24 +363,6 @@ func (cfg *Config) Sync() (err error) {
 		return err
 	}
 	return ioutil.WriteFile(cfg.ConfigPath, d, 0600)
-}
-
-// BackupConfig stores the original aws-k8s-tester configuration
-// file to backup, suffixed with ".backup.yaml".
-// Otherwise, deployer will overwrite its state back to YAML.
-// Useful when the original configuration would be reused
-// for other tests.
-func (cfg *Config) BackupConfig() (p string, err error) {
-	var d []byte
-	d, err = ioutil.ReadFile(cfg.ConfigPath)
-	if err != nil {
-		return "", err
-	}
-	p = fmt.Sprintf("%s.%X.backup.yaml",
-		cfg.ConfigPath,
-		time.Now().UTC().UnixNano(),
-	)
-	return p, ioutil.WriteFile(p, d, 0600)
 }
 
 const (

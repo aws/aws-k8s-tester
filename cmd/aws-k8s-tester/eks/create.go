@@ -7,9 +7,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/aws/aws-k8s-tester/eks"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/ekstester"
-	"github.com/aws/aws-k8s-tester/eks"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 
 	"github.com/spf13/cobra"
@@ -81,10 +81,6 @@ func createClusterFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	if _, err = cfg.BackupConfig(); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to back up original config file %v\n", err)
-		os.Exit(1)
-	}
 	if err = tester.Up(); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create cluster %v\n", err)
 		os.Exit(1)
