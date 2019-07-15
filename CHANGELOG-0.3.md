@@ -12,6 +12,11 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.2.9...0.3.0).
 - Add [`InstanceProfileFilePath` field](https://github.com/aws/aws-k8s-tester/commit/78ef8e10a6a4a09456a4895f0b30a3b8f5ca8d2b).
 - Add [`VolumeSize` field](https://github.com/aws/aws-k8s-tester/commit/c2d4e39af832e9369c801cfcd5fd97dbf1e41d43).
 - Add [`Tags` field](https://github.com/aws/aws-k8s-tester/commit/c8b6f67a7bb712b89a4d08c4afcd00c240ba4051).
+- Remove [`BackupConfig` method](https://github.com/aws/aws-k8s-tester/commit/48e009b185b5dc10f9b5295806bf3845e5e6d4de).
+
+### `etcdconfig`
+
+- Remove [`BackupConfig` method](https://github.com/aws/aws-k8s-tester/commit/48e009b185b5dc10f9b5295806bf3845e5e6d4de).
 
 ### `eks`
 
@@ -29,6 +34,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.2.9...0.3.0).
 - Make [EKS 1.13 by default](https://github.com/aws/aws-k8s-tester/commit/933d7ac1475b991e02aad2b2681c2a60cf7a2e16).
 - Upgrade to [CNI 1.5](https://github.com/aws/aws-k8s-tester/commit/933d7ac1475b991e02aad2b2681c2a60cf7a2e16).
 - Remove all [ALB plugin code](https://github.com/aws/aws-k8s-tester/commit/229c321b8a9a044a1726d4c23e7383036e36b753).
+- Remove [`BackupConfig` method](https://github.com/aws/aws-k8s-tester/commit/48e009b185b5dc10f9b5295806bf3845e5e6d4de).
 
 ### `internal`
 
