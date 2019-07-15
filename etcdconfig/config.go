@@ -566,7 +566,7 @@ func init() {
 
 	// package "internal/ec2" defaults
 	// Amazon Linux 2 AMI (HVM), SSD Volume Type
-	// ImageID:  "ami-032509850cf9ee54e"
+	// ImageID:  "ami-082b5a644766e0e6f "
 	// UserName: "ec2-user"
 	defaultConfig.EC2.Plugins = []string{
 		"update-amazon-linux-2",
@@ -584,7 +584,7 @@ func init() {
 	defaultConfig.EC2Bastion.Plugins = []string{
 		"update-amazon-linux-2",
 		"install-etcd-3.2.25",
-		"install-go-amazon-linux-2-1.11",
+		"install-go-amazon-linux-2-1.12",
 		"install-aws-k8s-tester",
 	}
 	defaultConfig.EC2Bastion.ClusterSize = 1
