@@ -256,7 +256,7 @@ func init() {
 
 	// package "internal/ec2" defaults
 	// Amazon Linux 2 AMI (HVM), SSD Volume Type
-	// ImageID:  "ami-0b898040803850657 "
+	// ImageID:  "ami-082b5a644766e0e6f "
 	// UserName: "ec2-user"
 	defaultConfig.EC2MasterNodes.Plugins = []string{
 		"update-amazon-linux-2",
