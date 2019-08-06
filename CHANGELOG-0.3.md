@@ -5,7 +5,7 @@
 
 ## [0.3.0](https://github.com/aws/aws-k8s-tester/releases/tag/0.3.0)(2019-08-06)
 
-See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.2.9...0.3.0).
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.2.8...0.3.0).
 
 ### `ec2config`
 
