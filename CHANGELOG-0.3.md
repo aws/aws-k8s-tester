@@ -3,6 +3,18 @@
 <hr>
 
 
+## [0.3.1](https://github.com/aws/aws-k8s-tester/releases/tag/0.3.1)(2019-08-06)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.3.0...0.3.1).
+
+### `internal`
+
+- Use [Go 1.12.7 for CSI integration tests](https://github.com/aws/aws-k8s-tester/commit/3b052ededa5a0cc37ac145fab31556bb463b9a3a).
+
+
+<hr>
+
+
 ## [0.3.0](https://github.com/aws/aws-k8s-tester/releases/tag/0.3.0)(2019-08-06)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.2.8...0.3.0).
