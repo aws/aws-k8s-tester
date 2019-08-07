@@ -100,7 +100,7 @@ func CreateConfig(vpcID, prNum, githubAccount, githubBranch string) (cfg *ec2con
 	cfg.IngressRulesTCP = map[string]string{"22": "0.0.0.0/0"}
 	cfg.Plugins = []string{
 		"update-amazon-linux-2",
-		"install-go-1.11.4",
+		"install-go-1.12.7",
 	}
 	cfg.InstanceProfileFilePath, err = fileutil.WriteTempFile([]byte(policyDocument))
 	if err != nil {
