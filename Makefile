@@ -1,7 +1,7 @@
 
 .PHONY: release
 release:
-	./scripts/aws-k8s-tester.build.release.sh
+	./scripts/build.sh
 
 clean:
 	rm -rf ./bin
