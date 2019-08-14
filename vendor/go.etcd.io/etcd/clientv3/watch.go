@@ -68,7 +68,7 @@ type Watcher interface {
 	// TODO: explicitly set context error in the last "WatchResponse" message and close channel?
 	// Currently, client contexts are overwritten with "valCtx" that never closes.
 	// TODO(v3.4): configure watch retry policy, limit maximum retry number
-	// (see https://go.etcd.io/etcd/issues/8980)
+	// (see https://github.com/etcd-io/etcd/issues/8980)
 	Watch(ctx context.Context, key string, opts ...OpOption) WatchChan
 
 	// RequestProgress requests a progress notify response be sent in all watch channels.
@@ -371,6 +371,10 @@ func (w *watcher) Close() (err error) {
 			err = werr
 		}
 	}
+	// Consider context.Canceled as a successful close
+	if err == context.Canceled {
+		err = nil
+	}
 	return err
 }
 
@@ -380,6 +384,7 @@ func (w *watcher) RequestProgress(ctx context.Context) (err error) {
 
 	w.mu.Lock()
 	if w.streams == nil {
+		w.mu.Unlock()
 		return fmt.Errorf("no stream found for context")
 	}
 	wgs := w.streams[ctxKey]

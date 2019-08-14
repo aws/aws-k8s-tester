@@ -61,7 +61,7 @@
 //
 //  1. context error: canceled or deadline exceeded.
 //  2. gRPC status error: e.g. when clock drifts in server-side before client's context deadline exceeded.
-//  3. gRPC error: see https://go.etcd.io/etcd/blob/master/etcdserver/api/v3rpc/rpctypes/error.go
+//  3. gRPC error: see https://github.com/etcd-io/etcd/blob/master/etcdserver/api/v3rpc/rpctypes/error.go
 //
 // Here is the example code to handle client errors:
 //
@@ -90,7 +90,7 @@
 //		// with etcd clientv3 <= v3.3
 //		if err == context.Canceled {
 //			// grpc balancer calls 'Get' with an inflight client.Close
-//		} else if err == grpc.ErrClientConnClosing {
+//		} else if err == grpc.ErrClientConnClosing { // <= gRCP v1.7.x
 //			// grpc balancer calls 'Get' after client.Close.
 //		}
 //		// with etcd clientv3 >= v3.4
