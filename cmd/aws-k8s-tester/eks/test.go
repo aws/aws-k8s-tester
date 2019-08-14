@@ -7,7 +7,6 @@ import (
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/ekstester"
 	"github.com/aws/aws-k8s-tester/eks"
-
 	"github.com/spf13/cobra"
 )
 

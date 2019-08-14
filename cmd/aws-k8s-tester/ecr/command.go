@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/aws/aws-k8s-tester/pkg/awsapi"
-
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sts"
 	"github.com/spf13/cobra"
