@@ -15,6 +15,7 @@ import (
 
 	"github.com/aws/aws-k8s-tester/ec2config/plugins"
 	ec2types "github.com/aws/aws-k8s-tester/pkg/awsapi/ec2"
+	"github.com/aws/aws-k8s-tester/pkg/logutil"
 	"sigs.k8s.io/yaml"
 )
 
@@ -29,9 +30,8 @@ type Config struct {
 	// AWSRegion is the AWS region.
 	AWSRegion string `json:"aws-region"`
 
-	// LogDebug is true to enable debug level logging.
-	LogDebug bool `json:"log-debug"`
-
+	// LogLevel configures log level. Only supports debug, info, warn, error, panic, or fatal. Default 'info'.
+	LogLevel string `json:"log-level"`
 	// LogOutputs is a list of log outputs. Valid values are 'default', 'stderr', 'stdout', or file names.
 	// Logs are appended to the existing file, if any.
 	// Multiple values are accepted. If empty, it sets to 'default', which outputs to stderr.
@@ -263,7 +263,7 @@ var defaultConfig = Config{
 	WaitBeforeDown: time.Minute,
 	Down:           true,
 
-	LogDebug: false,
+	LogLevel: logutil.DefaultLogLevel,
 
 	// default, stderr, stdout, or file name
 	// log file named with cluster name will be added automatically

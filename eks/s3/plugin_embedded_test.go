@@ -27,7 +27,7 @@ func TestEmbedded(t *testing.T) {
 
 	awsCfg := &awsapi.Config{
 		Logger:         zap.NewExample(),
-		DebugAPICalls:  cfg.LogDebug,
+		DebugAPICalls:  cfg.LogLevel == "debug",
 		Region:         cfg.AWSRegion,
 		CustomEndpoint: cfg.EKSCustomEndpoint,
 	}

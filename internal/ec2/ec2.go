@@ -16,7 +16,7 @@ import (
 	"github.com/aws/aws-k8s-tester/ec2config/plugins"
 	"github.com/aws/aws-k8s-tester/internal/ssh"
 	"github.com/aws/aws-k8s-tester/pkg/awsapi"
-	"github.com/aws/aws-k8s-tester/pkg/zaputil"
+	"github.com/aws/aws-k8s-tester/pkg/logutil"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
@@ -78,7 +78,9 @@ func NewDeployer(cfg *ec2config.Config) (Deployer, error) {
 
 	now := time.Now().UTC()
 
-	lg, err := zaputil.New(cfg.LogDebug, cfg.LogOutputs)
+	lcfg := logutil.AddOutputPaths(logutil.DefaultZapLoggerConfig, cfg.LogOutputs, cfg.LogOutputs)
+	lcfg.Level = zap.NewAtomicLevelAt(logutil.ConvertToZapLevel(cfg.LogLevel))
+	lg, err := lcfg.Build()
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +94,7 @@ func NewDeployer(cfg *ec2config.Config) (Deployer, error) {
 
 	awsCfg := &awsapi.Config{
 		Logger:         md.lg,
-		DebugAPICalls:  cfg.LogDebug,
+		DebugAPICalls:  cfg.LogLevel == "debug",
 		Region:         cfg.AWSRegion,
 		CustomEndpoint: "",
 	}

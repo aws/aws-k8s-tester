@@ -68,7 +68,7 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_ETCD_TAG", "my-test")
 	os.Setenv("AWS_K8S_TESTER_ETCD_CLUSTER_NAME", "my-cluster")
 	os.Setenv("AWS_K8S_TESTER_ETCD_DOWN", "false")
-	os.Setenv("AWS_K8S_TESTER_ETCD_LOG_DEBUG", "true")
+	os.Setenv("AWS_K8S_TESTER_ETCD_LOG_LEVEL", "debug")
 	os.Setenv("AWS_K8S_TESTER_ETCD_UPLOAD_TESTER_LOGS", "false")
 	os.Setenv("AWS_K8S_TESTER_ETCD_CLUSTER_VERSION", "v3.2.15")
 	os.Setenv("AWS_K8S_TESTER_ETCD_CLUSTER_TOP_LEVEL", "true")
@@ -84,7 +84,7 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWS_K8S_TESTER_ETCD_TAG")
 		os.Unsetenv("AWS_K8S_TESTER_ETCD_CLUSTER_NAME")
 		os.Unsetenv("AWS_K8S_TESTER_ETCD_DOWN")
-		os.Unsetenv("AWS_K8S_TESTER_ETCD_LOG_DEBUG")
+		os.Unsetenv("AWS_K8S_TESTER_ETCD_LOG_LEVEL")
 		os.Unsetenv("AWS_K8S_TESTER_ETCD_UPLOAD_TESTER_LOGS")
 		os.Unsetenv("AWS_K8S_TESTER_ETCD_CLUSTER_VERSION")
 		os.Unsetenv("AWS_K8S_TESTER_ETCD_CLUSTER_TOP_LEVEL")
@@ -125,8 +125,8 @@ func TestEnv(t *testing.T) {
 	if cfg.Down {
 		t.Fatalf("unexpected Down, got %v", cfg.Down)
 	}
-	if !cfg.LogDebug {
-		t.Fatalf("unexpected LogDebug, got %v", cfg.LogDebug)
+	if cfg.LogLevel != "debug" {
+		t.Fatalf("unexpected LogLevel, got %q", cfg.LogLevel)
 	}
 	if cfg.UploadTesterLogs {
 		t.Fatalf("unexpected UploadTesterLogs, got %v", cfg.UploadTesterLogs)

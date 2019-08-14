@@ -19,12 +19,12 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/aws/aws-k8s-tester/eks/s3"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/ekstester"
-	"github.com/aws/aws-k8s-tester/eks/s3"
 	"github.com/aws/aws-k8s-tester/pkg/awsapi"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
-	"github.com/aws/aws-k8s-tester/pkg/zaputil"
+	"github.com/aws/aws-k8s-tester/pkg/logutil"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/autoscaling"
@@ -83,7 +83,9 @@ type embedded struct {
 func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 	now := time.Now().UTC()
 
-	lg, err := zaputil.New(cfg.LogDebug, cfg.LogOutputs)
+	lcfg := logutil.AddOutputPaths(logutil.DefaultZapLoggerConfig, cfg.LogOutputs, cfg.LogOutputs)
+	lcfg.Level = zap.NewAtomicLevelAt(logutil.ConvertToZapLevel(cfg.LogLevel))
+	lg, err := lcfg.Build()
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +177,7 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 
 	awsCfg := &awsapi.Config{
 		Logger:        md.lg,
-		DebugAPICalls: md.cfg.LogDebug,
+		DebugAPICalls: md.cfg.LogLevel == "debug",
 		Region:        md.cfg.AWSRegion,
 	}
 	md.ss, err = awsapi.New(awsCfg)
@@ -190,7 +192,7 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 
 	awsCfgEKS := &awsapi.Config{
 		Logger:         md.lg,
-		DebugAPICalls:  md.cfg.LogDebug,
+		DebugAPICalls:  md.cfg.LogLevel == "debug",
 		Region:         md.cfg.AWSRegion,
 		CustomEndpoint: md.cfg.EKSCustomEndpoint,
 	}

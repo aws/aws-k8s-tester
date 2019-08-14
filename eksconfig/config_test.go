@@ -38,7 +38,7 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_MIN", "5")
 	os.Setenv("AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_MAX", "10")
 	os.Setenv("AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_DESIRED_CAPACITY", "7")
-	os.Setenv("AWS_K8S_TESTER_EKS_LOG_DEBUG", "true")
+	os.Setenv("AWS_K8S_TESTER_EKS_LOG_LEVEL", "debug")
 	os.Setenv("AWS_K8S_TESTER_EKS_UPLOAD_TESTER_LOGS", "true")
 	os.Setenv("AWS_K8S_TESTER_EKS_UPLOAD_KUBECONFIG", "true")
 	os.Setenv("AWS_K8S_TESTER_EKS_UPLOAD_WORKER_NODE_LOGS", "true")
@@ -73,7 +73,7 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_MIN")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_MAX")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_DESIRED_CAPACITY")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_LOG_DEBUG")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_LOG_LEVEL")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_UPLOAD_TESTER_LOGS")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_UPLOAD_KUBECONFIG")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_UPLOAD_WORKER_NODE_LOGS")
@@ -166,8 +166,8 @@ func TestEnv(t *testing.T) {
 	if cfg.WorkerNodeASGDesiredCapacity != 7 {
 		t.Fatalf("worker nodes desired capacity expected 7, got %q", cfg.WorkerNodeASGDesiredCapacity)
 	}
-	if !cfg.LogDebug {
-		t.Fatalf("LogDebug expected true, got %v", cfg.LogDebug)
+	if cfg.LogLevel != "debug" {
+		t.Fatalf("LogLevel unexpected %q", cfg.LogLevel)
 	}
 	if !cfg.UploadTesterLogs {
 		t.Fatalf("UploadTesterLogs expected true, got %v", cfg.UploadTesterLogs)

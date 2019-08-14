@@ -11,8 +11,6 @@ import (
 	"text/template"
 
 	etcdplugin "github.com/aws/aws-k8s-tester/etcdconfig/plugins"
-	kubeadmplugin "github.com/aws/aws-k8s-tester/kubeadmconfig/plugins"
-	kubernetesplugin "github.com/aws/aws-k8s-tester/kubernetesconfig/plugins"
 )
 
 // headerBash is the bash script header.
@@ -40,13 +38,8 @@ var keyPriorities = map[string]int{ // in the order of:
 	"install-csi":                         5,
 	"install-etcd":                        6,
 	"install-aws-k8s-tester":              7,
-	"install-wrk":                         8,
-	"install-alb":                         9,
-	"install-start-docker-amazon-linux-2": 10,
-	"install-start-docker-ubuntu":         11,
-	"install-kubeadm-amazon-linux-2":      12,
-	"install-kubeadm-ubuntu":              13,
-	"install-kubernetes-amazon-linux-2":   14,
+	"install-start-docker-amazon-linux-2": 8,
+	"install-start-docker-ubuntu":         9,
 }
 
 func convertToScript(userName, plugin string) (script, error) {
@@ -124,31 +117,6 @@ func convertToScript(userName, plugin string) (script, error) {
 		}
 		return script{key: "install-aws-k8s-tester", data: s}, nil
 
-	case plugin == "install-wrk":
-		return script{
-			key:  plugin,
-			data: installWrk,
-		}, nil
-
-	case strings.HasPrefix(plugin, "install-alb-"):
-		gitBranch := strings.Replace(plugin, "install-alb-", "", -1)
-		_, perr := strconv.ParseInt(gitBranch, 10, 64)
-		isPR := perr == nil
-		s, err := createInstallGit(gitInfo{
-			GitRepo:      "aws-alb-ingress-controller",
-			GitClonePath: "${GOPATH}/src/github.com/kubernetes-sigs",
-			GitCloneURL:  "https://github.com/kubernetes-sigs/aws-alb-ingress-controller.git",
-			IsPR:         isPR,
-			GitBranch:    gitBranch,
-			InstallScript: `GO111MODULE=on go mod vendor -v
-make server
-			`,
-		})
-		if err != nil {
-			return script{}, err
-		}
-		return script{key: "install-alb", data: s}, nil
-
 	case plugin == "install-start-docker-amazon-linux-2":
 		return script{
 			key:  plugin,
@@ -160,25 +128,6 @@ make server
 			key:  plugin,
 			data: installStartDockerUbuntu,
 		}, nil
-
-	case strings.HasPrefix(plugin, "install-kubeadm-amazon-linux-2-"):
-		id := strings.Replace(plugin, "install-kubeadm-amazon-linux-2-", "", -1)
-		s, err := kubeadmplugin.CreateInstallAL2(id)
-		if err != nil {
-			return script{}, err
-		}
-		return script{key: "install-kubeadm-amazon-linux-2", data: s}, nil
-
-	case strings.HasPrefix(plugin, "install-kubeadm-ubuntu-"):
-		id := strings.Replace(plugin, "install-kubeadm-ubuntu-", "", -1)
-		s, err := kubeadmplugin.CreateInstallUbuntu(id)
-		if err != nil {
-			return script{}, err
-		}
-		return script{key: "install-kubeadm-ubuntu", data: s}, nil
-
-	case plugin == "install-kubernetes-amazon-linux-2":
-		return script{key: "install-kubernetes-amazon-linux-2", data: kubernetesplugin.CreateInstall()}, nil
 	}
 
 	return script{}, fmt.Errorf("unknown plugin %q", plugin)
@@ -448,38 +397,6 @@ sudo cp /tmp/etcd-download-test/etcdctl /usr/bin/etcdctl
 
 etcd --version
 ETCDCTL_API=3 etcdctl version
-
-##################################
-
-`
-
-const installWrk = `
-
-################################## install wrk
-
-cd ${HOME}
-
-RETRIES=10
-DELAY=10
-COUNT=1
-while [[ ${COUNT} -lt ${RETRIES} ]]; do
-  rm -rf ./wrk
-  git clone https://github.com/wg/wrk.git
-  if [[ $? -eq 0 ]]; then
-    RETRIES=0
-    echo "Successfully git cloned!"
-    break
-  fi
-  let COUNT=${COUNT}+1
-  sleep ${DELAY}
-done
-
-cd ./wrk \
-  && make all \
-  && sudo cp ./wrk /usr/bin/wrk \
-  && cd .. \
-  && rm -rf ./wrk \
-  && wrk --version || true && which wrk
 
 ##################################
 

@@ -16,7 +16,7 @@ import (
 	"github.com/aws/aws-k8s-tester/internal/ec2"
 	"github.com/aws/aws-k8s-tester/internal/ssh"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
-	"github.com/aws/aws-k8s-tester/pkg/zaputil"
+	"github.com/aws/aws-k8s-tester/pkg/logutil"
 	"github.com/aws/aws-k8s-tester/storagetester"
 	"github.com/dustin/go-humanize"
 	"go.etcd.io/etcd/etcdserver/etcdserverpb"
@@ -37,10 +37,14 @@ func NewTester(cfg *etcdconfig.Config) (storagetester.Tester, error) {
 	if err := cfg.ValidateAndSetDefaults(); err != nil {
 		return nil, err
 	}
-	lg, err := zaputil.New(cfg.LogDebug, cfg.LogOutputs)
+
+	lcfg := logutil.AddOutputPaths(logutil.DefaultZapLoggerConfig, cfg.LogOutputs, cfg.LogOutputs)
+	lcfg.Level = zap.NewAtomicLevelAt(logutil.ConvertToZapLevel(cfg.LogLevel))
+	lg, err := lcfg.Build()
 	if err != nil {
 		return nil, err
 	}
+
 	md := &embedded{lg: lg, cfg: cfg}
 	md.ec2Deployer, err = ec2.NewDeployer(md.cfg.EC2)
 	if err != nil {
@@ -78,7 +82,7 @@ func (md *embedded) Create() (err error) {
 		zap.String("vpc-id", md.cfg.EC2.VPCID),
 		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 	)
-	if md.cfg.LogDebug {
+	if md.cfg.LogLevel == "debug" {
 		fmt.Println(md.cfg.EC2.SSHCommands())
 	}
 
@@ -96,7 +100,7 @@ func (md *embedded) Create() (err error) {
 		zap.String("vpc-id", md.cfg.EC2Bastion.VPCID),
 		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 	)
-	if md.cfg.LogDebug {
+	if md.cfg.LogLevel == "debug" {
 		fmt.Println(md.cfg.EC2Bastion.SSHCommands())
 	}
 

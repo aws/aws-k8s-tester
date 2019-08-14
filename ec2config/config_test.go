@@ -15,7 +15,7 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EC2_AWS_REGION", "us-east-1")
 	os.Setenv("AWS_K8S_TESTER_EC2_CONFIG_PATH", "test-path")
 	os.Setenv("AWS_K8S_TESTER_EC2_DOWN", "false")
-	os.Setenv("AWS_K8S_TESTER_EC2_LOG_DEBUG", "false")
+	os.Setenv("AWS_K8S_TESTER_EC2_LOG_LEVEL", "debug")
 	os.Setenv("AWS_K8S_TESTER_EC2_UPLOAD_AWS_TESTER_LOGS", "false")
 	os.Setenv("AWS_K8S_TESTER_EC2_UPLOAD_BUCKET_EXPIRE_DAYS", "3")
 	os.Setenv("AWS_K8S_TESTER_EC2_VPC_ID", "aaa")
@@ -40,7 +40,7 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWS_K8S_TESTER_EC2_AWS_REGION")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_CONFIG_PATH")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_DOWN")
-		os.Unsetenv("AWS_K8S_TESTER_EC2_LOG_DEBUG")
+		os.Unsetenv("AWS_K8S_TESTER_EC2_LOG_LEVEL")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_UPLOAD_AWS_TESTER_LOGS")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_UPLOAD_BUCKET_EXPIRE_DAYS")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_VPC_ID")
@@ -79,8 +79,8 @@ func TestEnv(t *testing.T) {
 	if cfg.Down {
 		t.Fatalf("Down unexpected %v", cfg.Down)
 	}
-	if cfg.LogDebug {
-		t.Fatalf("LogDebug unexpected %v", cfg.LogDebug)
+	if cfg.LogLevel != "debug" {
+		t.Fatalf("LogLevel unexpected %q", cfg.LogLevel)
 	}
 	if cfg.UploadTesterLogs {
 		t.Fatalf("UploadTesterLogs unexpected %v", cfg.UploadTesterLogs)
