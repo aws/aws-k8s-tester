@@ -1,4 +1,47 @@
 
+<hr>
+
+
+## [0.3.2](https://github.com/aws/aws-k8s-tester/releases/tag/0.3.2)(2019-08-TBD)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.3.1...0.3.2).
+
+### `aws-k8s-tester alb-log`
+
+- Remove, to be added back in future releases.
+
+### `aws-k8s-tester wrk`
+
+- Remove, to be added back in future releases.
+
+### `ec2config`
+
+- Replace [`LogDebug` with `LogLevel`](https://github.com/aws/aws-k8s-tester/commit/83140d408676142f7e5e7a2fe9cd0c19e8aec6bf).
+
+### `eksconfig`
+
+- Replace [`LogDebug` with `LogLevel`](https://github.com/aws/aws-k8s-tester/commit/83140d408676142f7e5e7a2fe9cd0c19e8aec6bf).
+
+### `etcdconfig`
+
+- Replace [`LogDebug` with `LogLevel`](https://github.com/aws/aws-k8s-tester/commit/83140d408676142f7e5e7a2fe9cd0c19e8aec6bf).
+
+### `kubernetesconfig`
+
+- Remove, to be added back in future releases.
+
+### `kubeadmconfig`
+
+- Remove, to be added back in future releases.
+
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.22.0`](https://github.com/aws/aws-sdk-go/releases/tag/v1.22.0) to [`v1.23.1`](https://github.com/aws/aws-sdk-go/releases/tag/v1.23.1).
+
+### Go
+
+- Compile with [*Go 1.12*](https://golang.org/doc/devel/release.html#go1.12).
+
 
 <hr>
 
@@ -10,6 +53,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.3.0...0.3.1).
 ### `internal`
 
 - Use [Go 1.12.7 for CSI integration tests](https://github.com/aws/aws-k8s-tester/commit/3b052ededa5a0cc37ac145fab31556bb463b9a3a).
+
+### Go
+
+- Compile with [*Go 1.12*](https://golang.org/doc/devel/release.html#go1.12).
 
 
 <hr>
@@ -60,8 +107,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.2.8...0.3.0).
 
 ### Dependency
 
-- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.22.0`](https://github.com/aws/aws-sdk-go/releases/tag/v1.22.0) to [`v1.20.20`](https://github.com/aws/aws-sdk-go/releases/tag/v1.20.20).
-- Upgrade [`go.uber.org/zap`](https://github.com/aws/aws-sdk-go/releases) from [`v1.10.0`](https://github.com/uber-go/zap/releases/tag/v1.10.0) to [`v1.10.0`](https://github.com/uber-go/zap/releases/tag/v1.10.0).
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.20.20`](https://github.com/aws/aws-sdk-go/releases/tag/v1.20.20) to [`v1.22.0`](https://github.com/aws/aws-sdk-go/releases/tag/v1.22.0).
+- Upgrade [`go.uber.org/zap`](https://github.com/uber-go/releases) from [`v1.10.0`](https://github.com/uber-go/zap/releases/tag/v1.10.0) to [`v1.10.0`](https://github.com/uber-go/zap/releases/tag/v1.10.0).
 
 ### Go
 
