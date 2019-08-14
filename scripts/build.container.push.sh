@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-if ! [[ "$0" =~ scripts/aws-k8s-tester.build.container.push.sh ]]; then
+if ! [[ "$0" =~ scripts/build.container.push.sh ]]; then
   echo "must be run from repository root"
   exit 255
 fi

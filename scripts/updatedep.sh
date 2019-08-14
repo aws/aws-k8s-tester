@@ -5,7 +5,7 @@ set -e
 GO111MODULE=on go mod init
 COMMENT
 
-if ! [[ "$0" =~ scripts/vendor.sh ]]; then
+if ! [[ "$0" =~ scripts/updatedep.sh ]]; then
   echo "must be run from repository root"
   exit 255
 fi

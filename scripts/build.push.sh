@@ -6,7 +6,7 @@ aws ecr create-repository --repository-name aws-k8s-tester
 aws ecr list-images --repository-name aws-k8s-tester
 COMMENT
 
-if ! [[ "$0" =~ scripts/aws-k8s-tester.build.push.sh ]]; then
+if ! [[ "$0" =~ scripts/build.push.sh ]]; then
   echo "must be run from repository root"
   exit 255
 fi
