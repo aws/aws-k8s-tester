@@ -22,7 +22,7 @@ type vpcStack struct {
 	SecurityGroupName string
 }
 
-// https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html
+// https://docs.aws.amazon.com/eks/latest/userguide/getting-started-console.html
 // https://amazon-eks.s3-us-west-2.amazonaws.com/cloudformation/2019-02-11/amazon-eks-vpc-sample.yaml
 const vpcStackTemplate = `---
 AWSTemplateFormatVersion: '2010-09-09'
