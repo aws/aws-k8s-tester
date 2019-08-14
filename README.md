@@ -36,6 +36,21 @@ aws-k8s-tester eks create config --path ./aws-k8s-tester-eks.yaml
 vi ./aws-k8s-tester-eks.yaml
 ```
 
+If run locally, make sure to change private key path to:
+
+```diff
+-worker-node-private-key-path: /Users/leegyuho/.ssh/kube_aws_rsa
++worker-node-private-key-path: /tmp/aws-k8s-tester-eks-worker-node.insecure.private.key
+```
+
+Otherwise,
+
+> {"level":"warn","ts":"2019-08-14T14:14:19.938-0700","caller":"eks/eks.go:347","msg":"failed to create EKS, reverting","error":"open /Users/leegyuho/.ssh/kube_aws_rsa: permission denied"}
+
+(`aws-k8s-tester` automatically detects OS to change the default value)
+
+Now, let's create an EKS cluster:
+
 ```bash
 aws-k8s-tester eks create cluster --path ./aws-k8s-tester-eks.yaml
 ```

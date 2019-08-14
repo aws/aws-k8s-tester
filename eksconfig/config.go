@@ -114,7 +114,7 @@ type Config struct {
 
 	// WorkerNodePrivateKeyPath is the file path to store node group key pair private key.
 	// Thus, deployer must delete the private key right after node group creation.
-	// MAKE SURE PRIVATE KEY NEVER GETS UPLOADED TO CLOUD STORAGE AND DLETE AFTER USE!!!
+	// MAKE SURE PRIVATE KEY NEVER GETS UPLOADED TO CLOUD STORAGE AND DELETE AFTER USE!!!
 	WorkerNodePrivateKeyPath string `json:"worker-node-private-key-path,omitempty"`
 	// WorkerNodeAMI is the Amazon EKS worker node AMI ID for the specified Region.
 	// Reference https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html.
@@ -268,6 +268,7 @@ func init() {
 		defaultConfig.AWSK8sTesterDownloadURL = strings.Replace(defaultConfig.AWSK8sTesterDownloadURL, "linux", "darwin", -1)
 		defaultConfig.KubectlDownloadURL = strings.Replace(defaultConfig.KubectlDownloadURL, "linux", "darwin", -1)
 		defaultConfig.AWSIAMAuthenticatorDownloadURL = strings.Replace(defaultConfig.AWSIAMAuthenticatorDownloadURL, "linux", "darwin", -1)
+		defaultConfig.WorkerNodePrivateKeyPath = filepath.Join(os.TempDir(), "a8-worker-node-private-key-"+defaultConfig.ClusterName)
 	}
 	sshDir := filepath.Join(homedir.HomeDir(), ".ssh")
 	if err := os.MkdirAll(sshDir, 0700); err != nil {
@@ -484,7 +485,7 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		}
 	}
 	cfg.ClusterState.CFStackWorkerNodeGroupKeyPairName = genNodeGroupKeyPairName(cfg.ClusterName)
-	// SECURITY NOTE: MAKE SURE PRIVATE KEY NEVER GETS UPLOADED TO CLOUD STORAGE AND DLETE AFTER USE!!!
+	// SECURITY NOTE: MAKE SURE PRIVATE KEY NEVER GETS UPLOADED TO CLOUD STORAGE AND DELETE AFTER USE!!!
 	if cfg.WorkerNodePrivateKeyPath == "" {
 		cfg.WorkerNodePrivateKeyPath = filepath.Join(
 			os.TempDir(),
