@@ -333,6 +333,11 @@ func (md *embedded) KubectlCommand() (*osexec.Cmd, error) {
 	return osexec.Command(md.cfg.KubectlPath, "--kubeconfig="+md.cfg.KubeConfigPath), nil
 }
 
+// KubernetesClientSet returns Kubernetes Go client.
+func (md *embedded) KubernetesClientSet() *kubernetes.Clientset {
+	return md.k8sClientSet
+}
+
 // Up creates an EKS cluster for 'kubetest'.
 // If it fails at any point of operation, it rolls back everything.
 // And expect to create a cluster from scratch with a new name.

@@ -2,7 +2,7 @@
 <hr>
 
 
-## [0.3.2](https://github.com/aws/aws-k8s-tester/releases/tag/0.3.2)(2019-08-TBD)
+## [0.3.2](https://github.com/aws/aws-k8s-tester/releases/tag/0.3.2)(2019-08-15)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.3.1...0.3.2).
 
@@ -21,6 +21,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.3.1...0.3.2).
 ### `eksconfig`
 
 - Replace [`LogDebug` with `LogLevel`](https://github.com/aws/aws-k8s-tester/commit/83140d408676142f7e5e7a2fe9cd0c19e8aec6bf).
+
+### `ekstester`
+
+- Add [`KubernetesClientSet() *kubernetes.Clientset`] method to `ekstester.Deployer` interface.
 
 ### `etcdconfig`
 

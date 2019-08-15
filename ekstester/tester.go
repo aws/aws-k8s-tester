@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
+	"k8s.io/client-go/kubernetes"
 )
 
 // Tester defines aws-k8s-tester eks specific operations.
@@ -42,4 +43,6 @@ type Deployer interface {
 
 	// KubectlCommand returns "kubectl" command object for API reachability tests.
 	KubectlCommand() (*osexec.Cmd, error)
+	// KubernetesClientSet returns Kubernetes Go client.
+	KubernetesClientSet() *kubernetes.Clientset
 }
