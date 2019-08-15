@@ -84,6 +84,8 @@ type embedded struct {
 
 	s3Plugin s3.Plugin
 
+	k8sClientSet *kubernetes.Clientset
+
 	// TODO: add EBS (with CSI) plugin
 	// TODO: add KMS plugin
 }
@@ -797,67 +799,68 @@ func (md *embedded) createCluster() error {
 	txt, done := "", false
 	for time.Now().UTC().Sub(retryStart) < 5*time.Minute {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		var out1 []byte
-		out1, err = exec.New().CommandContext(ctx,
+		var versionOut []byte
+		versionOut, err = exec.New().CommandContext(ctx,
 			md.cfg.KubectlPath,
 			"--kubeconfig="+md.cfg.KubeConfigPath,
 			"version",
 		).CombinedOutput()
 		cancel()
-		md.lg.Info("ran kubectl version",
-			zap.String("kubectl-path", md.cfg.KubectlPath),
-			zap.String("aws-iam-authenticator-path", md.cfg.AWSIAMAuthenticatorPath),
-			zap.String("output", string(out1)),
-			zap.Error(err),
-		)
+		if err != nil {
+			println()
+			fmt.Println("SUCCESS kubernetes version")
+			println()
+			fmt.Println(string(versionOut))
+			println()
+		} else {
+			md.lg.Warn("kubectl version is not ready yet",
+				zap.String("output", string(versionOut)),
+				zap.Error(err),
+			)
+			md.cfg.Sync()
+			time.Sleep(10 * time.Second)
+			continue
+		}
 
 		ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
-		var out2 []byte
-		out2, err = exec.New().CommandContext(ctx,
+		var clusterInfoOut []byte
+		clusterInfoOut, err = exec.New().CommandContext(ctx,
 			md.cfg.KubectlPath,
 			"--kubeconfig="+md.cfg.KubeConfigPath,
 			"cluster-info",
 		).CombinedOutput()
 		cancel()
-		md.lg.Info("ran kubectl cluster-info",
-			zap.String("kubectl-path", md.cfg.KubectlPath),
-			zap.String("aws-iam-authenticator-path", md.cfg.AWSIAMAuthenticatorPath),
-			zap.String("output", string(out2)),
-			zap.Error(err),
-		)
 
-		if strings.Contains(string(out2), "is running at") {
+		if strings.Contains(string(clusterInfoOut), "is running at") {
 			println()
-			fmt.Println(string(out2))
+			fmt.Println("SUCCESS EKS creation")
 			println()
+			fmt.Println(string(clusterInfoOut))
+			println()
+
 			err, done = nil, true
 			break
 		}
 
-		// Or run
-		// kubectl cluster-info dump --kubeconfig /tmp/aws-k8s-tester/kubeconfig
-
+		md.lg.Warn("kubectl cluster-info is not ready yet",
+			zap.String("output", string(clusterInfoOut)),
+			zap.Error(err),
+		)
+		md.cfg.Sync()
 		time.Sleep(10 * time.Second)
 	}
 	if err != nil || !done {
-		return fmt.Errorf("'kubectl get all' output unexpected: %s (%v)", txt, err)
+		return fmt.Errorf("'kubectl' command output unexpected: %s (%v)", txt, err)
 	}
 
-	md.lg.Info("cluster is ready",
+	md.lg.Info("cluster is ready!",
 		zap.String("name", md.cfg.ClusterName),
 		zap.String("kubernetes-version", md.cfg.KubernetesVersion),
 		zap.String("custom-endpoint", md.cfg.EKSCustomEndpoint),
 		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 	)
 
-	md.lg.Info("checking kubernetes healthy with client-go",
-		zap.String("name", md.cfg.ClusterName),
-		zap.String("kubectl-path", md.cfg.KubectlPath),
-		zap.String("aws-iam-authenticator-path", md.cfg.AWSIAMAuthenticatorPath),
-		zap.String("custom-endpoint", md.cfg.EKSCustomEndpoint),
-	)
-	// md.eks
-	k8sClient, err := kubernetes.NewForConfig(&rest.Config{
+	md.k8sClientSet, err = kubernetes.NewForConfig(&rest.Config{
 		Host: md.cfg.ClusterState.Endpoint,
 		TLSClientConfig: rest.TLSClientConfig{
 			CAData: []byte(md.cfg.ClusterState.CADecoded),
@@ -874,21 +877,16 @@ func (md *embedded) createCluster() error {
 	if err != nil {
 		md.lg.Warn("failed to create k8s.io/client-go", zap.Error(err))
 	} else {
-		pods, err := k8sClient.CoreV1().Pods("kube-system").List(metav1.ListOptions{})
+		pods, err := md.k8sClientSet.CoreV1().Pods("kube-system").List(metav1.ListOptions{})
 		if err != nil {
 			md.lg.Warn("failed to list pods", zap.Error(err))
 		} else {
 			for _, v := range pods.Items {
-				fmt.Println("pod:", v)
+				fmt.Println("kube-system Pod Name:", v.Name)
 			}
 		}
 	}
-	md.lg.Info("checked kubernetes healthy with client-go",
-		zap.String("name", md.cfg.ClusterName),
-		zap.String("kubectl-path", md.cfg.KubectlPath),
-		zap.String("aws-iam-authenticator-path", md.cfg.AWSIAMAuthenticatorPath),
-		zap.String("custom-endpoint", md.cfg.EKSCustomEndpoint),
-	)
+	md.lg.Info("checked kubernetes healthy with client-go")
 
 	return md.cfg.Sync()
 }
