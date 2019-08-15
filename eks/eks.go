@@ -12,6 +12,7 @@ import (
 	osexec "os/exec"
 	"os/signal"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"strings"
 	"sync"
@@ -180,7 +181,7 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 		DebugAPICalls: md.cfg.LogLevel == "debug",
 		Region:        md.cfg.AWSRegion,
 	}
-	md.ss, err = awsapi.New(awsCfg)
+	md.ss, _, err = awsapi.New(awsCfg)
 	if err != nil {
 		return nil, err
 	}
@@ -196,7 +197,7 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 		Region:         md.cfg.AWSRegion,
 		CustomEndpoint: md.cfg.EKSCustomEndpoint,
 	}
-	md.eksSession, err = awsapi.New(awsCfgEKS)
+	md.eksSession, _, err = awsapi.New(awsCfgEKS)
 	if err != nil {
 		return nil, err
 	}
@@ -685,12 +686,12 @@ func (md *embedded) createCluster() error {
 	}
 
 	// usually takes 10 minutes
-	md.lg.Info("waiting for 7-minute")
+	md.lg.Info("waiting for 5-minute")
 	select {
 	case <-md.stopc:
 		md.lg.Info("interrupted cluster creation")
 		return nil
-	case <-time.After(7 * time.Minute):
+	case <-time.After(5 * time.Minute):
 	}
 
 	retryStart := time.Now().UTC()
@@ -813,6 +814,9 @@ func (md *embedded) createCluster() error {
 		)
 
 		if strings.Contains(string(out2), "is running at") {
+			println()
+			fmt.Println(string(out2))
+			println()
 			err, done = nil, true
 			break
 		}
@@ -826,12 +830,27 @@ func (md *embedded) createCluster() error {
 		return fmt.Errorf("'kubectl get all' output unexpected: %s (%v)", txt, err)
 	}
 
-	md.lg.Info("created cluster",
+	md.lg.Info("cluster is ready",
 		zap.String("name", md.cfg.ClusterName),
 		zap.String("kubernetes-version", md.cfg.KubernetesVersion),
 		zap.String("custom-endpoint", md.cfg.EKSCustomEndpoint),
 		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 	)
+
+	md.lg.Info("checking kubernetes healthy with client-go",
+		zap.String("name", md.cfg.ClusterName),
+		zap.String("kubectl-path", md.cfg.KubectlPath),
+		zap.String("aws-iam-authenticator-path", md.cfg.AWSIAMAuthenticatorPath),
+		zap.String("custom-endpoint", md.cfg.EKSCustomEndpoint),
+	)
+
+	md.lg.Info("checked kubernetes healthy with client-go",
+		zap.String("name", md.cfg.ClusterName),
+		zap.String("kubectl-path", md.cfg.KubectlPath),
+		zap.String("aws-iam-authenticator-path", md.cfg.AWSIAMAuthenticatorPath),
+		zap.String("custom-endpoint", md.cfg.EKSCustomEndpoint),
+	)
+
 	return md.cfg.Sync()
 }
 
@@ -1030,6 +1049,22 @@ func httpRead(lg *zap.Logger, u string, wr io.Writer) error {
 		return fmt.Errorf("%q returned %d", u, r.StatusCode)
 	}
 	_, err = io.Copy(wr, r.Body)
-	lg.Info("downloaded", zap.String("url", u), zap.Error(err))
+
+	if err != nil {
+		lg.Warn("failed to download", zap.String("url", u), zap.Error(err))
+	} else {
+		if f, ok := wr.(*os.File); ok {
+			lg.Info("downloaded",
+				zap.String("url", u),
+				zap.String("file-path", f.Name()),
+			)
+		} else {
+			lg.Info("downloaded",
+				zap.String("url", u),
+				zap.String("value-of", reflect.ValueOf(wr).String()),
+			)
+		}
+	}
+
 	return err
 }

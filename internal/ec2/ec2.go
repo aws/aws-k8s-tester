@@ -98,7 +98,7 @@ func NewDeployer(cfg *ec2config.Config) (Deployer, error) {
 		Region:         cfg.AWSRegion,
 		CustomEndpoint: "",
 	}
-	md.ss, err = awsapi.New(awsCfg)
+	md.ss, _, err = awsapi.New(awsCfg)
 	if err != nil {
 		return nil, err
 	}

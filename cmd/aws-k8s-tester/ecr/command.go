@@ -53,7 +53,7 @@ func getRegistryFunc(cmd *cobra.Command, args []string) {
 		CustomEndpoint: customEndpoint,
 	}
 	var ss *session.Session
-	ss, err = awsapi.New(awsCfg)
+	ss, _, err = awsapi.New(awsCfg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create AWS API (%v)\n", err)
 		os.Exit(1)

@@ -33,15 +33,15 @@ type Config struct {
 
 // New creates a new AWS session.
 // Specify a custom endpoint for tests.
-func New(cfg *Config) (*session.Session, error) {
+func New(cfg *Config) (ss *session.Session, awsCredsPath string, err error) {
 	if cfg == nil {
-		return nil, errors.New("got empty config")
+		return nil, "", errors.New("got empty config")
 	}
 	if cfg.Logger == nil {
-		return nil, fmt.Errorf("missing logger")
+		return nil, "", fmt.Errorf("missing logger")
 	}
 	if cfg.Region == "" {
-		return nil, fmt.Errorf("missing region")
+		return nil, "", fmt.Errorf("missing region")
 	}
 
 	// Credential is the path to the shared credentials file.
@@ -53,18 +53,18 @@ func New(cfg *Config) (*session.Session, error) {
 	//
 	// See https://godoc.org/github.com/aws/aws-sdk-go/aws/credentials#SharedCredentialsProvider.
 	// See https://godoc.org/github.com/aws/aws-sdk-go/aws/session#hdr-Environment_Variables.
-	awsCredsPath := filepath.Join(homedir.HomeDir(), ".aws", "credentials")
+	awsCredsPath = filepath.Join(homedir.HomeDir(), ".aws", "credentials")
 	if os.Getenv("AWS_SHARED_CREDENTIALS_FILE") != "" {
 		awsCredsPath = os.Getenv("AWS_SHARED_CREDENTIALS_FILE")
 	}
 	if fileutil.Exist(awsCredsPath) {
-		cfg.Logger.Debug("found AWS cred file", zap.String("path", awsCredsPath))
+		cfg.Logger.Info("creating session from AWS cred file", zap.String("path", awsCredsPath))
 	} else {
-		cfg.Logger.Debug("cannot find AWS cred file", zap.String("path", awsCredsPath))
+		cfg.Logger.Info("cannot find AWS cred file", zap.String("path", awsCredsPath))
 		if os.Getenv("AWS_ACCESS_KEY_ID") == "" || os.Getenv("AWS_SECRET_ACCESS_KEY") == "" {
-			return nil, errors.New("cannot find AWS credentials")
+			return nil, "", errors.New("cannot find AWS credentials")
 		}
-		cfg.Logger.Debug("found AWS env vars")
+		cfg.Logger.Info("found AWS env vars")
 	}
 
 	ac := aws.Config{
@@ -87,5 +87,11 @@ func New(cfg *Config) (*session.Session, error) {
 		ac.Endpoint = aws.String(cfg.CustomEndpoint)
 	}
 
-	return session.NewSession(&ac)
+	// TODO: support temporary credentials with refresh mechanism
+
+	ss, err = session.NewSession(&ac)
+	if err != nil {
+		return nil, "", err
+	}
+	return ss, awsCredsPath, err
 }

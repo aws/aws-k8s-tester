@@ -31,7 +31,7 @@ func TestEmbedded(t *testing.T) {
 		Region:         cfg.AWSRegion,
 		CustomEndpoint: cfg.EKSCustomEndpoint,
 	}
-	ss, err := awsapi.New(awsCfg)
+	ss, _, err := awsapi.New(awsCfg)
 	if err != nil {
 		t.Fatal(err)
 	}
