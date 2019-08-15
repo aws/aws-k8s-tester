@@ -24,7 +24,9 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.3.1...0.3.2).
 
 ### `ekstester`
 
-- Add [`KubernetesClientSet() *kubernetes.Clientset`] method to `ekstester.Deployer` interface.
+- Add [`KubernetesClientSet() *kubernetes.Clientset`](https://github.com/aws/aws-k8s-tester/commit/b5eaf2c0ec3215366d4211e68c0a3c118cd29e8b) method to `ekstester.Deployer` interface.
+  - Easily extendable for other projects.
+  - See https://github.com/aws/aws-k8s-tester/issues/48 for more.
 
 ### `etcdconfig`
 
