@@ -812,19 +812,21 @@ func (md *embedded) createCluster() error {
 		).CombinedOutput()
 		cancel()
 		if err != nil {
-			println()
-			fmt.Println("SUCCESS kubernetes version")
-			println()
-			fmt.Println(string(versionOut))
-			println()
-		} else {
-			md.lg.Warn("kubectl version is not ready yet",
+			md.lg.Warn("'kubectl version' is not ready yet",
 				zap.String("output", string(versionOut)),
 				zap.Error(err),
 			)
 			md.cfg.Sync()
 			time.Sleep(10 * time.Second)
 			continue
+		} else {
+			println()
+			println()
+			fmt.Println("SUCCESS 'kubectl version'")
+			println()
+			fmt.Println(string(versionOut))
+			println()
+			println()
 		}
 
 		ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
@@ -838,16 +840,18 @@ func (md *embedded) createCluster() error {
 
 		if strings.Contains(string(clusterInfoOut), "is running at") {
 			println()
-			fmt.Println("SUCCESS EKS creation")
+			println()
+			fmt.Println("SUCCESS 'kubectl cluster-info'")
 			println()
 			fmt.Println(string(clusterInfoOut))
+			println()
 			println()
 
 			err, done = nil, true
 			break
 		}
 
-		md.lg.Warn("kubectl cluster-info is not ready yet",
+		md.lg.Warn("'kubectl cluster-info' is not ready yet",
 			zap.String("output", string(clusterInfoOut)),
 			zap.Error(err),
 		)

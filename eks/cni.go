@@ -51,16 +51,16 @@ func (md *embedded) upgradeCNI() error {
 			if strings.Contains(err.Error(), "unknown flag:") {
 				return fmt.Errorf("unknown flag %s", string(kexo))
 			}
-			md.lg.Warn("failed to upgrade CNI",
+			md.lg.Warn("failed to upgrade CNI; retrying...",
 				zap.String("output", string(kexo)),
 				zap.Error(err),
 			)
 
-			time.Sleep(5 * time.Second)
+			time.Sleep(7 * time.Second)
 			continue
 		}
 
-		md.lg.Info("upgraded CNI using kubectl", zap.String("output", string(kexo)))
+		md.lg.Info("successfully upgraded CNI using kubectl", zap.String("output", string(kexo)))
 		break
 	}
 
