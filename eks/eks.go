@@ -485,7 +485,7 @@ func (md *embedded) down() (err error) {
 		}
 	}
 
-	md.lg.Info("Down", zap.String("cluster-name", md.cfg.ClusterName))
+	md.lg.Info("starting Down", zap.String("cluster-name", md.cfg.ClusterName))
 	var errs []string
 	if err = md.deleteWorkerNode(); err != nil {
 		md.lg.Warn("failed to delete node group stack", zap.Error(err))
@@ -512,7 +512,7 @@ func (md *embedded) down() (err error) {
 		errs = append(errs, err.Error())
 	}
 
-	md.lg.Info("Down finished",
+	md.lg.Info("finished Down",
 		zap.String("cluster-name", md.cfg.ClusterName),
 		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 	)
