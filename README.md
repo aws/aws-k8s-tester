@@ -71,6 +71,9 @@ Cluster states are persisted on disk as well. EKS tester uses this file to track
 
 ```bash
 cat ./aws-k8s-tester-eks.yaml
+
+# or
+less +FG ./aws-k8s-tester-eks.yaml
 ```
 
 Tear down the cluster (takes about 10 minutes):

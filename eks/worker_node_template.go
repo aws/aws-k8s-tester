@@ -17,4 +17,4 @@ func createWorkerNodeTemplateFromURL(lg *zap.Logger) (string, error) {
 
 // https://docs.aws.amazon.com/eks/latest/userguide/launch-workers.html
 // https://github.com/awslabs/amazon-eks-ami/blob/master/amazon-eks-nodegroup.yaml
-const workerNodeStackTemplateURL = "https://raw.githubusercontent.com/awslabs/amazon-eks-ami/master/amazon-eks-nodegroup.yamll"
+const workerNodeStackTemplateURL = "https://raw.githubusercontent.com/awslabs/amazon-eks-ami/master/amazon-eks-nodegroup.yaml"
