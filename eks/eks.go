@@ -3,6 +3,7 @@ package eks
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"io"
@@ -43,6 +44,11 @@ import (
 	"github.com/aws/aws-sdk-go/service/sts/stsiface"
 	humanize "github.com/dustin/go-humanize"
 	"go.uber.org/zap"
+	"golang.org/x/oauth2"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/test-infra/kubetest/util"
 	"k8s.io/utils/exec"
 )
@@ -65,7 +71,9 @@ type embedded struct {
 	eksSession *session.Session
 	eks        eksiface.EKSAPI
 
-	ss  *session.Session
+	ss           *session.Session
+	awsCredsPath string
+
 	im  iamiface.IAMAPI
 	sts stsiface.STSAPI
 	cf  cloudformationiface.CloudFormationAPI
@@ -197,7 +205,7 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 		Region:         md.cfg.AWSRegion,
 		CustomEndpoint: md.cfg.EKSCustomEndpoint,
 	}
-	md.eksSession, _, err = awsapi.New(awsCfgEKS)
+	md.eksSession, md.awsCredsPath, err = awsapi.New(awsCfgEKS)
 	if err != nil {
 		return nil, err
 	}
@@ -727,6 +735,11 @@ func (md *embedded) createCluster() error {
 			}
 			if do.Cluster.CertificateAuthority != nil && do.Cluster.CertificateAuthority.Data != nil {
 				md.cfg.ClusterState.CA = *do.Cluster.CertificateAuthority.Data
+				d, derr := base64.StdEncoding.DecodeString(md.cfg.ClusterState.CA)
+				if derr != nil {
+					md.lg.Warn("failed to decode cluster CA", zap.Error(derr))
+				}
+				md.cfg.ClusterState.CADecoded = string(d)
 			}
 			md.cfg.Sync()
 			break
@@ -843,7 +856,33 @@ func (md *embedded) createCluster() error {
 		zap.String("aws-iam-authenticator-path", md.cfg.AWSIAMAuthenticatorPath),
 		zap.String("custom-endpoint", md.cfg.EKSCustomEndpoint),
 	)
-
+	// md.eks
+	k8sClient, err := kubernetes.NewForConfig(&rest.Config{
+		Host: md.cfg.ClusterState.Endpoint,
+		TLSClientConfig: rest.TLSClientConfig{
+			CAData: []byte(md.cfg.ClusterState.CADecoded),
+		},
+		AuthProvider: &api.AuthProviderConfig{
+			Name: "eks-token",
+			Config: map[string]string{
+				"aws-credentials-path": md.awsCredsPath,
+				"aws-region":           md.cfg.AWSRegion,
+				"cluster-name":         md.cfg.ClusterName,
+			},
+		},
+	})
+	if err != nil {
+		md.lg.Warn("failed to create k8s.io/client-go", zap.Error(err))
+	} else {
+		pods, err := k8sClient.CoreV1().Pods("kube-system").List(metav1.ListOptions{})
+		if err != nil {
+			md.lg.Warn("failed to list pods", zap.Error(err))
+		} else {
+			for _, v := range pods.Items {
+				fmt.Println("pod:", v)
+			}
+		}
+	}
 	md.lg.Info("checked kubernetes healthy with client-go",
 		zap.String("name", md.cfg.ClusterName),
 		zap.String("kubectl-path", md.cfg.KubectlPath),
@@ -852,6 +891,66 @@ func (md *embedded) createCluster() error {
 	)
 
 	return md.cfg.Sync()
+}
+
+func init() {
+	rest.RegisterAuthProviderPlugin("eks-token", newEKSAuthProvider)
+}
+
+func newEKSAuthProvider(_ string, config map[string]string, _ rest.AuthProviderConfigPersister) (rest.AuthProvider, error) {
+	// awsCredentialsPath := config["aws-credentials-path"]
+	awsRegion := config["aws-region"]
+	clusterName := config["cluster-name"]
+	sess := session.Must(session.NewSession(aws.NewConfig().WithRegion(awsRegion)))
+	ts := newEKSTokenSource(sess, clusterName)
+	return &eksAuthProvider{
+		ts: ts,
+	}, nil
+}
+
+type eksAuthProvider struct {
+	ts oauth2.TokenSource
+}
+
+func (p *eksAuthProvider) Login() error {
+	return nil
+}
+
+func (p *eksAuthProvider) WrapTransport(rt http.RoundTripper) http.RoundTripper {
+	return &oauth2.Transport{
+		Source: p.ts,
+		Base:   rt,
+	}
+}
+
+func newEKSTokenSource(sess *session.Session, clusterName string) oauth2.TokenSource {
+	return &eksTokenSource{
+		sess:        sess,
+		clusterName: clusterName,
+	}
+}
+
+type eksTokenSource struct {
+	sess        *session.Session
+	clusterName string
+}
+
+func (s *eksTokenSource) Token() (*oauth2.Token, error) {
+	stsAPI := sts.New(s.sess)
+	request, _ := stsAPI.GetCallerIdentityRequest(&sts.GetCallerIdentityInput{})
+	request.HTTPRequest.Header.Add("x-k8s-aws-id", s.clusterName)
+
+	payload, err := request.Presign(60)
+	if err != nil {
+		return nil, err
+	}
+	token := "k8s-aws-v1." + base64.RawURLEncoding.EncodeToString([]byte(payload))
+	tokenExpiration := time.Now().Local().Add(14 * time.Minute)
+	return &oauth2.Token{
+		AccessToken: token,
+		TokenType:   "Bearer",
+		Expiry:      tokenExpiration,
+	}, nil
 }
 
 func (md *embedded) deleteCluster(deleteKubeconfig bool) error {

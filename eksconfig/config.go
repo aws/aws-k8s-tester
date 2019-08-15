@@ -227,6 +227,8 @@ type ClusterState struct {
 	Endpoint string `json:"endpoint,omitempty"`
 	// CA is the EKS cluster CA, required for KUBECONFIG write.
 	CA string `json:"ca,omitempty"`
+	// CADecoded is the decoded EKS cluster CA, required for k8s.io/client-go.
+	CADecoded string `json:"ca-decoded,omitempty"`
 
 	// WorkerNodeGroupStatus is the status Kubernetes worker node group.
 	// "READY" when they successfully join the EKS cluster as worker nodes.
