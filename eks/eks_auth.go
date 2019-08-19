@@ -19,7 +19,7 @@ import (
 // https://github.com/kubernetes-sigs/aws-iam-authenticator/blob/master/README.md#api-authorization-from-outside-a-cluster
 // https://github.com/kubernetes-sigs/aws-iam-authenticator/blob/master/pkg/token/token.go
 
-const authProviderName = "eks-token"
+const authProviderName = "aws-eks-token"
 
 func (md *embedded) updateK8sClientSet() (err error) {
 	md.k8sClientSet, err = kubernetes.NewForConfig(&rest.Config{
