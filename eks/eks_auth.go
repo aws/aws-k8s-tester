@@ -12,7 +12,7 @@ import (
 	"golang.org/x/oauth2"
 	clientset "k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd/api"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
 func (md *embedded) updateK8sClientSet() (err error) {
@@ -28,7 +28,7 @@ func (md *embedded) createClientConfig() *restclient.Config {
 		TLSClientConfig: restclient.TLSClientConfig{
 			CAData: []byte(md.cfg.ClusterState.CADecoded),
 		},
-		AuthProvider: &api.AuthProviderConfig{
+		AuthProvider: &clientcmdapi.AuthProviderConfig{
 			Name: authProviderName,
 			Config: map[string]string{
 				// TODO: use this to support temporary credentials
@@ -51,11 +51,11 @@ func newAuthProvider(_ string, config map[string]string, _ restclient.AuthProvid
 
 	awsRegion, ok := config["aws-region"]
 	if !ok {
-		return nil, fmt.Errorf("'api.AuthProviderConfig' does not include 'aws-region' key %+v", config)
+		return nil, fmt.Errorf("'clientcmdapi.AuthProviderConfig' does not include 'aws-region' key %+v", config)
 	}
 	clusterName, ok := config["cluster-name"]
 	if !ok {
-		return nil, fmt.Errorf("'api.AuthProviderConfig' does not include 'cluster-name' key %+v", config)
+		return nil, fmt.Errorf("'clientcmdapi.AuthProviderConfig' does not include 'cluster-name' key %+v", config)
 	}
 
 	sess := session.Must(session.NewSession(aws.NewConfig().WithRegion(awsRegion)))
