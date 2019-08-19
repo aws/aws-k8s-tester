@@ -283,6 +283,11 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 			// fetch cluster information with cluster name
 			md.cfg.ClusterState.Endpoint = *co.Cluster.Endpoint
 			md.cfg.ClusterState.CA = *co.Cluster.CertificateAuthority.Data
+			d, derr := base64.StdEncoding.DecodeString(md.cfg.ClusterState.CA)
+			if derr != nil {
+				md.lg.Warn("failed to decode cluster CA", zap.Error(derr))
+			}
+			md.cfg.ClusterState.CADecoded = string(d)
 			if err = writeKUBECONFIG(
 				md.lg,
 				md.cfg.KubectlPath,
