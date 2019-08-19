@@ -15,14 +15,15 @@ import (
 	"k8s.io/client-go/tools/clientcmd/api"
 )
 
-// Reference
-// https://github.com/kubernetes-sigs/aws-iam-authenticator/blob/master/README.md#api-authorization-from-outside-a-cluster
-// https://github.com/kubernetes-sigs/aws-iam-authenticator/blob/master/pkg/token/token.go
+func (md *embedded) updateK8sClientSet() (err error) {
+	md.k8sClientSet, err = clientset.NewForConfig(md.createClientConfig())
+	return err
+}
 
 const authProviderName = "aws-eks-token"
 
-func (md *embedded) updateK8sClientSet() (err error) {
-	md.k8sClientSet, err = clientset.NewForConfig(&restclient.Config{
+func (md *embedded) createClientConfig() *restclient.Config {
+	return &restclient.Config{
 		Host: md.cfg.ClusterState.Endpoint,
 		TLSClientConfig: restclient.TLSClientConfig{
 			CAData: []byte(md.cfg.ClusterState.CADecoded),
@@ -37,8 +38,7 @@ func (md *embedded) updateK8sClientSet() (err error) {
 				"cluster-name": md.cfg.ClusterName,
 			},
 		},
-	})
-	return err
+	}
 }
 
 func init() {
@@ -86,6 +86,9 @@ type eksTokenSource struct {
 	clusterName string
 }
 
+// Reference
+// https://github.com/kubernetes-sigs/aws-iam-authenticator/blob/master/README.md#api-authorization-from-outside-a-cluster
+// https://github.com/kubernetes-sigs/aws-iam-authenticator/blob/master/pkg/token/token.go
 const (
 	v1Prefix        = "k8s-aws-v1."
 	clusterIDHeader = "x-k8s-aws-id"
