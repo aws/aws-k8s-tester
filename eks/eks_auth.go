@@ -10,8 +10,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sts"
 	"golang.org/x/oauth2"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
+	clientset "k8s.io/client-go/kubernetes"
+	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd/api"
 )
 
@@ -22,9 +22,9 @@ import (
 const authProviderName = "aws-eks-token"
 
 func (md *embedded) updateK8sClientSet() (err error) {
-	md.k8sClientSet, err = kubernetes.NewForConfig(&rest.Config{
+	md.k8sClientSet, err = clientset.NewForConfig(&restclient.Config{
 		Host: md.cfg.ClusterState.Endpoint,
-		TLSClientConfig: rest.TLSClientConfig{
+		TLSClientConfig: restclient.TLSClientConfig{
 			CAData: []byte(md.cfg.ClusterState.CADecoded),
 		},
 		AuthProvider: &api.AuthProviderConfig{
@@ -42,10 +42,10 @@ func (md *embedded) updateK8sClientSet() (err error) {
 }
 
 func init() {
-	rest.RegisterAuthProviderPlugin(authProviderName, newAuthProvider)
+	restclient.RegisterAuthProviderPlugin(authProviderName, newAuthProvider)
 }
 
-func newAuthProvider(_ string, config map[string]string, _ rest.AuthProviderConfigPersister) (rest.AuthProvider, error) {
+func newAuthProvider(_ string, config map[string]string, _ restclient.AuthProviderConfigPersister) (restclient.AuthProvider, error) {
 	// TODO: use this to support temporary credentials
 	// awsCredentialsPath := config["aws-credentials-path"]
 
