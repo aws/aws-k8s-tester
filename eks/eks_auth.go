@@ -34,7 +34,7 @@ func (md *embedded) createClientConfig() *restclient.Config {
 				// TODO: use this to support temporary credentials
 				// "aws-credentials-path": md.awsCredsPath,
 
-				"aws-region":   md.cfg.AWSRegion,
+				"region":       md.cfg.AWSRegion,
 				"cluster-name": md.cfg.ClusterName,
 			},
 		},
@@ -49,9 +49,9 @@ func newAuthProvider(_ string, config map[string]string, _ restclient.AuthProvid
 	// TODO: use this to support temporary credentials
 	// awsCredentialsPath := config["aws-credentials-path"]
 
-	awsRegion, ok := config["aws-region"]
+	awsRegion, ok := config["region"]
 	if !ok {
-		return nil, fmt.Errorf("'clientcmdapi.AuthProviderConfig' does not include 'aws-region' key %+v", config)
+		return nil, fmt.Errorf("'clientcmdapi.AuthProviderConfig' does not include 'region' key %+v", config)
 	}
 	clusterName, ok := config["cluster-name"]
 	if !ok {
