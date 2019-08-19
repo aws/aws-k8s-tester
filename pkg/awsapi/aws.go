@@ -71,7 +71,6 @@ func New(cfg *Config) (ss *session.Session, awsCredsPath string, err error) {
 	}
 	if fileutil.Exist(awsCredsPath) {
 		cfg.Logger.Info("creating session from AWS cred file", zap.String("path", awsCredsPath))
-
 		// TODO: support temporary credentials with refresh mechanism
 	} else {
 		cfg.Logger.Info("cannot find AWS cred file", zap.String("path", awsCredsPath))
