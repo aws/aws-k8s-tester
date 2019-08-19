@@ -19,6 +19,8 @@ import (
 // https://github.com/kubernetes-sigs/aws-iam-authenticator/blob/master/README.md#api-authorization-from-outside-a-cluster
 // https://github.com/kubernetes-sigs/aws-iam-authenticator/blob/master/pkg/token/token.go
 
+const authProviderName = "eks-token"
+
 func (md *embedded) updateK8sClientSet() (err error) {
 	md.k8sClientSet, err = kubernetes.NewForConfig(&rest.Config{
 		Host: md.cfg.ClusterState.Endpoint,
@@ -26,7 +28,7 @@ func (md *embedded) updateK8sClientSet() (err error) {
 			CAData: []byte(md.cfg.ClusterState.CADecoded),
 		},
 		AuthProvider: &api.AuthProviderConfig{
-			Name: "eks-token",
+			Name: authProviderName,
 			Config: map[string]string{
 				// TODO: use this to support temporary credentials
 				// "aws-credentials-path": md.awsCredsPath,
@@ -40,7 +42,7 @@ func (md *embedded) updateK8sClientSet() (err error) {
 }
 
 func init() {
-	rest.RegisterAuthProviderPlugin("eks-token", newAuthProvider)
+	rest.RegisterAuthProviderPlugin(authProviderName, newAuthProvider)
 }
 
 func newAuthProvider(_ string, config map[string]string, _ rest.AuthProviderConfigPersister) (rest.AuthProvider, error) {
