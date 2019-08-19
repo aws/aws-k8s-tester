@@ -20,7 +20,7 @@ func (md *embedded) updateK8sClientSet() (err error) {
 	return err
 }
 
-const authProviderName = "aws-eks-token"
+const authProviderName = "eks"
 
 func (md *embedded) createClientConfig() *restclient.Config {
 	return &restclient.Config{
