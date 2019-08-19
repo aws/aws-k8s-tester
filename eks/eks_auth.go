@@ -64,10 +64,6 @@ type eksAuthProvider struct {
 	ts oauth2.TokenSource
 }
 
-func (p *eksAuthProvider) Login() error {
-	return nil
-}
-
 func (p *eksAuthProvider) WrapTransport(rt http.RoundTripper) http.RoundTripper {
 	return &oauth2.Transport{
 		Source: p.ts,
@@ -75,11 +71,12 @@ func (p *eksAuthProvider) WrapTransport(rt http.RoundTripper) http.RoundTripper 
 	}
 }
 
+func (p *eksAuthProvider) Login() error {
+	return nil
+}
+
 func newTokenSource(sess *session.Session, clusterName string) oauth2.TokenSource {
-	return &eksTokenSource{
-		sess:        sess,
-		clusterName: clusterName,
-	}
+	return &eksTokenSource{sess: sess, clusterName: clusterName}
 }
 
 type eksTokenSource struct {
