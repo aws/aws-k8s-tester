@@ -879,9 +879,11 @@ func (md *embedded) createCluster() error {
 		if err != nil {
 			md.lg.Warn("failed to list pods", zap.Error(err))
 		} else {
+			println()
 			for _, v := range pods.Items {
-				fmt.Println("kube-system Pod:", v.Name)
+				fmt.Println("kube-system Pod using client-go:", v.Name)
 			}
+			println()
 		}
 	}
 	md.lg.Info("checked kubernetes healthy with client-go")
