@@ -21,6 +21,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.3.2...0.3.3).
 
 - Clean up [EKS auth code](https://github.com/aws/aws-k8s-tester/blob/a686ab5d6ec72f016b3b6dab843a532397fdc78a/eks/eks_auth.go).
 
+### Go
+
+- Compile with [*Go 1.12*](https://golang.org/doc/devel/release.html#go1.12).
+
 
 <hr>
 
