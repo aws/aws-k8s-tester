@@ -1,4 +1,27 @@
 
+
+<hr>
+
+
+## [0.3.3](https://github.com/aws/aws-k8s-tester/releases/tag/0.3.3)(2019-08-20)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.3.2...0.3.3).
+
+### `ec2config`
+
+- Remove [instance type checks](https://github.com/aws/aws-k8s-tester/commit/5cd11f2c54f3956edaeeac7680fe678f9340e73f).
+  - The invalid instance type will return errors from AWS API anyway.
+
+### `eksconfig`
+
+- Remove [instance type, region, Kubernetes version checks](https://github.com/aws/aws-k8s-tester/commit/5cd11f2c54f3956edaeeac7680fe678f9340e73f).
+  - The invalid input will return errors from AWS API anyway.
+
+### `eks`
+
+- Clean up [EKS auth code](https://github.com/aws/aws-k8s-tester/blob/a686ab5d6ec72f016b3b6dab843a532397fdc78a/eks/eks_auth.go).
+
+
 <hr>
 
 
