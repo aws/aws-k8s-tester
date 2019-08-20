@@ -323,7 +323,7 @@ var defaultConfig = Config{
 
 	// Amazon EKS-optimized AMI, https://docs.aws.amazon.com/eks/latest/userguide/eks-optimized-ami.html
 	// for the corresponding region and version
-	WorkerNodeAMI:                "ami-03a55127c613349a7",
+	WorkerNodeAMI:                "ami-00b95829322267382",
 	WorkerNodeInstanceType:       "m3.xlarge",
 	WorkerNodeASGMin:             1,
 	WorkerNodeASGMax:             1,
