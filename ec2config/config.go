@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config/plugins"
-	ec2types "github.com/aws/aws-k8s-tester/pkg/awsapi/ec2"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
 	"sigs.k8s.io/yaml"
 )
@@ -491,10 +490,6 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 		cfg.KeyPath, _ = filepath.Abs(f.Name())
 		f.Close()
 		os.RemoveAll(cfg.KeyPath)
-	}
-
-	if _, ok := ec2types.InstanceTypes[cfg.InstanceType]; !ok {
-		return fmt.Errorf("unexpected InstanceType %q", cfg.InstanceType)
 	}
 
 	if cfg.InstanceProfileFilePath != "" {

@@ -18,7 +18,6 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
-	"github.com/aws/aws-k8s-tester/pkg/awsapi/ec2"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
 	"k8s.io/client-go/util/homedir"
 	"sigs.k8s.io/yaml"
@@ -425,14 +424,8 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	if cfg.KubernetesVersion == "" {
 		return errors.New("KubernetesVersion is empty")
 	}
-	if !checkKubernetesVersion(cfg.KubernetesVersion) {
-		return fmt.Errorf("EKS Kubernetes version %q is not valid", cfg.KubernetesVersion)
-	}
 	if cfg.AWSRegion == "" {
 		return errors.New("AWS Region is empty")
-	}
-	if !checkRegion(cfg.AWSRegion) {
-		return fmt.Errorf("EKS Region %q is not valid", cfg.AWSRegion)
 	}
 	if cfg.Tag == "" {
 		return errors.New("Tag is empty")
@@ -445,9 +438,6 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 	if cfg.WorkerNodeInstanceType == "" {
 		return errors.New("EKS WorkerNodeInstanceType is not specified")
-	}
-	if !checkEC2InstanceType(cfg.WorkerNodeInstanceType) {
-		return fmt.Errorf("EKS WorkerNodeInstanceType %q is not valid", cfg.WorkerNodeInstanceType)
 	}
 	if cfg.WorkerNodeASGMin == 0 {
 		return errors.New("EKS WorkerNodeASGMin is not specified")
@@ -718,59 +708,6 @@ results=$(sonobuoy retrieve --kubeconfig={{ .KubeConfigPath }})
 sonobuoy e2e --kubeconfig={{ .KubeConfigPath }} $results --show all
 sonobuoy e2e --kubeconfig={{ .KubeConfigPath }} $results
 `
-
-func checkKubernetesVersion(s string) (ok bool) {
-	_, ok = supportedKubernetesVersions[s]
-	return ok
-}
-
-// supportedKubernetesVersions is a list of EKS supported Kubernets versions.
-var supportedKubernetesVersions = map[string]struct{}{
-	"1.13": {},
-}
-
-func checkRegion(s string) (ok bool) {
-	_, ok = supportedRegions[s]
-	return ok
-}
-
-// supportedRegions is a list of currently EKS supported AWS regions.
-// See https://aws.amazon.com/about-aws/global-infrastructure/regional-product-services.
-var supportedRegions = map[string]struct{}{
-	"us-west-2":      {},
-	"us-east-1":      {},
-	"us-east-2":      {},
-	"eu-central-1":   {},
-	"eu-north-1":     {},
-	"eu-west-1":      {},
-	"ap-northeast-1": {},
-	"ap-northeast-2": {},
-	"ap-southeast-1": {},
-	"ap-southeast-2": {},
-}
-
-func checkEC2InstanceType(s string) (ok bool) {
-	_, ok = ec2.InstanceTypes[s]
-	return ok
-}
-
-func checkMaxPods(s string, nodesN, serverReplicas int) (ok bool) {
-	var v *ec2.InstanceType
-	v, ok = ec2.InstanceTypes[s]
-	if !ok {
-		return false
-	}
-	maxPods := v.MaxPods * int64(nodesN)
-	if int64(serverReplicas) > maxPods {
-		return false
-	}
-	return true
-}
-
-const (
-	defaultASGMin = 2
-	defaultASGMax = 2
-)
 
 func checkWorkderNodeASG(min, max int) (ok bool) {
 	if min == 0 || max == 0 {
