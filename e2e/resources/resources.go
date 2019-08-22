@@ -25,7 +25,7 @@ type Resources struct {
 
 // ExpectDeploySuccessful expects a deployment and any services to be successful
 func (r *Resources) ExpectDeploySuccessful(ctx context.Context, f *framework.Framework, timeout time.Duration, ns *corev1.Namespace) {
-	By(fmt.Sprintf("create deployment (%s) with %d replicas", r.Deployment.Name, r.Deployment.Spec.Replicas))
+	By(fmt.Sprintf("create deployment (%s) with %d replicas", r.Deployment.Name, *(r.Deployment.Spec.Replicas)))
 	dp, err := f.ClientSet.AppsV1().Deployments(ns.Name).Create(r.Deployment)
 	Expect(err).NotTo(HaveOccurred())
 
