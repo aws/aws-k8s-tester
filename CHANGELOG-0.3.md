@@ -3,6 +3,20 @@
 <hr>
 
 
+## [0.3.4](https://github.com/aws/aws-k8s-tester/releases/tag/0.3.4)(2019 TBD)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.3.3...0.3.4).
+
+### `e2e`
+
+- [`e2e/framework`](https://github.com/aws/aws-k8s-tester/pull/50): This is largely features that are needed from the kubernetes/kubernetes test framework. Future goal is to use that, ideally when it is pulled out of mainline. This includes features such as waiting for resources.
+- [`e2e/resources`](https://github.com/aws/aws-k8s-tester/pull/50): Includes some go k8s resources such as an NGINX deployment. Also has ginkgo test code to create and wait for resources in resources.go.
+- [`e2e/cloud`](https://github.com/aws/aws-k8s-tester/pull/50): This is used in the framework to include aws sdk functionality. It lets people use functions in upstream as well as anything we add. This will be refactored into pkg/awsapi
+
+
+<hr>
+
+
 ## [0.3.3](https://github.com/aws/aws-k8s-tester/releases/tag/0.3.3)(2019-08-20)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.3.2...0.3.3).
