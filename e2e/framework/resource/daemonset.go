@@ -30,14 +30,14 @@ func (m *DaemonSetManager) WaitDaemonSetReady(ctx context.Context, ds *appsv1.Da
 	)
 	start := time.Now()
 
-	return observedDS, wait.PollImmediateUntil(utils.PollIntervalShort, func() (bool, error) {
+	return observedDS, wait.PollImmediateUntil(utils.PollIntervalMedium, func() (bool, error) {
 		observedDS, err = m.cs.AppsV1().DaemonSets(ds.Namespace).Get(ds.Name, metav1.GetOptions{})
 		if err != nil {
 			return false, err
 		}
 
-		log.Debugf("%d / %d pods available in namespace '%s' in daemonset '%s' (%d seconds elapsed)",
-			observedDS.Status.NumberAvailable, observedDS.Status.DesiredNumberScheduled, ds.Namespace,
+		log.Debugf("%d / %d pods are up to date in namespace '%s' in daemonset '%s' (%d seconds elapsed)",
+			observedDS.Status.UpdatedNumberScheduled, observedDS.Status.DesiredNumberScheduled, ds.Namespace,
 			observedDS.ObjectMeta.Name, int(time.Since(start).Seconds()))
 
 		if observedDS.Status.DesiredNumberScheduled == observedDS.Status.NumberReady &&

@@ -125,9 +125,9 @@ func (m *DeploymentManager) DeploymentLogger(dp *appsv1.Deployment) error {
 	}
 	for _, rs := range replicaSets {
 		if rs.Status.AvailableReplicas == rs.Status.Replicas {
-			log.Info(spew.Sprintf("ReplicaSet %q has %s/%s replicas", rs.Name, rs.Status.AvailableReplicas, rs.Status.Replicas))
+			log.Info(spew.Sprintf("ReplicaSet %q has %d/%d replicas", rs.Name, rs.Status.AvailableReplicas, rs.Status.Replicas))
 		} else {
-			log.Info(spew.Sprintf("ReplicaSet %q has %s/%s replicas %s:\n%+v", rs.Name, rs.Status.AvailableReplicas, rs.Status.Replicas, rs))
+			log.Info(spew.Sprintf("ReplicaSet %q has %d/%d replicas %s:\n%+v", rs.Name, rs.Status.AvailableReplicas, rs.Status.Replicas, rs))
 		}
 	}
 	pods, err := m.ListReplicaSetPods(replicaSets)
