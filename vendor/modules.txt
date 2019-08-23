@@ -22,10 +22,10 @@ github.com/aws/aws-sdk-go/aws
 github.com/aws/aws-sdk-go/aws/awserr
 github.com/aws/aws-sdk-go/aws/request
 github.com/aws/aws-sdk-go/service/autoscaling
+github.com/aws/aws-sdk-go/service/ec2
 github.com/aws/aws-sdk-go/service/autoscaling/autoscalingiface
 github.com/aws/aws-sdk-go/service/cloudformation
 github.com/aws/aws-sdk-go/service/cloudformation/cloudformationiface
-github.com/aws/aws-sdk-go/service/ec2
 github.com/aws/aws-sdk-go/service/ec2/ec2iface
 github.com/aws/aws-sdk-go/service/eks
 github.com/aws/aws-sdk-go/service/eks/eksiface
@@ -216,6 +216,8 @@ github.com/onsi/gomega/matchers/support/goraph/node
 github.com/onsi/gomega/matchers/support/goraph/util
 # github.com/peterbourgon/diskv v2.0.1+incompatible
 github.com/peterbourgon/diskv
+# github.com/pmezard/go-difflib v1.0.0
+github.com/pmezard/go-difflib/difflib
 # github.com/prometheus/client_golang v1.0.0
 github.com/prometheus/client_golang/api
 github.com/prometheus/client_golang/api/prometheus/v1
@@ -244,6 +246,8 @@ github.com/sirupsen/logrus
 github.com/spf13/cobra
 # github.com/spf13/pflag v1.0.3
 github.com/spf13/pflag
+# github.com/stretchr/testify v1.3.0
+github.com/stretchr/testify/assert
 # go.etcd.io/etcd v0.0.0-20190812170634-84ed0f7f87b4
 go.etcd.io/etcd/clientv3
 go.etcd.io/etcd/etcdserver/etcdserverpb
