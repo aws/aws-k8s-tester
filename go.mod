@@ -31,6 +31,7 @@ require (
 	github.com/smartystreets/goconvey v0.0.0-20190731233626-505e41936337 // indirect
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/pflag v1.0.3
+	github.com/stretchr/testify v1.3.0
 	go.etcd.io/etcd v0.0.0-20190812170634-84ed0f7f87b4
 	go.uber.org/zap v1.10.0
 	golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2
@@ -41,7 +42,6 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.46.0 // indirect
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5 // indirect
-	gopkg.in/yaml.v2 v2.2.2
 	k8s.io/api v0.0.0-20190115191648-dd23d9f710e2
 	k8s.io/apimachinery v0.0.0-20190111195121-fa6ddc151d63
 	k8s.io/client-go v2.0.0-alpha.0.0.20190112054256-b831b8de7155+incompatible
