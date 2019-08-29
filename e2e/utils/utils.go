@@ -9,7 +9,7 @@ import (
 
 	"github.com/aws/aws-k8s-tester/e2e/framework"
 	"github.com/aws/aws-k8s-tester/e2e/resources"
-	
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/request"
@@ -438,5 +438,33 @@ func WaitForASGInstancesAndNodesReady(ctx context.Context, f *framework.Framewor
 			return err
 		}
 	}
+	return nil
+}
+
+// AddAnnotationsToDaemonSet adds annotations to a daemonset
+func AddAnnotationsToDaemonSet(ctx context.Context, f *framework.Framework, ns *corev1.Namespace, ds *appsv1.DaemonSet, annotations map[string]string) error {
+	ds, err := f.ClientSet.AppsV1().DaemonSets(ns.Name).Get(ds.Name, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	if ds.Spec.Template.ObjectMeta.Annotations == nil {
+		ds.Spec.Template.ObjectMeta.Annotations = make(map[string]string)
+	}
+
+	for k, v := range annotations {
+		if val, ok := ds.Spec.Template.ObjectMeta.Annotations[k]; !ok {
+			log.Debugf("Adding annotation (%s: '%s') to daemonset (%s)", k, v, ds.Name)
+		} else if v != val {
+			log.Debugf("Replacing annotation (%s: '%s' -> '%s') on daemonset (%s)", k, v, val, ds.Name)
+		}
+		ds.Spec.Template.ObjectMeta.Annotations[k] = v
+	}
+
+	resource := &resources.Resources{
+		Daemonset: ds,
+	}
+
+	resource.ExpectDaemonsetUpdateSuccessful(ctx, f, ns)
 	return nil
 }
