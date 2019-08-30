@@ -5,10 +5,17 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"time"
 
 	"github.com/aws/aws-k8s-tester/e2e/tester/pkg"
 	yaml "gopkg.in/yaml.v2"
 )
+
+var rnd *rand.Rand
+
+func init() {
+	rnd = rand.New(rand.NewSource(time.Now().UnixNano()))
+}
 
 type Tester struct {
 	init      pkg.Step
@@ -34,7 +41,7 @@ func NewTester(configPath string) *Tester {
 		panic(err)
 	}
 
-	testId := fmt.Sprintf("%d", rand.Intn(10000))
+	testId := fmt.Sprintf("%d", rnd.Intn(10000))
 	clusterCreator, err := pkg.NewClusterCreator(config, "/tmp/tester-e2e-test", testId)
 	if err != nil {
 		panic(err)
