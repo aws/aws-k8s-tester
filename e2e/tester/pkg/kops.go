@@ -12,11 +12,6 @@ import (
 	"time"
 )
 
-const (
-	// TODO: create a new s3 bucket for generatal usage
-	kopsStateFile = "s3://k8s-kops-csi-e2e"
-)
-
 type KopsClusterCreator struct {
 	// TestId is used as cluster name
 	TestId string
@@ -89,7 +84,7 @@ func (c *KopsClusterCreator) TearDown() (Step, error) {
 		log.Printf("Deleting cluster %s", clusterName)
 
 		cmd := exec.Command(c.KopsBinaryPath, "delete", "cluster",
-			"--state", kopsStateFile,
+			"--state", c.Kops.StateFile,
 			"--name", clusterName, "--yes")
 
 		cmd.Stdout = os.Stdout
@@ -145,7 +140,7 @@ func (c *KopsClusterCreator) createCluster() error {
 	}
 
 	cmd := exec.Command(c.KopsBinaryPath, "create", "cluster",
-		"--state", kopsStateFile,
+		"--state", c.Kops.StateFile,
 		"--zones", c.Kops.Zones,
 		"--node-count", fmt.Sprintf("%d", c.Kops.NodeCount),
 		"--node-size", c.Kops.NodeSize,
@@ -170,7 +165,7 @@ func (c *KopsClusterCreator) createCluster() error {
 	defer clusterYamlFile.Close()
 
 	cmd = exec.Command(c.KopsBinaryPath, "get", "cluster",
-		"--state", kopsStateFile, clusterName, "-o", "yaml")
+		"--state", c.Kops.StateFile, clusterName, "-o", "yaml")
 	cmd.Stdout = clusterYamlFile
 	cmd.Stdin = os.Stdin
 	cmd.Stderr = os.Stderr
@@ -189,7 +184,7 @@ func (c *KopsClusterCreator) createCluster() error {
 	}
 
 	cmd = exec.Command(c.KopsBinaryPath, "replace",
-		"--state", kopsStateFile, "-f", clusterYamlPath)
+		"--state", c.Kops.StateFile, "-f", clusterYamlPath)
 	cmd.Stdout = os.Stdout
 	cmd.Stdin = os.Stdin
 	cmd.Stderr = os.Stderr
@@ -200,7 +195,7 @@ func (c *KopsClusterCreator) createCluster() error {
 	}
 
 	cmd = exec.Command(c.KopsBinaryPath, "update", "cluster",
-		"--state", kopsStateFile, clusterName, "--yes")
+		"--state", c.Kops.StateFile, clusterName, "--yes")
 	cmd.Stdout = os.Stdout
 	cmd.Stdin = os.Stdin
 	cmd.Stderr = os.Stderr
@@ -222,7 +217,7 @@ func (c *KopsClusterCreator) waitForCreation(timeout time.Duration) error {
 			return fmt.Errorf("cluster is not created after %v", timeout)
 		default:
 			cmd := exec.Command(c.KopsBinaryPath, "validate", "cluster",
-				"--state", kopsStateFile)
+				"--state", c.Kops.StateFile)
 			cmd.Stdout = os.Stdout
 			cmd.Stdin = os.Stdin
 			cmd.Stderr = os.Stderr

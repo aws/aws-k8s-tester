@@ -15,6 +15,7 @@ type Cluster struct {
 }
 
 type KopsCluster struct {
+	StateFile         string `yaml:"stateFile"`
 	Region            string `yaml:"region"`
 	Zones             string `yaml:"zones"`
 	NodeCount         int    `yaml:"nodeCount"`
