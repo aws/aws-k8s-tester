@@ -3,7 +3,7 @@
 <hr>
 
 
-## [0.3.4](https://github.com/aws/aws-k8s-tester/releases/tag/0.3.4)(2019 TBD)
+## [0.3.4](https://github.com/aws/aws-k8s-tester/releases/tag/0.3.4) (2019-09-03)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.3.3...0.3.4).
 
@@ -21,7 +21,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.3.3...0.3.4).
 <hr>
 
 
-## [0.3.3](https://github.com/aws/aws-k8s-tester/releases/tag/0.3.3)(2019-08-20)
+## [0.3.3](https://github.com/aws/aws-k8s-tester/releases/tag/0.3.3) (2019-08-20)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.3.2...0.3.3).
 
@@ -47,7 +47,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.3.2...0.3.3).
 <hr>
 
 
-## [0.3.2](https://github.com/aws/aws-k8s-tester/releases/tag/0.3.2)(2019-08-15)
+## [0.3.2](https://github.com/aws/aws-k8s-tester/releases/tag/0.3.2) (2019-08-15)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.3.1...0.3.2).
 
@@ -97,7 +97,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.3.1...0.3.2).
 <hr>
 
 
-## [0.3.1](https://github.com/aws/aws-k8s-tester/releases/tag/0.3.1)(2019-08-06)
+## [0.3.1](https://github.com/aws/aws-k8s-tester/releases/tag/0.3.1) (2019-08-06)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.3.0...0.3.1).
 
@@ -113,7 +113,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.3.0...0.3.1).
 <hr>
 
 
-## [0.3.0](https://github.com/aws/aws-k8s-tester/releases/tag/0.3.0)(2019-08-06)
+## [0.3.0](https://github.com/aws/aws-k8s-tester/releases/tag/0.3.0) (2019-08-06)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.2.8...0.3.0).
 
