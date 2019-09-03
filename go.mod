@@ -1,8 +1,7 @@
 module github.com/aws/aws-k8s-tester
 
 require (
-	cloud.google.com/go v0.30.0 // indirect
-	contrib.go.opencensus.io/exporter/ocagent v0.4.2 // indirect
+	contrib.go.opencensus.io/exporter/ocagent v0.6.0 // indirect
 	github.com/Azure/go-autorest v11.3.1+incompatible // indirect
 	github.com/aws/aws-sdk-go v1.23.1
 	github.com/blang/semver v3.5.1+incompatible
@@ -11,8 +10,6 @@ require (
 	github.com/dustin/go-humanize v1.0.0
 	github.com/go-ini/ini v1.46.0
 	github.com/go-yaml/yaml v2.1.0+incompatible // indirect
-	github.com/google/martian v2.1.0+incompatible // indirect
-	github.com/googleapis/gax-go v2.0.0+incompatible // indirect
 	github.com/googleapis/gnostic v0.3.1 // indirect
 	github.com/gophercloud/gophercloud v0.0.0-20190117043839-e340f5f89555 // indirect
 	github.com/gorilla/sessions v1.1.3 // indirect
@@ -35,10 +32,7 @@ require (
 	go.etcd.io/etcd v0.0.0-20190812170634-84ed0f7f87b4
 	go.uber.org/zap v1.10.0
 	golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2
-	golang.org/x/oauth2 v0.0.0-20181017192945-9dcd33a902f4
-	google.golang.org/api v0.0.0-20181021000519-a2651947f503 // indirect
-	google.golang.org/appengine v1.2.0 // indirect
-	google.golang.org/genproto v0.0.0-20181016170114-94acd270e44e // indirect
+	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.46.0 // indirect
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5 // indirect
