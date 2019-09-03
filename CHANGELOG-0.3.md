@@ -13,6 +13,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.3.3...0.3.4).
 - [`e2e/resources`](https://github.com/aws/aws-k8s-tester/pull/50): Includes some go k8s resources such as an NGINX deployment. Also has ginkgo test code to create and wait for resources in resources.go.
 - [`e2e/cloud`](https://github.com/aws/aws-k8s-tester/pull/50): This is used in the framework to include aws sdk functionality. It lets people use functions in upstream as well as anything we add. This will be refactored into pkg/awsapi
 
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.23.1`](https://github.com/aws/aws-sdk-go/releases/tag/v1.23.1) to [`v1.23.13`](https://github.com/aws/aws-sdk-go/releases/tag/v1.23.13).
+
 
 <hr>
 
