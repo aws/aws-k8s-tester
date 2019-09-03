@@ -15,7 +15,7 @@ github.com/Azure/go-autorest/autorest/azure
 github.com/Azure/go-autorest/logger
 github.com/Azure/go-autorest/tracing
 github.com/Azure/go-autorest/autorest/date
-# github.com/aws/aws-sdk-go v1.23.1
+# github.com/aws/aws-sdk-go v1.23.13
 github.com/aws/aws-sdk-go/aws/session
 github.com/aws/aws-sdk-go/service/sts
 github.com/aws/aws-sdk-go/aws
@@ -72,6 +72,7 @@ github.com/aws/aws-sdk-go/private/protocol/jsonrpc
 github.com/aws/aws-sdk-go/aws/credentials/ec2rolecreds
 github.com/aws/aws-sdk-go/aws/credentials/endpointcreds
 github.com/aws/aws-sdk-go/private/protocol/query/queryutil
+github.com/aws/aws-sdk-go/internal/sdkmath
 github.com/aws/aws-sdk-go/private/protocol/json/jsonutil
 # github.com/beorn7/perks v1.0.0
 github.com/beorn7/perks/quantile

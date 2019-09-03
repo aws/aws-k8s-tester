@@ -690,6 +690,10 @@ type EC2API interface {
 	DescribeElasticGpusWithContext(aws.Context, *ec2.DescribeElasticGpusInput, ...request.Option) (*ec2.DescribeElasticGpusOutput, error)
 	DescribeElasticGpusRequest(*ec2.DescribeElasticGpusInput) (*request.Request, *ec2.DescribeElasticGpusOutput)
 
+	DescribeExportImageTasks(*ec2.DescribeExportImageTasksInput) (*ec2.DescribeExportImageTasksOutput, error)
+	DescribeExportImageTasksWithContext(aws.Context, *ec2.DescribeExportImageTasksInput, ...request.Option) (*ec2.DescribeExportImageTasksOutput, error)
+	DescribeExportImageTasksRequest(*ec2.DescribeExportImageTasksInput) (*request.Request, *ec2.DescribeExportImageTasksOutput)
+
 	DescribeExportTasks(*ec2.DescribeExportTasksInput) (*ec2.DescribeExportTasksOutput, error)
 	DescribeExportTasksWithContext(aws.Context, *ec2.DescribeExportTasksInput, ...request.Option) (*ec2.DescribeExportTasksOutput, error)
 	DescribeExportTasksRequest(*ec2.DescribeExportTasksInput) (*request.Request, *ec2.DescribeExportTasksOutput)
@@ -1272,6 +1276,10 @@ type EC2API interface {
 	ExportClientVpnClientConfigurationWithContext(aws.Context, *ec2.ExportClientVpnClientConfigurationInput, ...request.Option) (*ec2.ExportClientVpnClientConfigurationOutput, error)
 	ExportClientVpnClientConfigurationRequest(*ec2.ExportClientVpnClientConfigurationInput) (*request.Request, *ec2.ExportClientVpnClientConfigurationOutput)
 
+	ExportImage(*ec2.ExportImageInput) (*ec2.ExportImageOutput, error)
+	ExportImageWithContext(aws.Context, *ec2.ExportImageInput, ...request.Option) (*ec2.ExportImageOutput, error)
+	ExportImageRequest(*ec2.ExportImageInput) (*request.Request, *ec2.ExportImageOutput)
+
 	ExportTransitGatewayRoutes(*ec2.ExportTransitGatewayRoutesInput) (*ec2.ExportTransitGatewayRoutesOutput, error)
 	ExportTransitGatewayRoutesWithContext(aws.Context, *ec2.ExportTransitGatewayRoutesInput, ...request.Option) (*ec2.ExportTransitGatewayRoutesOutput, error)
 	ExportTransitGatewayRoutesRequest(*ec2.ExportTransitGatewayRoutesInput) (*request.Request, *ec2.ExportTransitGatewayRoutesOutput)
@@ -1492,6 +1500,10 @@ type EC2API interface {
 	ModifyVpnConnection(*ec2.ModifyVpnConnectionInput) (*ec2.ModifyVpnConnectionOutput, error)
 	ModifyVpnConnectionWithContext(aws.Context, *ec2.ModifyVpnConnectionInput, ...request.Option) (*ec2.ModifyVpnConnectionOutput, error)
 	ModifyVpnConnectionRequest(*ec2.ModifyVpnConnectionInput) (*request.Request, *ec2.ModifyVpnConnectionOutput)
+
+	ModifyVpnTunnelCertificate(*ec2.ModifyVpnTunnelCertificateInput) (*ec2.ModifyVpnTunnelCertificateOutput, error)
+	ModifyVpnTunnelCertificateWithContext(aws.Context, *ec2.ModifyVpnTunnelCertificateInput, ...request.Option) (*ec2.ModifyVpnTunnelCertificateOutput, error)
+	ModifyVpnTunnelCertificateRequest(*ec2.ModifyVpnTunnelCertificateInput) (*request.Request, *ec2.ModifyVpnTunnelCertificateOutput)
 
 	MonitorInstances(*ec2.MonitorInstancesInput) (*ec2.MonitorInstancesOutput, error)
 	MonitorInstancesWithContext(aws.Context, *ec2.MonitorInstancesInput, ...request.Option) (*ec2.MonitorInstancesOutput, error)
