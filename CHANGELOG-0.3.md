@@ -17,6 +17,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.3.3...0.3.4).
 
 - Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.23.1`](https://github.com/aws/aws-sdk-go/releases/tag/v1.23.1) to [`v1.23.13`](https://github.com/aws/aws-sdk-go/releases/tag/v1.23.13).
 
+### Go
+
+- Compile with [*Go 1.12.9*](https://golang.org/doc/devel/release.html#go1.12).
+
 
 <hr>
 
@@ -41,7 +45,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.3.2...0.3.3).
 
 ### Go
 
-- Compile with [*Go 1.12*](https://golang.org/doc/devel/release.html#go1.12).
+- Compile with [*Go 1.12.9*](https://golang.org/doc/devel/release.html#go1.12).
 
 
 <hr>
@@ -91,7 +95,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.3.1...0.3.2).
 
 ### Go
 
-- Compile with [*Go 1.12*](https://golang.org/doc/devel/release.html#go1.12).
+- Compile with [*Go 1.12.8*](https://golang.org/doc/devel/release.html#go1.12).
 
 
 <hr>
@@ -107,7 +111,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.3.0...0.3.1).
 
 ### Go
 
-- Compile with [*Go 1.12*](https://golang.org/doc/devel/release.html#go1.12).
+- Compile with [*Go 1.12.7*](https://golang.org/doc/devel/release.html#go1.12).
 
 
 <hr>
@@ -163,7 +167,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.2.8...0.3.0).
 
 ### Go
 
-- Compile with [*Go 1.12*](https://golang.org/doc/devel/release.html#go1.12).
+- Compile with [*Go 1.12.7*](https://golang.org/doc/devel/release.html#go1.12).
 
 
 <hr>
