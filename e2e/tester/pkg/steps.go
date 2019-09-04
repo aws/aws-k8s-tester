@@ -17,7 +17,7 @@ type TestStep struct {
 
 func (s *TestStep) Run() error {
 	script := strings.Replace(s.Script, "{{TEST_ID}}", s.TestId, -1)
-	testCmd := exec.Command("sh", "-c", script)
+	testCmd := exec.Command("sh", "-eu", "-c", script)
 	testCmd.Stdout = os.Stdout
 	testCmd.Stdin = os.Stdin
 	testCmd.Stderr = os.Stderr
