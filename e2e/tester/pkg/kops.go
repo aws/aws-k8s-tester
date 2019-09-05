@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -37,7 +38,7 @@ func NewKopsClusterCreator(kops *KopsCluster, dir string, testId string) *KopsCl
 }
 
 func (c *KopsClusterCreator) Init() (Step, error) {
-	f := func() error {
+	f := func(ctx context.Context) error {
 		_, err := os.Stat(c.TestDir)
 		if os.IsNotExist(err) {
 			err := os.Mkdir(c.TestDir, 0777)
@@ -58,16 +59,16 @@ func (c *KopsClusterCreator) Init() (Step, error) {
 }
 
 func (c *KopsClusterCreator) Up() (Step, error) {
-	f := func() error {
+	f := func(ctx context.Context) error {
 		// create cluster
-		err := c.createCluster()
+		err := c.createCluster(ctx)
 		if err != nil {
 			return err
 		}
 
 		// wait for cluster creation to success
 		// or return err if timedout
-		err = c.waitForCreation(15 * time.Minute)
+		err = c.waitForCreation(ctx, 15*time.Minute)
 		if err != nil {
 			return err
 		}
@@ -79,11 +80,11 @@ func (c *KopsClusterCreator) Up() (Step, error) {
 }
 
 func (c *KopsClusterCreator) TearDown() (Step, error) {
-	f := func() error {
+	f := func(ctx context.Context) error {
 		clusterName := c.clusterName()
 		log.Printf("Deleting cluster %s", clusterName)
 
-		cmd := exec.Command(c.KopsBinaryPath, "delete", "cluster",
+		cmd := exec.CommandContext(ctx, c.KopsBinaryPath, "delete", "cluster",
 			"--state", c.Kops.StateFile,
 			"--name", clusterName, "--yes")
 
@@ -124,7 +125,7 @@ func (c *KopsClusterCreator) downloadKops() error {
 	return nil
 }
 
-func (c *KopsClusterCreator) createCluster() error {
+func (c *KopsClusterCreator) createCluster(ctx context.Context) error {
 	clusterName := c.clusterName()
 	log.Printf("Creating Kops cluster %s", clusterName)
 
@@ -133,13 +134,13 @@ func (c *KopsClusterCreator) createCluster() error {
 	_, err := os.Stat(sshKeyPath)
 	// only generate SSH key if it is missing
 	if os.IsNotExist(err) {
-		err := c.generateSSHKey(sshKeyPath)
+		err := c.generateSSHKey(ctx, sshKeyPath)
 		if err != nil {
 			return err
 		}
 	}
 
-	cmd := exec.Command(c.KopsBinaryPath, "create", "cluster",
+	cmd := exec.CommandContext(ctx, c.KopsBinaryPath, "create", "cluster",
 		"--state", c.Kops.StateFile,
 		"--zones", c.Kops.Zones,
 		"--node-count", fmt.Sprintf("%d", c.Kops.NodeCount),
@@ -164,7 +165,7 @@ func (c *KopsClusterCreator) createCluster() error {
 	}
 	defer clusterYamlFile.Close()
 
-	cmd = exec.Command(c.KopsBinaryPath, "get", "cluster",
+	cmd = exec.CommandContext(ctx, c.KopsBinaryPath, "get", "cluster",
 		"--state", c.Kops.StateFile, clusterName, "-o", "yaml")
 	cmd.Stdout = clusterYamlFile
 	cmd.Stdin = os.Stdin
@@ -183,7 +184,7 @@ func (c *KopsClusterCreator) createCluster() error {
 		return err
 	}
 
-	cmd = exec.Command(c.KopsBinaryPath, "replace",
+	cmd = exec.CommandContext(ctx, c.KopsBinaryPath, "replace",
 		"--state", c.Kops.StateFile, "-f", clusterYamlPath)
 	cmd.Stdout = os.Stdout
 	cmd.Stdin = os.Stdin
@@ -194,7 +195,7 @@ func (c *KopsClusterCreator) createCluster() error {
 		return err
 	}
 
-	cmd = exec.Command(c.KopsBinaryPath, "update", "cluster",
+	cmd = exec.CommandContext(ctx, c.KopsBinaryPath, "update", "cluster",
 		"--state", c.Kops.StateFile, clusterName, "--yes")
 	cmd.Stdout = os.Stdout
 	cmd.Stdin = os.Stdin
@@ -209,14 +210,17 @@ func (c *KopsClusterCreator) createCluster() error {
 }
 
 // waitForCreatoin waits for cluster creation and times out if it takes too long
-func (c *KopsClusterCreator) waitForCreation(timeout time.Duration) error {
+func (c *KopsClusterCreator) waitForCreation(ctx context.Context, timeout time.Duration) error {
 	timer := time.NewTimer(timeout)
 	for {
 		select {
 		case <-timer.C:
 			return fmt.Errorf("cluster is not created after %v", timeout)
+		case <-ctx.Done():
+			timer.Stop()
+			return fmt.Errorf("waitForCreation: context is cancelled")
 		default:
-			cmd := exec.Command(c.KopsBinaryPath, "validate", "cluster",
+			cmd := exec.CommandContext(ctx, c.KopsBinaryPath, "validate", "cluster",
 				"--state", c.Kops.StateFile)
 			cmd.Stdout = os.Stdout
 			cmd.Stdin = os.Stdin
@@ -231,8 +235,8 @@ func (c *KopsClusterCreator) waitForCreation(timeout time.Duration) error {
 	}
 }
 
-func (c *KopsClusterCreator) generateSSHKey(keyPath string) error {
-	cmd := exec.Command("ssh-keygen", "-N", "", "-f", keyPath)
+func (c *KopsClusterCreator) generateSSHKey(ctx context.Context, keyPath string) error {
+	cmd := exec.CommandContext(ctx, "ssh-keygen", "-N", "", "-f", keyPath)
 
 	cmd.Stdout = os.Stdout
 	cmd.Stdin = os.Stdin
