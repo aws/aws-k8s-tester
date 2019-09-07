@@ -146,6 +146,7 @@ func (c *KopsClusterCreator) createCluster(ctx context.Context) error {
 		"--node-count", fmt.Sprintf("%d", c.Kops.NodeCount),
 		"--node-size", c.Kops.NodeSize,
 		"--kubernetes-version", c.Kops.KubernetesVersion,
+		"--networking", "amazon-vpc-routed-eni",
 		"--ssh-public-key", fmt.Sprintf("%s.pub", sshKeyPath),
 		clusterName,
 	)
