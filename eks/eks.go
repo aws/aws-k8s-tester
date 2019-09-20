@@ -481,8 +481,7 @@ func (md *embedded) Down() (err error) {
 }
 
 func (md *embedded) down() (err error) {
-	if md.cfg.ClusterState.Status == "DELETING" ||
-		md.cfg.ClusterState.Status == "FAILED" {
+	if md.cfg.ClusterState.Status == "DELETING" {
 		return fmt.Errorf("cluster %q status is already %q",
 			md.cfg.ClusterName,
 			md.cfg.ClusterState.Status,
