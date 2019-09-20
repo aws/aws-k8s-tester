@@ -15,13 +15,13 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.3.4...v0.4.0)
 
 - Add [`aws-k8s-tester eks list clusters`](https://github.com/aws/aws-k8s-tester/commit/09994664f2ef14d07f21b941dce5caa6c99272d0).
 - Add [`aws-k8s-tester eks get worker-node-ami`](https://github.com/aws/aws-k8s-tester/commit/d1f0800f2df575e9662fec15fb47a4080ee6664a).
-- Delete [`aws-k8s-tester ec2 create cluster --terminate-on-exit` flag](https://github.com/aws/aws-k8s-tester/commit/TODO).
-- Delete [`aws-k8s-tester eks create cluster --terminate-on-exit` flag](https://github.com/aws/aws-k8s-tester/commit/TODO).
+- Delete [`aws-k8s-tester ec2 create cluster --terminate-on-exit` flag](https://github.com/aws/aws-k8s-tester/commit/67aa1e2a55e48aa29bded1f60b533fde5fc1883f).
+- Delete [`aws-k8s-tester eks create cluster --terminate-on-exit` flag](https://github.com/aws/aws-k8s-tester/commit/67aa1e2a55e48aa29bded1f60b533fde5fc1883f).
 
 ### `ec2config`
 
-- Rename [`Down` field to `DestroyAfterCreate`](https://github.com/aws/aws-k8s-tester/commit/TODO).
-- Rename [`WaitBeforeDown` field to `DestroyWaitTime`](https://github.com/aws/aws-k8s-tester/commit/TODO).
+- Rename [`Down` field to `DestroyAfterCreate`](https://github.com/aws/aws-k8s-tester/commit/67aa1e2a55e48aa29bded1f60b533fde5fc1883f).
+- Rename [`WaitBeforeDown` field to `DestroyWaitTime`](https://github.com/aws/aws-k8s-tester/commit/67aa1e2a55e48aa29bded1f60b533fde5fc1883f).
 
 ### `eks`
 
