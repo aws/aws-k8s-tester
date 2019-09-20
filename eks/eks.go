@@ -697,7 +697,12 @@ func (md *embedded) createCluster() error {
 	md.cfg.ClusterState.StatusClusterCreated = true
 	md.cfg.ClusterState.Status = "CREATING"
 	md.cfg.Sync()
-	md.lg.Info("sent create cluster request", zap.String("output", string(output.String())))
+	md.lg.Info("sent create cluster request")
+
+	println()
+	fmt.Println("Output:", output.String())
+	println()
+
 	if md.cfg.UploadTesterLogs {
 		if err = md.uploadTesterLogs(); err != nil {
 			md.lg.Warn("failed to upload", zap.Error(err))
