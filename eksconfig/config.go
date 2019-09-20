@@ -109,10 +109,15 @@ type Config struct {
 	// Thus, deployer must delete the private key right after node group creation.
 	// MAKE SURE PRIVATE KEY NEVER GETS UPLOADED TO CLOUD STORAGE AND DELETE AFTER USE!!!
 	WorkerNodePrivateKeyPath string `json:"worker-node-private-key-path,omitempty"`
-	// WorkerNodeAMI is the Amazon EKS worker node AMI ID for the specified Region.
+
+	// WorkerNodeAMIType is either "amazon-linux-2" or "amazon-linux-2-gpu".
+	// Be ignored if "WorkerNodeAMIID" is specified.
+	// Must be non-empty if "WorkerNodeAMIID" is NOT specified.
+	WorkerNodeAMIType string `json:"worker-node-ami-type,omitempty"`
+	// WorkerNodeAMIID is the Amazon EKS worker node AMI ID for the specified Region.
 	// Reference https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html.
 	// Leave empty to auto-populate from SSM parameter.
-	WorkerNodeAMI string `json:"worker-node-ami,omitempty"`
+	WorkerNodeAMIID string `json:"worker-node-ami-id,omitempty"`
 	// WorkerNodeAMIName is the name of the worker node AMI.
 	// Leave empty to auto-populate from SSM parameter.
 	WorkerNodeAMIName string `json:"worker-node-ami-name,omitempty"`
@@ -319,8 +324,8 @@ var defaultConfig = Config{
 	EnableWorkerNodePrivilegedPortAccess: true,
 
 	// keep in-sync with the default value in https://godoc.org/k8s.io/kubernetes/test/e2e/framework#GetSigner
-	WorkerNodePrivateKeyPath: filepath.Join(homedir.HomeDir(), ".ssh", "kube_aws_rsa"),
-
+	WorkerNodePrivateKeyPath:     filepath.Join(homedir.HomeDir(), ".ssh", "kube_aws_rsa"),
+	WorkerNodeAMIType:            "amazon-linux-2",
 	WorkerNodeInstanceType:       "m3.xlarge",
 	WorkerNodeASGMin:             1,
 	WorkerNodeASGMax:             1,
@@ -424,9 +429,20 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	if cfg.ClusterName == "" {
 		return errors.New("ClusterName is empty")
 	}
-	if cfg.WorkerNodeAMI == "" && cfg.WorkerNodeAMIName != "" {
-		return errors.New("EKS WorkerNodeAMI is not specified but WorkerNodeAMIName is specified")
+
+	// expect auto-populate from SSM
+	if cfg.WorkerNodeAMIID == "" {
+		if cfg.WorkerNodeAMIName != "" {
+			return errors.New("EKS WorkerNodeAMIID is not specified; but WorkerNodeAMIName is specified")
+		}
+		switch cfg.WorkerNodeAMIType {
+		case "amazon-linux-2":
+		case "amazon-linux-2-gpu":
+		default:
+			return fmt.Errorf("EKS WorkerNodeAMIID is not specified; but unknown WorkerNodeAMIType %q", cfg.WorkerNodeAMIType)
+		}
 	}
+
 	if cfg.WorkerNodeInstanceType == "" {
 		return errors.New("EKS WorkerNodeInstanceType is not specified")
 	}

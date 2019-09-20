@@ -39,6 +39,12 @@ var DefaultZapLoggerConfig = zap.Config{
 	ErrorOutputPaths: []string{"stderr"},
 }
 
+// GetDefaultZapLogger returns a new default logger.
+func GetDefaultZapLogger() (*zap.Logger, error) {
+	lcfg := DefaultZapLoggerConfig
+	return lcfg.Build()
+}
+
 // AddOutputPaths adds output paths to the existing output paths, resolving conflicts.
 func AddOutputPaths(cfg zap.Config, outputPaths, errorOutputPaths []string) zap.Config {
 	outputs := make(map[string]struct{})

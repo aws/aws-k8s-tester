@@ -10,6 +10,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.3.4...0.4.0).
 ### `aws-k8s-tester`
 
 - Add [`aws-k8s-tester eks list clusters`](https://github.com/aws/aws-k8s-tester/commit/09994664f2ef14d07f21b941dce5caa6c99272d0).
+- Add [`aws-k8s-tester eks get worker-node-ami`](https://github.com/aws/aws-k8s-tester/commit/TODO).
 
 ### `eks`
 
@@ -18,6 +19,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.3.4...0.4.0).
 ### `eksconfig`
 
 - Rename [`EKSCustomEndpoint` field to `EKSResolverURL`](https://github.com/aws/aws-k8s-tester/commit/09994664f2ef14d07f21b941dce5caa6c99272d0).
+- Rename [`WorkerNodeAMI` field to `WorkerNodeAMIID`](https://github.com/aws/aws-k8s-tester/commit/TODO).
 
 ### `pkg/cloud`
 

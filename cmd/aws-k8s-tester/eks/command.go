@@ -7,7 +7,14 @@ func init() {
 	cobra.EnablePrefixMatching = true
 }
 
-var path string
+var (
+	path string
+
+	resolverURL       string
+	region            string
+	kubernetesVersion string
+	amiType           string
+)
 
 // NewCommand implements "awstest eks" command.
 func NewCommand() *cobra.Command {
@@ -21,6 +28,7 @@ func NewCommand() *cobra.Command {
 		newCreate(),
 		newDelete(),
 		newCheck(),
+		newGet(),
 		newList(),
 		newProw(),
 		newS3Upload(),

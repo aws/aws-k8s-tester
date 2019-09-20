@@ -4,14 +4,11 @@ import (
 	"fmt"
 
 	"github.com/aws/aws-k8s-tester/pkg/awsapi"
+	"github.com/aws/aws-k8s-tester/pkg/logutil"
 	"github.com/aws/aws-sdk-go/aws"
 	awseks "github.com/aws/aws-sdk-go/service/eks"
 	"github.com/spf13/cobra"
-	"go.uber.org/zap"
 )
-
-var region string
-var resolverURL string
 
 func newList() *cobra.Command {
 	ac := &cobra.Command{
@@ -35,7 +32,7 @@ func newListClusters() *cobra.Command {
 }
 
 func listClustersFunc(cmd *cobra.Command, args []string) {
-	lg, _ := zap.NewProduction()
+	lg, _ := logutil.GetDefaultZapLogger()
 	awsCfgEKS := &awsapi.Config{
 		Logger:      lg,
 		Region:      region,

@@ -24,6 +24,12 @@ import (
 	"k8s.io/utils/exec"
 )
 
+type workerNodeAMISSM struct {
+	SchemaVersion string `json:"schema_version"`
+	ImageID       string `json:"image_id"`
+	ImageName     string `json:"image_name"`
+}
+
 func (md *embedded) createWorkerNode() error {
 	if md.cfg.ClusterState.CFStackWorkerNodeGroupKeyPairName == "" {
 		return errors.New("cannot create worker node without key name")
@@ -32,9 +38,9 @@ func (md *embedded) createWorkerNode() error {
 		return errors.New("cannot create empty worker node")
 	}
 
-	if md.cfg.WorkerNodeAMI == "" {
+	if md.cfg.WorkerNodeAMIID == "" {
 		// https://aws.amazon.com/about-aws/whats-new/2019/09/amazon-eks-provides-eks-optimized-ami-metadata-via-ssm-parameters/
-		ssmKey := fmt.Sprintf("/aws/service/eks/optimized-ami/%s/amazon-linux-2/recommended", md.cfg.KubernetesVersion)
+		ssmKey := fmt.Sprintf("/aws/service/eks/optimized-ami/%s/%s/recommended", md.cfg.KubernetesVersion, md.cfg.WorkerNodeAMIType)
 		md.lg.Info("getting SSM parameter to get latest worker node AMI", zap.String("ssm-key", ssmKey))
 		so, err := md.ssm.GetParameters(&ssm.GetParametersInput{
 			Names: aws.StringSlice([]string{ssmKey}),
@@ -42,20 +48,27 @@ func (md *embedded) createWorkerNode() error {
 		if err != nil {
 			return fmt.Errorf("failed to get latest worker node AMI %v", err)
 		}
+		value := ""
 		for _, pm := range so.Parameters {
-			switch *pm.Name {
-			case "image_id":
-				md.cfg.WorkerNodeAMI = *pm.Value
-			case "image_name":
-				md.cfg.WorkerNodeAMIName = *pm.Value
+			if *pm.Name != ssmKey {
+				continue
 			}
+			value = *pm.Value
 		}
-		if md.cfg.WorkerNodeAMI == "" || md.cfg.WorkerNodeAMIName == "" {
-			return fmt.Errorf("could not find latest worker node AMI %q %q", md.cfg.WorkerNodeAMI, md.cfg.WorkerNodeAMIName)
+		if value == "" {
+			return fmt.Errorf("SSM key %q not found", ssmKey)
 		}
-		md.lg.Info("successfully got latest worker node AMI",
-			zap.String("ami", md.cfg.WorkerNodeAMI),
-			zap.String("ami-name", md.cfg.WorkerNodeAMIName),
+		var output workerNodeAMISSM
+		if err = json.Unmarshal([]byte(value), &output); err != nil {
+			return err
+		}
+		if output.ImageID == "" || output.ImageName == "" {
+			return fmt.Errorf("latest worker node AMI not found (AMI %q, name %q)", output.ImageID, output.ImageName)
+		}
+		md.lg.Info("successfully got latest worker node AMI from SSM parameter",
+			zap.String("worker-node-ami-type", md.cfg.WorkerNodeAMIType),
+			zap.String("worker-node-ami-id", output.ImageID),
+			zap.String("worker-node-ami-name", output.ImageName),
 		)
 	}
 
@@ -103,7 +116,7 @@ func (md *embedded) createWorkerNode() error {
 			},
 			{
 				ParameterKey:   aws.String("NodeImageId"),
-				ParameterValue: aws.String(md.cfg.WorkerNodeAMI),
+				ParameterValue: aws.String(md.cfg.WorkerNodeAMIID),
 			},
 			{
 				ParameterKey:   aws.String("NodeInstanceType"),
