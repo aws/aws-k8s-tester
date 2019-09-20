@@ -1,9 +1,11 @@
 package eks
 
 import (
+	"fmt"
 	"os"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
 )
@@ -25,6 +27,9 @@ func TestEmbeddedServiceRole(t *testing.T) {
 	}
 
 	defer func() {
+		fmt.Println("waiting...")
+		time.Sleep(3 * time.Minute)
+
 		if err = md.detachPolicyForAWSServiceRoleForAmazonEKS(); err != nil {
 			t.Log(err)
 		}
@@ -32,6 +37,7 @@ func TestEmbeddedServiceRole(t *testing.T) {
 			t.Log(err)
 		}
 	}()
+
 	if err = md.createAWSServiceRoleForAmazonEKS(); err != nil {
 		t.Fatal(err)
 	}

@@ -1,11 +1,13 @@
 package eks
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
 )
@@ -37,6 +39,9 @@ func TestEmbeddedVPCStack(t *testing.T) {
 	if err = md.createVPC(); err != nil {
 		t.Fatal(err)
 	}
+
+	fmt.Println("waiting...")
+	time.Sleep(3 * time.Minute)
 
 	if err = md.deleteVPC(); err != nil {
 		t.Fatal(err)
