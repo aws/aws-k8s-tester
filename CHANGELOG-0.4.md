@@ -13,7 +13,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.3.4...0.4.0).
 
 ### `eks`
 
-- Get [worker node AMI automatically through SSM parameter]().
+- Get [worker node AMI automatically through SSM parameter](https://github.com/aws/aws-k8s-tester/commit/e4a5e9439608955f756d3b37c68f897b71de7912).
 
 ### `eksconfig`
 
