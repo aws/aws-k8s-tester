@@ -16,6 +16,9 @@ func TestEmbeddedServiceRole(t *testing.T) {
 	}
 
 	cfg := eksconfig.NewDefault()
+	if err := cfg.ValidateAndSetDefaults(); err != nil {
+		t.Fatal(err)
+	}
 
 	ek, err := newTesterEmbedded(cfg)
 	if err != nil {

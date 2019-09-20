@@ -2,9 +2,7 @@ package eks
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
-	"path/filepath"
 	"reflect"
 	"testing"
 	"time"
@@ -18,14 +16,9 @@ func TestEmbeddedVPCStack(t *testing.T) {
 	}
 
 	cfg := eksconfig.NewDefault()
-	f, err := ioutil.TempFile(os.TempDir(), "a8-eksconfig")
-	if err != nil {
+	if err := cfg.ValidateAndSetDefaults(); err != nil {
 		t.Fatal(err)
 	}
-	cfg.ConfigPath, _ = filepath.Abs(f.Name())
-	f.Close()
-	os.RemoveAll(cfg.ConfigPath)
-	cfg.ValidateAndSetDefaults()
 
 	ek, err := newTesterEmbedded(cfg)
 	if err != nil {

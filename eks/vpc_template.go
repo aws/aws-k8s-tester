@@ -20,6 +20,7 @@ type vpcStack struct {
 	TagValue          string
 	Hostname          string
 	SecurityGroupName string
+	Creation          string
 }
 
 // https://docs.aws.amazon.com/eks/latest/userguide/getting-started-console.html
@@ -98,6 +99,8 @@ Resources:
       Tags:
       - Key: Kind
         Value: aws-k8s-tester
+      - Key: Creation
+        Value: {{ .Creation }}
       - Key: Name
         Value: {{ .TagValue }}
       - Key: HOSTNAME
@@ -109,6 +112,8 @@ Resources:
       Tags:
       - Key: Kind
         Value: aws-k8s-tester
+      - Key: Creation
+        Value: {{ .Creation }}
       - Key: Name
         Value: {{ .TagValue }}
       - Key: HOSTNAME
@@ -127,6 +132,8 @@ Resources:
       Tags:
       - Key: Kind
         Value: aws-k8s-tester
+      - Key: Creation
+        Value: {{ .Creation }}
       - Key: Name
         Value: Public Subnets
       - Key: Network
@@ -161,6 +168,8 @@ Resources:
       Tags:
       - Key: Kind
         Value: aws-k8s-tester
+      - Key: Creation
+        Value: {{ .Creation }}
       - Key: Name
         Value: !Sub "{{ .TagValue }}-Subnet01"
       - Key: {{ .Tag }}
@@ -185,6 +194,8 @@ Resources:
       Tags:
       - Key: Kind
         Value: aws-k8s-tester
+      - Key: Creation
+        Value: {{ .Creation }}
       - Key: Name
         Value: !Sub "{{ .TagValue }}-Subnet02"
       - Key: {{ .Tag }}
@@ -210,6 +221,8 @@ Resources:
       Tags:
       - Key: Kind
         Value: aws-k8s-tester
+      - Key: Creation
+        Value: {{ .Creation }}
       - Key: Name
         Value: !Sub "{{ .TagValue }}-Subnet03"
       - Key: {{ .Tag }}

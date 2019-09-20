@@ -27,6 +27,7 @@ func (md *embedded) createVPC() error {
 		TagValue:          md.cfg.ClusterName,
 		Hostname:          h,
 		SecurityGroupName: md.cfg.ClusterName + "-security-group",
+		Creation:          time.Now().UTC().String(),
 	}
 	s, err := createVPCTemplate(v)
 	if err != nil {
@@ -36,6 +37,8 @@ func (md *embedded) createVPC() error {
 	cfnInput := &cloudformation.CreateStackInput{
 		StackName: aws.String(md.cfg.CFStackVPCName),
 		Tags: []*cloudformation.Tag{
+			{Key: aws.String("Kind"), Value: aws.String("aws-k8s-tester")},
+			{Key: aws.String("Creation"), Value: aws.String(time.Now().UTC().String())},
 			{
 				Key:   aws.String("Name"),
 				Value: aws.String(md.cfg.ClusterName),
@@ -138,10 +141,9 @@ func (md *embedded) createVPC() error {
 			_, err = md.ec2.CreateTags(&ec2.CreateTagsInput{
 				Resources: aws.StringSlice([]string{md.cfg.SecurityGroupID}),
 				Tags: []*ec2.Tag{
-					{
-						Key:   aws.String("Name"),
-						Value: aws.String(md.cfg.ClusterName),
-					},
+					{Key: aws.String("Kind"), Value: aws.String("aws-k8s-tester")},
+					{Key: aws.String("Creation"), Value: aws.String(time.Now().UTC().String())},
+					{Key: aws.String("Name"), Value: aws.String(md.cfg.ClusterName)},
 				},
 			})
 			if err != nil {

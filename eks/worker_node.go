@@ -89,6 +89,8 @@ func (md *embedded) createWorkerNode() error {
 	_, err = md.cfn.CreateStack(&cloudformation.CreateStackInput{
 		StackName: aws.String(md.cfg.ClusterState.CFStackWorkerNodeGroupName),
 		Tags: []*cloudformation.Tag{
+			{Key: aws.String("Kind"), Value: aws.String("aws-k8s-tester")},
+			{Key: aws.String("Creation"), Value: aws.String(time.Now().UTC().String())},
 			{
 				Key:   aws.String("Name"),
 				Value: aws.String(md.cfg.ClusterName),

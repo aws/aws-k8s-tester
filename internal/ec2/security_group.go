@@ -66,10 +66,9 @@ func (md *embedded) createSecurityGroup() (err error) {
 	_, err = md.ec2.CreateTags(&ec2.CreateTagsInput{
 		Resources: aws.StringSlice([]string{*output.GroupId}),
 		Tags: []*ec2.Tag{
-			{
-				Key:   aws.String("Name"),
-				Value: aws.String(md.cfg.ClusterName),
-			},
+			{Key: aws.String("Kind"), Value: aws.String("aws-k8s-tester")},
+			{Key: aws.String("Creation"), Value: aws.String(time.Now().UTC().String())},
+			{Key: aws.String("Name"), Value: aws.String(md.cfg.ClusterName)},
 		},
 	})
 	if err != nil {

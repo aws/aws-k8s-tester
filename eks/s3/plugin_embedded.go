@@ -95,7 +95,11 @@ func (md *embedded) CreateBucketForAccessLogs() error {
 		}
 
 		h, _ := os.Hostname()
-		tags := []*s3.Tag{{Key: aws.String("HOSTNAME"), Value: aws.String(h)}}
+		tags := []*s3.Tag{
+			{Key: aws.String("Kind"), Value: aws.String("aws-k8s-tester")},
+			{Key: aws.String("Creation"), Value: aws.String(time.Now().UTC().String())},
+			{Key: aws.String("HOSTNAME"), Value: aws.String(h)},
+		}
 		if md.cfg.Tag != "" && md.cfg.ClusterName != "" {
 			tags = append(tags, &s3.Tag{Key: aws.String(md.cfg.Tag), Value: aws.String(md.cfg.ClusterName)})
 		}
@@ -191,7 +195,11 @@ func (md *embedded) UploadToBucketForTests(localPath, s3Path string) error {
 			}
 
 			h, _ := os.Hostname()
-			tags := []*s3.Tag{{Key: aws.String("HOSTNAME"), Value: aws.String(h)}}
+			tags := []*s3.Tag{
+				{Key: aws.String("Kind"), Value: aws.String("aws-k8s-tester")},
+				{Key: aws.String("Creation"), Value: aws.String(time.Now().UTC().String())},
+				{Key: aws.String("HOSTNAME"), Value: aws.String(h)},
+			}
 			if md.cfg.Tag != "" && md.cfg.ClusterName != "" {
 				tags = append(tags, &s3.Tag{Key: aws.String(md.cfg.Tag), Value: aws.String(md.cfg.ClusterName)})
 			}

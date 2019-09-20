@@ -67,6 +67,10 @@ func (md *embedded) createAWSServiceRoleForAmazonEKS() error {
 	op1, err := md.iam.CreateRole(&iam.CreateRoleInput{
 		RoleName:                 aws.String(md.cfg.ClusterState.ServiceRoleWithPolicyName),
 		AssumeRolePolicyDocument: aws.String(policyDoc),
+		Tags: []*iam.Tag{
+			{Key: aws.String("Kind"), Value: aws.String("aws-k8s-tester")},
+			{Key: aws.String("Creation"), Value: aws.String(time.Now().UTC().String())},
+		},
 	})
 	if err != nil {
 		return err
