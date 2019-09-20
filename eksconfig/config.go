@@ -108,21 +108,20 @@ type Config struct {
 	// WorkerNodePrivateKeyPath is the file path to store node group key pair private key.
 	// Thus, deployer must delete the private key right after node group creation.
 	// MAKE SURE PRIVATE KEY NEVER GETS UPLOADED TO CLOUD STORAGE AND DELETE AFTER USE!!!
-	WorkerNodePrivateKeyPath string `json:"worker-node-private-key-path,omitempty"`
-
+	WorkerNodePrivateKeyPath string `json:"worker-node-private-key-path"`
 	// WorkerNodeAMIType is either "amazon-linux-2" or "amazon-linux-2-gpu".
 	// Be ignored if "WorkerNodeAMIID" is specified.
 	// Must be non-empty if "WorkerNodeAMIID" is NOT specified.
-	WorkerNodeAMIType string `json:"worker-node-ami-type,omitempty"`
+	WorkerNodeAMIType string `json:"worker-node-ami-type"`
 	// WorkerNodeAMIID is the Amazon EKS worker node AMI ID for the specified Region.
 	// Reference https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html.
 	// Leave empty to auto-populate from SSM parameter.
-	WorkerNodeAMIID string `json:"worker-node-ami-id,omitempty"`
+	WorkerNodeAMIID string `json:"worker-node-ami-id"`
 	// WorkerNodeAMIName is the name of the worker node AMI.
 	// Leave empty to auto-populate from SSM parameter.
-	WorkerNodeAMIName string `json:"worker-node-ami-name,omitempty"`
+	WorkerNodeAMIName string `json:"worker-node-ami-name"`
 	// WorkerNodeInstanceType is the EC2 instance type for worker nodes.
-	WorkerNodeInstanceType string `json:"worker-node-instance-type,omitempty"`
+	WorkerNodeInstanceType string `json:"worker-node-instance-type"`
 	// WorkerNodeASGMin is the minimum number of nodes in worker node ASG.
 	WorkerNodeASGMin int `json:"worker-node-asg-min,omitempty"`
 	// WorkerNodeASGMax is the maximum number of nodes in worker node ASG.
