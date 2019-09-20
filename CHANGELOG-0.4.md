@@ -15,7 +15,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.3.4...0.4.0).
 ### `eks`
 
 - Get [worker node AMI automatically through SSM parameter](https://github.com/aws/aws-k8s-tester/commit/e4a5e9439608955f756d3b37c68f897b71de7912).
-  - https://github.com/aws/aws-k8s-tester/commit/d1f0800f2df575e9662fec15fb47a4080ee6664a
+  - More changes in [`git@d1f0800f2d`](https://github.com/aws/aws-k8s-tester/commit/d1f0800f2df575e9662fec15fb47a4080ee6664a).
+- Add [`"Kind"` tag to VPC template](https://github.com/aws/aws-k8s-tester/commit/d81ea52a8f51f2bcd43daaaa64154a82f6f53c1b).
 
 ### `eksconfig`
 

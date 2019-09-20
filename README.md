@@ -27,32 +27,9 @@ To install:
 cd ${GOPATH}/src/github.com/aws/aws-k8s-tester
 go install -v ./cmd/aws-k8s-tester
 aws-k8s-tester eks create cluster -h
-```
 
-```bash
-aws-k8s-tester eks create config --path ./aws-k8s-tester-eks.yaml
-
-# change default configurations
-vi ./aws-k8s-tester-eks.yaml
-```
-
-If run locally, make sure to change private key path to:
-
-```diff
--worker-node-private-key-path: /Users/leegyuho/.ssh/kube_aws_rsa
-+worker-node-private-key-path: /tmp/aws-k8s-tester-eks-worker-node.insecure.private.key
-```
-
-Otherwise,
-
-> {"level":"warn","ts":"2019-08-14T14:14:19.938-0700","caller":"eks/eks.go:347","msg":"failed to create EKS, reverting","error":"open /Users/leegyuho/.ssh/kube_aws_rsa: permission denied"}
-
-(`aws-k8s-tester` automatically detects OS to change the default value)
-
-Now, let's create an EKS cluster:
-
-```bash
-aws-k8s-tester eks create cluster --path ./aws-k8s-tester-eks.yaml
+aws-k8s-tester eks create config --path /tmp/aws-k8s-tester-eks.yaml
+aws-k8s-tester eks create cluster --path /tmp/aws-k8s-tester-eks.yaml
 ```
 
 This will create an EKS cluster with a worker node (takes about 20 minutes).
@@ -70,16 +47,31 @@ aws eks describe-cluster \
 Cluster states are persisted on disk as well. EKS tester uses this file to track status.
 
 ```bash
-cat ./aws-k8s-tester-eks.yaml
+cat /tmp/aws-k8s-tester-eks.yaml
 
 # or
-less +FG ./aws-k8s-tester-eks.yaml
+less +FG /tmp/aws-k8s-tester-eks.yaml
 ```
 
 Tear down the cluster (takes about 10 minutes):
 
 ```bash
-aws-k8s-tester eks delete cluster --path ./aws-k8s-tester-eks.yaml
+aws-k8s-tester eks delete cluster --path /tmp/aws-k8s-tester-eks.yaml
+```
+
+### `aws-k8s-tester eks` beta cluster
+
+Assume the AWS account ID is granted beta access:
+
+```bash
+cd ${GOPATH}/src/github.com/aws/aws-k8s-tester
+go install -v ./cmd/aws-k8s-tester
+aws-k8s-tester eks create cluster -h
+
+aws-k8s-tester eks create config --path /tmp/aws-k8s-tester-eks-beta.yaml
+sed 's#eks-resolver-url: ""#eks-resolver-url: https://api.beta.us-west-2.wesley.amazonaws.com#g' /tmp/aws-k8s-tester-eks-beta.yaml
+
+aws-k8s-tester eks create cluster --path /tmp/aws-k8s-tester-eks-beta.yaml
 ```
 
 ### `aws-k8s-tester eks` e2e tests
@@ -95,7 +87,7 @@ cd ${GOPATH}/src/github.com/aws/aws-k8s-tester
 AWS_K8S_TESTER_EKS_KUBECTL_DOWNLOAD_URL=https://amazon-eks.s3-us-west-2.amazonaws.com/1.13.7/2019-06-11/bin/$(go env GOOS)/amd64/kubectl \
   AWS_K8S_TESTER_EKS_KUBECONFIG_PATH=/tmp/aws-k8s-tester/kubeconfig \
   AWS_K8S_TESTER_EKS_AWS_IAM_AUTHENTICATOR_DOWNLOAD_URL=https://amazon-eks.s3-us-west-2.amazonaws.com/1.13.7/2019-06-11/bin/$(go env GOOS)/amd64/aws-iam-authenticator \
-  AWS_K8S_TESTER_EKS_KUBERNETES_VERSION=1.13 \
+  AWS_K8S_TESTER_EKS_KUBERNETES_VERSION=1.14 \
   AWS_K8S_TESTER_EKS_WAIT_BEFORE_DOWN=1m \
   AWS_K8S_TESTER_EKS_DOWN=true \
   AWS_K8S_TESTER_EKS_ENABLE_WORKER_NODE_HA=true \
@@ -105,7 +97,6 @@ AWS_K8S_TESTER_EKS_KUBECTL_DOWNLOAD_URL=https://amazon-eks.s3-us-west-2.amazonaw
   AWS_K8S_TESTER_EKS_UPLOAD_TESTER_LOGS=false \
   AWS_K8S_TESTER_EKS_UPLOAD_WORKER_NODE_LOGS=false \
   AWS_K8S_TESTER_EKS_WORKER_NODE_PRIVATE_KEY_PATH=~/.ssh/kube_aws_rsa \
-  AWS_K8S_TESTER_EKS_WORKER_NODE_AMI=ami-00b95829322267382 \
   AWS_K8S_TESTER_EKS_WORKER_NODE_INSTANCE_TYPE=m3.xlarge \
   AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_MIN=1 \
   AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_MAX=1 \
