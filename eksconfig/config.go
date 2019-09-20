@@ -66,11 +66,10 @@ type Config struct {
 	KubeConfigPathBucket string `json:"kubeconfig-path-bucket,omitempty"` // read-only to user
 	KubeConfigPathURL    string `json:"kubeconfig-path-url,omitempty"`    // read-only to user
 
-	// DestroyAfterCreate is true to automatically tear down cluster in "test".
-	// Deployer implementation should not call "Down" inside "Up" method.
-	// This is meant to be used as a flag for test.
+	// DestroyAfterCreate is true to automatically tear down cluster.
 	DestroyAfterCreate bool `json:"destroy-after-create"`
 	// DestroyWaitTime is the duration to sleep before cluster tear down.
+	// Be ignored if "DestroyAfterCreate" is false.
 	DestroyWaitTime time.Duration `json:"destroy-wait-time,omitempty"`
 
 	// AWSAccountID is the AWS account ID.

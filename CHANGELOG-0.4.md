@@ -27,7 +27,13 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.3.4...v0.4.0)
 
 - Rename [`EKSCustomEndpoint` field to `EKSResolverURL`](https://github.com/aws/aws-k8s-tester/commit/09994664f2ef14d07f21b941dce5caa6c99272d0).
 - Rename [`WorkerNodeAMI` field to `WorkerNodeAMIID`](https://github.com/aws/aws-k8s-tester/commit/d1f0800f2df575e9662fec15fb47a4080ee6664a).
+- Rename [`Down` field to `DestroyAfterCreate`](https://github.com/aws/aws-k8s-tester/commit/f0c94407ec7746677acf85e851dcd45313d7bae9).
+- Rename [`WaitBeforeDown` field to `DestroyWaitTime`](https://github.com/aws/aws-k8s-tester/commit/f0c94407ec7746677acf85e851dcd45313d7bae9).
 - Add [`WorkerNodeUserName` field](https://github.com/aws/aws-k8s-tester/commit/d56c5bd679c3d76bd33b288d95ecd3743ec6c27a).
+
+### `e2e`
+
+- Initial commit for [testing libraries](https://github.com/aws/aws-k8s-tester/tree/master/e2e).
 
 ### `pkg/cloud`
 

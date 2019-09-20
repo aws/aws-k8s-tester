@@ -48,11 +48,8 @@ var _ = BeforeSuite(func() {
 		case sig := <-notifier:
 			fmt.Fprintf(os.Stderr, "received signal %q in BeforeSuite\n", sig)
 			tester.Stop()
-			cfg, derr := tester.LoadConfig()
+			_, derr := tester.LoadConfig()
 			Expect(derr).ShouldNot(HaveOccurred())
-			if cfg.Down {
-				derr = tester.Down()
-			}
 			signal.Stop(notifier)
 			<-donec // wait until 'Up' complete
 			fmt.Fprintf(os.Stderr, "shut down cluster with %q in BeforeSuite (down error %v)\n", sig, derr)
@@ -66,21 +63,18 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = Describe("EKS with ...", func() {
-	Context("Correctness of ALB Ingress Controller on worker nodes", func() {
+	Context("Correctness of ...", func() {
 		It("...", func() {
-			err := nil
-			Expect(err).ShouldNot(HaveOccurred())
+			// TODO
 		})
 	})
 })
 
 var _ = AfterSuite(func() {
 	// reload updated kubeconfig
-	cfg, err := tester.LoadConfig()
+	_, err := tester.LoadConfig()
 	Expect(err).ShouldNot(HaveOccurred())
 
-	if cfg.Down {
-		err := tester.Down()
-		Expect(err).ShouldNot(HaveOccurred())
-	}
+	err = tester.Down()
+	Expect(err).ShouldNot(HaveOccurred())
 })

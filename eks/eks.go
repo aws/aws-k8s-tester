@@ -358,8 +358,21 @@ func (md *embedded) Up() (err error) {
 
 	defer func() {
 		if err != nil {
-			md.lg.Warn("failed to create EKS, reverting", zap.Error(err))
-			md.lg.Warn("failed to create EKS, reverted", zap.Error(md.down()))
+			md.lg.Warn("failed to create EKS, deleting the cluster", zap.Error(err))
+			derr := md.down()
+			if derr != nil {
+				md.lg.Warn("failed to delete the cluster", zap.Error(derr))
+			}
+		} else if md.cfg.DestroyAfterCreate {
+			md.lg.Info(
+				"successfully create cluster but configured to delete",
+				zap.Duration("wait-time", md.cfg.DestroyWaitTime),
+			)
+			time.Sleep(md.cfg.DestroyWaitTime)
+			derr := md.down()
+			if derr != nil {
+				md.lg.Warn("failed to delete the cluster", zap.Error(derr))
+			}
 		}
 	}()
 
@@ -483,7 +496,10 @@ func (md *embedded) down() (err error) {
 		}
 	}
 
-	md.lg.Info("starting Down", zap.String("cluster-name", md.cfg.ClusterName))
+	md.lg.Info("starting Down",
+		zap.String("cluster-name", md.cfg.ClusterName),
+		zap.String("cluster-arn", md.cfg.ClusterState.ClusterARN),
+	)
 	var errs []string
 	if err = md.deleteWorkerNode(); err != nil {
 		md.lg.Warn("failed to delete node group stack", zap.Error(err))
@@ -510,11 +526,6 @@ func (md *embedded) down() (err error) {
 		errs = append(errs, err.Error())
 	}
 
-	md.lg.Info("finished Down",
-		zap.String("cluster-name", md.cfg.ClusterName),
-		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
-	)
-
 	if err = md.cfg.Sync(); err != nil {
 		return err
 	}
@@ -527,6 +538,12 @@ func (md *embedded) down() (err error) {
 	if len(errs) > 0 {
 		return errors.New(strings.Join(errs, ", "))
 	}
+
+	md.lg.Info("successfully finished Down",
+		zap.String("cluster-name", md.cfg.ClusterName),
+		zap.String("cluster-arn", md.cfg.ClusterState.ClusterARN),
+		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
+	)
 	return nil
 }
 

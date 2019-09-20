@@ -20,6 +20,7 @@ limitations under the License.
 package eks
 
 import (
+	"encoding/base64"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -28,11 +29,20 @@ import (
 	"os"
 	osexec "os/exec"
 	"path/filepath"
+	"reflect"
 	"syscall"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/ekstester"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/sts"
+	"golang.org/x/oauth2"
+	"k8s.io/client-go/kubernetes"
+	clientset "k8s.io/client-go/kubernetes"
+	restclient "k8s.io/client-go/rest"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/test-infra/kubetest/process"
 	"k8s.io/test-infra/kubetest/util"
 )
@@ -194,7 +204,8 @@ func (dp *deployer) GetWorkerNodeLogs() (err error) {
 		dp.cfg.AWSK8sTesterPath,
 		"eks",
 		"--path="+dp.cfg.ConfigPath,
-		"test", "get-worker-node-logs",
+		"test",
+		"get-worker-node-logs",
 	))
 	return err
 }
@@ -211,7 +222,8 @@ func (dp *deployer) DumpClusterLogs(artifactDir, _ string) (err error) {
 		dp.cfg.AWSK8sTesterPath,
 		"eks",
 		"--path="+dp.cfg.ConfigPath,
-		"test", "get-worker-node-logs",
+		"test",
+		"get-worker-node-logs",
 	))
 	if err != nil {
 		return err
@@ -235,6 +247,110 @@ func (dp *deployer) KubectlCommand() (*osexec.Cmd, error) {
 	return osexec.Command(dp.cfg.KubectlPath, "--kubeconfig="+dp.cfg.KubeConfigPath), nil
 }
 
+const authProviderName = "eks"
+
+// KubernetesClientSet returns Kubernetes Go client.
+func (dp *deployer) KubernetesClientSet() *kubernetes.Clientset {
+	// reload configuration from disk to read the latest configuration
+	if _, err := dp.LoadConfig(); err != nil {
+		panic(err)
+	}
+
+	restCfg := &restclient.Config{
+		Host: dp.cfg.ClusterState.Endpoint,
+		TLSClientConfig: restclient.TLSClientConfig{
+			CAData: []byte(dp.cfg.ClusterState.CADecoded),
+		},
+		AuthProvider: &clientcmdapi.AuthProviderConfig{
+			Name: authProviderName,
+			Config: map[string]string{
+				// TODO: use this to support temporary credentials
+				// "aws-credentials-path": md.awsCredsPath,
+
+				"region":       dp.cfg.AWSRegion,
+				"cluster-name": dp.cfg.ClusterName,
+			},
+		},
+	}
+
+	k8sClientSet, err := clientset.NewForConfig(restCfg)
+	if err != nil {
+		panic(err)
+	}
+	return k8sClientSet
+}
+
+func init() {
+	restclient.RegisterAuthProviderPlugin(authProviderName, newAuthProvider)
+}
+
+func newAuthProvider(_ string, config map[string]string, _ restclient.AuthProviderConfigPersister) (restclient.AuthProvider, error) {
+	// TODO: use this to support temporary credentials
+	// awsCredentialsPath := config["aws-credentials-path"]
+
+	awsRegion, ok := config["region"]
+	if !ok {
+		return nil, fmt.Errorf("'clientcmdapi.AuthProviderConfig' does not include 'region' key %+v", config)
+	}
+	clusterName, ok := config["cluster-name"]
+	if !ok {
+		return nil, fmt.Errorf("'clientcmdapi.AuthProviderConfig' does not include 'cluster-name' key %+v", config)
+	}
+
+	sess := session.Must(session.NewSession(aws.NewConfig().WithRegion(awsRegion)))
+	return &eksAuthProvider{ts: newTokenSource(sess, clusterName)}, nil
+}
+
+type eksAuthProvider struct {
+	ts oauth2.TokenSource
+}
+
+func (p *eksAuthProvider) WrapTransport(rt http.RoundTripper) http.RoundTripper {
+	return &oauth2.Transport{
+		Source: p.ts,
+		Base:   rt,
+	}
+}
+
+func (p *eksAuthProvider) Login() error {
+	return nil
+}
+
+func newTokenSource(sess *session.Session, clusterName string) oauth2.TokenSource {
+	return &eksTokenSource{sess: sess, clusterName: clusterName}
+}
+
+type eksTokenSource struct {
+	sess        *session.Session
+	clusterName string
+}
+
+// Reference
+// https://github.com/kubernetes-sigs/aws-iam-authenticator/blob/master/README.md#api-authorization-from-outside-a-cluster
+// https://github.com/kubernetes-sigs/aws-iam-authenticator/blob/master/pkg/token/token.go
+const (
+	v1Prefix        = "k8s-aws-v1."
+	clusterIDHeader = "x-k8s-aws-id"
+)
+
+func (s *eksTokenSource) Token() (*oauth2.Token, error) {
+	stsAPI := sts.New(s.sess)
+	request, _ := stsAPI.GetCallerIdentityRequest(&sts.GetCallerIdentityInput{})
+	request.HTTPRequest.Header.Add(clusterIDHeader, s.clusterName)
+
+	payload, err := request.Presign(60)
+	if err != nil {
+		return nil, err
+	}
+	token := v1Prefix + base64.RawURLEncoding.EncodeToString([]byte(payload))
+	tokenExpiration := time.Now().Local().Add(14 * time.Minute)
+	return &oauth2.Token{
+		AccessToken: token,
+		TokenType:   "Bearer",
+		Expiry:      tokenExpiration,
+	}, nil
+}
+
 // Stop stops ongoing operations.
 // This is useful for local development.
 // For example, one may run "Up" but have to cancel ongoing "Up"
@@ -249,6 +365,36 @@ func (dp *deployer) LoadConfig() (eksconfig.Config, error) {
 	var err error
 	dp.cfg, err = eksconfig.Load(dp.cfg.ConfigPath)
 	return *dp.cfg, err
+}
+
+// NewTester creates a new EKS tester.
+func NewTester(timeout time.Duration, verbose bool) (ekstester.Tester, error) {
+	dp, err := NewDeployer(timeout, verbose)
+	if err != nil {
+		return nil, err
+	}
+	d, ok := dp.(*deployer)
+	if !ok {
+		return nil, fmt.Errorf("expected *deployer, got %v", reflect.TypeOf(dp))
+	}
+	return &tester{deployer: d}, nil
+}
+
+type tester struct {
+	*deployer
+}
+
+// UploadToBucketForTests uploads a local file to aws-k8s-tester S3 bucket.
+func (tr *tester) UploadToBucketForTests(localPath, s3Path string) (err error) {
+	_, err = tr.ctrl.Output(osexec.Command(
+		tr.cfg.AWSK8sTesterPath,
+		"eks",
+		"--path="+tr.cfg.ConfigPath,
+		"s3-upload",
+		localPath,
+		s3Path,
+	))
+	return err
 }
 
 var httpTransport *http.Transport
