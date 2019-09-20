@@ -3,7 +3,7 @@ module github.com/aws/aws-k8s-tester
 require (
 	contrib.go.opencensus.io/exporter/ocagent v0.6.0 // indirect
 	github.com/Azure/go-autorest v11.3.1+incompatible // indirect
-	github.com/aws/aws-sdk-go v1.23.13
+	github.com/aws/aws-sdk-go v1.24.2
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/cihub/seelog v0.0.0-20170130134532-f561c5e57575
 	github.com/davecgh/go-spew v1.1.1
@@ -43,3 +43,5 @@ require (
 	k8s.io/utils v0.0.0-20190814173059-6c36bc71fc4a
 	sigs.k8s.io/yaml v1.1.0
 )
+
+go 1.13
