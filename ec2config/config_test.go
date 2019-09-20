@@ -10,11 +10,9 @@ import (
 func TestEnv(t *testing.T) {
 	cfg := NewDefault()
 
-	os.Setenv("AWS_K8S_TESTER_EC2_WAIT_BEFORE_DOWN", "2h")
 	os.Setenv("AWS_K8S_TESTER_EC2_CLUSTER_SIZE", "100")
 	os.Setenv("AWS_K8S_TESTER_EC2_AWS_REGION", "us-east-1")
 	os.Setenv("AWS_K8S_TESTER_EC2_CONFIG_PATH", "test-path")
-	os.Setenv("AWS_K8S_TESTER_EC2_DOWN", "false")
 	os.Setenv("AWS_K8S_TESTER_EC2_LOG_LEVEL", "debug")
 	os.Setenv("AWS_K8S_TESTER_EC2_UPLOAD_AWS_TESTER_LOGS", "false")
 	os.Setenv("AWS_K8S_TESTER_EC2_UPLOAD_BUCKET_EXPIRE_DAYS", "3")
@@ -33,13 +31,13 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EC2_VOLUME_SIZE", "120")
 	os.Setenv("AWS_K8S_TESTER_EC2_VPC_CIDR", "192.168.0.0/8")
 	os.Setenv("AWS_K8S_TESTER_EC2_INSTANCE_PROFILE_FILE_PATH", "/tmp/aws-k8s-tester-ec2")
+	os.Setenv("AWS_K8S_TESTER_EC2_DESTROY_AFTER_CREATE", "true")
+	os.Setenv("AWS_K8S_TESTER_EC2_DESTROY_WAIT_TIME", "2h")
 
 	defer func() {
-		os.Unsetenv("AWS_K8S_TESTER_EC2_WAIT_BEFORE_DOWN")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_CLUSTER_SIZE")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_AWS_REGION")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_CONFIG_PATH")
-		os.Unsetenv("AWS_K8S_TESTER_EC2_DOWN")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_LOG_LEVEL")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_UPLOAD_AWS_TESTER_LOGS")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_UPLOAD_BUCKET_EXPIRE_DAYS")
@@ -58,15 +56,14 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWS_K8S_TESTER_EC2_VOLUME_SIZE")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_VPC_CIDR")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_INSTANCE_PROFILE_FILE_PATH")
+		os.Unsetenv("AWS_K8S_TESTER_EC2_DESTROY_AFTER_CREATE")
+		os.Unsetenv("AWS_K8S_TESTER_EC2_DESTROY_WAIT_TIME")
 	}()
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
 		t.Fatal(err)
 	}
 
-	if cfg.WaitBeforeDown != 2*time.Hour {
-		t.Fatalf("unexpected WaitBeforeDown, got %v", cfg.WaitBeforeDown)
-	}
 	if cfg.ClusterSize != 100 {
 		t.Fatalf("ClusterSize expected 100, got %d", cfg.ClusterSize)
 	}
@@ -76,8 +73,11 @@ func TestEnv(t *testing.T) {
 	if cfg.ConfigPath != "test-path" {
 		t.Fatalf("ConfigPath unexpected %q", cfg.ConfigPath)
 	}
-	if cfg.Down {
-		t.Fatalf("Down unexpected %v", cfg.Down)
+	if !cfg.DestroyAfterCreate {
+		t.Fatalf("DestroyAfterCreate expected 'true', got %v", cfg.DestroyAfterCreate)
+	}
+	if cfg.DestroyWaitTime != 2*time.Hour {
+		t.Fatalf("DestroyWaitTime expected 2h, got %v", cfg.DestroyWaitTime)
 	}
 	if cfg.LogLevel != "debug" {
 		t.Fatalf("LogLevel unexpected %q", cfg.LogLevel)

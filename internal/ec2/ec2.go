@@ -7,9 +7,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/signal"
 	"reflect"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
@@ -141,8 +143,23 @@ func (md *embedded) Create() (err error) {
 	md.lg.Info("creating", zap.String("cluster-name", md.cfg.ClusterName))
 
 	defer func() {
-		if err != nil {
+		if err != nil || (err == nil && md.cfg.DestroyAfterCreate) {
 			md.lg.Warn("reverting EC2 creation", zap.Error(err))
+
+			if err == nil && md.cfg.DestroyAfterCreate {
+				md.lg.Info(
+					"successfully create EC2 but configured to delete",
+					zap.Duration("wait-time", md.cfg.DestroyWaitTime),
+				)
+				notifier := make(chan os.Signal, 1)
+				signal.Notify(notifier, syscall.SIGINT, syscall.SIGTERM)
+				select {
+				case <-time.After(md.cfg.DestroyWaitTime):
+				case sig := <-notifier:
+					md.lg.Warn("received signal", zap.String("signal", sig.String()))
+				}
+			}
+
 			if derr := md.deleteInstances(); derr != nil {
 				md.lg.Warn("failed to revert instance creation", zap.Error(derr))
 			}
@@ -494,7 +511,10 @@ func (md *embedded) deleteInstances() (err error) {
 func (md *embedded) Terminate() (err error) {
 	md.mu.Lock()
 	defer md.mu.Unlock()
+	return md.terminate()
+}
 
+func (md *embedded) terminate() (err error) {
 	now := time.Now().UTC()
 	md.lg.Info("deleting", zap.String("cluster-name", md.cfg.ClusterName))
 

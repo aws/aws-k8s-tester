@@ -357,18 +357,23 @@ func (md *embedded) Up() (err error) {
 	}
 
 	defer func() {
-		if err != nil {
-			md.lg.Warn("failed to create EKS, deleting the cluster", zap.Error(err))
-			derr := md.down()
-			if derr != nil {
-				md.lg.Warn("failed to delete the cluster", zap.Error(derr))
+		if err != nil || (err == nil && md.cfg.DestroyAfterCreate) {
+			md.lg.Warn("reverting cluster creation", zap.Error(err))
+
+			if err == nil && md.cfg.DestroyAfterCreate {
+				md.lg.Info(
+					"successfully create cluster but configured to delete",
+					zap.Duration("wait-time", md.cfg.DestroyWaitTime),
+				)
+				notifier := make(chan os.Signal, 1)
+				signal.Notify(notifier, syscall.SIGINT, syscall.SIGTERM)
+				select {
+				case <-time.After(md.cfg.DestroyWaitTime):
+				case sig := <-notifier:
+					md.lg.Warn("received signal", zap.String("signal", sig.String()))
+				}
 			}
-		} else if md.cfg.DestroyAfterCreate {
-			md.lg.Info(
-				"successfully create cluster but configured to delete",
-				zap.Duration("wait-time", md.cfg.DestroyWaitTime),
-			)
-			time.Sleep(md.cfg.DestroyWaitTime)
+
 			derr := md.down()
 			if derr != nil {
 				md.lg.Warn("failed to delete the cluster", zap.Error(derr))
@@ -950,7 +955,13 @@ func (md *embedded) deleteCluster(deleteKubeconfig bool) error {
 
 	// usually takes 5-minute
 	md.lg.Info("waiting for 4-minute after cluster delete request")
-	time.Sleep(4 * time.Minute)
+	notifier := make(chan os.Signal, 1)
+	signal.Notify(notifier, syscall.SIGINT, syscall.SIGTERM)
+	select {
+	case <-time.After(4 * time.Minute):
+	case sig := <-notifier:
+		md.lg.Warn("received signal", zap.String("signal", sig.String()))
+	}
 
 	retryStart := time.Now().UTC()
 	for time.Now().UTC().Sub(retryStart) < 15*time.Minute {

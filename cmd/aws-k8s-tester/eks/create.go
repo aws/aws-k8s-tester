@@ -3,9 +3,6 @@ package eks
 import (
 	"fmt"
 	"os"
-	"os/signal"
-	"syscall"
-	"time"
 
 	"github.com/aws/aws-k8s-tester/eks"
 	"github.com/aws/aws-k8s-tester/eksconfig"
@@ -51,11 +48,8 @@ func newCreateCluster() *cobra.Command {
 		Short: "Create an EKS cluster",
 		Run:   createClusterFunc,
 	}
-	cmd.PersistentFlags().BoolVar(&terminateOnExit, "terminate-on-exit", false, "true to terminate EKS cluster on exit")
 	return cmd
 }
-
-var terminateOnExit bool
 
 func createClusterFunc(cmd *cobra.Command, args []string) {
 	if !fileutil.Exist(path) {
@@ -85,19 +79,4 @@ func createClusterFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 	fmt.Println("'aws-k8s-tester eks create cluster' success")
-
-	if terminateOnExit {
-		notifier := make(chan os.Signal, 1)
-		signal.Notify(notifier, syscall.SIGINT, syscall.SIGTERM)
-		select {
-		case <-time.After(cfg.WaitBeforeDown):
-		case sig := <-notifier:
-			fmt.Fprintf(os.Stderr, "received %s\n", sig)
-		}
-		if err = tester.Down(); err != nil {
-			fmt.Fprintf(os.Stderr, "failed to delete cluster %v\n", err)
-			os.Exit(1)
-		}
-		fmt.Println("'aws-k8s-tester eks create cluster --terminate-on-exit' success")
-	}
 }

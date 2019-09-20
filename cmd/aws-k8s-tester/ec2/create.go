@@ -3,9 +3,6 @@ package ec2
 import (
 	"fmt"
 	"os"
-	"os/signal"
-	"syscall"
-	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/internal/ec2"
@@ -18,15 +15,12 @@ func newCreate() *cobra.Command {
 		Use:   "create <subcommand>",
 		Short: "Create commands",
 	}
-	cmd.PersistentFlags().BoolVar(&terminateOnExit, "terminate-on-exit", false, "true to terminate EC2 instance on test exit")
 	cmd.AddCommand(
 		newCreateConfig(),
 		newCreateCluster(),
 	)
 	return cmd
 }
-
-var terminateOnExit bool
 
 func newCreateConfig() *cobra.Command {
 	return &cobra.Command{
@@ -80,20 +74,4 @@ func createClusterFunc(cmd *cobra.Command, args []string) {
 	}
 
 	fmt.Println(cfg.SSHCommands())
-
-	if terminateOnExit {
-		notifier := make(chan os.Signal, 1)
-		signal.Notify(notifier, syscall.SIGINT, syscall.SIGTERM)
-		select {
-		case <-time.After(cfg.WaitBeforeDown):
-		case sig := <-notifier:
-			fmt.Fprintf(os.Stderr, "received %s\n", sig)
-		}
-		if err = dp.Terminate(); err != nil {
-			fmt.Fprintf(os.Stderr, "failed to delete cluster %v\n", err)
-			os.Exit(1)
-		} else {
-			fmt.Fprintf(os.Stderr, "deleted cluster\n")
-		}
-	}
 }

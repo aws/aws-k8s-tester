@@ -56,13 +56,11 @@ type Config struct {
 	// ClusterName is an unique ID for cluster.
 	ClusterName string `json:"cluster-name"`
 
-	// WaitBeforeDown is the duration to sleep before EC2 tear down.
-	// This is for "test".
-	WaitBeforeDown time.Duration `json:"wait-before-down"`
-	// Down is true to automatically tear down EC2 in "test".
-	// Note that this is meant to be used as a flag in "test".
-	// Deployer implementation should not call "Down" inside "Up" method.
-	Down bool `json:"down"`
+	// DestroyAfterCreate is true to automatically tear down EC2 instances.
+	DestroyAfterCreate bool `json:"destroy-after-create"`
+	// DestroyWaitTime is the duration to sleep before EC2 tear down.
+	// Be ignored if "DestroyAfterCreate" is false.
+	DestroyWaitTime time.Duration `json:"destroy-wait-time,omitempty"`
 
 	// ConfigPath is the configuration file path.
 	// If empty, it is autopopulated.
@@ -259,8 +257,8 @@ var defaultConfig = Config{
 	EnvPrefix: envPfx,
 	AWSRegion: "us-west-2",
 
-	WaitBeforeDown: time.Minute,
-	Down:           true,
+	DestroyAfterCreate: false,
+	DestroyWaitTime:    time.Minute,
 
 	LogLevel: logutil.DefaultLogLevel,
 
@@ -344,7 +342,7 @@ func (cfg *Config) UpdateFromEnvs() error {
 			vv.Field(i).SetBool(bb)
 
 		case reflect.Int, reflect.Int32, reflect.Int64:
-			if fieldName == "WaitBeforeDown" {
+			if fieldName == "DestroyWaitTime" {
 				dv, err := time.ParseDuration(sv)
 				if err != nil {
 					return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
