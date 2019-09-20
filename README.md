@@ -66,10 +66,9 @@ Assume the AWS account ID is granted beta access:
 ```bash
 cd ${GOPATH}/src/github.com/aws/aws-k8s-tester
 go install -v ./cmd/aws-k8s-tester
-aws-k8s-tester eks create cluster -h
 
 aws-k8s-tester eks create config --path /tmp/aws-k8s-tester-eks-beta.yaml
-sed 's#eks-resolver-url: ""#eks-resolver-url: https://api.beta.us-west-2.wesley.amazonaws.com#g' /tmp/aws-k8s-tester-eks-beta.yaml
+sed -i.bak 's#eks-resolver-url: ""#eks-resolver-url: https://api.beta.us-west-2.wesley.amazonaws.com#g' /tmp/aws-k8s-tester-eks-beta.yaml
 
 aws-k8s-tester eks create cluster --path /tmp/aws-k8s-tester-eks-beta.yaml
 ```

@@ -114,6 +114,8 @@ type Config struct {
 	// Be ignored if "WorkerNodeAMIID" is specified.
 	// Must be non-empty if "WorkerNodeAMIID" is NOT specified.
 	WorkerNodeAMIType string `json:"worker-node-ami-type"`
+	// WorkerNodeUserName is the user name for worker node SSH access.
+	WorkerNodeUserName string `json:"worker-node-user-name"`
 	// WorkerNodeAMIID is the Amazon EKS worker node AMI ID for the specified Region.
 	// Reference https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html.
 	// Leave empty to auto-populate from SSM parameter.
@@ -327,6 +329,7 @@ var defaultConfig = Config{
 	// keep in-sync with the default value in https://godoc.org/k8s.io/kubernetes/test/e2e/framework#GetSigner
 	WorkerNodePrivateKeyPath:     filepath.Join(homedir.HomeDir(), ".ssh", "kube_aws_rsa"),
 	WorkerNodeAMIType:            "amazon-linux-2",
+	WorkerNodeUserName:           "ec2-user",
 	WorkerNodeInstanceType:       "m3.xlarge",
 	WorkerNodeASGMin:             1,
 	WorkerNodeASGMax:             1,
@@ -416,13 +419,13 @@ func (cfg *Config) Sync() (err error) {
 // At the end, it writes populated YAML to aws-k8s-tester config path.
 func (cfg *Config) ValidateAndSetDefaults() error {
 	if len(cfg.LogOutputs) == 0 {
-		return errors.New("EKS LogOutputs is not specified")
+		return errors.New("LogOutputs is not empty")
 	}
 	if cfg.KubernetesVersion == "" {
 		return errors.New("KubernetesVersion is empty")
 	}
 	if cfg.AWSRegion == "" {
-		return errors.New("AWS Region is empty")
+		return errors.New("AWSRegion is empty")
 	}
 	if cfg.Tag == "" {
 		return errors.New("Tag is empty")
@@ -439,27 +442,37 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		}
 	}
 
+	if cfg.WorkerNodeUserName == "" {
+		return errors.New("WorkerNodeUserName is empty")
+	}
+
 	// expect auto-populate from SSM
 	if cfg.WorkerNodeAMIID == "" {
 		if cfg.WorkerNodeAMIName != "" {
-			return errors.New("EKS WorkerNodeAMIID is not specified; but WorkerNodeAMIName is specified")
+			return errors.New("WorkerNodeAMIID is not specified; but WorkerNodeAMIName is specified")
 		}
 		switch cfg.WorkerNodeAMIType {
 		case "amazon-linux-2":
+			if cfg.WorkerNodeUserName != "ec2-user" {
+				return fmt.Errorf("unexpected WorkerNodeUserName %q", cfg.WorkerNodeUserName)
+			}
 		case "amazon-linux-2-gpu":
+			if cfg.WorkerNodeUserName != "ec2-user" {
+				return fmt.Errorf("unexpected WorkerNodeUserName %q", cfg.WorkerNodeUserName)
+			}
 		default:
-			return fmt.Errorf("EKS WorkerNodeAMIID is not specified; but unknown WorkerNodeAMIType %q", cfg.WorkerNodeAMIType)
+			return fmt.Errorf("WorkerNodeAMIID is not specified; but unknown WorkerNodeAMIType %q", cfg.WorkerNodeAMIType)
 		}
 	}
 
 	if cfg.WorkerNodeInstanceType == "" {
-		return errors.New("EKS WorkerNodeInstanceType is not specified")
+		return errors.New("WorkerNodeInstanceType is not specified")
 	}
 	if cfg.WorkerNodeASGMin == 0 {
-		return errors.New("EKS WorkerNodeASGMin is not specified")
+		return errors.New("WorkerNodeASGMin is not specified")
 	}
 	if cfg.WorkerNodeASGMax == 0 {
-		return errors.New("EKS WorkerNodeASGMax is not specified")
+		return errors.New("WorkerNodeASGMax is not specified")
 	}
 	if !checkWorkderNodeASG(cfg.WorkerNodeASGMin, cfg.WorkerNodeASGMax) {
 		return fmt.Errorf("EKS WorkderNodeASG %d and %d is not valid", cfg.WorkerNodeASGMin, cfg.WorkerNodeASGMax)
@@ -664,6 +677,7 @@ func (cfg *Config) SSHCommands() (s string) {
 		return ""
 	}
 	ec := &ec2config.Config{
+		UserName:  cfg.WorkerNodeUserName,
 		KeyPath:   cfg.WorkerNodePrivateKeyPath,
 		Instances: cfg.ClusterState.WorkerNodes,
 	}

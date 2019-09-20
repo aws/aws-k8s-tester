@@ -65,6 +65,9 @@ func (md *embedded) createWorkerNode() error {
 		if output.ImageID == "" || output.ImageName == "" {
 			return fmt.Errorf("latest worker node AMI not found (AMI %q, name %q)", output.ImageID, output.ImageName)
 		}
+		md.cfg.WorkerNodeAMIID = output.ImageID
+		md.cfg.WorkerNodeAMIName = output.ImageName
+		md.cfg.Sync()
 		md.lg.Info("successfully got latest worker node AMI from SSM parameter",
 			zap.String("worker-node-ami-type", md.cfg.WorkerNodeAMIType),
 			zap.String("worker-node-ami-id", output.ImageID),
@@ -91,14 +94,8 @@ func (md *embedded) createWorkerNode() error {
 		Tags: []*cloudformation.Tag{
 			{Key: aws.String("Kind"), Value: aws.String("aws-k8s-tester")},
 			{Key: aws.String("Creation"), Value: aws.String(time.Now().UTC().String())},
-			{
-				Key:   aws.String("Name"),
-				Value: aws.String(md.cfg.ClusterName),
-			},
-			{
-				Key:   aws.String("HOSTNAME"),
-				Value: aws.String(h),
-			},
+			{Key: aws.String("Name"), Value: aws.String(md.cfg.ClusterName)},
+			{Key: aws.String("HOSTNAME"), Value: aws.String(h)},
 		},
 
 		TemplateBody: aws.String(s),
