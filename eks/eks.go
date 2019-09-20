@@ -40,6 +40,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/aws/aws-sdk-go/service/iam/iamiface"
 	awss3 "github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/ssm"
+	"github.com/aws/aws-sdk-go/service/ssm/ssmiface"
 	"github.com/aws/aws-sdk-go/service/sts"
 	humanize "github.com/dustin/go-humanize"
 	"go.uber.org/zap"
@@ -64,16 +66,17 @@ type embedded struct {
 	lg  *zap.Logger
 	cfg *eksconfig.Config
 
-	eksSession *session.Session
-	eks        eksiface.EKSAPI
-
 	ss           *session.Session
 	awsCredsPath string
 
-	im  iamiface.IAMAPI
-	cf  cloudformationiface.CloudFormationAPI
+	iam iamiface.IAMAPI
+	ssm ssmiface.SSMAPI
+	cfn cloudformationiface.CloudFormationAPI
 	asg autoscalingiface.AutoScalingAPI
 	ec2 ec2iface.EC2API
+
+	eksSession *session.Session
+	eks        eksiface.EKSAPI
 
 	ec2InstancesLogMu *sync.RWMutex
 
@@ -192,18 +195,19 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 		return nil, err
 	}
 	md.cfg.AWSAccountID = *stsOutput.Account
-	md.im = iam.New(md.ss)
-	md.cf = cloudformation.New(md.ss)
+	md.iam = iam.New(md.ss)
+	md.ssm = ssm.New(md.ss)
+	md.cfn = cloudformation.New(md.ss)
 	md.asg = autoscaling.New(md.ss)
 	md.ec2 = ec2.New(md.ss)
 
-	awsCfgEKS := &awsapi.Config{
+	// create a separate session for EKS (for resolver endpoint)
+	md.eksSession, _, md.awsCredsPath, err = awsapi.New(&awsapi.Config{
 		Logger:        md.lg,
 		DebugAPICalls: md.cfg.LogLevel == "debug",
 		Region:        md.cfg.AWSRegion,
 		ResolverURL:   md.cfg.EKSResolverURL,
-	}
-	md.eksSession, _, md.awsCredsPath, err = awsapi.New(awsCfgEKS)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -229,7 +233,7 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 	md.s3Plugin = s3.NewEmbedded(md.lg, md.cfg, awss3.New(md.ss))
 
 	// to connect to an existing cluster
-	op, err := md.im.GetRole(&iam.GetRoleInput{
+	op, err := md.iam.GetRole(&iam.GetRoleInput{
 		RoleName: aws.String(md.cfg.ClusterState.ServiceRoleWithPolicyName),
 	})
 	if err == nil {
@@ -238,7 +242,7 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 	}
 
 	// to connect to an existing cluster
-	do, err := md.cf.DescribeStacks(&cloudformation.DescribeStacksInput{
+	do, err := md.cfn.DescribeStacks(&cloudformation.DescribeStacksInput{
 		StackName: aws.String(md.cfg.CFStackVPCName),
 	})
 	if err == nil && len(do.Stacks) == 1 {

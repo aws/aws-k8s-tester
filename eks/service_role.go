@@ -19,7 +19,7 @@ func (md *embedded) createAWSServiceRoleForAmazonEKS() error {
 
 	now := time.Now().UTC()
 
-	op1, err := md.im.CreateRole(&iam.CreateRoleInput{
+	op1, err := md.iam.CreateRole(&iam.CreateRoleInput{
 		RoleName:                 aws.String(md.cfg.ClusterState.ServiceRoleWithPolicyName),
 		AssumeRolePolicyDocument: aws.String(serviceRolePolicyDoc),
 	})
@@ -30,7 +30,7 @@ func (md *embedded) createAWSServiceRoleForAmazonEKS() error {
 	md.cfg.Sync()
 
 	// check if it has been created
-	op2, err := md.im.GetRole(&iam.GetRoleInput{
+	op2, err := md.iam.GetRole(&iam.GetRoleInput{
 		RoleName: aws.String(md.cfg.ClusterState.ServiceRoleWithPolicyName),
 	})
 	if err != nil {
@@ -63,7 +63,7 @@ func (md *embedded) deleteAWSServiceRoleForAmazonEKS() error {
 
 	now := time.Now().UTC()
 
-	_, err := md.im.DeleteRole(&iam.DeleteRoleInput{
+	_, err := md.iam.DeleteRole(&iam.DeleteRoleInput{
 		RoleName: aws.String(md.cfg.ClusterState.ServiceRoleWithPolicyName),
 	})
 	if err != nil && !isIAMRoleDeletedGoClient(err) {
@@ -71,7 +71,7 @@ func (md *embedded) deleteAWSServiceRoleForAmazonEKS() error {
 	}
 
 	// check if it has been deleted
-	_, err = md.im.GetRole(&iam.GetRoleInput{RoleName: aws.String(md.cfg.ClusterState.ServiceRoleWithPolicyName)})
+	_, err = md.iam.GetRole(&iam.GetRoleInput{RoleName: aws.String(md.cfg.ClusterState.ServiceRoleWithPolicyName)})
 	if !isIAMRoleDeletedGoClient(err) {
 		return fmt.Errorf("%s still exists after 'DeleteRole' call (error %v)", md.cfg.ClusterState.ServiceRoleWithPolicyName, err)
 	}
@@ -92,7 +92,7 @@ func (md *embedded) attachPolicyForAWSServiceRoleForAmazonEKS() error {
 	now := time.Now().UTC()
 
 	for _, pv := range md.cfg.ClusterState.ServiceRolePolicies {
-		_, err := md.im.AttachRolePolicy(&iam.AttachRolePolicyInput{
+		_, err := md.iam.AttachRolePolicy(&iam.AttachRolePolicyInput{
 			RoleName:  aws.String(md.cfg.ClusterState.ServiceRoleWithPolicyName),
 			PolicyArn: aws.String(pv),
 		})
@@ -133,7 +133,7 @@ func (md *embedded) detachPolicyForAWSServiceRoleForAmazonEKS() error {
 	now := time.Now().UTC()
 
 	for _, pv := range md.cfg.ClusterState.ServiceRolePolicies {
-		_, err := md.im.DetachRolePolicy(&iam.DetachRolePolicyInput{
+		_, err := md.iam.DetachRolePolicy(&iam.DetachRolePolicyInput{
 			RoleName:  aws.String(md.cfg.ClusterState.ServiceRoleWithPolicyName),
 			PolicyArn: aws.String(pv),
 		})

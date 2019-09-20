@@ -111,7 +111,11 @@ type Config struct {
 	WorkerNodePrivateKeyPath string `json:"worker-node-private-key-path,omitempty"`
 	// WorkerNodeAMI is the Amazon EKS worker node AMI ID for the specified Region.
 	// Reference https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html.
+	// Leave empty to auto-populate from SSM parameter.
 	WorkerNodeAMI string `json:"worker-node-ami,omitempty"`
+	// WorkerNodeAMIName is the name of the worker node AMI.
+	// Leave empty to auto-populate from SSM parameter.
+	WorkerNodeAMIName string `json:"worker-node-ami-name,omitempty"`
 	// WorkerNodeInstanceType is the EC2 instance type for worker nodes.
 	WorkerNodeInstanceType string `json:"worker-node-instance-type,omitempty"`
 	// WorkerNodeASGMin is the minimum number of nodes in worker node ASG.
@@ -317,9 +321,6 @@ var defaultConfig = Config{
 	// keep in-sync with the default value in https://godoc.org/k8s.io/kubernetes/test/e2e/framework#GetSigner
 	WorkerNodePrivateKeyPath: filepath.Join(homedir.HomeDir(), ".ssh", "kube_aws_rsa"),
 
-	// Amazon EKS-optimized AMI, https://docs.aws.amazon.com/eks/latest/userguide/eks-optimized-ami.html
-	// for the corresponding region and version
-	WorkerNodeAMI:                "ami-038a987c6425a84ad",
 	WorkerNodeInstanceType:       "m3.xlarge",
 	WorkerNodeASGMin:             1,
 	WorkerNodeASGMax:             1,
@@ -423,8 +424,8 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	if cfg.ClusterName == "" {
 		return errors.New("ClusterName is empty")
 	}
-	if cfg.WorkerNodeAMI == "" {
-		return errors.New("EKS WorkerNodeAMI is not specified")
+	if cfg.WorkerNodeAMI == "" && cfg.WorkerNodeAMIName != "" {
+		return errors.New("EKS WorkerNodeAMI is not specified but WorkerNodeAMIName is specified")
 	}
 	if cfg.WorkerNodeInstanceType == "" {
 		return errors.New("EKS WorkerNodeInstanceType is not specified")

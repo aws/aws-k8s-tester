@@ -18,6 +18,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/autoscaling"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/service/ssm"
 	humanize "github.com/dustin/go-humanize"
 	"go.uber.org/zap"
 	"k8s.io/utils/exec"
@@ -29,6 +30,33 @@ func (md *embedded) createWorkerNode() error {
 	}
 	if md.cfg.ClusterState.CFStackWorkerNodeGroupName == "" {
 		return errors.New("cannot create empty worker node")
+	}
+
+	if md.cfg.WorkerNodeAMI == "" {
+		// https://aws.amazon.com/about-aws/whats-new/2019/09/amazon-eks-provides-eks-optimized-ami-metadata-via-ssm-parameters/
+		ssmKey := fmt.Sprintf("/aws/service/eks/optimized-ami/%s/amazon-linux-2/recommended", md.cfg.KubernetesVersion)
+		md.lg.Info("getting SSM parameter to get latest worker node AMI", zap.String("ssm-key", ssmKey))
+		so, err := md.ssm.GetParameters(&ssm.GetParametersInput{
+			Names: aws.StringSlice([]string{ssmKey}),
+		})
+		if err != nil {
+			return fmt.Errorf("failed to get latest worker node AMI %v", err)
+		}
+		for _, pm := range so.Parameters {
+			switch *pm.Name {
+			case "image_id":
+				md.cfg.WorkerNodeAMI = *pm.Value
+			case "image_name":
+				md.cfg.WorkerNodeAMIName = *pm.Value
+			}
+		}
+		if md.cfg.WorkerNodeAMI == "" || md.cfg.WorkerNodeAMIName == "" {
+			return fmt.Errorf("could not find latest worker node AMI %q %q", md.cfg.WorkerNodeAMI, md.cfg.WorkerNodeAMIName)
+		}
+		md.lg.Info("successfully got latest worker node AMI",
+			zap.String("ami", md.cfg.WorkerNodeAMI),
+			zap.String("ami-name", md.cfg.WorkerNodeAMIName),
+		)
 	}
 
 	now := time.Now().UTC()
@@ -45,7 +73,7 @@ func (md *embedded) createWorkerNode() error {
 		md.lg.Info("HA mode is disabled", zap.Strings("subnet-ids", subnetIDs))
 	}
 
-	_, err = md.cf.CreateStack(&cloudformation.CreateStackInput{
+	_, err = md.cfn.CreateStack(&cloudformation.CreateStackInput{
 		StackName: aws.String(md.cfg.ClusterState.CFStackWorkerNodeGroupName),
 		Tags: []*cloudformation.Tag{
 			{
@@ -138,7 +166,7 @@ func (md *embedded) createWorkerNode() error {
 		}
 
 		var do *cloudformation.DescribeStacksOutput
-		do, err = md.cf.DescribeStacks(&cloudformation.DescribeStacksInput{
+		do, err = md.cfn.DescribeStacks(&cloudformation.DescribeStacksInput{
 			StackName: aws.String(md.cfg.ClusterState.CFStackWorkerNodeGroupName),
 		})
 		if err != nil {
@@ -449,7 +477,7 @@ func (md *embedded) deleteWorkerNode() error {
 		return errors.New("cannot delete empty worker node")
 	}
 
-	_, err := md.cf.DeleteStack(&cloudformation.DeleteStackInput{
+	_, err := md.cfn.DeleteStack(&cloudformation.DeleteStackInput{
 		StackName: aws.String(md.cfg.ClusterState.CFStackWorkerNodeGroupName),
 	})
 	if err != nil {
@@ -474,7 +502,7 @@ func (md *embedded) deleteWorkerNode() error {
 	retryStart := time.Now().UTC()
 	for time.Now().UTC().Sub(retryStart) < waitTime {
 		var do *cloudformation.DescribeStacksOutput
-		do, err = md.cf.DescribeStacks(&cloudformation.DescribeStacksInput{
+		do, err = md.cfn.DescribeStacks(&cloudformation.DescribeStacksInput{
 			StackName: aws.String(md.cfg.ClusterState.CFStackWorkerNodeGroupName),
 		})
 		if err == nil {
@@ -523,7 +551,7 @@ func (md *embedded) checkASG() (err error) {
 	md.lg.Info("checking auto scaling groups for worker node instance information")
 
 	var rout *cloudformation.DescribeStackResourcesOutput
-	rout, err = md.cf.DescribeStackResources(&cloudformation.DescribeStackResourcesInput{
+	rout, err = md.cfn.DescribeStackResources(&cloudformation.DescribeStackResourcesInput{
 		StackName: aws.String(md.cfg.ClusterState.CFStackWorkerNodeGroupName),
 	})
 	if err != nil {

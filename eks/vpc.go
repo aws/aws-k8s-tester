@@ -72,7 +72,7 @@ func (md *embedded) createVPC() error {
 			},
 		}
 	}
-	_, err = md.cf.CreateStack(cfnInput)
+	_, err = md.cfn.CreateStack(cfnInput)
 	if err != nil {
 		return err
 	}
@@ -97,7 +97,7 @@ func (md *embedded) createVPC() error {
 		}
 
 		var do *cloudformation.DescribeStacksOutput
-		do, err = md.cf.DescribeStacks(&cloudformation.DescribeStacksInput{
+		do, err = md.cfn.DescribeStacks(&cloudformation.DescribeStacksInput{
 			StackName: aws.String(md.cfg.CFStackVPCName),
 		})
 		if err != nil {
@@ -192,7 +192,7 @@ func (md *embedded) deleteVPC() error {
 		return errors.New("cannot delete empty VPC stack")
 	}
 
-	_, err := md.cf.DeleteStack(&cloudformation.DeleteStackInput{
+	_, err := md.cfn.DeleteStack(&cloudformation.DeleteStackInput{
 		StackName: aws.String(md.cfg.CFStackVPCName),
 	})
 	if err != nil {
@@ -207,7 +207,7 @@ func (md *embedded) deleteVPC() error {
 	now := time.Now().UTC()
 	for time.Now().UTC().Sub(now) < 5*time.Minute {
 		var do *cloudformation.DescribeStacksOutput
-		do, err = md.cf.DescribeStacks(&cloudformation.DescribeStacksInput{
+		do, err = md.cfn.DescribeStacks(&cloudformation.DescribeStacksInput{
 			StackName: aws.String(md.cfg.CFStackVPCName),
 		})
 		if err == nil {
