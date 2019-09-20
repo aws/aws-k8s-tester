@@ -19,6 +19,7 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_AWS_IAM_AUTHENTICATOR_DOWNLOAD_URL", "https://amazon-eks.s3-us-west-2.amazonaws.com/1.11.5/2018-12-06/bin/linux/amd64/aws-iam-authenticator")
 	os.Setenv("AWS_K8S_TESTER_EKS_AWS_IAM_AUTHENTICATOR_PATH", "/tmp/aws-k8s-tester-test/aws-iam-authenticator")
 	os.Setenv("AWS_K8S_TESTER_EKS_KUBERNETES_VERSION", "1.11")
+	os.Setenv("AWS_K8S_TESTER_EKS_EKS_RESOLVER_URL", "https://api.beta.us-west-2.wesley.amazonaws.com")
 	os.Setenv("AWS_K8S_TESTER_EKS_TAG", "my-test")
 	os.Setenv("AWS_K8S_TESTER_EKS_CF_STACK_VPC_PARAMETER_VPC_BLOCK", "192.168.0.0/8")
 	os.Setenv("AWS_K8S_TESTER_EKS_CF_STACK_VPC_PARAMETER_SUBNET_01_BLOCK", "192.168.64.0/8")
@@ -54,6 +55,7 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWS_K8S_TESTER_EKS_AWS_IAM_AUTHENTICATOR_DOWNLOAD_URL")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_AWS_IAM_AUTHENTICATOR_PATH")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_KUBERNETES_VERSION")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_EKS_RESOLVER_URL")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_TAG")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_CF_STACK_VPC_PARAMETER_VPC_BLOCK")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_CF_STACK_VPC_PARAMETER_SUBNET_01_BLOCK")
@@ -108,6 +110,9 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.KubernetesVersion != "1.11" {
 		t.Fatalf("KubernetesVersion 1.11, got %q", cfg.KubernetesVersion)
+	}
+	if cfg.EKSResolverURL != "https://api.beta.us-west-2.wesley.amazonaws.com" {
+		t.Fatalf("unexpected EKSResolverURL %q", cfg.EKSResolverURL)
 	}
 	if cfg.Tag != "my-test" {
 		t.Fatalf("Tag my-test, got %q", cfg.Tag)

@@ -77,6 +77,12 @@ Conditions:
       - Fn::Equals:
         - {Ref: 'AWS::Region'}
         - cn-north-1
+      - Fn::Equals:
+        - {Ref: 'AWS::Region'}
+        - sa-east-1
+      - Fn::Equals:
+        - {Ref: 'AWS::Region'}
+        - us-west-1
 
   HasMoreThan2Azs:
     Fn::Not:
@@ -90,6 +96,8 @@ Resources:
       EnableDnsSupport: true
       EnableDnsHostnames: true
       Tags:
+      - Key: Kind
+        Value: aws-k8s-tester
       - Key: Name
         Value: {{ .TagValue }}
       - Key: HOSTNAME
@@ -99,6 +107,8 @@ Resources:
     Type: "AWS::EC2::InternetGateway"
     Properties:
       Tags:
+      - Key: Kind
+        Value: aws-k8s-tester
       - Key: Name
         Value: {{ .TagValue }}
       - Key: HOSTNAME
@@ -115,6 +125,8 @@ Resources:
     Properties:
       VpcId: !Ref VPC
       Tags:
+      - Key: Kind
+        Value: aws-k8s-tester
       - Key: Name
         Value: Public Subnets
       - Key: Network
@@ -147,6 +159,8 @@ Resources:
       VpcId:
         Ref: VPC
       Tags:
+      - Key: Kind
+        Value: aws-k8s-tester
       - Key: Name
         Value: !Sub "{{ .TagValue }}-Subnet01"
       - Key: {{ .Tag }}
@@ -169,6 +183,8 @@ Resources:
       VpcId:
         Ref: VPC
       Tags:
+      - Key: Kind
+        Value: aws-k8s-tester
       - Key: Name
         Value: !Sub "{{ .TagValue }}-Subnet02"
       - Key: {{ .Tag }}
@@ -192,6 +208,8 @@ Resources:
       VpcId:
         Ref: VPC
       Tags:
+      - Key: Kind
+        Value: aws-k8s-tester
       - Key: Name
         Value: !Sub "{{ .TagValue }}-Subnet03"
       - Key: {{ .Tag }}

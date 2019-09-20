@@ -12,16 +12,61 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	serviceRolePolicyDocProd = `{
+	"Version": "2012-10-17",
+	"Statement": [
+		{
+			"Effect": "Allow",
+			"Principal": {
+				"Service": "eks.amazonaws.com"
+			},
+			"Action": "sts:AssumeRole"
+		}
+	]
+}`
+	serviceRolePolicyDocBeta = `{
+	"Version": "2012-10-17",
+	"Statement": [
+		{
+			"Effect": "Allow",
+			"Principal": {
+				"Service": [
+					"eks-dev.aws.internal",
+					"eks-beta-pdx.aws.internal",
+					"eks.amazonaws.com"
+				]
+			},
+			"Action": "sts:AssumeRole"
+		}
+	]
+}`
+)
+
+var stageToServiceRole = map[string]string{
+	"prod": serviceRolePolicyDocProd,
+	"https://api.beta.us-west-2.wesley.amazonaws.com": serviceRolePolicyDocBeta,
+}
+
 func (md *embedded) createAWSServiceRoleForAmazonEKS() error {
 	if md.cfg.ClusterState.ServiceRoleWithPolicyName == "" {
 		return errors.New("cannot create empty service role")
+	}
+
+	policyDoc := stageToServiceRole["prod"]
+	if md.cfg.EKSResolverURL != "" {
+		var ok bool
+		policyDoc, ok = stageToServiceRole[md.cfg.EKSResolverURL]
+		if !ok {
+			return fmt.Errorf("service role policy for %q not found", md.cfg.EKSResolverURL)
+		}
 	}
 
 	now := time.Now().UTC()
 
 	op1, err := md.iam.CreateRole(&iam.CreateRoleInput{
 		RoleName:                 aws.String(md.cfg.ClusterState.ServiceRoleWithPolicyName),
-		AssumeRolePolicyDocument: aws.String(serviceRolePolicyDoc),
+		AssumeRolePolicyDocument: aws.String(policyDoc),
 	})
 	if err != nil {
 		return err
@@ -152,21 +197,6 @@ func (md *embedded) detachPolicyForAWSServiceRoleForAmazonEKS() error {
 	)
 	return nil
 }
-
-const (
-	serviceRolePolicyDoc = `{
-	"Version": "2012-10-17",
-	"Statement": [
-		{
-			"Effect": "Allow",
-			"Principal": {
-				"Service": "eks.amazonaws.com"
-			},
-			"Action": "sts:AssumeRole"
-		}
-	]
-}`
-)
 
 // isIAMRoleDeletedGoClient returns true if error from IAM API call
 // indicates that the role has already been deleted or does not exist.

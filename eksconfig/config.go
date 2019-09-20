@@ -429,6 +429,14 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		return errors.New("ClusterName is empty")
 	}
 
+	if cfg.EKSResolverURL != "" {
+		switch cfg.EKSResolverURL {
+		case "https://api.beta.us-west-2.wesley.amazonaws.com":
+		default:
+			return fmt.Errorf("%q is unknown EKS resolver URL", cfg.EKSResolverURL)
+		}
+	}
+
 	// expect auto-populate from SSM
 	if cfg.WorkerNodeAMIID == "" {
 		if cfg.WorkerNodeAMIName != "" {
