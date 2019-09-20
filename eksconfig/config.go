@@ -66,12 +66,12 @@ type Config struct {
 	KubeConfigPathBucket string `json:"kubeconfig-path-bucket,omitempty"` // read-only to user
 	KubeConfigPathURL    string `json:"kubeconfig-path-url,omitempty"`    // read-only to user
 
-	// WaitBeforeDown is the duration to sleep before cluster tear down.
-	WaitBeforeDown time.Duration `json:"wait-before-down,omitempty"`
-	// Down is true to automatically tear down cluster in "test".
+	// DestroyAfterCreate is true to automatically tear down cluster in "test".
 	// Deployer implementation should not call "Down" inside "Up" method.
 	// This is meant to be used as a flag for test.
-	Down bool `json:"down"`
+	DestroyAfterCreate bool `json:"destroy-after-create"`
+	// DestroyWaitTime is the duration to sleep before cluster tear down.
+	DestroyWaitTime time.Duration `json:"destroy-wait-time,omitempty"`
 
 	// AWSAccountID is the AWS account ID.
 	AWSAccountID string `json:"aws-account-id,omitempty"`
@@ -311,9 +311,8 @@ var defaultConfig = Config{
 	AWSIAMAuthenticatorDownloadURL: "https://amazon-eks.s3-us-west-2.amazonaws.com/1.13.7/2019-06-11/bin/linux/amd64/aws-iam-authenticator",
 	AWSIAMAuthenticatorPath:        "/tmp/aws-k8s-tester/aws-iam-authenticator",
 
-	// enough time for ALB access log
-	WaitBeforeDown: time.Minute,
-	Down:           true,
+	DestroyAfterCreate: false,
+	DestroyWaitTime:    time.Minute,
 
 	AWSAccountID: "",
 
@@ -626,7 +625,7 @@ func (cfg *Config) UpdateFromEnvs() error {
 			vv1.Field(i).SetBool(bb)
 
 		case reflect.Int, reflect.Int32, reflect.Int64:
-			if fieldName == "WaitBeforeDown" {
+			if fieldName == "DestroyWaitTime" {
 				dv, err := time.ParseDuration(sv)
 				if err != nil {
 					return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)

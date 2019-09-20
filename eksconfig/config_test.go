@@ -35,7 +35,6 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_ENABLE_WORKER_NODE_SSH", "true")
 	os.Setenv("AWS_K8S_TESTER_EKS_ENABLE_WORKER_NODE_PRIVILEGED_PORT_ACCESS", "true")
 	os.Setenv("AWS_K8S_TESTER_EKS_CONFIG_PATH", "test-path")
-	os.Setenv("AWS_K8S_TESTER_EKS_DOWN", "false")
 	os.Setenv("AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_MIN", "5")
 	os.Setenv("AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_MAX", "10")
 	os.Setenv("AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_DESIRED_CAPACITY", "7")
@@ -44,7 +43,8 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_UPLOAD_KUBECONFIG", "true")
 	os.Setenv("AWS_K8S_TESTER_EKS_UPLOAD_WORKER_NODE_LOGS", "true")
 	os.Setenv("AWS_K8S_TESTER_EKS_UPLOAD_BUCKET_EXPIRE_DAYS", "3")
-	os.Setenv("AWS_K8S_TESTER_EKS_WAIT_BEFORE_DOWN", "2h")
+	os.Setenv("AWS_K8S_TESTER_EKS_DESTROY_AFTER_CREATE", "true")
+	os.Setenv("AWS_K8S_TESTER_EKS_DESTROY_WAIT_TIME", "2h")
 
 	defer func() {
 		os.Unsetenv("AWS_K8S_TESTER_EKS_AWS_K8S_TESTER_DOWNLOAD_URL")
@@ -71,7 +71,6 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWS_K8S_TESTER_EKS_ENABLE_WORKER_NODE_SSH")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_ENABLE_WORKER_NODE_PRIVILEGED_PORT_ACCESS")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_CONFIG_PATH")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_DOWN")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_MIN")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_MAX")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_DESIRED_CAPACITY")
@@ -80,7 +79,8 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWS_K8S_TESTER_EKS_UPLOAD_KUBECONFIG")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_UPLOAD_WORKER_NODE_LOGS")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_UPLOAD_BUCKET_EXPIRE_DAYS")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_WAIT_BEFORE_DOWN")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_DESTROY_AFTER_CREATE")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_DESTROY_WAIT_TIME")
 	}()
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
@@ -150,8 +150,11 @@ func TestEnv(t *testing.T) {
 	if cfg.ConfigPath != "test-path" {
 		t.Fatalf("alb configuration path expected 'test-path', got %q", cfg.ConfigPath)
 	}
-	if cfg.Down {
-		t.Fatalf("cfg.Down expected 'false', got %v", cfg.Down)
+	if !cfg.DestroyAfterCreate {
+		t.Fatalf("DestroyAfterCreate expected 'true', got %v", cfg.DestroyAfterCreate)
+	}
+	if cfg.DestroyWaitTime != 2*time.Hour {
+		t.Fatalf("DestroyWaitTime expected 2h, got %v", cfg.DestroyWaitTime)
 	}
 	if cfg.EnableWorkerNodeHA {
 		t.Fatalf("cfg.EnableWorkerNodeHA expected 'false', got %v", cfg.EnableWorkerNodeHA)
@@ -185,9 +188,6 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.UploadBucketExpireDays != 3 {
 		t.Fatalf("UploadBucketExpireDays expected 3, got %d", cfg.UploadBucketExpireDays)
-	}
-	if cfg.WaitBeforeDown != 2*time.Hour {
-		t.Fatalf("wait before down expected 2h, got %v", cfg.WaitBeforeDown)
 	}
 
 	fmt.Println(cfg.KubectlCommands())
