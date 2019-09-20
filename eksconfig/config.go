@@ -11,7 +11,6 @@ import (
 	"path/filepath"
 	"reflect"
 	"runtime"
-	"sort"
 	"strconv"
 	"strings"
 	"text/template"
@@ -83,17 +82,12 @@ type Config struct {
 	// If "AWS_SHARED_CREDENTIALS_FILE" is specified, this field will overwritten.
 	AWSCredentialToMountPath string `json:"aws-credential-to-mount-path,omitempty"`
 	// AWSRegion is the AWS geographic area for EKS deployment.
-	// Currently supported regions are:
-	// - us-east-1; US East (N. Virginia)
-	// - us-west-2; US West (Oregon)
-	// - eu-west-1; EU West (Dublin)
 	// If empty, set default region.
 	AWSRegion string `json:"aws-region,omitempty"`
 
-	// EKSCustomEndpoint defines AWS custom endpoint for pre-release versions.
+	// EKSResolverURL defines an AWS resolver endpoint for EKS.
 	// Must be left empty to use production EKS service.
-	// TODO: define custom endpoints for CloudFormation, EC2, STS
-	EKSCustomEndpoint string `json:"eks-custom-endpoint"`
+	EKSResolverURL string `json:"eks-resolver-url"`
 
 	// EnableWorkerNodeSSH is true to enable SSH access to worker nodes.
 	EnableWorkerNodeSSH bool `json:"enable-worker-node-ssh"`
@@ -194,6 +188,9 @@ type Config struct {
 // Deployer is expected to write and read this.
 // Read-only to kubetest.
 type ClusterState struct {
+	// ClusterARN is the cluster ARN.
+	ClusterARN string `json:"cluster-arn,omitempty"`
+
 	// Status is the cluster status from EKS API.
 	// It's either CREATING, ACTIVE, DELETING, FAILED, "DELETE_COMPLETE".
 	// Reference: https://docs.aws.amazon.com/eks/latest/APIReference/API_Cluster.html#AmazonEKS-Type-Cluster-status.
@@ -311,7 +308,7 @@ var defaultConfig = Config{
 	// to be overwritten by AWS_SHARED_CREDENTIALS_FILE
 	AWSCredentialToMountPath: filepath.Join(homedir.HomeDir(), ".aws", "credentials"),
 	AWSRegion:                "us-west-2",
-	EKSCustomEndpoint:        "",
+	EKSResolverURL:           "",
 
 	EnableWorkerNodeHA:                   true,
 	EnableWorkerNodeSSH:                  true,
@@ -322,14 +319,14 @@ var defaultConfig = Config{
 
 	// Amazon EKS-optimized AMI, https://docs.aws.amazon.com/eks/latest/userguide/eks-optimized-ami.html
 	// for the corresponding region and version
-	WorkerNodeAMI:                "ami-00b95829322267382",
+	WorkerNodeAMI:                "ami-038a987c6425a84ad",
 	WorkerNodeInstanceType:       "m3.xlarge",
 	WorkerNodeASGMin:             1,
 	WorkerNodeASGMax:             1,
 	WorkerNodeASGDesiredCapacity: 1,
 	WorkerNodeVolumeSizeGB:       20,
 
-	KubernetesVersion: "1.13",
+	KubernetesVersion: "1.14",
 
 	LogLevel: logutil.DefaultLogLevel,
 	// default, stderr, stdout, or file name
@@ -407,13 +404,6 @@ func (cfg *Config) Sync() (err error) {
 	return ioutil.WriteFile(cfg.ConfigPath, d, 0600)
 }
 
-const (
-	// maxTestClients is the maximum number of clients.
-	maxTestClients = 1000
-	// maxTestResponseSize is the maximum response size for ingress test server.
-	maxTestResponseSize = 500 * 1024 // 500 KB == 4000 Kbit
-)
-
 // ValidateAndSetDefaults returns an error for invalid configurations.
 // And updates empty fields with default values.
 // At the end, it writes populated YAML to aws-k8s-tester config path.
@@ -450,9 +440,6 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 	if cfg.WorkerNodeVolumeSizeGB == 0 {
 		cfg.WorkerNodeVolumeSizeGB = defaultWorkderNodeVolumeSizeGB
-	}
-	if ok := checkEKSEp(cfg.EKSCustomEndpoint); !ok {
-		return fmt.Errorf("EKSCustomEndpoint %q is not valid", cfg.EKSCustomEndpoint)
 	}
 
 	// resources created from aws-k8s-tester always follow
@@ -565,10 +552,7 @@ func (cfg *Config) SetClusterUpTook(d time.Duration) {
 	cfg.ClusterState.UpTook = d.String()
 }
 
-const (
-	envPfx    = "AWS_K8S_TESTER_EKS_"
-	envPfxALB = "AWS_K8S_TESTER_EKS_ALB_"
-)
+const envPfx = "AWS_K8S_TESTER_EKS_"
 
 // UpdateFromEnvs updates fields from environmental variables.
 func (cfg *Config) UpdateFromEnvs() error {
@@ -738,35 +722,6 @@ func genNodeGroupKeyPairName(clusterName string) string {
 
 func genCFStackWorkerNodeGroup(clusterName string) string {
 	return fmt.Sprintf("%s-NODE-GROUP-STACK", clusterName)
-}
-
-var (
-	// supportedEKSEps maps each test environments to EKS endpoint.
-	supportedEKSEps = map[string]struct{}{
-		// TODO: support EKS testing endpoint
-		// https://docs.aws.amazon.com/sdk-for-go/v1/developer-guide/configuring-sdk.html#custom-endpoint
-		// "https://test.us-west-2.amazonaws.com" : struct{}{},
-
-		"https://api.beta.us-west-2.wesley.amazonaws.com": struct{}{},
-	}
-
-	allEKSEps = []string{}
-)
-
-func init() {
-	allEKSEps = make([]string, 0, len(supportedEKSEps))
-	for k := range supportedEKSEps {
-		allEKSEps = append(allEKSEps, k)
-	}
-	sort.Strings(allEKSEps)
-}
-
-func checkEKSEp(s string) (ok bool) {
-	if s == "" { // prod
-		return true
-	}
-	_, ok = supportedEKSEps[s]
-	return ok
 }
 
 // defaultWorkderNodeVolumeSizeGB is the default EKS worker node volume size in gigabytes.

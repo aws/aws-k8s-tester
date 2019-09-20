@@ -7,6 +7,14 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.3.4...0.4.0).
 
+### `aws-k8s-tester`
+
+- Add [`aws-k8s-tester eks list clusters`](https://github.com/aws/aws-k8s-tester/commit/TODO).
+
+### `eksconfig`
+
+- Rename [`EKSCustomEndpoint` field to `EKSResolverURL`](https://github.com/aws/aws-k8s-tester/commit/TODO).
+
 ### `pkg/cloud`
 
 - Initial commit https://github.com/aws/aws-k8s-tester/tree/master/pkg/cloud

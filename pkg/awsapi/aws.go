@@ -8,7 +8,9 @@ import (
 
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/endpoints"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/sts"
 	"go.uber.org/zap"
 	"k8s.io/client-go/util/homedir"
 )
@@ -25,23 +27,21 @@ type Config struct {
 	// Each AWS Region has multiple, isolated locations known as Availability Zones.
 	Region string
 
-	// CustomEndpoint is a custom endpoint for pre-release versions of the service.
-	// TODO: support EKS testing endpoint
-	// https://docs.aws.amazon.com/sdk-for-go/v1/developer-guide/configuring-sdk.html#custom-endpoint
-	CustomEndpoint string
+	// ResolverURL is a custom resolver URL.
+	ResolverURL string
 }
 
 // New creates a new AWS session.
 // Specify a custom endpoint for tests.
-func New(cfg *Config) (ss *session.Session, awsCredsPath string, err error) {
+func New(cfg *Config) (ss *session.Session, stsOutput *sts.GetCallerIdentityOutput, awsCredsPath string, err error) {
 	if cfg == nil {
-		return nil, "", errors.New("got empty config")
+		return nil, nil, "", errors.New("got empty config")
 	}
 	if cfg.Logger == nil {
-		return nil, "", fmt.Errorf("missing logger")
+		return nil, nil, "", fmt.Errorf("missing logger")
 	}
 	if cfg.Region == "" {
-		return nil, "", fmt.Errorf("missing region")
+		return nil, nil, "", fmt.Errorf("missing region")
 	}
 
 	awsConfig := aws.Config{
@@ -70,7 +70,7 @@ func New(cfg *Config) (ss *session.Session, awsCredsPath string, err error) {
 		cfg.Logger.Info("cannot find AWS cred file", zap.String("path", awsCredsPath))
 		if os.Getenv("AWS_ACCESS_KEY_ID") == "" ||
 			os.Getenv("AWS_SECRET_ACCESS_KEY") == "" {
-			return nil, "", errors.New("cannot find AWS credentials")
+			return nil, nil, "", errors.New("cannot find AWS credentials")
 		}
 		cfg.Logger.Info("creating session from env vars")
 	}
@@ -84,15 +84,41 @@ func New(cfg *Config) (ss *session.Session, awsCredsPath string, err error) {
 		awsConfig.LogLevel = &lvl
 	}
 
-	// TODO: support test endpoint
-	// https://docs.aws.amazon.com/sdk-for-go/v1/developer-guide/configuring-sdk.html#custom-endpoint
-	if cfg.CustomEndpoint != "" {
-		awsConfig.Endpoint = aws.String(cfg.CustomEndpoint)
+	var stsSession *session.Session
+	stsSession, err = session.NewSession(&awsConfig)
+	if err != nil {
+		return nil, nil, "", err
 	}
+	stsSvc := sts.New(stsSession)
+	stsOutput, err = stsSvc.GetCallerIdentity(&sts.GetCallerIdentityInput{})
+	if err != nil {
+		return nil, nil, "", err
+	}
+	cfg.Logger.Info(
+		"creating AWS session",
+		zap.String("account-id", *stsOutput.Account),
+		zap.String("user-id", *stsOutput.UserId),
+		zap.String("arn", *stsOutput.Arn),
+	)
+
+	resolver := endpoints.DefaultResolver()
+	// support test endpoint (e.g. https://api.beta.us-west-2.wesley.amazonaws.com)
+	if cfg.ResolverURL != "" {
+		cfg.Logger.Info("setting custom resolver", zap.String("resolver-url", cfg.ResolverURL))
+		resolver = endpoints.ResolverFunc(func(service, region string, optFns ...func(*endpoints.Options)) (endpoints.ResolvedEndpoint, error) {
+			if service == "eks" {
+				return endpoints.ResolvedEndpoint{
+					URL: cfg.ResolverURL,
+				}, nil
+			}
+			return endpoints.DefaultResolver().EndpointFor(service, region, optFns...)
+		})
+	}
+	awsConfig.EndpointResolver = resolver
 
 	ss, err = session.NewSession(&awsConfig)
 	if err != nil {
-		return nil, "", err
+		return nil, nil, "", err
 	}
-	return ss, awsCredsPath, err
+	return ss, stsOutput, awsCredsPath, err
 }

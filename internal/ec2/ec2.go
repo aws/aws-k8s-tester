@@ -28,7 +28,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"github.com/aws/aws-sdk-go/service/sts"
-	"github.com/aws/aws-sdk-go/service/sts/stsiface"
 	"github.com/dustin/go-humanize"
 	"go.uber.org/zap"
 )
@@ -59,7 +58,6 @@ type embedded struct {
 	cfg *ec2config.Config
 
 	ss  *session.Session
-	sts stsiface.STSAPI
 	cf  cloudformationiface.CloudFormationAPI
 	ec2 ec2iface.EC2API
 	iam iamiface.IAMAPI
@@ -93,30 +91,24 @@ func NewDeployer(cfg *ec2config.Config) (Deployer, error) {
 	}
 
 	awsCfg := &awsapi.Config{
-		Logger:         md.lg,
-		DebugAPICalls:  cfg.LogLevel == "debug",
-		Region:         cfg.AWSRegion,
-		CustomEndpoint: "",
+		Logger:        md.lg,
+		DebugAPICalls: cfg.LogLevel == "debug",
+		Region:        cfg.AWSRegion,
 	}
-	md.ss, _, err = awsapi.New(awsCfg)
+	var stsOutput *sts.GetCallerIdentityOutput
+	md.ss, stsOutput, _, err = awsapi.New(awsCfg)
 	if err != nil {
 		return nil, err
 	}
-	md.sts = sts.New(md.ss)
+	md.cfg.AWSAccountID = *stsOutput.Account
 	md.cf = cloudformation.New(md.ss)
 	md.ec2 = ec2.New(md.ss)
 	md.iam = iam.New(md.ss)
 	md.s3 = s3.New(md.ss)
 
-	output, oerr := md.sts.GetCallerIdentity(&sts.GetCallerIdentityInput{})
-	if oerr != nil {
-		return nil, oerr
-	}
-	md.cfg.AWSAccountID = *output.Account
-
 	// up to 63 characters
 	// https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-s3-bucket-naming-requirements.html
-	md.cfg.Tag += "-" + strings.ToLower(*output.UserId)
+	md.cfg.Tag += "-" + strings.ToLower(*stsOutput.UserId)
 	h, _ := os.Hostname()
 	if len(h) > 5 {
 		h = strings.ToLower(h)

@@ -41,7 +41,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/iam/iamiface"
 	awss3 "github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/sts"
-	"github.com/aws/aws-sdk-go/service/sts/stsiface"
 	humanize "github.com/dustin/go-humanize"
 	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -72,7 +71,6 @@ type embedded struct {
 	awsCredsPath string
 
 	im  iamiface.IAMAPI
-	sts stsiface.STSAPI
 	cf  cloudformationiface.CloudFormationAPI
 	asg autoscalingiface.AutoScalingAPI
 	ec2 ec2iface.EC2API
@@ -188,34 +186,28 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 		DebugAPICalls: md.cfg.LogLevel == "debug",
 		Region:        md.cfg.AWSRegion,
 	}
-	md.ss, _, err = awsapi.New(awsCfg)
+	var stsOutput *sts.GetCallerIdentityOutput
+	md.ss, stsOutput, _, err = awsapi.New(awsCfg)
 	if err != nil {
 		return nil, err
 	}
+	md.cfg.AWSAccountID = *stsOutput.Account
 	md.im = iam.New(md.ss)
-	md.sts = sts.New(md.ss)
 	md.cf = cloudformation.New(md.ss)
 	md.asg = autoscaling.New(md.ss)
 	md.ec2 = ec2.New(md.ss)
 
 	awsCfgEKS := &awsapi.Config{
-		Logger:         md.lg,
-		DebugAPICalls:  md.cfg.LogLevel == "debug",
-		Region:         md.cfg.AWSRegion,
-		CustomEndpoint: md.cfg.EKSCustomEndpoint,
+		Logger:        md.lg,
+		DebugAPICalls: md.cfg.LogLevel == "debug",
+		Region:        md.cfg.AWSRegion,
+		ResolverURL:   md.cfg.EKSResolverURL,
 	}
-	md.eksSession, md.awsCredsPath, err = awsapi.New(awsCfgEKS)
+	md.eksSession, _, md.awsCredsPath, err = awsapi.New(awsCfgEKS)
 	if err != nil {
 		return nil, err
 	}
 	md.eks = awseks.New(md.eksSession)
-
-	var stsOutput *sts.GetCallerIdentityOutput
-	stsOutput, err = md.sts.GetCallerIdentity(&sts.GetCallerIdentityInput{})
-	if err != nil {
-		return nil, err
-	}
-	md.cfg.AWSAccountID = *stsOutput.Account
 
 	// up to 63 characters
 	// https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-s3-bucket-naming-requirements.html
@@ -374,7 +366,7 @@ func (md *embedded) Up() (err error) {
 
 	md.lg.Info("Up",
 		zap.String("cluster-name", md.cfg.ClusterName),
-		zap.String("custom-endpoint", md.cfg.EKSCustomEndpoint),
+		zap.String("eks-resolver-url", md.cfg.EKSResolverURL),
 		zap.String("KUBECONFIG", md.cfg.KubeConfigPath),
 	)
 	defer md.cfg.Sync()
@@ -418,7 +410,7 @@ func (md *embedded) Up() (err error) {
 
 	md.lg.Info("Up finished",
 		zap.String("cluster-name", md.cfg.ClusterName),
-		zap.String("custom-endpoint", md.cfg.EKSCustomEndpoint),
+		zap.String("eks-resolver-url", md.cfg.EKSResolverURL),
 		zap.String("KUBECONFIG", md.cfg.KubeConfigPath),
 		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 	)
@@ -680,22 +672,28 @@ func (md *embedded) createCluster() error {
 
 	now := time.Now().UTC()
 
-	_, err := md.eks.CreateCluster(&awseks.CreateClusterInput{
-		Name:    aws.String(md.cfg.ClusterName),
-		Version: aws.String(md.cfg.KubernetesVersion),
-		RoleArn: aws.String(md.cfg.ClusterState.ServiceRoleWithPolicyARN),
+	createInput := awseks.CreateClusterInput{
+		ClientRequestToken: aws.String("test"),
+		Name:               aws.String(md.cfg.ClusterName),
+		Version:            aws.String(md.cfg.KubernetesVersion),
+		RoleArn:            aws.String(md.cfg.ClusterState.ServiceRoleWithPolicyARN),
 		ResourcesVpcConfig: &awseks.VpcConfigRequest{
-			SubnetIds:        aws.StringSlice(md.cfg.SubnetIDs),
 			SecurityGroupIds: aws.StringSlice([]string{md.cfg.SecurityGroupID}),
+			SubnetIds:        aws.StringSlice(md.cfg.SubnetIDs),
 		},
-	})
+	}
+
+	// TODO: support beta parameters
+	// _, err := md.eks.CreateCluster(&createInput)
+	req, output := md.eks.CreateClusterRequest(&createInput)
+	err := req.Send()
 	if err != nil {
 		return err
 	}
 	md.cfg.ClusterState.StatusClusterCreated = true
 	md.cfg.ClusterState.Status = "CREATING"
 	md.cfg.Sync()
-
+	md.lg.Info("sent create cluster request", zap.String("output", string(output.String())))
 	if md.cfg.UploadTesterLogs {
 		if err = md.uploadTesterLogs(); err != nil {
 			md.lg.Warn("failed to upload", zap.Error(err))
@@ -729,6 +727,7 @@ func (md *embedded) createCluster() error {
 			continue
 		}
 
+		md.cfg.ClusterState.ClusterARN = *do.Cluster.Arn
 		md.cfg.ClusterState.Status = *do.Cluster.Status
 		md.cfg.ClusterState.Created = *do.Cluster.CreatedAt
 		md.cfg.PlatformVersion = *do.Cluster.PlatformVersion
@@ -758,6 +757,7 @@ func (md *embedded) createCluster() error {
 
 		md.lg.Info("creating cluster",
 			zap.String("status", md.cfg.ClusterState.Status),
+			zap.String("cluster-arn", md.cfg.ClusterState.ClusterARN),
 			zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 		)
 
@@ -865,9 +865,10 @@ func (md *embedded) createCluster() error {
 	}
 
 	md.lg.Info("cluster is ready!",
+		zap.String("cluster-arn", md.cfg.ClusterState.ClusterARN),
 		zap.String("name", md.cfg.ClusterName),
 		zap.String("kubernetes-version", md.cfg.KubernetesVersion),
-		zap.String("custom-endpoint", md.cfg.EKSCustomEndpoint),
+		zap.String("eks-resolver-url", md.cfg.EKSResolverURL),
 		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 	)
 

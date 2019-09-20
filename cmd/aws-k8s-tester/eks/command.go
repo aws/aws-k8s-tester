@@ -21,6 +21,7 @@ func NewCommand() *cobra.Command {
 		newCreate(),
 		newDelete(),
 		newCheck(),
+		newList(),
 		newProw(),
 		newS3Upload(),
 		newTest(),

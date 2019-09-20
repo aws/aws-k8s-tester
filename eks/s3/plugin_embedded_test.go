@@ -26,12 +26,12 @@ func TestEmbedded(t *testing.T) {
 	}
 
 	awsCfg := &awsapi.Config{
-		Logger:         zap.NewExample(),
-		DebugAPICalls:  cfg.LogLevel == "debug",
-		Region:         cfg.AWSRegion,
-		CustomEndpoint: cfg.EKSCustomEndpoint,
+		Logger:        zap.NewExample(),
+		DebugAPICalls: cfg.LogLevel == "debug",
+		Region:        cfg.AWSRegion,
+		ResolverURL:   cfg.EKSResolverURL,
 	}
-	ss, _, err := awsapi.New(awsCfg)
+	ss, _, _, err := awsapi.New(awsCfg)
 	if err != nil {
 		t.Fatal(err)
 	}
