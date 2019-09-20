@@ -3,9 +3,13 @@
 <hr>
 
 
-## [0.4.0](https://github.com/aws/aws-k8s-tester/releases/tag/0.4.0) (2019-09 TBD)
+## [v0.4.0](https://github.com/aws/aws-k8s-tester/releases/tag/v0.4.0) (2019-09 TBD)
 
-See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.3.4...0.4.0).
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.3.4...v0.4.0).
+
+### Release
+
+- Prefix version string with `v` (e.g. not `0.4.0`, now use `v0.4.0`).
 
 ### `aws-k8s-tester`
 

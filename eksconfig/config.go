@@ -40,6 +40,7 @@ type Config struct {
 	// KubectlPath is the path to download the "kubectl".
 	KubectlPath string `json:"kubectl-path,omitempty"`
 	// KubectlDownloadURL is the download URL to download "kubectl" binary from.
+	// https://docs.aws.amazon.com/eks/latest/userguide/install-kubectl.html
 	KubectlDownloadURL string `json:"kubectl-download-url,omitempty"`
 	// AWSIAMAuthenticatorPath is the path to download the "aws-iam-authenticator".
 	// This is required for Kubernetes kubetest plugin.
@@ -296,10 +297,11 @@ func genTag() string {
 //  - make sure to check both
 var defaultConfig = Config{
 	// https://github.com/aws/aws-k8s-tester/releases
-	AWSK8sTesterDownloadURL: "https://github.com/aws/aws-k8s-tester/releases/download/0.2.9/aws-k8s-tester-0.2.9-linux-amd64",
+	AWSK8sTesterDownloadURL: "https://github.com/aws/aws-k8s-tester/releases/download/0.3.4/aws-k8s-tester-0.3.4-linux-amd64",
 	AWSK8sTesterPath:        "/tmp/aws-k8s-tester/aws-k8s-tester",
 
-	KubectlDownloadURL: "https://amazon-eks.s3-us-west-2.amazonaws.com/1.13.7/2019-06-11/bin/linux/amd64/kubectl",
+	// https://docs.aws.amazon.com/eks/latest/userguide/install-kubectl.html
+	KubectlDownloadURL: "https://amazon-eks.s3-us-west-2.amazonaws.com/1.14.6/2019-08-22/bin/linux/amd64/kubectl",
 	KubectlPath:        "/tmp/aws-k8s-tester/kubectl",
 
 	KubeConfigPath: "/tmp/aws-k8s-tester/kubeconfig",
