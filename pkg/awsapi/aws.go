@@ -29,6 +29,8 @@ type Config struct {
 
 	// ResolverURL is a custom resolver URL.
 	ResolverURL string
+	// SigningName is the API signing name.
+	SigningName string
 }
 
 // New creates a new AWS session.
@@ -102,13 +104,23 @@ func New(cfg *Config) (ss *session.Session, stsOutput *sts.GetCallerIdentityOutp
 	)
 
 	resolver := endpoints.DefaultResolver()
+
+	if cfg.ResolverURL != "" && cfg.SigningName == "" {
+		return nil, nil, "", fmt.Errorf("got empty signing name for resolver %q", cfg.ResolverURL)
+	}
+
 	// support test endpoint (e.g. https://api.beta.us-west-2.wesley.amazonaws.com)
 	if cfg.ResolverURL != "" {
-		cfg.Logger.Info("setting custom resolver", zap.String("resolver-url", cfg.ResolverURL))
+		cfg.Logger.Info(
+			"setting custom resolver",
+			zap.String("resolver-url", cfg.ResolverURL),
+			zap.String("signing-name", cfg.SigningName),
+		)
 		resolver = endpoints.ResolverFunc(func(service, region string, optFns ...func(*endpoints.Options)) (endpoints.ResolvedEndpoint, error) {
 			if service == "eks" {
 				return endpoints.ResolvedEndpoint{
-					URL: cfg.ResolverURL,
+					URL:         cfg.ResolverURL,
+					SigningName: cfg.SigningName,
 				}, nil
 			}
 			return endpoints.DefaultResolver().EndpointFor(service, region, optFns...)

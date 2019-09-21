@@ -327,12 +327,28 @@ func (cfg *Config) UpdateFromEnvs() error {
 			continue
 		}
 		sv := os.Getenv(env)
-
 		fieldName := tp.Field(i).Name
 
 		switch vv.Field(i).Type().Kind() {
 		case reflect.String:
 			vv.Field(i).SetString(sv)
+
+		case reflect.Map:
+			switch fieldName {
+			case "Tags",
+				"IngressRulesTCP":
+				vv.Field(i).Set(reflect.ValueOf(make(map[string]string)))
+				for _, pair := range strings.Split(sv, ",") {
+					fields := strings.Split(pair, "=")
+					if len(fields) != 2 {
+						return fmt.Errorf("map %q has unexpected format (e.g. should be 'a=b;c;d,e=f'", sv)
+					}
+					vv.Field(i).SetMapIndex(reflect.ValueOf(fields[0]), reflect.ValueOf(fields[1]))
+				}
+
+			default:
+				return fmt.Errorf("parsing field name %q not supported", fieldName)
+			}
 
 		case reflect.Bool:
 			bb, err := strconv.ParseBool(sv)
@@ -369,21 +385,6 @@ func (cfg *Config) UpdateFromEnvs() error {
 				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
 			}
 			vv.Field(i).SetFloat(fv)
-
-		case reflect.Map:
-			ss := strings.Split(sv, ",")
-			switch fieldName {
-			case "Tags", "IngressRulesTCP":
-				m := reflect.MakeMap(reflect.TypeOf(map[string]string{}))
-				for i := range ss {
-					fields := strings.Split(ss[i], "=")
-					m.SetMapIndex(reflect.ValueOf(fields[0]), reflect.ValueOf(fields[1]))
-				}
-				vv.Field(i).Set(m)
-
-			default:
-				return fmt.Errorf("parsing field name %q not supported", fieldName)
-			}
 
 		case reflect.Slice:
 			ss := strings.Split(sv, ",")

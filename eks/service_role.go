@@ -58,7 +58,10 @@ func (md *embedded) createAWSServiceRoleForAmazonEKS() error {
 		var ok bool
 		policyDoc, ok = stageToServiceRole[md.cfg.EKSResolverURL]
 		if !ok {
-			return fmt.Errorf("service role policy for %q not found", md.cfg.EKSResolverURL)
+			md.lg.Warn("service role policy not found, defaulting to beta service role policy",
+				zap.String("eks-resolver-url", md.cfg.EKSResolverURL),
+			)
+			policyDoc = serviceRolePolicyDocBeta
 		}
 	}
 

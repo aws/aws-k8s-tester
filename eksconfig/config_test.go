@@ -2,6 +2,7 @@ package eksconfig
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"reflect"
 	"testing"
@@ -45,6 +46,7 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_UPLOAD_BUCKET_EXPIRE_DAYS", "3")
 	os.Setenv("AWS_K8S_TESTER_EKS_DESTROY_AFTER_CREATE", "true")
 	os.Setenv("AWS_K8S_TESTER_EKS_DESTROY_WAIT_TIME", "2h")
+	os.Setenv("AWS_K8S_TESTER_EKS_EKS_REQUEST_HEADER", "a=b,eks-options=a;b;c")
 
 	defer func() {
 		os.Unsetenv("AWS_K8S_TESTER_EKS_AWS_K8S_TESTER_DOWNLOAD_URL")
@@ -81,6 +83,7 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWS_K8S_TESTER_EKS_UPLOAD_BUCKET_EXPIRE_DAYS")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_DESTROY_AFTER_CREATE")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_DESTROY_WAIT_TIME")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_EKS_REQUEST_HEADER")
 	}()
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
@@ -189,6 +192,22 @@ func TestEnv(t *testing.T) {
 	if cfg.UploadBucketExpireDays != 3 {
 		t.Fatalf("UploadBucketExpireDays expected 3, got %d", cfg.UploadBucketExpireDays)
 	}
+	rh := map[string]string{
+		"a":           "b",
+		"eks-options": "a;b;c",
+	}
+	if !reflect.DeepEqual(cfg.EKSRequestHeader, rh) {
+		t.Fatalf("EKSRequestHeader expected %v, got %v", rh, cfg.EKSRequestHeader)
+	}
+
+	if err := cfg.Sync(); err != nil {
+		t.Fatal(err)
+	}
+	d, err := ioutil.ReadFile(cfg.ConfigPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println(string(d))
 
 	fmt.Println(cfg.KubectlCommands())
 }

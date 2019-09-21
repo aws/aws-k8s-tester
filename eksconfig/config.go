@@ -31,6 +31,14 @@ type Config struct {
 	// If empty, deployer auto-populates it.
 	ClusterName string `json:"cluster-name,omitempty"`
 
+	// EKSRequestHeader defines EKS create cluster request header.
+	EKSRequestHeader map[string]string `json:"eks-request-header,omitempty"`
+	// EKSResolverURL defines an AWS resolver endpoint for EKS.
+	// Must be left empty to use production EKS service.
+	EKSResolverURL string `json:"eks-resolver-url"`
+	// EKSSigningName is the EKS create request signing name.
+	EKSSigningName string `json:"eks-signing-name"`
+
 	// AWSK8sTesterPath is the path to download the "aws-k8s-tester".
 	// This is required for Kubernetes kubetest plugin.
 	AWSK8sTesterPath string `json:"aws-k8s-tester-path,omitempty"`
@@ -84,10 +92,6 @@ type Config struct {
 	// AWSRegion is the AWS geographic area for EKS deployment.
 	// If empty, set default region.
 	AWSRegion string `json:"aws-region,omitempty"`
-
-	// EKSResolverURL defines an AWS resolver endpoint for EKS.
-	// Must be left empty to use production EKS service.
-	EKSResolverURL string `json:"eks-resolver-url"`
 
 	// EnableWorkerNodeSSH is true to enable SSH access to worker nodes.
 	EnableWorkerNodeSSH bool `json:"enable-worker-node-ssh"`
@@ -297,6 +301,9 @@ func genTag() string {
 //  - omitting an entire field returns nil value
 //  - make sure to check both
 var defaultConfig = Config{
+	EKSResolverURL: "",
+	EKSSigningName: "eks",
+
 	// https://github.com/aws/aws-k8s-tester/releases
 	AWSK8sTesterDownloadURL: "https://github.com/aws/aws-k8s-tester/releases/download/v0.4.0/aws-k8s-tester-v0.4.0-linux-amd64",
 	AWSK8sTesterPath:        "/tmp/aws-k8s-tester/aws-k8s-tester",
@@ -318,7 +325,6 @@ var defaultConfig = Config{
 	// to be overwritten by AWS_SHARED_CREDENTIALS_FILE
 	AWSCredentialToMountPath: filepath.Join(homedir.HomeDir(), ".aws", "credentials"),
 	AWSRegion:                "us-west-2",
-	EKSResolverURL:           "",
 
 	EnableWorkerNodeHA:                   true,
 	EnableWorkerNodeSSH:                  true,
@@ -435,8 +441,6 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	if cfg.EKSResolverURL != "" {
 		switch cfg.EKSResolverURL {
 		case "https://api.beta.us-west-2.wesley.amazonaws.com":
-		default:
-			return fmt.Errorf("%q is unknown EKS resolver URL", cfg.EKSResolverURL)
 		}
 	}
 
@@ -595,9 +599,9 @@ const envPfx = "AWS_K8S_TESTER_EKS_"
 func (cfg *Config) UpdateFromEnvs() error {
 	cc := *cfg
 
-	tp1, vv1 := reflect.TypeOf(&cc).Elem(), reflect.ValueOf(&cc).Elem()
-	for i := 0; i < tp1.NumField(); i++ {
-		jv := tp1.Field(i).Tag.Get("json")
+	tp, vv := reflect.TypeOf(&cc).Elem(), reflect.ValueOf(&cc).Elem()
+	for i := 0; i < tp.NumField(); i++ {
+		jv := tp.Field(i).Tag.Get("json")
 		if jv == "" {
 			continue
 		}
@@ -609,19 +613,34 @@ func (cfg *Config) UpdateFromEnvs() error {
 			continue
 		}
 		sv := os.Getenv(env)
+		fieldName := tp.Field(i).Name
 
-		fieldName := tp1.Field(i).Name
-
-		switch vv1.Field(i).Type().Kind() {
+		switch vv.Field(i).Type().Kind() {
 		case reflect.String:
-			vv1.Field(i).SetString(sv)
+			vv.Field(i).SetString(sv)
+
+		case reflect.Map:
+			switch fieldName {
+			case "EKSRequestHeader":
+				vv.Field(i).Set(reflect.ValueOf(make(map[string]string)))
+				for _, pair := range strings.Split(sv, ",") {
+					fields := strings.Split(pair, "=")
+					if len(fields) != 2 {
+						return fmt.Errorf("map %q has unexpected format (e.g. should be 'a=b;c;d,e=f'", sv)
+					}
+					vv.Field(i).SetMapIndex(reflect.ValueOf(fields[0]), reflect.ValueOf(fields[1]))
+				}
+
+			default:
+				return fmt.Errorf("parsing field name %q not supported", fieldName)
+			}
 
 		case reflect.Bool:
 			bb, err := strconv.ParseBool(sv)
 			if err != nil {
 				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
 			}
-			vv1.Field(i).SetBool(bb)
+			vv.Field(i).SetBool(bb)
 
 		case reflect.Int, reflect.Int32, reflect.Int64:
 			if fieldName == "DestroyWaitTime" {
@@ -629,28 +648,28 @@ func (cfg *Config) UpdateFromEnvs() error {
 				if err != nil {
 					return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
 				}
-				vv1.Field(i).SetInt(int64(dv))
+				vv.Field(i).SetInt(int64(dv))
 				continue
 			}
 			iv, err := strconv.ParseInt(sv, 10, 64)
 			if err != nil {
 				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
 			}
-			vv1.Field(i).SetInt(iv)
+			vv.Field(i).SetInt(iv)
 
 		case reflect.Uint, reflect.Uint32, reflect.Uint64:
 			iv, err := strconv.ParseUint(sv, 10, 64)
 			if err != nil {
 				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
 			}
-			vv1.Field(i).SetUint(iv)
+			vv.Field(i).SetUint(iv)
 
 		case reflect.Float32, reflect.Float64:
 			fv, err := strconv.ParseFloat(sv, 64)
 			if err != nil {
 				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
 			}
-			vv1.Field(i).SetFloat(fv)
+			vv.Field(i).SetFloat(fv)
 
 		case reflect.Slice:
 			ss := strings.Split(sv, ",")
@@ -658,10 +677,10 @@ func (cfg *Config) UpdateFromEnvs() error {
 			for i := range ss {
 				slice.Index(i).SetString(ss[i])
 			}
-			vv1.Field(i).Set(slice)
+			vv.Field(i).Set(slice)
 
 		default:
-			return fmt.Errorf("%q (%v) is not supported as an env", env, vv1.Field(i).Type())
+			return fmt.Errorf("%q (%v) is not supported as an env", env, vv.Field(i).Type())
 		}
 	}
 	*cfg = cc

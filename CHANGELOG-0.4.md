@@ -3,6 +3,22 @@
 <hr>
 
 
+## [v0.4.1](https://github.com/aws/aws-k8s-tester/releases/tag/v0.4.1) (2019-09-21)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.4.0...v0.4.1).
+
+### `eksconfig`
+
+- Add [`EKSRequestHeader` field](https://github.com/aws/aws-k8s-tester/commit/TODO).
+- Add [`EKSSigningName` field](https://github.com/aws/aws-k8s-tester/commit/TODO).
+
+### Go
+
+- Compile with [*Go 1.13.0*](https://golang.org/doc/devel/release.html#go1.13).
+
+<hr>
+
+
 ## [v0.4.0](https://github.com/aws/aws-k8s-tester/releases/tag/v0.4.0) (2019-09-20)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/0.3.4...v0.4.0).

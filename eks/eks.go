@@ -207,6 +207,7 @@ func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
 		DebugAPICalls: md.cfg.LogLevel == "debug",
 		Region:        md.cfg.AWSRegion,
 		ResolverURL:   md.cfg.EKSResolverURL,
+		SigningName:   md.cfg.EKSSigningName,
 	})
 	if err != nil {
 		return nil, err
@@ -708,13 +709,23 @@ func (md *embedded) createCluster() error {
 		},
 	}
 
-	// TODO: support beta parameters
 	// _, err := md.eks.CreateCluster(&createInput)
 	req, output := md.eks.CreateClusterRequest(&createInput)
+	if len(md.cfg.EKSRequestHeader) > 0 {
+		for k, v := range md.cfg.EKSRequestHeader {
+			req.HTTPRequest.Header[k] = []string{v}
+			md.lg.Info("set EKS request header",
+				zap.String("key", k),
+				zap.String("value", v),
+			)
+		}
+	}
+
 	err := req.Send()
 	if err != nil {
 		return err
 	}
+
 	md.cfg.ClusterState.StatusClusterCreated = true
 	md.cfg.ClusterState.Status = "CREATING"
 	md.cfg.Sync()
