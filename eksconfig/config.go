@@ -298,7 +298,7 @@ func genTag() string {
 //  - make sure to check both
 var defaultConfig = Config{
 	// https://github.com/aws/aws-k8s-tester/releases
-	AWSK8sTesterDownloadURL: "https://github.com/aws/aws-k8s-tester/releases/download/0.3.4/aws-k8s-tester-0.3.4-linux-amd64",
+	AWSK8sTesterDownloadURL: "https://github.com/aws/aws-k8s-tester/releases/download/v0.4.0/aws-k8s-tester-v0.4.0-linux-amd64",
 	AWSK8sTesterPath:        "/tmp/aws-k8s-tester/aws-k8s-tester",
 
 	// https://docs.aws.amazon.com/eks/latest/userguide/install-kubectl.html
