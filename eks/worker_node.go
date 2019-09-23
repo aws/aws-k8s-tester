@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 	"text/template"
@@ -14,6 +15,7 @@ import (
 	"github.com/aws/aws-k8s-tester/ec2config"
 	internalec2 "github.com/aws/aws-k8s-tester/internal/ec2"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
+	"github.com/aws/aws-k8s-tester/pkg/httputil"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/autoscaling"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
@@ -29,6 +31,10 @@ type workerNodeAMISSM struct {
 	ImageID       string `json:"image_id"`
 	ImageName     string `json:"image_name"`
 }
+
+// https://docs.aws.amazon.com/eks/latest/userguide/launch-workers.html
+// https://github.com/awslabs/amazon-eks-ami/blob/master/amazon-eks-nodegroup.yaml
+const workerNodeStackTemplateURL = "https://raw.githubusercontent.com/awslabs/amazon-eks-ami/master/amazon-eks-nodegroup.yaml"
 
 func (md *embedded) createWorkerNode() error {
 	if md.cfg.ClusterState.CFStackWorkerNodeGroupKeyPairName == "" {
@@ -75,10 +81,14 @@ func (md *embedded) createWorkerNode() error {
 		)
 	}
 
-	now := time.Now().UTC()
-	h, _ := os.Hostname()
-
-	s, err := createWorkerNodeTemplateFromURL(md.lg)
+	var body []byte
+	var err error
+	if md.cfg.WorkerNodeCFTemplatePath == "" {
+		body, err = httputil.Download(md.lg, os.Stdout, workerNodeStackTemplateURL)
+	} else {
+		md.lg.Info("reading worker node cloudformation template file", zap.String("path", md.cfg.WorkerNodeCFTemplatePath))
+		body, err = ioutil.ReadFile(md.cfg.WorkerNodeCFTemplatePath)
+	}
 	if err != nil {
 		return err
 	}
@@ -88,7 +98,75 @@ func (md *embedded) createWorkerNode() error {
 		subnetIDs = subnetIDs[:1]
 		md.lg.Info("HA mode is disabled", zap.Strings("subnet-ids", subnetIDs))
 	}
+	params := []*cloudformation.Parameter{
+		{
+			ParameterKey:   aws.String("ClusterName"),
+			ParameterValue: aws.String(md.cfg.ClusterName),
+		},
+		{
+			ParameterKey:   aws.String("NodeGroupName"),
+			ParameterValue: aws.String(md.cfg.ClusterState.CFStackWorkerNodeGroupName),
+		},
+		{
+			ParameterKey:   aws.String("KeyName"),
+			ParameterValue: aws.String(md.cfg.ClusterState.CFStackWorkerNodeGroupKeyPairName),
+		},
+		{
+			ParameterKey:   aws.String("NodeImageId"),
+			ParameterValue: aws.String(md.cfg.WorkerNodeAMIID),
+		},
+		{
+			ParameterKey:   aws.String("NodeInstanceType"),
+			ParameterValue: aws.String(md.cfg.WorkerNodeInstanceType),
+		},
+		{
+			ParameterKey:   aws.String("NodeAutoScalingGroupMinSize"),
+			ParameterValue: aws.String(fmt.Sprintf("%d", md.cfg.WorkerNodeASGMin)),
+		},
+		{
+			ParameterKey:   aws.String("NodeAutoScalingGroupMaxSize"),
+			ParameterValue: aws.String(fmt.Sprintf("%d", md.cfg.WorkerNodeASGMax)),
+		},
+		{
+			ParameterKey:   aws.String("NodeAutoScalingGroupDesiredCapacity"),
+			ParameterValue: aws.String(fmt.Sprintf("%d", md.cfg.WorkerNodeASGDesiredCapacity)),
+		},
+		{
+			ParameterKey:   aws.String("NodeVolumeSize"),
+			ParameterValue: aws.String(fmt.Sprintf("%d", md.cfg.WorkerNodeVolumeSizeGB)),
+		},
+		{
+			ParameterKey:   aws.String("VpcId"),
+			ParameterValue: aws.String(md.cfg.VPCID),
+		},
+		{
+			ParameterKey:   aws.String("Subnets"),
+			ParameterValue: aws.String(strings.Join(subnetIDs, ",")),
+		},
+		{
+			ParameterKey:   aws.String("ClusterControlPlaneSecurityGroup"),
+			ParameterValue: aws.String(md.cfg.SecurityGroupID),
+		},
+	}
+	for _, k := range md.cfg.WorkerNodeCFTemplateAdditionalParameterKeys {
+		switch k {
+		case "CertificateAuthorityData":
+			params = append(params, &cloudformation.Parameter{
+				ParameterKey:   aws.String("CertificateAuthorityData"),
+				ParameterValue: aws.String(md.cfg.ClusterState.CA),
+			})
+		case "ApiServerEndpoint":
+			params = append(params, &cloudformation.Parameter{
+				ParameterKey:   aws.String("ApiServerEndpoint"),
+				ParameterValue: aws.String(md.cfg.ClusterState.Endpoint),
+			})
+		default:
+			return fmt.Errorf("unknown worker node cloudformation parameter %q", k)
+		}
+	}
 
+	now := time.Now().UTC()
+	h, _ := os.Hostname()
 	_, err = md.cfn.CreateStack(&cloudformation.CreateStackInput{
 		StackName: aws.String(md.cfg.ClusterState.CFStackWorkerNodeGroupName),
 		Tags: []*cloudformation.Tag{
@@ -98,58 +176,8 @@ func (md *embedded) createWorkerNode() error {
 			{Key: aws.String("HOSTNAME"), Value: aws.String(h)},
 		},
 
-		TemplateBody: aws.String(s),
-
-		Parameters: []*cloudformation.Parameter{
-			{
-				ParameterKey:   aws.String("ClusterName"),
-				ParameterValue: aws.String(md.cfg.ClusterName),
-			},
-			{
-				ParameterKey:   aws.String("NodeGroupName"),
-				ParameterValue: aws.String(md.cfg.ClusterState.CFStackWorkerNodeGroupName),
-			},
-			{
-				ParameterKey:   aws.String("KeyName"),
-				ParameterValue: aws.String(md.cfg.ClusterState.CFStackWorkerNodeGroupKeyPairName),
-			},
-			{
-				ParameterKey:   aws.String("NodeImageId"),
-				ParameterValue: aws.String(md.cfg.WorkerNodeAMIID),
-			},
-			{
-				ParameterKey:   aws.String("NodeInstanceType"),
-				ParameterValue: aws.String(md.cfg.WorkerNodeInstanceType),
-			},
-			{
-				ParameterKey:   aws.String("NodeAutoScalingGroupMinSize"),
-				ParameterValue: aws.String(fmt.Sprintf("%d", md.cfg.WorkerNodeASGMin)),
-			},
-			{
-				ParameterKey:   aws.String("NodeAutoScalingGroupMaxSize"),
-				ParameterValue: aws.String(fmt.Sprintf("%d", md.cfg.WorkerNodeASGMax)),
-			},
-			{
-				ParameterKey:   aws.String("NodeAutoScalingGroupDesiredCapacity"),
-				ParameterValue: aws.String(fmt.Sprintf("%d", md.cfg.WorkerNodeASGDesiredCapacity)),
-			},
-			{
-				ParameterKey:   aws.String("NodeVolumeSize"),
-				ParameterValue: aws.String(fmt.Sprintf("%d", md.cfg.WorkerNodeVolumeSizeGB)),
-			},
-			{
-				ParameterKey:   aws.String("VpcId"),
-				ParameterValue: aws.String(md.cfg.VPCID),
-			},
-			{
-				ParameterKey:   aws.String("Subnets"),
-				ParameterValue: aws.String(strings.Join(subnetIDs, ",")),
-			},
-			{
-				ParameterKey:   aws.String("ClusterControlPlaneSecurityGroup"),
-				ParameterValue: aws.String(md.cfg.SecurityGroupID),
-			},
-		},
+		TemplateBody: aws.String(string(body)),
+		Parameters:   params,
 
 		Capabilities: aws.StringSlice([]string{"CAPABILITY_IAM"}),
 	})

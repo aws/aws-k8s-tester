@@ -11,6 +11,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.4.0...v0.4.1
 
 - Add [`EKSRequestHeader` field](https://github.com/aws/aws-k8s-tester/commit/ecaa236b66967b1aaff8b938e3daeb4ed0a59df8).
 - Add [`EKSSigningName` field](https://github.com/aws/aws-k8s-tester/commit/ecaa236b66967b1aaff8b938e3daeb4ed0a59df8).
+- Add [`WorkerNodeCFTemplatePath` field](https://github.com/aws/aws-k8s-tester/commit/TBD).
+- Add [`WorkerNodeCFTemplateAdditionalParameterKeys` field](https://github.com/aws/aws-k8s-tester/commit/TBD).
 
 ### Go
 

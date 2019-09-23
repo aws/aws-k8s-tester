@@ -109,6 +109,11 @@ type Config struct {
 	// SecurityGroupID is the default security group ID.
 	SecurityGroupID string `json:"security-group-id"`
 
+	// WorkerNodeCFTemplatePath is the file path of worker node template.
+	// If empty, download https://raw.githubusercontent.com/awslabs/amazon-eks-ami/master/amazon-eks-nodegroup.yaml.
+	WorkerNodeCFTemplatePath string `json:"worker-node-cf-template-path,omitempty"`
+	// WorkerNodeCFTemplateAdditionalParameterKeys defines a list of additional cloudformation parameter keys.
+	WorkerNodeCFTemplateAdditionalParameterKeys []string `json:"worker-node-cf-template-additional-parameter-keys,omitempty"`
 	// WorkerNodePrivateKeyPath is the file path to store node group key pair private key.
 	// Thus, deployer must delete the private key right after node group creation.
 	// MAKE SURE PRIVATE KEY NEVER GETS UPLOADED TO CLOUD STORAGE AND DELETE AFTER USE!!!

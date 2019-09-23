@@ -47,6 +47,8 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_DESTROY_AFTER_CREATE", "true")
 	os.Setenv("AWS_K8S_TESTER_EKS_DESTROY_WAIT_TIME", "2h")
 	os.Setenv("AWS_K8S_TESTER_EKS_EKS_REQUEST_HEADER", "a=b,eks-options=a;b;c")
+	os.Setenv("AWS_K8S_TESTER_EKS_WORKER_NODE_CF_TEMPLATE_PATH", "/tmp/template.yaml")
+	os.Setenv("AWS_K8S_TESTER_EKS_WORKER_NODE_CF_TEMPLATE_ADDITIONAL_PARAMETER_KEYS", "CertificateAuthorityData,ApiServerEndpoint")
 
 	defer func() {
 		os.Unsetenv("AWS_K8S_TESTER_EKS_AWS_K8S_TESTER_DOWNLOAD_URL")
@@ -84,6 +86,8 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWS_K8S_TESTER_EKS_DESTROY_AFTER_CREATE")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_DESTROY_WAIT_TIME")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_EKS_REQUEST_HEADER")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_WORKER_NODE_CF_TEMPLATE_PATH")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_WORKER_NODE_CF_TEMPLATE_ADDITIONAL_PARAMETER_KEYS")
 	}()
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
@@ -199,10 +203,18 @@ func TestEnv(t *testing.T) {
 	if !reflect.DeepEqual(cfg.EKSRequestHeader, rh) {
 		t.Fatalf("EKSRequestHeader expected %v, got %v", rh, cfg.EKSRequestHeader)
 	}
+	if cfg.WorkerNodeCFTemplatePath != "/tmp/template.yaml" {
+		t.Fatalf("WorkerNodeCFTemplatePath expected /tmp/template.yaml, got %q", cfg.WorkerNodeCFTemplatePath)
+	}
+	pks := []string{"CertificateAuthorityData", "ApiServerEndpoint"}
+	if !reflect.DeepEqual(cfg.WorkerNodeCFTemplateAdditionalParameterKeys, pks) {
+		t.Fatalf("WorkerNodeCFTemplateAdditionalParameterKeys expected %v, got %v", pks, cfg.WorkerNodeCFTemplateAdditionalParameterKeys)
+	}
 
 	if err := cfg.Sync(); err != nil {
 		t.Fatal(err)
 	}
+	defer os.RemoveAll(cfg.ConfigPath)
 	d, err := ioutil.ReadFile(cfg.ConfigPath)
 	if err != nil {
 		t.Fatal(err)
