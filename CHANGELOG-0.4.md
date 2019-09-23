@@ -3,6 +3,23 @@
 <hr>
 
 
+## [v0.4.2](https://github.com/aws/aws-k8s-tester/releases/tag/v0.4.2) (2019-09-23)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.4.1...v0.4.2).
+
+### `eksconfig`
+
+- Add [`WorkerNodeCFTemplatePath` field](https://github.com/aws/aws-k8s-tester/commit/e33beb235c86420a693a367a39a7a810580bd475).
+- Add [`WorkerNodeCFTemplateAdditionalParameterKeys` field](https://github.com/aws/aws-k8s-tester/commit/e33beb235c86420a693a367a39a7a810580bd475).
+
+### Go
+
+- Compile with [*Go 1.13.0*](https://golang.org/doc/devel/release.html#go1.13).
+
+
+<hr>
+
+
 ## [v0.4.1](https://github.com/aws/aws-k8s-tester/releases/tag/v0.4.1) (2019-09-21)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.4.0...v0.4.1).
@@ -11,8 +28,6 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.4.0...v0.4.1
 
 - Add [`EKSRequestHeader` field](https://github.com/aws/aws-k8s-tester/commit/ecaa236b66967b1aaff8b938e3daeb4ed0a59df8).
 - Add [`EKSSigningName` field](https://github.com/aws/aws-k8s-tester/commit/ecaa236b66967b1aaff8b938e3daeb4ed0a59df8).
-- Add [`WorkerNodeCFTemplatePath` field](https://github.com/aws/aws-k8s-tester/commit/TBD).
-- Add [`WorkerNodeCFTemplateAdditionalParameterKeys` field](https://github.com/aws/aws-k8s-tester/commit/TBD).
 
 ### Go
 
