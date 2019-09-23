@@ -12,6 +12,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.4.1...v0.4.2
 - Add [`WorkerNodeCFTemplatePath` field](https://github.com/aws/aws-k8s-tester/commit/e33beb235c86420a693a367a39a7a810580bd475).
 - Add [`WorkerNodeCFTemplateAdditionalParameterKeys` field](https://github.com/aws/aws-k8s-tester/commit/e33beb235c86420a693a367a39a7a810580bd475).
 
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.24.2`](https://github.com/aws/aws-sdk-go/releases/tag/v1.24.2) to [`v1.24.3`](https://github.com/aws/aws-sdk-go/releases/tag/v1.24.3).
+
 ### Go
 
 - Compile with [*Go 1.13.0*](https://golang.org/doc/devel/release.html#go1.13).
