@@ -281,14 +281,6 @@ func NewDefault() *Config {
 	return &vv
 }
 
-// genTag generates a tag for cluster name, CloudFormation, and S3 bucket.
-// Note that this would be used as S3 bucket name to upload tester logs.
-func genTag() string {
-	// use UTC time for everything
-	now := time.Now().UTC()
-	return fmt.Sprintf("eks-%d%02d%02d%02d", now.Year(), int(now.Month()), now.Day(), now.Hour())
-}
-
 func init() {
 	if runtime.GOOS == "darwin" {
 		defaultConfig.AWSK8sTesterDownloadURL = strings.Replace(defaultConfig.AWSK8sTesterDownloadURL, "linux", "darwin", -1)
@@ -422,6 +414,14 @@ func (cfg *Config) Sync() (err error) {
 		return err
 	}
 	return ioutil.WriteFile(cfg.ConfigPath, d, 0600)
+}
+
+// genTag generates a tag for cluster name, CloudFormation, and S3 bucket.
+// Note that this would be used as S3 bucket name to upload tester logs.
+func genTag() string {
+	// use UTC time for everything
+	now := time.Now().UTC()
+	return fmt.Sprintf("eks-%d%02d%02d%02d", now.Year(), int(now.Month()), now.Day(), now.Hour())
 }
 
 // ValidateAndSetDefaults returns an error for invalid configurations.

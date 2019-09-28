@@ -235,13 +235,6 @@ type SecurityGroup struct {
 	GroupID   string `json:"group-id"`
 }
 
-// genTag generates a tag for cluster name, CloudFormation, and S3 bucket.
-func genTag() string {
-	// use UTC time for everything
-	now := time.Now().UTC()
-	return fmt.Sprintf("ec2-%d%02d%02d%02d", now.Year()-2000, int(now.Month()), now.Day(), now.Hour())
-}
-
 // NewDefault returns a copy of the default configuration.
 func NewDefault() *Config {
 	vv := defaultConfig
@@ -410,6 +403,13 @@ func (cfg *Config) UpdateFromEnvs() error {
 	*cfg = cc
 
 	return nil
+}
+
+// genTag generates a tag for cluster name, CloudFormation, and S3 bucket.
+func genTag() string {
+	// use UTC time for everything
+	now := time.Now().UTC()
+	return fmt.Sprintf("ec2-%d%02d%02d%02d", now.Year()-2000, int(now.Month()), now.Day(), now.Hour())
 }
 
 // ValidateAndSetDefaults returns an error for invalid configurations.
