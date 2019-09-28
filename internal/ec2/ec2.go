@@ -1067,20 +1067,14 @@ func getTags(cfg *ec2config.Config) (tags []*ec2.TagSpecification) {
 				{Key: aws.String("Kind"), Value: aws.String("aws-k8s-tester")},
 				{Key: aws.String("Creation"), Value: aws.String(time.Now().UTC().String())},
 				{Key: aws.String("Name"), Value: aws.String(cfg.ClusterName)},
-				{
-					Key:   aws.String(fmt.Sprintf("kubernetes.io/cluster/%s", cfg.ClusterName)),
-					Value: aws.String("owned"),
-				},
 			},
 		},
 	}
-	if len(cfg.Tags) > 0 {
-		for k, v := range cfg.Tags {
-			tags[0].Tags = append(tags[0].Tags, &ec2.Tag{
-				Key:   aws.String(k),
-				Value: aws.String(v),
-			})
-		}
+	for k, v := range cfg.Tags {
+		tags[0].Tags = append(tags[0].Tags, &ec2.Tag{
+			Key:   aws.String(k),
+			Value: aws.String(v),
+		})
 	}
 	return tags
 }
