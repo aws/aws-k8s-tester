@@ -10,7 +10,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.4.2...v0.4.3
 
 ### `eksconfig`
 
-- Add [`EKSTags` field](https://github.com/aws/aws-k8s-tester/commit/TBD).
+- Add [`EKSTags` field](https://github.com/aws/aws-k8s-tester/commit/954468626d8e2bab3010af8bef2791de03ef5263).
 
 ### Dependency
 
