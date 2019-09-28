@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config/plugins"
+	"github.com/aws/aws-k8s-tester/pkg/awsapi"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
 	"sigs.k8s.io/yaml"
 )
@@ -238,7 +239,7 @@ type SecurityGroup struct {
 func genTag() string {
 	// use UTC time for everything
 	now := time.Now().UTC()
-	return fmt.Sprintf("a8-ec2-%d%02d%02d", now.Year()-2000, int(now.Month()), now.Day())
+	return fmt.Sprintf("ec2-%d%02d%02d%02d", now.Year()-2000, int(now.Month()), now.Day(), now.Hour())
 }
 
 // NewDefault returns a copy of the default configuration.
@@ -421,6 +422,9 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 	if cfg.AWSRegion == "" {
 		return errors.New("empty AWSRegion")
 	}
+	if _, ok := awsapi.RegionToAiport[cfg.AWSRegion]; !ok {
+		return fmt.Errorf("%q not found", cfg.AWSRegion)
+	}
 	if cfg.UserName == "" {
 		return errors.New("empty UserName")
 	}
@@ -445,14 +449,17 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 		return errors.New("unexpected ClusterSize")
 	}
 
-	if cfg.ClusterName == "" {
+	if cfg.Tag == "" {
 		cfg.Tag = genTag()
-		cfg.ClusterName = cfg.Tag + "-" + randString(7)
+	}
+	if cfg.ClusterName == "" {
+		airport := awsapi.RegionToAiport[cfg.AWSRegion]
+		cfg.ClusterName = cfg.Tag + "-" + strings.ToLower(airport) + "-" + cfg.AWSRegion + "-" + randString(5)
 	}
 
 	if cfg.ConfigPath == "" {
 		var f *os.File
-		f, err = ioutil.TempFile(os.TempDir(), "a8-ec2config")
+		f, err = ioutil.TempFile(os.TempDir(), "ec2config")
 		if err != nil {
 			return err
 		}
@@ -460,7 +467,7 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 		f.Close()
 		os.RemoveAll(cfg.ConfigPath)
 	}
-	cfg.ConfigPathBucket = filepath.Join(cfg.ClusterName, "a8-ec2config.yaml")
+	cfg.ConfigPathBucket = filepath.Join(cfg.ClusterName, "ec2config.yaml")
 
 	cfg.LogOutputToUploadPath = filepath.Join(os.TempDir(), fmt.Sprintf("%s.log", cfg.ClusterName))
 	logOutputExist := false
@@ -474,15 +481,15 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 		// auto-insert generated log output paths to zap logger output list
 		cfg.LogOutputs = append(cfg.LogOutputs, cfg.LogOutputToUploadPath)
 	}
-	cfg.LogOutputToUploadPathBucket = filepath.Join(cfg.ClusterName, "a8-ec2.log")
+	cfg.LogOutputToUploadPathBucket = filepath.Join(cfg.ClusterName, "ec2.log")
 
 	if cfg.KeyName == "" {
 		cfg.KeyName = cfg.ClusterName
 	}
-	cfg.KeyPathBucket = filepath.Join(cfg.ClusterName, "a8-ec2.key")
+	cfg.KeyPathBucket = filepath.Join(cfg.ClusterName, "ec2.key")
 	if cfg.KeyPath == "" {
 		var f *os.File
-		f, err = ioutil.TempFile(os.TempDir(), "a8-ec2.key")
+		f, err = ioutil.TempFile(os.TempDir(), "ec2.key")
 		if err != nil {
 			return err
 		}

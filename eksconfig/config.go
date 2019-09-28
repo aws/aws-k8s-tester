@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
+	"github.com/aws/aws-k8s-tester/pkg/awsapi"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
 	"k8s.io/client-go/util/homedir"
 	"sigs.k8s.io/yaml"
@@ -280,27 +281,25 @@ func NewDefault() *Config {
 	return &vv
 }
 
-func init() {
-	defaultConfig.Tag = genTag()
-	defaultConfig.ClusterName = defaultConfig.Tag + "-" + randString(5)
-	if runtime.GOOS == "darwin" {
-		defaultConfig.AWSK8sTesterDownloadURL = strings.Replace(defaultConfig.AWSK8sTesterDownloadURL, "linux", "darwin", -1)
-		defaultConfig.KubectlDownloadURL = strings.Replace(defaultConfig.KubectlDownloadURL, "linux", "darwin", -1)
-		defaultConfig.AWSIAMAuthenticatorDownloadURL = strings.Replace(defaultConfig.AWSIAMAuthenticatorDownloadURL, "linux", "darwin", -1)
-		defaultConfig.WorkerNodePrivateKeyPath = filepath.Join(os.TempDir(), "a8-worker-node-private-key-"+defaultConfig.ClusterName)
-	}
-	sshDir := filepath.Join(homedir.HomeDir(), ".ssh")
-	if err := os.MkdirAll(sshDir, 0700); err != nil {
-		panic(fmt.Errorf("failed to mkdir %q (%v)", sshDir, err))
-	}
-}
-
 // genTag generates a tag for cluster name, CloudFormation, and S3 bucket.
 // Note that this would be used as S3 bucket name to upload tester logs.
 func genTag() string {
 	// use UTC time for everything
 	now := time.Now().UTC()
-	return fmt.Sprintf("a8-eks-%d%02d%02d", now.Year()-2000, int(now.Month()), now.Day())
+	return fmt.Sprintf("eks-%d%02d%02d%02d", now.Year(), int(now.Month()), now.Day(), now.Hour())
+}
+
+func init() {
+	if runtime.GOOS == "darwin" {
+		defaultConfig.AWSK8sTesterDownloadURL = strings.Replace(defaultConfig.AWSK8sTesterDownloadURL, "linux", "darwin", -1)
+		defaultConfig.KubectlDownloadURL = strings.Replace(defaultConfig.KubectlDownloadURL, "linux", "darwin", -1)
+		defaultConfig.AWSIAMAuthenticatorDownloadURL = strings.Replace(defaultConfig.AWSIAMAuthenticatorDownloadURL, "linux", "darwin", -1)
+		defaultConfig.WorkerNodePrivateKeyPath = filepath.Join(os.TempDir(), randString(12)+".insecure.key")
+	}
+	sshDir := filepath.Join(homedir.HomeDir(), ".ssh")
+	if err := os.MkdirAll(sshDir, 0700); err != nil {
+		panic(fmt.Errorf("failed to mkdir %q (%v)", sshDir, err))
+	}
 }
 
 // defaultConfig is the default configuration.
@@ -438,11 +437,15 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	if cfg.AWSRegion == "" {
 		return errors.New("AWSRegion is empty")
 	}
+	if _, ok := awsapi.RegionToAiport[cfg.AWSRegion]; !ok {
+		return fmt.Errorf("%q not found", cfg.AWSRegion)
+	}
 	if cfg.Tag == "" {
-		return errors.New("Tag is empty")
+		cfg.Tag = genTag()
 	}
 	if cfg.ClusterName == "" {
-		return errors.New("ClusterName is empty")
+		airport := awsapi.RegionToAiport[cfg.AWSRegion]
+		cfg.ClusterName = cfg.Tag + "-" + strings.ToLower(airport) + "-" + cfg.AWSRegion + "-" + randString(5)
 	}
 
 	if cfg.EKSResolverURL != "" {
@@ -524,7 +527,7 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	////////////////////////////////////////////////////////////////////////
 	// populate all paths on disks and on remote storage
 	if cfg.ConfigPath == "" {
-		f, err := ioutil.TempFile(os.TempDir(), "a8-eksconfig")
+		f, err := ioutil.TempFile(os.TempDir(), "eks")
 		if err != nil {
 			return err
 		}
@@ -532,7 +535,7 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		f.Close()
 		os.RemoveAll(cfg.ConfigPath)
 	}
-	cfg.ConfigPathBucket = filepath.Join(cfg.ClusterName, "a8-eksconfig.yaml")
+	cfg.ConfigPathBucket = filepath.Join(cfg.ClusterName, "eks.yaml")
 
 	cfg.LogOutputToUploadPath = filepath.Join(os.TempDir(), fmt.Sprintf("%s.log", cfg.ClusterName))
 	logOutputExist := false
@@ -546,7 +549,7 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		// auto-insert generated log output paths to zap logger output list
 		cfg.LogOutputs = append(cfg.LogOutputs, cfg.LogOutputToUploadPath)
 	}
-	cfg.LogOutputToUploadPathBucket = filepath.Join(cfg.ClusterName, "a8-eks.log")
+	cfg.LogOutputToUploadPathBucket = filepath.Join(cfg.ClusterName, "eks.log")
 
 	cfg.KubeConfigPathBucket = filepath.Join(cfg.ClusterName, "kubeconfig")
 	////////////////////////////////////////////////////////////////////////

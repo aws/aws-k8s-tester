@@ -21,7 +21,6 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_AWS_IAM_AUTHENTICATOR_PATH", "/tmp/aws-k8s-tester-test/aws-iam-authenticator")
 	os.Setenv("AWS_K8S_TESTER_EKS_KUBERNETES_VERSION", "1.11")
 	os.Setenv("AWS_K8S_TESTER_EKS_EKS_RESOLVER_URL", "https://api.beta.us-west-2.wesley.amazonaws.com")
-	os.Setenv("AWS_K8S_TESTER_EKS_TAG", "my-test")
 	os.Setenv("AWS_K8S_TESTER_EKS_CF_STACK_VPC_PARAMETER_VPC_BLOCK", "192.168.0.0/8")
 	os.Setenv("AWS_K8S_TESTER_EKS_CF_STACK_VPC_PARAMETER_SUBNET_01_BLOCK", "192.168.64.0/8")
 	os.Setenv("AWS_K8S_TESTER_EKS_CF_STACK_VPC_PARAMETER_SUBNET_02_BLOCK", "192.168.128.0/8")
@@ -61,7 +60,6 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWS_K8S_TESTER_EKS_AWS_IAM_AUTHENTICATOR_PATH")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_KUBERNETES_VERSION")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_EKS_RESOLVER_URL")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_TAG")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_CF_STACK_VPC_PARAMETER_VPC_BLOCK")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_CF_STACK_VPC_PARAMETER_SUBNET_01_BLOCK")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_CF_STACK_VPC_PARAMETER_SUBNET_02_BLOCK")
@@ -122,9 +120,6 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.EKSResolverURL != "https://api.beta.us-west-2.wesley.amazonaws.com" {
 		t.Fatalf("unexpected EKSResolverURL %q", cfg.EKSResolverURL)
-	}
-	if cfg.Tag != "my-test" {
-		t.Fatalf("Tag my-test, got %q", cfg.Tag)
 	}
 	if cfg.CFStackVPCParameterVPCBlock != "192.168.0.0/8" {
 		t.Fatalf("CFStackVPCParameterVPCBlock unexpected %q", cfg.CFStackVPCParameterVPCBlock)
@@ -219,6 +214,9 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("WorkerNodeCFTemplateAdditionalParameterKeys expected %v, got %v", pks, cfg.WorkerNodeCFTemplateAdditionalParameterKeys)
 	}
 
+	if err := cfg.ValidateAndSetDefaults(); err != nil {
+		t.Fatal(err)
+	}
 	if err := cfg.Sync(); err != nil {
 		t.Fatal(err)
 	}

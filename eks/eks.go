@@ -51,14 +51,6 @@ import (
 	"k8s.io/utils/exec"
 )
 
-// NewTester returns a new EKS tester.
-func NewTester(cfg *eksconfig.Config) (ekstester.Tester, error) {
-	if err := cfg.ValidateAndSetDefaults(); err != nil {
-		return nil, err
-	}
-	return newTesterEmbedded(cfg)
-}
-
 type embedded struct {
 	stopc chan struct{}
 
@@ -88,8 +80,12 @@ type embedded struct {
 	// TODO: add KMS plugin
 }
 
-// newTesterEmbedded creates a new embedded AWS tester.
-func newTesterEmbedded(cfg *eksconfig.Config) (ekstester.Tester, error) {
+// NewTester returns a new EKS tester.
+func NewTester(cfg *eksconfig.Config) (ekstester.Tester, error) {
+	if err := cfg.ValidateAndSetDefaults(); err != nil {
+		return nil, err
+	}
+
 	now := time.Now().UTC()
 
 	lcfg := logutil.AddOutputPaths(logutil.DefaultZapLoggerConfig, cfg.LogOutputs, cfg.LogOutputs)

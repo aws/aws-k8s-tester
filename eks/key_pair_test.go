@@ -25,7 +25,7 @@ func TestEmbeddedCreateKeyPair(t *testing.T) {
 	os.RemoveAll(cfg.ConfigPath)
 	cfg.ValidateAndSetDefaults()
 
-	ek, err := newTesterEmbedded(cfg)
+	ek, err := NewTester(cfg)
 	if err != nil {
 		t.Fatal(err)
 	}

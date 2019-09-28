@@ -20,7 +20,7 @@ func TestEmbeddedVPCStack(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ek, err := newTesterEmbedded(cfg)
+	ek, err := NewTester(cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
