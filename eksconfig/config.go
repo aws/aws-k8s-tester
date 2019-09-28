@@ -31,6 +31,8 @@ type Config struct {
 	// If empty, deployer auto-populates it.
 	ClusterName string `json:"cluster-name,omitempty"`
 
+	// EKSTags defines EKS create cluster tags.
+	EKSTags map[string]string `json:"eks-tags,omitempty"`
 	// EKSRequestHeader defines EKS create cluster request header.
 	EKSRequestHeader map[string]string `json:"eks-request-header,omitempty"`
 	// EKSResolverURL defines an AWS resolver endpoint for EKS.
@@ -626,7 +628,8 @@ func (cfg *Config) UpdateFromEnvs() error {
 
 		case reflect.Map:
 			switch fieldName {
-			case "EKSRequestHeader":
+			case "EKSTags",
+				"EKSRequestHeader":
 				vv.Field(i).Set(reflect.ValueOf(make(map[string]string)))
 				for _, pair := range strings.Split(sv, ",") {
 					fields := strings.Split(pair, "=")

@@ -8,6 +8,10 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.4.2...v0.4.3).
 
+### `eksconfig`
+
+- Add [`EKSTags` field](https://github.com/aws/aws-k8s-tester/commit/TBD).
+
 ### Dependency
 
 - Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.24.3`](https://github.com/aws/aws-sdk-go/releases/tag/v1.24.3) to [`v1.25.1`](https://github.com/aws/aws-sdk-go/releases/tag/v1.25.1).

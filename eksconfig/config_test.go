@@ -46,6 +46,7 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_UPLOAD_BUCKET_EXPIRE_DAYS", "3")
 	os.Setenv("AWS_K8S_TESTER_EKS_DESTROY_AFTER_CREATE", "true")
 	os.Setenv("AWS_K8S_TESTER_EKS_DESTROY_WAIT_TIME", "2h")
+	os.Setenv("AWS_K8S_TESTER_EKS_EKS_TAGS", "to-delete=2019")
 	os.Setenv("AWS_K8S_TESTER_EKS_EKS_REQUEST_HEADER", "a=b,eks-options=a;b;c")
 	os.Setenv("AWS_K8S_TESTER_EKS_WORKER_NODE_CF_TEMPLATE_PATH", "/tmp/template.yaml")
 	os.Setenv("AWS_K8S_TESTER_EKS_WORKER_NODE_CF_TEMPLATE_ADDITIONAL_PARAMETER_KEYS", "CertificateAuthorityData,ApiServerEndpoint")
@@ -85,6 +86,7 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWS_K8S_TESTER_EKS_UPLOAD_BUCKET_EXPIRE_DAYS")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_DESTROY_AFTER_CREATE")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_DESTROY_WAIT_TIME")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_EKS_TAGS")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_EKS_REQUEST_HEADER")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_WORKER_NODE_CF_TEMPLATE_PATH")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_WORKER_NODE_CF_TEMPLATE_ADDITIONAL_PARAMETER_KEYS")
@@ -195,6 +197,12 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.UploadBucketExpireDays != 3 {
 		t.Fatalf("UploadBucketExpireDays expected 3, got %d", cfg.UploadBucketExpireDays)
+	}
+	tg := map[string]string{
+		"to-delete": "2019",
+	}
+	if !reflect.DeepEqual(cfg.EKSTags, tg) {
+		t.Fatalf("EKSTags expected %v, got %v", tg, cfg.EKSTags)
 	}
 	rh := map[string]string{
 		"a":           "b",

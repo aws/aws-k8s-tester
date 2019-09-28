@@ -707,6 +707,15 @@ func (md *embedded) createCluster() error {
 			SecurityGroupIds: aws.StringSlice([]string{md.cfg.SecurityGroupID}),
 			SubnetIds:        aws.StringSlice(md.cfg.SubnetIDs),
 		},
+		Tags: map[string]*string{
+			"Kind": aws.String("aws-k8s-tester"),
+		},
+	}
+	if len(md.cfg.EKSTags) > 0 {
+		for k, v := range md.cfg.EKSTags {
+			createInput.Tags[k] = aws.String(v)
+			md.lg.Info("added EKS tag", zap.String("key", k), zap.String("value", v))
+		}
 	}
 
 	// _, err := md.eks.CreateCluster(&createInput)
@@ -714,10 +723,7 @@ func (md *embedded) createCluster() error {
 	if len(md.cfg.EKSRequestHeader) > 0 {
 		for k, v := range md.cfg.EKSRequestHeader {
 			req.HTTPRequest.Header[k] = []string{v}
-			md.lg.Info("set EKS request header",
-				zap.String("key", k),
-				zap.String("value", v),
-			)
+			md.lg.Info("set EKS request header", zap.String("key", k), zap.String("value", v))
 		}
 	}
 
