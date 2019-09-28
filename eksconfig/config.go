@@ -303,7 +303,7 @@ var defaultConfig = Config{
 	EKSSigningName: "eks",
 
 	// https://github.com/aws/aws-k8s-tester/releases
-	AWSK8sTesterDownloadURL: "https://github.com/aws/aws-k8s-tester/releases/download/v0.4.0/aws-k8s-tester-v0.4.0-linux-amd64",
+	AWSK8sTesterDownloadURL: "https://github.com/aws/aws-k8s-tester/releases/download/v0.4.3/aws-k8s-tester-v0.4.3-linux-amd64",
 	AWSK8sTesterPath:        "/tmp/aws-k8s-tester/aws-k8s-tester",
 
 	// https://docs.aws.amazon.com/eks/latest/userguide/install-kubectl.html
@@ -312,7 +312,7 @@ var defaultConfig = Config{
 
 	KubeConfigPath: "/tmp/aws-k8s-tester/kubeconfig",
 
-	AWSIAMAuthenticatorDownloadURL: "https://amazon-eks.s3-us-west-2.amazonaws.com/1.13.7/2019-06-11/bin/linux/amd64/aws-iam-authenticator",
+	AWSIAMAuthenticatorDownloadURL: "https://amazon-eks.s3-us-west-2.amazonaws.com/1.14.6/2019-08-22/bin/linux/amd64/aws-iam-authenticator",
 	AWSIAMAuthenticatorPath:        "/tmp/aws-k8s-tester/aws-iam-authenticator",
 
 	DestroyAfterCreate: false,
