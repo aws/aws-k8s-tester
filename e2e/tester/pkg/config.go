@@ -26,4 +26,8 @@ type KopsCluster struct {
 }
 
 type EksCluster struct {
+	Region            string `yaml:"region"`
+	NodeCount         int    `yaml:"nodeCount"`
+	NodeSize          string `yaml:"nodeSize"`
+	KubernetesVersion string `yaml:"kubernetesVersion"`
 }
