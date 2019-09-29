@@ -10,7 +10,9 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.4.2...v0.4.3
 
 ### `aws-k8s-tester`
 
-- Add [`aws-k8s-tester eks list clusters --signing-name` flag](https://github.com/aws/aws-k8s-tester/commit/TBD).
+- Add [`aws-k8s-tester eks list clusters --signing-name` flag](https://github.com/aws/aws-k8s-tester/commit/e4c8b5beb852e9b7c18cb17bcd6f6fbf85f7b2da).
+- Add [`aws-k8s-tester eks list clusters --more` flag](https://github.com/aws/aws-k8s-tester/commit/e4c8b5beb852e9b7c18cb17bcd6f6fbf85f7b2da).
+- Add [`aws-k8s-tester eks list clusters --clean-up` flag](https://github.com/aws/aws-k8s-tester/commit/e4c8b5beb852e9b7c18cb17bcd6f6fbf85f7b2da).
 
 ### `eksconfig`
 
