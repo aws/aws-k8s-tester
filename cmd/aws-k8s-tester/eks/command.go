@@ -10,10 +10,16 @@ func init() {
 var (
 	path string
 
-	resolverURL       string
-	region            string
+	region string
+
+	resolverURL string
+	signingName string
+
 	kubernetesVersion string
 	amiType           string
+
+	more    bool
+	cleanUp bool
 )
 
 // NewCommand implements "awstest eks" command.

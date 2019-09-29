@@ -4,9 +4,13 @@
 <hr>
 
 
-## [v0.4.3](https://github.com/aws/aws-k8s-tester/releases/tag/v0.4.3) (2019-09-28)
+## [v0.4.3](https://github.com/aws/aws-k8s-tester/releases/tag/v0.4.3) (2019-09-29)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.4.2...v0.4.3).
+
+### `aws-k8s-tester`
+
+- Add [`aws-k8s-tester eks list clusters --signing-name` flag](https://github.com/aws/aws-k8s-tester/commit/TBD).
 
 ### `eksconfig`
 
