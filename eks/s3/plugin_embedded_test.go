@@ -7,7 +7,6 @@ import (
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/awsapi"
-
 	"github.com/aws/aws-sdk-go/service/s3"
 	"go.uber.org/zap"
 )

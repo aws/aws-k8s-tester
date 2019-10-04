@@ -60,10 +60,7 @@ type Config struct {
 	AWSIAMAuthenticatorDownloadURL string `json:"aws-iam-authenticator-download-url,omitempty"`
 
 	// ConfigPath is the configuration file path.
-	// Must be left empty, and let deployer auto-populate this field.
-	// Deployer is expected to update this file with latest status,
-	// and to make a backup of original configuration
-	// with the filename suffix ".backup.yaml" in the same directory.
+	// Deployer is expected to update this file with latest status.
 	ConfigPath string `json:"config-path,omitempty"`
 	// ConfigPathBucket is the path inside S3 bucket.
 	ConfigPathBucket string `json:"config-path-bucket,omitempty"` // read-only to user

@@ -78,7 +78,6 @@ func listClustersFunc(cmd *cobra.Command, args []string) {
 			Name: aws.String(name),
 		})
 		if err != nil {
-
 			fmt.Printf("%03d: %q failed to describe (%v, retriable %v, throttled %v, error type %v)\n",
 				i,
 				name,
@@ -89,9 +88,7 @@ func listClustersFunc(cmd *cobra.Command, args []string) {
 			)
 
 			awsErr, ok := err.(awserr.Error)
-			if cleanUp &&
-				ok &&
-				awsErr.Code() == "ResourceNotFoundException" &&
+			if cleanUp && ok && awsErr.Code() == "ResourceNotFoundException" &&
 				strings.HasPrefix(awsErr.Message(), "No cluster found for") {
 				fmt.Println("deleting", name)
 				_, derr := svc.DeleteCluster(&awseks.DeleteClusterInput{Name: aws.String(name)})
