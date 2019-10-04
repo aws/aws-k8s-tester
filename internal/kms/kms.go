@@ -22,11 +22,24 @@ type Deployer interface {
 	// CreateKey creates a new AWS KMS customer master key (CMK)
 	// https://docs.aws.amazon.com/kms/latest/developerguide/create-keys.html
 	CreateKey() error
+
 	// ScheduleKeyDeletion schedules a key deletion.
 	// Minimum pending days are 7.
 	ScheduleKeyDeletion(pendingDays int64) error
+
 	// ListAllKeys lists all KMS keys.
 	ListAllKeys() ([]kms.KeyListEntry, error)
+
+	// EnableKey(*kms.EnableKeyInput) (*kms.EnableKeyOutput, error)
+	// DisableKey(*kms.DisableKeyInput) (*kms.DisableKeyOutput, error)
+
+	// EnableKeyRotation(*kms.EnableKeyRotationInput) (*kms.EnableKeyRotationOutput, error)
+	// DisableKeyRotation(*kms.DisableKeyRotationInput) (*kms.DisableKeyRotationOutput, error)
+	// GetKeyRotationStatus(*kms.GetKeyRotationStatusInput) (*kms.GetKeyRotationStatusOutput, error)
+
+	// GenerateDataKey(*kms.GenerateDataKeyInput) (*kms.GenerateDataKeyOutput, error)
+	// Encrypt(*kms.EncryptInput) (*kms.EncryptOutput, error)
+	// Decrypt(*kms.DecryptInput) (*kms.DecryptOutput, error)
 }
 
 type deployer struct {
@@ -108,12 +121,30 @@ func (dp *deployer) CreateKey() error {
 }
 
 func (dp *deployer) syncKeyMetadata() (err error) {
-	k, err := dp.kms.DescribeKey(&kms.DescribeKeyInput{
-		KeyId: aws.String(dp.cfg.KeyMetadata.KeyID),
-	})
-	if err != nil {
-		return err
+	k := &kms.DescribeKeyOutput{}
+
+	waitTime := 7 * time.Minute
+	retryStart := time.Now().UTC()
+	for time.Now().UTC().Sub(retryStart) < waitTime {
+		var err error
+		k, err = dp.kms.DescribeKey(&kms.DescribeKeyInput{
+			KeyId: aws.String(dp.cfg.KeyMetadata.KeyID),
+		})
+		if err != nil {
+			if request.IsErrorRetryable(err) || request.IsErrorThrottle(err) {
+				dp.lg.Warn("retrying", zap.Error(err))
+				time.Sleep(5 * time.Second)
+				continue
+			}
+			awsErr, ok := err.(awserr.Error)
+			if ok {
+				dp.lg.Warn("failed to describe key", zap.String("code", awsErr.Code()), zap.Error(err))
+			}
+			return err
+		}
+		break
 	}
+
 	dp.cfg.KeyMetadata = &kmsconfig.KeyMetadata{
 		AWSAccountID: aws.StringValue(k.KeyMetadata.AWSAccountId),
 		ARN:          aws.StringValue(k.KeyMetadata.Arn),
@@ -155,10 +186,11 @@ func (dp *deployer) ScheduleKeyDeletion(pendingDays int64) error {
 
 func (dp *deployer) ListAllKeys() (entries []kms.KeyListEntry, err error) {
 	entries = make([]kms.KeyListEntry, 0)
-	waitTime := 7 * time.Minute
-	retryStart := time.Now().UTC()
 
 	input := &kms.ListKeysInput{}
+
+	waitTime := 7 * time.Minute
+	retryStart := time.Now().UTC()
 	for time.Now().UTC().Sub(retryStart) < waitTime {
 		var listOutput *kms.ListKeysOutput
 		listOutput, err = dp.kms.ListKeys(input)
@@ -182,7 +214,9 @@ func (dp *deployer) ListAllKeys() (entries []kms.KeyListEntry, err error) {
 		if aws.StringValue(listOutput.NextMarker) == "" {
 			break
 		}
+
 		input.Marker = listOutput.NextMarker
+		time.Sleep(5 * time.Second)
 	}
 
 	dp.lg.Info("listed all KMS keys", zap.Int("keys", len(entries)))
