@@ -45,6 +45,8 @@ type Config struct {
 	UpdatedAt time.Time `json:"updated-at,omitempty"` // read-only to user
 	// KeyMetadata is the EKS metadata status.
 	KeyMetadata *KeyMetadata `json:"key-meta-data,omitempty"`
+	// KeyRotationEnabled is true, if key rotation is enabled.
+	KeyRotationEnabled bool `json:"key-rotation-enabled,omitempty"`
 }
 
 // KeyMetadata is the key's current metadata.

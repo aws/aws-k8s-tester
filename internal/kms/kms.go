@@ -2,6 +2,7 @@
 package kms
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -30,16 +31,15 @@ type Deployer interface {
 	// ListAllKeys lists all KMS keys.
 	ListAllKeys() ([]kms.KeyListEntry, error)
 
-	// EnableKey(*kms.EnableKeyInput) (*kms.EnableKeyOutput, error)
-	// DisableKey(*kms.DisableKeyInput) (*kms.DisableKeyOutput, error)
+	EnableKey() error
+	DisableKey() error
 
-	// EnableKeyRotation(*kms.EnableKeyRotationInput) (*kms.EnableKeyRotationOutput, error)
-	// DisableKeyRotation(*kms.DisableKeyRotationInput) (*kms.DisableKeyRotationOutput, error)
-	// GetKeyRotationStatus(*kms.GetKeyRotationStatusInput) (*kms.GetKeyRotationStatusOutput, error)
+	EnableKeyRotation() error
+	DisableKeyRotation() error
 
-	// GenerateDataKey(*kms.GenerateDataKeyInput) (*kms.GenerateDataKeyOutput, error)
-	// Encrypt(*kms.EncryptInput) (*kms.EncryptOutput, error)
-	// Decrypt(*kms.DecryptInput) (*kms.DecryptOutput, error)
+	GenerateDataKey(encryptionCtx map[string]string) (cipher []byte, plain []byte, err error)
+	Encrypt(encryptionCtx map[string]string, plain []byte) (cipher []byte, err error)
+	Decrypt(encryptionCtx map[string]string, cipher []byte) (plain []byte, err error)
 }
 
 type deployer struct {
@@ -77,9 +77,7 @@ func New(cfg *kmsconfig.Config) (Deployer, error) {
 	cfg.AWSAccountID = *stsOutput.Account
 	cfg.Sync()
 
-	lg.Info("creating a new KMS deployer",
-		zap.String("path", cfg.ConfigPath),
-	)
+	lg.Info("creating a new KMS deployer", zap.String("path", cfg.ConfigPath))
 
 	return &deployer{
 		cfg: cfg,
@@ -106,12 +104,14 @@ func (dp *deployer) CreateKey() error {
 		ARN:   aws.StringValue(ko.KeyMetadata.Arn),
 		KeyID: aws.StringValue(ko.KeyMetadata.KeyId),
 	}
-
 	if err = dp.syncKeyMetadata(); err != nil {
 		return err
 	}
 	if err = dp.cfg.Sync(); err != nil {
 		return err
+	}
+	if !dp.cfg.KeyMetadata.Enabled {
+		return fmt.Errorf("KeyMetadata.Enabled unexpected %v", dp.cfg.KeyMetadata.Enabled)
 	}
 	dp.lg.Info("created a key",
 		zap.String("key-arn", dp.cfg.KeyMetadata.ARN),
@@ -121,13 +121,14 @@ func (dp *deployer) CreateKey() error {
 }
 
 func (dp *deployer) syncKeyMetadata() (err error) {
-	k := &kms.DescribeKeyOutput{}
+	desc := &kms.DescribeKeyOutput{}
+	rt := &kms.GetKeyRotationStatusOutput{}
 
 	waitTime := 7 * time.Minute
 	retryStart := time.Now().UTC()
 	for time.Now().UTC().Sub(retryStart) < waitTime {
 		var err error
-		k, err = dp.kms.DescribeKey(&kms.DescribeKeyInput{
+		desc, err = dp.kms.DescribeKey(&kms.DescribeKeyInput{
 			KeyId: aws.String(dp.cfg.KeyMetadata.KeyID),
 		})
 		if err != nil {
@@ -142,21 +143,40 @@ func (dp *deployer) syncKeyMetadata() (err error) {
 			}
 			return err
 		}
+
+		rt, err = dp.kms.GetKeyRotationStatus(&kms.GetKeyRotationStatusInput{
+			KeyId: aws.String(dp.cfg.KeyMetadata.KeyID),
+		})
+		if err != nil {
+			if request.IsErrorRetryable(err) || request.IsErrorThrottle(err) {
+				dp.lg.Warn("retrying", zap.Error(err))
+				time.Sleep(5 * time.Second)
+				continue
+			}
+			awsErr, ok := err.(awserr.Error)
+			if ok {
+				dp.lg.Warn("failed to describe key", zap.String("code", awsErr.Code()), zap.Error(err))
+			}
+			return err
+		}
+
 		break
 	}
 
 	dp.cfg.KeyMetadata = &kmsconfig.KeyMetadata{
-		AWSAccountID: aws.StringValue(k.KeyMetadata.AWSAccountId),
-		ARN:          aws.StringValue(k.KeyMetadata.Arn),
-		CreationDate: aws.TimeValue(k.KeyMetadata.CreationDate),
-		Description:  aws.StringValue(k.KeyMetadata.Description),
-		Enabled:      aws.BoolValue(k.KeyMetadata.Enabled),
-		KeyID:        aws.StringValue(k.KeyMetadata.KeyId),
-		KeyManager:   aws.StringValue(k.KeyMetadata.KeyManager),
-		KeyState:     aws.StringValue(k.KeyMetadata.KeyState),
-		KeyUsage:     aws.StringValue(k.KeyMetadata.KeyUsage),
-		Origin:       aws.StringValue(k.KeyMetadata.Origin),
+		AWSAccountID: aws.StringValue(desc.KeyMetadata.AWSAccountId),
+		ARN:          aws.StringValue(desc.KeyMetadata.Arn),
+		CreationDate: aws.TimeValue(desc.KeyMetadata.CreationDate),
+		Description:  aws.StringValue(desc.KeyMetadata.Description),
+		Enabled:      aws.BoolValue(desc.KeyMetadata.Enabled),
+		KeyID:        aws.StringValue(desc.KeyMetadata.KeyId),
+		KeyManager:   aws.StringValue(desc.KeyMetadata.KeyManager),
+		KeyState:     aws.StringValue(desc.KeyMetadata.KeyState),
+		KeyUsage:     aws.StringValue(desc.KeyMetadata.KeyUsage),
+		Origin:       aws.StringValue(desc.KeyMetadata.Origin),
 	}
+	dp.cfg.KeyRotationEnabled = aws.BoolValue(rt.KeyRotationEnabled)
+
 	return nil
 }
 
@@ -180,6 +200,9 @@ func (dp *deployer) ScheduleKeyDeletion(pendingDays int64) error {
 
 	if err = dp.syncKeyMetadata(); err != nil {
 		return err
+	}
+	if dp.cfg.KeyMetadata.KeyState != "PendingDeletion" {
+		return fmt.Errorf("KeyMetadata.KeyState unexpected %q", dp.cfg.KeyMetadata.KeyState)
 	}
 	return dp.cfg.Sync()
 }
@@ -221,4 +244,150 @@ func (dp *deployer) ListAllKeys() (entries []kms.KeyListEntry, err error) {
 
 	dp.lg.Info("listed all KMS keys", zap.Int("keys", len(entries)))
 	return entries, nil
+}
+
+func (dp *deployer) EnableKey() error {
+	dp.keyMu.Lock()
+	defer dp.keyMu.Unlock()
+
+	_, err := dp.kms.EnableKey(&kms.EnableKeyInput{
+		KeyId: aws.String(dp.cfg.KeyMetadata.KeyID),
+	})
+	if err != nil {
+		return err
+	}
+	if err = dp.syncKeyMetadata(); err != nil {
+		return err
+	}
+	if !dp.cfg.KeyMetadata.Enabled {
+		return fmt.Errorf("%q expected Enabled true, got %v", dp.cfg.KeyMetadata.KeyID, dp.cfg.KeyMetadata.Enabled)
+	}
+	return nil
+}
+
+func (dp *deployer) DisableKey() error {
+	dp.keyMu.Lock()
+	defer dp.keyMu.Unlock()
+
+	_, err := dp.kms.DisableKey(&kms.DisableKeyInput{
+		KeyId: aws.String(dp.cfg.KeyMetadata.KeyID),
+	})
+	if err != nil {
+		return err
+	}
+	if err = dp.syncKeyMetadata(); err != nil {
+		return err
+	}
+	if dp.cfg.KeyMetadata.Enabled {
+		return fmt.Errorf("%q expected Enabled false, got %v", dp.cfg.KeyMetadata.KeyID, dp.cfg.KeyMetadata.Enabled)
+	}
+	return nil
+}
+
+func (dp *deployer) EnableKeyRotation() error {
+	dp.keyMu.Lock()
+	defer dp.keyMu.Unlock()
+
+	_, err := dp.kms.EnableKeyRotation(&kms.EnableKeyRotationInput{
+		KeyId: aws.String(dp.cfg.KeyMetadata.KeyID),
+	})
+	if err != nil {
+		return err
+	}
+	if err = dp.syncKeyMetadata(); err != nil {
+		return err
+	}
+	if !dp.cfg.KeyRotationEnabled {
+		return fmt.Errorf("%q expected KeyRotationEnabled false, got %v", dp.cfg.KeyMetadata.KeyID, dp.cfg.KeyRotationEnabled)
+	}
+	return nil
+}
+
+func (dp *deployer) DisableKeyRotation() error {
+	dp.keyMu.Lock()
+	defer dp.keyMu.Unlock()
+
+	_, err := dp.kms.DisableKeyRotation(&kms.DisableKeyRotationInput{
+		KeyId: aws.String(dp.cfg.KeyMetadata.KeyID),
+	})
+	if err != nil {
+		return err
+	}
+	if err = dp.syncKeyMetadata(); err != nil {
+		return err
+	}
+	if dp.cfg.KeyRotationEnabled {
+		return fmt.Errorf("%q expected KeyRotationEnabled false, got %v", dp.cfg.KeyMetadata.KeyID, dp.cfg.KeyRotationEnabled)
+	}
+	return nil
+}
+
+func (dp *deployer) GenerateDataKey(encryptionCtx map[string]string, keySpec string, keyBytes int64) (cipher []byte, plain []byte, err error) {
+	dp.keyMu.RLock()
+	defer dp.keyMu.RUnlock()
+
+	ctx := make(map[string]*string, len(encryptionCtx))
+	for k, v := range encryptionCtx {
+		ctx[k] = aws.String(v)
+	}
+
+	out, err := dp.kms.GenerateDataKey(&kms.GenerateDataKeyInput{
+		EncryptionContext: ctx,
+		KeyId:             aws.String(dp.cfg.KeyMetadata.KeyID),
+		KeySpec:           aws.String(keySpec),
+		NumberOfBytes:     aws.Int64(keyBytes),
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	if dp.cfg.KeyMetadata.KeyID != aws.StringValue(out.KeyId) {
+		return nil, nil, fmt.Errorf("expected key ID %q, got %q", dp.cfg.KeyMetadata.KeyID, aws.StringValue(out.KeyId))
+	}
+	if err = dp.syncKeyMetadata(); err != nil {
+		return nil, nil, err
+	}
+	return out.CiphertextBlob, out.Plaintext, nil
+}
+
+func (dp *deployer) Encrypt(encryptionCtx map[string]string, plain []byte) (cipher []byte, err error) {
+	dp.keyMu.RLock()
+	defer dp.keyMu.RUnlock()
+
+	ctx := make(map[string]*string, len(encryptionCtx))
+	for k, v := range encryptionCtx {
+		ctx[k] = aws.String(v)
+	}
+
+	var resp *kms.EncryptOutput
+	resp, err = dp.kms.Encrypt(&kms.EncryptInput{
+		EncryptionContext: ctx,
+		KeyId:             aws.String(dp.cfg.KeyMetadata.KeyID),
+		Plaintext:         plain,
+	})
+	if err != nil {
+		dp.lg.Warn("failed to encrypt", zap.Error(err))
+		return nil, err
+	}
+	return resp.CiphertextBlob, nil
+}
+
+func (dp *deployer) Decrypt(encryptionCtx map[string]string, cipher []byte) (plain []byte, err error) {
+	dp.keyMu.RLock()
+	defer dp.keyMu.RUnlock()
+
+	ctx := make(map[string]*string, len(encryptionCtx))
+	for k, v := range encryptionCtx {
+		ctx[k] = aws.String(v)
+	}
+
+	var resp *kms.DecryptOutput
+	resp, err = dp.kms.Decrypt(&kms.DecryptInput{
+		EncryptionContext: ctx,
+		CiphertextBlob:    cipher,
+	})
+	if err != nil {
+		dp.lg.Warn("failed to decrypt", zap.Error(err))
+		return nil, err
+	}
+	return resp.Plaintext, nil
 }
