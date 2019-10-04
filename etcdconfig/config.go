@@ -30,8 +30,8 @@ type Config struct {
 	// If empty, deployer auto-populates it.
 	ClusterName string `json:"cluster-name,omitempty"`
 
-	// WaitBeforeDown is the duration to sleep before cluster tear down.
-	WaitBeforeDown time.Duration `json:"wait-before-down,omitempty"`
+	// DestroyWaitTime is the duration to sleep before cluster tear down.
+	DestroyWaitTime time.Duration `json:"destroy-wait-time,omitempty"`
 	// Down is true to automatically tear down cluster in "test".
 	// Deployer implementation should not call "Down" inside "Up" method.
 	// This is meant to be used as a flag for test.
@@ -606,8 +606,8 @@ func genTag() string {
 }
 
 var defaultConfig = Config{
-	WaitBeforeDown: time.Minute,
-	Down:           true,
+	DestroyWaitTime: time.Minute,
+	Down:            true,
 
 	LogLevel: logutil.DefaultLogLevel,
 	// default, stderr, stdout, or file name
@@ -734,7 +734,7 @@ func (cfg *Config) UpdateFromEnvs() error {
 			vv1.Field(i).SetBool(bb)
 
 		case reflect.Int, reflect.Int32, reflect.Int64:
-			if tp1.Field(i).Name == "WaitBeforeDown" ||
+			if tp1.Field(i).Name == "DestroyWaitTime" ||
 				tp1.Field(i).Name == "TestTimeout" {
 				dv, err := time.ParseDuration(sv)
 				if err != nil {

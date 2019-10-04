@@ -128,7 +128,7 @@ func TestEC2(t *testing.T) {
 		t.Errorf("expected 'Hello World!', got %q", string(d))
 	}
 
-	time.Sleep(cfg.WaitBeforeDown)
+	time.Sleep(cfg.DestroyWaitTime)
 
 	id := ""
 	for id2 := range cfg.Instances {

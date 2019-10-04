@@ -61,8 +61,8 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_ETCD_CLUSTER_SNAPSHOT_COUNT", "100")
 	os.Setenv("AWS_K8S_TESTER_EC2_ETCD_BASTION_NODES_CLUSTER_SIZE", "2")
 	os.Setenv("AWS_K8S_TESTER_ETCD_TEST_TIMEOUT", "20s")
-	os.Setenv("AWS_K8S_TESTER_EC2_ETCD_NODES_WAIT_BEFORE_DOWN", "3h")
-	os.Setenv("AWS_K8S_TESTER_ETCD_WAIT_BEFORE_DOWN", "2h")
+	os.Setenv("AWS_K8S_TESTER_EC2_ETCD_NODES_DESTROY_WAIT_TIME", "3h")
+	os.Setenv("AWS_K8S_TESTER_ETCD_DESTROY_WAIT_TIME", "2h")
 	os.Setenv("AWS_K8S_TESTER_EC2_ETCD_NODES_CLUSTER_SIZE", "100")
 	os.Setenv("AWS_K8S_TESTER_ETCD_CLUSTER_SIZE", "100")
 	os.Setenv("AWS_K8S_TESTER_ETCD_TAG", "my-test")
@@ -77,8 +77,8 @@ func TestEnv(t *testing.T) {
 		os.Unsetenv("AWS_K8S_TESTER_ETCD_CLUSTER_SNAPSHOT_COUNT")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_ETCD_BASTION_NODES_CLUSTER_SIZE")
 		os.Unsetenv("AWS_K8S_TESTER_ETCD_TEST_TIMEOUT")
-		os.Unsetenv("AWS_K8S_TESTER_EC2_ETCD_NODES_WAIT_BEFORE_DOWN")
-		os.Unsetenv("AWS_K8S_TESTER_ETCD_WAIT_BEFORE_DOWN")
+		os.Unsetenv("AWS_K8S_TESTER_EC2_ETCD_NODES_DESTROY_WAIT_TIME")
+		os.Unsetenv("AWS_K8S_TESTER_ETCD_DESTROY_WAIT_TIME")
 		os.Unsetenv("AWS_K8S_TESTER_EC2_ETCD_NODES_CLUSTER_SIZE")
 		os.Unsetenv("AWS_K8S_TESTER_ETCD_CLUSTER_SIZE")
 		os.Unsetenv("AWS_K8S_TESTER_ETCD_TAG")
@@ -104,11 +104,11 @@ func TestEnv(t *testing.T) {
 	if cfg.TestTimeout != 20*time.Second {
 		t.Fatalf("unexpected TestTimeout, got %v", cfg.TestTimeout)
 	}
-	if cfg.EC2.WaitBeforeDown != 3*time.Hour {
-		t.Fatalf("unexpected WaitBeforeDown, got %v", cfg.EC2.WaitBeforeDown)
+	if cfg.EC2.DestroyWaitTime != 3*time.Hour {
+		t.Fatalf("unexpected DestroyWaitTime, got %v", cfg.EC2.DestroyWaitTime)
 	}
-	if cfg.WaitBeforeDown != 2*time.Hour {
-		t.Fatalf("unexpected WaitBeforeDown, got %v", cfg.WaitBeforeDown)
+	if cfg.DestroyWaitTime != 2*time.Hour {
+		t.Fatalf("unexpected DestroyWaitTime, got %v", cfg.DestroyWaitTime)
 	}
 	if cfg.EC2.ClusterSize != 100 {
 		t.Fatalf("EC2.ClusterSize expected 100, got %d", cfg.EC2.ClusterSize)

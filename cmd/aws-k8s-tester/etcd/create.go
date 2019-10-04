@@ -88,7 +88,7 @@ func createClusterFunc(cmd *cobra.Command, args []string) {
 		notifier := make(chan os.Signal, 1)
 		signal.Notify(notifier, syscall.SIGINT, syscall.SIGTERM)
 		select {
-		case <-time.After(cfg.WaitBeforeDown):
+		case <-time.After(cfg.DestroyWaitTime):
 		case sig := <-notifier:
 			fmt.Fprintf(os.Stderr, "received %s\n", sig)
 		}
