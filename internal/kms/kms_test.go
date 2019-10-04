@@ -11,7 +11,7 @@ import (
 
 func TestDeployer(t *testing.T) {
 	if os.Getenv("RUN_AWS_TESTS") != "1" {
-		t.Skip()
+		// t.Skip()
 	}
 
 	cfg := kmsconfig.NewDefault()
@@ -51,39 +51,41 @@ func TestDeployer(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ctx := map[string]string{
+	// The key argument should be the AES key,
+	// either 16 or 32 bytes to select AES-128 or AES-256
+	dataKeyCtx := map[string]string{
 		"Kind":        "aws-k8s-tester",
 		"Description": cfg.ID,
 	}
-
-	cipherKey, plainKey, err := dp.GenerateDataKey(ctx)
+	cipherKey1, plainKey1, err := dp.GenerateDataKey(dataKeyCtx, "AES_256", 0)
 	if err != nil {
 		t.Fatal(err)
 	}
-	fmt.Println("cipherKey:", string(cipherKey))
-	fmt.Println("plainKey:", string(plainKey))
-
-	// TODO: test
-
-	encryptionCtx := map[string]string{
-		"a": "b",
-	}
-	plain := []byte("Hello World! This is great!")
-
-	var cipher []byte
-	cipher, err = dp.Encrypt(encryptionCtx, plain)
+	var plainKey2 []byte
+	plainKey2, err = dp.Decrypt(dataKeyCtx, cipherKey1)
 	if err != nil {
 		t.Fatal(err)
 	}
-	fmt.Println("cipher:", string(cipher))
+	if len(plainKey1) != 32 {
+		t.Fatalf("len(plainKey1) expected 32, got %d", len(plainKey1))
+	}
+	if !bytes.Equal(plainKey1, plainKey2) {
+		t.Fatalf("expected plain key %q, got %q", string(plainKey1), string(plainKey2))
+	}
 
-	var decrypted []byte
-	decrypted, err = dp.Decrypt(encryptionCtx, cipher)
+	encryptionCtx := map[string]string{"a": "b"}
+	plainTxt1 := []byte("Hello World! This is great!")
+	var cipherTxt []byte
+	cipherTxt, err = dp.Encrypt(encryptionCtx, plainTxt1)
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	if !bytes.Equal(plain, decrypted) {
-		t.Fatalf("decrypted text expected %q, got %q", string(plain), string(decrypted))
+	var plainTxt2 []byte
+	plainTxt2, err = dp.Decrypt(encryptionCtx, cipherTxt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(plainTxt1, plainTxt2) {
+		t.Fatalf("decrypted text expected %q, got %q", string(plainTxt1), string(plainTxt2))
 	}
 }

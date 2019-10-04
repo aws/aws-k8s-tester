@@ -37,8 +37,19 @@ type Deployer interface {
 	EnableKeyRotation() error
 	DisableKeyRotation() error
 
-	GenerateDataKey(encryptionCtx map[string]string) (cipher []byte, plain []byte, err error)
+	// GenerateDataKey creates a unique data key. It returns a plaintext copy of the data
+	// key and a copy that is encrypted under a customer master key (CMK).
+	// ref. https://docs.aws.amazon.com/kms/latest/APIReference/API_GenerateDataKey.html
+	GenerateDataKey(encryptionCtx map[string]string, keySpec string, keyBytes int64) (cipher []byte, plain []byte, err error)
+
+	// Encrypt encrypts plaintext into ciphertext by using a customer master key (CMK).
+	// It can encrypt up to 4 kilobytes (4096 bytes) of arbitrary data.
 	Encrypt(encryptionCtx map[string]string, plain []byte) (cipher []byte, err error)
+	// Decrypt decrypts ciphertext. Ciphertext is plaintext that has been previously encrypted
+	// by using any of the following operations:
+	//   GenerateDataKey
+	//   GenerateDataKeyWithoutPlaintext
+	//   Encrypt
 	Decrypt(encryptionCtx map[string]string, cipher []byte) (plain []byte, err error)
 }
 
@@ -331,17 +342,23 @@ func (dp *deployer) GenerateDataKey(encryptionCtx map[string]string, keySpec str
 		ctx[k] = aws.String(v)
 	}
 
-	out, err := dp.kms.GenerateDataKey(&kms.GenerateDataKeyInput{
+	input := &kms.GenerateDataKeyInput{
 		EncryptionContext: ctx,
 		KeyId:             aws.String(dp.cfg.KeyMetadata.KeyID),
-		KeySpec:           aws.String(keySpec),
-		NumberOfBytes:     aws.Int64(keyBytes),
-	})
+	}
+	if keySpec != "" {
+		input.KeySpec = aws.String(keySpec)
+	}
+	if keyBytes > 0 {
+		input.NumberOfBytes = aws.Int64(keyBytes)
+	}
+	out, err := dp.kms.GenerateDataKey(input)
 	if err != nil {
 		return nil, nil, err
 	}
-	if dp.cfg.KeyMetadata.KeyID != aws.StringValue(out.KeyId) {
-		return nil, nil, fmt.Errorf("expected key ID %q, got %q", dp.cfg.KeyMetadata.KeyID, aws.StringValue(out.KeyId))
+	// it returns ARN
+	if dp.cfg.KeyMetadata.ARN != aws.StringValue(out.KeyId) {
+		return nil, nil, fmt.Errorf("expected data key ID %q, got %q", dp.cfg.KeyMetadata.ARN, aws.StringValue(out.KeyId))
 	}
 	if err = dp.syncKeyMetadata(); err != nil {
 		return nil, nil, err
