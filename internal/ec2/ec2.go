@@ -828,7 +828,7 @@ func (md *embedded) createInstances() (err error) {
 			}
 
 			if n < runInstancesBatch {
-				tkn := md.cfg.ClusterName + fmt.Sprintf("%X", time.Now().Nanosecond())
+				tkn := md.cfg.ClusterName + fmt.Sprintf("%X", time.Now().UTC().UnixNano())
 				// otherwise, "InvalidParameterValue: Client token must be less than or equal to 64 characters"
 				if len(tkn) > 63 {
 					tkn = tkn[len(tkn)-63:]
@@ -865,7 +865,7 @@ func (md *embedded) createInstances() (err error) {
 			} else {
 				nLeft := n
 				for nLeft > 0 {
-					tkn := md.cfg.ClusterName + fmt.Sprintf("%X", time.Now().UTC().Nanosecond())
+					tkn := md.cfg.ClusterName + fmt.Sprintf("%X", time.Now().UTC().UnixNano())
 					// otherwise, "InvalidParameterValue: Client token must be less than or equal to 64 characters"
 					if len(tkn) > 63 {
 						tkn = tkn[len(tkn)-63:]
@@ -926,7 +926,7 @@ func (md *embedded) createInstances() (err error) {
 	} else {
 		// create <1 instance per subnet
 		for i := 0; i < md.cfg.ClusterSize; i++ {
-			tkn := md.cfg.ClusterName + fmt.Sprintf("%X", time.Now().Nanosecond())
+			tkn := md.cfg.ClusterName + fmt.Sprintf("%X", time.Now().UTC().UnixNano())
 			// otherwise, "InvalidParameterValue: Client token must be less than or equal to 64 characters"
 			if len(tkn) > 63 {
 				tkn = tkn[len(tkn)-63:]
@@ -1003,6 +1003,7 @@ func (md *embedded) createInstances() (err error) {
 				continue
 			}
 
+			md.lg.Info("describe instances success", zap.Int("reservations", len(output.Reservations)))
 			for _, rv := range output.Reservations {
 				for _, inst := range rv.Instances {
 					id := *inst.InstanceId
@@ -1030,7 +1031,6 @@ func (md *embedded) createInstances() (err error) {
 					}
 				}
 			}
-
 			time.Sleep(5 * time.Second)
 		}
 	}

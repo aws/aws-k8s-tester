@@ -27,7 +27,7 @@ func TestEC2(t *testing.T) {
 	cfg.Wait = true
 	cfg.Plugins = []string{
 		"update-amazon-linux-2",
-		"install-go-1.11.3",
+		"install-go-1.13.1",
 	}
 	cfg.UploadTesterLogs = false
 
@@ -39,6 +39,7 @@ func TestEC2(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer ec.Terminate()
+
 
 	fmt.Println(cfg.SSHCommands())
 
@@ -81,7 +82,7 @@ func TestEC2(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if string(out) != "go version go1.11.3 linux/amd64\n" {
+	if string(out) != "go version go1.13.1 linux/amd64\n" {
 		t.Errorf("unexpected go version %q", string(out))
 	}
 
