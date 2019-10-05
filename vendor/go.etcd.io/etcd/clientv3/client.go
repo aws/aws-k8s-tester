@@ -129,8 +129,12 @@ func NewFromURLs(urls []string) (*Client, error) {
 // Close shuts down the client's etcd connections.
 func (c *Client) Close() error {
 	c.cancel()
-	c.Watcher.Close()
-	c.Lease.Close()
+	if c.Watcher != nil {
+		c.Watcher.Close()
+	}
+	if c.Lease != nil {
+		c.Lease.Close()
+	}
 	if c.resolverGroup != nil {
 		c.resolverGroup.Close()
 	}
@@ -226,24 +230,17 @@ func (c *Client) dialSetupOpts(creds grpccredentials.TransportCredentials, dopts
 	}
 	opts = append(opts, dopts...)
 
-	// Provide a net dialer that supports cancelation and timeout.
-	f := func(dialEp string, t time.Duration) (net.Conn, error) {
-		proto, host, _ := endpoint.ParseEndpoint(dialEp)
-		select {
-		case <-c.ctx.Done():
-			return nil, c.ctx.Err()
-		default:
-		}
-		dialer := &net.Dialer{Timeout: t}
-		return dialer.DialContext(c.ctx, proto, host)
-	}
-	opts = append(opts, grpc.WithDialer(f))
-
+	dialer := endpoint.Dialer
 	if creds != nil {
 		opts = append(opts, grpc.WithTransportCredentials(creds))
+		// gRPC load balancer workaround. See credentials.transportCredential for details.
+		if credsDialer, ok := creds.(TransportCredentialsWithDialer); ok {
+			dialer = credsDialer.Dialer
+		}
 	} else {
 		opts = append(opts, grpc.WithInsecure())
 	}
+	opts = append(opts, grpc.WithContextDialer(dialer))
 
 	// Interceptor retry and backoff.
 	// TODO: Replace all of clientv3/retry.go with interceptor based retry, or with
@@ -274,8 +271,8 @@ func (c *Client) getToken(ctx context.Context) error {
 	var err error // return last error in a case of fail
 	var auth *authenticator
 
-	for i := 0; i < len(c.cfg.Endpoints); i++ {
-		ep := c.cfg.Endpoints[i]
+	eps := c.Endpoints()
+	for _, ep := range eps {
 		// use dial options without dopts to avoid reusing the client balancer
 		var dOpts []grpc.DialOption
 		_, host, _ := endpoint.ParseEndpoint(ep)
@@ -519,13 +516,17 @@ func (c *Client) roundRobinQuorumBackoff(waitBetween time.Duration, jitterFracti
 
 func (c *Client) checkVersion() (err error) {
 	var wg sync.WaitGroup
-	errc := make(chan error, len(c.cfg.Endpoints))
+
+	eps := c.Endpoints()
+	errc := make(chan error, len(eps))
 	ctx, cancel := context.WithCancel(c.ctx)
 	if c.cfg.DialTimeout > 0 {
-		ctx, cancel = context.WithTimeout(ctx, c.cfg.DialTimeout)
+		cancel()
+		ctx, cancel = context.WithTimeout(c.ctx, c.cfg.DialTimeout)
 	}
-	wg.Add(len(c.cfg.Endpoints))
-	for _, ep := range c.cfg.Endpoints {
+
+	wg.Add(len(eps))
+	for _, ep := range eps {
 		// if cluster is current, any endpoint gives a recent version
 		go func(e string) {
 			defer wg.Done()
@@ -537,8 +538,15 @@ func (c *Client) checkVersion() (err error) {
 			vs := strings.Split(resp.Version, ".")
 			maj, min := 0, 0
 			if len(vs) >= 2 {
-				maj, _ = strconv.Atoi(vs[0])
-				min, rerr = strconv.Atoi(vs[1])
+				var serr error
+				if maj, serr = strconv.Atoi(vs[0]); serr != nil {
+					errc <- serr
+					return
+				}
+				if min, serr = strconv.Atoi(vs[1]); serr != nil {
+					errc <- serr
+					return
+				}
 			}
 			if maj < 3 || (maj == 3 && min < 2) {
 				rerr = ErrOldCluster
@@ -547,7 +555,7 @@ func (c *Client) checkVersion() (err error) {
 		}(ep)
 	}
 	// wait for success
-	for i := 0; i < len(c.cfg.Endpoints); i++ {
+	for range eps {
 		if err = <-errc; err == nil {
 			break
 		}
@@ -647,4 +655,10 @@ func IsConnCanceled(err error) bool {
 
 	// <= gRPC v1.7.x returns 'errors.New("grpc: the client connection is closing")'
 	return strings.Contains(err.Error(), "grpc: the client connection is closing")
+}
+
+// TransportCredentialsWithDialer is for a gRPC load balancer workaround. See credentials.transportCredential for details.
+type TransportCredentialsWithDialer interface {
+	grpccredentials.TransportCredentials
+	Dialer(ctx context.Context, dialEp string) (net.Conn, error)
 }
