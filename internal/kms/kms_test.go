@@ -11,7 +11,7 @@ import (
 
 func TestDeployer(t *testing.T) {
 	if os.Getenv("RUN_AWS_TESTS") != "1" {
-		// t.Skip()
+		t.Skip()
 	}
 
 	cfg := kmsconfig.NewDefault()
