@@ -378,7 +378,7 @@ func (dp *deployer) Encrypt(encryptionCtx map[string]string, plain []byte) (ciph
 	var resp *kms.EncryptOutput
 	resp, err = dp.kms.Encrypt(&kms.EncryptInput{
 		EncryptionContext: ctx,
-		KeyId:             aws.String(dp.cfg.KeyMetadata.KeyID),
+		KeyId:             aws.String(dp.cfg.KeyMetadata.ARN),
 		Plaintext:         plain,
 	})
 	if err != nil {
