@@ -36,7 +36,6 @@ func NewCommand() *cobra.Command {
 		newCheck(),
 		newGet(),
 		newList(),
-		newProw(),
 		newS3Upload(),
 		newTest(),
 	)
