@@ -1,5 +1,0 @@
-approvers:
-- stevekuznetsov
-labels:
- - area/prow/sidecar
- - area/prow/pod-utilities
