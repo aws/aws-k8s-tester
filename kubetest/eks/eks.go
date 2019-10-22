@@ -35,6 +35,8 @@ import (
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/ekstester"
+	"github.com/aws/aws-k8s-tester/pkg/fileutil"
+	"github.com/aws/aws-k8s-tester/pkg/process"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sts"
@@ -43,8 +45,6 @@ import (
 	clientset "k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
-	"k8s.io/test-infra/kubetest/process"
-	"k8s.io/test-infra/kubetest/util"
 )
 
 // deployer implements EKS deployer interface using "aws-k8s-tester" binary.
@@ -104,7 +104,7 @@ func NewDeployer(timeout time.Duration, verbose bool) (ekstester.Deployer, error
 	if err = f.Close(); err != nil {
 		return nil, fmt.Errorf("failed to close aws-k8s-tester file %v", err)
 	}
-	if err = util.EnsureExecutable(cfg.AWSK8sTesterPath); err != nil {
+	if err = fileutil.EnsureExecutable(cfg.AWSK8sTesterPath); err != nil {
 		return nil, err
 	}
 	return dp, nil

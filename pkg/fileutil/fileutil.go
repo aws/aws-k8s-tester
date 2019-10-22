@@ -72,3 +72,15 @@ func Copy(src, dst string) error {
 	}
 	return nil
 }
+
+// EnsureExecutable sets the executable file mode bits, for all users, to ensure that we can execute a file
+func EnsureExecutable(p string) error {
+	s, err := os.Stat(p)
+	if err != nil {
+		return fmt.Errorf("error doing stat on %q: %v", p, err)
+	}
+	if err := os.Chmod(p, s.Mode()|0111); err != nil {
+		return fmt.Errorf("error doing chmod on %q: %v", p, err)
+	}
+	return nil
+}

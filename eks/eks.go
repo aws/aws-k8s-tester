@@ -47,7 +47,6 @@ import (
 	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/test-infra/kubetest/util"
 	"k8s.io/utils/exec"
 )
 
@@ -132,7 +131,7 @@ func NewTester(cfg *eksconfig.Config) (ekstester.Tester, error) {
 		if err = f.Close(); err != nil {
 			return nil, fmt.Errorf("failed to close kubectl %v", err)
 		}
-		if err = util.EnsureExecutable(md.cfg.KubectlPath); err != nil {
+		if err = fileutil.EnsureExecutable(md.cfg.KubectlPath); err != nil {
 			return nil, err
 		}
 	}
@@ -167,7 +166,7 @@ func NewTester(cfg *eksconfig.Config) (ekstester.Tester, error) {
 		if err = f.Close(); err != nil {
 			return nil, err
 		}
-		if err = util.EnsureExecutable(md.cfg.AWSIAMAuthenticatorPath); err != nil {
+		if err = fileutil.EnsureExecutable(md.cfg.AWSIAMAuthenticatorPath); err != nil {
 			return nil, err
 		}
 	}
