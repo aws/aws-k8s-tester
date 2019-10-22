@@ -10,7 +10,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.4.3...v0.4.4
 
 ### `aws-k8s-tester`
 
-- Add [`aws-k8s-tester eks list clusters --delete-prefix` flag](https://github.com/aws/aws-k8s-tester/commit/TBD).
+- Add [`aws-k8s-tester eks list clusters --delete-prefix` flag](https://github.com/aws/aws-k8s-tester/commit/c0e2da2b910176b9f8dad59e35712689ec289c34).
 
 ### `kmsconfig`
 
