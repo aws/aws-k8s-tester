@@ -20,9 +20,14 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.4.3...v0.4.4
 
 - Initial [commit](https://github.com/aws/aws-k8s-tester/commit/eab638497e57562046398784934c93b9c37dfb4b).
 
+### `internal/prow`
+
+- [Remove](https://github.com/aws/aws-k8s-tester/commit/050ed364929cfe15b638e3b2d9a3f9b1b0e197d9).
+
 ### Dependency
 
-- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.25.1`](https://github.com/aws/aws-sdk-go/releases/tag/v1.25.1) to [`v1.25.6`](https://github.com/aws/aws-sdk-go/releases/tag/v1.25.6).
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.25.1`](https://github.com/aws/aws-sdk-go/releases/tag/v1.25.1) to [`v1.25.16`](https://github.com/aws/aws-sdk-go/releases/tag/v1.25.16).
+- Pin [`k8s.io/*` dependencies](https://github.com/aws/aws-k8s-tester/commit/2f1fdf5c7e47c4a001a3913e37c88b0c94a31f6a).
 
 ### Go
 
