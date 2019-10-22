@@ -16,6 +16,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var deletePrefix string
+
 func newList() *cobra.Command {
 	ac := &cobra.Command{
 		Use:   "list <subcommand>",
@@ -26,6 +28,7 @@ func newList() *cobra.Command {
 	ac.PersistentFlags().StringVar(&signingName, "signing-name", "", "EKS signing name")
 	ac.PersistentFlags().BoolVar(&more, "more", false, "'true' to query all the details")
 	ac.PersistentFlags().BoolVar(&cleanUp, "clean-up", false, "'true' to clean up failed clusters")
+	ac.PersistentFlags().StringVar(&deletePrefix, "delete-prefix", "", "Cluster name prefix to match and delete")
 	ac.AddCommand(
 		newListClusters(),
 	)
@@ -115,6 +118,13 @@ func listClustersFunc(cmd *cobra.Command, args []string) {
 		)
 
 		if cleanUp && aws.StringValue(clus.Status) == "FAILED" {
+			fmt.Println("deleting", name)
+			_, derr := svc.DeleteCluster(&awseks.DeleteClusterInput{Name: aws.String(name)})
+			fmt.Println("deleted", name, derr)
+			continue
+		}
+
+		if strings.HasPrefix(name, deletePrefix) {
 			fmt.Println("deleting", name)
 			_, derr := svc.DeleteCluster(&awseks.DeleteClusterInput{Name: aws.String(name)})
 			fmt.Println("deleted", name, derr)

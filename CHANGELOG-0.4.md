@@ -4,9 +4,13 @@
 <hr>
 
 
-## [v0.4.4](https://github.com/aws/aws-k8s-tester/releases/tag/v0.4.4) (2019 TBD)
+## [v0.4.4](https://github.com/aws/aws-k8s-tester/releases/tag/v0.4.4) (2019-10-TBD)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.4.3...v0.4.4).
+
+### `aws-k8s-tester`
+
+- Add [`aws-k8s-tester eks list clusters --delete-prefix` flag](https://github.com/aws/aws-k8s-tester/commit/TBD).
 
 ### `kmsconfig`
 
