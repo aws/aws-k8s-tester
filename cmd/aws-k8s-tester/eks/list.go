@@ -98,9 +98,10 @@ func listClustersFunc(cmd *cobra.Command, args []string) {
 				fmt.Println("deleted", name, derr)
 			}
 
-			time.Sleep(30 * time.Millisecond)
+			time.Sleep(3 * time.Second)
 			continue
 		}
+
 		if out.Cluster == nil {
 			panic(fmt.Errorf("%03d: %q empty cluster", i, name))
 		}
@@ -121,6 +122,8 @@ func listClustersFunc(cmd *cobra.Command, args []string) {
 			fmt.Printf("deleting %q (reason: %v)\n", name, aws.StringValue(clus.Status))
 			_, derr := svc.DeleteCluster(&awseks.DeleteClusterInput{Name: aws.String(name)})
 			fmt.Println("deleted", name, derr)
+
+			time.Sleep(3 * time.Second)
 			continue
 		}
 
