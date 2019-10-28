@@ -130,7 +130,7 @@ func listClustersFunc(cmd *cobra.Command, args []string) {
 			fmt.Println("deleted", name, derr)
 		}
 
-		time.Sleep(30 * time.Millisecond)
+		time.Sleep(3 * time.Second)
 	}
 	fmt.Println("'aws-k8s-tester eks list clusters' returned", len(clusterNames), "clusters")
 }
