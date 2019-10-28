@@ -18,8 +18,8 @@ var (
 	kubernetesVersion string
 	amiType           string
 
-	more    bool
-	cleanUp bool
+	more         bool
+	deleteFailed bool
 )
 
 // NewCommand implements "awstest eks" command.

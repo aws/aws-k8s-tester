@@ -27,7 +27,7 @@ func newList() *cobra.Command {
 	ac.PersistentFlags().StringVar(&resolverURL, "resolver-url", "", "EKS resolver endpoint URL")
 	ac.PersistentFlags().StringVar(&signingName, "signing-name", "", "EKS signing name")
 	ac.PersistentFlags().BoolVar(&more, "more", false, "'true' to query all the details")
-	ac.PersistentFlags().BoolVar(&cleanUp, "clean-up", false, "'true' to clean up failed clusters")
+	ac.PersistentFlags().BoolVar(&deleteFailed, "delete-failed", false, "'true' to clean up failed clusters")
 	ac.PersistentFlags().StringVar(&deletePrefix, "delete-prefix", "", "Cluster name prefix to match and delete")
 	ac.AddCommand(
 		newListClusters(),
@@ -91,9 +91,9 @@ func listClustersFunc(cmd *cobra.Command, args []string) {
 			)
 
 			awsErr, ok := err.(awserr.Error)
-			if cleanUp && ok && awsErr.Code() == "ResourceNotFoundException" &&
+			if ok && awsErr.Code() == "ResourceNotFoundException" &&
 				strings.HasPrefix(awsErr.Message(), "No cluster found for") {
-				fmt.Println("deleting", name)
+				fmt.Printf("deleting %q (reason: %v)\n", name, err)
 				_, derr := svc.DeleteCluster(&awseks.DeleteClusterInput{Name: aws.String(name)})
 				fmt.Println("deleted", name, derr)
 			}
@@ -117,15 +117,15 @@ func listClustersFunc(cmd *cobra.Command, args []string) {
 			aws.StringValue(clus.ResourcesVpcConfig.VpcId),
 		)
 
-		if cleanUp && aws.StringValue(clus.Status) == "FAILED" {
-			fmt.Println("deleting", name)
+		if deleteFailed && aws.StringValue(clus.Status) == "FAILED" {
+			fmt.Printf("deleting %q (reason: %v)\n", name, aws.StringValue(clus.Status))
 			_, derr := svc.DeleteCluster(&awseks.DeleteClusterInput{Name: aws.String(name)})
 			fmt.Println("deleted", name, derr)
 			continue
 		}
 
 		if strings.HasPrefix(name, deletePrefix) {
-			fmt.Println("deleting", name)
+			fmt.Printf("deleting %q (reason: %q)\n", name, deletePrefix)
 			_, derr := svc.DeleteCluster(&awseks.DeleteClusterInput{Name: aws.String(name)})
 			fmt.Println("deleted", name, derr)
 		}
