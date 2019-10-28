@@ -124,7 +124,7 @@ func listClustersFunc(cmd *cobra.Command, args []string) {
 			continue
 		}
 
-		if strings.HasPrefix(name, deletePrefix) {
+		if len(deletePrefix) > 0 && strings.HasPrefix(name, deletePrefix) {
 			fmt.Printf("deleting %q (reason: %q)\n", name, deletePrefix)
 			_, derr := svc.DeleteCluster(&awseks.DeleteClusterInput{Name: aws.String(name)})
 			fmt.Println("deleted", name, derr)
