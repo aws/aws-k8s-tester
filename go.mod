@@ -2,8 +2,18 @@ module github.com/aws/aws-k8s-tester
 
 go 1.13
 
+// Pin all k8s.io staging repositories to kubernetes-1.15.3.
+// When bumping Kubernetes dependencies, you should update each of these lines
+// to point to the same kubernetes-1.x.y release branch before running update-deps.sh.
+replace (
+	k8s.io/api => k8s.io/api v0.0.0-20190918195907-bd6ac527cfd2
+	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.0.0-20190918201827-3de75813f604
+	k8s.io/apimachinery => k8s.io/apimachinery v0.0.0-20190817020851-f2f3a405f61d
+	k8s.io/client-go => k8s.io/client-go v0.0.0-20190918200256-06eb1244587a
+)
+
 require (
-	github.com/aws/aws-sdk-go v1.25.16
+	github.com/aws/aws-sdk-go v1.25.20
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/cihub/seelog v0.0.0-20170130134532-f561c5e57575
 	github.com/coreos/go-semver v0.3.0 // indirect
@@ -36,14 +46,4 @@ require (
 	k8s.io/client-go v11.0.0+incompatible
 	k8s.io/utils v0.0.0-20191010214722-8d271d903fe4
 	sigs.k8s.io/yaml v1.1.0
-)
-
-// Pin all k8s.io staging repositories to kubernetes-1.15.3.
-// When bumping Kubernetes dependencies, you should update each of these lines
-// to point to the same kubernetes-1.x.y release branch before running update-deps.sh.
-replace (
-	k8s.io/api => k8s.io/api v0.0.0-20190918195907-bd6ac527cfd2
-	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.0.0-20190918201827-3de75813f604
-	k8s.io/apimachinery => k8s.io/apimachinery v0.0.0-20190817020851-f2f3a405f61d
-	k8s.io/client-go => k8s.io/client-go v0.0.0-20190918200256-06eb1244587a
 )
