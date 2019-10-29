@@ -16,7 +16,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var deletePrefix string
+var (
+	deleteFailed bool
+	deletePrefix string
+)
 
 func newList() *cobra.Command {
 	ac := &cobra.Command{
@@ -26,9 +29,20 @@ func newList() *cobra.Command {
 	ac.PersistentFlags().StringVar(&region, "region", "us-west-2", "EKS region")
 	ac.PersistentFlags().StringVar(&resolverURL, "resolver-url", "", "EKS resolver endpoint URL")
 	ac.PersistentFlags().StringVar(&signingName, "signing-name", "", "EKS signing name")
-	ac.PersistentFlags().BoolVar(&more, "more", false, "'true' to query all the details")
-	ac.PersistentFlags().BoolVar(&deleteFailed, "delete-failed", false, "'true' to clean up failed clusters")
-	ac.PersistentFlags().StringVar(&deletePrefix, "delete-prefix", "", "Cluster name prefix to match and delete")
+
+	ac.PersistentFlags().BoolVar(
+		&deleteFailed,
+		"delete-failed",
+		false,
+		"'true' to clean up failed clusters",
+	)
+	ac.PersistentFlags().StringVar(
+		&deletePrefix,
+		"delete-prefix",
+		"",
+		"Cluster name prefix to match and delete",
+	)
+
 	ac.AddCommand(
 		newListClusters(),
 	)
@@ -71,17 +85,14 @@ func listClustersFunc(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	for i, name := range clusterNames {
-		if !more {
-			fmt.Printf("%03d: %q\n", i, name)
-			continue
-		}
+	fmt.Printf("Listing %d clusters\n", len(clusterNames))
 
+	for i, name := range clusterNames {
 		out, err := svc.DescribeCluster(&awseks.DescribeClusterInput{
 			Name: aws.String(name),
 		})
 		if err != nil {
-			fmt.Printf("%03d: %q failed to describe (%v, retriable %v, throttled %v, error type %v)\n",
+			fmt.Printf("[%03d] %q failed to describe (%v, retriable %v, throttled %v, error type %v)\n",
 				i,
 				name,
 				err,
@@ -99,15 +110,15 @@ func listClustersFunc(cmd *cobra.Command, args []string) {
 			}
 
 			time.Sleep(3 * time.Second)
+			println()
 			continue
 		}
-
 		if out.Cluster == nil {
-			panic(fmt.Errorf("%03d: %q empty cluster", i, name))
+			panic(fmt.Errorf("[%03d] %q empty cluster", i, name))
 		}
 
 		clus := out.Cluster
-		fmt.Printf("%03d: %q [created %v (%q), version %q, status %q, IAM Role %q, VPC %q]\n",
+		fmt.Printf("[%03d] %q [created %v (%q), version %q, status %q, IAM Role %q, VPC %q]\n",
 			i,
 			name,
 			aws.TimeValue(clus.CreatedAt),
@@ -124,6 +135,7 @@ func listClustersFunc(cmd *cobra.Command, args []string) {
 			fmt.Println("deleted", name, derr)
 
 			time.Sleep(3 * time.Second)
+			println()
 			continue
 		}
 
@@ -134,6 +146,8 @@ func listClustersFunc(cmd *cobra.Command, args []string) {
 		}
 
 		time.Sleep(3 * time.Second)
+		println()
 	}
-	fmt.Println("'aws-k8s-tester eks list clusters' returned", len(clusterNames), "clusters")
+
+	fmt.Println("Successfully listed", len(clusterNames), "clusters")
 }
