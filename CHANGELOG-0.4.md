@@ -12,8 +12,9 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.4.3...v0.4.4
 
 - Rename [`aws-k8s-tester eks list clusters --delete-failed` flag](https://github.com/aws/aws-k8s-tester/commit/3d5379d465cb29bac7519178ee25e11b48d6d02d).
 - Add [`aws-k8s-tester eks list clusters --delete-prefix` flag](https://github.com/aws/aws-k8s-tester/commit/c0e2da2b910176b9f8dad59e35712689ec289c34).
-- Remove [`aws-k8s-tester eks list clusters --more` flag](https://github.com/aws/aws-k8s-tester/commit/TODO).
-- Remove [`aws-k8s-tester eks list clusters --clean-up` flag](https://github.com/aws/aws-k8s-tester/commit/TODO).
+- Remove [`aws-k8s-tester eks list clusters --more` flag](https://github.com/aws/aws-k8s-tester/commit/2d253ca97d9dfb5efb50459eaa4fdb75359d28ef).
+- Remove [`aws-k8s-tester eks list clusters --clean-up` flag](https://github.com/aws/aws-k8s-tester/commit/2d253ca97d9dfb5efb50459eaa4fdb75359d28ef).
+- Add [`aws-k8s-tester eks list clusters --delete-dry` flag](https://github.com/aws/aws-k8s-tester/commit/c2af645e9af5b06afa460eb944178b6f38333cab).
 
 ### `kmsconfig`
 
