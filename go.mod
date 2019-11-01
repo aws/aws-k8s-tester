@@ -12,9 +12,13 @@ replace (
 	k8s.io/client-go => k8s.io/client-go v0.0.0-20190918200256-06eb1244587a
 )
 
+// https://github.com/aws/aws-sdk-go/releases
+// https://github.com/uber-go/zap/releases
+// https://github.com/kubernetes-sigs/yaml/releases
+// https://github.com/blang/semver/releases
 require (
-	github.com/aws/aws-sdk-go v1.25.20
-	github.com/blang/semver v3.5.1+incompatible
+	github.com/aws/aws-sdk-go v1.25.25
+	github.com/blang/semver v3.6.1+incompatible
 	github.com/cihub/seelog v0.0.0-20170130134532-f561c5e57575
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/coreos/go-systemd v0.0.0-20190719114852-fd7a80b32e1f // indirect
@@ -36,8 +40,7 @@ require (
 	github.com/stretchr/testify v1.4.0
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5 // indirect
 	go.etcd.io/etcd v0.0.0-20191004122535-555eb1951f2e
-	go.uber.org/multierr v1.2.0 // indirect
-	go.uber.org/zap v1.10.0
+	go.uber.org/zap v1.12.0
 	golang.org/x/crypto v0.0.0-20190611184440-5c40567a22f8
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 	gopkg.in/ini.v1 v1.46.0 // indirect
