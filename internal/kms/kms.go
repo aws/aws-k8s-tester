@@ -370,9 +370,12 @@ func (dp *deployer) Encrypt(encryptionCtx map[string]string, plain []byte) (ciph
 	dp.keyMu.RLock()
 	defer dp.keyMu.RUnlock()
 
-	ctx := make(map[string]*string, len(encryptionCtx))
-	for k, v := range encryptionCtx {
-		ctx[k] = aws.String(v)
+	var ctx map[string]*string
+	if len(encryptionCtx) > 0 {
+		ctx = make(map[string]*string, len(encryptionCtx))
+		for k, v := range encryptionCtx {
+			ctx[k] = aws.String(v)
+		}
 	}
 
 	var resp *kms.EncryptOutput
@@ -392,9 +395,12 @@ func (dp *deployer) Decrypt(encryptionCtx map[string]string, cipher []byte) (pla
 	dp.keyMu.RLock()
 	defer dp.keyMu.RUnlock()
 
-	ctx := make(map[string]*string, len(encryptionCtx))
-	for k, v := range encryptionCtx {
-		ctx[k] = aws.String(v)
+	var ctx map[string]*string
+	if len(encryptionCtx) > 0 {
+		ctx = make(map[string]*string, len(encryptionCtx))
+		for k, v := range encryptionCtx {
+			ctx[k] = aws.String(v)
+		}
 	}
 
 	var resp *kms.DecryptOutput
