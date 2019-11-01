@@ -30,7 +30,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.4.3...v0.4.4
 
 ### Dependency
 
-- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.25.1`](https://github.com/aws/aws-sdk-go/releases/tag/v1.25.1) to [`v1.25.20`](https://github.com/aws/aws-sdk-go/releases/tag/v1.25.20).
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.25.1`](https://github.com/aws/aws-sdk-go/releases/tag/v1.25.1) to [`v1.25.25`](https://github.com/aws/aws-sdk-go/releases/tag/v1.25.25).
+- Upgrade [`go.uber.org/zap`](https://github.com/uber-go/zap/releases) from [`v1.10.0`](https://github.com/uber-go/zap/releases/tag/v1.10.0) to [`v1.12.0`](https://github.com/uber-go/zap/releases/tag/v1.12.0).
 - Pin [`k8s.io/*` dependencies](https://github.com/aws/aws-k8s-tester/commit/2f1fdf5c7e47c4a001a3913e37c88b0c94a31f6a).
 
 ### Go
