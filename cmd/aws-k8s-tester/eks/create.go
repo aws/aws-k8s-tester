@@ -39,6 +39,11 @@ func configFunc(cmd *cobra.Command, args []string) {
 	cfg := eksconfig.NewDefault()
 	cfg.ConfigPath = path
 	cfg.Sync()
+	err := cfg.UpdateFromEnvs()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to load configuration from environment variables: %s", err.Error())
+		os.Exit(1)
+	}
 	fmt.Fprintf(os.Stderr, "wrote aws-k8s-tester eks configuration to %q\n", cfg.ConfigPath)
 }
 
@@ -64,6 +69,11 @@ func createClusterFunc(cmd *cobra.Command, args []string) {
 	}
 	if err = cfg.ValidateAndSetDefaults(); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to validate configuration %q (%v)\n", path, err)
+		os.Exit(1)
+	}
+	err = cfg.UpdateFromEnvs()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to load configuration from environment variables: %s", err.Error())
 		os.Exit(1)
 	}
 
