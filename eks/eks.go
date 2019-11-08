@@ -81,10 +81,6 @@ type embedded struct {
 
 // NewTester returns a new EKS tester.
 func NewTester(cfg *eksconfig.Config) (ekstester.Tester, error) {
-	if err := cfg.ValidateAndSetDefaults(); err != nil {
-		return nil, err
-	}
-
 	now := time.Now().UTC()
 
 	lcfg := logutil.AddOutputPaths(logutil.DefaultZapLoggerConfig, cfg.LogOutputs, cfg.LogOutputs)
