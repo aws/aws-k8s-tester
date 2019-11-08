@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"errors"
 	"fmt"
 )
 
@@ -30,6 +31,9 @@ func NewClusterCreator(config *TestConfig, testDir string, testId string) (Clust
 		return NewKopsClusterCreator(cluster.Kops, testDir, testId), nil
 	}
 
-	// TODO: add for EKS cluster
-	return nil, nil
+	if cluster.Eks != nil {
+		return NewEksctlClusterCreator(cluster.Eks, testDir, testId), nil
+	}
+
+	return nil, errors.New("Cluster is not specified")
 }
