@@ -18,6 +18,7 @@ replace (
 // https://github.com/blang/semver/releases
 require (
 	github.com/aws/aws-sdk-go v1.25.33
+	github.com/awslabs/goformation/v3 v3.1.0
 	github.com/blang/semver v3.6.1+incompatible
 	github.com/cihub/seelog v0.0.0-20170130134532-f561c5e57575
 	github.com/coreos/go-semver v0.3.0 // indirect
