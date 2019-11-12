@@ -18,7 +18,7 @@ Make sure AWS credential is located in your machine:
 cat ~/.aws/credentials
 
 # confirm credential is valid
-aws s3 ls
+aws sts get-caller-identity --query Arn --output text
 ```
 
 To install:
@@ -38,7 +38,7 @@ Once cluster is created, check cluster state using AWS CLI:
 
 ```bash
 aws eks describe-cluster \
-  --name a8-eks-190225-nqsht \
+  --name [NAME] \
   --query cluster.status
 
 "ACTIVE"
@@ -57,47 +57,4 @@ Tear down the cluster (takes about 10 minutes):
 
 ```bash
 aws-k8s-tester eks delete cluster --path /tmp/aws-k8s-tester-eks.yaml
-```
-
-### `aws-k8s-tester eks` beta cluster
-
-Assume the AWS account ID is granted beta access:
-
-```bash
-cd ${GOPATH}/src/github.com/aws/aws-k8s-tester
-go install -v ./cmd/aws-k8s-tester
-
-aws-k8s-tester eks create config --path /tmp/aws-k8s-tester-eks-beta.yaml
-sed -i.bak 's#eks-resolver-url: ""#eks-resolver-url: https://api.beta.us-west-2.wesley.amazonaws.com#g' /tmp/aws-k8s-tester-eks-beta.yaml
-
-aws-k8s-tester eks create cluster --path /tmp/aws-k8s-tester-eks-beta.yaml
-```
-
-### `aws-k8s-tester eks` e2e tests
-
-To test locally:
-
-```bash
-# set "AWS_K8S_TESTER_EKS_TAG" to avoid S3 bucket conflicts
-# or just disable log uploads with "AWS_K8S_TESTER_EKS_UPLOAD_TESTER_LOGS=false"
-cd ${GOPATH}/src/github.com/aws/aws-k8s-tester
-
-# use darwin to run local tests on Mac
-AWS_K8S_TESTER_EKS_KUBECTL_DOWNLOAD_URL=https://amazon-eks.s3-us-west-2.amazonaws.com/1.13.7/2019-06-11/bin/$(go env GOOS)/amd64/kubectl \
-  AWS_K8S_TESTER_EKS_KUBECONFIG_PATH=/tmp/aws-k8s-tester/kubeconfig \
-  AWS_K8S_TESTER_EKS_AWS_IAM_AUTHENTICATOR_DOWNLOAD_URL=https://amazon-eks.s3-us-west-2.amazonaws.com/1.13.7/2019-06-11/bin/$(go env GOOS)/amd64/aws-iam-authenticator \
-  AWS_K8S_TESTER_EKS_KUBERNETES_VERSION=1.14 \
-  AWS_K8S_TESTER_EKS_DESTROY_AFTER_CREATE=false \
-  AWS_K8S_TESTER_EKS_ENABLE_WORKER_NODE_HA=true \
-  AWS_K8S_TESTER_EKS_ENABLE_NODE_SSH=true \
-  AWS_K8S_TESTER_EKS_ENABLE_WORKER_NODE_PRIVILEGED_PORT_ACCESS=true \
-  AWS_K8S_TESTER_EKS_LOG_ACCESS=false \
-  AWS_K8S_TESTER_EKS_UPLOAD_TESTER_LOGS=false \
-  AWS_K8S_TESTER_EKS_UPLOAD_WORKER_NODE_LOGS=false \
-  AWS_K8S_TESTER_EKS_WORKER_NODE_PRIVATE_KEY_PATH=~/.ssh/kube_aws_rsa \
-  AWS_K8S_TESTER_EKS_WORKER_NODE_INSTANCE_TYPE=m3.xlarge \
-  AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_MIN=1 \
-  AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_MAX=1 \
-  AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_DESIRED_CAPACITY=1 \
-  ./tests/ginkgo.sh
 ```

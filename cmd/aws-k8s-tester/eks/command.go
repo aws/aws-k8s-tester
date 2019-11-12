@@ -31,9 +31,7 @@ func NewCommand() *cobra.Command {
 		newCreate(),
 		newDelete(),
 		newCheck(),
-		newGet(),
 		newList(),
-		newS3Upload(),
 		newTest(),
 	)
 	return cmd

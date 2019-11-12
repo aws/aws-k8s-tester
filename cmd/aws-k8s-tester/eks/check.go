@@ -6,7 +6,6 @@ import (
 
 	"github.com/aws/aws-k8s-tester/eks"
 	"github.com/aws/aws-k8s-tester/eksconfig"
-	"github.com/aws/aws-k8s-tester/ekstester"
 	"github.com/spf13/cobra"
 )
 
@@ -36,18 +35,21 @@ func checkClusterFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	var tester ekstester.Tester
-	tester, err = eks.NewTester(cfg)
+	tester, err := eks.New(cfg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create EKS deployer %v\n", err)
 		os.Exit(1)
 	}
 
-	err = tester.IsUp()
+	var up bool
+	up, err = tester.IsUp()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to check cluster status %v\n", err)
 		os.Exit(1)
 	}
-
+	if !up {
+		fmt.Fprintln(os.Stderr, "failed to check cluster status: not up")
+		os.Exit(1)
+	}
 	fmt.Println("'aws-k8s-tester eks check cluster' success")
 }

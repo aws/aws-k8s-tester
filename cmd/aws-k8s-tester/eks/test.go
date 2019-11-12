@@ -3,10 +3,11 @@ package eks
 import (
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/aws/aws-k8s-tester/eks"
 	"github.com/aws/aws-k8s-tester/eksconfig"
-	"github.com/aws/aws-k8s-tester/ekstester"
 	"github.com/spf13/cobra"
 )
 
@@ -16,77 +17,54 @@ func newTest() *cobra.Command {
 		Short: "Test commands",
 	}
 	cmd.AddCommand(
-		newTestGetWorkerNodeLogs(),
-		newTestDumpClusterLogs(),
+		newTestExample(),
 	)
 	return cmd
 }
 
-func newTestGetWorkerNodeLogs() *cobra.Command {
+func newTestExample() *cobra.Command {
 	return &cobra.Command{
-		Use:   "get-worker-node-logs",
-		Short: "Downloads all cluster logs",
-		Run:   testGetWorkerNodeLogs,
+		Use:   "example",
+		Short: "Test with example Pods",
+		Run:   testExamples,
 	}
 }
 
-func testGetWorkerNodeLogs(cmd *cobra.Command, args []string) {
-	if path == "" {
-		fmt.Fprintln(os.Stderr, "'--path' flag is not specified")
+func testExamples(cmd *cobra.Command, args []string) {
+	if path != "" {
+		fmt.Fprintln(os.Stderr, "'--path' flag is not expected")
 		os.Exit(1)
 	}
+	cfg := eksconfig.NewDefault()
+	if err := cfg.ValidateAndSetDefaults(); err != nil {
+		panic(err)
+	}
+	os.RemoveAll(cfg.ConfigPath)
+	os.RemoveAll(cfg.KubeConfigPath)
 
-	cfg, err := eksconfig.Load(path)
+	println()
+	fmt.Println("ConfigPath:", cfg.ConfigPath)
+	fmt.Println("KubeConfigPath:", cfg.KubeConfigPath)
+	println()
+
+	ts, err := eks.New(cfg)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to load configuration %q (%v)\n", path, err)
-		os.Exit(1)
+		panic(err)
 	}
-	var tester ekstester.Tester
-	tester, err = eks.NewTester(cfg)
+
+	err = ts.Up()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create EKS deployer %v\n", err)
-		os.Exit(1)
+		panic(err)
 	}
+	fmt.Println("Up done:", err)
 
-	if err = tester.GetWorkerNodeLogs(); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to get worker node logs %v\n", err)
-		os.Exit(1)
-	}
-}
+	tch := make(chan os.Signal)
+	signal.Notify(tch, syscall.SIGTERM, syscall.SIGINT)
 
-func newTestDumpClusterLogs() *cobra.Command {
-	return &cobra.Command{
-		Use:   "dump-cluster-logs [artifact-directory]",
-		Short: "Dump all cluster logs to the artifact directory",
-		Run:   testDumpClusterLogs,
-	}
-}
+	fmt.Println("waiting for", syscall.SIGTERM, syscall.SIGINT)
+	fmt.Println("received signal:", <-tch)
 
-func testDumpClusterLogs(cmd *cobra.Command, args []string) {
-	if path == "" {
-		fmt.Fprintln(os.Stderr, "'--path' flag is not specified")
-		os.Exit(1)
-	}
-	if len(args) != 1 {
-		fmt.Fprintf(os.Stderr, "expected 1 argument, got %v\n", args)
-		os.Exit(1)
-	}
-	dir := args[0]
-
-	cfg, err := eksconfig.Load(path)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to load configuration %q (%v)\n", path, err)
-		os.Exit(1)
-	}
-	var tester ekstester.Tester
-	tester, err = eks.NewTester(cfg)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create EKS deployer %v\n", err)
-		os.Exit(1)
-	}
-
-	if err = tester.DumpClusterLogs(dir, ""); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to dump cluster logs %v\n", err)
-		os.Exit(1)
+	if derr := ts.Down(); derr != nil {
+		fmt.Println("Down done:", derr)
 	}
 }

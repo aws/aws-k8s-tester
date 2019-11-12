@@ -1,33 +1,26 @@
+// Package eks implements EKS cluster operations.
 package eks
 
 import (
-	"bytes"
 	"context"
-	"encoding/base64"
 	"errors"
 	"fmt"
-	"io"
-	"io/ioutil"
-	"net/http"
 	"os"
 	osexec "os/exec"
 	"os/signal"
 	"path/filepath"
-	"reflect"
-	"runtime"
 	"strings"
 	"sync"
 	"syscall"
-	"text/template"
 	"time"
 
-	"github.com/aws/aws-k8s-tester/eks/s3"
+	"github.com/aws/aws-k8s-tester/eks/alb"
+	"github.com/aws/aws-k8s-tester/eks/jobs"
+	"github.com/aws/aws-k8s-tester/eks/nlb"
 	"github.com/aws/aws-k8s-tester/eksconfig"
-	"github.com/aws/aws-k8s-tester/ekstester"
 	"github.com/aws/aws-k8s-tester/pkg/awsapi"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/autoscaling"
 	"github.com/aws/aws-sdk-go/service/autoscaling/autoscalingiface"
@@ -37,51 +30,57 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	awseks "github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
+	"github.com/aws/aws-sdk-go/service/elb"
+	"github.com/aws/aws-sdk-go/service/elb/elbiface"
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/aws/aws-sdk-go/service/iam/iamiface"
-	awss3 "github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/ssm"
 	"github.com/aws/aws-sdk-go/service/ssm/ssmiface"
 	"github.com/aws/aws-sdk-go/service/sts"
-	humanize "github.com/dustin/go-humanize"
+	"github.com/dustin/go-humanize"
 	"go.uber.org/zap"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/utils/exec"
 )
 
-type embedded struct {
-	stopc chan struct{}
+// Tester implements "kubetest2" Deployer.
+// ref. https://github.com/kubernetes/test-infra/blob/master/kubetest2/pkg/types/types.go
+type Tester struct {
+	stopCreationCh     chan struct{}
+	stopCreationChOnce *sync.Once
 
-	mu  sync.RWMutex
+	interruptSig chan os.Signal
+
 	lg  *zap.Logger
 	cfg *eksconfig.Config
 
-	ss           *session.Session
-	awsCredsPath string
-
-	iam iamiface.IAMAPI
-	ssm ssmiface.SSMAPI
-	cfn cloudformationiface.CloudFormationAPI
-	asg autoscalingiface.AutoScalingAPI
-	ec2 ec2iface.EC2API
+	awsSession *session.Session
+	iamAPI     iamiface.IAMAPI
+	ssmAPI     ssmiface.SSMAPI
+	cfnAPI     cloudformationiface.CloudFormationAPI
+	ec2API     ec2iface.EC2API
+	asgAPI     autoscalingiface.AutoScalingAPI
+	elbAPI     elbiface.ELBAPI
 
 	eksSession *session.Session
-	eks        eksiface.EKSAPI
+	eksAPI     eksiface.EKSAPI
 
-	ec2InstancesLogMu *sync.RWMutex
-
-	s3Plugin s3.Plugin
+	downMu                      *sync.Mutex
+	fetchLogsManagedNodeGroupMu *sync.RWMutex
 
 	k8sClientSet *kubernetes.Clientset
 
-	// TODO: add EBS (with CSI) plugin
-	// TODO: add KMS plugin
+	jobPiTester         jobs.Tester
+	jobEchoTester       jobs.Tester
+	nlbHelloWorldTester alb.Tester
+	alb2048Tester       alb.Tester
 }
 
-// NewTester returns a new EKS tester.
-func NewTester(cfg *eksconfig.Config) (ekstester.Tester, error) {
-	now := time.Now().UTC()
+// New creates a new EKS tester.
+func New(cfg *eksconfig.Config) (*Tester, error) {
+	if err := cfg.ValidateAndSetDefaults(); err != nil {
+		return nil, err
+	}
 
 	lcfg := logutil.AddOutputPaths(logutil.DefaultZapLoggerConfig, cfg.LogOutputs, cfg.LogOutputs)
 	lcfg.Level = zap.NewAtomicLevelAt(logutil.ConvertToZapLevel(cfg.LogLevel))
@@ -90,1063 +89,492 @@ func NewTester(cfg *eksconfig.Config) (ekstester.Tester, error) {
 		return nil, err
 	}
 
-	md := &embedded{
-		stopc:             make(chan struct{}),
-		lg:                lg,
-		cfg:               cfg,
-		ec2InstancesLogMu: &sync.RWMutex{},
+	if err = fileutil.EnsureExecutable(cfg.AWSCLIPath); err != nil {
+		return nil, err
 	}
 
-	if md.cfg.KubectlPath == "" {
-		md.cfg.KubectlPath, _ = exec.New().LookPath("kubectl")
-	} else {
-		if err = os.MkdirAll(filepath.Dir(md.cfg.KubectlPath), 0700); err != nil {
-			return nil, fmt.Errorf("could not create %q (%v)", filepath.Dir(md.cfg.KubectlPath), err)
-		}
+	// aws --version
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	vo, verr := exec.New().CommandContext(
+		ctx,
+		cfg.AWSCLIPath,
+		"--version",
+	).CombinedOutput()
+	cancel()
+	if verr != nil {
+		return nil, fmt.Errorf("'aws --version' failed (output %q, error %v)", string(vo), verr)
 	}
-	if md.cfg.KubectlDownloadURL != "" { // overwrite
-		if runtime.GOOS == "darwin" {
-			md.cfg.KubectlDownloadURL = strings.Replace(md.cfg.KubectlDownloadURL, "linux", "darwin", -1)
-		}
-		if err = os.RemoveAll(md.cfg.KubectlPath); err != nil {
-			return nil, err
-		}
-		if err = os.MkdirAll(filepath.Dir(cfg.KubectlPath), 0700); err != nil {
-			return nil, err
-		}
-		var f *os.File
-		f, err = os.Create(md.cfg.KubectlPath)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create %q (%v)", md.cfg.KubectlPath, err)
-		}
-		md.cfg.KubectlPath = f.Name()
-		md.cfg.KubectlPath, _ = filepath.Abs(md.cfg.KubectlPath)
-		if err = httpRead(md.lg, md.cfg.KubectlDownloadURL, f); err != nil {
-			return nil, err
-		}
-		if err = f.Close(); err != nil {
-			return nil, fmt.Errorf("failed to close kubectl %v", err)
-		}
-		if err = fileutil.EnsureExecutable(md.cfg.KubectlPath); err != nil {
-			return nil, err
-		}
-	}
-
-	if md.cfg.AWSIAMAuthenticatorPath == "" {
-		md.cfg.AWSIAMAuthenticatorPath, _ = exec.New().LookPath("aws-iam-authenticator")
-	} else {
-		if err = os.MkdirAll(filepath.Dir(md.cfg.AWSIAMAuthenticatorPath), 0700); err != nil {
-			return nil, fmt.Errorf("could not create %q (%v)", filepath.Dir(md.cfg.AWSIAMAuthenticatorPath), err)
-		}
-	}
-	if md.cfg.AWSIAMAuthenticatorDownloadURL != "" { // overwrite
-		if runtime.GOOS == "darwin" {
-			md.cfg.AWSIAMAuthenticatorDownloadURL = strings.Replace(md.cfg.AWSIAMAuthenticatorDownloadURL, "linux", "darwin", -1)
-		}
-		if err = os.RemoveAll(md.cfg.AWSIAMAuthenticatorPath); err != nil {
-			return nil, err
-		}
-		if err = os.MkdirAll(filepath.Dir(cfg.AWSIAMAuthenticatorPath), 0700); err != nil {
-			return nil, err
-		}
-		var f *os.File
-		f, err = os.Create(md.cfg.AWSIAMAuthenticatorPath)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create %q (%v)", md.cfg.AWSIAMAuthenticatorPath, err)
-		}
-		md.cfg.AWSIAMAuthenticatorPath = f.Name()
-		md.cfg.AWSIAMAuthenticatorPath, _ = filepath.Abs(md.cfg.AWSIAMAuthenticatorPath)
-		if err = httpRead(md.lg, md.cfg.AWSIAMAuthenticatorDownloadURL, f); err != nil {
-			return nil, err
-		}
-		if err = f.Close(); err != nil {
-			return nil, err
-		}
-		if err = fileutil.EnsureExecutable(md.cfg.AWSIAMAuthenticatorPath); err != nil {
-			return nil, err
-		}
-	}
-
-	md.lg.Info(
-		"checking kubectl and aws-iam-authenticator",
-		zap.String("kubectl", md.cfg.KubectlPath),
-		zap.String("kubectl-download-url", md.cfg.KubectlDownloadURL),
-		zap.String("aws-iam-authenticator", md.cfg.AWSIAMAuthenticatorPath),
-		zap.String("aws-iam-authenticator-download-url", md.cfg.AWSIAMAuthenticatorDownloadURL),
+	lg.Info(
+		"aws version",
+		zap.String("aws-cli-path", cfg.AWSCLIPath),
+		zap.String("aws-version", string(vo)),
 	)
+
+	lg.Info("mkdir", zap.String("kubectl-path-dir", filepath.Dir(cfg.KubectlPath)))
+	if err := os.MkdirAll(filepath.Dir(cfg.KubectlPath), 0700); err != nil {
+		return nil, fmt.Errorf("could not create %q (%v)", filepath.Dir(cfg.KubectlPath), err)
+	}
+	lg.Info("downloading kubectl", zap.String("kubectl-path", cfg.KubectlPath))
+	if err := os.RemoveAll(cfg.KubectlPath); err != nil {
+		return nil, err
+	}
+	f, err := os.Create(cfg.KubectlPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create %q (%v)", cfg.KubectlPath, err)
+	}
+	cfg.KubectlPath = f.Name()
+	cfg.KubectlPath, _ = filepath.Abs(cfg.KubectlPath)
+	if err := httpDownloadFile(lg, cfg.KubectlDownloadURL, f); err != nil {
+		return nil, err
+	}
+	if err := f.Close(); err != nil {
+		return nil, fmt.Errorf("failed to close kubectl %v", err)
+	}
+	if err := fileutil.EnsureExecutable(cfg.KubectlPath); err != nil {
+		return nil, err
+	}
+	// kubectl version --client=true
+	ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
+	vo, verr = exec.New().CommandContext(
+		ctx,
+		cfg.KubectlPath,
+		"version",
+		"--client=true",
+	).CombinedOutput()
+	cancel()
+	if verr != nil {
+		return nil, fmt.Errorf("'kubectl version' failed (output %q, error %v)", string(vo), verr)
+	}
+	lg.Info(
+		"kubectl version",
+		zap.String("kubectl-path", cfg.KubectlPath),
+		zap.String("kubectl-version", string(vo)),
+	)
+
+	ts := &Tester{
+		stopCreationCh:              make(chan struct{}),
+		stopCreationChOnce:          new(sync.Once),
+		interruptSig:                make(chan os.Signal),
+		lg:                          lg,
+		cfg:                         cfg,
+		downMu:                      new(sync.Mutex),
+		fetchLogsManagedNodeGroupMu: new(sync.RWMutex),
+	}
+	signal.Notify(ts.interruptSig, syscall.SIGTERM, syscall.SIGINT)
+
+	defer ts.cfg.Sync()
 
 	awsCfg := &awsapi.Config{
-		Logger:        md.lg,
-		DebugAPICalls: md.cfg.LogLevel == "debug",
-		Region:        md.cfg.AWSRegion,
+		Logger:        ts.lg,
+		DebugAPICalls: ts.cfg.LogLevel == "debug",
+		Region:        ts.cfg.Region,
 	}
 	var stsOutput *sts.GetCallerIdentityOutput
-	md.ss, stsOutput, _, err = awsapi.New(awsCfg)
+	ts.awsSession, stsOutput, _, err = awsapi.New(awsCfg)
 	if err != nil {
 		return nil, err
 	}
-	md.cfg.AWSAccountID = *stsOutput.Account
-	md.iam = iam.New(md.ss)
-	md.ssm = ssm.New(md.ss)
-	md.cfn = cloudformation.New(md.ss)
-	md.asg = autoscaling.New(md.ss)
-	md.ec2 = ec2.New(md.ss)
+	ts.cfg.Status.AWSAccountID = *stsOutput.Account
+
+	ts.iamAPI = iam.New(ts.awsSession)
+	ts.ssmAPI = ssm.New(ts.awsSession)
+	ts.cfnAPI = cloudformation.New(ts.awsSession)
+	ts.ec2API = ec2.New(ts.awsSession)
+	ts.asgAPI = autoscaling.New(ts.awsSession)
+	ts.elbAPI = elb.New(ts.awsSession)
 
 	// create a separate session for EKS (for resolver endpoint)
-	md.eksSession, _, md.awsCredsPath, err = awsapi.New(&awsapi.Config{
-		Logger:        md.lg,
-		DebugAPICalls: md.cfg.LogLevel == "debug",
-		Region:        md.cfg.AWSRegion,
-		ResolverURL:   md.cfg.EKSResolverURL,
-		SigningName:   md.cfg.EKSSigningName,
+	ts.eksSession, _, ts.cfg.Status.AWSCredentialPath, err = awsapi.New(&awsapi.Config{
+		Logger:        ts.lg,
+		DebugAPICalls: ts.cfg.LogLevel == "debug",
+		Region:        ts.cfg.Region,
+		ResolverURL:   ts.cfg.Parameters.ClusterResolverURL,
+		SigningName:   ts.cfg.Parameters.ClusterSigningName,
 	})
 	if err != nil {
 		return nil, err
 	}
-	md.eks = awseks.New(md.eksSession)
+	ts.eksAPI = awseks.New(ts.eksSession)
 
-	// up to 63 characters
-	// https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-s3-bucket-naming-requirements.html
-	md.cfg.Tag += "-" + strings.ToLower(*stsOutput.UserId)
-	h, _ := os.Hostname()
-	if len(h) > 5 {
-		h = strings.ToLower(h)
-		h = strings.Replace(h, ".", "", -1)
-		h = strings.Replace(h, "-", "", -1)
-		h = strings.Replace(h, "_", "", -1)
-		md.cfg.Tag += h
-	}
-	if len(md.cfg.Tag) > 42 {
-		md.cfg.Tag = md.cfg.Tag[:42]
-	}
-	md.cfg.LogOutputToUploadPathURL = genS3URL(md.cfg.AWSRegion, md.cfg.Tag, md.cfg.LogOutputToUploadPathBucket)
-	md.cfg.ConfigPathURL = genS3URL(md.cfg.AWSRegion, md.cfg.Tag, md.cfg.ConfigPathBucket)
-	md.cfg.KubeConfigPathURL = genS3URL(md.cfg.AWSRegion, md.cfg.Tag, md.cfg.KubeConfigPathBucket)
-	md.s3Plugin = s3.NewEmbedded(md.lg, md.cfg, awss3.New(md.ss))
-
-	// to connect to an existing cluster
-	op, err := md.iam.GetRole(&iam.GetRoleInput{
-		RoleName: aws.String(md.cfg.ClusterState.ServiceRoleWithPolicyName),
-	})
-	if err == nil {
-		md.cfg.ClusterState.ServiceRoleWithPolicyARN = *op.Role.Arn
-		lg.Info("found existing service role ARN", zap.String("arn", md.cfg.ClusterState.ServiceRoleWithPolicyARN))
+	// reuse existing role
+	if ts.cfg.Parameters.ClusterRoleARN != "" {
+		ts.lg.Info("reuse existing IAM role", zap.String("cluster-role-arn", ts.cfg.Parameters.ClusterRoleARN))
+		ts.cfg.Status.ClusterRoleARN = ts.cfg.Parameters.ClusterRoleARN
 	}
 
-	// to connect to an existing cluster
-	do, err := md.cfn.DescribeStacks(&cloudformation.DescribeStacksInput{
-		StackName: aws.String(md.cfg.CFStackVPCName),
-	})
-	if err == nil && len(do.Stacks) == 1 {
-		for _, op := range do.Stacks[0].Outputs {
-			if *op.OutputKey == "VpcId" {
-				md.cfg.VPCID = *op.OutputValue
-				lg.Info("found existing VPC stack VPC ID", zap.String("id", md.cfg.VPCID))
-				continue
-			}
-			if *op.OutputKey == "SubnetIds" {
-				vv := *op.OutputValue
-				md.cfg.SubnetIDs = strings.Split(vv, ",")
-				lg.Info("found existing VPC stack Subnet IDs", zap.Strings("ids", md.cfg.SubnetIDs))
-				continue
-			}
-			if *op.OutputKey == "SecurityGroups" {
-				md.cfg.SecurityGroupID = *op.OutputValue
-				lg.Info("found existing VPC stack security group", zap.String("id", md.cfg.SecurityGroupID))
-			}
-		}
-	}
-
-	// to connect to an existing cluster
-	co, err := md.eks.DescribeCluster(&awseks.DescribeClusterInput{
-		Name: aws.String(md.cfg.ClusterName),
-	})
-	if err == nil {
-		md.cfg.ClusterState.Status = *co.Cluster.Status
-		md.cfg.ClusterState.Created = *co.Cluster.CreatedAt
-		md.cfg.PlatformVersion = *co.Cluster.PlatformVersion
-		if md.cfg.ClusterState.Status == "ACTIVE" {
-			// cluster is already created
-			// if up command failed, separate down command would need
-			// fetch cluster information with cluster name
-			md.cfg.ClusterState.Endpoint = *co.Cluster.Endpoint
-			md.cfg.ClusterState.CA = *co.Cluster.CertificateAuthority.Data
-			d, derr := base64.StdEncoding.DecodeString(md.cfg.ClusterState.CA)
-			if derr != nil {
-				md.lg.Warn("failed to decode cluster CA", zap.Error(derr))
-			}
-			md.cfg.ClusterState.CADecoded = string(d)
-			if err = writeKUBECONFIG(
-				md.lg,
-				md.cfg.KubectlPath,
-				md.cfg.AWSIAMAuthenticatorPath,
-				md.cfg.ClusterState.Endpoint,
-				md.cfg.ClusterState.CA,
-				md.cfg.ClusterName,
-				md.cfg.KubeConfigPath,
-			); err != nil {
-				return nil, err
-			}
-			md.lg.Info(
-				"overwrote KUBECONFIG from an existing cluster",
-				zap.String("KUBECONFIG", md.cfg.KubeConfigPath),
-				zap.String("cluster-name", md.cfg.ClusterName),
-			)
-
-			kvOut, kvOutErr := exec.New().CommandContext(
-				context.Background(),
-				md.cfg.KubectlPath,
-				"--kubeconfig="+md.cfg.KubeConfigPath,
-				"version",
-			).CombinedOutput()
-			md.lg.Info(
-				"checking kubectl after cluster creation",
-				zap.String("kubectl", md.cfg.KubectlPath),
-				zap.String("kubectl-download-url", md.cfg.KubectlDownloadURL),
-				zap.String("kubectl-version", string(kvOut)),
-				zap.String("kubectl-version-err", fmt.Sprintf("%v", kvOutErr)),
-			)
-		}
-	}
-
-	lg.Info(
-		"created EKS deployer",
-		zap.String("cluster-name", cfg.ClusterName),
-		zap.String("aws-k8s-tester-eksconfig-path", cfg.ConfigPath),
-		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
-	)
-	return md, md.cfg.Sync()
+	return ts, nil
 }
 
-// KubectlCommand returns "kubectl" command object for API reachability tests.
-func (md *embedded) KubectlCommand() (*osexec.Cmd, error) {
-	return osexec.Command(md.cfg.KubectlPath, "--kubeconfig="+md.cfg.KubeConfigPath), nil
-}
-
-// KubernetesClientSet returns Kubernetes Go client.
-func (md *embedded) KubernetesClientSet() *kubernetes.Clientset {
-	return md.k8sClientSet
-}
-
-// Up creates an EKS cluster for 'kubetest'.
-// If it fails at any point of operation, it rolls back everything.
-// And expect to create a cluster from scratch with a new name.
-//
-// TODO: if custom endpoint is specified,
-// either create a new cluster from scratch or
-// use the existing cluster
-func (md *embedded) Up() (err error) {
-	md.mu.Lock()
-	defer md.mu.Unlock()
-
-	if md.cfg.ClusterState.Status == "ACTIVE" {
-		return fmt.Errorf("%q is already %q", md.cfg.ClusterName, md.cfg.ClusterState.Status)
-	}
-	if md.cfg.LogAccess {
-		if err = md.s3Plugin.CreateBucketForAccessLogs(); err != nil {
-			return err
-		}
-	}
+// Up should provision a new cluster for testing
+func (ts *Tester) Up() (err error) {
+	now := time.Now().UTC()
 
 	defer func() {
-		if err != nil || (err == nil && md.cfg.DestroyAfterCreate) {
-			md.lg.Warn("reverting cluster creation", zap.Error(err))
+		if err == nil {
+			ts.lg.Info("Up completed",
+				zap.String("config-path", ts.cfg.ConfigPath),
+				zap.String("KUBECONFIG", ts.cfg.KubeConfigPath),
+				zap.String("cluster-arn", ts.cfg.Status.ClusterARN),
+				zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
+			)
+			return
+		}
 
-			if err == nil && md.cfg.DestroyAfterCreate {
-				md.lg.Info(
-					"successfully create cluster but configured to delete",
-					zap.Duration("wait-time", md.cfg.DestroyWaitTime),
-				)
-				notifier := make(chan os.Signal, 1)
-				signal.Notify(notifier, syscall.SIGINT, syscall.SIGTERM)
-				select {
-				case <-time.After(md.cfg.DestroyWaitTime):
-				case sig := <-notifier:
-					md.lg.Warn("received signal", zap.String("signal", sig.String()))
-				}
-			}
-
-			derr := md.down()
-			if derr != nil {
-				md.lg.Warn("failed to delete the cluster", zap.Error(derr))
-			}
+		ts.lg.Error("failed Up, reverting resource creation",
+			zap.String("config-path", ts.cfg.ConfigPath),
+			zap.String("KUBECONFIG", ts.cfg.KubeConfigPath),
+			zap.String("cluster-arn", ts.cfg.Status.ClusterARN),
+			zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
+			zap.Error(err),
+		)
+		derr := ts.down()
+		if derr != nil {
+			ts.lg.Error("failed to revert Up", zap.Error(derr))
+		} else {
+			ts.lg.Warn("reverted Up")
 		}
 	}()
 
-	termChan := make(chan os.Signal)
-	signal.Notify(termChan, syscall.SIGTERM, syscall.SIGINT)
-
-	now := time.Now().UTC()
-
-	md.lg.Info("Up",
-		zap.String("cluster-name", md.cfg.ClusterName),
-		zap.String("eks-resolver-url", md.cfg.EKSResolverURL),
-		zap.String("KUBECONFIG", md.cfg.KubeConfigPath),
+	ts.lg.Info("Up started",
+		zap.String("name", ts.cfg.Name),
+		zap.String("resolver-url", ts.cfg.Parameters.ClusterResolverURL),
+		zap.String("config-path", ts.cfg.ConfigPath),
+		zap.String("KUBECONFIG", ts.cfg.KubeConfigPath),
 	)
-	defer md.cfg.Sync()
+	defer ts.cfg.Sync()
 
-	if err = catchStopc(md.lg, md.stopc, termChan, md.createAWSServiceRoleForAmazonEKS); err != nil {
-		return err
-	}
-	if err = catchStopc(md.lg, md.stopc, termChan, md.attachPolicyForAWSServiceRoleForAmazonEKS); err != nil {
-		return err
-	}
-	if err = catchStopc(md.lg, md.stopc, termChan, md.createVPC); err != nil {
-		return err
-	}
-	if err = catchStopc(md.lg, md.stopc, termChan, md.createCluster); err != nil {
-		return err
-	}
-	if err = catchStopc(md.lg, md.stopc, termChan, md.upgradeCNI); err != nil {
-		return err
-	}
-	if err = catchStopc(md.lg, md.stopc, termChan, md.createKeyPair); err != nil {
-		return err
-	}
-	if err = catchStopc(md.lg, md.stopc, termChan, md.createWorkerNode); err != nil {
+	if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.createClusterRole); err != nil {
 		return err
 	}
 
-	if md.cfg.AWSCredentialToMountPath != "" {
-		if err = md.createAWSCredentialSecret(); err != nil {
+	if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.createVPC); err != nil {
+		return err
+	}
+
+	if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.createCluster); err != nil {
+		return err
+	}
+
+	waitDur := time.Minute
+	ts.lg.Info("waiting before running health check", zap.Duration("wait", waitDur))
+	time.Sleep(waitDur)
+
+	if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.runHealthCheck); err != nil {
+		return err
+	}
+
+	if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.createSecretAWSCredential); err != nil {
+		return err
+	}
+	if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.createKeyPair); err != nil {
+		return err
+	}
+
+	if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.createManagedNodeGroupRole); err != nil {
+		return err
+	}
+	if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.createManagedNodeGroup); err != nil {
+		return err
+	}
+
+	if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.runHealthCheck); err != nil {
+		return err
+	}
+
+	if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.openPortsManagedNodeGroup); err != nil {
+		return err
+	}
+	if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.createNamespace); err != nil {
+		return err
+	}
+
+	if ts.cfg.AddOnNLBHelloWorld.Enable {
+		ts.nlbHelloWorldTester, err = nlb.New(nlb.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			Sig:       ts.interruptSig,
+			K8SClient: ts.k8sClientSet,
+			EKSConfig: ts.cfg,
+		})
+		if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.nlbHelloWorldTester.Create); err != nil {
 			return err
 		}
 	}
 
-	md.cfg.Sync()
-	md.cfg.SetClusterUpTook(time.Now().UTC().Sub(now))
-
-	if md.cfg.UploadWorkerNodeLogs {
-		if err = md.uploadWorkerNodeLogs(); err != nil {
-			md.lg.Warn("failed to upload worker node logs", zap.Error(err))
+	if ts.cfg.AddOnALB2048.Enable {
+		ts.alb2048Tester, err = alb.New(alb.Config{
+			Logger:            ts.lg,
+			Stopc:             ts.stopCreationCh,
+			Sig:               ts.interruptSig,
+			CloudFormationAPI: ts.cfnAPI,
+			K8SClient:         ts.k8sClientSet,
+			EKSConfig:         ts.cfg,
+		})
+		if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.alb2048Tester.Create); err != nil {
+			return err
 		}
 	}
 
-	md.lg.Info("Up finished",
-		zap.String("cluster-name", md.cfg.ClusterName),
-		zap.String("eks-resolver-url", md.cfg.EKSResolverURL),
-		zap.String("KUBECONFIG", md.cfg.KubeConfigPath),
-		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
-	)
+	if ts.cfg.AddOnJobPerl.Enable {
+		ts.jobPiTester, err = jobs.New(jobs.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			Sig:       ts.interruptSig,
+			K8SClient: ts.k8sClientSet,
+			Namespace: ts.cfg.Name,
+			JobName:   jobs.JobNamePi,
+			Completes: ts.cfg.AddOnJobPerl.Completes,
+			Parallels: ts.cfg.AddOnJobPerl.Parallels,
+		})
+		if err != nil {
+			return err
+		}
+		if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.jobPiTester.Create); err != nil {
+			return err
+		}
+	}
 
-	println()
-	fmt.Println(md.cfg.SSHCommands())
-	println()
-	fmt.Println(md.cfg.KubectlCommands())
-	println()
+	if ts.cfg.AddOnJobEcho.Enable {
+		ts.jobEchoTester, err = jobs.New(jobs.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			Sig:       ts.interruptSig,
+			K8SClient: ts.k8sClientSet,
+			Namespace: ts.cfg.Name,
+			JobName:   jobs.JobNameEcho,
+			Completes: ts.cfg.AddOnJobEcho.Completes,
+			Parallels: ts.cfg.AddOnJobEcho.Parallels,
+			EchoSize:  ts.cfg.AddOnJobEcho.Size,
+		})
+		if err != nil {
+			return err
+		}
+		if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.jobEchoTester.Create); err != nil {
+			return err
+		}
+	}
 
-	if err = md.cfg.Sync(); err != nil {
+	if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.runHealthCheck); err != nil {
 		return err
 	}
 
-	if md.cfg.UploadTesterLogs {
-		if err = md.uploadTesterLogs(); err != nil {
-			md.lg.Warn("failed to upload", zap.Error(err))
-		}
-	}
-	return nil
-}
-
-func catchStopc(lg *zap.Logger, stopc chan struct{}, termc chan os.Signal, run func() error) (err error) {
-	errc := make(chan error)
-	go func() {
-		errc <- run()
-	}()
-	select {
-	case <-stopc:
-		lg.Info("interrupting")
-		gerr := <-errc
-		lg.Info("interrupted", zap.Error(gerr))
-		err = fmt.Errorf("interrupted (run function returned %v)", gerr)
-	case sig := <-termc:
-		err = fmt.Errorf("operating system: %v", sig)
-	case err = <-errc:
-	}
-	return err
-}
-
-// Down terminates and deletes the EKS cluster.
-func (md *embedded) Down() (err error) {
-	md.mu.Lock()
-	defer md.mu.Unlock()
-	return md.down()
-}
-
-func (md *embedded) down() (err error) {
-	if md.cfg.ClusterState.Status == "DELETING" {
-		return fmt.Errorf("cluster %q status is already %q",
-			md.cfg.ClusterName,
-			md.cfg.ClusterState.Status,
-		)
+	if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.FetchLogsManagedNodeGroup); err != nil {
+		return err
 	}
 
+	if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.runHealthCheck); err != nil {
+		return err
+	}
+
+	println()
+	fmt.Println(ts.cfg.KubectlCommands())
+	println()
+	fmt.Println(ts.cfg.SSHCommands())
+	println()
+
+	return ts.cfg.Sync()
+}
+
+func (ts *Tester) down() (err error) {
 	now := time.Now().UTC()
-
-	if md.cfg.UploadWorkerNodeLogs {
-		md.lg.Info(
-			"uploading worker node logs before shutdown",
-			zap.String("cluster-name", md.cfg.ClusterName),
-		)
-		if err = md.uploadWorkerNodeLogs(); err != nil {
-			md.lg.Warn("failed to upload worker node logs", zap.Error(err))
-		}
-	}
-
-	md.lg.Info("starting Down",
-		zap.String("cluster-name", md.cfg.ClusterName),
-		zap.String("cluster-arn", md.cfg.ClusterState.ClusterARN),
+	ts.lg.Warn("starting Down",
+		zap.String("name", ts.cfg.Name),
+		zap.String("config-path", ts.cfg.ConfigPath),
+		zap.String("cluster-arn", ts.cfg.Status.ClusterARN),
 	)
+	defer func() {
+		ts.cfg.Sync()
+		if err == nil {
+			ts.lg.Info("successfully finished Down",
+				zap.String("name", ts.cfg.Name),
+				zap.String("config-path", ts.cfg.ConfigPath),
+				zap.String("cluster-arn", ts.cfg.Status.ClusterARN),
+				zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
+			)
+		}
+	}()
+
+	// paralleize deletes
+	ch := make(chan errorData)
+	waits := 0
+	waits++
+	go func() {
+		ch <- errorData{name: "EC2 key pair", err: ts.deleteKeyPair()}
+	}()
+	waits++
+	go func() {
+		ch <- errorData{name: "cluster role", err: ts.deleteClusterRole()}
+	}()
+	if ts.cfg.AddOnJobEcho.Enable && ts.jobEchoTester != nil {
+		waits++
+		go func() {
+			ch <- errorData{name: "Job echo", err: ts.jobEchoTester.Delete()}
+		}()
+	}
+	if ts.cfg.AddOnJobPerl.Enable && ts.jobPiTester != nil {
+		waits++
+		go func() {
+			ch <- errorData{name: "Job Pi", err: ts.jobPiTester.Delete()}
+		}()
+	}
+	if ts.cfg.AddOnALB2048.Enable && ts.alb2048Tester != nil {
+		waits++
+		go func() {
+			ch <- errorData{name: "ALB", err: ts.alb2048Tester.Delete()}
+		}()
+	}
+	if ts.cfg.AddOnNLBHelloWorld.Enable && ts.nlbHelloWorldTester != nil {
+		waits++
+		go func() {
+			ch <- errorData{name: "NLB", err: ts.nlbHelloWorldTester.Delete()}
+		}()
+	}
+
 	var errs []string
-	if err = md.deleteWorkerNode(); err != nil {
-		md.lg.Warn("failed to delete node group stack", zap.Error(err))
-		errs = append(errs, err.Error())
+	for i := 0; i < waits; i++ {
+		if d := <-ch; d.err != nil {
+			ts.lg.Warn("failed to delete",
+				zap.String("name", d.name),
+				zap.Int("waits", i),
+				zap.Error(d.err),
+			)
+			errs = append(errs, d.err.Error())
+		} else {
+			ts.lg.Info("waited delete goroutine with no error", zap.String("name", d.name), zap.Int("waits", i))
+		}
 	}
-	if err = md.deleteKeyPair(); err != nil {
-		md.lg.Warn("failed to delete key pair", zap.Error(err))
-		errs = append(errs, err.Error())
-	}
-	if err = md.deleteCluster(true); err != nil {
-		md.lg.Warn("failed to delete cluster", zap.Error(err))
-		errs = append(errs, err.Error())
-	}
-	if err = md.deleteVPC(); err != nil {
-		md.lg.Warn("failed to delete VPC stack", zap.Error(err))
-		errs = append(errs, err.Error())
-	}
-	if err = md.detachPolicyForAWSServiceRoleForAmazonEKS(); err != nil {
-		md.lg.Warn("failed to delete service role policy", zap.Error(err))
-		errs = append(errs, err.Error())
-	}
-	if err = md.deleteAWSServiceRoleForAmazonEKS(); err != nil {
-		md.lg.Warn("failed to delete service role", zap.Error(err))
+
+	if err := ts.deleteNamespace(); err != nil {
+		ts.lg.Warn("failed to delete namespace", zap.String("namespace", ts.cfg.Name), zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 
-	if err = md.cfg.Sync(); err != nil {
-		return err
+	// following need to be run in order to resolve delete dependency
+	// e.g. cluster must be deleted before VPC delete
+
+	if err := ts.deleteManagedNodeGroup(); err != nil {
+		ts.lg.Warn("failed to delete managed node group", zap.Error(err))
+		errs = append(errs, err.Error())
 	}
-	if md.cfg.UploadTesterLogs {
-		if err = md.uploadTesterLogs(); err != nil {
-			md.lg.Warn("failed to upload", zap.Error(err))
-		}
+
+	waitDur := 5 * time.Second
+	ts.lg.Info("sleeping before node group role deletion", zap.Duration("wait", waitDur))
+	time.Sleep(waitDur)
+
+	// must be run after deleting node group
+	// otherwise, "Cannot delete entity, must remove roles from instance profile first. (Service: AmazonIdentityManagement; Status Code: 409; Error Code: DeleteConflict; Request ID: 197f795b-1003-4386-81cc-44a926c42be7)"
+	if err := ts.deleteManagedNodeGroupRole(); err != nil {
+		ts.lg.Warn("failed to delete managed node group role", zap.Error(err))
+		errs = append(errs, err.Error())
+	}
+
+	waitDur = 10 * time.Second
+	ts.lg.Info("sleeping before cluster deletion", zap.Duration("wait", waitDur))
+	time.Sleep(waitDur)
+
+	if err := ts.deleteCluster(); err != nil {
+		ts.lg.Warn("failed to delete cluster", zap.Error(err))
+		errs = append(errs, err.Error())
+	}
+
+	waitDur = 30 * time.Second
+	ts.lg.Info("sleeping before VPC deletion", zap.Duration("wait", waitDur))
+	time.Sleep(waitDur)
+
+	if err := ts.deleteVPC(); err != nil {
+		ts.lg.Warn("failed to delete VPC", zap.Error(err))
+		errs = append(errs, err.Error())
 	}
 
 	if len(errs) > 0 {
 		return errors.New(strings.Join(errs, ", "))
 	}
-
-	md.lg.Info("successfully finished Down",
-		zap.String("cluster-name", md.cfg.ClusterName),
-		zap.String("cluster-arn", md.cfg.ClusterState.ClusterARN),
-		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
-	)
-	return nil
+	return ts.cfg.Sync()
 }
 
-// IsUp returns an error if the cluster is not up and running.
-func (md *embedded) IsUp() (err error) {
-	if md.cfg.ClusterName == "" {
-		return errors.New("cannot check empty cluster")
-	}
-	var do *awseks.DescribeClusterOutput
-	do, err = md.eks.DescribeCluster(&awseks.DescribeClusterInput{
-		Name: aws.String(md.cfg.ClusterName),
-	})
-	if err != nil {
-		return err
-	}
-	md.cfg.ClusterState.Status = *do.Cluster.Status
-	md.cfg.ClusterState.Created = *do.Cluster.CreatedAt
-	md.cfg.PlatformVersion = *do.Cluster.PlatformVersion
-	if md.cfg.ClusterState.Status == "ACTIVE" {
-		return md.cfg.Sync()
-	}
-	return fmt.Errorf("cluster %q status is %q",
-		md.cfg.ClusterName,
-		md.cfg.ClusterState.Status,
-	)
+type errorData struct {
+	name string
+	err  error
 }
 
-// TestSetup checks if EKS testing cluster has been set up or not.
-func (md *embedded) TestSetup() (err error) {
-	return md.IsUp()
+// Down cancels the cluster creation and destroy the test cluster if any.
+func (ts *Tester) Down() error {
+	ts.downMu.Lock()
+	defer ts.downMu.Unlock()
+	return ts.down()
 }
 
-// GetClusterCreated returns EKS cluster creation time and error (if any).
-func (md *embedded) GetClusterCreated(v string) (time.Time, error) {
-	err := md.IsUp()
-	if err != nil {
-		return time.Time{}, err
+// IsUp should return true if a test cluster is successfully provisioned
+func (ts *Tester) IsUp() (up bool, err error) {
+	if !ts.cfg.Status.Up {
+		return false, nil
 	}
-	return md.cfg.ClusterState.Created, nil
+	return true, ts.healthCheck()
 }
 
-// DumpClusterLogs dumps all logs to artifact directory.
+// DumpClusterLogs should export logs from the cluster. It may be called
+// multiple times. Options for this should come from New(...)
+func (ts *Tester) DumpClusterLogs() error {
+	return ts.FetchLogsManagedNodeGroup()
+}
+
+// DownloadClusterLogs dumps all logs to artifact directory.
 // Let default kubetest log dumper handle all artifact uploads.
 // See https://github.com/kubernetes/test-infra/pull/9811/files#r225776067.
-func (md *embedded) DumpClusterLogs(artifactDir, _ string) (err error) {
-	err = md.GetWorkerNodeLogs()
+func (ts *Tester) DownloadClusterLogs(artifactDir, _ string) error {
+	err := ts.FetchLogsManagedNodeGroup()
 	if err != nil {
 		return err
 	}
 
-	md.ec2InstancesLogMu.RLock()
-	defer md.ec2InstancesLogMu.RUnlock()
+	ts.fetchLogsManagedNodeGroupMu.RLock()
+	defer ts.fetchLogsManagedNodeGroupMu.RUnlock()
 
-	for fpath, p := range md.cfg.ClusterState.WorkerNodeLogs {
-		if err = fileutil.Copy(fpath, filepath.Join(artifactDir, p)); err != nil {
-			return err
+	for _, fpaths := range ts.cfg.Status.ManagedNodeGroupsLogs {
+		for _, fpath := range fpaths {
+			newPath := filepath.Join(artifactDir, filepath.Base(fpath))
+			if err := fileutil.Copy(fpath, newPath); err != nil {
+				return err
+			}
 		}
 	}
 
-	if err = fileutil.Copy(
-		md.cfg.ConfigPath,
-		filepath.Join(artifactDir, md.cfg.ConfigPathBucket),
-	); err != nil {
-		return err
-	}
 	return fileutil.Copy(
-		md.cfg.LogOutputToUploadPath,
-		filepath.Join(artifactDir, md.cfg.LogOutputToUploadPathBucket),
+		ts.cfg.ConfigPath,
+		filepath.Join(artifactDir, filepath.Base(ts.cfg.ConfigPath)),
 	)
 }
 
-func (md *embedded) UploadToBucketForTests(localPath, remotePath string) error {
-	return md.s3Plugin.UploadToBucketForTests(localPath, remotePath)
-}
-
-func (md *embedded) Stop() { close(md.stopc) }
-
-// LoadConfig returns the current configuration and its states.
-func (md *embedded) LoadConfig() (eksconfig.Config, error) {
-	return *md.cfg, nil
-}
-
-// SECURITY NOTE: MAKE SURE PRIVATE KEY NEVER GETS UPLOADED TO CLOUD STORAGE AND DLETE AFTER USE!!!
-func (md *embedded) uploadTesterLogs() (err error) {
-	err = md.s3Plugin.UploadToBucketForTests(
-		md.cfg.ConfigPath,
-		md.cfg.ConfigPathBucket,
-	)
-	if err != nil {
-		return err
-	}
-	return md.s3Plugin.UploadToBucketForTests(
-		md.cfg.LogOutputToUploadPath,
-		md.cfg.LogOutputToUploadPathBucket,
-	)
-}
-
-// TODO: parallelize for >100 nodes?
-func (md *embedded) uploadWorkerNodeLogs() (err error) {
-	if !md.cfg.EnableWorkerNodeSSH {
-		return nil
-	}
-	err = md.GetWorkerNodeLogs()
-	if err != nil {
-		return err
-	}
-
-	md.ec2InstancesLogMu.RLock()
-	defer md.ec2InstancesLogMu.RUnlock()
-
-	for fpath, s3Path := range md.cfg.ClusterState.WorkerNodeLogs {
-		err = md.s3Plugin.UploadToBucketForTests(fpath, s3Path)
-		if err != nil {
-			md.lg.Warn(
-				"failed to upload",
-				zap.String("file-path", fpath),
-				zap.Error(err),
-			)
-			time.Sleep(3 * time.Second)
-			continue
-		}
-		md.lg.Info("uploaded", zap.String("s3-path", s3Path))
-		time.Sleep(30 * time.Millisecond)
-	}
+// Build should build kubernetes and package it in whatever format
+// the deployer consumes
+func (ts *Tester) Build() error {
+	// no-op
 	return nil
 }
 
-// genS3URL returns S3 URL path.
-// e.g. https://s3-us-west-2.amazonaws.com/aws-k8s-tester-20180925/hello-world
-func genS3URL(region, bucket, s3Path string) string {
-	return fmt.Sprintf("https://s3-%s.amazonaws.com/%s/%s", region, bucket, s3Path)
+// LoadConfig reloads configuration from disk to read the latest
+// cluster configuration and its states.
+// It's either reloaded from disk or returned from embedded EKS deployer.
+func (ts *Tester) LoadConfig() (eksconfig.Config, error) {
+	return *ts.cfg, nil
 }
 
-func (md *embedded) createCluster() error {
-	if md.cfg.ClusterName == "" {
-		return errors.New("cannot create empty cluster")
-	}
-	if md.cfg.ClusterState.ServiceRoleWithPolicyARN == "" {
-		return errors.New("can't create cluster without service role ARN")
-	}
-	if len(md.cfg.SubnetIDs) == 0 {
-		return errors.New("can't create cluster without subnet IDs")
-	}
-	if md.cfg.SecurityGroupID == "" {
-		return errors.New("can't create cluster without security group ID")
-	}
-
-	now := time.Now().UTC()
-
-	createInput := awseks.CreateClusterInput{
-		ClientRequestToken: aws.String("test"),
-		Name:               aws.String(md.cfg.ClusterName),
-		Version:            aws.String(md.cfg.KubernetesVersion),
-		RoleArn:            aws.String(md.cfg.ClusterState.ServiceRoleWithPolicyARN),
-		ResourcesVpcConfig: &awseks.VpcConfigRequest{
-			SecurityGroupIds: aws.StringSlice([]string{md.cfg.SecurityGroupID}),
-			SubnetIds:        aws.StringSlice(md.cfg.SubnetIDs),
-		},
-		Tags: map[string]*string{
-			"Kind": aws.String("aws-k8s-tester"),
-		},
-	}
-	if len(md.cfg.EKSTags) > 0 {
-		for k, v := range md.cfg.EKSTags {
-			createInput.Tags[k] = aws.String(v)
-			md.lg.Info("added EKS tag", zap.String("key", k), zap.String("value", v))
-		}
-	}
-
-	// _, err := md.eks.CreateCluster(&createInput)
-	req, output := md.eks.CreateClusterRequest(&createInput)
-	if len(md.cfg.EKSRequestHeader) > 0 {
-		for k, v := range md.cfg.EKSRequestHeader {
-			req.HTTPRequest.Header[k] = []string{v}
-			md.lg.Info("set EKS request header", zap.String("key", k), zap.String("value", v))
-		}
-	}
-
-	err := req.Send()
-	if err != nil {
-		return err
-	}
-
-	md.cfg.ClusterState.StatusClusterCreated = true
-	md.cfg.ClusterState.Status = "CREATING"
-	md.cfg.Sync()
-	md.lg.Info("sent create cluster request")
-
-	println()
-	fmt.Println("Output:", output.String())
-	println()
-
-	if md.cfg.UploadTesterLogs {
-		if err = md.uploadTesterLogs(); err != nil {
-			md.lg.Warn("failed to upload", zap.Error(err))
-		}
-	}
-
-	// usually takes 10 minutes
-	md.lg.Info("waiting for 5-minute")
-	select {
-	case <-md.stopc:
-		md.lg.Info("interrupted cluster creation")
-		return nil
-	case <-time.After(5 * time.Minute):
-	}
-
-	retryStart := time.Now().UTC()
-	for time.Now().UTC().Sub(retryStart) < 20*time.Minute {
-		select {
-		case <-md.stopc:
-			return nil
-		default:
-		}
-
-		var do *awseks.DescribeClusterOutput
-		do, err = md.eks.DescribeCluster(&awseks.DescribeClusterInput{
-			Name: aws.String(md.cfg.ClusterName),
-		})
-		if err != nil {
-			md.lg.Warn("failed to describe cluster", zap.Error(err))
-			time.Sleep(10 * time.Second)
-			continue
-		}
-
-		md.cfg.ClusterState.ClusterARN = *do.Cluster.Arn
-		md.cfg.ClusterState.Status = *do.Cluster.Status
-		md.cfg.ClusterState.Created = *do.Cluster.CreatedAt
-		md.cfg.PlatformVersion = *do.Cluster.PlatformVersion
-		md.cfg.Sync()
-
-		if md.cfg.ClusterState.Status == "FAILED" {
-			return fmt.Errorf("failed to create %q", md.cfg.ClusterName)
-		}
-
-		if md.cfg.ClusterState.Status == "ACTIVE" {
-			if do.Cluster.Endpoint != nil {
-				md.cfg.ClusterState.Endpoint = *do.Cluster.Endpoint
-			}
-			if do.Cluster.CertificateAuthority != nil && do.Cluster.CertificateAuthority.Data != nil {
-				md.cfg.ClusterState.CA = *do.Cluster.CertificateAuthority.Data
-				d, derr := base64.StdEncoding.DecodeString(md.cfg.ClusterState.CA)
-				if derr != nil {
-					md.lg.Warn("failed to decode cluster CA", zap.Error(derr))
-				}
-				md.cfg.ClusterState.CADecoded = string(d)
-			}
-			md.cfg.Sync()
-			break
-		}
-
-		md.cfg.Sync()
-
-		md.lg.Info("creating cluster",
-			zap.String("status", md.cfg.ClusterState.Status),
-			zap.String("cluster-arn", md.cfg.ClusterState.ClusterARN),
-			zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
-		)
-
-		if md.cfg.UploadTesterLogs {
-			if err = md.uploadTesterLogs(); err != nil {
-				md.lg.Warn("failed to upload", zap.Error(err))
-			}
-		}
-
-		time.Sleep(30 * time.Second)
-	}
-
-	if md.cfg.ClusterState.Status != "ACTIVE" {
-		return fmt.Errorf("cluster creation took too long (status %q, took %v)", md.cfg.ClusterState.Status, time.Now().UTC().Sub(now))
-	}
-	if md.cfg.ClusterState.Endpoint == "" || md.cfg.ClusterState.CA == "" {
-		return errors.New("cannot find cluster endpoint or cluster CA")
-	}
-
-	if err = writeKUBECONFIG(
-		md.lg,
-		md.cfg.KubectlPath,
-		md.cfg.AWSIAMAuthenticatorPath,
-		md.cfg.ClusterState.Endpoint,
-		md.cfg.ClusterState.CA,
-		md.cfg.ClusterName,
-		md.cfg.KubeConfigPath,
-	); err != nil {
-		return err
-	}
-
-	if md.cfg.UploadKubeConfig {
-		if err = md.s3Plugin.UploadToBucketForTests(
-			md.cfg.KubeConfigPath,
-			md.cfg.KubeConfigPathBucket,
-		); err != nil {
-			md.lg.Warn("failed to upload KUBECONFIG", zap.Error(err))
-		} else {
-			md.lg.Info("uploaded KUBECONFIG", zap.String("KUBECONFIG", md.cfg.KubeConfigPath))
-		}
-	}
-
-	time.Sleep(5 * time.Second)
-
-	retryStart = time.Now().UTC()
-	txt, done := "", false
-	for time.Now().UTC().Sub(retryStart) < 5*time.Minute {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		var versionOut []byte
-		versionOut, err = exec.New().CommandContext(ctx,
-			md.cfg.KubectlPath,
-			"--kubeconfig="+md.cfg.KubeConfigPath,
-			"version",
-		).CombinedOutput()
-		cancel()
-		if err != nil {
-			md.lg.Warn("'kubectl version' is not ready yet",
-				zap.String("output", string(versionOut)),
-				zap.Error(err),
-			)
-			md.cfg.Sync()
-			time.Sleep(10 * time.Second)
-			continue
-		} else {
-			println()
-			println()
-			fmt.Println("SUCCESS 'kubectl version'")
-			println()
-			fmt.Println(string(versionOut))
-			println()
-			println()
-		}
-
-		ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
-		var clusterInfoOut []byte
-		clusterInfoOut, err = exec.New().CommandContext(ctx,
-			md.cfg.KubectlPath,
-			"--kubeconfig="+md.cfg.KubeConfigPath,
-			"cluster-info",
-		).CombinedOutput()
-		cancel()
-
-		if strings.Contains(string(clusterInfoOut), "is running at") {
-			println()
-			println()
-			fmt.Println("SUCCESS 'kubectl cluster-info'")
-			println()
-			fmt.Println(string(clusterInfoOut))
-			println()
-			println()
-
-			err, done = nil, true
-			break
-		}
-
-		md.lg.Warn("'kubectl cluster-info' is not ready yet",
-			zap.String("output", string(clusterInfoOut)),
-			zap.Error(err),
-		)
-		md.cfg.Sync()
-		time.Sleep(10 * time.Second)
-	}
-	if err != nil || !done {
-		return fmt.Errorf("'kubectl' command output unexpected: %s (%v)", txt, err)
-	}
-
-	md.lg.Info("cluster is ready!",
-		zap.String("cluster-arn", md.cfg.ClusterState.ClusterARN),
-		zap.String("name", md.cfg.ClusterName),
-		zap.String("kubernetes-version", md.cfg.KubernetesVersion),
-		zap.String("eks-resolver-url", md.cfg.EKSResolverURL),
-		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
-	)
-
-	err = md.updateK8sClientSet()
-	if err != nil {
-		md.lg.Warn("failed to create k8s.io/client-go", zap.Error(err))
-	} else {
-		pods, err := md.k8sClientSet.CoreV1().Pods("kube-system").List(metav1.ListOptions{})
-		if err != nil {
-			md.lg.Warn("failed to list pods", zap.Error(err))
-		} else {
-			println()
-			for _, v := range pods.Items {
-				fmt.Println("kube-system Pod using client-go:", v.Name)
-			}
-			println()
-		}
-	}
-	md.lg.Info("checked kubernetes healthy with client-go")
-
-	return md.cfg.Sync()
+// KubectlCommand returns "kubectl" command object for API reachability tests.
+func (ts *Tester) KubectlCommand() (*osexec.Cmd, error) {
+	return osexec.Command(ts.cfg.KubectlPath, "--kubeconfig="+ts.cfg.KubeConfigPath), nil
 }
 
-func (md *embedded) deleteCluster(deleteKubeconfig bool) error {
-	if !md.cfg.ClusterState.StatusClusterCreated {
-		return nil
-	}
-	defer func() {
-		md.cfg.ClusterState.StatusClusterCreated = false
-		md.cfg.Sync()
-	}()
-
-	if md.cfg.ClusterName == "" {
-		return errors.New("cannot delete empty cluster")
-	}
-
-	now := time.Now().UTC()
-
-	// do not delete kubeconfig on "defer" call
-	// only delete on "Down" call
-	if deleteKubeconfig && md.cfg.KubeConfigPath != "" {
-		rerr := os.RemoveAll(md.cfg.KubeConfigPath)
-		md.lg.Info("deleted kubeconfig from local disk", zap.Error(rerr))
-	}
-
-	_, err := md.eks.DeleteCluster(&awseks.DeleteClusterInput{
-		Name: aws.String(md.cfg.ClusterName),
-	})
-	if err != nil && !isEKSDeletedGoClient(err) {
-		md.cfg.ClusterState.Status = err.Error()
-		return err
-	}
-
-	// usually takes 5-minute
-	md.lg.Info("waiting for 4-minute after cluster delete request")
-	notifier := make(chan os.Signal, 1)
-	signal.Notify(notifier, syscall.SIGINT, syscall.SIGTERM)
-	select {
-	case <-time.After(4 * time.Minute):
-	case sig := <-notifier:
-		md.lg.Warn("received signal", zap.String("signal", sig.String()))
-	}
-
-	retryStart := time.Now().UTC()
-	for time.Now().UTC().Sub(retryStart) < 15*time.Minute {
-		var do *awseks.DescribeClusterOutput
-		do, err = md.eks.DescribeCluster(&awseks.DescribeClusterInput{
-			Name: aws.String(md.cfg.ClusterName),
-		})
-		if err == nil {
-			md.cfg.ClusterState.Status = *do.Cluster.Status
-			md.cfg.ClusterState.Created = *do.Cluster.CreatedAt
-			md.cfg.PlatformVersion = *do.Cluster.PlatformVersion
-			md.cfg.Sync()
-
-			md.lg.Info("deleting cluster",
-				zap.String("status", md.cfg.ClusterState.Status),
-				zap.String("created-ago", humanize.RelTime(md.cfg.ClusterState.Created, time.Now().UTC(), "ago", "from now")),
-				zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
-			)
-
-			if md.cfg.UploadTesterLogs {
-				if err = md.uploadTesterLogs(); err != nil {
-					md.lg.Warn("failed to upload", zap.Error(err))
-				}
-			}
-
-			time.Sleep(30 * time.Second)
-			continue
-		}
-
-		if isEKSDeletedGoClient(err) {
-			err = nil
-			md.cfg.ClusterState.Status = "DELETE_COMPLETE"
-			break
-		}
-		md.cfg.ClusterState.Status = err.Error()
-		md.cfg.Sync()
-
-		md.lg.Warn("failed to describe cluster", zap.String("name", md.cfg.ClusterName), zap.Error(err))
-		time.Sleep(30 * time.Second)
-	}
-
-	if err != nil {
-		md.lg.Warn("failed to delete cluster",
-			zap.String("name", md.cfg.ClusterName),
-			zap.String("status", md.cfg.ClusterState.Status),
-			zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
-			zap.Error(err),
-		)
-		return err
-	}
-
-	md.lg.Info("deleted cluster",
-		zap.String("name", md.cfg.ClusterName),
-		zap.String("status", md.cfg.ClusterState.Status),
-		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
-	)
-	return md.cfg.Sync()
+// KubernetesClientSet returns Kubernetes Go client.
+func (ts *Tester) KubernetesClientSet() *kubernetes.Clientset {
+	return ts.k8sClientSet
 }
 
-// isEKSDeletedGoClient returns true if error from EKS API indicates that
-// the EKS cluster has already been deleted.
-func isEKSDeletedGoClient(err error) bool {
-	if err == nil {
-		return false
-	}
-	/*
-	   https://docs.aws.amazon.com/eks/latest/APIReference/API_Cluster.html#AmazonEKS-Type-Cluster-status
-
-	   CREATING
-	   ACTIVE
-	   DELETING
-	   FAILED
-	*/
-	// ResourceNotFoundException: No cluster found for name: aws-k8s-tester-155468BC717E03B003\n\tstatus code: 404, request id: 1e3fe41c-b878-11e8-adca-b503e0ba731d
-	return strings.Contains(err.Error(), "No cluster found for name: ")
+// Kubeconfig returns a path to a kubeconfig file for the cluster.
+func (ts *Tester) Kubeconfig() (string, error) {
+	return ts.cfg.KubeConfigPath, nil
 }
 
-const kubeConfigTempl = `---
-apiVersion: v1
-clusters:
-- cluster:
-    server: {{ .ClusterEndpoint }}
-    certificate-authority-data: {{ .ClusterCA }}
-  name: kubernetes
-contexts:
-- context:
-    cluster: kubernetes
-    user: aws
-  name: aws
-current-context: aws
-kind: Config
-preferences: {}
-users:
-- name: aws
-  user:
-    exec:
-      apiVersion: client.authentication.k8s.io/v1alpha1
-      command: {{ .AWSIAMAuthenticatorPath }}
-      args:
-        - token
-        - -i
-        - {{ .ClusterName }}
-
-`
-
-type kubeConfig struct {
-	AWSIAMAuthenticatorPath string
-	ClusterEndpoint         string
-	ClusterCA               string
-	ClusterName             string
-}
-
-func writeKUBECONFIG(
-	lg *zap.Logger,
-	kubectlPath string,
-	awsIAMAuthenticatorPath string,
-	ep string,
-	ca string,
-	clusterName string,
-	outputPath string) (err error) {
-	kc := kubeConfig{
-		AWSIAMAuthenticatorPath: awsIAMAuthenticatorPath,
-		ClusterEndpoint:         ep,
-		ClusterCA:               ca,
-		ClusterName:             clusterName,
-	}
-	tpl := template.Must(template.New("kubeCfgTempl").Parse(kubeConfigTempl))
-	buf := bytes.NewBuffer(nil)
-	if err = tpl.Execute(buf, kc); err != nil {
-		return err
-	}
-
-	// TODO: not working for "kubetest/e2e.go", "getKubectlVersion"
-	os.Setenv("KUBECTL", kubectlPath)
-	os.Setenv("KUBE_MASTER_URL", ep)
-	os.Setenv("KUBECONFIG", outputPath)
-	os.Setenv("KUBE_CONFIG_FILE", outputPath)
-	lg.Info("set KUBE_* environmental variables for kubetest", zap.Strings("envs", os.Environ()))
-
-	return ioutil.WriteFile(outputPath, buf.Bytes(), 0600)
-}
-
-var httpTransport *http.Transport
-
-func init() {
-	httpTransport = new(http.Transport)
-	httpTransport.RegisterProtocol("file", http.NewFileTransport(http.Dir("/")))
-}
-
-// curl -L [URL] | writer
-func httpRead(lg *zap.Logger, u string, wr io.Writer) error {
-	lg.Info("downloading", zap.String("url", u))
-	cli := &http.Client{Transport: httpTransport}
-	r, err := cli.Get(u)
-	if err != nil {
-		return err
-	}
-	defer r.Body.Close()
-	if r.StatusCode >= 400 {
-		return fmt.Errorf("%q returned %d", u, r.StatusCode)
-	}
-	_, err = io.Copy(wr, r.Body)
-
-	if err != nil {
-		lg.Warn("failed to download", zap.String("url", u), zap.Error(err))
-	} else {
-		if f, ok := wr.(*os.File); ok {
-			lg.Info("downloaded",
-				zap.String("url", u),
-				zap.String("file-path", f.Name()),
-			)
-		} else {
-			lg.Info("downloaded",
-				zap.String("url", u),
-				zap.String("value-of", reflect.ValueOf(wr).String()),
-			)
-		}
-	}
-
-	return err
+// Provider returns the kubernetes provider for legacy deployers.
+func (ts *Tester) Provider() string {
+	return "eks"
 }

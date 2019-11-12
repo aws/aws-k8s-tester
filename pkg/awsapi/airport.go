@@ -14,8 +14,10 @@ var AirportToRegion = map[string]string{
 	"FRA": "eu-central-1",
 	"GRU": "sa-east-1",
 	"HKG": "ap-east-1",
+	"HYD": "ap-south-2",
 	"IAD": "us-east-1",
 	"ICN": "ap-northeast-2",
+	"KIX": "ap-northeast-3",
 	"LHR": "eu-west-2",
 	"MXP": "eu-south-1",
 	"NRT": "ap-northeast-1",
@@ -24,6 +26,7 @@ var AirportToRegion = map[string]string{
 	"SIN": "ap-southeast-1",
 	"SYD": "ap-southeast-2",
 	"YUL": "ca-central-1",
+	"ZAZ": "eu-south-2",
 	"ZHY": "cn-northwest-1",
 }
 
@@ -41,8 +44,10 @@ var RegionToAiport = map[string]string{
 	"eu-central-1":   "FRA",
 	"sa-east-1":      "GRU",
 	"ap-east-1":      "HKG",
+	"ap-south-2":     "HYD",
 	"us-east-1":      "IAD",
 	"ap-northeast-2": "ICN",
+	"ap-northeast-3": "KIX",
 	"eu-west-2":      "LHR",
 	"eu-south-1":     "MXP",
 	"ap-northeast-1": "NRT",
@@ -51,5 +56,6 @@ var RegionToAiport = map[string]string{
 	"ap-southeast-1": "SIN",
 	"ap-southeast-2": "SYD",
 	"ca-central-1":   "YUL",
+	"eu-south-2":     "ZAZ",
 	"cn-northwest-1": "ZHY",
 }

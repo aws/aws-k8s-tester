@@ -5,102 +5,162 @@ import (
 	"io/ioutil"
 	"os"
 	"reflect"
+	"runtime"
+	"strings"
 	"testing"
-	"time"
 )
 
 func TestEnv(t *testing.T) {
 	cfg := NewDefault()
+	kubectlDownloadURL := "https://amazon-eks.s3-us-west-2.amazonaws.com/1.11.5/2018-12-06/bin/linux/amd64/kubectl"
+	if runtime.GOOS == "darwin" {
+		kubectlDownloadURL = strings.Replace(kubectlDownloadURL, "linux", runtime.GOOS, -1)
+	}
 
-	os.Setenv("AWS_K8S_TESTER_EKS_AWS_K8S_TESTER_DOWNLOAD_URL", "https://github.com/aws/aws-k8s-tester/releases/download/0.1.5/aws-k8s-tester-0.1.5-linux-amd64")
-	os.Setenv("AWS_K8S_TESTER_EKS_AWS_K8S_TESTER_PATH", "/tmp/aws-k8s-tester-test/aws-k8s-tester")
-	os.Setenv("AWS_K8S_TESTER_EKS_KUBECTL_DOWNLOAD_URL", "https://amazon-eks.s3-us-west-2.amazonaws.com/1.11.5/2018-12-06/bin/linux/amd64/kubectl")
+	os.Setenv("AWS_K8S_TESTER_EKS_REGION", "us-east-1")
+	os.Setenv("AWS_K8S_TESTER_EKS_LOG_LEVEL", "debug")
+	os.Setenv("AWS_K8S_TESTER_EKS_KUBECTL_DOWNLOAD_URL", kubectlDownloadURL)
 	os.Setenv("AWS_K8S_TESTER_EKS_KUBECTL_PATH", "/tmp/aws-k8s-tester-test/kubectl")
 	os.Setenv("AWS_K8S_TESTER_EKS_KUBECONFIG_PATH", "/tmp/aws-k8s-tester/kubeconfig2")
-	os.Setenv("AWS_K8S_TESTER_EKS_AWS_IAM_AUTHENTICATOR_DOWNLOAD_URL", "https://amazon-eks.s3-us-west-2.amazonaws.com/1.11.5/2018-12-06/bin/linux/amd64/aws-iam-authenticator")
-	os.Setenv("AWS_K8S_TESTER_EKS_AWS_IAM_AUTHENTICATOR_PATH", "/tmp/aws-k8s-tester-test/aws-iam-authenticator")
-	os.Setenv("AWS_K8S_TESTER_EKS_KUBERNETES_VERSION", "1.11")
-	os.Setenv("AWS_K8S_TESTER_EKS_EKS_RESOLVER_URL", "https://api.beta.us-west-2.wesley.amazonaws.com")
-	os.Setenv("AWS_K8S_TESTER_EKS_CF_STACK_VPC_PARAMETER_VPC_BLOCK", "192.168.0.0/8")
-	os.Setenv("AWS_K8S_TESTER_EKS_CF_STACK_VPC_PARAMETER_SUBNET_01_BLOCK", "192.168.64.0/8")
-	os.Setenv("AWS_K8S_TESTER_EKS_CF_STACK_VPC_PARAMETER_SUBNET_02_BLOCK", "192.168.128.0/8")
-	os.Setenv("AWS_K8S_TESTER_EKS_CF_STACK_VPC_PARAMETER_SUBNET_03_BLOCK", "192.168.192.0/8")
-	os.Setenv("AWS_K8S_TESTER_EKS_VPC_ID", "my-vpc-id")
-	os.Setenv("AWS_K8S_TESTER_EKS_SUBNET_IDS", "a,b,c")
-	os.Setenv("AWS_K8S_TESTER_EKS_LOG_ACCESS", "true")
-	os.Setenv("AWS_K8S_TESTER_EKS_WORKER_NODE_PRIVATE_KEY_PATH", "/tmp/aws-k8s-tester/worker-node.ssh.private.key.3")
-	os.Setenv("AWS_K8S_TESTER_EKS_WORKER_NODE_AMI_TYPE", "amazon-linux-2-gpu")
-	os.Setenv("AWS_K8S_TESTER_EKS_SECURITY_GROUP_ID", "my-security-id")
-	os.Setenv("AWS_K8S_TESTER_EKS_ENABLE_WORKER_NODE_HA", "false")
-	os.Setenv("AWS_K8S_TESTER_EKS_ENABLE_WORKER_NODE_SSH", "true")
-	os.Setenv("AWS_K8S_TESTER_EKS_ENABLE_WORKER_NODE_PRIVILEGED_PORT_ACCESS", "true")
-	os.Setenv("AWS_K8S_TESTER_EKS_CONFIG_PATH", "test-path")
-	os.Setenv("AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_MIN", "5")
-	os.Setenv("AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_MAX", "10")
-	os.Setenv("AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_DESIRED_CAPACITY", "7")
-	os.Setenv("AWS_K8S_TESTER_EKS_LOG_LEVEL", "debug")
-	os.Setenv("AWS_K8S_TESTER_EKS_UPLOAD_TESTER_LOGS", "true")
-	os.Setenv("AWS_K8S_TESTER_EKS_UPLOAD_KUBECONFIG", "true")
-	os.Setenv("AWS_K8S_TESTER_EKS_UPLOAD_WORKER_NODE_LOGS", "true")
-	os.Setenv("AWS_K8S_TESTER_EKS_UPLOAD_BUCKET_EXPIRE_DAYS", "3")
-	os.Setenv("AWS_K8S_TESTER_EKS_DESTROY_AFTER_CREATE", "true")
-	os.Setenv("AWS_K8S_TESTER_EKS_DESTROY_WAIT_TIME", "2h")
-	os.Setenv("AWS_K8S_TESTER_EKS_EKS_TAGS", "to-delete=2019")
-	os.Setenv("AWS_K8S_TESTER_EKS_EKS_REQUEST_HEADER", "a=b,eks-options=a;b;c")
-	os.Setenv("AWS_K8S_TESTER_EKS_WORKER_NODE_CF_TEMPLATE_PATH", "/tmp/template.yaml")
-	os.Setenv("AWS_K8S_TESTER_EKS_WORKER_NODE_CF_TEMPLATE_ADDITIONAL_PARAMETER_KEYS", "CertificateAuthorityData,ApiServerEndpoint")
+
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_TAGS", "to-delete=2019")
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_MANAGED_NODE_GROUP_TAGS", "hello=world")
+
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_REQUEST_HEADER_KEY", "eks-options")
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_REQUEST_HEADER_VALUE", "kubernetesVersion=1.11")
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_MANAGED_NODE_GROUP_REQUEST_HEADER_KEY", "a")
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_MANAGED_NODE_GROUP_REQUEST_HEADER_VALUE", "b")
+
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_ROLE_SERVICE_PRINCIPALS", "eks.amazonaws.com,eks-beta-pdx.aws.internal,eks-dev.aws.internal")
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_ROLE_MANAGED_POLICY_ARNS", "arn:aws:iam::aws:policy/AmazonEKSServicePolicy,arn:aws:iam::aws:policy/AmazonEKSClusterPolicy,arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM")
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_MANAGED_NODE_GROUP_ROLE_SERVICE_PRINCIPALS", "ec2.amazonaws.com,eks.amazonaws.com,hello.amazonaws.com")
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_MANAGED_NODE_GROUP_ROLE_MANAGED_POLICY_ARNS", "a,b,c")
+
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_VERSION", "1.11")
+
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_ENABLE", "true")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_URL", "invalid")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_ENABLE", "true")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_URL", "invalid")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_POLICY_NAME", "my-policy")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_POLICY_CFN_STACK_ID", "my-id")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_PERL_ENABLE", "true")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_PERL_COMPLETES", "100")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_PERL_PARALLELS", "10")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_ENABLE", "true")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_COMPLETES", "1000")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_PARALLELS", "100")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_SIZE", "10000")
 
 	defer func() {
-		os.Unsetenv("AWS_K8S_TESTER_EKS_AWS_K8S_TESTER_DOWNLOAD_URL")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_AWS_K8S_TESTER_PATH")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_REGION")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_LOG_LEVEL")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_KUBECTL_DOWNLOAD_URL")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_KUBECTL_PATH")
 		os.Unsetenv("AWS_K8S_TESTER_EKS_KUBECONFIG_PATH")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_AWS_IAM_AUTHENTICATOR_DOWNLOAD_URL")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_AWS_IAM_AUTHENTICATOR_PATH")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_KUBERNETES_VERSION")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_EKS_RESOLVER_URL")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_CF_STACK_VPC_PARAMETER_VPC_BLOCK")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_CF_STACK_VPC_PARAMETER_SUBNET_01_BLOCK")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_CF_STACK_VPC_PARAMETER_SUBNET_02_BLOCK")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_CF_STACK_VPC_PARAMETER_SUBNET_03_BLOCK")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_VPC_ID")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_SUBNET_IDs")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_LOG_ACCESS")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_WORKER_NODE_PRIVATE_KEY_PATH")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_WORKER_NODE_AMI_TYPE")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_SECURITY_GROUP_ID")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_ENABLE_WORKER_NODE_HA")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_ENABLE_WORKER_NODE_SSH")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_ENABLE_WORKER_NODE_PRIVILEGED_PORT_ACCESS")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_CONFIG_PATH")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_MIN")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_MAX")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_WORKER_NODE_ASG_DESIRED_CAPACITY")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_LOG_LEVEL")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_UPLOAD_TESTER_LOGS")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_UPLOAD_KUBECONFIG")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_UPLOAD_WORKER_NODE_LOGS")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_UPLOAD_BUCKET_EXPIRE_DAYS")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_DESTROY_AFTER_CREATE")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_DESTROY_WAIT_TIME")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_EKS_TAGS")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_EKS_REQUEST_HEADER")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_WORKER_NODE_CF_TEMPLATE_PATH")
-		os.Unsetenv("AWS_K8S_TESTER_EKS_WORKER_NODE_CF_TEMPLATE_ADDITIONAL_PARAMETER_KEYS")
+
+		os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_REQUEST_HEADER")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_TAGS")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_MANAGED_NODE_GROUP_REQUEST_HEADER")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_MANAGED_NODE_GROUP_TAGS")
+
+		os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_REQUEST_HEADER_KEY")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_REQUEST_HEADER_VALUE")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_MANAGED_NODE_GROUP_REQUEST_HEADER_KEY")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_MANAGED_NODE_GROUP_REQUEST_HEADER_VALUE")
+
+		os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_ROLE_SERVICE_PRINCIPALS")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_ROLE_MANAGED_POLICY_ARNS")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_MANAGED_NODE_GROUP_ROLE_SERVICE_PRINCIPALS")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_MANAGED_NODE_GROUP_ROLE_MANAGED_POLICY_ARNS")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_VERSION")
+
+		os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_ENABLE")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_URL")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_ENABLE")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_URL")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_POLICY_NAME")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_POLICY_CFN_STACK_ID")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_PERL_ENABLE")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_PERL_COMPLETES")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_PERL_PARALLELS")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_ENABLE")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_COMPLETES")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_PARALLELS")
+		os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_SIZE")
 	}()
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
 		t.Fatal(err)
 	}
 
-	if cfg.AWSK8sTesterDownloadURL != "https://github.com/aws/aws-k8s-tester/releases/download/0.1.5/aws-k8s-tester-0.1.5-linux-amd64" {
-		t.Fatalf("unexpected AWSK8sTesterDownloadURL %q", cfg.AWSK8sTesterDownloadURL)
+	if cfg.Region != "us-east-1" {
+		t.Fatalf("unexpected %q", cfg.Region)
 	}
-	if cfg.AWSK8sTesterPath != "/tmp/aws-k8s-tester-test/aws-k8s-tester" {
-		t.Fatalf("unexpected AWSK8sTesterPath %q", cfg.AWSK8sTesterPath)
+	if cfg.LogLevel != "debug" {
+		t.Fatalf("unexpected %q", cfg.LogLevel)
 	}
-	if cfg.KubectlDownloadURL != "https://amazon-eks.s3-us-west-2.amazonaws.com/1.11.5/2018-12-06/bin/linux/amd64/kubectl" {
+
+	expectedClusterRoleServicePrincipals := []string{
+		"eks.amazonaws.com",
+		"eks-beta-pdx.aws.internal",
+		"eks-dev.aws.internal",
+	}
+	if !reflect.DeepEqual(expectedClusterRoleServicePrincipals, cfg.Parameters.ClusterRoleServicePrincipals) {
+		t.Fatalf("unexpected Parameters.ClusterRoleServicePrincipals %+v", cfg.Parameters.ClusterRoleServicePrincipals)
+	}
+	expectedClusterRoleManagedPolicyARNs := []string{
+		"arn:aws:iam::aws:policy/AmazonEKSServicePolicy",
+		"arn:aws:iam::aws:policy/AmazonEKSClusterPolicy",
+		"arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM",
+	}
+	if !reflect.DeepEqual(expectedClusterRoleManagedPolicyARNs, cfg.Parameters.ClusterRoleManagedPolicyARNs) {
+		t.Fatalf("unexpected Parameters.ClusterRoleManagedPolicyARNs %+v", cfg.Parameters.ClusterRoleManagedPolicyARNs)
+	}
+	expectedManagedNodeGroupRoleServicePrincipals := []string{
+		"ec2.amazonaws.com",
+		"eks.amazonaws.com",
+		"hello.amazonaws.com",
+	}
+	if !reflect.DeepEqual(expectedManagedNodeGroupRoleServicePrincipals, cfg.Parameters.ManagedNodeGroupRoleServicePrincipals) {
+		t.Fatalf("unexpected Parameters.ManagedNodeGroupRoleServicePrincipals %+v", cfg.Parameters.ManagedNodeGroupRoleServicePrincipals)
+	}
+	expectedManagedNodeGroupRoleManagedPolicyARNs := []string{
+		"a",
+		"b",
+		"c",
+	}
+	if !reflect.DeepEqual(expectedManagedNodeGroupRoleManagedPolicyARNs, cfg.Parameters.ManagedNodeGroupRoleManagedPolicyARNs) {
+		t.Fatalf("unexpected Parameters.ManagedNodeGroupRoleManagedPolicyARNs %+v", cfg.Parameters.ManagedNodeGroupRoleManagedPolicyARNs)
+	}
+
+	if cfg.Parameters.Version != "1.11" {
+		t.Fatalf("unexpected Parameters.Version %q", cfg.Parameters.Version)
+	}
+
+	expectedClusterTags := map[string]string{"to-delete": "2019"}
+	if !reflect.DeepEqual(cfg.Parameters.ClusterTags, expectedClusterTags) {
+		t.Fatalf("Tags expected %v, got %v", expectedClusterTags, cfg.Parameters.ClusterTags)
+	}
+	expectedManagedNodeGroupTags := map[string]string{"hello": "world"}
+	if !reflect.DeepEqual(cfg.Parameters.ManagedNodeGroupTags, expectedManagedNodeGroupTags) {
+		t.Fatalf("Tags expected %v, got %v", expectedManagedNodeGroupTags, cfg.Parameters.ManagedNodeGroupTags)
+	}
+
+	if cfg.Parameters.ClusterRequestHeaderKey != "eks-options" {
+		t.Fatalf("unexpected Parameters.ClusterRequestHeaderKey %q", cfg.Parameters.ClusterRequestHeaderKey)
+	}
+	if cfg.Parameters.ClusterRequestHeaderValue != "kubernetesVersion=1.11" {
+		t.Fatalf("unexpected Parameters.ClusterRequestHeaderValue %q", cfg.Parameters.ClusterRequestHeaderValue)
+	}
+	if cfg.Parameters.ManagedNodeGroupRequestHeaderKey != "a" {
+		t.Fatalf("unexpected Parameters.ManagedNodeGroupRequestHeaderKey %q", cfg.Parameters.ManagedNodeGroupRequestHeaderKey)
+	}
+	if cfg.Parameters.ManagedNodeGroupRequestHeaderValue != "b" {
+		t.Fatalf("unexpected Parameters.ManagedNodeGroupRequestHeaderValue %q", cfg.Parameters.ManagedNodeGroupRequestHeaderValue)
+	}
+
+	if cfg.KubectlDownloadURL != kubectlDownloadURL {
 		t.Fatalf("unexpected KubectlDownloadURL %q", cfg.KubectlDownloadURL)
 	}
 	if cfg.KubectlPath != "/tmp/aws-k8s-tester-test/kubectl" {
@@ -109,109 +169,45 @@ func TestEnv(t *testing.T) {
 	if cfg.KubeConfigPath != "/tmp/aws-k8s-tester/kubeconfig2" {
 		t.Fatalf("unexpected KubeConfigPath %q", cfg.KubeConfigPath)
 	}
-	if cfg.AWSIAMAuthenticatorDownloadURL != "https://amazon-eks.s3-us-west-2.amazonaws.com/1.11.5/2018-12-06/bin/linux/amd64/aws-iam-authenticator" {
-		t.Fatalf("unexpected AWSIAMAuthenticatorDownloadURL %q", cfg.AWSIAMAuthenticatorDownloadURL)
+
+	if !cfg.AddOnNLBHelloWorld.Enable {
+		t.Fatalf("unexpected cfg.AddOnNLBHelloWorld.Enable %v", cfg.AddOnNLBHelloWorld.Enable)
 	}
-	if cfg.AWSIAMAuthenticatorPath != "/tmp/aws-k8s-tester-test/aws-iam-authenticator" {
-		t.Fatalf("unexpected AWSIAMAuthenticatorPath %q", cfg.AWSIAMAuthenticatorPath)
+	if cfg.AddOnNLBHelloWorld.URL != "" { // env should be ignored for read-only
+		t.Fatalf("unexpected cfg.AddOnNLBHelloWorld.URL %q", cfg.AddOnNLBHelloWorld.URL)
 	}
-	if cfg.KubernetesVersion != "1.11" {
-		t.Fatalf("KubernetesVersion 1.11, got %q", cfg.KubernetesVersion)
+	if !cfg.AddOnALB2048.Enable {
+		t.Fatalf("unexpected cfg.AddOnALB2048.Enable %v", cfg.AddOnALB2048.Enable)
 	}
-	if cfg.EKSResolverURL != "https://api.beta.us-west-2.wesley.amazonaws.com" {
-		t.Fatalf("unexpected EKSResolverURL %q", cfg.EKSResolverURL)
+	if cfg.AddOnALB2048.URL != "" { // env should be ignored for read-only
+		t.Fatalf("unexpected cfg.AddOnALB2048.URL %q", cfg.AddOnALB2048.URL)
 	}
-	if cfg.CFStackVPCParameterVPCBlock != "192.168.0.0/8" {
-		t.Fatalf("CFStackVPCParameterVPCBlock unexpected %q", cfg.CFStackVPCParameterVPCBlock)
+	if cfg.AddOnALB2048.PolicyCFNStackID != "" { // env should be ignored for read-only
+		t.Fatalf("unexpected cfg.AddOnALB2048.PolicyCFNStackID %q", cfg.AddOnALB2048.PolicyCFNStackID)
 	}
-	if cfg.CFStackVPCParameterSubnet01Block != "192.168.64.0/8" {
-		t.Fatalf("CFStackVPCParameterSubnet01Block unexpected %q", cfg.CFStackVPCParameterSubnet01Block)
+	if cfg.AddOnALB2048.PolicyName != "my-policy" { // env should be ignored for read-only
+		t.Fatalf("unexpected cfg.AddOnALB2048.PolicyName %q", cfg.AddOnALB2048.PolicyName)
 	}
-	if cfg.CFStackVPCParameterSubnet02Block != "192.168.128.0/8" {
-		t.Fatalf("CFStackVPCParameterSubnet02Block unexpected %q", cfg.CFStackVPCParameterSubnet02Block)
+	if !cfg.AddOnJobPerl.Enable {
+		t.Fatalf("unexpected cfg.AddOnJobPerl.Enable %v", cfg.AddOnJobPerl.Enable)
 	}
-	if cfg.CFStackVPCParameterSubnet03Block != "192.168.192.0/8" {
-		t.Fatalf("CFStackVPCParameterSubnet03Block unexpected %q", cfg.CFStackVPCParameterSubnet03Block)
+	if cfg.AddOnJobPerl.Completes != 100 {
+		t.Fatalf("unexpected cfg.AddOnJobPerl.Completes %v", cfg.AddOnJobPerl.Completes)
 	}
-	if cfg.VPCID != "my-vpc-id" {
-		t.Fatalf("VPCID my-vpc-id, got %q", cfg.VPCID)
+	if cfg.AddOnJobPerl.Parallels != 10 {
+		t.Fatalf("unexpected cfg.AddOnJobPerl.Parallels %v", cfg.AddOnJobPerl.Parallels)
 	}
-	if !reflect.DeepEqual(cfg.SubnetIDs, []string{"a", "b", "c"}) {
-		t.Fatalf("SubnetIDs expected a,b,c, got %q", cfg.SubnetIDs)
+	if !cfg.AddOnJobEcho.Enable {
+		t.Fatalf("unexpected cfg.AddOnJobEcho.Enable %v", cfg.AddOnJobEcho.Enable)
 	}
-	if !cfg.LogAccess {
-		t.Fatalf("LogAccess expected true, got %v", cfg.LogAccess)
+	if cfg.AddOnJobEcho.Completes != 1000 {
+		t.Fatalf("unexpected cfg.AddOnJobEcho.Completes %v", cfg.AddOnJobEcho.Completes)
 	}
-	if cfg.WorkerNodePrivateKeyPath != "/tmp/aws-k8s-tester/worker-node.ssh.private.key.3" {
-		t.Fatalf("WorkerNodePrivateKeyPath expected /tmp/aws-k8s-tester/worker-node.ssh.private.key.3, got %q", cfg.WorkerNodePrivateKeyPath)
+	if cfg.AddOnJobEcho.Parallels != 100 {
+		t.Fatalf("unexpected cfg.AddOnJobEcho.Parallels %v", cfg.AddOnJobEcho.Parallels)
 	}
-	if cfg.WorkerNodeAMIType != "amazon-linux-2-gpu" {
-		t.Fatalf("WorkerNodeAMIType expected amazon-linux-2-gpu, got %q", cfg.WorkerNodeAMIType)
-	}
-	if cfg.SecurityGroupID != "my-security-id" {
-		t.Fatalf("SecurityGroupID my-id, got %q", cfg.SecurityGroupID)
-	}
-	if cfg.ConfigPath != "test-path" {
-		t.Fatalf("alb configuration path expected 'test-path', got %q", cfg.ConfigPath)
-	}
-	if !cfg.DestroyAfterCreate {
-		t.Fatalf("DestroyAfterCreate expected 'true', got %v", cfg.DestroyAfterCreate)
-	}
-	if cfg.DestroyWaitTime != 2*time.Hour {
-		t.Fatalf("DestroyWaitTime expected 2h, got %v", cfg.DestroyWaitTime)
-	}
-	if cfg.EnableWorkerNodeHA {
-		t.Fatalf("cfg.EnableWorkerNodeHA expected 'false', got %v", cfg.EnableWorkerNodeHA)
-	}
-	if !cfg.EnableWorkerNodeSSH {
-		t.Fatalf("cfg.EnableWorkerNodeSSH expected 'true', got %v", cfg.EnableWorkerNodeSSH)
-	}
-	if !cfg.EnableWorkerNodePrivilegedPortAccess {
-		t.Fatalf("cfg.EnableWorkerNodePrivilegedPortAccess expected 'true', got %v", cfg.EnableWorkerNodePrivilegedPortAccess)
-	}
-	if cfg.WorkerNodeASGMin != 5 {
-		t.Fatalf("worker nodes min expected 5, got %q", cfg.WorkerNodeASGMin)
-	}
-	if cfg.WorkerNodeASGMax != 10 {
-		t.Fatalf("worker nodes max expected 10, got %q", cfg.WorkerNodeASGMax)
-	}
-	if cfg.WorkerNodeASGDesiredCapacity != 7 {
-		t.Fatalf("worker nodes desired capacity expected 7, got %q", cfg.WorkerNodeASGDesiredCapacity)
-	}
-	if cfg.LogLevel != "debug" {
-		t.Fatalf("LogLevel unexpected %q", cfg.LogLevel)
-	}
-	if !cfg.UploadTesterLogs {
-		t.Fatalf("UploadTesterLogs expected true, got %v", cfg.UploadTesterLogs)
-	}
-	if !cfg.UploadKubeConfig {
-		t.Fatalf("UploadKubeConfig expected true, got %v", cfg.UploadKubeConfig)
-	}
-	if !cfg.UploadWorkerNodeLogs {
-		t.Fatalf("UploadWorkerNodeLogs expected true, got %v", cfg.UploadWorkerNodeLogs)
-	}
-	if cfg.UploadBucketExpireDays != 3 {
-		t.Fatalf("UploadBucketExpireDays expected 3, got %d", cfg.UploadBucketExpireDays)
-	}
-	tg := map[string]string{
-		"to-delete": "2019",
-	}
-	if !reflect.DeepEqual(cfg.EKSTags, tg) {
-		t.Fatalf("EKSTags expected %v, got %v", tg, cfg.EKSTags)
-	}
-	rh := map[string]string{
-		"a":           "b",
-		"eks-options": "a;b;c",
-	}
-	if !reflect.DeepEqual(cfg.EKSRequestHeader, rh) {
-		t.Fatalf("EKSRequestHeader expected %v, got %v", rh, cfg.EKSRequestHeader)
-	}
-	if cfg.WorkerNodeCFTemplatePath != "/tmp/template.yaml" {
-		t.Fatalf("WorkerNodeCFTemplatePath expected /tmp/template.yaml, got %q", cfg.WorkerNodeCFTemplatePath)
-	}
-	pks := []string{"CertificateAuthorityData", "ApiServerEndpoint"}
-	if !reflect.DeepEqual(cfg.WorkerNodeCFTemplateAdditionalParameterKeys, pks) {
-		t.Fatalf("WorkerNodeCFTemplateAdditionalParameterKeys expected %v, got %v", pks, cfg.WorkerNodeCFTemplateAdditionalParameterKeys)
+	if cfg.AddOnJobEcho.Size != 10000 {
+		t.Fatalf("unexpected cfg.AddOnJobEcho.Size %v", cfg.AddOnJobEcho.Size)
 	}
 
 	if err := cfg.ValidateAndSetDefaults(); err != nil {
@@ -220,12 +216,13 @@ func TestEnv(t *testing.T) {
 	if err := cfg.Sync(); err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(cfg.ConfigPath)
+	fmt.Println(cfg.Name)
+
 	d, err := ioutil.ReadFile(cfg.ConfigPath)
 	if err != nil {
 		t.Fatal(err)
 	}
 	fmt.Println(string(d))
 
-	fmt.Println(cfg.KubectlCommands())
+	defer os.RemoveAll(cfg.ConfigPath)
 }

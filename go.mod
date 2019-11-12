@@ -16,9 +16,9 @@ replace (
 // https://github.com/uber-go/zap/releases
 // https://github.com/kubernetes-sigs/yaml/releases
 // https://github.com/blang/semver/releases
+// https://github.com/gyuho/semver/releases
 require (
-	github.com/aws/aws-sdk-go v1.25.25
-	github.com/blang/semver v3.6.1+incompatible
+	github.com/aws/aws-sdk-go v1.25.48
 	github.com/cihub/seelog v0.0.0-20170130134532-f561c5e57575
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/coreos/go-systemd v0.0.0-20190719114852-fd7a80b32e1f // indirect
@@ -28,6 +28,7 @@ require (
 	github.com/go-ini/ini v1.46.0
 	github.com/gorilla/websocket v1.4.1 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.1.0 // indirect
+	github.com/gyuho/semver/v3 v3.6.2
 	github.com/imdario/mergo v0.3.8 // indirect
 	github.com/mitchellh/ioprogress v0.0.0-20180201004757-6a23b12fa88e
 	github.com/onsi/ginkgo v1.10.1
@@ -40,10 +41,13 @@ require (
 	github.com/stretchr/testify v1.4.0
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5 // indirect
 	go.etcd.io/etcd v0.0.0-20191004122535-555eb1951f2e
-	go.uber.org/zap v1.12.0
+	go.uber.org/zap v1.13.0
 	golang.org/x/crypto v0.0.0-20190611184440-5c40567a22f8
+	golang.org/x/net v0.0.0-20191021144547-ec77196f6094 // indirect
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
+	golang.org/x/time v0.0.0-20180412165947-fbb02b2291d2
 	gopkg.in/ini.v1 v1.46.0 // indirect
+	gopkg.in/yaml.v2 v2.2.4 // indirect
 	k8s.io/api v0.0.0-20191016225839-816a9b7df678
 	k8s.io/apimachinery v0.0.0-20191020214737-6c8691705fc5
 	k8s.io/client-go v11.0.0+incompatible

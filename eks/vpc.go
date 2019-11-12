@@ -1,321 +1,644 @@
 package eks
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
 	"strings"
 	"time"
 
+	awsapicfn "github.com/aws/aws-k8s-tester/pkg/awsapi/cloudformation"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/ec2"
-	humanize "github.com/dustin/go-humanize"
 	"go.uber.org/zap"
 )
 
-func (md *embedded) createVPC() error {
-	if md.cfg.CFStackVPCName == "" {
-		return errors.New("cannot create empty VPC stack")
+// TemplateVPC is the CloudFormation template for EKS VPC.
+const TemplateVPC = `
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Amazon EKS VPC'
+
+Parameters:
+
+  VPCCIDR:
+    Description: IP range (CIDR notation) for VPC, must be a valid private (RFC 1918) CIDR range (from 192.168.0.0 to 192.168.255.255)
+    Type: String
+    Default: 192.168.0.0/16
+    AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+
+  PrivateSubnetCIDR1:
+    Description: CIDR block for subnet 1 within the VPC (from 192.168.64.0 to 192.168.127.255)
+    Type: String
+    Default: 192.168.64.0/18
+    AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+
+  PrivateSubnetCIDR2:
+    Description: CIDR block for subnet 2 within the VPC (from 192.168.128.0 to 192.168.191.255)
+    Type: String
+    Default: 192.168.128.0/18
+    AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+
+  PrivateSubnetCIDR3:
+    Description: CIDR block for subnet 3 within the VPC (from 192.168.192.0 to 192.168.255.255)
+    Type: String
+    Default: 192.168.192.0/18
+    AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+
+Conditions:
+
+  Has2Azs:
+    Fn::Or:
+      - Fn::Equals:
+        - {Ref: 'AWS::Region'}
+        - ap-south-1
+      - Fn::Equals:
+        - {Ref: 'AWS::Region'}
+        - ap-northeast-2
+      - Fn::Equals:
+        - {Ref: 'AWS::Region'}
+        - ca-central-1
+      - Fn::Equals:
+        - {Ref: 'AWS::Region'}
+        - cn-north-1
+      - Fn::Equals:
+        - {Ref: 'AWS::Region'}
+        - sa-east-1
+      - Fn::Equals:
+        - {Ref: 'AWS::Region'}
+        - us-west-1
+
+  HasMoreThan2Azs:
+    Fn::Not:
+      - Condition: Has2Azs
+
+Resources:
+
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VPCCIDR
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+      - Key: Name
+        Value: !Sub '${AWS::StackName}-VPC'
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+      - Key: Name
+        Value: !Sub '${AWS::StackName}-InternetGateway'
+
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    DependsOn:
+    - VPC
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    DependsOn:
+    - VPC
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: !Sub '${AWS::StackName}-PublicRouteTable'
+      - Key: Network
+        Value: Public
+
+  DefaultPublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn:
+    - VPC
+    - VPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    DependsOn:
+    - VPC
+    - VPCGatewayAttachment
+    Metadata:
+      Comment: Private Subnet 1, https://docs.aws.amazon.com/eks/latest/userguide/alb-ingress.html
+    Properties:
+      AvailabilityZone: !Select [ 0, !GetAZs ]
+      CidrBlock: !Ref PrivateSubnetCIDR1
+      MapPublicIpOnLaunch: false
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: !Sub '${AWS::StackName}-PrivateSubnet1'
+      - Key: kubernetes.io/role/elb
+        Value: 1
+      - Key: kubernetes.io/role/internal-elb
+        Value: 1
+
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    DependsOn:
+    - VPC
+    - VPCGatewayAttachment
+    Metadata:
+      Comment: Private Subnet 2, https://docs.aws.amazon.com/eks/latest/userguide/alb-ingress.html
+    Properties:
+      AvailabilityZone: !Select [ 1, !GetAZs ]
+      CidrBlock: !Ref PrivateSubnetCIDR2
+      MapPublicIpOnLaunch: false
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: !Sub '${AWS::StackName}-PrivateSubnet2'
+      - Key: kubernetes.io/role/elb
+        Value: 1
+      - Key: kubernetes.io/role/internal-elb
+        Value: 1
+
+  PrivateSubnet3:
+    Type: AWS::EC2::Subnet
+    Condition: HasMoreThan2Azs
+    DependsOn:
+    - VPC
+    - VPCGatewayAttachment
+    Metadata:
+      Comment: Private Subnet 3, https://docs.aws.amazon.com/eks/latest/userguide/alb-ingress.html
+    Properties:
+      AvailabilityZone:
+        Fn::Select:
+        - '2'
+        - Fn::GetAZs:
+            Ref: AWS::Region
+      CidrBlock: !Ref PrivateSubnetCIDR3
+      MapPublicIpOnLaunch: false
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: !Sub '${AWS::StackName}-PrivateSubnet3'
+      - Key: kubernetes.io/role/elb
+        Value: 1
+      - Key: kubernetes.io/role/internal-elb
+        Value: 1
+
+  PrivateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    DependsOn:
+    - VPC
+    - VPCGatewayAttachment
+    - PrivateSubnet1
+    Properties:
+      SubnetId: !Ref PrivateSubnet1
+      RouteTableId: !Ref PublicRouteTable
+
+  PrivateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    DependsOn:
+    - VPC
+    - VPCGatewayAttachment
+    - PrivateSubnet2
+    Properties:
+      SubnetId: !Ref PrivateSubnet2
+      RouteTableId: !Ref PublicRouteTable
+
+  PrivateSubnet3RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Condition: HasMoreThan2Azs
+    DependsOn:
+    - VPC
+    - VPCGatewayAttachment
+    - PrivateSubnet3
+    Properties:
+      SubnetId: !Ref PrivateSubnet3
+      RouteTableId: !Ref PublicRouteTable
+
+  ControlPlaneSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    DependsOn:
+    - VPC
+    - VPCGatewayAttachment
+    Properties:
+      GroupDescription: Cluster communication with worker nodes
+      VpcId: !Ref VPC
+
+Outputs:
+
+  VPCID:
+    Description: VPC ID
+    Value: !Ref VPC
+
+  PrivateSubnetIDs:
+    Description: All private subnet IDs in the VPC
+    Value:
+      Fn::If:
+      - HasMoreThan2Azs
+      - !Join [ ",", [ !Ref PrivateSubnet1, !Ref PrivateSubnet2, !Ref PrivateSubnet3 ] ]
+      - !Join [ ",", [ !Ref PrivateSubnet1, !Ref PrivateSubnet2 ] ]
+
+  ControlPlaneSecurityGroupID:
+    Description: Security group ID for the cluster control plane communication with worker nodes
+    Value: !Ref ControlPlaneSecurityGroup
+
+`
+
+func (ts *Tester) createVPC() error {
+	if len(ts.cfg.Parameters.PrivateSubnetIDs) != 0 ||
+		ts.cfg.Parameters.ControlPlaneSecurityGroupID != "" ||
+		ts.cfg.Status.VPCCFNStackID != "" ||
+		ts.cfg.Status.VPCID != "" ||
+		len(ts.cfg.Status.PrivateSubnetIDs) != 0 ||
+		ts.cfg.Status.ControlPlaneSecurityGroupID != "" {
+		ts.lg.Info("non-empty VPC given; no need to create a new one")
+		return nil
+	}
+
+	// VPC attributes are empty, create a new VPC
+	// otherwise, use the existing one
+	ts.lg.Info("creating a new VPC")
+	stackInput := &cloudformation.CreateStackInput{
+		StackName:    aws.String(ts.cfg.Name + "-vpc"),
+		Capabilities: aws.StringSlice([]string{"CAPABILITY_IAM"}),
+		OnFailure:    aws.String("DELETE"),
+		TemplateBody: aws.String(TemplateVPC),
+		Tags: awsapicfn.NewTags(map[string]string{
+			"Kind": "aws-k8s-tester",
+			"Name": ts.cfg.Name,
+		}),
+		Parameters: []*cloudformation.Parameter{},
+	}
+	if ts.cfg.Parameters.VPCCIDR != "" {
+		stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
+			ParameterKey:   aws.String("VPCCIDR"),
+			ParameterValue: aws.String(ts.cfg.Parameters.VPCCIDR),
+		})
+	}
+	if ts.cfg.Parameters.PrivateSubnetCIDR1 != "" {
+		stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
+			ParameterKey:   aws.String("PrivateSubnetCIDR1"),
+			ParameterValue: aws.String(ts.cfg.Parameters.PrivateSubnetCIDR1),
+		})
+	}
+	if ts.cfg.Parameters.PrivateSubnetCIDR2 != "" {
+		stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
+			ParameterKey:   aws.String("PrivateSubnetCIDR2"),
+			ParameterValue: aws.String(ts.cfg.Parameters.PrivateSubnetCIDR2),
+		})
+	}
+	if ts.cfg.Parameters.PrivateSubnetCIDR3 != "" {
+		stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
+			ParameterKey:   aws.String("PrivateSubnetCIDR3"),
+			ParameterValue: aws.String(ts.cfg.Parameters.PrivateSubnetCIDR3),
+		})
+	}
+	stackOutput, err := ts.cfnAPI.CreateStack(stackInput)
+	if err != nil {
+		return err
+	}
+	ts.cfg.Status.VPCCFNStackID = aws.StringValue(stackOutput.StackId)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
+	ch := awsapicfn.Poll(
+		ctx,
+		ts.stopCreationCh,
+		ts.interruptSig,
+		ts.lg,
+		ts.cfnAPI,
+		ts.cfg.Status.VPCCFNStackID,
+		cloudformation.ResourceStatusCreateComplete,
+		time.Minute+30*time.Second,
+		20*time.Second,
+	)
+	var st awsapicfn.StackStatus
+	for st = range ch {
+		select {
+		case <-ts.stopCreationCh:
+			cancel()
+			return errors.New("aborted")
+		default:
+		}
+		if st.Error != nil {
+			cancel()
+			ts.cfg.Status.ClusterStatus = fmt.Sprintf("failed to create VPC (%v)", st.Error)
+			ts.cfg.Sync()
+			ts.lg.Error("polling errror", zap.Error(st.Error))
+		}
+	}
+	cancel()
+	if st.Error != nil {
+		return st.Error
+	}
+	// update status after creating a new VPC
+	for _, o := range st.Stack.Outputs {
+		switch k := aws.StringValue(o.OutputKey); k {
+		case "VPCID":
+			ts.cfg.Status.VPCID = aws.StringValue(o.OutputValue)
+		case "PrivateSubnetIDs":
+			ts.cfg.Status.PrivateSubnetIDs = strings.Split(aws.StringValue(o.OutputValue), ",")
+		case "ControlPlaneSecurityGroupID":
+			ts.cfg.Status.ControlPlaneSecurityGroupID = aws.StringValue(o.OutputValue)
+		default:
+			return fmt.Errorf("unexpected OutputKey %q from %q", k, ts.cfg.Status.VPCCFNStackID)
+		}
+	}
+	ts.lg.Info("created a VPC",
+		zap.String("vpc-cfn-stack-id", ts.cfg.Status.VPCCFNStackID),
+		zap.String("vpc-id", ts.cfg.Status.VPCID),
+		zap.Strings("private-subnet-ids", ts.cfg.Status.PrivateSubnetIDs),
+		zap.String("control-plane-security-group-id", ts.cfg.Status.ControlPlaneSecurityGroupID),
+	)
+	return ts.cfg.Sync()
+}
+
+func (ts *Tester) deleteVPC() error {
+	if ts.cfg.Status.VPCCFNStackID == "" {
+		ts.lg.Info("empty VPC CFN stack ID; no need to delete VPC")
+		return nil
 	}
 
 	now := time.Now().UTC()
-	h, _ := os.Hostname()
-	v := vpcStack{
-		Description:       md.cfg.ClusterName + "-vpc-stack",
-		Tag:               md.cfg.Tag,
-		TagValue:          md.cfg.ClusterName,
-		Hostname:          h,
-		SecurityGroupName: md.cfg.ClusterName + "-security-group",
-		Creation:          time.Now().UTC().String(),
-	}
-	s, err := createVPCTemplate(v)
+
+	ts.lg.Info("deleting VPC CFN stack", zap.String("vpc-cfn-stack-id", ts.cfg.Status.VPCCFNStackID))
+	_, err := ts.cfnAPI.DeleteStack(&cloudformation.DeleteStackInput{
+		StackName: aws.String(ts.cfg.Status.VPCCFNStackID),
+	})
 	if err != nil {
 		return err
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
+	ch := awsapicfn.Poll(
+		ctx,
+		make(chan struct{}),  // do not exit on stop
+		make(chan os.Signal), // do not exit on stop
+		ts.lg,
+		ts.cfnAPI,
+		ts.cfg.Status.VPCCFNStackID,
+		cloudformation.ResourceStatusDeleteComplete,
+		time.Minute+30*time.Second,
+		20*time.Second,
+	)
 
-	cfnInput := &cloudformation.CreateStackInput{
-		StackName: aws.String(md.cfg.CFStackVPCName),
-		Tags: []*cloudformation.Tag{
-			{Key: aws.String("Kind"), Value: aws.String("aws-k8s-tester")},
-			{Key: aws.String("Creation"), Value: aws.String(time.Now().UTC().String())},
-			{
-				Key:   aws.String("Name"),
-				Value: aws.String(md.cfg.ClusterName),
-			},
-			{
-				Key:   aws.String("HOSTNAME"),
-				Value: aws.String(h),
-			},
-		},
-
-		// TemplateURL: aws.String("https://amazon-eks.s3-us-west-2.amazonaws.com/cloudformation/2018-08-30/amazon-eks-vpc-sample.yaml"),
-		TemplateBody: aws.String(s),
-	}
-	if md.cfg.CFStackVPCParameterVPCBlock != "" &&
-		md.cfg.CFStackVPCParameterSubnet01Block != "" &&
-		md.cfg.CFStackVPCParameterSubnet02Block != "" &&
-		md.cfg.CFStackVPCParameterSubnet03Block != "" {
-		cfnInput.Parameters = []*cloudformation.Parameter{
-			{
-				ParameterKey:   aws.String("VpcBlock"),
-				ParameterValue: aws.String(md.cfg.CFStackVPCParameterVPCBlock),
-			},
-			{
-				ParameterKey:   aws.String("Subnet01Block"),
-				ParameterValue: aws.String(md.cfg.CFStackVPCParameterSubnet01Block),
-			},
-			{
-				ParameterKey:   aws.String("Subnet02Block"),
-				ParameterValue: aws.String(md.cfg.CFStackVPCParameterSubnet02Block),
-			},
-			{
-				ParameterKey:   aws.String("Subnet03Block"),
-				ParameterValue: aws.String(md.cfg.CFStackVPCParameterSubnet03Block),
-			},
-		}
-	}
-	_, err = md.cfn.CreateStack(cfnInput)
-	if err != nil {
-		return err
-	}
-	md.cfg.ClusterState.StatusVPCCreated = true
-	md.cfg.Sync()
-
-	// usually take 1-minute
-	md.lg.Info("waiting for 1-minute")
-	select {
-	case <-md.stopc:
-		md.lg.Info("interrupted VPC stack creation")
-		return nil
-	case <-time.After(time.Minute):
-	}
-
-	retryStart := time.Now().UTC()
-	for time.Now().UTC().Sub(retryStart) < 5*time.Minute {
-		select {
-		case <-md.stopc:
-			return nil
-		default:
+	deletedResources := make(map[string]struct{})
+	var st awsapicfn.StackStatus
+	for st = range ch {
+		if st.Error != nil {
+			cancel()
+			ts.cfg.Status.ClusterStatus = fmt.Sprintf("failed to delete VPC (%v)", st.Error)
+			ts.cfg.Sync()
+			ts.lg.Error("polling errror", zap.Error(st.Error))
 		}
 
-		var do *cloudformation.DescribeStacksOutput
-		do, err = md.cfn.DescribeStacks(&cloudformation.DescribeStacksInput{
-			StackName: aws.String(md.cfg.CFStackVPCName),
-		})
-		if err != nil {
-			md.lg.Warn("failed to describe VPC stack",
-				zap.String("stack-name", md.cfg.CFStackVPCName),
-				zap.Error(err),
+		if time.Now().UTC().Sub(now) > 3*time.Minute {
+			ts.lg.Warn("deleting VPC for longer than 3 minutes; initiating force deletion",
+				zap.String("vpc-id", ts.cfg.Status.VPCID),
 			)
-			md.cfg.CFStackVPCStatus = err.Error()
-			time.Sleep(10 * time.Second)
-			continue
-		}
-
-		if len(do.Stacks) != 1 {
-			return fmt.Errorf("%q expects 1 Stack, got %v", md.cfg.CFStackVPCName, do.Stacks)
-		}
-
-		md.cfg.CFStackVPCStatus = *do.Stacks[0].StackStatus
-		if isCFCreateFailed(md.cfg.CFStackVPCStatus) {
-			return fmt.Errorf("failed to create %q (%q)", md.cfg.CFStackVPCName, md.cfg.CFStackVPCStatus)
-		}
-
-		for _, op := range do.Stacks[0].Outputs {
-			if *op.OutputKey == "VpcId" {
-				md.cfg.VPCID = *op.OutputValue
+			for _, subnetID := range ts.cfg.Status.PrivateSubnetIDs {
+				if _, ok := deletedResources[subnetID]; ok {
+					continue
+				}
+				_, serr := ts.ec2API.DeleteSubnet(&ec2.DeleteSubnetInput{
+					SubnetId: aws.String(subnetID),
+				})
+				ts.lg.Warn("tried force-delete subnet",
+					zap.String("subnet-id", subnetID),
+					zap.Error(serr),
+				)
+				if serr != nil && strings.Contains(serr.Error(), " does not exist") {
+					deletedResources[subnetID] = struct{}{}
+				}
+			}
+			if _, ok := deletedResources[ts.cfg.Status.VPCID]; ok {
 				continue
 			}
-			if *op.OutputKey == "SubnetIds" {
-				vv := *op.OutputValue
-				md.cfg.SubnetIDs = strings.Split(vv, ",")
+
+			// TODO: deleting VPC doesn't work because of dependencies...
+			// e.g. DependencyViolation: The vpc 'vpc-0127f6d18bd98836a' has dependencies and cannot be deleted
+			ts.lg.Warn("cleaning VPC dependencies", zap.String("vpc-id", ts.cfg.Status.VPCID))
+
+			// find all ENIs for VPC
+			enis := make([]*ec2.NetworkInterface, 0)
+			if err := ts.ec2API.DescribeNetworkInterfacesPages(
+				&ec2.DescribeNetworkInterfacesInput{
+					Filters: []*ec2.Filter{
+						{
+							Name:   aws.String("vpc-id"),
+							Values: aws.StringSlice([]string{ts.cfg.Status.VPCID}),
+						},
+					},
+				},
+				func(out *ec2.DescribeNetworkInterfacesOutput, lastPage bool) bool {
+					for _, eni := range out.NetworkInterfaces {
+						enis = append(enis, eni)
+						ts.lg.Info("found ENI", zap.String("eni-id", aws.StringValue(eni.NetworkInterfaceId)))
+					}
+					return true
+				},
+			); err != nil {
+				ts.lg.Error("failed to describe ENIs", zap.Error(err))
 				continue
 			}
-			if *op.OutputKey == "SecurityGroups" {
-				md.cfg.SecurityGroupID = *op.OutputValue
-			}
-		}
 
-		if md.cfg.CFStackVPCStatus == "CREATE_COMPLETE" {
-			_, err = md.ec2.CreateTags(&ec2.CreateTagsInput{
-				Resources: aws.StringSlice([]string{md.cfg.SecurityGroupID}),
-				Tags: []*ec2.Tag{
-					{Key: aws.String("Kind"), Value: aws.String("aws-k8s-tester")},
-					{Key: aws.String("Creation"), Value: aws.String(time.Now().UTC().String())},
-					{Key: aws.String("Name"), Value: aws.String(md.cfg.ClusterName)},
+			// detacth and delete ENIs
+			for _, eni := range enis {
+				ts.lg.Warn("detaching ENI", zap.String("eni-id", aws.StringValue(eni.NetworkInterfaceId)))
+				out, err := ts.ec2API.DescribeNetworkInterfaces(
+					&ec2.DescribeNetworkInterfacesInput{
+						NetworkInterfaceIds: []*string{eni.NetworkInterfaceId},
+					},
+				)
+				if err != nil {
+					ts.lg.Error("failed to describe ENI", zap.Error(err))
+					continue
+				}
+				for i := 0; i < 5; i++ {
+					_, err = ts.ec2API.DetachNetworkInterface(&ec2.DetachNetworkInterfaceInput{
+						AttachmentId: out.NetworkInterfaces[0].Attachment.AttachmentId,
+						Force:        aws.Bool(true),
+					})
+					if err == nil {
+						ts.lg.Info("successfully detached ENI")
+						break
+					}
+					ts.lg.Error("failed to detach ENI", zap.Error(err))
+					time.Sleep(5 * time.Second)
+				}
+
+				ts.lg.Warn("deleting ENI", zap.String("eni-id", aws.StringValue(eni.NetworkInterfaceId)))
+				_, err = ts.ec2API.DeleteNetworkInterface(&ec2.DeleteNetworkInterfaceInput{
+					NetworkInterfaceId: eni.NetworkInterfaceId,
+				})
+				if err != nil {
+					ts.lg.Error("failed to delete ENI", zap.Error(err))
+					continue
+				}
+				retryStart := time.Now().UTC()
+				for time.Now().UTC().Sub(retryStart) < 5*time.Minute {
+					_, err = ts.ec2API.DescribeNetworkInterfaces(&ec2.DescribeNetworkInterfacesInput{
+						NetworkInterfaceIds: []*string{eni.NetworkInterfaceId},
+					})
+					if err != nil {
+						if awsErr, ok := err.(awserr.Error); ok {
+							if strings.Contains(awsErr.Code(), "InvalidNetworkInterfaceID.NotFound") {
+								break
+							}
+						}
+					}
+					ts.lg.Error("still deleting ENI", zap.Error(err))
+					time.Sleep(5 * time.Second)
+				}
+			}
+
+			// clean up security groups for VPC
+			sout, err := ts.ec2API.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
+				Filters: []*ec2.Filter{
+					&ec2.Filter{
+						Name:   aws.String("vpc-id"),
+						Values: []*string{aws.String(ts.cfg.Status.VPCID)},
+					},
 				},
 			})
 			if err != nil {
-				md.lg.Warn("failed to tag security group", zap.String("group-id", md.cfg.SecurityGroupID), zap.Error(err))
+				ts.lg.Error("failed to describe security groups", zap.Error(err))
+				continue
 			}
-			break
-		}
-
-		md.lg.Info("creating VPC stack",
-			zap.String("stack-name", md.cfg.CFStackVPCName),
-			zap.String("stack-status", md.cfg.CFStackVPCStatus),
-			zap.String("vpc-id", md.cfg.VPCID),
-			zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
-		)
-
-		time.Sleep(10 * time.Second)
-	}
-	if err != nil {
-		md.lg.Info("failed to create VPC stack",
-			zap.String("stack-name", md.cfg.CFStackVPCName),
-			zap.String("stack-status", md.cfg.CFStackVPCStatus),
-			zap.String("vpc-id", md.cfg.VPCID),
-			zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
-			zap.Error(err),
-		)
-		return err
-	}
-
-	md.lg.Info("created VPC stack",
-		zap.String("stack-name", md.cfg.CFStackVPCName),
-		zap.String("stack-status", md.cfg.CFStackVPCStatus),
-		zap.String("vpc-id", md.cfg.VPCID),
-		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
-	)
-	return md.cfg.Sync()
-}
-
-func (md *embedded) deleteVPC() error {
-	if !md.cfg.ClusterState.StatusVPCCreated {
-		return nil
-	}
-	defer func() {
-		md.cfg.ClusterState.StatusVPCCreated = false
-		md.cfg.Sync()
-	}()
-
-	if md.cfg.CFStackVPCName == "" {
-		return errors.New("cannot delete empty VPC stack")
-	}
-
-	_, err := md.cfn.DeleteStack(&cloudformation.DeleteStackInput{
-		StackName: aws.String(md.cfg.CFStackVPCName),
-	})
-	if err != nil {
-		md.cfg.CFStackVPCStatus = err.Error()
-		return err
-	}
-
-	// usually take 1-minute
-	md.lg.Info("waiting for 1-minute")
-	time.Sleep(time.Minute)
-
-	now := time.Now().UTC()
-	for time.Now().UTC().Sub(now) < 5*time.Minute {
-		var do *cloudformation.DescribeStacksOutput
-		do, err = md.cfn.DescribeStacks(&cloudformation.DescribeStacksInput{
-			StackName: aws.String(md.cfg.CFStackVPCName),
-		})
-		if err == nil {
-			md.cfg.CFStackVPCStatus = *do.Stacks[0].StackStatus
-			md.lg.Info("deleting VPC stack",
-				zap.String("stack-status", md.cfg.CFStackVPCStatus),
-				zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
-			)
-			time.Sleep(10 * time.Second)
-
-			if time.Now().UTC().Sub(now) > 3*time.Minute {
-				// TODO: this doesn't work because of dependencies...
-				// e.g. DependencyViolation: The vpc 'vpc-0127f6d18bd98836a' has dependencies and cannot be deleted
-				// had to manually delete from console to delete VPN connection
-				cs, cerr := md.ec2.DescribeVpnConnections(&ec2.DescribeVpnConnectionsInput{})
-				if cerr == nil {
-					ids := make([]string, 0, len(cs.VpnConnections))
-					for _, cv := range cs.VpnConnections {
-						ids = append(ids, *cv.VpnConnectionId)
-					}
-					md.lg.Info("current VPC connections", zap.Int("number", len(ids)))
-				}
-				_, verr := md.ec2.DeleteVpc(&ec2.DeleteVpcInput{
-					VpcId: aws.String(md.cfg.VPCID),
-				})
-				md.lg.Info(
-					"manually tried to delete VPC",
-					zap.String("vpc-id", md.cfg.VPCID),
-					zap.Error(verr),
+			for _, sg := range sout.SecurityGroups {
+				sgID, sgGroupName := aws.StringValue(sg.GroupId), aws.StringValue(sg.GroupName)
+				ts.lg.Info("cleaning security group",
+					zap.String("security-group-id", sgID),
+					zap.String("security-group-name", sgGroupName),
 				)
-				if verr != nil && strings.Contains(verr.Error(), "does not exist") {
-					err = nil
-					md.cfg.CFStackVPCStatus = "DELETE_COMPLETE"
-					break
+
+				for _, ipPerm := range sg.IpPermissions {
+					ts.lg.Info("revoking ingress", zap.String("ip-perm", ipPerm.String()))
+					_, err = ts.ec2API.RevokeSecurityGroupIngress(&ec2.RevokeSecurityGroupIngressInput{
+						GroupId:       aws.String(sgID),
+						IpPermissions: []*ec2.IpPermission{ipPerm},
+					})
+					ts.lg.Info("tried to revoke ingress", zap.Error(err))
+
+					if len(ipPerm.UserIdGroupPairs) != 1 {
+						continue
+					}
+					sgIDEgress := aws.StringValue(ipPerm.UserIdGroupPairs[0].GroupId)
+					sgNameEgress := aws.StringValue(ipPerm.UserIdGroupPairs[0].GroupName)
+					sgEgress, err := ts.ec2API.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
+						GroupIds: aws.StringSlice([]string{sgIDEgress}),
+					})
+					if err != nil {
+						ts.lg.Error("failed to describe egress security group", zap.Error(err))
+						continue
+					}
+					if len(sgEgress.SecurityGroups) != 1 {
+						ts.lg.Warn("expected only 1 security group",
+							zap.String("egress-security-group-id", sgIDEgress),
+							zap.String("egress-security-group-name", sgNameEgress),
+							zap.Int("total", len(sgEgress.SecurityGroups)),
+						)
+						continue
+					}
+					for _, ipPermEg := range sgEgress.SecurityGroups[0].IpPermissionsEgress {
+						ts.lg.Info("revoking egress", zap.String("ip-perm", ipPermEg.String()))
+						_, err = ts.ec2API.RevokeSecurityGroupEgress(&ec2.RevokeSecurityGroupEgressInput{
+							GroupId:       aws.String(sgIDEgress),
+							IpPermissions: []*ec2.IpPermission{ipPermEg},
+						})
+						ts.lg.Info("tried to revoke egress", zap.Error(err))
+					}
+				}
+
+				for _, ipPerm := range sg.IpPermissionsEgress {
+					ts.lg.Info("revoking egress", zap.String("ip-perm", ipPerm.String()))
+					_, err = ts.ec2API.RevokeSecurityGroupEgress(&ec2.RevokeSecurityGroupEgressInput{
+						GroupId:       aws.String(sgID),
+						IpPermissions: []*ec2.IpPermission{ipPerm},
+					})
+					ts.lg.Info("tried to revoke egress", zap.Error(err))
+
+					if len(ipPerm.UserIdGroupPairs) != 1 {
+						continue
+					}
+					sgIDIngress := aws.StringValue(ipPerm.UserIdGroupPairs[0].GroupId)
+					sgNameIngress := aws.StringValue(ipPerm.UserIdGroupPairs[0].GroupName)
+					sgIngress, err := ts.ec2API.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
+						GroupIds: aws.StringSlice([]string{sgIDIngress}),
+					})
+					if err != nil {
+						ts.lg.Error("failed to describe egress security group", zap.Error(err))
+						continue
+					}
+					if len(sgIngress.SecurityGroups) != 1 {
+						ts.lg.Warn("expected only 1 security group",
+							zap.String("ingress-security-group-id", sgIDIngress),
+							zap.String("ingress-security-group-name", sgNameIngress),
+							zap.Int("total", len(sgIngress.SecurityGroups)),
+						)
+						continue
+					}
+					for _, ipPermEg := range sgIngress.SecurityGroups[0].IpPermissionsEgress {
+						ts.lg.Info("revoking ingress", zap.String("ip-perm", ipPermEg.String()))
+						_, err = ts.ec2API.RevokeSecurityGroupIngress(&ec2.RevokeSecurityGroupIngressInput{
+							GroupId:       aws.String(sgIDIngress),
+							IpPermissions: []*ec2.IpPermission{ipPermEg},
+						})
+						ts.lg.Info("tried to revoke ingress", zap.Error(err))
+					}
+				}
+
+				ts.lg.Info("deleting security group",
+					zap.String("security-group-id", sgID),
+					zap.String("security-group-name", sgGroupName),
+				)
+				_, err = ts.ec2API.DeleteSecurityGroup(&ec2.DeleteSecurityGroupInput{
+					GroupId: sg.GroupId,
+				})
+				if err != nil {
+					ts.lg.Error("failed to delete security group", zap.Error(err))
+					continue
+				}
+				retryStart := time.Now().UTC()
+				for time.Now().UTC().Sub(retryStart) < 5*time.Minute {
+					_, err = ts.ec2API.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
+						GroupIds: []*string{sg.GroupId},
+					})
+					if err != nil {
+						if awsErr, ok := err.(awserr.Error); ok {
+							if strings.Contains(awsErr.Code(), ".NotFound") {
+								ts.lg.Info("successfully deleted security group",
+									zap.String("security-group-id", sgID),
+									zap.String("security-group-name", sgGroupName),
+								)
+								break
+							}
+						}
+					}
+					ts.lg.Error("still deleting security group", zap.Error(err))
+					time.Sleep(5 * time.Second)
 				}
 			}
-			continue
+
+			_, derr := ts.ec2API.DeleteVpc(&ec2.DeleteVpcInput{VpcId: aws.String(ts.cfg.Status.VPCID)})
+			ts.lg.Warn("force-deleted VPC",
+				zap.String("vpc-id", ts.cfg.Status.VPCID),
+				zap.Error(derr),
+			)
+			if derr != nil && strings.Contains(derr.Error(), " does not exist") {
+				deletedResources[ts.cfg.Status.VPCID] = struct{}{}
+			}
 		}
-
-		if isCFDeletedGoClient(md.cfg.CFStackVPCName, err) {
-			err = nil
-			md.cfg.CFStackVPCStatus = "DELETE_COMPLETE"
-			break
-		}
-		md.cfg.CFStackVPCStatus = err.Error()
-
-		md.lg.Warn("failed to describe VPC stack", zap.String("stack-name", md.cfg.CFStackVPCName), zap.Error(err))
-		time.Sleep(10 * time.Second)
 	}
-
-	if err != nil {
-		md.lg.Info("failed to delete VPC stack",
-			zap.String("stack-name", md.cfg.CFStackVPCName),
-			zap.String("stack-status", md.cfg.CFStackVPCStatus),
-			zap.String("vpc-id", md.cfg.VPCID),
-			zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
-			zap.Error(err),
-		)
-		return err
+	cancel()
+	if st.Error != nil {
+		return st.Error
 	}
-
-	md.lg.Info("deleted VPC stack",
-		zap.String("stack-name", md.cfg.CFStackVPCName),
-		zap.String("stack-status", md.cfg.CFStackVPCStatus),
-		zap.String("vpc-id", md.cfg.VPCID),
-		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
+	ts.lg.Info("deleted a VPC",
+		zap.String("vpc-cfn-stack-id", ts.cfg.Status.VPCCFNStackID),
+		zap.String("vpc-id", ts.cfg.Status.VPCID),
 	)
-	return md.cfg.Sync()
-}
-
-// isCFCreateFailed return true if cloudformation status indicates its creation failure.
-func isCFCreateFailed(status string) bool {
-	/*
-		https://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_Stack.html
-
-		CREATE_IN_PROGRESS
-		CREATE_FAILED
-		CREATE_COMPLETE
-		ROLLBACK_IN_PROGRESS
-		ROLLBACK_FAILED
-		ROLLBACK_COMPLETE
-		DELETE_IN_PROGRESS
-		DELETE_FAILED
-		DELETE_COMPLETE
-		UPDATE_IN_PROGRESS
-		UPDATE_COMPLETE_CLEANUP_IN_PROGRESS
-		UPDATE_COMPLETE
-		UPDATE_ROLLBACK_IN_PROGRESS
-		UPDATE_ROLLBACK_FAILED
-		UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS
-		UPDATE_ROLLBACK_COMPLETE
-		REVIEW_IN_PROGRESS
-	*/
-	if strings.HasPrefix(status, "REVIEW_") || strings.HasPrefix(status, "CREATE_") {
-		return false
-	}
-	return true
-}
-
-// isCFDeletedGoClient returns true if cloudformation errror indicates
-// that the stack has already been deleted.
-func isCFDeletedGoClient(clusterName string, err error) bool {
-	if err == nil {
-		return false
-	}
-	// ValidationError: Stack with id AWSTESTER-155460CAAC98A17003-CF-STACK-VPC does not exist\n\tstatus code: 400, request id: bf45410b-b863-11e8-9550-914acc220b7c
-	notExistErr := fmt.Sprintf(`ValidationError: Stack with id %s does not exist`, clusterName)
-	return strings.Contains(err.Error(), notExistErr)
+	return ts.cfg.Sync()
 }

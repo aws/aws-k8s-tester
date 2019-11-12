@@ -17,7 +17,7 @@ import (
 
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
-	"github.com/blang/semver"
+	semver "github.com/gyuho/semver/v3"
 	"sigs.k8s.io/yaml"
 )
 
