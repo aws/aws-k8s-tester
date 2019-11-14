@@ -17,8 +17,8 @@ import (
 )
 
 /*
-go test -v -run TestSample
-RUN_AWS_TESTS=1 go test -v -run TestSample
+go test -v -timeout 2h -run TestSample
+RUN_AWS_TESTS=1 go test -v -timeout 2h -run TestSample
 */
 func TestSample(t *testing.T) {
 	cfg := eksconfig.NewDefault()
@@ -70,7 +70,11 @@ func TestSample(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	ch := awsapi_cfn.Wait(ctx, lg, svc, stackID, svccfn.ResourceStatusCreateComplete)
 	for st := range ch {
-		fmt.Println(st.Stack.GoString(), st.Error)
+		if st.Stack != nil {
+			fmt.Println(st.Stack.GoString(), st.Error)
+		} else {
+			fmt.Println(st.Stack, st.Error)
+		}
 	}
 	cancel()
 
@@ -83,7 +87,11 @@ func TestSample(t *testing.T) {
 	ctx, cancel = context.WithTimeout(context.Background(), 10*time.Minute)
 	ch = awsapi_cfn.Wait(ctx, lg, svc, stackID, svccfn.ResourceStatusDeleteComplete)
 	for st := range ch {
-		fmt.Println(st.Stack.GoString(), st.Error)
+		if st.Stack != nil {
+			fmt.Println(st.Stack.GoString(), st.Error)
+		} else {
+			fmt.Println(st.Stack, st.Error)
+		}
 	}
 	cancel()
 }
