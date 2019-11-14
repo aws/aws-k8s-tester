@@ -14,6 +14,7 @@ import (
 
 	"github.com/aws/aws-k8s-tester/ec2config"
 	internalec2 "github.com/aws/aws-k8s-tester/internal/ec2"
+	awsapi_cfn "github.com/aws/aws-k8s-tester/pkg/awsapi/cloudformation"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/pkg/httputil"
 	"github.com/aws/aws-sdk-go/aws"
@@ -166,19 +167,11 @@ func (md *embedded) createWorkerNode() error {
 	}
 
 	now := time.Now().UTC()
-	h, _ := os.Hostname()
 	_, err = md.cfn.CreateStack(&cloudformation.CreateStackInput{
-		StackName: aws.String(md.cfg.ClusterState.CFStackWorkerNodeGroupName),
-		Tags: []*cloudformation.Tag{
-			{Key: aws.String("Kind"), Value: aws.String("aws-k8s-tester")},
-			{Key: aws.String("Creation"), Value: aws.String(time.Now().UTC().String())},
-			{Key: aws.String("Name"), Value: aws.String(md.cfg.ClusterName)},
-			{Key: aws.String("HOSTNAME"), Value: aws.String(h)},
-		},
-
+		StackName:    aws.String(md.cfg.ClusterState.CFStackWorkerNodeGroupName),
+		Tags:         awsapi_cfn.NewTags("aws-k8s-tester", md.cfg.ClusterName),
 		TemplateBody: aws.String(string(body)),
 		Parameters:   params,
-
 		Capabilities: aws.StringSlice([]string{"CAPABILITY_IAM"}),
 	})
 	if err != nil {

@@ -11,10 +11,7 @@ import (
 	"go.uber.org/zap"
 )
 
-/*
-RUN_AWS_TESTS=1 go test -v -run TestEmbedded
-*/
-func TestEmbedded(t *testing.T) {
+func TestS3(t *testing.T) {
 	if os.Getenv("RUN_AWS_TESTS") != "1" {
 		t.Skip()
 	}

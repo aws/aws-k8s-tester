@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	awsapi_cfn "github.com/aws/aws-k8s-tester/pkg/awsapi/cloudformation"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/ec2"
@@ -36,19 +37,7 @@ func (md *embedded) createVPC() error {
 
 	cfnInput := &cloudformation.CreateStackInput{
 		StackName: aws.String(md.cfg.CFStackVPCName),
-		Tags: []*cloudformation.Tag{
-			{Key: aws.String("Kind"), Value: aws.String("aws-k8s-tester")},
-			{Key: aws.String("Creation"), Value: aws.String(time.Now().UTC().String())},
-			{
-				Key:   aws.String("Name"),
-				Value: aws.String(md.cfg.ClusterName),
-			},
-			{
-				Key:   aws.String("HOSTNAME"),
-				Value: aws.String(h),
-			},
-		},
-
+		Tags:      awsapi_cfn.NewTags("aws-k8s-tester", md.cfg.ClusterName),
 		// TemplateURL: aws.String("https://amazon-eks.s3-us-west-2.amazonaws.com/cloudformation/2018-08-30/amazon-eks-vpc-sample.yaml"),
 		TemplateBody: aws.String(s),
 	}

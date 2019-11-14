@@ -35,6 +35,7 @@ require (
 	github.com/onsi/gomega v1.7.0
 	github.com/prometheus/client_golang v1.0.0
 	github.com/prometheus/common v0.4.1
+	github.com/sanathkr/yaml v0.0.0-20170819201035-0056894fa522
 	github.com/smartystreets/goconvey v0.0.0-20190731233626-505e41936337 // indirect
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.5

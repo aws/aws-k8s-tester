@@ -10,7 +10,7 @@ import (
 	"github.com/aws/aws-k8s-tester/eksconfig"
 )
 
-func TestEmbeddedVPCStack(t *testing.T) {
+func TestVPCStack(t *testing.T) {
 	if os.Getenv("RUN_AWS_TESTS") != "1" {
 		t.Skip()
 	}
