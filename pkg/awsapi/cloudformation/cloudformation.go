@@ -159,11 +159,13 @@ func Wait(
 		ticker := time.NewTicker(10 * time.Second)
 		defer ticker.Stop()
 
+		prevStatusReason := ""
 		for ctx.Err() == nil {
 			select {
 			case <-ctx.Done():
 				lg.Warn("wait aborted", zap.Error(ctx.Err()))
 				ch <- StackStatus{Stack: nil, Error: ctx.Err()}
+				close(ch)
 				return
 
 			case <-ticker.C:
@@ -176,6 +178,7 @@ func Wait(
 				if IsStackDeleted(err) {
 					lg.Warn("stack does not exist", zap.Error(ctx.Err()))
 					ch <- StackStatus{Stack: nil, Error: err}
+					close(ch)
 					return
 				}
 
@@ -192,14 +195,26 @@ func Wait(
 
 			stack := output.Stacks[0]
 			status := aws.StringValue(stack.StackStatus)
+			currentStatusReason := aws.StringValue(stack.StackStatusReason)
+			if prevStatusReason == "" {
+				prevStatusReason = currentStatusReason
+			} else if prevStatusReason != "" && currentStatusReason != "" && prevStatusReason != currentStatusReason {
+				prevStatusReason = currentStatusReason
+			}
 
 			lg.Info("described",
 				zap.String("stack-name", aws.StringValue(stack.StackName)),
 				zap.String("stack-id", aws.StringValue(stack.StackId)),
 				zap.String("stack-status", status),
 			)
-			ch <- StackStatus{Stack: stack, Error: nil}
+			if status == svccfn.ResourceStatusDeleteComplete && desiredStackStatus != svccfn.ResourceStatusDeleteComplete {
+				lg.Error("create stack failed")
+				ch <- StackStatus{Stack: stack, Error: fmt.Errorf("stack failed thus deleted (%v)", prevStatusReason)}
+				close(ch)
+				return
+			}
 
+			ch <- StackStatus{Stack: stack, Error: nil}
 			if status == desiredStackStatus {
 				lg.Info("became desired stack status", zap.String("stack-status", status))
 				close(ch)
@@ -209,6 +224,7 @@ func Wait(
 
 		lg.Warn("wait aborted", zap.Error(ctx.Err()))
 		ch <- StackStatus{Stack: nil, Error: ctx.Err()}
+		close(ch)
 		return
 	}()
 
