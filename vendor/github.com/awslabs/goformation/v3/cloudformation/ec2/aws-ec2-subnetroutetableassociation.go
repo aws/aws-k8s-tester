@@ -30,6 +30,19 @@ type SubnetRouteTableAssociation struct {
 
 	// _metadata stores structured data associated with this resource
 	_metadata map[string]interface{}
+
+	// TODO: remove this custom patch
+	_resourceCondition string
+}
+
+// TODO: remove this custom patch
+func (r *SubnetRouteTableAssociation) ResourceCondition() string {
+	return r._resourceCondition
+}
+
+// TODO: remove this custom patch
+func (r *SubnetRouteTableAssociation) SetResourceCondition(condition string) {
+	r._resourceCondition = condition
 }
 
 // AWSCloudFormationType returns the AWS CloudFormation resource type
@@ -78,15 +91,23 @@ func (r *SubnetRouteTableAssociation) SetDeletionPolicy(policy policies.Deletion
 func (r SubnetRouteTableAssociation) MarshalJSON() ([]byte, error) {
 	type Properties SubnetRouteTableAssociation
 	return json.Marshal(&struct {
-		Type           string
-		Properties     Properties
-		DependsOn      []string                `json:"DependsOn,omitempty"`
+		Type       string
+		Properties Properties
+		DependsOn  []string `json:"DependsOn,omitempty"`
+
+		// TODO: remove this custom patch
+		Condition string `json:"Condition,omitempty"`
+
 		Metadata       map[string]interface{}  `json:"Metadata,omitempty"`
 		DeletionPolicy policies.DeletionPolicy `json:"DeletionPolicy,omitempty"`
 	}{
-		Type:           r.AWSCloudFormationType(),
-		Properties:     (Properties)(r),
-		DependsOn:      r._dependsOn,
+		Type:       r.AWSCloudFormationType(),
+		Properties: (Properties)(r),
+		DependsOn:  r._dependsOn,
+
+		// TODO: remove this custom patch
+		Condition: r._resourceCondition,
+
 		Metadata:       r._metadata,
 		DeletionPolicy: r._deletionPolicy,
 	})
@@ -97,9 +118,13 @@ func (r SubnetRouteTableAssociation) MarshalJSON() ([]byte, error) {
 func (r *SubnetRouteTableAssociation) UnmarshalJSON(b []byte) error {
 	type Properties SubnetRouteTableAssociation
 	res := &struct {
-		Type           string
-		Properties     *Properties
-		DependsOn      []string
+		Type       string
+		Properties *Properties
+		DependsOn  []string
+
+		// TODO: remove this custom patch
+		Condition string
+
 		Metadata       map[string]interface{}
 		DeletionPolicy string
 	}{}
@@ -119,6 +144,12 @@ func (r *SubnetRouteTableAssociation) UnmarshalJSON(b []byte) error {
 	if res.DependsOn != nil {
 		r._dependsOn = res.DependsOn
 	}
+
+	// TODO: remove this custom patch
+	if res.Condition != "" {
+		r._resourceCondition = res.Condition
+	}
+
 	if res.Metadata != nil {
 		r._metadata = res.Metadata
 	}
