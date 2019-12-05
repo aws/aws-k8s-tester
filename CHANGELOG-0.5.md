@@ -3,6 +3,22 @@
 <hr>
 
 
+## [v0.5.1](https://github.com/aws/aws-k8s-tester/releases/tag/v0.5.1) (2019-12 TBD)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.0...v0.5.1).
+
+### `aws-k8s-tester`
+
+- Add [`arm64` builds to release](https://github.com/aws/aws-k8s-tester/commit/39a6fcc687a45590b594e285708d9d03287873e5).
+
+### Go
+
+- Compile with [*Go 1.13.5*](https://golang.org/doc/devel/release.html#go1.13).
+
+
+<hr>
+
+
 ## [v0.5.0](https://github.com/aws/aws-k8s-tester/releases/tag/v0.5.0) (2019-12-05)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.4.4...v0.5.0).
