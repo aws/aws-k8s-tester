@@ -14,9 +14,6 @@ import (
 	"github.com/aws/aws-k8s-tester/internal/ssh"
 )
 
-/*
-RUN_AWS_TESTS=1 go test -v -timeout 2h -run TestEC2
-*/
 func TestEC2(t *testing.T) {
 	if os.Getenv("RUN_AWS_TESTS") != "1" {
 		t.Skip()
@@ -39,7 +36,6 @@ func TestEC2(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer ec.Terminate()
-
 
 	fmt.Println(cfg.SSHCommands())
 

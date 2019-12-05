@@ -6,7 +6,6 @@ import (
 
 	"github.com/aws/aws-k8s-tester/eks"
 	"github.com/aws/aws-k8s-tester/eksconfig"
-	"github.com/aws/aws-k8s-tester/ekstester"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/spf13/cobra"
 )
@@ -27,6 +26,7 @@ func newCreateConfig() *cobra.Command {
 	return &cobra.Command{
 		Use:   "config",
 		Short: "Writes an aws-k8s-tester eks configuration with default values",
+		Long:  "Configuration values are overwritten by environment variables.",
 		Run:   configFunc,
 	}
 }
@@ -39,11 +39,21 @@ func configFunc(cmd *cobra.Command, args []string) {
 	cfg := eksconfig.NewDefault()
 	cfg.ConfigPath = path
 	cfg.Sync()
+
+	fmt.Println("overwriting config file from environment variables")
 	err := cfg.UpdateFromEnvs()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to load configuration from environment variables: %s", err.Error())
+		fmt.Fprintf(os.Stderr, "failed to load configuration from environment variables: %v", err)
 		os.Exit(1)
 	}
+	cfg.Sync()
+
+	if err = cfg.ValidateAndSetDefaults(); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to validate configuration %q (%v)\n", path, err)
+		os.Exit(1)
+	}
+	cfg.Sync()
+
 	fmt.Fprintf(os.Stderr, "wrote aws-k8s-tester eks configuration to %q\n", cfg.ConfigPath)
 }
 
@@ -51,6 +61,7 @@ func newCreateCluster() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "cluster",
 		Short: "Create an EKS cluster",
+		Long:  "Configuration values are overwritten by environment variables.",
 		Run:   createClusterFunc,
 	}
 	return cmd
@@ -67,18 +78,28 @@ func createClusterFunc(cmd *cobra.Command, args []string) {
 		fmt.Fprintf(os.Stderr, "failed to load configuration %q (%v)\n", path, err)
 		os.Exit(1)
 	}
+
 	if err = cfg.ValidateAndSetDefaults(); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to validate configuration %q (%v)\n", path, err)
 		os.Exit(1)
 	}
+	cfg.Sync()
+
+	fmt.Println("overwriting config file from environment variables")
 	err = cfg.UpdateFromEnvs()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to load configuration from environment variables: %s", err.Error())
+		fmt.Fprintf(os.Stderr, "failed to load configuration from environment variables: %v\n", err)
 		os.Exit(1)
 	}
+	cfg.Sync()
 
-	var tester ekstester.Tester
-	tester, err = eks.NewTester(cfg)
+	if err = cfg.ValidateAndSetDefaults(); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to validate configuration %q (%v)\n", path, err)
+		os.Exit(1)
+	}
+	cfg.Sync()
+
+	tester, err := eks.New(cfg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create EKS deployer %v\n", err)
 		os.Exit(1)

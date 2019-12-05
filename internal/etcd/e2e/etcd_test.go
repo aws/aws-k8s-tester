@@ -11,7 +11,7 @@ import (
 	"github.com/aws/aws-k8s-tester/etcdconfig"
 	"github.com/aws/aws-k8s-tester/internal/etcd"
 
-	"github.com/blang/semver"
+	semver "github.com/gyuho/semver/v3"
 )
 
 /*

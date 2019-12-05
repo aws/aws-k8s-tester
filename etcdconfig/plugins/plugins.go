@@ -8,7 +8,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/blang/semver"
+	semver "github.com/gyuho/semver/v3"
 )
 
 // CreateInstallScript returns the etcd install script for Linux.
