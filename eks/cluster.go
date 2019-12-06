@@ -461,10 +461,6 @@ func (ts *Tester) deleteCluster() error {
 		ts.lg.Info("cluster already deleted; no need to delete cluster")
 		return nil
 	}
-	if !ts.cfg.Status.Up {
-		ts.lg.Info("cluster is not up; no need to delete cluster")
-		return nil
-	}
 
 	ts.lg.Info("deleting cluster", zap.String("cluster-name", ts.cfg.Name))
 	if ts.cfg.Status.ClusterCFNStackID != "" {

@@ -303,7 +303,7 @@ func (ts *Tester) createVPC() error {
 		return err
 	}
 	ts.cfg.Status.VPCCFNStackID = aws.StringValue(stackOutput.StackId)
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	ch := awsapicfn.Poll(
 		ctx,
 		ts.stopCreationCh,
@@ -371,7 +371,7 @@ func (ts *Tester) deleteVPC() error {
 	if err != nil {
 		return err
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	ch := awsapicfn.Poll(
 		ctx,
 		make(chan struct{}),  // do not exit on stop
@@ -456,6 +456,14 @@ func (ts *Tester) deleteVPC() error {
 					ts.lg.Error("failed to describe ENI", zap.Error(err))
 					continue
 				}
+				if len(out.NetworkInterfaces) != 1 {
+					ts.lg.Warn("expected 1 ENI", zap.String("eni-id", aws.StringValue(eni.NetworkInterfaceId)), zap.Int("enis", len(out.NetworkInterfaces)))
+					continue
+				}
+				if out.NetworkInterfaces[0].Attachment == nil {
+					ts.lg.Warn("no attachment found for ENI", zap.String("eni-id", aws.StringValue(eni.NetworkInterfaceId)))
+					continue
+				}
 				for i := 0; i < 5; i++ {
 					_, err = ts.ec2API.DetachNetworkInterface(&ec2.DetachNetworkInterfaceInput{
 						AttachmentId: out.NetworkInterfaces[0].Attachment.AttachmentId,
@@ -465,7 +473,7 @@ func (ts *Tester) deleteVPC() error {
 						ts.lg.Info("successfully detached ENI")
 						break
 					}
-					ts.lg.Error("failed to detach ENI", zap.Error(err))
+					ts.lg.Error("failed to detach ENI", zap.String("eni-id", aws.StringValue(eni.NetworkInterfaceId)), zap.Error(err))
 					time.Sleep(5 * time.Second)
 				}
 
