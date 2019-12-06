@@ -1,9 +1,12 @@
 package eks
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
 	"strings"
+	"text/template"
 	"time"
 
 	"go.uber.org/zap"
@@ -14,6 +17,25 @@ import (
 // https://docs.aws.amazon.com/eks/latest/userguide/create-kubeconfig.html
 // aws eks update-kubeconfig --name --role-arn --kubeconfig
 func (ts *Tester) updateKUBECONFIG() error {
+	if ts.cfg.AWSIAMAuthenticatorPath != "" && ts.cfg.AWSIAMAuthenticatorDownloadURL != "" {
+		tpl := template.Must(template.New("tmplKUBECONFIG").Parse(tmplKUBECONFIG))
+		buf := bytes.NewBuffer(nil)
+		if err := tpl.Execute(buf, kubeconfig{
+			ClusterAPIServerEndpoint: ts.cfg.Status.ClusterAPIServerEndpoint,
+			ClusterCA:                ts.cfg.Status.ClusterCA,
+			AWSIAMAuthenticatorPath:  ts.cfg.AWSIAMAuthenticatorPath,
+			ClusterName:              ts.cfg.Name,
+		}); err != nil {
+			return err
+		}
+		ts.lg.Info("writing KUBECONFIG with aws-iam-authenticator", zap.String("kubeconfig-path", ts.cfg.KubeConfigPath))
+		if err := ioutil.WriteFile(ts.cfg.KubeConfigPath, buf.Bytes(), 0777); err != nil {
+			return err
+		}
+		ts.lg.Info("wrote KUBECONFIG with aws-iam-authenticator", zap.String("kubeconfig-path", ts.cfg.KubeConfigPath))
+		return ts.cfg.Sync()
+	}
+
 	args := []string{
 		"eks",
 		fmt.Sprintf("--region=%s", ts.cfg.Region),
@@ -43,6 +65,40 @@ func (ts *Tester) updateKUBECONFIG() error {
 	ts.lg.Info("'aws eks update-kubeconfig' success", zap.String("kubeconfig-path", ts.cfg.KubeConfigPath))
 	return ts.cfg.Sync()
 }
+
+type kubeconfig struct {
+	ClusterAPIServerEndpoint string
+	ClusterCA                string
+	AWSIAMAuthenticatorPath  string
+	ClusterName              string
+}
+
+const tmplKUBECONFIG = `
+apiVersion: v1
+kind: Config
+clusters:
+- cluster:
+    server: {{ .ClusterAPIServerEndpoint }}
+    certificate-authority-data: {{ .ClusterCA }}
+  name: kubernetes
+contexts:
+- context:
+    cluster: kubernetes
+    user: aws
+  name: aws
+current-context: aws
+preferences: {}
+users:
+- name: aws
+  user:
+    exec:
+      apiVersion: client.authentication.k8s.io/v1alpha1
+      command: {{ .AWSIAMAuthenticatorPath }}
+      args:
+      - token
+      - -i
+      - {{ .ClusterName }}
+`
 
 func (ts *Tester) pollClusterInfo(timeout, interval time.Duration) error {
 	retryStart := time.Now().UTC()

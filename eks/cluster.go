@@ -372,6 +372,9 @@ func PollEKS(
 		zap.String("cluster-name", clusterName),
 		zap.String("desired-cluster-status", desiredClusterStatus),
 	)
+
+	now := time.Now().UTC()
+
 	ch := make(chan ClusterStatus, 10)
 	go func() {
 		ticker := time.NewTicker(wait)
@@ -429,6 +432,7 @@ func PollEKS(
 			lg.Info("poll",
 				zap.String("cluster-name", clusterName),
 				zap.String("cluster-status", status),
+				zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
 			)
 			ch <- ClusterStatus{Cluster: cluster, Error: nil}
 			if status == desiredClusterStatus {

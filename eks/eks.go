@@ -151,6 +151,48 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 		zap.String("kubectl-version", string(vo)),
 	)
 
+	if cfg.AWSIAMAuthenticatorPath != "" && cfg.AWSIAMAuthenticatorDownloadURL != "" {
+		lg.Info("mkdir", zap.String("aws-iam-authenticator-path-dir", filepath.Dir(cfg.AWSIAMAuthenticatorPath)))
+		if err := os.MkdirAll(filepath.Dir(cfg.AWSIAMAuthenticatorPath), 0700); err != nil {
+			return nil, fmt.Errorf("could not create %q (%v)", filepath.Dir(cfg.AWSIAMAuthenticatorPath), err)
+		}
+		lg.Info("downloading aws-iam-authenticator", zap.String("aws-iam-authenticator-path", cfg.AWSIAMAuthenticatorPath))
+		if err := os.RemoveAll(cfg.AWSIAMAuthenticatorPath); err != nil {
+			return nil, err
+		}
+		f, err := os.Create(cfg.AWSIAMAuthenticatorPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create %q (%v)", cfg.AWSIAMAuthenticatorPath, err)
+		}
+		cfg.AWSIAMAuthenticatorPath = f.Name()
+		cfg.AWSIAMAuthenticatorPath, _ = filepath.Abs(cfg.AWSIAMAuthenticatorPath)
+		if err := httpDownloadFile(lg, cfg.AWSIAMAuthenticatorDownloadURL, f); err != nil {
+			return nil, err
+		}
+		if err := f.Close(); err != nil {
+			return nil, fmt.Errorf("failed to close aws-iam-authenticator %v", err)
+		}
+		if err := fileutil.EnsureExecutable(cfg.AWSIAMAuthenticatorPath); err != nil {
+			return nil, err
+		}
+		// aws-iam-authenticator version
+		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
+		vo, verr = exec.New().CommandContext(
+			ctx,
+			cfg.AWSIAMAuthenticatorPath,
+			"version",
+		).CombinedOutput()
+		cancel()
+		if verr != nil {
+			return nil, fmt.Errorf("'aws-iam-authenticator version' failed (output %q, error %v)", string(vo), verr)
+		}
+		lg.Info(
+			"aws-iam-authenticator version",
+			zap.String("aws-iam-authenticator-path", cfg.AWSIAMAuthenticatorPath),
+			zap.String("aws-iam-authenticator-version", string(vo)),
+		)
+	}
+
 	ts := &Tester{
 		stopCreationCh:              make(chan struct{}),
 		stopCreationChOnce:          new(sync.Once),

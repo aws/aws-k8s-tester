@@ -47,6 +47,7 @@ type Config struct {
 
 	// AWSCLIPath is the path for AWS CLI path.
 	AWSCLIPath string `json:"aws-cli-path,omitempty"`
+
 	// KubectlPath is the path to download the "kubectl".
 	KubectlPath string `json:"kubectl-path,omitempty"`
 	// KubectlDownloadURL is the download URL to download "kubectl" binary from.
@@ -56,6 +57,11 @@ type Config struct {
 	// If empty, auto-generate one.
 	// Deployer is expected to delete this on cluster tear down.
 	KubeConfigPath string `json:"kubeconfig-path,omitempty"`
+
+	// AWSIAMAuthenticatorPath is the path to aws-iam-authenticator.
+	AWSIAMAuthenticatorPath string `json:"aws-iam-authenticator-path,omitempty"`
+	// AWSIAMAuthenticatorDownloadURL is the download URL to download "aws-iam-authenticator" binary from.
+	AWSIAMAuthenticatorDownloadURL string `json:"aws-iam-authenticator-download-url,omitempty"`
 
 	// Parameters defines EKS cluster creation parameters.
 	// It's ok to leave any parameters empty.
