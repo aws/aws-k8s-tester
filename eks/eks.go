@@ -485,12 +485,12 @@ func (ts *Tester) down() (err error) {
 
 	// following need to be run in order to resolve delete dependency
 	// e.g. cluster must be deleted before VPC delete
-	if ts.cfg.Parameters.ManagedNodeGroupCreate {
-		if err := ts.deleteNamespace(); err != nil {
-			ts.lg.Warn("failed to delete namespace", zap.String("namespace", ts.cfg.Name), zap.Error(err))
-			errs = append(errs, err.Error())
-		}
+	if err := ts.deleteNamespace(); err != nil {
+		ts.lg.Warn("failed to delete namespace", zap.String("namespace", ts.cfg.Name), zap.Error(err))
+		errs = append(errs, err.Error())
+	}
 
+	if ts.cfg.Parameters.ManagedNodeGroupCreate {
 		if err := ts.deleteManagedNodeGroup(); err != nil {
 			ts.lg.Warn("failed to delete managed node group", zap.Error(err))
 			errs = append(errs, err.Error())
