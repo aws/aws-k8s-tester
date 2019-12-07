@@ -330,84 +330,78 @@ func (ts *Tester) Up() (err error) {
 		return err
 	}
 
-	if ts.cfg.AddOnNLBHelloWorld.Enable {
-		ts.nlbHelloWorldTester, err = nlb.New(nlb.Config{
-			Logger:    ts.lg,
-			Stopc:     ts.stopCreationCh,
-			Sig:       ts.interruptSig,
-			K8SClient: ts.k8sClientSet,
-			EKSConfig: ts.cfg,
-		})
-		if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.nlbHelloWorldTester.Create); err != nil {
+	if ts.cfg.Parameters.ManagedNodeGroupCreate {
+		if ts.cfg.AddOnNLBHelloWorld.Enable {
+			ts.nlbHelloWorldTester, err = nlb.New(nlb.Config{
+				Logger:    ts.lg,
+				Stopc:     ts.stopCreationCh,
+				Sig:       ts.interruptSig,
+				K8SClient: ts.k8sClientSet,
+				EKSConfig: ts.cfg,
+			})
+			if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.nlbHelloWorldTester.Create); err != nil {
+				return err
+			}
+		}
+		if ts.cfg.AddOnALB2048.Enable {
+			ts.alb2048Tester, err = alb.New(alb.Config{
+				Logger:            ts.lg,
+				Stopc:             ts.stopCreationCh,
+				Sig:               ts.interruptSig,
+				CloudFormationAPI: ts.cfnAPI,
+				K8SClient:         ts.k8sClientSet,
+				EKSConfig:         ts.cfg,
+			})
+			if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.alb2048Tester.Create); err != nil {
+				return err
+			}
+		}
+		if ts.cfg.AddOnJobPerl.Enable {
+			ts.jobPiTester, err = jobs.New(jobs.Config{
+				Logger:    ts.lg,
+				Stopc:     ts.stopCreationCh,
+				Sig:       ts.interruptSig,
+				K8SClient: ts.k8sClientSet,
+				Namespace: ts.cfg.Name,
+				JobName:   jobs.JobNamePi,
+				Completes: ts.cfg.AddOnJobPerl.Completes,
+				Parallels: ts.cfg.AddOnJobPerl.Parallels,
+			})
+			if err != nil {
+				return err
+			}
+			if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.jobPiTester.Create); err != nil {
+				return err
+			}
+		}
+		if ts.cfg.AddOnJobEcho.Enable {
+			ts.jobEchoTester, err = jobs.New(jobs.Config{
+				Logger:    ts.lg,
+				Stopc:     ts.stopCreationCh,
+				Sig:       ts.interruptSig,
+				K8SClient: ts.k8sClientSet,
+				Namespace: ts.cfg.Name,
+				JobName:   jobs.JobNameEcho,
+				Completes: ts.cfg.AddOnJobEcho.Completes,
+				Parallels: ts.cfg.AddOnJobEcho.Parallels,
+				EchoSize:  ts.cfg.AddOnJobEcho.Size,
+			})
+			if err != nil {
+				return err
+			}
+			if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.jobEchoTester.Create); err != nil {
+				return err
+			}
+		}
+		if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.FetchLogsManagedNodeGroup); err != nil {
 			return err
 		}
 	}
 
-	if ts.cfg.AddOnALB2048.Enable {
-		ts.alb2048Tester, err = alb.New(alb.Config{
-			Logger:            ts.lg,
-			Stopc:             ts.stopCreationCh,
-			Sig:               ts.interruptSig,
-			CloudFormationAPI: ts.cfnAPI,
-			K8SClient:         ts.k8sClientSet,
-			EKSConfig:         ts.cfg,
-		})
-		if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.alb2048Tester.Create); err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.AddOnJobPerl.Enable {
-		ts.jobPiTester, err = jobs.New(jobs.Config{
-			Logger:    ts.lg,
-			Stopc:     ts.stopCreationCh,
-			Sig:       ts.interruptSig,
-			K8SClient: ts.k8sClientSet,
-			Namespace: ts.cfg.Name,
-			JobName:   jobs.JobNamePi,
-			Completes: ts.cfg.AddOnJobPerl.Completes,
-			Parallels: ts.cfg.AddOnJobPerl.Parallels,
-		})
-		if err != nil {
-			return err
-		}
-		if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.jobPiTester.Create); err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.AddOnJobEcho.Enable {
-		ts.jobEchoTester, err = jobs.New(jobs.Config{
-			Logger:    ts.lg,
-			Stopc:     ts.stopCreationCh,
-			Sig:       ts.interruptSig,
-			K8SClient: ts.k8sClientSet,
-			Namespace: ts.cfg.Name,
-			JobName:   jobs.JobNameEcho,
-			Completes: ts.cfg.AddOnJobEcho.Completes,
-			Parallels: ts.cfg.AddOnJobEcho.Parallels,
-			EchoSize:  ts.cfg.AddOnJobEcho.Size,
-		})
-		if err != nil {
-			return err
-		}
-		if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.jobEchoTester.Create); err != nil {
-			return err
-		}
-	}
-
+	println()
 	if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.runHealthCheck); err != nil {
 		return err
 	}
-
-	if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.FetchLogsManagedNodeGroup); err != nil {
-		return err
-	}
-
-	if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.runHealthCheck); err != nil {
-		return err
-	}
-
 	println()
 	fmt.Println(ts.cfg.KubectlCommands())
 	println()
@@ -447,29 +441,32 @@ func (ts *Tester) down() (err error) {
 	go func() {
 		ch <- errorData{name: "cluster role", err: ts.deleteClusterRole()}
 	}()
-	if ts.cfg.AddOnJobEcho.Enable && ts.jobEchoTester != nil {
-		waits++
-		go func() {
-			ch <- errorData{name: "Job echo", err: ts.jobEchoTester.Delete()}
-		}()
-	}
-	if ts.cfg.AddOnJobPerl.Enable && ts.jobPiTester != nil {
-		waits++
-		go func() {
-			ch <- errorData{name: "Job Pi", err: ts.jobPiTester.Delete()}
-		}()
-	}
-	if ts.cfg.AddOnALB2048.Enable && ts.alb2048Tester != nil {
-		waits++
-		go func() {
-			ch <- errorData{name: "ALB", err: ts.alb2048Tester.Delete()}
-		}()
-	}
-	if ts.cfg.AddOnNLBHelloWorld.Enable && ts.nlbHelloWorldTester != nil {
-		waits++
-		go func() {
-			ch <- errorData{name: "NLB", err: ts.nlbHelloWorldTester.Delete()}
-		}()
+
+	if ts.cfg.Parameters.ManagedNodeGroupCreate {
+		if ts.cfg.AddOnJobEcho.Enable && ts.jobEchoTester != nil {
+			waits++
+			go func() {
+				ch <- errorData{name: "Job echo", err: ts.jobEchoTester.Delete()}
+			}()
+		}
+		if ts.cfg.AddOnJobPerl.Enable && ts.jobPiTester != nil {
+			waits++
+			go func() {
+				ch <- errorData{name: "Job Pi", err: ts.jobPiTester.Delete()}
+			}()
+		}
+		if ts.cfg.AddOnALB2048.Enable && ts.alb2048Tester != nil {
+			waits++
+			go func() {
+				ch <- errorData{name: "ALB", err: ts.alb2048Tester.Delete()}
+			}()
+		}
+		if ts.cfg.AddOnNLBHelloWorld.Enable && ts.nlbHelloWorldTester != nil {
+			waits++
+			go func() {
+				ch <- errorData{name: "NLB", err: ts.nlbHelloWorldTester.Delete()}
+			}()
+		}
 	}
 
 	var errs []string
@@ -477,49 +474,49 @@ func (ts *Tester) down() (err error) {
 		if d := <-ch; d.err != nil {
 			ts.lg.Warn("failed to delete",
 				zap.String("name", d.name),
-				zap.Int("waits", i),
+				zap.Int("waited-goroutines", i+1),
 				zap.Error(d.err),
 			)
 			errs = append(errs, d.err.Error())
 		} else {
-			ts.lg.Info("waited delete goroutine with no error", zap.String("name", d.name), zap.Int("waits", i))
+			ts.lg.Info("waited delete goroutine with no error", zap.String("name", d.name), zap.Int("waited-goroutines", i+1))
 		}
-	}
-
-	if err := ts.deleteNamespace(); err != nil {
-		ts.lg.Warn("failed to delete namespace", zap.String("namespace", ts.cfg.Name), zap.Error(err))
-		errs = append(errs, err.Error())
 	}
 
 	// following need to be run in order to resolve delete dependency
 	// e.g. cluster must be deleted before VPC delete
+	if ts.cfg.Parameters.ManagedNodeGroupCreate {
+		if err := ts.deleteNamespace(); err != nil {
+			ts.lg.Warn("failed to delete namespace", zap.String("namespace", ts.cfg.Name), zap.Error(err))
+			errs = append(errs, err.Error())
+		}
 
-	if err := ts.deleteManagedNodeGroup(); err != nil {
-		ts.lg.Warn("failed to delete managed node group", zap.Error(err))
-		errs = append(errs, err.Error())
+		if err := ts.deleteManagedNodeGroup(); err != nil {
+			ts.lg.Warn("failed to delete managed node group", zap.Error(err))
+			errs = append(errs, err.Error())
+		}
+		waitDur := 5 * time.Second
+		ts.lg.Info("sleeping before node group role deletion", zap.Duration("wait", waitDur))
+		time.Sleep(waitDur)
+
+		// must be run after deleting node group
+		// otherwise, "Cannot delete entity, must remove roles from instance profile first. (Service: AmazonIdentityManagement; Status Code: 409; Error Code: DeleteConflict; Request ID: 197f795b-1003-4386-81cc-44a926c42be7)"
+		if err := ts.deleteManagedNodeGroupRole(); err != nil {
+			ts.lg.Warn("failed to delete managed node group role", zap.Error(err))
+			errs = append(errs, err.Error())
+		}
+
+		waitDur = 10 * time.Second
+		ts.lg.Info("sleeping before cluster deletion", zap.Duration("wait", waitDur))
+		time.Sleep(waitDur)
 	}
-
-	waitDur := 5 * time.Second
-	ts.lg.Info("sleeping before node group role deletion", zap.Duration("wait", waitDur))
-	time.Sleep(waitDur)
-
-	// must be run after deleting node group
-	// otherwise, "Cannot delete entity, must remove roles from instance profile first. (Service: AmazonIdentityManagement; Status Code: 409; Error Code: DeleteConflict; Request ID: 197f795b-1003-4386-81cc-44a926c42be7)"
-	if err := ts.deleteManagedNodeGroupRole(); err != nil {
-		ts.lg.Warn("failed to delete managed node group role", zap.Error(err))
-		errs = append(errs, err.Error())
-	}
-
-	waitDur = 10 * time.Second
-	ts.lg.Info("sleeping before cluster deletion", zap.Duration("wait", waitDur))
-	time.Sleep(waitDur)
 
 	if err := ts.deleteCluster(); err != nil {
 		ts.lg.Warn("failed to delete cluster", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 
-	waitDur = 30 * time.Second
+	waitDur := 30 * time.Second
 	ts.lg.Info("sleeping before VPC deletion", zap.Duration("wait", waitDur))
 	time.Sleep(waitDur)
 

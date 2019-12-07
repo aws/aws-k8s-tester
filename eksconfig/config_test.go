@@ -223,6 +223,35 @@ func TestEnv(t *testing.T) {
 		t.Fatal(err)
 	}
 	fmt.Println(string(d))
+	os.RemoveAll(cfg.ConfigPath)
+}
 
-	defer os.RemoveAll(cfg.ConfigPath)
+func TestEnvManagedNodeGroup(t *testing.T) {
+	cfg := NewDefault()
+
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_MANAGED_NODE_GROUP_CREATE", "false")
+	defer func() {
+		os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_MANAGED_NODE_GROUP_CREATE")
+	}()
+
+	if err := cfg.UpdateFromEnvs(); err != nil {
+		t.Fatal(err)
+	}
+
+	if cfg.Parameters.ManagedNodeGroupCreate {
+		t.Fatal("Parameters.ManagedNodeGroupCreate expected false, got true")
+	}
+
+	if err := cfg.ValidateAndSetDefaults(); !strings.Contains(err.Error(), "AddOnNLBHelloWorld.Enable true") {
+		t.Fatalf("expected add-on error, got %v", err)
+	}
+
+	cfg.AddOnNLBHelloWorld.Enable = false
+	cfg.AddOnALB2048.Enable = false
+	cfg.AddOnJobPerl.Enable = false
+	cfg.AddOnJobEcho.Enable = false
+
+	if err := cfg.ValidateAndSetDefaults(); err != nil {
+		t.Fatal(err)
+	}
 }

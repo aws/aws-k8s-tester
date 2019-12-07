@@ -27,6 +27,9 @@ var logCommandsForManagedNodeGroup = map[string]string{
 
 // FetchLogsManagedNodeGroup downloads logs from managed node group instances.
 func (ts *Tester) FetchLogsManagedNodeGroup() (err error) {
+	if !ts.cfg.Parameters.ManagedNodeGroupCreate {
+		return fmt.Errorf("Parameters.ManagedNodeGroupCreate %v; no managed node group to fetch logs for", ts.cfg.Parameters.ManagedNodeGroupCreate)
+	}
 	ts.fetchLogsManagedNodeGroupMu.Lock()
 	defer ts.fetchLogsManagedNodeGroupMu.Unlock()
 	return ts.fetchLogsManagedNodeGroup(300, 50, logCommandsForManagedNodeGroup)

@@ -125,6 +125,9 @@ type Parameters struct {
 	// If empty, set default version.
 	Version string `json:"version,omitempty"`
 
+	// ManagedNodeGroupCreate is true to auto-create a managed node group.
+	ManagedNodeGroupCreate bool `json:"managed-node-group-create"`
+
 	// ManagedNodeGroupRoleName is the name of the managed node group.
 	ManagedNodeGroupRoleName string `json:"managed-node-group-role-name,omitempty"`
 	// ManagedNodeGroupRoleServicePrincipals is the node group Service Principals
@@ -327,6 +330,8 @@ var defaultConfig = Config{
 			"arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy",
 			"arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
 		},
+
+		ManagedNodeGroupCreate: true,
 
 		// Allowed values are AL2_x86_64 and AL2_x86_64_GPU
 		ManagedNodeGroupAMIType:            "AL2_x86_64",
@@ -609,6 +614,20 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 
 	// validate node group related
+	if !cfg.Parameters.ManagedNodeGroupCreate {
+		if cfg.AddOnNLBHelloWorld.Enable {
+			return fmt.Errorf("Parameters.ManagedNodeGroupCreate false, but got AddOnNLBHelloWorld.Enable %v", cfg.AddOnNLBHelloWorld.Enable)
+		}
+		if cfg.AddOnALB2048.Enable {
+			return fmt.Errorf("Parameters.ManagedNodeGroupCreate false, but got AddOnALB2048.Enable %v", cfg.AddOnALB2048.Enable)
+		}
+		if cfg.AddOnJobPerl.Enable {
+			return fmt.Errorf("Parameters.ManagedNodeGroupCreate false, but got AddOnJobPerl.Enable %v", cfg.AddOnJobPerl.Enable)
+		}
+		if cfg.AddOnJobEcho.Enable {
+			return fmt.Errorf("Parameters.ManagedNodeGroupCreate false, but got AddOnJobEcho.Enable %v", cfg.AddOnJobEcho.Enable)
+		}
+	}
 	if cfg.Parameters.ManagedNodeGroupRoleName == "" {
 		cfg.Parameters.ManagedNodeGroupRoleName = cfg.Name + "-managed-node-group-role"
 	}
