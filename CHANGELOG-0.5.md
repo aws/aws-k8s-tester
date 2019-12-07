@@ -11,6 +11,14 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.0...v0.5.1
 
 - Add [`arm64` builds to release](https://github.com/aws/aws-k8s-tester/commit/39a6fcc687a45590b594e285708d9d03287873e5).
 
+### `eks`
+
+- Fix [delete operation](https://github.com/aws/aws-k8s-tester/commit/08efbaedf32ed84979623e4129acafbee6eaea5f).
+
+### `eksconfig`
+
+- Add [`Parameters.ManagedNodeGroupCreate`](https://github.com/aws/aws-k8s-tester/commit/9498e7093ba0696d96a87dca843ff68c6561bb02).
+
 ### Go
 
 - Compile with [*Go 1.13.5*](https://golang.org/doc/devel/release.html#go1.13).
