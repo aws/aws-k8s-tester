@@ -304,7 +304,6 @@ func (ts *Tester) Up() (err error) {
 	if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.runHealthCheck); err != nil {
 		return err
 	}
-
 	if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.createSecretAWSCredential); err != nil {
 		return err
 	}
