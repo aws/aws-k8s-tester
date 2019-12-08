@@ -308,29 +308,26 @@ func (ts *Tester) Up() (err error) {
 	if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.createSecretAWSCredential); err != nil {
 		return err
 	}
-	if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.createKeyPair); err != nil {
-		return err
-	}
-
-	if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.createManagedNodeGroupRole); err != nil {
-		return err
-	}
-	if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.createManagedNodeGroup); err != nil {
-		return err
-	}
-
-	if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.runHealthCheck); err != nil {
-		return err
-	}
-
-	if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.openPortsManagedNodeGroup); err != nil {
-		return err
-	}
 	if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.createNamespace); err != nil {
 		return err
 	}
 
 	if ts.cfg.Parameters.ManagedNodeGroupCreate {
+		if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.createKeyPair); err != nil {
+			return err
+		}
+		if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.createManagedNodeGroupRole); err != nil {
+			return err
+		}
+		if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.createManagedNodeGroup); err != nil {
+			return err
+		}
+		if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.openPortsManagedNodeGroup); err != nil {
+			return err
+		}
+		if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.runHealthCheck); err != nil {
+			return err
+		}
 		if ts.cfg.AddOnNLBHelloWorld.Enable {
 			ts.nlbHelloWorldTester, err = nlb.New(nlb.Config{
 				Logger:    ts.lg,
@@ -433,16 +430,17 @@ func (ts *Tester) down() (err error) {
 	// paralleize deletes
 	ch := make(chan errorData)
 	waits := 0
-	waits++
-	go func() {
-		ch <- errorData{name: "EC2 key pair", err: ts.deleteKeyPair()}
-	}()
+
 	waits++
 	go func() {
 		ch <- errorData{name: "cluster role", err: ts.deleteClusterRole()}
 	}()
 
 	if ts.cfg.Parameters.ManagedNodeGroupCreate {
+		waits++
+		go func() {
+			ch <- errorData{name: "EC2 key pair", err: ts.deleteKeyPair()}
+		}()
 		if ts.cfg.AddOnJobEcho.Enable && ts.jobEchoTester != nil {
 			waits++
 			go func() {
