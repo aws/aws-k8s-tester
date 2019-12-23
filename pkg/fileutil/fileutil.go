@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"syscall"
 	"time"
 )
 
@@ -78,6 +79,10 @@ func EnsureExecutable(p string) error {
 	s, err := os.Stat(p)
 	if err != nil {
 		return fmt.Errorf("error doing stat on %q: %v", p, err)
+	}
+	m := s.Mode()
+	if m&(syscall.S_IXOTH|syscall.S_IXGRP|syscall.S_IXUSR) != 0 {
+		return nil
 	}
 	if err := os.Chmod(p, s.Mode()|0111); err != nil {
 		return fmt.Errorf("error doing chmod on %q: %v", p, err)
