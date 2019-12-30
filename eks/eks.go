@@ -90,7 +90,9 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 	}
 
 	if err = fileutil.EnsureExecutable(cfg.AWSCLIPath); err != nil {
-		return nil, err
+		// file may be already executable while the process does not own the file/directory
+		// ref. https://github.com/aws/aws-k8s-tester/issues/66
+		lg.Error("failed to ensure executable", zap.Error(err))
 	}
 
 	// aws --version
@@ -131,7 +133,9 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 		return nil, fmt.Errorf("failed to close kubectl %v", err)
 	}
 	if err := fileutil.EnsureExecutable(cfg.KubectlPath); err != nil {
-		return nil, err
+		// file may be already executable while the process does not own the file/directory
+		// ref. https://github.com/aws/aws-k8s-tester/issues/66
+		lg.Error("failed to ensure executable", zap.Error(err))
 	}
 	// kubectl version --client=true
 	ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
@@ -173,7 +177,9 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 			return nil, fmt.Errorf("failed to close aws-iam-authenticator %v", err)
 		}
 		if err := fileutil.EnsureExecutable(cfg.AWSIAMAuthenticatorPath); err != nil {
-			return nil, err
+			// file may be already executable while the process does not own the file/directory
+			// ref. https://github.com/aws/aws-k8s-tester/issues/66
+			lg.Error("failed to ensure executable", zap.Error(err))
 		}
 		// aws-iam-authenticator version
 		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)

@@ -3,6 +3,23 @@
 <hr>
 
 
+## [v0.5.2](https://github.com/aws/aws-k8s-tester/releases/tag/v0.5.2) (2019-12-30)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.1...v0.5.2).
+
+### `eks`
+
+- Fix [`chmod` failures when ensuring executables](https://github.com/aws/aws-k8s-tester/pull/67).
+  - Fix [aws-k8s-tester#66](https://github.com/aws/aws-k8s-tester/issues/66).
+
+### Go
+
+- Compile with [*Go 1.13.5*](https://golang.org/doc/devel/release.html#go1.13).
+
+
+<hr>
+
+
 ## [v0.5.1](https://github.com/aws/aws-k8s-tester/releases/tag/v0.5.1) (2019-12-08)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.0...v0.5.1).
