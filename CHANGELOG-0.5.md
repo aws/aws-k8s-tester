@@ -12,6 +12,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.1...v0.5.2
 - Fix [`chmod` failures when ensuring executables](https://github.com/aws/aws-k8s-tester/pull/67).
   - Fix [aws-k8s-tester#66](https://github.com/aws/aws-k8s-tester/issues/66).
 
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.25.47`](https://github.com/aws/aws-sdk-go/releases/tag/v1.25.47) to [`v1.26.8`](https://github.com/aws/aws-sdk-go/releases/tag/v1.26.8).
+
 ### Go
 
 - Compile with [*Go 1.13.5*](https://golang.org/doc/devel/release.html#go1.13).
