@@ -11,6 +11,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.2...v0.5.3
 - Fix ["unable to detach ENI that was created by aws-k8s-tester due to permissions issue"](https://github.com/aws/aws-k8s-tester/pull/71).
   - See [issues#70](https://github.com/aws/aws-k8s-tester/issues/70) for more detail.
 
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.26.8`](https://github.com/aws/aws-sdk-go/releases/tag/v1.26.8) to [`v1.27.0`](https://github.com/aws/aws-sdk-go/releases/tag/v1.27.0).
+
 ### Go
 
 - Compile with [*Go 1.13.5*](https://golang.org/doc/devel/release.html#go1.13).
