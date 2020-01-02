@@ -486,6 +486,29 @@ func (ts *Tester) down() (err error) {
 		}
 	}
 
+	// NOTE(jaypipes): Wait for a bit here because we asked Kubernetes to
+	// delete the NLB hello world and ALB2048 Deployment/Service above, and
+	// both of these interact with the underlying Kubernetes AWS cloud provider
+	// to clean up the cloud load balancer backing the Service of type
+	// LoadBalancer. The calls to delete the Service return immediately
+	// (successfully) but the cloud load balancer resources may not have been
+	// deleted yet, including the ENIs that were associated with the cloud load
+	// balancer. When, later, aws-k8s-tester tries deleting the VPC associated
+	// with the test cluster, it will run into permissions issues because the
+	// IAM role that created the ENIs associated with the ENIs in subnets
+	// associated with the cloud load balancers will no longer exist.
+	//
+	// https://github.com/aws/aws-k8s-tester/issues/70
+	// https://github.com/kubernetes/kubernetes/issues/53451
+	// https://github.com/kubernetes/enhancements/blob/master/keps/sig-network/20190423-service-lb-finalizer.md
+	if ts.cfg.Parameters.ManagedNodeGroupCreate &&
+		(ts.cfg.AddOnALB2048.Enable && ts.alb2048Tester != nil ||
+			ts.cfg.AddOnNLBHelloWorld.Enable && ts.nlbHelloWorldTester != nil) {
+		waitDur := 30 * time.Second
+		ts.lg.Info("sleeping before deleting namespace", zap.Duration("wait", waitDur))
+		time.Sleep(waitDur)
+	}
+
 	// following need to be run in order to resolve delete dependency
 	// e.g. cluster must be deleted before VPC delete
 	if err := ts.deleteNamespace(); err != nil {
