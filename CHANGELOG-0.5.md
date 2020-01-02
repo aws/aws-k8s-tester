@@ -2,6 +2,22 @@
 
 <hr>
 
+## [v0.5.3](https://github.com/aws/aws-k8s-tester/releases/tag/v0.5.3) (2020-01-02)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.2...v0.5.3).
+
+### `eks`
+
+- Fix ["unable to detach ENI that was created by aws-k8s-tester due to permissions issue"](https://github.com/aws/aws-k8s-tester/pull/71).
+  - See [issues#70](https://github.com/aws/aws-k8s-tester/issues/70) for more detail.
+
+### Go
+
+- Compile with [*Go 1.13.5*](https://golang.org/doc/devel/release.html#go1.13).
+
+
+<hr>
+
 
 ## [v0.5.2](https://github.com/aws/aws-k8s-tester/releases/tag/v0.5.2) (2019-12-30)
 
