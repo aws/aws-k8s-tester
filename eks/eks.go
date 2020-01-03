@@ -249,8 +249,65 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 		ts.lg.Info("reuse existing IAM role", zap.String("cluster-role-arn", ts.cfg.Parameters.ClusterRoleARN))
 		ts.cfg.Status.ClusterRoleARN = ts.cfg.Parameters.ClusterRoleARN
 	}
+	if err = ts.createSubTesters(); err != nil {
+		return nil, err
+	}
 
 	return ts, nil
+}
+
+func (ts *Tester) createSubTesters() (err error) {
+	if ts.cfg.Parameters.ManagedNodeGroupCreate {
+		ts.nlbHelloWorldTester, err = nlb.New(nlb.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			Sig:       ts.interruptSig,
+			K8SClient: ts.k8sClientSet,
+			EKSConfig: ts.cfg,
+		})
+		if err != nil {
+			return err
+		}
+		ts.alb2048Tester, err = alb.New(alb.Config{
+			Logger:            ts.lg,
+			Stopc:             ts.stopCreationCh,
+			Sig:               ts.interruptSig,
+			CloudFormationAPI: ts.cfnAPI,
+			K8SClient:         ts.k8sClientSet,
+			EKSConfig:         ts.cfg,
+		})
+		if err != nil {
+			return err
+		}
+		ts.jobPiTester, err = jobs.New(jobs.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			Sig:       ts.interruptSig,
+			K8SClient: ts.k8sClientSet,
+			Namespace: ts.cfg.Name,
+			JobName:   jobs.JobNamePi,
+			Completes: ts.cfg.AddOnJobPerl.Completes,
+			Parallels: ts.cfg.AddOnJobPerl.Parallels,
+		})
+		if err != nil {
+			return err
+		}
+		ts.jobEchoTester, err = jobs.New(jobs.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			Sig:       ts.interruptSig,
+			K8SClient: ts.k8sClientSet,
+			Namespace: ts.cfg.Name,
+			JobName:   jobs.JobNameEcho,
+			Completes: ts.cfg.AddOnJobEcho.Completes,
+			Parallels: ts.cfg.AddOnJobEcho.Parallels,
+			EchoSize:  ts.cfg.AddOnJobEcho.Size,
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Up should provision a new cluster for testing
@@ -334,63 +391,21 @@ func (ts *Tester) Up() (err error) {
 			return err
 		}
 		if ts.cfg.AddOnNLBHelloWorld.Enable {
-			ts.nlbHelloWorldTester, err = nlb.New(nlb.Config{
-				Logger:    ts.lg,
-				Stopc:     ts.stopCreationCh,
-				Sig:       ts.interruptSig,
-				K8SClient: ts.k8sClientSet,
-				EKSConfig: ts.cfg,
-			})
 			if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.nlbHelloWorldTester.Create); err != nil {
 				return err
 			}
 		}
 		if ts.cfg.AddOnALB2048.Enable {
-			ts.alb2048Tester, err = alb.New(alb.Config{
-				Logger:            ts.lg,
-				Stopc:             ts.stopCreationCh,
-				Sig:               ts.interruptSig,
-				CloudFormationAPI: ts.cfnAPI,
-				K8SClient:         ts.k8sClientSet,
-				EKSConfig:         ts.cfg,
-			})
 			if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.alb2048Tester.Create); err != nil {
 				return err
 			}
 		}
 		if ts.cfg.AddOnJobPerl.Enable {
-			ts.jobPiTester, err = jobs.New(jobs.Config{
-				Logger:    ts.lg,
-				Stopc:     ts.stopCreationCh,
-				Sig:       ts.interruptSig,
-				K8SClient: ts.k8sClientSet,
-				Namespace: ts.cfg.Name,
-				JobName:   jobs.JobNamePi,
-				Completes: ts.cfg.AddOnJobPerl.Completes,
-				Parallels: ts.cfg.AddOnJobPerl.Parallels,
-			})
-			if err != nil {
-				return err
-			}
 			if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.jobPiTester.Create); err != nil {
 				return err
 			}
 		}
 		if ts.cfg.AddOnJobEcho.Enable {
-			ts.jobEchoTester, err = jobs.New(jobs.Config{
-				Logger:    ts.lg,
-				Stopc:     ts.stopCreationCh,
-				Sig:       ts.interruptSig,
-				K8SClient: ts.k8sClientSet,
-				Namespace: ts.cfg.Name,
-				JobName:   jobs.JobNameEcho,
-				Completes: ts.cfg.AddOnJobEcho.Completes,
-				Parallels: ts.cfg.AddOnJobEcho.Parallels,
-				EchoSize:  ts.cfg.AddOnJobEcho.Size,
-			})
-			if err != nil {
-				return err
-			}
 			if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.jobEchoTester.Create); err != nil {
 				return err
 			}
@@ -446,25 +461,25 @@ func (ts *Tester) down() (err error) {
 		go func() {
 			ch <- errorData{name: "EC2 key pair", err: ts.deleteKeyPair()}
 		}()
-		if ts.cfg.AddOnJobEcho.Enable && ts.jobEchoTester != nil {
+		if ts.cfg.AddOnJobEcho.Enable {
 			waits++
 			go func() {
 				ch <- errorData{name: "Job echo", err: ts.jobEchoTester.Delete()}
 			}()
 		}
-		if ts.cfg.AddOnJobPerl.Enable && ts.jobPiTester != nil {
+		if ts.cfg.AddOnJobPerl.Enable {
 			waits++
 			go func() {
 				ch <- errorData{name: "Job Pi", err: ts.jobPiTester.Delete()}
 			}()
 		}
-		if ts.cfg.AddOnALB2048.Enable && ts.alb2048Tester != nil {
+		if ts.cfg.AddOnALB2048.Enable {
 			waits++
 			go func() {
 				ch <- errorData{name: "ALB", err: ts.alb2048Tester.Delete()}
 			}()
 		}
-		if ts.cfg.AddOnNLBHelloWorld.Enable && ts.nlbHelloWorldTester != nil {
+		if ts.cfg.AddOnNLBHelloWorld.Enable {
 			waits++
 			go func() {
 				ch <- errorData{name: "NLB", err: ts.nlbHelloWorldTester.Delete()}
@@ -502,8 +517,7 @@ func (ts *Tester) down() (err error) {
 	// https://github.com/kubernetes/kubernetes/issues/53451
 	// https://github.com/kubernetes/enhancements/blob/master/keps/sig-network/20190423-service-lb-finalizer.md
 	if ts.cfg.Parameters.ManagedNodeGroupCreate &&
-		(ts.cfg.AddOnALB2048.Enable && ts.alb2048Tester != nil ||
-			ts.cfg.AddOnNLBHelloWorld.Enable && ts.nlbHelloWorldTester != nil) {
+		(ts.cfg.AddOnALB2048.Enable || ts.cfg.AddOnNLBHelloWorld.Enable) {
 		waitDur := 30 * time.Second
 		ts.lg.Info("sleeping before deleting namespace", zap.Duration("wait", waitDur))
 		time.Sleep(waitDur)
