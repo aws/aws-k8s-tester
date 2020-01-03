@@ -24,7 +24,7 @@ type Config struct {
 	Stopc chan struct{}
 	Sig   chan os.Signal
 
-	K8SClient *clientset.Clientset
+	K8SClient k8sClientSetGetter
 
 	// Namespace is the namespace to create Jobs.
 	Namespace string
@@ -39,6 +39,10 @@ type Config struct {
 
 	// EchoSize is the size of payload for echo Job.
 	EchoSize int
+}
+
+type k8sClientSetGetter interface {
+	KubernetesClientSet() *clientset.Clientset
 }
 
 // Tester defines Job tester.
@@ -70,7 +74,7 @@ func (ts *tester) Create() error {
 		zap.String("object-size", humanize.Bytes(uint64(len(b)))),
 	)
 
-	_, err = ts.cfg.K8SClient.
+	_, err = ts.cfg.K8SClient.KubernetesClientSet().
 		BatchV1().
 		Jobs(ts.cfg.Namespace).
 		Create(&obj)
@@ -85,7 +89,7 @@ func (ts *tester) Create() error {
 		ts.cfg.Logger,
 		ts.cfg.Stopc,
 		ts.cfg.Sig,
-		ts.cfg.K8SClient,
+		ts.cfg.K8SClient.KubernetesClientSet(),
 		waitDur,
 		5*time.Second,
 		ts.cfg.Namespace,
@@ -112,7 +116,7 @@ var propagationBackground = metav1.DeletePropagationBackground
 func (ts *tester) Delete() error {
 	ts.cfg.Logger.Info("deleting Job", zap.String("job-name", ts.cfg.JobName))
 	err := ts.cfg.
-		K8SClient.
+		K8SClient.KubernetesClientSet().
 		BatchV1().
 		Jobs(ts.cfg.Namespace).
 		Delete(

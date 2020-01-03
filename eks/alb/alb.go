@@ -35,7 +35,11 @@ type Config struct {
 	Sig               chan os.Signal
 	EKSConfig         *eksconfig.Config
 	CloudFormationAPI cloudformationiface.CloudFormationAPI
-	K8SClient         *clientset.Clientset
+	K8SClient         k8sClientSetGetter
+}
+
+type k8sClientSetGetter interface {
+	KubernetesClientSet() *clientset.Clientset
 }
 
 // Tester defines Job tester.
@@ -395,7 +399,7 @@ func (ts *tester) deleteALBIngressControllerPolicy() error {
 // https://github.com/kubernetes-sigs/aws-alb-ingress-controller/blob/master/docs/examples/rbac-role.yaml
 func (ts *tester) createALBIngressControllerServiceAccount() error {
 	ts.cfg.Logger.Info("creating ALB Ingress Controller  ServiceAccount")
-	_, err := ts.cfg.K8SClient.
+	_, err := ts.cfg.K8SClient.KubernetesClientSet().
 		CoreV1().
 		ServiceAccounts(albIngressControllerServiceAccountNamespace).
 		Create(&v1.ServiceAccount{
@@ -424,7 +428,7 @@ func (ts *tester) createALBIngressControllerServiceAccount() error {
 func (ts *tester) deleteALBIngressControllerServiceAccount() error {
 	ts.cfg.Logger.Info("deleting ALB Ingress Controller ServiceAccount")
 	foreground := metav1.DeletePropagationForeground
-	err := ts.cfg.K8SClient.
+	err := ts.cfg.K8SClient.KubernetesClientSet().
 		CoreV1().
 		ServiceAccounts(albIngressControllerServiceAccountNamespace).
 		Delete(
@@ -446,7 +450,7 @@ func (ts *tester) deleteALBIngressControllerServiceAccount() error {
 // https://github.com/kubernetes-sigs/aws-alb-ingress-controller/blob/master/docs/examples/rbac-role.yaml
 func (ts *tester) createALBIngressControllerRBACClusterRole() error {
 	ts.cfg.Logger.Info("creating ALB Ingress Controller RBAC ClusterRole")
-	_, err := ts.cfg.K8SClient.
+	_, err := ts.cfg.K8SClient.KubernetesClientSet().
 		RbacV1().
 		ClusterRoles().
 		Create(&rbacv1.ClusterRole{
@@ -517,7 +521,7 @@ func (ts *tester) createALBIngressControllerRBACClusterRole() error {
 func (ts *tester) deleteALBIngressControllerRBACClusterRole() error {
 	ts.cfg.Logger.Info("deleting ALB Ingress Controller RBAC ClusterRole")
 	foreground := metav1.DeletePropagationForeground
-	err := ts.cfg.K8SClient.
+	err := ts.cfg.K8SClient.KubernetesClientSet().
 		RbacV1().
 		ClusterRoles().
 		Delete(
@@ -539,7 +543,7 @@ func (ts *tester) deleteALBIngressControllerRBACClusterRole() error {
 // https://github.com/kubernetes-sigs/aws-alb-ingress-controller/blob/master/docs/examples/rbac-role.yaml
 func (ts *tester) createALBIngressControllerRBACClusterRoleBinding() error {
 	ts.cfg.Logger.Info("creating ALB Ingress Controller RBAC ClusterRoleBinding")
-	_, err := ts.cfg.K8SClient.
+	_, err := ts.cfg.K8SClient.KubernetesClientSet().
 		RbacV1().
 		ClusterRoleBindings().
 		Create(&rbacv1.ClusterRoleBinding{
@@ -580,7 +584,7 @@ func (ts *tester) createALBIngressControllerRBACClusterRoleBinding() error {
 func (ts *tester) deleteALBIngressControllerRBACClusterRoleBinding() error {
 	ts.cfg.Logger.Info("deleting ALB Ingress Controller RBAC ClusterRoleBinding")
 	foreground := metav1.DeletePropagationForeground
-	err := ts.cfg.K8SClient.
+	err := ts.cfg.K8SClient.KubernetesClientSet().
 		RbacV1().
 		ClusterRoleBindings().
 		Delete(
@@ -602,7 +606,7 @@ func (ts *tester) deleteALBIngressControllerRBACClusterRoleBinding() error {
 // https://github.com/kubernetes-sigs/aws-alb-ingress-controller/blob/master/docs/examples/alb-ingress-controller.yaml
 func (ts *tester) createALBIngressControllerDeployment() error {
 	ts.cfg.Logger.Info("creating ALB Ingress Controller Deployment")
-	_, err := ts.cfg.K8SClient.
+	_, err := ts.cfg.K8SClient.KubernetesClientSet().
 		AppsV1().
 		Deployments(albIngressControllerDeploymentNamespace).
 		Create(&appsv1.Deployment{
@@ -662,7 +666,7 @@ func (ts *tester) createALBIngressControllerDeployment() error {
 func (ts *tester) deleteALBIngressControllerDeployment() error {
 	ts.cfg.Logger.Info("deleting ALB Ingress Controller Deployment")
 	foreground := metav1.DeletePropagationForeground
-	err := ts.cfg.K8SClient.
+	err := ts.cfg.K8SClient.KubernetesClientSet().
 		AppsV1().
 		Deployments(albIngressControllerDeploymentNamespace).
 		Delete(
@@ -684,7 +688,7 @@ func (ts *tester) deleteALBIngressControllerDeployment() error {
 // https://github.com/kubernetes-sigs/aws-alb-ingress-controller/blob/master/docs/examples/2048/2048-deployment.yaml
 func (ts *tester) createDeployment() error {
 	ts.cfg.Logger.Info("creating ALB 2048 Deployment")
-	_, err := ts.cfg.K8SClient.
+	_, err := ts.cfg.K8SClient.KubernetesClientSet().
 		AppsV1().
 		Deployments(ts.cfg.EKSConfig.Name).
 		Create(&appsv1.Deployment{
@@ -743,7 +747,7 @@ func (ts *tester) createDeployment() error {
 func (ts *tester) deleteDeployment() error {
 	ts.cfg.Logger.Info("deleting ALB 2048 Deployment")
 	foreground := metav1.DeletePropagationForeground
-	err := ts.cfg.K8SClient.
+	err := ts.cfg.K8SClient.KubernetesClientSet().
 		AppsV1().
 		Deployments(ts.cfg.EKSConfig.Name).
 		Delete(
@@ -765,7 +769,7 @@ func (ts *tester) deleteDeployment() error {
 // https://github.com/kubernetes-sigs/aws-alb-ingress-controller/blob/master/docs/examples/2048/2048-service.yaml
 func (ts *tester) createService() error {
 	ts.cfg.Logger.Info("creating ALB 2048 Service")
-	_, err := ts.cfg.K8SClient.
+	_, err := ts.cfg.K8SClient.KubernetesClientSet().
 		CoreV1().
 		Services(ts.cfg.EKSConfig.Name).
 		Create(&v1.Service{
@@ -804,7 +808,7 @@ func (ts *tester) createService() error {
 func (ts *tester) deleteService() error {
 	ts.cfg.Logger.Info("deleting ALB 2048 Service")
 	foreground := metav1.DeletePropagationForeground
-	err := ts.cfg.K8SClient.
+	err := ts.cfg.K8SClient.KubernetesClientSet().
 		CoreV1().
 		Services(ts.cfg.EKSConfig.Name).
 		Delete(
@@ -826,7 +830,7 @@ func (ts *tester) deleteService() error {
 // https://github.com/kubernetes-sigs/aws-alb-ingress-controller/blob/master/docs/examples/2048/2048-ingress.yaml
 func (ts *tester) createIngress() error {
 	ts.cfg.Logger.Info("creating ALB 2048 Ingress")
-	_, err := ts.cfg.K8SClient.
+	_, err := ts.cfg.K8SClient.KubernetesClientSet().
 		ExtensionsV1beta1().
 		Ingresses(ts.cfg.EKSConfig.Name).
 		Create(&v1beta1.Ingress{
@@ -891,7 +895,7 @@ func (ts *tester) createIngress() error {
 		case <-time.After(5 * time.Second):
 		}
 		ts.cfg.Logger.Info("querying ALB 2048 Ingress for HTTP endpoint")
-		so, err := ts.cfg.K8SClient.
+		so, err := ts.cfg.K8SClient.KubernetesClientSet().
 			ExtensionsV1beta1().
 			Ingresses(ts.cfg.EKSConfig.Name).
 			Get(alb2048IngressName, metav1.GetOptions{})
@@ -970,7 +974,7 @@ func (ts *tester) createIngress() error {
 func (ts *tester) deleteIngress() error {
 	ts.cfg.Logger.Info("deleting ALB 2048 Ingress")
 	foreground := metav1.DeletePropagationForeground
-	err := ts.cfg.K8SClient.
+	err := ts.cfg.K8SClient.KubernetesClientSet().
 		ExtensionsV1beta1().
 		Ingresses(ts.cfg.EKSConfig.Name).
 		Delete(

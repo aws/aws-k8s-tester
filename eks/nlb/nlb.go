@@ -28,7 +28,11 @@ type Config struct {
 	Stopc     chan struct{}
 	Sig       chan os.Signal
 	EKSConfig *eksconfig.Config
-	K8SClient *clientset.Clientset
+	K8SClient k8sClientSetGetter
+}
+
+type k8sClientSetGetter interface {
+	KubernetesClientSet() *clientset.Clientset
 }
 
 // Tester defines Job tester.
@@ -81,7 +85,7 @@ func (ts *tester) Delete() error {
 
 func (ts *tester) createDeployment() error {
 	ts.cfg.Logger.Info("creating NLB hello-world Deployment")
-	_, err := ts.cfg.K8SClient.
+	_, err := ts.cfg.K8SClient.KubernetesClientSet().
 		AppsV1().
 		Deployments(ts.cfg.EKSConfig.Name).
 		Create(&appsv1.Deployment{
@@ -138,7 +142,7 @@ func (ts *tester) createDeployment() error {
 func (ts *tester) deleteDeployment() error {
 	ts.cfg.Logger.Info("deleting NLB hello-world Deployment")
 	foreground := metav1.DeletePropagationForeground
-	err := ts.cfg.K8SClient.
+	err := ts.cfg.K8SClient.KubernetesClientSet().
 		AppsV1().
 		Deployments(ts.cfg.EKSConfig.Name).
 		Delete(
@@ -158,7 +162,7 @@ func (ts *tester) deleteDeployment() error {
 
 func (ts *tester) createService() error {
 	ts.cfg.Logger.Info("creating NLB hello-world Service")
-	_, err := ts.cfg.K8SClient.
+	_, err := ts.cfg.K8SClient.KubernetesClientSet().
 		CoreV1().
 		Services(ts.cfg.EKSConfig.Name).
 		Create(&v1.Service{
@@ -213,7 +217,7 @@ func (ts *tester) createService() error {
 		case <-time.After(5 * time.Second):
 		}
 		ts.cfg.Logger.Info("querying NLB hello-world Service for HTTP endpoint")
-		so, err := ts.cfg.K8SClient.
+		so, err := ts.cfg.K8SClient.KubernetesClientSet().
 			CoreV1().
 			Services(ts.cfg.EKSConfig.Name).
 			Get(nlbHelloWorldServiceName, metav1.GetOptions{})
@@ -290,7 +294,7 @@ func (ts *tester) createService() error {
 func (ts *tester) deleteService() error {
 	ts.cfg.Logger.Info("deleting NLB hello-world Service")
 	foreground := metav1.DeletePropagationForeground
-	err := ts.cfg.K8SClient.
+	err := ts.cfg.K8SClient.KubernetesClientSet().
 		CoreV1().
 		Services(ts.cfg.EKSConfig.Name).
 		Delete(

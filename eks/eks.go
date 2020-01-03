@@ -262,7 +262,7 @@ func (ts *Tester) createSubTesters() (err error) {
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			Sig:       ts.interruptSig,
-			K8SClient: ts.k8sClientSet,
+			K8SClient: ts,
 			EKSConfig: ts.cfg,
 		})
 		if err != nil {
@@ -273,7 +273,7 @@ func (ts *Tester) createSubTesters() (err error) {
 			Stopc:             ts.stopCreationCh,
 			Sig:               ts.interruptSig,
 			CloudFormationAPI: ts.cfnAPI,
-			K8SClient:         ts.k8sClientSet,
+			K8SClient:         ts,
 			EKSConfig:         ts.cfg,
 		})
 		if err != nil {
@@ -283,7 +283,7 @@ func (ts *Tester) createSubTesters() (err error) {
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			Sig:       ts.interruptSig,
-			K8SClient: ts.k8sClientSet,
+			K8SClient: ts,
 			Namespace: ts.cfg.Name,
 			JobName:   jobs.JobNamePi,
 			Completes: ts.cfg.AddOnJobPerl.Completes,
@@ -296,7 +296,7 @@ func (ts *Tester) createSubTesters() (err error) {
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			Sig:       ts.interruptSig,
-			K8SClient: ts.k8sClientSet,
+			K8SClient: ts,
 			Namespace: ts.cfg.Name,
 			JobName:   jobs.JobNameEcho,
 			Completes: ts.cfg.AddOnJobEcho.Completes,
@@ -645,6 +645,12 @@ func (ts *Tester) KubectlCommand() (*osexec.Cmd, error) {
 
 // KubernetesClientSet returns Kubernetes Go client.
 func (ts *Tester) KubernetesClientSet() *kubernetes.Clientset {
+	if ts.k8sClientSet == nil {
+		if err := ts.updateK8sClientSet(); err != nil {
+			ts.lg.Warn("failed to update k8s client set", zap.Error(err))
+			return nil
+		}
+	}
 	return ts.k8sClientSet
 }
 
