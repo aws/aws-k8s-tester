@@ -2,6 +2,24 @@
 
 <hr>
 
+
+## [v0.5.4](https://github.com/aws/aws-k8s-tester/releases/tag/v0.5.4) (2020-01-03)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.3...v0.5.4).
+
+### `eks`
+
+- Ensure [subtester jobs are torn down properly](https://github.com/aws/aws-k8s-tester/pull/72).
+  - See [issues#70](https://github.com/aws/aws-k8s-tester/issues/70) for more detail.
+
+### Go
+
+- Compile with [*Go 1.13.5*](https://golang.org/doc/devel/release.html#go1.13).
+
+
+<hr>
+
+
 ## [v0.5.3](https://github.com/aws/aws-k8s-tester/releases/tag/v0.5.3) (2020-01-02)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.2...v0.5.3).
