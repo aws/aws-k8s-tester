@@ -14,6 +14,8 @@ import (
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/elbv2"
+	"github.com/aws/aws-sdk-go/service/elbv2/elbv2iface"
 	"go.uber.org/zap"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -29,6 +31,8 @@ type Config struct {
 	Sig       chan os.Signal
 	EKSConfig *eksconfig.Config
 	K8SClient k8sClientSetGetter
+	ELB2API   elbv2iface.ELBV2API
+	Namespace string
 }
 
 type k8sClientSetGetter interface {
@@ -74,9 +78,19 @@ func (ts *tester) Delete() error {
 	if err := ts.deleteService(); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete NLB hello-world Service (%v)", err))
 	}
+	time.Sleep(20 * time.Second)
+
 	if err := ts.deleteDeployment(); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete NLB hello-world Deployment (%v)", err))
 	}
+	time.Sleep(30 * time.Second)
+
+	// TODO: clean up target groups, LBs
+	if 1 == 2 {
+		ts.cfg.ELB2API.DescribeLoadBalancers(&elbv2.DescribeLoadBalancersInput{})
+		ts.cfg.ELB2API.DescribeTargetGroups(&elbv2.DescribeTargetGroupsInput{})
+	}
+
 	if len(errs) > 0 {
 		return errors.New(strings.Join(errs, ", "))
 	}
@@ -87,7 +101,7 @@ func (ts *tester) createDeployment() error {
 	ts.cfg.Logger.Info("creating NLB hello-world Deployment")
 	_, err := ts.cfg.K8SClient.KubernetesClientSet().
 		AppsV1().
-		Deployments(ts.cfg.EKSConfig.Name).
+		Deployments(ts.cfg.Namespace).
 		Create(&appsv1.Deployment{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "apps/v1",
@@ -95,7 +109,7 @@ func (ts *tester) createDeployment() error {
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      nlbHelloWorldDeploymentName,
-				Namespace: ts.cfg.EKSConfig.Name,
+				Namespace: ts.cfg.Namespace,
 				Labels: map[string]string{
 					"app": nlbHelloWorldAppName,
 				},
@@ -144,7 +158,7 @@ func (ts *tester) deleteDeployment() error {
 	foreground := metav1.DeletePropagationForeground
 	err := ts.cfg.K8SClient.KubernetesClientSet().
 		AppsV1().
-		Deployments(ts.cfg.EKSConfig.Name).
+		Deployments(ts.cfg.Namespace).
 		Delete(
 			nlbHelloWorldDeploymentName,
 			&metav1.DeleteOptions{
@@ -164,7 +178,7 @@ func (ts *tester) createService() error {
 	ts.cfg.Logger.Info("creating NLB hello-world Service")
 	_, err := ts.cfg.K8SClient.KubernetesClientSet().
 		CoreV1().
-		Services(ts.cfg.EKSConfig.Name).
+		Services(ts.cfg.Namespace).
 		Create(&v1.Service{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "v1",
@@ -172,7 +186,7 @@ func (ts *tester) createService() error {
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      nlbHelloWorldServiceName,
-				Namespace: ts.cfg.EKSConfig.Name,
+				Namespace: ts.cfg.Namespace,
 				Annotations: map[string]string{
 					"service.beta.kubernetes.io/aws-load-balancer-type": "nlb",
 				},
@@ -207,8 +221,8 @@ func (ts *tester) createService() error {
 	}
 
 	hostName := ""
-	retryStart := time.Now().UTC()
-	for time.Now().UTC().Sub(retryStart) < waitDur {
+	retryStart := time.Now()
+	for time.Now().Sub(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
 			return errors.New("NLB hello-world Service creation aborted")
@@ -219,7 +233,7 @@ func (ts *tester) createService() error {
 		ts.cfg.Logger.Info("querying NLB hello-world Service for HTTP endpoint")
 		so, err := ts.cfg.K8SClient.KubernetesClientSet().
 			CoreV1().
-			Services(ts.cfg.EKSConfig.Name).
+			Services(ts.cfg.Namespace).
 			Get(nlbHelloWorldServiceName, metav1.GetOptions{})
 		if err != nil {
 			ts.cfg.Logger.Error("failed to get NLB hello-world Service; retrying", zap.Error(err))
@@ -256,8 +270,8 @@ func (ts *tester) createService() error {
 	ts.cfg.Logger.Info("waiting before testing hello-world Service")
 	time.Sleep(20 * time.Second)
 
-	retryStart = time.Now().UTC()
-	for time.Now().UTC().Sub(retryStart) < waitDur {
+	retryStart = time.Now()
+	for time.Now().Sub(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
 			return errors.New("hello-world Service creation aborted")
@@ -296,7 +310,7 @@ func (ts *tester) deleteService() error {
 	foreground := metav1.DeletePropagationForeground
 	err := ts.cfg.K8SClient.KubernetesClientSet().
 		CoreV1().
-		Services(ts.cfg.EKSConfig.Name).
+		Services(ts.cfg.Namespace).
 		Delete(
 			nlbHelloWorldServiceName,
 			&metav1.DeleteOptions{
@@ -335,9 +349,7 @@ func httpReadInsecure(lg *zap.Logger, u string, wr io.Writer) error {
 	if err != nil {
 		lg.Warn("failed to read", zap.String("url", u), zap.Error(err))
 	} else {
-		lg.Info("read",
-			zap.String("url", u),
-		)
+		lg.Info("read", zap.String("url", u))
 	}
 	return err
 }
