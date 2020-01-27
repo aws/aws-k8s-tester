@@ -14,7 +14,7 @@ import (
 // WriteTempFile writes data to a temporary file.
 func WriteTempFile(d []byte) (path string, err error) {
 	var f *os.File
-	f, err = ioutil.TempFile(os.TempDir(), fmt.Sprintf("%X", time.Now().UTC().UnixNano()))
+	f, err = ioutil.TempFile(os.TempDir(), fmt.Sprintf("%X", time.Now().UnixNano()))
 	if err != nil {
 		return "", err
 	}

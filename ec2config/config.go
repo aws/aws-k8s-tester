@@ -407,8 +407,7 @@ func (cfg *Config) UpdateFromEnvs() error {
 
 // genTag generates a tag for cluster name, CloudFormation, and S3 bucket.
 func genTag() string {
-	// use UTC time for everything
-	now := time.Now().UTC()
+	now := time.Now()
 	return fmt.Sprintf("ec2-%d%02d%02d%02d", now.Year()-2000, int(now.Month()), now.Day(), now.Hour())
 }
 
@@ -556,7 +555,7 @@ func (cfg *Config) Sync() (err error) {
 		}
 	}
 
-	cfg.UpdatedAt = time.Now().UTC()
+	cfg.UpdatedAt = time.Now()
 	var d []byte
 	d, err = yaml.Marshal(cfg)
 	if err != nil {
@@ -601,7 +600,7 @@ const ll = "0123456789abcdefghijklmnopqrstuvwxyz"
 func randString(n int) string {
 	b := make([]byte, n)
 	for i := range b {
-		rand.Seed(time.Now().UTC().UnixNano())
+		rand.Seed(time.Now().UnixNano())
 		b[i] = ll[rand.Intn(len(ll))]
 	}
 	return string(b)

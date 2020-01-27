@@ -17,8 +17,8 @@ func PollUntilRunning(
 	lg *zap.Logger,
 	ec2API ec2iface.EC2API,
 	instanceIDs ...string) (ec2Instances map[string]*ec2.Instance, err error) {
-	retryStart := time.Now().UTC()
-	for time.Now().UTC().Sub(retryStart) < timeout {
+	retryStart := time.Now()
+	for time.Now().Sub(retryStart) < timeout {
 		ec2Instances, err = describeByBatch(lg, ec2API, instanceIDs...)
 		if err == nil {
 			return ec2Instances, nil

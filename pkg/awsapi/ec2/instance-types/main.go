@@ -113,7 +113,7 @@ var InstanceTypes = map[string]*InstanceType{
 	},
 {{- end }}
 }
-`, time.Now().UTC())
+`, time.Now())
 
 	pkgTmpl = template.Must(template.New("").Parse(tmpl))
 )

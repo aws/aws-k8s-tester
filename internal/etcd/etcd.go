@@ -61,7 +61,7 @@ func (md *embedded) Create() (err error) {
 	md.mu.Lock()
 	defer md.mu.Unlock()
 
-	now := time.Now().UTC()
+	now := time.Now()
 
 	md.lg.Info(
 		"deploying EC2",
@@ -80,7 +80,7 @@ func (md *embedded) Create() (err error) {
 		zap.Int("cluster-size", md.cfg.ClusterSize),
 		zap.Strings("plugins", md.cfg.EC2.Plugins),
 		zap.String("vpc-id", md.cfg.EC2.VPCID),
-		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
+		zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 	)
 	if md.cfg.LogLevel == "debug" {
 		fmt.Println(md.cfg.EC2.SSHCommands())
@@ -98,7 +98,7 @@ func (md *embedded) Create() (err error) {
 		"deployed EC2 bastion",
 		zap.Strings("plugins", md.cfg.EC2Bastion.Plugins),
 		zap.String("vpc-id", md.cfg.EC2Bastion.VPCID),
-		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
+		zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 	)
 	if md.cfg.LogLevel == "debug" {
 		fmt.Println(md.cfg.EC2Bastion.SSHCommands())
@@ -210,7 +210,7 @@ func (md *embedded) Create() (err error) {
 	}
 	md.lg.Info("deployed etcd",
 		zap.String("initial-cluster", initialCluster),
-		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
+		zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 	)
 
 	ready := 0

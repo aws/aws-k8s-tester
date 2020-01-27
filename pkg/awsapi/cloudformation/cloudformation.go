@@ -35,7 +35,7 @@ func Poll(
 	initialWait time.Duration,
 	wait time.Duration,
 ) <-chan StackStatus {
-	now := time.Now().UTC()
+	now := time.Now()
 
 	lg.Info("polling stack",
 		zap.String("stack-id", stackID),
@@ -144,7 +144,7 @@ func Poll(
 				zap.String("current", status),
 				zap.String("want", desiredStackStatus),
 				zap.String("reason", currentStatusReason),
-				zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
+				zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			)
 
 			if status == svccfn.ResourceStatusDeleteComplete &&

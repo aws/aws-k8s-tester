@@ -136,8 +136,8 @@ func (dp *deployer) syncKeyMetadata() (err error) {
 	rt := &kms.GetKeyRotationStatusOutput{}
 
 	waitTime := 7 * time.Minute
-	retryStart := time.Now().UTC()
-	for time.Now().UTC().Sub(retryStart) < waitTime {
+	retryStart := time.Now()
+	for time.Now().Sub(retryStart) < waitTime {
 		var err error
 		desc, err = dp.kms.DescribeKey(&kms.DescribeKeyInput{
 			KeyId: aws.String(dp.cfg.KeyMetadata.KeyID),
@@ -224,8 +224,8 @@ func (dp *deployer) ListAllKeys() (entries []kms.KeyListEntry, err error) {
 	input := &kms.ListKeysInput{}
 
 	waitTime := 7 * time.Minute
-	retryStart := time.Now().UTC()
-	for time.Now().UTC().Sub(retryStart) < waitTime {
+	retryStart := time.Now()
+	for time.Now().Sub(retryStart) < waitTime {
 		var listOutput *kms.ListKeysOutput
 		listOutput, err = dp.kms.ListKeys(input)
 		if err != nil {

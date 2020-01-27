@@ -600,8 +600,7 @@ func init() {
 // genTag generates a tag for cluster name, CloudFormation, and S3 bucket.
 // Note that this would be used as S3 bucket name to upload tester logs.
 func genTag() string {
-	// use UTC time for everything
-	now := time.Now().UTC()
+	now := time.Now()
 	return fmt.Sprintf("a8-etcd-%d%02d%02d", now.Year()-2000, int(now.Month()), now.Day())
 }
 
@@ -944,7 +943,7 @@ const ll = "0123456789abcdefghijklmnopqrstuvwxyz"
 func randString(n int) string {
 	b := make([]byte, n)
 	for i := range b {
-		rand.Seed(time.Now().UTC().UnixNano())
+		rand.Seed(time.Now().UnixNano())
 		b[i] = ll[rand.Intn(len(ll))]
 	}
 	return string(b)

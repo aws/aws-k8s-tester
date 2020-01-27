@@ -65,7 +65,7 @@ func (md *embedded) UploadToBucketForTests(localPath, s3Path string) error {
 			h, _ := os.Hostname()
 			tags := []*s3.Tag{
 				{Key: aws.String("Kind"), Value: aws.String("aws-k8s-tester")},
-				{Key: aws.String("Creation"), Value: aws.String(time.Now().UTC().String())},
+				{Key: aws.String("Creation"), Value: aws.String(time.Now().String())},
 				{Key: aws.String("HOSTNAME"), Value: aws.String(h)},
 			}
 			if md.cfg.Tag != "" && md.cfg.ClusterName != "" {
@@ -102,7 +102,7 @@ func (md *embedded) UploadToBucketForTests(localPath, s3Path string) error {
 		Bucket:  aws.String(bucket),
 		Key:     aws.String(s3Path),
 		Body:    bytes.NewReader(d),
-		Expires: aws.Time(time.Now().UTC().Add(24 * time.Hour)),
+		Expires: aws.Time(time.Now().Add(24 * time.Hour)),
 
 		// https://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html#canned-acl
 		// vs. "public-read"
