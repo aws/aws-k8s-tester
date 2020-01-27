@@ -1,5 +1,28 @@
 
 
+
+<hr>
+
+
+## [v0.5.5](https://github.com/aws/aws-k8s-tester/releases/tag/v0.5.5) (2020-01)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.4...v0.5.5).
+
+### `eks`
+
+- Support [multiple "Managed Node Group"s](https://github.com/aws/aws-k8s-tester/pull/74).
+  - See [`eksconfig` godoc](https://godoc.org/github.com/aws/aws-k8s-tester/eksconfig) for breaking changes to environmental variable parsing.
+  - See [`eksconfig` tests](https://github.com/aws/aws-k8s-tester/blob/master/eksconfig/config_test.go) for breaking changes to environmental variable parsing.
+
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.27.0`](https://github.com/aws/aws-sdk-go/releases/tag/v1.27.0) to [`v1.28.9`](https://github.com/aws/aws-sdk-go/releases/tag/v1.28.9).
+
+### Go
+
+- Compile with [*Go 1.13.6*](https://golang.org/doc/devel/release.html#go1.13).
+
+
 <hr>
 
 
