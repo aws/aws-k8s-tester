@@ -18,7 +18,7 @@ replace (
 // https://github.com/blang/semver/releases
 // https://github.com/gyuho/semver/releases
 require (
-	github.com/aws/aws-sdk-go v1.27.0
+	github.com/aws/aws-sdk-go v1.28.9
 	github.com/cihub/seelog v0.0.0-20170130134532-f561c5e57575
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/coreos/go-systemd v0.0.0-20190719114852-fd7a80b32e1f // indirect
@@ -30,6 +30,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.1.0 // indirect
 	github.com/gyuho/semver/v3 v3.6.2
 	github.com/imdario/mergo v0.3.8 // indirect
+	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db
 	github.com/mitchellh/ioprogress v0.0.0-20180201004757-6a23b12fa88e
 	github.com/onsi/ginkgo v1.10.1
 	github.com/onsi/gomega v1.7.0
