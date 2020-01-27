@@ -45,9 +45,12 @@ CGO_ENABLED=0 GOOS=linux GOARCH=arm64 \
   ./cmd/aws-k8s-tester
 
 if [[ "${OSTYPE}" == "linux-gnu" ]]; then
+  cp ./bin/aws-k8s-tester-${RELEASE_VERSION}-linux-$(go env GOARCH) ./bin/aws-k8s-tester
   ./bin/aws-k8s-tester-${RELEASE_VERSION}-linux-$(go env GOARCH) version
 elif [[ "${OSTYPE}" == "darwin"* ]]; then
+  cp ./bin/aws-k8s-tester-${RELEASE_VERSION}-darwin-$(go env GOARCH) ./bin/aws-k8s-tester
   ./bin/aws-k8s-tester-${RELEASE_VERSION}-darwin-$(go env GOARCH) version
 fi
 
 echo "Success!"
+find ./bin
