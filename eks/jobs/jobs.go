@@ -33,8 +33,8 @@ type Config struct {
 
 	// Completes the desired number of successfully finished pods.
 	Completes int
-	// Parallels is the the maximum desired number of pods the job should
-	// run at any given time.
+	// Parallels is the the maximum desired number of pods the
+	// job should run at any given time.
 	Parallels int
 
 	// EchoSize is the size of payload for echo Job.
@@ -114,7 +114,7 @@ func (ts *tester) Create() error {
 var propagationBackground = metav1.DeletePropagationBackground
 
 func (ts *tester) Delete() error {
-	ts.cfg.Logger.Info("deleting Job", zap.String("job-name", ts.cfg.JobName))
+	ts.cfg.Logger.Info("deleting Job", zap.String("name", ts.cfg.JobName))
 	err := ts.cfg.
 		K8SClient.KubernetesClientSet().
 		BatchV1().
@@ -129,7 +129,7 @@ func (ts *tester) Delete() error {
 	if err != nil {
 		return fmt.Errorf("failed to delete Job %q (%v)", ts.cfg.JobName, err)
 	}
-	ts.cfg.Logger.Info("deleted Job", zap.String("job-name", ts.cfg.JobName))
+	ts.cfg.Logger.Info("deleted Job", zap.String("name", ts.cfg.JobName))
 	return nil
 }
 
@@ -236,7 +236,7 @@ const ll = "0123456789abcdefghijklmnopqrstuvwxyz"
 func randString(n int) string {
 	b := make([]byte, n)
 	for i := range b {
-		rand.Seed(time.Now().UTC().UnixNano())
+		rand.Seed(time.Now().UnixNano())
 		b[i] = ll[rand.Intn(len(ll))]
 	}
 	return string(b)

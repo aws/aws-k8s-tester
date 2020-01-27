@@ -31,8 +31,8 @@ func waitJobs(
 		zap.String("job-name", jobName),
 		zap.String("field-selector", fieldSelector),
 	)
-	retryStart := time.Now().UTC()
-	for time.Now().UTC().Sub(retryStart) < timeout {
+	retryStart := time.Now()
+	for time.Now().Sub(retryStart) < timeout {
 		select {
 		case <-stopc:
 			return nil, errors.New("Pod polling aborted")
