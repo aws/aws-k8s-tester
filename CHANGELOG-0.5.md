@@ -19,6 +19,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.4...v0.5.5
 - Fix [hanging `Poll` function when `DELETE_FAILED`](https://github.com/aws/aws-k8s-tester/commit/5a36d9604f09cd2a9fb1659fd7acfb4c35ef088e).
   - See [issues#69](https://github.com/aws/aws-k8s-tester/issues/69) for more details.
 
+### `csi`
+
+- Deprecate [`csi` test packages](https://github.com/aws/aws-k8s-tester/commit/c648032f0c8405ef56563f09606b6a4d84ab5929).
+
 ### Dependency
 
 - Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.27.0`](https://github.com/aws/aws-sdk-go/releases/tag/v1.27.0) to [`v1.28.9`](https://github.com/aws/aws-sdk-go/releases/tag/v1.28.9).
