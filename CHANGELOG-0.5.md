@@ -14,6 +14,12 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.4...v0.5.5
   - See [`eksconfig` godoc](https://godoc.org/github.com/aws/aws-k8s-tester/eksconfig) for breaking changes to environmental variable parsing.
   - See [`eksconfig` tests](https://github.com/aws/aws-k8s-tester/blob/master/eksconfig/config_test.go) for breaking changes to environmental variable parsing.
 
+### `eksconfig`
+
+- Support [multiple "Managed Node Group"s](https://github.com/aws/aws-k8s-tester/pull/74).
+- Support ["Secret" tester](https://github.com/aws/aws-k8s-tester/pull/74).
+- Use upstream [`kubectl` binary by default](https://github.com/aws/aws-k8s-tester/commit/f0a97247bf0d6d7bbc8892ab3067a2db8b7cc253).
+
 ### `pkg/awsapi/cloudformation`
 
 - Fix [hanging `Poll` function when `DELETE_FAILED`](https://github.com/aws/aws-k8s-tester/commit/5a36d9604f09cd2a9fb1659fd7acfb4c35ef088e).
