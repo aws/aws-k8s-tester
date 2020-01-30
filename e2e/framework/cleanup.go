@@ -36,7 +36,7 @@ func RunCleanupActions() {
 		defer cleanupActionsLock.Unlock()
 		for _, fn := range cleanupActions {
 			list = append(list, fn)
-			}
+		}
 	}()
 	// Run unlocked.
 	for _, fn := range list {

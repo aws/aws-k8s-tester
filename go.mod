@@ -26,6 +26,7 @@ require (
 	github.com/gogo/protobuf v1.2.1 // indirect
 	github.com/golang/protobuf v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.8 // indirect
+	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db
 	github.com/mitchellh/ioprogress v0.0.0-20180201004757-6a23b12fa88e
 	github.com/onsi/ginkgo v1.10.1
 	github.com/onsi/gomega v1.7.0

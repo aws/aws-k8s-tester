@@ -38,6 +38,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ssm/ssmiface"
 	"github.com/aws/aws-sdk-go/service/sts"
 	"github.com/dustin/go-humanize"
+	"github.com/mitchellh/colorstring"
 	"go.uber.org/zap"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/utils/exec"
@@ -78,6 +79,7 @@ type Tester struct {
 
 // New creates a new EKS tester.
 func New(cfg *eksconfig.Config) (*Tester, error) {
+	colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]New [default](%q, 'kubectl --kubeconfig=%s')\n", cfg.ConfigPath, cfg.KubeConfigPath)
 	if err := cfg.ValidateAndSetDefaults(); err != nil {
 		return nil, err
 	}
@@ -257,6 +259,8 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 }
 
 func (ts *Tester) createSubTesters() (err error) {
+	colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]createSubTesters [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
+
 	if ts.cfg.Parameters.ManagedNodeGroupCreate {
 		ts.nlbHelloWorldTester, err = nlb.New(nlb.Config{
 			Logger:    ts.lg,
@@ -312,9 +316,13 @@ func (ts *Tester) createSubTesters() (err error) {
 
 // Up should provision a new cluster for testing
 func (ts *Tester) Up() (err error) {
+	colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]Up [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
+
 	now := time.Now()
 
 	defer func() {
+		colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]Up.defer [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
+
 		if err == nil {
 			ts.lg.Info("Up completed",
 				zap.String("config-path", ts.cfg.ConfigPath),

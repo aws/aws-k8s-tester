@@ -109,6 +109,8 @@ github.com/inconshreveable/mousetrap
 github.com/jmespath/go-jmespath
 # github.com/json-iterator/go v1.1.6
 github.com/json-iterator/go
+# github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db
+github.com/mitchellh/colorstring
 # github.com/mitchellh/ioprogress v0.0.0-20180201004757-6a23b12fa88e
 github.com/mitchellh/ioprogress
 # github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd
