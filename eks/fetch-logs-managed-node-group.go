@@ -14,7 +14,7 @@ import (
 	"golang.org/x/time/rate"
 )
 
-var logCommandsForManagedNodeGroup = map[string]string{
+var logCmds = map[string]string{
 	// kernel logs
 	"sudo journalctl --no-pager --output=short-precise -k": "kernel.out.log",
 
@@ -25,14 +25,14 @@ var logCommandsForManagedNodeGroup = map[string]string{
 	"sudo systemctl list-units -t service --no-pager --no-legend --all": "list-units-systemctl.out.log",
 }
 
-// FetchLogsManagedNodeGroup downloads logs from managed node group instances.
-func (ts *Tester) FetchLogsManagedNodeGroup() (err error) {
+// FetchLogs downloads logs from managed node group instances.
+func (ts *Tester) FetchLogs() (err error) {
 	if !ts.cfg.Parameters.ManagedNodeGroupCreate {
 		return fmt.Errorf("Parameters.ManagedNodeGroupCreate %v; no managed node group to fetch logs for", ts.cfg.Parameters.ManagedNodeGroupCreate)
 	}
-	ts.fetchLogsManagedNodeGroupMu.Lock()
-	defer ts.fetchLogsManagedNodeGroupMu.Unlock()
-	return ts.fetchLogsManagedNodeGroup(300, 50, logCommandsForManagedNodeGroup)
+	ts.logsMu.Lock()
+	defer ts.logsMu.Unlock()
+	return ts.fetchLogsManagedNodeGroup(300, 50, logCmds)
 }
 
 func (ts *Tester) fetchLogsManagedNodeGroup(qps float32, burst int, commandToFileName map[string]string) error {

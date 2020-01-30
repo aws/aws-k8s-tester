@@ -22,10 +22,12 @@ func (ts *Tester) runHealthCheck() error {
 
 	// might take several minutes for DNS to propagate
 	waitDur := 5 * time.Minute
-	retryStart := time.Now().UTC()
-	for time.Now().UTC().Sub(retryStart) < waitDur {
+	retryStart := time.Now()
+	for time.Now().Sub(retryStart) < waitDur {
 		select {
 		case <-ts.stopCreationCh:
+			return errors.New("health check aborted")
+		case <-ts.interruptSig:
 			return errors.New("health check aborted")
 		case <-time.After(5 * time.Second):
 		}

@@ -65,8 +65,8 @@ type Tester struct {
 	eksSession *session.Session
 	eksAPI     eksiface.EKSAPI
 
-	downMu                      *sync.Mutex
-	fetchLogsManagedNodeGroupMu *sync.RWMutex
+	downMu *sync.Mutex
+	logsMu *sync.RWMutex
 
 	k8sClientSet *kubernetes.Clientset
 
@@ -200,13 +200,13 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 	}
 
 	ts := &Tester{
-		stopCreationCh:              make(chan struct{}),
-		stopCreationChOnce:          new(sync.Once),
-		interruptSig:                make(chan os.Signal),
-		lg:                          lg,
-		cfg:                         cfg,
-		downMu:                      new(sync.Mutex),
-		fetchLogsManagedNodeGroupMu: new(sync.RWMutex),
+		stopCreationCh:     make(chan struct{}),
+		stopCreationChOnce: new(sync.Once),
+		interruptSig:       make(chan os.Signal),
+		lg:                 lg,
+		cfg:                cfg,
+		downMu:             new(sync.Mutex),
+		logsMu:             new(sync.RWMutex),
 	}
 	signal.Notify(ts.interruptSig, syscall.SIGTERM, syscall.SIGINT)
 
@@ -410,7 +410,7 @@ func (ts *Tester) Up() (err error) {
 				return err
 			}
 		}
-		if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.FetchLogsManagedNodeGroup); err != nil {
+		if err := catchInterrupt(ts.lg, ts.stopCreationCh, ts.stopCreationChOnce, ts.interruptSig, ts.FetchLogs); err != nil {
 			return err
 		}
 	}
@@ -594,20 +594,20 @@ func (ts *Tester) IsUp() (up bool, err error) {
 // DumpClusterLogs should export logs from the cluster. It may be called
 // multiple times. Options for this should come from New(...)
 func (ts *Tester) DumpClusterLogs() error {
-	return ts.FetchLogsManagedNodeGroup()
+	return ts.FetchLogs()
 }
 
 // DownloadClusterLogs dumps all logs to artifact directory.
 // Let default kubetest log dumper handle all artifact uploads.
 // See https://github.com/kubernetes/test-infra/pull/9811/files#r225776067.
 func (ts *Tester) DownloadClusterLogs(artifactDir, _ string) error {
-	err := ts.FetchLogsManagedNodeGroup()
+	err := ts.FetchLogs()
 	if err != nil {
 		return err
 	}
 
-	ts.fetchLogsManagedNodeGroupMu.RLock()
-	defer ts.fetchLogsManagedNodeGroupMu.RUnlock()
+	ts.logsMu.RLock()
+	defer ts.logsMu.RUnlock()
 
 	for _, fpaths := range ts.cfg.Status.ManagedNodeGroupsLogs {
 		for _, fpath := range fpaths {

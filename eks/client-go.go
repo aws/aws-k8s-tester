@@ -2,6 +2,7 @@ package eks
 
 import (
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -18,13 +19,29 @@ import (
 )
 
 func (ts *Tester) updateK8sClientSet() (err error) {
-	ts.k8sClientSet, err = clientset.NewForConfig(ts.createClientConfig())
+	cfg := ts.createClientConfig()
+	if cfg == nil {
+		return errors.New("*restclient.Config is nil")
+	}
+	ts.k8sClientSet, err = clientset.NewForConfig(cfg)
 	return err
 }
 
 const authProviderName = "eks"
 
 func (ts *Tester) createClientConfig() *restclient.Config {
+	if ts.cfg.Name == "" {
+		return nil
+	}
+	if ts.cfg.Region == "" {
+		return nil
+	}
+	if ts.cfg.Status.ClusterAPIServerEndpoint == "" {
+		return nil
+	}
+	if ts.cfg.Status.ClusterCADecoded == "" {
+		return nil
+	}
 	return &restclient.Config{
 		Host: ts.cfg.Status.ClusterAPIServerEndpoint,
 		TLSClientConfig: restclient.TLSClientConfig{

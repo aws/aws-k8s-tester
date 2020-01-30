@@ -112,7 +112,7 @@ func (ts *Tester) createEKS() error {
 		return fmt.Errorf("%q already %q", ts.cfg.Name, ts.cfg.Status.ClusterStatus)
 	}
 
-	now := time.Now().UTC()
+	now := time.Now()
 	initialWait := 7 * time.Minute
 
 	if ts.cfg.Parameters.ClusterResolverURL != "" || (ts.cfg.Parameters.ClusterRequestHeaderKey != "" && ts.cfg.Parameters.ClusterRequestHeaderValue != "") {
@@ -232,7 +232,7 @@ func (ts *Tester) createEKS() error {
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
-	ch := PollEKS(
+	ch := Poll(
 		ctx,
 		ts.stopCreationCh,
 		ts.lg,
@@ -253,7 +253,7 @@ func (ts *Tester) createEKS() error {
 		zap.String("cluster-api-server-endpoint", ts.cfg.Status.ClusterAPIServerEndpoint),
 		zap.Int("cluster-ca-bytes", len(ts.cfg.Status.ClusterCA)),
 		zap.String("config-path", ts.cfg.ConfigPath),
-		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
+		zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 	)
 	return ts.cfg.Sync()
 }
@@ -356,9 +356,9 @@ type ClusterStatus struct {
 	Error   error
 }
 
-// PollEKS periodically fetches the cluster status
+// Poll periodically fetches the cluster status
 // until the cluster becomes the desired state.
-func PollEKS(
+func Poll(
 	ctx context.Context,
 	stopc chan struct{},
 	lg *zap.Logger,
@@ -373,7 +373,7 @@ func PollEKS(
 		zap.String("desired-cluster-status", desiredClusterStatus),
 	)
 
-	now := time.Now().UTC()
+	now := time.Now()
 
 	ch := make(chan ClusterStatus, 10)
 	go func() {
@@ -432,7 +432,7 @@ func PollEKS(
 			lg.Info("poll",
 				zap.String("cluster-name", clusterName),
 				zap.String("cluster-status", status),
-				zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
+				zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			)
 			ch <- ClusterStatus{Cluster: cluster, Error: nil}
 			if status == desiredClusterStatus {
@@ -443,6 +443,14 @@ func PollEKS(
 
 			if first {
 				lg.Info("sleeping", zap.Duration("initial-wait", initialWait))
+				select {
+				case <-stopc:
+					lg.Warn("wait stopped", zap.Error(ctx.Err()))
+					ch <- ClusterStatus{Cluster: nil, Error: errors.New("wait stopped")}
+					close(ch)
+					return
+				case <-time.After(initialWait):
+				}
 				time.Sleep(initialWait)
 				first = false
 			}
@@ -517,7 +525,7 @@ func (ts *Tester) deleteCluster() error {
 		ts.cfg.Sync()
 
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
-		csCh := PollEKS(
+		csCh := Poll(
 			ctx,
 			make(chan struct{}), // do not exit on stop
 			ts.lg,

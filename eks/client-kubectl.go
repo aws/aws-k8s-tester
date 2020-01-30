@@ -101,9 +101,9 @@ users:
 `
 
 func (ts *Tester) pollClusterInfo(timeout, interval time.Duration) error {
-	retryStart := time.Now().UTC()
+	retryStart := time.Now()
 	ticker := time.NewTicker(interval)
-	for time.Now().UTC().Sub(retryStart) < timeout {
+	for time.Now().Sub(retryStart) < timeout {
 		select {
 		case <-ticker.C:
 		case <-ts.stopCreationCh:
