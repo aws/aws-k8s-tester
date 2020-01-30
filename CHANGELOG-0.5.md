@@ -14,6 +14,11 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.4...v0.5.5
   - See [`eksconfig` godoc](https://godoc.org/github.com/aws/aws-k8s-tester/eksconfig) for breaking changes to environmental variable parsing.
   - See [`eksconfig` tests](https://github.com/aws/aws-k8s-tester/blob/master/eksconfig/config_test.go) for breaking changes to environmental variable parsing.
 
+### `pkg/awsapi/cloudformation`
+
+- Fix [hanging `Poll` function when `DELETE_FAILED`](https://github.com/aws/aws-k8s-tester/commit/5a36d9604f09cd2a9fb1659fd7acfb4c35ef088e).
+  - See [issues#69](https://github.com/aws/aws-k8s-tester/issues/69) for more details.
+
 ### Dependency
 
 - Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.27.0`](https://github.com/aws/aws-sdk-go/releases/tag/v1.27.0) to [`v1.28.9`](https://github.com/aws/aws-sdk-go/releases/tag/v1.28.9).
@@ -33,7 +38,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.3...v0.5.4
 ### `eks`
 
 - Ensure [subtester jobs are torn down properly](https://github.com/aws/aws-k8s-tester/pull/72).
-  - See [issues#70](https://github.com/aws/aws-k8s-tester/issues/70) for more detail.
+  - See [issues#70](https://github.com/aws/aws-k8s-tester/issues/70) for more details.
 
 ### Go
 
@@ -50,7 +55,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.2...v0.5.3
 ### `eks`
 
 - Fix ["unable to detach ENI that was created by aws-k8s-tester due to permissions issue"](https://github.com/aws/aws-k8s-tester/pull/71).
-  - See [issues#70](https://github.com/aws/aws-k8s-tester/issues/70) for more detail.
+  - See [issues#70](https://github.com/aws/aws-k8s-tester/issues/70) for more details.
 
 ### Dependency
 
