@@ -435,7 +435,7 @@ func (ts *Tester) deleteVPC() error {
 				func(out *ec2.DescribeNetworkInterfacesOutput, lastPage bool) bool {
 					for _, eni := range out.NetworkInterfaces {
 						enis = append(enis, eni)
-						ts.lg.Info("found ENI", zap.String("eni-id", aws.StringValue(eni.NetworkInterfaceId)))
+						ts.lg.Info("found ENI", zap.String("eni", aws.StringValue(eni.NetworkInterfaceId)))
 					}
 					return true
 				},
@@ -446,7 +446,9 @@ func (ts *Tester) deleteVPC() error {
 
 			// detacth and delete ENIs
 			for _, eni := range enis {
-				ts.lg.Warn("detaching ENI", zap.String("eni-id", aws.StringValue(eni.NetworkInterfaceId)))
+				eniID := aws.StringValue(eni.NetworkInterfaceId)
+
+				ts.lg.Warn("detaching ENI", zap.String("eni", eniID))
 				out, err := ts.ec2API.DescribeNetworkInterfaces(
 					&ec2.DescribeNetworkInterfacesInput{
 						NetworkInterfaceIds: []*string{eni.NetworkInterfaceId},
@@ -457,48 +459,57 @@ func (ts *Tester) deleteVPC() error {
 					continue
 				}
 				if len(out.NetworkInterfaces) != 1 {
-					ts.lg.Warn("expected 1 ENI", zap.String("eni-id", aws.StringValue(eni.NetworkInterfaceId)), zap.Int("enis", len(out.NetworkInterfaces)))
+					ts.lg.Warn("expected 1 ENI", zap.String("eni", eniID), zap.Int("enis", len(out.NetworkInterfaces)))
 					continue
 				}
 				if out.NetworkInterfaces[0].Attachment == nil {
-					ts.lg.Warn("no attachment found for ENI", zap.String("eni-id", aws.StringValue(eni.NetworkInterfaceId)))
-					continue
-				}
-				for i := 0; i < 5; i++ {
-					_, err = ts.ec2API.DetachNetworkInterface(&ec2.DetachNetworkInterfaceInput{
-						AttachmentId: out.NetworkInterfaces[0].Attachment.AttachmentId,
-						Force:        aws.Bool(true),
-					})
-					if err == nil {
-						ts.lg.Info("successfully detached ENI")
-						break
+					ts.lg.Warn("no attachment found for ENI", zap.String("eni", eniID))
+				} else {
+					for i := 0; i < 5; i++ {
+						time.Sleep(5 * time.Second)
+						_, err = ts.ec2API.DetachNetworkInterface(&ec2.DetachNetworkInterfaceInput{
+							AttachmentId: out.NetworkInterfaces[0].Attachment.AttachmentId,
+							Force:        aws.Bool(true),
+						})
+						if err == nil {
+							ts.lg.Info("successfully detached ENI", zap.String("eni", eniID))
+							break
+						}
+						ts.lg.Error("failed to detach ENI", zap.String("eni", eniID), zap.Error(err))
 					}
-					ts.lg.Error("failed to detach ENI", zap.String("eni-id", aws.StringValue(eni.NetworkInterfaceId)), zap.Error(err))
-					time.Sleep(5 * time.Second)
 				}
 
-				ts.lg.Warn("deleting ENI", zap.String("eni-id", aws.StringValue(eni.NetworkInterfaceId)))
-				_, err = ts.ec2API.DeleteNetworkInterface(&ec2.DeleteNetworkInterfaceInput{
-					NetworkInterfaceId: eni.NetworkInterfaceId,
-				})
-				if err != nil {
-					ts.lg.Error("failed to delete ENI", zap.Error(err))
-					continue
+				for i := 0; i < 5; i++ {
+					time.Sleep(10 * time.Second) // it may take awhile for delete to success upon detach
+					ts.lg.Info("deleting ENI", zap.String("eni", eniID))
+					_, err = ts.ec2API.DeleteNetworkInterface(&ec2.DeleteNetworkInterfaceInput{
+						NetworkInterfaceId: eni.NetworkInterfaceId,
+					})
+					if err == nil {
+						ts.lg.Info("successfully deleted ENI", zap.String("eni", eniID))
+						break
+					}
+					ts.lg.Error("failed to delete ENI", zap.String("eni", eniID), zap.Error(err))
 				}
+
+				// confirm ENI deletion
 				retryStart := time.Now()
 				for time.Now().Sub(retryStart) < 5*time.Minute {
+					time.Sleep(5 * time.Second)
 					_, err = ts.ec2API.DescribeNetworkInterfaces(&ec2.DescribeNetworkInterfacesInput{
 						NetworkInterfaceIds: []*string{eni.NetworkInterfaceId},
 					})
-					if err != nil {
-						if awsErr, ok := err.(awserr.Error); ok {
-							if strings.Contains(awsErr.Code(), "InvalidNetworkInterfaceID.NotFound") {
-								break
-							}
+					if err == nil {
+						ts.lg.Warn("ENI still exists", zap.String("eni", eniID))
+						continue
+					}
+					if awsErr, ok := err.(awserr.Error); ok {
+						if strings.Contains(awsErr.Code(), "InvalidNetworkInterfaceID.NotFound") {
+							ts.lg.Info("confirmed ENI deletion", zap.String("eni", eniID))
+							break
 						}
 					}
-					ts.lg.Error("still deleting ENI", zap.Error(err))
-					time.Sleep(5 * time.Second)
+					ts.lg.Warn("ENI still exists", zap.String("eni", eniID), zap.Error(err))
 				}
 			}
 
@@ -561,12 +572,26 @@ func (ts *Tester) deleteVPC() error {
 				}
 
 				for _, ipPerm := range sg.IpPermissionsEgress {
-					ts.lg.Info("revoking egress", zap.String("ip-perm", ipPerm.String()))
+					ts.lg.Info("revoking egress",
+						zap.String("security-group-id", sgID),
+						zap.String("ip-perm", ipPerm.String()),
+					)
 					_, err = ts.ec2API.RevokeSecurityGroupEgress(&ec2.RevokeSecurityGroupEgressInput{
 						GroupId:       aws.String(sgID),
 						IpPermissions: []*ec2.IpPermission{ipPerm},
 					})
-					ts.lg.Info("tried to revoke egress", zap.Error(err))
+					if err != nil {
+						if ev, ok := err.(awserr.Error); ok && ev.Code() == "InvalidPermission.NotFound" {
+							ts.lg.Warn("ip permission does not exist", zap.Error(err))
+						} else {
+							ts.lg.Warn("failed to revoke egress", zap.Error(err))
+						}
+					} else {
+						ts.lg.Info("revoked egress",
+							zap.String("security-group-id", sgID),
+							zap.Error(err),
+						)
+					}
 
 					if len(ipPerm.UserIdGroupPairs) != 1 {
 						continue
@@ -594,7 +619,18 @@ func (ts *Tester) deleteVPC() error {
 							GroupId:       aws.String(sgIDIngress),
 							IpPermissions: []*ec2.IpPermission{ipPermEg},
 						})
-						ts.lg.Info("tried to revoke ingress", zap.Error(err))
+						if err != nil {
+							if ev, ok := err.(awserr.Error); ok && ev.Code() == "InvalidPermission.NotFound" {
+								ts.lg.Warn("ip permission does not exist", zap.Error(err))
+							} else {
+								ts.lg.Warn("failed to revoke ingress", zap.Error(err))
+							}
+						} else {
+							ts.lg.Info("revoked ingress",
+								zap.String("security-group-id", sgID),
+								zap.Error(err),
+							)
+						}
 					}
 				}
 
@@ -631,10 +667,16 @@ func (ts *Tester) deleteVPC() error {
 			}
 
 			_, derr := ts.ec2API.DeleteVpc(&ec2.DeleteVpcInput{VpcId: aws.String(ts.cfg.Status.VPCID)})
-			ts.lg.Warn("force-deleted VPC",
-				zap.String("vpc-id", ts.cfg.Status.VPCID),
-				zap.Error(derr),
-			)
+			if derr != nil {
+				ts.lg.Warn("failed to force-delete VPC",
+					zap.String("vpc-id", ts.cfg.Status.VPCID),
+					zap.Error(derr),
+				)
+			} else {
+				ts.lg.Info("force-deleted VPC",
+					zap.String("vpc-id", ts.cfg.Status.VPCID),
+				)
+			}
 			if derr != nil && strings.Contains(derr.Error(), " does not exist") {
 				deletedResources[ts.cfg.Status.VPCID] = struct{}{}
 			}

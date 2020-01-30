@@ -19,11 +19,16 @@ import (
 )
 
 func (ts *Tester) updateK8sClientSet() (err error) {
+	ts.lg.Info("creating k8s client config")
 	cfg := ts.createClientConfig()
 	if cfg == nil {
 		return errors.New("*restclient.Config is nil")
 	}
+	ts.lg.Info("creating k8s client")
 	ts.k8sClientSet, err = clientset.NewForConfig(cfg)
+	if err == nil {
+		ts.lg.Info("updated k8s client set")
+	}
 	return err
 }
 

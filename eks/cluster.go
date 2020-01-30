@@ -94,6 +94,13 @@ func (ts *Tester) createCluster() error {
 }
 
 func (ts *Tester) createEKS() error {
+	createStart := time.Now()
+	defer func() {
+		ts.cfg.Status.CreateTook = time.Since(createStart)
+		ts.cfg.Status.CreateTookString = ts.cfg.Status.CreateTook.String()
+		ts.cfg.Sync()
+	}()
+
 	if ts.cfg.Status.ClusterCFNStackID != "" ||
 		ts.cfg.Status.ClusterARN != "" ||
 		ts.cfg.Status.ClusterAPIServerEndpoint != "" ||
@@ -465,6 +472,13 @@ func Poll(
 }
 
 func (ts *Tester) deleteCluster() error {
+	deleteStart := time.Now()
+	defer func() {
+		ts.cfg.Status.DeleteTook = time.Since(deleteStart)
+		ts.cfg.Status.DeleteTookString = ts.cfg.Status.DeleteTook.String()
+		ts.cfg.Sync()
+	}()
+
 	if ts.cfg.Status.ClusterStatus == "" || ts.cfg.Status.ClusterStatus == ClusterStatusDELETEDORNOTEXIST {
 		ts.lg.Info("cluster already deleted; no need to delete cluster")
 		return nil
