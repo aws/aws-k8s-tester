@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/aws/aws-k8s-tester/cmd/aws-k8s-tester/csi"
 	"github.com/aws/aws-k8s-tester/cmd/aws-k8s-tester/ec2"
 	"github.com/aws/aws-k8s-tester/cmd/aws-k8s-tester/eks"
 	"github.com/aws/aws-k8s-tester/cmd/aws-k8s-tester/etcd"
@@ -25,7 +24,6 @@ func init() {
 
 func init() {
 	rootCmd.AddCommand(
-		csi.NewCommand(),
 		ec2.NewCommand(),
 		eks.NewCommand(),
 		etcd.NewCommand(),
