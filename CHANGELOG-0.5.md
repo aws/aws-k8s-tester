@@ -25,6 +25,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.4...v0.5.5
 - Fix [hanging `Poll` function when `DELETE_FAILED`](https://github.com/aws/aws-k8s-tester/commit/5a36d9604f09cd2a9fb1659fd7acfb4c35ef088e).
   - See [issues#69](https://github.com/aws/aws-k8s-tester/issues/69) for more details.
 
+### `etcd`
+
+- Deprecate [`etcd` test packages](https://github.com/aws/aws-k8s-tester/commit/96dd6292df8768ea4243d2d9b2995b0759fe61f4).
+
 ### `csi`
 
 - Deprecate [`csi` test packages](https://github.com/aws/aws-k8s-tester/commit/c648032f0c8405ef56563f09606b6a4d84ab5929).
