@@ -311,9 +311,13 @@ var defaultConfig = Config{
 	LogOutputs: []string{"stderr"},
 
 	// https://docs.aws.amazon.com/eks/latest/userguide/install-kubectl.html
-	KubectlDownloadURL: "https://amazon-eks.s3-us-west-2.amazonaws.com/1.14.6/2019-08-22/bin/linux/amd64/kubectl",
-	KubectlPath:        "/tmp/aws-k8s-tester/kubectl",
-	KubeConfigPath:     "/tmp/aws-k8s-tester/kubeconfig",
+	// KubectlDownloadURL: "https://amazon-eks.s3-us-west-2.amazonaws.com/1.14.6/2019-08-22/bin/linux/amd64/kubectl",
+
+	// https://kubernetes.io/docs/tasks/tools/install-kubectl/
+	KubectlDownloadURL: "https://storage.googleapis.com/kubernetes-release/release/v1.14.10/bin/linux/amd64/kubectl",
+
+	KubectlPath:    "/tmp/aws-k8s-tester/kubectl",
+	KubeConfigPath: "/tmp/aws-k8s-tester/kubeconfig",
 
 	Parameters: &Parameters{
 		ClusterSigningName:          "eks",
