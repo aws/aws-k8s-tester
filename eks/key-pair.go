@@ -28,7 +28,7 @@ func (ts *Tester) createKeyPair() (err error) {
 
 	ts.lg.Info("creating a new key pair", zap.String("key-pair-name", ts.cfg.Parameters.ManagedNodeGroupSSHKeyPairName))
 
-	now := time.Now().UTC()
+	now := time.Now()
 
 	var output *ec2.CreateKeyPairOutput
 	output, err = ts.ec2API.CreateKeyPair(&ec2.CreateKeyPairInput{
@@ -55,7 +55,7 @@ func (ts *Tester) createKeyPair() (err error) {
 	ts.lg.Info(
 		"created a new key pair",
 		zap.String("key-name", ts.cfg.Parameters.ManagedNodeGroupSSHKeyPairName),
-		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
+		zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 	)
 	return ts.cfg.Sync()
 }

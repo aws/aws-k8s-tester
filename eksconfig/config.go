@@ -438,7 +438,7 @@ func (cfg *Config) Sync() (err error) {
 // Note that this would be used as S3 bucket name to upload tester logs.
 func genTag() string {
 	// use UTC time for everything
-	now := time.Now().UTC()
+	now := time.Now()
 	return fmt.Sprintf("eks-%d%02d%02d%02d", now.Year(), int(now.Month()), now.Day(), now.Hour())
 }
 
@@ -455,7 +455,7 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 
 	if cfg.Name == "" {
-		now := time.Now().UTC()
+		now := time.Now()
 		cfg.Name = fmt.Sprintf(
 			"eks-%d%02d%02d%02d-%s-%s-%s",
 			now.Year(),
@@ -1059,7 +1059,7 @@ const ll = "0123456789abcdefghijklmnopqrstuvwxyz"
 func randString(n int) string {
 	b := make([]byte, n)
 	for i := range b {
-		rand.Seed(time.Now().UTC().UnixNano())
+		rand.Seed(time.Now().UnixNano())
 		b[i] = ll[rand.Intn(len(ll))]
 	}
 	return string(b)

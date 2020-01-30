@@ -362,7 +362,7 @@ func (ts *Tester) deleteVPC() error {
 		return nil
 	}
 
-	now := time.Now().UTC()
+	now := time.Now()
 
 	ts.lg.Info("deleting VPC CFN stack", zap.String("vpc-cfn-stack-id", ts.cfg.Status.VPCCFNStackID))
 	_, err := ts.cfnAPI.DeleteStack(&cloudformation.DeleteStackInput{
@@ -394,7 +394,7 @@ func (ts *Tester) deleteVPC() error {
 			ts.lg.Error("polling errror", zap.Error(st.Error))
 		}
 
-		if time.Now().UTC().Sub(now) > 3*time.Minute {
+		if time.Now().Sub(now) > 3*time.Minute {
 			ts.lg.Warn("deleting VPC for longer than 3 minutes; initiating force deletion",
 				zap.String("vpc-id", ts.cfg.Status.VPCID),
 			)
@@ -485,8 +485,8 @@ func (ts *Tester) deleteVPC() error {
 					ts.lg.Error("failed to delete ENI", zap.Error(err))
 					continue
 				}
-				retryStart := time.Now().UTC()
-				for time.Now().UTC().Sub(retryStart) < 5*time.Minute {
+				retryStart := time.Now()
+				for time.Now().Sub(retryStart) < 5*time.Minute {
 					_, err = ts.ec2API.DescribeNetworkInterfaces(&ec2.DescribeNetworkInterfacesInput{
 						NetworkInterfaceIds: []*string{eni.NetworkInterfaceId},
 					})
@@ -609,8 +609,8 @@ func (ts *Tester) deleteVPC() error {
 					ts.lg.Error("failed to delete security group", zap.Error(err))
 					continue
 				}
-				retryStart := time.Now().UTC()
-				for time.Now().UTC().Sub(retryStart) < 5*time.Minute {
+				retryStart := time.Now()
+				for time.Now().Sub(retryStart) < 5*time.Minute {
 					_, err = ts.ec2API.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
 						GroupIds: []*string{sg.GroupId},
 					})

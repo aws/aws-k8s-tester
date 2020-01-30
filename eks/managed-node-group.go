@@ -135,7 +135,7 @@ func (ts *Tester) createManagedNodeGroup() error {
 	// No cluster found for name: BETA_CLUSTER_NAME.
 	// (Service: AmazonEKS; Status Code: 404; Error Code: ResourceNotFoundException; Request ID: FOO)
 
-	now := time.Now().UTC()
+	now := time.Now()
 
 	initialWait := 3 * time.Minute
 
@@ -319,7 +319,7 @@ func (ts *Tester) createManagedNodeGroup() error {
 	ts.lg.Info("created a managed node group",
 		zap.String("managed-node-group-cfn-stack-id", ts.cfg.Status.ManagedNodeGroupCFNStackID),
 		zap.String("managed-node-group-id", ts.cfg.Status.ManagedNodeGroupID),
-		zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
+		zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 	)
 	return ts.cfg.Sync()
 }
@@ -543,8 +543,8 @@ func (ts *Tester) waitForNodes() error {
 
 	var items []v1.Node
 	ts.lg.Info("checking nodes via client-go")
-	retryStart := time.Now().UTC()
-	for time.Now().UTC().Sub(retryStart) < waitDur {
+	retryStart := time.Now()
+	for time.Now().Sub(retryStart) < waitDur {
 		nodes, err := ts.getAllNodes()
 		if err != nil {
 			ts.lg.Error("get nodes failed", zap.Error(err))

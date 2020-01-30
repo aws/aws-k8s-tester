@@ -312,7 +312,7 @@ func (ts *Tester) createSubTesters() (err error) {
 
 // Up should provision a new cluster for testing
 func (ts *Tester) Up() (err error) {
-	now := time.Now().UTC()
+	now := time.Now()
 
 	defer func() {
 		if err == nil {
@@ -320,7 +320,7 @@ func (ts *Tester) Up() (err error) {
 				zap.String("config-path", ts.cfg.ConfigPath),
 				zap.String("KUBECONFIG", ts.cfg.KubeConfigPath),
 				zap.String("cluster-arn", ts.cfg.Status.ClusterARN),
-				zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
+				zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			)
 			return
 		}
@@ -329,7 +329,7 @@ func (ts *Tester) Up() (err error) {
 			zap.String("config-path", ts.cfg.ConfigPath),
 			zap.String("KUBECONFIG", ts.cfg.KubeConfigPath),
 			zap.String("cluster-arn", ts.cfg.Status.ClusterARN),
-			zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
+			zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			zap.Error(err),
 		)
 		derr := ts.down()
@@ -429,7 +429,7 @@ func (ts *Tester) Up() (err error) {
 }
 
 func (ts *Tester) down() (err error) {
-	now := time.Now().UTC()
+	now := time.Now()
 	ts.lg.Warn("starting Down",
 		zap.String("name", ts.cfg.Name),
 		zap.String("config-path", ts.cfg.ConfigPath),
@@ -442,7 +442,7 @@ func (ts *Tester) down() (err error) {
 				zap.String("name", ts.cfg.Name),
 				zap.String("config-path", ts.cfg.ConfigPath),
 				zap.String("cluster-arn", ts.cfg.Status.ClusterARN),
-				zap.String("request-started", humanize.RelTime(now, time.Now().UTC(), "ago", "from now")),
+				zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			)
 		}
 	}()
