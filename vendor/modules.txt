@@ -74,10 +74,6 @@ github.com/cihub/seelog/archive
 github.com/cihub/seelog/archive/gzip
 github.com/cihub/seelog/archive/tar
 github.com/cihub/seelog/archive/zip
-# github.com/coreos/go-systemd v0.0.0-20190719114852-fd7a80b32e1f
-github.com/coreos/go-systemd/journal
-# github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f
-github.com/coreos/pkg/capnslog
 # github.com/davecgh/go-spew v1.1.1
 github.com/davecgh/go-spew/spew
 # github.com/dustin/go-humanize v1.0.0
@@ -85,9 +81,7 @@ github.com/dustin/go-humanize
 # github.com/go-ini/ini v1.46.0
 github.com/go-ini/ini
 # github.com/gogo/protobuf v1.2.1
-github.com/gogo/protobuf/gogoproto
 github.com/gogo/protobuf/proto
-github.com/gogo/protobuf/protoc-gen-gogo/descriptor
 github.com/gogo/protobuf/sortkeys
 # github.com/golang/protobuf v1.3.2
 github.com/golang/protobuf/proto
@@ -95,16 +89,12 @@ github.com/golang/protobuf/ptypes
 github.com/golang/protobuf/ptypes/any
 github.com/golang/protobuf/ptypes/duration
 github.com/golang/protobuf/ptypes/timestamp
-# github.com/google/gofuzz v1.0.0
+# github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf
 github.com/google/gofuzz
-# github.com/google/uuid v1.0.0
-github.com/google/uuid
 # github.com/googleapis/gnostic v0.0.0-20170729233727-0c5108395e2d
 github.com/googleapis/gnostic/OpenAPIv2
 github.com/googleapis/gnostic/compiler
 github.com/googleapis/gnostic/extensions
-# github.com/gyuho/semver/v3 v3.6.2
-github.com/gyuho/semver/v3
 # github.com/hpcloud/tail v1.0.0
 github.com/hpcloud/tail
 github.com/hpcloud/tail/ratelimiter
@@ -117,10 +107,8 @@ github.com/imdario/mergo
 github.com/inconshreveable/mousetrap
 # github.com/jmespath/go-jmespath v0.0.0-20180206201540-c2b33e8439af
 github.com/jmespath/go-jmespath
-# github.com/json-iterator/go v1.1.7
+# github.com/json-iterator/go v1.1.6
 github.com/json-iterator/go
-# github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db
-github.com/mitchellh/colorstring
 # github.com/mitchellh/ioprogress v0.0.0-20180201004757-6a23b12fa88e
 github.com/mitchellh/ioprogress
 # github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd
@@ -172,25 +160,6 @@ github.com/spf13/cobra
 github.com/spf13/pflag
 # github.com/stretchr/testify v1.4.0
 github.com/stretchr/testify/assert
-# go.etcd.io/etcd v0.0.0-20191004122535-555eb1951f2e
-go.etcd.io/etcd/auth/authpb
-go.etcd.io/etcd/clientv3
-go.etcd.io/etcd/clientv3/balancer
-go.etcd.io/etcd/clientv3/balancer/connectivity
-go.etcd.io/etcd/clientv3/balancer/picker
-go.etcd.io/etcd/clientv3/balancer/resolver/endpoint
-go.etcd.io/etcd/clientv3/credentials
-go.etcd.io/etcd/etcdserver/api/v3rpc/rpctypes
-go.etcd.io/etcd/etcdserver/etcdserverpb
-go.etcd.io/etcd/mvcc/mvccpb
-go.etcd.io/etcd/pkg/logutil
-go.etcd.io/etcd/pkg/systemd
-go.etcd.io/etcd/pkg/types
-go.etcd.io/etcd/raft
-go.etcd.io/etcd/raft/confchange
-go.etcd.io/etcd/raft/quorum
-go.etcd.io/etcd/raft/raftpb
-go.etcd.io/etcd/raft/tracker
 # go.uber.org/atomic v1.5.0
 go.uber.org/atomic
 # go.uber.org/multierr v1.3.0
@@ -226,12 +195,10 @@ golang.org/x/net/http/httpguts
 golang.org/x/net/http2
 golang.org/x/net/http2/hpack
 golang.org/x/net/idna
-golang.org/x/net/internal/timeseries
-golang.org/x/net/trace
 # golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 golang.org/x/oauth2
 golang.org/x/oauth2/internal
-# golang.org/x/sys v0.0.0-20190826190057-c7b8b68b1456
+# golang.org/x/sys v0.0.0-20190422165155-953cdadca894
 golang.org/x/sys/cpu
 golang.org/x/sys/unix
 golang.org/x/sys/windows
@@ -282,42 +249,6 @@ google.golang.org/appengine/internal/log
 google.golang.org/appengine/internal/remote_api
 google.golang.org/appengine/internal/urlfetch
 google.golang.org/appengine/urlfetch
-# google.golang.org/genproto v0.0.0-20190819201941-24fa4b261c55
-google.golang.org/genproto/googleapis/rpc/status
-# google.golang.org/grpc v1.24.0
-google.golang.org/grpc
-google.golang.org/grpc/balancer
-google.golang.org/grpc/balancer/base
-google.golang.org/grpc/balancer/roundrobin
-google.golang.org/grpc/binarylog/grpc_binarylog_v1
-google.golang.org/grpc/codes
-google.golang.org/grpc/connectivity
-google.golang.org/grpc/credentials
-google.golang.org/grpc/credentials/internal
-google.golang.org/grpc/encoding
-google.golang.org/grpc/encoding/proto
-google.golang.org/grpc/grpclog
-google.golang.org/grpc/internal
-google.golang.org/grpc/internal/backoff
-google.golang.org/grpc/internal/balancerload
-google.golang.org/grpc/internal/binarylog
-google.golang.org/grpc/internal/channelz
-google.golang.org/grpc/internal/envconfig
-google.golang.org/grpc/internal/grpcrand
-google.golang.org/grpc/internal/grpcsync
-google.golang.org/grpc/internal/syscall
-google.golang.org/grpc/internal/transport
-google.golang.org/grpc/keepalive
-google.golang.org/grpc/metadata
-google.golang.org/grpc/naming
-google.golang.org/grpc/peer
-google.golang.org/grpc/resolver
-google.golang.org/grpc/resolver/dns
-google.golang.org/grpc/resolver/passthrough
-google.golang.org/grpc/serviceconfig
-google.golang.org/grpc/stats
-google.golang.org/grpc/status
-google.golang.org/grpc/tap
 # gopkg.in/fsnotify.v1 v1.4.7
 gopkg.in/fsnotify.v1
 # gopkg.in/inf.v0 v0.9.0

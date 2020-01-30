@@ -20,17 +20,12 @@ replace (
 require (
 	github.com/aws/aws-sdk-go v1.28.9
 	github.com/cihub/seelog v0.0.0-20170130134532-f561c5e57575
-	github.com/coreos/go-semver v0.3.0 // indirect
-	github.com/coreos/go-systemd v0.0.0-20190719114852-fd7a80b32e1f // indirect
-	github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f // indirect
 	github.com/davecgh/go-spew v1.1.1
 	github.com/dustin/go-humanize v1.0.0
 	github.com/go-ini/ini v1.46.0
-	github.com/gorilla/websocket v1.4.1 // indirect
-	github.com/grpc-ecosystem/go-grpc-middleware v1.1.0 // indirect
-	github.com/gyuho/semver/v3 v3.6.2
+	github.com/gogo/protobuf v1.2.1 // indirect
+	github.com/golang/protobuf v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.8 // indirect
-	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db
 	github.com/mitchellh/ioprogress v0.0.0-20180201004757-6a23b12fa88e
 	github.com/onsi/ginkgo v1.10.1
 	github.com/onsi/gomega v1.7.0
@@ -40,12 +35,11 @@ require (
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.4.0
-	github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5 // indirect
-	go.etcd.io/etcd v0.0.0-20191004122535-555eb1951f2e
 	go.uber.org/zap v1.13.0
 	golang.org/x/crypto v0.0.0-20190611184440-5c40567a22f8
 	golang.org/x/net v0.0.0-20191021144547-ec77196f6094 // indirect
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
+	golang.org/x/sys v0.0.0-20190422165155-953cdadca894 // indirect
 	golang.org/x/time v0.0.0-20180412165947-fbb02b2291d2
 	gopkg.in/ini.v1 v1.46.0 // indirect
 	gopkg.in/yaml.v2 v2.2.4 // indirect

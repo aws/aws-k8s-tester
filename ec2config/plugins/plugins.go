@@ -9,8 +9,6 @@ import (
 	"strconv"
 	"strings"
 	"text/template"
-
-	etcdplugin "github.com/aws/aws-k8s-tester/etcdconfig/plugins"
 )
 
 // headerBash is the bash script header.
@@ -35,8 +33,6 @@ var keyPriorities = map[string]int{ // in the order of:
 	"update-ubuntu":                       2,
 	"install-go":                          3,
 	"install-go-amazon-linux-2":           4,
-	"install-csi":                         5,
-	"install-etcd":                        6,
 	"install-aws-k8s-tester":              7,
 	"install-start-docker-amazon-linux-2": 8,
 	"install-start-docker-ubuntu":         9,
@@ -79,29 +75,6 @@ func convertToScript(userName, plugin string) (script, error) {
 			key:  "install-go",
 			data: s,
 		}, nil
-
-	case strings.HasPrefix(plugin, "install-csi-"):
-		prNum := strings.Replace(plugin, "install-csi-", "", -1)
-		s, err := createInstallGit(gitInfo{
-			GitRepo:       "aws-ebs-csi-driver",
-			GitClonePath:  "${GOPATH}/src/github.com/kubernetes-sigs",
-			GitCloneURL:   "https://github.com/kubernetes-sigs/aws-ebs-csi-driver.git",
-			IsPR:          true,
-			GitBranch:     prNum,
-			InstallScript: `make aws-ebs-csi-driver && sudo cp ./bin/aws-ebs-csi-driver /usr/bin/aws-ebs-csi-driver`,
-		})
-		if err != nil {
-			return script{}, err
-		}
-		return script{key: "install-csi", data: s}, nil
-
-	case strings.HasPrefix(plugin, "install-etcd-"):
-		id := strings.Replace(plugin, "install-etcd-", "", -1)
-		s, err := etcdplugin.CreateInstallScript(id)
-		if err != nil {
-			return script{}, err
-		}
-		return script{key: "install-etcd", data: s}, nil
 
 	case plugin == "install-aws-k8s-tester":
 		s, err := createInstallGit(gitInfo{
@@ -356,47 +329,6 @@ sudo echo GOPATH=/home/{{ .UserName }}/go >> /etc/environment
 echo "source /etc/environment" >> ${HOME}/.bashrc;
 
 go version
-
-##################################
-
-`
-
-func createInstallEtcd(g etcdInfo) (string, error) {
-	tpl := template.Must(template.New("installEtcdTemplate").Parse(installEtcdTemplate))
-	buf := bytes.NewBuffer(nil)
-	if err := tpl.Execute(buf, g); err != nil {
-		return "", err
-	}
-	return buf.String(), nil
-}
-
-type etcdInfo struct {
-	Version string
-}
-
-const installEtcdTemplate = `
-
-################################## install etcd
-
-ETCD_VER=v{{ .Version }}
-
-# choose either URL
-GOOGLE_URL=https://storage.googleapis.com/etcd
-GITHUB_URL=https://github.com/etcd-io/etcd/releases/download
-DOWNLOAD_URL=${GOOGLE_URL}
-
-rm -f /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz
-rm -rf /tmp/etcd-download-test && mkdir -p /tmp/etcd-download-test
-
-curl -L ${DOWNLOAD_URL}/${ETCD_VER}/etcd-${ETCD_VER}-linux-amd64.tar.gz -o /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz
-tar xzvf /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz -C /tmp/etcd-download-test --strip-components=1
-rm -f /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz
-
-sudo cp /tmp/etcd-download-test/etcd /usr/bin/etcd
-sudo cp /tmp/etcd-download-test/etcdctl /usr/bin/etcdctl
-
-etcd --version
-ETCDCTL_API=3 etcdctl version
 
 ##################################
 

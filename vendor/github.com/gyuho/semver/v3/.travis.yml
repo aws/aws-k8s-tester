@@ -1,8 +1,0 @@
-language: go
-matrix:
-  include:
-  - go: 1.13
-  - go: tip
-script:
-- echo "Build examples" ; cd examples && go build
-- echo "Check if gofmt'd" ; diff -u <(echo -n) <(gofmt -d -s .)
