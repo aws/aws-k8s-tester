@@ -100,13 +100,13 @@ func Poll(
 			}
 
 			stack := output.Stacks[0]
+			currentStatus := aws.StringValue(stack.StackStatus)
 			currentStatusReason := aws.StringValue(stack.StackStatusReason)
 			if prevStatusReason == "" {
 				prevStatusReason = currentStatusReason
 			} else if currentStatusReason != "" && prevStatusReason != currentStatusReason {
 				prevStatusReason = currentStatusReason
 			}
-			status := aws.StringValue(stack.StackStatus)
 
 			if first {
 				lg.Info("sleeping",
@@ -141,29 +141,42 @@ func Poll(
 			lg.Info("polling",
 				zap.String("stack-id", stackID),
 				zap.String("stack-name", aws.StringValue(stack.StackName)),
-				zap.String("current", status),
-				zap.String("want", desiredStackStatus),
-				zap.String("reason", currentStatusReason),
+				zap.String("desired-status", desiredStackStatus),
+				zap.String("current-status", currentStatus),
+				zap.String("current-status-reason", currentStatusReason),
 				zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			)
 
-			if status == svccfn.ResourceStatusDeleteComplete &&
-				desiredStackStatus != svccfn.ResourceStatusDeleteComplete {
+			if desiredStackStatus != svccfn.ResourceStatusDeleteComplete &&
+				currentStatus == svccfn.ResourceStatusDeleteComplete {
 				lg.Error("create stack failed; aborting")
 				ch <- StackStatus{
 					Stack: stack,
-					Error: fmt.Errorf("stack failed thus deleted (previous status reason %q, current status reason %q, stack status %q)",
+					Error: fmt.Errorf("stack failed thus deleted (previous status reason %q, current stack status %q, current status reason %q)",
 						prevStatusReason,
+						currentStatus,
 						currentStatusReason,
-						status,
+					)}
+				close(ch)
+				return
+			}
+			if desiredStackStatus == svccfn.ResourceStatusDeleteComplete &&
+				currentStatus == svccfn.ResourceStatusDeleteFailed {
+				lg.Error("delete stack failed; aborting")
+				ch <- StackStatus{
+					Stack: stack,
+					Error: fmt.Errorf("failed to delete stack (previous status reason %q, current stack status %q, current status reason %q)",
+						prevStatusReason,
+						currentStatus,
+						currentStatusReason,
 					)}
 				close(ch)
 				return
 			}
 
 			ch <- StackStatus{Stack: stack, Error: nil}
-			if status == desiredStackStatus {
-				lg.Info("became desired stack status; exiting", zap.String("stack-status", status))
+			if currentStatus == desiredStackStatus {
+				lg.Info("became desired stack status; exiting", zap.String("current-stack-status", currentStatus))
 				close(ch)
 				return
 			}
