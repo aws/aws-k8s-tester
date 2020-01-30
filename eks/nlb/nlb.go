@@ -64,6 +64,9 @@ const (
 )
 
 func (ts *tester) Create() error {
+	ts.cfg.EKSConfig.AddOnNLBHelloWorld.Created = true
+	ts.cfg.EKSConfig.Sync()
+
 	if err := ts.createDeployment(); err != nil {
 		return err
 	}
@@ -74,21 +77,30 @@ func (ts *tester) Create() error {
 }
 
 func (ts *tester) Delete() error {
+	if !ts.cfg.EKSConfig.AddOnNLBHelloWorld.Created {
+		ts.cfg.Logger.Info("skipping delete AddOnNLBHelloWorld")
+		return nil
+	}
+
 	var errs []string
 	if err := ts.deleteService(); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete NLB hello-world Service (%v)", err))
 	}
-	time.Sleep(20 * time.Second)
+	time.Sleep(10 * time.Second)
 
 	if err := ts.deleteDeployment(); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete NLB hello-world Deployment (%v)", err))
 	}
-	time.Sleep(30 * time.Second)
+	time.Sleep(10 * time.Second)
 
-	// TODO: clean up target groups, LBs
-	if 1 == 2 {
-		ts.cfg.ELB2API.DescribeLoadBalancers(&elbv2.DescribeLoadBalancersInput{})
-		ts.cfg.ELB2API.DescribeTargetGroups(&elbv2.DescribeTargetGroupsInput{})
+	// TODO: is there a better way to clean up NLB resources?
+	if err := ts.deleteTargetGroups(); err != nil {
+		errs = append(errs, fmt.Sprintf("failed to delete NLB hello-world target groups (%v)", err))
+	}
+	time.Sleep(10 * time.Second)
+
+	if err := ts.deleteNLB(); err != nil {
+		errs = append(errs, fmt.Sprintf("failed to delete NLB hello-world (%v)", err))
 	}
 
 	if len(errs) > 0 {
@@ -261,11 +273,24 @@ func (ts *tester) createService() error {
 		return errors.New("failed to find NLB host name")
 	}
 
+	// TODO: is there any better way to find out the NLB name?
+	ts.cfg.EKSConfig.AddOnNLBHelloWorld.NLBName = strings.Split(hostName, "-")[0]
+	ss := strings.Split(hostName, ".")[0]
+	ss = strings.Replace(ss, "-", "/", -1)
+	ts.cfg.EKSConfig.AddOnNLBHelloWorld.NLBARN = fmt.Sprintf(
+		"arn:aws:elasticloadbalancing:%s:%s:loadbalancer/net/%s",
+		ts.cfg.EKSConfig.Region,
+		ts.cfg.EKSConfig.Status.AWSAccountID,
+		ss,
+	)
 	ts.cfg.EKSConfig.AddOnNLBHelloWorld.URL = "http://" + hostName
+	ts.cfg.EKSConfig.Sync()
+
 	println()
+	fmt.Println("NLB hello-world ARN:", ts.cfg.EKSConfig.AddOnNLBHelloWorld.NLBARN)
+	fmt.Println("NLB hello-world Name:", ts.cfg.EKSConfig.AddOnNLBHelloWorld.NLBName)
 	fmt.Println("NLB hello-world URL:", ts.cfg.EKSConfig.AddOnNLBHelloWorld.URL)
 	println()
-	ts.cfg.EKSConfig.Sync()
 
 	ts.cfg.Logger.Info("waiting before testing hello-world Service")
 	time.Sleep(20 * time.Second)
@@ -323,6 +348,46 @@ func (ts *tester) deleteService() error {
 	}
 	ts.cfg.Logger.Info("deleted NLB hello-world Service", zap.Error(err))
 
+	return ts.cfg.EKSConfig.Sync()
+}
+
+func (ts *tester) deleteTargetGroups() error {
+	ts.cfg.Logger.Info("deleting NLB hello-world target groups",
+		zap.String("nlb-name", ts.cfg.EKSConfig.AddOnNLBHelloWorld.NLBName),
+	)
+
+	to, err := ts.cfg.ELB2API.DescribeTargetGroups(&elbv2.DescribeTargetGroupsInput{
+		LoadBalancerArn: aws.String(ts.cfg.EKSConfig.AddOnNLBHelloWorld.NLBARN),
+	})
+	if err != nil {
+		return err
+	}
+	for _, tg := range to.TargetGroups {
+		ts.cfg.Logger.Info("deleting",
+			zap.String("target-group-arn", aws.StringValue(tg.TargetGroupArn)),
+			zap.String("target-group-name", aws.StringValue(tg.TargetGroupName)),
+			zap.String("target-group-type", aws.StringValue(tg.TargetType)),
+		)
+		_, err = ts.cfg.ELB2API.DeleteTargetGroup(&elbv2.DeleteTargetGroupInput{
+			TargetGroupArn: tg.TargetGroupArn,
+		})
+		ts.cfg.Logger.Info("deleted", zap.Error(err))
+
+		time.Sleep(3 * time.Second)
+	}
+
+	ts.cfg.Logger.Info("deleted NLB hello-world target groups")
+	return ts.cfg.EKSConfig.Sync()
+}
+
+func (ts *tester) deleteNLB() error {
+	ts.cfg.Logger.Info("deleting NLB hello-world",
+		zap.String("nlb-arn", ts.cfg.EKSConfig.AddOnNLBHelloWorld.NLBARN),
+	)
+	_, err := ts.cfg.ELB2API.DeleteLoadBalancer(&elbv2.DeleteLoadBalancerInput{
+		LoadBalancerArn: aws.String(ts.cfg.EKSConfig.AddOnNLBHelloWorld.NLBARN),
+	})
+	ts.cfg.Logger.Info("deleted NLB hello-world", zap.Error(err))
 	return ts.cfg.EKSConfig.Sync()
 }
 
