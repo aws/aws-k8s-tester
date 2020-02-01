@@ -14,6 +14,12 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.4...v0.5.5
   - See [`eksconfig` godoc](https://godoc.org/github.com/aws/aws-k8s-tester/eksconfig) for breaking changes to environmental variable parsing.
   - See [`eksconfig` tests](https://github.com/aws/aws-k8s-tester/blob/master/eksconfig/config_test.go) for breaking changes to environmental variable parsing.
   - See [`aws/amazon-vpc-cni-k8s#821`](https://github.com/aws/amazon-vpc-cni-k8s/pull/821) for example migration.
+- Support [GPU tester](https://github.com/aws/aws-k8s-tester/commit/239fe7fa057a130c8aacc1d71bcb60d94b4ccdaf).
+- Support ["Secret" tester](https://github.com/aws/aws-k8s-tester/commit/2303c8fcacae30b6b0e0bf5c4c45a2ace13f952f).
+- Improve [ALB resource deletion](https://github.com/aws/aws-k8s-tester/commit/721bbaecaa2735d04cf84d9aecfab7205b3beca6).
+  - See [issue#70](https://github.com/aws/aws-k8s-tester/issues/70) for more details.
+- Improve [NLB resource deletion](https://github.com/aws/aws-k8s-tester/commit/c7efee4ed5abe9d59adf1a9e50e75282892f6a1d).
+  - See [issue#70](https://github.com/aws/aws-k8s-tester/issues/70) for more details.
 
 ### `eksconfig`
 
@@ -21,8 +27,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.4...v0.5.5
   - See [`eksconfig` godoc](https://godoc.org/github.com/aws/aws-k8s-tester/eksconfig) for breaking changes to environmental variable parsing.
   - See [`eksconfig` tests](https://github.com/aws/aws-k8s-tester/blob/master/eksconfig/config_test.go) for breaking changes to environmental variable parsing.
   - See [`aws/amazon-vpc-cni-k8s#821`](https://github.com/aws/amazon-vpc-cni-k8s/pull/821) for example migration.
-- Support [GPU tester](https://github.com/aws/aws-k8s-tester/pull/74).
-- Support ["Secret" tester](https://github.com/aws/aws-k8s-tester/pull/74).
+- Support [GPU tester](https://github.com/aws/aws-k8s-tester/commit/239fe7fa057a130c8aacc1d71bcb60d94b4ccdaf).
+- Support ["Secret" tester](https://github.com/aws/aws-k8s-tester/commit/2303c8fcacae30b6b0e0bf5c4c45a2ace13f952f).
 - Use upstream [`kubectl` binary by default](https://github.com/aws/aws-k8s-tester/commit/f0a97247bf0d6d7bbc8892ab3067a2db8b7cc253).
 
 ### `pkg/awsapi/cloudformation`
