@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/dustin/go-humanize"
 	"go.uber.org/zap"
@@ -24,6 +25,7 @@ type Config struct {
 	Stopc chan struct{}
 	Sig   chan os.Signal
 
+	EKSConfig *eksconfig.Config
 	K8SClient k8sClientSetGetter
 
 	// Namespace is the namespace to create Jobs.
@@ -63,6 +65,15 @@ type tester struct {
 }
 
 func (ts *tester) Create() error {
+	switch ts.cfg.JobName {
+	case JobNamePi:
+		ts.cfg.EKSConfig.AddOnJobPerl.Created = true
+		ts.cfg.EKSConfig.Sync()
+	case JobNameEcho:
+		ts.cfg.EKSConfig.AddOnJobEcho.Created = true
+		ts.cfg.EKSConfig.Sync()
+	}
+
 	obj, b, err := ts.createObject()
 	if err != nil {
 		return err
@@ -114,6 +125,19 @@ func (ts *tester) Create() error {
 var propagationBackground = metav1.DeletePropagationBackground
 
 func (ts *tester) Delete() error {
+	switch ts.cfg.JobName {
+	case JobNamePi:
+		if !ts.cfg.EKSConfig.AddOnJobPerl.Created {
+			ts.cfg.Logger.Info("skipping delete AddOnJobPerl")
+			return nil
+		}
+	case JobNameEcho:
+		if !ts.cfg.EKSConfig.AddOnJobPerl.Created {
+			ts.cfg.Logger.Info("skipping delete AddOnJobPerl")
+			return nil
+		}
+	}
+
 	ts.cfg.Logger.Info("deleting Job", zap.String("name", ts.cfg.JobName))
 	err := ts.cfg.
 		K8SClient.KubernetesClientSet().
