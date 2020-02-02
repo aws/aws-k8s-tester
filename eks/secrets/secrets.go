@@ -75,6 +75,7 @@ func (ts *tester) Create() error {
 	createStart := time.Now()
 	defer func() {
 		ts.cfg.EKSConfig.AddOnSecrets.CreateTook = time.Since(createStart)
+		ts.cfg.EKSConfig.AddOnSecrets.CreateTookString = ts.cfg.EKSConfig.AddOnSecrets.CreateTook.String()
 		ts.cfg.EKSConfig.Sync()
 	}()
 
@@ -97,6 +98,7 @@ func (ts *tester) Delete() error {
 	deleteStart := time.Now()
 	defer func() {
 		ts.cfg.EKSConfig.AddOnSecrets.DeleteTook = time.Since(deleteStart)
+		ts.cfg.EKSConfig.AddOnSecrets.DeleteTookString = ts.cfg.EKSConfig.AddOnSecrets.DeleteTook.String()
 		ts.cfg.EKSConfig.Sync()
 	}()
 
