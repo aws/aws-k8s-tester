@@ -24,6 +24,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.4...v0.5.5
   - See [issue#70](https://github.com/aws/aws-k8s-tester/issues/70) for more details.
 - Improve [NLB resource deletion](https://github.com/aws/aws-k8s-tester/commit/b4dc9971a6bfbf3f7356a70f7572ca4b434104cf).
   - See [issue#70](https://github.com/aws/aws-k8s-tester/issues/70) for more details.
+- Update [ALB Ingress Controller default image from `v1.1.3` to `v1.1.5`](https://github.com/aws/aws-k8s-tester/commit/041907e35ba88daf708b6282a77f4c1a5ada8782).
 
 ### `eksconfig`
 
