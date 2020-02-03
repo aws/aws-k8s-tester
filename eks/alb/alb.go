@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aws/aws-k8s-tester/eks/elb"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	awsapicfn "github.com/aws/aws-k8s-tester/pkg/awsapi/cloudformation"
 	"github.com/aws/aws-sdk-go/aws"
@@ -260,12 +261,14 @@ func (ts *tester) Delete() error {
 	if err := ts.delete2048Ingress(); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete ALB 2048 Ingress (%v)", err))
 	}
-	time.Sleep(20 * time.Second)
+	ts.cfg.Logger.Info("wait for a minute after deleting 2048 Ingress")
+	time.Sleep(time.Minute)
 
 	if err := ts.delete2048Service(); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete ALB 2048 Service (%v)", err))
 	}
-	time.Sleep(30 * time.Second)
+	ts.cfg.Logger.Info("wait for a minute after deleting 2048 Service")
+	time.Sleep(time.Minute)
 
 	if err := ts.delete2048Deployment(); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete ALB 2048 Deployment (%v)", err))
@@ -275,7 +278,8 @@ func (ts *tester) Delete() error {
 	if err := ts.deleteALBDeployment(); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete ALB Ingress Controller Deployment (%v)", err))
 	}
-	time.Sleep(time.Minute + 10*time.Second)
+	ts.cfg.Logger.Info("wait for a minute after deleting ALB Deployment")
+	time.Sleep(time.Minute)
 
 	if err := ts.deleteALBRBACClusterRoleBinding(); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete ALB Ingress Controller RBAC (%v)", err))
@@ -295,9 +299,10 @@ func (ts *tester) Delete() error {
 	if err := ts.deleteALBPolicy(); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete ALB Ingress Controller Policy (%v)", err))
 	}
-	time.Sleep(10 * time.Second)
+	ts.cfg.Logger.Info("wait for a minute after deleting ALB Policy")
+	time.Sleep(time.Minute)
 
-	if err := ts.deleteALB(); err != nil {
+	if err := elb.DeleteELBv2(ts.cfg.Logger, ts.cfg.ELB2API, ts.cfg.EKSConfig.AddOnALB2048.ALBARN); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete ALB (%v)", err))
 	}
 
@@ -1039,93 +1044,6 @@ func (ts *tester) delete2048Ingress() error {
 	}
 	ts.cfg.Logger.Info("deleted ALB 2048 Ingress", zap.Error(err))
 
-	return ts.cfg.EKSConfig.Sync()
-}
-
-func (ts *tester) deleteALB() error {
-	if ts.cfg.EKSConfig.AddOnALB2048.ALBName == "" {
-		return errors.New("empty AddOnALB2048.ALBName")
-	}
-
-	// delete listener first
-	// e.g. ResourceInUse: Target group is currently in use by a listener or a rule
-	ts.cfg.Logger.Info("describing listeners", zap.String("alb-arn", ts.cfg.EKSConfig.AddOnALB2048.ALBARN))
-	ls, err := ts.cfg.ELB2API.DescribeListeners(&elbv2.DescribeListenersInput{
-		LoadBalancerArn: aws.String(ts.cfg.EKSConfig.AddOnALB2048.ALBARN),
-	})
-	if err != nil {
-		return err
-	}
-	for _, lv := range ls.Listeners {
-		arn := aws.StringValue(lv.ListenerArn)
-
-		ts.cfg.Logger.Info("describing rules", zap.String("listener-arn", arn))
-		ro, err := ts.cfg.ELB2API.DescribeRules(&elbv2.DescribeRulesInput{
-			ListenerArn: lv.ListenerArn,
-		})
-		if err != nil {
-			ts.cfg.Logger.Warn("failed to describe rules", zap.Error(err))
-		} else {
-			for _, rv := range ro.Rules {
-				ruleArn := aws.StringValue(rv.RuleArn)
-				ts.cfg.Logger.Info("deleting rule", zap.String("rule-arn", ruleArn))
-				_, err = ts.cfg.ELB2API.DeleteRule(&elbv2.DeleteRuleInput{
-					RuleArn: rv.RuleArn,
-				})
-				if err != nil {
-					ts.cfg.Logger.Info("failed to delete rule", zap.String("rule-arn", ruleArn), zap.Error(err))
-				} else {
-					ts.cfg.Logger.Info("deleted rule", zap.String("rule-arn", ruleArn))
-				}
-			}
-		}
-
-		ts.cfg.Logger.Info("deleting listener", zap.String("listener-arn", arn))
-		_, err = ts.cfg.ELB2API.DeleteListener(&elbv2.DeleteListenerInput{
-			ListenerArn: lv.ListenerArn,
-		})
-		if err != nil {
-			ts.cfg.Logger.Warn("failed to delete listener", zap.Error(err))
-		} else {
-			ts.cfg.Logger.Info("deleted listener")
-		}
-	}
-
-	ts.cfg.Logger.Info("deleting target groups", zap.String("alb-arn", ts.cfg.EKSConfig.AddOnALB2048.ALBARN))
-	to, err := ts.cfg.ELB2API.DescribeTargetGroups(&elbv2.DescribeTargetGroupsInput{
-		LoadBalancerArn: aws.String(ts.cfg.EKSConfig.AddOnALB2048.ALBARN),
-	})
-	if err != nil {
-		return err
-	}
-	for _, tv := range to.TargetGroups {
-		arn := aws.StringValue(tv.TargetGroupArn)
-		name := aws.StringValue(tv.TargetGroupName)
-		tp := aws.StringValue(tv.TargetType)
-		ts.cfg.Logger.Info("deleting target group",
-			zap.String("arn", arn),
-			zap.String("name", name),
-			zap.String("type", tp),
-		)
-		_, err = ts.cfg.ELB2API.DeleteTargetGroup(&elbv2.DeleteTargetGroupInput{
-			TargetGroupArn: tv.TargetGroupArn,
-		})
-		if err != nil {
-			ts.cfg.Logger.Warn("failed to delete target group", zap.Error(err))
-		} else {
-			ts.cfg.Logger.Info("deleted target group")
-		}
-	}
-
-	ts.cfg.Logger.Info("deleting ALB", zap.String("arn", ts.cfg.EKSConfig.AddOnALB2048.ALBARN))
-	_, err = ts.cfg.ELB2API.DeleteLoadBalancer(&elbv2.DeleteLoadBalancerInput{
-		LoadBalancerArn: aws.String(ts.cfg.EKSConfig.AddOnALB2048.ALBARN),
-	})
-	if err != nil {
-		return err
-	}
-
-	ts.cfg.Logger.Info("deleted ALB")
 	return ts.cfg.EKSConfig.Sync()
 }
 

@@ -12,9 +12,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aws/aws-k8s-tester/eks/elb"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/elbv2"
 	"github.com/aws/aws-sdk-go/service/elbv2/elbv2iface"
 	"go.uber.org/zap"
 	appsv1 "k8s.io/api/apps/v1"
@@ -86,20 +86,16 @@ func (ts *tester) Delete() error {
 	if err := ts.deleteService(); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete NLB hello-world Service (%v)", err))
 	}
-	time.Sleep(10 * time.Second)
+	ts.cfg.Logger.Info("wait for a minute after deleting Service")
+	time.Sleep(time.Minute)
 
 	if err := ts.deleteDeployment(); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete NLB hello-world Deployment (%v)", err))
 	}
-	time.Sleep(10 * time.Second)
+	ts.cfg.Logger.Info("wait for a minute after deleting Deployment")
+	time.Sleep(time.Minute)
 
-	// TODO: is there a better way to clean up NLB resources?
-	if err := ts.deleteTargetGroups(); err != nil {
-		errs = append(errs, fmt.Sprintf("failed to delete NLB hello-world target groups (%v)", err))
-	}
-	time.Sleep(10 * time.Second)
-
-	if err := ts.deleteNLB(); err != nil {
+	if err := elb.DeleteELBv2(ts.cfg.Logger, ts.cfg.ELB2API, ts.cfg.EKSConfig.AddOnNLBHelloWorld.NLBARN); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete NLB hello-world (%v)", err))
 	}
 
@@ -348,46 +344,6 @@ func (ts *tester) deleteService() error {
 	}
 	ts.cfg.Logger.Info("deleted NLB hello-world Service", zap.Error(err))
 
-	return ts.cfg.EKSConfig.Sync()
-}
-
-func (ts *tester) deleteTargetGroups() error {
-	ts.cfg.Logger.Info("deleting NLB hello-world target groups",
-		zap.String("nlb-name", ts.cfg.EKSConfig.AddOnNLBHelloWorld.NLBName),
-	)
-
-	to, err := ts.cfg.ELB2API.DescribeTargetGroups(&elbv2.DescribeTargetGroupsInput{
-		LoadBalancerArn: aws.String(ts.cfg.EKSConfig.AddOnNLBHelloWorld.NLBARN),
-	})
-	if err != nil {
-		return err
-	}
-	for _, tg := range to.TargetGroups {
-		ts.cfg.Logger.Info("deleting",
-			zap.String("target-group-arn", aws.StringValue(tg.TargetGroupArn)),
-			zap.String("target-group-name", aws.StringValue(tg.TargetGroupName)),
-			zap.String("target-group-type", aws.StringValue(tg.TargetType)),
-		)
-		_, err = ts.cfg.ELB2API.DeleteTargetGroup(&elbv2.DeleteTargetGroupInput{
-			TargetGroupArn: tg.TargetGroupArn,
-		})
-		ts.cfg.Logger.Info("deleted", zap.Error(err))
-
-		time.Sleep(3 * time.Second)
-	}
-
-	ts.cfg.Logger.Info("deleted NLB hello-world target groups")
-	return ts.cfg.EKSConfig.Sync()
-}
-
-func (ts *tester) deleteNLB() error {
-	ts.cfg.Logger.Info("deleting NLB hello-world",
-		zap.String("nlb-arn", ts.cfg.EKSConfig.AddOnNLBHelloWorld.NLBARN),
-	)
-	_, err := ts.cfg.ELB2API.DeleteLoadBalancer(&elbv2.DeleteLoadBalancerInput{
-		LoadBalancerArn: aws.String(ts.cfg.EKSConfig.AddOnNLBHelloWorld.NLBARN),
-	})
-	ts.cfg.Logger.Info("deleted NLB hello-world", zap.Error(err))
 	return ts.cfg.EKSConfig.Sync()
 }
 
