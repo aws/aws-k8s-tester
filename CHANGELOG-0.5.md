@@ -21,8 +21,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.4...v0.5.5
 - Support [GPU tester](https://github.com/aws/aws-k8s-tester/commit/239fe7fa057a130c8aacc1d71bcb60d94b4ccdaf).
 - Support ["Secret" tester](https://github.com/aws/aws-k8s-tester/commit/2303c8fcacae30b6b0e0bf5c4c45a2ace13f952f).
 - Improve [ALB resource deletion](https://github.com/aws/aws-k8s-tester/commit/4c8f1a6fe14e1eb10ab1ac47bf98d8ee1abcf865).
+  - Add [`eks/elb` package for clean-up operation](https://github.com/aws/aws-k8s-tester/commit/f4eb025f4444cf5629a8eab1e674a671ddfe0e48).
   - See [issue#70](https://github.com/aws/aws-k8s-tester/issues/70) for more details.
 - Improve [NLB resource deletion](https://github.com/aws/aws-k8s-tester/commit/b4dc9971a6bfbf3f7356a70f7572ca4b434104cf).
+  - Add [`eks/elb` package for clean-up operation](https://github.com/aws/aws-k8s-tester/commit/f4eb025f4444cf5629a8eab1e674a671ddfe0e48).
   - See [issue#70](https://github.com/aws/aws-k8s-tester/issues/70) for more details.
 - Update [ALB Ingress Controller default image from `v1.1.3` to `v1.1.5`](https://github.com/aws/aws-k8s-tester/commit/041907e35ba88daf708b6282a77f4c1a5ada8782).
 
