@@ -203,7 +203,6 @@ const (
 
 	albIngressControllerDeploymentName      = "alb-ingress-controller-deployment"
 	albIngressControllerDeploymentNamespace = "kube-system"
-	albIngressControllerImageName           = "docker.io/amazon/aws-alb-ingress-controller:v1.1.3"
 
 	alb2048AppName        = "alb-2048"
 	alb2048ImageName      = "alexwhen/docker-2048"
@@ -211,6 +210,10 @@ const (
 	alb2048ServiceName    = "alb-2048-service"
 	alb2048IngressName    = "alb-2048-ingress"
 )
+
+// ALBImageName is the image name of ALB Ingress Controller.
+// ref. https://github.com/kubernetes-sigs/aws-alb-ingress-controller/releases
+const ALBImageName = "docker.io/amazon/aws-alb-ingress-controller:v1.1.5"
 
 // https://docs.aws.amazon.com/eks/latest/userguide/alb-ingress.html
 func (ts *tester) Create() error {
@@ -667,7 +670,7 @@ func (ts *tester) createALBDeployment() error {
 						Containers: []v1.Container{
 							{
 								Name:            albIngressControllerDeploymentName,
-								Image:           albIngressControllerImageName,
+								Image:           ALBImageName,
 								ImagePullPolicy: v1.PullAlways,
 								Args: []string{
 									"--ingress-class=alb",
