@@ -65,6 +65,8 @@ Outputs:
 //
 // e.g.
 //   Error creating load balancer (will retry): failed to ensure load balancer for service eks-*/hello-world-service: Error creating load balancer: "AccessDenied: User: arn:aws:sts::404174646922:assumed-role/eks-*-cluster-role/* is not authorized to perform: ec2:DescribeAccountAttributes\n\tstatus code: 403"
+//
+// TODO: scope down (e.g. ec2:DescribeAccountAttributes, ec2:DescribeInternetGateways)
 const TemplateClusterRoleNLB = `
 ---
 AWSTemplateFormatVersion: '2010-09-09'
@@ -107,7 +109,8 @@ Resources:
         PolicyDocument:
           Version: '2012-10-17'
           Statement:
-          - Action: ['ec2:DescribeAccountAttributes']
+          - Action:
+            - ec2:*
             Effect: Allow
             Resource: '*'
 
