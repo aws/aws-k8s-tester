@@ -13,11 +13,11 @@ import (
 	"go.uber.org/zap"
 )
 
-// TemplateClusterRole is the CloudFormation template for EKS cluster role.
-const TemplateClusterRole = `
+// TemplateClusterRoleBasic is the CloudFormation template for EKS cluster role.
+const TemplateClusterRoleBasic = `
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Amazon EKS Cluster Role'
+Description: 'Amazon EKS Cluster Role Basic'
 
 Parameters:
 
@@ -60,6 +60,65 @@ Outputs:
 
 `
 
+// TemplateClusterRoleNLB is the CloudFormation template for EKS cluster role
+// with policies required for NLB service operation.
+//
+// e.g.
+//   Error creating load balancer (will retry): failed to ensure load balancer for service eks-*/hello-world-service: Error creating load balancer: "AccessDenied: User: arn:aws:sts::404174646922:assumed-role/eks-*-cluster-role/* is not authorized to perform: ec2:DescribeAccountAttributes\n\tstatus code: 403"
+const TemplateClusterRoleNLB = `
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Amazon EKS Cluster Role + NLB'
+
+Parameters:
+
+  ClusterRoleName:
+    Description: EKS Role name
+    Type: String
+
+  ClusterRoleServicePrincipals:
+    Description: EKS Role Service Principals
+    Type: CommaDelimitedList
+    Default: eks.amazonaws.com
+
+  ClusterRoleManagedPolicyARNs:
+    Description: EKS Role managed policy ARNs
+    Type: CommaDelimitedList
+    Default: 'arn:aws:iam::aws:policy/AmazonEKSServicePolicy,arn:aws:iam::aws:policy/AmazonEKSClusterPolicy'
+
+Resources:
+
+  ClusterRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Ref ClusterRoleName
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: !Ref ClusterRoleServicePrincipals
+          Action:
+          - sts:AssumeRole
+      ManagedPolicyArns: !Ref ClusterRoleManagedPolicyARNs
+      Path: /
+      Policies:
+      - PolicyName: !Join ['-', [!Ref ClusterRoleName, 'nlb-policy']]
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Action: ['ec2:DescribeAccountAttributes']
+            Effect: Allow
+            Resource: '*'
+
+Outputs:
+
+  ClusterRoleARN:
+    Description: Cluster role ARN that EKS uses to create AWS resources for Kubernetes
+    Value: !GetAtt ClusterRole.Arn
+
+`
+
 func (ts *Tester) createClusterRole() error {
 	if ts.cfg.Parameters.ClusterRoleARN != "" ||
 		ts.cfg.Status.ClusterRoleCFNStackID != "" ||
@@ -70,6 +129,12 @@ func (ts *Tester) createClusterRole() error {
 	}
 
 	ts.cfg.Status.ClusterRoleName = ts.cfg.Name + "-cluster-role"
+	ts.cfg.Sync()
+
+	tmpl := TemplateClusterRoleBasic
+	if ts.cfg.AddOnNLBHelloWorld.Enable {
+		tmpl = TemplateClusterRoleNLB
+	}
 
 	// role ARN is empty, create a default role
 	// otherwise, use the existing one
@@ -78,7 +143,7 @@ func (ts *Tester) createClusterRole() error {
 		StackName:    aws.String(ts.cfg.Status.ClusterRoleName),
 		Capabilities: aws.StringSlice([]string{"CAPABILITY_NAMED_IAM"}),
 		OnFailure:    aws.String("DELETE"),
-		TemplateBody: aws.String(TemplateClusterRole),
+		TemplateBody: aws.String(tmpl),
 		Tags: awsapicfn.NewTags(map[string]string{
 			"Kind": "aws-k8s-tester",
 			"Name": ts.cfg.Name,
