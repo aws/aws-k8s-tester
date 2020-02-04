@@ -579,7 +579,7 @@ func (ts *Tester) Up() (err error) {
 		}
 
 		if ts.cfg.AddOnJobPerl.Enable {
-			colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]jobPerlTester.Create [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
+			colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]jobPerlTester.Create [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.AddOnJobPerl.Namespace)
 			if err := catchInterrupt(
 				ts.lg,
 				ts.stopCreationCh,
@@ -592,7 +592,7 @@ func (ts *Tester) Up() (err error) {
 		}
 
 		if ts.cfg.AddOnJobEcho.Enable {
-			colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]jobEchoTester.Create [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
+			colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]jobEchoTester.Create [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.AddOnJobEcho.Namespace)
 			if err := catchInterrupt(
 				ts.lg,
 				ts.stopCreationCh,
@@ -663,6 +663,8 @@ func (ts *Tester) Up() (err error) {
 }
 
 func (ts *Tester) down() (err error) {
+	colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]down [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
+
 	now := time.Now()
 	ts.lg.Warn("starting Down",
 		zap.String("name", ts.cfg.Name),
