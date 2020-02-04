@@ -123,12 +123,12 @@ func deleteInOrder(lg *zap.Logger, elb2API elbv2iface.ELBV2API, arn string) erro
 	if !lbDeleted {
 		for i := 0; i < 5; i++ {
 			time.Sleep(10 * time.Second)
-			lg.Info("deleting ELB", zap.String("arn", arn))
+			lg.Info("deleting ELB in order", zap.String("arn", arn))
 			_, err = elb2API.DeleteLoadBalancer(&elbv2.DeleteLoadBalancerInput{
 				LoadBalancerArn: aws.String(arn),
 			})
 			if err == nil {
-				lg.Info("successfully deleted ELB")
+				lg.Info("successfully deleted ELB in order")
 				lbDeleted = true
 				break
 			}
@@ -137,11 +137,11 @@ func deleteInOrder(lg *zap.Logger, elb2API elbv2iface.ELBV2API, arn string) erro
 				lg.Info("ELB has already been deleted", zap.Error(err))
 				break
 			}
-			lg.Warn("failing to delete ELB", zap.Error(err))
+			lg.Warn("failing to delete ELB in order", zap.Error(err))
 		}
 	}
 	if err == nil && lbDeleted {
-		lg.Info("deleted ELB")
+		lg.Info("deleted ELB in order")
 		return nil
 	}
 	if err != nil && lbDeleted {
@@ -149,7 +149,7 @@ func deleteInOrder(lg *zap.Logger, elb2API elbv2iface.ELBV2API, arn string) erro
 	}
 
 	if err != nil && !lbDeleted {
-		lg.Warn("failed to delete ELB", zap.Error(err))
+		lg.Warn("failed to delete ELB in order", zap.Error(err))
 	}
 	return err
 }
@@ -159,21 +159,21 @@ func deleteInReverseOrder(lg *zap.Logger, elb2API elbv2iface.ELBV2API, arn strin
 	var err error
 	for i := 0; i < 5; i++ {
 		time.Sleep(10 * time.Second)
-		lg.Info("deleting ELB", zap.String("arn", arn))
+		lg.Info("deleting ELB in reverse order", zap.String("arn", arn))
 		_, err = elb2API.DeleteLoadBalancer(&elbv2.DeleteLoadBalancerInput{
 			LoadBalancerArn: aws.String(arn),
 		})
 		if err == nil {
-			lg.Info("successfully deleted ELB")
+			lg.Info("successfully deleted ELB in reverse order")
 			lg.Info("waiting for ENI clean up after ELB deletion")
 			time.Sleep(30 * time.Second)
 			break
 		}
 		if isDeleted(err) {
-			lg.Info("ELB has already been deleted", zap.Error(err))
+			lg.Info("ELB has already been deleted in order", zap.Error(err))
 			break
 		}
-		lg.Warn("failing to delete ELB", zap.Error(err))
+		lg.Warn("failing to delete ELB in order", zap.Error(err))
 	}
 	return err
 }
