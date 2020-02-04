@@ -29,6 +29,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.4...v0.5.5
   - Retry [ELB deletion in reverse order](https://github.com/aws/aws-k8s-tester/commit/fdf60d8572c6d6720268131ba80d32c9fde2bdc9).
   - See [issue#70](https://github.com/aws/aws-k8s-tester/issues/70) for more details.
 - Update [ALB Ingress Controller default image from `v1.1.3` to `v1.1.5`](https://github.com/aws/aws-k8s-tester/commit/041907e35ba88daf708b6282a77f4c1a5ada8782).
+- Fix [NLB cluster role policy for `eksconfig.AddOnNLBHelloWorld`](https://github.com/aws/aws-k8s-tester/commit/aa8d56335169395ba23362119bddac7bdd447273).
 
 ### `eksconfig`
 
