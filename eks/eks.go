@@ -363,7 +363,7 @@ func (ts *Tester) createSubTesters() (err error) {
 		Sig:       ts.interruptSig,
 		EKSConfig: ts.cfg,
 		K8SClient: ts,
-		Namespace: ts.cfg.JobNameEcho.Namespace,
+		Namespace: ts.cfg.AddOnJobEcho.Namespace,
 		JobName:   jobs.JobNameEcho,
 		Completes: ts.cfg.AddOnJobEcho.Completes,
 		Parallels: ts.cfg.AddOnJobEcho.Parallels,
