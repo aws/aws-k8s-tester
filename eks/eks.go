@@ -754,7 +754,8 @@ func (ts *Tester) down() (err error) {
 	// https://github.com/kubernetes/kubernetes/issues/53451
 	// https://github.com/kubernetes/enhancements/blob/master/keps/sig-network/20190423-service-lb-finalizer.md
 	if ts.cfg.AddOnManagedNodeGroups.Enable && len(ts.cfg.StatusManagedNodeGroups.Nodes) > 0 &&
-		(ts.cfg.AddOnALB2048.Enable || ts.cfg.AddOnNLBHelloWorld.Enable) {
+		((ts.cfg.AddOnALB2048.Enable && ts.cfg.AddOnALB2048.Created) ||
+			(ts.cfg.AddOnNLBHelloWorld.Enable && ts.cfg.AddOnNLBHelloWorld.Created)) {
 		waitDur := 2 * time.Minute
 		ts.lg.Info("sleeping after deleting LB", zap.Duration("wait", waitDur))
 		time.Sleep(waitDur)
