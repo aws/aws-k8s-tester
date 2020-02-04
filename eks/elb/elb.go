@@ -20,7 +20,19 @@ func DeleteELBv2(lg *zap.Logger, elb2API elbv2iface.ELBV2API, arn string) error 
 	if arn == "" {
 		return errors.New("empty ELB ARN")
 	}
+	// deleteInOrder deletes listeners, target groups, and ELB in order.
+	if err := deleteInOrder(lg, elb2API, arn); err == nil {
+		lg.Info("successfully deleted ELB in order")
+	}
+	// deleteInReverseOrder deletes ELB and expects ENIs to be detached and deleted.
+	if err := deleteInReverseOrder(lg, elb2API, arn); err == nil {
+		lg.Info("successfully deleted ELB in reverse order")
+	}
+	return nil
+}
 
+// deleteInOrder deletes listeners, target groups, and ELB in order.
+func deleteInOrder(lg *zap.Logger, elb2API elbv2iface.ELBV2API, arn string) error {
 	lbDeleted := false
 	// delete listener first
 	// e.g. ResourceInUse: Target group is currently in use by a listener or a rule
@@ -116,11 +128,13 @@ func DeleteELBv2(lg *zap.Logger, elb2API elbv2iface.ELBV2API, arn string) error 
 				LoadBalancerArn: aws.String(arn),
 			})
 			if err == nil {
+				lg.Info("successfully deleted ELB")
 				lbDeleted = true
 				break
 			}
 			if isDeleted(err) {
 				err, lbDeleted = nil, true
+				lg.Info("ELB has already been deleted", zap.Error(err))
 				break
 			}
 			lg.Warn("failing to delete ELB", zap.Error(err))
@@ -136,6 +150,30 @@ func DeleteELBv2(lg *zap.Logger, elb2API elbv2iface.ELBV2API, arn string) error 
 
 	if err != nil && !lbDeleted {
 		lg.Warn("failed to delete ELB", zap.Error(err))
+	}
+	return err
+}
+
+// deleteInReverseOrder deletes ELB and expects ENIs to be detached and deleted.
+func deleteInReverseOrder(lg *zap.Logger, elb2API elbv2iface.ELBV2API, arn string) error {
+	var err error
+	for i := 0; i < 5; i++ {
+		time.Sleep(10 * time.Second)
+		lg.Info("deleting ELB", zap.String("arn", arn))
+		_, err = elb2API.DeleteLoadBalancer(&elbv2.DeleteLoadBalancerInput{
+			LoadBalancerArn: aws.String(arn),
+		})
+		if err == nil {
+			lg.Info("successfully deleted ELB")
+			lg.Info("waiting for ENI clean up after ELB deletion")
+			time.Sleep(30 * time.Second)
+			break
+		}
+		if isDeleted(err) {
+			lg.Info("ELB has already been deleted", zap.Error(err))
+			break
+		}
+		lg.Warn("failing to delete ELB", zap.Error(err))
 	}
 	return err
 }
