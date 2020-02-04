@@ -113,9 +113,21 @@ func (ts *tester) Create() error {
 	case JobNamePi:
 		ts.cfg.EKSConfig.AddOnJobPerl.Created = true
 		ts.cfg.EKSConfig.Sync()
+		createStart := time.Now()
+		defer func() {
+			ts.cfg.EKSConfig.AddOnJobPerl.CreateTook = time.Since(createStart)
+			ts.cfg.EKSConfig.AddOnJobPerl.CreateTookString = ts.cfg.EKSConfig.AddOnJobPerl.CreateTook.String()
+			ts.cfg.EKSConfig.Sync()
+		}()
 	case JobNameEcho:
 		ts.cfg.EKSConfig.AddOnJobEcho.Created = true
 		ts.cfg.EKSConfig.Sync()
+		createStart := time.Now()
+		defer func() {
+			ts.cfg.EKSConfig.AddOnJobEcho.CreateTook = time.Since(createStart)
+			ts.cfg.EKSConfig.AddOnJobEcho.CreateTookString = ts.cfg.EKSConfig.AddOnJobEcho.CreateTook.String()
+			ts.cfg.EKSConfig.Sync()
+		}()
 	}
 
 	if err := ts.createNamespace(); err != nil {
@@ -178,11 +190,23 @@ func (ts *tester) Delete() error {
 			ts.cfg.Logger.Info("skipping delete AddOnJobPerl")
 			return nil
 		}
+		deleteStart := time.Now()
+		defer func() {
+			ts.cfg.EKSConfig.AddOnJobPerl.DeleteTook = time.Since(deleteStart)
+			ts.cfg.EKSConfig.AddOnJobPerl.DeleteTookString = ts.cfg.EKSConfig.AddOnJobPerl.DeleteTook.String()
+			ts.cfg.EKSConfig.Sync()
+		}()
 	case JobNameEcho:
 		if !ts.cfg.EKSConfig.AddOnJobEcho.Created {
 			ts.cfg.Logger.Info("skipping delete AddOnJobPerl")
 			return nil
 		}
+		deleteStart := time.Now()
+		defer func() {
+			ts.cfg.EKSConfig.AddOnJobEcho.DeleteTook = time.Since(deleteStart)
+			ts.cfg.EKSConfig.AddOnJobEcho.DeleteTookString = ts.cfg.EKSConfig.AddOnJobEcho.DeleteTook.String()
+			ts.cfg.EKSConfig.Sync()
+		}()
 	}
 
 	ts.cfg.Logger.Info("deleting Job", zap.String("name", ts.cfg.JobName))

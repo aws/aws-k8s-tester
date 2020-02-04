@@ -67,6 +67,13 @@ func (ts *tester) Create() error {
 	ts.cfg.EKSConfig.AddOnNLBHelloWorld.Created = true
 	ts.cfg.EKSConfig.Sync()
 
+	createStart := time.Now()
+	defer func() {
+		ts.cfg.EKSConfig.AddOnNLBHelloWorld.CreateTook = time.Since(createStart)
+		ts.cfg.EKSConfig.AddOnNLBHelloWorld.CreateTookString = ts.cfg.EKSConfig.AddOnNLBHelloWorld.CreateTook.String()
+		ts.cfg.EKSConfig.Sync()
+	}()
+
 	if err := ts.createDeployment(); err != nil {
 		return err
 	}
@@ -81,6 +88,13 @@ func (ts *tester) Delete() error {
 		ts.cfg.Logger.Info("skipping delete AddOnNLBHelloWorld")
 		return nil
 	}
+
+	deleteStart := time.Now()
+	defer func() {
+		ts.cfg.EKSConfig.AddOnNLBHelloWorld.DeleteTook = time.Since(deleteStart)
+		ts.cfg.EKSConfig.AddOnNLBHelloWorld.DeleteTookString = ts.cfg.EKSConfig.AddOnNLBHelloWorld.DeleteTook.String()
+		ts.cfg.EKSConfig.Sync()
+	}()
 
 	var errs []string
 	if err := ts.deleteService(); err != nil {
@@ -102,6 +116,8 @@ func (ts *tester) Delete() error {
 	if len(errs) > 0 {
 		return errors.New(strings.Join(errs, ", "))
 	}
+
+	ts.cfg.EKSConfig.AddOnNLBHelloWorld.Created = false
 	return ts.cfg.EKSConfig.Sync()
 }
 

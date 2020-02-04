@@ -88,13 +88,20 @@ func (ts *tester) Create() error {
 	if err := ts.createPods(); err != nil {
 		return err
 	}
+
 	if err := ts.waitForPodsCompleted(); err != nil {
 		return err
 	}
+
 	return ts.cfg.EKSConfig.Sync()
 }
 
 func (ts *tester) Delete() error {
+	if !ts.cfg.EKSConfig.AddOnSecrets.Created {
+		ts.cfg.Logger.Info("skipping delete AddOnSecrets")
+		return nil
+	}
+
 	deleteStart := time.Now()
 	defer func() {
 		ts.cfg.EKSConfig.AddOnSecrets.DeleteTook = time.Since(deleteStart)
@@ -102,13 +109,11 @@ func (ts *tester) Delete() error {
 		ts.cfg.EKSConfig.Sync()
 	}()
 
-	if !ts.cfg.EKSConfig.AddOnSecrets.Created {
-		ts.cfg.Logger.Info("skipping delete AddOnSecrets")
-		return nil
-	}
 	if err := ts.deleteNamespace(); err != nil {
 		return err
 	}
+
+	ts.cfg.EKSConfig.AddOnSecrets.Created = false
 	return ts.cfg.EKSConfig.Sync()
 }
 

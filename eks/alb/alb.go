@@ -220,6 +220,12 @@ const ALBImageName = "docker.io/amazon/aws-alb-ingress-controller:v1.1.5"
 func (ts *tester) Create() error {
 	ts.cfg.EKSConfig.AddOnALB2048.Created = true
 	ts.cfg.EKSConfig.Sync()
+	createStart := time.Now()
+	defer func() {
+		ts.cfg.EKSConfig.AddOnALB2048.CreateTook = time.Since(createStart)
+		ts.cfg.EKSConfig.AddOnALB2048.CreateTookString = ts.cfg.EKSConfig.AddOnALB2048.CreateTook.String()
+		ts.cfg.EKSConfig.Sync()
+	}()
 
 	if err := ts.createALBPolicy(); err != nil {
 		return err
@@ -256,6 +262,13 @@ func (ts *tester) Delete() error {
 		ts.cfg.Logger.Info("skipping delete AddOnALB2048")
 		return nil
 	}
+
+	deleteStart := time.Now()
+	defer func() {
+		ts.cfg.EKSConfig.AddOnALB2048.DeleteTook = time.Since(deleteStart)
+		ts.cfg.EKSConfig.AddOnALB2048.DeleteTookString = ts.cfg.EKSConfig.AddOnALB2048.DeleteTook.String()
+		ts.cfg.EKSConfig.Sync()
+	}()
 
 	var errs []string
 	if err := ts.delete2048Ingress(); err != nil {
@@ -309,6 +322,8 @@ func (ts *tester) Delete() error {
 	if len(errs) > 0 {
 		return errors.New(strings.Join(errs, ", "))
 	}
+
+	ts.cfg.EKSConfig.AddOnALB2048.Created = false
 	return ts.cfg.EKSConfig.Sync()
 }
 
