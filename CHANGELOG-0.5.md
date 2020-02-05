@@ -1,5 +1,20 @@
 
 
+<hr>
+
+
+## [v0.5.6](https://github.com/aws/aws-k8s-tester/releases/tag/v0.5.6) (2020-02)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.5...v0.5.6).
+
+### `eksconfig`
+
+- Add [`OnFailureDelete` and `OnFailureDeleteWaitSeconds`](https://github.com/aws/aws-k8s-tester/commit/0aea513d203c5df0b86ff4448ec67a627574ae77).
+
+### Go
+
+- Compile with [*Go 1.13.7*](https://golang.org/doc/devel/release.html#go1.13).
+
 
 <hr>
 
