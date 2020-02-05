@@ -23,6 +23,7 @@ func main() {
 	cfg.AddOnALB2048.Enable = true
 	cfg.AddOnJobPerl.Enable = true
 	cfg.AddOnJobEcho.Enable = true
+	cfg.AddOnSecrets.Enable = true
 
 	ts, err := eks.New(cfg)
 	if err != nil {
