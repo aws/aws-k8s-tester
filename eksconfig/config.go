@@ -697,7 +697,13 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		if err != nil {
 			return err
 		}
-		cfg.ConfigPath, _ = filepath.Abs(f.Name())
+		var p string
+		p, err = filepath.Abs(f.Name())
+		if err != nil {
+			panic(err)
+		}
+		cfg.ConfigPath = p
+		cfg.Sync()
 		f.Close()
 		os.RemoveAll(cfg.ConfigPath)
 	}
@@ -1004,27 +1010,33 @@ func Load(p string) (cfg *Config, err error) {
 	if cfg.ConfigPath != p {
 		cfg.ConfigPath = p
 	}
-	cfg.ConfigPath, err = filepath.Abs(p)
+	var ap string
+	ap, err = filepath.Abs(p)
 	if err != nil {
 		return nil, err
 	}
+	cfg.ConfigPath = ap
+	cfg.Sync()
 
 	return cfg, nil
 }
 
 // Sync persists current configuration and states to disk.
 func (cfg *Config) Sync() (err error) {
-	if !filepath.IsAbs(cfg.ConfigPath) {
-		cfg.ConfigPath, err = filepath.Abs(cfg.ConfigPath)
+		var p string
+		if !filepath.IsAbs(cfg.ConfigPath) {
+		p, err = filepath.Abs(cfg.ConfigPath)
 		if err != nil {
 			return fmt.Errorf("failed to 'filepath.Abs(%s)' %v", cfg.ConfigPath, err)
 		}
+		cfg.ConfigPath = p
 	}
 	if !filepath.IsAbs(cfg.KubeConfigPath) {
-		cfg.KubeConfigPath, err = filepath.Abs(cfg.KubeConfigPath)
+		p, err = filepath.Abs(cfg.KubeConfigPath)
 		if err != nil {
 			return fmt.Errorf("failed to 'filepath.Abs(%s)' %v", cfg.KubeConfigPath, err)
 		}
+		cfg.KubeConfigPath = p
 	}
 
 	var d []byte

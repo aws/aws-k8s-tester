@@ -115,20 +115,25 @@ func Load(p string) (cfg *Config, err error) {
 	if cfg.ConfigPath != p {
 		cfg.ConfigPath = p
 	}
-	cfg.ConfigPath, err = filepath.Abs(p)
+	var ap string
+	ap, err = filepath.Abs(p)
 	if err != nil {
 		return nil, err
 	}
+	cfg.ConfigPath = ap
+
 	return cfg, nil
 }
 
 // Sync persists current configuration and states to disk.
 func (cfg *Config) Sync() (err error) {
 	if !filepath.IsAbs(cfg.ConfigPath) {
-		cfg.ConfigPath, err = filepath.Abs(cfg.ConfigPath)
+		var p string
+		p, err = filepath.Abs(cfg.ConfigPath)
 		if err != nil {
 			return err
 		}
+		cfg.ConfigPath = p
 	}
 
 	cfg.UpdatedAt = time.Now()
@@ -175,8 +180,11 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		if err != nil {
 			return err
 		}
-		cfg.ConfigPath, _ = filepath.Abs(f.Name())
+		var p string
+		p, _ = filepath.Abs(f.Name())
 		f.Close()
+		cfg.ConfigPath = p
+		cfg.Sync()
 		os.RemoveAll(cfg.ConfigPath)
 	}
 
