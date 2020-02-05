@@ -28,6 +28,10 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_KUBECTL_PATH")
 	os.Setenv("AWS_K8S_TESTER_EKS_KUBECONFIG_PATH", "/tmp/aws-k8s-tester/kubeconfig2")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_KUBECONFIG_PATH")
+	os.Setenv("AWS_K8S_TESTER_EKS_ON_FAILURE_DELETE", "false")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ON_FAILURE_DELETE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ON_FAILURE_DELETE_WAIT_SECONDS", "780")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ON_FAILURE_DELETE_WAIT_SECONDS")
 
 	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_VERSION", "1.11")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_VERSION")
@@ -160,6 +164,12 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.KubeConfigPath != "/tmp/aws-k8s-tester/kubeconfig2" {
 		t.Fatalf("unexpected KubeConfigPath %q", cfg.KubeConfigPath)
+	}
+	if cfg.OnFailureDelete {
+		t.Fatalf("unexpected OnFailureDelete %v", cfg.OnFailureDelete)
+	}
+	if cfg.OnFailureDeleteWaitSeconds != 780 {
+		t.Fatalf("unexpected OnFailureDeleteWaitSeconds %d", cfg.OnFailureDeleteWaitSeconds)
 	}
 
 	if cfg.Parameters.Version != "1.11" {

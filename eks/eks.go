@@ -399,11 +399,18 @@ func (ts *Tester) Up() (err error) {
 		colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]Up.defer [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
 
 		if err == nil {
-			ts.lg.Info("Up completed",
+			ts.lg.Info("Up successful",
 				zap.String("config-path", ts.cfg.ConfigPath),
 				zap.String("KUBECONFIG", ts.cfg.KubeConfigPath),
 				zap.String("cluster-arn", ts.cfg.Status.ClusterARN),
 				zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
+			)
+			return
+		}
+		if !ts.cfg.OnFailureDelete {
+			ts.lg.Warn("Up failed; exiting",
+				zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
+				zap.Error(err),
 			)
 			return
 		}
@@ -415,6 +422,14 @@ func (ts *Tester) Up() (err error) {
 			zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			zap.Error(err),
 		)
+		waitDur := time.Duration(ts.cfg.OnFailureDeleteWaitSeconds) * time.Second
+		if waitDur > 0 {
+			ts.lg.Info("waiting before clean up", zap.Duration("wait", waitDur))
+			select {
+			case <-ts.stopCreationCh:
+			case <-time.After(waitDur):
+			}
+		}
 		derr := ts.down()
 		if derr != nil {
 			ts.lg.Error("failed to revert Up", zap.Error(derr))

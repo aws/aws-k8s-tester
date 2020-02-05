@@ -60,22 +60,36 @@ type Config struct {
 	// AWSIAMAuthenticatorDownloadURL is the download URL to download "aws-iam-authenticator" binary from.
 	AWSIAMAuthenticatorDownloadURL string `json:"aws-iam-authenticator-download-url,omitempty"`
 
+	// OnFailureDelete is true to delete all resources on creation fail.
+	OnFailureDelete bool `json:"on-failure-delete"`
+	// OnFailureDeleteWaitSeconds is the seconds to wait before deleting
+	// all resources on creation fail.
+	OnFailureDeleteWaitSeconds uint64 `json:"on-failure-delete-wait-seconds"`
+
 	// Parameters defines EKS "cluster" creation parameters.
 	// It's ok to leave any parameters empty.
 	// If empty, it will use default values.
 	Parameters *Parameters `json:"parameters,omitempty"`
-
-	// AddOnManagedNodeGroups defines EKS "Managed Node Group" creation parameters.
-	// If empty, it will use default values.
+	// AddOnManagedNodeGroups defines EKS "Managed Node Group"
+	// creation parameters. If empty, it will use default values.
 	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
 	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
 	AddOnManagedNodeGroups *AddOnManagedNodeGroups `json:"add-on-managed-node-groups,omitempty"`
-
+	// AddOnNLBHelloWorld defines parameters for EKS cluster
+	// add-on NLB hello-world service.
 	AddOnNLBHelloWorld *AddOnNLBHelloWorld `json:"add-on-nlb-hello-world,omitempty"`
-	AddOnALB2048       *AddOnALB2048       `json:"add-on-alb-2048,omitempty"`
-	AddOnJobPerl       *AddOnJobPerl       `json:"add-on-job-perl,omitempty"`
-	AddOnJobEcho       *AddOnJobEcho       `json:"add-on-job-echo,omitempty"`
-	AddOnSecrets       *AddOnSecrets       `json:"add-on-secrets,omitempty"`
+	// AddOnALB2048 defines parameters for EKS cluster
+	// add-on ALB 2048 service.
+	AddOnALB2048 *AddOnALB2048 `json:"add-on-alb-2048,omitempty"`
+	// AddOnJobPerl defines parameters for EKS cluster
+	// add-on Job with Perl.
+	AddOnJobPerl *AddOnJobPerl `json:"add-on-job-perl,omitempty"`
+	// AddOnJobEcho defines parameters for EKS cluster
+	// add-on Job with echo.
+	AddOnJobEcho *AddOnJobEcho `json:"add-on-job-echo,omitempty"`
+	// AddOnSecrets defines parameters for EKS cluster
+	// add-on "Secrets".
+	AddOnSecrets *AddOnSecrets `json:"add-on-secrets,omitempty"`
 
 	// Status represents the current status of AWS resources.
 	// Status is read-only.
@@ -226,7 +240,8 @@ type MNG struct {
 	VolumeSize int `json:"volume-size,omitempty"`
 }
 
-// AddOnNLBHelloWorld defines parameters for EKS cluster add-on NLB hello-world service.
+// AddOnNLBHelloWorld defines parameters for EKS cluster
+// add-on NLB hello-world service.
 type AddOnNLBHelloWorld struct {
 	// Enable is 'true' to create this add-on.
 	Enable bool `json:"enable"`
@@ -251,7 +266,8 @@ type AddOnNLBHelloWorld struct {
 	URL string `json:"url" read-only:"true"`
 }
 
-// AddOnALB2048 defines parameters for EKS cluster add-on ALB 2048 service.
+// AddOnALB2048 defines parameters for EKS cluster
+// add-on ALB 2048 service.
 type AddOnALB2048 struct {
 	// Enable is 'true' to create this add-on.
 	Enable bool `json:"enable"`
@@ -281,7 +297,8 @@ type AddOnALB2048 struct {
 	URL string `json:"url" read-only:"true"`
 }
 
-// AddOnJobPerl defines parameters for EKS cluster add-on Job with Perl.
+// AddOnJobPerl defines parameters for EKS cluster
+// add-on Job with Perl.
 type AddOnJobPerl struct {
 	// Enable is 'true' to create this add-on.
 	Enable bool `json:"enable"`
@@ -308,7 +325,8 @@ type AddOnJobPerl struct {
 	Parallels int `json:"parallels"`
 }
 
-// AddOnJobEcho defines parameters for EKS cluster add-on Job with echo.
+// AddOnJobEcho defines parameters for EKS cluster
+// add-on Job with echo.
 type AddOnJobEcho struct {
 	// Enable is 'true' to create this add-on.
 	Enable bool `json:"enable"`
@@ -340,7 +358,8 @@ type AddOnJobEcho struct {
 	Size int `json:"size"`
 }
 
-// AddOnSecrets defines parameters for EKS cluster add-on "Secrets".
+// AddOnSecrets defines parameters for EKS cluster
+// add-on "Secrets".
 type AddOnSecrets struct {
 	// Enable is 'true' to create this add-on.
 	Enable bool `json:"enable"`
@@ -527,6 +546,9 @@ var defaultConfig = Config{
 
 	KubectlPath:    "/tmp/aws-k8s-tester/kubectl",
 	KubeConfigPath: "/tmp/aws-k8s-tester/kubeconfig",
+
+	OnFailureDelete:            true,
+	OnFailureDeleteWaitSeconds: 60,
 
 	Parameters: &Parameters{
 		ClusterSigningName: "eks",
@@ -1023,8 +1045,8 @@ func Load(p string) (cfg *Config, err error) {
 
 // Sync persists current configuration and states to disk.
 func (cfg *Config) Sync() (err error) {
-		var p string
-		if !filepath.IsAbs(cfg.ConfigPath) {
+	var p string
+	if !filepath.IsAbs(cfg.ConfigPath) {
 		p, err = filepath.Abs(cfg.ConfigPath)
 		if err != nil {
 			return fmt.Errorf("failed to 'filepath.Abs(%s)' %v", cfg.ConfigPath, err)
