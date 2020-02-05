@@ -707,7 +707,7 @@ func (ts *Tester) down() (err error) {
 	var errs []string
 
 	if ts.cfg.AddOnManagedNodeGroups.Enable && len(ts.cfg.StatusManagedNodeGroups.Nodes) > 0 {
-		if ts.cfg.AddOnSecrets.Enable {
+		if ts.cfg.AddOnSecrets.Enable && ts.cfg.AddOnSecrets.Created {
 			colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]secretsTester.Delete [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
 			if err := ts.secretsTester.Delete(); err != nil {
 				ts.lg.Warn("failed to delete Job echo", zap.Error(err))
@@ -715,7 +715,7 @@ func (ts *Tester) down() (err error) {
 			}
 		}
 
-		if ts.cfg.AddOnJobEcho.Enable {
+		if ts.cfg.AddOnJobEcho.Enable && ts.cfg.AddOnJobEcho.Created {
 			colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]jobEchoTester.Delete [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
 			if err := ts.jobEchoTester.Delete(); err != nil {
 				ts.lg.Warn("failed to delete Job echo", zap.Error(err))
@@ -723,7 +723,7 @@ func (ts *Tester) down() (err error) {
 			}
 		}
 
-		if ts.cfg.AddOnJobPerl.Enable {
+		if ts.cfg.AddOnJobPerl.Enable && ts.cfg.AddOnJobPerl.Created {
 			colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]jobPerlTester.Delete [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
 			if err := ts.jobPerlTester.Delete(); err != nil {
 				ts.lg.Warn("failed to delete Job Perl", zap.Error(err))
@@ -731,7 +731,7 @@ func (ts *Tester) down() (err error) {
 			}
 		}
 
-		if ts.cfg.AddOnALB2048.Enable {
+		if ts.cfg.AddOnALB2048.Enable && ts.cfg.AddOnALB2048.Created {
 			colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]alb2048Tester.Delete [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
 			if err := ts.alb2048Tester.Delete(); err != nil {
 				ts.lg.Warn("failed to delete ALB", zap.Error(err))
@@ -743,7 +743,7 @@ func (ts *Tester) down() (err error) {
 			}
 		}
 
-		if ts.cfg.AddOnNLBHelloWorld.Enable {
+		if ts.cfg.AddOnNLBHelloWorld.Enable && ts.cfg.AddOnNLBHelloWorld.Created {
 			colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]nlbHelloWorldTester.Delete [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
 			if err := ts.nlbHelloWorldTester.Delete(); err != nil {
 				ts.lg.Warn("failed to delete NLB", zap.Error(err))

@@ -479,6 +479,7 @@ func (ts *Tester) deleteCluster() error {
 		ts.cfg.Sync()
 	}()
 
+	ts.describeCluster()
 	if ts.cfg.Status.ClusterStatus == "" || ts.cfg.Status.ClusterStatus == ClusterStatusDELETEDORNOTEXIST {
 		ts.lg.Info("cluster already deleted; no need to delete cluster")
 		return nil
