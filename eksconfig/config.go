@@ -10,9 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"reflect"
 	"runtime"
-	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -32,7 +30,6 @@ type Config struct {
 	// Region is the AWS geographic area for EKS deployment.
 	// If empty, set default region.
 	Region string `json:"region,omitempty"`
-
 	// Name is the cluster name.
 	// If empty, deployer auto-populates it.
 	Name string `json:"name,omitempty"`
@@ -63,23 +60,34 @@ type Config struct {
 	// AWSIAMAuthenticatorDownloadURL is the download URL to download "aws-iam-authenticator" binary from.
 	AWSIAMAuthenticatorDownloadURL string `json:"aws-iam-authenticator-download-url,omitempty"`
 
-	// Parameters defines EKS cluster creation parameters.
+	// Parameters defines EKS "cluster" creation parameters.
 	// It's ok to leave any parameters empty.
 	// If empty, it will use default values.
 	Parameters *Parameters `json:"parameters,omitempty"`
 
-	// Status represents the current status of AWS resources.
-	// Status is read-only.
-	// Status cannot be configured via environmental variables.
-	Status *Status `json:"status,omitempty"`
+	// AddOnManagedNodeGroups defines EKS "Managed Node Group" creation parameters.
+	// If empty, it will use default values.
+	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
+	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
+	AddOnManagedNodeGroups *AddOnManagedNodeGroups `json:"add-on-managed-node-groups,omitempty"`
 
 	AddOnNLBHelloWorld *AddOnNLBHelloWorld `json:"add-on-nlb-hello-world,omitempty"`
 	AddOnALB2048       *AddOnALB2048       `json:"add-on-alb-2048,omitempty"`
 	AddOnJobPerl       *AddOnJobPerl       `json:"add-on-job-perl,omitempty"`
 	AddOnJobEcho       *AddOnJobEcho       `json:"add-on-job-echo,omitempty"`
+	AddOnSecrets       *AddOnSecrets       `json:"add-on-secrets,omitempty"`
+
+	// Status represents the current status of AWS resources.
+	// Status is read-only.
+	// Status cannot be configured via environmental variables.
+	Status *Status `json:"status,omitempty" read-only:"true"`
+	// StatusManagedNodeGroups represents EKS "Managed Node Group" status.
+	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
+	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
+	StatusManagedNodeGroups *StatusManagedNodeGroups `json:"status-managed-node-groups" read-only:"true"`
 }
 
-// Parameters defines parameters for EKS cluster creation.
+// Parameters defines parameters for EKS "cluster" creation.
 type Parameters struct {
 	// ClusterRoleServicePrincipals is the EKS Role Service Principals
 	ClusterRoleServicePrincipals []string `json:"cluster-role-service-principals,omitempty"`
@@ -121,58 +129,278 @@ type Parameters struct {
 	// This must be from the same VPC that configures 'PrivateSubnetIDs'.
 	ControlPlaneSecurityGroupID string `json:"control-plane-security-group-id,omitempty"`
 
-	// Version is the version of Kubernetes cluster.
+	// Version is the version of EKS Kubernetes "cluster".
 	// If empty, set default version.
 	Version string `json:"version,omitempty"`
+}
 
-	// ManagedNodeGroupCreate is true to auto-create a managed node group.
-	ManagedNodeGroupCreate bool `json:"managed-node-group-create"`
+// AddOnManagedNodeGroups defines parameters for EKS "Managed Node Group" creation.
+// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
+// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
+type AddOnManagedNodeGroups struct {
+	// Enable is true to auto-create a managed node group.
+	Enable bool `json:"enable"`
+	// Created is true when the resource has been created.
+	// Used for delete operations.
+	Created bool `json:"created" read-only:"true"`
 
-	// ManagedNodeGroupRoleName is the name of the managed node group.
-	ManagedNodeGroupRoleName string `json:"managed-node-group-role-name,omitempty"`
-	// ManagedNodeGroupRoleServicePrincipals is the node group Service Principals
-	ManagedNodeGroupRoleServicePrincipals []string `json:"managed-node-group-role-service-principals,omitempty"`
-	// ManagedNodeGroupRoleManagedPolicyARNs is node group managed policy ARNs.
-	ManagedNodeGroupRoleManagedPolicyARNs []string `json:"managed-node-group-role-managed-policy-arns,omitempty"`
-	// ManagedNodeGroupRoleARN is the role ARN that EKS managed node group uses to create AWS resources for Kubernetes.
+	// RoleName is the name of the managed node group.
+	RoleName string `json:"role-name,omitempty"`
+	// RoleServicePrincipals is the node group Service Principals
+	RoleServicePrincipals []string `json:"role-service-principals,omitempty"`
+	// RoleManagedPolicyARNs is node group managed policy ARNs.
+	RoleManagedPolicyARNs []string `json:"role-managed-policy-arns,omitempty"`
+	// RoleARN is the role ARN that EKS managed node group uses to create AWS resources for Kubernetes.
 	// By default, it's empty which triggers tester to create one.
-	ManagedNodeGroupRoleARN string `json:"managed-node-group-role-arn,omitempty"`
+	RoleARN string `json:"role-arn,omitempty"`
 
-	// ManagedNodeGroupTags defines EKS managed node group create tags.
-	ManagedNodeGroupTags map[string]string `json:"managed-node-group-tags,omitempty"`
-	// ManagedNodeGroupRequestHeaderKey defines EKS managed node group create cluster request header key.
-	ManagedNodeGroupRequestHeaderKey string `json:"managed-node-group-request-header-key,omitempty"`
-	// ManagedNodeGroupRequestHeaderValue defines EKS managed node group create cluster request header value.
-	ManagedNodeGroupRequestHeaderValue string `json:"managed-node-group-request-header-value,omitempty"`
-
-	// ManagedNodeGroupResolverURL defines an AWS resolver endpoint for EKS API.
+	// RequestHeaderKey defines EKS managed node group create cluster request header key.
+	RequestHeaderKey string `json:"request-header-key,omitempty"`
+	// RequestHeaderValue defines EKS managed node group create cluster request header value.
+	RequestHeaderValue string `json:"request-header-value,omitempty"`
+	// ResolverURL defines an AWS resolver endpoint for EKS API.
 	// Must be left empty to use production EKS managed node group service.
-	ManagedNodeGroupResolverURL string `json:"managed-node-group-resolver-url"`
-	// ManagedNodeGroupSigningName is the EKS managed node group create request signing name.
-	ManagedNodeGroupSigningName string `json:"managed-node-group-signing-name"`
+	ResolverURL string `json:"resolver-url"`
+	// SigningName is the EKS managed node group create request signing name.
+	SigningName string `json:"signing-name"`
 
-	// ManagedNodeGroupName is the name of the managed node group.
-	ManagedNodeGroupName string `json:"managed-node-group-name,omitempty"`
-	// ManagedNodeGroupSSHKeyPairName is the key name for node group SSH EC2 key pair.
-	ManagedNodeGroupSSHKeyPairName string `json:"managed-node-group-ssh-key-pair-name,omitempty"`
-	// ManagedNodeGroupRemoteAccessPrivateKeyPath is the file path to store node group key pair private key.
+	// SSHKeyPairName is the key name for node group SSH EC2 key pair.
+	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
+	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
+	SSHKeyPairName string `json:"ssh-key-pair-name,omitempty"`
+	// RemoteAccessPrivateKeyPath is the file path to store node group key pair private key.
 	// Thus, deployer must delete the private key right after node group creation.
 	// MAKE SURE PRIVATE KEY NEVER GETS UPLOADED TO CLOUD STORAGE AND DELETE AFTER USE!!!
-	ManagedNodeGroupRemoteAccessPrivateKeyPath string `json:"managed-node-group-remote-access-private-key-path,omitempty"`
-	// ManagedNodeGroupRemoteAccessUserName is the user name for managed node group SSH access.
-	ManagedNodeGroupRemoteAccessUserName string `json:"managed-node-group-remote-access-user-name,omitempty"`
-	// ManagedNodeGroupAMIType is the AMI type for the node group.
-	ManagedNodeGroupAMIType string `json:"managed-node-group-ami-type,omitempty"`
-	// ManagedNodeGroupASGMinSize is the minimum size of Node Group Auto Scaling Group.
-	ManagedNodeGroupASGMinSize int `json:"managed-node-group-asg-min-size,omitempty"`
-	// ManagedNodeGroupASGMaxSize is the maximum size of Node Group Auto Scaling Group.
-	ManagedNodeGroupASGMaxSize int `json:"managed-node-group-asg-max-size,omitempty"`
-	// ManagedNodeGroupASGDesiredCapacity is the desired capacity of Node Group ASG.
-	ManagedNodeGroupASGDesiredCapacity int `json:"managed-node-group-asg-desired-capacity,omitempty"`
-	// ManagedNodeGroupInstanceTypes is the EC2 instance types for the node instances.
-	ManagedNodeGroupInstanceTypes []string `json:"managed-node-group-instance-types,omitempty"`
-	// ManagedNodeGroupVolumeSize is the node volume size.
-	ManagedNodeGroupVolumeSize int `json:"managed-node-group-volume-size,omitempty"`
+	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
+	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
+	RemoteAccessPrivateKeyPath string `json:"remote-access-private-key-path,omitempty"`
+	// RemoteAccessUserName is the user name for managed node group SSH access.
+	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
+	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
+	RemoteAccessUserName string `json:"remote-access-user-name,omitempty"`
+
+	// LogDir is set to specify the target directory to store all remote log files.
+	// If empty, it stores in the same directory as "Config".
+	LogDir string `json:"log-dir,omitempty"`
+	// MNGs maps from EKS Managed Node Group name to "MNG".
+	MNGs map[string]MNG `json:"mngs,omitempty"`
+}
+
+// MNG represents parameters for one EKS "Managed Node Group".
+type MNG struct {
+	// Name is the name of the managed node group.
+	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
+	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
+	Name string `json:"name,omitempty"`
+	// Tags defines EKS managed node group create tags.
+	Tags map[string]string `json:"tags,omitempty"`
+	// ReleaseVersion is the AMI version of the Amazon EKS-optimized AMI for the node group.
+	// The version may differ from EKS "cluster" version.
+	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
+	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
+	ReleaseVersion string `json:"release-version,omitempty"`
+	// AMIType is the AMI type for the node group.
+	// Allowed values are AL2_x86_64 and AL2_x86_64_GPU.
+	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
+	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
+	AMIType string `json:"ami-type,omitempty"`
+	// ASGMinSize is the minimum size of Node Group Auto Scaling Group.
+	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
+	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
+	ASGMinSize int `json:"asg-min-size,omitempty"`
+	// ASGMaxSize is the maximum size of Node Group Auto Scaling Group.
+	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
+	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
+	ASGMaxSize int `json:"asg-max-size,omitempty"`
+	// ASGDesiredCapacity is the desired capacity of Node Group ASG.
+	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
+	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
+	ASGDesiredCapacity int `json:"asg-desired-capacity,omitempty"`
+	// InstanceTypes is the EC2 instance types for the node instances.
+	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
+	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
+	InstanceTypes []string `json:"instance-types,omitempty"`
+	// VolumeSize is the node volume size.
+	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
+	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
+	VolumeSize int `json:"volume-size,omitempty"`
+}
+
+// AddOnNLBHelloWorld defines parameters for EKS cluster add-on NLB hello-world service.
+type AddOnNLBHelloWorld struct {
+	// Enable is 'true' to create this add-on.
+	Enable bool `json:"enable"`
+	// Created is true when the resource has been created.
+	// Used for delete operations.
+	Created bool `json:"created" read-only:"true"`
+
+	// CreateTook is the duration that took to create the resource.
+	CreateTook time.Duration `json:"create-took" read-only:"true"`
+	// CreateTookString is the duration that took to create the resource.
+	CreateTookString string `json:"create-took-string" read-only:"true"`
+	// DeleteTook is the duration that took to create the resource.
+	DeleteTook time.Duration `json:"delete-took" read-only:"true"`
+	// DeleteTookString is the duration that took to create the resource.
+	DeleteTookString string `json:"delete-took-string" read-only:"true"`
+
+	// NLBARN is the ARN of the NLB created from the service.
+	NLBARN string `json:"nlb-arn" read-only:"true"`
+	// NLBName is the name of the NLB created from the service.
+	NLBName string `json:"nlb-name" read-only:"true"`
+	// URL is the host name for hello-world service.
+	URL string `json:"url" read-only:"true"`
+}
+
+// AddOnALB2048 defines parameters for EKS cluster add-on ALB 2048 service.
+type AddOnALB2048 struct {
+	// Enable is 'true' to create this add-on.
+	Enable bool `json:"enable"`
+	// Created is true when the resource has been created.
+	// Used for delete operations.
+	Created bool `json:"created" read-only:"true"`
+
+	// CreateTook is the duration that took to create the resource.
+	CreateTook time.Duration `json:"create-took" read-only:"true"`
+	// CreateTookString is the duration that took to create the resource.
+	CreateTookString string `json:"create-took-string" read-only:"true"`
+	// DeleteTook is the duration that took to create the resource.
+	DeleteTook time.Duration `json:"delete-took" read-only:"true"`
+	// DeleteTookString is the duration that took to create the resource.
+	DeleteTookString string `json:"delete-took-string" read-only:"true"`
+
+	// PolicyCFNStackID is the CloudFormation stack ID
+	// for ALB Ingress Controller IAM policy.
+	PolicyCFNStackID string `json:"policy-cfn-stack-id" read-only:"true"`
+	PolicyName       string `json:"policy-name"`
+
+	// ALBARN is the ARN of the ALB created from the service.
+	ALBARN string `json:"alb-arn" read-only:"true"`
+	// ALBName is the name of the ALB created from the service.
+	ALBName string `json:"alb-name" read-only:"true"`
+	// URL is the URL for ALB 2048 Service.
+	URL string `json:"url" read-only:"true"`
+}
+
+// AddOnJobPerl defines parameters for EKS cluster add-on Job with Perl.
+type AddOnJobPerl struct {
+	// Enable is 'true' to create this add-on.
+	Enable bool `json:"enable"`
+	// Created is true when the resource has been created.
+	// Used for delete operations.
+	Created bool `json:"created" read-only:"true"`
+
+	// CreateTook is the duration that took to create the resource.
+	CreateTook time.Duration `json:"create-took" read-only:"true"`
+	// CreateTookString is the duration that took to create the resource.
+	CreateTookString string `json:"create-took-string" read-only:"true"`
+	// DeleteTook is the duration that took to create the resource.
+	DeleteTook time.Duration `json:"delete-took" read-only:"true"`
+	// DeleteTookString is the duration that took to create the resource.
+	DeleteTookString string `json:"delete-took-string" read-only:"true"`
+
+	// Namespace is the namespace to create "Job" objects in.
+	Namespace string `json:"namespace"`
+
+	// Completes the desired number of successfully finished pods.
+	Completes int `json:"completes"`
+	// Parallels is the the maximum desired number of pods the
+	// job should run at any given time.
+	Parallels int `json:"parallels"`
+}
+
+// AddOnJobEcho defines parameters for EKS cluster add-on Job with echo.
+type AddOnJobEcho struct {
+	// Enable is 'true' to create this add-on.
+	Enable bool `json:"enable"`
+	// Created is true when the resource has been created.
+	// Used for delete operations.
+	Created bool `json:"created" read-only:"true"`
+
+	// CreateTook is the duration that took to create the resource.
+	CreateTook time.Duration `json:"create-took" read-only:"true"`
+	// CreateTookString is the duration that took to create the resource.
+	CreateTookString string `json:"create-took-string" read-only:"true"`
+	// DeleteTook is the duration that took to create the resource.
+	DeleteTook time.Duration `json:"delete-took" read-only:"true"`
+	// DeleteTookString is the duration that took to create the resource.
+	DeleteTookString string `json:"delete-took-string" read-only:"true"`
+
+	// Namespace is the namespace to create "Job" objects in.
+	Namespace string `json:"namespace"`
+
+	// Completes the desired number of successfully finished pods.
+	Completes int `json:"completes"`
+	// Parallels is the the maximum desired number of pods the
+	// job should run at any given time.
+	Parallels int `json:"parallels"`
+	// Size is the job object size in bytes.
+	// "Request entity too large: limit is 3145728" (3.1 MB).
+	// "The Job "echo" is invalid: metadata.annotations:
+	// Too long: must have at most 262144 characters". (0.26 MB)
+	Size int `json:"size"`
+}
+
+// AddOnSecrets defines parameters for EKS cluster add-on "Secrets".
+type AddOnSecrets struct {
+	// Enable is 'true' to create this add-on.
+	Enable bool `json:"enable"`
+	// Created is true when the resource has been created.
+	// Used for delete operations.
+	Created bool `json:"created" read-only:"true"`
+
+	// CreateTook is the duration that took to create the resource.
+	CreateTook time.Duration `json:"create-took" read-only:"true"`
+	// CreateTookString is the duration that took to create the resource.
+	CreateTookString string `json:"create-took-string" read-only:"true"`
+	// DeleteTook is the duration that took to create the resource.
+	DeleteTook time.Duration `json:"delete-took" read-only:"true"`
+	// DeleteTookString is the duration that took to create the resource.
+	DeleteTookString string `json:"delete-took-string" read-only:"true"`
+
+	// Namespace is the namespace to create "Secret" and "Pod" objects in.
+	Namespace string `json:"namespace"`
+
+	// Objects is the number of "Secret" objects to write/read.
+	Objects int `json:"objects"`
+	// Size is the "Secret" value size in bytes.
+	Size int `json:"size"`
+
+	// SecretQPS is the number of "Secret" create requests to send
+	// per second. Requests may be throttled by kube-apiserver.
+	// Default rate limits from kube-apiserver are:
+	// FLAG: --max-mutating-requests-inflight="200"
+	// FLAG: --max-requests-inflight="400"
+	SecretQPS uint `json:"secret-qps"`
+	// SecretBurst is the number of "Secret" create requests that
+	// a client can make in excess of the rate specified by the limiter.
+	// Requests may be throttled by kube-apiserver.
+	// Default rate limits from kube-apiserver are:
+	// FLAG: --max-mutating-requests-inflight="200"
+	// FLAG: --max-requests-inflight="400"
+	SecretBurst uint `json:"secret-burst"`
+	// CreatedSecretNames is the list of created "Secret" object names.
+	CreatedSecretNames []string `json:"created-secret-names" read-only:"true"`
+
+	// PodQPS is the number of "Pod" create requests to send
+	// per second. Requests may be throttled by kube-apiserver.
+	// Default rate limits from kube-apiserver are:
+	// FLAG: --max-mutating-requests-inflight="200"
+	// FLAG: --max-requests-inflight="400"
+	PodQPS uint `json:"pod-qps"`
+	// PodBurst is the number of "Pod" create requests that
+	// a client can make in excess of the rate specified by the limiter.
+	// Requests may be throttled by kube-apiserver.
+	// Default rate limits from kube-apiserver are:
+	// FLAG: --max-mutating-requests-inflight="200"
+	// FLAG: --max-requests-inflight="400"
+	PodBurst uint `json:"pod-burst"`
+	// CreatedPodNames is the list of created "Pod" object names.
+	CreatedPodNames []string `json:"created-pod-names" read-only:"true"`
+
+	// WritesResultPath is the CSV file path to output Secret writes test results.
+	WritesResultPath string `json:"writes-result-path"`
+	// ReadsResultPath is the CSV file path to output Secret reads test results.
+	ReadsResultPath string `json:"reads-result-path"`
 }
 
 // Status represents the current status of AWS resources.
@@ -181,7 +409,21 @@ type Status struct {
 	// Up is true if the cluster is up.
 	Up bool `json:"up"`
 
+	// CreateTook is the duration that took to create the resource.
+	CreateTook time.Duration `json:"create-took" read-only:"true"`
+	// CreateTookString is the duration that took to create the resource.
+	CreateTookString string `json:"create-took-string" read-only:"true"`
+	// DeleteTook is the duration that took to create the resource.
+	DeleteTook time.Duration `json:"delete-took" read-only:"true"`
+	// DeleteTookString is the duration that took to create the resource.
+	DeleteTookString string `json:"delete-took-string" read-only:"true"`
+
+	// AWSAccountID is the account ID of the eks tester caller.
 	AWSAccountID string `json:"aws-account-id"`
+	// AWSUserID is the user ID of the eks tester caller.
+	AWSUserID string `json:"aws-user-id"`
+	// AWSARN is the user ARN of the eks tester caller.
+	AWSARN string `json:"aws-arn"`
 
 	// AWSCredentialPath is automatically set via AWS SDK Go.
 	// And to be mounted as a volume as 'Secret' object.
@@ -198,7 +440,8 @@ type Status struct {
 
 	ClusterCFNStackID string `json:"cluster-cfn-stack-id"`
 	ClusterARN        string `json:"cluster-arn"`
-	// ClusterAPIServerEndpoint is the cluster endpoint of the EKS cluster, required for KUBECONFIG write.
+	// ClusterAPIServerEndpoint is the cluster endpoint of the EKS cluster,
+	// required for KUBECONFIG write.
 	ClusterAPIServerEndpoint string `json:"cluster-api-server-endpoint"`
 	// ClusterOIDCIssuer is the issuer URL for the OpenID Connect
 	// (https://openid.net/connect/) identity provider .
@@ -208,91 +451,56 @@ type Status struct {
 	// ClusterCADecoded is the decoded EKS cluster CA, required for k8s.io/client-go.
 	ClusterCADecoded string `json:"cluster-ca-decoded"`
 
+	// ClusterStatus represents the current status of the cluster.
 	ClusterStatus string `json:"cluster-status"`
-
-	// ManagedNodeGroupRoleCFNStackID is the CloudFormation stack ID for a managed node group role.
-	ManagedNodeGroupRoleCFNStackID string `json:"managed-node-group-role-cfn-stack-id"`
-
-	// ManagedNodeGroupCFNStackID is the CloudFormation stack ID for a managed node group.
-	ManagedNodeGroupCFNStackID                  string `json:"managed-node-group-cfn-stack-id"`
-	ManagedNodeGroupRemoteAccessSecurityGroupID string `json:"managed-node-group-remote-access-security-group-id"`
-
-	// ManagedNodeGroupID is the Physical ID for the created "AWS::EKS::Nodegroup".
-	ManagedNodeGroupID string `json:"managed-node-group-id"`
-	// ManagedNodeGroups maps each Auto Scaling Group to a set of latest EC2 nodes.
-	ManagedNodeGroups map[string]NodeGroup `json:"managed-node-groups"`
-	// ManagedNodeGroupsLogs maps each instance ID to a list of log file paths fetched via SSH access.
-	ManagedNodeGroupsLogs map[string][]string `json:"managed-node-groups-logs"`
-
-	ManagedNodeGroupStatus string `json:"managed-node-group-status"`
 }
 
-// NodeGroup is a set of EC2 instances in EC2 Auto Scaling Group.
-type NodeGroup struct {
-	// Instances maps an instance ID to an EC2 instance object.
+// StatusManagedNodeGroups represents the status of EKS "Managed Node Group".
+// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
+// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
+type StatusManagedNodeGroups struct {
+	// CreateTook is the duration that took to create the resource.
+	CreateTook time.Duration `json:"create-took" read-only:"true"`
+	// CreateTookString is the duration that took to create the resource.
+	CreateTookString string `json:"create-took-string" read-only:"true"`
+	// DeleteTook is the duration that took to create the resource.
+	DeleteTook time.Duration `json:"delete-took" read-only:"true"`
+	// DeleteTookString is the duration that took to create the resource.
+	DeleteTookString string `json:"delete-took-string" read-only:"true"`
+
+	// RoleCFNStackID is the CloudFormation stack ID for a managed node group role.
+	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
+	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
+	RoleCFNStackID string `json:"role-cfn-stack-id"`
+	// NvidiaDriverInstalled is true if nvidia driver has been installed.
+	NvidiaDriverInstalled bool `json:"nvidia-driver-installed"`
+	// Nodes maps from EKS "Managed Node Group" name to its status.
+	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
+	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
+	Nodes map[string]StatusManagedNodeGroup `json:"nodes"`
+}
+
+// StatusManagedNodeGroup represents the status of EKS "Managed Node Group".
+// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
+// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
+type StatusManagedNodeGroup struct {
+	// CreateRequested is true if "CreateNodegroupRequest" has been sent.
+	CreateRequested bool `json:"create-requested"`
+	// CFNStackID is the CloudFormation stack ID for a managed node group.
+	CFNStackID string `json:"cfn-stack-id"`
+
+	RemoteAccessSecurityGroupID string `json:"remote-access-security-group-id"`
+
+	// PhysicalID is the Physical ID for the created "AWS::EKS::Nodegroup".
+	PhysicalID string `json:"physical-id"`
+
+	// Status is the current status of EKS "Managed Node Group".
+	Status string `json:"status"`
+
+	// Instances maps an instance ID to an EC2 instance object for the node group.
 	Instances map[string]ec2config.Instance `json:"instances"`
-}
-
-// AddOnNLBHelloWorld defines parameters for EKS cluster add-on NLB hello-world service.
-type AddOnNLBHelloWorld struct {
-	Enable bool   `json:"enable"`
-	URL    string `json:"url" read-only:"true"`
-}
-
-// AddOnALB2048 defines parameters for EKS cluster add-on ALB 2048 service.
-type AddOnALB2048 struct {
-	Enable bool `json:"enable"`
-
-	// PolicyCFNStackID is the CloudFormation stack ID
-	// for ALB Ingress Controller IAM policy.
-	PolicyCFNStackID string `json:"policy-cfn-stack-id" read-only:"true"`
-	PolicyName       string `json:"policy-name"`
-
-	// URL is the URL for ALB 2048 Service.
-	URL string `json:"url" read-only:"true"`
-}
-
-// AddOnJobPerl defines parameters for EKS cluster add-on Job with Perl.
-type AddOnJobPerl struct {
-	Enable    bool `json:"enable"`
-	Completes int  `json:"completes"`
-	Parallels int  `json:"parallels"`
-}
-
-// AddOnJobEcho defines parameters for EKS cluster add-on Job with echo.
-type AddOnJobEcho struct {
-	Enable    bool `json:"enable"`
-	Completes int  `json:"completes"`
-	Parallels int  `json:"parallels"`
-	// Size is the job object size.
-	// "Request entity too large: limit is 3145728" (3.1 MB).
-	// "The Job "echo" is invalid: metadata.annotations: Too long: must have at most 262144 characters". (0.26 MB)
-	Size int `json:"size"`
-}
-
-// NewDefault returns a copy of the default configuration.
-func NewDefault() *Config {
-	vv := defaultConfig
-	return &vv
-}
-
-func init() {
-	// https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-welcome.html
-	// pip3 install awscli --no-cache-dir --upgrade
-	var err error
-	defaultConfig.AWSCLIPath, err = exec.LookPath("aws")
-	if err != nil {
-		panic(fmt.Errorf("aws CLI is not installed (%v)", err))
-	}
-
-	if runtime.GOOS == "darwin" {
-		defaultConfig.KubectlDownloadURL = strings.Replace(defaultConfig.KubectlDownloadURL, "linux", "darwin", -1)
-		defaultConfig.Parameters.ManagedNodeGroupRemoteAccessPrivateKeyPath = filepath.Join(os.TempDir(), randString(12)+".insecure.key")
-	}
-
-	if err := os.MkdirAll(filepath.Dir(defaultConfig.KubectlPath), 0700); err != nil {
-		panic(fmt.Errorf("could not create %q (%v)", filepath.Dir(defaultConfig.KubectlPath), err))
-	}
+	// Logs maps each instance ID to a list of log file paths fetched via SSH access.
+	Logs map[string][]string `json:"logs"`
 }
 
 // defaultConfig is the default configuration.
@@ -304,6 +512,7 @@ func init() {
 //
 var defaultConfig = Config{
 	Region: "us-west-2",
+	Name:   "", // to be generated
 
 	LogLevel: logutil.DefaultLogLevel,
 	// default, stderr, stdout, or file name
@@ -320,159 +529,170 @@ var defaultConfig = Config{
 	KubeConfigPath: "/tmp/aws-k8s-tester/kubeconfig",
 
 	Parameters: &Parameters{
-		ClusterSigningName:          "eks",
-		ManagedNodeGroupSigningName: "eks",
+		ClusterSigningName: "eks",
+		Version:            "1.14",
+	},
 
-		Version: "1.14",
+	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
+	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
+	AddOnManagedNodeGroups: &AddOnManagedNodeGroups{
+		Enable:      true,
+		SigningName: "eks",
 
-		ManagedNodeGroupRoleServicePrincipals: []string{
+		RoleServicePrincipals: []string{
 			"ec2.amazonaws.com",
 			"eks.amazonaws.com",
 		},
-		ManagedNodeGroupRoleManagedPolicyARNs: []string{
+		RoleManagedPolicyARNs: []string{
 			"arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy",
 			"arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy",
 			"arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
 		},
 
-		ManagedNodeGroupCreate: true,
-
-		// Allowed values are AL2_x86_64 and AL2_x86_64_GPU
-		ManagedNodeGroupAMIType:            "AL2_x86_64",
-		ManagedNodeGroupASGMinSize:         3,
-		ManagedNodeGroupASGMaxSize:         3,
-		ManagedNodeGroupASGDesiredCapacity: 3,
-		ManagedNodeGroupInstanceTypes:      []string{"c5.xlarge"},
-		ManagedNodeGroupVolumeSize:         40,
-
 		// keep in-sync with the default value in https://godoc.org/k8s.io/kubernetes/test/e2e/framework#GetSigner
-		ManagedNodeGroupRemoteAccessPrivateKeyPath: filepath.Join(homedir.HomeDir(), ".ssh", "kube_aws_rsa"),
-		ManagedNodeGroupRemoteAccessUserName:       "ec2-user",
+		RemoteAccessPrivateKeyPath: filepath.Join(homedir.HomeDir(), ".ssh", "kube_aws_rsa"),
+		RemoteAccessUserName:       "ec2-user",
 	},
 
-	Status: &Status{Up: false},
-
+	// following default config generates about 550 MB of cluster data
 	AddOnNLBHelloWorld: &AddOnNLBHelloWorld{
 		Enable: true,
 	},
+
 	AddOnALB2048: &AddOnALB2048{
 		Enable: true,
 	},
+
 	AddOnJobPerl: &AddOnJobPerl{
 		Enable:    true,
 		Completes: 30,
 		Parallels: 10,
 	},
+
+	// writes total 100 MB data to etcd
 	AddOnJobEcho: &AddOnJobEcho{
 		Enable:    true,
-		Completes: 1000, // create 100 MB of data total
+		Completes: 1000,
 		Parallels: 100,
 		Size:      100 * 1024, // 100 KB
 	},
 
-	// default config generates about 550 MB of cluster data
+	AddOnSecrets: &AddOnSecrets{
+		Enable: false,
+
+		Objects:     1000,
+		Size:        10 * 1024, // 10 KB
+		SecretQPS:   1,
+		SecretBurst: 1,
+		PodQPS:      100,
+		PodBurst:    5,
+
+		// writes total 153.6 MB for "Secret" objects,
+		// plus "Pod" objects, writes total 330 MB to etcd
+		//
+		// with 3 nodes, takes about 1.5 hour for all
+		// these "Pod"s to complete
+		//
+		// Objects:     15000,
+		// Size:        10 * 1024, // 10 KB
+		// SecretQPS:   150,
+		// SecretBurst: 5,
+		// PodQPS:      150,
+		// PodBurst:    5,
+	},
+
+	Status: &Status{
+		Up: false,
+	},
+	StatusManagedNodeGroups: &StatusManagedNodeGroups{
+		RoleCFNStackID:        "",
+		NvidiaDriverInstalled: false,
+		Nodes:                 make(map[string]StatusManagedNodeGroup),
+	},
 }
 
-// Load loads configuration from YAML.
-// Useful when injecting shared configuration via ConfigMap.
-//
-// Example usage:
-//
-//  import "github.com/aws/aws-k8s-tester/eksconfig"
-//  cfg := eksconfig.Load("test.yaml")
-//  err := cfg.ValidateAndSetDefaults()
-//
-// Do not set default values in this function.
-// "ValidateAndSetDefaults" must be called separately,
-// to prevent overwriting previous data when loaded from disks.
-func Load(p string) (cfg *Config, err error) {
-	var d []byte
-	d, err = ioutil.ReadFile(p)
-	if err != nil {
-		return nil, err
-	}
-	cfg = new(Config)
-	if err = yaml.Unmarshal(d, cfg); err != nil {
-		return nil, err
-	}
+// NewDefault returns a copy of the default configuration.
+func NewDefault() *Config {
+	vv := defaultConfig
 
-	if cfg.ConfigPath != p {
-		cfg.ConfigPath = p
-	}
-	cfg.ConfigPath, err = filepath.Abs(p)
-	if err != nil {
-		return nil, err
-	}
-
-	return cfg, nil
-}
-
-// Sync persists current configuration and states to disk.
-func (cfg *Config) Sync() (err error) {
-	if !filepath.IsAbs(cfg.ConfigPath) {
-		cfg.ConfigPath, err = filepath.Abs(cfg.ConfigPath)
-		if err != nil {
-			return fmt.Errorf("failed to 'filepath.Abs(%s)' %v", cfg.ConfigPath, err)
-		}
-	}
-	if !filepath.IsAbs(cfg.KubeConfigPath) {
-		cfg.KubeConfigPath, err = filepath.Abs(cfg.KubeConfigPath)
-		if err != nil {
-			return fmt.Errorf("failed to 'filepath.Abs(%s)' %v", cfg.KubeConfigPath, err)
-		}
-	}
-
-	var d []byte
-	d, err = yaml.Marshal(cfg)
-	if err != nil {
-		return fmt.Errorf("failed to 'yaml.Marshal' %v", err)
-	}
-	err = ioutil.WriteFile(cfg.ConfigPath, d, 0600)
-	if err != nil {
-		return fmt.Errorf("failed to write file %q (%v)", cfg.ConfigPath, err)
-	}
-	return err
-}
-
-// genTag generates a tag for cluster name, CloudFormation, and S3 bucket.
-// Note that this would be used as S3 bucket name to upload tester logs.
-func genTag() string {
-	// use UTC time for everything
 	now := time.Now()
-	return fmt.Sprintf("eks-%d%02d%02d%02d", now.Year(), int(now.Month()), now.Day(), now.Hour())
+	vv.Name = fmt.Sprintf(
+		"eks-%d%02d%02d%02d-%s",
+		now.Year(),
+		int(now.Month()),
+		now.Day(),
+		now.Hour(),
+		randString(7),
+	)
+
+	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
+	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
+	vv.AddOnManagedNodeGroups.MNGs = map[string]MNG{
+		vv.Name + "-mng-cpu": MNG{
+			Name:               vv.Name + "-mng-cpu",
+			ReleaseVersion:     "", // to be auto-filled by EKS API
+			AMIType:            "AL2_x86_64",
+			ASGMinSize:         2,
+			ASGMaxSize:         2,
+			ASGDesiredCapacity: 2,
+			InstanceTypes:      []string{DefaultNodeInstanceTypeCPU},
+			VolumeSize:         DefaultNodeVolumeSize,
+		},
+	}
+
+	return &vv
+}
+
+const (
+	// DefaultNodeInstanceTypeCPU is the default EC2 instance type for CPU worker node.
+	DefaultNodeInstanceTypeCPU = "c5.xlarge"
+	// DefaultNodeInstanceTypeGPU is the default EC2 instance type for GPU worker node.
+	DefaultNodeInstanceTypeGPU = "p3.8xlarge"
+	// DefaultNodeVolumeSize is the default EC2 instance volume size for a worker node.
+	DefaultNodeVolumeSize = 40
+
+	// MNGMaxLimit is the maximum number of "Managed Node Group"s per a EKS cluster.
+	MNGMaxLimit = 10
+	// MNGNodesMaxLimit is the maximum number of nodes per a "Managed Node Group".
+	MNGNodesMaxLimit = 100
+)
+
+func init() {
+	// https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-welcome.html
+	// pip3 install awscli --no-cache-dir --upgrade
+	var err error
+	defaultConfig.AWSCLIPath, err = exec.LookPath("aws")
+	if err != nil {
+		panic(fmt.Errorf("aws CLI is not installed (%v)", err))
+	}
+
+	if runtime.GOOS == "darwin" {
+		defaultConfig.KubectlDownloadURL = strings.Replace(defaultConfig.KubectlDownloadURL, "linux", "darwin", -1)
+		defaultConfig.AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath = filepath.Join(os.TempDir(), randString(12)+".insecure.key")
+	}
 }
 
 // ValidateAndSetDefaults returns an error for invalid configurations.
 // And updates empty fields with default values.
 // At the end, it writes populated YAML to aws-k8s-tester config path.
 func (cfg *Config) ValidateAndSetDefaults() error {
+	if _, ok := awsapi.RegionToAiport[cfg.Region]; !ok {
+		return fmt.Errorf("region %q not found", cfg.Region)
+	}
+	if len(cfg.Name) == 0 {
+		return errors.New("Name is empty")
+	}
 	if len(cfg.LogOutputs) == 0 {
 		return errors.New("LogOutputs is not empty")
 	}
 
-	if _, ok := awsapi.RegionToAiport[cfg.Region]; !ok {
-		return fmt.Errorf("region %q not found", cfg.Region)
-	}
-
-	if cfg.Name == "" {
-		now := time.Now()
-		cfg.Name = fmt.Sprintf(
-			"eks-%d%02d%02d%02d-%s-%s-%s",
-			now.Year(),
-			int(now.Month()),
-			now.Day(),
-			now.Hour(),
-			strings.ToLower(awsapi.RegionToAiport[cfg.Region]),
-			cfg.Region,
-			randString(5),
-		)
-	}
-
+	dirCreated := false
 	if cfg.ConfigPath == "" {
 		rootDir := filepath.Join(os.TempDir(), cfg.Name)
 		if err := os.MkdirAll(rootDir, 0700); err != nil {
 			return err
 		}
+		dirCreated = true
 		f, err := ioutil.TempFile(rootDir, cfg.Name+"-config-yaml")
 		if err != nil {
 			return err
@@ -480,6 +700,14 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		cfg.ConfigPath, _ = filepath.Abs(f.Name())
 		f.Close()
 		os.RemoveAll(cfg.ConfigPath)
+	}
+	if !dirCreated {
+		if err := os.MkdirAll(filepath.Dir(cfg.ConfigPath), 0700); err != nil {
+			return err
+		}
+	}
+	if cfg.AddOnManagedNodeGroups.LogDir == "" {
+		cfg.AddOnManagedNodeGroups.LogDir = filepath.Dir(cfg.ConfigPath)
 	}
 
 	if !strings.Contains(cfg.KubectlDownloadURL, runtime.GOOS) {
@@ -618,368 +846,197 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 
 	// validate node group related
-	if !cfg.Parameters.ManagedNodeGroupCreate {
+	if cfg.AddOnManagedNodeGroups.RoleName == "" {
+		cfg.AddOnManagedNodeGroups.RoleName = cfg.Name + "-mng-role"
+	}
+	if cfg.AddOnManagedNodeGroups.SSHKeyPairName == "" {
+		cfg.AddOnManagedNodeGroups.SSHKeyPairName = cfg.Name + "-ssh"
+	}
+	if cfg.AddOnManagedNodeGroups.Enable {
+		if cfg.AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath == "" {
+			return errors.New("empty AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath")
+		}
+		if cfg.AddOnManagedNodeGroups.RemoteAccessUserName == "" {
+			return errors.New("empty AddOnManagedNodeGroups.RemoteAccessUserName")
+		}
+		n := len(cfg.AddOnManagedNodeGroups.MNGs)
+		if n == 0 {
+			return errors.New("AddOnManagedNodeGroups.Enable but empty AddOnManagedNodeGroups.MNGs")
+		}
+		if n > MNGNodesMaxLimit {
+			return fmt.Errorf("AddOnManagedNodeGroups.MNGs %d exceeds maximum number of node groups per EKS which is %d", n, MNGNodesMaxLimit)
+		}
+		names := make(map[string]struct{})
+		for k, v := range cfg.AddOnManagedNodeGroups.MNGs {
+			if v.Name == "" {
+				return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].Name is empty", k)
+			}
+			if k != v.Name {
+				return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].Name has different Name field %q", k, v.Name)
+			}
+			_, ok := names[v.Name]
+			if !ok {
+				names[v.Name] = struct{}{}
+			} else {
+				return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].Name %q is redundant", k, v.Name)
+			}
+
+			if v.VolumeSize == 0 {
+				v.VolumeSize = DefaultNodeVolumeSize
+			}
+
+			switch v.AMIType {
+			case "AL2_x86_64":
+				if len(v.InstanceTypes) == 0 {
+					v.InstanceTypes = []string{DefaultNodeInstanceTypeCPU}
+				}
+			case "AL2_x86_64_GPU":
+				if len(v.InstanceTypes) == 0 {
+					v.InstanceTypes = []string{DefaultNodeInstanceTypeGPU}
+				}
+			default:
+				return fmt.Errorf("unknown AddOnManagedNodeGroups.MNGs[%q].AMIType %q", k, v.AMIType)
+			}
+
+			if v.ASGMinSize > v.ASGMaxSize {
+				return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].ASGMinSize %d > ASGMaxSize %d", k, v.ASGMinSize, v.ASGMaxSize)
+			}
+			if v.ASGDesiredCapacity > v.ASGMaxSize {
+				return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].ASGDesiredCapacity %d > ASGMaxSize %d", k, v.ASGDesiredCapacity, v.ASGMaxSize)
+			}
+			if v.ASGMaxSize > MNGNodesMaxLimit {
+				return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].ASGMaxSize %d > MNGNodesMaxLimit %d", k, v.ASGMaxSize, MNGNodesMaxLimit)
+			}
+			if v.ASGDesiredCapacity > MNGNodesMaxLimit {
+				return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].ASGDesiredCapacity %d > MNGNodesMaxLimit %d", k, v.ASGDesiredCapacity, MNGNodesMaxLimit)
+			}
+
+			cfg.AddOnManagedNodeGroups.MNGs[k] = v
+		}
+
+		if cfg.AddOnJobEcho.Size > 250000 {
+			return fmt.Errorf("echo size limit is 0.25 MB, got %d", cfg.AddOnJobEcho.Size)
+		}
+
+		if cfg.AddOnJobPerl.Namespace == "" {
+			cfg.AddOnJobPerl.Namespace = cfg.Name + "-job-perl"
+		}
+		if cfg.AddOnJobPerl.Namespace == cfg.Name {
+			return fmt.Errorf("AddOnJobPerl.Namespace %q conflicts with %q", cfg.AddOnJobPerl.Namespace, cfg.Name)
+		}
+		if cfg.AddOnJobEcho.Namespace == "" {
+			cfg.AddOnJobEcho.Namespace = cfg.Name + "-job-echo"
+		}
+		if cfg.AddOnJobEcho.Namespace == cfg.Name {
+			return fmt.Errorf("AddOnJobEcho.Namespace %q conflicts with %q", cfg.AddOnJobEcho.Namespace, cfg.Name)
+		}
+		if cfg.AddOnSecrets.Namespace == "" {
+			cfg.AddOnSecrets.Namespace = cfg.Name + "-secrets"
+		}
+		if cfg.AddOnSecrets.Namespace == cfg.Name {
+			return fmt.Errorf("AddOnSecrets.Namespace %q conflicts with %q", cfg.AddOnSecrets.Namespace, cfg.Name)
+		}
+
+		if cfg.AddOnSecrets.WritesResultPath == "" {
+			cfg.AddOnSecrets.WritesResultPath = filepath.Join(
+				filepath.Dir(cfg.ConfigPath),
+				cfg.Name+"-secret-writes.csv",
+			)
+		}
+		if filepath.Ext(cfg.AddOnSecrets.WritesResultPath) != ".csv" {
+			return fmt.Errorf("expected .csv extension for WritesResultPath, got %q", cfg.AddOnSecrets.WritesResultPath)
+		}
+		if cfg.AddOnSecrets.ReadsResultPath == "" {
+			cfg.AddOnSecrets.ReadsResultPath = filepath.Join(
+				filepath.Dir(cfg.ConfigPath),
+				cfg.Name+"-secret-reads.csv",
+			)
+		}
+		if filepath.Ext(cfg.AddOnSecrets.ReadsResultPath) != ".csv" {
+			return fmt.Errorf("expected .csv extension for ReadsResultPath, got %q", cfg.AddOnSecrets.ReadsResultPath)
+		}
+
+	} else {
+
 		if cfg.AddOnNLBHelloWorld.Enable {
-			return fmt.Errorf("Parameters.ManagedNodeGroupCreate false, but got AddOnNLBHelloWorld.Enable %v", cfg.AddOnNLBHelloWorld.Enable)
+			return fmt.Errorf("AddOnManagedNodeGroups.Enable false, but got AddOnNLBHelloWorld.Enable %v", cfg.AddOnNLBHelloWorld.Enable)
 		}
 		if cfg.AddOnALB2048.Enable {
-			return fmt.Errorf("Parameters.ManagedNodeGroupCreate false, but got AddOnALB2048.Enable %v", cfg.AddOnALB2048.Enable)
+			return fmt.Errorf("AddOnManagedNodeGroups.Enable false, but got AddOnALB2048.Enable %v", cfg.AddOnALB2048.Enable)
 		}
 		if cfg.AddOnJobPerl.Enable {
-			return fmt.Errorf("Parameters.ManagedNodeGroupCreate false, but got AddOnJobPerl.Enable %v", cfg.AddOnJobPerl.Enable)
+			return fmt.Errorf("AddOnManagedNodeGroups.Enable false, but got AddOnJobPerl.Enable %v", cfg.AddOnJobPerl.Enable)
 		}
 		if cfg.AddOnJobEcho.Enable {
-			return fmt.Errorf("Parameters.ManagedNodeGroupCreate false, but got AddOnJobEcho.Enable %v", cfg.AddOnJobEcho.Enable)
+			return fmt.Errorf("AddOnManagedNodeGroups.Enable false, but got AddOnJobEcho.Enable %v", cfg.AddOnJobEcho.Enable)
 		}
-	}
-	if cfg.Parameters.ManagedNodeGroupRoleName == "" {
-		cfg.Parameters.ManagedNodeGroupRoleName = cfg.Name + "-managed-node-group-role"
-	}
-	if cfg.Parameters.ManagedNodeGroupName == "" {
-		cfg.Parameters.ManagedNodeGroupName = cfg.Name + "-managed-node-group"
-	}
-	if cfg.Parameters.ManagedNodeGroupSSHKeyPairName == "" {
-		cfg.Parameters.ManagedNodeGroupSSHKeyPairName = cfg.Name + "-ssh-key-pair"
-	}
-	if cfg.Parameters.ManagedNodeGroupRemoteAccessPrivateKeyPath == "" {
-		return errors.New("empty Parameters.ManagedNodeGroupRemoteAccessPrivateKeyPath")
-	}
-	if cfg.Parameters.ManagedNodeGroupRemoteAccessUserName == "" {
-		return errors.New("empty Parameters.ManagedNodeGroupRemoteAccessUserName")
-	}
-
-	if cfg.AddOnJobEcho.Size > 250000 {
-		return fmt.Errorf("echo size limit is 0.25 MB, got %d", cfg.AddOnJobEcho.Size)
+		if cfg.AddOnSecrets.Enable {
+			return fmt.Errorf("AddOnManagedNodeGroups.Enable false, but got AddOnSecrets.Enable %v", cfg.AddOnSecrets.Enable)
+		}
 	}
 
 	return cfg.Sync()
 }
 
-const (
-	// EnvironmentVariablePrefix is the environment variable prefix used for setting configuration.
-	EnvironmentVariablePrefix                   = "AWS_K8S_TESTER_EKS_"
-	EnvironmentVariablePrefixParameters         = "AWS_K8S_TESTER_EKS_PARAMETERS_"
-	EnvironmentVariablePrefixAddOnNLBHelloWorld = "AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_"
-	EnvironmentVariablePrefixAddOnALB2048       = "AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_"
-	EnvironmentVariablePrefixAddOnJobPerl       = "AWS_K8S_TESTER_EKS_ADD_ON_JOB_PERL_"
-	EnvironmentVariablePrefixAddOnJobEcho       = "AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_"
-)
+// Load loads configuration from YAML.
+// Useful when injecting shared configuration via ConfigMap.
+//
+// Example usage:
+//
+//  import "github.com/aws/aws-k8s-tester/eksconfig"
+//  cfg := eksconfig.Load("test.yaml")
+//  err := cfg.ValidateAndSetDefaults()
+//
+// Do not set default values in this function.
+// "ValidateAndSetDefaults" must be called separately,
+// to prevent overwriting previous data when loaded from disks.
+func Load(p string) (cfg *Config, err error) {
+	var d []byte
+	d, err = ioutil.ReadFile(p)
+	if err != nil {
+		return nil, err
+	}
+	cfg = new(Config)
+	if err = yaml.Unmarshal(d, cfg); err != nil {
+		return nil, err
+	}
 
-// UpdateFromEnvs updates fields from environmental variables.
-// Empty values are ignored.
-func (cfg *Config) UpdateFromEnvs() error {
-	copied := *cfg
+	if cfg.ConfigPath != p {
+		cfg.ConfigPath = p
+	}
+	cfg.ConfigPath, err = filepath.Abs(p)
+	if err != nil {
+		return nil, err
+	}
 
-	tp, vv := reflect.TypeOf(&copied).Elem(), reflect.ValueOf(&copied).Elem()
-	for i := 0; i < tp.NumField(); i++ {
-		jv := tp.Field(i).Tag.Get("json")
-		if jv == "" {
-			continue
-		}
-		jv = strings.Replace(jv, ",omitempty", "", -1)
-		jv = strings.Replace(jv, "-", "_", -1)
-		jv = strings.ToUpper(strings.Replace(jv, "-", "_", -1))
-		env := EnvironmentVariablePrefix + jv
-		sv := os.Getenv(env)
-		if sv == "" {
-			continue
-		}
-		if tp.Field(i).Tag.Get("read-only") == "true" {
-			continue
-		}
-		fieldName := tp.Field(i).Name
+	return cfg, nil
+}
 
-		switch vv.Field(i).Type().Kind() {
-		case reflect.String:
-			vv.Field(i).SetString(sv)
-
-		case reflect.Map:
-			return fmt.Errorf("parsing field name %q not supported", fieldName)
-
-		case reflect.Bool:
-			bb, err := strconv.ParseBool(sv)
-			if err != nil {
-				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
-			}
-			vv.Field(i).SetBool(bb)
-
-		case reflect.Int, reflect.Int32, reflect.Int64:
-			iv, err := strconv.ParseInt(sv, 10, 64)
-			if err != nil {
-				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
-			}
-			vv.Field(i).SetInt(iv)
-
-		case reflect.Uint, reflect.Uint32, reflect.Uint64:
-			iv, err := strconv.ParseUint(sv, 10, 64)
-			if err != nil {
-				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
-			}
-			vv.Field(i).SetUint(iv)
-
-		case reflect.Float32, reflect.Float64:
-			fv, err := strconv.ParseFloat(sv, 64)
-			if err != nil {
-				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
-			}
-			vv.Field(i).SetFloat(fv)
-
-		case reflect.Slice:
-			ss := strings.Split(sv, ",")
-			if len(ss) < 1 {
-				continue
-			}
-			slice := reflect.MakeSlice(reflect.TypeOf([]string{}), len(ss), len(ss))
-			for j := range ss {
-				slice.Index(j).SetString(ss[j])
-			}
-			vv.Field(i).Set(slice)
-
-		default:
-			return fmt.Errorf("%q (type %v) is not supported as an env", env, vv.Field(i).Type())
+// Sync persists current configuration and states to disk.
+func (cfg *Config) Sync() (err error) {
+	if !filepath.IsAbs(cfg.ConfigPath) {
+		cfg.ConfigPath, err = filepath.Abs(cfg.ConfigPath)
+		if err != nil {
+			return fmt.Errorf("failed to 'filepath.Abs(%s)' %v", cfg.ConfigPath, err)
 		}
 	}
-	*cfg = copied
-
-	fieldParameters := *copied.Parameters
-	tpParameters, vvParameters := reflect.TypeOf(&fieldParameters).Elem(), reflect.ValueOf(&fieldParameters).Elem()
-	for i := 0; i < tpParameters.NumField(); i++ {
-		jv := tpParameters.Field(i).Tag.Get("json")
-		if jv == "" {
-			continue
-		}
-		jv = strings.Replace(jv, ",omitempty", "", -1)
-		jv = strings.ToUpper(strings.Replace(jv, "-", "_", -1))
-		env := EnvironmentVariablePrefixParameters + jv
-		sv := os.Getenv(env)
-		if sv == "" {
-			continue
-		}
-		fieldName := tpParameters.Field(i).Name
-
-		switch vvParameters.Field(i).Type().Kind() {
-		case reflect.String:
-			vvParameters.Field(i).SetString(sv)
-
-		case reflect.Bool:
-			bb, err := strconv.ParseBool(sv)
-			if err != nil {
-				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
-			}
-			vvParameters.Field(i).SetBool(bb)
-
-		case reflect.Int, reflect.Int32, reflect.Int64:
-			iv, err := strconv.ParseInt(sv, 10, 64)
-			if err != nil {
-				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
-			}
-			vvParameters.Field(i).SetInt(iv)
-
-		case reflect.Uint, reflect.Uint32, reflect.Uint64:
-			iv, err := strconv.ParseUint(sv, 10, 64)
-			if err != nil {
-				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
-			}
-			vvParameters.Field(i).SetUint(iv)
-
-		case reflect.Float32, reflect.Float64:
-			fv, err := strconv.ParseFloat(sv, 64)
-			if err != nil {
-				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
-			}
-			vvParameters.Field(i).SetFloat(fv)
-
-		case reflect.Slice:
-			ss := strings.Split(sv, ",")
-			if len(ss) < 1 {
-				continue
-			}
-			slice := reflect.MakeSlice(reflect.TypeOf([]string{}), len(ss), len(ss))
-			for j := range ss {
-				slice.Index(j).SetString(ss[j])
-			}
-			vvParameters.Field(i).Set(slice)
-
-		case reflect.Map:
-			switch fieldName {
-			case "ClusterTags",
-				"ManagedNodeGroupTags":
-				vvParameters.Field(i).Set(reflect.ValueOf(make(map[string]string)))
-				for _, pair := range strings.Split(sv, ",") {
-					fields := strings.Split(pair, "=")
-					if len(fields) != 2 {
-						return fmt.Errorf("map %q has unexpected format (e.g. should be 'a=b;c;d,e=f'", sv)
-					}
-					vvParameters.Field(i).SetMapIndex(reflect.ValueOf(fields[0]), reflect.ValueOf(fields[1]))
-				}
-
-			default:
-				return fmt.Errorf("parsing field name %q not supported", fieldName)
-			}
-
-		default:
-			return fmt.Errorf("%q (type %v) is not supported as an env", env, vvParameters.Field(i).Type())
+	if !filepath.IsAbs(cfg.KubeConfigPath) {
+		cfg.KubeConfigPath, err = filepath.Abs(cfg.KubeConfigPath)
+		if err != nil {
+			return fmt.Errorf("failed to 'filepath.Abs(%s)' %v", cfg.KubeConfigPath, err)
 		}
 	}
-	cfg.Parameters = &fieldParameters
 
-	// DO NOT SET cfg.Status since it's read-only
-
-	fieldAddOnNLBHelloWorld := *copied.AddOnNLBHelloWorld
-	tpAddOnNLBHelloWorld, vvAddOnNLBHelloWorld := reflect.TypeOf(&fieldAddOnNLBHelloWorld).Elem(), reflect.ValueOf(&fieldAddOnNLBHelloWorld).Elem()
-	for i := 0; i < tpAddOnNLBHelloWorld.NumField(); i++ {
-		jv := tpAddOnNLBHelloWorld.Field(i).Tag.Get("json")
-		if jv == "" {
-			continue
-		}
-		jv = strings.Replace(jv, ",omitempty", "", -1)
-		jv = strings.ToUpper(strings.Replace(jv, "-", "_", -1))
-		env := EnvironmentVariablePrefixAddOnNLBHelloWorld + jv
-		sv := os.Getenv(env)
-		if sv == "" {
-			continue
-		}
-		if tpAddOnNLBHelloWorld.Field(i).Tag.Get("read-only") == "true" {
-			continue
-		}
-
-		switch vvAddOnNLBHelloWorld.Field(i).Type().Kind() {
-		case reflect.String:
-			vvAddOnNLBHelloWorld.Field(i).SetString(sv)
-
-		case reflect.Bool:
-			bb, err := strconv.ParseBool(sv)
-			if err != nil {
-				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
-			}
-			vvAddOnNLBHelloWorld.Field(i).SetBool(bb)
-
-		default:
-			return fmt.Errorf("%q (type %v) is not supported as an env", env, vvAddOnNLBHelloWorld.Field(i).Type())
-		}
+	var d []byte
+	d, err = yaml.Marshal(cfg)
+	if err != nil {
+		return fmt.Errorf("failed to 'yaml.Marshal' %v", err)
 	}
-	cfg.AddOnNLBHelloWorld = &fieldAddOnNLBHelloWorld
-
-	fieldAddOnALB2048 := *copied.AddOnALB2048
-	tpAddOnALB2048, vvAddOnALB2048 := reflect.TypeOf(&fieldAddOnALB2048).Elem(), reflect.ValueOf(&fieldAddOnALB2048).Elem()
-	for i := 0; i < tpAddOnALB2048.NumField(); i++ {
-		jv := tpAddOnALB2048.Field(i).Tag.Get("json")
-		if jv == "" {
-			continue
-		}
-		jv = strings.Replace(jv, ",omitempty", "", -1)
-		jv = strings.ToUpper(strings.Replace(jv, "-", "_", -1))
-		env := EnvironmentVariablePrefixAddOnALB2048 + jv
-		sv := os.Getenv(env)
-		if sv == "" {
-			continue
-		}
-		if tpAddOnALB2048.Field(i).Tag.Get("read-only") == "true" {
-			continue
-		}
-
-		switch vvAddOnALB2048.Field(i).Type().Kind() {
-		case reflect.String:
-			vvAddOnALB2048.Field(i).SetString(sv)
-
-		case reflect.Bool:
-			bb, err := strconv.ParseBool(sv)
-			if err != nil {
-				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
-			}
-			vvAddOnALB2048.Field(i).SetBool(bb)
-
-		default:
-			return fmt.Errorf("%q (type %v) is not supported as an env", env, vvAddOnALB2048.Field(i).Type())
-		}
+	err = ioutil.WriteFile(cfg.ConfigPath, d, 0600)
+	if err != nil {
+		return fmt.Errorf("failed to write file %q (%v)", cfg.ConfigPath, err)
 	}
-	cfg.AddOnALB2048 = &fieldAddOnALB2048
-
-	fieldAddOnJobPerl := *copied.AddOnJobPerl
-	tpAddOnJobPerl, vvAddOnJobPerl := reflect.TypeOf(&fieldAddOnJobPerl).Elem(), reflect.ValueOf(&fieldAddOnJobPerl).Elem()
-	for i := 0; i < tpAddOnJobPerl.NumField(); i++ {
-		jv := tpAddOnJobPerl.Field(i).Tag.Get("json")
-		if jv == "" {
-			continue
-		}
-		jv = strings.Replace(jv, ",omitempty", "", -1)
-		jv = strings.ToUpper(strings.Replace(jv, "-", "_", -1))
-		env := EnvironmentVariablePrefixAddOnJobPerl + jv
-		sv := os.Getenv(env)
-		if sv == "" {
-			continue
-		}
-		if tpAddOnJobPerl.Field(i).Tag.Get("read-only") == "true" {
-			continue
-		}
-
-		switch vvAddOnJobPerl.Field(i).Type().Kind() {
-		case reflect.String:
-			vvAddOnJobPerl.Field(i).SetString(sv)
-
-		case reflect.Bool:
-			bb, err := strconv.ParseBool(sv)
-			if err != nil {
-				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
-			}
-			vvAddOnJobPerl.Field(i).SetBool(bb)
-
-		case reflect.Int, reflect.Int32, reflect.Int64:
-			iv, err := strconv.ParseInt(sv, 10, 64)
-			if err != nil {
-				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
-			}
-			vvAddOnJobPerl.Field(i).SetInt(iv)
-
-		default:
-			return fmt.Errorf("%q (type %v) is not supported as an env", env, vvAddOnJobPerl.Field(i).Type())
-		}
-	}
-	cfg.AddOnJobPerl = &fieldAddOnJobPerl
-
-	fieldAddOnJobEcho := *copied.AddOnJobEcho
-	tpAddOnJobEcho, vvAddOnJobEcho := reflect.TypeOf(&fieldAddOnJobEcho).Elem(), reflect.ValueOf(&fieldAddOnJobEcho).Elem()
-	for i := 0; i < tpAddOnJobEcho.NumField(); i++ {
-		jv := tpAddOnJobEcho.Field(i).Tag.Get("json")
-		if jv == "" {
-			continue
-		}
-		jv = strings.Replace(jv, ",omitempty", "", -1)
-		jv = strings.ToUpper(strings.Replace(jv, "-", "_", -1))
-		env := EnvironmentVariablePrefixAddOnJobEcho + jv
-		sv := os.Getenv(env)
-		if sv == "" {
-			continue
-		}
-		if tpAddOnJobEcho.Field(i).Tag.Get("read-only") == "true" {
-			continue
-		}
-
-		switch vvAddOnJobEcho.Field(i).Type().Kind() {
-		case reflect.String:
-			vvAddOnJobEcho.Field(i).SetString(sv)
-
-		case reflect.Bool:
-			bb, err := strconv.ParseBool(sv)
-			if err != nil {
-				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
-			}
-			vvAddOnJobEcho.Field(i).SetBool(bb)
-
-		case reflect.Int, reflect.Int32, reflect.Int64:
-			iv, err := strconv.ParseInt(sv, 10, 64)
-			if err != nil {
-				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
-			}
-			vvAddOnJobEcho.Field(i).SetInt(iv)
-
-		default:
-			return fmt.Errorf("%q (type %v) is not supported as an env", env, vvAddOnJobEcho.Field(i).Type())
-		}
-	}
-	cfg.AddOnJobEcho = &fieldAddOnJobEcho
-
-	return nil
+	return err
 }
 
 // KubectlCommands returns the SSH commands.
@@ -990,9 +1047,11 @@ func (cfg *Config) KubectlCommands() (s string) {
 	tpl := template.Must(template.New("kubectlCmdTmpl").Parse(kubectlCmdTmpl))
 	buf := bytes.NewBuffer(nil)
 	if err := tpl.Execute(buf, struct {
+		Namespace      string
 		KubeConfigPath string
 		Version        string
 	}{
+		cfg.Name,
 		cfg.KubeConfigPath,
 		cfg.Parameters.Version,
 	}); err != nil {
@@ -1001,16 +1060,37 @@ func (cfg *Config) KubectlCommands() (s string) {
 	return buf.String()
 }
 
-const kubectlCmdTmpl = `# kubectl commands
+const kubectlCmdTmpl = `
+# kubectl commands
 kubectl --kubeconfig={{ .KubeConfigPath }} version
 kubectl --kubeconfig={{ .KubeConfigPath }} cluster-info
-kubectl --kubeconfig={{ .KubeConfigPath }} get cs
-kubectl --kubeconfig={{ .KubeConfigPath }} get nodes
-kubectl --kubeconfig={{ .KubeConfigPath }} get pods --namespace kube-system
-kubectl --kubeconfig={{ .KubeConfigPath }} get ds --namespace kube-system
-kubectl --kubeconfig={{ .KubeConfigPath }} get secrets --all-namespaces
-kubectl --kubeconfig={{ .KubeConfigPath }} get configmap --all-namespaces
-kubectl --kubeconfig={{ .KubeConfigPath }} get all --all-namespaces
+
+export KUBECONFIG={{ .KubeConfigPath }}
+kubectl version
+kubectl cluster-info
+
+export KUBECONFIG={{ .KubeConfigPath }}
+kubectl get cs
+kubectl get nodes
+
+export KUBECONFIG={{ .KubeConfigPath }}
+kubectl --namespace=kube-system get pods
+
+export KUBECONFIG={{ .KubeConfigPath }}
+kubectl --namespace={{ .Namespace }} get pods
+
+export KUBECONFIG={{ .KubeConfigPath }}
+kubectl --namespace=kube-system get ds
+
+export KUBECONFIG={{ .KubeConfigPath }}
+kubectl get secrets --all-namespaces
+
+export KUBECONFIG={{ .KubeConfigPath }}
+kubectl get configmap --all-namespaces
+
+export KUBECONFIG={{ .KubeConfigPath }}
+kubectl get all --all-namespaces
+
 
 # sonobuoy commands
 go get -v -u github.com/heptio/sonobuoy
@@ -1037,15 +1117,18 @@ sonobuoy e2e --kubeconfig={{ .KubeConfigPath }} $results
 
 // SSHCommands returns the SSH commands.
 func (cfg *Config) SSHCommands() (s string) {
-	if len(cfg.Status.ManagedNodeGroups) == 0 {
+	if cfg.StatusManagedNodeGroups == nil {
+		return ""
+	}
+	if len(cfg.StatusManagedNodeGroups.Nodes) == 0 {
 		return ""
 	}
 	buf := bytes.NewBuffer(nil)
-	for name, ng := range cfg.Status.ManagedNodeGroups {
+	for name, ng := range cfg.StatusManagedNodeGroups.Nodes {
 		buf.WriteString(fmt.Sprintf("ASG %q instance:\n", name))
 		ec := &ec2config.Config{
-			UserName:  cfg.Parameters.ManagedNodeGroupRemoteAccessUserName,
-			KeyPath:   cfg.Parameters.ManagedNodeGroupRemoteAccessPrivateKeyPath,
+			UserName:  cfg.AddOnManagedNodeGroups.RemoteAccessUserName,
+			KeyPath:   cfg.AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath,
 			Instances: ng.Instances,
 		}
 		buf.WriteString(ec.SSHCommands())
