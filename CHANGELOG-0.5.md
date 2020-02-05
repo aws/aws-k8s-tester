@@ -4,7 +4,7 @@
 <hr>
 
 
-## [v0.5.5](https://github.com/aws/aws-k8s-tester/releases/tag/v0.5.5) (2020-02-TBD)
+## [v0.5.5](https://github.com/aws/aws-k8s-tester/releases/tag/v0.5.5) (2020-02-04)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.4...v0.5.5).
 
