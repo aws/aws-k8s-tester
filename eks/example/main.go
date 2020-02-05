@@ -1,3 +1,4 @@
+// example shows how to use "eks" package.
 package main
 
 import (
