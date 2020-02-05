@@ -11,6 +11,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.5...v0.5.6
 
 - Add [`OnFailureDelete` and `OnFailureDeleteWaitSeconds`](https://github.com/aws/aws-k8s-tester/commit/0aea513d203c5df0b86ff4448ec67a627574ae77).
 
+### `eks`
+
+- Improve [`Delete` operation waits](https://github.com/aws/aws-k8s-tester/commit/4fb3060ad2695cdee3b040f332ee548222d9dcb3).
+
 ### Go
 
 - Compile with [*Go 1.13.7*](https://golang.org/doc/devel/release.html#go1.13).
