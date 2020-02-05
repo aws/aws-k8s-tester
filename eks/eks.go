@@ -526,7 +526,6 @@ func (ts *Tester) Up() (err error) {
 
 		colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]kubectl [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
 		fmt.Println(ts.cfg.KubectlCommands())
-
 		colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]SSH [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
 		fmt.Println(ts.cfg.SSHCommands())
 
@@ -551,6 +550,11 @@ func (ts *Tester) Up() (err error) {
 		); err != nil {
 			return err
 		}
+
+		colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]kubectl [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
+		fmt.Println(ts.cfg.KubectlCommands())
+		colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]SSH [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
+		fmt.Println(ts.cfg.SSHCommands())
 
 		if ts.cfg.AddOnNLBHelloWorld.Enable {
 			colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]nlbHelloWorldTester.Create [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
@@ -655,7 +659,6 @@ func (ts *Tester) Up() (err error) {
 
 	colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]kubectl [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
 	fmt.Println(ts.cfg.KubectlCommands())
-
 	colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]SSH [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
 	fmt.Println(ts.cfg.SSHCommands())
 
