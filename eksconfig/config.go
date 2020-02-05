@@ -235,13 +235,13 @@ type AddOnNLBHelloWorld struct {
 	Created bool `json:"created" read-only:"true"`
 
 	// CreateTook is the duration that took to create the resource.
-	CreateTook time.Duration `json:"create-took" read-only:"true"`
+	CreateTook time.Duration `json:"create-took,omitempty" read-only:"true"`
 	// CreateTookString is the duration that took to create the resource.
-	CreateTookString string `json:"create-took-string" read-only:"true"`
+	CreateTookString string `json:"create-took-string,omitempty" read-only:"true"`
 	// DeleteTook is the duration that took to create the resource.
-	DeleteTook time.Duration `json:"delete-took" read-only:"true"`
+	DeleteTook time.Duration `json:"delete-took,omitempty" read-only:"true"`
 	// DeleteTookString is the duration that took to create the resource.
-	DeleteTookString string `json:"delete-took-string" read-only:"true"`
+	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
 
 	// NLBARN is the ARN of the NLB created from the service.
 	NLBARN string `json:"nlb-arn" read-only:"true"`
@@ -260,13 +260,13 @@ type AddOnALB2048 struct {
 	Created bool `json:"created" read-only:"true"`
 
 	// CreateTook is the duration that took to create the resource.
-	CreateTook time.Duration `json:"create-took" read-only:"true"`
+	CreateTook time.Duration `json:"create-took,omitempty" read-only:"true"`
 	// CreateTookString is the duration that took to create the resource.
-	CreateTookString string `json:"create-took-string" read-only:"true"`
+	CreateTookString string `json:"create-took-string,omitempty" read-only:"true"`
 	// DeleteTook is the duration that took to create the resource.
-	DeleteTook time.Duration `json:"delete-took" read-only:"true"`
+	DeleteTook time.Duration `json:"delete-took,omitempty" read-only:"true"`
 	// DeleteTookString is the duration that took to create the resource.
-	DeleteTookString string `json:"delete-took-string" read-only:"true"`
+	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
 
 	// PolicyCFNStackID is the CloudFormation stack ID
 	// for ALB Ingress Controller IAM policy.
@@ -290,13 +290,13 @@ type AddOnJobPerl struct {
 	Created bool `json:"created" read-only:"true"`
 
 	// CreateTook is the duration that took to create the resource.
-	CreateTook time.Duration `json:"create-took" read-only:"true"`
+	CreateTook time.Duration `json:"create-took,omitempty" read-only:"true"`
 	// CreateTookString is the duration that took to create the resource.
-	CreateTookString string `json:"create-took-string" read-only:"true"`
+	CreateTookString string `json:"create-took-string,omitempty" read-only:"true"`
 	// DeleteTook is the duration that took to create the resource.
-	DeleteTook time.Duration `json:"delete-took" read-only:"true"`
+	DeleteTook time.Duration `json:"delete-took,omitempty" read-only:"true"`
 	// DeleteTookString is the duration that took to create the resource.
-	DeleteTookString string `json:"delete-took-string" read-only:"true"`
+	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
 
 	// Namespace is the namespace to create "Job" objects in.
 	Namespace string `json:"namespace"`
@@ -317,13 +317,13 @@ type AddOnJobEcho struct {
 	Created bool `json:"created" read-only:"true"`
 
 	// CreateTook is the duration that took to create the resource.
-	CreateTook time.Duration `json:"create-took" read-only:"true"`
+	CreateTook time.Duration `json:"create-took,omitempty" read-only:"true"`
 	// CreateTookString is the duration that took to create the resource.
-	CreateTookString string `json:"create-took-string" read-only:"true"`
+	CreateTookString string `json:"create-took-string,omitempty" read-only:"true"`
 	// DeleteTook is the duration that took to create the resource.
-	DeleteTook time.Duration `json:"delete-took" read-only:"true"`
+	DeleteTook time.Duration `json:"delete-took,omitempty" read-only:"true"`
 	// DeleteTookString is the duration that took to create the resource.
-	DeleteTookString string `json:"delete-took-string" read-only:"true"`
+	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
 
 	// Namespace is the namespace to create "Job" objects in.
 	Namespace string `json:"namespace"`
@@ -349,13 +349,13 @@ type AddOnSecrets struct {
 	Created bool `json:"created" read-only:"true"`
 
 	// CreateTook is the duration that took to create the resource.
-	CreateTook time.Duration `json:"create-took" read-only:"true"`
+	CreateTook time.Duration `json:"create-took,omitempty" read-only:"true"`
 	// CreateTookString is the duration that took to create the resource.
-	CreateTookString string `json:"create-took-string" read-only:"true"`
+	CreateTookString string `json:"create-took-string,omitempty" read-only:"true"`
 	// DeleteTook is the duration that took to create the resource.
-	DeleteTook time.Duration `json:"delete-took" read-only:"true"`
+	DeleteTook time.Duration `json:"delete-took,omitempty" read-only:"true"`
 	// DeleteTookString is the duration that took to create the resource.
-	DeleteTookString string `json:"delete-took-string" read-only:"true"`
+	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
 
 	// Namespace is the namespace to create "Secret" and "Pod" objects in.
 	Namespace string `json:"namespace"`
@@ -410,13 +410,13 @@ type Status struct {
 	Up bool `json:"up"`
 
 	// CreateTook is the duration that took to create the resource.
-	CreateTook time.Duration `json:"create-took" read-only:"true"`
+	CreateTook time.Duration `json:"create-took,omitempty" read-only:"true"`
 	// CreateTookString is the duration that took to create the resource.
-	CreateTookString string `json:"create-took-string" read-only:"true"`
+	CreateTookString string `json:"create-took-string,omitempty" read-only:"true"`
 	// DeleteTook is the duration that took to create the resource.
-	DeleteTook time.Duration `json:"delete-took" read-only:"true"`
+	DeleteTook time.Duration `json:"delete-took,omitempty" read-only:"true"`
 	// DeleteTookString is the duration that took to create the resource.
-	DeleteTookString string `json:"delete-took-string" read-only:"true"`
+	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
 
 	// AWSAccountID is the account ID of the eks tester caller.
 	AWSAccountID string `json:"aws-account-id"`
@@ -460,13 +460,13 @@ type Status struct {
 // ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
 type StatusManagedNodeGroups struct {
 	// CreateTook is the duration that took to create the resource.
-	CreateTook time.Duration `json:"create-took" read-only:"true"`
+	CreateTook time.Duration `json:"create-took,omitempty" read-only:"true"`
 	// CreateTookString is the duration that took to create the resource.
-	CreateTookString string `json:"create-took-string" read-only:"true"`
+	CreateTookString string `json:"create-took-string,omitempty" read-only:"true"`
 	// DeleteTook is the duration that took to create the resource.
-	DeleteTook time.Duration `json:"delete-took" read-only:"true"`
+	DeleteTook time.Duration `json:"delete-took,omitempty" read-only:"true"`
 	// DeleteTookString is the duration that took to create the resource.
-	DeleteTookString string `json:"delete-took-string" read-only:"true"`
+	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
 
 	// RoleCFNStackID is the CloudFormation stack ID for a managed node group role.
 	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
