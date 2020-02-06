@@ -9,6 +9,28 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.5...v0.5.6
 
 ### `eksconfig`
 
+- Validate [old instance types when `AddOnNLBHelloWorld` or `AddOnALB2048` is enabled](https://github.com/aws/aws-k8s-tester/commit/549ad616dc6507fd9d481a82177c0013a003926f).
+  - Debug [`aws/amazon-vpc-cni-k8s#821`](https://github.com/aws/amazon-vpc-cni-k8s/pull/821).
+  - See [`kubernetes/kubernetes#66044`](https://github.com/kubernetes/kubernetes/issues/66044#issuecomment-408188524).
+
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.28.10`](https://github.com/aws/aws-sdk-go/releases/tag/v1.28.10) to [`v1.28.12`](https://github.com/aws/aws-sdk-go/releases/tag/v1.28.12).
+
+### Go
+
+- Compile with [*Go 1.13.7*](https://golang.org/doc/devel/release.html#go1.13).
+
+
+<hr>
+
+
+## [v0.5.6](https://github.com/aws/aws-k8s-tester/releases/tag/v0.5.6) (2020-02-05)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.5...v0.5.6).
+
+### `eksconfig`
+
 - Add [`OnFailureDelete` and `OnFailureDeleteWaitSeconds`](https://github.com/aws/aws-k8s-tester/commit/0aea513d203c5df0b86ff4448ec67a627574ae77).
 - Add [`AddOnNLBHelloWorld.Namespace`](https://github.com/aws/aws-k8s-tester/commit/245ca7d53454613101c9dab188455b69c278b805).
 - Add [`AddOnALB2048.Namespace`](https://github.com/aws/aws-k8s-tester/commit/245ca7d53454613101c9dab188455b69c278b805).
