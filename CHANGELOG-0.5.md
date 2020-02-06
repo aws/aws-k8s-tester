@@ -12,18 +12,22 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.5...v0.5.6
 - Add [`OnFailureDelete` and `OnFailureDeleteWaitSeconds`](https://github.com/aws/aws-k8s-tester/commit/0aea513d203c5df0b86ff4448ec67a627574ae77).
 - Add [`AddOnNLBHelloWorld.Namespace`](https://github.com/aws/aws-k8s-tester/commit/245ca7d53454613101c9dab188455b69c278b805).
 - Add [`AddOnALB2048.Namespace`](https://github.com/aws/aws-k8s-tester/commit/245ca7d53454613101c9dab188455b69c278b805).
+  - Debug [`aws/amazon-vpc-cni-k8s#821`](https://github.com/aws/amazon-vpc-cni-k8s/pull/821).
 
 ### `eks`
 
 - Improve [`Delete` operation waits](https://github.com/aws/aws-k8s-tester/commit/4fb3060ad2695cdee3b040f332ee548222d9dcb3).
+  - See [issue#70](https://github.com/aws/aws-k8s-tester/issues/70) for more details.
 
 ### `eks/nlb`
 
 - Add [`kubectl describe svc` during host name checks](https://github.com/aws/aws-k8s-tester/commit/cb9943c6c830c2fe059330b6ce6e139ce8921e58).
+  - Debug [`aws/amazon-vpc-cni-k8s#821`](https://github.com/aws/amazon-vpc-cni-k8s/pull/821).
 
 ### `eks/alb`
 
 - Add [`kubectl describe svc` during host name checks](https://github.com/aws/aws-k8s-tester/commit/cb9943c6c830c2fe059330b6ce6e139ce8921e58).
+  - Debug [`aws/amazon-vpc-cni-k8s#821`](https://github.com/aws/amazon-vpc-cni-k8s/pull/821).
 
 ### Go
 
