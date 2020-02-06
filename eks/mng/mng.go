@@ -13,8 +13,8 @@ import (
 	testerec2 "github.com/aws/aws-k8s-tester/ec2"
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/eksconfig"
-	awsapicfn "github.com/aws/aws-k8s-tester/pkg/awsapi/cloudformation"
-	awsapiec2 "github.com/aws/aws-k8s-tester/pkg/awsapi/ec2"
+	awscfn "github.com/aws/aws-k8s-tester/pkg/aws/cloudformation"
+	awsapiec2 "github.com/aws/aws-k8s-tester/pkg/aws/ec2"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/autoscaling"
@@ -460,7 +460,7 @@ func (ts *tester) createMNG() error {
 				StackName:    aws.String(mv.Name),
 				Capabilities: aws.StringSlice([]string{"CAPABILITY_IAM"}),
 				OnFailure:    aws.String("DELETE"),
-				Tags: awsapicfn.NewTags(map[string]string{
+				Tags: awscfn.NewTags(map[string]string{
 					"Kind": "aws-k8s-tester",
 					"Name": ts.cfg.EKSConfig.Name,
 				}),
@@ -557,7 +557,7 @@ func (ts *tester) createMNG() error {
 			}
 			status := ts.cfg.EKSConfig.StatusManagedNodeGroups.Nodes[name]
 			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
-			ch := awsapicfn.Poll(
+			ch := awscfn.Poll(
 				ctx,
 				ts.cfg.Stopc,
 				ts.cfg.Sig,
@@ -568,7 +568,7 @@ func (ts *tester) createMNG() error {
 				cfnInitWait,
 				15*time.Second,
 			)
-			var st awsapicfn.StackStatus
+			var st awscfn.StackStatus
 			for st = range ch {
 				if st.Error != nil {
 					status.Status = fmt.Sprintf("failed to create managed node group (%v)", st.Error)
@@ -658,7 +658,7 @@ func (ts *tester) deleteMNG() error {
 				return err
 			}
 			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
-			ch := awsapicfn.Poll(
+			ch := awscfn.Poll(
 				ctx,
 				make(chan struct{}),  // do not exit on stop
 				make(chan os.Signal), // do not exit on stop
@@ -669,7 +669,7 @@ func (ts *tester) deleteMNG() error {
 				2*time.Minute,
 				15*time.Second,
 			)
-			var st awsapicfn.StackStatus
+			var st awscfn.StackStatus
 			for st = range ch {
 				if st.Error != nil {
 					cancel()

@@ -20,7 +20,7 @@ import (
 	"github.com/aws/aws-k8s-tester/eks/nlb"
 	"github.com/aws/aws-k8s-tester/eks/secrets"
 	"github.com/aws/aws-k8s-tester/eksconfig"
-	"github.com/aws/aws-k8s-tester/pkg/awsapi"
+	pkgaws "github.com/aws/aws-k8s-tester/pkg/aws"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
 	"github.com/aws/aws-sdk-go/aws"
@@ -221,13 +221,13 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 
 	defer ts.cfg.Sync()
 
-	awsCfg := &awsapi.Config{
+	awsCfg := &pkgaws.Config{
 		Logger:        ts.lg,
 		DebugAPICalls: ts.cfg.LogLevel == "debug",
 		Region:        ts.cfg.Region,
 	}
 	var stsOutput *sts.GetCallerIdentityOutput
-	ts.awsSession, stsOutput, ts.cfg.Status.AWSCredentialPath, err = awsapi.New(awsCfg)
+	ts.awsSession, stsOutput, ts.cfg.Status.AWSCredentialPath, err = pkgaws.New(awsCfg)
 	if err != nil {
 		return nil, err
 	}
@@ -245,7 +245,7 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 	ts.elbv2API = elbv2.New(ts.awsSession)
 
 	// create a separate session for EKS (for resolver endpoint)
-	ts.eksSession, _, ts.cfg.Status.AWSCredentialPath, err = awsapi.New(&awsapi.Config{
+	ts.eksSession, _, ts.cfg.Status.AWSCredentialPath, err = pkgaws.New(&pkgaws.Config{
 		Logger:        ts.lg,
 		DebugAPICalls: ts.cfg.LogLevel == "debug",
 		Region:        ts.cfg.Region,

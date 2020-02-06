@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config/plugins"
-	"github.com/aws/aws-k8s-tester/pkg/awsapi"
+	pkgaws "github.com/aws/aws-k8s-tester/pkg/aws"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
 	"sigs.k8s.io/yaml"
 )
@@ -421,7 +421,7 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 	if cfg.AWSRegion == "" {
 		return errors.New("empty AWSRegion")
 	}
-	if _, ok := awsapi.RegionToAiport[cfg.AWSRegion]; !ok {
+	if _, ok := pkgaws.RegionToAiport[cfg.AWSRegion]; !ok {
 		return fmt.Errorf("%q not found", cfg.AWSRegion)
 	}
 	if cfg.UserName == "" {
@@ -452,7 +452,7 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 		cfg.Tag = genTag()
 	}
 	if cfg.ClusterName == "" {
-		airport := awsapi.RegionToAiport[cfg.AWSRegion]
+		airport := pkgaws.RegionToAiport[cfg.AWSRegion]
 		cfg.ClusterName = cfg.Tag + "-" + strings.ToLower(airport) + "-" + cfg.AWSRegion + "-" + randString(5)
 	}
 

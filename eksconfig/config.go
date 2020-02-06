@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
-	"github.com/aws/aws-k8s-tester/pkg/awsapi"
+	pkgaws "github.com/aws/aws-k8s-tester/pkg/aws"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
 	"k8s.io/client-go/util/homedir"
 	"sigs.k8s.io/yaml"
@@ -704,7 +704,7 @@ func init() {
 // And updates empty fields with default values.
 // At the end, it writes populated YAML to aws-k8s-tester config path.
 func (cfg *Config) ValidateAndSetDefaults() error {
-	if _, ok := awsapi.RegionToAiport[cfg.Region]; !ok {
+	if _, ok := pkgaws.RegionToAiport[cfg.Region]; !ok {
 		return fmt.Errorf("region %q not found", cfg.Region)
 	}
 	if len(cfg.Name) == 0 {

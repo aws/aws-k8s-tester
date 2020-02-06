@@ -1,4 +1,4 @@
-package awsapi
+package aws
 
 // AirportToRegion maps airport code to each region.
 var AirportToRegion = map[string]string{

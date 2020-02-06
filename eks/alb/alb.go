@@ -15,7 +15,7 @@ import (
 
 	"github.com/aws/aws-k8s-tester/eks/elb"
 	"github.com/aws/aws-k8s-tester/eksconfig"
-	awsapicfn "github.com/aws/aws-k8s-tester/pkg/awsapi/cloudformation"
+	awscfn "github.com/aws/aws-k8s-tester/pkg/aws/cloudformation"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/cloudformation/cloudformationiface"
@@ -397,7 +397,7 @@ func (ts *tester) createALBPolicy() error {
 		Capabilities: aws.StringSlice([]string{"CAPABILITY_NAMED_IAM"}),
 		OnFailure:    aws.String("DELETE"),
 		TemplateBody: aws.String(TemplateALBIngressControllerPolicy),
-		Tags: awsapicfn.NewTags(map[string]string{
+		Tags: awscfn.NewTags(map[string]string{
 			"Kind": "aws-k8s-tester",
 			"Name": ts.cfg.EKSConfig.Name,
 		}),
@@ -418,7 +418,7 @@ func (ts *tester) createALBPolicy() error {
 	}
 	ts.cfg.EKSConfig.AddOnALB2048.PolicyCFNStackID = aws.StringValue(stackOutput.StackId)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
-	ch := awsapicfn.Poll(
+	ch := awscfn.Poll(
 		ctx,
 		ts.cfg.Stopc,
 		ts.cfg.Sig,
@@ -429,7 +429,7 @@ func (ts *tester) createALBPolicy() error {
 		25*time.Second,
 		10*time.Second,
 	)
-	var st awsapicfn.StackStatus
+	var st awscfn.StackStatus
 	for st = range ch {
 		if st.Error != nil {
 			cancel()
@@ -469,7 +469,7 @@ func (ts *tester) deleteALBPolicy() error {
 		return err
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
-	ch := awsapicfn.Poll(
+	ch := awscfn.Poll(
 		ctx,
 		make(chan struct{}),  // do not exit on stop
 		make(chan os.Signal), // do not exit on stop
@@ -480,7 +480,7 @@ func (ts *tester) deleteALBPolicy() error {
 		25*time.Second,
 		10*time.Second,
 	)
-	var st awsapicfn.StackStatus
+	var st awscfn.StackStatus
 	for st = range ch {
 		if st.Error != nil {
 			cancel()

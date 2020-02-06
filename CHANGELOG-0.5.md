@@ -21,6 +21,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.5...v0.5.6
 
 - New package `kms` moved from [`internal/kms`](https://github.com/aws/aws-k8s-tester/commit/afe4bf121ab941b292d1647ddb0f3448eecef71d).
 
+### `pkg/aws`
+
+- New package `pkg/aws` moved from [`pkg/awsapi`](https://github.com/aws/aws-k8s-tester/commit/).
+
 ### `pkg/ssh`
 
 - New package `pkg/ssh` moved from [`internal/ssh`](https://github.com/aws/aws-k8s-tester/commit/afe4bf121ab941b292d1647ddb0f3448eecef71d).

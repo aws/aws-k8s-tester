@@ -16,7 +16,7 @@ import (
 
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/ec2config/plugins"
-	"github.com/aws/aws-k8s-tester/pkg/awsapi"
+	pkgaws "github.com/aws/aws-k8s-tester/pkg/aws"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
 	"github.com/aws/aws-k8s-tester/pkg/ssh"
 	"github.com/aws/aws-sdk-go/aws"
@@ -92,13 +92,13 @@ func NewDeployer(cfg *ec2config.Config) (Deployer, error) {
 		s3Buckets: make(map[string]struct{}),
 	}
 
-	awsCfg := &awsapi.Config{
+	awsCfg := &pkgaws.Config{
 		Logger:        md.lg,
 		DebugAPICalls: cfg.LogLevel == "debug",
 		Region:        cfg.AWSRegion,
 	}
 	var stsOutput *sts.GetCallerIdentityOutput
-	md.ss, stsOutput, _, err = awsapi.New(awsCfg)
+	md.ss, stsOutput, _, err = pkgaws.New(awsCfg)
 	if err != nil {
 		return nil, err
 	}

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/kmsconfig"
-	"github.com/aws/aws-k8s-tester/pkg/awsapi"
+	pkgaws "github.com/aws/aws-k8s-tester/pkg/aws"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -76,12 +76,12 @@ func New(cfg *kmsconfig.Config) (Deployer, error) {
 		return nil, err
 	}
 
-	awsCfg := &awsapi.Config{
+	awsCfg := &pkgaws.Config{
 		Logger:        lg,
 		DebugAPICalls: cfg.LogLevel == "debug",
 		Region:        cfg.AWSRegion,
 	}
-	ss, stsOutput, _, err := awsapi.New(awsCfg)
+	ss, stsOutput, _, err := pkgaws.New(awsCfg)
 	if err != nil {
 		return nil, err
 	}

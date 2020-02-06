@@ -1,4 +1,4 @@
-package awsapi
+package aws
 
 import (
 	"fmt"

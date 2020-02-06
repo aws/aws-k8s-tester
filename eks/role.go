@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	awsapicfn "github.com/aws/aws-k8s-tester/pkg/awsapi/cloudformation"
+	awscfn "github.com/aws/aws-k8s-tester/pkg/aws/cloudformation"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"go.uber.org/zap"
@@ -147,7 +147,7 @@ func (ts *Tester) createClusterRole() error {
 		Capabilities: aws.StringSlice([]string{"CAPABILITY_NAMED_IAM"}),
 		OnFailure:    aws.String("DELETE"),
 		TemplateBody: aws.String(tmpl),
-		Tags: awsapicfn.NewTags(map[string]string{
+		Tags: awscfn.NewTags(map[string]string{
 			"Kind": "aws-k8s-tester",
 			"Name": ts.cfg.Name,
 		}),
@@ -182,7 +182,7 @@ func (ts *Tester) createClusterRole() error {
 	}
 	ts.cfg.Status.ClusterRoleCFNStackID = aws.StringValue(stackOutput.StackId)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
-	ch := awsapicfn.Poll(
+	ch := awscfn.Poll(
 		ctx,
 		ts.stopCreationCh,
 		ts.interruptSig,
@@ -193,7 +193,7 @@ func (ts *Tester) createClusterRole() error {
 		25*time.Second,
 		10*time.Second,
 	)
-	var st awsapicfn.StackStatus
+	var st awscfn.StackStatus
 	for st = range ch {
 		if st.Error != nil {
 			cancel()
@@ -238,7 +238,7 @@ func (ts *Tester) deleteClusterRole() error {
 		return err
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
-	ch := awsapicfn.Poll(
+	ch := awscfn.Poll(
 		ctx,
 		make(chan struct{}),  // do not exit on stop
 		make(chan os.Signal), // do not exit on stop
@@ -249,7 +249,7 @@ func (ts *Tester) deleteClusterRole() error {
 		25*time.Second,
 		10*time.Second,
 	)
-	var st awsapicfn.StackStatus
+	var st awscfn.StackStatus
 	for st = range ch {
 		if st.Error != nil {
 			cancel()

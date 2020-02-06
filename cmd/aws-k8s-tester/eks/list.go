@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aws/aws-k8s-tester/pkg/awsapi"
+	pkgaws "github.com/aws/aws-k8s-tester/pkg/aws"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -73,13 +73,13 @@ func newListClusters() *cobra.Command {
 
 func listClustersFunc(cmd *cobra.Command, args []string) {
 	lg, _ := logutil.GetDefaultZapLogger()
-	awsCfgEKS := &awsapi.Config{
+	awsCfgEKS := &pkgaws.Config{
 		Logger:      lg,
 		Region:      region,
 		ResolverURL: resolverURL,
 		SigningName: signingName,
 	}
-	ssEKS, _, _, err := awsapi.New(awsCfgEKS)
+	ssEKS, _, _, err := pkgaws.New(awsCfgEKS)
 	if err != nil {
 		panic(err)
 	}

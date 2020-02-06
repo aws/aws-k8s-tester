@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aws/aws-k8s-tester/pkg/awsapi"
+	pkgaws "github.com/aws/aws-k8s-tester/pkg/aws"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
 	"sigs.k8s.io/yaml"
 )
@@ -162,12 +162,12 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	if cfg.AWSRegion == "" {
 		return errors.New("AWSRegion is empty")
 	}
-	if _, ok := awsapi.RegionToAiport[cfg.AWSRegion]; !ok {
+	if _, ok := pkgaws.RegionToAiport[cfg.AWSRegion]; !ok {
 		return fmt.Errorf("%q not found", cfg.AWSRegion)
 	}
 	if cfg.ID == "" {
 		region := cfg.AWSRegion
-		airport := awsapi.RegionToAiport[region]
+		airport := pkgaws.RegionToAiport[region]
 		cfg.ID = genTag() + "-" + strings.ToLower(airport) + "-" + region + "-" + randString(5)
 	}
 
