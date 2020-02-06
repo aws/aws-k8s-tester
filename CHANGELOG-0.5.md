@@ -3,17 +3,27 @@
 <hr>
 
 
-## [v0.5.6](https://github.com/aws/aws-k8s-tester/releases/tag/v0.5.6) (2020-02)
+## [v0.5.6](https://github.com/aws/aws-k8s-tester/releases/tag/v0.5.6) (2020-02-05)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.5...v0.5.6).
 
 ### `eksconfig`
 
 - Add [`OnFailureDelete` and `OnFailureDeleteWaitSeconds`](https://github.com/aws/aws-k8s-tester/commit/0aea513d203c5df0b86ff4448ec67a627574ae77).
+- Add [`AddOnNLBHelloWorld.Namespace`](https://github.com/aws/aws-k8s-tester/commit/245ca7d53454613101c9dab188455b69c278b805).
+- Add [`AddOnALB2048.Namespace`](https://github.com/aws/aws-k8s-tester/commit/245ca7d53454613101c9dab188455b69c278b805).
 
 ### `eks`
 
 - Improve [`Delete` operation waits](https://github.com/aws/aws-k8s-tester/commit/4fb3060ad2695cdee3b040f332ee548222d9dcb3).
+
+### `eks/nlb`
+
+- Add [`kubectl describe svc` during host name checks](https://github.com/aws/aws-k8s-tester/commit/cb9943c6c830c2fe059330b6ce6e139ce8921e58).
+
+### `eks/alb`
+
+- Add [`kubectl describe svc` during host name checks](https://github.com/aws/aws-k8s-tester/commit/cb9943c6c830c2fe059330b6ce6e139ce8921e58).
 
 ### Go
 
