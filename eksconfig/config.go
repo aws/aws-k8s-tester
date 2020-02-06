@@ -932,6 +932,20 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 				return fmt.Errorf("unknown AddOnManagedNodeGroups.MNGs[%q].AMIType %q", k, v.AMIType)
 			}
 
+			if cfg.AddOnNLBHelloWorld.Enable || cfg.AddOnALB2048.Enable {
+				for _, itp := range v.InstanceTypes {
+					// "m3.xlarge" or "c4.xlarge" will fail with "InvalidTarget: Targets {...} are not supported"
+					// ref. https://github.com/aws/amazon-vpc-cni-k8s/pull/821
+					// ref. https://github.com/kubernetes/kubernetes/issues/66044#issuecomment-408188524
+					switch {
+					case strings.HasPrefix(itp, "m3."),
+						strings.HasPrefix(itp, "c4."):
+						return fmt.Errorf("AddOnNLBHelloWorld.Enable[%v] || AddOnALB2048.Enable[%v], but older instance type InstanceTypes %q for %q", cfg.AddOnNLBHelloWorld.Enable, cfg.AddOnALB2048.Enable, itp, k)
+					default:
+					}
+				}
+			}
+
 			if v.ASGMinSize > v.ASGMaxSize {
 				return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].ASGMinSize %d > ASGMaxSize %d", k, v.ASGMinSize, v.ASGMaxSize)
 			}
