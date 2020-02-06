@@ -83,6 +83,8 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_NLB_NAME")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_URL", "invalid")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_URL")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_NAMESPACE", "test-namespace")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_NAMESPACE")
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_ENABLE")
@@ -98,6 +100,8 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_POLICY_NAME")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_POLICY_CFN_STACK_ID", "my-id")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_POLICY_CFN_STACK_ID")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_NAMESPACE", "test-namespace")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_NAMESPACE")
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_PERL_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_PERL_ENABLE")
@@ -292,6 +296,9 @@ func TestEnv(t *testing.T) {
 	if cfg.AddOnNLBHelloWorld.URL != "" { // env should be ignored for read-only
 		t.Fatalf("unexpected cfg.AddOnNLBHelloWorld.URL %q", cfg.AddOnNLBHelloWorld.URL)
 	}
+	if cfg.AddOnNLBHelloWorld.Namespace != "test-namespace" {
+		t.Fatalf("unexpected cfg.AddOnNLBHelloWorld.Namespace %q", cfg.AddOnNLBHelloWorld.Namespace)
+	}
 
 	if cfg.AddOnALB2048.Created { // read-only must be ignored
 		t.Fatalf("unexpected AddOnALB2048.Created %v", cfg.AddOnALB2048.Created)
@@ -313,6 +320,9 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.AddOnALB2048.PolicyName != "my-policy" { // env should be ignored for read-only
 		t.Fatalf("unexpected cfg.AddOnALB2048.PolicyName %q", cfg.AddOnALB2048.PolicyName)
+	}
+	if cfg.AddOnALB2048.Namespace != "test-namespace" {
+		t.Fatalf("unexpected cfg.AddOnALB2048.Namespace %q", cfg.AddOnALB2048.Namespace)
 	}
 
 	if cfg.AddOnJobPerl.Created { // read-only must be ignored

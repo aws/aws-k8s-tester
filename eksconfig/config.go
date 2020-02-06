@@ -258,6 +258,9 @@ type AddOnNLBHelloWorld struct {
 	// DeleteTookString is the duration that took to create the resource.
 	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
 
+	// Namespace is the namespace to create "NLB" objects in.
+	Namespace string `json:"namespace"`
+
 	// NLBARN is the ARN of the NLB created from the service.
 	NLBARN string `json:"nlb-arn" read-only:"true"`
 	// NLBName is the name of the NLB created from the service.
@@ -288,6 +291,9 @@ type AddOnALB2048 struct {
 	// for ALB Ingress Controller IAM policy.
 	PolicyCFNStackID string `json:"policy-cfn-stack-id" read-only:"true"`
 	PolicyName       string `json:"policy-name"`
+
+	// Namespace is the namespace to create "ALB" objects in.
+	Namespace string `json:"namespace"`
 
 	// ALBARN is the ARN of the ALB created from the service.
 	ALBARN string `json:"alb-arn" read-only:"true"`
@@ -946,6 +952,12 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 			return fmt.Errorf("echo size limit is 0.25 MB, got %d", cfg.AddOnJobEcho.Size)
 		}
 
+		if cfg.AddOnNLBHelloWorld.Namespace == "" {
+			cfg.AddOnNLBHelloWorld.Namespace = cfg.Name + "-nlb-hello-world"
+		}
+		if cfg.AddOnALB2048.Namespace == "" {
+			cfg.AddOnALB2048.Namespace = cfg.Name + "-alb-2048"
+		}
 		if cfg.AddOnJobPerl.Namespace == "" {
 			cfg.AddOnJobPerl.Namespace = cfg.Name + "-job-perl"
 		}
