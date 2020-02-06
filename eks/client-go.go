@@ -2,7 +2,6 @@ package eks
 
 import (
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -10,25 +9,39 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sts"
+	"go.uber.org/zap"
 	"golang.org/x/oauth2"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientset "k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
-func (ts *Tester) updateK8sClientSet() (err error) {
-	ts.lg.Info("creating k8s client config")
+func (ts *Tester) createK8sClientSet() (err error) {
+	ts.lg.Info("loading *restclient.Config")
 	cfg := ts.createClientConfig()
 	if cfg == nil {
-		return errors.New("*restclient.Config is nil")
+		ts.lg.Warn("*restclient.Config is nil; reading kubeconfig")
+		cfg, err = clientcmd.BuildConfigFromFlags("", ts.cfg.KubeConfigPath)
+		if err != nil {
+			ts.lg.Warn("failed to read kubeconfig", zap.Error(err))
+			return err
+		}
+		ts.lg.Info("loaded *restclient.Config from kubeconfig")
+	} else {
+		ts.lg.Info("loaded *restclient.Config from aws-k8s-tester config")
 	}
-	ts.lg.Info("creating k8s client")
+
+	ts.lg.Info("creating k8s client set")
 	ts.k8sClientSet, err = clientset.NewForConfig(cfg)
 	if err == nil {
-		ts.lg.Info("updated k8s client set")
+		ts.lg.Info("created k8s client set")
+		return nil
 	}
+
+	ts.lg.Warn("failed to create k8s client set", zap.Error(err))
 	return err
 }
 

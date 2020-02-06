@@ -265,8 +265,8 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 	}
 
 	// update k8s client if cluster has already been created
-	if err = ts.updateK8sClientSet(); err != nil {
-		ts.lg.Warn("failed to update k8s client", zap.Error(err))
+	if err = ts.createK8sClientSet(); err != nil {
+		ts.lg.Warn("failed to create k8s client", zap.Error(err))
 	}
 
 	if err = ts.createSubTesters(); err != nil {
@@ -927,8 +927,8 @@ func (ts *Tester) LoadConfig() (eksconfig.Config, error) {
 // KubernetesClientSet returns Kubernetes Go client.
 func (ts *Tester) KubernetesClientSet() *kubernetes.Clientset {
 	if ts.k8sClientSet == nil {
-		if err := ts.updateK8sClientSet(); err != nil {
-			ts.lg.Warn("failed to update k8s client set", zap.Error(err))
+		if err := ts.createK8sClientSet(); err != nil {
+			ts.lg.Warn("failed to create k8s client set", zap.Error(err))
 			return nil
 		}
 	}

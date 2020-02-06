@@ -87,7 +87,7 @@ func (ts *Tester) createCluster() error {
 	if err := ts.pollClusterInfo(3*time.Minute, 10*time.Second); err != nil {
 		return err
 	}
-	if err := ts.updateK8sClientSet(); err != nil {
+	if err := ts.createK8sClientSet(); err != nil {
 		return err
 	}
 	return ts.cfg.Sync()

@@ -1,5 +1,22 @@
 
 
+
+<hr>
+
+
+## [v0.5.8](https://github.com/aws/aws-k8s-tester/releases/tag/v0.5.8) (2020-02)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.7...v0.5.8).
+
+### `eks`
+
+- Improve [`client-go` client set creation, support `kubeconfig` loader](https://github.com/aws/aws-k8s-tester/commit/).
+
+### Go
+
+- Compile with [*Go 1.13.7*](https://golang.org/doc/devel/release.html#go1.13).
+
+
 <hr>
 
 
