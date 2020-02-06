@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/ec2"
+	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/spf13/cobra"
 )
