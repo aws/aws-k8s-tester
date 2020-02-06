@@ -15,15 +15,15 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.5...v0.5.6
 
 ### `ec2`
 
-- New package `ec2` moved from [`internal/ec2`](https://github.com/aws/aws-k8s-tester/commit/).
+- New package `ec2` moved from [`internal/ec2`](https://github.com/aws/aws-k8s-tester/commit/afe4bf121ab941b292d1647ddb0f3448eecef71d).
 
 ### `kms`
 
-- New package `kms` moved from [`internal/kms`](https://github.com/aws/aws-k8s-tester/commit/).
+- New package `kms` moved from [`internal/kms`](https://github.com/aws/aws-k8s-tester/commit/afe4bf121ab941b292d1647ddb0f3448eecef71d).
 
 ### `pkg/ssh`
 
-- New package `pkg/ssh` moved from [`internal/ssh`](https://github.com/aws/aws-k8s-tester/commit/).
+- New package `pkg/ssh` moved from [`internal/ssh`](https://github.com/aws/aws-k8s-tester/commit/afe4bf121ab941b292d1647ddb0f3448eecef71d).
 
 ### Dependency
 
