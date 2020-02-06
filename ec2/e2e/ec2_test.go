@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
-	"github.com/aws/aws-k8s-tester/internal/ec2"
-	"github.com/aws/aws-k8s-tester/internal/ssh"
+	"github.com/aws/aws-k8s-tester/ec2"
+	"github.com/aws/aws-k8s-tester/pkg/ssh"
 )
 
 func TestEC2(t *testing.T) {

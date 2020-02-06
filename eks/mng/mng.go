@@ -12,7 +12,7 @@ import (
 
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/eksconfig"
-	internalec2 "github.com/aws/aws-k8s-tester/internal/ec2"
+	internalec2 "github.com/aws/aws-k8s-tester/ec2"
 	awsapicfn "github.com/aws/aws-k8s-tester/pkg/awsapi/cloudformation"
 	awsapiec2 "github.com/aws/aws-k8s-tester/pkg/awsapi/ec2"
 	"github.com/aws/aws-sdk-go/aws"

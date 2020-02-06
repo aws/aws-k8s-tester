@@ -13,6 +13,18 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.5...v0.5.6
   - Debug [`aws/amazon-vpc-cni-k8s#821`](https://github.com/aws/amazon-vpc-cni-k8s/pull/821).
   - See [`kubernetes/kubernetes#66044`](https://github.com/kubernetes/kubernetes/issues/66044#issuecomment-408188524).
 
+### `ec2`
+
+- New package `ec2` moved from [`internal/ec2`](https://github.com/aws/aws-k8s-tester/commit/).
+
+### `kms`
+
+- New package `kms` moved from [`internal/kms`](https://github.com/aws/aws-k8s-tester/commit/).
+
+### `pkg/ssh`
+
+- New package `pkg/ssh` moved from [`internal/ssh`](https://github.com/aws/aws-k8s-tester/commit/).
+
 ### Dependency
 
 - Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.28.10`](https://github.com/aws/aws-sdk-go/releases/tag/v1.28.10) to [`v1.28.12`](https://github.com/aws/aws-sdk-go/releases/tag/v1.28.12).
