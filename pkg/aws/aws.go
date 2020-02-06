@@ -1,3 +1,4 @@
+// Package aws implements wrappers for AWS API calls.
 package aws
 
 import (
