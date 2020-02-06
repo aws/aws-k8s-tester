@@ -572,7 +572,7 @@ func (ts *Tester) Up() (err error) {
 		fmt.Println(ts.cfg.SSHCommands())
 
 		if ts.cfg.AddOnNLBHelloWorld.Enable {
-			colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]nlbHelloWorldTester.Create [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
+			colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]nlbHelloWorldTester.Create [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.AddOnNLBHelloWorld.Namespace)
 			if err := catchInterrupt(
 				ts.lg,
 				ts.stopCreationCh,
@@ -585,7 +585,7 @@ func (ts *Tester) Up() (err error) {
 		}
 
 		if ts.cfg.AddOnALB2048.Enable {
-			colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]alb2048Tester.Create [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
+			colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]alb2048Tester.Create [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.AddOnALB2048.Namespace)
 			if err := catchInterrupt(
 				ts.lg,
 				ts.stopCreationCh,
