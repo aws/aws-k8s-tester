@@ -3,6 +3,7 @@ package nlb
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
@@ -16,12 +17,14 @@ import (
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/elbv2/elbv2iface"
+	"github.com/mitchellh/colorstring"
 	"go.uber.org/zap"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	clientset "k8s.io/client-go/kubernetes"
+	"k8s.io/utils/exec"
 )
 
 // Config defines ALB configuration.
@@ -254,6 +257,25 @@ func (ts *tester) createService() error {
 			return fmt.Errorf("received os signal %v", sig)
 		case <-time.After(5 * time.Second):
 		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		clusterInfoOut, err := exec.New().CommandContext(
+			ctx,
+			ts.cfg.EKSConfig.KubectlPath,
+			"--kubeconfig="+ts.cfg.EKSConfig.KubeConfigPath,
+			"--namespace="+ts.cfg.Namespace,
+			"describe",
+			"svc",
+			nlbHelloWorldServiceName,
+		).CombinedOutput()
+		cancel()
+		if err != nil {
+			ts.cfg.Logger.Warn("'kubectl describe svc' failed", zap.Error(err))
+		} else {
+			out := string(clusterInfoOut)
+			colorstring.Printf("\n\n[light_green]'kubectl describe svc %s' [default]output:\n%s\n\n", nlbHelloWorldServiceName, out)
+		}
+
 		ts.cfg.Logger.Info("querying NLB hello-world Service for HTTP endpoint")
 		so, err := ts.cfg.K8SClient.KubernetesClientSet().
 			CoreV1().
@@ -264,23 +286,26 @@ func (ts *tester) createService() error {
 			time.Sleep(5 * time.Second)
 			continue
 		}
+
 		ts.cfg.Logger.Info(
-			"NLB hello-world Service returns LoadBalancer",
+			"NLB hello-world Service has been linked to LoadBalancer",
 			zap.String("load-balancer", fmt.Sprintf("%+v", so.Status.LoadBalancer)),
 		)
 		for _, ing := range so.Status.LoadBalancer.Ingress {
 			ts.cfg.Logger.Info(
-				"NLB hello-world Service returns LoadBalancer.Ingress",
+				"NLB hello-world Service has been linked to LoadBalancer.Ingress",
 				zap.String("ingress", fmt.Sprintf("%+v", ing)),
 			)
 			hostName = ing.Hostname
 			break
 		}
+
 		if hostName != "" {
 			ts.cfg.Logger.Info("found NLB host name", zap.String("host-name", hostName))
 			break
 		}
 	}
+
 	if hostName == "" {
 		return errors.New("failed to find NLB host name")
 	}

@@ -21,6 +21,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/cloudformation/cloudformationiface"
 	"github.com/aws/aws-sdk-go/service/elbv2"
 	"github.com/aws/aws-sdk-go/service/elbv2/elbv2iface"
+	"github.com/mitchellh/colorstring"
 	"go.uber.org/zap"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -29,6 +30,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	clientset "k8s.io/client-go/kubernetes"
+	"k8s.io/utils/exec"
 )
 
 // Config defines ALB configuration.
@@ -801,7 +803,7 @@ func (ts *tester) delete2048Deployment() error {
 	foreground := metav1.DeletePropagationForeground
 	err := ts.cfg.K8SClient.KubernetesClientSet().
 		AppsV1().
-		Deployments(ts.cfg.EKSConfig.Name).
+		Deployments(ts.cfg.Namespace).
 		Delete(
 			alb2048DeploymentName,
 			&metav1.DeleteOptions{
@@ -862,7 +864,7 @@ func (ts *tester) delete2048Service() error {
 	foreground := metav1.DeletePropagationForeground
 	err := ts.cfg.K8SClient.KubernetesClientSet().
 		CoreV1().
-		Services(ts.cfg.EKSConfig.Name).
+		Services(ts.cfg.Namespace).
 		Delete(
 			alb2048ServiceName,
 			&metav1.DeleteOptions{
@@ -946,23 +948,43 @@ func (ts *tester) create2048Ingress() error {
 			return fmt.Errorf("received os signal %v", sig)
 		case <-time.After(5 * time.Second):
 		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		clusterInfoOut, err := exec.New().CommandContext(
+			ctx,
+			ts.cfg.EKSConfig.KubectlPath,
+			"--kubeconfig="+ts.cfg.EKSConfig.KubeConfigPath,
+			"--namespace="+ts.cfg.Namespace,
+			"describe",
+			"svc",
+			alb2048ServiceName,
+		).CombinedOutput()
+		cancel()
+		if err != nil {
+			ts.cfg.Logger.Warn("'kubectl describe svc' failed", zap.Error(err))
+		} else {
+			out := string(clusterInfoOut)
+			colorstring.Printf("\n\n[light_green]'kubectl describe svc %s' [default]output:\n%s\n\n", alb2048ServiceName, out)
+		}
+
 		ts.cfg.Logger.Info("querying ALB 2048 Ingress for HTTP endpoint")
 		so, err := ts.cfg.K8SClient.KubernetesClientSet().
 			ExtensionsV1beta1().
-			Ingresses(ts.cfg.EKSConfig.Name).
+			Ingresses(ts.cfg.Namespace).
 			Get(alb2048IngressName, metav1.GetOptions{})
 		if err != nil {
 			ts.cfg.Logger.Error("failed to get ALB 2048 Ingress; retrying", zap.Error(err))
 			time.Sleep(5 * time.Second)
 			continue
 		}
+
 		ts.cfg.Logger.Info(
-			"ALB 2048 Ingress returns LoadBalancer",
+			"ALB 2048 Ingress has been linked to LoadBalancer",
 			zap.String("load-balancer", fmt.Sprintf("%+v", so.Status.LoadBalancer)),
 		)
 		for _, ing := range so.Status.LoadBalancer.Ingress {
 			ts.cfg.Logger.Info(
-				"ALB 2048 Ingress returns LoadBalancer.Ingress",
+				"ALB 2048 Ingress has been linked to LoadBalancer.Ingress",
 				zap.String("ingress", fmt.Sprintf("%+v", ing)),
 			)
 			hostName = ing.Hostname
@@ -1046,7 +1068,7 @@ func (ts *tester) delete2048Ingress() error {
 	foreground := metav1.DeletePropagationForeground
 	err := ts.cfg.K8SClient.KubernetesClientSet().
 		ExtensionsV1beta1().
-		Ingresses(ts.cfg.EKSConfig.Name).
+		Ingresses(ts.cfg.Namespace).
 		Delete(
 			alb2048IngressName,
 			&metav1.DeleteOptions{

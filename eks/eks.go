@@ -319,7 +319,7 @@ func (ts *Tester) createSubTesters() (err error) {
 		EKSConfig: ts.cfg,
 		K8SClient: ts,
 		ELB2API:   ts.elbv2API,
-		Namespace: ts.cfg.Name,
+		Namespace: ts.cfg.AddOnNLBHelloWorld.Namespace,
 	})
 	if err != nil {
 		return err
@@ -334,7 +334,7 @@ func (ts *Tester) createSubTesters() (err error) {
 		EKSConfig:         ts.cfg,
 		K8SClient:         ts,
 		ELB2API:           ts.elbv2API,
-		Namespace:         ts.cfg.Name,
+		Namespace:         ts.cfg.AddOnALB2048.Namespace,
 	})
 	if err != nil {
 		return err
