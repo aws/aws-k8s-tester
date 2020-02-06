@@ -10,7 +10,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.7...v0.5.8
 
 ### `eks`
 
-- Improve [`client-go` client set creation, support `kubeconfig` loader](https://github.com/aws/aws-k8s-tester/commit/).
+- Improve [`client-go` client set creation, support `kubeconfig` loader](https://github.com/aws/aws-k8s-tester/commit/67f7528abd12ed7004cc7044e3695903e22b94cf).
 
 ### Go
 
