@@ -77,6 +77,9 @@ func (ts *tester) Create() error {
 		ts.cfg.EKSConfig.Sync()
 	}()
 
+	if err := ts.createNamespace(); err != nil {
+		return err
+	}
 	if err := ts.createDeployment(); err != nil {
 		return err
 	}
@@ -116,11 +119,59 @@ func (ts *tester) Delete() error {
 		errs = append(errs, fmt.Sprintf("failed to delete NLB hello-world (%v)", err))
 	}
 
+	if err := ts.deleteNamespace(); err != nil {
+		errs = append(errs, fmt.Sprintf("failed to delete NLB namespace (%v)", err))
+	}
+
 	if len(errs) > 0 {
 		return errors.New(strings.Join(errs, ", "))
 	}
 
 	ts.cfg.EKSConfig.AddOnNLBHelloWorld.Created = false
+	return ts.cfg.EKSConfig.Sync()
+}
+
+func (ts *tester) createNamespace() error {
+	ts.cfg.Logger.Info("creating namespace", zap.String("namespace", ts.cfg.Namespace))
+	_, err := ts.cfg.K8SClient.KubernetesClientSet().
+		CoreV1().
+		Namespaces().
+		Create(&v1.Namespace{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "v1",
+				Kind:       "Namespace",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: ts.cfg.Namespace,
+				Labels: map[string]string{
+					"name": ts.cfg.Namespace,
+				},
+			},
+		})
+	if err != nil {
+		return err
+	}
+	ts.cfg.Logger.Info("created namespace", zap.String("namespace", ts.cfg.Namespace))
+	return ts.cfg.EKSConfig.Sync()
+}
+
+func (ts *tester) deleteNamespace() error {
+	ts.cfg.Logger.Info("deleting namespace", zap.String("namespace", ts.cfg.Namespace))
+	foreground := metav1.DeletePropagationForeground
+	err := ts.cfg.K8SClient.KubernetesClientSet().
+		CoreV1().
+		Namespaces().
+		Delete(
+			ts.cfg.Namespace,
+			&metav1.DeleteOptions{
+				GracePeriodSeconds: aws.Int64(0),
+				PropagationPolicy:  &foreground,
+			},
+		)
+	if err != nil {
+		return err
+	}
+	ts.cfg.Logger.Info("deleted namespace", zap.String("namespace", ts.cfg.Namespace))
 	return ts.cfg.EKSConfig.Sync()
 }
 
