@@ -23,7 +23,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.5...v0.5.6
 
 ### `pkg/aws`
 
-- New package `pkg/aws` moved from [`pkg/awsapi`](https://github.com/aws/aws-k8s-tester/commit/).
+- New package `pkg/aws` moved from [`pkg/awsapi`](https://github.com/aws/aws-k8s-tester/commit/2dcae9bb901eee2905a035b263d7964ea9f6cbe0).
 
 ### `pkg/ssh`
 
