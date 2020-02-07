@@ -25,6 +25,7 @@ func main() {
 	cfg.AddOnJobPerl.Enable = true
 	cfg.AddOnJobEcho.Enable = true
 	cfg.AddOnSecrets.Enable = true
+	cfg.AddOnIRSA.Enable = true
 
 	ts, err := eks.New(cfg)
 	if err != nil {

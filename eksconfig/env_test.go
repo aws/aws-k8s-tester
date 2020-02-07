@@ -83,6 +83,8 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_NLB_NAME")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_URL", "invalid")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_URL")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_DEPLOYMENT_REPLICAS", "333")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_DEPLOYMENT_REPLICAS")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_NAMESPACE", "test-namespace")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_NAMESPACE")
 
@@ -100,6 +102,10 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_POLICY_NAME")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_POLICY_CFN_STACK_ID", "my-id")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_POLICY_CFN_STACK_ID")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_DEPLOYMENT_REPLICAS_ALB", "333")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_DEPLOYMENT_REPLICAS_ALB")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_DEPLOYMENT_REPLICAS_2048", "555")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_DEPLOYMENT_REPLICAS_2048")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_NAMESPACE", "test-namespace")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_NAMESPACE")
 
@@ -149,6 +155,31 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_WRITES_RESULT_PATH")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_READS_RESULT_PATH", "reads.csv")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_READS_RESULT_PATH")
+
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_CREATED", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_CREATED")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_NAMESPACE", "hello")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_NAME", "hello")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_MANAGED_POLICY_ARNS", "a,b,c")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_MANAGED_POLICY_ARNS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_SERVICE_ACCOUNT_NAME", "hello")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_SERVICE_ACCOUNT_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_CONFIG_MAP_NAME", "hello")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_CONFIG_MAP_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_CONFIG_MAP_SCRIPT_FILE_NAME", "hello.sh")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_CONFIG_MAP_SCRIPT_FILE_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_S3_BUCKET_NAME", "hello")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_S3_BUCKET_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_S3_KEY", "hello")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_S3_KEY")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_DEPLOYMENT_NAME", "hello-deployment")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_DEPLOYMENT_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_DEPLOYMENT_RESULT_PATH", "hello-deployment.log")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_DEPLOYMENT_RESULT_PATH")
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
 		t.Fatal(err)
@@ -207,10 +238,10 @@ func TestEnv(t *testing.T) {
 	}
 
 	if cfg.AddOnManagedNodeGroups.Created { // read-only must be ignored
-		t.Fatalf("unexpected AddOnManagedNodeGroups.Created %v", cfg.AddOnManagedNodeGroups.Created)
+		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.Created %v", cfg.AddOnManagedNodeGroups.Created)
 	}
 	if cfg.AddOnManagedNodeGroups.RoleName != "mng-role-name" {
-		t.Fatalf("unexpected AddOnManagedNodeGroups.RoleName %q", cfg.AddOnManagedNodeGroups.RoleName)
+		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.RoleName %q", cfg.AddOnManagedNodeGroups.RoleName)
 	}
 	expectedManagedNodeGroupRoleServicePrincipals := []string{
 		"ec2.amazonaws.com",
@@ -218,7 +249,7 @@ func TestEnv(t *testing.T) {
 		"hello.amazonaws.com",
 	}
 	if !reflect.DeepEqual(expectedManagedNodeGroupRoleServicePrincipals, cfg.AddOnManagedNodeGroups.RoleServicePrincipals) {
-		t.Fatalf("unexpected AddOnManagedNodeGroups.RoleServicePrincipals %+v", cfg.AddOnManagedNodeGroups.RoleServicePrincipals)
+		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.RoleServicePrincipals %+v", cfg.AddOnManagedNodeGroups.RoleServicePrincipals)
 	}
 	expectedManagedNodeGroupRoleManagedPolicyARNs := []string{
 		"a",
@@ -226,28 +257,28 @@ func TestEnv(t *testing.T) {
 		"c",
 	}
 	if !reflect.DeepEqual(expectedManagedNodeGroupRoleManagedPolicyARNs, cfg.AddOnManagedNodeGroups.RoleManagedPolicyARNs) {
-		t.Fatalf("unexpected AddOnManagedNodeGroups.RoleManagedPolicyARNs %+v", cfg.AddOnManagedNodeGroups.RoleManagedPolicyARNs)
+		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.RoleManagedPolicyARNs %+v", cfg.AddOnManagedNodeGroups.RoleManagedPolicyARNs)
 	}
 	if cfg.AddOnManagedNodeGroups.RequestHeaderKey != "a" {
-		t.Fatalf("unexpected AddOnManagedNodeGroups.RequestHeaderKey %q", cfg.AddOnManagedNodeGroups.RequestHeaderKey)
+		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.RequestHeaderKey %q", cfg.AddOnManagedNodeGroups.RequestHeaderKey)
 	}
 	if cfg.AddOnManagedNodeGroups.RequestHeaderValue != "b" {
-		t.Fatalf("unexpected AddOnManagedNodeGroups.RequestHeaderValue %q", cfg.AddOnManagedNodeGroups.RequestHeaderValue)
+		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.RequestHeaderValue %q", cfg.AddOnManagedNodeGroups.RequestHeaderValue)
 	}
 	if cfg.AddOnManagedNodeGroups.ResolverURL != "a" {
-		t.Fatalf("unexpected AddOnManagedNodeGroups.ResolverURL %q", cfg.AddOnManagedNodeGroups.ResolverURL)
+		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.ResolverURL %q", cfg.AddOnManagedNodeGroups.ResolverURL)
 	}
 	if cfg.AddOnManagedNodeGroups.SigningName != "a" {
-		t.Fatalf("unexpected AddOnManagedNodeGroups.SigningName %q", cfg.AddOnManagedNodeGroups.SigningName)
+		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.SigningName %q", cfg.AddOnManagedNodeGroups.SigningName)
 	}
 	if cfg.AddOnManagedNodeGroups.SSHKeyPairName != "a" {
-		t.Fatalf("unexpected AddOnManagedNodeGroups.SSHKeyPairName %q", cfg.AddOnManagedNodeGroups.SSHKeyPairName)
+		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.SSHKeyPairName %q", cfg.AddOnManagedNodeGroups.SSHKeyPairName)
 	}
 	if cfg.AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath != "a" {
-		t.Fatalf("unexpected AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath %q", cfg.AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath)
+		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath %q", cfg.AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath)
 	}
 	if cfg.AddOnManagedNodeGroups.RemoteAccessUserName != "a" {
-		t.Fatalf("unexpected AddOnManagedNodeGroups.RemoteAccessUserName %q", cfg.AddOnManagedNodeGroups.RemoteAccessUserName)
+		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.RemoteAccessUserName %q", cfg.AddOnManagedNodeGroups.RemoteAccessUserName)
 	}
 	cpuName, gpuName := "mng-test-name-cpu", "mng-test-name-gpu"
 	expectedMNGs := map[string]MNG{
@@ -275,14 +306,14 @@ func TestEnv(t *testing.T) {
 		},
 	}
 	if !reflect.DeepEqual(cfg.AddOnManagedNodeGroups.MNGs, expectedMNGs) {
-		t.Fatalf("expected AddOnManagedNodeGroups.MNGs %+v, got %+v", expectedMNGs, cfg.AddOnManagedNodeGroups.MNGs)
+		t.Fatalf("expected cfg.AddOnManagedNodeGroups.MNGs %+v, got %+v", expectedMNGs, cfg.AddOnManagedNodeGroups.MNGs)
 	}
 	if cfg.AddOnManagedNodeGroups.LogDir != "a" {
 		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.LogDir %q", cfg.AddOnManagedNodeGroups.LogDir)
 	}
 
 	if cfg.AddOnNLBHelloWorld.Created { // read-only must be ignored
-		t.Fatalf("unexpected AddOnNLBHelloWorld.Created %v", cfg.AddOnNLBHelloWorld.Created)
+		t.Fatalf("unexpected cfg.AddOnNLBHelloWorld.Created %v", cfg.AddOnNLBHelloWorld.Created)
 	}
 	if !cfg.AddOnNLBHelloWorld.Enable {
 		t.Fatalf("unexpected cfg.AddOnNLBHelloWorld.Enable %v", cfg.AddOnNLBHelloWorld.Enable)
@@ -296,12 +327,15 @@ func TestEnv(t *testing.T) {
 	if cfg.AddOnNLBHelloWorld.URL != "" { // env should be ignored for read-only
 		t.Fatalf("unexpected cfg.AddOnNLBHelloWorld.URL %q", cfg.AddOnNLBHelloWorld.URL)
 	}
+	if cfg.AddOnNLBHelloWorld.DeploymentReplicas != 333 {
+		t.Fatalf("unexpected cfg.AddOnNLBHelloWorld.DeploymentReplicas %d", cfg.AddOnNLBHelloWorld.DeploymentReplicas)
+	}
 	if cfg.AddOnNLBHelloWorld.Namespace != "test-namespace" {
 		t.Fatalf("unexpected cfg.AddOnNLBHelloWorld.Namespace %q", cfg.AddOnNLBHelloWorld.Namespace)
 	}
 
 	if cfg.AddOnALB2048.Created { // read-only must be ignored
-		t.Fatalf("unexpected AddOnALB2048.Created %v", cfg.AddOnALB2048.Created)
+		t.Fatalf("unexpected cfg.AddOnALB2048.Created %v", cfg.AddOnALB2048.Created)
 	}
 	if !cfg.AddOnALB2048.Enable {
 		t.Fatalf("unexpected cfg.AddOnALB2048.Enable %v", cfg.AddOnALB2048.Enable)
@@ -321,12 +355,18 @@ func TestEnv(t *testing.T) {
 	if cfg.AddOnALB2048.PolicyName != "my-policy" { // env should be ignored for read-only
 		t.Fatalf("unexpected cfg.AddOnALB2048.PolicyName %q", cfg.AddOnALB2048.PolicyName)
 	}
+	if cfg.AddOnALB2048.DeploymentReplicasALB != 333 {
+		t.Fatalf("unexpected cfg.AddOnALB2048.DeploymentReplicasALB %d", cfg.AddOnALB2048.DeploymentReplicasALB)
+	}
+	if cfg.AddOnALB2048.DeploymentReplicas2048 != 555 {
+		t.Fatalf("unexpected cfg.AddOnALB2048.DeploymentReplicas2048 %d", cfg.AddOnALB2048.DeploymentReplicas2048)
+	}
 	if cfg.AddOnALB2048.Namespace != "test-namespace" {
 		t.Fatalf("unexpected cfg.AddOnALB2048.Namespace %q", cfg.AddOnALB2048.Namespace)
 	}
 
 	if cfg.AddOnJobPerl.Created { // read-only must be ignored
-		t.Fatalf("unexpected AddOnJobPerl.Created %v", cfg.AddOnJobPerl.Created)
+		t.Fatalf("unexpected cfg.AddOnJobPerl.Created %v", cfg.AddOnJobPerl.Created)
 	}
 	if !cfg.AddOnJobPerl.Enable {
 		t.Fatalf("unexpected cfg.AddOnJobPerl.Enable %v", cfg.AddOnJobPerl.Enable)
@@ -342,7 +382,7 @@ func TestEnv(t *testing.T) {
 	}
 
 	if cfg.AddOnJobEcho.Created { // read-only must be ignored
-		t.Fatalf("unexpected AddOnJobEcho.Created %v", cfg.AddOnJobEcho.Created)
+		t.Fatalf("unexpected cfg.AddOnJobEcho.Created %v", cfg.AddOnJobEcho.Created)
 	}
 	if !cfg.AddOnJobEcho.Enable {
 		t.Fatalf("unexpected cfg.AddOnJobEcho.Enable %v", cfg.AddOnJobEcho.Enable)
@@ -361,7 +401,7 @@ func TestEnv(t *testing.T) {
 	}
 
 	if cfg.AddOnSecrets.Created { // read-only must be ignored
-		t.Fatalf("unexpected AddOnSecrets.Created %v", cfg.AddOnSecrets.Created)
+		t.Fatalf("unexpected cfg.AddOnSecrets.Created %v", cfg.AddOnSecrets.Created)
 	}
 	if !cfg.AddOnSecrets.Enable {
 		t.Fatalf("unexpected cfg.AddOnSecrets.Enable %v", cfg.AddOnSecrets.Enable)
@@ -394,6 +434,44 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("unexpected cfg.AddOnSecrets.ReadsResultPath %q", cfg.AddOnSecrets.ReadsResultPath)
 	}
 
+	if cfg.AddOnIRSA.Created { // read-only must be ignored
+		t.Fatalf("unexpected cfg.AddOnIRSA.Created %v", cfg.AddOnIRSA.Created)
+	}
+	if !cfg.AddOnIRSA.Enable {
+		t.Fatalf("unexpected cfg.AddOnIRSA.Enable %v", cfg.AddOnIRSA.Enable)
+	}
+	if cfg.AddOnIRSA.Namespace != "hello" {
+		t.Fatalf("unexpected cfg.AddOnIRSA.Namespace %q", cfg.AddOnIRSA.Namespace)
+	}
+	if cfg.AddOnIRSA.RoleName != "hello" {
+		t.Fatalf("unexpected cfg.AddOnIRSA.RoleName %q", cfg.AddOnIRSA.RoleName)
+	}
+	expectedAddOnIRSARoleManagedPolicyARNs := []string{"a", "b", "c"}
+	if !reflect.DeepEqual(cfg.AddOnIRSA.RoleManagedPolicyARNs, expectedAddOnIRSARoleManagedPolicyARNs) {
+		t.Fatalf("unexpected cfg.AddOnIRSA.RoleManagedPolicyARNs %q", cfg.AddOnIRSA.RoleManagedPolicyARNs)
+	}
+	if cfg.AddOnIRSA.ServiceAccountName != "hello" {
+		t.Fatalf("unexpected cfg.AddOnIRSA.ServiceAccountName %q", cfg.AddOnIRSA.ServiceAccountName)
+	}
+	if cfg.AddOnIRSA.ConfigMapName != "hello" {
+		t.Fatalf("unexpected cfg.AddOnIRSA.ConfigMapName %q", cfg.AddOnIRSA.ConfigMapName)
+	}
+	if cfg.AddOnIRSA.ConfigMapScriptFileName != "hello.sh" {
+		t.Fatalf("unexpected cfg.AddOnIRSA.ConfigMapScriptFileName %q", cfg.AddOnIRSA.ConfigMapScriptFileName)
+	}
+	if cfg.AddOnIRSA.S3BucketName != "hello" {
+		t.Fatalf("unexpected cfg.AddOnIRSA.S3BucketName %q", cfg.AddOnIRSA.S3BucketName)
+	}
+	if cfg.AddOnIRSA.S3Key != "hello" {
+		t.Fatalf("unexpected cfg.AddOnIRSA.S3Key %q", cfg.AddOnIRSA.S3Key)
+	}
+	if cfg.AddOnIRSA.DeploymentName != "hello-deployment" {
+		t.Fatalf("unexpected cfg.AddOnIRSA.DeploymentName %q", cfg.AddOnIRSA.DeploymentName)
+	}
+	if cfg.AddOnIRSA.DeploymentResultPath != "hello-deployment.log" {
+		t.Fatalf("unexpected cfg.AddOnIRSA.DeploymentResultPath %q", cfg.AddOnIRSA.DeploymentResultPath)
+	}
+
 	if err := cfg.ValidateAndSetDefaults(); err != nil {
 		t.Fatal(err)
 	}
@@ -408,6 +486,8 @@ func TestEnv(t *testing.T) {
 	}
 	fmt.Println(string(d))
 	os.RemoveAll(cfg.ConfigPath)
+
+	fmt.Println(cfg.KubectlCommands())
 }
 
 func TestEnvAddOnManagedNodeGroups(t *testing.T) {
@@ -448,7 +528,7 @@ func TestEnvAddOnManagedNodeGroupsCNI(t *testing.T) {
 	}
 
 	if cfg.AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath != "a" {
-		t.Fatalf("unexpected AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath %q", cfg.AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath)
+		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath %q", cfg.AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath)
 	}
 	expectedMNGs := map[string]MNG{
 		"test-mng-for-cni": MNG{
@@ -463,7 +543,7 @@ func TestEnvAddOnManagedNodeGroupsCNI(t *testing.T) {
 		},
 	}
 	if !reflect.DeepEqual(cfg.AddOnManagedNodeGroups.MNGs, expectedMNGs) {
-		t.Fatalf("expected AddOnManagedNodeGroups.MNGs %+v, got %+v", expectedMNGs, cfg.AddOnManagedNodeGroups.MNGs)
+		t.Fatalf("expected cfg.AddOnManagedNodeGroups.MNGs %+v, got %+v", expectedMNGs, cfg.AddOnManagedNodeGroups.MNGs)
 	}
 }
 

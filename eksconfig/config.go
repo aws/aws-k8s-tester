@@ -90,6 +90,9 @@ type Config struct {
 	// AddOnSecrets defines parameters for EKS cluster
 	// add-on "Secrets".
 	AddOnSecrets *AddOnSecrets `json:"add-on-secrets,omitempty"`
+	// AddOnIRSA defines parameters for EKS cluster
+	// add-on "IAM Roles for Service Accounts (IRSA)".
+	AddOnIRSA *AddOnIRSA `json:"add-on-irsa,omitempty"`
 
 	// Status represents the current status of AWS resources.
 	// Status is read-only.
@@ -258,6 +261,8 @@ type AddOnNLBHelloWorld struct {
 	// DeleteTookString is the duration that took to create the resource.
 	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
 
+	// DeploymentReplicas is the number of replicas to deploy using "Deployment" object.
+	DeploymentReplicas int32 `json:"deployment-replicas"`
 	// Namespace is the namespace to create "NLB" objects in.
 	Namespace string `json:"namespace"`
 
@@ -294,6 +299,10 @@ type AddOnALB2048 struct {
 
 	// Namespace is the namespace to create "ALB" objects in.
 	Namespace string `json:"namespace"`
+	// DeploymentReplicasALB is the number of ALB replicas to deploy using "Deployment" object.
+	DeploymentReplicasALB int32 `json:"deployment-replicas-alb"`
+	// DeploymentReplicas2048 is the number of 2048 replicas to deploy using "Deployment" object.
+	DeploymentReplicas2048 int32 `json:"deployment-replicas-2048"`
 
 	// ALBARN is the ARN of the ALB created from the service.
 	ALBARN string `json:"alb-arn" read-only:"true"`
@@ -428,6 +437,60 @@ type AddOnSecrets struct {
 	ReadsResultPath string `json:"reads-result-path"`
 }
 
+// AddOnIRSA defines parameters for EKS cluster
+// add-on "IAM Roles for Service Accounts (IRSA)".
+type AddOnIRSA struct {
+	// Enable is 'true' to create this add-on.
+	Enable bool `json:"enable"`
+	// Created is true when the resource has been created.
+	// Used for delete operations.
+	Created bool `json:"created" read-only:"true"`
+
+	// CreateTook is the duration that took to create the resource.
+	CreateTook time.Duration `json:"create-took,omitempty" read-only:"true"`
+	// CreateTookString is the duration that took to create the resource.
+	CreateTookString string `json:"create-took-string,omitempty" read-only:"true"`
+	// DeleteTook is the duration that took to create the resource.
+	DeleteTook time.Duration `json:"delete-took,omitempty" read-only:"true"`
+	// DeleteTookString is the duration that took to create the resource.
+	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
+
+	// Namespace is the namespace to create "Secret" and "Pod" objects in.
+	Namespace string `json:"namespace"`
+
+	// RoleName is the role name for IRSA.
+	RoleName string `json:"role-name"`
+	// RoleCFNStackID is the CloudFormation stack ID for IRSA.
+	RoleCFNStackID string `json:"role-cfn-stack-id"`
+	// RoleARN is the role ARN for IRSA.
+	RoleARN string `json:"role-arn"`
+	// RoleManagedPolicyARNs is IRSA role managed policy ARNs.
+	// ref. https://aws.amazon.com/blogs/opensource/introducing-fine-grained-iam-roles-service-accounts/
+	RoleManagedPolicyARNs []string `json:"role-managed-policy-arns,omitempty"`
+
+	// ServiceAccountName is the ServiceAccount name.
+	ServiceAccountName string `json:"service-account-name"`
+	// ConfigMapName is the ConfigMap name.
+	ConfigMapName string `json:"config-map-name"`
+	// ConfigMapScriptFileName is the ConfigMap script name.
+	ConfigMapScriptFileName string `json:"config-map-script-file-name"`
+	// S3BucketName is the S3 bucket for IRSA tests.
+	S3BucketName string `json:"s3-bucket-name"`
+	// S3Key is the S3 key to write for IRSA tests.
+	S3Key string `json:"s3-key"`
+
+	// DeploymentName is the Deployment name.
+	DeploymentName string `json:"deployment-name"`
+	// DeploymentReplicas is the number of Deployment replicas.
+	DeploymentReplicas int32 `json:"deployment-replicas"`
+	// DeploymentResultPath is the output of "Deployment" run.
+	DeploymentResultPath string `json:"deployment-result-path"`
+	// DeploymentTook is the duration that took for Deployment resource.
+	DeploymentTook time.Duration `json:"deployment-took,omitempty" read-only:"true"`
+	// DeploymentTookString is the duration that took for Deployment resource.
+	DeploymentTookString string `json:"deployment-took-string,omitempty" read-only:"true"`
+}
+
 // Status represents the current status of AWS resources.
 // Read-only. Cannot be configured via environmental variables.
 type Status struct {
@@ -443,12 +506,12 @@ type Status struct {
 	// DeleteTookString is the duration that took to create the resource.
 	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
 
-	// AWSAccountID is the account ID of the eks tester caller.
+	// AWSAccountID is the account ID of the eks tester caller session.
 	AWSAccountID string `json:"aws-account-id"`
-	// AWSUserID is the user ID of the eks tester caller.
+	// AWSUserID is the user ID of the eks tester caller session.
 	AWSUserID string `json:"aws-user-id"`
-	// AWSARN is the user ARN of the eks tester caller.
-	AWSARN string `json:"aws-arn"`
+	// AWSIAMRoleARN is the user IAM Role ARN of the eks tester caller session.
+	AWSIAMRoleARN string `json:"aws-iam-role-arn"`
 
 	// AWSCredentialPath is automatically set via AWS SDK Go.
 	// And to be mounted as a volume as 'Secret' object.
@@ -465,12 +528,22 @@ type Status struct {
 
 	ClusterCFNStackID string `json:"cluster-cfn-stack-id"`
 	ClusterARN        string `json:"cluster-arn"`
+
 	// ClusterAPIServerEndpoint is the cluster endpoint of the EKS cluster,
 	// required for KUBECONFIG write.
 	ClusterAPIServerEndpoint string `json:"cluster-api-server-endpoint"`
-	// ClusterOIDCIssuer is the issuer URL for the OpenID Connect
+
+	// ClusterOIDCIssuerURL is the issuer URL for the OpenID Connect
 	// (https://openid.net/connect/) identity provider .
-	ClusterOIDCIssuer string `json:"cluster-oidc-issuer"`
+	ClusterOIDCIssuerURL string `json:"cluster-oidc-issuer-url"`
+	// ClusterOIDCIssuerHostPath is the issuer host path.
+	ClusterOIDCIssuerHostPath string `json:"cluster-oidc-issuer-host-path"`
+	// ClusterOIDCIssuerARN is the issuer ARN for the OpenID Connect
+	// (https://openid.net/connect/) identity provider .
+	ClusterOIDCIssuerARN string `json:"cluster-oidc-issuer-arn"`
+	// ClusterOIDCIssuerCAThumbprint is the issuer CA thumbprint.
+	ClusterOIDCIssuerCAThumbprint string `json:"cluster-oidc-issuer-ca-thumbprint"`
+
 	// ClusterCA is the EKS cluster CA, required for KUBECONFIG write.
 	ClusterCA string `json:"cluster-ca"`
 	// ClusterCADecoded is the decoded EKS cluster CA, required for k8s.io/client-go.
@@ -549,9 +622,10 @@ var defaultConfig = Config{
 
 	// https://kubernetes.io/docs/tasks/tools/install-kubectl/
 	KubectlDownloadURL: "https://storage.googleapis.com/kubernetes-release/release/v1.14.10/bin/linux/amd64/kubectl",
+	KubectlPath:        "/tmp/aws-k8s-tester/kubectl",
 
-	KubectlPath:    "/tmp/aws-k8s-tester/kubectl",
-	KubeConfigPath: "/tmp/aws-k8s-tester/kubeconfig",
+	ConfigPath:     "",
+	KubeConfigPath: "",
 
 	OnFailureDelete:            true,
 	OnFailureDeleteWaitSeconds: 60,
@@ -582,29 +656,26 @@ var defaultConfig = Config{
 		RemoteAccessUserName:       "ec2-user",
 	},
 
-	// following default config generates about 550 MB of cluster data
 	AddOnNLBHelloWorld: &AddOnNLBHelloWorld{
-		Enable: true,
+		Enable:             true,
+		DeploymentReplicas: 3,
 	},
-
 	AddOnALB2048: &AddOnALB2048{
-		Enable: true,
+		Enable:                 true,
+		DeploymentReplicasALB:  3,
+		DeploymentReplicas2048: 3,
 	},
-
 	AddOnJobPerl: &AddOnJobPerl{
-		Enable:    true,
+		Enable:    false,
 		Completes: 30,
 		Parallels: 10,
 	},
-
-	// writes total 100 MB data to etcd
-	AddOnJobEcho: &AddOnJobEcho{
-		Enable:    true,
+	AddOnJobEcho: &AddOnJobEcho{ // writes total 100 MB data to etcd
+		Enable:    false,
 		Completes: 1000,
 		Parallels: 100,
 		Size:      100 * 1024, // 100 KB
 	},
-
 	AddOnSecrets: &AddOnSecrets{
 		Enable: false,
 
@@ -628,6 +699,11 @@ var defaultConfig = Config{
 		// PodQPS:      150,
 		// PodBurst:    5,
 	},
+	AddOnIRSA: &AddOnIRSA{
+		Enable:                false,
+		RoleManagedPolicyARNs: []string{"arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"},
+		DeploymentReplicas:    10,
+	},
 
 	Status: &Status{
 		Up: false,
@@ -650,7 +726,7 @@ func NewDefault() *Config {
 		int(now.Month()),
 		now.Day(),
 		now.Hour(),
-		randString(7),
+		randString(10),
 	)
 
 	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
@@ -696,7 +772,7 @@ func init() {
 
 	if runtime.GOOS == "darwin" {
 		defaultConfig.KubectlDownloadURL = strings.Replace(defaultConfig.KubectlDownloadURL, "linux", "darwin", -1)
-		defaultConfig.AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath = filepath.Join(os.TempDir(), randString(12)+".insecure.key")
+		defaultConfig.AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath = filepath.Join(os.TempDir(), randString(10)+".insecure.key")
 	}
 }
 
@@ -731,7 +807,6 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 			panic(err)
 		}
 		cfg.ConfigPath = p
-		cfg.Sync()
 		f.Close()
 		os.RemoveAll(cfg.ConfigPath)
 	}
@@ -740,6 +815,22 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 			return err
 		}
 	}
+	if cfg.KubeConfigPath == "" {
+		f, err := ioutil.TempFile(filepath.Dir(cfg.ConfigPath), cfg.Name+"-kubeconfig")
+		if err != nil {
+			return err
+		}
+		var p string
+		p, err = filepath.Abs(f.Name())
+		if err != nil {
+			panic(err)
+		}
+		cfg.KubeConfigPath = p
+		f.Close()
+		os.RemoveAll(cfg.KubeConfigPath)
+	}
+	cfg.Sync()
+
 	if cfg.AddOnManagedNodeGroups.LogDir == "" {
 		cfg.AddOnManagedNodeGroups.LogDir = filepath.Dir(cfg.ConfigPath)
 	}
@@ -959,6 +1050,16 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 				return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].ASGDesiredCapacity %d > MNGNodesMaxLimit %d", k, v.ASGDesiredCapacity, MNGNodesMaxLimit)
 			}
 
+			if cfg.AddOnNLBHelloWorld.Enable && cfg.AddOnNLBHelloWorld.DeploymentReplicas < int32(v.ASGDesiredCapacity) {
+				cfg.AddOnNLBHelloWorld.DeploymentReplicas = int32(v.ASGDesiredCapacity)
+			}
+			if cfg.AddOnALB2048.Enable && cfg.AddOnALB2048.DeploymentReplicasALB < int32(v.ASGDesiredCapacity) {
+				cfg.AddOnALB2048.DeploymentReplicasALB = int32(v.ASGDesiredCapacity)
+			}
+			if cfg.AddOnALB2048.Enable && cfg.AddOnALB2048.DeploymentReplicas2048 < int32(v.ASGDesiredCapacity) {
+				cfg.AddOnALB2048.DeploymentReplicas2048 = int32(v.ASGDesiredCapacity)
+			}
+
 			cfg.AddOnManagedNodeGroups.MNGs[k] = v
 		}
 
@@ -971,6 +1072,9 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		}
 		if cfg.AddOnALB2048.Namespace == "" {
 			cfg.AddOnALB2048.Namespace = cfg.Name + "-alb-2048"
+		}
+		if cfg.AddOnALB2048.PolicyName == "" {
+			cfg.AddOnALB2048.PolicyName = cfg.Name + "-alb-ingress-controller-policy"
 		}
 		if cfg.AddOnJobPerl.Namespace == "" {
 			cfg.AddOnJobPerl.Namespace = cfg.Name + "-job-perl"
@@ -989,6 +1093,36 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		}
 		if cfg.AddOnSecrets.Namespace == cfg.Name {
 			return fmt.Errorf("AddOnSecrets.Namespace %q conflicts with %q", cfg.AddOnSecrets.Namespace, cfg.Name)
+		}
+		if cfg.AddOnIRSA.Namespace == "" {
+			cfg.AddOnIRSA.Namespace = cfg.Name + "-irsa"
+		}
+		if cfg.AddOnIRSA.Namespace == cfg.Name {
+			return fmt.Errorf("AddOnIRSA.Namespace %q conflicts with %q", cfg.AddOnIRSA.Namespace, cfg.Name)
+		}
+		if cfg.AddOnIRSA.ServiceAccountName == "" {
+			cfg.AddOnIRSA.ServiceAccountName = cfg.Name + "-irsa-service-account"
+		}
+		if cfg.AddOnIRSA.ConfigMapName == "" {
+			cfg.AddOnIRSA.ConfigMapName = cfg.Name + "-irsa-configmap"
+		}
+		if cfg.AddOnIRSA.ConfigMapScriptFileName == "" {
+			cfg.AddOnIRSA.ConfigMapScriptFileName = cfg.Name + "-irsa-configmap.sh"
+		}
+		if cfg.AddOnIRSA.S3BucketName == "" {
+			cfg.AddOnIRSA.S3BucketName = cfg.Name + "-irsa-s3-bucket"
+		}
+		if cfg.AddOnIRSA.S3Key == "" {
+			cfg.AddOnIRSA.S3Key = cfg.Name + "-irsa-s3-key"
+		}
+		if cfg.AddOnIRSA.DeploymentName == "" {
+			cfg.AddOnIRSA.DeploymentName = cfg.Name + "-irsa-deployment"
+		}
+		if cfg.AddOnIRSA.DeploymentResultPath == "" {
+			cfg.AddOnIRSA.DeploymentResultPath = filepath.Join(
+				filepath.Dir(cfg.ConfigPath),
+				cfg.Name+"-deployment.log",
+			)
 		}
 
 		if cfg.AddOnSecrets.WritesResultPath == "" {
@@ -1010,6 +1144,10 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 			return fmt.Errorf("expected .csv extension for ReadsResultPath, got %q", cfg.AddOnSecrets.ReadsResultPath)
 		}
 
+		if cfg.AddOnIRSA.RoleName == "" {
+			cfg.AddOnIRSA.RoleName = cfg.Name + "-irsa-role"
+		}
+
 	} else {
 
 		if cfg.AddOnNLBHelloWorld.Enable {
@@ -1026,6 +1164,9 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		}
 		if cfg.AddOnSecrets.Enable {
 			return fmt.Errorf("AddOnManagedNodeGroups.Enable false, but got AddOnSecrets.Enable %v", cfg.AddOnSecrets.Enable)
+		}
+		if cfg.AddOnIRSA.Enable {
+			return fmt.Errorf("AddOnManagedNodeGroups.Enable false, but got AddOnIRSA.Enable %v", cfg.AddOnIRSA.Enable)
 		}
 	}
 
@@ -1072,14 +1213,14 @@ func Load(p string) (cfg *Config, err error) {
 // Sync persists current configuration and states to disk.
 func (cfg *Config) Sync() (err error) {
 	var p string
-	if !filepath.IsAbs(cfg.ConfigPath) {
+	if cfg.ConfigPath != "" && !filepath.IsAbs(cfg.ConfigPath) {
 		p, err = filepath.Abs(cfg.ConfigPath)
 		if err != nil {
 			return fmt.Errorf("failed to 'filepath.Abs(%s)' %v", cfg.ConfigPath, err)
 		}
 		cfg.ConfigPath = p
 	}
-	if !filepath.IsAbs(cfg.KubeConfigPath) {
+	if cfg.KubeConfigPath != "" && !filepath.IsAbs(cfg.KubeConfigPath) {
 		p, err = filepath.Abs(cfg.KubeConfigPath)
 		if err != nil {
 			return fmt.Errorf("failed to 'filepath.Abs(%s)' %v", cfg.KubeConfigPath, err)
@@ -1099,7 +1240,12 @@ func (cfg *Config) Sync() (err error) {
 	return err
 }
 
-// KubectlCommands returns the SSH commands.
+// KubectlCommand returns the kubectl command.
+func (cfg *Config) KubectlCommand() string {
+	return fmt.Sprintf("%s --kubeconfig=%s", cfg.KubectlPath, cfg.KubeConfigPath)
+}
+
+// KubectlCommands returns the various kubectl commands.
 func (cfg *Config) KubectlCommands() (s string) {
 	if cfg.KubeConfigPath == "" {
 		return ""
@@ -1107,12 +1253,14 @@ func (cfg *Config) KubectlCommands() (s string) {
 	tpl := template.Must(template.New("kubectlCmdTmpl").Parse(kubectlCmdTmpl))
 	buf := bytes.NewBuffer(nil)
 	if err := tpl.Execute(buf, struct {
-		Namespace      string
+		KubectlPath    string
 		KubeConfigPath string
+		KubectlCmd     string
 		Version        string
 	}{
-		cfg.Name,
+		cfg.KubectlPath,
 		cfg.KubeConfigPath,
+		fmt.Sprintf("%s --kubeconfig=%s", cfg.KubectlPath, cfg.KubeConfigPath),
 		cfg.Parameters.Version,
 	}); err != nil {
 		return ""
@@ -1122,34 +1270,42 @@ func (cfg *Config) KubectlCommands() (s string) {
 
 const kubectlCmdTmpl = `
 # kubectl commands
-kubectl --kubeconfig={{ .KubeConfigPath }} version
-kubectl --kubeconfig={{ .KubeConfigPath }} cluster-info
+{{ .KubectlPath }} --kubeconfig={{ .KubeConfigPath }} version
+{{ .KubectlPath }} --kubeconfig={{ .KubeConfigPath }} cluster-info
 
+export KUBECTL="{{ .KubectlCmd }}"
 export KUBECONFIG={{ .KubeConfigPath }}
-kubectl version
-kubectl cluster-info
+${KUBECTL} version
+${KUBECTL} cluster-info
 
+export KUBECTL="{{ .KubectlCmd }}"
 export KUBECONFIG={{ .KubeConfigPath }}
-kubectl get cs
-kubectl get nodes
+${KUBECTL} get cs
+${KUBECTL} get nodes
 
+export KUBECTL="{{ .KubectlCmd }}"
 export KUBECONFIG={{ .KubeConfigPath }}
-kubectl --namespace=kube-system get pods
+${KUBECTL} --namespace=kube-system get pods
 
+export KUBECTL="{{ .KubectlCmd }}"
 export KUBECONFIG={{ .KubeConfigPath }}
-kubectl --namespace={{ .Namespace }} get pods
+${KUBECTL} get pods
 
+export KUBECTL="{{ .KubectlCmd }}"
 export KUBECONFIG={{ .KubeConfigPath }}
-kubectl --namespace=kube-system get ds
+${KUBECTL} --namespace=kube-system get ds
 
+export KUBECTL="{{ .KubectlCmd }}"
 export KUBECONFIG={{ .KubeConfigPath }}
-kubectl get secrets --all-namespaces
+${KUBECTL} get secrets --all-namespaces
 
+export KUBECTL="{{ .KubectlCmd }}"
 export KUBECONFIG={{ .KubeConfigPath }}
-kubectl get configmap --all-namespaces
+${KUBECTL} get configmap --all-namespaces
 
+export KUBECTL="{{ .KubectlCmd }}"
 export KUBECONFIG={{ .KubeConfigPath }}
-kubectl get all --all-namespaces
+${KUBECTL} get all --all-namespaces
 
 
 # sonobuoy commands
@@ -1185,7 +1341,7 @@ func (cfg *Config) SSHCommands() (s string) {
 	}
 	buf := bytes.NewBuffer(nil)
 	for name, ng := range cfg.StatusManagedNodeGroups.Nodes {
-		buf.WriteString(fmt.Sprintf("ASG %q instance:\n", name))
+		buf.WriteString("ASG name \"" + name + "\":\n")
 		ec := &ec2config.Config{
 			UserName:  cfg.AddOnManagedNodeGroups.RemoteAccessUserName,
 			KeyPath:   cfg.AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath,

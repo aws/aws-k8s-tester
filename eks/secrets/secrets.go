@@ -30,7 +30,6 @@ type Config struct {
 	Sig       chan os.Signal
 	EKSConfig *eksconfig.Config
 	K8SClient k8sClientSetGetter
-	Namespace string
 }
 
 type k8sClientSetGetter interface {
@@ -44,10 +43,10 @@ type Tester interface {
 	// ref. https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
 	// Then, aggregate all reads results from remote nodes.
 	Create() error
-	// AggregateReadsResult aggregates all reads results from remote nodes.
-	AggregateReadsResult() error
 	// Delete deletes Secrets and Pods by deleting the namespace.
 	Delete() error
+	// AggregateResults aggregates all test results from remote nodes.
+	AggregateResults() error
 }
 
 // New creates a new Job tester.
@@ -59,16 +58,12 @@ type tester struct {
 	cfg Config
 }
 
-type result struct {
-	secret *v1.Secret
-	pod    *v1.Pod
-	err    error
-	took   time.Duration
-	start  time.Time
-	end    time.Time
-}
-
 func (ts *tester) Create() error {
+	if ts.cfg.EKSConfig.AddOnSecrets.Created {
+		ts.cfg.Logger.Info("skipping create AddOnSecrets")
+		return nil
+	}
+
 	ts.cfg.EKSConfig.AddOnSecrets.Created = true
 	ts.cfg.EKSConfig.Sync()
 
@@ -88,7 +83,6 @@ func (ts *tester) Create() error {
 	if err := ts.createPods(); err != nil {
 		return err
 	}
-
 	if err := ts.waitForPodsCompleted(); err != nil {
 		return err
 	}
@@ -196,7 +190,7 @@ func (ts *tester) createSecretsSequential(pfx, valSfx string) error {
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      key,
-				Namespace: ts.cfg.Namespace,
+				Namespace: ts.cfg.EKSConfig.AddOnSecrets.Namespace,
 			},
 			Type: v1.SecretTypeOpaque,
 			Data: map[string][]byte{key: val},
@@ -205,7 +199,7 @@ func (ts *tester) createSecretsSequential(pfx, valSfx string) error {
 		t1 := time.Now()
 		_, err := ts.cfg.K8SClient.KubernetesClientSet().
 			CoreV1().
-			Secrets(ts.cfg.Namespace).
+			Secrets(ts.cfg.EKSConfig.AddOnSecrets.Namespace).
 			Create(secret)
 		t2 := time.Now()
 		if err != nil {
@@ -280,7 +274,7 @@ func (ts *tester) createSecretsParallel(pfx, valSfx string) error {
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      key,
-					Namespace: ts.cfg.Namespace,
+					Namespace: ts.cfg.EKSConfig.AddOnSecrets.Namespace,
 				},
 				Type: v1.SecretTypeOpaque,
 				Data: map[string][]byte{key: val},
@@ -289,7 +283,7 @@ func (ts *tester) createSecretsParallel(pfx, valSfx string) error {
 			t1 := time.Now()
 			_, err := ts.cfg.K8SClient.KubernetesClientSet().
 				CoreV1().
-				Secrets(ts.cfg.Namespace).
+				Secrets(ts.cfg.EKSConfig.AddOnSecrets.Namespace).
 				Create(secret)
 			t2 := time.Now()
 			if err != nil {
@@ -368,11 +362,11 @@ func (ts *tester) createSecretsParallel(pfx, valSfx string) error {
 func (ts *tester) createPods() error {
 	ts.cfg.Logger.Info("mounting and read Secrets using Pod")
 
+	fileOrCreate := v1.HostPathFileOrCreate
 	pods := make([]*v1.Pod, len(ts.cfg.EKSConfig.AddOnSecrets.CreatedSecretNames))
 	for i, secretName := range ts.cfg.EKSConfig.AddOnSecrets.CreatedSecretNames {
 		podName := "pod-" + secretName
 		csvFilePath := fmt.Sprintf("/var/log/%s%s", secretName, ResultSuffixRead)
-		fileOrCreate := v1.HostPathFileOrCreate
 
 		pods[i] = &v1.Pod{
 			TypeMeta: metav1.TypeMeta{
@@ -381,7 +375,7 @@ func (ts *tester) createPods() error {
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      podName,
-				Namespace: ts.cfg.Namespace,
+				Namespace: ts.cfg.EKSConfig.AddOnSecrets.Namespace,
 			},
 			Spec: v1.PodSpec{
 				RestartPolicy: v1.RestartPolicyOnFailure,
@@ -404,6 +398,7 @@ func (ts *tester) createPods() error {
 
 								`date +%s.%N | tr -d '\n'` + " >> " + csvFilePath + ";",
 						},
+
 						// ref. https://kubernetes.io/docs/concepts/cluster-administration/logging/
 						VolumeMounts: []v1.VolumeMount{
 							{
@@ -424,8 +419,10 @@ func (ts *tester) createPods() error {
 						},
 					},
 				},
+
+				// ref. https://kubernetes.io/docs/concepts/cluster-administration/logging/
 				Volumes: []v1.Volume{
-					{
+					{ // to read
 						Name: "secret-volume",
 						VolumeSource: v1.VolumeSource{
 							Secret: &v1.SecretVolumeSource{
@@ -433,7 +430,7 @@ func (ts *tester) createPods() error {
 							},
 						},
 					},
-					{
+					{ // to write
 						Name: "csv-file",
 						VolumeSource: v1.VolumeSource{
 							HostPath: &v1.HostPathVolumeSource{
@@ -442,8 +439,7 @@ func (ts *tester) createPods() error {
 							},
 						},
 					},
-					{
-						// ref. https://kubernetes.io/docs/concepts/cluster-administration/logging/
+					{ // to write
 						Name: "var-log",
 						VolumeSource: v1.VolumeSource{
 							EmptyDir: &v1.EmptyDirVolumeSource{},
@@ -490,7 +486,7 @@ func (ts *tester) createPodsSequential(pods []*v1.Pod) error {
 
 		_, err := ts.cfg.K8SClient.KubernetesClientSet().
 			CoreV1().
-			Pods(ts.cfg.Namespace).
+			Pods(ts.cfg.EKSConfig.AddOnSecrets.Namespace).
 			Create(pod)
 		if err != nil {
 			select {
@@ -539,7 +535,7 @@ func (ts *tester) createPodsParallel(pods []*v1.Pod) error {
 
 			_, err := ts.cfg.K8SClient.KubernetesClientSet().
 				CoreV1().
-				Pods(ts.cfg.Namespace).
+				Pods(ts.cfg.EKSConfig.AddOnSecrets.Namespace).
 				Create(pod)
 			if err != nil {
 				select {
@@ -610,7 +606,7 @@ func (ts *tester) waitForPodsCompleted() error {
 
 		pods, err := ts.cfg.K8SClient.KubernetesClientSet().
 			CoreV1().
-			Pods(ts.cfg.Namespace).
+			Pods(ts.cfg.EKSConfig.AddOnSecrets.Namespace).
 			List(metav1.ListOptions{})
 		if err != nil {
 			ts.cfg.Logger.Error("failed to list Pod", zap.Error(err))
@@ -642,13 +638,58 @@ func (ts *tester) waitForPodsCompleted() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
-func (ts *tester) AggregateReadsResult() error {
+func (ts *tester) createNamespace() error {
+	ts.cfg.Logger.Info("creating namespace", zap.String("namespace", ts.cfg.EKSConfig.AddOnSecrets.Namespace))
+	_, err := ts.cfg.K8SClient.KubernetesClientSet().
+		CoreV1().
+		Namespaces().
+		Create(&v1.Namespace{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "v1",
+				Kind:       "Namespace",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: ts.cfg.EKSConfig.AddOnSecrets.Namespace,
+				Labels: map[string]string{
+					"name": ts.cfg.EKSConfig.AddOnSecrets.Namespace,
+				},
+			},
+		})
+	if err != nil {
+		return err
+	}
+	ts.cfg.Logger.Info("created namespace", zap.String("namespace", ts.cfg.EKSConfig.AddOnSecrets.Namespace))
+	return ts.cfg.EKSConfig.Sync()
+}
+
+func (ts *tester) deleteNamespace() error {
+	ts.cfg.Logger.Info("deleting namespace", zap.String("namespace", ts.cfg.EKSConfig.AddOnSecrets.Namespace))
+	foreground := metav1.DeletePropagationForeground
+	err := ts.cfg.K8SClient.KubernetesClientSet().
+		CoreV1().
+		Namespaces().
+		Delete(
+			ts.cfg.EKSConfig.AddOnSecrets.Namespace,
+			&metav1.DeleteOptions{
+				GracePeriodSeconds: aws.Int64(0),
+				PropagationPolicy:  &foreground,
+			},
+		)
+	if err != nil {
+		return err
+	}
+
+	ts.cfg.Logger.Info("deleted namespace", zap.String("namespace", ts.cfg.EKSConfig.AddOnSecrets.Namespace))
+	return ts.cfg.EKSConfig.Sync()
+}
+
+func (ts *tester) AggregateResults() error {
 	if !ts.cfg.EKSConfig.AddOnSecrets.Created {
 		ts.cfg.Logger.Info("skipping aggregating AddOnSecrets")
 		return nil
 	}
 
-	ts.cfg.Logger.Info("aggregating reads result from Pods")
+	ts.cfg.Logger.Info("aggregating results from Pods")
 
 	f, err := os.OpenFile(ts.cfg.EKSConfig.AddOnSecrets.ReadsResultPath, os.O_RDWR|os.O_TRUNC, 0777)
 	if err != nil {
@@ -722,54 +763,19 @@ func (ts *tester) AggregateReadsResult() error {
 		}
 	}
 
-	ts.cfg.Logger.Info("aggregated reads result from Pods",
+	ts.cfg.Logger.Info("aggregated results from Pods",
 		zap.String("reads-result-path", ts.cfg.EKSConfig.AddOnSecrets.ReadsResultPath),
 	)
 	return ts.cfg.EKSConfig.Sync()
 }
 
-func (ts *tester) createNamespace() error {
-	ts.cfg.Logger.Info("creating namespace", zap.String("namespace", ts.cfg.Namespace))
-	_, err := ts.cfg.K8SClient.KubernetesClientSet().
-		CoreV1().
-		Namespaces().
-		Create(&v1.Namespace{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "v1",
-				Kind:       "Namespace",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: ts.cfg.Namespace,
-				Labels: map[string]string{
-					"name": ts.cfg.Namespace,
-				},
-			},
-		})
-	if err != nil {
-		return err
-	}
-	ts.cfg.Logger.Info("created namespace", zap.String("namespace", ts.cfg.Namespace))
-	return ts.cfg.EKSConfig.Sync()
-}
-
-func (ts *tester) deleteNamespace() error {
-	ts.cfg.Logger.Info("deleting namespace", zap.String("namespace", ts.cfg.Namespace))
-	foreground := metav1.DeletePropagationForeground
-	err := ts.cfg.K8SClient.KubernetesClientSet().
-		CoreV1().
-		Namespaces().
-		Delete(
-			ts.cfg.Namespace,
-			&metav1.DeleteOptions{
-				GracePeriodSeconds: aws.Int64(0),
-				PropagationPolicy:  &foreground,
-			},
-		)
-	if err != nil {
-		return err
-	}
-	ts.cfg.Logger.Info("deleted namespace", zap.String("namespace", ts.cfg.Namespace))
-	return ts.cfg.EKSConfig.Sync()
+type result struct {
+	secret *v1.Secret
+	pod    *v1.Pod
+	err    error
+	took   time.Duration
+	start  time.Time
+	end    time.Time
 }
 
 // mountAWSCred mounts AWS credentials as a "Secret" object.
@@ -797,7 +803,7 @@ func (ts *tester) mountAWSCred() error {
 	*/
 	so, err := ts.cfg.K8SClient.KubernetesClientSet().
 		CoreV1().
-		Secrets(ts.cfg.Namespace).
+		Secrets(ts.cfg.EKSConfig.AddOnSecrets.Namespace).
 		Create(&v1.Secret{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "v1",
@@ -805,7 +811,7 @@ func (ts *tester) mountAWSCred() error {
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      awsCredName,
-				Namespace: ts.cfg.Namespace,
+				Namespace: ts.cfg.EKSConfig.AddOnSecrets.Namespace,
 			},
 			Type: v1.SecretTypeOpaque,
 			Data: map[string][]byte{

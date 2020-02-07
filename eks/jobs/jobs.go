@@ -28,8 +28,6 @@ type Config struct {
 	EKSConfig *eksconfig.Config
 	K8SClient k8sClientSetGetter
 
-	// Namespace is the namespace to create Jobs.
-	Namespace string
 	// JobName is the example Job type.
 	JobName string
 
@@ -64,64 +62,38 @@ type tester struct {
 	cfg Config
 }
 
-func (ts *tester) createNamespace() error {
-	ts.cfg.Logger.Info("creating namespace", zap.String("namespace", ts.cfg.Namespace))
-	_, err := ts.cfg.K8SClient.KubernetesClientSet().
-		CoreV1().
-		Namespaces().
-		Create(&v1.Namespace{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "v1",
-				Kind:       "Namespace",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: ts.cfg.Namespace,
-				Labels: map[string]string{
-					"name": ts.cfg.Namespace,
-				},
-			},
-		})
-	if err != nil {
-		return err
-	}
-	ts.cfg.Logger.Info("created namespace", zap.String("namespace", ts.cfg.Namespace))
-	return ts.cfg.EKSConfig.Sync()
-}
-
-func (ts *tester) deleteNamespace() error {
-	ts.cfg.Logger.Info("deleting namespace", zap.String("namespace", ts.cfg.Namespace))
-	foreground := metav1.DeletePropagationForeground
-	err := ts.cfg.K8SClient.KubernetesClientSet().
-		CoreV1().
-		Namespaces().
-		Delete(
-			ts.cfg.Namespace,
-			&metav1.DeleteOptions{
-				GracePeriodSeconds: aws.Int64(0),
-				PropagationPolicy:  &foreground,
-			},
-		)
-	if err != nil {
-		return err
-	}
-	ts.cfg.Logger.Info("deleted namespace", zap.String("namespace", ts.cfg.Namespace))
-	return ts.cfg.EKSConfig.Sync()
-}
-
 func (ts *tester) Create() error {
+	namespace := ""
 	switch ts.cfg.JobName {
 	case JobNamePi:
+		namespace = ts.cfg.EKSConfig.AddOnJobPerl.Namespace
+
+		if ts.cfg.EKSConfig.AddOnJobPerl.Created {
+			ts.cfg.Logger.Info("skipping create AddOnJobPerl")
+			return nil
+		}
+
 		ts.cfg.EKSConfig.AddOnJobPerl.Created = true
 		ts.cfg.EKSConfig.Sync()
+
 		createStart := time.Now()
 		defer func() {
 			ts.cfg.EKSConfig.AddOnJobPerl.CreateTook = time.Since(createStart)
 			ts.cfg.EKSConfig.AddOnJobPerl.CreateTookString = ts.cfg.EKSConfig.AddOnJobPerl.CreateTook.String()
 			ts.cfg.EKSConfig.Sync()
 		}()
+
 	case JobNameEcho:
+		namespace = ts.cfg.EKSConfig.AddOnJobEcho.Namespace
+
+		if ts.cfg.EKSConfig.AddOnJobEcho.Created {
+			ts.cfg.Logger.Info("skipping create AddOnJobEcho")
+			return nil
+		}
+
 		ts.cfg.EKSConfig.AddOnJobEcho.Created = true
 		ts.cfg.EKSConfig.Sync()
+
 		createStart := time.Now()
 		defer func() {
 			ts.cfg.EKSConfig.AddOnJobEcho.CreateTook = time.Since(createStart)
@@ -146,7 +118,7 @@ func (ts *tester) Create() error {
 
 	_, err = ts.cfg.K8SClient.KubernetesClientSet().
 		BatchV1().
-		Jobs(ts.cfg.Namespace).
+		Jobs(namespace).
 		Create(&obj)
 	if err != nil {
 		return fmt.Errorf("failed to create Job (%v)", err)
@@ -162,7 +134,7 @@ func (ts *tester) Create() error {
 		ts.cfg.K8SClient.KubernetesClientSet(),
 		waitDur,
 		5*time.Second,
-		ts.cfg.Namespace,
+		namespace,
 		ts.cfg.JobName,
 		int(ts.cfg.Completes),
 		jobsFieldSelector,
@@ -184,8 +156,11 @@ func (ts *tester) Create() error {
 var propagationBackground = metav1.DeletePropagationBackground
 
 func (ts *tester) Delete() error {
+	namespace := ""
 	switch ts.cfg.JobName {
 	case JobNamePi:
+		namespace = ts.cfg.EKSConfig.AddOnJobPerl.Namespace
+
 		if !ts.cfg.EKSConfig.AddOnJobPerl.Created {
 			ts.cfg.Logger.Info("skipping delete AddOnJobPerl")
 			return nil
@@ -196,7 +171,10 @@ func (ts *tester) Delete() error {
 			ts.cfg.EKSConfig.AddOnJobPerl.DeleteTookString = ts.cfg.EKSConfig.AddOnJobPerl.DeleteTook.String()
 			ts.cfg.EKSConfig.Sync()
 		}()
+
 	case JobNameEcho:
+		namespace = ts.cfg.EKSConfig.AddOnJobEcho.Namespace
+
 		if !ts.cfg.EKSConfig.AddOnJobEcho.Created {
 			ts.cfg.Logger.Info("skipping delete AddOnJobPerl")
 			return nil
@@ -213,7 +191,7 @@ func (ts *tester) Delete() error {
 	err := ts.cfg.
 		K8SClient.KubernetesClientSet().
 		BatchV1().
-		Jobs(ts.cfg.Namespace).
+		Jobs(namespace).
 		Delete(
 			ts.cfg.JobName,
 			&metav1.DeleteOptions{
@@ -239,6 +217,66 @@ func (ts *tester) Delete() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
+func (ts *tester) createNamespace() error {
+	namespace := ""
+	switch ts.cfg.JobName {
+	case JobNamePi:
+		namespace = ts.cfg.EKSConfig.AddOnJobPerl.Namespace
+	case JobNameEcho:
+		namespace = ts.cfg.EKSConfig.AddOnJobEcho.Namespace
+	}
+
+	ts.cfg.Logger.Info("creating namespace", zap.String("namespace", namespace))
+	_, err := ts.cfg.K8SClient.KubernetesClientSet().
+		CoreV1().
+		Namespaces().
+		Create(&v1.Namespace{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "v1",
+				Kind:       "Namespace",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: namespace,
+				Labels: map[string]string{
+					"name": namespace,
+				},
+			},
+		})
+	if err != nil {
+		return err
+	}
+	ts.cfg.Logger.Info("created namespace", zap.String("namespace", namespace))
+	return ts.cfg.EKSConfig.Sync()
+}
+
+func (ts *tester) deleteNamespace() error {
+	namespace := ""
+	switch ts.cfg.JobName {
+	case JobNamePi:
+		namespace = ts.cfg.EKSConfig.AddOnJobPerl.Namespace
+	case JobNameEcho:
+		namespace = ts.cfg.EKSConfig.AddOnJobEcho.Namespace
+	}
+
+	ts.cfg.Logger.Info("deleting namespace", zap.String("namespace", namespace))
+	foreground := metav1.DeletePropagationForeground
+	err := ts.cfg.K8SClient.KubernetesClientSet().
+		CoreV1().
+		Namespaces().
+		Delete(
+			namespace,
+			&metav1.DeleteOptions{
+				GracePeriodSeconds: aws.Int64(0),
+				PropagationPolicy:  &foreground,
+			},
+		)
+	if err != nil {
+		return err
+	}
+	ts.cfg.Logger.Info("deleted namespace", zap.String("namespace", namespace))
+	return ts.cfg.EKSConfig.Sync()
+}
+
 const (
 	// https://github.com/kubernetes/kubernetes/blob/d379ab2697251334774b7bd6f41b26cf39de470d/pkg/apis/batch/v1/conversion.go#L30-L41
 	jobsFieldSelector = "status.phase!=Running"
@@ -254,9 +292,11 @@ const (
 )
 
 func (ts *tester) createObject() (batchv1.Job, string, error) {
+	namespace := ""
 	var spec v1.PodTemplateSpec
 	switch ts.cfg.JobName {
 	case JobNamePi:
+		namespace = ts.cfg.EKSConfig.AddOnJobPerl.Namespace
 		spec = v1.PodTemplateSpec{
 			Spec: v1.PodSpec{
 				Containers: []v1.Container{
@@ -276,7 +316,9 @@ func (ts *tester) createObject() (batchv1.Job, string, error) {
 				RestartPolicy: v1.RestartPolicyOnFailure,
 			},
 		}
+
 	case JobNameEcho:
+		namespace = ts.cfg.EKSConfig.AddOnJobEcho.Namespace
 		spec = v1.PodTemplateSpec{
 			Spec: v1.PodSpec{
 				Containers: []v1.Container{
@@ -321,7 +363,7 @@ func (ts *tester) createObject() (batchv1.Job, string, error) {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      ts.cfg.JobName,
-			Namespace: ts.cfg.Namespace,
+			Namespace: namespace,
 		},
 		Spec: batchv1.JobSpec{
 			Completions: aws.Int32(int32(ts.cfg.Completes)),

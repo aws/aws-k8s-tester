@@ -18,7 +18,7 @@ replace (
 // https://github.com/blang/semver/releases
 // https://github.com/gyuho/semver/releases
 require (
-	github.com/aws/aws-sdk-go v1.28.12
+	github.com/aws/aws-sdk-go v1.29.0
 	github.com/cihub/seelog v0.0.0-20170130134532-f561c5e57575
 	github.com/davecgh/go-spew v1.1.1
 	github.com/dustin/go-humanize v1.0.0
@@ -38,7 +38,6 @@ require (
 	github.com/stretchr/testify v1.4.0
 	go.uber.org/zap v1.13.0
 	golang.org/x/crypto v0.0.0-20190611184440-5c40567a22f8
-	golang.org/x/net v0.0.0-20191021144547-ec77196f6094 // indirect
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 	golang.org/x/sys v0.0.0-20190422165155-953cdadca894 // indirect
 	golang.org/x/time v0.0.0-20180412165947-fbb02b2291d2

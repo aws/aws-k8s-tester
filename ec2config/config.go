@@ -569,7 +569,6 @@ func (cfg *Config) SSHCommands() (s string) {
 	s = fmt.Sprintf(`
 # change SSH key permission
 chmod 400 %s
-
 `, cfg.KeyPath)
 
 	for _, v := range cfg.Instances {

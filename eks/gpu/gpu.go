@@ -60,6 +60,11 @@ type tester struct {
 // ref. https://docs.aws.amazon.com/eks/latest/userguide/gpu-ami.html
 // ref. https://github.com/NVIDIA/k8s-device-plugin
 func (ts *tester) InstallNvidiaDriver() error {
+	if ts.cfg.EKSConfig.StatusManagedNodeGroups.NvidiaDriverInstalled {
+		ts.cfg.Logger.Info("skipping installing Nvidia GPU driver")
+		return nil
+	}
+
 	ts.cfg.Logger.Info("applying daemon set for Nvidia GPU driver for worker nodes")
 	downloadURL := "https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/1.0.0-beta4/nvidia-device-plugin.yml"
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
@@ -237,7 +242,7 @@ func (ts *tester) RunNvidiaSMI() error {
 			break
 		}
 	}
-	ts.cfg.Logger.Info("checked nvidia-smi")
 
+	ts.cfg.Logger.Info("checked nvidia-smi")
 	return ts.cfg.EKSConfig.Sync()
 }

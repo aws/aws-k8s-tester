@@ -266,7 +266,7 @@ func (ts *Tester) createVPC() error {
 	stackInput := &cloudformation.CreateStackInput{
 		StackName:    aws.String(ts.cfg.Name + "-vpc"),
 		Capabilities: aws.StringSlice([]string{"CAPABILITY_IAM"}),
-		OnFailure:    aws.String("DELETE"),
+		OnFailure:    aws.String(cloudformation.OnFailureDelete),
 		TemplateBody: aws.String(TemplateVPC),
 		Tags: awscfn.NewTags(map[string]string{
 			"Kind": "aws-k8s-tester",

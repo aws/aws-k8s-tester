@@ -48,6 +48,10 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 	if err != nil {
 		return err
 	}
+	cfg.AddOnIRSA, err = parseEnvsAddOnIRSA(*cfg.AddOnIRSA)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -62,6 +66,7 @@ const (
 	EnvironmentVariablePrefixAddOnJobPerl           = "AWS_K8S_TESTER_EKS_ADD_ON_JOB_PERL_"
 	EnvironmentVariablePrefixAddOnJobEcho           = "AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_"
 	EnvironmentVariablePrefixAddOnSecrets           = "AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_"
+	EnvironmentVariablePrefixAddOnIRSA              = "AWS_K8S_TESTER_EKS_ADD_ON_IRSA_"
 )
 
 func parseEnvs(cfg Config) (Config, error) {
@@ -308,6 +313,13 @@ func parseEnvsAddOnNLBHelloWorld(addOn AddOnNLBHelloWorld) (*AddOnNLBHelloWorld,
 			}
 			vv.Field(i).SetBool(bb)
 
+		case reflect.Int, reflect.Int32, reflect.Int64:
+			iv, err := strconv.ParseInt(sv, 10, 64)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vv.Field(i).SetInt(iv)
+
 		case reflect.Uint, reflect.Uint32, reflect.Uint64:
 			iv, err := strconv.ParseUint(sv, 10, 64)
 			if err != nil {
@@ -350,6 +362,13 @@ func parseEnvsAddOnALB2048(addOn AddOnALB2048) (*AddOnALB2048, error) {
 				return nil, fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
 			}
 			vv.Field(i).SetBool(bb)
+
+		case reflect.Int, reflect.Int32, reflect.Int64:
+			iv, err := strconv.ParseInt(sv, 10, 64)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vv.Field(i).SetInt(iv)
 
 		case reflect.Uint, reflect.Uint32, reflect.Uint64:
 			iv, err := strconv.ParseUint(sv, 10, 64)
@@ -507,6 +526,67 @@ func parseEnvsAddOnSecrets(addOn AddOnSecrets) (*AddOnSecrets, error) {
 				return nil, fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
 			}
 			vv.Field(i).SetUint(iv)
+
+		default:
+			return nil, fmt.Errorf("%q (type %v) is not supported as an env", env, vv.Field(i).Type())
+		}
+	}
+	return &addOn, nil
+}
+
+func parseEnvsAddOnIRSA(addOn AddOnIRSA) (*AddOnIRSA, error) {
+	tp, vv := reflect.TypeOf(&addOn).Elem(), reflect.ValueOf(&addOn).Elem()
+	for i := 0; i < tp.NumField(); i++ {
+		jv := tp.Field(i).Tag.Get("json")
+		if jv == "" {
+			continue
+		}
+		jv = strings.Replace(jv, ",omitempty", "", -1)
+		jv = strings.ToUpper(strings.Replace(jv, "-", "_", -1))
+		env := EnvironmentVariablePrefixAddOnIRSA + jv
+		sv := os.Getenv(env)
+		if sv == "" {
+			continue
+		}
+		if tp.Field(i).Tag.Get("read-only") == "true" {
+			continue
+		}
+
+		switch vv.Field(i).Type().Kind() {
+		case reflect.String:
+			vv.Field(i).SetString(sv)
+
+		case reflect.Bool:
+			bb, err := strconv.ParseBool(sv)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vv.Field(i).SetBool(bb)
+
+		case reflect.Int, reflect.Int32, reflect.Int64:
+			iv, err := strconv.ParseInt(sv, 10, 64)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vv.Field(i).SetInt(iv)
+
+		case reflect.Uint, reflect.Uint32, reflect.Uint64:
+			iv, err := strconv.ParseUint(sv, 10, 64)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+			}
+			vv.Field(i).SetUint(iv)
+
+		case reflect.Slice:
+			ss := strings.Split(sv, ",")
+			if len(ss) < 1 {
+				continue
+			}
+			slice := reflect.MakeSlice(reflect.TypeOf([]string{}), len(ss), len(ss))
+			for j := range ss {
+				slice.Index(j).SetString(ss[j])
+			}
+			vv.Field(i).Set(slice)
 
 		default:
 			return nil, fmt.Errorf("%q (type %v) is not supported as an env", env, vv.Field(i).Type())

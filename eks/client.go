@@ -31,7 +31,7 @@ func (ts *Tester) createK8sClientSet() (err error) {
 		}
 		ts.lg.Info("loaded *restclient.Config from kubeconfig")
 	} else {
-		ts.lg.Info("loaded *restclient.Config from aws-k8s-tester config")
+		ts.lg.Info("loaded *restclient.Config from eksconfig")
 	}
 
 	ts.lg.Info("creating k8s client set")

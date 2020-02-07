@@ -2,6 +2,7 @@ package cloud
 
 import (
 	"fmt"
+
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"github.com/aws/aws-sdk-go/aws/session"
 )

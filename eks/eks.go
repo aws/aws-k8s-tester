@@ -15,6 +15,7 @@ import (
 
 	"github.com/aws/aws-k8s-tester/eks/alb"
 	"github.com/aws/aws-k8s-tester/eks/gpu"
+	"github.com/aws/aws-k8s-tester/eks/irsa"
 	"github.com/aws/aws-k8s-tester/eks/jobs"
 	"github.com/aws/aws-k8s-tester/eks/mng"
 	"github.com/aws/aws-k8s-tester/eks/nlb"
@@ -33,12 +34,12 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	awseks "github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
-	"github.com/aws/aws-sdk-go/service/elb"
-	"github.com/aws/aws-sdk-go/service/elb/elbiface"
 	"github.com/aws/aws-sdk-go/service/elbv2"
 	"github.com/aws/aws-sdk-go/service/elbv2/elbv2iface"
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/aws/aws-sdk-go/service/iam/iamiface"
+	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"github.com/aws/aws-sdk-go/service/ssm"
 	"github.com/aws/aws-sdk-go/service/ssm/ssmiface"
 	"github.com/aws/aws-sdk-go/service/sts"
@@ -67,8 +68,8 @@ type Tester struct {
 	ssmAPI     ssmiface.SSMAPI
 	cfnAPI     cloudformationiface.CloudFormationAPI
 	ec2API     ec2iface.EC2API
+	s3API      s3iface.S3API
 	asgAPI     autoscalingiface.AutoScalingAPI
-	elbAPI     elbiface.ELBAPI
 	elbv2API   elbv2iface.ELBV2API
 
 	eksSession *session.Session
@@ -83,11 +84,13 @@ type Tester struct {
 	jobPerlTester       jobs.Tester
 	jobEchoTester       jobs.Tester
 	secretsTester       secrets.Tester
+	irsaTester          irsa.Tester
 }
 
 // New creates a new EKS tester.
 func New(cfg *eksconfig.Config) (*Tester, error) {
-	colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]New [default](%q, 'kubectl --kubeconfig=%s')\n", cfg.ConfigPath, cfg.KubeConfigPath)
+	fmt.Println("😎")
+	colorstring.Printf("\n\n\n[light_green]New [default](%q, %q)\n", cfg.ConfigPath, cfg.KubectlCommand())
 	if err := cfg.ValidateAndSetDefaults(); err != nil {
 		return nil, err
 	}
@@ -233,15 +236,15 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 	}
 	ts.cfg.Status.AWSAccountID = aws.StringValue(stsOutput.Account)
 	ts.cfg.Status.AWSUserID = aws.StringValue(stsOutput.UserId)
-	ts.cfg.Status.AWSARN = aws.StringValue(stsOutput.Arn)
+	ts.cfg.Status.AWSIAMRoleARN = aws.StringValue(stsOutput.Arn)
 	ts.cfg.Sync()
 
 	ts.iamAPI = iam.New(ts.awsSession)
 	ts.ssmAPI = ssm.New(ts.awsSession)
 	ts.cfnAPI = cloudformation.New(ts.awsSession)
 	ts.ec2API = ec2.New(ts.awsSession)
+	ts.s3API = s3.New(ts.awsSession)
 	ts.asgAPI = autoscaling.New(ts.awsSession)
-	ts.elbAPI = elb.New(ts.awsSession)
 	ts.elbv2API = elbv2.New(ts.awsSession)
 
 	// create a separate session for EKS (for resolver endpoint)
@@ -272,6 +275,7 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 	if err = ts.createSubTesters(); err != nil {
 		return nil, err
 	}
+
 	return ts, nil
 }
 
@@ -280,7 +284,7 @@ func (ts *Tester) createSubTesters() (err error) {
 		return nil
 	}
 
-	colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]createSubTesters [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
+	colorstring.Printf("\n\n\n[light_green]createSubTesters [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 
 	ts.lg.Info("creating gpuTester")
 	ts.gpuTester, err = gpu.New(gpu.Config{
@@ -319,7 +323,6 @@ func (ts *Tester) createSubTesters() (err error) {
 		EKSConfig: ts.cfg,
 		K8SClient: ts,
 		ELB2API:   ts.elbv2API,
-		Namespace: ts.cfg.AddOnNLBHelloWorld.Namespace,
 	})
 	if err != nil {
 		return err
@@ -334,7 +337,6 @@ func (ts *Tester) createSubTesters() (err error) {
 		EKSConfig:         ts.cfg,
 		K8SClient:         ts,
 		ELB2API:           ts.elbv2API,
-		Namespace:         ts.cfg.AddOnALB2048.Namespace,
 	})
 	if err != nil {
 		return err
@@ -347,7 +349,6 @@ func (ts *Tester) createSubTesters() (err error) {
 		Sig:       ts.interruptSig,
 		EKSConfig: ts.cfg,
 		K8SClient: ts,
-		Namespace: ts.cfg.AddOnJobPerl.Namespace,
 		JobName:   jobs.JobNamePi,
 		Completes: ts.cfg.AddOnJobPerl.Completes,
 		Parallels: ts.cfg.AddOnJobPerl.Parallels,
@@ -363,7 +364,6 @@ func (ts *Tester) createSubTesters() (err error) {
 		Sig:       ts.interruptSig,
 		EKSConfig: ts.cfg,
 		K8SClient: ts,
-		Namespace: ts.cfg.AddOnJobEcho.Namespace,
 		JobName:   jobs.JobNameEcho,
 		Completes: ts.cfg.AddOnJobEcho.Completes,
 		Parallels: ts.cfg.AddOnJobEcho.Parallels,
@@ -380,7 +380,21 @@ func (ts *Tester) createSubTesters() (err error) {
 		Sig:       ts.interruptSig,
 		EKSConfig: ts.cfg,
 		K8SClient: ts,
-		Namespace: ts.cfg.AddOnSecrets.Namespace,
+	})
+	if err != nil {
+		return err
+	}
+
+	ts.lg.Info("creating irsaTester")
+	ts.irsaTester, err = irsa.New(irsa.Config{
+		Logger:    ts.lg,
+		Stopc:     ts.stopCreationCh,
+		Sig:       ts.interruptSig,
+		EKSConfig: ts.cfg,
+		K8SClient: ts,
+		CFNAPI:    ts.cfnAPI,
+		IAMAPI:    ts.iamAPI,
+		S3API:     ts.s3API,
 	})
 	if err != nil {
 		return err
@@ -391,35 +405,32 @@ func (ts *Tester) createSubTesters() (err error) {
 
 // Up should provision a new cluster for testing
 func (ts *Tester) Up() (err error) {
-	colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]Up [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
+	colorstring.Printf("\n\n\n[light_green]Up [default](%q)\n", ts.cfg.ConfigPath)
 
 	now := time.Now()
 
 	defer func() {
-		colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]Up.defer [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
+		colorstring.Printf("\n\n\n[light_green]Up.defer [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 
 		if err == nil {
-			ts.lg.Info("Up successful",
-				zap.String("config-path", ts.cfg.ConfigPath),
-				zap.String("KUBECONFIG", ts.cfg.KubeConfigPath),
-				zap.String("cluster-arn", ts.cfg.Status.ClusterARN),
+			ts.lg.Info("Up succeeded",
 				zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			)
-			return
-		}
-		if !ts.cfg.OnFailureDelete {
-			ts.lg.Warn("Up failed; exiting",
-				zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
-				zap.Error(err),
-			)
+			colorstring.Printf("\n\n😁 [blue]:)\n\n\n")
 			return
 		}
 
-		ts.lg.Error("failed Up, reverting resource creation",
-			zap.String("config-path", ts.cfg.ConfigPath),
-			zap.String("KUBECONFIG", ts.cfg.KubeConfigPath),
-			zap.String("cluster-arn", ts.cfg.Status.ClusterARN),
+		ts.lg.Warn("Up failed",
 			zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
+			zap.Error(err),
+		)
+		colorstring.Printf("\n\n😱 ☹  [light_red](-_-)\n\n\n")
+
+		if !ts.cfg.OnFailureDelete {
+			return
+		}
+
+		ts.lg.Error("reverting resource creation",
 			zap.Error(err),
 		)
 		waitDur := time.Duration(ts.cfg.OnFailureDeleteWaitSeconds) * time.Second
@@ -440,13 +451,10 @@ func (ts *Tester) Up() (err error) {
 
 	ts.lg.Info("Up started",
 		zap.String("name", ts.cfg.Name),
-		zap.String("resolver-url", ts.cfg.Parameters.ClusterResolverURL),
-		zap.String("config-path", ts.cfg.ConfigPath),
-		zap.String("KUBECONFIG", ts.cfg.KubeConfigPath),
 	)
 	defer ts.cfg.Sync()
 
-	colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]createClusterRole [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
+	colorstring.Printf("\n\n\n[light_green]createClusterRole [default](%q)\n", ts.cfg.ConfigPath)
 	if err := catchInterrupt(
 		ts.lg,
 		ts.stopCreationCh,
@@ -457,7 +465,7 @@ func (ts *Tester) Up() (err error) {
 		return err
 	}
 
-	colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]createVPC [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
+	colorstring.Printf("\n\n\n[light_green]createVPC [default](%q)\n", ts.cfg.ConfigPath)
 	if err := catchInterrupt(
 		ts.lg,
 		ts.stopCreationCh,
@@ -468,7 +476,7 @@ func (ts *Tester) Up() (err error) {
 		return err
 	}
 
-	colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]createCluster [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
+	colorstring.Printf("\n\n\n[light_green]createCluster [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 	if err := catchInterrupt(
 		ts.lg,
 		ts.stopCreationCh,
@@ -483,19 +491,19 @@ func (ts *Tester) Up() (err error) {
 	ts.lg.Info("waiting before running health check", zap.Duration("wait", waitDur))
 	time.Sleep(waitDur)
 
-	colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]runHealthCheck [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
+	colorstring.Printf("\n\n\n[light_green]checkHealth [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 	if err := catchInterrupt(
 		ts.lg,
 		ts.stopCreationCh,
 		ts.stopCreationChOnce,
 		ts.interruptSig,
-		ts.runHealthCheck,
+		ts.checkHealth,
 	); err != nil {
 		return err
 	}
 
 	if ts.cfg.AddOnManagedNodeGroups.Enable {
-		colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]mngTester.Create [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
+		colorstring.Printf("\n\n\n[light_green]mngTester.Create [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		if err := catchInterrupt(
 			ts.lg,
 			ts.stopCreationCh,
@@ -516,7 +524,7 @@ func (ts *Tester) Up() (err error) {
 			}
 		}
 		if !ts.cfg.StatusManagedNodeGroups.NvidiaDriverInstalled && needGPU {
-			colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]gpuTester.InstallNvidiaDriver [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
+			colorstring.Printf("\n\n\n[light_green]gpuTester.InstallNvidiaDriver [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 			if err := catchInterrupt(
 				ts.lg,
 				ts.stopCreationCh,
@@ -527,7 +535,7 @@ func (ts *Tester) Up() (err error) {
 				ts.lg.Warn("failed to install Nvidia driver", zap.Error(err))
 			}
 
-			colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]gpuTester.RunNvidiaSMI [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
+			colorstring.Printf("\n\n\n[light_green]gpuTester.RunNvidiaSMI [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 			if err := catchInterrupt(
 				ts.lg,
 				ts.stopCreationCh,
@@ -539,40 +547,23 @@ func (ts *Tester) Up() (err error) {
 			}
 		}
 
-		colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]kubectl [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
-		fmt.Println(ts.cfg.KubectlCommands())
-		colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]SSH [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
-		fmt.Println(ts.cfg.SSHCommands())
-
-		colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]runHealthCheck [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
+		colorstring.Printf("\n\n\n[light_green]checkHealth [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		if err := catchInterrupt(
 			ts.lg,
 			ts.stopCreationCh,
 			ts.stopCreationChOnce,
 			ts.interruptSig,
-			ts.runHealthCheck,
+			ts.checkHealth,
 		); err != nil {
 			return err
 		}
-
-		colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]createNamespace [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.interruptSig,
-			ts.createNamespace,
-		); err != nil {
-			return err
-		}
-
-		colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]kubectl [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
+		colorstring.Printf("\n\n[light_green]kubectl [default](%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		fmt.Println(ts.cfg.KubectlCommands())
-		colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]SSH [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
+		colorstring.Printf("\n\n[light_green]SSH [default](%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		fmt.Println(ts.cfg.SSHCommands())
 
 		if ts.cfg.AddOnNLBHelloWorld.Enable {
-			colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]nlbHelloWorldTester.Create [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.AddOnNLBHelloWorld.Namespace)
+			colorstring.Printf("\n\n\n[light_green]nlbHelloWorldTester.Create [default](%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnNLBHelloWorld.Namespace)
 			if err := catchInterrupt(
 				ts.lg,
 				ts.stopCreationCh,
@@ -585,7 +576,7 @@ func (ts *Tester) Up() (err error) {
 		}
 
 		if ts.cfg.AddOnALB2048.Enable {
-			colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]alb2048Tester.Create [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.AddOnALB2048.Namespace)
+			colorstring.Printf("\n\n\n[light_green]alb2048Tester.Create [default](%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnALB2048.Namespace)
 			if err := catchInterrupt(
 				ts.lg,
 				ts.stopCreationCh,
@@ -598,7 +589,7 @@ func (ts *Tester) Up() (err error) {
 		}
 
 		if ts.cfg.AddOnJobPerl.Enable {
-			colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]jobPerlTester.Create [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.AddOnJobPerl.Namespace)
+			colorstring.Printf("\n\n\n[light_green]jobPerlTester.Create [default](%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnJobPerl.Namespace)
 			if err := catchInterrupt(
 				ts.lg,
 				ts.stopCreationCh,
@@ -611,7 +602,7 @@ func (ts *Tester) Up() (err error) {
 		}
 
 		if ts.cfg.AddOnJobEcho.Enable {
-			colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]jobEchoTester.Create [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.AddOnJobEcho.Namespace)
+			colorstring.Printf("\n\n\n[light_green]jobEchoTester.Create [default](%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnJobEcho.Namespace)
 			if err := catchInterrupt(
 				ts.lg,
 				ts.stopCreationCh,
@@ -624,7 +615,7 @@ func (ts *Tester) Up() (err error) {
 		}
 
 		if ts.cfg.AddOnSecrets.Enable {
-			colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]secretsTester.Create [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.AddOnSecrets.Namespace)
+			colorstring.Printf("\n\n\n[light_green]secretsTester.Create [default](%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnSecrets.Namespace)
 			if err := catchInterrupt(
 				ts.lg,
 				ts.stopCreationCh,
@@ -636,7 +627,20 @@ func (ts *Tester) Up() (err error) {
 			}
 		}
 
-		colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]mngTester.FetchLogs [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
+		if ts.cfg.AddOnIRSA.Enable {
+			colorstring.Printf("\n\n\n[light_green]irsaTester.Create [default](%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnIRSA.Namespace)
+			if err := catchInterrupt(
+				ts.lg,
+				ts.stopCreationCh,
+				ts.stopCreationChOnce,
+				ts.interruptSig,
+				ts.irsaTester.Create,
+			); err != nil {
+				return err
+			}
+		}
+
+		colorstring.Printf("\n\n\n[light_green]mngTester.FetchLogs [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		if err := catchInterrupt(
 			ts.lg,
 			ts.stopCreationCh,
@@ -648,45 +652,56 @@ func (ts *Tester) Up() (err error) {
 		}
 
 		if ts.cfg.AddOnSecrets.Enable {
-			colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]secretsTester.AggregateReadsResult [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.AddOnSecrets.Namespace)
+			colorstring.Printf("\n\n\n[light_green]secretsTester.AggregateResults [default](%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnSecrets.Namespace)
 			if err := catchInterrupt(
 				ts.lg,
 				ts.stopCreationCh,
 				ts.stopCreationChOnce,
 				ts.interruptSig,
-				ts.secretsTester.AggregateReadsResult,
+				ts.secretsTester.AggregateResults,
+			); err != nil {
+				return err
+			}
+		}
+
+		if ts.cfg.AddOnIRSA.Enable {
+			colorstring.Printf("\n\n\n[light_green]irsaTester.AggregateResults [default](%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnIRSA.Namespace)
+			if err := catchInterrupt(
+				ts.lg,
+				ts.stopCreationCh,
+				ts.stopCreationChOnce,
+				ts.interruptSig,
+				ts.irsaTester.AggregateResults,
 			); err != nil {
 				return err
 			}
 		}
 	}
 
-	colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]runHealthCheck [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
+	colorstring.Printf("\n\n\n[light_green]checkHealth [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 	if err := catchInterrupt(
 		ts.lg,
 		ts.stopCreationCh,
 		ts.stopCreationChOnce,
 		ts.interruptSig,
-		ts.runHealthCheck,
+		ts.checkHealth,
 	); err != nil {
 		return err
 	}
-
-	colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]kubectl [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
+	colorstring.Printf("\n\n[light_green]kubectl [default](%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 	fmt.Println(ts.cfg.KubectlCommands())
-	colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]SSH [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
+	colorstring.Printf("\n\n[light_green]SSH [default](%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 	fmt.Println(ts.cfg.SSHCommands())
 
 	return ts.cfg.Sync()
 }
 
 func (ts *Tester) down() (err error) {
-	colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]down [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
+	colorstring.Printf("\n\n\n[light_green]down [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 
 	now := time.Now()
 	ts.lg.Warn("starting Down",
 		zap.String("name", ts.cfg.Name),
-		zap.String("config-path", ts.cfg.ConfigPath),
 		zap.String("cluster-arn", ts.cfg.Status.ClusterARN),
 	)
 
@@ -695,20 +710,24 @@ func (ts *Tester) down() (err error) {
 		if err == nil {
 			ts.lg.Info("successfully finished Down",
 				zap.String("name", ts.cfg.Name),
-				zap.String("config-path", ts.cfg.ConfigPath),
-				zap.String("cluster-arn", ts.cfg.Status.ClusterARN),
 				zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			)
 		}
 	}()
 
-	// TODO: paralleize deletes after resolving all dependencies
-
 	var errs []string
 
 	if ts.cfg.AddOnManagedNodeGroups.Enable && len(ts.cfg.StatusManagedNodeGroups.Nodes) > 0 {
+		if ts.cfg.AddOnIRSA.Enable && ts.cfg.AddOnIRSA.Created {
+			colorstring.Printf("\n\n\n[light_green]irsaTester.Delete [default](%q)\n", ts.cfg.ConfigPath)
+			if err := ts.irsaTester.Delete(); err != nil {
+				ts.lg.Warn("failed to delete Job echo", zap.Error(err))
+				errs = append(errs, err.Error())
+			}
+		}
+
 		if ts.cfg.AddOnSecrets.Enable && ts.cfg.AddOnSecrets.Created {
-			colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]secretsTester.Delete [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
+			colorstring.Printf("\n\n\n[light_green]secretsTester.Delete [default](%q)\n", ts.cfg.ConfigPath)
 			if err := ts.secretsTester.Delete(); err != nil {
 				ts.lg.Warn("failed to delete Job echo", zap.Error(err))
 				errs = append(errs, err.Error())
@@ -716,7 +735,7 @@ func (ts *Tester) down() (err error) {
 		}
 
 		if ts.cfg.AddOnJobEcho.Enable && ts.cfg.AddOnJobEcho.Created {
-			colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]jobEchoTester.Delete [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
+			colorstring.Printf("\n\n\n[light_green]jobEchoTester.Delete [default](%q)\n", ts.cfg.ConfigPath)
 			if err := ts.jobEchoTester.Delete(); err != nil {
 				ts.lg.Warn("failed to delete Job echo", zap.Error(err))
 				errs = append(errs, err.Error())
@@ -724,7 +743,7 @@ func (ts *Tester) down() (err error) {
 		}
 
 		if ts.cfg.AddOnJobPerl.Enable && ts.cfg.AddOnJobPerl.Created {
-			colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]jobPerlTester.Delete [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
+			colorstring.Printf("\n\n\n[light_green]jobPerlTester.Delete [default](%q)\n", ts.cfg.ConfigPath)
 			if err := ts.jobPerlTester.Delete(); err != nil {
 				ts.lg.Warn("failed to delete Job Perl", zap.Error(err))
 				errs = append(errs, err.Error())
@@ -732,7 +751,7 @@ func (ts *Tester) down() (err error) {
 		}
 
 		if ts.cfg.AddOnALB2048.Enable && ts.cfg.AddOnALB2048.Created {
-			colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]alb2048Tester.Delete [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
+			colorstring.Printf("\n\n\n[light_green]alb2048Tester.Delete [default](%q)\n", ts.cfg.ConfigPath)
 			if err := ts.alb2048Tester.Delete(); err != nil {
 				ts.lg.Warn("failed to delete ALB", zap.Error(err))
 				errs = append(errs, err.Error())
@@ -744,7 +763,7 @@ func (ts *Tester) down() (err error) {
 		}
 
 		if ts.cfg.AddOnNLBHelloWorld.Enable && ts.cfg.AddOnNLBHelloWorld.Created {
-			colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]nlbHelloWorldTester.Delete [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
+			colorstring.Printf("\n\n\n[light_green]nlbHelloWorldTester.Delete [default](%q)\n", ts.cfg.ConfigPath)
 			if err := ts.nlbHelloWorldTester.Delete(); err != nil {
 				ts.lg.Warn("failed to delete NLB", zap.Error(err))
 				errs = append(errs, err.Error())
@@ -782,13 +801,7 @@ func (ts *Tester) down() (err error) {
 	// following need to be run in order to resolve delete dependency
 	// e.g. cluster must be deleted before VPC delete
 	if ts.cfg.AddOnManagedNodeGroups.Enable && len(ts.cfg.StatusManagedNodeGroups.Nodes) > 0 {
-		colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]deleteNamespace [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
-		if err := ts.deleteNamespace(); err != nil {
-			ts.lg.Warn("failed to delete namespace", zap.String("namespace", ts.cfg.Name), zap.Error(err))
-			errs = append(errs, err.Error())
-		}
-
-		colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]mngTester.Delete [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
+		colorstring.Printf("\n\n\n[light_green]mngTester.Delete [default](%q)\n", ts.cfg.ConfigPath)
 		if err := ts.mngTester.Delete(); err != nil {
 			ts.lg.Warn("failed to delete managed node group", zap.Error(err))
 			errs = append(errs, err.Error())
@@ -799,7 +812,7 @@ func (ts *Tester) down() (err error) {
 		time.Sleep(waitDur)
 	}
 
-	colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]deleteCluster [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
+	colorstring.Printf("\n\n\n[light_green]deleteCluster [default](%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteCluster(); err != nil {
 		ts.lg.Warn("failed to delete cluster", zap.Error(err))
 		errs = append(errs, err.Error())
@@ -809,13 +822,13 @@ func (ts *Tester) down() (err error) {
 	ts.lg.Info("sleeping before VPC deletion", zap.Duration("wait", waitDur))
 	time.Sleep(waitDur)
 
-	colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]deleteVPC [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
+	colorstring.Printf("\n\n\n[light_green]deleteVPC [default](%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteVPC(); err != nil {
 		ts.lg.Warn("failed to delete VPC", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 
-	colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]deleteClusterRole [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
+	colorstring.Printf("\n\n\n[light_green]deleteClusterRole [default](%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteClusterRole(); err != nil {
 		ts.lg.Warn("failed to delete cluster role", zap.Error(err))
 		errs = append(errs, err.Error())
@@ -835,7 +848,7 @@ func (ts *Tester) CreateMNG() error {
 		return nil
 	}
 
-	colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]mngTester.Create [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
+	colorstring.Printf("\n\n\n[light_green]mngTester.Create [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 	if err := catchInterrupt(
 		ts.lg,
 		ts.stopCreationCh,
@@ -856,7 +869,7 @@ found:
 		}
 	}
 	if !ts.cfg.StatusManagedNodeGroups.NvidiaDriverInstalled && needGPU {
-		colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]gpuTester.InstallNvidiaDriver [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
+		colorstring.Printf("\n\n\n[light_green]gpuTester.InstallNvidiaDriver [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		if err := catchInterrupt(
 			ts.lg,
 			ts.stopCreationCh,
@@ -867,7 +880,7 @@ found:
 			ts.lg.Warn("failed to install Nvidia driver", zap.Error(err))
 		}
 
-		colorstring.Printf("\n\n\n[yellow]aws-k8s-tester [cyan]EKS [magenta]gpuTester.RunNvidiaSMI [default](%q, 'kubectl --kubeconfig=%s --namespace=%s')\n", ts.cfg.ConfigPath, ts.cfg.KubeConfigPath, ts.cfg.Name)
+		colorstring.Printf("\n\n\n[light_green]gpuTester.RunNvidiaSMI [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		if err := catchInterrupt(
 			ts.lg,
 			ts.stopCreationCh,
@@ -894,7 +907,7 @@ func (ts *Tester) IsUp() (up bool, err error) {
 	if !ts.cfg.Status.Up {
 		return false, nil
 	}
-	return true, ts.healthCheck()
+	return true, ts.checkHealth()
 }
 
 // DumpClusterLogs should export logs from the cluster. It may be called

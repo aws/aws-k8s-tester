@@ -74,13 +74,11 @@ func (ts *tester) createRole() error {
 		return nil
 	}
 
-	// node group attributes are empty, create a new VPC
-	// otherwise, use the existing one
 	ts.cfg.Logger.Info("creating a new node group role using CFN", zap.String("name", ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleName))
 	stackInput := &cloudformation.CreateStackInput{
 		StackName:    aws.String(ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleName),
 		Capabilities: aws.StringSlice([]string{"CAPABILITY_NAMED_IAM"}),
-		OnFailure:    aws.String("DELETE"),
+		OnFailure:    aws.String(cloudformation.OnFailureDelete),
 		TemplateBody: aws.String(TemplateRole),
 		Tags: awscfn.NewTags(map[string]string{
 			"Kind": "aws-k8s-tester",

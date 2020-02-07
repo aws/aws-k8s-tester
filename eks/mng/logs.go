@@ -4,9 +4,12 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
@@ -39,6 +42,9 @@ func (ts *tester) FetchLogs() (err error) {
 	return ts.fetchLogs(300, 50, logCmds)
 }
 
+// only letters and numbers
+var regex = regexp.MustCompile("[^a-zA-Z0-9]+")
+
 func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string]string) error {
 	logsDir, err := ioutil.TempDir(
 		ts.cfg.EKSConfig.AddOnManagedNodeGroups.LogDir,
@@ -48,6 +54,7 @@ func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 		return err
 	}
 
+	sshOpt := ssh.WithVerbose(ts.cfg.EKSConfig.LogLevel == "debug")
 	rateLimiter := rate.NewLimiter(rate.Limit(qps), burst)
 	rch, waits := make(chan instanceLogs, 10), 0
 
@@ -59,7 +66,15 @@ func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 		waits += len(nodeGroup.Instances)
 
 		for instID, iv := range nodeGroup.Instances {
-			pfx := instID + "-" + iv.PublicDNSName + "-"
+			dns := strings.ToLower(regex.ReplaceAllString(iv.PublicDNSName, ""))
+			dns = strings.ReplaceAll(dns, "ec2", "")
+			dns = strings.ReplaceAll(dns, "compute.amazonaws", "")
+			dns = strings.ReplaceAll(dns, "amazonaws", "")
+			if len(dns) > 7 {
+				dns = dns[:7]
+			}
+			pfx := instID + "-" + dns + "-"
+
 			go func(instID, logsDir, pfx string, iv ec2config.Instance) {
 				select {
 				case <-ts.cfg.Stopc:
@@ -108,7 +123,7 @@ func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 						werr := rateLimiter.Wait(context.Background())
 						ts.cfg.Logger.Debug("waited for rate limiter", zap.Error(werr))
 					}
-					out, oerr := sh.Run(cmd, ssh.WithVerbose(ts.cfg.EKSConfig.LogLevel == "debug"))
+					out, oerr := sh.Run(cmd, sshOpt)
 					if oerr != nil {
 						rch <- instanceLogs{
 							mngName:    name,
@@ -121,7 +136,8 @@ func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 							)}
 						return
 					}
-					fpath := filepath.Join(logsDir, pfx+fileName)
+
+					fpath := filepath.Join(logsDir, shorten(ts.cfg.Logger, pfx+fileName))
 					f, err := os.Create(fpath)
 					if err != nil {
 						rch <- instanceLogs{
@@ -160,7 +176,7 @@ func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 				}
 				ts.cfg.Logger.Info("listing systemd service units", zap.String("instance-id", instID))
 				listCmd := "sudo systemctl list-units -t service --no-pager --no-legend --all"
-				out, oerr := sh.Run(listCmd, ssh.WithVerbose(ts.cfg.EKSConfig.LogLevel == "debug"))
+				out, oerr := sh.Run(listCmd, sshOpt)
 				if oerr != nil {
 					rch <- instanceLogs{
 						mngName:    name,
@@ -200,7 +216,7 @@ func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 						werr := rateLimiter.Wait(context.Background())
 						ts.cfg.Logger.Debug("waited for rate limiter", zap.Error(werr))
 					}
-					out, oerr := sh.Run(cmd, ssh.WithVerbose(ts.cfg.EKSConfig.LogLevel == "debug"))
+					out, oerr := sh.Run(cmd, sshOpt)
 					if oerr != nil {
 						rch <- instanceLogs{
 							mngName:    name,
@@ -213,7 +229,8 @@ func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 							)}
 						return
 					}
-					fpath := filepath.Join(logsDir, pfx+fileName)
+
+					fpath := filepath.Join(logsDir, shorten(ts.cfg.Logger, pfx+fileName))
 					f, err := os.Create(fpath)
 					if err != nil {
 						rch <- instanceLogs{
@@ -252,7 +269,7 @@ func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 				}
 				ts.cfg.Logger.Info("listing /var/log", zap.String("instance-id", instID))
 				findCmd := "sudo find /var/log ! -type d"
-				out, oerr = sh.Run(findCmd, ssh.WithVerbose(ts.cfg.EKSConfig.LogLevel == "debug"))
+				out, oerr = sh.Run(findCmd, sshOpt)
 				if oerr != nil {
 					rch <- instanceLogs{
 						mngName:    name,
@@ -281,7 +298,7 @@ func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 						werr := rateLimiter.Wait(context.Background())
 						ts.cfg.Logger.Debug("waited for rate limiter", zap.Error(werr))
 					}
-					out, oerr := sh.Run(cmd, ssh.WithVerbose(ts.cfg.EKSConfig.LogLevel == "debug"))
+					out, oerr := sh.Run(cmd, sshOpt)
 					if oerr != nil {
 						rch <- instanceLogs{
 							mngName:    name,
@@ -294,7 +311,8 @@ func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 							)}
 						return
 					}
-					fpath := filepath.Join(logsDir, pfx+fileName)
+
+					fpath := filepath.Join(logsDir, shorten(ts.cfg.Logger, pfx+fileName))
 					f, err := os.Create(fpath)
 					if err != nil {
 						rch <- instanceLogs{
@@ -412,4 +430,28 @@ func (ts *tester) DownloadClusterLogs(artifactDir string) error {
 		ts.cfg.EKSConfig.ConfigPath,
 		filepath.Join(artifactDir, filepath.Base(ts.cfg.EKSConfig.ConfigPath)),
 	)
+}
+
+func shorten(lg *zap.Logger, name string) string {
+	if len(name) < 240 {
+		return name
+	}
+
+	ext := filepath.Ext(name)
+	oldName := name
+
+	name = name[:230] + randString(5) + ext
+	lg.Info("file name too long; renamed", zap.String("old", oldName), zap.String("new", name))
+	return name
+}
+
+const ll = "0123456789abcdefghijklmnopqrstuvwxyz"
+
+func randString(n int) string {
+	b := make([]byte, n)
+	for i := range b {
+		rand.Seed(time.Now().UnixNano())
+		b[i] = ll[rand.Intn(len(ll))]
+	}
+	return string(b)
 }

@@ -11,6 +11,25 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.7...v0.5.8
 ### `eks`
 
 - Improve [`client-go` client set creation, support `kubeconfig` loader](https://github.com/aws/aws-k8s-tester/commit/67f7528abd12ed7004cc7044e3695903e22b94cf).
+- Support [IAM Roles for Service Accounts (`IRSA`)](https://github.com/aws/aws-k8s-tester/commit/).
+
+### `eks/irsa`
+
+- Initial commit to support [IAM Roles for Service Accounts (`IRSA`)](https://github.com/aws/aws-k8s-tester/commit/).
+
+### `eksconfig`
+
+- Add [`*Config.KubectlCommand` method](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`AddOnIRSA`](https://github.com/aws/aws-k8s-tester/commit/).
+- Rename [`eksconfig.Status.AWSARN` to `eksconfig.Status.AWSIAMRoleARN`](https://github.com/aws/aws-k8s-tester/commit/).
+- Rename [`eksconfig.Status.ClusterOIDCIssuer` to `eksconfig.Status.ClusterOIDCIssuerURL`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`eksconfig.Status.ClusterOIDCIssuerHostPath`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`eksconfig.Status.ClusterOIDCIssuerARN`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`eksconfig.Status.ClusterOIDCIssuerCAThumbprint`](https://github.com/aws/aws-k8s-tester/commit/).
+
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.28.12`](https://github.com/aws/aws-sdk-go/releases/tag/v1.28.12) to [`v1.29.0`](https://github.com/aws/aws-sdk-go/releases/tag/v1.29.0).
 
 ### Go
 

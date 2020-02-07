@@ -459,7 +459,7 @@ func (ts *tester) createMNG() error {
 			stackInput := &cloudformation.CreateStackInput{
 				StackName:    aws.String(mv.Name),
 				Capabilities: aws.StringSlice([]string{"CAPABILITY_IAM"}),
-				OnFailure:    aws.String("DELETE"),
+				OnFailure:    aws.String(cloudformation.OnFailureDelete),
 				Tags: awscfn.NewTags(map[string]string{
 					"Kind": "aws-k8s-tester",
 					"Name": ts.cfg.EKSConfig.Name,

@@ -8,7 +8,6 @@ import (
 func TestJobs(t *testing.T) {
 	ts := &tester{
 		cfg: Config{
-			Namespace: "default",
 			JobName:   JobNameEcho,
 			Completes: 1000,
 			Parallels: 100,

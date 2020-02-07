@@ -2,9 +2,13 @@ package eks
 
 import (
 	"context"
+	"crypto/sha1"
+	"crypto/tls"
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -84,9 +88,6 @@ func (ts *Tester) createCluster() error {
 	if err := ts.updateKUBECONFIG(); err != nil {
 		return err
 	}
-	if err := ts.pollClusterInfo(3*time.Minute, 10*time.Second); err != nil {
-		return err
-	}
 	if err := ts.createK8sClientSet(); err != nil {
 		return err
 	}
@@ -114,9 +115,11 @@ func (ts *Tester) createEKS() error {
 		ts.lg.Info("cluster is up; no need to create cluster")
 		return nil
 	}
+
 	ts.describeCluster()
 	if ts.cfg.Status.ClusterStatus == ClusterStatusACTIVE {
-		return fmt.Errorf("%q already %q", ts.cfg.Name, ts.cfg.Status.ClusterStatus)
+		ts.lg.Info("cluster status is active; no need to create cluster", zap.String("status", ts.cfg.Status.ClusterStatus))
+		return nil
 	}
 
 	now := time.Now()
@@ -167,7 +170,7 @@ func (ts *Tester) createEKS() error {
 		stackInput := &cloudformation.CreateStackInput{
 			StackName:    aws.String(ts.cfg.Name + "-cluster"),
 			Capabilities: aws.StringSlice([]string{"CAPABILITY_IAM"}),
-			OnFailure:    aws.String("DELETE"),
+			OnFailure:    aws.String(cloudformation.OnFailureDelete),
 			TemplateBody: aws.String(TemplateCluster),
 			Tags: awscfn.NewTags(map[string]string{
 				"Kind": "aws-k8s-tester",
@@ -322,9 +325,64 @@ func (ts *Tester) updateClusterStatus(v ClusterStatus) {
 		if v.Cluster.Endpoint != nil {
 			ts.cfg.Status.ClusterAPIServerEndpoint = aws.StringValue(v.Cluster.Endpoint)
 		}
-		if v.Cluster.Identity != nil && v.Cluster.Identity.Oidc != nil && v.Cluster.Identity.Oidc.Issuer != nil {
-			ts.cfg.Status.ClusterOIDCIssuer = aws.StringValue(v.Cluster.Identity.Oidc.Issuer)
+
+		if v.Cluster.Identity != nil &&
+			v.Cluster.Identity.Oidc != nil &&
+			v.Cluster.Identity.Oidc.Issuer != nil {
+			ts.cfg.Status.ClusterOIDCIssuerURL = aws.StringValue(v.Cluster.Identity.Oidc.Issuer)
+			u, err := url.Parse(ts.cfg.Status.ClusterOIDCIssuerURL)
+			if err != nil {
+				ts.lg.Error(
+					"failed to parse ClusterOIDCIssuerURL",
+					zap.String("url", ts.cfg.Status.ClusterOIDCIssuerURL),
+					zap.Error(err),
+				)
+			}
+			if u.Scheme != "https" {
+				ts.lg.Warn("invalid scheme", zap.String("scheme", u.Scheme))
+			}
+			if u.Port() == "" {
+				ts.lg.Info("updating host with port :443", zap.String("host", u.Host))
+				u.Host += ":443"
+			}
+			ts.cfg.Status.ClusterOIDCIssuerURL = u.String()
+			ts.cfg.Status.ClusterOIDCIssuerHostPath = u.Hostname() + u.Path
+			ts.cfg.Status.ClusterOIDCIssuerARN = fmt.Sprintf(
+				"arn:aws:iam::%s:oidc-provider/%s",
+				ts.cfg.Status.AWSAccountID,
+				ts.cfg.Status.ClusterOIDCIssuerHostPath,
+			)
+
+			ts.lg.Info("fetching OIDC CA thumbprint", zap.String("url", ts.cfg.Status.ClusterOIDCIssuerURL))
+			httpClient := &http.Client{
+				Transport: &http.Transport{
+					TLSClientConfig: &tls.Config{},
+					Proxy:           http.ProxyFromEnvironment,
+				},
+			}
+			resp, err := httpClient.Get(ts.cfg.Status.ClusterOIDCIssuerURL)
+			if err != nil {
+				ts.lg.Error("failed to fetch OIDC CA thumbprint",
+					zap.String("url", ts.cfg.Status.ClusterOIDCIssuerURL),
+					zap.Error(err),
+				)
+			}
+			defer resp.Body.Close()
+
+			if resp.TLS != nil {
+				certs := len(resp.TLS.PeerCertificates)
+				if certs >= 1 {
+					root := resp.TLS.PeerCertificates[certs-1]
+					ts.cfg.Status.ClusterOIDCIssuerCAThumbprint = fmt.Sprintf("%x", sha1.Sum(root.Raw))
+					ts.lg.Info("fetched OIDC CA thumbprint")
+				} else {
+					ts.lg.Warn("received empty TLS peer certs")
+				}
+			} else {
+				ts.lg.Warn("received empty HTTP empty TLS response")
+			}
 		}
+
 		if v.Cluster.CertificateAuthority != nil && v.Cluster.CertificateAuthority.Data != nil {
 			ts.cfg.Status.ClusterCA = aws.StringValue(v.Cluster.CertificateAuthority.Data)
 		}
@@ -333,9 +391,14 @@ func (ts *Tester) updateClusterStatus(v ClusterStatus) {
 			ts.lg.Error("failed to decode cluster CA", zap.Error(err))
 		}
 		ts.cfg.Status.ClusterCADecoded = string(d)
+
 	} else {
+
 		ts.cfg.Status.ClusterAPIServerEndpoint = ""
-		ts.cfg.Status.ClusterOIDCIssuer = ""
+		ts.cfg.Status.ClusterOIDCIssuerURL = ""
+		ts.cfg.Status.ClusterOIDCIssuerHostPath = ""
+		ts.cfg.Status.ClusterOIDCIssuerARN = ""
+		ts.cfg.Status.ClusterOIDCIssuerCAThumbprint = ""
 		ts.cfg.Status.ClusterCA = ""
 		ts.cfg.Status.ClusterCADecoded = ""
 	}
