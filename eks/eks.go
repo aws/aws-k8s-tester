@@ -639,6 +639,9 @@ func (ts *Tester) Up() (err error) {
 		}
 
 		colorstring.Printf("\n\n\n[light_green]mngTester.FetchLogs [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		waitDur := 20 * time.Second
+		ts.lg.Info("sleeping before mngTester.FetchLogs", zap.Duration("wait", waitDur))
+		time.Sleep(waitDur)
 		if err := catchInterrupt(
 			ts.lg,
 			ts.stopCreationCh,
