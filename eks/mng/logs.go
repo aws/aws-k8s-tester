@@ -267,6 +267,58 @@ func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 					werr := rateLimiter.Wait(context.Background())
 					ts.cfg.Logger.Debug("waited for rate limiter", zap.Error(werr))
 				}
+				// https://github.com/aws/amazon-vpc-cni-k8s/blob/master/docs/troubleshooting.md#ipamd-debugging-commands
+				ts.cfg.Logger.Info("fetching ENI information", zap.String("instance-id", instID))
+				eniCmd := "curl http://localhost:61679/v1/enis"
+				out, oerr = sh.Run(eniCmd, sshOpt)
+				if oerr != nil {
+					rch <- instanceLogs{
+						mngName:    name,
+						instanceID: instID,
+						err: fmt.Errorf(
+							"failed to run command %q for %q (error %v)",
+							eniCmd,
+							instID,
+							oerr,
+						)}
+					return
+				}
+				v1ENIOutputPath := filepath.Join(logsDir, shorten(ts.cfg.Logger, pfx+"v1-enis"))
+				f, err := os.Create(v1ENIOutputPath)
+				if err != nil {
+					rch <- instanceLogs{
+						mngName:    name,
+						instanceID: instID,
+						err: fmt.Errorf(
+							"failed to create a file %q for %q (error %v)",
+							v1ENIOutputPath,
+							instID,
+							err,
+						)}
+					return
+				}
+				if _, err = f.Write(out); err != nil {
+					rch <- instanceLogs{
+						mngName:    name,
+						instanceID: instID,
+						err: fmt.Errorf(
+							"failed to write to a file %q for %q (error %v)",
+							v1ENIOutputPath,
+							instID,
+							err,
+						)}
+					f.Close()
+					return
+				}
+				f.Close()
+				ts.cfg.Logger.Debug("wrote", zap.String("file-path", v1ENIOutputPath))
+				data.paths = append(data.paths, v1ENIOutputPath)
+
+				if !rateLimiter.Allow() {
+					ts.cfg.Logger.Debug("waiting for rate limiter before fetching file")
+					werr := rateLimiter.Wait(context.Background())
+					ts.cfg.Logger.Debug("waited for rate limiter", zap.Error(werr))
+				}
 				ts.cfg.Logger.Info("listing /var/log", zap.String("instance-id", instID))
 				findCmd := "sudo find /var/log ! -type d"
 				out, oerr = sh.Run(findCmd, sshOpt)
