@@ -1120,9 +1120,6 @@ func (ts *tester) waitDeployment() error {
 			}
 		}
 		if available && dresp.Status.ReadyReplicas >= ts.cfg.EKSConfig.AddOnIRSA.DeploymentReplicas {
-			ts.cfg.EKSConfig.AddOnIRSA.DeploymentTook = time.Since(ts.deploymentCreated)
-			ts.cfg.EKSConfig.AddOnIRSA.DeploymentTookString = ts.cfg.EKSConfig.AddOnIRSA.DeploymentTook.String()
-			ts.cfg.EKSConfig.Sync()
 			ready = true
 			break
 		}
@@ -1163,6 +1160,9 @@ func (ts *tester) waitOutputLogs() error {
 			zap.Int("current", cnt),
 		)
 		if cnt >= expects {
+			ts.cfg.EKSConfig.AddOnIRSA.DeploymentTook = time.Since(ts.deploymentCreated)
+			ts.cfg.EKSConfig.AddOnIRSA.DeploymentTookString = ts.cfg.EKSConfig.AddOnIRSA.DeploymentTook.String()
+			ts.cfg.EKSConfig.Sync()
 			break
 		}
 	}
