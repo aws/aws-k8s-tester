@@ -270,7 +270,7 @@ func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 				// https://github.com/aws/amazon-vpc-cni-k8s/blob/master/docs/troubleshooting.md#ipamd-debugging-commands
 				// https://github.com/aws/amazon-vpc-cni-k8s/blob/master/scripts/aws-cni-support.sh
 				ts.cfg.Logger.Info("fetching ENI information", zap.String("instance-id", instID))
-				eniCmd := "curl http://localhost:61679/v1/enis"
+				eniCmd := "curl -s http://localhost:61679/v1/enis"
 				out, oerr = sh.Run(eniCmd, sshOpt)
 				if oerr != nil {
 					rch <- instanceLogs{
