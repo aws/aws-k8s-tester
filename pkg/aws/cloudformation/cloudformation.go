@@ -50,7 +50,7 @@ func Poll(
 		for ctx.Err() == nil {
 			select {
 			case <-ctx.Done():
-				lg.Warn("wait aborted", zap.String("stack-id", stackID), zap.Error(ctx.Err()))
+				lg.Warn("wait aborted", zap.Error(ctx.Err()))
 				ch <- StackStatus{Stack: nil, Error: ctx.Err()}
 				close(ch)
 				return
@@ -109,14 +109,11 @@ func Poll(
 			}
 
 			if first {
-				lg.Info("sleeping",
-					zap.String("stack-id", stackID),
-					zap.Duration("initial-wait", initialWait),
-				)
+				lg.Info("sleeping", zap.Duration("initial-wait", initialWait))
 
 				select {
 				case <-ctx.Done():
-					lg.Warn("wait aborted", zap.String("stack-id", stackID), zap.Error(ctx.Err()))
+					lg.Warn("wait aborted", zap.Error(ctx.Err()))
 					ch <- StackStatus{Stack: nil, Error: ctx.Err()}
 					close(ch)
 					return
