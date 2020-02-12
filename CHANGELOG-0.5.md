@@ -16,6 +16,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.8...v0.5.9
 - Run [`curl http://localhost:61679/v1/enis` in `FetchLogs`](https://github.com/aws/aws-k8s-tester/commit/c0205eef6e9fbae6ba771a4b8d81136e3719afd2).
 - Run [`/opt/cni/bin/aws-cni-support.sh` in `FetchLogs`](https://github.com/aws/aws-k8s-tester/commit/1be5a9cfe102df3402cc23814e5cbbe7f12fbacf).
 - Fix [`FetchLogs` to continue downloading logs when one fails](https://github.com/aws/aws-k8s-tester/commit/f39a663f6d83af2b542d180516a774cb9a748eca).
+- Fix [`FetchLogs` error handling](https://github.com/aws/aws-k8s-tester/commit/ef36ec755f776c11e6c3c26a9b0929e3d969bdfc).
 - Reduce [QPS for `FetchLogs`](https://github.com/aws/aws-k8s-tester/commit/482bc0b3e5322ce83a065c75d961dae8c269a8bd).
 
 ### `eksconfig`
