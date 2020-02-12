@@ -440,13 +440,13 @@ func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 		ts.cfg.Logger.Info("wrote log files",
 			zap.String("instance-id", data.instanceID),
 			zap.Int("files", files),
-			zap.Int("total-files", total),
+			zap.Int("total-downloaded-files", total),
 		)
 	}
 
 	ts.cfg.Logger.Info("wrote all log files",
 		zap.String("log-dir", logsDir),
-		zap.Int("total-files", total),
+		zap.Int("total-downloaded-files", total),
 	)
 	return ts.cfg.EKSConfig.Sync()
 }
