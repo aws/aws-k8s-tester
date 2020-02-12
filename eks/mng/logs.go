@@ -268,6 +268,7 @@ func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 					ts.cfg.Logger.Debug("waited for rate limiter", zap.Error(werr))
 				}
 				// https://github.com/aws/amazon-vpc-cni-k8s/blob/master/docs/troubleshooting.md#ipamd-debugging-commands
+				// https://github.com/aws/amazon-vpc-cni-k8s/blob/master/scripts/aws-cni-support.sh
 				ts.cfg.Logger.Info("fetching ENI information", zap.String("instance-id", instID))
 				eniCmd := "curl http://localhost:61679/v1/enis"
 				out, oerr = sh.Run(eniCmd, sshOpt)
@@ -313,6 +314,22 @@ func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 				f.Close()
 				ts.cfg.Logger.Debug("wrote", zap.String("file-path", v1ENIOutputPath))
 				data.paths = append(data.paths, v1ENIOutputPath)
+
+				cniCmd := "/opt/cni/bin/aws-cni-support.sh"
+				out, oerr = sh.Run(cniCmd, sshOpt)
+				if oerr != nil {
+					rch <- instanceLogs{
+						mngName:    name,
+						instanceID: instID,
+						err: fmt.Errorf(
+							"failed to run command %q for %q (error %v)",
+							cniCmd,
+							instID,
+							oerr,
+						)}
+					return
+				}
+				ts.cfg.Logger.Info("ran /opt/cni/bin/aws-cni-support.sh", zap.String("instance-id", instID), zap.String("output", string(out)))
 
 				if !rateLimiter.Allow() {
 					ts.cfg.Logger.Debug("waiting for rate limiter before fetching file")
