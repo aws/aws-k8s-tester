@@ -13,8 +13,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.8...v0.5.9
 
 ### `eksconfig`
 
-- Add [`KubectlCommandsOutputPath`](https://github.com/aws/aws-k8s-tester/commit/).
-- Add [`SSHCommandsOutputPath`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`KubectlCommandsOutputPath`](https://github.com/aws/aws-k8s-tester/commit/4aa6070e762733f6b84fb6b8e6906f9dc695e068).
+- Add [`SSHCommandsOutputPath`](https://github.com/aws/aws-k8s-tester/commit/4aa6070e762733f6b84fb6b8e6906f9dc695e068).
 
 ### `pkg/aws/ec2`
 
