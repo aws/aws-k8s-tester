@@ -1138,7 +1138,7 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		if cfg.AddOnIRSA.DeploymentResultPath == "" {
 			cfg.AddOnIRSA.DeploymentResultPath = filepath.Join(
 				filepath.Dir(cfg.ConfigPath),
-				cfg.Name+"-deployment.log",
+				cfg.Name+"-irsa-deployment-result.log",
 			)
 		}
 
