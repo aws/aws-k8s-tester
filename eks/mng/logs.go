@@ -134,7 +134,7 @@ func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 								instID,
 								oerr,
 							)}
-						return
+						continue
 					}
 
 					fpath := filepath.Join(logsDir, shorten(ts.cfg.Logger, pfx+fileName))
@@ -149,7 +149,7 @@ func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 								instID,
 								err,
 							)}
-						return
+						continue
 					}
 					if _, err = f.Write(out); err != nil {
 						rch <- instanceLogs{
@@ -162,7 +162,7 @@ func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 								err,
 							)}
 						f.Close()
-						return
+						continue
 					}
 					f.Close()
 					ts.cfg.Logger.Debug("wrote", zap.String("file-path", fpath))
@@ -187,79 +187,79 @@ func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 							instID,
 							oerr,
 						)}
-					return
-				}
-				/*
-					auditd.service                                        loaded    active   running Security Auditing Service
-					auth-rpcgss-module.service                            loaded    inactive dead    Kernel Module supporting RPCSEC_GSS
-				*/
-				svcCmdToFileName := make(map[string]string)
-				for _, line := range strings.Split(string(out), "\n") {
-					fields := strings.Fields(line)
-					if len(fields) == 0 || fields[0] == "" || len(fields) < 5 {
-						continue
+				} else {
+					/*
+						auditd.service                                        loaded    active   running Security Auditing Service
+						auth-rpcgss-module.service                            loaded    inactive dead    Kernel Module supporting RPCSEC_GSS
+					*/
+					svcCmdToFileName := make(map[string]string)
+					for _, line := range strings.Split(string(out), "\n") {
+						fields := strings.Fields(line)
+						if len(fields) == 0 || fields[0] == "" || len(fields) < 5 {
+							continue
+						}
+						if fields[1] == "not-found" {
+							continue
+						}
+						if fields[2] == "inactive" {
+							continue
+						}
+						svc := fields[0]
+						svcCmd := "sudo journalctl --no-pager --output=cat -u " + svc
+						svcFileName := svc + ".out.log"
+						svcCmdToFileName[svcCmd] = svcFileName
 					}
-					if fields[1] == "not-found" {
-						continue
-					}
-					if fields[2] == "inactive" {
-						continue
-					}
-					svc := fields[0]
-					svcCmd := "sudo journalctl --no-pager --output=cat -u " + svc
-					svcFileName := svc + ".out.log"
-					svcCmdToFileName[svcCmd] = svcFileName
-				}
-				for cmd, fileName := range svcCmdToFileName {
-					if !rateLimiter.Allow() {
-						ts.cfg.Logger.Debug("waiting for rate limiter before fetching file")
-						werr := rateLimiter.Wait(context.Background())
-						ts.cfg.Logger.Debug("waited for rate limiter", zap.Error(werr))
-					}
-					out, oerr := sh.Run(cmd, sshOpt)
-					if oerr != nil {
-						rch <- instanceLogs{
-							mngName:    name,
-							instanceID: instID,
-							err: fmt.Errorf(
-								"failed to run command %q for %q (error %v)",
-								cmd,
-								instID,
-								oerr,
-							)}
-						return
-					}
+					for cmd, fileName := range svcCmdToFileName {
+						if !rateLimiter.Allow() {
+							ts.cfg.Logger.Debug("waiting for rate limiter before fetching file")
+							werr := rateLimiter.Wait(context.Background())
+							ts.cfg.Logger.Debug("waited for rate limiter", zap.Error(werr))
+						}
+						out, oerr := sh.Run(cmd, sshOpt)
+						if oerr != nil {
+							rch <- instanceLogs{
+								mngName:    name,
+								instanceID: instID,
+								err: fmt.Errorf(
+									"failed to run command %q for %q (error %v)",
+									cmd,
+									instID,
+									oerr,
+								)}
+							continue
+						}
 
-					fpath := filepath.Join(logsDir, shorten(ts.cfg.Logger, pfx+fileName))
-					f, err := os.Create(fpath)
-					if err != nil {
-						rch <- instanceLogs{
-							mngName:    name,
-							instanceID: instID,
-							err: fmt.Errorf(
-								"failed to create a file %q for %q (error %v)",
-								fpath,
-								instID,
-								err,
-							)}
-						return
-					}
-					if _, err = f.Write(out); err != nil {
-						rch <- instanceLogs{
-							mngName:    name,
-							instanceID: instID,
-							err: fmt.Errorf(
-								"failed to write to a file %q for %q (error %v)",
-								fpath,
-								instID,
-								err,
-							)}
+						fpath := filepath.Join(logsDir, shorten(ts.cfg.Logger, pfx+fileName))
+						f, err := os.Create(fpath)
+						if err != nil {
+							rch <- instanceLogs{
+								mngName:    name,
+								instanceID: instID,
+								err: fmt.Errorf(
+									"failed to create a file %q for %q (error %v)",
+									fpath,
+									instID,
+									err,
+								)}
+							continue
+						}
+						if _, err = f.Write(out); err != nil {
+							rch <- instanceLogs{
+								mngName:    name,
+								instanceID: instID,
+								err: fmt.Errorf(
+									"failed to write to a file %q for %q (error %v)",
+									fpath,
+									instID,
+									err,
+								)}
+							f.Close()
+							continue
+						}
 						f.Close()
-						return
+						ts.cfg.Logger.Debug("wrote", zap.String("file-path", fpath))
+						data.paths = append(data.paths, fpath)
 					}
-					f.Close()
-					ts.cfg.Logger.Debug("wrote", zap.String("file-path", fpath))
-					data.paths = append(data.paths, fpath)
 				}
 
 				if !rateLimiter.Allow() {
@@ -282,40 +282,40 @@ func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 							instID,
 							oerr,
 						)}
-					return
+				} else {
+					v1ENIOutputPath := filepath.Join(logsDir, shorten(ts.cfg.Logger, pfx+"v1-enis.out.log"))
+					f, err := os.Create(v1ENIOutputPath)
+					if err != nil {
+						rch <- instanceLogs{
+							mngName:    name,
+							instanceID: instID,
+							err: fmt.Errorf(
+								"failed to create a file %q for %q (error %v)",
+								v1ENIOutputPath,
+								instID,
+								err,
+							)}
+					} else {
+						if _, err = f.Write(out); err != nil {
+							rch <- instanceLogs{
+								mngName:    name,
+								instanceID: instID,
+								err: fmt.Errorf(
+									"failed to write to a file %q for %q (error %v)",
+									v1ENIOutputPath,
+									instID,
+									err,
+								)}
+						} else {
+							ts.cfg.Logger.Debug("wrote", zap.String("file-path", v1ENIOutputPath))
+							data.paths = append(data.paths, v1ENIOutputPath)
+						}
+						f.Close()
+					}
 				}
-				v1ENIOutputPath := filepath.Join(logsDir, shorten(ts.cfg.Logger, pfx+"v1-enis"))
-				f, err := os.Create(v1ENIOutputPath)
-				if err != nil {
-					rch <- instanceLogs{
-						mngName:    name,
-						instanceID: instID,
-						err: fmt.Errorf(
-							"failed to create a file %q for %q (error %v)",
-							v1ENIOutputPath,
-							instID,
-							err,
-						)}
-					return
-				}
-				if _, err = f.Write(out); err != nil {
-					rch <- instanceLogs{
-						mngName:    name,
-						instanceID: instID,
-						err: fmt.Errorf(
-							"failed to write to a file %q for %q (error %v)",
-							v1ENIOutputPath,
-							instID,
-							err,
-						)}
-					f.Close()
-					return
-				}
-				f.Close()
-				ts.cfg.Logger.Debug("wrote", zap.String("file-path", v1ENIOutputPath))
-				data.paths = append(data.paths, v1ENIOutputPath)
 
-				cniCmd := "/opt/cni/bin/aws-cni-support.sh"
+				ts.cfg.Logger.Info("running /opt/cni/bin/aws-cni-support.sh", zap.String("instance-id", instID))
+				cniCmd := "sudo /opt/cni/bin/aws-cni-support.sh"
 				out, oerr = sh.Run(cniCmd, sshOpt)
 				if oerr != nil {
 					rch <- instanceLogs{
@@ -327,9 +327,9 @@ func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 							instID,
 							oerr,
 						)}
-					return
+				} else {
+					ts.cfg.Logger.Info("ran /opt/cni/bin/aws-cni-support.sh", zap.String("instance-id", instID), zap.String("output", string(out)))
 				}
-				ts.cfg.Logger.Info("ran /opt/cni/bin/aws-cni-support.sh", zap.String("instance-id", instID), zap.String("output", string(out)))
 
 				if !rateLimiter.Allow() {
 					ts.cfg.Logger.Debug("waiting for rate limiter before fetching file")
@@ -349,70 +349,69 @@ func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 							instID,
 							oerr,
 						)}
-					return
-				}
-				varLogCmdToFileName := make(map[string]string)
-				for _, line := range strings.Split(string(out), "\n") {
-					if len(line) == 0 {
-						// last value
-						continue
+				} else {
+					varLogCmdToFileName := make(map[string]string)
+					for _, line := range strings.Split(string(out), "\n") {
+						if len(line) == 0 {
+							// last value
+							continue
+						}
+						logCmd := "sudo cat " + line
+						logName := filepath.Base(line)
+						varLogCmdToFileName[logCmd] = logName
 					}
-					logCmd := "sudo cat " + line
-					logName := filepath.Base(line)
-					varLogCmdToFileName[logCmd] = logName
-				}
-				for cmd, fileName := range varLogCmdToFileName {
-					if !rateLimiter.Allow() {
-						ts.cfg.Logger.Debug("waiting for rate limiter before fetching file")
-						werr := rateLimiter.Wait(context.Background())
-						ts.cfg.Logger.Debug("waited for rate limiter", zap.Error(werr))
-					}
-					out, oerr := sh.Run(cmd, sshOpt)
-					if oerr != nil {
-						rch <- instanceLogs{
-							mngName:    name,
-							instanceID: instID,
-							err: fmt.Errorf(
-								"failed to run command %q for %q (error %v)",
-								cmd,
-								instID,
-								oerr,
-							)}
-						return
-					}
+					for cmd, fileName := range varLogCmdToFileName {
+						if !rateLimiter.Allow() {
+							ts.cfg.Logger.Debug("waiting for rate limiter before fetching file")
+							werr := rateLimiter.Wait(context.Background())
+							ts.cfg.Logger.Debug("waited for rate limiter", zap.Error(werr))
+						}
+						out, oerr := sh.Run(cmd, sshOpt)
+						if oerr != nil {
+							rch <- instanceLogs{
+								mngName:    name,
+								instanceID: instID,
+								err: fmt.Errorf(
+									"failed to run command %q for %q (error %v)",
+									cmd,
+									instID,
+									oerr,
+								)}
+							continue
+						}
 
-					fpath := filepath.Join(logsDir, shorten(ts.cfg.Logger, pfx+fileName))
-					f, err := os.Create(fpath)
-					if err != nil {
-						rch <- instanceLogs{
-							mngName:    name,
-							instanceID: instID,
-							err: fmt.Errorf(
-								"failed to create a file %q for %q (error %v)",
-								fpath,
-								instID,
-								err,
-							)}
-						return
-					}
-					if _, err = f.Write(out); err != nil {
-						rch <- instanceLogs{
-							mngName:    name,
-							instanceID: instID,
-							err: fmt.Errorf(
-								"failed to write to a file %q for %q (error %v)",
-								fpath,
-								instID,
-								err,
-							)}
+						fpath := filepath.Join(logsDir, shorten(ts.cfg.Logger, pfx+fileName))
+						f, err := os.Create(fpath)
+						if err != nil {
+							rch <- instanceLogs{
+								mngName:    name,
+								instanceID: instID,
+								err: fmt.Errorf(
+									"failed to create a file %q for %q (error %v)",
+									fpath,
+									instID,
+									err,
+								)}
+							continue
+						}
+						if _, err = f.Write(out); err != nil {
+							rch <- instanceLogs{
+								mngName:    name,
+								instanceID: instID,
+								err: fmt.Errorf(
+									"failed to write to a file %q for %q (error %v)",
+									fpath,
+									instID,
+									err,
+								)}
+							f.Close()
+							continue
+						}
 						f.Close()
-						return
+						ts.cfg.Logger.Debug("wrote", zap.String("file-path", fpath))
+						data.paths = append(data.paths, fpath)
 					}
-					f.Close()
-					ts.cfg.Logger.Debug("wrote", zap.String("file-path", fpath))
-					data.paths = append(data.paths, fpath)
 				}
-
 				rch <- data
 			}(instID, logsDir, pfx, iv)
 		}
