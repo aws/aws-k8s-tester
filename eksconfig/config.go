@@ -802,7 +802,7 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 			return err
 		}
 		dirCreated = true
-		f, err := ioutil.TempFile(rootDir, cfg.Name+"-config-yaml")
+		f, err := ioutil.TempFile(rootDir, cfg.Name+"-config.yaml")
 		if err != nil {
 			return err
 		}
@@ -833,24 +833,15 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		cfg.SSHCommandsOutputPath = cfg.SSHCommandsOutputPath + ".sh"
 	}
 	if cfg.KubeConfigPath == "" {
-		f, err := ioutil.TempFile(filepath.Dir(cfg.ConfigPath), cfg.Name+"-kubeconfig")
-		if err != nil {
-			return err
-		}
-		var p string
-		p, err = filepath.Abs(f.Name())
-		if err != nil {
-			panic(err)
-		}
-		cfg.KubeConfigPath = p
-		f.Close()
-		os.RemoveAll(cfg.KubeConfigPath)
+		cfg.KubeConfigPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".kubeconfig.yaml"
 	}
-	cfg.Sync()
-
+	if filepath.Ext(cfg.KubeConfigPath) != ".yaml" {
+		cfg.KubeConfigPath = cfg.KubeConfigPath + ".yaml"
+	}
 	if cfg.AddOnManagedNodeGroups.LogDir == "" {
 		cfg.AddOnManagedNodeGroups.LogDir = filepath.Dir(cfg.ConfigPath)
 	}
+	cfg.Sync()
 
 	if !strings.Contains(cfg.KubectlDownloadURL, runtime.GOOS) {
 		return fmt.Errorf("kubectl-download-url %q build OS mismatch, expected %q", cfg.KubectlDownloadURL, runtime.GOOS)
