@@ -62,6 +62,7 @@ type Tester interface {
 	// Delete deletes "ServiceAccountToken" and Pods.
 	Delete() error
 	// AggregateResults aggregates all test results from remote nodes.
+	// Assumes logs are already downloaded.
 	AggregateResults() error
 }
 
