@@ -4,28 +4,28 @@
 <hr>
 
 
-## [v0.5.8](https://github.com/aws/aws-k8s-tester/releases/tag/v0.5.8) (2020-02)
+## [v0.5.8](https://github.com/aws/aws-k8s-tester/releases/tag/v0.5.8) (2020-02-12)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.7...v0.5.8).
 
 ### `eks`
 
 - Improve [`client-go` client set creation, support `kubeconfig` loader](https://github.com/aws/aws-k8s-tester/commit/67f7528abd12ed7004cc7044e3695903e22b94cf).
-- Support [IAM Roles for Service Accounts (`IRSA`)](https://github.com/aws/aws-k8s-tester/commit/).
+- Support [IAM Roles for Service Accounts (`IRSA`)](https://github.com/aws/aws-k8s-tester/commit/b68fdbe49bd0d6e43697f75d507ba6c80e1f1dce).
 
 ### `eks/irsa`
 
-- Initial commit to support [IAM Roles for Service Accounts (`IRSA`)](https://github.com/aws/aws-k8s-tester/commit/).
+- Initial commit to support [IAM Roles for Service Accounts (`IRSA`)](https://github.com/aws/aws-k8s-tester/commit/b68fdbe49bd0d6e43697f75d507ba6c80e1f1dce).
 
 ### `eksconfig`
 
-- Add [`*Config.KubectlCommand` method](https://github.com/aws/aws-k8s-tester/commit/).
-- Add [`AddOnIRSA`](https://github.com/aws/aws-k8s-tester/commit/).
-- Rename [`eksconfig.Status.AWSARN` to `eksconfig.Status.AWSIAMRoleARN`](https://github.com/aws/aws-k8s-tester/commit/).
-- Rename [`eksconfig.Status.ClusterOIDCIssuer` to `eksconfig.Status.ClusterOIDCIssuerURL`](https://github.com/aws/aws-k8s-tester/commit/).
-- Add [`eksconfig.Status.ClusterOIDCIssuerHostPath`](https://github.com/aws/aws-k8s-tester/commit/).
-- Add [`eksconfig.Status.ClusterOIDCIssuerARN`](https://github.com/aws/aws-k8s-tester/commit/).
-- Add [`eksconfig.Status.ClusterOIDCIssuerCAThumbprint`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`*Config.KubectlCommand` method](https://github.com/aws/aws-k8s-tester/commit/b68fdbe49bd0d6e43697f75d507ba6c80e1f1dce).
+- Add [`AddOnIRSA`](https://github.com/aws/aws-k8s-tester/commit/b68fdbe49bd0d6e43697f75d507ba6c80e1f1dce).
+- Rename [`eksconfig.Status.AWSARN` to `eksconfig.Status.AWSIAMRoleARN`](https://github.com/aws/aws-k8s-tester/commit/b68fdbe49bd0d6e43697f75d507ba6c80e1f1dce).
+- Rename [`eksconfig.Status.ClusterOIDCIssuer` to `eksconfig.Status.ClusterOIDCIssuerURL`](https://github.com/aws/aws-k8s-tester/commit/b68fdbe49bd0d6e43697f75d507ba6c80e1f1dce).
+- Add [`eksconfig.Status.ClusterOIDCIssuerHostPath`](https://github.com/aws/aws-k8s-tester/commit/b68fdbe49bd0d6e43697f75d507ba6c80e1f1dce).
+- Add [`eksconfig.Status.ClusterOIDCIssuerARN`](https://github.com/aws/aws-k8s-tester/commit/b68fdbe49bd0d6e43697f75d507ba6c80e1f1dce).
+- Add [`eksconfig.Status.ClusterOIDCIssuerCAThumbprint`](https://github.com/aws/aws-k8s-tester/commit/b68fdbe49bd0d6e43697f75d507ba6c80e1f1dce).
 
 ### Dependency
 
