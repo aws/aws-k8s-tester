@@ -139,7 +139,6 @@ func Poll(
 			}
 
 			lg.Info("polling",
-				zap.String("stack-id", stackID),
 				zap.String("stack-name", aws.StringValue(stack.StackName)),
 				zap.String("desired-status", desiredStackStatus),
 				zap.String("current-status", currentStatus),
