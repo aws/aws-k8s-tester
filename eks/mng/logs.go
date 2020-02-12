@@ -105,17 +105,16 @@ func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 					UserName:      ts.cfg.EKSConfig.AddOnManagedNodeGroups.RemoteAccessUserName,
 				})
 				if err != nil {
-					rch <- instanceLogs{mngName: name, err: err}
+					rch <- instanceLogs{mngName: name, errs: []string{err.Error()}}
 					return
 				}
 				defer sh.Close()
 				if err = sh.Connect(); err != nil {
-					rch <- instanceLogs{mngName: name, err: err}
+					rch <- instanceLogs{mngName: name, errs: []string{err.Error()}}
 					return
 				}
 
 				data := instanceLogs{mngName: name, instanceID: instID}
-
 				// fetch default logs
 				for cmd, fileName := range commandToFileName {
 					if !rateLimiter.Allow() {
@@ -125,42 +124,28 @@ func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 					}
 					out, oerr := sh.Run(cmd, sshOpt)
 					if oerr != nil {
-						rch <- instanceLogs{
-							mngName:    name,
-							instanceID: instID,
-							err: fmt.Errorf(
-								"failed to run command %q for %q (error %v)",
-								cmd,
-								instID,
-								oerr,
-							)}
+						data.errs = append(data.errs, fmt.Sprintf("failed to run command %q for %q (error %v)", cmd, instID, oerr))
 						continue
 					}
 
 					fpath := filepath.Join(logsDir, shorten(ts.cfg.Logger, pfx+fileName))
 					f, err := os.Create(fpath)
 					if err != nil {
-						rch <- instanceLogs{
-							mngName:    name,
-							instanceID: instID,
-							err: fmt.Errorf(
-								"failed to create a file %q for %q (error %v)",
-								fpath,
-								instID,
-								err,
-							)}
+						data.errs = append(data.errs, fmt.Sprintf(
+							"failed to create a file %q for %q (error %v)",
+							fpath,
+							instID,
+							err,
+						))
 						continue
 					}
 					if _, err = f.Write(out); err != nil {
-						rch <- instanceLogs{
-							mngName:    name,
-							instanceID: instID,
-							err: fmt.Errorf(
-								"failed to write to a file %q for %q (error %v)",
-								fpath,
-								instID,
-								err,
-							)}
+						data.errs = append(data.errs, fmt.Sprintf(
+							"failed to write to a file %q for %q (error %v)",
+							fpath,
+							instID,
+							err,
+						))
 						f.Close()
 						continue
 					}
@@ -178,15 +163,12 @@ func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 				listCmd := "sudo systemctl list-units -t service --no-pager --no-legend --all"
 				out, oerr := sh.Run(listCmd, sshOpt)
 				if oerr != nil {
-					rch <- instanceLogs{
-						mngName:    name,
-						instanceID: instID,
-						err: fmt.Errorf(
-							"failed to run command %q for %q (error %v)",
-							listCmd,
-							instID,
-							oerr,
-						)}
+					data.errs = append(data.errs, fmt.Sprintf(
+						"failed to run command %q for %q (error %v)",
+						listCmd,
+						instID,
+						oerr,
+					))
 				} else {
 					/*
 						auditd.service                                        loaded    active   running Security Auditing Service
@@ -217,42 +199,33 @@ func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 						}
 						out, oerr := sh.Run(cmd, sshOpt)
 						if oerr != nil {
-							rch <- instanceLogs{
-								mngName:    name,
-								instanceID: instID,
-								err: fmt.Errorf(
-									"failed to run command %q for %q (error %v)",
-									cmd,
-									instID,
-									oerr,
-								)}
+							data.errs = append(data.errs, fmt.Sprintf(
+								"failed to run command %q for %q (error %v)",
+								listCmd,
+								instID,
+								oerr,
+							))
 							continue
 						}
 
 						fpath := filepath.Join(logsDir, shorten(ts.cfg.Logger, pfx+fileName))
 						f, err := os.Create(fpath)
 						if err != nil {
-							rch <- instanceLogs{
-								mngName:    name,
-								instanceID: instID,
-								err: fmt.Errorf(
-									"failed to create a file %q for %q (error %v)",
-									fpath,
-									instID,
-									err,
-								)}
+							data.errs = append(data.errs, fmt.Sprintf(
+								"failed to create a file %q for %q (error %v)",
+								fpath,
+								instID,
+								err,
+							))
 							continue
 						}
 						if _, err = f.Write(out); err != nil {
-							rch <- instanceLogs{
-								mngName:    name,
-								instanceID: instID,
-								err: fmt.Errorf(
-									"failed to write to a file %q for %q (error %v)",
-									fpath,
-									instID,
-									err,
-								)}
+							data.errs = append(data.errs, fmt.Sprintf(
+								"failed to write to a file %q for %q (error %v)",
+								fpath,
+								instID,
+								err,
+							))
 							f.Close()
 							continue
 						}
@@ -273,39 +246,30 @@ func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 				eniCmd := "curl -s http://localhost:61679/v1/enis"
 				out, oerr = sh.Run(eniCmd, sshOpt)
 				if oerr != nil {
-					rch <- instanceLogs{
-						mngName:    name,
-						instanceID: instID,
-						err: fmt.Errorf(
-							"failed to run command %q for %q (error %v)",
-							eniCmd,
-							instID,
-							oerr,
-						)}
+					data.errs = append(data.errs, fmt.Sprintf(
+						"failed to run command %q for %q (error %v)",
+						eniCmd,
+						instID,
+						oerr,
+					))
 				} else {
 					v1ENIOutputPath := filepath.Join(logsDir, shorten(ts.cfg.Logger, pfx+"v1-enis.out.log"))
 					f, err := os.Create(v1ENIOutputPath)
 					if err != nil {
-						rch <- instanceLogs{
-							mngName:    name,
-							instanceID: instID,
-							err: fmt.Errorf(
-								"failed to create a file %q for %q (error %v)",
+						data.errs = append(data.errs, fmt.Sprintf(
+							"failed to create a file %q for %q (error %v)",
+							v1ENIOutputPath,
+							instID,
+							err,
+						))
+					} else {
+						if _, err = f.Write(out); err != nil {
+							data.errs = append(data.errs, fmt.Sprintf(
+								"failed to write to a file %q for %q (error %v)",
 								v1ENIOutputPath,
 								instID,
 								err,
-							)}
-					} else {
-						if _, err = f.Write(out); err != nil {
-							rch <- instanceLogs{
-								mngName:    name,
-								instanceID: instID,
-								err: fmt.Errorf(
-									"failed to write to a file %q for %q (error %v)",
-									v1ENIOutputPath,
-									instID,
-									err,
-								)}
+							))
 						} else {
 							ts.cfg.Logger.Debug("wrote", zap.String("file-path", v1ENIOutputPath))
 							data.paths = append(data.paths, v1ENIOutputPath)
@@ -315,18 +279,15 @@ func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 				}
 
 				ts.cfg.Logger.Info("running /opt/cni/bin/aws-cni-support.sh", zap.String("instance-id", instID))
-				cniCmd := "sudo /opt/cni/bin/aws-cni-support.sh"
+				cniCmd := "sudo /opt/cni/bin/aws-cni-support.sh || true"
 				out, oerr = sh.Run(cniCmd, sshOpt)
 				if oerr != nil {
-					rch <- instanceLogs{
-						mngName:    name,
-						instanceID: instID,
-						err: fmt.Errorf(
-							"failed to run command %q for %q (error %v)",
-							cniCmd,
-							instID,
-							oerr,
-						)}
+					data.errs = append(data.errs, fmt.Sprintf(
+						"failed to run command %q for %q (error %v)",
+						cniCmd,
+						instID,
+						oerr,
+					))
 				} else {
 					ts.cfg.Logger.Info("ran /opt/cni/bin/aws-cni-support.sh", zap.String("instance-id", instID), zap.String("output", string(out)))
 				}
@@ -340,15 +301,12 @@ func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 				findCmd := "sudo find /var/log ! -type d"
 				out, oerr = sh.Run(findCmd, sshOpt)
 				if oerr != nil {
-					rch <- instanceLogs{
-						mngName:    name,
-						instanceID: instID,
-						err: fmt.Errorf(
-							"failed to run command %q for %q (error %v)",
-							findCmd,
-							instID,
-							oerr,
-						)}
+					data.errs = append(data.errs, fmt.Sprintf(
+						"failed to run command %q for %q (error %v)",
+						findCmd,
+						instID,
+						oerr,
+					))
 				} else {
 					varLogCmdToFileName := make(map[string]string)
 					for _, line := range strings.Split(string(out), "\n") {
@@ -368,42 +326,33 @@ func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 						}
 						out, oerr := sh.Run(cmd, sshOpt)
 						if oerr != nil {
-							rch <- instanceLogs{
-								mngName:    name,
-								instanceID: instID,
-								err: fmt.Errorf(
-									"failed to run command %q for %q (error %v)",
-									cmd,
-									instID,
-									oerr,
-								)}
+							data.errs = append(data.errs, fmt.Sprintf(
+								"failed to run command %q for %q (error %v)",
+								cmd,
+								instID,
+								oerr,
+							))
 							continue
 						}
 
 						fpath := filepath.Join(logsDir, shorten(ts.cfg.Logger, pfx+fileName))
 						f, err := os.Create(fpath)
 						if err != nil {
-							rch <- instanceLogs{
-								mngName:    name,
-								instanceID: instID,
-								err: fmt.Errorf(
-									"failed to create a file %q for %q (error %v)",
-									fpath,
-									instID,
-									err,
-								)}
+							data.errs = append(data.errs, fmt.Sprintf(
+								"failed to create a file %q for %q (error %v)",
+								fpath,
+								instID,
+								err,
+							))
 							continue
 						}
 						if _, err = f.Write(out); err != nil {
-							rch <- instanceLogs{
-								mngName:    name,
-								instanceID: instID,
-								err: fmt.Errorf(
-									"failed to write to a file %q for %q (error %v)",
-									fpath,
-									instID,
-									err,
-								)}
+							data.errs = append(data.errs, fmt.Sprintf(
+								"failed to write to a file %q for %q (error %v)",
+								fpath,
+								instID,
+								err,
+							))
 							f.Close()
 							continue
 						}
@@ -417,6 +366,7 @@ func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 		}
 	}
 
+	ts.cfg.Logger.Info("waiting for log fetcher goroutines", zap.Int("waits", waits))
 	total := 0
 	for i := 0; i < waits; i++ {
 		var data instanceLogs
@@ -426,11 +376,11 @@ func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 			ts.cfg.Logger.Warn("exiting fetch logger")
 			return ts.cfg.EKSConfig.Sync()
 		}
-		if data.err != nil {
-			ts.cfg.Logger.Error("failed to fetch logs",
+		if len(data.errs) > 0 {
+			ts.cfg.Logger.Warn("failed to fetch logs",
 				zap.String("mng-name", data.mngName),
 				zap.String("instance-id", data.instanceID),
-				zap.Error(data.err),
+				zap.Strings("errors", data.errs),
 			)
 			continue
 		}
@@ -471,7 +421,7 @@ type instanceLogs struct {
 	mngName    string
 	instanceID string
 	paths      []string
-	err        error
+	errs       []string
 }
 
 func (ts *tester) DownloadClusterLogs(artifactDir string) error {
