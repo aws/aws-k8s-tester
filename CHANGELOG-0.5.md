@@ -11,6 +11,11 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.8...v0.5.9
 
 - Improve [`Deployment` wait methods](https://github.com/aws/aws-k8s-tester/commit/7266f245e0ff52008b51a5c21a07fc65d9cfbd9e).
 
+### `eks/mng`
+
+- Add [`curl http://localhost:61679/v1/enis`](https://github.com/aws/aws-k8s-tester/commit/c0205eef6e9fbae6ba771a4b8d81136e3719afd2).
+- Reduce [QPS for `FetchLogs`](https://github.com/aws/aws-k8s-tester/commit/482bc0b3e5322ce83a065c75d961dae8c269a8bd).
+
 ### `eksconfig`
 
 - Add [`KubectlCommandsOutputPath`](https://github.com/aws/aws-k8s-tester/commit/4aa6070e762733f6b84fb6b8e6906f9dc695e068).
