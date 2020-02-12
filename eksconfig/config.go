@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"math/rand"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -731,7 +730,7 @@ func NewDefault() *Config {
 		int(now.Month()),
 		now.Day(),
 		now.Hour(),
-		randString(10),
+		randString(12),
 	)
 
 	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
@@ -1372,15 +1371,4 @@ func (cfg *Config) SSHCommands() (s string) {
 		buf.WriteString("\n")
 	}
 	return buf.String()
-}
-
-const ll = "0123456789abcdefghijklmnopqrstuvwxyz"
-
-func randString(n int) string {
-	b := make([]byte, n)
-	for i := range b {
-		rand.Seed(time.Now().UnixNano())
-		b[i] = ll[rand.Intn(len(ll))]
-	}
-	return string(b)
 }
