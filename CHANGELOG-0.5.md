@@ -1,5 +1,20 @@
 
 
+<hr>
+
+
+## [v0.5.9](https://github.com/aws/aws-k8s-tester/releases/tag/v0.5.9) (2020-02)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.8...v0.5.9).
+
+### `eks`
+
+- Improve [`Deployment` wait methods](https://github.com/aws/aws-k8s-tester/commit/7266f245e0ff52008b51a5c21a07fc65d9cfbd9e).
+
+### Go
+
+- Compile with [*Go 1.13.7*](https://golang.org/doc/devel/release.html#go1.13).
+
 
 <hr>
 
