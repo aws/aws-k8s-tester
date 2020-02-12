@@ -24,7 +24,7 @@ func PollUntilRunning(
 		if err == nil {
 			return ec2Instances, nil
 		}
-		lg.Error("failed to describe instances", zap.Error(err))
+		lg.Warn("failed to describe instances", zap.Error(err))
 		time.Sleep(10 * time.Second)
 	}
 	return ec2Instances, err

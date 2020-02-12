@@ -105,7 +105,7 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 	if err = fileutil.EnsureExecutable(cfg.AWSCLIPath); err != nil {
 		// file may be already executable while the process does not own the file/directory
 		// ref. https://github.com/aws/aws-k8s-tester/issues/66
-		lg.Error("failed to ensure executable", zap.Error(err))
+		lg.Warn("failed to ensure executable", zap.Error(err))
 	}
 
 	// aws --version
@@ -148,7 +148,7 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 	if err := fileutil.EnsureExecutable(cfg.KubectlPath); err != nil {
 		// file may be already executable while the process does not own the file/directory
 		// ref. https://github.com/aws/aws-k8s-tester/issues/66
-		lg.Error("failed to ensure executable", zap.Error(err))
+		lg.Warn("failed to ensure executable", zap.Error(err))
 	}
 	// kubectl version --client=true
 	ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
@@ -192,7 +192,7 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 		if err := fileutil.EnsureExecutable(cfg.AWSIAMAuthenticatorPath); err != nil {
 			// file may be already executable while the process does not own the file/directory
 			// ref. https://github.com/aws/aws-k8s-tester/issues/66
-			lg.Error("failed to ensure executable", zap.Error(err))
+			lg.Warn("failed to ensure executable", zap.Error(err))
 		}
 		// aws-iam-authenticator version
 		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
@@ -430,9 +430,7 @@ func (ts *Tester) Up() (err error) {
 			return
 		}
 
-		ts.lg.Error("reverting resource creation",
-			zap.Error(err),
-		)
+		ts.lg.Warn("reverting resource creation")
 		waitDur := time.Duration(ts.cfg.OnFailureDeleteWaitSeconds) * time.Second
 		if waitDur > 0 {
 			ts.lg.Info("waiting before clean up", zap.Duration("wait", waitDur))
@@ -443,7 +441,7 @@ func (ts *Tester) Up() (err error) {
 		}
 		derr := ts.down()
 		if derr != nil {
-			ts.lg.Error("failed to revert Up", zap.Error(derr))
+			ts.lg.Warn("failed to revert Up", zap.Error(derr))
 		} else {
 			ts.lg.Warn("reverted Up")
 		}

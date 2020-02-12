@@ -88,13 +88,13 @@ func Poll(
 					return
 				}
 
-				lg.Error("describe stack failed; retrying", zap.Error(err))
+				lg.Warn("describe stack failed; retrying", zap.Error(err))
 				ch <- StackStatus{Stack: nil, Error: err}
 				continue
 			}
 
 			if len(output.Stacks) != 1 {
-				lg.Error("expected only 1 stack; retrying", zap.String("stacks", output.GoString()))
+				lg.Warn("expected only 1 stack; retrying", zap.String("stacks", output.GoString()))
 				ch <- StackStatus{Stack: nil, Error: fmt.Errorf("unexpected stack response %+v", output.GoString())}
 				continue
 			}
@@ -149,7 +149,7 @@ func Poll(
 
 			if desiredStackStatus != svccfn.ResourceStatusDeleteComplete &&
 				currentStatus == svccfn.ResourceStatusDeleteComplete {
-				lg.Error("create stack failed; aborting")
+				lg.Warn("create stack failed; aborting")
 				ch <- StackStatus{
 					Stack: stack,
 					Error: fmt.Errorf("stack failed thus deleted (previous status reason %q, current stack status %q, current status reason %q)",
@@ -162,7 +162,7 @@ func Poll(
 			}
 			if desiredStackStatus == svccfn.ResourceStatusDeleteComplete &&
 				currentStatus == svccfn.ResourceStatusDeleteFailed {
-				lg.Error("delete stack failed; aborting")
+				lg.Warn("delete stack failed; aborting")
 				ch <- StackStatus{
 					Stack: stack,
 					Error: fmt.Errorf("failed to delete stack (previous status reason %q, current stack status %q, current status reason %q)",

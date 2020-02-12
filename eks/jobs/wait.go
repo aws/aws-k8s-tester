@@ -49,7 +49,7 @@ func waitJobs(
 				FieldSelector: fieldSelector,
 			})
 		if err != nil {
-			lg.Error("failed to list Pod", zap.Error(err))
+			lg.Warn("failed to list Pod", zap.Error(err))
 			continue
 		}
 		pods = jobs.Items

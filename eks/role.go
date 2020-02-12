@@ -199,7 +199,7 @@ func (ts *Tester) createClusterRole() error {
 			cancel()
 			ts.cfg.Status.ClusterStatus = fmt.Sprintf("failed to create role (%v)", st.Error)
 			ts.cfg.Sync()
-			ts.lg.Error("polling errror", zap.Error(st.Error))
+			ts.lg.Warn("polling errror", zap.Error(st.Error))
 		}
 	}
 	cancel()
@@ -255,7 +255,7 @@ func (ts *Tester) deleteClusterRole() error {
 			cancel()
 			ts.cfg.Status.ClusterStatus = fmt.Sprintf("failed to delete role (%v)", st.Error)
 			ts.cfg.Sync()
-			ts.lg.Error("polling errror", zap.Error(st.Error))
+			ts.lg.Warn("polling errror", zap.Error(st.Error))
 		}
 	}
 	cancel()

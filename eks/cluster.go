@@ -221,7 +221,7 @@ func (ts *Tester) createEKS() error {
 			if st.Error != nil {
 				ts.cfg.Status.ClusterStatus = fmt.Sprintf("failed to create cluster (%v)", st.Error)
 				ts.cfg.Sync()
-				ts.lg.Error("polling errror", zap.Error(st.Error))
+				ts.lg.Warn("polling errror", zap.Error(st.Error))
 			}
 		}
 		cancel()
@@ -332,7 +332,7 @@ func (ts *Tester) updateClusterStatus(v ClusterStatus) {
 			ts.cfg.Status.ClusterOIDCIssuerURL = aws.StringValue(v.Cluster.Identity.Oidc.Issuer)
 			u, err := url.Parse(ts.cfg.Status.ClusterOIDCIssuerURL)
 			if err != nil {
-				ts.lg.Error(
+				ts.lg.Warn(
 					"failed to parse ClusterOIDCIssuerURL",
 					zap.String("url", ts.cfg.Status.ClusterOIDCIssuerURL),
 					zap.Error(err),
@@ -362,7 +362,7 @@ func (ts *Tester) updateClusterStatus(v ClusterStatus) {
 			}
 			resp, err := httpClient.Get(ts.cfg.Status.ClusterOIDCIssuerURL)
 			if err != nil {
-				ts.lg.Error("failed to fetch OIDC CA thumbprint",
+				ts.lg.Warn("failed to fetch OIDC CA thumbprint",
 					zap.String("url", ts.cfg.Status.ClusterOIDCIssuerURL),
 					zap.Error(err),
 				)
@@ -388,7 +388,7 @@ func (ts *Tester) updateClusterStatus(v ClusterStatus) {
 		}
 		d, err := base64.StdEncoding.DecodeString(ts.cfg.Status.ClusterCA)
 		if err != nil {
-			ts.lg.Error("failed to decode cluster CA", zap.Error(err))
+			ts.lg.Warn("failed to decode cluster CA", zap.Error(err))
 		}
 		ts.cfg.Status.ClusterCADecoded = string(d)
 
@@ -486,13 +486,13 @@ func Poll(
 					return
 				}
 
-				lg.Error("describe cluster failed; retrying", zap.Error(err))
+				lg.Warn("describe cluster failed; retrying", zap.Error(err))
 				ch <- ClusterStatus{Cluster: nil, Error: err}
 				continue
 			}
 
 			if output.Cluster == nil {
-				lg.Error("expected non-nil cluster; retrying")
+				lg.Warn("expected non-nil cluster; retrying")
 				ch <- ClusterStatus{Cluster: nil, Error: fmt.Errorf("unexpected empty response %+v", output.GoString())}
 				continue
 			}
@@ -578,7 +578,7 @@ func (ts *Tester) deleteCluster() error {
 				cancel()
 				ts.cfg.Status.ClusterStatus = fmt.Sprintf("failed to delete cluster (%v)", st.Error)
 				ts.cfg.Sync()
-				ts.lg.Error("polling errror", zap.Error(st.Error))
+				ts.lg.Warn("polling errror", zap.Error(st.Error))
 			}
 		}
 		cancel()

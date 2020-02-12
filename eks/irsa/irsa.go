@@ -146,7 +146,7 @@ func (ts *tester) Delete() error {
 	ts.cfg.Logger.Info("wait after deleting S3")
 	time.Sleep(20 * time.Second)
 
-	if err := ts.deleteDeployments(); err != nil {
+	if err := ts.deleteDeployment(); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete Deployments (%v)", err))
 	}
 	ts.cfg.Logger.Info("wait after deleting Deployments")
@@ -963,7 +963,7 @@ func (ts *tester) createDeployment() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
-func (ts *tester) deleteDeployments() error {
+func (ts *tester) deleteDeployment() error {
 	ts.cfg.Logger.Info("deleting IRSA Deployment")
 	foreground := metav1.DeletePropagationForeground
 	err := ts.cfg.K8SClient.KubernetesClientSet().
@@ -1066,7 +1066,10 @@ func (ts *tester) waitDeployment() error {
 	out := string(output)
 	colorstring.Printf("\n\n\"[light_green]kubectl describe deployment[default]\" output:\n%s\n\n", out)
 
-	initialWait := 2*time.Minute + time.Duration(ts.cfg.EKSConfig.AddOnIRSA.DeploymentReplicas)*10*time.Second
+	initialWait := 2*time.Minute + time.Duration(ts.cfg.EKSConfig.AddOnIRSA.DeploymentReplicas)*3*time.Second
+	if initialWait > 10*time.Minute {
+		initialWait = 10 * time.Minute
+	}
 	ts.cfg.Logger.Info("initial waiting", zap.Duration("duration", initialWait))
 	select {
 	case <-ts.cfg.Stopc:
@@ -1078,7 +1081,7 @@ func (ts *tester) waitDeployment() error {
 	ts.cfg.Logger.Info("initial waited", zap.Duration("duration", initialWait))
 
 	ready := false
-	waitDur := 5*time.Minute + time.Duration(ts.cfg.EKSConfig.AddOnIRSA.DeploymentReplicas)*time.Minute
+	waitDur := 5*time.Minute + time.Duration(ts.cfg.EKSConfig.AddOnIRSA.DeploymentReplicas)*3*time.Second
 	retryStart := time.Now()
 	for time.Now().Sub(retryStart) < waitDur {
 		select {

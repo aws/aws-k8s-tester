@@ -657,7 +657,11 @@ func (ts *tester) deleteMNG() error {
 			if err != nil {
 				return err
 			}
-			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
+			initialWait, timeout := 2*time.Minute, 15*time.Minute
+			if len(mv.Instances) > 50 {
+				initialWait, timeout = 3*time.Minute, 20*time.Minute
+			}
+			ctx, cancel := context.WithTimeout(context.Background(), timeout)
 			ch := awscfn.Poll(
 				ctx,
 				make(chan struct{}),  // do not exit on stop
@@ -666,7 +670,7 @@ func (ts *tester) deleteMNG() error {
 				ts.cfg.CFNAPI,
 				mv.CFNStackID,
 				cloudformation.ResourceStatusDeleteComplete,
-				2*time.Minute,
+				initialWait,
 				15*time.Second,
 			)
 			var st awscfn.StackStatus
@@ -701,7 +705,11 @@ func (ts *tester) deleteMNG() error {
 				return err
 			}
 
-			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
+			initialWait, timeout := 2*time.Minute, 15*time.Minute
+			if len(mv.Instances) > 50 {
+				initialWait, timeout = 3*time.Minute, 20*time.Minute
+			}
+			ctx, cancel := context.WithTimeout(context.Background(), timeout)
 			ch := Poll(
 				ctx,
 				ts.cfg.Stopc,
@@ -710,7 +718,7 @@ func (ts *tester) deleteMNG() error {
 				ts.cfg.EKSConfig.Name,
 				name,
 				ManagedNodeGroupStatusDELETEDORNOTEXIST,
-				3*time.Minute,
+				initialWait,
 				20*time.Second,
 			)
 			for v := range ch {
@@ -815,13 +823,13 @@ func Poll(
 					return
 				}
 
-				lg.Error("describe managed node group failed; retrying", zap.Error(err))
+				lg.Warn("describe managed node group failed; retrying", zap.Error(err))
 				ch <- ManagedNodeGroupStatus{NodeGroupName: nodeGroupName, NodeGroup: nil, Error: err}
 				continue
 			}
 
 			if output.Nodegroup == nil {
-				lg.Error("expected non-nil managed node group; retrying")
+				lg.Warn("expected non-nil managed node group; retrying")
 				ch <- ManagedNodeGroupStatus{NodeGroupName: nodeGroupName, NodeGroup: nil, Error: fmt.Errorf("unexpected empty response %+v", output.GoString())}
 				continue
 			}

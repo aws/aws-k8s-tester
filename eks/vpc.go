@@ -327,7 +327,7 @@ func (ts *Tester) createVPC() error {
 			cancel()
 			ts.cfg.Status.ClusterStatus = fmt.Sprintf("failed to create VPC (%v)", st.Error)
 			ts.cfg.Sync()
-			ts.lg.Error("polling errror", zap.Error(st.Error))
+			ts.lg.Warn("polling errror", zap.Error(st.Error))
 		}
 	}
 	cancel()
@@ -391,7 +391,7 @@ func (ts *Tester) deleteVPC() error {
 			cancel()
 			ts.cfg.Status.ClusterStatus = fmt.Sprintf("failed to delete VPC (%v)", st.Error)
 			ts.cfg.Sync()
-			ts.lg.Error("polling errror", zap.Error(st.Error))
+			ts.lg.Warn("polling errror", zap.Error(st.Error))
 		}
 
 		if time.Now().Sub(now) > 3*time.Minute {
@@ -440,7 +440,7 @@ func (ts *Tester) deleteVPC() error {
 					return true
 				},
 			); err != nil {
-				ts.lg.Error("failed to describe ENIs", zap.Error(err))
+				ts.lg.Warn("failed to describe ENIs", zap.Error(err))
 				continue
 			}
 
@@ -455,7 +455,7 @@ func (ts *Tester) deleteVPC() error {
 					},
 				)
 				if err != nil {
-					ts.lg.Error("failed to describe ENI", zap.Error(err))
+					ts.lg.Warn("failed to describe ENI", zap.Error(err))
 					continue
 				}
 				if len(out.NetworkInterfaces) != 1 {
@@ -475,7 +475,7 @@ func (ts *Tester) deleteVPC() error {
 							ts.lg.Info("successfully detached ENI", zap.String("eni", eniID))
 							break
 						}
-						ts.lg.Error("failed to detach ENI", zap.String("eni", eniID), zap.Error(err))
+						ts.lg.Warn("failed to detach ENI", zap.String("eni", eniID), zap.Error(err))
 					}
 				}
 
@@ -489,7 +489,7 @@ func (ts *Tester) deleteVPC() error {
 						ts.lg.Info("successfully deleted ENI", zap.String("eni", eniID))
 						break
 					}
-					ts.lg.Error("failed to delete ENI", zap.String("eni", eniID), zap.Error(err))
+					ts.lg.Warn("failed to delete ENI", zap.String("eni", eniID), zap.Error(err))
 				}
 
 				// confirm ENI deletion
@@ -523,7 +523,7 @@ func (ts *Tester) deleteVPC() error {
 				},
 			})
 			if err != nil {
-				ts.lg.Error("failed to describe security groups", zap.Error(err))
+				ts.lg.Warn("failed to describe security groups", zap.Error(err))
 				continue
 			}
 			for _, sg := range sout.SecurityGroups {
@@ -550,7 +550,7 @@ func (ts *Tester) deleteVPC() error {
 						GroupIds: aws.StringSlice([]string{sgIDEgress}),
 					})
 					if err != nil {
-						ts.lg.Error("failed to describe egress security group", zap.Error(err))
+						ts.lg.Warn("failed to describe egress security group", zap.Error(err))
 						continue
 					}
 					if len(sgEgress.SecurityGroups) != 1 {
@@ -602,7 +602,7 @@ func (ts *Tester) deleteVPC() error {
 						GroupIds: aws.StringSlice([]string{sgIDIngress}),
 					})
 					if err != nil {
-						ts.lg.Error("failed to describe egress security group", zap.Error(err))
+						ts.lg.Warn("failed to describe egress security group", zap.Error(err))
 						continue
 					}
 					if len(sgIngress.SecurityGroups) != 1 {
@@ -642,7 +642,7 @@ func (ts *Tester) deleteVPC() error {
 					GroupId: sg.GroupId,
 				})
 				if err != nil {
-					ts.lg.Error("failed to delete security group", zap.Error(err))
+					ts.lg.Warn("failed to delete security group", zap.Error(err))
 					continue
 				}
 				retryStart := time.Now()
@@ -661,7 +661,7 @@ func (ts *Tester) deleteVPC() error {
 							}
 						}
 					}
-					ts.lg.Error("still deleting security group", zap.Error(err))
+					ts.lg.Warn("still deleting security group", zap.Error(err))
 					time.Sleep(5 * time.Second)
 				}
 			}
