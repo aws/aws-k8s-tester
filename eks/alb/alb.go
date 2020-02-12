@@ -1020,7 +1020,7 @@ func (ts *tester) waitDeployment2048() error {
 				break
 			}
 		}
-		if available && dresp.Status.ReadyReplicas >= ts.cfg.EKSConfig.AddOnALB2048.DeploymentReplicas2048 {
+		if available && dresp.Status.AvailableReplicas >= ts.cfg.EKSConfig.AddOnALB2048.DeploymentReplicas2048 {
 			ready = true
 			break
 		}

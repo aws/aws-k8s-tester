@@ -1123,7 +1123,7 @@ func (ts *tester) waitDeployment() error {
 				break
 			}
 		}
-		if available && dresp.Status.ReadyReplicas >= ts.cfg.EKSConfig.AddOnIRSA.DeploymentReplicas {
+		if available && dresp.Status.AvailableReplicas >= ts.cfg.EKSConfig.AddOnIRSA.DeploymentReplicas {
 			ready = true
 			break
 		}
