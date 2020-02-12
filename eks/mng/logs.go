@@ -39,7 +39,7 @@ func (ts *tester) FetchLogs() (err error) {
 	}
 	ts.logsMu.Lock()
 	defer ts.logsMu.Unlock()
-	return ts.fetchLogs(300, 50, logCmds)
+	return ts.fetchLogs(150, 10, logCmds)
 }
 
 // only letters and numbers
