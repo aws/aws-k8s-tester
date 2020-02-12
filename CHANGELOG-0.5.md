@@ -11,6 +11,15 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.8...v0.5.9
 
 - Improve [`Deployment` wait methods](https://github.com/aws/aws-k8s-tester/commit/7266f245e0ff52008b51a5c21a07fc65d9cfbd9e).
 
+### `eksconfig`
+
+- Add [`KubectlCommandsOutputPath`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`SSHCommandsOutputPath`](https://github.com/aws/aws-k8s-tester/commit/).
+
+### `pkg/aws/ec2`
+
+- Fix [a bug in batch `ec2.DescribeInstances` (used in `pkg/aws/ec2.PollUntilRunning` for `mng`)](https://github.com/aws/aws-k8s-tester/commit/).
+
 ### Go
 
 - Compile with [*Go 1.13.7*](https://golang.org/doc/devel/release.html#go1.13).

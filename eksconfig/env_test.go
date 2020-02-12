@@ -12,11 +12,20 @@ import (
 
 func TestEnv(t *testing.T) {
 	cfg := NewDefault()
+	defer func() {
+		os.RemoveAll(cfg.KubectlCommandsOutputPath)
+		os.RemoveAll(cfg.SSHCommandsOutputPath)
+	}()
+
 	kubectlDownloadURL := "https://amazon-eks.s3-us-west-2.amazonaws.com/1.11.5/2018-12-06/bin/linux/amd64/kubectl"
 	if runtime.GOOS == "darwin" {
 		kubectlDownloadURL = strings.Replace(kubectlDownloadURL, "linux", runtime.GOOS, -1)
 	}
 
+	os.Setenv("AWS_K8S_TESTER_EKS_KUBECTL_COMMANDS_OUTPUT_PATH", "hello-kubectl")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_KUBECTL_COMMANDS_OUTPUT_PATH")
+	os.Setenv("AWS_K8S_TESTER_EKS_SSH_COMMANDS_OUTPUT_PATH", "hello-ssh")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_SSH_COMMANDS_OUTPUT_PATH")
 	os.Setenv("AWS_K8S_TESTER_EKS_REGION", "us-east-1")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_REGION")
 
@@ -185,6 +194,12 @@ func TestEnv(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	if cfg.KubectlCommandsOutputPath != "hello-kubectl" {
+		t.Fatalf("unexpected %q", cfg.KubectlCommandsOutputPath)
+	}
+	if cfg.SSHCommandsOutputPath != "hello-ssh" {
+		t.Fatalf("unexpected %q", cfg.SSHCommandsOutputPath)
+	}
 	if cfg.Region != "us-east-1" {
 		t.Fatalf("unexpected %q", cfg.Region)
 	}
@@ -492,6 +507,10 @@ func TestEnv(t *testing.T) {
 
 func TestEnvAddOnManagedNodeGroups(t *testing.T) {
 	cfg := NewDefault()
+	defer func() {
+		os.RemoveAll(cfg.KubectlCommandsOutputPath)
+		os.RemoveAll(cfg.SSHCommandsOutputPath)
+	}()
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE", "false")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE")
@@ -514,6 +533,10 @@ func TestEnvAddOnManagedNodeGroups(t *testing.T) {
 // https://github.com/aws/amazon-vpc-cni-k8s/blob/master/scripts/lib/cluster.sh
 func TestEnvAddOnManagedNodeGroupsCNI(t *testing.T) {
 	cfg := NewDefault()
+	defer func() {
+		os.RemoveAll(cfg.KubectlCommandsOutputPath)
+		os.RemoveAll(cfg.SSHCommandsOutputPath)
+	}()
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_REMOTE_ACCESS_PRIVATE_KEY_PATH", `a`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_REMOTE_ACCESS_PRIVATE_KEY_PATH")
@@ -550,6 +573,10 @@ func TestEnvAddOnManagedNodeGroupsCNI(t *testing.T) {
 // TestEnvAddOnManagedNodeGroupsInvalidInstanceType tests invalid instance types.
 func TestEnvAddOnManagedNodeGroupsInvalidInstanceType(t *testing.T) {
 	cfg := NewDefault()
+	defer func() {
+		os.RemoveAll(cfg.KubectlCommandsOutputPath)
+		os.RemoveAll(cfg.SSHCommandsOutputPath)
+	}()
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_REMOTE_ACCESS_PRIVATE_KEY_PATH", `a`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_REMOTE_ACCESS_PRIVATE_KEY_PATH")

@@ -1176,7 +1176,7 @@ func (ts *tester) waitOutputLogs() error {
 
 func (ts *tester) countSuccess() (int, error) {
 	sshOpt := ssh.WithVerbose(ts.cfg.EKSConfig.LogLevel == "debug")
-	rateLimiter := rate.NewLimiter(rate.Limit(100), 10)
+	rateLimiter := rate.NewLimiter(rate.Limit(50), 10)
 	total := 0
 	for name, nodeGroup := range ts.cfg.EKSConfig.StatusManagedNodeGroups.Nodes {
 		ts.cfg.Logger.Info("fetching outputs",
@@ -1202,7 +1202,7 @@ func (ts *tester) countSuccess() (int, error) {
 				)
 			}
 
-			ts.cfg.Logger.Info("fetching output", zap.String("instance-id", instID))
+			ts.cfg.Logger.Debug("fetching output", zap.String("instance-id", instID))
 			sh, err := ssh.New(ssh.Config{
 				Logger:        ts.cfg.Logger,
 				KeyPath:       ts.cfg.EKSConfig.AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath,

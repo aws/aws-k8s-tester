@@ -27,6 +27,11 @@ type Config struct {
 	// ConfigPath is the configuration file path.
 	// Deployer is expected to update this file with latest status.
 	ConfigPath string `json:"config-path,omitempty"`
+	// KubectlCommandsOutputPath is the output path for kubectl commands.
+	KubectlCommandsOutputPath string `json:"kubectl-commands-output-path,omitempty"`
+	// SSHCommandsOutputPath is the output path for ssh commands.
+	SSHCommandsOutputPath string `json:"ssh-commands-output-path,omitempty"`
+
 	// Region is the AWS geographic area for EKS deployment.
 	// If empty, set default region.
 	Region string `json:"region,omitempty"`
@@ -815,6 +820,18 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 			return err
 		}
 	}
+	if cfg.KubectlCommandsOutputPath == "" {
+		cfg.KubectlCommandsOutputPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".kubectl.sh"
+	}
+	if filepath.Ext(cfg.KubectlCommandsOutputPath) != ".sh" {
+		cfg.KubectlCommandsOutputPath = cfg.KubectlCommandsOutputPath + ".sh"
+	}
+	if cfg.SSHCommandsOutputPath == "" {
+		cfg.SSHCommandsOutputPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".ssh.sh"
+	}
+	if filepath.Ext(cfg.SSHCommandsOutputPath) != ".sh" {
+		cfg.SSHCommandsOutputPath = cfg.SSHCommandsOutputPath + ".sh"
+	}
 	if cfg.KubeConfigPath == "" {
 		f, err := ioutil.TempFile(filepath.Dir(cfg.ConfigPath), cfg.Name+"-kubeconfig")
 		if err != nil {
@@ -1237,8 +1254,24 @@ func (cfg *Config) Sync() (err error) {
 	if err != nil {
 		return fmt.Errorf("failed to write file %q (%v)", cfg.ConfigPath, err)
 	}
+
+	err = ioutil.WriteFile(cfg.KubectlCommandsOutputPath, []byte(cmdTop+cfg.KubectlCommands()), 0600)
+	if err != nil {
+		return fmt.Errorf("failed to write file %q (%v)", cfg.KubectlCommandsOutputPath, err)
+	}
+	err = ioutil.WriteFile(cfg.SSHCommandsOutputPath, []byte(cmdTop+cfg.SSHCommands()), 0600)
+	if err != nil {
+		return fmt.Errorf("failed to write file %q (%v)", cfg.SSHCommandsOutputPath, err)
+	}
+
 	return err
 }
+
+const cmdTop = `#!/bin/bash
+set -e
+set -x
+
+`
 
 // KubectlCommand returns the kubectl command.
 func (cfg *Config) KubectlCommand() string {
