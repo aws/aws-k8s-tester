@@ -1303,41 +1303,38 @@ func (cfg *Config) KubectlCommands() (s string) {
 
 const kubectlCmdTmpl = `
 # kubectl commands
-{{ .KubectlPath }} --kubeconfig={{ .KubeConfigPath }} version
-{{ .KubectlPath }} --kubeconfig={{ .KubeConfigPath }} cluster-info
-
-export KUBECTL="{{ .KubectlCmd }}"
 export KUBECONFIG={{ .KubeConfigPath }}
+export KUBECTL="{{ .KubectlCmd }}"
 ${KUBECTL} version
 ${KUBECTL} cluster-info
 
-export KUBECTL="{{ .KubectlCmd }}"
 export KUBECONFIG={{ .KubeConfigPath }}
+export KUBECTL="{{ .KubectlCmd }}"
 ${KUBECTL} get cs
 ${KUBECTL} get nodes
 
-export KUBECTL="{{ .KubectlCmd }}"
 export KUBECONFIG={{ .KubeConfigPath }}
+export KUBECTL="{{ .KubectlCmd }}"
 ${KUBECTL} --namespace=kube-system get pods
 
-export KUBECTL="{{ .KubectlCmd }}"
 export KUBECONFIG={{ .KubeConfigPath }}
+export KUBECTL="{{ .KubectlCmd }}"
 ${KUBECTL} get pods
 
-export KUBECTL="{{ .KubectlCmd }}"
 export KUBECONFIG={{ .KubeConfigPath }}
+export KUBECTL="{{ .KubectlCmd }}"
 ${KUBECTL} --namespace=kube-system get ds
 
-export KUBECTL="{{ .KubectlCmd }}"
 export KUBECONFIG={{ .KubeConfigPath }}
+export KUBECTL="{{ .KubectlCmd }}"
 ${KUBECTL} get secrets --all-namespaces
 
-export KUBECTL="{{ .KubectlCmd }}"
 export KUBECONFIG={{ .KubeConfigPath }}
+export KUBECTL="{{ .KubectlCmd }}"
 ${KUBECTL} get configmap --all-namespaces
 
-export KUBECTL="{{ .KubectlCmd }}"
 export KUBECONFIG={{ .KubeConfigPath }}
+export KUBECTL="{{ .KubectlCmd }}"
 ${KUBECTL} get all --all-namespaces
 
 
