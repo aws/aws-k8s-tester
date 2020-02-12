@@ -18,7 +18,11 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.8...v0.5.9
 
 ### `pkg/aws/ec2`
 
-- Fix [a bug in batch `ec2.DescribeInstances` (used in `pkg/aws/ec2.PollUntilRunning` for `mng`)](https://github.com/aws/aws-k8s-tester/commit/).
+- Fix [a bug in batch `ec2.DescribeInstances` (used in `pkg/aws/ec2.PollUntilRunning` for `mng`)](https://github.com/aws/aws-k8s-tester/commit/5c75c7b598449c774726ac6d32ed0409237a7242).
+
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.29.0`](https://github.com/aws/aws-sdk-go/releases/tag/v1.29.0) to [`v1.29.1`](https://github.com/aws/aws-sdk-go/releases/tag/v1.29.1).
 
 ### Go
 
