@@ -32,6 +32,8 @@ type Config struct {
 	// "ubuntu" for ubuntu
 	UserName string
 
+	// Envs is the set of environmental variables to use
+	// in the SSH session.
 	Envs map[string]string
 }
 
