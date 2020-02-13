@@ -57,16 +57,24 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 }
 
 const (
-	// EnvironmentVariablePrefix is the environment variable prefix used for setting configuration.
-	EnvironmentVariablePrefix                       = "AWS_K8S_TESTER_EKS_"
-	EnvironmentVariablePrefixParameters             = "AWS_K8S_TESTER_EKS_PARAMETERS_"
+	// EnvironmentVariablePrefix is the environment variable prefix used for "eksconfig".
+	EnvironmentVariablePrefix = "AWS_K8S_TESTER_EKS_"
+	// EnvironmentVariablePrefixParameters is the environment variable prefix used for "eksconfig".
+	EnvironmentVariablePrefixParameters = "AWS_K8S_TESTER_EKS_PARAMETERS_"
+	// EnvironmentVariablePrefixAddOnManagedNodeGroups is the environment variable prefix used for "eksconfig".
 	EnvironmentVariablePrefixAddOnManagedNodeGroups = "AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_"
-	EnvironmentVariablePrefixAddOnNLBHelloWorld     = "AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_"
-	EnvironmentVariablePrefixAddOnALB2048           = "AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_"
-	EnvironmentVariablePrefixAddOnJobPerl           = "AWS_K8S_TESTER_EKS_ADD_ON_JOB_PERL_"
-	EnvironmentVariablePrefixAddOnJobEcho           = "AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_"
-	EnvironmentVariablePrefixAddOnSecrets           = "AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_"
-	EnvironmentVariablePrefixAddOnIRSA              = "AWS_K8S_TESTER_EKS_ADD_ON_IRSA_"
+	// EnvironmentVariablePrefixAddOnNLBHelloWorld is the environment variable prefix used for "eksconfig".
+	EnvironmentVariablePrefixAddOnNLBHelloWorld = "AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_"
+	// EnvironmentVariablePrefixAddOnALB2048 is the environment variable prefix used for "eksconfig".
+	EnvironmentVariablePrefixAddOnALB2048 = "AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_"
+	// EnvironmentVariablePrefixAddOnJobPerl is the environment variable prefix used for "eksconfig".
+	EnvironmentVariablePrefixAddOnJobPerl = "AWS_K8S_TESTER_EKS_ADD_ON_JOB_PERL_"
+	// EnvironmentVariablePrefixAddOnJobEcho is the environment variable prefix used for "eksconfig".
+	EnvironmentVariablePrefixAddOnJobEcho = "AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_"
+	// EnvironmentVariablePrefixAddOnSecrets is the environment variable prefix used for "eksconfig".
+	EnvironmentVariablePrefixAddOnSecrets = "AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_"
+	// EnvironmentVariablePrefixAddOnIRSA is the environment variable prefix used for "eksconfig".
+	EnvironmentVariablePrefixAddOnIRSA = "AWS_K8S_TESTER_EKS_ADD_ON_IRSA_"
 )
 
 func parseEnvs(cfg Config) (Config, error) {

@@ -15,6 +15,7 @@ import (
 
 	"github.com/aws/aws-k8s-tester/ec2config"
 	pkgaws "github.com/aws/aws-k8s-tester/pkg/aws"
+	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"sigs.k8s.io/yaml"
 )
 
@@ -616,31 +617,29 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		return errors.New("LogOutputs is not empty")
 	}
 
-	dirCreated := false
 	if cfg.ConfigPath == "" {
-		rootDir := filepath.Join(os.TempDir(), cfg.Name)
-		if err := os.MkdirAll(rootDir, 0700); err != nil {
-			return err
-		}
-		dirCreated = true
-		f, err := ioutil.TempFile(rootDir, cfg.Name+"-config.yaml")
+		rootDir, err := os.Getwd()
 		if err != nil {
-			return err
+			rootDir = filepath.Join(os.TempDir(), cfg.Name)
+			if err := os.MkdirAll(rootDir, 0700); err != nil {
+				return err
+			}
 		}
+		cfg.ConfigPath = filepath.Join(rootDir, cfg.Name+"-config.yaml")
 		var p string
-		p, err = filepath.Abs(f.Name())
+		p, err = filepath.Abs(cfg.ConfigPath)
 		if err != nil {
 			panic(err)
 		}
 		cfg.ConfigPath = p
-		f.Close()
-		os.RemoveAll(cfg.ConfigPath)
 	}
-	if !dirCreated {
-		if err := os.MkdirAll(filepath.Dir(cfg.ConfigPath), 0700); err != nil {
-			return err
-		}
+	if err := os.MkdirAll(filepath.Dir(cfg.ConfigPath), 0700); err != nil {
+		return err
 	}
+	if fileutil.Exist(cfg.ConfigPath) {
+		return fmt.Errorf("ConfigPath %q exists", cfg.ConfigPath)
+	}
+
 	if cfg.KubectlCommandsOutputPath == "" {
 		cfg.KubectlCommandsOutputPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".kubectl.sh"
 	}

@@ -13,6 +13,7 @@ import (
 func TestEnv(t *testing.T) {
 	cfg := NewDefault()
 	defer func() {
+		os.RemoveAll(cfg.ConfigPath)
 		os.RemoveAll(cfg.KubectlCommandsOutputPath)
 		os.RemoveAll(cfg.SSHCommandsOutputPath)
 	}()
@@ -508,6 +509,7 @@ func TestEnv(t *testing.T) {
 func TestEnvAddOnManagedNodeGroups(t *testing.T) {
 	cfg := NewDefault()
 	defer func() {
+		os.RemoveAll(cfg.ConfigPath)
 		os.RemoveAll(cfg.KubectlCommandsOutputPath)
 		os.RemoveAll(cfg.SSHCommandsOutputPath)
 	}()
@@ -534,6 +536,7 @@ func TestEnvAddOnManagedNodeGroups(t *testing.T) {
 func TestEnvAddOnManagedNodeGroupsCNI(t *testing.T) {
 	cfg := NewDefault()
 	defer func() {
+		os.RemoveAll(cfg.ConfigPath)
 		os.RemoveAll(cfg.KubectlCommandsOutputPath)
 		os.RemoveAll(cfg.SSHCommandsOutputPath)
 	}()
@@ -574,6 +577,7 @@ func TestEnvAddOnManagedNodeGroupsCNI(t *testing.T) {
 func TestEnvAddOnManagedNodeGroupsInvalidInstanceType(t *testing.T) {
 	cfg := NewDefault()
 	defer func() {
+		os.RemoveAll(cfg.ConfigPath)
 		os.RemoveAll(cfg.KubectlCommandsOutputPath)
 		os.RemoveAll(cfg.SSHCommandsOutputPath)
 	}()
