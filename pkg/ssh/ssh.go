@@ -1,3 +1,4 @@
+// Package ssh implements various SSH commands.
 package ssh
 
 import (
@@ -35,6 +36,30 @@ type Config struct {
 }
 
 // SSH defines SSH operations.
+// For example, automates the following:
+//
+//  ssh -o "StrictHostKeyChecking no" \
+//    -i ./aws-k8s-tester-ec2.key669686897 \
+//    ec2-user@ec2-35-166-71-150.us-west-2.compute.amazonaws.com
+//
+//  rm -f ./text.txt
+//  echo "Hello" > ./text.txt
+//
+//  scp -oStrictHostKeyChecking=no \
+//    -i ./aws-k8s-tester-ec2.key301005900 \
+//    ./text.txt \
+//    ec2-user@ec2-35-166-71-150.us-west-2.compute.amazonaws.com:/home/ec2-user/test.txt
+//
+//  scp -oStrictHostKeyChecking=no \
+//    -i ./aws-k8s-tester-ec2.key301005900 \
+//    ./testfile449686843 \
+//    ec2-user@34.220.64.30:22:/home/ec2-user/aws-k8s-tester.txt
+//
+//  scp -oStrictHostKeyChecking=no \
+//    -i ./aws-k8s-tester-ec2.key301005900 \
+//    ec2-user@ec2-35-166-71-150.us-west-2.compute.amazonaws.com:/home/ec2-user/test.txt \
+//    ./test2.txt
+//
 type SSH interface {
 	// Connect connects to a remote server creating a new client session.
 	// "Close" must be called after use.
@@ -274,28 +299,28 @@ func (sh *ssh) Run(cmd string, opts ...OpOption) (out []byte, err error) {
 }
 
 /*
-chmod 400 /var/folders/y_/_dn293xd5kn7xlg6jvp7jpmxs99pm9/T/aws-k8s-tester-ec2.key301005900
+chmod 400 ./aws-k8s-tester-ec2.key301005900
 
 ssh -o "StrictHostKeyChecking no" \
-  -i /var/folders/y_/_dn293xd5kn7xlg6jvp7jpmxs99pm9/T/aws-k8s-tester-ec2.key669686897 \
+  -i ./aws-k8s-tester-ec2.key669686897 \
   ec2-user@ec2-35-166-71-150.us-west-2.compute.amazonaws.com
 
 rm -f ./text.txt
 echo "Hello" > ./text.txt
 
 scp -oStrictHostKeyChecking=no \
-  -i /var/folders/y_/_dn293xd5kn7xlg6jvp7jpmxs99pm9/T/aws-k8s-tester-ec2.key301005900 \
+  -i ./aws-k8s-tester-ec2.key301005900 \
   ./text.txt \
   ec2-user@ec2-35-166-71-150.us-west-2.compute.amazonaws.com:/home/ec2-user/test.txt
 
 
 /usr/bin/scp -oStrictHostKeyChecking=no \
-  -i /var/folders/y_/_dn293xd5kn7xlg6jvp7jpmxs99pm9/T/aws-k8s-tester-ec2.key301005900 \
-  /var/folders/y_/_dn293xd5kn7xlg6jvp7jpmxs99pm9/T/testfile449686843 \
+  -i ./aws-k8s-tester-ec2.key301005900 \
+  ./testfile449686843 \
   ec2-user@34.220.64.30:22:/home/ec2-user/aws-k8s-tester.txt
 
 scp -oStrictHostKeyChecking=no \
-  -i /var/folders/y_/_dn293xd5kn7xlg6jvp7jpmxs99pm9/T/aws-k8s-tester-ec2.key301005900 \
+  -i ./aws-k8s-tester-ec2.key301005900 \
   ec2-user@ec2-35-166-71-150.us-west-2.compute.amazonaws.com:/home/ec2-user/test.txt \
   ./test2.txt
 */
@@ -481,4 +506,49 @@ func (sh *ssh) Download(remotePath, localPath string, opts ...OpOption) (out []b
 		delete(sh.retries, key)
 	}
 	return out, err
+}
+
+// Op represents a SSH operation.
+type Op struct {
+	verbose       bool
+	retries       int
+	retryInterval time.Duration
+	timeout       time.Duration
+	envs          map[string]string
+}
+
+// OpOption configures archiver operations.
+type OpOption func(*Op)
+
+// WithVerbose configures verbose level in SSH operations.
+func WithVerbose(b bool) OpOption {
+	return func(op *Op) { op.verbose = b }
+}
+
+// WithRetry automatically retries the command on closed TCP connection error.
+// (e.g. retry immutable operation).
+// WithRetry(-1) to retry forever until success.
+func WithRetry(retries int, interval time.Duration) OpOption {
+	return func(op *Op) {
+		op.retries = retries
+		op.retryInterval = interval
+	}
+}
+
+// WithTimeout configures timeout for command run.
+func WithTimeout(timeout time.Duration) OpOption {
+	return func(op *Op) { op.timeout = timeout }
+}
+
+// WithEnv adds an environment variable that will be applied to any
+// command executed by Shell or Run. It overwrites the ones set by
+// "*ssh.Session.Setenv".
+func WithEnv(k, v string) OpOption {
+	return func(op *Op) { op.envs[k] = v }
+}
+
+func (op *Op) applyOpts(opts []OpOption) {
+	for _, opt := range opts {
+		opt(op)
+	}
 }
