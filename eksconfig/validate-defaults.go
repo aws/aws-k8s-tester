@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/pkg/aws"
-	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
 	"k8s.io/client-go/util/homedir"
 )
@@ -231,9 +230,6 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 	if err := os.MkdirAll(filepath.Dir(cfg.ConfigPath), 0700); err != nil {
 		return err
-	}
-	if fileutil.Exist(cfg.ConfigPath) {
-		return fmt.Errorf("ConfigPath %q exists", cfg.ConfigPath)
 	}
 
 	if cfg.KubectlCommandsOutputPath == "" {
