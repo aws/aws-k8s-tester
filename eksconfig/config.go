@@ -665,7 +665,7 @@ var defaultConfig = Config{
 		DeploymentReplicas: 3,
 	},
 	AddOnALB2048: &AddOnALB2048{
-		Enable:                 true,
+		Enable:                 false,
 		DeploymentReplicasALB:  3,
 		DeploymentReplicas2048: 3,
 	},
