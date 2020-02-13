@@ -260,6 +260,19 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 	}
 	ts.eksAPI = awseks.New(ts.eksSession)
 
+	// check EKS API availability
+	lresp, err := ts.eksAPI.ListClusters(&awseks.ListClustersInput{
+		MaxResults: aws.Int64(20),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list clusters using EKS API (%v)", err)
+	}
+	colorstring.Println("[green]EKS API available!")
+	ts.lg.Info("listing EKS clusters with limit 20", zap.Int("clusters", len(lresp.Clusters)))
+	for _, v := range lresp.Clusters {
+		ts.lg.Info("EKS cluster", zap.String("name", aws.StringValue(v)))
+	}
+
 	// reuse existing role
 	if ts.cfg.Parameters.ClusterRoleARN != "" {
 		ts.lg.Info("reuse existing IAM role", zap.String("cluster-role-arn", ts.cfg.Parameters.ClusterRoleARN))
