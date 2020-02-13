@@ -3,7 +3,6 @@ package mng
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -46,14 +45,7 @@ func (ts *tester) FetchLogs() (err error) {
 var regex = regexp.MustCompile("[^a-zA-Z0-9]+")
 
 func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string]string) error {
-	logsDir, err := ioutil.TempDir(
-		ts.cfg.EKSConfig.AddOnManagedNodeGroups.LogDir,
-		ts.cfg.EKSConfig.Name+"-mng-logs",
-	)
-	if err != nil {
-		return err
-	}
-
+	logsDir := ts.cfg.EKSConfig.AddOnManagedNodeGroups.LogDir
 	sshOpt := ssh.WithVerbose(ts.cfg.EKSConfig.LogLevel == "debug")
 	rateLimiter := rate.NewLimiter(rate.Limit(qps), burst)
 	rch, waits := make(chan instanceLogs, 10), 0

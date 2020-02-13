@@ -838,7 +838,7 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		cfg.KubeConfigPath = cfg.KubeConfigPath + ".yaml"
 	}
 	if cfg.AddOnManagedNodeGroups.LogDir == "" {
-		cfg.AddOnManagedNodeGroups.LogDir = filepath.Dir(cfg.ConfigPath)
+		cfg.AddOnManagedNodeGroups.LogDir = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-mng-logs")
 	}
 	cfg.Sync()
 
