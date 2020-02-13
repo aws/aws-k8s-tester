@@ -200,9 +200,9 @@ type AddOnManagedNodeGroups struct {
 	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
 	RemoteAccessUserName string `json:"remote-access-user-name,omitempty"`
 
-	// LogDir is set to specify the target directory to store all remote log files.
-	// If empty, it stores in the same directory as "Config".
-	LogDir string `json:"log-dir,omitempty"`
+	// LogsDir is set to specify the target directory to store all remote log files.
+	// If empty, it stores in the same directory as "ConfigPath".
+	LogsDir string `json:"logs-dir,omitempty"`
 	// MNGs maps from EKS Managed Node Group name to "MNG".
 	MNGs map[string]MNG `json:"mngs,omitempty"`
 }
@@ -837,8 +837,8 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	if filepath.Ext(cfg.KubeConfigPath) != ".yaml" {
 		cfg.KubeConfigPath = cfg.KubeConfigPath + ".yaml"
 	}
-	if cfg.AddOnManagedNodeGroups.LogDir == "" {
-		cfg.AddOnManagedNodeGroups.LogDir = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-mng-logs")
+	if cfg.AddOnManagedNodeGroups.LogsDir == "" {
+		cfg.AddOnManagedNodeGroups.LogsDir = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-mng-logs")
 	}
 	cfg.Sync()
 

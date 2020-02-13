@@ -33,7 +33,7 @@ func (ts *tester) FetchLogs() (err error) {
 	if !ts.cfg.EKSConfig.AddOnManagedNodeGroups.Enable {
 		return fmt.Errorf("AddOnManagedNodeGroups.Enable %v; no managed node group to fetch logs for", ts.cfg.EKSConfig.AddOnManagedNodeGroups.Enable)
 	}
-	if err := os.MkdirAll(ts.cfg.EKSConfig.AddOnManagedNodeGroups.LogDir, 0700); err != nil {
+	if err := os.MkdirAll(ts.cfg.EKSConfig.AddOnManagedNodeGroups.LogsDir, 0700); err != nil {
 		return err
 	}
 	ts.logsMu.Lock()
@@ -45,7 +45,7 @@ func (ts *tester) FetchLogs() (err error) {
 var regex = regexp.MustCompile("[^a-zA-Z0-9]+")
 
 func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string]string) error {
-	logsDir := ts.cfg.EKSConfig.AddOnManagedNodeGroups.LogDir
+	logsDir := ts.cfg.EKSConfig.AddOnManagedNodeGroups.LogsDir
 	sshOpt := ssh.WithVerbose(ts.cfg.EKSConfig.LogLevel == "debug")
 	rateLimiter := rate.NewLimiter(rate.Limit(qps), burst)
 	rch, waits := make(chan instanceLogs, 10), 0
