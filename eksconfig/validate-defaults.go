@@ -68,7 +68,7 @@ var DefaultConfig = Config{
 			"arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
 		},
 
-		// keep in-sync with the default value in https://godoc.org/k8s.io/kubernetes/test/e2e/framework#GetSigner
+		// keep in-sync with the default value in https://pkg.go.dev/k8s.io/kubernetes/test/e2e/framework#GetSigner
 		RemoteAccessPrivateKeyPath: filepath.Join(homedir.HomeDir(), ".ssh", "kube_aws_rsa"),
 		RemoteAccessUserName:       "ec2-user", // assume Amazon Linux 2
 
@@ -205,6 +205,9 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 	if len(cfg.Name) == 0 {
 		return errors.New("Name is empty")
+	}
+	if cfg.Name != strings.ToLower(cfg.Name) {
+		return fmt.Errorf("Name %q must be in lower-case", cfg.Name)
 	}
 	if len(cfg.LogOutputs) == 0 {
 		return errors.New("LogOutputs is not empty")

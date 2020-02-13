@@ -60,8 +60,8 @@ func New(cfg *Config) (ss *session.Session, stsOutput *sts.GetCallerIdentityOutp
 	// Linux/OSX: "$HOME/.aws/credentials"
 	// Windows:   "%USERPROFILE%\.aws\credentials"
 	//
-	// See https://godoc.org/github.com/aws/aws-sdk-go/aws/credentials#SharedCredentialsProvider.
-	// See https://godoc.org/github.com/aws/aws-sdk-go/aws/session#hdr-Environment_Variables.
+	// See https://pkg.go.dev/github.com/aws/aws-sdk-go/aws/credentials#SharedCredentialsProvider.
+	// See https://pkg.go.dev/github.com/aws/aws-sdk-go/aws/session#hdr-Environment_Variables.
 	awsCredsPath = filepath.Join(homedir.HomeDir(), ".aws", "credentials")
 	if os.Getenv("AWS_SHARED_CREDENTIALS_FILE") != "" {
 		awsCredsPath = os.Getenv("AWS_SHARED_CREDENTIALS_FILE")

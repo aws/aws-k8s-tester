@@ -35,7 +35,7 @@ type Config struct {
 	// LogOutputs is a list of log outputs. Valid values are 'default', 'stderr', 'stdout', or file names.
 	// Logs are appended to the existing file, if any.
 	// Multiple values are accepted. If empty, it sets to 'default', which outputs to stderr.
-	// See https://godoc.org/go.uber.org/zap#Open and https://godoc.org/go.uber.org/zap#Config for more details.
+	// See https://pkg.go.dev/go.uber.org/zap#Open and https://pkg.go.dev/go.uber.org/zap#Config for more details.
 	LogOutputs []string `json:"log-outputs"`
 	// LogOutputToUploadPath is the aws-k8s-tester log file path to upload to cloud storage.
 	// Must be left empty.

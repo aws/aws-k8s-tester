@@ -158,7 +158,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.4...v0.5.5
 ### `eks`
 
 - Support [multiple "Managed Node Group"s](https://github.com/aws/aws-k8s-tester/pull/74).
-  - See [`eksconfig` godoc](https://godoc.org/github.com/aws/aws-k8s-tester/eksconfig) for breaking changes to environmental variable parsing.
+  - See [`eksconfig` godoc](https://pkg.go.dev/github.com/aws/aws-k8s-tester/eksconfig) for breaking changes to environmental variable parsing.
   - See [`eksconfig` tests](https://github.com/aws/aws-k8s-tester/blob/master/eksconfig/config_test.go) for breaking changes to environmental variable parsing.
   - See [`aws/amazon-vpc-cni-k8s#821`](https://github.com/aws/amazon-vpc-cni-k8s/pull/821) for example migration.
 - Support [GPU tester](https://github.com/aws/aws-k8s-tester/commit/239fe7fa057a130c8aacc1d71bcb60d94b4ccdaf).
@@ -177,7 +177,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.4...v0.5.5
 ### `eksconfig`
 
 - Support [multiple "Managed Node Group"s](https://github.com/aws/aws-k8s-tester/pull/74).
-  - See [`eksconfig` godoc](https://godoc.org/github.com/aws/aws-k8s-tester/eksconfig) for breaking changes to environmental variable parsing.
+  - See [`eksconfig` godoc](https://pkg.go.dev/github.com/aws/aws-k8s-tester/eksconfig) for breaking changes to environmental variable parsing.
   - See [`eksconfig` tests](https://github.com/aws/aws-k8s-tester/blob/master/eksconfig/config_test.go) for breaking changes to environmental variable parsing.
   - See [`aws/amazon-vpc-cni-k8s#821`](https://github.com/aws/amazon-vpc-cni-k8s/pull/821) for example migration.
 - Support [GPU tester](https://github.com/aws/aws-k8s-tester/commit/239fe7fa057a130c8aacc1d71bcb60d94b4ccdaf).
@@ -300,9 +300,9 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.4.4...v0.5.0
 
 - Rewrite to [implement `kubetest2` and use `CloudFormation`](https://github.com/aws/aws-k8s-tester/pull/64).
   - https://github.com/kubernetes/test-infra/tree/master/kubetest2
-  - https://godoc.org/k8s.io/test-infra/kubetest2
-  - https://godoc.org/github.com/aws/aws-k8s-tester/eksconfig
-  - https://godoc.org/github.com/aws/aws-k8s-tester/eks
+  - https://pkg.go.dev/k8s.io/test-infra/kubetest2
+  - https://pkg.go.dev/github.com/aws/aws-k8s-tester/eksconfig
+  - https://pkg.go.dev/github.com/aws/aws-k8s-tester/eks
 
 ### Dependency
 
