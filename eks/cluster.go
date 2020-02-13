@@ -123,9 +123,12 @@ func (ts *Tester) createEKS() error {
 	}
 
 	now := time.Now()
-	initialWait := 7 * time.Minute
+	initialWait := 7*time.Minute + 30*time.Second
 
-	if ts.cfg.Parameters.ClusterResolverURL != "" || (ts.cfg.Parameters.ClusterRequestHeaderKey != "" && ts.cfg.Parameters.ClusterRequestHeaderValue != "") {
+	if ts.cfg.Parameters.ClusterResolverURL != "" ||
+		(ts.cfg.Parameters.ClusterRequestHeaderKey != "" &&
+			ts.cfg.Parameters.ClusterRequestHeaderValue != "") {
+
 		ts.lg.Info("creating a cluster using EKS API",
 			zap.String("name", ts.cfg.Name),
 			zap.String("resolver-url", ts.cfg.Parameters.ClusterResolverURL),
@@ -239,6 +242,7 @@ func (ts *Tester) createEKS() error {
 				return fmt.Errorf("unexpected OutputKey %q from %q", k, ts.cfg.Status.ClusterCFNStackID)
 			}
 		}
+
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
@@ -264,6 +268,99 @@ func (ts *Tester) createEKS() error {
 		zap.Int("cluster-ca-bytes", len(ts.cfg.Status.ClusterCA)),
 		zap.String("config-path", ts.cfg.ConfigPath),
 		zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
+	)
+	return ts.cfg.Sync()
+}
+
+func (ts *Tester) deleteCluster() error {
+	deleteStart := time.Now()
+	defer func() {
+		ts.cfg.Status.DeleteTook = time.Since(deleteStart)
+		ts.cfg.Status.DeleteTookString = ts.cfg.Status.DeleteTook.String()
+		ts.cfg.Sync()
+	}()
+
+	ts.describeCluster()
+	if ts.cfg.Status.ClusterStatus == "" || ts.cfg.Status.ClusterStatus == ClusterStatusDELETEDORNOTEXIST {
+		ts.lg.Info("cluster already deleted; no need to delete cluster")
+		return nil
+	}
+
+	ts.lg.Info("deleting cluster", zap.String("cluster-name", ts.cfg.Name))
+	if ts.cfg.Status.ClusterCFNStackID != "" {
+
+		_, err := ts.cfnAPI.DeleteStack(&cloudformation.DeleteStackInput{
+			StackName: aws.String(ts.cfg.Status.ClusterCFNStackID),
+		})
+		if err != nil {
+			ts.cfg.Status.ClusterStatus = fmt.Sprintf("failed to delete cluster (%v)", err)
+			ts.cfg.Sync()
+			return err
+		}
+		ts.cfg.Status.Up = false
+		ts.cfg.Sync()
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
+		ch := awscfn.Poll(
+			ctx,
+			make(chan struct{}),  // do not exit on stop
+			make(chan os.Signal), // do not exit on stop
+			ts.lg,
+			ts.cfnAPI,
+			ts.cfg.Status.ClusterCFNStackID,
+			cloudformation.ResourceStatusDeleteComplete,
+			3*time.Minute,
+			20*time.Second,
+		)
+		var st awscfn.StackStatus
+		for st = range ch {
+			if st.Error != nil {
+				cancel()
+				ts.cfg.Status.ClusterStatus = fmt.Sprintf("failed to delete cluster (%v)", st.Error)
+				ts.cfg.Sync()
+				ts.lg.Warn("polling errror", zap.Error(st.Error))
+			}
+		}
+		cancel()
+		if st.Error != nil {
+			return st.Error
+		}
+		ts.cfg.Status.ClusterStatus = ClusterStatusDELETEDORNOTEXIST
+		ts.cfg.Status.Up = false
+		ts.cfg.Sync()
+
+	} else {
+
+		_, err := ts.eksAPI.DeleteCluster(&awseks.DeleteClusterInput{
+			Name: aws.String(ts.cfg.Name),
+		})
+		if err != nil {
+			ts.cfg.Status.ClusterStatus = fmt.Sprintf("failed to delete cluster (%v)", err)
+			ts.cfg.Sync()
+			return err
+		}
+		ts.cfg.Status.Up = false
+		ts.cfg.Sync()
+
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
+		csCh := Poll(
+			ctx,
+			make(chan struct{}), // do not exit on stop
+			ts.lg,
+			ts.eksAPI,
+			ts.cfg.Name,
+			ClusterStatusDELETEDORNOTEXIST,
+			3*time.Minute,
+			20*time.Second,
+		)
+		for v := range csCh {
+			ts.updateClusterStatus(v)
+		}
+		cancel()
+	}
+
+	ts.lg.Info("deleted a cluster",
+		zap.String("cluster-cfn-stack-id", ts.cfg.Status.ClusterCFNStackID),
+		zap.String("cluster-name", ts.cfg.Name),
 	)
 	return ts.cfg.Sync()
 }
@@ -532,96 +629,4 @@ func Poll(
 		return
 	}()
 	return ch
-}
-
-func (ts *Tester) deleteCluster() error {
-	deleteStart := time.Now()
-	defer func() {
-		ts.cfg.Status.DeleteTook = time.Since(deleteStart)
-		ts.cfg.Status.DeleteTookString = ts.cfg.Status.DeleteTook.String()
-		ts.cfg.Sync()
-	}()
-
-	ts.describeCluster()
-	if ts.cfg.Status.ClusterStatus == "" || ts.cfg.Status.ClusterStatus == ClusterStatusDELETEDORNOTEXIST {
-		ts.lg.Info("cluster already deleted; no need to delete cluster")
-		return nil
-	}
-
-	ts.lg.Info("deleting cluster", zap.String("cluster-name", ts.cfg.Name))
-	if ts.cfg.Status.ClusterCFNStackID != "" {
-		_, err := ts.cfnAPI.DeleteStack(&cloudformation.DeleteStackInput{
-			StackName: aws.String(ts.cfg.Status.ClusterCFNStackID),
-		})
-		if err != nil {
-			ts.cfg.Status.ClusterStatus = fmt.Sprintf("failed to delete cluster (%v)", err)
-			ts.cfg.Sync()
-			return err
-		}
-		ts.cfg.Status.Up = false
-		ts.cfg.Sync()
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
-		ch := awscfn.Poll(
-			ctx,
-			make(chan struct{}),  // do not exit on stop
-			make(chan os.Signal), // do not exit on stop
-			ts.lg,
-			ts.cfnAPI,
-			ts.cfg.Status.ClusterCFNStackID,
-			cloudformation.ResourceStatusDeleteComplete,
-			3*time.Minute,
-			20*time.Second,
-		)
-		var st awscfn.StackStatus
-		for st = range ch {
-			if st.Error != nil {
-				cancel()
-				ts.cfg.Status.ClusterStatus = fmt.Sprintf("failed to delete cluster (%v)", st.Error)
-				ts.cfg.Sync()
-				ts.lg.Warn("polling errror", zap.Error(st.Error))
-			}
-		}
-		cancel()
-		if st.Error != nil {
-			return st.Error
-		}
-		ts.cfg.Status.ClusterStatus = ClusterStatusDELETEDORNOTEXIST
-		ts.cfg.Status.Up = false
-		ts.cfg.Sync()
-
-	} else {
-
-		_, err := ts.eksAPI.DeleteCluster(&awseks.DeleteClusterInput{
-			Name: aws.String(ts.cfg.Name),
-		})
-		if err != nil {
-			ts.cfg.Status.ClusterStatus = fmt.Sprintf("failed to delete cluster (%v)", err)
-			ts.cfg.Sync()
-			return err
-		}
-		ts.cfg.Status.Up = false
-		ts.cfg.Sync()
-
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
-		csCh := Poll(
-			ctx,
-			make(chan struct{}), // do not exit on stop
-			ts.lg,
-			ts.eksAPI,
-			ts.cfg.Name,
-			ClusterStatusDELETEDORNOTEXIST,
-			3*time.Minute,
-			20*time.Second,
-		)
-		for v := range csCh {
-			ts.updateClusterStatus(v)
-		}
-		cancel()
-	}
-
-	ts.lg.Info("deleted a cluster",
-		zap.String("cluster-cfn-stack-id", ts.cfg.Status.ClusterCFNStackID),
-		zap.String("cluster-name", ts.cfg.Name),
-	)
-	return ts.cfg.Sync()
 }
