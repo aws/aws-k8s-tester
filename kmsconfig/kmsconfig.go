@@ -195,22 +195,35 @@ const envPfx = "AWS_K8S_TESTER_KMS_"
 
 // UpdateFromEnvs updates fields from environmental variables.
 func (cfg *Config) UpdateFromEnvs() error {
-	cc := *cfg
+	vv, err := parseEnvs(envPfx, cfg)
+	if err != nil {
+		return err
+	}
+	av, ok := vv.(*Config)
+	if !ok {
+		return fmt.Errorf("expected *Config, got %T", vv)
+	}
+	cfg = av
+	return nil
+}
 
-	tp, vv := reflect.TypeOf(&cc).Elem(), reflect.ValueOf(&cc).Elem()
+func parseEnvs(pfx string, addOn interface{}) (interface{}, error) {
+	tp, vv := reflect.TypeOf(addOn).Elem(), reflect.ValueOf(addOn).Elem()
 	for i := 0; i < tp.NumField(); i++ {
 		jv := tp.Field(i).Tag.Get("json")
 		if jv == "" {
 			continue
 		}
 		jv = strings.Replace(jv, ",omitempty", "", -1)
-		jv = strings.Replace(jv, "-", "_", -1)
 		jv = strings.ToUpper(strings.Replace(jv, "-", "_", -1))
-		env := envPfx + jv
-		if os.Getenv(env) == "" {
+		env := pfx + jv
+		sv := os.Getenv(env)
+		if sv == "" {
 			continue
 		}
-		sv := os.Getenv(env)
+		if tp.Field(i).Tag.Get("read-only") == "true" { // skip updating read-only field
+			continue
+		}
 		fieldName := tp.Field(i).Name
 
 		switch vv.Field(i).Type().Kind() {
@@ -220,7 +233,7 @@ func (cfg *Config) UpdateFromEnvs() error {
 		case reflect.Bool:
 			bb, err := strconv.ParseBool(sv)
 			if err != nil {
-				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+				return nil, fmt.Errorf("failed to parse %q (field name %q, environmental variable key %q, error %v)", sv, fieldName, env, err)
 			}
 			vv.Field(i).SetBool(bb)
 
@@ -228,46 +241,47 @@ func (cfg *Config) UpdateFromEnvs() error {
 			if fieldName == "DestroyWaitTime" {
 				dv, err := time.ParseDuration(sv)
 				if err != nil {
-					return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+					return nil, fmt.Errorf("failed to parse %q (field name %q, environmental variable key %q, error %v)", sv, fieldName, env, err)
 				}
 				vv.Field(i).SetInt(int64(dv))
 				continue
 			}
 			iv, err := strconv.ParseInt(sv, 10, 64)
 			if err != nil {
-				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+				return nil, fmt.Errorf("failed to parse %q (field name %q, environmental variable key %q, error %v)", sv, fieldName, env, err)
 			}
 			vv.Field(i).SetInt(iv)
 
 		case reflect.Uint, reflect.Uint32, reflect.Uint64:
 			iv, err := strconv.ParseUint(sv, 10, 64)
 			if err != nil {
-				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+				return nil, fmt.Errorf("failed to parse %q (field name %q, environmental variable key %q, error %v)", sv, fieldName, env, err)
 			}
 			vv.Field(i).SetUint(iv)
 
 		case reflect.Float32, reflect.Float64:
 			fv, err := strconv.ParseFloat(sv, 64)
 			if err != nil {
-				return fmt.Errorf("failed to parse %q (%q, %v)", sv, env, err)
+				return nil, fmt.Errorf("failed to parse %q (field name %q, environmental variable key %q, error %v)", sv, fieldName, env, err)
 			}
 			vv.Field(i).SetFloat(fv)
 
-		case reflect.Slice:
+		case reflect.Slice: // only supports "[]string" for now
 			ss := strings.Split(sv, ",")
+			if len(ss) < 1 {
+				continue
+			}
 			slice := reflect.MakeSlice(reflect.TypeOf([]string{}), len(ss), len(ss))
-			for i := range ss {
-				slice.Index(i).SetString(ss[i])
+			for j := range ss {
+				slice.Index(j).SetString(ss[j])
 			}
 			vv.Field(i).Set(slice)
 
 		default:
-			return fmt.Errorf("%q (%v) is not supported as an env", env, vv.Field(i).Type())
+			return nil, fmt.Errorf("%q (type %v) is not supported as an env", env, vv.Field(i).Type())
 		}
 	}
-	*cfg = cc
-
-	return nil
+	return addOn, nil
 }
 
 const ll = "0123456789abcdefghijklmnopqrstuvwxyz"

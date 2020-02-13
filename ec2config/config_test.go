@@ -27,7 +27,7 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EC2_SECURITY_GROUP_IDS", "d,e,f")
 	os.Setenv("AWS_K8S_TESTER_EC2_WAIT", "true")
 	os.Setenv("AWS_K8S_TESTER_EC2_TAGS", "kubernetes.io/cluster/a8-ec2-190222-9dxccww=owned")
-	os.Setenv("AWS_K8S_TESTER_EC2_INGRESS_RULES_TCP", "22=0.0.0.0/0,2379-2380=192.168.0.0/8")
+	os.Setenv("AWS_K8S_TESTER_EC2_INGRESS_RULES_TCP", "22=0.0.0.0/0;2379-2380=192.168.0.0/8")
 	os.Setenv("AWS_K8S_TESTER_EC2_VOLUME_SIZE", "120")
 	os.Setenv("AWS_K8S_TESTER_EC2_VPC_CIDR", "192.168.0.0/8")
 	os.Setenv("AWS_K8S_TESTER_EC2_INSTANCE_PROFILE_FILE_PATH", "/tmp/aws-k8s-tester-ec2")
