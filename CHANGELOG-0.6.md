@@ -38,7 +38,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.9...v0.6.0
 
 ### Dependency
 
-- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.29.1`](https://github.com/aws/aws-sdk-go/releases/tag/v1.29.1) to [`v1.29.2`](https://github.com/aws/aws-sdk-go/releases/tag/v1.29.2).
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.29.1`](https://github.com/aws/aws-sdk-go/releases/tag/v1.29.1) to [`v1.29.3`](https://github.com/aws/aws-sdk-go/releases/tag/v1.29.3).
 
 ### Go
 
