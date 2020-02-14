@@ -322,23 +322,6 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 			return fmt.Errorf("non-empty Parameters.PrivateSubnetCIDR3 %q, but got empty Parameters.VPCCIDR", cfg.Parameters.PrivateSubnetCIDR3)
 		}
 	}
-	if cfg.Status.VPCCFNStackID != "" {
-		if cfg.Status.VPCID == "" {
-			return fmt.Errorf("non-empty Status.VPCCFNStackID %q, but empty Status.VPCID",
-				cfg.Status.VPCCFNStackID,
-			)
-		}
-		if len(cfg.Status.PrivateSubnetIDs) == 0 {
-			return fmt.Errorf("non-empty Status.ClusterRoleCFNStackID %q, but empty Status.PrivateSubnetIDs",
-				cfg.Status.ClusterRoleCFNStackID,
-			)
-		}
-		if cfg.Status.ControlPlaneSecurityGroupID == "" {
-			return fmt.Errorf("non-empty Status.ClusterRoleCFNStackID %q, but empty Status.ControlPlaneSecurityGroupID",
-				cfg.Status.ClusterRoleCFNStackID,
-			)
-		}
-	}
 	if cfg.Status.VPCID != "" {
 		if cfg.Status.VPCCFNStackID == "" {
 			return fmt.Errorf("non-empty Status.VPCID %q, but empty Status.VPCCFNStackID",
