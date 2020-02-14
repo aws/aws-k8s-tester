@@ -26,6 +26,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.9...v0.6.0
 ### `eksconfig`
 
 - Set [initial `eksconfig.Config.Name` in `eksconfig.NewDefault` using `AWS_K8S_TESTER_EKS_NAME` (if defined)](https://github.com/aws/aws-k8s-tester/commit/11c1fa3aaa654333069d002ecf1dc1e765deca02).
+  - e.g. `AWS_K8S_TESTER_EKS_NAME=${USER}-cluster aws-k8s-tester eks create config -p test.yaml`
 - Remove [redundant environmental variable parsing methods](https://github.com/aws/aws-k8s-tester/commit/7ea5e64a2f3618fd48c62c25acdceff6d97677f0).
 - Disable [`AddOnALB2048` by default](https://github.com/aws/aws-k8s-tester/commit/f437b006afbc304bd1552fa143cfcd6a5cbc8e39).
 - Rename [`AddOnManagedNodeGroups.LogDir` to `AddOnManagedNodeGroups.LogsDir`](https://github.com/aws/aws-k8s-tester/commit/bf3a92a97fbe4571388f7909225129fe3ee926da).
