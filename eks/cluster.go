@@ -594,29 +594,33 @@ func Poll(
 			}
 
 			cluster := output.Cluster
-			status := aws.StringValue(cluster.Status)
+			currentStatus := aws.StringValue(cluster.Status)
 			lg.Info("poll",
 				zap.String("cluster-name", clusterName),
-				zap.String("cluster-status", status),
+				zap.String("cluster-status", currentStatus),
 				zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			)
-			switch status {
+			switch currentStatus {
 			case desiredClusterStatus:
 				ch <- ClusterStatus{Cluster: cluster, Error: nil}
-				lg.Info("became desired cluster status; exiting", zap.String("cluster-status", status))
+				lg.Info("became desired cluster status; exiting", zap.String("cluster-status", currentStatus))
 				close(ch)
 				return
 			case awseks.ClusterStatusFailed:
-				ch <- ClusterStatus{Cluster: cluster, Error: fmt.Errorf("failed to create (status %q)", awseks.ClusterStatusFailed)}
+				ch <- ClusterStatus{Cluster: cluster, Error: fmt.Errorf("unexpected cluster status %q", awseks.ClusterStatusFailed)}
 				close(ch)
 				return
 			default:
 				ch <- ClusterStatus{Cluster: cluster, Error: nil}
 			}
-
 			if first {
 				lg.Info("sleeping", zap.Duration("initial-wait", initialWait))
 				select {
+				case <-ctx.Done():
+					lg.Warn("wait aborted", zap.Error(ctx.Err()))
+					ch <- ClusterStatus{Cluster: nil, Error: ctx.Err()}
+					close(ch)
+					return
 				case <-stopc:
 					lg.Warn("wait stopped", zap.Error(ctx.Err()))
 					ch <- ClusterStatus{Cluster: nil, Error: errors.New("wait stopped")}
@@ -624,7 +628,6 @@ func Poll(
 					return
 				case <-time.After(initialWait):
 				}
-				time.Sleep(initialWait)
 				first = false
 			}
 		}

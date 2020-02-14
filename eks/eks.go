@@ -530,7 +530,7 @@ func (ts *Tester) Up() (err error) {
 	found:
 		for _, mv := range ts.cfg.AddOnManagedNodeGroups.MNGs {
 			switch mv.AMIType {
-			case "AL2_x86_64_GPU":
+			case awseks.AMITypesAl2X8664Gpu:
 				needGPU = true
 				break found
 			}
@@ -878,7 +878,7 @@ func (ts *Tester) CreateMNG() error {
 found:
 	for _, mv := range ts.cfg.AddOnManagedNodeGroups.MNGs {
 		switch mv.AMIType {
-		case "AL2_x86_64_GPU":
+		case awseks.AMITypesAl2X8664Gpu:
 			needGPU = true
 			break found
 		}

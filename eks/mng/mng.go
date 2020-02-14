@@ -430,7 +430,7 @@ func (ts *tester) createMNG() error {
 
 			ts.cfg.EKSConfig.StatusManagedNodeGroups.Nodes[mv.Name] = eksconfig.StatusManagedNodeGroup{
 				CreateRequested: true,
-				Status:          ManagedNodeGroupStatusCREATING,
+				Status:          awseks.NodegroupStatusCreating,
 				Logs:            make(map[string][]string),
 			}
 			ts.cfg.EKSConfig.Sync()
@@ -602,7 +602,7 @@ func (ts *tester) createMNG() error {
 			ts.cfg.EKSAPI,
 			ts.cfg.EKSConfig.Name,
 			v.Name,
-			ManagedNodeGroupStatusACTIVE,
+			awseks.NodegroupStatusActive,
 			initialWait,
 			20*time.Second,
 		)
@@ -735,7 +735,9 @@ func (ts *tester) deleteMNG() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
-// https://docs.aws.amazon.com/eks/latest/APIReference/API_Nodegroup.html
+// ClusterStatusDELETEDORNOTEXIST defines the cluster status when the cluster is not found.
+//
+// ref. https://docs.aws.amazon.com/eks/latest/APIReference/API_Nodegroup.html
 //
 //  CREATING
 //  ACTIVE
@@ -743,17 +745,7 @@ func (ts *tester) deleteMNG() error {
 //  FAILED
 //  UPDATING
 //
-const (
-	ManagedNodeGroupStatusCREATING          = "CREATING"
-	ManagedNodeGroupStatusACTIVE            = "ACTIVE"
-	ManagedNodeGroupStatusUPDATING          = "UPDATING"
-	ManagedNodeGroupStatusDELETING          = "DELETING"
-	ManagedNodeGroupStatusCREATEFAILED      = "CREATE_FAILED"
-	ManagedNodeGroupStatusUPDATEFAILED      = "UPDATE_FAILED"
-	ManagedNodeGroupStatusDELETEFAILED      = "DELETE_FAILED"
-	ManagedNodeGroupStatusDEGRADED          = "DEGRADED"
-	ManagedNodeGroupStatusDELETEDORNOTEXIST = "DELETED/NOT-EXIST"
-)
+const ManagedNodeGroupStatusDELETEDORNOTEXIST = "DELETED/NOT-EXIST"
 
 // ManagedNodeGroupStatus represents the CloudFormation status.
 type ManagedNodeGroupStatus struct {
@@ -780,6 +772,9 @@ func Poll(
 		zap.String("mng-name", nodeGroupName),
 		zap.String("desired-mng-status", desiredNodeGroupStatus),
 	)
+
+	now := time.Now()
+
 	ch := make(chan ManagedNodeGroupStatus, 10)
 	go func() {
 		ticker := time.NewTicker(wait)
@@ -835,43 +830,45 @@ func Poll(
 			}
 
 			nodeGroup := output.Nodegroup
-			status := aws.StringValue(nodeGroup.Status)
-
+			currentStatus := aws.StringValue(nodeGroup.Status)
+			lg.Info("poll",
+				zap.String("cluster-name", clusterName),
+				zap.String("mng-name", nodeGroupName),
+				zap.String("mng-status", currentStatus),
+				zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
+			)
+			switch currentStatus {
+			case desiredNodeGroupStatus:
+				ch <- ManagedNodeGroupStatus{NodeGroupName: nodeGroupName, NodeGroup: nodeGroup, Error: nil}
+				lg.Info("became desired managed node group status; exiting", zap.String("status", currentStatus))
+				close(ch)
+				return
+			case awseks.NodegroupStatusCreateFailed,
+				awseks.NodegroupStatusDeleteFailed,
+				awseks.NodegroupStatusDegraded:
+				ch <- ManagedNodeGroupStatus{NodeGroupName: nodeGroupName, NodeGroup: nodeGroup, Error: fmt.Errorf("unexpected mng status %q", currentStatus)}
+				close(ch)
+				return
+			default:
+				ch <- ManagedNodeGroupStatus{NodeGroupName: nodeGroupName, NodeGroup: nodeGroup, Error: nil}
+			}
 			if first {
 				lg.Info("sleeping", zap.Duration("initial-wait", initialWait))
-
 				select {
 				case <-ctx.Done():
 					lg.Warn("wait aborted", zap.Error(ctx.Err()))
 					ch <- ManagedNodeGroupStatus{NodeGroupName: nodeGroupName, NodeGroup: nil, Error: ctx.Err()}
 					close(ch)
 					return
-
 				case <-stopc:
 					lg.Warn("wait stopped", zap.Error(ctx.Err()))
 					ch <- ManagedNodeGroupStatus{NodeGroupName: nodeGroupName, NodeGroup: nil, Error: errors.New("wait stopped")}
 					close(ch)
 					return
-
 				case <-time.After(initialWait):
 				}
-
 				first = false
 			}
-
-			lg.Info("poll",
-				zap.String("cluster-name", clusterName),
-				zap.String("name", nodeGroupName),
-				zap.String("status", status),
-			)
-
-			ch <- ManagedNodeGroupStatus{NodeGroupName: nodeGroupName, NodeGroup: nodeGroup, Error: nil}
-			if status == desiredNodeGroupStatus {
-				lg.Info("became desired managed node group status; exiting", zap.String("status", status))
-				close(ch)
-				return
-			}
-			// continue for-loop
 		}
 
 		lg.Warn("wait aborted", zap.Error(ctx.Err()))

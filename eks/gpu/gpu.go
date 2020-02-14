@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
+	"github.com/aws/aws-sdk-go/service/eks"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -93,7 +94,7 @@ func (ts *tester) InstallNvidiaDriver() error {
 	for time.Now().Sub(retryStart) < waitDur {
 		for _, mv := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
 			switch mv.AMIType {
-			case "AL2_x86_64_GPU":
+			case eks.AMITypesAl2X8664Gpu:
 			default:
 				continue
 			}

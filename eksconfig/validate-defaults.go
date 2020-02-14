@@ -12,6 +12,7 @@ import (
 
 	"github.com/aws/aws-k8s-tester/pkg/aws"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
+	"github.com/aws/aws-sdk-go/service/eks"
 	"k8s.io/client-go/util/homedir"
 )
 
@@ -425,11 +426,11 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 			}
 
 			switch v.AMIType {
-			case "AL2_x86_64":
+			case eks.AMITypesAl2X8664:
 				if len(v.InstanceTypes) == 0 {
 					v.InstanceTypes = []string{DefaultNodeInstanceTypeCPU}
 				}
-			case "AL2_x86_64_GPU":
+			case eks.AMITypesAl2X8664Gpu:
 				if len(v.InstanceTypes) == 0 {
 					v.InstanceTypes = []string{DefaultNodeInstanceTypeGPU}
 				}

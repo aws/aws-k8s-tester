@@ -8,6 +8,8 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/aws/aws-sdk-go/service/eks"
 )
 
 func TestEnv(t *testing.T) {
@@ -313,7 +315,7 @@ func TestEnv(t *testing.T) {
 			Name:               gpuName,
 			Tags:               map[string]string{"gpu": "hello-world"},
 			ReleaseVersion:     "test-ver-gpu",
-			AMIType:            "AL2_x86_64_GPU",
+			AMIType:            eks.AMITypesAl2X8664Gpu,
 			ASGMinSize:         30,
 			ASGMaxSize:         35,
 			ASGDesiredCapacity: 34,
