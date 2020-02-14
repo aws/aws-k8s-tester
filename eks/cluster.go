@@ -117,7 +117,7 @@ func (ts *Tester) createEKS() error {
 	}
 
 	ts.describeCluster()
-	if ts.cfg.Status.ClusterStatus == ClusterStatusACTIVE {
+	if ts.cfg.Status.ClusterStatus == awseks.ClusterStatusActive {
 		ts.lg.Info("cluster status is active; no need to create cluster", zap.String("status", ts.cfg.Status.ClusterStatus))
 		return nil
 	}
@@ -252,7 +252,7 @@ func (ts *Tester) createEKS() error {
 		ts.lg,
 		ts.eksAPI,
 		ts.cfg.Name,
-		ClusterStatusACTIVE,
+		awseks.ClusterStatusActive,
 		initialWait,
 		30*time.Second,
 	)
@@ -365,7 +365,9 @@ func (ts *Tester) deleteCluster() error {
 	return ts.cfg.Sync()
 }
 
-// https://docs.aws.amazon.com/eks/latest/APIReference/API_Cluster.html#AmazonEKS-Type-Cluster-status
+// ClusterStatusDELETEDORNOTEXIST defines the cluster status when the cluster is not found.
+//
+// ref. https://docs.aws.amazon.com/eks/latest/APIReference/API_Cluster.html#AmazonEKS-Type-Cluster-status
 //
 //  CREATING
 //  ACTIVE
@@ -373,14 +375,7 @@ func (ts *Tester) deleteCluster() error {
 //  DELETING
 //  FAILED
 //
-const (
-	ClusterStatusCREATING          = "CREATING"
-	ClusterStatusACTIVE            = "ACTIVE"
-	ClusterStatusUPDATING          = "UPDATING"
-	ClusterStatusDELETING          = "DELETING"
-	ClusterStatusFAILED            = "FAILED"
-	ClusterStatusDELETEDORNOTEXIST = "DELETED/NOT-EXIST"
-)
+const ClusterStatusDELETEDORNOTEXIST = "DELETED/NOT-EXIST"
 
 func (ts *Tester) describeCluster() {
 	dout, err := ts.eksAPI.DescribeCluster(&awseks.DescribeClusterInput{Name: aws.String(ts.cfg.Name)})
@@ -397,7 +392,7 @@ func (ts *Tester) describeCluster() {
 		ts.cfg.Status.Up = false
 	} else {
 		ts.cfg.Status.ClusterStatus = aws.StringValue(dout.Cluster.Status)
-		ts.cfg.Status.Up = ts.cfg.Status.ClusterStatus == ClusterStatusACTIVE
+		ts.cfg.Status.Up = ts.cfg.Status.ClusterStatus == awseks.ClusterStatusActive
 	}
 	ts.lg.Info("described cluster",
 		zap.String("name", ts.cfg.Name),
@@ -417,7 +412,7 @@ func (ts *Tester) updateClusterStatus(v ClusterStatus) {
 	}
 	ts.cfg.Status.ClusterARN = aws.StringValue(v.Cluster.Arn)
 	ts.cfg.Status.ClusterStatus = aws.StringValue(v.Cluster.Status)
-	ts.cfg.Status.Up = ts.cfg.Status.ClusterStatus == ClusterStatusACTIVE
+	ts.cfg.Status.Up = ts.cfg.Status.ClusterStatus == awseks.ClusterStatusActive
 	if ts.cfg.Status.ClusterStatus != ClusterStatusDELETEDORNOTEXIST {
 		if v.Cluster.Endpoint != nil {
 			ts.cfg.Status.ClusterAPIServerEndpoint = aws.StringValue(v.Cluster.Endpoint)
@@ -601,11 +596,18 @@ func Poll(
 				zap.String("cluster-status", status),
 				zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			)
-			ch <- ClusterStatus{Cluster: cluster, Error: nil}
-			if status == desiredClusterStatus {
+			switch status {
+			case desiredClusterStatus:
+				ch <- ClusterStatus{Cluster: cluster, Error: nil}
 				lg.Info("became desired cluster status; exiting", zap.String("cluster-status", status))
 				close(ch)
 				return
+			case awseks.ClusterStatusFailed:
+				ch <- ClusterStatus{Cluster: cluster, Error: fmt.Errorf("failed to create (status %q)", awseks.ClusterStatusFailed)}
+				close(ch)
+				return
+			default:
+				ch <- ClusterStatus{Cluster: cluster, Error: nil}
 			}
 
 			if first {

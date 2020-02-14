@@ -381,14 +381,8 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 			return fmt.Errorf("non-empty Status.ClusterCFNStackID %q, but empty Status.ClusterCADecoded", cfg.Status.ClusterCFNStackID)
 		}
 	}
-	if cfg.Status.ClusterARN != "" {
-		if cfg.Status.ClusterCA == "" {
-			return fmt.Errorf("non-empty Status.ClusterARN %q, but empty Status.ClusterCA", cfg.Status.ClusterARN)
-		}
-		if cfg.Status.ClusterCADecoded == "" {
-			return fmt.Errorf("non-empty Status.ClusterARN %q, but empty Status.ClusterCADecoded", cfg.Status.ClusterARN)
-		}
-	}
+	// if created via EKS API, no need to error in the following case:
+	// cfg.Status.ClusterARN != "" && cfg.Status.ClusterCA == "" || cfg.Status.ClusterCADecoded == ""
 
 	// validate node group related
 	if cfg.AddOnManagedNodeGroups.RoleName == "" {
