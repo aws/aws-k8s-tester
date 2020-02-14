@@ -39,10 +39,11 @@ var DefaultConfig = Config{
 	// log file named with cluster name will be added automatically
 	LogOutputs: []string{"stderr"},
 
+	// https://github.com/kubernetes/kubernetes/tags
 	// https://kubernetes.io/docs/tasks/tools/install-kubectl/
 	// https://docs.aws.amazon.com/eks/latest/userguide/install-kubectl.html
 	KubectlDownloadURL: "https://storage.googleapis.com/kubernetes-release/release/v1.14.10/bin/linux/amd64/kubectl",
-	KubectlPath:        "/tmp/aws-k8s-tester/kubectl",
+	KubectlPath:        "/tmp/kubectl-test-1.14.10",
 
 	OnFailureDelete:            true,
 	OnFailureDeleteWaitSeconds: 100,
