@@ -30,6 +30,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.9...v0.6.0
 - Rename [`AddOnManagedNodeGroups.LogDir` to `AddOnManagedNodeGroups.LogsDir`](https://github.com/aws/aws-k8s-tester/commit/bf3a92a97fbe4571388f7909225129fe3ee926da).
 - Improve [`AddOnManagedNodeGroups.LogsDir` defaults](https://github.com/aws/aws-k8s-tester/commit/4524c52ab907152bc85c656c54864e075f7ec5f3).
 - Fix [cluster deletion when created via `EKS` API instead of CloudFormation](https://github.com/aws/aws-k8s-tester/commit/475bf253b0355a845e052dd3d383c8ccf072f749).
+- Fix [`VPCID` checks](https://github.com/aws/aws-k8s-tester/commit/1758b1af46b71a837653518884414619e7003550).
 
 ### `kmsconfig`
 
