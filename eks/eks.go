@@ -423,12 +423,13 @@ func (ts *Tester) Up() (err error) {
 	now := time.Now()
 
 	defer func() {
-		colorstring.Printf("\n\n\n[light_green]Up.defer [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		colorstring.Printf("\n\n\n[light_green]Up.defer start [default](%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 
 		if err == nil {
 			ts.lg.Info("Up succeeded",
 				zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			)
+			colorstring.Printf("\n\n\n[light_green]Up.defer end [default](%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 			colorstring.Printf("\n\n😁 [blue]:)\n\n\n")
 			return
 		}
@@ -437,9 +438,10 @@ func (ts *Tester) Up() (err error) {
 			zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			zap.Error(err),
 		)
-		colorstring.Printf("\n\n😱 ☹  [light_red](-_-)\n\n\n")
 
 		if !ts.cfg.OnFailureDelete {
+			colorstring.Printf("\n\n\n[light_red]Up.defer end [default](%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+			colorstring.Printf("\n\n😱 ☹  [light_red](-_-)\n\n\n")
 			return
 		}
 
@@ -461,6 +463,9 @@ func (ts *Tester) Up() (err error) {
 		} else {
 			ts.lg.Warn("reverted Up")
 		}
+
+		colorstring.Printf("\n\n\n[light_red]Up.defer end [default](%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		colorstring.Printf("\n\n😱 ☹  [light_red](-_-)\n\n\n")
 	}()
 
 	ts.lg.Info("Up started",
@@ -713,8 +718,15 @@ func (ts *Tester) Up() (err error) {
 	return ts.cfg.Sync()
 }
 
+// Down cancels the cluster creation and destroy the test cluster if any.
+func (ts *Tester) Down() error {
+	ts.downMu.Lock()
+	defer ts.downMu.Unlock()
+	return ts.down()
+}
+
 func (ts *Tester) down() (err error) {
-	colorstring.Printf("\n\n\n[light_green]down [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+	colorstring.Printf("\n\n\n[light_green]Down start [default](%q)\n\n", ts.cfg.ConfigPath)
 
 	now := time.Now()
 	ts.lg.Warn("starting Down",
@@ -729,6 +741,11 @@ func (ts *Tester) down() (err error) {
 				zap.String("name", ts.cfg.Name),
 				zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			)
+			colorstring.Printf("\n\n\n[light_green]Down.defer end [default](%q)\n\n", ts.cfg.ConfigPath)
+			colorstring.Printf("\n\n😁 [blue]:)\n\n\n")
+		} else {
+			colorstring.Printf("\n\n\n[light_red]Down.defer end [default](%q)\n\n", ts.cfg.ConfigPath)
+			colorstring.Printf("\n\n😱 ☹  [light_red](-_-)\n\n\n")
 		}
 	}()
 
@@ -910,13 +927,6 @@ found:
 	}
 
 	return ts.cfg.Sync()
-}
-
-// Down cancels the cluster creation and destroy the test cluster if any.
-func (ts *Tester) Down() error {
-	ts.downMu.Lock()
-	defer ts.downMu.Unlock()
-	return ts.down()
 }
 
 // IsUp should return true if a test cluster is successfully provisioned
