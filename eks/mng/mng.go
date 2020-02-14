@@ -425,7 +425,8 @@ func (ts *tester) createMNG() error {
 
 			err := req.Send()
 			if err != nil {
-				return err
+				ts.cfg.Logger.Warn("failed to created MNG", zap.Error(err))
+				return fmt.Errorf("create node group request failed (%v)", err)
 			}
 
 			ts.cfg.EKSConfig.StatusManagedNodeGroups.Nodes[mv.Name] = eksconfig.StatusManagedNodeGroup{
