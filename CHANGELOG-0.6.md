@@ -11,6 +11,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.6.0...v0.6.1
 
 - Improve [failure logging](https://github.com/aws/aws-k8s-tester/commit/6604cbad3d64d885b16ce3246f78e3f5bc2cbc30).
 
+### `eksconfig`
+
+- Update [default `KubectlPath` value](https://github.com/aws/aws-k8s-tester/commit/95e8ed790e588a8f31758d901b2f8997b04d846f).
+
 ### Go
 
 - Compile with [*Go 1.13.8*](https://golang.org/doc/devel/release.html#go1.13).
