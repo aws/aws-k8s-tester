@@ -898,7 +898,9 @@ func (ts *tester) setStatus(sv ManagedNodeGroupStatus) error {
 		}
 	} else {
 		mv.Status = aws.StringValue(sv.NodeGroup.Status)
-		mv.RemoteAccessSecurityGroupID = aws.StringValue(sv.NodeGroup.Resources.RemoteAccessSecurityGroup)
+		if sv.NodeGroup.Resources != nil {
+			mv.RemoteAccessSecurityGroupID = aws.StringValue(sv.NodeGroup.Resources.RemoteAccessSecurityGroup)
+		}
 	}
 
 	ts.cfg.EKSConfig.StatusManagedNodeGroups.Nodes[name] = mv
