@@ -450,7 +450,7 @@ func (ts *Tester) Up() (err error) {
 			select {
 			case <-ts.stopCreationCh:
 				ts.lg.Info("wait aborted before clean up")
-			case <-ts.ts.interruptSig:
+			case <-ts.interruptSig:
 				ts.lg.Info("wait aborted before clean up")
 			case <-time.After(waitDur):
 			}
