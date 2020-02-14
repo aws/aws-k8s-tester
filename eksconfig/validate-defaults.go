@@ -45,7 +45,7 @@ var DefaultConfig = Config{
 	KubectlPath:        "/tmp/aws-k8s-tester/kubectl",
 
 	OnFailureDelete:            true,
-	OnFailureDeleteWaitSeconds: 60,
+	OnFailureDeleteWaitSeconds: 100,
 
 	Parameters: &Parameters{
 		ClusterSigningName: "eks",
