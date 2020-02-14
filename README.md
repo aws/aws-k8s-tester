@@ -12,6 +12,10 @@ WARNING: Pre-alpha. Do not use this in production. Only for testing.
 
 `aws-k8s-tester` is a set of utilities and libraries for testing Kubernetes on AWS.
 
+## Install
+
+https://github.com/aws/aws-k8s-tester/releases
+
 ## `aws-k8s-tester eks`
 
 Make sure AWS credential is located in your machine:
@@ -23,15 +27,11 @@ cat ~/.aws/credentials
 aws sts get-caller-identity --query Arn --output text
 ```
 
-To install:
-
 ```bash
-cd ${GOPATH}/src/github.com/aws/aws-k8s-tester
-go install -v ./cmd/aws-k8s-tester
 aws-k8s-tester eks create cluster -h
 
-aws-k8s-tester eks create config --path /tmp/aws-k8s-tester-eks.yaml
-aws-k8s-tester eks create cluster --path /tmp/aws-k8s-tester-eks.yaml
+aws-k8s-tester eks create config --path /tmp/config.yaml
+aws-k8s-tester eks create cluster --path /tmp/config.yaml
 ```
 
 This will create an EKS cluster with a worker node (takes about 20 minutes).
@@ -49,14 +49,14 @@ aws eks describe-cluster \
 Cluster states are persisted on disk as well. EKS tester uses this file to track status.
 
 ```bash
-cat /tmp/aws-k8s-tester-eks.yaml
+cat /tmp/config.yaml
 
 # or
-less +FG /tmp/aws-k8s-tester-eks.yaml
+less +FG /tmp/config.yaml
 ```
 
 Tear down the cluster (takes about 10 minutes):
 
 ```bash
-aws-k8s-tester eks delete cluster --path /tmp/aws-k8s-tester-eks.yaml
+aws-k8s-tester eks delete cluster --path /tmp/config.yaml
 ```
