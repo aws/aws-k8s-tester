@@ -138,15 +138,19 @@ var DefaultConfig = Config{
 func NewDefault() *Config {
 	vv := DefaultConfig
 
-	now := time.Now()
-	vv.Name = fmt.Sprintf(
-		"eks-%d%02d%02d%02d-%s",
-		now.Year(),
-		int(now.Month()),
-		now.Day(),
-		now.Hour(),
-		randString(12),
-	)
+	if name := os.Getenv(EnvironmentVariablePrefix + "NAME"); name != "" {
+		vv.Name = name
+	} else {
+		now := time.Now()
+		vv.Name = fmt.Sprintf(
+			"eks-%d%02d%02d%02d-%s",
+			now.Year(),
+			int(now.Month()),
+			now.Day(),
+			now.Hour(),
+			randString(12),
+		)
+	}
 
 	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
 	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
