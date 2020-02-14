@@ -225,7 +225,7 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 				return err
 			}
 		}
-		cfg.ConfigPath = filepath.Join(rootDir, cfg.Name+"-config.yaml")
+		cfg.ConfigPath = filepath.Join(rootDir, cfg.Name+".yaml")
 		var p string
 		p, err = filepath.Abs(cfg.ConfigPath)
 		if err != nil {
