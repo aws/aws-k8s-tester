@@ -257,7 +257,7 @@ func (ts *Tester) createEKS() error {
 		30*time.Second,
 	)
 	for v := range ch {
-		ts.updateClusterStatus(v)
+		ts.updateClusterStatus(v, awseks.ClusterStatusActive)
 	}
 	cancel()
 
@@ -353,7 +353,7 @@ func (ts *Tester) deleteCluster() error {
 			20*time.Second,
 		)
 		for v := range csCh {
-			ts.updateClusterStatus(v)
+			ts.updateClusterStatus(v, ClusterStatusDELETEDORNOTEXIST)
 		}
 		cancel()
 	}
@@ -400,7 +400,7 @@ func (ts *Tester) describeCluster() {
 	)
 }
 
-func (ts *Tester) updateClusterStatus(v ClusterStatus) {
+func (ts *Tester) updateClusterStatus(v ClusterStatus, desired string) {
 	if v.Cluster == nil {
 		if v.Error != nil {
 			ts.cfg.Status.ClusterStatus = fmt.Sprintf("failed with error %v", v.Error)
@@ -413,7 +413,9 @@ func (ts *Tester) updateClusterStatus(v ClusterStatus) {
 	ts.cfg.Status.ClusterARN = aws.StringValue(v.Cluster.Arn)
 	ts.cfg.Status.ClusterStatus = aws.StringValue(v.Cluster.Status)
 	ts.cfg.Status.Up = ts.cfg.Status.ClusterStatus == awseks.ClusterStatusActive
-	if ts.cfg.Status.ClusterStatus != ClusterStatusDELETEDORNOTEXIST {
+
+	if desired != ClusterStatusDELETEDORNOTEXIST && ts.cfg.Status.ClusterStatus != ClusterStatusDELETEDORNOTEXIST {
+
 		if v.Cluster.Endpoint != nil {
 			ts.cfg.Status.ClusterAPIServerEndpoint = aws.StringValue(v.Cluster.Endpoint)
 		}
@@ -493,7 +495,9 @@ func (ts *Tester) updateClusterStatus(v ClusterStatus) {
 		ts.cfg.Status.ClusterOIDCIssuerCAThumbprint = ""
 		ts.cfg.Status.ClusterCA = ""
 		ts.cfg.Status.ClusterCADecoded = ""
+
 	}
+
 	ts.cfg.Sync()
 }
 
