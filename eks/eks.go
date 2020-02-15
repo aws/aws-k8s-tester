@@ -242,7 +242,13 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 	ts.iamAPI = iam.New(ts.awsSession)
 	ts.ssmAPI = ssm.New(ts.awsSession)
 	ts.cfnAPI = cloudformation.New(ts.awsSession)
+
 	ts.ec2API = ec2.New(ts.awsSession)
+	if _, err := ts.ec2API.DescribeInstances(&ec2.DescribeInstancesInput{MaxResults: aws.Int64(1)}); err != nil {
+		return nil, fmt.Errorf("failed to describe instances using EC2 API (%v)", err)
+	}
+	colorstring.Println("[green]EC2 API available!")
+
 	ts.s3API = s3.New(ts.awsSession)
 	ts.asgAPI = autoscaling.New(ts.awsSession)
 	ts.elbv2API = elbv2.New(ts.awsSession)
