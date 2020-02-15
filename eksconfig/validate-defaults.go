@@ -387,6 +387,26 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		if cfg.AddOnManagedNodeGroups.RemoteAccessUserName == "" {
 			return errors.New("empty AddOnManagedNodeGroups.RemoteAccessUserName")
 		}
+		if len(cfg.AddOnManagedNodeGroups.RoleServicePrincipals) > 0 {
+			/*
+				create node group request failed (InvalidParameterException: Following required service principals [ec2.amazonaws.com] were not found in the trust relationships of nodeRole arn:aws:iam::...:role/test-mng-role
+				{
+				  ClusterName: "test",
+				  Message_: "Following required service principals [ec2.amazonaws.com] were not found in the trust relationships of nodeRole arn:aws:iam::...:role/test-mng-role",
+				  NodegroupName: "test-mng-cpu"
+				})
+			*/
+			found := false
+			for _, pv := range cfg.AddOnManagedNodeGroups.RoleServicePrincipals {
+				if pv == "ec2.amazonaws.com" {
+					found = true
+					break
+				}
+			}
+			if !found {
+				return fmt.Errorf("AddOnManagedNodeGroups.RoleServicePrincipals %q must include 'ec2.amazonaws.com'", cfg.AddOnManagedNodeGroups.RoleServicePrincipals)
+			}
+		}
 		n := len(cfg.AddOnManagedNodeGroups.MNGs)
 		if n == 0 {
 			return errors.New("AddOnManagedNodeGroups.Enable but empty AddOnManagedNodeGroups.MNGs")
