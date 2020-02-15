@@ -742,10 +742,10 @@ func (ts *Tester) down() (err error) {
 				zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			)
 			colorstring.Printf("\n\n\n[light_green]Down.defer end [default](%q)\n\n", ts.cfg.ConfigPath)
-			colorstring.Printf("\n\n😁 [blue]:) [default]down success\n\n\n")
+			colorstring.Printf("\n\n😁 [blue]:) [default]Down success\n\n\n")
 		} else {
 			colorstring.Printf("\n\n\n[light_red]Down.defer end [default](%q)\n\n", ts.cfg.ConfigPath)
-			colorstring.Printf("\n\n😱 ☹  [light_red](-_-) [default]down fail\n\n\n")
+			colorstring.Printf("\n\n😱 ☹  [light_red](-_-) [default]Down fail\n\n\n")
 		}
 	}()
 
