@@ -1,5 +1,22 @@
 
 
+
+<hr>
+
+
+## [v0.6.2](https://github.com/aws/aws-k8s-tester/releases/tag/v0.6.2) (2020-02)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.6.1...v0.6.2).
+
+### `eksconfig`
+
+- Improve [`AddOnManagedNodeGroups.RoleServicePrincipals` validation](https://github.com/aws/aws-k8s-tester/commit/ac2ba073a223c683eb550c6734925eb9e10e1905).
+
+### Go
+
+- Compile with [*Go 1.13.8*](https://golang.org/doc/devel/release.html#go1.13).
+
+
 <hr>
 
 
