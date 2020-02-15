@@ -430,7 +430,7 @@ func (ts *Tester) Up() (err error) {
 				zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			)
 			colorstring.Printf("\n\n\n[light_green]Up.defer end [default](%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-			colorstring.Printf("\n\n😁 [blue]:)\n\n\n")
+			colorstring.Printf("\n\n😁 [blue]:) [default]Up success\n\n\n")
 			return
 		}
 
@@ -441,7 +441,7 @@ func (ts *Tester) Up() (err error) {
 
 		if !ts.cfg.OnFailureDelete {
 			colorstring.Printf("\n\n\n[light_red]Up.defer end [default](%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-			colorstring.Printf("\n\n😱 ☹  [light_red](-_-)\n\n\n")
+			colorstring.Printf("\n\n😱 ☹  [light_red](-_-) [default]Up fail\n\n\n")
 			return
 		}
 
@@ -465,7 +465,7 @@ func (ts *Tester) Up() (err error) {
 		}
 
 		colorstring.Printf("\n\n\n[light_red]Up.defer end [default](%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-		colorstring.Printf("\n\n😱 ☹  [light_red](-_-)\n\n\n")
+		colorstring.Printf("\n\n😱 ☹  [light_red](-_-) [default]Up fail\n\n\n")
 	}()
 
 	ts.lg.Info("Up started",
@@ -742,10 +742,10 @@ func (ts *Tester) down() (err error) {
 				zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			)
 			colorstring.Printf("\n\n\n[light_green]Down.defer end [default](%q)\n\n", ts.cfg.ConfigPath)
-			colorstring.Printf("\n\n😁 [blue]:)\n\n\n")
+			colorstring.Printf("\n\n😁 [blue]:) [default]down success\n\n\n")
 		} else {
 			colorstring.Printf("\n\n\n[light_red]Down.defer end [default](%q)\n\n", ts.cfg.ConfigPath)
-			colorstring.Printf("\n\n😱 ☹  [light_red](-_-)\n\n\n")
+			colorstring.Printf("\n\n😱 ☹  [light_red](-_-) [default]down fail\n\n\n")
 		}
 	}()
 
