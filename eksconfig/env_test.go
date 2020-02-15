@@ -55,6 +55,8 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_REQUEST_HEADER_VALUE")
 	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_RESOLVER_URL", "amazon.com")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_RESOLVER_URL")
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_SIGNING_NAME", "a")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_SIGNING_NAME")
 	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_ROLE_SERVICE_PRINCIPALS", "eks.amazonaws.com,eks-beta-pdx.aws.internal,eks-dev.aws.internal")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_ROLE_SERVICE_PRINCIPALS")
 	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_ROLE_MANAGED_POLICY_ARNS", "arn:aws:iam::aws:policy/AmazonEKSServicePolicy,arn:aws:iam::aws:policy/AmazonEKSClusterPolicy,arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM")
@@ -242,6 +244,9 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.Parameters.ClusterResolverURL != "amazon.com" {
 		t.Fatalf("unexpected Parameters.ClusterResolverURL %q", cfg.Parameters.ClusterResolverURL)
+	}
+	if cfg.Parameters.ClusterSigningName != "a" {
+		t.Fatalf("unexpected Parameters.ClusterSigningName %q", cfg.Parameters.ClusterSigningName)
 	}
 	expectedClusterRoleServicePrincipals := []string{
 		"eks.amazonaws.com",
