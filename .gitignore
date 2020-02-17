@@ -1,10 +1,4 @@
 /.DS_Store
-/aws-k8s-tester
-/*.yaml
-/kubetest/*.yaml
-*generated.yaml
-*.coverprofile
-/*.log
 /bin
 /.idea
 *.swp
