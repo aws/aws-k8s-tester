@@ -10,7 +10,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.6.1...v0.6.2
 
 ### `eksconfig`
 
-- Set [`AddOnNLBHelloWorld.Enable` default value to `false`](https://github.com/aws/aws-k8s-tester/commit/c1400268aa7f2bcfccda94c8ecbc79c8f17239f7).
+- Set [`AddOnManagedNodeGroups.Enable` to `false` by default](https://github.com/aws/aws-k8s-tester/commit/).
+- Set [`AddOnNLBHelloWorld.Enable` to `false` by default](https://github.com/aws/aws-k8s-tester/commit/c1400268aa7f2bcfccda94c8ecbc79c8f17239f7).
 - Improve [`AddOnManagedNodeGroups.RoleServicePrincipals` validation](https://github.com/aws/aws-k8s-tester/commit/ac2ba073a223c683eb550c6734925eb9e10e1905).
 
 ### Go

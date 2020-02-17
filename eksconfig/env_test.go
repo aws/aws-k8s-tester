@@ -64,6 +64,8 @@ func TestEnv(t *testing.T) {
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_CREATED", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_CREATED")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_NAME", "mng-role-name")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_NAME")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_SERVICE_PRINCIPALS", "ec2.amazonaws.com,eks.amazonaws.com,hello.amazonaws.com")
@@ -267,6 +269,9 @@ func TestEnv(t *testing.T) {
 
 	if cfg.AddOnManagedNodeGroups.Created { // read-only must be ignored
 		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.Created %v", cfg.AddOnManagedNodeGroups.Created)
+	}
+	if !cfg.AddOnManagedNodeGroups.Enable {
+		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.Enable %v", cfg.AddOnManagedNodeGroups.Enable)
 	}
 	if cfg.AddOnManagedNodeGroups.RoleName != "mng-role-name" {
 		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.RoleName %q", cfg.AddOnManagedNodeGroups.RoleName)

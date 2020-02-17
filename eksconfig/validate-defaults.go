@@ -56,7 +56,7 @@ var DefaultConfig = Config{
 	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
 	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
 	AddOnManagedNodeGroups: &AddOnManagedNodeGroups{
-		Enable:      true,
+		Enable:      false,
 		SigningName: "eks",
 
 		RoleServicePrincipals: []string{
