@@ -244,7 +244,7 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 	ts.cfnAPI = cloudformation.New(ts.awsSession)
 
 	ts.ec2API = ec2.New(ts.awsSession)
-	if _, err := ts.ec2API.DescribeInstances(&ec2.DescribeInstancesInput{MaxResults: aws.Int64(1)}); err != nil {
+	if _, err := ts.ec2API.DescribeInstances(&ec2.DescribeInstancesInput{MaxResults: aws.Int64(5)}); err != nil {
 		return nil, fmt.Errorf("failed to describe instances using EC2 API (%v)", err)
 	}
 	colorstring.Println("[green]EC2 API available!")
