@@ -78,25 +78,29 @@ var DefaultConfig = Config{
 	},
 
 	AddOnNLBHelloWorld: &AddOnNLBHelloWorld{
-		Enable:             true,
+		Enable:             false,
 		DeploymentReplicas: 3,
 	},
+
 	AddOnALB2048: &AddOnALB2048{
 		Enable:                 false,
 		DeploymentReplicasALB:  3,
 		DeploymentReplicas2048: 3,
 	},
+
 	AddOnJobPerl: &AddOnJobPerl{
 		Enable:    false,
 		Completes: 30,
 		Parallels: 10,
 	},
+
 	AddOnJobEcho: &AddOnJobEcho{ // writes total 100 MB data to etcd
 		Enable:    false,
 		Completes: 1000,
 		Parallels: 100,
 		Size:      100 * 1024, // 100 KB
 	},
+
 	AddOnSecrets: &AddOnSecrets{
 		Enable: false,
 
@@ -120,6 +124,7 @@ var DefaultConfig = Config{
 		// PodQPS:      150,
 		// PodBurst:    5,
 	},
+
 	AddOnIRSA: &AddOnIRSA{
 		Enable:                false,
 		RoleManagedPolicyARNs: []string{"arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"},
