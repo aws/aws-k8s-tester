@@ -21,6 +21,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.6.1...v0.6.2
 
 - Support [existing VPC for cluster creation](https://github.com/aws/aws-k8s-tester/commit/78867cebf9ff6c2ff87b50d93dc6582d93373b49).
 
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.29.3`](https://github.com/aws/aws-sdk-go/releases/tag/v1.29.3) to [`v1.29.4`](https://github.com/aws/aws-sdk-go/releases/tag/v1.29.4).
+
 ### Go
 
 - Compile with [*Go 1.13.8*](https://golang.org/doc/devel/release.html#go1.13).
