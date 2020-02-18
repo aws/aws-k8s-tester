@@ -4,7 +4,7 @@
 <hr>
 
 
-## [v0.6.2](https://github.com/aws/aws-k8s-tester/releases/tag/v0.6.2) (2020-02)
+## [v0.6.2](https://github.com/aws/aws-k8s-tester/releases/tag/v0.6.2) (2020-02-18)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.6.1...v0.6.2).
 
@@ -13,6 +13,13 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.6.1...v0.6.2
 - Set [`AddOnManagedNodeGroups.Enable` to `false` by default](https://github.com/aws/aws-k8s-tester/commit/865dcaeecd2b447a9322c38c908e359b466d0471).
 - Set [`AddOnNLBHelloWorld.Enable` to `false` by default](https://github.com/aws/aws-k8s-tester/commit/c1400268aa7f2bcfccda94c8ecbc79c8f17239f7).
 - Improve [`AddOnManagedNodeGroups.RoleServicePrincipals` validation](https://github.com/aws/aws-k8s-tester/commit/ac2ba073a223c683eb550c6734925eb9e10e1905).
+- Add [`Parameters.VPCID` for VPC reuse](https://github.com/aws/aws-k8s-tester/commit/).
+- Remove [`Parameters.PrivateSubnetIDs`](https://github.com/aws/aws-k8s-tester/commit/).
+- Remove [`Parameters.ControlPlaneSecurityGroupID`](https://github.com/aws/aws-k8s-tester/commit/).
+
+### `eks`
+
+- Support [existing VPC for cluster creation](https://github.com/aws/aws-k8s-tester/commit/).
 
 ### Go
 

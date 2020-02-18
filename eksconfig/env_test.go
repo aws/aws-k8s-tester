@@ -47,6 +47,16 @@ func TestEnv(t *testing.T) {
 
 	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_VERSION", "1.11")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_VERSION")
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_VPC_ID", "vpc-id")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_VPC_ID")
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CIDR", "my-cidr")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CIDR")
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_PRIVATE_SUBNET_CIDR_1", "cidr1")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_PRIVATE_SUBNET_CIDR_1")
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_PRIVATE_SUBNET_CIDR_2", "cidr2")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_PRIVATE_SUBNET_CIDR_2")
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_PRIVATE_SUBNET_CIDR_3", "cidr3")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_PRIVATE_SUBNET_CIDR_3")
 	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_TAGS", "to-delete=2019;hello-world=test")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_TAGS")
 	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_REQUEST_HEADER_KEY", "eks-options")
@@ -233,6 +243,21 @@ func TestEnv(t *testing.T) {
 
 	if cfg.Parameters.Version != "1.11" {
 		t.Fatalf("unexpected Parameters.Version %q", cfg.Parameters.Version)
+	}
+	if cfg.Parameters.VPCID != "vpc-id" {
+		t.Fatalf("unexpected Parameters.VPCID %q", cfg.Parameters.VPCID)
+	}
+	if cfg.Parameters.VPCCIDR != "my-cidr" {
+		t.Fatalf("unexpected Parameters.VPCCIDR %q", cfg.Parameters.VPCCIDR)
+	}
+	if cfg.Parameters.PrivateSubnetCIDR1 != "cidr1" {
+		t.Fatalf("unexpected Parameters.PrivateSubnetCIDR1 %q", cfg.Parameters.PrivateSubnetCIDR1)
+	}
+	if cfg.Parameters.PrivateSubnetCIDR2 != "cidr2" {
+		t.Fatalf("unexpected Parameters.PrivateSubnetCIDR2 %q", cfg.Parameters.PrivateSubnetCIDR2)
+	}
+	if cfg.Parameters.PrivateSubnetCIDR3 != "cidr3" {
+		t.Fatalf("unexpected Parameters.PrivateSubnetCIDR3 %q", cfg.Parameters.PrivateSubnetCIDR3)
 	}
 	expectedClusterTags := map[string]string{"to-delete": "2019", "hello-world": "test"}
 	if !reflect.DeepEqual(cfg.Parameters.ClusterTags, expectedClusterTags) {

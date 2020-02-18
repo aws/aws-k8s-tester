@@ -250,14 +250,56 @@ Outputs:
 `
 
 func (ts *Tester) createVPC() error {
-	if len(ts.cfg.Parameters.PrivateSubnetIDs) != 0 ||
-		ts.cfg.Parameters.ControlPlaneSecurityGroupID != "" ||
-		ts.cfg.Status.VPCCFNStackID != "" ||
-		ts.cfg.Status.VPCID != "" ||
-		len(ts.cfg.Status.PrivateSubnetIDs) != 0 ||
-		ts.cfg.Status.ControlPlaneSecurityGroupID != "" {
+	if ts.cfg.Status.VPCCFNStackID != "" ||
+		(ts.cfg.Parameters.VPCID != "" &&
+			len(ts.cfg.Status.PrivateSubnetIDs) > 0 &&
+			ts.cfg.Status.ControlPlaneSecurityGroupID != "") {
 		ts.lg.Info("non-empty VPC given; no need to create a new one")
 		return nil
+	}
+	if ts.cfg.Parameters.VPCID != "" {
+		ts.lg.Info("querying subnet IDs", zap.String("vpc-id", ts.cfg.Parameters.VPCID))
+		sresp, err := ts.ec2API.DescribeSubnets(&ec2.DescribeSubnetsInput{
+			Filters: []*ec2.Filter{
+				{
+					Name:   aws.String("vpc-id"),
+					Values: aws.StringSlice([]string{ts.cfg.Parameters.VPCID}),
+				},
+			},
+		})
+		if err != nil {
+			ts.lg.Warn("failed to subnets", zap.Error(err))
+			return err
+		}
+		ts.cfg.Status.PrivateSubnetIDs = make([]string, 0, len(sresp.Subnets))
+		for _, sv := range sresp.Subnets {
+			id := aws.StringValue(sv.SubnetId)
+			ts.lg.Info("found subnet", zap.String("id", id), zap.String("az", aws.StringValue(sv.AvailabilityZone)))
+			ts.cfg.Status.PrivateSubnetIDs = append(ts.cfg.Status.PrivateSubnetIDs, id)
+		}
+
+		ts.lg.Info("querying security IDs", zap.String("vpc-id", ts.cfg.Parameters.VPCID))
+		gresp, err := ts.ec2API.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
+			Filters: []*ec2.Filter{
+				{
+					Name:   aws.String("vpc-id"),
+					Values: aws.StringSlice([]string{ts.cfg.Parameters.VPCID}),
+				},
+			},
+		})
+		if err != nil {
+			ts.lg.Warn("failed to security groups", zap.Error(err))
+			return err
+		}
+		for _, sg := range gresp.SecurityGroups {
+			id := aws.StringValue(sg.GroupId)
+			ts.lg.Info("found security group", zap.String("id", id))
+			ts.cfg.Status.ControlPlaneSecurityGroupID = id
+		}
+
+		ts.lg.Info("non-empty VPC given; no need to create a new one")
+		ts.cfg.Status.VPCID = ts.cfg.Parameters.VPCID
+		return ts.cfg.Sync()
 	}
 
 	// VPC attributes are empty, create a new VPC
@@ -357,6 +399,10 @@ func (ts *Tester) createVPC() error {
 }
 
 func (ts *Tester) deleteVPC() error {
+	if ts.cfg.Parameters.VPCID == "" {
+		ts.lg.Info("non-empty VPC given for reuse; do not delete VPC")
+		return nil
+	}
 	if ts.cfg.Status.VPCCFNStackID == "" {
 		ts.lg.Info("empty VPC CFN stack ID; no need to delete VPC")
 		return nil

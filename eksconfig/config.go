@@ -123,7 +123,12 @@ type Parameters struct {
 	// ClusterSigningName is the EKS create request signing name.
 	ClusterSigningName string `json:"cluster-signing-name"`
 
-	// VpcCIDR is the IP range (CIDR notation) for VPC, must be a valid private (RFC 1918) CIDR range.
+	// VPCID is the VPC ID for cluster creation.
+	// If not empty, VPC is reused and not deleted.
+	// If empty, VPC is created anew and deleted on cluster deletion.
+	VPCID string `json:"vpc-id"`
+	// VpcCIDR is the IP range (CIDR notation) for VPC, must be a valid private
+	// (RFC 1918) CIDR range.
 	VPCCIDR string `json:"vpc-cidr,omitempty"`
 	// PrivateSubnetCIDR1 is the CIDR Block for subnet 1 within the VPC.
 	PrivateSubnetCIDR1 string `json:"private-subnet-cidr-1,omitempty"`
@@ -131,16 +136,6 @@ type Parameters struct {
 	PrivateSubnetCIDR2 string `json:"private-subnet-cidr-2,omitempty"`
 	// PrivateSubnetCIDR3 is the CIDR Block for subnet 3 within the VPC.
 	PrivateSubnetCIDR3 string `json:"private-subnet-cidr-3,omitempty"`
-
-	// PrivateSubnetIDs is the list of all private subnets in the VPC.
-	// By default, it's empty which triggers tester to create a VPC.
-	// This must be from the same VPC that configures 'SecurityGroupIDs'.
-	PrivateSubnetIDs []string `json:"private-subnet-ids,omitempty"`
-	// ControlPlaneSecurityGroupID is the security group ID for the cluster control
-	// plane communication with worker nodes
-	// By default, it's empty which triggers tester to create a VPC.
-	// This must be from the same VPC that configures 'PrivateSubnetIDs'.
-	ControlPlaneSecurityGroupID string `json:"control-plane-security-group-id,omitempty"`
 
 	// Version is the version of EKS Kubernetes "cluster".
 	// If empty, set default version.
@@ -517,10 +512,14 @@ type Status struct {
 	ClusterRoleARN        string `json:"cluster-role-arn"`
 	ClusterRoleName       string `json:"cluster-role-name"`
 
-	VPCCFNStackID               string   `json:"vpc-cfn-stack-id"`
-	VPCID                       string   `json:"vpc-id"`
-	PrivateSubnetIDs            []string `json:"private-subnet-ids"`
-	ControlPlaneSecurityGroupID string   `json:"control-plane-security-group-id"`
+	VPCCFNStackID string `json:"vpc-cfn-stack-id"`
+	VPCID         string `json:"vpc-id"`
+
+	// PrivateSubnetIDs is the list of all private subnets in the VPC.
+	PrivateSubnetIDs []string `json:"private-subnet-ids"`
+	// ControlPlaneSecurityGroupID is the security group ID for the cluster control
+	// plane communication with worker nodes.
+	ControlPlaneSecurityGroupID string `json:"control-plane-security-group-id"`
 
 	ClusterCFNStackID string `json:"cluster-cfn-stack-id"`
 	ClusterARN        string `json:"cluster-arn"`

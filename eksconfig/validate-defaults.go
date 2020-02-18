@@ -304,6 +304,11 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 			)
 		}
 	}
+	if cfg.Parameters.VPCID != "" &&
+		cfg.Status.VPCID != "" &&
+		cfg.Parameters.VPCID != cfg.Status.VPCID {
+		return fmt.Errorf("cfg.Parameters.VPCID %q != cfg.Status.VPCID %q", cfg.Parameters.VPCID, cfg.Status.VPCID)
+	}
 
 	// validate VPC-related
 	if cfg.Parameters.VPCCIDR != "" {
@@ -332,12 +337,9 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 			return fmt.Errorf("non-empty Parameters.PrivateSubnetCIDR3 %q, but got empty Parameters.VPCCIDR", cfg.Parameters.PrivateSubnetCIDR3)
 		}
 	}
-	if cfg.Status.VPCID != "" {
-		if cfg.Status.VPCCFNStackID == "" {
-			return fmt.Errorf("non-empty Status.VPCID %q, but empty Status.VPCCFNStackID",
-				cfg.Status.VPCID,
-			)
-		}
+	if cfg.Status.VPCCFNStackID != "" && cfg.Status.VPCID == "" {
+		return fmt.Errorf("non-empty Status.VPCCFNStackID %q, but empty Status.VPCID",
+			cfg.Status.VPCCFNStackID)
 	}
 	if len(cfg.Status.PrivateSubnetIDs) > 0 {
 		if cfg.Status.ControlPlaneSecurityGroupID == "" {
@@ -357,12 +359,6 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	// validate cluster-related
 	if cfg.Parameters.Version == "" {
 		return errors.New("empty Parameters.Version")
-	}
-	if len(cfg.Parameters.PrivateSubnetIDs) == 0 && cfg.Parameters.ControlPlaneSecurityGroupID != "" {
-		return fmt.Errorf("empty Parameters.PrivateSubnetIDs, non-empty Parameters.ControlPlaneSecurityGroupID %q", cfg.Parameters.ControlPlaneSecurityGroupID)
-	}
-	if len(cfg.Parameters.PrivateSubnetIDs) > 0 && cfg.Parameters.ControlPlaneSecurityGroupID != "" {
-		return fmt.Errorf("non-empty Parameters.PrivateSubnetIDs %+v, but empty Parameters.ControlPlaneSecurityGroupID", cfg.Parameters.PrivateSubnetIDs)
 	}
 	if cfg.Status.ClusterCFNStackID != "" {
 		if cfg.Status.ClusterARN == "" {
