@@ -117,7 +117,7 @@ const ResultSuffixRead = "-secret-read.csv"
 // only letters and numbers for Secret key names
 var regex = regexp.MustCompile("[^a-zA-Z0-9]+")
 
-const secretWritesFailThreshold = 10
+const secretWritesFailThreshold = 20
 
 func (ts *tester) createSecrets() error {
 	size := humanize.Bytes(uint64(ts.cfg.EKSConfig.AddOnSecrets.Size))
