@@ -277,6 +277,9 @@ func (ts *Tester) createVPC() error {
 			ts.lg.Info("found subnet", zap.String("id", id), zap.String("az", aws.StringValue(sv.AvailabilityZone)))
 			ts.cfg.Status.PrivateSubnetIDs = append(ts.cfg.Status.PrivateSubnetIDs, id)
 		}
+		if len(ts.cfg.Status.PrivateSubnetIDs) == 0 {
+			return fmt.Errorf("no subnet found for VPC ID %q", ts.cfg.Parameters.VPCID)
+		}
 
 		ts.lg.Info("querying security IDs", zap.String("vpc-id", ts.cfg.Parameters.VPCID))
 		gresp, err := ts.ec2API.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
@@ -292,9 +295,14 @@ func (ts *Tester) createVPC() error {
 			return err
 		}
 		for _, sg := range gresp.SecurityGroups {
-			id := aws.StringValue(sg.GroupId)
-			ts.lg.Info("found security group", zap.String("id", id))
-			ts.cfg.Status.ControlPlaneSecurityGroupID = id
+			id, name := aws.StringValue(sg.GroupId), aws.StringValue(sg.GroupName)
+			ts.lg.Info("found security group", zap.String("id", id), zap.String("name", name))
+			if name != "default" {
+				ts.cfg.Status.ControlPlaneSecurityGroupID = id
+			}
+		}
+		if ts.cfg.Status.ControlPlaneSecurityGroupID == "" {
+			return fmt.Errorf("no security group found for VPC ID %q", ts.cfg.Parameters.VPCID)
 		}
 
 		ts.lg.Info("non-empty VPC given; no need to create a new one")
