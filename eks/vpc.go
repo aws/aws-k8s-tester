@@ -570,7 +570,7 @@ func (ts *Tester) deleteVPC() error {
 			// clean up security groups for VPC
 			sout, err := ts.ec2API.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
 				Filters: []*ec2.Filter{
-					&ec2.Filter{
+					{
 						Name:   aws.String("vpc-id"),
 						Values: []*string{aws.String(ts.cfg.Status.VPCID)},
 					},
