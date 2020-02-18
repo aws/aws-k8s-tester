@@ -38,6 +38,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/elbv2/elbv2iface"
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/aws/aws-sdk-go/service/iam/iamiface"
+	"github.com/aws/aws-sdk-go/service/kms"
+	"github.com/aws/aws-sdk-go/service/kms/kmsiface"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"github.com/aws/aws-sdk-go/service/ssm"
@@ -65,6 +67,7 @@ type Tester struct {
 
 	awsSession *session.Session
 	iamAPI     iamiface.IAMAPI
+	kmsAPI     kmsiface.KMSAPI
 	ssmAPI     ssmiface.SSMAPI
 	cfnAPI     cloudformationiface.CloudFormationAPI
 	ec2API     ec2iface.EC2API
@@ -240,6 +243,7 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 	ts.cfg.Sync()
 
 	ts.iamAPI = iam.New(ts.awsSession)
+	ts.kmsAPI = kms.New(ts.awsSession)
 	ts.ssmAPI = ssm.New(ts.awsSession)
 	ts.cfnAPI = cloudformation.New(ts.awsSession)
 
@@ -479,17 +483,6 @@ func (ts *Tester) Up() (err error) {
 	)
 	defer ts.cfg.Sync()
 
-	colorstring.Printf("\n\n\n[light_green]createClusterRole [default](%q)\n", ts.cfg.ConfigPath)
-	if err := catchInterrupt(
-		ts.lg,
-		ts.stopCreationCh,
-		ts.stopCreationChOnce,
-		ts.interruptSig,
-		ts.createClusterRole,
-	); err != nil {
-		return err
-	}
-
 	colorstring.Printf("\n\n\n[light_green]createVPC [default](%q)\n", ts.cfg.ConfigPath)
 	if err := catchInterrupt(
 		ts.lg,
@@ -497,6 +490,17 @@ func (ts *Tester) Up() (err error) {
 		ts.stopCreationChOnce,
 		ts.interruptSig,
 		ts.createVPC,
+	); err != nil {
+		return err
+	}
+
+	colorstring.Printf("\n\n\n[light_green]createClusterRole [default](%q)\n", ts.cfg.ConfigPath)
+	if err := catchInterrupt(
+		ts.lg,
+		ts.stopCreationCh,
+		ts.stopCreationChOnce,
+		ts.interruptSig,
+		ts.createClusterRole,
 	); err != nil {
 		return err
 	}
@@ -858,6 +862,12 @@ func (ts *Tester) down() (err error) {
 		errs = append(errs, err.Error())
 	}
 
+	colorstring.Printf("\n\n\n[light_green]deleteClusterRole [default](%q)\n", ts.cfg.ConfigPath)
+	if err := ts.deleteClusterRole(); err != nil {
+		ts.lg.Warn("failed to delete cluster role", zap.Error(err))
+		errs = append(errs, err.Error())
+	}
+
 	if ts.cfg.Parameters.VPCID == "" {
 		waitDur := 30 * time.Second
 		ts.lg.Info("sleeping before VPC deletion", zap.Duration("wait", waitDur))
@@ -867,12 +877,6 @@ func (ts *Tester) down() (err error) {
 	colorstring.Printf("\n\n\n[light_green]deleteVPC [default](%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteVPC(); err != nil {
 		ts.lg.Warn("failed to delete VPC", zap.Error(err))
-		errs = append(errs, err.Error())
-	}
-
-	colorstring.Printf("\n\n\n[light_green]deleteClusterRole [default](%q)\n", ts.cfg.ConfigPath)
-	if err := ts.deleteClusterRole(); err != nil {
-		ts.lg.Warn("failed to delete cluster role", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 
