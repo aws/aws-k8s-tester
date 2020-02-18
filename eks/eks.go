@@ -858,9 +858,11 @@ func (ts *Tester) down() (err error) {
 		errs = append(errs, err.Error())
 	}
 
-	waitDur := 30 * time.Second
-	ts.lg.Info("sleeping before VPC deletion", zap.Duration("wait", waitDur))
-	time.Sleep(waitDur)
+	if ts.cfg.Parameters.VPCID == "" {
+		waitDur := 30 * time.Second
+		ts.lg.Info("sleeping before VPC deletion", zap.Duration("wait", waitDur))
+		time.Sleep(waitDur)
+	}
 
 	colorstring.Printf("\n\n\n[light_green]deleteVPC [default](%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteVPC(); err != nil {

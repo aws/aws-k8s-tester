@@ -407,7 +407,7 @@ func (ts *Tester) createVPC() error {
 }
 
 func (ts *Tester) deleteVPC() error {
-	if ts.cfg.Parameters.VPCID == "" {
+	if ts.cfg.Parameters.VPCID != "" {
 		ts.lg.Info("non-empty VPC given for reuse; do not delete VPC")
 		return nil
 	}

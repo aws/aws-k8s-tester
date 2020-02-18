@@ -20,6 +20,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.6.1...v0.6.2
 ### `eks`
 
 - Support [existing VPC for cluster creation](https://github.com/aws/aws-k8s-tester/commit/78867cebf9ff6c2ff87b50d93dc6582d93373b49).
+- Set [secret write fail threshold for `AddOnSecrets`](https://github.com/aws/aws-k8s-tester/commit/).
+  - 10 consecutive `Secret` write failures returns an error.
 
 ### Dependency
 

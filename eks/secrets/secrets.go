@@ -117,6 +117,8 @@ const ResultSuffixRead = "-secret-read.csv"
 // only letters and numbers for Secret key names
 var regex = regexp.MustCompile("[^a-zA-Z0-9]+")
 
+const secretWritesFailThreshold = 10
+
 func (ts *tester) createSecrets() error {
 	size := humanize.Bytes(uint64(ts.cfg.EKSConfig.AddOnSecrets.Size))
 	ts.cfg.Logger.Info("creating Secrets",
@@ -139,19 +141,19 @@ func (ts *tester) createSecrets() error {
 	ts.cfg.EKSConfig.Sync()
 
 	if ts.cfg.EKSConfig.AddOnSecrets.SecretQPS <= 1 {
-		if err := ts.createSecretsSequential(pfx, valSfx); err != nil {
+		if err := ts.createSecretsSequential(pfx, valSfx, secretWritesFailThreshold); err != nil {
 			return err
 		}
-	} else {
-		if err := ts.createSecretsParallel(pfx, valSfx); err != nil {
-			return err
-		}
+		return ts.cfg.EKSConfig.Sync()
 	}
 
+	if err := ts.createSecretsParallel(pfx, valSfx, secretWritesFailThreshold); err != nil {
+		return err
+	}
 	return ts.cfg.EKSConfig.Sync()
 }
 
-func (ts *tester) createSecretsSequential(pfx, valSfx string) error {
+func (ts *tester) createSecretsSequential(pfx, valSfx string, failThreshold int) error {
 	qps := float64(ts.cfg.EKSConfig.AddOnSecrets.SecretQPS)
 	burst := int(ts.cfg.EKSConfig.AddOnSecrets.SecretBurst)
 	rateLimiter := rate.NewLimiter(rate.Limit(qps), burst)
@@ -173,6 +175,7 @@ func (ts *tester) createSecretsSequential(pfx, valSfx string) error {
 		return err
 	}
 
+	fails := 0
 	for i := 0; i < ts.cfg.EKSConfig.AddOnSecrets.Objects; i++ {
 		if !rateLimiter.Allow() {
 			ts.cfg.Logger.Debug("waiting for rate limiter creating Secret", zap.Int("index", i))
@@ -207,10 +210,19 @@ func (ts *tester) createSecretsSequential(pfx, valSfx string) error {
 			case <-ts.cfg.Stopc:
 				return errors.New("Secret creation aborted")
 			default:
-				ts.cfg.Logger.Warn("create Secret failed", zap.Error(err))
+				fails++
+				ts.cfg.Logger.Warn("create Secret failed",
+					zap.Int("fails", fails),
+					zap.Int("threshold", failThreshold),
+					zap.Error(err),
+				)
+				if fails >= failThreshold {
+					return fmt.Errorf("exceeded secret writes fail threshold %d (%v)", failThreshold, err)
+				}
 			}
 			continue
 		}
+		fails = 0
 
 		secretName := secret.GetObjectMeta().GetName()
 
@@ -246,7 +258,7 @@ func (ts *tester) createSecretsSequential(pfx, valSfx string) error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
-func (ts *tester) createSecretsParallel(pfx, valSfx string) error {
+func (ts *tester) createSecretsParallel(pfx, valSfx string, failThreshold int) error {
 	qps := float64(ts.cfg.EKSConfig.AddOnSecrets.SecretQPS)
 	burst := int(ts.cfg.EKSConfig.AddOnSecrets.SecretBurst)
 	rateLimiter := rate.NewLimiter(rate.Limit(qps), burst)
@@ -323,6 +335,8 @@ func (ts *tester) createSecretsParallel(pfx, valSfx string) error {
 	if err = wr.Write([]string{"secret-name", "write-took-in-seconds", "start", "end"}); err != nil {
 		return err
 	}
+
+	fails := 0
 	for i := 0; i < ts.cfg.EKSConfig.AddOnSecrets.Objects; i++ {
 		var rv result
 		select {
@@ -332,9 +346,18 @@ func (ts *tester) createSecretsParallel(pfx, valSfx string) error {
 			return errors.New("aborted")
 		}
 		if rv.err != nil {
-			ts.cfg.Logger.Warn("create Secret failed", zap.Error(rv.err))
+			fails++
+			ts.cfg.Logger.Warn("create Secret failed",
+				zap.Int("fails", fails),
+				zap.Int("threshold", failThreshold),
+				zap.Error(rv.err),
+			)
+			if fails >= failThreshold {
+				return fmt.Errorf("exceeded secret writes fail threshold %d (%v)", failThreshold, err)
+			}
 			continue
 		}
+		fails = 0
 
 		secretName := rv.secret.GetObjectMeta().GetName()
 
