@@ -1,5 +1,54 @@
 
 
+<hr>
+
+
+## [v0.6.3](https://github.com/aws/aws-k8s-tester/releases/tag/v0.6.3) (2020-02-27)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.6.2...v0.6.3).
+
+### `eksconfig`
+
+- Do not support [`AddOnManagedNodeGroups` when `Parameters.Version < 1.14`](https://github.com/aws/aws-k8s-tester/commit/56e53019f65e9da585ccb98b1f1dc27de5409edf).
+- Add [`AddOnFargate`](https://github.com/aws/aws-k8s-tester/commit/56e53019f65e9da585ccb98b1f1dc27de5409edf).
+- Add [default log output file path to `LogOutputs`](https://github.com/aws/aws-k8s-tester/commit/56e53019f65e9da585ccb98b1f1dc27de5409edf).
+
+### `eks`
+
+- Fix [namespace deletion](https://github.com/aws/aws-k8s-tester/commit/f388fe3bfed6d7ef0f7d3fad237ffa3c74341df6).
+  - See [issues#79](https://github.com/aws/aws-k8s-tester/issues/79).
+- Fix [`MNG` delete operation](https://github.com/aws/aws-k8s-tester/commit/1f8a396b56bcf46780c62eedfd34624c2ad35d8a).
+- Improve [`AddOnSecrets` pod deployment waits](https://github.com/aws/aws-k8s-tester/commit/82c62f4dc27592592b6743ad792280d13842be50).
+- Add [`github.com/aws/aws-k8s-tester/eks/fargate`](https://github.com/aws/aws-k8s-tester/commit/e0b4d2820e531f04d6d9c8eabd944a6304254ea4).
+- Support [private subnets in VPC creation for `eks/fargate`](https://github.com/aws/aws-k8s-tester/commit/08044d91316071381cc30ef306d2be76e8ed0260).
+- Add [`github.com/aws/aws-k8s-tester/eks/metrics`](https://github.com/aws/aws-k8s-tester/commit/753c76024d519cbc27a9531a1bdbcce37ecf7f20).
+
+### `ssh`
+
+- Fix [connection error handling in dial](https://github.com/aws/aws-k8s-tester/commit/dac3ad69218e7ddd44c7d7c4993d7239a761a6cf).
+- Rename package path from [`github.com/aws/aws-k8s-tester/pkg/ssh` to `github.com/aws/aws-k8s-tester/ssh`](https://github.com/aws/aws-k8s-tester/commit/dac3ad69218e7ddd44c7d7c4993d7239a761a6cf).
+
+### `ec2`
+
+- Fetch [latest AL2 AMI from SSM parameter](https://github.com/aws/aws-k8s-tester/commit/54b1f5e67f66eaf4f1b7bcec07d39d918dabae53).
+
+### `kms`
+
+- Remove [package `kms`](https://github.com/aws/aws-k8s-tester/commit/270bf13176605a57a58c20941bfa188b730909e0).
+
+### `kmsconfig`
+
+- Remove [package `kmsconfig`](https://github.com/aws/aws-k8s-tester/commit/270bf13176605a57a58c20941bfa188b730909e0).
+
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.29.4`](https://github.com/aws/aws-sdk-go/releases/tag/v1.29.4) to [`v1.29.12`](https://github.com/aws/aws-sdk-go/releases/tag/v1.29.12).
+- Upgrade [`github.com/uber-go/zap`](https://github.com/uber-go/zap/releases) from [`v1.13.0`](https://github.com/uber-go/zap/releases/tag/v1.13.0) to [`v1.14.0`](https://github.com/uber-go/zap/releases/tag/v1.14.0).
+
+### Go
+
+- Compile with [*Go 1.14.0*](https://golang.org/doc/devel/release.html#go1.14).
+
 
 <hr>
 
