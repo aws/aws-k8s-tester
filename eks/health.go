@@ -136,7 +136,7 @@ func (ts *Tester) health() error {
 		return fmt.Errorf("failed to get pods %v", err)
 	}
 	for _, v := range pods.Items {
-		colorstring.Printf("\"[light_magenta]kubectl get pods -n=kube-system[default]\" output: %q\n", v.Name)
+		colorstring.Printf("[light_magenta]kubectlkube-system Pod[default]: %q\n", v.Name)
 	}
 	println()
 
