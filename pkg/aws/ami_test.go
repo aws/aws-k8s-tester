@@ -2,15 +2,17 @@ package aws
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ssm"
 	"go.uber.org/zap"
 )
 
-func TestNew(t *testing.T) {
-	// t.Skip()
+func TestAMI(t *testing.T) {
+	if os.Getenv("RUN_AWS_TESTS") != "1" {
+		// t.Skip()
+	}
 
 	if _, _, _, err := New(nil); err == nil {
 		t.Fatal("expected error, got nil")
@@ -36,9 +38,16 @@ func TestNew(t *testing.T) {
 	t.Logf("secret key: %d bytes", len(creds.SecretAccessKey))
 
 	sm := ssm.New(ss)
-	so, err := sm.GetParameters(&ssm.GetParametersInput{Names: aws.StringSlice([]string{"/aws/service/eks/optimized-ami/1.14/amazon-linux-2/recommended"})})
+
+	a1, err := FetchAMI(sm, "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2")
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
-	fmt.Println(so)
+	fmt.Printf("%+v\n", a1)
+
+	a2, err := FetchAMI(sm, "/aws/service/eks/optimized-ami/1.14/amazon-linux-2/recommended")
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Printf("%+v\n", a2)
 }

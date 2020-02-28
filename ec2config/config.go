@@ -74,6 +74,7 @@ type Config struct {
 	UpdatedAt        time.Time `json:"updated-at"`         // read-only to user
 
 	// ImageID is the Amazon Machine Image (AMI).
+	// If empty, auto-populated with SSM parameter.
 	ImageID string `json:"image-id"`
 	// UserName is the user name used for running init scripts or SSH access.
 	UserName string `json:"user-name"`
@@ -262,27 +263,11 @@ var defaultConfig = Config{
 	UploadTesterLogs:       false,
 	UploadBucketExpireDays: 2,
 
-	// TODO: use Amazon EKS-optimized AMI, https://docs.aws.amazon.com/eks/latest/userguide/eks-optimized-ami.html
-
-	// Amazon Linux 2 AMI (HVM), SSD Volume Type
-	// NOTE: make sure to use the latest AMI for the region
-	// e.g. https://us-west-2.console.aws.amazon.com/ec2/v2/home?region=us-west-2#LaunchInstanceWizard:
-	ImageID:  "ami-082b5a644766e0e6f",
 	UserName: "ec2-user",
 	Plugins: []string{
 		"update-amazon-linux-2",
 		"install-start-docker-amazon-linux-2",
-		// "install-kubeadm-amazon-linux-2-1.13.0",
 	},
-
-	// Ubuntu Server 16.04 LTS, SSD Volume Type
-	// ImageID:  "ami-076e276d85f524150",
-	// UserName: "ubuntu",
-	// Plugins: []string{
-	// 	"update-ubuntu",
-	// 	"install-start-docker-ubuntu",
-	// 	// "install-kubeadm-ubuntu-1.13.0",
-	// },
 
 	// 2 vCPU, 8 GB RAM
 	InstanceType: "m5.large",
@@ -432,9 +417,6 @@ func (cfg *Config) ValidateAndSetDefaults() (err error) {
 	}
 	if cfg.UserName == "" {
 		return errors.New("empty UserName")
-	}
-	if cfg.ImageID == "" {
-		return errors.New("empty ImageID")
 	}
 
 	if len(cfg.Plugins) > 0 && !cfg.InitScriptCreated {

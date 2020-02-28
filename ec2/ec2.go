@@ -18,7 +18,7 @@ import (
 	"github.com/aws/aws-k8s-tester/ec2config/plugins"
 	pkgaws "github.com/aws/aws-k8s-tester/pkg/aws"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
-	"github.com/aws/aws-k8s-tester/pkg/ssh"
+	"github.com/aws/aws-k8s-tester/ssh"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
@@ -29,6 +29,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/iam/iamiface"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
+	"github.com/aws/aws-sdk-go/service/ssm"
+	"github.com/aws/aws-sdk-go/service/ssm/ssmiface"
 	"github.com/aws/aws-sdk-go/service/sts"
 	"github.com/dustin/go-humanize"
 	"go.uber.org/zap"
@@ -63,6 +65,7 @@ type embedded struct {
 	cf  cloudformationiface.CloudFormationAPI
 	ec2 ec2iface.EC2API
 	iam iamiface.IAMAPI
+	ssm ssmiface.SSMAPI
 
 	s3        s3iface.S3API
 	s3Buckets map[string]struct{}
@@ -106,6 +109,7 @@ func NewDeployer(cfg *ec2config.Config) (Deployer, error) {
 	md.cf = cloudformation.New(md.ss)
 	md.ec2 = ec2.New(md.ss)
 	md.iam = iam.New(md.ss)
+	md.ssm = ssm.New(md.ss)
 	md.s3 = s3.New(md.ss)
 
 	// up to 63 characters
@@ -779,6 +783,24 @@ func (md *embedded) deleteInstanceProfile() (err error) {
 }
 
 func (md *embedded) createInstances() (err error) {
+	if md.cfg.ImageID == "" {
+		md.lg.Info("fetching AMI from SSM")
+		switch md.cfg.UserName {
+		case "ec2-user":
+			ami, err := pkgaws.FetchAMI(
+				md.ssm,
+				"/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2",
+			)
+			if err != nil {
+				return err
+			}
+			md.cfg.ImageID = ami.ImageID
+			md.cfg.Sync()
+		default:
+			return fmt.Errorf("unknown user name %q to auto-populate AMI", md.cfg.UserName)
+		}
+	}
+
 	now := time.Now()
 
 	istSpec := new(ec2.IamInstanceProfileSpecification)
