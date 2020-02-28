@@ -640,7 +640,7 @@ func (ts *tester) checkPod() error {
 		zap.String("command", ts.cfg.EKSConfig.KubectlPath+" "+strings.Join(cmdFlags, " ")),
 	)
 	found := false
-	retryStart, waitDur := time.Now(), 2*time.Minute
+	retryStart, waitDur := time.Now(), 3*time.Minute
 	for time.Now().Sub(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
