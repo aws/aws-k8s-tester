@@ -1,6 +1,6 @@
 module github.com/aws/aws-k8s-tester
 
-go 1.13
+go 1.14
 
 // Pin all k8s.io staging repositories to kubernetes-1.15.3.
 // When bumping Kubernetes dependencies, you should update each of these lines
@@ -18,7 +18,7 @@ replace (
 // https://github.com/blang/semver/releases
 // https://github.com/gyuho/semver/releases
 require (
-	github.com/aws/aws-sdk-go v1.29.4
+	github.com/aws/aws-sdk-go v1.29.12
 	github.com/cihub/seelog v0.0.0-20170130134532-f561c5e57575
 	github.com/davecgh/go-spew v1.1.1
 	github.com/dustin/go-humanize v1.0.0
@@ -31,12 +31,13 @@ require (
 	github.com/onsi/ginkgo v1.10.1
 	github.com/onsi/gomega v1.7.0
 	github.com/prometheus/client_golang v1.0.0
+	github.com/prometheus/client_model v0.0.0-20190129233127-fd36f4220a90
 	github.com/prometheus/common v0.4.1
 	github.com/smartystreets/goconvey v0.0.0-20190731233626-505e41936337 // indirect
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.4.0
-	go.uber.org/zap v1.13.0
+	go.uber.org/zap v1.14.0
 	golang.org/x/crypto v0.0.0-20190611184440-5c40567a22f8
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 	golang.org/x/sys v0.0.0-20190422165155-953cdadca894 // indirect
