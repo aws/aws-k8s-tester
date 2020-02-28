@@ -13,15 +13,14 @@ import (
 	"k8s.io/utils/exec"
 )
 
-func (ts *Tester) checkHealth() error {
+func (ts *Tester) checkHealth() (err error) {
 	ts.lg.Info("running health check")
-
-	if err := ts.listPods("kube-system"); err != nil {
-		ts.lg.Warn("listing pods failed", zap.Error(err))
-		ts.cfg.Status.ClusterStatus = fmt.Sprintf("listing pods failed (%v)", err)
-		ts.cfg.Sync()
-		return err
-	}
+	defer func() {
+		if err == nil {
+			ts.cfg.Status.ClusterStatus = "health check success"
+			ts.cfg.Sync()
+		}
+	}()
 
 	// might take several minutes for DNS to propagate
 	waitDur := 5 * time.Minute
@@ -34,7 +33,7 @@ func (ts *Tester) checkHealth() error {
 			return errors.New("health check aborted")
 		case <-time.After(5 * time.Second):
 		}
-		err := ts.health()
+		err = ts.health()
 		if err == nil {
 			break
 		}
@@ -130,7 +129,16 @@ func (ts *Tester) health() error {
 		return fmt.Errorf("'kubectl get all -n=kube-system' failed %v", err)
 	}
 	out = string(output)
-	colorstring.Printf("\n\n\"[light_green]kubectl get all -n=kube-system[default]\" output:\n%s\n\n", out)
+
+	pods, err := ts.getPods("kube-system")
+	if err != nil {
+		return fmt.Errorf("failed to get pods %v", err)
+	}
+	println()
+	for _, v := range pods.Items {
+		colorstring.Printf("\n\"[light_magenta]kubectl get pods -n=kube-system[default]\" output: %q\n", v.Name)
+	}
+	println()
 
 	ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 	output, err = exec.New().CommandContext(
@@ -163,5 +171,20 @@ func (ts *Tester) health() error {
 	out = string(output)
 	colorstring.Printf("\n\n\"[light_green]kubectl get namespaces[default]\" output:\n%s\n\n", out)
 
+	mfs, err := ts.metricsTester.Fetch()
+	if err != nil {
+		return fmt.Errorf("'/metrics' fetch failed %v", err)
+	}
+	mv, ok := mfs[envCacheMissMetric]
+	if !ok {
+		return fmt.Errorf("%q not found", envCacheMissMetric)
+	}
+	val := mv.Metric[0].GetCounter().GetValue()
+	colorstring.Printf("\n\n\"[light_green]%s[default]\" metric output:\n%f\n\n", val)
+
+	// TODO: check metric count
+
 	return ts.cfg.Sync()
 }
+
+const envCacheMissMetric = "apiserver_storage_envelope_transformation_cache_misses_total"
