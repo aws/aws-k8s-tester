@@ -15,7 +15,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.6.4...v0.6.5
 - Add [`Status.ClusterStatusCurrent`](https://github.com/aws/aws-k8s-tester/commit/87b424593e28c8ea0b9d2b8ad6a6122247cae3dd).
 - Add [`Config.RecordStatus`](https://github.com/aws/aws-k8s-tester/commit/87b424593e28c8ea0b9d2b8ad6a6122247cae3dd).
 - Fix [`PrivateSubnetIDs` validation](https://github.com/aws/aws-k8s-tester/commit/87b424593e28c8ea0b9d2b8ad6a6122247cae3dd).
-- Add [`Parameters.VPCCreate`](https://github.com/aws/aws-k8s-tester/commit/b1e49d6a1e33712cf0dedaf1a254aa4e5bfbd154).
+- Add [`Parameters.VPCCreate`](https://github.com/aws/aws-k8s-tester/commit/92fd5589061d619d39f0427387065ddbb4440ee8).
 - Add [`Parameters.EncryptionCMKCreate`](https://github.com/aws/aws-k8s-tester/commit/87b424593e28c8ea0b9d2b8ad6a6122247cae3dd).
 - Add [`Parameters.EncryptionCMKARN`](https://github.com/aws/aws-k8s-tester/commit/87b424593e28c8ea0b9d2b8ad6a6122247cae3dd).
 - Add [`Status.EncryptionCMKARN`](https://github.com/aws/aws-k8s-tester/commit/87b424593e28c8ea0b9d2b8ad6a6122247cae3dd).
