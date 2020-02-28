@@ -25,24 +25,24 @@ Description: 'Amazon EKS VPC'
 Parameters:
 
   VPCCIDR:
-    Description: IP range (CIDR notation) for VPC, must be a valid private (RFC 1918) CIDR range (from 192.168.0.0 to 192.168.255.255)
+    Description: IP range (CIDR notation) for VPC, must be a valid public (RFC 1918) CIDR range (from 192.168.0.0 to 192.168.255.255)
     Type: String
     Default: 192.168.0.0/16
     AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
 
-  PrivateSubnetCIDR1:
+  PublicSubnetCIDR1:
     Description: CIDR block for subnet 1 within the VPC (from 192.168.64.0 to 192.168.127.255)
     Type: String
     Default: 192.168.64.0/18
     AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
 
-  PrivateSubnetCIDR2:
+  PublicSubnetCIDR2:
     Description: CIDR block for subnet 2 within the VPC (from 192.168.128.0 to 192.168.191.255)
     Type: String
     Default: 192.168.128.0/18
     AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
 
-  PrivateSubnetCIDR3:
+  PublicSubnetCIDR3:
     Description: CIDR block for subnet 3 within the VPC (from 192.168.192.0 to 192.168.255.255)
     Type: String
     Default: 192.168.192.0/18
