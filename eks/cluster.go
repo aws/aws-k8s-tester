@@ -48,8 +48,8 @@ Parameters:
     Description: Role ARN that EKS uses to create AWS resources for Kubernetes
     Type: String
 
-  PrivateSubnetIDs:
-    Description: All private subnets in the VPC
+  SubnetIDs:
+    Description: Subnets for EKS worker nodes. Amazon EKS creates cross-account elastic network interfaces in these subnets to allow communication between  worker nodes and the Kubernetes control plane
     Type: CommaDelimitedList
 
   ControlPlaneSecurityGroupID:
@@ -65,7 +65,7 @@ Resources:
       Version: !Ref Version
       RoleArn: !Ref ClusterRoleARN
       ResourcesVpcConfig:
-        SubnetIds: !Ref PrivateSubnetIDs
+        SubnetIds: !Ref SubnetIDs
         SecurityGroupIds:
         - !Ref ControlPlaneSecurityGroupID
 
@@ -125,6 +125,12 @@ func (ts *Tester) createEKS() error {
 	now := time.Now()
 	initialWait := 7*time.Minute + 30*time.Second
 
+	subnets := make([]string, len(ts.cfg.Status.PublicSubnetIDs))
+	copy(subnets, ts.cfg.Status.PublicSubnetIDs)
+	if len(ts.cfg.Status.PrivateSubnetIDs) > 0 {
+		subnets = append(subnets, ts.cfg.Status.PrivateSubnetIDs...)
+	}
+
 	if ts.cfg.Parameters.ClusterResolverURL != "" ||
 		(ts.cfg.Parameters.ClusterRequestHeaderKey != "" &&
 			ts.cfg.Parameters.ClusterRequestHeaderValue != "") {
@@ -141,7 +147,7 @@ func (ts *Tester) createEKS() error {
 			Version: aws.String(ts.cfg.Parameters.Version),
 			RoleArn: aws.String(ts.cfg.Status.ClusterRoleARN),
 			ResourcesVpcConfig: &awseks.VpcConfigRequest{
-				SubnetIds:        aws.StringSlice(ts.cfg.Status.PrivateSubnetIDs),
+				SubnetIds:        aws.StringSlice(subnets),
 				SecurityGroupIds: aws.StringSlice([]string{ts.cfg.Status.ControlPlaneSecurityGroupID}),
 			},
 			Tags: map[string]*string{
@@ -193,8 +199,8 @@ func (ts *Tester) createEKS() error {
 					ParameterValue: aws.String(ts.cfg.Status.ClusterRoleARN),
 				},
 				{
-					ParameterKey:   aws.String("PrivateSubnetIDs"),
-					ParameterValue: aws.String(strings.Join(ts.cfg.Status.PrivateSubnetIDs, ",")),
+					ParameterKey:   aws.String("SubnetIDs"),
+					ParameterValue: aws.String(strings.Join(subnets, ",")),
 				},
 				{
 					ParameterKey:   aws.String("ControlPlaneSecurityGroupID"),

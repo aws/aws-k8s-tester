@@ -14,9 +14,11 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/eks/alb"
+	"github.com/aws/aws-k8s-tester/eks/fargate"
 	"github.com/aws/aws-k8s-tester/eks/gpu"
 	"github.com/aws/aws-k8s-tester/eks/irsa"
 	"github.com/aws/aws-k8s-tester/eks/jobs"
+	"github.com/aws/aws-k8s-tester/eks/metrics"
 	"github.com/aws/aws-k8s-tester/eks/mng"
 	"github.com/aws/aws-k8s-tester/eks/nlb"
 	"github.com/aws/aws-k8s-tester/eks/secrets"
@@ -80,6 +82,7 @@ type Tester struct {
 
 	k8sClientSet *kubernetes.Clientset
 
+	metricsTester       metrics.Tester
 	gpuTester           gpu.Tester
 	mngTester           mng.Tester
 	nlbHelloWorldTester alb.Tester
@@ -88,6 +91,7 @@ type Tester struct {
 	jobEchoTester       jobs.Tester
 	secretsTester       secrets.Tester
 	irsaTester          irsa.Tester
+	fargateTester       fargate.Tester
 }
 
 // New creates a new EKS tester.
@@ -309,6 +313,18 @@ func (ts *Tester) createSubTesters() (err error) {
 
 	colorstring.Printf("\n\n\n[light_green]createSubTesters [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 
+	ts.lg.Info("creating metricsTester")
+	ts.metricsTester, err = metrics.New(metrics.Config{
+		Logger:    ts.lg,
+		Stopc:     ts.stopCreationCh,
+		Sig:       ts.interruptSig,
+		EKSConfig: ts.cfg,
+		K8SClient: ts,
+	})
+	if err != nil {
+		return err
+	}
+
 	ts.lg.Info("creating gpuTester")
 	ts.gpuTester, err = gpu.New(gpu.Config{
 		Logger:    ts.lg,
@@ -423,6 +439,20 @@ func (ts *Tester) createSubTesters() (err error) {
 		return err
 	}
 
+	ts.lg.Info("creating fargateTester")
+	ts.fargateTester, err = fargate.New(fargate.Config{
+		Logger:    ts.lg,
+		Stopc:     ts.stopCreationCh,
+		Sig:       ts.interruptSig,
+		EKSConfig: ts.cfg,
+		K8SClient: ts,
+		CFNAPI:    ts.cfnAPI,
+		EKSAPI:    ts.eksAPI,
+	})
+	if err != nil {
+		return err
+	}
+
 	return ts.cfg.Sync()
 }
 
@@ -441,6 +471,11 @@ func (ts *Tester) Up() (err error) {
 			)
 			colorstring.Printf("\n\n\n[light_green]Up.defer end [default](%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 			colorstring.Printf("\n\n😁 [blue]:) [default]Up success\n\n\n")
+
+			colorstring.Printf("\n\n[light_green]kubectl [default](%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+			fmt.Println(ts.cfg.KubectlCommands())
+			colorstring.Printf("\n\n[light_green]SSH [default](%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+			fmt.Println(ts.cfg.SSHCommands())
 			return
 		}
 
@@ -452,10 +487,20 @@ func (ts *Tester) Up() (err error) {
 		if !ts.cfg.OnFailureDelete {
 			colorstring.Printf("\n\n\n[light_red]Up.defer end [default](%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 			colorstring.Printf("\n\n😱 ☹  [light_red](-_-) [default]Up fail\n\n\n")
+
+			colorstring.Printf("\n\n[light_green]kubectl [default](%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+			fmt.Println(ts.cfg.KubectlCommands())
+			colorstring.Printf("\n\n[light_green]SSH [default](%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+			fmt.Println(ts.cfg.SSHCommands())
 			return
 		}
 
-		ts.lg.Warn("reverting resource creation")
+		colorstring.Printf("\n\n[light_green]kubectl [default](%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		fmt.Println(ts.cfg.KubectlCommands())
+		colorstring.Printf("\n\n[light_green]SSH [default](%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		fmt.Println(ts.cfg.SSHCommands())
+
+		ts.lg.Warn("reverting resource creation", zap.Error(err))
 		waitDur := time.Duration(ts.cfg.OnFailureDeleteWaitSeconds) * time.Second
 		if waitDur > 0 {
 			ts.lg.Info("waiting before clean up", zap.Duration("wait", waitDur))
@@ -669,6 +714,19 @@ func (ts *Tester) Up() (err error) {
 			}
 		}
 
+		if ts.cfg.AddOnFargate.Enable {
+			colorstring.Printf("\n\n\n[light_green]fargateTester.Create [default](%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnFargate.Namespace)
+			if err := catchInterrupt(
+				ts.lg,
+				ts.stopCreationCh,
+				ts.stopCreationChOnce,
+				ts.interruptSig,
+				ts.fargateTester.Create,
+			); err != nil {
+				return err
+			}
+		}
+
 		colorstring.Printf("\n\n\n[light_green]mngTester.FetchLogs [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		waitDur := 20 * time.Second
 		ts.lg.Info("sleeping before mngTester.FetchLogs", zap.Duration("wait", waitDur))
@@ -720,10 +778,6 @@ func (ts *Tester) Up() (err error) {
 	); err != nil {
 		return err
 	}
-	colorstring.Printf("\n\n[light_green]kubectl [default](%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-	fmt.Println(ts.cfg.KubectlCommands())
-	colorstring.Printf("\n\n[light_green]SSH [default](%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-	fmt.Println(ts.cfg.SSHCommands())
 
 	return ts.cfg.Sync()
 }
@@ -762,10 +816,18 @@ func (ts *Tester) down() (err error) {
 	var errs []string
 
 	if ts.cfg.AddOnManagedNodeGroups.Enable && len(ts.cfg.StatusManagedNodeGroups.Nodes) > 0 {
+		if ts.cfg.AddOnFargate.Enable && ts.cfg.AddOnFargate.Created {
+			colorstring.Printf("\n\n\n[light_green]fargateTester.Delete [default](%q)\n", ts.cfg.ConfigPath)
+			if err := ts.fargateTester.Delete(); err != nil {
+				ts.lg.Warn("fargateTester.Delete failed", zap.Error(err))
+				errs = append(errs, err.Error())
+			}
+		}
+
 		if ts.cfg.AddOnIRSA.Enable && ts.cfg.AddOnIRSA.Created {
 			colorstring.Printf("\n\n\n[light_green]irsaTester.Delete [default](%q)\n", ts.cfg.ConfigPath)
 			if err := ts.irsaTester.Delete(); err != nil {
-				ts.lg.Warn("failed to delete Job echo", zap.Error(err))
+				ts.lg.Warn("irsaTester.Delete failed", zap.Error(err))
 				errs = append(errs, err.Error())
 			}
 		}
@@ -773,7 +835,7 @@ func (ts *Tester) down() (err error) {
 		if ts.cfg.AddOnSecrets.Enable && ts.cfg.AddOnSecrets.Created {
 			colorstring.Printf("\n\n\n[light_green]secretsTester.Delete [default](%q)\n", ts.cfg.ConfigPath)
 			if err := ts.secretsTester.Delete(); err != nil {
-				ts.lg.Warn("failed to delete Job echo", zap.Error(err))
+				ts.lg.Warn("secretsTester.Delete failed", zap.Error(err))
 				errs = append(errs, err.Error())
 			}
 		}
@@ -781,7 +843,7 @@ func (ts *Tester) down() (err error) {
 		if ts.cfg.AddOnJobEcho.Enable && ts.cfg.AddOnJobEcho.Created {
 			colorstring.Printf("\n\n\n[light_green]jobEchoTester.Delete [default](%q)\n", ts.cfg.ConfigPath)
 			if err := ts.jobEchoTester.Delete(); err != nil {
-				ts.lg.Warn("failed to delete Job echo", zap.Error(err))
+				ts.lg.Warn("jobEchoTester.Delete failed", zap.Error(err))
 				errs = append(errs, err.Error())
 			}
 		}
@@ -789,7 +851,7 @@ func (ts *Tester) down() (err error) {
 		if ts.cfg.AddOnJobPerl.Enable && ts.cfg.AddOnJobPerl.Created {
 			colorstring.Printf("\n\n\n[light_green]jobPerlTester.Delete [default](%q)\n", ts.cfg.ConfigPath)
 			if err := ts.jobPerlTester.Delete(); err != nil {
-				ts.lg.Warn("failed to delete Job Perl", zap.Error(err))
+				ts.lg.Warn("jobPerlTester.Delete failed", zap.Error(err))
 				errs = append(errs, err.Error())
 			}
 		}
@@ -797,7 +859,7 @@ func (ts *Tester) down() (err error) {
 		if ts.cfg.AddOnALB2048.Enable && ts.cfg.AddOnALB2048.Created {
 			colorstring.Printf("\n\n\n[light_green]alb2048Tester.Delete [default](%q)\n", ts.cfg.ConfigPath)
 			if err := ts.alb2048Tester.Delete(); err != nil {
-				ts.lg.Warn("failed to delete ALB", zap.Error(err))
+				ts.lg.Warn("alb2048Tester.Delete failed", zap.Error(err))
 				errs = append(errs, err.Error())
 			} else {
 				waitDur := time.Minute
@@ -809,7 +871,7 @@ func (ts *Tester) down() (err error) {
 		if ts.cfg.AddOnNLBHelloWorld.Enable && ts.cfg.AddOnNLBHelloWorld.Created {
 			colorstring.Printf("\n\n\n[light_green]nlbHelloWorldTester.Delete [default](%q)\n", ts.cfg.ConfigPath)
 			if err := ts.nlbHelloWorldTester.Delete(); err != nil {
-				ts.lg.Warn("failed to delete NLB", zap.Error(err))
+				ts.lg.Warn("nlbHelloWorldTester.Delete failed", zap.Error(err))
 				errs = append(errs, err.Error())
 			} else {
 				waitDur := time.Minute
@@ -843,11 +905,12 @@ func (ts *Tester) down() (err error) {
 	}
 
 	// following need to be run in order to resolve delete dependency
+	// DO NOT "len(ts.cfg.StatusManagedNodeGroups.Nodes) > 0"; MNG may have failed to create
 	// e.g. cluster must be deleted before VPC delete
-	if ts.cfg.AddOnManagedNodeGroups.Enable && len(ts.cfg.StatusManagedNodeGroups.Nodes) > 0 {
+	if ts.cfg.AddOnManagedNodeGroups.Enable {
 		colorstring.Printf("\n\n\n[light_green]mngTester.Delete [default](%q)\n", ts.cfg.ConfigPath)
 		if err := ts.mngTester.Delete(); err != nil {
-			ts.lg.Warn("failed to delete managed node group", zap.Error(err))
+			ts.lg.Warn("mngTester.Delete failed", zap.Error(err))
 			errs = append(errs, err.Error())
 		}
 
@@ -858,17 +921,17 @@ func (ts *Tester) down() (err error) {
 
 	colorstring.Printf("\n\n\n[light_green]deleteCluster [default](%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteCluster(); err != nil {
-		ts.lg.Warn("failed to delete cluster", zap.Error(err))
+		ts.lg.Warn("deleteCluster failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 
 	colorstring.Printf("\n\n\n[light_green]deleteClusterRole [default](%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteClusterRole(); err != nil {
-		ts.lg.Warn("failed to delete cluster role", zap.Error(err))
+		ts.lg.Warn("deleteClusterRole failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 
-	if ts.cfg.Parameters.VPCID == "" {
+	if ts.cfg.Parameters.VPCID == "" { // VPC was created
 		waitDur := 30 * time.Second
 		ts.lg.Info("sleeping before VPC deletion", zap.Duration("wait", waitDur))
 		time.Sleep(waitDur)
@@ -876,7 +939,7 @@ func (ts *Tester) down() (err error) {
 
 	colorstring.Printf("\n\n\n[light_green]deleteVPC [default](%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteVPC(); err != nil {
-		ts.lg.Warn("failed to delete VPC", zap.Error(err))
+		ts.lg.Warn("deleteVPC failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 

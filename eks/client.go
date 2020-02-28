@@ -143,19 +143,6 @@ func (s *eksTokenSource) Token() (*oauth2.Token, error) {
 	}, nil
 }
 
-func (ts *Tester) listPods(ns string) error {
-	pods, err := ts.getPods(ns)
-	if err != nil {
-		return err
-	}
-	println()
-	for _, v := range pods.Items {
-		fmt.Printf("%q Pod using client-go: %q\n", ns, v.Name)
-	}
-	println()
-	return nil
-}
-
 func (ts *Tester) getPods(ns string) (*v1.PodList, error) {
 	return ts.k8sClientSet.CoreV1().Pods(ns).List(metav1.ListOptions{})
 }
