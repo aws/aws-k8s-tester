@@ -45,18 +45,20 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_ON_FAILURE_DELETE_WAIT_SECONDS", "780")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ON_FAILURE_DELETE_WAIT_SECONDS")
 
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_VERSION", "1.11")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_VERSION")
 	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_VPC_ID", "vpc-id")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_VPC_ID")
 	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CIDR", "my-cidr")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CIDR")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_PRIVATE_SUBNET_CIDR_1", "cidr1")
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_PUBLIC_SUBNET_CIDR_1", "public-cidr1")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_PUBLIC_SUBNET_CIDR_1")
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_PUBLIC_SUBNET_CIDR_2", "public-cidr2")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_PUBLIC_SUBNET_CIDR_2")
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_PUBLIC_SUBNET_CIDR_3", "public-cidr3")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_PUBLIC_SUBNET_CIDR_3")
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_PRIVATE_SUBNET_CIDR_1", "private-cidr1")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_PRIVATE_SUBNET_CIDR_1")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_PRIVATE_SUBNET_CIDR_2", "cidr2")
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_PRIVATE_SUBNET_CIDR_2", "private-cidr2")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_PRIVATE_SUBNET_CIDR_2")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_PRIVATE_SUBNET_CIDR_3", "cidr3")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_PRIVATE_SUBNET_CIDR_3")
 	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_TAGS", "to-delete=2019;hello-world=test")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_TAGS")
 	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_REQUEST_HEADER_KEY", "eks-options")
@@ -71,6 +73,8 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_ROLE_SERVICE_PRINCIPALS")
 	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_ROLE_MANAGED_POLICY_ARNS", "arn:aws:iam::aws:policy/AmazonEKSServicePolicy,arn:aws:iam::aws:policy/AmazonEKSClusterPolicy,arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_ROLE_MANAGED_POLICY_ARNS")
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_VERSION", "1.15")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_VERSION")
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_CREATED", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_CREATED")
@@ -209,6 +213,27 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_DEPLOYMENT_RESULT_PATH", "hello-deployment.log")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_DEPLOYMENT_RESULT_PATH")
 
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_CREATED", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_CREATED")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_NAMESPACE", "hello")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_NAME", "hello")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_SERVICE_PRINCIPALS", "a,b,c")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_SERVICE_PRINCIPALS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_MANAGED_POLICY_ARNS", "a,b,c")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_MANAGED_POLICY_ARNS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_PROFILE_NAME", "hello")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_PROFILE_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_SECRET_NAME", "HELLO-SECRET")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_SECRET_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_POD_NAME", "fargate-pod")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_POD_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_CONTAINER_NAME", "fargate-container")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_CONTAINER_NAME")
+
 	if err := cfg.UpdateFromEnvs(); err != nil {
 		t.Fatal(err)
 	}
@@ -241,23 +266,26 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("unexpected OnFailureDeleteWaitSeconds %d", cfg.OnFailureDeleteWaitSeconds)
 	}
 
-	if cfg.Parameters.Version != "1.11" {
-		t.Fatalf("unexpected Parameters.Version %q", cfg.Parameters.Version)
-	}
 	if cfg.Parameters.VPCID != "vpc-id" {
 		t.Fatalf("unexpected Parameters.VPCID %q", cfg.Parameters.VPCID)
 	}
 	if cfg.Parameters.VPCCIDR != "my-cidr" {
 		t.Fatalf("unexpected Parameters.VPCCIDR %q", cfg.Parameters.VPCCIDR)
 	}
-	if cfg.Parameters.PrivateSubnetCIDR1 != "cidr1" {
+	if cfg.Parameters.PublicSubnetCIDR1 != "public-cidr1" {
+		t.Fatalf("unexpected Parameters.PublicSubnetCIDR1 %q", cfg.Parameters.PublicSubnetCIDR1)
+	}
+	if cfg.Parameters.PublicSubnetCIDR2 != "public-cidr2" {
+		t.Fatalf("unexpected Parameters.PublicSubnetCIDR2 %q", cfg.Parameters.PublicSubnetCIDR2)
+	}
+	if cfg.Parameters.PublicSubnetCIDR3 != "public-cidr3" {
+		t.Fatalf("unexpected Parameters.PublicSubnetCIDR3 %q", cfg.Parameters.PublicSubnetCIDR3)
+	}
+	if cfg.Parameters.PrivateSubnetCIDR1 != "private-cidr1" {
 		t.Fatalf("unexpected Parameters.PrivateSubnetCIDR1 %q", cfg.Parameters.PrivateSubnetCIDR1)
 	}
-	if cfg.Parameters.PrivateSubnetCIDR2 != "cidr2" {
+	if cfg.Parameters.PrivateSubnetCIDR2 != "private-cidr2" {
 		t.Fatalf("unexpected Parameters.PrivateSubnetCIDR2 %q", cfg.Parameters.PrivateSubnetCIDR2)
-	}
-	if cfg.Parameters.PrivateSubnetCIDR3 != "cidr3" {
-		t.Fatalf("unexpected Parameters.PrivateSubnetCIDR3 %q", cfg.Parameters.PrivateSubnetCIDR3)
 	}
 	expectedClusterTags := map[string]string{"to-delete": "2019", "hello-world": "test"}
 	if !reflect.DeepEqual(cfg.Parameters.ClusterTags, expectedClusterTags) {
@@ -290,6 +318,9 @@ func TestEnv(t *testing.T) {
 	}
 	if !reflect.DeepEqual(expectedClusterRoleManagedPolicyARNs, cfg.Parameters.ClusterRoleManagedPolicyARNs) {
 		t.Fatalf("unexpected Parameters.ClusterRoleManagedPolicyARNs %+v", cfg.Parameters.ClusterRoleManagedPolicyARNs)
+	}
+	if cfg.Parameters.Version != "1.15" {
+		t.Fatalf("unexpected Parameters.Version %q", cfg.Parameters.Version)
 	}
 
 	if cfg.AddOnManagedNodeGroups.Created { // read-only must be ignored
@@ -530,9 +561,47 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("unexpected cfg.AddOnIRSA.DeploymentResultPath %q", cfg.AddOnIRSA.DeploymentResultPath)
 	}
 
+	if cfg.AddOnFargate.Created { // read-only must be ignored
+		t.Fatalf("unexpected cfg.AddOnFargate.Created %v", cfg.AddOnFargate.Created)
+	}
+	if !cfg.AddOnFargate.Enable {
+		t.Fatalf("unexpected cfg.AddOnFargate.Enable %v", cfg.AddOnFargate.Enable)
+	}
+	if cfg.AddOnFargate.Namespace != "hello" {
+		t.Fatalf("unexpected cfg.AddOnFargate.Namespace %q", cfg.AddOnFargate.Namespace)
+	}
+	if cfg.AddOnFargate.RoleName != "hello" {
+		t.Fatalf("unexpected cfg.AddOnFargate.RoleName %q", cfg.AddOnFargate.RoleName)
+	}
+	expectedAddOnFargateRoleServicePrincipals := []string{"a", "b", "c"}
+	if !reflect.DeepEqual(cfg.AddOnFargate.RoleServicePrincipals, expectedAddOnFargateRoleServicePrincipals) {
+		t.Fatalf("unexpected cfg.AddOnFargate.RoleServicePrincipals %q", cfg.AddOnFargate.RoleServicePrincipals)
+	}
+	expectedAddOnFargateRoleManagedPolicyARNs := []string{"a", "b", "c"}
+	if !reflect.DeepEqual(cfg.AddOnFargate.RoleManagedPolicyARNs, expectedAddOnFargateRoleManagedPolicyARNs) {
+		t.Fatalf("unexpected cfg.AddOnFargate.RoleManagedPolicyARNs %q", cfg.AddOnFargate.RoleManagedPolicyARNs)
+	}
+	if cfg.AddOnFargate.ProfileName != "hello" {
+		t.Fatalf("unexpected cfg.AddOnFargate.ProfileName %q", cfg.AddOnFargate.ProfileName)
+	}
+	if cfg.AddOnFargate.SecretName != "HELLO-SECRET" {
+		t.Fatalf("unexpected cfg.AddOnFargate.SecretName %q", cfg.AddOnFargate.SecretName)
+	}
+	if cfg.AddOnFargate.PodName != "fargate-pod" {
+		t.Fatalf("unexpected cfg.AddOnFargate.PodName %q", cfg.AddOnFargate.PodName)
+	}
+	if cfg.AddOnFargate.ContainerName != "fargate-container" {
+		t.Fatalf("unexpected cfg.AddOnFargate.ContainerName %q", cfg.AddOnFargate.ContainerName)
+	}
+
 	if err := cfg.ValidateAndSetDefaults(); err != nil {
 		t.Fatal(err)
 	}
+
+	if cfg.AddOnFargate.SecretName != "hellosecret" {
+		t.Fatalf("unexpected cfg.AddOnFargate.SecretName %q", cfg.AddOnFargate.SecretName)
+	}
+
 	if err := cfg.Sync(); err != nil {
 		t.Fatal(err)
 	}

@@ -28,6 +28,8 @@ const (
 	EnvironmentVariablePrefixAddOnSecrets = "AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_"
 	// EnvironmentVariablePrefixAddOnIRSA is the environment variable prefix used for "eksconfig".
 	EnvironmentVariablePrefixAddOnIRSA = "AWS_K8S_TESTER_EKS_ADD_ON_IRSA_"
+	// EnvironmentVariablePrefixAddOnFargate is the environment variable prefix used for "eksconfig".
+	EnvironmentVariablePrefixAddOnFargate = "AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_"
 )
 
 // UpdateFromEnvs updates fields from environmental variables.
@@ -124,6 +126,16 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		cfg.AddOnIRSA = av
 	} else {
 		return fmt.Errorf("expected *AddOnIRSA, got %T", vv)
+	}
+
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnFargate, cfg.AddOnFargate)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*AddOnFargate); ok {
+		cfg.AddOnFargate = av
+	} else {
+		return fmt.Errorf("expected *AddOnFargate, got %T", vv)
 	}
 
 	return nil

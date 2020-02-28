@@ -89,6 +89,9 @@ type Config struct {
 	// AddOnIRSA defines parameters for EKS cluster
 	// add-on "IAM Roles for Service Accounts (IRSA)".
 	AddOnIRSA *AddOnIRSA `json:"add-on-irsa,omitempty"`
+	// AddOnFargate defines parameters for EKS cluster
+	// add-on "EKS on Fargate".
+	AddOnFargate *AddOnFargate `json:"add-on-fargate,omitempty"`
 
 	// Status represents the current status of AWS resources.
 	// Status is read-only.
@@ -127,15 +130,20 @@ type Parameters struct {
 	// If not empty, VPC is reused and not deleted.
 	// If empty, VPC is created anew and deleted on cluster deletion.
 	VPCID string `json:"vpc-id"`
+
 	// VpcCIDR is the IP range (CIDR notation) for VPC, must be a valid private
 	// (RFC 1918) CIDR range.
 	VPCCIDR string `json:"vpc-cidr,omitempty"`
+	// PublicSubnetCIDR1 is the CIDR Block for subnet 1 within the VPC.
+	PublicSubnetCIDR1 string `json:"public-subnet-cidr-1,omitempty"`
+	// PublicSubnetCIDR2 is the CIDR Block for subnet 2 within the VPC.
+	PublicSubnetCIDR2 string `json:"public-subnet-cidr-2,omitempty"`
+	// PublicSubnetCIDR3 is the CIDR Block for subnet 3 within the VPC.
+	PublicSubnetCIDR3 string `json:"public-subnet-cidr-3,omitempty"`
 	// PrivateSubnetCIDR1 is the CIDR Block for subnet 1 within the VPC.
 	PrivateSubnetCIDR1 string `json:"private-subnet-cidr-1,omitempty"`
 	// PrivateSubnetCIDR2 is the CIDR Block for subnet 2 within the VPC.
 	PrivateSubnetCIDR2 string `json:"private-subnet-cidr-2,omitempty"`
-	// PrivateSubnetCIDR3 is the CIDR Block for subnet 3 within the VPC.
-	PrivateSubnetCIDR3 string `json:"private-subnet-cidr-3,omitempty"`
 
 	// Version is the version of EKS Kubernetes "cluster".
 	// If empty, set default version.
@@ -482,6 +490,48 @@ type AddOnIRSA struct {
 	DeploymentTookString string `json:"deployment-took-string,omitempty" read-only:"true"`
 }
 
+// AddOnFargate defines parameters for EKS cluster
+// add-on "EKS on Fargate".
+type AddOnFargate struct {
+	// Enable is 'true' to create this add-on.
+	Enable bool `json:"enable"`
+	// Created is true when the resource has been created.
+	// Used for delete operations.
+	Created bool `json:"created" read-only:"true"`
+
+	// CreateTook is the duration that took to create the resource.
+	CreateTook time.Duration `json:"create-took,omitempty" read-only:"true"`
+	// CreateTookString is the duration that took to create the resource.
+	CreateTookString string `json:"create-took-string,omitempty" read-only:"true"`
+	// DeleteTook is the duration that took to create the resource.
+	DeleteTook time.Duration `json:"delete-took,omitempty" read-only:"true"`
+	// DeleteTookString is the duration that took to create the resource.
+	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
+
+	// Namespace is the namespace to create "Secret" and "Pod" objects in.
+	Namespace string `json:"namespace"`
+
+	// RoleName is the role name for Fargate.
+	RoleName string `json:"role-name"`
+	// RoleCFNStackID is the CloudFormation stack ID for Fargate.
+	RoleCFNStackID string `json:"role-cfn-stack-id"`
+	// RoleARN is the role ARN for Fargate.
+	RoleARN string `json:"role-arn"`
+	// RoleServicePrincipals is the Fargate role Service Principals
+	RoleServicePrincipals []string `json:"role-service-principals,omitempty"`
+	// RoleManagedPolicyARNs is Fargate role managed policy ARNs.
+	RoleManagedPolicyARNs []string `json:"role-managed-policy-arns,omitempty"`
+
+	// ProfileName is the profile name for Fargate.
+	ProfileName string `json:"profile-name"`
+	// SecretName is the secret name for Fargate.
+	SecretName string `json:"secret-name"`
+	// PodName is the name of the Fargate Pod.
+	PodName string `json:"pod-name"`
+	// ContainerName is the name of the Fargate container.
+	ContainerName string `json:"container-name"`
+}
+
 // Status represents the current status of AWS resources.
 // Read-only. Cannot be configured via environmental variables.
 type Status struct {
@@ -515,6 +565,8 @@ type Status struct {
 	VPCCFNStackID string `json:"vpc-cfn-stack-id"`
 	VPCID         string `json:"vpc-id"`
 
+	// PublicSubnetIDs is the list of all public subnets in the VPC.
+	PublicSubnetIDs []string `json:"public-subnet-ids"`
 	// PrivateSubnetIDs is the list of all private subnets in the VPC.
 	PrivateSubnetIDs []string `json:"private-subnet-ids"`
 	// ControlPlaneSecurityGroupID is the security group ID for the cluster control

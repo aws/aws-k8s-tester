@@ -6,7 +6,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -46,7 +48,7 @@ var DefaultConfig = Config{
 	KubectlPath:        "/tmp/kubectl-test-1.14.10",
 
 	OnFailureDelete:            true,
-	OnFailureDeleteWaitSeconds: 100,
+	OnFailureDeleteWaitSeconds: 120,
 
 	Parameters: &Parameters{
 		ClusterSigningName: "eks",
@@ -111,24 +113,33 @@ var DefaultConfig = Config{
 		PodQPS:      100,
 		PodBurst:    5,
 
-		// writes total 153.6 MB for "Secret" objects,
+		// writes total 100 MB for "Secret" objects,
 		// plus "Pod" objects, writes total 330 MB to etcd
 		//
 		// with 3 nodes, takes about 1.5 hour for all
 		// these "Pod"s to complete
 		//
-		// Objects:     15000,
+		// Objects:     10000,
 		// Size:        10 * 1024, // 10 KB
-		// SecretQPS:   150,
-		// SecretBurst: 5,
-		// PodQPS:      150,
-		// PodBurst:    5,
 	},
 
 	AddOnIRSA: &AddOnIRSA{
-		Enable:                false,
-		RoleManagedPolicyARNs: []string{"arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"},
-		DeploymentReplicas:    10,
+		Enable: false,
+		RoleManagedPolicyARNs: []string{
+			"arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess",
+		},
+		DeploymentReplicas: 10,
+	},
+
+	AddOnFargate: &AddOnFargate{
+		Enable: false,
+		RoleServicePrincipals: []string{
+			"eks.amazonaws.com",
+			"eks-fargate-pods.amazonaws.com",
+		},
+		RoleManagedPolicyARNs: []string{
+			"arn:aws:iam::aws:policy/AmazonEKSFargatePodExecutionRolePolicy",
+		},
 	},
 
 	// read-only
@@ -243,6 +254,10 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		return err
 	}
 
+	if len(cfg.LogOutputs) == 1 && (cfg.LogOutputs[0] == "stderr" || cfg.LogOutputs[0] == "stdout") {
+		cfg.LogOutputs = append(cfg.LogOutputs, cfg.ConfigPath+".log")
+	}
+
 	if cfg.KubectlCommandsOutputPath == "" {
 		cfg.KubectlCommandsOutputPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".kubectl.sh"
 	}
@@ -312,14 +327,35 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 
 	// validate VPC-related
 	if cfg.Parameters.VPCCIDR != "" {
+		if cfg.Parameters.PublicSubnetCIDR1 == "" {
+			return fmt.Errorf("non-empty Parameters.VPCCIDR %q, but got empty Parameters.PublicSubnetCIDR1", cfg.Parameters.VPCCIDR)
+		}
+		if cfg.Parameters.PublicSubnetCIDR2 == "" {
+			return fmt.Errorf("non-empty Parameters.VPCCIDR %q, but got empty Parameters.PublicSubnetCIDR2", cfg.Parameters.VPCCIDR)
+		}
+		if cfg.Parameters.PublicSubnetCIDR3 == "" {
+			return fmt.Errorf("non-empty Parameters.VPCCIDR %q, but got empty Parameters.PublicSubnetCIDR3", cfg.Parameters.VPCCIDR)
+		}
 		if cfg.Parameters.PrivateSubnetCIDR1 == "" {
 			return fmt.Errorf("non-empty Parameters.VPCCIDR %q, but got empty Parameters.PrivateSubnetCIDR1", cfg.Parameters.VPCCIDR)
 		}
 		if cfg.Parameters.PrivateSubnetCIDR2 == "" {
 			return fmt.Errorf("non-empty Parameters.VPCCIDR %q, but got empty Parameters.PrivateSubnetCIDR2", cfg.Parameters.VPCCIDR)
 		}
-		if cfg.Parameters.PrivateSubnetCIDR3 == "" {
-			return fmt.Errorf("non-empty Parameters.VPCCIDR %q, but got empty Parameters.PrivateSubnetCIDR3", cfg.Parameters.VPCCIDR)
+	}
+	if cfg.Parameters.PublicSubnetCIDR1 != "" {
+		if cfg.Parameters.VPCCIDR == "" {
+			return fmt.Errorf("non-empty Parameters.PublicSubnetCIDR1 %q, but got empty Parameters.VPCCIDR", cfg.Parameters.PublicSubnetCIDR1)
+		}
+	}
+	if cfg.Parameters.PublicSubnetCIDR2 != "" {
+		if cfg.Parameters.VPCCIDR == "" {
+			return fmt.Errorf("non-empty Parameters.PublicSubnetCIDR2 %q, but got empty Parameters.VPCCIDR", cfg.Parameters.PublicSubnetCIDR2)
+		}
+	}
+	if cfg.Parameters.PublicSubnetCIDR3 != "" {
+		if cfg.Parameters.VPCCIDR == "" {
+			return fmt.Errorf("non-empty Parameters.PublicSubnetCIDR3 %q, but got empty Parameters.VPCCIDR", cfg.Parameters.PublicSubnetCIDR3)
 		}
 	}
 	if cfg.Parameters.PrivateSubnetCIDR1 != "" {
@@ -330,11 +366,6 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	if cfg.Parameters.PrivateSubnetCIDR2 != "" {
 		if cfg.Parameters.VPCCIDR == "" {
 			return fmt.Errorf("non-empty Parameters.PrivateSubnetCIDR2 %q, but got empty Parameters.VPCCIDR", cfg.Parameters.PrivateSubnetCIDR2)
-		}
-	}
-	if cfg.Parameters.PrivateSubnetCIDR3 != "" {
-		if cfg.Parameters.VPCCIDR == "" {
-			return fmt.Errorf("non-empty Parameters.PrivateSubnetCIDR3 %q, but got empty Parameters.VPCCIDR", cfg.Parameters.PrivateSubnetCIDR3)
 		}
 	}
 	if cfg.Status.VPCCFNStackID != "" && cfg.Status.VPCID == "" {
@@ -360,6 +391,14 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	if cfg.Parameters.Version == "" {
 		return errors.New("empty Parameters.Version")
 	}
+	vv, err := strconv.ParseFloat(cfg.Parameters.Version, 64)
+	if err != nil {
+		return fmt.Errorf("cannot parse Parameters.Version %q (%v)", cfg.Parameters.Version, err)
+	}
+	if vv < 1.14 && cfg.AddOnManagedNodeGroups.Enable {
+		return fmt.Errorf("AddOnManagedNodeGroups only supports Parameters.Version >=1.14, got %f", vv)
+	}
+
 	if cfg.Status.ClusterCFNStackID != "" {
 		if cfg.Status.ClusterARN == "" {
 			return fmt.Errorf("non-empty Status.ClusterCFNStackID %q, but empty Status.ClusterARN", cfg.Status.ClusterCFNStackID)
@@ -371,6 +410,7 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 			return fmt.Errorf("non-empty Status.ClusterCFNStackID %q, but empty Status.ClusterCADecoded", cfg.Status.ClusterCFNStackID)
 		}
 	}
+
 	// if created via EKS API, no need to error in the following case:
 	// cfg.Status.ClusterARN != "" && cfg.Status.ClusterCA == "" || cfg.Status.ClusterCADecoded == ""
 
@@ -548,6 +588,12 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 				cfg.Name+"-irsa-deployment-result.log",
 			)
 		}
+		if cfg.AddOnFargate.Namespace == "" {
+			cfg.AddOnFargate.Namespace = cfg.Name + "-fargate"
+		}
+		if cfg.AddOnFargate.Namespace == cfg.Name {
+			return fmt.Errorf("AddOnFargate.Namespace %q conflicts with %q", cfg.AddOnFargate.Namespace, cfg.Name)
+		}
 
 		if cfg.AddOnSecrets.WritesResultPath == "" {
 			cfg.AddOnSecrets.WritesResultPath = filepath.Join(
@@ -571,6 +617,22 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		if cfg.AddOnIRSA.RoleName == "" {
 			cfg.AddOnIRSA.RoleName = cfg.Name + "-irsa-role"
 		}
+		if cfg.AddOnFargate.RoleName == "" {
+			cfg.AddOnFargate.RoleName = cfg.Name + "-fargate-role"
+		}
+		if cfg.AddOnFargate.ProfileName == "" {
+			cfg.AddOnFargate.ProfileName = cfg.Name + "-fargate-profile"
+		}
+		if cfg.AddOnFargate.SecretName == "" {
+			cfg.AddOnFargate.SecretName = cfg.Name + "fargatesecret"
+		}
+		if cfg.AddOnFargate.PodName == "" {
+			cfg.AddOnFargate.PodName = cfg.Name + "-fargate-pod"
+		}
+		if cfg.AddOnFargate.ContainerName == "" {
+			cfg.AddOnFargate.ContainerName = cfg.Name + "-" + randString(10)
+		}
+		cfg.AddOnFargate.SecretName = strings.ToLower(secretRegex.ReplaceAllString(cfg.AddOnFargate.SecretName, ""))
 
 	} else {
 
@@ -592,7 +654,13 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		if cfg.AddOnIRSA.Enable {
 			return fmt.Errorf("AddOnManagedNodeGroups.Enable false, but got AddOnIRSA.Enable %v", cfg.AddOnIRSA.Enable)
 		}
+		if cfg.AddOnFargate.Enable {
+			return fmt.Errorf("AddOnManagedNodeGroups.Enable false, but got AddOnFargate.Enable %v", cfg.AddOnFargate.Enable)
+		}
 	}
 
 	return cfg.Sync()
 }
+
+// only letters and numbers for Secret key names
+var secretRegex = regexp.MustCompile("[^a-zA-Z0-9]+")
