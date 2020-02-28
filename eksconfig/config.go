@@ -840,8 +840,7 @@ func (cfg *Config) KubectlCommands() (s string) {
 	return buf.String()
 }
 
-const kubectlCmdTmpl = `
-# kubectl commands
+const kubectlCmdTmpl = `# kubectl commands
 export KUBECONFIG={{ .KubeConfigPath }}
 export KUBECTL="{{ .KubectlCmd }}"
 ${KUBECTL} version
@@ -875,7 +874,6 @@ ${KUBECTL} get configmap --all-namespaces
 export KUBECONFIG={{ .KubeConfigPath }}
 export KUBECTL="{{ .KubectlCmd }}"
 ${KUBECTL} get all --all-namespaces
-
 
 # sonobuoy commands
 go get -v -u github.com/heptio/sonobuoy
