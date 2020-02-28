@@ -37,7 +37,6 @@ func (ts *tester) createKeyPair() (err error) {
 	if err != nil {
 		return err
 	}
-
 	if *output.KeyName != ts.cfg.EKSConfig.AddOnManagedNodeGroups.SSHKeyPairName {
 		return fmt.Errorf("unexpected key name %q, expected %q", *output.KeyName, ts.cfg.EKSConfig.AddOnManagedNodeGroups.SSHKeyPairName)
 	}

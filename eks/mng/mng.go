@@ -26,6 +26,7 @@ import (
 	awseks "github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
 	"github.com/dustin/go-humanize"
+	"github.com/mitchellh/colorstring"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -56,8 +57,8 @@ Parameters:
     Description: Unique identifier for the Node Group.
     Type: String
 
-  PrivateSubnetIDs:
-    Description: The private subnet IDs where workers can be created.
+  PublicSubnetIDs:
+    Description: The public subnet IDs where workers can be created.
     Type: List<AWS::EC2::Subnet::Id>
 
   ManagedNodeGroupSSHKeyPairName:
@@ -114,7 +115,7 @@ Resources:
         DesiredSize: !Ref ManagedNodeGroupASGDesiredCapacity
         MinSize: !Ref ManagedNodeGroupASGMinSize
         MaxSize: !Ref ManagedNodeGroupASGMaxSize
-      Subnets: !Ref PrivateSubnetIDs
+      Subnets: !Ref PublicSubnetIDs
       Labels:
         Name: !Ref ManagedNodeGroupName
 
@@ -148,7 +149,7 @@ Parameters:
     Description: Unique identifier for the Node Group.
     Type: String
 
-  PrivateSubnetIDs:
+  PublicSubnetIDs:
     Description: The private subnet IDs where workers can be created.
     Type: List<AWS::EC2::Subnet::Id>
 
@@ -211,7 +212,7 @@ Resources:
         DesiredSize: !Ref ManagedNodeGroupASGDesiredCapacity
         MinSize: !Ref ManagedNodeGroupASGMinSize
         MaxSize: !Ref ManagedNodeGroupASGMaxSize
-      Subnets: !Ref PrivateSubnetIDs
+      Subnets: !Ref PublicSubnetIDs
       Labels:
         Name: !Ref ManagedNodeGroupName
 
@@ -273,6 +274,10 @@ type tester struct {
 }
 
 func (ts *tester) Create() (err error) {
+	if len(ts.cfg.EKSConfig.Status.PublicSubnetIDs) == 0 {
+		return errors.New("empty EKSConfig.Status.PublicSubnetIDs")
+	}
+
 	if err = ts.createKeyPair(); err != nil {
 		return err
 	}
@@ -397,7 +402,7 @@ func (ts *tester) createMNG() error {
 					MinSize:     aws.Int64(int64(mv.ASGMinSize)),
 					MaxSize:     aws.Int64(int64(mv.ASGMaxSize)),
 				},
-				Subnets: aws.StringSlice(ts.cfg.EKSConfig.Status.PrivateSubnetIDs),
+				Subnets: aws.StringSlice(ts.cfg.EKSConfig.Status.PublicSubnetIDs),
 				Tags: map[string]*string{
 					"Kind": aws.String("aws-k8s-tester"),
 				},
@@ -479,8 +484,8 @@ func (ts *tester) createMNG() error {
 						ParameterValue: aws.String(mv.Name),
 					},
 					{
-						ParameterKey:   aws.String("PrivateSubnetIDs"),
-						ParameterValue: aws.String(strings.Join(ts.cfg.EKSConfig.Status.PrivateSubnetIDs, ",")),
+						ParameterKey:   aws.String("PublicSubnetIDs"),
+						ParameterValue: aws.String(strings.Join(ts.cfg.EKSConfig.Status.PublicSubnetIDs, ",")),
 					},
 					{
 						ParameterKey:   aws.String("ManagedNodeGroupSSHKeyPairName"),
@@ -736,7 +741,7 @@ func (ts *tester) deleteMNG() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
-// ClusterStatusDELETEDORNOTEXIST defines the cluster status when the cluster is not found.
+// ManagedNodeGroupStatusDELETEDORNOTEXIST defines the cluster status when the cluster is not found.
 //
 // ref. https://docs.aws.amazon.com/eks/latest/APIReference/API_Nodegroup.html
 //
@@ -978,7 +983,7 @@ func (ts *tester) waitForNodes(name string) error {
 
 	var items []v1.Node
 	ts.cfg.Logger.Info("checking nodes via client-go")
-	retryStart := time.Now()
+	retryStart, threshold := time.Now(), waitDur/10*7
 	for time.Now().Sub(retryStart) < waitDur {
 		nodes, err := ts.cfg.K8SClient.KubernetesClientSet().CoreV1().Nodes().List(metav1.ListOptions{})
 		if err != nil {
@@ -1010,6 +1015,13 @@ func (ts *tester) waitForNodes(name string) error {
 		)
 		if readies >= mv.ASGDesiredCapacity {
 			break
+		}
+		took := time.Now().Sub(retryStart)
+		if took > threshold {
+			colorstring.Printf("\n\n[light_green]kubectl [default](%q, %q)\n\n", ts.cfg.EKSConfig.ConfigPath, ts.cfg.EKSConfig.KubectlCommand())
+			fmt.Println(ts.cfg.EKSConfig.KubectlCommands())
+			colorstring.Printf("\n\n[light_green]SSH [default](%q, %q)\n\n", ts.cfg.EKSConfig.ConfigPath, ts.cfg.EKSConfig.KubectlCommand())
+			fmt.Println(ts.cfg.EKSConfig.SSHCommands())
 		}
 	}
 	println()

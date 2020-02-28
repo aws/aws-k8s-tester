@@ -12,7 +12,7 @@ import (
 
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
-	"github.com/aws/aws-k8s-tester/pkg/ssh"
+	"github.com/aws/aws-k8s-tester/ssh"
 	"go.uber.org/zap"
 	"golang.org/x/time/rate"
 )
@@ -58,14 +58,7 @@ func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 		waits += len(nodeGroup.Instances)
 
 		for instID, iv := range nodeGroup.Instances {
-			dns := strings.ToLower(regex.ReplaceAllString(iv.PublicDNSName, ""))
-			dns = strings.ReplaceAll(dns, "ec2", "")
-			dns = strings.ReplaceAll(dns, "compute.amazonaws", "")
-			dns = strings.ReplaceAll(dns, "amazonaws", "")
-			if len(dns) > 7 {
-				dns = dns[:7]
-			}
-			pfx := instID + "-" + dns + "-"
+			pfx := instID + "-"
 
 			go func(instID, logsDir, pfx string, iv ec2config.Instance) {
 				select {
