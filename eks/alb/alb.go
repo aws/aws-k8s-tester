@@ -285,7 +285,7 @@ Parameters:
     Description: The policy name for ALB Ingress Controller
     Type: String
 
-  ALBIngressControllerRoleName:
+  ManagedNodeGroupRoleName:
     Description: The name of the node instance role
     Type: String
 
@@ -390,7 +390,7 @@ Resources:
           - waf:GetWebACL
           Resource: "*"
       Roles:
-      - !Ref ALBIngressControllerRoleName
+      - !Ref ManagedNodeGroupRoleName
 
 `
 
@@ -400,8 +400,8 @@ func (ts *tester) createALBPolicy() error {
 	if ts.cfg.EKSConfig.AddOnALB2048.PolicyName == "" {
 		return errors.New("empty AddOnALB2048.PolicyName")
 	}
-	if ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleName == "" {
-		return errors.New("empty AddOnManagedNodeGroups.RoleName")
+	if ts.cfg.EKSConfig.StatusManagedNodeGroups.RoleName == "" {
+		return errors.New("empty StatusManagedNodeGroups.RoleName")
 	}
 	if ts.cfg.EKSConfig.AddOnALB2048.PolicyCFNStackID != "" {
 		ts.cfg.Logger.Info("non-empty 2048 policy given; no need to create a new one")
@@ -424,8 +424,8 @@ func (ts *tester) createALBPolicy() error {
 				ParameterValue: aws.String(ts.cfg.EKSConfig.AddOnALB2048.PolicyName),
 			},
 			{
-				ParameterKey:   aws.String("ALBIngressControllerRoleName"),
-				ParameterValue: aws.String(ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleName),
+				ParameterKey:   aws.String("ManagedNodeGroupRoleName"),
+				ParameterValue: aws.String(ts.cfg.EKSConfig.StatusManagedNodeGroups.RoleName),
 			},
 		},
 	}

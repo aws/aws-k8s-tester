@@ -686,7 +686,8 @@ type StatusManagedNodeGroups struct {
 	// DeleteTookString is the duration that took to create the resource.
 	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
 
-	RoleARN string `json:"role-arn"`
+	RoleName string `json:"role-name"`
+	RoleARN  string `json:"role-arn"`
 	// RoleCFNStackID is the CloudFormation stack ID for a managed node group role.
 	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
 	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html

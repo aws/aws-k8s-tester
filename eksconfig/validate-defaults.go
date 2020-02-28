@@ -415,6 +415,16 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	if cfg.AddOnManagedNodeGroups.RoleARN != "" { // reuse existing role
 		cfg.StatusManagedNodeGroups.RoleARN = cfg.AddOnManagedNodeGroups.RoleARN
 	}
+	if cfg.AddOnManagedNodeGroups.RoleName != "" { // reuse existing role
+		cfg.StatusManagedNodeGroups.RoleName = cfg.AddOnManagedNodeGroups.RoleName
+	}
+	if cfg.AddOnManagedNodeGroups.RoleARN != "" &&
+		cfg.StatusManagedNodeGroups.RoleName == "" {
+		ss := strings.Split(cfg.AddOnManagedNodeGroups.RoleARN, "/")
+		if len(ss) > 0 {
+			cfg.StatusManagedNodeGroups.RoleName = ss[len(ss)-1]
+		}
+	}
 	if cfg.AddOnManagedNodeGroups.RoleCreate && cfg.AddOnManagedNodeGroups.RoleARN != "" {
 		return fmt.Errorf("invalid config: AddOnManagedNodeGroups.RoleCreate (%v), AddOnManagedNodeGroups.RoleARN (%q)", cfg.AddOnManagedNodeGroups.RoleCreate, cfg.AddOnManagedNodeGroups.RoleARN)
 	}
