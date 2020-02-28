@@ -6,15 +6,19 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"sync"
 	"text/template"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
+	awseks "github.com/aws/aws-sdk-go/service/eks"
 	"sigs.k8s.io/yaml"
 )
 
 // Config defines EKS test configuration.
 type Config struct {
+	mu sync.RWMutex
+
 	// ConfigPath is the configuration file path.
 	// Deployer is expected to update this file with latest status.
 	ConfigPath string `json:"config-path,omitempty"`
@@ -105,13 +109,17 @@ type Config struct {
 
 // Parameters defines parameters for EKS "cluster" creation.
 type Parameters struct {
+	// ClusterRoleName is the name of the managed node group.
+	ClusterRoleName string `json:"cluster-role-name,omitempty"`
+	// ClusterRoleCreate is true to auto-create and delete cluster role.
+	ClusterRoleCreate bool `json:"cluster-role-create"`
+	// ClusterRoleARN is the role ARN that EKS uses to create AWS resources for Kubernetes.
+	// By default, it's empty which triggers tester to create one.
+	ClusterRoleARN string `json:"cluster-role-arn,omitempty"`
 	// ClusterRoleServicePrincipals is the EKS Role Service Principals
 	ClusterRoleServicePrincipals []string `json:"cluster-role-service-principals,omitempty"`
 	// ClusterRoleManagedPolicyARNs is EKS Role managed policy ARNs.
 	ClusterRoleManagedPolicyARNs []string `json:"cluster-role-managed-policy-arns,omitempty"`
-	// ClusterRoleARN is the role ARN that EKS uses to create AWS resources for Kubernetes.
-	// By default, it's empty which triggers tester to create one.
-	ClusterRoleARN string `json:"cluster-role-arn,omitempty"`
 
 	// ClusterTags defines EKS create cluster tags.
 	ClusterTags map[string]string `json:"cluster-tags,omitempty"`
@@ -148,6 +156,14 @@ type Parameters struct {
 	// Version is the version of EKS Kubernetes "cluster".
 	// If empty, set default version.
 	Version string `json:"version,omitempty"`
+
+	// EncryptionCMKCreate is true to auto-create and delete KMS CMK
+	// for encryption feature.
+	EncryptionCMKCreate bool `json:"encryption-cmk-create"`
+	// EncryptionCMKARN is the KMS CMK ARN for encryption feature.
+	// If not empty, the cluster is created with encryption feature
+	// enabled.
+	EncryptionCMKARN string `json:"encryption-cmk-arn"`
 }
 
 // AddOnManagedNodeGroups defines parameters for EKS "Managed Node Group" creation.
@@ -162,13 +178,16 @@ type AddOnManagedNodeGroups struct {
 
 	// RoleName is the name of the managed node group.
 	RoleName string `json:"role-name,omitempty"`
+	// RoleCreate is true to auto-create and delete role.
+	RoleCreate bool `json:"role-create"`
+	// RoleARN is the role ARN that EKS managed node group uses to create AWS
+	// resources for Kubernetes.
+	// By default, it's empty which triggers tester to create one.
+	RoleARN string `json:"role-arn,omitempty"`
 	// RoleServicePrincipals is the node group Service Principals
 	RoleServicePrincipals []string `json:"role-service-principals,omitempty"`
 	// RoleManagedPolicyARNs is node group managed policy ARNs.
 	RoleManagedPolicyARNs []string `json:"role-managed-policy-arns,omitempty"`
-	// RoleARN is the role ARN that EKS managed node group uses to create AWS resources for Kubernetes.
-	// By default, it's empty which triggers tester to create one.
-	RoleARN string `json:"role-arn,omitempty"`
 
 	// RequestHeaderKey defines EKS managed node group create cluster request header key.
 	RequestHeaderKey string `json:"request-header-key,omitempty"`
@@ -459,10 +478,10 @@ type AddOnIRSA struct {
 
 	// RoleName is the role name for IRSA.
 	RoleName string `json:"role-name"`
-	// RoleCFNStackID is the CloudFormation stack ID for IRSA.
-	RoleCFNStackID string `json:"role-cfn-stack-id"`
 	// RoleARN is the role ARN for IRSA.
 	RoleARN string `json:"role-arn"`
+	// RoleCFNStackID is the CloudFormation stack ID for IRSA.
+	RoleCFNStackID string `json:"role-cfn-stack-id"`
 	// RoleManagedPolicyARNs is IRSA role managed policy ARNs.
 	// ref. https://aws.amazon.com/blogs/opensource/introducing-fine-grained-iam-roles-service-accounts/
 	RoleManagedPolicyARNs []string `json:"role-managed-policy-arns,omitempty"`
@@ -560,7 +579,6 @@ type Status struct {
 
 	ClusterRoleCFNStackID string `json:"cluster-role-cfn-stack-id"`
 	ClusterRoleARN        string `json:"cluster-role-arn"`
-	ClusterRoleName       string `json:"cluster-role-name"`
 
 	VPCCFNStackID string `json:"vpc-cfn-stack-id"`
 	VPCID         string `json:"vpc-id"`
@@ -596,8 +614,61 @@ type Status struct {
 	// ClusterCADecoded is the decoded EKS cluster CA, required for k8s.io/client-go.
 	ClusterCADecoded string `json:"cluster-ca-decoded"`
 
-	// ClusterStatus represents the current status of the cluster.
-	ClusterStatus string `json:"cluster-status"`
+	// ClusterStatusCurrent represents the current status of the cluster.
+	ClusterStatusCurrent string `json:"cluster-status-current"`
+	// ClusterStatus represents the status of the cluster.
+	ClusterStatus []ClusterStatus `json:"cluster-status"`
+
+	// EncryptionCMKARN is the KMS CMK ID, if any.
+	EncryptionCMKARN string `json:"encryption-cmk-arn"`
+	// EncryptionCMKID is the KMS CMK ID, if any.
+	EncryptionCMKID string `json:"encryption-cmk-id"`
+}
+
+// ClusterStatus represents the cluster status.
+type ClusterStatus struct {
+	Time   time.Time `json:"time"`
+	Status string    `json:"status"`
+}
+
+// ClusterStatusDELETEDORNOTEXIST defines the cluster status when the cluster is not found.
+//
+// ref. https://docs.aws.amazon.com/eks/latest/APIReference/API_Cluster.html#AmazonEKS-Type-Cluster-status
+//
+//  CREATING
+//  ACTIVE
+//  UPDATING
+//  DELETING
+//  FAILED
+//
+const ClusterStatusDELETEDORNOTEXIST = "DELETED/NOT-EXIST"
+
+// RecordStatus records cluster status.
+func (cfg *Config) RecordStatus(status string) {
+	cfg.mu.Lock()
+	defer cfg.mu.Unlock()
+
+	cfg.Status.ClusterStatusCurrent = status
+	switch status {
+	case ClusterStatusDELETEDORNOTEXIST:
+		cfg.Status.Up = false
+	case awseks.ClusterStatusActive:
+		cfg.Status.Up = true
+	}
+
+	sv := ClusterStatus{Time: time.Now(), Status: status}
+	n := len(cfg.Status.ClusterStatus)
+	if n == 0 {
+		cfg.Status.ClusterStatus = []ClusterStatus{sv}
+		cfg.sync()
+		return
+	}
+
+	copied := make([]ClusterStatus, n+1)
+	copy(copied[1:], cfg.Status.ClusterStatus)
+	copied[0] = sv
+	cfg.Status.ClusterStatus = copied
+	cfg.sync()
 }
 
 // StatusManagedNodeGroups represents the status of EKS "Managed Node Group".
@@ -687,6 +758,12 @@ func Load(p string) (cfg *Config, err error) {
 
 // Sync persists current configuration and states to disk.
 func (cfg *Config) Sync() (err error) {
+	cfg.mu.Lock()
+	defer cfg.mu.Unlock()
+	return cfg.sync()
+}
+
+func (cfg *Config) sync() (err error) {
 	var p string
 	if cfg.ConfigPath != "" && !filepath.IsAbs(cfg.ConfigPath) {
 		p, err = filepath.Abs(cfg.ConfigPath)

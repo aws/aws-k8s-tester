@@ -51,8 +51,13 @@ var DefaultConfig = Config{
 	OnFailureDeleteWaitSeconds: 120,
 
 	Parameters: &Parameters{
-		ClusterSigningName: "eks",
-		Version:            "1.14",
+		ClusterRoleName:     "",
+		ClusterRoleCreate:   true,
+		ClusterRoleARN:      "",
+		ClusterSigningName:  "eks",
+		Version:             "1.14",
+		EncryptionCMKCreate: true,
+		EncryptionCMKARN:    "",
 	},
 
 	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
@@ -61,15 +66,9 @@ var DefaultConfig = Config{
 		Enable:      false,
 		SigningName: "eks",
 
-		RoleServicePrincipals: []string{
-			"ec2.amazonaws.com",
-			"eks.amazonaws.com",
-		},
-		RoleManagedPolicyARNs: []string{
-			"arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy",
-			"arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy",
-			"arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
-		},
+		RoleName:   "",
+		RoleCreate: true,
+		RoleARN:    "",
 
 		// keep in-sync with the default value in https://pkg.go.dev/k8s.io/kubernetes/test/e2e/framework#GetSigner
 		RemoteAccessPrivateKeyPath: filepath.Join(homedir.HomeDir(), ".ssh", "kube_aws_rsa"),
@@ -124,22 +123,12 @@ var DefaultConfig = Config{
 	},
 
 	AddOnIRSA: &AddOnIRSA{
-		Enable: false,
-		RoleManagedPolicyARNs: []string{
-			"arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess",
-		},
+		Enable:             false,
 		DeploymentReplicas: 10,
 	},
 
 	AddOnFargate: &AddOnFargate{
 		Enable: false,
-		RoleServicePrincipals: []string{
-			"eks.amazonaws.com",
-			"eks-fargate-pods.amazonaws.com",
-		},
-		RoleManagedPolicyARNs: []string{
-			"arn:aws:iam::aws:policy/AmazonEKSFargatePodExecutionRolePolicy",
-		},
 	},
 
 	// read-only
@@ -285,40 +274,14 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		return fmt.Errorf("kubectl-download-url %q build OS mismatch, expected %q", cfg.KubectlDownloadURL, runtime.GOOS)
 	}
 
-	// validate role-related
-	if (len(cfg.Parameters.ClusterRoleServicePrincipals) > 0 || len(cfg.Parameters.ClusterRoleManagedPolicyARNs) > 0) && cfg.Parameters.ClusterRoleARN != "" {
-		return fmt.Errorf("non-empty Parameters.ClusterRoleServicePrincipals %+v or Parameters.ClusterRoleManagedPolicyARNs %+v, but got Parameters.ClusterRoleARN %q",
-			cfg.Parameters.ClusterRoleServicePrincipals,
-			cfg.Parameters.ClusterRoleManagedPolicyARNs,
-			cfg.Parameters.ClusterRoleARN,
-		)
-	}
 	if cfg.Status.ClusterRoleCFNStackID != "" {
-		if cfg.Status.ClusterRoleName == "" {
-			return fmt.Errorf("non-empty Status.ClusterRoleCFNStackID %q, but empty Status.ClusterRoleName",
-				cfg.Status.ClusterRoleCFNStackID,
-			)
-		}
 		if cfg.Status.ClusterRoleARN == "" {
 			return fmt.Errorf("non-empty Status.ClusterRoleCFNStackID %q, but empty Status.ClusterRoleARN",
 				cfg.Status.ClusterRoleCFNStackID,
 			)
 		}
 	}
-	if cfg.Status.ClusterRoleName != "" {
-		if cfg.Status.ClusterRoleARN == "" {
-			return fmt.Errorf("non-empty Status.ClusterRoleName %q, but empty Status.ClusterRoleARN",
-				cfg.Status.ClusterRoleName,
-			)
-		}
-	}
-	if cfg.Status.ClusterRoleARN != "" {
-		if cfg.Status.ClusterRoleName == "" {
-			return fmt.Errorf("non-empty Status.ClusterRoleARN %q, but empty Status.ClusterRoleName",
-				cfg.Status.ClusterRoleARN,
-			)
-		}
-	}
+
 	if cfg.Parameters.VPCID != "" &&
 		cfg.Status.VPCID != "" &&
 		cfg.Parameters.VPCID != cfg.Status.VPCID {
@@ -372,16 +335,16 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		return fmt.Errorf("non-empty Status.VPCCFNStackID %q, but empty Status.VPCID",
 			cfg.Status.VPCCFNStackID)
 	}
-	if len(cfg.Status.PrivateSubnetIDs) > 0 {
+	if len(cfg.Status.PublicSubnetIDs) > 0 {
 		if cfg.Status.ControlPlaneSecurityGroupID == "" {
-			return fmt.Errorf("non-empty Status.PrivateSubnetIDs %+v, but empty Status.ControlPlaneSecurityGroupID",
-				cfg.Status.PrivateSubnetIDs,
+			return fmt.Errorf("non-empty Status.PublicSubnetIDs %+v, but empty Status.ControlPlaneSecurityGroupID",
+				cfg.Status.PublicSubnetIDs,
 			)
 		}
 	}
 	if cfg.Status.ControlPlaneSecurityGroupID != "" {
-		if len(cfg.Status.PrivateSubnetIDs) == 0 {
-			return fmt.Errorf("non-empty Status.ControlPlaneSecurityGroupID %q, but empty Status.PrivateSubnetIDs",
+		if len(cfg.Status.PublicSubnetIDs) == 0 {
+			return fmt.Errorf("non-empty Status.ControlPlaneSecurityGroupID %q, but empty Status.PublicSubnetIDs",
 				cfg.Status.ControlPlaneSecurityGroupID,
 			)
 		}
@@ -397,6 +360,54 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 	if vv < 1.14 && cfg.AddOnManagedNodeGroups.Enable {
 		return fmt.Errorf("AddOnManagedNodeGroups only supports Parameters.Version >=1.14, got %f", vv)
+	}
+	if vv < 1.14 && cfg.AddOnFargate.Enable {
+		return fmt.Errorf("AddOnFargate only supports Parameters.Version >=1.14, got %f", vv)
+	}
+
+	if cfg.Parameters.ClusterRoleCreate && cfg.Parameters.ClusterRoleName == "" {
+		cfg.Parameters.ClusterRoleName = cfg.Name + "-role-cluster"
+	}
+	if cfg.Parameters.ClusterRoleCreate && cfg.Parameters.ClusterRoleARN != "" {
+		return fmt.Errorf("Parameters.ClusterRoleCreate true, so expect empty Parameters.ClusterRoleARN but got %q", cfg.Parameters.ClusterRoleARN)
+	}
+	if !cfg.Parameters.ClusterRoleCreate && cfg.Parameters.ClusterRoleName != "" {
+		return fmt.Errorf("Parameters.ClusterRoleCreate false, so expect empty Parameters.ClusterRoleName but got %q", cfg.Parameters.ClusterRoleName)
+	}
+	if !cfg.Parameters.ClusterRoleCreate && cfg.Parameters.ClusterRoleARN == "" {
+		return fmt.Errorf("Parameters.ClusterRoleCreate false, so expect non-empty Parameters.ClusterRoleARN but got %q", cfg.Parameters.ClusterRoleARN)
+	}
+	if !cfg.Parameters.ClusterRoleCreate && len(cfg.Parameters.ClusterRoleManagedPolicyARNs) > 0 {
+		return fmt.Errorf("Parameters.ClusterRoleCreate false, so expect empty Parameters.ClusterRoleManagedPolicyARNs but got %q", cfg.Parameters.ClusterRoleManagedPolicyARNs)
+	}
+	if !cfg.Parameters.ClusterRoleCreate && len(cfg.Parameters.ClusterRoleServicePrincipals) > 0 {
+		return fmt.Errorf("Parameters.ClusterRoleCreate false, so expect empty Parameters.ClusterRoleServicePrincipals but got %q", cfg.Parameters.ClusterRoleServicePrincipals)
+	}
+
+	if cfg.Parameters.EncryptionCMKCreate && cfg.Parameters.EncryptionCMKARN != "" {
+		return fmt.Errorf("Parameters.EncryptionCMKCreate true, so expect empty Parameters.EncryptionCMKARN but got %q", cfg.Parameters.EncryptionCMKARN)
+	}
+	if !cfg.Parameters.EncryptionCMKCreate && cfg.Parameters.EncryptionCMKARN == "" {
+		return fmt.Errorf("Parameters.EncryptionCMKCreate false, so expect non-empty Parameters.EncryptionCMKARN but got %q", cfg.Parameters.EncryptionCMKARN)
+	}
+
+	if cfg.AddOnManagedNodeGroups.RoleCreate && cfg.AddOnManagedNodeGroups.RoleARN == "" {
+		cfg.AddOnManagedNodeGroups.RoleName = cfg.Name + "-role-mng"
+	}
+	if cfg.AddOnManagedNodeGroups.RoleCreate && cfg.AddOnManagedNodeGroups.RoleARN != "" {
+		return fmt.Errorf("AddOnManagedNodeGroups.RoleCreate true, so expect empty AddOnManagedNodeGroups.RoleARN but got %q", cfg.AddOnManagedNodeGroups.RoleARN)
+	}
+	if !cfg.AddOnManagedNodeGroups.RoleCreate && cfg.AddOnManagedNodeGroups.RoleName != "" {
+		return fmt.Errorf("AddOnManagedNodeGroups.RoleCreate false, so expect empty AddOnManagedNodeGroups.RoleName but got %q", cfg.AddOnManagedNodeGroups.RoleName)
+	}
+	if !cfg.AddOnManagedNodeGroups.RoleCreate && cfg.AddOnManagedNodeGroups.RoleARN == "" {
+		return fmt.Errorf("AddOnManagedNodeGroups.RoleCreate false, so expect non-empty AddOnManagedNodeGroups.RoleARN but got %q", cfg.AddOnManagedNodeGroups.RoleARN)
+	}
+	if !cfg.AddOnManagedNodeGroups.RoleCreate && len(cfg.AddOnManagedNodeGroups.RoleManagedPolicyARNs) > 0 {
+		return fmt.Errorf("AddOnManagedNodeGroups.RoleCreate false, so expect empty AddOnManagedNodeGroups.RoleManagedPolicyARNs but got %q", cfg.AddOnManagedNodeGroups.RoleManagedPolicyARNs)
+	}
+	if !cfg.AddOnManagedNodeGroups.RoleCreate && len(cfg.AddOnManagedNodeGroups.RoleServicePrincipals) > 0 {
+		return fmt.Errorf("AddOnManagedNodeGroups.RoleCreate false, so expect empty AddOnManagedNodeGroups.RoleServicePrincipals but got %q", cfg.AddOnManagedNodeGroups.RoleServicePrincipals)
 	}
 
 	if cfg.Status.ClusterCFNStackID != "" {
@@ -414,10 +425,6 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	// if created via EKS API, no need to error in the following case:
 	// cfg.Status.ClusterARN != "" && cfg.Status.ClusterCA == "" || cfg.Status.ClusterCADecoded == ""
 
-	// validate node group related
-	if cfg.AddOnManagedNodeGroups.RoleName == "" {
-		cfg.AddOnManagedNodeGroups.RoleName = cfg.Name + "-mng-role"
-	}
 	if cfg.AddOnManagedNodeGroups.SSHKeyPairName == "" {
 		cfg.AddOnManagedNodeGroups.SSHKeyPairName = cfg.Name + "-ssh"
 	}
@@ -615,10 +622,10 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		}
 
 		if cfg.AddOnIRSA.RoleName == "" {
-			cfg.AddOnIRSA.RoleName = cfg.Name + "-irsa-role"
+			cfg.AddOnIRSA.RoleName = cfg.Name + "-role-irsa"
 		}
 		if cfg.AddOnFargate.RoleName == "" {
-			cfg.AddOnFargate.RoleName = cfg.Name + "-fargate-role"
+			cfg.AddOnFargate.RoleName = cfg.Name + "-role-fargate"
 		}
 		if cfg.AddOnFargate.ProfileName == "" {
 			cfg.AddOnFargate.ProfileName = cfg.Name + "-fargate-profile"
