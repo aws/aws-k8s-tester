@@ -31,7 +31,7 @@ type k8sClientSetGetter interface {
 // Tester defines metrics tester.
 type Tester interface {
 	// Fetch fetches all metrics output.
-	Fetch() (map[string]*dto.MetricFamily, error)
+	Fetch() ([]byte, map[string]*dto.MetricFamily, error)
 }
 
 // New creates a new Job tester.
@@ -43,7 +43,7 @@ type tester struct {
 	cfg Config
 }
 
-func (ts *tester) Fetch() (map[string]*dto.MetricFamily, error) {
+func (ts *tester) Fetch() ([]byte, map[string]*dto.MetricFamily, error) {
 	ts.cfg.Logger.Info("fetching /metrics")
 
 	var output []byte
@@ -54,9 +54,9 @@ func (ts *tester) Fetch() (map[string]*dto.MetricFamily, error) {
 	for time.Now().Sub(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
-			return nil, errors.New("/metric fetch aborted")
+			return nil, nil, errors.New("/metric fetch aborted")
 		case <-ts.cfg.Sig:
-			return nil, errors.New("/metric fetch aborted")
+			return nil, nil, errors.New("/metric fetch aborted")
 		case <-time.After(5 * time.Second):
 		}
 
@@ -74,11 +74,12 @@ func (ts *tester) Fetch() (map[string]*dto.MetricFamily, error) {
 		break
 	}
 	if len(output) == 0 {
-		return nil, errors.New("empty response from /metrics")
+		return nil, nil, errors.New("empty response from /metrics")
 	}
 	ts.cfg.Logger.Info("fetched /metrics")
 
-	return parse(bytes.NewReader(output))
+	rv, err := parse(bytes.NewReader(output))
+	return output, rv, err
 }
 
 func parse(rd io.Reader) (map[string]*dto.MetricFamily, error) {

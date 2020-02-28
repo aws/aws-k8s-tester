@@ -169,19 +169,26 @@ func (ts *Tester) health() error {
 	out = string(output)
 	colorstring.Printf("\n\"[light_green]kubectl get namespaces[default]\" output:\n%s\n\n", out)
 
-	mfs, err := ts.metricsTester.Fetch()
+	mout, mfs, err := ts.metricsTester.Fetch()
 	if err != nil {
 		return fmt.Errorf("'/metrics' fetch failed %v", err)
 	}
+	found := false
 	for _, k := range []string{metricDEKGen, metricEnvelopeCacheMiss} {
 		mv, ok := mfs[k]
 		if !ok {
-			return fmt.Errorf("%q not found", k)
+			ts.lg.Warn("metric not found", zap.String("name", k))
+			continue
 		}
+		found = true
 		val := mv.Metric[0].GetCounter().GetValue()
 		colorstring.Printf("\"[light_green]%s[default]\" metric output: %f\n", k, val)
 	}
-	ts.lg.Info("checked /metrics", zap.Error(err))
+	if !found {
+		colorstring.Printf("\"[red]/metrics not found[default]\" output:\n\n%s\n\n", string(mout))
+		return errors.New("metrics not found")
+	}
+	ts.lg.Info("checked /metrics")
 	return err
 }
 
