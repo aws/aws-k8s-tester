@@ -22,6 +22,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.6.2...v0.6.3
 - Add [`github.com/aws/aws-k8s-tester/eks/fargate`](https://github.com/aws/aws-k8s-tester/commit/e0b4d2820e531f04d6d9c8eabd944a6304254ea4).
 - Support [private subnets in VPC creation for `eks/fargate`](https://github.com/aws/aws-k8s-tester/commit/08044d91316071381cc30ef306d2be76e8ed0260).
 - Add [`github.com/aws/aws-k8s-tester/eks/metrics`](https://github.com/aws/aws-k8s-tester/commit/753c76024d519cbc27a9531a1bdbcce37ecf7f20).
+- Tag [VPC with `"Network"` key](https://github.com/aws/aws-k8s-tester/commit/2f8758cb67052e4affe7d6a6a4a745819563c656).
 
 ### `ssh`
 
