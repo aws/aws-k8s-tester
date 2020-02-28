@@ -134,6 +134,8 @@ type Parameters struct {
 	// ClusterSigningName is the EKS create request signing name.
 	ClusterSigningName string `json:"cluster-signing-name"`
 
+	// VPCCreate is true to auto-create and delete VPC.
+	VPCCreate bool `json:"vpc-create"`
 	// VPCID is the VPC ID for cluster creation.
 	// If not empty, VPC is reused and not deleted.
 	// If empty, VPC is created anew and deleted on cluster deletion.

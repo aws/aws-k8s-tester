@@ -46,6 +46,8 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_ON_FAILURE_DELETE_WAIT_SECONDS", "780")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ON_FAILURE_DELETE_WAIT_SECONDS")
 
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CREATE", "false")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CREATE")
 	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_VPC_ID", "vpc-id")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_VPC_ID")
 	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CIDR", "my-cidr")
@@ -279,6 +281,9 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("unexpected OnFailureDeleteWaitSeconds %d", cfg.OnFailureDeleteWaitSeconds)
 	}
 
+	if cfg.Parameters.VPCCreate {
+		t.Fatalf("unexpected Parameters.VPCCreate %v", cfg.Parameters.VPCCreate)
+	}
 	if cfg.Parameters.VPCID != "vpc-id" {
 		t.Fatalf("unexpected Parameters.VPCID %q", cfg.Parameters.VPCID)
 	}

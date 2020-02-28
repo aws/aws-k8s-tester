@@ -577,6 +577,10 @@ Outputs:
 `
 
 func (ts *Tester) createVPC() error {
+	if !ts.cfg.Parameters.VPCCreate {
+		ts.lg.Info("Parameters.VPCCreate false; skipping creation")
+		return nil
+	}
 	if ts.cfg.Status.VPCCFNStackID != "" ||
 		(ts.cfg.Parameters.VPCID != "" &&
 			len(ts.cfg.Status.PrivateSubnetIDs) > 0 &&
@@ -780,8 +784,8 @@ func (ts *Tester) createVPC() error {
 }
 
 func (ts *Tester) deleteVPC() error {
-	if ts.cfg.Parameters.VPCID != "" {
-		ts.lg.Info("non-empty VPC given for reuse; do not delete VPC")
+	if !ts.cfg.Parameters.VPCCreate {
+		ts.lg.Info("Parameters.VPCCreate false; skipping deletion")
 		return nil
 	}
 	if ts.cfg.Status.VPCCFNStackID == "" {

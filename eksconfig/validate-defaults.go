@@ -54,6 +54,8 @@ var DefaultConfig = Config{
 		ClusterRoleName:     "",
 		ClusterRoleCreate:   true,
 		ClusterRoleARN:      "",
+		VPCCreate:           true,
+		VPCID:               "",
 		ClusterSigningName:  "eks",
 		Version:             "1.14",
 		EncryptionCMKCreate: true,
@@ -366,6 +368,16 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 	if vv < 1.14 && cfg.AddOnFargate.Enable {
 		return fmt.Errorf("AddOnFargate only supports Parameters.Version >=1.14, got %f", vv)
+	}
+
+	if cfg.Parameters.VPCID != "" { // reuse existing vpc
+		cfg.Status.VPCID = cfg.Parameters.VPCID
+	}
+	if cfg.Parameters.VPCCreate && cfg.Parameters.VPCID != "" {
+		return fmt.Errorf("invalid config: Parameters.VPCCreate (%v), Parameters.VPCID (%q)", cfg.Parameters.VPCCreate, cfg.Parameters.VPCID)
+	}
+	if !cfg.Parameters.VPCCreate && cfg.Parameters.VPCID == "" {
+		return fmt.Errorf("Parameters.VPCCreate false, so expect non-empty Parameters.VPCID but got %q", cfg.Parameters.VPCID)
 	}
 
 	if cfg.Parameters.ClusterRoleCreate && cfg.Parameters.ClusterRoleName == "" {
