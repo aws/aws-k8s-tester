@@ -136,7 +136,7 @@ func (ts *Tester) health() error {
 	}
 	println()
 	for _, v := range pods.Items {
-		colorstring.Printf("\n\"[light_magenta]kubectl get pods -n=kube-system[default]\" output: %q\n", v.Name)
+		colorstring.Printf("\"[light_magenta]kubectl get pods -n=kube-system[default]\" output: %q\n", v.Name)
 	}
 	println()
 
@@ -171,6 +171,7 @@ func (ts *Tester) health() error {
 	out = string(output)
 	colorstring.Printf("\n\n\"[light_green]kubectl get namespaces[default]\" output:\n%s\n\n", out)
 
+	// TODO: check metric count
 	mfs, err := ts.metricsTester.Fetch()
 	if err != nil {
 		return fmt.Errorf("'/metrics' fetch failed %v", err)
@@ -180,9 +181,7 @@ func (ts *Tester) health() error {
 		return fmt.Errorf("%q not found", envCacheMissMetric)
 	}
 	val := mv.Metric[0].GetCounter().GetValue()
-	colorstring.Printf("\n\n\"[light_green]%s[default]\" metric output:\n%f\n\n", val)
-
-	// TODO: check metric count
+	colorstring.Printf("\n\n\"[light_green]%s[default]\" metric output:\n%f\n\n", envCacheMissMetric, val)
 
 	return ts.cfg.Sync()
 }
