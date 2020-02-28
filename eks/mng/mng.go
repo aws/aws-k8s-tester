@@ -274,9 +274,18 @@ type tester struct {
 }
 
 func (ts *tester) Create() (err error) {
+	if ts.cfg.EKSConfig.AddOnManagedNodeGroups.Created {
+		ts.cfg.Logger.Info("ManagedNodeGroup is already created; skipping creation")
+		return nil
+	}
 	if len(ts.cfg.EKSConfig.Status.PublicSubnetIDs) == 0 {
 		return errors.New("empty EKSConfig.Status.PublicSubnetIDs")
 	}
+
+	defer func() {
+		ts.cfg.EKSConfig.AddOnManagedNodeGroups.Created = true
+		ts.cfg.EKSConfig.Sync()
+	}()
 
 	if err = ts.createKeyPair(); err != nil {
 		return err
@@ -296,6 +305,11 @@ func (ts *tester) Create() (err error) {
 }
 
 func (ts *tester) Delete() error {
+	if !ts.cfg.EKSConfig.AddOnManagedNodeGroups.Created {
+		ts.cfg.Logger.Info("ManagedNodeGroup is not created; skipping deletion")
+		return nil
+	}
+
 	var errs []string
 	if err := ts.deleteKeyPair(); err != nil {
 		ts.cfg.Logger.Warn("failed to delete key pair", zap.Error(err))

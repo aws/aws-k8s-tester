@@ -125,7 +125,7 @@ Outputs:
 
 func (ts *Tester) createClusterRole() error {
 	if !ts.cfg.Parameters.ClusterRoleCreate {
-		ts.lg.Info("Parameters.ClusterRoleCreate false; skipping")
+		ts.lg.Info("Parameters.ClusterRoleCreate false; skipping creation")
 		return nil
 	}
 	if ts.cfg.Parameters.ClusterRoleARN != "" ||
@@ -229,7 +229,7 @@ func (ts *Tester) createClusterRole() error {
 
 func (ts *Tester) deleteClusterRole() error {
 	if !ts.cfg.Parameters.ClusterRoleCreate {
-		ts.lg.Info("Parameters.ClusterRoleCreate false; skipping")
+		ts.lg.Info("Parameters.ClusterRoleCreate false; skipping deletion")
 		return nil
 	}
 	if ts.cfg.Status.ClusterRoleCFNStackID == "" {

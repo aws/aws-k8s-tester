@@ -66,7 +66,7 @@ Outputs:
 
 func (ts *tester) createRole() error {
 	if !ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleCreate {
-		ts.cfg.Logger.Info("AddOnManagedNodeGroups.RoleCreate false; skipping")
+		ts.cfg.Logger.Info("AddOnManagedNodeGroups.RoleCreate false; skipping creation")
 		return nil
 	}
 	if ts.cfg.EKSConfig.StatusManagedNodeGroups.RoleCFNStackID != "" ||
@@ -163,7 +163,7 @@ func (ts *tester) createRole() error {
 
 func (ts *tester) deleteRole() error {
 	if !ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleCreate {
-		ts.cfg.Logger.Info("AddOnManagedNodeGroups.RoleCreate false; skipping")
+		ts.cfg.Logger.Info("AddOnManagedNodeGroups.RoleCreate false; skipping deletion")
 		return nil
 	}
 	if ts.cfg.EKSConfig.StatusManagedNodeGroups.RoleCFNStackID == "" {

@@ -953,7 +953,7 @@ func (ts *Tester) down() (err error) {
 // The existing node groups won't be recreated.
 func (ts *Tester) CreateMNG() error {
 	if !ts.cfg.AddOnManagedNodeGroups.Enable {
-		ts.lg.Warn("mng has not been enabled; skipping")
+		ts.lg.Warn("mng has not been enabled; skipping creation MNG")
 		return nil
 	}
 
