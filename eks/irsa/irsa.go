@@ -17,7 +17,7 @@ import (
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	awscfn "github.com/aws/aws-k8s-tester/pkg/aws/cloudformation"
-	"github.com/aws/aws-k8s-tester/pkg/ssh"
+	"github.com/aws/aws-k8s-tester/ssh"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/request"
@@ -396,9 +396,12 @@ func (ts *tester) deleteNamespace() error {
 			},
 		)
 	if err != nil {
-		return err
+		// ref. https://github.com/aws/aws-k8s-tester/issues/79
+		if !strings.Contains(err.Error(), ` not found`) {
+			return err
+		}
 	}
-	ts.cfg.Logger.Info("deleted namespace", zap.String("namespace", ts.cfg.EKSConfig.AddOnIRSA.Namespace))
+	ts.cfg.Logger.Info("deleted namespace", zap.Error(err))
 	return ts.cfg.EKSConfig.Sync()
 }
 
@@ -1215,6 +1218,7 @@ func (ts *tester) countSuccess() (int, error) {
 				return 0, err
 			}
 			if err = sh.Connect(); err != nil {
+				ts.cfg.Logger.Warn("failed to connect to SSH", zap.Error(err))
 				sh.Close()
 				return 0, err
 			}

@@ -176,9 +176,12 @@ func (ts *tester) deleteNamespace() error {
 			},
 		)
 	if err != nil {
-		return err
+		// ref. https://github.com/aws/aws-k8s-tester/issues/79
+		if !strings.Contains(err.Error(), ` not found`) {
+			return err
+		}
 	}
-	ts.cfg.Logger.Info("deleted namespace", zap.String("namespace", ts.cfg.EKSConfig.AddOnNLBHelloWorld.Namespace))
+	ts.cfg.Logger.Info("deleted namespace", zap.Error(err))
 	return ts.cfg.EKSConfig.Sync()
 }
 
