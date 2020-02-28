@@ -359,11 +359,8 @@ func (ts *tester) createMNG() error {
 		ts.cfg.EKSConfig.StatusManagedNodeGroups.CreateTookString = ts.cfg.EKSConfig.StatusManagedNodeGroups.CreateTook.String()
 	}()
 
-	if ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleName == "" {
-		return errors.New("empty EKSConfig.AddOnManagedNodeGroups.RoleName")
-	}
-	if ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleARN == "" {
-		return errors.New("empty AddOnManagedNodeGroups.RoleARN")
+	if ts.cfg.EKSConfig.StatusManagedNodeGroups.RoleARN == "" {
+		return errors.New("empty StatusManagedNodeGroups.RoleARN")
 	}
 	if ts.cfg.EKSConfig.StatusManagedNodeGroups.RoleCFNStackID == "" {
 		return errors.New("empty StatusManagedNodeGroups.RoleCFNStackID")
@@ -404,7 +401,7 @@ func (ts *tester) createMNG() error {
 			createInput := awseks.CreateNodegroupInput{
 				ClusterName:   aws.String(ts.cfg.EKSConfig.Name),
 				NodegroupName: aws.String(mv.Name),
-				NodeRole:      aws.String(ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleARN),
+				NodeRole:      aws.String(ts.cfg.EKSConfig.StatusManagedNodeGroups.RoleARN),
 				AmiType:       aws.String(mv.AMIType),
 				DiskSize:      aws.Int64(int64(mv.VolumeSize)),
 				InstanceTypes: aws.StringSlice(mv.InstanceTypes),
@@ -491,7 +488,7 @@ func (ts *tester) createMNG() error {
 					},
 					{
 						ParameterKey:   aws.String("ManagedNodeGroupRoleARN"),
-						ParameterValue: aws.String(ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleARN),
+						ParameterValue: aws.String(ts.cfg.EKSConfig.StatusManagedNodeGroups.RoleARN),
 					},
 					{
 						ParameterKey:   aws.String("ManagedNodeGroupName"),

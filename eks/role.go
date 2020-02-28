@@ -222,7 +222,6 @@ func (ts *Tester) createClusterRole() error {
 	ts.lg.Info("created a new role",
 		zap.String("cluster-role-cfn-stack-id", ts.cfg.Status.ClusterRoleCFNStackID),
 		zap.String("cluster-role-arn", ts.cfg.Status.ClusterRoleARN),
-		zap.String("cluster-role-name", ts.cfg.Parameters.ClusterRoleName),
 	)
 	return ts.cfg.Sync()
 }

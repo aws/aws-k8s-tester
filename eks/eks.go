@@ -287,13 +287,6 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 		ts.lg.Info("EKS cluster", zap.String("name", aws.StringValue(v)))
 	}
 
-	// reuse existing role
-	if ts.cfg.Parameters.ClusterRoleARN != "" {
-		ts.lg.Info("reuse existing IAM role", zap.String("cluster-role-arn", ts.cfg.Parameters.ClusterRoleARN))
-		ts.cfg.Status.ClusterRoleARN = ts.cfg.Parameters.ClusterRoleARN
-		ts.cfg.Sync()
-	}
-
 	// update k8s client if cluster has already been created
 	if err = ts.createK8sClientSet(); err != nil {
 		ts.lg.Warn("failed to create k8s client", zap.Error(err))

@@ -274,12 +274,15 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		return fmt.Errorf("kubectl-download-url %q build OS mismatch, expected %q", cfg.KubectlDownloadURL, runtime.GOOS)
 	}
 
-	if cfg.Status.ClusterRoleCFNStackID != "" {
-		if cfg.Status.ClusterRoleARN == "" {
-			return fmt.Errorf("non-empty Status.ClusterRoleCFNStackID %q, but empty Status.ClusterRoleARN",
-				cfg.Status.ClusterRoleCFNStackID,
-			)
-		}
+	if cfg.Status.ClusterRoleCFNStackID != "" && cfg.Status.ClusterRoleARN == "" {
+		return fmt.Errorf("non-empty Status.ClusterRoleCFNStackID %q, but empty Status.ClusterRoleARN",
+			cfg.Status.ClusterRoleCFNStackID,
+		)
+	}
+	if cfg.StatusManagedNodeGroups.RoleCFNStackID != "" && cfg.StatusManagedNodeGroups.RoleARN == "" {
+		return fmt.Errorf("non-empty StatusManagedNodeGroups.RoleCFNStackID %q, but empty StatusManagedNodeGroups.RoleARN",
+			cfg.StatusManagedNodeGroups.RoleCFNStackID,
+		)
 	}
 
 	if cfg.Parameters.VPCID != "" &&
@@ -368,6 +371,9 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	if cfg.Parameters.ClusterRoleCreate && cfg.Parameters.ClusterRoleName == "" {
 		cfg.Parameters.ClusterRoleName = cfg.Name + "-role-cluster"
 	}
+	if cfg.Parameters.ClusterRoleARN != "" { // reuse existing role
+		cfg.Status.ClusterRoleARN = cfg.Parameters.ClusterRoleARN
+	}
 	if cfg.Parameters.ClusterRoleCreate && cfg.Parameters.ClusterRoleARN != "" {
 		return fmt.Errorf("invalid config: Parameters.ClusterRoleCreate (%v), Parameters.ClusterRoleARN (%q)", cfg.Parameters.ClusterRoleCreate, cfg.Parameters.ClusterRoleARN)
 	}
@@ -393,6 +399,9 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 
 	if cfg.AddOnManagedNodeGroups.RoleCreate && cfg.AddOnManagedNodeGroups.RoleARN == "" {
 		cfg.AddOnManagedNodeGroups.RoleName = cfg.Name + "-role-mng"
+	}
+	if cfg.AddOnManagedNodeGroups.RoleARN != "" { // reuse existing role
+		cfg.StatusManagedNodeGroups.RoleARN = cfg.AddOnManagedNodeGroups.RoleARN
 	}
 	if cfg.AddOnManagedNodeGroups.RoleCreate && cfg.AddOnManagedNodeGroups.RoleARN != "" {
 		return fmt.Errorf("invalid config: AddOnManagedNodeGroups.RoleCreate (%v), AddOnManagedNodeGroups.RoleARN (%q)", cfg.AddOnManagedNodeGroups.RoleCreate, cfg.AddOnManagedNodeGroups.RoleARN)

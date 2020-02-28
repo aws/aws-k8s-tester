@@ -684,10 +684,12 @@ type StatusManagedNodeGroups struct {
 	// DeleteTookString is the duration that took to create the resource.
 	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
 
+	RoleARN string `json:"role-arn"`
 	// RoleCFNStackID is the CloudFormation stack ID for a managed node group role.
 	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
 	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
 	RoleCFNStackID string `json:"role-cfn-stack-id"`
+
 	// NvidiaDriverInstalled is true if nvidia driver has been installed.
 	NvidiaDriverInstalled bool `json:"nvidia-driver-installed"`
 	// Nodes maps from EKS "Managed Node Group" name to its status.

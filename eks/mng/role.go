@@ -147,7 +147,7 @@ func (ts *tester) createRole() error {
 	for _, o := range st.Stack.Outputs {
 		switch k := aws.StringValue(o.OutputKey); k {
 		case "ManagedNodeGroupRoleARN":
-			ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleARN = aws.StringValue(o.OutputValue)
+			ts.cfg.EKSConfig.StatusManagedNodeGroups.RoleARN = aws.StringValue(o.OutputValue)
 		default:
 			return fmt.Errorf("unexpected OutputKey %q from %q", k, ts.cfg.EKSConfig.StatusManagedNodeGroups.RoleCFNStackID)
 		}
@@ -155,8 +155,7 @@ func (ts *tester) createRole() error {
 
 	ts.cfg.Logger.Info("created a managed node group role",
 		zap.String("cfn-stack-id", ts.cfg.EKSConfig.StatusManagedNodeGroups.RoleCFNStackID),
-		zap.String("role-name", ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleName),
-		zap.String("role-arn", ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleARN),
+		zap.String("role-arn", ts.cfg.EKSConfig.StatusManagedNodeGroups.RoleARN),
 	)
 	return ts.cfg.EKSConfig.Sync()
 }
