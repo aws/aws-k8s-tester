@@ -459,7 +459,7 @@ func (ts *tester) createProfile() error {
 		ts.cfg.EKSConfig.AddOnFargate.ProfileName,
 		eks.FargateProfileStatusActive,
 		10*time.Second,
-		5*time.Second,
+		7*time.Second,
 	)
 	for sv := range ch {
 		if sv.Error != nil {
@@ -510,7 +510,7 @@ func (ts *tester) deleteProfile() error {
 		ts.cfg.EKSConfig.AddOnFargate.ProfileName,
 		FargateProfileStatusDELETEDORNOTEXIST,
 		10*time.Second,
-		5*time.Second,
+		7*time.Second,
 	)
 	for sv := range ch {
 		if sv.Error != nil {
@@ -548,6 +548,8 @@ func (ts *tester) createPod() error {
 					Command: []string{
 						"/bin/sh",
 						"-c",
+					},
+					Args: []string{
 						fmt.Sprintf("cat /tmp/%s && sleep 10000", ts.cfg.EKSConfig.AddOnFargate.SecretName),
 					},
 
@@ -628,61 +630,18 @@ func (ts *tester) checkPod() error {
 	cmdFlags := []string{
 		"--namespace=" + ts.cfg.EKSConfig.AddOnFargate.Namespace,
 		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
-		"logs",
-		ts.cfg.EKSConfig.AddOnFargate.PodName,
-		"--timestamps",
-	}
-	ts.cfg.Logger.Info("checking Pod logs",
-		zap.String("container-name", ts.cfg.EKSConfig.AddOnFargate.ContainerName),
-		zap.String("command", ts.cfg.EKSConfig.KubectlPath+" "+strings.Join(cmdFlags, " ")),
-	)
-	retryStart, waitDur := time.Now(), 3*time.Minute
-	for time.Now().Sub(retryStart) < waitDur {
-		select {
-		case <-ts.cfg.Stopc:
-			ts.cfg.Logger.Warn("aborted")
-			return nil
-		case <-time.After(5 * time.Second):
-		}
-
-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-		output, err := exec.New().CommandContext(
-			ctx,
-			ts.cfg.EKSConfig.KubectlPath,
-			cmdFlags...,
-		).CombinedOutput()
-		cancel()
-		out := string(output)
-		if err != nil {
-			ts.cfg.Logger.Warn("'kubectl logs' failed", zap.String("output", out), zap.Error(err))
-			continue
-		}
-		if !strings.Contains(out, secretReadTxt) {
-			ts.cfg.Logger.Warn("unexpected logs output", zap.String("output", out))
-			continue
-		}
-		ts.cfg.Logger.Info("checked Pod logs",
-			zap.String("container-name", ts.cfg.EKSConfig.AddOnFargate.ContainerName),
-			zap.String("output", out),
-		)
-		break
-	}
-
-	cmdFlags = []string{
-		"--namespace=" + ts.cfg.EKSConfig.AddOnFargate.Namespace,
-		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
 		"exec",
 		"-it",
 		ts.cfg.EKSConfig.AddOnFargate.PodName,
 		"--",
 		"cat",
-		fmt.Sprintf("cat /tmp/%s", ts.cfg.EKSConfig.AddOnFargate.SecretName),
+		fmt.Sprintf("/tmp/%s", ts.cfg.EKSConfig.AddOnFargate.SecretName),
 	}
 	ts.cfg.Logger.Info("checking Pod exec",
 		zap.String("container-name", ts.cfg.EKSConfig.AddOnFargate.ContainerName),
 		zap.String("command", ts.cfg.EKSConfig.KubectlPath+" "+strings.Join(cmdFlags, " ")),
 	)
-	retryStart, waitDur = time.Now(), 3*time.Minute
+	retryStart, waitDur := time.Now(), 2*time.Minute
 	for time.Now().Sub(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
@@ -708,6 +667,49 @@ func (ts *tester) checkPod() error {
 			continue
 		}
 		ts.cfg.Logger.Info("checked Pod exec",
+			zap.String("container-name", ts.cfg.EKSConfig.AddOnFargate.ContainerName),
+			zap.String("output", out),
+		)
+		break
+	}
+
+	cmdFlags = []string{
+		"--namespace=" + ts.cfg.EKSConfig.AddOnFargate.Namespace,
+		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+		"logs",
+		ts.cfg.EKSConfig.AddOnFargate.PodName,
+		"--timestamps",
+	}
+	ts.cfg.Logger.Info("checking Pod logs",
+		zap.String("container-name", ts.cfg.EKSConfig.AddOnFargate.ContainerName),
+		zap.String("command", ts.cfg.EKSConfig.KubectlPath+" "+strings.Join(cmdFlags, " ")),
+	)
+	retryStart, waitDur = time.Now(), 2*time.Minute
+	for time.Now().Sub(retryStart) < waitDur {
+		select {
+		case <-ts.cfg.Stopc:
+			ts.cfg.Logger.Warn("aborted")
+			return nil
+		case <-time.After(5 * time.Second):
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		output, err := exec.New().CommandContext(
+			ctx,
+			ts.cfg.EKSConfig.KubectlPath,
+			cmdFlags...,
+		).CombinedOutput()
+		cancel()
+		out := string(output)
+		if err != nil {
+			ts.cfg.Logger.Warn("'kubectl logs' failed", zap.String("output", out), zap.Error(err))
+			continue
+		}
+		if !strings.Contains(out, secretReadTxt) {
+			ts.cfg.Logger.Warn("unexpected logs output", zap.String("output", out))
+			continue
+		}
+		ts.cfg.Logger.Info("checked Pod logs",
 			zap.String("container-name", ts.cfg.EKSConfig.AddOnFargate.ContainerName),
 			zap.String("output", out),
 		)
