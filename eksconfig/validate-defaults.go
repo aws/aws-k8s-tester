@@ -369,10 +369,7 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		cfg.Parameters.ClusterRoleName = cfg.Name + "-role-cluster"
 	}
 	if cfg.Parameters.ClusterRoleCreate && cfg.Parameters.ClusterRoleARN != "" {
-		return fmt.Errorf("Parameters.ClusterRoleCreate true, so expect empty Parameters.ClusterRoleARN but got %q", cfg.Parameters.ClusterRoleARN)
-	}
-	if cfg.Parameters.ClusterRoleARN != "" && cfg.Parameters.ClusterRoleCreate {
-		return errors.New("Parameters.ClusterRoleARN non-empty, so expect Parameters.ClusterRoleCreate false")
+		return fmt.Errorf("Parameters.ClusterRoleCreate must be true or Parameters.ClusterRoleARN must be empty (%q)", cfg.Parameters.ClusterRoleARN)
 	}
 	if !cfg.Parameters.ClusterRoleCreate && cfg.Parameters.ClusterRoleName != "" {
 		return fmt.Errorf("Parameters.ClusterRoleCreate false, so expect empty Parameters.ClusterRoleName but got %q", cfg.Parameters.ClusterRoleName)
@@ -398,10 +395,7 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		cfg.AddOnManagedNodeGroups.RoleName = cfg.Name + "-role-mng"
 	}
 	if cfg.AddOnManagedNodeGroups.RoleCreate && cfg.AddOnManagedNodeGroups.RoleARN != "" {
-		return fmt.Errorf("AddOnManagedNodeGroups.RoleCreate true, so expect empty AddOnManagedNodeGroups.RoleARN but got %q", cfg.AddOnManagedNodeGroups.RoleARN)
-	}
-	if cfg.AddOnManagedNodeGroups.RoleARN != "" && cfg.AddOnManagedNodeGroups.RoleCreate {
-		return errors.New("AddOnManagedNodeGroups.RoleARN non-empty, so expect AddOnManagedNodeGroups.RoleCreate false")
+		return fmt.Errorf("AddOnManagedNodeGroups.RoleCreate must be true or AddOnManagedNodeGroups.RoleARN must be empty (%q)", cfg.AddOnManagedNodeGroups.RoleARN)
 	}
 	if !cfg.AddOnManagedNodeGroups.RoleCreate && cfg.AddOnManagedNodeGroups.RoleName != "" {
 		return fmt.Errorf("AddOnManagedNodeGroups.RoleCreate false, so expect empty AddOnManagedNodeGroups.RoleName but got %q", cfg.AddOnManagedNodeGroups.RoleName)
