@@ -3,6 +3,27 @@
 <hr>
 
 
+## [v0.6.4](https://github.com/aws/aws-k8s-tester/releases/tag/v0.6.4) (2020-02-28)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.6.3...v0.6.4).
+
+### `eks`
+
+- Fix [VPC public subnet creation](https://github.com/aws/aws-k8s-tester/commit/672b3e13bbd10273a6f88e524eee1c6042a5a789).
+
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.29.4`](https://github.com/aws/aws-sdk-go/releases/tag/v1.29.4) to [`v1.29.12`](https://github.com/aws/aws-sdk-go/releases/tag/v1.29.12).
+- Upgrade [`github.com/uber-go/zap`](https://github.com/uber-go/zap/releases) from [`v1.13.0`](https://github.com/uber-go/zap/releases/tag/v1.13.0) to [`v1.14.0`](https://github.com/uber-go/zap/releases/tag/v1.14.0).
+
+### Go
+
+- Compile with [*Go 1.14.0*](https://golang.org/doc/devel/release.html#go1.14).
+
+
+<hr>
+
+
 ## [v0.6.3](https://github.com/aws/aws-k8s-tester/releases/tag/v0.6.3) (2020-02-28)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.6.2...v0.6.3).
