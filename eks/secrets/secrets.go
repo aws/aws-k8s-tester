@@ -640,8 +640,9 @@ func (ts *tester) waitForPodsCompleted() error {
 			continue
 		}
 
-		completed := 0
+		completed, other := 0, make(map[string]int)
 		for _, p := range pods.Items {
+			other[fmt.Sprintf("%v", p.Status.Phase)]++
 			if p.Status.Phase == v1.PodSucceeded {
 				completed++
 			}
@@ -650,6 +651,7 @@ func (ts *tester) waitForPodsCompleted() error {
 		ts.cfg.Logger.Info("polling",
 			zap.Int("completed", completed),
 			zap.Int("target", target),
+			zap.String("pod-phases", fmt.Sprintf("%+v", other)),
 		)
 		if completed == target {
 			ts.cfg.Logger.Info("found all targets", zap.Int("target", target))
@@ -699,10 +701,12 @@ func (ts *tester) deleteNamespace() error {
 			},
 		)
 	if err != nil {
-		return err
+		// ref. https://github.com/aws/aws-k8s-tester/issues/79
+		if !strings.Contains(err.Error(), ` not found`) {
+			return err
+		}
 	}
-
-	ts.cfg.Logger.Info("deleted namespace", zap.String("namespace", ts.cfg.EKSConfig.AddOnSecrets.Namespace))
+	ts.cfg.Logger.Info("deleted namespace", zap.Error(err))
 	return ts.cfg.EKSConfig.Sync()
 }
 
