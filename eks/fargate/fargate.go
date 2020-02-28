@@ -761,7 +761,7 @@ func (ts *tester) checkNode() error {
 					zap.String("type", fmt.Sprintf("%s", cond.Type)),
 					zap.String("status", fmt.Sprintf("%s", cond.Status)),
 				)
-				if cond.Status == v1.ConditionTrue && strings.HasPrefix(name, "fargate") {
+				if cond.Status == v1.ConditionTrue && strings.HasPrefix(name, "fargate-") {
 					readies++
 				}
 			}
