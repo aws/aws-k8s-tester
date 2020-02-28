@@ -127,7 +127,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.5.5...v0.5.6
 ### `eks`
 
 - Improve [`Delete` operation waits](https://github.com/aws/aws-k8s-tester/commit/4fb3060ad2695cdee3b040f332ee548222d9dcb3).
-  - See [issue#70](https://github.com/aws/aws-k8s-tester/issues/70) for more details.
+  - See [`issues#70`](https://github.com/aws/aws-k8s-tester/issues/70) for more details.
 
 ### `eks/nlb`
 

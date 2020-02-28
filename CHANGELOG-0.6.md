@@ -3,6 +3,32 @@
 <hr>
 
 
+## [v0.6.5](https://github.com/aws/aws-k8s-tester/releases/tag/v0.6.5) (2020-02-28)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.6.4...v0.6.5).
+
+### `eksconfig`
+
+- Support [existing roles for `Parameters.RoleARN` and `AddOnManagedNodeGroups.RoleARN`](https://github.com/aws/aws-k8s-tester/commit/87b424593e28c8ea0b9d2b8ad6a6122247cae3dd).
+  - See [`issues#80`](https://github.com/aws/aws-k8s-tester/issues/80).
+- Change [`Status.ClusterStatus` type from `string` to `[]ClusterStatus`](https://github.com/aws/aws-k8s-tester/commit/87b424593e28c8ea0b9d2b8ad6a6122247cae3dd).
+- Add [`Status.ClusterStatusCurrent`](https://github.com/aws/aws-k8s-tester/commit/87b424593e28c8ea0b9d2b8ad6a6122247cae3dd).
+- Add [`Config.RecordStatus`](https://github.com/aws/aws-k8s-tester/commit/87b424593e28c8ea0b9d2b8ad6a6122247cae3dd).
+- Fix [`PrivateSubnetIDs` validation](https://github.com/aws/aws-k8s-tester/commit/87b424593e28c8ea0b9d2b8ad6a6122247cae3dd).
+- Add [`Parameters.EncryptionCMKCreate`](https://github.com/aws/aws-k8s-tester/commit/87b424593e28c8ea0b9d2b8ad6a6122247cae3dd).
+- Add [`Parameters.EncryptionCMKARN`](https://github.com/aws/aws-k8s-tester/commit/87b424593e28c8ea0b9d2b8ad6a6122247cae3dd).
+- Add [`Status.EncryptionCMKARN`](https://github.com/aws/aws-k8s-tester/commit/87b424593e28c8ea0b9d2b8ad6a6122247cae3dd).
+- Add [`Status.EncryptionCMKID`](https://github.com/aws/aws-k8s-tester/commit/87b424593e28c8ea0b9d2b8ad6a6122247cae3dd).
+
+### `eks`
+
+- Fix [health check](https://github.com/aws/aws-k8s-tester/commit/f57be0119a066e3502f75ebc42a9a869a6d1254e).
+- Improve [status tracking](https://github.com/aws/aws-k8s-tester/commit/f57be0119a066e3502f75ebc42a9a869a6d1254e).
+
+
+<hr>
+
+
 ## [v0.6.4](https://github.com/aws/aws-k8s-tester/releases/tag/v0.6.4) (2020-02-28)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.6.3...v0.6.4).
