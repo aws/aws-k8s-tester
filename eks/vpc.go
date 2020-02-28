@@ -16,8 +16,8 @@ import (
 	"go.uber.org/zap"
 )
 
-// TemplateVPC is the CloudFormation template for EKS VPC.
-const TemplateVPC = `
+// TemplateVPCPublic is the CloudFormation template for EKS VPC.
+const TemplateVPCPublic = `
 ---
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Amazon EKS VPC'
@@ -77,6 +77,13 @@ Conditions:
 
 Resources:
 
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+      - Key: Name
+        Value: !Sub '${AWS::StackName}-InternetGateway'
+
   VPC:
     Type: AWS::EC2::VPC
     Properties:
@@ -86,13 +93,6 @@ Resources:
       Tags:
       - Key: Name
         Value: !Sub '${AWS::StackName}-VPC'
-
-  InternetGateway:
-    Type: AWS::EC2::InternetGateway
-    Properties:
-      Tags:
-      - Key: Name
-        Value: !Sub '${AWS::StackName}-InternetGateway'
 
   VPCGatewayAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
@@ -114,7 +114,7 @@ Resources:
       - Key: Network
         Value: Public
 
-  DefaultPublicRoute:
+  PublicRoute:
     Type: AWS::EC2::Route
     DependsOn:
     - VPC
@@ -124,47 +124,51 @@ Resources:
       DestinationCidrBlock: 0.0.0.0/0
       GatewayId: !Ref InternetGateway
 
-  PrivateSubnet1:
+  PublicSubnet1:
     Type: AWS::EC2::Subnet
     DependsOn:
     - VPC
     - VPCGatewayAttachment
     Metadata:
-      Comment: Private Subnet 1, https://docs.aws.amazon.com/eks/latest/userguide/alb-ingress.html
+      Comment: Public Subnet 1, https://docs.aws.amazon.com/eks/latest/userguide/alb-ingress.html
     Properties:
       AvailabilityZone: !Select [ 0, !GetAZs ]
-      CidrBlock: !Ref PrivateSubnetCIDR1
+      CidrBlock: !Ref PublicSubnetCIDR1
       MapPublicIpOnLaunch: false
       VpcId: !Ref VPC
       Tags:
       - Key: Name
-        Value: !Sub '${AWS::StackName}-PrivateSubnet1'
+        Value: !Sub '${AWS::StackName}-PublicSubnet1'
+      - Key: Network
+        Value: Public
       - Key: kubernetes.io/role/elb
         Value: 1
       - Key: kubernetes.io/role/internal-elb
         Value: 1
 
-  PrivateSubnet2:
+  PublicSubnet2:
     Type: AWS::EC2::Subnet
     DependsOn:
     - VPC
     - VPCGatewayAttachment
     Metadata:
-      Comment: Private Subnet 2, https://docs.aws.amazon.com/eks/latest/userguide/alb-ingress.html
+      Comment: Public Subnet 2, https://docs.aws.amazon.com/eks/latest/userguide/alb-ingress.html
     Properties:
       AvailabilityZone: !Select [ 1, !GetAZs ]
-      CidrBlock: !Ref PrivateSubnetCIDR2
+      CidrBlock: !Ref PublicSubnetCIDR2
       MapPublicIpOnLaunch: false
       VpcId: !Ref VPC
       Tags:
       - Key: Name
-        Value: !Sub '${AWS::StackName}-PrivateSubnet2'
+        Value: !Sub '${AWS::StackName}-PublicSubnet2'
+      - Key: Network
+        Value: Public
       - Key: kubernetes.io/role/elb
         Value: 1
       - Key: kubernetes.io/role/internal-elb
         Value: 1
 
-  PrivateSubnet3:
+  PublicSubnet3:
     Type: AWS::EC2::Subnet
     Condition: HasMoreThan2Azs
     DependsOn:
@@ -178,46 +182,48 @@ Resources:
         - '2'
         - Fn::GetAZs:
             Ref: AWS::Region
-      CidrBlock: !Ref PrivateSubnetCIDR3
+      CidrBlock: !Ref PublicSubnetCIDR3
       MapPublicIpOnLaunch: false
       VpcId: !Ref VPC
       Tags:
       - Key: Name
-        Value: !Sub '${AWS::StackName}-PrivateSubnet3'
+        Value: !Sub '${AWS::StackName}-PublicSubnet3'
+      - Key: Network
+        Value: Public
       - Key: kubernetes.io/role/elb
         Value: 1
       - Key: kubernetes.io/role/internal-elb
         Value: 1
 
-  PrivateSubnet1RouteTableAssociation:
+  PublicSubnet1RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     DependsOn:
     - VPC
     - VPCGatewayAttachment
-    - PrivateSubnet1
+    - PublicSubnet1
     Properties:
-      SubnetId: !Ref PrivateSubnet1
+      SubnetId: !Ref PublicSubnet1
       RouteTableId: !Ref PublicRouteTable
 
-  PrivateSubnet2RouteTableAssociation:
+  PublicSubnet2RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     DependsOn:
     - VPC
     - VPCGatewayAttachment
-    - PrivateSubnet2
+    - PublicSubnet2
     Properties:
-      SubnetId: !Ref PrivateSubnet2
+      SubnetId: !Ref PublicSubnet2
       RouteTableId: !Ref PublicRouteTable
 
-  PrivateSubnet3RouteTableAssociation:
+  PublicSubnet3RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Condition: HasMoreThan2Azs
     DependsOn:
     - VPC
     - VPCGatewayAttachment
-    - PrivateSubnet3
+    - PublicSubnet3
     Properties:
-      SubnetId: !Ref PrivateSubnet3
+      SubnetId: !Ref PublicSubnet3
       RouteTableId: !Ref PublicRouteTable
 
   ControlPlaneSecurityGroup:
@@ -235,13 +241,334 @@ Outputs:
     Description: VPC ID
     Value: !Ref VPC
 
-  PrivateSubnetIDs:
+  PublicSubnetIDs:
     Description: All private subnet IDs in the VPC
     Value:
       Fn::If:
       - HasMoreThan2Azs
-      - !Join [ ",", [ !Ref PrivateSubnet1, !Ref PrivateSubnet2, !Ref PrivateSubnet3 ] ]
-      - !Join [ ",", [ !Ref PrivateSubnet1, !Ref PrivateSubnet2 ] ]
+      - !Join [ ",", [ !Ref PublicSubnet1, !Ref PublicSubnet2, !Ref PublicSubnet3 ] ]
+      - !Join [ ",", [ !Ref PublicSubnet1, !Ref PublicSubnet2 ] ]
+
+  ControlPlaneSecurityGroupID:
+    Description: Security group ID for the cluster control plane communication with worker nodes
+    Value: !Ref ControlPlaneSecurityGroup
+
+`
+
+// TemplateVPCPublicPrivate is the CloudFormation template for EKS VPC.
+const TemplateVPCPublicPrivate = `
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Amazon EKS VPC with public and private subnets'
+
+Parameters:
+
+  VPCCIDR:
+    Description: IP range (CIDR notation) for VPC, must be a valid (RFC 1918) CIDR range (from 192.168.0.0 to 192.168.255.255)
+    Type: String
+    Default: 192.168.0.0/16
+    AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+
+  PublicSubnetCIDR1:
+    Description: CIDR block for public subnet 1 within the VPC (from 192.168.0.0 to 192.168.63.255)
+    Type: String
+    Default: 192.168.0.0/18
+    AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+
+  PublicSubnetCIDR2:
+    Description: CIDR block for public subnet 2 within the VPC (from 192.168.64.0 to 192.168.127.255)
+    Type: String
+    Default: 192.168.64.0/18
+    AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+
+  PrivateSubnetCIDR1:
+    Description: CIDR block for private subnet 1 within the VPC (from 192.168.128.0 to 192.168.191.255)
+    Type: String
+    Default: 192.168.128.0/18
+    AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+
+  PrivateSubnetCIDR2:
+    Description: CIDR block for private subnet 2 within the VPC (from 192.168.192.0 to 192.168.255.255)
+    Type: String
+    Default: 192.168.192.0/18
+    AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+
+Resources:
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+      - Key: Name
+        Value: !Sub '${AWS::StackName}-InternetGateway'
+
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VPCCIDR
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+      - Key: Name
+        Value: !Sub '${AWS::StackName}-VPC'
+
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    DependsOn:
+    - VPC
+    - InternetGateway
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    DependsOn:
+    - VPC
+    - VPCGatewayAttachment
+    Metadata:
+      Comment: Public Subnet 1, https://docs.aws.amazon.com/eks/latest/userguide/alb-ingress.html
+    Properties:
+      AvailabilityZone: !Select [ 0, !GetAZs ]
+      CidrBlock: !Ref PublicSubnetCIDR1
+      MapPublicIpOnLaunch: false
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: !Sub '${AWS::StackName}-PublicSubnet1'
+      - Key: Network
+        Value: Public
+      - Key: kubernetes.io/role/elb
+        Value: 1
+      - Key: kubernetes.io/role/internal-elb
+        Value: 1
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    DependsOn:
+    - VPC
+    - VPCGatewayAttachment
+    Metadata:
+      Comment: Public Subnet 2, https://docs.aws.amazon.com/eks/latest/userguide/alb-ingress.html
+    Properties:
+      AvailabilityZone: !Select [ 1, !GetAZs ]
+      CidrBlock: !Ref PublicSubnetCIDR2
+      MapPublicIpOnLaunch: false
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: !Sub '${AWS::StackName}-PublicSubnet2'
+      - Key: Network
+        Value: Public
+      - Key: kubernetes.io/role/elb
+        Value: 1
+      - Key: kubernetes.io/role/internal-elb
+        Value: 1
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    DependsOn:
+    - VPC
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: !Sub '${AWS::StackName}-PublicRouteTable'
+      - Key: Network
+        Value: Public
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn:
+    - VPC
+    - VPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    DependsOn:
+    - VPC
+    - VPCGatewayAttachment
+    - PublicSubnet1
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    DependsOn:
+    - VPC
+    - VPCGatewayAttachment
+    - PublicSubnet2
+    Properties:
+      SubnetId: !Ref PublicSubnet2
+      RouteTableId: !Ref PublicRouteTable
+
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    DependsOn:
+    - VPC
+    - VPCGatewayAttachment
+    Metadata:
+      Comment: Private Subnet 1
+    Properties:
+      AvailabilityZone: !Select [ 0, !GetAZs ]
+      CidrBlock: !Ref PrivateSubnetCIDR1
+      MapPublicIpOnLaunch: false
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: !Sub '${AWS::StackName}-PrivateSubnet1'
+      - Key: Network
+        Value: Private
+
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    DependsOn:
+    - VPC
+    - VPCGatewayAttachment
+    Metadata:
+      Comment: Private Subnet 2
+    Properties:
+      AvailabilityZone: !Select [ 1, !GetAZs ]
+      CidrBlock: !Ref PrivateSubnetCIDR2
+      MapPublicIpOnLaunch: false
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: !Sub '${AWS::StackName}-PrivateSubnet2'
+      - Key: Network
+        Value: Private
+
+  PrivateRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: !Sub '${AWS::StackName}-PrivateRouteTable1'
+      - Key: Network
+        Value: Private1
+
+  PrivateRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: !Sub '${AWS::StackName}-PrivateRouteTable2'
+      - Key: Network
+        Value: Private2
+
+  NATGatewayEIP1:
+    Type: AWS::EC2::EIP
+    DependsOn:
+    - VPC
+    - VPCGatewayAttachment
+    Properties:
+      Domain: vpc
+
+  NATGatewayEIP2:
+    Type: AWS::EC2::EIP
+    DependsOn:
+    - VPC
+    - VPCGatewayAttachment
+    Properties:
+      Domain: vpc
+
+  NATGateway1:
+    Type: AWS::EC2::NatGateway
+    DependsOn:
+    - VPC
+    - VPCGatewayAttachment
+    - PublicSubnet1
+    - NATGatewayEIP1
+    Properties:
+      AllocationId: !GetAtt 'NATGatewayEIP1.AllocationId'
+      SubnetId: !Ref PublicSubnet1
+      Tags:
+      - Key: Name
+        Value: !Sub '${AWS::StackName}-NATGateway1'
+
+  NATGateway2:
+    Type: AWS::EC2::NatGateway
+    DependsOn:
+    - VPC
+    - VPCGatewayAttachment
+    - PublicSubnet2
+    - NATGatewayEIP2
+    Properties:
+      AllocationId: !GetAtt 'NATGatewayEIP2.AllocationId'
+      SubnetId: !Ref PublicSubnet2
+      Tags:
+      - Key: Name
+        Value: !Sub '${AWS::StackName}-NATGateway2'
+
+  PrivateRoute1:
+    Type: AWS::EC2::Route
+    DependsOn:
+    - VPC
+    - VPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable1
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NATGateway1
+
+  PrivateRoute2:
+    Type: AWS::EC2::Route
+    DependsOn:
+    - VPC
+    - VPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable2
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NATGateway2
+
+  PrivateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    DependsOn:
+    - VPC
+    - VPCGatewayAttachment
+    - PrivateSubnet1
+    Properties:
+      SubnetId: !Ref PrivateSubnet1
+      RouteTableId: !Ref PrivateRouteTable1
+
+  PrivateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    DependsOn:
+    - VPC
+    - VPCGatewayAttachment
+    - PrivateSubnet2
+    Properties:
+      SubnetId: !Ref PrivateSubnet2
+      RouteTableId: !Ref PrivateRouteTable2
+
+  ControlPlaneSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    DependsOn:
+    - VPC
+    - VPCGatewayAttachment
+    Properties:
+      GroupDescription: Cluster communication with worker nodes
+      VpcId: !Ref VPC
+
+Outputs:
+
+  VPCID:
+    Description: VPC ID
+    Value: !Ref VPC
+
+  PublicSubnetIDs:
+    Description: All public subnet IDs in the VPC
+    Value: !Join [ ",", [ !Ref PublicSubnet1, !Ref PublicSubnet2 ] ]
+
+  PrivateSubnetIDs:
+    Description: All private subnet IDs in the VPC
+    Value: !Join [ ",", [ !Ref PrivateSubnet1, !Ref PrivateSubnet2 ] ]
 
   ControlPlaneSecurityGroupID:
     Description: Security group ID for the cluster control plane communication with worker nodes
@@ -257,6 +584,7 @@ func (ts *Tester) createVPC() error {
 		ts.lg.Info("non-empty VPC given; no need to create a new one")
 		return nil
 	}
+
 	if ts.cfg.Parameters.VPCID != "" {
 		ts.lg.Info("querying subnet IDs", zap.String("vpc-id", ts.cfg.Parameters.VPCID))
 		sresp, err := ts.ec2API.DescribeSubnets(&ec2.DescribeSubnetsInput{
@@ -271,11 +599,34 @@ func (ts *Tester) createVPC() error {
 			ts.lg.Warn("failed to subnets", zap.Error(err))
 			return err
 		}
+
+		ts.cfg.Status.PublicSubnetIDs = make([]string, 0, len(sresp.Subnets))
 		ts.cfg.Status.PrivateSubnetIDs = make([]string, 0, len(sresp.Subnets))
 		for _, sv := range sresp.Subnets {
 			id := aws.StringValue(sv.SubnetId)
-			ts.lg.Info("found subnet", zap.String("id", id), zap.String("az", aws.StringValue(sv.AvailabilityZone)))
-			ts.cfg.Status.PrivateSubnetIDs = append(ts.cfg.Status.PrivateSubnetIDs, id)
+			networkTag := ""
+			for _, tg := range sv.Tags {
+				switch aws.StringValue(tg.Key) {
+				case "Network":
+					networkTag = aws.StringValue(tg.Value)
+				}
+				if networkTag != "" {
+					break
+				}
+			}
+			ts.lg.Info("found subnet",
+				zap.String("id", id),
+				zap.String("az", aws.StringValue(sv.AvailabilityZone)),
+				zap.String("network-tag", networkTag),
+			)
+			switch networkTag {
+			case "Public":
+				ts.cfg.Status.PublicSubnetIDs = append(ts.cfg.Status.PublicSubnetIDs, id)
+			case "Private":
+				ts.cfg.Status.PrivateSubnetIDs = append(ts.cfg.Status.PrivateSubnetIDs, id)
+			default:
+				return fmt.Errorf("'Network' tag not found in subnet %q", id)
+			}
 		}
 		if len(ts.cfg.Status.PrivateSubnetIDs) == 0 {
 			return fmt.Errorf("no subnet found for VPC ID %q", ts.cfg.Parameters.VPCID)
@@ -310,6 +661,12 @@ func (ts *Tester) createVPC() error {
 		return ts.cfg.Sync()
 	}
 
+	templateBody := TemplateVPCPublic
+	if ts.cfg.AddOnFargate.Enable {
+		// e.g. An error occurred (InvalidParameterException) when calling the CreateFargateProfile operation: Subnet subnet-123 provided in Fargate Profile is not a private subnet
+		templateBody = TemplateVPCPublicPrivate
+	}
+
 	// VPC attributes are empty, create a new VPC
 	// otherwise, use the existing one
 	ts.lg.Info("creating a new VPC")
@@ -317,7 +674,7 @@ func (ts *Tester) createVPC() error {
 		StackName:    aws.String(ts.cfg.Name + "-vpc"),
 		Capabilities: aws.StringSlice([]string{"CAPABILITY_IAM"}),
 		OnFailure:    aws.String(cloudformation.OnFailureDelete),
-		TemplateBody: aws.String(TemplateVPC),
+		TemplateBody: aws.String(templateBody),
 		Tags: awscfn.NewTags(map[string]string{
 			"Kind": "aws-k8s-tester",
 			"Name": ts.cfg.Name,
@@ -330,6 +687,24 @@ func (ts *Tester) createVPC() error {
 			ParameterValue: aws.String(ts.cfg.Parameters.VPCCIDR),
 		})
 	}
+	if ts.cfg.Parameters.PublicSubnetCIDR1 != "" {
+		stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
+			ParameterKey:   aws.String("PublicSubnetCIDR1"),
+			ParameterValue: aws.String(ts.cfg.Parameters.PublicSubnetCIDR1),
+		})
+	}
+	if ts.cfg.Parameters.PublicSubnetCIDR2 != "" {
+		stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
+			ParameterKey:   aws.String("PublicSubnetCIDR2"),
+			ParameterValue: aws.String(ts.cfg.Parameters.PublicSubnetCIDR2),
+		})
+	}
+	if ts.cfg.Parameters.PublicSubnetCIDR3 != "" {
+		stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
+			ParameterKey:   aws.String("PublicSubnetCIDR3"),
+			ParameterValue: aws.String(ts.cfg.Parameters.PublicSubnetCIDR3),
+		})
+	}
 	if ts.cfg.Parameters.PrivateSubnetCIDR1 != "" {
 		stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
 			ParameterKey:   aws.String("PrivateSubnetCIDR1"),
@@ -340,12 +715,6 @@ func (ts *Tester) createVPC() error {
 		stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
 			ParameterKey:   aws.String("PrivateSubnetCIDR2"),
 			ParameterValue: aws.String(ts.cfg.Parameters.PrivateSubnetCIDR2),
-		})
-	}
-	if ts.cfg.Parameters.PrivateSubnetCIDR3 != "" {
-		stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
-			ParameterKey:   aws.String("PrivateSubnetCIDR3"),
-			ParameterValue: aws.String(ts.cfg.Parameters.PrivateSubnetCIDR3),
 		})
 	}
 	stackOutput, err := ts.cfnAPI.CreateStack(stackInput)
@@ -389,6 +758,8 @@ func (ts *Tester) createVPC() error {
 		switch k := aws.StringValue(o.OutputKey); k {
 		case "VPCID":
 			ts.cfg.Status.VPCID = aws.StringValue(o.OutputValue)
+		case "PublicSubnetIDs":
+			ts.cfg.Status.PublicSubnetIDs = strings.Split(aws.StringValue(o.OutputValue), ",")
 		case "PrivateSubnetIDs":
 			ts.cfg.Status.PrivateSubnetIDs = strings.Split(aws.StringValue(o.OutputValue), ",")
 		case "ControlPlaneSecurityGroupID":
@@ -400,6 +771,7 @@ func (ts *Tester) createVPC() error {
 	ts.lg.Info("created a VPC",
 		zap.String("vpc-cfn-stack-id", ts.cfg.Status.VPCCFNStackID),
 		zap.String("vpc-id", ts.cfg.Status.VPCID),
+		zap.Strings("public-subnet-ids", ts.cfg.Status.PublicSubnetIDs),
 		zap.Strings("private-subnet-ids", ts.cfg.Status.PrivateSubnetIDs),
 		zap.String("control-plane-security-group-id", ts.cfg.Status.ControlPlaneSecurityGroupID),
 	)
