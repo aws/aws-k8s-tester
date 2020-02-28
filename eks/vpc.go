@@ -661,10 +661,11 @@ func (ts *Tester) createVPC() error {
 		return ts.cfg.Sync()
 	}
 
-	templateBody := TemplateVPCPublic
+	templateBody, network := TemplateVPCPublic, "Public"
 	if ts.cfg.AddOnFargate.Enable {
 		// e.g. An error occurred (InvalidParameterException) when calling the CreateFargateProfile operation: Subnet subnet-123 provided in Fargate Profile is not a private subnet
 		templateBody = TemplateVPCPublicPrivate
+		network = "Public/Private"
 	}
 
 	// VPC attributes are empty, create a new VPC
@@ -676,8 +677,9 @@ func (ts *Tester) createVPC() error {
 		OnFailure:    aws.String(cloudformation.OnFailureDelete),
 		TemplateBody: aws.String(templateBody),
 		Tags: awscfn.NewTags(map[string]string{
-			"Kind": "aws-k8s-tester",
-			"Name": ts.cfg.Name,
+			"Kind":    "aws-k8s-tester",
+			"Name":    ts.cfg.Name,
+			"Network": network,
 		}),
 		Parameters: []*cloudformation.Parameter{},
 	}
