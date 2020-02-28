@@ -85,7 +85,7 @@ func (ts *Tester) health() error {
 	if !strings.Contains(out, "is running at") {
 		return fmt.Errorf("'kubectl cluster-info' not ready (output %q)", out)
 	}
-	colorstring.Printf("\n\n\"[light_green]kubectl cluster-info[default]\" output:\n%s\n\n", out)
+	colorstring.Printf("\n\"[light_green]kubectl cluster-info[default]\" output:\n%s\n\n", out)
 
 	ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 	output, err = exec.New().CommandContext(
@@ -100,7 +100,7 @@ func (ts *Tester) health() error {
 		return fmt.Errorf("'kubectl get cs' failed %v", err)
 	}
 	out = string(output)
-	colorstring.Printf("\n\n\"[light_green]kubectl get cs[default]\" output:\n%s\n\n", out)
+	colorstring.Printf("\n\"[light_green]kubectl get cs[default]\" output:\n%s\n\n", out)
 
 	ep = ts.cfg.Status.ClusterAPIServerEndpoint + "/healthz?verbose"
 	buf.Reset()
@@ -152,7 +152,7 @@ func (ts *Tester) health() error {
 		return fmt.Errorf("'kubectl get configmaps --all-namespaces' failed %v", err)
 	}
 	out = string(output)
-	colorstring.Printf("\n\n\"[light_green]kubectl get configmaps --all-namespaces[default]\" output:\n%s\n\n", out)
+	colorstring.Printf("\n\"[light_green]kubectl get configmaps --all-namespaces[default]\" output:\n%s\n\n", out)
 
 	ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 	output, err = exec.New().CommandContext(
@@ -167,7 +167,7 @@ func (ts *Tester) health() error {
 		return fmt.Errorf("'kubectl get namespaces' failed %v", err)
 	}
 	out = string(output)
-	colorstring.Printf("\n\n\"[light_green]kubectl get namespaces[default]\" output:\n%s\n\n", out)
+	colorstring.Printf("\n\"[light_green]kubectl get namespaces[default]\" output:\n%s\n\n", out)
 
 	mfs, err := ts.metricsTester.Fetch()
 	if err != nil {
