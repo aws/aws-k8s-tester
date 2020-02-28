@@ -362,9 +362,6 @@ func (ts *tester) createMNG() error {
 	if ts.cfg.EKSConfig.StatusManagedNodeGroups.RoleARN == "" {
 		return errors.New("empty StatusManagedNodeGroups.RoleARN")
 	}
-	if ts.cfg.EKSConfig.StatusManagedNodeGroups.RoleCFNStackID == "" {
-		return errors.New("empty StatusManagedNodeGroups.RoleCFNStackID")
-	}
 
 	// need use EKS API directly for beta
 	// otherwise,
