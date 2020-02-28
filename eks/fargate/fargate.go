@@ -210,7 +210,7 @@ Parameters:
   FargateRoleManagedPolicyARNs:
     Description: EKS Fargate policy ARNs
     Type: CommaDelimitedList
-    Default: 'arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess'
+    Default: 'arn:aws:iam::aws:policy/AmazonEKSFargatePodExecutionRolePolicy'
 
 Resources:
 
@@ -305,8 +305,7 @@ func (ts *tester) createRole() error {
 	for st = range ch {
 		if st.Error != nil {
 			cancel()
-			ts.cfg.EKSConfig.Status.ClusterStatus = fmt.Sprintf("failed to create Fargate role (%v)", st.Error)
-			ts.cfg.EKSConfig.Sync()
+			ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("failed to create Fargate role (%v)", st.Error))
 			return st.Error
 		}
 	}
@@ -360,8 +359,7 @@ func (ts *tester) deleteRole() error {
 	for st = range ch {
 		if st.Error != nil {
 			cancel()
-			ts.cfg.EKSConfig.Status.ClusterStatus = fmt.Sprintf("failed to delete Fargate role (%v)", st.Error)
-			ts.cfg.EKSConfig.Sync()
+			ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("failed to delete Fargate role (%v)", st.Error))
 			return st.Error
 		}
 	}

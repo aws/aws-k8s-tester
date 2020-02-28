@@ -615,8 +615,7 @@ func (ts *tester) createRole() error {
 	for st = range ch {
 		if st.Error != nil {
 			cancel()
-			ts.cfg.EKSConfig.Status.ClusterStatus = fmt.Sprintf("failed to create IRSA role (%v)", st.Error)
-			ts.cfg.EKSConfig.Sync()
+			ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("failed to create IRSA role (%v)", st.Error))
 			return st.Error
 		}
 	}
@@ -670,8 +669,7 @@ func (ts *tester) deleteRole() error {
 	for st = range ch {
 		if st.Error != nil {
 			cancel()
-			ts.cfg.EKSConfig.Status.ClusterStatus = fmt.Sprintf("failed to delete IRSA role (%v)", st.Error)
-			ts.cfg.EKSConfig.Sync()
+			ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("failed to delete IRSA role (%v)", st.Error))
 			return st.Error
 		}
 	}

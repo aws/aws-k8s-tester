@@ -285,7 +285,7 @@ Parameters:
     Description: The policy name for ALB Ingress Controller
     Type: String
 
-  ManagedNodeGroupRoleName:
+  ALBIngressControllerRoleName:
     Description: The name of the node instance role
     Type: String
 
@@ -390,7 +390,7 @@ Resources:
           - waf:GetWebACL
           Resource: "*"
       Roles:
-      - !Ref ManagedNodeGroupRoleName
+      - !Ref ALBIngressControllerRoleName
 
 `
 
@@ -424,7 +424,7 @@ func (ts *tester) createALBPolicy() error {
 				ParameterValue: aws.String(ts.cfg.EKSConfig.AddOnALB2048.PolicyName),
 			},
 			{
-				ParameterKey:   aws.String("ManagedNodeGroupRoleName"),
+				ParameterKey:   aws.String("ALBIngressControllerRoleName"),
 				ParameterValue: aws.String(ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleName),
 			},
 		},
@@ -450,8 +450,7 @@ func (ts *tester) createALBPolicy() error {
 	for st = range ch {
 		if st.Error != nil {
 			cancel()
-			ts.cfg.EKSConfig.Status.ClusterStatus = fmt.Sprintf("failed to wait for ALB Ingress Controller Policy creation (%v)", st.Error)
-			ts.cfg.EKSConfig.Sync()
+			ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("failed to wait for ALB Ingress Controller Policy creation (%v)", st.Error))
 			ts.cfg.Logger.Error("polling errror", zap.Error(st.Error))
 		}
 	}
@@ -501,8 +500,7 @@ func (ts *tester) deleteALBPolicy() error {
 	for st = range ch {
 		if st.Error != nil {
 			cancel()
-			ts.cfg.EKSConfig.Status.ClusterStatus = fmt.Sprintf("failed to wait for ALB Ingress Controller Policy deletion (%v)", st.Error)
-			ts.cfg.EKSConfig.Sync()
+			ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("failed to wait for ALB Ingress Controller Policy deletion (%v)", st.Error))
 			ts.cfg.Logger.Error("polling errror", zap.Error(st.Error))
 		}
 	}

@@ -65,13 +65,17 @@ Outputs:
 `
 
 func (ts *tester) createRole() error {
-	if ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleName == "" {
-		return errors.New("empty Parameters.ManagedNodeGroupRoleName")
+	if !ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleCreate {
+		ts.cfg.Logger.Info("AddOnManagedNodeGroups.RoleCreate false; skipping")
+		return nil
 	}
 	if ts.cfg.EKSConfig.StatusManagedNodeGroups.RoleCFNStackID != "" ||
 		ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleARN != "" {
 		ts.cfg.Logger.Info("non-empty roleARN given; no need to create a new one")
 		return nil
+	}
+	if ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleName == "" {
+		return errors.New("empty AddOnManagedNodeGroups.RoleName")
 	}
 
 	ts.cfg.Logger.Info("creating a new node group role using CFN", zap.String("name", ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleName))
@@ -134,8 +138,7 @@ func (ts *tester) createRole() error {
 	for st = range ch {
 		if st.Error != nil {
 			cancel()
-			ts.cfg.EKSConfig.Status.ClusterStatus = fmt.Sprintf("failed to create managed node group role (%v)", st.Error)
-			ts.cfg.EKSConfig.Sync()
+			ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("failed to create managed node group role (%v)", st.Error))
 			return st.Error
 		}
 	}
@@ -159,6 +162,10 @@ func (ts *tester) createRole() error {
 }
 
 func (ts *tester) deleteRole() error {
+	if !ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleCreate {
+		ts.cfg.Logger.Info("AddOnManagedNodeGroups.RoleCreate false; skipping")
+		return nil
+	}
 	if ts.cfg.EKSConfig.StatusManagedNodeGroups.RoleCFNStackID == "" {
 		ts.cfg.Logger.Info("empty managed node group role CFN stack ID; no need to delete managed node group")
 		return nil
@@ -189,8 +196,7 @@ func (ts *tester) deleteRole() error {
 	for st = range ch {
 		if st.Error != nil {
 			cancel()
-			ts.cfg.EKSConfig.Status.ClusterStatus = fmt.Sprintf("failed to delete managed node group role (%v)", st.Error)
-			ts.cfg.EKSConfig.Sync()
+			ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("failed to delete managed node group role (%v)", st.Error))
 			return st.Error
 		}
 	}

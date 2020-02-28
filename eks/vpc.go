@@ -746,8 +746,7 @@ func (ts *Tester) createVPC() error {
 		}
 		if st.Error != nil {
 			cancel()
-			ts.cfg.Status.ClusterStatus = fmt.Sprintf("failed to create VPC (%v)", st.Error)
-			ts.cfg.Sync()
+			ts.cfg.RecordStatus(fmt.Sprintf("failed to create VPC (%v)", st.Error))
 			ts.lg.Warn("polling errror", zap.Error(st.Error))
 		}
 	}
@@ -817,8 +816,7 @@ func (ts *Tester) deleteVPC() error {
 	for st = range ch {
 		if st.Error != nil {
 			cancel()
-			ts.cfg.Status.ClusterStatus = fmt.Sprintf("failed to delete VPC (%v)", st.Error)
-			ts.cfg.Sync()
+			ts.cfg.RecordStatus(fmt.Sprintf("failed to delete VPC (%v)", st.Error))
 			ts.lg.Warn("polling errror", zap.Error(st.Error))
 		}
 

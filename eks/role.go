@@ -2,6 +2,7 @@ package eks
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -123,16 +124,19 @@ Outputs:
 `
 
 func (ts *Tester) createClusterRole() error {
+	if !ts.cfg.Parameters.ClusterRoleCreate {
+		ts.lg.Info("Parameters.ClusterRoleCreate false; skipping")
+		return nil
+	}
 	if ts.cfg.Parameters.ClusterRoleARN != "" ||
 		ts.cfg.Status.ClusterRoleCFNStackID != "" ||
-		ts.cfg.Status.ClusterRoleARN != "" ||
-		ts.cfg.Status.ClusterRoleName != "" {
+		ts.cfg.Status.ClusterRoleARN != "" {
 		ts.lg.Info("non-empty role given; no need to create a new one")
 		return nil
 	}
-
-	ts.cfg.Status.ClusterRoleName = ts.cfg.Name + "-cluster-role"
-	ts.cfg.Sync()
+	if ts.cfg.Parameters.ClusterRoleName == "" {
+		return errors.New("empty Parameters.ClusterRoleName")
+	}
 
 	tmpl := TemplateClusterRoleBasic
 	if ts.cfg.AddOnNLBHelloWorld.Enable {
@@ -141,9 +145,9 @@ func (ts *Tester) createClusterRole() error {
 
 	// role ARN is empty, create a default role
 	// otherwise, use the existing one
-	ts.lg.Info("creating a new role", zap.String("cluster-role-name", ts.cfg.Status.ClusterRoleName))
+	ts.lg.Info("creating a new role", zap.String("cluster-role-name", ts.cfg.Parameters.ClusterRoleName))
 	stackInput := &cloudformation.CreateStackInput{
-		StackName:    aws.String(ts.cfg.Status.ClusterRoleName),
+		StackName:    aws.String(ts.cfg.Parameters.ClusterRoleName),
 		Capabilities: aws.StringSlice([]string{"CAPABILITY_NAMED_IAM"}),
 		OnFailure:    aws.String(cloudformation.OnFailureDelete),
 		TemplateBody: aws.String(tmpl),
@@ -154,7 +158,7 @@ func (ts *Tester) createClusterRole() error {
 		Parameters: []*cloudformation.Parameter{
 			{
 				ParameterKey:   aws.String("ClusterRoleName"),
-				ParameterValue: aws.String(ts.cfg.Status.ClusterRoleName),
+				ParameterValue: aws.String(ts.cfg.Parameters.ClusterRoleName),
 			},
 		},
 	}
@@ -197,8 +201,7 @@ func (ts *Tester) createClusterRole() error {
 	for st = range ch {
 		if st.Error != nil {
 			cancel()
-			ts.cfg.Status.ClusterStatus = fmt.Sprintf("failed to create role (%v)", st.Error)
-			ts.cfg.Sync()
+			ts.cfg.RecordStatus(fmt.Sprintf("failed to create role (%v)", st.Error))
 			ts.lg.Warn("polling errror", zap.Error(st.Error))
 		}
 	}
@@ -219,12 +222,16 @@ func (ts *Tester) createClusterRole() error {
 	ts.lg.Info("created a new role",
 		zap.String("cluster-role-cfn-stack-id", ts.cfg.Status.ClusterRoleCFNStackID),
 		zap.String("cluster-role-arn", ts.cfg.Status.ClusterRoleARN),
-		zap.String("cluster-role-name", ts.cfg.Status.ClusterRoleName),
+		zap.String("cluster-role-name", ts.cfg.Parameters.ClusterRoleName),
 	)
 	return ts.cfg.Sync()
 }
 
 func (ts *Tester) deleteClusterRole() error {
+	if !ts.cfg.Parameters.ClusterRoleCreate {
+		ts.lg.Info("Parameters.ClusterRoleCreate false; skipping")
+		return nil
+	}
 	if ts.cfg.Status.ClusterRoleCFNStackID == "" {
 		ts.lg.Info("empty role CFN stack ID; no need to delete role")
 		return nil
@@ -253,8 +260,7 @@ func (ts *Tester) deleteClusterRole() error {
 	for st = range ch {
 		if st.Error != nil {
 			cancel()
-			ts.cfg.Status.ClusterStatus = fmt.Sprintf("failed to delete role (%v)", st.Error)
-			ts.cfg.Sync()
+			ts.cfg.RecordStatus(fmt.Sprintf("failed to delete role (%v)", st.Error))
 			ts.lg.Warn("polling errror", zap.Error(st.Error))
 		}
 	}
@@ -265,7 +271,7 @@ func (ts *Tester) deleteClusterRole() error {
 	ts.lg.Info("deleted a role",
 		zap.String("cluster-role-cfn-stack-id", ts.cfg.Status.ClusterRoleCFNStackID),
 		zap.String("cluster-role-arn", ts.cfg.Status.ClusterRoleARN),
-		zap.String("cluster-role-name", ts.cfg.Status.ClusterRoleName),
+		zap.String("cluster-role-name", ts.cfg.Parameters.ClusterRoleName),
 	)
 	return ts.cfg.Sync()
 }

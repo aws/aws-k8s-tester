@@ -14,11 +14,10 @@ import (
 )
 
 func (ts *Tester) checkHealth() (err error) {
-	ts.lg.Info("running health check")
+	ts.lg.Info("health checking")
 	defer func() {
 		if err == nil {
-			ts.cfg.Status.ClusterStatus = "health check success"
-			ts.cfg.Sync()
+			ts.cfg.RecordStatus("health check success")
 		}
 	}()
 
@@ -38,12 +37,11 @@ func (ts *Tester) checkHealth() (err error) {
 			break
 		}
 		ts.lg.Warn("health check failed", zap.Error(err))
-		ts.cfg.Status.ClusterStatus = fmt.Sprintf("health check failed (%v)", err)
-		ts.cfg.Sync()
+		ts.cfg.RecordStatus(fmt.Sprintf("health check failed (%v)", err))
 	}
 
-	ts.lg.Info("successfully ran health check")
-	return ts.cfg.Sync()
+	ts.lg.Info("health checked")
+	return err
 }
 
 func (ts *Tester) health() error {
@@ -171,19 +169,23 @@ func (ts *Tester) health() error {
 	out = string(output)
 	colorstring.Printf("\n\n\"[light_green]kubectl get namespaces[default]\" output:\n%s\n\n", out)
 
-	// TODO: check metric count
 	mfs, err := ts.metricsTester.Fetch()
 	if err != nil {
 		return fmt.Errorf("'/metrics' fetch failed %v", err)
 	}
-	mv, ok := mfs[envCacheMissMetric]
-	if !ok {
-		return fmt.Errorf("%q not found", envCacheMissMetric)
+	for _, k := range []string{metricDEKGen, metricEnvelopeCacheMiss} {
+		mv, ok := mfs[k]
+		if !ok {
+			return fmt.Errorf("%q not found", k)
+		}
+		val := mv.Metric[0].GetCounter().GetValue()
+		colorstring.Printf("\"[light_green]%s[default]\" metric output: %f\n", k, val)
 	}
-	val := mv.Metric[0].GetCounter().GetValue()
-	colorstring.Printf("\n\n\"[light_green]%s[default]\" metric output:\n%f\n\n", envCacheMissMetric, val)
-
-	return ts.cfg.Sync()
+	ts.lg.Info("checked /metrics", zap.Error(err))
+	return err
 }
 
-const envCacheMissMetric = "apiserver_storage_envelope_transformation_cache_misses_total"
+const (
+	metricDEKGen            = "apiserver_storage_data_key_generation_latencies_microseconds_count"
+	metricEnvelopeCacheMiss = "apiserver_storage_envelope_transformation_cache_misses_total"
+)

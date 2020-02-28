@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aws/aws-k8s-tester/eksconfig"
 	awscfn "github.com/aws/aws-k8s-tester/pkg/aws/cloudformation"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -107,7 +108,7 @@ func (ts *Tester) createEKS() error {
 		ts.cfg.Status.ClusterAPIServerEndpoint != "" ||
 		ts.cfg.Status.ClusterCA != "" ||
 		ts.cfg.Status.ClusterCADecoded != "" ||
-		ts.cfg.Status.ClusterStatus != "" {
+		ts.cfg.Status.ClusterStatusCurrent != "" {
 		ts.lg.Info("non-empty cluster given; no need to create a new one")
 		return nil
 	}
@@ -117,8 +118,8 @@ func (ts *Tester) createEKS() error {
 	}
 
 	ts.describeCluster()
-	if ts.cfg.Status.ClusterStatus == awseks.ClusterStatusActive {
-		ts.lg.Info("cluster status is active; no need to create cluster", zap.String("status", ts.cfg.Status.ClusterStatus))
+	if ts.cfg.Status.ClusterStatusCurrent == awseks.ClusterStatusActive {
+		ts.lg.Info("cluster status is active; no need to create cluster", zap.String("status", ts.cfg.Status.ClusterStatusCurrent))
 		return nil
 	}
 
@@ -156,7 +157,10 @@ func (ts *Tester) createEKS() error {
 		}
 		for k, v := range ts.cfg.Parameters.ClusterTags {
 			createInput.Tags[k] = aws.String(v)
-			ts.lg.Info("added EKS tag", zap.String("key", k), zap.String("value", v))
+			ts.lg.Info("added EKS tag to EKS API request",
+				zap.String("key", k),
+				zap.String("value", v),
+			)
 		}
 		req, _ := ts.eksAPI.CreateClusterRequest(&createInput)
 		if ts.cfg.Parameters.ClusterRequestHeaderKey != "" && ts.cfg.Parameters.ClusterRequestHeaderValue != "" {
@@ -208,6 +212,12 @@ func (ts *Tester) createEKS() error {
 				},
 			},
 		}
+		if ts.cfg.Status.EncryptionCMKARN != "" {
+			// TODO
+			ts.lg.Info("added encryption config to EKS CFN request",
+				zap.String("cmk-arn", ts.cfg.Status.EncryptionCMKARN),
+			)
+		}
 		stackOutput, err := ts.cfnAPI.CreateStack(stackInput)
 		if err != nil {
 			return err
@@ -228,8 +238,7 @@ func (ts *Tester) createEKS() error {
 		var st awscfn.StackStatus
 		for st = range ch {
 			if st.Error != nil {
-				ts.cfg.Status.ClusterStatus = fmt.Sprintf("failed to create cluster (%v)", st.Error)
-				ts.cfg.Sync()
+				ts.cfg.RecordStatus(fmt.Sprintf("failed to create cluster (%v)", st.Error))
 				ts.lg.Warn("polling errror", zap.Error(st.Error))
 			}
 		}
@@ -287,7 +296,7 @@ func (ts *Tester) deleteCluster() error {
 	}()
 
 	ts.describeCluster()
-	if ts.cfg.Status.ClusterStatus == "" || ts.cfg.Status.ClusterStatus == ClusterStatusDELETEDORNOTEXIST {
+	if ts.cfg.Status.ClusterStatusCurrent == "" || ts.cfg.Status.ClusterStatusCurrent == eksconfig.ClusterStatusDELETEDORNOTEXIST {
 		ts.lg.Info("cluster already deleted; no need to delete cluster")
 		return nil
 	}
@@ -299,8 +308,7 @@ func (ts *Tester) deleteCluster() error {
 			StackName: aws.String(ts.cfg.Status.ClusterCFNStackID),
 		})
 		if err != nil {
-			ts.cfg.Status.ClusterStatus = fmt.Sprintf("failed to delete cluster (%v)", err)
-			ts.cfg.Sync()
+			ts.cfg.RecordStatus(fmt.Sprintf("failed to delete cluster (%v)", err))
 			return err
 		}
 		ts.cfg.Status.Up = false
@@ -321,8 +329,7 @@ func (ts *Tester) deleteCluster() error {
 		for st = range ch {
 			if st.Error != nil {
 				cancel()
-				ts.cfg.Status.ClusterStatus = fmt.Sprintf("failed to delete cluster (%v)", st.Error)
-				ts.cfg.Sync()
+				ts.cfg.RecordStatus(fmt.Sprintf("failed to delete cluster (%v)", st.Error))
 				ts.lg.Warn("polling errror", zap.Error(st.Error))
 			}
 		}
@@ -330,9 +337,7 @@ func (ts *Tester) deleteCluster() error {
 		if st.Error != nil {
 			return st.Error
 		}
-		ts.cfg.Status.ClusterStatus = ClusterStatusDELETEDORNOTEXIST
-		ts.cfg.Status.Up = false
-		ts.cfg.Sync()
+		ts.cfg.RecordStatus(eksconfig.ClusterStatusDELETEDORNOTEXIST)
 
 	} else {
 
@@ -340,8 +345,7 @@ func (ts *Tester) deleteCluster() error {
 			Name: aws.String(ts.cfg.Name),
 		})
 		if err != nil {
-			ts.cfg.Status.ClusterStatus = fmt.Sprintf("failed to delete cluster (%v)", err)
-			ts.cfg.Sync()
+			ts.cfg.RecordStatus(fmt.Sprintf("failed to delete cluster (%v)", err))
 			return err
 		}
 		ts.cfg.Status.Up = false
@@ -354,12 +358,12 @@ func (ts *Tester) deleteCluster() error {
 			ts.lg,
 			ts.eksAPI,
 			ts.cfg.Name,
-			ClusterStatusDELETEDORNOTEXIST,
+			eksconfig.ClusterStatusDELETEDORNOTEXIST,
 			3*time.Minute,
 			20*time.Second,
 		)
 		for v := range csCh {
-			ts.updateClusterStatus(v, ClusterStatusDELETEDORNOTEXIST)
+			ts.updateClusterStatus(v, eksconfig.ClusterStatusDELETEDORNOTEXIST)
 		}
 		cancel()
 	}
@@ -371,56 +375,40 @@ func (ts *Tester) deleteCluster() error {
 	return ts.cfg.Sync()
 }
 
-// ClusterStatusDELETEDORNOTEXIST defines the cluster status when the cluster is not found.
-//
-// ref. https://docs.aws.amazon.com/eks/latest/APIReference/API_Cluster.html#AmazonEKS-Type-Cluster-status
-//
-//  CREATING
-//  ACTIVE
-//  UPDATING
-//  DELETING
-//  FAILED
-//
-const ClusterStatusDELETEDORNOTEXIST = "DELETED/NOT-EXIST"
-
 func (ts *Tester) describeCluster() {
 	dout, err := ts.eksAPI.DescribeCluster(&awseks.DescribeClusterInput{Name: aws.String(ts.cfg.Name)})
 	if err != nil {
 		if ClusterDeleted(err) {
-			ts.cfg.Status.ClusterStatus = ClusterStatusDELETEDORNOTEXIST
-			ts.cfg.Status.Up = false
+			ts.cfg.RecordStatus(eksconfig.ClusterStatusDELETEDORNOTEXIST)
 		} else {
-			ts.cfg.Status.ClusterStatus = fmt.Sprintf("failed to describe cluster (%v)", err)
+			ts.cfg.RecordStatus(fmt.Sprintf("failed to describe cluster (%v)", err))
 		}
 	}
 	if dout.Cluster == nil {
-		ts.cfg.Status.ClusterStatus = ClusterStatusDELETEDORNOTEXIST
-		ts.cfg.Status.Up = false
+		ts.cfg.RecordStatus(eksconfig.ClusterStatusDELETEDORNOTEXIST)
 	} else {
-		ts.cfg.Status.ClusterStatus = aws.StringValue(dout.Cluster.Status)
-		ts.cfg.Status.Up = ts.cfg.Status.ClusterStatus == awseks.ClusterStatusActive
+		ts.cfg.RecordStatus(aws.StringValue(dout.Cluster.Status))
 	}
 	ts.lg.Info("described cluster",
 		zap.String("name", ts.cfg.Name),
-		zap.String("cluster-status", ts.cfg.Status.ClusterStatus),
+		zap.String("cluster-status", ts.cfg.Status.ClusterStatusCurrent),
 	)
 }
 
 func (ts *Tester) updateClusterStatus(v ClusterStatus, desired string) {
 	if v.Cluster == nil {
 		if v.Error != nil {
-			ts.cfg.Status.ClusterStatus = fmt.Sprintf("failed with error %v", v.Error)
+			ts.cfg.RecordStatus(fmt.Sprintf("failed with error %v", v.Error))
+			ts.cfg.Status.Up = false
 		} else {
-			ts.cfg.Status.ClusterStatus = ClusterStatusDELETEDORNOTEXIST
+			ts.cfg.RecordStatus(eksconfig.ClusterStatusDELETEDORNOTEXIST)
 		}
-		ts.cfg.Status.Up = false
 		return
 	}
 	ts.cfg.Status.ClusterARN = aws.StringValue(v.Cluster.Arn)
-	ts.cfg.Status.ClusterStatus = aws.StringValue(v.Cluster.Status)
-	ts.cfg.Status.Up = ts.cfg.Status.ClusterStatus == awseks.ClusterStatusActive
+	ts.cfg.RecordStatus(aws.StringValue(v.Cluster.Status))
 
-	if desired != ClusterStatusDELETEDORNOTEXIST && ts.cfg.Status.ClusterStatus != ClusterStatusDELETEDORNOTEXIST {
+	if desired != eksconfig.ClusterStatusDELETEDORNOTEXIST && ts.cfg.Status.ClusterStatusCurrent != eksconfig.ClusterStatusDELETEDORNOTEXIST {
 
 		if v.Cluster.Endpoint != nil {
 			ts.cfg.Status.ClusterAPIServerEndpoint = aws.StringValue(v.Cluster.Endpoint)
@@ -575,7 +563,7 @@ func Poll(
 			})
 			if err != nil {
 				if ClusterDeleted(err) {
-					if desiredClusterStatus == ClusterStatusDELETEDORNOTEXIST {
+					if desiredClusterStatus == eksconfig.ClusterStatusDELETEDORNOTEXIST {
 						lg.Info("cluster is already deleted as desired; exiting", zap.Error(err))
 						ch <- ClusterStatus{Cluster: nil, Error: nil}
 						close(ch)
