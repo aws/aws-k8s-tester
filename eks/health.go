@@ -8,16 +8,17 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/mitchellh/colorstring"
 	"go.uber.org/zap"
 	"k8s.io/utils/exec"
 )
 
 func (ts *Tester) checkHealth() (err error) {
-	ts.lg.Info("health checking")
+	colorstring.Printf("\n\n\"[light_green]checking health[default]\"\n\n")
 	defer func() {
 		if err == nil {
-			ts.cfg.RecordStatus("health check success")
+			ts.cfg.RecordStatus(eks.ClusterStatusActive)
 		}
 	}()
 
@@ -36,11 +37,12 @@ func (ts *Tester) checkHealth() (err error) {
 		if err == nil {
 			break
 		}
+		colorstring.Printf("\n\n\"[red]health check fail[default]\"\n\n")
 		ts.lg.Warn("health check failed", zap.Error(err))
 		ts.cfg.RecordStatus(fmt.Sprintf("health check failed (%v)", err))
 	}
 
-	ts.lg.Info("health checked")
+	colorstring.Printf("\n\n\"[light_green]health check success[default]\"\n\n")
 	return err
 }
 
@@ -128,11 +130,11 @@ func (ts *Tester) health() error {
 	}
 	out = string(output)
 
+	colorstring.Printf("\n\"[light_green]kubectl get pods -n=kube-system[default]\" output:\n")
 	pods, err := ts.getPods("kube-system")
 	if err != nil {
 		return fmt.Errorf("failed to get pods %v", err)
 	}
-	println()
 	for _, v := range pods.Items {
 		colorstring.Printf("\"[light_magenta]kubectl get pods -n=kube-system[default]\" output: %q\n", v.Name)
 	}
@@ -169,6 +171,7 @@ func (ts *Tester) health() error {
 	out = string(output)
 	colorstring.Printf("\n\"[light_green]kubectl get namespaces[default]\" output:\n%s\n\n", out)
 
+	colorstring.Printf("\n\"[light_green]curl -sL http://localhost:8080/metrics | grep storage_[default]\" output:\n")
 	mout, mfs, err := ts.metricsTester.Fetch()
 	if err != nil {
 		return fmt.Errorf("'/metrics' fetch failed %v", err)

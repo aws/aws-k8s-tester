@@ -5,8 +5,7 @@ import (
 	"testing"
 )
 
-// $ curl -sL http://localhost:8080/metrics | grep storage_
-
+// curl -sL http://localhost:8080/metrics | grep storage_
 const outputEncrypt = `
 # HELP apiserver_storage_data_key_generation_duration_seconds Latencies in seconds of data encryption key(DEK) generation operations.
 # TYPE apiserver_storage_data_key_generation_duration_seconds histogram
