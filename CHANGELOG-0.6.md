@@ -1,6 +1,23 @@
 
 
 
+
+<hr>
+
+
+## [v0.6.7](https://github.com/aws/aws-k8s-tester/releases/tag/v0.6.7) (2020-02)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.6.6...v0.6.7).
+
+### `eks`
+
+- Fix [health check output](https://github.com/aws/aws-k8s-tester/commit/05f0101effb4b776b4f089adba0439371565d9aa).
+
+### Go
+
+- Compile with [*Go 1.14.0*](https://golang.org/doc/devel/release.html#go1.14).
+
+
 <hr>
 
 
