@@ -577,18 +577,6 @@ Outputs:
 `
 
 func (ts *Tester) createVPC() error {
-	if !ts.cfg.Parameters.VPCCreate {
-		ts.lg.Info("Parameters.VPCCreate false; skipping creation")
-		return nil
-	}
-	if ts.cfg.Status.VPCCFNStackID != "" ||
-		(ts.cfg.Parameters.VPCID != "" &&
-			len(ts.cfg.Status.PrivateSubnetIDs) > 0 &&
-			ts.cfg.Status.ControlPlaneSecurityGroupID != "") {
-		ts.lg.Info("non-empty VPC given; no need to create a new one")
-		return nil
-	}
-
 	if ts.cfg.Parameters.VPCID != "" {
 		ts.lg.Info("querying subnet IDs", zap.String("vpc-id", ts.cfg.Parameters.VPCID))
 		sresp, err := ts.ec2API.DescribeSubnets(&ec2.DescribeSubnetsInput{
@@ -663,6 +651,18 @@ func (ts *Tester) createVPC() error {
 		ts.lg.Info("non-empty VPC given; no need to create a new one")
 		ts.cfg.Status.VPCID = ts.cfg.Parameters.VPCID
 		return ts.cfg.Sync()
+	}
+
+	if !ts.cfg.Parameters.VPCCreate {
+		ts.lg.Info("Parameters.VPCCreate false; skipping creation")
+		return nil
+	}
+	if ts.cfg.Status.VPCCFNStackID != "" ||
+		(ts.cfg.Parameters.VPCID != "" &&
+			len(ts.cfg.Status.PrivateSubnetIDs) > 0 &&
+			ts.cfg.Status.ControlPlaneSecurityGroupID != "") {
+		ts.lg.Info("non-empty VPC given; no need to create a new one")
+		return nil
 	}
 
 	templateBody, network := TemplateVPCPublic, "Public"
