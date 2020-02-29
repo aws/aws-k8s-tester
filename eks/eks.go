@@ -18,7 +18,6 @@ import (
 	"github.com/aws/aws-k8s-tester/eks/gpu"
 	"github.com/aws/aws-k8s-tester/eks/irsa"
 	"github.com/aws/aws-k8s-tester/eks/jobs"
-	"github.com/aws/aws-k8s-tester/eks/metrics"
 	"github.com/aws/aws-k8s-tester/eks/mng"
 	"github.com/aws/aws-k8s-tester/eks/nlb"
 	"github.com/aws/aws-k8s-tester/eks/secrets"
@@ -82,7 +81,6 @@ type Tester struct {
 
 	k8sClientSet *kubernetes.Clientset
 
-	metricsTester       metrics.Tester
 	gpuTester           gpu.Tester
 	mngTester           mng.Tester
 	nlbHelloWorldTester alb.Tester
@@ -305,18 +303,6 @@ func (ts *Tester) createSubTesters() (err error) {
 	}
 
 	colorstring.Printf("\n\n\n[light_green]createSubTesters [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-
-	ts.lg.Info("creating metricsTester")
-	ts.metricsTester, err = metrics.New(metrics.Config{
-		Logger:    ts.lg,
-		Stopc:     ts.stopCreationCh,
-		Sig:       ts.interruptSig,
-		EKSConfig: ts.cfg,
-		K8SClient: ts,
-	})
-	if err != nil {
-		return err
-	}
 
 	ts.lg.Info("creating gpuTester")
 	ts.gpuTester, err = gpu.New(gpu.Config{

@@ -1,5 +1,23 @@
 
 
+
+<hr>
+
+
+## [v0.6.6](https://github.com/aws/aws-k8s-tester/releases/tag/v0.6.6) (2020-02-28)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.6.5...v0.6.6).
+
+### `eks`
+
+- Fix [VPC creation](https://github.com/aws/aws-k8s-tester/commit/5c4117ae1a368b57982fc7b8de94fb8009fd0266).
+- Delete [`eks/metrics`, fix health check with metrics](https://github.com/aws/aws-k8s-tester/commit/).
+
+### Go
+
+- Compile with [*Go 1.14.0*](https://golang.org/doc/devel/release.html#go1.14).
+
+
 <hr>
 
 
@@ -26,6 +44,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.6.4...v0.6.5
 - Fix [health check](https://github.com/aws/aws-k8s-tester/commit/f57be0119a066e3502f75ebc42a9a869a6d1254e).
 - Improve [status tracking](https://github.com/aws/aws-k8s-tester/commit/f57be0119a066e3502f75ebc42a9a869a6d1254e).
 - Fix [`eks/mng` delete operation](https://github.com/aws/aws-k8s-tester/commit/d9bfa9b7fbcf2063a81d161f832755528318c204).
+
+### Go
+
+- Compile with [*Go 1.14.0*](https://golang.org/doc/devel/release.html#go1.14).
 
 
 <hr>

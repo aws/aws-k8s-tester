@@ -1,10 +1,12 @@
 package eks
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -136,7 +138,7 @@ func (ts *Tester) health() error {
 		return fmt.Errorf("failed to get pods %v", err)
 	}
 	for _, v := range pods.Items {
-		colorstring.Printf("[light_magenta]kubectlkube-system Pod[default]: %q\n", v.Name)
+		colorstring.Printf("[light_magenta]kube-system Pod[default]: %q\n", v.Name)
 	}
 	println()
 
@@ -172,30 +174,62 @@ func (ts *Tester) health() error {
 	colorstring.Printf("\n\"[light_green]kubectl get namespaces[default]\" output:\n%s\n\n", out)
 
 	colorstring.Printf("\n\"[light_green]curl -sL http://localhost:8080/metrics | grep storage_[default]\" output:\n")
-	mout, mfs, err := ts.metricsTester.Fetch()
+	output, err = ts.k8sClientSet.
+		CoreV1().
+		RESTClient().
+		Get().
+		RequestURI("/metrics").
+		Do().
+		Raw()
 	if err != nil {
-		return fmt.Errorf("'/metrics' fetch failed %v", err)
+		return fmt.Errorf("failed to fetch /metrics (%v)", err)
 	}
-	found := false
-	for _, k := range []string{metricDEKGen, metricEnvelopeCacheMiss} {
-		mv, ok := mfs[k]
-		if !ok {
-			ts.lg.Warn("metric not found", zap.String("name", k))
+	const (
+		metricDEKGen            = "apiserver_storage_data_key_generation_latencies_microseconds_count"
+		metricEnvelopeCacheMiss = "apiserver_storage_envelope_transformation_cache_misses_total"
+	)
+	dekGenCnt, cacheMissCnt := int64(0), int64(0)
+	scanner := bufio.NewScanner(bytes.NewReader(output))
+	for scanner.Scan() {
+		line := scanner.Text()
+		switch {
+		case strings.HasPrefix(line, "# "):
 			continue
-		}
-		found = true
-		val := mv.Metric[0].GetCounter().GetValue()
-		colorstring.Printf("\"[light_green]%s[default]\" metric output: %f\n", k, val)
-	}
-	if !found {
-		colorstring.Printf("\"[red]/metrics not found[default]\" output:\n\n%s\n\n", string(mout))
-		return errors.New("metrics not found")
-	}
-	ts.lg.Info("checked /metrics")
-	return err
-}
 
-const (
-	metricDEKGen            = "apiserver_storage_data_key_generation_latencies_microseconds_count"
-	metricEnvelopeCacheMiss = "apiserver_storage_envelope_transformation_cache_misses_total"
-)
+		case strings.HasPrefix(line, metricDEKGen+" "):
+			vs := strings.TrimSpace(strings.Replace(line, metricDEKGen, "", -1))
+			dekGenCnt, err = strconv.ParseInt(vs, 10, 64)
+			if err != nil {
+				ts.lg.Warn("failed to parse",
+					zap.String("line", line),
+					zap.Error(err),
+				)
+			}
+
+		case strings.HasPrefix(line, metricEnvelopeCacheMiss+" "):
+			vs := strings.TrimSpace(strings.Replace(line, metricEnvelopeCacheMiss, "", -1))
+			cacheMissCnt, err = strconv.ParseInt(vs, 10, 64)
+			if err != nil {
+				ts.lg.Warn("failed to parse",
+					zap.String("line", line),
+					zap.Error(err),
+				)
+			}
+		}
+
+		if dekGenCnt > 0 || cacheMissCnt > 0 {
+			break
+		}
+	}
+	ts.lg.Info("encryption metrics",
+		zap.Int64("dek-gen-count", dekGenCnt),
+		zap.Int64("cache-miss-count", cacheMissCnt),
+	)
+	if ts.cfg.Status.EncryptionCMKARN != "" && dekGenCnt <= 0 && cacheMissCnt <= 0 {
+		// return errors.New("encrypted enabled, unexpected /metrics")
+		ts.lg.Info("encryption is not enabled")
+	}
+
+	ts.lg.Info("checked /metrics")
+	return nil
+}
