@@ -17,7 +17,6 @@ import (
 )
 
 func (ts *Tester) checkHealth() (err error) {
-	colorstring.Printf("\n\n\"[light_green]checking health[default]\"\n\n")
 	defer func() {
 		if err == nil {
 			ts.cfg.RecordStatus(eks.ClusterStatusActive)
@@ -61,7 +60,7 @@ func (ts *Tester) health() error {
 		return fmt.Errorf("'kubectl version' failed %v", err)
 	}
 	out := string(output)
-	colorstring.Printf("\n\n\"[light_green]kubectl version[default]\" output:\n%s\n\n", out)
+	colorstring.Printf("\n\"[light_green]kubectl version[default]\" output:\n%s\n", out)
 
 	ep := ts.cfg.Status.ClusterAPIServerEndpoint + "/version"
 	buf := bytes.NewBuffer(nil)
@@ -72,7 +71,7 @@ func (ts *Tester) health() error {
 	if !strings.Contains(out, fmt.Sprintf(`"gitVersion": "v%s`, ts.cfg.Parameters.Version)) {
 		return fmt.Errorf("%q does not contain version %q", out, ts.cfg.Parameters.Version)
 	}
-	colorstring.Printf("\n\n[light_green]%s [default]output:\n%s\n\n", ep, out)
+	colorstring.Printf("\n\n\"[light_green]%s[default]\" output:\n%s\n", ep, out)
 
 	ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 	output, err = exec.New().CommandContext(
@@ -89,7 +88,7 @@ func (ts *Tester) health() error {
 	if !strings.Contains(out, "is running at") {
 		return fmt.Errorf("'kubectl cluster-info' not ready (output %q)", out)
 	}
-	colorstring.Printf("\n\"[light_green]kubectl cluster-info[default]\" output:\n%s\n\n", out)
+	colorstring.Printf("\n\"[light_green]kubectl cluster-info[default]\" output:\n%s\n", out)
 
 	ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 	output, err = exec.New().CommandContext(
@@ -104,7 +103,7 @@ func (ts *Tester) health() error {
 		return fmt.Errorf("'kubectl get cs' failed %v", err)
 	}
 	out = string(output)
-	colorstring.Printf("\n\"[light_green]kubectl get cs[default]\" output:\n%s\n\n", out)
+	colorstring.Printf("\n\"[light_green]kubectl get cs[default]\" output:\n%s\n", out)
 
 	ep = ts.cfg.Status.ClusterAPIServerEndpoint + "/healthz?verbose"
 	buf.Reset()
@@ -115,7 +114,7 @@ func (ts *Tester) health() error {
 	if !strings.Contains(out, "healthz check passed") {
 		return fmt.Errorf("%q does not contain 'healthz check passed'", out)
 	}
-	colorstring.Printf("\n\n[light_green]%s [default]output:\n%s\n\n", ep, out)
+	colorstring.Printf("\n\n\"[light_green]%s[default]\" output:\n%s\n", ep, out)
 
 	ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 	output, err = exec.New().CommandContext(
@@ -131,6 +130,7 @@ func (ts *Tester) health() error {
 		return fmt.Errorf("'kubectl get all -n=kube-system' failed %v", err)
 	}
 	out = string(output)
+	colorstring.Printf("\n\"[light_green]kubectl all -n=kube-system[default]\" output:\n%s\n", out)
 
 	colorstring.Printf("\n\"[light_green]kubectl get pods -n=kube-system[default]\" output:\n")
 	pods, err := ts.getPods("kube-system")
@@ -156,7 +156,7 @@ func (ts *Tester) health() error {
 		return fmt.Errorf("'kubectl get configmaps --all-namespaces' failed %v", err)
 	}
 	out = string(output)
-	colorstring.Printf("\n\"[light_green]kubectl get configmaps --all-namespaces[default]\" output:\n%s\n\n", out)
+	colorstring.Printf("\n\"[light_green]kubectl get configmaps --all-namespaces[default]\" output:\n%s\n", out)
 
 	ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 	output, err = exec.New().CommandContext(
@@ -171,7 +171,7 @@ func (ts *Tester) health() error {
 		return fmt.Errorf("'kubectl get namespaces' failed %v", err)
 	}
 	out = string(output)
-	colorstring.Printf("\n\"[light_green]kubectl get namespaces[default]\" output:\n%s\n\n", out)
+	colorstring.Printf("\n\"[light_green]kubectl get namespaces[default]\" output:\n%s\n", out)
 
 	colorstring.Printf("\n\"[light_green]curl -sL http://localhost:8080/metrics | grep storage_[default]\" output:\n")
 	output, err = ts.k8sClientSet.
@@ -226,8 +226,8 @@ func (ts *Tester) health() error {
 		zap.Int64("cache-miss-count", cacheMissCnt),
 	)
 	if ts.cfg.Status.EncryptionCMKARN != "" && dekGenCnt <= 0 && cacheMissCnt <= 0 {
-		// return errors.New("encrypted enabled, unexpected /metrics")
 		ts.lg.Info("encryption is not enabled")
+		// return errors.New("encrypted enabled, unexpected /metrics")
 	}
 
 	ts.lg.Info("checked /metrics")
