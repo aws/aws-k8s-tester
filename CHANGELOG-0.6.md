@@ -5,7 +5,7 @@
 <hr>
 
 
-## [v0.6.7](https://github.com/aws/aws-k8s-tester/releases/tag/v0.6.7) (2020-02-29)
+## [v0.6.7](https://github.com/aws/aws-k8s-tester/releases/tag/v0.6.7) (2020-03-01)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.6.6...v0.6.7).
 
@@ -26,7 +26,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.6.6...v0.6.7
 ### `eks`
 
 - Fix [health check output](https://github.com/aws/aws-k8s-tester/commit/05f0101effb4b776b4f089adba0439371565d9aa).
-- Clean up [`eks/alb` policy creation](https://github.com/aws/aws-k8s-tester/commit/).
+- Clean up [`eks/alb` policy creation](https://github.com/aws/aws-k8s-tester/commit/5ec5c23b8d8b8d01590112617a92ed1648bf227b).
 
 ### Go
 
