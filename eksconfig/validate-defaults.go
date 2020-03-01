@@ -516,7 +516,7 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 			return fmt.Errorf("unknown AddOnManagedNodeGroups.MNGs[%q].AMIType %q", k, v.AMIType)
 		}
 
-		if cfg.AddOnNLBHelloWorld.Enable || cfg.AddOnALB2048.Enable {
+		if cfg.IsAddOnNLBHelloWorldEnabled() || cfg.IsAddOnALB2048Enabled() {
 			for _, itp := range v.InstanceTypes {
 				// "m3.xlarge" or "c4.xlarge" will fail with "InvalidTarget: Targets {...} are not supported"
 				// ref. https://github.com/aws/amazon-vpc-cni-k8s/pull/821
@@ -524,7 +524,10 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 				switch {
 				case strings.HasPrefix(itp, "m3."),
 					strings.HasPrefix(itp, "c4."):
-					return fmt.Errorf("AddOnNLBHelloWorld.Enable[%v] || AddOnALB2048.Enable[%v], but older instance type InstanceTypes %q for %q", cfg.AddOnNLBHelloWorld.Enable, cfg.AddOnALB2048.Enable, itp, k)
+					return fmt.Errorf("AddOnNLBHelloWorld.Enable[%v] || AddOnALB2048.Enable[%v], but older instance type InstanceTypes %q for %q",
+						cfg.IsAddOnNLBHelloWorldEnabled(),
+						cfg.IsAddOnALB2048Enabled(),
+						itp, k)
 				default:
 				}
 			}
@@ -543,13 +546,13 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].ASGDesiredCapacity %d > MNGNodesMaxLimit %d", k, v.ASGDesiredCapacity, MNGNodesMaxLimit)
 		}
 
-		if cfg.AddOnNLBHelloWorld.Enable && cfg.AddOnNLBHelloWorld.DeploymentReplicas < int32(v.ASGDesiredCapacity) {
+		if cfg.IsAddOnNLBHelloWorldEnabled() && cfg.AddOnNLBHelloWorld.DeploymentReplicas < int32(v.ASGDesiredCapacity) {
 			cfg.AddOnNLBHelloWorld.DeploymentReplicas = int32(v.ASGDesiredCapacity)
 		}
-		if cfg.AddOnALB2048.Enable && cfg.AddOnALB2048.DeploymentReplicasALB < int32(v.ASGDesiredCapacity) {
+		if cfg.IsAddOnALB2048Enabled() && cfg.AddOnALB2048.DeploymentReplicasALB < int32(v.ASGDesiredCapacity) {
 			cfg.AddOnALB2048.DeploymentReplicasALB = int32(v.ASGDesiredCapacity)
 		}
-		if cfg.AddOnALB2048.Enable && cfg.AddOnALB2048.DeploymentReplicas2048 < int32(v.ASGDesiredCapacity) {
+		if cfg.IsAddOnALB2048Enabled() && cfg.AddOnALB2048.DeploymentReplicas2048 < int32(v.ASGDesiredCapacity) {
 			cfg.AddOnALB2048.DeploymentReplicas2048 = int32(v.ASGDesiredCapacity)
 		}
 

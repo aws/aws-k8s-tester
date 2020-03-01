@@ -155,13 +155,14 @@ type Parameters struct {
 	PrivateSubnetCIDR1 string `json:"private-subnet-cidr-1,omitempty"`
 	// PrivateSubnetCIDR2 is the CIDR Block for subnet 2 within the VPC.
 	PrivateSubnetCIDR2 string `json:"private-subnet-cidr-2,omitempty"`
+
 	// PublicSubnetIDs is the list of all public subnets in the VPC.
-	PublicSubnetIDs []string `json:"public-subnet-ids"`
+	PublicSubnetIDs []string `json:"public-subnet-ids" read-only:"true"`
 	// PrivateSubnetIDs is the list of all private subnets in the VPC.
-	PrivateSubnetIDs []string `json:"private-subnet-ids"`
+	PrivateSubnetIDs []string `json:"private-subnet-ids" read-only:"true"`
 	// ControlPlaneSecurityGroupID is the security group ID for the cluster control
 	// plane communication with worker nodes.
-	ControlPlaneSecurityGroupID string `json:"control-plane-security-group-id"`
+	ControlPlaneSecurityGroupID string `json:"control-plane-security-group-id" read-only:"true"`
 
 	// Version is the version of EKS Kubernetes "cluster".
 	// If empty, set default version.
@@ -175,6 +176,10 @@ type Parameters struct {
 	// If not empty, the cluster is created with encryption feature
 	// enabled.
 	EncryptionCMKARN string `json:"encryption-cmk-arn"`
+}
+
+func (cfg *Config) IsAddOnManagedNodeGroupsEnabled() bool {
+	return cfg.AddOnManagedNodeGroups != nil && cfg.AddOnManagedNodeGroups.Enable
 }
 
 // AddOnManagedNodeGroups defines parameters for EKS "Managed Node Group" creation.
@@ -273,6 +278,10 @@ type MNG struct {
 	VolumeSize int `json:"volume-size,omitempty"`
 }
 
+func (cfg *Config) IsAddOnNLBHelloWorldEnabled() bool {
+	return cfg.AddOnNLBHelloWorld != nil && cfg.AddOnNLBHelloWorld.Enable
+}
+
 // AddOnNLBHelloWorld defines parameters for EKS cluster
 // add-on NLB hello-world service.
 type AddOnNLBHelloWorld struct {
@@ -302,6 +311,10 @@ type AddOnNLBHelloWorld struct {
 	NLBName string `json:"nlb-name" read-only:"true"`
 	// URL is the host name for hello-world service.
 	URL string `json:"url" read-only:"true"`
+}
+
+func (cfg *Config) IsAddOnALB2048Enabled() bool {
+	return cfg.AddOnALB2048 != nil && cfg.AddOnALB2048.Enable
 }
 
 // AddOnALB2048 defines parameters for EKS cluster
@@ -337,6 +350,10 @@ type AddOnALB2048 struct {
 	URL string `json:"url" read-only:"true"`
 }
 
+func (cfg *Config) IsAddOnJobPerlEnabled() bool {
+	return cfg.AddOnJobPerl != nil && cfg.AddOnJobPerl.Enable
+}
+
 // AddOnJobPerl defines parameters for EKS cluster
 // add-on Job with Perl.
 type AddOnJobPerl struct {
@@ -363,6 +380,10 @@ type AddOnJobPerl struct {
 	// Parallels is the the maximum desired number of pods the
 	// job should run at any given time.
 	Parallels int `json:"parallels"`
+}
+
+func (cfg *Config) IsAddOnJobEchoEnabled() bool {
+	return cfg.AddOnJobEcho != nil && cfg.AddOnJobEcho.Enable
 }
 
 // AddOnJobEcho defines parameters for EKS cluster
@@ -396,6 +417,10 @@ type AddOnJobEcho struct {
 	// "The Job "echo" is invalid: metadata.annotations:
 	// Too long: must have at most 262144 characters". (0.26 MB)
 	Size int `json:"size"`
+}
+
+func (cfg *Config) IsAddOnSecretsEnabled() bool {
+	return cfg.AddOnSecrets != nil && cfg.AddOnSecrets.Enable
 }
 
 // AddOnSecrets defines parameters for EKS cluster
@@ -462,6 +487,10 @@ type AddOnSecrets struct {
 	ReadsResultPath string `json:"reads-result-path"`
 }
 
+func (cfg *Config) IsAddOnIRSAEnabled() bool {
+	return cfg.AddOnIRSA != nil && cfg.AddOnIRSA.Enable
+}
+
 // AddOnIRSA defines parameters for EKS cluster
 // add-on "IAM Roles for Service Accounts (IRSA)".
 type AddOnIRSA struct {
@@ -513,6 +542,10 @@ type AddOnIRSA struct {
 	DeploymentTook time.Duration `json:"deployment-took,omitempty" read-only:"true"`
 	// DeploymentTookString is the duration that took for Deployment resource.
 	DeploymentTookString string `json:"deployment-took-string,omitempty" read-only:"true"`
+}
+
+func (cfg *Config) IsAddOnFargateEnabled() bool {
+	return cfg.AddOnFargate != nil && cfg.AddOnFargate.Enable
 }
 
 // AddOnFargate defines parameters for EKS cluster
