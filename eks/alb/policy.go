@@ -131,6 +131,15 @@ Resources:
           Action:
           - waf:GetWebACL
           Resource: "*"
+        - Effect: Allow
+          Action:
+          - shield:DescribeProtection
+          - shield:GetSubscriptionState
+          - shield:DeleteProtection
+          - shield:CreateProtection
+          - shield:DescribeSubscription
+          - shield:ListProtections
+          Resource: "*"
       Roles:
       - !Ref ManagedNodeGroupRoleName
 
