@@ -32,7 +32,6 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_SSH_COMMANDS_OUTPUT_PATH")
 	os.Setenv("AWS_K8S_TESTER_EKS_REGION", "us-east-1")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_REGION")
-
 	os.Setenv("AWS_K8S_TESTER_EKS_LOG_LEVEL", "debug")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_LOG_LEVEL")
 	os.Setenv("AWS_K8S_TESTER_EKS_KUBECTL_DOWNLOAD_URL", kubectlDownloadURL)
@@ -45,6 +44,10 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ON_FAILURE_DELETE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ON_FAILURE_DELETE_WAIT_SECONDS", "780")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ON_FAILURE_DELETE_WAIT_SECONDS")
+	os.Setenv("AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_CLUSTER", "echo hello1")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_CLUSTER")
+	os.Setenv("AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_ADD_ONS", "echo hello2")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_ADD_ONS")
 
 	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CREATE", "false")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CREATE")
@@ -275,6 +278,12 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.OnFailureDeleteWaitSeconds != 780 {
 		t.Fatalf("unexpected OnFailureDeleteWaitSeconds %d", cfg.OnFailureDeleteWaitSeconds)
+	}
+	if cfg.CommandAfterCreateCluster != "echo hello1" {
+		t.Fatalf("unexpected CommandAfterCreateCluster %q", cfg.CommandAfterCreateCluster)
+	}
+	if cfg.CommandAfterCreateAddOns != "echo hello2" {
+		t.Fatalf("unexpected CommandAfterCreateAddOns %q", cfg.CommandAfterCreateAddOns)
 	}
 
 	if cfg.Parameters.VPCCreate {

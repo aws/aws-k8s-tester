@@ -66,6 +66,11 @@ type Config struct {
 	// all resources on creation fail.
 	OnFailureDeleteWaitSeconds uint64 `json:"on-failure-delete-wait-seconds"`
 
+	// CommandAfterCreateCluster is the command to execute after creating clusters.
+	CommandAfterCreateCluster string `json:"command-after-create-cluster,omitempty"`
+	// CommandAfterCreateAddOns is the command to execute after creating clusters and add-ons.
+	CommandAfterCreateAddOns string `json:"command-after-create-add-ons,omitempty"`
+
 	// Parameters defines EKS "cluster" creation parameters.
 	// It's ok to leave any parameters empty.
 	// If empty, it will use default values.
