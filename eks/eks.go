@@ -584,11 +584,13 @@ func (ts *Tester) Up() (err error) {
 	}
 
 	if ts.cfg.CommandAfterCreateCluster != "" {
-		colorstring.Printf("\n\n\n[light_green]runCommand CommandAfterCreateCluster [default](%q)\n", ts.cfg.CommandAfterCreateCluster)
+		colorstring.Printf("\n[light_green]runCommand CommandAfterCreateCluster [default](%q)\n", ts.cfg.CommandAfterCreateCluster)
 		out, err := runCommand(ts.lg, ts.cfg.CommandAfterCreateCluster)
 		if err != nil {
 			return err
 		}
+		ts.cfg.CommandAfterCreateClusterOutput = string(out)
+		colorstring.Printf("\n[light_gray]runCommand output\n[default]:\n%s\n", ts.cfg.CommandAfterCreateClusterOutput)
 	}
 
 	if ts.cfg.IsAddOnManagedNodeGroupsEnabled() {
@@ -794,11 +796,13 @@ func (ts *Tester) Up() (err error) {
 		}
 
 		if ts.cfg.CommandAfterCreateAddOns != "" {
-			colorstring.Printf("\n\n\n[light_green]runCommand CommandAfterCreateAddOns [default](%q)\n", ts.cfg.CommandAfterCreateAddOns)
+			colorstring.Printf("\n[light_green]runCommand CommandAfterCreateAddOns [default](%q)\n", ts.cfg.CommandAfterCreateAddOns)
 			out, err := runCommand(ts.lg, ts.cfg.CommandAfterCreateAddOns)
 			if err != nil {
 				return err
 			}
+			ts.cfg.CommandAfterCreateAddOnsOutput = string(out)
+			colorstring.Printf("\n[light_gray]runCommand output\n[default]:\n%s\n", ts.cfg.CommandAfterCreateAddOnsOutput)
 		}
 	}
 
