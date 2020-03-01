@@ -583,6 +583,14 @@ func (ts *Tester) Up() (err error) {
 		return err
 	}
 
+	if ts.cfg.CommandAfterCreateCluster != "" {
+		colorstring.Printf("\n\n\n[light_green]runCommand CommandAfterCreateCluster [default](%q)\n", ts.cfg.CommandAfterCreateCluster)
+		out, err := runCommand(ts.lg, ts.cfg.CommandAfterCreateCluster)
+		if err != nil {
+			return err
+		}
+	}
+
 	if ts.cfg.IsAddOnManagedNodeGroupsEnabled() {
 		colorstring.Printf("\n\n\n[light_green]mngTester.Create [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		if err := catchInterrupt(
@@ -773,17 +781,25 @@ func (ts *Tester) Up() (err error) {
 				return err
 			}
 		}
-	}
 
-	colorstring.Printf("\n\n\n[light_green]checkHealth [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-	if err := catchInterrupt(
-		ts.lg,
-		ts.stopCreationCh,
-		ts.stopCreationChOnce,
-		ts.interruptSig,
-		ts.checkHealth,
-	); err != nil {
-		return err
+		colorstring.Printf("\n\n\n[light_green]checkHealth [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.interruptSig,
+			ts.checkHealth,
+		); err != nil {
+			return err
+		}
+
+		if ts.cfg.CommandAfterCreateAddOns != "" {
+			colorstring.Printf("\n\n\n[light_green]runCommand CommandAfterCreateAddOns [default](%q)\n", ts.cfg.CommandAfterCreateAddOns)
+			out, err := runCommand(ts.lg, ts.cfg.CommandAfterCreateAddOns)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	return ts.cfg.Sync()
