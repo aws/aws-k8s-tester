@@ -528,7 +528,7 @@ func (ts *Tester) Up() (err error) {
 		}
 
 		colorstring.Printf("\n\n\n[light_red]Up.defer end [default](%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-		colorstring.Printf("\n\n😱 ☹  [light_red](-_-) [default]Up fail\n\n\n")
+		colorstring.Printf("\n\n😱 ☹ 😡 [light_red](-_-) [default]Up fail\n\n\n")
 	}()
 
 	ts.lg.Info("Up started",
@@ -848,7 +848,7 @@ func (ts *Tester) down() (err error) {
 			)
 
 			colorstring.Printf("\n\n\n[light_green]Down.defer end [default](%q)\n\n", ts.cfg.ConfigPath)
-			colorstring.Printf("\n\n😁 [blue]:) [default]Down success\n\n\n")
+			colorstring.Printf("\n\n😁 😁 [blue]:) [default]Down success\n\n\n")
 
 		} else {
 
@@ -858,7 +858,7 @@ func (ts *Tester) down() (err error) {
 			)
 
 			colorstring.Printf("\n\n\n[light_red]Down.defer end [default](%q)\n\n", ts.cfg.ConfigPath)
-			colorstring.Printf("\n\n😱 ☹  [light_red](-_-) [default]Down fail\n\n\n")
+			colorstring.Printf("\n\n😱 ☹ 😡 [light_red](-_-) [default]Down fail\n\n\n")
 		}
 	}()
 
