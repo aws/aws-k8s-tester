@@ -307,6 +307,25 @@ func (cfg *Config) validateConfig() error {
 		return fmt.Errorf("kubectl-download-url %q build OS mismatch, expected %q", cfg.KubectlDownloadURL, runtime.GOOS)
 	}
 
+	if cfg.CommandAfterCreateCluster != "" {
+		ss := strings.Split(cfg.CommandAfterCreateCluster, " ")
+		p, err := exec.LookPath(ss[0])
+		if err != nil {
+			return fmt.Errorf("%q does not exist (%v)", ss[0], err)
+		}
+		ss[0] = p
+		cfg.CommandAfterCreateCluster = strings.Join(ss, " ")
+	}
+	if cfg.CommandAfterCreateAddOns != "" {
+		ss := strings.Split(cfg.CommandAfterCreateAddOns, " ")
+		p, err := exec.LookPath(ss[0])
+		if err != nil {
+			return fmt.Errorf("%q does not exist (%v)", ss[0], err)
+		}
+		ss[0] = p
+		cfg.CommandAfterCreateAddOns = strings.Join(ss, " ")
+	}
+
 	return nil
 }
 
