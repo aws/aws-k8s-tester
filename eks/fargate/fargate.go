@@ -12,12 +12,14 @@ import (
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	awscfn "github.com/aws/aws-k8s-tester/pkg/aws/cloudformation"
+	awsiam "github.com/aws/aws-k8s-tester/pkg/aws/iam"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/cloudformation/cloudformationiface"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
+	"github.com/aws/aws-sdk-go/service/iam/iamiface"
 	"github.com/dustin/go-humanize"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
@@ -36,6 +38,7 @@ type Config struct {
 	K8SClient k8sClientSetGetter
 	CFNAPI    cloudformationiface.CloudFormationAPI
 	EKSAPI    eksiface.EKSAPI
+	IAMAPI    iamiface.IAMAPI
 }
 
 type k8sClientSetGetter interface {
@@ -238,13 +241,28 @@ Outputs:
 `
 
 func (ts *tester) createRole() error {
-	if ts.cfg.EKSConfig.AddOnFargate.RoleName == "" {
-		return errors.New("empty AddOnFargate.RoleName")
+	if !ts.cfg.EKSConfig.AddOnFargate.RoleCreate {
+		ts.cfg.Logger.Info("EKSConfig.AddOnFargate.RoleCreate false; skipping creation")
+		return awsiam.Validate(
+			ts.cfg.Logger,
+			ts.cfg.IAMAPI,
+			ts.cfg.EKSConfig.AddOnFargate.RoleName,
+			[]string{
+				"eks.amazonaws.com",
+				"eks-fargate-pods.amazonaws.com",
+			},
+			[]string{
+				"arn:aws:iam::aws:policy/AmazonEKSFargatePodExecutionRolePolicy",
+			},
+		)
 	}
-	if ts.cfg.EKSConfig.AddOnFargate.RoleCFNStackID != "" ||
+	if ts.cfg.EKSConfig.AddOnFargate.RoleCFNStackID != "" &&
 		ts.cfg.EKSConfig.AddOnFargate.RoleARN != "" {
-		ts.cfg.Logger.Info("non-empty roleARN given; no need to create a new one")
+		ts.cfg.Logger.Info("role already created; no need to create a new one")
 		return nil
+	}
+	if ts.cfg.EKSConfig.AddOnFargate.RoleName == "" {
+		return errors.New("cannot create a cluster role with an empty AddOnFargate.RoleName")
 	}
 
 	ts.cfg.Logger.Info("creating a new Fargate role using CFN", zap.String("name", ts.cfg.EKSConfig.AddOnFargate.RoleName))
@@ -425,8 +443,8 @@ func (ts *tester) createProfile() error {
 	if ts.cfg.EKSConfig.AddOnFargate.RoleARN == "" {
 		return errors.New("empty AddOnFargate.RoleARN")
 	}
-	if len(ts.cfg.EKSConfig.Status.PrivateSubnetIDs) == 0 {
-		return errors.New("empty Status.PrivateSubnetIDs")
+	if len(ts.cfg.EKSConfig.Parameters.PrivateSubnetIDs) == 0 {
+		return errors.New("empty Parameters.PrivateSubnetIDs")
 	}
 	ts.cfg.Logger.Info("creating fargate profile", zap.String("name", ts.cfg.EKSConfig.AddOnFargate.ProfileName))
 
@@ -434,7 +452,7 @@ func (ts *tester) createProfile() error {
 		ClusterName:         aws.String(ts.cfg.EKSConfig.Name),
 		FargateProfileName:  aws.String(ts.cfg.EKSConfig.AddOnFargate.ProfileName),
 		PodExecutionRoleArn: aws.String(ts.cfg.EKSConfig.AddOnFargate.RoleARN),
-		Subnets:             aws.StringSlice(ts.cfg.EKSConfig.Status.PrivateSubnetIDs),
+		Subnets:             aws.StringSlice(ts.cfg.EKSConfig.Parameters.PrivateSubnetIDs),
 		Selectors: []*eks.FargateProfileSelector{
 			{
 				Namespace: aws.String(ts.cfg.EKSConfig.AddOnFargate.Namespace),

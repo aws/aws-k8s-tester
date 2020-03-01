@@ -578,7 +578,7 @@ Outputs:
 
 func (ts *Tester) createVPC() error {
 	if ts.cfg.Parameters.VPCID != "" {
-		ts.lg.Info("querying subnet IDs", zap.String("vpc-id", ts.cfg.Parameters.VPCID))
+		ts.lg.Info("querying subnet IDs for given VPC", zap.String("vpc-id", ts.cfg.Parameters.VPCID))
 		sresp, err := ts.ec2API.DescribeSubnets(&ec2.DescribeSubnetsInput{
 			Filters: []*ec2.Filter{
 				{
@@ -592,35 +592,35 @@ func (ts *Tester) createVPC() error {
 			return err
 		}
 
-		ts.cfg.Status.PublicSubnetIDs = make([]string, 0, len(sresp.Subnets))
-		ts.cfg.Status.PrivateSubnetIDs = make([]string, 0, len(sresp.Subnets))
+		ts.cfg.Parameters.PublicSubnetIDs = make([]string, 0, len(sresp.Subnets))
+		ts.cfg.Parameters.PrivateSubnetIDs = make([]string, 0, len(sresp.Subnets))
 		for _, sv := range sresp.Subnets {
 			id := aws.StringValue(sv.SubnetId)
-			networkTag := ""
+			networkTagValue := ""
 			for _, tg := range sv.Tags {
 				switch aws.StringValue(tg.Key) {
 				case "Network":
-					networkTag = aws.StringValue(tg.Value)
+					networkTagValue = aws.StringValue(tg.Value)
 				}
-				if networkTag != "" {
+				if networkTagValue != "" {
 					break
 				}
 			}
 			ts.lg.Info("found subnet",
 				zap.String("id", id),
 				zap.String("az", aws.StringValue(sv.AvailabilityZone)),
-				zap.String("network-tag", networkTag),
+				zap.String("network-tag", networkTagValue),
 			)
-			switch networkTag {
+			switch networkTagValue {
 			case "Public":
-				ts.cfg.Status.PublicSubnetIDs = append(ts.cfg.Status.PublicSubnetIDs, id)
+				ts.cfg.Parameters.PublicSubnetIDs = append(ts.cfg.Parameters.PublicSubnetIDs, id)
 			case "Private":
-				ts.cfg.Status.PrivateSubnetIDs = append(ts.cfg.Status.PrivateSubnetIDs, id)
+				ts.cfg.Parameters.PrivateSubnetIDs = append(ts.cfg.Parameters.PrivateSubnetIDs, id)
 			default:
 				return fmt.Errorf("'Network' tag not found in subnet %q", id)
 			}
 		}
-		if len(ts.cfg.Status.PrivateSubnetIDs) == 0 {
+		if len(ts.cfg.Parameters.PublicSubnetIDs) == 0 {
 			return fmt.Errorf("no subnet found for VPC ID %q", ts.cfg.Parameters.VPCID)
 		}
 
@@ -641,15 +641,13 @@ func (ts *Tester) createVPC() error {
 			id, name := aws.StringValue(sg.GroupId), aws.StringValue(sg.GroupName)
 			ts.lg.Info("found security group", zap.String("id", id), zap.String("name", name))
 			if name != "default" {
-				ts.cfg.Status.ControlPlaneSecurityGroupID = id
+				ts.cfg.Parameters.ControlPlaneSecurityGroupID = id
 			}
 		}
-		if ts.cfg.Status.ControlPlaneSecurityGroupID == "" {
+		if ts.cfg.Parameters.ControlPlaneSecurityGroupID == "" {
 			return fmt.Errorf("no security group found for VPC ID %q", ts.cfg.Parameters.VPCID)
 		}
 
-		ts.lg.Info("non-empty VPC given; no need to create a new one")
-		ts.cfg.Status.VPCID = ts.cfg.Parameters.VPCID
 		return ts.cfg.Sync()
 	}
 
@@ -657,19 +655,19 @@ func (ts *Tester) createVPC() error {
 		ts.lg.Info("Parameters.VPCCreate false; skipping creation")
 		return nil
 	}
-	if ts.cfg.Status.VPCCFNStackID != "" ||
-		(ts.cfg.Parameters.VPCID != "" &&
-			len(ts.cfg.Status.PrivateSubnetIDs) > 0 &&
-			ts.cfg.Status.ControlPlaneSecurityGroupID != "") {
-		ts.lg.Info("non-empty VPC given; no need to create a new one")
+	if ts.cfg.Parameters.VPCCFNStackID != "" &&
+		ts.cfg.Parameters.VPCID != "" &&
+		len(ts.cfg.Parameters.PublicSubnetIDs) > 0 &&
+		ts.cfg.Parameters.ControlPlaneSecurityGroupID != "" {
+		ts.lg.Info("VPC already created; no need to create a new one")
 		return nil
 	}
 
-	templateBody, network := TemplateVPCPublic, "Public"
-	if ts.cfg.AddOnFargate.Enable {
+	templateBody, cfnNetworkTagValue := TemplateVPCPublic, "Public"
+	if ts.cfg.IsAddOnFargateEnabled() {
 		// e.g. An error occurred (InvalidParameterException) when calling the CreateFargateProfile operation: Subnet subnet-123 provided in Fargate Profile is not a private subnet
 		templateBody = TemplateVPCPublicPrivate
-		network = "Public/Private"
+		cfnNetworkTagValue = "Public/Private"
 	}
 
 	// VPC attributes are empty, create a new VPC
@@ -683,7 +681,7 @@ func (ts *Tester) createVPC() error {
 		Tags: awscfn.NewTags(map[string]string{
 			"Kind":    "aws-k8s-tester",
 			"Name":    ts.cfg.Name,
-			"Network": network,
+			"Network": cfnNetworkTagValue,
 		}),
 		Parameters: []*cloudformation.Parameter{},
 	}
@@ -727,7 +725,7 @@ func (ts *Tester) createVPC() error {
 	if err != nil {
 		return err
 	}
-	ts.cfg.Status.VPCCFNStackID = aws.StringValue(stackOutput.StackId)
+	ts.cfg.Parameters.VPCCFNStackID = aws.StringValue(stackOutput.StackId)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	ch := awscfn.Poll(
 		ctx,
@@ -735,7 +733,7 @@ func (ts *Tester) createVPC() error {
 		ts.interruptSig,
 		ts.lg,
 		ts.cfnAPI,
-		ts.cfg.Status.VPCCFNStackID,
+		ts.cfg.Parameters.VPCCFNStackID,
 		cloudformation.ResourceStatusCreateComplete,
 		time.Minute+30*time.Second,
 		20*time.Second,
@@ -762,23 +760,23 @@ func (ts *Tester) createVPC() error {
 	for _, o := range st.Stack.Outputs {
 		switch k := aws.StringValue(o.OutputKey); k {
 		case "VPCID":
-			ts.cfg.Status.VPCID = aws.StringValue(o.OutputValue)
+			ts.cfg.Parameters.VPCID = aws.StringValue(o.OutputValue)
 		case "PublicSubnetIDs":
-			ts.cfg.Status.PublicSubnetIDs = strings.Split(aws.StringValue(o.OutputValue), ",")
+			ts.cfg.Parameters.PublicSubnetIDs = strings.Split(aws.StringValue(o.OutputValue), ",")
 		case "PrivateSubnetIDs":
-			ts.cfg.Status.PrivateSubnetIDs = strings.Split(aws.StringValue(o.OutputValue), ",")
+			ts.cfg.Parameters.PrivateSubnetIDs = strings.Split(aws.StringValue(o.OutputValue), ",")
 		case "ControlPlaneSecurityGroupID":
-			ts.cfg.Status.ControlPlaneSecurityGroupID = aws.StringValue(o.OutputValue)
+			ts.cfg.Parameters.ControlPlaneSecurityGroupID = aws.StringValue(o.OutputValue)
 		default:
-			return fmt.Errorf("unexpected OutputKey %q from %q", k, ts.cfg.Status.VPCCFNStackID)
+			return fmt.Errorf("unexpected OutputKey %q from %q", k, ts.cfg.Parameters.VPCCFNStackID)
 		}
 	}
 	ts.lg.Info("created a VPC",
-		zap.String("vpc-cfn-stack-id", ts.cfg.Status.VPCCFNStackID),
-		zap.String("vpc-id", ts.cfg.Status.VPCID),
-		zap.Strings("public-subnet-ids", ts.cfg.Status.PublicSubnetIDs),
-		zap.Strings("private-subnet-ids", ts.cfg.Status.PrivateSubnetIDs),
-		zap.String("control-plane-security-group-id", ts.cfg.Status.ControlPlaneSecurityGroupID),
+		zap.String("vpc-cfn-stack-id", ts.cfg.Parameters.VPCCFNStackID),
+		zap.String("vpc-id", ts.cfg.Parameters.VPCID),
+		zap.Strings("public-subnet-ids", ts.cfg.Parameters.PublicSubnetIDs),
+		zap.Strings("private-subnet-ids", ts.cfg.Parameters.PrivateSubnetIDs),
+		zap.String("control-plane-security-group-id", ts.cfg.Parameters.ControlPlaneSecurityGroupID),
 	)
 	return ts.cfg.Sync()
 }
@@ -788,16 +786,16 @@ func (ts *Tester) deleteVPC() error {
 		ts.lg.Info("Parameters.VPCCreate false; skipping deletion")
 		return nil
 	}
-	if ts.cfg.Status.VPCCFNStackID == "" {
+	if ts.cfg.Parameters.VPCCFNStackID == "" {
 		ts.lg.Info("empty VPC CFN stack ID; no need to delete VPC")
 		return nil
 	}
 
 	now := time.Now()
 
-	ts.lg.Info("deleting VPC CFN stack", zap.String("vpc-cfn-stack-id", ts.cfg.Status.VPCCFNStackID))
+	ts.lg.Info("deleting VPC CFN stack", zap.String("vpc-cfn-stack-id", ts.cfg.Parameters.VPCCFNStackID))
 	_, err := ts.cfnAPI.DeleteStack(&cloudformation.DeleteStackInput{
-		StackName: aws.String(ts.cfg.Status.VPCCFNStackID),
+		StackName: aws.String(ts.cfg.Parameters.VPCCFNStackID),
 	})
 	if err != nil {
 		return err
@@ -809,7 +807,7 @@ func (ts *Tester) deleteVPC() error {
 		make(chan os.Signal), // do not exit on stop
 		ts.lg,
 		ts.cfnAPI,
-		ts.cfg.Status.VPCCFNStackID,
+		ts.cfg.Parameters.VPCCFNStackID,
 		cloudformation.ResourceStatusDeleteComplete,
 		time.Minute+30*time.Second,
 		20*time.Second,
@@ -826,9 +824,9 @@ func (ts *Tester) deleteVPC() error {
 
 		if time.Now().Sub(now) > 3*time.Minute {
 			ts.lg.Warn("deleting VPC for longer than 3 minutes; initiating force deletion",
-				zap.String("vpc-id", ts.cfg.Status.VPCID),
+				zap.String("vpc-id", ts.cfg.Parameters.VPCID),
 			)
-			for _, subnetID := range ts.cfg.Status.PrivateSubnetIDs {
+			for _, subnetID := range ts.cfg.Parameters.PrivateSubnetIDs {
 				if _, ok := deletedResources[subnetID]; ok {
 					continue
 				}
@@ -843,13 +841,13 @@ func (ts *Tester) deleteVPC() error {
 					deletedResources[subnetID] = struct{}{}
 				}
 			}
-			if _, ok := deletedResources[ts.cfg.Status.VPCID]; ok {
+			if _, ok := deletedResources[ts.cfg.Parameters.VPCID]; ok {
 				continue
 			}
 
 			// TODO: deleting VPC doesn't work because of dependencies...
 			// e.g. DependencyViolation: The vpc 'vpc-0127f6d18bd98836a' has dependencies and cannot be deleted
-			ts.lg.Warn("cleaning VPC dependencies", zap.String("vpc-id", ts.cfg.Status.VPCID))
+			ts.lg.Warn("cleaning VPC dependencies", zap.String("vpc-id", ts.cfg.Parameters.VPCID))
 
 			// find all ENIs for VPC
 			enis := make([]*ec2.NetworkInterface, 0)
@@ -858,7 +856,7 @@ func (ts *Tester) deleteVPC() error {
 					Filters: []*ec2.Filter{
 						{
 							Name:   aws.String("vpc-id"),
-							Values: aws.StringSlice([]string{ts.cfg.Status.VPCID}),
+							Values: aws.StringSlice([]string{ts.cfg.Parameters.VPCID}),
 						},
 					},
 				},
@@ -948,7 +946,7 @@ func (ts *Tester) deleteVPC() error {
 				Filters: []*ec2.Filter{
 					{
 						Name:   aws.String("vpc-id"),
-						Values: []*string{aws.String(ts.cfg.Status.VPCID)},
+						Values: []*string{aws.String(ts.cfg.Parameters.VPCID)},
 					},
 				},
 			})
@@ -1096,19 +1094,19 @@ func (ts *Tester) deleteVPC() error {
 				}
 			}
 
-			_, derr := ts.ec2API.DeleteVpc(&ec2.DeleteVpcInput{VpcId: aws.String(ts.cfg.Status.VPCID)})
+			_, derr := ts.ec2API.DeleteVpc(&ec2.DeleteVpcInput{VpcId: aws.String(ts.cfg.Parameters.VPCID)})
 			if derr != nil {
 				ts.lg.Warn("failed to force-delete VPC",
-					zap.String("vpc-id", ts.cfg.Status.VPCID),
+					zap.String("vpc-id", ts.cfg.Parameters.VPCID),
 					zap.Error(derr),
 				)
 			} else {
 				ts.lg.Info("force-deleted VPC",
-					zap.String("vpc-id", ts.cfg.Status.VPCID),
+					zap.String("vpc-id", ts.cfg.Parameters.VPCID),
 				)
 			}
 			if derr != nil && strings.Contains(derr.Error(), " does not exist") {
-				deletedResources[ts.cfg.Status.VPCID] = struct{}{}
+				deletedResources[ts.cfg.Parameters.VPCID] = struct{}{}
 			}
 		}
 	}
@@ -1117,8 +1115,8 @@ func (ts *Tester) deleteVPC() error {
 		return st.Error
 	}
 	ts.lg.Info("deleted a VPC",
-		zap.String("vpc-cfn-stack-id", ts.cfg.Status.VPCCFNStackID),
-		zap.String("vpc-id", ts.cfg.Status.VPCID),
+		zap.String("vpc-cfn-stack-id", ts.cfg.Parameters.VPCCFNStackID),
+		zap.String("vpc-id", ts.cfg.Parameters.VPCID),
 	)
 	return ts.cfg.Sync()
 }

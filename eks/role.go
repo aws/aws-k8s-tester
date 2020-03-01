@@ -9,6 +9,7 @@ import (
 	"time"
 
 	awscfn "github.com/aws/aws-k8s-tester/pkg/aws/cloudformation"
+	awsiam "github.com/aws/aws-k8s-tester/pkg/aws/iam"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"go.uber.org/zap"
@@ -22,16 +23,16 @@ Description: 'Amazon EKS Cluster Role Basic'
 
 Parameters:
 
-  ClusterRoleName:
+  RoleName:
     Description: EKS Role name
     Type: String
 
-  ClusterRoleServicePrincipals:
+  RoleServicePrincipals:
     Description: EKS Role Service Principals
     Type: CommaDelimitedList
     Default: eks.amazonaws.com
 
-  ClusterRoleManagedPolicyARNs:
+  RoleManagedPolicyARNs:
     Description: EKS Role managed policy ARNs
     Type: CommaDelimitedList
     Default: 'arn:aws:iam::aws:policy/AmazonEKSServicePolicy,arn:aws:iam::aws:policy/AmazonEKSClusterPolicy'
@@ -41,50 +42,50 @@ Resources:
   ClusterRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Ref ClusterRoleName
+      RoleName: !Ref RoleName
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
         - Effect: Allow
           Principal:
-            Service: !Ref ClusterRoleServicePrincipals
+            Service: !Ref RoleServicePrincipals
           Action:
           - sts:AssumeRole
-      ManagedPolicyArns: !Ref ClusterRoleManagedPolicyARNs
+      ManagedPolicyArns: !Ref RoleManagedPolicyARNs
       Path: /
 
 Outputs:
 
-  ClusterRoleARN:
+  RoleARN:
     Description: Cluster role ARN that EKS uses to create AWS resources for Kubernetes
     Value: !GetAtt ClusterRole.Arn
 
 `
 
-// TemplateClusterRoleNLB is the CloudFormation template for EKS cluster role
+// TemplateClusterRoleLB is the CloudFormation template for EKS cluster role
 // with policies required for NLB service operation.
 //
 // e.g.
 //   Error creating load balancer (will retry): failed to ensure load balancer for service eks-*/hello-world-service: Error creating load balancer: "AccessDenied: User: arn:aws:sts::404174646922:assumed-role/eks-*-cluster-role/* is not authorized to perform: ec2:DescribeAccountAttributes\n\tstatus code: 403"
 //
 // TODO: scope down (e.g. ec2:DescribeAccountAttributes, ec2:DescribeInternetGateways)
-const TemplateClusterRoleNLB = `
+const TemplateClusterRoleLB = `
 ---
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Amazon EKS Cluster Role + NLB'
 
 Parameters:
 
-  ClusterRoleName:
+  RoleName:
     Description: EKS Role name
     Type: String
 
-  ClusterRoleServicePrincipals:
+  RoleServicePrincipals:
     Description: EKS Role Service Principals
     Type: CommaDelimitedList
     Default: eks.amazonaws.com
 
-  ClusterRoleManagedPolicyARNs:
+  RoleManagedPolicyARNs:
     Description: EKS Role managed policy ARNs
     Type: CommaDelimitedList
     Default: 'arn:aws:iam::aws:policy/AmazonEKSServicePolicy,arn:aws:iam::aws:policy/AmazonEKSClusterPolicy'
@@ -94,19 +95,19 @@ Resources:
   ClusterRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Ref ClusterRoleName
+      RoleName: !Ref RoleName
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
         - Effect: Allow
           Principal:
-            Service: !Ref ClusterRoleServicePrincipals
+            Service: !Ref RoleServicePrincipals
           Action:
           - sts:AssumeRole
-      ManagedPolicyArns: !Ref ClusterRoleManagedPolicyARNs
+      ManagedPolicyArns: !Ref RoleManagedPolicyARNs
       Path: /
       Policies:
-      - PolicyName: !Join ['-', [!Ref ClusterRoleName, 'nlb-policy']]
+      - PolicyName: !Join ['-', [!Ref RoleName, 'nlb-policy']]
         PolicyDocument:
           Version: '2012-10-17'
           Statement:
@@ -117,37 +118,45 @@ Resources:
 
 Outputs:
 
-  ClusterRoleARN:
+  RoleARN:
     Description: Cluster role ARN that EKS uses to create AWS resources for Kubernetes
     Value: !GetAtt ClusterRole.Arn
 
 `
 
 func (ts *Tester) createClusterRole() error {
-	if !ts.cfg.Parameters.ClusterRoleCreate {
-		ts.lg.Info("Parameters.ClusterRoleCreate false; skipping creation")
+	if !ts.cfg.Parameters.RoleCreate {
+		ts.lg.Info("Parameters.RoleCreate false; skipping creation")
+		return awsiam.Validate(
+			ts.lg,
+			ts.iamAPI,
+			ts.cfg.Parameters.RoleName,
+			[]string{"eks.amazonaws.com"},
+			[]string{
+				"arn:aws:iam::aws:policy/AmazonEKSServicePolicy",
+				"arn:aws:iam::aws:policy/AmazonEKSClusterPolicy",
+			},
+		)
+	}
+	if ts.cfg.Parameters.RoleCFNStackID != "" &&
+		ts.cfg.Parameters.RoleARN != "" {
+		ts.lg.Info("role already created; no need to create a new one")
 		return nil
 	}
-	if ts.cfg.Parameters.ClusterRoleARN != "" ||
-		ts.cfg.Status.ClusterRoleCFNStackID != "" ||
-		ts.cfg.Status.ClusterRoleARN != "" {
-		ts.lg.Info("non-empty role given; no need to create a new one")
-		return nil
-	}
-	if ts.cfg.Parameters.ClusterRoleName == "" {
-		return errors.New("empty Parameters.ClusterRoleName")
+	if ts.cfg.Parameters.RoleName == "" {
+		return errors.New("cannot create a cluster role with an empty Parameters.RoleName")
 	}
 
 	tmpl := TemplateClusterRoleBasic
-	if ts.cfg.AddOnNLBHelloWorld.Enable {
-		tmpl = TemplateClusterRoleNLB
+	if ts.cfg.IsAddOnNLBHelloWorldEnabled() || ts.cfg.IsAddOnALB2048Enabled() {
+		tmpl = TemplateClusterRoleLB
 	}
 
 	// role ARN is empty, create a default role
 	// otherwise, use the existing one
-	ts.lg.Info("creating a new role", zap.String("cluster-role-name", ts.cfg.Parameters.ClusterRoleName))
+	ts.lg.Info("creating a new role", zap.String("cluster-role-name", ts.cfg.Parameters.RoleName))
 	stackInput := &cloudformation.CreateStackInput{
-		StackName:    aws.String(ts.cfg.Parameters.ClusterRoleName),
+		StackName:    aws.String(ts.cfg.Parameters.RoleName),
 		Capabilities: aws.StringSlice([]string{"CAPABILITY_NAMED_IAM"}),
 		OnFailure:    aws.String(cloudformation.OnFailureDelete),
 		TemplateBody: aws.String(tmpl),
@@ -157,34 +166,34 @@ func (ts *Tester) createClusterRole() error {
 		}),
 		Parameters: []*cloudformation.Parameter{
 			{
-				ParameterKey:   aws.String("ClusterRoleName"),
-				ParameterValue: aws.String(ts.cfg.Parameters.ClusterRoleName),
+				ParameterKey:   aws.String("RoleName"),
+				ParameterValue: aws.String(ts.cfg.Parameters.RoleName),
 			},
 		},
 	}
-	if len(ts.cfg.Parameters.ClusterRoleServicePrincipals) > 0 {
+	if len(ts.cfg.Parameters.RoleServicePrincipals) > 0 {
 		ts.lg.Info("creating a new cluster role with custom service principals",
-			zap.Strings("service-principals", ts.cfg.Parameters.ClusterRoleServicePrincipals),
+			zap.Strings("service-principals", ts.cfg.Parameters.RoleServicePrincipals),
 		)
 		stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
-			ParameterKey:   aws.String("ClusterRoleServicePrincipals"),
-			ParameterValue: aws.String(strings.Join(ts.cfg.Parameters.ClusterRoleServicePrincipals, ",")),
+			ParameterKey:   aws.String("RoleServicePrincipals"),
+			ParameterValue: aws.String(strings.Join(ts.cfg.Parameters.RoleServicePrincipals, ",")),
 		})
 	}
-	if len(ts.cfg.Parameters.ClusterRoleManagedPolicyARNs) > 0 {
+	if len(ts.cfg.Parameters.RoleManagedPolicyARNs) > 0 {
 		ts.lg.Info("creating a new cluster role with custom managed role policies",
-			zap.Strings("policy-arns", ts.cfg.Parameters.ClusterRoleManagedPolicyARNs),
+			zap.Strings("policy-arns", ts.cfg.Parameters.RoleManagedPolicyARNs),
 		)
 		stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
-			ParameterKey:   aws.String("ClusterRoleManagedPolicyARNs"),
-			ParameterValue: aws.String(strings.Join(ts.cfg.Parameters.ClusterRoleManagedPolicyARNs, ",")),
+			ParameterKey:   aws.String("RoleManagedPolicyARNs"),
+			ParameterValue: aws.String(strings.Join(ts.cfg.Parameters.RoleManagedPolicyARNs, ",")),
 		})
 	}
 	stackOutput, err := ts.cfnAPI.CreateStack(stackInput)
 	if err != nil {
 		return err
 	}
-	ts.cfg.Status.ClusterRoleCFNStackID = aws.StringValue(stackOutput.StackId)
+	ts.cfg.Parameters.RoleCFNStackID = aws.StringValue(stackOutput.StackId)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	ch := awscfn.Poll(
 		ctx,
@@ -192,7 +201,7 @@ func (ts *Tester) createClusterRole() error {
 		ts.interruptSig,
 		ts.lg,
 		ts.cfnAPI,
-		ts.cfg.Status.ClusterRoleCFNStackID,
+		ts.cfg.Parameters.RoleCFNStackID,
 		cloudformation.ResourceStatusCreateComplete,
 		25*time.Second,
 		10*time.Second,
@@ -212,33 +221,33 @@ func (ts *Tester) createClusterRole() error {
 	// update status after creating a new IAM role
 	for _, o := range st.Stack.Outputs {
 		switch k := aws.StringValue(o.OutputKey); k {
-		case "ClusterRoleARN":
-			ts.cfg.Status.ClusterRoleARN = aws.StringValue(o.OutputValue)
+		case "RoleARN":
+			ts.cfg.Parameters.RoleARN = aws.StringValue(o.OutputValue)
 		default:
-			return fmt.Errorf("unexpected OutputKey %q from %q", k, ts.cfg.Status.ClusterRoleCFNStackID)
+			return fmt.Errorf("unexpected OutputKey %q from %q", k, ts.cfg.Parameters.RoleCFNStackID)
 		}
 	}
 
 	ts.lg.Info("created a new role",
-		zap.String("cluster-role-cfn-stack-id", ts.cfg.Status.ClusterRoleCFNStackID),
-		zap.String("cluster-role-arn", ts.cfg.Status.ClusterRoleARN),
+		zap.String("cluster-role-cfn-stack-id", ts.cfg.Parameters.RoleCFNStackID),
+		zap.String("cluster-role-arn", ts.cfg.Parameters.RoleARN),
 	)
 	return ts.cfg.Sync()
 }
 
 func (ts *Tester) deleteClusterRole() error {
-	if !ts.cfg.Parameters.ClusterRoleCreate {
-		ts.lg.Info("Parameters.ClusterRoleCreate false; skipping deletion")
+	if !ts.cfg.Parameters.RoleCreate {
+		ts.lg.Info("Parameters.RoleCreate false; skipping deletion")
 		return nil
 	}
-	if ts.cfg.Status.ClusterRoleCFNStackID == "" {
+	if ts.cfg.Parameters.RoleCFNStackID == "" {
 		ts.lg.Info("empty role CFN stack ID; no need to delete role")
 		return nil
 	}
 
-	ts.lg.Info("deleting role CFN stack", zap.String("cluster-role-cfn-stack-id", ts.cfg.Status.ClusterRoleCFNStackID))
+	ts.lg.Info("deleting role CFN stack", zap.String("cluster-role-cfn-stack-id", ts.cfg.Parameters.RoleCFNStackID))
 	_, err := ts.cfnAPI.DeleteStack(&cloudformation.DeleteStackInput{
-		StackName: aws.String(ts.cfg.Status.ClusterRoleCFNStackID),
+		StackName: aws.String(ts.cfg.Parameters.RoleCFNStackID),
 	})
 	if err != nil {
 		return err
@@ -250,7 +259,7 @@ func (ts *Tester) deleteClusterRole() error {
 		make(chan os.Signal), // do not exit on stop
 		ts.lg,
 		ts.cfnAPI,
-		ts.cfg.Status.ClusterRoleCFNStackID,
+		ts.cfg.Parameters.RoleCFNStackID,
 		cloudformation.ResourceStatusDeleteComplete,
 		25*time.Second,
 		10*time.Second,
@@ -268,9 +277,9 @@ func (ts *Tester) deleteClusterRole() error {
 		return st.Error
 	}
 	ts.lg.Info("deleted a role",
-		zap.String("cluster-role-cfn-stack-id", ts.cfg.Status.ClusterRoleCFNStackID),
-		zap.String("cluster-role-arn", ts.cfg.Status.ClusterRoleARN),
-		zap.String("cluster-role-name", ts.cfg.Parameters.ClusterRoleName),
+		zap.String("cluster-role-cfn-stack-id", ts.cfg.Parameters.RoleCFNStackID),
+		zap.String("cluster-role-arn", ts.cfg.Parameters.RoleARN),
+		zap.String("cluster-role-name", ts.cfg.Parameters.RoleName),
 	)
 	return ts.cfg.Sync()
 }

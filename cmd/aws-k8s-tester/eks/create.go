@@ -47,13 +47,11 @@ func configFunc(cmd *cobra.Command, args []string) {
 		fmt.Fprintf(os.Stderr, "failed to load configuration from environment variables: %v", err)
 		os.Exit(1)
 	}
-	cfg.Sync()
 
 	if err = cfg.ValidateAndSetDefaults(); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to validate configuration %q (%v)\n", path, err)
 		os.Exit(1)
 	}
-	cfg.Sync()
 
 	fmt.Fprintf(os.Stderr, "wrote aws-k8s-tester eks configuration to %q\n", cfg.ConfigPath)
 }
@@ -84,7 +82,6 @@ func createClusterFunc(cmd *cobra.Command, args []string) {
 		fmt.Fprintf(os.Stderr, "failed to validate configuration %q (%v)\n", path, err)
 		os.Exit(1)
 	}
-	cfg.Sync()
 
 	fmt.Println("overwriting config file from environment variables")
 	err = cfg.UpdateFromEnvs()
@@ -92,13 +89,11 @@ func createClusterFunc(cmd *cobra.Command, args []string) {
 		fmt.Fprintf(os.Stderr, "failed to load configuration from environment variables: %v\n", err)
 		os.Exit(1)
 	}
-	cfg.Sync()
 
 	if err = cfg.ValidateAndSetDefaults(); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to validate configuration %q (%v)\n", path, err)
 		os.Exit(1)
 	}
-	cfg.Sync()
 
 	tester, err := eks.New(cfg)
 	if err != nil {
@@ -139,7 +134,6 @@ func createMNGFunc(cmd *cobra.Command, args []string) {
 		fmt.Fprintf(os.Stderr, "failed to validate configuration %q (%v)\n", path, err)
 		os.Exit(1)
 	}
-	cfg.Sync()
 
 	fmt.Println("overwriting config file from environment variables")
 	err = cfg.UpdateFromEnvs()
@@ -147,13 +141,11 @@ func createMNGFunc(cmd *cobra.Command, args []string) {
 		fmt.Fprintf(os.Stderr, "failed to load configuration from environment variables: %v\n", err)
 		os.Exit(1)
 	}
-	cfg.Sync()
 
 	if err = cfg.ValidateAndSetDefaults(); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to validate configuration %q (%v)\n", path, err)
 		os.Exit(1)
 	}
-	cfg.Sync()
 
 	tester, err := eks.New(cfg)
 	if err != nil {

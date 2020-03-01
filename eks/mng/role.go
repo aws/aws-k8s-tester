@@ -9,6 +9,7 @@ import (
 	"time"
 
 	awscfn "github.com/aws/aws-k8s-tester/pkg/aws/cloudformation"
+	awsiam "github.com/aws/aws-k8s-tester/pkg/aws/iam"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"go.uber.org/zap"
@@ -66,16 +67,34 @@ Outputs:
 
 func (ts *tester) createRole() error {
 	if !ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleCreate {
-		ts.cfg.Logger.Info("AddOnManagedNodeGroups.RoleCreate false; skipping creation")
-		return nil
+		policyARNs := []string{
+			"arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy",
+			"arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy",
+			"arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
+		}
+		if ts.cfg.EKSConfig.IsAddOnNLBHelloWorldEnabled() ||
+			ts.cfg.EKSConfig.IsAddOnALB2048Enabled() {
+			policyARNs = append(policyARNs, "arn:aws:iam::aws:policy/ElasticLoadBalancingFullAccess")
+		}
+		ts.cfg.Logger.Info("EKSConfig.AddOnManagedNodeGroups.RoleCreate false; skipping creation")
+		return awsiam.Validate(
+			ts.cfg.Logger,
+			ts.cfg.IAMAPI,
+			ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleName,
+			[]string{
+				"ec2.amazonaws.com",
+				"eks.amazonaws.com",
+			},
+			policyARNs,
+		)
 	}
-	if ts.cfg.EKSConfig.StatusManagedNodeGroups.RoleCFNStackID != "" ||
+	if ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleCFNStackID != "" &&
 		ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleARN != "" {
-		ts.cfg.Logger.Info("non-empty roleARN given; no need to create a new one")
+		ts.cfg.Logger.Info("role already created; no need to create a new one")
 		return nil
 	}
 	if ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleName == "" {
-		return errors.New("empty AddOnManagedNodeGroups.RoleName")
+		return errors.New("cannot create a cluster role with an empty AddOnManagedNodeGroups.RoleName")
 	}
 
 	ts.cfg.Logger.Info("creating a new node group role using CFN", zap.String("name", ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleName))
@@ -120,7 +139,7 @@ func (ts *tester) createRole() error {
 	if err != nil {
 		return err
 	}
-	ts.cfg.EKSConfig.StatusManagedNodeGroups.RoleCFNStackID = aws.StringValue(stackOutput.StackId)
+	ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleCFNStackID = aws.StringValue(stackOutput.StackId)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
 	ch := awscfn.Poll(
@@ -129,7 +148,7 @@ func (ts *tester) createRole() error {
 		ts.cfg.Sig,
 		ts.cfg.Logger,
 		ts.cfg.CFNAPI,
-		ts.cfg.EKSConfig.StatusManagedNodeGroups.RoleCFNStackID,
+		ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleCFNStackID,
 		cloudformation.ResourceStatusCreateComplete,
 		time.Minute,
 		10*time.Second,
@@ -147,15 +166,15 @@ func (ts *tester) createRole() error {
 	for _, o := range st.Stack.Outputs {
 		switch k := aws.StringValue(o.OutputKey); k {
 		case "ManagedNodeGroupRoleARN":
-			ts.cfg.EKSConfig.StatusManagedNodeGroups.RoleARN = aws.StringValue(o.OutputValue)
+			ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleARN = aws.StringValue(o.OutputValue)
 		default:
-			return fmt.Errorf("unexpected OutputKey %q from %q", k, ts.cfg.EKSConfig.StatusManagedNodeGroups.RoleCFNStackID)
+			return fmt.Errorf("unexpected OutputKey %q from %q", k, ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleCFNStackID)
 		}
 	}
 
 	ts.cfg.Logger.Info("created a managed node group role",
-		zap.String("cfn-stack-id", ts.cfg.EKSConfig.StatusManagedNodeGroups.RoleCFNStackID),
-		zap.String("role-arn", ts.cfg.EKSConfig.StatusManagedNodeGroups.RoleARN),
+		zap.String("cfn-stack-id", ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleCFNStackID),
+		zap.String("role-arn", ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleARN),
 	)
 	return ts.cfg.EKSConfig.Sync()
 }
@@ -165,16 +184,16 @@ func (ts *tester) deleteRole() error {
 		ts.cfg.Logger.Info("AddOnManagedNodeGroups.RoleCreate false; skipping deletion")
 		return nil
 	}
-	if ts.cfg.EKSConfig.StatusManagedNodeGroups.RoleCFNStackID == "" {
+	if ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleCFNStackID == "" {
 		ts.cfg.Logger.Info("empty managed node group role CFN stack ID; no need to delete managed node group")
 		return nil
 	}
 
 	ts.cfg.Logger.Info("deleting managed node group role CFN stack",
-		zap.String("role-cfn-stack-id", ts.cfg.EKSConfig.StatusManagedNodeGroups.RoleCFNStackID),
+		zap.String("role-cfn-stack-id", ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleCFNStackID),
 	)
 	_, err := ts.cfg.CFNAPI.DeleteStack(&cloudformation.DeleteStackInput{
-		StackName: aws.String(ts.cfg.EKSConfig.StatusManagedNodeGroups.RoleCFNStackID),
+		StackName: aws.String(ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleCFNStackID),
 	})
 	if err != nil {
 		return err
@@ -186,7 +205,7 @@ func (ts *tester) deleteRole() error {
 		make(chan os.Signal), // do not exit on stop
 		ts.cfg.Logger,
 		ts.cfg.CFNAPI,
-		ts.cfg.EKSConfig.StatusManagedNodeGroups.RoleCFNStackID,
+		ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleCFNStackID,
 		cloudformation.ResourceStatusDeleteComplete,
 		time.Minute,
 		10*time.Second,
@@ -201,7 +220,7 @@ func (ts *tester) deleteRole() error {
 	}
 	cancel()
 	ts.cfg.Logger.Info("deleted a managed node group role",
-		zap.String("role-cfn-stack-id", ts.cfg.EKSConfig.StatusManagedNodeGroups.RoleCFNStackID),
+		zap.String("role-cfn-stack-id", ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleCFNStackID),
 	)
 	return ts.cfg.EKSConfig.Sync()
 }

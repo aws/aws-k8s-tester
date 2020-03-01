@@ -155,7 +155,7 @@ func (ts *tester) openPorts(name string) error {
 		zap.String("port-range", "1-1024"),
 	)
 	_, err = ts.cfg.EC2API.AuthorizeSecurityGroupEgress(&ec2.AuthorizeSecurityGroupEgressInput{
-		GroupId: aws.String(ts.cfg.EKSConfig.Status.ControlPlaneSecurityGroupID),
+		GroupId: aws.String(ts.cfg.EKSConfig.Parameters.ControlPlaneSecurityGroupID),
 		IpPermissions: []*ec2.IpPermission{
 			{
 				IpProtocol: aws.String("tcp"),

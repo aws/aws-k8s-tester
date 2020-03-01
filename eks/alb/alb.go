@@ -15,9 +15,7 @@ import (
 
 	"github.com/aws/aws-k8s-tester/eks/elb"
 	"github.com/aws/aws-k8s-tester/eksconfig"
-	awscfn "github.com/aws/aws-k8s-tester/pkg/aws/cloudformation"
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/cloudformation/cloudformationiface"
 	"github.com/aws/aws-sdk-go/service/elbv2"
 	"github.com/aws/aws-sdk-go/service/elbv2/elbv2iface"
@@ -35,13 +33,13 @@ import (
 
 // Config defines ALB configuration.
 type Config struct {
-	Logger            *zap.Logger
-	Stopc             chan struct{}
-	Sig               chan os.Signal
-	EKSConfig         *eksconfig.Config
-	CloudFormationAPI cloudformationiface.CloudFormationAPI
-	K8SClient         k8sClientSetGetter
-	ELB2API           elbv2iface.ELBV2API
+	Logger    *zap.Logger
+	Stopc     chan struct{}
+	Sig       chan os.Signal
+	EKSConfig *eksconfig.Config
+	CFNAPI    cloudformationiface.CloudFormationAPI
+	K8SClient k8sClientSetGetter
+	ELB2API   elbv2iface.ELBV2API
 }
 
 type k8sClientSetGetter interface {
@@ -62,7 +60,8 @@ func New(cfg Config) (Tester, error) {
 }
 
 type tester struct {
-	cfg Config
+	cfg              Config
+	policyCFNStackID string // TODO: persist
 }
 
 const (
@@ -72,8 +71,8 @@ const (
 	albIngressControllerServiceAccountNamespace = "kube-system"
 
 	// cluster-wide role
-	albIngressControllerRBACClusterRoleName      = "alb-ingress-controller-rbac-cluster-role"
-	albIngressControllerRBACClusterRoleNamespace = "default"
+	albIngressControllerRBACRoleName      = "alb-ingress-controller-rbac-cluster-role"
+	albIngressControllerRBACRoleNamespace = "default"
 
 	// cluster-wide role binding
 	albIngressControllerRBACClusterRoleBindingName      = "alb-ingress-controller-rbac-cluster-role-binding"
@@ -108,10 +107,6 @@ func (ts *tester) Create() error {
 		ts.cfg.EKSConfig.AddOnALB2048.CreateTookString = ts.cfg.EKSConfig.AddOnALB2048.CreateTook.String()
 		ts.cfg.EKSConfig.Sync()
 	}()
-
-	if err := ts.createALBPolicy(); err != nil {
-		return err
-	}
 
 	if err := ts.createNamespace(); err != nil {
 		return err
@@ -201,12 +196,6 @@ func (ts *tester) Delete() error {
 	}
 	time.Sleep(10 * time.Second)
 
-	if err := ts.deleteALBPolicy(); err != nil {
-		errs = append(errs, fmt.Sprintf("failed to delete ALB Ingress Controller Policy (%v)", err))
-	}
-	ts.cfg.Logger.Info("wait for a minute after deleting ALB Policy")
-	time.Sleep(time.Minute)
-
 	if err := elb.DeleteELBv2(ts.cfg.Logger, ts.cfg.ELB2API, ts.cfg.EKSConfig.AddOnALB2048.ALBARN); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete ALB (%v)", err))
 	}
@@ -267,252 +256,6 @@ func (ts *tester) deleteNamespace() error {
 		}
 	}
 	ts.cfg.Logger.Info("deleted namespace", zap.Error(err))
-	return ts.cfg.EKSConfig.Sync()
-}
-
-// TemplateALBIngressControllerPolicy is the CloudFormation template for ALB Ingress Controller Policy.
-// https://github.com/kubernetes-sigs/aws-alb-ingress-controller
-// https://github.com/kubernetes-sigs/aws-alb-ingress-controller/blob/master/docs/examples/iam-policy.json
-// https://docs.aws.amazon.com/eks/latest/userguide/alb-ingress.html
-const TemplateALBIngressControllerPolicy = `
----
-AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Amazon EKS ALB Ingress Controller Policy'
-
-Parameters:
-
-  ALBIngressControllerPolicyName:
-    Description: The policy name for ALB Ingress Controller
-    Type: String
-
-  ManagedNodeGroupRoleName:
-    Description: The name of the node instance role
-    Type: String
-
-Resources:
-
-  ALBIngressControllerPolicy:
-    Metadata:
-      Comment: Minimal policy to allow worker node instance profile that allows the ALB Ingress Controller to make calls to AWS APIs on your behalf
-    Type: AWS::IAM::Policy
-    Properties:
-      PolicyName: !Ref ALBIngressControllerPolicyName
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Effect: Allow
-          Action:
-          - acm:DescribeCertificate
-          - acm:ListCertificates
-          - acm:GetCertificate
-          Resource: "*"
-        - Effect: Allow
-          Action:
-          - ec2:AuthorizeSecurityGroupIngress
-          - ec2:CreateSecurityGroup
-          - ec2:CreateTags
-          - ec2:DeleteTags
-          - ec2:DeleteSecurityGroup
-          - ec2:DescribeAccountAttributes
-          - ec2:DescribeAddresses
-          - ec2:DescribeInstances
-          - ec2:DescribeInstanceStatus
-          - ec2:DescribeInternetGateways
-          - ec2:DescribeNetworkInterfaces
-          - ec2:DescribeSecurityGroups
-          - ec2:DescribeSubnets
-          - ec2:DescribeTags
-          - ec2:DescribeVpcs
-          - ec2:ModifyInstanceAttribute
-          - ec2:ModifyNetworkInterfaceAttribute
-          - ec2:RevokeSecurityGroupIngress
-          Resource: "*"
-        - Effect: Allow
-          Action:
-          - elasticloadbalancing:AddListenerCertificates
-          - elasticloadbalancing:AddTags
-          - elasticloadbalancing:CreateListener
-          - elasticloadbalancing:CreateLoadBalancer
-          - elasticloadbalancing:CreateRule
-          - elasticloadbalancing:CreateTargetGroup
-          - elasticloadbalancing:DeleteListener
-          - elasticloadbalancing:DeleteLoadBalancer
-          - elasticloadbalancing:DeleteRule
-          - elasticloadbalancing:DeleteTargetGroup
-          - elasticloadbalancing:DeregisterTargets
-          - elasticloadbalancing:DescribeListenerCertificates
-          - elasticloadbalancing:DescribeListeners
-          - elasticloadbalancing:DescribeLoadBalancers
-          - elasticloadbalancing:DescribeLoadBalancerAttributes
-          - elasticloadbalancing:DescribeRules
-          - elasticloadbalancing:DescribeSSLPolicies
-          - elasticloadbalancing:DescribeTags
-          - elasticloadbalancing:DescribeTargetGroups
-          - elasticloadbalancing:DescribeTargetGroupAttributes
-          - elasticloadbalancing:DescribeTargetHealth
-          - elasticloadbalancing:ModifyListener
-          - elasticloadbalancing:ModifyLoadBalancerAttributes
-          - elasticloadbalancing:ModifyRule
-          - elasticloadbalancing:ModifyTargetGroup
-          - elasticloadbalancing:ModifyTargetGroupAttributes
-          - elasticloadbalancing:RegisterTargets
-          - elasticloadbalancing:RemoveListenerCertificates
-          - elasticloadbalancing:RemoveTags
-          - elasticloadbalancing:SetIpAddressType
-          - elasticloadbalancing:SetSecurityGroups
-          - elasticloadbalancing:SetSubnets
-          - elasticloadbalancing:SetWebACL
-          Resource: "*"
-        - Effect: Allow
-          Action:
-          - iam:CreateServiceLinkedRole
-          - iam:GetServerCertificate
-          - iam:ListServerCertificates
-          Resource: "*"
-        - Effect: Allow
-          Action:
-          - cognito-idp:DescribeUserPoolClient
-          Resource: "*"
-        - Effect: Allow
-          Action:
-          - waf-regional:GetWebACLForResource
-          - waf-regional:GetWebACL
-          - waf-regional:AssociateWebACL
-          - waf-regional:DisassociateWebACL
-          Resource: "*"
-        - Effect: Allow
-          Action:
-          - tag:GetResources
-          - tag:TagResources
-          Resource: "*"
-        - Effect: Allow
-          Action:
-          - waf:GetWebACL
-          Resource: "*"
-      Roles:
-      - !Ref ManagedNodeGroupRoleName
-
-`
-
-// https://docs.aws.amazon.com/eks/latest/userguide/alb-ingress.html
-// https://github.com/kubernetes-sigs/aws-alb-ingress-controller/blob/master/docs/examples/iam-policy.json
-func (ts *tester) createALBPolicy() error {
-	if ts.cfg.EKSConfig.AddOnALB2048.PolicyName == "" {
-		return errors.New("empty AddOnALB2048.PolicyName")
-	}
-	if ts.cfg.EKSConfig.StatusManagedNodeGroups.RoleName == "" {
-		return errors.New("empty StatusManagedNodeGroups.RoleName")
-	}
-	if ts.cfg.EKSConfig.AddOnALB2048.PolicyCFNStackID != "" {
-		ts.cfg.Logger.Info("non-empty 2048 policy given; no need to create a new one")
-		return nil
-	}
-
-	ts.cfg.Logger.Info("creating ALB Ingress Controller Policy", zap.String("policy-name", ts.cfg.EKSConfig.AddOnALB2048.PolicyName))
-	stackInput := &cloudformation.CreateStackInput{
-		StackName:    aws.String(ts.cfg.EKSConfig.AddOnALB2048.PolicyName),
-		Capabilities: aws.StringSlice([]string{"CAPABILITY_NAMED_IAM"}),
-		OnFailure:    aws.String(cloudformation.OnFailureDelete),
-		TemplateBody: aws.String(TemplateALBIngressControllerPolicy),
-		Tags: awscfn.NewTags(map[string]string{
-			"Kind": "aws-k8s-tester",
-			"Name": ts.cfg.EKSConfig.Name,
-		}),
-		Parameters: []*cloudformation.Parameter{
-			{
-				ParameterKey:   aws.String("ALBIngressControllerPolicyName"),
-				ParameterValue: aws.String(ts.cfg.EKSConfig.AddOnALB2048.PolicyName),
-			},
-			{
-				ParameterKey:   aws.String("ManagedNodeGroupRoleName"),
-				ParameterValue: aws.String(ts.cfg.EKSConfig.StatusManagedNodeGroups.RoleName),
-			},
-		},
-	}
-	stackOutput, err := ts.cfg.CloudFormationAPI.CreateStack(stackInput)
-	if err != nil {
-		return err
-	}
-	ts.cfg.EKSConfig.AddOnALB2048.PolicyCFNStackID = aws.StringValue(stackOutput.StackId)
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
-	ch := awscfn.Poll(
-		ctx,
-		ts.cfg.Stopc,
-		ts.cfg.Sig,
-		ts.cfg.Logger,
-		ts.cfg.CloudFormationAPI,
-		ts.cfg.EKSConfig.AddOnALB2048.PolicyCFNStackID,
-		cloudformation.ResourceStatusCreateComplete,
-		25*time.Second,
-		10*time.Second,
-	)
-	var st awscfn.StackStatus
-	for st = range ch {
-		if st.Error != nil {
-			cancel()
-			ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("failed to wait for ALB Ingress Controller Policy creation (%v)", st.Error))
-			ts.cfg.Logger.Error("polling errror", zap.Error(st.Error))
-		}
-	}
-	cancel()
-	if st.Error != nil {
-		return st.Error
-	}
-
-	ts.cfg.Logger.Info("created ALB Ingress Controller Policy",
-		zap.String("policy-cfn-stack-id", ts.cfg.EKSConfig.AddOnALB2048.PolicyCFNStackID),
-		zap.String("policy-name", ts.cfg.EKSConfig.AddOnALB2048.PolicyName),
-	)
-
-	return ts.cfg.EKSConfig.Sync()
-}
-
-// https://docs.aws.amazon.com/eks/latest/userguide/alb-ingress.html
-// https://github.com/kubernetes-sigs/aws-alb-ingress-controller/blob/master/docs/examples/iam-policy.json
-func (ts *tester) deleteALBPolicy() error {
-	if ts.cfg.EKSConfig.AddOnALB2048.PolicyCFNStackID == "" {
-		ts.cfg.Logger.Info("empty policy CFN stack ID; no need to delete policy")
-		return nil
-	}
-
-	ts.cfg.Logger.Info("deleting ALB Ingress Controller Policy",
-		zap.String("policy-cfn-stack-id", ts.cfg.EKSConfig.AddOnALB2048.PolicyCFNStackID),
-	)
-	_, err := ts.cfg.CloudFormationAPI.DeleteStack(&cloudformation.DeleteStackInput{
-		StackName: aws.String(ts.cfg.EKSConfig.AddOnALB2048.PolicyCFNStackID),
-	})
-	if err != nil {
-		return err
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
-	ch := awscfn.Poll(
-		ctx,
-		make(chan struct{}),  // do not exit on stop
-		make(chan os.Signal), // do not exit on stop
-		ts.cfg.Logger,
-		ts.cfg.CloudFormationAPI,
-		ts.cfg.EKSConfig.AddOnALB2048.PolicyCFNStackID,
-		cloudformation.ResourceStatusDeleteComplete,
-		25*time.Second,
-		10*time.Second,
-	)
-	var st awscfn.StackStatus
-	for st = range ch {
-		if st.Error != nil {
-			cancel()
-			ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("failed to wait for ALB Ingress Controller Policy deletion (%v)", st.Error))
-			ts.cfg.Logger.Error("polling errror", zap.Error(st.Error))
-		}
-	}
-	cancel()
-	if st.Error != nil {
-		return st.Error
-	}
-	ts.cfg.Logger.Info("deleted ALB Ingress Controller Policy",
-		zap.String("policy-cfn-stack-id", ts.cfg.EKSConfig.AddOnALB2048.PolicyCFNStackID),
-		zap.String("policy-name", ts.cfg.EKSConfig.AddOnALB2048.PolicyName),
-	)
-
 	return ts.cfg.EKSConfig.Sync()
 }
 
@@ -580,8 +323,8 @@ func (ts *tester) createALBRBACClusterRole() error {
 				Kind:       "ClusterRole",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      albIngressControllerRBACClusterRoleName,
-				Namespace: albIngressControllerRBACClusterRoleNamespace,
+				Name:      albIngressControllerRBACRoleName,
+				Namespace: albIngressControllerRBACRoleNamespace,
 				Labels: map[string]string{
 					"app.kubernetes.io/name": albIngressControllerName,
 				},
@@ -646,7 +389,7 @@ func (ts *tester) deleteALBRBACClusterRole() error {
 		RbacV1().
 		ClusterRoles().
 		Delete(
-			albIngressControllerRBACClusterRoleName,
+			albIngressControllerRBACRoleName,
 			&metav1.DeleteOptions{
 				GracePeriodSeconds: aws.Int64(0),
 				PropagationPolicy:  &foreground,
@@ -689,7 +432,7 @@ func (ts *tester) createALBRBACClusterRoleBinding() error {
 			RoleRef: rbacv1.RoleRef{
 				APIGroup: "rbac.authorization.k8s.io",
 				Kind:     "ClusterRole",
-				Name:     albIngressControllerRBACClusterRoleName,
+				Name:     albIngressControllerRBACRoleName,
 			},
 		})
 	if err != nil {
@@ -764,7 +507,7 @@ func (ts *tester) createALBDeployment() error {
 								Args: []string{
 									"--ingress-class=alb",
 									fmt.Sprintf("--cluster-name=%s", ts.cfg.EKSConfig.Name),
-									fmt.Sprintf("--aws-vpc-id=%s", ts.cfg.EKSConfig.Status.VPCID),
+									fmt.Sprintf("--aws-vpc-id=%s", ts.cfg.EKSConfig.Parameters.VPCID),
 									fmt.Sprintf("--aws-region=%s", ts.cfg.EKSConfig.Region),
 								},
 							},

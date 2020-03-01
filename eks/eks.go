@@ -264,8 +264,8 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 		Logger:        ts.lg,
 		DebugAPICalls: ts.cfg.LogLevel == "debug",
 		Region:        ts.cfg.Region,
-		ResolverURL:   ts.cfg.Parameters.ClusterResolverURL,
-		SigningName:   ts.cfg.Parameters.ClusterSigningName,
+		ResolverURL:   ts.cfg.Parameters.ResolverURL,
+		SigningName:   ts.cfg.Parameters.SigningName,
 	})
 	if err != nil {
 		return nil, err
@@ -298,7 +298,7 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 }
 
 func (ts *Tester) createSubTesters() (err error) {
-	if !ts.cfg.AddOnManagedNodeGroups.Enable {
+	if !ts.cfg.IsAddOnManagedNodeGroupsEnabled() {
 		return nil
 	}
 
@@ -324,6 +324,7 @@ func (ts *Tester) createSubTesters() (err error) {
 		Sig:       ts.interruptSig,
 		EKSConfig: ts.cfg,
 		K8SClient: ts,
+		IAMAPI:    ts.iamAPI,
 		CFNAPI:    ts.cfnAPI,
 		EC2API:    ts.ec2API,
 		ASGAPI:    ts.asgAPI,
@@ -333,103 +334,118 @@ func (ts *Tester) createSubTesters() (err error) {
 		return err
 	}
 
-	ts.lg.Info("creating nlbHelloWorldTester")
-	ts.nlbHelloWorldTester, err = nlb.New(nlb.Config{
-		Logger:    ts.lg,
-		Stopc:     ts.stopCreationCh,
-		Sig:       ts.interruptSig,
-		EKSConfig: ts.cfg,
-		K8SClient: ts,
-		ELB2API:   ts.elbv2API,
-	})
-	if err != nil {
-		return err
+	if ts.cfg.IsAddOnNLBHelloWorldEnabled() {
+		ts.lg.Info("creating nlbHelloWorldTester")
+		ts.nlbHelloWorldTester, err = nlb.New(nlb.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			Sig:       ts.interruptSig,
+			EKSConfig: ts.cfg,
+			K8SClient: ts,
+			ELB2API:   ts.elbv2API,
+		})
+		if err != nil {
+			return err
+		}
 	}
 
-	ts.lg.Info("creating alb2048Tester")
-	ts.alb2048Tester, err = alb.New(alb.Config{
-		Logger:            ts.lg,
-		Stopc:             ts.stopCreationCh,
-		Sig:               ts.interruptSig,
-		CloudFormationAPI: ts.cfnAPI,
-		EKSConfig:         ts.cfg,
-		K8SClient:         ts,
-		ELB2API:           ts.elbv2API,
-	})
-	if err != nil {
-		return err
+	if ts.cfg.IsAddOnALB2048Enabled() {
+		ts.lg.Info("creating alb2048Tester")
+		ts.alb2048Tester, err = alb.New(alb.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			Sig:       ts.interruptSig,
+			CFNAPI:    ts.cfnAPI,
+			EKSConfig: ts.cfg,
+			K8SClient: ts,
+			ELB2API:   ts.elbv2API,
+		})
+		if err != nil {
+			return err
+		}
 	}
 
-	ts.lg.Info("creating jobPerlTester")
-	ts.jobPerlTester, err = jobs.New(jobs.Config{
-		Logger:    ts.lg,
-		Stopc:     ts.stopCreationCh,
-		Sig:       ts.interruptSig,
-		EKSConfig: ts.cfg,
-		K8SClient: ts,
-		JobName:   jobs.JobNamePi,
-		Completes: ts.cfg.AddOnJobPerl.Completes,
-		Parallels: ts.cfg.AddOnJobPerl.Parallels,
-	})
-	if err != nil {
-		return err
+	if ts.cfg.IsAddOnJobPerlEnabled() {
+		ts.lg.Info("creating jobPerlTester")
+		ts.jobPerlTester, err = jobs.New(jobs.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			Sig:       ts.interruptSig,
+			EKSConfig: ts.cfg,
+			K8SClient: ts,
+			JobName:   jobs.JobNamePi,
+			Completes: ts.cfg.AddOnJobPerl.Completes,
+			Parallels: ts.cfg.AddOnJobPerl.Parallels,
+		})
+		if err != nil {
+			return err
+		}
 	}
 
-	ts.lg.Info("creating jobEchoTester")
-	ts.jobEchoTester, err = jobs.New(jobs.Config{
-		Logger:    ts.lg,
-		Stopc:     ts.stopCreationCh,
-		Sig:       ts.interruptSig,
-		EKSConfig: ts.cfg,
-		K8SClient: ts,
-		JobName:   jobs.JobNameEcho,
-		Completes: ts.cfg.AddOnJobEcho.Completes,
-		Parallels: ts.cfg.AddOnJobEcho.Parallels,
-		EchoSize:  ts.cfg.AddOnJobEcho.Size,
-	})
-	if err != nil {
-		return err
+	if ts.cfg.IsAddOnJobEchoEnabled() {
+		ts.lg.Info("creating jobEchoTester")
+		ts.jobEchoTester, err = jobs.New(jobs.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			Sig:       ts.interruptSig,
+			EKSConfig: ts.cfg,
+			K8SClient: ts,
+			JobName:   jobs.JobNameEcho,
+			Completes: ts.cfg.AddOnJobEcho.Completes,
+			Parallels: ts.cfg.AddOnJobEcho.Parallels,
+			EchoSize:  ts.cfg.AddOnJobEcho.Size,
+		})
+		if err != nil {
+			return err
+		}
 	}
 
-	ts.lg.Info("creating secretsTester")
-	ts.secretsTester, err = secrets.New(secrets.Config{
-		Logger:    ts.lg,
-		Stopc:     ts.stopCreationCh,
-		Sig:       ts.interruptSig,
-		EKSConfig: ts.cfg,
-		K8SClient: ts,
-	})
-	if err != nil {
-		return err
+	if ts.cfg.IsAddOnSecretsEnabled() {
+		ts.lg.Info("creating secretsTester")
+		ts.secretsTester, err = secrets.New(secrets.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			Sig:       ts.interruptSig,
+			EKSConfig: ts.cfg,
+			K8SClient: ts,
+		})
+		if err != nil {
+			return err
+		}
 	}
 
-	ts.lg.Info("creating irsaTester")
-	ts.irsaTester, err = irsa.New(irsa.Config{
-		Logger:    ts.lg,
-		Stopc:     ts.stopCreationCh,
-		Sig:       ts.interruptSig,
-		EKSConfig: ts.cfg,
-		K8SClient: ts,
-		CFNAPI:    ts.cfnAPI,
-		IAMAPI:    ts.iamAPI,
-		S3API:     ts.s3API,
-	})
-	if err != nil {
-		return err
+	if ts.cfg.IsAddOnIRSAEnabled() {
+		ts.lg.Info("creating irsaTester")
+		ts.irsaTester, err = irsa.New(irsa.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			Sig:       ts.interruptSig,
+			EKSConfig: ts.cfg,
+			K8SClient: ts,
+			CFNAPI:    ts.cfnAPI,
+			IAMAPI:    ts.iamAPI,
+			S3API:     ts.s3API,
+		})
+		if err != nil {
+			return err
+		}
 	}
 
-	ts.lg.Info("creating fargateTester")
-	ts.fargateTester, err = fargate.New(fargate.Config{
-		Logger:    ts.lg,
-		Stopc:     ts.stopCreationCh,
-		Sig:       ts.interruptSig,
-		EKSConfig: ts.cfg,
-		K8SClient: ts,
-		CFNAPI:    ts.cfnAPI,
-		EKSAPI:    ts.eksAPI,
-	})
-	if err != nil {
-		return err
+	if ts.cfg.IsAddOnFargateEnabled() {
+		ts.lg.Info("creating fargateTester")
+		ts.fargateTester, err = fargate.New(fargate.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			Sig:       ts.interruptSig,
+			EKSConfig: ts.cfg,
+			K8SClient: ts,
+			IAMAPI:    ts.iamAPI,
+			CFNAPI:    ts.cfnAPI,
+			EKSAPI:    ts.eksAPI,
+		})
+		if err != nil {
+			return err
+		}
 	}
 
 	return ts.cfg.Sync()
@@ -557,7 +573,7 @@ func (ts *Tester) Up() (err error) {
 		return err
 	}
 
-	if ts.cfg.AddOnManagedNodeGroups.Enable {
+	if ts.cfg.IsAddOnManagedNodeGroupsEnabled() {
 		colorstring.Printf("\n\n\n[light_green]mngTester.Create [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		if err := catchInterrupt(
 			ts.lg,
@@ -617,7 +633,7 @@ func (ts *Tester) Up() (err error) {
 		colorstring.Printf("\n\n[light_green]SSH [default](%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		fmt.Println(ts.cfg.SSHCommands())
 
-		if ts.cfg.AddOnNLBHelloWorld.Enable {
+		if ts.cfg.IsAddOnNLBHelloWorldEnabled() {
 			colorstring.Printf("\n\n\n[light_green]nlbHelloWorldTester.Create [default](%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnNLBHelloWorld.Namespace)
 			if err := catchInterrupt(
 				ts.lg,
@@ -630,7 +646,7 @@ func (ts *Tester) Up() (err error) {
 			}
 		}
 
-		if ts.cfg.AddOnALB2048.Enable {
+		if ts.cfg.IsAddOnALB2048Enabled() {
 			colorstring.Printf("\n\n\n[light_green]alb2048Tester.Create [default](%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnALB2048.Namespace)
 			if err := catchInterrupt(
 				ts.lg,
@@ -643,7 +659,7 @@ func (ts *Tester) Up() (err error) {
 			}
 		}
 
-		if ts.cfg.AddOnJobPerl.Enable {
+		if ts.cfg.IsAddOnJobPerlEnabled() {
 			colorstring.Printf("\n\n\n[light_green]jobPerlTester.Create [default](%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnJobPerl.Namespace)
 			if err := catchInterrupt(
 				ts.lg,
@@ -656,7 +672,7 @@ func (ts *Tester) Up() (err error) {
 			}
 		}
 
-		if ts.cfg.AddOnJobEcho.Enable {
+		if ts.cfg.IsAddOnJobEchoEnabled() {
 			colorstring.Printf("\n\n\n[light_green]jobEchoTester.Create [default](%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnJobEcho.Namespace)
 			if err := catchInterrupt(
 				ts.lg,
@@ -669,7 +685,7 @@ func (ts *Tester) Up() (err error) {
 			}
 		}
 
-		if ts.cfg.AddOnSecrets.Enable {
+		if ts.cfg.IsAddOnSecretsEnabled() {
 			colorstring.Printf("\n\n\n[light_green]secretsTester.Create [default](%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnSecrets.Namespace)
 			if err := catchInterrupt(
 				ts.lg,
@@ -682,7 +698,7 @@ func (ts *Tester) Up() (err error) {
 			}
 		}
 
-		if ts.cfg.AddOnIRSA.Enable {
+		if ts.cfg.IsAddOnIRSAEnabled() {
 			colorstring.Printf("\n\n\n[light_green]irsaTester.Create [default](%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnIRSA.Namespace)
 			if err := catchInterrupt(
 				ts.lg,
@@ -695,7 +711,7 @@ func (ts *Tester) Up() (err error) {
 			}
 		}
 
-		if ts.cfg.AddOnFargate.Enable {
+		if ts.cfg.IsAddOnFargateEnabled() {
 			colorstring.Printf("\n\n\n[light_green]fargateTester.Create [default](%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnFargate.Namespace)
 			if err := catchInterrupt(
 				ts.lg,
@@ -722,7 +738,7 @@ func (ts *Tester) Up() (err error) {
 			return err
 		}
 
-		if ts.cfg.AddOnSecrets.Enable {
+		if ts.cfg.IsAddOnSecretsEnabled() {
 			colorstring.Printf("\n\n\n[light_green]secretsTester.AggregateResults [default](%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnSecrets.Namespace)
 			if err := catchInterrupt(
 				ts.lg,
@@ -735,7 +751,7 @@ func (ts *Tester) Up() (err error) {
 			}
 		}
 
-		if ts.cfg.AddOnIRSA.Enable {
+		if ts.cfg.IsAddOnIRSAEnabled() {
 			colorstring.Printf("\n\n\n[light_green]irsaTester.AggregateResults [default](%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnIRSA.Namespace)
 			if err := catchInterrupt(
 				ts.lg,
@@ -803,8 +819,8 @@ func (ts *Tester) down() (err error) {
 
 	var errs []string
 
-	if ts.cfg.AddOnManagedNodeGroups.Enable && len(ts.cfg.StatusManagedNodeGroups.Nodes) > 0 {
-		if ts.cfg.AddOnFargate.Enable && ts.cfg.AddOnFargate.Created {
+	if ts.cfg.IsAddOnManagedNodeGroupsEnabled() && len(ts.cfg.StatusManagedNodeGroups.Nodes) > 0 {
+		if ts.cfg.IsAddOnFargateEnabled() && ts.cfg.AddOnFargate.Created {
 			colorstring.Printf("\n\n\n[light_green]fargateTester.Delete [default](%q)\n", ts.cfg.ConfigPath)
 			if err := ts.fargateTester.Delete(); err != nil {
 				ts.lg.Warn("fargateTester.Delete failed", zap.Error(err))
@@ -812,7 +828,7 @@ func (ts *Tester) down() (err error) {
 			}
 		}
 
-		if ts.cfg.AddOnIRSA.Enable && ts.cfg.AddOnIRSA.Created {
+		if ts.cfg.IsAddOnIRSAEnabled() && ts.cfg.AddOnIRSA.Created {
 			colorstring.Printf("\n\n\n[light_green]irsaTester.Delete [default](%q)\n", ts.cfg.ConfigPath)
 			if err := ts.irsaTester.Delete(); err != nil {
 				ts.lg.Warn("irsaTester.Delete failed", zap.Error(err))
@@ -820,7 +836,7 @@ func (ts *Tester) down() (err error) {
 			}
 		}
 
-		if ts.cfg.AddOnSecrets.Enable && ts.cfg.AddOnSecrets.Created {
+		if ts.cfg.IsAddOnSecretsEnabled() && ts.cfg.AddOnSecrets.Created {
 			colorstring.Printf("\n\n\n[light_green]secretsTester.Delete [default](%q)\n", ts.cfg.ConfigPath)
 			if err := ts.secretsTester.Delete(); err != nil {
 				ts.lg.Warn("secretsTester.Delete failed", zap.Error(err))
@@ -828,7 +844,7 @@ func (ts *Tester) down() (err error) {
 			}
 		}
 
-		if ts.cfg.AddOnJobEcho.Enable && ts.cfg.AddOnJobEcho.Created {
+		if ts.cfg.IsAddOnJobEchoEnabled() && ts.cfg.AddOnJobEcho.Created {
 			colorstring.Printf("\n\n\n[light_green]jobEchoTester.Delete [default](%q)\n", ts.cfg.ConfigPath)
 			if err := ts.jobEchoTester.Delete(); err != nil {
 				ts.lg.Warn("jobEchoTester.Delete failed", zap.Error(err))
@@ -836,7 +852,7 @@ func (ts *Tester) down() (err error) {
 			}
 		}
 
-		if ts.cfg.AddOnJobPerl.Enable && ts.cfg.AddOnJobPerl.Created {
+		if ts.cfg.IsAddOnJobPerlEnabled() && ts.cfg.AddOnJobPerl.Created {
 			colorstring.Printf("\n\n\n[light_green]jobPerlTester.Delete [default](%q)\n", ts.cfg.ConfigPath)
 			if err := ts.jobPerlTester.Delete(); err != nil {
 				ts.lg.Warn("jobPerlTester.Delete failed", zap.Error(err))
@@ -844,7 +860,7 @@ func (ts *Tester) down() (err error) {
 			}
 		}
 
-		if ts.cfg.AddOnALB2048.Enable && ts.cfg.AddOnALB2048.Created {
+		if ts.cfg.IsAddOnALB2048Enabled() && ts.cfg.AddOnALB2048.Created {
 			colorstring.Printf("\n\n\n[light_green]alb2048Tester.Delete [default](%q)\n", ts.cfg.ConfigPath)
 			if err := ts.alb2048Tester.Delete(); err != nil {
 				ts.lg.Warn("alb2048Tester.Delete failed", zap.Error(err))
@@ -856,7 +872,7 @@ func (ts *Tester) down() (err error) {
 			}
 		}
 
-		if ts.cfg.AddOnNLBHelloWorld.Enable && ts.cfg.AddOnNLBHelloWorld.Created {
+		if ts.cfg.IsAddOnNLBHelloWorldEnabled() && ts.cfg.AddOnNLBHelloWorld.Created {
 			colorstring.Printf("\n\n\n[light_green]nlbHelloWorldTester.Delete [default](%q)\n", ts.cfg.ConfigPath)
 			if err := ts.nlbHelloWorldTester.Delete(); err != nil {
 				ts.lg.Warn("nlbHelloWorldTester.Delete failed", zap.Error(err))
@@ -884,9 +900,9 @@ func (ts *Tester) down() (err error) {
 	// https://github.com/aws/aws-k8s-tester/issues/70
 	// https://github.com/kubernetes/kubernetes/issues/53451
 	// https://github.com/kubernetes/enhancements/blob/master/keps/sig-network/20190423-service-lb-finalizer.md
-	if ts.cfg.AddOnManagedNodeGroups.Enable && len(ts.cfg.StatusManagedNodeGroups.Nodes) > 0 &&
-		((ts.cfg.AddOnALB2048.Enable && ts.cfg.AddOnALB2048.Created) ||
-			(ts.cfg.AddOnNLBHelloWorld.Enable && ts.cfg.AddOnNLBHelloWorld.Created)) {
+	if ts.cfg.IsAddOnManagedNodeGroupsEnabled() && len(ts.cfg.StatusManagedNodeGroups.Nodes) > 0 &&
+		((ts.cfg.IsAddOnALB2048Enabled() && ts.cfg.AddOnALB2048.Created) ||
+			(ts.cfg.IsAddOnNLBHelloWorldEnabled() && ts.cfg.AddOnNLBHelloWorld.Created)) {
 		waitDur := 2 * time.Minute
 		ts.lg.Info("sleeping after deleting LB", zap.Duration("wait", waitDur))
 		time.Sleep(waitDur)
@@ -895,7 +911,7 @@ func (ts *Tester) down() (err error) {
 	// following need to be run in order to resolve delete dependency
 	// DO NOT "len(ts.cfg.StatusManagedNodeGroups.Nodes) > 0"; MNG may have failed to create
 	// e.g. cluster must be deleted before VPC delete
-	if ts.cfg.AddOnManagedNodeGroups.Enable {
+	if ts.cfg.IsAddOnManagedNodeGroupsEnabled() {
 		colorstring.Printf("\n\n\n[light_green]mngTester.Delete [default](%q)\n", ts.cfg.ConfigPath)
 		if err := ts.mngTester.Delete(); err != nil {
 			ts.lg.Warn("mngTester.Delete failed", zap.Error(err))
@@ -940,7 +956,7 @@ func (ts *Tester) down() (err error) {
 // CreateMNG creates/adds EKS "Managed Node Group"s.
 // The existing node groups won't be recreated.
 func (ts *Tester) CreateMNG() error {
-	if !ts.cfg.AddOnManagedNodeGroups.Enable {
+	if !ts.cfg.IsAddOnManagedNodeGroupsEnabled() {
 		ts.lg.Warn("mng has not been enabled; skipping creation MNG")
 		return nil
 	}

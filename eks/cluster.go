@@ -45,7 +45,7 @@ Parameters:
     AllowedValues:
     - 1.14
 
-  ClusterRoleARN:
+  RoleARN:
     Description: Role ARN that EKS uses to create AWS resources for Kubernetes
     Type: String
 
@@ -64,7 +64,7 @@ Resources:
     Properties:
       Name: !Ref ClusterName
       Version: !Ref Version
-      RoleArn: !Ref ClusterRoleARN
+      RoleArn: !Ref RoleARN
       ResourcesVpcConfig:
         SubnetIds: !Ref SubnetIDs
         SecurityGroupIds:
@@ -126,36 +126,36 @@ func (ts *Tester) createEKS() error {
 	now := time.Now()
 	initialWait := 7*time.Minute + 30*time.Second
 
-	subnets := make([]string, len(ts.cfg.Status.PublicSubnetIDs))
-	copy(subnets, ts.cfg.Status.PublicSubnetIDs)
-	if len(ts.cfg.Status.PrivateSubnetIDs) > 0 {
-		subnets = append(subnets, ts.cfg.Status.PrivateSubnetIDs...)
+	subnets := make([]string, len(ts.cfg.Parameters.PublicSubnetIDs))
+	copy(subnets, ts.cfg.Parameters.PublicSubnetIDs)
+	if len(ts.cfg.Parameters.PrivateSubnetIDs) > 0 {
+		subnets = append(subnets, ts.cfg.Parameters.PrivateSubnetIDs...)
 	}
 
-	if ts.cfg.Parameters.ClusterResolverURL != "" ||
-		(ts.cfg.Parameters.ClusterRequestHeaderKey != "" &&
-			ts.cfg.Parameters.ClusterRequestHeaderValue != "") {
+	if ts.cfg.Parameters.ResolverURL != "" ||
+		(ts.cfg.Parameters.RequestHeaderKey != "" &&
+			ts.cfg.Parameters.RequestHeaderValue != "") {
 
 		ts.lg.Info("creating a cluster using EKS API",
 			zap.String("name", ts.cfg.Name),
-			zap.String("resolver-url", ts.cfg.Parameters.ClusterResolverURL),
-			zap.String("signing-name", ts.cfg.Parameters.ClusterSigningName),
-			zap.String("request-header-key", ts.cfg.Parameters.ClusterRequestHeaderKey),
-			zap.String("request-header-value", ts.cfg.Parameters.ClusterRequestHeaderValue),
+			zap.String("resolver-url", ts.cfg.Parameters.ResolverURL),
+			zap.String("signing-name", ts.cfg.Parameters.SigningName),
+			zap.String("request-header-key", ts.cfg.Parameters.RequestHeaderKey),
+			zap.String("request-header-value", ts.cfg.Parameters.RequestHeaderValue),
 		)
 		createInput := awseks.CreateClusterInput{
 			Name:    aws.String(ts.cfg.Name),
 			Version: aws.String(ts.cfg.Parameters.Version),
-			RoleArn: aws.String(ts.cfg.Status.ClusterRoleARN),
+			RoleArn: aws.String(ts.cfg.Parameters.RoleARN),
 			ResourcesVpcConfig: &awseks.VpcConfigRequest{
 				SubnetIds:        aws.StringSlice(subnets),
-				SecurityGroupIds: aws.StringSlice([]string{ts.cfg.Status.ControlPlaneSecurityGroupID}),
+				SecurityGroupIds: aws.StringSlice([]string{ts.cfg.Parameters.ControlPlaneSecurityGroupID}),
 			},
 			Tags: map[string]*string{
 				"Kind": aws.String("aws-k8s-tester"),
 			},
 		}
-		for k, v := range ts.cfg.Parameters.ClusterTags {
+		for k, v := range ts.cfg.Parameters.Tags {
 			createInput.Tags[k] = aws.String(v)
 			ts.lg.Info("added EKS tag to EKS API request",
 				zap.String("key", k),
@@ -163,11 +163,11 @@ func (ts *Tester) createEKS() error {
 			)
 		}
 		req, _ := ts.eksAPI.CreateClusterRequest(&createInput)
-		if ts.cfg.Parameters.ClusterRequestHeaderKey != "" && ts.cfg.Parameters.ClusterRequestHeaderValue != "" {
-			req.HTTPRequest.Header[ts.cfg.Parameters.ClusterRequestHeaderKey] = []string{ts.cfg.Parameters.ClusterRequestHeaderValue}
+		if ts.cfg.Parameters.RequestHeaderKey != "" && ts.cfg.Parameters.RequestHeaderValue != "" {
+			req.HTTPRequest.Header[ts.cfg.Parameters.RequestHeaderKey] = []string{ts.cfg.Parameters.RequestHeaderValue}
 			ts.lg.Info("set request header for EKS create request",
-				zap.String("key", ts.cfg.Parameters.ClusterRequestHeaderKey),
-				zap.String("value", ts.cfg.Parameters.ClusterRequestHeaderValue),
+				zap.String("key", ts.cfg.Parameters.RequestHeaderKey),
+				zap.String("value", ts.cfg.Parameters.RequestHeaderValue),
 			)
 		}
 		err := req.Send()
@@ -199,8 +199,8 @@ func (ts *Tester) createEKS() error {
 					ParameterValue: aws.String(ts.cfg.Parameters.Version),
 				},
 				{
-					ParameterKey:   aws.String("ClusterRoleARN"),
-					ParameterValue: aws.String(ts.cfg.Status.ClusterRoleARN),
+					ParameterKey:   aws.String("RoleARN"),
+					ParameterValue: aws.String(ts.cfg.Parameters.RoleARN),
 				},
 				{
 					ParameterKey:   aws.String("SubnetIDs"),
@@ -208,15 +208,15 @@ func (ts *Tester) createEKS() error {
 				},
 				{
 					ParameterKey:   aws.String("ControlPlaneSecurityGroupID"),
-					ParameterValue: aws.String(ts.cfg.Status.ControlPlaneSecurityGroupID),
+					ParameterValue: aws.String(ts.cfg.Parameters.ControlPlaneSecurityGroupID),
 				},
 			},
 		}
-		if ts.cfg.Status.EncryptionCMKARN != "" {
-			// TODO
+		if ts.cfg.Parameters.EncryptionCMKARN != "" {
 			ts.lg.Info("added encryption config to EKS CFN request",
-				zap.String("cmk-arn", ts.cfg.Status.EncryptionCMKARN),
+				zap.String("cmk-arn", ts.cfg.Parameters.EncryptionCMKARN),
 			)
+			// TODO
 		}
 		stackOutput, err := ts.cfnAPI.CreateStack(stackInput)
 		if err != nil {

@@ -5,13 +5,28 @@
 <hr>
 
 
-## [v0.6.7](https://github.com/aws/aws-k8s-tester/releases/tag/v0.6.7) (2020-02)
+## [v0.6.7](https://github.com/aws/aws-k8s-tester/releases/tag/v0.6.7) (2020-02-29)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.6.6...v0.6.7).
+
+### `eksconfig`
+
+- Add [`AddOnFargate.RoleCreate`](https://github.com/aws/aws-k8s-tester/commit/5548b155d10ac8b4fc3231f0dd0f6fd77690d405).
+- Clean up [`Config.ValidateAndSetDefaults`](https://github.com/aws/aws-k8s-tester/commit/5548b155d10ac8b4fc3231f0dd0f6fd77690d405).
+- Clean up [role create validation](https://github.com/aws/aws-k8s-tester/commit/5548b155d10ac8b4fc3231f0dd0f6fd77690d405).
+- Remove [`Cluster` from all `Parameters.Cluster*` fields](https://github.com/aws/aws-k8s-tester/commit/5548b155d10ac8b4fc3231f0dd0f6fd77690d405).
+  - e.g. Change `AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_` to `AWS_K8S_TESTER_EKS_PARAMETERS_`.
+  - e.g. Change `AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_SIGNING_NAME` to `AWS_K8S_TESTER_EKS_PARAMETERS_SIGNING_NAME`.
+- Remove [`Status.RoleCFNStackID`](https://github.com/aws/aws-k8s-tester/commit/5548b155d10ac8b4fc3231f0dd0f6fd77690d405).
+- Remove [`Status.RoleARN`](https://github.com/aws/aws-k8s-tester/commit/5548b155d10ac8b4fc3231f0dd0f6fd77690d405).
+- Remove [`StatusManagedNodeGroup.RoleName`](https://github.com/aws/aws-k8s-tester/commit/5548b155d10ac8b4fc3231f0dd0f6fd77690d405).
+- Remove [`StatusManagedNodeGroup.RoleARN`](https://github.com/aws/aws-k8s-tester/commit/5548b155d10ac8b4fc3231f0dd0f6fd77690d405).
+- Remove [`StatusManagedNodeGroup.RoleCFNStackID`](https://github.com/aws/aws-k8s-tester/commit/5548b155d10ac8b4fc3231f0dd0f6fd77690d405).
 
 ### `eks`
 
 - Fix [health check output](https://github.com/aws/aws-k8s-tester/commit/05f0101effb4b776b4f089adba0439371565d9aa).
+- Clean up [`eks/alb` policy creation](https://github.com/aws/aws-k8s-tester/commit/).
 
 ### Go
 

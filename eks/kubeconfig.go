@@ -77,8 +77,8 @@ func (ts *Tester) updateKUBECONFIG() error {
 		fmt.Sprintf("--kubeconfig=%s", ts.cfg.KubeConfigPath),
 		"--verbose",
 	}
-	if ts.cfg.Parameters.ClusterResolverURL != "" {
-		args = append(args, fmt.Sprintf("--endpoint=%s", ts.cfg.Parameters.ClusterResolverURL))
+	if ts.cfg.Parameters.ResolverURL != "" {
+		args = append(args, fmt.Sprintf("--endpoint=%s", ts.cfg.Parameters.ResolverURL))
 	}
 	ts.lg.Info("writing KUBECONFIG with 'aws eks update-kubeconfig'",
 		zap.String("kubeconfig-path", ts.cfg.KubeConfigPath),

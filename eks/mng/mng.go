@@ -25,6 +25,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/eks"
 	awseks "github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
+	"github.com/aws/aws-sdk-go/service/iam/iamiface"
 	"github.com/dustin/go-humanize"
 	"github.com/mitchellh/colorstring"
 	"go.uber.org/zap"
@@ -231,6 +232,7 @@ type Config struct {
 	Sig       chan os.Signal
 	EKSConfig *eksconfig.Config
 	K8SClient k8sClientSetGetter
+	IAMAPI    iamiface.IAMAPI
 	CFNAPI    cloudformationiface.CloudFormationAPI
 	EC2API    ec2iface.EC2API
 	ASGAPI    autoscalingiface.AutoScalingAPI
@@ -278,8 +280,8 @@ func (ts *tester) Create() (err error) {
 		ts.cfg.Logger.Info("ManagedNodeGroup is already created; skipping creation")
 		return nil
 	}
-	if len(ts.cfg.EKSConfig.Status.PublicSubnetIDs) == 0 {
-		return errors.New("empty EKSConfig.Status.PublicSubnetIDs")
+	if len(ts.cfg.EKSConfig.Parameters.PublicSubnetIDs) == 0 {
+		return errors.New("empty EKSConfig.Parameters.PublicSubnetIDs")
 	}
 
 	defer func() {
@@ -359,8 +361,8 @@ func (ts *tester) createMNG() error {
 		ts.cfg.EKSConfig.StatusManagedNodeGroups.CreateTookString = ts.cfg.EKSConfig.StatusManagedNodeGroups.CreateTook.String()
 	}()
 
-	if ts.cfg.EKSConfig.StatusManagedNodeGroups.RoleARN == "" {
-		return errors.New("empty StatusManagedNodeGroups.RoleARN")
+	if ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleARN == "" {
+		return errors.New("empty AddOnManagedNodeGroups.RoleARN")
 	}
 
 	// need use EKS API directly for beta
@@ -398,7 +400,7 @@ func (ts *tester) createMNG() error {
 			createInput := awseks.CreateNodegroupInput{
 				ClusterName:   aws.String(ts.cfg.EKSConfig.Name),
 				NodegroupName: aws.String(mv.Name),
-				NodeRole:      aws.String(ts.cfg.EKSConfig.StatusManagedNodeGroups.RoleARN),
+				NodeRole:      aws.String(ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleARN),
 				AmiType:       aws.String(mv.AMIType),
 				DiskSize:      aws.Int64(int64(mv.VolumeSize)),
 				InstanceTypes: aws.StringSlice(mv.InstanceTypes),
@@ -410,7 +412,7 @@ func (ts *tester) createMNG() error {
 					MinSize:     aws.Int64(int64(mv.ASGMinSize)),
 					MaxSize:     aws.Int64(int64(mv.ASGMaxSize)),
 				},
-				Subnets: aws.StringSlice(ts.cfg.EKSConfig.Status.PublicSubnetIDs),
+				Subnets: aws.StringSlice(ts.cfg.EKSConfig.Parameters.PublicSubnetIDs),
 				Tags: map[string]*string{
 					"Kind": aws.String("aws-k8s-tester"),
 				},
@@ -485,7 +487,7 @@ func (ts *tester) createMNG() error {
 					},
 					{
 						ParameterKey:   aws.String("ManagedNodeGroupRoleARN"),
-						ParameterValue: aws.String(ts.cfg.EKSConfig.StatusManagedNodeGroups.RoleARN),
+						ParameterValue: aws.String(ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleARN),
 					},
 					{
 						ParameterKey:   aws.String("ManagedNodeGroupName"),
@@ -493,7 +495,7 @@ func (ts *tester) createMNG() error {
 					},
 					{
 						ParameterKey:   aws.String("PublicSubnetIDs"),
-						ParameterValue: aws.String(strings.Join(ts.cfg.EKSConfig.Status.PublicSubnetIDs, ",")),
+						ParameterValue: aws.String(strings.Join(ts.cfg.EKSConfig.Parameters.PublicSubnetIDs, ",")),
 					},
 					{
 						ParameterKey:   aws.String("ManagedNodeGroupSSHKeyPairName"),

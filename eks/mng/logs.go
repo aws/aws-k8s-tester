@@ -30,8 +30,8 @@ var logCmds = map[string]string{
 
 // FetchLogs downloads logs from managed node group instances.
 func (ts *tester) FetchLogs() (err error) {
-	if !ts.cfg.EKSConfig.AddOnManagedNodeGroups.Enable {
-		return fmt.Errorf("AddOnManagedNodeGroups.Enable %v; no managed node group to fetch logs for", ts.cfg.EKSConfig.AddOnManagedNodeGroups.Enable)
+	if !ts.cfg.EKSConfig.IsAddOnManagedNodeGroupsEnabled() {
+		return fmt.Errorf("IsAddOnManagedNodeGroupsEnabled %v; no managed node group to fetch logs for", ts.cfg.EKSConfig.IsAddOnManagedNodeGroupsEnabled())
 	}
 	if err := os.MkdirAll(ts.cfg.EKSConfig.AddOnManagedNodeGroups.LogsDir, 0700); err != nil {
 		return err
