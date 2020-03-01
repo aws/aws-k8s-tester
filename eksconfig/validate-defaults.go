@@ -296,6 +296,18 @@ func (cfg *Config) validateConfig() error {
 	if filepath.Ext(cfg.SSHCommandsOutputPath) != ".sh" {
 		cfg.SSHCommandsOutputPath = cfg.SSHCommandsOutputPath + ".sh"
 	}
+	if cfg.CommandAfterCreateClusterOutputPath == "" {
+		cfg.CommandAfterCreateClusterOutputPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".after-create-cluster.out.log"
+	}
+	if filepath.Ext(cfg.CommandAfterCreateClusterOutputPath) != ".log" {
+		cfg.CommandAfterCreateClusterOutputPath = cfg.CommandAfterCreateClusterOutputPath + ".log"
+	}
+	if cfg.CommandAfterCreateAddOnsOutputPath == "" {
+		cfg.CommandAfterCreateAddOnsOutputPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".after-create-add-ons.out.log"
+	}
+	if filepath.Ext(cfg.CommandAfterCreateAddOnsOutputPath) != ".log" {
+		cfg.CommandAfterCreateAddOnsOutputPath = cfg.CommandAfterCreateAddOnsOutputPath + ".log"
+	}
 	if cfg.KubeConfigPath == "" {
 		cfg.KubeConfigPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".kubeconfig.yaml"
 	}
