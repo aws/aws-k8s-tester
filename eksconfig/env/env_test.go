@@ -62,24 +62,24 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_PRIVATE_SUBNET_CIDR_1")
 	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_PRIVATE_SUBNET_CIDR_2", "private-cidr2")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_PRIVATE_SUBNET_CIDR_2")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_TAGS", "to-delete=2019;hello-world=test")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_TAGS")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_REQUEST_HEADER_KEY", "eks-options")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_REQUEST_HEADER_KEY")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_REQUEST_HEADER_VALUE", "kubernetesVersion=1.11")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_REQUEST_HEADER_VALUE")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_RESOLVER_URL", "amazon.com")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_RESOLVER_URL")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_SIGNING_NAME", "a")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_SIGNING_NAME")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_ROLE_CREATE", "false")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_ROLE_CREATE")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_ROLE_ARN", "cluster-role-arn")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_ROLE_ARN")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_ROLE_SERVICE_PRINCIPALS", "eks.amazonaws.com,eks-beta-pdx.aws.internal,eks-dev.aws.internal")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_ROLE_SERVICE_PRINCIPALS")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_ROLE_MANAGED_POLICY_ARNS", "arn:aws:iam::aws:policy/AmazonEKSServicePolicy,arn:aws:iam::aws:policy/AmazonEKSClusterPolicy,arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_CLUSTER_ROLE_MANAGED_POLICY_ARNS")
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_TAGS", "to-delete=2019;hello-world=test")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_TAGS")
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_REQUEST_HEADER_KEY", "eks-options")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_REQUEST_HEADER_KEY")
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_REQUEST_HEADER_VALUE", "kubernetesVersion=1.11")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_REQUEST_HEADER_VALUE")
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_RESOLVER_URL", "amazon.com")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_RESOLVER_URL")
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_SIGNING_NAME", "a")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_SIGNING_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_CREATE", "false")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_CREATE")
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_ARN", "cluster-role-arn")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_ARN")
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_SERVICE_PRINCIPALS", "eks.amazonaws.com,eks-beta-pdx.aws.internal,eks-dev.aws.internal")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_SERVICE_PRINCIPALS")
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_MANAGED_POLICY_ARNS", "arn:aws:iam::aws:policy/AmazonEKSServicePolicy,arn:aws:iam::aws:policy/AmazonEKSClusterPolicy,arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_MANAGED_POLICY_ARNS")
 	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_VERSION", "1.15")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_VERSION")
 	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_ENCRYPTION_CMK_CREATE", "false")
@@ -145,10 +145,6 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_ALB_NAME")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_URL", "invalid")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_URL")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_POLICY_NAME", "my-policy")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_POLICY_NAME")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_POLICY_CFN_STACK_ID", "my-id")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_POLICY_CFN_STACK_ID")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_DEPLOYMENT_REPLICAS_ALB", "333")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_DEPLOYMENT_REPLICAS_ALB")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_DEPLOYMENT_REPLICAS_2048", "555")
@@ -305,43 +301,43 @@ func TestEnv(t *testing.T) {
 	if cfg.Parameters.PrivateSubnetCIDR2 != "private-cidr2" {
 		t.Fatalf("unexpected Parameters.PrivateSubnetCIDR2 %q", cfg.Parameters.PrivateSubnetCIDR2)
 	}
-	expectedClusterTags := map[string]string{"to-delete": "2019", "hello-world": "test"}
-	if !reflect.DeepEqual(cfg.Parameters.ClusterTags, expectedClusterTags) {
-		t.Fatalf("Tags expected %v, got %v", expectedClusterTags, cfg.Parameters.ClusterTags)
+	expectedTags := map[string]string{"to-delete": "2019", "hello-world": "test"}
+	if !reflect.DeepEqual(cfg.Parameters.Tags, expectedTags) {
+		t.Fatalf("Tags expected %v, got %v", expectedTags, cfg.Parameters.Tags)
 	}
-	if cfg.Parameters.ClusterRequestHeaderKey != "eks-options" {
-		t.Fatalf("unexpected Parameters.ClusterRequestHeaderKey %q", cfg.Parameters.ClusterRequestHeaderKey)
+	if cfg.Parameters.RequestHeaderKey != "eks-options" {
+		t.Fatalf("unexpected Parameters.RequestHeaderKey %q", cfg.Parameters.RequestHeaderKey)
 	}
-	if cfg.Parameters.ClusterRequestHeaderValue != "kubernetesVersion=1.11" {
-		t.Fatalf("unexpected Parameters.ClusterRequestHeaderValue %q", cfg.Parameters.ClusterRequestHeaderValue)
+	if cfg.Parameters.RequestHeaderValue != "kubernetesVersion=1.11" {
+		t.Fatalf("unexpected Parameters.RequestHeaderValue %q", cfg.Parameters.RequestHeaderValue)
 	}
-	if cfg.Parameters.ClusterResolverURL != "amazon.com" {
-		t.Fatalf("unexpected Parameters.ClusterResolverURL %q", cfg.Parameters.ClusterResolverURL)
+	if cfg.Parameters.ResolverURL != "amazon.com" {
+		t.Fatalf("unexpected Parameters.ResolverURL %q", cfg.Parameters.ResolverURL)
 	}
-	if cfg.Parameters.ClusterSigningName != "a" {
-		t.Fatalf("unexpected Parameters.ClusterSigningName %q", cfg.Parameters.ClusterSigningName)
+	if cfg.Parameters.SigningName != "a" {
+		t.Fatalf("unexpected Parameters.SigningName %q", cfg.Parameters.SigningName)
 	}
-	if cfg.Parameters.ClusterRoleCreate {
-		t.Fatalf("unexpected Parameters.ClusterRoleCreate %v", cfg.Parameters.ClusterRoleCreate)
+	if cfg.Parameters.RoleCreate {
+		t.Fatalf("unexpected Parameters.RoleCreate %v", cfg.Parameters.RoleCreate)
 	}
-	if cfg.Parameters.ClusterRoleARN != "cluster-role-arn" {
-		t.Fatalf("unexpected Parameters.ClusterRoleARN %q", cfg.Parameters.ClusterRoleARN)
+	if cfg.Parameters.RoleARN != "cluster-role-arn" {
+		t.Fatalf("unexpected Parameters.RoleARN %q", cfg.Parameters.RoleARN)
 	}
-	expectedClusterRoleServicePrincipals := []string{
+	expectedRoleServicePrincipals := []string{
 		"eks.amazonaws.com",
 		"eks-beta-pdx.aws.internal",
 		"eks-dev.aws.internal",
 	}
-	if !reflect.DeepEqual(expectedClusterRoleServicePrincipals, cfg.Parameters.ClusterRoleServicePrincipals) {
-		t.Fatalf("unexpected Parameters.ClusterRoleServicePrincipals %+v", cfg.Parameters.ClusterRoleServicePrincipals)
+	if !reflect.DeepEqual(expectedRoleServicePrincipals, cfg.Parameters.RoleServicePrincipals) {
+		t.Fatalf("unexpected Parameters.RoleServicePrincipals %+v", cfg.Parameters.RoleServicePrincipals)
 	}
-	expectedClusterRoleManagedPolicyARNs := []string{
+	expectedRoleManagedPolicyARNs := []string{
 		"arn:aws:iam::aws:policy/AmazonEKSServicePolicy",
 		"arn:aws:iam::aws:policy/AmazonEKSClusterPolicy",
 		"arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM",
 	}
-	if !reflect.DeepEqual(expectedClusterRoleManagedPolicyARNs, cfg.Parameters.ClusterRoleManagedPolicyARNs) {
-		t.Fatalf("unexpected Parameters.ClusterRoleManagedPolicyARNs %+v", cfg.Parameters.ClusterRoleManagedPolicyARNs)
+	if !reflect.DeepEqual(expectedRoleManagedPolicyARNs, cfg.Parameters.RoleManagedPolicyARNs) {
+		t.Fatalf("unexpected Parameters.RoleManagedPolicyARNs %+v", cfg.Parameters.RoleManagedPolicyARNs)
 	}
 	if cfg.Parameters.Version != "1.15" {
 		t.Fatalf("unexpected Parameters.Version %q", cfg.Parameters.Version)
@@ -473,12 +469,6 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.AddOnALB2048.URL != "" { // env should be ignored for read-only
 		t.Fatalf("unexpected cfg.AddOnALB2048.URL %q", cfg.AddOnALB2048.URL)
-	}
-	if cfg.AddOnALB2048.PolicyCFNStackID != "" { // env should be ignored for read-only
-		t.Fatalf("unexpected cfg.AddOnALB2048.PolicyCFNStackID %q", cfg.AddOnALB2048.PolicyCFNStackID)
-	}
-	if cfg.AddOnALB2048.PolicyName != "my-policy" { // env should be ignored for read-only
-		t.Fatalf("unexpected cfg.AddOnALB2048.PolicyName %q", cfg.AddOnALB2048.PolicyName)
 	}
 	if cfg.AddOnALB2048.DeploymentReplicasALB != 333 {
 		t.Fatalf("unexpected cfg.AddOnALB2048.DeploymentReplicasALB %d", cfg.AddOnALB2048.DeploymentReplicasALB)
@@ -630,11 +620,18 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("unexpected cfg.AddOnFargate.ContainerName %q", cfg.AddOnFargate.ContainerName)
 	}
 
-	cfg.Parameters.ClusterRoleManagedPolicyARNs = nil
-	cfg.Parameters.ClusterRoleServicePrincipals = nil
+	cfg.Parameters.RoleManagedPolicyARNs = nil
+	cfg.Parameters.RoleServicePrincipals = nil
 	cfg.AddOnManagedNodeGroups.RoleName = ""
 	cfg.AddOnManagedNodeGroups.RoleManagedPolicyARNs = nil
 	cfg.AddOnManagedNodeGroups.RoleServicePrincipals = nil
+	if err := cfg.ValidateAndSetDefaults(); err != nil {
+		t.Fatal(err)
+	}
+	cfg.AddOnNLBHelloWorld.Enable = false
+	cfg.AddOnALB2048.Enable = false
+	cfg.AddOnJobEcho.Enable = false
+	cfg.AddOnJobPerl.Enable = false
 	if err := cfg.ValidateAndSetDefaults(); err != nil {
 		t.Fatal(err)
 	}
@@ -643,17 +640,9 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("unexpected cfg.AddOnFargate.SecretName %q", cfg.AddOnFargate.SecretName)
 	}
 
-	if err := cfg.Sync(); err != nil {
-		t.Fatal(err)
-	}
-	fmt.Println(cfg.Name)
-
 	d, err := ioutil.ReadFile(cfg.ConfigPath)
 	if err != nil {
 		t.Fatal(err)
 	}
 	fmt.Println(string(d))
-	os.RemoveAll(cfg.ConfigPath)
-
-	fmt.Println(cfg.KubectlCommands())
 }

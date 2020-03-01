@@ -15,7 +15,7 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-// Config defines EKS test configuration.
+// Config defines EKS configuration.
 type Config struct {
 	mu sync.RWMutex
 
@@ -109,38 +109,39 @@ type Config struct {
 
 // Parameters defines parameters for EKS "cluster" creation.
 type Parameters struct {
-	// ClusterRoleName is the name of the managed node group.
-	ClusterRoleName string `json:"cluster-role-name,omitempty"`
-	// ClusterRoleCreate is true to auto-create and delete cluster role.
-	ClusterRoleCreate bool `json:"cluster-role-create"`
-	// ClusterRoleARN is the role ARN that EKS uses to create AWS resources for Kubernetes.
+	// RoleName is the name of cluster role.
+	RoleName string `json:"role-name"`
+	// RoleCreate is true to auto-create and delete cluster role.
+	RoleCreate bool `json:"role-create"`
+	// RoleARN is the role ARN that EKS uses to create AWS resources for Kubernetes.
 	// By default, it's empty which triggers tester to create one.
-	ClusterRoleARN string `json:"cluster-role-arn,omitempty"`
-	// ClusterRoleServicePrincipals is the EKS Role Service Principals
-	ClusterRoleServicePrincipals []string `json:"cluster-role-service-principals,omitempty"`
-	// ClusterRoleManagedPolicyARNs is EKS Role managed policy ARNs.
-	ClusterRoleManagedPolicyARNs []string `json:"cluster-role-managed-policy-arns,omitempty"`
+	RoleARN string `json:"role-arn"`
+	// RoleServicePrincipals is the EKS Role Service Principals
+	RoleServicePrincipals []string `json:"role-service-principals"`
+	// RoleManagedPolicyARNs is EKS Role managed policy ARNs.
+	RoleManagedPolicyARNs []string `json:"role-managed-policy-arns"`
+	RoleCFNStackID        string   `json:"role-cfn-stack-id" read-only:"true"`
 
-	// ClusterTags defines EKS create cluster tags.
-	ClusterTags map[string]string `json:"cluster-tags,omitempty"`
-	// ClusterRequestHeaderKey defines EKS create cluster request header key.
-	ClusterRequestHeaderKey string `json:"cluster-request-header-key,omitempty"`
-	// ClusterRequestHeaderValue defines EKS create cluster request header value.
-	ClusterRequestHeaderValue string `json:"cluster-request-header-value,omitempty"`
+	// Tags defines EKS create cluster tags.
+	Tags map[string]string `json:"tags"`
+	// RequestHeaderKey defines EKS create cluster request header key.
+	RequestHeaderKey string `json:"request-header-key"`
+	// RequestHeaderValue defines EKS create cluster request header value.
+	RequestHeaderValue string `json:"request-header-value"`
 
-	// ClusterResolverURL defines an AWS resolver endpoint for EKS API.
+	// ResolverURL defines an AWS resolver endpoint for EKS API.
 	// Must be left empty to use production EKS service.
-	ClusterResolverURL string `json:"cluster-resolver-url"`
-	// ClusterSigningName is the EKS create request signing name.
-	ClusterSigningName string `json:"cluster-signing-name"`
+	ResolverURL string `json:"resolver-url"`
+	// SigningName is the EKS create request signing name.
+	SigningName string `json:"signing-name"`
 
 	// VPCCreate is true to auto-create and delete VPC.
 	VPCCreate bool `json:"vpc-create"`
 	// VPCID is the VPC ID for cluster creation.
 	// If not empty, VPC is reused and not deleted.
 	// If empty, VPC is created anew and deleted on cluster deletion.
-	VPCID string `json:"vpc-id"`
-
+	VPCID         string `json:"vpc-id"`
+	VPCCFNStackID string `json:"vpc-cfn-stack-id" read-only:"true"`
 	// VpcCIDR is the IP range (CIDR notation) for VPC, must be a valid private
 	// (RFC 1918) CIDR range.
 	VPCCIDR string `json:"vpc-cidr,omitempty"`
@@ -154,10 +155,18 @@ type Parameters struct {
 	PrivateSubnetCIDR1 string `json:"private-subnet-cidr-1,omitempty"`
 	// PrivateSubnetCIDR2 is the CIDR Block for subnet 2 within the VPC.
 	PrivateSubnetCIDR2 string `json:"private-subnet-cidr-2,omitempty"`
+	// PublicSubnetIDs is the list of all public subnets in the VPC.
+	PublicSubnetIDs []string `json:"public-subnet-ids"`
+	// PrivateSubnetIDs is the list of all private subnets in the VPC.
+	PrivateSubnetIDs []string `json:"private-subnet-ids"`
+	// ControlPlaneSecurityGroupID is the security group ID for the cluster control
+	// plane communication with worker nodes.
+	ControlPlaneSecurityGroupID string `json:"control-plane-security-group-id"`
 
 	// Version is the version of EKS Kubernetes "cluster".
 	// If empty, set default version.
-	Version string `json:"version,omitempty"`
+	Version      string  `json:"version"`
+	VersionValue float64 `json:"version-value" read-only:"true"`
 
 	// EncryptionCMKCreate is true to auto-create and delete KMS CMK
 	// for encryption feature.
@@ -179,17 +188,18 @@ type AddOnManagedNodeGroups struct {
 	Created bool `json:"created" read-only:"true"`
 
 	// RoleName is the name of the managed node group.
-	RoleName string `json:"role-name,omitempty"`
+	RoleName string `json:"role-name"`
 	// RoleCreate is true to auto-create and delete role.
 	RoleCreate bool `json:"role-create"`
 	// RoleARN is the role ARN that EKS managed node group uses to create AWS
 	// resources for Kubernetes.
 	// By default, it's empty which triggers tester to create one.
-	RoleARN string `json:"role-arn,omitempty"`
+	RoleARN string `json:"role-arn"`
 	// RoleServicePrincipals is the node group Service Principals
-	RoleServicePrincipals []string `json:"role-service-principals,omitempty"`
+	RoleServicePrincipals []string `json:"role-service-principals"`
 	// RoleManagedPolicyARNs is node group managed policy ARNs.
-	RoleManagedPolicyARNs []string `json:"role-managed-policy-arns,omitempty"`
+	RoleManagedPolicyARNs []string `json:"role-managed-policy-arns"`
+	RoleCFNStackID        string   `json:"role-cfn-stack-id" read-only:"true"`
 
 	// RequestHeaderKey defines EKS managed node group create cluster request header key.
 	RequestHeaderKey string `json:"request-header-key,omitempty"`
@@ -311,11 +321,6 @@ type AddOnALB2048 struct {
 	DeleteTook time.Duration `json:"delete-took,omitempty" read-only:"true"`
 	// DeleteTookString is the duration that took to create the resource.
 	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
-
-	// PolicyCFNStackID is the CloudFormation stack ID
-	// for ALB Ingress Controller IAM policy.
-	PolicyCFNStackID string `json:"policy-cfn-stack-id" read-only:"true"`
-	PolicyName       string `json:"policy-name"`
 
 	// Namespace is the namespace to create "ALB" objects in.
 	Namespace string `json:"namespace"`
@@ -482,11 +487,10 @@ type AddOnIRSA struct {
 	RoleName string `json:"role-name"`
 	// RoleARN is the role ARN for IRSA.
 	RoleARN string `json:"role-arn"`
-	// RoleCFNStackID is the CloudFormation stack ID for IRSA.
-	RoleCFNStackID string `json:"role-cfn-stack-id"`
 	// RoleManagedPolicyARNs is IRSA role managed policy ARNs.
 	// ref. https://aws.amazon.com/blogs/opensource/introducing-fine-grained-iam-roles-service-accounts/
-	RoleManagedPolicyARNs []string `json:"role-managed-policy-arns,omitempty"`
+	RoleManagedPolicyARNs []string `json:"role-managed-policy-arns"`
+	RoleCFNStackID        string   `json:"role-cfn-stack-id" read-only:"true"`
 
 	// ServiceAccountName is the ServiceAccount name.
 	ServiceAccountName string `json:"service-account-name"`
@@ -534,14 +538,15 @@ type AddOnFargate struct {
 
 	// RoleName is the role name for Fargate.
 	RoleName string `json:"role-name"`
-	// RoleCFNStackID is the CloudFormation stack ID for Fargate.
-	RoleCFNStackID string `json:"role-cfn-stack-id"`
+	// RoleCreate is true to auto-create and delete role.
+	RoleCreate bool `json:"role-create"`
 	// RoleARN is the role ARN for Fargate.
 	RoleARN string `json:"role-arn"`
 	// RoleServicePrincipals is the Fargate role Service Principals
-	RoleServicePrincipals []string `json:"role-service-principals,omitempty"`
+	RoleServicePrincipals []string `json:"role-service-principals"`
 	// RoleManagedPolicyARNs is Fargate role managed policy ARNs.
-	RoleManagedPolicyARNs []string `json:"role-managed-policy-arns,omitempty"`
+	RoleManagedPolicyARNs []string `json:"role-managed-policy-arns"`
+	RoleCFNStackID        string   `json:"role-cfn-stack-id" read-only:"true"`
 
 	// ProfileName is the profile name for Fargate.
 	ProfileName string `json:"profile-name"`
@@ -574,32 +579,15 @@ type Status struct {
 	AWSUserID string `json:"aws-user-id"`
 	// AWSIAMRoleARN is the user IAM Role ARN of the eks tester caller session.
 	AWSIAMRoleARN string `json:"aws-iam-role-arn"`
-
 	// AWSCredentialPath is automatically set via AWS SDK Go.
 	// And to be mounted as a volume as 'Secret' object.
 	AWSCredentialPath string `json:"aws-credential-path"`
 
-	ClusterRoleCFNStackID string `json:"cluster-role-cfn-stack-id"`
-	ClusterRoleARN        string `json:"cluster-role-arn"`
-
-	VPCCFNStackID string `json:"vpc-cfn-stack-id"`
-	VPCID         string `json:"vpc-id"`
-
-	// PublicSubnetIDs is the list of all public subnets in the VPC.
-	PublicSubnetIDs []string `json:"public-subnet-ids"`
-	// PrivateSubnetIDs is the list of all private subnets in the VPC.
-	PrivateSubnetIDs []string `json:"private-subnet-ids"`
-	// ControlPlaneSecurityGroupID is the security group ID for the cluster control
-	// plane communication with worker nodes.
-	ControlPlaneSecurityGroupID string `json:"control-plane-security-group-id"`
-
 	ClusterCFNStackID string `json:"cluster-cfn-stack-id"`
 	ClusterARN        string `json:"cluster-arn"`
-
 	// ClusterAPIServerEndpoint is the cluster endpoint of the EKS cluster,
 	// required for KUBECONFIG write.
 	ClusterAPIServerEndpoint string `json:"cluster-api-server-endpoint"`
-
 	// ClusterOIDCIssuerURL is the issuer URL for the OpenID Connect
 	// (https://openid.net/connect/) identity provider .
 	ClusterOIDCIssuerURL string `json:"cluster-oidc-issuer-url"`
@@ -620,11 +608,6 @@ type Status struct {
 	ClusterStatusCurrent string `json:"cluster-status-current"`
 	// ClusterStatus represents the status of the cluster.
 	ClusterStatus []ClusterStatus `json:"cluster-status"`
-
-	// EncryptionCMKARN is the KMS CMK ID, if any.
-	EncryptionCMKARN string `json:"encryption-cmk-arn"`
-	// EncryptionCMKID is the KMS CMK ID, if any.
-	EncryptionCMKID string `json:"encryption-cmk-id"`
 }
 
 // ClusterStatus represents the cluster status.
@@ -662,7 +645,7 @@ func (cfg *Config) RecordStatus(status string) {
 	n := len(cfg.Status.ClusterStatus)
 	if n == 0 {
 		cfg.Status.ClusterStatus = []ClusterStatus{sv}
-		cfg.sync()
+		cfg.unsafeSync()
 		return
 	}
 
@@ -670,7 +653,7 @@ func (cfg *Config) RecordStatus(status string) {
 	copy(copied[1:], cfg.Status.ClusterStatus)
 	copied[0] = sv
 	cfg.Status.ClusterStatus = copied
-	cfg.sync()
+	cfg.unsafeSync()
 }
 
 // StatusManagedNodeGroups represents the status of EKS "Managed Node Group".
@@ -685,13 +668,6 @@ type StatusManagedNodeGroups struct {
 	DeleteTook time.Duration `json:"delete-took,omitempty" read-only:"true"`
 	// DeleteTookString is the duration that took to create the resource.
 	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
-
-	RoleName string `json:"role-name"`
-	RoleARN  string `json:"role-arn"`
-	// RoleCFNStackID is the CloudFormation stack ID for a managed node group role.
-	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
-	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
-	RoleCFNStackID string `json:"role-cfn-stack-id"`
 
 	// NvidiaDriverInstalled is true if nvidia driver has been installed.
 	NvidiaDriverInstalled bool `json:"nvidia-driver-installed"`
@@ -756,7 +732,7 @@ func Load(p string) (cfg *Config, err error) {
 		return nil, err
 	}
 	cfg.ConfigPath = ap
-	cfg.Sync()
+	cfg.unsafeSync()
 
 	return cfg, nil
 }
@@ -765,10 +741,10 @@ func Load(p string) (cfg *Config, err error) {
 func (cfg *Config) Sync() (err error) {
 	cfg.mu.Lock()
 	defer cfg.mu.Unlock()
-	return cfg.sync()
+	return cfg.unsafeSync()
 }
 
-func (cfg *Config) sync() (err error) {
+func (cfg *Config) unsafeSync() (err error) {
 	var p string
 	if cfg.ConfigPath != "" && !filepath.IsAbs(cfg.ConfigPath) {
 		p, err = filepath.Abs(cfg.ConfigPath)
@@ -799,7 +775,7 @@ func (cfg *Config) sync() (err error) {
 	if err != nil {
 		return fmt.Errorf("failed to write file %q (%v)", cfg.KubectlCommandsOutputPath, err)
 	}
-	err = ioutil.WriteFile(cfg.SSHCommandsOutputPath, []byte(cmdTop+cfg.SSHCommands()), 0600)
+	err = ioutil.WriteFile(cfg.SSHCommandsOutputPath, []byte(cmdTop+cfg.unsafeSSHCommands()), 0600)
 	if err != nil {
 		return fmt.Errorf("failed to write file %q (%v)", cfg.SSHCommandsOutputPath, err)
 	}
@@ -900,7 +876,13 @@ sonobuoy e2e --kubeconfig={{ .KubeConfigPath }} $results
 `
 
 // SSHCommands returns the SSH commands.
-func (cfg *Config) SSHCommands() (s string) {
+func (cfg *Config) SSHCommands() string {
+	cfg.mu.RLock()
+	defer cfg.mu.RUnlock()
+	return cfg.unsafeSSHCommands()
+}
+
+func (cfg *Config) unsafeSSHCommands() (s string) {
 	if cfg.StatusManagedNodeGroups == nil {
 		return ""
 	}

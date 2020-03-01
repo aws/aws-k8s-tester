@@ -51,15 +51,11 @@ var DefaultConfig = Config{
 	OnFailureDeleteWaitSeconds: 120,
 
 	Parameters: &Parameters{
-		ClusterRoleName:     "",
-		ClusterRoleCreate:   true,
-		ClusterRoleARN:      "",
+		RoleCreate:          true,
 		VPCCreate:           true,
-		VPCID:               "",
-		ClusterSigningName:  "eks",
+		SigningName:         "eks",
 		Version:             "1.14",
 		EncryptionCMKCreate: true,
-		EncryptionCMKARN:    "",
 	},
 
 	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
@@ -68,9 +64,7 @@ var DefaultConfig = Config{
 		Enable:      false,
 		SigningName: "eks",
 
-		RoleName:   "",
 		RoleCreate: true,
-		RoleARN:    "",
 
 		// keep in-sync with the default value in https://pkg.go.dev/k8s.io/kubernetes/test/e2e/framework#GetSigner
 		RemoteAccessPrivateKeyPath: filepath.Join(homedir.HomeDir(), ".ssh", "kube_aws_rsa"),
@@ -130,13 +124,13 @@ var DefaultConfig = Config{
 	},
 
 	AddOnFargate: &AddOnFargate{
-		Enable: false,
+		Enable:     false,
+		RoleCreate: true,
 	},
 
 	// read-only
 	Status: &Status{Up: false},
 	StatusManagedNodeGroups: &StatusManagedNodeGroups{
-		RoleCFNStackID:        "",
 		NvidiaDriverInstalled: false,
 		Nodes:                 make(map[string]StatusManagedNodeGroup),
 	},
@@ -212,6 +206,47 @@ func init() {
 // And updates empty fields with default values.
 // At the end, it writes populated YAML to aws-k8s-tester config path.
 func (cfg *Config) ValidateAndSetDefaults() error {
+	cfg.mu.Lock()
+	defer func() {
+		cfg.unsafeSync()
+		cfg.mu.Unlock()
+	}()
+
+	if err := cfg.validateConfig(); err != nil {
+		return fmt.Errorf("validateConfig failed [%v]", err)
+	}
+	if err := cfg.validateParameters(); err != nil {
+		return fmt.Errorf("validateParameters failed [%v]", err)
+	}
+	if err := cfg.validateAddOnManagedNodeGroups(); err != nil {
+		return fmt.Errorf("validateAddOnManagedNodeGroups failed [%v]", err)
+	}
+	if err := cfg.validateAddOnNLBHelloWorld(); err != nil {
+		return fmt.Errorf("validateAddOnNLBHelloWorld failed [%v]", err)
+	}
+	if err := cfg.validateAddOnALB2048(); err != nil {
+		return fmt.Errorf("validateAddOnALB2048 failed [%v]", err)
+	}
+	if err := cfg.validateAddOnJobPerl(); err != nil {
+		return fmt.Errorf("validateAddOnJobPerl failed [%v]", err)
+	}
+	if err := cfg.validateAddOnJobEcho(); err != nil {
+		return fmt.Errorf("validateAddOnJobEcho failed [%v]", err)
+	}
+	if err := cfg.validateAddOnSecrets(); err != nil {
+		return fmt.Errorf("validateAddOnSecrets failed [%v]", err)
+	}
+	if err := cfg.validateAddOnIRSA(); err != nil {
+		return fmt.Errorf("validateAddOnIRSA failed [%v]", err)
+	}
+	if err := cfg.validateAddOnFargate(); err != nil {
+		return fmt.Errorf("validateAddOnFargate failed [%v]", err)
+	}
+
+	return nil
+}
+
+func (cfg *Config) validateConfig() error {
 	if _, ok := aws.RegionToAiport[cfg.Region]; !ok {
 		return fmt.Errorf("region %q not found", cfg.Region)
 	}
@@ -267,204 +302,144 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	if filepath.Ext(cfg.KubeConfigPath) != ".yaml" {
 		cfg.KubeConfigPath = cfg.KubeConfigPath + ".yaml"
 	}
-	if cfg.AddOnManagedNodeGroups.LogsDir == "" {
-		cfg.AddOnManagedNodeGroups.LogsDir = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-mng-logs")
-	}
-	cfg.Sync()
 
 	if !strings.Contains(cfg.KubectlDownloadURL, runtime.GOOS) {
 		return fmt.Errorf("kubectl-download-url %q build OS mismatch, expected %q", cfg.KubectlDownloadURL, runtime.GOOS)
 	}
 
-	if cfg.Status.ClusterRoleCFNStackID != "" && cfg.Status.ClusterRoleARN == "" {
-		return fmt.Errorf("non-empty Status.ClusterRoleCFNStackID %q, but empty Status.ClusterRoleARN",
-			cfg.Status.ClusterRoleCFNStackID,
-		)
-	}
-	if cfg.StatusManagedNodeGroups.RoleCFNStackID != "" && cfg.StatusManagedNodeGroups.RoleARN == "" {
-		return fmt.Errorf("non-empty StatusManagedNodeGroups.RoleCFNStackID %q, but empty StatusManagedNodeGroups.RoleARN",
-			cfg.StatusManagedNodeGroups.RoleCFNStackID,
-		)
-	}
+	return nil
+}
 
-	if cfg.Parameters.VPCID != "" &&
-		cfg.Status.VPCID != "" &&
-		cfg.Parameters.VPCID != cfg.Status.VPCID {
-		return fmt.Errorf("cfg.Parameters.VPCID %q != cfg.Status.VPCID %q", cfg.Parameters.VPCID, cfg.Status.VPCID)
-	}
-
-	// validate VPC-related
-	if cfg.Parameters.VPCCIDR != "" {
-		if cfg.Parameters.PublicSubnetCIDR1 == "" {
-			return fmt.Errorf("non-empty Parameters.VPCCIDR %q, but got empty Parameters.PublicSubnetCIDR1", cfg.Parameters.VPCCIDR)
-		}
-		if cfg.Parameters.PublicSubnetCIDR2 == "" {
-			return fmt.Errorf("non-empty Parameters.VPCCIDR %q, but got empty Parameters.PublicSubnetCIDR2", cfg.Parameters.VPCCIDR)
-		}
-		if cfg.Parameters.PublicSubnetCIDR3 == "" {
-			return fmt.Errorf("non-empty Parameters.VPCCIDR %q, but got empty Parameters.PublicSubnetCIDR3", cfg.Parameters.VPCCIDR)
-		}
-		if cfg.Parameters.PrivateSubnetCIDR1 == "" {
-			return fmt.Errorf("non-empty Parameters.VPCCIDR %q, but got empty Parameters.PrivateSubnetCIDR1", cfg.Parameters.VPCCIDR)
-		}
-		if cfg.Parameters.PrivateSubnetCIDR2 == "" {
-			return fmt.Errorf("non-empty Parameters.VPCCIDR %q, but got empty Parameters.PrivateSubnetCIDR2", cfg.Parameters.VPCCIDR)
-		}
-	}
-	if cfg.Parameters.PublicSubnetCIDR1 != "" {
-		if cfg.Parameters.VPCCIDR == "" {
-			return fmt.Errorf("non-empty Parameters.PublicSubnetCIDR1 %q, but got empty Parameters.VPCCIDR", cfg.Parameters.PublicSubnetCIDR1)
-		}
-	}
-	if cfg.Parameters.PublicSubnetCIDR2 != "" {
-		if cfg.Parameters.VPCCIDR == "" {
-			return fmt.Errorf("non-empty Parameters.PublicSubnetCIDR2 %q, but got empty Parameters.VPCCIDR", cfg.Parameters.PublicSubnetCIDR2)
-		}
-	}
-	if cfg.Parameters.PublicSubnetCIDR3 != "" {
-		if cfg.Parameters.VPCCIDR == "" {
-			return fmt.Errorf("non-empty Parameters.PublicSubnetCIDR3 %q, but got empty Parameters.VPCCIDR", cfg.Parameters.PublicSubnetCIDR3)
-		}
-	}
-	if cfg.Parameters.PrivateSubnetCIDR1 != "" {
-		if cfg.Parameters.VPCCIDR == "" {
-			return fmt.Errorf("non-empty Parameters.PrivateSubnetCIDR1 %q, but got empty Parameters.VPCCIDR", cfg.Parameters.PrivateSubnetCIDR1)
-		}
-	}
-	if cfg.Parameters.PrivateSubnetCIDR2 != "" {
-		if cfg.Parameters.VPCCIDR == "" {
-			return fmt.Errorf("non-empty Parameters.PrivateSubnetCIDR2 %q, but got empty Parameters.VPCCIDR", cfg.Parameters.PrivateSubnetCIDR2)
-		}
-	}
-	if cfg.Status.VPCCFNStackID != "" && cfg.Status.VPCID == "" {
-		return fmt.Errorf("non-empty Status.VPCCFNStackID %q, but empty Status.VPCID",
-			cfg.Status.VPCCFNStackID)
-	}
-	if len(cfg.Status.PublicSubnetIDs) > 0 {
-		if cfg.Status.ControlPlaneSecurityGroupID == "" {
-			return fmt.Errorf("non-empty Status.PublicSubnetIDs %+v, but empty Status.ControlPlaneSecurityGroupID",
-				cfg.Status.PublicSubnetIDs,
-			)
-		}
-	}
-	if cfg.Status.ControlPlaneSecurityGroupID != "" {
-		if len(cfg.Status.PublicSubnetIDs) == 0 {
-			return fmt.Errorf("non-empty Status.ControlPlaneSecurityGroupID %q, but empty Status.PublicSubnetIDs",
-				cfg.Status.ControlPlaneSecurityGroupID,
-			)
-		}
-	}
-
-	// validate cluster-related
+func (cfg *Config) validateParameters() error {
 	if cfg.Parameters.Version == "" {
 		return errors.New("empty Parameters.Version")
 	}
-	vv, err := strconv.ParseFloat(cfg.Parameters.Version, 64)
+	var err error
+	cfg.Parameters.VersionValue, err = strconv.ParseFloat(cfg.Parameters.Version, 64)
 	if err != nil {
 		return fmt.Errorf("cannot parse Parameters.Version %q (%v)", cfg.Parameters.Version, err)
 	}
-	if vv < 1.14 && cfg.AddOnManagedNodeGroups.Enable {
-		return fmt.Errorf("AddOnManagedNodeGroups only supports Parameters.Version >=1.14, got %f", vv)
-	}
-	if vv < 1.14 && cfg.AddOnFargate.Enable {
-		return fmt.Errorf("AddOnFargate only supports Parameters.Version >=1.14, got %f", vv)
-	}
 
-	if cfg.Parameters.VPCID != "" { // reuse existing vpc
-		cfg.Status.VPCID = cfg.Parameters.VPCID
-	}
-	if cfg.Parameters.VPCCreate && cfg.Parameters.VPCID != "" {
-		return fmt.Errorf("invalid config: Parameters.VPCCreate (%v), Parameters.VPCID (%q)", cfg.Parameters.VPCCreate, cfg.Parameters.VPCID)
-	}
-	if !cfg.Parameters.VPCCreate && cfg.Parameters.VPCID == "" {
-		return fmt.Errorf("Parameters.VPCCreate false, so expect non-empty Parameters.VPCID but got %q", cfg.Parameters.VPCID)
-	}
-
-	if cfg.Parameters.ClusterRoleCreate && cfg.Parameters.ClusterRoleName == "" {
-		cfg.Parameters.ClusterRoleName = cfg.Name + "-role-cluster"
-	}
-	if cfg.Parameters.ClusterRoleARN != "" { // reuse existing role
-		cfg.Status.ClusterRoleARN = cfg.Parameters.ClusterRoleARN
-	}
-	if cfg.Parameters.ClusterRoleCreate && cfg.Parameters.ClusterRoleARN != "" {
-		return fmt.Errorf("invalid config: Parameters.ClusterRoleCreate (%v), Parameters.ClusterRoleARN (%q)", cfg.Parameters.ClusterRoleCreate, cfg.Parameters.ClusterRoleARN)
-	}
-	if !cfg.Parameters.ClusterRoleCreate && cfg.Parameters.ClusterRoleName != "" {
-		return fmt.Errorf("Parameters.ClusterRoleCreate false, so expect empty Parameters.ClusterRoleName but got %q", cfg.Parameters.ClusterRoleName)
-	}
-	if !cfg.Parameters.ClusterRoleCreate && cfg.Parameters.ClusterRoleARN == "" {
-		return fmt.Errorf("Parameters.ClusterRoleCreate false, so expect non-empty Parameters.ClusterRoleARN but got %q", cfg.Parameters.ClusterRoleARN)
-	}
-	if !cfg.Parameters.ClusterRoleCreate && len(cfg.Parameters.ClusterRoleManagedPolicyARNs) > 0 {
-		return fmt.Errorf("Parameters.ClusterRoleCreate false, so expect empty Parameters.ClusterRoleManagedPolicyARNs but got %q", cfg.Parameters.ClusterRoleManagedPolicyARNs)
-	}
-	if !cfg.Parameters.ClusterRoleCreate && len(cfg.Parameters.ClusterRoleServicePrincipals) > 0 {
-		return fmt.Errorf("Parameters.ClusterRoleCreate false, so expect empty Parameters.ClusterRoleServicePrincipals but got %q", cfg.Parameters.ClusterRoleServicePrincipals)
-	}
-
-	if cfg.Parameters.EncryptionCMKCreate && cfg.Parameters.EncryptionCMKARN != "" {
-		return fmt.Errorf("Parameters.EncryptionCMKCreate true, so expect empty Parameters.EncryptionCMKARN but got %q", cfg.Parameters.EncryptionCMKARN)
-	}
-	if !cfg.Parameters.EncryptionCMKCreate && cfg.Parameters.EncryptionCMKARN == "" {
-		return fmt.Errorf("Parameters.EncryptionCMKCreate false, so expect non-empty Parameters.EncryptionCMKARN but got %q", cfg.Parameters.EncryptionCMKARN)
-	}
-
-	if cfg.AddOnManagedNodeGroups.RoleCreate && cfg.AddOnManagedNodeGroups.RoleARN == "" {
-		cfg.AddOnManagedNodeGroups.RoleName = cfg.Name + "-role-mng"
-	}
-	if cfg.AddOnManagedNodeGroups.RoleARN != "" { // reuse existing role
-		cfg.StatusManagedNodeGroups.RoleARN = cfg.AddOnManagedNodeGroups.RoleARN
-	}
-	if cfg.AddOnManagedNodeGroups.RoleName != "" { // reuse existing role
-		cfg.StatusManagedNodeGroups.RoleName = cfg.AddOnManagedNodeGroups.RoleName
-	}
-	if cfg.AddOnManagedNodeGroups.RoleARN != "" &&
-		cfg.StatusManagedNodeGroups.RoleName == "" {
-		ss := strings.Split(cfg.AddOnManagedNodeGroups.RoleARN, "/")
-		if len(ss) > 0 {
-			cfg.StatusManagedNodeGroups.RoleName = ss[len(ss)-1]
+	switch cfg.Parameters.RoleCreate {
+	case true: // need create one, or already created
+		if cfg.Parameters.RoleName == "" {
+			cfg.Parameters.RoleName = cfg.Name + "-role-cluster"
 		}
-	}
-	if cfg.AddOnManagedNodeGroups.RoleCreate && cfg.AddOnManagedNodeGroups.RoleARN != "" {
-		return fmt.Errorf("invalid config: AddOnManagedNodeGroups.RoleCreate (%v), AddOnManagedNodeGroups.RoleARN (%q)", cfg.AddOnManagedNodeGroups.RoleCreate, cfg.AddOnManagedNodeGroups.RoleARN)
-	}
-	if !cfg.AddOnManagedNodeGroups.RoleCreate && cfg.AddOnManagedNodeGroups.RoleName != "" {
-		return fmt.Errorf("AddOnManagedNodeGroups.RoleCreate false, so expect empty AddOnManagedNodeGroups.RoleName but got %q", cfg.AddOnManagedNodeGroups.RoleName)
-	}
-	if !cfg.AddOnManagedNodeGroups.RoleCreate && cfg.AddOnManagedNodeGroups.RoleARN == "" {
-		return fmt.Errorf("AddOnManagedNodeGroups.RoleCreate false, so expect non-empty AddOnManagedNodeGroups.RoleARN but got %q", cfg.AddOnManagedNodeGroups.RoleARN)
-	}
-	if !cfg.AddOnManagedNodeGroups.RoleCreate && len(cfg.AddOnManagedNodeGroups.RoleManagedPolicyARNs) > 0 {
-		return fmt.Errorf("AddOnManagedNodeGroups.RoleCreate false, so expect empty AddOnManagedNodeGroups.RoleManagedPolicyARNs but got %q", cfg.AddOnManagedNodeGroups.RoleManagedPolicyARNs)
-	}
-	if !cfg.AddOnManagedNodeGroups.RoleCreate && len(cfg.AddOnManagedNodeGroups.RoleServicePrincipals) > 0 {
-		return fmt.Errorf("AddOnManagedNodeGroups.RoleCreate false, so expect empty AddOnManagedNodeGroups.RoleServicePrincipals but got %q", cfg.AddOnManagedNodeGroups.RoleServicePrincipals)
-	}
+		if cfg.Parameters.RoleARN != "" {
+			// just ignore...
+			// could be populated from previous run
+			// do not error, so long as RoleCreate false, role won't be deleted
+		}
 
-	if cfg.Status.ClusterCFNStackID != "" {
-		if cfg.Status.ClusterARN == "" {
-			return fmt.Errorf("non-empty Status.ClusterCFNStackID %q, but empty Status.ClusterARN", cfg.Status.ClusterCFNStackID)
+	case false: // use existing one
+		if cfg.Parameters.RoleARN == "" {
+			return fmt.Errorf("Parameters.RoleCreate false; expect non-empty RoleARN but got %q", cfg.Parameters.RoleARN)
 		}
-		if cfg.Status.ClusterCA == "" {
-			return fmt.Errorf("non-empty Status.ClusterCFNStackID %q, but empty Status.ClusterCA", cfg.Status.ClusterCFNStackID)
+		if cfg.Parameters.RoleName == "" {
+			cfg.Parameters.RoleName = getNameFromARN(cfg.Parameters.RoleARN)
 		}
-		if cfg.Status.ClusterCADecoded == "" {
-			return fmt.Errorf("non-empty Status.ClusterCFNStackID %q, but empty Status.ClusterCADecoded", cfg.Status.ClusterCFNStackID)
+		if len(cfg.Parameters.RoleManagedPolicyARNs) > 0 {
+			return fmt.Errorf("Parameters.RoleCreate false; expect empty RoleManagedPolicyARNs but got %q", cfg.Parameters.RoleManagedPolicyARNs)
+		}
+		if len(cfg.Parameters.RoleServicePrincipals) > 0 {
+			return fmt.Errorf("Parameters.RoleCreate false; expect empty RoleServicePrincipals but got %q", cfg.Parameters.RoleServicePrincipals)
 		}
 	}
 
-	// if created via EKS API, no need to error in the following case:
-	// cfg.Status.ClusterARN != "" && cfg.Status.ClusterCA == "" || cfg.Status.ClusterCADecoded == ""
+	switch cfg.Parameters.VPCCreate {
+	case true: // need create one, or already created
+		if cfg.Parameters.VPCID != "" {
+			// just ignore...
+			// could be populated from previous run
+			// do not error, so long as VPCCreate false, VPC won't be deleted
+		}
+	case false: // use existing one
+		if cfg.Parameters.VPCID == "" {
+			return fmt.Errorf("Parameters.RoleCreate false; expect non-empty VPCID but got %q", cfg.Parameters.VPCID)
+		}
+	}
+
+	switch cfg.Parameters.EncryptionCMKCreate {
+	case true: // need create one, or already created
+		if cfg.Parameters.EncryptionCMKARN != "" {
+			// just ignore...
+			// could be populated from previous run
+			// do not error, so long as EncryptionCMKCreate false, CMK won't be deleted
+		}
+	case false: // use existing one
+		if cfg.Parameters.EncryptionCMKARN == "" {
+			// return fmt.Errorf("Parameters.EncryptionCMKCreate false; expect non-empty EncryptionCMKARN but got %q", cfg.Parameters.EncryptionCMKARN)
+		}
+	}
+
+	switch {
+	case cfg.Parameters.VPCCIDR != "":
+		switch {
+		case cfg.Parameters.PublicSubnetCIDR1 == "":
+			return fmt.Errorf("empty Parameters.PublicSubnetCIDR1 when VPCCIDR is %q", cfg.Parameters.VPCCIDR)
+		case cfg.Parameters.PublicSubnetCIDR2 == "":
+			return fmt.Errorf("empty Parameters.PublicSubnetCIDR2 when VPCCIDR is %q", cfg.Parameters.VPCCIDR)
+		case cfg.Parameters.PublicSubnetCIDR3 == "":
+			return fmt.Errorf("empty Parameters.PublicSubnetCIDR3 when VPCCIDR is %q", cfg.Parameters.VPCCIDR)
+		case cfg.Parameters.PrivateSubnetCIDR1 == "":
+			return fmt.Errorf("empty Parameters.PrivateSubnetCIDR1 when VPCCIDR is %q", cfg.Parameters.VPCCIDR)
+		case cfg.Parameters.PrivateSubnetCIDR2 == "":
+			return fmt.Errorf("empty Parameters.PrivateSubnetCIDR2 when VPCCIDR is %q", cfg.Parameters.VPCCIDR)
+		}
+
+	case cfg.Parameters.VPCCIDR == "":
+		switch {
+		case cfg.Parameters.PublicSubnetCIDR1 != "":
+			return fmt.Errorf("non-empty Parameters.PublicSubnetCIDR1 %q when VPCCIDR is empty", cfg.Parameters.PublicSubnetCIDR1)
+		case cfg.Parameters.PublicSubnetCIDR2 != "":
+			return fmt.Errorf("non-empty Parameters.PublicSubnetCIDR2 %q when VPCCIDR is empty", cfg.Parameters.PublicSubnetCIDR2)
+		case cfg.Parameters.PublicSubnetCIDR3 != "":
+			return fmt.Errorf("non-empty Parameters.PublicSubnetCIDR3 %q when VPCCIDR is empty", cfg.Parameters.PublicSubnetCIDR3)
+		case cfg.Parameters.PrivateSubnetCIDR1 != "":
+			return fmt.Errorf("non-empty Parameters.PrivateSubnetCIDR1 %q when VPCCIDR is empty", cfg.Parameters.PrivateSubnetCIDR1)
+		case cfg.Parameters.PrivateSubnetCIDR2 != "":
+			return fmt.Errorf("non-empty Parameters.PrivateSubnetCIDR2 %q when VPCCIDR is empty", cfg.Parameters.PrivateSubnetCIDR2)
+		}
+	}
+
+	return nil
+}
+
+func (cfg *Config) validateAddOnManagedNodeGroups() error {
+	if cfg.AddOnManagedNodeGroups == nil {
+		return nil
+	}
+	if !cfg.AddOnManagedNodeGroups.Enable {
+		cfg.AddOnManagedNodeGroups = nil
+		return nil
+	}
+
+	if cfg.Parameters.VersionValue < 1.14 {
+		return fmt.Errorf("Version %q not supported for AddOnManagedNodeGroups", cfg.Parameters.Version)
+	}
+	if cfg.AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath == "" {
+		return errors.New("empty AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath")
+	}
+	if cfg.AddOnManagedNodeGroups.RemoteAccessUserName == "" {
+		return errors.New("empty AddOnManagedNodeGroups.RemoteAccessUserName")
+	}
 
 	if cfg.AddOnManagedNodeGroups.SSHKeyPairName == "" {
 		cfg.AddOnManagedNodeGroups.SSHKeyPairName = cfg.Name + "-ssh"
 	}
-	if cfg.AddOnManagedNodeGroups.Enable {
-		if cfg.AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath == "" {
-			return errors.New("empty AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath")
+	if cfg.AddOnManagedNodeGroups.LogsDir == "" {
+		cfg.AddOnManagedNodeGroups.LogsDir = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-mng-logs")
+	}
+
+	switch cfg.AddOnManagedNodeGroups.RoleCreate {
+	case true: // need create one, or already created
+		if cfg.AddOnManagedNodeGroups.RoleName == "" {
+			cfg.AddOnManagedNodeGroups.RoleName = cfg.Name + "-role-mng"
 		}
-		if cfg.AddOnManagedNodeGroups.RemoteAccessUserName == "" {
-			return errors.New("empty AddOnManagedNodeGroups.RemoteAccessUserName")
+		if cfg.AddOnManagedNodeGroups.RoleARN != "" {
+			// just ignore...
+			// could be populated from previous run
+			// do not error, so long as RoleCreate false, role won't be deleted
 		}
 		if len(cfg.AddOnManagedNodeGroups.RoleServicePrincipals) > 0 {
 			/*
@@ -486,219 +461,357 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 				return fmt.Errorf("AddOnManagedNodeGroups.RoleServicePrincipals %q must include 'ec2.amazonaws.com'", cfg.AddOnManagedNodeGroups.RoleServicePrincipals)
 			}
 		}
-		n := len(cfg.AddOnManagedNodeGroups.MNGs)
-		if n == 0 {
-			return errors.New("AddOnManagedNodeGroups.Enable but empty AddOnManagedNodeGroups.MNGs")
-		}
-		if n > MNGNodesMaxLimit {
-			return fmt.Errorf("AddOnManagedNodeGroups.MNGs %d exceeds maximum number of node groups per EKS which is %d", n, MNGNodesMaxLimit)
-		}
-		names := make(map[string]struct{})
-		for k, v := range cfg.AddOnManagedNodeGroups.MNGs {
-			if v.Name == "" {
-				return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].Name is empty", k)
-			}
-			if k != v.Name {
-				return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].Name has different Name field %q", k, v.Name)
-			}
-			_, ok := names[v.Name]
-			if !ok {
-				names[v.Name] = struct{}{}
-			} else {
-				return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].Name %q is redundant", k, v.Name)
-			}
 
-			if v.VolumeSize == 0 {
-				v.VolumeSize = DefaultNodeVolumeSize
-			}
-
-			switch v.AMIType {
-			case eks.AMITypesAl2X8664:
-				if len(v.InstanceTypes) == 0 {
-					v.InstanceTypes = []string{DefaultNodeInstanceTypeCPU}
-				}
-			case eks.AMITypesAl2X8664Gpu:
-				if len(v.InstanceTypes) == 0 {
-					v.InstanceTypes = []string{DefaultNodeInstanceTypeGPU}
-				}
-			default:
-				return fmt.Errorf("unknown AddOnManagedNodeGroups.MNGs[%q].AMIType %q", k, v.AMIType)
-			}
-
-			if cfg.AddOnNLBHelloWorld.Enable || cfg.AddOnALB2048.Enable {
-				for _, itp := range v.InstanceTypes {
-					// "m3.xlarge" or "c4.xlarge" will fail with "InvalidTarget: Targets {...} are not supported"
-					// ref. https://github.com/aws/amazon-vpc-cni-k8s/pull/821
-					// ref. https://github.com/kubernetes/kubernetes/issues/66044#issuecomment-408188524
-					switch {
-					case strings.HasPrefix(itp, "m3."),
-						strings.HasPrefix(itp, "c4."):
-						return fmt.Errorf("AddOnNLBHelloWorld.Enable[%v] || AddOnALB2048.Enable[%v], but older instance type InstanceTypes %q for %q", cfg.AddOnNLBHelloWorld.Enable, cfg.AddOnALB2048.Enable, itp, k)
-					default:
-					}
-				}
-			}
-
-			if v.ASGMinSize > v.ASGMaxSize {
-				return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].ASGMinSize %d > ASGMaxSize %d", k, v.ASGMinSize, v.ASGMaxSize)
-			}
-			if v.ASGDesiredCapacity > v.ASGMaxSize {
-				return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].ASGDesiredCapacity %d > ASGMaxSize %d", k, v.ASGDesiredCapacity, v.ASGMaxSize)
-			}
-			if v.ASGMaxSize > MNGNodesMaxLimit {
-				return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].ASGMaxSize %d > MNGNodesMaxLimit %d", k, v.ASGMaxSize, MNGNodesMaxLimit)
-			}
-			if v.ASGDesiredCapacity > MNGNodesMaxLimit {
-				return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].ASGDesiredCapacity %d > MNGNodesMaxLimit %d", k, v.ASGDesiredCapacity, MNGNodesMaxLimit)
-			}
-
-			if cfg.AddOnNLBHelloWorld.Enable && cfg.AddOnNLBHelloWorld.DeploymentReplicas < int32(v.ASGDesiredCapacity) {
-				cfg.AddOnNLBHelloWorld.DeploymentReplicas = int32(v.ASGDesiredCapacity)
-			}
-			if cfg.AddOnALB2048.Enable && cfg.AddOnALB2048.DeploymentReplicasALB < int32(v.ASGDesiredCapacity) {
-				cfg.AddOnALB2048.DeploymentReplicasALB = int32(v.ASGDesiredCapacity)
-			}
-			if cfg.AddOnALB2048.Enable && cfg.AddOnALB2048.DeploymentReplicas2048 < int32(v.ASGDesiredCapacity) {
-				cfg.AddOnALB2048.DeploymentReplicas2048 = int32(v.ASGDesiredCapacity)
-			}
-
-			cfg.AddOnManagedNodeGroups.MNGs[k] = v
+	case false: // use existing one
+		if cfg.AddOnManagedNodeGroups.RoleARN == "" {
+			return fmt.Errorf("AddOnManagedNodeGroups.RoleCreate false; expect non-empty RoleARN but got %q", cfg.AddOnManagedNodeGroups.RoleARN)
 		}
-
-		if cfg.AddOnJobEcho.Size > 250000 {
-			return fmt.Errorf("echo size limit is 0.25 MB, got %d", cfg.AddOnJobEcho.Size)
+		if cfg.AddOnManagedNodeGroups.RoleName == "" {
+			cfg.AddOnManagedNodeGroups.RoleName = getNameFromARN(cfg.AddOnManagedNodeGroups.RoleARN)
 		}
-
-		if cfg.AddOnNLBHelloWorld.Namespace == "" {
-			cfg.AddOnNLBHelloWorld.Namespace = cfg.Name + "-nlb-hello-world"
+		if len(cfg.AddOnManagedNodeGroups.RoleManagedPolicyARNs) > 0 {
+			return fmt.Errorf("AddOnManagedNodeGroups.RoleCreate false; expect empty RoleManagedPolicyARNs but got %q", cfg.AddOnManagedNodeGroups.RoleManagedPolicyARNs)
 		}
-		if cfg.AddOnALB2048.Namespace == "" {
-			cfg.AddOnALB2048.Namespace = cfg.Name + "-alb-2048"
-		}
-		if cfg.AddOnALB2048.PolicyName == "" {
-			cfg.AddOnALB2048.PolicyName = cfg.Name + "-alb-ingress-controller-policy"
-		}
-		if cfg.AddOnJobPerl.Namespace == "" {
-			cfg.AddOnJobPerl.Namespace = cfg.Name + "-job-perl"
-		}
-		if cfg.AddOnJobPerl.Namespace == cfg.Name {
-			return fmt.Errorf("AddOnJobPerl.Namespace %q conflicts with %q", cfg.AddOnJobPerl.Namespace, cfg.Name)
-		}
-		if cfg.AddOnJobEcho.Namespace == "" {
-			cfg.AddOnJobEcho.Namespace = cfg.Name + "-job-echo"
-		}
-		if cfg.AddOnJobEcho.Namespace == cfg.Name {
-			return fmt.Errorf("AddOnJobEcho.Namespace %q conflicts with %q", cfg.AddOnJobEcho.Namespace, cfg.Name)
-		}
-		if cfg.AddOnSecrets.Namespace == "" {
-			cfg.AddOnSecrets.Namespace = cfg.Name + "-secrets"
-		}
-		if cfg.AddOnSecrets.Namespace == cfg.Name {
-			return fmt.Errorf("AddOnSecrets.Namespace %q conflicts with %q", cfg.AddOnSecrets.Namespace, cfg.Name)
-		}
-		if cfg.AddOnIRSA.Namespace == "" {
-			cfg.AddOnIRSA.Namespace = cfg.Name + "-irsa"
-		}
-		if cfg.AddOnIRSA.Namespace == cfg.Name {
-			return fmt.Errorf("AddOnIRSA.Namespace %q conflicts with %q", cfg.AddOnIRSA.Namespace, cfg.Name)
-		}
-		if cfg.AddOnIRSA.ServiceAccountName == "" {
-			cfg.AddOnIRSA.ServiceAccountName = cfg.Name + "-irsa-service-account"
-		}
-		if cfg.AddOnIRSA.ConfigMapName == "" {
-			cfg.AddOnIRSA.ConfigMapName = cfg.Name + "-irsa-configmap"
-		}
-		if cfg.AddOnIRSA.ConfigMapScriptFileName == "" {
-			cfg.AddOnIRSA.ConfigMapScriptFileName = cfg.Name + "-irsa-configmap.sh"
-		}
-		if cfg.AddOnIRSA.S3BucketName == "" {
-			cfg.AddOnIRSA.S3BucketName = cfg.Name + "-irsa-s3-bucket"
-		}
-		if cfg.AddOnIRSA.S3Key == "" {
-			cfg.AddOnIRSA.S3Key = cfg.Name + "-irsa-s3-key"
-		}
-		if cfg.AddOnIRSA.DeploymentName == "" {
-			cfg.AddOnIRSA.DeploymentName = cfg.Name + "-irsa-deployment"
-		}
-		if cfg.AddOnIRSA.DeploymentResultPath == "" {
-			cfg.AddOnIRSA.DeploymentResultPath = filepath.Join(
-				filepath.Dir(cfg.ConfigPath),
-				cfg.Name+"-irsa-deployment-result.log",
-			)
-		}
-		if cfg.AddOnFargate.Namespace == "" {
-			cfg.AddOnFargate.Namespace = cfg.Name + "-fargate"
-		}
-		if cfg.AddOnFargate.Namespace == cfg.Name {
-			return fmt.Errorf("AddOnFargate.Namespace %q conflicts with %q", cfg.AddOnFargate.Namespace, cfg.Name)
-		}
-
-		if cfg.AddOnSecrets.WritesResultPath == "" {
-			cfg.AddOnSecrets.WritesResultPath = filepath.Join(
-				filepath.Dir(cfg.ConfigPath),
-				cfg.Name+"-secret-writes.csv",
-			)
-		}
-		if filepath.Ext(cfg.AddOnSecrets.WritesResultPath) != ".csv" {
-			return fmt.Errorf("expected .csv extension for WritesResultPath, got %q", cfg.AddOnSecrets.WritesResultPath)
-		}
-		if cfg.AddOnSecrets.ReadsResultPath == "" {
-			cfg.AddOnSecrets.ReadsResultPath = filepath.Join(
-				filepath.Dir(cfg.ConfigPath),
-				cfg.Name+"-secret-reads.csv",
-			)
-		}
-		if filepath.Ext(cfg.AddOnSecrets.ReadsResultPath) != ".csv" {
-			return fmt.Errorf("expected .csv extension for ReadsResultPath, got %q", cfg.AddOnSecrets.ReadsResultPath)
-		}
-
-		if cfg.AddOnIRSA.RoleName == "" {
-			cfg.AddOnIRSA.RoleName = cfg.Name + "-role-irsa"
-		}
-		if cfg.AddOnFargate.RoleName == "" {
-			cfg.AddOnFargate.RoleName = cfg.Name + "-role-fargate"
-		}
-		if cfg.AddOnFargate.ProfileName == "" {
-			cfg.AddOnFargate.ProfileName = cfg.Name + "-fargate-profile"
-		}
-		if cfg.AddOnFargate.SecretName == "" {
-			cfg.AddOnFargate.SecretName = cfg.Name + "fargatesecret"
-		}
-		if cfg.AddOnFargate.PodName == "" {
-			cfg.AddOnFargate.PodName = cfg.Name + "-fargate-pod"
-		}
-		if cfg.AddOnFargate.ContainerName == "" {
-			cfg.AddOnFargate.ContainerName = cfg.Name + "-" + randString(10)
-		}
-		cfg.AddOnFargate.SecretName = strings.ToLower(secretRegex.ReplaceAllString(cfg.AddOnFargate.SecretName, ""))
-
-	} else {
-
-		if cfg.AddOnNLBHelloWorld.Enable {
-			return fmt.Errorf("AddOnManagedNodeGroups.Enable false, but got AddOnNLBHelloWorld.Enable %v", cfg.AddOnNLBHelloWorld.Enable)
-		}
-		if cfg.AddOnALB2048.Enable {
-			return fmt.Errorf("AddOnManagedNodeGroups.Enable false, but got AddOnALB2048.Enable %v", cfg.AddOnALB2048.Enable)
-		}
-		if cfg.AddOnJobPerl.Enable {
-			return fmt.Errorf("AddOnManagedNodeGroups.Enable false, but got AddOnJobPerl.Enable %v", cfg.AddOnJobPerl.Enable)
-		}
-		if cfg.AddOnJobEcho.Enable {
-			return fmt.Errorf("AddOnManagedNodeGroups.Enable false, but got AddOnJobEcho.Enable %v", cfg.AddOnJobEcho.Enable)
-		}
-		if cfg.AddOnSecrets.Enable {
-			return fmt.Errorf("AddOnManagedNodeGroups.Enable false, but got AddOnSecrets.Enable %v", cfg.AddOnSecrets.Enable)
-		}
-		if cfg.AddOnIRSA.Enable {
-			return fmt.Errorf("AddOnManagedNodeGroups.Enable false, but got AddOnIRSA.Enable %v", cfg.AddOnIRSA.Enable)
-		}
-		if cfg.AddOnFargate.Enable {
-			return fmt.Errorf("AddOnManagedNodeGroups.Enable false, but got AddOnFargate.Enable %v", cfg.AddOnFargate.Enable)
+		if len(cfg.AddOnManagedNodeGroups.RoleServicePrincipals) > 0 {
+			return fmt.Errorf("AddOnManagedNodeGroups.RoleCreate false; expect empty RoleServicePrincipals but got %q", cfg.AddOnManagedNodeGroups.RoleServicePrincipals)
 		}
 	}
 
-	return cfg.Sync()
+	n := len(cfg.AddOnManagedNodeGroups.MNGs)
+	if n == 0 {
+		return errors.New("AddOnManagedNodeGroups.Enable but empty AddOnManagedNodeGroups.MNGs")
+	}
+	if n > MNGNodesMaxLimit {
+		return fmt.Errorf("AddOnManagedNodeGroups.MNGs %d exceeds maximum number of node groups per EKS which is %d", n, MNGNodesMaxLimit)
+	}
+	names := make(map[string]struct{})
+	for k, v := range cfg.AddOnManagedNodeGroups.MNGs {
+		if v.Name == "" {
+			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].Name is empty", k)
+		}
+		if k != v.Name {
+			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].Name has different Name field %q", k, v.Name)
+		}
+		_, ok := names[v.Name]
+		if !ok {
+			names[v.Name] = struct{}{}
+		} else {
+			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].Name %q is redundant", k, v.Name)
+		}
+
+		if v.VolumeSize == 0 {
+			v.VolumeSize = DefaultNodeVolumeSize
+		}
+
+		switch v.AMIType {
+		case eks.AMITypesAl2X8664:
+			if len(v.InstanceTypes) == 0 {
+				v.InstanceTypes = []string{DefaultNodeInstanceTypeCPU}
+			}
+		case eks.AMITypesAl2X8664Gpu:
+			if len(v.InstanceTypes) == 0 {
+				v.InstanceTypes = []string{DefaultNodeInstanceTypeGPU}
+			}
+		default:
+			return fmt.Errorf("unknown AddOnManagedNodeGroups.MNGs[%q].AMIType %q", k, v.AMIType)
+		}
+
+		if cfg.AddOnNLBHelloWorld.Enable || cfg.AddOnALB2048.Enable {
+			for _, itp := range v.InstanceTypes {
+				// "m3.xlarge" or "c4.xlarge" will fail with "InvalidTarget: Targets {...} are not supported"
+				// ref. https://github.com/aws/amazon-vpc-cni-k8s/pull/821
+				// ref. https://github.com/kubernetes/kubernetes/issues/66044#issuecomment-408188524
+				switch {
+				case strings.HasPrefix(itp, "m3."),
+					strings.HasPrefix(itp, "c4."):
+					return fmt.Errorf("AddOnNLBHelloWorld.Enable[%v] || AddOnALB2048.Enable[%v], but older instance type InstanceTypes %q for %q", cfg.AddOnNLBHelloWorld.Enable, cfg.AddOnALB2048.Enable, itp, k)
+				default:
+				}
+			}
+		}
+
+		if v.ASGMinSize > v.ASGMaxSize {
+			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].ASGMinSize %d > ASGMaxSize %d", k, v.ASGMinSize, v.ASGMaxSize)
+		}
+		if v.ASGDesiredCapacity > v.ASGMaxSize {
+			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].ASGDesiredCapacity %d > ASGMaxSize %d", k, v.ASGDesiredCapacity, v.ASGMaxSize)
+		}
+		if v.ASGMaxSize > MNGNodesMaxLimit {
+			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].ASGMaxSize %d > MNGNodesMaxLimit %d", k, v.ASGMaxSize, MNGNodesMaxLimit)
+		}
+		if v.ASGDesiredCapacity > MNGNodesMaxLimit {
+			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].ASGDesiredCapacity %d > MNGNodesMaxLimit %d", k, v.ASGDesiredCapacity, MNGNodesMaxLimit)
+		}
+
+		if cfg.AddOnNLBHelloWorld.Enable && cfg.AddOnNLBHelloWorld.DeploymentReplicas < int32(v.ASGDesiredCapacity) {
+			cfg.AddOnNLBHelloWorld.DeploymentReplicas = int32(v.ASGDesiredCapacity)
+		}
+		if cfg.AddOnALB2048.Enable && cfg.AddOnALB2048.DeploymentReplicasALB < int32(v.ASGDesiredCapacity) {
+			cfg.AddOnALB2048.DeploymentReplicasALB = int32(v.ASGDesiredCapacity)
+		}
+		if cfg.AddOnALB2048.Enable && cfg.AddOnALB2048.DeploymentReplicas2048 < int32(v.ASGDesiredCapacity) {
+			cfg.AddOnALB2048.DeploymentReplicas2048 = int32(v.ASGDesiredCapacity)
+		}
+
+		cfg.AddOnManagedNodeGroups.MNGs[k] = v
+	}
+
+	return nil
+}
+
+func (cfg *Config) validateAddOnNLBHelloWorld() error {
+	if cfg.AddOnNLBHelloWorld == nil {
+		return nil
+	}
+	switch cfg.AddOnNLBHelloWorld.Enable {
+	case true:
+		if cfg.AddOnManagedNodeGroups == nil {
+			return errors.New("AddOnManagedNodeGroups disabled but AddOnNLBHelloWorld.Enable true")
+		}
+		if !cfg.AddOnManagedNodeGroups.Enable {
+			return errors.New("AddOnManagedNodeGroups disabled but AddOnNLBHelloWorld.Enable true")
+		}
+	case false:
+		cfg.AddOnNLBHelloWorld = nil
+		return nil
+	}
+
+	if cfg.AddOnNLBHelloWorld.Namespace == "" {
+		cfg.AddOnNLBHelloWorld.Namespace = cfg.Name + "-nlb-hello-world"
+	}
+	return nil
+}
+
+func (cfg *Config) validateAddOnALB2048() error {
+	if cfg.AddOnALB2048 == nil {
+		return nil
+	}
+	switch cfg.AddOnALB2048.Enable {
+	case true:
+		if cfg.AddOnManagedNodeGroups == nil {
+			return errors.New("AddOnManagedNodeGroups disabled but AddOnALB2048.Enable true")
+		}
+		if !cfg.AddOnManagedNodeGroups.Enable {
+			return errors.New("AddOnManagedNodeGroups disabled but AddOnALB2048.Enable true")
+		}
+	case false:
+		cfg.AddOnALB2048 = nil
+		return nil
+	}
+
+	if cfg.AddOnALB2048.Namespace == "" {
+		cfg.AddOnALB2048.Namespace = cfg.Name + "-alb-2048"
+	}
+	return nil
+}
+
+func (cfg *Config) validateAddOnJobPerl() error {
+	if cfg.AddOnJobPerl == nil {
+		return nil
+	}
+	switch cfg.AddOnJobPerl.Enable {
+	case true:
+		if cfg.AddOnManagedNodeGroups == nil {
+			return errors.New("AddOnManagedNodeGroups disabled but AddOnJobPerl.Enable true")
+		}
+		if !cfg.AddOnManagedNodeGroups.Enable {
+			return errors.New("AddOnManagedNodeGroups disabled but AddOnJobPerl.Enable true")
+		}
+	case false:
+		cfg.AddOnJobPerl = nil
+		return nil
+	}
+
+	if cfg.AddOnJobPerl.Namespace == "" {
+		cfg.AddOnJobPerl.Namespace = cfg.Name + "-job-perl"
+	}
+	return nil
+}
+
+func (cfg *Config) validateAddOnJobEcho() error {
+	if cfg.AddOnJobEcho == nil {
+		return nil
+	}
+	switch cfg.AddOnJobEcho.Enable {
+	case true:
+		if cfg.AddOnManagedNodeGroups == nil {
+			return errors.New("AddOnManagedNodeGroups disabled but AddOnJobEcho.Enable true")
+		}
+		if !cfg.AddOnManagedNodeGroups.Enable {
+			return errors.New("AddOnManagedNodeGroups disabled but AddOnJobEcho.Enable true")
+		}
+	case false:
+		cfg.AddOnJobEcho = nil
+		return nil
+	}
+
+	if cfg.AddOnJobEcho.Namespace == "" {
+		cfg.AddOnJobEcho.Namespace = cfg.Name + "-job-echo"
+	}
+	if cfg.AddOnJobEcho.Size > 250000 {
+		return fmt.Errorf("echo size limit is 0.25 MB, got %d", cfg.AddOnJobEcho.Size)
+	}
+	return nil
 }
 
 // only letters and numbers for Secret key names
 var secretRegex = regexp.MustCompile("[^a-zA-Z0-9]+")
+
+func (cfg *Config) validateAddOnSecrets() error {
+	if cfg.AddOnSecrets == nil {
+		return nil
+	}
+	switch cfg.AddOnSecrets.Enable {
+	case true:
+		if cfg.AddOnManagedNodeGroups == nil {
+			return errors.New("AddOnManagedNodeGroups disabled but AddOnSecrets.Enable true")
+		}
+		if !cfg.AddOnManagedNodeGroups.Enable {
+			return errors.New("AddOnManagedNodeGroups disabled but AddOnSecrets.Enable true")
+		}
+	case false:
+		cfg.AddOnSecrets = nil
+		return nil
+	}
+
+	if cfg.AddOnSecrets.Namespace == "" {
+		cfg.AddOnSecrets.Namespace = cfg.Name + "-secrets"
+	}
+	if cfg.AddOnSecrets.WritesResultPath == "" {
+		cfg.AddOnSecrets.WritesResultPath = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-secret-writes.csv")
+	}
+	if filepath.Ext(cfg.AddOnSecrets.WritesResultPath) != ".csv" {
+		return fmt.Errorf("expected .csv extension for WritesResultPath, got %q", cfg.AddOnSecrets.WritesResultPath)
+	}
+	if cfg.AddOnSecrets.ReadsResultPath == "" {
+		cfg.AddOnSecrets.ReadsResultPath = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-secret-reads.csv")
+	}
+	if filepath.Ext(cfg.AddOnSecrets.ReadsResultPath) != ".csv" {
+		return fmt.Errorf("expected .csv extension for ReadsResultPath, got %q", cfg.AddOnSecrets.ReadsResultPath)
+	}
+	return nil
+}
+
+func (cfg *Config) validateAddOnIRSA() error {
+	if cfg.AddOnIRSA == nil {
+		return nil
+	}
+	switch cfg.AddOnIRSA.Enable {
+	case true:
+		if cfg.AddOnManagedNodeGroups == nil {
+			return errors.New("AddOnManagedNodeGroups disabled but AddOnIRSA.Enable true")
+		}
+		if !cfg.AddOnManagedNodeGroups.Enable {
+			return errors.New("AddOnManagedNodeGroups disabled but AddOnIRSA.Enable true")
+		}
+	case false:
+		cfg.AddOnIRSA = nil
+		return nil
+	}
+
+	if cfg.Parameters.VersionValue < 1.14 {
+		return fmt.Errorf("Version %q not supported for AddOnIRSA", cfg.Parameters.Version)
+	}
+	if cfg.AddOnIRSA.Namespace == "" {
+		cfg.AddOnIRSA.Namespace = cfg.Name + "-irsa"
+	}
+	if cfg.AddOnIRSA.RoleName == "" {
+		cfg.AddOnIRSA.RoleName = cfg.Name + "-role-irsa"
+	}
+	if cfg.AddOnIRSA.ServiceAccountName == "" {
+		cfg.AddOnIRSA.ServiceAccountName = cfg.Name + "-irsa-service-account"
+	}
+	if cfg.AddOnIRSA.ConfigMapName == "" {
+		cfg.AddOnIRSA.ConfigMapName = cfg.Name + "-irsa-configmap"
+	}
+	if cfg.AddOnIRSA.ConfigMapScriptFileName == "" {
+		cfg.AddOnIRSA.ConfigMapScriptFileName = cfg.Name + "-irsa-configmap.sh"
+	}
+	if cfg.AddOnIRSA.S3BucketName == "" {
+		cfg.AddOnIRSA.S3BucketName = cfg.Name + "-irsa-s3-bucket"
+	}
+	if cfg.AddOnIRSA.S3Key == "" {
+		cfg.AddOnIRSA.S3Key = cfg.Name + "-irsa-s3-key"
+	}
+	if cfg.AddOnIRSA.DeploymentName == "" {
+		cfg.AddOnIRSA.DeploymentName = cfg.Name + "-irsa-deployment"
+	}
+	if cfg.AddOnIRSA.DeploymentResultPath == "" {
+		cfg.AddOnIRSA.DeploymentResultPath = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-irsa-deployment-result.log")
+	}
+	return nil
+}
+
+func (cfg *Config) validateAddOnFargate() error {
+	if cfg.AddOnFargate == nil {
+		return nil
+	}
+	switch cfg.AddOnFargate.Enable {
+	case true:
+		if cfg.AddOnManagedNodeGroups == nil {
+			return errors.New("AddOnManagedNodeGroups disabled but AddOnFargate.Enable true")
+		}
+		if !cfg.AddOnManagedNodeGroups.Enable {
+			return errors.New("AddOnManagedNodeGroups disabled but AddOnFargate.Enable true")
+		}
+	case false:
+		cfg.AddOnFargate = nil
+		return nil
+	}
+
+	if cfg.Parameters.VersionValue < 1.14 {
+		return fmt.Errorf("Version %q not supported for AddOnFargate", cfg.Parameters.Version)
+	}
+	if cfg.AddOnFargate.Namespace == "" {
+		cfg.AddOnFargate.Namespace = cfg.Name + "-fargate"
+	}
+	if cfg.AddOnFargate.ProfileName == "" {
+		cfg.AddOnFargate.ProfileName = cfg.Name + "-fargate-profile"
+	}
+	if cfg.AddOnFargate.SecretName == "" {
+		cfg.AddOnFargate.SecretName = cfg.Name + "addonfargatesecret"
+	}
+	if cfg.AddOnFargate.PodName == "" {
+		cfg.AddOnFargate.PodName = cfg.Name + "-fargate-pod"
+	}
+	if cfg.AddOnFargate.ContainerName == "" {
+		cfg.AddOnFargate.ContainerName = cfg.Name + "-" + randString(10)
+	}
+	cfg.AddOnFargate.SecretName = strings.ToLower(secretRegex.ReplaceAllString(cfg.AddOnFargate.SecretName, ""))
+
+	switch cfg.AddOnFargate.RoleCreate {
+	case true: // need create one, or already created
+		if cfg.AddOnFargate.RoleName == "" {
+			cfg.AddOnFargate.RoleName = cfg.Name + "-role-fargate"
+		}
+		if cfg.AddOnFargate.RoleARN != "" {
+			// just ignore...
+			// could be populated from previous run
+			// do not error, so long as RoleCreate false, role won't be deleted
+		}
+
+	case false: // use existing one
+		if cfg.AddOnFargate.RoleARN == "" {
+			return fmt.Errorf("AddOnFargate.RoleCreate false; expect non-empty RoleARN but got %q", cfg.AddOnFargate.RoleARN)
+		}
+		if cfg.AddOnFargate.RoleName == "" {
+			cfg.AddOnFargate.RoleName = getNameFromARN(cfg.AddOnFargate.RoleARN)
+		}
+		if len(cfg.AddOnFargate.RoleManagedPolicyARNs) > 0 {
+			return fmt.Errorf("AddOnFargate.RoleCreate false; expect empty RoleManagedPolicyARNs but got %q", cfg.AddOnFargate.RoleManagedPolicyARNs)
+		}
+		if len(cfg.AddOnFargate.RoleServicePrincipals) > 0 {
+			return fmt.Errorf("AddOnFargate.RoleCreate false; expect empty RoleServicePrincipals but got %q", cfg.AddOnFargate.RoleServicePrincipals)
+		}
+	}
+
+	return nil
+}
+
+// get "role-eks" from "arn:aws:iam::123:role/role-eks"
+func getNameFromARN(arn string) string {
+	if ss := strings.Split(arn, "/"); len(ss) > 0 {
+		arn = ss[len(ss)-1]
+	}
+	return arn
+}

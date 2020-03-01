@@ -37,6 +37,12 @@ const (
 // WARNING: The environmetal variable value always overwrites current field
 // values if there's a conflict.
 func (cfg *Config) UpdateFromEnvs() (err error) {
+	cfg.mu.Lock()
+	defer func() {
+		cfg.unsafeSync()
+		cfg.mu.Unlock()
+	}()
+
 	var vv interface{}
 	vv, err = parseEnvs(EnvironmentVariablePrefix, cfg)
 	if err != nil {
@@ -205,7 +211,7 @@ func parseEnvs(pfx string, addOn interface{}) (interface{}, error) {
 
 		case reflect.Map:
 			switch fieldName {
-			case "ClusterTags":
+			case "Tags":
 				vv.Field(i).Set(reflect.ValueOf(make(map[string]string)))
 				for _, pair := range strings.Split(sv, ";") {
 					fields := strings.Split(pair, "=")
