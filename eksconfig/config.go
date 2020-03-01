@@ -71,7 +71,7 @@ type Config struct {
 	CommandAfterCreateClusterOutputPath string `json:"command-after-create-cluster-output-path,omitempty" read-only:"true"`
 	// CommandAfterCreateAddOns is the command to execute after creating clusters and add-ons.
 	CommandAfterCreateAddOns           string `json:"command-after-create-add-ons,omitempty"`
-	CommandAfterCreateAddOnsOutputPath string `json:"command-after-create-cluster-add-ons-output-path,omitempty" read-only:"true"`
+	CommandAfterCreateAddOnsOutputPath string `json:"command-after-create-add-ons-output-path,omitempty" read-only:"true"`
 
 	// Parameters defines EKS "cluster" creation parameters.
 	// It's ok to leave any parameters empty.
