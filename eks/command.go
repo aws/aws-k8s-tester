@@ -33,7 +33,7 @@ func runCommand(lg *zap.Logger, s string) ([]byte, error) {
 	if err == nil {
 		lg.Info("ran command")
 	} else {
-		lg.Info("failed to run command", zap.Error(err))
+		lg.Warn("failed to run command", zap.Error(err))
 	}
 	return out, err
 }
