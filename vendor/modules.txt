@@ -117,8 +117,6 @@ github.com/inconshreveable/mousetrap
 github.com/jmespath/go-jmespath
 # github.com/json-iterator/go v1.1.6
 github.com/json-iterator/go
-# github.com/matttproud/golang_protobuf_extensions v1.0.1
-github.com/matttproud/golang_protobuf_extensions/pbutil
 # github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db
 ## explicit
 github.com/mitchellh/colorstring
@@ -169,13 +167,8 @@ github.com/pmezard/go-difflib/difflib
 ## explicit
 github.com/prometheus/client_golang/api
 github.com/prometheus/client_golang/api/prometheus/v1
-# github.com/prometheus/client_model v0.0.0-20190129233127-fd36f4220a90
-## explicit
-github.com/prometheus/client_model/go
 # github.com/prometheus/common v0.4.1
 ## explicit
-github.com/prometheus/common/expfmt
-github.com/prometheus/common/internal/bitbucket.org/ww/goautoneg
 github.com/prometheus/common/model
 # github.com/smartystreets/goconvey v0.0.0-20190731233626-505e41936337
 ## explicit

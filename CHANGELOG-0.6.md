@@ -22,12 +22,19 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.6.6...v0.6.7
 - Remove [`StatusManagedNodeGroup.RoleName`](https://github.com/aws/aws-k8s-tester/commit/5548b155d10ac8b4fc3231f0dd0f6fd77690d405).
 - Remove [`StatusManagedNodeGroup.RoleARN`](https://github.com/aws/aws-k8s-tester/commit/5548b155d10ac8b4fc3231f0dd0f6fd77690d405).
 - Remove [`StatusManagedNodeGroup.RoleCFNStackID`](https://github.com/aws/aws-k8s-tester/commit/5548b155d10ac8b4fc3231f0dd0f6fd77690d405).
+- Add [`Config.CommandAfterCreateCluster`](https://github.com/aws/aws-k8s-tester/commit/474ecb790ae80263fbadba69fabb6ae97ea98e50).
+- Add [`Config.CommandAfterCreateAddOns`](https://github.com/aws/aws-k8s-tester/commit/474ecb790ae80263fbadba69fabb6ae97ea98e50).
 
 ### `eks`
 
 - Fix [health check output](https://github.com/aws/aws-k8s-tester/commit/05f0101effb4b776b4f089adba0439371565d9aa).
 - Clean up [`eks/alb` policy creation](https://github.com/aws/aws-k8s-tester/commit/5ec5c23b8d8b8d01590112617a92ed1648bf227b).
   - Do not create `eks/alb` policy.
+- Implement [after commands](https://github.com/aws/aws-k8s-tester/commit/).
+
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.29.12`](https://github.com/aws/aws-sdk-go/releases/tag/v1.29.12) to [`v1.29.14`](https://github.com/aws/aws-sdk-go/releases/tag/v1.29.14).
 
 ### Go
 
