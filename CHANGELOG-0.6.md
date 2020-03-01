@@ -30,7 +30,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.6.6...v0.6.7
 - Fix [health check output](https://github.com/aws/aws-k8s-tester/commit/05f0101effb4b776b4f089adba0439371565d9aa).
 - Clean up [`eks/alb` policy creation](https://github.com/aws/aws-k8s-tester/commit/5ec5c23b8d8b8d01590112617a92ed1648bf227b).
   - Do not create `eks/alb` policy.
-- Implement [after commands](https://github.com/aws/aws-k8s-tester/commit/).
+- Implement [after commands](https://github.com/aws/aws-k8s-tester/commit/52f885f4a0e14bf162afd5cd5b46cdf50247ede3).
 
 ### Dependency
 
