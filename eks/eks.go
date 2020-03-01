@@ -588,17 +588,17 @@ func (ts *Tester) Up() (err error) {
 		colorstring.Printf("\n[light_green]runCommand CommandAfterCreateCluster [default](%q)\n", ts.cfg.CommandAfterCreateCluster)
 		out, err := runCommand(ts.lg, ts.cfg.CommandAfterCreateCluster)
 		if err != nil {
-			err = ioutil.WriteFile(ts.cfg.CommandAfterCreateClusterOutputPath, []byte(ts.cfg.CommandAfterCreateCluster+"\n\n"+err.Error()), 0600)
+			err = ioutil.WriteFile(ts.cfg.CommandAfterCreateClusterOutputPath, []byte(ts.cfg.CommandAfterCreateCluster+"\n\n# output\n"+string(out)+"\n\n# error\n"+err.Error()), 0600)
 			if err != nil {
 				return fmt.Errorf("failed to write file %q (%v)", ts.cfg.CommandAfterCreateClusterOutputPath, err)
 			}
 		} else {
-			err = ioutil.WriteFile(ts.cfg.CommandAfterCreateClusterOutputPath, []byte(ts.cfg.CommandAfterCreateCluster+"\n\n"+string(out)), 0600)
+			err = ioutil.WriteFile(ts.cfg.CommandAfterCreateClusterOutputPath, []byte(ts.cfg.CommandAfterCreateCluster+"\n\n# output\n"+string(out)), 0600)
 			if err != nil {
 				return fmt.Errorf("failed to write file %q (%v)", ts.cfg.CommandAfterCreateClusterOutputPath, err)
 			}
 		}
-		colorstring.Printf("\n[light_gray]runCommand output\n[default]:\n%s\n", string(out))
+		colorstring.Printf("\n[light_gray]runCommand output[default]:\n%s\n", string(out))
 	}
 
 	if ts.cfg.IsAddOnManagedNodeGroupsEnabled() {
@@ -807,17 +807,17 @@ func (ts *Tester) Up() (err error) {
 			colorstring.Printf("\n[light_green]runCommand CommandAfterCreateAddOns [default](%q)\n", ts.cfg.CommandAfterCreateAddOns)
 			out, err := runCommand(ts.lg, ts.cfg.CommandAfterCreateAddOns)
 			if err != nil {
-				err = ioutil.WriteFile(ts.cfg.CommandAfterCreateAddOnsOutputPath, []byte(ts.cfg.CommandAfterCreateAddOns+"\n\n"+err.Error()), 0600)
+				err = ioutil.WriteFile(ts.cfg.CommandAfterCreateAddOnsOutputPath, []byte(ts.cfg.CommandAfterCreateAddOns+"\n\n# output\n"+string(out)+"\n\n# error\n"+err.Error()), 0600)
 				if err != nil {
 					return fmt.Errorf("failed to write file %q (%v)", ts.cfg.CommandAfterCreateAddOnsOutputPath, err)
 				}
 			} else {
-				err = ioutil.WriteFile(ts.cfg.CommandAfterCreateAddOnsOutputPath, []byte(ts.cfg.CommandAfterCreateAddOns+"\n\n"+string(out)), 0600)
+				err = ioutil.WriteFile(ts.cfg.CommandAfterCreateAddOnsOutputPath, []byte(ts.cfg.CommandAfterCreateAddOns+"\n\n# output\n"+string(out)), 0600)
 				if err != nil {
 					return fmt.Errorf("failed to write file %q (%v)", ts.cfg.CommandAfterCreateAddOnsOutputPath, err)
 				}
 			}
-			colorstring.Printf("\n[light_gray]runCommand output\n[default]:\n%s\n", string(out))
+			colorstring.Printf("\n[light_gray]runCommand output[default]:\n%s\n", string(out))
 		}
 	}
 
