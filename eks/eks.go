@@ -94,7 +94,7 @@ type Tester struct {
 
 // New creates a new EKS tester.
 func New(cfg *eksconfig.Config) (*Tester, error) {
-	fmt.Println("😎")
+	fmt.Println("😎 🙏")
 	colorstring.Printf("\n\n\n[light_green]New [default](%q, %q)\n", cfg.ConfigPath, cfg.KubectlCommand())
 	if err := cfg.ValidateAndSetDefaults(); err != nil {
 		return nil, err
@@ -461,38 +461,48 @@ func (ts *Tester) Up() (err error) {
 		colorstring.Printf("\n\n\n[light_green]Up.defer start [default](%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 
 		if err == nil {
-			colorstring.Printf("\n\n[light_green]kubectl [default](%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-			fmt.Println(ts.cfg.KubectlCommands())
-			colorstring.Printf("\n\n[light_green]SSH [default](%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-			fmt.Println(ts.cfg.SSHCommands())
+			if ts.cfg.Status.Up {
+				colorstring.Printf("\n\n[light_green]kubectl [default](%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+				fmt.Println(ts.cfg.KubectlCommands())
+				colorstring.Printf("\n\n[light_green]SSH [default](%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+				fmt.Println(ts.cfg.SSHCommands())
 
-			colorstring.Printf("\n\n\n[light_green]Up.defer end [default](%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-			colorstring.Printf("\n\n😁 [blue]:) [default]Up success\n\n\n")
-			ts.lg.Info("Up succeeded",
-				zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
-			)
+				ts.lg.Info("Up succeeded",
+					zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
+				)
+
+				colorstring.Printf("\n\n\n[light_green]Up.defer end [default](%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+				colorstring.Printf("\n\n😁 😁 [blue]:) [default]Up success\n\n\n")
+			} else {
+				colorstring.Printf("\n\n😲 😲 [yellow]aborted [default]Up ???\n\n\n")
+			}
 			return
 		}
 
 		if !ts.cfg.OnFailureDelete {
-			colorstring.Printf("\n\n[light_green]kubectl [default](%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-			fmt.Println(ts.cfg.KubectlCommands())
-			colorstring.Printf("\n\n[light_green]SSH [default](%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-			fmt.Println(ts.cfg.SSHCommands())
+			if ts.cfg.Status.Up {
+				colorstring.Printf("\n\n[light_green]kubectl [default](%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+				fmt.Println(ts.cfg.KubectlCommands())
+				colorstring.Printf("\n\n[light_green]SSH [default](%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+				fmt.Println(ts.cfg.SSHCommands())
+			}
 
-			colorstring.Printf("\n\n\n[light_red]Up.defer end [default](%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-			colorstring.Printf("\n\n😱 ☹  [light_red](-_-) [default]Up fail\n\n\n")
 			ts.lg.Warn("Up failed",
 				zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 				zap.Error(err),
 			)
+
+			colorstring.Printf("\n\n\n[light_red]Up.defer end [default](%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+			colorstring.Printf("\n\n😱 ☹ 😡 [light_red](-_-) [default]Up fail\n\n\n")
 			return
 		}
 
-		colorstring.Printf("\n\n[light_green]kubectl [default](%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-		fmt.Println(ts.cfg.KubectlCommands())
-		colorstring.Printf("\n\n[light_green]SSH [default](%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-		fmt.Println(ts.cfg.SSHCommands())
+		if ts.cfg.Status.Up {
+			colorstring.Printf("\n\n[light_green]kubectl [default](%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+			fmt.Println(ts.cfg.KubectlCommands())
+			colorstring.Printf("\n\n[light_green]SSH [default](%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+			fmt.Println(ts.cfg.SSHCommands())
+		}
 
 		ts.lg.Warn("Up failed; reverting resource creation",
 			zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
@@ -798,22 +808,22 @@ func (ts *Tester) down() (err error) {
 	defer func() {
 		ts.cfg.Sync()
 		if err == nil {
-			colorstring.Printf("\n\n\n[light_green]Down.defer end [default](%q)\n\n", ts.cfg.ConfigPath)
-			colorstring.Printf("\n\n😁 [blue]:) [default]Down success\n\n\n")
-
 			ts.lg.Info("successfully finished Down",
 				zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			)
 
-		} else {
+			colorstring.Printf("\n\n\n[light_green]Down.defer end [default](%q)\n\n", ts.cfg.ConfigPath)
+			colorstring.Printf("\n\n😁 [blue]:) [default]Down success\n\n\n")
 
-			colorstring.Printf("\n\n\n[light_red]Down.defer end [default](%q)\n\n", ts.cfg.ConfigPath)
-			colorstring.Printf("\n\n😱 ☹  [light_red](-_-) [default]Down fail\n\n\n")
+		} else {
 
 			ts.lg.Info("failed Down",
 				zap.Error(err),
 				zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			)
+
+			colorstring.Printf("\n\n\n[light_red]Down.defer end [default](%q)\n\n", ts.cfg.ConfigPath)
+			colorstring.Printf("\n\n😱 ☹  [light_red](-_-) [default]Down fail\n\n\n")
 		}
 	}()
 
