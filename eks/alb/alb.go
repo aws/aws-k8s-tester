@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aws/aws-k8s-tester/eks/elb"
 	"github.com/aws/aws-k8s-tester/eksconfig"
+	"github.com/aws/aws-k8s-tester/pkg/aws/elb"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudformation/cloudformationiface"
 	"github.com/aws/aws-sdk-go/service/elbv2"
