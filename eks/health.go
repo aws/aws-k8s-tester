@@ -56,10 +56,10 @@ func (ts *Tester) health() error {
 		"version",
 	).CombinedOutput()
 	cancel()
-	if err != nil {
-		return fmt.Errorf("'kubectl version' failed %v", err)
-	}
 	out := string(output)
+	if err != nil {
+		return fmt.Errorf("'kubectl version' failed %v (output %q)", err, out)
+	}
 	colorstring.Printf("\n\"[light_green]kubectl version[default]\" output:\n%s\n", out)
 
 	ep := ts.cfg.Status.ClusterAPIServerEndpoint + "/version"
@@ -81,10 +81,10 @@ func (ts *Tester) health() error {
 		"cluster-info",
 	).CombinedOutput()
 	cancel()
-	if err != nil {
-		return fmt.Errorf("'kubectl cluster-info' failed %v", err)
-	}
 	out = string(output)
+	if err != nil {
+		return fmt.Errorf("'kubectl cluster-info' failed %v (output %q)", err, out)
+	}
 	if !strings.Contains(out, "is running at") {
 		return fmt.Errorf("'kubectl cluster-info' not ready (output %q)", out)
 	}
@@ -99,10 +99,10 @@ func (ts *Tester) health() error {
 		"cs",
 	).CombinedOutput()
 	cancel()
-	if err != nil {
-		return fmt.Errorf("'kubectl get cs' failed %v", err)
-	}
 	out = string(output)
+	if err != nil {
+		return fmt.Errorf("'kubectl get cs' failed %v (output %q)", err, out)
+	}
 	colorstring.Printf("\n\"[light_green]kubectl get cs[default]\" output:\n%s\n", out)
 
 	ep = ts.cfg.Status.ClusterAPIServerEndpoint + "/healthz?verbose"
@@ -126,10 +126,10 @@ func (ts *Tester) health() error {
 		"all",
 	).CombinedOutput()
 	cancel()
-	if err != nil {
-		return fmt.Errorf("'kubectl get all -n=kube-system' failed %v", err)
-	}
 	out = string(output)
+	if err != nil {
+		return fmt.Errorf("'kubectl get all -n=kube-system' failed %v (output %q)", err, out)
+	}
 	colorstring.Printf("\n\"[light_green]kubectl all -n=kube-system[default]\" output:\n%s\n", out)
 
 	colorstring.Printf("\n\"[light_green]kubectl get pods -n=kube-system[default]\" output:\n")
@@ -152,10 +152,10 @@ func (ts *Tester) health() error {
 		"--all-namespaces",
 	).CombinedOutput()
 	cancel()
-	if err != nil {
-		return fmt.Errorf("'kubectl get configmaps --all-namespaces' failed %v", err)
-	}
 	out = string(output)
+	if err != nil {
+		return fmt.Errorf("'kubectl get configmaps --all-namespaces' failed %v (output %q)", err, out)
+	}
 	colorstring.Printf("\n\"[light_green]kubectl get configmaps --all-namespaces[default]\" output:\n%s\n", out)
 
 	ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
@@ -167,10 +167,10 @@ func (ts *Tester) health() error {
 		"namespaces",
 	).CombinedOutput()
 	cancel()
-	if err != nil {
-		return fmt.Errorf("'kubectl get namespaces' failed %v", err)
-	}
 	out = string(output)
+	if err != nil {
+		return fmt.Errorf("'kubectl get namespaces' failed %v (output %q)", err, out)
+	}
 	colorstring.Printf("\n\"[light_green]kubectl get namespaces[default]\" output:\n%s\n", out)
 
 	colorstring.Printf("\n\"[light_green]curl -sL http://localhost:8080/metrics | grep storage_[default]\" output:\n")
