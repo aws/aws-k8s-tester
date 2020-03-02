@@ -3,7 +3,7 @@
 <hr>
 
 
-## [v0.6.8](https://github.com/aws/aws-k8s-tester/releases/tag/v0.6.8) (2020-03)
+## [v0.6.8](https://github.com/aws/aws-k8s-tester/releases/tag/v0.6.8) (2020-03-01)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.6.7...v0.6.8).
 
@@ -11,6 +11,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.6.7...v0.6.8
 
 - Improve [`eks/alb` Pod debugging logs](https://github.com/aws/aws-k8s-tester/commit/0ec89a60df5a01beada440e100430470d6c1a9d5).
   - Fetching ALB Ingress Controller Pod logs.
+- Fix [`KUBECONFIG` path overwrite with extension](https://github.com/aws/aws-k8s-tester/commit/cebf948f76f038180f1a519d990d865eb7945d86).
+- Improve [health check outputs](https://github.com/aws/aws-k8s-tester/commit/811fc2d2f219e9f63605db2e23fc82ceb7dbd9ec).
 
 ### Go
 
