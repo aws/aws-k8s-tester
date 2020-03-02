@@ -941,6 +941,12 @@ func (ts *tester) waitForNodes(name string) error {
 	if err != nil {
 		return err
 	}
+	if dout.Nodegroup == nil {
+		return fmt.Errorf("MNG %q not found", mv.Name)
+	}
+	if dout.Nodegroup.Resources == nil {
+		return fmt.Errorf("MNG %q Resources not found", mv.Name)
+	}
 	sv.RemoteAccessSecurityGroupID = aws.StringValue(dout.Nodegroup.Resources.RemoteAccessSecurityGroup)
 	ts.cfg.EKSConfig.StatusManagedNodeGroups.Nodes[name] = sv
 	ts.cfg.EKSConfig.Sync()
