@@ -536,13 +536,13 @@ func (ts *Tester) Up() (err error) {
 	)
 	defer ts.cfg.Sync()
 
-	colorstring.Printf("\n\n\n[light_green]createVPC [default](%q)\n", ts.cfg.ConfigPath)
+	colorstring.Printf("\n\n\n[light_green]createEncryption [default](%q)\n", ts.cfg.ConfigPath)
 	if err := catchInterrupt(
 		ts.lg,
 		ts.stopCreationCh,
 		ts.stopCreationChOnce,
 		ts.interruptSig,
-		ts.createVPC,
+		ts.createEncryption,
 	); err != nil {
 		return err
 	}
@@ -558,13 +558,13 @@ func (ts *Tester) Up() (err error) {
 		return err
 	}
 
-	colorstring.Printf("\n\n\n[light_green]createEncryption [default](%q)\n", ts.cfg.ConfigPath)
+	colorstring.Printf("\n\n\n[light_green]createVPC [default](%q)\n", ts.cfg.ConfigPath)
 	if err := catchInterrupt(
 		ts.lg,
 		ts.stopCreationCh,
 		ts.stopCreationChOnce,
 		ts.interruptSig,
-		ts.createEncryption,
+		ts.createVPC,
 	); err != nil {
 		return err
 	}
@@ -985,15 +985,15 @@ func (ts *Tester) down() (err error) {
 		errs = append(errs, err.Error())
 	}
 
-	colorstring.Printf("\n\n\n[light_green]deleteEncryption [default](%q)\n", ts.cfg.ConfigPath)
-	if err := ts.deleteEncryption(); err != nil {
-		ts.lg.Warn("deleteEncryption failed", zap.Error(err))
-		errs = append(errs, err.Error())
-	}
-
 	colorstring.Printf("\n\n\n[light_green]deleteClusterRole [default](%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteClusterRole(); err != nil {
 		ts.lg.Warn("deleteClusterRole failed", zap.Error(err))
+		errs = append(errs, err.Error())
+	}
+
+	colorstring.Printf("\n\n\n[light_green]deleteEncryption [default](%q)\n", ts.cfg.ConfigPath)
+	if err := ts.deleteEncryption(); err != nil {
+		ts.lg.Warn("deleteEncryption failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 
