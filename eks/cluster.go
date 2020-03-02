@@ -134,7 +134,8 @@ func (ts *Tester) createEKS() error {
 
 	if ts.cfg.Parameters.ResolverURL != "" ||
 		(ts.cfg.Parameters.RequestHeaderKey != "" &&
-			ts.cfg.Parameters.RequestHeaderValue != "") {
+			ts.cfg.Parameters.RequestHeaderValue != "") ||
+		ts.cfg.Parameters.EncryptionCMKARN != "" { // TODO
 
 		ts.lg.Info("creating a cluster using EKS API",
 			zap.String("name", ts.cfg.Name),
@@ -160,6 +161,12 @@ func (ts *Tester) createEKS() error {
 			ts.lg.Info("added EKS tag to EKS API request",
 				zap.String("key", k),
 				zap.String("value", v),
+			)
+		}
+		if ts.cfg.Parameters.EncryptionCMKARN != "" {
+			// TODO
+			ts.lg.Info("added encryption to EKS API request",
+				zap.String("cmk-arn", ts.cfg.Parameters.EncryptionCMKARN),
 			)
 		}
 		req, _ := ts.eksAPI.CreateClusterRequest(&createInput)
@@ -213,10 +220,10 @@ func (ts *Tester) createEKS() error {
 			},
 		}
 		if ts.cfg.Parameters.EncryptionCMKARN != "" {
+			// TODO
 			ts.lg.Info("added encryption config to EKS CFN request",
 				zap.String("cmk-arn", ts.cfg.Parameters.EncryptionCMKARN),
 			)
-			// TODO
 		}
 		stackOutput, err := ts.cfnAPI.CreateStack(stackInput)
 		if err != nil {

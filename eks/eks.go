@@ -558,6 +558,17 @@ func (ts *Tester) Up() (err error) {
 		return err
 	}
 
+	colorstring.Printf("\n\n\n[light_green]createEncryption [default](%q)\n", ts.cfg.ConfigPath)
+	if err := catchInterrupt(
+		ts.lg,
+		ts.stopCreationCh,
+		ts.stopCreationChOnce,
+		ts.interruptSig,
+		ts.createEncryption,
+	); err != nil {
+		return err
+	}
+
 	colorstring.Printf("\n\n\n[light_green]createCluster [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 	if err := catchInterrupt(
 		ts.lg,
@@ -971,6 +982,12 @@ func (ts *Tester) down() (err error) {
 	colorstring.Printf("\n\n\n[light_green]deleteCluster [default](%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteCluster(); err != nil {
 		ts.lg.Warn("deleteCluster failed", zap.Error(err))
+		errs = append(errs, err.Error())
+	}
+
+	colorstring.Printf("\n\n\n[light_green]deleteEncryption [default](%q)\n", ts.cfg.ConfigPath)
+	if err := ts.deleteEncryption(); err != nil {
+		ts.lg.Warn("deleteEncryption failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 

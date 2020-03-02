@@ -75,6 +75,10 @@ func (ts *Tester) deleteEncryption() error {
 		ts.lg.Info("Parameters.EncryptionCMKCreate false; no need to delete one")
 		return nil
 	}
+	if ts.cfg.Parameters.EncryptionCMKARN == "" {
+		ts.lg.Info("Parameters.EncryptionCMKARN empty; no need to delete one")
+		return nil
+	}
 
 	keyARN := ts.cfg.Parameters.EncryptionCMKARN
 	keyID := getIDFromKeyARN(keyARN)
