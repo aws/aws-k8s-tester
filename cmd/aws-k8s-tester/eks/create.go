@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-k8s-tester/eks"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
+	"github.com/mitchellh/colorstring"
 	"github.com/spf13/cobra"
 )
 
@@ -41,7 +42,7 @@ func configFunc(cmd *cobra.Command, args []string) {
 	cfg.ConfigPath = path
 	cfg.Sync()
 
-	fmt.Println("overwriting config file from environment variables")
+	colorstring.Printf("\n\n[light_blue][bold]overwriting config file from environment variables[default]\n\n\n")
 	err := cfg.UpdateFromEnvs()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to load configuration from environment variables: %v", err)
@@ -50,10 +51,11 @@ func configFunc(cmd *cobra.Command, args []string) {
 
 	if err = cfg.ValidateAndSetDefaults(); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to validate configuration %q (%v)\n", path, err)
+		colorstring.Printf("\n\n[red][bold]'aws-k8s-tester eks create config' fail[default] %v\n\n\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Fprintf(os.Stderr, "wrote aws-k8s-tester eks configuration to %q\n", cfg.ConfigPath)
+	colorstring.Printf("\n\n[light_blue][bold]'aws-k8s-tester eks create config' success[default] %q\n\n\n", cfg.ConfigPath)
 }
 
 func newCreateCluster() *cobra.Command {
@@ -83,7 +85,7 @@ func createClusterFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	fmt.Println("overwriting config file from environment variables")
+	colorstring.Printf("\n\n[light_blue][bold]overwriting config file from environment variables[default]\n\n\n")
 	err = cfg.UpdateFromEnvs()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to load configuration from environment variables: %v\n", err)
@@ -102,10 +104,10 @@ func createClusterFunc(cmd *cobra.Command, args []string) {
 	}
 
 	if err = tester.Up(); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create cluster %v\n", err)
+		colorstring.Printf("\n\n[red][bold]'aws-k8s-tester eks create cluster' fail[default] %v\n\n\n", err)
 		os.Exit(1)
 	}
-	fmt.Println("'aws-k8s-tester eks create cluster' success")
+	colorstring.Printf("\n\n[light_blue][bold]'aws-k8s-tester eks create cluster' success[default]\n\n\n")
 }
 
 func newCreateMNG() *cobra.Command {
@@ -135,7 +137,7 @@ func createMNGFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	fmt.Println("overwriting config file from environment variables")
+	colorstring.Printf("\n\n[light_blue][bold]overwriting config file from environment variables[default]\n\n\n")
 	err = cfg.UpdateFromEnvs()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to load configuration from environment variables: %v\n", err)
@@ -154,8 +156,8 @@ func createMNGFunc(cmd *cobra.Command, args []string) {
 	}
 
 	if err = tester.CreateMNG(); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create mng %v\n", err)
+		colorstring.Printf("\n\n[red][bold]'aws-k8s-tester eks create mng' fail[default] %v\n\n\n", err)
 		os.Exit(1)
 	}
-	fmt.Println("'aws-k8s-tester eks create mng' success")
+	colorstring.Printf("\n\n[light_blue][bold]'aws-k8s-tester eks create mng' success[default]\n\n\n")
 }
