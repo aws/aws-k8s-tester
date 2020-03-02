@@ -897,6 +897,7 @@ func (ts *tester) create2048Ingress() error {
 	}
 
 	hostName := ""
+	waitDur = 4 * time.Minute
 	retryStart := time.Now()
 	for time.Now().Sub(retryStart) < waitDur {
 		select {
@@ -907,7 +908,24 @@ func (ts *tester) create2048Ingress() error {
 		case <-time.After(5 * time.Second):
 		}
 
+		logCmdFlags := []string{
+			"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+			"--namespace=" + albIngressControllerDeploymentNamespace,
+			"logs",
+			"--selector=" + "app.kubernetes.io/name" + "=" + albIngressControllerName,
+		}
+		ts.cfg.Logger.Info("fetching ALB pod logs", zap.String("cmd", ts.cfg.EKSConfig.KubectlPath+strings.Join(logCmdFlags, " ")))
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		logsOutput, err := exec.New().CommandContext(ctx, ts.cfg.EKSConfig.KubectlPath, logCmdFlags...).CombinedOutput()
+		cancel()
+		out := string(logsOutput)
+		if err != nil {
+			ts.cfg.Logger.Warn("'kubectl logs alb' failed", zap.String("output", out), zap.Error(err))
+			continue
+		}
+		colorstring.Printf("[light_gray]kubectl logs alb\n[default]:\n%s\n", out)
+
+		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 		clusterInfoOut, err := exec.New().CommandContext(
 			ctx,
 			ts.cfg.EKSConfig.KubectlPath,
@@ -922,7 +940,7 @@ func (ts *tester) create2048Ingress() error {
 			ts.cfg.Logger.Warn("'kubectl describe svc' failed", zap.Error(err))
 		} else {
 			out := string(clusterInfoOut)
-			colorstring.Printf("\n\n\"[light_green]kubectl describe svc %s[default]\" output:\n%s\n\n", alb2048ServiceName, out)
+			colorstring.Printf("\n\"[light_green]kubectl describe svc %s[default]\" output:\n%s\n", alb2048ServiceName, out)
 		}
 
 		ts.cfg.Logger.Info("querying ALB 2048 Ingress for HTTP endpoint")
@@ -975,9 +993,9 @@ func (ts *tester) create2048Ingress() error {
 		break
 	}
 
-	colorstring.Printf("\n[light_green]ALB 2048 ARN: [default]%s\n", ts.cfg.EKSConfig.AddOnALB2048.ALBARN)
-	colorstring.Printf("[light_green]ALB 2048 Name: [default]%s\n", ts.cfg.EKSConfig.AddOnALB2048.ALBName)
-	colorstring.Printf("[light_green]ALB 2048 URL:[default]\n%s\n\n", ts.cfg.EKSConfig.AddOnALB2048.URL)
+	colorstring.Printf("\n[light_green]ALB 2048 ARN[default] %s\n", ts.cfg.EKSConfig.AddOnALB2048.ALBARN)
+	colorstring.Printf("[light_green]ALB 2048 Name[default] %s\n", ts.cfg.EKSConfig.AddOnALB2048.ALBName)
+	colorstring.Printf("[light_green]ALB 2048 URL[default] %s\n\n", ts.cfg.EKSConfig.AddOnALB2048.URL)
 
 	ts.cfg.Logger.Info("waiting before testing ALB 2048 Ingress")
 	time.Sleep(10 * time.Second)
