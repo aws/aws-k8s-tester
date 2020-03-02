@@ -42,6 +42,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.6.8...v0.6.9
 - Add [`vpcID` and `tags` arguments to `DeleteELBv2`](https://github.com/aws/aws-k8s-tester/commit/b4578c016613cc07dadcb528629539fdf45a7005).
   - Support clean up with Kubernetes tags.
 
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.29.14`](https://github.com/aws/aws-sdk-go/releases/tag/v1.29.14) to [`v1.29.18`](https://github.com/aws/aws-sdk-go/releases/tag/v1.29.18).
+
 ### Go
 
 - Compile with [*Go 1.14.0*](https://golang.org/doc/devel/release.html#go1.14).

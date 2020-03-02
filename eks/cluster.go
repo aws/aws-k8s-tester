@@ -82,6 +82,71 @@ Outputs:
 
 `
 
+// TemplateClusterWithEncryption is the CloudFormation template for EKS cluster.
+const TemplateClusterWithEncryption = `
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Amazon EKS Cluster'
+
+Parameters:
+
+  ClusterName:
+    Description: Cluster name
+    Type: String
+
+  Version:
+    Description: Specify the EKS version
+    Type: String
+    Default: 1.14
+    AllowedValues:
+    - 1.14
+
+  RoleARN:
+    Description: Role ARN that EKS uses to create AWS resources for Kubernetes
+    Type: String
+
+  SubnetIDs:
+    Description: Subnets for EKS worker nodes. Amazon EKS creates cross-account elastic network interfaces in these subnets to allow communication between  worker nodes and the Kubernetes control plane
+    Type: CommaDelimitedList
+
+  ControlPlaneSecurityGroupID:
+    Description: Security group ID for the cluster control plane communication with worker nodes
+    Type: AWS::EC2::SecurityGroup::Id
+
+  AWSEncryptionProviderCMKARN:
+    Description: KMS CMK for aws-encryption-provider.
+    Type: String
+
+Resources:
+
+  Cluster:
+    Type: AWS::EKS::Cluster
+    Properties:
+      Name: !Ref ClusterName
+      Version: !Ref Version
+      RoleArn: !Ref RoleARN
+      ResourcesVpcConfig:
+        SubnetIds: !Ref SubnetIDs
+        SecurityGroupIds:
+        - !Ref ControlPlaneSecurityGroupID
+      EncryptionConfig:
+      - Resources:
+        - secrets
+        Provider:
+          KeyArn: !Ref AWSEncryptionProviderCMKARN
+
+Outputs:
+
+  ClusterARN:
+    Description: EKS Cluster ARN
+    Value: !GetAtt Cluster.Arn
+
+  ClusterAPIServerEndpoint:
+    Description: EKS Cluster API server endpoint
+    Value: !GetAtt Cluster.Endpoint
+
+`
+
 func (ts *Tester) createCluster() error {
 	if err := ts.createEKS(); err != nil {
 		return err
@@ -134,9 +199,7 @@ func (ts *Tester) createEKS() error {
 
 	if ts.cfg.Parameters.ResolverURL != "" ||
 		(ts.cfg.Parameters.RequestHeaderKey != "" &&
-			ts.cfg.Parameters.RequestHeaderValue != "") ||
-		ts.cfg.Parameters.EncryptionCMKARN != "" { // TODO
-
+			ts.cfg.Parameters.RequestHeaderValue != "") {
 		ts.lg.Info("creating a cluster using EKS API",
 			zap.String("name", ts.cfg.Name),
 			zap.String("resolver-url", ts.cfg.Parameters.ResolverURL),
@@ -164,10 +227,17 @@ func (ts *Tester) createEKS() error {
 			)
 		}
 		if ts.cfg.Parameters.EncryptionCMKARN != "" {
-			// TODO
 			ts.lg.Info("added encryption to EKS API request",
 				zap.String("cmk-arn", ts.cfg.Parameters.EncryptionCMKARN),
 			)
+			createInput.EncryptionConfig = []*awseks.EncryptionConfig{
+				{
+					Resources: aws.StringSlice([]string{"secrets"}),
+					Provider: &awseks.Provider{
+						KeyArn: aws.String(ts.cfg.Parameters.EncryptionCMKARN),
+					},
+				},
+			}
 		}
 		req, _ := ts.eksAPI.CreateClusterRequest(&createInput)
 		if ts.cfg.Parameters.RequestHeaderKey != "" && ts.cfg.Parameters.RequestHeaderValue != "" {
@@ -185,13 +255,17 @@ func (ts *Tester) createEKS() error {
 
 	} else {
 
+		tmpl := TemplateCluster
+		if ts.cfg.Parameters.EncryptionCMKARN != "" {
+			tmpl = TemplateClusterWithEncryption
+		}
 		initialWait = time.Minute
 		ts.lg.Info("creating a cluster using CFN", zap.String("name", ts.cfg.Name))
 		stackInput := &cloudformation.CreateStackInput{
 			StackName:    aws.String(ts.cfg.Name + "-cluster"),
 			Capabilities: aws.StringSlice([]string{"CAPABILITY_IAM"}),
 			OnFailure:    aws.String(cloudformation.OnFailureDelete),
-			TemplateBody: aws.String(TemplateCluster),
+			TemplateBody: aws.String(tmpl),
 			Tags: awscfn.NewTags(map[string]string{
 				"Kind": "aws-k8s-tester",
 				"Name": ts.cfg.Name,
@@ -220,10 +294,13 @@ func (ts *Tester) createEKS() error {
 			},
 		}
 		if ts.cfg.Parameters.EncryptionCMKARN != "" {
-			// TODO
 			ts.lg.Info("added encryption config to EKS CFN request",
 				zap.String("cmk-arn", ts.cfg.Parameters.EncryptionCMKARN),
 			)
+			stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
+				ParameterKey:   aws.String("AWSEncryptionProviderCMKARN"),
+				ParameterValue: aws.String(ts.cfg.Parameters.EncryptionCMKARN),
+			})
 		}
 		stackOutput, err := ts.cfnAPI.CreateStack(stackInput)
 		if err != nil {

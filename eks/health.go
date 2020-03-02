@@ -226,8 +226,7 @@ func (ts *Tester) health() error {
 		zap.Int64("cache-miss-count", cacheMissCnt),
 	)
 	if ts.cfg.Parameters.EncryptionCMKARN != "" && dekGenCnt <= 0 && cacheMissCnt <= 0 {
-		ts.lg.Info("encryption is not enabled")
-		// return errors.New("encrypted enabled, unexpected /metrics")
+		return errors.New("encrypted enabled, unexpected /metrics")
 	}
 
 	ts.lg.Info("checked /metrics")
