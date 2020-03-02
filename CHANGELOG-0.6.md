@@ -1,5 +1,20 @@
 
 
+<hr>
+
+
+## [v0.6.8](https://github.com/aws/aws-k8s-tester/releases/tag/v0.6.8) (2020-03)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.6.7...v0.6.8).
+
+### `eks`
+
+- Improve [`eks/alb` Pod debugging logs](https://github.com/aws/aws-k8s-tester/commit/0ec89a60df5a01beada440e100430470d6c1a9d5).
+  - Fetching ALB Ingress Controller Pod logs.
+
+### Go
+
+- Compile with [*Go 1.14.0*](https://golang.org/doc/devel/release.html#go1.14).
 
 
 <hr>
