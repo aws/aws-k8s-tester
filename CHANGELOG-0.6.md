@@ -9,7 +9,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.6.8...v0.6.9
 
 ### `eks`
 
-- Rename [`github.com/aws/aws-k8s-tester/eks/elb` to `github.com/aws/aws-k8s-tester/pkg/aws/elb`](https://github.com/aws/aws-k8s-tester/commit/).
+- Rename [`github.com/aws/aws-k8s-tester/eks/elb` to `github.com/aws/aws-k8s-tester/pkg/aws/elb`](https://github.com/aws/aws-k8s-tester/commit/87b3e79c2f5d923dd40bb9f34192ec6bf8934783).
 
 ### Go
 
