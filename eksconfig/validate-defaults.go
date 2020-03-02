@@ -101,7 +101,7 @@ var DefaultConfig = Config{
 	AddOnSecrets: &AddOnSecrets{
 		Enable: false,
 
-		Objects:     1000,
+		Objects:     10,
 		Size:        10 * 1024, // 10 KB
 		SecretQPS:   1,
 		SecretBurst: 1,
