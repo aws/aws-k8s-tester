@@ -232,7 +232,7 @@ func (ts *Tester) createEKS() error {
 			ts.cfnAPI,
 			ts.cfg.Status.ClusterCFNStackID,
 			cloudformation.ResourceStatusCreateComplete,
-			7*time.Minute,
+			7*time.Minute+30*time.Second,
 			30*time.Second,
 		)
 		var st awscfn.StackStatus
