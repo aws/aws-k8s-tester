@@ -311,9 +311,6 @@ func (cfg *Config) validateConfig() error {
 	if cfg.KubeConfigPath == "" {
 		cfg.KubeConfigPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".kubeconfig.yaml"
 	}
-	if filepath.Ext(cfg.KubeConfigPath) != ".yaml" {
-		cfg.KubeConfigPath = cfg.KubeConfigPath + ".yaml"
-	}
 
 	if !strings.Contains(cfg.KubectlDownloadURL, runtime.GOOS) {
 		return fmt.Errorf("kubectl-download-url %q build OS mismatch, expected %q", cfg.KubectlDownloadURL, runtime.GOOS)
