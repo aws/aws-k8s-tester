@@ -2,7 +2,9 @@
 package elb
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -12,50 +14,97 @@ import (
 	"go.uber.org/zap"
 )
 
-/*
-# NLB tags
-kubernetes.io/service-name
-leegyuho-test-prod-nlb-hello-world/hello-world-service
-
-kubernetes.io/cluster/leegyuho-test-prod
-owned
-
-
-# ALB tags
-ingress.k8s.aws/stack
-leegyuho-test-prod-alb-2048/alb-2048-ingress
-
-kubernetes.io/ingress-name
-alb-2048-ingress
-
-ingress.k8s.aws/cluster
-leegyuho-test-prod
-
-ingress.k8s.aws/resource
-LoadBalancer
-
-kubernetes.io/cluster/leegyuho-test-prod
-owned
-
-kubernetes.io/namespace
-leegyuho-test-prod-alb-2048
-*/
-
 // DeleteELBv2 deletes all resources associated
 // with the load balancer.
 // TODO: is there a better way to clean up resources?
 // ref. https://github.com/aws/aws-k8s-tester/issues/70
-func DeleteELBv2(lg *zap.Logger, elb2API elbv2iface.ELBV2API, arn string) error {
+func DeleteELBv2(lg *zap.Logger, elb2API elbv2iface.ELBV2API, arn string, vpcID string, tags map[string]string) (err error) {
+	recurse := false
 	if arn == "" {
-		return errors.New("empty ELB ARN")
+		lg.Info("load balancer ARN not given, querying by VPC and cluster name",
+			zap.String("vpc-id", vpcID),
+			zap.String("tags", fmt.Sprintf("%+v", tags)),
+		)
+		elbARNs := make([]string, 0)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		err = elb2API.DescribeLoadBalancersPagesWithContext(
+			ctx,
+			&elbv2.DescribeLoadBalancersInput{},
+			func(output *elbv2.DescribeLoadBalancersOutput, _ bool) bool {
+				for _, ev := range output.LoadBalancers {
+					arn := aws.StringValue(ev.LoadBalancerArn)
+					vpcID := aws.StringValue(ev.VpcId)
+					if vpcID == vpcID {
+						lg.Warn("found ELBv2 for this VPC",
+							zap.String("vpc-id", vpcID),
+							zap.String("elb-arn", arn),
+						)
+						elbARNs = append(elbARNs, arn)
+					} else {
+						lg.Info("found ELBv2 for other VPCs", zap.String("vpc-id", vpcID), zap.String("elb-arn", arn))
+					}
+				}
+				return true
+			})
+		cancel()
+		if err != nil {
+			lg.Warn("failed to describe ELBv2", zap.Error(err))
+			return errors.New("empty ELB ARN")
+		}
+
+		lg.Info("describing tags for elb", zap.Strings("elb-arns", elbARNs))
+		tout, err := elb2API.DescribeTags(&elbv2.DescribeTagsInput{ResourceArns: aws.StringSlice(elbARNs)})
+		if err != nil {
+			lg.Warn("failed to describe tags", zap.Error(err))
+		}
+		matchingARNs := make([]string, 0)
+		for _, desc := range tout.TagDescriptions {
+			copied := make(map[string]string)
+			for k, v := range tags {
+				copied[k] = v
+			}
+			elbARN := aws.StringValue(desc.ResourceArn)
+			for _, tv := range desc.Tags {
+				k, v1 := aws.StringValue(tv.Key), aws.StringValue(tv.Value)
+				lg.Info("found tag", zap.String("elb-arn", elbARN), zap.String("key", k), zap.String("value", v1))
+				if v2, ok := copied[k]; ok && v2 == v1 {
+					delete(copied, k)
+					lg.Info("found matching tag", zap.String("key", k), zap.String("value", v1))
+				}
+			}
+			if len(copied) == 0 {
+				lg.Info("found elb with matching tags; deleting", zap.String("elb-arn", elbARN))
+				matchingARNs = append(matchingARNs, elbARN)
+			}
+		}
+
+		lg.Info("matching elb", zap.Strings("elb-arns", matchingARNs))
+		switch {
+		case len(matchingARNs) == 0:
+			lg.Warn("could not found matching elb")
+			return errors.New("empty ELB ARN")
+		case len(matchingARNs) == 1:
+			lg.Warn("found 1 matching elb")
+			arn = matchingARNs[0]
+		case len(matchingARNs) == 2:
+			lg.Warn("found 2 matching elb")
+			arn = matchingARNs[0]
+			recurse = true
+			lg.Info("need recursively delete elb", zap.String("elb-arn", matchingARNs[1]))
+		}
 	}
+
 	// deleteInOrder deletes listeners, target groups, and ELB in order.
-	if err := deleteInOrder(lg, elb2API, arn); err == nil {
+	if err = deleteInOrder(lg, elb2API, arn); err == nil {
 		lg.Info("successfully deleted ELB in order")
 	}
 	// deleteInReverseOrder deletes ELB and expects ENIs to be detached and deleted.
-	if err := deleteInReverseOrder(lg, elb2API, arn); err == nil {
+	if err = deleteInReverseOrder(lg, elb2API, arn); err == nil {
 		lg.Info("successfully deleted ELB in reverse order")
+	}
+	if recurse {
+		// pass empty, so it can fetch recursively len(elbs) > 2
+		return DeleteELBv2(lg, elb2API, "", vpcID, tags)
 	}
 	return nil
 }

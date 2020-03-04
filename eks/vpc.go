@@ -735,7 +735,7 @@ func (ts *Tester) createVPC() error {
 							zap.String("elb-arn", arn),
 						)
 					} else {
-						ts.lg.Info("found ELBv2", zap.String("vpc-id", vpcID), zap.String("elb-arn", arn))
+						ts.lg.Info("found ELBv2 for other VPCs", zap.String("vpc-id", vpcID), zap.String("elb-arn", arn))
 					}
 				}
 				return true
@@ -1082,7 +1082,7 @@ func (ts *Tester) deleteELBv2(deletedResources map[string]struct{}) bool {
 					)
 					continue
 				}
-				ts.lg.Info("found ELBv2",
+				ts.lg.Info("found ELBv2 for other VPCs",
 					zap.String("vpc-id", vpcID),
 					zap.String("elb-arn", arn),
 				)

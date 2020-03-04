@@ -122,7 +122,24 @@ func (ts *tester) Delete() error {
 	ts.cfg.Logger.Info("wait for a minute after deleting Deployment")
 	time.Sleep(time.Minute)
 
-	if err := elb.DeleteELBv2(ts.cfg.Logger, ts.cfg.ELB2API, ts.cfg.EKSConfig.AddOnNLBHelloWorld.NLBARN); err != nil {
+	/*
+	   # NLB tags
+	   kubernetes.io/service-name
+	   leegyuho-test-prod-nlb-hello-world/hello-world-service
+
+	   kubernetes.io/cluster/leegyuho-test-prod
+	   owned
+	*/
+	if err := elb.DeleteELBv2(
+		ts.cfg.Logger,
+		ts.cfg.ELB2API,
+		ts.cfg.EKSConfig.AddOnNLBHelloWorld.NLBARN,
+		ts.cfg.EKSConfig.Parameters.VPCID,
+		map[string]string{
+			"kubernetes.io/cluster/" + ts.cfg.EKSConfig.Name: "owned",
+			"kubernetes.io/service-name":                     ts.cfg.EKSConfig.AddOnNLBHelloWorld.Namespace + "/" + nlbHelloWorldServiceName,
+		},
+	); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete NLB hello-world (%v)", err))
 	}
 

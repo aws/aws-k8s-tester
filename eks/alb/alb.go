@@ -196,7 +196,36 @@ func (ts *tester) Delete() error {
 	}
 	time.Sleep(10 * time.Second)
 
-	if err := elb.DeleteELBv2(ts.cfg.Logger, ts.cfg.ELB2API, ts.cfg.EKSConfig.AddOnALB2048.ALBARN); err != nil {
+	/*
+	   # ALB tags
+	   ingress.k8s.aws/stack
+	   leegyuho-test-prod-alb-2048/alb-2048-ingress
+
+	   kubernetes.io/ingress-name
+	   alb-2048-ingress
+
+	   ingress.k8s.aws/cluster
+	   leegyuho-test-prod
+
+	   ingress.k8s.aws/resource
+	   LoadBalancer
+
+	   kubernetes.io/cluster/leegyuho-test-prod
+	   owned
+
+	   kubernetes.io/namespace
+	   leegyuho-test-prod-alb-2048
+	*/
+	if err := elb.DeleteELBv2(
+		ts.cfg.Logger,
+		ts.cfg.ELB2API,
+		ts.cfg.EKSConfig.AddOnALB2048.ALBARN,
+		ts.cfg.EKSConfig.Parameters.VPCID,
+		map[string]string{
+			"kubernetes.io/cluster/" + ts.cfg.EKSConfig.Name: "owned",
+			"kubernetes.io/namespace":                        ts.cfg.EKSConfig.AddOnALB2048.Namespace,
+		},
+	); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete ALB (%v)", err))
 	}
 

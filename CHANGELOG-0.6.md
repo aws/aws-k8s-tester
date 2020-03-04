@@ -16,6 +16,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.6.8...v0.6.9
 - Clean up [VPC deletion](https://github.com/aws/aws-k8s-tester/commit/d3d13e226a073924b6724dee648629a4ef4ff017).
 - Add [VPCName parameter to VPC template](https://github.com/aws/aws-k8s-tester/commit/2b4b461b766c4dbbc9cc2f1da3d84298c5a5a74e).
 
+### `pkg/aws/elb`
+
+- Add [`vpcID` and `tags` arguments to `DeleteELBv2`](https://github.com/aws/aws-k8s-tester/commit/).
+
 ### Go
 
 - Compile with [*Go 1.14.0*](https://golang.org/doc/devel/release.html#go1.14).
