@@ -25,6 +25,10 @@ Description: 'Amazon EKS VPC'
 
 Parameters:
 
+  VPCName:
+    Description: name of the VPC
+    Type: String
+
   VPCCIDR:
     Description: IP range (CIDR notation) for VPC, must be a valid public (RFC 1918) CIDR range (from 192.168.0.0 to 192.168.255.255)
     Type: String
@@ -91,7 +95,7 @@ Resources:
       EnableDnsHostnames: true
       Tags:
       - Key: Name
-        Value: !Sub '${AWS::StackName}-VPC'
+        Value: !Ref VPCName
 
   VPCGatewayAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
@@ -262,6 +266,10 @@ Description: 'Amazon EKS VPC with public and private subnets'
 
 Parameters:
 
+  VPCName:
+    Description: name of the VPC
+    Type: String
+
   VPCCIDR:
     Description: IP range (CIDR notation) for VPC, must be a valid (RFC 1918) CIDR range (from 192.168.0.0 to 192.168.255.255)
     Type: String
@@ -340,7 +348,7 @@ Resources:
       EnableDnsHostnames: true
       Tags:
       - Key: Name
-        Value: !Sub '${AWS::StackName}-VPC'
+        Value: Value: !Ref VPCName
 
   VPCGatewayAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
@@ -787,11 +795,12 @@ func (ts *Tester) createVPC() error {
 		cfnNetworkTagValue = "Public/Private"
 	}
 
+	vpcName := ts.cfg.Name + "-vpc"
 	// VPC attributes are empty, create a new VPC
 	// otherwise, use the existing one
 	ts.lg.Info("creating a new VPC")
 	stackInput := &cloudformation.CreateStackInput{
-		StackName:    aws.String(ts.cfg.Name + "-vpc"),
+		StackName:    aws.String(vpcName),
 		Capabilities: aws.StringSlice([]string{"CAPABILITY_IAM"}),
 		OnFailure:    aws.String(cloudformation.OnFailureDelete),
 		TemplateBody: aws.String(templateBody),
@@ -800,7 +809,12 @@ func (ts *Tester) createVPC() error {
 			"Name":    ts.cfg.Name,
 			"Network": cfnNetworkTagValue,
 		}),
-		Parameters: []*cloudformation.Parameter{},
+		Parameters: []*cloudformation.Parameter{
+			{
+				ParameterKey:   aws.String("VPCName"),
+				ParameterValue: aws.String(vpcName),
+			},
+		},
 	}
 	if ts.cfg.Parameters.VPCCIDR != "" {
 		stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
