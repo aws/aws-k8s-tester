@@ -348,7 +348,7 @@ Resources:
       EnableDnsHostnames: true
       Tags:
       - Key: Name
-        Value: Value: !Ref VPCName
+        Value: !Ref VPCName
 
   VPCGatewayAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
