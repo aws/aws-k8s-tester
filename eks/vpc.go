@@ -72,6 +72,7 @@ Parameters:
   VPCName:
     Description: name of the VPC
     Type: String
+    Default: aws-k8s-tester-eks-vpc
 
   VPCCIDR:
     Description: IP range (CIDR notation) for VPC, must be a valid public (RFC 1918) CIDR range (from 192.168.0.0 to 192.168.255.255)
@@ -313,6 +314,7 @@ Parameters:
   VPCName:
     Description: name of the VPC
     Type: String
+    Default: aws-k8s-tester-eks-vpc
 
   VPCCIDR:
     Description: IP range (CIDR notation) for VPC, must be a valid (RFC 1918) CIDR range (from 192.168.0.0 to 192.168.255.255)
