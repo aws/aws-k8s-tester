@@ -86,11 +86,11 @@ func DeleteELBv2(lg *zap.Logger, elb2API elbv2iface.ELBV2API, arn string, vpcID 
 		case len(matchingARNs) == 1:
 			lg.Warn("found 1 matching elb")
 			arn = matchingARNs[0]
-		case len(matchingARNs) == 2:
-			lg.Warn("found 2 matching elb")
+		case len(matchingARNs) > 1:
+			lg.Warn("found multiple matching elb")
 			arn = matchingARNs[0]
 			recurse = true
-			lg.Info("need recursively delete elb", zap.String("elb-arn", matchingARNs[1]))
+			lg.Info("need recursively delete elb", zap.Strings("elb-arn", matchingARNs[1:]))
 		}
 	}
 
