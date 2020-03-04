@@ -12,6 +12,35 @@ import (
 	"go.uber.org/zap"
 )
 
+/*
+# NLB tags
+kubernetes.io/service-name
+leegyuho-test-prod-nlb-hello-world/hello-world-service
+
+kubernetes.io/cluster/leegyuho-test-prod
+owned
+
+
+# ALB tags
+ingress.k8s.aws/stack
+leegyuho-test-prod-alb-2048/alb-2048-ingress
+
+kubernetes.io/ingress-name
+alb-2048-ingress
+
+ingress.k8s.aws/cluster
+leegyuho-test-prod
+
+ingress.k8s.aws/resource
+LoadBalancer
+
+kubernetes.io/cluster/leegyuho-test-prod
+owned
+
+kubernetes.io/namespace
+leegyuho-test-prod-alb-2048
+*/
+
 // DeleteELBv2 deletes all resources associated
 // with the load balancer.
 // TODO: is there a better way to clean up resources?
