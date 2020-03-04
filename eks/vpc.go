@@ -17,6 +17,50 @@ import (
 	"go.uber.org/zap"
 )
 
+/*
+ref.
+https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Internet_Gateway.html#vpc-igw-internet-access
+https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html
+
+
+Fargate for EKS does not support public subnet
+Customer ENIs attached to Fargate task is not given a Public IP/EIP
+Fargate node is not assigned a PublicIP/EIP
+
+EC2::InternetGateway
+EC2::InternetGateway allows "inbound" and "outbound" traffic from/to the internet
+EC2::InternetGateway does NAT (network address translation) between two IP addresses:
+- Public IP/EIP assigned to the EC2 instance
+- Private IP assigned to the EC2 instance
+
+EC2::NatGateway
+EC2::NatGateway only allows "outbound" traffic to the internet
+Cannot SSH into an instance with a public IP but private subnet
+since EC2::NatGateway only allows "outbound" traffic
+
+
+Public Subnet
+Subnet associated with EC2::RouteTable that has EC2::Route to an EC2::InternetGateway
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+
+Private Subnet
+Subnet associated with EC2::RouteTable that has EC2::Route to an EC2::NatGateway
+
+  PrivateRoute1:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable1
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NATGateway1
+*/
+
 // TemplateVPCPublic is the CloudFormation template for EKS VPC.
 const TemplateVPCPublic = `
 ---
