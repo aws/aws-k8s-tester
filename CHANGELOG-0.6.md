@@ -18,7 +18,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.6.8...v0.6.9
 
 ### `pkg/aws/elb`
 
-- Add [`vpcID` and `tags` arguments to `DeleteELBv2`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`vpcID` and `tags` arguments to `DeleteELBv2`](https://github.com/aws/aws-k8s-tester/commit/b4578c016613cc07dadcb528629539fdf45a7005).
+  - Support clean up with Kubernetes tags.
 
 ### Go
 
