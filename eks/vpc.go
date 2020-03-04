@@ -49,7 +49,6 @@ Parameters:
     AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
 
 Conditions:
-
   Has2Azs:
     Fn::Or:
       - Fn::Equals:
@@ -70,7 +69,6 @@ Conditions:
       - Fn::Equals:
         - {Ref: 'AWS::Region'}
         - us-west-1
-
   HasMoreThan2Azs:
     Fn::Not:
       - Condition: Has2Azs
@@ -270,28 +268,59 @@ Parameters:
     AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
 
   PublicSubnetCIDR1:
-    Description: CIDR block for public subnet 1 within the VPC (from 192.168.0.0 to 192.168.63.255)
+    Description: CIDR block for public subnet 1 within the VPC (from 192.168.64.0 to 192.168.95.255)
     Type: String
-    Default: 192.168.0.0/18
+    Default: 192.168.64.0/19
     AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
 
   PublicSubnetCIDR2:
-    Description: CIDR block for public subnet 2 within the VPC (from 192.168.64.0 to 192.168.127.255)
+    Description: CIDR block for public subnet 2 within the VPC (from 192.168.128.0 to 192.168.159.255)
     Type: String
-    Default: 192.168.64.0/18
+    Default: 192.168.128.0/19
+    AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+
+  PublicSubnetCIDR3:
+    Description: CIDR block for public subnet 2 within the VPC (from 192.168.192.0 to 192.168.223.255)
+    Type: String
+    Default: 192.168.192.0/19
     AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
 
   PrivateSubnetCIDR1:
-    Description: CIDR block for private subnet 1 within the VPC (from 192.168.128.0 to 192.168.191.255)
+    Description: CIDR block for private subnet 1 within the VPC (from 192.168.32.0 to 192.168.63.255)
     Type: String
-    Default: 192.168.128.0/18
+    Default: 192.168.32.0/19
     AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
 
   PrivateSubnetCIDR2:
-    Description: CIDR block for private subnet 2 within the VPC (from 192.168.192.0 to 192.168.255.255)
+    Description: CIDR block for private subnet 2 within the VPC (from 192.168.96.0 to 192.168.127.255)
     Type: String
-    Default: 192.168.192.0/18
+    Default: 192.168.96.0/19
     AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+
+Conditions:
+  Has2Azs:
+    Fn::Or:
+      - Fn::Equals:
+        - {Ref: 'AWS::Region'}
+        - ap-south-1
+      - Fn::Equals:
+        - {Ref: 'AWS::Region'}
+        - ap-northeast-2
+      - Fn::Equals:
+        - {Ref: 'AWS::Region'}
+        - ca-central-1
+      - Fn::Equals:
+        - {Ref: 'AWS::Region'}
+        - cn-north-1
+      - Fn::Equals:
+        - {Ref: 'AWS::Region'}
+        - sa-east-1
+      - Fn::Equals:
+        - {Ref: 'AWS::Region'}
+        - us-west-1
+  HasMoreThan2Azs:
+    Fn::Not:
+      - Condition: Has2Azs
 
 Resources:
 
@@ -365,6 +394,29 @@ Resources:
       - Key: kubernetes.io/role/internal-elb
         Value: 1
 
+  PublicSubnet3:
+    Condition: HasMoreThan2Azs
+    Type: AWS::EC2::Subnet
+    DependsOn:
+    - VPC
+    - VPCGatewayAttachment
+    Metadata:
+      Comment: Public Subnet 3, https://docs.aws.amazon.com/eks/latest/userguide/alb-ingress.html
+    Properties:
+      AvailabilityZone: !Select [ 2, !GetAZs ]
+      CidrBlock: !Ref PublicSubnetCIDR3
+      MapPublicIpOnLaunch: false
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: !Sub '${AWS::StackName}-PublicSubnet3'
+      - Key: Network
+        Value: Public
+      - Key: kubernetes.io/role/elb
+        Value: 1
+      - Key: kubernetes.io/role/internal-elb
+        Value: 1
+
   PublicRouteTable:
     Type: AWS::EC2::RouteTable
     DependsOn:
@@ -405,6 +457,17 @@ Resources:
     - PublicSubnet2
     Properties:
       SubnetId: !Ref PublicSubnet2
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnet3RouteTableAssociation:
+    Condition: HasMoreThan2Azs
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    DependsOn:
+    - VPC
+    - VPCGatewayAttachment
+    - PublicSubnet3
+    Properties:
+      SubnetId: !Ref PublicSubnet3
       RouteTableId: !Ref PublicRouteTable
 
   PrivateSubnet1:
@@ -479,6 +542,14 @@ Resources:
     Properties:
       Domain: vpc
 
+  NATGatewayEIP3:
+    Type: AWS::EC2::EIP
+    DependsOn:
+    - VPC
+    - VPCGatewayAttachment
+    Properties:
+      Domain: vpc
+
   NATGateway1:
     Type: AWS::EC2::NatGateway
     DependsOn:
@@ -506,6 +577,20 @@ Resources:
       Tags:
       - Key: Name
         Value: !Sub '${AWS::StackName}-NATGateway2'
+
+  NATGateway3:
+    Type: AWS::EC2::NatGateway
+    DependsOn:
+    - VPC
+    - VPCGatewayAttachment
+    - PublicSubnet3
+    - NATGatewayEIP3
+    Properties:
+      AllocationId: !GetAtt 'NATGatewayEIP3.AllocationId'
+      SubnetId: !Ref PublicSubnet3
+      Tags:
+      - Key: Name
+        Value: !Sub '${AWS::StackName}-NATGateway3'
 
   PrivateRoute1:
     Type: AWS::EC2::Route
@@ -564,7 +649,11 @@ Outputs:
 
   PublicSubnetIDs:
     Description: All public subnet IDs in the VPC
-    Value: !Join [ ",", [ !Ref PublicSubnet1, !Ref PublicSubnet2 ] ]
+    Value:
+      Fn::If:
+      - HasMoreThan2Azs
+      - !Join [ ",", [ !Ref PublicSubnet1, !Ref PublicSubnet2, !Ref PublicSubnet3 ] ]
+      - !Join [ ",", [ !Ref PublicSubnet1, !Ref PublicSubnet2 ] ]
 
   PrivateSubnetIDs:
     Description: All private subnet IDs in the VPC
