@@ -10,6 +10,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.6.8...v0.6.9
 ### `eks`
 
 - Rename [`github.com/aws/aws-k8s-tester/eks/elb` to `github.com/aws/aws-k8s-tester/pkg/aws/elb`](https://github.com/aws/aws-k8s-tester/commit/87b3e79c2f5d923dd40bb9f34192ec6bf8934783).
+- Add [3rd public subnet to VPC CloudFormation template](https://github.com/aws/aws-k8s-tester/commit/9de73c4eb886f94ea60e825c00ce39b6b8e61e4b).
 
 ### Go
 
