@@ -908,9 +908,17 @@ func (ts *Tester) deleteVPC() error {
 		return nil
 	}
 
-	now := time.Now()
+	ts.lg.Info("deleting VPC",
+		zap.String("vpc-id", ts.cfg.Parameters.VPCID),
+		zap.String("vpc-cfn-stack-id", ts.cfg.Parameters.VPCCFNStackID),
+	)
 
-	ts.lg.Info("deleting VPC CFN stack", zap.String("vpc-cfn-stack-id", ts.cfg.Parameters.VPCCFNStackID))
+	deletedResources := make(map[string]struct{})
+	if ok := ts.deleteELBv2(deletedResources); ok {
+		time.Sleep(10 * time.Second)
+	}
+
+	now := time.Now()
 	_, err := ts.cfnAPI.DeleteStack(&cloudformation.DeleteStackInput{
 		StackName: aws.String(ts.cfg.Parameters.VPCCFNStackID),
 	})
@@ -930,7 +938,6 @@ func (ts *Tester) deleteVPC() error {
 		20*time.Second,
 	)
 
-	deletedResources := make(map[string]struct{})
 	var st awscfn.StackStatus
 	for st = range ch {
 		if st.Error != nil {
@@ -943,324 +950,24 @@ func (ts *Tester) deleteVPC() error {
 			continue
 		}
 
-		ts.lg.Warn("deleting VPC for longer than 3 minutes; initiating force deletion",
+		// e.g. DependencyViolation: The vpc 'vpc-0127f6d18bd98836a' has dependencies and cannot be deleted
+		ts.lg.Warn("deleting for awhile; initiating force deletion",
 			zap.String("vpc-id", ts.cfg.Parameters.VPCID),
 		)
-
-		elbARNs := make([]string, 0)
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		err = ts.elbv2API.DescribeLoadBalancersPagesWithContext(
-			ctx,
-			&elbv2.DescribeLoadBalancersInput{},
-			func(output *elbv2.DescribeLoadBalancersOutput, _ bool) bool {
-				for _, ev := range output.LoadBalancers {
-					arn := aws.StringValue(ev.LoadBalancerArn)
-					if _, ok := deletedResources[arn]; ok {
-						continue
-					}
-					vpcID := aws.StringValue(ev.VpcId)
-					if vpcID == ts.cfg.Parameters.VPCID {
-						elbARNs = append(elbARNs, arn)
-						ts.lg.Info("found ELBv2 for this VPC",
-							zap.String("vpc-id", ts.cfg.Parameters.VPCID),
-							zap.String("elb-arn", arn),
-						)
-					} else {
-						ts.lg.Info("found ELBv2", zap.String("vpc-id", vpcID), zap.String("elb-arn", arn))
-					}
-				}
-				return true
-			})
-		cancel()
-		if err != nil {
-			ts.lg.Warn("failed to describe ELBv2", zap.Error(err))
+		if ok := ts.deleteELBv2(deletedResources); ok {
+			time.Sleep(10 * time.Second)
 		}
-		for _, arn := range elbARNs {
-			ts.lg.Info("removing ELBv2",
-				zap.String("vpc-id", ts.cfg.Parameters.VPCID),
-				zap.String("elb-arn", arn),
-			)
-			_, err = ts.elbv2API.DeleteLoadBalancer(&elbv2.DeleteLoadBalancerInput{
-				LoadBalancerArn: aws.String(arn),
-			})
-			if err != nil {
-				ts.lg.Warn("failed to remove ELBv2",
-					zap.String("elb-arn", arn),
-					zap.Error(err),
-				)
-			} else {
-				ts.lg.Info("removed ELBv2", zap.String("elb-arn", arn), zap.Error(err))
-				deletedResources[arn] = struct{}{}
-				time.Sleep(10 * time.Second)
-			}
-		}
-
-		for _, subnetID := range ts.cfg.Parameters.PrivateSubnetIDs {
-			if _, ok := deletedResources[subnetID]; ok {
-				continue
-			}
-			_, serr := ts.ec2API.DeleteSubnet(&ec2.DeleteSubnetInput{
-				SubnetId: aws.String(subnetID),
-			})
-			ts.lg.Warn("tried force-delete subnet",
-				zap.String("subnet-id", subnetID),
-				zap.Error(serr),
-			)
-			if serr != nil && strings.Contains(serr.Error(), " does not exist") {
-				deletedResources[subnetID] = struct{}{}
-			}
+		if ok := ts.deleteSubnets(deletedResources); ok {
+			time.Sleep(10 * time.Second)
 		}
 		if _, ok := deletedResources[ts.cfg.Parameters.VPCID]; ok {
 			continue
 		}
-
-		// TODO: deleting VPC doesn't work because of dependencies...
-		// e.g. DependencyViolation: The vpc 'vpc-0127f6d18bd98836a' has dependencies and cannot be deleted
-		ts.lg.Warn("cleaning VPC dependencies", zap.String("vpc-id", ts.cfg.Parameters.VPCID))
-
-		// find all ENIs for VPC
-		enis := make([]*ec2.NetworkInterface, 0)
-		if err := ts.ec2API.DescribeNetworkInterfacesPages(
-			&ec2.DescribeNetworkInterfacesInput{
-				Filters: []*ec2.Filter{
-					{
-						Name:   aws.String("vpc-id"),
-						Values: aws.StringSlice([]string{ts.cfg.Parameters.VPCID}),
-					},
-				},
-			},
-			func(out *ec2.DescribeNetworkInterfacesOutput, lastPage bool) bool {
-				for _, eni := range out.NetworkInterfaces {
-					enis = append(enis, eni)
-					ts.lg.Info("found ENI", zap.String("eni", aws.StringValue(eni.NetworkInterfaceId)))
-				}
-				return true
-			},
-		); err != nil {
-			ts.lg.Warn("failed to describe ENIs", zap.Error(err))
-			continue
+		if ok := ts.deleteENIs(deletedResources); ok {
+			time.Sleep(10 * time.Second)
 		}
-
-		// detacth and delete ENIs
-		for _, eni := range enis {
-			eniID := aws.StringValue(eni.NetworkInterfaceId)
-
-			ts.lg.Warn("detaching ENI", zap.String("eni", eniID))
-			out, err := ts.ec2API.DescribeNetworkInterfaces(
-				&ec2.DescribeNetworkInterfacesInput{
-					NetworkInterfaceIds: []*string{eni.NetworkInterfaceId},
-				},
-			)
-			if err != nil {
-				ts.lg.Warn("failed to describe ENI", zap.Error(err))
-				continue
-			}
-			if len(out.NetworkInterfaces) != 1 {
-				ts.lg.Warn("expected 1 ENI", zap.String("eni", eniID), zap.Int("enis", len(out.NetworkInterfaces)))
-				continue
-			}
-			if out.NetworkInterfaces[0].Attachment == nil {
-				ts.lg.Warn("no attachment found for ENI", zap.String("eni", eniID))
-			} else {
-				for i := 0; i < 5; i++ {
-					time.Sleep(5 * time.Second)
-					_, err = ts.ec2API.DetachNetworkInterface(&ec2.DetachNetworkInterfaceInput{
-						AttachmentId: out.NetworkInterfaces[0].Attachment.AttachmentId,
-						Force:        aws.Bool(true),
-					})
-					if err == nil {
-						ts.lg.Info("successfully detached ENI", zap.String("eni", eniID))
-						break
-					}
-					ts.lg.Warn("failed to detach ENI", zap.String("eni", eniID), zap.Error(err))
-				}
-			}
-
-			for i := 0; i < 5; i++ {
-				time.Sleep(10 * time.Second) // it may take awhile for delete to success upon detach
-				ts.lg.Info("deleting ENI", zap.String("eni", eniID))
-				_, err = ts.ec2API.DeleteNetworkInterface(&ec2.DeleteNetworkInterfaceInput{
-					NetworkInterfaceId: eni.NetworkInterfaceId,
-				})
-				if err == nil {
-					ts.lg.Info("successfully deleted ENI", zap.String("eni", eniID))
-					break
-				}
-				ts.lg.Warn("failed to delete ENI", zap.String("eni", eniID), zap.Error(err))
-			}
-
-			// confirm ENI deletion
-			retryStart := time.Now()
-			for time.Now().Sub(retryStart) < 5*time.Minute {
-				time.Sleep(5 * time.Second)
-				_, err = ts.ec2API.DescribeNetworkInterfaces(&ec2.DescribeNetworkInterfacesInput{
-					NetworkInterfaceIds: []*string{eni.NetworkInterfaceId},
-				})
-				if err == nil {
-					ts.lg.Warn("ENI still exists", zap.String("eni", eniID))
-					continue
-				}
-				if awsErr, ok := err.(awserr.Error); ok {
-					if strings.Contains(awsErr.Code(), "InvalidNetworkInterfaceID.NotFound") {
-						ts.lg.Info("confirmed ENI deletion", zap.String("eni", eniID))
-						break
-					}
-				}
-				ts.lg.Warn("ENI still exists", zap.String("eni", eniID), zap.Error(err))
-			}
-		}
-
-		// clean up security groups for VPC
-		sout, err := ts.ec2API.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
-			Filters: []*ec2.Filter{
-				{
-					Name:   aws.String("vpc-id"),
-					Values: []*string{aws.String(ts.cfg.Parameters.VPCID)},
-				},
-			},
-		})
-		if err != nil {
-			ts.lg.Warn("failed to describe security groups", zap.Error(err))
-			continue
-		}
-		for _, sg := range sout.SecurityGroups {
-			sgID, sgGroupName := aws.StringValue(sg.GroupId), aws.StringValue(sg.GroupName)
-			ts.lg.Info("cleaning security group",
-				zap.String("security-group-id", sgID),
-				zap.String("security-group-name", sgGroupName),
-			)
-
-			for _, ipPerm := range sg.IpPermissions {
-				ts.lg.Info("revoking ingress", zap.String("ip-perm", ipPerm.String()))
-				_, err = ts.ec2API.RevokeSecurityGroupIngress(&ec2.RevokeSecurityGroupIngressInput{
-					GroupId:       aws.String(sgID),
-					IpPermissions: []*ec2.IpPermission{ipPerm},
-				})
-				ts.lg.Info("tried to revoke ingress", zap.Error(err))
-
-				if len(ipPerm.UserIdGroupPairs) != 1 {
-					continue
-				}
-				sgIDEgress := aws.StringValue(ipPerm.UserIdGroupPairs[0].GroupId)
-				sgNameEgress := aws.StringValue(ipPerm.UserIdGroupPairs[0].GroupName)
-				sgEgress, err := ts.ec2API.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
-					GroupIds: aws.StringSlice([]string{sgIDEgress}),
-				})
-				if err != nil {
-					ts.lg.Warn("failed to describe egress security group", zap.Error(err))
-					continue
-				}
-				if len(sgEgress.SecurityGroups) != 1 {
-					ts.lg.Warn("expected only 1 security group",
-						zap.String("egress-security-group-id", sgIDEgress),
-						zap.String("egress-security-group-name", sgNameEgress),
-						zap.Int("total", len(sgEgress.SecurityGroups)),
-					)
-					continue
-				}
-				for _, ipPermEg := range sgEgress.SecurityGroups[0].IpPermissionsEgress {
-					ts.lg.Info("revoking egress", zap.String("ip-perm", ipPermEg.String()))
-					_, err = ts.ec2API.RevokeSecurityGroupEgress(&ec2.RevokeSecurityGroupEgressInput{
-						GroupId:       aws.String(sgIDEgress),
-						IpPermissions: []*ec2.IpPermission{ipPermEg},
-					})
-					ts.lg.Info("tried to revoke egress", zap.Error(err))
-				}
-			}
-
-			for _, ipPerm := range sg.IpPermissionsEgress {
-				ts.lg.Info("revoking egress",
-					zap.String("security-group-id", sgID),
-					zap.String("ip-perm", ipPerm.String()),
-				)
-				_, err = ts.ec2API.RevokeSecurityGroupEgress(&ec2.RevokeSecurityGroupEgressInput{
-					GroupId:       aws.String(sgID),
-					IpPermissions: []*ec2.IpPermission{ipPerm},
-				})
-				if err != nil {
-					if ev, ok := err.(awserr.Error); ok && ev.Code() == "InvalidPermission.NotFound" {
-						ts.lg.Warn("ip permission does not exist", zap.Error(err))
-					} else {
-						ts.lg.Warn("failed to revoke egress", zap.Error(err))
-					}
-				} else {
-					ts.lg.Info("revoked egress",
-						zap.String("security-group-id", sgID),
-						zap.Error(err),
-					)
-				}
-
-				if len(ipPerm.UserIdGroupPairs) != 1 {
-					continue
-				}
-				sgIDIngress := aws.StringValue(ipPerm.UserIdGroupPairs[0].GroupId)
-				sgNameIngress := aws.StringValue(ipPerm.UserIdGroupPairs[0].GroupName)
-				sgIngress, err := ts.ec2API.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
-					GroupIds: aws.StringSlice([]string{sgIDIngress}),
-				})
-				if err != nil {
-					ts.lg.Warn("failed to describe egress security group", zap.Error(err))
-					continue
-				}
-				if len(sgIngress.SecurityGroups) != 1 {
-					ts.lg.Warn("expected only 1 security group",
-						zap.String("ingress-security-group-id", sgIDIngress),
-						zap.String("ingress-security-group-name", sgNameIngress),
-						zap.Int("total", len(sgIngress.SecurityGroups)),
-					)
-					continue
-				}
-				for _, ipPermEg := range sgIngress.SecurityGroups[0].IpPermissionsEgress {
-					ts.lg.Info("revoking ingress", zap.String("ip-perm", ipPermEg.String()))
-					_, err = ts.ec2API.RevokeSecurityGroupIngress(&ec2.RevokeSecurityGroupIngressInput{
-						GroupId:       aws.String(sgIDIngress),
-						IpPermissions: []*ec2.IpPermission{ipPermEg},
-					})
-					if err != nil {
-						if ev, ok := err.(awserr.Error); ok && ev.Code() == "InvalidPermission.NotFound" {
-							ts.lg.Warn("ip permission does not exist", zap.Error(err))
-						} else {
-							ts.lg.Warn("failed to revoke ingress", zap.Error(err))
-						}
-					} else {
-						ts.lg.Info("revoked ingress",
-							zap.String("security-group-id", sgID),
-							zap.Error(err),
-						)
-					}
-				}
-			}
-
-			ts.lg.Info("deleting security group",
-				zap.String("security-group-id", sgID),
-				zap.String("security-group-name", sgGroupName),
-			)
-			_, err = ts.ec2API.DeleteSecurityGroup(&ec2.DeleteSecurityGroupInput{
-				GroupId: sg.GroupId,
-			})
-			if err != nil {
-				ts.lg.Warn("failed to delete security group", zap.Error(err))
-				continue
-			}
-			retryStart := time.Now()
-			for time.Now().Sub(retryStart) < 5*time.Minute {
-				_, err = ts.ec2API.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
-					GroupIds: []*string{sg.GroupId},
-				})
-				if err != nil {
-					if awsErr, ok := err.(awserr.Error); ok {
-						if strings.Contains(awsErr.Code(), ".NotFound") {
-							ts.lg.Info("successfully deleted security group",
-								zap.String("security-group-id", sgID),
-								zap.String("security-group-name", sgGroupName),
-							)
-							break
-						}
-					}
-				}
-				ts.lg.Warn("still deleting security group", zap.Error(err))
-				time.Sleep(5 * time.Second)
-			}
+		if ok := ts.deleteSGs(deletedResources); ok {
+			time.Sleep(10 * time.Second)
 		}
 
 		if _, ok := deletedResources[ts.cfg.Parameters.VPCID]; ok {
@@ -1290,4 +997,377 @@ func (ts *Tester) deleteVPC() error {
 		zap.String("vpc-id", ts.cfg.Parameters.VPCID),
 	)
 	return ts.cfg.Sync()
+}
+
+func (ts *Tester) deleteELBv2(deletedResources map[string]struct{}) bool {
+	ts.lg.Info("deleting ELBv2 for the VPC", zap.String("vpc-id", ts.cfg.Parameters.VPCID))
+	elbARNs := make([]string, 0)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	err := ts.elbv2API.DescribeLoadBalancersPagesWithContext(
+		ctx,
+		&elbv2.DescribeLoadBalancersInput{},
+		func(output *elbv2.DescribeLoadBalancersOutput, _ bool) bool {
+			if len(output.LoadBalancers) == 0 {
+				ts.lg.Info("ELBv2 not found")
+			}
+			for _, ev := range output.LoadBalancers {
+				arn := aws.StringValue(ev.LoadBalancerArn)
+				if _, ok := deletedResources[arn]; ok {
+					continue
+				}
+				vpcID := aws.StringValue(ev.VpcId)
+				if vpcID == ts.cfg.Parameters.VPCID {
+					elbARNs = append(elbARNs, arn)
+					ts.lg.Info("found ELBv2 for this VPC",
+						zap.String("vpc-id", ts.cfg.Parameters.VPCID),
+						zap.String("elb-arn", arn),
+					)
+					continue
+				}
+				ts.lg.Info("found ELBv2",
+					zap.String("vpc-id", vpcID),
+					zap.String("elb-arn", arn),
+				)
+			}
+			return true
+		})
+	cancel()
+	if err != nil {
+		ts.lg.Warn("failed to describe ELBv2", zap.Error(err))
+	}
+	deleted := false
+	for _, arn := range elbARNs {
+		ts.lg.Info("removing ELBv2",
+			zap.String("vpc-id", ts.cfg.Parameters.VPCID),
+			zap.String("elb-arn", arn),
+		)
+		_, err = ts.elbv2API.DeleteLoadBalancer(&elbv2.DeleteLoadBalancerInput{
+			LoadBalancerArn: aws.String(arn),
+		})
+		if err != nil {
+			ts.lg.Warn("failed to remove ELBv2",
+				zap.String("elb-arn", arn),
+				zap.Error(err),
+			)
+		} else {
+			ts.lg.Info("removed ELBv2", zap.String("elb-arn", arn), zap.Error(err))
+			deletedResources[arn] = struct{}{}
+			deleted = true
+		}
+	}
+	return deleted
+}
+
+func (ts *Tester) deleteSubnets(deletedResources map[string]struct{}) bool {
+	ts.lg.Info("deleting subnets for the VPC", zap.String("vpc-id", ts.cfg.Parameters.VPCID))
+	subnets := append(ts.cfg.Parameters.PublicSubnetIDs, ts.cfg.Parameters.PrivateSubnetIDs...)
+	deleted := false
+	for _, subnetID := range subnets {
+		if _, ok := deletedResources[subnetID]; ok {
+			continue
+		}
+		_, err := ts.ec2API.DeleteSubnet(&ec2.DeleteSubnetInput{
+			SubnetId: aws.String(subnetID),
+		})
+		if err != nil {
+			if strings.Contains(err.Error(), " does not exist") {
+				deletedResources[subnetID] = struct{}{}
+				ts.lg.Info("already deleted",
+					zap.String("subnet-id", subnetID),
+					zap.Error(err),
+				)
+			} else {
+				ts.lg.Warn("failed to delete subnet",
+					zap.String("subnet-id", subnetID),
+					zap.Error(err),
+				)
+			}
+			continue
+		}
+		deletedResources[subnetID] = struct{}{}
+		deleted = true
+	}
+	return deleted
+}
+
+func (ts *Tester) deleteENIs(deletedResources map[string]struct{}) bool {
+	ts.lg.Info("deleting ENIs for the VPC", zap.String("vpc-id", ts.cfg.Parameters.VPCID))
+	enis := make([]*ec2.NetworkInterface, 0)
+	if err := ts.ec2API.DescribeNetworkInterfacesPages(
+		&ec2.DescribeNetworkInterfacesInput{
+			Filters: []*ec2.Filter{
+				{
+					Name:   aws.String("vpc-id"),
+					Values: aws.StringSlice([]string{ts.cfg.Parameters.VPCID}),
+				},
+			},
+		},
+		func(out *ec2.DescribeNetworkInterfacesOutput, lastPage bool) bool {
+			for _, eni := range out.NetworkInterfaces {
+				enis = append(enis, eni)
+				ts.lg.Info("found ENI", zap.String("eni", aws.StringValue(eni.NetworkInterfaceId)))
+			}
+			return true
+		},
+	); err != nil {
+		ts.lg.Warn("failed to describe ENIs", zap.Error(err))
+		return false
+	}
+
+	// detacth and delete ENIs
+	deleted := false
+	for _, eni := range enis {
+		eniID := aws.StringValue(eni.NetworkInterfaceId)
+
+		ts.lg.Warn("detaching ENI", zap.String("eni", eniID))
+		out, err := ts.ec2API.DescribeNetworkInterfaces(
+			&ec2.DescribeNetworkInterfacesInput{
+				NetworkInterfaceIds: aws.StringSlice([]string{eniID}),
+			},
+		)
+		if err != nil {
+			ts.lg.Warn("failed to describe ENI", zap.Error(err))
+			continue
+		}
+		if len(out.NetworkInterfaces) != 1 {
+			ts.lg.Warn("expected 1 ENI", zap.String("eni", eniID), zap.Int("enis", len(out.NetworkInterfaces)))
+			continue
+		}
+		if out.NetworkInterfaces[0].Attachment == nil {
+			ts.lg.Warn("no attachment found for ENI", zap.String("eni", eniID))
+		} else {
+			for i := 0; i < 5; i++ {
+				time.Sleep(5 * time.Second)
+				_, err = ts.ec2API.DetachNetworkInterface(&ec2.DetachNetworkInterfaceInput{
+					AttachmentId: out.NetworkInterfaces[0].Attachment.AttachmentId,
+					Force:        aws.Bool(true),
+				})
+				if err == nil {
+					ts.lg.Info("successfully detached ENI", zap.String("eni", eniID))
+					break
+				}
+				ts.lg.Warn("failed to detach ENI", zap.String("eni", eniID), zap.Error(err))
+			}
+		}
+
+		for i := 0; i < 5; i++ {
+			if _, ok := deletedResources[eniID]; !ok {
+				break
+			}
+			//  may take awhile for delete to success upon detach
+			time.Sleep(10 * time.Second)
+			ts.lg.Info("deleting ENI", zap.String("eni", eniID))
+			_, err = ts.ec2API.DeleteNetworkInterface(&ec2.DeleteNetworkInterfaceInput{
+				NetworkInterfaceId: aws.String(eniID),
+			})
+			if err == nil {
+				ts.lg.Info("successfully deleted ENI", zap.String("eni", eniID))
+				deletedResources[eniID] = struct{}{}
+				deleted = true
+				break
+			}
+			ts.lg.Warn("failed to delete ENI", zap.String("eni", eniID), zap.Error(err))
+		}
+
+		// confirm ENI deletion
+		retryStart := time.Now()
+		for time.Now().Sub(retryStart) < 5*time.Minute {
+			time.Sleep(5 * time.Second)
+			_, err = ts.ec2API.DescribeNetworkInterfaces(&ec2.DescribeNetworkInterfacesInput{
+				NetworkInterfaceIds: aws.StringSlice([]string{eniID}),
+			})
+			if err == nil {
+				ts.lg.Warn("ENI still exists", zap.String("eni", eniID))
+				continue
+			}
+			if awsErr, ok := err.(awserr.Error); ok {
+				if strings.Contains(awsErr.Code(), "InvalidNetworkInterfaceID.NotFound") {
+					ts.lg.Info("confirmed ENI deletion", zap.String("eni", eniID))
+					deletedResources[eniID] = struct{}{}
+					break
+				}
+			}
+			ts.lg.Warn("ENI still exists", zap.String("eni", eniID), zap.Error(err))
+		}
+	}
+	return deleted
+}
+
+func (ts *Tester) deleteSGs(deletedResources map[string]struct{}) bool {
+	ts.lg.Info("deleting security groups for the VPC", zap.String("vpc-id", ts.cfg.Parameters.VPCID))
+	sout, err := ts.ec2API.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
+		Filters: []*ec2.Filter{
+			{
+				Name:   aws.String("vpc-id"),
+				Values: []*string{aws.String(ts.cfg.Parameters.VPCID)},
+			},
+		},
+	})
+	if err != nil {
+		ts.lg.Warn("failed to describe security groups", zap.Error(err))
+		return false
+	}
+
+	deleted := false
+	for _, sg := range sout.SecurityGroups {
+		sgID, sgGroupName := aws.StringValue(sg.GroupId), aws.StringValue(sg.GroupName)
+		ts.lg.Info("cleaning security group",
+			zap.String("security-group-id", sgID),
+			zap.String("security-group-name", sgGroupName),
+		)
+
+		for _, ipPerm := range sg.IpPermissions {
+			ts.lg.Info("revoking ingress", zap.String("ip-perm", ipPerm.String()))
+			_, err = ts.ec2API.RevokeSecurityGroupIngress(&ec2.RevokeSecurityGroupIngressInput{
+				GroupId:       aws.String(sgID),
+				IpPermissions: []*ec2.IpPermission{ipPerm},
+			})
+			if err != nil {
+				ts.lg.Warn("failed to revoke ingress", zap.Error(err))
+			} else {
+				ts.lg.Info("revoked ingress")
+				deleted = true
+			}
+
+			if len(ipPerm.UserIdGroupPairs) != 1 {
+				continue
+			}
+			sgIDEgress := aws.StringValue(ipPerm.UserIdGroupPairs[0].GroupId)
+			sgNameEgress := aws.StringValue(ipPerm.UserIdGroupPairs[0].GroupName)
+			sgEgress, err := ts.ec2API.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
+				GroupIds: aws.StringSlice([]string{sgIDEgress}),
+			})
+			if err != nil {
+				ts.lg.Warn("failed to describe egress security group", zap.Error(err))
+				continue
+			}
+			if len(sgEgress.SecurityGroups) != 1 {
+				ts.lg.Warn("expected only 1 security group",
+					zap.String("egress-security-group-id", sgIDEgress),
+					zap.String("egress-security-group-name", sgNameEgress),
+					zap.Int("total", len(sgEgress.SecurityGroups)),
+				)
+				continue
+			}
+			for _, ipPermEg := range sgEgress.SecurityGroups[0].IpPermissionsEgress {
+				ts.lg.Info("revoking egress", zap.String("ip-perm", ipPermEg.String()))
+				_, err = ts.ec2API.RevokeSecurityGroupEgress(&ec2.RevokeSecurityGroupEgressInput{
+					GroupId:       aws.String(sgIDEgress),
+					IpPermissions: []*ec2.IpPermission{ipPermEg},
+				})
+				if err != nil {
+					ts.lg.Warn("failed to revoke egress", zap.Error(err))
+				} else {
+					ts.lg.Info("revoked egress")
+					deleted = true
+				}
+			}
+		}
+
+		for _, ipPerm := range sg.IpPermissionsEgress {
+			ts.lg.Info("revoking egress",
+				zap.String("security-group-id", sgID),
+				zap.String("ip-perm", ipPerm.String()),
+			)
+			_, err = ts.ec2API.RevokeSecurityGroupEgress(&ec2.RevokeSecurityGroupEgressInput{
+				GroupId:       aws.String(sgID),
+				IpPermissions: []*ec2.IpPermission{ipPerm},
+			})
+			if err != nil {
+				if ev, ok := err.(awserr.Error); ok && ev.Code() == "InvalidPermission.NotFound" {
+					ts.lg.Warn("ip permission does not exist", zap.Error(err))
+				} else {
+					ts.lg.Warn("failed to revoke egress", zap.Error(err))
+				}
+			} else {
+				ts.lg.Info("revoked egress",
+					zap.String("security-group-id", sgID),
+					zap.Error(err),
+				)
+				deleted = true
+			}
+
+			if len(ipPerm.UserIdGroupPairs) != 1 {
+				continue
+			}
+			sgIDIngress := aws.StringValue(ipPerm.UserIdGroupPairs[0].GroupId)
+			sgNameIngress := aws.StringValue(ipPerm.UserIdGroupPairs[0].GroupName)
+			sgIngress, err := ts.ec2API.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
+				GroupIds: aws.StringSlice([]string{sgIDIngress}),
+			})
+			if err != nil {
+				ts.lg.Warn("failed to describe egress security group", zap.Error(err))
+				continue
+			}
+			if len(sgIngress.SecurityGroups) != 1 {
+				ts.lg.Warn("expected only 1 security group",
+					zap.String("ingress-security-group-id", sgIDIngress),
+					zap.String("ingress-security-group-name", sgNameIngress),
+					zap.Int("total", len(sgIngress.SecurityGroups)),
+				)
+				continue
+			}
+			for _, ipPermEg := range sgIngress.SecurityGroups[0].IpPermissionsEgress {
+				ts.lg.Info("revoking ingress", zap.String("ip-perm", ipPermEg.String()))
+				_, err = ts.ec2API.RevokeSecurityGroupIngress(&ec2.RevokeSecurityGroupIngressInput{
+					GroupId:       aws.String(sgIDIngress),
+					IpPermissions: []*ec2.IpPermission{ipPermEg},
+				})
+				if err != nil {
+					if ev, ok := err.(awserr.Error); ok && ev.Code() == "InvalidPermission.NotFound" {
+						ts.lg.Warn("ip permission does not exist", zap.Error(err))
+					} else {
+						ts.lg.Warn("failed to revoke ingress", zap.Error(err))
+					}
+				} else {
+					ts.lg.Info("revoked ingress",
+						zap.String("security-group-id", sgID),
+						zap.Error(err),
+					)
+					deleted = true
+				}
+			}
+		}
+
+		if _, ok := deletedResources[sgID]; !ok {
+			ts.lg.Info("deleting security group",
+				zap.String("security-group-id", sgID),
+				zap.String("security-group-name", sgGroupName),
+			)
+			_, err = ts.ec2API.DeleteSecurityGroup(&ec2.DeleteSecurityGroupInput{
+				GroupId: aws.String(sgID),
+			})
+			if err != nil {
+				ts.lg.Warn("failed to delete security group", zap.Error(err))
+				continue
+			}
+			ts.lg.Info("deleted security group",
+				zap.String("security-group-id", sgID),
+				zap.String("security-group-name", sgGroupName),
+			)
+			deletedResources[sgID] = struct{}{}
+			deleted = true
+		}
+
+		retryStart := time.Now()
+		for time.Now().Sub(retryStart) < 5*time.Minute {
+			_, err = ts.ec2API.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
+				GroupIds: aws.StringSlice([]string{sgID}),
+			})
+			if err != nil {
+				if awsErr, ok := err.(awserr.Error); ok {
+					if strings.Contains(awsErr.Code(), ".NotFound") {
+						ts.lg.Info("successfully deleted security group",
+							zap.String("security-group-id", sgID),
+							zap.String("security-group-name", sgGroupName),
+						)
+						break
+					}
+				}
+			}
+			ts.lg.Warn("still deleting security group", zap.Error(err))
+			time.Sleep(5 * time.Second)
+		}
+	}
+	return deleted
 }
