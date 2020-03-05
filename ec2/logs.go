@@ -396,7 +396,7 @@ type instanceLogs struct {
 	errs       []string
 }
 
-func (ts *Tester) DownloadClusterLogs(artifactDir string) error {
+func (ts *Tester) DownloadLogs(artifactDir string) error {
 	err := ts.FetchLogs()
 	if err != nil {
 		return err
