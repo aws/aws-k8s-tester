@@ -475,9 +475,9 @@ func (ts *tester) createService() error {
 	ts.cfg.EKSConfig.AddOnNLBHelloWorld.URL = "http://" + hostName
 	ts.cfg.EKSConfig.Sync()
 
-	colorstring.Printf("\n[light_green]NLB hello-world ARN: [default]%s\n", ts.cfg.EKSConfig.AddOnNLBHelloWorld.NLBARN)
-	colorstring.Printf("[light_green]NLB hello-world Name: [default]%s\n", ts.cfg.EKSConfig.AddOnNLBHelloWorld.NLBName)
-	colorstring.Printf("[light_green]NLB hello-world URL:[default]\n%s\n\n", ts.cfg.EKSConfig.AddOnNLBHelloWorld.URL)
+	colorstring.Printf("\n[light_green]NLB hello-world ARN [default]%s\n", ts.cfg.EKSConfig.AddOnNLBHelloWorld.NLBARN)
+	colorstring.Printf("[light_green]NLB hello-world Name [default]%s\n", ts.cfg.EKSConfig.AddOnNLBHelloWorld.NLBName)
+	colorstring.Printf("[light_green]NLB hello-world URL [default]%s\n\n", ts.cfg.EKSConfig.AddOnNLBHelloWorld.URL)
 
 	ts.cfg.Logger.Info("waiting before testing hello-world Service")
 	time.Sleep(20 * time.Second)
