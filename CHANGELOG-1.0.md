@@ -9,7 +9,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.6.9...v1.0.0
 
 ### `ec2`
 
-- Rename [`DownloadClusterLogs` to `DownloadLogs`]().
+- Rename [`DownloadClusterLogs` to `DownloadLogs`](https://github.com/aws/aws-k8s-tester/commit/e3cf908519a5a75fd11cecfe81ab55d64ebddb2d).
 
 ### Dependency
 
