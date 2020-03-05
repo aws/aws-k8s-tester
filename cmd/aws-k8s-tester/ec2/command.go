@@ -7,7 +7,7 @@ import "github.com/spf13/cobra"
 func NewCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:        "ec2",
-		Short:      "EC2 commands",
+		Short:      "ec2 commands",
 		SuggestFor: []string{"ec22"},
 	}
 	cmd.PersistentFlags().StringVarP(&path, "path", "p", "", "ec2 test configuration file path")

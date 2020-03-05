@@ -61,7 +61,7 @@ func configFunc(cmd *cobra.Command, args []string) {
 func newCreateCluster() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "cluster",
-		Short: "Create an EKS cluster",
+		Short: "Create an eks cluster",
 		Long:  "Configuration values are overwritten by environment variables.",
 		Run:   createClusterFunc,
 	}
@@ -151,7 +151,7 @@ func createMNGFunc(cmd *cobra.Command, args []string) {
 
 	tester, err := eks.New(cfg)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create EKS deployer %v\n", err)
+		fmt.Fprintf(os.Stderr, "failed to create eks deployer %v\n", err)
 		os.Exit(1)
 	}
 

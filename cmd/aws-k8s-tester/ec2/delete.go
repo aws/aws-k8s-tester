@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-k8s-tester/ec2"
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
+	"github.com/mitchellh/colorstring"
 	"github.com/spf13/cobra"
 )
 
@@ -39,17 +40,16 @@ func deleteClusterFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	var dp ec2.Deployer
-	dp, err = ec2.NewDeployer(cfg)
+	tester, err := ec2.New(cfg)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create EC2 cluster %v\n", err)
+		fmt.Fprintf(os.Stderr, "failed to create ec2 deployer %v\n", err)
 		os.Exit(1)
 	}
 
-	if err = dp.Terminate(); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to terminate cluster %v", err)
+	if err = tester.Down(); err != nil {
+		colorstring.Printf("\n\n[red][bold]'aws-k8s-tester ec2 delete cluster' fail[default] %v\n\n\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Println("'aws-k8s-tester ec2 delete cluster' success")
+	colorstring.Printf("\n\n[light_blue][bold]'aws-k8s-tester ec2 delete cluster' success[default]\n\n\n")
 }

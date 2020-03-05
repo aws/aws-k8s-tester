@@ -453,7 +453,7 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 	}
 
 	if cfg.AddOnManagedNodeGroups.LogsDir == "" {
-		cfg.AddOnManagedNodeGroups.LogsDir = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-mng-logs")
+		cfg.AddOnManagedNodeGroups.LogsDir = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-logs-mngs")
 	}
 
 	switch cfg.AddOnManagedNodeGroups.RoleCreate {

@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	testerec2 "github.com/aws/aws-k8s-tester/ec2"
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	awscfn "github.com/aws/aws-k8s-tester/pkg/aws/cloudformation"
@@ -991,7 +990,7 @@ func (ts *tester) waitForNodes(name string) error {
 		}
 		sv.Instances = make(map[string]ec2config.Instance)
 		for id, vv := range ec2Instances {
-			sv.Instances[id] = testerec2.ConvertEC2Instance(vv)
+			sv.Instances[id] = ec2config.ConvertInstance(vv)
 		}
 		ts.cfg.EKSConfig.StatusManagedNodeGroups.Nodes[name] = sv
 		ts.cfg.EKSConfig.Sync()

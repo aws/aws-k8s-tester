@@ -26,6 +26,25 @@ type Config struct {
 	// If empty, set default region.
 	Region string `json:"region,omitempty"`
 
+	// AWSAccountID is the account ID of the eks tester caller session.
+	AWSAccountID string `json:"aws-account-id" read-only:"true"`
+	// AWSUserID is the user ID of the eks tester caller session.
+	AWSUserID string `json:"aws-user-id" read-only:"true"`
+	// AWSIAMRoleARN is the user IAM Role ARN of the eks tester caller session.
+	AWSIAMRoleARN string `json:"aws-iam-role-arn" read-only:"true"`
+	// AWSCredentialPath is automatically set via AWS SDK Go.
+	// And to be mounted as a volume as 'Secret' object.
+	AWSCredentialPath string `json:"aws-credential-path" read-only:"true"`
+
+	// CreateTook is the duration that took to create the resource.
+	CreateTook time.Duration `json:"create-took,omitempty" read-only:"true"`
+	// CreateTookString is the duration that took to create the resource.
+	CreateTookString string `json:"create-took-string,omitempty" read-only:"true"`
+	// DeleteTook is the duration that took to create the resource.
+	DeleteTook time.Duration `json:"delete-took,omitempty" read-only:"true"`
+	// DeleteTookString is the duration that took to create the resource.
+	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
+
 	// LogLevel configures log level. Only supports debug, info, warn, error, panic, or fatal. Default 'info'.
 	LogLevel string `json:"log-level"`
 	// LogOutputs is a list of log outputs. Valid values are 'default', 'stderr', 'stdout', or file names.
@@ -36,6 +55,19 @@ type Config struct {
 	// LogsDir is set to specify the target directory to store all remote log files.
 	// If empty, it stores in the same directory as "ConfigPath".
 	LogsDir string `json:"logs-dir,omitempty"`
+
+	// Up is true if the cluster is up.
+	Up bool `json:"up"`
+	// StatusCurrent represents the current status of the cluster.
+	StatusCurrent string `json:"status-current"`
+	// Status represents the status of the cluster.
+	Status []Status `json:"status"`
+
+	// OnFailureDelete is true to delete all resources on creation fail.
+	OnFailureDelete bool `json:"on-failure-delete"`
+	// OnFailureDeleteWaitSeconds is the seconds to wait before deleting
+	// all resources on creation fail.
+	OnFailureDeleteWaitSeconds uint64 `json:"on-failure-delete-wait-seconds"`
 
 	// RoleName is the name of cluster role.
 	RoleName string `json:"role-name"`
@@ -76,9 +108,8 @@ type Config struct {
 	PublicSubnetIDs []string `json:"public-subnet-ids" read-only:"true"`
 	// PrivateSubnetIDs is the list of all private subnets in the VPC.
 	PrivateSubnetIDs []string `json:"private-subnet-ids" read-only:"true"`
-	// ControlPlaneSecurityGroupID is the security group ID for the cluster control
-	// plane communication with worker nodes.
-	ControlPlaneSecurityGroupID string `json:"control-plane-security-group-id" read-only:"true"`
+	// SecurityGroupID is the security group ID for the VPC.
+	SecurityGroupID string `json:"security-group-id" read-only:"true"`
 
 	// RemoteAccessKeyCreate is true to create the remote SSH access private key.
 	RemoteAccessKeyCreate bool `json:"remote-access-key-create"`
@@ -95,10 +126,49 @@ type Config struct {
 	ASGs map[string]ASG `json:"asgs"`
 }
 
+// Status is the status.
+type Status struct {
+	Time   time.Time `json:"time"`
+	Status string    `json:"status"`
+}
+
+// TODO: asg status
+const StatusDELETEDORNOTEXIST = "DELETED/NOT-EXIST"
+
+// RecordStatus records cluster status.
+func (cfg *Config) RecordStatus(status string) {
+	cfg.mu.Lock()
+	defer cfg.mu.Unlock()
+
+	cfg.StatusCurrent = status
+	switch status {
+	case StatusDELETEDORNOTEXIST:
+		cfg.Up = false
+	case "TODO/active":
+		cfg.Up = true
+	}
+
+	sv := Status{Time: time.Now(), Status: status}
+	n := len(cfg.Status)
+	if n == 0 {
+		cfg.Status = []Status{sv}
+		cfg.unsafeSync()
+		return
+	}
+
+	copied := make([]Status, n+1)
+	copy(copied[1:], cfg.Status)
+	copied[0] = sv
+	cfg.Status = copied
+	cfg.unsafeSync()
+}
+
 // ASG represents one ASG.
 type ASG struct {
 	// Name is the ASG name.
 	Name string `json:"name"`
+
+	CFNStackID string `json:"cfn-stack-id" read-only:"true"`
 
 	// ImageID is the Amazon Machine Image (AMI).
 	// If empty, auto-populated with SSM parameter.
@@ -118,14 +188,16 @@ type ASG struct {
 	VolumeSize int64 `json:"volume-size"`
 
 	// MinSize is the minimum size of ASG.
-	MinSize int `json:"min-size,omitempty"`
+	MinSize int64 `json:"min-size,omitempty"`
 	// MaxSize is the maximum size of ASG.
-	MaxSize int `json:"max-size,omitempty"`
+	MaxSize int64 `json:"max-size,omitempty"`
 	// DesiredCapacity is the desired capacity of ASG.
-	DesiredCapacity int `json:"desired-capacity,omitempty"`
+	DesiredCapacity int64 `json:"desired-capacity,omitempty"`
 
 	// Instances is a map from instance ID to instance.
 	Instances map[string]Instance `json:"instanaces" read-only:"true"`
+	// Logs maps each instance ID to a list of log file paths fetched via SSH access.
+	Logs map[string][]string `json:"logs" read-only:"true"`
 }
 
 // Instance represents an EC2 instance.

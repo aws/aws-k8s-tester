@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/pkg/aws"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
+	"k8s.io/client-go/util/homedir"
 )
 
 // DefaultConfig is the default configuration.
@@ -30,10 +32,20 @@ var DefaultConfig = Config{
 	// log file named with cluster name will be added automatically
 	LogOutputs: []string{"stderr"},
 
-	RoleCreate:            true,
-	VPCCreate:             true,
-	RemoteAccessKeyCreate: true,
-	RemoteAccessUserName:  "ec2-user", // for AL2
+	OnFailureDelete:            true,
+	OnFailureDeleteWaitSeconds: 120,
+
+	RoleCreate:                 true,
+	VPCCreate:                  true,
+	RemoteAccessKeyCreate:      true,
+	RemoteAccessPrivateKeyPath: filepath.Join(homedir.HomeDir(), ".ssh", "ec2_aws_rsa"),
+	RemoteAccessUserName:       "ec2-user", // for AL2
+}
+
+func init() {
+	if runtime.GOOS == "darwin" {
+		DefaultConfig.RemoteAccessPrivateKeyPath = filepath.Join(os.TempDir(), randString(10)+".insecure.key")
+	}
 }
 
 // NewDefault returns a copy of the default configuration.
@@ -55,8 +67,8 @@ func NewDefault() *Config {
 	}
 
 	vv.ASGs = map[string]ASG{
-		vv.Name + "-asg-cpu": ASG{
-			Name:            vv.Name + "-mng-cpu",
+		vv.Name + "-asg": ASG{
+			Name:            vv.Name + "-asg",
 			MinSize:         1,
 			MaxSize:         1,
 			DesiredCapacity: 1,
@@ -131,7 +143,7 @@ func (cfg *Config) validateConfig() error {
 		cfg.LogOutputs = append(cfg.LogOutputs, cfg.ConfigPath+".log")
 	}
 	if cfg.LogsDir == "" {
-		cfg.LogsDir = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-ec2-logs")
+		cfg.LogsDir = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-logs-remote")
 	}
 
 	if cfg.RemoteAccessCommandsOutputPath == "" {
@@ -233,7 +245,7 @@ func (cfg *Config) validateConfig() error {
 	switch cfg.RemoteAccessKeyCreate {
 	case true: // need create one, or already created
 		if cfg.RemoteAccessKeyName == "" {
-			cfg.RemoteAccessKeyName = cfg.Name + "-key-asg"
+			cfg.RemoteAccessKeyName = cfg.Name + "-key-ec2"
 		}
 		if cfg.RemoteAccessPrivateKeyPath != "" {
 			// just ignore...

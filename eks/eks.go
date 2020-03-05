@@ -854,22 +854,21 @@ func (ts *Tester) down() (err error) {
 	defer func() {
 		ts.cfg.Sync()
 		if err == nil {
+			colorstring.Printf("\n\n\n[light_green]Down.defer end [default](%q)\n\n", ts.cfg.ConfigPath)
+			colorstring.Printf("\n\n😁 😁 [blue]:) [default]Down success\n\n\n")
+
 			ts.lg.Info("successfully finished Down",
 				zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			)
 
-			colorstring.Printf("\n\n\n[light_green]Down.defer end [default](%q)\n\n", ts.cfg.ConfigPath)
-			colorstring.Printf("\n\n😁 😁 [blue]:) [default]Down success\n\n\n")
-
 		} else {
+			colorstring.Printf("\n\n\n[light_red]Down.defer end [default](%q)\n\n", ts.cfg.ConfigPath)
+			colorstring.Printf("\n\n😱 ☹ 😡 [light_red](-_-) [default]Down fail\n\n\n")
 
 			ts.lg.Info("failed Down",
 				zap.Error(err),
 				zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			)
-
-			colorstring.Printf("\n\n\n[light_red]Down.defer end [default](%q)\n\n", ts.cfg.ConfigPath)
-			colorstring.Printf("\n\n😱 ☹ 😡 [light_red](-_-) [default]Down fail\n\n\n")
 		}
 	}()
 
@@ -997,7 +996,7 @@ func (ts *Tester) down() (err error) {
 		errs = append(errs, err.Error())
 	}
 
-	if ts.cfg.Parameters.VPCID == "" { // VPC was created
+	if ts.cfg.Parameters.VPCCreate { // VPC was created
 		waitDur := 30 * time.Second
 		ts.lg.Info("sleeping before VPC deletion", zap.Duration("wait", waitDur))
 		time.Sleep(waitDur)

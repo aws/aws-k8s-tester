@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-k8s-tester/ec2"
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
+	"github.com/mitchellh/colorstring"
 	"github.com/spf13/cobra"
 )
 
@@ -25,7 +26,8 @@ func newCreate() *cobra.Command {
 func newCreateConfig() *cobra.Command {
 	return &cobra.Command{
 		Use:   "config",
-		Short: "Writes an aws-k8s-tester eks configuration with default values",
+		Short: "Writes an aws-k8s-tester ec2 configuration with default values",
+		Long:  "Configuration values are overwritten by environment variables.",
 		Run:   configFunc,
 	}
 }
@@ -38,15 +40,31 @@ func configFunc(cmd *cobra.Command, args []string) {
 	cfg := ec2config.NewDefault()
 	cfg.ConfigPath = path
 	cfg.Sync()
-	fmt.Fprintf(os.Stderr, "wrote aws-k8s-tester eks configuration to %q\n", cfg.ConfigPath)
+
+	colorstring.Printf("\n\n[light_blue][bold]overwriting config file from environment variables[default]\n\n\n")
+	err := cfg.UpdateFromEnvs()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to load configuration from environment variables: %v", err)
+		os.Exit(1)
+	}
+
+	if err = cfg.ValidateAndSetDefaults(); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to validate configuration %q (%v)\n", path, err)
+		colorstring.Printf("\n\n[red][bold]'aws-k8s-tester ec2 create config' fail[default] %v\n\n\n", err)
+		os.Exit(1)
+	}
+
+	colorstring.Printf("\n\n[light_blue][bold]'aws-k8s-tester ec2 create config' success[default] %q\n\n\n", cfg.ConfigPath)
 }
 
 func newCreateCluster() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "cluster",
-		Short: "Create EC2 instances",
+		Short: "Create an ec2 cluster",
+		Long:  "Configuration values are overwritten by environment variables.",
 		Run:   createClusterFunc,
 	}
+	return cmd
 }
 
 func createClusterFunc(cmd *cobra.Command, args []string) {
@@ -61,17 +79,32 @@ func createClusterFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	var dp ec2.Deployer
-	dp, err = ec2.NewDeployer(cfg)
+	if err = cfg.ValidateAndSetDefaults(); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to validate configuration %q (%v)\n", path, err)
+		os.Exit(1)
+	}
+
+	colorstring.Printf("\n\n[light_blue][bold]overwriting config file from environment variables[default]\n\n\n")
+	err = cfg.UpdateFromEnvs()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create EKS deployer %v\n", err)
+		fmt.Fprintf(os.Stderr, "failed to load configuration from environment variables: %v\n", err)
 		os.Exit(1)
 	}
 
-	if err = dp.Create(); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create cluster %v\n", err)
+	if err = cfg.ValidateAndSetDefaults(); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to validate configuration %q (%v)\n", path, err)
 		os.Exit(1)
 	}
 
-	fmt.Println(cfg.SSHCommands())
+	tester, err := ec2.New(cfg)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to create ec2 deployer %v\n", err)
+		os.Exit(1)
+	}
+
+	if err = tester.Up(); err != nil {
+		colorstring.Printf("\n\n[red][bold]'aws-k8s-tester ec2 create cluster' fail[default] %v\n\n\n", err)
+		os.Exit(1)
+	}
+	colorstring.Printf("\n\n[light_blue][bold]'aws-k8s-tester ec2 create cluster' success[default]\n\n\n")
 }

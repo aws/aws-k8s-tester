@@ -23,7 +23,7 @@ var (
 func NewCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:        "eks",
-		Short:      "EKS commands",
+		Short:      "eks commands",
 		SuggestFor: []string{"ekk", "ekstester"},
 	}
 	cmd.PersistentFlags().StringVarP(&path, "path", "p", "", "aws-k8s-tester EKS configuration file path")

@@ -23,7 +23,7 @@ func newDelete() *cobra.Command {
 func newDeleteCluster() *cobra.Command {
 	return &cobra.Command{
 		Use:   "cluster",
-		Short: "Delete EKS cluster",
+		Short: "Delete eks cluster",
 		Run:   deleteClusterFunc,
 	}
 }
@@ -42,7 +42,7 @@ func deleteClusterFunc(cmd *cobra.Command, args []string) {
 
 	tester, err := eks.New(cfg)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create EKS deployer %v\n", err)
+		fmt.Fprintf(os.Stderr, "failed to create eks deployer %v\n", err)
 		os.Exit(1)
 	}
 
