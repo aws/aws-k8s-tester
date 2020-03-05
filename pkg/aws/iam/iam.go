@@ -26,19 +26,34 @@ type StatementEntry struct {
 	Principal *PrincipalEntry `json:"Principal,omitempty"`
 }
 
-// PrincipalEntry represents the policy document Principal.
-type PrincipalEntry struct {
-	Service []string `json:"Service,omitempty"`
-}
-
 type AssumeRolePolicyDocument struct {
 	Version   string                               `json:"Version"`
 	Statement []*AssumeRolePolicyDocumentStatement `json:"Statement"`
 }
 
+type AssumeRolePolicyDocumentSingle struct {
+	Version   string                                     `json:"Version"`
+	Statement []*AssumeRolePolicyDocumentStatementSingle `json:"Statement"`
+}
+
 type AssumeRolePolicyDocumentStatement struct {
 	Effect    string          `json:"Effect"`
 	Principal *PrincipalEntry `json:"Principal,omitempty"`
+}
+
+// PrincipalEntry represents the policy document Principal.
+type PrincipalEntry struct {
+	Service []string `json:"Service,omitempty"`
+}
+
+type AssumeRolePolicyDocumentStatementSingle struct {
+	Effect    string                `json:"Effect"`
+	Principal *PrincipalEntrySingle `json:"Principal,omitempty"`
+}
+
+// PrincipalEntrySingle represents the policy document Principal.
+type PrincipalEntrySingle struct {
+	Service string `json:"Service,omitempty"`
 }
 
 // Validate validates IAM role.
@@ -64,17 +79,40 @@ func Validate(
 	if err != nil {
 		return fmt.Errorf("failed to escape AssumeRolePolicyDocument:\n%s\n\n(%v)", txt, err)
 	}
-	doc := new(AssumeRolePolicyDocument)
+	doc, docSingle := new(AssumeRolePolicyDocument), new(AssumeRolePolicyDocumentSingle)
 	if err = json.Unmarshal([]byte(txt), doc); err != nil {
-		return fmt.Errorf("failed to unmarshal AssumeRolePolicyDocument:\n%s\n\n(%v)", txt, err)
-	}
-	trustedEntities := make(map[string]struct{})
-	for _, v1 := range doc.Statement {
-		for _, v2 := range v1.Principal.Service {
-			lg.Info("found trusted entity", zap.String("entity", v2))
-			trustedEntities[v2] = struct{}{}
+		doc = nil
+		lg.Warn("retrying unmarshal", zap.String("body", txt), zap.Error(err))
+		if err = json.Unmarshal([]byte(txt), docSingle); err != nil {
+			return fmt.Errorf("failed to unmarshal AssumeRolePolicyDocument/Single:\n%s\n\n(%v)", txt, err)
 		}
 	}
+	trustedEntities := make(map[string]struct{})
+	switch {
+	case doc != nil && len(doc.Statement) > 0:
+		lg.Info("checking trusted entity using AssumeRolePolicyDocument",
+			zap.String("body", txt),
+			zap.String("parsed-doc", fmt.Sprintf("%+v", *doc)),
+		)
+		for _, v1 := range doc.Statement {
+			for _, v2 := range v1.Principal.Service {
+				lg.Info("found trusted entity", zap.String("entity", v2))
+				trustedEntities[v2] = struct{}{}
+			}
+		}
+	case docSingle != nil && len(docSingle.Statement) > 0:
+		lg.Info("checking trusted entity using AssumeRolePolicyDocumentSingle",
+			zap.String("body", txt),
+			zap.String("parsed-doc", fmt.Sprintf("%+v", *docSingle)),
+		)
+		for _, v1 := range docSingle.Statement {
+			lg.Info("found trusted entity", zap.String("entity", v1.Principal.Service))
+			trustedEntities[v1.Principal.Service] = struct{}{}
+		}
+	default:
+		return fmt.Errorf("statement not found %s", txt)
+	}
+
 	reqEnts := make(map[string]struct{})
 	for _, v := range requiredSPs {
 		reqEnts[v] = struct{}{}
