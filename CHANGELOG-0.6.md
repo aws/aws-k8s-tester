@@ -3,7 +3,7 @@
 <hr>
 
 
-## [v0.6.9](https://github.com/aws/aws-k8s-tester/releases/tag/v0.6.9) (2020-03)
+## [v0.6.9](https://github.com/aws/aws-k8s-tester/releases/tag/v0.6.9) (2020-03-05)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.6.8...v0.6.9).
 
@@ -13,7 +13,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.6.8...v0.6.9
 
 ### `ec2`
 
-- Rewrite to use [CFN](https://github.com/aws/aws-k8s-tester/commit/).
+- Rewrite to use [CFN](https://github.com/aws/aws-k8s-tester/commit/92a6a2d5feb4ee9622b0f2d320bc754acad84790).
 
 ### `eksconfig`
 
