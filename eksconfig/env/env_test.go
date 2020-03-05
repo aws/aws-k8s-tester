@@ -18,7 +18,7 @@ func TestEnv(t *testing.T) {
 	defer func() {
 		os.RemoveAll(cfg.ConfigPath)
 		os.RemoveAll(cfg.KubectlCommandsOutputPath)
-		os.RemoveAll(cfg.SSHCommandsOutputPath)
+		os.RemoveAll(cfg.RemoteAccessCommandsOutputPath)
 	}()
 
 	kubectlDownloadURL := "https://amazon-eks.s3-us-west-2.amazonaws.com/1.11.5/2018-12-06/bin/linux/amd64/kubectl"
@@ -28,8 +28,8 @@ func TestEnv(t *testing.T) {
 
 	os.Setenv("AWS_K8S_TESTER_EKS_KUBECTL_COMMANDS_OUTPUT_PATH", "hello-kubectl")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_KUBECTL_COMMANDS_OUTPUT_PATH")
-	os.Setenv("AWS_K8S_TESTER_EKS_SSH_COMMANDS_OUTPUT_PATH", "hello-ssh")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_SSH_COMMANDS_OUTPUT_PATH")
+	os.Setenv("AWS_K8S_TESTER_EKS_REMOTE_ACCESS_COMMANDS_OUTPUT_PATH", "hello-ssh")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_REMOTE_ACCESS_COMMANDS_OUTPUT_PATH")
 	os.Setenv("AWS_K8S_TESTER_EKS_REGION", "us-east-1")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_REGION")
 	os.Setenv("AWS_K8S_TESTER_EKS_LOG_LEVEL", "debug")
@@ -112,8 +112,8 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_RESOLVER_URL")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_SIGNING_NAME", "a")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_SIGNING_NAME")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_SSH_KEY_PAIR_NAME", "a")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_SSH_KEY_PAIR_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_REMOTE_ACCESS_KEY_NAME", "a")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_REMOTE_ACCESS_KEY_NAME")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_REMOTE_ACCESS_PRIVATE_KEY_PATH", "a")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_REMOTE_ACCESS_PRIVATE_KEY_PATH")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_REMOTE_ACCESS_USER_NAME", "a")
@@ -255,8 +255,8 @@ func TestEnv(t *testing.T) {
 	if cfg.KubectlCommandsOutputPath != "hello-kubectl" {
 		t.Fatalf("unexpected %q", cfg.KubectlCommandsOutputPath)
 	}
-	if cfg.SSHCommandsOutputPath != "hello-ssh" {
-		t.Fatalf("unexpected %q", cfg.SSHCommandsOutputPath)
+	if cfg.RemoteAccessCommandsOutputPath != "hello-ssh" {
+		t.Fatalf("unexpected %q", cfg.RemoteAccessCommandsOutputPath)
 	}
 	if cfg.Region != "us-east-1" {
 		t.Fatalf("unexpected %q", cfg.Region)
@@ -401,8 +401,8 @@ func TestEnv(t *testing.T) {
 	if cfg.AddOnManagedNodeGroups.SigningName != "a" {
 		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.SigningName %q", cfg.AddOnManagedNodeGroups.SigningName)
 	}
-	if cfg.AddOnManagedNodeGroups.SSHKeyPairName != "a" {
-		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.SSHKeyPairName %q", cfg.AddOnManagedNodeGroups.SSHKeyPairName)
+	if cfg.AddOnManagedNodeGroups.RemoteAccessKeyName != "a" {
+		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.RemoteAccessKeyName %q", cfg.AddOnManagedNodeGroups.RemoteAccessKeyName)
 	}
 	if cfg.AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath != "a" {
 		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath %q", cfg.AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath)

@@ -19,26 +19,26 @@ import (
 // SECURITY NOTE: MAKE SURE PRIVATE KEY NEVER GETS UPLOADED TO CLOUD STORAGE AND DLETE AFTER USE!!!
 
 func (ts *tester) createKeyPair() (err error) {
-	if ts.cfg.EKSConfig.AddOnManagedNodeGroups.SSHKeyPairName == "" {
+	if ts.cfg.EKSConfig.AddOnManagedNodeGroups.RemoteAccessKeyName == "" {
 		return errors.New("cannot create key pair without key name")
 	}
 	if ts.cfg.EKSConfig.AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath == "" {
 		return errors.New("cannot create key pair without private key path")
 	}
 
-	ts.cfg.Logger.Info("creating a new key pair", zap.String("key-pair-name", ts.cfg.EKSConfig.AddOnManagedNodeGroups.SSHKeyPairName))
+	ts.cfg.Logger.Info("creating a new key pair", zap.String("key-pair-name", ts.cfg.EKSConfig.AddOnManagedNodeGroups.RemoteAccessKeyName))
 
 	now := time.Now()
 
 	var output *ec2.CreateKeyPairOutput
 	output, err = ts.cfg.EC2API.CreateKeyPair(&ec2.CreateKeyPairInput{
-		KeyName: aws.String(ts.cfg.EKSConfig.AddOnManagedNodeGroups.SSHKeyPairName),
+		KeyName: aws.String(ts.cfg.EKSConfig.AddOnManagedNodeGroups.RemoteAccessKeyName),
 	})
 	if err != nil {
 		return err
 	}
-	if *output.KeyName != ts.cfg.EKSConfig.AddOnManagedNodeGroups.SSHKeyPairName {
-		return fmt.Errorf("unexpected key name %q, expected %q", *output.KeyName, ts.cfg.EKSConfig.AddOnManagedNodeGroups.SSHKeyPairName)
+	if *output.KeyName != ts.cfg.EKSConfig.AddOnManagedNodeGroups.RemoteAccessKeyName {
+		return fmt.Errorf("unexpected key name %q, expected %q", *output.KeyName, ts.cfg.EKSConfig.AddOnManagedNodeGroups.RemoteAccessKeyName)
 	}
 	if err = os.MkdirAll(filepath.Dir(ts.cfg.EKSConfig.AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath), 0700); err != nil {
 		return err
@@ -53,22 +53,22 @@ func (ts *tester) createKeyPair() (err error) {
 
 	ts.cfg.Logger.Info(
 		"created a new key pair",
-		zap.String("key-name", ts.cfg.EKSConfig.AddOnManagedNodeGroups.SSHKeyPairName),
+		zap.String("key-name", ts.cfg.EKSConfig.AddOnManagedNodeGroups.RemoteAccessKeyName),
 		zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 	)
 	return ts.cfg.EKSConfig.Sync()
 }
 
 func (ts *tester) deleteKeyPair() error {
-	if ts.cfg.EKSConfig.AddOnManagedNodeGroups.SSHKeyPairName == "" {
+	if ts.cfg.EKSConfig.AddOnManagedNodeGroups.RemoteAccessKeyName == "" {
 		return errors.New("cannot delete key pair without key name")
 	}
 	defer os.RemoveAll(ts.cfg.EKSConfig.AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath)
 
-	ts.cfg.Logger.Info("deleting a key pair", zap.String("key-pair-name", ts.cfg.EKSConfig.AddOnManagedNodeGroups.SSHKeyPairName))
+	ts.cfg.Logger.Info("deleting a key pair", zap.String("key-pair-name", ts.cfg.EKSConfig.AddOnManagedNodeGroups.RemoteAccessKeyName))
 
 	_, err := ts.cfg.EC2API.DeleteKeyPair(&ec2.DeleteKeyPairInput{
-		KeyName: aws.String(ts.cfg.EKSConfig.AddOnManagedNodeGroups.SSHKeyPairName),
+		KeyName: aws.String(ts.cfg.EKSConfig.AddOnManagedNodeGroups.RemoteAccessKeyName),
 	})
 	if err != nil {
 		return err
@@ -79,7 +79,7 @@ func (ts *tester) deleteKeyPair() error {
 	deleted := false
 	for i := 0; i < 10; i++ {
 		_, err = ts.cfg.EC2API.DescribeKeyPairs(&ec2.DescribeKeyPairsInput{
-			KeyNames: aws.StringSlice([]string{ts.cfg.EKSConfig.AddOnManagedNodeGroups.SSHKeyPairName}),
+			KeyNames: aws.StringSlice([]string{ts.cfg.EKSConfig.AddOnManagedNodeGroups.RemoteAccessKeyName}),
 		})
 		if err == nil {
 			time.Sleep(3 * time.Second)
@@ -98,9 +98,9 @@ func (ts *tester) deleteKeyPair() error {
 		}
 	}
 	if !deleted {
-		return fmt.Errorf("deleted key pair but %q still exists", ts.cfg.EKSConfig.AddOnManagedNodeGroups.SSHKeyPairName)
+		return fmt.Errorf("deleted key pair but %q still exists", ts.cfg.EKSConfig.AddOnManagedNodeGroups.RemoteAccessKeyName)
 	}
 
-	ts.cfg.Logger.Info("deleted a key pair", zap.String("key-pair-name", ts.cfg.EKSConfig.AddOnManagedNodeGroups.SSHKeyPairName))
+	ts.cfg.Logger.Info("deleted a key pair", zap.String("key-pair-name", ts.cfg.EKSConfig.AddOnManagedNodeGroups.RemoteAccessKeyName))
 	return nil
 }

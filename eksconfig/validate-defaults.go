@@ -29,7 +29,6 @@ var DefaultConfig = Config{
 	// to be auto-generated
 	ConfigPath:                "",
 	KubectlCommandsOutputPath: "",
-	SSHCommandsOutputPath:     "",
 	KubeConfigPath:            "",
 	Name:                      "",
 	AWSCLIPath:                "",
@@ -66,6 +65,7 @@ var DefaultConfig = Config{
 
 		RoleCreate: true,
 
+		RemoteAccessKeyCreate: true,
 		// keep in-sync with the default value in https://pkg.go.dev/k8s.io/kubernetes/test/e2e/framework#GetSigner
 		RemoteAccessPrivateKeyPath: filepath.Join(homedir.HomeDir(), ".ssh", "kube_aws_rsa"),
 		RemoteAccessUserName:       "ec2-user", // assume Amazon Linux 2
@@ -290,11 +290,11 @@ func (cfg *Config) validateConfig() error {
 	if filepath.Ext(cfg.KubectlCommandsOutputPath) != ".sh" {
 		cfg.KubectlCommandsOutputPath = cfg.KubectlCommandsOutputPath + ".sh"
 	}
-	if cfg.SSHCommandsOutputPath == "" {
-		cfg.SSHCommandsOutputPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".ssh.sh"
+	if cfg.RemoteAccessCommandsOutputPath == "" {
+		cfg.RemoteAccessCommandsOutputPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".ssh.sh"
 	}
-	if filepath.Ext(cfg.SSHCommandsOutputPath) != ".sh" {
-		cfg.SSHCommandsOutputPath = cfg.SSHCommandsOutputPath + ".sh"
+	if filepath.Ext(cfg.RemoteAccessCommandsOutputPath) != ".sh" {
+		cfg.RemoteAccessCommandsOutputPath = cfg.RemoteAccessCommandsOutputPath + ".sh"
 	}
 	if cfg.CommandAfterCreateClusterOutputPath == "" {
 		cfg.CommandAfterCreateClusterOutputPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".after-create-cluster.out.log"
@@ -452,9 +452,6 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 		return errors.New("empty AddOnManagedNodeGroups.RemoteAccessUserName")
 	}
 
-	if cfg.AddOnManagedNodeGroups.SSHKeyPairName == "" {
-		cfg.AddOnManagedNodeGroups.SSHKeyPairName = cfg.Name + "-ssh"
-	}
 	if cfg.AddOnManagedNodeGroups.LogsDir == "" {
 		cfg.AddOnManagedNodeGroups.LogsDir = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-mng-logs")
 	}
@@ -502,6 +499,26 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 		}
 		if len(cfg.AddOnManagedNodeGroups.RoleServicePrincipals) > 0 {
 			return fmt.Errorf("AddOnManagedNodeGroups.RoleCreate false; expect empty RoleServicePrincipals but got %q", cfg.AddOnManagedNodeGroups.RoleServicePrincipals)
+		}
+	}
+
+	switch cfg.AddOnManagedNodeGroups.RemoteAccessKeyCreate {
+	case true: // need create one, or already created
+		if cfg.AddOnManagedNodeGroups.RemoteAccessKeyName == "" {
+			cfg.AddOnManagedNodeGroups.RemoteAccessKeyName = cfg.Name + "-key-mng"
+		}
+		if cfg.AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath != "" {
+			// just ignore...
+			// could be populated from previous run
+			// do not error, so long as RoleCreate false, role won't be deleted
+		}
+
+	case false: // use existing one
+		if cfg.AddOnManagedNodeGroups.RemoteAccessKeyName == "" {
+			return fmt.Errorf("AddOnManagedNodeGroups.RemoteAccessKeyCreate false; expect non-empty RemoteAccessKeyName but got %q", cfg.AddOnManagedNodeGroups.RemoteAccessKeyName)
+		}
+		if cfg.AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath == "" {
+			return fmt.Errorf("AddOnManagedNodeGroups.RemoteAccessKeyCreate false; expect non-empty RemoteAccessPrivateKeyPath but got %q", cfg.AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath)
 		}
 	}
 

@@ -2,33 +2,29 @@
 package ec2config
 
 import (
-	"errors"
+	"bytes"
 	"fmt"
 	"io/ioutil"
-	"math/rand"
-	"os"
 	"path/filepath"
-	"reflect"
-	"strconv"
-	"strings"
+	"sync"
 	"time"
 
-	"github.com/aws/aws-k8s-tester/ec2config/plugins"
-	pkgaws "github.com/aws/aws-k8s-tester/pkg/aws"
-	"github.com/aws/aws-k8s-tester/pkg/logutil"
+	"github.com/aws/aws-sdk-go/service/ec2"
 	"sigs.k8s.io/yaml"
 )
 
 // Config defines EC2 configuration.
 type Config struct {
-	// EnvPrefix is used to update configuration via environmental variables.
-	// The default is "AWS_K8S_TESTER_EC2_".
-	EnvPrefix string `json:"env-prefix"`
+	mu sync.RWMutex
 
-	// AWSAccountID is the AWS account ID.
-	AWSAccountID string `json:"aws-account-id"`
-	// AWSRegion is the AWS region.
-	AWSRegion string `json:"aws-region"`
+	// Name is the name of EC2 tester.
+	Name string `json:"name"`
+	// ConfigPath is the configuration file path.
+	// Deployer is expected to update this file with latest status.
+	ConfigPath string `json:"config-path,omitempty"`
+	// Region is the AWS geographic area for EC2 deployment.
+	// If empty, set default region.
+	Region string `json:"region,omitempty"`
 
 	// LogLevel configures log level. Only supports debug, info, warn, error, panic, or fatal. Default 'info'.
 	LogLevel string `json:"log-level"`
@@ -36,111 +32,79 @@ type Config struct {
 	// Logs are appended to the existing file, if any.
 	// Multiple values are accepted. If empty, it sets to 'default', which outputs to stderr.
 	// See https://pkg.go.dev/go.uber.org/zap#Open and https://pkg.go.dev/go.uber.org/zap#Config for more details.
-	LogOutputs []string `json:"log-outputs"`
-	// LogOutputToUploadPath is the aws-k8s-tester log file path to upload to cloud storage.
-	// Must be left empty.
-	// This will be overwritten by cluster name.
-	LogOutputToUploadPath       string `json:"log-output-to-upload-path"`
-	LogOutputToUploadPathBucket string `json:"log-output-to-upload-path-bucket"`
-	LogOutputToUploadPathURL    string `json:"log-output-to-upload-path-url"`
-	// UploadTesterLogs is true to auto-upload log files.
-	UploadTesterLogs bool `json:"upload-tester-logs"`
+	LogOutputs []string `json:"log-outputs,omitempty"`
+	// LogsDir is set to specify the target directory to store all remote log files.
+	// If empty, it stores in the same directory as "ConfigPath".
+	LogsDir string `json:"logs-dir,omitempty"`
 
-	// UploadBucketExpireDays is the number of days for objects in S3 bucket to expire.
-	// Set 0 to not expire.
-	UploadBucketExpireDays int `json:"upload-bucket-expire-days"`
+	// RoleName is the name of cluster role.
+	RoleName string `json:"role-name"`
+	// RoleCreate is true to auto-create and delete cluster role.
+	RoleCreate bool `json:"role-create"`
+	// RoleARN is the role ARN that EC2 uses to create AWS resources for Kubernetes.
+	// By default, it's empty which triggers tester to create one.
+	RoleARN string `json:"role-arn"`
+	// RoleServicePrincipals is the EC2 Role Service Principals
+	RoleServicePrincipals []string `json:"role-service-principals"`
+	// RoleManagedPolicyARNs is EC2 Role managed policy ARNs.
+	RoleManagedPolicyARNs []string `json:"role-managed-policy-arns"`
+	RoleCFNStackID        string   `json:"role-cfn-stack-id" read-only:"true"`
 
-	// Tag is the tag used for all cloudformation stacks.
-	Tag string `json:"tag"`
-	// Tags to add additional tags to the EC2 instances.
-	Tags map[string]string `json:"tags"`
-	// ClusterName is an unique ID for cluster.
-	ClusterName string `json:"cluster-name"`
+	// VPCCreate is true to auto-create and delete VPC.
+	VPCCreate bool `json:"vpc-create"`
+	// VPCID is the VPC ID for cluster creation.
+	// If not empty, VPC is reused and not deleted.
+	// If empty, VPC is created anew and deleted on cluster deletion.
+	VPCID         string `json:"vpc-id"`
+	VPCCFNStackID string `json:"vpc-cfn-stack-id" read-only:"true"`
+	// SSHIngressIPv4Range is the IP range for SSH inbound traffic.
+	SSHIngressIPv4Range string `json:"ssh-ingress-ipv4-range"`
+	// VpcCIDR is the IP range (CIDR notation) for VPC, must be a valid private
+	// (RFC 1918) CIDR range.
+	VPCCIDR string `json:"vpc-cidr,omitempty"`
+	// PublicSubnetCIDR1 is the CIDR Block for subnet 1 within the VPC.
+	PublicSubnetCIDR1 string `json:"public-subnet-cidr-1,omitempty"`
+	// PublicSubnetCIDR2 is the CIDR Block for subnet 2 within the VPC.
+	PublicSubnetCIDR2 string `json:"public-subnet-cidr-2,omitempty"`
+	// PublicSubnetCIDR3 is the CIDR Block for subnet 3 within the VPC.
+	PublicSubnetCIDR3 string `json:"public-subnet-cidr-3,omitempty"`
+	// PrivateSubnetCIDR1 is the CIDR Block for subnet 1 within the VPC.
+	PrivateSubnetCIDR1 string `json:"private-subnet-cidr-1,omitempty"`
+	// PrivateSubnetCIDR2 is the CIDR Block for subnet 2 within the VPC.
+	PrivateSubnetCIDR2 string `json:"private-subnet-cidr-2,omitempty"`
+	// PublicSubnetIDs is the list of all public subnets in the VPC.
+	PublicSubnetIDs []string `json:"public-subnet-ids" read-only:"true"`
+	// PrivateSubnetIDs is the list of all private subnets in the VPC.
+	PrivateSubnetIDs []string `json:"private-subnet-ids" read-only:"true"`
+	// ControlPlaneSecurityGroupID is the security group ID for the cluster control
+	// plane communication with worker nodes.
+	ControlPlaneSecurityGroupID string `json:"control-plane-security-group-id" read-only:"true"`
 
-	// DestroyAfterCreate is true to automatically tear down EC2 instances.
-	DestroyAfterCreate bool `json:"destroy-after-create"`
-	// DestroyWaitTime is the duration to sleep before EC2 tear down.
-	// Be ignored if "DestroyAfterCreate" is false.
-	DestroyWaitTime time.Duration `json:"destroy-wait-time,omitempty"`
+	// RemoteAccessKeyCreate is true to create the remote SSH access private key.
+	RemoteAccessKeyCreate bool `json:"remote-access-key-create"`
+	// RemoteAccessKeyName is the remote SSH access private key name.
+	RemoteAccessKeyName string `json:"remote-access-key-name"`
+	// RemoteAccessPrivateKeyPath is the remote SSH access private key path.
+	RemoteAccessPrivateKeyPath string `json:"remote-access-private-key-path"`
+	// RemoteAccessUserName is the user name used for running init scripts or SSH access.
+	RemoteAccessUserName string `json:"remote-access-user-name"`
+	// RemoteAccessCommandsOutputPath is the output path for ssh commands.
+	RemoteAccessCommandsOutputPath string `json:"remote-access-commands-output-path,omitempty"`
 
-	// ConfigPath is the configuration file path.
-	// If empty, it is autopopulated.
-	// Deployer is expected to update this file with latest status,
-	// and to make a backup of original configuration
-	// with the filename suffix ".backup.yaml" in the same directory.
-	ConfigPath       string    `json:"config-path"`
-	ConfigPathBucket string    `json:"config-path-bucket"` // read-only to user
-	ConfigPathURL    string    `json:"config-path-url"`    // read-only to user
-	UpdatedAt        time.Time `json:"updated-at"`         // read-only to user
+	// ASGs is a map from each ASG name to EC2 ASG.
+	ASGs map[string]ASG `json:"asgs"`
+}
+
+// ASG represents one ASG.
+type ASG struct {
+	// Name is the ASG name.
+	Name string `json:"name"`
 
 	// ImageID is the Amazon Machine Image (AMI).
 	// If empty, auto-populated with SSM parameter.
 	ImageID string `json:"image-id"`
-	// UserName is the user name used for running init scripts or SSH access.
-	UserName string `json:"user-name"`
-	// Plugins is the list of plugins.
-	Plugins []string `json:"plugins"`
-
-	// InitScript contains init scripts (run-instance UserData field).
-	// Script must be started with "#!/usr/bin/env bash" IF "Plugins" field is not defined.
-	// And will be base64-encoded. Do not base64-encode. Just configure as plain-text.
-	// Let this "ec2" package base64-encode.
-	// Outputs are saved in "/var/log/cloud-init-output.log" in EC2 instance.
-	// "tail -f /var/log/cloud-init-output.log" to check the progress.
-	// Reference: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html.
-	// Note that if both "Plugins" and "InitScript" are not empty,
-	// "InitScript" field is always appended to the scripts generated by "Plugins" field.
-	InitScript string `json:"init-script"`
-	// InitScriptCreated is true once the init script has been created.
-	// This is to prevent redundant init script updates from plugins.
-	InitScriptCreated bool `json:"init-script-created"`
-
 	// InstanceType is the instance type.
 	InstanceType string `json:"instance-type"`
-	// ClusterSize is the number of EC2 instances to create.
-	ClusterSize int `json:"cluster-size"`
-
-	// KeyName is the name of the key pair used for SSH access.
-	// Leave empty to create a temporary one.
-	KeyName string `json:"key-name"`
-	// KeyPath is the file path to the private key.
-	KeyPath       string `json:"key-path"`
-	KeyPathBucket string `json:"key-path-bucket"`
-	KeyPathURL    string `json:"key-path-url"`
-	// KeyCreateSkip is true to indicate that EC2 key pair has been created, so needs no creation.
-	KeyCreateSkip bool `json:"key-create-skip"`
-	// KeyCreated is true to indicate that EC2 key pair has been created, so needs be cleaned later.
-	KeyCreated bool `json:"key-created"`
-
-	// VPCCIDR is the VPC CIDR.
-	VPCCIDR string `json:"vpc-cidr"`
-	// VPCID is the VPC ID to use.
-	// Leave empty to create a temporary one.
-	VPCID string `json:"vpc-id"`
-	// VPCCreated is true to indicate that EC2 VPC has been created, so needs be cleaned later.
-	// Set this to false, if the VPC is reused from somewhere else, so the original VPC creator deletes the VPC.
-	VPCCreated bool `json:"vpc-created"`
-	// InternetGatewayID is the internet gateway ID.
-	InternetGatewayID string `json:"internet-gateway-id"`
-	// RouteTableIDs is the list of route table IDs.
-	RouteTableIDs []string `json:"route-table-ids"`
-
-	// SubnetIDs is a list of subnet IDs to use.
-	// If empty, it will fetch subnets from a given or created VPC.
-	// And randomly assign them to instances.
-	SubnetIDs                  []string          `json:"subnet-ids"`
-	SubnetIDToAvailabilityZone map[string]string `json:"subnet-id-to-availability-zone"` // read-only to user
-
-	// IngressRulesTCP is a map from TCP port range to CIDR to allow via security groups.
-	IngressRulesTCP map[string]string `json:"ingress-rules-tcp"`
-
-	// SecurityGroupIDs is the list of security group IDs.
-	// Leave empty to create a temporary one.
-	SecurityGroupIDs []string `json:"security-group-ids"`
-
-	// AssociatePublicIPAddress is true to associate a public IP address.
-	AssociatePublicIPAddress bool `json:"associate-public-ip-address"`
-
 	// VolumeSize is the size of the default volume, in GiB.
 	//
 	// Constraints: 1-16384 for General Purpose SSD (gp2), 4-16384 for Provisioned
@@ -153,34 +117,15 @@ type Config struct {
 	// a volume size, the default is the snapshot size.
 	VolumeSize int64 `json:"volume-size"`
 
-	// Instances is a set of EC2 instances created from this configuration.
-	Instances map[string]Instance `json:"instances"`
+	// MinSize is the minimum size of ASG.
+	MinSize int `json:"min-size,omitempty"`
+	// MaxSize is the maximum size of ASG.
+	MaxSize int `json:"max-size,omitempty"`
+	// DesiredCapacity is the desired capacity of ASG.
+	DesiredCapacity int `json:"desired-capacity,omitempty"`
 
-	// Wait is true to wait until all EC2 instances are ready.
-	Wait bool `json:"wait"`
-
-	// InstanceProfileFilePath is the JSON file path that defines the instance profile.
-	InstanceProfileFilePath string `json:"instance-profile-file-path"`
-	// InstanceProfileName is the name of an instance profile with permissions to manage EC2 instances.
-	// NOTE THAT this always gets overwritten by 'ClusterName' and 'InstanceProfileFilePath'.
-	InstanceProfileName string `json:"instance-profile-name"`
-	// InstanceProfileCreated is true to indicate that instance profile has been created, so needs be cleaned later.
-	InstanceProfileCreated bool `json:"instance-profile-created"`
-	// InstanceProfilePolicyName is the name of instance profile.
-	InstanceProfilePolicyName string `json:"instance-profile-policy-name"`
-	// InstanceProfilePolicyARN is the ARN of instance profile.
-	InstanceProfilePolicyARN string `json:"instance-profile-policy-arn"`
-	// InstanceProfilePolicy is the instance profile policy.
-	InstanceProfilePolicy string `json:"instance-profile-policy"`
-	// InstanceProfilePolicyCreated is true to indicate that instance profile policy has been created, so needs be cleaned later.
-	InstanceProfilePolicyCreated bool `json:"instance-profile-policy-created"`
-	// InstanceProfileRoleName is the instance profile role name.
-	InstanceProfileRoleName string `json:"instance-profile-role-name"`
-	// InstanceProfileRoleCreated is true to indicate that instance profile role has been created, so needs be cleaned later.
-	InstanceProfileRoleCreated bool `json:"instance-profile-role-created"`
-
-	// CustomScript is executed at the end of EC2 init script.
-	CustomScript string `json:"custom-script"`
+	// Instances is a map from instance ID to instance.
+	Instances map[string]Instance `json:"instanaces" read-only:"true"`
 }
 
 // Instance represents an EC2 instance.
@@ -236,273 +181,13 @@ type SecurityGroup struct {
 	GroupID   string `json:"group-id"`
 }
 
-// NewDefault returns a copy of the default configuration.
-func NewDefault() *Config {
-	vv := defaultConfig
-	return &vv
-}
-
-const envPfx = "AWS_K8S_TESTER_EC2_"
-
-// defaultConfig is the default configuration.
-//  - empty string creates a non-nil object for pointer-type field
-//  - omitting an entire field returns nil value
-//  - make sure to check both
-var defaultConfig = Config{
-	EnvPrefix: envPfx,
-	AWSRegion: "us-west-2",
-
-	DestroyAfterCreate: false,
-	DestroyWaitTime:    time.Minute,
-
-	LogLevel: logutil.DefaultLogLevel,
-
-	// default, stderr, stdout, or file name
-	// log file named with cluster name will be added automatically
-	LogOutputs:             []string{"stderr"},
-	UploadTesterLogs:       false,
-	UploadBucketExpireDays: 2,
-
-	UserName: "ec2-user",
-	Plugins: []string{
-		"update-amazon-linux-2",
-		"install-start-docker-amazon-linux-2",
-	},
-
-	// 2 vCPU, 8 GB RAM
-	InstanceType: "m5.large",
-	ClusterSize:  1,
-
-	AssociatePublicIPAddress: true,
-
-	KeyCreateSkip: false,
-	KeyCreated:    false,
-
-	VPCCIDR: "192.168.0.0/16",
-	IngressRulesTCP: map[string]string{
-		"22": "0.0.0.0/0",
-	},
-
-	VolumeSize: 40,
-
-	Wait: true,
-}
-
-// UpdateFromEnvs updates fields from environmental variables.
-func (cfg *Config) UpdateFromEnvs() error {
-	vv, err := parseEnvs(envPfx, cfg)
-	if err != nil {
-		return err
-	}
-	av, ok := vv.(*Config)
-	if !ok {
-		return fmt.Errorf("expected *Config, got %T", vv)
-	}
-	cfg = av
-	return nil
-}
-
-func parseEnvs(pfx string, addOn interface{}) (interface{}, error) {
-	tp, vv := reflect.TypeOf(addOn).Elem(), reflect.ValueOf(addOn).Elem()
-	for i := 0; i < tp.NumField(); i++ {
-		jv := tp.Field(i).Tag.Get("json")
-		if jv == "" {
-			continue
-		}
-		jv = strings.Replace(jv, ",omitempty", "", -1)
-		jv = strings.ToUpper(strings.Replace(jv, "-", "_", -1))
-		env := pfx + jv
-		sv := os.Getenv(env)
-		if sv == "" {
-			continue
-		}
-		if tp.Field(i).Tag.Get("read-only") == "true" { // skip updating read-only field
-			continue
-		}
-		fieldName := tp.Field(i).Name
-
-		switch vv.Field(i).Type().Kind() {
-		case reflect.String:
-			vv.Field(i).SetString(sv)
-
-		case reflect.Bool:
-			bb, err := strconv.ParseBool(sv)
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse %q (field name %q, environmental variable key %q, error %v)", sv, fieldName, env, err)
-			}
-			vv.Field(i).SetBool(bb)
-
-		case reflect.Int, reflect.Int32, reflect.Int64:
-			if fieldName == "DestroyWaitTime" {
-				dv, err := time.ParseDuration(sv)
-				if err != nil {
-					return nil, fmt.Errorf("failed to parse %q (field name %q, environmental variable key %q, error %v)", sv, fieldName, env, err)
-				}
-				vv.Field(i).SetInt(int64(dv))
-				continue
-			}
-			iv, err := strconv.ParseInt(sv, 10, 64)
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse %q (field name %q, environmental variable key %q, error %v)", sv, fieldName, env, err)
-			}
-			vv.Field(i).SetInt(iv)
-
-		case reflect.Uint, reflect.Uint32, reflect.Uint64:
-			iv, err := strconv.ParseUint(sv, 10, 64)
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse %q (field name %q, environmental variable key %q, error %v)", sv, fieldName, env, err)
-			}
-			vv.Field(i).SetUint(iv)
-
-		case reflect.Float32, reflect.Float64:
-			fv, err := strconv.ParseFloat(sv, 64)
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse %q (field name %q, environmental variable key %q, error %v)", sv, fieldName, env, err)
-			}
-			vv.Field(i).SetFloat(fv)
-
-		case reflect.Slice: // only supports "[]string" for now
-			ss := strings.Split(sv, ",")
-			if len(ss) < 1 {
-				continue
-			}
-			slice := reflect.MakeSlice(reflect.TypeOf([]string{}), len(ss), len(ss))
-			for j := range ss {
-				slice.Index(j).SetString(ss[j])
-			}
-			vv.Field(i).Set(slice)
-
-		case reflect.Map:
-			switch fieldName {
-			case "Tags",
-				"IngressRulesTCP":
-				vv.Field(i).Set(reflect.ValueOf(make(map[string]string)))
-				for _, pair := range strings.Split(sv, ";") {
-					fields := strings.Split(pair, "=")
-					if len(fields) != 2 {
-						return nil, fmt.Errorf("map %q for %q has unexpected format (e.g. should be 'a=b;c;d,e=f')", sv, fieldName)
-					}
-					vv.Field(i).SetMapIndex(reflect.ValueOf(fields[0]), reflect.ValueOf(fields[1]))
-				}
-
-			default:
-				return nil, fmt.Errorf("field %q not supported for reflect.Map", fieldName)
-			}
-
-		default:
-			return nil, fmt.Errorf("%q (type %v) is not supported as an env", env, vv.Field(i).Type())
-		}
-	}
-	return addOn, nil
-}
-
-// genTag generates a tag for cluster name, CloudFormation, and S3 bucket.
-func genTag() string {
-	now := time.Now()
-	return fmt.Sprintf("ec2-%d%02d%02d%02d", now.Year()-2000, int(now.Month()), now.Day(), now.Hour())
-}
-
-// ValidateAndSetDefaults returns an error for invalid configurations.
-// And updates empty fields with default values.
-// At the end, it writes populated YAML to aws-k8s-tester config path.
-func (cfg *Config) ValidateAndSetDefaults() (err error) {
-	if len(cfg.LogOutputs) == 0 {
-		return errors.New("EC2 LogOutputs is not specified")
-	}
-	if cfg.AWSRegion == "" {
-		return errors.New("empty AWSRegion")
-	}
-	if _, ok := pkgaws.RegionToAiport[cfg.AWSRegion]; !ok {
-		return fmt.Errorf("%q not found", cfg.AWSRegion)
-	}
-	if cfg.UserName == "" {
-		return errors.New("empty UserName")
-	}
-
-	if len(cfg.Plugins) > 0 && !cfg.InitScriptCreated {
-		txt := cfg.InitScript
-		cfg.InitScript, err = plugins.Create(cfg.UserName, cfg.CustomScript, cfg.Plugins)
-		if err != nil {
-			return err
-		}
-		cfg.InitScript += "\n" + txt
-		cfg.InitScriptCreated = true
-	}
-
-	if cfg.InstanceType == "" {
-		return errors.New("empty InstanceType")
-	}
-	if cfg.ClusterSize < 1 {
-		return errors.New("unexpected ClusterSize")
-	}
-
-	if cfg.Tag == "" {
-		cfg.Tag = genTag()
-	}
-	if cfg.ClusterName == "" {
-		airport := pkgaws.RegionToAiport[cfg.AWSRegion]
-		cfg.ClusterName = cfg.Tag + "-" + strings.ToLower(airport) + "-" + cfg.AWSRegion + "-" + randString(5)
-	}
-
-	if cfg.ConfigPath == "" {
-		var f *os.File
-		f, err = ioutil.TempFile(os.TempDir(), "ec2config")
-		if err != nil {
-			return err
-		}
-		cfg.ConfigPath, _ = filepath.Abs(f.Name())
-		f.Close()
-		os.RemoveAll(cfg.ConfigPath)
-	}
-	cfg.ConfigPathBucket = filepath.Join(cfg.ClusterName, "ec2config.yaml")
-
-	cfg.LogOutputToUploadPath = filepath.Join(os.TempDir(), fmt.Sprintf("%s.log", cfg.ClusterName))
-	logOutputExist := false
-	for _, lv := range cfg.LogOutputs {
-		if cfg.LogOutputToUploadPath == lv {
-			logOutputExist = true
-			break
-		}
-	}
-	if !logOutputExist {
-		// auto-insert generated log output paths to zap logger output list
-		cfg.LogOutputs = append(cfg.LogOutputs, cfg.LogOutputToUploadPath)
-	}
-	cfg.LogOutputToUploadPathBucket = filepath.Join(cfg.ClusterName, "ec2.log")
-
-	if cfg.KeyName == "" {
-		cfg.KeyName = cfg.ClusterName
-	}
-	cfg.KeyPathBucket = filepath.Join(cfg.ClusterName, "ec2.key")
-	if cfg.KeyPath == "" {
-		var f *os.File
-		f, err = ioutil.TempFile(os.TempDir(), "ec2.key")
-		if err != nil {
-			return err
-		}
-		cfg.KeyPath, _ = filepath.Abs(f.Name())
-		f.Close()
-		os.RemoveAll(cfg.KeyPath)
-	}
-
-	if cfg.InstanceProfileFilePath != "" {
-		if _, err := os.Stat(cfg.InstanceProfileFilePath); err != nil {
-			return fmt.Errorf("instance profile name %q does not exist (%v)", cfg.InstanceProfileFilePath, err)
-		}
-		cfg.InstanceProfileName = cfg.ClusterName + "-instance-profile"
-		cfg.InstanceProfileRoleName = cfg.InstanceProfileName + "-role"
-		cfg.InstanceProfilePolicyName = cfg.InstanceProfileName + "-policy"
-	}
-
-	return nil
-}
-
 // Load loads configuration from YAML.
+// Useful when injecting shared configuration via ConfigMap.
 //
 // Example usage:
 //
-//  import "github.com/aws/aws-k8s-tester/internal/ec2/config"
-//  cfg := config.Load("test.yaml")
+//  import "github.com/aws/aws-k8s-tester/eksconfig"
+//  cfg := eksconfig.Load("test.yaml")
 //  err := cfg.ValidateAndSetDefaults()
 //
 // Do not set default values in this function.
@@ -519,47 +204,87 @@ func Load(p string) (cfg *Config, err error) {
 		return nil, err
 	}
 
-	if cfg.Instances == nil {
-		cfg.Instances = make(map[string]Instance)
-	}
-
 	if cfg.ConfigPath != p {
 		cfg.ConfigPath = p
 	}
-	cfg.ConfigPath, err = filepath.Abs(p)
+	var ap string
+	ap, err = filepath.Abs(p)
 	if err != nil {
 		return nil, err
 	}
+	cfg.ConfigPath = ap
+	cfg.unsafeSync()
 
 	return cfg, nil
 }
 
 // Sync persists current configuration and states to disk.
 func (cfg *Config) Sync() (err error) {
-	if !filepath.IsAbs(cfg.ConfigPath) {
-		cfg.ConfigPath, err = filepath.Abs(cfg.ConfigPath)
-		if err != nil {
-			return err
-		}
-	}
+	cfg.mu.Lock()
+	defer cfg.mu.Unlock()
+	return cfg.unsafeSync()
+}
 
-	cfg.UpdatedAt = time.Now()
+func (cfg *Config) unsafeSync() (err error) {
+	var p string
+	if cfg.ConfigPath != "" && !filepath.IsAbs(cfg.ConfigPath) {
+		p, err = filepath.Abs(cfg.ConfigPath)
+		if err != nil {
+			return fmt.Errorf("failed to 'filepath.Abs(%s)' %v", cfg.ConfigPath, err)
+		}
+		cfg.ConfigPath = p
+	}
 	var d []byte
 	d, err = yaml.Marshal(cfg)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to 'yaml.Marshal' %v", err)
 	}
-	return ioutil.WriteFile(cfg.ConfigPath, d, 0600)
+
+	err = ioutil.WriteFile(cfg.ConfigPath, d, 0600)
+	if err != nil {
+		return fmt.Errorf("failed to write file %q (%v)", cfg.ConfigPath, err)
+	}
+	err = ioutil.WriteFile(cfg.RemoteAccessCommandsOutputPath, []byte(cmdTop+cfg.unsafeSSHCommands()), 0600)
+	if err != nil {
+		return fmt.Errorf("failed to write file %q (%v)", cfg.RemoteAccessCommandsOutputPath, err)
+	}
+
+	return nil
+}
+
+const cmdTop = `#!/bin/bash
+set -e
+set -x
+
+`
+
+// SSHCommands returns the SSH commands.
+func (cfg *Config) SSHCommands() string {
+	cfg.mu.RLock()
+	defer cfg.mu.RUnlock()
+	return cfg.unsafeSSHCommands()
+}
+
+func (cfg *Config) unsafeSSHCommands() (s string) {
+	if len(cfg.ASGs) == 0 {
+		return ""
+	}
+	buf := bytes.NewBuffer(nil)
+	for name, asg := range cfg.ASGs {
+		buf.WriteString("ASG name \"" + name + "\":\n")
+		buf.WriteString(asg.SSHCommands(cfg.Region, cfg.RemoteAccessPrivateKeyPath, cfg.RemoteAccessUserName))
+		buf.WriteString("\n")
+	}
+	return buf.String()
 }
 
 // SSHCommands returns the SSH commands.
-func (cfg *Config) SSHCommands() (s string) {
+func (asg *ASG) SSHCommands(region string, keyPath string, userName string) (s string) {
 	s = fmt.Sprintf(`
 # change SSH key permission
 chmod 400 %s
-`, cfg.KeyPath)
-
-	for _, v := range cfg.Instances {
+`, keyPath)
+	for _, v := range asg.Instances {
 		s += fmt.Sprintf(`# SSH into the remote machine (instance ID %q, public IP %q, private IP %q, public DNS %q)
 ssh -o "StrictHostKeyChecking no" -i %s %s@%s
 # download to local machine
@@ -568,27 +293,69 @@ scp -i %s -r %s@%s:REMOTE_DIRECTORY_PATH LOCAL_DIRECTORY_PATH
 # upload to remote machine
 scp -i %s LOCAL_FILE_PATH %s@%s:REMOTE_FILE_PATH
 scp -i %s -r LOCAL_DIRECTORY_PATH %s@%s:REMOTE_DIRECTORY_PATH
-
+# SSM session (requires SSM agent)
+aws ssm --region %s start-session --target %s
 `,
 			v.InstanceID, v.PublicIP, v.PrivateIP, v.PublicDNSName,
-			cfg.KeyPath, cfg.UserName, v.PublicDNSName,
-			cfg.KeyPath, cfg.UserName, v.PublicDNSName,
-			cfg.KeyPath, cfg.UserName, v.PublicDNSName,
-			cfg.KeyPath, cfg.UserName, v.PublicDNSName,
-			cfg.KeyPath, cfg.UserName, v.PublicDNSName,
+			keyPath, userName, v.PublicDNSName,
+			keyPath, userName, v.PublicDNSName,
+			keyPath, userName, v.PublicDNSName,
+			keyPath, userName, v.PublicDNSName,
+			keyPath, userName, v.PublicDNSName,
+			region, v.InstanceID,
 		)
 	}
 
 	return s + "\n"
 }
 
-const ll = "0123456789abcdefghijklmnopqrstuvwxyz"
-
-func randString(n int) string {
-	b := make([]byte, n)
-	for i := range b {
-		rand.Seed(time.Now().UnixNano())
-		b[i] = ll[rand.Intn(len(ll))]
+// ConvertInstance converts "aws ec2 describe-instances" to "config.Instance".
+func ConvertInstance(iv *ec2.Instance) (instance Instance) {
+	instance = Instance{
+		ImageID:      *iv.ImageId,
+		InstanceID:   *iv.InstanceId,
+		InstanceType: *iv.InstanceType,
+		KeyName:      *iv.KeyName,
+		Placement: Placement{
+			AvailabilityZone: *iv.Placement.AvailabilityZone,
+			Tenancy:          *iv.Placement.Tenancy,
+		},
+		PrivateDNSName: *iv.PrivateDnsName,
+		PrivateIP:      *iv.PrivateIpAddress,
+		State: State{
+			Code: *iv.State.Code,
+			Name: *iv.State.Name,
+		},
+		SubnetID:            *iv.SubnetId,
+		VPCID:               *iv.VpcId,
+		BlockDeviceMappings: make([]BlockDeviceMapping, len(iv.BlockDeviceMappings)),
+		EBSOptimized:        *iv.EbsOptimized,
+		RootDeviceName:      *iv.RootDeviceName,
+		RootDeviceType:      *iv.RootDeviceType,
+		SecurityGroups:      make([]SecurityGroup, len(iv.SecurityGroups)),
+		LaunchTime:          *iv.LaunchTime,
 	}
-	return string(b)
+	if iv.PublicDnsName != nil {
+		instance.PublicDNSName = *iv.PublicDnsName
+	}
+	if iv.PublicIpAddress != nil {
+		instance.PublicIP = *iv.PublicIpAddress
+	}
+	for j := range iv.BlockDeviceMappings {
+		instance.BlockDeviceMappings[j] = BlockDeviceMapping{
+			DeviceName: *iv.BlockDeviceMappings[j].DeviceName,
+			EBS: EBS{
+				DeleteOnTermination: *iv.BlockDeviceMappings[j].Ebs.DeleteOnTermination,
+				Status:              *iv.BlockDeviceMappings[j].Ebs.Status,
+				VolumeID:            *iv.BlockDeviceMappings[j].Ebs.VolumeId,
+			},
+		}
+	}
+	for j := range iv.SecurityGroups {
+		instance.SecurityGroups[j] = SecurityGroup{
+			GroupName: *iv.SecurityGroups[j].GroupName,
+			GroupID:   *iv.SecurityGroups[j].GroupId,
+		}
+	}
+	return instance
 }

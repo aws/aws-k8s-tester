@@ -62,7 +62,7 @@ Parameters:
     Description: The public subnet IDs where workers can be created.
     Type: List<AWS::EC2::Subnet::Id>
 
-  ManagedNodeGroupSSHKeyPairName:
+  ManagedNodeGroupRemoteAccessKeyName:
     Description: Amazon EC2 Key Pair
     Type: AWS::EC2::KeyPair::KeyName
 
@@ -111,7 +111,7 @@ Resources:
       DiskSize: !Ref ManagedNodeGroupVolumeSize
       InstanceTypes: !Ref ManagedNodeGroupInstanceTypes
       RemoteAccess:
-        Ec2SshKey: !Ref ManagedNodeGroupSSHKeyPairName
+        Ec2SshKey: !Ref ManagedNodeGroupRemoteAccessKeyName
       ScalingConfig:
         DesiredSize: !Ref ManagedNodeGroupASGDesiredCapacity
         MinSize: !Ref ManagedNodeGroupASGMinSize
@@ -154,7 +154,7 @@ Parameters:
     Description: The private subnet IDs where workers can be created.
     Type: List<AWS::EC2::Subnet::Id>
 
-  ManagedNodeGroupSSHKeyPairName:
+  ManagedNodeGroupRemoteAccessKeyName:
     Description: Amazon EC2 Key Pair
     Type: AWS::EC2::KeyPair::KeyName
 
@@ -208,7 +208,7 @@ Resources:
       InstanceTypes: !Ref ManagedNodeGroupInstanceTypes
       ReleaseVersion: !Ref ManagedNodeGroupReleaseVersion
       RemoteAccess:
-        Ec2SshKey: !Ref ManagedNodeGroupSSHKeyPairName
+        Ec2SshKey: !Ref ManagedNodeGroupRemoteAccessKeyName
       ScalingConfig:
         DesiredSize: !Ref ManagedNodeGroupASGDesiredCapacity
         MinSize: !Ref ManagedNodeGroupASGMinSize
@@ -405,7 +405,7 @@ func (ts *tester) createMNG() error {
 				DiskSize:      aws.Int64(int64(mv.VolumeSize)),
 				InstanceTypes: aws.StringSlice(mv.InstanceTypes),
 				RemoteAccess: &awseks.RemoteAccessConfig{
-					Ec2SshKey: aws.String(ts.cfg.EKSConfig.AddOnManagedNodeGroups.SSHKeyPairName),
+					Ec2SshKey: aws.String(ts.cfg.EKSConfig.AddOnManagedNodeGroups.RemoteAccessKeyName),
 				},
 				ScalingConfig: &awseks.NodegroupScalingConfig{
 					DesiredSize: aws.Int64(int64(mv.ASGDesiredCapacity)),
@@ -498,8 +498,8 @@ func (ts *tester) createMNG() error {
 						ParameterValue: aws.String(strings.Join(ts.cfg.EKSConfig.Parameters.PublicSubnetIDs, ",")),
 					},
 					{
-						ParameterKey:   aws.String("ManagedNodeGroupSSHKeyPairName"),
-						ParameterValue: aws.String(ts.cfg.EKSConfig.AddOnManagedNodeGroups.SSHKeyPairName),
+						ParameterKey:   aws.String("ManagedNodeGroupRemoteAccessKeyName"),
+						ParameterValue: aws.String(ts.cfg.EKSConfig.AddOnManagedNodeGroups.RemoteAccessKeyName),
 					},
 				},
 			}

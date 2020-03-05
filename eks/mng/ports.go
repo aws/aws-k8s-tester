@@ -13,7 +13,7 @@ import (
 /*
 // 'SourceSecurityGroups' does not open to '0.0.0.0/0'
 RemoteAccess:
-  Ec2SshKey: !Ref ManagedNodeGroupSSHKeyPairName
+  Ec2SshKey: !Ref ManagedNodeGroupRemoteAccessKeyName
   SourceSecurityGroups:
   - !Ref ManagedNodeGroupSecurityGroup
 */

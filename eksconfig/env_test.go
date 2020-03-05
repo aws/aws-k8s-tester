@@ -12,7 +12,7 @@ func TestEnvAddOnManagedNodeGroups(t *testing.T) {
 	defer func() {
 		os.RemoveAll(cfg.ConfigPath)
 		os.RemoveAll(cfg.KubectlCommandsOutputPath)
-		os.RemoveAll(cfg.SSHCommandsOutputPath)
+		os.RemoveAll(cfg.RemoteAccessCommandsOutputPath)
 	}()
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE", "false")
@@ -39,7 +39,7 @@ func TestEnvAddOnManagedNodeGroupsCNI(t *testing.T) {
 	defer func() {
 		os.RemoveAll(cfg.ConfigPath)
 		os.RemoveAll(cfg.KubectlCommandsOutputPath)
-		os.RemoveAll(cfg.SSHCommandsOutputPath)
+		os.RemoveAll(cfg.RemoteAccessCommandsOutputPath)
 	}()
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE", `true`)
@@ -82,7 +82,7 @@ func TestEnvAddOnManagedNodeGroupsInvalidInstanceType(t *testing.T) {
 	defer func() {
 		os.RemoveAll(cfg.ConfigPath)
 		os.RemoveAll(cfg.KubectlCommandsOutputPath)
-		os.RemoveAll(cfg.SSHCommandsOutputPath)
+		os.RemoveAll(cfg.RemoteAccessCommandsOutputPath)
 	}()
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE", `true`)

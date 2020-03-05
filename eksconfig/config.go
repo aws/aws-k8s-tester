@@ -24,8 +24,8 @@ type Config struct {
 	ConfigPath string `json:"config-path,omitempty"`
 	// KubectlCommandsOutputPath is the output path for kubectl commands.
 	KubectlCommandsOutputPath string `json:"kubectl-commands-output-path,omitempty"`
-	// SSHCommandsOutputPath is the output path for ssh commands.
-	SSHCommandsOutputPath string `json:"ssh-commands-output-path,omitempty"`
+	// RemoteAccessCommandsOutputPath is the output path for ssh commands.
+	RemoteAccessCommandsOutputPath string `json:"remote-access-commands-output-path,omitempty"`
 
 	// Region is the AWS geographic area for EKS deployment.
 	// If empty, set default region.
@@ -162,7 +162,6 @@ type Parameters struct {
 	PrivateSubnetCIDR1 string `json:"private-subnet-cidr-1,omitempty"`
 	// PrivateSubnetCIDR2 is the CIDR Block for subnet 2 within the VPC.
 	PrivateSubnetCIDR2 string `json:"private-subnet-cidr-2,omitempty"`
-
 	// PublicSubnetIDs is the list of all public subnets in the VPC.
 	PublicSubnetIDs []string `json:"public-subnet-ids" read-only:"true"`
 	// PrivateSubnetIDs is the list of all private subnets in the VPC.
@@ -223,10 +222,12 @@ type AddOnManagedNodeGroups struct {
 	// SigningName is the EKS managed node group create request signing name.
 	SigningName string `json:"signing-name"`
 
-	// SSHKeyPairName is the key name for node group SSH EC2 key pair.
+	// RemoteAccessKeyCreate is true to create the remote SSH access private key.
+	RemoteAccessKeyCreate bool `json:"remote-access-key-create"`
+	// RemoteAccessKeyName is the key name for node group SSH EC2 key pair.
 	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
 	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
-	SSHKeyPairName string `json:"ssh-key-pair-name,omitempty"`
+	RemoteAccessKeyName string `json:"remote-access-key-name,omitempty"`
 	// RemoteAccessPrivateKeyPath is the file path to store node group key pair private key.
 	// Thus, deployer must delete the private key right after node group creation.
 	// MAKE SURE PRIVATE KEY NEVER GETS UPLOADED TO CLOUD STORAGE AND DELETE AFTER USE!!!
@@ -815,12 +816,12 @@ func (cfg *Config) unsafeSync() (err error) {
 	if err != nil {
 		return fmt.Errorf("failed to write file %q (%v)", cfg.KubectlCommandsOutputPath, err)
 	}
-	err = ioutil.WriteFile(cfg.SSHCommandsOutputPath, []byte(cmdTop+cfg.unsafeSSHCommands()), 0600)
+	err = ioutil.WriteFile(cfg.RemoteAccessCommandsOutputPath, []byte(cmdTop+cfg.unsafeSSHCommands()), 0600)
 	if err != nil {
-		return fmt.Errorf("failed to write file %q (%v)", cfg.SSHCommandsOutputPath, err)
+		return fmt.Errorf("failed to write file %q (%v)", cfg.RemoteAccessCommandsOutputPath, err)
 	}
 
-	return err
+	return nil
 }
 
 const cmdTop = `#!/bin/bash
@@ -932,12 +933,11 @@ func (cfg *Config) unsafeSSHCommands() (s string) {
 	buf := bytes.NewBuffer(nil)
 	for name, ng := range cfg.StatusManagedNodeGroups.Nodes {
 		buf.WriteString("ASG name \"" + name + "\":\n")
-		ec := &ec2config.Config{
-			UserName:  cfg.AddOnManagedNodeGroups.RemoteAccessUserName,
-			KeyPath:   cfg.AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath,
+		asg := &ec2config.ASG{
+			Name:      name,
 			Instances: ng.Instances,
 		}
-		buf.WriteString(ec.SSHCommands())
+		buf.WriteString(asg.SSHCommands(cfg.Region, cfg.AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath, cfg.AddOnManagedNodeGroups.RemoteAccessUserName))
 		buf.WriteString("\n")
 	}
 	return buf.String()
