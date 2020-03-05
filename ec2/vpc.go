@@ -9,6 +9,7 @@ import (
 	"time"
 
 	awscfn "github.com/aws/aws-k8s-tester/pkg/aws/cloudformation"
+	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
@@ -622,6 +623,7 @@ func (ts *Tester) createVPC() error {
 			"Kind":    "aws-k8s-tester",
 			"Name":    ts.cfg.Name,
 			"Network": cfnNetworkTagValue,
+			"Version": version.ReleaseVersion,
 		}),
 		Parameters: []*cloudformation.Parameter{
 			{

@@ -18,6 +18,7 @@ import (
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	awscfn "github.com/aws/aws-k8s-tester/pkg/aws/cloudformation"
 	"github.com/aws/aws-k8s-tester/ssh"
+	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/request"
@@ -561,8 +562,9 @@ func (ts *tester) createRole() error {
 		OnFailure:    aws.String(cloudformation.OnFailureDelete),
 		TemplateBody: aws.String(tplTxt),
 		Tags: awscfn.NewTags(map[string]string{
-			"Kind": "aws-k8s-tester",
-			"Name": ts.cfg.EKSConfig.Name,
+			"Kind":    "aws-k8s-tester",
+			"Name":    ts.cfg.EKSConfig.Name,
+			"Version": version.ReleaseVersion,
 		}),
 		Parameters: []*cloudformation.Parameter{
 			{

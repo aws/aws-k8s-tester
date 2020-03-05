@@ -14,6 +14,7 @@ import (
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	awscfn "github.com/aws/aws-k8s-tester/pkg/aws/cloudformation"
 	awsapiec2 "github.com/aws/aws-k8s-tester/pkg/aws/ec2"
+	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/autoscaling"
@@ -413,7 +414,8 @@ func (ts *tester) createMNG() error {
 				},
 				Subnets: aws.StringSlice(ts.cfg.EKSConfig.Parameters.PublicSubnetIDs),
 				Tags: map[string]*string{
-					"Kind": aws.String("aws-k8s-tester"),
+					"Kind":    aws.String("aws-k8s-tester"),
+					"Version": aws.String(version.ReleaseVersion),
 				},
 				Labels: map[string]*string{
 					"Name": aws.String(mv.Name),
@@ -476,8 +478,9 @@ func (ts *tester) createMNG() error {
 				Capabilities: aws.StringSlice([]string{"CAPABILITY_IAM"}),
 				OnFailure:    aws.String(cloudformation.OnFailureDelete),
 				Tags: awscfn.NewTags(map[string]string{
-					"Kind": "aws-k8s-tester",
-					"Name": ts.cfg.EKSConfig.Name,
+					"Kind":    "aws-k8s-tester",
+					"Name":    ts.cfg.EKSConfig.Name,
+					"Version": version.ReleaseVersion,
 				}),
 				Parameters: []*cloudformation.Parameter{
 					{

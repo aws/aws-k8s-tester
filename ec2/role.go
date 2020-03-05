@@ -10,6 +10,7 @@ import (
 
 	awscfn "github.com/aws/aws-k8s-tester/pkg/aws/cloudformation"
 	awsiam "github.com/aws/aws-k8s-tester/pkg/aws/iam"
+	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"go.uber.org/zap"
@@ -97,8 +98,9 @@ func (ts *Tester) createRole() error {
 		OnFailure:    aws.String(cloudformation.OnFailureDelete),
 		TemplateBody: aws.String(tmpl),
 		Tags: awscfn.NewTags(map[string]string{
-			"Kind": "aws-k8s-tester",
-			"Name": ts.cfg.Name,
+			"Kind":    "aws-k8s-tester",
+			"Name":    ts.cfg.Name,
+			"Version": version.ReleaseVersion,
 		}),
 		Parameters: []*cloudformation.Parameter{
 			{

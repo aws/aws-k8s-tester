@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-k8s-tester/ec2config"
 	awscfn "github.com/aws/aws-k8s-tester/pkg/aws/cloudformation"
 	awsapiec2 "github.com/aws/aws-k8s-tester/pkg/aws/ec2"
+	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/autoscaling"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
@@ -292,8 +293,9 @@ func (ts *Tester) createASGs() error {
 			OnFailure:    aws.String(cloudformation.OnFailureDelete),
 			TemplateBody: aws.String(TemplateASG),
 			Tags: awscfn.NewTags(map[string]string{
-				"Kind": "aws-k8s-tester",
-				"Name": ts.cfg.Name,
+				"Kind":    "aws-k8s-tester",
+				"Name":    ts.cfg.Name,
+				"Version": version.ReleaseVersion,
 			}),
 			Parameters: []*cloudformation.Parameter{
 				{

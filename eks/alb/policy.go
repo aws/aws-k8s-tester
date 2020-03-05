@@ -7,6 +7,7 @@ import (
 	"time"
 
 	awscfn "github.com/aws/aws-k8s-tester/pkg/aws/cloudformation"
+	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"go.uber.org/zap"
@@ -157,8 +158,9 @@ func (ts *tester) createALBPolicy() error {
 		OnFailure:    aws.String(cloudformation.OnFailureDelete),
 		TemplateBody: aws.String(TemplateALBIngressControllerPolicy),
 		Tags: awscfn.NewTags(map[string]string{
-			"Kind": "aws-k8s-tester",
-			"Name": ts.cfg.EKSConfig.Name,
+			"Kind":    "aws-k8s-tester",
+			"Name":    ts.cfg.EKSConfig.Name,
+			"Version": version.ReleaseVersion,
 		}),
 		Parameters: []*cloudformation.Parameter{
 			{

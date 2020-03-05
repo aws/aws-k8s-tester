@@ -5,7 +5,7 @@ var (
 	// GitCommit is the git commit on build.
 	GitCommit = ""
 	// ReleaseVersion is the release version.
-	ReleaseVersion = ""
+	ReleaseVersion = "TODO"
 	// BuildTime is the build timestamp.
 	BuildTime = ""
 )

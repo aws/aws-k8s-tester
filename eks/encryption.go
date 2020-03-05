@@ -3,6 +3,7 @@ package eks
 import (
 	"strings"
 
+	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/kms"
@@ -53,6 +54,7 @@ func (ts *Tester) createEncryption() error {
 		Description: aws.String(ts.cfg.Name),
 		Tags: []*kms.Tag{
 			{TagKey: aws.String("Kind"), TagValue: aws.String("aws-k8s-tester")},
+			{TagKey: aws.String("Version"), TagValue: aws.String(version.ReleaseVersion)},
 		},
 	})
 	if err != nil {
