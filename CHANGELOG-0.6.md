@@ -7,6 +7,23 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.6.8...v0.6.9).
 
+### `ec2config`
+
+- Rewrite to use [CFN](https://github.com/aws/aws-k8s-tester/commit/33994016efbd7f514223131f5a959db50bf638ce).
+
+### `ec2`
+
+- Rewrite to use [CFN](https://github.com/aws/aws-k8s-tester/commit/).
+
+### `eksconfig`
+
+- Change [field name `SSH*` to `RemoteAccess*`](https://github.com/aws/aws-k8s-tester/commit/33994016efbd7f514223131f5a959db50bf638ce).
+  - Add `RemoteAccessKeyCreate` (default `true`).
+  - `SSHCommandsOutputPath` is now `RemoteAccessCommandsOutputPath`.
+  - `AWS_K8S_TESTER_EKS_SSH_COMMANDS_OUTPUT_PATH` is now `AWS_K8S_TESTER_EKS_REMOTE_ACCESS_COMMANDS_OUTPUT_PATH`.
+  - `AddOnManagedNodeGroups.SSHKeyPairName` is now `AddOnManagedNodeGroups.RemoteAccessKeyName`.
+  - `AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_SSH_KEY_PAIR_NAME` is now `AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_REMOTE_ACCESS_KEY_NAME`.
+
 ### `eks`
 
 - Rename [`github.com/aws/aws-k8s-tester/eks/elb` to `github.com/aws/aws-k8s-tester/pkg/aws/elb`](https://github.com/aws/aws-k8s-tester/commit/87b3e79c2f5d923dd40bb9f34192ec6bf8934783).
