@@ -35,7 +35,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.6.8...v0.6.9
 
 ### `pkg/aws/iam`
 
-- Fix [`AssumeRolePolicyDocument` parsing](https://github.com/aws/aws-k8s-tester/commit/).
+- Fix [`AssumeRolePolicyDocument` parsing](https://github.com/aws/aws-k8s-tester/commit/624121ce66e432fcf397759b57813a6ed0cbe42e).
 
 ### `pkg/aws/elb`
 
