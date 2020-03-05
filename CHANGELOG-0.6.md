@@ -26,6 +26,9 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.6.8...v0.6.9
 
 ### `eks`
 
+- Add [Secret encryption support](https://github.com/aws/aws-k8s-tester/commit/154c6b334650cceb7f71e892f3aebfea7016ae84).
+  - https://aws.amazon.com/about-aws/whats-new/2020/03/amazon-eks-adds-envelope-encryption-for-secrets-with-aws-kms/
+  - https://aws.amazon.com/blogs/containers/using-eks-encryption-provider-support-for-defense-in-depth/
 - Rename [`github.com/aws/aws-k8s-tester/eks/elb` to `github.com/aws/aws-k8s-tester/pkg/aws/elb`](https://github.com/aws/aws-k8s-tester/commit/87b3e79c2f5d923dd40bb9f34192ec6bf8934783).
 - Add [3rd public subnet to VPC CloudFormation template](https://github.com/aws/aws-k8s-tester/commit/9de73c4eb886f94ea60e825c00ce39b6b8e61e4b).
 - Check [existing ELBv2 when VPC ID is reused](https://github.com/aws/aws-k8s-tester/commit/facb0e8027ee298b8c8ce3e2ecaa05a18a70e0f7).
