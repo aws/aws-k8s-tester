@@ -562,9 +562,9 @@ func (ts *tester) createRole() error {
 		OnFailure:    aws.String(cloudformation.OnFailureDelete),
 		TemplateBody: aws.String(tplTxt),
 		Tags: awscfn.NewTags(map[string]string{
-			"Kind":    "aws-k8s-tester",
-			"Name":    ts.cfg.EKSConfig.Name,
-			"Version": version.ReleaseVersion,
+			"Kind":                   "aws-k8s-tester",
+			"Name":                   ts.cfg.EKSConfig.Name,
+			"aws-k8s-tester-version": version.ReleaseVersion,
 		}),
 		Parameters: []*cloudformation.Parameter{
 			{

@@ -414,8 +414,8 @@ func (ts *tester) createMNG() error {
 				},
 				Subnets: aws.StringSlice(ts.cfg.EKSConfig.Parameters.PublicSubnetIDs),
 				Tags: map[string]*string{
-					"Kind":    aws.String("aws-k8s-tester"),
-					"Version": aws.String(version.ReleaseVersion),
+					"Kind":                   aws.String("aws-k8s-tester"),
+					"aws-k8s-tester-version": aws.String(version.ReleaseVersion),
 				},
 				Labels: map[string]*string{
 					"Name": aws.String(mv.Name),
@@ -478,9 +478,9 @@ func (ts *tester) createMNG() error {
 				Capabilities: aws.StringSlice([]string{"CAPABILITY_IAM"}),
 				OnFailure:    aws.String(cloudformation.OnFailureDelete),
 				Tags: awscfn.NewTags(map[string]string{
-					"Kind":    "aws-k8s-tester",
-					"Name":    ts.cfg.EKSConfig.Name,
-					"Version": version.ReleaseVersion,
+					"Kind":                   "aws-k8s-tester",
+					"Name":                   ts.cfg.EKSConfig.Name,
+					"aws-k8s-tester-version": version.ReleaseVersion,
 				}),
 				Parameters: []*cloudformation.Parameter{
 					{

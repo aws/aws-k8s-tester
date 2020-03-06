@@ -217,8 +217,8 @@ func (ts *Tester) createEKS() error {
 				SecurityGroupIds: aws.StringSlice([]string{ts.cfg.Parameters.ControlPlaneSecurityGroupID}),
 			},
 			Tags: map[string]*string{
-				"Kind":    aws.String("aws-k8s-tester"),
-				"Version": aws.String(version.ReleaseVersion),
+				"Kind":                   aws.String("aws-k8s-tester"),
+				"aws-k8s-tester-version": aws.String(version.ReleaseVersion),
 			},
 		}
 		for k, v := range ts.cfg.Parameters.Tags {
@@ -269,9 +269,9 @@ func (ts *Tester) createEKS() error {
 			OnFailure:    aws.String(cloudformation.OnFailureDelete),
 			TemplateBody: aws.String(tmpl),
 			Tags: awscfn.NewTags(map[string]string{
-				"Kind":    "aws-k8s-tester",
-				"Name":    ts.cfg.Name,
-				"Version": version.ReleaseVersion,
+				"Kind":                   "aws-k8s-tester",
+				"Name":                   ts.cfg.Name,
+				"aws-k8s-tester-version": version.ReleaseVersion,
 			}),
 			Parameters: []*cloudformation.Parameter{
 				{

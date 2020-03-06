@@ -293,9 +293,9 @@ func (ts *Tester) createASGs() error {
 			OnFailure:    aws.String(cloudformation.OnFailureDelete),
 			TemplateBody: aws.String(TemplateASG),
 			Tags: awscfn.NewTags(map[string]string{
-				"Kind":    "aws-k8s-tester",
-				"Name":    ts.cfg.Name,
-				"Version": version.ReleaseVersion,
+				"Kind":                   "aws-k8s-tester",
+				"Name":                   ts.cfg.Name,
+				"aws-k8s-tester-version": version.ReleaseVersion,
 			}),
 			Parameters: []*cloudformation.Parameter{
 				{

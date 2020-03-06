@@ -16,8 +16,14 @@ import (
 	"go.uber.org/zap"
 )
 
-// TemplateClusterRoleBasic is the CloudFormation template for EKS cluster role.
-const TemplateClusterRoleBasic = `
+// TemplateClusterRole is the CloudFormation template for EKS cluster role.
+//
+// e.g.
+//   Error creating load balancer (will retry): failed to ensure load balancer for service eks-*/hello-world-service: Error creating load balancer: "AccessDenied: User: arn:aws:sts::404174646922:assumed-role/eks-*-cluster-role/* is not authorized to perform: ec2:DescribeAccountAttributes\n\tstatus code: 403"
+//
+// TODO: scope down (e.g. ec2:DescribeAccountAttributes, ec2:DescribeInternetGateways)
+// mng, fargate, etc. may use other roles
+const TemplateClusterRole = `
 ---
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Amazon EKS Cluster Role Basic'
@@ -27,73 +33,21 @@ Parameters:
   RoleName:
     Description: EKS Role name
     Type: String
+    Default: aws-k8s-tester-eks-role
 
   RoleServicePrincipals:
     Description: EKS Role Service Principals
     Type: CommaDelimitedList
-    Default: eks.amazonaws.com
+    Default: 'ec2.amazonaws.com,eks.amazonaws.com,eks-fargate-pods.amazonaws.com'
 
   RoleManagedPolicyARNs:
     Description: EKS Role managed policy ARNs
     Type: CommaDelimitedList
-    Default: 'arn:aws:iam::aws:policy/AmazonEKSServicePolicy,arn:aws:iam::aws:policy/AmazonEKSClusterPolicy'
+    Default: 'arn:aws:iam::aws:policy/AmazonEKSServicePolicy,arn:aws:iam::aws:policy/AmazonEKSClusterPolicy,arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy,arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy,arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly,arn:aws:iam::aws:policy/ElasticLoadBalancingFullAccess,arn:aws:iam::aws:policy/AmazonEKSFargatePodExecutionRolePolicy'
 
 Resources:
 
-  ClusterRole:
-    Type: AWS::IAM::Role
-    Properties:
-      RoleName: !Ref RoleName
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Effect: Allow
-          Principal:
-            Service: !Ref RoleServicePrincipals
-          Action:
-          - sts:AssumeRole
-      ManagedPolicyArns: !Ref RoleManagedPolicyARNs
-      Path: /
-
-Outputs:
-
-  RoleARN:
-    Description: Cluster role ARN that EKS uses to create AWS resources for Kubernetes
-    Value: !GetAtt ClusterRole.Arn
-
-`
-
-// TemplateClusterRoleLB is the CloudFormation template for EKS cluster role
-// with policies required for NLB service operation.
-//
-// e.g.
-//   Error creating load balancer (will retry): failed to ensure load balancer for service eks-*/hello-world-service: Error creating load balancer: "AccessDenied: User: arn:aws:sts::404174646922:assumed-role/eks-*-cluster-role/* is not authorized to perform: ec2:DescribeAccountAttributes\n\tstatus code: 403"
-//
-// TODO: scope down (e.g. ec2:DescribeAccountAttributes, ec2:DescribeInternetGateways)
-const TemplateClusterRoleLB = `
----
-AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Amazon EKS Cluster Role + NLB'
-
-Parameters:
-
-  RoleName:
-    Description: EKS Role name
-    Type: String
-
-  RoleServicePrincipals:
-    Description: EKS Role Service Principals
-    Type: CommaDelimitedList
-    Default: eks.amazonaws.com
-
-  RoleManagedPolicyARNs:
-    Description: EKS Role managed policy ARNs
-    Type: CommaDelimitedList
-    Default: 'arn:aws:iam::aws:policy/AmazonEKSServicePolicy,arn:aws:iam::aws:policy/AmazonEKSClusterPolicy'
-
-Resources:
-
-  ClusterRole:
+  Role:
     Type: AWS::IAM::Role
     Properties:
       RoleName: !Ref RoleName
@@ -108,20 +62,115 @@ Resources:
       ManagedPolicyArns: !Ref RoleManagedPolicyARNs
       Path: /
       Policies:
-      - PolicyName: !Join ['-', [!Ref RoleName, 'nlb-policy']]
+      # https://github.com/kubernetes-sigs/aws-alb-ingress-controller/blob/master/docs/examples/iam-policy.json
+      - PolicyName: !Join ['-', [!Ref RoleName, 'alb-policy']]
         PolicyDocument:
           Version: '2012-10-17'
           Statement:
-          - Action:
-            - ec2:*
-            Effect: Allow
-            Resource: '*'
+          - Effect: Allow
+            Action:
+            - acm:DescribeCertificate
+            - acm:ListCertificates
+            - acm:GetCertificate
+            Resource: "*"
+          - Effect: Allow
+            Action:
+            - ec2:AuthorizeSecurityGroupIngress
+            - ec2:CreateSecurityGroup
+            - ec2:CreateTags
+            - ec2:DeleteTags
+            - ec2:DeleteSecurityGroup
+            - ec2:DescribeAccountAttributes
+            - ec2:DescribeAddresses
+            - ec2:DescribeInstances
+            - ec2:DescribeInstanceStatus
+            - ec2:DescribeInternetGateways
+            - ec2:DescribeNetworkInterfaces
+            - ec2:DescribeSecurityGroups
+            - ec2:DescribeSubnets
+            - ec2:DescribeTags
+            - ec2:DescribeVpcs
+            - ec2:ModifyInstanceAttribute
+            - ec2:ModifyNetworkInterfaceAttribute
+            - ec2:RevokeSecurityGroupIngress
+            Resource: "*"
+          - Effect: Allow
+            Action:
+            - elasticloadbalancing:AddListenerCertificates
+            - elasticloadbalancing:AddTags
+            - elasticloadbalancing:CreateListener
+            - elasticloadbalancing:CreateLoadBalancer
+            - elasticloadbalancing:CreateRule
+            - elasticloadbalancing:CreateTargetGroup
+            - elasticloadbalancing:DeleteListener
+            - elasticloadbalancing:DeleteLoadBalancer
+            - elasticloadbalancing:DeleteRule
+            - elasticloadbalancing:DeleteTargetGroup
+            - elasticloadbalancing:DeregisterTargets
+            - elasticloadbalancing:DescribeListenerCertificates
+            - elasticloadbalancing:DescribeListeners
+            - elasticloadbalancing:DescribeLoadBalancers
+            - elasticloadbalancing:DescribeLoadBalancerAttributes
+            - elasticloadbalancing:DescribeRules
+            - elasticloadbalancing:DescribeSSLPolicies
+            - elasticloadbalancing:DescribeTags
+            - elasticloadbalancing:DescribeTargetGroups
+            - elasticloadbalancing:DescribeTargetGroupAttributes
+            - elasticloadbalancing:DescribeTargetHealth
+            - elasticloadbalancing:ModifyListener
+            - elasticloadbalancing:ModifyLoadBalancerAttributes
+            - elasticloadbalancing:ModifyRule
+            - elasticloadbalancing:ModifyTargetGroup
+            - elasticloadbalancing:ModifyTargetGroupAttributes
+            - elasticloadbalancing:RegisterTargets
+            - elasticloadbalancing:RemoveListenerCertificates
+            - elasticloadbalancing:RemoveTags
+            - elasticloadbalancing:SetIpAddressType
+            - elasticloadbalancing:SetSecurityGroups
+            - elasticloadbalancing:SetSubnets
+            - elasticloadbalancing:SetWebACL
+            Resource: "*"
+          - Effect: Allow
+            Action:
+            - iam:CreateServiceLinkedRole
+            - iam:GetServerCertificate
+            - iam:ListServerCertificates
+            Resource: "*"
+          - Effect: Allow
+            Action:
+            - cognito-idp:DescribeUserPoolClient
+            Resource: "*"
+          - Effect: Allow
+            Action:
+            - waf-regional:GetWebACLForResource
+            - waf-regional:GetWebACL
+            - waf-regional:AssociateWebACL
+            - waf-regional:DisassociateWebACL
+            Resource: "*"
+          - Effect: Allow
+            Action:
+            - tag:GetResources
+            - tag:TagResources
+            Resource: "*"
+          - Effect: Allow
+            Action:
+            - waf:GetWebACL
+            Resource: "*"
+          - Effect: Allow
+            Action:
+            - shield:DescribeProtection
+            - shield:GetSubscriptionState
+            - shield:DeleteProtection
+            - shield:CreateProtection
+            - shield:DescribeSubscription
+            - shield:ListProtections
+            Resource: "*"
 
 Outputs:
 
   RoleARN:
-    Description: Cluster role ARN that EKS uses to create AWS resources for Kubernetes
-    Value: !GetAtt ClusterRole.Arn
+    Description: Role ARN that EKS uses to create AWS resources for Kubernetes
+    Value: !GetAtt Role.Arn
 
 `
 
@@ -148,10 +197,7 @@ func (ts *Tester) createClusterRole() error {
 		return errors.New("cannot create a cluster role with an empty Parameters.RoleName")
 	}
 
-	tmpl := TemplateClusterRoleBasic
-	if ts.cfg.IsAddOnNLBHelloWorldEnabled() || ts.cfg.IsAddOnALB2048Enabled() {
-		tmpl = TemplateClusterRoleLB
-	}
+	tmpl := TemplateClusterRole
 
 	// role ARN is empty, create a default role
 	// otherwise, use the existing one
@@ -162,9 +208,9 @@ func (ts *Tester) createClusterRole() error {
 		OnFailure:    aws.String(cloudformation.OnFailureDelete),
 		TemplateBody: aws.String(tmpl),
 		Tags: awscfn.NewTags(map[string]string{
-			"Kind":    "aws-k8s-tester",
-			"Name":    ts.cfg.Name,
-			"Version": version.ReleaseVersion,
+			"Kind":                   "aws-k8s-tester",
+			"Name":                   ts.cfg.Name,
+			"aws-k8s-tester-version": version.ReleaseVersion,
 		}),
 		Parameters: []*cloudformation.Parameter{
 			{

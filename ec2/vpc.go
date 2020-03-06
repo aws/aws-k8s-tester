@@ -620,10 +620,10 @@ func (ts *Tester) createVPC() error {
 		OnFailure:    aws.String(cloudformation.OnFailureDelete),
 		TemplateBody: aws.String(templateBody),
 		Tags: awscfn.NewTags(map[string]string{
-			"Kind":    "aws-k8s-tester",
-			"Name":    ts.cfg.Name,
-			"Network": cfnNetworkTagValue,
-			"Version": version.ReleaseVersion,
+			"Kind":                   "aws-k8s-tester",
+			"Name":                   ts.cfg.Name,
+			"Network":                cfnNetworkTagValue,
+			"aws-k8s-tester-version": version.ReleaseVersion,
 		}),
 		Parameters: []*cloudformation.Parameter{
 			{
