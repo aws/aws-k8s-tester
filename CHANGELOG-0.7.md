@@ -12,6 +12,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.0...v0.7.1
 
 - Remove [`TemplateVPCPublic` to only use VPC templates with public and private subnets](https://github.com/aws/aws-k8s-tester/commit/f445f1aac5055fbb06356a86638d3ff39f115ffe).
   - Auto-created VPCs will have both public and private subnets.
+- Include [ALB policy in default roles](https://github.com/aws/aws-k8s-tester/commit/5d1de5d17e38880a88336cfb9ff2e454e8bea226).
 
 ### `version`
 
