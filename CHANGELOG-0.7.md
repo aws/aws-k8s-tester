@@ -8,6 +8,11 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.0...v0.7.1).
 
+### `eks`
+
+- Remove [`TemplateVPCPublic` to only use VPC templates with public and private subnets](https://github.com/aws/aws-k8s-tester/commit/).
+  - Auto-created VPCs will have both public and private subnets.
+
 ### `version`
 
 - Tag [resources with `ReleaseVersion` with the tag key `aws-k8s-tester-version`](https://github.com/aws/aws-k8s-tester/commit/4b77f640e8bdd8abe4100778777e6d7df5ff1229).
