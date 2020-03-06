@@ -11,6 +11,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.0...v0.7.1
 ### `version`
 
 - Tag [resources with `ReleaseVersion` with the tag key `aws-k8s-tester-version`](https://github.com/aws/aws-k8s-tester/commit/4b77f640e8bdd8abe4100778777e6d7df5ff1229).
+- Set [default values at compile](https://github.com/aws/aws-k8s-tester/commit/5a3ec45b5230747adfda28d22434dcef6b45430e).
 
 ### Dependency
 
