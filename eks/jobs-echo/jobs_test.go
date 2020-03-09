@@ -11,11 +11,13 @@ func TestJobs(t *testing.T) {
 	ts := &tester{
 		cfg: Config{
 			EKSConfig: &eksconfig.Config{
-				AddOnJobEcho: &eksconfig.AddOnJobEcho{Namespace: "hello"},
+				AddOnJobEcho: &eksconfig.AddOnJobEcho{
+					Namespace: "hello",
+					Completes: 1000,
+					Parallels: 100,
+					Size:      10,
+				},
 			},
-			Completes: 1000,
-			Parallels: 100,
-			EchoSize:  10,
 		},
 	}
 	_, b, err := ts.createObject()

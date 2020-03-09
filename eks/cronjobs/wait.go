@@ -1,4 +1,4 @@
-package jobsecho
+package cronjobs
 
 import (
 	"errors"

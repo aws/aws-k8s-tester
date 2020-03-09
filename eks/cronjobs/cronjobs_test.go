@@ -1,4 +1,4 @@
-package jobspi
+package cronjobs
 
 import (
 	"fmt"
@@ -11,8 +11,9 @@ func TestJobs(t *testing.T) {
 	ts := &tester{
 		cfg: Config{
 			EKSConfig: &eksconfig.Config{
-				AddOnJobPi: &eksconfig.AddOnJobPi{
+				AddOnCronJob: &eksconfig.AddOnCronJob{
 					Namespace: "hello",
+					Schedule:  "*/10 * * * *",
 					Completes: 1000,
 					Parallels: 100,
 				},

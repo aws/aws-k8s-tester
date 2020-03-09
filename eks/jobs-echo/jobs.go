@@ -28,15 +28,6 @@ type Config struct {
 
 	EKSConfig *eksconfig.Config
 	K8SClient k8sClientSetGetter
-
-	// Completes the desired number of successfully finished pods.
-	Completes int
-	// Parallels is the the maximum desired number of pods the
-	// job should run at any given time.
-	Parallels int
-
-	// EchoSize is the size of payload for echo Job.
-	EchoSize int
 }
 
 type k8sClientSetGetter interface {
@@ -85,8 +76,8 @@ func (ts *tester) Create() error {
 	}
 	ts.cfg.Logger.Info("creating Job",
 		zap.String("name", jobName),
-		zap.Int("completes", ts.cfg.Completes),
-		zap.Int("parallels", ts.cfg.Parallels),
+		zap.Int("completes", ts.cfg.EKSConfig.AddOnJobEcho.Completes),
+		zap.Int("parallels", ts.cfg.EKSConfig.AddOnJobEcho.Parallels),
 		zap.String("object-size", humanize.Bytes(uint64(len(b)))),
 	)
 
@@ -99,7 +90,7 @@ func (ts *tester) Create() error {
 	}
 	ts.cfg.Logger.Info("created Job")
 
-	waitDur := 3*time.Minute + 10*time.Duration(ts.cfg.Completes)*time.Second
+	waitDur := 3*time.Minute + 10*time.Duration(ts.cfg.EKSConfig.AddOnJobEcho.Completes)*time.Second
 
 	completedJobs, err := waitJobs(
 		ts.cfg.Logger,
@@ -110,7 +101,7 @@ func (ts *tester) Create() error {
 		5*time.Second,
 		ts.cfg.EKSConfig.AddOnJobEcho.Namespace,
 		jobName,
-		int(ts.cfg.Completes),
+		int(ts.cfg.EKSConfig.AddOnJobEcho.Completes),
 		jobsFieldSelector,
 		v1.PodSucceeded,
 	)
@@ -220,7 +211,7 @@ const (
 )
 
 func (ts *tester) createObject() (batchv1.Job, string, error) {
-	spec := v1.PodTemplateSpec{
+	podSpec := v1.PodTemplateSpec{
 		Spec: v1.PodSpec{
 			Containers: []v1.Container{
 				{
@@ -230,7 +221,7 @@ func (ts *tester) createObject() (batchv1.Job, string, error) {
 					Command: []string{
 						"/bin/sh",
 						"-ec",
-						fmt.Sprintf("echo -n '%s' >> /config/output.txt", randString(ts.cfg.EchoSize)),
+						fmt.Sprintf("echo -n '%s' >> /config/output.txt", randString(ts.cfg.EKSConfig.AddOnJobEcho.Size)),
 					},
 					VolumeMounts: []v1.VolumeMount{
 						{
@@ -253,8 +244,7 @@ func (ts *tester) createObject() (batchv1.Job, string, error) {
 			},
 		},
 	}
-
-	obj := batchv1.Job{
+	jobObj := batchv1.Job{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "batch/v1",
 			Kind:       "Job",
@@ -264,17 +254,15 @@ func (ts *tester) createObject() (batchv1.Job, string, error) {
 			Namespace: ts.cfg.EKSConfig.AddOnJobEcho.Namespace,
 		},
 		Spec: batchv1.JobSpec{
-			Completions: aws.Int32(int32(ts.cfg.Completes)),
-			Parallelism: aws.Int32(int32(ts.cfg.Parallels)),
-
+			Completions: aws.Int32(int32(ts.cfg.EKSConfig.AddOnJobEcho.Completes)),
+			Parallelism: aws.Int32(int32(ts.cfg.EKSConfig.AddOnJobEcho.Parallels)),
+			Template:    podSpec,
 			// TODO: 'TTLSecondsAfterFinished' is still alpha
 			// https://kubernetes.io/docs/concepts/workloads/controllers/ttlafterfinished/
-
-			Template: spec,
 		},
 	}
-	b, err := yaml.Marshal(obj)
-	return obj, string(b), err
+	b, err := yaml.Marshal(jobObj)
+	return jobObj, string(b), err
 }
 
 const ll = "0123456789abcdefghijklmnopqrstuvwxyz"

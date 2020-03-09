@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/eks/alb"
+	"github.com/aws/aws-k8s-tester/eks/cronjobs"
 	"github.com/aws/aws-k8s-tester/eks/fargate"
 	"github.com/aws/aws-k8s-tester/eks/gpu"
 	"github.com/aws/aws-k8s-tester/eks/irsa"
@@ -87,8 +88,9 @@ type Tester struct {
 	mngTester           mng.Tester
 	nlbHelloWorldTester alb.Tester
 	alb2048Tester       alb.Tester
-	jobPiTester         jobspi.Tester
-	jobEchoTester       jobsecho.Tester
+	jobsPiTester        jobspi.Tester
+	jobsEchoTester      jobsecho.Tester
+	cronJobsTester      cronjobs.Tester
 	secretsTester       secrets.Tester
 	irsaTester          irsa.Tester
 	fargateTester       fargate.Tester
@@ -368,15 +370,13 @@ func (ts *Tester) createSubTesters() (err error) {
 	}
 
 	if ts.cfg.IsAddOnJobPiEnabled() {
-		ts.lg.Info("creating jobPiTester")
-		ts.jobPiTester, err = jobspi.New(jobspi.Config{
+		ts.lg.Info("creating jobsPiTester")
+		ts.jobsPiTester, err = jobspi.New(jobspi.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			Sig:       ts.interruptSig,
 			EKSConfig: ts.cfg,
 			K8SClient: ts,
-			Completes: ts.cfg.AddOnJobPi.Completes,
-			Parallels: ts.cfg.AddOnJobPi.Parallels,
 		})
 		if err != nil {
 			return err
@@ -384,16 +384,27 @@ func (ts *Tester) createSubTesters() (err error) {
 	}
 
 	if ts.cfg.IsAddOnJobEchoEnabled() {
-		ts.lg.Info("creating jobEchoTester")
-		ts.jobEchoTester, err = jobsecho.New(jobsecho.Config{
+		ts.lg.Info("creating jobsEchoTester")
+		ts.jobsEchoTester, err = jobsecho.New(jobsecho.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			Sig:       ts.interruptSig,
 			EKSConfig: ts.cfg,
 			K8SClient: ts,
-			Completes: ts.cfg.AddOnJobEcho.Completes,
-			Parallels: ts.cfg.AddOnJobEcho.Parallels,
-			EchoSize:  ts.cfg.AddOnJobEcho.Size,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	if ts.cfg.IsAddOnCronJobEnabled() {
+		ts.lg.Info("creating cronJobsTester")
+		ts.cronJobsTester, err = cronjobs.New(cronjobs.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			Sig:       ts.interruptSig,
+			EKSConfig: ts.cfg,
+			K8SClient: ts,
 		})
 		if err != nil {
 			return err
@@ -698,26 +709,26 @@ func (ts *Tester) Up() (err error) {
 		}
 
 		if ts.cfg.IsAddOnJobPiEnabled() {
-			colorstring.Printf("\n\n\n[light_green]jobPiTester.Create [default](%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnJobPi.Namespace)
+			colorstring.Printf("\n\n\n[light_green]jobsPiTester.Create [default](%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnJobPi.Namespace)
 			if err := catchInterrupt(
 				ts.lg,
 				ts.stopCreationCh,
 				ts.stopCreationChOnce,
 				ts.interruptSig,
-				ts.jobPiTester.Create,
+				ts.jobsPiTester.Create,
 			); err != nil {
 				return err
 			}
 		}
 
 		if ts.cfg.IsAddOnJobEchoEnabled() {
-			colorstring.Printf("\n\n\n[light_green]jobEchoTester.Create [default](%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnJobEcho.Namespace)
+			colorstring.Printf("\n\n\n[light_green]jobsEchoTester.Create [default](%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnJobEcho.Namespace)
 			if err := catchInterrupt(
 				ts.lg,
 				ts.stopCreationCh,
 				ts.stopCreationChOnce,
 				ts.interruptSig,
-				ts.jobEchoTester.Create,
+				ts.jobsEchoTester.Create,
 			); err != nil {
 				return err
 			}
@@ -899,17 +910,17 @@ func (ts *Tester) down() (err error) {
 		}
 
 		if ts.cfg.IsAddOnJobEchoEnabled() && ts.cfg.AddOnJobEcho.Created {
-			colorstring.Printf("\n\n\n[light_green]jobEchoTester.Delete [default](%q)\n", ts.cfg.ConfigPath)
-			if err := ts.jobEchoTester.Delete(); err != nil {
-				ts.lg.Warn("jobEchoTester.Delete failed", zap.Error(err))
+			colorstring.Printf("\n\n\n[light_green]jobsEchoTester.Delete [default](%q)\n", ts.cfg.ConfigPath)
+			if err := ts.jobsEchoTester.Delete(); err != nil {
+				ts.lg.Warn("jobsEchoTester.Delete failed", zap.Error(err))
 				errs = append(errs, err.Error())
 			}
 		}
 
 		if ts.cfg.IsAddOnJobPiEnabled() && ts.cfg.AddOnJobPi.Created {
-			colorstring.Printf("\n\n\n[light_green]jobPiTester.Delete [default](%q)\n", ts.cfg.ConfigPath)
-			if err := ts.jobPiTester.Delete(); err != nil {
-				ts.lg.Warn("jobPiTester.Delete failed", zap.Error(err))
+			colorstring.Printf("\n\n\n[light_green]jobsPiTester.Delete [default](%q)\n", ts.cfg.ConfigPath)
+			if err := ts.jobsPiTester.Delete(); err != nil {
+				ts.lg.Warn("jobsPiTester.Delete failed", zap.Error(err))
 				errs = append(errs, err.Error())
 			}
 		}

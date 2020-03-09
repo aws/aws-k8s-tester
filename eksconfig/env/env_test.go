@@ -191,6 +191,8 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_COMPLETES")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_PARALLELS", "10")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_PARALLELS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_ECHO_SIZE", "10000")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_ECHO_SIZE")
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_ENABLE")
@@ -554,6 +556,9 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.AddOnCronJob.Parallels != 10 {
 		t.Fatalf("unexpected cfg.AddOnCronJob.Parallels %v", cfg.AddOnCronJob.Parallels)
+	}
+	if cfg.AddOnCronJob.Size != 10000 {
+		t.Fatalf("unexpected cfg.AddOnCronJob.Size %v", cfg.AddOnCronJob.Size)
 	}
 
 	if cfg.AddOnSecrets.Created { // read-only must be ignored

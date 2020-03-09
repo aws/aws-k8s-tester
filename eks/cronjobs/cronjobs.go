@@ -1,5 +1,5 @@
-// Package jobspi creates example Job objects in Kubernetes.
-package jobspi
+// Package cronjobs creates CronJob objects in Kubernetes.
+package cronjobs
 
 import (
 	"fmt"
@@ -13,13 +13,14 @@ import (
 	"github.com/dustin/go-humanize"
 	"go.uber.org/zap"
 	batchv1 "k8s.io/api/batch/v1"
+	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientset "k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/yaml"
 )
 
-// Config defines 'Job' configuration.
+// Config defines 'CronJob' configuration.
 type Config struct {
 	Logger *zap.Logger
 
@@ -28,6 +29,15 @@ type Config struct {
 
 	EKSConfig *eksconfig.Config
 	K8SClient k8sClientSetGetter
+
+	// Completes the desired number of successfully finished pods.
+	Completes int
+	// Parallels is the the maximum desired number of pods the
+	// job should run at any given time.
+	Parallels int
+
+	// EchoSize is the size of payload for echo Job.
+	EchoSize int
 }
 
 type k8sClientSetGetter interface {
@@ -52,18 +62,18 @@ type tester struct {
 }
 
 func (ts *tester) Create() error {
-	if ts.cfg.EKSConfig.AddOnJobPi.Created {
-		ts.cfg.Logger.Info("skipping create AddOnJobPi")
+	if ts.cfg.EKSConfig.AddOnCronJob.Created {
+		ts.cfg.Logger.Info("skipping create AddOnCronJob")
 		return nil
 	}
 
-	ts.cfg.EKSConfig.AddOnJobPi.Created = true
+	ts.cfg.EKSConfig.AddOnCronJob.Created = true
 	ts.cfg.EKSConfig.Sync()
 
 	createStart := time.Now()
 	defer func() {
-		ts.cfg.EKSConfig.AddOnJobPi.CreateTook = time.Since(createStart)
-		ts.cfg.EKSConfig.AddOnJobPi.CreateTookString = ts.cfg.EKSConfig.AddOnJobPi.CreateTook.String()
+		ts.cfg.EKSConfig.AddOnCronJob.CreateTook = time.Since(createStart)
+		ts.cfg.EKSConfig.AddOnCronJob.CreateTookString = ts.cfg.EKSConfig.AddOnCronJob.CreateTook.String()
 		ts.cfg.EKSConfig.Sync()
 	}()
 
@@ -74,23 +84,23 @@ func (ts *tester) Create() error {
 	if err != nil {
 		return err
 	}
-	ts.cfg.Logger.Info("creating Job",
-		zap.String("name", jobName),
-		zap.Int("completes", ts.cfg.EKSConfig.AddOnJobPi.Completes),
-		zap.Int("parallels", ts.cfg.EKSConfig.AddOnJobPi.Parallels),
+	ts.cfg.Logger.Info("creating CronJob",
+		zap.String("name", cronJobName),
+		zap.Int("completes", ts.cfg.EKSConfig.AddOnCronJob.Completes),
+		zap.Int("parallels", ts.cfg.EKSConfig.AddOnCronJob.Parallels),
 		zap.String("object-size", humanize.Bytes(uint64(len(b)))),
 	)
 
 	_, err = ts.cfg.K8SClient.KubernetesClientSet().
-		BatchV1().
-		Jobs(ts.cfg.EKSConfig.AddOnJobPi.Namespace).
+		BatchV1beta1().
+		CronJobs(ts.cfg.EKSConfig.AddOnCronJob.Namespace).
 		Create(&obj)
 	if err != nil {
 		return fmt.Errorf("failed to create Job (%v)", err)
 	}
 	ts.cfg.Logger.Info("created Job")
 
-	waitDur := 3*time.Minute + 10*time.Duration(ts.cfg.EKSConfig.AddOnJobPi.Completes)*time.Second
+	waitDur := 3*time.Minute + 10*time.Duration(ts.cfg.EKSConfig.AddOnCronJob.Completes)*time.Second
 
 	completedJobs, err := waitJobs(
 		ts.cfg.Logger,
@@ -99,9 +109,9 @@ func (ts *tester) Create() error {
 		ts.cfg.K8SClient.KubernetesClientSet(),
 		waitDur,
 		5*time.Second,
-		ts.cfg.EKSConfig.AddOnJobPi.Namespace,
-		jobName,
-		int(ts.cfg.EKSConfig.AddOnJobPi.Completes),
+		ts.cfg.EKSConfig.AddOnCronJob.Namespace,
+		cronJobName,
+		int(ts.cfg.EKSConfig.AddOnCronJob.Completes),
 		jobsFieldSelector,
 		v1.PodSucceeded,
 	)
@@ -111,7 +121,7 @@ func (ts *tester) Create() error {
 
 	println()
 	for _, item := range completedJobs {
-		fmt.Printf("Job Pod %q: %q\n", item.Name, item.Status.Phase)
+		fmt.Printf("CronJob Pod %q: %q\n", item.Name, item.Status.Phase)
 	}
 	println()
 
@@ -121,44 +131,43 @@ func (ts *tester) Create() error {
 var propagationBackground = metav1.DeletePropagationBackground
 
 func (ts *tester) Delete() error {
-	if !ts.cfg.EKSConfig.AddOnJobPi.Created {
-		ts.cfg.Logger.Info("skipping delete AddOnJobPi")
+	if !ts.cfg.EKSConfig.AddOnCronJob.Created {
+		ts.cfg.Logger.Info("skipping delete AddOnCronJob")
 		return nil
 	}
 	deleteStart := time.Now()
 	defer func() {
-		ts.cfg.EKSConfig.AddOnJobPi.DeleteTook = time.Since(deleteStart)
-		ts.cfg.EKSConfig.AddOnJobPi.DeleteTookString = ts.cfg.EKSConfig.AddOnJobPi.DeleteTook.String()
+		ts.cfg.EKSConfig.AddOnCronJob.DeleteTook = time.Since(deleteStart)
+		ts.cfg.EKSConfig.AddOnCronJob.DeleteTookString = ts.cfg.EKSConfig.AddOnCronJob.DeleteTook.String()
 		ts.cfg.EKSConfig.Sync()
 	}()
 
-	ts.cfg.Logger.Info("deleting Job", zap.String("name", jobName))
+	ts.cfg.Logger.Info("deleting Job", zap.String("name", cronJobName))
 	err := ts.cfg.
 		K8SClient.KubernetesClientSet().
-		BatchV1().
-		Jobs(ts.cfg.EKSConfig.AddOnJobPi.Namespace).
+		BatchV1beta1().
+		CronJobs(ts.cfg.EKSConfig.AddOnCronJob.Namespace).
 		Delete(
-			jobName,
+			cronJobName,
 			&metav1.DeleteOptions{
 				GracePeriodSeconds: aws.Int64(0),
 				PropagationPolicy:  &propagationBackground,
 			},
 		)
 	if err != nil {
-		return fmt.Errorf("failed to delete Job %q (%v)", jobName, err)
+		return fmt.Errorf("failed to delete CronJob %q (%v)", cronJobName, err)
 	}
-	ts.cfg.Logger.Info("deleted Job", zap.String("name", jobName))
+	ts.cfg.Logger.Info("deleted CronJob", zap.String("name", cronJobName))
 
 	if err := ts.deleteNamespace(); err != nil {
 		return err
 	}
-
-	ts.cfg.EKSConfig.AddOnJobPi.Created = false
+	ts.cfg.EKSConfig.AddOnCronJob.Created = false
 	return ts.cfg.EKSConfig.Sync()
 }
 
 func (ts *tester) createNamespace() error {
-	ts.cfg.Logger.Info("creating namespace", zap.String("namespace", ts.cfg.EKSConfig.AddOnJobPi.Namespace))
+	ts.cfg.Logger.Info("creating namespace", zap.String("namespace", ts.cfg.EKSConfig.AddOnCronJob.Namespace))
 	_, err := ts.cfg.K8SClient.KubernetesClientSet().
 		CoreV1().
 		Namespaces().
@@ -168,27 +177,27 @@ func (ts *tester) createNamespace() error {
 				Kind:       "Namespace",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name: ts.cfg.EKSConfig.AddOnJobPi.Namespace,
+				Name: ts.cfg.EKSConfig.AddOnCronJob.Namespace,
 				Labels: map[string]string{
-					"name": ts.cfg.EKSConfig.AddOnJobPi.Namespace,
+					"name": ts.cfg.EKSConfig.AddOnCronJob.Namespace,
 				},
 			},
 		})
 	if err != nil {
 		return err
 	}
-	ts.cfg.Logger.Info("created namespace", zap.String("namespace", ts.cfg.EKSConfig.AddOnJobPi.Namespace))
+	ts.cfg.Logger.Info("created namespace", zap.String("namespace", ts.cfg.EKSConfig.AddOnCronJob.Namespace))
 	return ts.cfg.EKSConfig.Sync()
 }
 
 func (ts *tester) deleteNamespace() error {
-	ts.cfg.Logger.Info("deleting namespace", zap.String("namespace", ts.cfg.EKSConfig.AddOnJobPi.Namespace))
+	ts.cfg.Logger.Info("deleting namespace", zap.String("namespace", ts.cfg.EKSConfig.AddOnCronJob.Namespace))
 	foreground := metav1.DeletePropagationForeground
 	err := ts.cfg.K8SClient.KubernetesClientSet().
 		CoreV1().
 		Namespaces().
 		Delete(
-			ts.cfg.EKSConfig.AddOnJobPi.Namespace,
+			ts.cfg.EKSConfig.AddOnCronJob.Namespace,
 			&metav1.DeleteOptions{
 				GracePeriodSeconds: aws.Int64(0),
 				PropagationPolicy:  &foreground,
@@ -206,50 +215,75 @@ func (ts *tester) deleteNamespace() error {
 
 const (
 	// https://github.com/kubernetes/kubernetes/blob/d379ab2697251334774b7bd6f41b26cf39de470d/pkg/apis/batch/v1/conversion.go#L30-L41
-	jobsFieldSelector = "status.phase!=Running"
-	jobName           = "job-pi"
-	jobPiImageName    = "perl"
+	jobsFieldSelector    = "status.phase!=Running"
+	jobName              = "job-echo"
+	cronJobName          = "cronjob-echo"
+	cronJobEchoImageName = "busybox"
 )
 
-func (ts *tester) createObject() (batchv1.Job, string, error) {
+func (ts *tester) createObject() (batchv1beta1.CronJob, string, error) {
 	podSpec := v1.PodTemplateSpec{
 		Spec: v1.PodSpec{
 			Containers: []v1.Container{
 				{
-					Name:            jobName,
-					Image:           jobPiImageName,
+					Name:            cronJobName,
+					Image:           cronJobEchoImageName,
 					ImagePullPolicy: v1.PullAlways,
 					Command: []string{
-						"perl",
-						"-Mbignum=bpi",
-						"-wle",
-						"print bpi(2000)",
+						"/bin/sh",
+						"-ec",
+						fmt.Sprintf("echo -n '%s' >> /config/output.txt", randString(ts.cfg.EKSConfig.AddOnCronJob.Size)),
+					},
+					VolumeMounts: []v1.VolumeMount{
+						{
+							Name:      "config",
+							MountPath: "/config",
+						},
 					},
 				},
 			},
 			// spec.template.spec.restartPolicy: Unsupported value: "Always": supported values: "OnFailure", "Never"
 			RestartPolicy: v1.RestartPolicyOnFailure,
+
+			Volumes: []v1.Volume{
+				{
+					Name: "config",
+					VolumeSource: v1.VolumeSource{
+						EmptyDir: &v1.EmptyDirVolumeSource{},
+					},
+				},
+			},
 		},
 	}
-	jobObj := batchv1.Job{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "batch/v1",
-			Kind:       "Job",
-		},
+	jobSpec := batchv1beta1.JobTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      jobName,
-			Namespace: ts.cfg.EKSConfig.AddOnJobPi.Namespace,
+			Namespace: ts.cfg.EKSConfig.AddOnCronJob.Namespace,
 		},
 		Spec: batchv1.JobSpec{
-			Completions: aws.Int32(int32(ts.cfg.EKSConfig.AddOnJobPi.Completes)),
-			Parallelism: aws.Int32(int32(ts.cfg.EKSConfig.AddOnJobPi.Parallels)),
+			Completions: aws.Int32(int32(ts.cfg.EKSConfig.AddOnCronJob.Completes)),
+			Parallelism: aws.Int32(int32(ts.cfg.EKSConfig.AddOnCronJob.Parallels)),
 			Template:    podSpec,
 			// TODO: 'TTLSecondsAfterFinished' is still alpha
 			// https://kubernetes.io/docs/concepts/workloads/controllers/ttlafterfinished/
 		},
 	}
-	b, err := yaml.Marshal(jobObj)
-	return jobObj, string(b), err
+	cronObj := batchv1beta1.CronJob{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "batch/v1beta1",
+			Kind:       "CronJob",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      cronJobName,
+			Namespace: ts.cfg.EKSConfig.AddOnCronJob.Namespace,
+		},
+		Spec: batchv1beta1.CronJobSpec{
+			Schedule:    ts.cfg.EKSConfig.AddOnCronJob.Schedule,
+			JobTemplate: jobSpec,
+		},
+	}
+	b, err := yaml.Marshal(cronObj)
+	return cronObj, string(b), err
 }
 
 const ll = "0123456789abcdefghijklmnopqrstuvwxyz"
