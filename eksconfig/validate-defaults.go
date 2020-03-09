@@ -108,6 +108,7 @@ var DefaultConfig = Config{
 		Schedule:  "*/10 * * * *",
 		Completes: 10,
 		Parallels: 10,
+		Size:      100 * 1024, // 100 KB
 	},
 
 	AddOnSecrets: &AddOnSecrets{
