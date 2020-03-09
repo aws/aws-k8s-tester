@@ -94,6 +94,9 @@ type Config struct {
 	// AddOnJobEcho defines parameters for EKS cluster
 	// add-on Job with echo.
 	AddOnJobEcho *AddOnJobEcho `json:"add-on-job-echo,omitempty"`
+	// AddOnCronJob defines parameters for EKS cluster
+	// add-on with CronJob.
+	AddOnCronJob *AddOnCronJob `json:"add-on-cron-job,omitempty"`
 	// AddOnSecrets defines parameters for EKS cluster
 	// add-on "Secrets".
 	AddOnSecrets *AddOnSecrets `json:"add-on-secrets,omitempty"`
@@ -272,7 +275,7 @@ type MNG struct {
 	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
 	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
 	ASGMaxSize int `json:"asg-max-size,omitempty"`
-	// ASGDesiredCapacity is the desired capacity of Node Group ASG.
+	// ASGDesiredCapacity is is the desired capacity of Node Group ASG.
 	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
 	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
 	ASGDesiredCapacity int `json:"asg-desired-capacity,omitempty"`
@@ -383,7 +386,7 @@ type AddOnJobPi struct {
 	// Namespace is the namespace to create "Job" objects in.
 	Namespace string `json:"namespace"`
 
-	// Completes the desired number of successfully finished pods.
+	// Completes is the desired number of successfully finished pods.
 	Completes int `json:"completes"`
 	// Parallels is the the maximum desired number of pods the
 	// job should run at any given time.
@@ -415,7 +418,7 @@ type AddOnJobEcho struct {
 	// Namespace is the namespace to create "Job" objects in.
 	Namespace string `json:"namespace"`
 
-	// Completes the desired number of successfully finished pods.
+	// Completes is the desired number of successfully finished pods.
 	Completes int `json:"completes"`
 	// Parallels is the the maximum desired number of pods the
 	// job should run at any given time.
@@ -425,6 +428,40 @@ type AddOnJobEcho struct {
 	// "The Job "echo" is invalid: metadata.annotations:
 	// Too long: must have at most 262144 characters". (0.26 MB)
 	Size int `json:"size"`
+}
+
+func (cfg *Config) IsAddOnCronJobEnabled() bool {
+	return cfg.AddOnCronJob != nil && cfg.AddOnCronJob.Enable
+}
+
+// AddOnCronJob defines parameters for EKS cluster
+// add-on with CronJob.
+type AddOnCronJob struct {
+	// Enable is 'true' to create this add-on.
+	Enable bool `json:"enable"`
+	// Created is true when the resource has been created.
+	// Used for delete operations.
+	Created bool `json:"created" read-only:"true"`
+
+	// CreateTook is the duration that took to create the resource.
+	CreateTook time.Duration `json:"create-took,omitempty" read-only:"true"`
+	// CreateTookString is the duration that took to create the resource.
+	CreateTookString string `json:"create-took-string,omitempty" read-only:"true"`
+	// DeleteTook is the duration that took to create the resource.
+	DeleteTook time.Duration `json:"delete-took,omitempty" read-only:"true"`
+	// DeleteTookString is the duration that took to create the resource.
+	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
+
+	// Namespace is the namespace to create "Job" objects in.
+	Namespace string `json:"namespace"`
+
+	// Schedule is the cron schedule (e.g. "*/1 * * * *").
+	Schedule string `json:"schedule"`
+	// Completes is the desired number of successfully finished pods.
+	Completes int `json:"completes"`
+	// Parallels is the the maximum desired number of pods the
+	// job should run at any given time.
+	Parallels int `json:"parallels"`
 }
 
 func (cfg *Config) IsAddOnSecretsEnabled() bool {

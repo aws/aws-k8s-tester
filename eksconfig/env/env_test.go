@@ -179,6 +179,19 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_SIZE", "10000")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_SIZE")
 
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_CREATED", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_CREATED")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_NAMESPACE", "hello3")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_SCHEDULE", "*/10 * * * *")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_SCHEDULE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_COMPLETES", "100")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_COMPLETES")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_PARALLELS", "10")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_PARALLELS")
+
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_ENABLE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_CREATED", "true")
@@ -522,6 +535,25 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.AddOnJobEcho.Size != 10000 {
 		t.Fatalf("unexpected cfg.AddOnJobEcho.Size %v", cfg.AddOnJobEcho.Size)
+	}
+
+	if cfg.AddOnCronJob.Created { // read-only must be ignored
+		t.Fatalf("unexpected cfg.AddOnCronJob.Created %v", cfg.AddOnCronJob.Created)
+	}
+	if !cfg.AddOnCronJob.Enable {
+		t.Fatalf("unexpected cfg.AddOnCronJob.Enable %v", cfg.AddOnCronJob.Enable)
+	}
+	if cfg.AddOnCronJob.Namespace != "hello3" {
+		t.Fatalf("unexpected cfg.AddOnCronJob.Namespace %q", cfg.AddOnCronJob.Namespace)
+	}
+	if cfg.AddOnCronJob.Schedule != "*/10 * * * *" {
+		t.Fatalf("unexpected cfg.AddOnCronJob.Schedule %q", cfg.AddOnCronJob.Schedule)
+	}
+	if cfg.AddOnCronJob.Completes != 100 {
+		t.Fatalf("unexpected cfg.AddOnCronJob.Completes %v", cfg.AddOnCronJob.Completes)
+	}
+	if cfg.AddOnCronJob.Parallels != 10 {
+		t.Fatalf("unexpected cfg.AddOnCronJob.Parallels %v", cfg.AddOnCronJob.Parallels)
 	}
 
 	if cfg.AddOnSecrets.Created { // read-only must be ignored

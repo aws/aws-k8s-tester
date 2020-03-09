@@ -98,6 +98,13 @@ var DefaultConfig = Config{
 		Size:      100 * 1024, // 100 KB
 	},
 
+	AddOnCronJob: &AddOnCronJob{
+		Enable:    false,
+		Schedule:  "*/10 * * * *",
+		Completes: 1000,
+		Parallels: 100,
+	},
+
 	AddOnSecrets: &AddOnSecrets{
 		Enable: false,
 

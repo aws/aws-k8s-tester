@@ -24,6 +24,8 @@ const (
 	EnvironmentVariablePrefixAddOnJobPi = "AWS_K8S_TESTER_EKS_ADD_ON_JOB_PI_"
 	// EnvironmentVariablePrefixAddOnJobEcho is the environment variable prefix used for "eksconfig".
 	EnvironmentVariablePrefixAddOnJobEcho = "AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_"
+	// EnvironmentVariablePrefixAddOnCronJob is the environment variable prefix used for "eksconfig".
+	EnvironmentVariablePrefixAddOnCronJob = "AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_"
 	// EnvironmentVariablePrefixAddOnSecrets is the environment variable prefix used for "eksconfig".
 	EnvironmentVariablePrefixAddOnSecrets = "AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_"
 	// EnvironmentVariablePrefixAddOnIRSA is the environment variable prefix used for "eksconfig".
@@ -112,6 +114,16 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		cfg.AddOnJobEcho = av
 	} else {
 		return fmt.Errorf("expected *AddOnJobEcho, got %T", vv)
+	}
+
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnCronJob, cfg.AddOnCronJob)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*AddOnCronJob); ok {
+		cfg.AddOnCronJob = av
+	} else {
+		return fmt.Errorf("expected *AddOnCronJob, got %T", vv)
 	}
 
 	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnSecrets, cfg.AddOnSecrets)
