@@ -155,16 +155,16 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_NAMESPACE", "test-namespace")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_NAMESPACE")
 
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_PERL_ENABLE", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_PERL_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_PERL_CREATED", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_PERL_CREATED")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_PERL_NAMESPACE", "hello1")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_PERL_NAMESPACE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_PERL_COMPLETES", "100")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_PERL_COMPLETES")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_PERL_PARALLELS", "10")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_PERL_PARALLELS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_PI_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_PI_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_PI_CREATED", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_PI_CREATED")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_PI_NAMESPACE", "hello1")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_PI_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_PI_COMPLETES", "100")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_PI_COMPLETES")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_PI_PARALLELS", "10")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_PI_PARALLELS")
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_ENABLE")
@@ -489,20 +489,20 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("unexpected cfg.AddOnALB2048.Namespace %q", cfg.AddOnALB2048.Namespace)
 	}
 
-	if cfg.AddOnJobPerl.Created { // read-only must be ignored
-		t.Fatalf("unexpected cfg.AddOnJobPerl.Created %v", cfg.AddOnJobPerl.Created)
+	if cfg.AddOnJobPi.Created { // read-only must be ignored
+		t.Fatalf("unexpected cfg.AddOnJobPi.Created %v", cfg.AddOnJobPi.Created)
 	}
-	if !cfg.AddOnJobPerl.Enable {
-		t.Fatalf("unexpected cfg.AddOnJobPerl.Enable %v", cfg.AddOnJobPerl.Enable)
+	if !cfg.AddOnJobPi.Enable {
+		t.Fatalf("unexpected cfg.AddOnJobPi.Enable %v", cfg.AddOnJobPi.Enable)
 	}
-	if cfg.AddOnJobPerl.Namespace != "hello1" {
-		t.Fatalf("unexpected cfg.AddOnJobPerl.Namespace %q", cfg.AddOnJobPerl.Namespace)
+	if cfg.AddOnJobPi.Namespace != "hello1" {
+		t.Fatalf("unexpected cfg.AddOnJobPi.Namespace %q", cfg.AddOnJobPi.Namespace)
 	}
-	if cfg.AddOnJobPerl.Completes != 100 {
-		t.Fatalf("unexpected cfg.AddOnJobPerl.Completes %v", cfg.AddOnJobPerl.Completes)
+	if cfg.AddOnJobPi.Completes != 100 {
+		t.Fatalf("unexpected cfg.AddOnJobPi.Completes %v", cfg.AddOnJobPi.Completes)
 	}
-	if cfg.AddOnJobPerl.Parallels != 10 {
-		t.Fatalf("unexpected cfg.AddOnJobPerl.Parallels %v", cfg.AddOnJobPerl.Parallels)
+	if cfg.AddOnJobPi.Parallels != 10 {
+		t.Fatalf("unexpected cfg.AddOnJobPi.Parallels %v", cfg.AddOnJobPi.Parallels)
 	}
 
 	if cfg.AddOnJobEcho.Created { // read-only must be ignored
@@ -640,7 +640,7 @@ func TestEnv(t *testing.T) {
 	cfg.AddOnNLBHelloWorld.Enable = false
 	cfg.AddOnALB2048.Enable = false
 	cfg.AddOnJobEcho.Enable = false
-	cfg.AddOnJobPerl.Enable = false
+	cfg.AddOnJobPi.Enable = false
 	if err := cfg.ValidateAndSetDefaults(); err != nil {
 		t.Fatal(err)
 	}

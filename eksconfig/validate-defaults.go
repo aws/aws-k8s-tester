@@ -85,7 +85,7 @@ var DefaultConfig = Config{
 		DeploymentReplicas2048: 3,
 	},
 
-	AddOnJobPerl: &AddOnJobPerl{
+	AddOnJobPi: &AddOnJobPi{
 		Enable:    false,
 		Completes: 30,
 		Parallels: 10,
@@ -227,8 +227,8 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	if err := cfg.validateAddOnALB2048(); err != nil {
 		return fmt.Errorf("validateAddOnALB2048 failed [%v]", err)
 	}
-	if err := cfg.validateAddOnJobPerl(); err != nil {
-		return fmt.Errorf("validateAddOnJobPerl failed [%v]", err)
+	if err := cfg.validateAddOnJobPi(); err != nil {
+		return fmt.Errorf("validateAddOnJobPi failed [%v]", err)
 	}
 	if err := cfg.validateAddOnJobEcho(); err != nil {
 		return fmt.Errorf("validateAddOnJobEcho failed [%v]", err)
@@ -653,25 +653,25 @@ func (cfg *Config) validateAddOnALB2048() error {
 	return nil
 }
 
-func (cfg *Config) validateAddOnJobPerl() error {
-	if cfg.AddOnJobPerl == nil {
+func (cfg *Config) validateAddOnJobPi() error {
+	if cfg.AddOnJobPi == nil {
 		return nil
 	}
-	switch cfg.AddOnJobPerl.Enable {
+	switch cfg.AddOnJobPi.Enable {
 	case true:
 		if cfg.AddOnManagedNodeGroups == nil {
-			return errors.New("AddOnManagedNodeGroups disabled but AddOnJobPerl.Enable true")
+			return errors.New("AddOnManagedNodeGroups disabled but AddOnJobPi.Enable true")
 		}
 		if !cfg.AddOnManagedNodeGroups.Enable {
-			return errors.New("AddOnManagedNodeGroups disabled but AddOnJobPerl.Enable true")
+			return errors.New("AddOnManagedNodeGroups disabled but AddOnJobPi.Enable true")
 		}
 	case false:
-		cfg.AddOnJobPerl = nil
+		cfg.AddOnJobPi = nil
 		return nil
 	}
 
-	if cfg.AddOnJobPerl.Namespace == "" {
-		cfg.AddOnJobPerl.Namespace = cfg.Name + "-job-perl"
+	if cfg.AddOnJobPi.Namespace == "" {
+		cfg.AddOnJobPi.Namespace = cfg.Name + "-job-perl"
 	}
 	return nil
 }

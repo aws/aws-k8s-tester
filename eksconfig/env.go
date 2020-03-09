@@ -20,8 +20,8 @@ const (
 	EnvironmentVariablePrefixAddOnNLBHelloWorld = "AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_"
 	// EnvironmentVariablePrefixAddOnALB2048 is the environment variable prefix used for "eksconfig".
 	EnvironmentVariablePrefixAddOnALB2048 = "AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_"
-	// EnvironmentVariablePrefixAddOnJobPerl is the environment variable prefix used for "eksconfig".
-	EnvironmentVariablePrefixAddOnJobPerl = "AWS_K8S_TESTER_EKS_ADD_ON_JOB_PERL_"
+	// EnvironmentVariablePrefixAddOnJobPi is the environment variable prefix used for "eksconfig".
+	EnvironmentVariablePrefixAddOnJobPi = "AWS_K8S_TESTER_EKS_ADD_ON_JOB_PI_"
 	// EnvironmentVariablePrefixAddOnJobEcho is the environment variable prefix used for "eksconfig".
 	EnvironmentVariablePrefixAddOnJobEcho = "AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_"
 	// EnvironmentVariablePrefixAddOnSecrets is the environment variable prefix used for "eksconfig".
@@ -94,14 +94,14 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *AddOnALB2048, got %T", vv)
 	}
 
-	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnJobPerl, cfg.AddOnJobPerl)
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnJobPi, cfg.AddOnJobPi)
 	if err != nil {
 		return err
 	}
-	if av, ok := vv.(*AddOnJobPerl); ok {
-		cfg.AddOnJobPerl = av
+	if av, ok := vv.(*AddOnJobPi); ok {
+		cfg.AddOnJobPi = av
 	} else {
-		return fmt.Errorf("expected *AddOnJobPerl, got %T", vv)
+		return fmt.Errorf("expected *AddOnJobPi, got %T", vv)
 	}
 
 	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnJobEcho, cfg.AddOnJobEcho)

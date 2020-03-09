@@ -4,6 +4,33 @@
 <hr>
 
 
+## [v0.7.2](https://github.com/aws/aws-k8s-tester/releases/tag/v0.7.2) (2020-03)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.1...v0.7.2).
+
+### `eksconfig`
+
+- Rename [`AddOnJobPerl` to `AddOnJobPi`](https://github.com/aws/aws-k8s-tester/commit/).
+  - `AWS_K8S_TESTER_EKS_ADD_ON_JOB_PERL_*` is now `AWS_K8S_TESTER_EKS_ADD_ON_JOB_PI_`.
+- Add [`AddOnCronJob`](https://github.com/aws/aws-k8s-tester/commit/).
+
+### `eks`
+
+- Rename [`eks/jobs` package to `jobs-echo` and `jobs-pi`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`eks/cronjobs`](https://github.com/aws/aws-k8s-tester/commit/).
+
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.29.19`](https://github.com/aws/aws-sdk-go/releases/tag/v1.29.19) to [`vTODO`](https://github.com/aws/aws-sdk-go/releases/tag/vTODO).
+
+### Go
+
+- Compile with [*Go 1.14.0*](https://golang.org/doc/devel/release.html#go1.14).
+
+
+<hr>
+
+
 ## [v0.7.1](https://github.com/aws/aws-k8s-tester/releases/tag/v0.7.1) (2020-03-06)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.0...v0.7.1).

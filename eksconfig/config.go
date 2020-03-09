@@ -88,9 +88,9 @@ type Config struct {
 	// AddOnALB2048 defines parameters for EKS cluster
 	// add-on ALB 2048 service.
 	AddOnALB2048 *AddOnALB2048 `json:"add-on-alb-2048,omitempty"`
-	// AddOnJobPerl defines parameters for EKS cluster
-	// add-on Job with Perl.
-	AddOnJobPerl *AddOnJobPerl `json:"add-on-job-perl,omitempty"`
+	// AddOnJobPi defines parameters for EKS cluster
+	// add-on Job with pi Perl command.
+	AddOnJobPi *AddOnJobPi `json:"add-on-job-pi,omitempty"`
 	// AddOnJobEcho defines parameters for EKS cluster
 	// add-on Job with echo.
 	AddOnJobEcho *AddOnJobEcho `json:"add-on-job-echo,omitempty"`
@@ -358,13 +358,13 @@ type AddOnALB2048 struct {
 	URL string `json:"url" read-only:"true"`
 }
 
-func (cfg *Config) IsAddOnJobPerlEnabled() bool {
-	return cfg.AddOnJobPerl != nil && cfg.AddOnJobPerl.Enable
+func (cfg *Config) IsAddOnJobPiEnabled() bool {
+	return cfg.AddOnJobPi != nil && cfg.AddOnJobPi.Enable
 }
 
-// AddOnJobPerl defines parameters for EKS cluster
+// AddOnJobPi defines parameters for EKS cluster
 // add-on Job with Perl.
-type AddOnJobPerl struct {
+type AddOnJobPi struct {
 	// Enable is 'true' to create this add-on.
 	Enable bool `json:"enable"`
 	// Created is true when the resource has been created.

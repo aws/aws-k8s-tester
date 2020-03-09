@@ -22,7 +22,7 @@ func main() {
 
 	cfg.AddOnNLBHelloWorld.Enable = true
 	cfg.AddOnALB2048.Enable = true
-	cfg.AddOnJobPerl.Enable = true
+	cfg.AddOnJobPi.Enable = true
 	cfg.AddOnJobEcho.Enable = true
 	cfg.AddOnSecrets.Enable = true
 	cfg.AddOnIRSA.Enable = true

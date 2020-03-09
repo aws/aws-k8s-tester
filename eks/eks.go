@@ -18,7 +18,8 @@ import (
 	"github.com/aws/aws-k8s-tester/eks/fargate"
 	"github.com/aws/aws-k8s-tester/eks/gpu"
 	"github.com/aws/aws-k8s-tester/eks/irsa"
-	"github.com/aws/aws-k8s-tester/eks/jobs"
+	jobsecho "github.com/aws/aws-k8s-tester/eks/jobs-echo"
+	jobspi "github.com/aws/aws-k8s-tester/eks/jobs-pi"
 	"github.com/aws/aws-k8s-tester/eks/mng"
 	"github.com/aws/aws-k8s-tester/eks/nlb"
 	"github.com/aws/aws-k8s-tester/eks/secrets"
@@ -86,8 +87,8 @@ type Tester struct {
 	mngTester           mng.Tester
 	nlbHelloWorldTester alb.Tester
 	alb2048Tester       alb.Tester
-	jobPerlTester       jobs.Tester
-	jobEchoTester       jobs.Tester
+	jobPiTester         jobspi.Tester
+	jobEchoTester       jobsecho.Tester
 	secretsTester       secrets.Tester
 	irsaTester          irsa.Tester
 	fargateTester       fargate.Tester
@@ -366,17 +367,16 @@ func (ts *Tester) createSubTesters() (err error) {
 		}
 	}
 
-	if ts.cfg.IsAddOnJobPerlEnabled() {
-		ts.lg.Info("creating jobPerlTester")
-		ts.jobPerlTester, err = jobs.New(jobs.Config{
+	if ts.cfg.IsAddOnJobPiEnabled() {
+		ts.lg.Info("creating jobPiTester")
+		ts.jobPiTester, err = jobspi.New(jobspi.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			Sig:       ts.interruptSig,
 			EKSConfig: ts.cfg,
 			K8SClient: ts,
-			JobName:   jobs.JobNamePi,
-			Completes: ts.cfg.AddOnJobPerl.Completes,
-			Parallels: ts.cfg.AddOnJobPerl.Parallels,
+			Completes: ts.cfg.AddOnJobPi.Completes,
+			Parallels: ts.cfg.AddOnJobPi.Parallels,
 		})
 		if err != nil {
 			return err
@@ -385,13 +385,12 @@ func (ts *Tester) createSubTesters() (err error) {
 
 	if ts.cfg.IsAddOnJobEchoEnabled() {
 		ts.lg.Info("creating jobEchoTester")
-		ts.jobEchoTester, err = jobs.New(jobs.Config{
+		ts.jobEchoTester, err = jobsecho.New(jobsecho.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			Sig:       ts.interruptSig,
 			EKSConfig: ts.cfg,
 			K8SClient: ts,
-			JobName:   jobs.JobNameEcho,
 			Completes: ts.cfg.AddOnJobEcho.Completes,
 			Parallels: ts.cfg.AddOnJobEcho.Parallels,
 			EchoSize:  ts.cfg.AddOnJobEcho.Size,
@@ -698,14 +697,14 @@ func (ts *Tester) Up() (err error) {
 			}
 		}
 
-		if ts.cfg.IsAddOnJobPerlEnabled() {
-			colorstring.Printf("\n\n\n[light_green]jobPerlTester.Create [default](%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnJobPerl.Namespace)
+		if ts.cfg.IsAddOnJobPiEnabled() {
+			colorstring.Printf("\n\n\n[light_green]jobPiTester.Create [default](%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnJobPi.Namespace)
 			if err := catchInterrupt(
 				ts.lg,
 				ts.stopCreationCh,
 				ts.stopCreationChOnce,
 				ts.interruptSig,
-				ts.jobPerlTester.Create,
+				ts.jobPiTester.Create,
 			); err != nil {
 				return err
 			}
@@ -907,10 +906,10 @@ func (ts *Tester) down() (err error) {
 			}
 		}
 
-		if ts.cfg.IsAddOnJobPerlEnabled() && ts.cfg.AddOnJobPerl.Created {
-			colorstring.Printf("\n\n\n[light_green]jobPerlTester.Delete [default](%q)\n", ts.cfg.ConfigPath)
-			if err := ts.jobPerlTester.Delete(); err != nil {
-				ts.lg.Warn("jobPerlTester.Delete failed", zap.Error(err))
+		if ts.cfg.IsAddOnJobPiEnabled() && ts.cfg.AddOnJobPi.Created {
+			colorstring.Printf("\n\n\n[light_green]jobPiTester.Delete [default](%q)\n", ts.cfg.ConfigPath)
+			if err := ts.jobPiTester.Delete(); err != nil {
+				ts.lg.Warn("jobPiTester.Delete failed", zap.Error(err))
 				errs = append(errs, err.Error())
 			}
 		}
