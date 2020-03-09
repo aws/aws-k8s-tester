@@ -91,11 +91,16 @@ var DefaultConfig = Config{
 		Parallels: 10,
 	},
 
-	AddOnJobEcho: &AddOnJobEcho{ // writes total 100 MB data to etcd
+	AddOnJobEcho: &AddOnJobEcho{
 		Enable:    false,
-		Completes: 1000,
-		Parallels: 100,
+		Completes: 10,
+		Parallels: 10,
 		Size:      100 * 1024, // 100 KB
+
+		// writes total 100 MB data to etcd
+		// Completes: 1000,
+		// Parallels: 100,
+		// Size:      100 * 1024, // 100 KB
 	},
 
 	AddOnCronJob: &AddOnCronJob{
@@ -106,8 +111,7 @@ var DefaultConfig = Config{
 	},
 
 	AddOnSecrets: &AddOnSecrets{
-		Enable: false,
-
+		Enable:      false,
 		Objects:     10,
 		Size:        10 * 1024, // 10 KB
 		SecretQPS:   1,
