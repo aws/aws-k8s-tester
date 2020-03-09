@@ -101,8 +101,8 @@ var DefaultConfig = Config{
 	AddOnCronJob: &AddOnCronJob{
 		Enable:    false,
 		Schedule:  "*/10 * * * *",
-		Completes: 1000,
-		Parallels: 100,
+		Completes: 10,
+		Parallels: 10,
 	},
 
 	AddOnSecrets: &AddOnSecrets{
