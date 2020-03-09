@@ -12,6 +12,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.1...v0.7.2
 
 - Rename [`AddOnJobPerl` to `AddOnJobPi`](https://github.com/aws/aws-k8s-tester/commit/c1ea05d9584805a64ba4bb37f864ff88ac3545f2).
   - `AWS_K8S_TESTER_EKS_ADD_ON_JOB_PERL_*` is now `AWS_K8S_TESTER_EKS_ADD_ON_JOB_PI_`.
+- Reduce [`AddOnJobEcho` default `Parallels` and `Completes` values](https://github.com/aws/aws-k8s-tester/commit/3b9b9583ab6f0a294525ec5ca3a056ebf201f845).
 - Add [`AddOnCronJob`](https://github.com/aws/aws-k8s-tester/commit/ce4819124972610a392b6055a30321a1a5b9169e).
 
 ### `eks`
