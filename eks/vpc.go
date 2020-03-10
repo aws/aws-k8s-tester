@@ -22,7 +22,7 @@ import (
 ref.
 https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Internet_Gateway.html#vpc-igw-internet-access
 https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html
-
+https://amazon-eks.s3.us-west-2.amazonaws.com/cloudformation/2019-11-15/amazon-eks-vpc-private-subnets.yaml
 
 Fargate for EKS does not support public subnet
 Customer ENIs attached to Fargate task is not given a Public IP/EIP
@@ -38,7 +38,9 @@ EC2::NatGateway
 EC2::NatGateway only allows "outbound" traffic to the internet
 Cannot SSH into an instance with a public IP but private subnet
 since EC2::NatGateway only allows "outbound" traffic
-
+network address translation (NAT) gateway in the specified public subnet
+NAT gateway to allow instances in a private subnet to connect to the Internet
+or to other AWS services, but prevent the Internet from initiating a connection with those instances.
 
 Public Subnet
 Subnet associated with EC2::RouteTable that has EC2::Route to an EC2::InternetGateway
@@ -349,6 +351,9 @@ Resources:
     - VPCGatewayAttachment
     Properties:
       Domain: vpc
+      Tags:
+      - Key: Name
+        Value: !Sub '${AWS::StackName}-EIP1'
 
   NATGatewayEIP2:
     Type: AWS::EC2::EIP
@@ -357,6 +362,9 @@ Resources:
     - VPCGatewayAttachment
     Properties:
       Domain: vpc
+      Tags:
+      - Key: Name
+        Value: !Sub '${AWS::StackName}-EIP2'
 
   NATGatewayEIP3:
     Type: AWS::EC2::EIP
@@ -365,6 +373,9 @@ Resources:
     - VPCGatewayAttachment
     Properties:
       Domain: vpc
+      Tags:
+      - Key: Name
+        Value: !Sub '${AWS::StackName}-EIP3'
 
   NATGateway1:
     Type: AWS::EC2::NatGateway
