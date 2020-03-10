@@ -104,11 +104,13 @@ var DefaultConfig = Config{
 	},
 
 	AddOnCronJob: &AddOnCronJob{
-		Enable:    false,
-		Schedule:  "*/10 * * * *",
-		Completes: 10,
-		Parallels: 10,
-		EchoSize:  100 * 1024, // 100 KB
+		Enable:                     false,
+		Schedule:                   "*/10 * * * *", // every 10-min
+		Completes:                  10,
+		Parallels:                  10,
+		SuccessfulJobsHistoryLimit: 3,
+		FailedJobsHistoryLimit:     1,
+		EchoSize:                   100 * 1024, // 100 KB
 	},
 
 	AddOnSecrets: &AddOnSecrets{

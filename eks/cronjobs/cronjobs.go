@@ -91,6 +91,14 @@ func (ts *tester) Create() error {
 	}
 	ts.cfg.Logger.Info("created Job")
 
+	// take about 4-min for 10 cron jobs to trigger
+	select {
+	case <-ts.cfg.Stopc:
+		ts.cfg.Logger.Warn("wait aborted")
+		return nil
+	case <-time.After(2 * time.Minute):
+	}
+
 	waitDur := 3*time.Minute + 10*time.Duration(ts.cfg.EKSConfig.AddOnCronJob.Completes)*time.Second
 
 	completedJobs, err := waitJobs(
@@ -269,8 +277,10 @@ func (ts *tester) createObject() (batchv1beta1.CronJob, string, error) {
 			Namespace: ts.cfg.EKSConfig.AddOnCronJob.Namespace,
 		},
 		Spec: batchv1beta1.CronJobSpec{
-			Schedule:    ts.cfg.EKSConfig.AddOnCronJob.Schedule,
-			JobTemplate: jobSpec,
+			Schedule:                   ts.cfg.EKSConfig.AddOnCronJob.Schedule,
+			SuccessfulJobsHistoryLimit: aws.Int32(ts.cfg.EKSConfig.AddOnCronJob.SuccessfulJobsHistoryLimit),
+			FailedJobsHistoryLimit:     aws.Int32(ts.cfg.EKSConfig.AddOnCronJob.FailedJobsHistoryLimit),
+			JobTemplate:                jobSpec,
 		},
 	}
 	b, err := yaml.Marshal(cronObj)

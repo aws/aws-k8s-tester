@@ -185,12 +185,16 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_CREATED")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_NAMESPACE", "hello3")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_NAMESPACE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_SCHEDULE", "*/10 * * * *")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_SCHEDULE", "*/1 * * * *")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_SCHEDULE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_COMPLETES", "100")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_COMPLETES")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_PARALLELS", "10")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_PARALLELS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_SUCCESSFUL_JOBS_HISTORY_LIMIT", "100")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_SUCCESSFUL_JOBS_HISTORY_LIMIT")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_FAILED_JOBS_HISTORY_LIMIT", "1000")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_FAILED_JOBS_HISTORY_LIMIT")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_ECHO_SIZE", "10000")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_ECHO_SIZE")
 
@@ -548,7 +552,7 @@ func TestEnv(t *testing.T) {
 	if cfg.AddOnCronJob.Namespace != "hello3" {
 		t.Fatalf("unexpected cfg.AddOnCronJob.Namespace %q", cfg.AddOnCronJob.Namespace)
 	}
-	if cfg.AddOnCronJob.Schedule != "*/10 * * * *" {
+	if cfg.AddOnCronJob.Schedule != "*/1 * * * *" {
 		t.Fatalf("unexpected cfg.AddOnCronJob.Schedule %q", cfg.AddOnCronJob.Schedule)
 	}
 	if cfg.AddOnCronJob.Completes != 100 {
@@ -556,6 +560,12 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.AddOnCronJob.Parallels != 10 {
 		t.Fatalf("unexpected cfg.AddOnCronJob.Parallels %v", cfg.AddOnCronJob.Parallels)
+	}
+	if cfg.AddOnCronJob.SuccessfulJobsHistoryLimit != 100 {
+		t.Fatalf("unexpected cfg.AddOnCronJob.SuccessfulJobsHistoryLimit %v", cfg.AddOnCronJob.SuccessfulJobsHistoryLimit)
+	}
+	if cfg.AddOnCronJob.FailedJobsHistoryLimit != 1000 {
+		t.Fatalf("unexpected cfg.AddOnCronJob.FailedJobsHistoryLimit %v", cfg.AddOnCronJob.FailedJobsHistoryLimit)
 	}
 	if cfg.AddOnCronJob.EchoSize != 10000 {
 		t.Fatalf("unexpected cfg.AddOnCronJob.EchoSize %v", cfg.AddOnCronJob.EchoSize)

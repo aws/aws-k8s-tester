@@ -462,6 +462,13 @@ type AddOnCronJob struct {
 	// Parallels is the the maximum desired number of pods the
 	// job should run at any given time.
 	Parallels int `json:"parallels"`
+	// SuccessfulJobsHistoryLimit is the number of successful finished
+	// jobs to retain. Defaults to 3.
+	SuccessfulJobsHistoryLimit int32 `json:"successful-jobs-history-limit"`
+	// FailedJobsHistoryLimit is the number of failed finished jobs
+	// to retain. Defaults to 1.
+	FailedJobsHistoryLimit int32 `json:"failed-jobs-history-limit"`
+
 	// EchoSize is the job object size in bytes.
 	// "Request entity too large: limit is 3145728" (3.1 MB).
 	// "The Job "echo" is invalid: metadata.annotations:
