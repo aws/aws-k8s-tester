@@ -423,11 +423,11 @@ type AddOnJobEcho struct {
 	// Parallels is the the maximum desired number of pods the
 	// job should run at any given time.
 	Parallels int `json:"parallels"`
-	// Size is the job object size in bytes.
+	// EchoSize is the job object size in bytes.
 	// "Request entity too large: limit is 3145728" (3.1 MB).
 	// "The Job "echo" is invalid: metadata.annotations:
 	// Too long: must have at most 262144 characters". (0.26 MB)
-	Size int `json:"size"`
+	EchoSize int `json:"echo-size"`
 }
 
 func (cfg *Config) IsAddOnCronJobEnabled() bool {
@@ -462,11 +462,11 @@ type AddOnCronJob struct {
 	// Parallels is the the maximum desired number of pods the
 	// job should run at any given time.
 	Parallels int `json:"parallels"`
-	// Size is the job object size in bytes.
+	// EchoSize is the job object size in bytes.
 	// "Request entity too large: limit is 3145728" (3.1 MB).
 	// "The Job "echo" is invalid: metadata.annotations:
 	// Too long: must have at most 262144 characters". (0.26 MB)
-	Size int `json:"size"`
+	EchoSize int `json:"echo-size"`
 }
 
 func (cfg *Config) IsAddOnSecretsEnabled() bool {

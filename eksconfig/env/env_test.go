@@ -176,8 +176,8 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_COMPLETES")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_PARALLELS", "100")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_PARALLELS")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_SIZE", "10000")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_SIZE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_ECHO_SIZE", "10000")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_ECHO_SIZE")
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_ENABLE")
@@ -535,8 +535,8 @@ func TestEnv(t *testing.T) {
 	if cfg.AddOnJobEcho.Parallels != 100 {
 		t.Fatalf("unexpected cfg.AddOnJobEcho.Parallels %v", cfg.AddOnJobEcho.Parallels)
 	}
-	if cfg.AddOnJobEcho.Size != 10000 {
-		t.Fatalf("unexpected cfg.AddOnJobEcho.Size %v", cfg.AddOnJobEcho.Size)
+	if cfg.AddOnJobEcho.EchoSize != 10000 {
+		t.Fatalf("unexpected cfg.AddOnJobEcho.EchoSize %v", cfg.AddOnJobEcho.EchoSize)
 	}
 
 	if cfg.AddOnCronJob.Created { // read-only must be ignored
@@ -557,8 +557,8 @@ func TestEnv(t *testing.T) {
 	if cfg.AddOnCronJob.Parallels != 10 {
 		t.Fatalf("unexpected cfg.AddOnCronJob.Parallels %v", cfg.AddOnCronJob.Parallels)
 	}
-	if cfg.AddOnCronJob.Size != 10000 {
-		t.Fatalf("unexpected cfg.AddOnCronJob.Size %v", cfg.AddOnCronJob.Size)
+	if cfg.AddOnCronJob.EchoSize != 10000 {
+		t.Fatalf("unexpected cfg.AddOnCronJob.EchoSize %v", cfg.AddOnCronJob.EchoSize)
 	}
 
 	if cfg.AddOnSecrets.Created { // read-only must be ignored

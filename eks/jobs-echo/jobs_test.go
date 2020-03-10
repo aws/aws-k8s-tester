@@ -15,7 +15,7 @@ func TestJobs(t *testing.T) {
 					Namespace: "hello",
 					Completes: 1000,
 					Parallels: 100,
-					Size:      10,
+					EchoSize:  10,
 				},
 			},
 		},

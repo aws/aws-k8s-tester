@@ -29,15 +29,6 @@ type Config struct {
 
 	EKSConfig *eksconfig.Config
 	K8SClient k8sClientSetGetter
-
-	// Completes the desired number of successfully finished pods.
-	Completes int
-	// Parallels is the the maximum desired number of pods the
-	// job should run at any given time.
-	Parallels int
-
-	// EchoSize is the size of payload for echo Job.
-	EchoSize int
 }
 
 type k8sClientSetGetter interface {
@@ -232,7 +223,7 @@ func (ts *tester) createObject() (batchv1beta1.CronJob, string, error) {
 					Command: []string{
 						"/bin/sh",
 						"-ec",
-						fmt.Sprintf("echo -n '%s' >> /config/output.txt", randString(ts.cfg.EKSConfig.AddOnCronJob.Size)),
+						fmt.Sprintf("echo -n '%s' >> /config/output.txt", randString(ts.cfg.EKSConfig.AddOnCronJob.EchoSize)),
 					},
 					VolumeMounts: []v1.VolumeMount{
 						{

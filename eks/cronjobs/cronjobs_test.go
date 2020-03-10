@@ -16,6 +16,7 @@ func TestJobs(t *testing.T) {
 					Schedule:  "*/10 * * * *",
 					Completes: 1000,
 					Parallels: 100,
+					EchoSize:  10,
 				},
 			},
 		},

@@ -95,12 +95,12 @@ var DefaultConfig = Config{
 		Enable:    false,
 		Completes: 10,
 		Parallels: 10,
-		Size:      100 * 1024, // 100 KB
+		EchoSize:  100 * 1024, // 100 KB
 
 		// writes total 100 MB data to etcd
 		// Completes: 1000,
 		// Parallels: 100,
-		// Size:      100 * 1024, // 100 KB
+		// EchoSize:      100 * 1024, // 100 KB
 	},
 
 	AddOnCronJob: &AddOnCronJob{
@@ -108,7 +108,7 @@ var DefaultConfig = Config{
 		Schedule:  "*/10 * * * *",
 		Completes: 10,
 		Parallels: 10,
-		Size:      100 * 1024, // 100 KB
+		EchoSize:  100 * 1024, // 100 KB
 	},
 
 	AddOnSecrets: &AddOnSecrets{
@@ -244,6 +244,9 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 	if err := cfg.validateAddOnJobEcho(); err != nil {
 		return fmt.Errorf("validateAddOnJobEcho failed [%v]", err)
+	}
+	if err := cfg.validateAddOnCronJob(); err != nil {
+		return fmt.Errorf("validateAddOnCronJob failed [%v]", err)
 	}
 	if err := cfg.validateAddOnSecrets(); err != nil {
 		return fmt.Errorf("validateAddOnSecrets failed [%v]", err)
@@ -708,8 +711,34 @@ func (cfg *Config) validateAddOnJobEcho() error {
 	if cfg.AddOnJobEcho.Namespace == "" {
 		cfg.AddOnJobEcho.Namespace = cfg.Name + "-job-echo"
 	}
-	if cfg.AddOnJobEcho.Size > 250000 {
-		return fmt.Errorf("echo size limit is 0.25 MB, got %d", cfg.AddOnJobEcho.Size)
+	if cfg.AddOnJobEcho.EchoSize > 250000 {
+		return fmt.Errorf("echo size limit is 0.25 MB, got %d", cfg.AddOnJobEcho.EchoSize)
+	}
+	return nil
+}
+
+func (cfg *Config) validateAddOnCronJob() error {
+	if cfg.AddOnCronJob == nil {
+		return nil
+	}
+	switch cfg.AddOnCronJob.Enable {
+	case true:
+		if cfg.AddOnManagedNodeGroups == nil {
+			return errors.New("AddOnManagedNodeGroups disabled but AddOnCronJob.Enable true")
+		}
+		if !cfg.AddOnManagedNodeGroups.Enable {
+			return errors.New("AddOnManagedNodeGroups disabled but AddOnCronJob.Enable true")
+		}
+	case false:
+		cfg.AddOnCronJob = nil
+		return nil
+	}
+
+	if cfg.AddOnCronJob.Namespace == "" {
+		cfg.AddOnCronJob.Namespace = cfg.Name + "-cronjob"
+	}
+	if cfg.AddOnCronJob.EchoSize > 250000 {
+		return fmt.Errorf("echo size limit is 0.25 MB, got %d", cfg.AddOnCronJob.EchoSize)
 	}
 	return nil
 }

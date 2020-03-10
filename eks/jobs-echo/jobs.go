@@ -221,7 +221,7 @@ func (ts *tester) createObject() (batchv1.Job, string, error) {
 					Command: []string{
 						"/bin/sh",
 						"-ec",
-						fmt.Sprintf("echo -n '%s' >> /config/output.txt", randString(ts.cfg.EKSConfig.AddOnJobEcho.Size)),
+						fmt.Sprintf("echo -n '%s' >> /config/output.txt", randString(ts.cfg.EKSConfig.AddOnJobEcho.EchoSize)),
 					},
 					VolumeMounts: []v1.VolumeMount{
 						{
