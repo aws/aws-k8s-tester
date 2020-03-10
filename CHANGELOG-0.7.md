@@ -14,7 +14,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.1...v0.7.2
   - `AWS_K8S_TESTER_EKS_ADD_ON_JOB_PERL_*` is now `AWS_K8S_TESTER_EKS_ADD_ON_JOB_PI_`.
 - Reduce [`AddOnJobEcho` default `Parallels` and `Completes` values](https://github.com/aws/aws-k8s-tester/commit/3b9b9583ab6f0a294525ec5ca3a056ebf201f845).
 - Add [`AddOnCronJob`](https://github.com/aws/aws-k8s-tester/commit/ce4819124972610a392b6055a30321a1a5b9169e).
-- Rename [`AddOnJobEcho.Size` to `AddOnJobEcho.EchoSize`](https://github.com/aws/aws-k8s-tester/commit/).
+- Rename [`AddOnJobEcho.Size` to `AddOnJobEcho.EchoSize`](https://github.com/aws/aws-k8s-tester/commit/fa3fa7b3b11fd33c8dc923b9dc629b00dbf15864).
   - `AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_SIZE` is now `AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_ECHO_SIZE`.
 
 ### `eks`
