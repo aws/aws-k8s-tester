@@ -8,6 +8,10 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.1...v0.7.2).
 
+### `ec2`
+
+- Tag [`AWS::EC2::EIP` with `'${AWS::StackName}-EIP*'` during VPC creation](https://github.com/aws/aws-k8s-tester/commit/26893f1d472004b22ecb09a67a2c2cab4c238786).
+
 ### `eksconfig`
 
 - Rename [`AddOnJobPerl` to `AddOnJobPi`](https://github.com/aws/aws-k8s-tester/commit/c1ea05d9584805a64ba4bb37f864ff88ac3545f2).
@@ -21,6 +25,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.1...v0.7.2
 
 - Rename [`eks/jobs` package to `jobs-echo` and `jobs-pi`](https://github.com/aws/aws-k8s-tester/commit/c1ea05d9584805a64ba4bb37f864ff88ac3545f2).
 - Add [`eks/cronjobs`](https://github.com/aws/aws-k8s-tester/commit/730cd1f473486f3449281958c00000e74e342a4c).
+- Tag [`AWS::EC2::EIP` with `'${AWS::StackName}-EIP*'` during VPC creation](https://github.com/aws/aws-k8s-tester/commit/26893f1d472004b22ecb09a67a2c2cab4c238786).
 
 ### `version`
 
