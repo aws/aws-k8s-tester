@@ -73,9 +73,10 @@ func New(cfg *Config) (ss *session.Session, stsOutput *sts.GetCallerIdentityOutp
 		cfg.Logger.Info("cannot find AWS cred file", zap.String("path", awsCredsPath))
 		if os.Getenv("AWS_ACCESS_KEY_ID") == "" ||
 			os.Getenv("AWS_SECRET_ACCESS_KEY") == "" {
-			return nil, nil, "", errors.New("cannot find AWS credentials")
+			cfg.Logger.Info("cannot create a session from env vars")
+		} else {
+			cfg.Logger.Info("creating a session from env vars")
 		}
-		cfg.Logger.Info("creating session from env vars")
 	}
 
 	if cfg.DebugAPICalls {
