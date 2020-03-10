@@ -22,6 +22,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.1...v0.7.2
 - Rename [`eks/jobs` package to `jobs-echo` and `jobs-pi`](https://github.com/aws/aws-k8s-tester/commit/c1ea05d9584805a64ba4bb37f864ff88ac3545f2).
 - Add [`eks/cronjobs`](https://github.com/aws/aws-k8s-tester/commit/730cd1f473486f3449281958c00000e74e342a4c).
 
+### `version`
+
+- Add [`Version` function](https://github.com/aws/aws-k8s-tester/commit/d582a0ee4c1c15d4945ca9fcc801cd433034ee81).
+
 ### Dependency
 
 - Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.29.19`](https://github.com/aws/aws-sdk-go/releases/tag/v1.29.19) to [`vTODO`](https://github.com/aws/aws-sdk-go/releases/tag/vTODO).
