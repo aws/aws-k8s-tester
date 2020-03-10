@@ -100,6 +100,7 @@ type Tester struct {
 // New creates a new EKS tester.
 func New(cfg *eksconfig.Config) (*Tester, error) {
 	fmt.Println("😎 🙏")
+	fmt.Println(version.Version())
 	colorstring.Printf("\n\n\n[light_green]New [default](%q, %q)\n", cfg.ConfigPath, cfg.KubectlCommand())
 	if err := cfg.ValidateAndSetDefaults(); err != nil {
 		return nil, err

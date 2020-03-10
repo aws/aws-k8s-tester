@@ -67,6 +67,7 @@ type Tester struct {
 // New creates a new EC2 tester.
 func New(cfg *ec2config.Config) (*Tester, error) {
 	fmt.Println("😎 🙏")
+	fmt.Println(version.Version())
 	colorstring.Printf("\n\n\n[light_green]New [default](%q)\n", cfg.ConfigPath)
 	if err := cfg.ValidateAndSetDefaults(); err != nil {
 		return nil, err
