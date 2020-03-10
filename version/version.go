@@ -2,6 +2,7 @@
 package version
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -30,4 +31,24 @@ func init() {
 	if BuildTime == "" {
 		BuildTime = now.String()
 	}
+}
+
+type version struct {
+	GitCommit      string `json:"git-commit"`
+	ReleaseVersion string `json:"release-version"`
+	BuildTime      string `json:"build-time"`
+}
+
+// Version returns the version string.
+func Version() string {
+	vv := version{
+		GitCommit:      GitCommit,
+		ReleaseVersion: ReleaseVersion,
+		BuildTime:      BuildTime,
+	}
+	b, err := json.Marshal(vv)
+	if err != nil {
+		panic(err)
+	}
+	return string(b)
 }

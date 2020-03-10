@@ -23,12 +23,5 @@ func NewCommand() *cobra.Command {
 }
 
 func versionFunc(cmd *cobra.Command, args []string) {
-	fmt.Printf(`GitCommit: %s
-ReleaseVersion: %s
-BuildTime: %s
-`,
-		version.GitCommit,
-		version.ReleaseVersion,
-		version.BuildTime,
-	)
+	fmt.Print(version.Version())
 }

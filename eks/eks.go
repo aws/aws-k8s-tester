@@ -28,6 +28,7 @@ import (
 	pkgaws "github.com/aws/aws-k8s-tester/pkg/aws"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
+	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/autoscaling"
@@ -542,6 +543,7 @@ func (ts *Tester) Up() (err error) {
 	}()
 
 	ts.lg.Info("Up started",
+		zap.String("version", version.Version()),
 		zap.String("name", ts.cfg.Name),
 	)
 	defer ts.cfg.Sync()
