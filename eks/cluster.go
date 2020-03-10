@@ -43,8 +43,6 @@ Parameters:
     Description: Specify the EKS version
     Type: String
     Default: 1.14
-    AllowedValues:
-    - 1.14
 
   RoleARN:
     Description: Role ARN that EKS uses to create AWS resources for Kubernetes
@@ -99,8 +97,6 @@ Parameters:
     Description: Specify the EKS version
     Type: String
     Default: 1.14
-    AllowedValues:
-    - 1.14
 
   RoleARN:
     Description: Role ARN that EKS uses to create AWS resources for Kubernetes
