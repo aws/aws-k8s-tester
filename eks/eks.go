@@ -734,6 +734,19 @@ func (ts *Tester) Up() (err error) {
 			}
 		}
 
+		if ts.cfg.IsAddOnCronJobEnabled() {
+			colorstring.Printf("\n\n\n[light_green]cronJobsTester.Create [default](%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnCronJob.Namespace)
+			if err := catchInterrupt(
+				ts.lg,
+				ts.stopCreationCh,
+				ts.stopCreationChOnce,
+				ts.interruptSig,
+				ts.cronJobsTester.Create,
+			); err != nil {
+				return err
+			}
+		}
+
 		if ts.cfg.IsAddOnSecretsEnabled() {
 			colorstring.Printf("\n\n\n[light_green]secretsTester.Create [default](%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnSecrets.Namespace)
 			if err := catchInterrupt(
@@ -905,6 +918,14 @@ func (ts *Tester) down() (err error) {
 			colorstring.Printf("\n\n\n[light_green]secretsTester.Delete [default](%q)\n", ts.cfg.ConfigPath)
 			if err := ts.secretsTester.Delete(); err != nil {
 				ts.lg.Warn("secretsTester.Delete failed", zap.Error(err))
+				errs = append(errs, err.Error())
+			}
+		}
+
+		if ts.cfg.IsAddOnCronJobEnabled() && ts.cfg.AddOnCronJob.Created {
+			colorstring.Printf("\n\n\n[light_green]cronJobsTester.Delete [default](%q)\n", ts.cfg.ConfigPath)
+			if err := ts.cronJobsTester.Delete(); err != nil {
+				ts.lg.Warn("cronJobsTester.Delete failed", zap.Error(err))
 				errs = append(errs, err.Error())
 			}
 		}
