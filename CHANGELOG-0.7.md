@@ -1,6 +1,23 @@
 
 
 
+
+<hr>
+
+
+## [v0.7.4](https://github.com/aws/aws-k8s-tester/releases/tag/v0.7.4) (2020-03-10)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.3...v0.7.4).
+
+### `eks`
+
+- Remove [`AllowedValues` for eks version](https://github.com/aws/aws-k8s-tester/commit/0cb2d0a2736d66ddf711144d0b95da548c1eb65a).
+
+### Go
+
+- Compile with [*Go 1.14.0*](https://golang.org/doc/devel/release.html#go1.14).
+
+
 <hr>
 
 
