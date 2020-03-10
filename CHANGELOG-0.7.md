@@ -10,7 +10,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.2...v0.7.3
 
 ### `pkg/aws`
 
-- Allow [session creation without env vars (e.g. instance IAM role)](https://github.com/aws/aws-k8s-tester/commit/).
+- Allow [session creation without env vars (e.g. instance IAM role)](https://github.com/aws/aws-k8s-tester/commit/5c3a18b7395d8bd90f5a837b3b97c6521ede02de).
 
 ### Go
 
