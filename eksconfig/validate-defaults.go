@@ -53,7 +53,7 @@ var DefaultConfig = Config{
 		RoleCreate:          true,
 		VPCCreate:           true,
 		SigningName:         "eks",
-		Version:             "1.14",
+		Version:             "1.15",
 		EncryptionCMKCreate: true,
 	},
 
