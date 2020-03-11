@@ -10,10 +10,12 @@ https://raw.githubusercontent.com/awslabs/amazon-eks-ami/master/amazon-eks-nodeg
 
 https://aws.amazon.com/about-aws/whats-new/2019/09/amazon-eks-provides-eks-optimized-ami-metadata-via-ssm-parameters/
 
-e.g.
-/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+
 
 e.g.
-/aws/service/eks/optimized-ami/1.15/amazon-linux-2/recommended
-/aws/service/bottlerocket/aws-k8s-1.15/x86_64/latest/image_id
+aws ssm get-parameters --names /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+
+e.g.
+aws ssm get-parameters --names /aws/service/eks/optimized-ami/1.15/amazon-linux-2/recommended
+aws ssm get-parameters --names /aws/service/bottlerocket/aws-k8s-1.15/x86_64/latest/image_id
 */
