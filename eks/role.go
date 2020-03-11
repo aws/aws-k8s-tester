@@ -38,7 +38,7 @@ Parameters:
   RoleServicePrincipals:
     Description: EKS Role Service Principals
     Type: CommaDelimitedList
-    Default: 'ec2.amazonaws.com,eks.amazonaws.com,eks-fargate-pods.amazonaws.com'
+    Default: 'ec2.amazonaws.com,ec2.amazonaws.com.cn,eks.amazonaws.com,eks.amazonaws.com.cn,eks-fargate-pods.amazonaws.com'
 
   RoleManagedPolicyARNs:
     Description: EKS Role managed policy ARNs

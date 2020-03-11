@@ -32,7 +32,7 @@ Parameters:
   RoleServicePrincipals:
     Description: EC2 Role Service Principals
     Type: CommaDelimitedList
-    Default: 'ec2.amazonaws.com'
+    Default: 'ec2.amazonaws.com,ec2.amazonaws.com.cn'
 
   RoleManagedPolicyARNs:
     Description: EC2 Role managed policy ARNs
@@ -71,7 +71,7 @@ func (ts *Tester) createRole() error {
 			ts.lg,
 			ts.iamAPI,
 			ts.cfg.RoleName,
-			[]string{"ec2.amazonaws.com"},
+			[]string{"ec2.amazonaws.com"}, // TODO: support China regions
 			[]string{
 				"arn:aws:iam::aws:policy/AmazonEC2FullAccess",
 				"arn:aws:iam::aws:policy/AmazonSSMFullAccess",

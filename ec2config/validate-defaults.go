@@ -174,7 +174,7 @@ func (cfg *Config) validateConfig() error {
 			*/
 			found := false
 			for _, pv := range cfg.RoleServicePrincipals {
-				if pv == "ec2.amazonaws.com" {
+				if pv == "ec2.amazonaws.com" { // TODO: support China regions
 					found = true
 					break
 				}
