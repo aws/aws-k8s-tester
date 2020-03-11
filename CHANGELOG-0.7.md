@@ -29,10 +29,13 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.4...v0.7.5
 - Add [`AddOnManagedNodeGroups.FetchLogs` to configure fetch managed node group logs downloading](https://github.com/aws/aws-k8s-tester/commit/d57a203315b842bea6cab7476a778624155fdee3).
   - `AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_FETCH_LOGS` is `true` by default.
   - `FetchLogs` will be [skipped if `AddOnManagedNodeGroups.FetchLogs` is `false`](https://github.com/aws/aws-k8s-tester/commit/74aee02ac01123cbc8036910831addbca665cbbc).
+- Add [`AddOnAppMesh`](https://github.com/aws/aws-k8s-tester/pull/81).
+  - Enable AppMesh add-on with `AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_ENABLE=true`.
 - Support [custom worker node AMI](https://github.com/aws/aws-k8s-tester/commit/).
 
 ### `eks`
 
+- Add [`eks/appmesh`](https://github.com/aws/aws-k8s-tester/pull/81).
 - Set [`EKS 1.15` as default](https://github.com/aws/aws-k8s-tester/commit/49d364c710b87ee5bcd6f22684c0de861ae3f86e).
 - Support [custom worker node AMI](https://github.com/aws/aws-k8s-tester/commit/).
 - Move [remote access key creation/deletion function from `eks/mng` to `eks`](https://github.com/aws/aws-k8s-tester/commit/d110238d6ba93300d3109f2925bcc6a5cd254ad0).
