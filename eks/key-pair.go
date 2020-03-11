@@ -66,7 +66,6 @@ func (ts *Tester) deleteKeyPair() error {
 	defer os.RemoveAll(ts.cfg.RemoteAccessPrivateKeyPath)
 
 	ts.lg.Info("deleting a key pair", zap.String("key-pair-name", ts.cfg.RemoteAccessKeyName))
-
 	_, err := ts.ec2API.DeleteKeyPair(&ec2.DeleteKeyPairInput{
 		KeyName: aws.String(ts.cfg.RemoteAccessKeyName),
 	})
