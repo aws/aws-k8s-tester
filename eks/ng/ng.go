@@ -1,5 +1,5 @@
-// Package workernodes implements EKS worker nodes with a custom AMI.
-package workernodes
+// Package ng implements EKS worker nodes with a custom AMI.
+package ng
 
 /*
 https://docs.aws.amazon.com/eks/latest/userguide/launch-workers.html
@@ -19,3 +19,9 @@ e.g.
 aws ssm get-parameters --names /aws/service/eks/optimized-ami/1.15/amazon-linux-2/recommended
 aws ssm get-parameters --names /aws/service/bottlerocket/aws-k8s-1.15/x86_64/latest/image_id
 */
+
+// TemplateNG is the CloudFormation template for EKS node group.
+// ref. https://github.com/awslabs/amazon-eks-ami/blob/master/amazon-eks-nodegroup.yaml
+const TemplateNG = `
+
+`
