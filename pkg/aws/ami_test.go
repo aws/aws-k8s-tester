@@ -50,4 +50,10 @@ func TestAMI(t *testing.T) {
 		t.Fatal(err)
 	}
 	fmt.Printf("%+v\n", a2)
+
+	a3, err := FetchAMI(sm, "/aws/service/bottlerocket/aws-k8s-1.15/x86_64/latest/image_id")
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Printf("%+v\n", a3)
 }

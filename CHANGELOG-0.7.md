@@ -7,9 +7,14 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.4...v0.7.5).
 
+### `eksconfig`
+
+- Support [custom worker node AMI](https://github.com/aws/aws-k8s-tester/commit/).
+
 ### `eks`
 
 - Set [`EKS 1.15` as default](https://github.com/aws/aws-k8s-tester/commit/49d364c710b87ee5bcd6f22684c0de861ae3f86e).
+- Support [custom worker node AMI](https://github.com/aws/aws-k8s-tester/commit/).
 
 ### Go
 

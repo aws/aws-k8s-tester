@@ -32,9 +32,9 @@ func FetchAMI(sa ssmiface.SSMAPI, key string) (*AMI, error) {
 	if len(so.Parameters) != 1 {
 		return nil, fmt.Errorf("unexpected parameters received %+v", so.Parameters)
 	}
-
-	ami := &AMI{}
-	v := aws.StringValue(so.Parameters[0].Value)
+	param := so.Parameters[0]
+	ami := new(AMI)
+	v := aws.StringValue(param.Value)
 	switch {
 	case strings.HasPrefix(v, "ami-"):
 		ami.ImageID = v
@@ -47,9 +47,9 @@ func FetchAMI(sa ssmiface.SSMAPI, key string) (*AMI, error) {
 		return nil, fmt.Errorf("cannot parse %s", v)
 	}
 
-	ami.ARN = aws.StringValue(so.Parameters[0].ARN)
-	ami.Name = aws.StringValue(so.Parameters[0].Name)
-	ami.Version = aws.Int64Value(so.Parameters[0].Version)
-	ami.LastModifiedDate = aws.TimeValue(so.Parameters[0].LastModifiedDate)
+	ami.ARN = aws.StringValue(param.ARN)
+	ami.Name = aws.StringValue(param.Name)
+	ami.Version = aws.Int64Value(param.Version)
+	ami.LastModifiedDate = aws.TimeValue(param.LastModifiedDate)
 	return ami, nil
 }
