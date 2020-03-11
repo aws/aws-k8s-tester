@@ -90,6 +90,13 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_ENCRYPTION_CMK_ARN", "key-arn")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_ENCRYPTION_CMK_ARN")
 
+	os.Setenv("AWS_K8S_TESTER_EKS_REMOTE_ACCESS_KEY_CREATE", "false")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_REMOTE_ACCESS_KEY_CREATE")
+	os.Setenv("AWS_K8S_TESTER_EKS_REMOTE_ACCESS_KEY_NAME", "a")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_REMOTE_ACCESS_KEY_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_REMOTE_ACCESS_PRIVATE_KEY_PATH", "a")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_REMOTE_ACCESS_PRIVATE_KEY_PATH")
+
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_CREATED", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_CREATED")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE", "true")
@@ -112,10 +119,6 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_RESOLVER_URL")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_SIGNING_NAME", "a")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_SIGNING_NAME")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_REMOTE_ACCESS_KEY_NAME", "a")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_REMOTE_ACCESS_KEY_NAME")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_REMOTE_ACCESS_PRIVATE_KEY_PATH", "a")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_REMOTE_ACCESS_PRIVATE_KEY_PATH")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_REMOTE_ACCESS_USER_NAME", "a")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_REMOTE_ACCESS_USER_NAME")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS", `{"mng-test-name-cpu":{"name":"mng-test-name-cpu","tags":{"cpu":"hello-world"},"release-version":"test-ver-cpu","ami-type":"AL2_x86_64","asg-min-size":17,"asg-max-size":99,"asg-desired-capacity":77,"instance-types":["type-cpu-1","type-cpu-2"],"volume-size":40},"mng-test-name-gpu":{"name":"mng-test-name-gpu","tags":{"gpu":"hello-world"},"release-version":"test-ver-gpu","ami-type":"AL2_x86_64_GPU","asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34,"instance-types":["type-gpu-1","type-gpu-2"],"volume-size":500}}`)
@@ -377,6 +380,16 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("unexpected Parameters.EncryptionCMKARN %q", cfg.Parameters.EncryptionCMKARN)
 	}
 
+	if cfg.RemoteAccessKeyCreate {
+		t.Fatalf("unexpected cfg.RemoteAccessKeyCreate %v", cfg.RemoteAccessKeyCreate)
+	}
+	if cfg.RemoteAccessKeyName != "a" {
+		t.Fatalf("unexpected cfg.RemoteAccessKeyName %q", cfg.RemoteAccessKeyName)
+	}
+	if cfg.RemoteAccessPrivateKeyPath != "a" {
+		t.Fatalf("unexpected cfg.RemoteAccessPrivateKeyPath %q", cfg.RemoteAccessPrivateKeyPath)
+	}
+
 	if cfg.AddOnManagedNodeGroups.Created { // read-only must be ignored
 		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.Created %v", cfg.AddOnManagedNodeGroups.Created)
 	}
@@ -419,12 +432,6 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.AddOnManagedNodeGroups.SigningName != "a" {
 		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.SigningName %q", cfg.AddOnManagedNodeGroups.SigningName)
-	}
-	if cfg.AddOnManagedNodeGroups.RemoteAccessKeyName != "a" {
-		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.RemoteAccessKeyName %q", cfg.AddOnManagedNodeGroups.RemoteAccessKeyName)
-	}
-	if cfg.AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath != "a" {
-		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath %q", cfg.AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath)
 	}
 	if cfg.AddOnManagedNodeGroups.RemoteAccessUserName != "a" {
 		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.RemoteAccessUserName %q", cfg.AddOnManagedNodeGroups.RemoteAccessUserName)

@@ -77,11 +77,26 @@ type Config struct {
 	// It's ok to leave any parameters empty.
 	// If empty, it will use default values.
 	Parameters *Parameters `json:"parameters,omitempty"`
+
+	// RemoteAccessKeyCreate is true to create the remote SSH access private key.
+	RemoteAccessKeyCreate bool `json:"remote-access-key-create"`
+	// RemoteAccessKeyName is the key name for node group SSH EC2 key pair.
+	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
+	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
+	RemoteAccessKeyName string `json:"remote-access-key-name,omitempty"`
+	// RemoteAccessPrivateKeyPath is the file path to store node group key pair private key.
+	// Thus, deployer must delete the private key right after node group creation.
+	// MAKE SURE PRIVATE KEY NEVER GETS UPLOADED TO CLOUD STORAGE AND DELETE AFTER USE!!!
+	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
+	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
+	RemoteAccessPrivateKeyPath string `json:"remote-access-private-key-path,omitempty"`
+
 	// AddOnManagedNodeGroups defines EKS "Managed Node Group"
 	// creation parameters. If empty, it will use default values.
 	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
 	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
 	AddOnManagedNodeGroups *AddOnManagedNodeGroups `json:"add-on-managed-node-groups,omitempty"`
+
 	// AddOnNLBHelloWorld defines parameters for EKS cluster
 	// add-on NLB hello-world service.
 	AddOnNLBHelloWorld *AddOnNLBHelloWorld `json:"add-on-nlb-hello-world,omitempty"`
@@ -225,18 +240,6 @@ type AddOnManagedNodeGroups struct {
 	// SigningName is the EKS managed node group create request signing name.
 	SigningName string `json:"signing-name"`
 
-	// RemoteAccessKeyCreate is true to create the remote SSH access private key.
-	RemoteAccessKeyCreate bool `json:"remote-access-key-create"`
-	// RemoteAccessKeyName is the key name for node group SSH EC2 key pair.
-	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
-	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
-	RemoteAccessKeyName string `json:"remote-access-key-name,omitempty"`
-	// RemoteAccessPrivateKeyPath is the file path to store node group key pair private key.
-	// Thus, deployer must delete the private key right after node group creation.
-	// MAKE SURE PRIVATE KEY NEVER GETS UPLOADED TO CLOUD STORAGE AND DELETE AFTER USE!!!
-	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
-	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
-	RemoteAccessPrivateKeyPath string `json:"remote-access-private-key-path,omitempty"`
 	// RemoteAccessUserName is the user name for managed node group SSH access.
 	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
 	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
@@ -986,7 +989,7 @@ func (cfg *Config) unsafeSSHCommands() (s string) {
 			Name:      name,
 			Instances: ng.Instances,
 		}
-		buf.WriteString(asg.SSHCommands(cfg.Region, cfg.AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath, cfg.AddOnManagedNodeGroups.RemoteAccessUserName))
+		buf.WriteString(asg.SSHCommands(cfg.Region, cfg.RemoteAccessPrivateKeyPath, cfg.AddOnManagedNodeGroups.RemoteAccessUserName))
 		buf.WriteString("\n")
 	}
 	return buf.String()

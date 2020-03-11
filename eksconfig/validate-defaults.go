@@ -57,6 +57,10 @@ var DefaultConfig = Config{
 		EncryptionCMKCreate: true,
 	},
 
+	RemoteAccessKeyCreate: true,
+	// keep in-sync with the default value in https://pkg.go.dev/k8s.io/kubernetes/test/e2e/framework#GetSigner
+	RemoteAccessPrivateKeyPath: filepath.Join(homedir.HomeDir(), ".ssh", "kube_aws_rsa"),
+
 	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
 	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
 	AddOnManagedNodeGroups: &AddOnManagedNodeGroups{
@@ -65,10 +69,7 @@ var DefaultConfig = Config{
 
 		RoleCreate: true,
 
-		RemoteAccessKeyCreate: true,
-		// keep in-sync with the default value in https://pkg.go.dev/k8s.io/kubernetes/test/e2e/framework#GetSigner
-		RemoteAccessPrivateKeyPath: filepath.Join(homedir.HomeDir(), ".ssh", "kube_aws_rsa"),
-		RemoteAccessUserName:       "ec2-user", // assume Amazon Linux 2
+		RemoteAccessUserName: "ec2-user", // assume Amazon Linux 2
 
 		// to be auto-generated
 		LogsDir: "",
@@ -212,7 +213,7 @@ func init() {
 
 	if runtime.GOOS == "darwin" {
 		DefaultConfig.KubectlDownloadURL = strings.Replace(DefaultConfig.KubectlDownloadURL, "linux", "darwin", -1)
-		DefaultConfig.AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath = filepath.Join(os.TempDir(), randString(10)+".insecure.key")
+		DefaultConfig.RemoteAccessPrivateKeyPath = filepath.Join(os.TempDir(), randString(10)+".insecure.key")
 	}
 }
 
@@ -447,6 +448,30 @@ func (cfg *Config) validateParameters() error {
 		}
 	}
 
+	if cfg.RemoteAccessPrivateKeyPath == "" {
+		return errors.New("empty RemoteAccessPrivateKeyPath")
+	}
+
+	switch cfg.RemoteAccessKeyCreate {
+	case true: // need create one, or already created
+		if cfg.RemoteAccessKeyName == "" {
+			cfg.RemoteAccessKeyName = cfg.Name + "-key-mng"
+		}
+		if cfg.RemoteAccessPrivateKeyPath != "" {
+			// just ignore...
+			// could be populated from previous run
+			// do not error, so long as RoleCreate false, role won't be deleted
+		}
+
+	case false: // use existing one
+		if cfg.RemoteAccessKeyName == "" {
+			return fmt.Errorf("RemoteAccessKeyCreate false; expect non-empty RemoteAccessKeyName but got %q", cfg.RemoteAccessKeyName)
+		}
+		if cfg.RemoteAccessPrivateKeyPath == "" {
+			return fmt.Errorf("RemoteAccessKeyCreate false; expect non-empty RemoteAccessPrivateKeyPath but got %q", cfg.RemoteAccessPrivateKeyPath)
+		}
+	}
+
 	return nil
 }
 
@@ -461,9 +486,6 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 
 	if cfg.Parameters.VersionValue < 1.14 {
 		return fmt.Errorf("Version %q not supported for AddOnManagedNodeGroups", cfg.Parameters.Version)
-	}
-	if cfg.AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath == "" {
-		return errors.New("empty AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath")
 	}
 	if cfg.AddOnManagedNodeGroups.RemoteAccessUserName == "" {
 		return errors.New("empty AddOnManagedNodeGroups.RemoteAccessUserName")
@@ -516,26 +538,6 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 		}
 		if len(cfg.AddOnManagedNodeGroups.RoleServicePrincipals) > 0 {
 			return fmt.Errorf("AddOnManagedNodeGroups.RoleCreate false; expect empty RoleServicePrincipals but got %q", cfg.AddOnManagedNodeGroups.RoleServicePrincipals)
-		}
-	}
-
-	switch cfg.AddOnManagedNodeGroups.RemoteAccessKeyCreate {
-	case true: // need create one, or already created
-		if cfg.AddOnManagedNodeGroups.RemoteAccessKeyName == "" {
-			cfg.AddOnManagedNodeGroups.RemoteAccessKeyName = cfg.Name + "-key-mng"
-		}
-		if cfg.AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath != "" {
-			// just ignore...
-			// could be populated from previous run
-			// do not error, so long as RoleCreate false, role won't be deleted
-		}
-
-	case false: // use existing one
-		if cfg.AddOnManagedNodeGroups.RemoteAccessKeyName == "" {
-			return fmt.Errorf("AddOnManagedNodeGroups.RemoteAccessKeyCreate false; expect non-empty RemoteAccessKeyName but got %q", cfg.AddOnManagedNodeGroups.RemoteAccessKeyName)
-		}
-		if cfg.AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath == "" {
-			return fmt.Errorf("AddOnManagedNodeGroups.RemoteAccessKeyCreate false; expect non-empty RemoteAccessPrivateKeyPath but got %q", cfg.AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath)
 		}
 	}
 
