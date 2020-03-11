@@ -1,11 +1,43 @@
 package eksconfig
 
 import (
+	"github.com/stretchr/testify/assert"
 	"os"
 	"reflect"
 	"strings"
 	"testing"
 )
+
+func TestEnvAddOnAppMesh(t *testing.T) {
+	cfg := NewDefault()
+	defer func() {
+		os.RemoveAll(cfg.ConfigPath)
+		os.RemoveAll(cfg.KubectlCommandsOutputPath)
+		os.RemoveAll(cfg.RemoteAccessCommandsOutputPath)
+	}()
+
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE", `true`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_NAMESPACE", "custom-namespace")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_CONTROLLER_IMAGE", "repo/controller:v1.1.3")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_CONTROLLER_IMAGE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_INJECTOR_IMAGE", "repo/injector:v1.1.3")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_INJECTOR_IMAGE")
+
+	if err := cfg.UpdateFromEnvs(); err != nil {
+		t.Fatal(err)
+	}
+	err := cfg.ValidateAndSetDefaults()
+	assert.NoError(t, err)
+
+	assert.True(t, cfg.AddOnAppMesh.Enable)
+	assert.Equal(t, cfg.AddOnAppMesh.Namespace, "custom-namespace")
+	assert.Equal(t, cfg.AddOnAppMesh.ControllerImage, "repo/controller:v1.1.3")
+	assert.Equal(t, cfg.AddOnAppMesh.InjectorImage, "repo/injector:v1.1.3")
+}
 
 func TestEnvAddOnManagedNodeGroups(t *testing.T) {
 	cfg := NewDefault()
