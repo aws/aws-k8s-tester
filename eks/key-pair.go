@@ -19,6 +19,10 @@ import (
 // SECURITY NOTE: MAKE SURE PRIVATE KEY NEVER GETS UPLOADED TO CLOUD STORAGE AND DLETE AFTER USE!!!
 
 func (ts *Tester) createKeyPair() (err error) {
+	if !ts.cfg.RemoteAccessKeyCreate {
+		ts.lg.Info("skipping creating key pair")
+		return nil
+	}
 	if ts.cfg.RemoteAccessKeyName == "" {
 		return errors.New("cannot create key pair without key name")
 	}
@@ -60,6 +64,10 @@ func (ts *Tester) createKeyPair() (err error) {
 }
 
 func (ts *Tester) deleteKeyPair() error {
+	if !ts.cfg.RemoteAccessKeyCreate {
+		ts.lg.Info("skipping deleting key pair")
+		return nil
+	}
 	if ts.cfg.RemoteAccessKeyName == "" {
 		return errors.New("cannot delete key pair without key name")
 	}
