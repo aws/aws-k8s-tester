@@ -26,7 +26,6 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.4...v0.7.5
 - Support [custom worker node AMI](https://github.com/aws/aws-k8s-tester/commit/).
 - Move [remote access key creation/deletion function from `eks/mng` to `eks`](https://github.com/aws/aws-k8s-tester/commit/d110238d6ba93300d3109f2925bcc6a5cd254ad0).
 - Remove [unused IAM policy creation/deletion function](https://github.com/aws/aws-k8s-tester/commit/21ea5769a46b9a2ecd5cac041570d4bc1d1d62d1).
-- Add [China region Service Principals by default](https://github.com/aws/aws-k8s-tester/commit/11722f487b861ffb52c98ef0eefda6934cd305df).
 
 ### Go
 

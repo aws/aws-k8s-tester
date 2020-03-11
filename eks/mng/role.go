@@ -34,7 +34,7 @@ Parameters:
   ManagedNodeGroupRoleServicePrincipals:
     Description: EKS Node Group Service Principals
     Type: CommaDelimitedList
-    Default: 'ec2.amazonaws.com,ec2.amazonaws.com.cn,eks.amazonaws.com,eks.amazonaws.com.cn'
+    Default: 'ec2.amazonaws.com,eks.amazonaws.com'
 
   ManagedNodeGroupRoleManagedPolicyARNs:
     Description: EKS Node Group managed policy ARNs

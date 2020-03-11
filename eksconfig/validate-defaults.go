@@ -517,7 +517,7 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 			*/
 			found := false
 			for _, pv := range cfg.AddOnManagedNodeGroups.RoleServicePrincipals {
-				if pv == "ec2.amazonaws.com" { // TODO: support China regions
+				if pv == "ec2.amazonaws.com" { // TODO: support China regions ec2.amazonaws.com.cn or eks.amazonaws.com.cn
 					found = true
 					break
 				}
