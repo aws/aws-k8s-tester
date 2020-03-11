@@ -80,8 +80,14 @@ Parameters:
     Default: aws-k8s-tester-ec2-key
 
   ImageID:
+    Type: String
+    Default: ""
+    Description: (Optional) Custom image ID. This value overrides any AWS Systems Manager Parameter Store value specified above.
+
+  ImageIDSSMParameter:
     Type : AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
     Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+    Description: AWS Systems Manager Parameter Store parameter of the AMI ID.
 
   InstanceType:
     Type: String
@@ -124,6 +130,11 @@ Conditions:
           - Ref: PublicSubnetID3
           - ""
 
+  HasImageID:
+    Fn::Not:
+      - Fn::Equals:
+          - Ref: ImageID
+          - ""
 
 Resources:
 
@@ -169,7 +180,11 @@ Resources:
                 - Fn::Sub: 'https://s3.${AWS::Region}.${AWS::URLSuffix}/amazon-ssm-${AWS::Region}/latest/linux_amd64/amazon-ssm-agent.rpm'
     Properties:
       LaunchConfigurationName: !Ref LaunchConfigurationName
-      ImageId: !Ref ImageID
+      ImageId:
+        Fn::If:
+        - HasImageID
+        - !Ref ImageID
+        - !Ref ImageIDSSMParameter
       InstanceType: !Ref InstanceType
       IamInstanceProfile: !Ref InstanceProfile
       # need this for public DNS + SSH access
@@ -352,6 +367,13 @@ func (ts *Tester) createASGs() error {
 			stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
 				ParameterKey:   aws.String("ImageID"),
 				ParameterValue: aws.String(asg.ImageID),
+			})
+		}
+		if asg.ImageIDSSMParameter != "" {
+			ts.lg.Info("added image ID", zap.String("image-id-ssm-parameter", asg.ImageIDSSMParameter))
+			stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
+				ParameterKey:   aws.String("ImageIDSSMParameter"),
+				ParameterValue: aws.String(asg.ImageIDSSMParameter),
 			})
 		}
 		if asg.InstanceType != "" {

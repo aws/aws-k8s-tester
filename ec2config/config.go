@@ -171,8 +171,11 @@ type ASG struct {
 	CFNStackID string `json:"cfn-stack-id" read-only:"true"`
 
 	// ImageID is the Amazon Machine Image (AMI).
-	// If empty, auto-populated with SSM parameter.
+	// This value overrides any AWS Systems Manager Parameter Store value.
 	ImageID string `json:"image-id"`
+	// ImageIDSSMParameter is the AWS Systems Manager Parameter Store
+	// parameter of the AMI ID.
+	ImageIDSSMParameter string `json:"image-id-ssm-parameter"`
 	// InstanceType is the instance type.
 	InstanceType string `json:"instance-type"`
 	// VolumeSize is the size of the default volume, in GiB.
