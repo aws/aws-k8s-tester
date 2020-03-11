@@ -2,6 +2,8 @@ package appmesh
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"helm.sh/helm/v3/pkg/action"
@@ -9,7 +11,6 @@ import (
 	"helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/release"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
-	"strings"
 )
 
 const (

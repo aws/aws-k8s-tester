@@ -3,13 +3,14 @@ package appmesh
 import (
 	"context"
 	"fmt"
+	"os"
+	"time"
+
 	awscfn "github.com/aws/aws-k8s-tester/pkg/aws/cloudformation"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"go.uber.org/zap"
-	"os"
-	"time"
 )
 
 const addOnCFNStackTemplate = `
