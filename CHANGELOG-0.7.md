@@ -10,12 +10,12 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.4...v0.7.5
 ### `eksconfig`
 
 - Move [`AddOnManagedNodeGroups.RemoteAccessKeyCreate` to `Config.RemoteAccessKeyCreate`](https://github.com/aws/aws-k8s-tester/commit/0179c3a94106e82388158f7efd07d951d55023d3).
-  - `AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_REMOTE_ACCESS_KEY_CREATE_` is now `AWS_K8S_TESTER_EKS_REMOTE_ACCESS_KEY_CREATE_`.
+  - `AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_REMOTE_ACCESS_KEY_CREATE` is now `AWS_K8S_TESTER_EKS_REMOTE_ACCESS_KEY_CREATE`.
 - Move [`AddOnManagedNodeGroups.RemoteAccessKeyName` to `Config.RemoteAccessKeyName`](https://github.com/aws/aws-k8s-tester/commit/0179c3a94106e82388158f7efd07d951d55023d3).
   - `AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_REMOTE_ACCESS_KEY_NAME` is now `AWS_K8S_TESTER_EKS_REMOTE_ACCESS_KEY_NAME`.
 - Move [`AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath` to `Config.RemoteAccessPrivateKeyPath`](https://github.com/aws/aws-k8s-tester/commit/0179c3a94106e82388158f7efd07d951d55023d3).
   - `AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_REMOTE_ACCESS_PRIVATE_KEY_PATH` is now `AWS_K8S_TESTER_EKS_REMOTE_ACCESS_PRIVATE_KEY_PATH`.
-- Add [`AddOnManagedNodeGroups.FetchLogs` to configure fetch managed node group logs downloading]().
+- Add [`AddOnManagedNodeGroups.FetchLogs` to configure fetch managed node group logs downloading](https://github.com/aws/aws-k8s-tester/commit/d57a203315b842bea6cab7476a778624155fdee3).
   - `AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_FETCH_LOGS` is `true` by default.
 - Support [custom worker node AMI](https://github.com/aws/aws-k8s-tester/commit/).
 
