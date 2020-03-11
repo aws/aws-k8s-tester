@@ -560,6 +560,17 @@ func (ts *Tester) Up() (err error) {
 		return err
 	}
 
+	colorstring.Printf("\n\n\n[light_green]createKeyPair [default](%q)\n", ts.cfg.ConfigPath)
+	if err := catchInterrupt(
+		ts.lg,
+		ts.stopCreationCh,
+		ts.stopCreationChOnce,
+		ts.interruptSig,
+		ts.createKeyPair,
+	); err != nil {
+		return err
+	}
+
 	colorstring.Printf("\n\n\n[light_green]createClusterRole [default](%q)\n", ts.cfg.ConfigPath)
 	if err := catchInterrupt(
 		ts.lg,
@@ -900,6 +911,18 @@ func (ts *Tester) down() (err error) {
 
 	var errs []string
 
+	colorstring.Printf("\n\n\n[light_green]deleteKeyPair [default](%q)\n", ts.cfg.ConfigPath)
+	if err := ts.deleteKeyPair(); err != nil {
+		ts.lg.Warn("failed to delete key pair", zap.Error(err))
+		errs = append(errs, err.Error())
+	}
+
+	colorstring.Printf("\n\n\n[light_green]deleteEncryption [default](%q)\n", ts.cfg.ConfigPath)
+	if err := ts.deleteEncryption(); err != nil {
+		ts.lg.Warn("deleteEncryption failed", zap.Error(err))
+		errs = append(errs, err.Error())
+	}
+
 	if ts.cfg.IsAddOnManagedNodeGroupsEnabled() && len(ts.cfg.StatusManagedNodeGroups.Nodes) > 0 {
 		if ts.cfg.IsAddOnFargateEnabled() && ts.cfg.AddOnFargate.Created {
 			colorstring.Printf("\n\n\n[light_green]fargateTester.Delete [default](%q)\n", ts.cfg.ConfigPath)
@@ -1021,12 +1044,6 @@ func (ts *Tester) down() (err error) {
 	colorstring.Printf("\n\n\n[light_green]deleteClusterRole [default](%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteClusterRole(); err != nil {
 		ts.lg.Warn("deleteClusterRole failed", zap.Error(err))
-		errs = append(errs, err.Error())
-	}
-
-	colorstring.Printf("\n\n\n[light_green]deleteEncryption [default](%q)\n", ts.cfg.ConfigPath)
-	if err := ts.deleteEncryption(); err != nil {
-		ts.lg.Warn("deleteEncryption failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 

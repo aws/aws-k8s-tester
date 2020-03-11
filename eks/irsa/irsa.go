@@ -1209,7 +1209,7 @@ func (ts *tester) countSuccess() (int, error) {
 			ts.cfg.Logger.Debug("fetching output", zap.String("instance-id", instID))
 			sh, err := ssh.New(ssh.Config{
 				Logger:        ts.cfg.Logger,
-				KeyPath:       ts.cfg.EKSConfig.AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath,
+				KeyPath:       ts.cfg.EKSConfig.RemoteAccessPrivateKeyPath,
 				PublicIP:      iv.PublicIP,
 				PublicDNSName: iv.PublicDNSName,
 				UserName:      ts.cfg.EKSConfig.AddOnManagedNodeGroups.RemoteAccessUserName,

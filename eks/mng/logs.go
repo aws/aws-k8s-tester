@@ -84,7 +84,7 @@ func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 
 				sh, err := ssh.New(ssh.Config{
 					Logger:        ts.cfg.Logger,
-					KeyPath:       ts.cfg.EKSConfig.AddOnManagedNodeGroups.RemoteAccessPrivateKeyPath,
+					KeyPath:       ts.cfg.EKSConfig.RemoteAccessPrivateKeyPath,
 					PublicIP:      iv.PublicIP,
 					PublicDNSName: iv.PublicDNSName,
 					UserName:      ts.cfg.EKSConfig.AddOnManagedNodeGroups.RemoteAccessUserName,

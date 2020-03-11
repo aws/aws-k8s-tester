@@ -289,9 +289,6 @@ func (ts *tester) Create() (err error) {
 		ts.cfg.EKSConfig.Sync()
 	}()
 
-	if err = ts.createKeyPair(); err != nil {
-		return err
-	}
 	if err = ts.createRole(); err != nil {
 		return err
 	}
@@ -313,11 +310,6 @@ func (ts *tester) Delete() error {
 	}
 
 	var errs []string
-	if err := ts.deleteKeyPair(); err != nil {
-		ts.cfg.Logger.Warn("failed to delete key pair", zap.Error(err))
-		errs = append(errs, err.Error())
-	}
-
 	var err error
 	for i := 0; i < 5; i++ { // retry, leakly ENI may take awhile to be deleted
 		err = ts.deleteMNG()
@@ -405,7 +397,7 @@ func (ts *tester) createMNG() error {
 				DiskSize:      aws.Int64(int64(mv.VolumeSize)),
 				InstanceTypes: aws.StringSlice(mv.InstanceTypes),
 				RemoteAccess: &awseks.RemoteAccessConfig{
-					Ec2SshKey: aws.String(ts.cfg.EKSConfig.AddOnManagedNodeGroups.RemoteAccessKeyName),
+					Ec2SshKey: aws.String(ts.cfg.EKSConfig.RemoteAccessKeyName),
 				},
 				ScalingConfig: &awseks.NodegroupScalingConfig{
 					DesiredSize: aws.Int64(int64(mv.ASGDesiredCapacity)),
@@ -501,7 +493,7 @@ func (ts *tester) createMNG() error {
 					},
 					{
 						ParameterKey:   aws.String("ManagedNodeGroupRemoteAccessKeyName"),
-						ParameterValue: aws.String(ts.cfg.EKSConfig.AddOnManagedNodeGroups.RemoteAccessKeyName),
+						ParameterValue: aws.String(ts.cfg.EKSConfig.RemoteAccessKeyName),
 					},
 				},
 			}
