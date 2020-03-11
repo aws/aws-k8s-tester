@@ -7,6 +7,14 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.4...v0.7.5).
 
+### `ec2config`
+
+- Add [`ImageIDSSMParameter`](https://github.com/aws/aws-k8s-tester/commit/81c5af7df626bae2721e89a09ae05a061be15ceb).
+
+### `ec2`
+
+- Add [custom AMI ASG CFN template](https://github.com/aws/aws-k8s-tester/commit/81c5af7df626bae2721e89a09ae05a061be15ceb).
+
 ### `eksconfig`
 
 - Move [`AddOnManagedNodeGroups.RemoteAccessKeyCreate` to `Config.RemoteAccessKeyCreate`](https://github.com/aws/aws-k8s-tester/commit/0179c3a94106e82388158f7efd07d951d55023d3).
