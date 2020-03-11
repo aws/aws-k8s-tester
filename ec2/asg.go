@@ -512,6 +512,9 @@ func (ts *Tester) deleteASGs() error {
 
 	ts.lg.Info("deleting ASGs using CFN", zap.String("name", ts.cfg.Name))
 	for asgName, asg := range ts.cfg.ASGs {
+		if asg.CFNStackID == "" {
+			return fmt.Errorf("%q ASG stack ID is empty", asg.Name)
+		}
 		ts.lg.Info("deleting ASG", zap.String("name", asgName), zap.String("cfn-stack-id", asg.CFNStackID))
 		_, err := ts.cfnAPI.DeleteStack(&cloudformation.DeleteStackInput{
 			StackName: aws.String(asg.CFNStackID),
