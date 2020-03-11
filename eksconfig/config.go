@@ -121,6 +121,9 @@ type Config struct {
 	// AddOnFargate defines parameters for EKS cluster
 	// add-on "EKS on Fargate".
 	AddOnFargate *AddOnFargate `json:"add-on-fargate,omitempty"`
+	// AddOnAppMesh defines parameters for EKS cluster
+	// add-on "EKS App Mesh Integration".
+	AddOnAppMesh *AddOnAppMesh `json:"add-on-app-mesh,omitempty"`
 
 	// Status represents the current status of AWS resources.
 	// Status is read-only.
@@ -651,6 +654,41 @@ type AddOnFargate struct {
 	PodName string `json:"pod-name"`
 	// ContainerName is the name of the Fargate container.
 	ContainerName string `json:"container-name"`
+}
+
+func (cfg *Config) IsAddOnAppMeshEnabled() bool {
+	return cfg.AddOnAppMesh != nil && cfg.AddOnAppMesh.Enable
+}
+
+// AddOnAppMesh defines parameters for EKS cluster
+// add-on "EKS App Mesh Integration".
+type AddOnAppMesh struct {
+	// Enable is 'true' to create this add-on.
+	Enable bool `json:"enable"`
+
+	// Namespace is the namespace to create "AppMesh" controller/injector.
+	Namespace string `json:"namespace"`
+
+	// The image of appMesh controller
+	ControllerImage string `json:"controller-image"`
+
+	// The image of appMesh injector
+	InjectorImage string `json:"injector-image"`
+
+	// Created is true when the resource has been created.
+	// Used for delete operations.
+	Created bool `json:"created" read-only:"true"`
+	// CreateTook is the duration that took to create the resource.
+	CreateTook time.Duration `json:"create-took,omitempty" read-only:"true"`
+	// CreateTookString is the duration that took to create the resource.
+	CreateTookString string `json:"create-took-string,omitempty" read-only:"true"`
+	// DeleteTook is the duration that took to create the resource.
+	DeleteTook time.Duration `json:"delete-took,omitempty" read-only:"true"`
+	// DeleteTookString is the duration that took to create the resource.
+	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
+
+	// AddOnStackARN is the arn of cloudFormation to create the resource.
+	AddOnCFNStackARN string `json:"add-on-stack-arn,omitempty" read-only:"true"`
 }
 
 // Status represents the current status of AWS resources.
