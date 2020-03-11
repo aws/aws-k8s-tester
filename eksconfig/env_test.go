@@ -1,11 +1,12 @@
 package eksconfig
 
 import (
-	"github.com/stretchr/testify/assert"
 	"os"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestEnvAddOnAppMesh(t *testing.T) {
@@ -26,6 +27,8 @@ func TestEnvAddOnAppMesh(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_CONTROLLER_IMAGE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_INJECTOR_IMAGE", "repo/injector:v1.1.3")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_INJECTOR_IMAGE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_ADD_ON_CFN_STACK_ARN", `hello`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_ADD_ON_CFN_STACK_ARN")
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
 		t.Fatal(err)
@@ -37,6 +40,10 @@ func TestEnvAddOnAppMesh(t *testing.T) {
 	assert.Equal(t, cfg.AddOnAppMesh.Namespace, "custom-namespace")
 	assert.Equal(t, cfg.AddOnAppMesh.ControllerImage, "repo/controller:v1.1.3")
 	assert.Equal(t, cfg.AddOnAppMesh.InjectorImage, "repo/injector:v1.1.3")
+
+	if cfg.AddOnAppMesh.AddOnCFNStackARN != "" {
+		t.Fatalf("read-only AddOnAppMesh.AddOnCFNStackARN is set to %q", cfg.AddOnAppMesh.AddOnCFNStackARN)
+	}
 }
 
 func TestEnvAddOnManagedNodeGroups(t *testing.T) {

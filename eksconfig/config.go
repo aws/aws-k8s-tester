@@ -688,7 +688,7 @@ type AddOnAppMesh struct {
 	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
 
 	// AddOnStackARN is the arn of cloudFormation to create the resource.
-	AddOnCFNStackARN string `json:"add-on-stack-arn,omitempty" read-only:"true"`
+	AddOnCFNStackARN string `json:"add-on-cfn-stack-arn,omitempty" read-only:"true"`
 }
 
 // Status represents the current status of AWS resources.
