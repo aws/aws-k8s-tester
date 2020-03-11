@@ -10,8 +10,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.4...v0.7.5
 ### `ec2config`
 
 - Add [`ImageIDSSMParameter`](https://github.com/aws/aws-k8s-tester/commit/81c5af7df626bae2721e89a09ae05a061be15ceb).
-- Add [`ASGsFetchLogs`](https://github.com/aws/aws-k8s-tester/commit/).
-- Rename [`LogsDir` to `ASGsLogsDir`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`ASGsFetchLogs`](https://github.com/aws/aws-k8s-tester/commit/8ee120834bf615f7ec2e94cb2a1d973c88472eb6).
+- Rename [`LogsDir` to `ASGsLogsDir`](https://github.com/aws/aws-k8s-tester/commit/8ee120834bf615f7ec2e94cb2a1d973c88472eb6).
 
 ### `ec2`
 
