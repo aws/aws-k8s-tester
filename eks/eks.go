@@ -800,43 +800,45 @@ func (ts *Tester) Up() (err error) {
 			}
 		}
 
-		colorstring.Printf("\n\n\n[light_green]mngTester.FetchLogs [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-		waitDur := 20 * time.Second
-		ts.lg.Info("sleeping before mngTester.FetchLogs", zap.Duration("wait", waitDur))
-		time.Sleep(waitDur)
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.interruptSig,
-			ts.mngTester.FetchLogs,
-		); err != nil {
-			return err
-		}
-
-		if ts.cfg.IsAddOnSecretsEnabled() {
-			colorstring.Printf("\n\n\n[light_green]secretsTester.AggregateResults [default](%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnSecrets.Namespace)
+		if ts.cfg.AddOnManagedNodeGroups.FetchLogs {
+			colorstring.Printf("\n\n\n[light_green]mngTester.FetchLogs [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+			waitDur := 20 * time.Second
+			ts.lg.Info("sleeping before mngTester.FetchLogs", zap.Duration("wait", waitDur))
+			time.Sleep(waitDur)
 			if err := catchInterrupt(
 				ts.lg,
 				ts.stopCreationCh,
 				ts.stopCreationChOnce,
 				ts.interruptSig,
-				ts.secretsTester.AggregateResults,
+				ts.mngTester.FetchLogs,
 			); err != nil {
 				return err
 			}
-		}
 
-		if ts.cfg.IsAddOnIRSAEnabled() {
-			colorstring.Printf("\n\n\n[light_green]irsaTester.AggregateResults [default](%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnIRSA.Namespace)
-			if err := catchInterrupt(
-				ts.lg,
-				ts.stopCreationCh,
-				ts.stopCreationChOnce,
-				ts.interruptSig,
-				ts.irsaTester.AggregateResults,
-			); err != nil {
-				return err
+			if ts.cfg.IsAddOnSecretsEnabled() {
+				colorstring.Printf("\n\n\n[light_green]secretsTester.AggregateResults [default](%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnSecrets.Namespace)
+				if err := catchInterrupt(
+					ts.lg,
+					ts.stopCreationCh,
+					ts.stopCreationChOnce,
+					ts.interruptSig,
+					ts.secretsTester.AggregateResults,
+				); err != nil {
+					return err
+				}
+			}
+
+			if ts.cfg.IsAddOnIRSAEnabled() {
+				colorstring.Printf("\n\n\n[light_green]irsaTester.AggregateResults [default](%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnIRSA.Namespace)
+				if err := catchInterrupt(
+					ts.lg,
+					ts.stopCreationCh,
+					ts.stopCreationChOnce,
+					ts.interruptSig,
+					ts.irsaTester.AggregateResults,
+				); err != nil {
+					return err
+				}
 			}
 		}
 

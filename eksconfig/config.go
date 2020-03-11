@@ -215,6 +215,8 @@ type AddOnManagedNodeGroups struct {
 	// Created is true when the resource has been created.
 	// Used for delete operations.
 	Created bool `json:"created" read-only:"true"`
+	// FetchLogs is true to fetch logs from remote nodes using SSH.
+	FetchLogs bool `json:"fetch-logs"`
 
 	// RoleName is the name of the managed node group.
 	RoleName string `json:"role-name"`

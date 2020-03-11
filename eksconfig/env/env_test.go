@@ -101,6 +101,8 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_CREATED")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_FETCH_LOGS", "false")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_FETCH_LOGS")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_CREATE", "false")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_CREATE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_NAME", "mng-role-name")
@@ -395,6 +397,9 @@ func TestEnv(t *testing.T) {
 	}
 	if !cfg.AddOnManagedNodeGroups.Enable {
 		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.Enable %v", cfg.AddOnManagedNodeGroups.Enable)
+	}
+	if cfg.AddOnManagedNodeGroups.FetchLogs {
+		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.FetchLogs %v", cfg.AddOnManagedNodeGroups.FetchLogs)
 	}
 	if cfg.AddOnManagedNodeGroups.RoleCreate {
 		t.Fatalf("unexpected AddOnManagedNodeGroups.RoleCreate %v", cfg.AddOnManagedNodeGroups.RoleCreate)

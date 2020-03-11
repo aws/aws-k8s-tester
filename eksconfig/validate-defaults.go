@@ -65,6 +65,7 @@ var DefaultConfig = Config{
 	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
 	AddOnManagedNodeGroups: &AddOnManagedNodeGroups{
 		Enable:      false,
+		FetchLogs:   true,
 		SigningName: "eks",
 
 		RoleCreate: true,
