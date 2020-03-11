@@ -17,6 +17,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.4...v0.7.5
   - `AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_REMOTE_ACCESS_PRIVATE_KEY_PATH` is now `AWS_K8S_TESTER_EKS_REMOTE_ACCESS_PRIVATE_KEY_PATH`.
 - Add [`AddOnManagedNodeGroups.FetchLogs` to configure fetch managed node group logs downloading](https://github.com/aws/aws-k8s-tester/commit/d57a203315b842bea6cab7476a778624155fdee3).
   - `AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_FETCH_LOGS` is `true` by default.
+  - `FetchLogs` will be [skipped if `AddOnManagedNodeGroups.FetchLogs` is `false`](https://github.com/aws/aws-k8s-tester/commit/74aee02ac01123cbc8036910831addbca665cbbc).
 - Support [custom worker node AMI](https://github.com/aws/aws-k8s-tester/commit/).
 
 ### `eks`
@@ -25,6 +26,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.4...v0.7.5
 - Support [custom worker node AMI](https://github.com/aws/aws-k8s-tester/commit/).
 - Move [remote access key creation/deletion function from `eks/mng` to `eks`](https://github.com/aws/aws-k8s-tester/commit/d110238d6ba93300d3109f2925bcc6a5cd254ad0).
 - Remove [unused IAM policy creation/deletion function](https://github.com/aws/aws-k8s-tester/commit/21ea5769a46b9a2ecd5cac041570d4bc1d1d62d1).
+- Add [China region Service Principals by default](https://github.com/aws/aws-k8s-tester/commit/11722f487b861ffb52c98ef0eefda6934cd305df).
 
 ### Go
 
