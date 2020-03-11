@@ -238,7 +238,7 @@ func (ts *Tester) Up() (err error) {
 		return err
 	}
 
-	colorstring.Printf("\n\n\n[light_green]createASGs [default](%q, %q)\n", ts.cfg.ConfigPath)
+	colorstring.Printf("\n\n\n[light_green]createASGs [default](%q)\n", ts.cfg.ConfigPath)
 	if err := catchInterrupt(
 		ts.lg,
 		ts.stopCreationCh,
@@ -249,18 +249,20 @@ func (ts *Tester) Up() (err error) {
 		return err
 	}
 
-	colorstring.Printf("\n\n\n[light_green]FetchLogs [default](%q)\n", ts.cfg.ConfigPath)
-	waitDur := 20 * time.Second
-	ts.lg.Info("sleeping before FetchLogs", zap.Duration("wait", waitDur))
-	time.Sleep(waitDur)
-	if err := catchInterrupt(
-		ts.lg,
-		ts.stopCreationCh,
-		ts.stopCreationChOnce,
-		ts.interruptSig,
-		ts.FetchLogs,
-	); err != nil {
-		return err
+	if ts.cfg.ASGsFetchLogs {
+		colorstring.Printf("\n\n\n[light_green]FetchLogs [default](%q)\n", ts.cfg.ConfigPath)
+		waitDur := 20 * time.Second
+		ts.lg.Info("sleeping before FetchLogs", zap.Duration("wait", waitDur))
+		time.Sleep(waitDur)
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.interruptSig,
+			ts.FetchLogs,
+		); err != nil {
+			return err
+		}
 	}
 
 	return ts.cfg.Sync()

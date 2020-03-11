@@ -30,11 +30,14 @@ var logCmds = map[string]string{
 
 // FetchLogs downloads logs from managed node group instances.
 func (ts *Tester) FetchLogs() (err error) {
+	if !ts.cfg.ASGsFetchLogs {
+		return nil
+	}
 	if len(ts.cfg.ASGs) == 0 {
 		ts.lg.Info("empty ASGs; no logs to fetch")
 		return nil
 	}
-	if err := os.MkdirAll(ts.cfg.LogsDir, 0700); err != nil {
+	if err := os.MkdirAll(ts.cfg.ASGsLogsDir, 0700); err != nil {
 		return err
 	}
 	ts.logsMu.Lock()
@@ -46,7 +49,7 @@ func (ts *Tester) FetchLogs() (err error) {
 var regex = regexp.MustCompile("[^a-zA-Z0-9]+")
 
 func (ts *Tester) fetchLogs(qps float32, burst int, commandToFileName map[string]string) error {
-	logsDir := ts.cfg.LogsDir
+	logsDir := ts.cfg.ASGsLogsDir
 	sshOpt := ssh.WithVerbose(ts.cfg.LogLevel == "debug")
 	rateLimiter := rate.NewLimiter(rate.Limit(qps), burst)
 	rch, waits := make(chan instanceLogs, 10), 0

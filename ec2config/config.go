@@ -52,9 +52,6 @@ type Config struct {
 	// Multiple values are accepted. If empty, it sets to 'default', which outputs to stderr.
 	// See https://pkg.go.dev/go.uber.org/zap#Open and https://pkg.go.dev/go.uber.org/zap#Config for more details.
 	LogOutputs []string `json:"log-outputs,omitempty"`
-	// LogsDir is set to specify the target directory to store all remote log files.
-	// If empty, it stores in the same directory as "ConfigPath".
-	LogsDir string `json:"logs-dir,omitempty"`
 
 	// Up is true if the cluster is up.
 	Up bool `json:"up"`
@@ -122,6 +119,11 @@ type Config struct {
 	// RemoteAccessCommandsOutputPath is the output path for ssh commands.
 	RemoteAccessCommandsOutputPath string `json:"remote-access-commands-output-path,omitempty"`
 
+	// ASGsFetchLogs is true to fetch logs from remote nodes using SSH.
+	ASGsFetchLogs bool `json:"asgs-fetch-logs"`
+	// ASGsLogsDir is set to specify the target directory to store all remote log files.
+	// If empty, it stores in the same directory as "ConfigPath".
+	ASGsLogsDir string `json:"asgs-logs-dir,omitempty"`
 	// ASGs is a map from each ASG name to EC2 ASG.
 	ASGs map[string]ASG `json:"asgs"`
 }

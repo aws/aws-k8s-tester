@@ -29,6 +29,10 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EC2_REMOTE_ACCESS_PRIVATE_KEY_PATH")
 	os.Setenv("AWS_K8S_TESTER_EC2_REMOTE_ACCESS_USER_NAME", `my-user`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EC2_REMOTE_ACCESS_USER_NAME")
+	os.Setenv("AWS_K8S_TESTER_EC2_ASGS_FETCH_LOGS", "false")
+	defer os.Unsetenv("AWS_K8S_TESTER_EC2_ASGS_FETCH_LOGS")
+	os.Setenv("AWS_K8S_TESTER_EC2_ASGS_LOGS_DIR", "hello")
+	defer os.Unsetenv("AWS_K8S_TESTER_EC2_ASGS_LOGS_DIR")
 	os.Setenv("AWS_K8S_TESTER_EC2_ASGS", `{"test-asg":{"name":"test-asg","image-id":"123","image-id-ssm-parameter":"777","min-size":30,"max-size":30,"desired-capacity":30,"volume-size":120,"instance-type":"c5.xlarge"}}`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EC2_ASGS")
 
@@ -61,6 +65,12 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("unexpected cfg.RemoteAccessUserName %q", cfg.RemoteAccessUserName)
 	}
 
+	if cfg.ASGsFetchLogs {
+		t.Fatalf("unexpected cfg.ASGsFetchLogs %v", cfg.ASGsFetchLogs)
+	}
+	if cfg.ASGsLogsDir != "hello" {
+		t.Fatalf("unexpected cfg.ASGsLogsDir %q", cfg.ASGsLogsDir)
+	}
 	expectedASGs := map[string]ASG{
 		"test-asg": {
 			Name:                "test-asg",

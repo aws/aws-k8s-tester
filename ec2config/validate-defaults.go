@@ -40,6 +40,8 @@ var DefaultConfig = Config{
 	RemoteAccessKeyCreate:      true,
 	RemoteAccessPrivateKeyPath: filepath.Join(homedir.HomeDir(), ".ssh", "ec2_aws_rsa"),
 	RemoteAccessUserName:       "ec2-user", // for AL2
+
+	ASGsFetchLogs: true,
 }
 
 func init() {
@@ -142,8 +144,8 @@ func (cfg *Config) validateConfig() error {
 	if len(cfg.LogOutputs) == 1 && (cfg.LogOutputs[0] == "stderr" || cfg.LogOutputs[0] == "stdout") {
 		cfg.LogOutputs = append(cfg.LogOutputs, cfg.ConfigPath+".log")
 	}
-	if cfg.LogsDir == "" {
-		cfg.LogsDir = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-logs-remote")
+	if cfg.ASGsLogsDir == "" {
+		cfg.ASGsLogsDir = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-logs-remote")
 	}
 
 	if cfg.RemoteAccessCommandsOutputPath == "" {
