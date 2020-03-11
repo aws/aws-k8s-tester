@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/aws/aws-k8s-tester/eks/appmesh"
 	"io/ioutil"
 	"os"
 	"os/signal"
@@ -95,6 +96,7 @@ type Tester struct {
 	secretsTester       secrets.Tester
 	irsaTester          irsa.Tester
 	fargateTester       fargate.Tester
+	appMeshTester       appmesh.Tester
 }
 
 // New creates a new EKS tester.
@@ -461,6 +463,18 @@ func (ts *Tester) createSubTesters() (err error) {
 		}
 	}
 
+	if ts.cfg.IsAddOnAppMeshEnabled() {
+		ts.lg.Info("creating appMeshTester")
+		ts.appMeshTester, err = appmesh.NewTester(appmesh.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			Sig:       ts.interruptSig,
+			EKSConfig: ts.cfg,
+			K8SClient: ts,
+			CFNAPI:    ts.cfnAPI,
+		})
+	}
+
 	return ts.cfg.Sync()
 }
 
@@ -800,11 +814,25 @@ func (ts *Tester) Up() (err error) {
 			}
 		}
 
+		if ts.cfg.IsAddOnAppMeshEnabled() {
+			colorstring.Printf("\n\n\n[light_green]appMeshTester.Create [default](%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnAppMesh.Namespace)
+			if err := catchInterrupt(
+				ts.lg,
+				ts.stopCreationCh,
+				ts.stopCreationChOnce,
+				ts.interruptSig,
+				ts.appMeshTester.Create,
+			); err != nil {
+				return err
+			}
+		}
+
 		if ts.cfg.AddOnManagedNodeGroups.FetchLogs {
 			colorstring.Printf("\n\n\n[light_green]mngTester.FetchLogs [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 			waitDur := 20 * time.Second
 			ts.lg.Info("sleeping before mngTester.FetchLogs", zap.Duration("wait", waitDur))
 			time.Sleep(waitDur)
+
 			if err := catchInterrupt(
 				ts.lg,
 				ts.stopCreationCh,
@@ -994,6 +1022,17 @@ func (ts *Tester) down() (err error) {
 			} else {
 				waitDur := time.Minute
 				ts.lg.Info("sleeping after deleting NLB", zap.Duration("wait", waitDur))
+				time.Sleep(waitDur)
+			}
+		}
+		if ts.cfg.IsAddOnAppMeshEnabled() && ts.cfg.AddOnAppMesh.Created {
+			colorstring.Printf("\n\n\n[light_green]appMeshTester.Delete [default](%q)\n", ts.cfg.ConfigPath)
+			if err := ts.appMeshTester.Delete(); err != nil {
+				ts.lg.Warn("appMeshTester.Delete failed", zap.Error(err))
+				errs = append(errs, err.Error())
+			} else {
+				waitDur := time.Minute
+				ts.lg.Info("sleeping after deleting appMesh", zap.Duration("wait", waitDur))
 				time.Sleep(waitDur)
 			}
 		}

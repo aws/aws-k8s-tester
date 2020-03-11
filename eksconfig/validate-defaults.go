@@ -144,6 +144,9 @@ var DefaultConfig = Config{
 		RoleCreate: true,
 	},
 
+	AddOnAppMesh: &AddOnAppMesh{
+		Enable: false,
+	},
 	// read-only
 	Status: &Status{Up: false},
 	StatusManagedNodeGroups: &StatusManagedNodeGroups{
@@ -261,7 +264,9 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	if err := cfg.validateAddOnFargate(); err != nil {
 		return fmt.Errorf("validateAddOnFargate failed [%v]", err)
 	}
-
+	if err := cfg.validateAddOnAppMesh(); err != nil {
+		return fmt.Errorf("validateAddOnAppMesh failed [%v]", err)
+	}
 	return nil
 }
 
@@ -899,6 +904,29 @@ func (cfg *Config) validateAddOnFargate() error {
 		}
 	}
 
+	return nil
+}
+
+func (cfg *Config) validateAddOnAppMesh() error {
+	if cfg.AddOnAppMesh == nil {
+		return nil
+	}
+	switch cfg.AddOnAppMesh.Enable {
+	case true:
+		if cfg.AddOnManagedNodeGroups == nil {
+			return errors.New("AddOnManagedNodeGroups disabled but AddOnAppMesh.Enable true")
+		}
+		if !cfg.AddOnManagedNodeGroups.Enable {
+			return errors.New("AddOnManagedNodeGroups disabled but AddOnAppMesh.Enable true")
+		}
+	case false:
+		cfg.AddOnAppMesh = nil
+		return nil
+	}
+
+	if cfg.AddOnAppMesh.Namespace == "" {
+		cfg.AddOnAppMesh.Namespace = "appmesh-system"
+	}
 	return nil
 }
 
