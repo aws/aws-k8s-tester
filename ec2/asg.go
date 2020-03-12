@@ -125,7 +125,7 @@ Outputs:
 func (ts *Tester) createASGs() error {
 	createStart := time.Now()
 	defer func() {
-		ts.cfg.CreateTook = time.Since(createStart)
+		ts.cfg.CreateTook += time.Since(createStart)
 		ts.cfg.CreateTookString = ts.cfg.CreateTook.String()
 		ts.cfg.Sync()
 	}()
@@ -286,7 +286,7 @@ func (ts *Tester) createASGs() error {
 func (ts *Tester) deleteASGs() error {
 	deleteStart := time.Now()
 	defer func() {
-		ts.cfg.DeleteTook = time.Since(deleteStart)
+		ts.cfg.DeleteTook += time.Since(deleteStart)
 		ts.cfg.DeleteTookString = ts.cfg.DeleteTook.String()
 		ts.cfg.Sync()
 	}()

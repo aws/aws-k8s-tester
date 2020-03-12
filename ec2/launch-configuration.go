@@ -466,7 +466,7 @@ func (ts *Tester) createLaunchConfiguration() error {
 func (ts *Tester) deleteLaunchConfiguration() error {
 	deleteStart := time.Now()
 	defer func() {
-		ts.cfg.DeleteTook = time.Since(deleteStart)
+		ts.cfg.DeleteTook += time.Since(deleteStart)
 		ts.cfg.DeleteTookString = ts.cfg.DeleteTook.String()
 		ts.cfg.Sync()
 	}()
