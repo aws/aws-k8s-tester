@@ -15,8 +15,9 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.4...v0.7.5
 
 ### `ec2`
 
-- Add [custom AMI ASG CFN template](https://github.com/aws/aws-k8s-tester/commit/81c5af7df626bae2721e89a09ae05a061be15ceb).
+- Fix [custom AMI ASG CFN template](https://github.com/aws/aws-k8s-tester/commit/81c5af7df626bae2721e89a09ae05a061be15ceb).
 - Fix [key creation](https://github.com/aws/aws-k8s-tester/commit/61487a22279956c2575affaf1c97896474ce475e).
+- Create [ASG and launch configuration in a separate CFN stack](https://github.com/aws/aws-k8s-tester/commit/c3f431d325b26784acd9b33d66bd73605e6c1efb).
 
 ### `eksconfig`
 
