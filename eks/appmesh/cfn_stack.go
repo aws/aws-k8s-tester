@@ -15,21 +15,25 @@ import (
 
 const addOnCFNStackTemplate = `
 ---
-AWSTemplateFormatVersion: "2010-09-09"
-Description: "Amazon EKS AppMesh Controller AddOn stack"
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Amazon EKS AppMesh Controller AddOn stack'
 
 Parameters:
+
   AppMeshControllerPolicyName:
+    Type: String
     Description: The policy name for AppMesh Controller
-    Type: String
+
   ManagedNodeGroupRoleName:
-    Description: The name of the node instance role
     Type: String
+    Description: The name of the node instance role
+
 Resources:
+
   AppMeshControllerPolicy:
+    Type: AWS::IAM::Policy
     Metadata:
       Comment: Minimal policy to allow worker node instance profile that allows the AppMesh Controller to make calls to AWS APIs on your behalf
-    Type: AWS::IAM::Policy
     Properties:
       PolicyName: !Ref AppMeshControllerPolicyName
       PolicyDocument:
@@ -37,22 +41,23 @@ Resources:
         Statement:
           - Effect: Allow
             Action:
-              - appmesh:*
-              - servicediscovery:CreateService
-              - servicediscovery:GetService
-              - servicediscovery:RegisterInstance
-              - servicediscovery:DeregisterInstance
-              - servicediscovery:ListInstances
-              - servicediscovery:ListNamespaces
-              - servicediscovery:ListServices
-              - route53:GetHealthCheck
-              - route53:CreateHealthCheck
-              - route53:UpdateHealthCheck
-              - route53:ChangeResourceRecordSets
-              - route53:DeleteHealthCheck
+            - appmesh:*
+            - servicediscovery:CreateService
+            - servicediscovery:GetService
+            - servicediscovery:RegisterInstance
+            - servicediscovery:DeregisterInstance
+            - servicediscovery:ListInstances
+            - servicediscovery:ListNamespaces
+            - servicediscovery:ListServices
+            - route53:GetHealthCheck
+            - route53:CreateHealthCheck
+            - route53:UpdateHealthCheck
+            - route53:ChangeResourceRecordSets
+            - route53:DeleteHealthCheck
             Resource: "*"
       Roles:
         - !Ref ManagedNodeGroupRoleName
+
 `
 
 // createAppMeshAddOnCFNStack creates the cfn stack needed for AppMesh addOn.
