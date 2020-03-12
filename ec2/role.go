@@ -67,15 +67,20 @@ Outputs:
 func (ts *Tester) createRole() error {
 	if !ts.cfg.RoleCreate {
 		ts.lg.Info("RoleCreate false; skipping creation")
+		pss := []string{
+			"arn:aws:iam::aws:policy/AmazonEC2FullAccess",
+		}
+		for _, av := range ts.cfg.ASGs {
+			if av.InstallSSM {
+				pss = append(pss, "arn:aws:iam::aws:policy/AmazonSSMFullAccess")
+			}
+		}
 		return awsiam.Validate(
 			ts.lg,
 			ts.iamAPI,
 			ts.cfg.RoleName,
 			[]string{"ec2.amazonaws.com"}, // TODO: support China regions ec2.amazonaws.com.cn or eks.amazonaws.com.cn
-			[]string{
-				"arn:aws:iam::aws:policy/AmazonEC2FullAccess",
-				"arn:aws:iam::aws:policy/AmazonSSMFullAccess",
-			},
+			pss,
 		)
 	}
 	if ts.cfg.RoleCFNStackID != "" &&

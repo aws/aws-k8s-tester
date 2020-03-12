@@ -356,10 +356,6 @@ func (ts *Tester) createLaunchConfiguration() error {
 					ParameterValue: aws.String(asg.LaunchConfigurationName),
 				},
 				{
-					ParameterKey:   aws.String("AutoScalingGroupName"),
-					ParameterValue: aws.String(asg.Name),
-				},
-				{
 					ParameterKey:   aws.String("RoleName"),
 					ParameterValue: aws.String(ts.cfg.RoleName),
 				},
@@ -435,8 +431,8 @@ func (ts *Tester) createLaunchConfiguration() error {
 		// update status after creating a new cluster
 		for _, o := range st.Stack.Outputs {
 			switch k := aws.StringValue(o.OutputKey); k {
-			case "AutoScalingGroupName":
-				ts.lg.Info("found AutoScalingGroupName value from CFN", zap.String("value", aws.StringValue(o.OutputValue)))
+			case "LaunchConfigurationName":
+				ts.lg.Info("found LaunchConfigurationName value from CFN", zap.String("value", aws.StringValue(o.OutputValue)))
 			default:
 				return fmt.Errorf("unexpected OutputKey %q from %q", k, asg.CFNStackID)
 			}
