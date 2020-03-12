@@ -317,15 +317,15 @@ func (ts *Tester) down() (err error) {
 
 	var errs []string
 
-	colorstring.Printf("\n\n\n[light_green]deleteLaunchConfiguration [default](%q)\n", ts.cfg.ConfigPath)
-	if err := ts.deleteLaunchConfiguration(); err != nil {
-		ts.lg.Warn("deleteLaunchConfiguration failed", zap.Error(err))
-		errs = append(errs, err.Error())
-	}
-
 	colorstring.Printf("\n\n\n[light_green]deleteASGs [default](%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteASGs(); err != nil {
 		ts.lg.Warn("deleteASGs failed", zap.Error(err))
+		errs = append(errs, err.Error())
+	}
+
+	colorstring.Printf("\n\n\n[light_green]deleteLaunchConfiguration [default](%q)\n", ts.cfg.ConfigPath)
+	if err := ts.deleteLaunchConfiguration(); err != nil {
+		ts.lg.Warn("deleteLaunchConfiguration failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 
