@@ -12,12 +12,17 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.4...v0.7.5
 - Add [`ImageIDSSMParameter`](https://github.com/aws/aws-k8s-tester/commit/81c5af7df626bae2721e89a09ae05a061be15ceb).
 - Add [`ASGsFetchLogs`](https://github.com/aws/aws-k8s-tester/commit/8ee120834bf615f7ec2e94cb2a1d973c88472eb6).
 - Rename [`LogsDir` to `ASGsLogsDir`](https://github.com/aws/aws-k8s-tester/commit/8ee120834bf615f7ec2e94cb2a1d973c88472eb6).
+- Add [`ASG.InstallSSM` field](https://github.com/aws/aws-k8s-tester/commit/c3f431d325b26784acd9b33d66bd73605e6c1efb).
+- Add [`ASG.SSMDocument*` field](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`S3Bucket*` fields](https://github.com/aws/aws-k8s-tester/commit/).
 
 ### `ec2`
 
 - Fix [custom AMI ASG CFN template](https://github.com/aws/aws-k8s-tester/commit/81c5af7df626bae2721e89a09ae05a061be15ceb).
 - Fix [key creation](https://github.com/aws/aws-k8s-tester/commit/61487a22279956c2575affaf1c97896474ce475e).
 - Create [ASG and launch configuration in a separate CFN stack](https://github.com/aws/aws-k8s-tester/commit/c3f431d325b26784acd9b33d66bd73605e6c1efb).
+- Support [`bottlerocket` AMIs](https://github.com/aws/aws-k8s-tester/commit/).
+  - See https://github.com/bottlerocket-os/bottlerocket.
 
 ### `eksconfig`
 

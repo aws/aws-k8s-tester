@@ -3,12 +3,10 @@ package ec2
 import (
 	"context"
 	"fmt"
-	"math/rand"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
-	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
@@ -436,15 +434,4 @@ func shorten(lg *zap.Logger, name string) string {
 	name = name[:230] + randString(5) + ext
 	lg.Info("file name too long; renamed", zap.String("old", oldName), zap.String("new", name))
 	return name
-}
-
-const ll = "0123456789abcdefghijklmnopqrstuvwxyz"
-
-func randString(n int) string {
-	b := make([]byte, n)
-	for i := range b {
-		rand.Seed(time.Now().UnixNano())
-		b[i] = ll[rand.Intn(len(ll))]
-	}
-	return string(b)
 }
