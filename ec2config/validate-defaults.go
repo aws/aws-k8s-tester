@@ -35,6 +35,11 @@ var DefaultConfig = Config{
 	OnFailureDelete:            true,
 	OnFailureDeleteWaitSeconds: 120,
 
+	S3BucketName:                    "aws-k8s-tester-ec2-s3-bucket",
+	S3BucketCreate:                  true,
+	S3BucketDelete:                  false,
+	S3BucketLifecycleExpirationDays: 0,
+
 	RoleCreate:                 true,
 	VPCCreate:                  true,
 	RemoteAccessKeyCreate:      true,
@@ -57,25 +62,20 @@ func NewDefault() *Config {
 	if name := os.Getenv(EnvironmentVariablePrefix + "NAME"); name != "" {
 		vv.Name = name
 	} else {
-		now := time.Now()
-		vv.Name = fmt.Sprintf(
-			"ec2-%d%02d%02d%02d-%s",
-			now.Year(),
-			int(now.Month()),
-			now.Day(),
-			now.Hour(),
-			randString(12),
-		)
+		vv.Name = fmt.Sprintf("ec2-%s-%s", getTS()[:10], randString(12))
 	}
 
 	vv.ASGs = map[string]ASG{
 		vv.Name + "-asg": ASG{
-			Name:                    vv.Name + "-asg",
-			LaunchConfigurationName: vv.Name + "-asg-launch-config",
-			InstallSSM:              true,
-			MinSize:                 1,
-			MaxSize:                 1,
-			DesiredCapacity:         1,
+			Name:                               vv.Name + "-asg",
+			LaunchConfigurationName:            vv.Name + "-asg-launch-config",
+			InstallSSM:                         true,
+			SSMDocumentName:                    vv.Name + "-ssm-document",
+			SSMDocumentCreate:                  false,
+			SSMDocumentExecutionTimeoutSeconds: 3600,
+			MinSize:                            1,
+			MaxSize:                            1,
+			DesiredCapacity:                    1,
 		},
 	}
 
@@ -155,6 +155,24 @@ func (cfg *Config) validateConfig() error {
 	}
 	if filepath.Ext(cfg.RemoteAccessCommandsOutputPath) != ".sh" {
 		cfg.RemoteAccessCommandsOutputPath = cfg.RemoteAccessCommandsOutputPath + ".sh"
+	}
+
+	switch cfg.S3BucketCreate {
+	case true: // need create one, or already created
+		if cfg.S3BucketName == "" {
+			cfg.S3BucketName = cfg.Name + "-s3-bucket"
+		}
+		if cfg.S3BucketLifecycleExpirationDays > 0 && cfg.S3BucketLifecycleExpirationDays < 3 {
+			cfg.S3BucketLifecycleExpirationDays = 3
+		}
+
+	case false: // use existing one
+		if cfg.S3BucketName == "" {
+			return errors.New("S3BucketCreate false to use existing one but empty S3BucketName")
+		}
+		if cfg.S3BucketDelete {
+			return errors.New("S3BucketCreate false to use existing one but S3BucketDelete true; error to prevent accidental S3 bucket delete")
+		}
 	}
 
 	switch cfg.RoleCreate {
@@ -308,6 +326,21 @@ func (cfg *Config) validateASGs() error {
 			return fmt.Errorf("ASGs[%q].DesiredCapacity %d > ASGMaxLimit %d", k, v.DesiredCapacity, ASGMaxLimit)
 		}
 
+		switch v.SSMDocumentCreate {
+		case true: // need create one, or already created
+			if v.SSMDocumentName == "" {
+				v.SSMDocumentName = v.Name + "-ssm-doc"
+			}
+			if v.SSMDocumentExecutionTimeoutSeconds == 0 {
+				v.SSMDocumentExecutionTimeoutSeconds = 3600
+			}
+
+		case false: // use existing one, or don't run any SSM
+			if v.SSMDocumentCommands != "" {
+				return fmt.Errorf("ASGs[%q].SSMDocumentCreate false but got non-empty SSMDocumentCommands %q", k, v.SSMDocumentCommands)
+			}
+		}
+
 		cfg.ASGs[k] = v
 	}
 
@@ -320,4 +353,16 @@ func getNameFromARN(arn string) string {
 		arn = ss[len(ss)-1]
 	}
 	return arn
+}
+
+func getTS() string {
+	now := time.Now()
+	return fmt.Sprintf(
+		"%04d%02d%02d%02d%02d",
+		now.Year(),
+		int(now.Month()),
+		now.Day(),
+		now.Hour(),
+		now.Second(),
+	)
 }

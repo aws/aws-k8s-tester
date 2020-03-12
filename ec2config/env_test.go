@@ -13,6 +13,14 @@ func TestEnv(t *testing.T) {
 		os.RemoveAll(cfg.RemoteAccessCommandsOutputPath)
 	}()
 
+	os.Setenv("AWS_K8S_TESTER_EC2_S3_BUCKET_NAME", `my-bucket`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EC2_S3_BUCKET_NAME")
+	os.Setenv("AWS_K8S_TESTER_EC2_S3_BUCKET_CREATE", `false`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EC2_S3_BUCKET_CREATE")
+	os.Setenv("AWS_K8S_TESTER_EC2_S3_BUCKET_DELETE", `false`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EC2_S3_BUCKET_DELETE")
+	os.Setenv("AWS_K8S_TESTER_EC2_S3_BUCKET_LIFECYCLE_EXPIRATION_DAYS", `10`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EC2_S3_BUCKET_LIFECYCLE_EXPIRATION_DAYS")
 	os.Setenv("AWS_K8S_TESTER_EC2_ROLE_CREATE", `false`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EC2_ROLE_CREATE")
 	os.Setenv("AWS_K8S_TESTER_EC2_ROLE_ARN", `role-arn`)
@@ -33,11 +41,24 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EC2_ASGS_FETCH_LOGS")
 	os.Setenv("AWS_K8S_TESTER_EC2_ASGS_LOGS_DIR", "hello")
 	defer os.Unsetenv("AWS_K8S_TESTER_EC2_ASGS_LOGS_DIR")
-	os.Setenv("AWS_K8S_TESTER_EC2_ASGS", `{"test-asg":{"name":"test-asg","launch-configuration-name":"aaa","image-id":"123","image-id-ssm-parameter":"777","asg-launch-configuration-cfn-stack-id":"none","asg-cfn-stack-id":"bbb","install-ssm":false,"min-size":30,"max-size":30,"desired-capacity":30,"volume-size":120,"instance-type":"c5.xlarge"}}`)
+	os.Setenv("AWS_K8S_TESTER_EC2_ASGS", `{"test-asg":{"name":"test-asg","ssm-document-create":true,"ssm-document-name":"my-doc","ssm-document-command-id":"no","ssm-document-cfn-stack-id":"invalid","ssm-document-commands":"echo 123; echo 456;","ssm-document-execution-timeout-in-seconds":10,"launch-configuration-name":"aaa","image-id":"123","image-id-ssm-parameter":"777","asg-launch-configuration-cfn-stack-id":"none","asg-cfn-stack-id":"bbb","install-ssm":false,"min-size":30,"max-size":30,"desired-capacity":30,"volume-size":120,"instance-type":"c5.xlarge"}}`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EC2_ASGS")
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
 		t.Fatal(err)
+	}
+
+	if cfg.S3BucketName != "my-bucket" {
+		t.Fatalf("unexpected cfg.S3BucketName %q", cfg.S3BucketName)
+	}
+	if cfg.S3BucketCreate {
+		t.Fatalf("unexpected cfg.S3BucketCreate %v", cfg.S3BucketCreate)
+	}
+	if cfg.S3BucketDelete {
+		t.Fatalf("unexpected cfg.S3BucketDelete %v", cfg.S3BucketDelete)
+	}
+	if cfg.S3BucketLifecycleExpirationDays != 10 {
+		t.Fatalf("unexpected cfg.S3BucketLifecycleExpirationDays %d", cfg.S3BucketLifecycleExpirationDays)
 	}
 
 	if cfg.RoleCreate {
@@ -73,16 +94,20 @@ func TestEnv(t *testing.T) {
 	}
 	expectedASGs := map[string]ASG{
 		"test-asg": {
-			Name:                    "test-asg",
-			LaunchConfigurationName: "aaa",
-			InstallSSM:              false,
-			ImageID:                 "123",
-			ImageIDSSMParameter:     "777",
-			MinSize:                 30,
-			MaxSize:                 30,
-			DesiredCapacity:         30,
-			InstanceType:            "c5.xlarge",
-			VolumeSize:              120,
+			Name:                               "test-asg",
+			LaunchConfigurationName:            "aaa",
+			InstallSSM:                         false,
+			SSMDocumentCreate:                  true,
+			SSMDocumentName:                    "my-doc",
+			SSMDocumentCommands:                "echo 123; echo 456;",
+			SSMDocumentExecutionTimeoutSeconds: 10,
+			ImageID:                            "123",
+			ImageIDSSMParameter:                "777",
+			MinSize:                            30,
+			MaxSize:                            30,
+			DesiredCapacity:                    30,
+			InstanceType:                       "c5.xlarge",
+			VolumeSize:                         120,
 		},
 	}
 	if !reflect.DeepEqual(cfg.ASGs, expectedASGs) {

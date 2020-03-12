@@ -66,6 +66,15 @@ type Config struct {
 	// all resources on creation fail.
 	OnFailureDeleteWaitSeconds uint64 `json:"on-failure-delete-wait-seconds"`
 
+	// S3BucketName is the name of cluster S3.
+	S3BucketName string `json:"s3-bucket-name"`
+	// S3BucketCreate is true to auto-create S3 bucket.
+	S3BucketCreate bool `json:"s3-bucket-create"`
+	// S3BucketDelete is true to delete auto-created S3 bucket.
+	S3BucketDelete bool `json:"s3-bucket-delete"`
+	// S3BucketLifecycleExpirationDays is expiration in days for the lifecycle of the object
+	S3BucketLifecycleExpirationDays int64 `json:"s3-bucket-lifecycle-expiration-days"`
+
 	// RoleName is the name of cluster role.
 	RoleName string `json:"role-name"`
 	// RoleCreate is true to auto-create and delete cluster role.
@@ -177,6 +186,18 @@ type ASG struct {
 
 	// InstallSSM is true to install SSM in launch configuration.
 	InstallSSM bool `json:"install-ssm"`
+
+	// SSMDocumentName is the name of SSM document.
+	SSMDocumentName string `json:"ssm-document-name"`
+	// SSMDocumentCreate is true to auto-create and delete SSM document.
+	SSMDocumentCreate bool `json:"ssm-document-create"`
+	// SSMDocumentCommands is the commands for SSM document.
+	// Only used if SSM doc is created.
+	SSMDocumentCommands string `json:"ssm-document-commands"`
+	// SSMDocumentExecutionTimeoutSeconds is the SSM document execution timeout in seconds.
+	SSMDocumentExecutionTimeoutSeconds int    `json:"ssm-document-execution-timeout-in-seconds"`
+	SSMDocumentCFNStackID              string `json:"ssm-document-cfn-stack-id" read-only:"true"`
+	SSMDocumentCommandID               string `json:"ssm-document-command-id" read-only:"true"`
 
 	// ImageID is the Amazon Machine Image (AMI).
 	// This value overrides any AWS Systems Manager Parameter Store value.
