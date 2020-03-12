@@ -19,21 +19,6 @@ import (
 
 // MAKE SURE TO SYNC THE DEFAULT VALUES in "ec2config"
 
-/*
-https://docs.aws.amazon.com/eks/latest/userguide/launch-workers.html
-https://github.com/awslabs/amazon-eks-ami/blob/master/amazon-eks-nodegroup.yaml
-https://raw.githubusercontent.com/awslabs/amazon-eks-ami/master/amazon-eks-nodegroup.yaml
-
-https://aws.amazon.com/about-aws/whats-new/2019/09/amazon-eks-provides-eks-optimized-ami-metadata-via-ssm-parameters/
-
-e.g.
-/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
-
-e.g.
-/aws/service/eks/optimized-ami/1.15/amazon-linux-2/recommended
-/aws/service/bottlerocket/aws-k8s-1.15/x86_64/latest/image_id
-*/
-
 // TemplateASG is the CloudFormation template for ASG.
 const TemplateASG = `
 ---
@@ -53,11 +38,6 @@ Parameters:
     Default: aws-k8s-tester-ec2-asg
     Description: EC2 AutoScalingGroup name
 
-  RoleName:
-    Type: String
-    Default: aws-k8s-tester-ec2-role
-    Description: EC2 Role name
-
   PublicSubnetID1:
     Type: String
     Description: EC2 public subnet ID
@@ -69,37 +49,6 @@ Parameters:
   PublicSubnetID3:
     Type: String
     Description: EC2 public subnet ID
-
-  SecurityGroupID:
-    Type: String
-    Description: EC2 security group ID
-
-  RemoteAccessKeyName:
-    Type: String
-    Description: EC2 SSH key name
-    Default: aws-k8s-tester-ec2-key
-
-  ImageID:
-    Type: String
-    Default: ""
-    Description: (Optional) Custom image ID. This value overrides any AWS Systems Manager Parameter Store value specified above.
-
-  ImageIDSSMParameter:
-    Type : AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
-    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
-    Description: AWS Systems Manager Parameter Store parameter of the AMI ID.
-
-  InstanceType:
-    Type: String
-    Default: c5.xlarge
-    Description: EC2 instance type
-
-  VolumeSize:
-    Type: Number
-    Default: 40
-    MinValue: 8
-    MaxValue: 1024
-    Description: Size of the root disk for the EC2 instances, in GiB.
 
   MinSize:
     Type: Number
@@ -130,132 +79,7 @@ Conditions:
           - Ref: PublicSubnetID3
           - ""
 
-  HasImageID:
-    Fn::Not:
-      - Fn::Equals:
-          - Ref: ImageID
-          - ""
-
 Resources:
-
-  InstanceProfile:
-    Type: AWS::IAM::InstanceProfile
-    Properties:
-      Path: "/"
-      Roles:
-      - !Ref RoleName
-
-  LaunchConfiguration:
-    Type: AWS::AutoScaling::LaunchConfiguration
-    DependsOn:
-    - InstanceProfile
-    Metadata:
-      AWS::CloudFormation::Init:
-        configSets:
-          default:
-          - InstallAWSCLI
-          - InstallSSM
-        InstallAWSCLI:
-          packages:
-            # zsh: most Amazon users stations are set to zsh as a default
-            # unzip: required to install aws cli
-            # wget: under the hood SPIE requires wget
-            yum:
-              unzip: []
-              zsh: []
-              wget: []
-          commands:
-            01InstallAWSCLI:
-              # AL2 doesn't have aws cli installed
-              command: |
-                curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"
-                unzip awscli-bundle.zip
-                sudo ./awscli-bundle/install -i /usr/local/aws -b /usr/bin/aws
-                which aws
-                rm -r awscli*
-        InstallSSM:
-          packages:
-            rpm:
-              ssm:
-                - Fn::Sub: 'https://s3.${AWS::Region}.${AWS::URLSuffix}/amazon-ssm-${AWS::Region}/latest/linux_amd64/amazon-ssm-agent.rpm'
-    Properties:
-      LaunchConfigurationName: !Ref LaunchConfigurationName
-      ImageId:
-        Fn::If:
-        - HasImageID
-        - !Ref ImageID
-        - !Ref ImageIDSSMParameter
-      InstanceType: !Ref InstanceType
-      IamInstanceProfile: !Ref InstanceProfile
-      # need this for public DNS + SSH access
-      AssociatePublicIpAddress: true
-      SecurityGroups:
-      - !Ref SecurityGroupID
-      KeyName: !Ref RemoteAccessKeyName
-      BlockDeviceMappings:
-      - DeviceName: '/dev/xvda'
-        Ebs:
-          VolumeType: gp2
-          VolumeSize: !Ref VolumeSize
-      UserData:
-        Fn::Base64:
-          Fn::Sub: |
-            #!/bin/bash
-            set -xeu
-
-            sudo yum update -y \
-              && sudo yum install -y \
-              gcc \
-              zlib-devel \
-              openssl-devel \
-              ncurses-devel \
-              git \
-              wget \
-              jq \
-              tar \
-              curl \
-              unzip \
-              screen \
-              mercurial \
-              aws-cfn-bootstrap \
-              awscli \
-              chrony \
-              conntrack \
-              nfs-utils \
-              socat
-
-            # Make sure Amazon Time Sync Service starts on boot.
-            sudo chkconfig chronyd on
-
-            # Make sure that chronyd syncs RTC clock to the kernel.
-            cat <<EOF | sudo tee -a /etc/chrony.conf
-            # This directive enables kernel synchronisation (every 11 minutes) of the
-            # real-time clock. Note that it can’t be used along with the 'rtcfile' directive.
-            rtcsync
-            EOF
-
-            # https://docs.aws.amazon.com/inspector/latest/userguide/inspector_installing-uninstalling-agents.html
-            curl -O https://inspector-agent.amazonaws.com/linux/latest/install
-            chmod +x install
-            sudo ./install -u false
-            rm install
-
-            sudo yum install -y yum-utils device-mapper-persistent-data lvm2
-            sudo amazon-linux-extras install docker -y
-
-            sudo systemctl daemon-reload
-            sudo systemctl enable docker || true
-            sudo systemctl start docker || true
-            sudo systemctl restart docker || true
-
-            sudo systemctl status docker --full --no-pager || true
-            sudo usermod -aG docker ec2-user || true
-
-            # su - ec2-user
-            # or logout and login to use docker without 'sudo'
-            id -nG
-            sudo docker version
-            sudo docker info
 
   AutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
@@ -287,10 +111,9 @@ Resources:
       - Key: Name
         PropagateAtLaunch: true
         Value: !Ref AutoScalingGroupName
-      LaunchConfigurationName: !Ref LaunchConfiguration
+      LaunchConfigurationName: !Ref LaunchConfigurationName
       HealthCheckType: EC2
       HealthCheckGracePeriod: 300
-
 
 Outputs:
 
@@ -328,15 +151,11 @@ func (ts *Tester) createASGs() error {
 			Parameters: []*cloudformation.Parameter{
 				{
 					ParameterKey:   aws.String("LaunchConfigurationName"),
-					ParameterValue: aws.String(asg.Name + "launch-configuration"),
+					ParameterValue: aws.String(asg.LaunchConfigurationName),
 				},
 				{
 					ParameterKey:   aws.String("AutoScalingGroupName"),
 					ParameterValue: aws.String(asg.Name),
-				},
-				{
-					ParameterKey:   aws.String("RoleName"),
-					ParameterValue: aws.String(ts.cfg.RoleName),
 				},
 				{
 					ParameterKey:   aws.String("PublicSubnetID1"),
@@ -350,43 +169,7 @@ func (ts *Tester) createASGs() error {
 					ParameterKey:   aws.String("PublicSubnetID3"),
 					ParameterValue: aws.String(ts.cfg.PublicSubnetIDs[2]),
 				},
-				{
-					ParameterKey:   aws.String("SecurityGroupID"),
-					ParameterValue: aws.String(ts.cfg.SecurityGroupID),
-				},
-				{
-					ParameterKey:   aws.String("RemoteAccessKeyName"),
-					ParameterValue: aws.String(ts.cfg.RemoteAccessKeyName),
-				},
 			},
-		}
-		if asg.ImageID != "" {
-			ts.lg.Info("added image ID", zap.String("image-id", asg.ImageID))
-			stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
-				ParameterKey:   aws.String("ImageID"),
-				ParameterValue: aws.String(asg.ImageID),
-			})
-		}
-		if asg.ImageIDSSMParameter != "" {
-			ts.lg.Info("added image ID", zap.String("image-id-ssm-parameter", asg.ImageIDSSMParameter))
-			stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
-				ParameterKey:   aws.String("ImageIDSSMParameter"),
-				ParameterValue: aws.String(asg.ImageIDSSMParameter),
-			})
-		}
-		if asg.InstanceType != "" {
-			ts.lg.Info("added instance type", zap.String("instance-type", asg.InstanceType))
-			stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
-				ParameterKey:   aws.String("InstanceType"),
-				ParameterValue: aws.String(asg.InstanceType),
-			})
-		}
-		if asg.VolumeSize > 0 {
-			ts.lg.Info("added volume size", zap.Int64("volume-size", asg.VolumeSize))
-			stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
-				ParameterKey:   aws.String("VolumeSize"),
-				ParameterValue: aws.String(fmt.Sprintf("%d", asg.VolumeSize)),
-			})
 		}
 		if asg.MinSize > 0 {
 			ts.lg.Info("added min size", zap.Int64("min-size", asg.MinSize))

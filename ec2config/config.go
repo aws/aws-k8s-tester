@@ -169,8 +169,13 @@ func (cfg *Config) RecordStatus(status string) {
 type ASG struct {
 	// Name is the ASG name.
 	Name string `json:"name"`
+	// LaunchConfigurationName is the name of the ASG launch configuration.
+	LaunchConfigurationName string `json:"launch-configuration-name"`
 
 	CFNStackID string `json:"cfn-stack-id" read-only:"true"`
+
+	// InstallSSM is true to install SSM in launch configuration.
+	InstallSSM bool `json:"install-ssm"`
 
 	// ImageID is the Amazon Machine Image (AMI).
 	// This value overrides any AWS Systems Manager Parameter Store value.

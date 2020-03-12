@@ -143,6 +143,7 @@ Conditions:
       - Fn::Equals:
         - {Ref: 'AWS::Region'}
         - us-west-1
+
   HasMoreThan2Azs:
     Fn::Not:
       - Condition: Has2Azs

@@ -33,7 +33,7 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EC2_ASGS_FETCH_LOGS")
 	os.Setenv("AWS_K8S_TESTER_EC2_ASGS_LOGS_DIR", "hello")
 	defer os.Unsetenv("AWS_K8S_TESTER_EC2_ASGS_LOGS_DIR")
-	os.Setenv("AWS_K8S_TESTER_EC2_ASGS", `{"test-asg":{"name":"test-asg","image-id":"123","image-id-ssm-parameter":"777","min-size":30,"max-size":30,"desired-capacity":30,"volume-size":120,"instance-type":"c5.xlarge"}}`)
+	os.Setenv("AWS_K8S_TESTER_EC2_ASGS", `{"test-asg":{"name":"test-asg","launch-configuration-name":"aaa","image-id":"123","image-id-ssm-parameter":"777","install-ssm":false,"min-size":30,"max-size":30,"desired-capacity":30,"volume-size":120,"instance-type":"c5.xlarge"}}`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EC2_ASGS")
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
@@ -73,14 +73,16 @@ func TestEnv(t *testing.T) {
 	}
 	expectedASGs := map[string]ASG{
 		"test-asg": {
-			Name:                "test-asg",
-			ImageID:             "123",
-			ImageIDSSMParameter: "777",
-			MinSize:             30,
-			MaxSize:             30,
-			DesiredCapacity:     30,
-			InstanceType:        "c5.xlarge",
-			VolumeSize:          120,
+			Name:                    "test-asg",
+			LaunchConfigurationName: "aaa",
+			InstallSSM:              false,
+			ImageID:                 "123",
+			ImageIDSSMParameter:     "777",
+			MinSize:                 30,
+			MaxSize:                 30,
+			DesiredCapacity:         30,
+			InstanceType:            "c5.xlarge",
+			VolumeSize:              120,
 		},
 	}
 	if !reflect.DeepEqual(cfg.ASGs, expectedASGs) {

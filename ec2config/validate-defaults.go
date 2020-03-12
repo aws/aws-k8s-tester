@@ -70,10 +70,12 @@ func NewDefault() *Config {
 
 	vv.ASGs = map[string]ASG{
 		vv.Name + "-asg": ASG{
-			Name:            vv.Name + "-asg",
-			MinSize:         1,
-			MaxSize:         1,
-			DesiredCapacity: 1,
+			Name:                    vv.Name + "-asg",
+			LaunchConfigurationName: vv.Name + "-asg-launch-config",
+			InstallSSM:              true,
+			MinSize:                 1,
+			MaxSize:                 1,
+			DesiredCapacity:         1,
 		},
 	}
 
@@ -279,6 +281,9 @@ func (cfg *Config) validateASGs() error {
 	for k, v := range cfg.ASGs {
 		if v.Name == "" {
 			return fmt.Errorf("ASGs[%q].Name is empty", k)
+		}
+		if v.LaunchConfigurationName == "" {
+			return fmt.Errorf("ASGs[%q].LaunchConfigurationName is empty", k)
 		}
 		if k != v.Name {
 			return fmt.Errorf("ASGs[%q].Name has different Name field %q", k, v.Name)
