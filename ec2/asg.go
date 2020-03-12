@@ -196,7 +196,7 @@ func (ts *Tester) createASGs() error {
 		if err != nil {
 			return err
 		}
-		asg.CFNStackID = aws.StringValue(stackOutput.StackId)
+		asg.ASGCFNStackID = aws.StringValue(stackOutput.StackId)
 		ts.cfg.ASGs[asgName] = asg
 		ts.cfg.Sync()
 
@@ -207,7 +207,7 @@ func (ts *Tester) createASGs() error {
 			ts.interruptSig,
 			ts.lg,
 			ts.cfnAPI,
-			asg.CFNStackID,
+			asg.ASGCFNStackID,
 			cloudformation.ResourceStatusCreateComplete,
 			2*time.Minute,
 			30*time.Second,
@@ -215,7 +215,7 @@ func (ts *Tester) createASGs() error {
 		var st awscfn.StackStatus
 		for st = range ch {
 			if st.Error != nil {
-				ts.cfg.RecordStatus(fmt.Sprintf("failed to create cluster (%v)", st.Error))
+				ts.cfg.RecordStatus(fmt.Sprintf("failed to create ASG (%v)", st.Error))
 				ts.lg.Warn("polling errror", zap.Error(st.Error))
 			}
 		}
@@ -223,19 +223,19 @@ func (ts *Tester) createASGs() error {
 		if st.Error != nil {
 			return st.Error
 		}
-		// update status after creating a new cluster
+		// update status after creating a new ASG
 		for _, o := range st.Stack.Outputs {
 			switch k := aws.StringValue(o.OutputKey); k {
 			case "AutoScalingGroupName":
 				ts.lg.Info("found AutoScalingGroupName value from CFN", zap.String("value", aws.StringValue(o.OutputValue)))
 			default:
-				return fmt.Errorf("unexpected OutputKey %q from %q", k, asg.CFNStackID)
+				return fmt.Errorf("unexpected OutputKey %q from %q", k, asg.ASGCFNStackID)
 			}
 		}
 
 		ts.lg.Info("created ASG",
 			zap.String("name", asg.Name),
-			zap.String("cfn-stack-id", asg.CFNStackID),
+			zap.String("cfn-stack-id", asg.ASGCFNStackID),
 			zap.String("request-started", humanize.RelTime(createStart, time.Now(), "ago", "from now")),
 		)
 		ts.cfg.ASGs[asgName] = asg
@@ -293,12 +293,12 @@ func (ts *Tester) deleteASGs() error {
 
 	ts.lg.Info("deleting ASGs using CFN", zap.String("name", ts.cfg.Name))
 	for asgName, asg := range ts.cfg.ASGs {
-		if asg.CFNStackID == "" {
+		if asg.ASGCFNStackID == "" {
 			return fmt.Errorf("%q ASG stack ID is empty", asg.Name)
 		}
-		ts.lg.Info("deleting ASG", zap.String("name", asgName), zap.String("cfn-stack-id", asg.CFNStackID))
+		ts.lg.Info("deleting ASG", zap.String("name", asgName), zap.String("cfn-stack-id", asg.ASGCFNStackID))
 		_, err := ts.cfnAPI.DeleteStack(&cloudformation.DeleteStackInput{
-			StackName: aws.String(asg.CFNStackID),
+			StackName: aws.String(asg.ASGCFNStackID),
 		})
 		if err != nil {
 			ts.cfg.RecordStatus(fmt.Sprintf("failed to delete ASG (%v)", err))
@@ -313,7 +313,7 @@ func (ts *Tester) deleteASGs() error {
 			make(chan os.Signal), // do not exit on stop
 			ts.lg,
 			ts.cfnAPI,
-			asg.CFNStackID,
+			asg.ASGCFNStackID,
 			cloudformation.ResourceStatusDeleteComplete,
 			2*time.Minute,
 			20*time.Second,

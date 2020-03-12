@@ -8,7 +8,6 @@ import (
 
 	"github.com/aws/aws-k8s-tester/ec2config"
 	awscfn "github.com/aws/aws-k8s-tester/pkg/aws/cloudformation"
-	awsapiec2 "github.com/aws/aws-k8s-tester/pkg/aws/ec2"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/autoscaling"
@@ -401,7 +400,13 @@ func (ts *Tester) createLaunchConfiguration() error {
 		if err != nil {
 			return err
 		}
-		asg.CFNStackID = aws.StringValue(stackOutput.StackId)
+		asg.ASGLaunchConfigurationCFNStackID = aws.StringValue(stackOutput.StackId)
+
+		ts.lg.Info("created ASG Launch Configuration",
+			zap.String("name", asg.LaunchConfigurationName),
+			zap.String("cfn-stack-id", asg.ASGLaunchConfigurationCFNStackID),
+			zap.String("request-started", humanize.RelTime(createStart, time.Now(), "ago", "from now")),
+		)
 		ts.cfg.ASGs[asgName] = asg
 		ts.cfg.Sync()
 
@@ -412,7 +417,7 @@ func (ts *Tester) createLaunchConfiguration() error {
 			ts.interruptSig,
 			ts.lg,
 			ts.cfnAPI,
-			asg.CFNStackID,
+			asg.ASGLaunchConfigurationCFNStackID,
 			cloudformation.ResourceStatusCreateComplete,
 			2*time.Minute,
 			30*time.Second,
@@ -420,7 +425,7 @@ func (ts *Tester) createLaunchConfiguration() error {
 		var st awscfn.StackStatus
 		for st = range ch {
 			if st.Error != nil {
-				ts.cfg.RecordStatus(fmt.Sprintf("failed to create cluster (%v)", st.Error))
+				ts.cfg.RecordStatus(fmt.Sprintf("failed to create ASG Launch Configuration (%v)", st.Error))
 				ts.lg.Warn("polling errror", zap.Error(st.Error))
 			}
 		}
@@ -434,55 +439,25 @@ func (ts *Tester) createLaunchConfiguration() error {
 			case "LaunchConfigurationName":
 				ts.lg.Info("found LaunchConfigurationName value from CFN", zap.String("value", aws.StringValue(o.OutputValue)))
 			default:
-				return fmt.Errorf("unexpected OutputKey %q from %q", k, asg.CFNStackID)
+				return fmt.Errorf("unexpected OutputKey %q from %q", k, asg.ASGLaunchConfigurationCFNStackID)
 			}
 		}
 
-		ts.lg.Info("created ASG",
-			zap.String("name", asg.Name),
-			zap.String("cfn-stack-id", asg.CFNStackID),
-			zap.String("request-started", humanize.RelTime(createStart, time.Now(), "ago", "from now")),
-		)
-		ts.cfg.ASGs[asgName] = asg
-		ts.cfg.Up = true
-		ts.cfg.Sync()
-
-		var aout *autoscaling.DescribeAutoScalingGroupsOutput
-		aout, err = ts.asgAPI.DescribeAutoScalingGroups(&autoscaling.DescribeAutoScalingGroupsInput{
-			AutoScalingGroupNames: aws.StringSlice([]string{asgName}),
+		var aout *autoscaling.DescribeLaunchConfigurationsOutput
+		aout, err = ts.asgAPI.DescribeLaunchConfigurations(&autoscaling.DescribeLaunchConfigurationsInput{
+			LaunchConfigurationNames: aws.StringSlice([]string{asg.LaunchConfigurationName}),
 		})
 		if err != nil {
 			return fmt.Errorf("ASG %q not found (%v)", asgName, err)
 		}
-		if len(aout.AutoScalingGroups) != 1 {
-			return fmt.Errorf("%q expected only 1 ASG, got %+v", asgName, aout.AutoScalingGroups)
+		if len(aout.LaunchConfigurations) != 1 {
+			return fmt.Errorf("%q expected only 1 ASG Launch Configuration, got %+v", asg.LaunchConfigurationName, aout.LaunchConfigurations)
 		}
-		av := aout.AutoScalingGroups[0]
-		instanceIDs := make([]string, 0, len(av.Instances))
-		for _, iv := range av.Instances {
-			instanceIDs = append(instanceIDs, aws.StringValue(iv.InstanceId))
+		lname := aws.StringValue(aout.LaunchConfigurations[0].LaunchConfigurationName)
+		if lname != asg.LaunchConfigurationName {
+			ts.lg.Warn("unexpected ASG Launch Configuration name", zap.String("name", lname))
+			return fmt.Errorf("ASG Launch Configuration name expected %q, got %q", asg.LaunchConfigurationName, lname)
 		}
-		ts.lg.Info(
-			"describing EC2 instances in ASG",
-			zap.String("asg-name", asgName),
-			zap.Strings("instance-ids", instanceIDs),
-		)
-		ec2Instances, err := awsapiec2.PollUntilRunning(
-			10*time.Minute,
-			ts.lg,
-			ts.ec2API,
-			instanceIDs...,
-		)
-		if err != nil {
-			return err
-		}
-		asg.Instances = make(map[string]ec2config.Instance)
-		for id, vv := range ec2Instances {
-			asg.Instances[id] = ec2config.ConvertInstance(vv)
-		}
-		ts.cfg.ASGs[asgName] = asg
-		ts.cfg.RecordStatus(fmt.Sprintf("%q/%s", asgName, cloudformation.ResourceStatusCreateComplete))
-		ts.cfg.Sync()
 	}
 
 	return ts.cfg.Sync()
@@ -496,14 +471,14 @@ func (ts *Tester) deleteLaunchConfiguration() error {
 		ts.cfg.Sync()
 	}()
 
-	ts.lg.Info("deleting ASGs using CFN", zap.String("name", ts.cfg.Name))
+	ts.lg.Info("deleting ASG Launch Configurations using CFN", zap.String("name", ts.cfg.Name))
 	for asgName, asg := range ts.cfg.ASGs {
-		if asg.CFNStackID == "" {
+		if asg.ASGLaunchConfigurationCFNStackID == "" {
 			return fmt.Errorf("%q ASG stack ID is empty", asg.Name)
 		}
-		ts.lg.Info("deleting ASG", zap.String("name", asgName), zap.String("cfn-stack-id", asg.CFNStackID))
+		ts.lg.Info("deleting ASG Launch Configuration", zap.String("name", asg.LaunchConfigurationName), zap.String("cfn-stack-id", asg.ASGLaunchConfigurationCFNStackID))
 		_, err := ts.cfnAPI.DeleteStack(&cloudformation.DeleteStackInput{
-			StackName: aws.String(asg.CFNStackID),
+			StackName: aws.String(asg.ASGLaunchConfigurationCFNStackID),
 		})
 		if err != nil {
 			ts.cfg.RecordStatus(fmt.Sprintf("failed to delete ASG (%v)", err))
@@ -518,7 +493,7 @@ func (ts *Tester) deleteLaunchConfiguration() error {
 			make(chan os.Signal), // do not exit on stop
 			ts.lg,
 			ts.cfnAPI,
-			asg.CFNStackID,
+			asg.ASGLaunchConfigurationCFNStackID,
 			cloudformation.ResourceStatusDeleteComplete,
 			2*time.Minute,
 			20*time.Second,
@@ -527,7 +502,7 @@ func (ts *Tester) deleteLaunchConfiguration() error {
 		for st = range ch {
 			if st.Error != nil {
 				cancel()
-				ts.cfg.RecordStatus(fmt.Sprintf("failed to delete ASG (%v)", st.Error))
+				ts.cfg.RecordStatus(fmt.Sprintf("failed to delete ASG Launch Configuration (%v)", st.Error))
 				ts.lg.Warn("polling errror", zap.Error(st.Error))
 			}
 		}
@@ -535,7 +510,7 @@ func (ts *Tester) deleteLaunchConfiguration() error {
 		if st.Error != nil {
 			return st.Error
 		}
-		ts.cfg.RecordStatus(fmt.Sprintf("%q/%s", asgName, ec2config.StatusDELETEDORNOTEXIST))
+		ts.cfg.RecordStatus(fmt.Sprintf("%q/%s", asg.LaunchConfigurationName, ec2config.StatusDELETEDORNOTEXIST))
 	}
 
 	return ts.cfg.Sync()
