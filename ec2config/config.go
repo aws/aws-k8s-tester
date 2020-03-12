@@ -172,7 +172,8 @@ type ASG struct {
 	// LaunchConfigurationName is the name of the ASG launch configuration.
 	LaunchConfigurationName string `json:"launch-configuration-name"`
 
-	CFNStackID string `json:"cfn-stack-id" read-only:"true"`
+	ASGLaunchConfigurationCFNStackID string `json:"asg-launch-configuration-cfn-stack-id" read-only:"true"`
+	ASGCFNStackID                    string `json:"asg-cfn-stack-id" read-only:"true"`
 
 	// InstallSSM is true to install SSM in launch configuration.
 	InstallSSM bool `json:"install-ssm"`
