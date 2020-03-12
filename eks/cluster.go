@@ -36,25 +36,25 @@ Description: 'Amazon EKS Cluster'
 Parameters:
 
   ClusterName:
-    Description: Cluster name
     Type: String
+    Description: Cluster name
 
   Version:
-    Description: Specify the EKS version
     Type: String
     Default: 1.15
+    Description: Specify the EKS version
 
   RoleARN:
-    Description: Role ARN that EKS uses to create AWS resources for Kubernetes
     Type: String
+    Description: Role ARN that EKS uses to create AWS resources for Kubernetes
 
   SubnetIDs:
-    Description: Subnets for EKS worker nodes. Amazon EKS creates cross-account elastic network interfaces in these subnets to allow communication between  worker nodes and the Kubernetes control plane
     Type: CommaDelimitedList
+    Description: Subnets for EKS worker nodes. Amazon EKS creates cross-account elastic network interfaces in these subnets to allow communication between  worker nodes and the Kubernetes control plane
 
   ControlPlaneSecurityGroupID:
-    Description: Security group ID for the cluster control plane communication with worker nodes
     Type: AWS::EC2::SecurityGroup::Id
+    Description: Security group ID for the cluster control plane communication with worker nodes
 
 Resources:
 
@@ -72,12 +72,12 @@ Resources:
 Outputs:
 
   ClusterARN:
-    Description: EKS Cluster ARN
     Value: !GetAtt Cluster.Arn
+    Description: EKS Cluster ARN
 
   ClusterAPIServerEndpoint:
-    Description: EKS Cluster API server endpoint
     Value: !GetAtt Cluster.Endpoint
+    Description: EKS Cluster API server endpoint
 
 `
 
@@ -90,29 +90,29 @@ Description: 'Amazon EKS Cluster'
 Parameters:
 
   ClusterName:
-    Description: Cluster name
     Type: String
+    Description: Cluster name
 
   Version:
-    Description: Specify the EKS version
     Type: String
     Default: 1.15
+    Description: Specify the EKS version
 
   RoleARN:
-    Description: Role ARN that EKS uses to create AWS resources for Kubernetes
     Type: String
+    Description: Role ARN that EKS uses to create AWS resources for Kubernetes
 
   SubnetIDs:
-    Description: Subnets for EKS worker nodes. Amazon EKS creates cross-account elastic network interfaces in these subnets to allow communication between  worker nodes and the Kubernetes control plane
     Type: CommaDelimitedList
+    Description: Subnets for EKS worker nodes. Amazon EKS creates cross-account elastic network interfaces in these subnets to allow communication between  worker nodes and the Kubernetes control plane
 
   ControlPlaneSecurityGroupID:
-    Description: Security group ID for the cluster control plane communication with worker nodes
     Type: AWS::EC2::SecurityGroup::Id
+    Description: Security group ID for the cluster control plane communication with worker nodes
 
   AWSEncryptionProviderCMKARN:
-    Description: KMS CMK for aws-encryption-provider.
     Type: String
+    Description: KMS CMK for aws-encryption-provider.
 
 Resources:
 
@@ -135,12 +135,12 @@ Resources:
 Outputs:
 
   ClusterARN:
-    Description: EKS Cluster ARN
     Value: !GetAtt Cluster.Arn
+    Description: EKS Cluster ARN
 
   ClusterAPIServerEndpoint:
-    Description: EKS Cluster API server endpoint
     Value: !GetAtt Cluster.Endpoint
+    Description: EKS Cluster API server endpoint
 
 `
 

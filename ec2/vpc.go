@@ -75,53 +75,54 @@ Description: 'Amazon EC2 VPC with public and private subnets'
 Parameters:
 
   VPCName:
-    Description: name of the VPC
     Type: String
     Default: aws-k8s-tester-ec2-vpc
+    Description: name of the VPC
 
   SSHIngressIPv4Range:
-    Description: IP range for SSH inbound traffic
     Type: String
     Default: 0.0.0.0/0
     AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+    Description: IP range for SSH inbound traffic
 
   VPCCIDR:
-    Description: IP range (CIDR notation) for VPC, must be a valid (RFC 1918) CIDR range (from 192.168.0.0 to 192.168.255.255)
     Type: String
     Default: 192.168.0.0/16
     AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+    Description: IP range (CIDR notation) for VPC, must be a valid (RFC 1918) CIDR range (from 192.168.0.0 to 192.168.255.255)
 
   PublicSubnetCIDR1:
-    Description: CIDR block for public subnet 1 within the VPC (from 192.168.64.0 to 192.168.95.255)
     Type: String
     Default: 192.168.64.0/19
     AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+    Description: CIDR block for public subnet 1 within the VPC (from 192.168.64.0 to 192.168.95.255)
 
   PublicSubnetCIDR2:
-    Description: CIDR block for public subnet 2 within the VPC (from 192.168.128.0 to 192.168.159.255)
     Type: String
     Default: 192.168.128.0/19
     AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+    Description: CIDR block for public subnet 2 within the VPC (from 192.168.128.0 to 192.168.159.255)
 
   PublicSubnetCIDR3:
-    Description: CIDR block for public subnet 2 within the VPC (from 192.168.192.0 to 192.168.223.255)
     Type: String
     Default: 192.168.192.0/19
     AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+    Description: CIDR block for public subnet 2 within the VPC (from 192.168.192.0 to 192.168.223.255)
 
   PrivateSubnetCIDR1:
-    Description: CIDR block for private subnet 1 within the VPC (from 192.168.32.0 to 192.168.63.255)
     Type: String
     Default: 192.168.32.0/19
     AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+    Description: CIDR block for private subnet 1 within the VPC (from 192.168.32.0 to 192.168.63.255)
 
   PrivateSubnetCIDR2:
-    Description: CIDR block for private subnet 2 within the VPC (from 192.168.96.0 to 192.168.127.255)
     Type: String
     Default: 192.168.96.0/19
     AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+    Description: CIDR block for private subnet 2 within the VPC (from 192.168.96.0 to 192.168.127.255)
 
 Conditions:
+
   Has2Azs:
     Fn::Or:
       - Fn::Equals:
@@ -486,24 +487,24 @@ Resources:
 Outputs:
 
   VPCID:
-    Description: VPC ID
     Value: !Ref VPC
+    Description: VPC ID
 
   PublicSubnetIDs:
-    Description: All public subnet IDs in the VPC
     Value:
       Fn::If:
       - HasMoreThan2Azs
       - !Join [ ",", [ !Ref PublicSubnet1, !Ref PublicSubnet2, !Ref PublicSubnet3 ] ]
       - !Join [ ",", [ !Ref PublicSubnet1, !Ref PublicSubnet2 ] ]
+    Description: All public subnet IDs in the VPC
 
   PrivateSubnetIDs:
-    Description: All private subnet IDs in the VPC
     Value: !Join [ ",", [ !Ref PrivateSubnet1, !Ref PrivateSubnet2 ] ]
+    Description: All private subnet IDs in the VPC
 
   SecurityGroupID:
-    Description: Security group ID
     Value: !Ref SecurityGroup
+    Description: Security group ID
 
 `
 

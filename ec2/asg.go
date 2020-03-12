@@ -45,18 +45,18 @@ Parameters:
 
   LaunchConfigurationName:
     Type: String
-    Description: EC2 LaunchConfiguration name
     Default: aws-k8s-tester-ec2-asg-launch-configuration
+    Description: EC2 LaunchConfiguration name
 
   AutoScalingGroupName:
     Type: String
-    Description: EC2 AutoScalingGroup name
     Default: aws-k8s-tester-ec2-asg
+    Description: EC2 AutoScalingGroup name
 
   RoleName:
     Type: String
-    Description: EC2 Role name
     Default: aws-k8s-tester-ec2-role
+    Description: EC2 Role name
 
   PublicSubnetID1:
     Type: String
@@ -91,15 +91,15 @@ Parameters:
 
   InstanceType:
     Type: String
-    Description: EC2 instance type
     Default: c5.xlarge
+    Description: EC2 instance type
 
   VolumeSize:
-    Description: Size of the root disk for the EC2 instances, in GiB.
-    Default: 40
     Type: Number
+    Default: 40
     MinValue: 8
     MaxValue: 1024
+    Description: Size of the root disk for the EC2 instances, in GiB.
 
   MinSize:
     Type: Number
@@ -259,11 +259,9 @@ Resources:
 
   AutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
-    Metadata:
-      Comment: AutoScalingGroup.
     UpdatePolicy:
       AutoScalingRollingUpdate:
-        MinInstancesInService: 1
+        MinInstancesInService: !Ref DesiredCapacity
         MaxBatchSize: 1
         SuspendProcesses:
         - HealthCheck
@@ -286,7 +284,7 @@ Resources:
       MetricsCollection:
       - Granularity: "1Minute"
       Tags:
-      - Key: 'Name'
+      - Key: Name
         PropagateAtLaunch: true
         Value: !Ref AutoScalingGroupName
       LaunchConfigurationName: !Ref LaunchConfiguration

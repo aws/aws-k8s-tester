@@ -485,25 +485,25 @@ Description: 'Amazon EKS Cluster IRSA Role'
 Parameters:
 
   IRSARoleName:
-    Description: The name of the IRSA role
     Type: String
+    Description: The name of the IRSA role
 
   IRSAIssuerARN:
-    Description: EKS IRSA Provider ARN
     Type: String
+    Description: EKS IRSA Provider ARN
 
   IRSANamespace:
-    Description: The namespace for the IRSA role
     Type: String
+    Description: The namespace for the IRSA role
 
   IRSAServiceAccountName:
-    Description: The ServiceAccount name for the IRSA role
     Type: String
+    Description: The ServiceAccount name for the IRSA role
 
   IRSARoleManagedPolicyARNs:
-    Description: EKS IRSA policy ARNs
     Type: CommaDelimitedList
     Default: 'arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess'
+    Description: EKS IRSA policy ARNs
 
 Resources:
 

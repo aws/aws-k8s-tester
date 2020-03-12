@@ -202,18 +202,18 @@ Description: 'Amazon EKS Cluster Fargate Role'
 Parameters:
 
   FargateRoleName:
-    Description: The name of the Fargate role
     Type: String
+    Description: The name of the Fargate role
 
   FargateRoleServicePrincipals:
-    Description: EKS Fargate Role Service Principals
     Type: CommaDelimitedList
     Default: 'eks.amazonaws.com,eks-fargate-pods.amazonaws.com'
+    Description: EKS Fargate Role Service Principals
 
   FargateRoleManagedPolicyARNs:
-    Description: EKS Fargate policy ARNs
     Type: CommaDelimitedList
     Default: 'arn:aws:iam::aws:policy/AmazonEKSFargatePodExecutionRolePolicy'
+    Description: EKS Fargate policy ARNs
 
 Resources:
 
@@ -235,8 +235,8 @@ Resources:
 Outputs:
 
   FargateRoleARN:
-    Description: The Fargate role ARN
     Value: !GetAtt FargateRole.Arn
+    Description: The Fargate role ARN
 
 `
 

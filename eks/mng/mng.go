@@ -47,57 +47,57 @@ Description: 'Amazon EKS Cluster Managed Node Group'
 Parameters:
 
   ClusterName:
-    Description: The cluster name provided when the cluster was created. If it is incorrect, nodes will not be able to join the cluster.
     Type: String
+    Description: The cluster name provided when the cluster was created. If it is incorrect, nodes will not be able to join the cluster.
 
   ManagedNodeGroupRoleARN:
-    Description: The ARN of the node instance role
     Type: String
+    Description: The ARN of the node instance role
 
   ManagedNodeGroupName:
-    Description: Unique identifier for the Node Group.
     Type: String
+    Description: Unique identifier for the Node Group.
 
   PublicSubnetIDs:
-    Description: The public subnet IDs where workers can be created.
     Type: List<AWS::EC2::Subnet::Id>
+    Description: The public subnet IDs where workers can be created.
 
   ManagedNodeGroupRemoteAccessKeyName:
-    Description: Amazon EC2 Key Pair
     Type: AWS::EC2::KeyPair::KeyName
+    Description: Amazon EC2 Key Pair
 
   ManagedNodeGroupAMIType:
-    Description: AMI type for your node group
     Type: String
     Default: AL2_x86_64
     AllowedValues:
     - AL2_x86_64
     - AL2_x86_64_GPU
+    Description: AMI type for your node group
 
   ManagedNodeGroupASGMinSize:
-    Description: Minimum size of Node Group Auto Scaling Group.
     Type: Number
-    Default: 3
+    Default: 2
+    Description: Minimum size of Node Group Auto Scaling Group.
 
   ManagedNodeGroupASGMaxSize:
-    Description: Maximum size of Node Group Auto Scaling Group. Set to at least 1 greater than ManagedNodeGroupASGDesiredCapacity.
     Type: Number
-    Default: 3
+    Default: 2
+    Description: Maximum size of Node Group Auto Scaling Group. Set to at least 1 greater than ManagedNodeGroupASGDesiredCapacity.
 
   ManagedNodeGroupASGDesiredCapacity:
-    Description: Desired capacity of Node Group Auto Scaling Group.
     Type: Number
-    Default: 3
+    Default: 2
+    Description: Desired capacity of Node Group Auto Scaling Group.
 
   ManagedNodeGroupInstanceTypes:
-    Description: EC2 instance types for the node instances
     Type: CommaDelimitedList
     Default: c5.xlarge
+    Description: EC2 instance types for the node instances
 
   ManagedNodeGroupVolumeSize:
-    Description: Node volume size
     Type: Number
     Default: 40
+    Description: Node volume size
 
 Resources:
 
@@ -113,9 +113,9 @@ Resources:
       RemoteAccess:
         Ec2SshKey: !Ref ManagedNodeGroupRemoteAccessKeyName
       ScalingConfig:
-        DesiredSize: !Ref ManagedNodeGroupASGDesiredCapacity
         MinSize: !Ref ManagedNodeGroupASGMinSize
         MaxSize: !Ref ManagedNodeGroupASGMaxSize
+        DesiredSize: !Ref ManagedNodeGroupASGDesiredCapacity
       Subnets: !Ref PublicSubnetIDs
       Labels:
         Name: !Ref ManagedNodeGroupName
@@ -123,8 +123,8 @@ Resources:
 Outputs:
 
   ManagedNodeGroupID:
-    Description: The managed node group resource Physical ID
     Value: !Ref ManagedNodeGroup
+    Description: The managed node group resource Physical ID
 
 `
 
@@ -139,61 +139,61 @@ Description: 'Amazon EKS Cluster Managed Node Group'
 Parameters:
 
   ClusterName:
-    Description: The cluster name provided when the cluster was created. If it is incorrect, nodes will not be able to join the cluster.
     Type: String
+    Description: The cluster name provided when the cluster was created. If it is incorrect, nodes will not be able to join the cluster.
 
   ManagedNodeGroupRoleARN:
-    Description: The ARN of the node instance role
     Type: String
+    Description: The ARN of the node instance role
 
   ManagedNodeGroupName:
-    Description: Unique identifier for the Node Group.
     Type: String
+    Description: Unique identifier for the Node Group.
 
   PublicSubnetIDs:
-    Description: The private subnet IDs where workers can be created.
     Type: List<AWS::EC2::Subnet::Id>
+    Description: The private subnet IDs where workers can be created.
 
   ManagedNodeGroupRemoteAccessKeyName:
-    Description: Amazon EC2 Key Pair
     Type: AWS::EC2::KeyPair::KeyName
+    Description: Amazon EC2 Key Pair
 
   ManagedNodeGroupAMIType:
-    Description: AMI type for your node group
     Type: String
     Default: AL2_x86_64
     AllowedValues:
     - AL2_x86_64
     - AL2_x86_64_GPU
+    Description: AMI type for your node group
 
   ManagedNodeGroupASGMinSize:
-    Description: Minimum size of Node Group Auto Scaling Group.
     Type: Number
-    Default: 3
+    Default: 2
+    Description: Minimum size of Node Group Auto Scaling Group.
 
   ManagedNodeGroupASGMaxSize:
-    Description: Maximum size of Node Group Auto Scaling Group. Set to at least 1 greater than ManagedNodeGroupASGDesiredCapacity.
     Type: Number
-    Default: 3
+    Default: 2
+    Description: Maximum size of Node Group Auto Scaling Group. Set to at least 1 greater than ManagedNodeGroupASGDesiredCapacity.
 
   ManagedNodeGroupASGDesiredCapacity:
-    Description: Desired capacity of Node Group Auto Scaling Group.
     Type: Number
-    Default: 3
+    Default: 2
+    Description: Desired capacity of Node Group Auto Scaling Group.
 
   ManagedNodeGroupInstanceTypes:
-    Description: EC2 instance types for the node instances
     Type: CommaDelimitedList
     Default: c5.xlarge
+    Description: EC2 instance types for the node instances
 
   ManagedNodeGroupVolumeSize:
-    Description: Node volume size
     Type: Number
     Default: 40
+    Description: Node volume size
 
   ManagedNodeGroupReleaseVersion:
-    Description: AMI version of the Amazon EKS-optimized AMI
     Type: String
+    Description: AMI version of the Amazon EKS-optimized AMI
 
 Resources:
 
@@ -210,9 +210,9 @@ Resources:
       RemoteAccess:
         Ec2SshKey: !Ref ManagedNodeGroupRemoteAccessKeyName
       ScalingConfig:
-        DesiredSize: !Ref ManagedNodeGroupASGDesiredCapacity
         MinSize: !Ref ManagedNodeGroupASGMinSize
         MaxSize: !Ref ManagedNodeGroupASGMaxSize
+        DesiredSize: !Ref ManagedNodeGroupASGDesiredCapacity
       Subnets: !Ref PublicSubnetIDs
       Labels:
         Name: !Ref ManagedNodeGroupName
@@ -220,8 +220,8 @@ Resources:
 Outputs:
 
   ManagedNodeGroupID:
-    Description: The managed node group resource Physical ID
     Value: !Ref ManagedNodeGroup
+    Description: The managed node group resource Physical ID
 
 `
 
@@ -400,9 +400,9 @@ func (ts *tester) createMNG() error {
 					Ec2SshKey: aws.String(ts.cfg.EKSConfig.RemoteAccessKeyName),
 				},
 				ScalingConfig: &awseks.NodegroupScalingConfig{
-					DesiredSize: aws.Int64(int64(mv.ASGDesiredCapacity)),
 					MinSize:     aws.Int64(int64(mv.ASGMinSize)),
 					MaxSize:     aws.Int64(int64(mv.ASGMaxSize)),
+					DesiredSize: aws.Int64(int64(mv.ASGDesiredCapacity)),
 				},
 				Subnets: aws.StringSlice(ts.cfg.EKSConfig.Parameters.PublicSubnetIDs),
 				Tags: map[string]*string{

@@ -471,24 +471,24 @@ Resources:
 Outputs:
 
   VPCID:
-    Description: VPC ID
     Value: !Ref VPC
+    Description: VPC ID
 
   PublicSubnetIDs:
-    Description: All public subnet IDs in the VPC
     Value:
       Fn::If:
       - HasMoreThan2Azs
       - !Join [ ",", [ !Ref PublicSubnet1, !Ref PublicSubnet2, !Ref PublicSubnet3 ] ]
       - !Join [ ",", [ !Ref PublicSubnet1, !Ref PublicSubnet2 ] ]
+    Description: All public subnet IDs in the VPC
 
   PrivateSubnetIDs:
-    Description: All private subnet IDs in the VPC
     Value: !Join [ ",", [ !Ref PrivateSubnet1, !Ref PrivateSubnet2 ] ]
+    Description: All private subnet IDs in the VPC
 
   ControlPlaneSecurityGroupID:
-    Description: Security group ID for the cluster control plane communication with worker nodes
     Value: !Ref ControlPlaneSecurityGroup
+    Description: Security group ID for the cluster control plane communication with worker nodes
 
 `
 

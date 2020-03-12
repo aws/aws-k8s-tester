@@ -25,19 +25,19 @@ Description: 'Amazon EC2 Role'
 Parameters:
 
   RoleName:
-    Description: EC2 Role name
     Type: String
     Default: aws-k8s-tester-ec2-role
+    Description: EC2 Role name
 
   RoleServicePrincipals:
-    Description: EC2 Role Service Principals
     Type: CommaDelimitedList
     Default: 'ec2.amazonaws.com'
+    Description: EC2 Role Service Principals
 
   RoleManagedPolicyARNs:
-    Description: EC2 Role managed policy ARNs
     Type: CommaDelimitedList
     Default: 'arn:aws:iam::aws:policy/AmazonEC2FullAccess,arn:aws:iam::aws:policy/AmazonSSMFullAccess,arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly,arn:aws:iam::aws:policy/ElasticLoadBalancingFullAccess'
+    Description: EC2 Role managed policy ARNs
 
 Resources:
 
@@ -59,8 +59,8 @@ Resources:
 Outputs:
 
   RoleARN:
-    Description: Role ARN that EC2 uses to create AWS resources
     Value: !GetAtt Role.Arn
+    Description: Role ARN that EC2 uses to create AWS resources
 
 `
 

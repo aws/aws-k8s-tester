@@ -20,26 +20,27 @@ import (
 
 // TemplateRole is the CloudFormation template for EKS managed node group role.
 // https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
+// https://github.com/aws/eks-charts/tree/master/stable/appmesh-controller
 const TemplateRole = `
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Amazon EKS Cluster Node Group Managed Role'
+Description: 'Amazon EKS Cluster Managed Node Group Role'
 
 Parameters:
 
   ManagedNodeGroupRoleName:
-    Description: The name of the node instance role
     Type: String
+    Description: The name of the node instance role
 
   ManagedNodeGroupRoleServicePrincipals:
-    Description: EKS Node Group Service Principals
     Type: CommaDelimitedList
     Default: 'ec2.amazonaws.com,eks.amazonaws.com'
+    Description: EKS Managed Node Group Service Principals
 
   ManagedNodeGroupRoleManagedPolicyARNs:
-    Description: EKS Node Group managed policy ARNs
     Type: CommaDelimitedList
     Default: 'arn:aws:iam::aws:policy/AmazonEKSServicePolicy,arn:aws:iam::aws:policy/AmazonEKSClusterPolicy,arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy,arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy,arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly,arn:aws:iam::aws:policy/ElasticLoadBalancingFullAccess,arn:aws:iam::aws:policy/AmazonEKSFargatePodExecutionRolePolicy'
+    Description: EKS Managed Node Group managed policy ARNs
 
 Resources:
 
@@ -59,7 +60,8 @@ Resources:
       Path: /
       Policies:
       # https://github.com/kubernetes-sigs/aws-alb-ingress-controller/blob/master/docs/examples/iam-policy.json
-      - PolicyName: !Join ['-', [!Ref ManagedNodeGroupRoleName, 'alb-policy']]
+      # https://github.com/aws/eks-charts/tree/master/stable/appmesh-controller
+      - PolicyName: !Join ['-', [!Ref ManagedNodeGroupRoleName, 'alb-appmesh-policy']]
         PolicyDocument:
           Version: '2012-10-17'
           Statement:
@@ -161,12 +163,28 @@ Resources:
             - shield:DescribeSubscription
             - shield:ListProtections
             Resource: "*"
+          - Effect: Allow
+            Action:
+            - appmesh:*
+            - servicediscovery:CreateService
+            - servicediscovery:GetService
+            - servicediscovery:RegisterInstance
+            - servicediscovery:DeregisterInstance
+            - servicediscovery:ListInstances
+            - servicediscovery:ListNamespaces
+            - servicediscovery:ListServices
+            - route53:GetHealthCheck
+            - route53:CreateHealthCheck
+            - route53:UpdateHealthCheck
+            - route53:ChangeResourceRecordSets
+            - route53:DeleteHealthCheck
+            Resource: "*"
 
 Outputs:
 
   ManagedNodeGroupRoleARN:
-    Description: The node instance role ARN
     Value: !GetAtt ManagedNodeGroupRole.Arn
+    Description: The node instance role ARN
 
 `
 

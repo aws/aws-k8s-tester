@@ -31,19 +31,19 @@ Description: 'Amazon EKS Cluster Role Basic'
 Parameters:
 
   RoleName:
-    Description: EKS Role name
     Type: String
     Default: aws-k8s-tester-eks-role
+    Description: EKS Role name
 
   RoleServicePrincipals:
-    Description: EKS Role Service Principals
     Type: CommaDelimitedList
     Default: 'ec2.amazonaws.com,eks.amazonaws.com,eks-fargate-pods.amazonaws.com'
+    Description: EKS Role Service Principals
 
   RoleManagedPolicyARNs:
-    Description: EKS Role managed policy ARNs
     Type: CommaDelimitedList
     Default: 'arn:aws:iam::aws:policy/AmazonEKSServicePolicy,arn:aws:iam::aws:policy/AmazonEKSClusterPolicy,arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy,arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy,arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly,arn:aws:iam::aws:policy/ElasticLoadBalancingFullAccess'
+    Description: EKS Role managed policy ARNs
 
 Resources:
 
@@ -63,7 +63,8 @@ Resources:
       Path: /
       Policies:
       # https://github.com/kubernetes-sigs/aws-alb-ingress-controller/blob/master/docs/examples/iam-policy.json
-      - PolicyName: !Join ['-', [!Ref RoleName, 'alb-policy']]
+      # https://github.com/aws/eks-charts/tree/master/stable/appmesh-controller
+      - PolicyName: !Join ['-', [!Ref RoleName, 'alb-appmesh-policy']]
         PolicyDocument:
           Version: '2012-10-17'
           Statement:
@@ -165,12 +166,28 @@ Resources:
             - shield:DescribeSubscription
             - shield:ListProtections
             Resource: "*"
+          - Effect: Allow
+            Action:
+            - appmesh:*
+            - servicediscovery:CreateService
+            - servicediscovery:GetService
+            - servicediscovery:RegisterInstance
+            - servicediscovery:DeregisterInstance
+            - servicediscovery:ListInstances
+            - servicediscovery:ListNamespaces
+            - servicediscovery:ListServices
+            - route53:GetHealthCheck
+            - route53:CreateHealthCheck
+            - route53:UpdateHealthCheck
+            - route53:ChangeResourceRecordSets
+            - route53:DeleteHealthCheck
+            Resource: "*"
 
 Outputs:
 
   RoleARN:
-    Description: Role ARN that EKS uses to create AWS resources for Kubernetes
     Value: !GetAtt Role.Arn
+    Description: Role ARN that EKS uses to create AWS resources for Kubernetes
 
 `
 
