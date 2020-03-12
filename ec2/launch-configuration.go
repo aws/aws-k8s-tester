@@ -472,7 +472,7 @@ func (ts *Tester) deleteLaunchConfiguration() error {
 	}()
 
 	ts.lg.Info("deleting ASG Launch Configurations using CFN", zap.String("name", ts.cfg.Name))
-	for asgName, asg := range ts.cfg.ASGs {
+	for _, asg := range ts.cfg.ASGs {
 		if asg.ASGLaunchConfigurationCFNStackID == "" {
 			return fmt.Errorf("%q ASG stack ID is empty", asg.Name)
 		}
