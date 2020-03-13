@@ -330,7 +330,6 @@ func (cfg *Config) validateASGs() error {
 			if v.SSMDocumentName == "" {
 				v.SSMDocumentName = v.Name + "SSMDocument"
 			}
-			v.SSMDocumentName = strings.ReplaceAll(v.SSMDocumentName, "-", "")
 			if v.SSMDocumentExecutionTimeoutSeconds == 0 {
 				v.SSMDocumentExecutionTimeoutSeconds = 3600
 			}

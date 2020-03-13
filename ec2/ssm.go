@@ -71,6 +71,7 @@ Resources:
         parameters:
           region: {type: String, description: 'AWS Region', default: { Ref: "AWS::Region" } }
           executionTimeoutSeconds: {type: String, description: 'timeout for script, in seconds'}
+          moreCommands: {type: String, description: 'more commands', default: { Ref: Commands } }
         mainSteps:
           - action: aws:runShellScript
             name: !Ref DocumentName
@@ -86,7 +87,7 @@ Resources:
                   log "running SSM with AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION}"
 
                   log "running more SSM command"
-                  !Ref Commands
+                  {{ moreCommands }}
 
 Outputs:
 
@@ -174,7 +175,8 @@ func (ts *Tester) createSSMDocument() error {
 		for _, o := range st.Stack.Outputs {
 			switch k := aws.StringValue(o.OutputKey); k {
 			case "SSMDocumentName":
-				ts.lg.Info("found SSMDocumentName value from CFN", zap.String("value", aws.StringValue(o.OutputValue)))
+				asg.SSMDocumentName = aws.StringValue(o.OutputValue)
+				ts.lg.Info("found SSMDocumentName value from CFN", zap.String("value", asg.SSMDocumentName))
 			default:
 				return fmt.Errorf("unexpected OutputKey %q from %q", k, asg.SSMDocumentCFNStackID)
 			}
@@ -271,19 +273,22 @@ func (ts *Tester) sendSSMDocumentCommand() error {
 			zap.String("ssm-document-name", asg.SSMDocumentName),
 			zap.Strings("instance-ids", ids),
 		)
-		cmd, err := ts.ssmAPI.SendCommand(&ssm.SendCommandInput{
-			DocumentName:     aws.String(asg.SSMDocumentName),
-			Comment:          aws.String(asg.SSMDocumentName + "-" + randString(10)),
-			DocumentHashType: aws.String("Sha256"),
-			InstanceIds:      aws.StringSlice(ids),
-			MaxConcurrency:   aws.String(fmt.Sprintf("%d", len(ids))),
+		ssmInput := &ssm.SendCommandInput{
+			DocumentName:   aws.String(asg.SSMDocumentName),
+			Comment:        aws.String(asg.SSMDocumentName + "-" + randString(10)),
+			InstanceIds:    aws.StringSlice(ids),
+			MaxConcurrency: aws.String(fmt.Sprintf("%d", len(ids))),
 			Parameters: map[string][]*string{
 				"region":                  aws.StringSlice([]string{ts.cfg.Region}),
 				"executionTimeoutSeconds": aws.StringSlice([]string{fmt.Sprintf("%d", asg.SSMDocumentExecutionTimeoutSeconds)}),
 			},
 			OutputS3BucketName: aws.String(ts.cfg.S3BucketName),
 			OutputS3KeyPrefix:  aws.String(ts.cfg.Name),
-		})
+		}
+		if len(asg.SSMDocumentCommands) > 0 {
+			ssmInput.Parameters["moreCommands"] = aws.StringSlice([]string{asg.SSMDocumentCommands})
+		}
+		cmd, err := ts.ssmAPI.SendCommand(ssmInput)
 		if err != nil {
 			return err
 		}
