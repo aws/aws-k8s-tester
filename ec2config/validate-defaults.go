@@ -64,12 +64,14 @@ func NewDefault() *Config {
 		vv.Name = fmt.Sprintf("ec2-%s-%s", getTS()[:10], randString(12))
 	}
 
+	ssmDocName := vv.Name + "SSMDocument"
+	ssmDocName = strings.ReplaceAll(ssmDocName, "-", "")
 	vv.ASGs = map[string]ASG{
 		vv.Name + "-asg": ASG{
 			Name:                               vv.Name + "-asg",
 			LaunchConfigurationName:            vv.Name + "-asg-launch-config",
 			InstallSSM:                         true,
-			SSMDocumentName:                    vv.Name + "-ssm-document",
+			SSMDocumentName:                    vv.Name + "SSMDocument",
 			SSMDocumentCreate:                  false,
 			SSMDocumentCommands:                "",
 			SSMDocumentExecutionTimeoutSeconds: 3600,
@@ -326,8 +328,9 @@ func (cfg *Config) validateASGs() error {
 		switch v.SSMDocumentCreate {
 		case true: // need create one, or already created
 			if v.SSMDocumentName == "" {
-				v.SSMDocumentName = v.Name + "-ssm-document"
+				v.SSMDocumentName = v.Name + "SSMDocument"
 			}
+			v.SSMDocumentName = strings.ReplaceAll(v.SSMDocumentName, "-", "")
 			if v.SSMDocumentExecutionTimeoutSeconds == 0 {
 				v.SSMDocumentExecutionTimeoutSeconds = 3600
 			}
