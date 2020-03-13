@@ -72,6 +72,7 @@ func NewDefault() *Config {
 			InstallSSM:                         true,
 			SSMDocumentName:                    vv.Name + "-ssm-document",
 			SSMDocumentCreate:                  false,
+			SSMDocumentCommands:                "",
 			SSMDocumentExecutionTimeoutSeconds: 3600,
 			MinSize:                            1,
 			MaxSize:                            1,
@@ -329,16 +330,13 @@ func (cfg *Config) validateASGs() error {
 		switch v.SSMDocumentCreate {
 		case true: // need create one, or already created
 			if v.SSMDocumentName == "" {
-				v.SSMDocumentName = v.Name + "-ssm-doc"
+				v.SSMDocumentName = v.Name + "-ssm-document"
 			}
 			if v.SSMDocumentExecutionTimeoutSeconds == 0 {
 				v.SSMDocumentExecutionTimeoutSeconds = 3600
 			}
 
 		case false: // use existing one, or don't run any SSM
-			if v.SSMDocumentCommands != "" {
-				return fmt.Errorf("ASGs[%q].SSMDocumentCreate false but got non-empty SSMDocumentCommands %q", k, v.SSMDocumentCommands)
-			}
 		}
 
 		cfg.ASGs[k] = v
