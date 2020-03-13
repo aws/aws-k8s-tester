@@ -18,7 +18,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.4...v0.7.5
 
 ### `ec2`
 
-- Clean up [terminal outputs, no color string](https://github.com/aws/aws-k8s-tester/commit/).
+- Clean up [terminal outputs, no color string](https://github.com/aws/aws-k8s-tester/commit/94e0a8b9e019c935c113f8e27274d8790490abec).
 - Fix [custom AMI ASG CFN template](https://github.com/aws/aws-k8s-tester/commit/81c5af7df626bae2721e89a09ae05a061be15ceb).
 - Fix [key creation](https://github.com/aws/aws-k8s-tester/commit/61487a22279956c2575affaf1c97896474ce475e).
 - Create [ASG and launch configuration in a separate CFN stack](https://github.com/aws/aws-k8s-tester/commit/c3f431d325b26784acd9b33d66bd73605e6c1efb).
@@ -47,7 +47,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.4...v0.7.5
 
 ### `eks`
 
-- Clean up [terminal outputs, no color string](https://github.com/aws/aws-k8s-tester/commit/).
+- Clean up [terminal outputs, no color string](https://github.com/aws/aws-k8s-tester/commit/94e0a8b9e019c935c113f8e27274d8790490abec).
 - Add [`eks/appmesh`](https://github.com/aws/aws-k8s-tester/pull/81).
 - Set [`EKS 1.15` as default](https://github.com/aws/aws-k8s-tester/commit/49d364c710b87ee5bcd6f22684c0de861ae3f86e).
 - Move [remote access key creation/deletion function from `eks/mng` to `eks`](https://github.com/aws/aws-k8s-tester/commit/d110238d6ba93300d3109f2925bcc6a5cd254ad0).
