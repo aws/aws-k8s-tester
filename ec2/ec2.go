@@ -135,6 +135,10 @@ func (ts *Tester) Up() (err error) {
 	defer func() {
 		colorstring.Printf("\n\n\n[light_green]Up.defer start [default](%q)\n\n", ts.cfg.ConfigPath)
 
+		if serr := ts.uploadToS3(); serr != nil {
+			ts.lg.Warn("failed to upload artifacts to S3", zap.Error(serr))
+		}
+
 		if err == nil {
 			if ts.cfg.Up {
 				colorstring.Printf("\n\n[light_green]SSH [default](%q)\n\n", ts.cfg.ConfigPath)
@@ -315,6 +319,9 @@ func (ts *Tester) down() (err error) {
 	ts.lg.Warn("starting Down",
 		zap.String("name", ts.cfg.Name),
 	)
+	if serr := ts.uploadToS3(); serr != nil {
+		ts.lg.Warn("failed to upload artifacts to S3", zap.Error(serr))
+	}
 
 	defer func() {
 		ts.cfg.Sync()

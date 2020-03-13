@@ -1,8 +1,11 @@
 package ec2
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
 	"path"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"time"
@@ -212,4 +215,81 @@ func getTS() string {
 		now.Hour(),
 		now.Second(),
 	)
+}
+
+func (ts *Tester) uploadToS3() error {
+	d, err := ioutil.ReadFile(ts.cfg.ConfigPath)
+	if err != nil {
+		return err
+	}
+	s3Key := path.Join(ts.cfg.Name, "aws-k8s-tester-eks.config.yaml")
+	_, err = ts.s3API.PutObject(&s3.PutObjectInput{
+		Bucket: aws.String(ts.cfg.S3BucketName),
+		Key:    aws.String(s3Key),
+		Body:   bytes.NewReader(d),
+
+		// https://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html#canned-acl
+		// vs. "public-read"
+		ACL: aws.String("private"),
+
+		Metadata: map[string]*string{
+			"Kind": aws.String("aws-k8s-tester"),
+		},
+	})
+	if err == nil {
+		ts.lg.Info("uploaded the config file",
+			zap.String("bucket", ts.cfg.S3BucketName),
+			zap.String("remote-path", s3Key),
+		)
+	} else {
+		ts.lg.Warn("failed to upload the config file",
+			zap.String("bucket", ts.cfg.S3BucketName),
+			zap.String("remote-path", s3Key),
+			zap.Error(err),
+		)
+		return err
+	}
+
+	logFilePath := ""
+	for _, fpath := range ts.cfg.LogOutputs {
+		if filepath.Ext(fpath) == ".log" {
+			logFilePath = fpath
+			break
+		}
+	}
+	if logFilePath != "" {
+		d, err = ioutil.ReadFile(logFilePath)
+		if err != nil {
+			return err
+		}
+		s3Key = path.Join(ts.cfg.Name, "aws-k8s-tester-eks.log")
+		_, err = ts.s3API.PutObject(&s3.PutObjectInput{
+			Bucket: aws.String(ts.cfg.S3BucketName),
+			Key:    aws.String(s3Key),
+			Body:   bytes.NewReader(d),
+
+			// https://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html#canned-acl
+			// vs. "public-read"
+			ACL: aws.String("private"),
+
+			Metadata: map[string]*string{
+				"Kind": aws.String("aws-k8s-tester"),
+			},
+		})
+		if err == nil {
+			ts.lg.Info("uploaded the log file",
+				zap.String("bucket", ts.cfg.S3BucketName),
+				zap.String("remote-path", s3Key),
+			)
+		} else {
+			ts.lg.Warn("failed to upload the log file",
+				zap.String("bucket", ts.cfg.S3BucketName),
+				zap.String("remote-path", s3Key),
+				zap.Error(err),
+			)
+			return err
+		}
+	}
+
+	return err
 }
