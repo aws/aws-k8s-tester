@@ -184,6 +184,8 @@ func (ts *Tester) Up() (err error) {
 			fmt.Println(ts.cfg.SSHCommands())
 		}
 
+		fmt.Printf("\n#################################\n")
+		fmt.Printf("😱 ☹ 😡 (-_-) Up fail\n")
 		ts.lg.Warn("Up failed; reverting resource creation",
 			zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			zap.Error(err),
