@@ -17,7 +17,6 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/aws/elb"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/elbv2/elbv2iface"
-	"github.com/mitchellh/colorstring"
 	"go.uber.org/zap"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -296,7 +295,7 @@ func (ts *tester) waitDeployment() error {
 		return fmt.Errorf("'kubectl describe deployment' failed %v", err)
 	}
 	out := string(output)
-	colorstring.Printf("\n\n\"[light_green]kubectl describe deployment[default]\" output:\n%s\n\n", out)
+	fmt.Printf("\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
 
 	ready := false
 	waitDur := 5*time.Minute + time.Duration(ts.cfg.EKSConfig.AddOnNLBHelloWorld.DeploymentReplicas)*time.Minute
@@ -425,7 +424,7 @@ func (ts *tester) createService() error {
 			ts.cfg.Logger.Warn("'kubectl describe svc' failed", zap.Error(err))
 		} else {
 			out := string(clusterInfoOut)
-			colorstring.Printf("\n\n\"[light_green]kubectl describe svc %s[default]\" output:\n%s\n\n", nlbHelloWorldServiceName, out)
+			fmt.Printf("\n\n\"kubectl describe svc %s\" output:\n%s\n\n", nlbHelloWorldServiceName, out)
 		}
 
 		ts.cfg.Logger.Info("querying NLB hello-world Service for HTTP endpoint")
@@ -475,9 +474,9 @@ func (ts *tester) createService() error {
 	ts.cfg.EKSConfig.AddOnNLBHelloWorld.URL = "http://" + hostName
 	ts.cfg.EKSConfig.Sync()
 
-	colorstring.Printf("\n[light_green]NLB hello-world ARN [default]%s\n", ts.cfg.EKSConfig.AddOnNLBHelloWorld.NLBARN)
-	colorstring.Printf("[light_green]NLB hello-world Name [default]%s\n", ts.cfg.EKSConfig.AddOnNLBHelloWorld.NLBName)
-	colorstring.Printf("[light_green]NLB hello-world URL [default]%s\n\n", ts.cfg.EKSConfig.AddOnNLBHelloWorld.URL)
+	fmt.Printf("\nNLB hello-world ARN %s\n", ts.cfg.EKSConfig.AddOnNLBHelloWorld.NLBARN)
+	fmt.Printf("NLB hello-world Name %s\n", ts.cfg.EKSConfig.AddOnNLBHelloWorld.NLBName)
+	fmt.Printf("NLB hello-world URL %s\n\n", ts.cfg.EKSConfig.AddOnNLBHelloWorld.URL)
 
 	ts.cfg.Logger.Info("waiting before testing hello-world Service")
 	time.Sleep(20 * time.Second)

@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go/service/eks"
-	"github.com/mitchellh/colorstring"
 	"go.uber.org/zap"
 	"k8s.io/utils/exec"
 )
@@ -38,12 +37,11 @@ func (ts *Tester) checkHealth() (err error) {
 		if err == nil {
 			break
 		}
-		colorstring.Printf("\n\n\"[red]health check fail[default]\"\n\n")
 		ts.lg.Warn("health check failed", zap.Error(err))
 		ts.cfg.RecordStatus(fmt.Sprintf("health check failed (%v)", err))
 	}
 
-	colorstring.Printf("\n\n\"[light_green]health check success[default]\"\n\n")
+	ts.lg.Info("health check success")
 	return err
 }
 
@@ -60,7 +58,7 @@ func (ts *Tester) health() error {
 	if err != nil {
 		return fmt.Errorf("'kubectl version' failed %v (output %q)", err, out)
 	}
-	colorstring.Printf("\n\"[light_green]kubectl version[default]\" output:\n%s\n", out)
+	fmt.Printf("\n\"kubectl version\" output:\n%s\n", out)
 
 	ep := ts.cfg.Status.ClusterAPIServerEndpoint + "/version"
 	buf := bytes.NewBuffer(nil)
@@ -71,7 +69,7 @@ func (ts *Tester) health() error {
 	if !strings.Contains(out, fmt.Sprintf(`"gitVersion": "v%s`, ts.cfg.Parameters.Version)) {
 		return fmt.Errorf("%q does not contain version %q", out, ts.cfg.Parameters.Version)
 	}
-	colorstring.Printf("\n\n\"[light_green]%s[default]\" output:\n%s\n", ep, out)
+	fmt.Printf("\n\n\"%s\" output:\n%s\n", ep, out)
 
 	ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 	output, err = exec.New().CommandContext(
@@ -88,7 +86,7 @@ func (ts *Tester) health() error {
 	if !strings.Contains(out, "is running at") {
 		return fmt.Errorf("'kubectl cluster-info' not ready (output %q)", out)
 	}
-	colorstring.Printf("\n\"[light_green]kubectl cluster-info[default]\" output:\n%s\n", out)
+	fmt.Printf("\n\"kubectl cluster-info\" output:\n%s\n", out)
 
 	ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 	output, err = exec.New().CommandContext(
@@ -103,7 +101,7 @@ func (ts *Tester) health() error {
 	if err != nil {
 		return fmt.Errorf("'kubectl get cs' failed %v (output %q)", err, out)
 	}
-	colorstring.Printf("\n\"[light_green]kubectl get cs[default]\" output:\n%s\n", out)
+	fmt.Printf("\n\"kubectl get cs\" output:\n%s\n", out)
 
 	ep = ts.cfg.Status.ClusterAPIServerEndpoint + "/healthz?verbose"
 	buf.Reset()
@@ -114,7 +112,7 @@ func (ts *Tester) health() error {
 	if !strings.Contains(out, "healthz check passed") {
 		return fmt.Errorf("%q does not contain 'healthz check passed'", out)
 	}
-	colorstring.Printf("\n\n\"[light_green]%s[default]\" output:\n%s\n", ep, out)
+	fmt.Printf("\n\n\"%s\" output:\n%s\n", ep, out)
 
 	ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 	output, err = exec.New().CommandContext(
@@ -130,15 +128,15 @@ func (ts *Tester) health() error {
 	if err != nil {
 		return fmt.Errorf("'kubectl get all -n=kube-system' failed %v (output %q)", err, out)
 	}
-	colorstring.Printf("\n\"[light_green]kubectl all -n=kube-system[default]\" output:\n%s\n", out)
+	fmt.Printf("\n\"kubectl all -n=kube-system\" output:\n%s\n", out)
 
-	colorstring.Printf("\n\"[light_green]kubectl get pods -n=kube-system[default]\" output:\n")
+	fmt.Printf("\n\"kubectl get pods -n=kube-system\" output:\n")
 	pods, err := ts.getPods("kube-system")
 	if err != nil {
 		return fmt.Errorf("failed to get pods %v", err)
 	}
 	for _, v := range pods.Items {
-		colorstring.Printf("[light_magenta]kube-system Pod[default]: %q\n", v.Name)
+		fmt.Printf("kube-system Pod: %q\n", v.Name)
 	}
 	println()
 
@@ -156,7 +154,7 @@ func (ts *Tester) health() error {
 	if err != nil {
 		return fmt.Errorf("'kubectl get configmaps --all-namespaces' failed %v (output %q)", err, out)
 	}
-	colorstring.Printf("\n\"[light_green]kubectl get configmaps --all-namespaces[default]\" output:\n%s\n", out)
+	fmt.Printf("\n\"kubectl get configmaps --all-namespaces\" output:\n%s\n", out)
 
 	ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 	output, err = exec.New().CommandContext(
@@ -171,9 +169,9 @@ func (ts *Tester) health() error {
 	if err != nil {
 		return fmt.Errorf("'kubectl get namespaces' failed %v (output %q)", err, out)
 	}
-	colorstring.Printf("\n\"[light_green]kubectl get namespaces[default]\" output:\n%s\n", out)
+	fmt.Printf("\n\"kubectl get namespaces\" output:\n%s\n", out)
 
-	colorstring.Printf("\n\"[light_green]curl -sL http://localhost:8080/metrics | grep storage_[default]\" output:\n")
+	fmt.Printf("\n\"curl -sL http://localhost:8080/metrics | grep storage_\" output:\n")
 	output, err = ts.k8sClientSet.
 		CoreV1().
 		RESTClient().

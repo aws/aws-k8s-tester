@@ -19,7 +19,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/cloudformation/cloudformationiface"
 	"github.com/aws/aws-sdk-go/service/elbv2"
 	"github.com/aws/aws-sdk-go/service/elbv2/elbv2iface"
-	"github.com/mitchellh/colorstring"
 	"go.uber.org/zap"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -594,7 +593,7 @@ func (ts *tester) waitDeploymentALB() error {
 		return fmt.Errorf("'kubectl describe deployment' failed %v", err)
 	}
 	out := string(output)
-	colorstring.Printf("\n\n\"[light_green]kubectl describe deployment[default]\" output:\n%s\n\n", out)
+	fmt.Printf("\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
 
 	ready := false
 	waitDur := 5*time.Minute + time.Duration(ts.cfg.EKSConfig.AddOnALB2048.DeploymentReplicasALB)*time.Minute
@@ -749,7 +748,7 @@ func (ts *tester) waitDeployment2048() error {
 		return fmt.Errorf("'kubectl describe deployment' failed %v", err)
 	}
 	out := string(output)
-	colorstring.Printf("\n\n\"[light_green]kubectl describe deployment[default]\" output:\n%s\n\n", out)
+	fmt.Printf("\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
 
 	ready := false
 	waitDur := 5*time.Minute + time.Duration(ts.cfg.EKSConfig.AddOnALB2048.DeploymentReplicas2048)*time.Minute
@@ -952,7 +951,7 @@ func (ts *tester) create2048Ingress() error {
 			ts.cfg.Logger.Warn("'kubectl logs alb' failed", zap.String("output", out), zap.Error(err))
 			continue
 		}
-		colorstring.Printf("[light_gray]kubectl logs alb[default]:\n%s\n", out)
+		fmt.Printf("[light_gray]kubectl logs alb:\n%s\n", out)
 
 		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 		clusterInfoOut, err := exec.New().CommandContext(
@@ -969,7 +968,7 @@ func (ts *tester) create2048Ingress() error {
 			ts.cfg.Logger.Warn("'kubectl describe svc' failed", zap.Error(err))
 		} else {
 			out := string(clusterInfoOut)
-			colorstring.Printf("\n\"[light_green]kubectl describe svc %s[default]\" output:\n%s\n", alb2048ServiceName, out)
+			fmt.Printf("\n\"kubectl describe svc %s\" output:\n%s\n", alb2048ServiceName, out)
 		}
 
 		ts.cfg.Logger.Info("querying ALB 2048 Ingress for HTTP endpoint")
@@ -1022,9 +1021,9 @@ func (ts *tester) create2048Ingress() error {
 		break
 	}
 
-	colorstring.Printf("\n[light_green]ALB 2048 ARN[default] %s\n", ts.cfg.EKSConfig.AddOnALB2048.ALBARN)
-	colorstring.Printf("[light_green]ALB 2048 Name[default] %s\n", ts.cfg.EKSConfig.AddOnALB2048.ALBName)
-	colorstring.Printf("[light_green]ALB 2048 URL[default] %s\n\n", ts.cfg.EKSConfig.AddOnALB2048.URL)
+	fmt.Printf("\nALB 2048 ARN %s\n", ts.cfg.EKSConfig.AddOnALB2048.ALBARN)
+	fmt.Printf("ALB 2048 Name %s\n", ts.cfg.EKSConfig.AddOnALB2048.ALBName)
+	fmt.Printf("ALB 2048 URL %s\n\n", ts.cfg.EKSConfig.AddOnALB2048.URL)
 
 	ts.cfg.Logger.Info("waiting before testing ALB 2048 Ingress")
 	time.Sleep(10 * time.Second)

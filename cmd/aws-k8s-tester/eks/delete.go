@@ -7,7 +7,6 @@ import (
 	"github.com/aws/aws-k8s-tester/eks"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
-	"github.com/mitchellh/colorstring"
 	"github.com/spf13/cobra"
 )
 
@@ -47,9 +46,11 @@ func deleteClusterFunc(cmd *cobra.Command, args []string) {
 	}
 
 	if err = tester.Down(); err != nil {
-		colorstring.Printf("\n\n[red][bold]'aws-k8s-tester eks delete cluster' fail[default] %v\n\n\n", err)
+		fmt.Printf("\n#################################\n")
+		fmt.Printf("'aws-k8s-tester eks delete cluster' fail %v\n", err)
 		os.Exit(1)
 	}
 
-	colorstring.Printf("\n\n[light_blue][bold]'aws-k8s-tester eks delete cluster' success[default]\n\n\n")
+	fmt.Printf("\n#################################\n")
+	fmt.Printf("'aws-k8s-tester eks delete cluster' successs\n")
 }

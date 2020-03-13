@@ -27,7 +27,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
 	"github.com/aws/aws-sdk-go/service/iam/iamiface"
 	"github.com/dustin/go-humanize"
-	"github.com/mitchellh/colorstring"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -1028,9 +1027,9 @@ func (ts *tester) waitForNodes(name string) error {
 		}
 		took := time.Now().Sub(retryStart)
 		if took > threshold {
-			colorstring.Printf("\n\n[light_green]kubectl [default](%q, %q)\n\n", ts.cfg.EKSConfig.ConfigPath, ts.cfg.EKSConfig.KubectlCommand())
+			fmt.Printf("\n\nkubectl (%q, %q)\n\n", ts.cfg.EKSConfig.ConfigPath, ts.cfg.EKSConfig.KubectlCommand())
 			fmt.Println(ts.cfg.EKSConfig.KubectlCommands())
-			colorstring.Printf("\n\n[light_green]SSH [default](%q, %q)\n\n", ts.cfg.EKSConfig.ConfigPath, ts.cfg.EKSConfig.KubectlCommand())
+			fmt.Printf("\n\nSSH (%q, %q)\n\n", ts.cfg.EKSConfig.ConfigPath, ts.cfg.EKSConfig.KubectlCommand())
 			fmt.Println(ts.cfg.EKSConfig.SSHCommands())
 		}
 	}

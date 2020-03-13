@@ -35,7 +35,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/ssm/ssmiface"
 	"github.com/aws/aws-sdk-go/service/sts"
 	"github.com/dustin/go-humanize"
-	"github.com/mitchellh/colorstring"
 	"go.uber.org/zap"
 )
 
@@ -68,7 +67,8 @@ type Tester struct {
 func New(cfg *ec2config.Config) (*Tester, error) {
 	fmt.Println("😎 🙏")
 	fmt.Println(version.Version())
-	colorstring.Printf("\n\n\n[light_green]New [default](%q)\n", cfg.ConfigPath)
+	fmt.Printf("\n#################################\n")
+	fmt.Printf("New %q\n", cfg.ConfigPath)
 	if err := cfg.ValidateAndSetDefaults(); err != nil {
 		return nil, err
 	}
@@ -117,7 +117,7 @@ func New(cfg *ec2config.Config) (*Tester, error) {
 	if _, err := ts.ec2API.DescribeInstances(&ec2.DescribeInstancesInput{MaxResults: aws.Int64(5)}); err != nil {
 		return nil, fmt.Errorf("failed to describe instances using EC2 API (%v)", err)
 	}
-	colorstring.Println("[green]EC2 API available!")
+	fmt.Println("EC2 API available!")
 
 	ts.s3API = s3.New(ts.awsSession)
 	ts.asgAPI = autoscaling.New(ts.awsSession)
@@ -128,12 +128,14 @@ func New(cfg *ec2config.Config) (*Tester, error) {
 
 // Up should provision a new cluster for testing
 func (ts *Tester) Up() (err error) {
-	colorstring.Printf("\n\n\n[light_green]Up [default](%q)\n", ts.cfg.ConfigPath)
+	fmt.Printf("\n#################################\n")
+	ts.lg.Sugar().Infof("Up (%q)", ts.cfg.ConfigPath)
 
 	now := time.Now()
 
 	defer func() {
-		colorstring.Printf("\n\n\n[light_green]Up.defer start [default](%q)\n\n", ts.cfg.ConfigPath)
+		fmt.Printf("\n#################################\n")
+		ts.lg.Sugar().Infof("Up.defer start (%q)", ts.cfg.ConfigPath)
 
 		if serr := ts.uploadToS3(); serr != nil {
 			ts.lg.Warn("failed to upload artifacts to S3", zap.Error(serr))
@@ -141,24 +143,27 @@ func (ts *Tester) Up() (err error) {
 
 		if err == nil {
 			if ts.cfg.Up {
-				colorstring.Printf("\n\n[light_green]SSH [default](%q)\n\n", ts.cfg.ConfigPath)
+				fmt.Printf("\n#################################\n")
+				ts.lg.Sugar().Infof("SSH (%q)", ts.cfg.ConfigPath)
 				fmt.Println(ts.cfg.SSHCommands())
 
 				ts.lg.Info("Up succeeded",
 					zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 				)
 
-				colorstring.Printf("\n\n\n[light_green]Up.defer end [default](%q)\n\n", ts.cfg.ConfigPath)
-				colorstring.Printf("\n\n😁 😁 [blue]:) [default]Up success\n\n\n")
+				fmt.Printf("\n#################################\n")
+				ts.lg.Sugar().Infof("Up.defer end (%q)", ts.cfg.ConfigPath)
+				fmt.Printf("\n\n😁 😁 :) Up success\n\n\n")
 			} else {
-				colorstring.Printf("\n\n😲 😲 [yellow]aborted [default]Up ???\n\n\n")
+				fmt.Printf("\n\n😲 😲 aborted Up ???\n\n\n")
 			}
 			return
 		}
 
 		if !ts.cfg.OnFailureDelete {
 			if ts.cfg.Up {
-				colorstring.Printf("\n\n[light_green]SSH [default](%q)\n\n", ts.cfg.ConfigPath)
+				fmt.Printf("\n#################################\n")
+				ts.lg.Sugar().Infof("SSH (%q)", ts.cfg.ConfigPath)
 				fmt.Println(ts.cfg.SSHCommands())
 			}
 
@@ -167,13 +172,15 @@ func (ts *Tester) Up() (err error) {
 				zap.Error(err),
 			)
 
-			colorstring.Printf("\n\n\n[light_red]Up.defer end [default](%q)\n\n", ts.cfg.ConfigPath)
-			colorstring.Printf("\n\n😱 ☹ 😡 [light_red](-_-) [default]Up fail\n\n\n")
+			fmt.Printf("\n#################################\n")
+			ts.lg.Sugar().Infof("Up.defer end (%q)", ts.cfg.ConfigPath)
+			fmt.Printf("\n\n😱 ☹ 😡 (-_-) Up fail\n\n\n")
 			return
 		}
 
 		if ts.cfg.Up {
-			colorstring.Printf("\n\n[light_green]SSH [default](%q)\n\n", ts.cfg.ConfigPath)
+			fmt.Printf("\n#################################\n")
+			ts.lg.Sugar().Infof("SSH (%q)", ts.cfg.ConfigPath)
 			fmt.Println(ts.cfg.SSHCommands())
 		}
 
@@ -199,8 +206,9 @@ func (ts *Tester) Up() (err error) {
 			ts.lg.Warn("reverted Up")
 		}
 
-		colorstring.Printf("\n\n\n[light_red]Up.defer end [default](%q)\n\n", ts.cfg.ConfigPath)
-		colorstring.Printf("\n\n😱 ☹ 😡 [light_red](-_-) [default]Up fail\n\n\n")
+		fmt.Printf("\n#################################\n")
+		ts.lg.Sugar().Infof("Up.defer end (%q)", ts.cfg.ConfigPath)
+		fmt.Printf("\n\n😱 ☹ 😡 (-_-) Up fail\n\n\n")
 	}()
 
 	ts.lg.Info("Up started",
@@ -209,7 +217,8 @@ func (ts *Tester) Up() (err error) {
 	)
 	defer ts.cfg.Sync()
 
-	colorstring.Printf("\n\n\n[light_green]createS3 [default](%q)\n", ts.cfg.ConfigPath)
+	fmt.Printf("\n#################################\n")
+	fmt.Printf("createS3 (%q)\n", ts.cfg.ConfigPath)
 	if err := catchInterrupt(
 		ts.lg,
 		ts.stopCreationCh,
@@ -220,7 +229,8 @@ func (ts *Tester) Up() (err error) {
 		return err
 	}
 
-	colorstring.Printf("\n\n\n[light_green]createRole [default](%q)\n", ts.cfg.ConfigPath)
+	fmt.Printf("\n#################################\n")
+	fmt.Printf("createRole (%q)\n", ts.cfg.ConfigPath)
 	if err := catchInterrupt(
 		ts.lg,
 		ts.stopCreationCh,
@@ -231,7 +241,8 @@ func (ts *Tester) Up() (err error) {
 		return err
 	}
 
-	colorstring.Printf("\n\n\n[light_green]createVPC [default](%q)\n", ts.cfg.ConfigPath)
+	fmt.Printf("\n#################################\n")
+	fmt.Printf("createVPC (%q)\n", ts.cfg.ConfigPath)
 	if err := catchInterrupt(
 		ts.lg,
 		ts.stopCreationCh,
@@ -242,7 +253,8 @@ func (ts *Tester) Up() (err error) {
 		return err
 	}
 
-	colorstring.Printf("\n\n\n[light_green]createKeyPair [default](%q)\n", ts.cfg.ConfigPath)
+	fmt.Printf("\n#################################\n")
+	fmt.Printf("createKeyPair (%q)\n", ts.cfg.ConfigPath)
 	if err := catchInterrupt(
 		ts.lg,
 		ts.stopCreationCh,
@@ -253,7 +265,8 @@ func (ts *Tester) Up() (err error) {
 		return err
 	}
 
-	colorstring.Printf("\n\n\n[light_green]createLaunchConfiguration [default](%q)\n", ts.cfg.ConfigPath)
+	fmt.Printf("\n#################################\n")
+	fmt.Printf("createLaunchConfiguration (%q)\n", ts.cfg.ConfigPath)
 	if err := catchInterrupt(
 		ts.lg,
 		ts.stopCreationCh,
@@ -264,7 +277,8 @@ func (ts *Tester) Up() (err error) {
 		return err
 	}
 
-	colorstring.Printf("\n\n\n[light_green]createASGs [default](%q)\n", ts.cfg.ConfigPath)
+	fmt.Printf("\n#################################\n")
+	fmt.Printf("createASGs (%q)\n", ts.cfg.ConfigPath)
 	if err := catchInterrupt(
 		ts.lg,
 		ts.stopCreationCh,
@@ -275,7 +289,8 @@ func (ts *Tester) Up() (err error) {
 		return err
 	}
 
-	colorstring.Printf("\n\n\n[light_green]createSSM [default](%q)\n", ts.cfg.ConfigPath)
+	fmt.Printf("\n#################################\n")
+	fmt.Printf("createSSM (%q)\n", ts.cfg.ConfigPath)
 	if err := catchInterrupt(
 		ts.lg,
 		ts.stopCreationCh,
@@ -287,7 +302,8 @@ func (ts *Tester) Up() (err error) {
 	}
 
 	if ts.cfg.ASGsFetchLogs {
-		colorstring.Printf("\n\n\n[light_green]FetchLogs [default](%q)\n", ts.cfg.ConfigPath)
+		fmt.Printf("\n#################################\n")
+		fmt.Printf("FetchLogs (%q)\n", ts.cfg.ConfigPath)
 		waitDur := 20 * time.Second
 		ts.lg.Info("sleeping before FetchLogs", zap.Duration("wait", waitDur))
 		time.Sleep(waitDur)
@@ -313,7 +329,7 @@ func (ts *Tester) Down() error {
 }
 
 func (ts *Tester) down() (err error) {
-	colorstring.Printf("\n\n\n[light_green]Down start [default](%q)\n\n", ts.cfg.ConfigPath)
+	fmt.Printf("\n\n\nDown start (%q)\n\n", ts.cfg.ConfigPath)
 
 	now := time.Now()
 	ts.lg.Warn("starting Down",
@@ -326,16 +342,16 @@ func (ts *Tester) down() (err error) {
 	defer func() {
 		ts.cfg.Sync()
 		if err == nil {
-			colorstring.Printf("\n\n\n[light_green]Down.defer end [default](%q)\n\n", ts.cfg.ConfigPath)
-			colorstring.Printf("\n\n😁 😁 [blue]:) [default]Down success\n\n\n")
+			fmt.Printf("\n\n\nDown.defer end (%q)\n\n", ts.cfg.ConfigPath)
+			fmt.Printf("\n\n😁 😁 :) Down success\n\n\n")
 
 			ts.lg.Info("successfully finished Down",
 				zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			)
 
 		} else {
-			colorstring.Printf("\n\n\n[light_red]Down.defer end [default](%q)\n\n", ts.cfg.ConfigPath)
-			colorstring.Printf("\n\n😱 ☹ 😡 [light_red](-_-) [default]Down fail\n\n\n")
+			fmt.Printf("\n\n\nDown.defer end (%q)\n\n", ts.cfg.ConfigPath)
+			fmt.Printf("\n\n😱 ☹ 😡 (-_-) Down fail\n\n\n")
 
 			ts.lg.Info("failed Down",
 				zap.Error(err),
@@ -346,31 +362,31 @@ func (ts *Tester) down() (err error) {
 
 	var errs []string
 
-	colorstring.Printf("\n\n\n[light_green]deleteSSM [default](%q)\n", ts.cfg.ConfigPath)
+	fmt.Printf("\n\n\ndeleteSSM (%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteSSM(); err != nil {
 		ts.lg.Warn("deleteSSM failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 
-	colorstring.Printf("\n\n\n[light_green]deleteASGs [default](%q)\n", ts.cfg.ConfigPath)
+	fmt.Printf("\n\n\ndeleteASGs (%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteASGs(); err != nil {
 		ts.lg.Warn("deleteASGs failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 
-	colorstring.Printf("\n\n\n[light_green]deleteLaunchConfiguration [default](%q)\n", ts.cfg.ConfigPath)
+	fmt.Printf("\n\n\ndeleteLaunchConfiguration (%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteLaunchConfiguration(); err != nil {
 		ts.lg.Warn("deleteLaunchConfiguration failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 
-	colorstring.Printf("\n\n\n[light_green]deleteKeyPair [default](%q)\n", ts.cfg.ConfigPath)
+	fmt.Printf("\n\n\ndeleteKeyPair (%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteKeyPair(); err != nil {
 		ts.lg.Warn("deleteKeyPair failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 
-	colorstring.Printf("\n\n\n[light_green]deleteRole [default](%q)\n", ts.cfg.ConfigPath)
+	fmt.Printf("\n\n\ndeleteRole (%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteRole(); err != nil {
 		ts.lg.Warn("deleteRole failed", zap.Error(err))
 		errs = append(errs, err.Error())
@@ -382,13 +398,13 @@ func (ts *Tester) down() (err error) {
 		time.Sleep(waitDur)
 	}
 
-	colorstring.Printf("\n\n\n[light_green]deleteVPC [default](%q)\n", ts.cfg.ConfigPath)
+	fmt.Printf("\n\n\ndeleteVPC (%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteVPC(); err != nil {
 		ts.lg.Warn("deleteVPC failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 
-	colorstring.Printf("\n\n\n[light_green]deleteS3 [default](%q)\n", ts.cfg.ConfigPath)
+	fmt.Printf("\n\n\ndeleteS3 (%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteS3(); err != nil {
 		ts.lg.Warn("deleteS3 failed", zap.Error(err))
 		errs = append(errs, err.Error())

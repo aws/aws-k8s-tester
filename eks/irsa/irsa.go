@@ -26,7 +26,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/iam/iamiface"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
-	"github.com/mitchellh/colorstring"
 	"go.uber.org/zap"
 	"golang.org/x/time/rate"
 	appsv1 "k8s.io/api/apps/v1"
@@ -943,7 +942,7 @@ func (ts *tester) waitDeployment() error {
 		return fmt.Errorf("'kubectl describe deployment' failed %v", err)
 	}
 	out := string(output)
-	colorstring.Printf("\n\n\"[light_green]kubectl describe deployment[default]\" output:\n%s\n\n", out)
+	fmt.Printf("\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
 
 	initialWait := 2*time.Minute + time.Duration(ts.cfg.EKSConfig.AddOnIRSA.DeploymentReplicas)*3*time.Second
 	if initialWait > 10*time.Minute {
