@@ -487,6 +487,10 @@ func (ts *Tester) Up() (err error) {
 	defer func() {
 		colorstring.Printf("\n\n\n[light_green]Up.defer start [default](%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 
+		if serr := ts.uploadToS3(); serr != nil {
+			ts.lg.Warn("failed to upload artifacts to S3", zap.Error(serr))
+		}
+
 		if err == nil {
 			if ts.cfg.Status.Up {
 				colorstring.Printf("\n\n[light_green]kubectl [default](%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
@@ -928,6 +932,9 @@ func (ts *Tester) down() (err error) {
 		zap.String("name", ts.cfg.Name),
 		zap.String("cluster-arn", ts.cfg.Status.ClusterARN),
 	)
+	if serr := ts.uploadToS3(); serr != nil {
+		ts.lg.Warn("failed to upload artifacts to S3", zap.Error(serr))
+	}
 
 	defer func() {
 		ts.cfg.Sync()
