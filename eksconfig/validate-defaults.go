@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -48,6 +49,11 @@ var DefaultConfig = Config{
 
 	OnFailureDelete:            true,
 	OnFailureDeleteWaitSeconds: 120,
+
+	S3BucketName:                    "aws-k8s-tester-eks-s3-bucket",
+	S3BucketCreate:                  true,
+	S3BucketDelete:                  false,
+	S3BucketLifecycleExpirationDays: 0,
 
 	Parameters: &Parameters{
 		RoleCreate:          true,
@@ -162,15 +168,7 @@ func NewDefault() *Config {
 	if name := os.Getenv(EnvironmentVariablePrefix + "NAME"); name != "" {
 		vv.Name = name
 	} else {
-		now := time.Now()
-		vv.Name = fmt.Sprintf(
-			"eks-%d%02d%02d%02d-%s",
-			now.Year(),
-			int(now.Month()),
-			now.Day(),
-			now.Hour(),
-			randString(12),
-		)
+		vv.Name = fmt.Sprintf("eks-%s-%s", getTS()[:10], randString(12))
 	}
 
 	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
@@ -357,6 +355,24 @@ func (cfg *Config) validateConfig() error {
 		}
 		ss[0] = p
 		cfg.CommandAfterCreateAddOns = strings.Join(ss, " ")
+	}
+
+	switch cfg.S3BucketCreate {
+	case true: // need create one, or already created
+		if cfg.S3BucketName == "" {
+			cfg.S3BucketName = cfg.Name + "-s3-bucket"
+		}
+		if cfg.S3BucketLifecycleExpirationDays > 0 && cfg.S3BucketLifecycleExpirationDays < 3 {
+			cfg.S3BucketLifecycleExpirationDays = 3
+		}
+
+	case false: // use existing one
+		if cfg.S3BucketName == "" {
+			return errors.New("S3BucketCreate false to use existing one but empty S3BucketName")
+		}
+		if cfg.S3BucketDelete {
+			return errors.New("S3BucketCreate false to use existing one but S3BucketDelete true; error to prevent accidental S3 bucket delete")
+		}
 	}
 
 	return nil
@@ -826,11 +842,8 @@ func (cfg *Config) validateAddOnIRSA() error {
 	if cfg.AddOnIRSA.ConfigMapScriptFileName == "" {
 		cfg.AddOnIRSA.ConfigMapScriptFileName = cfg.Name + "-irsa-configmap.sh"
 	}
-	if cfg.AddOnIRSA.S3BucketName == "" {
-		cfg.AddOnIRSA.S3BucketName = cfg.Name + "-irsa-s3-bucket"
-	}
 	if cfg.AddOnIRSA.S3Key == "" {
-		cfg.AddOnIRSA.S3Key = cfg.Name + "-irsa-s3-key"
+		cfg.AddOnIRSA.S3Key = path.Join(cfg.Name, "irsa-s3-key")
 	}
 	if cfg.AddOnIRSA.DeploymentName == "" {
 		cfg.AddOnIRSA.DeploymentName = cfg.Name + "-irsa-deployment"
@@ -936,4 +949,16 @@ func getNameFromARN(arn string) string {
 		arn = ss[len(ss)-1]
 	}
 	return arn
+}
+
+func getTS() string {
+	now := time.Now()
+	return fmt.Sprintf(
+		"%04d%02d%02d%02d%02d",
+		now.Year(),
+		int(now.Month()),
+		now.Day(),
+		now.Hour(),
+		now.Second(),
+	)
 }

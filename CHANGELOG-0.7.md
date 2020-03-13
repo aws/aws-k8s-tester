@@ -13,8 +13,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.4...v0.7.5
 - Add [`ASGsFetchLogs`](https://github.com/aws/aws-k8s-tester/commit/8ee120834bf615f7ec2e94cb2a1d973c88472eb6).
 - Rename [`LogsDir` to `ASGsLogsDir`](https://github.com/aws/aws-k8s-tester/commit/8ee120834bf615f7ec2e94cb2a1d973c88472eb6).
 - Add [`ASG.InstallSSM` field](https://github.com/aws/aws-k8s-tester/commit/c3f431d325b26784acd9b33d66bd73605e6c1efb).
-- Add [`ASG.SSMDocument*` field](https://github.com/aws/aws-k8s-tester/commit/).
-- Add [`S3Bucket*` fields](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`ASG.SSMDocument*` field](https://github.com/aws/aws-k8s-tester/commit/d0de15c2da992a1915928d685788ad0ad1debad1).
+- Add [`S3Bucket*` fields](https://github.com/aws/aws-k8s-tester/commit/d0de15c2da992a1915928d685788ad0ad1debad1).
 
 ### `ec2`
 
@@ -23,6 +23,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.4...v0.7.5
 - Create [ASG and launch configuration in a separate CFN stack](https://github.com/aws/aws-k8s-tester/commit/c3f431d325b26784acd9b33d66bd73605e6c1efb).
 - Support [`bottlerocket` AMIs](https://github.com/aws/aws-k8s-tester/commit/).
   - See https://github.com/bottlerocket-os/bottlerocket.
+- Support [SSM document command](https://github.com/aws/aws-k8s-tester/commit/).
+- Support [S3 bucket creation](https://github.com/aws/aws-k8s-tester/commit/).
 
 ### `eksconfig`
 
@@ -38,6 +40,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.4...v0.7.5
 - Add [`AddOnAppMesh`](https://github.com/aws/aws-k8s-tester/pull/81).
   - Enable AppMesh add-on with `AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_ENABLE=true`.
 - Support [custom worker node AMI](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`S3Bucket*` fields](https://github.com/aws/aws-k8s-tester/commit/).
 
 ### `eks`
 
@@ -47,6 +50,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.4...v0.7.5
 - Move [remote access key creation/deletion function from `eks/mng` to `eks`](https://github.com/aws/aws-k8s-tester/commit/d110238d6ba93300d3109f2925bcc6a5cd254ad0).
 - Remove [unused IAM policy creation/deletion function](https://github.com/aws/aws-k8s-tester/commit/21ea5769a46b9a2ecd5cac041570d4bc1d1d62d1).
 - Fix [key creation](https://github.com/aws/aws-k8s-tester/commit/61487a22279956c2575affaf1c97896474ce475e).
+- Support [S3 bucket creation](https://github.com/aws/aws-k8s-tester/commit/).
 
 ### Dependency
 

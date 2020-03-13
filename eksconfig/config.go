@@ -73,6 +73,15 @@ type Config struct {
 	CommandAfterCreateAddOns           string `json:"command-after-create-add-ons,omitempty"`
 	CommandAfterCreateAddOnsOutputPath string `json:"command-after-create-add-ons-output-path,omitempty" read-only:"true"`
 
+	// S3BucketName is the name of cluster S3.
+	S3BucketName string `json:"s3-bucket-name"`
+	// S3BucketCreate is true to auto-create S3 bucket.
+	S3BucketCreate bool `json:"s3-bucket-create"`
+	// S3BucketDelete is true to delete auto-created S3 bucket.
+	S3BucketDelete bool `json:"s3-bucket-delete"`
+	// S3BucketLifecycleExpirationDays is expiration in days for the lifecycle of the object
+	S3BucketLifecycleExpirationDays int64 `json:"s3-bucket-lifecycle-expiration-days"`
+
 	// Parameters defines EKS "cluster" creation parameters.
 	// It's ok to leave any parameters empty.
 	// If empty, it will use default values.
@@ -592,8 +601,6 @@ type AddOnIRSA struct {
 	ConfigMapName string `json:"config-map-name"`
 	// ConfigMapScriptFileName is the ConfigMap script name.
 	ConfigMapScriptFileName string `json:"config-map-script-file-name"`
-	// S3BucketName is the S3 bucket for IRSA tests.
-	S3BucketName string `json:"s3-bucket-name"`
 	// S3Key is the S3 key to write for IRSA tests.
 	S3Key string `json:"s3-key"`
 

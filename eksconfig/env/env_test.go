@@ -48,6 +48,14 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_CLUSTER")
 	os.Setenv("AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_ADD_ONS", "echo hello2")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_ADD_ONS")
+	os.Setenv("AWS_K8S_TESTER_EKS_S3_BUCKET_NAME", `my-bucket`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_S3_BUCKET_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_S3_BUCKET_CREATE", `false`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_S3_BUCKET_CREATE")
+	os.Setenv("AWS_K8S_TESTER_EKS_S3_BUCKET_DELETE", `false`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_S3_BUCKET_DELETE")
+	os.Setenv("AWS_K8S_TESTER_EKS_S3_BUCKET_LIFECYCLE_EXPIRATION_DAYS", `10`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_S3_BUCKET_LIFECYCLE_EXPIRATION_DAYS")
 
 	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CREATE", "false")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CREATE")
@@ -308,6 +316,19 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.CommandAfterCreateAddOns != "echo hello2" {
 		t.Fatalf("unexpected CommandAfterCreateAddOns %q", cfg.CommandAfterCreateAddOns)
+	}
+
+	if cfg.S3BucketName != "my-bucket" {
+		t.Fatalf("unexpected cfg.S3BucketName %q", cfg.S3BucketName)
+	}
+	if cfg.S3BucketCreate {
+		t.Fatalf("unexpected cfg.S3BucketCreate %v", cfg.S3BucketCreate)
+	}
+	if cfg.S3BucketDelete {
+		t.Fatalf("unexpected cfg.S3BucketDelete %v", cfg.S3BucketDelete)
+	}
+	if cfg.S3BucketLifecycleExpirationDays != 10 {
+		t.Fatalf("unexpected cfg.S3BucketLifecycleExpirationDays %d", cfg.S3BucketLifecycleExpirationDays)
 	}
 
 	if cfg.Parameters.VPCCreate {
@@ -641,9 +662,6 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.AddOnIRSA.ConfigMapScriptFileName != "hello.sh" {
 		t.Fatalf("unexpected cfg.AddOnIRSA.ConfigMapScriptFileName %q", cfg.AddOnIRSA.ConfigMapScriptFileName)
-	}
-	if cfg.AddOnIRSA.S3BucketName != "hello" {
-		t.Fatalf("unexpected cfg.AddOnIRSA.S3BucketName %q", cfg.AddOnIRSA.S3BucketName)
 	}
 	if cfg.AddOnIRSA.S3Key != "hello" {
 		t.Fatalf("unexpected cfg.AddOnIRSA.S3Key %q", cfg.AddOnIRSA.S3Key)
