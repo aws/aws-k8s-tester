@@ -70,7 +70,7 @@ func (ts *Tester) createS3() (err error) {
 }
 
 func (ts *Tester) createBucket() (bool, error) {
-	if ts.cfg.S3BucketCreate {
+	if !ts.cfg.S3BucketCreate {
 		ts.lg.Info("skipping S3 bucket creation", zap.String("name", ts.cfg.S3BucketName))
 		return false, nil
 	}
