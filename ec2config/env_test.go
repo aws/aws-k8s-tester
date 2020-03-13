@@ -17,8 +17,6 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EC2_S3_BUCKET_NAME")
 	os.Setenv("AWS_K8S_TESTER_EC2_S3_BUCKET_CREATE", `false`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EC2_S3_BUCKET_CREATE")
-	os.Setenv("AWS_K8S_TESTER_EC2_S3_BUCKET_DELETE", `false`)
-	defer os.Unsetenv("AWS_K8S_TESTER_EC2_S3_BUCKET_DELETE")
 	os.Setenv("AWS_K8S_TESTER_EC2_S3_BUCKET_LIFECYCLE_EXPIRATION_DAYS", `10`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EC2_S3_BUCKET_LIFECYCLE_EXPIRATION_DAYS")
 	os.Setenv("AWS_K8S_TESTER_EC2_ROLE_CREATE", `false`)
@@ -53,9 +51,6 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.S3BucketCreate {
 		t.Fatalf("unexpected cfg.S3BucketCreate %v", cfg.S3BucketCreate)
-	}
-	if cfg.S3BucketDelete {
-		t.Fatalf("unexpected cfg.S3BucketDelete %v", cfg.S3BucketDelete)
 	}
 	if cfg.S3BucketLifecycleExpirationDays != 10 {
 		t.Fatalf("unexpected cfg.S3BucketLifecycleExpirationDays %d", cfg.S3BucketLifecycleExpirationDays)

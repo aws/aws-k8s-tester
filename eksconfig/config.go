@@ -77,8 +77,6 @@ type Config struct {
 	S3BucketName string `json:"s3-bucket-name"`
 	// S3BucketCreate is true to auto-create S3 bucket.
 	S3BucketCreate bool `json:"s3-bucket-create"`
-	// S3BucketDelete is true to delete auto-created S3 bucket.
-	S3BucketDelete bool `json:"s3-bucket-delete"`
 	// S3BucketLifecycleExpirationDays is expiration in days for the lifecycle of the object
 	S3BucketLifecycleExpirationDays int64 `json:"s3-bucket-lifecycle-expiration-days"`
 

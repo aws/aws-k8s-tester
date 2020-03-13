@@ -154,7 +154,7 @@ func (ts *Tester) createBucket() (bool, error) {
 }
 
 func (ts *Tester) deleteS3() error {
-	if !ts.cfg.S3BucketDelete {
+	if !ts.cfg.S3BucketCreate {
 		ts.lg.Info("skipping S3 bucket deletion")
 		return nil
 	}

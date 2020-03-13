@@ -52,7 +52,6 @@ var DefaultConfig = Config{
 
 	S3BucketName:                    "aws-k8s-tester-eks-s3-bucket",
 	S3BucketCreate:                  true,
-	S3BucketDelete:                  false,
 	S3BucketLifecycleExpirationDays: 0,
 
 	Parameters: &Parameters{
@@ -369,9 +368,6 @@ func (cfg *Config) validateConfig() error {
 	case false: // use existing one
 		if cfg.S3BucketName == "" {
 			return errors.New("S3BucketCreate false to use existing one but empty S3BucketName")
-		}
-		if cfg.S3BucketDelete {
-			return errors.New("S3BucketCreate false to use existing one but S3BucketDelete true; error to prevent accidental S3 bucket delete")
 		}
 	}
 
