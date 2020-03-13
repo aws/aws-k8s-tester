@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
@@ -283,7 +284,7 @@ func (ts *Tester) sendSSMDocumentCommand() error {
 				"executionTimeoutSeconds": aws.StringSlice([]string{fmt.Sprintf("%d", asg.SSMDocumentExecutionTimeoutSeconds)}),
 			},
 			OutputS3BucketName: aws.String(ts.cfg.S3BucketName),
-			OutputS3KeyPrefix:  aws.String(ts.cfg.Name),
+			OutputS3KeyPrefix:  aws.String(path.Join(ts.cfg.Name, "ssm-outputs")),
 		}
 		if len(asg.SSMDocumentCommands) > 0 {
 			ssmInput.Parameters["moreCommands"] = aws.StringSlice([]string{asg.SSMDocumentCommands})
