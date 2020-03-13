@@ -281,8 +281,8 @@ func (ts *Tester) sendSSMDocumentCommand() error {
 				"region":                  aws.StringSlice([]string{ts.cfg.Region}),
 				"executionTimeoutSeconds": aws.StringSlice([]string{fmt.Sprintf("%d", asg.SSMDocumentExecutionTimeoutSeconds)}),
 			},
-			OutputS3BucketName: aws.String(""),
-			OutputS3KeyPrefix:  aws.String(""),
+			OutputS3BucketName: aws.String(ts.cfg.S3BucketName),
+			OutputS3KeyPrefix:  aws.String(ts.cfg.Name),
 		})
 		if err != nil {
 			return err
