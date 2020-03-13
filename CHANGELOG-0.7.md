@@ -25,8 +25,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.4...v0.7.5
 - Support [`bottlerocket` AMIs](https://github.com/aws/aws-k8s-tester/commit/).
   - See https://github.com/bottlerocket-os/bottlerocket.
 - Support [SSM document command](https://github.com/aws/aws-k8s-tester/commit/b72c06301f61bc9424baae34ae59b1ebbac1e44c).
+  - Require [S3 managed policy in IAM role for SSM output uploads](https://github.com/aws/aws-k8s-tester/commit/000766975c8636390fa88ed95c41522b7f8c9247).
 - Support [S3 bucket creation](https://github.com/aws/aws-k8s-tester/commit/b72c06301f61bc9424baae34ae59b1ebbac1e44c).
 - Upload [test artifacts to S3 bucket](https://github.com/aws/aws-k8s-tester/commit/372aeb1ac12566f5213667133c1bdc7b85926487).
+  - Require [S3 managed policy in IAM role for SSM output uploads](https://github.com/aws/aws-k8s-tester/commit/000766975c8636390fa88ed95c41522b7f8c9247).
 
 ### `eksconfig`
 
@@ -55,6 +57,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.4...v0.7.5
 - Fix [key creation](https://github.com/aws/aws-k8s-tester/commit/61487a22279956c2575affaf1c97896474ce475e).
 - Support [S3 bucket creation](https://github.com/aws/aws-k8s-tester/commit/dc906341d1254cd2d89588f388efbe93c0a53c3d).
 - Upload [test artifacts to S3 bucket](https://github.com/aws/aws-k8s-tester/commit/b8467a95f28131efe859c5580e5e89d9639a50a3).
+  - Require [S3 managed policy in IAM role](https://github.com/aws/aws-k8s-tester/commit/000766975c8636390fa88ed95c41522b7f8c9247).
 - Support [custom worker node AMI](https://github.com/aws/aws-k8s-tester/commit/).
 
 ### Dependency
