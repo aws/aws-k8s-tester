@@ -39,7 +39,7 @@ Parameters:
 
   ManagedNodeGroupRoleManagedPolicyARNs:
     Type: CommaDelimitedList
-    Default: 'arn:aws:iam::aws:policy/AmazonEKSServicePolicy,arn:aws:iam::aws:policy/AmazonEKSClusterPolicy,arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy,arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy,arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly,arn:aws:iam::aws:policy/ElasticLoadBalancingFullAccess,arn:aws:iam::aws:policy/AmazonEKSFargatePodExecutionRolePolicy'
+    Default: 'arn:aws:iam::aws:policy/AmazonEKSServicePolicy,arn:aws:iam::aws:policy/AmazonEKSClusterPolicy,arn:aws:iam::aws:policy/AmazonSSMFullAccess,arn:aws:iam::aws:policy/AmazonS3FullAccess,arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy,arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy,arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly,arn:aws:iam::aws:policy/ElasticLoadBalancingFullAccess,arn:aws:iam::aws:policy/AmazonEKSFargatePodExecutionRolePolicy'
     Description: EKS Managed Node Group managed policy ARNs
 
 Resources:
@@ -194,6 +194,8 @@ func (ts *tester) createRole() error {
 			"arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy",
 			"arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy",
 			"arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
+			"arn:aws:iam::aws:policy/AmazonSSMFullAccess",
+			"arn:aws:iam::aws:policy/AmazonS3FullAccess",
 		}
 		if ts.cfg.EKSConfig.IsAddOnNLBHelloWorldEnabled() ||
 			ts.cfg.EKSConfig.IsAddOnALB2048Enabled() {
