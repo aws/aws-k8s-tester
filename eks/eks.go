@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/aws/aws-k8s-tester/eks/appmesh"
 	"io/ioutil"
 	"os"
 	"os/signal"
@@ -16,6 +15,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/eks/alb"
+	"github.com/aws/aws-k8s-tester/eks/appmesh"
 	"github.com/aws/aws-k8s-tester/eks/cronjobs"
 	"github.com/aws/aws-k8s-tester/eks/fargate"
 	"github.com/aws/aws-k8s-tester/eks/gpu"
@@ -563,6 +563,17 @@ func (ts *Tester) Up() (err error) {
 	)
 	defer ts.cfg.Sync()
 
+	colorstring.Printf("\n\n\n[light_green]createS3 [default](%q)\n", ts.cfg.ConfigPath)
+	if err := catchInterrupt(
+		ts.lg,
+		ts.stopCreationCh,
+		ts.stopCreationChOnce,
+		ts.interruptSig,
+		ts.createS3,
+	); err != nil {
+		return err
+	}
+
 	colorstring.Printf("\n\n\n[light_green]createEncryption [default](%q)\n", ts.cfg.ConfigPath)
 	if err := catchInterrupt(
 		ts.lg,
@@ -1097,6 +1108,12 @@ func (ts *Tester) down() (err error) {
 	colorstring.Printf("\n\n\n[light_green]deleteVPC [default](%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteVPC(); err != nil {
 		ts.lg.Warn("deleteVPC failed", zap.Error(err))
+		errs = append(errs, err.Error())
+	}
+
+	colorstring.Printf("\n\n\n[light_green]deleteS3 [default](%q)\n", ts.cfg.ConfigPath)
+	if err := ts.deleteS3(); err != nil {
+		ts.lg.Warn("deleteS3 failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 

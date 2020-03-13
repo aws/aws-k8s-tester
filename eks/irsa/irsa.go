@@ -10,7 +10,6 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"text/template"
 	"time"
@@ -21,14 +20,12 @@ import (
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/cloudformation/cloudformationiface"
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/aws/aws-sdk-go/service/iam/iamiface"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/mitchellh/colorstring"
 	"go.uber.org/zap"
 	"golang.org/x/time/rate"
@@ -187,25 +184,8 @@ func (ts *tester) Delete() error {
 }
 
 func (ts *tester) createS3() (err error) {
-	var retry bool
-	for i := 0; i < 5; i++ {
-		retry, err = ts.createBucket()
-		if err == nil {
-			break
-		}
-		if retry {
-			ts.cfg.Logger.Warn("failed to create bucket; retrying", zap.Error(err))
-			time.Sleep(5 * time.Second)
-			continue
-		}
-		return err
-	}
-	if err != nil {
-		return err
-	}
-
 	_, err = ts.cfg.S3API.PutObject(&s3.PutObjectInput{
-		Bucket:  aws.String(ts.cfg.EKSConfig.AddOnIRSA.S3BucketName),
+		Bucket:  aws.String(ts.cfg.EKSConfig.S3BucketName),
 		Key:     aws.String(ts.cfg.EKSConfig.AddOnIRSA.S3Key),
 		Body:    bytes.NewReader(randBytes(1024)),
 		Expires: aws.Time(time.Now().Add(24 * time.Hour)),
@@ -220,12 +200,12 @@ func (ts *tester) createS3() (err error) {
 	})
 	if err == nil {
 		ts.cfg.Logger.Info("uploaded",
-			zap.String("bucket", ts.cfg.EKSConfig.AddOnIRSA.S3BucketName),
+			zap.String("bucket", ts.cfg.EKSConfig.S3BucketName),
 			zap.String("remote-path", ts.cfg.EKSConfig.AddOnIRSA.S3Key),
 		)
 	} else {
 		ts.cfg.Logger.Warn("failed to upload",
-			zap.String("bucket", ts.cfg.EKSConfig.AddOnIRSA.S3BucketName),
+			zap.String("bucket", ts.cfg.EKSConfig.S3BucketName),
 			zap.String("remote-path", ts.cfg.EKSConfig.AddOnIRSA.S3Key),
 			zap.Error(err),
 		)
@@ -233,130 +213,25 @@ func (ts *tester) createS3() (err error) {
 	return ts.cfg.EKSConfig.Sync()
 }
 
-func (ts *tester) createBucket() (bool, error) {
-	ts.cfg.Logger.Info("creating S3 bucket", zap.String("name", ts.cfg.EKSConfig.AddOnIRSA.S3BucketName))
-	_, err := ts.cfg.S3API.CreateBucket(&s3.CreateBucketInput{
-		Bucket: aws.String(ts.cfg.EKSConfig.AddOnIRSA.S3BucketName),
-		CreateBucketConfiguration: &s3.CreateBucketConfiguration{
-			LocationConstraint: aws.String(ts.cfg.EKSConfig.Region),
-		},
-		// https://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html#canned-acl
-		// vs. "public-read"
-		ACL: aws.String("private"),
-	})
-	alreadyExist := false
-	if err != nil {
-		// https://docs.aws.amazon.com/AWSEC2/latest/APIReference/errors-overview.html
-		if aerr, ok := err.(awserr.Error); ok {
-			switch aerr.Code() {
-			case s3.ErrCodeBucketAlreadyExists:
-				ts.cfg.Logger.Warn("bucket already exists", zap.String("bucket", ts.cfg.EKSConfig.AddOnIRSA.S3BucketName), zap.Error(err))
-				alreadyExist, err = true, nil
-			case s3.ErrCodeBucketAlreadyOwnedByYou:
-				ts.cfg.Logger.Warn("bucket already owned by me", zap.String("bucket", ts.cfg.EKSConfig.AddOnIRSA.S3BucketName), zap.Error(err))
-				alreadyExist, err = true, nil
-			default:
-				if strings.Contains(err.Error(), "OperationAborted: A conflicting conditional operation is currently in progress against this resource. Please try again.") ||
-					request.IsErrorRetryable(err) ||
-					request.IsErrorThrottle(err) {
-					return true, err
-				}
-				ts.cfg.Logger.Warn("failed to create bucket", zap.String("bucket", ts.cfg.EKSConfig.AddOnIRSA.S3BucketName), zap.String("code", aerr.Code()), zap.Error(err))
-				return false, err
-			}
-		}
-		if !alreadyExist {
-			ts.cfg.Logger.Warn("failed to create bucket", zap.String("bucket", ts.cfg.EKSConfig.AddOnIRSA.S3BucketName), zap.String("type", reflect.TypeOf(err).String()), zap.Error(err))
-			return false, err
-		}
-	}
-	if alreadyExist {
-		return false, nil
-	}
-	ts.cfg.Logger.Info("created S3 bucket", zap.String("bucket", ts.cfg.EKSConfig.AddOnIRSA.S3BucketName))
-
-	_, err = ts.cfg.S3API.PutBucketTagging(&s3.PutBucketTaggingInput{
-		Bucket: aws.String(ts.cfg.EKSConfig.AddOnIRSA.S3BucketName),
-		Tagging: &s3.Tagging{TagSet: []*s3.Tag{
-			{Key: aws.String("Kind"), Value: aws.String("aws-k8s-tester")},
-			{Key: aws.String("Creation"), Value: aws.String(time.Now().String())},
-		}},
-	})
-	if err != nil {
-		return true, err
-	}
-
-	days := int64(3)
-	_, err = ts.cfg.S3API.PutBucketLifecycle(&s3.PutBucketLifecycleInput{
-		Bucket: aws.String(ts.cfg.EKSConfig.AddOnIRSA.S3BucketName),
-		LifecycleConfiguration: &s3.LifecycleConfiguration{
-			Rules: []*s3.Rule{
-				{
-					Prefix: aws.String(ts.cfg.EKSConfig.AddOnIRSA.S3Key),
-					AbortIncompleteMultipartUpload: &s3.AbortIncompleteMultipartUpload{
-						DaysAfterInitiation: aws.Int64(days),
-					},
-					Expiration: &s3.LifecycleExpiration{
-						Days: aws.Int64(days),
-					},
-					ID:     aws.String(fmt.Sprintf("ObjectLifecycleOf%vDays", days)),
-					Status: aws.String("Enabled"),
-				},
-			},
-		},
-	})
-	if err != nil {
-		return true, err
-	}
-
-	return false, ts.cfg.EKSConfig.Sync()
-}
-
 func (ts *tester) deleteS3() error {
-	ts.cfg.Logger.Info("emptying bucket", zap.String("bucket", ts.cfg.EKSConfig.AddOnIRSA.S3BucketName))
-	batcher := s3manager.NewBatchDeleteWithClient(ts.cfg.S3API)
-	iter := &s3manager.DeleteListIterator{
-		Bucket: aws.String(ts.cfg.EKSConfig.AddOnIRSA.S3BucketName),
-		Paginator: request.Pagination{
-			NewRequest: func() (*request.Request, error) {
-				req, _ := ts.cfg.S3API.ListObjectsRequest(&s3.ListObjectsInput{
-					Bucket: aws.String(ts.cfg.EKSConfig.AddOnIRSA.S3BucketName),
-				})
-				return req, nil
-			},
-		},
-	}
-	err := batcher.Delete(aws.BackgroundContext(), iter)
-	if err != nil { // https://docs.aws.amazon.com/AWSEC2/latest/APIReference/errors-overview.html
-		if aerr, ok := err.(awserr.Error); ok {
-			switch aerr.Code() {
-			case s3.ErrCodeNoSuchBucket:
-				ts.cfg.Logger.Info("no such bucket", zap.String("bucket", ts.cfg.EKSConfig.AddOnIRSA.S3BucketName), zap.Error(err))
-				return nil
-			}
-		}
-		ts.cfg.Logger.Warn("failed to empty bucket", zap.String("bucket", ts.cfg.EKSConfig.AddOnIRSA.S3BucketName), zap.Error(err))
-		return err
-	}
-	ts.cfg.Logger.Info("emptied bucket", zap.String("bucket", ts.cfg.EKSConfig.AddOnIRSA.S3BucketName))
-
-	ts.cfg.Logger.Info("deleting bucket", zap.String("bucket", ts.cfg.EKSConfig.AddOnIRSA.S3BucketName))
-	_, err = ts.cfg.S3API.DeleteBucket(&s3.DeleteBucketInput{
-		Bucket: aws.String(ts.cfg.EKSConfig.AddOnIRSA.S3BucketName),
+	s3Key := ts.cfg.EKSConfig.AddOnIRSA.S3Key
+	_, err := ts.cfg.S3API.DeleteObject(&s3.DeleteObjectInput{
+		Bucket: aws.String(ts.cfg.EKSConfig.S3BucketName),
+		Key:    aws.String(s3Key),
 	})
-	if err != nil {
-		if aerr, ok := err.(awserr.Error); ok {
-			switch aerr.Code() {
-			case s3.ErrCodeNoSuchBucket:
-				ts.cfg.Logger.Info("no such bucket", zap.String("bucket", ts.cfg.EKSConfig.AddOnIRSA.S3BucketName), zap.Error(err))
-				return nil
-			}
-		}
-		ts.cfg.Logger.Warn("failed to delete bucket", zap.String("bucket", ts.cfg.EKSConfig.AddOnIRSA.S3BucketName), zap.Error(err))
+	if err == nil {
+		ts.cfg.Logger.Info("deleted the private key in S3",
+			zap.String("bucket", ts.cfg.EKSConfig.S3BucketName),
+			zap.String("remote-path", s3Key),
+		)
+	} else {
+		ts.cfg.Logger.Warn("failed to delete the private key in S3",
+			zap.String("bucket", ts.cfg.EKSConfig.S3BucketName),
+			zap.String("remote-path", s3Key),
+			zap.Error(err),
+		)
 	}
-
-	ts.cfg.Logger.Info("deleted bucket", zap.String("bucket", ts.cfg.EKSConfig.AddOnIRSA.S3BucketName))
-	return nil
+	return err
 }
 
 func (ts *tester) createNamespace() error {
@@ -781,7 +656,7 @@ func (ts *tester) createConfigMap() error {
 	buf := bytes.NewBuffer(nil)
 	if err := tpl.Execute(buf, configMapTemplate{
 		RoleName:     ts.cfg.EKSConfig.AddOnIRSA.RoleName,
-		S3BucketName: ts.cfg.EKSConfig.AddOnIRSA.S3BucketName,
+		S3BucketName: ts.cfg.EKSConfig.S3BucketName,
 		S3Key:        ts.cfg.EKSConfig.AddOnIRSA.S3Key,
 		SleepMessage: sleepMsg,
 	}); err != nil {

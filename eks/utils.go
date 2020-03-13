@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	"os"
 	"reflect"
@@ -99,4 +100,15 @@ func httpReadInsecure(lg *zap.Logger, u string, wr io.Writer) error {
 		)
 	}
 	return err
+}
+
+const ll = "0123456789abcdefghijklmnopqrstuvwxyz"
+
+func randString(n int) string {
+	b := make([]byte, n)
+	for i := range b {
+		rand.Seed(time.Now().UnixNano())
+		b[i] = ll[rand.Intn(len(ll))]
+	}
+	return string(b)
 }
