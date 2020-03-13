@@ -59,6 +59,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.4...v0.7.5
 - Upload [test artifacts to S3 bucket](https://github.com/aws/aws-k8s-tester/commit/b8467a95f28131efe859c5580e5e89d9639a50a3).
   - Require [S3 managed policy in IAM role](https://github.com/aws/aws-k8s-tester/commit/000766975c8636390fa88ed95c41522b7f8c9247).
 - Support [custom worker node AMI](https://github.com/aws/aws-k8s-tester/commit/).
+  - See [`24661b9f7` for the initial commit](https://github.com/aws/aws-k8s-tester/commit/24661b9f78897d3f360c7b5b033bb7365bb8c1f3).
 
 ### Dependency
 
