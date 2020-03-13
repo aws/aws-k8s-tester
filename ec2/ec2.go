@@ -129,13 +129,13 @@ func New(cfg *ec2config.Config) (*Tester, error) {
 // Up should provision a new cluster for testing
 func (ts *Tester) Up() (err error) {
 	fmt.Printf("\n#################################\n")
-	ts.lg.Sugar().Infof("Up (%q)", ts.cfg.ConfigPath)
+	ts.lg.Sugar().Infof("Up (%s)", ts.cfg.ConfigPath)
 
 	now := time.Now()
 
 	defer func() {
 		fmt.Printf("\n#################################\n")
-		ts.lg.Sugar().Infof("Up.defer start (%q)", ts.cfg.ConfigPath)
+		ts.lg.Sugar().Infof("Up.defer start (%s)", ts.cfg.ConfigPath)
 
 		if serr := ts.uploadToS3(); serr != nil {
 			ts.lg.Warn("failed to upload artifacts to S3", zap.Error(serr))
@@ -144,7 +144,7 @@ func (ts *Tester) Up() (err error) {
 		if err == nil {
 			if ts.cfg.Up {
 				fmt.Printf("\n#################################\n")
-				ts.lg.Sugar().Infof("SSH (%q)", ts.cfg.ConfigPath)
+				ts.lg.Sugar().Infof("SSH (%s)", ts.cfg.ConfigPath)
 				fmt.Println(ts.cfg.SSHCommands())
 
 				ts.lg.Info("Up succeeded",
@@ -152,7 +152,7 @@ func (ts *Tester) Up() (err error) {
 				)
 
 				fmt.Printf("\n#################################\n")
-				ts.lg.Sugar().Infof("Up.defer end (%q)", ts.cfg.ConfigPath)
+				ts.lg.Sugar().Infof("Up.defer end (%s)", ts.cfg.ConfigPath)
 				fmt.Printf("\n\n😁 😁 :) Up success\n\n\n")
 			} else {
 				fmt.Printf("\n\n😲 😲 aborted Up ???\n\n\n")
@@ -163,7 +163,7 @@ func (ts *Tester) Up() (err error) {
 		if !ts.cfg.OnFailureDelete {
 			if ts.cfg.Up {
 				fmt.Printf("\n#################################\n")
-				ts.lg.Sugar().Infof("SSH (%q)", ts.cfg.ConfigPath)
+				ts.lg.Sugar().Infof("SSH (%s)", ts.cfg.ConfigPath)
 				fmt.Println(ts.cfg.SSHCommands())
 			}
 
@@ -173,14 +173,14 @@ func (ts *Tester) Up() (err error) {
 			)
 
 			fmt.Printf("\n#################################\n")
-			ts.lg.Sugar().Infof("Up.defer end (%q)", ts.cfg.ConfigPath)
+			ts.lg.Sugar().Infof("Up.defer end (%s)", ts.cfg.ConfigPath)
 			fmt.Printf("\n\n😱 ☹ 😡 (-_-) Up fail\n\n\n")
 			return
 		}
 
 		if ts.cfg.Up {
 			fmt.Printf("\n#################################\n")
-			ts.lg.Sugar().Infof("SSH (%q)", ts.cfg.ConfigPath)
+			ts.lg.Sugar().Infof("SSH (%s)", ts.cfg.ConfigPath)
 			fmt.Println(ts.cfg.SSHCommands())
 		}
 
@@ -209,7 +209,7 @@ func (ts *Tester) Up() (err error) {
 		}
 
 		fmt.Printf("\n#################################\n")
-		ts.lg.Sugar().Infof("Up.defer end (%q)", ts.cfg.ConfigPath)
+		ts.lg.Sugar().Infof("Up.defer end (%s)", ts.cfg.ConfigPath)
 		fmt.Printf("\n\n😱 ☹ 😡 (-_-) Up fail\n\n\n")
 	}()
 
