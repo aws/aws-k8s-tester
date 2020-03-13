@@ -329,7 +329,8 @@ func (ts *Tester) Down() error {
 }
 
 func (ts *Tester) down() (err error) {
-	fmt.Printf("\n\n\nDown start (%q)\n\n", ts.cfg.ConfigPath)
+	fmt.Printf("\n#################################\n")
+	fmt.Printf("Down start (%q)\n\n", ts.cfg.ConfigPath)
 
 	now := time.Now()
 	ts.lg.Warn("starting Down",
@@ -342,7 +343,8 @@ func (ts *Tester) down() (err error) {
 	defer func() {
 		ts.cfg.Sync()
 		if err == nil {
-			fmt.Printf("\n\n\nDown.defer end (%q)\n\n", ts.cfg.ConfigPath)
+			fmt.Printf("\n#################################\n")
+			fmt.Printf("Down.defer end (%q)\n\n", ts.cfg.ConfigPath)
 			fmt.Printf("\n\n😁 😁 :) Down success\n\n\n")
 
 			ts.lg.Info("successfully finished Down",
@@ -350,7 +352,8 @@ func (ts *Tester) down() (err error) {
 			)
 
 		} else {
-			fmt.Printf("\n\n\nDown.defer end (%q)\n\n", ts.cfg.ConfigPath)
+			fmt.Printf("\n#################################\n")
+			fmt.Printf("Down.defer end (%q)\n\n", ts.cfg.ConfigPath)
 			fmt.Printf("\n\n😱 ☹ 😡 (-_-) Down fail\n\n\n")
 
 			ts.lg.Info("failed Down",
@@ -362,31 +365,36 @@ func (ts *Tester) down() (err error) {
 
 	var errs []string
 
-	fmt.Printf("\n\n\ndeleteSSM (%q)\n", ts.cfg.ConfigPath)
+	fmt.Printf("\n#################################\n")
+	fmt.Printf("deleteSSM (%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteSSM(); err != nil {
 		ts.lg.Warn("deleteSSM failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 
-	fmt.Printf("\n\n\ndeleteASGs (%q)\n", ts.cfg.ConfigPath)
+	fmt.Printf("\n#################################\n")
+	fmt.Printf("deleteASGs (%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteASGs(); err != nil {
 		ts.lg.Warn("deleteASGs failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 
-	fmt.Printf("\n\n\ndeleteLaunchConfiguration (%q)\n", ts.cfg.ConfigPath)
+	fmt.Printf("\n#################################\n")
+	fmt.Printf("deleteLaunchConfiguration (%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteLaunchConfiguration(); err != nil {
 		ts.lg.Warn("deleteLaunchConfiguration failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 
-	fmt.Printf("\n\n\ndeleteKeyPair (%q)\n", ts.cfg.ConfigPath)
+	fmt.Printf("\n#################################\n")
+	fmt.Printf("deleteKeyPair (%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteKeyPair(); err != nil {
 		ts.lg.Warn("deleteKeyPair failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 
-	fmt.Printf("\n\n\ndeleteRole (%q)\n", ts.cfg.ConfigPath)
+	fmt.Printf("\n#################################\n")
+	fmt.Printf("deleteRole (%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteRole(); err != nil {
 		ts.lg.Warn("deleteRole failed", zap.Error(err))
 		errs = append(errs, err.Error())
@@ -398,13 +406,15 @@ func (ts *Tester) down() (err error) {
 		time.Sleep(waitDur)
 	}
 
-	fmt.Printf("\n\n\ndeleteVPC (%q)\n", ts.cfg.ConfigPath)
+	fmt.Printf("\n#################################\n")
+	fmt.Printf("deleteVPC (%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteVPC(); err != nil {
 		ts.lg.Warn("deleteVPC failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 
-	fmt.Printf("\n\n\ndeleteS3 (%q)\n", ts.cfg.ConfigPath)
+	fmt.Printf("\n#################################\n")
+	fmt.Printf("deleteS3 (%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteS3(); err != nil {
 		ts.lg.Warn("deleteS3 failed", zap.Error(err))
 		errs = append(errs, err.Error())
