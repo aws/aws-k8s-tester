@@ -156,7 +156,7 @@ func (ts *Tester) createSSMDocument() error {
 			ts.cfnAPI,
 			asg.SSMDocumentCFNStackID,
 			cloudformation.ResourceStatusCreateComplete,
-			2*time.Minute,
+			time.Minute,
 			30*time.Second,
 		)
 		var st awscfn.StackStatus
@@ -224,7 +224,7 @@ func (ts *Tester) deleteSSMDocument() error {
 			ts.cfnAPI,
 			asg.SSMDocumentCFNStackID,
 			cloudformation.ResourceStatusDeleteComplete,
-			2*time.Minute,
+			time.Minute,
 			20*time.Second,
 		)
 		var st awscfn.StackStatus
