@@ -44,7 +44,7 @@ var DefaultConfig = Config{
 	// https://github.com/kubernetes/kubernetes/tags
 	// https://kubernetes.io/docs/tasks/tools/install-kubectl/
 	// https://docs.aws.amazon.com/eks/latest/userguide/install-kubectl.html
-	KubectlDownloadURL: "https://storage.googleapis.com/kubernetes-release/release/v1.14.10/bin/linux/amd64/kubectl",
+	KubectlDownloadURL: "https://storage.googleapis.com/kubernetes-release/release/v1.15.11/bin/linux/amd64/kubectl",
 	KubectlPath:        "/tmp/kubectl-test-1.14.10",
 
 	OnFailureDelete:            true,
