@@ -75,9 +75,9 @@ func NewDefault() *Config {
 			SSMDocumentCreate:                  false,
 			SSMDocumentCommands:                "",
 			SSMDocumentExecutionTimeoutSeconds: 3600,
-			MinSize:                            1,
-			MaxSize:                            1,
-			DesiredCapacity:                    1,
+			ASGMinSize:                         1,
+			ASGMaxSize:                         1,
+			ASGDesiredCapacity:                 1,
 		},
 	}
 
@@ -312,17 +312,17 @@ func (cfg *Config) validateASGs() error {
 			return fmt.Errorf("ASGs[%q].Name %q is redundant", k, v.Name)
 		}
 
-		if v.MinSize > v.MaxSize {
-			return fmt.Errorf("ASGs[%q].ASGMinSize %d > ASGMaxSize %d", k, v.MinSize, v.MaxSize)
+		if v.ASGMinSize > v.ASGMaxSize {
+			return fmt.Errorf("ASGs[%q].ASGMinSize %d > ASGMaxSize %d", k, v.ASGMinSize, v.ASGMaxSize)
 		}
-		if v.DesiredCapacity > v.MaxSize {
-			return fmt.Errorf("ASGs[%q].DesiredCapacity %d > ASGMaxSize %d", k, v.DesiredCapacity, v.MaxSize)
+		if v.ASGDesiredCapacity > v.ASGMaxSize {
+			return fmt.Errorf("ASGs[%q].ASGDesiredCapacity %d > ASGMaxSize %d", k, v.ASGDesiredCapacity, v.ASGMaxSize)
 		}
-		if v.MaxSize > ASGMaxLimit {
-			return fmt.Errorf("ASGs[%q].ASGMaxSize %d > ASGMaxLimit %d", k, v.MaxSize, ASGMaxLimit)
+		if v.ASGMaxSize > ASGMaxLimit {
+			return fmt.Errorf("ASGs[%q].ASGMaxSize %d > ASGMaxLimit %d", k, v.ASGMaxSize, ASGMaxLimit)
 		}
-		if v.DesiredCapacity > ASGMaxLimit {
-			return fmt.Errorf("ASGs[%q].DesiredCapacity %d > ASGMaxLimit %d", k, v.DesiredCapacity, ASGMaxLimit)
+		if v.ASGDesiredCapacity > ASGMaxLimit {
+			return fmt.Errorf("ASGs[%q].ASGDesiredCapacity %d > ASGMaxLimit %d", k, v.ASGDesiredCapacity, ASGMaxLimit)
 		}
 
 		switch v.SSMDocumentCreate {

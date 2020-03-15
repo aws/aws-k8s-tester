@@ -50,21 +50,21 @@ Parameters:
     Type: String
     Description: EC2 public subnet ID
 
-  MinSize:
+  ASGMinSize:
     Type: Number
     Description: Minimum size auto scaling group
     Default: 1
     MinValue: 1
     MaxValue: 1000
 
-  MaxSize:
+  ASGMaxSize:
     Type: Number
     Description: Maximum size auto scaling group
     Default: 1
     MinValue: 1
     MaxValue: 1000
 
-  DesiredCapacity:
+  ASGDesiredCapacity:
     Type: Number
     Description: Desired size auto scaling group
     Default: 1
@@ -85,7 +85,7 @@ Resources:
     Type: AWS::AutoScaling::AutoScalingGroup
     UpdatePolicy:
       AutoScalingRollingUpdate:
-        MinInstancesInService: !Ref DesiredCapacity
+        MinInstancesInService: !Ref ASGDesiredCapacity
         MaxBatchSize: 1
         SuspendProcesses:
         - HealthCheck
@@ -95,9 +95,9 @@ Resources:
         - ScheduledActions
     Properties:
       AutoScalingGroupName: !Ref AutoScalingGroupName
-      MinSize: !Ref MinSize
-      MaxSize: !Ref MaxSize
-      DesiredCapacity: !Ref DesiredCapacity
+      MinSize: !Ref ASGMinSize
+      MaxSize: !Ref ASGMaxSize
+      DesiredCapacity: !Ref ASGDesiredCapacity
       VPCZoneIdentifier:
       - !Ref PublicSubnetID1
       - !Ref PublicSubnetID2
@@ -171,25 +171,25 @@ func (ts *Tester) createASGs() error {
 				},
 			},
 		}
-		if asg.MinSize > 0 {
-			ts.lg.Info("added min size", zap.Int64("min-size", asg.MinSize))
+		if asg.ASGMinSize > 0 {
+			ts.lg.Info("added min size", zap.Int64("min-size", asg.ASGMinSize))
 			stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
-				ParameterKey:   aws.String("MinSize"),
-				ParameterValue: aws.String(fmt.Sprintf("%d", asg.MinSize)),
+				ParameterKey:   aws.String("ASGMinSize"),
+				ParameterValue: aws.String(fmt.Sprintf("%d", asg.ASGMinSize)),
 			})
 		}
-		if asg.MaxSize > 0 {
-			ts.lg.Info("added max size", zap.Int64("max-size", asg.MaxSize))
+		if asg.ASGMaxSize > 0 {
+			ts.lg.Info("added max size", zap.Int64("max-size", asg.ASGMaxSize))
 			stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
-				ParameterKey:   aws.String("MaxSize"),
-				ParameterValue: aws.String(fmt.Sprintf("%d", asg.MaxSize)),
+				ParameterKey:   aws.String("ASGMaxSize"),
+				ParameterValue: aws.String(fmt.Sprintf("%d", asg.ASGMaxSize)),
 			})
 		}
-		if asg.DesiredCapacity > 0 {
-			ts.lg.Info("added desired size", zap.Int64("desired-capacity", asg.DesiredCapacity))
+		if asg.ASGDesiredCapacity > 0 {
+			ts.lg.Info("added desired size", zap.Int64("desired-capacity", asg.ASGDesiredCapacity))
 			stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
-				ParameterKey:   aws.String("DesiredCapacity"),
-				ParameterValue: aws.String(fmt.Sprintf("%d", asg.DesiredCapacity)),
+				ParameterKey:   aws.String("ASGDesiredCapacity"),
+				ParameterValue: aws.String(fmt.Sprintf("%d", asg.ASGDesiredCapacity)),
 			})
 		}
 		stackOutput, err := ts.cfnAPI.CreateStack(stackInput)
@@ -273,7 +273,9 @@ func (ts *Tester) createASGs() error {
 		}
 		asg.Instances = make(map[string]ec2config.Instance)
 		for id, vv := range ec2Instances {
-			asg.Instances[id] = ec2config.ConvertInstance(vv)
+			ivv := ec2config.ConvertInstance(vv)
+			ivv.RemoteAccessUserName = ts.cfg.RemoteAccessUserName
+			asg.Instances[id] = ivv
 		}
 		ts.cfg.ASGs[asgName] = asg
 		ts.cfg.RecordStatus(fmt.Sprintf("%q/%s", asgName, cloudformation.ResourceStatusCreateComplete))

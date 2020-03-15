@@ -39,7 +39,7 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EC2_ASGS_FETCH_LOGS")
 	os.Setenv("AWS_K8S_TESTER_EC2_ASGS_LOGS_DIR", "hello")
 	defer os.Unsetenv("AWS_K8S_TESTER_EC2_ASGS_LOGS_DIR")
-	os.Setenv("AWS_K8S_TESTER_EC2_ASGS", `{"test-asg":{"name":"test-asg","ssm-document-create":true,"ssm-document-name":"my-doc","ssm-document-command-id":"no","ssm-document-cfn-stack-id":"invalid","ssm-document-commands":"echo 123; echo 456;","ssm-document-execution-timeout-in-seconds":10,"launch-configuration-name":"aaa","image-id":"123","image-id-ssm-parameter":"777","asg-launch-configuration-cfn-stack-id":"none","asg-cfn-stack-id":"bbb","install-ssm":false,"min-size":30,"max-size":30,"desired-capacity":30,"volume-size":120,"instance-type":"c5.xlarge"}}`)
+	os.Setenv("AWS_K8S_TESTER_EC2_ASGS", `{"test-asg":{"name":"test-asg","ssm-document-create":true,"ssm-document-name":"my-doc","ssm-document-command-id":"no","ssm-document-cfn-stack-id":"invalid","ssm-document-commands":"echo 123; echo 456;","ssm-document-execution-timeout-in-seconds":10,"launch-configuration-name":"aaa","image-id":"123","image-id-ssm-parameter":"777","asg-launch-configuration-cfn-stack-id":"none","asg-cfn-stack-id":"bbb","install-ssm":false,"asg-min-size":30,"asg-max-size":30,"asg-desired-capacity":30,"volume-size":120,"instance-type":"c5.xlarge"}}`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EC2_ASGS")
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
@@ -98,9 +98,9 @@ func TestEnv(t *testing.T) {
 			SSMDocumentExecutionTimeoutSeconds: 10,
 			ImageID:                            "123",
 			ImageIDSSMParameter:                "777",
-			MinSize:                            30,
-			MaxSize:                            30,
-			DesiredCapacity:                    30,
+			ASGMinSize:                         30,
+			ASGMaxSize:                         30,
+			ASGDesiredCapacity:                 30,
 			InstanceType:                       "c5.xlarge",
 			VolumeSize:                         120,
 		},

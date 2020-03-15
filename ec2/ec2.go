@@ -67,7 +67,7 @@ type Tester struct {
 func New(cfg *ec2config.Config) (*Tester, error) {
 	fmt.Println("😎 🙏")
 	fmt.Println(version.Version())
-	fmt.Printf("\n#################################\n")
+	fmt.Printf("\n*********************************\n")
 	fmt.Printf("New %q\n", cfg.ConfigPath)
 	if err := cfg.ValidateAndSetDefaults(); err != nil {
 		return nil, err
@@ -128,13 +128,13 @@ func New(cfg *ec2config.Config) (*Tester, error) {
 
 // Up should provision a new cluster for testing
 func (ts *Tester) Up() (err error) {
-	fmt.Printf("\n#################################\n")
+	fmt.Printf("\n*********************************\n")
 	ts.lg.Sugar().Infof("Up (%s)", ts.cfg.ConfigPath)
 
 	now := time.Now()
 
 	defer func() {
-		fmt.Printf("\n#################################\n")
+		fmt.Printf("\n*********************************\n")
 		ts.lg.Sugar().Infof("Up.defer start (%s)", ts.cfg.ConfigPath)
 
 		if serr := ts.uploadToS3(); serr != nil {
@@ -143,7 +143,7 @@ func (ts *Tester) Up() (err error) {
 
 		if err == nil {
 			if ts.cfg.Up {
-				fmt.Printf("\n#################################\n")
+				fmt.Printf("\n*********************************\n")
 				ts.lg.Sugar().Infof("SSH (%s)", ts.cfg.ConfigPath)
 				fmt.Println(ts.cfg.SSHCommands())
 
@@ -151,7 +151,7 @@ func (ts *Tester) Up() (err error) {
 					zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 				)
 
-				fmt.Printf("\n#################################\n")
+				fmt.Printf("\n*********************************\n")
 				ts.lg.Sugar().Infof("Up.defer end (%s)", ts.cfg.ConfigPath)
 				fmt.Printf("\n\n😁 😁 :) Up success\n\n\n")
 			} else {
@@ -162,7 +162,7 @@ func (ts *Tester) Up() (err error) {
 
 		if !ts.cfg.OnFailureDelete {
 			if ts.cfg.Up {
-				fmt.Printf("\n#################################\n")
+				fmt.Printf("\n*********************************\n")
 				ts.lg.Sugar().Infof("SSH (%s)", ts.cfg.ConfigPath)
 				fmt.Println(ts.cfg.SSHCommands())
 			}
@@ -172,19 +172,19 @@ func (ts *Tester) Up() (err error) {
 				zap.Error(err),
 			)
 
-			fmt.Printf("\n#################################\n")
+			fmt.Printf("\n*********************************\n")
 			ts.lg.Sugar().Infof("Up.defer end (%s)", ts.cfg.ConfigPath)
 			fmt.Printf("\n\n😱 ☹ 😡 (-_-) Up fail\n\n\n")
 			return
 		}
 
 		if ts.cfg.Up {
-			fmt.Printf("\n#################################\n")
+			fmt.Printf("\n*********************************\n")
 			ts.lg.Sugar().Infof("SSH (%s)", ts.cfg.ConfigPath)
 			fmt.Println(ts.cfg.SSHCommands())
 		}
 
-		fmt.Printf("\n#################################\n")
+		fmt.Printf("\n*********************************\n")
 		fmt.Printf("😱 ☹ 😡 (-_-) Up fail\n")
 		ts.lg.Warn("Up failed; reverting resource creation",
 			zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
@@ -208,7 +208,7 @@ func (ts *Tester) Up() (err error) {
 			ts.lg.Warn("reverted Up")
 		}
 
-		fmt.Printf("\n#################################\n")
+		fmt.Printf("\n*********************************\n")
 		ts.lg.Sugar().Infof("Up.defer end (%s)", ts.cfg.ConfigPath)
 		fmt.Printf("\n\n😱 ☹ 😡 (-_-) Up fail\n\n\n")
 	}()
@@ -219,7 +219,7 @@ func (ts *Tester) Up() (err error) {
 	)
 	defer ts.cfg.Sync()
 
-	fmt.Printf("\n#################################\n")
+	fmt.Printf("\n*********************************\n")
 	fmt.Printf("createS3 (%q)\n", ts.cfg.ConfigPath)
 	if err := catchInterrupt(
 		ts.lg,
@@ -231,7 +231,7 @@ func (ts *Tester) Up() (err error) {
 		return err
 	}
 
-	fmt.Printf("\n#################################\n")
+	fmt.Printf("\n*********************************\n")
 	fmt.Printf("createRole (%q)\n", ts.cfg.ConfigPath)
 	if err := catchInterrupt(
 		ts.lg,
@@ -243,7 +243,7 @@ func (ts *Tester) Up() (err error) {
 		return err
 	}
 
-	fmt.Printf("\n#################################\n")
+	fmt.Printf("\n*********************************\n")
 	fmt.Printf("createVPC (%q)\n", ts.cfg.ConfigPath)
 	if err := catchInterrupt(
 		ts.lg,
@@ -255,7 +255,7 @@ func (ts *Tester) Up() (err error) {
 		return err
 	}
 
-	fmt.Printf("\n#################################\n")
+	fmt.Printf("\n*********************************\n")
 	fmt.Printf("createKeyPair (%q)\n", ts.cfg.ConfigPath)
 	if err := catchInterrupt(
 		ts.lg,
@@ -267,7 +267,7 @@ func (ts *Tester) Up() (err error) {
 		return err
 	}
 
-	fmt.Printf("\n#################################\n")
+	fmt.Printf("\n*********************************\n")
 	fmt.Printf("createLaunchConfiguration (%q)\n", ts.cfg.ConfigPath)
 	if err := catchInterrupt(
 		ts.lg,
@@ -279,7 +279,7 @@ func (ts *Tester) Up() (err error) {
 		return err
 	}
 
-	fmt.Printf("\n#################################\n")
+	fmt.Printf("\n*********************************\n")
 	fmt.Printf("createASGs (%q)\n", ts.cfg.ConfigPath)
 	if err := catchInterrupt(
 		ts.lg,
@@ -291,7 +291,7 @@ func (ts *Tester) Up() (err error) {
 		return err
 	}
 
-	fmt.Printf("\n#################################\n")
+	fmt.Printf("\n*********************************\n")
 	fmt.Printf("createSSM (%q)\n", ts.cfg.ConfigPath)
 	if err := catchInterrupt(
 		ts.lg,
@@ -304,7 +304,7 @@ func (ts *Tester) Up() (err error) {
 	}
 
 	if ts.cfg.ASGsFetchLogs {
-		fmt.Printf("\n#################################\n")
+		fmt.Printf("\n*********************************\n")
 		fmt.Printf("FetchLogs (%q)\n", ts.cfg.ConfigPath)
 		waitDur := 20 * time.Second
 		ts.lg.Info("sleeping before FetchLogs", zap.Duration("wait", waitDur))
@@ -331,7 +331,7 @@ func (ts *Tester) Down() error {
 }
 
 func (ts *Tester) down() (err error) {
-	fmt.Printf("\n#################################\n")
+	fmt.Printf("\n*********************************\n")
 	fmt.Printf("Down start (%q)\n\n", ts.cfg.ConfigPath)
 
 	now := time.Now()
@@ -345,7 +345,7 @@ func (ts *Tester) down() (err error) {
 	defer func() {
 		ts.cfg.Sync()
 		if err == nil {
-			fmt.Printf("\n#################################\n")
+			fmt.Printf("\n*********************************\n")
 			fmt.Printf("Down.defer end (%q)\n\n", ts.cfg.ConfigPath)
 			fmt.Printf("\n\n😁 😁 :) Down success\n\n\n")
 
@@ -354,7 +354,7 @@ func (ts *Tester) down() (err error) {
 			)
 
 		} else {
-			fmt.Printf("\n#################################\n")
+			fmt.Printf("\n*********************************\n")
 			fmt.Printf("Down.defer end (%q)\n\n", ts.cfg.ConfigPath)
 			fmt.Printf("\n\n😱 ☹ 😡 (-_-) Down fail\n\n\n")
 
@@ -367,35 +367,35 @@ func (ts *Tester) down() (err error) {
 
 	var errs []string
 
-	fmt.Printf("\n#################################\n")
+	fmt.Printf("\n*********************************\n")
 	fmt.Printf("deleteSSM (%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteSSM(); err != nil {
 		ts.lg.Warn("deleteSSM failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 
-	fmt.Printf("\n#################################\n")
+	fmt.Printf("\n*********************************\n")
 	fmt.Printf("deleteASGs (%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteASGs(); err != nil {
 		ts.lg.Warn("deleteASGs failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 
-	fmt.Printf("\n#################################\n")
+	fmt.Printf("\n*********************************\n")
 	fmt.Printf("deleteLaunchConfiguration (%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteLaunchConfiguration(); err != nil {
 		ts.lg.Warn("deleteLaunchConfiguration failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 
-	fmt.Printf("\n#################################\n")
+	fmt.Printf("\n*********************************\n")
 	fmt.Printf("deleteKeyPair (%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteKeyPair(); err != nil {
 		ts.lg.Warn("deleteKeyPair failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 
-	fmt.Printf("\n#################################\n")
+	fmt.Printf("\n*********************************\n")
 	fmt.Printf("deleteRole (%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteRole(); err != nil {
 		ts.lg.Warn("deleteRole failed", zap.Error(err))
@@ -408,14 +408,14 @@ func (ts *Tester) down() (err error) {
 		time.Sleep(waitDur)
 	}
 
-	fmt.Printf("\n#################################\n")
+	fmt.Printf("\n*********************************\n")
 	fmt.Printf("deleteVPC (%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteVPC(); err != nil {
 		ts.lg.Warn("deleteVPC failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 
-	fmt.Printf("\n#################################\n")
+	fmt.Printf("\n*********************************\n")
 	fmt.Printf("deleteS3 (%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteS3(); err != nil {
 		ts.lg.Warn("deleteS3 failed", zap.Error(err))

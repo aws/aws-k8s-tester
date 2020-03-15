@@ -217,12 +217,12 @@ type ASG struct {
 	// a volume size, the default is the snapshot size.
 	VolumeSize int64 `json:"volume-size"`
 
-	// MinSize is the minimum size of ASG.
-	MinSize int64 `json:"min-size,omitempty"`
-	// MaxSize is the maximum size of ASG.
-	MaxSize int64 `json:"max-size,omitempty"`
-	// DesiredCapacity is the desired capacity of ASG.
-	DesiredCapacity int64 `json:"desired-capacity,omitempty"`
+	// ASGMinSize is the minimum size of ASG.
+	ASGMinSize int64 `json:"asg-min-size,omitempty"`
+	// ASGMaxSize is the maximum size of ASG.
+	ASGMaxSize int64 `json:"asg-max-size,omitempty"`
+	// ASGDesiredCapacity is the desired capacity of ASG.
+	ASGDesiredCapacity int64 `json:"asg-desired-capacity,omitempty"`
 
 	// Instances is a map from instance ID to instance.
 	Instances map[string]Instance `json:"instanaces" read-only:"true"`
@@ -232,24 +232,25 @@ type ASG struct {
 
 // Instance represents an EC2 instance.
 type Instance struct {
-	ImageID             string               `json:"image-id"`
-	InstanceID          string               `json:"instance-id"`
-	InstanceType        string               `json:"instance-type"`
-	KeyName             string               `json:"key-name"`
-	Placement           Placement            `json:"placement"`
-	PrivateDNSName      string               `json:"private-dns-name"`
-	PrivateIP           string               `json:"private-ip"`
-	PublicDNSName       string               `json:"public-dns-name"`
-	PublicIP            string               `json:"public-ip"`
-	State               State                `json:"state"`
-	SubnetID            string               `json:"subnet-id"`
-	VPCID               string               `json:"vpc-id"`
-	BlockDeviceMappings []BlockDeviceMapping `json:"block-device-mappings"`
-	EBSOptimized        bool                 `json:"ebs-optimized"`
-	RootDeviceName      string               `json:"root-device-name"`
-	RootDeviceType      string               `json:"root-device-type"`
-	SecurityGroups      []SecurityGroup      `json:"security-groups"`
-	LaunchTime          time.Time            `json:"launch-time"`
+	ImageID              string               `json:"image-id"`
+	InstanceID           string               `json:"instance-id"`
+	InstanceType         string               `json:"instance-type"`
+	KeyName              string               `json:"key-name"`
+	Placement            Placement            `json:"placement"`
+	PrivateDNSName       string               `json:"private-dns-name"`
+	PrivateIP            string               `json:"private-ip"`
+	PublicDNSName        string               `json:"public-dns-name"`
+	PublicIP             string               `json:"public-ip"`
+	State                State                `json:"state"`
+	SubnetID             string               `json:"subnet-id"`
+	VPCID                string               `json:"vpc-id"`
+	BlockDeviceMappings  []BlockDeviceMapping `json:"block-device-mappings"`
+	EBSOptimized         bool                 `json:"ebs-optimized"`
+	RootDeviceName       string               `json:"root-device-name"`
+	RootDeviceType       string               `json:"root-device-type"`
+	SecurityGroups       []SecurityGroup      `json:"security-groups"`
+	LaunchTime           time.Time            `json:"launch-time"`
+	RemoteAccessUserName string               `json:"remote-access-user-name"`
 }
 
 // Placement defines EC2 placement.
