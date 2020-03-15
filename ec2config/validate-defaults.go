@@ -43,7 +43,6 @@ var DefaultConfig = Config{
 	VPCCreate:                  true,
 	RemoteAccessKeyCreate:      true,
 	RemoteAccessPrivateKeyPath: filepath.Join(homedir.HomeDir(), ".ssh", "ec2_aws_rsa"),
-	RemoteAccessUserName:       "ec2-user", // for AL2
 
 	ASGsFetchLogs: true,
 }
@@ -70,11 +69,14 @@ func NewDefault() *Config {
 		vv.Name + "-asg": ASG{
 			Name:                               vv.Name + "-asg",
 			LaunchConfigurationName:            vv.Name + "-asg-launch-config",
-			InstallSSM:                         true,
+			RemoteAccessUserName:               "ec2-user", // for AL2
 			SSMDocumentName:                    vv.Name + "SSMDocument",
 			SSMDocumentCreate:                  false,
 			SSMDocumentCommands:                "",
 			SSMDocumentExecutionTimeoutSeconds: 3600,
+			AMIType:                            AMITypeAL2X8664,
+			InstanceType:                       DefaultNodeInstanceTypeCPU,
+			VolumeSize:                         DefaultNodeVolumeSize,
 			ASGMinSize:                         1,
 			ASGMaxSize:                         1,
 			ASGDesiredCapacity:                 1,
@@ -83,13 +85,6 @@ func NewDefault() *Config {
 
 	return &vv
 }
-
-const (
-	// ASGsMaxLimit is the maximum number of "Managed Node Group"s per a EKS cluster.
-	ASGsMaxLimit = 10
-	// ASGMaxLimit is the maximum number of nodes per a "Managed Node Group".
-	ASGMaxLimit = 100
-)
 
 // ValidateAndSetDefaults returns an error for invalid configurations.
 // And updates empty fields with default values.
@@ -310,6 +305,27 @@ func (cfg *Config) validateASGs() error {
 			names[v.Name] = struct{}{}
 		} else {
 			return fmt.Errorf("ASGs[%q].Name %q is redundant", k, v.Name)
+		}
+
+		if v.VolumeSize == 0 {
+			v.VolumeSize = DefaultNodeVolumeSize
+		}
+		if v.RemoteAccessUserName == "" {
+			v.RemoteAccessUserName = "ec2-user"
+		}
+
+		switch v.AMIType {
+		case AMITypeBottleRocketCPU,
+			AMITypeAL2X8664:
+			if len(v.InstanceType) == 0 {
+				v.InstanceType = DefaultNodeInstanceTypeCPU
+			}
+		case AMITypeAL2X8664GPU:
+			if len(v.InstanceType) == 0 {
+				v.InstanceType = DefaultNodeInstanceTypeGPU
+			}
+		default:
+			return fmt.Errorf("unknown ASGs[%q].AMIType %q", k, v.AMIType)
 		}
 
 		if v.ASGMinSize > v.ASGMaxSize {

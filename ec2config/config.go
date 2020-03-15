@@ -13,6 +13,29 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+const (
+	// AMITypeBottleRocketCPU is the AMI type for Bottlerocket OS.
+	// https://github.com/bottlerocket-os/bottlerocket
+	AMITypeBottleRocketCPU = "BOTTLEROCKET_x86_64"
+	// AMITypeAL2X8664 is the AMI type for Amazon Linux 2 AMI.
+	AMITypeAL2X8664 = "AL2_x86_64"
+	// AMITypeAL2X8664GPU is the AMI type for Amazon Linux 2 AMI with GPU.
+	AMITypeAL2X8664GPU = "AL2_x86_64_GPU"
+
+	// DefaultNodeInstanceTypeCPU is the default EC2 instance type for CPU worker node.
+	DefaultNodeInstanceTypeCPU = "c5.xlarge"
+	// DefaultNodeInstanceTypeGPU is the default EC2 instance type for GPU worker node.
+	DefaultNodeInstanceTypeGPU = "p3.8xlarge"
+
+	// DefaultNodeVolumeSize is the default EC2 instance volume size for a worker node.
+	DefaultNodeVolumeSize = 40
+
+	// ASGsMaxLimit is the maximum number of "Managed Node Group"s per a EKS cluster.
+	ASGsMaxLimit = 10
+	// ASGMaxLimit is the maximum number of nodes per a "Managed Node Group".
+	ASGMaxLimit = 100
+)
+
 // Config defines EC2 configuration.
 type Config struct {
 	mu sync.RWMutex
@@ -121,8 +144,6 @@ type Config struct {
 	RemoteAccessKeyName string `json:"remote-access-key-name"`
 	// RemoteAccessPrivateKeyPath is the remote SSH access private key path.
 	RemoteAccessPrivateKeyPath string `json:"remote-access-private-key-path"`
-	// RemoteAccessUserName is the user name used for running init scripts or SSH access.
-	RemoteAccessUserName string `json:"remote-access-user-name"`
 	// RemoteAccessCommandsOutputPath is the output path for ssh commands.
 	RemoteAccessCommandsOutputPath string `json:"remote-access-commands-output-path,omitempty"`
 
@@ -179,11 +200,11 @@ type ASG struct {
 	// LaunchConfigurationName is the name of the ASG launch configuration.
 	LaunchConfigurationName string `json:"launch-configuration-name"`
 
+	// RemoteAccessUserName is the user name used for running init scripts or SSH access.
+	RemoteAccessUserName string `json:"remote-access-user-name"`
+
 	ASGLaunchConfigurationCFNStackID string `json:"asg-launch-configuration-cfn-stack-id" read-only:"true"`
 	ASGCFNStackID                    string `json:"asg-cfn-stack-id" read-only:"true"`
-
-	// InstallSSM is true to install SSM in launch configuration.
-	InstallSSM bool `json:"install-ssm"`
 
 	// SSMDocumentName is the name of SSM document.
 	SSMDocumentName string `json:"ssm-document-name"`
@@ -197,6 +218,11 @@ type ASG struct {
 	SSMDocumentCFNStackID              string `json:"ssm-document-cfn-stack-id" read-only:"true"`
 	SSMDocumentCommandID               string `json:"ssm-document-command-id" read-only:"true"`
 
+	// AMIType is the AMI type for the node group.
+	// Allowed values are BOTTLEROCKET_x86_64, AL2_x86_64 and AL2_x86_64_GPU.
+	// ref. https://docs.aws.amazon.com/eks/latest/userguide/launch-workers.html
+	// ref. https://github.com/awslabs/amazon-eks-ami/blob/master/amazon-eks-nodegroup.yaml
+	AMIType string `json:"ami-type,omitempty"`
 	// ImageID is the Amazon Machine Image (AMI).
 	// This value overrides any AWS Systems Manager Parameter Store value.
 	ImageID string `json:"image-id"`
@@ -375,7 +401,7 @@ func (cfg *Config) unsafeSSHCommands() (s string) {
 	buf := bytes.NewBuffer(nil)
 	for name, asg := range cfg.ASGs {
 		buf.WriteString("ASG name \"" + name + "\":\n")
-		buf.WriteString(asg.SSHCommands(cfg.Region, cfg.RemoteAccessPrivateKeyPath, cfg.RemoteAccessUserName))
+		buf.WriteString(asg.SSHCommands(cfg.Region, cfg.RemoteAccessPrivateKeyPath, asg.RemoteAccessUserName))
 		buf.WriteString("\n")
 	}
 	return buf.String()
