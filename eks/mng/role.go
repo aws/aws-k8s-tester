@@ -182,7 +182,7 @@ Resources:
 
 Outputs:
 
-  ManagedNodeGroupRoleARN:
+  RoleARN:
     Value: !GetAtt ManagedNodeGroupRole.Arn
     Description: The node instance role ARN
 
@@ -197,8 +197,8 @@ func (ts *tester) createRole() error {
 			"arn:aws:iam::aws:policy/AmazonSSMFullAccess",
 			"arn:aws:iam::aws:policy/AmazonS3FullAccess",
 		}
-		if ts.cfg.EKSConfig.IsAddOnNLBHelloWorldEnabled() ||
-			ts.cfg.EKSConfig.IsAddOnALB2048Enabled() {
+		if ts.cfg.EKSConfig.IsEnabledAddOnNLBHelloWorld() ||
+			ts.cfg.EKSConfig.IsEnabledAddOnALB2048() {
 			policyARNs = append(policyARNs, "arn:aws:iam::aws:policy/ElasticLoadBalancingFullAccess")
 		}
 		ts.cfg.Logger.Info("EKSConfig.AddOnManagedNodeGroups.RoleCreate false; skipping creation")
@@ -291,7 +291,7 @@ func (ts *tester) createRole() error {
 
 	for _, o := range st.Stack.Outputs {
 		switch k := aws.StringValue(o.OutputKey); k {
-		case "ManagedNodeGroupRoleARN":
+		case "RoleARN":
 			ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleARN = aws.StringValue(o.OutputValue)
 		default:
 			return fmt.Errorf("unexpected OutputKey %q from %q", k, ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleCFNStackID)

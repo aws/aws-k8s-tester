@@ -30,7 +30,7 @@ var logCmds = map[string]string{
 
 // FetchLogs downloads logs from managed node group instances.
 func (ts *tester) FetchLogs() (err error) {
-	if !ts.cfg.EKSConfig.IsAddOnManagedNodeGroupsEnabled() {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnManagedNodeGroups() {
 		return nil
 	}
 	if !ts.cfg.EKSConfig.AddOnManagedNodeGroups.FetchLogs {
@@ -90,7 +90,7 @@ func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 					KeyPath:       ts.cfg.EKSConfig.RemoteAccessPrivateKeyPath,
 					PublicIP:      iv.PublicIP,
 					PublicDNSName: iv.PublicDNSName,
-					UserName:      ts.cfg.EKSConfig.AddOnManagedNodeGroups.RemoteAccessUserName,
+					UserName:      iv.RemoteAccessUserName,
 				})
 				if err != nil {
 					rch <- instanceLogs{mngName: name, errs: []string{err.Error()}}

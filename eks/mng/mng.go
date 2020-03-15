@@ -45,27 +45,27 @@ Description: 'Amazon EKS Cluster Managed Node Group'
 
 Parameters:
 
+  Name:
+    Type: String
+    Description: Unique identifier for the Node Group.
+
   ClusterName:
     Type: String
     Description: The cluster name provided when the cluster was created. If it is incorrect, nodes will not be able to join the cluster.
 
-  ManagedNodeGroupRoleARN:
+  RoleARN:
     Type: String
     Description: The ARN of the node instance role
-
-  ManagedNodeGroupName:
-    Type: String
-    Description: Unique identifier for the Node Group.
 
   PublicSubnetIDs:
     Type: List<AWS::EC2::Subnet::Id>
     Description: The public subnet IDs where workers can be created.
 
-  ManagedNodeGroupRemoteAccessKeyName:
+  RemoteAccessKeyName:
     Type: AWS::EC2::KeyPair::KeyName
     Description: Amazon EC2 Key Pair
 
-  ManagedNodeGroupAMIType:
+  AMIType:
     Type: String
     Default: AL2_x86_64
     AllowedValues:
@@ -73,27 +73,27 @@ Parameters:
     - AL2_x86_64_GPU
     Description: AMI type for your node group
 
-  ManagedNodeGroupASGMinSize:
+  ASGMinSize:
     Type: Number
     Default: 2
     Description: Minimum size of Node Group Auto Scaling Group.
 
-  ManagedNodeGroupASGMaxSize:
+  ASGMaxSize:
     Type: Number
     Default: 2
-    Description: Maximum size of Node Group Auto Scaling Group. Set to at least 1 greater than ManagedNodeGroupASGDesiredCapacity.
+    Description: Maximum size of Node Group Auto Scaling Group. Set to at least 1 greater than ASGDesiredCapacity.
 
-  ManagedNodeGroupASGDesiredCapacity:
+  ASGDesiredCapacity:
     Type: Number
     Default: 2
     Description: Desired capacity of Node Group Auto Scaling Group.
 
-  ManagedNodeGroupInstanceTypes:
+  InstanceTypes:
     Type: CommaDelimitedList
     Default: c5.xlarge
     Description: EC2 instance types for the node instances
 
-  ManagedNodeGroupVolumeSize:
+  VolumeSize:
     Type: Number
     Default: 40
     Description: Node volume size
@@ -104,20 +104,20 @@ Resources:
     Type: AWS::EKS::Nodegroup
     Properties:
       ClusterName: !Ref ClusterName
-      NodegroupName: !Ref ManagedNodeGroupName
-      NodeRole: !Ref ManagedNodeGroupRoleARN
-      AmiType: !Ref ManagedNodeGroupAMIType
-      DiskSize: !Ref ManagedNodeGroupVolumeSize
-      InstanceTypes: !Ref ManagedNodeGroupInstanceTypes
+      NodegroupName: !Ref Name
+      NodeRole: !Ref RoleARN
+      AmiType: !Ref AMIType
+      DiskSize: !Ref VolumeSize
+      InstanceTypes: !Ref InstanceTypes
       RemoteAccess:
-        Ec2SshKey: !Ref ManagedNodeGroupRemoteAccessKeyName
+        Ec2SshKey: !Ref RemoteAccessKeyName
       ScalingConfig:
-        MinSize: !Ref ManagedNodeGroupASGMinSize
-        MaxSize: !Ref ManagedNodeGroupASGMaxSize
-        DesiredSize: !Ref ManagedNodeGroupASGDesiredCapacity
+        MinSize: !Ref ASGMinSize
+        MaxSize: !Ref ASGMaxSize
+        DesiredSize: !Ref ASGDesiredCapacity
       Subnets: !Ref PublicSubnetIDs
       Labels:
-        Name: !Ref ManagedNodeGroupName
+        Name: !Ref Name
 
 Outputs:
 
@@ -137,27 +137,27 @@ Description: 'Amazon EKS Cluster Managed Node Group'
 
 Parameters:
 
+  Name:
+    Type: String
+    Description: Unique identifier for the Node Group.
+
   ClusterName:
     Type: String
     Description: The cluster name provided when the cluster was created. If it is incorrect, nodes will not be able to join the cluster.
 
-  ManagedNodeGroupRoleARN:
+  RoleARN:
     Type: String
     Description: The ARN of the node instance role
-
-  ManagedNodeGroupName:
-    Type: String
-    Description: Unique identifier for the Node Group.
 
   PublicSubnetIDs:
     Type: List<AWS::EC2::Subnet::Id>
     Description: The private subnet IDs where workers can be created.
 
-  ManagedNodeGroupRemoteAccessKeyName:
+  RemoteAccessKeyName:
     Type: AWS::EC2::KeyPair::KeyName
     Description: Amazon EC2 Key Pair
 
-  ManagedNodeGroupAMIType:
+  AMIType:
     Type: String
     Default: AL2_x86_64
     AllowedValues:
@@ -165,32 +165,32 @@ Parameters:
     - AL2_x86_64_GPU
     Description: AMI type for your node group
 
-  ManagedNodeGroupASGMinSize:
+  ASGMinSize:
     Type: Number
     Default: 2
     Description: Minimum size of Node Group Auto Scaling Group.
 
-  ManagedNodeGroupASGMaxSize:
+  ASGMaxSize:
     Type: Number
     Default: 2
-    Description: Maximum size of Node Group Auto Scaling Group. Set to at least 1 greater than ManagedNodeGroupASGDesiredCapacity.
+    Description: Maximum size of Node Group Auto Scaling Group. Set to at least 1 greater than ASGDesiredCapacity.
 
-  ManagedNodeGroupASGDesiredCapacity:
+  ASGDesiredCapacity:
     Type: Number
     Default: 2
     Description: Desired capacity of Node Group Auto Scaling Group.
 
-  ManagedNodeGroupInstanceTypes:
+  InstanceTypes:
     Type: CommaDelimitedList
     Default: c5.xlarge
     Description: EC2 instance types for the node instances
 
-  ManagedNodeGroupVolumeSize:
+  VolumeSize:
     Type: Number
     Default: 40
     Description: Node volume size
 
-  ManagedNodeGroupReleaseVersion:
+  ReleaseVersion:
     Type: String
     Description: AMI version of the Amazon EKS-optimized AMI
 
@@ -200,21 +200,21 @@ Resources:
     Type: AWS::EKS::Nodegroup
     Properties:
       ClusterName: !Ref ClusterName
-      NodegroupName: !Ref ManagedNodeGroupName
-      NodeRole: !Ref ManagedNodeGroupRoleARN
-      AmiType: !Ref ManagedNodeGroupAMIType
-      DiskSize: !Ref ManagedNodeGroupVolumeSize
-      InstanceTypes: !Ref ManagedNodeGroupInstanceTypes
-      ReleaseVersion: !Ref ManagedNodeGroupReleaseVersion
+      NodegroupName: !Ref Name
+      NodeRole: !Ref RoleARN
+      AmiType: !Ref AMIType
+      DiskSize: !Ref VolumeSize
+      InstanceTypes: !Ref InstanceTypes
+      ReleaseVersion: !Ref ReleaseVersion
       RemoteAccess:
-        Ec2SshKey: !Ref ManagedNodeGroupRemoteAccessKeyName
+        Ec2SshKey: !Ref RemoteAccessKeyName
       ScalingConfig:
-        MinSize: !Ref ManagedNodeGroupASGMinSize
-        MaxSize: !Ref ManagedNodeGroupASGMaxSize
-        DesiredSize: !Ref ManagedNodeGroupASGDesiredCapacity
+        MinSize: !Ref ASGMinSize
+        MaxSize: !Ref ASGMaxSize
+        DesiredSize: !Ref ASGDesiredCapacity
       Subnets: !Ref PublicSubnetIDs
       Labels:
-        Name: !Ref ManagedNodeGroupName
+        Name: !Ref Name
 
 Outputs:
 
@@ -475,23 +475,23 @@ func (ts *tester) createMNG() error {
 				}),
 				Parameters: []*cloudformation.Parameter{
 					{
+						ParameterKey:   aws.String("Name"),
+						ParameterValue: aws.String(mv.Name),
+					},
+					{
 						ParameterKey:   aws.String("ClusterName"),
 						ParameterValue: aws.String(ts.cfg.EKSConfig.Name),
 					},
 					{
-						ParameterKey:   aws.String("ManagedNodeGroupRoleARN"),
+						ParameterKey:   aws.String("RoleARN"),
 						ParameterValue: aws.String(ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleARN),
-					},
-					{
-						ParameterKey:   aws.String("ManagedNodeGroupName"),
-						ParameterValue: aws.String(mv.Name),
 					},
 					{
 						ParameterKey:   aws.String("PublicSubnetIDs"),
 						ParameterValue: aws.String(strings.Join(ts.cfg.EKSConfig.Parameters.PublicSubnetIDs, ",")),
 					},
 					{
-						ParameterKey:   aws.String("ManagedNodeGroupRemoteAccessKeyName"),
+						ParameterKey:   aws.String("RemoteAccessKeyName"),
 						ParameterValue: aws.String(ts.cfg.EKSConfig.RemoteAccessKeyName),
 					},
 				},
@@ -501,43 +501,43 @@ func (ts *tester) createMNG() error {
 			} else {
 				stackInput.TemplateBody = aws.String(TemplateManagedNodeGroupWithReleaseVersion)
 				stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
-					ParameterKey:   aws.String("ManagedNodeGroupReleaseVersion"),
+					ParameterKey:   aws.String("ReleaseVersion"),
 					ParameterValue: aws.String(mv.ReleaseVersion),
 				})
 			}
 			if mv.AMIType != "" {
 				stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
-					ParameterKey:   aws.String("ManagedNodeGroupAMIType"),
+					ParameterKey:   aws.String("AMIType"),
 					ParameterValue: aws.String(mv.AMIType),
 				})
 			}
 			if mv.ASGMinSize > 0 {
 				stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
-					ParameterKey:   aws.String("ManagedNodeGroupASGMinSize"),
+					ParameterKey:   aws.String("ASGMinSize"),
 					ParameterValue: aws.String(fmt.Sprintf("%d", mv.ASGMinSize)),
 				})
 			}
 			if mv.ASGMaxSize > 0 {
 				stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
-					ParameterKey:   aws.String("ManagedNodeGroupASGMaxSize"),
+					ParameterKey:   aws.String("ASGMaxSize"),
 					ParameterValue: aws.String(fmt.Sprintf("%d", mv.ASGMaxSize)),
 				})
 			}
 			if mv.ASGDesiredCapacity > 0 {
 				stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
-					ParameterKey:   aws.String("ManagedNodeGroupASGDesiredCapacity"),
+					ParameterKey:   aws.String("ASGDesiredCapacity"),
 					ParameterValue: aws.String(fmt.Sprintf("%d", mv.ASGDesiredCapacity)),
 				})
 			}
 			if len(mv.InstanceTypes) > 0 {
 				stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
-					ParameterKey:   aws.String("ManagedNodeGroupInstanceTypes"),
+					ParameterKey:   aws.String("InstanceTypes"),
 					ParameterValue: aws.String(strings.Join(mv.InstanceTypes, ",")),
 				})
 			}
 			if mv.VolumeSize > 0 {
 				stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
-					ParameterKey:   aws.String("ManagedNodeGroupVolumeSize"),
+					ParameterKey:   aws.String("VolumeSize"),
 					ParameterValue: aws.String(fmt.Sprintf("%d", mv.VolumeSize)),
 				})
 			}
@@ -984,7 +984,9 @@ func (ts *tester) waitForNodes(name string) error {
 		}
 		sv.Instances = make(map[string]ec2config.Instance)
 		for id, vv := range ec2Instances {
-			sv.Instances[id] = ec2config.ConvertInstance(vv)
+			ivv := ec2config.ConvertInstance(vv)
+			ivv.RemoteAccessUserName = mv.RemoteAccessUserName
+			sv.Instances[id] = ivv
 		}
 		ts.cfg.EKSConfig.StatusManagedNodeGroups.Nodes[name] = sv
 		ts.cfg.EKSConfig.Sync()
