@@ -274,7 +274,7 @@ func (ts *Tester) createASGs() error {
 		asg.Instances = make(map[string]ec2config.Instance)
 		for id, vv := range ec2Instances {
 			ivv := ec2config.ConvertInstance(vv)
-			ivv.RemoteAccessUserName = ts.cfg.RemoteAccessUserName
+			ivv.RemoteAccessUserName = asg.RemoteAccessUserName
 			asg.Instances[id] = ivv
 		}
 		ts.cfg.ASGs[asgName] = asg

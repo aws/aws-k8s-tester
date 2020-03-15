@@ -89,7 +89,7 @@ func (ts *Tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 					KeyPath:       ts.cfg.RemoteAccessPrivateKeyPath,
 					PublicIP:      iv.PublicIP,
 					PublicDNSName: iv.PublicDNSName,
-					UserName:      ts.cfg.RemoteAccessUserName,
+					UserName:      iv.RemoteAccessUserName,
 				})
 				if err != nil {
 					rch <- instanceLogs{mngName: name, errs: []string{err.Error()}}

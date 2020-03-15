@@ -130,9 +130,9 @@ Outputs:
 
 `
 
-// TemplateASGLaunchConfigurationWithSSM is the CloudFormation
+// TemplateASGLaunchConfigurationAL2 is the CloudFormation
 // template for ASG launch configuration.
-const TemplateASGLaunchConfigurationWithSSM = `
+const TemplateASGLaunchConfigurationAL2 = `
 ---
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Amazon EC2 ASG launch configuration'
@@ -334,9 +334,15 @@ func (ts *Tester) createLaunchConfiguration() error {
 	for asgName, asg := range ts.cfg.ASGs {
 		ts.lg.Info("creating ASG launch configuration", zap.String("name", asg.LaunchConfigurationName))
 
-		tmpl := TemplateASGLaunchConfiguration
-		if asg.InstallSSM {
-			tmpl = TemplateASGLaunchConfigurationWithSSM
+		tmpl := ""
+		switch asg.AMIType {
+		case ec2config.AMITypeBottleRocketCPU:
+			tmpl = TemplateASGLaunchConfiguration
+		case ec2config.AMITypeAL2X8664,
+			ec2config.AMITypeAL2X8664GPU:
+			tmpl = TemplateASGLaunchConfigurationAL2
+		default:
+			return fmt.Errorf("unknown AMI type %q", asg.AMIType)
 		}
 
 		stackInput := &cloudformation.CreateStackInput{
