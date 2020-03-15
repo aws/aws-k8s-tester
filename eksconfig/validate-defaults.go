@@ -45,7 +45,7 @@ var DefaultConfig = Config{
 	// https://kubernetes.io/docs/tasks/tools/install-kubectl/
 	// https://docs.aws.amazon.com/eks/latest/userguide/install-kubectl.html
 	KubectlDownloadURL: "https://storage.googleapis.com/kubernetes-release/release/v1.15.11/bin/linux/amd64/kubectl",
-	KubectlPath:        "/tmp/kubectl-test-1.14.10",
+	KubectlPath:        "/tmp/kubectl-test-1.15.11",
 
 	OnFailureDelete:            true,
 	OnFailureDeleteWaitSeconds: 120,
@@ -75,7 +75,8 @@ var DefaultConfig = Config{
 
 		RoleCreate: true,
 
-		RemoteAccessUserName: "ec2-user", // assume Amazon Linux 2
+		// assume Amazon Linux 2
+		RemoteAccessUserName: "ec2-user",
 
 		// to be auto-generated
 		LogsDir: "",
@@ -152,6 +153,7 @@ var DefaultConfig = Config{
 	AddOnAppMesh: &AddOnAppMesh{
 		Enable: false,
 	},
+
 	// read-only
 	Status: &Status{Up: false},
 	StatusManagedNodeGroups: &StatusManagedNodeGroups{
@@ -264,6 +266,7 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	if err := cfg.validateAddOnAppMesh(); err != nil {
 		return fmt.Errorf("validateAddOnAppMesh failed [%v]", err)
 	}
+
 	return nil
 }
 
