@@ -275,6 +275,9 @@ type tester struct {
 }
 
 func (ts *tester) Create() (err error) {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnManagedNodeGroups() {
+		return nil
+	}
 	if ts.cfg.EKSConfig.AddOnManagedNodeGroups.Created {
 		ts.cfg.Logger.Info("ManagedNodeGroup is already created; skipping creation")
 		return nil
@@ -303,6 +306,9 @@ func (ts *tester) Create() (err error) {
 }
 
 func (ts *tester) Delete() error {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnManagedNodeGroups() {
+		return nil
+	}
 	if !ts.cfg.EKSConfig.AddOnManagedNodeGroups.Created {
 		ts.cfg.Logger.Info("ManagedNodeGroup is not created; skipping deletion")
 		return nil

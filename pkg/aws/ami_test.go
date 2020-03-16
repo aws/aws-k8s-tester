@@ -45,7 +45,7 @@ func TestAMI(t *testing.T) {
 	}
 	fmt.Printf("%+v\n", a1)
 
-	a2, err := FetchAMI(sm, "/aws/service/eks/optimized-ami/1.14/amazon-linux-2/recommended")
+	a2, err := FetchAMI(sm, "/aws/service/eks/optimized-ami/1.15/amazon-linux-2/recommended")
 	if err != nil {
 		t.Fatal(err)
 	}

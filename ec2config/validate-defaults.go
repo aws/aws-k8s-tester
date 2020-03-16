@@ -308,6 +308,9 @@ func (cfg *Config) validateASGs() error {
 			return fmt.Errorf("ASGs[%q].Name %q is redundant", k, v.Name)
 		}
 
+		if len(v.InstanceTypes) > 4 {
+			return fmt.Errorf("too many InstaceTypes[%q]", v.InstanceTypes)
+		}
 		if v.VolumeSize == 0 {
 			v.VolumeSize = DefaultNodeVolumeSize
 		}

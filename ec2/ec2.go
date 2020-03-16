@@ -268,18 +268,6 @@ func (ts *Tester) Up() (err error) {
 	}
 
 	fmt.Printf("\n*********************************\n")
-	fmt.Printf("createLaunchConfiguration (%q)\n", ts.cfg.ConfigPath)
-	if err := catchInterrupt(
-		ts.lg,
-		ts.stopCreationCh,
-		ts.stopCreationChOnce,
-		ts.interruptSig,
-		ts.createLaunchConfiguration,
-	); err != nil {
-		return err
-	}
-
-	fmt.Printf("\n*********************************\n")
 	fmt.Printf("createASGs (%q)\n", ts.cfg.ConfigPath)
 	if err := catchInterrupt(
 		ts.lg,
@@ -378,13 +366,6 @@ func (ts *Tester) down() (err error) {
 	fmt.Printf("deleteASGs (%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteASGs(); err != nil {
 		ts.lg.Warn("deleteASGs failed", zap.Error(err))
-		errs = append(errs, err.Error())
-	}
-
-	fmt.Printf("\n*********************************\n")
-	fmt.Printf("deleteLaunchConfiguration (%q)\n", ts.cfg.ConfigPath)
-	if err := ts.deleteLaunchConfiguration(); err != nil {
-		ts.lg.Warn("deleteLaunchConfiguration failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 

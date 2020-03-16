@@ -11,6 +11,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/pkg/aws"
@@ -66,20 +67,18 @@ var DefaultConfig = Config{
 	// keep in-sync with the default value in https://pkg.go.dev/k8s.io/kubernetes/test/e2e/framework#GetSigner
 	RemoteAccessPrivateKeyPath: filepath.Join(homedir.HomeDir(), ".ssh", "kube_aws_rsa"),
 
-	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
-	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
+	AddOnNodeGroups: &AddOnNodeGroups{
+		Enable:     false,
+		FetchLogs:  true,
+		RoleCreate: true,
+		LogsDir:    "", // to be auto-generated
+	},
 	AddOnManagedNodeGroups: &AddOnManagedNodeGroups{
 		Enable:      false,
 		FetchLogs:   true,
 		SigningName: "eks",
-
-		RoleCreate: true,
-
-		// assume Amazon Linux 2
-		RemoteAccessUserName: "ec2-user",
-
-		// to be auto-generated
-		LogsDir: "",
+		RoleCreate:  true,
+		LogsDir:     "", // to be auto-generated
 	},
 
 	AddOnNLBHelloWorld: &AddOnNLBHelloWorld{
@@ -165,6 +164,7 @@ var DefaultConfig = Config{
 // NewDefault returns a copy of the default configuration.
 func NewDefault() *Config {
 	vv := DefaultConfig
+	vv.mu = new(sync.RWMutex)
 
 	if name := os.Getenv(EnvironmentVariablePrefix + "NAME"); name != "" {
 		vv.Name = name
@@ -172,38 +172,34 @@ func NewDefault() *Config {
 		vv.Name = fmt.Sprintf("eks-%s-%s", getTS()[:10], randString(12))
 	}
 
-	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
-	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
+	vv.AddOnNodeGroups.NGs = map[string]NG{
+		vv.Name + "-ng-cpu": {
+			Name:                 vv.Name + "-ng-cpu",
+			RemoteAccessUserName: "ec2-user", // assume Amazon Linux 2
+			AMIType:              eks.AMITypesAl2X8664,
+			ASGMinSize:           1,
+			ASGMaxSize:           1,
+			ASGDesiredCapacity:   1,
+			InstanceTypes:        []string{DefaultNodeInstanceTypeCPU},
+			VolumeSize:           DefaultNodeVolumeSize,
+		},
+	}
 	vv.AddOnManagedNodeGroups.MNGs = map[string]MNG{
-		vv.Name + "-mng-cpu": MNG{
-			Name:               vv.Name + "-mng-cpu",
-			ReleaseVersion:     "", // to be auto-filled by EKS API
-			AMIType:            "AL2_x86_64",
-			ASGMinSize:         2,
-			ASGMaxSize:         2,
-			ASGDesiredCapacity: 2,
-			InstanceTypes:      []string{DefaultNodeInstanceTypeCPU},
-			VolumeSize:         DefaultNodeVolumeSize,
+		vv.Name + "-mng-cpu": {
+			Name:                 vv.Name + "-mng-cpu",
+			RemoteAccessUserName: "ec2-user", // assume Amazon Linux 2
+			ReleaseVersion:       "",         // to be auto-filled by EKS API
+			AMIType:              eks.AMITypesAl2X8664,
+			ASGMinSize:           2,
+			ASGMaxSize:           2,
+			ASGDesiredCapacity:   2,
+			InstanceTypes:        []string{DefaultNodeInstanceTypeCPU},
+			VolumeSize:           DefaultNodeVolumeSize,
 		},
 	}
 
 	return &vv
 }
-
-const (
-	// DefaultNodeInstanceTypeCPU is the default EC2 instance type for CPU worker node.
-	DefaultNodeInstanceTypeCPU = "c5.xlarge"
-	// DefaultNodeInstanceTypeGPU is the default EC2 instance type for GPU worker node.
-	DefaultNodeInstanceTypeGPU = "p3.8xlarge"
-
-	// DefaultNodeVolumeSize is the default EC2 instance volume size for a worker node.
-	DefaultNodeVolumeSize = 40
-
-	// MNGMaxLimit is the maximum number of "Managed Node Group"s per a EKS cluster.
-	MNGMaxLimit = 10
-	// MNGNodesMaxLimit is the maximum number of nodes per a "Managed Node Group".
-	MNGNodesMaxLimit = 100
-)
 
 func init() {
 	// https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-welcome.html
@@ -224,6 +220,9 @@ func init() {
 // And updates empty fields with default values.
 // At the end, it writes populated YAML to aws-k8s-tester config path.
 func (cfg *Config) ValidateAndSetDefaults() error {
+	if cfg.mu == nil {
+		cfg.mu = new(sync.RWMutex)
+	}
 	cfg.mu.Lock()
 	defer func() {
 		cfg.unsafeSync()
@@ -235,6 +234,9 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 	if err := cfg.validateParameters(); err != nil {
 		return fmt.Errorf("validateParameters failed [%v]", err)
+	}
+	if err := cfg.validateAddOnNodeGroups(); err != nil {
+		return fmt.Errorf("validateAddOnNodeGroups failed [%v]", err)
 	}
 	if err := cfg.validateAddOnManagedNodeGroups(); err != nil {
 		return fmt.Errorf("validateAddOnManagedNodeGroups failed [%v]", err)
@@ -496,20 +498,173 @@ func (cfg *Config) validateParameters() error {
 	return nil
 }
 
-func (cfg *Config) validateAddOnManagedNodeGroups() error {
-	if cfg.AddOnManagedNodeGroups == nil {
+func (cfg *Config) validateAddOnNodeGroups() error {
+	if !cfg.IsEnabledAddOnNodeGroups() {
 		return nil
 	}
-	if !cfg.AddOnManagedNodeGroups.Enable {
-		cfg.AddOnManagedNodeGroups = nil
+
+	n := len(cfg.AddOnNodeGroups.NGs)
+	if n == 0 {
+		return errors.New("empty NGs")
+	}
+	if n > NGsMaxLimit {
+		return fmt.Errorf("NGs %d exceeds maximum number of NGs which is %d", n, NGsMaxLimit)
+	}
+
+	if cfg.Parameters.VersionValue < 1.14 {
+		return fmt.Errorf("Version %q not supported for AddOnNodeGroups", cfg.Parameters.Version)
+	}
+
+	if cfg.AddOnNodeGroups.LogsDir == "" {
+		cfg.AddOnNodeGroups.LogsDir = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-logs-ngs")
+	}
+
+	switch cfg.AddOnNodeGroups.RoleCreate {
+	case true: // need create one, or already created
+		if cfg.AddOnNodeGroups.RoleName == "" {
+			cfg.AddOnNodeGroups.RoleName = cfg.Name + "-role-ng"
+		}
+		if cfg.AddOnNodeGroups.RoleARN != "" {
+			// just ignore...
+			// could be populated from previous run
+			// do not error, so long as RoleCreate false, role won't be deleted
+		}
+		if len(cfg.AddOnNodeGroups.RoleServicePrincipals) > 0 {
+			/*
+				create node group request failed (InvalidParameterException: Following required service principals [ec2.amazonaws.com] were not found in the trust relationships of nodeRole arn:aws:iam::...:role/test-ng-role
+				{
+				  ClusterName: "test",
+				  Message_: "Following required service principals [ec2.amazonaws.com] were not found in the trust relationships of nodeRole arn:aws:iam::...:role/test-ng-role",
+				  NodegroupName: "test-ng-cpu"
+				})
+			*/
+			found := false
+			for _, pv := range cfg.AddOnNodeGroups.RoleServicePrincipals {
+				if pv == "ec2.amazonaws.com" { // TODO: support China regions ec2.amazonaws.com.cn or eks.amazonaws.com.cn
+					found = true
+					break
+				}
+			}
+			if !found {
+				return fmt.Errorf("AddOnNodeGroups.RoleServicePrincipals %q must include 'ec2.amazonaws.com'", cfg.AddOnNodeGroups.RoleServicePrincipals)
+			}
+		}
+
+	case false: // use existing one
+		if cfg.AddOnNodeGroups.RoleARN == "" {
+			return fmt.Errorf("AddOnNodeGroups.RoleCreate false; expect non-empty RoleARN but got %q", cfg.AddOnNodeGroups.RoleARN)
+		}
+		if cfg.AddOnNodeGroups.RoleName == "" {
+			cfg.AddOnNodeGroups.RoleName = getNameFromARN(cfg.AddOnNodeGroups.RoleARN)
+		}
+		if len(cfg.AddOnNodeGroups.RoleManagedPolicyARNs) > 0 {
+			return fmt.Errorf("AddOnNodeGroups.RoleCreate false; expect empty RoleManagedPolicyARNs but got %q", cfg.AddOnNodeGroups.RoleManagedPolicyARNs)
+		}
+		if len(cfg.AddOnNodeGroups.RoleServicePrincipals) > 0 {
+			return fmt.Errorf("AddOnNodeGroups.RoleCreate false; expect empty RoleServicePrincipals but got %q", cfg.AddOnNodeGroups.RoleServicePrincipals)
+		}
+	}
+
+	names := make(map[string]struct{})
+	for k, v := range cfg.AddOnNodeGroups.NGs {
+		if v.Name == "" {
+			return fmt.Errorf("AddOnNodeGroups.NGs[%q].Name is empty", k)
+		}
+		if k != v.Name {
+			return fmt.Errorf("AddOnNodeGroups.NGs[%q].Name has different Name field %q", k, v.Name)
+		}
+		_, ok := names[v.Name]
+		if !ok {
+			names[v.Name] = struct{}{}
+		} else {
+			return fmt.Errorf("AddOnNodeGroups.NGs[%q].Name %q is redundant", k, v.Name)
+		}
+
+		if len(v.InstanceTypes) > 4 {
+			return fmt.Errorf("too many InstaceTypes[%q]", v.InstanceTypes)
+		}
+		if v.VolumeSize == 0 {
+			v.VolumeSize = DefaultNodeVolumeSize
+		}
+		if v.RemoteAccessUserName == "" {
+			v.RemoteAccessUserName = "ec2-user"
+		}
+
+		switch v.AMIType {
+		case AMITypeBottleRocketCPU,
+			eks.AMITypesAl2X8664:
+			if len(v.InstanceTypes) == 0 {
+				v.InstanceTypes = []string{DefaultNodeInstanceTypeCPU}
+			}
+		case eks.AMITypesAl2X8664Gpu:
+			if len(v.InstanceTypes) == 0 {
+				v.InstanceTypes = []string{DefaultNodeInstanceTypeGPU}
+			}
+		default:
+			return fmt.Errorf("unknown AddOnNodeGroups.NGs[%q].AMIType %q", k, v.AMIType)
+		}
+
+		if cfg.IsEnabledAddOnNLBHelloWorld() || cfg.IsEnabledAddOnALB2048() {
+			// "m3.xlarge" or "c4.xlarge" will fail with "InvalidTarget: Targets {...} are not supported"
+			// ref. https://github.com/aws/amazon-vpc-cni-k8s/pull/821
+			// ref. https://github.com/kubernetes/kubernetes/issues/66044#issuecomment-408188524
+			for _, ivt := range v.InstanceTypes {
+
+				switch {
+				case strings.HasPrefix(ivt, "m3."),
+					strings.HasPrefix(ivt, "c4."):
+					return fmt.Errorf("AddOnNLBHelloWorld.Enable[%v] || AddOnALB2048.Enable[%v], but older instance type InstanceType %q for %q",
+						cfg.IsEnabledAddOnNLBHelloWorld(),
+						cfg.IsEnabledAddOnALB2048(),
+						ivt, k)
+				}
+			}
+		}
+
+		if v.ASGMinSize > v.ASGMaxSize {
+			return fmt.Errorf("AddOnNodeGroups.NGs[%q].ASGMinSize %d > ASGMaxSize %d", k, v.ASGMinSize, v.ASGMaxSize)
+		}
+		if v.ASGDesiredCapacity > v.ASGMaxSize {
+			return fmt.Errorf("AddOnNodeGroups.NGs[%q].ASGDesiredCapacity %d > ASGMaxSize %d", k, v.ASGDesiredCapacity, v.ASGMaxSize)
+		}
+		if v.ASGMaxSize > NGMaxLimit {
+			return fmt.Errorf("AddOnNodeGroups.NGs[%q].ASGMaxSize %d > NGMaxLimit %d", k, v.ASGMaxSize, NGMaxLimit)
+		}
+		if v.ASGDesiredCapacity > NGMaxLimit {
+			return fmt.Errorf("AddOnNodeGroups.NGs[%q].ASGDesiredCapacity %d > NGMaxLimit %d", k, v.ASGDesiredCapacity, NGMaxLimit)
+		}
+
+		if cfg.IsEnabledAddOnNLBHelloWorld() && cfg.AddOnNLBHelloWorld.DeploymentReplicas < int32(v.ASGDesiredCapacity) {
+			cfg.AddOnNLBHelloWorld.DeploymentReplicas = int32(v.ASGDesiredCapacity)
+		}
+		if cfg.IsEnabledAddOnALB2048() && cfg.AddOnALB2048.DeploymentReplicasALB < int32(v.ASGDesiredCapacity) {
+			cfg.AddOnALB2048.DeploymentReplicasALB = int32(v.ASGDesiredCapacity)
+		}
+		if cfg.IsEnabledAddOnALB2048() && cfg.AddOnALB2048.DeploymentReplicas2048 < int32(v.ASGDesiredCapacity) {
+			cfg.AddOnALB2048.DeploymentReplicas2048 = int32(v.ASGDesiredCapacity)
+		}
+
+		cfg.AddOnNodeGroups.NGs[k] = v
+	}
+
+	return nil
+}
+
+func (cfg *Config) validateAddOnManagedNodeGroups() error {
+	if !cfg.IsEnabledAddOnManagedNodeGroups() {
 		return nil
+	}
+
+	n := len(cfg.AddOnManagedNodeGroups.MNGs)
+	if n == 0 {
+		return errors.New("empty MNGs")
+	}
+	if n > MNGsMaxLimit {
+		return fmt.Errorf("MNGs %d exceeds maximum number of MNGs which is %d", n, MNGsMaxLimit)
 	}
 
 	if cfg.Parameters.VersionValue < 1.14 {
 		return fmt.Errorf("Version %q not supported for AddOnManagedNodeGroups", cfg.Parameters.Version)
-	}
-	if cfg.AddOnManagedNodeGroups.RemoteAccessUserName == "" {
-		return errors.New("empty AddOnManagedNodeGroups.RemoteAccessUserName")
 	}
 
 	if cfg.AddOnManagedNodeGroups.LogsDir == "" {
@@ -562,13 +717,6 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 		}
 	}
 
-	n := len(cfg.AddOnManagedNodeGroups.MNGs)
-	if n == 0 {
-		return errors.New("AddOnManagedNodeGroups.Enable but empty AddOnManagedNodeGroups.MNGs")
-	}
-	if n > MNGNodesMaxLimit {
-		return fmt.Errorf("AddOnManagedNodeGroups.MNGs %d exceeds maximum number of node groups per EKS which is %d", n, MNGNodesMaxLimit)
-	}
 	names := make(map[string]struct{})
 	for k, v := range cfg.AddOnManagedNodeGroups.MNGs {
 		if v.Name == "" {
@@ -583,9 +731,21 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 		} else {
 			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].Name %q is redundant", k, v.Name)
 		}
+		if cfg.IsEnabledAddOnNodeGroups() {
+			_, ok = cfg.AddOnNodeGroups.NGs[v.Name]
+			if ok {
+				return fmt.Errorf("MNG[%q] name is conflicting with NG", v.Name)
+			}
+		}
 
+		if len(v.InstanceTypes) > 4 {
+			return fmt.Errorf("too many InstaceTypes[%q]", v.InstanceTypes)
+		}
 		if v.VolumeSize == 0 {
 			v.VolumeSize = DefaultNodeVolumeSize
+		}
+		if v.RemoteAccessUserName == "" {
+			v.RemoteAccessUserName = "ec2-user"
 		}
 
 		switch v.AMIType {
@@ -601,7 +761,7 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 			return fmt.Errorf("unknown AddOnManagedNodeGroups.MNGs[%q].AMIType %q", k, v.AMIType)
 		}
 
-		if cfg.IsAddOnNLBHelloWorldEnabled() || cfg.IsAddOnALB2048Enabled() {
+		if cfg.IsEnabledAddOnNLBHelloWorld() || cfg.IsEnabledAddOnALB2048() {
 			for _, itp := range v.InstanceTypes {
 				// "m3.xlarge" or "c4.xlarge" will fail with "InvalidTarget: Targets {...} are not supported"
 				// ref. https://github.com/aws/amazon-vpc-cni-k8s/pull/821
@@ -610,8 +770,8 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 				case strings.HasPrefix(itp, "m3."),
 					strings.HasPrefix(itp, "c4."):
 					return fmt.Errorf("AddOnNLBHelloWorld.Enable[%v] || AddOnALB2048.Enable[%v], but older instance type InstanceTypes %q for %q",
-						cfg.IsAddOnNLBHelloWorldEnabled(),
-						cfg.IsAddOnALB2048Enabled(),
+						cfg.IsEnabledAddOnNLBHelloWorld(),
+						cfg.IsEnabledAddOnALB2048(),
 						itp, k)
 				default:
 				}
@@ -624,20 +784,20 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 		if v.ASGDesiredCapacity > v.ASGMaxSize {
 			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].ASGDesiredCapacity %d > ASGMaxSize %d", k, v.ASGDesiredCapacity, v.ASGMaxSize)
 		}
-		if v.ASGMaxSize > MNGNodesMaxLimit {
-			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].ASGMaxSize %d > MNGNodesMaxLimit %d", k, v.ASGMaxSize, MNGNodesMaxLimit)
+		if v.ASGMaxSize > MNGMaxLimit {
+			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].ASGMaxSize %d > MNGMaxLimit %d", k, v.ASGMaxSize, MNGMaxLimit)
 		}
-		if v.ASGDesiredCapacity > MNGNodesMaxLimit {
-			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].ASGDesiredCapacity %d > MNGNodesMaxLimit %d", k, v.ASGDesiredCapacity, MNGNodesMaxLimit)
+		if v.ASGDesiredCapacity > MNGMaxLimit {
+			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].ASGDesiredCapacity %d > MNGMaxLimit %d", k, v.ASGDesiredCapacity, MNGMaxLimit)
 		}
 
-		if cfg.IsAddOnNLBHelloWorldEnabled() && cfg.AddOnNLBHelloWorld.DeploymentReplicas < int32(v.ASGDesiredCapacity) {
+		if cfg.IsEnabledAddOnNLBHelloWorld() && cfg.AddOnNLBHelloWorld.DeploymentReplicas < int32(v.ASGDesiredCapacity) {
 			cfg.AddOnNLBHelloWorld.DeploymentReplicas = int32(v.ASGDesiredCapacity)
 		}
-		if cfg.IsAddOnALB2048Enabled() && cfg.AddOnALB2048.DeploymentReplicasALB < int32(v.ASGDesiredCapacity) {
+		if cfg.IsEnabledAddOnALB2048() && cfg.AddOnALB2048.DeploymentReplicasALB < int32(v.ASGDesiredCapacity) {
 			cfg.AddOnALB2048.DeploymentReplicasALB = int32(v.ASGDesiredCapacity)
 		}
-		if cfg.IsAddOnALB2048Enabled() && cfg.AddOnALB2048.DeploymentReplicas2048 < int32(v.ASGDesiredCapacity) {
+		if cfg.IsEnabledAddOnALB2048() && cfg.AddOnALB2048.DeploymentReplicas2048 < int32(v.ASGDesiredCapacity) {
 			cfg.AddOnALB2048.DeploymentReplicas2048 = int32(v.ASGDesiredCapacity)
 		}
 
@@ -648,22 +808,12 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 }
 
 func (cfg *Config) validateAddOnNLBHelloWorld() error {
-	if cfg.AddOnNLBHelloWorld == nil {
+	if !cfg.IsEnabledAddOnNLBHelloWorld() {
 		return nil
 	}
-	switch cfg.AddOnNLBHelloWorld.Enable {
-	case true:
-		if cfg.AddOnManagedNodeGroups == nil {
-			return errors.New("AddOnManagedNodeGroups disabled but AddOnNLBHelloWorld.Enable true")
-		}
-		if !cfg.AddOnManagedNodeGroups.Enable {
-			return errors.New("AddOnManagedNodeGroups disabled but AddOnNLBHelloWorld.Enable true")
-		}
-	case false:
-		cfg.AddOnNLBHelloWorld = nil
-		return nil
+	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
+		return errors.New("AddOnNLBHelloWorld.Enable true but no node group is enabled")
 	}
-
 	if cfg.AddOnNLBHelloWorld.Namespace == "" {
 		cfg.AddOnNLBHelloWorld.Namespace = cfg.Name + "-nlb-hello-world"
 	}
@@ -671,22 +821,12 @@ func (cfg *Config) validateAddOnNLBHelloWorld() error {
 }
 
 func (cfg *Config) validateAddOnALB2048() error {
-	if cfg.AddOnALB2048 == nil {
+	if !cfg.IsEnabledAddOnALB2048() {
 		return nil
 	}
-	switch cfg.AddOnALB2048.Enable {
-	case true:
-		if cfg.AddOnManagedNodeGroups == nil {
-			return errors.New("AddOnManagedNodeGroups disabled but AddOnALB2048.Enable true")
-		}
-		if !cfg.AddOnManagedNodeGroups.Enable {
-			return errors.New("AddOnManagedNodeGroups disabled but AddOnALB2048.Enable true")
-		}
-	case false:
-		cfg.AddOnALB2048 = nil
-		return nil
+	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
+		return errors.New("AddOnALB2048.Enable true but no node group is enabled")
 	}
-
 	if cfg.AddOnALB2048.Namespace == "" {
 		cfg.AddOnALB2048.Namespace = cfg.Name + "-alb-2048"
 	}
@@ -694,22 +834,12 @@ func (cfg *Config) validateAddOnALB2048() error {
 }
 
 func (cfg *Config) validateAddOnJobPi() error {
-	if cfg.AddOnJobPi == nil {
+	if !cfg.IsEnabledAddOnJobPi() {
 		return nil
 	}
-	switch cfg.AddOnJobPi.Enable {
-	case true:
-		if cfg.AddOnManagedNodeGroups == nil {
-			return errors.New("AddOnManagedNodeGroups disabled but AddOnJobPi.Enable true")
-		}
-		if !cfg.AddOnManagedNodeGroups.Enable {
-			return errors.New("AddOnManagedNodeGroups disabled but AddOnJobPi.Enable true")
-		}
-	case false:
-		cfg.AddOnJobPi = nil
-		return nil
+	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
+		return errors.New("AddOnJobPi.Enable true but no node group is enabled")
 	}
-
 	if cfg.AddOnJobPi.Namespace == "" {
 		cfg.AddOnJobPi.Namespace = cfg.Name + "-job-perl"
 	}
@@ -717,22 +847,12 @@ func (cfg *Config) validateAddOnJobPi() error {
 }
 
 func (cfg *Config) validateAddOnJobEcho() error {
-	if cfg.AddOnJobEcho == nil {
+	if !cfg.IsEnabledAddOnJobEcho() {
 		return nil
 	}
-	switch cfg.AddOnJobEcho.Enable {
-	case true:
-		if cfg.AddOnManagedNodeGroups == nil {
-			return errors.New("AddOnManagedNodeGroups disabled but AddOnJobEcho.Enable true")
-		}
-		if !cfg.AddOnManagedNodeGroups.Enable {
-			return errors.New("AddOnManagedNodeGroups disabled but AddOnJobEcho.Enable true")
-		}
-	case false:
-		cfg.AddOnJobEcho = nil
-		return nil
+	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
+		return errors.New("AddOnJobEcho.Enable true but no node group is enabled")
 	}
-
 	if cfg.AddOnJobEcho.Namespace == "" {
 		cfg.AddOnJobEcho.Namespace = cfg.Name + "-job-echo"
 	}
@@ -743,22 +863,12 @@ func (cfg *Config) validateAddOnJobEcho() error {
 }
 
 func (cfg *Config) validateAddOnCronJob() error {
-	if cfg.AddOnCronJob == nil {
+	if !cfg.IsEnabledAddOnCronJob() {
 		return nil
 	}
-	switch cfg.AddOnCronJob.Enable {
-	case true:
-		if cfg.AddOnManagedNodeGroups == nil {
-			return errors.New("AddOnManagedNodeGroups disabled but AddOnCronJob.Enable true")
-		}
-		if !cfg.AddOnManagedNodeGroups.Enable {
-			return errors.New("AddOnManagedNodeGroups disabled but AddOnCronJob.Enable true")
-		}
-	case false:
-		cfg.AddOnCronJob = nil
-		return nil
+	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
+		return errors.New("AddOnCronJob.Enable true but no node group is enabled")
 	}
-
 	if cfg.AddOnCronJob.Namespace == "" {
 		cfg.AddOnCronJob.Namespace = cfg.Name + "-cronjob"
 	}
@@ -772,22 +882,12 @@ func (cfg *Config) validateAddOnCronJob() error {
 var secretRegex = regexp.MustCompile("[^a-zA-Z0-9]+")
 
 func (cfg *Config) validateAddOnSecrets() error {
-	if cfg.AddOnSecrets == nil {
+	if !cfg.IsEnabledAddOnSecrets() {
 		return nil
 	}
-	switch cfg.AddOnSecrets.Enable {
-	case true:
-		if cfg.AddOnManagedNodeGroups == nil {
-			return errors.New("AddOnManagedNodeGroups disabled but AddOnSecrets.Enable true")
-		}
-		if !cfg.AddOnManagedNodeGroups.Enable {
-			return errors.New("AddOnManagedNodeGroups disabled but AddOnSecrets.Enable true")
-		}
-	case false:
-		cfg.AddOnSecrets = nil
-		return nil
+	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
+		return errors.New("AddOnSecrets.Enable true but no node group is enabled")
 	}
-
 	if cfg.AddOnSecrets.Namespace == "" {
 		cfg.AddOnSecrets.Namespace = cfg.Name + "-secrets"
 	}
@@ -807,22 +907,12 @@ func (cfg *Config) validateAddOnSecrets() error {
 }
 
 func (cfg *Config) validateAddOnIRSA() error {
-	if cfg.AddOnIRSA == nil {
+	if !cfg.IsEnabledAddOnIRSA() {
 		return nil
 	}
-	switch cfg.AddOnIRSA.Enable {
-	case true:
-		if cfg.AddOnManagedNodeGroups == nil {
-			return errors.New("AddOnManagedNodeGroups disabled but AddOnIRSA.Enable true")
-		}
-		if !cfg.AddOnManagedNodeGroups.Enable {
-			return errors.New("AddOnManagedNodeGroups disabled but AddOnIRSA.Enable true")
-		}
-	case false:
-		cfg.AddOnIRSA = nil
-		return nil
+	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
+		return errors.New("AddOnIRSA.Enable true but no node group is enabled")
 	}
-
 	if cfg.Parameters.VersionValue < 1.14 {
 		return fmt.Errorf("Version %q not supported for AddOnIRSA", cfg.Parameters.Version)
 	}
@@ -854,22 +944,12 @@ func (cfg *Config) validateAddOnIRSA() error {
 }
 
 func (cfg *Config) validateAddOnFargate() error {
-	if cfg.AddOnFargate == nil {
+	if !cfg.IsEnabledAddOnFargate() {
 		return nil
 	}
-	switch cfg.AddOnFargate.Enable {
-	case true:
-		if cfg.AddOnManagedNodeGroups == nil {
-			return errors.New("AddOnManagedNodeGroups disabled but AddOnFargate.Enable true")
-		}
-		if !cfg.AddOnManagedNodeGroups.Enable {
-			return errors.New("AddOnManagedNodeGroups disabled but AddOnFargate.Enable true")
-		}
-	case false:
-		cfg.AddOnFargate = nil
-		return nil
+	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
+		return errors.New("AddOnFargate.Enable true but no node group is enabled")
 	}
-
 	if cfg.Parameters.VersionValue < 1.14 {
 		return fmt.Errorf("Version %q not supported for AddOnFargate", cfg.Parameters.Version)
 	}
@@ -900,7 +980,6 @@ func (cfg *Config) validateAddOnFargate() error {
 			// could be populated from previous run
 			// do not error, so long as RoleCreate false, role won't be deleted
 		}
-
 	case false: // use existing one
 		if cfg.AddOnFargate.RoleARN == "" {
 			return fmt.Errorf("AddOnFargate.RoleCreate false; expect non-empty RoleARN but got %q", cfg.AddOnFargate.RoleARN)
@@ -920,22 +999,12 @@ func (cfg *Config) validateAddOnFargate() error {
 }
 
 func (cfg *Config) validateAddOnAppMesh() error {
-	if cfg.AddOnAppMesh == nil {
+	if !cfg.IsEnabledAddOnAppMesh() {
 		return nil
 	}
-	switch cfg.AddOnAppMesh.Enable {
-	case true:
-		if cfg.AddOnManagedNodeGroups == nil {
-			return errors.New("AddOnManagedNodeGroups disabled but AddOnAppMesh.Enable true")
-		}
-		if !cfg.AddOnManagedNodeGroups.Enable {
-			return errors.New("AddOnManagedNodeGroups disabled but AddOnAppMesh.Enable true")
-		}
-	case false:
-		cfg.AddOnAppMesh = nil
-		return nil
+	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
+		return errors.New("AddOnAppMesh.Enable true but no node group is enabled")
 	}
-
 	if cfg.AddOnAppMesh.Namespace == "" {
 		cfg.AddOnAppMesh.Namespace = "appmesh-system"
 	}

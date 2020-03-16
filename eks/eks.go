@@ -23,6 +23,7 @@ import (
 	jobsecho "github.com/aws/aws-k8s-tester/eks/jobs-echo"
 	jobspi "github.com/aws/aws-k8s-tester/eks/jobs-pi"
 	"github.com/aws/aws-k8s-tester/eks/mng"
+	"github.com/aws/aws-k8s-tester/eks/ng"
 	"github.com/aws/aws-k8s-tester/eks/nlb"
 	"github.com/aws/aws-k8s-tester/eks/secrets"
 	"github.com/aws/aws-k8s-tester/eksconfig"
@@ -85,8 +86,9 @@ type Tester struct {
 
 	k8sClientSet *kubernetes.Clientset
 
-	gpuTester           gpu.Tester
+	ngTester            ng.Tester
 	mngTester           mng.Tester
+	gpuTester           gpu.Tester
 	nlbHelloWorldTester alb.Tester
 	alb2048Tester       alb.Tester
 	jobsPiTester        jobspi.Tester
@@ -102,7 +104,7 @@ type Tester struct {
 func New(cfg *eksconfig.Config) (*Tester, error) {
 	fmt.Println("😎 🙏")
 	fmt.Println(version.Version())
-	fmt.Printf("\n#################################\n")
+	fmt.Printf("\n*********************************\n")
 	fmt.Printf("New %q\n", cfg.ConfigPath)
 	if err := cfg.ValidateAndSetDefaults(); err != nil {
 		return nil, err
@@ -306,21 +308,25 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 }
 
 func (ts *Tester) createSubTesters() (err error) {
-	if !ts.cfg.IsAddOnManagedNodeGroupsEnabled() {
+	if !ts.cfg.IsEnabledAddOnManagedNodeGroups() {
 		return nil
 	}
 
-	fmt.Printf("\n#################################\n")
-	fmt.Printf("createSubTesters (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+	fmt.Printf("\n*********************************\n")
+	fmt.Printf("createSubTesters (%q)\n", ts.cfg.ConfigPath)
 
-	ts.lg.Info("creating gpuTester")
-	ts.gpuTester, err = gpu.New(gpu.Config{
+	ts.lg.Info("creating ngTester")
+	ts.ngTester, err = ng.New(ng.Config{
 		Logger:    ts.lg,
 		Stopc:     ts.stopCreationCh,
 		Sig:       ts.interruptSig,
 		EKSConfig: ts.cfg,
 		K8SClient: ts,
-		Namespace: ts.cfg.Name,
+		IAMAPI:    ts.iamAPI,
+		CFNAPI:    ts.cfnAPI,
+		EC2API:    ts.ec2API,
+		ASGAPI:    ts.asgAPI,
+		EKSAPI:    ts.eksAPI,
 	})
 	if err != nil {
 		return err
@@ -343,7 +349,20 @@ func (ts *Tester) createSubTesters() (err error) {
 		return err
 	}
 
-	if ts.cfg.IsAddOnNLBHelloWorldEnabled() {
+	ts.lg.Info("creating gpuTester")
+	ts.gpuTester, err = gpu.New(gpu.Config{
+		Logger:    ts.lg,
+		Stopc:     ts.stopCreationCh,
+		Sig:       ts.interruptSig,
+		EKSConfig: ts.cfg,
+		K8SClient: ts,
+		Namespace: ts.cfg.Name,
+	})
+	if err != nil {
+		return err
+	}
+
+	if ts.cfg.IsEnabledAddOnNLBHelloWorld() {
 		ts.lg.Info("creating nlbHelloWorldTester")
 		ts.nlbHelloWorldTester, err = nlb.New(nlb.Config{
 			Logger:    ts.lg,
@@ -358,7 +377,7 @@ func (ts *Tester) createSubTesters() (err error) {
 		}
 	}
 
-	if ts.cfg.IsAddOnALB2048Enabled() {
+	if ts.cfg.IsEnabledAddOnALB2048() {
 		ts.lg.Info("creating alb2048Tester")
 		ts.alb2048Tester, err = alb.New(alb.Config{
 			Logger:    ts.lg,
@@ -374,7 +393,7 @@ func (ts *Tester) createSubTesters() (err error) {
 		}
 	}
 
-	if ts.cfg.IsAddOnJobPiEnabled() {
+	if ts.cfg.IsEnabledAddOnJobPi() {
 		ts.lg.Info("creating jobsPiTester")
 		ts.jobsPiTester, err = jobspi.New(jobspi.Config{
 			Logger:    ts.lg,
@@ -388,7 +407,7 @@ func (ts *Tester) createSubTesters() (err error) {
 		}
 	}
 
-	if ts.cfg.IsAddOnJobEchoEnabled() {
+	if ts.cfg.IsEnabledAddOnJobEcho() {
 		ts.lg.Info("creating jobsEchoTester")
 		ts.jobsEchoTester, err = jobsecho.New(jobsecho.Config{
 			Logger:    ts.lg,
@@ -402,7 +421,7 @@ func (ts *Tester) createSubTesters() (err error) {
 		}
 	}
 
-	if ts.cfg.IsAddOnCronJobEnabled() {
+	if ts.cfg.IsEnabledAddOnCronJob() {
 		ts.lg.Info("creating cronJobsTester")
 		ts.cronJobsTester, err = cronjobs.New(cronjobs.Config{
 			Logger:    ts.lg,
@@ -416,7 +435,7 @@ func (ts *Tester) createSubTesters() (err error) {
 		}
 	}
 
-	if ts.cfg.IsAddOnSecretsEnabled() {
+	if ts.cfg.IsEnabledAddOnSecrets() {
 		ts.lg.Info("creating secretsTester")
 		ts.secretsTester, err = secrets.New(secrets.Config{
 			Logger:    ts.lg,
@@ -430,7 +449,7 @@ func (ts *Tester) createSubTesters() (err error) {
 		}
 	}
 
-	if ts.cfg.IsAddOnIRSAEnabled() {
+	if ts.cfg.IsEnabledAddOnIRSA() {
 		ts.lg.Info("creating irsaTester")
 		ts.irsaTester, err = irsa.New(irsa.Config{
 			Logger:    ts.lg,
@@ -447,7 +466,7 @@ func (ts *Tester) createSubTesters() (err error) {
 		}
 	}
 
-	if ts.cfg.IsAddOnFargateEnabled() {
+	if ts.cfg.IsEnabledAddOnFargate() {
 		ts.lg.Info("creating fargateTester")
 		ts.fargateTester, err = fargate.New(fargate.Config{
 			Logger:    ts.lg,
@@ -464,7 +483,7 @@ func (ts *Tester) createSubTesters() (err error) {
 		}
 	}
 
-	if ts.cfg.IsAddOnAppMeshEnabled() {
+	if ts.cfg.IsEnabledAddOnAppMesh() {
 		ts.lg.Info("creating appMeshTester")
 		ts.appMeshTester, err = appmesh.NewTester(appmesh.Config{
 			Logger:    ts.lg,
@@ -481,13 +500,13 @@ func (ts *Tester) createSubTesters() (err error) {
 
 // Up should provision a new cluster for testing
 func (ts *Tester) Up() (err error) {
-	fmt.Printf("\n#################################\n")
+	fmt.Printf("\n*********************************\n")
 	fmt.Printf("Up (%q)\n", ts.cfg.ConfigPath)
 
 	now := time.Now()
 
 	defer func() {
-		fmt.Printf("\n#################################\n")
+		fmt.Printf("\n*********************************\n")
 		fmt.Printf("Up.defer start (%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 
 		if serr := ts.uploadToS3(); serr != nil {
@@ -496,11 +515,11 @@ func (ts *Tester) Up() (err error) {
 
 		if err == nil {
 			if ts.cfg.Status.Up {
-				fmt.Printf("\n#################################\n")
+				fmt.Printf("\n*********************************\n")
 				ts.lg.Sugar().Infof("kubectl (%s)", ts.cfg.ConfigPath)
 				fmt.Println(ts.cfg.KubectlCommands())
 
-				fmt.Printf("\n#################################\n")
+				fmt.Printf("\n*********************************\n")
 				ts.lg.Sugar().Infof("SSH (%s)", ts.cfg.ConfigPath)
 				fmt.Println(ts.cfg.SSHCommands())
 
@@ -508,7 +527,7 @@ func (ts *Tester) Up() (err error) {
 					zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 				)
 
-				fmt.Printf("\n#################################\n")
+				fmt.Printf("\n*********************************\n")
 				ts.lg.Sugar().Infof("Up.defer end (%s, %s)", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 				fmt.Printf("\n\n😁 😁 :) Up success\n\n\n")
 			} else {
@@ -519,11 +538,11 @@ func (ts *Tester) Up() (err error) {
 
 		if !ts.cfg.OnFailureDelete {
 			if ts.cfg.Status.Up {
-				fmt.Printf("\n#################################\n")
+				fmt.Printf("\n*********************************\n")
 				ts.lg.Sugar().Infof("kubectl (%s)", ts.cfg.ConfigPath)
 				fmt.Println(ts.cfg.KubectlCommands())
 
-				fmt.Printf("\n#################################\n")
+				fmt.Printf("\n*********************************\n")
 				ts.lg.Sugar().Infof("SSH (%s)", ts.cfg.ConfigPath)
 				fmt.Println(ts.cfg.SSHCommands())
 			}
@@ -533,23 +552,23 @@ func (ts *Tester) Up() (err error) {
 				zap.Error(err),
 			)
 
-			fmt.Printf("\n#################################\n")
+			fmt.Printf("\n*********************************\n")
 			ts.lg.Sugar().Infof("Up.defer end (%s, %s)", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 			fmt.Printf("\n\n😱 ☹ 😡 (-_-) Up fail\n\n\n")
 			return
 		}
 
 		if ts.cfg.Status.Up {
-			fmt.Printf("\n#################################\n")
+			fmt.Printf("\n*********************************\n")
 			ts.lg.Sugar().Infof("kubectl (%s)", ts.cfg.ConfigPath)
 			fmt.Println(ts.cfg.KubectlCommands())
 
-			fmt.Printf("\n#################################\n")
+			fmt.Printf("\n*********************************\n")
 			ts.lg.Sugar().Infof("SSH (%s)", ts.cfg.ConfigPath)
 			fmt.Println(ts.cfg.SSHCommands())
 		}
 
-		fmt.Printf("\n#################################\n")
+		fmt.Printf("\n*********************************\n")
 		fmt.Printf("😱 ☹ 😡 (-_-) Up fail\n")
 		ts.lg.Warn("Up failed; reverting resource creation",
 			zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
@@ -573,7 +592,7 @@ func (ts *Tester) Up() (err error) {
 			ts.lg.Warn("reverted Up")
 		}
 
-		fmt.Printf("\n#################################\n")
+		fmt.Printf("\n*********************************\n")
 		ts.lg.Sugar().Infof("Up.defer end (%s, %s)", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		fmt.Printf("\n\n😱 ☹ 😡 (-_-) Up fail\n\n\n")
 	}()
@@ -584,7 +603,7 @@ func (ts *Tester) Up() (err error) {
 	)
 	defer ts.cfg.Sync()
 
-	fmt.Printf("\n#################################\n")
+	fmt.Printf("\n*********************************\n")
 	fmt.Printf("createS3 (%q)\n", ts.cfg.ConfigPath)
 	if err := catchInterrupt(
 		ts.lg,
@@ -596,7 +615,7 @@ func (ts *Tester) Up() (err error) {
 		return err
 	}
 
-	fmt.Printf("\n#################################\n")
+	fmt.Printf("\n*********************************\n")
 	fmt.Printf("createEncryption (%q)\n", ts.cfg.ConfigPath)
 	if err := catchInterrupt(
 		ts.lg,
@@ -608,7 +627,7 @@ func (ts *Tester) Up() (err error) {
 		return err
 	}
 
-	fmt.Printf("\n#################################\n")
+	fmt.Printf("\n*********************************\n")
 	fmt.Printf("createKeyPair (%q)\n", ts.cfg.ConfigPath)
 	if err := catchInterrupt(
 		ts.lg,
@@ -620,7 +639,7 @@ func (ts *Tester) Up() (err error) {
 		return err
 	}
 
-	fmt.Printf("\n#################################\n")
+	fmt.Printf("\n*********************************\n")
 	fmt.Printf("createClusterRole (%q)\n", ts.cfg.ConfigPath)
 	if err := catchInterrupt(
 		ts.lg,
@@ -632,7 +651,7 @@ func (ts *Tester) Up() (err error) {
 		return err
 	}
 
-	fmt.Printf("\n#################################\n")
+	fmt.Printf("\n*********************************\n")
 	fmt.Printf("createVPC (%q)\n", ts.cfg.ConfigPath)
 	if err := catchInterrupt(
 		ts.lg,
@@ -644,7 +663,7 @@ func (ts *Tester) Up() (err error) {
 		return err
 	}
 
-	fmt.Printf("\n#################################\n")
+	fmt.Printf("\n*********************************\n")
 	fmt.Printf("createCluster (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 	if err := catchInterrupt(
 		ts.lg,
@@ -660,7 +679,7 @@ func (ts *Tester) Up() (err error) {
 	ts.lg.Info("waiting before running health check", zap.Duration("wait", waitDur))
 	time.Sleep(waitDur)
 
-	fmt.Printf("\n#################################\n")
+	fmt.Printf("\n*********************************\n")
 	fmt.Printf("checkHealth (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 	if err := catchInterrupt(
 		ts.lg,
@@ -673,7 +692,7 @@ func (ts *Tester) Up() (err error) {
 	}
 
 	if ts.cfg.CommandAfterCreateCluster != "" {
-		fmt.Printf("\n#################################\n")
+		fmt.Printf("\n*********************************\n")
 		fmt.Printf("\nrunCommand CommandAfterCreateCluster (%q)\n", ts.cfg.CommandAfterCreateCluster)
 		out, err := runCommand(ts.lg, ts.cfg.CommandAfterCreateCluster)
 		if err != nil {
@@ -690,8 +709,8 @@ func (ts *Tester) Up() (err error) {
 		fmt.Printf("\n[light_gray]runCommand output:\n%s\n", string(out))
 	}
 
-	if ts.cfg.IsAddOnManagedNodeGroupsEnabled() {
-		fmt.Printf("\n#################################\n")
+	if ts.cfg.IsEnabledAddOnManagedNodeGroups() {
+		fmt.Printf("\n*********************************\n")
 		fmt.Printf("mngTester.Create (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		if err := catchInterrupt(
 			ts.lg,
@@ -713,7 +732,7 @@ func (ts *Tester) Up() (err error) {
 			}
 		}
 		if !ts.cfg.StatusManagedNodeGroups.NvidiaDriverInstalled && needGPU {
-			fmt.Printf("\n#################################\n")
+			fmt.Printf("\n*********************************\n")
 			fmt.Printf("gpuTester.InstallNvidiaDriver (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 			if err := catchInterrupt(
 				ts.lg,
@@ -725,7 +744,7 @@ func (ts *Tester) Up() (err error) {
 				ts.lg.Warn("failed to install Nvidia driver", zap.Error(err))
 			}
 
-			fmt.Printf("\n#################################\n")
+			fmt.Printf("\n*********************************\n")
 			fmt.Printf("gpuTester.RunNvidiaSMI (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 			if err := catchInterrupt(
 				ts.lg,
@@ -738,7 +757,7 @@ func (ts *Tester) Up() (err error) {
 			}
 		}
 
-		fmt.Printf("\n#################################\n")
+		fmt.Printf("\n*********************************\n")
 		fmt.Printf("checkHealth (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		if err := catchInterrupt(
 			ts.lg,
@@ -750,16 +769,16 @@ func (ts *Tester) Up() (err error) {
 			return err
 		}
 
-		fmt.Printf("\n#################################\n")
+		fmt.Printf("\n*********************************\n")
 		ts.lg.Sugar().Infof("kubectl (%s)", ts.cfg.ConfigPath)
 		fmt.Println(ts.cfg.KubectlCommands())
 
-		fmt.Printf("\n#################################\n")
+		fmt.Printf("\n*********************************\n")
 		ts.lg.Sugar().Infof("SSH (%s)", ts.cfg.ConfigPath)
 		fmt.Println(ts.cfg.SSHCommands())
 
-		if ts.cfg.IsAddOnNLBHelloWorldEnabled() {
-			fmt.Printf("\n#################################\n")
+		if ts.cfg.IsEnabledAddOnNLBHelloWorld() {
+			fmt.Printf("\n*********************************\n")
 			fmt.Printf("nlbHelloWorldTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnNLBHelloWorld.Namespace)
 			if err := catchInterrupt(
 				ts.lg,
@@ -772,8 +791,8 @@ func (ts *Tester) Up() (err error) {
 			}
 		}
 
-		if ts.cfg.IsAddOnALB2048Enabled() {
-			fmt.Printf("\n#################################\n")
+		if ts.cfg.IsEnabledAddOnALB2048() {
+			fmt.Printf("\n*********************************\n")
 			fmt.Printf("alb2048Tester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnALB2048.Namespace)
 			if err := catchInterrupt(
 				ts.lg,
@@ -786,8 +805,8 @@ func (ts *Tester) Up() (err error) {
 			}
 		}
 
-		if ts.cfg.IsAddOnJobPiEnabled() {
-			fmt.Printf("\n#################################\n")
+		if ts.cfg.IsEnabledAddOnJobPi() {
+			fmt.Printf("\n*********************************\n")
 			fmt.Printf("jobsPiTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnJobPi.Namespace)
 			if err := catchInterrupt(
 				ts.lg,
@@ -800,8 +819,8 @@ func (ts *Tester) Up() (err error) {
 			}
 		}
 
-		if ts.cfg.IsAddOnJobEchoEnabled() {
-			fmt.Printf("\n#################################\n")
+		if ts.cfg.IsEnabledAddOnJobEcho() {
+			fmt.Printf("\n*********************************\n")
 			fmt.Printf("jobsEchoTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnJobEcho.Namespace)
 			if err := catchInterrupt(
 				ts.lg,
@@ -814,8 +833,8 @@ func (ts *Tester) Up() (err error) {
 			}
 		}
 
-		if ts.cfg.IsAddOnCronJobEnabled() {
-			fmt.Printf("\n#################################\n")
+		if ts.cfg.IsEnabledAddOnCronJob() {
+			fmt.Printf("\n*********************************\n")
 			fmt.Printf("cronJobsTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnCronJob.Namespace)
 			if err := catchInterrupt(
 				ts.lg,
@@ -828,8 +847,8 @@ func (ts *Tester) Up() (err error) {
 			}
 		}
 
-		if ts.cfg.IsAddOnSecretsEnabled() {
-			fmt.Printf("\n#################################\n")
+		if ts.cfg.IsEnabledAddOnSecrets() {
+			fmt.Printf("\n*********************************\n")
 			fmt.Printf("secretsTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnSecrets.Namespace)
 			if err := catchInterrupt(
 				ts.lg,
@@ -842,8 +861,8 @@ func (ts *Tester) Up() (err error) {
 			}
 		}
 
-		if ts.cfg.IsAddOnIRSAEnabled() {
-			fmt.Printf("\n#################################\n")
+		if ts.cfg.IsEnabledAddOnIRSA() {
+			fmt.Printf("\n*********************************\n")
 			fmt.Printf("irsaTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnIRSA.Namespace)
 			if err := catchInterrupt(
 				ts.lg,
@@ -856,8 +875,8 @@ func (ts *Tester) Up() (err error) {
 			}
 		}
 
-		if ts.cfg.IsAddOnFargateEnabled() {
-			fmt.Printf("\n#################################\n")
+		if ts.cfg.IsEnabledAddOnFargate() {
+			fmt.Printf("\n*********************************\n")
 			fmt.Printf("fargateTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnFargate.Namespace)
 			if err := catchInterrupt(
 				ts.lg,
@@ -870,8 +889,8 @@ func (ts *Tester) Up() (err error) {
 			}
 		}
 
-		if ts.cfg.IsAddOnAppMeshEnabled() {
-			fmt.Printf("\n#################################\n")
+		if ts.cfg.IsEnabledAddOnAppMesh() {
+			fmt.Printf("\n*********************************\n")
 			fmt.Printf("appMeshTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnAppMesh.Namespace)
 			if err := catchInterrupt(
 				ts.lg,
@@ -885,7 +904,7 @@ func (ts *Tester) Up() (err error) {
 		}
 
 		if ts.cfg.AddOnManagedNodeGroups.FetchLogs {
-			fmt.Printf("\n#################################\n")
+			fmt.Printf("\n*********************************\n")
 			fmt.Printf("mngTester.FetchLogs (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 			waitDur := 20 * time.Second
 			ts.lg.Info("sleeping before mngTester.FetchLogs", zap.Duration("wait", waitDur))
@@ -901,8 +920,8 @@ func (ts *Tester) Up() (err error) {
 				return err
 			}
 
-			if ts.cfg.IsAddOnSecretsEnabled() {
-				fmt.Printf("\n#################################\n")
+			if ts.cfg.IsEnabledAddOnSecrets() {
+				fmt.Printf("\n*********************************\n")
 				fmt.Printf("secretsTester.AggregateResults (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnSecrets.Namespace)
 				if err := catchInterrupt(
 					ts.lg,
@@ -915,8 +934,8 @@ func (ts *Tester) Up() (err error) {
 				}
 			}
 
-			if ts.cfg.IsAddOnIRSAEnabled() {
-				fmt.Printf("\n#################################\n")
+			if ts.cfg.IsEnabledAddOnIRSA() {
+				fmt.Printf("\n*********************************\n")
 				fmt.Printf("irsaTester.AggregateResults (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnIRSA.Namespace)
 				if err := catchInterrupt(
 					ts.lg,
@@ -930,7 +949,7 @@ func (ts *Tester) Up() (err error) {
 			}
 		}
 
-		fmt.Printf("\n#################################\n")
+		fmt.Printf("\n*********************************\n")
 		fmt.Printf("checkHealth (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		if err := catchInterrupt(
 			ts.lg,
@@ -971,7 +990,7 @@ func (ts *Tester) Down() error {
 }
 
 func (ts *Tester) down() (err error) {
-	fmt.Printf("\n#################################\n")
+	fmt.Printf("\n*********************************\n")
 	fmt.Printf("Down start (%q)\n\n", ts.cfg.ConfigPath)
 
 	now := time.Now()
@@ -986,7 +1005,7 @@ func (ts *Tester) down() (err error) {
 	defer func() {
 		ts.cfg.Sync()
 		if err == nil {
-			fmt.Printf("\n#################################\n")
+			fmt.Printf("\n*********************************\n")
 			fmt.Printf("Down.defer end (%q)\n\n", ts.cfg.ConfigPath)
 			fmt.Printf("\n\n😁 😁 :) Down success\n\n\n")
 
@@ -995,7 +1014,7 @@ func (ts *Tester) down() (err error) {
 			)
 
 		} else {
-			fmt.Printf("\n#################################\n")
+			fmt.Printf("\n*********************************\n")
 			fmt.Printf("Down.defer end (%q)\n\n", ts.cfg.ConfigPath)
 			fmt.Printf("\n\n😱 ☹ 😡 (-_-) Down fail\n\n\n")
 
@@ -1008,23 +1027,23 @@ func (ts *Tester) down() (err error) {
 
 	var errs []string
 
-	fmt.Printf("\n#################################\n")
+	fmt.Printf("\n*********************************\n")
 	fmt.Printf("deleteKeyPair (%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteKeyPair(); err != nil {
 		ts.lg.Warn("failed to delete key pair", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 
-	fmt.Printf("\n#################################\n")
+	fmt.Printf("\n*********************************\n")
 	fmt.Printf("deleteEncryption (%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteEncryption(); err != nil {
 		ts.lg.Warn("deleteEncryption failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 
-	if ts.cfg.IsAddOnManagedNodeGroupsEnabled() && len(ts.cfg.StatusManagedNodeGroups.Nodes) > 0 {
-		if ts.cfg.IsAddOnFargateEnabled() && ts.cfg.AddOnFargate.Created {
-			fmt.Printf("\n#################################\n")
+	if ts.cfg.IsEnabledAddOnManagedNodeGroups() && len(ts.cfg.StatusManagedNodeGroups.Nodes) > 0 {
+		if ts.cfg.IsEnabledAddOnFargate() && ts.cfg.AddOnFargate.Created {
+			fmt.Printf("\n*********************************\n")
 			fmt.Printf("fargateTester.Delete (%q)\n", ts.cfg.ConfigPath)
 			if err := ts.fargateTester.Delete(); err != nil {
 				ts.lg.Warn("fargateTester.Delete failed", zap.Error(err))
@@ -1032,8 +1051,8 @@ func (ts *Tester) down() (err error) {
 			}
 		}
 
-		if ts.cfg.IsAddOnIRSAEnabled() && ts.cfg.AddOnIRSA.Created {
-			fmt.Printf("\n#################################\n")
+		if ts.cfg.IsEnabledAddOnIRSA() && ts.cfg.AddOnIRSA.Created {
+			fmt.Printf("\n*********************************\n")
 			fmt.Printf("irsaTester.Delete (%q)\n", ts.cfg.ConfigPath)
 			if err := ts.irsaTester.Delete(); err != nil {
 				ts.lg.Warn("irsaTester.Delete failed", zap.Error(err))
@@ -1041,8 +1060,8 @@ func (ts *Tester) down() (err error) {
 			}
 		}
 
-		if ts.cfg.IsAddOnSecretsEnabled() && ts.cfg.AddOnSecrets.Created {
-			fmt.Printf("\n#################################\n")
+		if ts.cfg.IsEnabledAddOnSecrets() && ts.cfg.AddOnSecrets.Created {
+			fmt.Printf("\n*********************************\n")
 			fmt.Printf("secretsTester.Delete (%q)\n", ts.cfg.ConfigPath)
 			if err := ts.secretsTester.Delete(); err != nil {
 				ts.lg.Warn("secretsTester.Delete failed", zap.Error(err))
@@ -1050,8 +1069,8 @@ func (ts *Tester) down() (err error) {
 			}
 		}
 
-		if ts.cfg.IsAddOnCronJobEnabled() && ts.cfg.AddOnCronJob.Created {
-			fmt.Printf("\n#################################\n")
+		if ts.cfg.IsEnabledAddOnCronJob() && ts.cfg.AddOnCronJob.Created {
+			fmt.Printf("\n*********************************\n")
 			fmt.Printf("cronJobsTester.Delete (%q)\n", ts.cfg.ConfigPath)
 			if err := ts.cronJobsTester.Delete(); err != nil {
 				ts.lg.Warn("cronJobsTester.Delete failed", zap.Error(err))
@@ -1059,8 +1078,8 @@ func (ts *Tester) down() (err error) {
 			}
 		}
 
-		if ts.cfg.IsAddOnJobEchoEnabled() && ts.cfg.AddOnJobEcho.Created {
-			fmt.Printf("\n#################################\n")
+		if ts.cfg.IsEnabledAddOnJobEcho() && ts.cfg.AddOnJobEcho.Created {
+			fmt.Printf("\n*********************************\n")
 			fmt.Printf("jobsEchoTester.Delete (%q)\n", ts.cfg.ConfigPath)
 			if err := ts.jobsEchoTester.Delete(); err != nil {
 				ts.lg.Warn("jobsEchoTester.Delete failed", zap.Error(err))
@@ -1068,8 +1087,8 @@ func (ts *Tester) down() (err error) {
 			}
 		}
 
-		if ts.cfg.IsAddOnJobPiEnabled() && ts.cfg.AddOnJobPi.Created {
-			fmt.Printf("\n#################################\n")
+		if ts.cfg.IsEnabledAddOnJobPi() && ts.cfg.AddOnJobPi.Created {
+			fmt.Printf("\n*********************************\n")
 			fmt.Printf("jobsPiTester.Delete (%q)\n", ts.cfg.ConfigPath)
 			if err := ts.jobsPiTester.Delete(); err != nil {
 				ts.lg.Warn("jobsPiTester.Delete failed", zap.Error(err))
@@ -1077,8 +1096,8 @@ func (ts *Tester) down() (err error) {
 			}
 		}
 
-		if ts.cfg.IsAddOnALB2048Enabled() && ts.cfg.AddOnALB2048.Created {
-			fmt.Printf("\n#################################\n")
+		if ts.cfg.IsEnabledAddOnALB2048() && ts.cfg.AddOnALB2048.Created {
+			fmt.Printf("\n*********************************\n")
 			fmt.Printf("alb2048Tester.Delete (%q)\n", ts.cfg.ConfigPath)
 			if err := ts.alb2048Tester.Delete(); err != nil {
 				ts.lg.Warn("alb2048Tester.Delete failed", zap.Error(err))
@@ -1090,8 +1109,8 @@ func (ts *Tester) down() (err error) {
 			}
 		}
 
-		if ts.cfg.IsAddOnNLBHelloWorldEnabled() && ts.cfg.AddOnNLBHelloWorld.Created {
-			fmt.Printf("\n#################################\n")
+		if ts.cfg.IsEnabledAddOnNLBHelloWorld() && ts.cfg.AddOnNLBHelloWorld.Created {
+			fmt.Printf("\n*********************************\n")
 			fmt.Printf("nlbHelloWorldTester.Delete (%q)\n", ts.cfg.ConfigPath)
 			if err := ts.nlbHelloWorldTester.Delete(); err != nil {
 				ts.lg.Warn("nlbHelloWorldTester.Delete failed", zap.Error(err))
@@ -1102,8 +1121,8 @@ func (ts *Tester) down() (err error) {
 				time.Sleep(waitDur)
 			}
 		}
-		if ts.cfg.IsAddOnAppMeshEnabled() && ts.cfg.AddOnAppMesh.Created {
-			fmt.Printf("\n#################################\n")
+		if ts.cfg.IsEnabledAddOnAppMesh() && ts.cfg.AddOnAppMesh.Created {
+			fmt.Printf("\n*********************************\n")
 			fmt.Printf("appMeshTester.Delete (%q)\n", ts.cfg.ConfigPath)
 			if err := ts.appMeshTester.Delete(); err != nil {
 				ts.lg.Warn("appMeshTester.Delete failed", zap.Error(err))
@@ -1131,9 +1150,9 @@ func (ts *Tester) down() (err error) {
 	// https://github.com/aws/aws-k8s-tester/issues/70
 	// https://github.com/kubernetes/kubernetes/issues/53451
 	// https://github.com/kubernetes/enhancements/blob/master/keps/sig-network/20190423-service-lb-finalizer.md
-	if ts.cfg.IsAddOnManagedNodeGroupsEnabled() && len(ts.cfg.StatusManagedNodeGroups.Nodes) > 0 &&
-		((ts.cfg.IsAddOnALB2048Enabled() && ts.cfg.AddOnALB2048.Created) ||
-			(ts.cfg.IsAddOnNLBHelloWorldEnabled() && ts.cfg.AddOnNLBHelloWorld.Created)) {
+	if ts.cfg.IsEnabledAddOnManagedNodeGroups() && len(ts.cfg.StatusManagedNodeGroups.Nodes) > 0 &&
+		((ts.cfg.IsEnabledAddOnALB2048() && ts.cfg.AddOnALB2048.Created) ||
+			(ts.cfg.IsEnabledAddOnNLBHelloWorld() && ts.cfg.AddOnNLBHelloWorld.Created)) {
 		waitDur := 2 * time.Minute
 		ts.lg.Info("sleeping after deleting LB", zap.Duration("wait", waitDur))
 		time.Sleep(waitDur)
@@ -1142,8 +1161,8 @@ func (ts *Tester) down() (err error) {
 	// following need to be run in order to resolve delete dependency
 	// DO NOT "len(ts.cfg.StatusManagedNodeGroups.Nodes) > 0"; MNG may have failed to create
 	// e.g. cluster must be deleted before VPC delete
-	if ts.cfg.IsAddOnManagedNodeGroupsEnabled() {
-		fmt.Printf("\n#################################\n")
+	if ts.cfg.IsEnabledAddOnManagedNodeGroups() {
+		fmt.Printf("\n*********************************\n")
 		fmt.Printf("mngTester.Delete (%q)\n", ts.cfg.ConfigPath)
 		if err := ts.mngTester.Delete(); err != nil {
 			ts.lg.Warn("mngTester.Delete failed", zap.Error(err))
@@ -1155,14 +1174,14 @@ func (ts *Tester) down() (err error) {
 		time.Sleep(waitDur)
 	}
 
-	fmt.Printf("\n#################################\n")
+	fmt.Printf("\n*********************************\n")
 	fmt.Printf("deleteCluster (%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteCluster(); err != nil {
 		ts.lg.Warn("deleteCluster failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 
-	fmt.Printf("\n#################################\n")
+	fmt.Printf("\n*********************************\n")
 	fmt.Printf("deleteClusterRole (%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteClusterRole(); err != nil {
 		ts.lg.Warn("deleteClusterRole failed", zap.Error(err))
@@ -1175,14 +1194,14 @@ func (ts *Tester) down() (err error) {
 		time.Sleep(waitDur)
 	}
 
-	fmt.Printf("\n#################################\n")
+	fmt.Printf("\n*********************************\n")
 	fmt.Printf("deleteVPC (%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteVPC(); err != nil {
 		ts.lg.Warn("deleteVPC failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 
-	fmt.Printf("\n#################################\n")
+	fmt.Printf("\n*********************************\n")
 	fmt.Printf("deleteS3 (%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteS3(); err != nil {
 		ts.lg.Warn("deleteS3 failed", zap.Error(err))
@@ -1198,12 +1217,12 @@ func (ts *Tester) down() (err error) {
 // CreateMNG creates/adds EKS "Managed Node Group"s.
 // The existing node groups won't be recreated.
 func (ts *Tester) CreateMNG() error {
-	if !ts.cfg.IsAddOnManagedNodeGroupsEnabled() {
+	if !ts.cfg.IsEnabledAddOnManagedNodeGroups() {
 		ts.lg.Warn("mng has not been enabled; skipping creation MNG")
 		return nil
 	}
 
-	fmt.Printf("\n#################################\n")
+	fmt.Printf("\n*********************************\n")
 	fmt.Printf("mngTester.Create (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 	if err := catchInterrupt(
 		ts.lg,
@@ -1225,7 +1244,7 @@ found:
 		}
 	}
 	if !ts.cfg.StatusManagedNodeGroups.NvidiaDriverInstalled && needGPU {
-		fmt.Printf("\n#################################\n")
+		fmt.Printf("\n*********************************\n")
 		fmt.Printf("gpuTester.InstallNvidiaDriver (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		if err := catchInterrupt(
 			ts.lg,
@@ -1237,7 +1256,7 @@ found:
 			ts.lg.Warn("failed to install Nvidia driver", zap.Error(err))
 		}
 
-		fmt.Printf("\n#################################\n")
+		fmt.Printf("\n*********************************\n")
 		fmt.Printf("gpuTester.RunNvidiaSMI (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		if err := catchInterrupt(
 			ts.lg,

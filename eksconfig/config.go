@@ -15,9 +15,35 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+const (
+	// DefaultNodeInstanceTypeCPU is the default EC2 instance type for CPU worker node.
+	DefaultNodeInstanceTypeCPU = "c5.xlarge"
+	// DefaultNodeInstanceTypeGPU is the default EC2 instance type for GPU worker node.
+	DefaultNodeInstanceTypeGPU = "p3.8xlarge"
+
+	// DefaultNodeVolumeSize is the default EC2 instance volume size for a worker node.
+	DefaultNodeVolumeSize = 40
+
+	// NGsMaxLimit is the maximum number of "Node Group"s per a EKS cluster.
+	NGsMaxLimit = 10
+	// NGMaxLimit is the maximum number of nodes per a "Node Group".
+	NGMaxLimit = 100
+
+	// MNGsMaxLimit is the maximum number of "Managed Node Group"s per a EKS cluster.
+	MNGsMaxLimit = 10
+	// MNGMaxLimit is the maximum number of nodes per a "Managed Node Group".
+	MNGMaxLimit = 100
+)
+
+const (
+	// AMITypeBottleRocketCPU is the default AMI type for Bottlerocket OS.
+	// https://github.com/bottlerocket-os/bottlerocket
+	AMITypeBottleRocketCPU = "BOTTLEROCKET_x86_64"
+)
+
 // Config defines EKS configuration.
 type Config struct {
-	mu sync.RWMutex
+	mu *sync.RWMutex
 
 	// ConfigPath is the configuration file path.
 	// Deployer is expected to update this file with latest status.
@@ -98,6 +124,9 @@ type Config struct {
 	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
 	RemoteAccessPrivateKeyPath string `json:"remote-access-private-key-path,omitempty"`
 
+	// AddOnNodeGroups defines EKS "Node Group"
+	// creation parameters.
+	AddOnNodeGroups *AddOnNodeGroups `json:"add-on-node-groups,omitempty"`
 	// AddOnManagedNodeGroups defines EKS "Managed Node Group"
 	// creation parameters. If empty, it will use default values.
 	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
@@ -212,8 +241,108 @@ type Parameters struct {
 	EncryptionCMKARN string `json:"encryption-cmk-arn"`
 }
 
-func (cfg *Config) IsAddOnManagedNodeGroupsEnabled() bool {
-	return cfg.AddOnManagedNodeGroups != nil && cfg.AddOnManagedNodeGroups.Enable
+// IsEnabledAddOnNodeGroups returns true if "AddOnNodeGroups" is enabled.
+// Otherwise, nil the field for "omitempty".
+func (cfg *Config) IsEnabledAddOnNodeGroups() bool {
+	if cfg.AddOnNodeGroups == nil {
+		return false
+	}
+	if cfg.AddOnNodeGroups.Enable {
+		return true
+	}
+	cfg.AddOnNodeGroups = nil
+	return false
+}
+
+// AddOnNodeGroups defines parameters for EKS "Managed Node Group" creation.
+// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
+// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
+type AddOnNodeGroups struct {
+	// Enable is true to auto-create ad node group.
+	Enable bool `json:"enable"`
+	// Created is true when the resource has been created.
+	// Used for delete operations.
+	Created bool `json:"created" read-only:"true"`
+	// FetchLogs is true to fetch logs from remote nodes using SSH.
+	FetchLogs bool `json:"fetch-logs"`
+
+	// RoleName is the name of thed node group.
+	RoleName string `json:"role-name"`
+	// RoleCreate is true to auto-create and delete role.
+	RoleCreate bool `json:"role-create"`
+	// RoleARN is the role ARN that EKSd node group uses to create AWS
+	// resources for Kubernetes.
+	// By default, it's empty which triggers tester to create one.
+	RoleARN string `json:"role-arn"`
+	// RoleServicePrincipals is the node group Service Principals
+	RoleServicePrincipals []string `json:"role-service-principals"`
+	// RoleManagedPolicyARNs is node groupd policy ARNs.
+	RoleManagedPolicyARNs []string `json:"role-managed-policy-arns"`
+	RoleCFNStackID        string   `json:"role-cfn-stack-id" read-only:"true"`
+
+	// LogsDir is set to specify the target directory to store all remote log files.
+	// If empty, it stores in the same directory as "ConfigPath".
+	LogsDir string `json:"logs-dir,omitempty"`
+	// NGs maps from EKSd Node Group name to "NG".
+	NGs map[string]NG `json:"ngs,omitempty"`
+}
+
+// NG represents parameters for one EKS "Node Group".
+type NG struct {
+	// Name is the name of thed node group.
+	// ref. https://docs.aws.amazon.com/eks/latest/userguide/launch-workers.html
+	// ref. https://github.com/awslabs/amazon-eks-ami/blob/master/amazon-eks-nodegroup.yaml
+	Name string `json:"name,omitempty"`
+	// RemoteAccessUserName is the user name ford node group SSH access.
+	// ref. https://docs.aws.amazon.com/eks/latest/userguide/launch-workers.html
+	// ref. https://github.com/awslabs/amazon-eks-ami/blob/master/amazon-eks-nodegroup.yaml
+	RemoteAccessUserName string `json:"remote-access-user-name,omitempty"`
+	// Tags defines EKSd node group create tags.
+	Tags map[string]string `json:"tags,omitempty"`
+	// AMIType is the AMI type for the node group.
+	// Allowed values are BOTTLEROCKET_x86_64, AL2_x86_64 and AL2_x86_64_GPU.
+	// ref. https://docs.aws.amazon.com/eks/latest/userguide/launch-workers.html
+	// ref. https://github.com/awslabs/amazon-eks-ami/blob/master/amazon-eks-nodegroup.yaml
+	AMIType string `json:"ami-type,omitempty"`
+	// ASGMinSize is the minimum size of Node Group Auto Scaling Group.
+	// ref. https://docs.aws.amazon.com/eks/latest/userguide/launch-workers.html
+	// ref. https://github.com/awslabs/amazon-eks-ami/blob/master/amazon-eks-nodegroup.yaml
+	ASGMinSize int `json:"asg-min-size,omitempty"`
+	// ASGMaxSize is the maximum size of Node Group Auto Scaling Group.
+	// ref. https://docs.aws.amazon.com/eks/latest/userguide/launch-workers.html
+	// ref. https://github.com/awslabs/amazon-eks-ami/blob/master/amazon-eks-nodegroup.yaml
+	ASGMaxSize int `json:"asg-max-size,omitempty"`
+	// ASGDesiredCapacity is is the desired capacity of Node Group ASG.
+	// ref. https://docs.aws.amazon.com/eks/latest/userguide/launch-workers.html
+	// ref. https://github.com/awslabs/amazon-eks-ami/blob/master/amazon-eks-nodegroup.yaml
+	ASGDesiredCapacity int `json:"asg-desired-capacity,omitempty"`
+	// ImageID is the Amazon Machine Image (AMI).
+	// This value overrides any AWS Systems Manager Parameter Store value.
+	ImageID string `json:"image-id"`
+	// ImageIDSSMParameter is the AWS Systems Manager Parameter Store
+	// parameter of the AMI ID.
+	ImageIDSSMParameter string `json:"image-id-ssm-parameter"`
+	// InstanceTypes is the list of EC2 instance types for the node instances.
+	// ref. https://docs.aws.amazon.com/eks/latest/userguide/launch-workers.html
+	// ref. https://github.com/awslabs/amazon-eks-ami/blob/master/amazon-eks-nodegroup.yaml
+	InstanceTypes []string `json:"instance-types,omitempty"`
+	// VolumeSize is the node volume size.
+	// ref. https://docs.aws.amazon.com/eks/latest/userguide/launch-workers.html
+	// ref. https://github.com/awslabs/amazon-eks-ami/blob/master/amazon-eks-nodegroup.yaml
+	VolumeSize int `json:"volume-size,omitempty"`
+}
+
+// IsEnabledAddOnManagedNodeGroups returns true if "AddOnManagedNodeGroups" is enabled.
+// Otherwise, nil the field for "omitempty".
+func (cfg *Config) IsEnabledAddOnManagedNodeGroups() bool {
+	if cfg.AddOnManagedNodeGroups == nil {
+		return false
+	}
+	if cfg.AddOnManagedNodeGroups.Enable {
+		return true
+	}
+	cfg.AddOnManagedNodeGroups = nil
+	return false
 }
 
 // AddOnManagedNodeGroups defines parameters for EKS "Managed Node Group" creation.
@@ -252,11 +381,6 @@ type AddOnManagedNodeGroups struct {
 	// SigningName is the EKS managed node group create request signing name.
 	SigningName string `json:"signing-name"`
 
-	// RemoteAccessUserName is the user name for managed node group SSH access.
-	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
-	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
-	RemoteAccessUserName string `json:"remote-access-user-name,omitempty"`
-
 	// LogsDir is set to specify the target directory to store all remote log files.
 	// If empty, it stores in the same directory as "ConfigPath".
 	LogsDir string `json:"logs-dir,omitempty"`
@@ -270,6 +394,10 @@ type MNG struct {
 	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
 	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
 	Name string `json:"name,omitempty"`
+	// RemoteAccessUserName is the user name for managed node group SSH access.
+	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
+	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
+	RemoteAccessUserName string `json:"remote-access-user-name,omitempty"`
 	// Tags defines EKS managed node group create tags.
 	Tags map[string]string `json:"tags,omitempty"`
 	// ReleaseVersion is the AMI version of the Amazon EKS-optimized AMI for the node group.
@@ -304,8 +432,17 @@ type MNG struct {
 	VolumeSize int `json:"volume-size,omitempty"`
 }
 
-func (cfg *Config) IsAddOnNLBHelloWorldEnabled() bool {
-	return cfg.AddOnNLBHelloWorld != nil && cfg.AddOnNLBHelloWorld.Enable
+// IsEnabledAddOnNLBHelloWorld returns true if "AddOnNLBHelloWorld" is enabled.
+// Otherwise, nil the field for "omitempty".
+func (cfg *Config) IsEnabledAddOnNLBHelloWorld() bool {
+	if cfg.AddOnNLBHelloWorld == nil {
+		return false
+	}
+	if cfg.AddOnNLBHelloWorld.Enable {
+		return true
+	}
+	cfg.AddOnNLBHelloWorld = nil
+	return false
 }
 
 // AddOnNLBHelloWorld defines parameters for EKS cluster
@@ -339,8 +476,17 @@ type AddOnNLBHelloWorld struct {
 	URL string `json:"url" read-only:"true"`
 }
 
-func (cfg *Config) IsAddOnALB2048Enabled() bool {
-	return cfg.AddOnALB2048 != nil && cfg.AddOnALB2048.Enable
+// IsEnabledAddOnALB2048 returns true if "AddOnALB2048" is enabled.
+// Otherwise, nil the field for "omitempty".
+func (cfg *Config) IsEnabledAddOnALB2048() bool {
+	if cfg.AddOnALB2048 == nil {
+		return false
+	}
+	if cfg.AddOnALB2048.Enable {
+		return true
+	}
+	cfg.AddOnALB2048 = nil
+	return false
 }
 
 // AddOnALB2048 defines parameters for EKS cluster
@@ -376,8 +522,17 @@ type AddOnALB2048 struct {
 	URL string `json:"url" read-only:"true"`
 }
 
-func (cfg *Config) IsAddOnJobPiEnabled() bool {
-	return cfg.AddOnJobPi != nil && cfg.AddOnJobPi.Enable
+// IsEnabledAddOnJobPi returns true if "AddOnJobPi" is enabled.
+// Otherwise, nil the field for "omitempty".
+func (cfg *Config) IsEnabledAddOnJobPi() bool {
+	if cfg.AddOnJobPi == nil {
+		return false
+	}
+	if cfg.AddOnJobPi.Enable {
+		return true
+	}
+	cfg.AddOnJobPi = nil
+	return false
 }
 
 // AddOnJobPi defines parameters for EKS cluster
@@ -408,8 +563,17 @@ type AddOnJobPi struct {
 	Parallels int `json:"parallels"`
 }
 
-func (cfg *Config) IsAddOnJobEchoEnabled() bool {
-	return cfg.AddOnJobEcho != nil && cfg.AddOnJobEcho.Enable
+// IsEnabledAddOnJobEcho returns true if "AddOnJobEcho" is enabled.
+// Otherwise, nil the field for "omitempty".
+func (cfg *Config) IsEnabledAddOnJobEcho() bool {
+	if cfg.AddOnJobEcho == nil {
+		return false
+	}
+	if cfg.AddOnJobEcho.Enable {
+		return true
+	}
+	cfg.AddOnJobEcho = nil
+	return false
 }
 
 // AddOnJobEcho defines parameters for EKS cluster
@@ -445,8 +609,17 @@ type AddOnJobEcho struct {
 	EchoSize int `json:"echo-size"`
 }
 
-func (cfg *Config) IsAddOnCronJobEnabled() bool {
-	return cfg.AddOnCronJob != nil && cfg.AddOnCronJob.Enable
+// IsEnabledAddOnCronJob returns true if "AddOnCronJob" is enabled.
+// Otherwise, nil the field for "omitempty".
+func (cfg *Config) IsEnabledAddOnCronJob() bool {
+	if cfg.AddOnCronJob == nil {
+		return false
+	}
+	if cfg.AddOnCronJob.Enable {
+		return true
+	}
+	cfg.AddOnCronJob = nil
+	return false
 }
 
 // AddOnCronJob defines parameters for EKS cluster
@@ -491,8 +664,17 @@ type AddOnCronJob struct {
 	EchoSize int `json:"echo-size"`
 }
 
-func (cfg *Config) IsAddOnSecretsEnabled() bool {
-	return cfg.AddOnSecrets != nil && cfg.AddOnSecrets.Enable
+// IsEnabledAddOnSecrets returns true if "AddOnSecrets" is enabled.
+// Otherwise, nil the field for "omitempty".
+func (cfg *Config) IsEnabledAddOnSecrets() bool {
+	if cfg.AddOnSecrets == nil {
+		return false
+	}
+	if cfg.AddOnSecrets.Enable {
+		return true
+	}
+	cfg.AddOnSecrets = nil
+	return false
 }
 
 // AddOnSecrets defines parameters for EKS cluster
@@ -559,8 +741,17 @@ type AddOnSecrets struct {
 	ReadsResultPath string `json:"reads-result-path"`
 }
 
-func (cfg *Config) IsAddOnIRSAEnabled() bool {
-	return cfg.AddOnIRSA != nil && cfg.AddOnIRSA.Enable
+// IsEnabledAddOnIRSA returns true if "AddOnIRSA" is enabled.
+// Otherwise, nil the field for "omitempty".
+func (cfg *Config) IsEnabledAddOnIRSA() bool {
+	if cfg.AddOnIRSA == nil {
+		return false
+	}
+	if cfg.AddOnIRSA.Enable {
+		return true
+	}
+	cfg.AddOnIRSA = nil
+	return false
 }
 
 // AddOnIRSA defines parameters for EKS cluster
@@ -614,8 +805,17 @@ type AddOnIRSA struct {
 	DeploymentTookString string `json:"deployment-took-string,omitempty" read-only:"true"`
 }
 
-func (cfg *Config) IsAddOnFargateEnabled() bool {
-	return cfg.AddOnFargate != nil && cfg.AddOnFargate.Enable
+// IsEnabledAddOnFargate returns true if "AddOnFargate" is enabled.
+// Otherwise, nil the field for "omitempty".
+func (cfg *Config) IsEnabledAddOnFargate() bool {
+	if cfg.AddOnFargate == nil {
+		return false
+	}
+	if cfg.AddOnFargate.Enable {
+		return true
+	}
+	cfg.AddOnFargate = nil
+	return false
 }
 
 // AddOnFargate defines parameters for EKS cluster
@@ -661,8 +861,17 @@ type AddOnFargate struct {
 	ContainerName string `json:"container-name"`
 }
 
-func (cfg *Config) IsAddOnAppMeshEnabled() bool {
-	return cfg.AddOnAppMesh != nil && cfg.AddOnAppMesh.Enable
+// IsEnabledAddOnAppMesh returns true if "AddOnAppMesh" is enabled.
+// Otherwise, nil the field for "omitempty".
+func (cfg *Config) IsEnabledAddOnAppMesh() bool {
+	if cfg.AddOnAppMesh == nil {
+		return false
+	}
+	if cfg.AddOnAppMesh.Enable {
+		return true
+	}
+	cfg.AddOnAppMesh = nil
+	return false
 }
 
 // AddOnAppMesh defines parameters for EKS cluster
@@ -861,6 +1070,7 @@ func Load(p string) (cfg *Config, err error) {
 		return nil, err
 	}
 
+	cfg.mu = new(sync.RWMutex)
 	if cfg.ConfigPath != p {
 		cfg.ConfigPath = p
 	}
@@ -1034,7 +1244,7 @@ func (cfg *Config) unsafeSSHCommands() (s string) {
 			Name:      name,
 			Instances: ng.Instances,
 		}
-		buf.WriteString(asg.SSHCommands(cfg.Region, cfg.RemoteAccessPrivateKeyPath, cfg.AddOnManagedNodeGroups.RemoteAccessUserName))
+		buf.WriteString(asg.SSHCommands(cfg.Region, cfg.RemoteAccessPrivateKeyPath, cfg.AddOnManagedNodeGroups.MNGs[name].RemoteAccessUserName))
 		buf.WriteString("\n")
 	}
 	return buf.String()

@@ -41,7 +41,7 @@ func configFunc(cmd *cobra.Command, args []string) {
 	cfg.ConfigPath = path
 	cfg.Sync()
 
-	fmt.Printf("\n#################################\n")
+	fmt.Printf("\n*********************************\n")
 	fmt.Printf("overwriting config file from environment variables...\n")
 	err := cfg.UpdateFromEnvs()
 	if err != nil {
@@ -49,12 +49,12 @@ func configFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 	if err = cfg.ValidateAndSetDefaults(); err != nil {
-		fmt.Printf("\n#################################\n")
+		fmt.Printf("\n*********************************\n")
 		fmt.Printf("'aws-k8s-tester eks create config' fail %v\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Printf("\n#################################\n")
+	fmt.Printf("\n*********************************\n")
 	fmt.Printf("'aws-k8s-tester eks create config' successs\n")
 }
 
@@ -85,7 +85,7 @@ func createClusterFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	fmt.Printf("\n#################################\n")
+	fmt.Printf("\n*********************************\n")
 	fmt.Printf("overwriting config file from environment variables...\n")
 	err = cfg.UpdateFromEnvs()
 	if err != nil {
@@ -105,12 +105,12 @@ func createClusterFunc(cmd *cobra.Command, args []string) {
 	}
 
 	if err = tester.Up(); err != nil {
-		fmt.Printf("\n#################################\n")
+		fmt.Printf("\n*********************************\n")
 		fmt.Printf("'aws-k8s-tester eks create cluster' fail %v\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Printf("\n#################################\n")
+	fmt.Printf("\n*********************************\n")
 	fmt.Printf("'aws-k8s-tester eks create cluster' successs\n")
 }
 
@@ -141,7 +141,7 @@ func createMNGFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	fmt.Printf("\n#################################\n")
+	fmt.Printf("\n*********************************\n")
 	fmt.Printf("overwriting config file from environment variables...\n")
 	err = cfg.UpdateFromEnvs()
 	if err != nil {
@@ -161,11 +161,11 @@ func createMNGFunc(cmd *cobra.Command, args []string) {
 	}
 
 	if err = tester.CreateMNG(); err != nil {
-		fmt.Printf("\n#################################\n")
+		fmt.Printf("\n*********************************\n")
 		fmt.Printf("'aws-k8s-tester eks create mng' fail %err\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Printf("\n#################################\n")
+	fmt.Printf("\n*********************************\n")
 	fmt.Printf("'aws-k8s-tester eks create mng' successs\n")
 }

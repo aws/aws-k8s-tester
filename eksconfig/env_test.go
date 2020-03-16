@@ -103,13 +103,34 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_REMOTE_ACCESS_PRIVATE_KEY_PATH", "a")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_REMOTE_ACCESS_PRIVATE_KEY_PATH")
 
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_CREATED", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_CREATED")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_FETCH_LOGS", "false")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_FETCH_LOGS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_CREATE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_CREATE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_NAME", "ng-role-name")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_ARN", "ng-role-arn")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_ARN")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_SERVICE_PRINCIPALS", "ec2.amazonaws.com,eks.amazonaws.com,hello.amazonaws.com")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_SERVICE_PRINCIPALS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_MANAGED_POLICY_ARNS", "a,b,c")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_MANAGED_POLICY_ARNS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_NGS", `{"ng-test-name-cpu":{"name":"ng-test-name-cpu","tags":{"cpu":"hello-world"},"remote-access-user-name":"aaa","ami-type":"AL2_x86_64","asg-min-size":17,"asg-max-size":99,"asg-desired-capacity":77,"instance-type":"type-cpu-2","volume-size":40},"ng-test-name-gpu":{"name":"ng-test-name-gpu","remote-access-user-name":"bbb","tags":{"gpu":"hello-world"},"ami-type":"AL2_x86_64_GPU","asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34,"instance-type":"type-gpu-2","volume-size":500}}`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_NGS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_LOGS_DIR", "a")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_LOGS_DIR")
+
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_CREATED", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_CREATED")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_FETCH_LOGS", "false")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_FETCH_LOGS")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_CREATE", "false")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_CREATE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_CREATE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_NAME", "mng-role-name")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_NAME")
@@ -127,9 +148,7 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_RESOLVER_URL")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_SIGNING_NAME", "a")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_SIGNING_NAME")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_REMOTE_ACCESS_USER_NAME", "a")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_REMOTE_ACCESS_USER_NAME")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS", `{"mng-test-name-cpu":{"name":"mng-test-name-cpu","tags":{"cpu":"hello-world"},"release-version":"test-ver-cpu","ami-type":"AL2_x86_64","asg-min-size":17,"asg-max-size":99,"asg-desired-capacity":77,"instance-types":["type-cpu-1","type-cpu-2"],"volume-size":40},"mng-test-name-gpu":{"name":"mng-test-name-gpu","tags":{"gpu":"hello-world"},"release-version":"test-ver-gpu","ami-type":"AL2_x86_64_GPU","asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34,"instance-types":["type-gpu-1","type-gpu-2"],"volume-size":500}}`)
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS", `{"mng-test-name-cpu":{"name":"mng-test-name-cpu","tags":{"cpu":"hello-world"},"remote-access-user-name":"aaa","release-version":"test-ver-cpu","ami-type":"AL2_x86_64","asg-min-size":17,"asg-max-size":99,"asg-desired-capacity":77,"instance-types":["type-cpu-1","type-cpu-2"],"volume-size":40},"mng-test-name-gpu":{"name":"mng-test-name-gpu","remote-access-user-name":"bbb","tags":{"gpu":"hello-world"},"release-version":"test-ver-gpu","ami-type":"AL2_x86_64_GPU","asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34,"instance-types":["type-gpu-1","type-gpu-2"],"volume-size":500}}`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_LOGS_DIR", "a")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_LOGS_DIR")
@@ -408,6 +427,72 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("unexpected cfg.RemoteAccessPrivateKeyPath %q", cfg.RemoteAccessPrivateKeyPath)
 	}
 
+	if cfg.AddOnNodeGroups.Created { // read-only must be ignored
+		t.Fatalf("unexpected cfg.AddOnNodeGroups.Created %v", cfg.AddOnNodeGroups.Created)
+	}
+	if !cfg.AddOnNodeGroups.Enable {
+		t.Fatalf("unexpected cfg.AddOnNodeGroups.Enable %v", cfg.AddOnNodeGroups.Enable)
+	}
+	if cfg.AddOnNodeGroups.FetchLogs {
+		t.Fatalf("unexpected cfg.AddOnNodeGroups.FetchLogs %v", cfg.AddOnNodeGroups.FetchLogs)
+	}
+	if !cfg.AddOnNodeGroups.RoleCreate {
+		t.Fatalf("unexpected AddOnNodeGroups.RoleCreate %v", cfg.AddOnNodeGroups.RoleCreate)
+	}
+	if cfg.AddOnNodeGroups.RoleName != "ng-role-name" {
+		t.Fatalf("unexpected cfg.AddOnNodeGroups.RoleName %q", cfg.AddOnNodeGroups.RoleName)
+	}
+	if cfg.AddOnNodeGroups.RoleARN != "ng-role-arn" {
+		t.Fatalf("unexpected cfg.AddOnNodeGroups.RoleARN %q", cfg.AddOnNodeGroups.RoleARN)
+	}
+	expectedNGRoleServicePrincipals := []string{
+		"ec2.amazonaws.com",
+		"eks.amazonaws.com",
+		"hello.amazonaws.com",
+	}
+	if !reflect.DeepEqual(expectedNGRoleServicePrincipals, cfg.AddOnNodeGroups.RoleServicePrincipals) {
+		t.Fatalf("unexpected cfg.AddOnNodeGroups.RoleServicePrincipals %+v", cfg.AddOnNodeGroups.RoleServicePrincipals)
+	}
+	expectedNGRoleManagedPolicyARNs := []string{
+		"a",
+		"b",
+		"c",
+	}
+	if !reflect.DeepEqual(expectedNGRoleManagedPolicyARNs, cfg.AddOnNodeGroups.RoleManagedPolicyARNs) {
+		t.Fatalf("unexpected cfg.AddOnNodeGroups.RoleManagedPolicyARNs %+v", cfg.AddOnNodeGroups.RoleManagedPolicyARNs)
+	}
+	cpuName, gpuName := "ng-test-name-cpu", "ng-test-name-gpu"
+	expectedNGs := map[string]NG{
+		cpuName: {
+			Name:                 cpuName,
+			RemoteAccessUserName: "aaa",
+			Tags:                 map[string]string{"cpu": "hello-world"},
+			AMIType:              "AL2_x86_64",
+			ASGMinSize:           17,
+			ASGMaxSize:           99,
+			ASGDesiredCapacity:   77,
+			InstanceTypes:        []string{"type-cpu-2"},
+			VolumeSize:           40,
+		},
+		gpuName: {
+			Name:                 gpuName,
+			RemoteAccessUserName: "bbb",
+			Tags:                 map[string]string{"gpu": "hello-world"},
+			AMIType:              eks.AMITypesAl2X8664Gpu,
+			ASGMinSize:           30,
+			ASGMaxSize:           35,
+			ASGDesiredCapacity:   34,
+			InstanceTypes:        []string{"type-gpu-2"},
+			VolumeSize:           500,
+		},
+	}
+	if !reflect.DeepEqual(cfg.AddOnNodeGroups.NGs, expectedNGs) {
+		t.Fatalf("expected cfg.AddOnNodeGroups.NGs %+v, got %+v", expectedNGs, cfg.AddOnNodeGroups.NGs)
+	}
+	if cfg.AddOnNodeGroups.LogsDir != "a" {
+		t.Fatalf("unexpected cfg.AddOnNodeGroups.LogsDir %q", cfg.AddOnNodeGroups.LogsDir)
+	}
+
 	if cfg.AddOnManagedNodeGroups.Created { // read-only must be ignored
 		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.Created %v", cfg.AddOnManagedNodeGroups.Created)
 	}
@@ -417,7 +502,7 @@ func TestEnv(t *testing.T) {
 	if cfg.AddOnManagedNodeGroups.FetchLogs {
 		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.FetchLogs %v", cfg.AddOnManagedNodeGroups.FetchLogs)
 	}
-	if cfg.AddOnManagedNodeGroups.RoleCreate {
+	if !cfg.AddOnManagedNodeGroups.RoleCreate {
 		t.Fatalf("unexpected AddOnManagedNodeGroups.RoleCreate %v", cfg.AddOnManagedNodeGroups.RoleCreate)
 	}
 	if cfg.AddOnManagedNodeGroups.RoleName != "mng-role-name" {
@@ -426,20 +511,20 @@ func TestEnv(t *testing.T) {
 	if cfg.AddOnManagedNodeGroups.RoleARN != "mng-role-arn" {
 		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.RoleARN %q", cfg.AddOnManagedNodeGroups.RoleARN)
 	}
-	expectedManagedNodeGroupRoleServicePrincipals := []string{
+	expectedMNGRoleServicePrincipals := []string{
 		"ec2.amazonaws.com",
 		"eks.amazonaws.com",
 		"hello.amazonaws.com",
 	}
-	if !reflect.DeepEqual(expectedManagedNodeGroupRoleServicePrincipals, cfg.AddOnManagedNodeGroups.RoleServicePrincipals) {
+	if !reflect.DeepEqual(expectedMNGRoleServicePrincipals, cfg.AddOnManagedNodeGroups.RoleServicePrincipals) {
 		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.RoleServicePrincipals %+v", cfg.AddOnManagedNodeGroups.RoleServicePrincipals)
 	}
-	expectedManagedNodeGroupRoleManagedPolicyARNs := []string{
+	expectedMNGRoleManagedPolicyARNs := []string{
 		"a",
 		"b",
 		"c",
 	}
-	if !reflect.DeepEqual(expectedManagedNodeGroupRoleManagedPolicyARNs, cfg.AddOnManagedNodeGroups.RoleManagedPolicyARNs) {
+	if !reflect.DeepEqual(expectedMNGRoleManagedPolicyARNs, cfg.AddOnManagedNodeGroups.RoleManagedPolicyARNs) {
 		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.RoleManagedPolicyARNs %+v", cfg.AddOnManagedNodeGroups.RoleManagedPolicyARNs)
 	}
 	if cfg.AddOnManagedNodeGroups.RequestHeaderKey != "a" {
@@ -454,32 +539,31 @@ func TestEnv(t *testing.T) {
 	if cfg.AddOnManagedNodeGroups.SigningName != "a" {
 		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.SigningName %q", cfg.AddOnManagedNodeGroups.SigningName)
 	}
-	if cfg.AddOnManagedNodeGroups.RemoteAccessUserName != "a" {
-		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.RemoteAccessUserName %q", cfg.AddOnManagedNodeGroups.RemoteAccessUserName)
-	}
-	cpuName, gpuName := "mng-test-name-cpu", "mng-test-name-gpu"
+	cpuName, gpuName = "mng-test-name-cpu", "mng-test-name-gpu"
 	expectedMNGs := map[string]MNG{
 		cpuName: {
-			Name:               cpuName,
-			Tags:               map[string]string{"cpu": "hello-world"},
-			ReleaseVersion:     "test-ver-cpu",
-			AMIType:            "AL2_x86_64",
-			ASGMinSize:         17,
-			ASGMaxSize:         99,
-			ASGDesiredCapacity: 77,
-			InstanceTypes:      []string{"type-cpu-1", "type-cpu-2"},
-			VolumeSize:         40,
+			Name:                 cpuName,
+			RemoteAccessUserName: "aaa",
+			Tags:                 map[string]string{"cpu": "hello-world"},
+			ReleaseVersion:       "test-ver-cpu",
+			AMIType:              "AL2_x86_64",
+			ASGMinSize:           17,
+			ASGMaxSize:           99,
+			ASGDesiredCapacity:   77,
+			InstanceTypes:        []string{"type-cpu-1", "type-cpu-2"},
+			VolumeSize:           40,
 		},
 		gpuName: {
-			Name:               gpuName,
-			Tags:               map[string]string{"gpu": "hello-world"},
-			ReleaseVersion:     "test-ver-gpu",
-			AMIType:            eks.AMITypesAl2X8664Gpu,
-			ASGMinSize:         30,
-			ASGMaxSize:         35,
-			ASGDesiredCapacity: 34,
-			InstanceTypes:      []string{"type-gpu-1", "type-gpu-2"},
-			VolumeSize:         500,
+			Name:                 gpuName,
+			RemoteAccessUserName: "bbb",
+			Tags:                 map[string]string{"gpu": "hello-world"},
+			ReleaseVersion:       "test-ver-gpu",
+			AMIType:              eks.AMITypesAl2X8664Gpu,
+			ASGMinSize:           30,
+			ASGMaxSize:           35,
+			ASGDesiredCapacity:   34,
+			InstanceTypes:        []string{"type-gpu-1", "type-gpu-2"},
+			VolumeSize:           500,
 		},
 	}
 	if !reflect.DeepEqual(cfg.AddOnManagedNodeGroups.MNGs, expectedMNGs) {
@@ -773,6 +857,8 @@ func TestEnvAddOnManagedNodeGroups(t *testing.T) {
 		os.RemoveAll(cfg.RemoteAccessCommandsOutputPath)
 	}()
 
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE", "false")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE", "false")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE")
 
@@ -780,6 +866,9 @@ func TestEnvAddOnManagedNodeGroups(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	if cfg.AddOnNodeGroups.Enable {
+		t.Fatal("AddOnNodeGroups.Enable expected false, got true")
+	}
 	if cfg.AddOnManagedNodeGroups.Enable {
 		t.Fatal("AddOnManagedNodeGroups.Enable expected false, got true")
 	}
@@ -804,7 +893,7 @@ func TestEnvAddOnManagedNodeGroupsCNI(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE")
 	os.Setenv("AWS_K8S_TESTER_EKS_REMOTE_ACCESS_PRIVATE_KEY_PATH", `a`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_REMOTE_ACCESS_PRIVATE_KEY_PATH")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS", `{"test-mng-for-cni":{"name":"test-mng-for-cni","tags":{"group":"amazon-vpc-cni-k8s"},"ami-type":"AL2_x86_64","asg-min-size":3,"asg-max-size":3,"asg-desired-capacity":3,"instance-types":["c5.xlarge"]}}`)
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS", `{"test-mng-for-cni":{"name":"test-mng-for-cni","remote-access-user-name":"ec2-user-testing","tags":{"group":"amazon-vpc-cni-k8s"},"ami-type":"AL2_x86_64","asg-min-size":3,"asg-max-size":3,"asg-desired-capacity":3,"instance-types":["c5.xlarge"]}}`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS")
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
@@ -819,14 +908,15 @@ func TestEnvAddOnManagedNodeGroupsCNI(t *testing.T) {
 	}
 	expectedMNGs := map[string]MNG{
 		"test-mng-for-cni": {
-			Name:               "test-mng-for-cni",
-			Tags:               map[string]string{"group": "amazon-vpc-cni-k8s"},
-			AMIType:            "AL2_x86_64",
-			ASGMinSize:         3,
-			ASGMaxSize:         3,
-			ASGDesiredCapacity: 3,
-			InstanceTypes:      []string{"c5.xlarge"},
-			VolumeSize:         40,
+			Name:                 "test-mng-for-cni",
+			RemoteAccessUserName: "ec2-user-testing",
+			Tags:                 map[string]string{"group": "amazon-vpc-cni-k8s"},
+			AMIType:              "AL2_x86_64",
+			ASGMinSize:           3,
+			ASGMaxSize:           3,
+			ASGDesiredCapacity:   3,
+			InstanceTypes:        []string{"c5.xlarge"},
+			VolumeSize:           40,
 		},
 	}
 	if !reflect.DeepEqual(cfg.AddOnManagedNodeGroups.MNGs, expectedMNGs) {

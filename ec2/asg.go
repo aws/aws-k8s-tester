@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
@@ -19,24 +20,92 @@ import (
 
 // MAKE SURE TO SYNC THE DEFAULT VALUES in "ec2config"
 
+/*
+https://docs.aws.amazon.com/eks/latest/userguide/launch-workers.html
+https://github.com/awslabs/amazon-eks-ami/blob/master/amazon-eks-nodegroup.yaml
+https://raw.githubusercontent.com/awslabs/amazon-eks-ami/master/amazon-eks-nodegroup.yaml
+
+https://aws.amazon.com/about-aws/whats-new/2019/09/amazon-eks-provides-eks-optimized-ami-metadata-via-ssm-parameters/
+
+e.g.
+/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+
+e.g.
+/aws/service/eks/optimized-ami/1.15/amazon-linux-2/recommended
+/aws/service/bottlerocket/aws-k8s-1.15/x86_64/latest/image_id
+*/
+
 // TemplateASG is the CloudFormation template for ASG.
+// "must specify one of the following properties: LaunchConfigurationName,
+// LaunchTemplate, InstanceId, or MixedInstancesPolicy"
+// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-as-group.html
+// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-attribute-updatepolicy.html
+// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-launchtemplate-launchtemplatedata.html
+// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-launchtemplate-networkinterface.html
 const TemplateASG = `
 ---
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Amazon EC2 ASG'
 
-# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-as-group.html
 Parameters:
 
-  LaunchConfigurationName:
-    Type: String
-    Default: aws-k8s-tester-ec2-asg-launch-configuration
-    Description: EC2 LaunchConfiguration name
-
-  AutoScalingGroupName:
+  ASGName:
     Type: String
     Default: aws-k8s-tester-ec2-asg
     Description: EC2 AutoScalingGroup name
+
+  ASGInstanceProfileName:
+    Type: String
+    Default: aws-k8s-tester-ec2-asg-instance-profile
+    Description: EC2 InstanceProfile name
+
+  ASGLaunchTemplateName:
+    Type: String
+    Default: aws-k8s-tester-ec2-asg-launch-template
+    Description: EC2 LaunchConfiguration name
+
+  RoleName:
+    Type: String
+    Default: aws-k8s-tester-ec2-role
+    Description: EC2 Role name
+
+  SecurityGroupID:
+    Type: String
+    Description: EC2 security group ID
+
+  RemoteAccessKeyName:
+    Type: String
+    Description: EC2 SSH key name
+    Default: aws-k8s-tester-ec2-key
+
+  ImageID:
+    Type: String
+    Default: ""
+    Description: (Optional) Custom image ID. This value overrides any AWS Systems Manager Parameter Store value specified above.
+
+  ImageIDSSMParameter:
+    Type : AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+    Description: AWS Systems Manager Parameter Store parameter of the AMI ID.
+
+  InstanceTypes:
+    Type: CommaDelimitedList
+    Default: c5.xlarge
+    Description: EC2 instance types
+
+  InstanceTypesCount:
+    Type: Number
+    Default: 1
+    MinValue: 1
+    MaxValue: 4
+    Description: The number of instance types
+
+  VolumeSize:
+    Type: Number
+    Default: 40
+    MinValue: 8
+    MaxValue: 1024
+    Description: Size of the root disk for the EC2 instances, in GiB.
 
   PublicSubnetID1:
     Type: String
@@ -73,15 +142,98 @@ Parameters:
 
 Conditions:
 
+  HasImageID:
+    Fn::Not:
+      - Fn::Equals:
+          - Ref: ImageID
+          - ""
+
   IsPublicSubnetID3Configured:
     Fn::Not:
       - Fn::Equals:
           - Ref: PublicSubnetID3
           - ""
 
+  Has2InstanceTypes:
+    Fn::Or:
+      - Fn::Equals:
+          - Ref: InstanceTypesCount
+          - 2
+      - Fn::Equals:
+          - Ref: InstanceTypesCount
+          - 3
+      - Fn::Equals:
+          - Ref: InstanceTypesCount
+          - 4
+
+  Has3InstanceTypes:
+    Fn::Or:
+      - Fn::Equals:
+          - Ref: InstanceTypesCount
+          - 3
+      - Fn::Equals:
+          - Ref: InstanceTypesCount
+          - 4
+
+  Has4InstanceTypes:
+    Fn::Equals:
+      - Ref: InstanceTypesCount
+      - 4
+
 Resources:
 
-  AutoScalingGroup:
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: !Ref ASGInstanceProfileName
+      Path: "/"
+      Roles:
+      - !Ref RoleName
+
+  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-launchtemplate-launchtemplatedata.html
+  NodeLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    DependsOn:
+    - InstanceProfile
+    Properties:
+      LaunchTemplateName: !Ref ASGLaunchTemplateName
+      LaunchTemplateData:
+        IamInstanceProfile:
+          Arn: !GetAtt InstanceProfile.Arn
+          Name: !Ref ASGInstanceProfileName
+        ImageId:
+          Fn::If:
+            - HasImageID
+            - !Ref ImageID
+            - !Ref ImageIDSSMParameter
+        SecurityGroupIds:
+        - !Ref SecurityGroupID
+        KeyName: !Ref RemoteAccessKeyName
+        BlockDeviceMappings:
+        - DeviceName: '/dev/xvda'
+          Ebs:
+            VolumeType: gp2
+            VolumeSize: !Ref VolumeSize
+            DeleteOnTermination: true
+        Monitoring:
+          Enabled: true
+        # need this for public DNS + SSH access
+        NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeleteOnTermination: true
+          DeviceIndex: 0
+          Groups:
+          - !Ref SecurityGroupID
+        TagSpecifications:
+        - ResourceType: instance
+          Tags:
+          - { Key: Name, Value: !Sub '${ASGName}-instance' }
+        - ResourceType: volume
+          Tags:
+          - { Key: Name, Value: !Sub '${ASGName}-volume' }
+
+  # specify "MixedInstancesPolicy" or "LaunchConfiguration"
+  ASG:
     Type: AWS::AutoScaling::AutoScalingGroup
     UpdatePolicy:
       AutoScalingRollingUpdate:
@@ -94,7 +246,7 @@ Resources:
         - AlarmNotification
         - ScheduledActions
     Properties:
-      AutoScalingGroupName: !Ref AutoScalingGroupName
+      AutoScalingGroupName: !Ref ASGName
       MinSize: !Ref ASGMinSize
       MaxSize: !Ref ASGMaxSize
       DesiredCapacity: !Ref ASGDesiredCapacity
@@ -110,15 +262,35 @@ Resources:
       Tags:
       - Key: Name
         PropagateAtLaunch: true
-        Value: !Ref AutoScalingGroupName
-      LaunchConfigurationName: !Ref LaunchConfigurationName
+        Value: !Ref ASGName
+      MixedInstancesPolicy:
+        InstancesDistribution:
+          OnDemandAllocationStrategy: "prioritized"
+        LaunchTemplate:
+          LaunchTemplateSpecification:
+            LaunchTemplateId: !Ref NodeLaunchTemplate
+            Version: !GetAtt NodeLaunchTemplate.LatestVersionNumber
+          Overrides:
+          - InstanceType: !Select [ 0, !Ref InstanceTypes ]
+          - Fn::If:
+            - Has2InstanceTypes
+            - !Select [ 1, !Ref InstanceTypes ]
+            - !Ref AWS::NoValue
+          - Fn::If:
+            - Has3InstanceTypes
+            - !Select [ 2, !Ref InstanceTypes ]
+            - !Ref AWS::NoValue
+          - Fn::If:
+            - Has4InstanceTypes
+            - !Select [ 3, !Ref InstanceTypes ]
+            - !Ref AWS::NoValue
       HealthCheckType: EC2
       HealthCheckGracePeriod: 300
 
 Outputs:
 
-  AutoScalingGroupName:
-    Value: !Ref AutoScalingGroup
+  ASGName:
+    Value: !Ref ASG
 
 `
 
@@ -140,7 +312,7 @@ func (ts *Tester) createASGs() error {
 		ts.lg.Info("creating ASG", zap.String("name", asgName))
 		stackInput := &cloudformation.CreateStackInput{
 			StackName:    aws.String(asgName),
-			Capabilities: aws.StringSlice([]string{"CAPABILITY_IAM"}),
+			Capabilities: aws.StringSlice([]string{"CAPABILITY_NAMED_IAM"}),
 			OnFailure:    aws.String(cloudformation.OnFailureDelete),
 			TemplateBody: aws.String(TemplateASG),
 			Tags: awscfn.NewTags(map[string]string{
@@ -150,12 +322,28 @@ func (ts *Tester) createASGs() error {
 			}),
 			Parameters: []*cloudformation.Parameter{
 				{
-					ParameterKey:   aws.String("LaunchConfigurationName"),
-					ParameterValue: aws.String(asg.LaunchConfigurationName),
+					ParameterKey:   aws.String("ASGName"),
+					ParameterValue: aws.String(asg.Name),
 				},
 				{
-					ParameterKey:   aws.String("AutoScalingGroupName"),
-					ParameterValue: aws.String(asg.Name),
+					ParameterKey:   aws.String("ASGInstanceProfileName"),
+					ParameterValue: aws.String(asg.Name + "-instance-profile"),
+				},
+				{
+					ParameterKey:   aws.String("ASGLaunchTemplateName"),
+					ParameterValue: aws.String(asg.Name + "-launch-template"),
+				},
+				{
+					ParameterKey:   aws.String("RoleName"),
+					ParameterValue: aws.String(ts.cfg.RoleName),
+				},
+				{
+					ParameterKey:   aws.String("SecurityGroupID"),
+					ParameterValue: aws.String(ts.cfg.SecurityGroupID),
+				},
+				{
+					ParameterKey:   aws.String("RemoteAccessKeyName"),
+					ParameterValue: aws.String(ts.cfg.RemoteAccessKeyName),
 				},
 				{
 					ParameterKey:   aws.String("PublicSubnetID1"),
@@ -170,6 +358,38 @@ func (ts *Tester) createASGs() error {
 					ParameterValue: aws.String(ts.cfg.PublicSubnetIDs[2]),
 				},
 			},
+		}
+		if asg.ImageID != "" {
+			ts.lg.Info("added image ID", zap.String("image-id", asg.ImageID))
+			stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
+				ParameterKey:   aws.String("ImageID"),
+				ParameterValue: aws.String(asg.ImageID),
+			})
+		}
+		if asg.ImageIDSSMParameter != "" {
+			ts.lg.Info("added image SSM parameter", zap.String("image-id-ssm-parameter", asg.ImageIDSSMParameter))
+			stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
+				ParameterKey:   aws.String("ImageIDSSMParameter"),
+				ParameterValue: aws.String(asg.ImageIDSSMParameter),
+			})
+		}
+		if len(asg.InstanceTypes) > 0 {
+			ts.lg.Info("added instance type", zap.Strings("instance-types", asg.InstanceTypes))
+			stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
+				ParameterKey:   aws.String("InstanceTypes"),
+				ParameterValue: aws.String(strings.Join(asg.InstanceTypes, ",")),
+			})
+			stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
+				ParameterKey:   aws.String("InstanceTypesCount"),
+				ParameterValue: aws.String(fmt.Sprintf("%d", len(asg.InstanceTypes))),
+			})
+		}
+		if asg.VolumeSize > 0 {
+			ts.lg.Info("added volume size", zap.Int64("volume-size", asg.VolumeSize))
+			stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
+				ParameterKey:   aws.String("VolumeSize"),
+				ParameterValue: aws.String(fmt.Sprintf("%d", asg.VolumeSize)),
+			})
 		}
 		if asg.ASGMinSize > 0 {
 			ts.lg.Info("added min size", zap.Int64("min-size", asg.ASGMinSize))
@@ -226,8 +446,8 @@ func (ts *Tester) createASGs() error {
 		// update status after creating a new ASG
 		for _, o := range st.Stack.Outputs {
 			switch k := aws.StringValue(o.OutputKey); k {
-			case "AutoScalingGroupName":
-				ts.lg.Info("found AutoScalingGroupName value from CFN", zap.String("value", aws.StringValue(o.OutputValue)))
+			case "ASGName":
+				ts.lg.Info("found ASGName value from CFN", zap.String("value", aws.StringValue(o.OutputValue)))
 			default:
 				return fmt.Errorf("unexpected OutputKey %q from %q", k, asg.ASGCFNStackID)
 			}

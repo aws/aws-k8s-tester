@@ -1086,7 +1086,7 @@ func (ts *tester) countSuccess() (int, error) {
 				KeyPath:       ts.cfg.EKSConfig.RemoteAccessPrivateKeyPath,
 				PublicIP:      iv.PublicIP,
 				PublicDNSName: iv.PublicDNSName,
-				UserName:      ts.cfg.EKSConfig.AddOnManagedNodeGroups.RemoteAccessUserName,
+				UserName:      iv.RemoteAccessUserName,
 			})
 			if err != nil {
 				return 0, err

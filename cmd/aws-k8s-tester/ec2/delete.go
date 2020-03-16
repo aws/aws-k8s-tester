@@ -46,11 +46,11 @@ func deleteClusterFunc(cmd *cobra.Command, args []string) {
 	}
 
 	if err = tester.Down(); err != nil {
-		fmt.Printf("\n#################################\n")
+		fmt.Printf("\n*********************************\n")
 		fmt.Printf("'aws-k8s-tester ec2 delete cluster' fail %v\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Printf("\n#################################\n")
+	fmt.Printf("\n*********************************\n")
 	fmt.Printf("'aws-k8s-tester ec2 delete cluster' successs\n")
 }

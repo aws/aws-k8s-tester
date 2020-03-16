@@ -22,7 +22,7 @@ RemoteAccess:
 // Not supported yet
 // Fn::GetAtt: Resource type AWS::EKS::Nodegroup does not support attribute {Resources.RemoteAccessSecurityGroup}
 
-  ManagedNodeGroupSecurityGroupIngress22:
+  SecurityGroupIngress22:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
       GroupId: !GetAtt ManagedNodeGroup.Resources.RemoteAccessSecurityGroup
@@ -31,7 +31,7 @@ RemoteAccess:
       ToPort: '22'
       CidrIp: '0.0.0.0/0'
 
-  ManagedNodeGroupSecurityGroupIngress1024:
+  SecurityGroupIngress1024:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
       GroupId: !GetAtt ManagedNodeGroup.Resources.RemoteAccessSecurityGroup
@@ -40,7 +40,7 @@ RemoteAccess:
       ToPort: '1024'
       CidrIp: '0.0.0.0/0'
 
-  ManagedNodeGroupSecurityGroupEgress1024:
+  SecurityGroupEgress1024:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
       GroupId: !Ref ControlPlaneSecurityGroupID

@@ -14,6 +14,8 @@ const (
 	EnvironmentVariablePrefix = "AWS_K8S_TESTER_EKS_"
 	// EnvironmentVariablePrefixParameters is the environment variable prefix used for "eksconfig".
 	EnvironmentVariablePrefixParameters = "AWS_K8S_TESTER_EKS_PARAMETERS_"
+	// EnvironmentVariablePrefixAddOnNodeGroups is the environment variable prefix used for "eksconfig".
+	EnvironmentVariablePrefixAddOnNodeGroups = "AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_"
 	// EnvironmentVariablePrefixAddOnManagedNodeGroups is the environment variable prefix used for "eksconfig".
 	EnvironmentVariablePrefixAddOnManagedNodeGroups = "AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_"
 	// EnvironmentVariablePrefixAddOnNLBHelloWorld is the environment variable prefix used for "eksconfig".
@@ -66,6 +68,16 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		cfg.Parameters = av
 	} else {
 		return fmt.Errorf("expected *Parameters, got %T", vv)
+	}
+
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnNodeGroups, cfg.AddOnNodeGroups)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*AddOnNodeGroups); ok {
+		cfg.AddOnNodeGroups = av
+	} else {
+		return fmt.Errorf("expected *AddOnNodeGroups, got %T", vv)
 	}
 
 	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnManagedNodeGroups, cfg.AddOnManagedNodeGroups)
@@ -243,6 +255,13 @@ func parseEnvs(pfx string, addOn interface{}) (interface{}, error) {
 					}
 					vv.Field(i).SetMapIndex(reflect.ValueOf(fields[0]), reflect.ValueOf(fields[1]))
 				}
+
+			case "NGs":
+				ng := make(map[string]NG)
+				if err := json.Unmarshal([]byte(sv), &ng); err != nil {
+					return nil, fmt.Errorf("failed to parse %q (field name %q, environmental variable key %q, error %v)", sv, fieldName, env, err)
+				}
+				vv.Field(i).Set(reflect.ValueOf(ng))
 
 			case "MNGs":
 				mng := make(map[string]MNG)
