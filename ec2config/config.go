@@ -38,7 +38,7 @@ const (
 
 // Config defines EC2 configuration.
 type Config struct {
-	mu sync.RWMutex
+	mu *sync.RWMutex
 
 	// Name is the name of EC2 tester.
 	Name string `json:"name"`
@@ -196,15 +196,11 @@ func (cfg *Config) RecordStatus(status string) {
 // ASG represents one ASG.
 type ASG struct {
 	// Name is the ASG name.
-	Name string `json:"name"`
-	// LaunchConfigurationName is the name of the ASG launch configuration.
-	LaunchConfigurationName string `json:"launch-configuration-name"`
+	Name          string `json:"name"`
+	ASGCFNStackID string `json:"asg-cfn-stack-id" read-only:"true"`
 
 	// RemoteAccessUserName is the user name used for running init scripts or SSH access.
 	RemoteAccessUserName string `json:"remote-access-user-name"`
-
-	ASGLaunchConfigurationCFNStackID string `json:"asg-launch-configuration-cfn-stack-id" read-only:"true"`
-	ASGCFNStackID                    string `json:"asg-cfn-stack-id" read-only:"true"`
 
 	// SSMDocumentName is the name of SSM document.
 	SSMDocumentName string `json:"ssm-document-name"`
@@ -229,8 +225,8 @@ type ASG struct {
 	// ImageIDSSMParameter is the AWS Systems Manager Parameter Store
 	// parameter of the AMI ID.
 	ImageIDSSMParameter string `json:"image-id-ssm-parameter"`
-	// InstanceType is the instance type.
-	InstanceType string `json:"instance-type"`
+	// InstanceTypes is the list of EC2 instance types.
+	InstanceTypes []string `json:"instance-types"`
 	// VolumeSize is the size of the default volume, in GiB.
 	//
 	// Constraints: 1-16384 for General Purpose SSD (gp2), 4-16384 for Provisioned
@@ -333,6 +329,7 @@ func Load(p string) (cfg *Config, err error) {
 		return nil, err
 	}
 
+	cfg.mu = new(sync.RWMutex)
 	if cfg.ConfigPath != p {
 		cfg.ConfigPath = p
 	}

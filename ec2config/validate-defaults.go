@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/pkg/aws"
@@ -56,6 +57,7 @@ func init() {
 // NewDefault returns a copy of the default configuration.
 func NewDefault() *Config {
 	vv := DefaultConfig
+	vv.mu = new(sync.RWMutex)
 
 	if name := os.Getenv(EnvironmentVariablePrefix + "NAME"); name != "" {
 		vv.Name = name
@@ -66,16 +68,15 @@ func NewDefault() *Config {
 	ssmDocName := vv.Name + "SSMDocument"
 	ssmDocName = strings.ReplaceAll(ssmDocName, "-", "")
 	vv.ASGs = map[string]ASG{
-		vv.Name + "-asg": ASG{
+		vv.Name + "-asg": {
 			Name:                               vv.Name + "-asg",
-			LaunchConfigurationName:            vv.Name + "-asg-launch-config",
 			RemoteAccessUserName:               "ec2-user", // for AL2
 			SSMDocumentName:                    vv.Name + "SSMDocument",
 			SSMDocumentCreate:                  false,
 			SSMDocumentCommands:                "",
 			SSMDocumentExecutionTimeoutSeconds: 3600,
 			AMIType:                            AMITypeAL2X8664,
-			InstanceType:                       DefaultNodeInstanceTypeCPU,
+			InstanceTypes:                      []string{DefaultNodeInstanceTypeCPU},
 			VolumeSize:                         DefaultNodeVolumeSize,
 			ASGMinSize:                         1,
 			ASGMaxSize:                         1,
@@ -90,6 +91,9 @@ func NewDefault() *Config {
 // And updates empty fields with default values.
 // At the end, it writes populated YAML to aws-k8s-tester config path.
 func (cfg *Config) ValidateAndSetDefaults() error {
+	if cfg.mu == nil {
+		cfg.mu = new(sync.RWMutex)
+	}
 	cfg.mu.Lock()
 	defer func() {
 		cfg.unsafeSync()
@@ -294,9 +298,6 @@ func (cfg *Config) validateASGs() error {
 		if v.Name == "" {
 			return fmt.Errorf("ASGs[%q].Name is empty", k)
 		}
-		if v.LaunchConfigurationName == "" {
-			return fmt.Errorf("ASGs[%q].LaunchConfigurationName is empty", k)
-		}
 		if k != v.Name {
 			return fmt.Errorf("ASGs[%q].Name has different Name field %q", k, v.Name)
 		}
@@ -317,12 +318,12 @@ func (cfg *Config) validateASGs() error {
 		switch v.AMIType {
 		case AMITypeBottleRocketCPU,
 			AMITypeAL2X8664:
-			if len(v.InstanceType) == 0 {
-				v.InstanceType = DefaultNodeInstanceTypeCPU
+			if len(v.InstanceTypes) == 0 {
+				v.InstanceTypes = []string{DefaultNodeInstanceTypeCPU}
 			}
 		case AMITypeAL2X8664GPU:
-			if len(v.InstanceType) == 0 {
-				v.InstanceType = DefaultNodeInstanceTypeGPU
+			if len(v.InstanceTypes) == 0 {
+				v.InstanceTypes = []string{DefaultNodeInstanceTypeGPU}
 			}
 		default:
 			return fmt.Errorf("unknown ASGs[%q].AMIType %q", k, v.AMIType)
