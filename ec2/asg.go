@@ -54,11 +54,6 @@ Parameters:
     Default: aws-k8s-tester-ec2-asg
     Description: EC2 AutoScalingGroup name
 
-  ASGInstanceProfileName:
-    Type: String
-    Default: aws-k8s-tester-ec2-asg-instance-profile
-    Description: EC2 InstanceProfile name
-
   ASGLaunchTemplateName:
     Type: String
     Default: aws-k8s-tester-ec2-asg-launch-template
@@ -185,7 +180,6 @@ Resources:
   InstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
-      InstanceProfileName: !Ref ASGInstanceProfileName
       Path: "/"
       Roles:
       - !Ref RoleName
@@ -200,14 +194,11 @@ Resources:
       LaunchTemplateData:
         IamInstanceProfile:
           Arn: !GetAtt InstanceProfile.Arn
-          Name: !Ref ASGInstanceProfileName
         ImageId:
           Fn::If:
             - HasImageID
             - !Ref ImageID
             - !Ref ImageIDSSMParameter
-        SecurityGroupIds:
-        - !Ref SecurityGroupID
         KeyName: !Ref RemoteAccessKeyName
         BlockDeviceMappings:
         - DeviceName: '/dev/xvda'
@@ -324,10 +315,6 @@ func (ts *Tester) createASGs() error {
 				{
 					ParameterKey:   aws.String("ASGName"),
 					ParameterValue: aws.String(asg.Name),
-				},
-				{
-					ParameterKey:   aws.String("ASGInstanceProfileName"),
-					ParameterValue: aws.String(asg.Name + "-instance-profile"),
 				},
 				{
 					ParameterKey:   aws.String("ASGLaunchTemplateName"),
