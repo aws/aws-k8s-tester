@@ -69,7 +69,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.4...v0.7.5
 ### Dependency
 
 - Clean up [`k8s.io/client-go` vendoring](https://github.com/aws/aws-k8s-tester/pull/81).
-- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.29.20`](https://github.com/aws/aws-sdk-go/releases/tag/v1.29.20) to [`v1.29.24`](https://github.com/aws/aws-sdk-go/releases/tag/v1.29.24).
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.29.20`](https://github.com/aws/aws-sdk-go/releases/tag/v1.29.20) to [`v1.29.26`](https://github.com/aws/aws-sdk-go/releases/tag/v1.29.26).
 
 ### Go
 

@@ -397,6 +397,7 @@ type instanceLogs struct {
 	errs       []string
 }
 
+// DownloadLogs downloads logs to the artifact direcoty.
 func (ts *Tester) DownloadLogs(artifactDir string) error {
 	err := ts.FetchLogs()
 	if err != nil {

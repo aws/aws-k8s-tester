@@ -1,10 +1,12 @@
 package ec2
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"os"
 	"strings"
+	"text/template"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
@@ -189,6 +191,7 @@ Resources:
     Type: AWS::EC2::LaunchTemplate
     DependsOn:
     - InstanceProfile
+{{ if .InstallSSM }}{{.Metadata}}{{ end }}
     Properties:
       LaunchTemplateName: !Ref ASGLaunchTemplateName
       LaunchTemplateData:
@@ -222,6 +225,7 @@ Resources:
         - ResourceType: volume
           Tags:
           - { Key: Name, Value: !Sub '${ASGName}-volume' }
+{{ if .InstallSSM }}{{.UserData}}{{ end }}
 
   # specify "MixedInstancesPolicy" or "LaunchConfiguration"
   ASG:
@@ -285,6 +289,102 @@ Outputs:
 
 `
 
+const installSSMAL2Metadata = `    Metadata:
+      AWS::CloudFormation::Init:
+        configSets:
+          default:
+          - InstallAWSCLI
+          - InstallSSM
+        InstallAWSCLI:
+          packages:
+            # zsh: most Amazon users stations are set to zsh as a default
+            # unzip: required to install aws cli
+            # wget: under the hood SPIE requires wget
+            yum:
+              unzip: []
+              zsh: []
+              wget: []
+          commands:
+            01InstallAWSCLI:
+              # AL2 doesn't have aws cli installed
+              command: |
+                curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"
+                unzip awscli-bundle.zip
+                sudo ./awscli-bundle/install -i /usr/local/aws -b /usr/bin/aws
+                which aws
+                rm -r awscli*
+        InstallSSM:
+          packages:
+            rpm:
+              ssm:
+                - Fn::Sub: 'https://s3.${AWS::Region}.${AWS::URLSuffix}/amazon-ssm-${AWS::Region}/latest/linux_amd64/amazon-ssm-agent.rpm'`
+
+const installSSMAL2UserData = `        UserData:
+          Fn::Base64:
+            Fn::Sub: |
+              #!/bin/bash
+              set -xeu
+
+              sudo yum update -y \
+                && sudo yum install -y \
+                gcc \
+                zlib-devel \
+                openssl-devel \
+                ncurses-devel \
+                git \
+                wget \
+                jq \
+                tar \
+                curl \
+                unzip \
+                screen \
+                mercurial \
+                aws-cfn-bootstrap \
+                awscli \
+                chrony \
+                conntrack \
+                nfs-utils \
+                socat
+
+              # Make sure Amazon Time Sync Service starts on boot.
+              sudo chkconfig chronyd on
+
+              # Make sure that chronyd syncs RTC clock to the kernel.
+              cat <<EOF | sudo tee -a /etc/chrony.conf
+              # This directive enables kernel synchronisation (every 11 minutes) of the
+              # real-time clock. Note that it can’t be used along with the 'rtcfile' directive.
+              rtcsync
+              EOF
+
+              # https://docs.aws.amazon.com/inspector/latest/userguide/inspector_installing-uninstalling-agents.html
+              curl -O https://inspector-agent.amazonaws.com/linux/latest/install
+              chmod +x install
+              sudo ./install -u false
+              rm install
+
+              sudo yum install -y yum-utils device-mapper-persistent-data lvm2
+              sudo amazon-linux-extras install docker -y
+
+              sudo systemctl daemon-reload
+              sudo systemctl enable docker || true
+              sudo systemctl start docker || true
+              sudo systemctl restart docker || true
+
+              sudo systemctl status docker --full --no-pager || true
+              sudo usermod -aG docker ec2-user || true
+
+              # su - ec2-user
+              # or logout and login to use docker without 'sudo'
+              id -nG
+              sudo docker version
+              sudo docker info`
+
+type templateASG struct {
+	InstallSSM bool
+	Metadata   string
+	UserData   string
+}
+
 func (ts *Tester) createASGs() error {
 	createStart := time.Now()
 	defer func() {
@@ -301,11 +401,32 @@ func (ts *Tester) createASGs() error {
 	ts.lg.Info("creating ASGs using CFN", zap.String("name", ts.cfg.Name))
 	for asgName, asg := range ts.cfg.ASGs {
 		ts.lg.Info("creating ASG", zap.String("name", asgName))
+
+		tg := templateASG{}
+		switch asg.AMIType {
+		case ec2config.AMITypeBottleRocketCPU:
+			// "bottlerocket" comes with SSM agent
+			tg.InstallSSM = false
+		case ec2config.AMITypeAL2X8664:
+			tg.InstallSSM = true
+			tg.Metadata = installSSMAL2Metadata
+			tg.UserData = installSSMAL2UserData
+		case ec2config.AMITypeAL2X8664GPU:
+			tg.InstallSSM = true
+			tg.Metadata = installSSMAL2Metadata
+			tg.UserData = installSSMAL2UserData
+		}
+		tpl := template.Must(template.New("TemplateASG").Parse(TemplateASG))
+		buf := bytes.NewBuffer(nil)
+		if err := tpl.Execute(buf, tg); err != nil {
+			return err
+		}
+		tmpl := buf.String()
 		stackInput := &cloudformation.CreateStackInput{
 			StackName:    aws.String(asgName),
 			Capabilities: aws.StringSlice([]string{"CAPABILITY_NAMED_IAM"}),
 			OnFailure:    aws.String(cloudformation.OnFailureDelete),
-			TemplateBody: aws.String(TemplateASG),
+			TemplateBody: aws.String(tmpl),
 			Tags: awscfn.NewTags(map[string]string{
 				"Kind":                   "aws-k8s-tester",
 				"Name":                   ts.cfg.Name,

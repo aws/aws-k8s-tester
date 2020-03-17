@@ -3,6 +3,7 @@ package ec2config
 import (
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -104,7 +105,11 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("expected cfg.ASGs\n%+v\n\ngot\n%+v", expectedASGs, cfg.ASGs)
 	}
 
-	if err := cfg.ValidateAndSetDefaults(); err != nil {
+	err := cfg.ValidateAndSetDefaults()
+	if err == nil {
+		t.Fatalf("expected error but got %v", err)
+	}
+	if !strings.Contains(err.Error(), "unexpected RemoteAccessUserName") {
 		t.Fatalf("unexpected error %v", err)
 	}
 }

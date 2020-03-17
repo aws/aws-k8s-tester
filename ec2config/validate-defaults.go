@@ -319,8 +319,28 @@ func (cfg *Config) validateASGs() error {
 		}
 
 		switch v.AMIType {
-		case AMITypeBottleRocketCPU,
-			AMITypeAL2X8664:
+		case AMITypeBottleRocketCPU:
+			if v.RemoteAccessUserName != "ec2-user" {
+				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", v.AMIType, v.RemoteAccessUserName)
+			}
+		case AMITypeAL2X8664:
+			if v.RemoteAccessUserName != "ec2-user" {
+				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", v.AMIType, v.RemoteAccessUserName)
+			}
+		case AMITypeAL2X8664GPU:
+			if v.RemoteAccessUserName != "ec2-user" {
+				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", v.AMIType, v.RemoteAccessUserName)
+			}
+		default:
+			return fmt.Errorf("unknown ASGs[%q].AMIType %q", k, v.AMIType)
+		}
+
+		switch v.AMIType {
+		case AMITypeBottleRocketCPU:
+			if len(v.InstanceTypes) == 0 {
+				v.InstanceTypes = []string{DefaultNodeInstanceTypeCPU}
+			}
+		case AMITypeAL2X8664:
 			if len(v.InstanceTypes) == 0 {
 				v.InstanceTypes = []string{DefaultNodeInstanceTypeCPU}
 			}
