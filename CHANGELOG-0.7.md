@@ -23,8 +23,9 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.4...v0.7.5
 - Fix [custom AMI ASG CFN template](https://github.com/aws/aws-k8s-tester/commit/81c5af7df626bae2721e89a09ae05a061be15ceb).
 - Fix [key creation](https://github.com/aws/aws-k8s-tester/commit/61487a22279956c2575affaf1c97896474ce475e).
 - Create [ASG and launch configuration in a separate CFN stack](https://github.com/aws/aws-k8s-tester/commit/c3f431d325b26784acd9b33d66bd73605e6c1efb).
-- Support [`bottlerocket` AMIs](https://github.com/aws/aws-k8s-tester/commit/).
+- Support [`bottlerocket` AMIs](https://github.com/aws/aws-k8s-tester/commit/dfd759622b5c3092e0ff7d4c00a636386addce70).
   - See https://github.com/bottlerocket-os/bottlerocket.
+  - Configurable [EC2 metadata and user data](https://github.com/aws/aws-k8s-tester/commit/410d5b491d5cedcc763f689f6ef09d5c786be340).
 - Support [SSM document command](https://github.com/aws/aws-k8s-tester/commit/b72c06301f61bc9424baae34ae59b1ebbac1e44c).
   - Require [S3 managed policy in IAM role for SSM output uploads](https://github.com/aws/aws-k8s-tester/commit/000766975c8636390fa88ed95c41522b7f8c9247).
 - Support [S3 bucket creation](https://github.com/aws/aws-k8s-tester/commit/b72c06301f61bc9424baae34ae59b1ebbac1e44c).
@@ -42,7 +43,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.4...v0.7.5
 - Move [`AddOnManagedNodeGroups.RemoteAccessUserName` to `MNG.RemoteAccessUserName`](https://github.com/aws/aws-k8s-tester/commit/12441b3af9a2eba207ca3ae4ce7d07ef6844c7ac).
   - `AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_REMOTE_ACCESS_USER_NAME` is now deprecated.
   - Instead, use `remote-access-user-name` in `MNG` struct.
-  - e.g. `{"mng-test-name-cpu":{"name":"mng-test-name-cpu","tags":{"cpu":"hello-world"},"remote-access-user-name":"aaa","release-version":"test-ver-cpu","ami-type":"AL2_x86_64","asg-min-size":17,"asg-max-size":99,"asg-desired-capacity":77,"instance-types":["type-cpu-1","type-cpu-2"],"volume-size":40},"mng-test-name-gpu":{"name":"mng-test-name-gpu","remote-access-user-name":"bbb","tags":{"gpu":"hello-world"},"release-version":"test-ver-gpu","ami-type":"AL2_x86_64_GPU","asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34,"instance-types":["type-gpu-1","type-gpu-2"],"volume-size":500}}`
+  - e.g. `{"mng-test-name-cpu":{"name":"mng-test-name-cpu","tags":{"cpu":"hello-world"},"remote-access-user-name":"ec2-user","release-version":"test-ver-cpu","ami-type":"AL2_x86_64","asg-min-size":17,"asg-max-size":99,"asg-desired-capacity":77,"instance-types":["type-cpu-1","type-cpu-2"],"volume-size":40},"mng-test-name-gpu":{"name":"mng-test-name-gpu","remote-access-user-name":"ec2-user","tags":{"gpu":"hello-world"},"release-version":"test-ver-gpu","ami-type":"AL2_x86_64_GPU","asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34,"instance-types":["type-gpu-1","type-gpu-2"],"volume-size":500}}`
 - Add [`AddOnManagedNodeGroups.FetchLogs` to configure fetch managed node group logs downloading](https://github.com/aws/aws-k8s-tester/commit/d57a203315b842bea6cab7476a778624155fdee3).
   - `AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_FETCH_LOGS` is `true` by default.
   - `FetchLogs` will be [skipped if `AddOnManagedNodeGroups.FetchLogs` is `false`](https://github.com/aws/aws-k8s-tester/commit/74aee02ac01123cbc8036910831addbca665cbbc).
