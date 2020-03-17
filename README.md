@@ -16,22 +16,78 @@ WARNING: Pre-alpha. Do not use this in production. Only for testing.
 
 https://github.com/aws/aws-k8s-tester/releases
 
-## `aws-k8s-tester eks`
+
+## `aws-k8s-tester ec2`
 
 Make sure AWS credential is located in your machine:
 
-```sh
-cat ~/.aws/credentials
-
+```bash
 # confirm credential is valid
 aws sts get-caller-identity --query Arn --output text
 ```
 
 ```bash
-aws-k8s-tester eks create cluster -h
+cd /tmp
+rm -f /tmp/${USER}-test-ec2-bottlerocket*
+AWS_K8S_TESTER_EC2_ON_FAILURE_DELETE=true \
+AWS_K8S_TESTER_EC2_NAME=${USER}-test-ec2-bottlerocket \
+AWS_K8S_TESTER_EC2_REGION=us-west-2 \
+AWS_K8S_TESTER_EC2_S3_BUCKET_NAME=aws-k8s-tester-ec2-s3-bucket \
+AWS_K8S_TESTER_EC2_S3_BUCKET_CREATE=false \
+AWS_K8S_TESTER_EC2_REMOTE_ACCESS_KEY_CREATE=true \
+AWS_K8S_TESTER_EC2_REMOTE_ACCESS_KEY_NAME=aws-k8s-tester-ec2-key \
+AWS_K8S_TESTER_EC2_ASGS_FETCH_LOGS=false \
+AWS_K8S_TESTER_EC2_ASGS={\"${USER}-test-ec2-bottlerocket\":{\"name\":\"${USER}-test-ec2-bottlerocket\",\"remote-access-user-name\":\"ec2-user\",\"ami-type\":\"BOTTLEROCKET_x86_64\",\"image-id-ssm-parameter\":\"/aws/service/bottlerocket/aws-k8s-1.15/x86_64/latest/image_id\",\"ssm-document-name\":\"${USER}InstallBottleRocket\",\"ssm-document-create\":true,\"ssm-document-commands\":\"enable-admin-container\",\"ssm-document-execution-timeout-seconds\":3600,\"asg-min-size\":1,\"asg-max-size\":1,\"asg-desired-capacity\":1,\"instance-types\":[\"c5.xlarge\"],\"volume-size\":40}} \
+AWS_K8S_TESTER_EC2_ROLE_CREATE=false \
+AWS_K8S_TESTER_EC2_ROLE_ARN=arn:aws:iam::607362164682:role/aws-k8s-tester-ec2-role \
+AWS_K8S_TESTER_EC2_VPC_CREATE=false \
+AWS_K8S_TESTER_EC2_VPC_ID=vpc-00219f2d3063b6d9c \
+aws-k8s-tester ec2 create config -p /tmp/${USER}-test-ec2-bottlerocket.yaml && cat /tmp/${USER}-test-ec2-bottlerocket.yaml
 
-aws-k8s-tester eks create config --path /tmp/config.yaml
-aws-k8s-tester eks create cluster --path /tmp/config.yaml
+cd /tmp
+aws-k8s-tester ec2 create cluster -p /tmp/${USER}-test-ec2-bottlerocket.yaml
+
+cd /tmp
+aws-k8s-tester ec2 delete cluster -p /tmp/${USER}-test-ec2-bottlerocket.yaml
+```
+
+```bash
+cd /tmp
+rm -f /tmp/${USER}-test-ec2-al2-cpu*
+AWS_K8S_TESTER_EC2_ON_FAILURE_DELETE=true \
+AWS_K8S_TESTER_EC2_NAME=${USER}-test-ec2-al2-cpu \
+AWS_K8S_TESTER_EC2_REGION=us-west-2 \
+AWS_K8S_TESTER_EC2_S3_BUCKET_NAME=aws-k8s-tester-ec2-s3-bucket \
+AWS_K8S_TESTER_EC2_S3_BUCKET_CREATE=false \
+AWS_K8S_TESTER_EC2_REMOTE_ACCESS_KEY_CREATE=true \
+AWS_K8S_TESTER_EC2_REMOTE_ACCESS_KEY_NAME=aws-k8s-tester-ec2-key \
+AWS_K8S_TESTER_EC2_ASGS_FETCH_LOGS=false \
+AWS_K8S_TESTER_EC2_ASGS={\"${USER}-test-ec2-al2-cpu\":{\"name\":\"${USER}-test-ec2-al2-cpu\",\"remote-access-user-name\":\"ec2-user\",\"ami-type\":\"AL2_x86_64\",\"image-id-ssm-parameter\":\"/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2\",\"asg-min-size\":1,\"asg-max-size\":1,\"asg-desired-capacity\":1,\"instance-types\":[\"c5.xlarge\"],\"volume-size\":40}} \
+AWS_K8S_TESTER_EC2_ROLE_CREATE=false \
+AWS_K8S_TESTER_EC2_ROLE_ARN=arn:aws:iam::607362164682:role/aws-k8s-tester-ec2-role \
+AWS_K8S_TESTER_EC2_VPC_CREATE=false \
+AWS_K8S_TESTER_EC2_VPC_ID=vpc-00219f2d3063b6d9c \
+aws-k8s-tester ec2 create config -p /tmp/${USER}-test-ec2-al2-cpu.yaml && cat /tmp/${USER}-test-ec2-al2-cpu.yaml
+
+cd /tmp
+aws-k8s-tester ec2 create cluster -p /tmp/${USER}-test-ec2-al2-cpu.yaml
+
+cd /tmp
+aws-k8s-tester ec2 delete cluster -p /tmp/${USER}-test-ec2-al2-cpu.yaml
+```
+
+
+## `aws-k8s-tester eks`
+
+Make sure AWS credential is located in your machine:
+
+```bash
+# confirm credential is valid
+aws sts get-caller-identity --query Arn --output text
+```
+
+```bash
+
 ```
 
 This will create an EKS cluster with a worker node (takes about 20 minutes).
@@ -46,17 +102,13 @@ aws eks describe-cluster \
 "ACTIVE"
 ```
 
-Cluster states are persisted on disk as well. EKS tester uses this file to track status.
+Cluster states are persisted on disk and S3 bucket.
+
+EKS tester uses this file to record status.
 
 ```bash
 cat /tmp/config.yaml
 
 # or
 less +FG /tmp/config.yaml
-```
-
-Tear down the cluster (takes about 10 minutes):
-
-```bash
-aws-k8s-tester eks delete cluster --path /tmp/config.yaml
 ```
