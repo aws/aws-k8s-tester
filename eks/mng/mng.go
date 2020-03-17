@@ -2,12 +2,14 @@
 package mng
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"os"
 	"strings"
 	"sync"
+	"text/template"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
@@ -35,10 +37,10 @@ import (
 
 // MAKE SURE TO SYNC THE DEFAULT VALUES in "eksconfig"
 
-// TemplateManagedNodeGroupWithNoReleaseVersion is the CloudFormation template for EKS managed node group.
+// TemplateMNG is the CloudFormation template for EKS managed node group.
 // ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
 // ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
-const TemplateManagedNodeGroupWithNoReleaseVersion = `
+const TemplateMNG = `
 ---
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Amazon EKS Cluster Managed Node Group'
@@ -98,6 +100,8 @@ Parameters:
     Default: 40
     Description: Node volume size
 
+{{ if ne .ParameterReleaseVersion "" }}{{.ParameterReleaseVersion}}{{ end }}
+
 Resources:
 
   ManagedNodeGroup:
@@ -118,6 +122,7 @@ Resources:
       Subnets: !Ref PublicSubnetIDs
       Labels:
         Name: !Ref Name
+{{ if ne .PropertyReleaseVersion "" }}{{.PropertyReleaseVersion}}{{ end }}
 
 Outputs:
 
@@ -127,102 +132,16 @@ Outputs:
 
 `
 
-// TemplateManagedNodeGroupWithReleaseVersion is the CloudFormation template for EKS managed node group.
-// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
-// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
-const TemplateManagedNodeGroupWithReleaseVersion = `
----
-AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Amazon EKS Cluster Managed Node Group'
-
-Parameters:
-
-  Name:
+const parametersReleaseVersion = `  ReleaseVersion:
     Type: String
-    Description: Unique identifier for the Node Group.
+    Description: AMI version of the Amazon EKS-optimized AMI`
 
-  ClusterName:
-    Type: String
-    Description: The cluster name provided when the cluster was created. If it is incorrect, nodes will not be able to join the cluster.
+const propertyReleaseVersion = `      ReleaseVersion: !Ref ReleaseVersion`
 
-  RoleARN:
-    Type: String
-    Description: The ARN of the node instance role
-
-  PublicSubnetIDs:
-    Type: List<AWS::EC2::Subnet::Id>
-    Description: The private subnet IDs where workers can be created.
-
-  RemoteAccessKeyName:
-    Type: AWS::EC2::KeyPair::KeyName
-    Description: Amazon EC2 Key Pair
-
-  AMIType:
-    Type: String
-    Default: AL2_x86_64
-    AllowedValues:
-    - AL2_x86_64
-    - AL2_x86_64_GPU
-    Description: AMI type for your node group
-
-  ASGMinSize:
-    Type: Number
-    Default: 2
-    Description: Minimum size of Node Group Auto Scaling Group.
-
-  ASGMaxSize:
-    Type: Number
-    Default: 2
-    Description: Maximum size of Node Group Auto Scaling Group. Set to at least 1 greater than ASGDesiredCapacity.
-
-  ASGDesiredCapacity:
-    Type: Number
-    Default: 2
-    Description: Desired capacity of Node Group Auto Scaling Group.
-
-  InstanceTypes:
-    Type: CommaDelimitedList
-    Default: c5.xlarge
-    Description: EC2 instance types for the node instances
-
-  VolumeSize:
-    Type: Number
-    Default: 40
-    Description: Node volume size
-
-  ReleaseVersion:
-    Type: String
-    Description: AMI version of the Amazon EKS-optimized AMI
-
-Resources:
-
-  ManagedNodeGroup:
-    Type: AWS::EKS::Nodegroup
-    Properties:
-      ClusterName: !Ref ClusterName
-      NodegroupName: !Ref Name
-      NodeRole: !Ref RoleARN
-      AmiType: !Ref AMIType
-      DiskSize: !Ref VolumeSize
-      InstanceTypes: !Ref InstanceTypes
-      ReleaseVersion: !Ref ReleaseVersion
-      RemoteAccess:
-        Ec2SshKey: !Ref RemoteAccessKeyName
-      ScalingConfig:
-        MinSize: !Ref ASGMinSize
-        MaxSize: !Ref ASGMaxSize
-        DesiredSize: !Ref ASGDesiredCapacity
-      Subnets: !Ref PublicSubnetIDs
-      Labels:
-        Name: !Ref Name
-
-Outputs:
-
-  ManagedNodeGroupID:
-    Value: !Ref ManagedNodeGroup
-    Description: The managed node group resource Physical ID
-
-`
+type templateMNG struct {
+	ParameterReleaseVersion string
+	PropertyReleaseVersion  string
+}
 
 // Config defines Managed Node Group configuration.
 type Config struct {
@@ -502,15 +421,23 @@ func (ts *tester) createMNG() error {
 					},
 				},
 			}
-			if mv.ReleaseVersion == "" {
-				stackInput.TemplateBody = aws.String(TemplateManagedNodeGroupWithNoReleaseVersion)
-			} else {
-				stackInput.TemplateBody = aws.String(TemplateManagedNodeGroupWithReleaseVersion)
+
+			tg := templateMNG{}
+			if mv.ReleaseVersion != "" {
+				tg.ParameterReleaseVersion = parametersReleaseVersion
+				tg.PropertyReleaseVersion = propertyReleaseVersion
 				stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
 					ParameterKey:   aws.String("ReleaseVersion"),
 					ParameterValue: aws.String(mv.ReleaseVersion),
 				})
 			}
+			tpl := template.Must(template.New("TemplateMNG").Parse(TemplateMNG))
+			buf := bytes.NewBuffer(nil)
+			if err := tpl.Execute(buf, tg); err != nil {
+				return err
+			}
+			stackInput.TemplateBody = aws.String(buf.String())
+
 			if mv.AMIType != "" {
 				stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
 					ParameterKey:   aws.String("AMIType"),

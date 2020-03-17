@@ -191,7 +191,7 @@ Resources:
     Type: AWS::EC2::LaunchTemplate
     DependsOn:
     - InstanceProfile
-{{ if .InstallSSM }}{{.Metadata}}{{ end }}
+{{ if ne .Metadata "" }}{{.Metadata}}{{ end }}
     Properties:
       LaunchTemplateName: !Ref ASGLaunchTemplateName
       LaunchTemplateData:
@@ -225,7 +225,7 @@ Resources:
         - ResourceType: volume
           Tags:
           - { Key: Name, Value: !Sub '${ASGName}-volume' }
-{{ if .InstallSSM }}{{.UserData}}{{ end }}
+{{ if ne .UserData "" }}{{.UserData}}{{ end }}
 
   # specify "MixedInstancesPolicy" or "LaunchConfiguration"
   ASG:
@@ -380,9 +380,8 @@ const installSSMAL2UserData = `        UserData:
               sudo docker info`
 
 type templateASG struct {
-	InstallSSM bool
-	Metadata   string
-	UserData   string
+	Metadata string
+	UserData string
 }
 
 func (ts *Tester) createASGs() error {
@@ -409,13 +408,10 @@ func (ts *Tester) createASGs() error {
 		switch asg.AMIType {
 		case ec2config.AMITypeBottleRocketCPU:
 			// "bottlerocket" comes with SSM agent
-			tg.InstallSSM = false
 		case ec2config.AMITypeAL2X8664:
-			tg.InstallSSM = true
 			tg.Metadata = installSSMAL2Metadata
 			tg.UserData = installSSMAL2UserData
 		case ec2config.AMITypeAL2X8664GPU:
-			tg.InstallSSM = true
 			tg.Metadata = installSSMAL2Metadata
 			tg.UserData = installSSMAL2UserData
 		}
