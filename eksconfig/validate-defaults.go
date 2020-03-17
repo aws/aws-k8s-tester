@@ -591,8 +591,28 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 		}
 
 		switch v.AMIType {
-		case AMITypeBottleRocketCPU,
-			eks.AMITypesAl2X8664:
+		case AMITypeBottleRocketCPU:
+			if v.RemoteAccessUserName != "ec2-user" {
+				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", v.AMIType, v.RemoteAccessUserName)
+			}
+		case eks.AMITypesAl2X8664:
+			if v.RemoteAccessUserName != "ec2-user" {
+				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", v.AMIType, v.RemoteAccessUserName)
+			}
+		case eks.AMITypesAl2X8664Gpu:
+			if v.RemoteAccessUserName != "ec2-user" {
+				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", v.AMIType, v.RemoteAccessUserName)
+			}
+		default:
+			return fmt.Errorf("unknown ASGs[%q].AMIType %q", k, v.AMIType)
+		}
+
+		switch v.AMIType {
+		case AMITypeBottleRocketCPU:
+			if len(v.InstanceTypes) == 0 {
+				v.InstanceTypes = []string{DefaultNodeInstanceTypeCPU}
+			}
+		case eks.AMITypesAl2X8664:
 			if len(v.InstanceTypes) == 0 {
 				v.InstanceTypes = []string{DefaultNodeInstanceTypeCPU}
 			}
@@ -746,6 +766,23 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 		}
 		if v.RemoteAccessUserName == "" {
 			v.RemoteAccessUserName = "ec2-user"
+		}
+
+		if v.RemoteAccessUserName == "" {
+			v.RemoteAccessUserName = "ec2-user"
+		}
+
+		switch v.AMIType {
+		case eks.AMITypesAl2X8664:
+			if v.RemoteAccessUserName != "ec2-user" {
+				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", v.AMIType, v.RemoteAccessUserName)
+			}
+		case eks.AMITypesAl2X8664Gpu:
+			if v.RemoteAccessUserName != "ec2-user" {
+				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", v.AMIType, v.RemoteAccessUserName)
+			}
+		default:
+			return fmt.Errorf("unknown ASGs[%q].AMIType %q", k, v.AMIType)
 		}
 
 		switch v.AMIType {
