@@ -402,6 +402,9 @@ func (ts *Tester) createASGs() error {
 	for asgName, asg := range ts.cfg.ASGs {
 		ts.lg.Info("creating ASG", zap.String("name", asgName))
 
+		// TODO: may not be necessary
+		// "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
+		// already includes SSM agent + AWS CLI
 		tg := templateASG{}
 		switch asg.AMIType {
 		case ec2config.AMITypeBottleRocketCPU:
