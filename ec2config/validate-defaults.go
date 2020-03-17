@@ -323,6 +323,9 @@ func (cfg *Config) validateASGs() error {
 			if v.RemoteAccessUserName != "ec2-user" {
 				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", v.AMIType, v.RemoteAccessUserName)
 			}
+			if cfg.ASGsFetchLogs {
+				return fmt.Errorf("AMIType %q does not suppport log fetch yet", v.AMIType)
+			}
 		case AMITypeAL2X8664:
 			if v.RemoteAccessUserName != "ec2-user" {
 				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", v.AMIType, v.RemoteAccessUserName)

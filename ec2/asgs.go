@@ -66,17 +66,21 @@ Parameters:
     Default: aws-k8s-tester-ec2-role
     Description: EC2 Role name
 
+  PublicSubnetIDs:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: The public subnet IDs where workers can be created.
+
   SecurityGroupID:
-    Type: String
+    Type: AWS::EC2::SecurityGroup::Id
     Description: EC2 security group ID
 
   RemoteAccessKeyName:
-    Type: String
+    Type: AWS::EC2::KeyPair::KeyName
     Description: EC2 SSH key name
     Default: aws-k8s-tester-ec2-key
 
   ImageID:
-    Type: String
+    Type: AWS::EC2::Image::Id
     Default: ""
     Description: (Optional) Custom image ID. This value overrides any AWS Systems Manager Parameter Store value specified above.
 
@@ -103,18 +107,6 @@ Parameters:
     MinValue: 8
     MaxValue: 1024
     Description: Size of the root disk for the EC2 instances, in GiB.
-
-  PublicSubnetID1:
-    Type: String
-    Description: EC2 public subnet ID
-
-  PublicSubnetID2:
-    Type: String
-    Description: EC2 public subnet ID
-
-  PublicSubnetID3:
-    Type: String
-    Description: EC2 public subnet ID
 
   ASGMinSize:
     Type: Number
@@ -143,12 +135,6 @@ Conditions:
     Fn::Not:
       - Fn::Equals:
           - Ref: ImageID
-          - ""
-
-  IsPublicSubnetID3Configured:
-    Fn::Not:
-      - Fn::Equals:
-          - Ref: PublicSubnetID3
           - ""
 
   Has2InstanceTypes:
@@ -204,7 +190,7 @@ Resources:
             - !Ref ImageIDSSMParameter
         KeyName: !Ref RemoteAccessKeyName
         BlockDeviceMappings:
-        - DeviceName: '/dev/xvda'
+        - DeviceName: /dev/xvda
           Ebs:
             VolumeType: gp2
             VolumeSize: !Ref VolumeSize
@@ -245,13 +231,7 @@ Resources:
       MinSize: !Ref ASGMinSize
       MaxSize: !Ref ASGMaxSize
       DesiredCapacity: !Ref ASGDesiredCapacity
-      VPCZoneIdentifier:
-      - !Ref PublicSubnetID1
-      - !Ref PublicSubnetID2
-      - Fn::If:
-        - IsPublicSubnetID3Configured
-        - !Ref PublicSubnetID3
-        - !Ref AWS::NoValue
+      VPCZoneIdentifier: !Ref PublicSubnetIDs
       MetricsCollection:
       - Granularity: "1Minute"
       Tags:
@@ -286,6 +266,9 @@ Outputs:
 
   ASGName:
     Value: !Ref ASG
+
+  InstanceProfileARN:
+    Value: !GetAtt InstanceProfile.Arn
 
 `
 
@@ -399,6 +382,7 @@ func (ts *Tester) createASGs() error {
 
 	ts.lg.Info("creating ASGs using CFN", zap.String("name", ts.cfg.Name))
 	for asgName, asg := range ts.cfg.ASGs {
+		timeStart := time.Now()
 		ts.lg.Info("creating ASG", zap.String("name", asgName))
 
 		// TODO: may not be necessary
@@ -453,16 +437,8 @@ func (ts *Tester) createASGs() error {
 					ParameterValue: aws.String(ts.cfg.RemoteAccessKeyName),
 				},
 				{
-					ParameterKey:   aws.String("PublicSubnetID1"),
-					ParameterValue: aws.String(ts.cfg.PublicSubnetIDs[0]),
-				},
-				{
-					ParameterKey:   aws.String("PublicSubnetID2"),
-					ParameterValue: aws.String(ts.cfg.PublicSubnetIDs[1]),
-				},
-				{
-					ParameterKey:   aws.String("PublicSubnetID3"),
-					ParameterValue: aws.String(ts.cfg.PublicSubnetIDs[2]),
+					ParameterKey:   aws.String("PublicSubnetIDs"),
+					ParameterValue: aws.String(strings.Join(ts.cfg.PublicSubnetIDs, ",")),
 				},
 			},
 		}
@@ -521,6 +497,10 @@ func (ts *Tester) createASGs() error {
 		}
 		stackOutput, err := ts.cfnAPI.CreateStack(stackInput)
 		if err != nil {
+			asg.CreateTook += time.Since(timeStart)
+			asg.CreateTookString = asg.CreateTook.String()
+			ts.cfg.ASGs[asgName] = asg
+			ts.cfg.Sync()
 			return err
 		}
 		asg.ASGCFNStackID = aws.StringValue(stackOutput.StackId)
@@ -548,6 +528,10 @@ func (ts *Tester) createASGs() error {
 		}
 		cancel()
 		if st.Error != nil {
+			asg.CreateTook += time.Since(timeStart)
+			asg.CreateTookString = asg.CreateTook.String()
+			ts.cfg.ASGs[asgName] = asg
+			ts.cfg.Sync()
 			return st.Error
 		}
 		// update status after creating a new ASG
@@ -555,7 +539,13 @@ func (ts *Tester) createASGs() error {
 			switch k := aws.StringValue(o.OutputKey); k {
 			case "ASGName":
 				ts.lg.Info("found ASGName value from CFN", zap.String("value", aws.StringValue(o.OutputValue)))
+			case "InstanceProfileARN":
+				ts.lg.Info("found InstanceProfileARN value from CFN", zap.String("value", aws.StringValue(o.OutputValue)))
 			default:
+				asg.CreateTook += time.Since(timeStart)
+				asg.CreateTookString = asg.CreateTook.String()
+				ts.cfg.ASGs[asgName] = asg
+				ts.cfg.Sync()
 				return fmt.Errorf("unexpected OutputKey %q from %q", k, asg.ASGCFNStackID)
 			}
 		}
@@ -565,6 +555,8 @@ func (ts *Tester) createASGs() error {
 			zap.String("cfn-stack-id", asg.ASGCFNStackID),
 			zap.String("request-started", humanize.RelTime(createStart, time.Now(), "ago", "from now")),
 		)
+		asg.CreateTook += time.Since(timeStart)
+		asg.CreateTookString = asg.CreateTook.String()
 		ts.cfg.ASGs[asgName] = asg
 		ts.cfg.Up = true
 		ts.cfg.Sync()
@@ -596,6 +588,10 @@ func (ts *Tester) createASGs() error {
 			instanceIDs...,
 		)
 		if err != nil {
+			asg.CreateTook += time.Since(timeStart)
+			asg.CreateTookString = asg.CreateTook.String()
+			ts.cfg.ASGs[asgName] = asg
+			ts.cfg.Sync()
 			return err
 		}
 		asg.Instances = make(map[string]ec2config.Instance)
@@ -604,6 +600,8 @@ func (ts *Tester) createASGs() error {
 			ivv.RemoteAccessUserName = asg.RemoteAccessUserName
 			asg.Instances[id] = ivv
 		}
+		asg.CreateTook += time.Since(timeStart)
+		asg.CreateTookString = asg.CreateTook.String()
 		ts.cfg.ASGs[asgName] = asg
 		ts.cfg.RecordStatus(fmt.Sprintf("%q/%s", asgName, cloudformation.ResourceStatusCreateComplete))
 		ts.cfg.Sync()
@@ -625,12 +623,17 @@ func (ts *Tester) deleteASGs() error {
 		if asg.ASGCFNStackID == "" {
 			return fmt.Errorf("%q ASG stack ID is empty", asg.Name)
 		}
+		timeStart := time.Now()
 		ts.lg.Info("deleting ASG", zap.String("name", asgName), zap.String("cfn-stack-id", asg.ASGCFNStackID))
 		_, err := ts.cfnAPI.DeleteStack(&cloudformation.DeleteStackInput{
 			StackName: aws.String(asg.ASGCFNStackID),
 		})
 		if err != nil {
 			ts.cfg.RecordStatus(fmt.Sprintf("failed to delete ASG (%v)", err))
+			asg.DeleteTook += time.Since(timeStart)
+			asg.DeleteTookString = ts.cfg.DeleteTook.String()
+			ts.cfg.ASGs[asgName] = asg
+			ts.cfg.Sync()
 			return err
 		}
 		ts.cfg.Up = false
@@ -657,9 +660,17 @@ func (ts *Tester) deleteASGs() error {
 		}
 		cancel()
 		if st.Error != nil {
+			asg.DeleteTook += time.Since(timeStart)
+			asg.DeleteTookString = ts.cfg.DeleteTook.String()
+			ts.cfg.ASGs[asgName] = asg
+			ts.cfg.Sync()
 			return st.Error
 		}
 		ts.cfg.RecordStatus(fmt.Sprintf("%q/%s", asgName, ec2config.StatusDELETEDORNOTEXIST))
+		asg.DeleteTook += time.Since(timeStart)
+		asg.DeleteTookString = ts.cfg.DeleteTook.String()
+		ts.cfg.ASGs[asgName] = asg
+		ts.cfg.Sync()
 	}
 
 	return ts.cfg.Sync()

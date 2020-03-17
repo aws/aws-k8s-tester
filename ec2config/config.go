@@ -199,6 +199,15 @@ type ASG struct {
 	Name          string `json:"name"`
 	ASGCFNStackID string `json:"asg-cfn-stack-id" read-only:"true"`
 
+	// CreateTook is the duration that took to create the resource.
+	CreateTook time.Duration `json:"create-took,omitempty" read-only:"true"`
+	// CreateTookString is the duration that took to create the resource.
+	CreateTookString string `json:"create-took-string,omitempty" read-only:"true"`
+	// DeleteTook is the duration that took to create the resource.
+	DeleteTook time.Duration `json:"delete-took,omitempty" read-only:"true"`
+	// DeleteTookString is the duration that took to create the resource.
+	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
+
 	// RemoteAccessUserName is the user name used for running init scripts or SSH access.
 	RemoteAccessUserName string `json:"remote-access-user-name"`
 
