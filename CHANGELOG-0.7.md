@@ -3,6 +3,31 @@
 <hr>
 
 
+## [v0.7.7](https://github.com/aws/aws-k8s-tester/releases/tag/v0.7.7) (2020-03-18)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.6...v0.7.7).
+
+### `ec2config`
+
+- Skip [private key S3 uploads if `S3BucketName` is empty](https://github.com/aws/aws-k8s-tester/commit/2823aa88f7455289a2aa34589c388177fa3e8507).
+
+### `eksconfig`
+
+- Skip [private key S3 uploads if `S3BucketName` is empty](https://github.com/aws/aws-k8s-tester/commit/2823aa88f7455289a2aa34589c388177fa3e8507).
+
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.29.26`](https://github.com/aws/aws-sdk-go/releases/tag/v1.29.26) to [`v1.29.27`](https://github.com/aws/aws-sdk-go/releases/tag/v1.29.27).
+
+### Go
+
+- Compile with [*Go 1.14.0*](https://golang.org/doc/devel/release.html#go1.14).
+
+
+<hr>
+
+
+
 ## [v0.7.6](https://github.com/aws/aws-k8s-tester/releases/tag/v0.7.6) (2020-03-18)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.5...v0.7.6).
