@@ -15,6 +15,7 @@ WARNING: Pre-alpha. Do not use this in production. Only for testing.
 - Uses AWS CloudFormation for resource creation
 - Supports automatic rollback and resource deletion
 - Flexible add-on support via environmental variables
+- Extensible as a Go package; `eks.Tester.Up` to create EKS
 
 ## Install
 
