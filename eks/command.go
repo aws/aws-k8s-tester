@@ -26,10 +26,9 @@ func runCommand(lg *zap.Logger, s string) ([]byte, error) {
 	}
 
 	lg.Info("running command", zap.String("cmd-path", p), zap.Strings("ars", args))
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	out, err := exec.New().CommandContext(ctx, p, args...).CombinedOutput()
 	cancel()
-
 	if err == nil {
 		lg.Info("ran command")
 	} else {
