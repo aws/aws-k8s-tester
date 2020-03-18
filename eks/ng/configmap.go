@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"text/template"
 	"time"
 
@@ -20,6 +21,7 @@ func (ts *tester) createConfigMap() error {
 		return err
 	}
 
+	var output []byte
 	// might take several minutes for DNS to propagate
 	waitDur := 5 * time.Minute
 	retryStart := time.Now()
@@ -33,7 +35,7 @@ func (ts *tester) createConfigMap() error {
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-		output, err := exec.New().CommandContext(
+		output, err = exec.New().CommandContext(
 			ctx,
 			ts.cfg.EKSConfig.KubectlPath,
 			"--kubeconfig="+ts.cfg.EKSConfig.KubeConfigPath,
@@ -41,19 +43,28 @@ func (ts *tester) createConfigMap() error {
 		).CombinedOutput()
 		cancel()
 		out := string(output)
-		if err != nil {
-			return fmt.Errorf("'kubectl version' failed %v (output %q)", err, out)
+		fmt.Printf("\n\"kubectl apply\" output:\n%s\n", out)
+		if err == nil {
+			break
 		}
-		fmt.Printf("\n\"kubectl version\" output:\n%s\n", out)
+		// "configmap/aws-auth created" or "configmap/aws-auth unchanged"
+		if strings.Contains(out, " created") || strings.Contains(out, " unchanged") {
+			err = nil
+			break
+		}
 
 		ts.cfg.Logger.Warn("create ConfigMap failed", zap.Error(err))
 		ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("create ConfigMap failed (%v)", err))
 	}
-	ts.cfg.Logger.Info("created ConfigMap")
+	if err != nil {
+		return fmt.Errorf("'kubectl apply' failed %v (output %q)", err, string(output))
+	}
 
+	ts.cfg.Logger.Info("created ConfigMap")
 	return ts.cfg.EKSConfig.Sync()
 }
 
+// TODO: use client-go
 // https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html
 const configMapAuthTempl = `---
 apiVersion: v1
