@@ -950,6 +950,9 @@ func (cfg *Config) validateAddOnIRSA() error {
 	if cfg.Parameters.VersionValue < 1.14 {
 		return fmt.Errorf("Version %q not supported for AddOnIRSA", cfg.Parameters.Version)
 	}
+	if cfg.S3BucketName == "" {
+		return errors.New("AddOnIRSA requires S3 bucket but S3BucketName empty")
+	}
 	if cfg.AddOnIRSA.Namespace == "" {
 		cfg.AddOnIRSA.Namespace = cfg.Name + "-irsa"
 	}

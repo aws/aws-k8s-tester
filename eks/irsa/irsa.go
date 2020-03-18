@@ -183,6 +183,9 @@ func (ts *tester) Delete() error {
 }
 
 func (ts *tester) createS3() (err error) {
+	if ts.cfg.EKSConfig.S3BucketName == "" {
+		return errors.New("empty S3 bucket name for IRSA add-on")
+	}
 	_, err = ts.cfg.S3API.PutObject(&s3.PutObjectInput{
 		Bucket:  aws.String(ts.cfg.EKSConfig.S3BucketName),
 		Key:     aws.String(ts.cfg.EKSConfig.AddOnIRSA.S3Key),
@@ -213,6 +216,10 @@ func (ts *tester) createS3() (err error) {
 }
 
 func (ts *tester) deleteS3() error {
+	if ts.cfg.EKSConfig.S3BucketName == "" {
+		ts.cfg.Logger.Info("skipping S3 deletes for IRSA add-on")
+		return nil
+	}
 	s3Key := ts.cfg.EKSConfig.AddOnIRSA.S3Key
 	_, err := ts.cfg.S3API.DeleteObject(&s3.DeleteObjectInput{
 		Bucket: aws.String(ts.cfg.EKSConfig.S3BucketName),

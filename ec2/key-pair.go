@@ -67,32 +67,37 @@ func (ts *Tester) createKeyPair() (err error) {
 		zap.String("key-path", ts.cfg.RemoteAccessPrivateKeyPath),
 	)
 
-	s3Key := path.Join(ts.cfg.Name, ts.cfg.RemoteAccessKeyName+".private.pem")
-	_, err = ts.s3API.PutObject(&s3.PutObjectInput{
-		Bucket: aws.String(ts.cfg.S3BucketName),
-		Key:    aws.String(s3Key),
-		Body:   strings.NewReader(aws.StringValue(output.KeyMaterial)),
+	if ts.cfg.S3BucketName != "" {
+		s3Key := path.Join(ts.cfg.Name, ts.cfg.RemoteAccessKeyName+".private.pem")
+		_, err = ts.s3API.PutObject(&s3.PutObjectInput{
+			Bucket: aws.String(ts.cfg.S3BucketName),
+			Key:    aws.String(s3Key),
+			Body:   strings.NewReader(aws.StringValue(output.KeyMaterial)),
 
-		// https://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html#canned-acl
-		// vs. "public-read"
-		ACL: aws.String("private"),
+			// https://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html#canned-acl
+			// vs. "public-read"
+			ACL: aws.String("private"),
 
-		Metadata: map[string]*string{
-			"Kind": aws.String("aws-k8s-tester"),
-		},
-	})
-	if err == nil {
-		ts.lg.Info("uploaded the private key",
-			zap.String("bucket", ts.cfg.S3BucketName),
-			zap.String("remote-path", s3Key),
-		)
+			Metadata: map[string]*string{
+				"Kind": aws.String("aws-k8s-tester"),
+			},
+		})
+		if err == nil {
+			ts.lg.Info("uploaded the private key",
+				zap.String("bucket", ts.cfg.S3BucketName),
+				zap.String("remote-path", s3Key),
+			)
+		} else {
+			ts.lg.Warn("failed to upload the private key",
+				zap.String("bucket", ts.cfg.S3BucketName),
+				zap.String("remote-path", s3Key),
+				zap.Error(err),
+			)
+		}
 	} else {
-		ts.lg.Warn("failed to upload the private key",
-			zap.String("bucket", ts.cfg.S3BucketName),
-			zap.String("remote-path", s3Key),
-			zap.Error(err),
-		)
+		ts.lg.Info("skipping private key uploads")
 	}
+
 	return err
 }
 
