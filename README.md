@@ -26,6 +26,8 @@ Make sure AWS credential is located in your machine:
 aws sts get-caller-identity --query Arn --output text
 ```
 
+See https://github.com/aws/aws-k8s-tester/blob/master/ec2config/README.md for more.
+
 ```bash
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text);
 echo ${ACCOUNT_ID}
@@ -91,6 +93,8 @@ Make sure AWS credential is located in your machine:
 # confirm credential is valid
 aws sts get-caller-identity --query Arn --output text
 ```
+
+See https://github.com/aws/aws-k8s-tester/blob/master/eksconfig/README.md for more.
 
 ```bash
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text);
