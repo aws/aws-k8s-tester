@@ -80,7 +80,7 @@ Parameters:
     Default: aws-k8s-tester-ec2-key
 
   ImageID:
-    Type: AWS::EC2::Image::Id
+    Type: String
     Default: ""
     Description: (Optional) Custom image ID. This value overrides any AWS Systems Manager Parameter Store value specified above.
 
@@ -442,13 +442,11 @@ func (ts *Tester) createASGs() error {
 				},
 			},
 		}
-		if asg.ImageID != "" {
-			ts.lg.Info("added image ID", zap.String("image-id", asg.ImageID))
-			stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
-				ParameterKey:   aws.String("ImageID"),
-				ParameterValue: aws.String(asg.ImageID),
-			})
-		}
+		ts.lg.Info("added image ID", zap.String("image-id", asg.ImageID))
+		stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
+			ParameterKey:   aws.String("ImageID"),
+			ParameterValue: aws.String(asg.ImageID),
+		})
 		if asg.ImageIDSSMParameter != "" {
 			ts.lg.Info("added image SSM parameter", zap.String("image-id-ssm-parameter", asg.ImageIDSSMParameter))
 			stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{

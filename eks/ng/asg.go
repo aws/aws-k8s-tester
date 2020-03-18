@@ -80,7 +80,7 @@ Parameters:
     Description: The EC2 Key Pair to allow SSH access to the instances
 
   ImageID:
-    Type: AWS::EC2::Image::Id
+    Type: String
     Default: ""
     Description: (Optional) Specify your own custom image ID. This value overrides any AWS Systems Manager Parameter Store value specified above.
 
