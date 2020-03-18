@@ -147,22 +147,28 @@ func (ts *Tester) deleteKeyPair() error {
 	}
 	ts.lg.Info("deleted a key pair", zap.String("key-pair-name", ts.cfg.RemoteAccessKeyName))
 
-	s3Key := path.Join(ts.cfg.Name, ts.cfg.RemoteAccessKeyName+".private.pem")
-	_, err = ts.s3API.DeleteObject(&s3.DeleteObjectInput{
-		Bucket: aws.String(ts.cfg.S3BucketName),
-		Key:    aws.String(s3Key),
-	})
-	if err == nil {
-		ts.lg.Info("deleted the private key in S3",
-			zap.String("bucket", ts.cfg.S3BucketName),
-			zap.String("remote-path", s3Key),
-		)
+	if ts.cfg.S3BucketName != "" {
+		s3Key := path.Join(ts.cfg.Name, ts.cfg.RemoteAccessKeyName+".private.pem")
+		_, err = ts.s3API.DeleteObject(&s3.DeleteObjectInput{
+			Bucket: aws.String(ts.cfg.S3BucketName),
+			Key:    aws.String(s3Key),
+		})
+		if err == nil {
+			ts.lg.Info("deleted the private key in S3",
+				zap.String("bucket", ts.cfg.S3BucketName),
+				zap.String("remote-path", s3Key),
+			)
+		} else {
+			ts.lg.Warn("failed to delete the private key in S3",
+				zap.String("bucket", ts.cfg.S3BucketName),
+				zap.String("remote-path", s3Key),
+				zap.Error(err),
+			)
+			return err
+		}
 	} else {
-		ts.lg.Warn("failed to delete the private key in S3",
-			zap.String("bucket", ts.cfg.S3BucketName),
-			zap.String("remote-path", s3Key),
-			zap.Error(err),
-		)
+		ts.lg.Info("skipping S3 clean-up")
 	}
-	return err
+
+	return nil
 }

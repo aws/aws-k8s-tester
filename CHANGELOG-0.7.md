@@ -3,6 +3,23 @@
 <hr>
 
 
+## [v0.7.8](https://github.com/aws/aws-k8s-tester/releases/tag/v0.7.8) (2020-03-18)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.7...v0.7.8).
+
+### `ec2`
+
+- Fix [S3 clean-up when `S3BucketName` is empty](https://github.com/aws/aws-k8s-tester/commit/).
+
+### `eks`
+
+- Fix [S3 clean-up when `S3BucketName` is empty](https://github.com/aws/aws-k8s-tester/commit/).
+- Fix [add-in install when `AddOn(Managed)NodeGroup` is `nil`](https://github.com/aws/aws-k8s-tester/commit/).
+
+
+<hr>
+
+
 ## [v0.7.7](https://github.com/aws/aws-k8s-tester/releases/tag/v0.7.7) (2020-03-18)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.6...v0.7.7).

@@ -737,21 +737,23 @@ func (ts *Tester) Up() (err error) {
 		}
 
 		needGPU := false
-	gpuFound:
-		for _, mv := range ts.cfg.AddOnNodeGroups.ASGs {
-			switch mv.AMIType {
-			case ec2config.AMITypeAL2X8664GPU:
-				needGPU = true
-				break gpuFound
+		if ts.cfg.IsEnabledAddOnNodeGroups() {
+		gpuFound1:
+			for _, mv := range ts.cfg.AddOnNodeGroups.ASGs {
+				switch mv.AMIType {
+				case ec2config.AMITypeAL2X8664GPU:
+					needGPU = true
+					break gpuFound1
+				}
 			}
 		}
-		if !needGPU {
-		found:
+		if !needGPU && ts.cfg.IsEnabledAddOnManagedNodeGroups() {
+		gpuFound2:
 			for _, mv := range ts.cfg.AddOnManagedNodeGroups.MNGs {
 				switch mv.AMIType {
 				case awseks.AMITypesAl2X8664Gpu:
 					needGPU = true
-					break found
+					break gpuFound2
 				}
 			}
 		}
@@ -927,7 +929,7 @@ func (ts *Tester) Up() (err error) {
 			}
 		}
 
-		if ts.cfg.AddOnNodeGroups.FetchLogs {
+		if ts.cfg.IsEnabledAddOnNodeGroups() && ts.cfg.AddOnNodeGroups.FetchLogs {
 			fmt.Printf("\n*********************************\n")
 			fmt.Printf("ngTester.FetchLogs (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 			waitDur := 20 * time.Second
@@ -945,7 +947,7 @@ func (ts *Tester) Up() (err error) {
 			}
 		}
 
-		if ts.cfg.AddOnManagedNodeGroups.FetchLogs {
+		if ts.cfg.IsEnabledAddOnManagedNodeGroups() && ts.cfg.AddOnManagedNodeGroups.FetchLogs {
 			fmt.Printf("\n*********************************\n")
 			fmt.Printf("mngTester.FetchLogs (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 			waitDur := 20 * time.Second
@@ -963,7 +965,8 @@ func (ts *Tester) Up() (err error) {
 			}
 		}
 
-		if ts.cfg.AddOnNodeGroups.FetchLogs || ts.cfg.AddOnManagedNodeGroups.FetchLogs {
+		if (ts.cfg.IsEnabledAddOnNodeGroups() && ts.cfg.AddOnNodeGroups.FetchLogs) ||
+			(ts.cfg.IsEnabledAddOnManagedNodeGroups() && ts.cfg.AddOnManagedNodeGroups.FetchLogs) {
 			if ts.cfg.IsEnabledAddOnSecrets() {
 				fmt.Printf("\n*********************************\n")
 				fmt.Printf("secretsTester.AggregateResults (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnSecrets.Namespace)
