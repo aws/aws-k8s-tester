@@ -204,7 +204,7 @@ Resources:
           DeleteOnTermination: true
           DeviceIndex: 0
           Groups:
-          - !Ref SecurityGroupID
+          - !Ref NodeSecurityGroupID
         TagSpecifications:
         - ResourceType: instance
           Tags:
