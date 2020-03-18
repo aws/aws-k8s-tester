@@ -9,12 +9,12 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.7...v0.7.8
 
 ### `ec2`
 
-- Fix [S3 clean-up when `S3BucketName` is empty](https://github.com/aws/aws-k8s-tester/commit/).
+- Fix [S3 clean-up when `S3BucketName` is empty](https://github.com/aws/aws-k8s-tester/commit/6b11852e3e32e5276f5beddbbe3322b6335d247b).
 
 ### `eks`
 
-- Fix [S3 clean-up when `S3BucketName` is empty](https://github.com/aws/aws-k8s-tester/commit/).
-- Fix [add-in install when `AddOn(Managed)NodeGroup` is `nil`](https://github.com/aws/aws-k8s-tester/commit/).
+- Fix [S3 clean-up when `S3BucketName` is empty](https://github.com/aws/aws-k8s-tester/commit/6b11852e3e32e5276f5beddbbe3322b6335d247b).
+- Fix [add-in install when `AddOn(Managed)NodeGroup` is `nil`](https://github.com/aws/aws-k8s-tester/commit/6b11852e3e32e5276f5beddbbe3322b6335d247b).
 
 
 <hr>
