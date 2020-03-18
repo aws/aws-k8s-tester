@@ -7,11 +7,11 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.6...v0.7.7).
 
-### `ec2config`
+### `ec2`
 
 - Skip [private key S3 uploads if `S3BucketName` is empty](https://github.com/aws/aws-k8s-tester/commit/2823aa88f7455289a2aa34589c388177fa3e8507).
 
-### `eksconfig`
+### `eks`
 
 - Skip [private key S3 uploads if `S3BucketName` is empty](https://github.com/aws/aws-k8s-tester/commit/2823aa88f7455289a2aa34589c388177fa3e8507).
 
