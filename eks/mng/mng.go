@@ -35,8 +35,6 @@ import (
 	clientset "k8s.io/client-go/kubernetes"
 )
 
-// MAKE SURE TO SYNC THE DEFAULT VALUES in "eksconfig"
-
 // TemplateMNG is the CloudFormation template for EKS managed node group.
 // ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
 // ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
@@ -930,10 +928,17 @@ func (ts *tester) waitForNodes(name string) error {
 	ts.cfg.Logger.Info("checking nodes via client-go")
 	retryStart, threshold := time.Now(), waitDur/10*7
 	for time.Now().Sub(retryStart) < waitDur {
+		select {
+		case <-ts.cfg.Stopc:
+			return errors.New("checking node aborted")
+		case <-ts.cfg.Sig:
+			return errors.New("checking node aborted")
+		case <-time.After(5 * time.Second):
+		}
+
 		nodes, err := ts.cfg.K8SClient.KubernetesClientSet().CoreV1().Nodes().List(metav1.ListOptions{})
 		if err != nil {
 			ts.cfg.Logger.Error("get nodes failed", zap.Error(err))
-			time.Sleep(5 * time.Second)
 			continue
 		}
 		items = nodes.Items

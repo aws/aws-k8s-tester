@@ -272,7 +272,7 @@ Outputs:
 
 `
 
-const installSSMAL2Metadata = `    Metadata:
+const metadataAL2InstallSSM = `    Metadata:
       AWS::CloudFormation::Init:
         configSets:
           default:
@@ -302,7 +302,7 @@ const installSSMAL2Metadata = `    Metadata:
               ssm:
                 - Fn::Sub: 'https://s3.${AWS::Region}.${AWS::URLSuffix}/amazon-ssm-${AWS::Region}/latest/linux_amd64/amazon-ssm-agent.rpm'`
 
-const installSSMAL2UserData = `        UserData:
+const userDataAL2InstallSSM = `        UserData:
           Fn::Base64:
             Fn::Sub: |
               #!/bin/bash
@@ -393,11 +393,11 @@ func (ts *Tester) createASGs() error {
 		case ec2config.AMITypeBottleRocketCPU:
 			// "bottlerocket" comes with SSM agent
 		case ec2config.AMITypeAL2X8664:
-			tg.Metadata = installSSMAL2Metadata
-			tg.UserData = installSSMAL2UserData
+			tg.Metadata = metadataAL2InstallSSM
+			tg.UserData = userDataAL2InstallSSM
 		case ec2config.AMITypeAL2X8664GPU:
-			tg.Metadata = installSSMAL2Metadata
-			tg.UserData = installSSMAL2UserData
+			tg.Metadata = metadataAL2InstallSSM
+			tg.UserData = userDataAL2InstallSSM
 		}
 		tpl := template.Must(template.New("TemplateASG").Parse(TemplateASG))
 		buf := bytes.NewBuffer(nil)

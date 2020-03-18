@@ -273,7 +273,7 @@ Outputs:
 
 `
 
-const installSSMAL2Metadata = `    Metadata:
+const metadataAL2InstallSSM = `    Metadata:
       AWS::CloudFormation::Init:
         configSets:
           default:
@@ -303,11 +303,11 @@ const installSSMAL2Metadata = `    Metadata:
               ssm:
                 - Fn::Sub: 'https://s3.${AWS::Region}.${AWS::URLSuffix}/amazon-ssm-${AWS::Region}/latest/linux_amd64/amazon-ssm-agent.rpm'`
 
-const installSSMAL2UserData = `        UserData:
+const userDataAL2InstallSSM = `        UserData:
           Fn::Base64:
             Fn::Sub: |
               #!/bin/bash
-              set -xeu
+              set -o xtrace
 
               sudo yum update -y \
                 && sudo yum install -y \
@@ -361,7 +361,9 @@ const installSSMAL2UserData = `        UserData:
               # or logout and login to use docker without 'sudo'
               id -nG
               sudo docker version
-              sudo docker info`
+              sudo docker info
+
+`
 
 type templateASG struct {
 	Metadata string
@@ -386,13 +388,41 @@ func (ts *tester) createASGs() error {
 		switch asg.AMIType {
 		case ec2config.AMITypeBottleRocketCPU:
 			// "bottlerocket" comes with SSM agent
+			tg.Metadata = ""
+			tg.UserData = fmt.Sprintf(`        UserData:
+          Fn::Base64:
+            Fn::Sub: |
+              [settings.kubernetes]
+              api-server = "%s"
+              cluster-certificate = "%s"
+              cluster-name = "%s"
+`,
+				ts.cfg.EKSConfig.Status.ClusterAPIServerEndpoint,
+				ts.cfg.EKSConfig.Status.ClusterCA,
+				ts.cfg.EKSConfig.Name,
+			)
+
 		case ec2config.AMITypeAL2X8664:
-			tg.Metadata = installSSMAL2Metadata
-			tg.UserData = installSSMAL2UserData
+			tg.Metadata = metadataAL2InstallSSM
+			tg.UserData = userDataAL2InstallSSM
+			tg.UserData += `              /etc/eks/bootstrap.sh ${ClusterName}`
+			if ts.cfg.EKSConfig.Parameters.ResolverURL != "" {
+				tg.UserData += fmt.Sprintf(` --b64-cluster-ca %s --apiserver-endpoint %s`, ts.cfg.EKSConfig.Status.ClusterCA, ts.cfg.EKSConfig.Status.ClusterAPIServerEndpoint)
+				tg.UserData += "\n"
+			}
+			tg.UserData += `              /opt/aws/bin/cfn-signal --exit-code $? --stack ${AWS::StackName} --resource ASG --region ${AWS::Region}`
+
 		case ec2config.AMITypeAL2X8664GPU:
-			tg.Metadata = installSSMAL2Metadata
-			tg.UserData = installSSMAL2UserData
+			tg.Metadata = metadataAL2InstallSSM
+			tg.UserData = userDataAL2InstallSSM
+			tg.UserData += `              /etc/eks/bootstrap.sh ${ClusterName}`
+			if ts.cfg.EKSConfig.Parameters.ResolverURL != "" {
+				tg.UserData += fmt.Sprintf(` --b64-cluster-ca %s --apiserver-endpoint %s`, ts.cfg.EKSConfig.Status.ClusterCA, ts.cfg.EKSConfig.Status.ClusterAPIServerEndpoint)
+				tg.UserData += "\n"
+			}
+			tg.UserData += `              /opt/aws/bin/cfn-signal --exit-code $? --stack ${AWS::StackName} --resource ASG --region ${AWS::Region}`
 		}
+
 		tpl := template.Must(template.New("TemplateASG").Parse(TemplateASG))
 		buf := bytes.NewBuffer(nil)
 		if err := tpl.Execute(buf, tg); err != nil {
@@ -436,13 +466,11 @@ func (ts *tester) createASGs() error {
 				},
 			},
 		}
-		if asg.ImageID != "" {
-			ts.cfg.Logger.Info("added image ID", zap.String("image-id", asg.ImageID))
-			stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
-				ParameterKey:   aws.String("ImageID"),
-				ParameterValue: aws.String(asg.ImageID),
-			})
-		}
+		ts.cfg.Logger.Info("added image ID", zap.String("image-id", asg.ImageID))
+		stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
+			ParameterKey:   aws.String("ImageID"),
+			ParameterValue: aws.String(asg.ImageID),
+		})
 		if asg.ImageIDSSMParameter != "" {
 			ts.cfg.Logger.Info("added image SSM parameter", zap.String("image-id-ssm-parameter", asg.ImageIDSSMParameter))
 			stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{

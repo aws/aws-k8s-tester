@@ -17,8 +17,8 @@ func TestTemplateASG(t *testing.T) {
 
 	buf.Reset()
 	if err := tpl.Execute(buf, templateASG{
-		Metadata: installSSMAL2Metadata,
-		UserData: installSSMAL2UserData,
+		Metadata: metadataAL2InstallSSM,
+		UserData: userDataAL2InstallSSM,
 	}); err != nil {
 		t.Fatal(err)
 	}

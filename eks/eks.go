@@ -711,6 +711,7 @@ func (ts *Tester) Up() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnNodeGroups() || ts.cfg.IsEnabledAddOnManagedNodeGroups() {
+		// create NG first, so MNG configmap update can be called afterwards
 		fmt.Printf("\n*********************************\n")
 		fmt.Printf("ngTester.Create (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		if err := catchInterrupt(
@@ -1279,6 +1280,9 @@ func (ts *Tester) IsUp() (up bool, err error) {
 // DumpClusterLogs should export logs from the cluster. It may be called
 // multiple times. Options for this should come from New(...)
 func (ts *Tester) DumpClusterLogs() error {
+	if err := ts.ngTester.FetchLogs(); err != nil {
+		return err
+	}
 	return ts.mngTester.FetchLogs()
 }
 

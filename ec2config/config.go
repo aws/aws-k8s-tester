@@ -223,6 +223,9 @@ type ASG struct {
 	SSMDocumentCFNStackID              string `json:"ssm-document-cfn-stack-id" read-only:"true"`
 	SSMDocumentCommandID               string `json:"ssm-document-command-id" read-only:"true"`
 
+	// TODO: support bootstrap arguments
+	// ref. https://github.com/awslabs/amazon-eks-ami/blob/master/amazon-eks-nodegroup.yaml
+
 	// AMIType is the AMI type for the node group.
 	// Allowed values are BOTTLEROCKET_x86_64, AL2_x86_64 and AL2_x86_64_GPU.
 	// ref. https://docs.aws.amazon.com/eks/latest/userguide/launch-workers.html

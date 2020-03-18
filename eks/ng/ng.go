@@ -3,9 +3,11 @@ package ng
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-sdk-go/service/autoscaling/autoscalingiface"
@@ -14,6 +16,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
 	"github.com/aws/aws-sdk-go/service/iam/iamiface"
 	"go.uber.org/zap"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientset "k8s.io/client-go/kubernetes"
 )
 
@@ -93,6 +97,75 @@ func (ts *tester) Create() (err error) {
 	if err = ts.createASGs(); err != nil {
 		return err
 	}
+	if err = ts.createConfigMap(); err != nil {
+		return err
+	}
+	if err = ts.waitForNodes(); err != nil {
+		return err
+	}
+
+	return ts.cfg.EKSConfig.Sync()
+}
+
+func (ts *tester) waitForNodes() error {
+	waitDur := 5 * time.Minute
+	var items []v1.Node
+	ts.cfg.Logger.Info("checking nodes via client-go")
+	for _, mv := range ts.cfg.EKSConfig.AddOnNodeGroups.ASGs {
+		retryStart, threshold := time.Now(), 3*time.Minute
+		for time.Now().Sub(retryStart) < waitDur {
+			select {
+			case <-ts.cfg.Stopc:
+				return errors.New("checking nodes aborted")
+			case <-ts.cfg.Sig:
+				return errors.New("checking nodes aborted")
+			case <-time.After(5 * time.Second):
+			}
+
+			nodes, err := ts.cfg.K8SClient.KubernetesClientSet().CoreV1().Nodes().List(metav1.ListOptions{})
+			if err != nil {
+				ts.cfg.Logger.Error("get nodes failed", zap.Error(err))
+				continue
+			}
+			items = nodes.Items
+
+			readies := int64(0)
+			for _, node := range items {
+				for _, cond := range node.Status.Conditions {
+					if cond.Type != v1.NodeReady {
+						continue
+					}
+					ts.cfg.Logger.Info("node info",
+						zap.String("name", node.GetName()),
+						zap.String("type", fmt.Sprintf("%s", cond.Type)),
+						zap.String("status", fmt.Sprintf("%s", cond.Status)),
+					)
+					if cond.Status == v1.ConditionTrue {
+						readies++
+					}
+				}
+			}
+			ts.cfg.Logger.Info("nodes",
+				zap.Int64("current-ready-nodes", readies),
+				zap.Int64("desired-ready-nodes", mv.ASGDesiredCapacity),
+			)
+			if readies >= mv.ASGDesiredCapacity {
+				break
+			}
+			took := time.Now().Sub(retryStart)
+			if took > threshold {
+				fmt.Printf("\n\nkubectl (%q, %q)\n\n", ts.cfg.EKSConfig.ConfigPath, ts.cfg.EKSConfig.KubectlCommand())
+				fmt.Println(ts.cfg.EKSConfig.KubectlCommands())
+				fmt.Printf("\n\nSSH (%q, %q)\n\n", ts.cfg.EKSConfig.ConfigPath, ts.cfg.EKSConfig.KubectlCommand())
+				fmt.Println(ts.cfg.EKSConfig.SSHCommands())
+			}
+		}
+	}
+	println()
+	for _, v := range items {
+		fmt.Printf("'Node' %q (using client-go): %+v\n", v.GetName(), v.Status.Addresses)
+	}
+	println()
 
 	return ts.cfg.EKSConfig.Sync()
 }
