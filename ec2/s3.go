@@ -2,6 +2,7 @@ package ec2
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"path"
@@ -20,6 +21,9 @@ import (
 
 func (ts *Tester) createS3() (err error) {
 	if ts.cfg.S3BucketCreate {
+		if ts.cfg.S3BucketName == "" {
+			return errors.New("empty S3 bucket name")
+		}
 		var retry bool
 		for i := 0; i < 5; i++ {
 			retry, err = ts.createBucket()
@@ -38,6 +42,10 @@ func (ts *Tester) createS3() (err error) {
 		}
 	} else {
 		ts.lg.Info("skipping S3 bucket creation")
+	}
+	if ts.cfg.S3BucketName == "" {
+		ts.lg.Info("skipping s3 bucket creation")
+		return nil
 	}
 
 	testKey := path.Join(ts.cfg.Name, "test-"+getTS()+"-"+randString(10))
@@ -218,6 +226,11 @@ func getTS() string {
 }
 
 func (ts *Tester) uploadToS3() error {
+	if ts.cfg.S3BucketName == "" {
+		ts.lg.Info("skipping s3 uploads; s3 bucket name is empty")
+		return nil
+	}
+
 	d, err := ioutil.ReadFile(ts.cfg.ConfigPath)
 	if err != nil {
 		return err

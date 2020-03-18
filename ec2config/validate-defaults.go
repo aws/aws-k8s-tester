@@ -36,8 +36,8 @@ var DefaultConfig = Config{
 	OnFailureDelete:            true,
 	OnFailureDeleteWaitSeconds: 120,
 
-	S3BucketName:                    "aws-k8s-tester-ec2-s3-bucket",
-	S3BucketCreate:                  true,
+	S3BucketName:                    "",
+	S3BucketCreate:                  false,
 	S3BucketLifecycleExpirationDays: 0,
 
 	RoleCreate:                 true,
@@ -168,9 +168,6 @@ func (cfg *Config) validateConfig() error {
 		}
 
 	case false: // use existing one
-		if cfg.S3BucketName == "" {
-			return errors.New("S3BucketCreate false to use existing one but empty S3BucketName")
-		}
 	}
 
 	switch cfg.RoleCreate {
