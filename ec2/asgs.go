@@ -33,7 +33,7 @@ e.g.
 /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
 
 e.g.
-/aws/service/eks/optimized-ami/1.15/amazon-linux-2/recommended
+/aws/service/eks/optimized-ami/1.15/amazon-linux-2/recommended/image_id
 /aws/service/bottlerocket/aws-k8s-1.15/x86_64/latest/image_id
 */
 

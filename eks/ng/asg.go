@@ -35,7 +35,7 @@ e.g.
 aws ssm get-parameters --names /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
 
 e.g.
-aws ssm get-parameters --names /aws/service/eks/optimized-ami/1.15/amazon-linux-2/recommended
+aws ssm get-parameters --names /aws/service/eks/optimized-ami/1.15/amazon-linux-2/recommended/image_id
 aws ssm get-parameters --names /aws/service/bottlerocket/aws-k8s-1.15/x86_64/latest/image_id
 
 
