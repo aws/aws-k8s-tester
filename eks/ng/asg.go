@@ -568,6 +568,8 @@ func (ts *tester) createASGs() error {
 			switch k := aws.StringValue(o.OutputKey); k {
 			case "ASGName":
 				ts.cfg.Logger.Info("found ASGName value from CFN", zap.String("value", aws.StringValue(o.OutputValue)))
+			case "InstanceProfileARN":
+				ts.cfg.Logger.Info("found InstanceProfileARN value from CFN", zap.String("value", aws.StringValue(o.OutputValue)))
 			default:
 				asg.CreateTook += time.Since(timeStart)
 				asg.CreateTookString = asg.CreateTook.String()
