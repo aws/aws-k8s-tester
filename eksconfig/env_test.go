@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/stretchr/testify/assert"
 )
@@ -119,8 +120,8 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_SERVICE_PRINCIPALS")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_MANAGED_POLICY_ARNS", "a,b,c")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_MANAGED_POLICY_ARNS")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_NGS", `{"ng-test-name-cpu":{"name":"ng-test-name-cpu","tags":{"cpu":"hello-world"},"remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64","asg-min-size":17,"asg-max-size":99,"asg-desired-capacity":77,"instance-types":["type-cpu-2"],"volume-size":40},"ng-test-name-gpu":{"name":"ng-test-name-gpu","remote-access-user-name":"ec2-user","tags":{"gpu":"hello-world"},"ami-type":"AL2_x86_64_GPU","asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34,"instance-types":["type-gpu-2"],"volume-size":500}}`)
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_NGS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS", `{"ng-test-name-cpu":{"name":"ng-test-name-cpu","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64","asg-min-size":17,"asg-max-size":99,"asg-desired-capacity":77,"instance-types":["type-cpu-2"],"volume-size":40},"ng-test-name-gpu":{"name":"ng-test-name-gpu","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64_GPU","asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34,"instance-types":["type-gpu-2"],"volume-size":500}}`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_LOGS_DIR", "a")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_LOGS_DIR")
 
@@ -462,11 +463,10 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("unexpected cfg.AddOnNodeGroups.RoleManagedPolicyARNs %+v", cfg.AddOnNodeGroups.RoleManagedPolicyARNs)
 	}
 	cpuName, gpuName := "ng-test-name-cpu", "ng-test-name-gpu"
-	expectedNGs := map[string]NG{
+	expectedASGs := map[string]ec2config.ASG{
 		cpuName: {
 			Name:                 cpuName,
 			RemoteAccessUserName: "ec2-user",
-			Tags:                 map[string]string{"cpu": "hello-world"},
 			AMIType:              "AL2_x86_64",
 			ASGMinSize:           17,
 			ASGMaxSize:           99,
@@ -477,7 +477,6 @@ func TestEnv(t *testing.T) {
 		gpuName: {
 			Name:                 gpuName,
 			RemoteAccessUserName: "ec2-user",
-			Tags:                 map[string]string{"gpu": "hello-world"},
 			AMIType:              eks.AMITypesAl2X8664Gpu,
 			ASGMinSize:           30,
 			ASGMaxSize:           35,
@@ -486,8 +485,8 @@ func TestEnv(t *testing.T) {
 			VolumeSize:           500,
 		},
 	}
-	if !reflect.DeepEqual(cfg.AddOnNodeGroups.NGs, expectedNGs) {
-		t.Fatalf("expected cfg.AddOnNodeGroups.NGs %+v, got %+v", expectedNGs, cfg.AddOnNodeGroups.NGs)
+	if !reflect.DeepEqual(cfg.AddOnNodeGroups.ASGs, expectedASGs) {
+		t.Fatalf("expected cfg.AddOnNodeGroups.ASGs\n%+v\n\ngot\n%+v\n", expectedASGs, cfg.AddOnNodeGroups.ASGs)
 	}
 	if cfg.AddOnNodeGroups.LogsDir != "a" {
 		t.Fatalf("unexpected cfg.AddOnNodeGroups.LogsDir %q", cfg.AddOnNodeGroups.LogsDir)

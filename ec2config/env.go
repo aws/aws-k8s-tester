@@ -102,11 +102,11 @@ func parseEnvs(pfx string, addOn interface{}) (interface{}, error) {
 		case reflect.Map:
 			switch fieldName {
 			case "ASGs":
-				asg := make(map[string]ASG)
-				if err := json.Unmarshal([]byte(sv), &asg); err != nil {
+				asgs := make(map[string]ASG)
+				if err := json.Unmarshal([]byte(sv), &asgs); err != nil {
 					return nil, fmt.Errorf("failed to parse %q (field name %q, environmental variable key %q, error %v)", sv, fieldName, env, err)
 				}
-				for k, v := range asg {
+				for k, v := range asgs {
 					tp2, vv2 := reflect.TypeOf(&v).Elem(), reflect.ValueOf(&v).Elem()
 					for j := 0; j < tp2.NumField(); j++ {
 						jv := tp2.Field(j).Tag.Get("json")
@@ -122,9 +122,9 @@ func parseEnvs(pfx string, addOn interface{}) (interface{}, error) {
 						// skip updating read-only field
 						vv2.Field(j).SetString("")
 					}
-					asg[k] = v
+					asgs[k] = v
 				}
-				vv.Field(i).Set(reflect.ValueOf(asg))
+				vv.Field(i).Set(reflect.ValueOf(asgs))
 
 			default:
 				return nil, fmt.Errorf("field %q not supported for reflect.Map", fieldName)

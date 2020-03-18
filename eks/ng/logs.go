@@ -1,4 +1,4 @@
-package mng
+package ng
 
 import (
 	"context"
@@ -30,15 +30,15 @@ var logCmds = map[string]string{
 
 // FetchLogs downloads logs from managed node group instances.
 func (ts *tester) FetchLogs() (err error) {
-	if !ts.cfg.EKSConfig.IsEnabledAddOnManagedNodeGroups() {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnNodeGroups() {
 		ts.cfg.Logger.Info("skipping fetch logs for node groups")
 		return nil
 	}
-	if !ts.cfg.EKSConfig.AddOnManagedNodeGroups.FetchLogs {
+	if !ts.cfg.EKSConfig.AddOnNodeGroups.FetchLogs {
 		ts.cfg.Logger.Info("skipping fetch logs for node groups")
 		return nil
 	}
-	if err := os.MkdirAll(ts.cfg.EKSConfig.AddOnManagedNodeGroups.LogsDir, 0700); err != nil {
+	if err := os.MkdirAll(ts.cfg.EKSConfig.AddOnNodeGroups.LogsDir, 0700); err != nil {
 		return err
 	}
 	ts.logsMu.Lock()
@@ -50,14 +50,14 @@ func (ts *tester) FetchLogs() (err error) {
 var regex = regexp.MustCompile("[^a-zA-Z0-9]+")
 
 func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string]string) error {
-	logsDir := ts.cfg.EKSConfig.AddOnManagedNodeGroups.LogsDir
+	logsDir := ts.cfg.EKSConfig.AddOnNodeGroups.LogsDir
 	sshOpt := ssh.WithVerbose(ts.cfg.EKSConfig.LogLevel == "debug")
 	rateLimiter := rate.NewLimiter(rate.Limit(qps), burst)
 	rch, waits := make(chan instanceLogs, 10), 0
 
-	for name, nodeGroup := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
-		ts.cfg.Logger.Info("fetching logs from managed node group",
-			zap.String("mng-name", name),
+	for name, nodeGroup := range ts.cfg.EKSConfig.AddOnNodeGroups.ASGs {
+		ts.cfg.Logger.Info("fetching logs from node group",
+			zap.String("asg-name", name),
 			zap.Int("nodes", len(nodeGroup.Instances)),
 		)
 		waits += len(nodeGroup.Instances)
@@ -95,16 +95,16 @@ func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 					UserName:      iv.RemoteAccessUserName,
 				})
 				if err != nil {
-					rch <- instanceLogs{mngName: name, errs: []string{err.Error()}}
+					rch <- instanceLogs{asgName: name, errs: []string{err.Error()}}
 					return
 				}
 				defer sh.Close()
 				if err = sh.Connect(); err != nil {
-					rch <- instanceLogs{mngName: name, errs: []string{err.Error()}}
+					rch <- instanceLogs{asgName: name, errs: []string{err.Error()}}
 					return
 				}
 
-				data := instanceLogs{mngName: name, instanceID: instID}
+				data := instanceLogs{asgName: name, instanceID: instID}
 				// fetch default logs
 				for cmd, fileName := range commandToFileName {
 					if !rateLimiter.Allow() {
@@ -368,27 +368,27 @@ func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 		}
 		if len(data.errs) > 0 {
 			ts.cfg.Logger.Warn("failed to fetch logs",
-				zap.String("mng-name", data.mngName),
+				zap.String("mng-name", data.asgName),
 				zap.String("instance-id", data.instanceID),
 				zap.Strings("errors", data.errs),
 			)
 			continue
 		}
-		mv, ok := ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[data.mngName]
+		mv, ok := ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[data.asgName]
 		if !ok {
-			return fmt.Errorf("EKS Managed Node Group name %q is unknown", data.mngName)
+			return fmt.Errorf("EKS Managed Node Group name %q is unknown", data.asgName)
 		}
 		if mv.Logs == nil {
 			mv.Logs = make(map[string][]string)
 		}
 		_, ok = mv.Logs[data.instanceID]
 		if ok {
-			return fmt.Errorf("EKS Managed Node Group name %q for instance %q logs are redundant", data.mngName, data.instanceID)
+			return fmt.Errorf("EKS Managed Node Group name %q for instance %q logs are redundant", data.asgName, data.instanceID)
 		}
 
 		mv.Logs[data.instanceID] = data.paths
 
-		ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[data.mngName] = mv
+		ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[data.asgName] = mv
 		ts.cfg.EKSConfig.Sync()
 
 		files := len(data.paths)
@@ -408,7 +408,7 @@ func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 }
 
 type instanceLogs struct {
-	mngName    string
+	asgName    string
 	instanceID string
 	paths      []string
 	errs       []string
@@ -423,7 +423,7 @@ func (ts *tester) DownloadClusterLogs(artifactDir string) error {
 	ts.logsMu.RLock()
 	defer ts.logsMu.RUnlock()
 
-	for _, v := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
+	for _, v := range ts.cfg.EKSConfig.AddOnNodeGroups.ASGs {
 		for _, fpaths := range v.Logs {
 			for _, fpath := range fpaths {
 				newPath := filepath.Join(artifactDir, filepath.Base(fpath))

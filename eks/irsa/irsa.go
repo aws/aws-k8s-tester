@@ -1056,55 +1056,110 @@ func (ts *tester) countSuccess() (int, error) {
 	sshOpt := ssh.WithVerbose(ts.cfg.EKSConfig.LogLevel == "debug")
 	rateLimiter := rate.NewLimiter(rate.Limit(50), 10)
 	total := 0
-	for name, nodeGroup := range ts.cfg.EKSConfig.StatusManagedNodeGroups.Nodes {
-		ts.cfg.Logger.Info("fetching outputs",
-			zap.String("mng-name", name),
-			zap.Int("nodes", len(nodeGroup.Instances)),
-		)
+	if ts.cfg.EKSConfig.IsEnabledAddOnNodeGroups() && ts.cfg.EKSConfig.AddOnNodeGroups.FetchLogs {
+		for name, nodeGroup := range ts.cfg.EKSConfig.AddOnNodeGroups.ASGs {
+			ts.cfg.Logger.Info("fetching outputs from node group",
+				zap.String("mng-name", name),
+				zap.Int("nodes", len(nodeGroup.Instances)),
+			)
 
-		for instID, iv := range nodeGroup.Instances {
-			select {
-			case <-ts.cfg.Stopc:
-				ts.cfg.Logger.Warn("exiting fetcher")
-				return 0, nil
-			default:
-			}
+			for instID, iv := range nodeGroup.Instances {
+				select {
+				case <-ts.cfg.Stopc:
+					ts.cfg.Logger.Warn("exiting fetcher")
+					return 0, nil
+				default:
+				}
 
-			if !rateLimiter.Allow() {
-				ts.cfg.Logger.Debug("waiting for rate limiter before SSH into the machine",
-					zap.String("instance-id", instID),
-				)
-				werr := rateLimiter.Wait(context.Background())
-				ts.cfg.Logger.Debug("waited for rate limiter",
-					zap.Error(werr),
-				)
-			}
+				if !rateLimiter.Allow() {
+					ts.cfg.Logger.Debug("waiting for rate limiter before SSH into the machine",
+						zap.String("instance-id", instID),
+					)
+					werr := rateLimiter.Wait(context.Background())
+					ts.cfg.Logger.Debug("waited for rate limiter",
+						zap.Error(werr),
+					)
+				}
 
-			ts.cfg.Logger.Debug("fetching output", zap.String("instance-id", instID))
-			sh, err := ssh.New(ssh.Config{
-				Logger:        ts.cfg.Logger,
-				KeyPath:       ts.cfg.EKSConfig.RemoteAccessPrivateKeyPath,
-				PublicIP:      iv.PublicIP,
-				PublicDNSName: iv.PublicDNSName,
-				UserName:      iv.RemoteAccessUserName,
-			})
-			if err != nil {
-				return 0, err
-			}
-			if err = sh.Connect(); err != nil {
-				ts.cfg.Logger.Warn("failed to connect to SSH", zap.Error(err))
+				ts.cfg.Logger.Debug("fetching output", zap.String("instance-id", instID))
+				sh, err := ssh.New(ssh.Config{
+					Logger:        ts.cfg.Logger,
+					KeyPath:       ts.cfg.EKSConfig.RemoteAccessPrivateKeyPath,
+					PublicIP:      iv.PublicIP,
+					PublicDNSName: iv.PublicDNSName,
+					UserName:      iv.RemoteAccessUserName,
+				})
+				if err != nil {
+					return 0, err
+				}
+				if err = sh.Connect(); err != nil {
+					ts.cfg.Logger.Warn("failed to connect to SSH", zap.Error(err))
+					sh.Close()
+					return 0, err
+				}
+				catCmd := "sudo cat " + outputFilePath
+				out, err := sh.Run(catCmd, sshOpt)
+				if err != nil {
+					sh.Close()
+					return 0, err
+				}
 				sh.Close()
-				return 0, err
-			}
-			catCmd := "sudo cat " + outputFilePath
-			out, err := sh.Run(catCmd, sshOpt)
-			if err != nil {
-				sh.Close()
-				return 0, err
-			}
-			sh.Close()
 
-			total += strings.Count(string(out), sleepMsg)
+				total += strings.Count(string(out), sleepMsg)
+			}
+		}
+	}
+	if ts.cfg.EKSConfig.IsEnabledAddOnManagedNodeGroups() && ts.cfg.EKSConfig.AddOnManagedNodeGroups.FetchLogs {
+		for name, nodeGroup := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
+			ts.cfg.Logger.Info("fetching outputs from managed node group",
+				zap.String("mng-name", name),
+				zap.Int("nodes", len(nodeGroup.Instances)),
+			)
+
+			for instID, iv := range nodeGroup.Instances {
+				select {
+				case <-ts.cfg.Stopc:
+					ts.cfg.Logger.Warn("exiting fetcher")
+					return 0, nil
+				default:
+				}
+
+				if !rateLimiter.Allow() {
+					ts.cfg.Logger.Debug("waiting for rate limiter before SSH into the machine",
+						zap.String("instance-id", instID),
+					)
+					werr := rateLimiter.Wait(context.Background())
+					ts.cfg.Logger.Debug("waited for rate limiter",
+						zap.Error(werr),
+					)
+				}
+
+				ts.cfg.Logger.Debug("fetching output", zap.String("instance-id", instID))
+				sh, err := ssh.New(ssh.Config{
+					Logger:        ts.cfg.Logger,
+					KeyPath:       ts.cfg.EKSConfig.RemoteAccessPrivateKeyPath,
+					PublicIP:      iv.PublicIP,
+					PublicDNSName: iv.PublicDNSName,
+					UserName:      iv.RemoteAccessUserName,
+				})
+				if err != nil {
+					return 0, err
+				}
+				if err = sh.Connect(); err != nil {
+					ts.cfg.Logger.Warn("failed to connect to SSH", zap.Error(err))
+					sh.Close()
+					return 0, err
+				}
+				catCmd := "sudo cat " + outputFilePath
+				out, err := sh.Run(catCmd, sshOpt)
+				if err != nil {
+					sh.Close()
+					return 0, err
+				}
+				sh.Close()
+
+				total += strings.Count(string(out), sleepMsg)
+			}
 		}
 	}
 	return total, ts.cfg.EKSConfig.Sync()
@@ -1128,26 +1183,56 @@ func (ts *tester) AggregateResults() error {
 	defer f.Close()
 
 	sfx := filepath.Base(outputFilePath)
-	for _, v := range ts.cfg.EKSConfig.StatusManagedNodeGroups.Nodes {
-		for _, fpaths := range v.Logs {
-			for _, fpath := range fpaths {
-				if !strings.HasSuffix(fpath, sfx) {
-					continue
+	if ts.cfg.EKSConfig.IsEnabledAddOnNodeGroups() && ts.cfg.EKSConfig.AddOnNodeGroups.FetchLogs {
+		ts.cfg.Logger.Info("fetching logs from ngs")
+		for _, v := range ts.cfg.EKSConfig.AddOnNodeGroups.ASGs {
+			for _, fpaths := range v.Logs {
+				for _, fpath := range fpaths {
+					if !strings.HasSuffix(fpath, sfx) {
+						continue
+					}
+					if _, err = f.Write([]byte(fmt.Sprintf("%q contents:\n", fpath))); err != nil {
+						return err
+					}
+					d, err := ioutil.ReadFile(fpath)
+					if err != nil {
+						ts.cfg.Logger.Warn("failed to read file", zap.Error(err))
+						return err
+					}
+					if _, err = f.Write(d); err != nil {
+						ts.cfg.Logger.Warn("failed to write a file", zap.Error(err))
+						return err
+					}
+					if _, err = f.Write([]byte("\n\n\n")); err != nil {
+						return err
+					}
 				}
-				if _, err = f.Write([]byte(fmt.Sprintf("%q contents:\n", fpath))); err != nil {
-					return err
-				}
-				d, err := ioutil.ReadFile(fpath)
-				if err != nil {
-					ts.cfg.Logger.Warn("failed to read file", zap.Error(err))
-					return err
-				}
-				if _, err = f.Write(d); err != nil {
-					ts.cfg.Logger.Warn("failed to write a file", zap.Error(err))
-					return err
-				}
-				if _, err = f.Write([]byte("\n\n\n")); err != nil {
-					return err
+			}
+		}
+	}
+	if ts.cfg.EKSConfig.IsEnabledAddOnManagedNodeGroups() && ts.cfg.EKSConfig.AddOnManagedNodeGroups.FetchLogs {
+		ts.cfg.Logger.Info("fetching logs from mngs")
+		for _, v := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
+			for _, fpaths := range v.Logs {
+				for _, fpath := range fpaths {
+					if !strings.HasSuffix(fpath, sfx) {
+						continue
+					}
+					if _, err = f.Write([]byte(fmt.Sprintf("%q contents:\n", fpath))); err != nil {
+						return err
+					}
+					d, err := ioutil.ReadFile(fpath)
+					if err != nil {
+						ts.cfg.Logger.Warn("failed to read file", zap.Error(err))
+						return err
+					}
+					if _, err = f.Write(d); err != nil {
+						ts.cfg.Logger.Warn("failed to write a file", zap.Error(err))
+						return err
+					}
+					if _, err = f.Write([]byte("\n\n\n")); err != nil {
+						return err
+					}
 				}
 			}
 		}

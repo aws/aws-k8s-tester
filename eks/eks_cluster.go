@@ -1,6 +1,7 @@
 package eks
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha1"
 	"crypto/tls"
@@ -11,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"text/template"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
@@ -27,8 +29,8 @@ import (
 
 // MAKE SURE TO SYNC THE DEFAULT VALUES in "eksconfig"
 
-// TemplateCluster is the CloudFormation template for EKS cluster.
-const TemplateCluster = `
+// TemplateEKSCluster is the CloudFormation template for EKS cluster.
+const TemplateEKSCluster = `
 ---
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Amazon EKS Cluster'
@@ -49,70 +51,17 @@ Parameters:
     Description: Role ARN that EKS uses to create AWS resources for Kubernetes
 
   SubnetIDs:
-    Type: CommaDelimitedList
+    Type: List<AWS::EC2::Subnet::Id>
     Description: Subnets for EKS worker nodes. Amazon EKS creates cross-account elastic network interfaces in these subnets to allow communication between  worker nodes and the Kubernetes control plane
 
   ControlPlaneSecurityGroupID:
     Type: AWS::EC2::SecurityGroup::Id
     Description: Security group ID for the cluster control plane communication with worker nodes
-
-Resources:
-
-  Cluster:
-    Type: AWS::EKS::Cluster
-    Properties:
-      Name: !Ref ClusterName
-      Version: !Ref Version
-      RoleArn: !Ref RoleARN
-      ResourcesVpcConfig:
-        SubnetIds: !Ref SubnetIDs
-        SecurityGroupIds:
-        - !Ref ControlPlaneSecurityGroupID
-
-Outputs:
-
-  ClusterARN:
-    Value: !GetAtt Cluster.Arn
-    Description: EKS Cluster ARN
-
-  ClusterAPIServerEndpoint:
-    Value: !GetAtt Cluster.Endpoint
-    Description: EKS Cluster API server endpoint
-
-`
-
-// TemplateClusterWithEncryption is the CloudFormation template for EKS cluster.
-const TemplateClusterWithEncryption = `
----
-AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Amazon EKS Cluster'
-
-Parameters:
-
-  ClusterName:
-    Type: String
-    Description: Cluster name
-
-  Version:
-    Type: String
-    Default: 1.15
-    Description: Specify the EKS version
-
-  RoleARN:
-    Type: String
-    Description: Role ARN that EKS uses to create AWS resources for Kubernetes
-
-  SubnetIDs:
-    Type: CommaDelimitedList
-    Description: Subnets for EKS worker nodes. Amazon EKS creates cross-account elastic network interfaces in these subnets to allow communication between  worker nodes and the Kubernetes control plane
-
-  ControlPlaneSecurityGroupID:
-    Type: AWS::EC2::SecurityGroup::Id
-    Description: Security group ID for the cluster control plane communication with worker nodes
-
+{{ if ne .AWSEncryptionProviderCMKARN "" }}
   AWSEncryptionProviderCMKARN:
     Type: String
     Description: KMS CMK for aws-encryption-provider.
+{{ end }}
 
 Resources:
 
@@ -126,12 +75,12 @@ Resources:
         SubnetIds: !Ref SubnetIDs
         SecurityGroupIds:
         - !Ref ControlPlaneSecurityGroupID
-      EncryptionConfig:
+{{ if ne .AWSEncryptionProviderCMKARN "" }}      EncryptionConfig:
       - Resources:
         - secrets
         Provider:
           KeyArn: !Ref AWSEncryptionProviderCMKARN
-
+{{ end }}
 Outputs:
 
   ClusterARN:
@@ -143,6 +92,10 @@ Outputs:
     Description: EKS Cluster API server endpoint
 
 `
+
+type templateEKSCluster struct {
+	AWSEncryptionProviderCMKARN string
+}
 
 func (ts *Tester) createCluster() error {
 	if err := ts.createEKS(); err != nil {
@@ -253,10 +206,15 @@ func (ts *Tester) createEKS() error {
 
 	} else {
 
-		tmpl := TemplateCluster
-		if ts.cfg.Parameters.EncryptionCMKARN != "" {
-			tmpl = TemplateClusterWithEncryption
+		tpl := template.Must(template.New("TemplateEKSCluster").Parse(TemplateEKSCluster))
+		buf := bytes.NewBuffer(nil)
+		if err := tpl.Execute(buf, templateEKSCluster{
+			AWSEncryptionProviderCMKARN: ts.cfg.Parameters.EncryptionCMKARN,
+		}); err != nil {
+			return err
 		}
+		tmpl := buf.String()
+
 		initialWait = time.Minute
 		ts.lg.Info("creating a cluster using CFN", zap.String("name", ts.cfg.Name))
 		stackInput := &cloudformation.CreateStackInput{

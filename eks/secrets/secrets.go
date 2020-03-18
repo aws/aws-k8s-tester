@@ -730,62 +730,127 @@ func (ts *tester) AggregateResults() error {
 	if err = wr.Write([]string{"secret-name", "read-took-in-seconds", "start", "end"}); err != nil {
 		return err
 	}
-	for _, v := range ts.cfg.EKSConfig.StatusManagedNodeGroups.Nodes {
-		for _, fpaths := range v.Logs {
-			for _, fpath := range fpaths {
-				if !strings.HasSuffix(fpath, ResultSuffixRead) {
-					continue
-				}
-				rf, err := os.OpenFile(fpath, os.O_RDONLY, 0444)
-				if err != nil {
-					return fmt.Errorf("failed to open %q (%v)", fpath, err)
-				}
-				rd := csv.NewReader(rf)
+	if ts.cfg.EKSConfig.IsEnabledAddOnNodeGroups() && ts.cfg.EKSConfig.AddOnNodeGroups.FetchLogs {
+		ts.cfg.Logger.Info("fetching logs from ngs")
+		for _, v := range ts.cfg.EKSConfig.AddOnNodeGroups.ASGs {
+			for _, fpaths := range v.Logs {
+				for _, fpath := range fpaths {
+					if !strings.HasSuffix(fpath, ResultSuffixRead) {
+						continue
+					}
+					rf, err := os.OpenFile(fpath, os.O_RDONLY, 0444)
+					if err != nil {
+						return fmt.Errorf("failed to open %q (%v)", fpath, err)
+					}
+					rd := csv.NewReader(rf)
 
-				rows, err := rd.ReadAll()
-				if err != nil {
-					return fmt.Errorf("failed to read CSV %q (%v)", fpath, err)
-				}
-				if len(rows) != 1 {
-					ts.cfg.Logger.Warn("unexpected rows", zap.String("path", fpath), zap.String("rows", fmt.Sprintf("%v", rows)))
+					rows, err := rd.ReadAll()
+					if err != nil {
+						return fmt.Errorf("failed to read CSV %q (%v)", fpath, err)
+					}
+					if len(rows) != 1 {
+						ts.cfg.Logger.Warn("unexpected rows", zap.String("path", fpath), zap.String("rows", fmt.Sprintf("%v", rows)))
+						wr.Flush()
+						rf.Close()
+						continue
+					}
+
+					row := rows[0]
+					if len(row) != 3 {
+						ts.cfg.Logger.Warn("unexpected column", zap.String("path", fpath), zap.String("row", fmt.Sprintf("%v", row)))
+						wr.Flush()
+						rf.Close()
+						continue
+					}
+
+					start, secretName, end := row[0], row[1], row[2]
+					startFv, err := strconv.ParseFloat(start, 64)
+					if err != nil {
+						ts.cfg.Logger.Warn("unexpected float value", zap.String("path", fpath), zap.String("start", start))
+						wr.Flush()
+						rf.Close()
+						continue
+					}
+					endFv, err := strconv.ParseFloat(end, 64)
+					if err != nil {
+						ts.cfg.Logger.Warn("unexpected float value", zap.String("path", fpath), zap.String("end", end))
+						wr.Flush()
+						rf.Close()
+						continue
+					}
+
+					if err = wr.Write([]string{secretName, fmt.Sprintf("%f", endFv-startFv), start, end}); err != nil {
+						return err
+					}
+
 					wr.Flush()
+					if err = wr.Error(); err != nil {
+						return fmt.Errorf("CSV %q has unexpected error %v", fpath, err)
+					}
 					rf.Close()
-					continue
 				}
+			}
+		}
+	}
+	if ts.cfg.EKSConfig.IsEnabledAddOnManagedNodeGroups() && ts.cfg.EKSConfig.AddOnManagedNodeGroups.FetchLogs {
+		ts.cfg.Logger.Info("fetching logs from mngs")
+		for _, v := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
+			for _, fpaths := range v.Logs {
+				for _, fpath := range fpaths {
+					if !strings.HasSuffix(fpath, ResultSuffixRead) {
+						continue
+					}
+					rf, err := os.OpenFile(fpath, os.O_RDONLY, 0444)
+					if err != nil {
+						return fmt.Errorf("failed to open %q (%v)", fpath, err)
+					}
+					rd := csv.NewReader(rf)
 
-				row := rows[0]
-				if len(row) != 3 {
-					ts.cfg.Logger.Warn("unexpected column", zap.String("path", fpath), zap.String("row", fmt.Sprintf("%v", row)))
+					rows, err := rd.ReadAll()
+					if err != nil {
+						return fmt.Errorf("failed to read CSV %q (%v)", fpath, err)
+					}
+					if len(rows) != 1 {
+						ts.cfg.Logger.Warn("unexpected rows", zap.String("path", fpath), zap.String("rows", fmt.Sprintf("%v", rows)))
+						wr.Flush()
+						rf.Close()
+						continue
+					}
+
+					row := rows[0]
+					if len(row) != 3 {
+						ts.cfg.Logger.Warn("unexpected column", zap.String("path", fpath), zap.String("row", fmt.Sprintf("%v", row)))
+						wr.Flush()
+						rf.Close()
+						continue
+					}
+
+					start, secretName, end := row[0], row[1], row[2]
+					startFv, err := strconv.ParseFloat(start, 64)
+					if err != nil {
+						ts.cfg.Logger.Warn("unexpected float value", zap.String("path", fpath), zap.String("start", start))
+						wr.Flush()
+						rf.Close()
+						continue
+					}
+					endFv, err := strconv.ParseFloat(end, 64)
+					if err != nil {
+						ts.cfg.Logger.Warn("unexpected float value", zap.String("path", fpath), zap.String("end", end))
+						wr.Flush()
+						rf.Close()
+						continue
+					}
+
+					if err = wr.Write([]string{secretName, fmt.Sprintf("%f", endFv-startFv), start, end}); err != nil {
+						return err
+					}
+
 					wr.Flush()
+					if err = wr.Error(); err != nil {
+						return fmt.Errorf("CSV %q has unexpected error %v", fpath, err)
+					}
 					rf.Close()
-					continue
 				}
-
-				start, secretName, end := row[0], row[1], row[2]
-				startFv, err := strconv.ParseFloat(start, 64)
-				if err != nil {
-					ts.cfg.Logger.Warn("unexpected float value", zap.String("path", fpath), zap.String("start", start))
-					wr.Flush()
-					rf.Close()
-					continue
-				}
-				endFv, err := strconv.ParseFloat(end, 64)
-				if err != nil {
-					ts.cfg.Logger.Warn("unexpected float value", zap.String("path", fpath), zap.String("end", end))
-					wr.Flush()
-					rf.Close()
-					continue
-				}
-
-				if err = wr.Write([]string{secretName, fmt.Sprintf("%f", endFv-startFv), start, end}); err != nil {
-					return err
-				}
-
-				wr.Flush()
-				if err = wr.Error(); err != nil {
-					return fmt.Errorf("CSV %q has unexpected error %v", fpath, err)
-				}
-				rf.Close()
 			}
 		}
 	}

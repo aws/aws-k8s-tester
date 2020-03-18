@@ -47,13 +47,13 @@ Description: 'Amazon EKS Cluster Managed Node Group'
 
 Parameters:
 
-  Name:
-    Type: String
-    Description: Unique identifier for the Node Group.
-
   ClusterName:
     Type: String
     Description: The cluster name provided when the cluster was created. If it is incorrect, nodes will not be able to join the cluster.
+
+  Name:
+    Type: String
+    Description: Unique identifier for the Node Group.
 
   RoleARN:
     Type: String
@@ -104,7 +104,7 @@ Parameters:
 
 Resources:
 
-  ManagedNodeGroup:
+  MNG:
     Type: AWS::EKS::Nodegroup
     Properties:
       ClusterName: !Ref ClusterName
@@ -126,8 +126,8 @@ Resources:
 
 Outputs:
 
-  ManagedNodeGroupID:
-    Value: !Ref ManagedNodeGroup
+  MNGID:
+    Value: !Ref MNG
     Description: The managed node group resource Physical ID
 
 `
@@ -216,7 +216,7 @@ func (ts *tester) Create() (err error) {
 	if err = ts.createMNG(); err != nil {
 		return err
 	}
-	for name := range ts.cfg.EKSConfig.StatusManagedNodeGroups.Nodes {
+	for name := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
 		if err = ts.openPorts(name); err != nil {
 			return err
 		}
@@ -273,8 +273,8 @@ func (ts *tester) Delete() error {
 func (ts *tester) createMNG() error {
 	createStart := time.Now()
 	defer func() {
-		ts.cfg.EKSConfig.StatusManagedNodeGroups.CreateTook = time.Since(createStart)
-		ts.cfg.EKSConfig.StatusManagedNodeGroups.CreateTookString = ts.cfg.EKSConfig.StatusManagedNodeGroups.CreateTook.String()
+		ts.cfg.EKSConfig.AddOnManagedNodeGroups.CreateTook = time.Since(createStart)
+		ts.cfg.EKSConfig.AddOnManagedNodeGroups.CreateTookString = ts.cfg.EKSConfig.AddOnManagedNodeGroups.CreateTook.String()
 	}()
 
 	if ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleARN == "" {
@@ -302,7 +302,7 @@ func (ts *tester) createMNG() error {
 			ts.cfg.EKSConfig.AddOnManagedNodeGroups.RequestHeaderValue != "") {
 
 		for k, mv := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
-			vv, ok := ts.cfg.EKSConfig.StatusManagedNodeGroups.Nodes[k]
+			vv, ok := ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[k]
 			if ok && (vv.CreateRequested || vv.CFNStackID != "") {
 				ts.cfg.Logger.Warn("no need to create a new one, skipping",
 					zap.String("name", k),
@@ -361,11 +361,11 @@ func (ts *tester) createMNG() error {
 				return fmt.Errorf("create node group request failed (%v)", err)
 			}
 
-			ts.cfg.EKSConfig.StatusManagedNodeGroups.Nodes[mv.Name] = eksconfig.StatusManagedNodeGroup{
-				CreateRequested: true,
-				Status:          awseks.NodegroupStatusCreating,
-				Logs:            make(map[string][]string),
-			}
+			mv.CreateRequested = true
+			mv.Status = awseks.NodegroupStatusCreating
+			mv.Instances = make(map[string]ec2config.Instance)
+			mv.Logs = make(map[string][]string)
+			ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mv.Name] = mv
 			ts.cfg.EKSConfig.Sync()
 			ts.cfg.Logger.Info("sent create managed node group request")
 
@@ -378,7 +378,7 @@ func (ts *tester) createMNG() error {
 		initialWait = 30 * time.Second
 
 		for k, mv := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
-			vv, ok := ts.cfg.EKSConfig.StatusManagedNodeGroups.Nodes[k]
+			vv, ok := ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[k]
 			if ok && (vv.CreateRequested || vv.CFNStackID != "") {
 				ts.cfg.Logger.Warn("no need to create a new one, skipping",
 					zap.String("name", k),
@@ -400,12 +400,12 @@ func (ts *tester) createMNG() error {
 				}),
 				Parameters: []*cloudformation.Parameter{
 					{
-						ParameterKey:   aws.String("Name"),
-						ParameterValue: aws.String(mv.Name),
-					},
-					{
 						ParameterKey:   aws.String("ClusterName"),
 						ParameterValue: aws.String(ts.cfg.EKSConfig.Name),
+					},
+					{
+						ParameterKey:   aws.String("Name"),
+						ParameterValue: aws.String(mv.Name),
 					},
 					{
 						ParameterKey:   aws.String("RoleARN"),
@@ -482,12 +482,13 @@ func (ts *tester) createMNG() error {
 
 			stackID := aws.StringValue(stackOutput.StackId)
 			cfnStacks[mv.Name] = stackID
-			ts.cfg.EKSConfig.StatusManagedNodeGroups.Nodes[mv.Name] = eksconfig.StatusManagedNodeGroup{
-				CreateRequested: true,
-				CFNStackID:      stackID,
-				Status:          cloudformation.ResourceStatusCreateInProgress,
-				Logs:            make(map[string][]string),
-			}
+
+			mv.CreateRequested = true
+			mv.CFNStackID = stackID
+			mv.Status = cloudformation.ResourceStatusCreateInProgress
+			mv.Instances = make(map[string]ec2config.Instance)
+			mv.Logs = make(map[string][]string)
+			ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mv.Name] = mv
 			ts.cfg.EKSConfig.Sync()
 		}
 
@@ -497,7 +498,7 @@ func (ts *tester) createMNG() error {
 			if cfnInitWait < 0 {
 				cfnInitWait = 10 * time.Second
 			}
-			status := ts.cfg.EKSConfig.StatusManagedNodeGroups.Nodes[name]
+			status := ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[name]
 			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
 			ch := awscfn.Poll(
 				ctx,
@@ -514,7 +515,7 @@ func (ts *tester) createMNG() error {
 			for st = range ch {
 				if st.Error != nil {
 					status.Status = fmt.Sprintf("failed to create managed node group (%v)", st.Error)
-					ts.cfg.EKSConfig.StatusManagedNodeGroups.Nodes[name] = status
+					ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[name] = status
 					ts.cfg.EKSConfig.Sync()
 				}
 			}
@@ -523,9 +524,9 @@ func (ts *tester) createMNG() error {
 			// update status after creating a new managed node group CFN
 			for _, o := range st.Stack.Outputs {
 				switch k := aws.StringValue(o.OutputKey); k {
-				case "ManagedNodeGroupID":
+				case "MNGID":
 					status.PhysicalID = aws.StringValue(o.OutputValue)
-					ts.cfg.EKSConfig.StatusManagedNodeGroups.Nodes[name] = status
+					ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[name] = status
 					ts.cfg.EKSConfig.Sync()
 				default:
 					return fmt.Errorf("unexpected OutputKey %q from %q", k, stackID)
@@ -569,16 +570,16 @@ func (ts *tester) createMNG() error {
 func (ts *tester) deleteMNG() error {
 	deleteStart := time.Now()
 	defer func() {
-		ts.cfg.EKSConfig.StatusManagedNodeGroups.DeleteTook = time.Since(deleteStart)
-		ts.cfg.EKSConfig.StatusManagedNodeGroups.DeleteTookString = ts.cfg.EKSConfig.StatusManagedNodeGroups.DeleteTook.String()
+		ts.cfg.EKSConfig.AddOnManagedNodeGroups.DeleteTook = time.Since(deleteStart)
+		ts.cfg.EKSConfig.AddOnManagedNodeGroups.DeleteTookString = ts.cfg.EKSConfig.AddOnManagedNodeGroups.DeleteTook.String()
 		ts.cfg.EKSConfig.Sync()
 	}()
 
 	ts.cfg.Logger.Info("deleting managed node groups")
-	for name, mv := range ts.cfg.EKSConfig.StatusManagedNodeGroups.Nodes {
+	for name, mv := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
 		if name == "" {
 			ts.cfg.Logger.Warn("empty name found in status map")
-			delete(ts.cfg.EKSConfig.StatusManagedNodeGroups.Nodes, "")
+			delete(ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs, "")
 			continue
 		}
 		if mv.Status == "" || mv.Status == ManagedNodeGroupStatusDELETEDORNOTEXIST {
@@ -620,7 +621,7 @@ func (ts *tester) deleteMNG() error {
 				if st.Error != nil {
 					cancel()
 					mv.Status = fmt.Sprintf("failed to delete a managed node group (%v)", st.Error)
-					ts.cfg.EKSConfig.StatusManagedNodeGroups.Nodes[name] = mv
+					ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[name] = mv
 					ts.cfg.EKSConfig.Sync()
 					ts.cfg.Logger.Error("polling errror", zap.Error(st.Error))
 				}
@@ -630,7 +631,7 @@ func (ts *tester) deleteMNG() error {
 				return st.Error
 			}
 			mv.Status = ManagedNodeGroupStatusDELETEDORNOTEXIST
-			ts.cfg.EKSConfig.StatusManagedNodeGroups.Nodes[name] = mv
+			ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[name] = mv
 			ts.cfg.EKSConfig.Sync()
 
 		} else {
@@ -642,7 +643,7 @@ func (ts *tester) deleteMNG() error {
 			})
 			if err != nil {
 				mv.Status = fmt.Sprintf("failed to delete managed node group (%v)", err)
-				ts.cfg.EKSConfig.StatusManagedNodeGroups.Nodes[name] = mv
+				ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[name] = mv
 				ts.cfg.EKSConfig.Sync()
 				return err
 			}
@@ -826,7 +827,7 @@ func (ts *tester) setStatus(sv ManagedNodeGroupStatus) error {
 	if name == "" {
 		return errors.New("EKS Managed Node Group empty name")
 	}
-	mv, ok := ts.cfg.EKSConfig.StatusManagedNodeGroups.Nodes[name]
+	mv, ok := ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[name]
 	if !ok {
 		return fmt.Errorf("EKS Managed Node Group %q not found", name)
 	}
@@ -844,7 +845,7 @@ func (ts *tester) setStatus(sv ManagedNodeGroupStatus) error {
 		}
 	}
 
-	ts.cfg.EKSConfig.StatusManagedNodeGroups.Nodes[name] = mv
+	ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[name] = mv
 	return ts.cfg.EKSConfig.Sync()
 }
 
@@ -853,7 +854,7 @@ func (ts *tester) waitForNodes(name string) error {
 	if !ok {
 		return fmt.Errorf("Managed Node Group %q not found", name)
 	}
-	sv, ok := ts.cfg.EKSConfig.StatusManagedNodeGroups.Nodes[name]
+	sv, ok := ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[name]
 	if !ok {
 		return fmt.Errorf("Managed Node Group Status %q not found", name)
 	}
@@ -874,7 +875,7 @@ func (ts *tester) waitForNodes(name string) error {
 		return fmt.Errorf("MNG %q Resources not found", mv.Name)
 	}
 	sv.RemoteAccessSecurityGroupID = aws.StringValue(dout.Nodegroup.Resources.RemoteAccessSecurityGroup)
-	ts.cfg.EKSConfig.StatusManagedNodeGroups.Nodes[name] = sv
+	ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[name] = sv
 	ts.cfg.EKSConfig.Sync()
 
 	for _, asg := range dout.Nodegroup.Resources.AutoScalingGroups {
@@ -911,7 +912,7 @@ func (ts *tester) waitForNodes(name string) error {
 		if err != nil {
 			return err
 		}
-		sv, ok = ts.cfg.EKSConfig.StatusManagedNodeGroups.Nodes[name]
+		sv, ok = ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[name]
 		if !ok {
 			return fmt.Errorf("Managed Node Group Status %q not found", name)
 		}
@@ -921,7 +922,7 @@ func (ts *tester) waitForNodes(name string) error {
 			ivv.RemoteAccessUserName = mv.RemoteAccessUserName
 			sv.Instances[id] = ivv
 		}
-		ts.cfg.EKSConfig.StatusManagedNodeGroups.Nodes[name] = sv
+		ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[name] = sv
 		ts.cfg.EKSConfig.Sync()
 	}
 

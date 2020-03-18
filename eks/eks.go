@@ -14,6 +14,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/eks/alb"
 	"github.com/aws/aws-k8s-tester/eks/appmesh"
 	"github.com/aws/aws-k8s-tester/eks/cronjobs"
@@ -709,7 +710,19 @@ func (ts *Tester) Up() (err error) {
 		fmt.Printf("\n[light_gray]runCommand output:\n%s\n", string(out))
 	}
 
-	if ts.cfg.IsEnabledAddOnManagedNodeGroups() {
+	if ts.cfg.IsEnabledAddOnNodeGroups() || ts.cfg.IsEnabledAddOnManagedNodeGroups() {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("ngTester.Create (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.interruptSig,
+			ts.ngTester.Create,
+		); err != nil {
+			return err
+		}
+
 		fmt.Printf("\n*********************************\n")
 		fmt.Printf("mngTester.Create (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		if err := catchInterrupt(
@@ -723,15 +736,25 @@ func (ts *Tester) Up() (err error) {
 		}
 
 		needGPU := false
-	found:
-		for _, mv := range ts.cfg.AddOnManagedNodeGroups.MNGs {
+	gpuFound:
+		for _, mv := range ts.cfg.AddOnNodeGroups.ASGs {
 			switch mv.AMIType {
-			case awseks.AMITypesAl2X8664Gpu:
+			case ec2config.AMITypeAL2X8664GPU:
 				needGPU = true
-				break found
+				break gpuFound
 			}
 		}
-		if !ts.cfg.StatusManagedNodeGroups.NvidiaDriverInstalled && needGPU {
+		if !needGPU {
+		found:
+			for _, mv := range ts.cfg.AddOnManagedNodeGroups.MNGs {
+				switch mv.AMIType {
+				case awseks.AMITypesAl2X8664Gpu:
+					needGPU = true
+					break found
+				}
+			}
+		}
+		if needGPU {
 			fmt.Printf("\n*********************************\n")
 			fmt.Printf("gpuTester.InstallNvidiaDriver (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 			if err := catchInterrupt(
@@ -903,6 +926,24 @@ func (ts *Tester) Up() (err error) {
 			}
 		}
 
+		if ts.cfg.AddOnNodeGroups.FetchLogs {
+			fmt.Printf("\n*********************************\n")
+			fmt.Printf("ngTester.FetchLogs (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+			waitDur := 20 * time.Second
+			ts.lg.Info("sleeping before ngTester.FetchLogs", zap.Duration("wait", waitDur))
+			time.Sleep(waitDur)
+
+			if err := catchInterrupt(
+				ts.lg,
+				ts.stopCreationCh,
+				ts.stopCreationChOnce,
+				ts.interruptSig,
+				ts.ngTester.FetchLogs,
+			); err != nil {
+				return err
+			}
+		}
+
 		if ts.cfg.AddOnManagedNodeGroups.FetchLogs {
 			fmt.Printf("\n*********************************\n")
 			fmt.Printf("mngTester.FetchLogs (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
@@ -919,7 +960,9 @@ func (ts *Tester) Up() (err error) {
 			); err != nil {
 				return err
 			}
+		}
 
+		if ts.cfg.AddOnNodeGroups.FetchLogs || ts.cfg.AddOnManagedNodeGroups.FetchLogs {
 			if ts.cfg.IsEnabledAddOnSecrets() {
 				fmt.Printf("\n*********************************\n")
 				fmt.Printf("secretsTester.AggregateResults (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnSecrets.Namespace)
@@ -933,7 +976,6 @@ func (ts *Tester) Up() (err error) {
 					return err
 				}
 			}
-
 			if ts.cfg.IsEnabledAddOnIRSA() {
 				fmt.Printf("\n*********************************\n")
 				fmt.Printf("irsaTester.AggregateResults (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnIRSA.Namespace)
@@ -1041,7 +1083,7 @@ func (ts *Tester) down() (err error) {
 		errs = append(errs, err.Error())
 	}
 
-	if ts.cfg.IsEnabledAddOnManagedNodeGroups() && len(ts.cfg.StatusManagedNodeGroups.Nodes) > 0 {
+	if ts.cfg.IsEnabledAddOnNodeGroups() || ts.cfg.IsEnabledAddOnManagedNodeGroups() {
 		if ts.cfg.IsEnabledAddOnFargate() && ts.cfg.AddOnFargate.Created {
 			fmt.Printf("\n*********************************\n")
 			fmt.Printf("fargateTester.Delete (%q)\n", ts.cfg.ConfigPath)
@@ -1150,7 +1192,7 @@ func (ts *Tester) down() (err error) {
 	// https://github.com/aws/aws-k8s-tester/issues/70
 	// https://github.com/kubernetes/kubernetes/issues/53451
 	// https://github.com/kubernetes/enhancements/blob/master/keps/sig-network/20190423-service-lb-finalizer.md
-	if ts.cfg.IsEnabledAddOnManagedNodeGroups() && len(ts.cfg.StatusManagedNodeGroups.Nodes) > 0 &&
+	if (ts.cfg.IsEnabledAddOnNodeGroups() || ts.cfg.IsEnabledAddOnManagedNodeGroups()) &&
 		((ts.cfg.IsEnabledAddOnALB2048() && ts.cfg.AddOnALB2048.Created) ||
 			(ts.cfg.IsEnabledAddOnNLBHelloWorld() && ts.cfg.AddOnNLBHelloWorld.Created)) {
 		waitDur := 2 * time.Minute
@@ -1159,13 +1201,25 @@ func (ts *Tester) down() (err error) {
 	}
 
 	// following need to be run in order to resolve delete dependency
-	// DO NOT "len(ts.cfg.StatusManagedNodeGroups.Nodes) > 0"; MNG may have failed to create
 	// e.g. cluster must be deleted before VPC delete
 	if ts.cfg.IsEnabledAddOnManagedNodeGroups() {
 		fmt.Printf("\n*********************************\n")
 		fmt.Printf("mngTester.Delete (%q)\n", ts.cfg.ConfigPath)
 		if err := ts.mngTester.Delete(); err != nil {
 			ts.lg.Warn("mngTester.Delete failed", zap.Error(err))
+			errs = append(errs, err.Error())
+		}
+
+		waitDur := 10 * time.Second
+		ts.lg.Info("sleeping before cluster deletion", zap.Duration("wait", waitDur))
+		time.Sleep(waitDur)
+	}
+
+	if ts.cfg.IsEnabledAddOnNodeGroups() {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("ngTester.Delete (%q)\n", ts.cfg.ConfigPath)
+		if err := ts.ngTester.Delete(); err != nil {
+			ts.lg.Warn("ngTester.Delete failed", zap.Error(err))
 			errs = append(errs, err.Error())
 		}
 
@@ -1211,64 +1265,6 @@ func (ts *Tester) down() (err error) {
 	if len(errs) > 0 {
 		return errors.New(strings.Join(errs, ", "))
 	}
-	return ts.cfg.Sync()
-}
-
-// CreateMNG creates/adds EKS "Managed Node Group"s.
-// The existing node groups won't be recreated.
-func (ts *Tester) CreateMNG() error {
-	if !ts.cfg.IsEnabledAddOnManagedNodeGroups() {
-		ts.lg.Warn("mng has not been enabled; skipping creation MNG")
-		return nil
-	}
-
-	fmt.Printf("\n*********************************\n")
-	fmt.Printf("mngTester.Create (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-	if err := catchInterrupt(
-		ts.lg,
-		ts.stopCreationCh,
-		ts.stopCreationChOnce,
-		ts.interruptSig,
-		ts.mngTester.Create,
-	); err != nil {
-		return err
-	}
-
-	needGPU := false
-found:
-	for _, mv := range ts.cfg.AddOnManagedNodeGroups.MNGs {
-		switch mv.AMIType {
-		case awseks.AMITypesAl2X8664Gpu:
-			needGPU = true
-			break found
-		}
-	}
-	if !ts.cfg.StatusManagedNodeGroups.NvidiaDriverInstalled && needGPU {
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("gpuTester.InstallNvidiaDriver (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.interruptSig,
-			ts.gpuTester.InstallNvidiaDriver,
-		); err != nil {
-			ts.lg.Warn("failed to install Nvidia driver", zap.Error(err))
-		}
-
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("gpuTester.RunNvidiaSMI (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.interruptSig,
-			ts.gpuTester.RunNvidiaSMI,
-		); err != nil {
-			return err
-		}
-	}
-
 	return ts.cfg.Sync()
 }
 

@@ -165,10 +165,6 @@ type Config struct {
 	// Status is read-only.
 	// Status cannot be configured via environmental variables.
 	Status *Status `json:"status,omitempty" read-only:"true"`
-	// StatusManagedNodeGroups represents EKS "Managed Node Group" status.
-	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
-	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
-	StatusManagedNodeGroups *StatusManagedNodeGroups `json:"status-managed-node-groups" read-only:"true"`
 }
 
 // Parameters defines parameters for EKS "cluster" creation.
@@ -248,7 +244,7 @@ func (cfg *Config) IsEnabledAddOnNodeGroups() bool {
 		return false
 	}
 	if cfg.AddOnNodeGroups.Enable {
-		return true
+		return len(cfg.AddOnNodeGroups.ASGs) > 0
 	}
 	cfg.AddOnNodeGroups = nil
 	return false
@@ -270,7 +266,7 @@ type AddOnNodeGroups struct {
 	RoleName string `json:"role-name"`
 	// RoleCreate is true to auto-create and delete role.
 	RoleCreate bool `json:"role-create"`
-	// RoleARN is the role ARN that EKSd node group uses to create AWS
+	// RoleARN is the role ARN that EKS node group uses to create AWS
 	// resources for Kubernetes.
 	// By default, it's empty which triggers tester to create one.
 	RoleARN string `json:"role-arn"`
@@ -280,56 +276,15 @@ type AddOnNodeGroups struct {
 	RoleManagedPolicyARNs []string `json:"role-managed-policy-arns"`
 	RoleCFNStackID        string   `json:"role-cfn-stack-id" read-only:"true"`
 
+	// NodeGroupSecurityGroupID is the security group ID for the node group.
+	NodeGroupSecurityGroupID         string `json:"node-group-security-group-id" read-only:"true"`
+	NodeGroupSecurityGroupCFNStackID string `json:"node-group-security-group-cfn-stack-id" read-only:"true"`
+
 	// LogsDir is set to specify the target directory to store all remote log files.
 	// If empty, it stores in the same directory as "ConfigPath".
 	LogsDir string `json:"logs-dir,omitempty"`
-	// NGs maps from EKSd Node Group name to "NG".
-	NGs map[string]NG `json:"ngs,omitempty"`
-}
-
-// NG represents parameters for one EKS "Node Group".
-type NG struct {
-	// Name is the name of thed node group.
-	// ref. https://docs.aws.amazon.com/eks/latest/userguide/launch-workers.html
-	// ref. https://github.com/awslabs/amazon-eks-ami/blob/master/amazon-eks-nodegroup.yaml
-	Name string `json:"name,omitempty"`
-	// RemoteAccessUserName is the user name ford node group SSH access.
-	// ref. https://docs.aws.amazon.com/eks/latest/userguide/launch-workers.html
-	// ref. https://github.com/awslabs/amazon-eks-ami/blob/master/amazon-eks-nodegroup.yaml
-	RemoteAccessUserName string `json:"remote-access-user-name,omitempty"`
-	// Tags defines EKSd node group create tags.
-	Tags map[string]string `json:"tags,omitempty"`
-	// AMIType is the AMI type for the node group.
-	// Allowed values are BOTTLEROCKET_x86_64, AL2_x86_64 and AL2_x86_64_GPU.
-	// ref. https://docs.aws.amazon.com/eks/latest/userguide/launch-workers.html
-	// ref. https://github.com/awslabs/amazon-eks-ami/blob/master/amazon-eks-nodegroup.yaml
-	AMIType string `json:"ami-type,omitempty"`
-	// ASGMinSize is the minimum size of Node Group Auto Scaling Group.
-	// ref. https://docs.aws.amazon.com/eks/latest/userguide/launch-workers.html
-	// ref. https://github.com/awslabs/amazon-eks-ami/blob/master/amazon-eks-nodegroup.yaml
-	ASGMinSize int `json:"asg-min-size,omitempty"`
-	// ASGMaxSize is the maximum size of Node Group Auto Scaling Group.
-	// ref. https://docs.aws.amazon.com/eks/latest/userguide/launch-workers.html
-	// ref. https://github.com/awslabs/amazon-eks-ami/blob/master/amazon-eks-nodegroup.yaml
-	ASGMaxSize int `json:"asg-max-size,omitempty"`
-	// ASGDesiredCapacity is is the desired capacity of Node Group ASG.
-	// ref. https://docs.aws.amazon.com/eks/latest/userguide/launch-workers.html
-	// ref. https://github.com/awslabs/amazon-eks-ami/blob/master/amazon-eks-nodegroup.yaml
-	ASGDesiredCapacity int `json:"asg-desired-capacity,omitempty"`
-	// ImageID is the Amazon Machine Image (AMI).
-	// This value overrides any AWS Systems Manager Parameter Store value.
-	ImageID string `json:"image-id"`
-	// ImageIDSSMParameter is the AWS Systems Manager Parameter Store
-	// parameter of the AMI ID.
-	ImageIDSSMParameter string `json:"image-id-ssm-parameter"`
-	// InstanceTypes is the list of EC2 instance types for the node instances.
-	// ref. https://docs.aws.amazon.com/eks/latest/userguide/launch-workers.html
-	// ref. https://github.com/awslabs/amazon-eks-ami/blob/master/amazon-eks-nodegroup.yaml
-	InstanceTypes []string `json:"instance-types,omitempty"`
-	// VolumeSize is the node volume size.
-	// ref. https://docs.aws.amazon.com/eks/latest/userguide/launch-workers.html
-	// ref. https://github.com/awslabs/amazon-eks-ami/blob/master/amazon-eks-nodegroup.yaml
-	VolumeSize int `json:"volume-size,omitempty"`
+	// ASGs maps from EKS Node Group name to "ASG".
+	ASGs map[string]ec2config.ASG `json:"asgs,omitempty"`
 }
 
 // IsEnabledAddOnManagedNodeGroups returns true if "AddOnManagedNodeGroups" is enabled.
@@ -339,7 +294,7 @@ func (cfg *Config) IsEnabledAddOnManagedNodeGroups() bool {
 		return false
 	}
 	if cfg.AddOnManagedNodeGroups.Enable {
-		return true
+		return len(cfg.AddOnManagedNodeGroups.MNGs) > 0
 	}
 	cfg.AddOnManagedNodeGroups = nil
 	return false
@@ -351,9 +306,19 @@ func (cfg *Config) IsEnabledAddOnManagedNodeGroups() bool {
 type AddOnManagedNodeGroups struct {
 	// Enable is true to auto-create a managed node group.
 	Enable bool `json:"enable"`
+
 	// Created is true when the resource has been created.
 	// Used for delete operations.
 	Created bool `json:"created" read-only:"true"`
+	// CreateTook is the duration that took to create the resource.
+	CreateTook time.Duration `json:"create-took,omitempty" read-only:"true"`
+	// CreateTookString is the duration that took to create the resource.
+	CreateTookString string `json:"create-took-string,omitempty" read-only:"true"`
+	// DeleteTook is the duration that took to create the resource.
+	DeleteTook time.Duration `json:"delete-took,omitempty" read-only:"true"`
+	// DeleteTookString is the duration that took to create the resource.
+	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
+
 	// FetchLogs is true to fetch logs from remote nodes using SSH.
 	FetchLogs bool `json:"fetch-logs"`
 
@@ -430,6 +395,20 @@ type MNG struct {
 	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
 	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
 	VolumeSize int `json:"volume-size,omitempty"`
+
+	// CreateRequested is true if "CreateNodegroupRequest" has been sent.
+	CreateRequested bool `json:"create-requested" read-only:"true"`
+	// CFNStackID is the CloudFormation stack ID for a managed node group.
+	CFNStackID                  string `json:"cfn-stack-id" read-only:"true"`
+	RemoteAccessSecurityGroupID string `json:"remote-access-security-group-id" read-only:"true"`
+	// PhysicalID is the Physical ID for the created "AWS::EKS::Nodegroup".
+	PhysicalID string `json:"physical-id" read-only:"true"`
+	// Status is the current status of EKS "Managed Node Group".
+	Status string `json:"status" read-only:"true"`
+	// Instances maps an instance ID to an EC2 instance object for the node group.
+	Instances map[string]ec2config.Instance `json:"instances" read-only:"true"`
+	// Logs maps each instance ID to a list of log file paths fetched via SSH access.
+	Logs map[string][]string `json:"logs" read-only:"true"`
 }
 
 // IsEnabledAddOnNLBHelloWorld returns true if "AddOnNLBHelloWorld" is enabled.
@@ -1003,50 +982,6 @@ func (cfg *Config) RecordStatus(status string) {
 	cfg.unsafeSync()
 }
 
-// StatusManagedNodeGroups represents the status of EKS "Managed Node Group".
-// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
-// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
-type StatusManagedNodeGroups struct {
-	// CreateTook is the duration that took to create the resource.
-	CreateTook time.Duration `json:"create-took,omitempty" read-only:"true"`
-	// CreateTookString is the duration that took to create the resource.
-	CreateTookString string `json:"create-took-string,omitempty" read-only:"true"`
-	// DeleteTook is the duration that took to create the resource.
-	DeleteTook time.Duration `json:"delete-took,omitempty" read-only:"true"`
-	// DeleteTookString is the duration that took to create the resource.
-	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
-
-	// NvidiaDriverInstalled is true if nvidia driver has been installed.
-	NvidiaDriverInstalled bool `json:"nvidia-driver-installed"`
-	// Nodes maps from EKS "Managed Node Group" name to its status.
-	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
-	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
-	Nodes map[string]StatusManagedNodeGroup `json:"nodes"`
-}
-
-// StatusManagedNodeGroup represents the status of EKS "Managed Node Group".
-// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
-// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
-type StatusManagedNodeGroup struct {
-	// CreateRequested is true if "CreateNodegroupRequest" has been sent.
-	CreateRequested bool `json:"create-requested"`
-	// CFNStackID is the CloudFormation stack ID for a managed node group.
-	CFNStackID string `json:"cfn-stack-id"`
-
-	RemoteAccessSecurityGroupID string `json:"remote-access-security-group-id"`
-
-	// PhysicalID is the Physical ID for the created "AWS::EKS::Nodegroup".
-	PhysicalID string `json:"physical-id"`
-
-	// Status is the current status of EKS "Managed Node Group".
-	Status string `json:"status"`
-
-	// Instances maps an instance ID to an EC2 instance object for the node group.
-	Instances map[string]ec2config.Instance `json:"instances"`
-	// Logs maps each instance ID to a list of log file paths fetched via SSH access.
-	Logs map[string][]string `json:"logs"`
-}
-
 // Load loads configuration from YAML.
 // Useful when injecting shared configuration via ConfigMap.
 //
@@ -1231,21 +1166,35 @@ func (cfg *Config) SSHCommands() string {
 }
 
 func (cfg *Config) unsafeSSHCommands() (s string) {
-	if cfg.StatusManagedNodeGroups == nil {
+	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
 		return ""
 	}
-	if len(cfg.StatusManagedNodeGroups.Nodes) == 0 {
-		return ""
-	}
+
 	buf := bytes.NewBuffer(nil)
-	for name, ng := range cfg.StatusManagedNodeGroups.Nodes {
-		buf.WriteString("ASG name \"" + name + "\":\n")
-		asg := &ec2config.ASG{
-			Name:      name,
-			Instances: ng.Instances,
+
+	if cfg.IsEnabledAddOnNodeGroups() {
+		for name, ng := range cfg.AddOnNodeGroups.ASGs {
+			buf.WriteString("ASG name from node group \"" + name + "\":\n")
+			asg := &ec2config.ASG{
+				Name:      name,
+				Instances: ng.Instances,
+			}
+			buf.WriteString(asg.SSHCommands(cfg.Region, cfg.RemoteAccessPrivateKeyPath, cfg.AddOnManagedNodeGroups.MNGs[name].RemoteAccessUserName))
+			buf.WriteString("\n")
 		}
-		buf.WriteString(asg.SSHCommands(cfg.Region, cfg.RemoteAccessPrivateKeyPath, cfg.AddOnManagedNodeGroups.MNGs[name].RemoteAccessUserName))
-		buf.WriteString("\n")
 	}
+
+	if cfg.IsEnabledAddOnManagedNodeGroups() {
+		for name, ng := range cfg.AddOnManagedNodeGroups.MNGs {
+			buf.WriteString("ASG name from managed node group \"" + name + "\":\n")
+			asg := &ec2config.ASG{
+				Name:      name,
+				Instances: ng.Instances,
+			}
+			buf.WriteString(asg.SSHCommands(cfg.Region, cfg.RemoteAccessPrivateKeyPath, cfg.AddOnManagedNodeGroups.MNGs[name].RemoteAccessUserName))
+			buf.WriteString("\n")
+		}
+	}
+
 	return buf.String()
 }

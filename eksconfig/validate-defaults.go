@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/pkg/aws"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
 	"github.com/aws/aws-sdk-go/service/eks"
@@ -155,10 +156,6 @@ var DefaultConfig = Config{
 
 	// read-only
 	Status: &Status{Up: false},
-	StatusManagedNodeGroups: &StatusManagedNodeGroups{
-		NvidiaDriverInstalled: false,
-		Nodes:                 make(map[string]StatusManagedNodeGroup),
-	},
 }
 
 // NewDefault returns a copy of the default configuration.
@@ -172,9 +169,9 @@ func NewDefault() *Config {
 		vv.Name = fmt.Sprintf("eks-%s-%s", getTS()[:10], randString(12))
 	}
 
-	vv.AddOnNodeGroups.NGs = map[string]NG{
-		vv.Name + "-ng-cpu": {
-			Name:                 vv.Name + "-ng-cpu",
+	vv.AddOnNodeGroups.ASGs = map[string]ec2config.ASG{
+		vv.Name + "-ng-asg-cpu": {
+			Name:                 vv.Name + "-ng-asg-cpu",
 			RemoteAccessUserName: "ec2-user", // assume Amazon Linux 2
 			AMIType:              eks.AMITypesAl2X8664,
 			ASGMinSize:           1,
@@ -503,9 +500,9 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 		return nil
 	}
 
-	n := len(cfg.AddOnNodeGroups.NGs)
+	n := len(cfg.AddOnNodeGroups.ASGs)
 	if n == 0 {
-		return errors.New("empty NGs")
+		return errors.New("empty ASGs")
 	}
 	if n > NGsMaxLimit {
 		return fmt.Errorf("NGs %d exceeds maximum number of NGs which is %d", n, NGsMaxLimit)
@@ -566,18 +563,18 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 	}
 
 	names := make(map[string]struct{})
-	for k, v := range cfg.AddOnNodeGroups.NGs {
+	for k, v := range cfg.AddOnNodeGroups.ASGs {
 		if v.Name == "" {
-			return fmt.Errorf("AddOnNodeGroups.NGs[%q].Name is empty", k)
+			return fmt.Errorf("AddOnNodeGroups.ASGs[%q].Name is empty", k)
 		}
 		if k != v.Name {
-			return fmt.Errorf("AddOnNodeGroups.NGs[%q].Name has different Name field %q", k, v.Name)
+			return fmt.Errorf("AddOnNodeGroups.ASGs[%q].Name has different Name field %q", k, v.Name)
 		}
 		_, ok := names[v.Name]
 		if !ok {
 			names[v.Name] = struct{}{}
 		} else {
-			return fmt.Errorf("AddOnNodeGroups.NGs[%q].Name %q is redundant", k, v.Name)
+			return fmt.Errorf("AddOnNodeGroups.ASGs[%q].Name %q is redundant", k, v.Name)
 		}
 
 		if len(v.InstanceTypes) > 4 {
@@ -594,6 +591,9 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 		case AMITypeBottleRocketCPU:
 			if v.RemoteAccessUserName != "ec2-user" {
 				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", v.AMIType, v.RemoteAccessUserName)
+			}
+			if cfg.AddOnNodeGroups.FetchLogs { // TODO: fetch logs via SSM + S3
+				return fmt.Errorf("AMIType %q does not suppport log fetch yet", v.AMIType)
 			}
 		case eks.AMITypesAl2X8664:
 			if v.RemoteAccessUserName != "ec2-user" {
@@ -621,7 +621,7 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 				v.InstanceTypes = []string{DefaultNodeInstanceTypeGPU}
 			}
 		default:
-			return fmt.Errorf("unknown AddOnNodeGroups.NGs[%q].AMIType %q", k, v.AMIType)
+			return fmt.Errorf("unknown AddOnNodeGroups.ASGs[%q].AMIType %q", k, v.AMIType)
 		}
 
 		if cfg.IsEnabledAddOnNLBHelloWorld() || cfg.IsEnabledAddOnALB2048() {
@@ -642,16 +642,16 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 		}
 
 		if v.ASGMinSize > v.ASGMaxSize {
-			return fmt.Errorf("AddOnNodeGroups.NGs[%q].ASGMinSize %d > ASGMaxSize %d", k, v.ASGMinSize, v.ASGMaxSize)
+			return fmt.Errorf("AddOnNodeGroups.ASGs[%q].ASGMinSize %d > ASGMaxSize %d", k, v.ASGMinSize, v.ASGMaxSize)
 		}
 		if v.ASGDesiredCapacity > v.ASGMaxSize {
-			return fmt.Errorf("AddOnNodeGroups.NGs[%q].ASGDesiredCapacity %d > ASGMaxSize %d", k, v.ASGDesiredCapacity, v.ASGMaxSize)
+			return fmt.Errorf("AddOnNodeGroups.ASGs[%q].ASGDesiredCapacity %d > ASGMaxSize %d", k, v.ASGDesiredCapacity, v.ASGMaxSize)
 		}
 		if v.ASGMaxSize > NGMaxLimit {
-			return fmt.Errorf("AddOnNodeGroups.NGs[%q].ASGMaxSize %d > NGMaxLimit %d", k, v.ASGMaxSize, NGMaxLimit)
+			return fmt.Errorf("AddOnNodeGroups.ASGs[%q].ASGMaxSize %d > NGMaxLimit %d", k, v.ASGMaxSize, NGMaxLimit)
 		}
 		if v.ASGDesiredCapacity > NGMaxLimit {
-			return fmt.Errorf("AddOnNodeGroups.NGs[%q].ASGDesiredCapacity %d > NGMaxLimit %d", k, v.ASGDesiredCapacity, NGMaxLimit)
+			return fmt.Errorf("AddOnNodeGroups.ASGs[%q].ASGDesiredCapacity %d > NGMaxLimit %d", k, v.ASGDesiredCapacity, NGMaxLimit)
 		}
 
 		if cfg.IsEnabledAddOnNLBHelloWorld() && cfg.AddOnNLBHelloWorld.DeploymentReplicas < int32(v.ASGDesiredCapacity) {
@@ -664,7 +664,7 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 			cfg.AddOnALB2048.DeploymentReplicas2048 = int32(v.ASGDesiredCapacity)
 		}
 
-		cfg.AddOnNodeGroups.NGs[k] = v
+		cfg.AddOnNodeGroups.ASGs[k] = v
 	}
 
 	return nil
@@ -752,9 +752,9 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].Name %q is redundant", k, v.Name)
 		}
 		if cfg.IsEnabledAddOnNodeGroups() {
-			_, ok = cfg.AddOnNodeGroups.NGs[v.Name]
+			_, ok = cfg.AddOnNodeGroups.ASGs[v.Name]
 			if ok {
-				return fmt.Errorf("MNG[%q] name is conflicting with NG", v.Name)
+				return fmt.Errorf("MNGs[%q] name is conflicting with NG ASG", v.Name)
 			}
 		}
 

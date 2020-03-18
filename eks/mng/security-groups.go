@@ -57,7 +57,7 @@ Outputs:
 */
 
 func (ts *tester) openPorts(name string) error {
-	sv, ok := ts.cfg.EKSConfig.StatusManagedNodeGroups.Nodes[name]
+	sv, ok := ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[name]
 	if !ok {
 		return fmt.Errorf("Managed Node Group %q not found", name)
 	}

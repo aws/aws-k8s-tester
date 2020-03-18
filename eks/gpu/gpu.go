@@ -61,11 +61,6 @@ type tester struct {
 // ref. https://docs.aws.amazon.com/eks/latest/userguide/gpu-ami.html
 // ref. https://github.com/NVIDIA/k8s-device-plugin
 func (ts *tester) InstallNvidiaDriver() error {
-	if ts.cfg.EKSConfig.StatusManagedNodeGroups.NvidiaDriverInstalled {
-		ts.cfg.Logger.Info("skipping installing Nvidia GPU driver")
-		return nil
-	}
-
 	ts.cfg.Logger.Info("applying daemon set for Nvidia GPU driver for worker nodes")
 	downloadURL := "https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/1.0.0-beta4/nvidia-device-plugin.yml"
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
@@ -82,9 +77,6 @@ func (ts *tester) InstallNvidiaDriver() error {
 		return fmt.Errorf("'kubectl apply' failed (output %q, error %v)", string(out), err)
 	}
 	ts.cfg.Logger.Info("applied daemon set for Nvidia GPU driver for worker nodes", zap.String("output", string(out)))
-
-	ts.cfg.EKSConfig.StatusManagedNodeGroups.NvidiaDriverInstalled = true
-	ts.cfg.EKSConfig.Sync()
 
 	waitDur := 5 * time.Minute
 	var items []v1.Node

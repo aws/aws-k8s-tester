@@ -7,6 +7,8 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/aws/aws-k8s-tester/ec2config"
 )
 
 const (
@@ -256,19 +258,55 @@ func parseEnvs(pfx string, addOn interface{}) (interface{}, error) {
 					vv.Field(i).SetMapIndex(reflect.ValueOf(fields[0]), reflect.ValueOf(fields[1]))
 				}
 
-			case "NGs":
-				ng := make(map[string]NG)
-				if err := json.Unmarshal([]byte(sv), &ng); err != nil {
+			case "ASGs":
+				asgs := make(map[string]ec2config.ASG)
+				if err := json.Unmarshal([]byte(sv), &asgs); err != nil {
 					return nil, fmt.Errorf("failed to parse %q (field name %q, environmental variable key %q, error %v)", sv, fieldName, env, err)
 				}
-				vv.Field(i).Set(reflect.ValueOf(ng))
+				for k, v := range asgs {
+					tp2, vv2 := reflect.TypeOf(&v).Elem(), reflect.ValueOf(&v).Elem()
+					for j := 0; j < tp2.NumField(); j++ {
+						jv := tp2.Field(j).Tag.Get("json")
+						if jv == "" {
+							continue
+						}
+						if tp2.Field(j).Tag.Get("read-only") != "true" {
+							continue
+						}
+						if vv2.Field(j).Type().Kind() != reflect.String {
+							continue
+						}
+						// skip updating read-only field
+						vv2.Field(j).SetString("")
+					}
+					asgs[k] = v
+				}
+				vv.Field(i).Set(reflect.ValueOf(asgs))
 
 			case "MNGs":
-				mng := make(map[string]MNG)
-				if err := json.Unmarshal([]byte(sv), &mng); err != nil {
+				mngs := make(map[string]MNG)
+				if err := json.Unmarshal([]byte(sv), &mngs); err != nil {
 					return nil, fmt.Errorf("failed to parse %q (field name %q, environmental variable key %q, error %v)", sv, fieldName, env, err)
 				}
-				vv.Field(i).Set(reflect.ValueOf(mng))
+				for k, v := range mngs {
+					tp2, vv2 := reflect.TypeOf(&v).Elem(), reflect.ValueOf(&v).Elem()
+					for j := 0; j < tp2.NumField(); j++ {
+						jv := tp2.Field(j).Tag.Get("json")
+						if jv == "" {
+							continue
+						}
+						if tp2.Field(j).Tag.Get("read-only") != "true" {
+							continue
+						}
+						if vv2.Field(j).Type().Kind() != reflect.String {
+							continue
+						}
+						// skip updating read-only field
+						vv2.Field(j).SetString("")
+					}
+					mngs[k] = v
+				}
+				vv.Field(i).Set(reflect.ValueOf(mngs))
 
 			default:
 				return nil, fmt.Errorf("field %q not supported for reflect.Map", fieldName)

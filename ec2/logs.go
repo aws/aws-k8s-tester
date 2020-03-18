@@ -92,16 +92,16 @@ func (ts *Tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 					UserName:      iv.RemoteAccessUserName,
 				})
 				if err != nil {
-					rch <- instanceLogs{mngName: name, errs: []string{err.Error()}}
+					rch <- instanceLogs{asgName: name, errs: []string{err.Error()}}
 					return
 				}
 				defer sh.Close()
 				if err = sh.Connect(); err != nil {
-					rch <- instanceLogs{mngName: name, errs: []string{err.Error()}}
+					rch <- instanceLogs{asgName: name, errs: []string{err.Error()}}
 					return
 				}
 
-				data := instanceLogs{mngName: name, instanceID: instID}
+				data := instanceLogs{asgName: name, instanceID: instID}
 				// fetch default logs
 				for cmd, fileName := range commandToFileName {
 					if !rateLimiter.Allow() {
@@ -227,49 +227,6 @@ func (ts *Tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 					werr := rateLimiter.Wait(context.Background())
 					ts.lg.Debug("waited for rate limiter", zap.Error(werr))
 				}
-				// https://github.com/aws/amazon-vpc-cni-k8s/blob/master/docs/troubleshooting.md#ipamd-debugging-commands
-				// https://github.com/aws/amazon-vpc-cni-k8s/blob/master/scripts/aws-cni-support.sh
-				ts.lg.Info("fetching ENI information", zap.String("instance-id", instID))
-				eniCmd := "curl -s http://localhost:61679/v1/enis"
-				out, oerr = sh.Run(eniCmd, sshOpt)
-				if oerr != nil {
-					data.errs = append(data.errs, fmt.Sprintf(
-						"failed to run command %q for %q (error %v)",
-						eniCmd,
-						instID,
-						oerr,
-					))
-				} else {
-					v1ENIOutputPath := filepath.Join(logsDir, shorten(ts.lg, pfx+"v1-enis.out.log"))
-					f, err := os.Create(v1ENIOutputPath)
-					if err != nil {
-						data.errs = append(data.errs, fmt.Sprintf(
-							"failed to create a file %q for %q (error %v)",
-							v1ENIOutputPath,
-							instID,
-							err,
-						))
-					} else {
-						if _, err = f.Write(out); err != nil {
-							data.errs = append(data.errs, fmt.Sprintf(
-								"failed to write to a file %q for %q (error %v)",
-								v1ENIOutputPath,
-								instID,
-								err,
-							))
-						} else {
-							ts.lg.Debug("wrote", zap.String("file-path", v1ENIOutputPath))
-							data.paths = append(data.paths, v1ENIOutputPath)
-						}
-						f.Close()
-					}
-				}
-
-				if !rateLimiter.Allow() {
-					ts.lg.Debug("waiting for rate limiter before fetching file")
-					werr := rateLimiter.Wait(context.Background())
-					ts.lg.Debug("waited for rate limiter", zap.Error(werr))
-				}
 				ts.lg.Info("listing /var/log", zap.String("instance-id", instID))
 				findCmd := "sudo find /var/log ! -type d"
 				out, oerr = sh.Run(findCmd, sshOpt)
@@ -351,27 +308,27 @@ func (ts *Tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 		}
 		if len(data.errs) > 0 {
 			ts.lg.Warn("failed to fetch logs",
-				zap.String("mng-name", data.mngName),
+				zap.String("asg-name", data.asgName),
 				zap.String("instance-id", data.instanceID),
 				zap.Strings("errors", data.errs),
 			)
 			continue
 		}
-		mv, ok := ts.cfg.ASGs[data.mngName]
+		mv, ok := ts.cfg.ASGs[data.asgName]
 		if !ok {
-			return fmt.Errorf("EKS Managed Node Group name %q is unknown", data.mngName)
+			return fmt.Errorf("EKS Managed Node Group name %q is unknown", data.asgName)
 		}
 		if mv.Logs == nil {
 			mv.Logs = make(map[string][]string)
 		}
 		_, ok = mv.Logs[data.instanceID]
 		if ok {
-			return fmt.Errorf("EKS Managed Node Group name %q for instance %q logs are redundant", data.mngName, data.instanceID)
+			return fmt.Errorf("EKS Managed Node Group name %q for instance %q logs are redundant", data.asgName, data.instanceID)
 		}
 
 		mv.Logs[data.instanceID] = data.paths
 
-		ts.cfg.ASGs[data.mngName] = mv
+		ts.cfg.ASGs[data.asgName] = mv
 		ts.cfg.Sync()
 
 		files := len(data.paths)
@@ -391,7 +348,7 @@ func (ts *Tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 }
 
 type instanceLogs struct {
-	mngName    string
+	asgName    string
 	instanceID string
 	paths      []string
 	errs       []string

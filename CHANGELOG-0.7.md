@@ -7,6 +7,10 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.4...v0.7.5).
 
+### `aws-k8s-tester`
+
+- Remove [`aws-k8s-tester eks create mng` sub-command](https://github.com/aws/aws-k8s-tester/commit/).
+
 ### `ec2config`
 
 - Add [`ImageIDSSMParameter`](https://github.com/aws/aws-k8s-tester/commit/81c5af7df626bae2721e89a09ae05a061be15ceb).
@@ -52,6 +56,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.4...v0.7.5
 - Add [`S3Bucket*` fields](https://github.com/aws/aws-k8s-tester/commit/f9c2ee1c2f9d4c6fc38e84c950f11616b3402713).
 - Remove [`AddOnIRSA.S3BucketName` field](https://github.com/aws/aws-k8s-tester/commit/f9c2ee1c2f9d4c6fc38e84c950f11616b3402713).
 - Support [custom worker node AMI](https://github.com/aws/aws-k8s-tester/commit/).
+- Remove [`StatusManagedNodeGroups`](https://github.com/aws/aws-k8s-tester/commit/).
+- Remove [`StatusManagedNodeGroup`](https://github.com/aws/aws-k8s-tester/commit/).
 
 ### `eks`
 
