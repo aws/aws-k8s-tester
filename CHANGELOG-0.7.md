@@ -9,7 +9,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.4...v0.7.5
 
 ### `aws-k8s-tester`
 
-- Remove [`aws-k8s-tester eks create mng` sub-command](https://github.com/aws/aws-k8s-tester/commit/).
+- Remove [`aws-k8s-tester eks create mng` sub-command](https://github.com/aws/aws-k8s-tester/commit/36ee870ba3b84954c771184fb3f7b8b582862d9b).
 
 ### `ec2config`
 
@@ -55,9 +55,9 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.4...v0.7.5
   - Enable AppMesh add-on with `AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_ENABLE=true`.
 - Add [`S3Bucket*` fields](https://github.com/aws/aws-k8s-tester/commit/f9c2ee1c2f9d4c6fc38e84c950f11616b3402713).
 - Remove [`AddOnIRSA.S3BucketName` field](https://github.com/aws/aws-k8s-tester/commit/f9c2ee1c2f9d4c6fc38e84c950f11616b3402713).
-- Support [custom worker node AMI](https://github.com/aws/aws-k8s-tester/commit/).
-- Remove [`StatusManagedNodeGroups`](https://github.com/aws/aws-k8s-tester/commit/).
-- Remove [`StatusManagedNodeGroup`](https://github.com/aws/aws-k8s-tester/commit/).
+- Support [custom worker node AMI](https://github.com/aws/aws-k8s-tester/commit/36ee870ba3b84954c771184fb3f7b8b582862d9b).
+- Remove [`StatusManagedNodeGroups`](https://github.com/aws/aws-k8s-tester/commit/36ee870ba3b84954c771184fb3f7b8b582862d9b).
+- Remove [`StatusManagedNodeGroup`](https://github.com/aws/aws-k8s-tester/commit/36ee870ba3b84954c771184fb3f7b8b582862d9b).
 
 ### `eks`
 
@@ -70,7 +70,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.4...v0.7.5
 - Support [S3 bucket creation](https://github.com/aws/aws-k8s-tester/commit/dc906341d1254cd2d89588f388efbe93c0a53c3d).
 - Upload [test artifacts to S3 bucket](https://github.com/aws/aws-k8s-tester/commit/b8467a95f28131efe859c5580e5e89d9639a50a3).
   - Require [S3 managed policy in IAM role](https://github.com/aws/aws-k8s-tester/commit/000766975c8636390fa88ed95c41522b7f8c9247).
-- Support [custom worker node AMI](https://github.com/aws/aws-k8s-tester/commit/).
+- Support [custom worker node AMI](https://github.com/aws/aws-k8s-tester/commit/36ee870ba3b84954c771184fb3f7b8b582862d9b).
   - See [`24661b9f7` for the initial commit](https://github.com/aws/aws-k8s-tester/commit/24661b9f78897d3f360c7b5b033bb7365bb8c1f3).
 
 ### Dependency
