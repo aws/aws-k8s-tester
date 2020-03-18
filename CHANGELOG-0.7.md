@@ -3,6 +3,27 @@
 <hr>
 
 
+## [v0.7.6](https://github.com/aws/aws-k8s-tester/releases/tag/v0.7.6) (2020-03-18)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.5...v0.7.6).
+
+### `ec2config`
+
+- Make [S3 uploads optional](https://github.com/aws/aws-k8s-tester/commit/84d7e037fd8682981ea08bb9799c291f5376f377).
+
+### `eksconfig`
+
+- Make [S3 uploads optional](https://github.com/aws/aws-k8s-tester/commit/84d7e037fd8682981ea08bb9799c291f5376f377).
+
+### Go
+
+- Compile with [*Go 1.14.0*](https://golang.org/doc/devel/release.html#go1.14).
+
+
+<hr>
+
+
+
 ## [v0.7.5](https://github.com/aws/aws-k8s-tester/releases/tag/v0.7.5) (2020-03-18)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.4...v0.7.5).
