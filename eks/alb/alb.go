@@ -951,7 +951,7 @@ func (ts *tester) create2048Ingress() error {
 			ts.cfg.Logger.Warn("'kubectl logs alb' failed", zap.String("output", out), zap.Error(err))
 			continue
 		}
-		fmt.Printf("[light_gray]kubectl logs alb:\n%s\n", out)
+		fmt.Printf("kubectl logs alb:\n%s\n", out)
 
 		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 		clusterInfoOut, err := exec.New().CommandContext(

@@ -707,7 +707,7 @@ func (ts *Tester) Up() (err error) {
 				return fmt.Errorf("failed to write file %q (%v)", ts.cfg.CommandAfterCreateClusterOutputPath, err)
 			}
 		}
-		fmt.Printf("\n[light_gray]runCommand output:\n%s\n", string(out))
+		fmt.Printf("\nrunCommand output:\n%s\n", string(out))
 	}
 
 	if ts.cfg.IsEnabledAddOnNodeGroups() || ts.cfg.IsEnabledAddOnManagedNodeGroups() {
@@ -1018,7 +1018,7 @@ func (ts *Tester) Up() (err error) {
 					return fmt.Errorf("failed to write file %q (%v)", ts.cfg.CommandAfterCreateAddOnsOutputPath, err)
 				}
 			}
-			fmt.Printf("\n[light_gray]runCommand output:\n%s\n", string(out))
+			fmt.Printf("\nrunCommand output:\n%s\n", string(out))
 		}
 	}
 

@@ -37,6 +37,13 @@ aws ssm get-parameters --names /aws/service/ami-amazon-linux-latest/amzn2-ami-hv
 e.g.
 aws ssm get-parameters --names /aws/service/eks/optimized-ami/1.15/amazon-linux-2/recommended
 aws ssm get-parameters --names /aws/service/bottlerocket/aws-k8s-1.15/x86_64/latest/image_id
+
+
+TODO
+
+  BootstrapArguments:
+    Type: String
+    Description: Arguments to pass to the bootstrap script. See files/bootstrap.sh in https://github.com/awslabs/amazon-eks-ami
 */
 
 // TemplateASG is the CloudFormation template for EKS node group.
@@ -122,10 +129,6 @@ Parameters:
     Type: Number
     Default: 2
     Description: Desired capacity of Node Group ASG.
-
-  BootstrapArguments:
-    Type: String
-    Description: Arguments to pass to the bootstrap script. See files/bootstrap.sh in https://github.com/awslabs/amazon-eks-ami
 
 Conditions:
 
@@ -440,6 +443,10 @@ func (ts *tester) createASGs() error {
 				"aws-k8s-tester-version": version.ReleaseVersion,
 			}),
 			Parameters: []*cloudformation.Parameter{
+				{
+					ParameterKey:   aws.String("ClusterName"),
+					ParameterValue: aws.String(ts.cfg.EKSConfig.Name),
+				},
 				{
 					ParameterKey:   aws.String("ASGName"),
 					ParameterValue: aws.String(asg.Name),
