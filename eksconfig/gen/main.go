@@ -1,3 +1,4 @@
+// gen generates eksconfig documentation.
 package main
 
 import (

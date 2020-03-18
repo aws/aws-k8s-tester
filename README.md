@@ -12,6 +12,10 @@ WARNING: Pre-alpha. Do not use this in production. Only for testing.
 
 `aws-k8s-tester` is a set of utilities and libraries for testing Kubernetes on AWS.
 
+- Uses AWS CloudFormation for resource creation
+- Supports automatic rollback and resource deletion
+- Flexible add-on support via environmental variables
+
 ## Install
 
 https://github.com/aws/aws-k8s-tester/releases

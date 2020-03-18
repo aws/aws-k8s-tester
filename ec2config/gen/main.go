@@ -1,3 +1,4 @@
+// gen generates ec2config documentation.
 package main
 
 import (
