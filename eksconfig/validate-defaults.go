@@ -651,6 +651,18 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 			return fmt.Errorf("AddOnNodeGroups.ASGs[%q].ASGDesiredCapacity %d > NGMaxLimit %d", k, v.ASGDesiredCapacity, NGMaxLimit)
 		}
 
+		switch v.SSMDocumentCreate {
+		case true: // need create one, or already created
+			if v.SSMDocumentName == "" {
+				v.SSMDocumentName = v.Name + "SSMDocument"
+			}
+			if v.SSMDocumentExecutionTimeoutSeconds == 0 {
+				v.SSMDocumentExecutionTimeoutSeconds = 3600
+			}
+
+		case false: // use existing one, or don't run any SSM
+		}
+
 		if cfg.IsEnabledAddOnNLBHelloWorld() && cfg.AddOnNLBHelloWorld.DeploymentReplicas < int32(v.ASGDesiredCapacity) {
 			cfg.AddOnNLBHelloWorld.DeploymentReplicas = int32(v.ASGDesiredCapacity)
 		}
