@@ -15,6 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
 	"github.com/aws/aws-sdk-go/service/iam/iamiface"
+	"github.com/aws/aws-sdk-go/service/ssm/ssmiface"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,6 +34,7 @@ type Config struct {
 	EC2API    ec2iface.EC2API
 	ASGAPI    autoscalingiface.AutoScalingAPI
 	EKSAPI    eksiface.EKSAPI
+	SSMAPI    ssmiface.SSMAPI
 }
 
 type k8sClientSetGetter interface {
@@ -101,6 +103,9 @@ func (ts *tester) Create() (err error) {
 		return err
 	}
 	if err = ts.waitForNodes(); err != nil {
+		return err
+	}
+	if err = ts.createSSM(); err != nil {
 		return err
 	}
 
@@ -180,6 +185,10 @@ func (ts *tester) Delete() error {
 	}
 
 	var errs []string
+	if err := ts.deleteSSM(); err != nil {
+		ts.cfg.Logger.Warn("failed to delete SSM", zap.Error(err))
+		errs = append(errs, err.Error())
+	}
 	if err := ts.deleteASGs(); err != nil {
 		ts.cfg.Logger.Warn("failed to delete ASGs", zap.Error(err))
 		errs = append(errs, err.Error())

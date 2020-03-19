@@ -3,6 +3,26 @@
 <hr>
 
 
+## [v0.7.9](https://github.com/aws/aws-k8s-tester/releases/tag/v0.7.9) (2020-03-18)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.8...v0.7.9).
+
+### `eks`
+
+- Support [`AddOnNodeGroups` `SSMDocument*` for bottlerocket AMIs](https://github.com/aws/aws-k8s-tester/commit/).
+
+### `eksconfig`
+
+- Support [`AddOnNodeGroups` `SSMDocument*` for bottlerocket AMIs](https://github.com/aws/aws-k8s-tester/commit/b7a37a18dcbe1f0ecbc519c92260e3def26e9135).
+
+### Go
+
+- Compile with [*Go 1.14.0*](https://golang.org/doc/devel/release.html#go1.14).
+
+
+<hr>
+
+
 ## [v0.7.8](https://github.com/aws/aws-k8s-tester/releases/tag/v0.7.8) (2020-03-18)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.7...v0.7.8).
@@ -15,6 +35,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.7...v0.7.8
 
 - Fix [S3 clean-up when `S3BucketName` is empty](https://github.com/aws/aws-k8s-tester/commit/6b11852e3e32e5276f5beddbbe3322b6335d247b).
 - Fix [add-in install when `AddOn(Managed)NodeGroup` is `nil`](https://github.com/aws/aws-k8s-tester/commit/6b11852e3e32e5276f5beddbbe3322b6335d247b).
+
+### Go
+
+- Compile with [*Go 1.14.0*](https://golang.org/doc/devel/release.html#go1.14).
 
 
 <hr>

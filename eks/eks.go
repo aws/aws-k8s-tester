@@ -328,6 +328,7 @@ func (ts *Tester) createSubTesters() (err error) {
 		EC2API:    ts.ec2API,
 		ASGAPI:    ts.asgAPI,
 		EKSAPI:    ts.eksAPI,
+		SSMAPI:    ts.ssmAPI,
 	})
 	if err != nil {
 		return err
