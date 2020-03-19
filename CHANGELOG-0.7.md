@@ -3,13 +3,13 @@
 <hr>
 
 
-## [v0.7.9](https://github.com/aws/aws-k8s-tester/releases/tag/v0.7.9) (2020-03-18)
+## [v0.7.9](https://github.com/aws/aws-k8s-tester/releases/tag/v0.7.9) (2020-03-19)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.7.8...v0.7.9).
 
 ### `eks`
 
-- Support [`AddOnNodeGroups` `SSMDocument*` for bottlerocket AMIs](https://github.com/aws/aws-k8s-tester/commit/).
+- Support [`AddOnNodeGroups` `SSMDocument*` for bottlerocket AMIs](https://github.com/aws/aws-k8s-tester/commit/5ddb73b26debb8858380a2c9f31c942f9537f0f8).
 
 ### `eksconfig`
 
