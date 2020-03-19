@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -13,6 +14,9 @@ import (
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/ssh"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/mholt/archiver/v3"
 	"go.uber.org/zap"
 	"golang.org/x/time/rate"
 )
@@ -38,12 +42,76 @@ func (ts *tester) FetchLogs() (err error) {
 		ts.cfg.Logger.Info("skipping fetch logs for node groups")
 		return nil
 	}
-	if err := os.MkdirAll(ts.cfg.EKSConfig.AddOnManagedNodeGroups.LogsDir, 0700); err != nil {
-		return err
-	}
+
 	ts.logsMu.Lock()
 	defer ts.logsMu.Unlock()
-	return ts.fetchLogs(150, 10, logCmds)
+
+	err = os.MkdirAll(ts.cfg.EKSConfig.AddOnManagedNodeGroups.LogsDir, 0700)
+	if err != nil {
+		ts.cfg.Logger.Warn("failed to mkdir", zap.Error(err))
+		return err
+	}
+
+	err = ts.fetchLogs(150, 10, logCmds)
+	if err != nil {
+		ts.cfg.Logger.Warn("failed to fetch logs", zap.Error(err))
+		return err
+	}
+
+	fpath := filepath.Join(os.TempDir(), ts.cfg.EKSConfig.Name+"-mng-logs.tar.gz")
+	err = os.RemoveAll(fpath)
+	if err != nil {
+		ts.cfg.Logger.Warn("failed to remove temp file", zap.Error(err))
+		return err
+	}
+
+	ts.cfg.Logger.Info("gzipping logs dir", zap.String("logs-dir", ts.cfg.EKSConfig.AddOnManagedNodeGroups.LogsDir), zap.String("file-path", fpath))
+	err = archiver.Archive([]string{ts.cfg.EKSConfig.AddOnManagedNodeGroups.LogsDir}, fpath)
+	if err != nil {
+		ts.cfg.Logger.Warn("archive failed", zap.Error(err))
+		return err
+	}
+	ts.cfg.Logger.Info("gzipped logs dir", zap.String("logs-dir", ts.cfg.EKSConfig.AddOnManagedNodeGroups.LogsDir), zap.String("file-path", fpath))
+
+	if ts.cfg.EKSConfig.S3BucketName != "" {
+		rf, err := os.OpenFile(fpath, os.O_RDONLY, 0444)
+		if err != nil {
+			ts.cfg.Logger.Warn("failed to read a file", zap.Error(err))
+			return err
+		}
+		defer rf.Close()
+
+		s3Key := path.Join(ts.cfg.EKSConfig.Name, filepath.Base(fpath))
+		_, err = ts.s3API.PutObject(&s3.PutObjectInput{
+			Bucket: aws.String(ts.cfg.EKSConfig.S3BucketName),
+			Key:    aws.String(s3Key),
+			Body:   rf,
+
+			// https://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html#canned-acl
+			// vs. "public-read"
+			ACL: aws.String("private"),
+
+			Metadata: map[string]*string{
+				"Kind": aws.String("aws-k8s-tester"),
+			},
+		})
+		if err == nil {
+			ts.cfg.Logger.Info("uploaded the gzipped file",
+				zap.String("bucket", ts.cfg.EKSConfig.S3BucketName),
+				zap.String("remote-path", s3Key),
+			)
+		} else {
+			ts.cfg.Logger.Warn("failed to upload the gzipped file",
+				zap.String("bucket", ts.cfg.EKSConfig.S3BucketName),
+				zap.String("remote-path", s3Key),
+				zap.Error(err),
+			)
+		}
+	} else {
+		ts.cfg.Logger.Info("skipping S3 uploads")
+	}
+
+	return ts.cfg.Sync()
 }
 
 // only letters and numbers

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -11,6 +12,9 @@ import (
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/ssh"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/mholt/archiver/v3"
 	"go.uber.org/zap"
 	"golang.org/x/time/rate"
 )
@@ -37,12 +41,76 @@ func (ts *Tester) FetchLogs() (err error) {
 		ts.lg.Info("empty ASGs; no logs to fetch")
 		return nil
 	}
-	if err := os.MkdirAll(ts.cfg.ASGsLogsDir, 0700); err != nil {
-		return err
-	}
+
 	ts.logsMu.Lock()
 	defer ts.logsMu.Unlock()
-	return ts.fetchLogs(150, 10, logCmds)
+
+	err = os.MkdirAll(ts.cfg.ASGsLogsDir, 0700)
+	if err != nil {
+		ts.lg.Warn("failed to mkdir", zap.Error(err))
+		return err
+	}
+
+	err = ts.fetchLogs(150, 10, logCmds)
+	if err != nil {
+		ts.lg.Warn("failed to fetch logs", zap.Error(err))
+		return err
+	}
+
+	fpath := filepath.Join(os.TempDir(), ts.cfg.Name+"-logs.tar.gz")
+	err = os.RemoveAll(fpath)
+	if err != nil {
+		ts.lg.Warn("failed to remove temp file", zap.Error(err))
+		return err
+	}
+
+	ts.lg.Info("gzipping logs dir", zap.String("logs-dir", ts.cfg.ASGsLogsDir), zap.String("file-path", fpath))
+	err = archiver.Archive([]string{ts.cfg.ASGsLogsDir}, fpath)
+	if err != nil {
+		ts.lg.Warn("archive failed", zap.Error(err))
+		return err
+	}
+	ts.lg.Info("gzipped logs dir", zap.String("logs-dir", ts.cfg.ASGsLogsDir), zap.String("file-path", fpath))
+
+	if ts.cfg.S3BucketName != "" {
+		rf, err := os.OpenFile(fpath, os.O_RDONLY, 0444)
+		if err != nil {
+			ts.lg.Warn("failed to read a file", zap.Error(err))
+			return err
+		}
+		defer rf.Close()
+
+		s3Key := path.Join(ts.cfg.Name, filepath.Base(fpath))
+		_, err = ts.s3API.PutObject(&s3.PutObjectInput{
+			Bucket: aws.String(ts.cfg.S3BucketName),
+			Key:    aws.String(s3Key),
+			Body:   rf,
+
+			// https://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html#canned-acl
+			// vs. "public-read"
+			ACL: aws.String("private"),
+
+			Metadata: map[string]*string{
+				"Kind": aws.String("aws-k8s-tester"),
+			},
+		})
+		if err == nil {
+			ts.lg.Info("uploaded the gzipped file",
+				zap.String("bucket", ts.cfg.S3BucketName),
+				zap.String("remote-path", s3Key),
+			)
+		} else {
+			ts.lg.Warn("failed to upload the gzipped file",
+				zap.String("bucket", ts.cfg.S3BucketName),
+				zap.String("remote-path", s3Key),
+				zap.Error(err),
+			)
+		}
+	} else {
+		ts.lg.Info("skipping S3 uploads")
+	}
+
+	return ts.cfg.Sync()
 }
 
 // only letters and numbers
