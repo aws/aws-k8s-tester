@@ -472,7 +472,7 @@ func (cfg *Config) validateParameters() error {
 	switch cfg.RemoteAccessKeyCreate {
 	case true: // need create one, or already created
 		if cfg.RemoteAccessKeyName == "" {
-			cfg.RemoteAccessKeyName = cfg.Name + "-key-mng"
+			cfg.RemoteAccessKeyName = cfg.Name + "-key-nodes"
 		}
 		if cfg.RemoteAccessPrivateKeyPath != "" {
 			// just ignore...
