@@ -21,6 +21,7 @@ require (
 	github.com/go-ini/ini v1.46.0
 	github.com/imdario/mergo v0.3.8 // indirect
 	github.com/mattn/go-runewidth v0.0.8 // indirect
+	github.com/mholt/archiver/v3 v3.3.0
 	github.com/mitchellh/ioprogress v0.0.0-20180201004757-6a23b12fa88e
 	github.com/onsi/ginkgo v1.10.1
 	github.com/onsi/gomega v1.7.0
