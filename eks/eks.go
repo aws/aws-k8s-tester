@@ -711,7 +711,7 @@ func (ts *Tester) Up() (err error) {
 		fmt.Printf("\nrunCommand output:\n%s\n", string(out))
 	}
 
-	if ts.cfg.IsEnabledAddOnNodeGroups() || ts.cfg.IsEnabledAddOnManagedNodeGroups() {
+	if ts.cfg.IsEnabledAddOnNodeGroups() {
 		// create NG first, so MNG configmap update can be called afterwards
 		fmt.Printf("\n*********************************\n")
 		fmt.Printf("ngTester.Create (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
@@ -724,7 +724,9 @@ func (ts *Tester) Up() (err error) {
 		); err != nil {
 			return err
 		}
+	}
 
+	if ts.cfg.IsEnabledAddOnManagedNodeGroups() {
 		fmt.Printf("\n*********************************\n")
 		fmt.Printf("mngTester.Create (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		if err := catchInterrupt(
@@ -736,153 +738,251 @@ func (ts *Tester) Up() (err error) {
 		); err != nil {
 			return err
 		}
+	}
 
-		needGPU := false
-		if ts.cfg.IsEnabledAddOnNodeGroups() {
-		gpuFound1:
-			for _, mv := range ts.cfg.AddOnNodeGroups.ASGs {
-				switch mv.AMIType {
-				case ec2config.AMITypeAL2X8664GPU:
-					needGPU = true
-					break gpuFound1
-				}
+	needGPU := false
+	if ts.cfg.IsEnabledAddOnNodeGroups() {
+	gpuFound1:
+		for _, mv := range ts.cfg.AddOnNodeGroups.ASGs {
+			switch mv.AMIType {
+			case ec2config.AMITypeAL2X8664GPU:
+				needGPU = true
+				break gpuFound1
 			}
 		}
-		if !needGPU && ts.cfg.IsEnabledAddOnManagedNodeGroups() {
-		gpuFound2:
-			for _, mv := range ts.cfg.AddOnManagedNodeGroups.MNGs {
-				switch mv.AMIType {
-				case awseks.AMITypesAl2X8664Gpu:
-					needGPU = true
-					break gpuFound2
-				}
+	}
+	if !needGPU && ts.cfg.IsEnabledAddOnManagedNodeGroups() {
+	gpuFound2:
+		for _, mv := range ts.cfg.AddOnManagedNodeGroups.MNGs {
+			switch mv.AMIType {
+			case awseks.AMITypesAl2X8664Gpu:
+				needGPU = true
+				break gpuFound2
 			}
 		}
-		if needGPU {
-			fmt.Printf("\n*********************************\n")
-			fmt.Printf("gpuTester.InstallNvidiaDriver (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-			if err := catchInterrupt(
-				ts.lg,
-				ts.stopCreationCh,
-				ts.stopCreationChOnce,
-				ts.interruptSig,
-				ts.gpuTester.InstallNvidiaDriver,
-			); err != nil {
-				ts.lg.Warn("failed to install Nvidia driver", zap.Error(err))
-			}
-
-			fmt.Printf("\n*********************************\n")
-			fmt.Printf("gpuTester.RunNvidiaSMI (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-			if err := catchInterrupt(
-				ts.lg,
-				ts.stopCreationCh,
-				ts.stopCreationChOnce,
-				ts.interruptSig,
-				ts.gpuTester.RunNvidiaSMI,
-			); err != nil {
-				return err
-			}
-		}
-
+	}
+	if needGPU {
 		fmt.Printf("\n*********************************\n")
-		fmt.Printf("checkHealth (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		fmt.Printf("gpuTester.InstallNvidiaDriver (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		if err := catchInterrupt(
 			ts.lg,
 			ts.stopCreationCh,
 			ts.stopCreationChOnce,
 			ts.interruptSig,
-			ts.checkHealth,
+			ts.gpuTester.InstallNvidiaDriver,
+		); err != nil {
+			ts.lg.Warn("failed to install Nvidia driver", zap.Error(err))
+		}
+
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("gpuTester.RunNvidiaSMI (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.interruptSig,
+			ts.gpuTester.RunNvidiaSMI,
 		); err != nil {
 			return err
 		}
+	}
 
+	fmt.Printf("\n*********************************\n")
+	fmt.Printf("checkHealth (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+	if err := catchInterrupt(
+		ts.lg,
+		ts.stopCreationCh,
+		ts.stopCreationChOnce,
+		ts.interruptSig,
+		ts.checkHealth,
+	); err != nil {
+		return err
+	}
+
+	fmt.Printf("\n*********************************\n")
+	ts.lg.Sugar().Infof("kubectl (%s)", ts.cfg.ConfigPath)
+	fmt.Println(ts.cfg.KubectlCommands())
+
+	fmt.Printf("\n*********************************\n")
+	ts.lg.Sugar().Infof("SSH (%s)", ts.cfg.ConfigPath)
+	fmt.Println(ts.cfg.SSHCommands())
+
+	if ts.cfg.IsEnabledAddOnNLBHelloWorld() {
 		fmt.Printf("\n*********************************\n")
-		ts.lg.Sugar().Infof("kubectl (%s)", ts.cfg.ConfigPath)
-		fmt.Println(ts.cfg.KubectlCommands())
+		fmt.Printf("nlbHelloWorldTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnNLBHelloWorld.Namespace)
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.interruptSig,
+			ts.nlbHelloWorldTester.Create,
+		); err != nil {
+			return err
+		}
+	}
 
+	if ts.cfg.IsEnabledAddOnALB2048() {
 		fmt.Printf("\n*********************************\n")
-		ts.lg.Sugar().Infof("SSH (%s)", ts.cfg.ConfigPath)
-		fmt.Println(ts.cfg.SSHCommands())
-
-		if ts.cfg.IsEnabledAddOnNLBHelloWorld() {
-			fmt.Printf("\n*********************************\n")
-			fmt.Printf("nlbHelloWorldTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnNLBHelloWorld.Namespace)
-			if err := catchInterrupt(
-				ts.lg,
-				ts.stopCreationCh,
-				ts.stopCreationChOnce,
-				ts.interruptSig,
-				ts.nlbHelloWorldTester.Create,
-			); err != nil {
-				return err
-			}
+		fmt.Printf("alb2048Tester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnALB2048.Namespace)
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.interruptSig,
+			ts.alb2048Tester.Create,
+		); err != nil {
+			return err
 		}
+	}
 
-		if ts.cfg.IsEnabledAddOnALB2048() {
-			fmt.Printf("\n*********************************\n")
-			fmt.Printf("alb2048Tester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnALB2048.Namespace)
-			if err := catchInterrupt(
-				ts.lg,
-				ts.stopCreationCh,
-				ts.stopCreationChOnce,
-				ts.interruptSig,
-				ts.alb2048Tester.Create,
-			); err != nil {
-				return err
-			}
+	if ts.cfg.IsEnabledAddOnJobPi() {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("jobsPiTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnJobPi.Namespace)
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.interruptSig,
+			ts.jobsPiTester.Create,
+		); err != nil {
+			return err
 		}
+	}
 
-		if ts.cfg.IsEnabledAddOnJobPi() {
-			fmt.Printf("\n*********************************\n")
-			fmt.Printf("jobsPiTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnJobPi.Namespace)
-			if err := catchInterrupt(
-				ts.lg,
-				ts.stopCreationCh,
-				ts.stopCreationChOnce,
-				ts.interruptSig,
-				ts.jobsPiTester.Create,
-			); err != nil {
-				return err
-			}
+	if ts.cfg.IsEnabledAddOnJobEcho() {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("jobsEchoTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnJobEcho.Namespace)
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.interruptSig,
+			ts.jobsEchoTester.Create,
+		); err != nil {
+			return err
 		}
+	}
 
-		if ts.cfg.IsEnabledAddOnJobEcho() {
-			fmt.Printf("\n*********************************\n")
-			fmt.Printf("jobsEchoTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnJobEcho.Namespace)
-			if err := catchInterrupt(
-				ts.lg,
-				ts.stopCreationCh,
-				ts.stopCreationChOnce,
-				ts.interruptSig,
-				ts.jobsEchoTester.Create,
-			); err != nil {
-				return err
-			}
+	if ts.cfg.IsEnabledAddOnCronJob() {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("cronJobsTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnCronJob.Namespace)
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.interruptSig,
+			ts.cronJobsTester.Create,
+		); err != nil {
+			return err
 		}
+	}
 
-		if ts.cfg.IsEnabledAddOnCronJob() {
-			fmt.Printf("\n*********************************\n")
-			fmt.Printf("cronJobsTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnCronJob.Namespace)
-			if err := catchInterrupt(
-				ts.lg,
-				ts.stopCreationCh,
-				ts.stopCreationChOnce,
-				ts.interruptSig,
-				ts.cronJobsTester.Create,
-			); err != nil {
-				return err
-			}
+	if ts.cfg.IsEnabledAddOnSecrets() {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("secretsTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnSecrets.Namespace)
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.interruptSig,
+			ts.secretsTester.Create,
+		); err != nil {
+			return err
 		}
+	}
+
+	if ts.cfg.IsEnabledAddOnIRSA() {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("irsaTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnIRSA.Namespace)
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.interruptSig,
+			ts.irsaTester.Create,
+		); err != nil {
+			return err
+		}
+	}
+
+	if ts.cfg.IsEnabledAddOnFargate() {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("fargateTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnFargate.Namespace)
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.interruptSig,
+			ts.fargateTester.Create,
+		); err != nil {
+			return err
+		}
+	}
+
+	if ts.cfg.IsEnabledAddOnAppMesh() {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("appMeshTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnAppMesh.Namespace)
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.interruptSig,
+			ts.appMeshTester.Create,
+		); err != nil {
+			return err
+		}
+	}
+
+	if ts.cfg.IsEnabledAddOnNodeGroups() && ts.cfg.AddOnNodeGroups.FetchLogs {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("ngTester.FetchLogs (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+
+		waitDur := 20 * time.Second
+		ts.lg.Info("sleeping before ngTester.FetchLogs", zap.Duration("wait", waitDur))
+		time.Sleep(waitDur)
+
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.interruptSig,
+			ts.ngTester.FetchLogs,
+		); err != nil {
+			return err
+		}
+	}
+
+	if ts.cfg.IsEnabledAddOnManagedNodeGroups() && ts.cfg.AddOnManagedNodeGroups.FetchLogs {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("mngTester.FetchLogs (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+
+		waitDur := 20 * time.Second
+		ts.lg.Info("sleeping before mngTester.FetchLogs", zap.Duration("wait", waitDur))
+		time.Sleep(waitDur)
+
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.interruptSig,
+			ts.mngTester.FetchLogs,
+		); err != nil {
+			return err
+		}
+	}
+
+	if (ts.cfg.IsEnabledAddOnNodeGroups() && ts.cfg.AddOnNodeGroups.FetchLogs) ||
+		(ts.cfg.IsEnabledAddOnManagedNodeGroups() && ts.cfg.AddOnManagedNodeGroups.FetchLogs) {
 
 		if ts.cfg.IsEnabledAddOnSecrets() {
 			fmt.Printf("\n*********************************\n")
-			fmt.Printf("secretsTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnSecrets.Namespace)
+			fmt.Printf("secretsTester.AggregateResults (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnSecrets.Namespace)
 			if err := catchInterrupt(
 				ts.lg,
 				ts.stopCreationCh,
 				ts.stopCreationChOnce,
 				ts.interruptSig,
-				ts.secretsTester.Create,
+				ts.secretsTester.AggregateResults,
 			); err != nil {
 				return err
 			}
@@ -890,140 +990,46 @@ func (ts *Tester) Up() (err error) {
 
 		if ts.cfg.IsEnabledAddOnIRSA() {
 			fmt.Printf("\n*********************************\n")
-			fmt.Printf("irsaTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnIRSA.Namespace)
+			fmt.Printf("irsaTester.AggregateResults (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnIRSA.Namespace)
 			if err := catchInterrupt(
 				ts.lg,
 				ts.stopCreationCh,
 				ts.stopCreationChOnce,
 				ts.interruptSig,
-				ts.irsaTester.Create,
+				ts.irsaTester.AggregateResults,
 			); err != nil {
 				return err
 			}
 		}
+	}
 
-		if ts.cfg.IsEnabledAddOnFargate() {
-			fmt.Printf("\n*********************************\n")
-			fmt.Printf("fargateTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnFargate.Namespace)
-			if err := catchInterrupt(
-				ts.lg,
-				ts.stopCreationCh,
-				ts.stopCreationChOnce,
-				ts.interruptSig,
-				ts.fargateTester.Create,
-			); err != nil {
-				return err
-			}
-		}
+	fmt.Printf("\n*********************************\n")
+	fmt.Printf("checkHealth (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+	if err := catchInterrupt(
+		ts.lg,
+		ts.stopCreationCh,
+		ts.stopCreationChOnce,
+		ts.interruptSig,
+		ts.checkHealth,
+	); err != nil {
+		return err
+	}
 
-		if ts.cfg.IsEnabledAddOnAppMesh() {
-			fmt.Printf("\n*********************************\n")
-			fmt.Printf("appMeshTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnAppMesh.Namespace)
-			if err := catchInterrupt(
-				ts.lg,
-				ts.stopCreationCh,
-				ts.stopCreationChOnce,
-				ts.interruptSig,
-				ts.appMeshTester.Create,
-			); err != nil {
-				return err
-			}
-		}
-
-		if ts.cfg.IsEnabledAddOnNodeGroups() && ts.cfg.AddOnNodeGroups.FetchLogs {
-			fmt.Printf("\n*********************************\n")
-			fmt.Printf("ngTester.FetchLogs (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-			waitDur := 20 * time.Second
-			ts.lg.Info("sleeping before ngTester.FetchLogs", zap.Duration("wait", waitDur))
-			time.Sleep(waitDur)
-
-			if err := catchInterrupt(
-				ts.lg,
-				ts.stopCreationCh,
-				ts.stopCreationChOnce,
-				ts.interruptSig,
-				ts.ngTester.FetchLogs,
-			); err != nil {
-				return err
-			}
-		}
-
-		if ts.cfg.IsEnabledAddOnManagedNodeGroups() && ts.cfg.AddOnManagedNodeGroups.FetchLogs {
-			fmt.Printf("\n*********************************\n")
-			fmt.Printf("mngTester.FetchLogs (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-			waitDur := 20 * time.Second
-			ts.lg.Info("sleeping before mngTester.FetchLogs", zap.Duration("wait", waitDur))
-			time.Sleep(waitDur)
-
-			if err := catchInterrupt(
-				ts.lg,
-				ts.stopCreationCh,
-				ts.stopCreationChOnce,
-				ts.interruptSig,
-				ts.mngTester.FetchLogs,
-			); err != nil {
-				return err
-			}
-		}
-
-		if (ts.cfg.IsEnabledAddOnNodeGroups() && ts.cfg.AddOnNodeGroups.FetchLogs) ||
-			(ts.cfg.IsEnabledAddOnManagedNodeGroups() && ts.cfg.AddOnManagedNodeGroups.FetchLogs) {
-			if ts.cfg.IsEnabledAddOnSecrets() {
-				fmt.Printf("\n*********************************\n")
-				fmt.Printf("secretsTester.AggregateResults (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnSecrets.Namespace)
-				if err := catchInterrupt(
-					ts.lg,
-					ts.stopCreationCh,
-					ts.stopCreationChOnce,
-					ts.interruptSig,
-					ts.secretsTester.AggregateResults,
-				); err != nil {
-					return err
-				}
-			}
-			if ts.cfg.IsEnabledAddOnIRSA() {
-				fmt.Printf("\n*********************************\n")
-				fmt.Printf("irsaTester.AggregateResults (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnIRSA.Namespace)
-				if err := catchInterrupt(
-					ts.lg,
-					ts.stopCreationCh,
-					ts.stopCreationChOnce,
-					ts.interruptSig,
-					ts.irsaTester.AggregateResults,
-				); err != nil {
-					return err
-				}
-			}
-		}
-
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("checkHealth (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.interruptSig,
-			ts.checkHealth,
-		); err != nil {
-			return err
-		}
-
-		if ts.cfg.CommandAfterCreateAddOns != "" {
-			fmt.Printf("\nrunCommand CommandAfterCreateAddOns (%q)\n", ts.cfg.CommandAfterCreateAddOns)
-			out, err := runCommand(ts.lg, ts.cfg.CommandAfterCreateAddOns)
+	if ts.cfg.CommandAfterCreateAddOns != "" {
+		fmt.Printf("\nrunCommand CommandAfterCreateAddOns (%q)\n", ts.cfg.CommandAfterCreateAddOns)
+		out, err := runCommand(ts.lg, ts.cfg.CommandAfterCreateAddOns)
+		if err != nil {
+			err = ioutil.WriteFile(ts.cfg.CommandAfterCreateAddOnsOutputPath, []byte(ts.cfg.CommandAfterCreateAddOns+"\n\n# output\n"+string(out)+"\n\n# error\n"+err.Error()), 0600)
 			if err != nil {
-				err = ioutil.WriteFile(ts.cfg.CommandAfterCreateAddOnsOutputPath, []byte(ts.cfg.CommandAfterCreateAddOns+"\n\n# output\n"+string(out)+"\n\n# error\n"+err.Error()), 0600)
-				if err != nil {
-					return fmt.Errorf("failed to write file %q (%v)", ts.cfg.CommandAfterCreateAddOnsOutputPath, err)
-				}
-			} else {
-				err = ioutil.WriteFile(ts.cfg.CommandAfterCreateAddOnsOutputPath, []byte(ts.cfg.CommandAfterCreateAddOns+"\n\n# output\n"+string(out)), 0600)
-				if err != nil {
-					return fmt.Errorf("failed to write file %q (%v)", ts.cfg.CommandAfterCreateAddOnsOutputPath, err)
-				}
+				return fmt.Errorf("failed to write file %q (%v)", ts.cfg.CommandAfterCreateAddOnsOutputPath, err)
 			}
-			fmt.Printf("\nrunCommand output:\n%s\n", string(out))
+		} else {
+			err = ioutil.WriteFile(ts.cfg.CommandAfterCreateAddOnsOutputPath, []byte(ts.cfg.CommandAfterCreateAddOns+"\n\n# output\n"+string(out)), 0600)
+			if err != nil {
+				return fmt.Errorf("failed to write file %q (%v)", ts.cfg.CommandAfterCreateAddOnsOutputPath, err)
+			}
 		}
+		fmt.Printf("\nrunCommand output:\n%s\n", string(out))
 	}
 
 	return ts.cfg.Sync()
