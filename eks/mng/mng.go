@@ -28,6 +28,7 @@ import (
 	awseks "github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
 	"github.com/aws/aws-sdk-go/service/iam/iamiface"
+	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"github.com/dustin/go-humanize"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
@@ -153,6 +154,7 @@ type Config struct {
 	EC2API    ec2iface.EC2API
 	ASGAPI    autoscalingiface.AutoScalingAPI
 	EKSAPI    eksiface.EKSAPI
+	S3API     s3iface.S3API
 }
 
 type k8sClientSetGetter interface {

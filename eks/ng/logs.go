@@ -84,7 +84,7 @@ func (ts *tester) FetchLogs() (err error) {
 		defer rf.Close()
 
 		s3Key := path.Join(ts.cfg.EKSConfig.Name, filepath.Base(fpath))
-		_, err = ts.s3API.PutObject(&s3.PutObjectInput{
+		_, err = ts.cfg.S3API.PutObject(&s3.PutObjectInput{
 			Bucket: aws.String(ts.cfg.EKSConfig.S3BucketName),
 			Key:    aws.String(s3Key),
 			Body:   rf,
@@ -113,7 +113,7 @@ func (ts *tester) FetchLogs() (err error) {
 		ts.cfg.Logger.Info("skipping S3 uploads")
 	}
 
-	return ts.cfg.Sync()
+	return ts.cfg.EKSConfig.Sync()
 }
 
 // only letters and numbers
