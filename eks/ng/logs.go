@@ -60,7 +60,7 @@ func (ts *tester) FetchLogs() (err error) {
 		return err
 	}
 
-	fpath := filepath.Join(os.TempDir(), ts.cfg.EKSConfig.Name+"-mng-logs.tar.gz")
+	fpath := filepath.Join(os.TempDir(), ts.cfg.EKSConfig.Name+"-logs-ng.tar.gz")
 	err = os.RemoveAll(fpath)
 	if err != nil {
 		ts.cfg.Logger.Warn("failed to remove temp file", zap.Error(err))

@@ -23,20 +23,19 @@ import (
 
 func (ts *Tester) createKeyPair() (err error) {
 	if !ts.cfg.RemoteAccessKeyCreate {
-		ts.lg.Info("skipping creating key pair")
+		ts.lg.Info("skipping creating EC2 key pair")
 		return nil
 	}
 	if ts.cfg.RemoteAccessKeyName == "" {
-		return errors.New("cannot create key pair without key name")
+		return errors.New("cannot create EC2 key pair without key name")
 	}
 	if ts.cfg.RemoteAccessPrivateKeyPath == "" {
-		return errors.New("cannot create key pair without private key path")
+		return errors.New("cannot create EC2 key pair without private key path")
 	}
-
-	ts.lg.Info("creating a new key pair", zap.String("key-pair-name", ts.cfg.RemoteAccessKeyName))
 
 	now := time.Now()
 
+	ts.lg.Info("creating EC2 key pair", zap.String("key-pair-name", ts.cfg.RemoteAccessKeyName))
 	var output *ec2.CreateKeyPairOutput
 	output, err = ts.ec2API.CreateKeyPair(&ec2.CreateKeyPairInput{
 		KeyName: aws.String(ts.cfg.RemoteAccessKeyName),
@@ -44,11 +43,11 @@ func (ts *Tester) createKeyPair() (err error) {
 	if err != nil {
 		return err
 	}
-	if *output.KeyName != ts.cfg.RemoteAccessKeyName {
-		return fmt.Errorf("unexpected key name %q, expected %q", *output.KeyName, ts.cfg.RemoteAccessKeyName)
+	if aws.StringValue(output.KeyName) != ts.cfg.RemoteAccessKeyName {
+		return fmt.Errorf("unexpected key name %q, expected %q", aws.StringValue(output.KeyName), ts.cfg.RemoteAccessKeyName)
 	}
 	ts.lg.Info(
-		"created a new key pair",
+		"created EC2 key pair",
 		zap.String("key-name", ts.cfg.RemoteAccessKeyName),
 		zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 	)
@@ -64,7 +63,7 @@ func (ts *Tester) createKeyPair() (err error) {
 		return err
 	}
 	ts.lg.Info(
-		"wrote the new key pair",
+		"wrote EC2 private key on disk",
 		zap.String("key-path", ts.cfg.RemoteAccessPrivateKeyPath),
 	)
 
@@ -84,35 +83,37 @@ func (ts *Tester) createKeyPair() (err error) {
 			},
 		})
 		if err == nil {
-			ts.lg.Info("uploaded the private key",
+			ts.lg.Info("uploaded EC2 private key",
 				zap.String("bucket", ts.cfg.S3BucketName),
 				zap.String("remote-path", s3Key),
 			)
 		} else {
-			ts.lg.Warn("failed to upload the private key",
+			ts.lg.Warn("failed to upload EC2 private key",
 				zap.String("bucket", ts.cfg.S3BucketName),
 				zap.String("remote-path", s3Key),
 				zap.Error(err),
 			)
 		}
 	} else {
-		ts.lg.Info("skipping private key uploads")
+		ts.lg.Info("skipping EC2 private key uploads")
 	}
 	return err
 }
 
 func (ts *Tester) deleteKeyPair() error {
 	if !ts.cfg.RemoteAccessKeyCreate {
-		ts.lg.Info("skipping deleting key pair")
+		ts.lg.Info("skipping deleting EC2 key pair")
 		return nil
 	}
 	if ts.cfg.RemoteAccessKeyName == "" {
-		return errors.New("cannot delete key pair without key name")
+		return errors.New("cannot delete EC2 key pair without key name")
 	}
-	defer os.RemoveAll(ts.cfg.RemoteAccessPrivateKeyPath)
 
-	ts.lg.Info("deleting a key pair", zap.String("key-pair-name", ts.cfg.RemoteAccessKeyName))
-	_, err := ts.ec2API.DeleteKeyPair(&ec2.DeleteKeyPairInput{
+	err := os.RemoveAll(ts.cfg.RemoteAccessPrivateKeyPath)
+	ts.lg.Info("deleted EC2 private key on disk", zap.String("key-path", ts.cfg.RemoteAccessPrivateKeyPath))
+
+	ts.lg.Info("deleting EC2 key pair", zap.String("key-pair-name", ts.cfg.RemoteAccessKeyName))
+	_, err = ts.ec2API.DeleteKeyPair(&ec2.DeleteKeyPairInput{
 		KeyName: aws.String(ts.cfg.RemoteAccessKeyName),
 	})
 	if err != nil {
@@ -145,7 +146,7 @@ func (ts *Tester) deleteKeyPair() error {
 	if !deleted {
 		return fmt.Errorf("deleted key pair but %q still exists", ts.cfg.RemoteAccessKeyName)
 	}
-	ts.lg.Info("deleted a key pair", zap.String("key-pair-name", ts.cfg.RemoteAccessKeyName))
+	ts.lg.Info("deleted EC2 key pair", zap.String("key-pair-name", ts.cfg.RemoteAccessKeyName))
 
 	if ts.cfg.S3BucketName != "" {
 		s3Key := path.Join(ts.cfg.Name, ts.cfg.RemoteAccessKeyName+".private.pem")
@@ -154,12 +155,12 @@ func (ts *Tester) deleteKeyPair() error {
 			Key:    aws.String(s3Key),
 		})
 		if err == nil {
-			ts.lg.Info("deleted the private key in S3",
+			ts.lg.Info("deleted EC2 private key in S3",
 				zap.String("bucket", ts.cfg.S3BucketName),
 				zap.String("remote-path", s3Key),
 			)
 		} else {
-			ts.lg.Warn("failed to delete the private key in S3",
+			ts.lg.Warn("failed to delete EC2 private key in S3",
 				zap.String("bucket", ts.cfg.S3BucketName),
 				zap.String("remote-path", s3Key),
 				zap.Error(err),
@@ -167,7 +168,7 @@ func (ts *Tester) deleteKeyPair() error {
 			return err
 		}
 	} else {
-		ts.lg.Info("skipping S3 clean-up")
+		ts.lg.Info("skipping S3 EC2 private key clean-up")
 	}
 
 	return nil

@@ -48,7 +48,7 @@ func (ts *Tester) createS3() (err error) {
 		return nil
 	}
 
-	testKey := path.Join(ts.cfg.Name, "test-"+getTS()+"-"+randString(10))
+	testKey := path.Join(ts.cfg.Name, "test-"+getTS()+".log")
 	_, err = ts.s3API.PutObject(&s3.PutObjectInput{
 		Bucket: aws.String(ts.cfg.S3BucketName),
 		Key:    aws.String(testKey),
