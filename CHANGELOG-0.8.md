@@ -3,6 +3,22 @@
 <hr>
 
 
+## [v0.8.3](https://github.com/aws/aws-k8s-tester/releases/tag/v0.8.3) (2020-03-19)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.8.2...v0.8.3).
+
+### `eksconfig`
+
+- Change [default `RemoteAccessKeyName` suffixed by `-key-nodes`](https://github.com/aws/aws-k8s-tester/commit/92292eb2f3159a9ebb37af134a86ec66a67de26b).
+
+### Go
+
+- Compile with [*Go 1.14.1*](https://golang.org/doc/devel/release.html#go1.14).
+
+
+<hr>
+
+
 ## [v0.8.2](https://github.com/aws/aws-k8s-tester/releases/tag/v0.8.2) (2020-03-19)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.8.1...v0.8.2).
