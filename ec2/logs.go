@@ -14,6 +14,7 @@ import (
 	"github.com/aws/aws-k8s-tester/ssh"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/dustin/go-humanize"
 	"github.com/mholt/archiver/v3"
 	"go.uber.org/zap"
 	"golang.org/x/time/rate"
@@ -70,7 +71,13 @@ func (ts *Tester) FetchLogs() (err error) {
 		ts.lg.Warn("archive failed", zap.Error(err))
 		return err
 	}
-	ts.lg.Info("gzipped logs dir", zap.String("logs-dir", ts.cfg.ASGsLogsDir), zap.String("file-path", fpath))
+	s, err := os.Stat(fpath)
+	if err != nil {
+		ts.lg.Warn("failed to os stat", zap.Error(err))
+		return err
+	}
+	sz := humanize.Bytes(uint64(s.Size()))
+	ts.lg.Info("gzipped logs dir", zap.String("logs-dir", ts.cfg.ASGsLogsDir), zap.String("file-path", fpath), zap.String("file-size", sz))
 
 	if ts.cfg.S3BucketName != "" {
 		rf, err := os.OpenFile(fpath, os.O_RDONLY, 0444)
@@ -98,11 +105,13 @@ func (ts *Tester) FetchLogs() (err error) {
 			ts.lg.Info("uploaded the gzipped file",
 				zap.String("bucket", ts.cfg.S3BucketName),
 				zap.String("remote-path", s3Key),
+				zap.String("file-size", sz),
 			)
 		} else {
 			ts.lg.Warn("failed to upload the gzipped file",
 				zap.String("bucket", ts.cfg.S3BucketName),
 				zap.String("remote-path", s3Key),
+				zap.String("file-size", sz),
 				zap.Error(err),
 			)
 		}

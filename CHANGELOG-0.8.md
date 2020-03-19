@@ -3,17 +3,19 @@
 <hr>
 
 
-## [v0.8.2](https://github.com/aws/aws-k8s-tester/releases/tag/v0.8.2) (2020-03)
+## [v0.8.2](https://github.com/aws/aws-k8s-tester/releases/tag/v0.8.2) (2020-03-19)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.8.1...v0.8.2).
 
 ### `ec2`
 
 - Update [S3 test file uploads](https://github.com/aws/aws-k8s-tester/commit/167fcfab94e095714809c970bb77c1789e8b2d69).
+- Log [logs gzipped file size](https://github.com/aws/aws-k8s-tester/commit/).
 
 ### `eks`
 
 - Update [S3 test file uploads](https://github.com/aws/aws-k8s-tester/commit/167fcfab94e095714809c970bb77c1789e8b2d69).
+- Log [logs gzipped file size](https://github.com/aws/aws-k8s-tester/commit/).
 
 ### Go
 
