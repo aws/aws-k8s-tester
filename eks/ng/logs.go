@@ -17,6 +17,8 @@ import (
 	"golang.org/x/time/rate"
 )
 
+// TODO: fetch logs via SSM + S3
+
 var logCmds = map[string]string{
 	// kernel logs
 	"sudo journalctl --no-pager --output=short-precise -k": "kernel.out.log",
