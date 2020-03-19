@@ -75,10 +75,11 @@ type tester struct {
 
 func (ts *tester) Create() (err error) {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnNodeGroups() {
+		ts.cfg.Logger.Info("node group is disabled; skipping creation")
 		return nil
 	}
 	if ts.cfg.EKSConfig.AddOnNodeGroups.Created {
-		ts.cfg.Logger.Info("ManagedNodeGroup is already created; skipping creation")
+		ts.cfg.Logger.Info("node group is already created; skipping creation")
 		return nil
 	}
 	if len(ts.cfg.EKSConfig.Parameters.PublicSubnetIDs) == 0 {
