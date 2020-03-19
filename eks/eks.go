@@ -309,10 +309,6 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 }
 
 func (ts *Tester) createSubTesters() (err error) {
-	if !ts.cfg.IsEnabledAddOnManagedNodeGroups() {
-		return nil
-	}
-
 	fmt.Printf("\n*********************************\n")
 	fmt.Printf("createSubTesters (%q)\n", ts.cfg.ConfigPath)
 
