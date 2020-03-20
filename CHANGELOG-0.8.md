@@ -3,7 +3,7 @@
 <hr>
 
 
-## [v0.8.4](https://github.com/aws/aws-k8s-tester/releases/tag/v0.8.4) (2020-03)
+## [v0.8.4](https://github.com/aws/aws-k8s-tester/releases/tag/v0.8.4) (2020-03-19)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.8.3...v0.8.4).
 
@@ -14,6 +14,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.8.3...v0.8.4
 ### `eks`
 
 - Update [default SSM doc parameters](https://github.com/aws/aws-k8s-tester/commit/bafdba80410d4d5c48c292518cf09f4872bb9c6f).
+- Remove [remove "Error" level logging](https://github.com/aws/aws-k8s-tester/commit/6204c255ee9587cdd6f940ddd5c0f64c3c03ffc1).
 
 ### Go
 
