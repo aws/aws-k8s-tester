@@ -925,6 +925,22 @@ func (ts *tester) create2048Ingress() error {
 	case <-time.After(waitDur):
 	}
 
+	logCmdFlags := []string{
+		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+		"--namespace=" + albIngressControllerDeploymentNamespace,
+		"logs",
+		"--selector=" + "app.kubernetes.io/name" + "=" + albIngressControllerName,
+	}
+	css := ts.cfg.EKSConfig.KubectlPath + strings.Join(logCmdFlags, " ")
+	describeCmdFlags := []string{
+		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+		"--namespace=" + ts.cfg.EKSConfig.AddOnALB2048.Namespace,
+		"describe",
+		"svc",
+		alb2048ServiceName,
+	}
+	dss := ts.cfg.EKSConfig.KubectlPath + strings.Join(describeCmdFlags, " ")
+
 	hostName := ""
 	waitDur = 4 * time.Minute
 	retryStart := time.Now()
@@ -937,13 +953,7 @@ func (ts *tester) create2048Ingress() error {
 		case <-time.After(5 * time.Second):
 		}
 
-		logCmdFlags := []string{
-			"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
-			"--namespace=" + albIngressControllerDeploymentNamespace,
-			"logs",
-			"--selector=" + "app.kubernetes.io/name" + "=" + albIngressControllerName,
-		}
-		ts.cfg.Logger.Info("fetching ALB pod logs", zap.String("cmd", ts.cfg.EKSConfig.KubectlPath+strings.Join(logCmdFlags, " ")))
+		ts.cfg.Logger.Info("fetching ALB pod logs", zap.String("cmd", css))
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		logsOutput, err := exec.New().CommandContext(ctx, ts.cfg.EKSConfig.KubectlPath, logCmdFlags...).CombinedOutput()
 		cancel()
@@ -952,24 +962,17 @@ func (ts *tester) create2048Ingress() error {
 			ts.cfg.Logger.Warn("'kubectl logs alb' failed", zap.String("output", out), zap.Error(err))
 			continue
 		}
-		fmt.Printf("\n\nkubectl logs alb:\n%s\n", out)
+		fmt.Printf("\n\n\"%s\" output:\n%s\n", css, out)
 
+		ts.cfg.Logger.Info("describing ALB service", zap.String("cmd", dss))
 		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
-		clusterInfoOut, err := exec.New().CommandContext(
-			ctx,
-			ts.cfg.EKSConfig.KubectlPath,
-			"--kubeconfig="+ts.cfg.EKSConfig.KubeConfigPath,
-			"--namespace="+ts.cfg.EKSConfig.AddOnALB2048.Namespace,
-			"describe",
-			"svc",
-			alb2048ServiceName,
-		).CombinedOutput()
+		clusterInfoOut, err := exec.New().CommandContext(ctx, ts.cfg.EKSConfig.KubectlPath, describeCmdFlags...).CombinedOutput()
 		cancel()
 		if err != nil {
 			ts.cfg.Logger.Warn("'kubectl describe svc' failed", zap.Error(err))
 		} else {
 			out := string(clusterInfoOut)
-			fmt.Printf("\n\"kubectl describe svc %s\" output:\n%s\n", alb2048ServiceName, out)
+			fmt.Printf("\n\n\"%s\" output:\n%s\n", dss, out)
 		}
 
 		ts.cfg.Logger.Info("querying ALB 2048 Ingress for HTTP endpoint")
