@@ -537,6 +537,7 @@ func (ts *tester) createALBDeployment() error {
 									fmt.Sprintf("--cluster-name=%s", ts.cfg.EKSConfig.Name),
 									fmt.Sprintf("--aws-vpc-id=%s", ts.cfg.EKSConfig.Parameters.VPCID),
 									fmt.Sprintf("--aws-region=%s", ts.cfg.EKSConfig.Region),
+									"-v=2", // for debugging
 								},
 							},
 						},
