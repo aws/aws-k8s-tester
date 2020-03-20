@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/pkg/aws"
+	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
 	"k8s.io/client-go/util/homedir"
 )
@@ -276,6 +277,8 @@ func (cfg *Config) validateConfig() error {
 		}
 		if cfg.RemoteAccessPrivateKeyPath == "" {
 			return fmt.Errorf("RemoteAccessKeyCreate false; expect non-empty RemoteAccessPrivateKeyPath but got %q", cfg.RemoteAccessPrivateKeyPath)
+		} else if !fileutil.Exist(cfg.RemoteAccessPrivateKeyPath) {
+			return fmt.Errorf("RemoteAccessPrivateKeyPath %q does not exist", cfg.RemoteAccessPrivateKeyPath)
 		}
 	}
 

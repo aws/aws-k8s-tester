@@ -28,7 +28,7 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EC2_VPC_CREATE")
 	os.Setenv("AWS_K8S_TESTER_EC2_VPC_ID", `vpc-id`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EC2_VPC_ID")
-	os.Setenv("AWS_K8S_TESTER_EC2_REMOTE_ACCESS_KEY_CREATE", `false`)
+	os.Setenv("AWS_K8S_TESTER_EC2_REMOTE_ACCESS_KEY_CREATE", `true`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EC2_REMOTE_ACCESS_KEY_CREATE")
 	os.Setenv("AWS_K8S_TESTER_EC2_REMOTE_ACCESS_KEY_NAME", `my-key`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EC2_REMOTE_ACCESS_KEY_NAME")
@@ -67,7 +67,7 @@ func TestEnv(t *testing.T) {
 	if cfg.VPCID != "vpc-id" {
 		t.Fatalf("unexpected cfg.VPCID %q", cfg.VPCID)
 	}
-	if cfg.RemoteAccessKeyCreate {
+	if !cfg.RemoteAccessKeyCreate {
 		t.Fatalf("unexpected cfg.RemoteAccessKeyCreate %v", cfg.RemoteAccessKeyCreate)
 	}
 	if cfg.RemoteAccessKeyName != "my-key" {

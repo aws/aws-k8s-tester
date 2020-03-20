@@ -16,6 +16,7 @@ import (
 
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/pkg/aws"
+	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"k8s.io/client-go/util/homedir"
@@ -486,6 +487,8 @@ func (cfg *Config) validateParameters() error {
 		}
 		if cfg.RemoteAccessPrivateKeyPath == "" {
 			return fmt.Errorf("RemoteAccessKeyCreate false; expect non-empty RemoteAccessPrivateKeyPath but got %q", cfg.RemoteAccessPrivateKeyPath)
+		} else if !fileutil.Exist(cfg.RemoteAccessPrivateKeyPath) {
+			return fmt.Errorf("RemoteAccessPrivateKeyPath %q does not exist", cfg.RemoteAccessPrivateKeyPath)
 		}
 	}
 
