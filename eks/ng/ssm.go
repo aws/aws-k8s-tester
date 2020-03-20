@@ -44,11 +44,11 @@ Parameters:
 
   Name:
     Type: String
-    Default: aws-k8s-tester-ec2
+    Default: aws-k8s-tester-eks-ng-ssm
 
   DocumentName:
     Type: String
-    Default: aws-k8s-tester-ec2-ssm-document
+    Default: aws-k8s-tester-eks-ng-ssm-document
 
   Commands:
     Type: String
