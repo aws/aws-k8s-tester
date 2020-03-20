@@ -54,6 +54,11 @@ AWS_K8S_TESTER_EC2_VPC_CREATE=false \
 AWS_K8S_TESTER_EC2_VPC_ID=vpc-00219f2d3063b6d9c \
 aws-k8s-tester ec2 create config -p /tmp/${USER}-test-ec2-bottlerocket.yaml && cat /tmp/${USER}-test-ec2-bottlerocket.yaml
 
+# Or just run
+aws-k8s-tester ec2 create config -p /tmp/${USER}-test-ec2-bottlerocket.yaml
+# to write initial configuration with default values
+
+
 cd /tmp
 aws-k8s-tester ec2 create cluster -p /tmp/${USER}-test-ec2-bottlerocket.yaml
 
@@ -81,6 +86,11 @@ AWS_K8S_TESTER_EC2_ROLE_ARN=arn:aws:iam::${ACCOUNT_ID}:role/aws-k8s-tester-ec2-r
 AWS_K8S_TESTER_EC2_VPC_CREATE=false \
 AWS_K8S_TESTER_EC2_VPC_ID=vpc-00219f2d3063b6d9c \
 aws-k8s-tester ec2 create config -p /tmp/${USER}-test-ec2-al2-cpu.yaml && cat /tmp/${USER}-test-ec2-al2-cpu.yaml
+
+# Or just run
+aws-k8s-tester ec2 create config -p /tmp/${USER}-test-ec2-al2-cpu.yaml
+# to write initial configuration with default values
+
 
 cd /tmp
 aws-k8s-tester ec2 create cluster -p /tmp/${USER}-test-ec2-al2-cpu.yaml
@@ -138,6 +148,11 @@ AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_JOB_PI_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_ENABLE=true \
 aws-k8s-tester eks create config -p /tmp/${USER}-test-prod.yaml && cat /tmp/${USER}-test-prod.yaml
+
+# Or just run
+aws-k8s-tester eks create config -p /tmp/${USER}-test-prod.yaml
+# to write initial configuration with default values
+
 
 cd /tmp
 aws-k8s-tester eks create cluster -p /tmp/${USER}-test-prod.yaml
