@@ -760,7 +760,7 @@ func (ts *tester) checkNode() error {
 
 		nodes, err := ts.cfg.K8SClient.KubernetesClientSet().CoreV1().Nodes().List(metav1.ListOptions{})
 		if err != nil {
-			ts.cfg.Logger.Error("get nodes failed", zap.Error(err))
+			ts.cfg.Logger.Warn("get nodes failed", zap.Error(err))
 			continue
 		}
 		items := nodes.Items

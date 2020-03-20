@@ -981,7 +981,7 @@ func (ts *tester) create2048Ingress() error {
 			Ingresses(ts.cfg.EKSConfig.AddOnALB2048.Namespace).
 			Get(alb2048IngressName, metav1.GetOptions{})
 		if err != nil {
-			ts.cfg.Logger.Error("failed to get ALB 2048 Ingress; retrying", zap.Error(err))
+			ts.cfg.Logger.Warn("failed to get ALB 2048 Ingress; retrying", zap.Error(err))
 			time.Sleep(5 * time.Second)
 			continue
 		}
@@ -1045,7 +1045,7 @@ func (ts *tester) create2048Ingress() error {
 		buf := bytes.NewBuffer(nil)
 		err = httpReadInsecure(ts.cfg.Logger, ts.cfg.EKSConfig.AddOnALB2048.URL, buf)
 		if err != nil {
-			ts.cfg.Logger.Error("failed to read ALB 2048 Service; retrying", zap.Error(err))
+			ts.cfg.Logger.Warn("failed to read ALB 2048 Service; retrying", zap.Error(err))
 			time.Sleep(5 * time.Second)
 			continue
 		}

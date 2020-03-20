@@ -624,7 +624,7 @@ func (ts *tester) deleteMNG() error {
 					mv.Status = fmt.Sprintf("failed to delete a managed node group (%v)", st.Error)
 					ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[name] = mv
 					ts.cfg.EKSConfig.Sync()
-					ts.cfg.Logger.Error("polling errror", zap.Error(st.Error))
+					ts.cfg.Logger.Warn("polling errror", zap.Error(st.Error))
 				}
 			}
 			cancel()
@@ -941,7 +941,7 @@ func (ts *tester) waitForNodes(name string) error {
 
 		nodes, err := ts.cfg.K8SClient.KubernetesClientSet().CoreV1().Nodes().List(metav1.ListOptions{})
 		if err != nil {
-			ts.cfg.Logger.Error("get nodes failed", zap.Error(err))
+			ts.cfg.Logger.Warn("get nodes failed", zap.Error(err))
 			continue
 		}
 		items = nodes.Items

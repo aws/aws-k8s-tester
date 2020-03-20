@@ -433,7 +433,7 @@ func (ts *tester) createService() error {
 			Services(ts.cfg.EKSConfig.AddOnNLBHelloWorld.Namespace).
 			Get(nlbHelloWorldServiceName, metav1.GetOptions{})
 		if err != nil {
-			ts.cfg.Logger.Error("failed to get NLB hello-world Service; retrying", zap.Error(err))
+			ts.cfg.Logger.Warn("failed to get NLB hello-world Service; retrying", zap.Error(err))
 			time.Sleep(5 * time.Second)
 			continue
 		}
@@ -494,7 +494,7 @@ func (ts *tester) createService() error {
 		buf := bytes.NewBuffer(nil)
 		err = httpReadInsecure(ts.cfg.Logger, ts.cfg.EKSConfig.AddOnNLBHelloWorld.URL, buf)
 		if err != nil {
-			ts.cfg.Logger.Error("failed to read NLB hello-world Service; retrying", zap.Error(err))
+			ts.cfg.Logger.Warn("failed to read NLB hello-world Service; retrying", zap.Error(err))
 			time.Sleep(5 * time.Second)
 			continue
 		}

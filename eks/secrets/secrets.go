@@ -632,7 +632,7 @@ func (ts *tester) waitForPodsCompleted() error {
 			Pods(ts.cfg.EKSConfig.AddOnSecrets.Namespace).
 			List(metav1.ListOptions{})
 		if err != nil {
-			ts.cfg.Logger.Error("failed to list Pod", zap.Error(err))
+			ts.cfg.Logger.Warn("failed to list Pod", zap.Error(err))
 			continue
 		}
 		if len(pods.Items) == 0 {

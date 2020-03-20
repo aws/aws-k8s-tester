@@ -100,7 +100,7 @@ func (ts *tester) InstallNvidiaDriver() error {
 				// FieldSelector: fields.OneTermEqualSelector("metadata.name", "GPU").String(),
 			})
 			if err != nil {
-				ts.cfg.Logger.Error("get nodes failed", zap.Error(err))
+				ts.cfg.Logger.Warn("get nodes failed", zap.Error(err))
 				time.Sleep(5 * time.Second)
 				continue
 			}

@@ -115,7 +115,7 @@ func (ts *tester) createAppMeshAddOnCFNStack() error {
 		if st.Error != nil {
 			cancel()
 			ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("failed to wait for AppMesh Controller AddOn CFN stack creation (%v)", st.Error))
-			ts.cfg.Logger.Error("polling error", zap.Error(st.Error))
+			ts.cfg.Logger.Warn("polling error", zap.Error(st.Error))
 		}
 	}
 	cancel()
@@ -165,7 +165,7 @@ func (ts *tester) deleteAppMeshAddOnCFNStack() error {
 		if st.Error != nil {
 			cancel()
 			ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("failed to wait for AppMesh Controller AddOn CFN stack  deletion (%v)", st.Error))
-			ts.cfg.Logger.Error("polling error", zap.Error(st.Error))
+			ts.cfg.Logger.Warn("polling error", zap.Error(st.Error))
 		}
 	}
 	cancel()
