@@ -962,7 +962,7 @@ func (ts *tester) create2048Ingress() error {
 			ts.cfg.Logger.Warn("'kubectl logs alb' failed", zap.String("output", out), zap.Error(err))
 			continue
 		}
-		fmt.Printf("\n\n\"%s\" output:\n%s\n", css, out)
+		fmt.Printf("\n\n\n\"%s\" output:\n\n%s\n\n", css, out)
 
 		ts.cfg.Logger.Info("describing ALB service", zap.String("cmd", dss))
 		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
@@ -970,10 +970,9 @@ func (ts *tester) create2048Ingress() error {
 		cancel()
 		if err != nil {
 			ts.cfg.Logger.Warn("'kubectl describe svc' failed", zap.Error(err))
-		} else {
-			out := string(clusterInfoOut)
-			fmt.Printf("\n\n\"%s\" output:\n%s\n", dss, out)
 		}
+		out = string(clusterInfoOut)
+		fmt.Printf("\n\n\n\"%s\" output:\n\n%s\n\n", dss, out)
 
 		ts.cfg.Logger.Info("querying ALB 2048 Ingress for HTTP endpoint")
 		so, err := ts.cfg.K8SClient.KubernetesClientSet().
