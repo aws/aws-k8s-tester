@@ -3,6 +3,26 @@
 <hr>
 
 
+## [v0.8.4](https://github.com/aws/aws-k8s-tester/releases/tag/v0.8.4) (2020-03)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.8.3...v0.8.4).
+
+### `ec2`
+
+- Update [default SSM doc parameters](https://github.com/aws/aws-k8s-tester/commit/bafdba80410d4d5c48c292518cf09f4872bb9c6f).
+
+### `eks`
+
+- Update [default SSM doc parameters](https://github.com/aws/aws-k8s-tester/commit/bafdba80410d4d5c48c292518cf09f4872bb9c6f).
+
+### Go
+
+- Compile with [*Go 1.14.1*](https://golang.org/doc/devel/release.html#go1.14).
+
+
+<hr>
+
+
 ## [v0.8.3](https://github.com/aws/aws-k8s-tester/releases/tag/v0.8.3) (2020-03-19)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.8.2...v0.8.3).
