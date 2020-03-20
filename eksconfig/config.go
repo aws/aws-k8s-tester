@@ -1171,6 +1171,7 @@ func (cfg *Config) unsafeSSHCommands() (s string) {
 	}
 
 	buf := bytes.NewBuffer(nil)
+	buf.WriteByte('\n')
 
 	if cfg.IsEnabledAddOnNodeGroups() {
 		for name, ng := range cfg.AddOnNodeGroups.ASGs {
