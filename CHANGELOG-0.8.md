@@ -9,7 +9,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.8.6...v0.8.7
 
 ### `eks`
 
-- Implement [upstream `kubetest2` interface](https://github.com/aws/aws-k8s-tester/commit/).
+- Implement [upstream `kubetest2` interface](https://github.com/aws/aws-k8s-tester/commit/210f3b91f7c953be08b46dce6e9e7f8e1cfdde03).
   - https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Deployer
   - https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Options
 
