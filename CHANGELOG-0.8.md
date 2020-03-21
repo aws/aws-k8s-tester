@@ -3,6 +3,24 @@
 <hr>
 
 
+## [v0.8.7](https://github.com/aws/aws-k8s-tester/releases/tag/v0.8.7) (2020-03-21)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.8.6...v0.8.7).
+
+### `eks`
+
+- Implement [upstream `kubetest2` interface](https://github.com/aws/aws-k8s-tester/commit/).
+  - https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Deployer
+  - https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Options
+
+### Go
+
+- Compile with [*Go 1.14.1*](https://golang.org/doc/devel/release.html#go1.14).
+
+
+<hr>
+
+
 ## [v0.8.6](https://github.com/aws/aws-k8s-tester/releases/tag/v0.8.6) (2020-03-21)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.8.5...v0.8.6).

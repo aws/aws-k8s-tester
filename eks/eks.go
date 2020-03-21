@@ -1,4 +1,8 @@
 // Package eks implements EKS cluster operations.
+// It implements "k8s.io/test-infra/kubetest2/pkg/types.Deployer" and
+// "k8s.io/test-infra/kubetest2/pkg/types.Options".
+// ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Deployer
+// ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Options
 package eks
 
 import (
@@ -60,7 +64,7 @@ import (
 )
 
 // Tester implements "kubetest2" Deployer.
-// ref. https://github.com/kubernetes/test-infra/blob/master/kubetest2/pkg/types/types.go
+// ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc
 type Tester struct {
 	stopCreationCh     chan struct{}
 	stopCreationChOnce *sync.Once
@@ -101,7 +105,9 @@ type Tester struct {
 	appMeshTester       appmesh.Tester
 }
 
-// New creates a new EKS tester.
+// New returns a new EKS kubetest2 Deployer.
+// ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Deployer
+// ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Options
 func New(cfg *eksconfig.Config) (*Tester, error) {
 	fmt.Println("😎 🙏")
 	fmt.Println(version.Version())
@@ -503,7 +509,9 @@ func (ts *Tester) createSubTesters() (err error) {
 	return ts.cfg.Sync()
 }
 
-// Up should provision a new cluster for testing
+// Up should provision a new cluster for testing.
+// ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Deployer
+// ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Options
 func (ts *Tester) Up() (err error) {
 	fmt.Printf("\n*********************************\n")
 	fmt.Printf("Up (%q)\n", ts.cfg.ConfigPath)
@@ -1039,6 +1047,8 @@ func (ts *Tester) Up() (err error) {
 }
 
 // Down cancels the cluster creation and destroy the test cluster if any.
+// ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Deployer
+// ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Options
 func (ts *Tester) Down() error {
 	ts.downMu.Lock()
 	defer ts.downMu.Unlock()
@@ -1282,8 +1292,16 @@ func (ts *Tester) down() (err error) {
 	return ts.cfg.Sync()
 }
 
-// IsUp should return true if a test cluster is successfully provisioned
+// IsUp should return true if a test cluster is successfully provisioned.
+// ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Deployer
+// ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Options
 func (ts *Tester) IsUp() (up bool, err error) {
+	if ts.cfg == nil {
+		return false, nil
+	}
+	if ts.cfg.Status == nil {
+		return false, nil
+	}
 	if !ts.cfg.Status.Up {
 		return false, nil
 	}
@@ -1292,6 +1310,8 @@ func (ts *Tester) IsUp() (up bool, err error) {
 
 // DumpClusterLogs should export logs from the cluster. It may be called
 // multiple times. Options for this should come from New(...)
+// ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Deployer
+// ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Options
 func (ts *Tester) DumpClusterLogs() error {
 	if err := ts.ngTester.FetchLogs(); err != nil {
 		return err
@@ -1302,12 +1322,16 @@ func (ts *Tester) DumpClusterLogs() error {
 // DownloadClusterLogs dumps all logs to artifact directory.
 // Let default kubetest log dumper handle all artifact uploads.
 // See https://github.com/kubernetes/test-infra/pull/9811/files#r225776067.
+// ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Deployer
+// ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Options
 func (ts *Tester) DownloadClusterLogs(artifactDir, _ string) error {
 	return ts.mngTester.DownloadClusterLogs(artifactDir)
 }
 
 // Build should build kubernetes and package it in whatever format
-// the deployer consumes
+// the deployer consumes.
+// ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Deployer
+// ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Options
 func (ts *Tester) Build() error {
 	// no-op
 	return nil
@@ -1316,11 +1340,15 @@ func (ts *Tester) Build() error {
 // LoadConfig reloads configuration from disk to read the latest
 // cluster configuration and its states.
 // It's either reloaded from disk or returned from embedded EKS deployer.
+// ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Deployer
+// ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Options
 func (ts *Tester) LoadConfig() (eksconfig.Config, error) {
 	return *ts.cfg, nil
 }
 
 // KubernetesClientSet returns Kubernetes Go client.
+// ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Deployer
+// ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Options
 func (ts *Tester) KubernetesClientSet() *kubernetes.Clientset {
 	if ts.k8sClientSet == nil {
 		if err := ts.createK8sClientSet(); err != nil {
@@ -1332,11 +1360,74 @@ func (ts *Tester) KubernetesClientSet() *kubernetes.Clientset {
 }
 
 // Kubeconfig returns a path to a kubeconfig file for the cluster.
+// ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Deployer
+// ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Options
 func (ts *Tester) Kubeconfig() (string, error) {
+	if ts.cfg == nil {
+		return "", errors.New("empty tester object")
+	}
 	return ts.cfg.KubeConfigPath, nil
 }
 
 // Provider returns the kubernetes provider for legacy deployers.
+// ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Deployer
+// ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Options
 func (ts *Tester) Provider() string {
 	return "eks"
+}
+
+// HelpRequested true, help text will be shown to the user after instancing
+// the deployer and tester.
+// ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Options
+func (ts *Tester) HelpRequested() bool {
+	return false
+}
+
+// ShouldBuild true, kubetest2 will be calling deployer.Build.
+// ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Options
+func (ts *Tester) ShouldBuild() bool {
+	return false
+}
+
+// ShouldUp true, kubetest2 will be calling deployer.Up.
+// ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Options
+func (ts *Tester) ShouldUp() bool {
+	if ts.cfg == nil {
+		return false
+	}
+	return !ts.cfg.Status.Up
+}
+
+// ShouldDown true, kubetest2 will be calling deployer.Down.
+// ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Options
+func (ts *Tester) ShouldDown() bool {
+	if ts.cfg == nil {
+		return false
+	}
+	return ts.cfg.Status.Up
+}
+
+// ShouldTest true, kubetest2 will be calling tester.Test.
+// ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Options
+func (ts *Tester) ShouldTest() bool {
+	if ts.cfg == nil {
+		return false
+	}
+	return ts.cfg.Status.Up
+}
+
+// ArtifactsDir returns the path to the directory where artifacts should be written
+// (including metadata files like junit_runner.xml).
+// ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Options
+func (ts *Tester) ArtifactsDir() string {
+	if ts.cfg == nil {
+		return ""
+	}
+	if ts.cfg.IsEnabledAddOnManagedNodeGroups() {
+		return ts.cfg.AddOnManagedNodeGroups.LogsDir
+	}
+	if ts.cfg.IsEnabledAddOnNodeGroups() {
+		return ts.cfg.AddOnNodeGroups.LogsDir
+	}
+	return ""
 }
