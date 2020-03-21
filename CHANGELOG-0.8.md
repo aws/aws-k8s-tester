@@ -9,11 +9,11 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.8.5...v0.8.6
 
 ### `eks`
 
-- Improve [error handling in downloading binaries](https://github.com/aws/aws-k8s-tester/commit/).
+- Improve [error handling in downloading binaries](https://github.com/aws/aws-k8s-tester/commit/5522d9e36c172d644bd9c0227dfe639511fba8ee).
 
 ### `pkg/github`
 
-- Initial [commit](https://github.com/aws/aws-k8s-tester/commit/).
+- Initial [commit](https://github.com/aws/aws-k8s-tester/commit/5522d9e36c172d644bd9c0227dfe639511fba8ee).
 
 ### Go
 
