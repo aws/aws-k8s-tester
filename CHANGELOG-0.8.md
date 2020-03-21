@@ -3,7 +3,7 @@
 <hr>
 
 
-## [v0.8.6](https://github.com/aws/aws-k8s-tester/releases/tag/v0.8.6) (2020-03)
+## [v0.8.6](https://github.com/aws/aws-k8s-tester/releases/tag/v0.8.6) (2020-03-21)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.8.5...v0.8.6).
 
@@ -14,6 +14,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.8.5...v0.8.6
 ### `pkg/github`
 
 - Initial [commit](https://github.com/aws/aws-k8s-tester/commit/5522d9e36c172d644bd9c0227dfe639511fba8ee).
+
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.29.28`](https://github.com/aws/aws-sdk-go/releases/tag/v1.29.28) to [`v1.29.29`](https://github.com/aws/aws-sdk-go/releases/tag/v1.29.29).
 
 ### Go
 
