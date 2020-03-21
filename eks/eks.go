@@ -122,6 +122,7 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 		// file may be already executable while the process does not own the file/directory
 		// ref. https://github.com/aws/aws-k8s-tester/issues/66
 		lg.Warn("failed to ensure executable", zap.Error(err))
+		err = nil
 	}
 
 	// aws --version
@@ -156,6 +157,7 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 	cfg.KubectlPath = f.Name()
 	cfg.KubectlPath, _ = filepath.Abs(cfg.KubectlPath)
 	if err := httpDownloadFile(lg, cfg.KubectlDownloadURL, f); err != nil {
+		f.Close()
 		return nil, err
 	}
 	if err := f.Close(); err != nil {
@@ -165,6 +167,7 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 		// file may be already executable while the process does not own the file/directory
 		// ref. https://github.com/aws/aws-k8s-tester/issues/66
 		lg.Warn("failed to ensure executable", zap.Error(err))
+		err = nil
 	}
 	// kubectl version --client=true
 	ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
@@ -200,6 +203,7 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 		cfg.AWSIAMAuthenticatorPath = f.Name()
 		cfg.AWSIAMAuthenticatorPath, _ = filepath.Abs(cfg.AWSIAMAuthenticatorPath)
 		if err := httpDownloadFile(lg, cfg.AWSIAMAuthenticatorDownloadURL, f); err != nil {
+			f.Close()
 			return nil, err
 		}
 		if err := f.Close(); err != nil {
@@ -209,6 +213,7 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 			// file may be already executable while the process does not own the file/directory
 			// ref. https://github.com/aws/aws-k8s-tester/issues/66
 			lg.Warn("failed to ensure executable", zap.Error(err))
+			err = nil
 		}
 		// aws-iam-authenticator version
 		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)

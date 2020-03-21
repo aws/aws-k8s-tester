@@ -3,6 +3,26 @@
 <hr>
 
 
+## [v0.8.6](https://github.com/aws/aws-k8s-tester/releases/tag/v0.8.6) (2020-03)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.8.5...v0.8.6).
+
+### `eks`
+
+- Improve [error handling in downloading binaries](https://github.com/aws/aws-k8s-tester/commit/).
+
+### `pkg/github`
+
+- Initial [commit](https://github.com/aws/aws-k8s-tester/commit/).
+
+### Go
+
+- Compile with [*Go 1.14.1*](https://golang.org/doc/devel/release.html#go1.14).
+
+
+<hr>
+
+
 ## [v0.8.5](https://github.com/aws/aws-k8s-tester/releases/tag/v0.8.5) (2020-03-19)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.8.4...v0.8.5).
