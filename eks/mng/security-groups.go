@@ -61,6 +61,9 @@ func (ts *tester) openPorts(name string) error {
 	if !ok {
 		return fmt.Errorf("Managed Node Group %q not found", name)
 	}
+	if sv.RemoteAccessSecurityGroupID == "" {
+		return fmt.Errorf("MNG[%q] security group ID not found", name)
+	}
 
 	sgID := sv.RemoteAccessSecurityGroupID
 	ts.cfg.Logger.Info("opening ports", zap.String("name", name), zap.String("security-group-id", sgID))

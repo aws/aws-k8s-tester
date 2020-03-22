@@ -2,6 +2,7 @@
 package ng
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -21,6 +22,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientset "k8s.io/client-go/kubernetes"
+	"k8s.io/utils/exec"
 )
 
 // Config defines Node Group configuration.
@@ -121,6 +123,7 @@ func (ts *tester) waitForNodes() error {
 	ts.cfg.Logger.Info("checking nodes via client-go")
 	for _, mv := range ts.cfg.EKSConfig.AddOnNodeGroups.ASGs {
 		retryStart, threshold := time.Now(), 3*time.Minute
+		ready := false
 		for time.Now().Sub(retryStart) < waitDur {
 			select {
 			case <-ts.cfg.Stopc:
@@ -140,14 +143,14 @@ func (ts *tester) waitForNodes() error {
 			readies := int64(0)
 			for _, node := range items {
 				for _, cond := range node.Status.Conditions {
-					if cond.Type != v1.NodeReady {
-						continue
-					}
 					ts.cfg.Logger.Info("node info",
 						zap.String("name", node.GetName()),
 						zap.String("type", fmt.Sprintf("%s", cond.Type)),
 						zap.String("status", fmt.Sprintf("%s", cond.Status)),
 					)
+					if cond.Type != v1.NodeReady {
+						continue
+					}
 					if cond.Status == v1.ConditionTrue {
 						readies++
 					}
@@ -157,16 +160,31 @@ func (ts *tester) waitForNodes() error {
 				zap.Int64("current-ready-nodes", readies),
 				zap.Int64("desired-ready-nodes", mv.ASGDesiredCapacity),
 			)
-			if readies >= mv.ASGDesiredCapacity {
+			if readies >= mv.ASGDesiredCapacity { // TODO: check per node group
+				ready = true
 				break
 			}
 			took := time.Now().Sub(retryStart)
 			if took > threshold {
-				fmt.Printf("\n\nkubectl (%q, %q)\n\n", ts.cfg.EKSConfig.ConfigPath, ts.cfg.EKSConfig.KubectlCommand())
-				fmt.Println(ts.cfg.EKSConfig.KubectlCommands())
-				fmt.Printf("\n\nSSH (%q, %q)\n\n", ts.cfg.EKSConfig.ConfigPath, ts.cfg.EKSConfig.KubectlCommand())
-				fmt.Println(ts.cfg.EKSConfig.SSHCommands())
+				ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+				output, err := exec.New().CommandContext(
+					ctx,
+					ts.cfg.EKSConfig.KubectlPath,
+					"--kubeconfig="+ts.cfg.EKSConfig.KubeConfigPath,
+					"get",
+					"nodes",
+					"-o=wide",
+				).CombinedOutput()
+				cancel()
+				out := string(output)
+				if err != nil {
+					ts.cfg.Logger.Warn("'kubectl get nodes' failed", zap.Error(err))
+				}
+				fmt.Printf("\n\n\"kubectl get nodes\" output:\n%s\n\n", out)
 			}
+		}
+		if !ready {
+			return fmt.Errorf("NG %q not ready", mv.Name)
 		}
 	}
 	println()
