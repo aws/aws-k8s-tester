@@ -932,7 +932,7 @@ func (ts *tester) waitForNodes(name string) error {
 
 	var items []v1.Node
 	ts.cfg.Logger.Info("checking nodes via client-go")
-	retryStart, threshold := time.Now(), waitDur/10*7
+	retryStart := time.Now()
 	ready := false
 	for time.Now().Sub(retryStart) < waitDur {
 		select {
@@ -970,27 +970,26 @@ func (ts *tester) waitForNodes(name string) error {
 			zap.Int("current-ready-nodes", readies),
 			zap.Int("desired-ready-nodes", mv.ASGDesiredCapacity),
 		)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		output, err := exec.New().CommandContext(
+			ctx,
+			ts.cfg.EKSConfig.KubectlPath,
+			"--kubeconfig="+ts.cfg.EKSConfig.KubeConfigPath,
+			"get",
+			"nodes",
+			"-o=wide",
+		).CombinedOutput()
+		cancel()
+		out := string(output)
+		if err != nil {
+			ts.cfg.Logger.Warn("'kubectl get nodes' failed", zap.Error(err))
+		}
+		fmt.Printf("\n\n\"%s get nodes\":\n%s\n\n", ts.cfg.EKSConfig.KubectlCommand(), out)
+
 		if readies >= mv.ASGDesiredCapacity { // TODO: check per node group
 			ready = true
 			break
-		}
-		took := time.Now().Sub(retryStart)
-		if took > threshold {
-			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-			output, err := exec.New().CommandContext(
-				ctx,
-				ts.cfg.EKSConfig.KubectlPath,
-				"--kubeconfig="+ts.cfg.EKSConfig.KubeConfigPath,
-				"get",
-				"nodes",
-				"-o=wide",
-			).CombinedOutput()
-			cancel()
-			out := string(output)
-			if err != nil {
-				ts.cfg.Logger.Warn("'kubectl get nodes' failed", zap.Error(err))
-			}
-			fmt.Printf("\n\n\"kubectl get nodes\" output:\n%s\n\n", out)
 		}
 	}
 	if !ready {
