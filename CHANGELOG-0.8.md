@@ -3,14 +3,30 @@
 <hr>
 
 
+## [v0.8.9](https://github.com/aws/aws-k8s-tester/releases/tag/v0.8.9) (2020-03-22)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.8.8...v0.8.9).
+
+### `eks`
+
+- Run [`kubectl get nodes` while waiting for node groups](https://github.com/aws/aws-k8s-tester/commit/ed19ebf6b7abde641552273e35bd2f7a8a1d86fd).
+
+### Go
+
+- Compile with [*Go 1.14.1*](https://golang.org/doc/devel/release.html#go1.14).
+
+
+<hr>
+
+
 ## [v0.8.8](https://github.com/aws/aws-k8s-tester/releases/tag/v0.8.8) (2020-03-21)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.8.7...v0.8.8).
 
 ### `eks`
 
-- Fix [MNG security group creation](https://github.com/aws/aws-k8s-tester/commit/](https://github.com/aws/aws-k8s-tester/commit/210f3b91f7c953be08b46dce6e9e7f8e1cfdde03).).
-- Improve [MNG debugging](https://github.com/aws/aws-k8s-tester/commit/](https://github.com/aws/aws-k8s-tester/commit/210f3b91f7c953be08b46dce6e9e7f8e1cfdde03).).
+- Fix [MNG security group creation](https://github.com/aws/aws-k8s-tester/commit/210f3b91f7c953be08b46dce6e9e7f8e1cfdde03).
+- Improve [MNG debugging](https://github.com/aws/aws-k8s-tester/commit/210f3b91f7c953be08b46dce6e9e7f8e1cfdde03).
 
 ### Go
 
