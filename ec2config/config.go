@@ -451,6 +451,9 @@ func (cfg *Config) unsafeSSHCommands() (s string) {
 
 // SSHCommands returns the SSH commands.
 func (asg *ASG) SSHCommands(region string, keyPath string, userName string) (s string) {
+	if len(asg.Instances) == 0 {
+		return fmt.Sprintf("# empty ASG %q\n", asg.Name)
+	}
 	s = fmt.Sprintf(`
 # change SSH key permission
 chmod 400 %s
