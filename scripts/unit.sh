@@ -29,19 +29,8 @@ function govet_pass {
 	fi
 }
 
-function govet_shadow_pass {
-	fmtpkgs=$(for a in "${FMT[@]}"; do dirname "$a"; done | sort | uniq | grep -v "\\.")
-	fmtpkgs=($fmtpkgs)
-	vetRes=$(go tool vet -all -shadow "${fmtpkgs[@]}" 2>&1 | grep -v '/gw/' || true)
-	if [ -n "${vetRes}" ]; then
-		echo -e "govet -all -shadow checking failed:\\n${vetRes}"
-		exit 255
-	fi
-}
-
 gofmt_pass
 govet_pass
-govet_shadow_pass
 
 echo "Running unit tests..."
 go test -v ./eksconfig/...
