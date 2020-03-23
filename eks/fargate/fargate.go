@@ -894,7 +894,7 @@ func Poll(
 				zap.String("cluster-name", clusterName),
 				zap.String("fargate-name", profileName),
 				zap.String("fargate-status", currentStatus),
-				zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
+				zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			)
 			switch currentStatus {
 			case desiredStatus:

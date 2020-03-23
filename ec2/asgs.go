@@ -551,7 +551,7 @@ func (ts *Tester) createASGs() error {
 		ts.lg.Info("created ASG",
 			zap.String("name", cur.Name),
 			zap.String("cfn-stack-id", cur.ASGCFNStackID),
-			zap.String("request-started", humanize.RelTime(createStart, time.Now(), "ago", "from now")),
+			zap.String("started", humanize.RelTime(createStart, time.Now(), "ago", "from now")),
 		)
 		cur.CreateTook += time.Since(timeStart)
 		cur.CreateTookString = cur.CreateTook.String()

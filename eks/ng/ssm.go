@@ -187,7 +187,7 @@ func (ts *tester) createSSMDocument() error {
 			zap.String("asg-name", cur.Name),
 			zap.String("ssm-document-name", cur.SSMDocumentName),
 			zap.String("cfn-stack-id", cur.SSMDocumentCFNStackID),
-			zap.String("request-started", humanize.RelTime(createStart, time.Now(), "ago", "from now")),
+			zap.String("started", humanize.RelTime(createStart, time.Now(), "ago", "from now")),
 		)
 		ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName] = cur
 		ts.cfg.EKSConfig.Sync()

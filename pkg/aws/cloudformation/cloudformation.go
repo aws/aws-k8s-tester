@@ -140,7 +140,7 @@ func Poll(
 				zap.String("desired-status", desiredStackStatus),
 				zap.String("current-status", currentStatus),
 				zap.String("current-status-reason", currentStatusReason),
-				zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
+				zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			)
 
 			if desiredStackStatus != svccfn.ResourceStatusDeleteComplete &&

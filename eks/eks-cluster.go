@@ -323,7 +323,7 @@ func (ts *Tester) createEKS() error {
 		zap.String("cluster-api-server-endpoint", ts.cfg.Status.ClusterAPIServerEndpoint),
 		zap.Int("cluster-ca-bytes", len(ts.cfg.Status.ClusterCA)),
 		zap.String("config-path", ts.cfg.ConfigPath),
-		zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
+		zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 	)
 	return ts.cfg.Sync()
 }
@@ -633,7 +633,7 @@ func Poll(
 			lg.Info("poll",
 				zap.String("cluster-name", clusterName),
 				zap.String("cluster-status", currentStatus),
-				zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
+				zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			)
 			switch currentStatus {
 			case desiredClusterStatus:

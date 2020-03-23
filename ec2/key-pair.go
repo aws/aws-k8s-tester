@@ -49,7 +49,7 @@ func (ts *Tester) createKeyPair() (err error) {
 	ts.lg.Info(
 		"created EC2 key pair",
 		zap.String("key-name", ts.cfg.RemoteAccessKeyName),
-		zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
+		zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 	)
 
 	if err = os.MkdirAll(filepath.Dir(ts.cfg.RemoteAccessPrivateKeyPath), 0700); err != nil {

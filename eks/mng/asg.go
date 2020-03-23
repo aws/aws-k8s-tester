@@ -422,7 +422,7 @@ func (ts *tester) createASG() error {
 
 		ts.cfg.Logger.Info("created a managed node group",
 			zap.String("mng-name", cur.Name),
-			zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
+			zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 		)
 	}
 	return ts.cfg.EKSConfig.Sync()
@@ -639,7 +639,7 @@ func Poll(
 				zap.String("cluster-name", clusterName),
 				zap.String("mng-name", nodeGroupName),
 				zap.String("mng-status", currentStatus),
-				zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
+				zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			)
 			switch currentStatus {
 			case desiredNodeGroupStatus:

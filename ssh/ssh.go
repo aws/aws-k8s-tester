@@ -287,7 +287,7 @@ func (sh *ssh) Run(cmd string, opts ...OpOption) (out []byte, err error) {
 	if ret.verbose {
 		sh.lg.Info("ran command",
 			zap.String("cmd", cmd),
-			zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
+			zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 		)
 	}
 
@@ -398,14 +398,14 @@ func (sh *ssh) Send(localPath, remotePath string, opts ...OpOption) (out []byte,
 			sh.lg.Info("sent",
 				zap.String("size", humanize.Bytes(uint64(fi.Size()))),
 				zap.String("output", string(out)),
-				zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
+				zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			)
 		}
 	} else {
 		sh.lg.Warn("failed to send",
 			zap.String("output", string(out)),
 			zap.Error(ferr),
-			zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
+			zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 		)
 	}
 
@@ -489,14 +489,14 @@ func (sh *ssh) Download(remotePath, localPath string, opts ...OpOption) (out []b
 			sh.lg.Info("downloaded",
 				zap.String("size", humanize.Bytes(uint64(fi.Size()))),
 				zap.String("output", string(out)),
-				zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
+				zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			)
 		}
 	} else {
 		sh.lg.Warn("failed to download",
 			zap.String("output", string(out)),
 			zap.Error(ferr),
-			zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
+			zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 		)
 	}
 

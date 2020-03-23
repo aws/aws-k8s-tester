@@ -537,7 +537,7 @@ func (ts *Tester) Up() (err error) {
 				fmt.Println(ts.cfg.SSHCommands())
 
 				ts.lg.Info("Up succeeded",
-					zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
+					zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 				)
 
 				fmt.Printf("\n*********************************\n")
@@ -561,7 +561,7 @@ func (ts *Tester) Up() (err error) {
 			}
 
 			ts.lg.Warn("Up failed",
-				zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
+				zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 				zap.Error(err),
 			)
 
@@ -584,7 +584,7 @@ func (ts *Tester) Up() (err error) {
 		fmt.Printf("\n*********************************\n")
 		fmt.Printf("😱 ☹ 😡 (-_-) Up fail\n")
 		ts.lg.Warn("Up failed; reverting resource creation",
-			zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
+			zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			zap.Error(err),
 		)
 		waitDur := time.Duration(ts.cfg.OnFailureDeleteWaitSeconds) * time.Second
@@ -1076,7 +1076,7 @@ func (ts *Tester) down() (err error) {
 			fmt.Printf("\n\n😁 😁 :) Down success\n\n\n")
 
 			ts.lg.Info("successfully finished Down",
-				zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
+				zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			)
 
 		} else {
@@ -1086,7 +1086,7 @@ func (ts *Tester) down() (err error) {
 
 			ts.lg.Info("failed Down",
 				zap.Error(err),
-				zap.String("request-started", humanize.RelTime(now, time.Now(), "ago", "from now")),
+				zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			)
 		}
 	}()
