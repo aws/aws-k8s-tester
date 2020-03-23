@@ -38,65 +38,32 @@ ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text);
 echo ${ACCOUNT_ID}
 
 cd /tmp
-rm -f /tmp/${USER}-test-ec2-bottlerocket*
+rm -f /tmp/${USER}-test-ec2*
 AWS_K8S_TESTER_EC2_ON_FAILURE_DELETE=true \
-AWS_K8S_TESTER_EC2_NAME=${USER}-test-ec2-bottlerocket \
+AWS_K8S_TESTER_EC2_NAME=${USER}-test-ec2 \
 AWS_K8S_TESTER_EC2_REGION=us-west-2 \
 AWS_K8S_TESTER_EC2_S3_BUCKET_NAME=aws-k8s-tester-ec2-s3-bucket \
 AWS_K8S_TESTER_EC2_S3_BUCKET_CREATE=false \
 AWS_K8S_TESTER_EC2_REMOTE_ACCESS_KEY_CREATE=true \
 AWS_K8S_TESTER_EC2_REMOTE_ACCESS_KEY_NAME=aws-k8s-tester-ec2-key \
-AWS_K8S_TESTER_EC2_ASGS_FETCH_LOGS=false \
-AWS_K8S_TESTER_EC2_ASGS={\"${USER}-test-ec2-bottlerocket\":{\"name\":\"${USER}-test-ec2-bottlerocket\",\"remote-access-user-name\":\"ec2-user\",\"ami-type\":\"BOTTLEROCKET_x86_64\",\"image-id-ssm-parameter\":\"/aws/service/bottlerocket/aws-k8s-1.15/x86_64/latest/image_id\",\"ssm-document-name\":\"${USER}InstallBottleRocket\",\"ssm-document-create\":true,\"ssm-document-commands\":\"enable-admin-container\",\"ssm-document-execution-timeout-seconds\":3600,\"asg-min-size\":1,\"asg-max-size\":1,\"asg-desired-capacity\":1,\"instance-types\":[\"c5.xlarge\"],\"volume-size\":40}} \
+AWS_K8S_TESTER_EC2_ASGS_FETCH_LOGS=true \
+AWS_K8S_TESTER_EC2_ASGS={\"${USER}-test-ec2-al2-cpu\":{\"name\":\"${USER}-test-ec2-al2-cpu\",\"remote-access-user-name\":\"ec2-user\",\"ami-type\":\"AL2_x86_64\",\"image-id-ssm-parameter\":\"/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2\",\"asg-min-size\":1,\"asg-max-size\":1,\"asg-desired-capacity\":1,\"instance-types\":[\"c5.xlarge\"],\"volume-size\":40},\"${USER}-test-ec2-bottlerocket\":{\"name\":\"${USER}-test-ec2-bottlerocket\",\"remote-access-user-name\":\"ec2-user\",\"ami-type\":\"BOTTLEROCKET_x86_64\",\"image-id-ssm-parameter\":\"/aws/service/bottlerocket/aws-k8s-1.15/x86_64/latest/image_id\",\"ssm-document-name\":\"${USER}InstallBottleRocket\",\"ssm-document-create\":true,\"ssm-document-commands\":\"enable-admin-container\",\"ssm-document-execution-timeout-seconds\":3600,\"asg-min-size\":1,\"asg-max-size\":1,\"asg-desired-capacity\":1,\"instance-types\":[\"c5.xlarge\"],\"volume-size\":40}} \
 AWS_K8S_TESTER_EC2_ROLE_CREATE=false \
 AWS_K8S_TESTER_EC2_ROLE_ARN=arn:aws:iam::${ACCOUNT_ID}:role/aws-k8s-tester-ec2-role \
 AWS_K8S_TESTER_EC2_VPC_CREATE=false \
 AWS_K8S_TESTER_EC2_VPC_ID=vpc-00219f2d3063b6d9c \
-aws-k8s-tester ec2 create config -p /tmp/${USER}-test-ec2-bottlerocket.yaml && cat /tmp/${USER}-test-ec2-bottlerocket.yaml
+aws-k8s-tester ec2 create config -p /tmp/${USER}-test-ec2.yaml && cat /tmp/${USER}-test-ec2.yaml
 
 # Or just run
-aws-k8s-tester ec2 create config -p /tmp/${USER}-test-ec2-bottlerocket.yaml
+aws-k8s-tester ec2 create config -p /tmp/${USER}-test-ec2.yaml
 # to write initial configuration with default values
 
 
 cd /tmp
-aws-k8s-tester ec2 create cluster -p /tmp/${USER}-test-ec2-bottlerocket.yaml
+aws-k8s-tester ec2 create cluster -p /tmp/${USER}-test-ec2.yaml
 
 cd /tmp
-aws-k8s-tester ec2 delete cluster -p /tmp/${USER}-test-ec2-bottlerocket.yaml
-```
-
-```bash
-ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text);
-echo ${ACCOUNT_ID}
-
-cd /tmp
-rm -f /tmp/${USER}-test-ec2-al2-cpu*
-AWS_K8S_TESTER_EC2_ON_FAILURE_DELETE=true \
-AWS_K8S_TESTER_EC2_NAME=${USER}-test-ec2-al2-cpu \
-AWS_K8S_TESTER_EC2_REGION=us-west-2 \
-AWS_K8S_TESTER_EC2_S3_BUCKET_NAME=aws-k8s-tester-ec2-s3-bucket \
-AWS_K8S_TESTER_EC2_S3_BUCKET_CREATE=false \
-AWS_K8S_TESTER_EC2_REMOTE_ACCESS_KEY_CREATE=true \
-AWS_K8S_TESTER_EC2_REMOTE_ACCESS_KEY_NAME=aws-k8s-tester-ec2-key \
-AWS_K8S_TESTER_EC2_ASGS_FETCH_LOGS=false \
-AWS_K8S_TESTER_EC2_ASGS={\"${USER}-test-ec2-al2-cpu\":{\"name\":\"${USER}-test-ec2-al2-cpu\",\"remote-access-user-name\":\"ec2-user\",\"ami-type\":\"AL2_x86_64\",\"image-id-ssm-parameter\":\"/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2\",\"asg-min-size\":1,\"asg-max-size\":1,\"asg-desired-capacity\":1,\"instance-types\":[\"c5.xlarge\"],\"volume-size\":40}} \
-AWS_K8S_TESTER_EC2_ROLE_CREATE=false \
-AWS_K8S_TESTER_EC2_ROLE_ARN=arn:aws:iam::${ACCOUNT_ID}:role/aws-k8s-tester-ec2-role \
-AWS_K8S_TESTER_EC2_VPC_CREATE=false \
-AWS_K8S_TESTER_EC2_VPC_ID=vpc-00219f2d3063b6d9c \
-aws-k8s-tester ec2 create config -p /tmp/${USER}-test-ec2-al2-cpu.yaml && cat /tmp/${USER}-test-ec2-al2-cpu.yaml
-
-# Or just run
-aws-k8s-tester ec2 create config -p /tmp/${USER}-test-ec2-al2-cpu.yaml
-# to write initial configuration with default values
-
-
-cd /tmp
-aws-k8s-tester ec2 create cluster -p /tmp/${USER}-test-ec2-al2-cpu.yaml
-
-cd /tmp
-aws-k8s-tester ec2 delete cluster -p /tmp/${USER}-test-ec2-al2-cpu.yaml
+aws-k8s-tester ec2 delete cluster -p /tmp/${USER}-test-ec2.yaml
 ```
 
 
