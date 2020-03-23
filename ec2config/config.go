@@ -483,46 +483,26 @@ aws ssm --region %s start-session --target %s
 // ConvertInstance converts "aws ec2 describe-instances" to "config.Instance".
 func ConvertInstance(iv *ec2.Instance) (instance Instance) {
 	instance = Instance{
-		Architecture: aws.StringValue(iv.Architecture),
-		IAMInstanceProfile: IAMInstanceProfile{
-			ARN: aws.StringValue(iv.IamInstanceProfile.Arn),
-			ID:  aws.StringValue(iv.IamInstanceProfile.Id),
-		},
-		ImageID:      aws.StringValue(iv.ImageId),
-		InstanceID:   aws.StringValue(iv.InstanceId),
-		InstanceType: aws.StringValue(iv.InstanceType),
-		KeyName:      aws.StringValue(iv.KeyName),
-		Placement: Placement{
-			AvailabilityZone: aws.StringValue(iv.Placement.AvailabilityZone),
-			Tenancy:          aws.StringValue(iv.Placement.Tenancy),
-		},
-		PrivateDNSName: aws.StringValue(iv.PrivateDnsName),
-		PrivateIP:      aws.StringValue(iv.PrivateIpAddress),
-		PublicDNSName:  aws.StringValue(iv.PublicDnsName),
-		PublicIP:       aws.StringValue(iv.PublicIpAddress),
-		State: State{
-			Code: aws.Int64Value(iv.State.Code),
-			Name: aws.StringValue(iv.State.Name),
-		},
-		StateReason: StateReason{
-			Code:    aws.StringValue(iv.StateReason.Code),
-			Message: aws.StringValue(iv.StateReason.Message),
-		},
+		Architecture:          aws.StringValue(iv.Architecture),
+		ImageID:               aws.StringValue(iv.ImageId),
+		InstanceID:            aws.StringValue(iv.InstanceId),
+		InstanceType:          aws.StringValue(iv.InstanceType),
+		KeyName:               aws.StringValue(iv.KeyName),
+		PrivateDNSName:        aws.StringValue(iv.PrivateDnsName),
+		PrivateIP:             aws.StringValue(iv.PrivateIpAddress),
+		PublicDNSName:         aws.StringValue(iv.PublicDnsName),
+		PublicIP:              aws.StringValue(iv.PublicIpAddress),
 		StateTransitionReason: aws.StringValue(iv.StateTransitionReason),
 		SubnetID:              aws.StringValue(iv.SubnetId),
 		VPCID:                 aws.StringValue(iv.VpcId),
-		CPUOptions: CPUOptions{
-			CoreCount:      aws.Int64Value(iv.CpuOptions.CoreCount),
-			ThreadsPerCore: aws.Int64Value(iv.CpuOptions.ThreadsPerCore),
-		},
-		BlockDeviceMappings: make([]BlockDeviceMapping, len(iv.BlockDeviceMappings)),
-		EBSOptimized:        aws.BoolValue(iv.EbsOptimized),
-		RootDeviceName:      aws.StringValue(iv.RootDeviceName),
-		RootDeviceType:      aws.StringValue(iv.RootDeviceType),
-		SecurityGroups:      make([]SecurityGroup, len(iv.SecurityGroups)),
-		LaunchTime:          aws.TimeValue(iv.LaunchTime),
-		Hypervisor:          aws.StringValue(iv.Hypervisor),
-		VirtualizationType:  aws.StringValue(iv.VirtualizationType),
+		BlockDeviceMappings:   make([]BlockDeviceMapping, len(iv.BlockDeviceMappings)),
+		EBSOptimized:          aws.BoolValue(iv.EbsOptimized),
+		RootDeviceName:        aws.StringValue(iv.RootDeviceName),
+		RootDeviceType:        aws.StringValue(iv.RootDeviceType),
+		SecurityGroups:        make([]SecurityGroup, len(iv.SecurityGroups)),
+		LaunchTime:            aws.TimeValue(iv.LaunchTime),
+		Hypervisor:            aws.StringValue(iv.Hypervisor),
+		VirtualizationType:    aws.StringValue(iv.VirtualizationType),
 	}
 	for j := range iv.BlockDeviceMappings {
 		instance.BlockDeviceMappings[j] = BlockDeviceMapping{
@@ -538,6 +518,36 @@ func ConvertInstance(iv *ec2.Instance) (instance Instance) {
 		instance.SecurityGroups[j] = SecurityGroup{
 			GroupName: aws.StringValue(iv.SecurityGroups[j].GroupName),
 			GroupID:   aws.StringValue(iv.SecurityGroups[j].GroupId),
+		}
+	}
+	if iv.IamInstanceProfile != nil {
+		instance.IAMInstanceProfile = IAMInstanceProfile{
+			ARN: aws.StringValue(iv.IamInstanceProfile.Arn),
+			ID:  aws.StringValue(iv.IamInstanceProfile.Id),
+		}
+	}
+	if iv.Placement != nil {
+		instance.Placement = Placement{
+			AvailabilityZone: aws.StringValue(iv.Placement.AvailabilityZone),
+			Tenancy:          aws.StringValue(iv.Placement.Tenancy),
+		}
+	}
+	if iv.State != nil {
+		instance.State = State{
+			Code: aws.Int64Value(iv.State.Code),
+			Name: aws.StringValue(iv.State.Name),
+		}
+	}
+	if iv.StateReason != nil {
+		instance.StateReason = StateReason{
+			Code:    aws.StringValue(iv.StateReason.Code),
+			Message: aws.StringValue(iv.StateReason.Message),
+		}
+	}
+	if iv.CpuOptions != nil {
+		instance.CPUOptions = CPUOptions{
+			CoreCount:      aws.Int64Value(iv.CpuOptions.CoreCount),
+			ThreadsPerCore: aws.Int64Value(iv.CpuOptions.ThreadsPerCore),
 		}
 	}
 	return instance
