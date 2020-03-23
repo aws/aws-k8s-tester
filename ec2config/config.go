@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"sigs.k8s.io/yaml"
 )
@@ -266,25 +267,48 @@ type ASG struct {
 
 // Instance represents an EC2 instance.
 type Instance struct {
-	ImageID              string               `json:"image-id"`
-	InstanceID           string               `json:"instance-id"`
-	InstanceType         string               `json:"instance-type"`
-	KeyName              string               `json:"key-name"`
-	Placement            Placement            `json:"placement"`
-	PrivateDNSName       string               `json:"private-dns-name"`
-	PrivateIP            string               `json:"private-ip"`
-	PublicDNSName        string               `json:"public-dns-name"`
-	PublicIP             string               `json:"public-ip"`
-	State                State                `json:"state"`
-	SubnetID             string               `json:"subnet-id"`
-	VPCID                string               `json:"vpc-id"`
-	BlockDeviceMappings  []BlockDeviceMapping `json:"block-device-mappings"`
-	EBSOptimized         bool                 `json:"ebs-optimized"`
-	RootDeviceName       string               `json:"root-device-name"`
-	RootDeviceType       string               `json:"root-device-type"`
-	SecurityGroups       []SecurityGroup      `json:"security-groups"`
-	LaunchTime           time.Time            `json:"launch-time"`
-	RemoteAccessUserName string               `json:"remote-access-user-name"`
+	Architecture          string               `json:"architecture"`
+	ImageID               string               `json:"image-id"`
+	IAMInstanceProfile    IAMInstanceProfile   `json:"iam-instance-profile"`
+	InstanceID            string               `json:"instance-id"`
+	InstanceType          string               `json:"instance-type"`
+	KeyName               string               `json:"key-name"`
+	Placement             Placement            `json:"placement"`
+	PrivateDNSName        string               `json:"private-dns-name"`
+	PrivateIP             string               `json:"private-ip"`
+	PublicDNSName         string               `json:"public-dns-name"`
+	PublicIP              string               `json:"public-ip"`
+	State                 State                `json:"state"`
+	StateReason           StateReason          `json:"state-reason"`
+	StateTransitionReason string               `json:"state-transition-reason"`
+	SubnetID              string               `json:"subnet-id"`
+	VPCID                 string               `json:"vpc-id"`
+	CPUOptions            CPUOptions           `json:"cpu-options"`
+	BlockDeviceMappings   []BlockDeviceMapping `json:"block-device-mappings"`
+	EBSOptimized          bool                 `json:"ebs-optimized"`
+	RootDeviceName        string               `json:"root-device-name"`
+	RootDeviceType        string               `json:"root-device-type"`
+	SecurityGroups        []SecurityGroup      `json:"security-groups"`
+	LaunchTime            time.Time            `json:"launch-time"`
+	RemoteAccessUserName  string               `json:"remote-access-user-name"`
+	Hypervisor            string               `json:"hypervisor"`
+	VirtualizationType    string               `json:"virtualization-type"`
+}
+
+// IAMInstanceProfile is the IAM instance profile.
+type IAMInstanceProfile struct {
+	// ARN is the Amazon Resource Name (ARN) of the instance profile.
+	ARN string `json:"arn"`
+	// ID is the ID of the instance profile.
+	ID string `json:"id"`
+}
+
+// CPUOptions represents the CPU of an EC2 instance.
+type CPUOptions struct {
+	// CoreCount is the number of CPU cores for the instance.
+	CoreCount int64 `json:"core-count"`
+	// ThreadsPerCore is the number of threads per CPU core.
+	ThreadsPerCore int64 `json:"threads-per-core"`
 }
 
 // Placement defines EC2 placement.
@@ -297,6 +321,12 @@ type Placement struct {
 type State struct {
 	Code int64  `json:"code"`
 	Name string `json:"name"`
+}
+
+// StateReason represents the EC2 state reason.
+type StateReason struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
 }
 
 // BlockDeviceMapping defines a block device mapping.
@@ -453,49 +483,61 @@ aws ssm --region %s start-session --target %s
 // ConvertInstance converts "aws ec2 describe-instances" to "config.Instance".
 func ConvertInstance(iv *ec2.Instance) (instance Instance) {
 	instance = Instance{
-		ImageID:      *iv.ImageId,
-		InstanceID:   *iv.InstanceId,
-		InstanceType: *iv.InstanceType,
-		KeyName:      *iv.KeyName,
+		Architecture: aws.StringValue(iv.Architecture),
+		IAMInstanceProfile: IAMInstanceProfile{
+			ARN: aws.StringValue(iv.IamInstanceProfile.Arn),
+			ID:  aws.StringValue(iv.IamInstanceProfile.Id),
+		},
+		ImageID:      aws.StringValue(iv.ImageId),
+		InstanceID:   aws.StringValue(iv.InstanceId),
+		InstanceType: aws.StringValue(iv.InstanceType),
+		KeyName:      aws.StringValue(iv.KeyName),
 		Placement: Placement{
-			AvailabilityZone: *iv.Placement.AvailabilityZone,
-			Tenancy:          *iv.Placement.Tenancy,
+			AvailabilityZone: aws.StringValue(iv.Placement.AvailabilityZone),
+			Tenancy:          aws.StringValue(iv.Placement.Tenancy),
 		},
-		PrivateDNSName: *iv.PrivateDnsName,
-		PrivateIP:      *iv.PrivateIpAddress,
+		PrivateDNSName: aws.StringValue(iv.PrivateDnsName),
+		PrivateIP:      aws.StringValue(iv.PrivateIpAddress),
+		PublicDNSName:  aws.StringValue(iv.PublicDnsName),
+		PublicIP:       aws.StringValue(iv.PublicIpAddress),
 		State: State{
-			Code: *iv.State.Code,
-			Name: *iv.State.Name,
+			Code: aws.Int64Value(iv.State.Code),
+			Name: aws.StringValue(iv.State.Name),
 		},
-		SubnetID:            *iv.SubnetId,
-		VPCID:               *iv.VpcId,
+		StateReason: StateReason{
+			Code:    aws.StringValue(iv.StateReason.Code),
+			Message: aws.StringValue(iv.StateReason.Message),
+		},
+		StateTransitionReason: aws.StringValue(iv.StateTransitionReason),
+		SubnetID:              aws.StringValue(iv.SubnetId),
+		VPCID:                 aws.StringValue(iv.VpcId),
+		CPUOptions: CPUOptions{
+			CoreCount:      aws.Int64Value(iv.CpuOptions.CoreCount),
+			ThreadsPerCore: aws.Int64Value(iv.CpuOptions.ThreadsPerCore),
+		},
 		BlockDeviceMappings: make([]BlockDeviceMapping, len(iv.BlockDeviceMappings)),
-		EBSOptimized:        *iv.EbsOptimized,
-		RootDeviceName:      *iv.RootDeviceName,
-		RootDeviceType:      *iv.RootDeviceType,
+		EBSOptimized:        aws.BoolValue(iv.EbsOptimized),
+		RootDeviceName:      aws.StringValue(iv.RootDeviceName),
+		RootDeviceType:      aws.StringValue(iv.RootDeviceType),
 		SecurityGroups:      make([]SecurityGroup, len(iv.SecurityGroups)),
-		LaunchTime:          *iv.LaunchTime,
-	}
-	if iv.PublicDnsName != nil {
-		instance.PublicDNSName = *iv.PublicDnsName
-	}
-	if iv.PublicIpAddress != nil {
-		instance.PublicIP = *iv.PublicIpAddress
+		LaunchTime:          aws.TimeValue(iv.LaunchTime),
+		Hypervisor:          aws.StringValue(iv.Hypervisor),
+		VirtualizationType:  aws.StringValue(iv.VirtualizationType),
 	}
 	for j := range iv.BlockDeviceMappings {
 		instance.BlockDeviceMappings[j] = BlockDeviceMapping{
-			DeviceName: *iv.BlockDeviceMappings[j].DeviceName,
+			DeviceName: aws.StringValue(iv.BlockDeviceMappings[j].DeviceName),
 			EBS: EBS{
-				DeleteOnTermination: *iv.BlockDeviceMappings[j].Ebs.DeleteOnTermination,
-				Status:              *iv.BlockDeviceMappings[j].Ebs.Status,
-				VolumeID:            *iv.BlockDeviceMappings[j].Ebs.VolumeId,
+				DeleteOnTermination: aws.BoolValue(iv.BlockDeviceMappings[j].Ebs.DeleteOnTermination),
+				Status:              aws.StringValue(iv.BlockDeviceMappings[j].Ebs.Status),
+				VolumeID:            aws.StringValue(iv.BlockDeviceMappings[j].Ebs.VolumeId),
 			},
 		}
 	}
 	for j := range iv.SecurityGroups {
 		instance.SecurityGroups[j] = SecurityGroup{
-			GroupName: *iv.SecurityGroups[j].GroupName,
-			GroupID:   *iv.SecurityGroups[j].GroupId,
+			GroupName: aws.StringValue(iv.SecurityGroups[j].GroupName),
+			GroupID:   aws.StringValue(iv.SecurityGroups[j].GroupId),
 		}
 	}
 	return instance
