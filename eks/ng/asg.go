@@ -3,6 +3,7 @@ package ng
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -16,8 +17,10 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/autoscaling"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
-	"github.com/dustin/go-humanize"
 	"go.uber.org/zap"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/exec"
 )
 
 /*
@@ -535,7 +538,11 @@ func (ts *tester) createASGs() error {
 		asg.ASGCFNStackID = aws.StringValue(stackOutput.StackId)
 		ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName] = asg
 		ts.cfg.EKSConfig.Sync()
+	}
 
+	// wait for ASG EC2 instances + Kubernetes nodes ready
+	for ngName, cur := range ts.cfg.EKSConfig.AddOnNodeGroups.ASGs {
+		now := time.Now()
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
 		ch := awscfn.Poll(
 			ctx,
@@ -543,7 +550,7 @@ func (ts *tester) createASGs() error {
 			ts.cfg.Sig,
 			ts.cfg.Logger,
 			ts.cfg.CFNAPI,
-			asg.ASGCFNStackID,
+			cur.ASGCFNStackID,
 			cloudformation.ResourceStatusCreateComplete,
 			2*time.Minute,
 			30*time.Second,
@@ -557,9 +564,9 @@ func (ts *tester) createASGs() error {
 		}
 		cancel()
 		if st.Error != nil {
-			asg.CreateTook += time.Since(timeStart)
-			asg.CreateTookString = asg.CreateTook.String()
-			ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName] = asg
+			cur.CreateTook += time.Since(now)
+			cur.CreateTookString = cur.CreateTook.String()
+			ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[ngName] = cur
 			ts.cfg.EKSConfig.Sync()
 			return st.Error
 		}
@@ -571,68 +578,31 @@ func (ts *tester) createASGs() error {
 			case "InstanceProfileARN":
 				ts.cfg.Logger.Info("found InstanceProfileARN value from CFN", zap.String("value", aws.StringValue(o.OutputValue)))
 			default:
-				asg.CreateTook += time.Since(timeStart)
-				asg.CreateTookString = asg.CreateTook.String()
-				ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName] = asg
+				cur.CreateTook += time.Since(now)
+				cur.CreateTookString = cur.CreateTook.String()
+				ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[ngName] = cur
+				ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("unexpected key from ASG stack (%v)", k))
 				ts.cfg.EKSConfig.Sync()
-				return fmt.Errorf("unexpected OutputKey %q from %q", k, asg.ASGCFNStackID)
+				return fmt.Errorf("unexpected OutputKey %q from %q", k, cur.ASGCFNStackID)
 			}
 		}
 
 		ts.cfg.Logger.Info("created ASG",
-			zap.String("name", asg.Name),
-			zap.String("cfn-stack-id", asg.ASGCFNStackID),
-			zap.String("request-started", humanize.RelTime(timeStart, time.Now(), "ago", "from now")),
+			zap.String("name", cur.Name),
+			zap.String("cfn-stack-id", cur.ASGCFNStackID),
 		)
-		asg.CreateTook += time.Since(timeStart)
-		asg.CreateTookString = asg.CreateTook.String()
-		ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName] = asg
+		cur.CreateTook += time.Since(now)
+		cur.CreateTookString = cur.CreateTook.String()
+		ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[ngName] = cur
 		ts.cfg.EKSConfig.Sync()
 
-		var aout *autoscaling.DescribeAutoScalingGroupsOutput
-		aout, err = ts.cfg.ASGAPI.DescribeAutoScalingGroups(&autoscaling.DescribeAutoScalingGroupsInput{
-			AutoScalingGroupNames: aws.StringSlice([]string{asgName}),
-		})
-		if err != nil {
-			return fmt.Errorf("ASG %q not found (%v)", asgName, err)
-		}
-		if len(aout.AutoScalingGroups) != 1 {
-			return fmt.Errorf("%q expected only 1 ASG, got %+v", asgName, aout.AutoScalingGroups)
-		}
-		av := aout.AutoScalingGroups[0]
-		instanceIDs := make([]string, 0, len(av.Instances))
-		for _, iv := range av.Instances {
-			instanceIDs = append(instanceIDs, aws.StringValue(iv.InstanceId))
-		}
-		ts.cfg.Logger.Info(
-			"describing EC2 instances in ASG",
-			zap.String("asg-name", asgName),
-			zap.Strings("instance-ids", instanceIDs),
-		)
-		ec2Instances, err := awsapiec2.PollUntilRunning(
-			10*time.Minute,
-			ts.cfg.Logger,
-			ts.cfg.EC2API,
-			instanceIDs...,
-		)
-		if err != nil {
-			asg.CreateTook += time.Since(timeStart)
-			asg.CreateTookString = asg.CreateTook.String()
-			ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName] = asg
-			ts.cfg.EKSConfig.Sync()
+		if err := ts.waitForNodes(cur.Name); err != nil {
 			return err
 		}
-		asg.Instances = make(map[string]ec2config.Instance)
-		for id, vv := range ec2Instances {
-			ivv := ec2config.ConvertInstance(vv)
-			ivv.RemoteAccessUserName = asg.RemoteAccessUserName
-			asg.Instances[id] = ivv
-		}
-		asg.CreateTook += time.Since(timeStart)
-		asg.CreateTookString = asg.CreateTook.String()
-		ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName] = asg
-		ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("%q/%s", asgName, cloudformation.ResourceStatusCreateComplete))
-		ts.cfg.EKSConfig.Sync()
+		ts.cfg.Logger.Info("created a Node Group",
+			zap.String("mng-name", cur.Name),
+			zap.String("took", cur.CreateTookString),
+		)
 	}
 
 	return ts.cfg.EKSConfig.Sync()
@@ -645,19 +615,19 @@ func (ts *tester) deleteASGs() error {
 	}
 
 	ts.cfg.Logger.Info("deleting ASGs using CFN", zap.String("name", ts.cfg.EKSConfig.Name))
-	for asgName, asg := range ts.cfg.EKSConfig.AddOnNodeGroups.ASGs {
-		if asg.ASGCFNStackID == "" {
-			return fmt.Errorf("%q ASG stack ID is empty", asg.Name)
+	for ngName, cur := range ts.cfg.EKSConfig.AddOnNodeGroups.ASGs {
+		if cur.ASGCFNStackID == "" {
+			return fmt.Errorf("%q ASG stack ID is empty", cur.Name)
 		}
 		timeStart := time.Now()
-		ts.cfg.Logger.Info("deleting ASG", zap.String("name", asgName), zap.String("cfn-stack-id", asg.ASGCFNStackID))
+		ts.cfg.Logger.Info("deleting ASG", zap.String("name", ngName), zap.String("cfn-stack-id", cur.ASGCFNStackID))
 		_, err := ts.cfg.CFNAPI.DeleteStack(&cloudformation.DeleteStackInput{
-			StackName: aws.String(asg.ASGCFNStackID),
+			StackName: aws.String(cur.ASGCFNStackID),
 		})
 		if err != nil {
-			asg.DeleteTook += time.Since(timeStart)
-			asg.DeleteTookString = asg.DeleteTook.String()
-			ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName] = asg
+			cur.DeleteTook += time.Since(timeStart)
+			cur.DeleteTookString = cur.DeleteTook.String()
+			ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[ngName] = cur
 			ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("failed to delete ASG (%v)", err))
 			ts.cfg.EKSConfig.Sync()
 			return err
@@ -670,7 +640,7 @@ func (ts *tester) deleteASGs() error {
 			make(chan os.Signal), // do not exit on stop
 			ts.cfg.Logger,
 			ts.cfg.CFNAPI,
-			asg.ASGCFNStackID,
+			cur.ASGCFNStackID,
 			cloudformation.ResourceStatusDeleteComplete,
 			2*time.Minute,
 			20*time.Second,
@@ -685,18 +655,173 @@ func (ts *tester) deleteASGs() error {
 		}
 		cancel()
 		if st.Error != nil {
-			asg.DeleteTook += time.Since(timeStart)
-			asg.DeleteTookString = asg.DeleteTook.String()
-			ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName] = asg
+			cur.DeleteTook += time.Since(timeStart)
+			cur.DeleteTookString = cur.DeleteTook.String()
+			ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[ngName] = cur
 			ts.cfg.EKSConfig.Sync()
 			return st.Error
 		}
-		ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("%q/%s", asgName, ec2config.StatusDELETEDORNOTEXIST))
-		asg.DeleteTook += time.Since(timeStart)
-		asg.DeleteTookString = asg.DeleteTook.String()
-		ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName] = asg
+		ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("%q/%s", ngName, ec2config.StatusDELETEDORNOTEXIST))
+		cur.DeleteTook += time.Since(timeStart)
+		cur.DeleteTookString = cur.DeleteTook.String()
+		ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[ngName] = cur
 		ts.cfg.EKSConfig.Sync()
 	}
 
+	return ts.cfg.EKSConfig.Sync()
+}
+
+func (ts *tester) waitForNodes(ngName string) error {
+	cur, ok := ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[ngName]
+	if !ok {
+		return fmt.Errorf("Node Group %q not found", ngName)
+	}
+	waitDur := 2*time.Minute + time.Duration(15*cur.ASGDesiredCapacity)*time.Second
+
+	aout, err := ts.cfg.ASGAPI.DescribeAutoScalingGroups(&autoscaling.DescribeAutoScalingGroupsInput{
+		AutoScalingGroupNames: aws.StringSlice([]string{cur.Name}),
+	})
+	if err != nil {
+		return fmt.Errorf("ASG %q not found (%v)", cur.Name, err)
+	}
+	if len(aout.AutoScalingGroups) != 1 {
+		return fmt.Errorf("%q expected only 1 ASG, got %+v", cur.Name, aout.AutoScalingGroups)
+	}
+
+	av := aout.AutoScalingGroups[0]
+	instanceIDs := make([]string, 0, len(av.Instances))
+	for _, iv := range av.Instances {
+		instanceIDs = append(instanceIDs, aws.StringValue(iv.InstanceId))
+	}
+
+	ts.cfg.Logger.Info(
+		"describing EC2 instances in ASG",
+		zap.String("asg-name", cur.Name),
+		zap.Strings("instance-ids", instanceIDs),
+	)
+	ec2Instances, err := awsapiec2.PollUntilRunning(
+		waitDur,
+		ts.cfg.Logger,
+		ts.cfg.EC2API,
+		instanceIDs...,
+	)
+	if err != nil {
+		return err
+	}
+	cur, ok = ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[ngName]
+	if !ok {
+		return fmt.Errorf("Node Group %q not found", ngName)
+	}
+	cur.Instances = make(map[string]ec2config.Instance)
+	for id, vv := range ec2Instances {
+		ivv := ec2config.ConvertInstance(vv)
+		ivv.RemoteAccessUserName = cur.RemoteAccessUserName
+		cur.Instances[id] = ivv
+	}
+	ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[ngName] = cur
+	ts.cfg.EKSConfig.Sync()
+
+	cur, ok = ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[ngName]
+	if !ok {
+		return fmt.Errorf("Node Group %q not found", ngName)
+	}
+	// ec2 private DNS == kubernetes node hostname
+	ec2PrivateDNS := make(map[string]struct{})
+	for _, v := range cur.Instances {
+		ec2PrivateDNS[v.PrivateDNSName] = struct{}{}
+	}
+
+	ts.cfg.Logger.Info("checking nodes readiness")
+	var items []v1.Node
+	retryStart := time.Now()
+	ready := false
+	for time.Now().Sub(retryStart) < waitDur {
+		select {
+		case <-ts.cfg.Stopc:
+			return errors.New("checking node aborted")
+		case <-ts.cfg.Sig:
+			return errors.New("checking node aborted")
+		case <-time.After(5 * time.Second):
+		}
+
+		nodes, err := ts.cfg.K8SClient.KubernetesClientSet().CoreV1().Nodes().List(metav1.ListOptions{})
+		if err != nil {
+			ts.cfg.Logger.Warn("get nodes failed", zap.Error(err))
+			continue
+		}
+		items = nodes.Items
+
+		readies := 0
+		for _, node := range items {
+			nodeName := node.GetName()
+			ts.cfg.Logger.Info("checking node host name with EC2 Private DNS", zap.String("name", nodeName))
+			hostName := ""
+			for _, av := range node.Status.Addresses {
+				if av.Type == v1.NodeHostName {
+					hostName = av.Address
+					break
+				}
+			}
+			if hostName == "" {
+				return fmt.Errorf("%q not found for node %q", v1.NodeHostName, nodeName)
+			}
+			if _, ok := ec2PrivateDNS[hostName]; !ok {
+				ts.cfg.Logger.Warn("node may not belong to this ASG", zap.String("host-name", hostName))
+				continue
+			}
+			ts.cfg.Logger.Info("checked node host name with EC2 Private DNS", zap.String("name", nodeName), zap.String("host-name", hostName))
+			ts.cfg.Logger.Info("checking node readiness", zap.String("name", nodeName))
+			for _, cond := range node.Status.Conditions {
+				if cond.Status != v1.ConditionTrue {
+					continue
+				}
+				if cond.Type != v1.NodeReady {
+					continue
+				}
+				ts.cfg.Logger.Info("checked node readiness",
+					zap.String("name", nodeName),
+					zap.String("type", fmt.Sprintf("%s", cond.Type)),
+					zap.String("status", fmt.Sprintf("%s", cond.Status)),
+				)
+				readies++
+				break
+			}
+		}
+		ts.cfg.Logger.Info("nodes",
+			zap.Int("current-ready-nodes", readies),
+			zap.Int64("desired-ready-nodes", cur.ASGDesiredCapacity),
+		)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		output, err := exec.New().CommandContext(
+			ctx,
+			ts.cfg.EKSConfig.KubectlPath,
+			"--kubeconfig="+ts.cfg.EKSConfig.KubeConfigPath,
+			"get",
+			"nodes",
+			"-o=wide",
+		).CombinedOutput()
+		cancel()
+		out := string(output)
+		if err != nil {
+			ts.cfg.Logger.Warn("'kubectl get nodes' failed", zap.Error(err))
+		}
+		fmt.Printf("\n\n\"%s get nodes\":\n%s\n\n", ts.cfg.EKSConfig.KubectlCommand(), out)
+
+		if int64(readies) >= cur.ASGDesiredCapacity { // TODO: check per node group
+			ready = true
+			break
+		}
+	}
+	if !ready {
+		return fmt.Errorf("MNG %q not ready", ngName)
+	}
+
+	println()
+	fmt.Printf("%q nodes are ready!\n", ngName)
+	for _, v := range items {
+		fmt.Printf("node %q address: %+v\n", v.GetName(), v.Status.Addresses)
+	}
+	println()
 	return ts.cfg.EKSConfig.Sync()
 }

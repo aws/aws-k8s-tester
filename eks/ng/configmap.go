@@ -16,10 +16,12 @@ import (
 
 func (ts *tester) createConfigMap() error {
 	ts.cfg.Logger.Info("writing ConfigMap", zap.String("instance-role-arn", ts.cfg.EKSConfig.AddOnNodeGroups.RoleARN))
-	p, err := writeConfigMapAuth(ts.cfg.EKSConfig.AddOnNodeGroups.RoleARN)
+	body, p, err := writeConfigMapAuth(ts.cfg.EKSConfig.AddOnNodeGroups.RoleARN)
 	if err != nil {
 		return err
 	}
+	ts.cfg.Logger.Info("applying ConfigMap")
+	fmt.Printf("\naws-auth ConfigMap:\n%s\n\n", body)
 
 	var output []byte
 	// might take several minutes for DNS to propagate
@@ -85,14 +87,15 @@ type configMapAuth struct {
 	NGInstanceRoleARN string
 }
 
-func writeConfigMapAuth(arn string) (p string, err error) {
-	kc := configMapAuth{NGInstanceRoleARN: arn}
+func writeConfigMapAuth(instanceRoleARN string) (body string, fpath string, err error) {
+	kc := configMapAuth{NGInstanceRoleARN: instanceRoleARN}
 	tpl := template.Must(template.New("configMapAuthTempl").Parse(configMapAuthTempl))
 	buf := bytes.NewBuffer(nil)
 	if err = tpl.Execute(buf, kc); err != nil {
-		return "", err
+		return "", "", err
 	}
 	// avoid '{{' conflicts with Go
-	txt := fmt.Sprintf(buf.String(), `username: system:node:{{EC2PrivateDNSName}}`)
-	return fileutil.WriteTempFile([]byte(txt))
+	body = fmt.Sprintf(buf.String(), `username: system:node:{{EC2PrivateDNSName}}`)
+	fpath, err = fileutil.WriteTempFile([]byte(body))
+	return body, fpath, err
 }
