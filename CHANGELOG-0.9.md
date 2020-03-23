@@ -14,6 +14,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.8.8...v0.9.0
 ### `eksconfig`
 
 - Add [`MNG.ASGName` field](https://github.com/aws/aws-k8s-tester/commit/bc9f04c99baf1a4914bed4689fae308f536f247f).
+- Skip [`SSHCommands` if no instance is found](https://github.com/aws/aws-k8s-tester/commit/1f0006cbe07079d4ebeda78697c8cd4750dd6a63).
 
 ### `eks`
 
