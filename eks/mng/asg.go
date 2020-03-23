@@ -404,6 +404,15 @@ func (ts *tester) createASG() error {
 				cancel()
 				return serr
 			}
+			ss := aws.StringValue(sv.NodeGroup.Status)
+			if sv.Error != nil && ss == awseks.NodegroupStatusCreateFailed {
+				ts.cfg.Logger.Warn("node group failed to create",
+					zap.String("node-group-status", ss),
+					zap.Error(sv.Error),
+				)
+				cancel()
+				return sv.Error
+			}
 		}
 		cancel()
 
