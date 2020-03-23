@@ -136,10 +136,10 @@ func Poll(
 			}
 
 			lg.Info("polling",
-				zap.String("stack-name", aws.StringValue(stack.StackName)),
-				zap.String("desired-status", desiredStackStatus),
-				zap.String("current-status", currentStatus),
-				zap.String("current-status-reason", currentStatusReason),
+				zap.String("name", aws.StringValue(stack.StackName)),
+				zap.String("desired", desiredStackStatus),
+				zap.String("current", currentStatus),
+				zap.String("current-reason", currentStatusReason),
 				zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			)
 
