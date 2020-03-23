@@ -441,9 +441,9 @@ func (cfg *Config) unsafeSSHCommands() (s string) {
 	buf := bytes.NewBuffer(nil)
 	buf.WriteByte('\n')
 
-	for name, asg := range cfg.ASGs {
+	for name, cur := range cfg.ASGs {
 		buf.WriteString("ASG name \"" + name + "\":\n")
-		buf.WriteString(asg.SSHCommands(cfg.Region, cfg.RemoteAccessPrivateKeyPath, asg.RemoteAccessUserName))
+		buf.WriteString(cur.SSHCommands(cfg.Region, cfg.RemoteAccessPrivateKeyPath, cur.RemoteAccessUserName))
 		buf.WriteString("\n")
 	}
 	return buf.String()

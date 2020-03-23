@@ -131,14 +131,14 @@ func (ts *Tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 	rateLimiter := rate.NewLimiter(rate.Limit(qps), burst)
 	rch, waits := make(chan instanceLogs, 10), 0
 
-	for name, asg := range ts.cfg.ASGs {
+	for name, cur := range ts.cfg.ASGs {
 		ts.lg.Info("fetching logs",
 			zap.String("asg-name", name),
-			zap.Int("instances", len(asg.Instances)),
+			zap.Int("instances", len(cur.Instances)),
 		)
-		waits += len(asg.Instances)
+		waits += len(cur.Instances)
 
-		for instID, iv := range asg.Instances {
+		for instID, iv := range cur.Instances {
 			pfx := instID + "-"
 
 			go func(instID, logsDir, pfx string, iv ec2config.Instance) {

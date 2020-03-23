@@ -383,7 +383,7 @@ func (ts *tester) createASGs() error {
 	}
 
 	ts.cfg.Logger.Info("creating ASGs using CFN", zap.String("name", ts.cfg.EKSConfig.Name))
-	for asgName, asg := range ts.cfg.EKSConfig.AddOnNodeGroups.ASGs {
+	for asgName, cur := range ts.cfg.EKSConfig.AddOnNodeGroups.ASGs {
 		timeStart := time.Now()
 		ts.cfg.Logger.Info("creating ASG", zap.String("name", asgName))
 
@@ -391,7 +391,7 @@ func (ts *tester) createASGs() error {
 		// "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
 		// already includes SSM agent + AWS CLI
 		tg := templateASG{}
-		switch asg.AMIType {
+		switch cur.AMIType {
 		case ec2config.AMITypeBottleRocketCPU:
 			// "bottlerocket" comes with SSM agent
 			tg.Metadata = ""
@@ -452,11 +452,11 @@ func (ts *tester) createASGs() error {
 				},
 				{
 					ParameterKey:   aws.String("ASGName"),
-					ParameterValue: aws.String(asg.Name),
+					ParameterValue: aws.String(cur.Name),
 				},
 				{
 					ParameterKey:   aws.String("ASGLaunchTemplateName"),
-					ParameterValue: aws.String(asg.Name + "-launch-template"),
+					ParameterValue: aws.String(cur.Name + "-launch-template"),
 				},
 				{
 					ParameterKey:   aws.String("RoleName"),
@@ -476,67 +476,67 @@ func (ts *tester) createASGs() error {
 				},
 			},
 		}
-		ts.cfg.Logger.Info("added image ID", zap.String("image-id", asg.ImageID))
+		ts.cfg.Logger.Info("added image ID", zap.String("image-id", cur.ImageID))
 		stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
 			ParameterKey:   aws.String("ImageID"),
-			ParameterValue: aws.String(asg.ImageID),
+			ParameterValue: aws.String(cur.ImageID),
 		})
-		if asg.ImageIDSSMParameter != "" {
-			ts.cfg.Logger.Info("added image SSM parameter", zap.String("image-id-ssm-parameter", asg.ImageIDSSMParameter))
+		if cur.ImageIDSSMParameter != "" {
+			ts.cfg.Logger.Info("added image SSM parameter", zap.String("image-id-ssm-parameter", cur.ImageIDSSMParameter))
 			stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
 				ParameterKey:   aws.String("ImageIDSSMParameter"),
-				ParameterValue: aws.String(asg.ImageIDSSMParameter),
+				ParameterValue: aws.String(cur.ImageIDSSMParameter),
 			})
 		}
-		if len(asg.InstanceTypes) > 0 {
-			ts.cfg.Logger.Info("added instance type", zap.Strings("instance-types", asg.InstanceTypes))
+		if len(cur.InstanceTypes) > 0 {
+			ts.cfg.Logger.Info("added instance type", zap.Strings("instance-types", cur.InstanceTypes))
 			stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
 				ParameterKey:   aws.String("InstanceTypes"),
-				ParameterValue: aws.String(strings.Join(asg.InstanceTypes, ",")),
+				ParameterValue: aws.String(strings.Join(cur.InstanceTypes, ",")),
 			})
 			stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
 				ParameterKey:   aws.String("InstanceTypesCount"),
-				ParameterValue: aws.String(fmt.Sprintf("%d", len(asg.InstanceTypes))),
+				ParameterValue: aws.String(fmt.Sprintf("%d", len(cur.InstanceTypes))),
 			})
 		}
-		if asg.VolumeSize > 0 {
-			ts.cfg.Logger.Info("added volume size", zap.Int64("volume-size", asg.VolumeSize))
+		if cur.VolumeSize > 0 {
+			ts.cfg.Logger.Info("added volume size", zap.Int64("volume-size", cur.VolumeSize))
 			stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
 				ParameterKey:   aws.String("VolumeSize"),
-				ParameterValue: aws.String(fmt.Sprintf("%d", asg.VolumeSize)),
+				ParameterValue: aws.String(fmt.Sprintf("%d", cur.VolumeSize)),
 			})
 		}
-		if asg.ASGMinSize > 0 {
-			ts.cfg.Logger.Info("added min size", zap.Int64("min-size", asg.ASGMinSize))
+		if cur.ASGMinSize > 0 {
+			ts.cfg.Logger.Info("added min size", zap.Int64("min-size", cur.ASGMinSize))
 			stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
 				ParameterKey:   aws.String("ASGMinSize"),
-				ParameterValue: aws.String(fmt.Sprintf("%d", asg.ASGMinSize)),
+				ParameterValue: aws.String(fmt.Sprintf("%d", cur.ASGMinSize)),
 			})
 		}
-		if asg.ASGMaxSize > 0 {
-			ts.cfg.Logger.Info("added max size", zap.Int64("max-size", asg.ASGMaxSize))
+		if cur.ASGMaxSize > 0 {
+			ts.cfg.Logger.Info("added max size", zap.Int64("max-size", cur.ASGMaxSize))
 			stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
 				ParameterKey:   aws.String("ASGMaxSize"),
-				ParameterValue: aws.String(fmt.Sprintf("%d", asg.ASGMaxSize)),
+				ParameterValue: aws.String(fmt.Sprintf("%d", cur.ASGMaxSize)),
 			})
 		}
-		if asg.ASGDesiredCapacity > 0 {
-			ts.cfg.Logger.Info("added desired size", zap.Int64("desired-capacity", asg.ASGDesiredCapacity))
+		if cur.ASGDesiredCapacity > 0 {
+			ts.cfg.Logger.Info("added desired size", zap.Int64("desired-capacity", cur.ASGDesiredCapacity))
 			stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
 				ParameterKey:   aws.String("ASGDesiredCapacity"),
-				ParameterValue: aws.String(fmt.Sprintf("%d", asg.ASGDesiredCapacity)),
+				ParameterValue: aws.String(fmt.Sprintf("%d", cur.ASGDesiredCapacity)),
 			})
 		}
 		stackOutput, err := ts.cfg.CFNAPI.CreateStack(stackInput)
 		if err != nil {
-			asg.CreateTook += time.Since(timeStart)
-			asg.CreateTookString = asg.CreateTook.String()
-			ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName] = asg
+			cur.CreateTook += time.Since(timeStart)
+			cur.CreateTookString = cur.CreateTook.String()
+			ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName] = cur
 			ts.cfg.EKSConfig.Sync()
 			return err
 		}
-		asg.ASGCFNStackID = aws.StringValue(stackOutput.StackId)
-		ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName] = asg
+		cur.ASGCFNStackID = aws.StringValue(stackOutput.StackId)
+		ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName] = cur
 		ts.cfg.EKSConfig.Sync()
 	}
 

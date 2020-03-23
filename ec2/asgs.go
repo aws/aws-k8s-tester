@@ -381,7 +381,7 @@ func (ts *Tester) createASGs() error {
 	}
 
 	ts.lg.Info("creating ASGs using CFN", zap.String("name", ts.cfg.Name))
-	for asgName, asg := range ts.cfg.ASGs {
+	for asgName, cur := range ts.cfg.ASGs {
 		timeStart := time.Now()
 		ts.lg.Info("creating ASG", zap.String("name", asgName))
 
@@ -389,7 +389,7 @@ func (ts *Tester) createASGs() error {
 		// "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
 		// already includes SSM agent + AWS CLI
 		tg := templateASG{}
-		switch asg.AMIType {
+		switch cur.AMIType {
 		case ec2config.AMITypeBottleRocketCPU:
 			// "bottlerocket" comes with SSM agent
 		case ec2config.AMITypeAL2X8664:
@@ -418,11 +418,11 @@ func (ts *Tester) createASGs() error {
 			Parameters: []*cloudformation.Parameter{
 				{
 					ParameterKey:   aws.String("ASGName"),
-					ParameterValue: aws.String(asg.Name),
+					ParameterValue: aws.String(cur.Name),
 				},
 				{
 					ParameterKey:   aws.String("ASGLaunchTemplateName"),
-					ParameterValue: aws.String(asg.Name + "-launch-template"),
+					ParameterValue: aws.String(cur.Name + "-launch-template"),
 				},
 				{
 					ParameterKey:   aws.String("RoleName"),
@@ -442,67 +442,67 @@ func (ts *Tester) createASGs() error {
 				},
 			},
 		}
-		ts.lg.Info("added image ID", zap.String("image-id", asg.ImageID))
+		ts.lg.Info("added image ID", zap.String("image-id", cur.ImageID))
 		stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
 			ParameterKey:   aws.String("ImageID"),
-			ParameterValue: aws.String(asg.ImageID),
+			ParameterValue: aws.String(cur.ImageID),
 		})
-		if asg.ImageIDSSMParameter != "" {
-			ts.lg.Info("added image SSM parameter", zap.String("image-id-ssm-parameter", asg.ImageIDSSMParameter))
+		if cur.ImageIDSSMParameter != "" {
+			ts.lg.Info("added image SSM parameter", zap.String("image-id-ssm-parameter", cur.ImageIDSSMParameter))
 			stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
 				ParameterKey:   aws.String("ImageIDSSMParameter"),
-				ParameterValue: aws.String(asg.ImageIDSSMParameter),
+				ParameterValue: aws.String(cur.ImageIDSSMParameter),
 			})
 		}
-		if len(asg.InstanceTypes) > 0 {
-			ts.lg.Info("added instance type", zap.Strings("instance-types", asg.InstanceTypes))
+		if len(cur.InstanceTypes) > 0 {
+			ts.lg.Info("added instance type", zap.Strings("instance-types", cur.InstanceTypes))
 			stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
 				ParameterKey:   aws.String("InstanceTypes"),
-				ParameterValue: aws.String(strings.Join(asg.InstanceTypes, ",")),
+				ParameterValue: aws.String(strings.Join(cur.InstanceTypes, ",")),
 			})
 			stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
 				ParameterKey:   aws.String("InstanceTypesCount"),
-				ParameterValue: aws.String(fmt.Sprintf("%d", len(asg.InstanceTypes))),
+				ParameterValue: aws.String(fmt.Sprintf("%d", len(cur.InstanceTypes))),
 			})
 		}
-		if asg.VolumeSize > 0 {
-			ts.lg.Info("added volume size", zap.Int64("volume-size", asg.VolumeSize))
+		if cur.VolumeSize > 0 {
+			ts.lg.Info("added volume size", zap.Int64("volume-size", cur.VolumeSize))
 			stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
 				ParameterKey:   aws.String("VolumeSize"),
-				ParameterValue: aws.String(fmt.Sprintf("%d", asg.VolumeSize)),
+				ParameterValue: aws.String(fmt.Sprintf("%d", cur.VolumeSize)),
 			})
 		}
-		if asg.ASGMinSize > 0 {
-			ts.lg.Info("added min size", zap.Int64("min-size", asg.ASGMinSize))
+		if cur.ASGMinSize > 0 {
+			ts.lg.Info("added min size", zap.Int64("min-size", cur.ASGMinSize))
 			stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
 				ParameterKey:   aws.String("ASGMinSize"),
-				ParameterValue: aws.String(fmt.Sprintf("%d", asg.ASGMinSize)),
+				ParameterValue: aws.String(fmt.Sprintf("%d", cur.ASGMinSize)),
 			})
 		}
-		if asg.ASGMaxSize > 0 {
-			ts.lg.Info("added max size", zap.Int64("max-size", asg.ASGMaxSize))
+		if cur.ASGMaxSize > 0 {
+			ts.lg.Info("added max size", zap.Int64("max-size", cur.ASGMaxSize))
 			stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
 				ParameterKey:   aws.String("ASGMaxSize"),
-				ParameterValue: aws.String(fmt.Sprintf("%d", asg.ASGMaxSize)),
+				ParameterValue: aws.String(fmt.Sprintf("%d", cur.ASGMaxSize)),
 			})
 		}
-		if asg.ASGDesiredCapacity > 0 {
-			ts.lg.Info("added desired size", zap.Int64("desired-capacity", asg.ASGDesiredCapacity))
+		if cur.ASGDesiredCapacity > 0 {
+			ts.lg.Info("added desired size", zap.Int64("desired-capacity", cur.ASGDesiredCapacity))
 			stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
 				ParameterKey:   aws.String("ASGDesiredCapacity"),
-				ParameterValue: aws.String(fmt.Sprintf("%d", asg.ASGDesiredCapacity)),
+				ParameterValue: aws.String(fmt.Sprintf("%d", cur.ASGDesiredCapacity)),
 			})
 		}
 		stackOutput, err := ts.cfnAPI.CreateStack(stackInput)
 		if err != nil {
-			asg.CreateTook += time.Since(timeStart)
-			asg.CreateTookString = asg.CreateTook.String()
-			ts.cfg.ASGs[asgName] = asg
+			cur.CreateTook += time.Since(timeStart)
+			cur.CreateTookString = cur.CreateTook.String()
+			ts.cfg.ASGs[asgName] = cur
 			ts.cfg.Sync()
 			return err
 		}
-		asg.ASGCFNStackID = aws.StringValue(stackOutput.StackId)
-		ts.cfg.ASGs[asgName] = asg
+		cur.ASGCFNStackID = aws.StringValue(stackOutput.StackId)
+		ts.cfg.ASGs[asgName] = cur
 		ts.cfg.Sync()
 
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
@@ -512,7 +512,7 @@ func (ts *Tester) createASGs() error {
 			ts.interruptSig,
 			ts.lg,
 			ts.cfnAPI,
-			asg.ASGCFNStackID,
+			cur.ASGCFNStackID,
 			cloudformation.ResourceStatusCreateComplete,
 			2*time.Minute,
 			30*time.Second,
@@ -526,9 +526,9 @@ func (ts *Tester) createASGs() error {
 		}
 		cancel()
 		if st.Error != nil {
-			asg.CreateTook += time.Since(timeStart)
-			asg.CreateTookString = asg.CreateTook.String()
-			ts.cfg.ASGs[asgName] = asg
+			cur.CreateTook += time.Since(timeStart)
+			cur.CreateTookString = cur.CreateTook.String()
+			ts.cfg.ASGs[asgName] = cur
 			ts.cfg.Sync()
 			return st.Error
 		}
@@ -540,22 +540,22 @@ func (ts *Tester) createASGs() error {
 			case "InstanceProfileARN":
 				ts.lg.Info("found InstanceProfileARN value from CFN", zap.String("value", aws.StringValue(o.OutputValue)))
 			default:
-				asg.CreateTook += time.Since(timeStart)
-				asg.CreateTookString = asg.CreateTook.String()
-				ts.cfg.ASGs[asgName] = asg
+				cur.CreateTook += time.Since(timeStart)
+				cur.CreateTookString = cur.CreateTook.String()
+				ts.cfg.ASGs[asgName] = cur
 				ts.cfg.Sync()
-				return fmt.Errorf("unexpected OutputKey %q from %q", k, asg.ASGCFNStackID)
+				return fmt.Errorf("unexpected OutputKey %q from %q", k, cur.ASGCFNStackID)
 			}
 		}
 
 		ts.lg.Info("created ASG",
-			zap.String("name", asg.Name),
-			zap.String("cfn-stack-id", asg.ASGCFNStackID),
+			zap.String("name", cur.Name),
+			zap.String("cfn-stack-id", cur.ASGCFNStackID),
 			zap.String("request-started", humanize.RelTime(createStart, time.Now(), "ago", "from now")),
 		)
-		asg.CreateTook += time.Since(timeStart)
-		asg.CreateTookString = asg.CreateTook.String()
-		ts.cfg.ASGs[asgName] = asg
+		cur.CreateTook += time.Since(timeStart)
+		cur.CreateTookString = cur.CreateTook.String()
+		ts.cfg.ASGs[asgName] = cur
 		ts.cfg.Up = true
 		ts.cfg.Sync()
 
@@ -586,21 +586,21 @@ func (ts *Tester) createASGs() error {
 			instanceIDs...,
 		)
 		if err != nil {
-			asg.CreateTook += time.Since(timeStart)
-			asg.CreateTookString = asg.CreateTook.String()
-			ts.cfg.ASGs[asgName] = asg
+			cur.CreateTook += time.Since(timeStart)
+			cur.CreateTookString = cur.CreateTook.String()
+			ts.cfg.ASGs[asgName] = cur
 			ts.cfg.Sync()
 			return err
 		}
-		asg.Instances = make(map[string]ec2config.Instance)
+		cur.Instances = make(map[string]ec2config.Instance)
 		for id, vv := range ec2Instances {
 			ivv := ec2config.ConvertInstance(vv)
-			ivv.RemoteAccessUserName = asg.RemoteAccessUserName
-			asg.Instances[id] = ivv
+			ivv.RemoteAccessUserName = cur.RemoteAccessUserName
+			cur.Instances[id] = ivv
 		}
-		asg.CreateTook += time.Since(timeStart)
-		asg.CreateTookString = asg.CreateTook.String()
-		ts.cfg.ASGs[asgName] = asg
+		cur.CreateTook += time.Since(timeStart)
+		cur.CreateTookString = cur.CreateTook.String()
+		ts.cfg.ASGs[asgName] = cur
 		ts.cfg.RecordStatus(fmt.Sprintf("%q/%s", asgName, cloudformation.ResourceStatusCreateComplete))
 		ts.cfg.Sync()
 	}
@@ -617,20 +617,20 @@ func (ts *Tester) deleteASGs() error {
 	}()
 
 	ts.lg.Info("deleting ASGs using CFN", zap.String("name", ts.cfg.Name))
-	for asgName, asg := range ts.cfg.ASGs {
-		if asg.ASGCFNStackID == "" {
-			return fmt.Errorf("%q ASG stack ID is empty", asg.Name)
+	for asgName, cur := range ts.cfg.ASGs {
+		if cur.ASGCFNStackID == "" {
+			return fmt.Errorf("%q ASG stack ID is empty", cur.Name)
 		}
 		timeStart := time.Now()
-		ts.lg.Info("deleting ASG", zap.String("name", asgName), zap.String("cfn-stack-id", asg.ASGCFNStackID))
+		ts.lg.Info("deleting ASG", zap.String("name", asgName), zap.String("cfn-stack-id", cur.ASGCFNStackID))
 		_, err := ts.cfnAPI.DeleteStack(&cloudformation.DeleteStackInput{
-			StackName: aws.String(asg.ASGCFNStackID),
+			StackName: aws.String(cur.ASGCFNStackID),
 		})
 		if err != nil {
 			ts.cfg.RecordStatus(fmt.Sprintf("failed to delete ASG (%v)", err))
-			asg.DeleteTook += time.Since(timeStart)
-			asg.DeleteTookString = ts.cfg.DeleteTook.String()
-			ts.cfg.ASGs[asgName] = asg
+			cur.DeleteTook += time.Since(timeStart)
+			cur.DeleteTookString = ts.cfg.DeleteTook.String()
+			ts.cfg.ASGs[asgName] = cur
 			ts.cfg.Sync()
 			return err
 		}
@@ -643,7 +643,7 @@ func (ts *Tester) deleteASGs() error {
 			make(chan os.Signal), // do not exit on stop
 			ts.lg,
 			ts.cfnAPI,
-			asg.ASGCFNStackID,
+			cur.ASGCFNStackID,
 			cloudformation.ResourceStatusDeleteComplete,
 			2*time.Minute,
 			20*time.Second,
@@ -658,16 +658,16 @@ func (ts *Tester) deleteASGs() error {
 		}
 		cancel()
 		if st.Error != nil {
-			asg.DeleteTook += time.Since(timeStart)
-			asg.DeleteTookString = ts.cfg.DeleteTook.String()
-			ts.cfg.ASGs[asgName] = asg
+			cur.DeleteTook += time.Since(timeStart)
+			cur.DeleteTookString = ts.cfg.DeleteTook.String()
+			ts.cfg.ASGs[asgName] = cur
 			ts.cfg.Sync()
 			return st.Error
 		}
 		ts.cfg.RecordStatus(fmt.Sprintf("%q/%s", asgName, ec2config.StatusDELETEDORNOTEXIST))
-		asg.DeleteTook += time.Since(timeStart)
-		asg.DeleteTookString = ts.cfg.DeleteTook.String()
-		ts.cfg.ASGs[asgName] = asg
+		cur.DeleteTook += time.Since(timeStart)
+		cur.DeleteTookString = ts.cfg.DeleteTook.String()
+		ts.cfg.ASGs[asgName] = cur
 		ts.cfg.Sync()
 	}
 
