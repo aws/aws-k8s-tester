@@ -359,6 +359,9 @@ type MNG struct {
 	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
 	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
 	Name string `json:"name,omitempty"`
+	// ASGName is the ASG name from a created managed node group.
+	ASGName string `json:"asg-name,omitempty" read-only:"true"`
+
 	// RemoteAccessUserName is the user name for managed node group SSH access.
 	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
 	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
