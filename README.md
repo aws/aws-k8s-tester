@@ -10,6 +10,8 @@ WARNING: Pre-alpha. Do not use this in production. Only for testing.
 [![Releases](https://img.shields.io/github/release/aws/aws-k8s-tester/all.svg?style=flat-square)](https://github.com/aws/aws-k8s-tester/releases)
 [![LICENSE](https://img.shields.io/github/license/aws/aws-k8s-tester.svg?style=flat-square)](https://github.com/aws/aws-k8s-tester/blob/master/LICENSE)
 
+https://github.com/kubernetes/enhancements/blob/master/keps/provider-aws/20181126-aws-k8s-tester.md
+
 `aws-k8s-tester` is a set of utilities and libraries for testing Kubernetes on AWS.
 
 - Uses AWS CloudFormation for resource creation
