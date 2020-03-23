@@ -11,10 +11,16 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.9.0...v0.9.1
 ### `ec2`
 
 - Set [`MapPublicIpOnLaunch` to `true` in public subnet creation](https://github.com/aws/aws-k8s-tester/commit/68ed5183f41635d3c9cf9570970cece0da450251).
+  - Public Subnets must have egress.
+  - Otherwise, it will error as:
+  - > "code": "Ec2SubnetInvalidConfiguration", "message": "One or more Amazon EC2 Subnets of [subnet-0cd62ce8f19b1817c, subnet-0b0dce45d938751fd, subnet-0310bcff99bfdf415] for node group leegyuho-test-eks-mng-al2-cpu does not automatically assign public IP addresses to instances launched into it. If you want your instances to be assigned a public IP address, then you need to enable auto-assign public IP address for the subnet. See IP addressing in VPC guide: https://docs.aws.amazon.com/vpc/latest/userguide/vpc-ip-addressing.html#subnet-public-ip",
 
 ### `eks`
 
 - Set [`MapPublicIpOnLaunch` to `true` in public subnet creation](https://github.com/aws/aws-k8s-tester/commit/68ed5183f41635d3c9cf9570970cece0da450251).
+  - Public Subnets must have egress.
+  - Otherwise, it will error as:
+  - > "code": "Ec2SubnetInvalidConfiguration", "message": "One or more Amazon EC2 Subnets of [subnet-0cd62ce8f19b1817c, subnet-0b0dce45d938751fd, subnet-0310bcff99bfdf415] for node group leegyuho-test-eks-mng-al2-cpu does not automatically assign public IP addresses to instances launched into it. If you want your instances to be assigned a public IP address, then you need to enable auto-assign public IP address for the subnet. See IP addressing in VPC guide: https://docs.aws.amazon.com/vpc/latest/userguide/vpc-ip-addressing.html#subnet-public-ip",
 
 ### Go
 
