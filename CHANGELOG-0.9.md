@@ -1,5 +1,26 @@
 
 
+
+<hr>
+
+
+## [v0.9.1](https://github.com/aws/aws-k8s-tester/releases/tag/v0.9.1) (2020-03-23)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.9.0...v0.9.1).
+
+### `ec2`
+
+- Set [`MapPublicIpOnLaunch` to `true` in public subnet creation](https://github.com/aws/aws-k8s-tester/commit/68ed5183f41635d3c9cf9570970cece0da450251).
+
+### `eks`
+
+- Set [`MapPublicIpOnLaunch` to `true` in public subnet creation](https://github.com/aws/aws-k8s-tester/commit/68ed5183f41635d3c9cf9570970cece0da450251).
+
+### Go
+
+- Compile with [*Go 1.14.1*](https://golang.org/doc/devel/release.html#go1.14).
+
+
 <hr>
 
 
