@@ -1177,11 +1177,15 @@ func (cfg *Config) unsafeSSHCommands() (s string) {
 	buf.WriteByte('\n')
 
 	if cfg.IsEnabledAddOnNodeGroups() {
-		for name, ng := range cfg.AddOnNodeGroups.ASGs {
+		for name, cur := range cfg.AddOnNodeGroups.ASGs {
+			if len(cur.Instances) == 0 {
+				buf.WriteString(fmt.Sprintf("no ASG instances found for node group %s\n", name))
+				continue
+			}
 			buf.WriteString("ASG name from node group \"" + name + "\":\n")
 			asg := &ec2config.ASG{
 				Name:      name,
-				Instances: ng.Instances,
+				Instances: cur.Instances,
 			}
 			buf.WriteString(asg.SSHCommands(cfg.Region, cfg.RemoteAccessPrivateKeyPath, cfg.AddOnNodeGroups.ASGs[name].RemoteAccessUserName))
 			buf.WriteString("\n")
@@ -1189,11 +1193,15 @@ func (cfg *Config) unsafeSSHCommands() (s string) {
 	}
 
 	if cfg.IsEnabledAddOnManagedNodeGroups() {
-		for name, ng := range cfg.AddOnManagedNodeGroups.MNGs {
+		for name, cur := range cfg.AddOnManagedNodeGroups.MNGs {
+			if len(cur.Instances) == 0 {
+				buf.WriteString(fmt.Sprintf("no ASG instances found for managed node group %s\n", name))
+				continue
+			}
 			buf.WriteString("ASG name from managed node group \"" + name + "\":\n")
 			asg := &ec2config.ASG{
 				Name:      name,
-				Instances: ng.Instances,
+				Instances: cur.Instances,
 			}
 			buf.WriteString(asg.SSHCommands(cfg.Region, cfg.RemoteAccessPrivateKeyPath, cfg.AddOnManagedNodeGroups.MNGs[name].RemoteAccessUserName))
 			buf.WriteString("\n")
