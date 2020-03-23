@@ -19,6 +19,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.8.8...v0.9.0
 
 - Improve [node group waits using EC2 Private DNS](https://github.com/aws/aws-k8s-tester/commit/eafc1f84c2096b07edcb501d1ddfa99f6c545d64).
 - Run [`kubectl get nodes` while waiting for node groups](https://github.com/aws/aws-k8s-tester/commit/ed19ebf6b7abde641552273e35bd2f7a8a1d86fd).
+- Return [an error if `MNG` creation fails with `CREATE_FAILED`](https://github.com/aws/aws-k8s-tester/commit/74ca7e997050971795b8f2d3b5513db00688c988).
 
 ### Go
 
