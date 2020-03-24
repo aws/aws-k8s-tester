@@ -1014,7 +1014,7 @@ func (ts *tester) create2048Ingress() error {
 	ts.cfg.EKSConfig.Sync()
 
 	if ts.cfg.EKSConfig.AddOnALB2048.ALBName == "" {
-		return fmt.Errorf("failed to create 2048 Ingress; got empty ALB name")
+		return errors.New("failed to create 2048 Ingress; got empty ALB name")
 	}
 	ts.cfg.Logger.Info("describing LB to get ARN",
 		zap.String("name", ts.cfg.EKSConfig.AddOnALB2048.ALBName),
