@@ -12,13 +12,13 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.9.1...v0.9.2
 
 - Improve [`eks/alb` `ELB2API.DescribeLoadBalancers` error logging](https://github.com/aws/aws-k8s-tester/commit/6af497890100d8980e801d18ca1aab5b943aa86d).
 
-### Go
-
-- Compile with [*Go 1.14.1*](https://golang.org/doc/devel/release.html#go1.14).
-
 ### Dependency
 
 - Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.29.29`](https://github.com/aws/aws-sdk-go/releases/tag/v1.29.29) to [`v1.29.30`](https://github.com/aws/aws-sdk-go/releases/tag/v1.29.30).
+
+### Go
+
+- Compile with [*Go 1.14.1*](https://golang.org/doc/devel/release.html#go1.14).
 
 
 <hr>
