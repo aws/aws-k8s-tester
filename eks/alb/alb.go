@@ -1013,10 +1013,24 @@ func (ts *tester) create2048Ingress() error {
 	ts.cfg.EKSConfig.AddOnALB2048.URL = "http://" + hostName
 	ts.cfg.EKSConfig.Sync()
 
+	if ts.cfg.EKSConfig.AddOnALB2048.ALBName == "" {
+		return fmt.Errorf("failed to create 2048 Ingress; got empty ALB name")
+	}
+	ts.cfg.Logger.Info("describing LB to get ARN",
+		zap.String("name", ts.cfg.EKSConfig.AddOnALB2048.ALBName),
+		zap.String("url", ts.cfg.EKSConfig.AddOnALB2048.URL),
+	)
 	do, err := ts.cfg.ELB2API.DescribeLoadBalancers(&elbv2.DescribeLoadBalancersInput{
 		Names: aws.StringSlice([]string{ts.cfg.EKSConfig.AddOnALB2048.ALBName}),
 	})
 	if err != nil {
+		// it may fail
+		// 8ad2aa58-cnitest91alb2048--13d6-797589654.*********.elb.amazonaws.com
+		// ValidationError: The load balancer name '8ad2aa58-cnitest91alb2048-' cannot end with a hyphen(-)\n\tstatus code: 400
+		ts.cfg.Logger.Info("failed to describe LB",
+			zap.String("name", ts.cfg.EKSConfig.AddOnALB2048.ALBName),
+			zap.Error(err),
+		)
 		return err
 	}
 	for _, lb := range do.LoadBalancers {
