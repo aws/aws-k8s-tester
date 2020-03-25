@@ -4,6 +4,27 @@
 <hr>
 
 
+## [v0.9.3](https://github.com/aws/aws-k8s-tester/releases/tag/v0.9.3) (2020-03)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.9.2...v0.9.3).
+
+### `eks`
+
+- Set [default `kubectl` download path to `1.16`](https://github.com/aws/aws-k8s-tester/commit/0f21c40dd8ecc3d552d64eba1ac3b6eaf368694b).
+- Skip [`kubectl` and `aws-iam-authenticator` download if exists](https://github.com/aws/aws-k8s-tester/commit/0f21c40dd8ecc3d552d64eba1ac3b6eaf368694b).
+
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.29.30`](https://github.com/aws/aws-sdk-go/releases/tag/v1.29.30) to [`v1.29.32`](https://github.com/aws/aws-sdk-go/releases/tag/v1.29.32).
+
+### Go
+
+- Compile with [*Go 1.14.1*](https://golang.org/doc/devel/release.html#go1.14).
+
+
+<hr>
+
+
 ## [v0.9.2](https://github.com/aws/aws-k8s-tester/releases/tag/v0.9.2) (2020-03-24)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.9.1...v0.9.2).
