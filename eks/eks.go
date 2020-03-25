@@ -152,22 +152,23 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 	if err := os.MkdirAll(filepath.Dir(cfg.KubectlPath), 0700); err != nil {
 		return nil, fmt.Errorf("could not create %q (%v)", filepath.Dir(cfg.KubectlPath), err)
 	}
-	lg.Info("downloading kubectl", zap.String("kubectl-path", cfg.KubectlPath))
-	if err := os.RemoveAll(cfg.KubectlPath); err != nil {
-		return nil, err
-	}
-	f, err := os.Create(cfg.KubectlPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create %q (%v)", cfg.KubectlPath, err)
-	}
-	cfg.KubectlPath = f.Name()
-	cfg.KubectlPath, _ = filepath.Abs(cfg.KubectlPath)
-	if err := httpDownloadFile(lg, cfg.KubectlDownloadURL, f); err != nil {
-		f.Close()
-		return nil, err
-	}
-	if err := f.Close(); err != nil {
-		return nil, fmt.Errorf("failed to close kubectl %v", err)
+	if !fileutil.Exist(cfg.KubectlPath) {
+		lg.Info("downloading kubectl", zap.String("kubectl-path", cfg.KubectlPath))
+		f, err := os.Create(cfg.KubectlPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create %q (%v)", cfg.KubectlPath, err)
+		}
+		cfg.KubectlPath = f.Name()
+		cfg.KubectlPath, _ = filepath.Abs(cfg.KubectlPath)
+		if err := httpDownloadFile(lg, cfg.KubectlDownloadURL, f); err != nil {
+			f.Close()
+			return nil, err
+		}
+		if err := f.Close(); err != nil {
+			return nil, fmt.Errorf("failed to close kubectl %v", err)
+		}
+	} else {
+		lg.Info("skipping kubectl download; already exist", zap.String("kubectl-path", cfg.KubectlPath))
 	}
 	if err := fileutil.EnsureExecutable(cfg.KubectlPath); err != nil {
 		// file may be already executable while the process does not own the file/directory
@@ -198,22 +199,26 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 		if err := os.MkdirAll(filepath.Dir(cfg.AWSIAMAuthenticatorPath), 0700); err != nil {
 			return nil, fmt.Errorf("could not create %q (%v)", filepath.Dir(cfg.AWSIAMAuthenticatorPath), err)
 		}
-		lg.Info("downloading aws-iam-authenticator", zap.String("aws-iam-authenticator-path", cfg.AWSIAMAuthenticatorPath))
-		if err := os.RemoveAll(cfg.AWSIAMAuthenticatorPath); err != nil {
-			return nil, err
-		}
-		f, err := os.Create(cfg.AWSIAMAuthenticatorPath)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create %q (%v)", cfg.AWSIAMAuthenticatorPath, err)
-		}
-		cfg.AWSIAMAuthenticatorPath = f.Name()
-		cfg.AWSIAMAuthenticatorPath, _ = filepath.Abs(cfg.AWSIAMAuthenticatorPath)
-		if err := httpDownloadFile(lg, cfg.AWSIAMAuthenticatorDownloadURL, f); err != nil {
-			f.Close()
-			return nil, err
-		}
-		if err := f.Close(); err != nil {
-			return nil, fmt.Errorf("failed to close aws-iam-authenticator %v", err)
+		if !fileutil.Exist(cfg.AWSIAMAuthenticatorPath) {
+			lg.Info("downloading aws-iam-authenticator", zap.String("aws-iam-authenticator-path", cfg.AWSIAMAuthenticatorPath))
+			if err := os.RemoveAll(cfg.AWSIAMAuthenticatorPath); err != nil {
+				return nil, err
+			}
+			f, err := os.Create(cfg.AWSIAMAuthenticatorPath)
+			if err != nil {
+				return nil, fmt.Errorf("failed to create %q (%v)", cfg.AWSIAMAuthenticatorPath, err)
+			}
+			cfg.AWSIAMAuthenticatorPath = f.Name()
+			cfg.AWSIAMAuthenticatorPath, _ = filepath.Abs(cfg.AWSIAMAuthenticatorPath)
+			if err := httpDownloadFile(lg, cfg.AWSIAMAuthenticatorDownloadURL, f); err != nil {
+				f.Close()
+				return nil, err
+			}
+			if err := f.Close(); err != nil {
+				return nil, fmt.Errorf("failed to close aws-iam-authenticator %v", err)
+			}
+		} else {
+			lg.Info("skipping aws-iam-authenticator download; already exist", zap.String("aws-iam-authenticator-path", cfg.AWSIAMAuthenticatorPath))
 		}
 		if err := fileutil.EnsureExecutable(cfg.AWSIAMAuthenticatorPath); err != nil {
 			// file may be already executable while the process does not own the file/directory
