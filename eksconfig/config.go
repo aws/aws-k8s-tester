@@ -372,6 +372,7 @@ type MNG struct {
 	// The version may differ from EKS "cluster" version.
 	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
 	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
+	// ref. https://docs.aws.amazon.com/eks/latest/userguide/eks-linux-ami-versions.html
 	ReleaseVersion string `json:"release-version,omitempty"`
 	// AMIType is the AMI type for the node group.
 	// Allowed values are AL2_x86_64 and AL2_x86_64_GPU.
