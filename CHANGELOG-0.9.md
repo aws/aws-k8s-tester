@@ -15,7 +15,9 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.9.2...v0.9.3
 ### `ekstester`
 
 - [Deprecate `ekstester` package](https://github.com/aws/aws-k8s-tester/commit/a6cc130e951d78075c7963222b805d4c55312e1c).
-  - See https://github.com/kubernetes/test-infra/pull/16890.
+  - See [`test-infra#16890`](https://github.com/kubernetes/test-infra/pull/16890).
+  - Upstream `k8s.io/test-infra` has deprecated old `ekstester`.
+  - Fix https://github.com/aws/aws-k8s-tester/issues/73.
 
 ### Dependency
 
