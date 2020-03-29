@@ -3,6 +3,26 @@
 <hr>
 
 
+## [v0.9.4](https://github.com/aws/aws-k8s-tester/releases/tag/v0.9.4) (2020-03-28)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.9.3...v0.9.4).
+
+### `eks`
+
+- List [`csr` while waiting for ASG](https://github.com/aws/aws-k8s-tester/commit/41202c1501602a88894b7e6cf3ec1235fda320b6).
+
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.29.32`](https://github.com/aws/aws-sdk-go/releases/tag/v1.29.32) to [`v1.29.34`](https://github.com/aws/aws-sdk-go/releases/tag/v1.29.34).
+
+### Go
+
+- Compile with [*Go 1.14.1*](https://golang.org/doc/devel/release.html#go1.14).
+
+
+<hr>
+
+
 ## [v0.9.3](https://github.com/aws/aws-k8s-tester/releases/tag/v0.9.3) (2020-03-25)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.9.2...v0.9.3).
