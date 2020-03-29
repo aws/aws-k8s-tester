@@ -792,8 +792,24 @@ func (ts *tester) waitForNodes(ngName string) error {
 			zap.Int64("desired-ready-nodes", cur.ASGDesiredCapacity),
 		)
 
-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		output, err := exec.New().CommandContext(
+			ctx,
+			ts.cfg.EKSConfig.KubectlPath,
+			"--kubeconfig="+ts.cfg.EKSConfig.KubeConfigPath,
+			"get",
+			"csr",
+			"-o=wide",
+		).CombinedOutput()
+		cancel()
+		out := string(output)
+		if err != nil {
+			ts.cfg.Logger.Warn("'kubectl get csr' failed", zap.Error(err))
+		}
+		fmt.Printf("\n\n\"%s get csr\":\n%s\n\n", ts.cfg.EKSConfig.KubectlCommand(), out)
+
+		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
+		output, err = exec.New().CommandContext(
 			ctx,
 			ts.cfg.EKSConfig.KubectlPath,
 			"--kubeconfig="+ts.cfg.EKSConfig.KubeConfigPath,
@@ -802,7 +818,7 @@ func (ts *tester) waitForNodes(ngName string) error {
 			"-o=wide",
 		).CombinedOutput()
 		cancel()
-		out := string(output)
+		out = string(output)
 		if err != nil {
 			ts.cfg.Logger.Warn("'kubectl get nodes' failed", zap.Error(err))
 		}
