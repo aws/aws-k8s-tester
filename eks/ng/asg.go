@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 	"text/template"
 	"time"
@@ -382,6 +383,10 @@ func (ts *tester) createASGs() error {
 		return nil
 	}
 
+	// track timestamps and check status in reverse order
+	// to minimize polling API calls
+	tss := make(tupleTimes, 0)
+
 	ts.cfg.Logger.Info("creating ASGs using CFN", zap.String("name", ts.cfg.EKSConfig.Name))
 	for asgName, cur := range ts.cfg.EKSConfig.AddOnNodeGroups.ASGs {
 		timeStart := time.Now()
@@ -538,10 +543,20 @@ func (ts *tester) createASGs() error {
 		cur.ASGCFNStackID = aws.StringValue(stackOutput.StackId)
 		ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName] = cur
 		ts.cfg.EKSConfig.Sync()
+
+		tss = append(tss, tupleTime{ts: time.Now(), name: asgName})
 	}
 
+	sort.Sort(sort.Reverse(tss))
+
 	// wait for ASG EC2 instances + Kubernetes nodes ready
-	for ngName, cur := range ts.cfg.EKSConfig.AddOnNodeGroups.ASGs {
+	for _, tv := range tss {
+		asgName := tv.name
+		cur, ok := ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName]
+		if !ok {
+			return fmt.Errorf("ASG name %q not found after creation", asgName)
+		}
+
 		now := time.Now()
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
 		ch := awscfn.Poll(
@@ -566,7 +581,7 @@ func (ts *tester) createASGs() error {
 		if st.Error != nil {
 			cur.CreateTook += time.Since(now)
 			cur.CreateTookString = cur.CreateTook.String()
-			ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[ngName] = cur
+			ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName] = cur
 			ts.cfg.EKSConfig.Sync()
 			return st.Error
 		}
@@ -580,7 +595,7 @@ func (ts *tester) createASGs() error {
 			default:
 				cur.CreateTook += time.Since(now)
 				cur.CreateTookString = cur.CreateTook.String()
-				ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[ngName] = cur
+				ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName] = cur
 				ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("unexpected key from ASG stack (%v)", k))
 				ts.cfg.EKSConfig.Sync()
 				return fmt.Errorf("unexpected OutputKey %q from %q", k, cur.ASGCFNStackID)
@@ -593,7 +608,7 @@ func (ts *tester) createASGs() error {
 		)
 		cur.CreateTook += time.Since(now)
 		cur.CreateTookString = cur.CreateTook.String()
-		ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[ngName] = cur
+		ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName] = cur
 		ts.cfg.EKSConfig.Sync()
 
 		if err := ts.waitForNodes(cur.Name); err != nil {
@@ -615,19 +630,19 @@ func (ts *tester) deleteASGs() error {
 	}
 
 	ts.cfg.Logger.Info("deleting ASGs using CFN", zap.String("name", ts.cfg.EKSConfig.Name))
-	for ngName, cur := range ts.cfg.EKSConfig.AddOnNodeGroups.ASGs {
+	for asgName, cur := range ts.cfg.EKSConfig.AddOnNodeGroups.ASGs {
 		if cur.ASGCFNStackID == "" {
 			return fmt.Errorf("%q ASG stack ID is empty", cur.Name)
 		}
 		timeStart := time.Now()
-		ts.cfg.Logger.Info("deleting ASG", zap.String("name", ngName), zap.String("cfn-stack-id", cur.ASGCFNStackID))
+		ts.cfg.Logger.Info("deleting ASG", zap.String("name", asgName), zap.String("cfn-stack-id", cur.ASGCFNStackID))
 		_, err := ts.cfg.CFNAPI.DeleteStack(&cloudformation.DeleteStackInput{
 			StackName: aws.String(cur.ASGCFNStackID),
 		})
 		if err != nil {
 			cur.DeleteTook += time.Since(timeStart)
 			cur.DeleteTookString = cur.DeleteTook.String()
-			ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[ngName] = cur
+			ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName] = cur
 			ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("failed to delete ASG (%v)", err))
 			ts.cfg.EKSConfig.Sync()
 			return err
@@ -657,24 +672,24 @@ func (ts *tester) deleteASGs() error {
 		if st.Error != nil {
 			cur.DeleteTook += time.Since(timeStart)
 			cur.DeleteTookString = cur.DeleteTook.String()
-			ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[ngName] = cur
+			ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName] = cur
 			ts.cfg.EKSConfig.Sync()
 			return st.Error
 		}
-		ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("%q/%s", ngName, ec2config.StatusDELETEDORNOTEXIST))
+		ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("%q/%s", asgName, ec2config.StatusDELETEDORNOTEXIST))
 		cur.DeleteTook += time.Since(timeStart)
 		cur.DeleteTookString = cur.DeleteTook.String()
-		ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[ngName] = cur
+		ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName] = cur
 		ts.cfg.EKSConfig.Sync()
 	}
 
 	return ts.cfg.EKSConfig.Sync()
 }
 
-func (ts *tester) waitForNodes(ngName string) error {
-	cur, ok := ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[ngName]
+func (ts *tester) waitForNodes(asgName string) error {
+	cur, ok := ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName]
 	if !ok {
-		return fmt.Errorf("Node Group %q not found", ngName)
+		return fmt.Errorf("Node Group %q not found", asgName)
 	}
 	waitDur := 2*time.Minute + time.Duration(15*cur.ASGDesiredCapacity)*time.Second
 
@@ -708,9 +723,9 @@ func (ts *tester) waitForNodes(ngName string) error {
 	if err != nil {
 		return err
 	}
-	cur, ok = ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[ngName]
+	cur, ok = ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName]
 	if !ok {
-		return fmt.Errorf("Node Group %q not found", ngName)
+		return fmt.Errorf("Node Group %q not found", asgName)
 	}
 	cur.Instances = make(map[string]ec2config.Instance)
 	for id, vv := range ec2Instances {
@@ -718,12 +733,12 @@ func (ts *tester) waitForNodes(ngName string) error {
 		ivv.RemoteAccessUserName = cur.RemoteAccessUserName
 		cur.Instances[id] = ivv
 	}
-	ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[ngName] = cur
+	ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName] = cur
 	ts.cfg.EKSConfig.Sync()
 
-	cur, ok = ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[ngName]
+	cur, ok = ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName]
 	if !ok {
-		return fmt.Errorf("Node Group %q not found", ngName)
+		return fmt.Errorf("Node Group %q not found", asgName)
 	}
 	// ec2 private DNS == kubernetes node hostname
 	ec2PrivateDNS := make(map[string]struct{})
@@ -806,7 +821,7 @@ func (ts *tester) waitForNodes(ngName string) error {
 		if err != nil {
 			ts.cfg.Logger.Warn("'kubectl get csr' failed", zap.Error(err))
 		}
-		fmt.Printf("\n\n\"%s get csr\":\n%s\n\n", ts.cfg.EKSConfig.KubectlCommand(), out)
+		fmt.Printf("\n\n\"%s get csr\":\n%s\n", ts.cfg.EKSConfig.KubectlCommand(), out)
 
 		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 		output, err = exec.New().CommandContext(
@@ -822,7 +837,7 @@ func (ts *tester) waitForNodes(ngName string) error {
 		if err != nil {
 			ts.cfg.Logger.Warn("'kubectl get nodes' failed", zap.Error(err))
 		}
-		fmt.Printf("\n\n\"%s get nodes\":\n%s\n\n", ts.cfg.EKSConfig.KubectlCommand(), out)
+		fmt.Printf("\n\"%s get nodes\":\n%s\n\n", ts.cfg.EKSConfig.KubectlCommand(), out)
 
 		if int64(readies) >= cur.ASGDesiredCapacity { // TODO: check per node group
 			ready = true
@@ -830,11 +845,11 @@ func (ts *tester) waitForNodes(ngName string) error {
 		}
 	}
 	if !ready {
-		return fmt.Errorf("MNG %q not ready", ngName)
+		return fmt.Errorf("MNG %q not ready", asgName)
 	}
 
 	println()
-	fmt.Printf("%q nodes are ready!\n", ngName)
+	fmt.Printf("%q nodes are ready!\n", asgName)
 	for _, v := range items {
 		fmt.Printf("node %q address: %+v\n", v.GetName(), v.Status.Addresses)
 	}

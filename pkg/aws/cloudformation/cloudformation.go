@@ -43,8 +43,10 @@ func Poll(
 	)
 	ch := make(chan StackStatus, 10)
 	go func() {
-		ticker := time.NewTicker(wait)
-		defer ticker.Stop()
+		// very first poll should be no-wait
+		// in case stack has already reached desired status
+		// wait from second interation
+		waitDur := time.Duration(0)
 
 		prevStatusReason, first := "", true
 		for ctx.Err() == nil {
@@ -67,7 +69,13 @@ func Poll(
 				close(ch)
 				return
 
-			case <-ticker.C:
+			case <-time.After(waitDur):
+				// very first poll should be no-wait
+				// in case stack has already reached desired status
+				// wait from second interation
+				if waitDur == time.Duration(0) {
+					waitDur = wait
+				}
 			}
 
 			output, err := cfnAPI.DescribeStacks(&svccfn.DescribeStacksInput{
@@ -108,6 +116,49 @@ func Poll(
 				prevStatusReason = currentStatusReason
 			}
 
+			lg.Info("polling",
+				zap.String("name", aws.StringValue(stack.StackName)),
+				zap.String("desired", desiredStackStatus),
+				zap.String("current", currentStatus),
+				zap.String("current-reason", currentStatusReason),
+				zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
+			)
+
+			if desiredStackStatus != svccfn.ResourceStatusDeleteComplete &&
+				currentStatus == svccfn.ResourceStatusDeleteComplete {
+				lg.Warn("create stack failed; aborting")
+				ch <- StackStatus{
+					Stack: stack,
+					Error: fmt.Errorf("stack failed thus deleted (previous status reason %q, current stack status %q, current status reason %q)",
+						prevStatusReason,
+						currentStatus,
+						currentStatusReason,
+					)}
+				close(ch)
+				return
+			}
+
+			if desiredStackStatus == svccfn.ResourceStatusDeleteComplete &&
+				currentStatus == svccfn.ResourceStatusDeleteFailed {
+				lg.Warn("delete stack failed; aborting")
+				ch <- StackStatus{
+					Stack: stack,
+					Error: fmt.Errorf("failed to delete stack (previous status reason %q, current stack status %q, current status reason %q)",
+						prevStatusReason,
+						currentStatus,
+						currentStatusReason,
+					)}
+				close(ch)
+				return
+			}
+
+			ch <- StackStatus{Stack: stack, Error: nil}
+			if currentStatus == desiredStackStatus {
+				lg.Info("became desired stack status; exiting", zap.String("current-stack-status", currentStatus))
+				close(ch)
+				return
+			}
+
 			if first {
 				lg.Info("sleeping", zap.Duration("initial-wait", initialWait))
 
@@ -135,47 +186,6 @@ func Poll(
 				first = false
 			}
 
-			lg.Info("polling",
-				zap.String("name", aws.StringValue(stack.StackName)),
-				zap.String("desired", desiredStackStatus),
-				zap.String("current", currentStatus),
-				zap.String("current-reason", currentStatusReason),
-				zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
-			)
-
-			if desiredStackStatus != svccfn.ResourceStatusDeleteComplete &&
-				currentStatus == svccfn.ResourceStatusDeleteComplete {
-				lg.Warn("create stack failed; aborting")
-				ch <- StackStatus{
-					Stack: stack,
-					Error: fmt.Errorf("stack failed thus deleted (previous status reason %q, current stack status %q, current status reason %q)",
-						prevStatusReason,
-						currentStatus,
-						currentStatusReason,
-					)}
-				close(ch)
-				return
-			}
-			if desiredStackStatus == svccfn.ResourceStatusDeleteComplete &&
-				currentStatus == svccfn.ResourceStatusDeleteFailed {
-				lg.Warn("delete stack failed; aborting")
-				ch <- StackStatus{
-					Stack: stack,
-					Error: fmt.Errorf("failed to delete stack (previous status reason %q, current stack status %q, current status reason %q)",
-						prevStatusReason,
-						currentStatus,
-						currentStatusReason,
-					)}
-				close(ch)
-				return
-			}
-
-			ch <- StackStatus{Stack: stack, Error: nil}
-			if currentStatus == desiredStackStatus {
-				lg.Info("became desired stack status; exiting", zap.String("current-stack-status", currentStatus))
-				close(ch)
-				return
-			}
 			// continue for-loop
 		}
 

@@ -3,6 +3,35 @@
 <hr>
 
 
+## [v0.9.5](https://github.com/aws/aws-k8s-tester/releases/tag/v0.9.5) (2020-03-30)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.9.4...v0.9.5).
+
+### `eks`
+
+- Improve [`NG` and `MNG` polling, check in reverse order of creation time for each ASG](https://github.com/aws/aws-k8s-tester/commit/).
+- Improve [`Poll` functions in case stack has already been created complete](https://github.com/aws/aws-k8s-tester/commit/).
+
+### `pkg/aws`
+
+- Improve [`cloudformation.Poll` functions in case stack has already been created complete](https://github.com/aws/aws-k8s-tester/commit/).
+
+### `eksconfig`
+
+- Simplify [`KubectlCommands` output](https://github.com/aws/aws-k8s-tester/commit/d890ee138d1f63f2a8c2697163c9dc2fb2a69361).
+
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.29.34`](https://github.com/aws/aws-sdk-go/releases/tag/v1.29.34) to [`v1.30.0`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.0).
+
+### Go
+
+- Compile with [*Go 1.14.1*](https://golang.org/doc/devel/release.html#go1.14).
+
+
+<hr>
+
+
 ## [v0.9.4](https://github.com/aws/aws-k8s-tester/releases/tag/v0.9.4) (2020-03-28)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.9.3...v0.9.4).

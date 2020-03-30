@@ -578,8 +578,10 @@ func Poll(
 
 	ch := make(chan ClusterStatus, 10)
 	go func() {
-		ticker := time.NewTicker(wait)
-		defer ticker.Stop()
+		// very first poll should be no-wait
+		// in case stack has already reached desired status
+		// wait from second interation
+		waitDur := time.Duration(0)
 
 		first := true
 		for ctx.Err() == nil {
@@ -596,7 +598,13 @@ func Poll(
 				close(ch)
 				return
 
-			case <-ticker.C:
+			case <-time.After(waitDur):
+				// very first poll should be no-wait
+				// in case stack has already reached desired status
+				// wait from second interation
+				if waitDur == time.Duration(0) {
+					waitDur = wait
+				}
 			}
 
 			output, err := eksAPI.DescribeCluster(&awseks.DescribeClusterInput{
@@ -648,6 +656,7 @@ func Poll(
 			default:
 				ch <- ClusterStatus{Cluster: cluster, Error: nil}
 			}
+
 			if first {
 				lg.Info("sleeping", zap.Duration("initial-wait", initialWait))
 				select {

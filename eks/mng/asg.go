@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 	"text/template"
 	"time"
@@ -159,22 +160,26 @@ func (ts *tester) createASG() error {
 
 	now := time.Now()
 
+	// track timestamps and check status in reverse order
+	// to minimize polling API calls
+	tss := make(tupleTimes, 0)
+
 	if ts.cfg.EKSConfig.AddOnManagedNodeGroups.ResolverURL != "" ||
 		(ts.cfg.EKSConfig.AddOnManagedNodeGroups.RequestHeaderKey != "" &&
 			ts.cfg.EKSConfig.AddOnManagedNodeGroups.RequestHeaderValue != "") {
 
-		for k, cur := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
-			vv, ok := ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[k]
+		for mngName, cur := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
+			vv, ok := ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName]
 			if ok && (vv.CreateRequested || vv.CFNStackID != "") {
 				ts.cfg.Logger.Warn("no need to create a new one, skipping",
-					zap.String("name", k),
+					zap.String("mng-name", mngName),
 					zap.Bool("create-requested", vv.CreateRequested),
 					zap.String("cfn-stack-id", vv.CFNStackID),
 				)
 				continue
 			}
 
-			ts.cfg.Logger.Info("creating a managed node group using EKS API", zap.String("name", cur.Name))
+			ts.cfg.Logger.Info("creating a managed node group using EKS API", zap.String("mng-name", cur.Name))
 			createInput := awseks.CreateNodegroupInput{
 				ClusterName:   aws.String(ts.cfg.EKSConfig.Name),
 				NodegroupName: aws.String(cur.Name),
@@ -227,27 +232,28 @@ func (ts *tester) createASG() error {
 			cur.Status = awseks.NodegroupStatusCreating
 			cur.Instances = make(map[string]ec2config.Instance)
 			cur.Logs = make(map[string][]string)
-			ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[cur.Name] = cur
+			ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName] = cur
 			ts.cfg.EKSConfig.Sync()
 			ts.cfg.Logger.Info("sent create managed node group request")
 
+			tss = append(tss, tupleTime{ts: time.Now(), name: mngName})
 			// when used with EKS API directly, just use "Poll" below to sync status
 		}
 
 	} else {
 
-		for k, cur := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
-			vv, ok := ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[k]
+		for mngName, cur := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
+			vv, ok := ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName]
 			if ok && (vv.CreateRequested || vv.CFNStackID != "") {
 				ts.cfg.Logger.Warn("no need to create a new one, skipping",
-					zap.String("name", k),
+					zap.String("mng-name", mngName),
 					zap.Bool("create-requested", vv.CreateRequested),
 					zap.String("cfn-stack-id", vv.CFNStackID),
 				)
 				continue
 			}
 
-			ts.cfg.Logger.Info("creating a new node group using CFN", zap.String("name", cur.Name))
+			ts.cfg.Logger.Info("creating a new node group using CFN", zap.String("mng-name", cur.Name))
 			stackInput := &cloudformation.CreateStackInput{
 				StackName:    aws.String(cur.Name),
 				Capabilities: aws.StringSlice([]string{"CAPABILITY_IAM"}),
@@ -344,13 +350,23 @@ func (ts *tester) createASG() error {
 			cur.Status = cloudformation.ResourceStatusCreateInProgress
 			cur.Instances = make(map[string]ec2config.Instance)
 			cur.Logs = make(map[string][]string)
-			ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[cur.Name] = cur
+			ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName] = cur
 			ts.cfg.EKSConfig.Sync()
+
+			tss = append(tss, tupleTime{ts: time.Now(), name: mngName})
 		}
 	}
 
+	sort.Sort(sort.Reverse(tss))
+
 	// wait for ASG EC2 instances + MNG nodes + Kubernetes nodes ready
-	for mngName, cur := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
+	for _, tv := range tss {
+		mngName := tv.name
+		cur, ok := ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName]
+		if !ok {
+			return fmt.Errorf("MNG name %q not found after creation", mngName)
+		}
+
 		mngStackID := cur.CFNStackID
 		if mngStackID != "" {
 			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
@@ -437,14 +453,14 @@ func (ts *tester) deleteASG() error {
 	}()
 
 	ts.cfg.Logger.Info("deleting managed node groups")
-	for name, mv := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
-		if name == "" {
+	for mngName, mv := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
+		if mngName == "" {
 			ts.cfg.Logger.Warn("empty name found in status map")
 			delete(ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs, "")
 			continue
 		}
 		if mv.Status == "" || mv.Status == ManagedNodeGroupStatusDELETEDORNOTEXIST {
-			ts.cfg.Logger.Info("managed node group already deleted; no need to delete managed node group", zap.String("name", name))
+			ts.cfg.Logger.Info("managed node group already deleted; no need to delete managed node group", zap.String("name", mngName))
 			continue
 		}
 
@@ -454,7 +470,10 @@ func (ts *tester) deleteASG() error {
 		}
 
 		if useCFN {
-			ts.cfg.Logger.Info("deleting managed node group using CFN", zap.String("name", name), zap.String("cfn-stack-id", name))
+			ts.cfg.Logger.Info("deleting managed node group using CFN",
+				zap.String("mng-name", mngName),
+				zap.String("cfn-stack-id", mv.CFNStackID),
+			)
 			_, err := ts.cfg.CFNAPI.DeleteStack(&cloudformation.DeleteStackInput{
 				StackName: aws.String(mv.CFNStackID),
 			})
@@ -482,7 +501,7 @@ func (ts *tester) deleteASG() error {
 				if st.Error != nil {
 					cancel()
 					mv.Status = fmt.Sprintf("failed to delete a managed node group (%v)", st.Error)
-					ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[name] = mv
+					ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName] = mv
 					ts.cfg.EKSConfig.Sync()
 					ts.cfg.Logger.Warn("polling errror", zap.Error(st.Error))
 				}
@@ -492,19 +511,19 @@ func (ts *tester) deleteASG() error {
 				return st.Error
 			}
 			mv.Status = ManagedNodeGroupStatusDELETEDORNOTEXIST
-			ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[name] = mv
+			ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName] = mv
 			ts.cfg.EKSConfig.Sync()
 
 		} else {
 
-			ts.cfg.Logger.Info("deleting managed node group using EKS API", zap.String("name", name))
+			ts.cfg.Logger.Info("deleting managed node group using EKS API", zap.String("name", mngName))
 			_, err := ts.cfg.EKSAPI.DeleteNodegroup(&awseks.DeleteNodegroupInput{
 				ClusterName:   aws.String(ts.cfg.EKSConfig.Name),
-				NodegroupName: aws.String(name),
+				NodegroupName: aws.String(mngName),
 			})
 			if err != nil {
 				mv.Status = fmt.Sprintf("failed to delete managed node group (%v)", err)
-				ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[name] = mv
+				ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName] = mv
 				ts.cfg.EKSConfig.Sync()
 				return err
 			}
@@ -520,7 +539,7 @@ func (ts *tester) deleteASG() error {
 				ts.cfg.Logger,
 				ts.cfg.EKSAPI,
 				ts.cfg.EKSConfig.Name,
-				name,
+				mngName,
 				ManagedNodeGroupStatusDELETEDORNOTEXIST,
 				initialWait,
 				20*time.Second,
@@ -566,14 +585,14 @@ func Poll(
 	lg *zap.Logger,
 	eksAPI eksiface.EKSAPI,
 	clusterName string,
-	nodeGroupName string,
+	mngName string,
 	desiredNodeGroupStatus string,
 	initialWait time.Duration,
 	wait time.Duration,
 ) <-chan ManagedNodeGroupStatus {
 	lg.Info("polling mng",
 		zap.String("cluster-name", clusterName),
-		zap.String("mng-name", nodeGroupName),
+		zap.String("mng-name", mngName),
 		zap.String("desired-mng-status", desiredNodeGroupStatus),
 	)
 
@@ -581,55 +600,63 @@ func Poll(
 
 	ch := make(chan ManagedNodeGroupStatus, 10)
 	go func() {
-		ticker := time.NewTicker(wait)
-		defer ticker.Stop()
+		// very first poll should be no-wait
+		// in case stack has already reached desired status
+		// wait from second interation
+		waitDur := time.Duration(0)
 
 		first := true
 		for ctx.Err() == nil {
 			select {
 			case <-ctx.Done():
 				lg.Warn("wait aborted", zap.Error(ctx.Err()))
-				ch <- ManagedNodeGroupStatus{NodeGroupName: nodeGroupName, NodeGroup: nil, Error: ctx.Err()}
+				ch <- ManagedNodeGroupStatus{NodeGroupName: mngName, NodeGroup: nil, Error: ctx.Err()}
 				close(ch)
 				return
 
 			case <-stopc:
 				lg.Warn("wait stopped", zap.Error(ctx.Err()))
-				ch <- ManagedNodeGroupStatus{NodeGroupName: nodeGroupName, NodeGroup: nil, Error: errors.New("wait stopped")}
+				ch <- ManagedNodeGroupStatus{NodeGroupName: mngName, NodeGroup: nil, Error: errors.New("wait stopped")}
 				close(ch)
 				return
 
-			case <-ticker.C:
+			case <-time.After(waitDur):
+				// very first poll should be no-wait
+				// in case stack has already reached desired status
+				// wait from second interation
+				if waitDur == time.Duration(0) {
+					waitDur = wait
+				}
 			}
 
 			output, err := eksAPI.DescribeNodegroup(&awseks.DescribeNodegroupInput{
 				ClusterName:   aws.String(clusterName),
-				NodegroupName: aws.String(nodeGroupName),
+				NodegroupName: aws.String(mngName),
 			})
 			if err != nil {
 				if IsDeleted(err) {
 					if desiredNodeGroupStatus == ManagedNodeGroupStatusDELETEDORNOTEXIST {
 						lg.Info("managed node group is already deleted as desired; exiting", zap.Error(err))
-						ch <- ManagedNodeGroupStatus{NodeGroupName: nodeGroupName, NodeGroup: nil, Error: nil}
+						ch <- ManagedNodeGroupStatus{NodeGroupName: mngName, NodeGroup: nil, Error: nil}
 						close(ch)
 						return
 					}
 
 					lg.Warn("managed node group does not exist", zap.Error(err))
 					lg.Warn("aborting", zap.Error(ctx.Err()))
-					ch <- ManagedNodeGroupStatus{NodeGroupName: nodeGroupName, NodeGroup: nil, Error: err}
+					ch <- ManagedNodeGroupStatus{NodeGroupName: mngName, NodeGroup: nil, Error: err}
 					close(ch)
 					return
 				}
 
 				lg.Warn("describe managed node group failed; retrying", zap.Error(err))
-				ch <- ManagedNodeGroupStatus{NodeGroupName: nodeGroupName, NodeGroup: nil, Error: err}
+				ch <- ManagedNodeGroupStatus{NodeGroupName: mngName, NodeGroup: nil, Error: err}
 				continue
 			}
 
 			if output.Nodegroup == nil {
 				lg.Warn("expected non-nil managed node group; retrying")
-				ch <- ManagedNodeGroupStatus{NodeGroupName: nodeGroupName, NodeGroup: nil, Error: fmt.Errorf("unexpected empty response %+v", output.GoString())}
+				ch <- ManagedNodeGroupStatus{NodeGroupName: mngName, NodeGroup: nil, Error: fmt.Errorf("unexpected empty response %+v", output.GoString())}
 				continue
 			}
 
@@ -637,36 +664,37 @@ func Poll(
 			currentStatus := aws.StringValue(nodeGroup.Status)
 			lg.Info("poll",
 				zap.String("cluster-name", clusterName),
-				zap.String("mng-name", nodeGroupName),
+				zap.String("mng-name", mngName),
 				zap.String("mng-status", currentStatus),
 				zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			)
 			switch currentStatus {
 			case desiredNodeGroupStatus:
-				ch <- ManagedNodeGroupStatus{NodeGroupName: nodeGroupName, NodeGroup: nodeGroup, Error: nil}
+				ch <- ManagedNodeGroupStatus{NodeGroupName: mngName, NodeGroup: nodeGroup, Error: nil}
 				lg.Info("became desired managed node group status; exiting", zap.String("status", currentStatus))
 				close(ch)
 				return
 			case awseks.NodegroupStatusCreateFailed,
 				awseks.NodegroupStatusDeleteFailed,
 				awseks.NodegroupStatusDegraded:
-				ch <- ManagedNodeGroupStatus{NodeGroupName: nodeGroupName, NodeGroup: nodeGroup, Error: fmt.Errorf("unexpected mng status %q", currentStatus)}
+				ch <- ManagedNodeGroupStatus{NodeGroupName: mngName, NodeGroup: nodeGroup, Error: fmt.Errorf("unexpected mng status %q", currentStatus)}
 				close(ch)
 				return
 			default:
-				ch <- ManagedNodeGroupStatus{NodeGroupName: nodeGroupName, NodeGroup: nodeGroup, Error: nil}
+				ch <- ManagedNodeGroupStatus{NodeGroupName: mngName, NodeGroup: nodeGroup, Error: nil}
 			}
+
 			if first {
 				lg.Info("sleeping", zap.Duration("initial-wait", initialWait))
 				select {
 				case <-ctx.Done():
 					lg.Warn("wait aborted", zap.Error(ctx.Err()))
-					ch <- ManagedNodeGroupStatus{NodeGroupName: nodeGroupName, NodeGroup: nil, Error: ctx.Err()}
+					ch <- ManagedNodeGroupStatus{NodeGroupName: mngName, NodeGroup: nil, Error: ctx.Err()}
 					close(ch)
 					return
 				case <-stopc:
 					lg.Warn("wait stopped", zap.Error(ctx.Err()))
-					ch <- ManagedNodeGroupStatus{NodeGroupName: nodeGroupName, NodeGroup: nil, Error: errors.New("wait stopped")}
+					ch <- ManagedNodeGroupStatus{NodeGroupName: mngName, NodeGroup: nil, Error: errors.New("wait stopped")}
 					close(ch)
 					return
 				case <-time.After(initialWait):
@@ -676,7 +704,7 @@ func Poll(
 		}
 
 		lg.Warn("wait aborted", zap.Error(ctx.Err()))
-		ch <- ManagedNodeGroupStatus{NodeGroupName: nodeGroupName, NodeGroup: nil, Error: ctx.Err()}
+		ch <- ManagedNodeGroupStatus{NodeGroupName: mngName, NodeGroup: nil, Error: ctx.Err()}
 		close(ch)
 		return
 	}()
@@ -879,7 +907,7 @@ func (ts *tester) waitForNodes(mngName string) error {
 		if err != nil {
 			ts.cfg.Logger.Warn("'kubectl get csr' failed", zap.Error(err))
 		}
-		fmt.Printf("\n\n\"%s get csr\":\n%s\n\n", ts.cfg.EKSConfig.KubectlCommand(), out)
+		fmt.Printf("\n\n\"%s get csr\":\n%s\n", ts.cfg.EKSConfig.KubectlCommand(), out)
 
 		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 		output, err = exec.New().CommandContext(
@@ -895,7 +923,7 @@ func (ts *tester) waitForNodes(mngName string) error {
 		if err != nil {
 			ts.cfg.Logger.Warn("'kubectl get nodes' failed", zap.Error(err))
 		}
-		fmt.Printf("\n\n\"%s get nodes\":\n%s\n\n", ts.cfg.EKSConfig.KubectlCommand(), out)
+		fmt.Printf("\n\"%s get nodes\":\n%s\n\n", ts.cfg.EKSConfig.KubectlCommand(), out)
 
 		if readies >= cur.ASGDesiredCapacity { // TODO: check per node group
 			ready = true
