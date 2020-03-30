@@ -9,12 +9,12 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.9.4...v0.9.5
 
 ### `eks`
 
-- Improve [`NG` and `MNG` polling, check in reverse order of creation time for each ASG](https://github.com/aws/aws-k8s-tester/commit/).
-- Improve [`Poll` functions in case stack has already been created complete](https://github.com/aws/aws-k8s-tester/commit/).
+- Improve [`NG` and `MNG` polling, check in reverse order of creation time for each ASG](https://github.com/aws/aws-k8s-tester/commit/ac69bebef621271526d07edf0f23a3e96d32f459).
+- Improve [`Poll` functions in case stack has already been created complete](https://github.com/aws/aws-k8s-tester/commit/ac69bebef621271526d07edf0f23a3e96d32f459).
 
 ### `pkg/aws`
 
-- Improve [`cloudformation.Poll` functions in case stack has already been created complete](https://github.com/aws/aws-k8s-tester/commit/).
+- Improve [`cloudformation.Poll` functions in case stack has already been created complete](https://github.com/aws/aws-k8s-tester/commit/ac69bebef621271526d07edf0f23a3e96d32f459).
 
 ### `eksconfig`
 
