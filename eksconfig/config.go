@@ -1086,17 +1086,15 @@ func (cfg *Config) KubectlCommands() (s string) {
 	if cfg.KubeConfigPath == "" {
 		return ""
 	}
-	tpl := template.Must(template.New("kubectlCmdTmpl").Parse(kubectlCmdTmpl))
+	tpl := template.Must(template.New("kubectlTmpl").Parse(kubectlTmpl))
 	buf := bytes.NewBuffer(nil)
 	if err := tpl.Execute(buf, struct {
-		KubectlPath    string
 		KubeConfigPath string
-		KubectlCmd     string
+		KubectlCommand string
 		Version        string
 	}{
-		cfg.KubectlPath,
 		cfg.KubeConfigPath,
-		fmt.Sprintf("%s --kubeconfig=%s", cfg.KubectlPath, cfg.KubeConfigPath),
+		cfg.KubectlCommand(),
 		cfg.Parameters.Version,
 	}); err != nil {
 		return ""
@@ -1104,40 +1102,18 @@ func (cfg *Config) KubectlCommands() (s string) {
 	return buf.String()
 }
 
-const kubectlCmdTmpl = `# kubectl commands
+const kubectlTmpl = `# kubectl commands
 export KUBECONFIG={{ .KubeConfigPath }}
-export KUBECTL="{{ .KubectlCmd }}"
-${KUBECTL} version
-${KUBECTL} cluster-info
+export KUBECTL="{{ .KubectlCommand }}"
 
-export KUBECONFIG={{ .KubeConfigPath }}
-export KUBECTL="{{ .KubectlCmd }}"
-${KUBECTL} get cs
-${KUBECTL} get nodes
-
-export KUBECONFIG={{ .KubeConfigPath }}
-export KUBECTL="{{ .KubectlCmd }}"
-${KUBECTL} --namespace=kube-system get pods
-
-export KUBECONFIG={{ .KubeConfigPath }}
-export KUBECTL="{{ .KubectlCmd }}"
-${KUBECTL} get pods
-
-export KUBECONFIG={{ .KubeConfigPath }}
-export KUBECTL="{{ .KubectlCmd }}"
-${KUBECTL} --namespace=kube-system get ds
-
-export KUBECONFIG={{ .KubeConfigPath }}
-export KUBECTL="{{ .KubectlCmd }}"
-${KUBECTL} get secrets --all-namespaces
-
-export KUBECONFIG={{ .KubeConfigPath }}
-export KUBECTL="{{ .KubectlCmd }}"
-${KUBECTL} get configmap --all-namespaces
-
-export KUBECONFIG={{ .KubeConfigPath }}
-export KUBECTL="{{ .KubectlCmd }}"
-${KUBECTL} get all --all-namespaces
+{{ .KubectlCommand }} version
+{{ .KubectlCommand }} cluster-info
+{{ .KubectlCommand }} get cs
+{{ .KubectlCommand }} get nodes
+{{ .KubectlCommand }} get pods
+{{ .KubectlCommand }} --namespace=kube-system get pods
+{{ .KubectlCommand }} --namespace=kube-system get ds
+{{ .KubectlCommand }} get all --all-namespaces
 
 # sonobuoy commands
 go get -v -u github.com/heptio/sonobuoy
