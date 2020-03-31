@@ -11,6 +11,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.9.5...v0.9.6
 
 - Clean up [`KubectlCommands` output](https://github.com/aws/aws-k8s-tester/commit/76b35f487480290d344f918ddd5b0cb99566831d).
 
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.30.0`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.0) to [`v1.30.1`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.1).
+
 ### Go
 
 - Compile with [*Go 1.14.1*](https://golang.org/doc/devel/release.html#go1.14).
