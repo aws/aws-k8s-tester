@@ -3,6 +3,22 @@
 <hr>
 
 
+## [v0.9.6](https://github.com/aws/aws-k8s-tester/releases/tag/v0.9.6) (2020-03-31)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.9.5...v0.9.6).
+
+### `eksconfig`
+
+- Clean up [`KubectlCommands` output]().
+
+### Go
+
+- Compile with [*Go 1.14.1*](https://golang.org/doc/devel/release.html#go1.14).
+
+
+<hr>
+
+
 ## [v0.9.5](https://github.com/aws/aws-k8s-tester/releases/tag/v0.9.5) (2020-03-30)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.9.4...v0.9.5).

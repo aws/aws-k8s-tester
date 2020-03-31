@@ -1058,13 +1058,14 @@ func (cfg *Config) unsafeSync() (err error) {
 		return fmt.Errorf("failed to write file %q (%v)", cfg.ConfigPath, err)
 	}
 
-	err = ioutil.WriteFile(cfg.KubectlCommandsOutputPath, []byte(cmdTop+cfg.KubectlCommands()), 0600)
-	if err != nil {
-		return fmt.Errorf("failed to write file %q (%v)", cfg.KubectlCommandsOutputPath, err)
-	}
 	err = ioutil.WriteFile(cfg.RemoteAccessCommandsOutputPath, []byte(cmdTop+cfg.unsafeSSHCommands()), 0600)
 	if err != nil {
 		return fmt.Errorf("failed to write file %q (%v)", cfg.RemoteAccessCommandsOutputPath, err)
+	}
+
+	err = ioutil.WriteFile(cfg.KubectlCommandsOutputPath, []byte(cmdTop+cfg.KubectlCommands()), 0600)
+	if err != nil {
+		return fmt.Errorf("failed to write file %q (%v)", cfg.KubectlCommandsOutputPath, err)
 	}
 
 	return nil
@@ -1108,8 +1109,8 @@ export KUBECTL="{{ .KubectlCommand }}"
 
 {{ .KubectlCommand }} version
 {{ .KubectlCommand }} cluster-info
-{{ .KubectlCommand }} get cs
-{{ .KubectlCommand }} get nodes
+{{ .KubectlCommand }} get cs -o=yaml
+{{ .KubectlCommand }} get nodes -o=yaml
 {{ .KubectlCommand }} get pods
 {{ .KubectlCommand }} --namespace=kube-system get pods
 {{ .KubectlCommand }} --namespace=kube-system get ds
@@ -1117,22 +1118,11 @@ export KUBECTL="{{ .KubectlCommand }}"
 
 # sonobuoy commands
 go get -v -u github.com/heptio/sonobuoy
-
 sonobuoy delete --wait --kubeconfig={{ .KubeConfigPath }}
-sonobuoy run \
-  --mode Quick \
-  --wait \
-  --kube-conformance-image gcr.io/heptio-images/kube-conformance:v{{ .Version }}.0 \
-  --kubeconfig={{ .KubeConfigPath }}
-
+sonobuoy run --mode Quick --wait --kube-conformance-image gcr.io/heptio-images/kube-conformance:v{{ .Version }}.0 --kubeconfig={{ .KubeConfigPath }}
 sonobuoy delete --wait --kubeconfig={{ .KubeConfigPath }}
-sonobuoy run \
-  --wait \
-  --kube-conformance-image gcr.io/heptio-images/kube-conformance:v{{ .Version }}.0 \
-  --kubeconfig={{ .KubeConfigPath }}
-
+sonobuoy run --wait --kube-conformance-image gcr.io/heptio-images/kube-conformance:v{{ .Version }}.0 --kubeconfig={{ .KubeConfigPath }}
 sonobuoy status --kubeconfig={{ .KubeConfigPath }}
-
 results=$(sonobuoy retrieve --kubeconfig={{ .KubeConfigPath }})
 sonobuoy e2e --kubeconfig={{ .KubeConfigPath }} $results --show all
 sonobuoy e2e --kubeconfig={{ .KubeConfigPath }} $results

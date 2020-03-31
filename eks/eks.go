@@ -534,12 +534,12 @@ func (ts *Tester) Up() (err error) {
 		if err == nil {
 			if ts.cfg.Status.Up {
 				fmt.Printf("\n*********************************\n")
-				ts.lg.Sugar().Infof("kubectl (%s)", ts.cfg.ConfigPath)
-				fmt.Println(ts.cfg.KubectlCommands())
-
-				fmt.Printf("\n*********************************\n")
 				ts.lg.Sugar().Infof("SSH (%s)", ts.cfg.ConfigPath)
 				fmt.Println(ts.cfg.SSHCommands())
+
+				fmt.Printf("\n*********************************\n")
+				ts.lg.Sugar().Infof("kubectl (%s)", ts.cfg.ConfigPath)
+				fmt.Println(ts.cfg.KubectlCommands())
 
 				ts.lg.Info("Up succeeded",
 					zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
@@ -557,12 +557,12 @@ func (ts *Tester) Up() (err error) {
 		if !ts.cfg.OnFailureDelete {
 			if ts.cfg.Status.Up {
 				fmt.Printf("\n*********************************\n")
-				ts.lg.Sugar().Infof("kubectl (%s)", ts.cfg.ConfigPath)
-				fmt.Println(ts.cfg.KubectlCommands())
-
-				fmt.Printf("\n*********************************\n")
 				ts.lg.Sugar().Infof("SSH (%s)", ts.cfg.ConfigPath)
 				fmt.Println(ts.cfg.SSHCommands())
+
+				fmt.Printf("\n*********************************\n")
+				ts.lg.Sugar().Infof("kubectl (%s)", ts.cfg.ConfigPath)
+				fmt.Println(ts.cfg.KubectlCommands())
 			}
 
 			ts.lg.Warn("Up failed",
@@ -578,12 +578,12 @@ func (ts *Tester) Up() (err error) {
 
 		if ts.cfg.Status.Up {
 			fmt.Printf("\n*********************************\n")
-			ts.lg.Sugar().Infof("kubectl (%s)", ts.cfg.ConfigPath)
-			fmt.Println(ts.cfg.KubectlCommands())
-
-			fmt.Printf("\n*********************************\n")
 			ts.lg.Sugar().Infof("SSH (%s)", ts.cfg.ConfigPath)
 			fmt.Println(ts.cfg.SSHCommands())
+
+			fmt.Printf("\n*********************************\n")
+			ts.lg.Sugar().Infof("kubectl (%s)", ts.cfg.ConfigPath)
+			fmt.Println(ts.cfg.KubectlCommands())
 		}
 
 		fmt.Printf("\n*********************************\n")
@@ -816,12 +816,13 @@ func (ts *Tester) Up() (err error) {
 	}
 
 	fmt.Printf("\n*********************************\n")
+	ts.lg.Sugar().Infof("SSH (%s)", ts.cfg.ConfigPath)
+	fmt.Println(ts.cfg.SSHCommands())
+	
+	fmt.Printf("\n*********************************\n")
 	ts.lg.Sugar().Infof("kubectl (%s)", ts.cfg.ConfigPath)
 	fmt.Println(ts.cfg.KubectlCommands())
 
-	fmt.Printf("\n*********************************\n")
-	ts.lg.Sugar().Infof("SSH (%s)", ts.cfg.ConfigPath)
-	fmt.Println(ts.cfg.SSHCommands())
 
 	if ts.cfg.IsEnabledAddOnNLBHelloWorld() {
 		fmt.Printf("\n*********************************\n")
