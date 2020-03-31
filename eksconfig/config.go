@@ -1109,9 +1109,10 @@ export KUBECTL="{{ .KubectlCommand }}"
 
 {{ .KubectlCommand }} version
 {{ .KubectlCommand }} cluster-info
-{{ .KubectlCommand }} get cs -o=yaml
-{{ .KubectlCommand }} get nodes -o=yaml
+{{ .KubectlCommand }} get cs
 {{ .KubectlCommand }} get pods
+{{ .KubectlCommand }} get csr -o=yaml
+{{ .KubectlCommand }} get nodes -o=yaml
 {{ .KubectlCommand }} --namespace=kube-system get pods
 {{ .KubectlCommand }} --namespace=kube-system get ds
 {{ .KubectlCommand }} get all --all-namespaces
