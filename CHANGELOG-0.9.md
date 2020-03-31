@@ -9,7 +9,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.9.5...v0.9.6
 
 ### `eksconfig`
 
-- Clean up [`KubectlCommands` output]().
+- Clean up [`KubectlCommands` output](https://github.com/aws/aws-k8s-tester/commit/76b35f487480290d344f918ddd5b0cb99566831d).
 
 ### Go
 
