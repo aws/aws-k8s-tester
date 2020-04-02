@@ -1058,14 +1058,18 @@ func (cfg *Config) unsafeSync() (err error) {
 		return fmt.Errorf("failed to write file %q (%v)", cfg.ConfigPath, err)
 	}
 
-	err = ioutil.WriteFile(cfg.RemoteAccessCommandsOutputPath, []byte(cmdTop+cfg.unsafeSSHCommands()), 0600)
-	if err != nil {
-		return fmt.Errorf("failed to write file %q (%v)", cfg.RemoteAccessCommandsOutputPath, err)
+	if cfg.RemoteAccessCommandsOutputPath != "" {
+		err = ioutil.WriteFile(cfg.RemoteAccessCommandsOutputPath, []byte(cmdTop+cfg.unsafeSSHCommands()), 0600)
+		if err != nil {
+			return fmt.Errorf("failed to write RemoteAccessCommandsOutputPath %q (%v)", cfg.RemoteAccessCommandsOutputPath, err)
+		}
 	}
 
-	err = ioutil.WriteFile(cfg.KubectlCommandsOutputPath, []byte(cmdTop+cfg.KubectlCommands()), 0600)
-	if err != nil {
-		return fmt.Errorf("failed to write file %q (%v)", cfg.KubectlCommandsOutputPath, err)
+	if cfg.KubectlCommandsOutputPath != "" {
+		err = ioutil.WriteFile(cfg.KubectlCommandsOutputPath, []byte(cmdTop+cfg.KubectlCommands()), 0600)
+		if err != nil {
+			return fmt.Errorf("failed to write KubectlCommandsOutputPath %q (%v)", cfg.KubectlCommandsOutputPath, err)
+		}
 	}
 
 	return nil
@@ -1137,14 +1141,10 @@ func (cfg *Config) SSHCommands() string {
 }
 
 func (cfg *Config) unsafeSSHCommands() (s string) {
-	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
-		return ""
-	}
-
 	buf := bytes.NewBuffer(nil)
 	buf.WriteByte('\n')
 
-	if cfg.IsEnabledAddOnNodeGroups() {
+	if cfg.AddOnNodeGroups != nil && cfg.AddOnNodeGroups.Enable {
 		for name, cur := range cfg.AddOnNodeGroups.ASGs {
 			if len(cur.Instances) == 0 {
 				buf.WriteString(fmt.Sprintf("no ASG instances found for node group %s\n", name))
@@ -1160,7 +1160,7 @@ func (cfg *Config) unsafeSSHCommands() (s string) {
 		}
 	}
 
-	if cfg.IsEnabledAddOnManagedNodeGroups() {
+	if cfg.AddOnManagedNodeGroups != nil && cfg.AddOnManagedNodeGroups.Enable {
 		for name, cur := range cfg.AddOnManagedNodeGroups.MNGs {
 			if len(cur.Instances) == 0 {
 				buf.WriteString(fmt.Sprintf("no ASG instances found for managed node group %s\n", name))
