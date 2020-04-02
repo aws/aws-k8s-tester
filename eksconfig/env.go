@@ -57,7 +57,12 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return err
 	}
 	if av, ok := vv.(*Config); ok {
+		before := cfg.Parameters
 		cfg = av
+		after := cfg.Parameters
+		if !reflect.DeepEqual(before, after) {
+			return fmt.Errorf("Parameters overwritten [before %+v, after %+v]", before, after)
+		}
 	} else {
 		return fmt.Errorf("expected *Config, got %T", vv)
 	}
