@@ -3,6 +3,27 @@
 <hr>
 
 
+## [v0.9.8](https://github.com/aws/aws-k8s-tester/releases/tag/v0.9.8) (2020-04-02)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.9.7...v0.9.8).
+
+### `eksconfig`
+
+- Fix [`eks create config` by removing unnecessary `eksconfig.Config.Sync` call](https://github.com/aws/aws-k8s-tester/pull/83).
+  - https://github.com/aws/aws-k8s-tester/issues/82
+
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.30.1`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.1) to [`v1.30.2`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.2).
+
+### Go
+
+- Compile with [*Go 1.14.1*](https://golang.org/doc/devel/release.html#go1.14).
+
+
+<hr>
+
+
 ## [v0.9.7](https://github.com/aws/aws-k8s-tester/releases/tag/v0.9.7) (2020-04-01)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.9.6...v0.9.7).
