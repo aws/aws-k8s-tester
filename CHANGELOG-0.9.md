@@ -3,18 +3,9 @@
 <hr>
 
 
-## [v0.9.8](https://github.com/aws/aws-k8s-tester/releases/tag/v0.9.8) (2020-04-02)
+## [v0.9.8](https://github.com/aws/aws-k8s-tester/releases/tag/v0.9.8) (2020-04)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.9.7...v0.9.8).
-
-### `eksconfig`
-
-- Fix [`eks create config` by removing unnecessary `eksconfig.Config.Sync` call](https://github.com/aws/aws-k8s-tester/pull/83).
-  - https://github.com/aws/aws-k8s-tester/issues/82
-
-### Dependency
-
-- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.30.2`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.2) to [`v1.30.3`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.3).
 
 ### Go
 
@@ -24,17 +15,19 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.9.7...v0.9.8
 <hr>
 
 
-## [v0.9.7](https://github.com/aws/aws-k8s-tester/releases/tag/v0.9.7) (2020-04-01)
+## [v0.9.7](https://github.com/aws/aws-k8s-tester/releases/tag/v0.9.7) (2020-04-02)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.9.6...v0.9.7).
 
 ### `eksconfig`
 
 - Fix [`Sync` method to not overwriting pointer fields with `nil`](https://github.com/aws/aws-k8s-tester/commit/2a2aa2a9428161624c6a20126a940b40d31dbae4).
+- Fix [`eks create config` by removing unnecessary `eksconfig.Config.Sync` call](https://github.com/aws/aws-k8s-tester/pull/83).
+  - https://github.com/aws/aws-k8s-tester/issues/82
 
 ### Dependency
 
-- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.30.1`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.1) to [`v1.30.2`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.2).
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.30.1`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.1) to [`v1.30.3`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.3).
 
 ### Go
 
