@@ -38,7 +38,6 @@ func configFunc(cmd *cobra.Command, args []string) {
 	}
 	cfg := eksconfig.NewDefault()
 	cfg.ConfigPath = path
-	cfg.Sync()
 
 	fmt.Printf("\n*********************************\n")
 	fmt.Printf("overwriting config file from environment variables...\n")
