@@ -3,9 +3,13 @@
 <hr>
 
 
-## [v0.9.7](https://github.com/aws/aws-k8s-tester/releases/tag/v0.9.7) (2020-04)
+## [v0.9.7](https://github.com/aws/aws-k8s-tester/releases/tag/v0.9.7) (2020-04-01)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.9.6...v0.9.7).
+
+### `eksconfig`
+
+- Fix [`Sync` method to not overwriting pointer fields with `nil`](https://github.com/aws/aws-k8s-tester/commit/2a2aa2a9428161624c6a20126a940b40d31dbae4).
 
 ### Dependency
 
