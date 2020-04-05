@@ -9,25 +9,25 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.9.7...v0.9.8
 
 ### `eks`
 
-- Create namespace with [`pkg/k8s-client` with retries and backoff](https://github.com/aws/aws-k8s-tester/commit/be210c67cc3128b88666d6d673f1b6ebd0741a47).
-- Add [`eks/configmaps`](https://github.com/aws/aws-k8s-tester/commit/8f327f748333fe9c19c0fecb8647f2c8a7374482).
-- Add [`eks/csrs`](https://github.com/aws/aws-k8s-tester/commit/8f327f748333fe9c19c0fecb8647f2c8a7374482).
+- Create namespace with [`pkg/k8s-client` with retries and backoff](https://github.com/aws/aws-k8s-tester/commit/f85118eea332fc33629d8c21470c731090e51c19).
+- Add [`eks/configmaps`](https://github.com/aws/aws-k8s-tester/commit/f85118eea332fc33629d8c21470c731090e51c19).
+- Add [`eks/csrs`](https://github.com/aws/aws-k8s-tester/commit/f85118eea332fc33629d8c21470c731090e51c19).
 
 ### `eksconfig`
 
-- Add [`ClientQPS`](https://github.com/aws/aws-k8s-tester/commit/8f327f748333fe9c19c0fecb8647f2c8a7374482).
+- Add [`ClientQPS`](https://github.com/aws/aws-k8s-tester/commit/f85118eea332fc33629d8c21470c731090e51c19).
   - `AWS_K8S_TESTER_EKS_CLIENT_QPS`.
-- Add [`ClientBurst`](https://github.com/aws/aws-k8s-tester/commit/8f327f748333fe9c19c0fecb8647f2c8a7374482).
+- Add [`ClientBurst`](https://github.com/aws/aws-k8s-tester/commit/f85118eea332fc33629d8c21470c731090e51c19).
   - `AWS_K8S_TESTER_EKS_CLIENT_BURST`.
-- Rename [`AddOnCronJob` to `AddOnCronJobs`](https://github.com/aws/aws-k8s-tester/commit/8f327f748333fe9c19c0fecb8647f2c8a7374482).
+- Rename [`AddOnCronJob` to `AddOnCronJobs`](https://github.com/aws/aws-k8s-tester/commit/f85118eea332fc33629d8c21470c731090e51c19).
   - `AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_*` is now `AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_*`.
-- Rename [`AddOnJobPi` to `AddOnJobsPi`](https://github.com/aws/aws-k8s-tester/commit/8f327f748333fe9c19c0fecb8647f2c8a7374482).
+- Rename [`AddOnJobPi` to `AddOnJobsPi`](https://github.com/aws/aws-k8s-tester/commit/f85118eea332fc33629d8c21470c731090e51c19).
   - `AWS_K8S_TESTER_EKS_ADD_ON_JOB_PI_*` is now `AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_*`.
-- Rename [`AddOnJobEcho` to `AddOnJobsEcho`](https://github.com/aws/aws-k8s-tester/commit/8f327f748333fe9c19c0fecb8647f2c8a7374482).
+- Rename [`AddOnJobEcho` to `AddOnJobsEcho`](https://github.com/aws/aws-k8s-tester/commit/f85118eea332fc33629d8c21470c731090e51c19).
   - `AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_*` is now `AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_*`.
-- Add [`AddOnConfigMaps`](https://github.com/aws/aws-k8s-tester/commit/8f327f748333fe9c19c0fecb8647f2c8a7374482).
+- Add [`AddOnConfigMaps`](https://github.com/aws/aws-k8s-tester/commit/f85118eea332fc33629d8c21470c731090e51c19).
   - `AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_*`.
-- Add [`AddOnCSRs`](https://github.com/aws/aws-k8s-tester/commit/8f327f748333fe9c19c0fecb8647f2c8a7374482).
+- Add [`AddOnCSRs`](https://github.com/aws/aws-k8s-tester/commit/f85118eea332fc33629d8c21470c731090e51c19).
   - `AWS_K8S_TESTER_EKS_ADD_ON_CSRS_*`.
 
 ### Dependency
