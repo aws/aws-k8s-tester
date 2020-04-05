@@ -342,6 +342,13 @@ func (ts *tester) createCSRsParallel(pfx string, failThreshold int) error {
 				werr := rateLimiter.Wait(context.Background())
 				ts.cfg.Logger.Debug("waited for rate limiter", zap.Int("index", i), zap.Error(werr))
 			}
+			select {
+			case <-ts.cancel:
+				return
+			case <-ts.cfg.Stopc:
+				return
+			default:
+			}
 
 			key := fmt.Sprintf("%s%06d", pfx, i)
 			req := ts.createCSR(key)

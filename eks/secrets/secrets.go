@@ -284,6 +284,14 @@ func (ts *tester) createSecretsParallel(pfx, valSfx string, failThreshold int) e
 				ts.cfg.Logger.Debug("waited for rate limiter", zap.Int("index", i), zap.Error(werr))
 			}
 
+			select {
+			case <-ts.cancel:
+				return
+			case <-ts.cfg.Stopc:
+				return
+			default:
+			}
+
 			key := fmt.Sprintf("%s%06d", pfx, i)
 			val := []byte(fmt.Sprintf("%06d", i) + valSfx)
 
@@ -581,6 +589,13 @@ func (ts *tester) createPodsParallel(pods []*v1.Pod) error {
 				ts.cfg.Logger.Debug("waiting for rate limiter creating Pod")
 				werr := rateLimiter.Wait(context.Background())
 				ts.cfg.Logger.Debug("waited for rate limiter", zap.Error(werr))
+			}
+			select {
+			case <-ts.cancel:
+				return
+			case <-ts.cfg.Stopc:
+				return
+			default:
 			}
 
 			t1 := time.Now()
