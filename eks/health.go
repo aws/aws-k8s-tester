@@ -112,7 +112,7 @@ func (ts *Tester) health() error {
 	if !strings.Contains(out, "healthz check passed") {
 		return fmt.Errorf("%q does not contain 'healthz check passed'", out)
 	}
-	fmt.Printf("\n\n\"%s\" output:\n%s\n", ep, out)
+	fmt.Printf("\n\n\"%s\" output (\"kubectl get --raw /healthz?verbose\"):\n%s\n", ep, out)
 
 	ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 	output, err = exec.New().CommandContext(
