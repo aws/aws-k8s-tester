@@ -14,56 +14,53 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
 )
 
-// DefaultConfig is the default configuration.
+// NewDefault returns a default configuration.
 //  - empty string creates a non-nil object for pointer-type field
 //  - omitting an entire field returns nil value
 //  - make sure to check both
-var DefaultConfig = Config{
-	// to be auto-generated
-	ConfigPath:                     "",
-	RemoteAccessCommandsOutputPath: "",
-	Name:                           "",
-
-	Region: "us-west-2",
-
-	LogLevel: logutil.DefaultLogLevel,
-	// default, stderr, stdout, or file name
-	// log file named with cluster name will be added automatically
-	LogOutputs: []string{"stderr"},
-
-	OnFailureDelete:            true,
-	OnFailureDeleteWaitSeconds: 120,
-
-	S3BucketName:                    "",
-	S3BucketCreate:                  false,
-	S3BucketLifecycleExpirationDays: 0,
-
-	RoleCreate:                 true,
-	VPCCreate:                  true,
-	RemoteAccessKeyCreate:      true,
-	RemoteAccessPrivateKeyPath: filepath.Join(os.TempDir(), randString(10)+".insecure.key"),
-
-	ASGsFetchLogs: true,
-}
-
-// NewDefault returns a copy of the default configuration.
 func NewDefault() *Config {
-	vv := DefaultConfig
-	vv.mu = new(sync.RWMutex)
+	cfg := Config{
+		mu: new(sync.RWMutex),
 
-	if name := os.Getenv(EnvironmentVariablePrefix + "NAME"); name != "" {
-		vv.Name = name
-	} else {
-		vv.Name = fmt.Sprintf("ec2-%s-%s", getTS()[:10], randString(12))
+		Name: fmt.Sprintf("ec2-%s-%s", getTS()[:10], randString(12)),
+
+		// to be auto-generated
+		ConfigPath:                     "",
+		RemoteAccessCommandsOutputPath: "",
+
+		Region: "us-west-2",
+
+		LogLevel: logutil.DefaultLogLevel,
+		// default, stderr, stdout, or file name
+		// log file named with cluster name will be added automatically
+		LogOutputs: []string{"stderr"},
+
+		OnFailureDelete:            true,
+		OnFailureDeleteWaitSeconds: 120,
+
+		S3BucketName:                    "",
+		S3BucketCreate:                  false,
+		S3BucketLifecycleExpirationDays: 0,
+
+		RoleCreate:                 true,
+		VPCCreate:                  true,
+		RemoteAccessKeyCreate:      true,
+		RemoteAccessPrivateKeyPath: filepath.Join(os.TempDir(), randString(10)+".insecure.key"),
+
+		ASGsFetchLogs: true,
 	}
 
-	ssmDocName := vv.Name + "SSMDocument"
+	if name := os.Getenv(EnvironmentVariablePrefix + "NAME"); name != "" {
+		cfg.Name = name
+	}
+
+	ssmDocName := cfg.Name + "SSMDocument"
 	ssmDocName = strings.ReplaceAll(ssmDocName, "-", "")
-	vv.ASGs = map[string]ASG{
-		vv.Name + "-asg": {
-			Name:                               vv.Name + "-asg",
+	cfg.ASGs = map[string]ASG{
+		cfg.Name + "-asg": {
+			Name:                               cfg.Name + "-asg",
 			RemoteAccessUserName:               "ec2-user", // for AL2
-			SSMDocumentName:                    vv.Name + "SSMDocument",
+			SSMDocumentName:                    cfg.Name + "SSMDocument",
 			SSMDocumentCreate:                  false,
 			SSMDocumentCommands:                "",
 			SSMDocumentExecutionTimeoutSeconds: 3600,
@@ -76,7 +73,7 @@ func NewDefault() *Config {
 		},
 	}
 
-	return &vv
+	return &cfg
 }
 
 // ValidateAndSetDefaults returns an error for invalid configurations.

@@ -55,7 +55,7 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_S3_BUCKET_CREATE")
 	os.Setenv("AWS_K8S_TESTER_EKS_S3_BUCKET_LIFECYCLE_EXPIRATION_DAYS", `10`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_S3_BUCKET_LIFECYCLE_EXPIRATION_DAYS")
-	os.Setenv("AWS_K8S_TESTER_EKS_CLIENT_QPS", `555.77`)
+	os.Setenv("AWS_K8S_TESTER_EKS_CLIENT_QPS", `99555.77`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_CLIENT_QPS")
 	os.Setenv("AWS_K8S_TESTER_EKS_CLIENT_BURST", `177`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_CLIENT_BURST")
@@ -241,7 +241,7 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_NAMESPACE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_OBJECTS", "10000")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_OBJECTS")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_QPS", "333")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_QPS", "222")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_QPS")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_BURST", "777")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_BURST")
@@ -380,7 +380,7 @@ func TestEnv(t *testing.T) {
 	if cfg.S3BucketLifecycleExpirationDays != 10 {
 		t.Fatalf("unexpected cfg.S3BucketLifecycleExpirationDays %d", cfg.S3BucketLifecycleExpirationDays)
 	}
-	if cfg.ClientQPS != 555.77 {
+	if cfg.ClientQPS != 99555.77 {
 		t.Fatalf("unexpected cfg.ClientQPS %f", cfg.ClientQPS)
 	}
 	if cfg.ClientBurst != 177 {
@@ -735,7 +735,7 @@ func TestEnv(t *testing.T) {
 	if cfg.AddOnCSRs.Objects != 10000 {
 		t.Fatalf("unexpected cfg.AddOnCSRs.Objects %d", cfg.AddOnCSRs.Objects)
 	}
-	if cfg.AddOnCSRs.QPS != 333 {
+	if cfg.AddOnCSRs.QPS != 222 {
 		t.Fatalf("unexpected cfg.AddOnCSRs.QPS %d", cfg.AddOnCSRs.QPS)
 	}
 	if cfg.AddOnCSRs.Burst != 777 {
@@ -1028,6 +1028,8 @@ func TestEnvAddOnManagedNodeGroupsInvalidInstanceType(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_REMOTE_ACCESS_PRIVATE_KEY_PATH")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS", `{"test-mng-for-cni":{"name":"test-mng-for-cni","tags":{"group":"amazon-vpc-cni-k8s"},"ami-type":"AL2_x86_64","asg-min-size":3,"asg-max-size":3,"asg-desired-capacity":3,"instance-types":["m3.xlarge"]}}`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_ENABLE", `true`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_ENABLE")
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
 		t.Fatal(err)

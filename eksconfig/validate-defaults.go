@@ -22,191 +22,197 @@ import (
 	"k8s.io/client-go/util/homedir"
 )
 
-// DefaultConfig is the default configuration.
+// NewDefault returns a default configuration.
 //  - empty string creates a non-nil object for pointer-type field
 //  - omitting an entire field returns nil value
 //  - make sure to check both
-var DefaultConfig = Config{
-	// to be auto-generated
-	ConfigPath:                "",
-	KubectlCommandsOutputPath: "",
-	KubeConfigPath:            "",
-	Name:                      "",
-	AWSCLIPath:                "",
-
-	Region: "us-west-2",
-
-	LogLevel: logutil.DefaultLogLevel,
-	// default, stderr, stdout, or file name
-	// log file named with cluster name will be added automatically
-	LogOutputs: []string{"stderr"},
-
-	// https://github.com/kubernetes/kubernetes/tags
-	// https://kubernetes.io/docs/tasks/tools/install-kubectl/
-	// https://docs.aws.amazon.com/eks/latest/userguide/install-kubectl.html
-	KubectlDownloadURL: "https://storage.googleapis.com/kubernetes-release/release/v1.16.8/bin/linux/amd64/kubectl",
-	KubectlPath:        "/tmp/kubectl-test-1.16.8",
-
-	OnFailureDelete:            true,
-	OnFailureDeleteWaitSeconds: 120,
-
-	S3BucketName:                    "",
-	S3BucketCreate:                  false,
-	S3BucketLifecycleExpirationDays: 0,
-
-	Parameters: &Parameters{
-		RoleCreate:          true,
-		VPCCreate:           true,
-		SigningName:         "eks",
-		Version:             "1.15",
-		EncryptionCMKCreate: true,
-	},
-
-	RemoteAccessKeyCreate: true,
-	// keep in-sync with the default value in https://pkg.go.dev/k8s.io/kubernetes/test/e2e/framework#GetSigner
-	RemoteAccessPrivateKeyPath: filepath.Join(homedir.HomeDir(), ".ssh", "kube_aws_rsa"),
-
-	// Kubernetes client DefaultQPS is 5.
-	// Kubernetes client DefaultBurst is 10.
-	// ref. https://github.com/kubernetes/kubernetes/blob/4d0e86f0b8d1eae00a202009858c8739e4c9402e/staging/src/k8s.io/client-go/rest/config.go#L43-L46
-	//
-	// kube-apiserver default rate limits are:
-	// FLAG: --max-mutating-requests-inflight="200"
-	// FLAG: --max-requests-inflight="400"
-	// ref. https://github.com/kubernetes/kubernetes/blob/4d0e86f0b8d1eae00a202009858c8739e4c9402e/staging/src/k8s.io/apiserver/pkg/server/config.go#L300-L301
-	ClientQPS:   5.0,
-	ClientBurst: 10,
-
-	AddOnNodeGroups: &AddOnNodeGroups{
-		Enable:     false,
-		FetchLogs:  true,
-		RoleCreate: true,
-		LogsDir:    "", // to be auto-generated
-	},
-	AddOnManagedNodeGroups: &AddOnManagedNodeGroups{
-		Enable:      false,
-		FetchLogs:   true,
-		SigningName: "eks",
-		RoleCreate:  true,
-		LogsDir:     "", // to be auto-generated
-	},
-
-	AddOnNLBHelloWorld: &AddOnNLBHelloWorld{
-		Enable:             false,
-		DeploymentReplicas: 3,
-	},
-
-	AddOnALB2048: &AddOnALB2048{
-		Enable:                 false,
-		DeploymentReplicasALB:  3,
-		DeploymentReplicas2048: 3,
-	},
-
-	AddOnJobsPi: &AddOnJobsPi{
-		Enable:    false,
-		Completes: 30,
-		Parallels: 10,
-	},
-
-	AddOnJobsEcho: &AddOnJobsEcho{
-		Enable:    false,
-		Completes: 10,
-		Parallels: 10,
-		EchoSize:  100 * 1024, // 100 KB
-
-		// writes total 100 MB data to etcd
-		// Completes: 1000,
-		// Parallels: 100,
-		// EchoSize:      100 * 1024, // 100 KB
-	},
-
-	AddOnCronJobs: &AddOnCronJobs{
-		Enable:                     false,
-		Schedule:                   "*/10 * * * *", // every 10-min
-		Completes:                  10,
-		Parallels:                  10,
-		SuccessfulJobsHistoryLimit: 3,
-		FailedJobsHistoryLimit:     1,
-		EchoSize:                   100 * 1024, // 100 KB
-	},
-
-	AddOnCSRs: &AddOnCSRs{
-		Enable:  false,
-		Objects: 10,
-		QPS:     1,
-		Burst:   1,
-
-		// writes total 5 MB data to etcd
-		// Objects: 1000,
-		// QPS:     30,
-		// Burst:   50,
-	},
-
-	AddOnConfigMaps: &AddOnConfigMaps{
-		Enable:  false,
-		Objects: 10,
-		Size:    10 * 1024, // 10 KB
-		QPS:     1,
-		Burst:   1,
-
-		// writes total 20 MB data to etcd
-		// Objects: 20,
-		// Size:    900000, // 0.9 MB
-		// QPS:     1,
-		// Burst:   1,
-	},
-
-	AddOnSecrets: &AddOnSecrets{
-		Enable:       false,
-		Objects:      10,
-		Size:         10 * 1024, // 10 KB
-		SecretsQPS:   1,
-		SecretsBurst: 1,
-		PodQPS:       100,
-		PodBurst:     5,
-
-		// writes total 100 MB for "Secret" objects,
-		// plus "Pod" objects, writes total 330 MB to etcd
-		//
-		// with 3 nodes, takes about 1.5 hour for all
-		// these "Pod"s to complete
-		//
-		// Objects:     10000,
-		// Size:        10 * 1024, // 10 KB
-	},
-
-	AddOnIRSA: &AddOnIRSA{
-		Enable:             false,
-		DeploymentReplicas: 10,
-	},
-
-	AddOnFargate: &AddOnFargate{
-		Enable:     false,
-		RoleCreate: true,
-	},
-
-	AddOnAppMesh: &AddOnAppMesh{
-		Enable: false,
-	},
-
-	// read-only
-	Status: &Status{Up: false},
-}
-
-// NewDefault returns a copy of the default configuration.
 func NewDefault() *Config {
-	vv := DefaultConfig
-	vv.mu = new(sync.RWMutex)
+	cfg := Config{
+		mu: new(sync.RWMutex),
 
-	if name := os.Getenv(EnvironmentVariablePrefix + "NAME"); name != "" {
-		vv.Name = name
-	} else {
-		vv.Name = fmt.Sprintf("eks-%s-%s", getTS()[:10], randString(12))
+		Name: fmt.Sprintf("eks-%s-%s", getTS()[:10], randString(12)),
+
+		// to be auto-generated
+		ConfigPath:                "",
+		KubectlCommandsOutputPath: "",
+		KubeConfigPath:            "",
+		AWSCLIPath:                "",
+
+		Region: "us-west-2",
+
+		LogLevel: logutil.DefaultLogLevel,
+		// default, stderr, stdout, or file name
+		// log file named with cluster name will be added automatically
+		LogOutputs: []string{"stderr"},
+
+		// https://github.com/kubernetes/kubernetes/tags
+		// https://kubernetes.io/docs/tasks/tools/install-kubectl/
+		// https://docs.aws.amazon.com/eks/latest/userguide/install-kubectl.html
+		KubectlDownloadURL: "https://storage.googleapis.com/kubernetes-release/release/v1.16.8/bin/linux/amd64/kubectl",
+		KubectlPath:        "/tmp/kubectl-test-1.16.8",
+
+		OnFailureDelete:            true,
+		OnFailureDeleteWaitSeconds: 120,
+
+		S3BucketName:                    "",
+		S3BucketCreate:                  false,
+		S3BucketLifecycleExpirationDays: 0,
+
+		Parameters: &Parameters{
+			RoleCreate:          true,
+			VPCCreate:           true,
+			SigningName:         "eks",
+			Version:             "1.15",
+			EncryptionCMKCreate: true,
+		},
+
+		RemoteAccessKeyCreate: true,
+		// keep in-sync with the default value in https://pkg.go.dev/k8s.io/kubernetes/test/e2e/framework#GetSigner
+		RemoteAccessPrivateKeyPath: filepath.Join(homedir.HomeDir(), ".ssh", "kube_aws_rsa"),
+
+		// Kubernetes client DefaultQPS is 5.
+		// Kubernetes client DefaultBurst is 10.
+		// ref. https://github.com/kubernetes/kubernetes/blob/4d0e86f0b8d1eae00a202009858c8739e4c9402e/staging/src/k8s.io/client-go/rest/config.go#L43-L46
+		//
+		// kube-apiserver default rate limits are:
+		// FLAG: --max-mutating-requests-inflight="200"
+		// FLAG: --max-requests-inflight="400"
+		// ref. https://github.com/kubernetes/kubernetes/blob/4d0e86f0b8d1eae00a202009858c8739e4c9402e/staging/src/k8s.io/apiserver/pkg/server/config.go#L300-L301
+		ClientQPS:   5.0,
+		ClientBurst: 10,
+
+		AddOnNodeGroups: &AddOnNodeGroups{
+			Enable:     false,
+			FetchLogs:  true,
+			RoleCreate: true,
+			LogsDir:    "", // to be auto-generated
+		},
+		AddOnManagedNodeGroups: &AddOnManagedNodeGroups{
+			Enable:      false,
+			FetchLogs:   true,
+			SigningName: "eks",
+			RoleCreate:  true,
+			LogsDir:     "", // to be auto-generated
+		},
+
+		AddOnNLBHelloWorld: &AddOnNLBHelloWorld{
+			Enable:             false,
+			DeploymentReplicas: 3,
+		},
+
+		AddOnALB2048: &AddOnALB2048{
+			Enable:                 false,
+			DeploymentReplicasALB:  3,
+			DeploymentReplicas2048: 3,
+		},
+
+		AddOnJobsPi: &AddOnJobsPi{
+			Enable:    false,
+			Completes: 30,
+			Parallels: 10,
+		},
+
+		AddOnJobsEcho: &AddOnJobsEcho{
+			Enable:    false,
+			Completes: 10,
+			Parallels: 10,
+			EchoSize:  100 * 1024, // 100 KB
+
+			// writes total 100 MB data to etcd
+			// Completes: 1000,
+			// Parallels: 100,
+			// EchoSize: 100 * 1024, // 100 KB
+		},
+
+		AddOnCronJobs: &AddOnCronJobs{
+			Enable:                     false,
+			Schedule:                   "*/10 * * * *", // every 10-min
+			Completes:                  10,
+			Parallels:                  10,
+			SuccessfulJobsHistoryLimit: 3,
+			FailedJobsHistoryLimit:     1,
+			EchoSize:                   100 * 1024, // 100 KB
+		},
+
+		AddOnCSRs: &AddOnCSRs{
+			Enable:  false,
+			Objects: 10,
+			QPS:     1,
+			Burst:   1,
+
+			// writes total 5 MB data to etcd
+			// Objects: 1000,
+		},
+
+		AddOnConfigMaps: &AddOnConfigMaps{
+			Enable:  false,
+			Objects: 10,
+			Size:    10 * 1024, // 10 KB
+			QPS:     1,
+			Burst:   1,
+
+			// writes total 20 MB data to etcd
+			// Objects: 20,
+			// Size:    900000, // 0.9 MB
+		},
+
+		AddOnSecrets: &AddOnSecrets{
+			Enable:       false,
+			Objects:      10,
+			Size:         10 * 1024, // 10 KB
+			SecretsQPS:   1,
+			SecretsBurst: 1,
+			PodQPS:       1,
+			PodBurst:     1,
+
+			// writes total 100 MB for "Secret" objects,
+			// plus "Pod" objects, writes total 330 MB to etcd
+			//
+			// with 3 nodes, takes about 1.5 hour for all
+			// these "Pod"s to complete
+			//
+			// Objects:     10000,
+			// Size:        10 * 1024, // 10 KB
+		},
+
+		AddOnIRSA: &AddOnIRSA{
+			Enable:             false,
+			DeploymentReplicas: 10,
+		},
+
+		AddOnFargate: &AddOnFargate{
+			Enable:     false,
+			RoleCreate: true,
+		},
+
+		AddOnAppMesh: &AddOnAppMesh{
+			Enable: false,
+		},
+
+		// read-only
+		Status: &Status{Up: false},
 	}
 
-	vv.AddOnNodeGroups.ASGs = map[string]ec2config.ASG{
-		vv.Name + "-ng-asg-cpu": {
-			Name:                 vv.Name + "-ng-asg-cpu",
+	if name := os.Getenv(EnvironmentVariablePrefix + "NAME"); name != "" {
+		cfg.Name = name
+	}
+
+	// https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-welcome.html
+	// pip3 install awscli --no-cache-dir --upgrade
+	var err error
+	cfg.AWSCLIPath, err = exec.LookPath("aws")
+	if err != nil {
+		panic(fmt.Errorf("aws CLI is not installed (%v)", err))
+	}
+
+	if runtime.GOOS == "darwin" {
+		cfg.KubectlDownloadURL = strings.Replace(cfg.KubectlDownloadURL, "linux", "darwin", -1)
+		cfg.RemoteAccessPrivateKeyPath = filepath.Join(os.TempDir(), randString(10)+".insecure.key")
+	}
+
+	cfg.AddOnNodeGroups.ASGs = map[string]ec2config.ASG{
+		cfg.Name + "-ng-asg-cpu": {
+			Name:                 cfg.Name + "-ng-asg-cpu",
 			RemoteAccessUserName: "ec2-user", // assume Amazon Linux 2
 			AMIType:              eks.AMITypesAl2X8664,
 			ASGMinSize:           1,
@@ -216,9 +222,9 @@ func NewDefault() *Config {
 			VolumeSize:           DefaultNodeVolumeSize,
 		},
 	}
-	vv.AddOnManagedNodeGroups.MNGs = map[string]MNG{
-		vv.Name + "-mng-cpu": {
-			Name:                 vv.Name + "-mng-cpu",
+	cfg.AddOnManagedNodeGroups.MNGs = map[string]MNG{
+		cfg.Name + "-mng-cpu": {
+			Name:                 cfg.Name + "-mng-cpu",
 			RemoteAccessUserName: "ec2-user", // assume Amazon Linux 2
 			ReleaseVersion:       "",         // to be auto-filled by EKS API
 			AMIType:              eks.AMITypesAl2X8664,
@@ -230,22 +236,7 @@ func NewDefault() *Config {
 		},
 	}
 
-	return &vv
-}
-
-func init() {
-	// https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-welcome.html
-	// pip3 install awscli --no-cache-dir --upgrade
-	var err error
-	DefaultConfig.AWSCLIPath, err = exec.LookPath("aws")
-	if err != nil {
-		panic(fmt.Errorf("aws CLI is not installed (%v)", err))
-	}
-
-	if runtime.GOOS == "darwin" {
-		DefaultConfig.KubectlDownloadURL = strings.Replace(DefaultConfig.KubectlDownloadURL, "linux", "darwin", -1)
-		DefaultConfig.RemoteAccessPrivateKeyPath = filepath.Join(os.TempDir(), randString(10)+".insecure.key")
-	}
+	return &cfg
 }
 
 // ValidateAndSetDefaults returns an error for invalid configurations.
@@ -969,6 +960,9 @@ func (cfg *Config) validateAddOnCSRs() error {
 	if cfg.AddOnCSRs.Namespace == "" {
 		cfg.AddOnCSRs.Namespace = cfg.Name + "-csrs"
 	}
+	if cfg.ClientQPS > 0 && float32(cfg.AddOnCSRs.QPS) > cfg.ClientQPS {
+		return fmt.Errorf("AddOnCSRs.QPS %d > ClientQPS %f", cfg.AddOnCSRs.QPS, cfg.ClientQPS)
+	}
 	return nil
 }
 
@@ -984,6 +978,9 @@ func (cfg *Config) validateAddOnConfigMaps() error {
 	}
 	if cfg.AddOnConfigMaps.Size > 900000 {
 		return fmt.Errorf("AddOnConfigMaps.Size limit is 0.9 MB, got %d", cfg.AddOnConfigMaps.Size)
+	}
+	if cfg.ClientQPS > 0 && float32(cfg.AddOnConfigMaps.QPS) > cfg.ClientQPS {
+		return fmt.Errorf("AddOnConfigMaps.QPS %d > ClientQPS %f", cfg.AddOnConfigMaps.QPS, cfg.ClientQPS)
 	}
 	return nil
 }
@@ -1012,6 +1009,12 @@ func (cfg *Config) validateAddOnSecrets() error {
 	}
 	if filepath.Ext(cfg.AddOnSecrets.ReadsResultPath) != ".csv" {
 		return fmt.Errorf("expected .csv extension for ReadsResultPath, got %q", cfg.AddOnSecrets.ReadsResultPath)
+	}
+	if cfg.ClientQPS > 0 && float32(cfg.AddOnSecrets.SecretsQPS) > cfg.ClientQPS {
+		return fmt.Errorf("AddOnSecrets.SecretsQPS %d > ClientQPS %f", cfg.AddOnSecrets.SecretsQPS, cfg.ClientQPS)
+	}
+	if cfg.ClientQPS > 0 && float32(cfg.AddOnSecrets.PodQPS) > cfg.ClientQPS {
+		return fmt.Errorf("AddOnSecrets.PodQPS %d > ClientQPS %f", cfg.AddOnSecrets.PodQPS, cfg.ClientQPS)
 	}
 	return nil
 }
