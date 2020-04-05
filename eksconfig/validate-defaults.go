@@ -979,8 +979,8 @@ func (cfg *Config) validateAddOnConfigMaps() error {
 	if cfg.AddOnConfigMaps.Namespace == "" {
 		cfg.AddOnConfigMaps.Namespace = cfg.Name + "-config-maps"
 	}
-	if cfg.AddOnConfigMaps.Size > 500000 {
-		return fmt.Errorf("AddOnConfigMaps.Size limit is 0.5 MB, got %d", cfg.AddOnConfigMaps.Size)
+	if cfg.AddOnConfigMaps.Size > 900000 {
+		return fmt.Errorf("AddOnConfigMaps.Size limit is 0.9 MB, got %d", cfg.AddOnConfigMaps.Size)
 	}
 	return nil
 }

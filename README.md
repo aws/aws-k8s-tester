@@ -1,8 +1,4 @@
 
-
-WARNING: Pre-alpha. Do not use this in production. Only for testing.
-
-
 # aws-k8s-tester
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/aws/aws-k8s-tester)](https://goreportcard.com/report/github.com/aws/aws-k8s-tester)
@@ -12,7 +8,7 @@ WARNING: Pre-alpha. Do not use this in production. Only for testing.
 
 https://github.com/kubernetes/enhancements/blob/master/keps/provider-aws/20181126-aws-k8s-tester.md
 
-`aws-k8s-tester` is a set of utilities and libraries for testing Kubernetes on AWS.
+`aws-k8s-tester` is a set of utilities and libraries for "testing" Kubernetes on AWS.
 
 - Uses AWS CloudFormation for resource creation
 - Supports automatic rollback and resource deletion
@@ -111,10 +107,6 @@ AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_CREATE=false \
 AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_ARN=arn:aws:iam::${ACCOUNT_ID}:role/aws-k8s-tester-eks-role \
 AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS={\"${USER}-test-eks-mng-al2-cpu\":{\"name\":\"${USER}-test-eks-mng-al2-cpu\",\"remote-access-user-name\":\"ec2-user\",\"ami-type\":\"AL2_x86_64\",\"asg-min-size\":1,\"asg-max-size\":1,\"asg-desired-capacity\":1,\"instance-types\":[\"c5.xlarge\"],\"volume-size\":40}} \
 AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_ENABLE=true \
-AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_ENABLE=true \
-AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_ENABLE=true \
-AWS_K8S_TESTER_EKS_ADD_ON_JOB_PI_ENABLE=true \
-AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_ENABLE=true \
 aws-k8s-tester eks create config -p /tmp/${USER}-test-eks.yaml && cat /tmp/${USER}-test-eks.yaml
 
 # Or just run
