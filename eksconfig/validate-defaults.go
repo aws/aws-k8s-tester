@@ -148,6 +148,12 @@ var DefaultConfig = Config{
 		Size:    10 * 1024, // 10 KB
 		QPS:     1,
 		Burst:   1,
+
+		// writes total 20 MB data to etcd
+		// Objects: 20,
+		// Size:    900000, // 0.9 MB
+		// QPS:     1,
+		// Burst:   1,
 	},
 
 	AddOnSecrets: &AddOnSecrets{
