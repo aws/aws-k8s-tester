@@ -13,7 +13,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.9.8...v1.0.0
 - Clean up [`RemoteAccessPrivateKeyPath` defaults](https://github.com/aws/aws-k8s-tester/commit/eb0d6bca8bd01da418901acfa2c7b1fd5080d9bd).
 - Fix [`ec2config.NewDefault`, remove `DefaultConfig`](https://github.com/aws/aws-k8s-tester/commit/13eabf5034488eefa0a028449f3f23233ef74661).
   - `ec2config.NewDefault` was copying the add-on fields in reference.
-- Check [`ImageID` and `ImageIDSSMParameter`](https://github.com/aws/aws-k8s-tester/commit/).
+- Check [`ImageID` and `ImageIDSSMParameter`](https://github.com/aws/aws-k8s-tester/commit/13151dfd539a31175a9014e2115148605c9bc001).
 
 ### `ec2`
 
@@ -25,7 +25,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.9.8...v1.0.0
 - Clean up [`RemoteAccessPrivateKeyPath` defaults](https://github.com/aws/aws-k8s-tester/commit/eb0d6bca8bd01da418901acfa2c7b1fd5080d9bd).
 - Fix [`eksconfig.NewDefault`, remove `DefaultConfig`](https://github.com/aws/aws-k8s-tester/commit/13eabf5034488eefa0a028449f3f23233ef74661).
   - `eksconfig.NewDefault` was copying the add-on fields in reference.
-- Check [`ImageID` and `ImageIDSSMParameter`](https://github.com/aws/aws-k8s-tester/commit/).
+- Check [`ImageID` and `ImageIDSSMParameter`](https://github.com/aws/aws-k8s-tester/commit/13151dfd539a31175a9014e2115148605c9bc001).
 
 ### `eks`
 
