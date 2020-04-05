@@ -3,6 +3,7 @@ package ec2
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -367,7 +368,7 @@ type templateASG struct {
 	UserData string
 }
 
-func (ts *Tester) createASGs() error {
+func (ts *Tester) createASGs() (err error) {
 	createStart := time.Now()
 	defer func() {
 		ts.cfg.CreateTook += time.Since(createStart)
@@ -504,6 +505,12 @@ func (ts *Tester) createASGs() error {
 		cur.ASGCFNStackID = aws.StringValue(stackOutput.StackId)
 		ts.cfg.ASGs[asgName] = cur
 		ts.cfg.Sync()
+	}
+
+	ts.lg.Info("waiting for ASGs create using CFN", zap.String("name", ts.cfg.Name))
+	for asgName, cur := range ts.cfg.ASGs {
+		timeStart := time.Now()
+		ts.lg.Info("waiting for ASG", zap.String("name", asgName))
 
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
 		ch := awscfn.Poll(
@@ -608,13 +615,15 @@ func (ts *Tester) createASGs() error {
 	return ts.cfg.Sync()
 }
 
-func (ts *Tester) deleteASGs() error {
+func (ts *Tester) deleteASGs() (err error) {
 	deleteStart := time.Now()
 	defer func() {
 		ts.cfg.DeleteTook += time.Since(deleteStart)
 		ts.cfg.DeleteTookString = ts.cfg.DeleteTook.String()
 		ts.cfg.Sync()
 	}()
+
+	var errs []string
 
 	ts.lg.Info("deleting ASGs using CFN", zap.String("name", ts.cfg.Name))
 	for asgName, cur := range ts.cfg.ASGs {
@@ -623,7 +632,7 @@ func (ts *Tester) deleteASGs() error {
 		}
 		timeStart := time.Now()
 		ts.lg.Info("deleting ASG", zap.String("name", asgName), zap.String("cfn-stack-id", cur.ASGCFNStackID))
-		_, err := ts.cfnAPI.DeleteStack(&cloudformation.DeleteStackInput{
+		_, err = ts.cfnAPI.DeleteStack(&cloudformation.DeleteStackInput{
 			StackName: aws.String(cur.ASGCFNStackID),
 		})
 		if err != nil {
@@ -632,10 +641,18 @@ func (ts *Tester) deleteASGs() error {
 			cur.DeleteTookString = ts.cfg.DeleteTook.String()
 			ts.cfg.ASGs[asgName] = cur
 			ts.cfg.Sync()
-			return err
+			errs = append(errs, fmt.Sprintf("failed to delete ASG (%v)", err))
+			continue
 		}
 		ts.cfg.Up = false
 		ts.cfg.Sync()
+	}
+
+	ts.lg.Info("waiting for ASGs delete using CFN", zap.String("name", ts.cfg.Name))
+	for asgName, cur := range ts.cfg.ASGs {
+		timeStart := time.Now()
+		ts.lg.Info("waiting for ASG", zap.String("name", asgName))
+
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
 		ch := awscfn.Poll(
 			ctx,
@@ -648,6 +665,7 @@ func (ts *Tester) deleteASGs() error {
 			2*time.Minute,
 			20*time.Second,
 		)
+
 		var st awscfn.StackStatus
 		for st = range ch {
 			if st.Error != nil {
@@ -662,8 +680,10 @@ func (ts *Tester) deleteASGs() error {
 			cur.DeleteTookString = ts.cfg.DeleteTook.String()
 			ts.cfg.ASGs[asgName] = cur
 			ts.cfg.Sync()
-			return st.Error
+			errs = append(errs, fmt.Sprintf("failed to delete ASG (%v)", st.Error))
+			continue
 		}
+
 		ts.cfg.RecordStatus(fmt.Sprintf("%q/%s", asgName, ec2config.StatusDELETEDORNOTEXIST))
 		cur.DeleteTook += time.Since(timeStart)
 		cur.DeleteTookString = ts.cfg.DeleteTook.String()
@@ -671,5 +691,8 @@ func (ts *Tester) deleteASGs() error {
 		ts.cfg.Sync()
 	}
 
+	if len(errs) > 0 {
+		return errors.New(strings.Join(errs, "; "))
+	}
 	return ts.cfg.Sync()
 }
