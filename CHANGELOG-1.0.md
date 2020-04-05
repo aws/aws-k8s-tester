@@ -19,7 +19,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.9.8...v1.0.0
 
 ### `eks`
 
-- TODO
+- Add [missing `AddOnCSRs` delete operation](https://github.com/aws/aws-k8s-tester/commit/).
 
 ### `pkg/k8s-client`
 

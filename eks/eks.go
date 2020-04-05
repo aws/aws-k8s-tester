@@ -1261,6 +1261,24 @@ func (ts *Tester) down() (err error) {
 			}
 		}
 
+		if ts.cfg.IsEnabledAddOnConfigMaps() && ts.cfg.AddOnConfigMaps.Created {
+			fmt.Printf("\n*********************************\n")
+			fmt.Printf("configMapsTester.Delete (%q)\n", ts.cfg.ConfigPath)
+			if err := ts.configMapsTester.Delete(); err != nil {
+				ts.lg.Warn("configMapsTester.Delete failed", zap.Error(err))
+				errs = append(errs, err.Error())
+			}
+		}
+
+		if ts.cfg.IsEnabledAddOnCSRs() && ts.cfg.AddOnCSRs.Created {
+			fmt.Printf("\n*********************************\n")
+			fmt.Printf("csrsTester.Delete (%q)\n", ts.cfg.ConfigPath)
+			if err := ts.csrsTester.Delete(); err != nil {
+				ts.lg.Warn("csrsTester.Delete failed", zap.Error(err))
+				errs = append(errs, err.Error())
+			}
+		}
+
 		if ts.cfg.IsEnabledAddOnCronJobs() && ts.cfg.AddOnCronJobs.Created {
 			fmt.Printf("\n*********************************\n")
 			fmt.Printf("cronJobsTester.Delete (%q)\n", ts.cfg.ConfigPath)
