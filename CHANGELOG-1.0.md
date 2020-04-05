@@ -21,6 +21,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.9.8...v1.0.0
 
 - TODO
 
+### `pkg/k8s-client`
+
+- Increase [`DefaultNamespaceDeletionInterval` from 5-second to 15-second](https://github.com/aws/aws-k8s-tester/commit/).
+
 ### Go
 
 - Compile with [*Go 1.14.1*](https://golang.org/doc/devel/release.html#go1.14).
