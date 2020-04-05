@@ -7,6 +7,10 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.9.8...v1.0.0).
 
+### `ec2`
+
+- Improve [ASG create and delete performance](https://github.com/aws/aws-k8s-tester/commit/4a97173663a4f383b2810051fd630b93c49f6351).
+
 ### `ec2config`
 
 - Update [`README.md`](https://github.com/aws/aws-k8s-tester/commit/eb0d6bca8bd01da418901acfa2c7b1fd5080d9bd).
