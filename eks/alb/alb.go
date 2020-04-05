@@ -90,7 +90,7 @@ const (
 
 // ALBImageName is the image name of ALB Ingress Controller.
 // ref. https://github.com/kubernetes-sigs/aws-alb-ingress-controller/releases
-const ALBImageName = "docker.io/amazon/aws-alb-ingress-controller:v1.1.5"
+const ALBImageName = "docker.io/amazon/aws-alb-ingress-controller:v1.1.6"
 
 // https://docs.aws.amazon.com/eks/latest/userguide/alb-ingress.html
 func (ts *tester) Create() error {

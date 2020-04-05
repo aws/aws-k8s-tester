@@ -19,6 +19,7 @@ import (
 // TemplateRole is the CloudFormation template for EKS managed node group role.
 // https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
 // https://github.com/aws/eks-charts/tree/master/stable/appmesh-controller
+// ref. https://github.com/kubernetes-sigs/aws-alb-ingress-controller/pull/1126
 const TemplateRole = `
 ---
 AWSTemplateFormatVersion: '2010-09-09'
