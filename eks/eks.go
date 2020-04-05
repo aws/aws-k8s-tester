@@ -1226,13 +1226,6 @@ func (ts *Tester) down() (err error) {
 		errs = append(errs, err.Error())
 	}
 
-	fmt.Printf("\n*********************************\n")
-	fmt.Printf("deleteEncryption (%q)\n", ts.cfg.ConfigPath)
-	if err := ts.deleteEncryption(); err != nil {
-		ts.lg.Warn("deleteEncryption failed", zap.Error(err))
-		errs = append(errs, err.Error())
-	}
-
 	if ts.cfg.IsEnabledAddOnNodeGroups() || ts.cfg.IsEnabledAddOnManagedNodeGroups() {
 		if ts.cfg.IsEnabledAddOnFargate() && ts.cfg.AddOnFargate.Created {
 			fmt.Printf("\n*********************************\n")
@@ -1400,6 +1393,13 @@ func (ts *Tester) down() (err error) {
 	fmt.Printf("deleteCluster (%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteCluster(); err != nil {
 		ts.lg.Warn("deleteCluster failed", zap.Error(err))
+		errs = append(errs, err.Error())
+	}
+
+	fmt.Printf("\n*********************************\n")
+	fmt.Printf("deleteEncryption (%q)\n", ts.cfg.ConfigPath)
+	if err := ts.deleteEncryption(); err != nil {
+		ts.lg.Warn("deleteEncryption failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 
