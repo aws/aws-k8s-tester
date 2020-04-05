@@ -36,8 +36,9 @@ ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text);
 echo ${ACCOUNT_ID}
 
 
-cd /tmp
 rm -f /tmp/${USER}-test-ec2*
+
+cd /tmp
 AWS_K8S_TESTER_EC2_ON_FAILURE_DELETE=true \
 AWS_K8S_TESTER_EC2_NAME=${USER}-test-ec2 \
 AWS_K8S_TESTER_EC2_REGION=us-west-2 \
@@ -49,9 +50,11 @@ AWS_K8S_TESTER_EC2_ROLE_CREATE=true \
 AWS_K8S_TESTER_EC2_VPC_CREATE=true \
 aws-k8s-tester ec2 create config -p /tmp/${USER}-test-ec2.yaml && cat /tmp/${USER}-test-ec2.yaml
 
+<<COMMENT
 # Or just run
 aws-k8s-tester ec2 create config -p /tmp/${USER}-test-ec2.yaml
 # to write initial configuration with default values
+COMMENT
 
 <<COMMENT
 # to reuse an existing S3 bucket
@@ -99,8 +102,9 @@ CLUSTER_ARN=arn:aws:eks:us-west-2:${ACCOUNT_ID}:cluster/${USER}-test-eks
 echo ${CLUSTER_ARN}
 
 
-cd /tmp
 rm -rf /tmp/${USER}-test-eks*
+
+cd /tmp
 AWS_K8S_TESTER_EKS_NAME=${USER}-test-eks \
 AWS_K8S_TESTER_EKS_REGION=us-west-2 \
 AWS_K8S_TESTER_EKS_S3_BUCKET_CREATE=true \
@@ -120,9 +124,11 @@ AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS={\"${USER}-test-eks-mng-al2-c
 AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_ENABLE=true \
 aws-k8s-tester eks create config -p /tmp/${USER}-test-eks.yaml && cat /tmp/${USER}-test-eks.yaml
 
+<<COMMENT
 # Or just run
 aws-k8s-tester eks create config -p /tmp/${USER}-test-eks.yaml
 # to write initial configuration with default values
+COMMENT
 
 <<COMMENT
 # to reuse an existing S3 bucket
