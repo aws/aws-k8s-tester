@@ -455,6 +455,20 @@ func (ts *Tester) createSubTesters() (err error) {
 		}
 	}
 
+	if ts.cfg.IsEnabledAddOnCSRs() {
+		ts.lg.Info("creating csrsTester")
+		ts.csrsTester, err = csrs.New(csrs.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			Sig:       ts.interruptSig,
+			EKSConfig: ts.cfg,
+			K8SClient: ts,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
 	if ts.cfg.IsEnabledAddOnConfigMaps() {
 		ts.lg.Info("creating configMapsTester")
 		ts.configMapsTester, err = configmaps.New(configmaps.Config{
@@ -760,6 +774,9 @@ func (ts *Tester) Up() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnNodeGroups() {
+		if ts.ngTester == nil {
+			return errors.New("ts.ngTester == nil when AddOnNodeGroups.Enable == true")
+		}
 		// create NG first, so MNG configmap update can be called afterwards
 		fmt.Printf("\n*********************************\n")
 		fmt.Printf("ngTester.Create (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
@@ -775,6 +792,9 @@ func (ts *Tester) Up() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnManagedNodeGroups() {
+		if ts.ngTester == nil {
+			return errors.New("ts.mngTester == nil when AddOnManagedNodeGroups.Enable == true")
+		}
 		fmt.Printf("\n*********************************\n")
 		fmt.Printf("mngTester.Create (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		if err := catchInterrupt(
@@ -856,6 +876,9 @@ func (ts *Tester) Up() (err error) {
 	fmt.Println(ts.cfg.KubectlCommands())
 
 	if ts.cfg.IsEnabledAddOnNLBHelloWorld() {
+		if ts.nlbHelloWorldTester == nil {
+			return errors.New("ts.nlbHelloWorldTester == nil when AddOnNLBHelloWorld.Enable == true")
+		}
 		fmt.Printf("\n*********************************\n")
 		fmt.Printf("nlbHelloWorldTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnNLBHelloWorld.Namespace)
 		if err := catchInterrupt(
@@ -870,6 +893,9 @@ func (ts *Tester) Up() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnALB2048() {
+		if ts.alb2048Tester == nil {
+			return errors.New("ts.alb2048Tester == nil when AddOnALB2048.Enable == true")
+		}
 		fmt.Printf("\n*********************************\n")
 		fmt.Printf("alb2048Tester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnALB2048.Namespace)
 		if err := catchInterrupt(
@@ -884,6 +910,9 @@ func (ts *Tester) Up() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnJobsPi() {
+		if ts.jobsPiTester == nil {
+			return errors.New("ts.jobsPiTester == nil when AddOnJobsPi.Enable == true")
+		}
 		fmt.Printf("\n*********************************\n")
 		fmt.Printf("jobsPiTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnJobsPi.Namespace)
 		if err := catchInterrupt(
@@ -898,6 +927,9 @@ func (ts *Tester) Up() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnJobsEcho() {
+		if ts.jobsEchoTester == nil {
+			return errors.New("ts.jobsEchoTester == nil when AddOnJobsEcho.Enable == true")
+		}
 		fmt.Printf("\n*********************************\n")
 		fmt.Printf("jobsEchoTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnJobsEcho.Namespace)
 		if err := catchInterrupt(
@@ -912,6 +944,9 @@ func (ts *Tester) Up() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnCronJobs() {
+		if ts.cronJobsTester == nil {
+			return errors.New("ts.cronJobsTester == nil when AddOnCronJobs.Enable == true")
+		}
 		fmt.Printf("\n*********************************\n")
 		fmt.Printf("cronJobsTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnCronJobs.Namespace)
 		if err := catchInterrupt(
@@ -926,6 +961,9 @@ func (ts *Tester) Up() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnCSRs() {
+		if ts.csrsTester == nil {
+			return errors.New("ts.csrsTester == nil when AddOnCSRs.Enable == true")
+		}
 		fmt.Printf("\n*********************************\n")
 		fmt.Printf("csrsTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnCSRs.Namespace)
 		if err := catchInterrupt(
@@ -940,6 +978,9 @@ func (ts *Tester) Up() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnConfigMaps() {
+		if ts.configMapsTester == nil {
+			return errors.New("ts.configMapsTester == nil when AddOnConfigMaps.Enable == true")
+		}
 		fmt.Printf("\n*********************************\n")
 		fmt.Printf("configMapsTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnConfigMaps.Namespace)
 		if err := catchInterrupt(
@@ -954,6 +995,9 @@ func (ts *Tester) Up() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnSecrets() {
+		if ts.secretsTester == nil {
+			return errors.New("ts.secretsTester == nil when AddOnSecrets.Enable == true")
+		}
 		fmt.Printf("\n*********************************\n")
 		fmt.Printf("secretsTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnSecrets.Namespace)
 		if err := catchInterrupt(
@@ -968,6 +1012,9 @@ func (ts *Tester) Up() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnIRSA() {
+		if ts.irsaTester == nil {
+			return errors.New("ts.irsaTester == nil when AddOnIRSA.Enable == true")
+		}
 		fmt.Printf("\n*********************************\n")
 		fmt.Printf("irsaTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnIRSA.Namespace)
 		if err := catchInterrupt(
@@ -982,6 +1029,9 @@ func (ts *Tester) Up() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnFargate() {
+		if ts.fargateTester == nil {
+			return errors.New("ts.fargateTester == nil when AddOnFargate.Enable == true")
+		}
 		fmt.Printf("\n*********************************\n")
 		fmt.Printf("fargateTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnFargate.Namespace)
 		if err := catchInterrupt(
@@ -996,6 +1046,9 @@ func (ts *Tester) Up() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnAppMesh() {
+		if ts.appMeshTester == nil {
+			return errors.New("ts.appMeshTester == nil when AddOnAppMesh.Enable == true")
+		}
 		fmt.Printf("\n*********************************\n")
 		fmt.Printf("appMeshTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnAppMesh.Namespace)
 		if err := catchInterrupt(
@@ -1010,6 +1063,10 @@ func (ts *Tester) Up() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnNodeGroups() && ts.cfg.AddOnNodeGroups.FetchLogs {
+		if ts.ngTester == nil {
+			return errors.New("ts.ngTester == nil when AddOnNodeGroups.Enable == true")
+		}
+
 		fmt.Printf("\n*********************************\n")
 		fmt.Printf("ngTester.FetchLogs (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 
@@ -1029,6 +1086,10 @@ func (ts *Tester) Up() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnManagedNodeGroups() && ts.cfg.AddOnManagedNodeGroups.FetchLogs {
+		if ts.mngTester == nil {
+			return errors.New("ts.mngTester == nil when AddOnManagedNodeGroups.Enable == true")
+		}
+
 		fmt.Printf("\n*********************************\n")
 		fmt.Printf("mngTester.FetchLogs (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 
