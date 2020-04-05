@@ -140,21 +140,23 @@ func (ts *Tester) health() error {
 	}
 	println()
 
-	ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
-	output, err = exec.New().CommandContext(
-		ctx,
-		ts.cfg.KubectlPath,
-		"--kubeconfig="+ts.cfg.KubeConfigPath,
-		"get",
-		"configmaps",
-		"--all-namespaces",
-	).CombinedOutput()
-	cancel()
-	out = string(output)
-	if err != nil {
-		return fmt.Errorf("'kubectl get configmaps --all-namespaces' failed %v (output %q)", err, out)
+	if !ts.cfg.IsEnabledAddOnConfigMaps() || !ts.cfg.AddOnConfigMaps.Created {
+		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
+		output, err = exec.New().CommandContext(
+			ctx,
+			ts.cfg.KubectlPath,
+			"--kubeconfig="+ts.cfg.KubeConfigPath,
+			"get",
+			"configmaps",
+			"--all-namespaces",
+		).CombinedOutput()
+		cancel()
+		out = string(output)
+		if err != nil {
+			return fmt.Errorf("'kubectl get configmaps --all-namespaces' failed %v (output %q)", err, out)
+		}
+		fmt.Printf("\n\"kubectl get configmaps --all-namespaces\" output:\n%s\n", out)
 	}
-	fmt.Printf("\n\"kubectl get configmaps --all-namespaces\" output:\n%s\n", out)
 
 	ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 	output, err = exec.New().CommandContext(

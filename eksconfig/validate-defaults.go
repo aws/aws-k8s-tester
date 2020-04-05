@@ -151,9 +151,9 @@ func NewDefault() *Config {
 			QPS:     1,
 			Burst:   1,
 
-			// writes total 20 MB data to etcd
-			// Objects: 20,
-			// Size:    900000, // 0.9 MB
+			// writes total 300 MB data to etcd
+			// Objects: 1000,
+			// Size: 300000, // 0.3 MB
 		},
 
 		AddOnSecrets: &AddOnSecrets{
