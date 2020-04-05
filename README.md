@@ -40,7 +40,6 @@ rm -f /tmp/${USER}-test-ec2*
 
 cd /tmp
 AWS_K8S_TESTER_EC2_ON_FAILURE_DELETE=true \
-AWS_K8S_TESTER_EC2_NAME=${USER}-test-ec2 \
 AWS_K8S_TESTER_EC2_REGION=us-west-2 \
 AWS_K8S_TESTER_EC2_S3_BUCKET_CREATE=true \
 AWS_K8S_TESTER_EC2_REMOTE_ACCESS_KEY_CREATE=true \
@@ -57,6 +56,9 @@ aws-k8s-tester ec2 create config -p /tmp/${USER}-test-ec2.yaml
 COMMENT
 
 <<COMMENT
+# to config a fixed name for EC2 ASG
+AWS_K8S_TESTER_EC2_NAME=${NAME} \
+
 # to reuse an existing S3 bucket
 AWS_K8S_TESTER_EC2_S3_BUCKET_CREATE=false \
 AWS_K8S_TESTER_EC2_S3_BUCKET_NAME=${BUCKET_NAME} \
@@ -131,6 +133,9 @@ aws-k8s-tester eks create config -p /tmp/${USER}-test-eks.yaml
 COMMENT
 
 <<COMMENT
+# to assign a random cluster name, delete the following variable
+# AWS_K8S_TESTER_EKS_NAME=${USER}-test-eks \
+
 # to reuse an existing S3 bucket
 AWS_K8S_TESTER_EKS_S3_BUCKET_CREATE=false \
 AWS_K8S_TESTER_EKS_S3_BUCKET_NAME=${BUCKET_NAME} \
