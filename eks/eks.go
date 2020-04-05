@@ -565,7 +565,7 @@ func (ts *Tester) createSubTesters() (err error) {
 // ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Options
 func (ts *Tester) Up() (err error) {
 	fmt.Printf("\n*********************************\n")
-	fmt.Printf("Up (%q)\n", ts.cfg.ConfigPath)
+	fmt.Printf("Up start (%q)\n", ts.cfg.ConfigPath)
 
 	now := time.Now()
 
