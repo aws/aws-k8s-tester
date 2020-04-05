@@ -19,6 +19,7 @@ package k8sclient
 
 import (
 	"net"
+	"strings"
 	"time"
 
 	"go.uber.org/zap"
@@ -48,7 +49,7 @@ const (
 	// DefaultNamespaceDeletionInterval is the default namespace deletion interval.
 	DefaultNamespaceDeletionInterval = 15 * time.Second
 	// DefaultNamespaceDeletionTimeout is the default namespace deletion timeout.
-	DefaultNamespaceDeletionTimeout  = 10 * time.Minute
+	DefaultNamespaceDeletionTimeout = 10 * time.Minute
 )
 
 // RetryWithExponentialBackOff a utility for retrying the given function with exponential backoff.
@@ -248,18 +249,23 @@ func waitForDeleteNamespace(lg *zap.Logger, c clientset.Interface, namespace str
 	if timeout == 0 {
 		timeout = DefaultNamespaceDeletionTimeout
 	}
-	retryWaitFunc := func() (bool, error) {
+	retryWaitFunc := func() (done bool, err error) {
 		lg.Info("waiting for namespace deletion", zap.String("namespace", namespace))
-		_, err := c.CoreV1().Namespaces().Get(namespace, metav1.GetOptions{})
+		_, err = c.CoreV1().Namespaces().Get(namespace, metav1.GetOptions{})
 		if err != nil {
 			if apierrs.IsNotFound(err) {
-				lg.Info("namespace deleted", zap.String("namespace", namespace))
+				lg.Info("namespace already deleted", zap.String("namespace", namespace))
 				return true, nil
+			}
+			lg.Warn("failed to get namespace", zap.String("namespace", namespace), zap.Error(err))
+			if strings.Contains(err.Error(), "i/o timeout") {
+				return false, nil
 			}
 			if !IsRetryableAPIError(err) {
 				return false, err
 			}
 		}
+		lg.Info("namespace still exists", zap.String("namespace", namespace))
 		return false, nil
 	}
 	return wait.PollImmediate(interval, timeout, retryWaitFunc)
