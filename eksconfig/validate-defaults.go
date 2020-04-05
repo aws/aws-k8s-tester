@@ -26,9 +26,6 @@ import (
 //  - empty string creates a non-nil object for pointer-type field
 //  - omitting an entire field returns nil value
 //  - make sure to check both
-//
-// MAKE SURE TO SYNC THE DEFAULT VALUES in "eks" templates
-//
 var DefaultConfig = Config{
 	// to be auto-generated
 	ConfigPath:                "",
@@ -138,6 +135,11 @@ var DefaultConfig = Config{
 		Objects: 10,
 		QPS:     1,
 		Burst:   1,
+
+		// writes total 5 MB data to etcd
+		// Objects: 1000,
+		// QPS:     30,
+		// Burst:   50,
 	},
 
 	AddOnConfigMaps: &AddOnConfigMaps{
@@ -498,19 +500,13 @@ func (cfg *Config) validateParameters() error {
 		}
 	}
 
-	if cfg.RemoteAccessPrivateKeyPath == "" {
-		return errors.New("empty RemoteAccessPrivateKeyPath")
-	}
-
 	switch cfg.RemoteAccessKeyCreate {
 	case true: // need create one, or already created
 		if cfg.RemoteAccessKeyName == "" {
 			cfg.RemoteAccessKeyName = cfg.Name + "-key-nodes"
 		}
-		if cfg.RemoteAccessPrivateKeyPath != "" {
-			// just ignore...
-			// could be populated from previous run
-			// do not error, so long as RoleCreate false, role won't be deleted
+		if cfg.RemoteAccessPrivateKeyPath == "" {
+			cfg.RemoteAccessPrivateKeyPath = filepath.Join(os.TempDir(), randString(10)+".insecure.key")
 		}
 
 	case false: // use existing one
@@ -519,7 +515,8 @@ func (cfg *Config) validateParameters() error {
 		}
 		if cfg.RemoteAccessPrivateKeyPath == "" {
 			return fmt.Errorf("RemoteAccessKeyCreate false; expect non-empty RemoteAccessPrivateKeyPath but got %q", cfg.RemoteAccessPrivateKeyPath)
-		} else if !fileutil.Exist(cfg.RemoteAccessPrivateKeyPath) {
+		}
+		if !fileutil.Exist(cfg.RemoteAccessPrivateKeyPath) {
 			return fmt.Errorf("RemoteAccessPrivateKeyPath %q does not exist", cfg.RemoteAccessPrivateKeyPath)
 		}
 	}

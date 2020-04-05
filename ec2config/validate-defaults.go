@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -13,14 +12,12 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/aws"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
-	"k8s.io/client-go/util/homedir"
 )
 
 // DefaultConfig is the default configuration.
 //  - empty string creates a non-nil object for pointer-type field
 //  - omitting an entire field returns nil value
 //  - make sure to check both
-//
 var DefaultConfig = Config{
 	// to be auto-generated
 	ConfigPath:                     "",
@@ -44,15 +41,9 @@ var DefaultConfig = Config{
 	RoleCreate:                 true,
 	VPCCreate:                  true,
 	RemoteAccessKeyCreate:      true,
-	RemoteAccessPrivateKeyPath: filepath.Join(homedir.HomeDir(), ".ssh", "ec2_aws_rsa"),
+	RemoteAccessPrivateKeyPath: filepath.Join(os.TempDir(), randString(10)+".insecure.key"),
 
 	ASGsFetchLogs: true,
-}
-
-func init() {
-	if runtime.GOOS == "darwin" {
-		DefaultConfig.RemoteAccessPrivateKeyPath = filepath.Join(os.TempDir(), randString(10)+".insecure.key")
-	}
 }
 
 // NewDefault returns a copy of the default configuration.
@@ -265,10 +256,8 @@ func (cfg *Config) validateConfig() error {
 		if cfg.RemoteAccessKeyName == "" {
 			cfg.RemoteAccessKeyName = cfg.Name + "-key-ec2"
 		}
-		if cfg.RemoteAccessPrivateKeyPath != "" {
-			// just ignore...
-			// could be populated from previous run
-			// do not error, so long as RoleCreate false, role won't be deleted
+		if cfg.RemoteAccessPrivateKeyPath == "" {
+			cfg.RemoteAccessPrivateKeyPath = filepath.Join(os.TempDir(), randString(10)+".insecure.key")
 		}
 
 	case false: // use existing one
@@ -277,7 +266,8 @@ func (cfg *Config) validateConfig() error {
 		}
 		if cfg.RemoteAccessPrivateKeyPath == "" {
 			return fmt.Errorf("RemoteAccessKeyCreate false; expect non-empty RemoteAccessPrivateKeyPath but got %q", cfg.RemoteAccessPrivateKeyPath)
-		} else if !fileutil.Exist(cfg.RemoteAccessPrivateKeyPath) {
+		}
+		if !fileutil.Exist(cfg.RemoteAccessPrivateKeyPath) {
 			return fmt.Errorf("RemoteAccessPrivateKeyPath %q does not exist", cfg.RemoteAccessPrivateKeyPath)
 		}
 	}
