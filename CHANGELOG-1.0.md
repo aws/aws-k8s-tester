@@ -19,7 +19,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.9.8...v1.0.0
 
 ### `eks`
 
-- Add [missing `AddOnCSRs` delete operation](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [missing `AddOnCSRs` delete operation](https://github.com/aws/aws-k8s-tester/commit/e91e12f256a60d74a9f08dead964608f74beee5a).
+- Add [missing `AddOnConfigMaps` delete operation](https://github.com/aws/aws-k8s-tester/commit/e91e12f256a60d74a9f08dead964608f74beee5a).
 
 ### `pkg/k8s-client`
 
