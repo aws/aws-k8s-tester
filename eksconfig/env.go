@@ -24,12 +24,16 @@ const (
 	EnvironmentVariablePrefixAddOnNLBHelloWorld = "AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_"
 	// EnvironmentVariablePrefixAddOnALB2048 is the environment variable prefix used for "eksconfig".
 	EnvironmentVariablePrefixAddOnALB2048 = "AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_"
-	// EnvironmentVariablePrefixAddOnJobPi is the environment variable prefix used for "eksconfig".
-	EnvironmentVariablePrefixAddOnJobPi = "AWS_K8S_TESTER_EKS_ADD_ON_JOB_PI_"
-	// EnvironmentVariablePrefixAddOnJobEcho is the environment variable prefix used for "eksconfig".
-	EnvironmentVariablePrefixAddOnJobEcho = "AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_"
-	// EnvironmentVariablePrefixAddOnCronJob is the environment variable prefix used for "eksconfig".
-	EnvironmentVariablePrefixAddOnCronJob = "AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_"
+	// EnvironmentVariablePrefixAddOnJobsPi is the environment variable prefix used for "eksconfig".
+	EnvironmentVariablePrefixAddOnJobsPi = "AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_"
+	// EnvironmentVariablePrefixAddOnJobsEcho is the environment variable prefix used for "eksconfig".
+	EnvironmentVariablePrefixAddOnJobsEcho = "AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_"
+	// EnvironmentVariablePrefixAddOnCronJobs is the environment variable prefix used for "eksconfig".
+	EnvironmentVariablePrefixAddOnCronJobs = "AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_"
+	// EnvironmentVariablePrefixAddOnCSRs is the environment variable prefix used for "eksconfig".
+	EnvironmentVariablePrefixAddOnCSRs = "AWS_K8S_TESTER_EKS_ADD_ON_CSRS_"
+	// EnvironmentVariablePrefixAddOnConfigMaps is the environment variable prefix used for "eksconfig".
+	EnvironmentVariablePrefixAddOnConfigMaps = "AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_"
 	// EnvironmentVariablePrefixAddOnSecrets is the environment variable prefix used for "eksconfig".
 	EnvironmentVariablePrefixAddOnSecrets = "AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_"
 	// EnvironmentVariablePrefixAddOnIRSA is the environment variable prefix used for "eksconfig".
@@ -117,34 +121,54 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *AddOnALB2048, got %T", vv)
 	}
 
-	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnJobPi, cfg.AddOnJobPi)
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnJobsPi, cfg.AddOnJobsPi)
 	if err != nil {
 		return err
 	}
-	if av, ok := vv.(*AddOnJobPi); ok {
-		cfg.AddOnJobPi = av
+	if av, ok := vv.(*AddOnJobsPi); ok {
+		cfg.AddOnJobsPi = av
 	} else {
-		return fmt.Errorf("expected *AddOnJobPi, got %T", vv)
+		return fmt.Errorf("expected *AddOnJobsPi, got %T", vv)
 	}
 
-	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnJobEcho, cfg.AddOnJobEcho)
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnJobsEcho, cfg.AddOnJobsEcho)
 	if err != nil {
 		return err
 	}
-	if av, ok := vv.(*AddOnJobEcho); ok {
-		cfg.AddOnJobEcho = av
+	if av, ok := vv.(*AddOnJobsEcho); ok {
+		cfg.AddOnJobsEcho = av
 	} else {
-		return fmt.Errorf("expected *AddOnJobEcho, got %T", vv)
+		return fmt.Errorf("expected *AddOnJobsEcho, got %T", vv)
 	}
 
-	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnCronJob, cfg.AddOnCronJob)
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnCronJobs, cfg.AddOnCronJobs)
 	if err != nil {
 		return err
 	}
-	if av, ok := vv.(*AddOnCronJob); ok {
-		cfg.AddOnCronJob = av
+	if av, ok := vv.(*AddOnCronJobs); ok {
+		cfg.AddOnCronJobs = av
 	} else {
-		return fmt.Errorf("expected *AddOnCronJob, got %T", vv)
+		return fmt.Errorf("expected *AddOnCronJobs, got %T", vv)
+	}
+
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnCSRs, cfg.AddOnCSRs)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*AddOnCSRs); ok {
+		cfg.AddOnCSRs = av
+	} else {
+		return fmt.Errorf("expected *AddOnCSRs, got %T", vv)
+	}
+
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnConfigMaps, cfg.AddOnConfigMaps)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*AddOnConfigMaps); ok {
+		cfg.AddOnConfigMaps = av
+	} else {
+		return fmt.Errorf("expected *AddOnConfigMaps, got %T", vv)
 	}
 
 	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnSecrets, cfg.AddOnSecrets)

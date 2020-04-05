@@ -7,6 +7,29 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.9.7...v0.9.8).
 
+### `eks`
+
+- Create namespace with [`pkg/k8s-client` with retries and backoff](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`eks/configmaps`](https://github.com/aws/aws-k8s-tester/commit/8f327f748333fe9c19c0fecb8647f2c8a7374482).
+- Add [`eks/csrs`](https://github.com/aws/aws-k8s-tester/commit/8f327f748333fe9c19c0fecb8647f2c8a7374482).
+
+### `eksconfig`
+
+- Add [`ClientQPS`](https://github.com/aws/aws-k8s-tester/commit/8f327f748333fe9c19c0fecb8647f2c8a7374482).
+  - `AWS_K8S_TESTER_EKS_CLIENT_QPS`.
+- Add [`ClientBurst`](https://github.com/aws/aws-k8s-tester/commit/8f327f748333fe9c19c0fecb8647f2c8a7374482).
+  - `AWS_K8S_TESTER_EKS_CLIENT_BURST`.
+- Rename [`AddOnCronJob` to `AddOnCronJobs`](https://github.com/aws/aws-k8s-tester/commit/8f327f748333fe9c19c0fecb8647f2c8a7374482).
+  - `AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_*` is now `AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_*`.
+- Rename [`AddOnJobPi` to `AddOnJobsPi`](https://github.com/aws/aws-k8s-tester/commit/8f327f748333fe9c19c0fecb8647f2c8a7374482).
+  - `AWS_K8S_TESTER_EKS_ADD_ON_JOB_PI_*` is now `AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_*`.
+- Rename [`AddOnJobEcho` to `AddOnJobsEcho`](https://github.com/aws/aws-k8s-tester/commit/8f327f748333fe9c19c0fecb8647f2c8a7374482).
+  - `AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_*` is now `AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_*`.
+- Add [`AddOnConfigMaps`](https://github.com/aws/aws-k8s-tester/commit/8f327f748333fe9c19c0fecb8647f2c8a7374482).
+  - `AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_*`.
+- Add [`AddOnCSRs`](https://github.com/aws/aws-k8s-tester/commit/8f327f748333fe9c19c0fecb8647f2c8a7374482).
+  - `AWS_K8S_TESTER_EKS_ADD_ON_CSRS_*`.
+
 ### Dependency
 
 - Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.30.3`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.3) to [`v1.30.4`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.4).

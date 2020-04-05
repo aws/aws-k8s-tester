@@ -11,7 +11,7 @@ func TestJobs(t *testing.T) {
 	ts := &tester{
 		cfg: Config{
 			EKSConfig: &eksconfig.Config{
-				AddOnCronJob: &eksconfig.AddOnCronJob{
+				AddOnCronJobs: &eksconfig.AddOnCronJobs{
 					Namespace: "hello",
 					Schedule:  "*/10 * * * *",
 					Completes: 1000,
@@ -21,7 +21,7 @@ func TestJobs(t *testing.T) {
 			},
 		},
 	}
-	_, b, err := ts.createObject()
+	_, b, err := ts.createCronJobs()
 	if err != nil {
 		t.Fatal(err)
 	}

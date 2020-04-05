@@ -11,7 +11,7 @@ func TestJobs(t *testing.T) {
 	ts := &tester{
 		cfg: Config{
 			EKSConfig: &eksconfig.Config{
-				AddOnJobEcho: &eksconfig.AddOnJobEcho{
+				AddOnJobsEcho: &eksconfig.AddOnJobsEcho{
 					Namespace: "hello",
 					Completes: 1000,
 					Parallels: 100,

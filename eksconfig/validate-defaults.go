@@ -69,6 +69,17 @@ var DefaultConfig = Config{
 	// keep in-sync with the default value in https://pkg.go.dev/k8s.io/kubernetes/test/e2e/framework#GetSigner
 	RemoteAccessPrivateKeyPath: filepath.Join(homedir.HomeDir(), ".ssh", "kube_aws_rsa"),
 
+	// Kubernetes client DefaultQPS is 5.
+	// Kubernetes client DefaultBurst is 10.
+	// ref. https://github.com/kubernetes/kubernetes/blob/4d0e86f0b8d1eae00a202009858c8739e4c9402e/staging/src/k8s.io/client-go/rest/config.go#L43-L46
+	//
+	// kube-apiserver default rate limits are:
+	// FLAG: --max-mutating-requests-inflight="200"
+	// FLAG: --max-requests-inflight="400"
+	// ref. https://github.com/kubernetes/kubernetes/blob/4d0e86f0b8d1eae00a202009858c8739e4c9402e/staging/src/k8s.io/apiserver/pkg/server/config.go#L300-L301
+	ClientQPS:   5.0,
+	ClientBurst: 10,
+
 	AddOnNodeGroups: &AddOnNodeGroups{
 		Enable:     false,
 		FetchLogs:  true,
@@ -94,13 +105,13 @@ var DefaultConfig = Config{
 		DeploymentReplicas2048: 3,
 	},
 
-	AddOnJobPi: &AddOnJobPi{
+	AddOnJobsPi: &AddOnJobsPi{
 		Enable:    false,
 		Completes: 30,
 		Parallels: 10,
 	},
 
-	AddOnJobEcho: &AddOnJobEcho{
+	AddOnJobsEcho: &AddOnJobsEcho{
 		Enable:    false,
 		Completes: 10,
 		Parallels: 10,
@@ -112,7 +123,7 @@ var DefaultConfig = Config{
 		// EchoSize:      100 * 1024, // 100 KB
 	},
 
-	AddOnCronJob: &AddOnCronJob{
+	AddOnCronJobs: &AddOnCronJobs{
 		Enable:                     false,
 		Schedule:                   "*/10 * * * *", // every 10-min
 		Completes:                  10,
@@ -122,14 +133,29 @@ var DefaultConfig = Config{
 		EchoSize:                   100 * 1024, // 100 KB
 	},
 
+	AddOnCSRs: &AddOnCSRs{
+		Enable:  false,
+		Objects: 10,
+		QPS:     1,
+		Burst:   1,
+	},
+
+	AddOnConfigMaps: &AddOnConfigMaps{
+		Enable:  false,
+		Objects: 10,
+		Size:    10 * 1024, // 10 KB
+		QPS:     1,
+		Burst:   1,
+	},
+
 	AddOnSecrets: &AddOnSecrets{
-		Enable:      false,
-		Objects:     10,
-		Size:        10 * 1024, // 10 KB
-		SecretQPS:   1,
-		SecretBurst: 1,
-		PodQPS:      100,
-		PodBurst:    5,
+		Enable:       false,
+		Objects:      10,
+		Size:         10 * 1024, // 10 KB
+		SecretsQPS:   1,
+		SecretsBurst: 1,
+		PodQPS:       100,
+		PodBurst:     5,
 
 		// writes total 100 MB for "Secret" objects,
 		// plus "Pod" objects, writes total 330 MB to etcd
@@ -245,14 +271,20 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	if err := cfg.validateAddOnALB2048(); err != nil {
 		return fmt.Errorf("validateAddOnALB2048 failed [%v]", err)
 	}
-	if err := cfg.validateAddOnJobPi(); err != nil {
-		return fmt.Errorf("validateAddOnJobPi failed [%v]", err)
+	if err := cfg.validateAddOnJobsPi(); err != nil {
+		return fmt.Errorf("validateAddOnJobsPi failed [%v]", err)
 	}
-	if err := cfg.validateAddOnJobEcho(); err != nil {
-		return fmt.Errorf("validateAddOnJobEcho failed [%v]", err)
+	if err := cfg.validateAddOnJobsEcho(); err != nil {
+		return fmt.Errorf("validateAddOnJobsEcho failed [%v]", err)
 	}
-	if err := cfg.validateAddOnCronJob(); err != nil {
-		return fmt.Errorf("validateAddOnCronJob failed [%v]", err)
+	if err := cfg.validateAddOnCronJobs(); err != nil {
+		return fmt.Errorf("validateAddOnCronJobs failed [%v]", err)
+	}
+	if err := cfg.validateAddOnCSRs(); err != nil {
+		return fmt.Errorf("validateAddOnCSRs failed [%v]", err)
+	}
+	if err := cfg.validateAddOnConfigMaps(); err != nil {
+		return fmt.Errorf("validateAddOnConfigMaps failed [%v]", err)
 	}
 	if err := cfg.validateAddOnSecrets(); err != nil {
 		return fmt.Errorf("validateAddOnSecrets failed [%v]", err)
@@ -879,47 +911,76 @@ func (cfg *Config) validateAddOnALB2048() error {
 	return nil
 }
 
-func (cfg *Config) validateAddOnJobPi() error {
-	if !cfg.IsEnabledAddOnJobPi() {
+func (cfg *Config) validateAddOnJobsPi() error {
+	if !cfg.IsEnabledAddOnJobsPi() {
 		return nil
 	}
 	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
-		return errors.New("AddOnJobPi.Enable true but no node group is enabled")
+		return errors.New("AddOnJobsPi.Enable true but no node group is enabled")
 	}
-	if cfg.AddOnJobPi.Namespace == "" {
-		cfg.AddOnJobPi.Namespace = cfg.Name + "-job-perl"
+	if cfg.AddOnJobsPi.Namespace == "" {
+		cfg.AddOnJobsPi.Namespace = cfg.Name + "-job-perl"
 	}
 	return nil
 }
 
-func (cfg *Config) validateAddOnJobEcho() error {
-	if !cfg.IsEnabledAddOnJobEcho() {
+func (cfg *Config) validateAddOnJobsEcho() error {
+	if !cfg.IsEnabledAddOnJobsEcho() {
 		return nil
 	}
 	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
-		return errors.New("AddOnJobEcho.Enable true but no node group is enabled")
+		return errors.New("AddOnJobsEcho.Enable true but no node group is enabled")
 	}
-	if cfg.AddOnJobEcho.Namespace == "" {
-		cfg.AddOnJobEcho.Namespace = cfg.Name + "-job-echo"
+	if cfg.AddOnJobsEcho.Namespace == "" {
+		cfg.AddOnJobsEcho.Namespace = cfg.Name + "-job-echo"
 	}
-	if cfg.AddOnJobEcho.EchoSize > 250000 {
-		return fmt.Errorf("echo size limit is 0.25 MB, got %d", cfg.AddOnJobEcho.EchoSize)
+	if cfg.AddOnJobsEcho.EchoSize > 250000 {
+		return fmt.Errorf("echo size limit is 0.25 MB, got %d", cfg.AddOnJobsEcho.EchoSize)
 	}
 	return nil
 }
 
-func (cfg *Config) validateAddOnCronJob() error {
-	if !cfg.IsEnabledAddOnCronJob() {
+func (cfg *Config) validateAddOnCronJobs() error {
+	if !cfg.IsEnabledAddOnCronJobs() {
 		return nil
 	}
 	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
-		return errors.New("AddOnCronJob.Enable true but no node group is enabled")
+		return errors.New("AddOnCronJobs.Enable true but no node group is enabled")
 	}
-	if cfg.AddOnCronJob.Namespace == "" {
-		cfg.AddOnCronJob.Namespace = cfg.Name + "-cronjob"
+	if cfg.AddOnCronJobs.Namespace == "" {
+		cfg.AddOnCronJobs.Namespace = cfg.Name + "-cronjob"
 	}
-	if cfg.AddOnCronJob.EchoSize > 250000 {
-		return fmt.Errorf("echo size limit is 0.25 MB, got %d", cfg.AddOnCronJob.EchoSize)
+	if cfg.AddOnCronJobs.EchoSize > 250000 {
+		return fmt.Errorf("echo size limit is 0.25 MB, got %d", cfg.AddOnCronJobs.EchoSize)
+	}
+	return nil
+}
+
+func (cfg *Config) validateAddOnCSRs() error {
+	if !cfg.IsEnabledAddOnCSRs() {
+		return nil
+	}
+	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
+		return errors.New("AddOnCSRs.Enable true but no node group is enabled")
+	}
+	if cfg.AddOnCSRs.Namespace == "" {
+		cfg.AddOnCSRs.Namespace = cfg.Name + "-csrs"
+	}
+	return nil
+}
+
+func (cfg *Config) validateAddOnConfigMaps() error {
+	if !cfg.IsEnabledAddOnConfigMaps() {
+		return nil
+	}
+	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
+		return errors.New("AddOnConfigMaps.Enable true but no node group is enabled")
+	}
+	if cfg.AddOnConfigMaps.Namespace == "" {
+		cfg.AddOnConfigMaps.Namespace = cfg.Name + "-config-maps"
+	}
+	if cfg.AddOnConfigMaps.Size > 500000 {
+		return fmt.Errorf("AddOnConfigMaps.Size limit is 0.5 MB, got %d", cfg.AddOnConfigMaps.Size)
 	}
 	return nil
 }

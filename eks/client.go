@@ -20,28 +20,29 @@ import (
 )
 
 func (ts *Tester) createK8sClientSet() (err error) {
-	ts.lg.Info("loading *restclient.Config")
 	cfg := ts.createClientConfig()
 	if cfg == nil {
-		ts.lg.Warn("*restclient.Config is nil; reading kubeconfig")
+		ts.lg.Info("creating k8s client using KUBECONFIG")
 		cfg, err = clientcmd.BuildConfigFromFlags("", ts.cfg.KubeConfigPath)
 		if err != nil {
 			ts.lg.Warn("failed to read kubeconfig", zap.Error(err))
 			return err
 		}
-		ts.lg.Info("loaded *restclient.Config from kubeconfig")
-	} else {
-		ts.lg.Info("loaded *restclient.Config from eksconfig")
+	}
+	if ts.cfg.ClientQPS > 0 {
+		cfg.QPS = ts.cfg.ClientQPS
+	}
+	if ts.cfg.ClientBurst > 0 {
+		cfg.Burst = ts.cfg.ClientBurst
 	}
 
-	ts.lg.Info("creating k8s client set")
 	ts.k8sClientSet, err = clientset.NewForConfig(cfg)
 	if err == nil {
-		ts.lg.Info("created k8s client set")
+		ts.lg.Info("created k8s client", zap.Float32("qps", cfg.QPS), zap.Int("burst", cfg.Burst))
 		return nil
 	}
 
-	ts.lg.Warn("failed to create k8s client set", zap.Error(err))
+	ts.lg.Warn("failed to create k8s client", zap.Error(err))
 	return err
 }
 
@@ -60,6 +61,7 @@ func (ts *Tester) createClientConfig() *restclient.Config {
 	if ts.cfg.Status.ClusterCADecoded == "" {
 		return nil
 	}
+	ts.lg.Info("creating k8s client using status")
 	return &restclient.Config{
 		Host: ts.cfg.Status.ClusterAPIServerEndpoint,
 		TLSClientConfig: restclient.TLSClientConfig{

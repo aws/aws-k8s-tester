@@ -124,6 +124,31 @@ type Config struct {
 	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
 	RemoteAccessPrivateKeyPath string `json:"remote-access-private-key-path,omitempty"`
 
+	// ClientQPS is the QPS for kubernetes client.
+	// To use while talking with kubernetes apiserver.
+	//
+	// Kubernetes client DefaultQPS is 5.
+	// Kubernetes client DefaultBurst is 10.
+	// ref. https://github.com/kubernetes/kubernetes/blob/4d0e86f0b8d1eae00a202009858c8739e4c9402e/staging/src/k8s.io/client-go/rest/config.go#L43-L46
+	//
+	// kube-apiserver default rate limits are:
+	// FLAG: --max-mutating-requests-inflight="200"
+	// FLAG: --max-requests-inflight="400"
+	// ref. https://github.com/kubernetes/kubernetes/blob/4d0e86f0b8d1eae00a202009858c8739e4c9402e/staging/src/k8s.io/apiserver/pkg/server/config.go#L300-L301
+	ClientQPS float32 `json:"client-qps"`
+	// ClientBurst is the burst for kubernetes client.
+	// To use while talking with kubernetes apiserver
+	//
+	// Kubernetes client DefaultQPS is 5.
+	// Kubernetes client DefaultBurst is 10.
+	// ref. https://github.com/kubernetes/kubernetes/blob/4d0e86f0b8d1eae00a202009858c8739e4c9402e/staging/src/k8s.io/client-go/rest/config.go#L43-L46
+	//
+	// kube-apiserver default rate limits are:
+	// FLAG: --max-mutating-requests-inflight="200"
+	// FLAG: --max-requests-inflight="400"
+	// ref. https://github.com/kubernetes/kubernetes/blob/4d0e86f0b8d1eae00a202009858c8739e4c9402e/staging/src/k8s.io/apiserver/pkg/server/config.go#L300-L301
+	ClientBurst int `json:"client-burst"`
+
 	// AddOnNodeGroups defines EKS "Node Group"
 	// creation parameters.
 	AddOnNodeGroups *AddOnNodeGroups `json:"add-on-node-groups,omitempty"`
@@ -139,15 +164,21 @@ type Config struct {
 	// AddOnALB2048 defines parameters for EKS cluster
 	// add-on ALB 2048 service.
 	AddOnALB2048 *AddOnALB2048 `json:"add-on-alb-2048,omitempty"`
-	// AddOnJobPi defines parameters for EKS cluster
+	// AddOnJobsPi defines parameters for EKS cluster
 	// add-on Job with pi Perl command.
-	AddOnJobPi *AddOnJobPi `json:"add-on-job-pi,omitempty"`
-	// AddOnJobEcho defines parameters for EKS cluster
+	AddOnJobsPi *AddOnJobsPi `json:"add-on-jobs-pi,omitempty"`
+	// AddOnJobsEcho defines parameters for EKS cluster
 	// add-on Job with echo.
-	AddOnJobEcho *AddOnJobEcho `json:"add-on-job-echo,omitempty"`
-	// AddOnCronJob defines parameters for EKS cluster
+	AddOnJobsEcho *AddOnJobsEcho `json:"add-on-jobs-echo,omitempty"`
+	// AddOnCronJobs defines parameters for EKS cluster
 	// add-on with CronJob.
-	AddOnCronJob *AddOnCronJob `json:"add-on-cron-job,omitempty"`
+	AddOnCronJobs *AddOnCronJobs `json:"add-on-cron-jobs,omitempty"`
+	// AddOnCSRs defines parameters for EKS cluster
+	// add-on with CSRs.
+	AddOnCSRs *AddOnCSRs `json:"add-on-csrs,omitempty"`
+	// AddOnConfigMaps defines parameters for EKS cluster
+	// add-on with ConfigMap.
+	AddOnConfigMaps *AddOnConfigMaps `json:"add-on-config-maps,omitempty"`
 	// AddOnSecrets defines parameters for EKS cluster
 	// add-on "Secrets".
 	AddOnSecrets *AddOnSecrets `json:"add-on-secrets,omitempty"`
@@ -505,22 +536,22 @@ type AddOnALB2048 struct {
 	URL string `json:"url" read-only:"true"`
 }
 
-// IsEnabledAddOnJobPi returns true if "AddOnJobPi" is enabled.
+// IsEnabledAddOnJobsPi returns true if "AddOnJobsPi" is enabled.
 // Otherwise, nil the field for "omitempty".
-func (cfg *Config) IsEnabledAddOnJobPi() bool {
-	if cfg.AddOnJobPi == nil {
+func (cfg *Config) IsEnabledAddOnJobsPi() bool {
+	if cfg.AddOnJobsPi == nil {
 		return false
 	}
-	if cfg.AddOnJobPi.Enable {
+	if cfg.AddOnJobsPi.Enable {
 		return true
 	}
-	cfg.AddOnJobPi = nil
+	cfg.AddOnJobsPi = nil
 	return false
 }
 
-// AddOnJobPi defines parameters for EKS cluster
+// AddOnJobsPi defines parameters for EKS cluster
 // add-on Job with Perl.
-type AddOnJobPi struct {
+type AddOnJobsPi struct {
 	// Enable is 'true' to create this add-on.
 	Enable bool `json:"enable"`
 	// Created is true when the resource has been created.
@@ -546,22 +577,22 @@ type AddOnJobPi struct {
 	Parallels int `json:"parallels"`
 }
 
-// IsEnabledAddOnJobEcho returns true if "AddOnJobEcho" is enabled.
+// IsEnabledAddOnJobsEcho returns true if "AddOnJobsEcho" is enabled.
 // Otherwise, nil the field for "omitempty".
-func (cfg *Config) IsEnabledAddOnJobEcho() bool {
-	if cfg.AddOnJobEcho == nil {
+func (cfg *Config) IsEnabledAddOnJobsEcho() bool {
+	if cfg.AddOnJobsEcho == nil {
 		return false
 	}
-	if cfg.AddOnJobEcho.Enable {
+	if cfg.AddOnJobsEcho.Enable {
 		return true
 	}
-	cfg.AddOnJobEcho = nil
+	cfg.AddOnJobsEcho = nil
 	return false
 }
 
-// AddOnJobEcho defines parameters for EKS cluster
+// AddOnJobsEcho defines parameters for EKS cluster
 // add-on Job with echo.
-type AddOnJobEcho struct {
+type AddOnJobsEcho struct {
 	// Enable is 'true' to create this add-on.
 	Enable bool `json:"enable"`
 	// Created is true when the resource has been created.
@@ -592,22 +623,22 @@ type AddOnJobEcho struct {
 	EchoSize int `json:"echo-size"`
 }
 
-// IsEnabledAddOnCronJob returns true if "AddOnCronJob" is enabled.
+// IsEnabledAddOnCronJobs returns true if "AddOnCronJobs" is enabled.
 // Otherwise, nil the field for "omitempty".
-func (cfg *Config) IsEnabledAddOnCronJob() bool {
-	if cfg.AddOnCronJob == nil {
+func (cfg *Config) IsEnabledAddOnCronJobs() bool {
+	if cfg.AddOnCronJobs == nil {
 		return false
 	}
-	if cfg.AddOnCronJob.Enable {
+	if cfg.AddOnCronJobs.Enable {
 		return true
 	}
-	cfg.AddOnCronJob = nil
+	cfg.AddOnCronJobs = nil
 	return false
 }
 
-// AddOnCronJob defines parameters for EKS cluster
+// AddOnCronJobs defines parameters for EKS cluster
 // add-on with CronJob.
-type AddOnCronJob struct {
+type AddOnCronJobs struct {
 	// Enable is 'true' to create this add-on.
 	Enable bool `json:"enable"`
 	// Created is true when the resource has been created.
@@ -645,6 +676,138 @@ type AddOnCronJob struct {
 	// "The Job "echo" is invalid: metadata.annotations:
 	// Too long: must have at most 262144 characters". (0.26 MB)
 	EchoSize int `json:"echo-size"`
+}
+
+// IsEnabledAddOnCSRs returns true if "AddOnCSRs" is enabled.
+// Otherwise, nil the field for "omitempty".
+func (cfg *Config) IsEnabledAddOnCSRs() bool {
+	if cfg.AddOnCSRs == nil {
+		return false
+	}
+	if cfg.AddOnCSRs.Enable {
+		return true
+	}
+	cfg.AddOnCSRs = nil
+	return false
+}
+
+// AddOnCSRs defines parameters for EKS cluster
+// add-on "CertificateSigningRequest".
+type AddOnCSRs struct {
+	// Enable is 'true' to create this add-on.
+	Enable bool `json:"enable"`
+	// Created is true when the resource has been created.
+	// Used for delete operations.
+	Created bool `json:"created" read-only:"true"`
+
+	// CreateTook is the duration that took to create the resource.
+	CreateTook time.Duration `json:"create-took,omitempty" read-only:"true"`
+	// CreateTookString is the duration that took to create the resource.
+	CreateTookString string `json:"create-took-string,omitempty" read-only:"true"`
+	// DeleteTook is the duration that took to create the resource.
+	DeleteTook time.Duration `json:"delete-took,omitempty" read-only:"true"`
+	// DeleteTookString is the duration that took to create the resource.
+	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
+
+	// Namespace is the namespace to create "CertificateSigningRequest" objects in.
+	Namespace string `json:"namespace"`
+
+	// Objects is the number of "CertificateSigningRequest" objects to create.
+	Objects int `json:"objects"`
+	// QPS is the number of "CertificateSigningRequest" create requests to send
+	// per second. Requests may be throttled by kube-apiserver.
+	//
+	// Kubernetes client DefaultQPS is 5.
+	// Kubernetes client DefaultBurst is 10.
+	// ref. https://github.com/kubernetes/kubernetes/blob/4d0e86f0b8d1eae00a202009858c8739e4c9402e/staging/src/k8s.io/client-go/rest/config.go#L43-L46
+	//
+	// kube-apiserver default rate limits are:
+	// FLAG: --max-mutating-requests-inflight="200"
+	// FLAG: --max-requests-inflight="400"
+	// ref. https://github.com/kubernetes/kubernetes/blob/4d0e86f0b8d1eae00a202009858c8739e4c9402e/staging/src/k8s.io/apiserver/pkg/server/config.go#L300-L301
+	QPS uint `json:"qps"`
+	// Burst is the number of "CertificateSigningRequest" create requests that
+	// a client can make in excess of the rate specified by the limiter.
+	// Requests may be throttled by kube-apiserver.
+	//
+	// Kubernetes client DefaultQPS is 5.
+	// Kubernetes client DefaultBurst is 10.
+	// ref. https://github.com/kubernetes/kubernetes/blob/4d0e86f0b8d1eae00a202009858c8739e4c9402e/staging/src/k8s.io/client-go/rest/config.go#L43-L46
+	//
+	// kube-apiserver default rate limits are:
+	// FLAG: --max-mutating-requests-inflight="200"
+	// FLAG: --max-requests-inflight="400"
+	// ref. https://github.com/kubernetes/kubernetes/blob/4d0e86f0b8d1eae00a202009858c8739e4c9402e/staging/src/k8s.io/apiserver/pkg/server/config.go#L300-L301
+	Burst uint `json:"burst"`
+	// CreatedNames is the list of created "CertificateSigningRequest" object names.
+	CreatedNames []string `json:"created-names" read-only:"true"`
+}
+
+// IsEnabledAddOnConfigMaps returns true if "AddOnConfigMaps" is enabled.
+// Otherwise, nil the field for "omitempty".
+func (cfg *Config) IsEnabledAddOnConfigMaps() bool {
+	if cfg.AddOnConfigMaps == nil {
+		return false
+	}
+	if cfg.AddOnConfigMaps.Enable {
+		return true
+	}
+	cfg.AddOnConfigMaps = nil
+	return false
+}
+
+// AddOnConfigMaps defines parameters for EKS cluster
+// add-on "ConfigMap".
+type AddOnConfigMaps struct {
+	// Enable is 'true' to create this add-on.
+	Enable bool `json:"enable"`
+	// Created is true when the resource has been created.
+	// Used for delete operations.
+	Created bool `json:"created" read-only:"true"`
+
+	// CreateTook is the duration that took to create the resource.
+	CreateTook time.Duration `json:"create-took,omitempty" read-only:"true"`
+	// CreateTookString is the duration that took to create the resource.
+	CreateTookString string `json:"create-took-string,omitempty" read-only:"true"`
+	// DeleteTook is the duration that took to create the resource.
+	DeleteTook time.Duration `json:"delete-took,omitempty" read-only:"true"`
+	// DeleteTookString is the duration that took to create the resource.
+	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
+
+	// Namespace is the namespace to create "ConfigMap" objects in.
+	Namespace string `json:"namespace"`
+
+	// Objects is the number of "ConfigMap" objects to create.
+	Objects int `json:"objects"`
+	// Size is the "ConfigMap" value size in bytes.
+	Size int `json:"size"`
+	// QPS is the number of "ConfigMap" create requests to send
+	// per second. Requests may be throttled by kube-apiserver.
+	//
+	// Kubernetes client DefaultQPS is 5.
+	// Kubernetes client DefaultBurst is 10.
+	// ref. https://github.com/kubernetes/kubernetes/blob/4d0e86f0b8d1eae00a202009858c8739e4c9402e/staging/src/k8s.io/client-go/rest/config.go#L43-L46
+	//
+	// kube-apiserver default rate limits are:
+	// FLAG: --max-mutating-requests-inflight="200"
+	// FLAG: --max-requests-inflight="400"
+	// ref. https://github.com/kubernetes/kubernetes/blob/4d0e86f0b8d1eae00a202009858c8739e4c9402e/staging/src/k8s.io/apiserver/pkg/server/config.go#L300-L301
+	QPS uint `json:"qps"`
+	// Burst is the number of "ConfigMap" create requests that
+	// a client can make in excess of the rate specified by the limiter.
+	// Requests may be throttled by kube-apiserver.
+	//
+	// Kubernetes client DefaultQPS is 5.
+	// Kubernetes client DefaultBurst is 10.
+	// ref. https://github.com/kubernetes/kubernetes/blob/4d0e86f0b8d1eae00a202009858c8739e4c9402e/staging/src/k8s.io/client-go/rest/config.go#L43-L46
+	//
+	// kube-apiserver default rate limits are:
+	// FLAG: --max-mutating-requests-inflight="200"
+	// FLAG: --max-requests-inflight="400"
+	// ref. https://github.com/kubernetes/kubernetes/blob/4d0e86f0b8d1eae00a202009858c8739e4c9402e/staging/src/k8s.io/apiserver/pkg/server/config.go#L300-L301
+	Burst uint `json:"burst"`
+	// CreatedNames is the list of created "ConfigMap" object names.
+	CreatedNames []string `json:"created-names" read-only:"true"`
 }
 
 // IsEnabledAddOnSecrets returns true if "AddOnSecrets" is enabled.
@@ -686,21 +849,21 @@ type AddOnSecrets struct {
 	// Size is the "Secret" value size in bytes.
 	Size int `json:"size"`
 
-	// SecretQPS is the number of "Secret" create requests to send
+	// SecretsQPS is the number of "Secret" create requests to send
 	// per second. Requests may be throttled by kube-apiserver.
 	// Default rate limits from kube-apiserver are:
 	// FLAG: --max-mutating-requests-inflight="200"
 	// FLAG: --max-requests-inflight="400"
-	SecretQPS uint `json:"secret-qps"`
-	// SecretBurst is the number of "Secret" create requests that
+	SecretsQPS uint `json:"secret-qps"`
+	// SecretsBurst is the number of "Secret" create requests that
 	// a client can make in excess of the rate specified by the limiter.
 	// Requests may be throttled by kube-apiserver.
 	// Default rate limits from kube-apiserver are:
 	// FLAG: --max-mutating-requests-inflight="200"
 	// FLAG: --max-requests-inflight="400"
-	SecretBurst uint `json:"secret-burst"`
-	// CreatedSecretNames is the list of created "Secret" object names.
-	CreatedSecretNames []string `json:"created-secret-names" read-only:"true"`
+	SecretsBurst uint `json:"secret-burst"`
+	// CreatedSecretsNames is the list of created "Secret" object names.
+	CreatedSecretsNames []string `json:"created-secrets-names" read-only:"true"`
 
 	// PodQPS is the number of "Pod" create requests to send
 	// per second. Requests may be throttled by kube-apiserver.

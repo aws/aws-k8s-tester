@@ -21,7 +21,9 @@ import (
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/eks/alb"
 	"github.com/aws/aws-k8s-tester/eks/appmesh"
+	"github.com/aws/aws-k8s-tester/eks/configmaps"
 	"github.com/aws/aws-k8s-tester/eks/cronjobs"
+	"github.com/aws/aws-k8s-tester/eks/csrs"
 	"github.com/aws/aws-k8s-tester/eks/fargate"
 	"github.com/aws/aws-k8s-tester/eks/gpu"
 	"github.com/aws/aws-k8s-tester/eks/irsa"
@@ -99,6 +101,8 @@ type Tester struct {
 	jobsPiTester        jobspi.Tester
 	jobsEchoTester      jobsecho.Tester
 	cronJobsTester      cronjobs.Tester
+	csrsTester          csrs.Tester
+	configMapsTester    configmaps.Tester
 	secretsTester       secrets.Tester
 	irsaTester          irsa.Tester
 	fargateTester       fargate.Tester
@@ -409,7 +413,7 @@ func (ts *Tester) createSubTesters() (err error) {
 		}
 	}
 
-	if ts.cfg.IsEnabledAddOnJobPi() {
+	if ts.cfg.IsEnabledAddOnJobsPi() {
 		ts.lg.Info("creating jobsPiTester")
 		ts.jobsPiTester, err = jobspi.New(jobspi.Config{
 			Logger:    ts.lg,
@@ -423,7 +427,7 @@ func (ts *Tester) createSubTesters() (err error) {
 		}
 	}
 
-	if ts.cfg.IsEnabledAddOnJobEcho() {
+	if ts.cfg.IsEnabledAddOnJobsEcho() {
 		ts.lg.Info("creating jobsEchoTester")
 		ts.jobsEchoTester, err = jobsecho.New(jobsecho.Config{
 			Logger:    ts.lg,
@@ -437,9 +441,37 @@ func (ts *Tester) createSubTesters() (err error) {
 		}
 	}
 
-	if ts.cfg.IsEnabledAddOnCronJob() {
+	if ts.cfg.IsEnabledAddOnCronJobs() {
 		ts.lg.Info("creating cronJobsTester")
 		ts.cronJobsTester, err = cronjobs.New(cronjobs.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			Sig:       ts.interruptSig,
+			EKSConfig: ts.cfg,
+			K8SClient: ts,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	if ts.cfg.IsEnabledAddOnConfigMaps() {
+		ts.lg.Info("creating configMapsTester")
+		ts.configMapsTester, err = configmaps.New(configmaps.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			Sig:       ts.interruptSig,
+			EKSConfig: ts.cfg,
+			K8SClient: ts,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	if ts.cfg.IsEnabledAddOnConfigMaps() {
+		ts.lg.Info("creating configMapsTester")
+		ts.configMapsTester, err = configmaps.New(configmaps.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			Sig:       ts.interruptSig,
@@ -818,11 +850,10 @@ func (ts *Tester) Up() (err error) {
 	fmt.Printf("\n*********************************\n")
 	ts.lg.Sugar().Infof("SSH (%s)", ts.cfg.ConfigPath)
 	fmt.Println(ts.cfg.SSHCommands())
-	
+
 	fmt.Printf("\n*********************************\n")
 	ts.lg.Sugar().Infof("kubectl (%s)", ts.cfg.ConfigPath)
 	fmt.Println(ts.cfg.KubectlCommands())
-
 
 	if ts.cfg.IsEnabledAddOnNLBHelloWorld() {
 		fmt.Printf("\n*********************************\n")
@@ -852,9 +883,9 @@ func (ts *Tester) Up() (err error) {
 		}
 	}
 
-	if ts.cfg.IsEnabledAddOnJobPi() {
+	if ts.cfg.IsEnabledAddOnJobsPi() {
 		fmt.Printf("\n*********************************\n")
-		fmt.Printf("jobsPiTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnJobPi.Namespace)
+		fmt.Printf("jobsPiTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnJobsPi.Namespace)
 		if err := catchInterrupt(
 			ts.lg,
 			ts.stopCreationCh,
@@ -866,9 +897,9 @@ func (ts *Tester) Up() (err error) {
 		}
 	}
 
-	if ts.cfg.IsEnabledAddOnJobEcho() {
+	if ts.cfg.IsEnabledAddOnJobsEcho() {
 		fmt.Printf("\n*********************************\n")
-		fmt.Printf("jobsEchoTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnJobEcho.Namespace)
+		fmt.Printf("jobsEchoTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnJobsEcho.Namespace)
 		if err := catchInterrupt(
 			ts.lg,
 			ts.stopCreationCh,
@@ -880,15 +911,43 @@ func (ts *Tester) Up() (err error) {
 		}
 	}
 
-	if ts.cfg.IsEnabledAddOnCronJob() {
+	if ts.cfg.IsEnabledAddOnCronJobs() {
 		fmt.Printf("\n*********************************\n")
-		fmt.Printf("cronJobsTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnCronJob.Namespace)
+		fmt.Printf("cronJobsTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnCronJobs.Namespace)
 		if err := catchInterrupt(
 			ts.lg,
 			ts.stopCreationCh,
 			ts.stopCreationChOnce,
 			ts.interruptSig,
 			ts.cronJobsTester.Create,
+		); err != nil {
+			return err
+		}
+	}
+
+	if ts.cfg.IsEnabledAddOnCSRs() {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("csrsTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnCSRs.Namespace)
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.interruptSig,
+			ts.csrsTester.Create,
+		); err != nil {
+			return err
+		}
+	}
+
+	if ts.cfg.IsEnabledAddOnConfigMaps() {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("configMapsTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnConfigMaps.Namespace)
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.interruptSig,
+			ts.configMapsTester.Create,
 		); err != nil {
 			return err
 		}
@@ -1141,7 +1200,7 @@ func (ts *Tester) down() (err error) {
 			}
 		}
 
-		if ts.cfg.IsEnabledAddOnCronJob() && ts.cfg.AddOnCronJob.Created {
+		if ts.cfg.IsEnabledAddOnCronJobs() && ts.cfg.AddOnCronJobs.Created {
 			fmt.Printf("\n*********************************\n")
 			fmt.Printf("cronJobsTester.Delete (%q)\n", ts.cfg.ConfigPath)
 			if err := ts.cronJobsTester.Delete(); err != nil {
@@ -1150,7 +1209,7 @@ func (ts *Tester) down() (err error) {
 			}
 		}
 
-		if ts.cfg.IsEnabledAddOnJobEcho() && ts.cfg.AddOnJobEcho.Created {
+		if ts.cfg.IsEnabledAddOnJobsEcho() && ts.cfg.AddOnJobsEcho.Created {
 			fmt.Printf("\n*********************************\n")
 			fmt.Printf("jobsEchoTester.Delete (%q)\n", ts.cfg.ConfigPath)
 			if err := ts.jobsEchoTester.Delete(); err != nil {
@@ -1159,7 +1218,7 @@ func (ts *Tester) down() (err error) {
 			}
 		}
 
-		if ts.cfg.IsEnabledAddOnJobPi() && ts.cfg.AddOnJobPi.Created {
+		if ts.cfg.IsEnabledAddOnJobsPi() && ts.cfg.AddOnJobsPi.Created {
 			fmt.Printf("\n*********************************\n")
 			fmt.Printf("jobsPiTester.Delete (%q)\n", ts.cfg.ConfigPath)
 			if err := ts.jobsPiTester.Delete(); err != nil {

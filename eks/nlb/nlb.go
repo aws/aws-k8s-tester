@@ -15,6 +15,7 @@ import (
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/aws/elb"
+	k8sclient "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/elbv2/elbv2iface"
 	"go.uber.org/zap"
@@ -80,7 +81,7 @@ func (ts *tester) Create() error {
 		ts.cfg.EKSConfig.Sync()
 	}()
 
-	if err := ts.createNamespace(); err != nil {
+	if err := k8sclient.CreateNamespace(ts.cfg.Logger, ts.cfg.K8SClient.KubernetesClientSet(), ts.cfg.EKSConfig.AddOnNLBHelloWorld.Namespace); err != nil {
 		return err
 	}
 	if err := ts.createDeployment(); err != nil {
@@ -109,6 +110,7 @@ func (ts *tester) Delete() error {
 	}()
 
 	var errs []string
+
 	if err := ts.deleteService(); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete NLB hello-world Service (%v)", err))
 	}
@@ -142,7 +144,11 @@ func (ts *tester) Delete() error {
 		errs = append(errs, fmt.Sprintf("failed to delete NLB hello-world (%v)", err))
 	}
 
-	if err := ts.deleteNamespace(); err != nil {
+	if err := k8sclient.DeleteNamespaceAndWait(ts.cfg.Logger,
+		ts.cfg.K8SClient.KubernetesClientSet(),
+		ts.cfg.EKSConfig.AddOnNLBHelloWorld.Namespace,
+		k8sclient.DefaultNamespaceDeletionInterval,
+		k8sclient.DefaultNamespaceDeletionTimeout); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete NLB namespace (%v)", err))
 	}
 
@@ -151,53 +157,6 @@ func (ts *tester) Delete() error {
 	}
 
 	ts.cfg.EKSConfig.AddOnNLBHelloWorld.Created = false
-	return ts.cfg.EKSConfig.Sync()
-}
-
-func (ts *tester) createNamespace() error {
-	ts.cfg.Logger.Info("creating namespace", zap.String("namespace", ts.cfg.EKSConfig.AddOnNLBHelloWorld.Namespace))
-	_, err := ts.cfg.K8SClient.KubernetesClientSet().
-		CoreV1().
-		Namespaces().
-		Create(&v1.Namespace{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "v1",
-				Kind:       "Namespace",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: ts.cfg.EKSConfig.AddOnNLBHelloWorld.Namespace,
-				Labels: map[string]string{
-					"name": ts.cfg.EKSConfig.AddOnNLBHelloWorld.Namespace,
-				},
-			},
-		})
-	if err != nil {
-		return err
-	}
-	ts.cfg.Logger.Info("created namespace", zap.String("namespace", ts.cfg.EKSConfig.AddOnNLBHelloWorld.Namespace))
-	return ts.cfg.EKSConfig.Sync()
-}
-
-func (ts *tester) deleteNamespace() error {
-	ts.cfg.Logger.Info("deleting namespace", zap.String("namespace", ts.cfg.EKSConfig.AddOnNLBHelloWorld.Namespace))
-	foreground := metav1.DeletePropagationForeground
-	err := ts.cfg.K8SClient.KubernetesClientSet().
-		CoreV1().
-		Namespaces().
-		Delete(
-			ts.cfg.EKSConfig.AddOnNLBHelloWorld.Namespace,
-			&metav1.DeleteOptions{
-				GracePeriodSeconds: aws.Int64(0),
-				PropagationPolicy:  &foreground,
-			},
-		)
-	if err != nil {
-		// ref. https://github.com/aws/aws-k8s-tester/issues/79
-		if !strings.Contains(err.Error(), ` not found`) {
-			return err
-		}
-	}
-	ts.cfg.Logger.Info("deleted namespace", zap.Error(err))
 	return ts.cfg.EKSConfig.Sync()
 }
 

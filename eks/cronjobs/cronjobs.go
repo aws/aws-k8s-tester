@@ -2,6 +2,7 @@
 package cronjobs
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"os"
@@ -9,6 +10,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
+	k8sclient "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/dustin/go-humanize"
 	"go.uber.org/zap"
@@ -53,43 +55,43 @@ type tester struct {
 }
 
 func (ts *tester) Create() error {
-	if ts.cfg.EKSConfig.AddOnCronJob.Created {
+	if ts.cfg.EKSConfig.AddOnCronJobs.Created {
 		ts.cfg.Logger.Info("skipping create AddOnCronJob")
 		return nil
 	}
 
-	ts.cfg.EKSConfig.AddOnCronJob.Created = true
+	ts.cfg.EKSConfig.AddOnCronJobs.Created = true
 	ts.cfg.EKSConfig.Sync()
 
 	createStart := time.Now()
 	defer func() {
-		ts.cfg.EKSConfig.AddOnCronJob.CreateTook = time.Since(createStart)
-		ts.cfg.EKSConfig.AddOnCronJob.CreateTookString = ts.cfg.EKSConfig.AddOnCronJob.CreateTook.String()
+		ts.cfg.EKSConfig.AddOnCronJobs.CreateTook = time.Since(createStart)
+		ts.cfg.EKSConfig.AddOnCronJobs.CreateTookString = ts.cfg.EKSConfig.AddOnCronJobs.CreateTook.String()
 		ts.cfg.EKSConfig.Sync()
 	}()
 
-	if err := ts.createNamespace(); err != nil {
+	if err := k8sclient.CreateNamespace(ts.cfg.Logger, ts.cfg.K8SClient.KubernetesClientSet(), ts.cfg.EKSConfig.AddOnCronJobs.Namespace); err != nil {
 		return err
 	}
-	obj, b, err := ts.createObject()
+	obj, b, err := ts.createCronJobs()
 	if err != nil {
 		return err
 	}
 	ts.cfg.Logger.Info("creating CronJob",
 		zap.String("name", cronJobName),
-		zap.Int("completes", ts.cfg.EKSConfig.AddOnCronJob.Completes),
-		zap.Int("parallels", ts.cfg.EKSConfig.AddOnCronJob.Parallels),
+		zap.Int("completes", ts.cfg.EKSConfig.AddOnCronJobs.Completes),
+		zap.Int("parallels", ts.cfg.EKSConfig.AddOnCronJobs.Parallels),
 		zap.String("object-size", humanize.Bytes(uint64(len(b)))),
 	)
 
 	_, err = ts.cfg.K8SClient.KubernetesClientSet().
 		BatchV1beta1().
-		CronJobs(ts.cfg.EKSConfig.AddOnCronJob.Namespace).
+		CronJobs(ts.cfg.EKSConfig.AddOnCronJobs.Namespace).
 		Create(&obj)
 	if err != nil {
-		return fmt.Errorf("failed to create Job (%v)", err)
+		return fmt.Errorf("failed to create CronJob (%v)", err)
 	}
-	ts.cfg.Logger.Info("created Job")
+	ts.cfg.Logger.Info("created CronJob")
 
 	// take about 4-min for 10 cron jobs to trigger
 	select {
@@ -99,7 +101,7 @@ func (ts *tester) Create() error {
 	case <-time.After(2 * time.Minute):
 	}
 
-	waitDur := 3*time.Minute + 10*time.Duration(ts.cfg.EKSConfig.AddOnCronJob.Completes)*time.Second
+	waitDur := 3*time.Minute + 10*time.Duration(ts.cfg.EKSConfig.AddOnCronJobs.Completes)*time.Second
 
 	completedJobs, err := waitJobs(
 		ts.cfg.Logger,
@@ -108,9 +110,9 @@ func (ts *tester) Create() error {
 		ts.cfg.K8SClient.KubernetesClientSet(),
 		waitDur,
 		5*time.Second,
-		ts.cfg.EKSConfig.AddOnCronJob.Namespace,
+		ts.cfg.EKSConfig.AddOnCronJobs.Namespace,
 		cronJobName,
-		int(ts.cfg.EKSConfig.AddOnCronJob.Completes),
+		int(ts.cfg.EKSConfig.AddOnCronJobs.Completes),
 		jobsFieldSelector,
 		v1.PodSucceeded,
 	)
@@ -130,22 +132,24 @@ func (ts *tester) Create() error {
 var propagationBackground = metav1.DeletePropagationBackground
 
 func (ts *tester) Delete() error {
-	if !ts.cfg.EKSConfig.AddOnCronJob.Created {
+	if !ts.cfg.EKSConfig.AddOnCronJobs.Created {
 		ts.cfg.Logger.Info("skipping delete AddOnCronJob")
 		return nil
 	}
 	deleteStart := time.Now()
 	defer func() {
-		ts.cfg.EKSConfig.AddOnCronJob.DeleteTook = time.Since(deleteStart)
-		ts.cfg.EKSConfig.AddOnCronJob.DeleteTookString = ts.cfg.EKSConfig.AddOnCronJob.DeleteTook.String()
+		ts.cfg.EKSConfig.AddOnCronJobs.DeleteTook = time.Since(deleteStart)
+		ts.cfg.EKSConfig.AddOnCronJobs.DeleteTookString = ts.cfg.EKSConfig.AddOnCronJobs.DeleteTook.String()
 		ts.cfg.EKSConfig.Sync()
 	}()
+
+	var errs []string
 
 	ts.cfg.Logger.Info("deleting Job", zap.String("name", cronJobName))
 	err := ts.cfg.
 		K8SClient.KubernetesClientSet().
 		BatchV1beta1().
-		CronJobs(ts.cfg.EKSConfig.AddOnCronJob.Namespace).
+		CronJobs(ts.cfg.EKSConfig.AddOnCronJobs.Namespace).
 		Delete(
 			cronJobName,
 			&metav1.DeleteOptions{
@@ -154,61 +158,23 @@ func (ts *tester) Delete() error {
 			},
 		)
 	if err != nil {
-		return fmt.Errorf("failed to delete CronJob %q (%v)", cronJobName, err)
+		errs = append(errs, fmt.Sprintf("failed to delete CronJob %q (%v)", cronJobName, err))
 	}
 	ts.cfg.Logger.Info("deleted CronJob", zap.String("name", cronJobName))
 
-	if err := ts.deleteNamespace(); err != nil {
-		return err
+	if err := k8sclient.DeleteNamespaceAndWait(ts.cfg.Logger,
+		ts.cfg.K8SClient.KubernetesClientSet(),
+		ts.cfg.EKSConfig.AddOnCronJobs.Namespace,
+		k8sclient.DefaultNamespaceDeletionInterval,
+		k8sclient.DefaultNamespaceDeletionTimeout); err != nil {
+		errs = append(errs, fmt.Sprintf("failed to delete CronJobs namespace (%v)", err))
 	}
-	ts.cfg.EKSConfig.AddOnCronJob.Created = false
-	return ts.cfg.EKSConfig.Sync()
-}
 
-func (ts *tester) createNamespace() error {
-	ts.cfg.Logger.Info("creating namespace", zap.String("namespace", ts.cfg.EKSConfig.AddOnCronJob.Namespace))
-	_, err := ts.cfg.K8SClient.KubernetesClientSet().
-		CoreV1().
-		Namespaces().
-		Create(&v1.Namespace{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "v1",
-				Kind:       "Namespace",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: ts.cfg.EKSConfig.AddOnCronJob.Namespace,
-				Labels: map[string]string{
-					"name": ts.cfg.EKSConfig.AddOnCronJob.Namespace,
-				},
-			},
-		})
-	if err != nil {
-		return err
+	if len(errs) > 0 {
+		return errors.New(strings.Join(errs, ", "))
 	}
-	ts.cfg.Logger.Info("created namespace", zap.String("namespace", ts.cfg.EKSConfig.AddOnCronJob.Namespace))
-	return ts.cfg.EKSConfig.Sync()
-}
 
-func (ts *tester) deleteNamespace() error {
-	ts.cfg.Logger.Info("deleting namespace", zap.String("namespace", ts.cfg.EKSConfig.AddOnCronJob.Namespace))
-	foreground := metav1.DeletePropagationForeground
-	err := ts.cfg.K8SClient.KubernetesClientSet().
-		CoreV1().
-		Namespaces().
-		Delete(
-			ts.cfg.EKSConfig.AddOnCronJob.Namespace,
-			&metav1.DeleteOptions{
-				GracePeriodSeconds: aws.Int64(0),
-				PropagationPolicy:  &foreground,
-			},
-		)
-	if err != nil {
-		// ref. https://github.com/aws/aws-k8s-tester/issues/79
-		if !strings.Contains(err.Error(), ` not found`) {
-			return err
-		}
-	}
-	ts.cfg.Logger.Info("deleted namespace", zap.Error(err))
+	ts.cfg.EKSConfig.AddOnCronJobs.Created = false
 	return ts.cfg.EKSConfig.Sync()
 }
 
@@ -220,7 +186,7 @@ const (
 	cronJobEchoImageName = "busybox"
 )
 
-func (ts *tester) createObject() (batchv1beta1.CronJob, string, error) {
+func (ts *tester) createCronJobs() (batchv1beta1.CronJob, string, error) {
 	podSpec := v1.PodTemplateSpec{
 		Spec: v1.PodSpec{
 			Containers: []v1.Container{
@@ -231,7 +197,7 @@ func (ts *tester) createObject() (batchv1beta1.CronJob, string, error) {
 					Command: []string{
 						"/bin/sh",
 						"-ec",
-						fmt.Sprintf("echo -n '%s' >> /config/output.txt", randString(ts.cfg.EKSConfig.AddOnCronJob.EchoSize)),
+						fmt.Sprintf("echo -n '%s' >> /config/output.txt", randString(ts.cfg.EKSConfig.AddOnCronJobs.EchoSize)),
 					},
 					VolumeMounts: []v1.VolumeMount{
 						{
@@ -257,11 +223,11 @@ func (ts *tester) createObject() (batchv1beta1.CronJob, string, error) {
 	jobSpec := batchv1beta1.JobTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      jobName,
-			Namespace: ts.cfg.EKSConfig.AddOnCronJob.Namespace,
+			Namespace: ts.cfg.EKSConfig.AddOnCronJobs.Namespace,
 		},
 		Spec: batchv1.JobSpec{
-			Completions: aws.Int32(int32(ts.cfg.EKSConfig.AddOnCronJob.Completes)),
-			Parallelism: aws.Int32(int32(ts.cfg.EKSConfig.AddOnCronJob.Parallels)),
+			Completions: aws.Int32(int32(ts.cfg.EKSConfig.AddOnCronJobs.Completes)),
+			Parallelism: aws.Int32(int32(ts.cfg.EKSConfig.AddOnCronJobs.Parallels)),
 			Template:    podSpec,
 			// TODO: 'TTLSecondsAfterFinished' is still alpha
 			// https://kubernetes.io/docs/concepts/workloads/controllers/ttlafterfinished/
@@ -274,12 +240,12 @@ func (ts *tester) createObject() (batchv1beta1.CronJob, string, error) {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cronJobName,
-			Namespace: ts.cfg.EKSConfig.AddOnCronJob.Namespace,
+			Namespace: ts.cfg.EKSConfig.AddOnCronJobs.Namespace,
 		},
 		Spec: batchv1beta1.CronJobSpec{
-			Schedule:                   ts.cfg.EKSConfig.AddOnCronJob.Schedule,
-			SuccessfulJobsHistoryLimit: aws.Int32(ts.cfg.EKSConfig.AddOnCronJob.SuccessfulJobsHistoryLimit),
-			FailedJobsHistoryLimit:     aws.Int32(ts.cfg.EKSConfig.AddOnCronJob.FailedJobsHistoryLimit),
+			Schedule:                   ts.cfg.EKSConfig.AddOnCronJobs.Schedule,
+			SuccessfulJobsHistoryLimit: aws.Int32(ts.cfg.EKSConfig.AddOnCronJobs.SuccessfulJobsHistoryLimit),
+			FailedJobsHistoryLimit:     aws.Int32(ts.cfg.EKSConfig.AddOnCronJobs.FailedJobsHistoryLimit),
 			JobTemplate:                jobSpec,
 		},
 	}

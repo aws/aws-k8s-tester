@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
-	"github.com/aws/aws-sdk-go/aws"
+	k8sclient "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/dustin/go-humanize"
 	"go.uber.org/zap"
 	"golang.org/x/time/rate"
@@ -49,13 +49,14 @@ type Tester interface {
 	AggregateResults() error
 }
 
-// New creates a new Job tester.
+// New creates a new Secret tester.
 func New(cfg Config) (Tester, error) {
-	return &tester{cfg: cfg}, nil
+	return &tester{cfg: cfg, cancel: make(chan struct{})}, nil
 }
 
 type tester struct {
-	cfg Config
+	cfg    Config
+	cancel chan struct{}
 }
 
 func (ts *tester) Create() error {
@@ -74,7 +75,7 @@ func (ts *tester) Create() error {
 		ts.cfg.EKSConfig.Sync()
 	}()
 
-	if err := ts.createNamespace(); err != nil {
+	if err := k8sclient.CreateNamespace(ts.cfg.Logger, ts.cfg.K8SClient.KubernetesClientSet(), ts.cfg.EKSConfig.AddOnSecrets.Namespace); err != nil {
 		return err
 	}
 	if err := ts.createSecrets(); err != nil {
@@ -103,8 +104,12 @@ func (ts *tester) Delete() error {
 		ts.cfg.EKSConfig.Sync()
 	}()
 
-	if err := ts.deleteNamespace(); err != nil {
-		return err
+	if err := k8sclient.DeleteNamespaceAndWait(ts.cfg.Logger,
+		ts.cfg.K8SClient.KubernetesClientSet(),
+		ts.cfg.EKSConfig.AddOnSecrets.Namespace,
+		k8sclient.DefaultNamespaceDeletionInterval,
+		k8sclient.DefaultNamespaceDeletionTimeout); err != nil {
+		return fmt.Errorf("failed to delete Secrets namespace (%v)", err)
 	}
 
 	ts.cfg.EKSConfig.AddOnSecrets.Created = false
@@ -117,9 +122,9 @@ const ResultSuffixRead = "-secret-read.csv"
 // only letters and numbers for Secret key names
 var regex = regexp.MustCompile("[^a-zA-Z0-9]+")
 
-const secretWritesFailThreshold = 10
+const writesFailThreshold = 10
 
-func (ts *tester) createSecrets() error {
+func (ts *tester) createSecrets() (err error) {
 	size := humanize.Bytes(uint64(ts.cfg.EKSConfig.AddOnSecrets.Size))
 	ts.cfg.Logger.Info("creating Secrets",
 		zap.Int("objects", ts.cfg.EKSConfig.AddOnSecrets.Objects),
@@ -137,27 +142,23 @@ func (ts *tester) createSecrets() error {
 	}
 
 	// overwrite if any
-	ts.cfg.EKSConfig.AddOnSecrets.CreatedSecretNames = make([]string, 0, ts.cfg.EKSConfig.AddOnSecrets.Objects)
+	ts.cfg.EKSConfig.AddOnSecrets.CreatedSecretsNames = make([]string, 0, ts.cfg.EKSConfig.AddOnSecrets.Objects)
 	ts.cfg.EKSConfig.Sync()
 
-	if ts.cfg.EKSConfig.AddOnSecrets.SecretQPS <= 1 {
-		if err := ts.createSecretsSequential(pfx, valSfx, secretWritesFailThreshold); err != nil {
-			return err
-		}
-		return ts.cfg.EKSConfig.Sync()
+	if ts.cfg.EKSConfig.AddOnSecrets.SecretsQPS <= 1 {
+		err = ts.createSecretsSequential(pfx, valSfx, writesFailThreshold)
+	} else {
+		err = ts.createSecretsParallel(pfx, valSfx, writesFailThreshold)
 	}
-
-	if err := ts.createSecretsParallel(pfx, valSfx, secretWritesFailThreshold); err != nil {
-		return err
-	}
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return err
 }
 
 func (ts *tester) createSecretsSequential(pfx, valSfx string, failThreshold int) error {
-	qps := float64(ts.cfg.EKSConfig.AddOnSecrets.SecretQPS)
-	burst := int(ts.cfg.EKSConfig.AddOnSecrets.SecretBurst)
+	qps := float64(ts.cfg.EKSConfig.AddOnSecrets.SecretsQPS)
+	burst := int(ts.cfg.EKSConfig.AddOnSecrets.SecretsBurst)
 	rateLimiter := rate.NewLimiter(rate.Limit(qps), burst)
-	ts.cfg.Logger.Info("creating Secret sequential",
+	ts.cfg.Logger.Info("creating Secrets sequential",
 		zap.Float64("qps", qps),
 		zap.Int("burst", burst),
 	)
@@ -194,6 +195,9 @@ func (ts *tester) createSecretsSequential(pfx, valSfx string, failThreshold int)
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      key,
 				Namespace: ts.cfg.EKSConfig.AddOnSecrets.Namespace,
+				Labels: map[string]string{
+					"name": key,
+				},
 			},
 			Type: v1.SecretTypeOpaque,
 			Data: map[string][]byte{key: val},
@@ -207,6 +211,8 @@ func (ts *tester) createSecretsSequential(pfx, valSfx string, failThreshold int)
 		t2 := time.Now()
 		if err != nil {
 			select {
+			case <-ts.cancel:
+				return errors.New("Secret creation aborted")
 			case <-ts.cfg.Stopc:
 				return errors.New("Secret creation aborted")
 			default:
@@ -217,6 +223,7 @@ func (ts *tester) createSecretsSequential(pfx, valSfx string, failThreshold int)
 					zap.Error(err),
 				)
 				if fails >= failThreshold {
+					close(ts.cancel)
 					return fmt.Errorf("exceeded secret writes fail threshold %d (%v)", failThreshold, err)
 				}
 			}
@@ -226,7 +233,7 @@ func (ts *tester) createSecretsSequential(pfx, valSfx string, failThreshold int)
 
 		secretName := secret.GetObjectMeta().GetName()
 
-		ts.cfg.EKSConfig.AddOnSecrets.CreatedSecretNames = append(ts.cfg.EKSConfig.AddOnSecrets.CreatedSecretNames, secretName)
+		ts.cfg.EKSConfig.AddOnSecrets.CreatedSecretsNames = append(ts.cfg.EKSConfig.AddOnSecrets.CreatedSecretsNames, secretName)
 		ts.cfg.EKSConfig.Sync()
 
 		if err = wr.Write([]string{
@@ -244,14 +251,15 @@ func (ts *tester) createSecretsSequential(pfx, valSfx string, failThreshold int)
 		if ts.cfg.EKSConfig.LogLevel == "debug" || i%200 == 0 {
 			ts.cfg.Logger.Info("created Secret",
 				zap.String("key", secret.GetObjectMeta().GetName()),
+				zap.Duration("took", t2.Sub(t1)),
 			)
 		}
 	}
 	wr.Flush()
 
-	ts.cfg.Logger.Info("created Secrets sequential",
+	ts.cfg.Logger.Info("created sequential",
 		zap.Int("objects", ts.cfg.EKSConfig.AddOnSecrets.Objects),
-		zap.Int("success", len(ts.cfg.EKSConfig.AddOnSecrets.CreatedSecretNames)),
+		zap.Int("success", len(ts.cfg.EKSConfig.AddOnSecrets.CreatedSecretsNames)),
 		zap.String("writes-result-path", ts.cfg.EKSConfig.AddOnSecrets.WritesResultPath),
 		zap.Error(wr.Error()),
 	)
@@ -259,8 +267,8 @@ func (ts *tester) createSecretsSequential(pfx, valSfx string, failThreshold int)
 }
 
 func (ts *tester) createSecretsParallel(pfx, valSfx string, failThreshold int) error {
-	qps := float64(ts.cfg.EKSConfig.AddOnSecrets.SecretQPS)
-	burst := int(ts.cfg.EKSConfig.AddOnSecrets.SecretBurst)
+	qps := float64(ts.cfg.EKSConfig.AddOnSecrets.SecretsQPS)
+	burst := int(ts.cfg.EKSConfig.AddOnSecrets.SecretsBurst)
 	rateLimiter := rate.NewLimiter(rate.Limit(qps), burst)
 	ts.cfg.Logger.Info("creating Secrets parallel",
 		zap.Float64("qps", qps),
@@ -287,6 +295,9 @@ func (ts *tester) createSecretsParallel(pfx, valSfx string, failThreshold int) e
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      key,
 					Namespace: ts.cfg.EKSConfig.AddOnSecrets.Namespace,
+					Labels: map[string]string{
+						"name": key,
+					},
 				},
 				Type: v1.SecretTypeOpaque,
 				Data: map[string][]byte{key: val},
@@ -300,6 +311,9 @@ func (ts *tester) createSecretsParallel(pfx, valSfx string, failThreshold int) e
 			t2 := time.Now()
 			if err != nil {
 				select {
+				case <-ts.cancel:
+					ts.cfg.Logger.Warn("exiting")
+					return
 				case <-ts.cfg.Stopc:
 					ts.cfg.Logger.Warn("exiting")
 					return
@@ -309,6 +323,9 @@ func (ts *tester) createSecretsParallel(pfx, valSfx string, failThreshold int) e
 			}
 
 			select {
+			case <-ts.cancel:
+				ts.cfg.Logger.Warn("exiting")
+				return
 			case <-ts.cfg.Stopc:
 				ts.cfg.Logger.Warn("exiting")
 				return
@@ -318,6 +335,7 @@ func (ts *tester) createSecretsParallel(pfx, valSfx string, failThreshold int) e
 			if ts.cfg.EKSConfig.LogLevel == "debug" || i%200 == 0 {
 				ts.cfg.Logger.Info("created Secret",
 					zap.String("key", secret.GetObjectMeta().GetName()),
+					zap.Duration("took", t2.Sub(t1)),
 				)
 			}
 		}(i)
@@ -341,6 +359,9 @@ func (ts *tester) createSecretsParallel(pfx, valSfx string, failThreshold int) e
 		var rv result
 		select {
 		case rv = <-rch:
+		case <-ts.cancel:
+			ts.cfg.Logger.Warn("exiting")
+			return errors.New("aborted")
 		case <-ts.cfg.Stopc:
 			ts.cfg.Logger.Warn("exiting")
 			return errors.New("aborted")
@@ -353,6 +374,7 @@ func (ts *tester) createSecretsParallel(pfx, valSfx string, failThreshold int) e
 				zap.Error(rv.err),
 			)
 			if fails >= failThreshold {
+				close(ts.cancel)
 				return fmt.Errorf("exceeded secret writes fail threshold %d (%v)", failThreshold, err)
 			}
 			continue
@@ -360,8 +382,7 @@ func (ts *tester) createSecretsParallel(pfx, valSfx string, failThreshold int) e
 		fails = 0
 
 		secretName := rv.secret.GetObjectMeta().GetName()
-
-		ts.cfg.EKSConfig.AddOnSecrets.CreatedSecretNames = append(ts.cfg.EKSConfig.AddOnSecrets.CreatedSecretNames, secretName)
+		ts.cfg.EKSConfig.AddOnSecrets.CreatedSecretsNames = append(ts.cfg.EKSConfig.AddOnSecrets.CreatedSecretsNames, secretName)
 		ts.cfg.EKSConfig.Sync()
 
 		if err = wr.Write([]string{secretName, fmt.Sprintf("%f", rv.took.Seconds()), rv.start.String(), rv.end.String()}); err != nil {
@@ -373,9 +394,9 @@ func (ts *tester) createSecretsParallel(pfx, valSfx string, failThreshold int) e
 	}
 	wr.Flush()
 
-	ts.cfg.Logger.Info("created Secrets parallel",
+	ts.cfg.Logger.Info("created parallel",
 		zap.Int("objects", ts.cfg.EKSConfig.AddOnSecrets.Objects),
-		zap.Int("success", len(ts.cfg.EKSConfig.AddOnSecrets.CreatedSecretNames)),
+		zap.Int("success", len(ts.cfg.EKSConfig.AddOnSecrets.CreatedSecretsNames)),
 		zap.String("writes-result-path", ts.cfg.EKSConfig.AddOnSecrets.WritesResultPath),
 		zap.Error(wr.Error()),
 	)
@@ -386,8 +407,8 @@ func (ts *tester) createPods() error {
 	ts.cfg.Logger.Info("mounting and read Secrets using Pod")
 
 	fileOrCreate := v1.HostPathFileOrCreate
-	pods := make([]*v1.Pod, len(ts.cfg.EKSConfig.AddOnSecrets.CreatedSecretNames))
-	for i, secretName := range ts.cfg.EKSConfig.AddOnSecrets.CreatedSecretNames {
+	pods := make([]*v1.Pod, len(ts.cfg.EKSConfig.AddOnSecrets.CreatedSecretsNames))
+	for i, secretName := range ts.cfg.EKSConfig.AddOnSecrets.CreatedSecretsNames {
 		podName := "pod-" + secretName
 		csvFilePath := fmt.Sprintf("/var/log/%s%s", secretName, ResultSuffixRead)
 
@@ -507,12 +528,17 @@ func (ts *tester) createPodsSequential(pods []*v1.Pod) error {
 			ts.cfg.Logger.Debug("waited for rate limiter", zap.Error(werr))
 		}
 
+		t1 := time.Now()
 		_, err := ts.cfg.K8SClient.KubernetesClientSet().
 			CoreV1().
 			Pods(ts.cfg.EKSConfig.AddOnSecrets.Namespace).
 			Create(pod)
+		t2 := time.Now()
 		if err != nil {
 			select {
+			case <-ts.cancel:
+				ts.cfg.Logger.Warn("exiting")
+				return errors.New("aborted")
 			case <-ts.cfg.Stopc:
 				ts.cfg.Logger.Warn("exiting")
 				return errors.New("aborted")
@@ -522,11 +548,12 @@ func (ts *tester) createPodsSequential(pods []*v1.Pod) error {
 			continue
 		}
 
-		ts.cfg.EKSConfig.AddOnSecrets.CreatedPodNames = append(ts.cfg.EKSConfig.AddOnSecrets.CreatedPodNames, pod.GetObjectMeta().GetName())
+		podName := pod.GetObjectMeta().GetName()
+		ts.cfg.EKSConfig.AddOnSecrets.CreatedPodNames = append(ts.cfg.EKSConfig.AddOnSecrets.CreatedPodNames, podName)
 		ts.cfg.EKSConfig.Sync()
 
 		if ts.cfg.EKSConfig.LogLevel == "debug" || idx%200 == 0 {
-			ts.cfg.Logger.Info("created Pod", zap.String("name", pod.GetObjectMeta().GetName()))
+			ts.cfg.Logger.Info("created Pod", zap.String("name", podName), zap.Duration("took", t2.Sub(t1)))
 		}
 	}
 
@@ -556,12 +583,17 @@ func (ts *tester) createPodsParallel(pods []*v1.Pod) error {
 				ts.cfg.Logger.Debug("waited for rate limiter", zap.Error(werr))
 			}
 
+			t1 := time.Now()
 			_, err := ts.cfg.K8SClient.KubernetesClientSet().
 				CoreV1().
 				Pods(ts.cfg.EKSConfig.AddOnSecrets.Namespace).
 				Create(pod)
+			t2 := time.Now()
 			if err != nil {
 				select {
+				case <-ts.cancel:
+					ts.cfg.Logger.Warn("exiting")
+					return
 				case <-ts.cfg.Stopc:
 					ts.cfg.Logger.Warn("exiting")
 					return
@@ -571,6 +603,9 @@ func (ts *tester) createPodsParallel(pods []*v1.Pod) error {
 			}
 
 			select {
+			case <-ts.cancel:
+				ts.cfg.Logger.Warn("exiting")
+				return
 			case <-ts.cfg.Stopc:
 				ts.cfg.Logger.Warn("exiting")
 				return
@@ -578,7 +613,7 @@ func (ts *tester) createPodsParallel(pods []*v1.Pod) error {
 			}
 
 			if ts.cfg.EKSConfig.LogLevel == "debug" || i%200 == 0 {
-				ts.cfg.Logger.Info("created Pod", zap.String("name", pod.GetObjectMeta().GetName()))
+				ts.cfg.Logger.Info("created Pod", zap.String("name", pod.GetObjectMeta().GetName()), zap.Duration("took", t2.Sub(t1)))
 			}
 		}(idx, s)
 	}
@@ -587,6 +622,9 @@ func (ts *tester) createPodsParallel(pods []*v1.Pod) error {
 		var rv result
 		select {
 		case rv = <-rch:
+		case <-ts.cancel:
+			ts.cfg.Logger.Warn("exiting")
+			return ts.cfg.EKSConfig.Sync()
 		case <-ts.cfg.Stopc:
 			ts.cfg.Logger.Warn("exiting")
 			return ts.cfg.EKSConfig.Sync()
@@ -620,6 +658,8 @@ func (ts *tester) waitForPodsCompleted() error {
 	retryStart := time.Now()
 	for time.Now().Sub(retryStart) < timeout {
 		select {
+		case <-ts.cancel:
+			return errors.New("aborted")
 		case <-ts.cfg.Stopc:
 			return errors.New("aborted")
 		case sig := <-ts.cfg.Sig:
@@ -660,53 +700,6 @@ func (ts *tester) waitForPodsCompleted() error {
 	}
 
 	ts.cfg.Logger.Info("waited for completed Pods")
-	return ts.cfg.EKSConfig.Sync()
-}
-
-func (ts *tester) createNamespace() error {
-	ts.cfg.Logger.Info("creating namespace", zap.String("namespace", ts.cfg.EKSConfig.AddOnSecrets.Namespace))
-	_, err := ts.cfg.K8SClient.KubernetesClientSet().
-		CoreV1().
-		Namespaces().
-		Create(&v1.Namespace{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "v1",
-				Kind:       "Namespace",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: ts.cfg.EKSConfig.AddOnSecrets.Namespace,
-				Labels: map[string]string{
-					"name": ts.cfg.EKSConfig.AddOnSecrets.Namespace,
-				},
-			},
-		})
-	if err != nil {
-		return err
-	}
-	ts.cfg.Logger.Info("created namespace", zap.String("namespace", ts.cfg.EKSConfig.AddOnSecrets.Namespace))
-	return ts.cfg.EKSConfig.Sync()
-}
-
-func (ts *tester) deleteNamespace() error {
-	ts.cfg.Logger.Info("deleting namespace", zap.String("namespace", ts.cfg.EKSConfig.AddOnSecrets.Namespace))
-	foreground := metav1.DeletePropagationForeground
-	err := ts.cfg.K8SClient.KubernetesClientSet().
-		CoreV1().
-		Namespaces().
-		Delete(
-			ts.cfg.EKSConfig.AddOnSecrets.Namespace,
-			&metav1.DeleteOptions{
-				GracePeriodSeconds: aws.Int64(0),
-				PropagationPolicy:  &foreground,
-			},
-		)
-	if err != nil {
-		// ref. https://github.com/aws/aws-k8s-tester/issues/79
-		if !strings.Contains(err.Error(), ` not found`) {
-			return err
-		}
-	}
-	ts.cfg.Logger.Info("deleted namespace", zap.Error(err))
 	return ts.cfg.EKSConfig.Sync()
 }
 

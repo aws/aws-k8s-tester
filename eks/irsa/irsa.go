@@ -16,6 +16,7 @@ import (
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	awscfn "github.com/aws/aws-k8s-tester/pkg/aws/cloudformation"
+	k8sclient "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/ssh"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
@@ -92,7 +93,7 @@ func (ts *tester) Create() error {
 	if err := ts.createS3(); err != nil {
 		return err
 	}
-	if err := ts.createNamespace(); err != nil {
+	if err := k8sclient.CreateNamespace(ts.cfg.Logger, ts.cfg.K8SClient.KubernetesClientSet(), ts.cfg.EKSConfig.AddOnIRSA.Namespace); err != nil {
 		return err
 	}
 	if err := ts.createOIDCProvider(); err != nil {
@@ -104,7 +105,7 @@ func (ts *tester) Create() error {
 	if err := ts.createServiceAccount(); err != nil {
 		return err
 	}
-	if err := ts.createConfigMap(); err != nil {
+	if err := ts.createConfigMaps(); err != nil {
 		return err
 	}
 	if err := ts.createDeployment(); err != nil {
@@ -150,7 +151,7 @@ func (ts *tester) Delete() error {
 	ts.cfg.Logger.Info("wait after deleting Deployments")
 	time.Sleep(20 * time.Second)
 
-	if err := ts.deleteConfigMap(); err != nil {
+	if err := ts.deleteConfigMaps(); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete ConfigMap (%v)", err))
 	}
 	ts.cfg.Logger.Info("wait after deleting ConfigMap")
@@ -174,8 +175,16 @@ func (ts *tester) Delete() error {
 	ts.cfg.Logger.Info("wait for a minute after deleting namespace")
 	time.Sleep(time.Minute)
 
-	if err := ts.deleteNamespace(); err != nil {
-		return err
+	if err := k8sclient.DeleteNamespaceAndWait(ts.cfg.Logger,
+		ts.cfg.K8SClient.KubernetesClientSet(),
+		ts.cfg.EKSConfig.AddOnIRSA.Namespace,
+		k8sclient.DefaultNamespaceDeletionInterval,
+		k8sclient.DefaultNamespaceDeletionTimeout); err != nil {
+		errs = append(errs, fmt.Sprintf("failed to delete IRSA namespace (%v)", err))
+	}
+
+	if len(errs) > 0 {
+		return errors.New(strings.Join(errs, ", "))
 	}
 
 	ts.cfg.EKSConfig.AddOnIRSA.Created = false
@@ -238,53 +247,6 @@ func (ts *tester) deleteS3() error {
 		)
 	}
 	return err
-}
-
-func (ts *tester) createNamespace() error {
-	ts.cfg.Logger.Info("creating namespace", zap.String("namespace", ts.cfg.EKSConfig.AddOnIRSA.Namespace))
-	_, err := ts.cfg.K8SClient.KubernetesClientSet().
-		CoreV1().
-		Namespaces().
-		Create(&v1.Namespace{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "v1",
-				Kind:       "Namespace",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: ts.cfg.EKSConfig.AddOnIRSA.Namespace,
-				Labels: map[string]string{
-					"name": ts.cfg.EKSConfig.AddOnIRSA.Namespace,
-				},
-			},
-		})
-	if err != nil {
-		return err
-	}
-	ts.cfg.Logger.Info("created namespace", zap.String("namespace", ts.cfg.EKSConfig.AddOnIRSA.Namespace))
-	return ts.cfg.EKSConfig.Sync()
-}
-
-func (ts *tester) deleteNamespace() error {
-	ts.cfg.Logger.Info("deleting namespace", zap.String("namespace", ts.cfg.EKSConfig.AddOnIRSA.Namespace))
-	foreground := metav1.DeletePropagationForeground
-	err := ts.cfg.K8SClient.KubernetesClientSet().
-		CoreV1().
-		Namespaces().
-		Delete(
-			ts.cfg.EKSConfig.AddOnIRSA.Namespace,
-			&metav1.DeleteOptions{
-				GracePeriodSeconds: aws.Int64(0),
-				PropagationPolicy:  &foreground,
-			},
-		)
-	if err != nil {
-		// ref. https://github.com/aws/aws-k8s-tester/issues/79
-		if !strings.Contains(err.Error(), ` not found`) {
-			return err
-		}
-	}
-	ts.cfg.Logger.Info("deleted namespace", zap.Error(err))
-	return ts.cfg.EKSConfig.Sync()
 }
 
 func (ts *tester) createOIDCProvider() error {
@@ -655,8 +617,8 @@ type configMapTemplate struct {
 	SleepMessage string
 }
 
-func (ts *tester) createConfigMap() error {
-	ts.cfg.Logger.Info("creating config map", zap.String("name", ts.cfg.EKSConfig.AddOnIRSA.ServiceAccountName))
+func (ts *tester) createConfigMaps() error {
+	ts.cfg.Logger.Info("creating config maps", zap.String("name", ts.cfg.EKSConfig.AddOnIRSA.ConfigMapName))
 
 	tpl := template.Must(template.New("TemplateConfigMap").Parse(TemplateConfigMap))
 	buf := bytes.NewBuffer(nil)
@@ -693,12 +655,12 @@ func (ts *tester) createConfigMap() error {
 		return err
 	}
 
-	ts.cfg.Logger.Info("created config map", zap.String("name", ts.cfg.EKSConfig.AddOnIRSA.ServiceAccountName))
+	ts.cfg.Logger.Info("created config maps", zap.String("name", ts.cfg.EKSConfig.AddOnIRSA.ConfigMapName))
 	return ts.cfg.EKSConfig.Sync()
 }
 
-func (ts *tester) deleteConfigMap() error {
-	ts.cfg.Logger.Info("deleting config map", zap.String("name", ts.cfg.EKSConfig.AddOnIRSA.ConfigMapName))
+func (ts *tester) deleteConfigMaps() error {
+	ts.cfg.Logger.Info("deleting config maps", zap.String("name", ts.cfg.EKSConfig.AddOnIRSA.ConfigMapName))
 	foreground := metav1.DeletePropagationForeground
 	err := ts.cfg.K8SClient.KubernetesClientSet().
 		CoreV1().
@@ -714,7 +676,7 @@ func (ts *tester) deleteConfigMap() error {
 		return err
 	}
 
-	ts.cfg.Logger.Info("deleted config map", zap.String("name", ts.cfg.EKSConfig.AddOnIRSA.ConfigMapName))
+	ts.cfg.Logger.Info("deleted config maps", zap.String("name", ts.cfg.EKSConfig.AddOnIRSA.ConfigMapName))
 	return ts.cfg.EKSConfig.Sync()
 }
 

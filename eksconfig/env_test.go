@@ -55,6 +55,10 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_S3_BUCKET_CREATE")
 	os.Setenv("AWS_K8S_TESTER_EKS_S3_BUCKET_LIFECYCLE_EXPIRATION_DAYS", `10`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_S3_BUCKET_LIFECYCLE_EXPIRATION_DAYS")
+	os.Setenv("AWS_K8S_TESTER_EKS_CLIENT_QPS", `555.77`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_CLIENT_QPS")
+	os.Setenv("AWS_K8S_TESTER_EKS_CLIENT_BURST", `177`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_CLIENT_BURST")
 
 	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CREATE", "false")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CREATE")
@@ -186,48 +190,80 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_NAMESPACE", "test-namespace")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_NAMESPACE")
 
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_PI_ENABLE", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_PI_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_PI_CREATED", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_PI_CREATED")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_PI_NAMESPACE", "hello1")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_PI_NAMESPACE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_PI_COMPLETES", "100")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_PI_COMPLETES")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_PI_PARALLELS", "10")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_PI_PARALLELS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_CREATED", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_CREATED")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_NAMESPACE", "hello1")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_COMPLETES", "100")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_COMPLETES")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_PARALLELS", "10")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_PARALLELS")
 
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_ENABLE", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_CREATED", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_CREATED")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_NAMESPACE", "hello2")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_NAMESPACE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_COMPLETES", "1000")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_COMPLETES")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_PARALLELS", "100")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_PARALLELS")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_ECHO_SIZE", "10000")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOB_ECHO_ECHO_SIZE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_CREATED", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_CREATED")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_NAMESPACE", "hello2")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_COMPLETES", "1000")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_COMPLETES")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_PARALLELS", "100")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_PARALLELS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_ECHO_SIZE", "10000")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_ECHO_SIZE")
 
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_ENABLE", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_CREATED", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_CREATED")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_NAMESPACE", "hello3")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_NAMESPACE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_SCHEDULE", "*/1 * * * *")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_SCHEDULE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_COMPLETES", "100")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_COMPLETES")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_PARALLELS", "10")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_PARALLELS")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_SUCCESSFUL_JOBS_HISTORY_LIMIT", "100")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_SUCCESSFUL_JOBS_HISTORY_LIMIT")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_FAILED_JOBS_HISTORY_LIMIT", "1000")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_FAILED_JOBS_HISTORY_LIMIT")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_ECHO_SIZE", "10000")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOB_ECHO_SIZE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_CREATED", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_CREATED")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_NAMESPACE", "hello3")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_SCHEDULE", "*/1 * * * *")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_SCHEDULE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_COMPLETES", "100")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_COMPLETES")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_PARALLELS", "10")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_PARALLELS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_SUCCESSFUL_JOBS_HISTORY_LIMIT", "100")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_SUCCESSFUL_JOBS_HISTORY_LIMIT")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_FAILED_JOBS_HISTORY_LIMIT", "1000")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_FAILED_JOBS_HISTORY_LIMIT")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_ECHO_SIZE", "10000")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_ECHO_SIZE")
+
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_CREATED", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_CREATED")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_NAMESPACE", "csr-namespace")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_OBJECTS", "10000")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_OBJECTS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_QPS", "333")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_QPS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_BURST", "777")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_BURST")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_CREATED_NAMES", "a,b,c")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_CREATED_NAMES")
+
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_CREATED", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_CREATED")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_NAMESPACE", "config-map-namespace")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_OBJECTS", "10000")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_OBJECTS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_SIZE", "555")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_SIZE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_QPS", "333")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_QPS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_BURST", "777")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_BURST")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_CREATED_NAMES", "a,b,c")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_CREATED_NAMES")
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_ENABLE")
@@ -335,7 +371,6 @@ func TestEnv(t *testing.T) {
 	if cfg.CommandAfterCreateAddOns != "echo hello2" {
 		t.Fatalf("unexpected CommandAfterCreateAddOns %q", cfg.CommandAfterCreateAddOns)
 	}
-
 	if cfg.S3BucketName != "my-bucket" {
 		t.Fatalf("unexpected cfg.S3BucketName %q", cfg.S3BucketName)
 	}
@@ -344,6 +379,12 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.S3BucketLifecycleExpirationDays != 10 {
 		t.Fatalf("unexpected cfg.S3BucketLifecycleExpirationDays %d", cfg.S3BucketLifecycleExpirationDays)
+	}
+	if cfg.ClientQPS != 555.77 {
+		t.Fatalf("unexpected cfg.ClientQPS %f", cfg.ClientQPS)
+	}
+	if cfg.ClientBurst != 177 {
+		t.Fatalf("unexpected cfg.ClientBurst %d", cfg.ClientBurst)
 	}
 
 	if cfg.Parameters.VPCCreate {
@@ -619,67 +660,114 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("unexpected cfg.AddOnALB2048.Namespace %q", cfg.AddOnALB2048.Namespace)
 	}
 
-	if cfg.AddOnJobPi.Created { // read-only must be ignored
-		t.Fatalf("unexpected cfg.AddOnJobPi.Created %v", cfg.AddOnJobPi.Created)
+	if cfg.AddOnJobsPi.Created { // read-only must be ignored
+		t.Fatalf("unexpected cfg.AddOnJobsPi.Created %v", cfg.AddOnJobsPi.Created)
 	}
-	if !cfg.AddOnJobPi.Enable {
-		t.Fatalf("unexpected cfg.AddOnJobPi.Enable %v", cfg.AddOnJobPi.Enable)
+	if !cfg.AddOnJobsPi.Enable {
+		t.Fatalf("unexpected cfg.AddOnJobsPi.Enable %v", cfg.AddOnJobsPi.Enable)
 	}
-	if cfg.AddOnJobPi.Namespace != "hello1" {
-		t.Fatalf("unexpected cfg.AddOnJobPi.Namespace %q", cfg.AddOnJobPi.Namespace)
+	if cfg.AddOnJobsPi.Namespace != "hello1" {
+		t.Fatalf("unexpected cfg.AddOnJobsPi.Namespace %q", cfg.AddOnJobsPi.Namespace)
 	}
-	if cfg.AddOnJobPi.Completes != 100 {
-		t.Fatalf("unexpected cfg.AddOnJobPi.Completes %v", cfg.AddOnJobPi.Completes)
+	if cfg.AddOnJobsPi.Completes != 100 {
+		t.Fatalf("unexpected cfg.AddOnJobsPi.Completes %v", cfg.AddOnJobsPi.Completes)
 	}
-	if cfg.AddOnJobPi.Parallels != 10 {
-		t.Fatalf("unexpected cfg.AddOnJobPi.Parallels %v", cfg.AddOnJobPi.Parallels)
-	}
-
-	if cfg.AddOnJobEcho.Created { // read-only must be ignored
-		t.Fatalf("unexpected cfg.AddOnJobEcho.Created %v", cfg.AddOnJobEcho.Created)
-	}
-	if !cfg.AddOnJobEcho.Enable {
-		t.Fatalf("unexpected cfg.AddOnJobEcho.Enable %v", cfg.AddOnJobEcho.Enable)
-	}
-	if cfg.AddOnJobEcho.Namespace != "hello2" {
-		t.Fatalf("unexpected cfg.AddOnJobEcho.Namespace %q", cfg.AddOnJobEcho.Namespace)
-	}
-	if cfg.AddOnJobEcho.Completes != 1000 {
-		t.Fatalf("unexpected cfg.AddOnJobEcho.Completes %v", cfg.AddOnJobEcho.Completes)
-	}
-	if cfg.AddOnJobEcho.Parallels != 100 {
-		t.Fatalf("unexpected cfg.AddOnJobEcho.Parallels %v", cfg.AddOnJobEcho.Parallels)
-	}
-	if cfg.AddOnJobEcho.EchoSize != 10000 {
-		t.Fatalf("unexpected cfg.AddOnJobEcho.EchoSize %v", cfg.AddOnJobEcho.EchoSize)
+	if cfg.AddOnJobsPi.Parallels != 10 {
+		t.Fatalf("unexpected cfg.AddOnJobsPi.Parallels %v", cfg.AddOnJobsPi.Parallels)
 	}
 
-	if cfg.AddOnCronJob.Created { // read-only must be ignored
-		t.Fatalf("unexpected cfg.AddOnCronJob.Created %v", cfg.AddOnCronJob.Created)
+	if cfg.AddOnJobsEcho.Created { // read-only must be ignored
+		t.Fatalf("unexpected cfg.AddOnJobsEcho.Created %v", cfg.AddOnJobsEcho.Created)
 	}
-	if !cfg.AddOnCronJob.Enable {
-		t.Fatalf("unexpected cfg.AddOnCronJob.Enable %v", cfg.AddOnCronJob.Enable)
+	if !cfg.AddOnJobsEcho.Enable {
+		t.Fatalf("unexpected cfg.AddOnJobsEcho.Enable %v", cfg.AddOnJobsEcho.Enable)
 	}
-	if cfg.AddOnCronJob.Namespace != "hello3" {
-		t.Fatalf("unexpected cfg.AddOnCronJob.Namespace %q", cfg.AddOnCronJob.Namespace)
+	if cfg.AddOnJobsEcho.Namespace != "hello2" {
+		t.Fatalf("unexpected cfg.AddOnJobsEcho.Namespace %q", cfg.AddOnJobsEcho.Namespace)
 	}
-	if cfg.AddOnCronJob.Schedule != "*/1 * * * *" {
-		t.Fatalf("unexpected cfg.AddOnCronJob.Schedule %q", cfg.AddOnCronJob.Schedule)
+	if cfg.AddOnJobsEcho.Completes != 1000 {
+		t.Fatalf("unexpected cfg.AddOnJobsEcho.Completes %v", cfg.AddOnJobsEcho.Completes)
 	}
-	if cfg.AddOnCronJob.Completes != 100 {
-		t.Fatalf("unexpected cfg.AddOnCronJob.Completes %v", cfg.AddOnCronJob.Completes)
+	if cfg.AddOnJobsEcho.Parallels != 100 {
+		t.Fatalf("unexpected cfg.AddOnJobsEcho.Parallels %v", cfg.AddOnJobsEcho.Parallels)
 	}
-	if cfg.AddOnCronJob.Parallels != 10 {
-		t.Fatalf("unexpected cfg.AddOnCronJob.Parallels %v", cfg.AddOnCronJob.Parallels)
+	if cfg.AddOnJobsEcho.EchoSize != 10000 {
+		t.Fatalf("unexpected cfg.AddOnJobsEcho.EchoSize %v", cfg.AddOnJobsEcho.EchoSize)
 	}
-	if cfg.AddOnCronJob.SuccessfulJobsHistoryLimit != 100 {
-		t.Fatalf("unexpected cfg.AddOnCronJob.SuccessfulJobsHistoryLimit %v", cfg.AddOnCronJob.SuccessfulJobsHistoryLimit)
+
+	if cfg.AddOnCronJobs.Created { // read-only must be ignored
+		t.Fatalf("unexpected cfg.AddOnCronJobs.Created %v", cfg.AddOnCronJobs.Created)
 	}
-	if cfg.AddOnCronJob.FailedJobsHistoryLimit != 1000 {
-		t.Fatalf("unexpected cfg.AddOnCronJob.FailedJobsHistoryLimit %v", cfg.AddOnCronJob.FailedJobsHistoryLimit)
+	if !cfg.AddOnCronJobs.Enable {
+		t.Fatalf("unexpected cfg.AddOnCronJobs.Enable %v", cfg.AddOnCronJobs.Enable)
 	}
-	if cfg.AddOnCronJob.EchoSize != 10000 {
-		t.Fatalf("unexpected cfg.AddOnCronJob.EchoSize %v", cfg.AddOnCronJob.EchoSize)
+	if cfg.AddOnCronJobs.Namespace != "hello3" {
+		t.Fatalf("unexpected cfg.AddOnCronJobs.Namespace %q", cfg.AddOnCronJobs.Namespace)
+	}
+	if cfg.AddOnCronJobs.Schedule != "*/1 * * * *" {
+		t.Fatalf("unexpected cfg.AddOnCronJobs.Schedule %q", cfg.AddOnCronJobs.Schedule)
+	}
+	if cfg.AddOnCronJobs.Completes != 100 {
+		t.Fatalf("unexpected cfg.AddOnCronJobs.Completes %v", cfg.AddOnCronJobs.Completes)
+	}
+	if cfg.AddOnCronJobs.Parallels != 10 {
+		t.Fatalf("unexpected cfg.AddOnCronJobs.Parallels %v", cfg.AddOnCronJobs.Parallels)
+	}
+	if cfg.AddOnCronJobs.SuccessfulJobsHistoryLimit != 100 {
+		t.Fatalf("unexpected cfg.AddOnCronJobs.SuccessfulJobsHistoryLimit %d", cfg.AddOnCronJobs.SuccessfulJobsHistoryLimit)
+	}
+	if cfg.AddOnCronJobs.FailedJobsHistoryLimit != 1000 {
+		t.Fatalf("unexpected cfg.AddOnCronJobs.FailedJobsHistoryLimit %d", cfg.AddOnCronJobs.FailedJobsHistoryLimit)
+	}
+	if cfg.AddOnCronJobs.EchoSize != 10000 {
+		t.Fatalf("unexpected cfg.AddOnCronJobs.EchoSize %d", cfg.AddOnCronJobs.EchoSize)
+	}
+
+	if cfg.AddOnCSRs.Created { // read-only must be ignored
+		t.Fatalf("unexpected cfg.AddOnCSRs.Created %v", cfg.AddOnCSRs.Created)
+	}
+	if !cfg.AddOnCSRs.Enable {
+		t.Fatalf("unexpected cfg.AddOnCSRs.Enable %v", cfg.AddOnCSRs.Enable)
+	}
+	if cfg.AddOnCSRs.Namespace != "csr-namespace" {
+		t.Fatalf("unexpected cfg.AddOnCSRs.Namespace %q", cfg.AddOnCSRs.Namespace)
+	}
+	if cfg.AddOnCSRs.Objects != 10000 {
+		t.Fatalf("unexpected cfg.AddOnCSRs.Objects %d", cfg.AddOnCSRs.Objects)
+	}
+	if cfg.AddOnCSRs.QPS != 333 {
+		t.Fatalf("unexpected cfg.AddOnCSRs.QPS %d", cfg.AddOnCSRs.QPS)
+	}
+	if cfg.AddOnCSRs.Burst != 777 {
+		t.Fatalf("unexpected cfg.AddOnCSRs.Burst %d", cfg.AddOnCSRs.Burst)
+	}
+	if len(cfg.AddOnCSRs.CreatedNames) > 0 { // read-only must be ignored
+		t.Fatalf("unexpected cfg.AddOnCSRs.CreatedNames %v", cfg.AddOnCSRs.CreatedNames)
+	}
+
+	if cfg.AddOnConfigMaps.Created { // read-only must be ignored
+		t.Fatalf("unexpected cfg.AddOnConfigMaps.Created %v", cfg.AddOnConfigMaps.Created)
+	}
+	if !cfg.AddOnConfigMaps.Enable {
+		t.Fatalf("unexpected cfg.AddOnConfigMaps.Enable %v", cfg.AddOnConfigMaps.Enable)
+	}
+	if cfg.AddOnConfigMaps.Namespace != "config-map-namespace" {
+		t.Fatalf("unexpected cfg.AddOnConfigMaps.Namespace %q", cfg.AddOnConfigMaps.Namespace)
+	}
+	if cfg.AddOnConfigMaps.Objects != 10000 {
+		t.Fatalf("unexpected cfg.AddOnConfigMaps.Objects %d", cfg.AddOnConfigMaps.Objects)
+	}
+	if cfg.AddOnConfigMaps.Size != 555 {
+		t.Fatalf("unexpected cfg.AddOnConfigMaps.Size %d", cfg.AddOnConfigMaps.Size)
+	}
+	if cfg.AddOnConfigMaps.QPS != 333 {
+		t.Fatalf("unexpected cfg.AddOnConfigMaps.QPS %d", cfg.AddOnConfigMaps.QPS)
+	}
+	if cfg.AddOnConfigMaps.Burst != 777 {
+		t.Fatalf("unexpected cfg.AddOnConfigMaps.Burst %d", cfg.AddOnConfigMaps.Burst)
+	}
+	if len(cfg.AddOnConfigMaps.CreatedNames) > 0 { // read-only must be ignored
+		t.Fatalf("unexpected cfg.AddOnConfigMaps.CreatedNames %v", cfg.AddOnConfigMaps.CreatedNames)
 	}
 
 	if cfg.AddOnSecrets.Created { // read-only must be ignored
@@ -697,11 +785,11 @@ func TestEnv(t *testing.T) {
 	if cfg.AddOnSecrets.Size != 10 {
 		t.Fatalf("unexpected cfg.AddOnSecrets.Size %v", cfg.AddOnSecrets.Size)
 	}
-	if cfg.AddOnSecrets.SecretQPS != 10 {
-		t.Fatalf("unexpected cfg.AddOnSecrets.SecretQPS %v", cfg.AddOnSecrets.SecretQPS)
+	if cfg.AddOnSecrets.SecretsQPS != 10 {
+		t.Fatalf("unexpected cfg.AddOnSecrets.SecretsQPS %v", cfg.AddOnSecrets.SecretsQPS)
 	}
-	if cfg.AddOnSecrets.SecretBurst != 10 {
-		t.Fatalf("unexpected cfg.AddOnSecrets.SecretBurst %v", cfg.AddOnSecrets.SecretBurst)
+	if cfg.AddOnSecrets.SecretsBurst != 10 {
+		t.Fatalf("unexpected cfg.AddOnSecrets.SecretsBurst %v", cfg.AddOnSecrets.SecretsBurst)
 	}
 	if cfg.AddOnSecrets.PodQPS != 10 {
 		t.Fatalf("unexpected cfg.AddOnSecrets.PodQPS %v", cfg.AddOnSecrets.PodQPS)
@@ -794,8 +882,8 @@ func TestEnv(t *testing.T) {
 	}
 	cfg.AddOnNLBHelloWorld.Enable = false
 	cfg.AddOnALB2048.Enable = false
-	cfg.AddOnJobEcho.Enable = false
-	cfg.AddOnJobPi.Enable = false
+	cfg.AddOnJobsEcho.Enable = false
+	cfg.AddOnJobsPi.Enable = false
 	if err := cfg.ValidateAndSetDefaults(); err != nil {
 		t.Fatal(err)
 	}

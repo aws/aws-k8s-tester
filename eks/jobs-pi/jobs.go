@@ -2,6 +2,7 @@
 package jobspi
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"os"
@@ -9,6 +10,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
+	k8sclient "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/dustin/go-humanize"
 	"go.uber.org/zap"
@@ -52,22 +54,22 @@ type tester struct {
 }
 
 func (ts *tester) Create() error {
-	if ts.cfg.EKSConfig.AddOnJobPi.Created {
-		ts.cfg.Logger.Info("skipping create AddOnJobPi")
+	if ts.cfg.EKSConfig.AddOnJobsPi.Created {
+		ts.cfg.Logger.Info("skipping create AddOnJobsPi")
 		return nil
 	}
 
-	ts.cfg.EKSConfig.AddOnJobPi.Created = true
+	ts.cfg.EKSConfig.AddOnJobsPi.Created = true
 	ts.cfg.EKSConfig.Sync()
 
 	createStart := time.Now()
 	defer func() {
-		ts.cfg.EKSConfig.AddOnJobPi.CreateTook = time.Since(createStart)
-		ts.cfg.EKSConfig.AddOnJobPi.CreateTookString = ts.cfg.EKSConfig.AddOnJobPi.CreateTook.String()
+		ts.cfg.EKSConfig.AddOnJobsPi.CreateTook = time.Since(createStart)
+		ts.cfg.EKSConfig.AddOnJobsPi.CreateTookString = ts.cfg.EKSConfig.AddOnJobsPi.CreateTook.String()
 		ts.cfg.EKSConfig.Sync()
 	}()
 
-	if err := ts.createNamespace(); err != nil {
+	if err := k8sclient.CreateNamespace(ts.cfg.Logger, ts.cfg.K8SClient.KubernetesClientSet(), ts.cfg.EKSConfig.AddOnJobsPi.Namespace); err != nil {
 		return err
 	}
 	obj, b, err := ts.createObject()
@@ -76,21 +78,21 @@ func (ts *tester) Create() error {
 	}
 	ts.cfg.Logger.Info("creating Job",
 		zap.String("name", jobName),
-		zap.Int("completes", ts.cfg.EKSConfig.AddOnJobPi.Completes),
-		zap.Int("parallels", ts.cfg.EKSConfig.AddOnJobPi.Parallels),
+		zap.Int("completes", ts.cfg.EKSConfig.AddOnJobsPi.Completes),
+		zap.Int("parallels", ts.cfg.EKSConfig.AddOnJobsPi.Parallels),
 		zap.String("object-size", humanize.Bytes(uint64(len(b)))),
 	)
 
 	_, err = ts.cfg.K8SClient.KubernetesClientSet().
 		BatchV1().
-		Jobs(ts.cfg.EKSConfig.AddOnJobPi.Namespace).
+		Jobs(ts.cfg.EKSConfig.AddOnJobsPi.Namespace).
 		Create(&obj)
 	if err != nil {
 		return fmt.Errorf("failed to create Job (%v)", err)
 	}
 	ts.cfg.Logger.Info("created Job")
 
-	waitDur := 3*time.Minute + 10*time.Duration(ts.cfg.EKSConfig.AddOnJobPi.Completes)*time.Second
+	waitDur := 3*time.Minute + 10*time.Duration(ts.cfg.EKSConfig.AddOnJobsPi.Completes)*time.Second
 
 	completedJobs, err := waitJobs(
 		ts.cfg.Logger,
@@ -99,9 +101,9 @@ func (ts *tester) Create() error {
 		ts.cfg.K8SClient.KubernetesClientSet(),
 		waitDur,
 		5*time.Second,
-		ts.cfg.EKSConfig.AddOnJobPi.Namespace,
+		ts.cfg.EKSConfig.AddOnJobsPi.Namespace,
 		jobName,
-		int(ts.cfg.EKSConfig.AddOnJobPi.Completes),
+		int(ts.cfg.EKSConfig.AddOnJobsPi.Completes),
 		jobsFieldSelector,
 		v1.PodSucceeded,
 	)
@@ -121,22 +123,24 @@ func (ts *tester) Create() error {
 var propagationBackground = metav1.DeletePropagationBackground
 
 func (ts *tester) Delete() error {
-	if !ts.cfg.EKSConfig.AddOnJobPi.Created {
-		ts.cfg.Logger.Info("skipping delete AddOnJobPi")
+	if !ts.cfg.EKSConfig.AddOnJobsPi.Created {
+		ts.cfg.Logger.Info("skipping delete AddOnJobsPi")
 		return nil
 	}
 	deleteStart := time.Now()
 	defer func() {
-		ts.cfg.EKSConfig.AddOnJobPi.DeleteTook = time.Since(deleteStart)
-		ts.cfg.EKSConfig.AddOnJobPi.DeleteTookString = ts.cfg.EKSConfig.AddOnJobPi.DeleteTook.String()
+		ts.cfg.EKSConfig.AddOnJobsPi.DeleteTook = time.Since(deleteStart)
+		ts.cfg.EKSConfig.AddOnJobsPi.DeleteTookString = ts.cfg.EKSConfig.AddOnJobsPi.DeleteTook.String()
 		ts.cfg.EKSConfig.Sync()
 	}()
+
+	var errs []string
 
 	ts.cfg.Logger.Info("deleting Job", zap.String("name", jobName))
 	err := ts.cfg.
 		K8SClient.KubernetesClientSet().
 		BatchV1().
-		Jobs(ts.cfg.EKSConfig.AddOnJobPi.Namespace).
+		Jobs(ts.cfg.EKSConfig.AddOnJobsPi.Namespace).
 		Delete(
 			jobName,
 			&metav1.DeleteOptions{
@@ -145,62 +149,24 @@ func (ts *tester) Delete() error {
 			},
 		)
 	if err != nil {
-		return fmt.Errorf("failed to delete Job %q (%v)", jobName, err)
-	}
-	ts.cfg.Logger.Info("deleted Job", zap.String("name", jobName))
-
-	if err := ts.deleteNamespace(); err != nil {
-		return err
+		errs = append(errs, fmt.Sprintf("failed to delete Job pi %q (%v)", jobName, err))
+	} else {
+		ts.cfg.Logger.Info("deleted Job", zap.String("name", jobName))
 	}
 
-	ts.cfg.EKSConfig.AddOnJobPi.Created = false
-	return ts.cfg.EKSConfig.Sync()
-}
-
-func (ts *tester) createNamespace() error {
-	ts.cfg.Logger.Info("creating namespace", zap.String("namespace", ts.cfg.EKSConfig.AddOnJobPi.Namespace))
-	_, err := ts.cfg.K8SClient.KubernetesClientSet().
-		CoreV1().
-		Namespaces().
-		Create(&v1.Namespace{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "v1",
-				Kind:       "Namespace",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: ts.cfg.EKSConfig.AddOnJobPi.Namespace,
-				Labels: map[string]string{
-					"name": ts.cfg.EKSConfig.AddOnJobPi.Namespace,
-				},
-			},
-		})
-	if err != nil {
-		return err
+	if err := k8sclient.DeleteNamespaceAndWait(ts.cfg.Logger,
+		ts.cfg.K8SClient.KubernetesClientSet(),
+		ts.cfg.EKSConfig.AddOnJobsPi.Namespace,
+		k8sclient.DefaultNamespaceDeletionInterval,
+		k8sclient.DefaultNamespaceDeletionTimeout); err != nil {
+		errs = append(errs, fmt.Sprintf("failed to delete Jobs oi namespace (%v)", err))
 	}
-	ts.cfg.Logger.Info("created namespace", zap.String("namespace", ts.cfg.EKSConfig.AddOnJobPi.Namespace))
-	return ts.cfg.EKSConfig.Sync()
-}
 
-func (ts *tester) deleteNamespace() error {
-	ts.cfg.Logger.Info("deleting namespace", zap.String("namespace", ts.cfg.EKSConfig.AddOnJobPi.Namespace))
-	foreground := metav1.DeletePropagationForeground
-	err := ts.cfg.K8SClient.KubernetesClientSet().
-		CoreV1().
-		Namespaces().
-		Delete(
-			ts.cfg.EKSConfig.AddOnJobPi.Namespace,
-			&metav1.DeleteOptions{
-				GracePeriodSeconds: aws.Int64(0),
-				PropagationPolicy:  &foreground,
-			},
-		)
-	if err != nil {
-		// ref. https://github.com/aws/aws-k8s-tester/issues/79
-		if !strings.Contains(err.Error(), ` not found`) {
-			return err
-		}
+	if len(errs) > 0 {
+		return errors.New(strings.Join(errs, ", "))
 	}
-	ts.cfg.Logger.Info("deleted namespace", zap.Error(err))
+
+	ts.cfg.EKSConfig.AddOnJobsPi.Created = false
 	return ts.cfg.EKSConfig.Sync()
 }
 
@@ -238,11 +204,11 @@ func (ts *tester) createObject() (batchv1.Job, string, error) {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      jobName,
-			Namespace: ts.cfg.EKSConfig.AddOnJobPi.Namespace,
+			Namespace: ts.cfg.EKSConfig.AddOnJobsPi.Namespace,
 		},
 		Spec: batchv1.JobSpec{
-			Completions: aws.Int32(int32(ts.cfg.EKSConfig.AddOnJobPi.Completes)),
-			Parallelism: aws.Int32(int32(ts.cfg.EKSConfig.AddOnJobPi.Parallels)),
+			Completions: aws.Int32(int32(ts.cfg.EKSConfig.AddOnJobsPi.Completes)),
+			Parallelism: aws.Int32(int32(ts.cfg.EKSConfig.AddOnJobsPi.Parallels)),
 			Template:    podSpec,
 			// TODO: 'TTLSecondsAfterFinished' is still alpha
 			// https://kubernetes.io/docs/concepts/workloads/controllers/ttlafterfinished/
