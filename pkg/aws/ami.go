@@ -23,6 +23,7 @@ type AMI struct {
 }
 
 // FetchAMI gets AMI from the SSM parameter key.
+// Automated "aws ssm get-parameter --name ...".
 func FetchAMI(sa ssmiface.SSMAPI, key string) (*AMI, error) {
 	so, err := sa.GetParameters(&ssm.GetParametersInput{
 		Names: aws.StringSlice([]string{key})})

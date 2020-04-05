@@ -561,7 +561,10 @@ func (ts *tester) createPodsSequential(pods []*v1.Pod) error {
 		ts.cfg.EKSConfig.Sync()
 
 		if ts.cfg.EKSConfig.LogLevel == "debug" || idx%200 == 0 {
-			ts.cfg.Logger.Info("created Pod", zap.String("name", podName), zap.Duration("took", t2.Sub(t1)))
+			ts.cfg.Logger.Info("created Pod",
+				zap.String("name", podName),
+				zap.Duration("took", t2.Sub(t1)),
+			)
 		}
 	}
 
@@ -628,7 +631,10 @@ func (ts *tester) createPodsParallel(pods []*v1.Pod) error {
 			}
 
 			if ts.cfg.EKSConfig.LogLevel == "debug" || i%200 == 0 {
-				ts.cfg.Logger.Info("created Pod", zap.String("name", pod.GetObjectMeta().GetName()), zap.Duration("took", t2.Sub(t1)))
+				ts.cfg.Logger.Info("created Pod",
+					zap.String("name", pod.GetObjectMeta().GetName()),
+					zap.Duration("took", t2.Sub(t1)),
+				)
 			}
 		}(idx, s)
 	}

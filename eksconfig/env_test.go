@@ -124,7 +124,7 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_SERVICE_PRINCIPALS")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_MANAGED_POLICY_ARNS", "a,b,c")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_MANAGED_POLICY_ARNS")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS", `{"ng-test-name-cpu":{"name":"ng-test-name-cpu","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64","asg-min-size":17,"asg-max-size":99,"asg-desired-capacity":77,"instance-types":["type-cpu-2"],"volume-size":40},"ng-test-name-gpu":{"name":"ng-test-name-gpu","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64_GPU","asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34,"instance-types":["type-gpu-2"],"volume-size":500}}`)
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS", `{"ng-test-name-cpu":{"name":"ng-test-name-cpu","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64","image-id-ssm-parameter":"/aws/service/eks/optimized-ami/1.30/amazon-linux-2/recommended/image_id","asg-min-size":17,"asg-max-size":99,"asg-desired-capacity":77,"instance-types":["type-cpu-2"],"volume-size":40},"ng-test-name-gpu":{"name":"ng-test-name-gpu","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64_GPU","asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34,"instance-types":["type-gpu-2"],"image-id":"my-gpu-ami","volume-size":500}}`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_LOGS_DIR", "a")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_LOGS_DIR")
@@ -509,6 +509,7 @@ func TestEnv(t *testing.T) {
 			Name:                 cpuName,
 			RemoteAccessUserName: "ec2-user",
 			AMIType:              "AL2_x86_64",
+			ImageIDSSMParameter:  "/aws/service/eks/optimized-ami/1.30/amazon-linux-2/recommended/image_id",
 			ASGMinSize:           17,
 			ASGMaxSize:           99,
 			ASGDesiredCapacity:   77,
@@ -519,6 +520,7 @@ func TestEnv(t *testing.T) {
 			Name:                 gpuName,
 			RemoteAccessUserName: "ec2-user",
 			AMIType:              eks.AMITypesAl2X8664Gpu,
+			ImageID:              "my-gpu-ami",
 			ASGMinSize:           30,
 			ASGMaxSize:           35,
 			ASGDesiredCapacity:   34,

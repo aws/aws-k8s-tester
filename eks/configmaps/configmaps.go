@@ -281,7 +281,10 @@ func (ts *tester) createConfigMapsParallel(pfx, val string, failThreshold int) e
 			}
 
 			if ts.cfg.EKSConfig.LogLevel == "debug" || i%200 == 0 {
-				ts.cfg.Logger.Info("created ConfigMap", zap.String("key", configMap.GetObjectMeta().GetName()), zap.Duration("took", t2.Sub(t1)))
+				ts.cfg.Logger.Info("created ConfigMap",
+					zap.String("key", configMap.GetObjectMeta().GetName()),
+					zap.Duration("took", t2.Sub(t1)),
+				)
 			}
 		}(i)
 	}

@@ -65,6 +65,7 @@ func NewDefault() *Config {
 			SSMDocumentCommands:                "",
 			SSMDocumentExecutionTimeoutSeconds: 3600,
 			AMIType:                            AMITypeAL2X8664,
+			ImageIDSSMParameter:                "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2",
 			InstanceTypes:                      []string{DefaultNodeInstanceTypeCPU},
 			VolumeSize:                         DefaultNodeVolumeSize,
 			ASGMinSize:                         1,
@@ -303,6 +304,10 @@ func (cfg *Config) validateASGs() error {
 		}
 		if v.RemoteAccessUserName == "" {
 			v.RemoteAccessUserName = "ec2-user"
+		}
+
+		if v.ImageID == "" && v.ImageIDSSMParameter == "" {
+			return fmt.Errorf("%q both ImageID and ImageIDSSMParameter are empty", v.Name)
 		}
 
 		switch v.AMIType {

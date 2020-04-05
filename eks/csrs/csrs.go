@@ -411,7 +411,11 @@ func (ts *tester) createCSRsParallel(pfx string, failThreshold int) error {
 			}
 
 			if ts.cfg.EKSConfig.LogLevel == "debug" || i%200 == 0 {
-				ts.cfg.Logger.Info("created CSR", zap.String("key", csr.GetObjectMeta().GetName()), zap.Duration("took", t2.Sub(t1)))
+				ts.cfg.Logger.Info("created CSR",
+					zap.String("key",
+						csr.GetObjectMeta().GetName()),
+					zap.Duration("took", t2.Sub(t1)),
+				)
 			}
 		}(i)
 	}

@@ -215,6 +215,7 @@ func NewDefault() *Config {
 			Name:                 cfg.Name + "-ng-asg-cpu",
 			RemoteAccessUserName: "ec2-user", // assume Amazon Linux 2
 			AMIType:              eks.AMITypesAl2X8664,
+			ImageIDSSMParameter:  "/aws/service/eks/optimized-ami/1.15/amazon-linux-2/recommended/image_id",
 			ASGMinSize:           1,
 			ASGMaxSize:           1,
 			ASGDesiredCapacity:   1,
@@ -611,6 +612,10 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 		}
 		if v.RemoteAccessUserName == "" {
 			v.RemoteAccessUserName = "ec2-user"
+		}
+
+		if v.ImageID == "" && v.ImageIDSSMParameter == "" {
+			return fmt.Errorf("%q both ImageID and ImageIDSSMParameter are empty", v.Name)
 		}
 
 		switch v.AMIType {
