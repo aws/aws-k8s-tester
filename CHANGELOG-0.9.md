@@ -3,7 +3,7 @@
 <hr>
 
 
-## [v0.9.8](https://github.com/aws/aws-k8s-tester/releases/tag/v0.9.8) (2020-04)
+## [v0.9.8](https://github.com/aws/aws-k8s-tester/releases/tag/v0.9.8) (2020-04-04)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.9.7...v0.9.8).
 
@@ -12,6 +12,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.9.7...v0.9.8
 - Create namespace with [`pkg/k8s-client` with retries and backoff](https://github.com/aws/aws-k8s-tester/commit/f85118eea332fc33629d8c21470c731090e51c19).
 - Add [`eks/configmaps`](https://github.com/aws/aws-k8s-tester/commit/f85118eea332fc33629d8c21470c731090e51c19).
 - Add [`eks/csrs`](https://github.com/aws/aws-k8s-tester/commit/f85118eea332fc33629d8c21470c731090e51c19).
+- Check [sub-tester `nil`](https://github.com/aws/aws-k8s-tester/commit/536f948901936c696c76f301ce64c34354d77ba4).
 
 ### `eksconfig`
 
