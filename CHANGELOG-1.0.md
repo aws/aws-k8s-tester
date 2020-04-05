@@ -3,7 +3,7 @@
 <hr>
 
 
-## [v1.0.0](https://github.com/aws/aws-k8s-tester/releases/tag/v1.0.0) (2020-04)
+## [v1.0.0](https://github.com/aws/aws-k8s-tester/releases/tag/v1.0.0) (2020-04-05)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.9.8...v1.0.0).
 
@@ -35,6 +35,11 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.9.8...v1.0.0
 
 - Increase [`DefaultNamespaceDeletionInterval` from 5-second to 15-second](https://github.com/aws/aws-k8s-tester/commit/1a41c61813e1e0872b44738773ccdda4e765be1c).
 - Improve [`DeleteNamespaceAndWait` retries on `i/o timeout`](https://github.com/aws/aws-k8s-tester/commit/1a41c61813e1e0872b44738773ccdda4e765be1c).
+
+### Dependency
+
+- Upgrade [`github.com/go-ini/ini`](https://github.com/go-ini/ini/releases) from [`v1.46.0`](https://github.com/go-ini/ini/releases/tag/v1.46.0) to [`v1.55.0`](https://github.com/go-ini/ini/releases/tag/v1.55.0).
+- Upgrade [`sigs.k8s.io/yaml`](https://github.com/kubernetes-sigs/yaml/releases) from [`v1.1.0`](https://github.com/kubernetes-sigs/yaml/releases/tag/v1.1.0) to [`v1.2.0`](https://github.com/kubernetes-sigs/yaml/releases/tag/v1.2.0).
 
 ### Go
 

@@ -226,7 +226,7 @@ github.com/exponent-io/jsonpath
 github.com/fatih/color
 # github.com/ghodss/yaml v1.0.0
 github.com/ghodss/yaml
-# github.com/go-ini/ini v1.46.0
+# github.com/go-ini/ini v1.55.0
 ## explicit
 github.com/go-ini/ini
 # github.com/go-openapi/jsonpointer v0.19.3
@@ -840,7 +840,7 @@ sigs.k8s.io/kustomize/pkg/transformers
 sigs.k8s.io/kustomize/pkg/transformers/config
 sigs.k8s.io/kustomize/pkg/transformers/config/defaultconfig
 sigs.k8s.io/kustomize/pkg/types
-# sigs.k8s.io/yaml v1.1.0
+# sigs.k8s.io/yaml v1.2.0
 ## explicit
 sigs.k8s.io/yaml
 # k8s.io/client-go => k8s.io/client-go v0.0.0-20190918200256-06eb1244587a

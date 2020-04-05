@@ -18,7 +18,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1
 	github.com/dustin/go-humanize v1.0.0
 	github.com/fatih/color v1.9.0 // indirect
-	github.com/go-ini/ini v1.46.0
+	github.com/go-ini/ini v1.55.0
 	github.com/imdario/mergo v0.3.8 // indirect
 	github.com/mattn/go-runewidth v0.0.8 // indirect
 	github.com/mholt/archiver/v3 v3.3.0
@@ -44,5 +44,5 @@ require (
 	k8s.io/client-go v0.17.3
 	k8s.io/utils v0.0.0-20191114184206-e782cd3c129f
 	rsc.io/letsencrypt v0.0.3 // indirect
-	sigs.k8s.io/yaml v1.1.0
+	sigs.k8s.io/yaml v1.2.0
 )
