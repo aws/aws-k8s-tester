@@ -33,6 +33,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.9.8...v1.0.0
 - Add [missing `AddOnConfigMaps` delete operation](https://github.com/aws/aws-k8s-tester/commit/e91e12f256a60d74a9f08dead964608f74beee5a).
 - Improve [inflight creation requests cancel](https://github.com/aws/aws-k8s-tester/commit/da59e6bca6c117b3737bbb36598a3830b63ec7cf).
 - Upgrade [`eks/alb` `kubernetes-sigs/aws-alb-ingress-controller` version from `v1.1.5` to `v1.1.6`](https://github.com/aws/aws-k8s-tester/commit/8df3fc79196113d19ad84077aab3bdc1c3805249).
+- Delete [encryption CMK at the end](https://github.com/aws/aws-k8s-tester/commit/2436dafee14582014a97a08637272211c80f1d79).
+  - Otherwise, `kube-apiserver` `/healthz` check fails.
 
 ### `pkg/k8s-client`
 
