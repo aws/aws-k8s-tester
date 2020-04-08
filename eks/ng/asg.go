@@ -387,6 +387,7 @@ func (ts *tester) createASGs() error {
 	// to minimize polling API calls
 	tss := make(tupleTimes, 0)
 
+	// https://github.com/awslabs/amazon-eks-ami/blob/master/files/bootstrap.sh
 	ts.cfg.Logger.Info("creating ASGs using CFN", zap.String("name", ts.cfg.EKSConfig.Name))
 	for asgName, cur := range ts.cfg.EKSConfig.AddOnNodeGroups.ASGs {
 		timeStart := time.Now()
@@ -404,33 +405,35 @@ func (ts *tester) createASGs() error {
           Fn::Base64:
             Fn::Sub: |
               [settings.kubernetes]
-              api-server = "%s"
-              cluster-certificate = "%s"
               cluster-name = "%s"
+              cluster-certificate = "%s"
+              api-server = "%s"
 `,
-				ts.cfg.EKSConfig.Status.ClusterAPIServerEndpoint,
-				ts.cfg.EKSConfig.Status.ClusterCA,
 				ts.cfg.EKSConfig.Name,
+				ts.cfg.EKSConfig.Status.ClusterCA,
+				ts.cfg.EKSConfig.Status.ClusterAPIServerEndpoint,
 			)
 
-		case ec2config.AMITypeAL2X8664:
+		case ec2config.AMITypeAL2X8664,
+			ec2config.AMITypeAL2X8664GPU:
+			// https://github.com/awslabs/amazon-eks-ami/blob/master/files/bootstrap.sh
 			tg.Metadata = metadataAL2InstallSSM
 			tg.UserData = userDataAL2InstallSSM
 			tg.UserData += `              /etc/eks/bootstrap.sh ${ClusterName}`
 			if ts.cfg.EKSConfig.Parameters.ResolverURL != "" {
+				ts.cfg.Logger.Info("adding extra bootstrap arguments --b64-cluster-ca and --apiserver-endpoint to user data",
+					zap.String("b64-cluster-ca", ts.cfg.EKSConfig.Status.ClusterCA),
+					zap.String("apiserver-endpoint", ts.cfg.EKSConfig.Status.ClusterAPIServerEndpoint),
+				)
 				tg.UserData += fmt.Sprintf(` --b64-cluster-ca %s --apiserver-endpoint %s`, ts.cfg.EKSConfig.Status.ClusterCA, ts.cfg.EKSConfig.Status.ClusterAPIServerEndpoint)
-				tg.UserData += "\n"
 			}
-			tg.UserData += `              /opt/aws/bin/cfn-signal --exit-code $? --stack ${AWS::StackName} --resource ASG --region ${AWS::Region}`
-
-		case ec2config.AMITypeAL2X8664GPU:
-			tg.Metadata = metadataAL2InstallSSM
-			tg.UserData = userDataAL2InstallSSM
-			tg.UserData += `              /etc/eks/bootstrap.sh ${ClusterName}`
-			if ts.cfg.EKSConfig.Parameters.ResolverURL != "" {
-				tg.UserData += fmt.Sprintf(` --b64-cluster-ca %s --apiserver-endpoint %s`, ts.cfg.EKSConfig.Status.ClusterCA, ts.cfg.EKSConfig.Status.ClusterAPIServerEndpoint)
-				tg.UserData += "\n"
+			if cur.KubeletExtraArgs != "" {
+				ts.cfg.Logger.Info("adding extra bootstrap arguments --kubelet-extra-args to user data",
+					zap.String("kubelet-extra-args", cur.KubeletExtraArgs),
+				)
+				tg.UserData += fmt.Sprintf(` --kubelet-extra-args %s`, cur.KubeletExtraArgs)
 			}
+			tg.UserData += "\n"
 			tg.UserData += `              /opt/aws/bin/cfn-signal --exit-code $? --stack ${AWS::StackName} --resource ASG --region ${AWS::Region}`
 		}
 

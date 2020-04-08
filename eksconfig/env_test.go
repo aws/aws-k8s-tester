@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"os"
 	"reflect"
-	"runtime"
 	"strings"
 	"testing"
 
@@ -22,11 +21,6 @@ func TestEnv(t *testing.T) {
 		os.RemoveAll(cfg.RemoteAccessCommandsOutputPath)
 	}()
 
-	kubectlDownloadURL := "https://amazon-eks.s3-us-west-2.amazonaws.com/1.11.5/2018-12-06/bin/linux/amd64/kubectl"
-	if runtime.GOOS == "darwin" {
-		kubectlDownloadURL = strings.Replace(kubectlDownloadURL, "linux", runtime.GOOS, -1)
-	}
-
 	os.Setenv("AWS_K8S_TESTER_EKS_KUBECTL_COMMANDS_OUTPUT_PATH", "hello-kubectl")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_KUBECTL_COMMANDS_OUTPUT_PATH")
 	os.Setenv("AWS_K8S_TESTER_EKS_REMOTE_ACCESS_COMMANDS_OUTPUT_PATH", "hello-ssh")
@@ -35,7 +29,7 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_REGION")
 	os.Setenv("AWS_K8S_TESTER_EKS_LOG_LEVEL", "debug")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_LOG_LEVEL")
-	os.Setenv("AWS_K8S_TESTER_EKS_KUBECTL_DOWNLOAD_URL", kubectlDownloadURL)
+	os.Setenv("AWS_K8S_TESTER_EKS_KUBECTL_DOWNLOAD_URL", "https://amazon-eks.s3-us-west-2.amazonaws.com/1.11.5/2018-12-06/bin/linux/amd64/kubectl")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_KUBECTL_DOWNLOAD_URL")
 	os.Setenv("AWS_K8S_TESTER_EKS_KUBECTL_PATH", "/tmp/aws-k8s-tester-test/kubectl")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_KUBECTL_PATH")
@@ -128,7 +122,7 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_SERVICE_PRINCIPALS")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_MANAGED_POLICY_ARNS", "a,b,c")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_MANAGED_POLICY_ARNS")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS", `{"ng-test-name-cpu":{"name":"ng-test-name-cpu","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64","image-id-ssm-parameter":"/aws/service/eks/optimized-ami/1.30/amazon-linux-2/recommended/image_id","asg-min-size":17,"asg-max-size":99,"asg-desired-capacity":77,"instance-types":["type-cpu-2"],"volume-size":40},"ng-test-name-gpu":{"name":"ng-test-name-gpu","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64_GPU","asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34,"instance-types":["type-gpu-2"],"image-id":"my-gpu-ami","volume-size":500}}`)
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS", `{"ng-test-name-cpu":{"name":"ng-test-name-cpu","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64","image-id-ssm-parameter":"/aws/service/eks/optimized-ami/1.30/amazon-linux-2/recommended/image_id","asg-min-size":17,"kubelet-extra-args":"bbb qq","asg-max-size":99,"asg-desired-capacity":77,"instance-types":["type-cpu-2"],"volume-size":40},"ng-test-name-gpu":{"name":"ng-test-name-gpu","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64_GPU","asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34,"instance-types":["type-gpu-2"],"image-id":"my-gpu-ami","volume-size":500, "kubelet-extra-args":"aaa aa"}}`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_LOGS_DIR", "a")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_LOGS_DIR")
@@ -354,7 +348,7 @@ func TestEnv(t *testing.T) {
 	if cfg.LogLevel != "debug" {
 		t.Fatalf("unexpected %q", cfg.LogLevel)
 	}
-	if cfg.KubectlDownloadURL != kubectlDownloadURL {
+	if cfg.KubectlDownloadURL != "https://amazon-eks.s3-us-west-2.amazonaws.com/1.11.5/2018-12-06/bin/linux/amd64/kubectl" {
 		t.Fatalf("unexpected KubectlDownloadURL %q", cfg.KubectlDownloadURL)
 	}
 	if cfg.KubectlPath != "/tmp/aws-k8s-tester-test/kubectl" {
@@ -514,28 +508,34 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("unexpected cfg.AddOnNodeGroups.RoleManagedPolicyARNs %+v", cfg.AddOnNodeGroups.RoleManagedPolicyARNs)
 	}
 	cpuName, gpuName := "ng-test-name-cpu", "ng-test-name-gpu"
-	expectedASGs := map[string]ec2config.ASG{
-		cpuName: {
-			Name:                 cpuName,
-			RemoteAccessUserName: "ec2-user",
-			AMIType:              "AL2_x86_64",
-			ImageIDSSMParameter:  "/aws/service/eks/optimized-ami/1.30/amazon-linux-2/recommended/image_id",
-			ASGMinSize:           17,
-			ASGMaxSize:           99,
-			ASGDesiredCapacity:   77,
-			InstanceTypes:        []string{"type-cpu-2"},
-			VolumeSize:           40,
+	expectedASGs := map[string]ASG{
+		cpuName: ASG{
+			ASG: ec2config.ASG{
+				Name:                 cpuName,
+				RemoteAccessUserName: "ec2-user",
+				AMIType:              "AL2_x86_64",
+				ImageIDSSMParameter:  "/aws/service/eks/optimized-ami/1.30/amazon-linux-2/recommended/image_id",
+				ASGMinSize:           17,
+				ASGMaxSize:           99,
+				ASGDesiredCapacity:   77,
+				InstanceTypes:        []string{"type-cpu-2"},
+				VolumeSize:           40,
+			},
+			KubeletExtraArgs: "bbb qq",
 		},
-		gpuName: {
-			Name:                 gpuName,
-			RemoteAccessUserName: "ec2-user",
-			AMIType:              eks.AMITypesAl2X8664Gpu,
-			ImageID:              "my-gpu-ami",
-			ASGMinSize:           30,
-			ASGMaxSize:           35,
-			ASGDesiredCapacity:   34,
-			InstanceTypes:        []string{"type-gpu-2"},
-			VolumeSize:           500,
+		gpuName: ASG{
+			ASG: ec2config.ASG{
+				Name:                 gpuName,
+				RemoteAccessUserName: "ec2-user",
+				AMIType:              eks.AMITypesAl2X8664Gpu,
+				ImageID:              "my-gpu-ami",
+				ASGMinSize:           30,
+				ASGMaxSize:           35,
+				ASGDesiredCapacity:   34,
+				InstanceTypes:        []string{"type-gpu-2"},
+				VolumeSize:           500,
+			},
+			KubeletExtraArgs: "aaa aa",
 		},
 	}
 	if !reflect.DeepEqual(cfg.AddOnNodeGroups.ASGs, expectedASGs) {

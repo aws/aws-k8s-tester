@@ -70,7 +70,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_CFN_STACK_ID | *eksconfig.AddOnNodeGr
 AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_NODE_GROUP_SECURITY_GROUP_ID | *eksconfig.AddOnNodeGroups.NodeGroupSecurityGroupID | string | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_NODE_GROUP_SECURITY_GROUP_CFN_STACK_ID | *eksconfig.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackID | string | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_LOGS_DIR | *eksconfig.AddOnNodeGroups.LogsDir | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS | *eksconfig.AddOnNodeGroups.ASGs | map[string]ec2config.ASG | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS | *eksconfig.AddOnNodeGroups.ASGs | map[string]eksconfig.ASG | read-only "false"
 
 AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE | *eksconfig.AddOnManagedNodeGroups.Enable | bool | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_CREATED | *eksconfig.AddOnManagedNodeGroups.Created | bool | read-only "true"

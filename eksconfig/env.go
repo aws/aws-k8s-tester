@@ -7,8 +7,6 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
-
-	"github.com/aws/aws-k8s-tester/ec2config"
 )
 
 const (
@@ -288,7 +286,7 @@ func parseEnvs(pfx string, addOn interface{}) (interface{}, error) {
 				}
 
 			case "ASGs":
-				asgs := make(map[string]ec2config.ASG)
+				asgs := make(map[string]ASG)
 				if err := json.Unmarshal([]byte(sv), &asgs); err != nil {
 					return nil, fmt.Errorf("failed to parse %q (field name %q, environmental variable key %q, error %v)", sv, fieldName, env, err)
 				}

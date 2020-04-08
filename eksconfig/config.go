@@ -324,7 +324,17 @@ type AddOnNodeGroups struct {
 	// If empty, it stores in the same directory as "ConfigPath".
 	LogsDir string `json:"logs-dir,omitempty"`
 	// ASGs maps from EKS Node Group name to "ASG".
-	ASGs map[string]ec2config.ASG `json:"asgs,omitempty"`
+	ASGs map[string]ASG `json:"asgs,omitempty"`
+}
+
+// ASG represents an EKS Node Group ASG.
+type ASG struct {
+	ec2config.ASG
+	// KubeletExtraArgs represents "--kubelet-extra-args".
+	// e.g. '--kubelet-extra-args --node-labels=nodesgroup=main,subnets=private'
+	// e.g. '--kubelet-extra-args --hostname-override string'
+	// ref. https://github.com/awslabs/amazon-eks-ami/blob/master/files/bootstrap.sh
+	KubeletExtraArgs string `json:"kubelet-extra-args,omitempty"`
 }
 
 // IsEnabledAddOnManagedNodeGroups returns true if "AddOnManagedNodeGroups" is enabled.

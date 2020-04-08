@@ -210,17 +210,20 @@ func NewDefault() *Config {
 		cfg.RemoteAccessPrivateKeyPath = filepath.Join(os.TempDir(), randString(10)+".insecure.key")
 	}
 
-	cfg.AddOnNodeGroups.ASGs = map[string]ec2config.ASG{
-		cfg.Name + "-ng-asg-cpu": {
-			Name:                 cfg.Name + "-ng-asg-cpu",
-			RemoteAccessUserName: "ec2-user", // assume Amazon Linux 2
-			AMIType:              eks.AMITypesAl2X8664,
-			ImageIDSSMParameter:  "/aws/service/eks/optimized-ami/1.15/amazon-linux-2/recommended/image_id",
-			ASGMinSize:           1,
-			ASGMaxSize:           1,
-			ASGDesiredCapacity:   1,
-			InstanceTypes:        []string{DefaultNodeInstanceTypeCPU},
-			VolumeSize:           DefaultNodeVolumeSize,
+	cfg.AddOnNodeGroups.ASGs = map[string]ASG{
+		cfg.Name + "-ng-asg-cpu": ASG{
+			ASG: ec2config.ASG{
+				Name:                 cfg.Name + "-ng-asg-cpu",
+				RemoteAccessUserName: "ec2-user", // assume Amazon Linux 2
+				AMIType:              eks.AMITypesAl2X8664,
+				ImageIDSSMParameter:  "/aws/service/eks/optimized-ami/1.15/amazon-linux-2/recommended/image_id",
+				ASGMinSize:           1,
+				ASGMaxSize:           1,
+				ASGDesiredCapacity:   1,
+				InstanceTypes:        []string{DefaultNodeInstanceTypeCPU},
+				VolumeSize:           DefaultNodeVolumeSize,
+			},
+			KubeletExtraArgs: "",
 		},
 	}
 	cfg.AddOnManagedNodeGroups.MNGs = map[string]MNG{
