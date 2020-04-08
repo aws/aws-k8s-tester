@@ -626,6 +626,9 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 			if v.RemoteAccessUserName != "ec2-user" {
 				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", v.AMIType, v.RemoteAccessUserName)
 			}
+			if v.KubeletExtraArgs != "" {
+				return fmt.Errorf("AMIType %q but unexpected KubeletExtraArgs %q", v.AMIType, v.KubeletExtraArgs)
+			}
 		case eks.AMITypesAl2X8664:
 			if v.RemoteAccessUserName != "ec2-user" {
 				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", v.AMIType, v.RemoteAccessUserName)
