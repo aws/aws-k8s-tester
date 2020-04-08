@@ -3,7 +3,7 @@
 <hr>
 
 
-## [v1.0.1](https://github.com/aws/aws-k8s-tester/releases/tag/v1.0.1) (2020-04-07)
+## [v1.0.1](https://github.com/aws/aws-k8s-tester/releases/tag/v1.0.1) (2020-04)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.0...v1.0.1).
 
@@ -19,9 +19,12 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.0...v1.0.1
 - Add [`Parameters.DHCPOptionsDomainName`](https://github.com/aws/aws-k8s-tester/commit/84dd682a673eaa01fbf6bbbf3e664ad82c1dbbf4
 ).
   - `AWS_K8S_TESTER_EKS_PARAMETERS_DHCP_OPTIONS_DOMAIN_NAME`
-- Add [`Parameters.DHCPOptionsDomainNameServers`](https://github.com/aws/aws-k8s-tester/commit/84dd682a673eaa01fbf6bbbf3e664ad82c1dbbf4
-).
+- Add [`Parameters.DHCPOptionsDomainNameServers`](https://github.com/aws/aws-k8s-tester/commit/84dd682a673eaa01fbf6bbbf3e664ad82c1dbbf4).
   - `AWS_K8S_TESTER_EKS_PARAMETERS_DHCP_OPTIONS_DOMAIN_NAME_SERVERS`
+- Change [`eksconfig.Config.AddOnNodeGroups.ASGs` from `map[string]ec2config.ASG` to `map[string]eksconfig.ASG`](https://github.com/aws/aws-k8s-tester/commit/e302d15f428e014931e1f43a3a0e8cafec136e77).
+  - To support `--kubelet-extra-args`.
+  - Added `eksconfig.ASG` with `KubeletExtraArgs` field.
+  - ref. https://github.com/awslabs/amazon-eks-ami/blob/master/files/bootstrap.sh
 
 ### Dependency
 
