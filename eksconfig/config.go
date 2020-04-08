@@ -335,6 +335,9 @@ type ASG struct {
 	// e.g. '--kubelet-extra-args --node-labels=nodesgroup=main,subnets=private'
 	// e.g. '--kubelet-extra-args --hostname-override=string'
 	// ref. https://github.com/awslabs/amazon-eks-ami/blob/master/files/bootstrap.sh
+	//
+	// TODO: handle conflicting flag '--cloud-provider aws'
+	// ref. https://github.com/kubernetes/kubernetes/issues/64659
 	KubeletExtraArgs string `json:"kubelet-extra-args"`
 }
 
