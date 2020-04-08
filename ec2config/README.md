@@ -39,6 +39,8 @@ AWS_K8S_TESTER_EC2_PRIVATE_SUBNET_CIDR_1 | *ec2config.Config.PrivateSubnetCIDR1 
 AWS_K8S_TESTER_EC2_PRIVATE_SUBNET_CIDR_2 | *ec2config.Config.PrivateSubnetCIDR2 | string | read-only "false"
 AWS_K8S_TESTER_EC2_PUBLIC_SUBNET_IDS | *ec2config.Config.PublicSubnetIDs | []string | read-only "true"
 AWS_K8S_TESTER_EC2_PRIVATE_SUBNET_IDS | *ec2config.Config.PrivateSubnetIDs | []string | read-only "true"
+AWS_K8S_TESTER_EC2_DHCP_OPTIONS_DOMAIN_NAME | *ec2config.Config.DHCPOptionsDomainName | string | read-only "false"
+AWS_K8S_TESTER_EC2_DHCP_OPTIONS_DOMAIN_NAME_SERVERS | *ec2config.Config.DHCPOptionsDomainNameServers | []string | read-only "false"
 AWS_K8S_TESTER_EC2_SECURITY_GROUP_ID | *ec2config.Config.SecurityGroupID | string | read-only "true"
 AWS_K8S_TESTER_EC2_REMOTE_ACCESS_KEY_CREATE | *ec2config.Config.RemoteAccessKeyCreate | bool | read-only "false"
 AWS_K8S_TESTER_EC2_REMOTE_ACCESS_KEY_NAME | *ec2config.Config.RemoteAccessKeyName | string | read-only "false"

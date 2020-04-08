@@ -121,6 +121,14 @@ Parameters:
     AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
     Description: CIDR block for private subnet 2 within the VPC (from 192.168.96.0 to 192.168.127.255)
 
+  DHCPOptionsDomainName:
+    Type: String
+    Description: This value is used to complete unqualified DNS hostnames.
+
+  DHCPOptionsDomainNameServers:
+    Type: CommaDelimitedList
+    Description: The IPv4 addresses of up to four domain name servers, or AmazonProvidedDNS.
+
 Conditions:
 
   Has2Azs:
@@ -147,6 +155,43 @@ Conditions:
   HasMoreThan2Azs:
     Fn::Not:
       - Condition: Has2Azs
+
+  HasDHCPOptionsOnlyDomainName:
+    Fn::And:
+      - Fn::Not:
+        - Fn::Equals:
+          - Ref: DHCPOptionsDomainName
+          - ''
+      - Fn::Equals:
+        - Fn::Join:
+          - ''
+          - Ref: DHCPOptionsDomainNameServers
+        - ''
+
+  HasDHCPOptionsOnlyDomainNameServers:
+    Fn::And:
+      - Fn::Not:
+        - Fn::Equals:
+          - Fn::Join:
+            - ''
+            - Ref: DHCPOptionsDomainNameServers
+          - ''
+      - Fn::Equals:
+        - Ref: DHCPOptionsDomainName
+        - ''
+
+  HasDHCPOptionsBothDomains:
+    Fn::And:
+      - Fn::Not:
+        - Fn::Equals:
+          - Ref: DHCPOptionsDomainName
+          - ''
+      - Fn::Not:
+        - Fn::Equals:
+          - Fn::Join:
+            - ''
+            - Ref: DHCPOptionsDomainNameServers
+          - ''
 
 Resources:
 
@@ -485,6 +530,46 @@ Resources:
       ToPort: 22
       CidrIp: !Ref SSHIngressIPv4Range
 
+  DHCPOptionsOnlyDomainName:
+    Condition: HasDHCPOptionsOnlyDomainName
+    Type: AWS::EC2::DHCPOptions
+    Properties:
+      DomainName: !Ref DHCPOptionsDomainName
+
+  DHCPOptionsOnlyDomainNameAttachment:
+    Condition: HasDHCPOptionsOnlyDomainName
+    Type: AWS::EC2::VPCDHCPOptionsAssociation
+    Properties:
+      DhcpOptionsId: !Ref DHCPOptionsOnlyDomainName
+      VpcId: !Ref VPC
+
+  DHCPOptionsOnlyDomainNameServers:
+    Condition: HasDHCPOptionsOnlyDomainNameServers
+    Type: AWS::EC2::DHCPOptions
+    Properties:
+      DomainNameServers: !Ref DHCPOptionsDomainNameServers
+
+  DHCPOptionsOnlyDomainNameServersAttachment:
+    Condition: HasDHCPOptionsOnlyDomainNameServers
+    Type: AWS::EC2::VPCDHCPOptionsAssociation
+    Properties:
+      DhcpOptionsId: !Ref DHCPOptionsOnlyDomainNameServers
+      VpcId: !Ref VPC
+
+  DHCPOptionsBothDomains:
+    Condition: HasDHCPOptionsBothDomains
+    Type: AWS::EC2::DHCPOptions
+    Properties:
+      DomainName: !Ref DHCPOptionsDomainName
+      DomainNameServers: !Ref DHCPOptionsDomainNameServers
+
+  DHCPOptionsBothDomainsAttachment:
+    Condition: HasDHCPOptionsBothDomains
+    Type: AWS::EC2::VPCDHCPOptionsAssociation
+    Properties:
+      DhcpOptionsId: !Ref DHCPOptionsBothDomains
+      VpcId: !Ref VPC
+
 Outputs:
 
   VPCID:
@@ -683,6 +768,18 @@ func (ts *Tester) createVPC() error {
 			ParameterValue: aws.String(ts.cfg.PrivateSubnetCIDR2),
 		})
 	}
+	if ts.cfg.DHCPOptionsDomainName != "" {
+		stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
+			ParameterKey:   aws.String("DHCPOptionsDomainName"),
+			ParameterValue: aws.String(ts.cfg.DHCPOptionsDomainName),
+		})
+	}
+	if len(ts.cfg.DHCPOptionsDomainNameServers) > 0 {
+		stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
+			ParameterKey:   aws.String("DHCPOptionsDomainNameServers"),
+			ParameterValue: aws.String(strings.Join(ts.cfg.DHCPOptionsDomainNameServers, ",")),
+		})
+	}
 	stackOutput, err := ts.cfnAPI.CreateStack(stackInput)
 	if err != nil {
 		return err
@@ -720,17 +817,17 @@ func (ts *Tester) createVPC() error {
 	}
 	// update status after creating a new VPC
 	for _, o := range st.Stack.Outputs {
-		switch k := aws.StringValue(o.OutputKey); k {
+		k, v := aws.StringValue(o.OutputKey), aws.StringValue(o.OutputValue)
+		ts.lg.Info("CFN output", zap.String("key", k), zap.String("value", v))
+		switch k {
 		case "VPCID":
-			ts.cfg.VPCID = aws.StringValue(o.OutputValue)
+			ts.cfg.VPCID = v
 		case "PublicSubnetIDs":
-			ts.cfg.PublicSubnetIDs = strings.Split(aws.StringValue(o.OutputValue), ",")
+			ts.cfg.PublicSubnetIDs = strings.Split(v, ",")
 		case "PrivateSubnetIDs":
-			ts.cfg.PrivateSubnetIDs = strings.Split(aws.StringValue(o.OutputValue), ",")
+			ts.cfg.PrivateSubnetIDs = strings.Split(v, ",")
 		case "SecurityGroupID":
-			ts.cfg.SecurityGroupID = aws.StringValue(o.OutputValue)
-		default:
-			return fmt.Errorf("unexpected OutputKey %q from %q", k, ts.cfg.VPCCFNStackID)
+			ts.cfg.SecurityGroupID = v
 		}
 	}
 	ts.lg.Info("created a VPC",

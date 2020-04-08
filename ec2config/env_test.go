@@ -30,6 +30,10 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EC2_VPC_ID")
 	os.Setenv("AWS_K8S_TESTER_EC2_REMOTE_ACCESS_KEY_CREATE", `true`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EC2_REMOTE_ACCESS_KEY_CREATE")
+	os.Setenv("AWS_K8S_TESTER_EC2_DHCP_OPTIONS_DOMAIN_NAME", `hello.com`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EC2_DHCP_OPTIONS_DOMAIN_NAME")
+	os.Setenv("AWS_K8S_TESTER_EC2_DHCP_OPTIONS_DOMAIN_NAME_SERVERS", `1.2.3.0,4.5.6.7`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EC2_DHCP_OPTIONS_DOMAIN_NAME_SERVERS")
 	os.Setenv("AWS_K8S_TESTER_EC2_REMOTE_ACCESS_KEY_NAME", `my-key`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EC2_REMOTE_ACCESS_KEY_NAME")
 	os.Setenv("AWS_K8S_TESTER_EC2_REMOTE_ACCESS_PRIVATE_KEY_PATH", `a`)
@@ -67,6 +71,13 @@ func TestEnv(t *testing.T) {
 	if cfg.VPCID != "vpc-id" {
 		t.Fatalf("unexpected cfg.VPCID %q", cfg.VPCID)
 	}
+	if cfg.DHCPOptionsDomainName != "hello.com" {
+		t.Fatalf("unexpected cfg.DHCPOptionsDomainName %q", cfg.DHCPOptionsDomainName)
+	}
+	if !reflect.DeepEqual(cfg.DHCPOptionsDomainNameServers, []string{"1.2.3.0", "4.5.6.7"}) {
+		t.Fatalf("unexpected cfg.DHCPOptionsDomainNameServers %q", cfg.DHCPOptionsDomainNameServers)
+	}
+
 	if !cfg.RemoteAccessKeyCreate {
 		t.Fatalf("unexpected cfg.RemoteAccessKeyCreate %v", cfg.RemoteAccessKeyCreate)
 	}
