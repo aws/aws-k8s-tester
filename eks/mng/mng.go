@@ -131,6 +131,9 @@ func (ts *tester) Delete() error {
 		errs = append(errs, err.Error())
 	}
 
+	ts.cfg.EKSConfig.AddOnManagedNodeGroups.Created = false
+	ts.cfg.EKSConfig.Sync()
+
 	waitDur := 5 * time.Second
 	ts.cfg.Logger.Info("sleeping before node group role deletion", zap.Duration("wait", waitDur))
 	time.Sleep(waitDur)

@@ -469,17 +469,46 @@ func (ts *tester) deleteASG() error {
 			useCFN = false
 		}
 
+		var err error
 		if useCFN {
 			ts.cfg.Logger.Info("deleting managed node group using CFN",
 				zap.String("mng-name", mngName),
 				zap.String("cfn-stack-id", mv.CFNStackID),
 			)
-			_, err := ts.cfg.CFNAPI.DeleteStack(&cloudformation.DeleteStackInput{
+			_, err = ts.cfg.CFNAPI.DeleteStack(&cloudformation.DeleteStackInput{
 				StackName: aws.String(mv.CFNStackID),
 			})
-			if err != nil {
-				return err
-			}
+		} else {
+			ts.cfg.Logger.Info("deleting managed node group using EKS API", zap.String("name", mngName))
+			_, err = ts.cfg.EKSAPI.DeleteNodegroup(&awseks.DeleteNodegroupInput{
+				ClusterName:   aws.String(ts.cfg.EKSConfig.Name),
+				NodegroupName: aws.String(mngName),
+			})
+		}
+		if err != nil {
+			mv.Status = fmt.Sprintf("failed to delete managed node group (%v)", err)
+			ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName] = mv
+			ts.cfg.EKSConfig.Sync()
+			return err
+		}
+	}
+
+	for mngName, mv := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
+		if mv.Status == "" || mv.Status == ManagedNodeGroupStatusDELETEDORNOTEXIST {
+			ts.cfg.Logger.Info("managed node group already deleted; no need to delete managed node group", zap.String("name", mngName))
+			continue
+		}
+
+		useCFN := mv.CFNStackID != ""
+		if ts.failedOnce {
+			useCFN = false
+		}
+
+		if useCFN {
+			ts.cfg.Logger.Info("waiting for delete managed node group using CFN",
+				zap.String("mng-name", mngName),
+				zap.String("cfn-stack-id", mv.CFNStackID),
+			)
 			initialWait, timeout := 2*time.Minute, 15*time.Minute
 			if len(mv.Instances) > 50 {
 				initialWait, timeout = 3*time.Minute, 20*time.Minute
@@ -510,24 +539,10 @@ func (ts *tester) deleteASG() error {
 			if st.Error != nil {
 				return st.Error
 			}
-			mv.Status = ManagedNodeGroupStatusDELETEDORNOTEXIST
-			ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName] = mv
-			ts.cfg.EKSConfig.Sync()
 
 		} else {
 
-			ts.cfg.Logger.Info("deleting managed node group using EKS API", zap.String("name", mngName))
-			_, err := ts.cfg.EKSAPI.DeleteNodegroup(&awseks.DeleteNodegroupInput{
-				ClusterName:   aws.String(ts.cfg.EKSConfig.Name),
-				NodegroupName: aws.String(mngName),
-			})
-			if err != nil {
-				mv.Status = fmt.Sprintf("failed to delete managed node group (%v)", err)
-				ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName] = mv
-				ts.cfg.EKSConfig.Sync()
-				return err
-			}
-
+			ts.cfg.Logger.Info("waiting for delete managed node group using EKS API", zap.String("name", mngName))
 			initialWait, timeout := 2*time.Minute, 15*time.Minute
 			if len(mv.Instances) > 50 {
 				initialWait, timeout = 3*time.Minute, 20*time.Minute
@@ -552,6 +567,10 @@ func (ts *tester) deleteASG() error {
 			}
 			cancel()
 		}
+
+		mv.Status = ManagedNodeGroupStatusDELETEDORNOTEXIST
+		ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName] = mv
+		ts.cfg.EKSConfig.Sync()
 	}
 
 	ts.cfg.Logger.Info("deleted managed node groups")
