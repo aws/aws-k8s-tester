@@ -651,6 +651,9 @@ func (ts *tester) deleteASGs() error {
 			return err
 		}
 		ts.cfg.EKSConfig.Sync()
+	}
+	for asgName, cur := range ts.cfg.EKSConfig.AddOnNodeGroups.ASGs {
+		timeStart := time.Now()
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
 		ch := awscfn.Poll(
 			ctx,
