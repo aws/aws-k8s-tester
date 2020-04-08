@@ -123,10 +123,12 @@ Parameters:
 
   DHCPOptionsDomainName:
     Type: String
+    Default: ""
     Description: This value is used to complete unqualified DNS hostnames.
 
   DHCPOptionsDomainNameServers:
     Type: CommaDelimitedList
+    Default: ""
     Description: The IPv4 addresses of up to four domain name servers, or AmazonProvidedDNS.
 
 Conditions:

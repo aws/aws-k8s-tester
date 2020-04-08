@@ -333,7 +333,7 @@ type ASG struct {
 
 	// KubeletExtraArgs represents "--kubelet-extra-args".
 	// e.g. '--kubelet-extra-args --node-labels=nodesgroup=main,subnets=private'
-	// e.g. '--kubelet-extra-args --hostname-override string'
+	// e.g. '--kubelet-extra-args --hostname-override=string'
 	// ref. https://github.com/awslabs/amazon-eks-ami/blob/master/files/bootstrap.sh
 	KubeletExtraArgs string `json:"kubelet-extra-args"`
 }
