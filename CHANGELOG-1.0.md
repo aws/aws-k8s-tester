@@ -3,6 +3,38 @@
 <hr>
 
 
+## [v1.0.1](https://github.com/aws/aws-k8s-tester/releases/tag/v1.0.1) (2020-04-07)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.0...v1.0.1).
+
+### `ec2config`
+
+- Add [`DHCPOptionsDomainName`](https://github.com/aws/aws-k8s-tester/commit/1f90891e0aeaa9fcffb25acda12f5f4e4a78f706).
+  - `AWS_K8S_TESTER_EC2_DHCP_OPTIONS_DOMAIN_NAME`
+- Add [`DHCPOptionsDomainNameServers`](https://github.com/aws/aws-k8s-tester/commit/1f90891e0aeaa9fcffb25acda12f5f4e4a78f706).
+  - `AWS_K8S_TESTER_EC2_DHCP_OPTIONS_DOMAIN_NAME_SERVERS`
+
+### `eksconfig`
+
+- Add [`Parameters.DHCPOptionsDomainName`](https://github.com/aws/aws-k8s-tester/commit/84dd682a673eaa01fbf6bbbf3e664ad82c1dbbf4
+).
+  - `AWS_K8S_TESTER_EKS_PARAMETERS_DHCP_OPTIONS_DOMAIN_NAME`
+- Add [`Parameters.DHCPOptionsDomainNameServers`](https://github.com/aws/aws-k8s-tester/commit/84dd682a673eaa01fbf6bbbf3e664ad82c1dbbf4
+).
+  - `AWS_K8S_TESTER_EKS_PARAMETERS_DHCP_OPTIONS_DOMAIN_NAME_SERVERS`
+
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.30.4`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.4) to [`v1.30.6`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.6).
+
+### Go
+
+- Compile with [*Go 1.14.1*](https://golang.org/doc/devel/release.html#go1.14).
+
+
+<hr>
+
+
 ## [v1.0.0](https://github.com/aws/aws-k8s-tester/releases/tag/v1.0.0) (2020-04-05)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v0.9.8...v1.0.0).
