@@ -29,6 +29,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.0...v1.0.1
 ### `eks`
 
 - Improve [`AddOnNodeGroups` delete operation](https://github.com/aws/aws-k8s-tester/commit/90b0b50819da58a48cfebef8f6172238426dd8b5).
+- Improve [`AddOnManagedNodeGroups` delete operation](https://github.com/aws/aws-k8s-tester/commit/5a21706eaf6ff00b65ef651385b99b6f23676633).
 
 ### Dependency
 
