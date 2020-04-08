@@ -50,6 +50,8 @@ AWS_K8S_TESTER_EKS_PARAMETERS_PRIVATE_SUBNET_CIDR_1 | *eksconfig.Parameters.Priv
 AWS_K8S_TESTER_EKS_PARAMETERS_PRIVATE_SUBNET_CIDR_2 | *eksconfig.Parameters.PrivateSubnetCIDR2 | string | read-only "false"
 AWS_K8S_TESTER_EKS_PARAMETERS_PUBLIC_SUBNET_IDS | *eksconfig.Parameters.PublicSubnetIDs | []string | read-only "true"
 AWS_K8S_TESTER_EKS_PARAMETERS_PRIVATE_SUBNET_IDS | *eksconfig.Parameters.PrivateSubnetIDs | []string | read-only "true"
+AWS_K8S_TESTER_EKS_PARAMETERS_DHCP_OPTIONS_DOMAIN_NAME | *eksconfig.Parameters.DHCPOptionsDomainName | string | read-only "false"
+AWS_K8S_TESTER_EKS_PARAMETERS_DHCP_OPTIONS_DOMAIN_NAME_SERVERS | *eksconfig.Parameters.DHCPOptionsDomainNameServers | []string | read-only "false"
 AWS_K8S_TESTER_EKS_PARAMETERS_CONTROL_PLANE_SECURITY_GROUP_ID | *eksconfig.Parameters.ControlPlaneSecurityGroupID | string | read-only "true"
 AWS_K8S_TESTER_EKS_PARAMETERS_VERSION | *eksconfig.Parameters.Version | string | read-only "false"
 AWS_K8S_TESTER_EKS_PARAMETERS_VERSION_VALUE | *eksconfig.Parameters.VersionValue | float64 | read-only "true"

@@ -250,6 +250,15 @@ type Parameters struct {
 	PublicSubnetIDs []string `json:"public-subnet-ids" read-only:"true"`
 	// PrivateSubnetIDs is the list of all private subnets in the VPC.
 	PrivateSubnetIDs []string `json:"private-subnet-ids" read-only:"true"`
+
+	// DHCPOptionsDomainName is used to complete unqualified DNS hostnames for VPC.
+	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-dhcp-options.html
+	DHCPOptionsDomainName string `json:"dhcp-options-domain-name"`
+	// DHCPOptionsDomainNameServers is a list of strings.
+	// The IPv4 addresses of up to four domain name servers, or AmazonProvidedDNS, for VPC.
+	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-dhcp-options.html
+	DHCPOptionsDomainNameServers []string `json:"dhcp-options-domain-name-servers"`
+
 	// ControlPlaneSecurityGroupID is the security group ID for the cluster control
 	// plane communication with worker nodes.
 	ControlPlaneSecurityGroupID string `json:"control-plane-security-group-id" read-only:"true"`
