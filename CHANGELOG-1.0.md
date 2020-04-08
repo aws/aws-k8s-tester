@@ -26,6 +26,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.0...v1.0.1
   - Added `eksconfig.ASG` with `KubeletExtraArgs` field.
   - ref. https://github.com/awslabs/amazon-eks-ami/blob/master/files/bootstrap.sh
 
+### `eks`
+
+- Improve [`AddOnNodeGroups` delete operation](https://github.com/aws/aws-k8s-tester/commit/90b0b50819da58a48cfebef8f6172238426dd8b5).
+
 ### Dependency
 
 - Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.30.4`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.4) to [`v1.30.6`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.6).
