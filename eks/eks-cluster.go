@@ -17,6 +17,7 @@ import (
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	awscfn "github.com/aws/aws-k8s-tester/pkg/aws/cloudformation"
+	k8sclient "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -97,16 +98,31 @@ type templateEKSCluster struct {
 	AWSEncryptionProviderCMKARN string
 }
 
-func (ts *Tester) createCluster() error {
-	if err := ts.createEKS(); err != nil {
+func (ts *Tester) createCluster() (err error) {
+	if err = ts.createEKS(); err != nil {
 		return err
 	}
-	if err := ts.updateKUBECONFIG(); err != nil {
+
+	if err = ts.updateKUBECONFIG(); err != nil {
 		return err
 	}
-	if err := ts.createK8sClientSet(); err != nil {
+
+	kcfg := k8sclient.EKSConfig{
+		Region:         ts.cfg.Region,
+		ClusterName:    ts.cfg.Name,
+		ClientQPS:      ts.cfg.ClientQPS,
+		ClientBurst:    ts.cfg.ClientBurst,
+		KubeConfigPath: ts.cfg.KubeConfigPath,
+	}
+	if ts.cfg.Status != nil {
+		kcfg.ClusterAPIServerEndpoint = ts.cfg.Status.ClusterAPIServerEndpoint
+		kcfg.ClusterCADecoded = ts.cfg.Status.ClusterCADecoded
+	}
+	ts.k8sClientSet, err = k8sclient.NewEKS(ts.lg, kcfg)
+	if err != nil {
 		return err
 	}
+
 	return ts.cfg.Sync()
 }
 

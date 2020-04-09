@@ -12,6 +12,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/service/eks"
 	"go.uber.org/zap"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/exec"
 )
 
@@ -131,7 +132,7 @@ func (ts *Tester) health() error {
 	fmt.Printf("\n\"kubectl all -n=kube-system\" output:\n%s", out)
 
 	fmt.Printf("\n\"kubectl get pods -n=kube-system\" output:\n")
-	pods, err := ts.getPods("kube-system")
+	pods, err := ts.k8sClientSet.CoreV1().Pods("kube-system").List(metav1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to get pods %v", err)
 	}

@@ -36,6 +36,7 @@ import (
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	pkgaws "github.com/aws/aws-k8s-tester/pkg/aws"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
+	k8sclient "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
@@ -317,7 +318,19 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 	}
 
 	// update k8s client if cluster has already been created
-	if err = ts.createK8sClientSet(); err != nil {
+	kcfg := k8sclient.EKSConfig{
+		Region:         ts.cfg.Region,
+		ClusterName:    ts.cfg.Name,
+		ClientQPS:      ts.cfg.ClientQPS,
+		ClientBurst:    ts.cfg.ClientBurst,
+		KubeConfigPath: ts.cfg.KubeConfigPath,
+	}
+	if ts.cfg.Status != nil {
+		kcfg.ClusterAPIServerEndpoint = ts.cfg.Status.ClusterAPIServerEndpoint
+		kcfg.ClusterCADecoded = ts.cfg.Status.ClusterCADecoded
+	}
+	ts.k8sClientSet, err = k8sclient.NewEKS(ts.lg, kcfg)
+	if err != nil {
 		ts.lg.Warn("failed to create k8s client", zap.Error(err))
 	}
 
@@ -1495,7 +1508,20 @@ func (ts *Tester) LoadConfig() (eksconfig.Config, error) {
 // ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Options
 func (ts *Tester) KubernetesClientSet() *kubernetes.Clientset {
 	if ts.k8sClientSet == nil {
-		if err := ts.createK8sClientSet(); err != nil {
+		kcfg := k8sclient.EKSConfig{
+			Region:         ts.cfg.Region,
+			ClusterName:    ts.cfg.Name,
+			ClientQPS:      ts.cfg.ClientQPS,
+			ClientBurst:    ts.cfg.ClientBurst,
+			KubeConfigPath: ts.cfg.KubeConfigPath,
+		}
+		if ts.cfg.Status != nil {
+			kcfg.ClusterAPIServerEndpoint = ts.cfg.Status.ClusterAPIServerEndpoint
+			kcfg.ClusterCADecoded = ts.cfg.Status.ClusterCADecoded
+		}
+		var err error
+		ts.k8sClientSet, err = k8sclient.NewEKS(ts.lg, kcfg)
+		if err != nil {
 			ts.lg.Warn("failed to create k8s client set", zap.Error(err))
 			return nil
 		}
