@@ -1,7 +1,6 @@
 package eks
 
 import (
-	"crypto/tls"
 	"fmt"
 	"io"
 	"math/rand"
@@ -68,36 +67,6 @@ func httpDownloadFile(lg *zap.Logger, u string, wr io.Writer) error {
 				zap.String("value-of", reflect.ValueOf(wr).String()),
 			)
 		}
-	}
-	return err
-}
-
-// curl -k [URL]
-func httpReadInsecure(lg *zap.Logger, u string, wr io.Writer) error {
-	lg.Info("reading", zap.String("url", u))
-	cli := &http.Client{
-		Timeout: 5 * time.Second,
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		}}
-	r, err := cli.Get(u)
-	if err != nil {
-		return err
-	}
-	defer r.Body.Close()
-	if r.StatusCode >= 400 {
-		return fmt.Errorf("%q returned %d", u, r.StatusCode)
-	}
-
-	_, err = io.Copy(wr, r.Body)
-	if err != nil {
-		lg.Warn("failed to read", zap.String("url", u), zap.Error(err))
-	} else {
-		lg.Info("read",
-			zap.String("url", u),
-		)
 	}
 	return err
 }

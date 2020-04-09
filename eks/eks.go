@@ -92,7 +92,7 @@ type Tester struct {
 	eksSession *session.Session
 	eksAPI     eksiface.EKSAPI
 
-	k8sClientSet *kubernetes.Clientset
+	k8sClient k8sclient.EKS
 
 	ngTester            ng.Tester
 	mngTester           mng.Tester
@@ -318,20 +318,27 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 	}
 
 	// update k8s client if cluster has already been created
-	kcfg := k8sclient.EKSConfig{
-		Region:         ts.cfg.Region,
-		ClusterName:    ts.cfg.Name,
-		ClientQPS:      ts.cfg.ClientQPS,
-		ClientBurst:    ts.cfg.ClientBurst,
-		KubeConfigPath: ts.cfg.KubeConfigPath,
+	ts.lg.Info("creating k8s client from previous states if any")
+	kcfg := &k8sclient.EKSConfig{
+		Logger:            ts.lg,
+		Region:            ts.cfg.Region,
+		ClusterName:       ts.cfg.Name,
+		ClientQPS:         ts.cfg.ClientQPS,
+		ClientBurst:       ts.cfg.ClientBurst,
+		KubeConfigPath:    ts.cfg.KubeConfigPath,
+		KubectlPath:       ts.cfg.KubectlPath,
+		ServerVersion:     ts.cfg.Parameters.Version,
+		EncryptionEnabled: ts.cfg.Parameters.EncryptionCMKARN != "",
 	}
 	if ts.cfg.Status != nil {
 		kcfg.ClusterAPIServerEndpoint = ts.cfg.Status.ClusterAPIServerEndpoint
 		kcfg.ClusterCADecoded = ts.cfg.Status.ClusterCADecoded
 	}
-	ts.k8sClientSet, err = k8sclient.NewEKS(ts.lg, kcfg)
+	ts.k8sClient, err = k8sclient.NewEKS(kcfg)
 	if err != nil {
-		ts.lg.Warn("failed to create k8s client", zap.Error(err))
+		ts.lg.Warn("failed to create k8s client from previous states", zap.Error(err))
+	} else {
+		ts.lg.Info("created k8s client from previous states")
 	}
 
 	if err = ts.createSubTesters(); err != nil {
@@ -351,7 +358,7 @@ func (ts *Tester) createSubTesters() (err error) {
 		Stopc:     ts.stopCreationCh,
 		Sig:       ts.interruptSig,
 		EKSConfig: ts.cfg,
-		K8SClient: ts,
+		K8SClient: ts.k8sClient,
 		IAMAPI:    ts.iamAPI,
 		CFNAPI:    ts.cfnAPI,
 		EC2API:    ts.ec2API,
@@ -370,7 +377,7 @@ func (ts *Tester) createSubTesters() (err error) {
 		Stopc:     ts.stopCreationCh,
 		Sig:       ts.interruptSig,
 		EKSConfig: ts.cfg,
-		K8SClient: ts,
+		K8SClient: ts.k8sClient,
 		IAMAPI:    ts.iamAPI,
 		CFNAPI:    ts.cfnAPI,
 		EC2API:    ts.ec2API,
@@ -388,7 +395,7 @@ func (ts *Tester) createSubTesters() (err error) {
 		Stopc:     ts.stopCreationCh,
 		Sig:       ts.interruptSig,
 		EKSConfig: ts.cfg,
-		K8SClient: ts,
+		K8SClient: ts.k8sClient,
 		Namespace: ts.cfg.Name,
 	})
 	if err != nil {
@@ -402,7 +409,7 @@ func (ts *Tester) createSubTesters() (err error) {
 			Stopc:     ts.stopCreationCh,
 			Sig:       ts.interruptSig,
 			EKSConfig: ts.cfg,
-			K8SClient: ts,
+			K8SClient: ts.k8sClient,
 			ELB2API:   ts.elbv2API,
 		})
 		if err != nil {
@@ -418,7 +425,7 @@ func (ts *Tester) createSubTesters() (err error) {
 			Sig:       ts.interruptSig,
 			CFNAPI:    ts.cfnAPI,
 			EKSConfig: ts.cfg,
-			K8SClient: ts,
+			K8SClient: ts.k8sClient,
 			ELB2API:   ts.elbv2API,
 		})
 		if err != nil {
@@ -433,7 +440,7 @@ func (ts *Tester) createSubTesters() (err error) {
 			Stopc:     ts.stopCreationCh,
 			Sig:       ts.interruptSig,
 			EKSConfig: ts.cfg,
-			K8SClient: ts,
+			K8SClient: ts.k8sClient,
 		})
 		if err != nil {
 			return err
@@ -447,7 +454,7 @@ func (ts *Tester) createSubTesters() (err error) {
 			Stopc:     ts.stopCreationCh,
 			Sig:       ts.interruptSig,
 			EKSConfig: ts.cfg,
-			K8SClient: ts,
+			K8SClient: ts.k8sClient,
 		})
 		if err != nil {
 			return err
@@ -461,7 +468,7 @@ func (ts *Tester) createSubTesters() (err error) {
 			Stopc:     ts.stopCreationCh,
 			Sig:       ts.interruptSig,
 			EKSConfig: ts.cfg,
-			K8SClient: ts,
+			K8SClient: ts.k8sClient,
 		})
 		if err != nil {
 			return err
@@ -475,7 +482,7 @@ func (ts *Tester) createSubTesters() (err error) {
 			Stopc:     ts.stopCreationCh,
 			Sig:       ts.interruptSig,
 			EKSConfig: ts.cfg,
-			K8SClient: ts,
+			K8SClient: ts.k8sClient,
 		})
 		if err != nil {
 			return err
@@ -489,7 +496,7 @@ func (ts *Tester) createSubTesters() (err error) {
 			Stopc:     ts.stopCreationCh,
 			Sig:       ts.interruptSig,
 			EKSConfig: ts.cfg,
-			K8SClient: ts,
+			K8SClient: ts.k8sClient,
 		})
 		if err != nil {
 			return err
@@ -503,7 +510,7 @@ func (ts *Tester) createSubTesters() (err error) {
 			Stopc:     ts.stopCreationCh,
 			Sig:       ts.interruptSig,
 			EKSConfig: ts.cfg,
-			K8SClient: ts,
+			K8SClient: ts.k8sClient,
 		})
 		if err != nil {
 			return err
@@ -517,7 +524,7 @@ func (ts *Tester) createSubTesters() (err error) {
 			Stopc:     ts.stopCreationCh,
 			Sig:       ts.interruptSig,
 			EKSConfig: ts.cfg,
-			K8SClient: ts,
+			K8SClient: ts.k8sClient,
 		})
 		if err != nil {
 			return err
@@ -531,7 +538,7 @@ func (ts *Tester) createSubTesters() (err error) {
 			Stopc:     ts.stopCreationCh,
 			Sig:       ts.interruptSig,
 			EKSConfig: ts.cfg,
-			K8SClient: ts,
+			K8SClient: ts.k8sClient,
 			CFNAPI:    ts.cfnAPI,
 			IAMAPI:    ts.iamAPI,
 			S3API:     ts.s3API,
@@ -548,7 +555,7 @@ func (ts *Tester) createSubTesters() (err error) {
 			Stopc:     ts.stopCreationCh,
 			Sig:       ts.interruptSig,
 			EKSConfig: ts.cfg,
-			K8SClient: ts,
+			K8SClient: ts.k8sClient,
 			IAMAPI:    ts.iamAPI,
 			CFNAPI:    ts.cfnAPI,
 			EKSAPI:    ts.eksAPI,
@@ -565,7 +572,7 @@ func (ts *Tester) createSubTesters() (err error) {
 			Stopc:     ts.stopCreationCh,
 			Sig:       ts.interruptSig,
 			EKSConfig: ts.cfg,
-			K8SClient: ts,
+			K8SClient: ts.k8sClient,
 			CFNAPI:    ts.cfnAPI,
 		})
 	}
@@ -1507,26 +1514,7 @@ func (ts *Tester) LoadConfig() (eksconfig.Config, error) {
 // ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Deployer
 // ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Options
 func (ts *Tester) KubernetesClientSet() *kubernetes.Clientset {
-	if ts.k8sClientSet == nil {
-		kcfg := k8sclient.EKSConfig{
-			Region:         ts.cfg.Region,
-			ClusterName:    ts.cfg.Name,
-			ClientQPS:      ts.cfg.ClientQPS,
-			ClientBurst:    ts.cfg.ClientBurst,
-			KubeConfigPath: ts.cfg.KubeConfigPath,
-		}
-		if ts.cfg.Status != nil {
-			kcfg.ClusterAPIServerEndpoint = ts.cfg.Status.ClusterAPIServerEndpoint
-			kcfg.ClusterCADecoded = ts.cfg.Status.ClusterCADecoded
-		}
-		var err error
-		ts.k8sClientSet, err = k8sclient.NewEKS(ts.lg, kcfg)
-		if err != nil {
-			ts.lg.Warn("failed to create k8s client set", zap.Error(err))
-			return nil
-		}
-	}
-	return ts.k8sClientSet
+	return ts.k8sClient.KubernetesClientSet()
 }
 
 // Kubeconfig returns a path to a kubeconfig file for the cluster.

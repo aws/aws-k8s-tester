@@ -107,20 +107,27 @@ func (ts *Tester) createCluster() (err error) {
 		return err
 	}
 
-	kcfg := k8sclient.EKSConfig{
-		Region:         ts.cfg.Region,
-		ClusterName:    ts.cfg.Name,
-		ClientQPS:      ts.cfg.ClientQPS,
-		ClientBurst:    ts.cfg.ClientBurst,
-		KubeConfigPath: ts.cfg.KubeConfigPath,
+	ts.lg.Info("creating k8s client")
+	kcfg := &k8sclient.EKSConfig{
+		Logger:            ts.lg,
+		Region:            ts.cfg.Region,
+		ClusterName:       ts.cfg.Name,
+		ClientQPS:         ts.cfg.ClientQPS,
+		ClientBurst:       ts.cfg.ClientBurst,
+		KubeConfigPath:    ts.cfg.KubeConfigPath,
+		KubectlPath:       ts.cfg.KubectlPath,
+		ServerVersion:     ts.cfg.Parameters.Version,
+		EncryptionEnabled: ts.cfg.Parameters.EncryptionCMKARN != "",
 	}
 	if ts.cfg.Status != nil {
 		kcfg.ClusterAPIServerEndpoint = ts.cfg.Status.ClusterAPIServerEndpoint
 		kcfg.ClusterCADecoded = ts.cfg.Status.ClusterCADecoded
 	}
-	ts.k8sClientSet, err = k8sclient.NewEKS(ts.lg, kcfg)
+	ts.k8sClient, err = k8sclient.NewEKS(kcfg)
 	if err != nil {
-		return err
+		ts.lg.Warn("failed to create k8s client", zap.Error(err))
+	} else {
+		ts.lg.Info("created k8s client")
 	}
 
 	return ts.cfg.Sync()
