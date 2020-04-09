@@ -7,6 +7,7 @@ import (
 	k8sclient "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var (
@@ -62,7 +63,11 @@ func checkClusterFunc(cmd *cobra.Command, args []string) {
 		kcfg.ClusterCADecoded = string(d)
 	}
 
-	clientSet, err := k8sclient.NewEKS(zap.NewDevelopment(), kcfg)
+	lg, err := zap.NewDevelopment()
+	if err != nil {
+		panic(err)
+	}
+	clientSet, err := k8sclient.NewEKS(lg, kcfg)
 	if err != nil {
 		panic(fmt.Errorf("failed to create client %v", err))
 	}
