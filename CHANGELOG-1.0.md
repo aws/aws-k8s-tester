@@ -10,7 +10,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.1...v1.0.2
 ### `aws-k8s-tester`
 
 - Remove [`aws-k8s-tester eks test`](https://github.com/aws/aws-k8s-tester/commit/237075a8130f1ad29e3c3b655ca4d52fa5632426).
-- Improve [`aws-k8s-tester eks cluster check`](https://github.com/aws/aws-k8s-tester/commit/237075a8130f1ad29e3c3b655ca4d52fa5632426).
+- Improve [`aws-k8s-tester eks check`](https://github.com/aws/aws-k8s-tester/commit/237075a8130f1ad29e3c3b655ca4d52fa5632426).
+  - [`aws-k8s-tester eks check cluster` is now just `aws-k8s-tester eks check`](https://github.com/aws/aws-k8s-tester/commit/623350901946156b97ef985aa4b2344a9e654835).
 
 ### `eks`
 
