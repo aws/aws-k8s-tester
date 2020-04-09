@@ -3,7 +3,7 @@
 <hr>
 
 
-## [v1.0.2](https://github.com/aws/aws-k8s-tester/releases/tag/v1.0.2) (2020-04)
+## [v1.0.2](https://github.com/aws/aws-k8s-tester/releases/tag/v1.0.2) (2020-04-09)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.1...v1.0.2).
 
@@ -14,11 +14,13 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.1...v1.0.2
 
 ### `eks`
 
-- Use [`pkg/k8s-client.NewEKS` for `*kubernetes.Clientset`](https://github.com/aws/aws-k8s-tester/commit/85db2dd0c9f64af5d37be1b304d63ff2d42cdc79).
+- Use [`pkg/k8s-client.NewEKS` for `*kubernetes.Clientset`; use `pkg/k8s-client.EKS` interface](https://github.com/aws/aws-k8s-tester/commit/85db2dd0c9f64af5d37be1b304d63ff2d42cdc79).
+- Move [`healthz` checks to `pkg/k8s-client.EKS` interface](https://github.com/aws/aws-k8s-tester/commit/0d7981d66303ba8384ec57b338feb084bca64bdf).
 
 ### `pkg/k8s-client`
 
-- Add [`k8sclient.NewEKS` and `k8sclient.EKSConfig` for `*kubernetes.Clientset`](https://github.com/aws/aws-k8s-tester/commit/e673d3388ee44889e6572dcdcee530ea06984a86).
+- Add [`k8sclient.NewEKS` and `k8sclient.EKSConfig` for `*kubernetes.Clientset`; use `pkg/k8s-client.EKS` interface](https://github.com/aws/aws-k8s-tester/commit/e673d3388ee44889e6572dcdcee530ea06984a86).
+- Move [`healthz` checks to `k8sclient.EKS` interface](https://github.com/aws/aws-k8s-tester/commit/3dac533adcf2fb0aa51f19d4f56bbc9dd2b59eb5).
 
 ### Dependency
 
