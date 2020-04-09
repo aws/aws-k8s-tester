@@ -30,24 +30,22 @@ func init() {
 
 func newCheck() *cobra.Command {
 	ac := &cobra.Command{
-		Use:   "check <subcommand>",
-		Short: "Check EKS resources",
+		Use:   "check",
+		Run:   checkFunc,
+		Short: "Check EKS cluster status",
 		Long: `
 aws-k8s-tester eks check \
   --kubeconfig /tmp/kubeconfig.yaml \
-  <subcommand>
 
 e.g.
 
 aws-k8s-tester eks check \
-  --kubeconfig /tmp/kubeconfig.yaml \
-  cluster
+  --kubeconfig /tmp/kubeconfig.yaml
 
 aws-k8s-tester eks check \
   --kubeconfig /tmp/kubeconfig.yaml \
   --server-version 1.16 \
-  --encryption-enabled \
-  cluster
+  --encryption-enabled
 
 aws-k8s-tester eks check \
   --region us-west-2 \
@@ -56,13 +54,11 @@ aws-k8s-tester eks check \
   --client-burst 30 \
   --kubeconfig /tmp/kubeconfig.yaml \
   --server-version 1.16 \
-  --encryption-enabled \
-  cluster
+  --encryption-enabled
 
 aws-k8s-tester eks check \
   --kubeconfig ~/.kube/config \
-  --kubeconfig-context prow-hkg \
-  cluster
+  --kubeconfig-context prow-hkg
 `,
 	}
 	ac.PersistentFlags().StringVar(&checkRegion, "region", "", "EKS region")
@@ -74,21 +70,10 @@ aws-k8s-tester eks check \
 	ac.PersistentFlags().StringVar(&checkKubectlPath, "kubectl", defaultKubectlPath, "kubectl path")
 	ac.PersistentFlags().StringVar(&checkServerVersion, "server-version", "", "EKS server version")
 	ac.PersistentFlags().BoolVar(&checkEncryptionEnabled, "encryption-enabled", false, "'true' to check EKS encryption")
-	ac.AddCommand(
-		newCheckCluster(),
-	)
 	return ac
 }
 
-func newCheckCluster() *cobra.Command {
-	return &cobra.Command{
-		Use:   "cluster",
-		Short: "Check EKS cluster status",
-		Run:   checkClusterFunc,
-	}
-}
-
-func checkClusterFunc(cmd *cobra.Command, args []string) {
+func checkFunc(cmd *cobra.Command, args []string) {
 	if checkKubectlPath == "" {
 		panic(errors.New("'kubectl' not found"))
 	}
