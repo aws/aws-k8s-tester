@@ -17,10 +17,14 @@ import (
 )
 
 var (
-	deleteDry    bool
-	deleteFailed bool
-	deletePrefix string
-	deleteAgo    time.Duration
+	listRegion      string
+	listResolverURL string
+	listSigningName string
+
+	listDeleteDry    bool
+	listDeleteFailed bool
+	listDeletePrefix string
+	listDeleteAgo    time.Duration
 )
 
 func newList() *cobra.Command {
@@ -28,38 +32,14 @@ func newList() *cobra.Command {
 		Use:   "list <subcommand>",
 		Short: "List EKS resources",
 	}
-	ac.PersistentFlags().StringVar(&region, "region", "us-west-2", "EKS region")
-	ac.PersistentFlags().StringVar(&resolverURL, "resolver-url", "", "EKS resolver endpoint URL")
-	ac.PersistentFlags().StringVar(&signingName, "signing-name", "", "EKS signing name")
-
-	ac.PersistentFlags().BoolVar(
-		&deleteDry,
-		"delete-dry",
-		true,
-		"'true' to delete clusters in dry mode",
-	)
-	ac.PersistentFlags().BoolVar(
-		&deleteFailed,
-		"delete-failed",
-		false,
-		"'true' to clean up failed clusters",
-	)
-	ac.PersistentFlags().StringVar(
-		&deletePrefix,
-		"delete-prefix",
-		"",
-		"Cluster name prefix to match and delete",
-	)
-	ac.PersistentFlags().DurationVar(
-		&deleteAgo,
-		"delete-ago",
-		0,
-		"Duration to delete clusters created x-duration ago",
-	)
-
-	ac.AddCommand(
-		newListClusters(),
-	)
+	ac.PersistentFlags().StringVar(&listRegion, "region", "us-west-2", "EKS region")
+	ac.PersistentFlags().StringVar(&listResolverURL, "resolver-url", "", "EKS resolver endpoint URL")
+	ac.PersistentFlags().StringVar(&listSigningName, "signing-name", "", "EKS signing name")
+	ac.PersistentFlags().BoolVar(&listDeleteDry, "delete-dry", true, "'true' to delete clusters in dry mode")
+	ac.PersistentFlags().BoolVar(&listDeleteFailed, "delete-failed", false, "'true' to clean up failed clusters")
+	ac.PersistentFlags().StringVar(&listDeletePrefix, "delete-prefix", "", "Cluster name prefix to match and delete")
+	ac.PersistentFlags().DurationVar(&listDeleteAgo, "delete-ago", 0, "Duration to delete clusters created x-duration ago")
+	ac.AddCommand(newListClusters())
 	return ac
 }
 
@@ -75,9 +55,9 @@ func listClustersFunc(cmd *cobra.Command, args []string) {
 	lg, _ := logutil.GetDefaultZapLogger()
 	awsCfgEKS := &pkgaws.Config{
 		Logger:      lg,
-		Region:      region,
-		ResolverURL: resolverURL,
-		SigningName: signingName,
+		Region:      listRegion,
+		ResolverURL: listResolverURL,
+		SigningName: listSigningName,
 	}
 	ssEKS, _, _, err := pkgaws.New(awsCfgEKS)
 	if err != nil {
@@ -119,7 +99,7 @@ func listClustersFunc(cmd *cobra.Command, args []string) {
 			if ok && awsErr.Code() == "ResourceNotFoundException" &&
 				strings.HasPrefix(awsErr.Message(), "No cluster found for") {
 				fmt.Printf("deleting %q (reason: %v)\n", name, err)
-				if !deleteDry {
+				if !listDeleteDry {
 					_, derr := svc.DeleteCluster(&awseks.DeleteClusterInput{Name: aws.String(name)})
 					fmt.Println("deleted", name, derr)
 				}
@@ -149,9 +129,9 @@ func listClustersFunc(cmd *cobra.Command, args []string) {
 			aws.StringValue(clus.ResourcesVpcConfig.VpcId),
 		)
 
-		if deleteFailed && aws.StringValue(clus.Status) == "FAILED" {
+		if listDeleteFailed && aws.StringValue(clus.Status) == "FAILED" {
 			fmt.Printf("deleting %q (reason: %v)\n", name, aws.StringValue(clus.Status))
-			if !deleteDry {
+			if !listDeleteDry {
 				_, derr := svc.DeleteCluster(&awseks.DeleteClusterInput{Name: aws.String(name)})
 				fmt.Println("deleted", name, derr)
 			}
@@ -161,9 +141,9 @@ func listClustersFunc(cmd *cobra.Command, args []string) {
 			continue
 		}
 
-		if len(deletePrefix) > 0 && strings.HasPrefix(name, deletePrefix) {
-			fmt.Printf("deleting %q (reason: %q)\n", name, deletePrefix)
-			if !deleteDry {
+		if len(listDeletePrefix) > 0 && strings.HasPrefix(name, listDeletePrefix) {
+			fmt.Printf("deleting %q (reason: %q)\n", name, listDeletePrefix)
+			if !listDeleteDry {
 				_, derr := svc.DeleteCluster(&awseks.DeleteClusterInput{Name: aws.String(name)})
 				fmt.Println("deleted", name, derr)
 			}
@@ -174,14 +154,14 @@ func listClustersFunc(cmd *cobra.Command, args []string) {
 		}
 
 		createDur := nowUTC.Sub(createdAtUTC)
-		if deleteAgo > 0 && createDur > deleteAgo {
+		if listDeleteAgo > 0 && createDur > listDeleteAgo {
 			fmt.Printf("deleting %q (reason: create at %v, delete ago %v, create duration %v)\n",
 				name,
 				createdAtUTC,
-				deleteAgo,
+				listDeleteAgo,
 				createDur,
 			)
-			if !deleteDry {
+			if !listDeleteDry {
 				_, derr := svc.DeleteCluster(&awseks.DeleteClusterInput{Name: aws.String(name)})
 				fmt.Println("deleted", name, derr)
 			}

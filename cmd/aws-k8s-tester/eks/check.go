@@ -1,12 +1,22 @@
 package eks
 
 import (
+	"encoding/base64"
 	"fmt"
-	"os"
 
-	"github.com/aws/aws-k8s-tester/eks"
-	"github.com/aws/aws-k8s-tester/eksconfig"
+	k8sclient "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
+)
+
+var (
+	checkRegion                   string
+	checkClusterName              string
+	checkClusterAPIServerEndpoint string
+	checkClusterCA                string
+	checkClientQPS                float32
+	checkClientBurst              int
+	checkKubeConfigPath           string
 )
 
 func newCheck() *cobra.Command {
@@ -14,6 +24,13 @@ func newCheck() *cobra.Command {
 		Use:   "check <subcommand>",
 		Short: "Check EKS resources",
 	}
+	ac.PersistentFlags().StringVar(&checkRegion, "region", "us-west-2", "EKS region")
+	ac.PersistentFlags().StringVar(&checkClusterName, "cluster-name", "", "EKS cluster name")
+	ac.PersistentFlags().StringVar(&checkClusterAPIServerEndpoint, "cluster-api-server-endpoint", "", "EKS cluster apiserver endpoint")
+	ac.PersistentFlags().StringVar(&checkClusterCA, "cluster-ca", "", "EKS cluster CA encoded in base64")
+	ac.PersistentFlags().Float32Var(&checkClientQPS, "client-qps", 5.0, "EKS client qps")
+	ac.PersistentFlags().IntVar(&checkClientBurst, "client-burst", 10, "EKS client burst")
+	ac.PersistentFlags().StringVar(&checkKubeConfigPath, "kubeconfig", "", "EKS KUBECONFIG")
 	ac.AddCommand(
 		newCheckCluster(),
 	)
@@ -29,27 +46,33 @@ func newCheckCluster() *cobra.Command {
 }
 
 func checkClusterFunc(cmd *cobra.Command, args []string) {
-	cfg, err := eksconfig.Load(path)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to load configuration %q (%v)\n", path, err)
-		os.Exit(1)
+	kcfg := k8sclient.EKSConfig{
+		Region:                   checkRegion,
+		ClusterName:              checkClusterName,
+		ClusterAPIServerEndpoint: checkClusterAPIServerEndpoint,
+		ClientQPS:                checkClientQPS,
+		ClientBurst:              checkClientBurst,
+		KubeConfigPath:           checkKubeConfigPath,
+	}
+	if checkClusterCA != "" {
+		d, err := base64.StdEncoding.DecodeString(checkClusterCA)
+		if err != nil {
+			panic(fmt.Errorf("failed to decode cluster CA %v", err))
+		}
+		kcfg.ClusterCADecoded = string(d)
 	}
 
-	tester, err := eks.New(cfg)
+	clientSet, err := k8sclient.NewEKS(zap.NewDevelopment(), kcfg)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create EKS deployer %v\n", err)
-		os.Exit(1)
+		panic(fmt.Errorf("failed to create client %v", err))
+	}
+	ns, err := clientSet.CoreV1().Namespaces().List(metav1.ListOptions{})
+	if err != nil {
+		panic(fmt.Errorf("failed to list namespaces %v", err))
+	}
+	for _, v := range ns.Items {
+		fmt.Println(v.GetName())
 	}
 
-	var up bool
-	up, err = tester.IsUp()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to check cluster status %v\n", err)
-		os.Exit(1)
-	}
-	if !up {
-		fmt.Fprintln(os.Stderr, "failed to check cluster status: not up")
-		os.Exit(1)
-	}
 	fmt.Println("'aws-k8s-tester eks check cluster' success")
 }
