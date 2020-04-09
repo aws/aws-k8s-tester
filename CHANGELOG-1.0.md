@@ -7,6 +7,11 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.1...v1.0.2).
 
+### `aws-k8s-tester`
+
+- Remove [`aws-k8s-tester eks test`](https://github.com/aws/aws-k8s-tester/commit/237075a8130f1ad29e3c3b655ca4d52fa5632426).
+- Improve [`aws-k8s-tester eks cluster check`](https://github.com/aws/aws-k8s-tester/commit/237075a8130f1ad29e3c3b655ca4d52fa5632426).
+
 ### `eks`
 
 - Use [`pkg/k8s-client.NewEKS` for `*kubernetes.Clientset`](https://github.com/aws/aws-k8s-tester/commit/85db2dd0c9f64af5d37be1b304d63ff2d42cdc79).
