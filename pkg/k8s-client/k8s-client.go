@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package k8sclient implements various k8s utils.
 package k8sclient
 
 import (
