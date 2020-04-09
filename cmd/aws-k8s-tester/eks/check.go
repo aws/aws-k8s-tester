@@ -74,22 +74,49 @@ func checkClusterFunc(cmd *cobra.Command, args []string) {
 		}
 		kcfg.ClusterCADecoded = string(d)
 	}
-
-	lg, err := zap.NewDevelopment()
-	if err != nil {
-		panic(err)
-	}
-	clientSet, err := k8sclient.NewEKS(lg, kcfg)
+	clientSet, err := k8sclient.NewEKS(zap.NewExample(), kcfg)
 	if err != nil {
 		panic(fmt.Errorf("failed to create client %v", err))
 	}
+
+	println()
 	ns, err := clientSet.CoreV1().Namespaces().List(metav1.ListOptions{})
 	if err != nil {
 		panic(fmt.Errorf("failed to list namespaces %v", err))
 	}
-	for _, v := range ns.Items {
-		fmt.Println(v.GetName())
+	if len(ns.Items) > 0 {
+		for _, v := range ns.Items {
+			fmt.Println("namespace:", v.GetName())
+		}
+	} else {
+		fmt.Println("no namespace")
+	}
+	println()
+	nodes, err := clientSet.CoreV1().Nodes().List(metav1.ListOptions{})
+	if err != nil {
+		panic(fmt.Errorf("failed to list nodes %v", err))
+	}
+	if len(nodes.Items) > 0 {
+		for _, v := range nodes.Items {
+			fmt.Println("node:", v.GetName())
+		}
+	} else {
+		fmt.Println("no node")
 	}
 
+	println()
+	evs, err := clientSet.CoreV1().Events("default").List(metav1.ListOptions{})
+	if err != nil {
+		panic(fmt.Errorf("failed to list events %v", err))
+	}
+	if len(evs.Items) > 0 {
+		for _, v := range evs.Items {
+			fmt.Println("event:", v.GetName())
+		}
+	} else {
+		fmt.Println("no event")
+	}
+
+	println()
 	fmt.Println("'aws-k8s-tester eks check cluster' success")
 }
