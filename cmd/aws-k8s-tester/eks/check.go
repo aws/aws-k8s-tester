@@ -24,6 +24,18 @@ func newCheck() *cobra.Command {
 	ac := &cobra.Command{
 		Use:   "check <subcommand>",
 		Short: "Check EKS resources",
+		Long: `
+aws-k8s-tester eks check \
+  --kubeconfig /tmp/kubeconfig.yaml \
+  <subcommand>
+
+aws-k8s-tester eks check \
+  --cluster-api-server-endpoint https://URL \
+  --cluster-ca "LS0...=" \
+  --cluster-name eks-2020040819-surfcrvabhtd \
+  <subcommand>
+
+`,
 	}
 	ac.PersistentFlags().StringVar(&checkRegion, "region", "us-west-2", "EKS region")
 	ac.PersistentFlags().StringVar(&checkClusterName, "cluster-name", "", "EKS cluster name")
