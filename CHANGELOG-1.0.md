@@ -3,6 +3,30 @@
 <hr>
 
 
+## [v1.0.2](https://github.com/aws/aws-k8s-tester/releases/tag/v1.0.2) (2020-04)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.1...v1.0.2).
+
+### `eks`
+
+- Use [`pkg/k8s-client.NewEKS` for `*kubernetes.Clientset`](https://github.com/aws/aws-k8s-tester/commit/85db2dd0c9f64af5d37be1b304d63ff2d42cdc79).
+
+### `pkg/k8s-client`
+
+- Add [`k8sclient.NewEKS` and `k8sclient.EKSConfig` for `*kubernetes.Clientset`](https://github.com/aws/aws-k8s-tester/commit/e673d3388ee44889e6572dcdcee530ea06984a86).
+
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.30.7`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.7) to [`v1.30.X`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.X).
+
+### Go
+
+- Compile with [*Go 1.14.2*](https://golang.org/doc/devel/release.html#go1.14).
+
+
+<hr>
+
+
 ## [v1.0.1](https://github.com/aws/aws-k8s-tester/releases/tag/v1.0.1) (2020-04-08)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.0...v1.0.1).
