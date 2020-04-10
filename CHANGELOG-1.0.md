@@ -3,9 +3,14 @@
 <hr>
 
 
-## [v1.0.2](https://github.com/aws/aws-k8s-tester/releases/tag/v1.0.2) (2020-04-09)
+## [v1.0.2](https://github.com/aws/aws-k8s-tester/releases/tag/v1.0.2) (2020-04)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.1...v1.0.2).
+
+### `eks-util`
+
+- Add [`eks-util`](https://github.com/aws/aws-k8s-tester/commit/).
+  - Read https://github.com/aws/aws-k8s-tester#eks-util.
 
 ### `aws-k8s-tester`
 
