@@ -874,11 +874,23 @@ func (ts *tester) waitForNodes(mngName string) error {
 		readies := 0
 		for _, node := range items {
 			nodeName := node.GetName()
+
+			// e.g. given node name ip-192-168-81-186.us-west-2.compute.internal + DHCP option my-private-dns
+			// InternalIP == 192.168.81.186
+			// ExternalIP == 52.38.118.149
+			// Hostname == my-private-dns (without DHCP option, it's "ip-192-168-81-186.my-private-dns", private DNS, InternalDNS)
+			// InternalDNS == ip-192-168-81-186.my-private-dns
+			// ExternalDNS == ec2-52-38-118-149.us-west-2.compute.amazonaws.com
 			ts.cfg.Logger.Info("checking node host name with EC2 Private DNS", zap.String("name", nodeName))
 			hostName := ""
 			for _, av := range node.Status.Addresses {
-				if av.Type == v1.NodeHostName {
-					hostName = av.Address
+				ts.cfg.Logger.Info("node status address", zap.String("name", nodeName), zap.String("type", string(av.Type)), zap.String("address", string(av.Address)))
+				if av.Type != v1.NodeHostName && av.Type != v1.NodeInternalDNS {
+					continue
+				}
+				// handle when node is configured DHCP
+				hostName = av.Address
+				if _, ok := ec2PrivateDNS[hostName]; ok {
 					break
 				}
 			}
