@@ -339,10 +339,12 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 		ts.lg.Warn("failed to create k8s client from previous states", zap.Error(err))
 	} else {
 		ts.lg.Info("created k8s client from previous states")
-	}
-
-	if err = ts.createSubTesters(); err != nil {
-		return nil, err
+		// call here, because "createCluster" won't be called
+		// if loaded from previous states
+		// e.g. delete
+		if err = ts.createSubTesters(); err != nil {
+			return nil, err
+		}
 	}
 
 	return ts, nil

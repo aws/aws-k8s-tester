@@ -130,6 +130,10 @@ func (ts *Tester) createCluster() (err error) {
 		ts.lg.Info("created k8s client")
 	}
 
+	if err = ts.createSubTesters(); err != nil {
+		return err
+	}
+
 	return ts.cfg.Sync()
 }
 
