@@ -78,7 +78,7 @@ func NewDefault() *Config {
 		// FLAG: --max-mutating-requests-inflight="200"
 		// FLAG: --max-requests-inflight="400"
 		// ref. https://github.com/kubernetes/kubernetes/blob/4d0e86f0b8d1eae00a202009858c8739e4c9402e/staging/src/k8s.io/apiserver/pkg/server/config.go#L300-L301
-	//
+		//
 		ClientQPS:   5.0,
 		ClientBurst: 10,
 
