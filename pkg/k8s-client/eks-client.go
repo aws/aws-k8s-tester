@@ -6,6 +6,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -21,6 +22,7 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/oauth2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/kubernetes"
 	clientset "k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
@@ -80,8 +82,27 @@ type EKSConfig struct {
 type EKS interface {
 	// KubernetesClientSet returns a new kubernetes client set.
 	KubernetesClientSet() *kubernetes.Clientset
+
 	// CheckEKSHealth checks the EKS health.
 	CheckHealth() error
+
+	// FetchVersion fetches the version from kube-apiserver.
+	//
+	// e.g.
+	//
+	//	{
+	//		"major": "1",
+	//		"minor": "16+",
+	//		"gitVersion": "v1.16.8-eks-e16311",
+	//		"gitCommit": "e163110a04dcb2f39c3325af96d019b4925419eb",
+	//		"gitTreeState": "clean",
+	//		"buildDate": "2020-03-27T22:37:12Z",
+	//		"goVersion": "go1.13.8",
+	//		"compiler": "gc",
+	//		"platform": "linux/amd64"
+	//	}
+	//
+	FetchVersion() (version.Info, error)
 }
 
 type eks struct {
@@ -524,6 +545,39 @@ func (e *eks) checkHealth() error {
 
 	e.cfg.Logger.Info("checked /metrics")
 	return nil
+}
+
+// FetchVersion fetches the version from kube-apiserver.
+//
+// e.g.
+//
+//	{
+//		"major": "1",
+//		"minor": "16+",
+//		"gitVersion": "v1.16.8-eks-e16311",
+//		"gitCommit": "e163110a04dcb2f39c3325af96d019b4925419eb",
+//		"gitTreeState": "clean",
+//		"buildDate": "2020-03-27T22:37:12Z",
+//		"goVersion": "go1.13.8",
+//		"compiler": "gc",
+//		"platform": "linux/amd64"
+//	}
+//
+func (e *eks) FetchVersion() (version.Info, error) {
+	ep := e.cfg.ClusterAPIServerEndpoint + "/version"
+	e.cfg.Logger.Info("fetching version", zap.String("url", ep))
+	buf := bytes.NewBuffer(nil)
+	if err := httpReadInsecure(e.cfg.Logger, ep, buf); err != nil {
+		return version.Info{}, nil
+	}
+	var ver version.Info
+	err := json.NewDecoder(buf).Decode(&ver)
+	if err != nil {
+		e.cfg.Logger.Warn("failed to fetch version", zap.Error(err))
+	} else {
+		e.cfg.Logger.Info("fetched version", zap.String("version", fmt.Sprintf("%+v", ver)))
+	}
+	return ver, err
 }
 
 // curl -k [URL]
