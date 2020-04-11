@@ -200,7 +200,7 @@ func (ts *tester) createIngressEgress(name string) error {
 
 	ts.cfg.Logger.Info("creating ingress/egress for mng using CFN", zap.String("mng-name", name), zap.String("security-group-id", sgID))
 	stackInput := &cloudformation.CreateStackInput{
-		StackName:    aws.String(ts.cfg.EKSConfig.Name + "-mng-sg-" + name),
+		StackName:    aws.String(name + "-mng-sg"),
 		OnFailure:    aws.String(cloudformation.OnFailureDelete),
 		TemplateBody: aws.String(TemplateSG),
 		Tags: awscfn.NewTags(map[string]string{
