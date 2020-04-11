@@ -574,7 +574,7 @@ Outputs:
     Value: !Join [ ",", [ !Ref PrivateSubnet1, !Ref PrivateSubnet2 ] ]
     Description: All private subnet IDs in the VPC
 
-  ControlPlaneSecurityGroupID:
+  ClusterControlPlaneSecurityGroupID:
     Value: !Ref ControlPlaneSecurityGroup
     Description: Security group ID for the cluster control plane communication with worker nodes
 
@@ -672,10 +672,10 @@ func (ts *Tester) createVPC() error {
 			id, name := aws.StringValue(sg.GroupId), aws.StringValue(sg.GroupName)
 			ts.lg.Info("found security group", zap.String("id", id), zap.String("name", name))
 			if name != "default" {
-				ts.cfg.Parameters.ControlPlaneSecurityGroupID = id
+				ts.cfg.Status.ClusterControlPlaneSecurityGroupID = id
 			}
 		}
-		if ts.cfg.Parameters.ControlPlaneSecurityGroupID == "" {
+		if ts.cfg.Status.ClusterControlPlaneSecurityGroupID == "" {
 			return fmt.Errorf("no security group found for VPC ID %q", ts.cfg.Parameters.VPCID)
 		}
 
@@ -689,7 +689,7 @@ func (ts *Tester) createVPC() error {
 	if ts.cfg.Parameters.VPCCFNStackID != "" &&
 		ts.cfg.Parameters.VPCID != "" &&
 		len(ts.cfg.Parameters.PublicSubnetIDs) > 0 &&
-		ts.cfg.Parameters.ControlPlaneSecurityGroupID != "" {
+		ts.cfg.Status.ClusterControlPlaneSecurityGroupID != "" {
 		ts.lg.Info("VPC already created; no need to create a new one")
 		return nil
 	}
@@ -812,8 +812,8 @@ func (ts *Tester) createVPC() error {
 			ts.cfg.Parameters.PublicSubnetIDs = strings.Split(v, ",")
 		case "PrivateSubnetIDs":
 			ts.cfg.Parameters.PrivateSubnetIDs = strings.Split(v, ",")
-		case "ControlPlaneSecurityGroupID":
-			ts.cfg.Parameters.ControlPlaneSecurityGroupID = v
+		case "ClusterControlPlaneSecurityGroupID":
+			ts.cfg.Status.ClusterControlPlaneSecurityGroupID = v
 		}
 	}
 	ts.lg.Info("created a VPC",
@@ -821,7 +821,7 @@ func (ts *Tester) createVPC() error {
 		zap.String("vpc-id", ts.cfg.Parameters.VPCID),
 		zap.Strings("public-subnet-ids", ts.cfg.Parameters.PublicSubnetIDs),
 		zap.Strings("private-subnet-ids", ts.cfg.Parameters.PrivateSubnetIDs),
-		zap.String("control-plane-security-group-id", ts.cfg.Parameters.ControlPlaneSecurityGroupID),
+		zap.String("control-plane-security-group-id", ts.cfg.Status.ClusterControlPlaneSecurityGroupID),
 	)
 	return ts.cfg.Sync()
 }

@@ -161,7 +161,7 @@ Outputs:
 
 func (ts *tester) createSG() error {
 	if ts.cfg.EKSConfig.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackID != "" &&
-		ts.cfg.EKSConfig.Parameters.ControlPlaneSecurityGroupID != "" {
+		ts.cfg.EKSConfig.Status.ClusterControlPlaneSecurityGroupID != "" {
 		ts.cfg.Logger.Info("security group already created; no need to create a new one")
 		return nil
 	}
@@ -183,7 +183,7 @@ func (ts *tester) createSG() error {
 			},
 			{
 				ParameterKey:   aws.String("ClusterControlPlaneSecurityGroupID"),
-				ParameterValue: aws.String(ts.cfg.EKSConfig.Parameters.ControlPlaneSecurityGroupID),
+				ParameterValue: aws.String(ts.cfg.EKSConfig.Status.ClusterControlPlaneSecurityGroupID),
 			},
 			{
 				ParameterKey:   aws.String("VPCID"),

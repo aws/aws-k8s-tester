@@ -55,7 +55,7 @@ Parameters:
     Type: List<AWS::EC2::Subnet::Id>
     Description: Subnets for EKS worker nodes. Amazon EKS creates cross-account elastic network interfaces in these subnets to allow communication between  worker nodes and the Kubernetes control plane
 
-  ControlPlaneSecurityGroupID:
+  ClusterControlPlaneSecurityGroupID:
     Type: AWS::EC2::SecurityGroup::Id
     Description: Security group ID for the cluster control plane communication with worker nodes
 {{ if ne .AWSEncryptionProviderCMKARN "" }}
@@ -75,7 +75,7 @@ Resources:
       ResourcesVpcConfig:
         SubnetIds: !Ref SubnetIDs
         SecurityGroupIds:
-        - !Ref ControlPlaneSecurityGroupID
+        - !Ref ClusterControlPlaneSecurityGroupID
 {{ if ne .AWSEncryptionProviderCMKARN "" }}      EncryptionConfig:
       - Resources:
         - secrets
@@ -190,7 +190,7 @@ func (ts *Tester) createEKS() error {
 			RoleArn: aws.String(ts.cfg.Parameters.RoleARN),
 			ResourcesVpcConfig: &awseks.VpcConfigRequest{
 				SubnetIds:        aws.StringSlice(subnets),
-				SecurityGroupIds: aws.StringSlice([]string{ts.cfg.Parameters.ControlPlaneSecurityGroupID}),
+				SecurityGroupIds: aws.StringSlice([]string{ts.cfg.Status.ClusterControlPlaneSecurityGroupID}),
 			},
 			Tags: map[string]*string{
 				"Kind":                   aws.String("aws-k8s-tester"),
@@ -272,8 +272,8 @@ func (ts *Tester) createEKS() error {
 					ParameterValue: aws.String(strings.Join(subnets, ",")),
 				},
 				{
-					ParameterKey:   aws.String("ControlPlaneSecurityGroupID"),
-					ParameterValue: aws.String(ts.cfg.Parameters.ControlPlaneSecurityGroupID),
+					ParameterKey:   aws.String("ClusterControlPlaneSecurityGroupID"),
+					ParameterValue: aws.String(ts.cfg.Status.ClusterControlPlaneSecurityGroupID),
 				},
 			},
 		}

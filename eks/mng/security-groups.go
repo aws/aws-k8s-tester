@@ -43,7 +43,7 @@ RemoteAccess:
   SecurityGroupEgress1024:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
-      GroupId: !Ref ControlPlaneSecurityGroupID
+      GroupId: !Ref ClusterControlPlaneSecurityGroupID
       IpProtocol: 'tcp'
       FromPort: '1'
       ToPort: '1024'
@@ -158,7 +158,7 @@ func (ts *tester) openPorts(name string) error {
 		zap.String("port-range", "1-1024"),
 	)
 	_, err = ts.cfg.EC2API.AuthorizeSecurityGroupEgress(&ec2.AuthorizeSecurityGroupEgressInput{
-		GroupId: aws.String(ts.cfg.EKSConfig.Parameters.ControlPlaneSecurityGroupID),
+		GroupId: aws.String(ts.cfg.EKSConfig.Status.ClusterControlPlaneSecurityGroupID),
 		IpPermissions: []*ec2.IpPermission{
 			{
 				IpProtocol: aws.String("tcp"),
