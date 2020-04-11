@@ -195,6 +195,35 @@ less +FG /tmp/config.yaml
 ```
 
 
-## `eks-utils api-resources`
+## `eks-utils`
 
-TODO
+Install `eks-utils` from https://github.com/aws/aws-k8s-tester/releases.
+
+**WARNING**
+
+`kubectl` internally converts API versions in the response (see [`kubernetes/issues#58131`](https://github.com/kubernetes/kubernetes/issues/58131#issuecomment-403829566)). Which means `kubectl get` output may have different API versions than the one persisted in `etcd`.
+
+Upstream recommends upgrading deprecated API with *get and put*:
+
+> the simplest approach is to get/put every object after upgrades. objects that don't need migration will no-op (they won't even increment resourceVersion in etcd). objects that do need migration will persist in the new preferred storage version
+
+```bash
+# to check supported API groups from current kube-apiserver
+eks-utils apis \
+  --kubeconfig /tmp/kubeconfig.yaml \
+  supported
+
+# to write API upgrade/rollback scripts and YAML files in "/tmp/eks-utils"
+#
+# make sure to set proper "--list-batch" and "--list-interval"
+# to not overload EKS master; if it's set too high, it can affect
+# production workloads slowing down kube-apiserver
+rm -rf /tmp/eks-utils
+eks-utils apis \
+  --kubeconfig /tmp/kubeconfig.yaml \
+  --enable-prompt \
+  deprecate \
+  --dir /tmp/eks-utils \
+  --list-batch 10 \
+  --list-interval 2s
+```

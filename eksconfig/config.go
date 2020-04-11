@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
+	k8sclient "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	awseks "github.com/aws/aws-sdk-go/service/eks"
-	"k8s.io/apimachinery/pkg/version"
 	"sigs.k8s.io/yaml"
 )
 
@@ -207,9 +207,8 @@ type Status struct {
 	// Up is true if the cluster is up.
 	Up bool `json:"up"`
 
-
 	// ServerVersionInfo is the server version from EKS kube-apiserver.
-	ServerVersionInfo version.Info `json:"server-version-info" read-only:"true"`
+	ServerVersionInfo k8sclient.ServerVersionInfo `json:"server-version-info" read-only:"true"`
 
 	// CreateTook is the duration that took to create the resource.
 	CreateTook time.Duration `json:"create-took,omitempty" read-only:"true"`
@@ -566,13 +565,12 @@ type MNG struct {
 
 	// PhysicalID is the Physical ID for the created "AWS::EKS::Nodegroup".
 	PhysicalID string `json:"physical-id" read-only:"true"`
-	
+
 	// CFNStackID is the CloudFormation stack ID for a managed node group.
-	CFNStackID                  string `json:"cfn-stack-id" read-only:"true"`
+	CFNStackID string `json:"cfn-stack-id" read-only:"true"`
 
-	RemoteAccessSecurityGroupID string `json:"remote-access-security-group-id" read-only:"true"`
+	RemoteAccessSecurityGroupID                      string `json:"remote-access-security-group-id" read-only:"true"`
 	RemoteAccessSecurityGroupIngressEgressCFNStackID string `json:"remote-access-security-group-ingress-egress-cfn-stack-id" read-only:"true"`
-
 
 	// Status is the current status of EKS "Managed Node Group".
 	Status string `json:"status" read-only:"true"`

@@ -10,7 +10,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
+	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -22,15 +25,87 @@ import (
 	"github.com/aws/aws-sdk-go/service/sts"
 	"go.uber.org/zap"
 	"golang.org/x/oauth2"
+	apps_v1 "k8s.io/api/apps/v1"
+	apps_v1beta1 "k8s.io/api/apps/v1beta1"
+	apps_v1beta2 "k8s.io/api/apps/v1beta2"
+	v1 "k8s.io/api/core/v1"
+	extensions_v1beta1 "k8s.io/api/extensions/v1beta1"
+	networking_v1 "k8s.io/api/networking/v1"
+	policy_v1beta1 "k8s.io/api/policy/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/kubernetes"
-	clientset "k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/utils/exec"
+	"sigs.k8s.io/yaml"
 )
+
+// EKS defines EKS client operations.
+type EKS interface {
+	// KubernetesClientSet returns a new kubernetes client set.
+	KubernetesClientSet() *kubernetes.Clientset
+
+	// CheckEKSHealth checks the EKS health.
+	CheckHealth() error
+
+	// FetchServerVersion fetches the version from kube-apiserver.
+	//
+	// e.g.
+	//
+	//	{
+	//		"major": "1",
+	//		"minor": "16+",
+	//		"gitVersion": "v1.16.8-eks-e16311",
+	//		"gitCommit": "e163110a04dcb2f39c3325af96d019b4925419eb",
+	//		"gitTreeState": "clean",
+	//		"buildDate": "2020-03-27T22:37:12Z",
+	//		"goVersion": "go1.13.8",
+	//		"compiler": "gc",
+	//		"platform": "linux/amd64"
+	//	}
+	//
+	FetchServerVersion() (ServerVersionInfo, error)
+
+	// FetchSupportedAPIGroupVersions fetches all supported API group resources.
+	// ref. https://github.com/kubernetes/kubernetes/tree/master/staging/src/k8s.io/kubectl/pkg/cmd/apiresources
+	FetchSupportedAPIGroupVersions() (float64, map[string]struct{}, error)
+
+	// ListNamespaces returns the list of existing namespace names.
+	ListNamespaces(limit int64, interval time.Duration) ([]v1.Namespace, error)
+	// ListNodes returns the list of existing nodes.
+	ListNodes(limit int64, interval time.Duration) ([]v1.Node, error)
+
+	// ListPods returns the list of existing namespace names.
+	ListPods(namespace string, limit int64, interval time.Duration) ([]v1.Pod, error)
+
+	ListAppsV1Deployments(namespace string, limit int64, interval time.Duration) (ss []apps_v1.Deployment, err error)
+	ListAppsV1StatefulSets(namespace string, limit int64, interval time.Duration) (ss []apps_v1.StatefulSet, err error)
+	ListAppsV1DaemonSets(namespace string, limit int64, interval time.Duration) (ss []apps_v1.DaemonSet, err error)
+	ListAppsV1ReplicaSets(namespace string, limit int64, interval time.Duration) (ss []apps_v1.ReplicaSet, err error)
+	ListNetworkingV1NetworkPolicies(namespace string, limit int64, interval time.Duration) (ss []networking_v1.NetworkPolicy, err error)
+	ListPolicyV1beta1PodSecurityPolicies(limit int64, interval time.Duration) (ss []policy_v1beta1.PodSecurityPolicy, err error)
+
+	ListAppsV1beta1Deployments(namespace string, limit int64, interval time.Duration) (ss []apps_v1beta1.Deployment, err error)
+	ListAppsV1beta1StatefulSets(namespace string, limit int64, interval time.Duration) (ss []apps_v1beta1.StatefulSet, err error)
+	ListAppsV1beta2Deployments(namespace string, limit int64, interval time.Duration) (ss []apps_v1beta2.Deployment, err error)
+	ListAppsV1beta2StatefulSets(namespace string, limit int64, interval time.Duration) (ss []apps_v1beta2.StatefulSet, err error)
+	ListExtensionsV1beta1DaemonSets(namespace string, limit int64, interval time.Duration) (ss []extensions_v1beta1.DaemonSet, err error)
+	ListExtensionsV1beta1Deployments(namespace string, limit int64, interval time.Duration) (ss []extensions_v1beta1.Deployment, err error)
+	ListExtensionsV1beta1ReplicaSets(namespace string, limit int64, interval time.Duration) (ss []extensions_v1beta1.ReplicaSet, err error)
+	ListExtensionsV1beta1NetworkPolicies(namespace string, limit int64, interval time.Duration) (ss []extensions_v1beta1.NetworkPolicy, err error)
+	ListExtensionsV1beta1PodSecurityPolicies(limit int64, interval time.Duration) (ss []extensions_v1beta1.PodSecurityPolicy, err error)
+
+	// GetObject get object type and object metadata using kubectl.
+	// The internal API group version is not exposed,
+	// thus kubectl converts API version internally.
+	// ref. https://github.com/kubernetes/kubernetes/issues/58131#issuecomment-403829566
+	GetObject(namespace string, kind string, name string) (obj Object, d []byte, err error)
+
+	// Deprecate checks deprecated API groups based on the current kube-apiserver version.
+	Deprecate() error
+}
 
 // EKSConfig defines EKS client configuration.
 type EKSConfig struct {
@@ -77,33 +152,34 @@ type EKSConfig struct {
 	ServerVersion string
 
 	EncryptionEnabled bool
+
+	// ListBatch is non-zero to configure list batch limit.
+	ListBatch int64
+	// ListInterval is the wait interval between batched list operations.
+	ListInterval time.Duration
+	// EnablePrompt is true to enable interactive mode.
+	EnablePrompt bool
+	// Dir is the directory to store all upgrade/rollback files.
+	Dir string
 }
 
-// EKS defines EKS client operations.
-type EKS interface {
-	// KubernetesClientSet returns a new kubernetes client set.
-	KubernetesClientSet() *kubernetes.Clientset
+// Object contains all object metadata.
+type Object struct {
+	// Kind is a string value representing the REST resource this object represents.
+	// Servers may infer this from the endpoint the client submits requests to.
+	// Cannot be updated.
+	// In CamelCase.
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+	// ref. metav1.TypeMeta
+	Kind string `json:"kind"`
+	// APIVersion defines the versioned schema of this representation of an object.
+	// Servers should convert recognized schemas to the latest internal value, and
+	// may reject unrecognized values.
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+	// ref. metav1.TypeMeta
+	APIVersion string `json:"apiVersion"`
 
-	// CheckEKSHealth checks the EKS health.
-	CheckHealth() error
-
-	// FetchVersion fetches the version from kube-apiserver.
-	//
-	// e.g.
-	//
-	//	{
-	//		"major": "1",
-	//		"minor": "16+",
-	//		"gitVersion": "v1.16.8-eks-e16311",
-	//		"gitCommit": "e163110a04dcb2f39c3325af96d019b4925419eb",
-	//		"gitTreeState": "clean",
-	//		"buildDate": "2020-03-27T22:37:12Z",
-	//		"goVersion": "go1.13.8",
-	//		"compiler": "gc",
-	//		"platform": "linux/amd64"
-	//	}
-	//
-	FetchVersion() (version.Info, error)
+	ObjectMeta metav1.ObjectMeta `json:"metadata"`
 }
 
 type eks struct {
@@ -112,18 +188,23 @@ type eks struct {
 	mu  sync.Mutex
 }
 
+// ServerVersionInfo is the server version info from kube-apiserver
+type ServerVersionInfo struct {
+	version.Info
+	VersionValue float64 `json:"version-value"`
+}
+
+func (sv ServerVersionInfo) String() string {
+	d, err := json.Marshal(sv)
+	if err != nil {
+		return sv.GitVersion
+	}
+	return string(d)
+}
+
 // KubernetesClientSet returns a new kubernetes client set.
 func (e *eks) KubernetesClientSet() *kubernetes.Clientset {
 	return e.cli
-}
-
-// CheckHealth checks the EKS health.
-func (e *eks) CheckHealth() error {
-	// allow only one health check at a time
-	e.mu.Lock()
-	err := e.checkHealth()
-	e.mu.Unlock()
-	return err
 }
 
 // NewEKS returns a new EKS client.
@@ -238,12 +319,23 @@ func NewEKS(cfg *EKSConfig) (EKS, error) {
 	}
 
 	ek := &eks{cfg: cfg}
-	ek.cli, err = clientset.NewForConfig(kcfg)
+	ek.cli, err = kubernetes.NewForConfig(kcfg)
 	if err != nil {
 		cfg.Logger.Warn("failed to create k8s client", zap.Error(err))
 		return nil, err
 	}
 	cfg.Logger.Info("created k8s client", zap.Float32("qps", kcfg.QPS), zap.Int("burst", kcfg.Burst))
+
+	if cfg.Dir == "" {
+		cfg.Dir, err = ioutil.TempDir(os.TempDir(), "eks-dir")
+		if err != nil {
+			return nil, err
+		}
+	}
+	if err = os.MkdirAll(cfg.Dir, 0700); err != nil {
+		return nil, err
+	}
+	cfg.Logger.Info("created dir", zap.String("dir", cfg.Dir))
 
 	return ek, nil
 }
@@ -347,6 +439,15 @@ func (s *eksTokenSource) Token() (*oauth2.Token, error) {
 	}, nil
 }
 
+// CheckHealth checks the EKS health.
+func (e *eks) CheckHealth() error {
+	// allow only one health check at a time
+	e.mu.Lock()
+	err := e.checkHealth()
+	e.mu.Unlock()
+	return err
+}
+
 func (e *eks) checkHealth() error {
 	if e.cfg == nil {
 		return errors.New("nil EKSConfig")
@@ -379,22 +480,22 @@ func (e *eks) checkHealth() error {
 		"version",
 	).CombinedOutput()
 	cancel()
-	out := string(output)
+	out := strings.TrimSpace(string(output))
 	if err != nil {
 		return fmt.Errorf("'kubectl version' failed %v (output %q)", err, out)
 	}
-	fmt.Printf("\n\"kubectl version\" output:\n%s\n", out)
+	fmt.Printf("\n\"kubectl version\" output:\n%s\n\n", out)
 
 	ep := e.cfg.ClusterAPIServerEndpoint + "/version"
 	buf := bytes.NewBuffer(nil)
 	if err = httpReadInsecure(e.cfg.Logger, ep, buf); err != nil {
 		return err
 	}
-	out = buf.String()
+	out = strings.TrimSpace(buf.String())
 	if e.cfg.ServerVersion != "" && !strings.Contains(out, fmt.Sprintf(`"gitVersion": "v%s`, e.cfg.ServerVersion)) {
 		return fmt.Errorf("%q does not contain version %q", out, e.cfg.ServerVersion)
 	}
-	fmt.Printf("\n\n\"%s\" output:\n%s\n", ep, out)
+	fmt.Printf("\n\n\"%s\" output:\n%s\n\n", ep, out)
 
 	ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 	output, err = exec.New().CommandContext(
@@ -404,14 +505,14 @@ func (e *eks) checkHealth() error {
 		"cluster-info",
 	).CombinedOutput()
 	cancel()
-	out = string(output)
+	out = strings.TrimSpace(string(output))
 	if err != nil {
 		return fmt.Errorf("'kubectl cluster-info' failed %v (output %q)", err, out)
 	}
 	if !strings.Contains(out, "is running at") {
 		return fmt.Errorf("'kubectl cluster-info' not ready (output %q)", out)
 	}
-	fmt.Printf("\n\"kubectl cluster-info\" output:\n%s\n", out)
+	fmt.Printf("\n\"kubectl cluster-info\" output:\n%s\n\n", out)
 
 	ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 	output, err = exec.New().CommandContext(
@@ -422,18 +523,18 @@ func (e *eks) checkHealth() error {
 		"cs",
 	).CombinedOutput()
 	cancel()
-	out = string(output)
+	out = strings.TrimSpace(string(output))
 	if err != nil {
 		return fmt.Errorf("'kubectl get cs' failed %v (output %q)", err, out)
 	}
-	fmt.Printf("\n\"kubectl get cs\" output:\n%s\n", out)
+	fmt.Printf("\n\"kubectl get cs\" output:\n%s\n\n", out)
 
 	ep = e.cfg.ClusterAPIServerEndpoint + "/healthz?verbose"
 	buf.Reset()
 	if err := httpReadInsecure(e.cfg.Logger, ep, buf); err != nil {
 		return err
 	}
-	out = buf.String()
+	out = strings.TrimSpace(buf.String())
 	if !strings.Contains(out, "healthz check passed") {
 		return fmt.Errorf("%q does not contain 'healthz check passed'", out)
 	}
@@ -449,7 +550,7 @@ func (e *eks) checkHealth() error {
 		"all",
 	).CombinedOutput()
 	cancel()
-	out = string(output)
+	out = strings.TrimSpace(string(output))
 	if err != nil {
 		return fmt.Errorf("'kubectl get all -n=kube-system' failed %v (output %q)", err, out)
 	}
@@ -475,11 +576,11 @@ func (e *eks) checkHealth() error {
 		"--namespace=kube-system",
 	).CombinedOutput()
 	cancel()
-	out = string(output)
+	out = strings.TrimSpace(string(output))
 	if err != nil {
 		return fmt.Errorf("'kubectl get configmaps --namespace=kube-system' failed %v (output %q)", err, out)
 	}
-	fmt.Printf("\n\"kubectl get configmaps --namespace=kube-system\" output:\n%s\n", out)
+	fmt.Printf("\n\"kubectl get configmaps --namespace=kube-system\" output:\n%s\n\n", out)
 
 	ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 	output, err = exec.New().CommandContext(
@@ -490,11 +591,27 @@ func (e *eks) checkHealth() error {
 		"namespaces",
 	).CombinedOutput()
 	cancel()
-	out = string(output)
+	out = strings.TrimSpace(string(output))
 	if err != nil {
 		return fmt.Errorf("'kubectl get namespaces' failed %v (output %q)", err, out)
 	}
-	fmt.Printf("\n\"kubectl get namespaces\" output:\n%s\n", out)
+	fmt.Printf("\n\"kubectl get namespaces\" output:\n%s\n\n", out)
+
+	ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
+	output, err = exec.New().CommandContext(
+		ctx,
+		e.cfg.KubectlPath,
+		"--kubeconfig="+e.cfg.KubeConfigPath,
+		"get",
+		"nodes",
+		"-o=wide",
+	).CombinedOutput()
+	cancel()
+	out = strings.TrimSpace(string(output))
+	if err != nil {
+		return fmt.Errorf("'kubectl get nodes -o=wide' failed %v (output %q)", err, out)
+	}
+	fmt.Printf("\n\"kubectl get nodes -o=wide\" output:\n%s\n\n", out)
 
 	fmt.Printf("\n\"curl -sL http://localhost:8080/metrics | grep storage_\" output:\n")
 	output, err = e.cli.
@@ -559,7 +676,7 @@ func (e *eks) checkHealth() error {
 	return nil
 }
 
-// FetchVersion fetches the version from kube-apiserver.
+// FetchServerVersion fetches the version from kube-apiserver.
 //
 // e.g.
 //
@@ -575,21 +692,43 @@ func (e *eks) checkHealth() error {
 //		"platform": "linux/amd64"
 //	}
 //
-func (e *eks) FetchVersion() (version.Info, error) {
+func (e *eks) FetchServerVersion() (ServerVersionInfo, error) {
+	// allow only one version check at a time
+	e.mu.Lock()
+	ver, err := e.fetchServerVersion()
+	e.mu.Unlock()
+	return ver, err
+}
+
+func (e *eks) fetchServerVersion() (ServerVersionInfo, error) {
 	ep := e.cfg.ClusterAPIServerEndpoint + "/version"
 	e.cfg.Logger.Info("fetching version", zap.String("url", ep))
 	buf := bytes.NewBuffer(nil)
 	if err := httpReadInsecure(e.cfg.Logger, ep, buf); err != nil {
-		return version.Info{}, nil
+		return ServerVersionInfo{}, nil
 	}
-	var ver version.Info
-	err := json.NewDecoder(buf).Decode(&ver)
+	return parseVersion(e.cfg.Logger, buf)
+}
+
+var regex = regexp.MustCompile("[^0-9]+")
+
+func parseVersion(lg *zap.Logger, rd io.Reader) (ServerVersionInfo, error) {
+	var ver ServerVersionInfo
+	err := json.NewDecoder(rd).Decode(&ver)
 	if err != nil {
-		e.cfg.Logger.Warn("failed to fetch version", zap.Error(err))
-	} else {
-		e.cfg.Logger.Info("fetched version", zap.String("version", fmt.Sprintf("%+v", ver)))
+		lg.Warn("failed to fetch version", zap.Error(err))
+		return ServerVersionInfo{}, err
 	}
-	return ver, err
+	ver.VersionValue, _ = strconv.ParseFloat(ver.Major, 64)
+	fv, err := strconv.ParseFloat(regex.ReplaceAllString(ver.Minor, ""), 64)
+	if err != nil {
+		lg.Warn("failed to parse version", zap.String("ver", fmt.Sprintf("%+v", ver)), zap.Error(err))
+		return ServerVersionInfo{}, err
+	}
+	ver.VersionValue += (fv * 0.01)
+
+	lg.Info("fetched version", zap.String("version", fmt.Sprintf("%+v", ver)))
+	return ver, nil
 }
 
 // curl -k [URL]
@@ -620,4 +759,772 @@ func httpReadInsecure(lg *zap.Logger, u string, wr io.Writer) error {
 		)
 	}
 	return err
+}
+
+func (e *eks) FetchSupportedAPIGroupVersions() (float64, map[string]struct{}, error) {
+	e.mu.Lock()
+	vv, m, err := e.fetchSupportedAPIGroupVersions()
+	e.mu.Unlock()
+	return vv, m, err
+}
+
+func (e *eks) fetchSupportedAPIGroupVersions() (float64, map[string]struct{}, error) {
+	if e.cli == nil {
+		return 0.0, nil, errors.New("nil client")
+	}
+	ver, err := e.fetchServerVersion()
+	if err != nil {
+		return 0.0, nil, fmt.Errorf("failed to check api-resources because version check failed (%v)", err)
+	}
+	vv := ver.VersionValue
+
+	dc := e.cli.Discovery()
+
+	e.cfg.Logger.Info("listing supported api-resources from kube-apiserver", zap.Float64("version-value", vv))
+	groupList, err := dc.ServerGroups() // returns the supported groups
+	if err != nil {
+		return vv, nil, fmt.Errorf("failed to get server groups (%v)", err)
+	}
+	apiVersions := metav1.ExtractGroupVersions(groupList)
+
+	m := make(map[string]struct{})
+	for _, k := range apiVersions {
+		m[k] = struct{}{}
+	}
+	return vv, m, nil
+}
+
+func (e *eks) ListNamespaces(limit int64, interval time.Duration) ([]v1.Namespace, error) {
+	e.mu.Lock()
+	ns, err := e.listNamespaces(limit, interval)
+	e.mu.Unlock()
+	return ns, err
+}
+
+func (e *eks) listNamespaces(limit int64, interval time.Duration) (ns []v1.Namespace, err error) {
+	rs := &v1.NamespaceList{ListMeta: metav1.ListMeta{Continue: ""}}
+	for {
+		rs, err = e.cli.CoreV1().
+			Namespaces().
+			List(metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		if err != nil {
+			return nil, err
+		}
+		ns = append(ns, rs.Items...)
+		remained := int64Value(rs.RemainingItemCount)
+		e.cfg.Logger.Info("listing namespace",
+			zap.Int64("limit", limit),
+			zap.Int64("remained", remained),
+			zap.String("continue", rs.Continue),
+			zap.Duration("interval", interval),
+			zap.Int("items", len(rs.Items)),
+		)
+		if rs.Continue == "" {
+			break
+		}
+		time.Sleep(interval)
+	}
+	return ns, err
+}
+
+func (e *eks) ListNodes(limit int64, interval time.Duration) ([]v1.Node, error) {
+	e.mu.Lock()
+	ns, err := e.listNodes(limit, interval)
+	e.mu.Unlock()
+	return ns, err
+}
+
+func (e *eks) listNodes(limit int64, interval time.Duration) (nodes []v1.Node, err error) {
+	rs := &v1.NodeList{ListMeta: metav1.ListMeta{Continue: ""}}
+	for {
+		rs, err = e.cli.CoreV1().
+			Nodes().
+			List(metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		if err != nil {
+			return nil, err
+		}
+		nodes = append(nodes, rs.Items...)
+		remained := int64Value(rs.RemainingItemCount)
+		e.cfg.Logger.Info("listing nodes",
+			zap.Int64("limit", limit),
+			zap.Int64("remained", remained),
+			zap.String("continue", rs.Continue),
+			zap.Duration("interval", interval),
+			zap.Int("items", len(rs.Items)),
+		)
+		if rs.Continue == "" {
+			break
+		}
+		time.Sleep(interval)
+	}
+	return nodes, err
+}
+
+func (e *eks) ListPods(namespace string, limit int64, interval time.Duration) ([]v1.Pod, error) {
+	e.mu.Lock()
+	ns, err := e.listPods(namespace, limit, interval)
+	e.mu.Unlock()
+	return ns, err
+}
+
+func (e *eks) listPods(namespace string, limit int64, interval time.Duration) (pods []v1.Pod, err error) {
+	rs := &v1.PodList{ListMeta: metav1.ListMeta{Continue: ""}}
+	for {
+		rs, err = e.cli.CoreV1().
+			Pods(namespace).
+			List(metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		if err != nil {
+			return nil, err
+		}
+		pods = append(pods, rs.Items...)
+		remained := int64Value(rs.RemainingItemCount)
+		e.cfg.Logger.Info("listing pods",
+			zap.String("namespace", namespace),
+			zap.Int64("limit", limit),
+			zap.Int64("remained", remained),
+			zap.String("continue", rs.Continue),
+			zap.Duration("interval", interval),
+			zap.Int("items", len(rs.Items)),
+		)
+		if rs.Continue == "" {
+			break
+		}
+		time.Sleep(interval)
+	}
+	return pods, err
+}
+
+func (e *eks) ListAppsV1Deployments(namespace string, limit int64, interval time.Duration) (ss []apps_v1.Deployment, err error) {
+	rs := &apps_v1.DeploymentList{ListMeta: metav1.ListMeta{Continue: ""}}
+	for {
+		rs, err = e.cli.AppsV1().
+			Deployments(namespace).
+			List(metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		if err != nil {
+			return nil, err
+		}
+		ss = append(ss, rs.Items...)
+		remained := int64Value(rs.RemainingItemCount)
+		e.cfg.Logger.Info("listing deployments apps/v1",
+			zap.String("namespace", namespace),
+			zap.Int64("limit", limit),
+			zap.Int64("remained", remained),
+			zap.String("continue", rs.Continue),
+			zap.Duration("interval", interval),
+			zap.Int("items", len(rs.Items)),
+		)
+		if rs.Continue == "" {
+			break
+		}
+		time.Sleep(interval)
+	}
+	for i := range ss {
+		if ss[i].TypeMeta.APIVersion == "" {
+			ss[i].TypeMeta.APIVersion = "apps/v1"
+		}
+		if ss[i].TypeMeta.Kind == "" {
+			ss[i].TypeMeta.Kind = "Deployment"
+		}
+		if ss[i].ObjectMeta.Namespace == "" {
+			ss[i].ObjectMeta.Namespace = namespace
+		}
+	}
+	return ss, err
+}
+
+func (e *eks) ListAppsV1StatefulSets(namespace string, limit int64, interval time.Duration) (ss []apps_v1.StatefulSet, err error) {
+	rs := &apps_v1.StatefulSetList{ListMeta: metav1.ListMeta{Continue: ""}}
+	for {
+		rs, err = e.cli.AppsV1().
+			StatefulSets(namespace).
+			List(metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		if err != nil {
+			return nil, err
+		}
+		ss = append(ss, rs.Items...)
+		remained := int64Value(rs.RemainingItemCount)
+		e.cfg.Logger.Info("listing statefulsets apps/v1",
+			zap.String("namespace", namespace),
+			zap.Int64("limit", limit),
+			zap.Int64("remained", remained),
+			zap.String("continue", rs.Continue),
+			zap.Duration("interval", interval),
+			zap.Int("items", len(rs.Items)),
+		)
+		if rs.Continue == "" {
+			break
+		}
+		time.Sleep(interval)
+	}
+	for i := range ss {
+		if ss[i].TypeMeta.APIVersion == "" {
+			ss[i].TypeMeta.APIVersion = "apps/v1"
+		}
+		if ss[i].TypeMeta.Kind == "" {
+			ss[i].TypeMeta.Kind = "StatefulSet"
+		}
+		if ss[i].ObjectMeta.Namespace == "" {
+			ss[i].ObjectMeta.Namespace = namespace
+		}
+	}
+	return ss, err
+}
+
+func (e *eks) ListAppsV1DaemonSets(namespace string, limit int64, interval time.Duration) (ss []apps_v1.DaemonSet, err error) {
+	rs := &apps_v1.DaemonSetList{ListMeta: metav1.ListMeta{Continue: ""}}
+	for {
+		rs, err = e.cli.AppsV1().
+			DaemonSets(namespace).
+			List(metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		if err != nil {
+			return nil, err
+		}
+		ss = append(ss, rs.Items...)
+		remained := int64Value(rs.RemainingItemCount)
+		e.cfg.Logger.Info("listing daemonsets apps/v1",
+			zap.String("namespace", namespace),
+			zap.Int64("limit", limit),
+			zap.Int64("remained", remained),
+			zap.String("continue", rs.Continue),
+			zap.Duration("interval", interval),
+			zap.Int("items", len(rs.Items)),
+		)
+		if rs.Continue == "" {
+			break
+		}
+		time.Sleep(interval)
+	}
+	for i := range ss {
+		if ss[i].TypeMeta.APIVersion == "" {
+			ss[i].TypeMeta.APIVersion = "apps/v1"
+		}
+		if ss[i].TypeMeta.Kind == "" {
+			ss[i].TypeMeta.Kind = "DaemonSet"
+		}
+		if ss[i].ObjectMeta.Namespace == "" {
+			ss[i].ObjectMeta.Namespace = namespace
+		}
+	}
+	return ss, err
+}
+
+func (e *eks) ListAppsV1ReplicaSets(namespace string, limit int64, interval time.Duration) (ss []apps_v1.ReplicaSet, err error) {
+	rs := &apps_v1.ReplicaSetList{ListMeta: metav1.ListMeta{Continue: ""}}
+	for {
+		rs, err = e.cli.AppsV1().
+			ReplicaSets(namespace).
+			List(metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		if err != nil {
+			return nil, err
+		}
+		ss = append(ss, rs.Items...)
+		remained := int64Value(rs.RemainingItemCount)
+		e.cfg.Logger.Info("listing replicasets apps/v1",
+			zap.String("namespace", namespace),
+			zap.Int64("limit", limit),
+			zap.Int64("remained", remained),
+			zap.String("continue", rs.Continue),
+			zap.Duration("interval", interval),
+			zap.Int("items", len(rs.Items)),
+		)
+		if rs.Continue == "" {
+			break
+		}
+		time.Sleep(interval)
+	}
+	for i := range ss {
+		if ss[i].TypeMeta.APIVersion == "" {
+			ss[i].TypeMeta.APIVersion = "apps/v1"
+		}
+		if ss[i].TypeMeta.Kind == "" {
+			ss[i].TypeMeta.Kind = "ReplicaSet"
+		}
+		if ss[i].ObjectMeta.Namespace == "" {
+			ss[i].ObjectMeta.Namespace = namespace
+		}
+	}
+	return ss, err
+}
+
+func (e *eks) ListNetworkingV1NetworkPolicies(namespace string, limit int64, interval time.Duration) (ss []networking_v1.NetworkPolicy, err error) {
+	rs := &networking_v1.NetworkPolicyList{ListMeta: metav1.ListMeta{Continue: ""}}
+	for {
+		rs, err = e.cli.NetworkingV1().
+			NetworkPolicies(namespace).
+			List(metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		if err != nil {
+			return nil, err
+		}
+		ss = append(ss, rs.Items...)
+		remained := int64Value(rs.RemainingItemCount)
+		e.cfg.Logger.Info("listing networkpolicies networking.k8s.io/v1",
+			zap.String("namespace", namespace),
+			zap.Int64("limit", limit),
+			zap.Int64("remained", remained),
+			zap.String("continue", rs.Continue),
+			zap.Duration("interval", interval),
+			zap.Int("items", len(rs.Items)),
+		)
+		if rs.Continue == "" {
+			break
+		}
+		time.Sleep(interval)
+	}
+	for i := range ss {
+		if ss[i].TypeMeta.APIVersion == "" {
+			ss[i].TypeMeta.APIVersion = "networking.k8s.io/v1"
+		}
+		if ss[i].TypeMeta.Kind == "" {
+			ss[i].TypeMeta.Kind = "NetworkPolicy"
+		}
+		if ss[i].ObjectMeta.Namespace == "" {
+			ss[i].ObjectMeta.Namespace = namespace
+		}
+	}
+	return ss, err
+}
+
+func (e *eks) ListPolicyV1beta1PodSecurityPolicies(limit int64, interval time.Duration) (ss []policy_v1beta1.PodSecurityPolicy, err error) {
+	rs := &policy_v1beta1.PodSecurityPolicyList{ListMeta: metav1.ListMeta{Continue: ""}}
+	for {
+		rs, err = e.cli.PolicyV1beta1().
+			PodSecurityPolicies().
+			List(metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		if err != nil {
+			return nil, err
+		}
+		ss = append(ss, rs.Items...)
+		remained := int64Value(rs.RemainingItemCount)
+		e.cfg.Logger.Info("listing podsecuritypolicies policy/v1beta1",
+			zap.Int64("limit", limit),
+			zap.Int64("remained", remained),
+			zap.String("continue", rs.Continue),
+			zap.Duration("interval", interval),
+			zap.Int("items", len(rs.Items)),
+		)
+		if rs.Continue == "" {
+			break
+		}
+		time.Sleep(interval)
+	}
+	for i := range ss {
+		if ss[i].TypeMeta.APIVersion == "" {
+			ss[i].TypeMeta.APIVersion = "policy/v1beta1"
+		}
+		if ss[i].TypeMeta.Kind == "" {
+			ss[i].TypeMeta.Kind = "PodSecurityPolicy"
+		}
+	}
+	return ss, err
+}
+
+func (e *eks) ListAppsV1beta1Deployments(namespace string, limit int64, interval time.Duration) (ss []apps_v1beta1.Deployment, err error) {
+	rs := &apps_v1beta1.DeploymentList{ListMeta: metav1.ListMeta{Continue: ""}}
+	for {
+		rs, err = e.cli.AppsV1beta1().
+			Deployments(namespace).
+			List(metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		if err != nil {
+			return nil, err
+		}
+		ss = append(ss, rs.Items...)
+		remained := int64Value(rs.RemainingItemCount)
+		e.cfg.Logger.Info("listing deployments apps/v1beta1",
+			zap.String("namespace", namespace),
+			zap.Int64("limit", limit),
+			zap.Int64("remained", remained),
+			zap.String("continue", rs.Continue),
+			zap.Duration("interval", interval),
+			zap.Int("items", len(rs.Items)),
+		)
+		if rs.Continue == "" {
+			break
+		}
+		time.Sleep(interval)
+	}
+	for i := range ss {
+		if ss[i].TypeMeta.APIVersion == "" {
+			ss[i].TypeMeta.APIVersion = "apps/v1beta1"
+		}
+		if ss[i].TypeMeta.Kind == "" {
+			ss[i].TypeMeta.Kind = "Deployment"
+		}
+		if ss[i].ObjectMeta.Namespace == "" {
+			ss[i].ObjectMeta.Namespace = namespace
+		}
+	}
+	return ss, err
+}
+
+func (e *eks) ListAppsV1beta1StatefulSets(namespace string, limit int64, interval time.Duration) (ss []apps_v1beta1.StatefulSet, err error) {
+	rs := &apps_v1beta1.StatefulSetList{ListMeta: metav1.ListMeta{Continue: ""}}
+	for {
+		rs, err = e.cli.AppsV1beta1().
+			StatefulSets(namespace).
+			List(metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		if err != nil {
+			return nil, err
+		}
+		ss = append(ss, rs.Items...)
+		remained := int64Value(rs.RemainingItemCount)
+		e.cfg.Logger.Info("listing statefulsets apps/v1beta1",
+			zap.String("namespace", namespace),
+			zap.Int64("limit", limit),
+			zap.Int64("remained", remained),
+			zap.String("continue", rs.Continue),
+			zap.Duration("interval", interval),
+			zap.Int("items", len(rs.Items)),
+		)
+		if rs.Continue == "" {
+			break
+		}
+		time.Sleep(interval)
+	}
+	for i := range ss {
+		if ss[i].TypeMeta.APIVersion == "" {
+			ss[i].TypeMeta.APIVersion = "apps/v1beta1"
+		}
+		if ss[i].TypeMeta.Kind == "" {
+			ss[i].TypeMeta.Kind = "StatefulSet"
+		}
+		if ss[i].ObjectMeta.Namespace == "" {
+			ss[i].ObjectMeta.Namespace = namespace
+		}
+	}
+	return ss, err
+}
+
+func (e *eks) ListAppsV1beta2Deployments(namespace string, limit int64, interval time.Duration) (ss []apps_v1beta2.Deployment, err error) {
+	rs := &apps_v1beta2.DeploymentList{ListMeta: metav1.ListMeta{Continue: ""}}
+	for {
+		rs, err = e.cli.AppsV1beta2().
+			Deployments(namespace).
+			List(metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		if err != nil {
+			return nil, err
+		}
+		ss = append(ss, rs.Items...)
+		remained := int64Value(rs.RemainingItemCount)
+		e.cfg.Logger.Info("listing deployments apps/v1beta2",
+			zap.String("namespace", namespace),
+			zap.Int64("limit", limit),
+			zap.Int64("remained", remained),
+			zap.String("continue", rs.Continue),
+			zap.Duration("interval", interval),
+			zap.Int("items", len(rs.Items)),
+		)
+		if rs.Continue == "" {
+			break
+		}
+		time.Sleep(interval)
+	}
+	for i := range ss {
+		if ss[i].TypeMeta.APIVersion == "" {
+			ss[i].TypeMeta.APIVersion = "apps/v1beta2"
+		}
+		if ss[i].TypeMeta.Kind == "" {
+			ss[i].TypeMeta.Kind = "Deployment"
+		}
+		if ss[i].ObjectMeta.Namespace == "" {
+			ss[i].ObjectMeta.Namespace = namespace
+		}
+	}
+	return ss, err
+}
+
+func (e *eks) ListAppsV1beta2StatefulSets(namespace string, limit int64, interval time.Duration) (ss []apps_v1beta2.StatefulSet, err error) {
+	rs := &apps_v1beta2.StatefulSetList{ListMeta: metav1.ListMeta{Continue: ""}}
+	for {
+		rs, err = e.cli.AppsV1beta2().
+			StatefulSets(namespace).
+			List(metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		if err != nil {
+			return nil, err
+		}
+		ss = append(ss, rs.Items...)
+		remained := int64Value(rs.RemainingItemCount)
+		e.cfg.Logger.Info("listing statefulsets apps/v1beta2",
+			zap.String("namespace", namespace),
+			zap.Int64("limit", limit),
+			zap.Int64("remained", remained),
+			zap.String("continue", rs.Continue),
+			zap.Duration("interval", interval),
+			zap.Int("items", len(rs.Items)),
+		)
+		if rs.Continue == "" {
+			break
+		}
+		time.Sleep(interval)
+	}
+	for i := range ss {
+		if ss[i].TypeMeta.APIVersion == "" {
+			ss[i].TypeMeta.APIVersion = "apps/v1beta2"
+		}
+		if ss[i].TypeMeta.Kind == "" {
+			ss[i].TypeMeta.Kind = "StatefulSet"
+		}
+		if ss[i].ObjectMeta.Namespace == "" {
+			ss[i].ObjectMeta.Namespace = namespace
+		}
+	}
+	return ss, err
+}
+
+func (e *eks) ListExtensionsV1beta1DaemonSets(namespace string, limit int64, interval time.Duration) (ss []extensions_v1beta1.DaemonSet, err error) {
+	rs := &extensions_v1beta1.DaemonSetList{ListMeta: metav1.ListMeta{Continue: ""}}
+	for {
+		rs, err = e.cli.ExtensionsV1beta1().
+			DaemonSets(namespace).
+			List(metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		if err != nil {
+			return nil, err
+		}
+		ss = append(ss, rs.Items...)
+		remained := int64Value(rs.RemainingItemCount)
+		e.cfg.Logger.Info("listing daemonsets extensions/v1beta1",
+			zap.String("namespace", namespace),
+			zap.Int64("limit", limit),
+			zap.Int64("remained", remained),
+			zap.String("continue", rs.Continue),
+			zap.Duration("interval", interval),
+			zap.Int("items", len(rs.Items)),
+		)
+		if rs.Continue == "" {
+			break
+		}
+		time.Sleep(interval)
+	}
+	for i := range ss {
+		if ss[i].TypeMeta.APIVersion == "" {
+			ss[i].TypeMeta.APIVersion = "extensions/v1beta1"
+		}
+		if ss[i].TypeMeta.Kind == "" {
+			ss[i].TypeMeta.Kind = "DaemonSet"
+		}
+		if ss[i].ObjectMeta.Namespace == "" {
+			ss[i].ObjectMeta.Namespace = namespace
+		}
+	}
+	return ss, err
+}
+
+func (e *eks) ListExtensionsV1beta1Deployments(namespace string, limit int64, interval time.Duration) (ss []extensions_v1beta1.Deployment, err error) {
+	rs := &extensions_v1beta1.DeploymentList{ListMeta: metav1.ListMeta{Continue: ""}}
+	for {
+		rs, err = e.cli.ExtensionsV1beta1().
+			Deployments(namespace).
+			List(metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		if err != nil {
+			return nil, err
+		}
+		ss = append(ss, rs.Items...)
+		remained := int64Value(rs.RemainingItemCount)
+		e.cfg.Logger.Info("listing deployments extensions/v1beta1",
+			zap.String("namespace", namespace),
+			zap.Int64("limit", limit),
+			zap.Int64("remained", remained),
+			zap.String("continue", rs.Continue),
+			zap.Duration("interval", interval),
+			zap.Int("items", len(rs.Items)),
+		)
+		if rs.Continue == "" {
+			break
+		}
+		time.Sleep(interval)
+	}
+	for i := range ss {
+		if ss[i].TypeMeta.APIVersion == "" {
+			ss[i].TypeMeta.APIVersion = "extensions/v1beta1"
+		}
+		if ss[i].TypeMeta.Kind == "" {
+			ss[i].TypeMeta.Kind = "Deployment"
+		}
+		if ss[i].ObjectMeta.Namespace == "" {
+			ss[i].ObjectMeta.Namespace = namespace
+		}
+	}
+	return ss, err
+}
+
+func (e *eks) ListExtensionsV1beta1ReplicaSets(namespace string, limit int64, interval time.Duration) (ss []extensions_v1beta1.ReplicaSet, err error) {
+	rs := &extensions_v1beta1.ReplicaSetList{ListMeta: metav1.ListMeta{Continue: ""}}
+	for {
+		rs, err = e.cli.ExtensionsV1beta1().
+			ReplicaSets(namespace).
+			List(metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		if err != nil {
+			return nil, err
+		}
+		ss = append(ss, rs.Items...)
+		remained := int64Value(rs.RemainingItemCount)
+		e.cfg.Logger.Info("listing replicasets extensions/v1beta1",
+			zap.String("namespace", namespace),
+			zap.Int64("limit", limit),
+			zap.Int64("remained", remained),
+			zap.String("continue", rs.Continue),
+			zap.Duration("interval", interval),
+			zap.Int("items", len(rs.Items)),
+		)
+		if rs.Continue == "" {
+			break
+		}
+		time.Sleep(interval)
+	}
+	for i := range ss {
+		if ss[i].TypeMeta.APIVersion == "" {
+			ss[i].TypeMeta.APIVersion = "extensions/v1beta1"
+		}
+		if ss[i].TypeMeta.Kind == "" {
+			ss[i].TypeMeta.Kind = "ReplicaSet"
+		}
+		if ss[i].ObjectMeta.Namespace == "" {
+			ss[i].ObjectMeta.Namespace = namespace
+		}
+	}
+	return ss, err
+}
+
+func (e *eks) ListExtensionsV1beta1NetworkPolicies(namespace string, limit int64, interval time.Duration) (ss []extensions_v1beta1.NetworkPolicy, err error) {
+	rs := &extensions_v1beta1.NetworkPolicyList{ListMeta: metav1.ListMeta{Continue: ""}}
+	for {
+		rs, err = e.cli.ExtensionsV1beta1().
+			NetworkPolicies(namespace).
+			List(metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		if err != nil {
+			return nil, err
+		}
+		ss = append(ss, rs.Items...)
+		remained := int64Value(rs.RemainingItemCount)
+		e.cfg.Logger.Info("listing networkpolicies extensions/v1beta1",
+			zap.String("namespace", namespace),
+			zap.Int64("limit", limit),
+			zap.Int64("remained", remained),
+			zap.String("continue", rs.Continue),
+			zap.Duration("interval", interval),
+			zap.Int("items", len(rs.Items)),
+		)
+		if rs.Continue == "" {
+			break
+		}
+		time.Sleep(interval)
+	}
+	for i := range ss {
+		if ss[i].TypeMeta.APIVersion == "" {
+			ss[i].TypeMeta.APIVersion = "extensions/v1beta1"
+		}
+		if ss[i].TypeMeta.Kind == "" {
+			ss[i].TypeMeta.Kind = "NetworkPolicy"
+		}
+		if ss[i].ObjectMeta.Namespace == "" {
+			ss[i].ObjectMeta.Namespace = namespace
+		}
+	}
+	return ss, err
+}
+
+func (e *eks) ListExtensionsV1beta1PodSecurityPolicies(limit int64, interval time.Duration) (ss []extensions_v1beta1.PodSecurityPolicy, err error) {
+	rs := &extensions_v1beta1.PodSecurityPolicyList{ListMeta: metav1.ListMeta{Continue: ""}}
+	for {
+		rs, err = e.cli.ExtensionsV1beta1().
+			PodSecurityPolicies().
+			List(metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		if err != nil {
+			return nil, err
+		}
+		ss = append(ss, rs.Items...)
+		remained := int64Value(rs.RemainingItemCount)
+		e.cfg.Logger.Info("listing podsecuritypolicies extensions/v1beta1",
+			zap.Int64("limit", limit),
+			zap.Int64("remained", remained),
+			zap.String("continue", rs.Continue),
+			zap.Duration("interval", interval),
+			zap.Int("items", len(rs.Items)),
+		)
+		if rs.Continue == "" {
+			break
+		}
+		time.Sleep(interval)
+	}
+	for i := range ss {
+		if ss[i].TypeMeta.APIVersion == "" {
+			ss[i].TypeMeta.APIVersion = "extensions/v1beta1"
+		}
+		if ss[i].TypeMeta.Kind == "" {
+			ss[i].TypeMeta.Kind = "PodSecurityPolicy"
+		}
+	}
+	return ss, err
+}
+
+func int64Value(p *int64) int64 {
+	if p == nil {
+		return 0
+	}
+	return *p
+}
+
+func (e *eks) GetObject(namespace string, kind string, name string) (obj Object, d []byte, err error) {
+	if e.cfg.KubectlPath == "" {
+		return Object{}, nil, errors.New("empty EKSConfig.KubectlPath")
+	}
+	if e.cfg.KubeConfigPath == "" {
+		return Object{}, nil, errors.New("empty EKSConfig.KubeConfigPath")
+	}
+	if !fileutil.Exist(e.cfg.KubeConfigPath) {
+		return Object{}, nil, fmt.Errorf("%q not found", e.cfg.KubeConfigPath)
+	}
+	if !fileutil.Exist(e.cfg.KubectlPath) {
+		return Object{}, nil, fmt.Errorf("%q not found", e.cfg.KubectlPath)
+	}
+	if err := fileutil.EnsureExecutable(e.cfg.KubectlPath); err != nil {
+		return Object{}, nil, fmt.Errorf("cannot execute %q (%v)", e.cfg.KubectlPath, err)
+	}
+
+	if kind == "" {
+		return Object{}, nil, fmt.Errorf("empty Kind for %q", name)
+	}
+	if name == "" {
+		return Object{}, nil, errors.New("empty name")
+	}
+
+	args := []string{
+		e.cfg.KubectlPath,
+		"--kubeconfig=" + e.cfg.KubeConfigPath,
+	}
+	if namespace != "" {
+		args = append(args, "--namespace="+namespace)
+	}
+	args = append(args,
+		"get",
+		kind,
+		name,
+		"-o=yaml",
+	)
+
+	e.cfg.Logger.Info("running kubectl get",
+		zap.String("namespace", namespace),
+		zap.String("kind", kind),
+		zap.String("name", name),
+	)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	output, err := exec.New().CommandContext(ctx, args[0], args[1:]...).CombinedOutput()
+	cancel()
+	out := strings.TrimSpace(string(output))
+	if err != nil {
+		return Object{}, nil, fmt.Errorf("'kubectl get' failed %v (output %q)", err, out)
+	}
+
+	if err = yaml.Unmarshal([]byte(out), &obj); err != nil {
+		return Object{}, nil, err
+	}
+	if obj.Kind == "" {
+		obj.Kind = kind
+	}
+	if obj.ObjectMeta.Namespace == "" && namespace != "" {
+		obj.ObjectMeta.Namespace = namespace
+	}
+	if obj.ObjectMeta.Name == "" {
+		obj.ObjectMeta.Name = name
+	}
+	return obj, []byte(out), nil
 }

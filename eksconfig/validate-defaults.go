@@ -997,9 +997,6 @@ func (cfg *Config) validateAddOnConfigMaps() error {
 	return nil
 }
 
-// only letters and numbers for Secret key names
-var secretRegex = regexp.MustCompile("[^a-zA-Z0-9]+")
-
 func (cfg *Config) validateAddOnSecrets() error {
 	if !cfg.IsEnabledAddOnSecrets() {
 		return nil
@@ -1070,6 +1067,9 @@ func (cfg *Config) validateAddOnIRSA() error {
 	}
 	return nil
 }
+
+// only letters and numbers for Secret key names
+var secretRegex = regexp.MustCompile("[^a-zA-Z0-9]+")
 
 func (cfg *Config) validateAddOnFargate() error {
 	if !cfg.IsEnabledAddOnFargate() {

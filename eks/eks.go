@@ -114,7 +114,7 @@ type Tester struct {
 // ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Deployer
 // ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Options
 func New(cfg *eksconfig.Config) (*Tester, error) {
-	fmt.Println("😎 🙏")
+	fmt.Println("😎 🙏 🙏")
 	fmt.Println(version.Version())
 	fmt.Printf("\n*********************************\n")
 	fmt.Printf("New %q\n", cfg.ConfigPath)
@@ -615,9 +615,9 @@ func (ts *Tester) Up() (err error) {
 
 				fmt.Printf("\n*********************************\n")
 				ts.lg.Sugar().Infof("Up.defer end (%s, %s)", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-				fmt.Printf("\n\n😁 😁 :) Up success\n\n\n")
+				fmt.Printf("\n\n😁 😁 😁 :)  Up success\n\n\n")
 			} else {
-				fmt.Printf("\n\n😲 😲 aborted Up ???\n\n\n")
+				fmt.Printf("\n\n😲 😲 😲  aborted Up ???\n\n\n")
 			}
 			return
 		}
@@ -642,7 +642,7 @@ func (ts *Tester) Up() (err error) {
 
 			fmt.Printf("\n*********************************\n")
 			ts.lg.Sugar().Infof("Up.defer end (%s, %s)", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-			fmt.Printf("\n\n😱 ☹ 😡 (-_-) Up fail\n\n\n")
+			fmt.Printf("\n\n😱 😱 😡 (-_-)  Up fail\n\n\n")
 			return
 		}
 
@@ -659,7 +659,7 @@ func (ts *Tester) Up() (err error) {
 		fmt.Printf("\n\n\nUP FAIL ERROR:\n\n%v\n\n\n", err)
 
 		fmt.Printf("\n*********************************\n")
-		fmt.Printf("😱 ☹ 😡 (-_-) Up fail\n")
+		fmt.Printf("😱 😱 😡 (-_-) Up fail\n")
 		ts.lg.Warn("Up failed; reverting resource creation",
 			zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			zap.Error(err),
@@ -686,7 +686,7 @@ func (ts *Tester) Up() (err error) {
 
 		fmt.Printf("\n*********************************\n")
 		ts.lg.Sugar().Infof("Up.defer end (%s, %s)", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-		fmt.Printf("\n\n😱 ☹ 😡 (-_-) Up fail\n\n\n")
+		fmt.Printf("\n\n😱 😱 😡 (-_-) Up fail\n\n\n")
 	}()
 
 	ts.lg.Info("Up started",
@@ -1227,7 +1227,7 @@ func (ts *Tester) down() (err error) {
 		if err == nil {
 			fmt.Printf("\n*********************************\n")
 			fmt.Printf("Down.defer end (%q)\n\n", ts.cfg.ConfigPath)
-			fmt.Printf("\n\n😁 😁 :) Down success\n\n\n")
+			fmt.Printf("\n\n😁 😁  :) Down success\n\n\n")
 
 			ts.lg.Info("successfully finished Down",
 				zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
@@ -1236,7 +1236,7 @@ func (ts *Tester) down() (err error) {
 		} else {
 			fmt.Printf("\n*********************************\n")
 			fmt.Printf("Down.defer end (%q)\n\n", ts.cfg.ConfigPath)
-			fmt.Printf("\n\n😱 ☹ 😡 (-_-) Down fail\n\n\n")
+			fmt.Printf("\n\n😱 😱 😡 (-_-) Down fail\n\n\n")
 
 			ts.lg.Info("failed Down",
 				zap.Error(err),
@@ -1391,7 +1391,7 @@ func (ts *Tester) down() (err error) {
 
 	// following need to be run in order to resolve delete dependency
 	// e.g. cluster must be deleted before VPC delete
-	if ts.cfg.IsEnabledAddOnManagedNodeGroups() {
+	if ts.cfg.IsEnabledAddOnManagedNodeGroups() && ts.mngTester != nil {
 		fmt.Printf("\n*********************************\n")
 		fmt.Printf("mngTester.Delete (%q)\n", ts.cfg.ConfigPath)
 		if err := ts.mngTester.Delete(); err != nil {
@@ -1404,7 +1404,7 @@ func (ts *Tester) down() (err error) {
 		time.Sleep(waitDur)
 	}
 
-	if ts.cfg.IsEnabledAddOnNodeGroups() {
+	if ts.cfg.IsEnabledAddOnNodeGroups() && ts.ngTester != nil {
 		fmt.Printf("\n*********************************\n")
 		fmt.Printf("ngTester.Delete (%q)\n", ts.cfg.ConfigPath)
 		if err := ts.ngTester.Delete(); err != nil {

@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	k8sclient "github.com/aws/aws-k8s-tester/pkg/k8s-client"
-	"github.com/mitchellh/colorstring"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 	"k8s.io/utils/exec"
@@ -75,14 +74,14 @@ func checkFunc(cmd *cobra.Command, args []string) {
 		panic(fmt.Errorf("failed to create client %v", err))
 	}
 
-	colorstring.Printf("\n\n\n[green]fetching version...\n\n")
-	ver, err := cli.FetchVersion()
+	fmt.Printf("\n\n************************\nfetching version\n\n")
+	ver, err := cli.FetchServerVersion()
 	if err != nil {
 		panic(fmt.Errorf("failed to check version %v", err))
 	}
 	fmt.Printf("\n\nVersion:\n%+v\n\n", ver)
 
-	colorstring.Printf("\n\n\n[green]checking health...\n\n")
+	fmt.Printf("\n\n************************\nchecking health...\n\n")
 	if err = cli.CheckHealth(); err != nil {
 		panic(fmt.Errorf("failed to check health %v", err))
 	}

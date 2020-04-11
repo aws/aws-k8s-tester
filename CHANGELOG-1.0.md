@@ -22,7 +22,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.1...v1.0.2
 
 - Rename [`eksconfig.Parameters.ControlPlaneSecurityGroupID` to `eksconfig.Status.ClusterControlPlaneSecurityGroupID`](https://github.com/aws/aws-k8s-tester/commit/14565868ed452f6d9ffa8335935192bcb0d42e86).
   - Does not break anything, since `ControlPlaneSecurityGroupID` was a read-only field.
-- Add [`eksconfig.Status.(k8s.io/apimachinery/pkg/version).Info`](https://github.com/aws/aws-k8s-tester/commit/ba7231019be4637e0bbbd91220b260e903ecb5b6).
+- Add [`eksconfig.Status.(k8s.io/apimachinery/pkg/version).Info` as `Status.ServerVersionInfo`](https://github.com/aws/aws-k8s-tester/commit/ba7231019be4637e0bbbd91220b260e903ecb5b6).
+- Include [`float64` version value in `ServerVersionInfo`](https://github.com/aws/aws-k8s-tester/commit/).
 
 ### `eks`
 
@@ -42,7 +43,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.1...v1.0.2
 
 - Add [`k8sclient.NewEKS` and `k8sclient.EKSConfig` for `*kubernetes.Clientset`; use `pkg/k8s-client.EKS` interface](https://github.com/aws/aws-k8s-tester/commit/e673d3388ee44889e6572dcdcee530ea06984a86).
 - Move [`healthz` checks to `k8sclient.EKS` interface](https://github.com/aws/aws-k8s-tester/commit/3dac533adcf2fb0aa51f19d4f56bbc9dd2b59eb5).
-- Add [`k8sclient.EKS.FetchVersion`](https://github.com/aws/aws-k8s-tester/commit/56cd2d0f26e88f8c806a74a503def91769a3e8e3).
+- Add [`k8sclient.EKS.FetchServerVersion`](https://github.com/aws/aws-k8s-tester/commit/56cd2d0f26e88f8c806a74a503def91769a3e8e3).
+- Include [`float64` version value in `ServerVersionInfo`](https://github.com/aws/aws-k8s-tester/commit/).
 
 ### Dependency
 
