@@ -94,6 +94,12 @@ func checkFunc(cmd *cobra.Command, args []string) {
 		panic(fmt.Errorf("failed to create client %v", err))
 	}
 
+	ver, err := cli.FetchVersion()
+	if err != nil {
+		panic(fmt.Errorf("failed to check version %v", err))
+	}
+	fmt.Printf("\n\nVersion:\n%+v\n\n", ver)
+
 	if err = cli.CheckHealth(); err != nil {
 		panic(fmt.Errorf("failed to check health %v", err))
 	}

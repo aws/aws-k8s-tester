@@ -9,7 +9,7 @@ func init() {
 
 var path string
 
-// NewCommand implements "awstest eks" command.
+// NewCommand implements "aws-k8s-tester eks" command.
 func NewCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:        "eks",
