@@ -13,7 +13,7 @@ func init() {
 	cobra.EnablePrefixMatching = true
 }
 
-// NewCommand implements "awstest eks" command.
+// NewCommand implements "aws-k8s-tester eks" command.
 func NewCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:   "version",
