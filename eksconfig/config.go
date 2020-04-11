@@ -12,6 +12,7 @@ import (
 
 	"github.com/aws/aws-k8s-tester/ec2config"
 	awseks "github.com/aws/aws-sdk-go/service/eks"
+	"k8s.io/apimachinery/pkg/version"
 	"sigs.k8s.io/yaml"
 )
 
@@ -205,6 +206,10 @@ type Config struct {
 type Status struct {
 	// Up is true if the cluster is up.
 	Up bool `json:"up"`
+
+
+	// ServerVersionInfo is the server version from EKS kube-apiserver.
+	ServerVersionInfo version.Info `json:"server-version-info" read-only:"true"`
 
 	// CreateTook is the duration that took to create the resource.
 	CreateTook time.Duration `json:"create-took,omitempty" read-only:"true"`
