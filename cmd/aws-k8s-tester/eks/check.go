@@ -11,8 +11,6 @@ import (
 )
 
 var (
-	checkRegion            string
-	checkClusterName       string
 	checkClientQPS         float32
 	checkClientBurst       int
 	checkKubeConfigPath    string
@@ -37,21 +35,7 @@ func newCheck() *cobra.Command {
 aws-k8s-tester eks check \
   --kubeconfig /tmp/kubeconfig.yaml \
 
-e.g.
-
 aws-k8s-tester eks check \
-  --kubeconfig /tmp/kubeconfig.yaml
-
-aws-k8s-tester eks check \
-  --kubeconfig /tmp/kubeconfig.yaml \
-  --server-version 1.16 \
-  --encryption-enabled
-
-aws-k8s-tester eks check \
-  --region us-west-2 \
-  --cluster-name eks-2020040819-surfcrvabhtd \
-  --client-qps 20 \
-  --client-burst 30 \
   --kubeconfig /tmp/kubeconfig.yaml \
   --server-version 1.16 \
   --encryption-enabled
@@ -61,8 +45,6 @@ aws-k8s-tester eks check \
   --kubeconfig-context prow-hkg
 `,
 	}
-	ac.PersistentFlags().StringVar(&checkRegion, "region", "", "EKS region")
-	ac.PersistentFlags().StringVar(&checkClusterName, "cluster-name", "", "EKS cluster name")
 	ac.PersistentFlags().Float32Var(&checkClientQPS, "client-qps", 5.0, "EKS client qps")
 	ac.PersistentFlags().IntVar(&checkClientBurst, "client-burst", 10, "EKS client burst")
 	ac.PersistentFlags().StringVar(&checkKubeConfigPath, "kubeconfig", "", "EKS KUBECONFIG")
@@ -79,8 +61,6 @@ func checkFunc(cmd *cobra.Command, args []string) {
 	}
 	kcfg := &k8sclient.EKSConfig{
 		Logger:            zap.NewExample(),
-		Region:            checkRegion,
-		ClusterName:       checkClusterName,
 		ClientQPS:         checkClientQPS,
 		ClientBurst:       checkClientBurst,
 		KubeConfigPath:    checkKubeConfigPath,

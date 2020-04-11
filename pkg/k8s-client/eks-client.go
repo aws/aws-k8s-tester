@@ -16,6 +16,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sts"
@@ -133,6 +134,7 @@ func NewEKS(cfg *EKSConfig) (EKS, error) {
 	if cfg.Logger == nil {
 		cfg.Logger = zap.NewExample()
 	}
+
 	var kcfg *restclient.Config
 	var err error
 	if cfg.KubeConfigPath != "" {
@@ -357,6 +359,16 @@ func (e *eks) checkHealth() error {
 	}
 	if e.cfg.ClusterAPIServerEndpoint == "" {
 		return errors.New("empty EKSConfig.ClusterAPIServerEndpoint")
+	}
+
+	if !fileutil.Exist(e.cfg.KubeConfigPath) {
+		return fmt.Errorf("%q not found", e.cfg.KubeConfigPath)
+	}
+	if !fileutil.Exist(e.cfg.KubectlPath) {
+		return fmt.Errorf("%q not found", e.cfg.KubectlPath)
+	}
+	if err := fileutil.EnsureExecutable(e.cfg.KubectlPath); err != nil {
+		return fmt.Errorf("cannot execute %q (%v)", e.cfg.KubectlPath, err)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
