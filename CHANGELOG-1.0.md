@@ -24,6 +24,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.1...v1.0.2
 - Move [`healthz` checks to `pkg/k8s-client.EKS` interface](https://github.com/aws/aws-k8s-tester/commit/0d7981d66303ba8384ec57b338feb084bca64bdf).
 - Fix [node group instance check when `DHCP` options are set](https://github.com/aws/aws-k8s-tester/commit/2cc88ee4ab04159ec04306400f7f5d8c44b81f8d).
 - Log [node `Labels` when polling node status](https://github.com/aws/aws-k8s-tester/commit/26f67f5285ffdb748914233272857bb7ff0f048e).
+- Open [`30000-32767` ports for node group](https://github.com/aws/aws-k8s-tester/commit/bcc27696b8d2d1524db78faec64ec4bf3ad601a0).
+  - `NodePort` conformance test requires `30000-32767` ports to be open from nodes to internet, request to node over public IP in those range.
+  - https://github.com/kubernetes/kubernetes/blob/release-1.16/test/e2e/network/service.go#L544.
+- Use [CloudFormation stack to create security group for managed node group](https://github.com/aws/aws-k8s-tester/commit/).
 
 ### `pkg/k8s-client`
 
