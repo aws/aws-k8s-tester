@@ -1316,6 +1316,7 @@ export KUBECTL="{{ .KubectlCommand }}"
 {{ .KubectlCommand }} get cs
 {{ .KubectlCommand }} get pods
 {{ .KubectlCommand }} get csr -o=yaml
+{{ .KubectlCommand }} get nodes -o=wide
 {{ .KubectlCommand }} get nodes -o=yaml
 {{ .KubectlCommand }} --namespace=kube-system get pods
 {{ .KubectlCommand }} --namespace=kube-system get ds
