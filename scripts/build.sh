@@ -33,23 +33,23 @@ for os in linux darwin; do
     -X github.com/aws/aws-k8s-tester/version.BuildTime=${BUILD_TIME}" \
     -o ./bin/aws-k8s-tester-${RELEASE_VERSION}-${os}-$(go env GOARCH) \
     ./cmd/aws-k8s-tester
+
+  CGO_ENABLED=0 GOOS=${os} GOARCH=$(go env GOARCH) \
+    go build -v \
+    -ldflags "-s -w \
+    -X github.com/aws/aws-k8s-tester/version.GitCommit=${GIT_COMMIT} \
+    -X github.com/aws/aws-k8s-tester/version.ReleaseVersion=${RELEASE_VERSION} \
+    -X github.com/aws/aws-k8s-tester/version.BuildTime=${BUILD_TIME}" \
+    -o ./bin/eks-utils-${RELEASE_VERSION}-${os}-$(go env GOARCH) \
+    ./cmd/eks-utils
 done
 
-CGO_ENABLED=0 GOOS=linux GOARCH=arm64 \
-  go build -v \
-  -ldflags "-s -w \
-  -X github.com/aws/aws-k8s-tester/version.GitCommit=${GIT_COMMIT} \
-  -X github.com/aws/aws-k8s-tester/version.ReleaseVersion=${RELEASE_VERSION} \
-  -X github.com/aws/aws-k8s-tester/version.BuildTime=${BUILD_TIME}" \
-  -o ./bin/aws-k8s-tester-${RELEASE_VERSION}-linux-arm64 \
-  ./cmd/aws-k8s-tester
-
 if [[ "${OSTYPE}" == "linux-gnu" ]]; then
-  cp ./bin/aws-k8s-tester-${RELEASE_VERSION}-linux-$(go env GOARCH) ./bin/aws-k8s-tester
   ./bin/aws-k8s-tester-${RELEASE_VERSION}-linux-$(go env GOARCH) version
+  ./bin/eks-utils-${RELEASE_VERSION}-linux-$(go env GOARCH) version
 elif [[ "${OSTYPE}" == "darwin"* ]]; then
-  cp ./bin/aws-k8s-tester-${RELEASE_VERSION}-darwin-$(go env GOARCH) ./bin/aws-k8s-tester
   ./bin/aws-k8s-tester-${RELEASE_VERSION}-darwin-$(go env GOARCH) version
+  ./bin/eks-utils-${RELEASE_VERSION}-darwin-$(go env GOARCH) version
 fi
 
 echo "Success!"
