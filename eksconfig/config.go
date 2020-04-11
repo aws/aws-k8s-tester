@@ -558,11 +558,17 @@ type MNG struct {
 
 	// CreateRequested is true if "CreateNodegroupRequest" has been sent.
 	CreateRequested bool `json:"create-requested" read-only:"true"`
-	// CFNStackID is the CloudFormation stack ID for a managed node group.
-	CFNStackID                  string `json:"cfn-stack-id" read-only:"true"`
-	RemoteAccessSecurityGroupID string `json:"remote-access-security-group-id" read-only:"true"`
+
 	// PhysicalID is the Physical ID for the created "AWS::EKS::Nodegroup".
 	PhysicalID string `json:"physical-id" read-only:"true"`
+	
+	// CFNStackID is the CloudFormation stack ID for a managed node group.
+	CFNStackID                  string `json:"cfn-stack-id" read-only:"true"`
+
+	RemoteAccessSecurityGroupID string `json:"remote-access-security-group-id" read-only:"true"`
+	RemoteAccessSecurityGroupIngressEgressCFNStackID string `json:"remote-access-security-group-ingress-egress-cfn-stack-id" read-only:"true"`
+
+
 	// Status is the current status of EKS "Managed Node Group".
 	Status string `json:"status" read-only:"true"`
 	// Instances maps an instance ID to an EC2 instance object for the node group.

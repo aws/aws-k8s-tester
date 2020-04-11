@@ -1,12 +1,15 @@
 package mng
 
 import (
+	"context"
 	"fmt"
-	"strings"
+	"os"
+	"time"
 
+	awscfn "github.com/aws/aws-k8s-tester/pkg/aws/cloudformation"
+	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"go.uber.org/zap"
 )
 
@@ -56,132 +59,253 @@ Outputs:
     Value: !GetAtt ManagedNodeGroup.Resources.RemoteAccessSecurityGroup
 */
 
-func (ts *tester) openPorts(name string) error {
-	sv, ok := ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[name]
+// TemplateSG is the CloudFormation template for EKS managed node group security group.
+// ref. https://docs.aws.amazon.com/eks/latest/userguide/launch-workers.html
+// ref. https://github.com/awslabs/amazon-eks-ami/blob/master/amazon-eks-nodegroup.yaml
+// ref. https://github.com/aws/aws-k8s-tester/pull/33
+// ref. https://github.com/kubernetes/kubernetes/blob/release-1.16/test/e2e/network/service.go#L544
+const TemplateSG = `
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Amazon EKS Managed Node Group Security Group'
+
+Parameters:
+
+  ClusterControlPlaneSecurityGroupID:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: The security group of the cluster control plane.
+
+  ManagedNodeGroupSecurityGroupID:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: The security group of a managed node group
+
+Resources:
+
+  IngressWithinManagedNodeGroupSecurityGroup:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Allow node to communicate with each other
+      GroupId: !Ref ManagedNodeGroupSecurityGroupID
+      SourceSecurityGroupId: !Ref ManagedNodeGroupSecurityGroupID
+      IpProtocol: "-1"
+      FromPort: 0
+      ToPort: 65535
+
+  Ingress443FromNGtoCP:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Allow pods to communicate with the cluster API Server
+      SourceSecurityGroupId: !Ref ManagedNodeGroupSecurityGroupID
+      GroupId: !Ref ClusterControlPlaneSecurityGroupID
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+
+  Ingress443FromCPtoNG:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Allow pods running extension API servers on port 443 to receive communication from cluster control plane
+      SourceSecurityGroupId: !Ref ClusterControlPlaneSecurityGroupID
+      GroupId: !Ref ManagedNodeGroupSecurityGroupID
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+
+  Egress443FromCPtoNG:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      Description: Allow the cluster control plane to communicate with pods running extension API servers on port 443
+      GroupId: !Ref ClusterControlPlaneSecurityGroupID
+      DestinationSecurityGroupId: !Ref ManagedNodeGroupSecurityGroupID
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+
+  IngressAllFromCPtoNG:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Allow worker Kubelets and pods to receive communication from the cluster control plane
+      SourceSecurityGroupId: !Ref ClusterControlPlaneSecurityGroupID
+      GroupId: !Ref ManagedNodeGroupSecurityGroupID
+      IpProtocol: tcp
+      FromPort: 0
+      ToPort: 65535
+
+  EgressAllFromCPtoNG:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      Description: Allow the cluster control plane to communicate with worker Kubelet and pods
+      GroupId: !Ref ClusterControlPlaneSecurityGroupID
+      DestinationSecurityGroupId: !Ref ManagedNodeGroupSecurityGroupID
+      IpProtocol: tcp
+      FromPort: 0
+      ToPort: 65535
+
+  Ingress22ForSSH:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref ManagedNodeGroupSecurityGroupID
+      IpProtocol: 'tcp'
+      CidrIp: '0.0.0.0/0'
+      FromPort: 22
+      ToPort: 22
+
+  Ingress1024ForGuestBook:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref ManagedNodeGroupSecurityGroupID
+      IpProtocol: 'tcp'
+      CidrIp: '0.0.0.0/0'
+      FromPort: 1
+      ToPort: 1024
+
+  Egress1024ForGuestBook:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref ClusterControlPlaneSecurityGroupID
+      IpProtocol: 'tcp'
+      CidrIp: '0.0.0.0/0'
+      FromPort: 1
+      ToPort: 1024
+
+  IngressForNodePortConformance:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: NodePort requires 30000-32767 open from nodes to internet, request to node over public IP in those range https://github.com/kubernetes/kubernetes/blob/release-1.16/test/e2e/network/service.go#L544
+      GroupId: !Ref ManagedNodeGroupSecurityGroupID
+      IpProtocol: 'tcp'
+      CidrIp: '0.0.0.0/0'
+      FromPort: 30000
+      ToPort: 32767
+
+`
+
+func (ts *tester) createIngressEgress(name string) error {
+	cur, ok := ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[name]
 	if !ok {
-		return fmt.Errorf("Managed Node Group %q not found", name)
+		return fmt.Errorf("Managed Node Group %q not found; cannot create ingress/egress", name)
 	}
-	if sv.RemoteAccessSecurityGroupID == "" {
-		return fmt.Errorf("MNG[%q] security group ID not found", name)
+	if cur.RemoteAccessSecurityGroupID == "" {
+		return fmt.Errorf("MNG[%q] security group ID not found; cannot create ingress/egress", name)
+	}
+	if cur.RemoteAccessSecurityGroupIngressEgressCFNStackID != "" {
+		ts.cfg.Logger.Info("managed node group already has opened ports",
+			zap.String("mng-name", name),
+			zap.String("cfn-stack-id", cur.RemoteAccessSecurityGroupIngressEgressCFNStackID),
+		)
+		return nil
 	}
 
-	sgID := sv.RemoteAccessSecurityGroupID
-	ts.cfg.Logger.Info("opening ports", zap.String("name", name), zap.String("security-group-id", sgID))
+	sgID := cur.RemoteAccessSecurityGroupID
 
-	sout, err := ts.cfg.EC2API.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
-		GroupIds: aws.StringSlice([]string{sgID}),
+	ts.cfg.Logger.Info("creating ingress/egress for mng using CFN", zap.String("mng-name", name), zap.String("security-group-id", sgID))
+	stackInput := &cloudformation.CreateStackInput{
+		StackName:    aws.String(ts.cfg.EKSConfig.Name + "-mng-sg-" + name),
+		OnFailure:    aws.String(cloudformation.OnFailureDelete),
+		TemplateBody: aws.String(TemplateSG),
+		Tags: awscfn.NewTags(map[string]string{
+			"Kind":                   "aws-k8s-tester",
+			"Name":                   ts.cfg.EKSConfig.Name,
+			"aws-k8s-tester-version": version.ReleaseVersion,
+		}),
+		Parameters: []*cloudformation.Parameter{
+			{
+				ParameterKey:   aws.String("ClusterControlPlaneSecurityGroupID"),
+				ParameterValue: aws.String(ts.cfg.EKSConfig.Status.ClusterControlPlaneSecurityGroupID),
+			},
+			{
+				ParameterKey:   aws.String("ManagedNodeGroupSecurityGroupID"),
+				ParameterValue: aws.String(sgID),
+			},
+		},
+	}
+
+	stackOutput, err := ts.cfg.CFNAPI.CreateStack(stackInput)
+	if err != nil {
+		return err
+	}
+	cur.RemoteAccessSecurityGroupIngressEgressCFNStackID = aws.StringValue(stackOutput.StackId)
+	ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[name] = cur
+	ts.cfg.EKSConfig.Sync()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
+	ch := awscfn.Poll(
+		ctx,
+		ts.cfg.Stopc,
+		ts.cfg.Sig,
+		ts.cfg.Logger,
+		ts.cfg.CFNAPI,
+		cur.RemoteAccessSecurityGroupIngressEgressCFNStackID,
+		cloudformation.ResourceStatusCreateComplete,
+		time.Minute,
+		10*time.Second,
+	)
+	for st := range ch {
+		if st.Error != nil {
+			cancel()
+			ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("failed to create managed node group ingress/egress (%v)", st.Error))
+			return st.Error
+		}
+	}
+	cancel()
+
+	ts.cfg.Logger.Info("created ingress/egress for mng",
+		zap.String("mng-name", name),
+		zap.String("cfn-stack-id", cur.RemoteAccessSecurityGroupIngressEgressCFNStackID),
+	)
+	return ts.cfg.EKSConfig.Sync()
+}
+
+func (ts *tester) deleteIngressEgress(name string) error {
+	cur, ok := ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[name]
+	if !ok {
+		return fmt.Errorf("Managed Node Group %q not found; cannot delete ingress/egress", name)
+	}
+	if cur.RemoteAccessSecurityGroupID == "" {
+		return fmt.Errorf("MNG[%q] security group ID not found; cannot delete ingress/egress", name)
+	}
+	if cur.RemoteAccessSecurityGroupIngressEgressCFNStackID == "" {
+		ts.cfg.Logger.Info("managed node group has no open ports",
+			zap.String("mng-name", name),
+			zap.String("cfn-stack-id", cur.RemoteAccessSecurityGroupIngressEgressCFNStackID),
+		)
+		return nil
+	}
+
+	ts.cfg.Logger.Info("deleting managed node group ingress/egress CFN stack",
+		zap.String("mng-name", name),
+		zap.String("cfn-stack-id", cur.RemoteAccessSecurityGroupIngressEgressCFNStackID),
+	)
+	_, err := ts.cfg.CFNAPI.DeleteStack(&cloudformation.DeleteStackInput{
+		StackName: aws.String(cur.RemoteAccessSecurityGroupIngressEgressCFNStackID),
 	})
 	if err != nil {
 		return err
 	}
-	if len(sout.SecurityGroups) != 1 {
-		return fmt.Errorf("expected 1 security group, got %+v", sout.SecurityGroups)
-	}
-
-	foundSSHAccess := false
-	sg := sout.SecurityGroups[0]
-	for _, perm := range sg.IpPermissions {
-		if perm.FromPort == nil || perm.ToPort == nil {
-			ts.cfg.Logger.Info(
-				"found security IP permission",
-				zap.String("security-group-id", sgID),
-				zap.String("permission", fmt.Sprintf("%+v", perm)),
-			)
-			continue
-		}
-		fromPort, toPort := *perm.FromPort, *perm.ToPort
-		rg := ""
-		if len(perm.IpRanges) == 1 {
-			rg = *perm.IpRanges[0].CidrIp
-		}
-		ts.cfg.Logger.Info(
-			"found security IP permission",
-			zap.String("security-group-id", sgID),
-			zap.Int64("from-port", fromPort),
-			zap.Int64("to-port", toPort),
-			zap.String("cidr-ip", rg),
-		)
-		if fromPort == 22 && toPort == 22 && rg == "0.0.0.0/0" {
-			foundSSHAccess = true
-			break
-		}
-	}
-
-	if !foundSSHAccess {
-		ts.cfg.Logger.Warn("authorizing SSH access",
-			zap.String("name", name),
-			zap.String("security-group-id", sgID),
-			zap.Int64("port", 22),
-		)
-		_, aerr := ts.cfg.EC2API.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
-			GroupId:    aws.String(sgID),
-			IpProtocol: aws.String("tcp"),
-			FromPort:   aws.Int64(22),
-			ToPort:     aws.Int64(22),
-			CidrIp:     aws.String("0.0.0.0/0"),
-		})
-		if aerr != nil {
-			return aerr
-		}
-		ts.cfg.Logger.Info("authorized SSH access ingress",
-			zap.String("security-group-id", sgID),
-			zap.Int64("port", 22),
-		)
-	}
-
-	ts.cfg.Logger.Info("authorizing worker node privileged port 'ingress' access for control plane",
-		zap.String("security-group-id", sgID),
-		zap.String("port-range", "1-1024"),
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
+	ch := awscfn.Poll(
+		ctx,
+		make(chan struct{}),  // do not exit on stop
+		make(chan os.Signal), // do not exit on stop
+		ts.cfg.Logger,
+		ts.cfg.CFNAPI,
+		cur.RemoteAccessSecurityGroupIngressEgressCFNStackID,
+		cloudformation.ResourceStatusDeleteComplete,
+		time.Minute,
+		10*time.Second,
 	)
-	_, err = ts.cfg.EC2API.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
-		GroupId:    aws.String(sgID),
-		IpProtocol: aws.String("tcp"),
-		FromPort:   aws.Int64(1),
-		ToPort:     aws.Int64(1024),
-		CidrIp:     aws.String("0.0.0.0/0"),
-	})
-	if err != nil {
-		// security group may be shared between node groups
-		skip := false
-		if ev, ok := err.(awserr.Error); ok {
-			if ev.Code() == "InvalidPermission.Duplicate" && strings.Contains(ev.Message(), "already exists") {
-				skip = true
-			}
-		}
-		if !skip {
-			return err
+	var st awscfn.StackStatus
+	for st = range ch {
+		if st.Error != nil {
+			cancel()
+			ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("failed to delete managed node group ingress/egress (%v)", st.Error))
+			return st.Error
 		}
 	}
-
-	ts.cfg.Logger.Info("authorizing worker node privileged port 'egress' access for control plane",
-		zap.String("security-group-id", sgID),
-		zap.String("port-range", "1-1024"),
+	cancel()
+	ts.cfg.Logger.Info("deleted a managed node group ingress/egress",
+		zap.String("mng-name", name),
+		zap.String("cfn-stack-id", cur.RemoteAccessSecurityGroupIngressEgressCFNStackID),
 	)
-	_, err = ts.cfg.EC2API.AuthorizeSecurityGroupEgress(&ec2.AuthorizeSecurityGroupEgressInput{
-		GroupId: aws.String(ts.cfg.EKSConfig.Status.ClusterControlPlaneSecurityGroupID),
-		IpPermissions: []*ec2.IpPermission{
-			{
-				IpProtocol: aws.String("tcp"),
-				FromPort:   aws.Int64(1),
-				ToPort:     aws.Int64(1024),
-				IpRanges: []*ec2.IpRange{
-					{CidrIp: aws.String("0.0.0.0/0")},
-				},
-			},
-		},
-	})
-	if err != nil {
-		// security group may be shared between node groups
-		skip := false
-		if ev, ok := err.(awserr.Error); ok {
-			if ev.Code() == "InvalidPermission.Duplicate" && strings.Contains(ev.Message(), "already exists") {
-				skip = true
-			}
-		}
-		if !skip {
-			return err
-		}
-	}
-
 	return ts.cfg.EKSConfig.Sync()
 }

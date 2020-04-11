@@ -95,7 +95,7 @@ func (ts *tester) Create() (err error) {
 		return err
 	}
 	for name := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
-		if err = ts.openPorts(name); err != nil {
+		if err = ts.createIngressEgress(name); err != nil {
 			return err
 		}
 	}
@@ -113,6 +113,13 @@ func (ts *tester) Delete() error {
 
 	var errs []string
 	var err error
+	for name := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
+		err = ts.deleteIngressEgress(name)
+		if err != nil {
+			errs = append(errs, err.Error())
+		}
+	}
+
 	for i := 0; i < 5; i++ { // retry, leakly ENI may take awhile to be deleted
 		err = ts.deleteASG()
 		if err == nil {
