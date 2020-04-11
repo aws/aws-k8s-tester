@@ -193,3 +193,8 @@ cat /tmp/config.yaml
 # or
 less +FG /tmp/config.yaml
 ```
+
+
+## `eks-utils api-resources`
+
+TODO
