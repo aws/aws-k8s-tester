@@ -17,6 +17,7 @@ import (
 // ref. https://docs.aws.amazon.com/eks/latest/userguide/launch-workers.html
 // ref. https://github.com/awslabs/amazon-eks-ami/blob/master/amazon-eks-nodegroup.yaml
 // ref. https://github.com/aws/aws-k8s-tester/pull/33
+// ref. https://github.com/kubernetes/kubernetes/blob/release-1.16/test/e2e/network/service.go#L544
 const TemplateSG = `
 ---
 AWSTemplateFormatVersion: '2010-09-09'
@@ -28,7 +29,7 @@ Parameters:
     Type: String
     Description: The cluster name provided when the cluster was created. If it is incorrect, nodes will not be able to join the cluster.
 
-  ControlPlaneSecurityGroupID:
+  ClusterControlPlaneSecurityGroupID:
     Type: AWS::EC2::SecurityGroup::Id
     Description: The security group of the cluster control plane.
 
@@ -38,7 +39,7 @@ Parameters:
 
 Resources:
 
-  NodeSecurityGroup:
+  NodeGroupSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Security group for all nodes in the cluster
@@ -47,103 +48,113 @@ Resources:
         Value: owned
       VpcId: !Ref VPCID
 
-  IngressWithinNodeSecurityGroup:
+  IngressWithinNodeGroupSecurityGroup:
     Type: AWS::EC2::SecurityGroupIngress
-    DependsOn: NodeSecurityGroup
+    DependsOn: NodeGroupSecurityGroup
     Properties:
       Description: Allow node to communicate with each other
-      GroupId: !Ref NodeSecurityGroup
-      SourceSecurityGroupId: !Ref NodeSecurityGroup
+      GroupId: !Ref NodeGroupSecurityGroup
+      SourceSecurityGroupId: !Ref NodeGroupSecurityGroup
       IpProtocol: "-1"
       FromPort: 0
       ToPort: 65535
 
   Ingress443FromNGtoCP:
     Type: AWS::EC2::SecurityGroupIngress
-    DependsOn: NodeSecurityGroup
+    DependsOn: NodeGroupSecurityGroup
     Properties:
       Description: Allow pods to communicate with the cluster API Server
-      SourceSecurityGroupId: !Ref NodeSecurityGroup
-      GroupId: !Ref ControlPlaneSecurityGroupID
+      SourceSecurityGroupId: !Ref NodeGroupSecurityGroup
+      GroupId: !Ref ClusterControlPlaneSecurityGroupID
       IpProtocol: tcp
       FromPort: 443
       ToPort: 443
 
   Ingress443FromCPtoNG:
     Type: AWS::EC2::SecurityGroupIngress
-    DependsOn: NodeSecurityGroup
+    DependsOn: NodeGroupSecurityGroup
     Properties:
       Description: Allow pods running extension API servers on port 443 to receive communication from cluster control plane
-      SourceSecurityGroupId: !Ref ControlPlaneSecurityGroupID
-      GroupId: !Ref NodeSecurityGroup
+      SourceSecurityGroupId: !Ref ClusterControlPlaneSecurityGroupID
+      GroupId: !Ref NodeGroupSecurityGroup
       IpProtocol: tcp
       FromPort: 443
       ToPort: 443
 
   Egress443FromCPtoNG:
     Type: AWS::EC2::SecurityGroupEgress
-    DependsOn: NodeSecurityGroup
+    DependsOn: NodeGroupSecurityGroup
     Properties:
       Description: Allow the cluster control plane to communicate with pods running extension API servers on port 443
-      GroupId: !Ref ControlPlaneSecurityGroupID
-      DestinationSecurityGroupId: !Ref NodeSecurityGroup
+      GroupId: !Ref ClusterControlPlaneSecurityGroupID
+      DestinationSecurityGroupId: !Ref NodeGroupSecurityGroup
       IpProtocol: tcp
       FromPort: 443
       ToPort: 443
 
-  Ingress1025FromCPtoNG:
+  IngressAllFromCPtoNG:
     Type: AWS::EC2::SecurityGroupIngress
-    DependsOn: NodeSecurityGroup
+    DependsOn: NodeGroupSecurityGroup
     Properties:
       Description: Allow worker Kubelets and pods to receive communication from the cluster control plane
-      SourceSecurityGroupId: !Ref ControlPlaneSecurityGroupID
-      GroupId: !Ref NodeSecurityGroup
+      SourceSecurityGroupId: !Ref ClusterControlPlaneSecurityGroupID
+      GroupId: !Ref NodeGroupSecurityGroup
       IpProtocol: tcp
-      FromPort: 1025
+      FromPort: 0
       ToPort: 65535
 
-  Egress1025FromCPtoNG:
+  EgressAllFromCPtoNG:
     Type: AWS::EC2::SecurityGroupEgress
-    DependsOn: NodeSecurityGroup
+    DependsOn: NodeGroupSecurityGroup
     Properties:
       Description: Allow the cluster control plane to communicate with worker Kubelet and pods
-      GroupId: !Ref ControlPlaneSecurityGroupID
-      DestinationSecurityGroupId: !Ref NodeSecurityGroup
+      GroupId: !Ref ClusterControlPlaneSecurityGroupID
+      DestinationSecurityGroupId: !Ref NodeGroupSecurityGroup
       IpProtocol: tcp
-      FromPort: 1025
+      FromPort: 0
       ToPort: 65535
 
   Ingress22ForSSH:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
-      GroupId: !Ref NodeSecurityGroup
+      GroupId: !Ref NodeGroupSecurityGroup
       IpProtocol: 'tcp'
-      FromPort: '22'
-      ToPort: '22'
       CidrIp: '0.0.0.0/0'
+      FromPort: 22
+      ToPort: 22
 
   Ingress1024ForGuestBook:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
-      GroupId: !Ref NodeSecurityGroup
+      GroupId: !Ref NodeGroupSecurityGroup
       IpProtocol: 'tcp'
-      FromPort: '1'
-      ToPort: '1024'
       CidrIp: '0.0.0.0/0'
+      FromPort: 1
+      ToPort: 1024
 
   Egress1024ForGuestBook:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
-      GroupId: !Ref ControlPlaneSecurityGroupID
+      GroupId: !Ref ClusterControlPlaneSecurityGroupID
       IpProtocol: 'tcp'
-      FromPort: '1'
-      ToPort: '1024'
       CidrIp: '0.0.0.0/0'
+      FromPort: 1
+      ToPort: 1024
+
+  IngressForNodePortConformance:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: NodePort requires 30000-32767 open from nodes to internet, request to node over public IP in those range https://github.com/kubernetes/kubernetes/blob/release-1.16/test/e2e/network/service.go#L544
+      GroupId: !Ref NodeGroupSecurityGroup
+      IpProtocol: 'tcp'
+      CidrIp: '0.0.0.0/0'
+      FromPort: 30000
+      ToPort: 32767
 
 Outputs:
 
-  NodeSecurityGroupID:
-    Value: !Ref NodeSecurityGroup
+  NodeGroupSecurityGroupID:
+    Value: !Ref NodeGroupSecurityGroup
     Description: The security group ID for the node group
 
 `
@@ -171,7 +182,7 @@ func (ts *tester) createSG() error {
 				ParameterValue: aws.String(ts.cfg.EKSConfig.Name),
 			},
 			{
-				ParameterKey:   aws.String("ControlPlaneSecurityGroupID"),
+				ParameterKey:   aws.String("ClusterControlPlaneSecurityGroupID"),
 				ParameterValue: aws.String(ts.cfg.EKSConfig.Parameters.ControlPlaneSecurityGroupID),
 			},
 			{
@@ -211,7 +222,7 @@ func (ts *tester) createSG() error {
 
 	for _, o := range st.Stack.Outputs {
 		switch k := aws.StringValue(o.OutputKey); k {
-		case "NodeSecurityGroupID":
+		case "NodeGroupSecurityGroupID":
 			ts.cfg.EKSConfig.AddOnNodeGroups.NodeGroupSecurityGroupID = aws.StringValue(o.OutputValue)
 		default:
 			return fmt.Errorf("unexpected OutputKey %q from %q", k, ts.cfg.EKSConfig.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackID)

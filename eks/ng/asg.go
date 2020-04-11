@@ -82,7 +82,7 @@ Parameters:
     Type: List<AWS::EC2::Subnet::Id>
     Description: The public subnet IDs where workers can be created.
 
-  NodeSecurityGroupID:
+  NodeGroupSecurityGroupID:
     Type: AWS::EC2::SecurityGroup::Id
     Description: The security group of the node group.
 
@@ -208,7 +208,7 @@ Resources:
           DeleteOnTermination: true
           DeviceIndex: 0
           Groups:
-          - !Ref NodeSecurityGroupID
+          - !Ref NodeGroupSecurityGroupID
         TagSpecifications:
         - ResourceType: instance
           Tags:
@@ -475,7 +475,7 @@ func (ts *tester) createASGs() error {
 					ParameterValue: aws.String(strings.Join(ts.cfg.EKSConfig.Parameters.PublicSubnetIDs, ",")),
 				},
 				{
-					ParameterKey:   aws.String("NodeSecurityGroupID"),
+					ParameterKey:   aws.String("NodeGroupSecurityGroupID"),
 					ParameterValue: aws.String(ts.cfg.EKSConfig.AddOnNodeGroups.NodeGroupSecurityGroupID),
 				},
 				{
