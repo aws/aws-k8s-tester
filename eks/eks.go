@@ -638,6 +638,8 @@ func (ts *Tester) Up() (err error) {
 				zap.Error(err),
 			)
 
+			fmt.Printf("\n\n\nUP FAIL ERROR:\n\n%v\n\n\n", err)
+
 			fmt.Printf("\n*********************************\n")
 			ts.lg.Sugar().Infof("Up.defer end (%s, %s)", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 			fmt.Printf("\n\n😱 ☹ 😡 (-_-) Up fail\n\n\n")
@@ -653,6 +655,8 @@ func (ts *Tester) Up() (err error) {
 			ts.lg.Sugar().Infof("kubectl (%s)", ts.cfg.ConfigPath)
 			fmt.Println(ts.cfg.KubectlCommands())
 		}
+
+		fmt.Printf("\n\n\nUP FAIL ERROR:\n\n%v\n\n\n", err)
 
 		fmt.Printf("\n*********************************\n")
 		fmt.Printf("😱 ☹ 😡 (-_-) Up fail\n")
@@ -677,6 +681,8 @@ func (ts *Tester) Up() (err error) {
 		} else {
 			ts.lg.Warn("reverted Up")
 		}
+
+		fmt.Printf("\n\n\nUP FAIL ERROR:\n\n%v\n\n\n", err)
 
 		fmt.Printf("\n*********************************\n")
 		ts.lg.Sugar().Infof("Up.defer end (%s, %s)", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())

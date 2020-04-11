@@ -27,6 +27,10 @@ func (ts *Tester) checkHealth() (err error) {
 			return errors.New("health check aborted")
 		case <-time.After(5 * time.Second):
 		}
+		ts.cfg.Status.ServerVersionInfo, err = ts.k8sClient.FetchVersion()
+		if err != nil {
+			ts.lg.Warn("get version failed", zap.Error(err))
+		}
 		err = ts.k8sClient.CheckHealth()
 		if err == nil {
 			break
