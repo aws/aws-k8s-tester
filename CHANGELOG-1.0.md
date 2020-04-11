@@ -7,16 +7,21 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.1...v1.0.2).
 
-### `eks-util`
+### `eks-utils`
 
-- Add [`eks-util`](https://github.com/aws/aws-k8s-tester/commit/).
-  - Read https://github.com/aws/aws-k8s-tester#eks-util.
+- Add [`eks-utils`](https://github.com/aws/aws-k8s-tester/commit/).
+  - Read https://github.com/aws/aws-k8s-tester#eks-utils.
 
 ### `aws-k8s-tester`
 
 - Remove [`aws-k8s-tester eks test`](https://github.com/aws/aws-k8s-tester/commit/237075a8130f1ad29e3c3b655ca4d52fa5632426).
 - Improve [`aws-k8s-tester eks check`](https://github.com/aws/aws-k8s-tester/commit/237075a8130f1ad29e3c3b655ca4d52fa5632426).
   - [`aws-k8s-tester eks check cluster` is now just `aws-k8s-tester eks check`](https://github.com/aws/aws-k8s-tester/commit/623350901946156b97ef985aa4b2344a9e654835).
+
+### `eksconfig`
+
+- Rename [`eksconfig.Parameters.ControlPlaneSecurityGroupID` to `eksconfig.Status.ClusterControlPlaneSecurityGroupID`](https://github.com/aws/aws-k8s-tester/commit/14565868ed452f6d9ffa8335935192bcb0d42e86).
+  - Does not break anything, since `ControlPlaneSecurityGroupID` was a read-only field.
 
 ### `eks`
 
@@ -28,6 +33,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.1...v1.0.2
   - `NodePort` conformance test requires `30000-32767` ports to be open from nodes to internet, request to node over public IP in those range.
   - https://github.com/kubernetes/kubernetes/blob/release-1.16/test/e2e/network/service.go#L544.
 - Use [CloudFormation stack to create security group for managed node group](https://github.com/aws/aws-k8s-tester/commit/).
+- Rename [`eksconfig.Parameters.ClusterControlPlaneSecurityGroupID` to `eksconfig.Status.ClusterControlPlaneSecurityGroupID`](https://github.com/aws/aws-k8s-tester/commit/14565868ed452f6d9ffa8335935192bcb0d42e86).
 
 ### `pkg/k8s-client`
 
