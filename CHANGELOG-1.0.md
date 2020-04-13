@@ -9,7 +9,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.1...v1.0.2
 
 ### `eks-utils`
 
-- Add [`eks-utils`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`eks-utils`](https://github.com/aws/aws-k8s-tester/commit/198631e1ae10ed4eb1a76346e27730290eb0675b).
   - Read https://github.com/aws/aws-k8s-tester#eks-utils.
 
 ### `aws-k8s-tester`
@@ -45,10 +45,6 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.1...v1.0.2
 - Move [`healthz` checks to `k8sclient.EKS` interface](https://github.com/aws/aws-k8s-tester/commit/3dac533adcf2fb0aa51f19d4f56bbc9dd2b59eb5).
 - Add [`k8sclient.EKS.FetchServerVersion`](https://github.com/aws/aws-k8s-tester/commit/56cd2d0f26e88f8c806a74a503def91769a3e8e3).
 - Include [`float64` version value in `ServerVersionInfo`](https://github.com/aws/aws-k8s-tester/commit/).
-
-### Dependency
-
-- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.30.7`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.7) to [`v1.30.X`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.X).
 
 ### Go
 
