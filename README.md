@@ -199,6 +199,23 @@ less +FG /tmp/config.yaml
 
 Install `eks-utils` from https://github.com/aws/aws-k8s-tester/releases.
 
+```
+AWS_K8S_TESTER_VERSION=v1.0.2
+
+DOWNLOAD_URL=https://github.com/aws/aws-k8s-tester/releases/download
+rm -rf /tmp/aws-k8s-tester
+rm -rf /tmp/eks-utils
+
+if [[ "${OSTYPE}" == "linux"* ]]; then
+  curl -L ${DOWNLOAD_URL}/${AWS_K8S_TESTER_VERSION}/eks-utils-${AWS_K8S_TESTER_VERSION}-linux-$(go env GOARCH) -o /tmp/eks-utils
+elif [[ "${OSTYPE}" == "darwin"* ]]; then
+  curl -L ${DOWNLOAD_URL}/${AWS_K8S_TESTER_VERSION}/eks-utils-${AWS_K8S_TESTER_VERSION}-darwin-$(go env GOARCH) -o /tmp/eks-utils
+fi
+
+chmod +x /tmp/eks-utils
+/tmp/eks-utils version
+```
+
 **WARNING**: `kubectl` internally converts API versions in the response (see [`kubernetes/issues#58131`](https://github.com/kubernetes/kubernetes/issues/58131#issuecomment-403829566)). Which means `kubectl get` output may have different API versions than the one persisted in `etcd` . Upstream Kubernetes recommends upgrading deprecated API with *get and put*:
 
 > the simplest approach is to get/put every object after upgrades. objects that don't need migration will no-op (they won't even increment resourceVersion in etcd). objects that do need migration will persist in the new preferred storage version
@@ -214,12 +231,12 @@ eks-utils apis \
 # make sure to set proper "--list-batch" and "--list-interval"
 # to not overload EKS master; if it's set too high, it can affect
 # production workloads slowing down kube-apiserver
-rm -rf /tmp/eks-utils
+rm -rf /tmp/eks-utils-resources
 eks-utils apis \
   --kubeconfig /tmp/kubeconfig.yaml \
   --enable-prompt \
   deprecate \
-  --dir /tmp/eks-utils \
+  --dir /tmp/eks-utils-resources \
   --list-batch 10 \
   --list-interval 2s
 ```
