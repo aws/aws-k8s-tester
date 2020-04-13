@@ -239,4 +239,12 @@ eks-utils apis \
   --dir /tmp/eks-utils-resources \
   --list-batch 10 \
   --list-interval 2s
+
+# this command does not apply or create any resources
+# it only lists the resources that need be upgraded
+
+# if there's any resources that needs upgrade,
+# it writes patched YAML file, original YAML file,
+# bash scripts to update and rollback
+find /tmp/eks-utils-resources
 ```
