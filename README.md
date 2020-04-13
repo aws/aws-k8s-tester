@@ -195,7 +195,7 @@ less +FG /tmp/config.yaml
 ```
 
 
-## `eks-utils`
+## `eks-utils apis`
 
 Install `eks-utils` from https://github.com/aws/aws-k8s-tester/releases.
 
@@ -219,6 +219,10 @@ chmod +x /tmp/eks-utils
 **WARNING**: `kubectl` internally converts API versions in the response (see [`kubernetes/issues#58131`](https://github.com/kubernetes/kubernetes/issues/58131#issuecomment-403829566)). Which means `kubectl get` output may have different API versions than the one persisted in `etcd` . Upstream Kubernetes recommends upgrading deprecated API with *get and put*:
 
 > the simplest approach is to get/put every object after upgrades. objects that don't need migration will no-op (they won't even increment resourceVersion in etcd). objects that do need migration will persist in the new preferred storage version
+
+Which means there's no way in client-side to find all resources created with deprecated API groups. The only way to ensure API group upgrades is list all resources, and execute *get and put* with the latest API group version. If the resource has already latest API version, it will be no-op. Otherwise, it will upgrade to the latest API version.
+
+`eks-utils apis` will help with the list calls with proper pagination and generate *get and put* scripts for the cluster:
 
 ```bash
 # to check supported API groups from current kube-apiserver
