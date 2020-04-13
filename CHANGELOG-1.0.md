@@ -10,7 +10,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.1...v1.0.2
 ### `eks-utils`
 
 - Add [`eks-utils`](https://github.com/aws/aws-k8s-tester/commit/198631e1ae10ed4eb1a76346e27730290eb0675b).
-  - Read https://github.com/aws/aws-k8s-tester#eks-utils.
+  - Read https://github.com/aws/aws-k8s-tester#eks-utils-apis.
 
 ### `aws-k8s-tester`
 
