@@ -263,7 +263,7 @@ find /tmp/eks-utils-resources
 
 > the simplest approach is to get/put every object after upgrades. objects that don't need migration will no-op (they won't even increment resourceVersion in etcd). objects that do need migration will persist in the new preferred storage version
 
-To minimize the impact of list cals, `etcd-utils k8s list` reads keys with leadership election and pagination; only a single worker can run at a time.
+To minimize the impact of list calls, `etcd-utils k8s list` reads keys with leadership election and pagination; only a single worker can run at a time.
 
 ```bash
 # to list all deployments with etcd pagination + k8s decoder
