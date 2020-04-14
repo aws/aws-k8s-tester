@@ -42,14 +42,25 @@ for os in linux darwin; do
     -X github.com/aws/aws-k8s-tester/version.BuildTime=${BUILD_TIME}" \
     -o ./bin/eks-utils-${RELEASE_VERSION}-${os}-$(go env GOARCH) \
     ./cmd/eks-utils
+
+  CGO_ENABLED=0 GOOS=${os} GOARCH=$(go env GOARCH) \
+    go build -v \
+    -ldflags "-s -w \
+    -X github.com/aws/aws-k8s-tester/version.GitCommit=${GIT_COMMIT} \
+    -X github.com/aws/aws-k8s-tester/version.ReleaseVersion=${RELEASE_VERSION} \
+    -X github.com/aws/aws-k8s-tester/version.BuildTime=${BUILD_TIME}" \
+    -o ./bin/etcd-utils-${RELEASE_VERSION}-${os}-$(go env GOARCH) \
+    ./cmd/etcd-utils
 done
 
 if [[ "${OSTYPE}" == "linux-gnu" ]]; then
   ./bin/aws-k8s-tester-${RELEASE_VERSION}-linux-$(go env GOARCH) version
   ./bin/eks-utils-${RELEASE_VERSION}-linux-$(go env GOARCH) version
+  ./bin/etcd-utils-${RELEASE_VERSION}-linux-$(go env GOARCH) version
 elif [[ "${OSTYPE}" == "darwin"* ]]; then
   ./bin/aws-k8s-tester-${RELEASE_VERSION}-darwin-$(go env GOARCH) version
   ./bin/eks-utils-${RELEASE_VERSION}-darwin-$(go env GOARCH) version
+  ./bin/etcd-utils-${RELEASE_VERSION}-darwin-$(go env GOARCH) version
 fi
 
 echo "Success!"

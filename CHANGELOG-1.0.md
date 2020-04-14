@@ -3,7 +3,24 @@
 <hr>
 
 
-## [v1.0.2](https://github.com/aws/aws-k8s-tester/releases/tag/v1.0.2) (2020-04)
+## [v1.0.3](https://github.com/aws/aws-k8s-tester/releases/tag/v1.0.3) (2020-04-14)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.2...v1.0.3).
+
+### `etcd-utils`
+
+- Add [`etcd-utils k8s list`](https://github.com/aws/aws-k8s-tester/commit/2fc40d989bcd71e8f0cd45e9aadee3c777f33bf9).
+  - Read https://github.com/aws/aws-k8s-tester#etcd-utils.
+
+### Go
+
+- Compile with [*Go 1.14.2*](https://golang.org/doc/devel/release.html#go1.14).
+
+
+<hr>
+
+
+## [v1.0.2](https://github.com/aws/aws-k8s-tester/releases/tag/v1.0.2) (2020-04-13)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.1...v1.0.2).
 

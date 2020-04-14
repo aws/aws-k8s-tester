@@ -6,7 +6,6 @@ import (
 
 	k8sclient "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/spf13/cobra"
-	"go.uber.org/zap"
 	"k8s.io/utils/exec"
 )
 
@@ -60,7 +59,6 @@ func checkFunc(cmd *cobra.Command, args []string) {
 		panic(errors.New("'kubectl' not found"))
 	}
 	kcfg := &k8sclient.EKSConfig{
-		Logger:            zap.NewExample(),
 		ClientQPS:         checkClientQPS,
 		ClientBurst:       checkClientBurst,
 		KubeConfigPath:    checkKubeConfigPath,

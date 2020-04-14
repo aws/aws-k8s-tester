@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
+	"github.com/aws/aws-k8s-tester/pkg/logutil"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sts"
@@ -213,7 +214,11 @@ func NewEKS(cfg *EKSConfig) (EKS, error) {
 		return nil, errors.New("nil EKSConfig")
 	}
 	if cfg.Logger == nil {
-		cfg.Logger = zap.NewExample()
+		var err error
+		cfg.Logger, err = logutil.GetDefaultZapLogger()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	var kcfg *restclient.Config

@@ -41,7 +41,6 @@ func deprecatedFunc(cmd *cobra.Command, args []string) {
 
 	lg := zap.NewExample()
 	kcfg := &k8sclient.EKSConfig{
-		Logger:            lg,
 		ClientQPS:         clientQPS,
 		ClientBurst:       clientBurst,
 		KubeConfigPath:    kubeConfigPath,

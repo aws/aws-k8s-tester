@@ -254,3 +254,19 @@ eks-utils apis \
 # bash scripts to update and rollback
 find /tmp/eks-utils-resources
 ```
+
+## `etcd-utils k8s list`
+
+```bash
+# to list all deployments with etcd pagination + k8s decoder
+etcd-utils k8s \
+  --endpoint http://localhost:2379 \
+  list \
+  --election-prefix __etcd_utils_k8s_list \
+  --election-timeout 30s \
+  --batch 10 \
+  --interval 5s \
+  --prefix /registry/deployments \
+  --csv-output /tmp/etcd-utils-k8s-list.output.csv \
+  --done-key __etcd_utils_k8s_list_done
+```
