@@ -9,7 +9,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.2...v1.0.3
 
 ### `etcd-utils`
 
-- Add [`etcd-utils k8s list`](https://github.com/aws/aws-k8s-tester/commit/2fc40d989bcd71e8f0cd45e9aadee3c777f33bf9).
+- Add [`etcd-utils k8s list`](https://github.com/aws/aws-k8s-tester/commit/428668e4d30f18bee4b03f8a4b37315d36823d41).
   - Read https://github.com/aws/aws-k8s-tester#etcd-utils.
 
 ### Go
