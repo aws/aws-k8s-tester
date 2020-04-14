@@ -270,3 +270,30 @@ etcd-utils k8s \
   --csv-output /tmp/etcd-utils-k8s-list.output.csv \
   --done-key __etcd_utils_k8s_list_done
 ```
+
+Example outputs:
+
+```
+************************
+starting 'etcd-utils k8s list'
+
+{18:42.925Z","caller":"etcd-client.go:91","msg":"campaigning","prefix":"__etcd_utils_k8s_list_daemonsets"}
+{18:42.930Z","caller":"etcd-client.go:96","msg":"elected as a leader"}
+{18:42.933Z","caller":"etcd-client.go:71","msg":"getting","key":"__etcd_utils_k8s_list_daemonsets_done"}
+{18:42.935Z","caller":"etcd-client.go:78","msg":"got","key":"__etcd_utils_k8s_list_daemonsets_done","kvs":0}
+{18:42.937Z","caller":"etcd-client.go:121","msg":"getting response","start-key":"/registry/daemonsets","kvs":2,"more":false}
+{18:42.937Z","caller":"etcd-client.go:135","msg":"got response","kvs":2}
+
+writing to "/tmp/etcd-utils-k8s-list.output.csv"
+
+["/registry/daemonsets/kube-system/aws-node" "DaemonSet" "apps/v1" "<nil>"]
+["/registry/daemonsets/kube-system/kube-proxy" "DaemonSet" "apps/v1" "<nil>"]
+
+saved to CSV "/tmp/etcd-utils-k8s-list.output.csv"
+
+{18:42.937Z","caller":"etcd-client.go:62","msg":"writing","key":"__etcd_utils_k8s_list_daemonsets_done"}
+{18:42.940Z","caller":"etcd-client.go:66","msg":"wrote","key":"__etcd_utils_k8s_list_daemonsets_done"}
+
+'etcd-utils k8s list' success
+{18:42.940Z","caller":"etcd-client.go:58","msg":"closed client"}
+```
