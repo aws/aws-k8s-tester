@@ -35,8 +35,8 @@ func New(cfg Config) (Etcd, error) {
 		}
 	}
 	if cfg.EtcdClientConfig.LogConfig == nil {
-		copied := logutil.DefaultZapLoggerConfig
-		cfg.EtcdClientConfig.LogConfig = &copied
+		lcfg := logutil.GetDefaultZapLoggerConfig()
+		cfg.EtcdClientConfig.LogConfig = &lcfg
 	}
 	cli, err := clientv3.New(cfg.EtcdClientConfig)
 	if err != nil {

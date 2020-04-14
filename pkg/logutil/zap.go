@@ -7,41 +7,43 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-// DefaultZapLoggerConfig defines default zap logger configuration.
-var DefaultZapLoggerConfig = zap.Config{
-	Level: zap.NewAtomicLevelAt(ConvertToZapLevel(DefaultLogLevel)),
+// GetDefaultZapLoggerConfig returns a new default zap logger configuration.
+func GetDefaultZapLoggerConfig() zap.Config {
+	return zap.Config{
+		Level: zap.NewAtomicLevelAt(ConvertToZapLevel(DefaultLogLevel)),
 
-	Development: false,
-	Sampling: &zap.SamplingConfig{
-		Initial:    100,
-		Thereafter: 100,
-	},
+		Development: false,
+		Sampling: &zap.SamplingConfig{
+			Initial:    100,
+			Thereafter: 100,
+		},
 
-	Encoding: "json",
+		Encoding: "json",
 
-	// copied from "zap.NewProductionEncoderConfig" with some updates
-	EncoderConfig: zapcore.EncoderConfig{
-		TimeKey:        "ts",
-		LevelKey:       "level",
-		NameKey:        "logger",
-		CallerKey:      "caller",
-		MessageKey:     "msg",
-		StacktraceKey:  "stacktrace",
-		LineEnding:     zapcore.DefaultLineEnding,
-		EncodeLevel:    zapcore.LowercaseLevelEncoder,
-		EncodeTime:     zapcore.ISO8601TimeEncoder,
-		EncodeDuration: zapcore.StringDurationEncoder,
-		EncodeCaller:   zapcore.ShortCallerEncoder,
-	},
+		// copied from "zap.NewProductionEncoderConfig" with some updates
+		EncoderConfig: zapcore.EncoderConfig{
+			TimeKey:        "ts",
+			LevelKey:       "level",
+			NameKey:        "logger",
+			CallerKey:      "caller",
+			MessageKey:     "msg",
+			StacktraceKey:  "stacktrace",
+			LineEnding:     zapcore.DefaultLineEnding,
+			EncodeLevel:    zapcore.LowercaseLevelEncoder,
+			EncodeTime:     zapcore.ISO8601TimeEncoder,
+			EncodeDuration: zapcore.StringDurationEncoder,
+			EncodeCaller:   zapcore.ShortCallerEncoder,
+		},
 
-	// Use "/dev/null" to discard all
-	OutputPaths:      []string{"stderr"},
-	ErrorOutputPaths: []string{"stderr"},
+		// Use "/dev/null" to discard all
+		OutputPaths:      []string{"stderr"},
+		ErrorOutputPaths: []string{"stderr"},
+	}
 }
 
 // GetDefaultZapLogger returns a new default logger.
 func GetDefaultZapLogger() (*zap.Logger, error) {
-	lcfg := DefaultZapLoggerConfig
+	lcfg := GetDefaultZapLoggerConfig()
 	return lcfg.Build()
 }
 

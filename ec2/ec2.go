@@ -73,7 +73,7 @@ func New(cfg *ec2config.Config) (*Tester, error) {
 		return nil, err
 	}
 
-	lcfg := logutil.AddOutputPaths(logutil.DefaultZapLoggerConfig, cfg.LogOutputs, cfg.LogOutputs)
+	lcfg := logutil.AddOutputPaths(logutil.GetDefaultZapLoggerConfig(), cfg.LogOutputs, cfg.LogOutputs)
 	lcfg.Level = zap.NewAtomicLevelAt(logutil.ConvertToZapLevel(cfg.LogLevel))
 	lg, err := lcfg.Build()
 	if err != nil {
