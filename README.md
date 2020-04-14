@@ -216,7 +216,7 @@ chmod +x /tmp/eks-utils
 /tmp/eks-utils version
 ```
 
-`eks-utils apis` helps with API deprecation (e.g. https://code.amazon.com/packages/EtcdTools/blobs/mainline/--/cmd/etcd-tools/k8s/encoding.go).
+`eks-utils apis` helps with API deprecation (e.g. https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG/CHANGELOG-1.16.md#deprecations-and-removals).
 
 **WARNING**: `kubectl` internally converts API versions in the response (see [`kubernetes/issues#58131`](https://github.com/kubernetes/kubernetes/issues/58131#issuecomment-403829566)). Which means `kubectl get` output may have different API versions than the one persisted in `etcd` . Upstream Kubernetes recommends upgrading deprecated API with *get and put*:
 
@@ -257,7 +257,7 @@ find /tmp/eks-utils-resources
 
 ## `etcd-utils k8s list`
 
-`etcd-utils k8s list` helps with API deprecation (e.g. https://code.amazon.com/packages/EtcdTools/blobs/mainline/--/cmd/etcd-tools/k8s/encoding.go).
+`etcd-utils k8s list` helps with API deprecation (e.g. https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG/CHANGELOG-1.16.md#deprecations-and-removals).
 
 **WARNING**: `kubectl` internally converts API versions in the response (see [`kubernetes/issues#58131`](https://github.com/kubernetes/kubernetes/issues/58131#issuecomment-403829566)). Which means `kubectl get` output may have different API versions than the one persisted in `etcd` . Upstream Kubernetes recommends upgrading deprecated API with *get and put*:
 
