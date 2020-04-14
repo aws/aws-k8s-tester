@@ -200,16 +200,16 @@ less +FG /tmp/config.yaml
 Install `eks-utils` from https://github.com/aws/aws-k8s-tester/releases.
 
 ```
-AWS_K8S_TESTER_VERSION=v1.0.2
+AWS_K8S_TESTER_VERSION=v1.0.3
 
 DOWNLOAD_URL=https://github.com/aws/aws-k8s-tester/releases/download
 rm -rf /tmp/aws-k8s-tester
 rm -rf /tmp/eks-utils
 
 if [[ "${OSTYPE}" == "linux"* ]]; then
-  curl -L ${DOWNLOAD_URL}/${AWS_K8S_TESTER_VERSION}/eks-utils-${AWS_K8S_TESTER_VERSION}-linux-$(go env GOARCH) -o /tmp/eks-utils
+  curl -L ${DOWNLOAD_URL}/${AWS_K8S_TESTER_VERSION}/eks-utils-${AWS_K8S_TESTER_VERSION}-linux-amd64 -o /tmp/eks-utils
 elif [[ "${OSTYPE}" == "darwin"* ]]; then
-  curl -L ${DOWNLOAD_URL}/${AWS_K8S_TESTER_VERSION}/eks-utils-${AWS_K8S_TESTER_VERSION}-darwin-$(go env GOARCH) -o /tmp/eks-utils
+  curl -L ${DOWNLOAD_URL}/${AWS_K8S_TESTER_VERSION}/eks-utils-${AWS_K8S_TESTER_VERSION}-darwin-amd64 -o /tmp/eks-utils
 fi
 
 chmod +x /tmp/eks-utils
