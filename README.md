@@ -257,6 +257,12 @@ find /tmp/eks-utils-resources
 
 ## `etcd-utils k8s list`
 
+`etcd-utils k8s list` helps with API deprecation (e.g. https://code.amazon.com/packages/EtcdTools/blobs/mainline/--/cmd/etcd-tools/k8s/encoding.go).
+
+**WARNING**: `kubectl` internally converts API versions in the response (see [`kubernetes/issues#58131`](https://github.com/kubernetes/kubernetes/issues/58131#issuecomment-403829566)). Which means `kubectl get` output may have different API versions than the one persisted in `etcd` . Upstream Kubernetes recommends upgrading deprecated API with *get and put*:
+
+> the simplest approach is to get/put every object after upgrades. objects that don't need migration will no-op (they won't even increment resourceVersion in etcd). objects that do need migration will persist in the new preferred storage version
+
 To minimize the impact of list cals, `etcd-utils k8s list` reads keys with leadership election and pagination; only a single worker can run at a time.
 
 ```bash
