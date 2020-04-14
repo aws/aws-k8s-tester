@@ -257,6 +257,8 @@ find /tmp/eks-utils-resources
 
 ## `etcd-utils k8s list`
 
+To minimize the impact of list cals, it reads with leadership election and pagination; only a single worker can run at a time.
+
 ```bash
 # to list all deployments with etcd pagination + k8s decoder
 etcd-utils k8s \
