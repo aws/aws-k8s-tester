@@ -260,7 +260,7 @@ find /tmp/eks-utils-resources
 ```bash
 # to list all deployments with etcd pagination + k8s decoder
 etcd-utils k8s \
-  --endpoint http://localhost:2379 \
+  --endpoints http://localhost:2379 \
   list \
   --election-prefix __etcd_utils_k8s_list \
   --election-timeout 30s \
