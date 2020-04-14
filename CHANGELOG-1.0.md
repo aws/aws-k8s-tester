@@ -5,11 +5,11 @@
 
 ## [v1.0.4](https://github.com/aws/aws-k8s-tester/releases/tag/v1.0.4) (2020-04-14)
 
-See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.2...v1.0.4).
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.3...v1.0.4).
 
 ### `etcd-utils`
 
-- Add [`etcd-utils k8s list --csv-ids` flag](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`etcd-utils k8s list --csv-ids` flag](https://github.com/aws/aws-k8s-tester/commit/cb661c3339fd31b39c8e315028fc97fe1e73ca56).
   - Read https://github.com/aws/aws-k8s-tester#etcd-utils-k8s-list.
 
 ### Go
