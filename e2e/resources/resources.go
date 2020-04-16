@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/e2e/framework"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
@@ -26,7 +25,9 @@ type Resources struct {
 // ExpectDeploySuccessful expects a deployment and any services to be successful
 func (r *Resources) ExpectDeploySuccessful(ctx context.Context, f *framework.Framework, timeout time.Duration, ns *corev1.Namespace) {
 	By(fmt.Sprintf("create deployment (%s) with %d replicas", r.Deployment.Name, *(r.Deployment.Spec.Replicas)))
-	dp, err := f.ClientSet.AppsV1().Deployments(ns.Name).Create(r.Deployment)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	dp, err := f.ClientSet.AppsV1().Deployments(ns.Name).Create(ctx, r.Deployment, metav1.CreateOptions{})
+	cancel()
 	Expect(err).NotTo(HaveOccurred())
 
 	By(fmt.Sprintf("wait deployment (%s)", r.Deployment.Name))
@@ -42,7 +43,9 @@ func (r *Resources) ExpectDeploySuccessful(ctx context.Context, f *framework.Fra
 
 	for _, service := range r.Services {
 		By(fmt.Sprintf("create service (%s)", service.Name))
-		svc, err := f.ClientSet.CoreV1().Services(ns.Name).Create(service)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		svc, err := f.ClientSet.CoreV1().Services(ns.Name).Create(ctx, service, metav1.CreateOptions{})
+		cancel()
 		Expect(err).NotTo(HaveOccurred())
 		By(fmt.Sprintf("wait service (%s)", service.Name))
 		ctxto, cancel := context.WithTimeout(ctx, timeout)
@@ -56,12 +59,16 @@ func (r *Resources) ExpectDeploySuccessful(ctx context.Context, f *framework.Fra
 func (r *Resources) ExpectCleanupSuccessful(ctx context.Context, f *framework.Framework, ns *corev1.Namespace) {
 	for _, service := range r.Services {
 		By(fmt.Sprintf("delete service (%s)", service.Name))
-		err := f.ClientSet.CoreV1().Services(ns.Name).Delete(service.Name, &metav1.DeleteOptions{})
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		err := f.ClientSet.CoreV1().Services(ns.Name).Delete(ctx, service.Name, metav1.DeleteOptions{})
+		cancel()
 		Expect(err).NotTo(HaveOccurred())
 	}
 
 	By(fmt.Sprintf("delete deployment (%s)", r.Deployment.Name))
-	err := f.ClientSet.AppsV1().Deployments(ns.Name).Delete(r.Deployment.Name, &metav1.DeleteOptions{})
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	err := f.ClientSet.AppsV1().Deployments(ns.Name).Delete(ctx, r.Deployment.Name, metav1.DeleteOptions{})
+	cancel()
 	Expect(err).NotTo(HaveOccurred())
 
 	By(fmt.Sprintf("wait delete deployment (%s)", r.Deployment.Name))
@@ -92,7 +99,9 @@ func (r *Resources) ExpectDeploymentScaleSuccessful(ctx context.Context, f *fram
 	}
 	patchBytes, err := json.Marshal(patch)
 
-	dp, err := f.ClientSet.AppsV1().Deployments(ns.Name).Patch(r.Deployment.Name, types.JSONPatchType, patchBytes)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	dp, err := f.ClientSet.AppsV1().Deployments(ns.Name).Patch(ctx, r.Deployment.Name, types.JSONPatchType, patchBytes, metav1.PatchOptions{})
+	cancel()
 	Expect(err).NotTo(HaveOccurred())
 
 	By(fmt.Sprintf("wait deployment (%s)", r.Deployment.Name))
@@ -110,7 +119,9 @@ func (r *Resources) ExpectDeploymentScaleSuccessful(ctx context.Context, f *fram
 // ExpectDaemonsetUpdateSuccessful expects updating a daemonset to be successful
 func (r *Resources) ExpectDaemonsetUpdateSuccessful(ctx context.Context, f *framework.Framework, ns *corev1.Namespace) {
 	By(fmt.Sprintf("update daemonset (%s)", r.Daemonset.Name))
-	ds, err := f.ClientSet.AppsV1().DaemonSets(ns.Name).Update(r.Daemonset)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	ds, err := f.ClientSet.AppsV1().DaemonSets(ns.Name).Update(ctx, r.Daemonset, metav1.UpdateOptions{})
+	cancel()
 	Expect(err).NotTo(HaveOccurred())
 
 	By(fmt.Sprintf("wait daemonset (%s)", r.Daemonset.Name))
@@ -122,7 +133,9 @@ func (r *Resources) ExpectDaemonsetUpdateSuccessful(ctx context.Context, f *fram
 func (r *Resources) ExpectServicesSuccessful(ctx context.Context, f *framework.Framework, ns *corev1.Namespace, replicas int) {
 	for _, service := range r.Services {
 		By(fmt.Sprintf("create service (%s)", service.Name))
-		svc, err := f.ClientSet.CoreV1().Services(ns.Name).Create(service)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		svc, err := f.ClientSet.CoreV1().Services(ns.Name).Create(ctx, service, metav1.CreateOptions{})
+		cancel()
 		Expect(err).NotTo(HaveOccurred())
 		By(fmt.Sprintf("wait service (%s)", service.Name))
 		_, err = f.ResourceManager.WaitServiceHasEndpointsNum(ctx, svc, replicas)

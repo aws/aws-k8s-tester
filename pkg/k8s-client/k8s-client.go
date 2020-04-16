@@ -17,6 +17,7 @@ limitations under the License.
 package k8sclient
 
 import (
+	"context"
 	"net"
 	"strings"
 	"time"
@@ -153,7 +154,9 @@ func RetryFunction(f func() error, options ...*ApiCallOptions) wait.ConditionFun
 func ListPodsWithOptions(c clientset.Interface, namespace string, listOpts metav1.ListOptions) ([]apiv1.Pod, error) {
 	var pods []apiv1.Pod
 	listFunc := func() error {
-		podsList, err := c.CoreV1().Pods(namespace).List(listOpts)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		podsList, err := c.CoreV1().Pods(namespace).List(ctx, listOpts)
+		cancel()
 		if err != nil {
 			return err
 		}
@@ -175,7 +178,9 @@ func ListNodes(c clientset.Interface) ([]apiv1.Node, error) {
 func ListNodesWithOptions(c clientset.Interface, listOpts metav1.ListOptions) ([]apiv1.Node, error) {
 	var nodes []apiv1.Node
 	listFunc := func() error {
-		nodesList, err := c.CoreV1().Nodes().List(listOpts)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		nodesList, err := c.CoreV1().Nodes().List(ctx, listOpts)
+		cancel()
 		if err != nil {
 			return err
 		}
@@ -192,7 +197,9 @@ func ListNodesWithOptions(c clientset.Interface, listOpts metav1.ListOptions) ([
 func CreateNamespace(lg *zap.Logger, c clientset.Interface, namespace string) error {
 	createFunc := func() error {
 		lg.Info("creating namespace", zap.String("namespace", namespace))
-		_, err := c.CoreV1().Namespaces().Create(&apiv1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace}})
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		_, err := c.CoreV1().Namespaces().Create(ctx, &apiv1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace}}, metav1.CreateOptions{})
+		cancel()
 		if err == nil {
 			lg.Info("created namespace", zap.String("namespace", namespace))
 		} else {
@@ -208,13 +215,16 @@ func DeleteNamespace(lg *zap.Logger, c clientset.Interface, namespace string) er
 	foreground, zero := metav1.DeletePropagationForeground, int64(0)
 	deleteFunc := func() error {
 		lg.Info("deleting namespace", zap.String("namespace", namespace))
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		err := c.CoreV1().Namespaces().Delete(
+			ctx,
 			namespace,
-			&metav1.DeleteOptions{
+			metav1.DeleteOptions{
 				GracePeriodSeconds: &zero,
 				PropagationPolicy:  &foreground,
 			},
 		)
+		cancel()
 		if err == nil {
 			lg.Info("deleted namespace", zap.String("namespace", namespace))
 		} else {
@@ -250,7 +260,9 @@ func waitForDeleteNamespace(lg *zap.Logger, c clientset.Interface, namespace str
 	}
 	retryWaitFunc := func() (done bool, err error) {
 		lg.Info("waiting for namespace deletion", zap.String("namespace", namespace))
-		_, err = c.CoreV1().Namespaces().Get(namespace, metav1.GetOptions{})
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		_, err = c.CoreV1().Namespaces().Get(ctx, namespace, metav1.GetOptions{})
+		cancel()
 		if err != nil {
 			if apierrs.IsNotFound(err) {
 				lg.Info("namespace already deleted", zap.String("namespace", namespace))
@@ -274,7 +286,9 @@ func waitForDeleteNamespace(lg *zap.Logger, c clientset.Interface, namespace str
 func ListNamespaces(c clientset.Interface) ([]apiv1.Namespace, error) {
 	var namespaces []apiv1.Namespace
 	listFunc := func() error {
-		namespacesList, err := c.CoreV1().Namespaces().List(metav1.ListOptions{})
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		namespacesList, err := c.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
+		cancel()
 		if err != nil {
 			return err
 		}
@@ -290,9 +304,14 @@ func ListNamespaces(c clientset.Interface) ([]apiv1.Namespace, error) {
 // ListEvents retrieves events for the object with the given name.
 func ListEvents(c clientset.Interface, namespace string, name string, options ...*ApiCallOptions) (obj *apiv1.EventList, err error) {
 	getFunc := func() error {
-		obj, err = c.CoreV1().Events(namespace).List(metav1.ListOptions{
-			FieldSelector: "involvedObject.name=" + name,
-		})
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		obj, err = c.CoreV1().Events(namespace).List(
+			ctx,
+			metav1.ListOptions{
+				FieldSelector: "involvedObject.name=" + name,
+			},
+		)
+		cancel()
 		return err
 	}
 	if err := RetryWithExponentialBackOff(RetryFunction(getFunc, options...)); err != nil {
@@ -307,7 +326,9 @@ func CreateObject(dynamicClient dynamic.Interface, namespace string, name string
 	gvr, _ := meta.UnsafeGuessKindToResource(gvk)
 	obj.SetName(name)
 	createFunc := func() error {
-		_, err := dynamicClient.Resource(gvr).Namespace(namespace).Create(obj, metav1.CreateOptions{})
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		_, err := dynamicClient.Resource(gvr).Namespace(namespace).Create(ctx, obj, metav1.CreateOptions{})
+		cancel()
 		return err
 	}
 	options = append(options, Allow(apierrs.IsAlreadyExists))

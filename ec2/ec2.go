@@ -65,7 +65,7 @@ type Tester struct {
 
 // New creates a new EC2 tester.
 func New(cfg *ec2config.Config) (*Tester, error) {
-	fmt.Println("😎 🙏")
+	fmt.Println("😎 🙏 🚶 ✔️ 👍")
 	fmt.Println(version.Version())
 	fmt.Printf("\n*********************************\n")
 	fmt.Printf("New %q\n", cfg.ConfigPath)
@@ -153,7 +153,7 @@ func (ts *Tester) Up() (err error) {
 
 				fmt.Printf("\n*********************************\n")
 				ts.lg.Sugar().Infof("Up.defer end (%s)", ts.cfg.ConfigPath)
-				fmt.Printf("\n\n😁 😁 :) Up success\n\n\n")
+				fmt.Printf("\n\n💯 😁 👍 :) Up success\n\n\n")
 			} else {
 				fmt.Printf("\n\n😲 😲 aborted Up ???\n\n\n")
 			}
@@ -174,7 +174,7 @@ func (ts *Tester) Up() (err error) {
 
 			fmt.Printf("\n*********************************\n")
 			ts.lg.Sugar().Infof("Up.defer end (%s)", ts.cfg.ConfigPath)
-			fmt.Printf("\n\n😱 ☹ 😡 (-_-) Up fail\n\n\n")
+			fmt.Printf("\n\n🔥 💀 👽 😱 😡 (-_-) Up fail\n\n\n")
 			return
 		}
 
@@ -185,7 +185,7 @@ func (ts *Tester) Up() (err error) {
 		}
 
 		fmt.Printf("\n*********************************\n")
-		fmt.Printf("😱 ☹ 😡 (-_-) Up fail\n")
+		fmt.Printf("🔥 💀 👽 😱 😡 (-_-) Up fail\n")
 		ts.lg.Warn("Up failed; reverting resource creation",
 			zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			zap.Error(err),
@@ -210,7 +210,7 @@ func (ts *Tester) Up() (err error) {
 
 		fmt.Printf("\n*********************************\n")
 		ts.lg.Sugar().Infof("Up.defer end (%s)", ts.cfg.ConfigPath)
-		fmt.Printf("\n\n😱 ☹ 😡 (-_-) Up fail\n\n\n")
+		fmt.Printf("\n\n🔥 💀 👽 😱 😡 (-_-) Up fail\n\n\n")
 	}()
 
 	ts.lg.Info("Up started",
@@ -335,7 +335,7 @@ func (ts *Tester) down() (err error) {
 		if err == nil {
 			fmt.Printf("\n*********************************\n")
 			fmt.Printf("Down.defer end (%q)\n\n", ts.cfg.ConfigPath)
-			fmt.Printf("\n\n😁 😁 :) Down success\n\n\n")
+			fmt.Printf("\n\n💯 😁 👍 :) Down success\n\n\n")
 
 			ts.lg.Info("successfully finished Down",
 				zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
@@ -344,7 +344,7 @@ func (ts *Tester) down() (err error) {
 		} else {
 			fmt.Printf("\n*********************************\n")
 			fmt.Printf("Down.defer end (%q)\n\n", ts.cfg.ConfigPath)
-			fmt.Printf("\n\n😱 ☹ 😡 (-_-) Down fail\n\n\n")
+			fmt.Printf("\n\n🔥 💀 👽 😱 😡 (-_-) Down fail\n\n\n")
 
 			ts.lg.Info("failed Down",
 				zap.Error(err),

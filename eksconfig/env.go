@@ -40,6 +40,10 @@ const (
 	EnvironmentVariablePrefixAddOnFargate = "AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_"
 	// EnvironmentVariablePrefixAddOnAppMesh is the environment variable prefix used for "eksconfig".
 	EnvironmentVariablePrefixAddOnAppMesh = "AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_"
+	// EnvironmentVariablePrefixAddOnWordpress is the environment variable prefix used for "eksconfig".
+	EnvironmentVariablePrefixAddOnWordpress = "AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_"
+	// EnvironmentVariablePrefixAddOnKubeflow is the environment variable prefix used for "eksconfig".
+	EnvironmentVariablePrefixAddOnKubeflow = "AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_"
 )
 
 // UpdateFromEnvs updates fields from environmental variables.
@@ -53,6 +57,9 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		cfg.mu.Unlock()
 	}()
 
+	if cfg.Parameters == nil {
+		cfg.Parameters = &Parameters{}
+	}
 	var vv interface{}
 	vv, err = parseEnvs(EnvironmentVariablePrefix, cfg)
 	if err != nil {
@@ -69,6 +76,9 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *Config, got %T", vv)
 	}
 
+	if cfg.Parameters == nil {
+		cfg.Parameters = &Parameters{}
+	}
 	vv, err = parseEnvs(EnvironmentVariablePrefixParameters, cfg.Parameters)
 	if err != nil {
 		return err
@@ -79,6 +89,9 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *Parameters, got %T", vv)
 	}
 
+	if cfg.AddOnNodeGroups == nil {
+		cfg.AddOnNodeGroups = &AddOnNodeGroups{}
+	}
 	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnNodeGroups, cfg.AddOnNodeGroups)
 	if err != nil {
 		return err
@@ -89,6 +102,9 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *AddOnNodeGroups, got %T", vv)
 	}
 
+	if cfg.AddOnManagedNodeGroups == nil {
+		cfg.AddOnManagedNodeGroups = &AddOnManagedNodeGroups{}
+	}
 	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnManagedNodeGroups, cfg.AddOnManagedNodeGroups)
 	if err != nil {
 		return err
@@ -99,6 +115,9 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *AddOnManagedNodeGroups, got %T", vv)
 	}
 
+	if cfg.AddOnNLBHelloWorld == nil {
+		cfg.AddOnNLBHelloWorld = &AddOnNLBHelloWorld{}
+	}
 	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnNLBHelloWorld, cfg.AddOnNLBHelloWorld)
 	if err != nil {
 		return err
@@ -109,6 +128,9 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *AddOnNLBHelloWorld, got %T", vv)
 	}
 
+	if cfg.AddOnALB2048 == nil {
+		cfg.AddOnALB2048 = &AddOnALB2048{}
+	}
 	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnALB2048, cfg.AddOnALB2048)
 	if err != nil {
 		return err
@@ -119,6 +141,9 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *AddOnALB2048, got %T", vv)
 	}
 
+	if cfg.AddOnJobsPi == nil {
+		cfg.AddOnJobsPi = &AddOnJobsPi{}
+	}
 	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnJobsPi, cfg.AddOnJobsPi)
 	if err != nil {
 		return err
@@ -129,6 +154,9 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *AddOnJobsPi, got %T", vv)
 	}
 
+	if cfg.AddOnJobsEcho == nil {
+		cfg.AddOnJobsEcho = &AddOnJobsEcho{}
+	}
 	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnJobsEcho, cfg.AddOnJobsEcho)
 	if err != nil {
 		return err
@@ -139,6 +167,9 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *AddOnJobsEcho, got %T", vv)
 	}
 
+	if cfg.AddOnCronJobs == nil {
+		cfg.AddOnCronJobs = &AddOnCronJobs{}
+	}
 	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnCronJobs, cfg.AddOnCronJobs)
 	if err != nil {
 		return err
@@ -149,6 +180,9 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *AddOnCronJobs, got %T", vv)
 	}
 
+	if cfg.AddOnCSRs == nil {
+		cfg.AddOnCSRs = &AddOnCSRs{}
+	}
 	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnCSRs, cfg.AddOnCSRs)
 	if err != nil {
 		return err
@@ -159,6 +193,9 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *AddOnCSRs, got %T", vv)
 	}
 
+	if cfg.AddOnConfigMaps == nil {
+		cfg.AddOnConfigMaps = &AddOnConfigMaps{}
+	}
 	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnConfigMaps, cfg.AddOnConfigMaps)
 	if err != nil {
 		return err
@@ -169,6 +206,9 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *AddOnConfigMaps, got %T", vv)
 	}
 
+	if cfg.AddOnSecrets == nil {
+		cfg.AddOnSecrets = &AddOnSecrets{}
+	}
 	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnSecrets, cfg.AddOnSecrets)
 	if err != nil {
 		return err
@@ -179,6 +219,9 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *AddOnSecrets, got %T", vv)
 	}
 
+	if cfg.AddOnIRSA == nil {
+		cfg.AddOnIRSA = &AddOnIRSA{}
+	}
 	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnIRSA, cfg.AddOnIRSA)
 	if err != nil {
 		return err
@@ -189,6 +232,9 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *AddOnIRSA, got %T", vv)
 	}
 
+	if cfg.AddOnFargate == nil {
+		cfg.AddOnFargate = &AddOnFargate{}
+	}
 	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnFargate, cfg.AddOnFargate)
 	if err != nil {
 		return err
@@ -199,6 +245,9 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *AddOnFargate, got %T", vv)
 	}
 
+	if cfg.AddOnAppMesh == nil {
+		cfg.AddOnAppMesh = &AddOnAppMesh{}
+	}
 	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnAppMesh, cfg.AddOnAppMesh)
 	if err != nil {
 		return err
@@ -208,6 +257,33 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 	} else {
 		return fmt.Errorf("expected *AddOnAppMesh, got %T", vv)
 	}
+
+	if cfg.AddOnWordpress == nil {
+		cfg.AddOnWordpress = &AddOnWordpress{}
+	}
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnWordpress, cfg.AddOnWordpress)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*AddOnWordpress); ok {
+		cfg.AddOnWordpress = av
+	} else {
+		return fmt.Errorf("expected *AddOnWordpress, got %T", vv)
+	}
+
+	if cfg.AddOnKubeflow == nil {
+		cfg.AddOnKubeflow = &AddOnKubeflow{}
+	}
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnKubeflow, cfg.AddOnKubeflow)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*AddOnKubeflow); ok {
+		cfg.AddOnKubeflow = av
+	} else {
+		return fmt.Errorf("expected *AddOnKubeflow, got %T", vv)
+	}
+
 	return nil
 }
 

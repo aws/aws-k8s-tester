@@ -5,7 +5,9 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"os/exec"
 	"path/filepath"
+	"strings"
 	"sync"
 	"text/template"
 	"time"
@@ -94,11 +96,17 @@ type Config struct {
 	OnFailureDeleteWaitSeconds uint64 `json:"on-failure-delete-wait-seconds"`
 
 	// CommandAfterCreateCluster is the command to execute after creating clusters.
-	CommandAfterCreateCluster           string `json:"command-after-create-cluster,omitempty"`
-	CommandAfterCreateClusterOutputPath string `json:"command-after-create-cluster-output-path,omitempty" read-only:"true"`
+	// Currently supported variables are:
+	//  - "GetRef.Name" for cluster name
+	//  - "GetRef.ClusterARN" for cluster ARN
+	CommandAfterCreateCluster           string `json:"command-after-create-cluster"`
+	CommandAfterCreateClusterOutputPath string `json:"command-after-create-cluster-output-path" read-only:"true"`
 	// CommandAfterCreateAddOns is the command to execute after creating clusters and add-ons.
-	CommandAfterCreateAddOns           string `json:"command-after-create-add-ons,omitempty"`
-	CommandAfterCreateAddOnsOutputPath string `json:"command-after-create-add-ons-output-path,omitempty" read-only:"true"`
+	// Currently supported variables are:
+	//  - "GetRef.Name" for cluster name
+	//  - "GetRef.ClusterARN" for cluster ARN
+	CommandAfterCreateAddOns           string `json:"command-after-create-add-ons"`
+	CommandAfterCreateAddOnsOutputPath string `json:"command-after-create-add-ons-output-path" read-only:"true"`
 
 	// S3BucketName is the name of cluster S3.
 	S3BucketName string `json:"s3-bucket-name"`
@@ -194,6 +202,12 @@ type Config struct {
 	// AddOnAppMesh defines parameters for EKS cluster
 	// add-on "EKS App Mesh Integration".
 	AddOnAppMesh *AddOnAppMesh `json:"add-on-app-mesh,omitempty"`
+	// AddOnWordpress defines parameters for EKS cluster
+	// add-on WordPress.
+	AddOnWordpress *AddOnWordpress `json:"add-on-wordpress,omitempty"`
+	// AddOnKubeflow defines parameters for EKS cluster
+	// add-on Kubeflow.
+	AddOnKubeflow *AddOnKubeflow `json:"add-on-kubeflow,omitempty"`
 
 	// Status represents the current status of AWS resources.
 	// Status is read-only.
@@ -846,6 +860,18 @@ type AddOnCSRs struct {
 	// Namespace is the namespace to create "CertificateSigningRequest" objects in.
 	Namespace string `json:"namespace"`
 
+	// InitialRequestConditionType is the initial CSR condition type
+	// to simulate CSR condition.
+	//
+	// Valid values are:
+	//   "k8s.io/api/certificates/v1beta1.CertificateApproved" == "Approved"
+	//   "k8s.io/api/certificates/v1beta1.CertificateDenied" == "Denied"
+	//   "Random"
+	//   "Pending"
+	//   ""
+	//
+	InitialRequestConditionType string `json:"initial-request-condition-type"`
+
 	// Objects is the number of "CertificateSigningRequest" objects to create.
 	Objects int `json:"objects"`
 	// QPS is the number of "CertificateSigningRequest" create requests to send
@@ -1185,8 +1211,92 @@ type AddOnAppMesh struct {
 	// DeleteTookString is the duration that took to create the resource.
 	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
 
-	// AddOnStackARN is the arn of cloudFormation to create the resource.
-	AddOnCFNStackARN string `json:"add-on-cfn-stack-arn,omitempty" read-only:"true"`
+	// PolicyCFNStackID is the CFN stack ID for policy.
+	PolicyCFNStackID string `json:"policy-cfn-stack-id,omitempty" read-only:"true"`
+}
+
+// IsEnabledAddOnWordpress returns true if "AddOnWordpress" is enabled.
+// Otherwise, nil the field for "omitempty".
+func (cfg *Config) IsEnabledAddOnWordpress() bool {
+	if cfg.AddOnWordpress == nil {
+		return false
+	}
+	if cfg.AddOnWordpress.Enable {
+		return true
+	}
+	cfg.AddOnWordpress = nil
+	return false
+}
+
+// AddOnWordpress defines parameters for EKS cluster
+// add-on WordPress.
+type AddOnWordpress struct {
+	// Enable is 'true' to create this add-on.
+	Enable bool `json:"enable"`
+
+	// Namespace is the namespace to create "AppMesh" controller/injector.
+	Namespace string `json:"namespace"`
+
+	// Created is true when the resource has been created.
+	// Used for delete operations.
+	Created bool `json:"created" read-only:"true"`
+	// CreateTook is the duration that took to create the resource.
+	CreateTook time.Duration `json:"create-took,omitempty" read-only:"true"`
+	// CreateTookString is the duration that took to create the resource.
+	CreateTookString string `json:"create-took-string,omitempty" read-only:"true"`
+	// DeleteTook is the duration that took to create the resource.
+	DeleteTook time.Duration `json:"delete-took,omitempty" read-only:"true"`
+	// DeleteTookString is the duration that took to create the resource.
+	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
+
+	// UserName is the user name.
+	// ref. https://github.com/helm/charts/tree/master/stable/wordpress
+	UserName string `json:"user-name"`
+	// Password is the user password.
+	// ref. https://github.com/helm/charts/tree/master/stable/wordpress
+	Password string `json:"password"`
+
+	// NLBARN is the ARN of the NLB created from the service.
+	NLBARN string `json:"nlb-arn" read-only:"true"`
+	// NLBName is the name of the NLB created from the service.
+	NLBName string `json:"nlb-name" read-only:"true"`
+	// URL is the host name for WordPress service.
+	URL string `json:"url" read-only:"true"`
+}
+
+// IsEnabledAddOnKubeflow returns true if "AddOnKubeflow" is enabled.
+// Otherwise, nil the field for "omitempty".
+func (cfg *Config) IsEnabledAddOnKubeflow() bool {
+	if cfg.AddOnKubeflow == nil {
+		return false
+	}
+	if cfg.AddOnKubeflow.Enable {
+		return true
+	}
+	cfg.AddOnKubeflow = nil
+	return false
+}
+
+// AddOnKubeflow defines parameters for EKS cluster
+// add-on Kubeflow.
+type AddOnKubeflow struct {
+	// Enable is 'true' to create this add-on.
+	Enable bool `json:"enable"`
+
+	// Namespace is the namespace to create "AppMesh" controller/injector.
+	Namespace string `json:"namespace"`
+
+	// Created is true when the resource has been created.
+	// Used for delete operations.
+	Created bool `json:"created" read-only:"true"`
+	// CreateTook is the duration that took to create the resource.
+	CreateTook time.Duration `json:"create-took,omitempty" read-only:"true"`
+	// CreateTookString is the duration that took to create the resource.
+	CreateTookString string `json:"create-took-string,omitempty" read-only:"true"`
+	// DeleteTook is the duration that took to create the resource.
+	DeleteTook time.Duration `json:"delete-took,omitempty" read-only:"true"`
+	// DeleteTookString is the duration that took to create the resource.
+	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
 }
 
 // Load loads configuration from YAML.
@@ -1225,6 +1335,53 @@ func Load(p string) (cfg *Config, err error) {
 	cfg.unsafeSync()
 
 	return cfg, nil
+}
+
+// EvaluateCommandRefs updates "CommandAfterCreateCluster" and "CommandAfterCreateAddOns".
+// currently, only support "GetRef.Name" and "GetRef.ClusterARN"
+func (cfg *Config) EvaluateCommandRefs() error {
+	cfg.mu.Lock()
+	err := cfg.evaluateCommandRefs()
+	cfg.mu.Unlock()
+	return err
+}
+
+func (cfg *Config) evaluateCommandRefs() error {
+	if cfg.CommandAfterCreateCluster != "" {
+		ss := strings.Split(cfg.CommandAfterCreateCluster, " ")
+		p, err := exec.LookPath(ss[0])
+		if err != nil {
+			return fmt.Errorf("%q does not exist (%v)", ss[0], err)
+		}
+		ss[0] = p
+		cfg.CommandAfterCreateCluster = strings.Join(ss, " ")
+	}
+
+	if cfg.CommandAfterCreateAddOns != "" {
+		ss := strings.Split(cfg.CommandAfterCreateAddOns, " ")
+		p, err := exec.LookPath(ss[0])
+		if err != nil {
+			return fmt.Errorf("%q does not exist (%v)", ss[0], err)
+		}
+		ss[0] = p
+		cfg.CommandAfterCreateAddOns = strings.Join(ss, " ")
+	}
+
+	if cfg.Name != "" && strings.Contains(cfg.CommandAfterCreateCluster, "GetRef.Name") {
+		cfg.CommandAfterCreateCluster = strings.ReplaceAll(cfg.CommandAfterCreateCluster, "GetRef.Name", cfg.Name)
+	}
+	if cfg.Status != nil && cfg.Status.ClusterARN != "" && strings.Contains(cfg.CommandAfterCreateCluster, "GetRef.ClusterARN") {
+		cfg.CommandAfterCreateCluster = strings.ReplaceAll(cfg.CommandAfterCreateCluster, "GetRef.ClusterARN", cfg.Status.ClusterARN)
+	}
+
+	if cfg.Name != "" && strings.Contains(cfg.CommandAfterCreateAddOns, "GetRef.Name") {
+		cfg.CommandAfterCreateAddOns = strings.ReplaceAll(cfg.CommandAfterCreateAddOns, "GetRef.Name", cfg.Name)
+	}
+	if cfg.Status != nil && cfg.Status.ClusterARN != "" && strings.Contains(cfg.CommandAfterCreateAddOns, "GetRef.ClusterARN") {
+		cfg.CommandAfterCreateAddOns = strings.ReplaceAll(cfg.CommandAfterCreateAddOns, "GetRef.ClusterARN", cfg.Status.ClusterARN)
+	}
+
+	return cfg.unsafeSync()
 }
 
 // Sync persists current configuration and states to disk.
@@ -1317,13 +1474,12 @@ export KUBECTL="{{ .KubectlCommand }}"
 {{ .KubectlCommand }} version
 {{ .KubectlCommand }} cluster-info
 {{ .KubectlCommand }} get cs
-{{ .KubectlCommand }} get pods
-{{ .KubectlCommand }} get csr -o=yaml
-{{ .KubectlCommand }} get nodes -o=wide
-{{ .KubectlCommand }} get nodes -o=yaml
 {{ .KubectlCommand }} --namespace=kube-system get pods
 {{ .KubectlCommand }} --namespace=kube-system get ds
-{{ .KubectlCommand }} get all --all-namespaces
+{{ .KubectlCommand }} get pods
+{{ .KubectlCommand }} get csr -o=yaml
+{{ .KubectlCommand }} get nodes --show-labels -o=wide
+{{ .KubectlCommand }} get nodes -o=wide
 
 # sonobuoy commands
 go get -v -u github.com/heptio/sonobuoy

@@ -2,6 +2,7 @@
 package jobspi
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"math/rand"
@@ -83,10 +84,12 @@ func (ts *tester) Create() error {
 		zap.String("object-size", humanize.Bytes(uint64(len(b)))),
 	)
 
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err = ts.cfg.K8SClient.KubernetesClientSet().
 		BatchV1().
 		Jobs(ts.cfg.EKSConfig.AddOnJobsPi.Namespace).
-		Create(&obj)
+		Create(ctx, &obj, metav1.CreateOptions{})
+	cancel()
 	if err != nil {
 		return fmt.Errorf("failed to create Job (%v)", err)
 	}
@@ -137,17 +140,20 @@ func (ts *tester) Delete() error {
 	var errs []string
 
 	ts.cfg.Logger.Info("deleting Job", zap.String("name", jobName))
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	err := ts.cfg.
 		K8SClient.KubernetesClientSet().
 		BatchV1().
 		Jobs(ts.cfg.EKSConfig.AddOnJobsPi.Namespace).
 		Delete(
+			ctx,
 			jobName,
-			&metav1.DeleteOptions{
+			metav1.DeleteOptions{
 				GracePeriodSeconds: aws.Int64(0),
 				PropagationPolicy:  &propagationBackground,
 			},
 		)
+	cancel()
 	if err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete Job pi %q (%v)", jobName, err))
 	} else {

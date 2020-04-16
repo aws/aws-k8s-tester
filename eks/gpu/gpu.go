@@ -95,10 +95,15 @@ func (ts *tester) InstallNvidiaDriver() error {
 			}
 
 			ts.cfg.Logger.Info("listing GPU nodes via client-go", zap.String("mng-name", mv.Name))
-			nodes, err := ts.cfg.K8SClient.KubernetesClientSet().CoreV1().Nodes().List(metav1.ListOptions{
-				// TODO: filter by GPU?
-				// FieldSelector: fields.OneTermEqualSelector("metadata.name", "GPU").String(),
-			})
+			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+			nodes, err := ts.cfg.K8SClient.KubernetesClientSet().CoreV1().Nodes().List(
+				ctx,
+				metav1.ListOptions{
+					// TODO: filter by GPU?
+					// FieldSelector: fields.OneTermEqualSelector("metadata.name", "GPU").String(),
+				},
+			)
+			cancel()
 			if err != nil {
 				ts.cfg.Logger.Warn("get nodes failed", zap.Error(err))
 				time.Sleep(5 * time.Second)
@@ -164,34 +169,40 @@ kubectl logs nvidia-smi
 */
 func (ts *tester) RunNvidiaSMI() error {
 	ts.cfg.Logger.Info("creating nvidia-smi")
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.K8SClient.
 		KubernetesClientSet().
 		CoreV1().
 		Pods("default").
-		Create(&v1.Pod{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "v1",
-				Kind:       "Pod",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "nvidia-smi",
-			},
-			Spec: v1.PodSpec{
-				RestartPolicy: v1.RestartPolicyOnFailure,
-				Containers: []v1.Container{
-					{
-						Name:  "nvidia-smi",
-						Image: "nvidia/cuda:9.2-devel",
-						Args:  []string{"nvidia-smi"},
-						Resources: v1.ResourceRequirements{
-							Limits: map[v1.ResourceName]resource.Quantity{
-								v1.ResourceName("nvidia.com/gpu"): resource.MustParse("1"),
+		Create(
+			ctx,
+			&v1.Pod{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "Pod",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "nvidia-smi",
+				},
+				Spec: v1.PodSpec{
+					RestartPolicy: v1.RestartPolicyOnFailure,
+					Containers: []v1.Container{
+						{
+							Name:  "nvidia-smi",
+							Image: "nvidia/cuda:9.2-devel",
+							Args:  []string{"nvidia-smi"},
+							Resources: v1.ResourceRequirements{
+								Limits: map[v1.ResourceName]resource.Quantity{
+									v1.ResourceName("nvidia.com/gpu"): resource.MustParse("1"),
+								},
 							},
 						},
 					},
 				},
 			},
-		})
+			metav1.CreateOptions{},
+		)
+	cancel()
 	if err != nil {
 		return err
 	}

@@ -31,7 +31,9 @@ func (m *DaemonSetManager) WaitDaemonSetReady(ctx context.Context, ds *appsv1.Da
 	start := time.Now()
 
 	return observedDS, wait.PollImmediateUntil(utils.PollIntervalMedium, func() (bool, error) {
-		observedDS, err = m.cs.AppsV1().DaemonSets(ds.Namespace).Get(ds.Name, metav1.GetOptions{})
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		observedDS, err = m.cs.AppsV1().DaemonSets(ds.Namespace).Get(ctx, ds.Name, metav1.GetOptions{})
+		cancel()
 		if err != nil {
 			return false, err
 		}

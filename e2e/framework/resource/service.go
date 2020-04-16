@@ -2,6 +2,7 @@ package resource
 
 import (
 	"context"
+	"time"
 
 	"github.com/aws/aws-k8s-tester/e2e/framework/utils"
 
@@ -26,7 +27,9 @@ func NewServiceManager(cs kubernetes.Interface) *ServiceManager {
 // WaitServiceHasEndpointsNum waits until the service has the expected number of endpoints
 func (m *ServiceManager) WaitServiceHasEndpointsNum(ctx context.Context, svc *corev1.Service, epCounts int) (*corev1.Service, error) {
 	if err := wait.PollImmediateUntil(utils.PollIntervalShort, func() (bool, error) {
-		ep, err := m.cs.CoreV1().Endpoints(svc.Namespace).Get(svc.Name, metav1.GetOptions{})
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		ep, err := m.cs.CoreV1().Endpoints(svc.Namespace).Get(ctx, svc.Name, metav1.GetOptions{})
+		cancel()
 		if err != nil {
 			if apierrs.IsNotFound(err) {
 				return false, nil
@@ -44,14 +47,19 @@ func (m *ServiceManager) WaitServiceHasEndpointsNum(ctx context.Context, svc *co
 	}, ctx.Done()); err != nil {
 		return nil, err
 	}
-	return m.cs.CoreV1().Services(svc.Namespace).Get(svc.Name, metav1.GetOptions{})
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	svc, err := m.cs.CoreV1().Services(svc.Namespace).Get(ctx, svc.Name, metav1.GetOptions{})
+	cancel()
+	return svc, err
 }
 
 // WaitServiceHasEndpointIP waits for the service to have a specific endpoint IP
 // TODO deal with port
 func (m *ServiceManager) WaitServiceHasEndpointIP(ctx context.Context, svc *corev1.Service, ip string) (*corev1.Service, error) {
 	if err := wait.PollImmediateUntil(utils.PollIntervalShort, func() (bool, error) {
-		ep, err := m.cs.CoreV1().Endpoints(svc.Namespace).Get(svc.Name, metav1.GetOptions{})
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		ep, err := m.cs.CoreV1().Endpoints(svc.Namespace).Get(ctx, svc.Name, metav1.GetOptions{})
+		cancel()
 		if err != nil {
 			if apierrs.IsNotFound(err) {
 				return false, nil
@@ -71,5 +79,8 @@ func (m *ServiceManager) WaitServiceHasEndpointIP(ctx context.Context, svc *core
 	}, ctx.Done()); err != nil {
 		return nil, err
 	}
-	return m.cs.CoreV1().Services(svc.Namespace).Get(svc.Name, metav1.GetOptions{})
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	svc, err := m.cs.CoreV1().Services(svc.Namespace).Get(ctx, svc.Name, metav1.GetOptions{})
+	cancel()
+	return svc, err
 }

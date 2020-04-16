@@ -136,7 +136,10 @@ func NewDefault() *Config {
 		},
 
 		AddOnCSRs: &AddOnCSRs{
-			Enable:  false,
+			Enable: false,
+
+			InitialRequestConditionType: "",
+
 			Objects: 10,
 			QPS:     1,
 			Burst:   1,
@@ -187,6 +190,16 @@ func NewDefault() *Config {
 		},
 
 		AddOnAppMesh: &AddOnAppMesh{
+			Enable: false,
+		},
+
+		AddOnWordpress: &AddOnWordpress{
+			Enable:   false,
+			UserName: "user",
+			Password: "",
+		},
+
+		AddOnKubeflow: &AddOnKubeflow{
 			Enable: false,
 		},
 
@@ -302,6 +315,12 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	if err := cfg.validateAddOnAppMesh(); err != nil {
 		return fmt.Errorf("validateAddOnAppMesh failed [%v]", err)
 	}
+	if err := cfg.validateAddOnWordpress(); err != nil {
+		return fmt.Errorf("validateAddOnWordpress failed [%v]", err)
+	}
+	if err := cfg.validateAddOnKubeflow(); err != nil {
+		return fmt.Errorf("validateAddOnKubeflow failed [%v]", err)
+	}
 
 	return nil
 }
@@ -376,23 +395,8 @@ func (cfg *Config) validateConfig() error {
 		return fmt.Errorf("kubectl-download-url %q build OS mismatch, expected %q", cfg.KubectlDownloadURL, runtime.GOOS)
 	}
 
-	if cfg.CommandAfterCreateCluster != "" {
-		ss := strings.Split(cfg.CommandAfterCreateCluster, " ")
-		p, err := exec.LookPath(ss[0])
-		if err != nil {
-			return fmt.Errorf("%q does not exist (%v)", ss[0], err)
-		}
-		ss[0] = p
-		cfg.CommandAfterCreateCluster = strings.Join(ss, " ")
-	}
-	if cfg.CommandAfterCreateAddOns != "" {
-		ss := strings.Split(cfg.CommandAfterCreateAddOns, " ")
-		p, err := exec.LookPath(ss[0])
-		if err != nil {
-			return fmt.Errorf("%q does not exist (%v)", ss[0], err)
-		}
-		ss[0] = p
-		cfg.CommandAfterCreateAddOns = strings.Join(ss, " ")
+	if err := cfg.evaluateCommandRefs(); err != nil {
+		return err
 	}
 
 	switch cfg.S3BucketCreate {
@@ -626,6 +630,9 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 		case AMITypeBottleRocketCPU:
 			if v.RemoteAccessUserName != "ec2-user" {
 				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", v.AMIType, v.RemoteAccessUserName)
+			}
+			if v.SSMDocumentName != "" && cfg.S3BucketName == "" {
+				return fmt.Errorf("AMIType %q requires SSMDocumentName %q but no S3BucketName", v.AMIType, v.SSMDocumentName)
 			}
 			if v.KubeletExtraArgs != "" {
 				return fmt.Errorf("AMIType %q but unexpected KubeletExtraArgs %q", v.AMIType, v.KubeletExtraArgs)
@@ -975,6 +982,14 @@ func (cfg *Config) validateAddOnCSRs() error {
 	if cfg.ClientQPS > 0 && float32(cfg.AddOnCSRs.QPS) > cfg.ClientQPS {
 		return fmt.Errorf("AddOnCSRs.QPS %d > ClientQPS %f", cfg.AddOnCSRs.QPS, cfg.ClientQPS)
 	}
+	switch cfg.AddOnCSRs.InitialRequestConditionType {
+	case "Approved":
+	case "Denied":
+	case "Pending", "":
+	case "Random":
+	default:
+		return fmt.Errorf("unknown AddOnCSRs.InitialRequestConditionType %q", cfg.AddOnCSRs.InitialRequestConditionType)
+	}
 	return nil
 }
 
@@ -1135,6 +1150,65 @@ func (cfg *Config) validateAddOnAppMesh() error {
 	}
 	if cfg.AddOnAppMesh.Namespace == "" {
 		cfg.AddOnAppMesh.Namespace = "appmesh-system"
+	}
+	return nil
+}
+
+func (cfg *Config) validateAddOnWordpress() error {
+	if !cfg.IsEnabledAddOnWordpress() {
+		return nil
+	}
+
+	// TODO: nodeSelector does not work for mariadb
+	// this does not work when deployed with NG + MNG
+	// does not work even when assigned to NG, not to MNG
+	// only works when deployed with NG and not MNG
+	// only works when deployed with not NG and MNG
+	// don't mix...
+	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
+		return errors.New("AddOnWordpress.Enable true but no node group is enabled")
+	}
+	if cfg.IsEnabledAddOnNodeGroups() && cfg.IsEnabledAddOnManagedNodeGroups() {
+		return errors.New("AddOnWordpress.Enable true but both node groups are enabled")
+	}
+
+	// TODO: can we support NG + bottlerocket
+	if cfg.IsEnabledAddOnNodeGroups() {
+		for name, asg := range cfg.AddOnNodeGroups.ASGs {
+			if asg.AMIType == ec2config.AMITypeBottleRocketCPU {
+				return fmt.Errorf("AddOnNodeGroups %q has %q for AddOnWordpress (not supported yet)", name, asg.AMIType)
+			}
+		}
+	}
+	if cfg.IsEnabledAddOnManagedNodeGroups() {
+		for name, asg := range cfg.AddOnManagedNodeGroups.MNGs {
+			if asg.AMIType == ec2config.AMITypeBottleRocketCPU {
+				return fmt.Errorf("AddOnManagedNodeGroups %q has %q for AddOnWordpress (not supported yet)", name, asg.AMIType)
+			}
+		}
+	}
+
+	if cfg.AddOnWordpress.Namespace == "" {
+		cfg.AddOnWordpress.Namespace = cfg.Name + "-wordpress"
+	}
+	if cfg.AddOnWordpress.UserName == "" {
+		cfg.AddOnWordpress.UserName = "user"
+	}
+	if cfg.AddOnWordpress.Password == "" {
+		cfg.AddOnWordpress.Password = randString(10)
+	}
+	return nil
+}
+
+func (cfg *Config) validateAddOnKubeflow() error {
+	if !cfg.IsEnabledAddOnKubeflow() {
+		return nil
+	}
+	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
+		return errors.New("AddOnKubeflow.Enable true but no node group is enabled")
+	}
+	if cfg.AddOnKubeflow.Namespace == "" {
+		cfg.AddOnKubeflow.Namespace = cfg.Name + "-kubeflow"
 	}
 	return nil
 }

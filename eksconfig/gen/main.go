@@ -49,6 +49,10 @@ func createDoc() string {
 	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnFargate, &eksconfig.AddOnFargate{}))
 	b.WriteByte('\n')
 	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnAppMesh, &eksconfig.AddOnAppMesh{}))
+	b.WriteByte('\n')
+	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnWordpress, &eksconfig.AddOnWordpress{}))
+	b.WriteByte('\n')
+	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnKubeflow, &eksconfig.AddOnKubeflow{}))
 	return b.String()
 }
 

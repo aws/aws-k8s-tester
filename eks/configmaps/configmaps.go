@@ -167,10 +167,12 @@ func (ts *tester) createConfigMapsSequential(pfx, val string, failThreshold int)
 		}
 
 		t1 := time.Now()
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		_, err := ts.cfg.K8SClient.KubernetesClientSet().
 			CoreV1().
 			ConfigMaps(ts.cfg.EKSConfig.AddOnConfigMaps.Namespace).
-			Create(configMap)
+			Create(ctx, configMap, metav1.CreateOptions{})
+		cancel()
 		t2 := time.Now()
 		if err != nil {
 			select {
@@ -252,10 +254,12 @@ func (ts *tester) createConfigMapsParallel(pfx, val string, failThreshold int) e
 			}
 
 			t1 := time.Now()
+			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 			_, err := ts.cfg.K8SClient.KubernetesClientSet().
 				CoreV1().
 				ConfigMaps(ts.cfg.EKSConfig.AddOnConfigMaps.Namespace).
-				Create(configMap)
+				Create(ctx, configMap, metav1.CreateOptions{})
+			cancel()
 			t2 := time.Now()
 			if err != nil {
 				select {

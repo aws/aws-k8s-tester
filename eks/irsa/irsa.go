@@ -527,25 +527,31 @@ func (ts *tester) deleteRole() error {
 
 func (ts *tester) createServiceAccount() error {
 	ts.cfg.Logger.Info("creating service account", zap.String("name", ts.cfg.EKSConfig.AddOnIRSA.ServiceAccountName))
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.K8SClient.KubernetesClientSet().
 		CoreV1().
 		ServiceAccounts(ts.cfg.EKSConfig.AddOnIRSA.Namespace).
-		Create(&v1.ServiceAccount{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "v1",
-				Kind:       "ServiceAccount",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      ts.cfg.EKSConfig.AddOnIRSA.ServiceAccountName,
-				Namespace: ts.cfg.EKSConfig.AddOnIRSA.Namespace,
-				Labels: map[string]string{
-					"name": ts.cfg.EKSConfig.AddOnIRSA.ServiceAccountName,
+		Create(
+			ctx,
+			&v1.ServiceAccount{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "ServiceAccount",
 				},
-				Annotations: map[string]string{
-					"eks.amazonaws.com/role-arn": ts.cfg.EKSConfig.AddOnIRSA.RoleARN,
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      ts.cfg.EKSConfig.AddOnIRSA.ServiceAccountName,
+					Namespace: ts.cfg.EKSConfig.AddOnIRSA.Namespace,
+					Labels: map[string]string{
+						"name": ts.cfg.EKSConfig.AddOnIRSA.ServiceAccountName,
+					},
+					Annotations: map[string]string{
+						"eks.amazonaws.com/role-arn": ts.cfg.EKSConfig.AddOnIRSA.RoleARN,
+					},
 				},
 			},
-		})
+			metav1.CreateOptions{},
+		)
+	cancel()
 	if err != nil {
 		return err
 	}
@@ -556,16 +562,19 @@ func (ts *tester) createServiceAccount() error {
 func (ts *tester) deleteServiceAccount() error {
 	ts.cfg.Logger.Info("deleting service account", zap.String("name", ts.cfg.EKSConfig.AddOnIRSA.ServiceAccountName))
 	foreground := metav1.DeletePropagationForeground
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	err := ts.cfg.K8SClient.KubernetesClientSet().
 		CoreV1().
 		ServiceAccounts(ts.cfg.EKSConfig.AddOnIRSA.Namespace).
 		Delete(
+			ctx,
 			ts.cfg.EKSConfig.AddOnIRSA.ServiceAccountName,
-			&metav1.DeleteOptions{
+			metav1.DeleteOptions{
 				GracePeriodSeconds: aws.Int64(0),
 				PropagationPolicy:  &foreground,
 			},
 		)
+	cancel()
 	if err != nil {
 		return err
 	}
@@ -632,25 +641,31 @@ func (ts *tester) createConfigMaps() error {
 	}
 	tplTxt := buf.String()
 
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.K8SClient.KubernetesClientSet().
 		CoreV1().
 		ConfigMaps(ts.cfg.EKSConfig.AddOnIRSA.Namespace).
-		Create(&v1.ConfigMap{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "v1",
-				Kind:       "ConfigMap",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      ts.cfg.EKSConfig.AddOnIRSA.ConfigMapName,
-				Namespace: ts.cfg.EKSConfig.AddOnIRSA.Namespace,
-				Labels: map[string]string{
-					"name": ts.cfg.EKSConfig.AddOnIRSA.ConfigMapName,
+		Create(
+			ctx,
+			&v1.ConfigMap{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "ConfigMap",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      ts.cfg.EKSConfig.AddOnIRSA.ConfigMapName,
+					Namespace: ts.cfg.EKSConfig.AddOnIRSA.Namespace,
+					Labels: map[string]string{
+						"name": ts.cfg.EKSConfig.AddOnIRSA.ConfigMapName,
+					},
+				},
+				Data: map[string]string{
+					ts.cfg.EKSConfig.AddOnIRSA.ConfigMapScriptFileName: tplTxt,
 				},
 			},
-			Data: map[string]string{
-				ts.cfg.EKSConfig.AddOnIRSA.ConfigMapScriptFileName: tplTxt,
-			},
-		})
+			metav1.CreateOptions{},
+		)
+	cancel()
 	if err != nil {
 		return err
 	}
@@ -662,16 +677,19 @@ func (ts *tester) createConfigMaps() error {
 func (ts *tester) deleteConfigMaps() error {
 	ts.cfg.Logger.Info("deleting config maps", zap.String("name", ts.cfg.EKSConfig.AddOnIRSA.ConfigMapName))
 	foreground := metav1.DeletePropagationForeground
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	err := ts.cfg.K8SClient.KubernetesClientSet().
 		CoreV1().
 		ConfigMaps(ts.cfg.EKSConfig.AddOnIRSA.Namespace).
 		Delete(
+			ctx,
 			ts.cfg.EKSConfig.AddOnIRSA.ConfigMapName,
-			&metav1.DeleteOptions{
+			metav1.DeleteOptions{
 				GracePeriodSeconds: aws.Int64(0),
 				PropagationPolicy:  &foreground,
 			},
 		)
+	cancel()
 	if err != nil {
 		return err
 	}
@@ -704,103 +722,109 @@ func (ts *tester) createDeployment() error {
 	tplTxt := buf.String()
 
 	fileOrCreate := v1.HostPathFileOrCreate
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.K8SClient.KubernetesClientSet().
 		AppsV1().
 		Deployments(ts.cfg.EKSConfig.AddOnIRSA.Namespace).
-		Create(&appsv1.Deployment{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "apps/v1",
-				Kind:       "Deployment",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      ts.cfg.EKSConfig.AddOnIRSA.DeploymentName,
-				Namespace: ts.cfg.EKSConfig.AddOnIRSA.Namespace,
-				Labels: map[string]string{
-					"test": ts.cfg.EKSConfig.AddOnIRSA.ConfigMapScriptFileName,
+		Create(
+			ctx,
+			&appsv1.Deployment{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "apps/v1",
+					Kind:       "Deployment",
 				},
-			},
-			Spec: appsv1.DeploymentSpec{
-				Replicas: aws.Int32(ts.cfg.EKSConfig.AddOnIRSA.DeploymentReplicas),
-				Selector: &metav1.LabelSelector{
-					MatchLabels: map[string]string{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      ts.cfg.EKSConfig.AddOnIRSA.DeploymentName,
+					Namespace: ts.cfg.EKSConfig.AddOnIRSA.Namespace,
+					Labels: map[string]string{
 						"test": ts.cfg.EKSConfig.AddOnIRSA.ConfigMapScriptFileName,
 					},
 				},
-				Template: v1.PodTemplateSpec{
-					ObjectMeta: metav1.ObjectMeta{
-						Labels: map[string]string{
+				Spec: appsv1.DeploymentSpec{
+					Replicas: aws.Int32(ts.cfg.EKSConfig.AddOnIRSA.DeploymentReplicas),
+					Selector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
 							"test": ts.cfg.EKSConfig.AddOnIRSA.ConfigMapScriptFileName,
 						},
 					},
-					Spec: v1.PodSpec{
-						ServiceAccountName: ts.cfg.EKSConfig.AddOnIRSA.ServiceAccountName,
-
-						// invalid: spec.template.spec.restartPolicy: Unsupported value: \"OnFailure\": supported values: \"Always\")"
-						RestartPolicy: v1.RestartPolicyAlways,
-
-						Containers: []v1.Container{
-							{
-								Name:  ts.cfg.EKSConfig.AddOnIRSA.ConfigMapName,
-								Image: "amazonlinux",
-
-								ImagePullPolicy: v1.PullIfNotPresent,
-								Command: []string{
-									"sh",
-									"-c",
-									tplTxt,
-								},
-
-								// ref. https://kubernetes.io/docs/concepts/cluster-administration/logging/
-								VolumeMounts: []v1.VolumeMount{
-									{ // to execute
-										Name:      ts.cfg.EKSConfig.AddOnIRSA.ConfigMapName,
-										MountPath: "/opt",
-									},
-									{ // to write
-										Name:      "output-file",
-										MountPath: outputFilePath,
-									},
-									{ // to write
-										Name:      "var-log",
-										MountPath: "/var/log",
-									},
-								},
+					Template: v1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Labels: map[string]string{
+								"test": ts.cfg.EKSConfig.AddOnIRSA.ConfigMapScriptFileName,
 							},
 						},
+						Spec: v1.PodSpec{
+							ServiceAccountName: ts.cfg.EKSConfig.AddOnIRSA.ServiceAccountName,
 
-						// ref. https://kubernetes.io/docs/concepts/cluster-administration/logging/
-						Volumes: []v1.Volume{
-							{ // to execute
-								Name: ts.cfg.EKSConfig.AddOnIRSA.ConfigMapName,
-								VolumeSource: v1.VolumeSource{
-									ConfigMap: &v1.ConfigMapVolumeSource{
-										LocalObjectReference: v1.LocalObjectReference{
-											Name: ts.cfg.EKSConfig.AddOnIRSA.ConfigMapName,
+							// invalid: spec.template.spec.restartPolicy: Unsupported value: \"OnFailure\": supported values: \"Always\")"
+							RestartPolicy: v1.RestartPolicyAlways,
+
+							Containers: []v1.Container{
+								{
+									Name:  ts.cfg.EKSConfig.AddOnIRSA.ConfigMapName,
+									Image: "amazonlinux",
+
+									ImagePullPolicy: v1.PullIfNotPresent,
+									Command: []string{
+										"sh",
+										"-c",
+										tplTxt,
+									},
+
+									// ref. https://kubernetes.io/docs/concepts/cluster-administration/logging/
+									VolumeMounts: []v1.VolumeMount{
+										{ // to execute
+											Name:      ts.cfg.EKSConfig.AddOnIRSA.ConfigMapName,
+											MountPath: "/opt",
 										},
-										DefaultMode: aws.Int32(0777),
+										{ // to write
+											Name:      "output-file",
+											MountPath: outputFilePath,
+										},
+										{ // to write
+											Name:      "var-log",
+											MountPath: "/var/log",
+										},
 									},
 								},
 							},
-							{ // to write
-								Name: "output-file",
-								VolumeSource: v1.VolumeSource{
-									HostPath: &v1.HostPathVolumeSource{
-										Path: outputFilePath,
-										Type: &fileOrCreate,
+
+							// ref. https://kubernetes.io/docs/concepts/cluster-administration/logging/
+							Volumes: []v1.Volume{
+								{ // to execute
+									Name: ts.cfg.EKSConfig.AddOnIRSA.ConfigMapName,
+									VolumeSource: v1.VolumeSource{
+										ConfigMap: &v1.ConfigMapVolumeSource{
+											LocalObjectReference: v1.LocalObjectReference{
+												Name: ts.cfg.EKSConfig.AddOnIRSA.ConfigMapName,
+											},
+											DefaultMode: aws.Int32(0777),
+										},
 									},
 								},
-							},
-							{ // to write
-								Name: "var-log",
-								VolumeSource: v1.VolumeSource{
-									EmptyDir: &v1.EmptyDirVolumeSource{},
+								{ // to write
+									Name: "output-file",
+									VolumeSource: v1.VolumeSource{
+										HostPath: &v1.HostPathVolumeSource{
+											Path: outputFilePath,
+											Type: &fileOrCreate,
+										},
+									},
+								},
+								{ // to write
+									Name: "var-log",
+									VolumeSource: v1.VolumeSource{
+										EmptyDir: &v1.EmptyDirVolumeSource{},
+									},
 								},
 							},
 						},
 					},
 				},
 			},
-		})
+			metav1.CreateOptions{},
+		)
+	cancel()
 	if err != nil {
 		return fmt.Errorf("failed to create IRSA Deployment (%v)", err)
 	}
@@ -813,16 +837,19 @@ func (ts *tester) createDeployment() error {
 func (ts *tester) deleteDeployment() error {
 	ts.cfg.Logger.Info("deleting IRSA Deployment")
 	foreground := metav1.DeletePropagationForeground
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	err := ts.cfg.K8SClient.KubernetesClientSet().
 		AppsV1().
 		Deployments(ts.cfg.EKSConfig.AddOnIRSA.Namespace).
 		Delete(
+			ctx,
 			ts.cfg.EKSConfig.AddOnIRSA.DeploymentName,
-			&metav1.DeleteOptions{
+			metav1.DeleteOptions{
 				GracePeriodSeconds: aws.Int64(0),
 				PropagationPolicy:  &foreground,
 			},
 		)
+	cancel()
 	if err != nil && !strings.Contains(err.Error(), " not found") {
 		return fmt.Errorf("failed to delete IRSA Deployment (%v)", err)
 	}
@@ -848,10 +875,12 @@ foundBreak:
 		case <-time.After(5 * time.Second):
 		}
 
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		presp, err := ts.cfg.K8SClient.KubernetesClientSet().
 			CoreV1().
 			Pods(ts.cfg.EKSConfig.AddOnIRSA.Namespace).
-			List(metav1.ListOptions{})
+			List(ctx, metav1.ListOptions{})
+		cancel()
 		if err != nil {
 			return fmt.Errorf("failed to get IRSA Pod (%v)", err)
 		}
@@ -939,10 +968,12 @@ func (ts *tester) waitDeployment() error {
 		case <-time.After(time.Minute):
 		}
 
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		dresp, err := ts.cfg.K8SClient.KubernetesClientSet().
 			AppsV1().
 			Deployments(ts.cfg.EKSConfig.AddOnIRSA.Namespace).
-			Get(ts.cfg.EKSConfig.AddOnIRSA.DeploymentName, metav1.GetOptions{})
+			Get(ctx, ts.cfg.EKSConfig.AddOnIRSA.DeploymentName, metav1.GetOptions{})
+		cancel()
 		if err != nil {
 			return fmt.Errorf("failed to get Deployment (%v)", err)
 		}

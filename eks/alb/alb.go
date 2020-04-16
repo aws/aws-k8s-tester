@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/aws/elb"
 	k8sclient "github.com/aws/aws-k8s-tester/pkg/k8s-client"
@@ -249,22 +250,28 @@ func (ts *tester) Delete() error {
 // https://github.com/kubernetes-sigs/aws-alb-ingress-controller/blob/master/docs/examples/rbac-role.yaml
 func (ts *tester) createALBServiceAccount() error {
 	ts.cfg.Logger.Info("creating ALB Ingress Controller  ServiceAccount")
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.K8SClient.KubernetesClientSet().
 		CoreV1().
 		ServiceAccounts(albIngressControllerServiceAccountNamespace).
-		Create(&v1.ServiceAccount{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "v1",
-				Kind:       "ServiceAccount",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      albIngressControllerServiceAccountName,
-				Namespace: albIngressControllerServiceAccountNamespace,
-				Labels: map[string]string{
-					"app.kubernetes.io/name": albIngressControllerName,
+		Create(
+			ctx,
+			&v1.ServiceAccount{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "ServiceAccount",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      albIngressControllerServiceAccountName,
+					Namespace: albIngressControllerServiceAccountNamespace,
+					Labels: map[string]string{
+						"app.kubernetes.io/name": albIngressControllerName,
+					},
 				},
 			},
-		})
+			metav1.CreateOptions{},
+		)
+	cancel()
 	if err != nil {
 		return fmt.Errorf("failed to create ALB Ingress Controller ServiceAccount (%v)", err)
 	}
@@ -278,16 +285,19 @@ func (ts *tester) createALBServiceAccount() error {
 func (ts *tester) deleteALBServiceAccount() error {
 	ts.cfg.Logger.Info("deleting ALB Ingress Controller ServiceAccount")
 	foreground := metav1.DeletePropagationForeground
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	err := ts.cfg.K8SClient.KubernetesClientSet().
 		CoreV1().
 		ServiceAccounts(albIngressControllerServiceAccountNamespace).
 		Delete(
+			ctx,
 			albIngressControllerServiceAccountName,
-			&metav1.DeleteOptions{
+			metav1.DeleteOptions{
 				GracePeriodSeconds: aws.Int64(0),
 				PropagationPolicy:  &foreground,
 			},
 		)
+	cancel()
 	if err != nil && !strings.Contains(err.Error(), " not found") {
 		return fmt.Errorf("failed to delete ALB Ingress Controller ServiceAccount (%v)", err)
 	}
@@ -300,64 +310,70 @@ func (ts *tester) deleteALBServiceAccount() error {
 // https://github.com/kubernetes-sigs/aws-alb-ingress-controller/blob/master/docs/examples/rbac-role.yaml
 func (ts *tester) createALBRBACClusterRole() error {
 	ts.cfg.Logger.Info("creating ALB Ingress Controller RBAC ClusterRole")
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.K8SClient.KubernetesClientSet().
 		RbacV1().
 		ClusterRoles().
-		Create(&rbacv1.ClusterRole{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "rbac.authorization.k8s.io/v1",
-				Kind:       "ClusterRole",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      albIngressControllerRBACRoleName,
-				Namespace: albIngressControllerRBACRoleNamespace,
-				Labels: map[string]string{
-					"app.kubernetes.io/name": albIngressControllerName,
+		Create(
+			ctx,
+			&rbacv1.ClusterRole{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "rbac.authorization.k8s.io/v1",
+					Kind:       "ClusterRole",
 				},
-			},
-			Rules: []rbacv1.PolicyRule{
-				{ // read/write
-					APIGroups: []string{
-						"",
-						"extensions",
-					},
-					Resources: []string{
-						"configmaps",
-						"endpoints",
-						"events",
-						"ingresses",
-						"ingresses/status",
-						"services",
-					},
-					Verbs: []string{
-						"create",
-						"get",
-						"list",
-						"update",
-						"watch",
-						"patch",
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      albIngressControllerRBACRoleName,
+					Namespace: albIngressControllerRBACRoleNamespace,
+					Labels: map[string]string{
+						"app.kubernetes.io/name": albIngressControllerName,
 					},
 				},
-				{ // read-only
-					APIGroups: []string{
-						"",
-						"extensions",
+				Rules: []rbacv1.PolicyRule{
+					{ // read/write
+						APIGroups: []string{
+							"",
+							"extensions",
+						},
+						Resources: []string{
+							"configmaps",
+							"endpoints",
+							"events",
+							"ingresses",
+							"ingresses/status",
+							"services",
+						},
+						Verbs: []string{
+							"create",
+							"get",
+							"list",
+							"update",
+							"watch",
+							"patch",
+						},
 					},
-					Resources: []string{
-						"nodes",
-						"pods",
-						"secrets",
-						"services",
-						"namespaces",
-					},
-					Verbs: []string{
-						"get",
-						"list",
-						"watch",
+					{ // read-only
+						APIGroups: []string{
+							"",
+							"extensions",
+						},
+						Resources: []string{
+							"nodes",
+							"pods",
+							"secrets",
+							"services",
+							"namespaces",
+						},
+						Verbs: []string{
+							"get",
+							"list",
+							"watch",
+						},
 					},
 				},
 			},
-		})
+			metav1.CreateOptions{},
+		)
+	cancel()
 	if err != nil {
 		return fmt.Errorf("failed to create ALB Ingress Controller RBAC ClusterRole (%v)", err)
 	}
@@ -371,16 +387,19 @@ func (ts *tester) createALBRBACClusterRole() error {
 func (ts *tester) deleteALBRBACClusterRole() error {
 	ts.cfg.Logger.Info("deleting ALB Ingress Controller RBAC ClusterRole")
 	foreground := metav1.DeletePropagationForeground
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	err := ts.cfg.K8SClient.KubernetesClientSet().
 		RbacV1().
 		ClusterRoles().
 		Delete(
+			ctx,
 			albIngressControllerRBACRoleName,
-			&metav1.DeleteOptions{
+			metav1.DeleteOptions{
 				GracePeriodSeconds: aws.Int64(0),
 				PropagationPolicy:  &foreground,
 			},
 		)
+	cancel()
 	if err != nil && !strings.Contains(err.Error(), " not found") {
 		return fmt.Errorf("failed to delete ALB Ingress Controller RBAC ClusterRole (%v)", err)
 	}
@@ -393,34 +412,40 @@ func (ts *tester) deleteALBRBACClusterRole() error {
 // https://github.com/kubernetes-sigs/aws-alb-ingress-controller/blob/master/docs/examples/rbac-role.yaml
 func (ts *tester) createALBRBACClusterRoleBinding() error {
 	ts.cfg.Logger.Info("creating ALB Ingress Controller RBAC ClusterRoleBinding")
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.K8SClient.KubernetesClientSet().
 		RbacV1().
 		ClusterRoleBindings().
-		Create(&rbacv1.ClusterRoleBinding{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "rbac.authorization.k8s.io/v1",
-				Kind:       "ClusterRoleBinding",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      albIngressControllerRBACClusterRoleBindingName,
-				Namespace: albIngressControllerRBACClusterRoleBindingNamespace,
-				Labels: map[string]string{
-					"app.kubernetes.io/name": albIngressControllerName,
+		Create(
+			ctx,
+			&rbacv1.ClusterRoleBinding{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "rbac.authorization.k8s.io/v1",
+					Kind:       "ClusterRoleBinding",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      albIngressControllerRBACClusterRoleBindingName,
+					Namespace: albIngressControllerRBACClusterRoleBindingNamespace,
+					Labels: map[string]string{
+						"app.kubernetes.io/name": albIngressControllerName,
+					},
+				},
+				Subjects: []rbacv1.Subject{
+					{
+						Kind:      "ServiceAccount",
+						Name:      albIngressControllerServiceAccountName,
+						Namespace: albIngressControllerServiceAccountNamespace,
+					},
+				},
+				RoleRef: rbacv1.RoleRef{
+					APIGroup: "rbac.authorization.k8s.io",
+					Kind:     "ClusterRole",
+					Name:     albIngressControllerRBACRoleName,
 				},
 			},
-			Subjects: []rbacv1.Subject{
-				{
-					Kind:      "ServiceAccount",
-					Name:      albIngressControllerServiceAccountName,
-					Namespace: albIngressControllerServiceAccountNamespace,
-				},
-			},
-			RoleRef: rbacv1.RoleRef{
-				APIGroup: "rbac.authorization.k8s.io",
-				Kind:     "ClusterRole",
-				Name:     albIngressControllerRBACRoleName,
-			},
-		})
+			metav1.CreateOptions{},
+		)
+	cancel()
 	if err != nil {
 		return fmt.Errorf("failed to create ALB Ingress Controller RBAC ClusterRoleBinding (%v)", err)
 	}
@@ -434,16 +459,19 @@ func (ts *tester) createALBRBACClusterRoleBinding() error {
 func (ts *tester) deleteALBRBACClusterRoleBinding() error {
 	ts.cfg.Logger.Info("deleting ALB Ingress Controller RBAC ClusterRoleBinding")
 	foreground := metav1.DeletePropagationForeground
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	err := ts.cfg.K8SClient.KubernetesClientSet().
 		RbacV1().
 		ClusterRoleBindings().
 		Delete(
+			ctx,
 			albIngressControllerRBACClusterRoleBindingName,
-			&metav1.DeleteOptions{
+			metav1.DeleteOptions{
 				GracePeriodSeconds: aws.Int64(0),
 				PropagationPolicy:  &foreground,
 			},
 		)
+	cancel()
 	if err != nil && !strings.Contains(err.Error(), " not found") {
 		return fmt.Errorf("failed to delete ALB Ingress Controller RBAC ClusterRoleBinding (%v)", err)
 	}
@@ -456,54 +484,63 @@ func (ts *tester) deleteALBRBACClusterRoleBinding() error {
 // https://github.com/kubernetes-sigs/aws-alb-ingress-controller/blob/master/docs/examples/alb-ingress-controller.yaml
 func (ts *tester) createALBDeployment() error {
 	ts.cfg.Logger.Info("creating ALB Ingress Controller Deployment")
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.K8SClient.KubernetesClientSet().
 		AppsV1().
 		Deployments(albIngressControllerDeploymentNamespace).
-		Create(&appsv1.Deployment{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "apps/v1",
-				Kind:       "Deployment",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      albIngressControllerDeploymentName,
-				Namespace: albIngressControllerDeploymentNamespace,
-				Labels: map[string]string{
-					"app.kubernetes.io/name": albIngressControllerName,
+		Create(
+			ctx,
+			&appsv1.Deployment{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "apps/v1",
+					Kind:       "Deployment",
 				},
-			},
-			Spec: appsv1.DeploymentSpec{
-				Replicas: aws.Int32(ts.cfg.EKSConfig.AddOnALB2048.DeploymentReplicasALB),
-				Selector: &metav1.LabelSelector{
-					MatchLabels: map[string]string{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      albIngressControllerDeploymentName,
+					Namespace: albIngressControllerDeploymentNamespace,
+					Labels: map[string]string{
 						"app.kubernetes.io/name": albIngressControllerName,
 					},
 				},
-				Template: v1.PodTemplateSpec{
-					ObjectMeta: metav1.ObjectMeta{
-						Labels: map[string]string{
+				Spec: appsv1.DeploymentSpec{
+					Replicas: aws.Int32(ts.cfg.EKSConfig.AddOnALB2048.DeploymentReplicasALB),
+					Selector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
 							"app.kubernetes.io/name": albIngressControllerName,
 						},
 					},
-					Spec: v1.PodSpec{
-						Containers: []v1.Container{
-							{
-								Name:            albIngressControllerDeploymentName,
-								Image:           ALBImageName,
-								ImagePullPolicy: v1.PullAlways,
-								Args: []string{
-									"--ingress-class=alb",
-									fmt.Sprintf("--cluster-name=%s", ts.cfg.EKSConfig.Name),
-									fmt.Sprintf("--aws-vpc-id=%s", ts.cfg.EKSConfig.Parameters.VPCID),
-									fmt.Sprintf("--aws-region=%s", ts.cfg.EKSConfig.Region),
-									"-v=2", // for debugging
-								},
+					Template: v1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Labels: map[string]string{
+								"app.kubernetes.io/name": albIngressControllerName,
 							},
 						},
-						ServiceAccountName: albIngressControllerServiceAccountName,
+						Spec: v1.PodSpec{
+							Containers: []v1.Container{
+								{
+									Name:            albIngressControllerDeploymentName,
+									Image:           ALBImageName,
+									ImagePullPolicy: v1.PullAlways,
+									Args: []string{
+										"--ingress-class=alb",
+										fmt.Sprintf("--cluster-name=%s", ts.cfg.EKSConfig.Name),
+										fmt.Sprintf("--aws-vpc-id=%s", ts.cfg.EKSConfig.Parameters.VPCID),
+										fmt.Sprintf("--aws-region=%s", ts.cfg.EKSConfig.Region),
+										"-v=2", // for debugging
+									},
+								},
+							},
+							ServiceAccountName: albIngressControllerServiceAccountName,
+							NodeSelector: map[string]string{
+								"AMIType": ec2config.AMITypeAL2X8664, // do not deploy in bottlerocket or GPU
+							},
+						},
 					},
 				},
 			},
-		})
+			metav1.CreateOptions{},
+		)
+	cancel()
 	if err != nil {
 		return fmt.Errorf("failed to create ALB Ingress Controller Deployment (%v)", err)
 	}
@@ -517,16 +554,19 @@ func (ts *tester) createALBDeployment() error {
 func (ts *tester) deleteALBDeployment() error {
 	ts.cfg.Logger.Info("deleting ALB Ingress Controller Deployment")
 	foreground := metav1.DeletePropagationForeground
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	err := ts.cfg.K8SClient.KubernetesClientSet().
 		AppsV1().
 		Deployments(albIngressControllerDeploymentNamespace).
 		Delete(
+			ctx,
 			albIngressControllerDeploymentName,
-			&metav1.DeleteOptions{
+			metav1.DeleteOptions{
 				GracePeriodSeconds: aws.Int64(0),
 				PropagationPolicy:  &foreground,
 			},
 		)
+	cancel()
 	if err != nil && !strings.Contains(err.Error(), " not found") {
 		return fmt.Errorf("failed to delete ALB Ingress Controller Deployment (%v)", err)
 	}
@@ -566,10 +606,12 @@ func (ts *tester) waitDeploymentALB() error {
 		case <-time.After(15 * time.Second):
 		}
 
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		dresp, err := ts.cfg.K8SClient.KubernetesClientSet().
 			AppsV1().
 			Deployments(albIngressControllerDeploymentNamespace).
-			Get(albIngressControllerDeploymentName, metav1.GetOptions{})
+			Get(ctx, albIngressControllerDeploymentName, metav1.GetOptions{})
+		cancel()
 		if err != nil {
 			return fmt.Errorf("failed to get Deployment (%v)", err)
 		}
@@ -613,52 +655,61 @@ func (ts *tester) waitDeploymentALB() error {
 // https://github.com/kubernetes-sigs/aws-alb-ingress-controller/blob/master/docs/examples/2048/2048-deployment.yaml
 func (ts *tester) create2048Deployment() error {
 	ts.cfg.Logger.Info("creating ALB 2048 Deployment")
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.K8SClient.KubernetesClientSet().
 		AppsV1().
 		Deployments(ts.cfg.EKSConfig.AddOnALB2048.Namespace).
-		Create(&appsv1.Deployment{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "apps/v1",
-				Kind:       "Deployment",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      alb2048DeploymentName,
-				Namespace: ts.cfg.EKSConfig.AddOnALB2048.Namespace,
-				Labels: map[string]string{
-					"app": alb2048AppName,
+		Create(
+			ctx,
+			&appsv1.Deployment{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "apps/v1",
+					Kind:       "Deployment",
 				},
-			},
-			Spec: appsv1.DeploymentSpec{
-				Replicas: aws.Int32(ts.cfg.EKSConfig.AddOnALB2048.DeploymentReplicas2048),
-				Selector: &metav1.LabelSelector{
-					MatchLabels: map[string]string{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      alb2048DeploymentName,
+					Namespace: ts.cfg.EKSConfig.AddOnALB2048.Namespace,
+					Labels: map[string]string{
 						"app": alb2048AppName,
 					},
 				},
-				Template: v1.PodTemplateSpec{
-					ObjectMeta: metav1.ObjectMeta{
-						Labels: map[string]string{
+				Spec: appsv1.DeploymentSpec{
+					Replicas: aws.Int32(ts.cfg.EKSConfig.AddOnALB2048.DeploymentReplicas2048),
+					Selector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
 							"app": alb2048AppName,
 						},
 					},
-					Spec: v1.PodSpec{
-						Containers: []v1.Container{
-							{
-								Name:            alb2048AppName,
-								Image:           alb2048ImageName,
-								ImagePullPolicy: v1.PullAlways,
-								Ports: []v1.ContainerPort{
-									{
-										Protocol:      v1.ProtocolTCP,
-										ContainerPort: 80,
+					Template: v1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Labels: map[string]string{
+								"app": alb2048AppName,
+							},
+						},
+						Spec: v1.PodSpec{
+							Containers: []v1.Container{
+								{
+									Name:            alb2048AppName,
+									Image:           alb2048ImageName,
+									ImagePullPolicy: v1.PullAlways,
+									Ports: []v1.ContainerPort{
+										{
+											Protocol:      v1.ProtocolTCP,
+											ContainerPort: 80,
+										},
 									},
 								},
+							},
+							NodeSelector: map[string]string{
+								"AMIType": ec2config.AMITypeAL2X8664, // do not deploy in bottlerocket or GPU
 							},
 						},
 					},
 				},
 			},
-		})
+			metav1.CreateOptions{},
+		)
+	cancel()
 	if err != nil {
 		return fmt.Errorf("failed to create ALB 2048 Deployment (%v)", err)
 	}
@@ -672,16 +723,19 @@ func (ts *tester) create2048Deployment() error {
 func (ts *tester) delete2048Deployment() error {
 	ts.cfg.Logger.Info("deleting ALB 2048 Deployment")
 	foreground := metav1.DeletePropagationForeground
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	err := ts.cfg.K8SClient.KubernetesClientSet().
 		AppsV1().
 		Deployments(ts.cfg.EKSConfig.AddOnALB2048.Namespace).
 		Delete(
+			ctx,
 			alb2048DeploymentName,
-			&metav1.DeleteOptions{
+			metav1.DeleteOptions{
 				GracePeriodSeconds: aws.Int64(0),
 				PropagationPolicy:  &foreground,
 			},
 		)
+	cancel()
 	if err != nil && !strings.Contains(err.Error(), " not found") {
 		return fmt.Errorf("failed to delete ALB 2048 Deployment (%v)", err)
 	}
@@ -721,10 +775,12 @@ func (ts *tester) waitDeployment2048() error {
 		case <-time.After(15 * time.Second):
 		}
 
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		dresp, err := ts.cfg.K8SClient.KubernetesClientSet().
 			AppsV1().
 			Deployments(ts.cfg.EKSConfig.AddOnALB2048.Namespace).
-			Get(alb2048DeploymentName, metav1.GetOptions{})
+			Get(ctx, alb2048DeploymentName, metav1.GetOptions{})
+		cancel()
 		if err != nil {
 			return fmt.Errorf("failed to get Deployment (%v)", err)
 		}
@@ -768,32 +824,38 @@ func (ts *tester) waitDeployment2048() error {
 // https://github.com/kubernetes-sigs/aws-alb-ingress-controller/blob/master/docs/examples/2048/2048-service.yaml
 func (ts *tester) create2048Service() error {
 	ts.cfg.Logger.Info("creating ALB 2048 Service")
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.K8SClient.KubernetesClientSet().
 		CoreV1().
 		Services(ts.cfg.EKSConfig.AddOnALB2048.Namespace).
-		Create(&v1.Service{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "v1",
-				Kind:       "Service",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      alb2048ServiceName,
-				Namespace: ts.cfg.EKSConfig.AddOnALB2048.Namespace,
-			},
-			Spec: v1.ServiceSpec{
-				Selector: map[string]string{
-					"app": alb2048AppName,
+		Create(
+			ctx,
+			&v1.Service{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "Service",
 				},
-				Type: v1.ServiceTypeNodePort,
-				Ports: []v1.ServicePort{
-					{
-						Protocol:   v1.ProtocolTCP,
-						Port:       80,
-						TargetPort: intstr.FromInt(80),
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      alb2048ServiceName,
+					Namespace: ts.cfg.EKSConfig.AddOnALB2048.Namespace,
+				},
+				Spec: v1.ServiceSpec{
+					Selector: map[string]string{
+						"app": alb2048AppName,
+					},
+					Type: v1.ServiceTypeNodePort,
+					Ports: []v1.ServicePort{
+						{
+							Protocol:   v1.ProtocolTCP,
+							Port:       80,
+							TargetPort: intstr.FromInt(80),
+						},
 					},
 				},
 			},
-		})
+			metav1.CreateOptions{},
+		)
+	cancel()
 	if err != nil {
 		return fmt.Errorf("failed to create ALB 2048 Service (%v)", err)
 	}
@@ -807,16 +869,19 @@ func (ts *tester) create2048Service() error {
 func (ts *tester) delete2048Service() error {
 	ts.cfg.Logger.Info("deleting ALB 2048 Service")
 	foreground := metav1.DeletePropagationForeground
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	err := ts.cfg.K8SClient.KubernetesClientSet().
 		CoreV1().
 		Services(ts.cfg.EKSConfig.AddOnALB2048.Namespace).
 		Delete(
+			ctx,
 			alb2048ServiceName,
-			&metav1.DeleteOptions{
+			metav1.DeleteOptions{
 				GracePeriodSeconds: aws.Int64(0),
 				PropagationPolicy:  &foreground,
 			},
 		)
+	cancel()
 	if err != nil && !strings.Contains(err.Error(), " not found") {
 		return fmt.Errorf("failed to delete ALB 2048 Service (%v)", err)
 	}
@@ -829,36 +894,40 @@ func (ts *tester) delete2048Service() error {
 // https://github.com/kubernetes-sigs/aws-alb-ingress-controller/blob/master/docs/examples/2048/2048-ingress.yaml
 func (ts *tester) create2048Ingress() error {
 	ts.cfg.Logger.Info("creating ALB 2048 Ingress")
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.K8SClient.KubernetesClientSet().
 		ExtensionsV1beta1().
 		Ingresses(ts.cfg.EKSConfig.AddOnALB2048.Namespace).
-		Create(&v1beta1.Ingress{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "extensions/v1beta1",
-				Kind:       "Ingress",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      alb2048IngressName,
-				Namespace: ts.cfg.EKSConfig.AddOnALB2048.Namespace,
-				Annotations: map[string]string{
-					"kubernetes.io/ingress.class":      "alb",
-					"alb.ingress.kubernetes.io/scheme": "internet-facing",
+		Create(
+			ctx,
+			&v1beta1.Ingress{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "extensions/v1beta1",
+					Kind:       "Ingress",
 				},
-				Labels: map[string]string{
-					"app": alb2048AppName,
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      alb2048IngressName,
+					Namespace: ts.cfg.EKSConfig.AddOnALB2048.Namespace,
+					Annotations: map[string]string{
+						"kubernetes.io/ingress.class":      "alb",
+						"alb.ingress.kubernetes.io/scheme": "internet-facing",
+					},
+					Labels: map[string]string{
+						"app": alb2048AppName,
+					},
 				},
-			},
-			Spec: v1beta1.IngressSpec{
-				Rules: []v1beta1.IngressRule{
-					{
-						IngressRuleValue: v1beta1.IngressRuleValue{
-							HTTP: &v1beta1.HTTPIngressRuleValue{
-								Paths: []v1beta1.HTTPIngressPath{
-									{
-										Path: "/*",
-										Backend: v1beta1.IngressBackend{
-											ServiceName: alb2048ServiceName,
-											ServicePort: intstr.FromInt(80),
+				Spec: v1beta1.IngressSpec{
+					Rules: []v1beta1.IngressRule{
+						{
+							IngressRuleValue: v1beta1.IngressRuleValue{
+								HTTP: &v1beta1.HTTPIngressRuleValue{
+									Paths: []v1beta1.HTTPIngressPath{
+										{
+											Path: "/*",
+											Backend: v1beta1.IngressBackend{
+												ServiceName: alb2048ServiceName,
+												ServicePort: intstr.FromInt(80),
+											},
 										},
 									},
 								},
@@ -867,7 +936,9 @@ func (ts *tester) create2048Ingress() error {
 					},
 				},
 			},
-		})
+			metav1.CreateOptions{},
+		)
+	cancel()
 	if err != nil {
 		return fmt.Errorf("failed to create ALB 2048 Ingress (%v)", err)
 	}
@@ -933,10 +1004,12 @@ func (ts *tester) create2048Ingress() error {
 		fmt.Printf("\n\n\n\"%s\" output:\n\n%s\n\n", dss, out)
 
 		ts.cfg.Logger.Info("querying ALB 2048 Ingress for HTTP endpoint")
+		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 		so, err := ts.cfg.K8SClient.KubernetesClientSet().
 			ExtensionsV1beta1().
 			Ingresses(ts.cfg.EKSConfig.AddOnALB2048.Namespace).
-			Get(alb2048IngressName, metav1.GetOptions{})
+			Get(ctx, alb2048IngressName, metav1.GetOptions{})
+		cancel()
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to get ALB 2048 Ingress; retrying", zap.Error(err))
 			time.Sleep(5 * time.Second)
@@ -1043,16 +1116,19 @@ func (ts *tester) create2048Ingress() error {
 func (ts *tester) delete2048Ingress() error {
 	ts.cfg.Logger.Info("deleting ALB 2048 Ingress")
 	foreground := metav1.DeletePropagationForeground
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	err := ts.cfg.K8SClient.KubernetesClientSet().
 		ExtensionsV1beta1().
 		Ingresses(ts.cfg.EKSConfig.AddOnALB2048.Namespace).
 		Delete(
+			ctx,
 			alb2048IngressName,
-			&metav1.DeleteOptions{
+			metav1.DeleteOptions{
 				GracePeriodSeconds: aws.Int64(0),
 				PropagationPolicy:  &foreground,
 			},
 		)
+	cancel()
 	if err != nil && !strings.Contains(err.Error(), " not found") {
 		return fmt.Errorf("failed to delete ALB 2048 Ingress (%v)", err)
 	}

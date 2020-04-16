@@ -1,6 +1,7 @@
 package cronjobs
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -42,12 +43,12 @@ func waitJobs(
 		}
 
 		// https://github.com/kubernetes/kubernetes/blob/d379ab2697251334774b7bd6f41b26cf39de470d/pkg/apis/batch/v1/conversion.go#L30-L41
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		jobs, err := clientSet.
 			CoreV1().
 			Pods(namespace).
-			List(metav1.ListOptions{
-				FieldSelector: fieldSelector,
-			})
+			List(ctx, metav1.ListOptions{FieldSelector: fieldSelector})
+		cancel()
 		if err != nil {
 			lg.Warn("failed to list Pod", zap.Error(err))
 			continue

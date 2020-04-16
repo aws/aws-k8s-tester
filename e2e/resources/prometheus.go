@@ -153,7 +153,9 @@ func NewPromResources(ns, serviceAccountName, nodeName string, replicas int32) *
 func NewPromAPI(f *framework.Framework, ns *corev1.Namespace) (promv1.API, error) {
 	var resp *http.Response
 
-	promSvc, err := f.ClientSet.CoreV1().Services(ns.Name).Get(PromServiceName, metav1.GetOptions{})
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	promSvc, err := f.ClientSet.CoreV1().Services(ns.Name).Get(ctx, PromServiceName, metav1.GetOptions{})
+	cancel()
 	if err != nil {
 		return nil, err
 	}

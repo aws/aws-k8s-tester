@@ -7,6 +7,7 @@ if ! [[ "$0" =~ scripts/fmt.sh ]]; then
 fi
 
 goimports -w ./cmd
+goimports -w ./e2e
 goimports -w ./ec2
 goimports -w ./ec2config
 goimports -w ./eks
@@ -16,6 +17,7 @@ goimports -w ./ssh
 goimports -w ./version
 
 gofmt -w ./cmd
+gofmt -w ./e2e
 gofmt -w ./ec2
 gofmt -w ./ec2config
 gofmt -w ./eks

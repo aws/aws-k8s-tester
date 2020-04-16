@@ -20,6 +20,8 @@ import (
 // https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
 // https://github.com/aws/eks-charts/tree/master/stable/appmesh-controller
 // ref. https://github.com/kubernetes-sigs/aws-alb-ingress-controller/pull/1126
+//
+// TODO: create policy instead based off cluster role?
 const TemplateRole = `
 ---
 AWSTemplateFormatVersion: '2010-09-09'

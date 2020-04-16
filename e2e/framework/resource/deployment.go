@@ -35,7 +35,9 @@ func (m *DeploymentManager) WaitDeploymentReady(ctx context.Context, dp *appsv1.
 	start := time.Now()
 
 	return observedDP, wait.PollImmediateUntil(utils.PollIntervalShort, func() (bool, error) {
-		observedDP, err = m.cs.AppsV1().Deployments(dp.Namespace).Get(dp.Name, metav1.GetOptions{})
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		observedDP, err = m.cs.AppsV1().Deployments(dp.Namespace).Get(ctx, dp.Name, metav1.GetOptions{})
+		cancel()
 		if err != nil {
 			return false, err
 		}
@@ -60,7 +62,9 @@ func (m *DeploymentManager) WaitDeploymentDeleted(ctx context.Context, dp *appsv
 		err error
 	)
 	return wait.PollImmediateUntil(utils.PollIntervalShort, func() (bool, error) {
-		_, err = m.cs.AppsV1().Deployments(dp.Namespace).Get(dp.Name, metav1.GetOptions{})
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		_, err = m.cs.AppsV1().Deployments(dp.Namespace).Get(ctx, dp.Name, metav1.GetOptions{})
+		cancel()
 		if err != nil {
 			if serr, ok := err.(*kerrors.StatusError); ok {
 				switch serr.ErrStatus.Reason {
@@ -82,7 +86,9 @@ func (m *DeploymentManager) ListDeploymentReplicaSets(dp *appsv1.Deployment) ([]
 	if err != nil {
 		return nil, err
 	}
-	replicaSetList, err := m.cs.AppsV1().ReplicaSets(dp.Namespace).List(metav1.ListOptions{LabelSelector: selector.String()})
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	replicaSetList, err := m.cs.AppsV1().ReplicaSets(dp.Namespace).List(ctx, metav1.ListOptions{LabelSelector: selector.String()})
+	cancel()
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +110,9 @@ func (m *DeploymentManager) ListReplicaSetPods(replicaSets []*appsv1.ReplicaSet)
 		if err != nil {
 			return nil, err
 		}
-		podList, err := m.cs.CoreV1().Pods(rs.Namespace).List(metav1.ListOptions{LabelSelector: selector.String()})
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		podList, err := m.cs.CoreV1().Pods(rs.Namespace).List(ctx, metav1.ListOptions{LabelSelector: selector.String()})
+		cancel()
 		if err != nil {
 			return nil, err
 		}

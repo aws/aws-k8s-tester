@@ -562,7 +562,9 @@ func (e *eks) checkHealth() error {
 	fmt.Printf("\n\"kubectl all -n=kube-system\" output:\n%s", out)
 
 	fmt.Printf("\n\"kubectl get pods -n=kube-system\" output:\n")
-	pods, err := e.cli.CoreV1().Pods("kube-system").List(metav1.ListOptions{})
+	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
+	pods, err := e.cli.CoreV1().Pods("kube-system").List(ctx, metav1.ListOptions{})
+	cancel()
 	if err != nil {
 		return fmt.Errorf("failed to get pods %v", err)
 	}
@@ -609,23 +611,26 @@ func (e *eks) checkHealth() error {
 		"--kubeconfig="+e.cfg.KubeConfigPath,
 		"get",
 		"nodes",
+		"--show-labels",
 		"-o=wide",
 	).CombinedOutput()
 	cancel()
 	out = strings.TrimSpace(string(output))
 	if err != nil {
-		return fmt.Errorf("'kubectl get nodes -o=wide' failed %v (output %q)", err, out)
+		return fmt.Errorf("'kubectl get nodes --show-labels -o=wide' failed %v (output %q)", err, out)
 	}
-	fmt.Printf("\n\"kubectl get nodes -o=wide\" output:\n%s\n\n", out)
+	fmt.Printf("\n\"kubectl get nodes --show-labels -o=wide\" output:\n%s\n\n", out)
 
 	fmt.Printf("\n\"curl -sL http://localhost:8080/metrics | grep storage_\" output:\n")
+	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 	output, err = e.cli.
 		CoreV1().
 		RESTClient().
 		Get().
 		RequestURI("/metrics").
-		Do().
+		Do(ctx).
 		Raw()
+	cancel()
 	if err != nil {
 		return fmt.Errorf("failed to fetch /metrics (%v)", err)
 	}
@@ -809,9 +814,9 @@ func (e *eks) ListNamespaces(limit int64, interval time.Duration) ([]v1.Namespac
 func (e *eks) listNamespaces(limit int64, interval time.Duration) (ns []v1.Namespace, err error) {
 	rs := &v1.NamespaceList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
-		rs, err = e.cli.CoreV1().
-			Namespaces().
-			List(metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		rs, err = e.cli.CoreV1().Namespaces().List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		cancel()
 		if err != nil {
 			return nil, err
 		}
@@ -842,9 +847,9 @@ func (e *eks) ListNodes(limit int64, interval time.Duration) ([]v1.Node, error) 
 func (e *eks) listNodes(limit int64, interval time.Duration) (nodes []v1.Node, err error) {
 	rs := &v1.NodeList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
-		rs, err = e.cli.CoreV1().
-			Nodes().
-			List(metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		rs, err = e.cli.CoreV1().Nodes().List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		cancel()
 		if err != nil {
 			return nil, err
 		}
@@ -875,9 +880,9 @@ func (e *eks) ListPods(namespace string, limit int64, interval time.Duration) ([
 func (e *eks) listPods(namespace string, limit int64, interval time.Duration) (pods []v1.Pod, err error) {
 	rs := &v1.PodList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
-		rs, err = e.cli.CoreV1().
-			Pods(namespace).
-			List(metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		rs, err = e.cli.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		cancel()
 		if err != nil {
 			return nil, err
 		}
@@ -902,9 +907,9 @@ func (e *eks) listPods(namespace string, limit int64, interval time.Duration) (p
 func (e *eks) ListAppsV1Deployments(namespace string, limit int64, interval time.Duration) (ss []apps_v1.Deployment, err error) {
 	rs := &apps_v1.DeploymentList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
-		rs, err = e.cli.AppsV1().
-			Deployments(namespace).
-			List(metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		rs, err = e.cli.AppsV1().Deployments(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		cancel()
 		if err != nil {
 			return nil, err
 		}
@@ -940,9 +945,9 @@ func (e *eks) ListAppsV1Deployments(namespace string, limit int64, interval time
 func (e *eks) ListAppsV1StatefulSets(namespace string, limit int64, interval time.Duration) (ss []apps_v1.StatefulSet, err error) {
 	rs := &apps_v1.StatefulSetList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
-		rs, err = e.cli.AppsV1().
-			StatefulSets(namespace).
-			List(metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		rs, err = e.cli.AppsV1().StatefulSets(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		cancel()
 		if err != nil {
 			return nil, err
 		}
@@ -978,9 +983,9 @@ func (e *eks) ListAppsV1StatefulSets(namespace string, limit int64, interval tim
 func (e *eks) ListAppsV1DaemonSets(namespace string, limit int64, interval time.Duration) (ss []apps_v1.DaemonSet, err error) {
 	rs := &apps_v1.DaemonSetList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
-		rs, err = e.cli.AppsV1().
-			DaemonSets(namespace).
-			List(metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		rs, err = e.cli.AppsV1().DaemonSets(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		cancel()
 		if err != nil {
 			return nil, err
 		}
@@ -1016,9 +1021,9 @@ func (e *eks) ListAppsV1DaemonSets(namespace string, limit int64, interval time.
 func (e *eks) ListAppsV1ReplicaSets(namespace string, limit int64, interval time.Duration) (ss []apps_v1.ReplicaSet, err error) {
 	rs := &apps_v1.ReplicaSetList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
-		rs, err = e.cli.AppsV1().
-			ReplicaSets(namespace).
-			List(metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		rs, err = e.cli.AppsV1().ReplicaSets(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		cancel()
 		if err != nil {
 			return nil, err
 		}
@@ -1054,9 +1059,9 @@ func (e *eks) ListAppsV1ReplicaSets(namespace string, limit int64, interval time
 func (e *eks) ListNetworkingV1NetworkPolicies(namespace string, limit int64, interval time.Duration) (ss []networking_v1.NetworkPolicy, err error) {
 	rs := &networking_v1.NetworkPolicyList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
-		rs, err = e.cli.NetworkingV1().
-			NetworkPolicies(namespace).
-			List(metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		rs, err = e.cli.NetworkingV1().NetworkPolicies(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		cancel()
 		if err != nil {
 			return nil, err
 		}
@@ -1092,9 +1097,9 @@ func (e *eks) ListNetworkingV1NetworkPolicies(namespace string, limit int64, int
 func (e *eks) ListPolicyV1beta1PodSecurityPolicies(limit int64, interval time.Duration) (ss []policy_v1beta1.PodSecurityPolicy, err error) {
 	rs := &policy_v1beta1.PodSecurityPolicyList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
-		rs, err = e.cli.PolicyV1beta1().
-			PodSecurityPolicies().
-			List(metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		rs, err = e.cli.PolicyV1beta1().PodSecurityPolicies().List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		cancel()
 		if err != nil {
 			return nil, err
 		}
@@ -1126,9 +1131,9 @@ func (e *eks) ListPolicyV1beta1PodSecurityPolicies(limit int64, interval time.Du
 func (e *eks) ListAppsV1beta1Deployments(namespace string, limit int64, interval time.Duration) (ss []apps_v1beta1.Deployment, err error) {
 	rs := &apps_v1beta1.DeploymentList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
-		rs, err = e.cli.AppsV1beta1().
-			Deployments(namespace).
-			List(metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		rs, err = e.cli.AppsV1beta1().Deployments(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		cancel()
 		if err != nil {
 			return nil, err
 		}
@@ -1164,9 +1169,9 @@ func (e *eks) ListAppsV1beta1Deployments(namespace string, limit int64, interval
 func (e *eks) ListAppsV1beta1StatefulSets(namespace string, limit int64, interval time.Duration) (ss []apps_v1beta1.StatefulSet, err error) {
 	rs := &apps_v1beta1.StatefulSetList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
-		rs, err = e.cli.AppsV1beta1().
-			StatefulSets(namespace).
-			List(metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		rs, err = e.cli.AppsV1beta1().StatefulSets(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		cancel()
 		if err != nil {
 			return nil, err
 		}
@@ -1202,9 +1207,9 @@ func (e *eks) ListAppsV1beta1StatefulSets(namespace string, limit int64, interva
 func (e *eks) ListAppsV1beta2Deployments(namespace string, limit int64, interval time.Duration) (ss []apps_v1beta2.Deployment, err error) {
 	rs := &apps_v1beta2.DeploymentList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
-		rs, err = e.cli.AppsV1beta2().
-			Deployments(namespace).
-			List(metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		rs, err = e.cli.AppsV1beta2().Deployments(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		cancel()
 		if err != nil {
 			return nil, err
 		}
@@ -1240,9 +1245,9 @@ func (e *eks) ListAppsV1beta2Deployments(namespace string, limit int64, interval
 func (e *eks) ListAppsV1beta2StatefulSets(namespace string, limit int64, interval time.Duration) (ss []apps_v1beta2.StatefulSet, err error) {
 	rs := &apps_v1beta2.StatefulSetList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
-		rs, err = e.cli.AppsV1beta2().
-			StatefulSets(namespace).
-			List(metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		rs, err = e.cli.AppsV1beta2().StatefulSets(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		cancel()
 		if err != nil {
 			return nil, err
 		}
@@ -1278,9 +1283,9 @@ func (e *eks) ListAppsV1beta2StatefulSets(namespace string, limit int64, interva
 func (e *eks) ListExtensionsV1beta1DaemonSets(namespace string, limit int64, interval time.Duration) (ss []extensions_v1beta1.DaemonSet, err error) {
 	rs := &extensions_v1beta1.DaemonSetList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
-		rs, err = e.cli.ExtensionsV1beta1().
-			DaemonSets(namespace).
-			List(metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		rs, err = e.cli.ExtensionsV1beta1().DaemonSets(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		cancel()
 		if err != nil {
 			return nil, err
 		}
@@ -1316,9 +1321,9 @@ func (e *eks) ListExtensionsV1beta1DaemonSets(namespace string, limit int64, int
 func (e *eks) ListExtensionsV1beta1Deployments(namespace string, limit int64, interval time.Duration) (ss []extensions_v1beta1.Deployment, err error) {
 	rs := &extensions_v1beta1.DeploymentList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
-		rs, err = e.cli.ExtensionsV1beta1().
-			Deployments(namespace).
-			List(metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		rs, err = e.cli.ExtensionsV1beta1().Deployments(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		cancel()
 		if err != nil {
 			return nil, err
 		}
@@ -1354,9 +1359,9 @@ func (e *eks) ListExtensionsV1beta1Deployments(namespace string, limit int64, in
 func (e *eks) ListExtensionsV1beta1ReplicaSets(namespace string, limit int64, interval time.Duration) (ss []extensions_v1beta1.ReplicaSet, err error) {
 	rs := &extensions_v1beta1.ReplicaSetList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
-		rs, err = e.cli.ExtensionsV1beta1().
-			ReplicaSets(namespace).
-			List(metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		rs, err = e.cli.ExtensionsV1beta1().ReplicaSets(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		cancel()
 		if err != nil {
 			return nil, err
 		}
@@ -1392,9 +1397,9 @@ func (e *eks) ListExtensionsV1beta1ReplicaSets(namespace string, limit int64, in
 func (e *eks) ListExtensionsV1beta1NetworkPolicies(namespace string, limit int64, interval time.Duration) (ss []extensions_v1beta1.NetworkPolicy, err error) {
 	rs := &extensions_v1beta1.NetworkPolicyList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
-		rs, err = e.cli.ExtensionsV1beta1().
-			NetworkPolicies(namespace).
-			List(metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		rs, err = e.cli.ExtensionsV1beta1().NetworkPolicies(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		cancel()
 		if err != nil {
 			return nil, err
 		}
@@ -1430,9 +1435,9 @@ func (e *eks) ListExtensionsV1beta1NetworkPolicies(namespace string, limit int64
 func (e *eks) ListExtensionsV1beta1PodSecurityPolicies(limit int64, interval time.Duration) (ss []extensions_v1beta1.PodSecurityPolicy, err error) {
 	rs := &extensions_v1beta1.PodSecurityPolicyList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
-		rs, err = e.cli.ExtensionsV1beta1().
-			PodSecurityPolicies().
-			List(metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		rs, err = e.cli.ExtensionsV1beta1().PodSecurityPolicies().List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		cancel()
 		if err != nil {
 			return nil, err
 		}

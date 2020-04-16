@@ -67,7 +67,9 @@ func (m *NodeManager) WaitNodeExists(ctx context.Context, n *corev1.Node) (*core
 	)
 
 	return observedN, wait.PollImmediateUntil(utils.PollIntervalShort, func() (bool, error) {
-		observedN, err = m.cs.CoreV1().Nodes().Get(n.Name, metav1.GetOptions{})
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		observedN, err = m.cs.CoreV1().Nodes().Get(ctx, n.Name, metav1.GetOptions{})
+		cancel()
 		if err != nil {
 			if serr, ok := err.(*errors.StatusError); ok {
 				switch serr.ErrStatus.Reason {
@@ -90,7 +92,9 @@ func (m *NodeManager) WaitNodeReady(ctx context.Context, n *corev1.Node) (*corev
 	)
 
 	return observedN, wait.PollImmediateUntil(utils.PollIntervalShort, func() (bool, error) {
-		observedN, err = m.cs.CoreV1().Nodes().Get(n.Name, metav1.GetOptions{})
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		observedN, err = m.cs.CoreV1().Nodes().Get(ctx, n.Name, metav1.GetOptions{})
+		cancel()
 		if err != nil {
 			return false, err
 		}

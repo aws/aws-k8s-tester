@@ -368,10 +368,12 @@ func (ts *tester) createSecret() error {
 		Type: v1.SecretTypeOpaque,
 		Data: map[string][]byte{ts.cfg.EKSConfig.AddOnFargate.SecretName: []byte(secretReadTxt)},
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.K8SClient.KubernetesClientSet().
 		CoreV1().
 		Secrets(ts.cfg.EKSConfig.AddOnFargate.Namespace).
-		Create(secret)
+		Create(ctx, secret, metav1.CreateOptions{})
+	cancel()
 	if err != nil {
 		return err
 	}
@@ -384,17 +386,20 @@ var propagationBackground = metav1.DeletePropagationBackground
 
 func (ts *tester) deleteSecret() error {
 	ts.cfg.Logger.Info("deleting Secret", zap.String("name", ts.cfg.EKSConfig.AddOnFargate.SecretName))
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	err := ts.cfg.
 		K8SClient.KubernetesClientSet().
 		CoreV1().
 		Secrets(ts.cfg.EKSConfig.AddOnFargate.Namespace).
 		Delete(
+			ctx,
 			ts.cfg.EKSConfig.AddOnFargate.SecretName,
-			&metav1.DeleteOptions{
+			metav1.DeleteOptions{
 				GracePeriodSeconds: aws.Int64(0),
 				PropagationPolicy:  &propagationBackground,
 			},
 		)
+	cancel()
 	if err != nil {
 		return fmt.Errorf("failed to delete Secret %q (%v)", ts.cfg.EKSConfig.AddOnFargate.SecretName, err)
 	}
@@ -556,10 +561,12 @@ func (ts *tester) createPod() error {
 			},
 		},
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.K8SClient.KubernetesClientSet().
 		CoreV1().
 		Pods(ts.cfg.EKSConfig.AddOnFargate.Namespace).
-		Create(pod)
+		Create(ctx, pod, metav1.CreateOptions{})
+	cancel()
 	if err != nil {
 		return err
 	}
@@ -570,17 +577,20 @@ func (ts *tester) createPod() error {
 
 func (ts *tester) deletePod() error {
 	ts.cfg.Logger.Info("deleting Pod", zap.String("name", ts.cfg.EKSConfig.AddOnFargate.PodName))
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	err := ts.cfg.
 		K8SClient.KubernetesClientSet().
 		CoreV1().
 		Pods(ts.cfg.EKSConfig.AddOnFargate.Namespace).
 		Delete(
+			ctx,
 			ts.cfg.EKSConfig.AddOnFargate.PodName,
-			&metav1.DeleteOptions{
+			metav1.DeleteOptions{
 				GracePeriodSeconds: aws.Int64(0),
 				PropagationPolicy:  &propagationBackground,
 			},
 		)
+	cancel()
 	if err != nil {
 		return fmt.Errorf("failed to delete Pod %q (%v)", ts.cfg.EKSConfig.AddOnFargate.PodName, err)
 	}
@@ -602,7 +612,10 @@ func (ts *tester) listPods(ns string) error {
 }
 
 func (ts *tester) getPods(ns string) (*v1.PodList, error) {
-	return ts.cfg.K8SClient.KubernetesClientSet().CoreV1().Pods(ns).List(metav1.ListOptions{})
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	ps, err := ts.cfg.K8SClient.KubernetesClientSet().CoreV1().Pods(ns).List(ctx, metav1.ListOptions{})
+	cancel()
+	return ps, err
 }
 
 func (ts *tester) checkPod() error {
@@ -721,7 +734,9 @@ func (ts *tester) checkNode() error {
 		case <-time.After(5 * time.Second):
 		}
 
-		nodes, err := ts.cfg.K8SClient.KubernetesClientSet().CoreV1().Nodes().List(metav1.ListOptions{})
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		nodes, err := ts.cfg.K8SClient.KubernetesClientSet().CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+		cancel()
 		if err != nil {
 			ts.cfg.Logger.Warn("get nodes failed", zap.Error(err))
 			continue

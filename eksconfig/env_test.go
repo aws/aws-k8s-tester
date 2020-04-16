@@ -237,6 +237,8 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_CREATED")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_NAMESPACE", "csr-namespace")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_INITIAL_REQUEST_CONDITION_TYPE", "Random")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_INITIAL_REQUEST_CONDITION_TYPE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_OBJECTS", "10000")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_OBJECTS")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_QPS", "222")
@@ -331,6 +333,13 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_POD_NAME")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_CONTAINER_NAME", "fargate-container")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_CONTAINER_NAME")
+
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_CREATED", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_CREATED")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_NAMESPACE", "hello-kubeflow")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_NAMESPACE")
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
 		t.Fatal(err)
@@ -744,6 +753,9 @@ func TestEnv(t *testing.T) {
 	if cfg.AddOnCSRs.Namespace != "csr-namespace" {
 		t.Fatalf("unexpected cfg.AddOnCSRs.Namespace %q", cfg.AddOnCSRs.Namespace)
 	}
+	if cfg.AddOnCSRs.InitialRequestConditionType != "Random" {
+		t.Fatalf("unexpected cfg.AddOnCSRs.InitialRequestConditionType %q", cfg.AddOnCSRs.InitialRequestConditionType)
+	}
 	if cfg.AddOnCSRs.Objects != 10000 {
 		t.Fatalf("unexpected cfg.AddOnCSRs.Objects %d", cfg.AddOnCSRs.Objects)
 	}
@@ -884,6 +896,16 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("unexpected cfg.AddOnFargate.ContainerName %q", cfg.AddOnFargate.ContainerName)
 	}
 
+	if cfg.AddOnKubeflow.Created { // read-only must be ignored
+		t.Fatalf("unexpected cfg.AddOnKubeflow.Created %v", cfg.AddOnKubeflow.Created)
+	}
+	if !cfg.AddOnKubeflow.Enable {
+		t.Fatalf("unexpected cfg.AddOnKubeflow.Enable %v", cfg.AddOnKubeflow.Enable)
+	}
+	if cfg.AddOnKubeflow.Namespace != "hello-kubeflow" {
+		t.Fatalf("unexpected cfg.AddOnKubeflow.Namespace %q", cfg.AddOnKubeflow.Namespace)
+	}
+
 	cfg.Parameters.RoleManagedPolicyARNs = nil
 	cfg.Parameters.RoleServicePrincipals = nil
 	cfg.AddOnManagedNodeGroups.RoleName = ""
@@ -909,45 +931,6 @@ func TestEnv(t *testing.T) {
 		t.Fatal(err)
 	}
 	fmt.Println(string(d))
-}
-
-func TestEnvAddOnAppMesh(t *testing.T) {
-	cfg := NewDefault()
-	defer func() {
-		os.RemoveAll(cfg.ConfigPath)
-		os.RemoveAll(cfg.KubectlCommandsOutputPath)
-		os.RemoveAll(cfg.RemoteAccessCommandsOutputPath)
-	}()
-
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE", `true`)
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ENABLE", `false`)
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_ENABLE", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_NAMESPACE", "custom-namespace")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_NAMESPACE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_CONTROLLER_IMAGE", "repo/controller:v1.1.3")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_CONTROLLER_IMAGE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_INJECTOR_IMAGE", "repo/injector:v1.1.3")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_INJECTOR_IMAGE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_ADD_ON_CFN_STACK_ARN", `hello`)
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_ADD_ON_CFN_STACK_ARN")
-
-	if err := cfg.UpdateFromEnvs(); err != nil {
-		t.Fatal(err)
-	}
-	err := cfg.ValidateAndSetDefaults()
-	assert.NoError(t, err)
-
-	assert.True(t, cfg.AddOnAppMesh.Enable)
-	assert.Equal(t, cfg.AddOnAppMesh.Namespace, "custom-namespace")
-	assert.Equal(t, cfg.AddOnAppMesh.ControllerImage, "repo/controller:v1.1.3")
-	assert.Equal(t, cfg.AddOnAppMesh.InjectorImage, "repo/injector:v1.1.3")
-
-	if cfg.AddOnAppMesh.AddOnCFNStackARN != "" {
-		t.Fatalf("read-only AddOnAppMesh.AddOnCFNStackARN is set to %q", cfg.AddOnAppMesh.AddOnCFNStackARN)
-	}
 }
 
 func TestEnvAddOnManagedNodeGroups(t *testing.T) {
@@ -1052,5 +1035,89 @@ func TestEnvAddOnManagedNodeGroupsInvalidInstanceType(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "older instance type InstanceTypes") {
 		t.Fatalf("unexpected error %v", err)
+	}
+}
+
+func TestEnvAddOnAppMesh(t *testing.T) {
+	cfg := NewDefault()
+	defer func() {
+		os.RemoveAll(cfg.ConfigPath)
+		os.RemoveAll(cfg.KubectlCommandsOutputPath)
+		os.RemoveAll(cfg.RemoteAccessCommandsOutputPath)
+	}()
+
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE", `true`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ENABLE", `false`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_NAMESPACE", "custom-namespace")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_CONTROLLER_IMAGE", "repo/controller:v1.1.3")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_CONTROLLER_IMAGE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_INJECTOR_IMAGE", "repo/injector:v1.1.3")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_INJECTOR_IMAGE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_POLICY_CFN_STACK_ID", `hello`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_POLICY_CFN_STACK_ID")
+
+	if err := cfg.UpdateFromEnvs(); err != nil {
+		t.Fatal(err)
+	}
+	err := cfg.ValidateAndSetDefaults()
+	assert.NoError(t, err)
+
+	assert.True(t, cfg.AddOnAppMesh.Enable)
+	assert.Equal(t, cfg.AddOnAppMesh.Namespace, "custom-namespace")
+	assert.Equal(t, cfg.AddOnAppMesh.ControllerImage, "repo/controller:v1.1.3")
+	assert.Equal(t, cfg.AddOnAppMesh.InjectorImage, "repo/injector:v1.1.3")
+
+	if cfg.AddOnAppMesh.PolicyCFNStackID != "" {
+		t.Fatalf("read-only AddOnAppMesh.PolicyCFNStackID is set to %q", cfg.AddOnAppMesh.PolicyCFNStackID)
+	}
+}
+
+func TestEnvAddOnWordpress(t *testing.T) {
+	cfg := NewDefault()
+	defer func() {
+		os.RemoveAll(cfg.ConfigPath)
+		os.RemoveAll(cfg.KubectlCommandsOutputPath)
+		os.RemoveAll(cfg.RemoteAccessCommandsOutputPath)
+	}()
+
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE", `true`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE")
+
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_CREATED", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_CREATED")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_NAMESPACE", "word-press")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_USER_NAME", "my-user")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_USER_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_PASSWORD", "my-password")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_PASSWORD")
+
+	if err := cfg.UpdateFromEnvs(); err != nil {
+		t.Fatal(err)
+	}
+	err := cfg.ValidateAndSetDefaults()
+	assert.NoError(t, err)
+
+	if cfg.AddOnWordpress.Created { // read-only must be ignored
+		t.Fatalf("unexpected cfg.AddOnWordpress.Created %v", cfg.AddOnWordpress.Created)
+	}
+	if !cfg.AddOnWordpress.Enable {
+		t.Fatalf("unexpected cfg.AddOnWordpress.Enable %v", cfg.AddOnWordpress.Enable)
+	}
+	if cfg.AddOnWordpress.Namespace != "word-press" {
+		t.Fatalf("unexpected cfg.AddOnWordpress.Namespace %q", cfg.AddOnWordpress.Namespace)
+	}
+	if cfg.AddOnWordpress.UserName != "my-user" {
+		t.Fatalf("unexpected cfg.AddOnWordpress.UserName %q", cfg.AddOnWordpress.UserName)
+	}
+	if cfg.AddOnWordpress.Password != "my-password" {
+		t.Fatalf("unexpected cfg.AddOnWordpress.Password %q", cfg.AddOnWordpress.Password)
 	}
 }

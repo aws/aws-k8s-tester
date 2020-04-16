@@ -85,7 +85,7 @@ func (e *eks) Deprecate() (err error) {
 	}
 	sort.Strings(namespaces)
 
-	e.cfg.Logger.Info("😎 🙏 🙏  checking deprecated APIs",
+	e.cfg.Logger.Info("😎 🙏 🚶 ✔️ 👍  checking deprecated APIs",
 		zap.Bool("enable-prompt", e.cfg.EnablePrompt),
 		zap.Int64("list-batch", e.cfg.ListBatch),
 		zap.Duration("list-interval", e.cfg.ListInterval),
@@ -202,7 +202,7 @@ func (e *eks) Deprecate() (err error) {
 						continue
 					}
 
-					e.cfg.Logger.Warn("😱 😱 😱  found deprecated API!",
+					e.cfg.Logger.Warn("🔥 💀 👽 😱 😡  found deprecated API!",
 						zap.String("namespace", namespace),
 						zap.String("name", name),
 						zap.String("current-api-version", orig.APIVersion),
@@ -312,7 +312,7 @@ func (e *eks) Deprecate() (err error) {
 						continue
 					}
 
-					e.cfg.Logger.Warn("😱 😱 😱  found deprecated API!",
+					e.cfg.Logger.Warn("🔥 💀 👽 😱 😡  found deprecated API!",
 						zap.String("namespace", namespace),
 						zap.String("name", name),
 						zap.String("current-api-version", orig.APIVersion),
@@ -413,7 +413,7 @@ func (e *eks) Deprecate() (err error) {
 						continue
 					}
 
-					e.cfg.Logger.Warn("😱 😱 😱  found deprecated API!",
+					e.cfg.Logger.Warn("🔥 💀 👽 😱 😡  found deprecated API!",
 						zap.String("namespace", namespace),
 						zap.String("name", name),
 						zap.String("current-api-version", orig.APIVersion),
@@ -514,7 +514,7 @@ func (e *eks) Deprecate() (err error) {
 						continue
 					}
 
-					e.cfg.Logger.Warn("😱 😱 😱  found deprecated API!",
+					e.cfg.Logger.Warn("🔥 💀 👽 😱 😡  found deprecated API!",
 						zap.String("namespace", namespace),
 						zap.String("name", name),
 						zap.String("current-api-version", orig.APIVersion),
@@ -615,7 +615,7 @@ func (e *eks) Deprecate() (err error) {
 						continue
 					}
 
-					e.cfg.Logger.Warn("😱 😱 😱  found deprecated API!",
+					e.cfg.Logger.Warn("🔥 💀 👽 😱 😡  found deprecated API!",
 						zap.String("namespace", namespace),
 						zap.String("name", name),
 						zap.String("current-api-version", orig.APIVersion),
@@ -712,7 +712,7 @@ func (e *eks) Deprecate() (err error) {
 					continue
 				}
 
-				e.cfg.Logger.Warn("😱 😱 😱  found deprecated API!",
+				e.cfg.Logger.Warn("🔥 💀 👽 😱 😡  found deprecated API!",
 					zap.String("name", name),
 					zap.String("current-api-version", orig.APIVersion),
 					zap.String("expected-api-version", to.APIVersion),

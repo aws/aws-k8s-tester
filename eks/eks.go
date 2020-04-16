@@ -20,23 +20,24 @@ import (
 
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/eks/alb"
-	"github.com/aws/aws-k8s-tester/eks/appmesh"
+	app_mesh "github.com/aws/aws-k8s-tester/eks/app-mesh"
 	"github.com/aws/aws-k8s-tester/eks/configmaps"
 	"github.com/aws/aws-k8s-tester/eks/cronjobs"
 	"github.com/aws/aws-k8s-tester/eks/csrs"
 	"github.com/aws/aws-k8s-tester/eks/fargate"
 	"github.com/aws/aws-k8s-tester/eks/gpu"
 	"github.com/aws/aws-k8s-tester/eks/irsa"
-	jobsecho "github.com/aws/aws-k8s-tester/eks/jobs-echo"
-	jobspi "github.com/aws/aws-k8s-tester/eks/jobs-pi"
+	jobs_echo "github.com/aws/aws-k8s-tester/eks/jobs-echo"
+	jobs_pi "github.com/aws/aws-k8s-tester/eks/jobs-pi"
 	"github.com/aws/aws-k8s-tester/eks/mng"
 	"github.com/aws/aws-k8s-tester/eks/ng"
 	"github.com/aws/aws-k8s-tester/eks/nlb"
 	"github.com/aws/aws-k8s-tester/eks/secrets"
+	"github.com/aws/aws-k8s-tester/eks/wordpress"
 	"github.com/aws/aws-k8s-tester/eksconfig"
-	pkgaws "github.com/aws/aws-k8s-tester/pkg/aws"
+	pkg_aws "github.com/aws/aws-k8s-tester/pkg/aws"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
-	k8sclient "github.com/aws/aws-k8s-tester/pkg/k8s-client"
+	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
@@ -47,7 +48,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/cloudformation/cloudformationiface"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
-	awseks "github.com/aws/aws-sdk-go/service/eks"
+	aws_eks "github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
 	"github.com/aws/aws-sdk-go/service/elbv2"
 	"github.com/aws/aws-sdk-go/service/elbv2/elbv2iface"
@@ -92,29 +93,30 @@ type Tester struct {
 	eksSession *session.Session
 	eksAPI     eksiface.EKSAPI
 
-	k8sClient k8sclient.EKS
+	k8sClient k8s_client.EKS
 
 	ngTester            ng.Tester
 	mngTester           mng.Tester
 	gpuTester           gpu.Tester
 	nlbHelloWorldTester alb.Tester
 	alb2048Tester       alb.Tester
-	jobsPiTester        jobspi.Tester
-	jobsEchoTester      jobsecho.Tester
+	jobsPiTester        jobs_pi.Tester
+	jobsEchoTester      jobs_echo.Tester
 	cronJobsTester      cronjobs.Tester
 	csrsTester          csrs.Tester
 	configMapsTester    configmaps.Tester
 	secretsTester       secrets.Tester
 	irsaTester          irsa.Tester
 	fargateTester       fargate.Tester
-	appMeshTester       appmesh.Tester
+	appMeshTester       app_mesh.Tester
+	wordPressTester     wordpress.Tester
 }
 
 // New returns a new EKS kubetest2 Deployer.
 // ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Deployer
 // ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Options
 func New(cfg *eksconfig.Config) (*Tester, error) {
-	fmt.Println("😎 🙏 🙏")
+	fmt.Println("😎 🙏 🚶 ✔️ 👍")
 	fmt.Println(version.Version())
 	fmt.Printf("\n*********************************\n")
 	fmt.Printf("New %q\n", cfg.ConfigPath)
@@ -261,13 +263,13 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 
 	defer ts.cfg.Sync()
 
-	awsCfg := &pkgaws.Config{
+	awsCfg := &pkg_aws.Config{
 		Logger:        ts.lg,
 		DebugAPICalls: ts.cfg.LogLevel == "debug",
 		Region:        ts.cfg.Region,
 	}
 	var stsOutput *sts.GetCallerIdentityOutput
-	ts.awsSession, stsOutput, ts.cfg.Status.AWSCredentialPath, err = pkgaws.New(awsCfg)
+	ts.awsSession, stsOutput, ts.cfg.Status.AWSCredentialPath, err = pkg_aws.New(awsCfg)
 	if err != nil {
 		return nil, err
 	}
@@ -292,7 +294,7 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 	ts.elbv2API = elbv2.New(ts.awsSession)
 
 	// create a separate session for EKS (for resolver endpoint)
-	ts.eksSession, _, ts.cfg.Status.AWSCredentialPath, err = pkgaws.New(&pkgaws.Config{
+	ts.eksSession, _, ts.cfg.Status.AWSCredentialPath, err = pkg_aws.New(&pkg_aws.Config{
 		Logger:        ts.lg,
 		DebugAPICalls: ts.cfg.LogLevel == "debug",
 		Region:        ts.cfg.Region,
@@ -302,10 +304,10 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 	if err != nil {
 		return nil, err
 	}
-	ts.eksAPI = awseks.New(ts.eksSession)
+	ts.eksAPI = aws_eks.New(ts.eksSession)
 
 	// check EKS API availability
-	lresp, err := ts.eksAPI.ListClusters(&awseks.ListClustersInput{
+	lresp, err := ts.eksAPI.ListClusters(&aws_eks.ListClustersInput{
 		MaxResults: aws.Int64(20),
 	})
 	if err != nil {
@@ -319,7 +321,7 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 
 	// update k8s client if cluster has already been created
 	ts.lg.Info("creating k8s client from previous states if any")
-	kcfg := &k8sclient.EKSConfig{
+	kcfg := &k8s_client.EKSConfig{
 		Logger:            ts.lg,
 		Region:            ts.cfg.Region,
 		ClusterName:       ts.cfg.Name,
@@ -334,7 +336,7 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 		kcfg.ClusterAPIServerEndpoint = ts.cfg.Status.ClusterAPIServerEndpoint
 		kcfg.ClusterCADecoded = ts.cfg.Status.ClusterCADecoded
 	}
-	ts.k8sClient, err = k8sclient.NewEKS(kcfg)
+	ts.k8sClient, err = k8s_client.NewEKS(kcfg)
 	if err != nil {
 		ts.lg.Warn("failed to create k8s client from previous states", zap.Error(err))
 	} else {
@@ -437,7 +439,7 @@ func (ts *Tester) createSubTesters() (err error) {
 
 	if ts.cfg.IsEnabledAddOnJobsPi() {
 		ts.lg.Info("creating jobsPiTester")
-		ts.jobsPiTester, err = jobspi.New(jobspi.Config{
+		ts.jobsPiTester, err = jobs_pi.New(jobs_pi.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			Sig:       ts.interruptSig,
@@ -451,7 +453,7 @@ func (ts *Tester) createSubTesters() (err error) {
 
 	if ts.cfg.IsEnabledAddOnJobsEcho() {
 		ts.lg.Info("creating jobsEchoTester")
-		ts.jobsEchoTester, err = jobsecho.New(jobsecho.Config{
+		ts.jobsEchoTester, err = jobs_echo.New(jobs_echo.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			Sig:       ts.interruptSig,
@@ -569,13 +571,24 @@ func (ts *Tester) createSubTesters() (err error) {
 
 	if ts.cfg.IsEnabledAddOnAppMesh() {
 		ts.lg.Info("creating appMeshTester")
-		ts.appMeshTester, err = appmesh.NewTester(appmesh.Config{
+		ts.appMeshTester, err = app_mesh.NewTester(app_mesh.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			Sig:       ts.interruptSig,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 			CFNAPI:    ts.cfnAPI,
+		})
+	}
+
+	if ts.cfg.IsEnabledAddOnWordpress() {
+		ts.lg.Info("creating wordPressTester")
+		ts.wordPressTester, err = wordpress.NewTester(wordpress.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			Sig:       ts.interruptSig,
+			EKSConfig: ts.cfg,
+			K8SClient: ts.k8sClient,
 		})
 	}
 
@@ -615,7 +628,7 @@ func (ts *Tester) Up() (err error) {
 
 				fmt.Printf("\n*********************************\n")
 				ts.lg.Sugar().Infof("Up.defer end (%s, %s)", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-				fmt.Printf("\n\n😁 😁 😁 :)  Up success\n\n\n")
+				fmt.Printf("\n\n💯 😁 👍 :)  Up success\n\n\n")
 			} else {
 				fmt.Printf("\n\n😲 😲 😲  aborted Up ???\n\n\n")
 			}
@@ -642,7 +655,7 @@ func (ts *Tester) Up() (err error) {
 
 			fmt.Printf("\n*********************************\n")
 			ts.lg.Sugar().Infof("Up.defer end (%s, %s)", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-			fmt.Printf("\n\n😱 😱 😡 (-_-)  Up fail\n\n\n")
+			fmt.Printf("\n\n🔥 💀 👽 😱 😡 (-_-)  Up fail\n\n\n")
 			return
 		}
 
@@ -659,7 +672,7 @@ func (ts *Tester) Up() (err error) {
 		fmt.Printf("\n\n\nUP FAIL ERROR:\n\n%v\n\n\n", err)
 
 		fmt.Printf("\n*********************************\n")
-		fmt.Printf("😱 😱 😡 (-_-) Up fail\n")
+		fmt.Printf("🔥 💀 👽 😱 😡 (-_-) Up fail\n")
 		ts.lg.Warn("Up failed; reverting resource creation",
 			zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			zap.Error(err),
@@ -686,7 +699,7 @@ func (ts *Tester) Up() (err error) {
 
 		fmt.Printf("\n*********************************\n")
 		ts.lg.Sugar().Infof("Up.defer end (%s, %s)", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-		fmt.Printf("\n\n😱 😱 😡 (-_-) Up fail\n\n\n")
+		fmt.Printf("\n\n🔥 💀 👽 😱 😡 (-_-) Up fail\n\n\n")
 	}()
 
 	ts.lg.Info("Up started",
@@ -784,6 +797,9 @@ func (ts *Tester) Up() (err error) {
 	}
 
 	if ts.cfg.CommandAfterCreateCluster != "" {
+		if err := ts.cfg.EvaluateCommandRefs(); err != nil {
+			return err
+		}
 		fmt.Printf("\n*********************************\n")
 		fmt.Printf("\nrunCommand CommandAfterCreateCluster (%q)\n", ts.cfg.CommandAfterCreateCluster)
 		out, err := runCommand(ts.lg, ts.cfg.CommandAfterCreateCluster)
@@ -851,7 +867,7 @@ func (ts *Tester) Up() (err error) {
 	gpuFound2:
 		for _, mv := range ts.cfg.AddOnManagedNodeGroups.MNGs {
 			switch mv.AMIType {
-			case awseks.AMITypesAl2X8664Gpu:
+			case aws_eks.AMITypesAl2X8664Gpu:
 				needGPU = true
 				break gpuFound2
 			}
@@ -1090,6 +1106,23 @@ func (ts *Tester) Up() (err error) {
 		}
 	}
 
+	if ts.cfg.IsEnabledAddOnWordpress() {
+		if ts.wordPressTester == nil {
+			return errors.New("ts.wordPressTester == nil when AddOnWordpress.Enable == true")
+		}
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("wordPressTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnWordpress.Namespace)
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.interruptSig,
+			ts.wordPressTester.Create,
+		); err != nil {
+			return err
+		}
+	}
+
 	if ts.cfg.IsEnabledAddOnNodeGroups() && ts.cfg.AddOnNodeGroups.FetchLogs {
 		if ts.ngTester == nil {
 			return errors.New("ts.ngTester == nil when AddOnNodeGroups.Enable == true")
@@ -1181,6 +1214,9 @@ func (ts *Tester) Up() (err error) {
 	}
 
 	if ts.cfg.CommandAfterCreateAddOns != "" {
+		if err := ts.cfg.EvaluateCommandRefs(); err != nil {
+			return err
+		}
 		fmt.Printf("\nrunCommand CommandAfterCreateAddOns (%q)\n", ts.cfg.CommandAfterCreateAddOns)
 		out, err := runCommand(ts.lg, ts.cfg.CommandAfterCreateAddOns)
 		if err != nil {
@@ -1236,7 +1272,7 @@ func (ts *Tester) down() (err error) {
 		} else {
 			fmt.Printf("\n*********************************\n")
 			fmt.Printf("Down.defer end (%q)\n\n", ts.cfg.ConfigPath)
-			fmt.Printf("\n\n😱 😱 😡 (-_-) Down fail\n\n\n")
+			fmt.Printf("\n\n🔥 💀 👽 😱 😡 (-_-) Down fail\n\n\n")
 
 			ts.lg.Info("failed Down",
 				zap.Error(err),
@@ -1255,6 +1291,32 @@ func (ts *Tester) down() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnNodeGroups() || ts.cfg.IsEnabledAddOnManagedNodeGroups() {
+		if ts.cfg.IsEnabledAddOnWordpress() && ts.cfg.AddOnWordpress.Created {
+			fmt.Printf("\n*********************************\n")
+			fmt.Printf("wordPressTester.Delete (%q)\n", ts.cfg.ConfigPath)
+			if err := ts.wordPressTester.Delete(); err != nil {
+				ts.lg.Warn("wordPressTester.Delete failed", zap.Error(err))
+				errs = append(errs, err.Error())
+			} else {
+				waitDur := time.Minute
+				ts.lg.Info("sleeping after deleting wordPressTester", zap.Duration("wait", waitDur))
+				time.Sleep(waitDur)
+			}
+		}
+
+		if ts.cfg.IsEnabledAddOnAppMesh() && ts.cfg.AddOnAppMesh.Created {
+			fmt.Printf("\n*********************************\n")
+			fmt.Printf("appMeshTester.Delete (%q)\n", ts.cfg.ConfigPath)
+			if err := ts.appMeshTester.Delete(); err != nil {
+				ts.lg.Warn("appMeshTester.Delete failed", zap.Error(err))
+				errs = append(errs, err.Error())
+			} else {
+				waitDur := time.Minute
+				ts.lg.Info("sleeping after deleting appMeshTester", zap.Duration("wait", waitDur))
+				time.Sleep(waitDur)
+			}
+		}
+
 		if ts.cfg.IsEnabledAddOnFargate() && ts.cfg.AddOnFargate.Created {
 			fmt.Printf("\n*********************************\n")
 			fmt.Printf("fargateTester.Delete (%q)\n", ts.cfg.ConfigPath)
@@ -1349,18 +1411,6 @@ func (ts *Tester) down() (err error) {
 			} else {
 				waitDur := time.Minute
 				ts.lg.Info("sleeping after deleting NLB", zap.Duration("wait", waitDur))
-				time.Sleep(waitDur)
-			}
-		}
-		if ts.cfg.IsEnabledAddOnAppMesh() && ts.cfg.AddOnAppMesh.Created {
-			fmt.Printf("\n*********************************\n")
-			fmt.Printf("appMeshTester.Delete (%q)\n", ts.cfg.ConfigPath)
-			if err := ts.appMeshTester.Delete(); err != nil {
-				ts.lg.Warn("appMeshTester.Delete failed", zap.Error(err))
-				errs = append(errs, err.Error())
-			} else {
-				waitDur := time.Minute
-				ts.lg.Info("sleeping after deleting appMesh", zap.Duration("wait", waitDur))
 				time.Sleep(waitDur)
 			}
 		}

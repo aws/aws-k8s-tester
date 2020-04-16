@@ -2,6 +2,7 @@ package resource
 
 import (
 	"context"
+	"time"
 
 	"github.com/aws/aws-k8s-tester/e2e/framework/utils"
 
@@ -38,7 +39,9 @@ func (m *JobManager) WaitJobComplete(ctx context.Context, job *batchv1.Job) (*ba
 		err         error
 	)
 	return observedJob, wait.PollImmediateUntil(utils.PollIntervalShort, func() (bool, error) {
-		observedJob, err = m.cs.BatchV1().Jobs(job.Namespace).Get(job.Name, metav1.GetOptions{})
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		observedJob, err = m.cs.BatchV1().Jobs(job.Namespace).Get(ctx, job.Name, metav1.GetOptions{})
+		cancel()
 		if err != nil {
 			return false, err
 		}

@@ -32,16 +32,9 @@ aws sts get-caller-identity --query Arn --output text
 See https://github.com/aws/aws-k8s-tester/blob/master/ec2config/README.md for more.
 
 ```bash
-ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text);
-echo ${ACCOUNT_ID}
-
-
-rm -f /tmp/${USER}-test-ec2*
-
 cd /tmp
 AWS_K8S_TESTER_EC2_ON_FAILURE_DELETE=true \
 AWS_K8S_TESTER_EC2_REGION=us-west-2 \
-AWS_K8S_TESTER_EC2_S3_BUCKET_CREATE=true \
 AWS_K8S_TESTER_EC2_REMOTE_ACCESS_KEY_CREATE=true \
 AWS_K8S_TESTER_EC2_ASGS_FETCH_LOGS=true \
 AWS_K8S_TESTER_EC2_ASGS={\"${USER}-test-ec2-al2-cpu\":{\"name\":\"${USER}-test-ec2-al2-cpu\",\"remote-access-user-name\":\"ec2-user\",\"ami-type\":\"AL2_x86_64\",\"image-id-ssm-parameter\":\"/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2\",\"asg-min-size\":1,\"asg-max-size\":1,\"asg-desired-capacity\":1,\"instance-types\":[\"c5.xlarge\"],\"volume-size\":40},\"${USER}-test-ec2-bottlerocket\":{\"name\":\"${USER}-test-ec2-bottlerocket\",\"remote-access-user-name\":\"ec2-user\",\"ami-type\":\"BOTTLEROCKET_x86_64\",\"image-id-ssm-parameter\":\"/aws/service/bottlerocket/aws-k8s-1.15/x86_64/latest/image_id\",\"ssm-document-name\":\"${USER}InstallBottleRocket\",\"ssm-document-create\":true,\"ssm-document-commands\":\"enable-admin-container\",\"ssm-document-execution-timeout-seconds\":3600,\"asg-min-size\":1,\"asg-max-size\":1,\"asg-desired-capacity\":1,\"instance-types\":[\"c5.xlarge\"],\"volume-size\":40}} \
@@ -59,9 +52,15 @@ COMMENT
 # to config a fixed name for EC2 ASG
 AWS_K8S_TESTER_EC2_NAME=${NAME} \
 
+# to create/delete a S3 bucket for test artifacts
+AWS_K8S_TESTER_EC2_S3_BUCKET_CREATE=true \
+
 # to reuse an existing S3 bucket
 AWS_K8S_TESTER_EC2_S3_BUCKET_CREATE=false \
 AWS_K8S_TESTER_EC2_S3_BUCKET_NAME=${BUCKET_NAME} \
+
+# to automatically create EC2 key-pair
+AWS_K8S_TESTER_EC2_REMOTE_ACCESS_KEY_CREATE=true \
 
 # to reuse an existing EC2 key-pair
 AWS_K8S_TESTER_EC2_REMOTE_ACCESS_KEY_CREATE=false \
@@ -99,20 +98,10 @@ aws sts get-caller-identity --query Arn --output text
 See https://github.com/aws/aws-k8s-tester/blob/master/eksconfig/README.md for more.
 
 ```bash
-ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text);
-CLUSTER_ARN=arn:aws:eks:us-west-2:${ACCOUNT_ID}:cluster/${USER}-test-eks
-echo ${CLUSTER_ARN}
-
-
-rm -rf /tmp/${USER}-test-eks*
-
 cd /tmp
-AWS_K8S_TESTER_EKS_NAME=${USER}-test-eks \
 AWS_K8S_TESTER_EKS_REGION=us-west-2 \
-AWS_K8S_TESTER_EKS_S3_BUCKET_CREATE=true \
-AWS_K8S_TESTER_EKS_REMOTE_ACCESS_KEY_CREATE=true \
-AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_CLUSTER="aws eks describe-cluster --name ${USER}-test-eks" \
-AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_ADD_ONS="aws eks describe-cluster --name ${USER}-test-eks" \
+AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_CLUSTER="aws eks describe-cluster --name GetRef.Name" \
+AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_ADD_ONS="aws eks describe-cluster --name GetRef.Name" \
 AWS_K8S_TESTER_EKS_PARAMETERS_ENCRYPTION_CMK_CREATE=true \
 AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_CREATE=true \
 AWS_K8S_TESTER_EKS_PARAMETERS_VERSION=1.15 \
@@ -124,6 +113,17 @@ AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_CREATE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS={\"${USER}-test-eks-mng-al2-cpu\":{\"name\":\"${USER}-test-eks-mng-al2-cpu\",\"remote-access-user-name\":\"ec2-user\",\"release-version\":\"\",\"ami-type\":\"AL2_x86_64\",\"asg-min-size\":1,\"asg-max-size\":1,\"asg-desired-capacity\":1,\"instance-types\":[\"c5.xlarge\"],\"volume-size\":40}} \
 AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_ENABLE=true \
+AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_ENABLE=true \
+AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_ENABLE=true \
+AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_ENABLE=true \
+AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_ENABLE=true \
+AWS_K8S_TESTER_EKS_ADD_ON_CSRS_ENABLE=true \
+AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_ENABLE=true \
+AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_ENABLE=true \
+AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ENABLE=true \
+AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ENABLE=true \
+AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_CREATE=true \
+AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_ENABLE=true \
 aws-k8s-tester eks create config -p /tmp/${USER}-test-eks.yaml && cat /tmp/${USER}-test-eks.yaml
 
 <<COMMENT
@@ -133,12 +133,24 @@ aws-k8s-tester eks create config -p /tmp/${USER}-test-eks.yaml
 COMMENT
 
 <<COMMENT
-# to assign a random cluster name, delete the following variable
-# AWS_K8S_TESTER_EKS_NAME=${USER}-test-eks \
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text);
+echo ${ACCOUNT_ID}
+CLUSTER_ARN=arn:aws:eks:us-west-2:${ACCOUNT_ID}:cluster/${USER}-test-eks
+echo ${CLUSTER_ARN}
+
+# to assign a non-random cluster name
+# if empty, name is auto-generated
+AWS_K8S_TESTER_EKS_NAME=${USER}-test-eks \
+
+# to create/delete a S3 bucket for test artifacts
+AWS_K8S_TESTER_EKS_S3_BUCKET_CREATE=true \
 
 # to reuse an existing S3 bucket
 AWS_K8S_TESTER_EKS_S3_BUCKET_CREATE=false \
 AWS_K8S_TESTER_EKS_S3_BUCKET_NAME=${BUCKET_NAME} \
+
+# to automatically create EC2 key-pair
+AWS_K8S_TESTER_EKS_REMOTE_ACCESS_KEY_CREATE=true \
 
 # to reuse an existing EC2 key-pair
 AWS_K8S_TESTER_EKS_REMOTE_ACCESS_KEY_CREATE=false \
@@ -160,6 +172,10 @@ AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_ARN=${NG_ROLE_ARN} \
 # to reuse an existing role for "Managed Node Group"
 AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_CREATE=false \
 AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_ARN=${MNG_ROLE_ARN} \
+
+# to reuse an existing role for "Fargate"
+AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_CREATE=false \
+AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_ARN=${FARGATE_ROLE_ARN} \
 COMMENT
 
 
@@ -200,7 +216,7 @@ less +FG /tmp/config.yaml
 Install `eks-utils` from https://github.com/aws/aws-k8s-tester/releases.
 
 ```
-AWS_K8S_TESTER_VERSION=v1.0.4
+AWS_K8S_TESTER_VERSION=v1.0.6
 
 DOWNLOAD_URL=https://github.com/aws/aws-k8s-tester/releases/download
 rm -rf /tmp/aws-k8s-tester

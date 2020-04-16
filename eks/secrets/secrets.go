@@ -204,10 +204,12 @@ func (ts *tester) createSecretsSequential(pfx, valSfx string, failThreshold int)
 		}
 
 		t1 := time.Now()
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		_, err := ts.cfg.K8SClient.KubernetesClientSet().
 			CoreV1().
 			Secrets(ts.cfg.EKSConfig.AddOnSecrets.Namespace).
-			Create(secret)
+			Create(ctx, secret, metav1.CreateOptions{})
+		cancel()
 		t2 := time.Now()
 		if err != nil {
 			select {
@@ -312,10 +314,12 @@ func (ts *tester) createSecretsParallel(pfx, valSfx string, failThreshold int) e
 			}
 
 			t1 := time.Now()
+			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 			_, err := ts.cfg.K8SClient.KubernetesClientSet().
 				CoreV1().
 				Secrets(ts.cfg.EKSConfig.AddOnSecrets.Namespace).
-				Create(secret)
+				Create(ctx, secret, metav1.CreateOptions{})
+			cancel()
 			t2 := time.Now()
 			if err != nil {
 				select {
@@ -537,10 +541,12 @@ func (ts *tester) createPodsSequential(pods []*v1.Pod) error {
 		}
 
 		t1 := time.Now()
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		_, err := ts.cfg.K8SClient.KubernetesClientSet().
 			CoreV1().
 			Pods(ts.cfg.EKSConfig.AddOnSecrets.Namespace).
-			Create(pod)
+			Create(ctx, pod, metav1.CreateOptions{})
+		cancel()
 		t2 := time.Now()
 		if err != nil {
 			select {
@@ -602,10 +608,12 @@ func (ts *tester) createPodsParallel(pods []*v1.Pod) error {
 			}
 
 			t1 := time.Now()
+			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 			_, err := ts.cfg.K8SClient.KubernetesClientSet().
 				CoreV1().
 				Pods(ts.cfg.EKSConfig.AddOnSecrets.Namespace).
-				Create(pod)
+				Create(ctx, pod, metav1.CreateOptions{})
+			cancel()
 			t2 := time.Now()
 			if err != nil {
 				select {
@@ -688,10 +696,12 @@ func (ts *tester) waitForPodsCompleted() error {
 		case <-ticker.C:
 		}
 
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		pods, err := ts.cfg.K8SClient.KubernetesClientSet().
 			CoreV1().
 			Pods(ts.cfg.EKSConfig.AddOnSecrets.Namespace).
-			List(metav1.ListOptions{})
+			List(ctx, metav1.ListOptions{})
+		cancel()
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to list Pod", zap.Error(err))
 			continue
@@ -907,23 +917,29 @@ func (ts *tester) mountAWSCred() error {
 	    create secret generic aws-cred-aws-k8s-tester \
 	    --from-file=aws-cred-aws-k8s-tester/[FILE-PATH]
 	*/
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	so, err := ts.cfg.K8SClient.KubernetesClientSet().
 		CoreV1().
 		Secrets(ts.cfg.EKSConfig.AddOnSecrets.Namespace).
-		Create(&v1.Secret{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "v1",
-				Kind:       "Secret",
+		Create(
+			ctx,
+			&v1.Secret{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "Secret",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      awsCredName,
+					Namespace: ts.cfg.EKSConfig.AddOnSecrets.Namespace,
+				},
+				Type: v1.SecretTypeOpaque,
+				Data: map[string][]byte{
+					awsCredName: d,
+				},
 			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      awsCredName,
-				Namespace: ts.cfg.EKSConfig.AddOnSecrets.Namespace,
-			},
-			Type: v1.SecretTypeOpaque,
-			Data: map[string][]byte{
-				awsCredName: d,
-			},
-		})
+			metav1.CreateOptions{},
+		)
+	cancel()
 	if err != nil {
 		return fmt.Errorf("failed to create AWS credential as Secret (%v)", err)
 	}

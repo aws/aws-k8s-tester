@@ -408,10 +408,14 @@ func (ts *tester) createASGs() error {
               cluster-name = "%s"
               cluster-certificate = "%s"
               api-server = "%s"
+              [settings.kubernetes.node-labels]
+              AMIType = "%s"
+              NGType = "custom"
 `,
 				ts.cfg.EKSConfig.Name,
 				ts.cfg.EKSConfig.Status.ClusterCA,
 				ts.cfg.EKSConfig.Status.ClusterAPIServerEndpoint,
+				ec2config.AMITypeBottleRocketCPU,
 			)
 
 		case ec2config.AMITypeAL2X8664,
@@ -427,12 +431,15 @@ func (ts *tester) createASGs() error {
 				)
 				tg.UserData += fmt.Sprintf(` --b64-cluster-ca %s --apiserver-endpoint %s`, ts.cfg.EKSConfig.Status.ClusterCA, ts.cfg.EKSConfig.Status.ClusterAPIServerEndpoint)
 			}
+			// https://aws.amazon.com/blogs/opensource/improvements-eks-worker-node-provisioning/
+			tg.UserData += fmt.Sprintf(` --kubelet-extra-args '--node-labels=AMIType=%s,NGType=custom`, cur.AMIType)
 			if cur.KubeletExtraArgs != "" {
 				ts.cfg.Logger.Info("adding extra bootstrap arguments --kubelet-extra-args to user data",
 					zap.String("kubelet-extra-args", cur.KubeletExtraArgs),
 				)
-				tg.UserData += fmt.Sprintf(` --kubelet-extra-args %s`, cur.KubeletExtraArgs)
+				tg.UserData += fmt.Sprintf(` %s`, cur.KubeletExtraArgs)
 			}
+			tg.UserData += "'"
 			tg.UserData += "\n"
 			tg.UserData += `              /opt/aws/bin/cfn-signal --exit-code $? --stack ${AWS::StackName} --resource ASG --region ${AWS::Region}`
 		}
@@ -770,7 +777,9 @@ func (ts *tester) waitForNodes(asgName string) error {
 		case <-time.After(5 * time.Second):
 		}
 
-		nodes, err := ts.cfg.K8SClient.KubernetesClientSet().CoreV1().Nodes().List(metav1.ListOptions{})
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		nodes, err := ts.cfg.K8SClient.KubernetesClientSet().CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+		cancel()
 		if err != nil {
 			ts.cfg.Logger.Warn("get nodes failed", zap.Error(err))
 			continue
@@ -847,7 +856,7 @@ func (ts *tester) waitForNodes(asgName string) error {
 			zap.Int64("desired-ready-nodes", cur.ASGDesiredCapacity),
 		)
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 		output, err := exec.New().CommandContext(
 			ctx,
 			ts.cfg.EKSConfig.KubectlPath,
@@ -870,6 +879,7 @@ func (ts *tester) waitForNodes(asgName string) error {
 			"--kubeconfig="+ts.cfg.EKSConfig.KubeConfigPath,
 			"get",
 			"nodes",
+			"--show-labels",
 			"-o=wide",
 		).CombinedOutput()
 		cancel()

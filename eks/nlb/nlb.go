@@ -162,44 +162,48 @@ func (ts *tester) Delete() error {
 
 func (ts *tester) createDeployment() error {
 	ts.cfg.Logger.Info("creating NLB hello-world Deployment")
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.K8SClient.KubernetesClientSet().
 		AppsV1().
 		Deployments(ts.cfg.EKSConfig.AddOnNLBHelloWorld.Namespace).
-		Create(&appsv1.Deployment{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "apps/v1",
-				Kind:       "Deployment",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      nlbHelloWorldDeploymentName,
-				Namespace: ts.cfg.EKSConfig.AddOnNLBHelloWorld.Namespace,
-				Labels: map[string]string{
-					"app": nlbHelloWorldAppName,
+		Create(
+			ctx,
+			&appsv1.Deployment{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "apps/v1",
+					Kind:       "Deployment",
 				},
-			},
-			Spec: appsv1.DeploymentSpec{
-				Replicas: aws.Int32(ts.cfg.EKSConfig.AddOnNLBHelloWorld.DeploymentReplicas),
-				Selector: &metav1.LabelSelector{
-					MatchLabels: map[string]string{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      nlbHelloWorldDeploymentName,
+					Namespace: ts.cfg.EKSConfig.AddOnNLBHelloWorld.Namespace,
+					Labels: map[string]string{
 						"app": nlbHelloWorldAppName,
 					},
 				},
-				Template: v1.PodTemplateSpec{
-					ObjectMeta: metav1.ObjectMeta{
-						Labels: map[string]string{
+				Spec: appsv1.DeploymentSpec{
+					Replicas: aws.Int32(ts.cfg.EKSConfig.AddOnNLBHelloWorld.DeploymentReplicas),
+					Selector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
 							"app": nlbHelloWorldAppName,
 						},
 					},
-					Spec: v1.PodSpec{
-						Containers: []v1.Container{
-							{
-								Name:            nlbHelloWorldAppName,
-								Image:           nlbHelloWorldAppImageName,
-								ImagePullPolicy: v1.PullAlways,
-								Ports: []v1.ContainerPort{
-									{
-										Protocol:      v1.ProtocolTCP,
-										ContainerPort: 80,
+					Template: v1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Labels: map[string]string{
+								"app": nlbHelloWorldAppName,
+							},
+						},
+						Spec: v1.PodSpec{
+							Containers: []v1.Container{
+								{
+									Name:            nlbHelloWorldAppName,
+									Image:           nlbHelloWorldAppImageName,
+									ImagePullPolicy: v1.PullAlways,
+									Ports: []v1.ContainerPort{
+										{
+											Protocol:      v1.ProtocolTCP,
+											ContainerPort: 80,
+										},
 									},
 								},
 							},
@@ -207,7 +211,9 @@ func (ts *tester) createDeployment() error {
 					},
 				},
 			},
-		})
+			metav1.CreateOptions{},
+		)
+	cancel()
 	if err != nil {
 		return fmt.Errorf("failed to create NLB hello-world Deployment (%v)", err)
 	}
@@ -219,16 +225,19 @@ func (ts *tester) createDeployment() error {
 func (ts *tester) deleteDeployment() error {
 	ts.cfg.Logger.Info("deleting NLB hello-world Deployment")
 	foreground := metav1.DeletePropagationForeground
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	err := ts.cfg.K8SClient.KubernetesClientSet().
 		AppsV1().
 		Deployments(ts.cfg.EKSConfig.AddOnNLBHelloWorld.Namespace).
 		Delete(
+			ctx,
 			nlbHelloWorldDeploymentName,
-			&metav1.DeleteOptions{
+			metav1.DeleteOptions{
 				GracePeriodSeconds: aws.Int64(0),
 				PropagationPolicy:  &foreground,
 			},
 		)
+	cancel()
 	if err != nil && !strings.Contains(err.Error(), " not found") {
 		return fmt.Errorf("failed to delete NLB hello-world Deployment (%v)", err)
 	}
@@ -268,10 +277,12 @@ func (ts *tester) waitDeployment() error {
 		case <-time.After(15 * time.Second):
 		}
 
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		dresp, err := ts.cfg.K8SClient.KubernetesClientSet().
 			AppsV1().
 			Deployments(ts.cfg.EKSConfig.AddOnNLBHelloWorld.Namespace).
-			Get(nlbHelloWorldDeploymentName, metav1.GetOptions{})
+			Get(ctx, nlbHelloWorldDeploymentName, metav1.GetOptions{})
+		cancel()
 		if err != nil {
 			return fmt.Errorf("failed to get Deployment (%v)", err)
 		}
@@ -313,35 +324,41 @@ func (ts *tester) waitDeployment() error {
 
 func (ts *tester) createService() error {
 	ts.cfg.Logger.Info("creating NLB hello-world Service")
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.K8SClient.KubernetesClientSet().
 		CoreV1().
 		Services(ts.cfg.EKSConfig.AddOnNLBHelloWorld.Namespace).
-		Create(&v1.Service{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "v1",
-				Kind:       "Service",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      nlbHelloWorldServiceName,
-				Namespace: ts.cfg.EKSConfig.AddOnNLBHelloWorld.Namespace,
-				Annotations: map[string]string{
-					"service.beta.kubernetes.io/aws-load-balancer-type": "nlb",
+		Create(
+			ctx,
+			&v1.Service{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "Service",
 				},
-			},
-			Spec: v1.ServiceSpec{
-				Selector: map[string]string{
-					"app": nlbHelloWorldAppName,
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      nlbHelloWorldServiceName,
+					Namespace: ts.cfg.EKSConfig.AddOnNLBHelloWorld.Namespace,
+					Annotations: map[string]string{
+						"service.beta.kubernetes.io/aws-load-balancer-type": "nlb",
+					},
 				},
-				Type: v1.ServiceTypeLoadBalancer,
-				Ports: []v1.ServicePort{
-					{
-						Protocol:   v1.ProtocolTCP,
-						Port:       80,
-						TargetPort: intstr.FromInt(80),
+				Spec: v1.ServiceSpec{
+					Selector: map[string]string{
+						"app": nlbHelloWorldAppName,
+					},
+					Type: v1.ServiceTypeLoadBalancer,
+					Ports: []v1.ServicePort{
+						{
+							Protocol:   v1.ProtocolTCP,
+							Port:       80,
+							TargetPort: intstr.FromInt(80),
+						},
 					},
 				},
 			},
-		})
+			metav1.CreateOptions{},
+		)
+	cancel()
 	if err != nil {
 		return fmt.Errorf("failed to create NLB hello-world Service (%v)", err)
 	}
@@ -357,6 +374,15 @@ func (ts *tester) createService() error {
 	case <-time.After(waitDur):
 	}
 
+	args := []string{
+		ts.cfg.EKSConfig.KubectlPath,
+		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+		"--namespace=" + ts.cfg.EKSConfig.AddOnNLBHelloWorld.Namespace,
+		"describe",
+		"svc",
+		nlbHelloWorldServiceName,
+	}
+	argsCmd := strings.Join(args, " ")
 	hostName := ""
 	retryStart := time.Now()
 	for time.Now().Sub(retryStart) < waitDur {
@@ -369,28 +395,22 @@ func (ts *tester) createService() error {
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-		clusterInfoOut, err := exec.New().CommandContext(
-			ctx,
-			ts.cfg.EKSConfig.KubectlPath,
-			"--kubeconfig="+ts.cfg.EKSConfig.KubeConfigPath,
-			"--namespace="+ts.cfg.EKSConfig.AddOnNLBHelloWorld.Namespace,
-			"describe",
-			"svc",
-			nlbHelloWorldServiceName,
-		).CombinedOutput()
+		cmdOut, err := exec.New().CommandContext(ctx, args[0], args[1:]...).CombinedOutput()
 		cancel()
 		if err != nil {
-			ts.cfg.Logger.Warn("'kubectl describe svc' failed", zap.Error(err))
+			ts.cfg.Logger.Warn("'kubectl describe svc' failed", zap.String("command", argsCmd), zap.Error(err))
 		} else {
-			out := string(clusterInfoOut)
-			fmt.Printf("\n\n\"kubectl describe svc %s\" output:\n%s\n\n", nlbHelloWorldServiceName, out)
+			out := string(cmdOut)
+			fmt.Printf("\n\n\"%s\" output:\n%s\n\n", argsCmd, out)
 		}
 
 		ts.cfg.Logger.Info("querying NLB hello-world Service for HTTP endpoint")
+		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 		so, err := ts.cfg.K8SClient.KubernetesClientSet().
 			CoreV1().
 			Services(ts.cfg.EKSConfig.AddOnNLBHelloWorld.Namespace).
-			Get(nlbHelloWorldServiceName, metav1.GetOptions{})
+			Get(ctx, nlbHelloWorldServiceName, metav1.GetOptions{})
+		cancel()
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to get NLB hello-world Service; retrying", zap.Error(err))
 			time.Sleep(5 * time.Second)
@@ -478,16 +498,19 @@ func (ts *tester) createService() error {
 func (ts *tester) deleteService() error {
 	ts.cfg.Logger.Info("deleting NLB hello-world Service")
 	foreground := metav1.DeletePropagationForeground
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	err := ts.cfg.K8SClient.KubernetesClientSet().
 		CoreV1().
 		Services(ts.cfg.EKSConfig.AddOnNLBHelloWorld.Namespace).
 		Delete(
+			ctx,
 			nlbHelloWorldServiceName,
-			&metav1.DeleteOptions{
+			metav1.DeleteOptions{
 				GracePeriodSeconds: aws.Int64(0),
 				PropagationPolicy:  &foreground,
 			},
 		)
+	cancel()
 	if err != nil && !strings.Contains(err.Error(), " not found") {
 		return fmt.Errorf("failed to delete NLB hello-world Service (%v)", err)
 	}

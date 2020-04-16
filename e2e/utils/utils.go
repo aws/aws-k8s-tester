@@ -118,7 +118,9 @@ func updateDaemonSetEnvVars(ds *appsv1.DaemonSet, envs []corev1.EnvVar) {
 // UpdateDaemonSetEnvVars updates a daemonset with updated environment variables
 func UpdateDaemonSetEnvVars(ctx context.Context, f *framework.Framework, ns *corev1.Namespace, ds *appsv1.DaemonSet, envs []corev1.EnvVar) {
 	var err error
-	ds, err = f.ClientSet.AppsV1().DaemonSets(ns.Name).Get(ds.Name, metav1.GetOptions{})
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	ds, err = f.ClientSet.AppsV1().DaemonSets(ns.Name).Get(ctx, ds.Name, metav1.GetOptions{})
+	cancel()
 	Expect(err).ShouldNot(HaveOccurred())
 
 	updateDaemonSetEnvVars(ds, envs)
@@ -133,7 +135,9 @@ func UpdateDaemonSetEnvVars(ctx context.Context, f *framework.Framework, ns *cor
 // UpdateDaemonSetLabels updates labels for a daemonset
 func UpdateDaemonSetLabels(ctx context.Context, f *framework.Framework, ns *corev1.Namespace, ds *appsv1.DaemonSet, labels map[string]string) {
 	var err error
-	ds, err = f.ClientSet.AppsV1().DaemonSets(ns.Name).Get(ds.Name, metav1.GetOptions{})
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	ds, err = f.ClientSet.AppsV1().DaemonSets(ns.Name).Get(ctx, ds.Name, metav1.GetOptions{})
+	cancel()
 	Expect(err).ShouldNot(HaveOccurred())
 
 	for k, v := range labels {
@@ -149,7 +153,9 @@ func UpdateDaemonSetLabels(ctx context.Context, f *framework.Framework, ns *core
 
 // GetTesterPodNodeName gets the node name in which the pod runs on
 func GetTesterPodNodeName(f *framework.Framework, nsName string, podName string) (string, error) {
-	testerPod, err := f.ClientSet.CoreV1().Pods(nsName).Get(podName, metav1.GetOptions{})
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	testerPod, err := f.ClientSet.CoreV1().Pods(nsName).Get(ctx, podName, metav1.GetOptions{})
+	cancel()
 	if err != nil {
 		return "", err
 	}
@@ -161,7 +167,9 @@ func GetTesterPodNodeName(f *framework.Framework, nsName string, podName string)
 func GetTestNodes(f *framework.Framework, testerNodeName string) ([]corev1.Node, error) {
 	var testNodes []corev1.Node
 
-	nodesList, err := f.ClientSet.CoreV1().Nodes().List(metav1.ListOptions{})
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	nodesList, err := f.ClientSet.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+	cancel()
 	if err != nil {
 		return nil, err
 	}
@@ -188,7 +196,9 @@ func NodeCoreDNSCount(f *framework.Framework, nodeName string) (int, error) {
 	listOptions := metav1.ListOptions{
 		LabelSelector: "k8s-app=kube-dns",
 	}
-	podList, err = f.ClientSet.CoreV1().Pods("kube-system").List(listOptions)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	podList, err = f.ClientSet.CoreV1().Pods("kube-system").List(ctx, listOptions)
+	cancel()
 	if err != nil {
 		return 0, err
 	}
@@ -443,7 +453,9 @@ func WaitForASGInstancesAndNodesReady(ctx context.Context, f *framework.Framewor
 
 // AddAnnotationsToDaemonSet adds annotations to a daemonset
 func AddAnnotationsToDaemonSet(ctx context.Context, f *framework.Framework, ns *corev1.Namespace, ds *appsv1.DaemonSet, annotations map[string]string) error {
-	ds, err := f.ClientSet.AppsV1().DaemonSets(ns.Name).Get(ds.Name, metav1.GetOptions{})
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	ds, err := f.ClientSet.AppsV1().DaemonSets(ns.Name).Get(ctx, ds.Name, metav1.GetOptions{})
+	cancel()
 	if err != nil {
 		return err
 	}

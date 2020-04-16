@@ -3,7 +3,50 @@
 <hr>
 
 
-## [v1.0.5](https://github.com/aws/aws-k8s-tester/releases/tag/v1.0.5) (2020-04)
+## [v1.0.6](https://github.com/aws/aws-k8s-tester/releases/tag/v1.0.6) (2020-04)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.5...v1.0.6).
+
+### `eksconfig`
+
+- Rename [`AddOnAppMesh.AddOnCFNStackARN` to `AddOnAppMesh.PolicyCFNStackID`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`AddOnWordpress`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`AddOnDashboard`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`AddOnPrometheusGrafana`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`AddOnKubeflow`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`AddOnCSRs.InitialRequestConditionType` for simulate an initial CSR condition](https://github.com/aws/aws-k8s-tester/commit/).
+- Support [variable evaluation for `AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_CLUSTER` and `AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_ADD_ONS`](https://github.com/aws/aws-k8s-tester/commit/).
+  - `AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_CLUSTER="aws eks describe-cluster --endpoint https://api.beta.us-west-2.wesley.amazonaws.com/ --name GetRef.Name"`
+  - `AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_ADD_ONS="echo GetRef.ClusterARN"`
+
+### `eks`
+
+- Create [node labels and use `nodeSelector` for add-ons](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`NGType` node labels](https://github.com/aws/aws-k8s-tester/commit/).
+- Rename [`"github.com/aws/aws-k8s-tester/eks/appmesh"` to `"github.com/aws/aws-k8s-tester/eks/app-mesh"`](https://github.com/aws/aws-k8s-tester/commit/).
+- Improve [`eks/app-mesh` to update helm repo before install](https://github.com/aws/aws-k8s-tester/commit/).
+- Improve [`"github.com/aws/aws-k8s-tester/eks/csrs"` to simulate initial CSR conditions](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`"github.com/aws/aws-k8s-tester/eks/helm"`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`"github.com/aws/aws-k8s-tester/eks/wordpress"`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`"github.com/aws/aws-k8s-tester/eks/dashboard"`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`"github.com/aws/aws-k8s-tester/eks/prometheus-grafana"`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`"github.com/aws/aws-k8s-tester/eks/kubeflow"`](https://github.com/aws/aws-k8s-tester/commit/).
+
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.30.7`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.7) to [`v1.30.9`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.9).
+- Upgrade [`github.com/helm/helm`](https://github.com/helm/helm/releases) from [`v3.1.1`](https://github.com/helm/helm/releases/tag/v3.1.1) to [`v3.2.0-rc.1`](https://github.com/helm/helm/releases/tag/v3.2.0-rc.1).
+- Upgrade [`github.com/kubernetes/client-go`](https://github.com/kubernetes/client-go/releases) from [`kubernetes-1.15.4`](https://github.com/kubernetes/client-go/releases/tag/kubernetes-1.15.4) to [`v0.18.2`](https://github.com/kubernetes/client-go/releases/tag/v0.18.2).
+
+### Go
+
+- Compile with [*Go 1.14.2*](https://golang.org/doc/devel/release.html#go1.14).
+
+
+<hr>
+
+
+## [v1.0.5](https://github.com/aws/aws-k8s-tester/releases/tag/v1.0.5) (2020-04-15)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.4...v1.0.5).
 
@@ -22,7 +65,6 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.4...v1.0.5
 
 
 <hr>
-
 
 
 ## [v1.0.4](https://github.com/aws/aws-k8s-tester/releases/tag/v1.0.4) (2020-04-14)

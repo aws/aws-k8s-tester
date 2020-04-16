@@ -114,6 +114,8 @@ Resources:
       Subnets: !Ref PublicSubnetIDs
       Labels:
         Name: !Ref Name
+        AMIType: !Ref AMIType
+        NGType: managed
 {{ if ne .PropertyReleaseVersion "" }}{{.PropertyReleaseVersion}}{{ end }}
 
 Outputs:
@@ -201,7 +203,9 @@ func (ts *tester) createASG() error {
 					"aws-k8s-tester-version": aws.String(version.ReleaseVersion),
 				},
 				Labels: map[string]*string{
-					"Name": aws.String(cur.Name),
+					"Name":    aws.String(cur.Name),
+					"AMIType": aws.String(cur.AMIType),
+					"NGType":  aws.String("managed"),
 				},
 			}
 			for k, v := range cur.Tags {
@@ -869,7 +873,9 @@ func (ts *tester) waitForNodes(mngName string) error {
 		case <-time.After(5 * time.Second):
 		}
 
-		nodes, err := ts.cfg.K8SClient.KubernetesClientSet().CoreV1().Nodes().List(metav1.ListOptions{})
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		nodes, err := ts.cfg.K8SClient.KubernetesClientSet().CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+		cancel()
 		if err != nil {
 			ts.cfg.Logger.Warn("get nodes failed", zap.Error(err))
 			continue
@@ -946,7 +952,7 @@ func (ts *tester) waitForNodes(mngName string) error {
 			zap.Int("desired-ready-nodes", cur.ASGDesiredCapacity),
 		)
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 		output, err := exec.New().CommandContext(
 			ctx,
 			ts.cfg.EKSConfig.KubectlPath,
@@ -969,6 +975,7 @@ func (ts *tester) waitForNodes(mngName string) error {
 			"--kubeconfig="+ts.cfg.EKSConfig.KubeConfigPath,
 			"get",
 			"nodes",
+			"--show-labels",
 			"-o=wide",
 		).CombinedOutput()
 		cancel()

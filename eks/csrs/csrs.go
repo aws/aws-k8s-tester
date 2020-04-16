@@ -189,7 +189,7 @@ $ echo "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURSBSRVFVRVNULS0tLS0KTUlJQnJEQ0NBVk1DQVFBd1dE
 
 var reqData, _ = base64.StdEncoding.DecodeString("LS0tLS1CRUdJTiBDRVJUSUZJQ0FURSBSRVFVRVNULS0tLS0KTUlJQnJEQ0NBVk1DQVFBd1dERVZNQk1HQTFVRUNoTU1jM2x6ZEdWdE9tNXZaR1Z6TVQ4d1BRWURWUVFERXpaegplWE4wWlcwNmJtOWtaVHBwY0MweE56SXRNakF0TXpJdE9Ea3VkWE10ZDJWemRDMHlMbU52YlhCMWRHVXVhVzUwClpYSnVZV3d3V1RBVEJnY3Foa2pPUFFJQkJnZ3Foa2pPUFFNQkJ3TkNBQVJGSzI3L2w4U2NtMXF1K2xXbEs5WFoKUUtVM0grSnFENTZuSEFYOXBUQ25YVWRQaUppemRzc01QaSs2emtCU1I2MXVJcVRsdnNIcjkwbFNyU2tQeDd1aQpvSUdZTUlHVkJna3Foa2lHOXcwQkNRNHhnWWN3Z1lRd2dZRUdBMVVkRVFSNk1IaUNNbVZqTWkwMU5DMHhPRFV0Ck1qUTJMVEV5T0M1MWN5MTNaWE4wTFRJdVkyOXRjSFYwWlM1aGJXRjZiMjVoZDNNdVkyOXRod1NzRkNCWmh3UTIKdWZhQWhqWnplWE4wWlcwNmJtOWtaVHBwY0MweE56SXRNakF0TXpJdE9Ea3VkWE10ZDJWemRDMHlMbU52YlhCMQpkR1V1YVc1MFpYSnVZV3d3Q2dZSUtvWkl6ajBFQXdJRFJ3QXdSQUlnVTUrNEFkWVcvRm9kdDExMmgvRjV4RHFQClFJS1BJemk4TUJMSTBBaVE2cGtDSUdqOHZPNDlTQldJVlo2SnhJL1lENldrRVhXdlZEbFp4cjFlZmVMM0NIeEgKLS0tLS1FTkQgQ0VSVElGSUNBVEUgUkVRVUVTVC0tLS0tCg==")
 
-func (ts *tester) createCSR(name string) *certificatesv1beta1.CertificateSigningRequest {
+func (ts *tester) createCSR(idx int, name string) *certificatesv1beta1.CertificateSigningRequest {
 	return &certificatesv1beta1.CertificateSigningRequest{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "certificates.k8s.io/v1beta1",
@@ -214,14 +214,7 @@ func (ts *tester) createCSR(name string) *certificatesv1beta1.CertificateSigning
 		},
 		Status: certificatesv1beta1.CertificateSigningRequestStatus{
 			Certificate: nil,
-			Conditions: []certificatesv1beta1.CertificateSigningRequestCondition{
-				{
-					Type:           certificatesv1beta1.CertificateApproved,
-					Reason:         "TestApproved",
-					Message:        "test-approved via " + ts.cfg.EKSConfig.Name,
-					LastUpdateTime: metav1.NewTime(time.Now().Add(-time.Hour)),
-				},
-			},
+			Conditions:  pickCond(idx, "Testing via "+ts.cfg.EKSConfig.Name, ts.cfg.EKSConfig.AddOnCSRs.InitialRequestConditionType),
 		},
 	}
 }
@@ -244,12 +237,14 @@ func (ts *tester) createCSRsSequential(pfx string, failThreshold int) error {
 		}
 
 		key := fmt.Sprintf("%s%06d", pfx, i)
-		req := ts.createCSR(key)
+		req := ts.createCSR(i, key)
 		t1 := time.Now()
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		csr, err := ts.cfg.K8SClient.KubernetesClientSet().
 			CertificatesV1beta1().
 			CertificateSigningRequests().
-			Create(req)
+			Create(ctx, req, metav1.CreateOptions{})
+		cancel()
 		t2 := time.Now()
 		if err != nil {
 			select {
@@ -260,42 +255,6 @@ func (ts *tester) createCSRsSequential(pfx string, failThreshold int) error {
 			default:
 				fails++
 				ts.cfg.Logger.Warn("create CSR failed",
-					zap.Int("fails", fails),
-					zap.Int("threshold", failThreshold),
-					zap.Error(err),
-				)
-				if fails >= failThreshold {
-					close(ts.cancel)
-					return fmt.Errorf("exceeded CSR writes fail threshold %d (%v)", failThreshold, err)
-				}
-			}
-			continue
-		}
-		csr.Status = certificatesv1beta1.CertificateSigningRequestStatus{
-			Certificate: nil,
-			Conditions: []certificatesv1beta1.CertificateSigningRequestCondition{
-				{
-					Type:           certificatesv1beta1.CertificateApproved,
-					Reason:         "TestApproved",
-					Message:        "test-approved via " + ts.cfg.EKSConfig.Name,
-					LastUpdateTime: metav1.NewTime(time.Now().Add(-time.Hour)),
-				},
-			},
-		}
-		csr, err = ts.cfg.K8SClient.KubernetesClientSet().
-			CertificatesV1beta1().
-			CertificateSigningRequests().
-			UpdateApproval(csr)
-		t2 = time.Now()
-		if err != nil {
-			select {
-			case <-ts.cancel:
-				return errors.New("update approval CSR aborted")
-			case <-ts.cfg.Stopc:
-				return errors.New("update approval CSR aborted")
-			default:
-				fails++
-				ts.cfg.Logger.Warn("update approval CSR failed",
 					zap.Int("fails", fails),
 					zap.Int("threshold", failThreshold),
 					zap.Error(err),
@@ -351,12 +310,14 @@ func (ts *tester) createCSRsParallel(pfx string, failThreshold int) error {
 			}
 
 			key := fmt.Sprintf("%s%06d", pfx, i)
-			req := ts.createCSR(key)
+			req := ts.createCSR(i, key)
 			t1 := time.Now()
+			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 			csr, err := ts.cfg.K8SClient.KubernetesClientSet().
 				CertificatesV1beta1().
 				CertificateSigningRequests().
-				Create(req)
+				Create(ctx, req, metav1.CreateOptions{})
+			cancel()
 			t2 := time.Now()
 			if err != nil {
 				select {
@@ -369,45 +330,6 @@ func (ts *tester) createCSRsParallel(pfx string, failThreshold int) error {
 				case rch <- result{csr: csr, err: err, took: t2.Sub(t1), start: t1, end: t2}:
 				}
 				return
-			}
-
-			csr.Status = certificatesv1beta1.CertificateSigningRequestStatus{
-				Certificate: nil,
-				Conditions: []certificatesv1beta1.CertificateSigningRequestCondition{
-					{
-						Type:           certificatesv1beta1.CertificateApproved,
-						Reason:         "TestApproved",
-						Message:        "test-approved via " + ts.cfg.EKSConfig.Name,
-						LastUpdateTime: metav1.NewTime(time.Now().Add(-time.Hour)),
-					},
-				},
-			}
-			csr, err = ts.cfg.K8SClient.KubernetesClientSet().
-				CertificatesV1beta1().
-				CertificateSigningRequests().
-				UpdateApproval(csr)
-			t2 = time.Now()
-			if err != nil {
-				select {
-				case <-ts.cancel:
-					ts.cfg.Logger.Warn("exiting")
-					return
-				case <-ts.cfg.Stopc:
-					ts.cfg.Logger.Warn("exiting")
-					return
-				case rch <- result{csr: csr, err: err, took: t2.Sub(t1), start: t1, end: t2}:
-				}
-				return
-			}
-
-			select {
-			case <-ts.cancel:
-				ts.cfg.Logger.Warn("exiting")
-				return
-			case <-ts.cfg.Stopc:
-				ts.cfg.Logger.Warn("exiting")
-				return
-			case rch <- result{csr: csr, err: nil, took: t2.Sub(t1), start: t1, end: t2}:
 			}
 
 			if ts.cfg.EKSConfig.LogLevel == "debug" || i%200 == 0 {
@@ -465,4 +387,31 @@ type result struct {
 	took  time.Duration
 	start time.Time
 	end   time.Time
+}
+
+var conds = []certificatesv1beta1.RequestConditionType{
+	certificatesv1beta1.CertificateApproved,
+	certificatesv1beta1.CertificateDenied,
+	certificatesv1beta1.RequestConditionType(""),
+}
+
+func pickCond(idx int, msg string, tp string) (cs []certificatesv1beta1.CertificateSigningRequestCondition) {
+	cs = []certificatesv1beta1.CertificateSigningRequestCondition{
+		{
+			Reason:         "Test",
+			Message:        msg,
+			LastUpdateTime: metav1.NewTime(time.Now().Add(-time.Hour)),
+		},
+	}
+	switch tp {
+	case string(certificatesv1beta1.CertificateApproved):
+		cs[0].Type = certificatesv1beta1.CertificateApproved
+	case string(certificatesv1beta1.CertificateDenied):
+		cs[0].Type = certificatesv1beta1.CertificateDenied
+	case "Pending", "":
+		cs = make([]certificatesv1beta1.CertificateSigningRequestCondition, 0)
+	case "Random":
+		cs[0].Type = conds[idx%3]
+	}
+	return cs
 }

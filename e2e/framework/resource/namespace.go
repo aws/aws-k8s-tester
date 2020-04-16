@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/e2e/framework/utils"
-
 	"github.com/onsi/ginkgo"
 	corev1 "k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
@@ -71,7 +70,9 @@ func (m *NamespaceManager) CreateNamespace(ctx context.Context, name string) (*c
 	ginkgo.By(fmt.Sprintf("Creating namespace %q for this suite.", name))
 	if err := wait.PollImmediateUntil(utils.PollIntervalShort, func() (bool, error) {
 		var err error
-		namespace, err = m.cs.CoreV1().Namespaces().Create(namespaceObj)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		namespace, err = m.cs.CoreV1().Namespaces().Create(ctx, namespaceObj, metav1.CreateOptions{})
+		cancel()
 		if err != nil {
 			utils.Logf("Unexpected error while creating namespace: %v", err)
 			return false, nil
@@ -88,7 +89,10 @@ func (m *NamespaceManager) DeleteNamespace(ctx context.Context, namespace string
 	startTime := time.Now()
 
 	ginkgo.By(fmt.Sprintf("Deleting namespace %q for this suite.", namespace))
-	if err := m.cs.CoreV1().Namespaces().Delete(namespace, nil); err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	err := m.cs.CoreV1().Namespaces().Delete(ctx, namespace, metav1.DeleteOptions{})
+	cancel()
+	if err != nil {
 		if apierrs.IsNotFound(err) {
 			utils.Logf("Namespace %v was already deleted", namespace)
 			return nil
@@ -98,7 +102,10 @@ func (m *NamespaceManager) DeleteNamespace(ctx context.Context, namespace string
 
 	// wait for namespace to delete or timeout.
 	if err := wait.PollImmediateUntil(utils.PollIntervalShort, func() (bool, error) {
-		if _, err := m.cs.CoreV1().Namespaces().Get(namespace, metav1.GetOptions{}); err != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		_, err := m.cs.CoreV1().Namespaces().Get(ctx, namespace, metav1.GetOptions{})
+		cancel()
+		if err != nil {
 			if apierrs.IsNotFound(err) {
 				return true, nil
 			}
@@ -119,7 +126,9 @@ func (m *NamespaceManager) findAvailableNamespaceName(ctx context.Context, baseN
 	var name string
 	err := wait.PollImmediateUntil(utils.PollIntervalShort, func() (bool, error) {
 		name = fmt.Sprintf("%v-%v", baseName, utils.RandomSuffix())
-		_, err := m.cs.CoreV1().Namespaces().Get(name, metav1.GetOptions{})
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		_, err := m.cs.CoreV1().Namespaces().Get(ctx, name, metav1.GetOptions{})
+		cancel()
 		if err == nil {
 			// Already taken
 			return false, nil
