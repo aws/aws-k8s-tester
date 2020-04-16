@@ -3,6 +3,24 @@
 <hr>
 
 
+## [v1.0.5](https://github.com/aws/aws-k8s-tester/releases/tag/v1.0.5) (2020-04)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.4...v1.0.5).
+
+### `eks`
+
+- Fix [node group checks when DHCP option domain name is set](https://github.com/aws/aws-k8s-tester/commit/e3ee6cce0d81b85f52aae3264384445e2c022f2d).
+  - e.g. `"caller":"ng/asg.go:809","msg":"node may not belong to this ASG","host-name":"ip-192-168-132-188.my-private-dns"`
+
+### Go
+
+- Compile with [*Go 1.14.2*](https://golang.org/doc/devel/release.html#go1.14).
+
+
+<hr>
+
+
+
 ## [v1.0.4](https://github.com/aws/aws-k8s-tester/releases/tag/v1.0.4) (2020-04-14)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.3...v1.0.4).
