@@ -9,7 +9,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.4...v1.0.5
 
 ### `etcd-utils`
 
-- Add [`etcd-utils k8s list` `--csv-aggregated-ids` and `--csv-aggregated-output` flags](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`etcd-utils k8s list` `--csv-aggregated-ids` and `--csv-aggregated-output` flags](https://github.com/aws/aws-k8s-tester/commit/7b3975f12f2cca9da9927bd930d189119ccadf0a).
 
 ### `eks`
 
