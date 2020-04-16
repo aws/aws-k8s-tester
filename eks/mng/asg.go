@@ -845,10 +845,15 @@ func (ts *tester) waitForNodes(mngName string) error {
 	if !ok {
 		return fmt.Errorf("Managed Node Group %q not found", mngName)
 	}
-	// ec2 private DNS == kubernetes node hostname
+
+	// Hostname/InternalDNS == EC2 private DNS
+	// TODO: handle DHCP option domain name
 	ec2PrivateDNS := make(map[string]struct{})
 	for _, v := range cur.Instances {
+		ts.cfg.Logger.Info("found private DNS for an EC2 instance", zap.String("instance-id", v.InstanceID), zap.String("private-dns-name", v.PrivateDNSName))
 		ec2PrivateDNS[v.PrivateDNSName] = struct{}{}
+		// "ip-192-168-81-186" from "ip-192-168-81-186.my-private-dns"
+		ec2PrivateDNS[strings.Split(v.PrivateDNSName, ".")[0]] = struct{}{}
 	}
 
 	ts.cfg.Logger.Info("checking nodes readiness")
@@ -897,15 +902,25 @@ func (ts *tester) waitForNodes(mngName string) error {
 				}
 				// handle when node is configured DHCP
 				hostName = av.Address
-				if _, ok := ec2PrivateDNS[hostName]; ok {
+				_, ok := ec2PrivateDNS[hostName]
+				if !ok {
+					// "ip-192-168-81-186" from "ip-192-168-81-186.my-private-dns"
+					_, ok = ec2PrivateDNS[strings.Split(hostName, ".")[0]]
+				}
+				if ok {
 					break
 				}
 			}
 			if hostName == "" {
 				return fmt.Errorf("%q not found for node %q", v1.NodeHostName, nodeName)
 			}
-			if _, ok := ec2PrivateDNS[hostName]; !ok {
-				ts.cfg.Logger.Warn("node may not belong to this ASG", zap.String("host-name", hostName))
+			_, ok := ec2PrivateDNS[hostName]
+			if !ok {
+				// "ip-192-168-81-186" from "ip-192-168-81-186.my-private-dns"
+				_, ok = ec2PrivateDNS[strings.Split(hostName, ".")[0]]
+			}
+			if !ok {
+				ts.cfg.Logger.Warn("node may not belong to this ASG", zap.String("host-name", hostName), zap.String("ec2-private-dnss", fmt.Sprintf("%v", ec2PrivateDNS)))
 				continue
 			}
 			ts.cfg.Logger.Info("checked node host name with EC2 Private DNS", zap.String("name", nodeName), zap.String("host-name", hostName))
