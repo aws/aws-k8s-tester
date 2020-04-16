@@ -7,6 +7,10 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.4...v1.0.5).
 
+### `etcd-utils`
+
+- Add [`etcd-utils k8s list` `--csv-aggregated-ids` and `--csv-aggregated-output` flags](https://github.com/aws/aws-k8s-tester/commit/).
+
 ### `eks`
 
 - Fix [node group checks when DHCP option domain name is set](https://github.com/aws/aws-k8s-tester/commit/e3ee6cce0d81b85f52aae3264384445e2c022f2d).

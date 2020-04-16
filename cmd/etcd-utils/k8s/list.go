@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"time"
 
 	etcdclient "github.com/aws/aws-k8s-tester/pkg/etcd-client"
@@ -22,15 +23,24 @@ var (
 	listBatch           int64
 	listInterval        time.Duration
 	listPfx             string
-	listCSVIDs          []string
-	listCSVOutput       string
-	listDoneKey         string
+
+	listCSVIDs    []string
+	listCSVOutput string
+
+	listCSVAggregatedIDs    []string
+	listCSVAggregatedOutput string
+
+	listDoneKey string
 )
 
-var defaultListCSVOutput string
+var (
+	defaultListCSVOutput           string
+	defaultListCSVAggregatedOutput string
+)
 
 func init() {
 	defaultListCSVOutput = filepath.Join(os.TempDir(), fmt.Sprintf("etcd-utils-k8s-list-%d.csv", time.Now().UnixNano()))
+	defaultListCSVAggregatedOutput = filepath.Join(os.TempDir(), fmt.Sprintf("etcd-utils-k8s-list-aggregated-%d.csv", time.Now().UnixNano()))
 }
 
 func newListCommand() *cobra.Command {
@@ -49,6 +59,8 @@ etcd-utils k8s \
   --prefix /registry/deployments \
   --csv-ids id1,id2 \
   --csv-output /tmp/etcd-utils-k8s-list.output.csv \
+  --csv-aggregated-ids id1,id2 \
+  --csv-aggregated-output /tmp/etcd-utils-k8s-list.output.aggregated.csv \
   --done-key __etcd_utils_k8s_list_done
 
 `,
@@ -60,6 +72,8 @@ etcd-utils k8s \
 	ac.PersistentFlags().StringVar(&listPfx, "prefix", "/registry/deployments", "Prefix to list")
 	ac.PersistentFlags().StringSliceVar(&listCSVIDs, "csv-ids", []string{}, "IDs to prepend in each CSV entry")
 	ac.PersistentFlags().StringVar(&listCSVOutput, "csv-output", defaultListCSVOutput, "CSV path to output data")
+	ac.PersistentFlags().StringSliceVar(&listCSVAggregatedIDs, "csv-aggregated-ids", []string{}, "IDs to prepend in each aggregated  CSV entry")
+	ac.PersistentFlags().StringVar(&listCSVAggregatedOutput, "csv-aggregated-output", defaultListCSVAggregatedOutput, "CSV path to output aggregated data by prefix")
 	ac.PersistentFlags().StringVar(&listDoneKey, "done-key", "__etcd_utils_k8s_list_done", "Key to write once list is done")
 	return ac
 }
@@ -126,30 +140,67 @@ func listFunc(cmd *cobra.Command, args []string) {
 		lg.Warn("failed to list", zap.Error(err))
 	}
 
-	f, err := os.OpenFile(listCSVOutput, os.O_RDWR|os.O_TRUNC, 0777)
+	f1, err := os.OpenFile(listCSVOutput, os.O_RDWR|os.O_TRUNC, 0777)
 	if err != nil {
-		f, err = os.Create(listCSVOutput)
+		f1, err = os.Create(listCSVOutput)
 		if err != nil {
 			lg.Warn("failed to create file", zap.Error(err))
 		}
 	}
-	defer f.Close()
-	wr := csv.NewWriter(f)
+	defer f1.Close()
+	wr1 := csv.NewWriter(f1)
 
 	lg.Info("writing to CSV", zap.Strings("ids", listCSVIDs), zap.String("path", listCSVOutput))
-
+	kindToVers := make(map[string]map[string]int)
 	for _, kv := range kvs {
 		tv, err := k8sobject.ExtractTypeMeta(kv.Value)
 		errMsg := fmt.Sprintf("%v", err)
 		row := []string{string(kv.Key), tv.Kind, tv.APIVersion, errMsg}
-		err = wr.Write(append(listCSVIDs, row...))
+		err = wr1.Write(append(listCSVIDs, row...))
+		if err != nil {
+			lg.Warn("failed to write to CSV", zap.Error(err))
+		}
+		if vv, ok := kindToVers[tv.Kind]; !ok {
+			vv = make(map[string]int)
+			vv[tv.APIVersion] = 1
+			kindToVers[tv.Kind] = vv
+		} else {
+			v, ok := vv[tv.APIVersion]
+			if ok {
+				vv[tv.APIVersion] = v + 1
+			} else {
+				vv[tv.APIVersion] = 1
+			}
+			kindToVers[tv.Kind] = vv
+		}
+	}
+	wr1.Flush()
+	lg.Info("saved to CSV", zap.Strings("ids", listCSVIDs), zap.String("path", listCSVOutput))
+
+	f2, err := os.OpenFile(listCSVAggregatedOutput, os.O_RDWR|os.O_TRUNC, 0777)
+	if err != nil {
+		f2, err = os.Create(listCSVAggregatedOutput)
+		if err != nil {
+			lg.Warn("failed to create file", zap.Error(err))
+		}
+	}
+	defer f2.Close()
+	wr2 := csv.NewWriter(f2)
+	aggRows := make([][]string, 0)
+	for k, v := range kindToVers {
+		for ver, cnt := range v {
+			aggRows = append(aggRows, []string{k, ver, fmt.Sprintf("%d", cnt)})
+		}
+	}
+	sort.Sort(rows(aggRows))
+	for _, row := range aggRows {
+		err = wr2.Write(row)
 		if err != nil {
 			lg.Warn("failed to write to CSV", zap.Error(err))
 		}
 	}
-
-	wr.Flush()
-	lg.Info("saved to CSV", zap.Strings("ids", listCSVIDs), zap.String("path", listCSVOutput))
+	wr2.Flush()
+	lg.Info("saved to CSV", zap.Strings("ids", listCSVIDs), zap.String("path", listCSVAggregatedOutput))
 
 	err = e.Put(10*time.Second, listDoneKey, "done")
 	if err != nil {
@@ -159,4 +210,20 @@ func listFunc(cmd *cobra.Command, args []string) {
 	println()
 	fmt.Println("'etcd-utils k8s list' success")
 	println()
+}
+
+type rows [][]string
+
+func (rs rows) Len() int { return len(rs) }
+
+func (rs rows) Less(i, j int) bool {
+	r1 := rs[i]
+	r2 := rs[j]
+	return r1[1] < r2[1] // sort by api version
+}
+
+func (rs rows) Swap(i, j int) {
+	t := rs[i]
+	rs[i] = rs[j]
+	rs[j] = t
 }

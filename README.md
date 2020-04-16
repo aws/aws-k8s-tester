@@ -277,6 +277,8 @@ etcd-utils k8s \
   --prefix /registry/deployments \
   --csv-ids id1,id2 \
   --csv-output /tmp/etcd-utils-k8s-list.output.csv \
+  --csv-aggregated-ids id1,id2 \
+  --csv-aggregated-output /tmp/etcd-utils-k8s-list.output.aggregated.csv \
   --done-key __etcd_utils_k8s_list_done
 ```
 
