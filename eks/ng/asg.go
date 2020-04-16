@@ -875,9 +875,9 @@ func (ts *tester) waitForNodes(asgName string) error {
 		cancel()
 		out = string(output)
 		if err != nil {
-			ts.cfg.Logger.Warn("'kubectl get nodes' failed", zap.Error(err))
+			ts.cfg.Logger.Warn("'kubectl get nodes -o=wide' failed", zap.Error(err))
 		}
-		fmt.Printf("\n\"%s get nodes\":\n%s\n\n", ts.cfg.EKSConfig.KubectlCommand(), out)
+		fmt.Printf("\n\"%s get nodes -o=wide\":\n%s\n\n", ts.cfg.EKSConfig.KubectlCommand(), out)
 
 		if int64(readies) >= cur.ASGDesiredCapacity { // TODO: check per node group
 			ready = true
