@@ -352,6 +352,9 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	if err := cfg.validateAddOnWordpress(); err != nil {
 		return fmt.Errorf("validateAddOnWordpress failed [%v]", err)
 	}
+	if err := cfg.validateAddOnKubernetesDashboard(); err != nil {
+		return fmt.Errorf("validateAddOnKubernetesDashboard failed [%v]", err)
+	}
 	if err := cfg.validateAddOnKubeflow(); err != nil {
 		return fmt.Errorf("validateAddOnKubeflow failed [%v]", err)
 	}
@@ -1230,6 +1233,47 @@ func (cfg *Config) validateAddOnWordpress() error {
 	}
 	if cfg.AddOnWordpress.Password == "" {
 		cfg.AddOnWordpress.Password = randString(10)
+	}
+	return nil
+}
+
+
+func (cfg *Config) validateAddOnKubernetesDashboard() error {
+	if !cfg.IsEnabledAddOnKubernetesDashboard() {
+		return nil
+	}
+
+	// TODO: nodeSelector does not work for mariadb
+	// this does not work when deployed with NG + MNG
+	// does not work even when assigned to NG, not to MNG
+	// only works when deployed with NG and not MNG
+	// only works when deployed with not NG and MNG
+	// don't mix...
+	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
+		return errors.New("AddOnKubernetesDashboard.Enable true but no node group is enabled")
+	}
+	if cfg.IsEnabledAddOnNodeGroups() && cfg.IsEnabledAddOnManagedNodeGroups() {
+		return errors.New("AddOnKubernetesDashboard.Enable true but both node groups are enabled")
+	}
+
+	// TODO: can we support NG + bottlerocket
+	if cfg.IsEnabledAddOnNodeGroups() {
+		for name, asg := range cfg.AddOnNodeGroups.ASGs {
+			if asg.AMIType == ec2config.AMITypeBottleRocketCPU {
+				return fmt.Errorf("AddOnNodeGroups %q has %q for AddOnKubernetesDashboard (not supported yet)", name, asg.AMIType)
+			}
+		}
+	}
+	if cfg.IsEnabledAddOnManagedNodeGroups() {
+		for name, asg := range cfg.AddOnManagedNodeGroups.MNGs {
+			if asg.AMIType == ec2config.AMITypeBottleRocketCPU {
+				return fmt.Errorf("AddOnManagedNodeGroups %q has %q for AddOnKubernetesDashboard (not supported yet)", name, asg.AMIType)
+			}
+		}
+	}
+
+	if cfg.AddOnKubernetesDashboard.Namespace == "" {
+		cfg.AddOnKubernetesDashboard.Namespace = cfg.Name + "-kubernetes-dashboard"
 	}
 	return nil
 }
