@@ -1125,8 +1125,6 @@ func TestEnvAddOnKubernetesDashboard(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_ENABLE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_CREATED", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_CREATED")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_NAMESPACE", "dashboard")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_NAMESPACE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_URL", "MY-URL")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_URL")
 
@@ -1142,12 +1140,11 @@ func TestEnvAddOnKubernetesDashboard(t *testing.T) {
 	if !cfg.AddOnKubernetesDashboard.Enable {
 		t.Fatalf("unexpected cfg.AddOnKubernetesDashboard.Enable %v", cfg.AddOnKubernetesDashboard.Enable)
 	}
-	if cfg.AddOnKubernetesDashboard.Namespace != "dashboard" {
-		t.Fatalf("unexpected cfg.AddOnKubernetesDashboard.Namespace %q", cfg.AddOnKubernetesDashboard.Namespace)
-	}
-	if cfg.AddOnKubernetesDashboard.URL != "" {
+	if cfg.AddOnKubernetesDashboard.URL != "MY-URL" {
 		t.Fatalf("unexpected cfg.AddOnKubernetesDashboard.URL %q", cfg.AddOnKubernetesDashboard.URL)
 	}
+
+	fmt.Println(cfg.KubectlCommands())
 }
 
 func TestEnvAddOnPrometheusGrafana(t *testing.T) {
@@ -1183,6 +1180,8 @@ func TestEnvAddOnPrometheusGrafana(t *testing.T) {
 	if cfg.AddOnPrometheusGrafana.Namespace != "grafana" {
 		t.Fatalf("unexpected cfg.AddOnPrometheusGrafana.Namespace %q", cfg.AddOnPrometheusGrafana.Namespace)
 	}
+
+	fmt.Println(cfg.KubectlCommands())
 }
 
 func TestEnvAddOnKubeflow(t *testing.T) {

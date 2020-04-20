@@ -4,12 +4,13 @@ go 1.14
 
 // https://github.com/aws/aws-sdk-go/releases
 // https://github.com/uber-go/zap/releases
+// https://github.com/helm/helm/releases
 // https://github.com/kubernetes/client-go/releases
 // https://github.com/kubernetes-sigs/yaml/releases
 // https://github.com/blang/semver/releases
 // https://github.com/gyuho/semver/releases
 require (
-	github.com/aws/aws-sdk-go v1.30.9
+	github.com/aws/aws-sdk-go v1.30.10
 	github.com/cihub/seelog v0.0.0-20170130134532-f561c5e57575
 	github.com/davecgh/go-spew v1.1.1
 	github.com/dustin/go-humanize v1.0.0
@@ -22,7 +23,6 @@ require (
 	github.com/mitchellh/ioprogress v0.0.0-20180201004757-6a23b12fa88e
 	github.com/onsi/ginkgo v1.11.0
 	github.com/onsi/gomega v1.7.0
-	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.0.0
 	github.com/prometheus/common v0.4.1
 	github.com/smartystreets/goconvey v0.0.0-20190731233626-505e41936337 // indirect

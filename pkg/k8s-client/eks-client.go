@@ -77,9 +77,10 @@ type EKS interface {
 	ListNamespaces(limit int64, interval time.Duration) ([]v1.Namespace, error)
 	// ListNodes returns the list of existing nodes.
 	ListNodes(limit int64, interval time.Duration) ([]v1.Node, error)
-
 	// ListPods returns the list of existing namespace names.
 	ListPods(namespace string, limit int64, interval time.Duration) ([]v1.Pod, error)
+	// ListSecrets returns the list of existing Secret objects.
+	ListSecrets(namespace string, limit int64, interval time.Duration) ([]v1.Secret, error)
 
 	ListAppsV1Deployments(namespace string, limit int64, interval time.Duration) (ss []apps_v1.Deployment, err error)
 	ListAppsV1StatefulSets(namespace string, limit int64, interval time.Duration) (ss []apps_v1.StatefulSet, err error)
@@ -902,6 +903,39 @@ func (e *eks) listPods(namespace string, limit int64, interval time.Duration) (p
 		time.Sleep(interval)
 	}
 	return pods, err
+}
+
+func (e *eks) ListSecrets(namespace string, limit int64, interval time.Duration) ([]v1.Secret, error) {
+	e.mu.Lock()
+	ss, err := e.listSecrets(namespace, limit, interval)
+	e.mu.Unlock()
+	return ss, err
+}
+
+func (e *eks) listSecrets(namespace string, limit int64, interval time.Duration) (ss []v1.Secret, err error) {
+	rs := &v1.SecretList{ListMeta: metav1.ListMeta{Continue: ""}}
+	for {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		rs, err = e.cli.CoreV1().Secrets(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		cancel()
+		if err != nil {
+			return nil, err
+		}
+		ss = append(ss, rs.Items...)
+		remained := int64Value(rs.RemainingItemCount)
+		e.cfg.Logger.Info("listing secret",
+			zap.Int64("limit", limit),
+			zap.Int64("remained", remained),
+			zap.String("continue", rs.Continue),
+			zap.Duration("interval", interval),
+			zap.Int("items", len(rs.Items)),
+		)
+		if rs.Continue == "" {
+			break
+		}
+		time.Sleep(interval)
+	}
+	return ss, err
 }
 
 func (e *eks) ListAppsV1Deployments(namespace string, limit int64, interval time.Duration) (ss []apps_v1.Deployment, err error) {

@@ -1140,7 +1140,7 @@ func (ts *Tester) Up() (err error) {
 			return errors.New("ts.kubernetesDashboardTester == nil when AddOnKubernetesDashboard.Enable == true")
 		}
 		fmt.Printf("\n*********************************\n")
-		fmt.Printf("kubernetesDashboardTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnKubernetesDashboard.Namespace)
+		fmt.Printf("kubernetesDashboardTester.Create (%q, \"%s --namespace=kube-system get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		if err := catchInterrupt(
 			ts.lg,
 			ts.stopCreationCh,

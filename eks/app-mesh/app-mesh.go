@@ -3,6 +3,7 @@ package appmesh
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -16,7 +17,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/cloudformation/cloudformationiface"
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	clientset "k8s.io/client-go/kubernetes"
 )
@@ -394,7 +394,7 @@ func (ts *tester) uninstallInjector() error {
 func splitImageRepoAndTag(dockerImage string) (string, string, error) {
 	parts := strings.Split(dockerImage, ":")
 	if len(parts) != 2 {
-		return "", "", errors.Errorf("dockerImage expects <imageRepo>:<imageTag>, got: %s", dockerImage)
+		return "", "", fmt.Errorf("dockerImage expects <imageRepo>:<imageTag>, got: %s", dockerImage)
 	}
 	return parts[0], parts[1], nil
 }

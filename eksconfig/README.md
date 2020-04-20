@@ -259,15 +259,14 @@ AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_NLB_NAME | *eksconfig.AddOnWordpress.NLBName
 AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_URL | *eksconfig.AddOnWordpress.URL | string | read-only "true"
 
 AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_ENABLE | *eksconfig.AddOnKubernetesDashboard.Enable | bool | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_NAMESPACE | *eksconfig.AddOnKubernetesDashboard.Namespace | string | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_CREATED | *eksconfig.AddOnKubernetesDashboard.Created | bool | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_CREATE_TOOK | *eksconfig.AddOnKubernetesDashboard.CreateTook | time.Duration | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_CREATE_TOOK_STRING | *eksconfig.AddOnKubernetesDashboard.CreateTookString | string | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_DELETE_TOOK | *eksconfig.AddOnKubernetesDashboard.DeleteTook | time.Duration | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_DELETE_TOOK_STRING | *eksconfig.AddOnKubernetesDashboard.DeleteTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_NLB_ARN | *eksconfig.AddOnKubernetesDashboard.NLBARN | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_NLB_NAME | *eksconfig.AddOnKubernetesDashboard.NLBName | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_URL | *eksconfig.AddOnKubernetesDashboard.URL | string | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_URL | *eksconfig.AddOnKubernetesDashboard.URL | string | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_KUBECTL_PROXY_PID | *eksconfig.AddOnKubernetesDashboard.KubectlProxyPID | int | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_AUTHENTICATION_TOKEN | *eksconfig.AddOnKubernetesDashboard.AuthenticationToken | string | read-only "true"
 
 AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_ENABLE | *eksconfig.AddOnPrometheusGrafana.Enable | bool | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_NAMESPACE | *eksconfig.AddOnPrometheusGrafana.Namespace | string | read-only "false"

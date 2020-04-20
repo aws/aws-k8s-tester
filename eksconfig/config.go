@@ -347,13 +347,17 @@ func (cfg *Config) KubectlCommands() (s string) {
 	tpl := template.Must(template.New("kubectlTmpl").Parse(kubectlTmpl))
 	buf := bytes.NewBuffer(nil)
 	if err := tpl.Execute(buf, struct {
-		KubeConfigPath string
-		KubectlCommand string
-		Version        string
+		KubeConfigPath             string
+		KubectlCommand             string
+		Version                    string
+		KubernetesDashboardEnabled bool
+		KubernetesDashboardURL     string
 	}{
 		cfg.KubeConfigPath,
 		cfg.KubectlCommand(),
 		cfg.Parameters.Version,
+		cfg.IsEnabledAddOnKubernetesDashboard(),
+		cfg.getAddOnKubernetesDashboardURL(),
 	}); err != nil {
 		return ""
 	}
@@ -373,6 +377,10 @@ export KUBECTL="{{ .KubectlCommand }}"
 {{ .KubectlCommand }} get csr -o=yaml
 {{ .KubectlCommand }} get nodes --show-labels -o=wide
 {{ .KubectlCommand }} get nodes -o=wide
+{{ if .KubernetesDashboardEnabled }}
+{{ .KubectlCommand }} proxy
+# Kubernetes Dashboard URL {{ .KubernetesDashboardURL }}
+{{ end }}
 
 # sonobuoy commands
 go get -v -u github.com/heptio/sonobuoy

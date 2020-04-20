@@ -5,22 +5,19 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"strings"
+	"syscall"
 	"time"
 
-	"github.com/aws/aws-k8s-tester/ec2config"
-	"github.com/aws/aws-k8s-tester/eks/helm"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clientset "k8s.io/client-go/kubernetes"
-	"k8s.io/utils/exec"
 )
 
 // Config defines Dashboard configuration.
@@ -30,11 +27,7 @@ type Config struct {
 	Sig    chan os.Signal
 
 	EKSConfig *eksconfig.Config
-	K8SClient k8sClientSetGetter
-}
-
-type k8sClientSetGetter interface {
-	KubernetesClientSet() *clientset.Clientset
+	K8SClient k8s_client.EKS
 }
 
 // Tester defines Dashboard tester
@@ -50,25 +43,10 @@ func NewTester(cfg Config) (Tester, error) {
 }
 
 type tester struct {
-	cfg Config
+	cfg         Config
+	proxyCmd    *exec.Cmd
+	proxyCancel func()
 }
-
-/*
-helm repo add stable https://kubernetes-charts.storage.googleapis.com
-helm search repo stable
-
-helm repo add bitnami https://charts.bitnami.com/bitnami
-helm search repo bitnami
-
-helm repo add eks https://aws.github.io/eks-charts
-helm search repo eks
-*/
-
-const (
-	chartRepoName = "stable"
-	chartURL      = "https://kubernetes-charts.storage.googleapis.com"
-	chartName     = "kubernetes-dashboard"
-)
 
 func (ts *tester) Create() error {
 	if ts.cfg.EKSConfig.AddOnKubernetesDashboard.Created {
@@ -86,16 +64,17 @@ func (ts *tester) Create() error {
 		ts.cfg.EKSConfig.Sync()
 	}()
 
-	if err := k8s_client.CreateNamespace(ts.cfg.Logger, ts.cfg.K8SClient.KubernetesClientSet(), ts.cfg.EKSConfig.AddOnKubernetesDashboard.Namespace); err != nil {
+	if err := ts.installMetricsServer(); err != nil {
 		return err
 	}
-	if err := helm.RepoAdd(ts.cfg.Logger, chartRepoName, chartURL); err != nil {
+	if err := ts.installDashboard(); err != nil {
 		return err
 	}
-	if err := ts.installHelm(); err != nil {
+	if err := ts.installEKSAdmin(); err != nil {
 		return err
 	}
-	if err := ts.waitService(); err != nil {
+	// TODO: use ingress
+	if err := ts.startProxy(true); err != nil {
 		return err
 	}
 
@@ -117,16 +96,8 @@ func (ts *tester) Delete() error {
 
 	var errs []string
 
-	if err := ts.uninstallHelm(); err != nil {
+	if err := ts.stopProxy(); err != nil {
 		errs = append(errs, err.Error())
-	}
-
-	if err := k8s_client.DeleteNamespaceAndWait(ts.cfg.Logger,
-		ts.cfg.K8SClient.KubernetesClientSet(),
-		ts.cfg.EKSConfig.AddOnKubernetesDashboard.Namespace,
-		k8s_client.DefaultNamespaceDeletionInterval,
-		k8s_client.DefaultNamespaceDeletionTimeout); err != nil {
-		errs = append(errs, fmt.Sprintf("failed to delete Dashboard namespace (%v)", err))
 	}
 
 	if len(errs) > 0 {
@@ -137,178 +108,102 @@ func (ts *tester) Delete() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
-/*
-https://github.com/helm/charts/tree/master/stable/kubernetes-dashboard
-*/
-
-func (ts *tester) installHelm() error {
-	ngType := "custom"
-	if ts.cfg.EKSConfig.IsEnabledAddOnManagedNodeGroups() {
-		ngType = "managed"
-	}
-
-	values := make(map[string]interface{})
-
-	// TODO: PVC not working on BottleRocket
-	// do not assign mariadb to Bottlerocket
-	// e.g. MountVolume.MountDevice failed for volume "pvc-8e035a13-4d33-472f-a4c0-f36c7d39d170" : executable file not found in $PATH
-	values["nodeSelector"] = map[string]interface{}{"AMIType": ec2config.AMITypeAL2X8664, "NGType": ngType}
-
-	return helm.Install(
-		ts.cfg.Logger,
-		10*time.Minute,
-		ts.cfg.EKSConfig.KubeConfigPath,
-		ts.cfg.EKSConfig.AddOnKubernetesDashboard.Namespace,
-		chartURL,
-		chartName,
-		ts.cfg.EKSConfig.AddOnKubernetesDashboard.Namespace,
-		values,
-	)
-}
-
-func (ts *tester) uninstallHelm() error {
-	return helm.Uninstall(
-		ts.cfg.Logger,
-		10*time.Minute,
-		ts.cfg.EKSConfig.KubeConfigPath,
-		ts.cfg.EKSConfig.AddOnKubernetesDashboard.Namespace,
-		ts.cfg.EKSConfig.AddOnKubernetesDashboard.Namespace,
-	)
-}
-
-func (ts *tester) waitService() error {
-	svcName := ts.cfg.EKSConfig.AddOnKubernetesDashboard.Namespace
-	ts.cfg.Logger.Info("waiting for Kubernetes Dashboard service")
-
-	waitDur := 2 * time.Minute
-	ts.cfg.Logger.Info("waiting for Kubernetes Dashboard service", zap.Duration("wait", waitDur))
-	select {
-	case <-ts.cfg.Stopc:
-		return errors.New("Kubernetes Dashboard service creation aborted")
-	case sig := <-ts.cfg.Sig:
-		return fmt.Errorf("received os signal %v", sig)
-	case <-time.After(waitDur):
-	}
-
+func (ts *tester) startProxy(dry bool) error {
 	args := []string{
 		ts.cfg.EKSConfig.KubectlPath,
 		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
-		"--namespace=" + ts.cfg.EKSConfig.AddOnKubernetesDashboard.Namespace,
-		"describe",
-		"svc",
-		svcName,
+		"proxy",
 	}
-	argsCmd := strings.Join(args, " ")
-	hostName := ""
-	retryStart := time.Now()
-	for time.Now().Sub(retryStart) < waitDur {
-		select {
-		case <-ts.cfg.Stopc:
-			return errors.New("Kubernetes Dashboard service creation aborted")
-		case sig := <-ts.cfg.Sig:
-			return fmt.Errorf("received os signal %v", sig)
-		case <-time.After(5 * time.Second):
-		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-		cmdOut, err := exec.New().CommandContext(ctx, args[0], args[1:]...).CombinedOutput()
-		cancel()
-		if err != nil {
-			ts.cfg.Logger.Warn("'kubectl describe svc' failed", zap.String("command", argsCmd), zap.Error(err))
-		} else {
-			out := string(cmdOut)
-			fmt.Printf("\n\n\"%s\" output:\n%s\n\n", argsCmd, out)
+	if !dry {
+		ts.cfg.Logger.Info("starting Kubernetes Dashboard proxy", zap.String("cmd-path", ts.cfg.EKSConfig.KubectlPath))
+		ctx, cancel := context.WithCancel(context.Background())
+		ts.proxyCmd = exec.CommandContext(ctx, args[0], args[1:]...)
+		ts.proxyCmd.Stderr = os.Stderr
+		ts.proxyCmd.Stdout = os.Stdout
+		ts.proxyCancel = cancel
+		if err := ts.proxyCmd.Start(); err != nil {
+			ts.cfg.Logger.Warn("failed to start kubectl proxy command", zap.Error(err))
+			ts.proxyCancel()
+			if ts.proxyCmd.Process != nil {
+				ts.proxyCmd.Process.Kill()
+			}
+			return err
 		}
+		ts.cfg.EKSConfig.AddOnKubernetesDashboard.KubectlProxyPID = ts.proxyCmd.Process.Pid
+		ts.cfg.Logger.Info("started Kubernetes Dashboard proxy", zap.Int("pid", ts.cfg.EKSConfig.AddOnKubernetesDashboard.KubectlProxyPID))
 
-		ts.cfg.Logger.Info("querying Kubernetes Dashboard service for HTTP endpoint")
-		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
-		so, err := ts.cfg.K8SClient.KubernetesClientSet().
-			CoreV1().
-			Services(ts.cfg.EKSConfig.AddOnKubernetesDashboard.Namespace).
-			Get(ctx, svcName, metav1.GetOptions{})
-		cancel()
-		if err != nil {
-			ts.cfg.Logger.Warn("failed to get Kubernetes Dashboard service; retrying", zap.Error(err))
-			time.Sleep(5 * time.Second)
-			continue
-		}
+		waitDur := time.Minute
+		retryStart := time.Now()
+		for time.Now().Sub(retryStart) < waitDur {
+			select {
+			case <-ts.cfg.Stopc:
+				return errors.New("Kubernetes Dashboard proxy creation aborted")
+			case sig := <-ts.cfg.Sig:
+				return fmt.Errorf("received os signal %v", sig)
+			case <-time.After(5 * time.Second):
+			}
 
-		ts.cfg.Logger.Info(
-			"Kubernetes Dashboard service has been linked to LoadBalancer",
-			zap.String("load-balancer", fmt.Sprintf("%+v", so.Status.LoadBalancer)),
-		)
-		for _, ing := range so.Status.LoadBalancer.Ingress {
-			ts.cfg.Logger.Info(
-				"Kubernetes Dashboard service has been linked to LoadBalancer.Ingress",
-				zap.String("ingress", fmt.Sprintf("%+v", ing)),
-			)
-			hostName = ing.Hostname
-			break
-		}
+			buf := bytes.NewBuffer(nil)
+			err := httpReadInsecure(ts.cfg.Logger, ts.cfg.EKSConfig.AddOnKubernetesDashboard.URL, buf)
+			if err != nil {
+				ts.cfg.Logger.Warn("failed to read Kubernetes Dashboard proxy; retrying", zap.Error(err))
+				time.Sleep(5 * time.Second)
+				continue
+			}
 
-		if hostName != "" {
-			ts.cfg.Logger.Info("found host name", zap.String("host-name", hostName))
-			break
+			httpOutput := buf.String()
+			fmt.Printf("\nKubernetes Dashboard proxy output:\n%s\n", httpOutput)
+
+			if strings.Contains(httpOutput, `The Kubernetes Authors.`) || true {
+				ts.cfg.Logger.Info("read Kubernetes Dashboard proxy; exiting")
+				break
+			}
+
+			ts.cfg.Logger.Warn("unexpected Kubernetes Dashboard proxy output; retrying")
 		}
 	}
 
-	if hostName == "" {
-		return errors.New("failed to find host name")
-	}
-
-	ts.cfg.EKSConfig.AddOnKubernetesDashboard.URL = "http://" + hostName
-
-	// TODO: is there any better way to find out the NLB name?
-	ts.cfg.EKSConfig.AddOnKubernetesDashboard.NLBName = strings.Split(hostName, "-")[0]
-	ss := strings.Split(hostName, ".")[0]
-	ss = strings.Replace(ss, "-", "/", -1)
-	ts.cfg.EKSConfig.AddOnKubernetesDashboard.NLBARN = fmt.Sprintf(
-		"arn:aws:elasticloadbalancing:%s:%s:loadbalancer/net/%s",
-		ts.cfg.EKSConfig.Region,
-		ts.cfg.EKSConfig.Status.AWSAccountID,
-		ss,
+	fmt.Printf("\nKubernetes Dashboard URL %s\n\n%s\n\n",
+		ts.cfg.EKSConfig.AddOnKubernetesDashboard.URL,
+		strings.Join(args, " "),
 	)
 
-	fmt.Printf("\nNLB Kubernetes Dashboard ARN %s\n", ts.cfg.EKSConfig.AddOnKubernetesDashboard.NLBARN)
-	fmt.Printf("NLB Kubernetes Dashboard Name %s\n", ts.cfg.EKSConfig.AddOnKubernetesDashboard.NLBName)
-	fmt.Printf("NLB Kubernetes Dashboard URL %s\n\n", ts.cfg.EKSConfig.AddOnKubernetesDashboard.URL)
+	return ts.cfg.EKSConfig.Sync()
+}
 
-	ts.cfg.Logger.Info("waiting before testing Kubernetes Dashboard Service")
-	time.Sleep(20 * time.Second)
-
-	retryStart = time.Now()
-	for time.Now().Sub(retryStart) < waitDur {
-		select {
-		case <-ts.cfg.Stopc:
-			return errors.New("Kubernetes Dashboard Service creation aborted")
-		case sig := <-ts.cfg.Sig:
-			return fmt.Errorf("received os signal %v", sig)
-		case <-time.After(5 * time.Second):
-		}
-
-		buf := bytes.NewBuffer(nil)
-		err := httpReadInsecure(ts.cfg.Logger, ts.cfg.EKSConfig.AddOnKubernetesDashboard.URL, buf)
-		if err != nil {
-			ts.cfg.Logger.Warn("failed to read NLB Kubernetes Dashboard Service; retrying", zap.Error(err))
-			time.Sleep(5 * time.Second)
-			continue
-		}
-
-		httpOutput := buf.String()
-		fmt.Printf("\nNLB Kubernetes Dashboard Service output:\n%s\n", httpOutput)
-
-		if strings.Contains(httpOutput, `<p>Welcome to Kubernetes Dashboard. This is your first post.`) || true {
-			ts.cfg.Logger.Info(
-				"read Kubernetes Dashboard Service; exiting",
-				zap.String("host-name", hostName),
-			)
-			break
-		}
-
-		ts.cfg.Logger.Warn("unexpected Kubernetes Dashboard Service output; retrying")
+func (ts *tester) stopProxy() error {
+	if ts.proxyCmd == nil || ts.cfg.EKSConfig.AddOnKubernetesDashboard.KubectlProxyPID == 0 {
+		return nil
 	}
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.Logger.Info("stopping Kubernetes Dashboard proxy")
+
+	if ts.proxyCancel != nil {
+		ts.proxyCancel()
+	}
+
+	if ts.proxyCmd != nil && ts.proxyCmd.Process != nil {
+		err := ts.proxyCmd.Process.Kill()
+		if err != nil {
+			ts.cfg.Logger.Warn("proxyCmd.Process.Kill failed", zap.Error(err))
+		} else {
+			ts.cfg.Logger.Info("ran proxyCmd.Process.Kill")
+		}
+	}
+
+	if ts.cfg.EKSConfig.AddOnKubernetesDashboard.KubectlProxyPID != 0 {
+		err := syscall.Kill(-ts.cfg.EKSConfig.AddOnKubernetesDashboard.KubectlProxyPID, syscall.SIGKILL)
+		if err != nil {
+			ts.cfg.Logger.Warn("syscall.Kill failed", zap.Error(err))
+		} else {
+			ts.cfg.Logger.Info("ran syscall.Kill")
+		}
+	}
+
+	ts.cfg.Logger.Info("stopped Kubernetes Dashboard proxy")
+
+	return nil
 }
 
 // curl -k [URL]

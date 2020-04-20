@@ -15,14 +15,19 @@ func (cfg *Config) IsEnabledAddOnKubernetesDashboard() bool {
 	return false
 }
 
+func (cfg *Config) getAddOnKubernetesDashboardURL() string {
+	if cfg.AddOnKubernetesDashboard == nil {
+		return ""
+	}
+	return cfg.AddOnKubernetesDashboard.URL
+}
+
 // AddOnKubernetesDashboard defines parameters for EKS cluster
 // add-on Kubernetes Dashboard.
+// ref. https://docs.aws.amazon.com/eks/latest/userguide/dashboard-tutorial.html
 type AddOnKubernetesDashboard struct {
 	// Enable is 'true' to create this add-on.
 	Enable bool `json:"enable"`
-
-	// Namespace is the namespace to create "AppMesh" controller/injector.
-	Namespace string `json:"namespace"`
 
 	// Created is true when the resource has been created.
 	// Used for delete operations.
@@ -36,10 +41,12 @@ type AddOnKubernetesDashboard struct {
 	// DeleteTookString is the duration that took to create the resource.
 	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
 
-	// NLBARN is the ARN of the NLB created from the service.
-	NLBARN string `json:"nlb-arn" read-only:"true"`
-	// NLBName is the name of the NLB created from the service.
-	NLBName string `json:"nlb-name" read-only:"true"`
 	// URL is the host name for Kubernetes Dashboard service.
-	URL string `json:"url" read-only:"true"`
+	// TODO: convert this to read-only, and auto-populate this with NLB
+	URL string `json:"url"`
+
+	// KubectlProxyPID is the PID for kubectl proxy.
+	KubectlProxyPID int `json:"kubectl-proxy-pid" read-only:"true"`
+	// AuthenticationToken is the authentication token for eks-admin service account.
+	AuthenticationToken string `json:"authentication-token,omitempty" read-only:"true"`
 }

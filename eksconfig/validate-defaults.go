@@ -227,6 +227,7 @@ func NewDefault() *Config {
 
 		AddOnKubernetesDashboard: &AddOnKubernetesDashboard{
 			Enable: false,
+			URL:    defaultKubernetesDashboardURL,
 		},
 
 		AddOnPrometheusGrafana: &AddOnPrometheusGrafana{
@@ -1237,43 +1238,15 @@ func (cfg *Config) validateAddOnWordpress() error {
 	return nil
 }
 
+// ref. https://docs.aws.amazon.com/eks/latest/userguide/dashboard-tutorial.html
+const defaultKubernetesDashboardURL = "http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/#/login"
 
 func (cfg *Config) validateAddOnKubernetesDashboard() error {
 	if !cfg.IsEnabledAddOnKubernetesDashboard() {
 		return nil
 	}
-
-	// TODO: nodeSelector does not work for mariadb
-	// this does not work when deployed with NG + MNG
-	// does not work even when assigned to NG, not to MNG
-	// only works when deployed with NG and not MNG
-	// only works when deployed with not NG and MNG
-	// don't mix...
-	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
-		return errors.New("AddOnKubernetesDashboard.Enable true but no node group is enabled")
-	}
-	if cfg.IsEnabledAddOnNodeGroups() && cfg.IsEnabledAddOnManagedNodeGroups() {
-		return errors.New("AddOnKubernetesDashboard.Enable true but both node groups are enabled")
-	}
-
-	// TODO: can we support NG + bottlerocket
-	if cfg.IsEnabledAddOnNodeGroups() {
-		for name, asg := range cfg.AddOnNodeGroups.ASGs {
-			if asg.AMIType == ec2config.AMITypeBottleRocketCPU {
-				return fmt.Errorf("AddOnNodeGroups %q has %q for AddOnKubernetesDashboard (not supported yet)", name, asg.AMIType)
-			}
-		}
-	}
-	if cfg.IsEnabledAddOnManagedNodeGroups() {
-		for name, asg := range cfg.AddOnManagedNodeGroups.MNGs {
-			if asg.AMIType == ec2config.AMITypeBottleRocketCPU {
-				return fmt.Errorf("AddOnManagedNodeGroups %q has %q for AddOnKubernetesDashboard (not supported yet)", name, asg.AMIType)
-			}
-		}
-	}
-
-	if cfg.AddOnKubernetesDashboard.Namespace == "" {
-		cfg.AddOnKubernetesDashboard.Namespace = cfg.Name + "-kubernetes-dashboard"
+	if cfg.AddOnKubernetesDashboard.URL == "" {
+		cfg.AddOnKubernetesDashboard.URL = defaultKubernetesDashboardURL
 	}
 	return nil
 }
