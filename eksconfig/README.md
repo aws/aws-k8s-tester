@@ -258,6 +258,22 @@ AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_NLB_ARN | *eksconfig.AddOnWordpress.NLBARN |
 AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_NLB_NAME | *eksconfig.AddOnWordpress.NLBName | string | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_URL | *eksconfig.AddOnWordpress.URL | string | read-only "true"
 
+AWS_K8S_TESTER_EKS_ADD_ON_DASHBOARD_ENABLE | *eksconfig.AddOnDashboard.Enable | bool | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_DASHBOARD_NAMESPACE | *eksconfig.AddOnDashboard.Namespace | string | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_DASHBOARD_CREATED | *eksconfig.AddOnDashboard.Created | bool | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_DASHBOARD_CREATE_TOOK | *eksconfig.AddOnDashboard.CreateTook | time.Duration | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_DASHBOARD_CREATE_TOOK_STRING | *eksconfig.AddOnDashboard.CreateTookString | string | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_DASHBOARD_DELETE_TOOK | *eksconfig.AddOnDashboard.DeleteTook | time.Duration | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_DASHBOARD_DELETE_TOOK_STRING | *eksconfig.AddOnDashboard.DeleteTookString | string | read-only "true"
+
+AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_ENABLE | *eksconfig.AddOnPrometheusGrafana.Enable | bool | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_NAMESPACE | *eksconfig.AddOnPrometheusGrafana.Namespace | string | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_CREATED | *eksconfig.AddOnPrometheusGrafana.Created | bool | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_CREATE_TOOK | *eksconfig.AddOnPrometheusGrafana.CreateTook | time.Duration | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_CREATE_TOOK_STRING | *eksconfig.AddOnPrometheusGrafana.CreateTookString | string | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_DELETE_TOOK | *eksconfig.AddOnPrometheusGrafana.DeleteTook | time.Duration | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_DELETE_TOOK_STRING | *eksconfig.AddOnPrometheusGrafana.DeleteTookString | string | read-only "true"
+
 AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_ENABLE | *eksconfig.AddOnKubeflow.Enable | bool | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_NAMESPACE | *eksconfig.AddOnKubeflow.Namespace | string | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_CREATED | *eksconfig.AddOnKubeflow.Created | bool | read-only "true"
