@@ -40,6 +40,6 @@ type AddOnKubernetesDashboard struct {
 	NLBARN string `json:"nlb-arn" read-only:"true"`
 	// NLBName is the name of the NLB created from the service.
 	NLBName string `json:"nlb-name" read-only:"true"`
-	// URL is the host name for WordPress service.
+	// URL is the host name for Kubernetes Dashboard service.
 	URL string `json:"url" read-only:"true"`
 }
