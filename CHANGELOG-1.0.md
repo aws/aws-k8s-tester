@@ -44,7 +44,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.5...v1.0.6
 - Improve [`"github.com/aws/aws-k8s-tester/eks/csrs"` to simulate initial CSR conditions](https://github.com/aws/aws-k8s-tester/commit/eb3368cbf7c3fa961fe600cfc89f5444f8a80b77).
 - Add [`"github.com/aws/aws-k8s-tester/eks/helm"`](https://github.com/aws/aws-k8s-tester/commit/eb3368cbf7c3fa961fe600cfc89f5444f8a80b77).
 - Add [`"github.com/aws/aws-k8s-tester/eks/wordpress"`](https://github.com/aws/aws-k8s-tester/commit/eb3368cbf7c3fa961fe600cfc89f5444f8a80b77).
-- Add [`"github.com/aws/aws-k8s-tester/eks/kubernetes-dashboard"`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`"github.com/aws/aws-k8s-tester/eks/kubernetes-dashboard"`](https://github.com/aws/aws-k8s-tester/commit/c296d0587a07112bf5c08f709e96f8d806d2828e).
 - Add [`"github.com/aws/aws-k8s-tester/eks/prometheus-grafana"`](https://github.com/aws/aws-k8s-tester/commit/).
 
 ### Dependency
