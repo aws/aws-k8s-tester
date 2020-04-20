@@ -15,6 +15,13 @@ func (cfg *Config) IsEnabledAddOnKubernetesDashboard() bool {
 	return false
 }
 
+func (cfg *Config) getAddOnKubernetesDashboardAuthenticationToken() string {
+	if cfg.AddOnKubernetesDashboard == nil {
+		return ""
+	}
+	return cfg.AddOnKubernetesDashboard.AuthenticationToken
+}
+
 func (cfg *Config) getAddOnKubernetesDashboardURL() string {
 	if cfg.AddOnKubernetesDashboard == nil {
 		return ""
@@ -41,12 +48,12 @@ type AddOnKubernetesDashboard struct {
 	// DeleteTookString is the duration that took to create the resource.
 	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
 
+	// AuthenticationToken is the authentication token for eks-admin service account.
+	AuthenticationToken string `json:"authentication-token,omitempty" read-only:"true"`
 	// URL is the host name for Kubernetes Dashboard service.
 	// TODO: convert this to read-only, and auto-populate this with NLB
 	URL string `json:"url"`
 
 	// KubectlProxyPID is the PID for kubectl proxy.
 	KubectlProxyPID int `json:"kubectl-proxy-pid" read-only:"true"`
-	// AuthenticationToken is the authentication token for eks-admin service account.
-	AuthenticationToken string `json:"authentication-token,omitempty" read-only:"true"`
 }
