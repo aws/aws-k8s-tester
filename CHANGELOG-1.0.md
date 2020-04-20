@@ -9,6 +9,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.5...v1.0.6
 
 ### `eksconfig`
 
+- Seperate [files for `AddOn*`](https://github.com/aws/aws-k8s-tester/commit/).
 - Rename [`AddOnAppMesh.AddOnCFNStackARN` to `AddOnAppMesh.PolicyCFNStackID`](https://github.com/aws/aws-k8s-tester/commit/eb3368cbf7c3fa961fe600cfc89f5444f8a80b77).
 - Add [`AddOnWordpress`](https://github.com/aws/aws-k8s-tester/commit/eb3368cbf7c3fa961fe600cfc89f5444f8a80b77).
 - Add [`AddOnCSRs.InitialRequestConditionType` for simulate an initial CSR condition](https://github.com/aws/aws-k8s-tester/commit/eb3368cbf7c3fa961fe600cfc89f5444f8a80b77).

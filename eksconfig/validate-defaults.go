@@ -22,6 +22,32 @@ import (
 	"k8s.io/client-go/util/homedir"
 )
 
+const (
+	// DefaultNodeInstanceTypeCPU is the default EC2 instance type for CPU worker node.
+	DefaultNodeInstanceTypeCPU = "c5.xlarge"
+	// DefaultNodeInstanceTypeGPU is the default EC2 instance type for GPU worker node.
+	DefaultNodeInstanceTypeGPU = "p3.8xlarge"
+
+	// DefaultNodeVolumeSize is the default EC2 instance volume size for a worker node.
+	DefaultNodeVolumeSize = 40
+
+	// NGsMaxLimit is the maximum number of "Node Group"s per a EKS cluster.
+	NGsMaxLimit = 10
+	// NGMaxLimit is the maximum number of nodes per a "Node Group".
+	NGMaxLimit = 100
+
+	// MNGsMaxLimit is the maximum number of "Managed Node Group"s per a EKS cluster.
+	MNGsMaxLimit = 10
+	// MNGMaxLimit is the maximum number of nodes per a "Managed Node Group".
+	MNGMaxLimit = 100
+)
+
+const (
+	// AMITypeBottleRocketCPU is the default AMI type for Bottlerocket OS.
+	// https://github.com/bottlerocket-os/bottlerocket
+	AMITypeBottleRocketCPU = "BOTTLEROCKET_x86_64"
+)
+
 // NewDefault returns a default configuration.
 //  - empty string creates a non-nil object for pointer-type field
 //  - omitting an entire field returns nil value
@@ -197,6 +223,14 @@ func NewDefault() *Config {
 			Enable:   false,
 			UserName: "user",
 			Password: "",
+		},
+
+		AddOnDashboard: &AddOnDashboard{
+			Enable: false,
+		},
+
+		AddOnPrometheusGrafana: &AddOnPrometheusGrafana{
+			Enable: false,
 		},
 
 		AddOnKubeflow: &AddOnKubeflow{

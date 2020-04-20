@@ -334,13 +334,6 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_CONTAINER_NAME", "fargate-container")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_CONTAINER_NAME")
 
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_ENABLE", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_CREATED", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_CREATED")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_NAMESPACE", "hello-kubeflow")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_NAMESPACE")
-
 	if err := cfg.UpdateFromEnvs(); err != nil {
 		t.Fatal(err)
 	}
@@ -896,16 +889,6 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("unexpected cfg.AddOnFargate.ContainerName %q", cfg.AddOnFargate.ContainerName)
 	}
 
-	if cfg.AddOnKubeflow.Created { // read-only must be ignored
-		t.Fatalf("unexpected cfg.AddOnKubeflow.Created %v", cfg.AddOnKubeflow.Created)
-	}
-	if !cfg.AddOnKubeflow.Enable {
-		t.Fatalf("unexpected cfg.AddOnKubeflow.Enable %v", cfg.AddOnKubeflow.Enable)
-	}
-	if cfg.AddOnKubeflow.Namespace != "hello-kubeflow" {
-		t.Fatalf("unexpected cfg.AddOnKubeflow.Namespace %q", cfg.AddOnKubeflow.Namespace)
-	}
-
 	cfg.Parameters.RoleManagedPolicyARNs = nil
 	cfg.Parameters.RoleServicePrincipals = nil
 	cfg.AddOnManagedNodeGroups.RoleName = ""
@@ -1119,5 +1102,110 @@ func TestEnvAddOnWordpress(t *testing.T) {
 	}
 	if cfg.AddOnWordpress.Password != "my-password" {
 		t.Fatalf("unexpected cfg.AddOnWordpress.Password %q", cfg.AddOnWordpress.Password)
+	}
+}
+
+func TestEnvAddOnDashboard(t *testing.T) {
+	cfg := NewDefault()
+	defer func() {
+		os.RemoveAll(cfg.ConfigPath)
+		os.RemoveAll(cfg.KubectlCommandsOutputPath)
+		os.RemoveAll(cfg.RemoteAccessCommandsOutputPath)
+	}()
+
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE", `true`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE")
+
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_DASHBOARD_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_DASHBOARD_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_DASHBOARD_CREATED", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_DASHBOARD_CREATED")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_DASHBOARD_NAMESPACE", "dashboard")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_DASHBOARD_NAMESPACE")
+
+	if err := cfg.UpdateFromEnvs(); err != nil {
+		t.Fatal(err)
+	}
+	err := cfg.ValidateAndSetDefaults()
+	assert.NoError(t, err)
+
+	if cfg.AddOnDashboard.Created { // read-only must be ignored
+		t.Fatalf("unexpected cfg.AddOnDashboard.Created %v", cfg.AddOnDashboard.Created)
+	}
+	if !cfg.AddOnDashboard.Enable {
+		t.Fatalf("unexpected cfg.AddOnDashboard.Enable %v", cfg.AddOnDashboard.Enable)
+	}
+	if cfg.AddOnDashboard.Namespace != "dashboard" {
+		t.Fatalf("unexpected cfg.AddOnDashboard.Namespace %q", cfg.AddOnDashboard.Namespace)
+	}
+}
+
+func TestEnvAddOnPrometheusGrafana(t *testing.T) {
+	cfg := NewDefault()
+	defer func() {
+		os.RemoveAll(cfg.ConfigPath)
+		os.RemoveAll(cfg.KubectlCommandsOutputPath)
+		os.RemoveAll(cfg.RemoteAccessCommandsOutputPath)
+	}()
+
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE", `true`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE")
+
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_CREATED", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_CREATED")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_NAMESPACE", "grafana")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_NAMESPACE")
+
+	if err := cfg.UpdateFromEnvs(); err != nil {
+		t.Fatal(err)
+	}
+	err := cfg.ValidateAndSetDefaults()
+	assert.NoError(t, err)
+
+	if cfg.AddOnPrometheusGrafana.Created { // read-only must be ignored
+		t.Fatalf("unexpected cfg.AddOnPrometheusGrafana.Created %v", cfg.AddOnPrometheusGrafana.Created)
+	}
+	if !cfg.AddOnPrometheusGrafana.Enable {
+		t.Fatalf("unexpected cfg.AddOnPrometheusGrafana.Enable %v", cfg.AddOnPrometheusGrafana.Enable)
+	}
+	if cfg.AddOnPrometheusGrafana.Namespace != "grafana" {
+		t.Fatalf("unexpected cfg.AddOnPrometheusGrafana.Namespace %q", cfg.AddOnPrometheusGrafana.Namespace)
+	}
+}
+
+func TestEnvAddOnKubeflow(t *testing.T) {
+	cfg := NewDefault()
+	defer func() {
+		os.RemoveAll(cfg.ConfigPath)
+		os.RemoveAll(cfg.KubectlCommandsOutputPath)
+		os.RemoveAll(cfg.RemoteAccessCommandsOutputPath)
+	}()
+
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE", `true`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE")
+
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_CREATED", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_CREATED")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_NAMESPACE", "kubeflow")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_NAMESPACE")
+
+	if err := cfg.UpdateFromEnvs(); err != nil {
+		t.Fatal(err)
+	}
+	err := cfg.ValidateAndSetDefaults()
+	assert.NoError(t, err)
+
+	if cfg.AddOnKubeflow.Created { // read-only must be ignored
+		t.Fatalf("unexpected cfg.AddOnKubeflow.Created %v", cfg.AddOnKubeflow.Created)
+	}
+	if !cfg.AddOnKubeflow.Enable {
+		t.Fatalf("unexpected cfg.AddOnKubeflow.Enable %v", cfg.AddOnKubeflow.Enable)
+	}
+	if cfg.AddOnKubeflow.Namespace != "kubeflow" {
+		t.Fatalf("unexpected cfg.AddOnKubeflow.Namespace %q", cfg.AddOnKubeflow.Namespace)
 	}
 }

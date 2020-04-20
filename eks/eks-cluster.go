@@ -17,12 +17,12 @@ import (
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	awscfn "github.com/aws/aws-k8s-tester/pkg/aws/cloudformation"
-	k8sclient "github.com/aws/aws-k8s-tester/pkg/k8s-client"
+	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
-	awseks "github.com/aws/aws-sdk-go/service/eks"
+	aws_eks "github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
 	"github.com/dustin/go-humanize"
 	"go.uber.org/zap"
@@ -108,7 +108,7 @@ func (ts *Tester) createCluster() (err error) {
 	}
 
 	ts.lg.Info("creating k8s client")
-	kcfg := &k8sclient.EKSConfig{
+	kcfg := &k8s_client.EKSConfig{
 		Logger:            ts.lg,
 		Region:            ts.cfg.Region,
 		ClusterName:       ts.cfg.Name,
@@ -123,7 +123,7 @@ func (ts *Tester) createCluster() (err error) {
 		kcfg.ClusterAPIServerEndpoint = ts.cfg.Status.ClusterAPIServerEndpoint
 		kcfg.ClusterCADecoded = ts.cfg.Status.ClusterCADecoded
 	}
-	ts.k8sClient, err = k8sclient.NewEKS(kcfg)
+	ts.k8sClient, err = k8s_client.NewEKS(kcfg)
 	if err != nil {
 		ts.lg.Warn("failed to create k8s client", zap.Error(err))
 	} else {
@@ -160,7 +160,7 @@ func (ts *Tester) createEKS() error {
 	}
 
 	ts.describeCluster()
-	if ts.cfg.Status.ClusterStatusCurrent == awseks.ClusterStatusActive {
+	if ts.cfg.Status.ClusterStatusCurrent == aws_eks.ClusterStatusActive {
 		ts.lg.Info("cluster status is active; no need to create cluster", zap.String("status", ts.cfg.Status.ClusterStatusCurrent))
 		return nil
 	}
@@ -184,11 +184,11 @@ func (ts *Tester) createEKS() error {
 			zap.String("request-header-key", ts.cfg.Parameters.RequestHeaderKey),
 			zap.String("request-header-value", ts.cfg.Parameters.RequestHeaderValue),
 		)
-		createInput := awseks.CreateClusterInput{
+		createInput := aws_eks.CreateClusterInput{
 			Name:    aws.String(ts.cfg.Name),
 			Version: aws.String(ts.cfg.Parameters.Version),
 			RoleArn: aws.String(ts.cfg.Parameters.RoleARN),
-			ResourcesVpcConfig: &awseks.VpcConfigRequest{
+			ResourcesVpcConfig: &aws_eks.VpcConfigRequest{
 				SubnetIds:        aws.StringSlice(subnets),
 				SecurityGroupIds: aws.StringSlice([]string{ts.cfg.Status.ClusterControlPlaneSecurityGroupID}),
 			},
@@ -208,10 +208,10 @@ func (ts *Tester) createEKS() error {
 			ts.lg.Info("added encryption to EKS API request",
 				zap.String("cmk-arn", ts.cfg.Parameters.EncryptionCMKARN),
 			)
-			createInput.EncryptionConfig = []*awseks.EncryptionConfig{
+			createInput.EncryptionConfig = []*aws_eks.EncryptionConfig{
 				{
 					Resources: aws.StringSlice([]string{"secrets"}),
-					Provider: &awseks.Provider{
+					Provider: &aws_eks.Provider{
 						KeyArn: aws.String(ts.cfg.Parameters.EncryptionCMKARN),
 					},
 				},
@@ -335,12 +335,12 @@ func (ts *Tester) createEKS() error {
 		ts.lg,
 		ts.eksAPI,
 		ts.cfg.Name,
-		awseks.ClusterStatusActive,
+		aws_eks.ClusterStatusActive,
 		initialWait,
 		30*time.Second,
 	)
 	for v := range ch {
-		ts.updateClusterStatus(v, awseks.ClusterStatusActive)
+		ts.updateClusterStatus(v, aws_eks.ClusterStatusActive)
 	}
 	cancel()
 
@@ -409,7 +409,7 @@ func (ts *Tester) deleteCluster() error {
 
 	} else {
 
-		_, err := ts.eksAPI.DeleteCluster(&awseks.DeleteClusterInput{
+		_, err := ts.eksAPI.DeleteCluster(&aws_eks.DeleteClusterInput{
 			Name: aws.String(ts.cfg.Name),
 		})
 		if err != nil {
@@ -444,7 +444,7 @@ func (ts *Tester) deleteCluster() error {
 }
 
 func (ts *Tester) describeCluster() {
-	dout, err := ts.eksAPI.DescribeCluster(&awseks.DescribeClusterInput{Name: aws.String(ts.cfg.Name)})
+	dout, err := ts.eksAPI.DescribeCluster(&aws_eks.DescribeClusterInput{Name: aws.String(ts.cfg.Name)})
 	if err != nil {
 		if ClusterDeleted(err) {
 			ts.cfg.RecordStatus(eksconfig.ClusterStatusDELETEDORNOTEXIST)
@@ -580,7 +580,7 @@ func ClusterDeleted(err error) bool {
 
 // ClusterStatus represents the CloudFormation status.
 type ClusterStatus struct {
-	Cluster *awseks.Cluster
+	Cluster *aws_eks.Cluster
 	Error   error
 }
 
@@ -634,7 +634,7 @@ func Poll(
 				}
 			}
 
-			output, err := eksAPI.DescribeCluster(&awseks.DescribeClusterInput{
+			output, err := eksAPI.DescribeCluster(&aws_eks.DescribeClusterInput{
 				Name: aws.String(clusterName),
 			})
 			if err != nil {
@@ -676,8 +676,8 @@ func Poll(
 				lg.Info("became desired cluster status; exiting", zap.String("cluster-status", currentStatus))
 				close(ch)
 				return
-			case awseks.ClusterStatusFailed:
-				ch <- ClusterStatus{Cluster: cluster, Error: fmt.Errorf("unexpected cluster status %q", awseks.ClusterStatusFailed)}
+			case aws_eks.ClusterStatusFailed:
+				ch <- ClusterStatus{Cluster: cluster, Error: fmt.Errorf("unexpected cluster status %q", aws_eks.ClusterStatusFailed)}
 				close(ch)
 				return
 			default:
