@@ -28,7 +28,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.5...v1.0.6
 - Add [`aws-k8s-tester eks create/delete --enable-prompt` flag](https://github.com/aws/aws-k8s-tester/commit/b83d6bd925c83592dd1ecc6cceb813de0d0442a2).
   - `--enable-prompt=true` by default.
   - `--enable-prompt=false` to disable.
-- Add [`aws-k8s-tester ec2 create/delete --enable-prompt` flag](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`aws-k8s-tester ec2 create/delete --enable-prompt` flag](https://github.com/aws/aws-k8s-tester/commit/c7de973f5e411f1bd1237b89e9a0dc99c9b23ef7).
   - `--enable-prompt=true` by default.
   - `--enable-prompt=false` to disable.
 
