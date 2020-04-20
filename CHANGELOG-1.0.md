@@ -9,16 +9,16 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.5...v1.0.6
 
 ### `eksconfig`
 
-- Seperate [files for `AddOn*`](https://github.com/aws/aws-k8s-tester/commit/).
+- Seperate [files for `AddOn*`](https://github.com/aws/aws-k8s-tester/commit/28d6baa83ce4df8e1c32b849c8e4d0ac5e3e3682).
 - Rename [`AddOnAppMesh.AddOnCFNStackARN` to `AddOnAppMesh.PolicyCFNStackID`](https://github.com/aws/aws-k8s-tester/commit/eb3368cbf7c3fa961fe600cfc89f5444f8a80b77).
 - Add [`AddOnWordpress`](https://github.com/aws/aws-k8s-tester/commit/eb3368cbf7c3fa961fe600cfc89f5444f8a80b77).
 - Add [`AddOnCSRs.InitialRequestConditionType` for simulate an initial CSR condition](https://github.com/aws/aws-k8s-tester/commit/eb3368cbf7c3fa961fe600cfc89f5444f8a80b77).
 - Support [variable evaluation for `AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_CLUSTER` and `AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_ADD_ONS`](https://github.com/aws/aws-k8s-tester/commit/eb3368cbf7c3fa961fe600cfc89f5444f8a80b77).
   - `AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_CLUSTER="aws eks describe-cluster --endpoint https://api.beta.us-west-2.wesley.amazonaws.com/ --name GetRef.Name"`
   - `AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_ADD_ONS="echo GetRef.ClusterARN"`
-- Add [`AddOnDashboard`](https://github.com/aws/aws-k8s-tester/commit/).
-- Add [`AddOnPrometheusGrafana`](https://github.com/aws/aws-k8s-tester/commit/).
-- Add [`AddOnKubeflow`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`AddOnDashboard`](https://github.com/aws/aws-k8s-tester/commit/28d6baa83ce4df8e1c32b849c8e4d0ac5e3e3682).
+- Add [`AddOnPrometheusGrafana`](https://github.com/aws/aws-k8s-tester/commit/28d6baa83ce4df8e1c32b849c8e4d0ac5e3e3682).
+- Add [`AddOnKubeflow`](https://github.com/aws/aws-k8s-tester/commit/28d6baa83ce4df8e1c32b849c8e4d0ac5e3e3682).
 
 ### `eks`
 
