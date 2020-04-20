@@ -17,12 +17,11 @@ func (cfg *Config) IsEnabledAddOnPrometheusGrafana() bool {
 
 // AddOnPrometheusGrafana defines parameters for EKS cluster
 // add-on Prometheus/Grafana.
+// ref. https://docs.aws.amazon.com/eks/latest/userguide/prometheus.html
+// ref. https://eksworkshop.com/intermediate/240_monitoring/deploy-prometheus/
 type AddOnPrometheusGrafana struct {
 	// Enable is 'true' to create this add-on.
 	Enable bool `json:"enable"`
-
-	// Namespace is the namespace to create "AppMesh" controller/injector.
-	Namespace string `json:"namespace"`
 
 	// Created is true when the resource has been created.
 	// Used for delete operations.
@@ -35,4 +34,13 @@ type AddOnPrometheusGrafana struct {
 	DeleteTook time.Duration `json:"delete-took,omitempty" read-only:"true"`
 	// DeleteTookString is the duration that took to create the resource.
 	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
+
+	// GrafanaAdminPassword is the admin password for the Grafana service.
+	GrafanaAdminPassword string `json:"grafana-admin-password"`
+	// GrafanaNLBARN is the ARN of the NLB created from the Grafana service.
+	GrafanaNLBARN string `json:"grafana-nlb-arn" read-only:"true"`
+	// GrafanaNLBName is the name of the NLB created from the Grafana service.
+	GrafanaNLBName string `json:"grafana-nlb-name" read-only:"true"`
+	// GrafanaURL is the host name for Grafana service.
+	GrafanaURL string `json:"grafana-url" read-only:"true"`
 }

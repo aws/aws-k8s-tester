@@ -1162,8 +1162,10 @@ func TestEnvAddOnPrometheusGrafana(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_ENABLE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_CREATED", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_CREATED")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_NAMESPACE", "grafana")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_GRAFANA_ADMIN_PASSWORD", "MY_ADMIN_PASSWORD")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_GRAFANA_ADMIN_PASSWORD")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_GRAFANA_URL", "MY-URL")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_GRAFANA_URL")
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
 		t.Fatal(err)
@@ -1177,11 +1179,12 @@ func TestEnvAddOnPrometheusGrafana(t *testing.T) {
 	if !cfg.AddOnPrometheusGrafana.Enable {
 		t.Fatalf("unexpected cfg.AddOnPrometheusGrafana.Enable %v", cfg.AddOnPrometheusGrafana.Enable)
 	}
-	if cfg.AddOnPrometheusGrafana.Namespace != "grafana" {
-		t.Fatalf("unexpected cfg.AddOnPrometheusGrafana.Namespace %q", cfg.AddOnPrometheusGrafana.Namespace)
+	if cfg.AddOnPrometheusGrafana.GrafanaAdminPassword != "MY_ADMIN_PASSWORD" {
+		t.Fatalf("unexpected cfg.AddOnPrometheusGrafana.GrafanaAdminPassword %q", cfg.AddOnPrometheusGrafana.GrafanaAdminPassword)
 	}
-
-	fmt.Println(cfg.KubectlCommands())
+	if cfg.AddOnPrometheusGrafana.GrafanaURL != "" {
+		t.Fatalf("unexpected cfg.AddOnPrometheusGrafana.GrafanaURL %q", cfg.AddOnPrometheusGrafana.GrafanaURL)
+	}
 }
 
 func TestEnvAddOnKubeflow(t *testing.T) {

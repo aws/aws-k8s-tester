@@ -33,7 +33,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.5...v1.0.6
   - `AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_CLUSTER="aws eks describe-cluster --endpoint https://api.beta.us-west-2.wesley.amazonaws.com/ --name GetRef.Name"`
   - `AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_ADD_ONS="echo GetRef.ClusterARN"`
 - Add [`AddOnKubernetesDashboard`](https://github.com/aws/aws-k8s-tester/commit/e07dedcf6dc2be7837f6a1a78fd7e37024ba17d8).
-- Add [`AddOnPrometheusGrafana`](https://github.com/aws/aws-k8s-tester/commit/28d6baa83ce4df8e1c32b849c8e4d0ac5e3e3682).
+- Add [`AddOnPrometheusGrafana`](https://github.com/aws/aws-k8s-tester/commit/72e96eb24c3e6150fbfcf42dad57947b45068005).
 
 ### `eks`
 
@@ -45,7 +45,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.5...v1.0.6
 - Add [`"github.com/aws/aws-k8s-tester/eks/helm"`](https://github.com/aws/aws-k8s-tester/commit/eb3368cbf7c3fa961fe600cfc89f5444f8a80b77).
 - Add [`"github.com/aws/aws-k8s-tester/eks/wordpress"`](https://github.com/aws/aws-k8s-tester/commit/eb3368cbf7c3fa961fe600cfc89f5444f8a80b77).
 - Add [`"github.com/aws/aws-k8s-tester/eks/kubernetes-dashboard"`](https://github.com/aws/aws-k8s-tester/commit/c296d0587a07112bf5c08f709e96f8d806d2828e).
-- Add [`"github.com/aws/aws-k8s-tester/eks/prometheus-grafana"`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`"github.com/aws/aws-k8s-tester/eks/prometheus-grafana"`](https://github.com/aws/aws-k8s-tester/commit/72e96eb24c3e6150fbfcf42dad57947b45068005).
 
 ### Dependency
 

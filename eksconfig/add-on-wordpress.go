@@ -17,6 +17,9 @@ func (cfg *Config) IsEnabledAddOnWordpress() bool {
 
 // AddOnWordpress defines parameters for EKS cluster
 // add-on WordPress.
+// ref. https://github.com/helm/charts/blob/master/stable/wordpress/requirements.yaml
+// ref. https://github.com/helm/charts/tree/master/stable/mariadb
+// ref. https://github.com/bitnami/charts/tree/master/bitnami/wordpress/#installing-the-chart
 type AddOnWordpress struct {
 	// Enable is 'true' to create this add-on.
 	Enable bool `json:"enable"`

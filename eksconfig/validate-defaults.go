@@ -356,6 +356,9 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	if err := cfg.validateAddOnKubernetesDashboard(); err != nil {
 		return fmt.Errorf("validateAddOnKubernetesDashboard failed [%v]", err)
 	}
+	if err := cfg.validateAddOnPrometheusGrafana(); err != nil {
+		return fmt.Errorf("validateAddOnPrometheusGrafana failed [%v]", err)
+	}
 	if err := cfg.validateAddOnKubeflow(); err != nil {
 		return fmt.Errorf("validateAddOnKubeflow failed [%v]", err)
 	}
@@ -1247,6 +1250,16 @@ func (cfg *Config) validateAddOnKubernetesDashboard() error {
 	}
 	if cfg.AddOnKubernetesDashboard.URL == "" {
 		cfg.AddOnKubernetesDashboard.URL = defaultKubernetesDashboardURL
+	}
+	return nil
+}
+
+func (cfg *Config) validateAddOnPrometheusGrafana() error {
+	if !cfg.IsEnabledAddOnPrometheusGrafana() {
+		return nil
+	}
+	if cfg.AddOnPrometheusGrafana.GrafanaAdminPassword == "" {
+		cfg.AddOnPrometheusGrafana.GrafanaAdminPassword = randString(10)
 	}
 	return nil
 }

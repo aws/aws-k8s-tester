@@ -33,6 +33,7 @@ import (
 	"github.com/aws/aws-k8s-tester/eks/mng"
 	"github.com/aws/aws-k8s-tester/eks/ng"
 	"github.com/aws/aws-k8s-tester/eks/nlb"
+	prometheus_grafana "github.com/aws/aws-k8s-tester/eks/prometheus-grafana"
 	"github.com/aws/aws-k8s-tester/eks/secrets"
 	"github.com/aws/aws-k8s-tester/eks/wordpress"
 	"github.com/aws/aws-k8s-tester/eksconfig"
@@ -112,6 +113,7 @@ type Tester struct {
 	appMeshTester             app_mesh.Tester
 	wordPressTester           wordpress.Tester
 	kubernetesDashboardTester kubernetes_dashboard.Tester
+	prometheusGrafanaTester   prometheus_grafana.Tester
 }
 
 // New returns a new EKS kubetest2 Deployer.
@@ -593,9 +595,21 @@ func (ts *Tester) createSubTesters() (err error) {
 			K8SClient: ts.k8sClient,
 		})
 	}
+
 	if ts.cfg.IsEnabledAddOnKubernetesDashboard() {
 		ts.lg.Info("creating kubernetesDashboardTester")
 		ts.kubernetesDashboardTester, err = kubernetes_dashboard.NewTester(kubernetes_dashboard.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			Sig:       ts.interruptSig,
+			EKSConfig: ts.cfg,
+			K8SClient: ts.k8sClient,
+		})
+	}
+
+	if ts.cfg.IsEnabledAddOnPrometheusGrafana() {
+		ts.lg.Info("creating prometheusGrafanaTester")
+		ts.prometheusGrafanaTester, err = prometheus_grafana.NewTester(prometheus_grafana.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			Sig:       ts.interruptSig,
@@ -1152,6 +1166,23 @@ func (ts *Tester) Up() (err error) {
 		}
 	}
 
+	if ts.cfg.IsEnabledAddOnPrometheusGrafana() {
+		if ts.prometheusGrafanaTester == nil {
+			return errors.New("ts.prometheusGrafanaTester == nil when AddOnKubernetesDashboard.Enable == true")
+		}
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("prometheusGrafanaTester.Create (%q, \"%s --namespace=prometheus/grafana get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.interruptSig,
+			ts.prometheusGrafanaTester.Create,
+		); err != nil {
+			return err
+		}
+	}
+
 	if ts.cfg.IsEnabledAddOnNodeGroups() && ts.cfg.AddOnNodeGroups.FetchLogs {
 		if ts.ngTester == nil {
 			return errors.New("ts.ngTester == nil when AddOnNodeGroups.Enable == true")
@@ -1320,6 +1351,19 @@ func (ts *Tester) down() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnNodeGroups() || ts.cfg.IsEnabledAddOnManagedNodeGroups() {
+		if ts.cfg.IsEnabledAddOnPrometheusGrafana() && ts.cfg.AddOnPrometheusGrafana.Created {
+			fmt.Printf("\n*********************************\n")
+			fmt.Printf("prometheusGrafanaTester.Delete (%q)\n", ts.cfg.ConfigPath)
+			if err := ts.prometheusGrafanaTester.Delete(); err != nil {
+				ts.lg.Warn("prometheusGrafanaTester.Delete failed", zap.Error(err))
+				errs = append(errs, err.Error())
+			} else {
+				waitDur := time.Minute
+				ts.lg.Info("sleeping after deleting prometheusGrafanaTester", zap.Duration("wait", waitDur))
+				time.Sleep(waitDur)
+			}
+		}
+
 		if ts.cfg.IsEnabledAddOnKubernetesDashboard() && ts.cfg.AddOnKubernetesDashboard.Created {
 			fmt.Printf("\n*********************************\n")
 			fmt.Printf("kubernetesDashboardTester.Delete (%q)\n", ts.cfg.ConfigPath)

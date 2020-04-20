@@ -303,17 +303,6 @@ func (ts *tester) deletePolicy() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
-/*
-helm repo add stable https://kubernetes-charts.storage.googleapis.com
-helm search repo stable
-
-helm repo add bitnami https://charts.bitnami.com/bitnami
-helm search repo bitnami
-
-helm repo add eks https://aws.github.io/eks-charts
-helm search repo eks
-*/
-
 const (
 	chartRepoName = "eks"
 	chartRepoURL  = "https://aws.github.io/eks-charts"

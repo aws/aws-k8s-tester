@@ -21,6 +21,20 @@ import (
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
+/*
+helm repo add stable https://kubernetes-charts.storage.googleapis.com
+helm repo update
+helm search repo stable
+
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo update
+helm search repo bitnami
+
+helm repo add eks https://aws.github.io/eks-charts
+helm repo update
+helm search repo eks
+*/
+
 var settings *cli.EnvSettings
 
 func init() {

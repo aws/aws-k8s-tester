@@ -53,17 +53,6 @@ type tester struct {
 	cfg Config
 }
 
-/*
-helm repo add stable https://kubernetes-charts.storage.googleapis.com
-helm search repo stable
-
-helm repo add bitnami https://charts.bitnami.com/bitnami
-helm search repo bitnami
-
-helm repo add eks https://aws.github.io/eks-charts
-helm search repo eks
-*/
-
 const (
 	chartRepoName = "bitnami"
 	chartURL      = "https://charts.bitnami.com/bitnami"
@@ -136,19 +125,6 @@ func (ts *tester) Delete() error {
 	ts.cfg.EKSConfig.AddOnWordpress.Created = false
 	return ts.cfg.EKSConfig.Sync()
 }
-
-/*
-
-# TODO: not working with bottlerocket
-
-helm install \
-  --name elasticsearch elastic/elasticsearch \
-  --set nodeSelector."beta\.kubernetes\.io/os"=linux
-
-https://github.com/helm/charts/blob/master/stable/wordpress/requirements.yaml
-https://github.com/helm/charts/tree/master/stable/mariadb
-https://github.com/bitnami/charts/tree/master/bitnami/wordpress/#installing-the-chart
-*/
 
 func (ts *tester) installHelm() error {
 	ngType := "custom"
