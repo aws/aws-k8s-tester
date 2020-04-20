@@ -2,22 +2,22 @@ package eksconfig
 
 import "time"
 
-// IsEnabledAddOnDashboard returns true if "AddOnDashboard" is enabled.
+// IsEnabledAddOnKubernetesDashboard returns true if "AddOnKubernetesDashboard" is enabled.
 // Otherwise, nil the field for "omitempty".
-func (cfg *Config) IsEnabledAddOnDashboard() bool {
-	if cfg.AddOnDashboard == nil {
+func (cfg *Config) IsEnabledAddOnKubernetesDashboard() bool {
+	if cfg.AddOnKubernetesDashboard == nil {
 		return false
 	}
-	if cfg.AddOnDashboard.Enable {
+	if cfg.AddOnKubernetesDashboard.Enable {
 		return true
 	}
-	cfg.AddOnDashboard = nil
+	cfg.AddOnKubernetesDashboard = nil
 	return false
 }
 
-// AddOnDashboard defines parameters for EKS cluster
-// add-on Dashboard.
-type AddOnDashboard struct {
+// AddOnKubernetesDashboard defines parameters for EKS cluster
+// add-on Kubernetes Dashboard.
+type AddOnKubernetesDashboard struct {
 	// Enable is 'true' to create this add-on.
 	Enable bool `json:"enable"`
 
@@ -35,4 +35,11 @@ type AddOnDashboard struct {
 	DeleteTook time.Duration `json:"delete-took,omitempty" read-only:"true"`
 	// DeleteTookString is the duration that took to create the resource.
 	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
+
+	// NLBARN is the ARN of the NLB created from the service.
+	NLBARN string `json:"nlb-arn" read-only:"true"`
+	// NLBName is the name of the NLB created from the service.
+	NLBName string `json:"nlb-name" read-only:"true"`
+	// URL is the host name for WordPress service.
+	URL string `json:"url" read-only:"true"`
 }

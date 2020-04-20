@@ -1,5 +1,5 @@
-// Package wordpress implements wordpress add-on.
-package wordpress
+// Package kubernetesdashboard implements Kubernetes dashboard add-on.
+package kubernetesdashboard
 
 import (
 	"bytes"
@@ -23,7 +23,7 @@ import (
 	"k8s.io/utils/exec"
 )
 
-// Config defines Wordpress configuration.
+// Config defines Dashboard configuration.
 type Config struct {
 	Logger *zap.Logger
 	Stopc  chan struct{}
@@ -37,11 +37,11 @@ type k8sClientSetGetter interface {
 	KubernetesClientSet() *clientset.Clientset
 }
 
-// Tester defines Wordpress tester
+// Tester defines Dashboard tester
 type Tester interface {
-	// Create installs Wordpress.
+	// Create installs Dashboard.
 	Create() error
-	// Delete deletes Wordpress.
+	// Delete deletes Dashboard.
 	Delete() error
 }
 
@@ -65,28 +65,28 @@ helm search repo eks
 */
 
 const (
-	chartRepoName = "bitnami"
-	chartURL      = "https://charts.bitnami.com/bitnami"
-	chartName     = "wordpress"
+	chartRepoName = "stable"
+	chartURL      = "https://kubernetes-charts.storage.googleapis.com"
+	chartName     = "kubernetes-dashboard"
 )
 
 func (ts *tester) Create() error {
-	if ts.cfg.EKSConfig.AddOnWordpress.Created {
-		ts.cfg.Logger.Info("skipping create AddOnWordpress")
+	if ts.cfg.EKSConfig.AddOnKubernetesDashboard.Created {
+		ts.cfg.Logger.Info("skipping create AddOnKubernetesDashboard")
 		return nil
 	}
 
-	ts.cfg.EKSConfig.AddOnWordpress.Created = true
+	ts.cfg.EKSConfig.AddOnKubernetesDashboard.Created = true
 	ts.cfg.EKSConfig.Sync()
 	createStart := time.Now()
 
 	defer func() {
-		ts.cfg.EKSConfig.AddOnWordpress.CreateTook = time.Since(createStart)
-		ts.cfg.EKSConfig.AddOnWordpress.CreateTookString = ts.cfg.EKSConfig.AddOnWordpress.CreateTook.String()
+		ts.cfg.EKSConfig.AddOnKubernetesDashboard.CreateTook = time.Since(createStart)
+		ts.cfg.EKSConfig.AddOnKubernetesDashboard.CreateTookString = ts.cfg.EKSConfig.AddOnKubernetesDashboard.CreateTook.String()
 		ts.cfg.EKSConfig.Sync()
 	}()
 
-	if err := k8s_client.CreateNamespace(ts.cfg.Logger, ts.cfg.K8SClient.KubernetesClientSet(), ts.cfg.EKSConfig.AddOnWordpress.Namespace); err != nil {
+	if err := k8s_client.CreateNamespace(ts.cfg.Logger, ts.cfg.K8SClient.KubernetesClientSet(), ts.cfg.EKSConfig.AddOnKubernetesDashboard.Namespace); err != nil {
 		return err
 	}
 	if err := helm.RepoAdd(ts.cfg.Logger, chartRepoName, chartURL); err != nil {
@@ -103,15 +103,15 @@ func (ts *tester) Create() error {
 }
 
 func (ts *tester) Delete() error {
-	if !ts.cfg.EKSConfig.AddOnWordpress.Created {
-		ts.cfg.Logger.Info("skipping delete AddOnWordpress")
+	if !ts.cfg.EKSConfig.AddOnKubernetesDashboard.Created {
+		ts.cfg.Logger.Info("skipping delete AddOnKubernetesDashboard")
 		return nil
 	}
 
 	deleteStart := time.Now()
 	defer func() {
-		ts.cfg.EKSConfig.AddOnWordpress.DeleteTook = time.Since(deleteStart)
-		ts.cfg.EKSConfig.AddOnWordpress.DeleteTookString = ts.cfg.EKSConfig.AddOnWordpress.DeleteTook.String()
+		ts.cfg.EKSConfig.AddOnKubernetesDashboard.DeleteTook = time.Since(deleteStart)
+		ts.cfg.EKSConfig.AddOnKubernetesDashboard.DeleteTookString = ts.cfg.EKSConfig.AddOnKubernetesDashboard.DeleteTook.String()
 		ts.cfg.EKSConfig.Sync()
 	}()
 
@@ -123,31 +123,22 @@ func (ts *tester) Delete() error {
 
 	if err := k8s_client.DeleteNamespaceAndWait(ts.cfg.Logger,
 		ts.cfg.K8SClient.KubernetesClientSet(),
-		ts.cfg.EKSConfig.AddOnWordpress.Namespace,
+		ts.cfg.EKSConfig.AddOnKubernetesDashboard.Namespace,
 		k8s_client.DefaultNamespaceDeletionInterval,
 		k8s_client.DefaultNamespaceDeletionTimeout); err != nil {
-		errs = append(errs, fmt.Sprintf("failed to delete Wordpress namespace (%v)", err))
+		errs = append(errs, fmt.Sprintf("failed to delete Dashboard namespace (%v)", err))
 	}
 
 	if len(errs) > 0 {
 		return errors.New(strings.Join(errs, ", "))
 	}
 
-	ts.cfg.EKSConfig.AddOnWordpress.Created = false
+	ts.cfg.EKSConfig.AddOnKubernetesDashboard.Created = false
 	return ts.cfg.EKSConfig.Sync()
 }
 
 /*
-
-# TODO: not working with bottlerocket
-
-helm install \
-  --name elasticsearch elastic/elasticsearch \
-  --set nodeSelector."beta\.kubernetes\.io/os"=linux
-
-https://github.com/helm/charts/blob/master/stable/wordpress/requirements.yaml
-https://github.com/helm/charts/tree/master/stable/mariadb
-https://github.com/bitnami/charts/tree/master/bitnami/wordpress/#installing-the-chart
+https://github.com/helm/charts/tree/master/stable/kubernetes-dashboard
 */
 
 func (ts *tester) installHelm() error {
@@ -163,22 +154,14 @@ func (ts *tester) installHelm() error {
 	// e.g. MountVolume.MountDevice failed for volume "pvc-8e035a13-4d33-472f-a4c0-f36c7d39d170" : executable file not found in $PATH
 	values["nodeSelector"] = map[string]interface{}{"AMIType": ec2config.AMITypeAL2X8664, "NGType": ngType}
 
-	// TODO: not working...
-	values["mariadb.master.persistence.enabled"] = "false"
-	values["mariadb.master.nodeSelector"] = map[string]interface{}{"AMIType": ec2config.AMITypeAL2X8664, "NGType": ngType}
-	values["mariadb.slave.nodeSelector"] = map[string]interface{}{"AMIType": ec2config.AMITypeAL2X8664, "NGType": ngType}
-
-	values["wordpressUsername"] = ts.cfg.EKSConfig.AddOnWordpress.UserName
-	values["wordpressPassword"] = ts.cfg.EKSConfig.AddOnWordpress.Password
-
 	return helm.Install(
 		ts.cfg.Logger,
 		10*time.Minute,
 		ts.cfg.EKSConfig.KubeConfigPath,
-		ts.cfg.EKSConfig.AddOnWordpress.Namespace,
+		ts.cfg.EKSConfig.AddOnKubernetesDashboard.Namespace,
 		chartURL,
 		chartName,
-		ts.cfg.EKSConfig.AddOnWordpress.Namespace,
+		ts.cfg.EKSConfig.AddOnKubernetesDashboard.Namespace,
 		values,
 	)
 }
@@ -188,20 +171,20 @@ func (ts *tester) uninstallHelm() error {
 		ts.cfg.Logger,
 		10*time.Minute,
 		ts.cfg.EKSConfig.KubeConfigPath,
-		ts.cfg.EKSConfig.AddOnWordpress.Namespace,
-		ts.cfg.EKSConfig.AddOnWordpress.Namespace,
+		ts.cfg.EKSConfig.AddOnKubernetesDashboard.Namespace,
+		ts.cfg.EKSConfig.AddOnKubernetesDashboard.Namespace,
 	)
 }
 
 func (ts *tester) waitService() error {
-	svcName := ts.cfg.EKSConfig.AddOnWordpress.Namespace
-	ts.cfg.Logger.Info("waiting for WordPress service")
+	svcName := ts.cfg.EKSConfig.AddOnKubernetesDashboard.Namespace
+	ts.cfg.Logger.Info("waiting for Kubernetes Dashboard service")
 
 	waitDur := 2 * time.Minute
-	ts.cfg.Logger.Info("waiting for WordPress service", zap.Duration("wait", waitDur))
+	ts.cfg.Logger.Info("waiting for Kubernetes Dashboard service", zap.Duration("wait", waitDur))
 	select {
 	case <-ts.cfg.Stopc:
-		return errors.New("WordPress service creation aborted")
+		return errors.New("Kubernetes Dashboard service creation aborted")
 	case sig := <-ts.cfg.Sig:
 		return fmt.Errorf("received os signal %v", sig)
 	case <-time.After(waitDur):
@@ -210,7 +193,7 @@ func (ts *tester) waitService() error {
 	args := []string{
 		ts.cfg.EKSConfig.KubectlPath,
 		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
-		"--namespace=" + ts.cfg.EKSConfig.AddOnWordpress.Namespace,
+		"--namespace=" + ts.cfg.EKSConfig.AddOnKubernetesDashboard.Namespace,
 		"describe",
 		"svc",
 		svcName,
@@ -221,7 +204,7 @@ func (ts *tester) waitService() error {
 	for time.Now().Sub(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
-			return errors.New("WordPress service creation aborted")
+			return errors.New("Kubernetes Dashboard service creation aborted")
 		case sig := <-ts.cfg.Sig:
 			return fmt.Errorf("received os signal %v", sig)
 		case <-time.After(5 * time.Second):
@@ -237,26 +220,26 @@ func (ts *tester) waitService() error {
 			fmt.Printf("\n\n\"%s\" output:\n%s\n\n", argsCmd, out)
 		}
 
-		ts.cfg.Logger.Info("querying WordPress service for HTTP endpoint")
+		ts.cfg.Logger.Info("querying Kubernetes Dashboard service for HTTP endpoint")
 		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 		so, err := ts.cfg.K8SClient.KubernetesClientSet().
 			CoreV1().
-			Services(ts.cfg.EKSConfig.AddOnWordpress.Namespace).
+			Services(ts.cfg.EKSConfig.AddOnKubernetesDashboard.Namespace).
 			Get(ctx, svcName, metav1.GetOptions{})
 		cancel()
 		if err != nil {
-			ts.cfg.Logger.Warn("failed to get WordPress service; retrying", zap.Error(err))
+			ts.cfg.Logger.Warn("failed to get Kubernetes Dashboard service; retrying", zap.Error(err))
 			time.Sleep(5 * time.Second)
 			continue
 		}
 
 		ts.cfg.Logger.Info(
-			"WordPress service has been linked to LoadBalancer",
+			"Kubernetes Dashboard service has been linked to LoadBalancer",
 			zap.String("load-balancer", fmt.Sprintf("%+v", so.Status.LoadBalancer)),
 		)
 		for _, ing := range so.Status.LoadBalancer.Ingress {
 			ts.cfg.Logger.Info(
-				"WordPress service has been linked to LoadBalancer.Ingress",
+				"Kubernetes Dashboard service has been linked to LoadBalancer.Ingress",
 				zap.String("ingress", fmt.Sprintf("%+v", ing)),
 			)
 			hostName = ing.Hostname
@@ -273,58 +256,56 @@ func (ts *tester) waitService() error {
 		return errors.New("failed to find host name")
 	}
 
-	ts.cfg.EKSConfig.AddOnWordpress.URL = "http://" + hostName
+	ts.cfg.EKSConfig.AddOnKubernetesDashboard.URL = "http://" + hostName
 
 	// TODO: is there any better way to find out the NLB name?
-	ts.cfg.EKSConfig.AddOnWordpress.NLBName = strings.Split(hostName, "-")[0]
+	ts.cfg.EKSConfig.AddOnKubernetesDashboard.NLBName = strings.Split(hostName, "-")[0]
 	ss := strings.Split(hostName, ".")[0]
 	ss = strings.Replace(ss, "-", "/", -1)
-	ts.cfg.EKSConfig.AddOnWordpress.NLBARN = fmt.Sprintf(
+	ts.cfg.EKSConfig.AddOnKubernetesDashboard.NLBARN = fmt.Sprintf(
 		"arn:aws:elasticloadbalancing:%s:%s:loadbalancer/net/%s",
 		ts.cfg.EKSConfig.Region,
 		ts.cfg.EKSConfig.Status.AWSAccountID,
 		ss,
 	)
 
-	fmt.Printf("\nNLB WordPress ARN %s\n", ts.cfg.EKSConfig.AddOnWordpress.NLBARN)
-	fmt.Printf("NLB WordPress Name %s\n", ts.cfg.EKSConfig.AddOnWordpress.NLBName)
-	fmt.Printf("NLB WordPress URL %s\n\n", ts.cfg.EKSConfig.AddOnWordpress.URL)
-	fmt.Printf("WordPress UserName %s\n", ts.cfg.EKSConfig.AddOnWordpress.UserName)
-	fmt.Printf("WordPress Password %d characters\n", len(ts.cfg.EKSConfig.AddOnWordpress.Password))
+	fmt.Printf("\nNLB Kubernetes Dashboard ARN %s\n", ts.cfg.EKSConfig.AddOnKubernetesDashboard.NLBARN)
+	fmt.Printf("NLB Kubernetes Dashboard Name %s\n", ts.cfg.EKSConfig.AddOnKubernetesDashboard.NLBName)
+	fmt.Printf("NLB Kubernetes Dashboard URL %s\n\n", ts.cfg.EKSConfig.AddOnKubernetesDashboard.URL)
 
-	ts.cfg.Logger.Info("waiting before testing WordPress Service")
+	ts.cfg.Logger.Info("waiting before testing Kubernetes Dashboard Service")
 	time.Sleep(20 * time.Second)
 
 	retryStart = time.Now()
 	for time.Now().Sub(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
-			return errors.New("WordPress Service creation aborted")
+			return errors.New("Kubernetes Dashboard Service creation aborted")
 		case sig := <-ts.cfg.Sig:
 			return fmt.Errorf("received os signal %v", sig)
 		case <-time.After(5 * time.Second):
 		}
 
 		buf := bytes.NewBuffer(nil)
-		err := httpReadInsecure(ts.cfg.Logger, ts.cfg.EKSConfig.AddOnWordpress.URL, buf)
+		err := httpReadInsecure(ts.cfg.Logger, ts.cfg.EKSConfig.AddOnKubernetesDashboard.URL, buf)
 		if err != nil {
-			ts.cfg.Logger.Warn("failed to read NLB WordPress Service; retrying", zap.Error(err))
+			ts.cfg.Logger.Warn("failed to read NLB Kubernetes Dashboard Service; retrying", zap.Error(err))
 			time.Sleep(5 * time.Second)
 			continue
 		}
 
 		httpOutput := buf.String()
-		fmt.Printf("\nNLB WordPress Service output:\n%s\n", httpOutput)
+		fmt.Printf("\nNLB Kubernetes Dashboard Service output:\n%s\n", httpOutput)
 
-		if strings.Contains(httpOutput, `<p>Welcome to WordPress. This is your first post.`) || true {
+		if strings.Contains(httpOutput, `<p>Welcome to Kubernetes Dashboard. This is your first post.`) || true {
 			ts.cfg.Logger.Info(
-				"read WordPress Service; exiting",
+				"read Kubernetes Dashboard Service; exiting",
 				zap.String("host-name", hostName),
 			)
 			break
 		}
 
-		ts.cfg.Logger.Warn("unexpected WordPress Service output; retrying")
+		ts.cfg.Logger.Warn("unexpected Kubernetes Dashboard Service output; retrying")
 	}
 
 	return ts.cfg.EKSConfig.Sync()

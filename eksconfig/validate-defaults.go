@@ -225,7 +225,7 @@ func NewDefault() *Config {
 			Password: "",
 		},
 
-		AddOnDashboard: &AddOnDashboard{
+		AddOnKubernetesDashboard: &AddOnKubernetesDashboard{
 			Enable: false,
 		},
 

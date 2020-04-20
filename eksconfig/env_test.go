@@ -1081,6 +1081,8 @@ func TestEnvAddOnWordpress(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_USER_NAME")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_PASSWORD", "my-password")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_PASSWORD")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_URL", "MY-URL")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_URL")
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
 		t.Fatal(err)
@@ -1103,9 +1105,12 @@ func TestEnvAddOnWordpress(t *testing.T) {
 	if cfg.AddOnWordpress.Password != "my-password" {
 		t.Fatalf("unexpected cfg.AddOnWordpress.Password %q", cfg.AddOnWordpress.Password)
 	}
+	if cfg.AddOnWordpress.URL != "" {
+		t.Fatalf("unexpected cfg.AddOnWordpress.URL %q", cfg.AddOnWordpress.URL)
+	}
 }
 
-func TestEnvAddOnDashboard(t *testing.T) {
+func TestEnvAddOnKubernetesDashboard(t *testing.T) {
 	cfg := NewDefault()
 	defer func() {
 		os.RemoveAll(cfg.ConfigPath)
@@ -1116,12 +1121,14 @@ func TestEnvAddOnDashboard(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE", `true`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE")
 
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_DASHBOARD_ENABLE", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_DASHBOARD_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_DASHBOARD_CREATED", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_DASHBOARD_CREATED")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_DASHBOARD_NAMESPACE", "dashboard")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_DASHBOARD_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_CREATED", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_CREATED")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_NAMESPACE", "dashboard")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_URL", "MY-URL")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_URL")
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
 		t.Fatal(err)
@@ -1129,14 +1136,17 @@ func TestEnvAddOnDashboard(t *testing.T) {
 	err := cfg.ValidateAndSetDefaults()
 	assert.NoError(t, err)
 
-	if cfg.AddOnDashboard.Created { // read-only must be ignored
-		t.Fatalf("unexpected cfg.AddOnDashboard.Created %v", cfg.AddOnDashboard.Created)
+	if cfg.AddOnKubernetesDashboard.Created { // read-only must be ignored
+		t.Fatalf("unexpected cfg.AddOnKubernetesDashboard.Created %v", cfg.AddOnKubernetesDashboard.Created)
 	}
-	if !cfg.AddOnDashboard.Enable {
-		t.Fatalf("unexpected cfg.AddOnDashboard.Enable %v", cfg.AddOnDashboard.Enable)
+	if !cfg.AddOnKubernetesDashboard.Enable {
+		t.Fatalf("unexpected cfg.AddOnKubernetesDashboard.Enable %v", cfg.AddOnKubernetesDashboard.Enable)
 	}
-	if cfg.AddOnDashboard.Namespace != "dashboard" {
-		t.Fatalf("unexpected cfg.AddOnDashboard.Namespace %q", cfg.AddOnDashboard.Namespace)
+	if cfg.AddOnKubernetesDashboard.Namespace != "dashboard" {
+		t.Fatalf("unexpected cfg.AddOnKubernetesDashboard.Namespace %q", cfg.AddOnKubernetesDashboard.Namespace)
+	}
+	if cfg.AddOnKubernetesDashboard.URL != "" {
+		t.Fatalf("unexpected cfg.AddOnKubernetesDashboard.URL %q", cfg.AddOnKubernetesDashboard.URL)
 	}
 }
 

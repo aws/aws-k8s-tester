@@ -176,9 +176,9 @@ type Config struct {
 	// AddOnWordpress defines parameters for EKS cluster
 	// add-on WordPress.
 	AddOnWordpress *AddOnWordpress `json:"add-on-wordpress,omitempty"`
-	// AddOnDashboard defines parameters for EKS cluster
+	// AddOnKubernetesDashboard defines parameters for EKS cluster
 	// add-on Dashboard.
-	AddOnDashboard *AddOnDashboard `json:"add-on-dashboard,omitempty"`
+	AddOnKubernetesDashboard *AddOnKubernetesDashboard `json:"add-on-kubernetes-dashboard,omitempty"`
 	// AddOnPrometheusGrafana defines parameters for EKS cluster
 	// add-on Prometheus/Grafana.
 	AddOnPrometheusGrafana *AddOnPrometheusGrafana `json:"add-on-prometheus-grafana,omitempty"`

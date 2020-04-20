@@ -42,8 +42,8 @@ const (
 	EnvironmentVariablePrefixAddOnAppMesh = "AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_"
 	// EnvironmentVariablePrefixAddOnWordpress is the environment variable prefix used for "eksconfig".
 	EnvironmentVariablePrefixAddOnWordpress = "AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_"
-	// EnvironmentVariablePrefixAddOnDashboard is the environment variable prefix used for "eksconfig".
-	EnvironmentVariablePrefixAddOnDashboard = "AWS_K8S_TESTER_EKS_ADD_ON_DASHBOARD_"
+	// EnvironmentVariablePrefixAddOnKubernetesDashboard is the environment variable prefix used for "eksconfig".
+	EnvironmentVariablePrefixAddOnKubernetesDashboard = "AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_"
 	// EnvironmentVariablePrefixAddOnPrometheusGrafana is the environment variable prefix used for "eksconfig".
 	EnvironmentVariablePrefixAddOnPrometheusGrafana = "AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_"
 	// EnvironmentVariablePrefixAddOnKubeflow is the environment variable prefix used for "eksconfig".
@@ -275,17 +275,17 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *AddOnWordpress, got %T", vv)
 	}
 
-	if cfg.AddOnDashboard == nil {
-		cfg.AddOnDashboard = &AddOnDashboard{}
+	if cfg.AddOnKubernetesDashboard == nil {
+		cfg.AddOnKubernetesDashboard = &AddOnKubernetesDashboard{}
 	}
-	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnDashboard, cfg.AddOnDashboard)
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnKubernetesDashboard, cfg.AddOnKubernetesDashboard)
 	if err != nil {
 		return err
 	}
-	if av, ok := vv.(*AddOnDashboard); ok {
-		cfg.AddOnDashboard = av
+	if av, ok := vv.(*AddOnKubernetesDashboard); ok {
+		cfg.AddOnKubernetesDashboard = av
 	} else {
-		return fmt.Errorf("expected *AddOnDashboard, got %T", vv)
+		return fmt.Errorf("expected *AddOnKubernetesDashboard, got %T", vv)
 	}
 
 	if cfg.AddOnPrometheusGrafana == nil {

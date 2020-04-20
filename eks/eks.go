@@ -29,6 +29,7 @@ import (
 	"github.com/aws/aws-k8s-tester/eks/irsa"
 	jobs_echo "github.com/aws/aws-k8s-tester/eks/jobs-echo"
 	jobs_pi "github.com/aws/aws-k8s-tester/eks/jobs-pi"
+	kubernetes_dashboard "github.com/aws/aws-k8s-tester/eks/kubernetes-dashboard"
 	"github.com/aws/aws-k8s-tester/eks/mng"
 	"github.com/aws/aws-k8s-tester/eks/ng"
 	"github.com/aws/aws-k8s-tester/eks/nlb"
@@ -95,21 +96,22 @@ type Tester struct {
 
 	k8sClient k8s_client.EKS
 
-	ngTester            ng.Tester
-	mngTester           mng.Tester
-	gpuTester           gpu.Tester
-	nlbHelloWorldTester alb.Tester
-	alb2048Tester       alb.Tester
-	jobsPiTester        jobs_pi.Tester
-	jobsEchoTester      jobs_echo.Tester
-	cronJobsTester      cronjobs.Tester
-	csrsTester          csrs.Tester
-	configMapsTester    configmaps.Tester
-	secretsTester       secrets.Tester
-	irsaTester          irsa.Tester
-	fargateTester       fargate.Tester
-	appMeshTester       app_mesh.Tester
-	wordPressTester     wordpress.Tester
+	ngTester                  ng.Tester
+	mngTester                 mng.Tester
+	gpuTester                 gpu.Tester
+	nlbHelloWorldTester       alb.Tester
+	alb2048Tester             alb.Tester
+	jobsPiTester              jobs_pi.Tester
+	jobsEchoTester            jobs_echo.Tester
+	cronJobsTester            cronjobs.Tester
+	csrsTester                csrs.Tester
+	configMapsTester          configmaps.Tester
+	secretsTester             secrets.Tester
+	irsaTester                irsa.Tester
+	fargateTester             fargate.Tester
+	appMeshTester             app_mesh.Tester
+	wordPressTester           wordpress.Tester
+	kubernetesDashboardTester kubernetes_dashboard.Tester
 }
 
 // New returns a new EKS kubetest2 Deployer.
@@ -584,6 +586,16 @@ func (ts *Tester) createSubTesters() (err error) {
 	if ts.cfg.IsEnabledAddOnWordpress() {
 		ts.lg.Info("creating wordPressTester")
 		ts.wordPressTester, err = wordpress.NewTester(wordpress.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			Sig:       ts.interruptSig,
+			EKSConfig: ts.cfg,
+			K8SClient: ts.k8sClient,
+		})
+	}
+	if ts.cfg.IsEnabledAddOnKubernetesDashboard() {
+		ts.lg.Info("creating kubernetesDashboardTester")
+		ts.kubernetesDashboardTester, err = kubernetes_dashboard.NewTester(kubernetes_dashboard.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			Sig:       ts.interruptSig,
@@ -1123,6 +1135,23 @@ func (ts *Tester) Up() (err error) {
 		}
 	}
 
+	if ts.cfg.IsEnabledAddOnKubernetesDashboard() {
+		if ts.wordPressTester == nil {
+			return errors.New("ts.wordPressTester == nil when AddOnKubernetesDashboard.Enable == true")
+		}
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("kubernetesDashboardTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnKubernetesDashboard.Namespace)
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.interruptSig,
+			ts.kubernetesDashboardTester.Create,
+		); err != nil {
+			return err
+		}
+	}
+
 	if ts.cfg.IsEnabledAddOnNodeGroups() && ts.cfg.AddOnNodeGroups.FetchLogs {
 		if ts.ngTester == nil {
 			return errors.New("ts.ngTester == nil when AddOnNodeGroups.Enable == true")
@@ -1291,6 +1320,19 @@ func (ts *Tester) down() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnNodeGroups() || ts.cfg.IsEnabledAddOnManagedNodeGroups() {
+		if ts.cfg.IsEnabledAddOnKubernetesDashboard() && ts.cfg.AddOnKubernetesDashboard.Created {
+			fmt.Printf("\n*********************************\n")
+			fmt.Printf("kubernetesDashboardTester.Delete (%q)\n", ts.cfg.ConfigPath)
+			if err := ts.kubernetesDashboardTester.Delete(); err != nil {
+				ts.lg.Warn("kubernetesDashboardTester.Delete failed", zap.Error(err))
+				errs = append(errs, err.Error())
+			} else {
+				waitDur := time.Minute
+				ts.lg.Info("sleeping after deleting kubernetesDashboardTester", zap.Duration("wait", waitDur))
+				time.Sleep(waitDur)
+			}
+		}
+
 		if ts.cfg.IsEnabledAddOnWordpress() && ts.cfg.AddOnWordpress.Created {
 			fmt.Printf("\n*********************************\n")
 			fmt.Printf("wordPressTester.Delete (%q)\n", ts.cfg.ConfigPath)
