@@ -40,7 +40,7 @@ AWS_K8S_TESTER_EC2_ASGS_FETCH_LOGS=true \
 AWS_K8S_TESTER_EC2_ASGS={\"${USER}-test-ec2-al2-cpu\":{\"name\":\"${USER}-test-ec2-al2-cpu\",\"remote-access-user-name\":\"ec2-user\",\"ami-type\":\"AL2_x86_64\",\"image-id-ssm-parameter\":\"/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2\",\"asg-min-size\":1,\"asg-max-size\":1,\"asg-desired-capacity\":1,\"instance-types\":[\"c5.xlarge\"],\"volume-size\":40},\"${USER}-test-ec2-bottlerocket\":{\"name\":\"${USER}-test-ec2-bottlerocket\",\"remote-access-user-name\":\"ec2-user\",\"ami-type\":\"BOTTLEROCKET_x86_64\",\"image-id-ssm-parameter\":\"/aws/service/bottlerocket/aws-k8s-1.15/x86_64/latest/image_id\",\"ssm-document-name\":\"${USER}InstallBottleRocket\",\"ssm-document-create\":true,\"ssm-document-commands\":\"enable-admin-container\",\"ssm-document-execution-timeout-seconds\":3600,\"asg-min-size\":1,\"asg-max-size\":1,\"asg-desired-capacity\":1,\"instance-types\":[\"c5.xlarge\"],\"volume-size\":40}} \
 AWS_K8S_TESTER_EC2_ROLE_CREATE=true \
 AWS_K8S_TESTER_EC2_VPC_CREATE=true \
-aws-k8s-tester ec2 create config -p /tmp/${USER}-test-ec2.yaml && cat /tmp/${USER}-test-ec2.yaml
+aws-k8s-tester ec2 create config -p /tmp/${USER}-test-ec2.yaml
 
 <<COMMENT
 # Or just run
@@ -79,10 +79,10 @@ COMMENT
 
 
 cd /tmp
-aws-k8s-tester ec2 create cluster -p /tmp/${USER}-test-ec2.yaml
+aws-k8s-tester ec2 create cluster --enable-prompt=true -p /tmp/${USER}-test-ec2.yaml
 
 cd /tmp
-aws-k8s-tester ec2 delete cluster -p /tmp/${USER}-test-ec2.yaml
+aws-k8s-tester ec2 delete cluster --enable-prompt=true -p /tmp/${USER}-test-ec2.yaml
 ```
 
 
@@ -186,7 +186,7 @@ cd /tmp
 aws-k8s-tester eks create cluster --enable-prompt=true -p /tmp/${USER}-test-eks.yaml
 
 cd /tmp
-aws-k8s-tester eks delete cluster -p /tmp/${USER}-test-eks.yaml
+aws-k8s-tester eks delete cluster --enable-prompt=true -p /tmp/${USER}-test-eks.yaml
 ```
 
 This will create an EKS cluster with a worker node (takes about 20 minutes).
