@@ -2,11 +2,13 @@ package ec2
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 
 	"github.com/aws/aws-k8s-tester/ec2"
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
+	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
 )
 
@@ -37,6 +39,33 @@ func deleteClusterFunc(cmd *cobra.Command, args []string) {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to load configuration %q (%v)\n", path, err)
 		os.Exit(1)
+	}
+
+	txt, err := ioutil.ReadFile(path)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to read configuration %q (%v)\n", path, err)
+		os.Exit(1)
+	}
+	println()
+	fmt.Println(string(txt))
+	println()
+
+	if enablePrompt {
+		prompt := promptui.Select{
+			Label: "Ready to delete EC2 resources, should we continue?",
+			Items: []string{
+				"No, cancel it!",
+				"Yes, let's delete!",
+			},
+		}
+		idx, answer, err := prompt.Run()
+		if err != nil {
+			panic(err)
+		}
+		if idx != 1 {
+			fmt.Printf("returning 'delete' [index %d, answer %q]\n", idx, answer)
+			return
+		}
 	}
 
 	tester, err := ec2.New(cfg)

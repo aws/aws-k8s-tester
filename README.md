@@ -126,7 +126,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_CREATE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_ENABLE=true \
-aws-k8s-tester eks create config -p /tmp/${USER}-test-eks.yaml && cat /tmp/${USER}-test-eks.yaml
+aws-k8s-tester eks create config -p /tmp/${USER}-test-eks.yaml
 
 <<COMMENT
 # Or just run
@@ -183,7 +183,7 @@ COMMENT
 
 
 cd /tmp
-aws-k8s-tester eks create cluster -p /tmp/${USER}-test-eks.yaml
+aws-k8s-tester eks create cluster --enable-prompt=true -p /tmp/${USER}-test-eks.yaml
 
 cd /tmp
 aws-k8s-tester eks delete cluster -p /tmp/${USER}-test-eks.yaml
