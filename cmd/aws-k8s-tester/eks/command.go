@@ -7,7 +7,10 @@ func init() {
 	cobra.EnablePrefixMatching = true
 }
 
-var path string
+var (
+	path         string
+	enablePrompt bool
+)
 
 // NewCommand implements "aws-k8s-tester eks" command.
 func NewCommand() *cobra.Command {
@@ -17,6 +20,7 @@ func NewCommand() *cobra.Command {
 		SuggestFor: []string{"ekk", "ekstester"},
 	}
 	cmd.PersistentFlags().StringVarP(&path, "path", "p", "", "aws-k8s-tester EKS configuration file path")
+	cmd.PersistentFlags().BoolVarP(&enablePrompt, "enable-prompt", "e", true, "'true' to enable prompt mode")
 	cmd.AddCommand(
 		newCreate(),
 		newDelete(),

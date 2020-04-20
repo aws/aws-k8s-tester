@@ -2,11 +2,14 @@ package eks
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
+	"time"
 
 	"github.com/aws/aws-k8s-tester/eks"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
+	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
 )
 
@@ -46,11 +49,21 @@ func configFunc(cmd *cobra.Command, args []string) {
 		fmt.Fprintf(os.Stderr, "failed to load configuration from environment variables: %v", err)
 		os.Exit(1)
 	}
+
 	if err = cfg.ValidateAndSetDefaults(); err != nil {
 		fmt.Printf("\n*********************************\n")
 		fmt.Printf("'aws-k8s-tester eks create config' fail %v\n", err)
 		os.Exit(1)
 	}
+
+	txt, err := ioutil.ReadFile(path)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to read configuration %q (%v)\n", path, err)
+		os.Exit(1)
+	}
+	println()
+	fmt.Println(string(txt))
+	println()
 
 	fmt.Printf("\n*********************************\n")
 	fmt.Printf("'aws-k8s-tester eks create config' successs\n")
@@ -95,6 +108,35 @@ func createClusterFunc(cmd *cobra.Command, args []string) {
 		fmt.Fprintf(os.Stderr, "failed to validate configuration %q (%v)\n", path, err)
 		os.Exit(1)
 	}
+
+	txt, err := ioutil.ReadFile(path)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to read configuration %q (%v)\n", path, err)
+		os.Exit(1)
+	}
+	println()
+	fmt.Println(string(txt))
+	println()
+
+	if enablePrompt {
+		prompt := promptui.Select{
+			Label: "Ready to create EKS resources, should we continue?",
+			Items: []string{
+				"No, cancel it!",
+				"Yes, let's create!",
+			},
+		}
+		idx, answer, err := prompt.Run()
+		if err != nil {
+			panic(err)
+		}
+		if idx != 1 {
+			fmt.Printf("returning 'create' [index %d, answer %q]\n", idx, answer)
+			return
+		}
+	}
+
+	time.Sleep(5 * time.Second)
 
 	tester, err := eks.New(cfg)
 	if err != nil {

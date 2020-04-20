@@ -23,6 +23,11 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.6...v1.0.7
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.5...v1.0.6).
 
+### `aws-k8s-tester`
+
+- Add [`aws-k8s-tester --enable-prompt` flag](https://github.com/aws/aws-k8s-tester/commit/).
+  - `--enable-prompt=true` by default.
+
 ### `eksconfig`
 
 - Seperate [files for `AddOn*`](https://github.com/aws/aws-k8s-tester/commit/28d6baa83ce4df8e1c32b849c8e4d0ac5e3e3682).
