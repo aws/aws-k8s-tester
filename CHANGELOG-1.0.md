@@ -19,7 +19,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.6...v1.0.7
 <hr>
 
 
-## [v1.0.6](https://github.com/aws/aws-k8s-tester/releases/tag/v1.0.6) (2020-04-20)
+## [v1.0.6](https://github.com/aws/aws-k8s-tester/releases/tag/v1.0.6) (2020-04-21)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.5...v1.0.6).
 
@@ -43,6 +43,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.5...v1.0.6
   - `AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_ADD_ONS="echo GetRef.ClusterARN"`
 - Add [`AddOnKubernetesDashboard`](https://github.com/aws/aws-k8s-tester/commit/e07dedcf6dc2be7837f6a1a78fd7e37024ba17d8).
 - Add [`AddOnPrometheusGrafana`](https://github.com/aws/aws-k8s-tester/commit/115da16e9f9887dc71998ff6940cf5908f082af9).
+- Add [`AddOnCSIEBS`](https://github.com/aws/aws-k8s-tester/commit/).
 
 ### `eks`
 
@@ -55,10 +56,12 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.5...v1.0.6
 - Add [`"github.com/aws/aws-k8s-tester/eks/wordpress"`](https://github.com/aws/aws-k8s-tester/commit/eb3368cbf7c3fa961fe600cfc89f5444f8a80b77).
 - Add [`"github.com/aws/aws-k8s-tester/eks/kubernetes-dashboard"`](https://github.com/aws/aws-k8s-tester/commit/c296d0587a07112bf5c08f709e96f8d806d2828e).
 - Add [`"github.com/aws/aws-k8s-tester/eks/prometheus-grafana"`](https://github.com/aws/aws-k8s-tester/commit/115da16e9f9887dc71998ff6940cf5908f082af9).
+- Add [`"github.com/aws/aws-k8s-tester/eks/csi-ebs"`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [retries to `aws eks update-kubeconfig`](https://github.com/aws/aws-k8s-tester/commit/).
 
 ### Dependency
 
-- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.30.7`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.7) to [`v1.30.10`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.10).
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.30.7`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.7) to [`v1.30.11`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.11).
 - Upgrade [`github.com/helm/helm`](https://github.com/helm/helm/releases) from [`v3.1.1`](https://github.com/helm/helm/releases/tag/v3.1.1) to [`v3.2.0-rc.1`](https://github.com/helm/helm/releases/tag/v3.2.0-rc.1).
 - Upgrade [`github.com/kubernetes/client-go`](https://github.com/kubernetes/client-go/releases) from [`kubernetes-1.15.4`](https://github.com/kubernetes/client-go/releases/tag/kubernetes-1.15.4) to [`v0.18.2`](https://github.com/kubernetes/client-go/releases/tag/v0.18.2).
 

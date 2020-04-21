@@ -12,13 +12,12 @@ import (
 	"github.com/aws/aws-k8s-tester/eks/helm"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	awscfn "github.com/aws/aws-k8s-tester/pkg/aws/cloudformation"
-	k8sclient "github.com/aws/aws-k8s-tester/pkg/k8s-client"
+	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/cloudformation/cloudformationiface"
 	"go.uber.org/zap"
-	clientset "k8s.io/client-go/kubernetes"
 )
 
 // Config defines AppMesh configuration.
@@ -28,12 +27,8 @@ type Config struct {
 	Sig    chan os.Signal
 
 	EKSConfig *eksconfig.Config
-	K8SClient k8sClientSetGetter
+	K8SClient k8s_client.EKS
 	CFNAPI    cloudformationiface.CloudFormationAPI
-}
-
-type k8sClientSetGetter interface {
-	KubernetesClientSet() *clientset.Clientset
 }
 
 // Tester defines AppMesh tester
@@ -71,16 +66,16 @@ func (ts *tester) Create() error {
 	if err := ts.createPolicy(); err != nil {
 		return err
 	}
-	if err := k8sclient.CreateNamespace(ts.cfg.Logger, ts.cfg.K8SClient.KubernetesClientSet(), ts.cfg.EKSConfig.AddOnAppMesh.Namespace); err != nil {
+	if err := k8s_client.CreateNamespace(ts.cfg.Logger, ts.cfg.K8SClient.KubernetesClientSet(), ts.cfg.EKSConfig.AddOnAppMesh.Namespace); err != nil {
 		return err
 	}
 	if err := helm.RepoAdd(ts.cfg.Logger, chartRepoName, chartRepoURL); err != nil {
 		return err
 	}
-	if err := ts.installController(); err != nil {
+	if err := ts.createHelmController(); err != nil {
 		return err
 	}
-	if err := ts.installInjector(); err != nil {
+	if err := ts.createHelmInjector(); err != nil {
 		return err
 	}
 	return ts.cfg.EKSConfig.Sync()
@@ -101,19 +96,19 @@ func (ts *tester) Delete() error {
 
 	var errs []string
 
-	if err := ts.uninstallInjector(); err != nil {
+	if err := ts.deleteHelmInjector(); err != nil {
 		errs = append(errs, err.Error())
 	}
 
-	if err := ts.uninstallController(); err != nil {
+	if err := ts.deleteHelmController(); err != nil {
 		errs = append(errs, err.Error())
 	}
 
-	if err := k8sclient.DeleteNamespaceAndWait(ts.cfg.Logger,
+	if err := k8s_client.DeleteNamespaceAndWait(ts.cfg.Logger,
 		ts.cfg.K8SClient.KubernetesClientSet(),
 		ts.cfg.EKSConfig.AddOnAppMesh.Namespace,
-		k8sclient.DefaultNamespaceDeletionInterval,
-		k8sclient.DefaultNamespaceDeletionTimeout); err != nil {
+		k8s_client.DefaultNamespaceDeletionInterval,
+		k8s_client.DefaultNamespaceDeletionTimeout); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete AppMesh namespace (%v)", err))
 	}
 
@@ -192,7 +187,6 @@ func (ts *tester) createPolicy() error {
 	}
 
 	ts.cfg.Logger.Info("creating app mesh controller policy")
-
 	stackName := ts.cfg.EKSConfig.Name + "-app-mesh-addOn"
 	policyName := ts.cfg.EKSConfig.Name + "-app-mesh-policy"
 	stackInput := &cloudformation.CreateStackInput{
@@ -311,7 +305,9 @@ const (
 	chartNameInjector   = "appmesh-inject"
 )
 
-func (ts *tester) installController() error {
+// https://github.com/aws/eks-charts/blob/master/stable/appmesh-controller/values.yaml
+func (ts *tester) createHelmController() error {
+	// https://github.com/aws/eks-charts/blob/master/stable/appmesh-controller/values.yaml
 	values := make(map[string]interface{})
 	if ts.cfg.EKSConfig.AddOnAppMesh.ControllerImage != "" {
 		imageRepo, imageTag, err := splitImageRepoAndTag(ts.cfg.EKSConfig.AddOnAppMesh.ControllerImage)
@@ -323,29 +319,31 @@ func (ts *tester) installController() error {
 			"tag":        imageTag,
 		}
 	}
-	return helm.Install(
-		ts.cfg.Logger,
-		15*time.Minute,
-		ts.cfg.EKSConfig.KubeConfigPath,
-		ts.cfg.EKSConfig.AddOnAppMesh.Namespace,
-		chartRepoURL,
-		chartNameController,
-		chartNameController,
-		values,
-	)
+	return helm.Install(helm.InstallConfig{
+		Logger:         ts.cfg.Logger,
+		Timeout:        15 * time.Minute,
+		KubeConfigPath: ts.cfg.EKSConfig.KubeConfigPath,
+		Namespace:      ts.cfg.EKSConfig.AddOnAppMesh.Namespace,
+		ChartRepoURL:   chartRepoURL,
+		ChartName:      chartNameController,
+		ReleaseName:    chartNameController,
+		Values:         values,
+	})
 }
 
-func (ts *tester) uninstallController() error {
-	return helm.Uninstall(
-		ts.cfg.Logger,
-		15*time.Minute,
-		ts.cfg.EKSConfig.KubeConfigPath,
-		ts.cfg.EKSConfig.AddOnAppMesh.Namespace,
-		chartNameController,
-	)
+func (ts *tester) deleteHelmController() error {
+	return helm.Uninstall(helm.InstallConfig{
+		Logger:         ts.cfg.Logger,
+		Timeout:        15 * time.Minute,
+		KubeConfigPath: ts.cfg.EKSConfig.KubeConfigPath,
+		Namespace:      ts.cfg.EKSConfig.AddOnAppMesh.Namespace,
+		ChartName:      chartNameController,
+		ReleaseName:    chartNameController,
+	})
 }
 
-func (ts *tester) installInjector() error {
+// https://github.com/aws/eks-charts/blob/master/stable/appmesh-injector/values.yaml
+func (ts *tester) createHelmInjector() error {
 	values := make(map[string]interface{})
 	if ts.cfg.EKSConfig.AddOnAppMesh.InjectorImage != "" {
 		imageRepo, imageTag, err := splitImageRepoAndTag(ts.cfg.EKSConfig.AddOnAppMesh.InjectorImage)
@@ -357,26 +355,27 @@ func (ts *tester) installInjector() error {
 			"tag":        imageTag,
 		}
 	}
-	return helm.Install(
-		ts.cfg.Logger,
-		15*time.Minute,
-		ts.cfg.EKSConfig.KubeConfigPath,
-		ts.cfg.EKSConfig.AddOnAppMesh.Namespace,
-		chartRepoURL,
-		chartNameInjector,
-		chartNameInjector,
-		values,
-	)
+	return helm.Install(helm.InstallConfig{
+		Logger:         ts.cfg.Logger,
+		Timeout:        15 * time.Minute,
+		KubeConfigPath: ts.cfg.EKSConfig.KubeConfigPath,
+		Namespace:      ts.cfg.EKSConfig.AddOnAppMesh.Namespace,
+		ChartRepoURL:   chartRepoURL,
+		ChartName:      chartNameInjector,
+		ReleaseName:    chartNameInjector,
+		Values:         values,
+	})
 }
 
-func (ts *tester) uninstallInjector() error {
-	return helm.Uninstall(
-		ts.cfg.Logger,
-		15*time.Minute,
-		ts.cfg.EKSConfig.KubeConfigPath,
-		ts.cfg.EKSConfig.AddOnAppMesh.Namespace,
-		chartNameInjector,
-	)
+func (ts *tester) deleteHelmInjector() error {
+	return helm.Uninstall(helm.InstallConfig{
+		Logger:         ts.cfg.Logger,
+		Timeout:        15 * time.Minute,
+		KubeConfigPath: ts.cfg.EKSConfig.KubeConfigPath,
+		Namespace:      ts.cfg.EKSConfig.AddOnAppMesh.Namespace,
+		ChartName:      chartNameInjector,
+		ReleaseName:    chartNameInjector,
+	})
 }
 
 // splitImageRepoAndTag parses a docker image in format <imageRepo>:<imageTag> into `imageRepo` and `imageTag`

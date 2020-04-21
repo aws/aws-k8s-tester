@@ -166,7 +166,7 @@ func (ts *Tester) createEKS() error {
 	}
 
 	now := time.Now()
-	initialWait := 7*time.Minute + 30*time.Second
+	initialWait := 9 * time.Minute
 
 	subnets := make([]string, len(ts.cfg.Parameters.PublicSubnetIDs))
 	copy(subnets, ts.cfg.Parameters.PublicSubnetIDs)
@@ -300,7 +300,7 @@ func (ts *Tester) createEKS() error {
 			ts.cfnAPI,
 			ts.cfg.Status.ClusterCFNStackID,
 			cloudformation.ResourceStatusCreateComplete,
-			7*time.Minute+30*time.Second,
+			9*time.Minute,
 			30*time.Second,
 		)
 		var st awscfn.StackStatus

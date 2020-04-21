@@ -23,6 +23,7 @@ import (
 	app_mesh "github.com/aws/aws-k8s-tester/eks/app-mesh"
 	"github.com/aws/aws-k8s-tester/eks/configmaps"
 	"github.com/aws/aws-k8s-tester/eks/cronjobs"
+	csi_ebs "github.com/aws/aws-k8s-tester/eks/csi-ebs"
 	"github.com/aws/aws-k8s-tester/eks/csrs"
 	"github.com/aws/aws-k8s-tester/eks/fargate"
 	"github.com/aws/aws-k8s-tester/eks/gpu"
@@ -111,9 +112,10 @@ type Tester struct {
 	irsaTester                irsa.Tester
 	fargateTester             fargate.Tester
 	appMeshTester             app_mesh.Tester
-	wordPressTester           wordpress.Tester
 	kubernetesDashboardTester kubernetes_dashboard.Tester
+	csiEBSTester              csi_ebs.Tester
 	prometheusGrafanaTester   prometheus_grafana.Tester
+	wordPressTester           wordpress.Tester
 }
 
 // New returns a new EKS kubetest2 Deployer.
@@ -585,9 +587,9 @@ func (ts *Tester) createSubTesters() (err error) {
 		})
 	}
 
-	if ts.cfg.IsEnabledAddOnWordpress() {
-		ts.lg.Info("creating wordPressTester")
-		ts.wordPressTester, err = wordpress.NewTester(wordpress.Config{
+	if ts.cfg.IsEnabledAddOnKubernetesDashboard() {
+		ts.lg.Info("creating kubernetesDashboardTester")
+		ts.kubernetesDashboardTester, err = kubernetes_dashboard.NewTester(kubernetes_dashboard.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			Sig:       ts.interruptSig,
@@ -596,9 +598,20 @@ func (ts *Tester) createSubTesters() (err error) {
 		})
 	}
 
-	if ts.cfg.IsEnabledAddOnKubernetesDashboard() {
-		ts.lg.Info("creating kubernetesDashboardTester")
-		ts.kubernetesDashboardTester, err = kubernetes_dashboard.NewTester(kubernetes_dashboard.Config{
+	if ts.cfg.IsEnabledAddOnCSIEBS() {
+		ts.lg.Info("creating csiEBSTester")
+		ts.csiEBSTester, err = csi_ebs.NewTester(csi_ebs.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			Sig:       ts.interruptSig,
+			EKSConfig: ts.cfg,
+			K8SClient: ts.k8sClient,
+		})
+	}
+
+	if ts.cfg.IsEnabledAddOnWordpress() {
+		ts.lg.Info("creating wordPressTester")
+		ts.wordPressTester, err = wordpress.NewTester(wordpress.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			Sig:       ts.interruptSig,
@@ -1132,23 +1145,6 @@ func (ts *Tester) Up() (err error) {
 		}
 	}
 
-	if ts.cfg.IsEnabledAddOnWordpress() {
-		if ts.wordPressTester == nil {
-			return errors.New("ts.wordPressTester == nil when AddOnWordpress.Enable == true")
-		}
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("wordPressTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnWordpress.Namespace)
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.interruptSig,
-			ts.wordPressTester.Create,
-		); err != nil {
-			return err
-		}
-	}
-
 	if ts.cfg.IsEnabledAddOnKubernetesDashboard() {
 		if ts.kubernetesDashboardTester == nil {
 			return errors.New("ts.kubernetesDashboardTester == nil when AddOnKubernetesDashboard.Enable == true")
@@ -1166,6 +1162,23 @@ func (ts *Tester) Up() (err error) {
 		}
 	}
 
+	if ts.cfg.IsEnabledAddOnCSIEBS() {
+		if ts.csiEBSTester == nil {
+			return errors.New("ts.csiEBSTester == nil when AddOnCSIEBS.Enable == true")
+		}
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("csiEBSTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnWordpress.Namespace)
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.interruptSig,
+			ts.csiEBSTester.Create,
+		); err != nil {
+			return err
+		}
+	}
+
 	if ts.cfg.IsEnabledAddOnPrometheusGrafana() {
 		if ts.prometheusGrafanaTester == nil {
 			return errors.New("ts.prometheusGrafanaTester == nil when AddOnKubernetesDashboard.Enable == true")
@@ -1178,6 +1191,23 @@ func (ts *Tester) Up() (err error) {
 			ts.stopCreationChOnce,
 			ts.interruptSig,
 			ts.prometheusGrafanaTester.Create,
+		); err != nil {
+			return err
+		}
+	}
+
+	if ts.cfg.IsEnabledAddOnWordpress() {
+		if ts.wordPressTester == nil {
+			return errors.New("ts.wordPressTester == nil when AddOnWordpress.Enable == true")
+		}
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("wordPressTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnWordpress.Namespace)
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.interruptSig,
+			ts.wordPressTester.Create,
 		); err != nil {
 			return err
 		}
@@ -1351,6 +1381,19 @@ func (ts *Tester) down() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnNodeGroups() || ts.cfg.IsEnabledAddOnManagedNodeGroups() {
+		if ts.cfg.IsEnabledAddOnWordpress() && ts.cfg.AddOnWordpress.Created {
+			fmt.Printf("\n*********************************\n")
+			fmt.Printf("wordPressTester.Delete (%q)\n", ts.cfg.ConfigPath)
+			if err := ts.wordPressTester.Delete(); err != nil {
+				ts.lg.Warn("wordPressTester.Delete failed", zap.Error(err))
+				errs = append(errs, err.Error())
+			} else {
+				waitDur := 20 * time.Second
+				ts.lg.Info("sleeping after deleting wordPressTester", zap.Duration("wait", waitDur))
+				time.Sleep(waitDur)
+			}
+		}
+
 		if ts.cfg.IsEnabledAddOnPrometheusGrafana() && ts.cfg.AddOnPrometheusGrafana.Created {
 			fmt.Printf("\n*********************************\n")
 			fmt.Printf("prometheusGrafanaTester.Delete (%q)\n", ts.cfg.ConfigPath)
@@ -1358,8 +1401,21 @@ func (ts *Tester) down() (err error) {
 				ts.lg.Warn("prometheusGrafanaTester.Delete failed", zap.Error(err))
 				errs = append(errs, err.Error())
 			} else {
-				waitDur := time.Minute
+				waitDur := 20 * time.Second
 				ts.lg.Info("sleeping after deleting prometheusGrafanaTester", zap.Duration("wait", waitDur))
+				time.Sleep(waitDur)
+			}
+		}
+
+		if ts.cfg.IsEnabledAddOnCSIEBS() && ts.cfg.AddOnCSIEBS.Created {
+			fmt.Printf("\n*********************************\n")
+			fmt.Printf("csiEBSTester.Delete (%q)\n", ts.cfg.ConfigPath)
+			if err := ts.csiEBSTester.Delete(); err != nil {
+				ts.lg.Warn("csiEBSTester.Delete failed", zap.Error(err))
+				errs = append(errs, err.Error())
+			} else {
+				waitDur := 20 * time.Second
+				ts.lg.Info("sleeping after deleting csiEBSTester", zap.Duration("wait", waitDur))
 				time.Sleep(waitDur)
 			}
 		}
@@ -1370,23 +1426,6 @@ func (ts *Tester) down() (err error) {
 			if err := ts.kubernetesDashboardTester.Delete(); err != nil {
 				ts.lg.Warn("kubernetesDashboardTester.Delete failed", zap.Error(err))
 				errs = append(errs, err.Error())
-			} else {
-				waitDur := time.Minute
-				ts.lg.Info("sleeping after deleting kubernetesDashboardTester", zap.Duration("wait", waitDur))
-				time.Sleep(waitDur)
-			}
-		}
-
-		if ts.cfg.IsEnabledAddOnWordpress() && ts.cfg.AddOnWordpress.Created {
-			fmt.Printf("\n*********************************\n")
-			fmt.Printf("wordPressTester.Delete (%q)\n", ts.cfg.ConfigPath)
-			if err := ts.wordPressTester.Delete(); err != nil {
-				ts.lg.Warn("wordPressTester.Delete failed", zap.Error(err))
-				errs = append(errs, err.Error())
-			} else {
-				waitDur := time.Minute
-				ts.lg.Info("sleeping after deleting wordPressTester", zap.Duration("wait", waitDur))
-				time.Sleep(waitDur)
 			}
 		}
 
@@ -1396,10 +1435,6 @@ func (ts *Tester) down() (err error) {
 			if err := ts.appMeshTester.Delete(); err != nil {
 				ts.lg.Warn("appMeshTester.Delete failed", zap.Error(err))
 				errs = append(errs, err.Error())
-			} else {
-				waitDur := time.Minute
-				ts.lg.Info("sleeping after deleting appMeshTester", zap.Duration("wait", waitDur))
-				time.Sleep(waitDur)
 			}
 		}
 

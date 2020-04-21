@@ -4,7 +4,9 @@ package helm
 import (
 	"context"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,6 +16,7 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 	"helm.sh/helm/v3/pkg/action"
+	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/getter"
@@ -99,112 +102,145 @@ func RepoAdd(lg *zap.Logger, name, url string) error {
 	return nil
 }
 
+// InstallConfig defines helm installation configuration.
+type InstallConfig struct {
+	Logger         *zap.Logger
+	Timeout        time.Duration
+	KubeConfigPath string
+	Namespace      string
+	ChartRepoURL   string
+	ChartName      string
+	ReleaseName    string
+	Values         map[string]interface{}
+}
+
 // Install installs a helm chart.
-func Install(
-	lg *zap.Logger,
-	timeout time.Duration,
-	kubeconfig string,
-	namespace string,
-	chartRepoURL string,
-	chartName string,
-	releaseName string,
-	values map[string]interface{},
-) error {
-	copied := make(map[string]string)
-	for k, v := range values {
-		if strings.Contains(strings.ToLower(k), "password") {
-			v = "[redacted]"
-		}
-		copied[k] = fmt.Sprintf("%v", v)
-	}
-	lg.Info("installing chart",
-		zap.String("namespace", namespace),
-		zap.String("chart-repo-url", chartRepoURL),
-		zap.String("chart-name", chartName),
-		zap.String("release-name", releaseName),
-		zap.String("values", fmt.Sprintf("%+v", copied)),
+func Install(cfg InstallConfig) (err error) {
+	cfg.Logger.Info("installing chart",
+		zap.String("namespace", cfg.Namespace),
+		zap.String("chart-repo-url", cfg.ChartRepoURL),
+		zap.String("chart-name", cfg.ChartName),
+		zap.String("release-name", cfg.ReleaseName),
 	)
 
 	cfgFlags := genericclioptions.NewConfigFlags(false)
-	cfgFlags.KubeConfig = &kubeconfig
-	cfgFlags.Namespace = &namespace
+	cfgFlags.KubeConfig = &cfg.KubeConfigPath
+	cfgFlags.Namespace = &cfg.Namespace
 
 	act := new(action.Configuration)
 	if err := act.Init(
 		cfgFlags,
-		namespace,
+		cfg.Namespace,
 		"secrets",
 		func(format string, v ...interface{}) {
-			lg.Info(fmt.Sprintf("[helm-install-log] "+format, v...))
+			cfg.Logger.Info(fmt.Sprintf("[install] "+format, v...))
 		},
 	); err != nil {
 		return err
 	}
 
 	install := action.NewInstall(act)
-	install.ChartPathOptions.RepoURL = chartRepoURL
-	install.Namespace = namespace
-	install.ReleaseName = releaseName
+	install.Namespace = cfg.Namespace
+	install.ReleaseName = cfg.ReleaseName
 	install.Wait = true
-	install.Timeout = timeout
+	install.Timeout = cfg.Timeout
 
-	lg.Info("locating chart",
-		zap.String("namespace", namespace),
-		zap.String("chart-repo", chartRepoURL),
-		zap.String("chart-name", chartName),
-		zap.String("release-name", releaseName),
-	)
-	chartPath, err := install.ChartPathOptions.LocateChart(chartName, cli.New())
-	if err != nil {
-		lg.Warn("failed to locate chart",
-			zap.String("chart-repo", chartRepoURL),
-			zap.String("chart-name", chartName),
-			zap.Error(err),
+	var chart *chart.Chart
+	switch {
+	case strings.HasSuffix(cfg.ChartRepoURL, ".tgz"):
+		// https://github.com/kubernetes-sigs/aws-ebs-csi-driver#deploy-driver
+		var rd io.ReadCloser
+		retryStart, waitDur := time.Now(), 3*time.Minute
+		for time.Now().Sub(retryStart) < waitDur {
+			var resp *http.Response
+			resp, err = http.Get(cfg.ChartRepoURL)
+			if err != nil {
+				cfg.Logger.Warn("failed to download tar", zap.Error(err))
+				time.Sleep(5 * time.Second)
+				continue
+			}
+			rd = resp.Body
+			break
+		}
+		if err != nil {
+			return err
+		}
+		defer rd.Close()
+		cfg.Logger.Info("downloading chart .tgz", zap.String("url", cfg.ChartRepoURL))
+		chart, err = loader.LoadArchive(rd)
+		if err != nil {
+			return err
+		}
+		cfg.Logger.Info("loaded chart via .tgz",
+			zap.String("namespace", cfg.Namespace),
+			zap.String("chart-repo", cfg.ChartRepoURL),
+			zap.String("chart-name", cfg.ChartName),
+			zap.String("release-name", cfg.ReleaseName),
+			zap.String("chart-full-path", chart.ChartFullPath()),
+			zap.String("chart-name", chart.Name()),
+			zap.String("chart-app-version", chart.AppVersion()),
 		)
-		return err
-	}
-	lg.Info("located chart",
-		zap.String("namespace", namespace),
-		zap.String("chart-repo", chartRepoURL),
-		zap.String("chart-name", chartName),
-		zap.String("release-name", releaseName),
-		zap.String("chart-path", chartPath),
-	)
 
-	lg.Info("loading chart",
-		zap.String("namespace", namespace),
-		zap.String("chart-repo", chartRepoURL),
-		zap.String("chart-name", chartName),
-		zap.String("release-name", releaseName),
-		zap.String("chart-path", chartPath),
-	)
-	chart, err := loader.Load(chartPath)
-	if err != nil {
-		lg.Warn("failed to load chart",
-			zap.String("chart-repo", chartRepoURL),
-			zap.String("chart-name", chartName),
+	default:
+		cfg.Logger.Info("locating chart",
+			zap.String("namespace", cfg.Namespace),
+			zap.String("chart-repo", cfg.ChartRepoURL),
+			zap.String("chart-name", cfg.ChartName),
+			zap.String("release-name", cfg.ReleaseName),
+		)
+		install.ChartPathOptions.RepoURL = cfg.ChartRepoURL
+		chartPath, err := install.ChartPathOptions.LocateChart(cfg.ChartName, cli.New())
+		if err != nil {
+			cfg.Logger.Warn("failed to locate chart",
+				zap.String("chart-repo", cfg.ChartRepoURL),
+				zap.String("chart-name", cfg.ChartName),
+				zap.Error(err),
+			)
+			return err
+		}
+		cfg.Logger.Info("located chart",
+			zap.String("namespace", cfg.Namespace),
+			zap.String("chart-repo", cfg.ChartRepoURL),
+			zap.String("chart-name", cfg.ChartName),
+			zap.String("release-name", cfg.ReleaseName),
 			zap.String("chart-path", chartPath),
-			zap.Error(err),
 		)
-		return err
-	}
-	lg.Info("loaded chart",
-		zap.String("namespace", namespace),
-		zap.String("chart-repo", chartRepoURL),
-		zap.String("chart-name", chartName),
-		zap.String("release-name", releaseName),
-		zap.String("chart-path", chartPath),
-		zap.String("chart-full-path", chart.ChartFullPath()),
-		zap.String("chart-name", chart.Name()),
-		zap.String("chart-app-version", chart.AppVersion()),
-	)
 
-	rs, err := install.Run(chart, values)
+		cfg.Logger.Info("loading chart",
+			zap.String("namespace", cfg.Namespace),
+			zap.String("chart-repo", cfg.ChartRepoURL),
+			zap.String("chart-name", cfg.ChartName),
+			zap.String("release-name", cfg.ReleaseName),
+			zap.String("chart-path", chartPath),
+		)
+		chart, err = loader.Load(chartPath)
+		if err != nil {
+			cfg.Logger.Warn("failed to load chart",
+				zap.String("chart-repo", cfg.ChartRepoURL),
+				zap.String("chart-name", cfg.ChartName),
+				zap.String("chart-path", chartPath),
+				zap.Error(err),
+			)
+			return err
+		}
+		cfg.Logger.Info("loaded chart via remote repo",
+			zap.String("namespace", cfg.Namespace),
+			zap.String("chart-repo", cfg.ChartRepoURL),
+			zap.String("chart-name", cfg.ChartName),
+			zap.String("release-name", cfg.ReleaseName),
+			zap.String("chart-path", chartPath),
+			zap.String("chart-full-path", chart.ChartFullPath()),
+			zap.String("chart-name", chart.Name()),
+			zap.String("chart-app-version", chart.AppVersion()),
+		)
+	}
+
+	rs, err := install.Run(chart, cfg.Values)
 	if err != nil {
-		lg.Warn("failed to install chart", zap.String("release-name", releaseName), zap.Error(err))
+		cfg.Logger.Warn("failed to install chart", zap.String("release-name", cfg.ReleaseName), zap.Error(err))
 		return err
 	}
-	lg.Info("installed chart",
+	cfg.Logger.Info("installed chart",
 		zap.String("namespace", rs.Namespace),
 		zap.String("name", rs.Name),
 		zap.String("version", fmt.Sprintf("%v", rs.Version)),
@@ -213,47 +249,41 @@ func Install(
 }
 
 // Uninstall uninstalls a helm chart.
-func Uninstall(
-	lg *zap.Logger,
-	timeout time.Duration,
-	kubeconfig string,
-	namespace string,
-	releaseName string,
-) error {
-	lg.Info("uninstalling chart",
-		zap.String("namespace", namespace),
-		zap.String("release-name", releaseName),
+func Uninstall(cfg InstallConfig) error {
+	cfg.Logger.Info("uninstalling chart",
+		zap.String("namespace", cfg.Namespace),
+		zap.String("release-name", cfg.ReleaseName),
 	)
 
 	cfgFlags := genericclioptions.NewConfigFlags(false)
-	cfgFlags.KubeConfig = &kubeconfig
-	cfgFlags.Namespace = &namespace
+	cfgFlags.KubeConfig = &cfg.KubeConfigPath
+	cfgFlags.Namespace = &cfg.Namespace
 
 	act := new(action.Configuration)
 	if err := act.Init(
 		cfgFlags,
-		namespace,
+		cfg.Namespace,
 		"secrets",
 		func(format string, v ...interface{}) {
-			lg.Info(fmt.Sprintf("[helm-uninstall-log] "+format, v...))
+			cfg.Logger.Info(fmt.Sprintf("[uninstall] "+format, v...))
 		},
 	); err != nil {
 		return err
 	}
 
 	uninstall := action.NewUninstall(act)
-	uninstall.Timeout = timeout
+	uninstall.Timeout = cfg.Timeout
 
-	rs, err := uninstall.Run(releaseName)
+	rs, err := uninstall.Run(cfg.ReleaseName)
 	if err != nil {
 		if !strings.Contains(err.Error(), "not found") {
-			lg.Warn("failed to uninstall chart", zap.String("release-name", releaseName), zap.Error(err))
+			cfg.Logger.Warn("failed to uninstall chart", zap.String("release-name", cfg.ReleaseName), zap.Error(err))
 			return err
 		}
-		lg.Info("uninstalled chart", zap.Error(err))
+		cfg.Logger.Info("uninstalled chart", zap.Error(err))
 		return nil
 	}
-	lg.Info("uninstalled chart",
+	cfg.Logger.Info("uninstalled chart",
 		zap.String("namespace", rs.Release.Namespace),
 		zap.String("name", rs.Release.Name),
 		zap.String("version", fmt.Sprintf("%v", rs.Release.Version)),

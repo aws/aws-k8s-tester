@@ -173,15 +173,18 @@ type Config struct {
 	// AddOnAppMesh defines parameters for EKS cluster
 	// add-on "EKS App Mesh Integration".
 	AddOnAppMesh *AddOnAppMesh `json:"add-on-app-mesh,omitempty"`
-	// AddOnWordpress defines parameters for EKS cluster
-	// add-on WordPress.
-	AddOnWordpress *AddOnWordpress `json:"add-on-wordpress,omitempty"`
 	// AddOnKubernetesDashboard defines parameters for EKS cluster
 	// add-on Dashboard.
 	AddOnKubernetesDashboard *AddOnKubernetesDashboard `json:"add-on-kubernetes-dashboard,omitempty"`
+	// AddOnCSIEBS defines parameters for EKS cluster
+	// add-on AWS EBS CSI Driver.
+	AddOnCSIEBS *AddOnCSIEBS `json:"add-on-csi-ebs,omitempty"`
 	// AddOnPrometheusGrafana defines parameters for EKS cluster
 	// add-on Prometheus/Grafana.
 	AddOnPrometheusGrafana *AddOnPrometheusGrafana `json:"add-on-prometheus-grafana,omitempty"`
+	// AddOnWordpress defines parameters for EKS cluster
+	// add-on WordPress.
+	AddOnWordpress *AddOnWordpress `json:"add-on-wordpress,omitempty"`
 	// AddOnKubeflow defines parameters for EKS cluster
 	// add-on Kubeflow.
 	AddOnKubeflow *AddOnKubeflow `json:"add-on-kubeflow,omitempty"`
@@ -351,15 +354,15 @@ func (cfg *Config) KubectlCommands() (s string) {
 		KubectlCommand                         string
 		Version                                string
 		KubernetesDashboardEnabled             bool
-		KubernetesDashboardAuthenticationToken string
 		KubernetesDashboardURL                 string
+		KubernetesDashboardAuthenticationToken string
 	}{
 		cfg.KubeConfigPath,
 		cfg.KubectlCommand(),
 		cfg.Parameters.Version,
 		cfg.IsEnabledAddOnKubernetesDashboard(),
-		cfg.getAddOnKubernetesDashboardAuthenticationToken(),
 		cfg.getAddOnKubernetesDashboardURL(),
+		cfg.getAddOnKubernetesDashboardAuthenticationToken(),
 	}); err != nil {
 		return ""
 	}
@@ -383,10 +386,11 @@ export KUBECTL="{{ .KubectlCommand }}"
 {{ if .KubernetesDashboardEnabled }}
 {{ .KubectlCommand }} proxy
 
-# Kubernetes Dashboard Authentication Token
-{{ .KubernetesDashboardAuthenticationToken }}
+# Kubernetes Dashboard URL:
+{{ .KubernetesDashboardURL }}
 
-# Kubernetes Dashboard URL {{ .KubernetesDashboardURL }}
+# Kubernetes Dashboard Authentication Token:
+{{ .KubernetesDashboardAuthenticationToken }}
 {{ end }}
 
 # sonobuoy commands

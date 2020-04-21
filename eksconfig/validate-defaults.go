@@ -219,19 +219,26 @@ func NewDefault() *Config {
 			Enable: false,
 		},
 
-		AddOnWordpress: &AddOnWordpress{
-			Enable:   false,
-			UserName: "user",
-			Password: "",
-		},
-
 		AddOnKubernetesDashboard: &AddOnKubernetesDashboard{
 			Enable: false,
 			URL:    defaultKubernetesDashboardURL,
 		},
 
-		AddOnPrometheusGrafana: &AddOnPrometheusGrafana{
+		AddOnCSIEBS: &AddOnCSIEBS{
 			Enable: false,
+			// https://github.com/kubernetes-sigs/aws-ebs-csi-driver#deploy-driver
+			ChartRepoURL: "https://github.com/kubernetes-sigs/aws-ebs-csi-driver/releases/download/v0.5.0/helm-chart.tgz",
+		},
+
+		AddOnPrometheusGrafana: &AddOnPrometheusGrafana{
+			Enable:               false,
+			GrafanaAdminUserName: "admin",
+		},
+
+		AddOnWordpress: &AddOnWordpress{
+			Enable:   false,
+			UserName: "user",
+			Password: "",
 		},
 
 		AddOnKubeflow: &AddOnKubeflow{
@@ -350,14 +357,17 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	if err := cfg.validateAddOnAppMesh(); err != nil {
 		return fmt.Errorf("validateAddOnAppMesh failed [%v]", err)
 	}
-	if err := cfg.validateAddOnWordpress(); err != nil {
-		return fmt.Errorf("validateAddOnWordpress failed [%v]", err)
-	}
 	if err := cfg.validateAddOnKubernetesDashboard(); err != nil {
 		return fmt.Errorf("validateAddOnKubernetesDashboard failed [%v]", err)
 	}
+	if err := cfg.validateAddOnCSIEBS(); err != nil {
+		return fmt.Errorf("validateAddOnCSIEBS failed [%v]", err)
+	}
 	if err := cfg.validateAddOnPrometheusGrafana(); err != nil {
 		return fmt.Errorf("validateAddOnPrometheusGrafana failed [%v]", err)
+	}
+	if err := cfg.validateAddOnWordpress(); err != nil {
+		return fmt.Errorf("validateAddOnWordpress failed [%v]", err)
 	}
 	if err := cfg.validateAddOnKubeflow(); err != nil {
 		return fmt.Errorf("validateAddOnKubeflow failed [%v]", err)
@@ -1182,6 +1192,16 @@ func (cfg *Config) validateAddOnFargate() error {
 	return nil
 }
 
+func (cfg *Config) validateAddOnCSIEBS() error {
+	if !cfg.IsEnabledAddOnCSIEBS() {
+		return nil
+	}
+	if cfg.AddOnCSIEBS.ChartRepoURL == "" {
+		return errors.New("unexpected empty AddOnCSIEBS.ChartRepoURL")
+	}
+	return nil
+}
+
 func (cfg *Config) validateAddOnAppMesh() error {
 	if !cfg.IsEnabledAddOnAppMesh() {
 		return nil
@@ -1195,58 +1215,15 @@ func (cfg *Config) validateAddOnAppMesh() error {
 	return nil
 }
 
-func (cfg *Config) validateAddOnWordpress() error {
-	if !cfg.IsEnabledAddOnWordpress() {
-		return nil
-	}
-
-	// TODO: nodeSelector does not work for mariadb
-	// this does not work when deployed with NG + MNG
-	// does not work even when assigned to NG, not to MNG
-	// only works when deployed with NG and not MNG
-	// only works when deployed with not NG and MNG
-	// don't mix...
-	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
-		return errors.New("AddOnWordpress.Enable true but no node group is enabled")
-	}
-	if cfg.IsEnabledAddOnNodeGroups() && cfg.IsEnabledAddOnManagedNodeGroups() {
-		return errors.New("AddOnWordpress.Enable true but both node groups are enabled")
-	}
-
-	// TODO: can we support NG + bottlerocket
-	if cfg.IsEnabledAddOnNodeGroups() {
-		for name, asg := range cfg.AddOnNodeGroups.ASGs {
-			if asg.AMIType == ec2config.AMITypeBottleRocketCPU {
-				return fmt.Errorf("AddOnNodeGroups %q has %q for AddOnWordpress (not supported yet)", name, asg.AMIType)
-			}
-		}
-	}
-	if cfg.IsEnabledAddOnManagedNodeGroups() {
-		for name, asg := range cfg.AddOnManagedNodeGroups.MNGs {
-			if asg.AMIType == ec2config.AMITypeBottleRocketCPU {
-				return fmt.Errorf("AddOnManagedNodeGroups %q has %q for AddOnWordpress (not supported yet)", name, asg.AMIType)
-			}
-		}
-	}
-
-	if cfg.AddOnWordpress.Namespace == "" {
-		cfg.AddOnWordpress.Namespace = cfg.Name + "-wordpress"
-	}
-	if cfg.AddOnWordpress.UserName == "" {
-		cfg.AddOnWordpress.UserName = "user"
-	}
-	if cfg.AddOnWordpress.Password == "" {
-		cfg.AddOnWordpress.Password = randString(10)
-	}
-	return nil
-}
-
 // ref. https://docs.aws.amazon.com/eks/latest/userguide/dashboard-tutorial.html
 const defaultKubernetesDashboardURL = "http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/#/login"
 
 func (cfg *Config) validateAddOnKubernetesDashboard() error {
 	if !cfg.IsEnabledAddOnKubernetesDashboard() {
 		return nil
+	}
+	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
+		return errors.New("AddOnKubernetesDashboard.Enable true but no node group is enabled")
 	}
 	if cfg.AddOnKubernetesDashboard.URL == "" {
 		cfg.AddOnKubernetesDashboard.URL = defaultKubernetesDashboardURL
@@ -1258,8 +1235,131 @@ func (cfg *Config) validateAddOnPrometheusGrafana() error {
 	if !cfg.IsEnabledAddOnPrometheusGrafana() {
 		return nil
 	}
+	if !cfg.IsEnabledAddOnCSIEBS() {
+		return errors.New("AddOnPrometheusGrafana.Enable true but IsEnabledAddOnCSIEBS.Enable false")
+	}
+	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
+		return errors.New("AddOnPrometheusGrafana.Enable true but no node group is enabled")
+	}
+
+	// TODO: PVC not working on BottleRocket
+	// do not assign mariadb to Bottlerocket
+	// e.g. MountVolume.MountDevice failed for volume "pvc-8e035a13-4d33-472f-a4c0-f36c7d39d170" : executable file not found in $PATH
+	// e.g. Unable to mount volumes for pod "wordpress-84c567b89b-2jgh5_eks-2020042114-exclusivea3i-wordpress(d02336a3-1799-4b08-9f15-b90871f6a2f0)": timeout expired waiting for volumes to attach or mount for pod "eks-2020042114-exclusivea3i-wordpress"/"wordpress-84c567b89b-2jgh5". list of unmounted volumes=[wordpress-data]. list of unattached volumes=[wordpress-data default-token-7bdc2]
+	// TODO: fix CSI EBS https://github.com/bottlerocket-os/bottlerocket/issues/877
+	if cfg.IsEnabledAddOnNodeGroups() {
+		x86Found, rocketFound := false, false
+		for _, asg := range cfg.AddOnNodeGroups.ASGs {
+			switch asg.AMIType {
+			case ec2config.AMITypeAL2X8664,
+				ec2config.AMITypeAL2X8664GPU:
+				x86Found = true
+			case ec2config.AMITypeBottleRocketCPU:
+				rocketFound = true
+			}
+		}
+		if !x86Found && rocketFound {
+			return fmt.Errorf("AddOnPrometheusGrafana.Enabled true but AddOnNodeGroups [x86Found %v, rocketFound %v]", x86Found, rocketFound)
+		}
+	}
+	if cfg.IsEnabledAddOnManagedNodeGroups() {
+		x86Found, rocketFound := false, false
+		for _, asg := range cfg.AddOnManagedNodeGroups.MNGs {
+			switch asg.AMIType {
+			case eks.AMITypesAl2X8664,
+				eks.AMITypesAl2X8664Gpu:
+				x86Found = true
+			case ec2config.AMITypeBottleRocketCPU:
+				rocketFound = true
+			}
+		}
+		if !x86Found && rocketFound {
+			return fmt.Errorf("AddOnPrometheusGrafana.Enabled true but AddOnManagedNodeGroups [x86Found %v, rocketFound %v]", x86Found, rocketFound)
+		}
+	}
+	// TODO: nodeSelector does not work for mariadb
+	// this does not work when deployed with NG + MNG
+	// does not work even when assigned to NG, not to MNG
+	// only works when deployed with NG and not MNG
+	// only works when deployed with not NG and MNG
+	// don't mix...
+	// if cfg.IsEnabledAddOnNodeGroups() && cfg.IsEnabledAddOnManagedNodeGroups() {
+	// 	return errors.New("AddOnPrometheusGrafana.Enable true but both node groups are enabled")
+	// }
+
+	if cfg.AddOnPrometheusGrafana.GrafanaAdminUserName == "" {
+		cfg.AddOnPrometheusGrafana.GrafanaAdminUserName = randString(10)
+	}
 	if cfg.AddOnPrometheusGrafana.GrafanaAdminPassword == "" {
 		cfg.AddOnPrometheusGrafana.GrafanaAdminPassword = randString(10)
+	}
+	return nil
+}
+
+func (cfg *Config) validateAddOnWordpress() error {
+	if !cfg.IsEnabledAddOnWordpress() {
+		return nil
+	}
+	if !cfg.IsEnabledAddOnCSIEBS() {
+		return errors.New("AddOnWordpress.Enable true but IsEnabledAddOnCSIEBS.Enable false")
+	}
+	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
+		return errors.New("AddOnWordpress.Enable true but no node group is enabled")
+	}
+
+	// TODO: PVC not working on BottleRocket
+	// do not assign mariadb to Bottlerocket
+	// e.g. MountVolume.MountDevice failed for volume "pvc-8e035a13-4d33-472f-a4c0-f36c7d39d170" : executable file not found in $PATH
+	// e.g. Unable to mount volumes for pod "wordpress-84c567b89b-2jgh5_eks-2020042114-exclusivea3i-wordpress(d02336a3-1799-4b08-9f15-b90871f6a2f0)": timeout expired waiting for volumes to attach or mount for pod "eks-2020042114-exclusivea3i-wordpress"/"wordpress-84c567b89b-2jgh5". list of unmounted volumes=[wordpress-data]. list of unattached volumes=[wordpress-data default-token-7bdc2]
+	// TODO: fix CSI EBS https://github.com/bottlerocket-os/bottlerocket/issues/877
+	if cfg.IsEnabledAddOnNodeGroups() {
+		x86Found, rocketFound := false, false
+		for _, asg := range cfg.AddOnNodeGroups.ASGs {
+			switch asg.AMIType {
+			case ec2config.AMITypeAL2X8664,
+				ec2config.AMITypeAL2X8664GPU:
+				x86Found = true
+			case ec2config.AMITypeBottleRocketCPU:
+				rocketFound = true
+			}
+		}
+		if !x86Found && rocketFound {
+			return fmt.Errorf("AddOnWordpress.Enabled true but AddOnNodeGroups [x86Found %v, rocketFound %v]", x86Found, rocketFound)
+		}
+	}
+	if cfg.IsEnabledAddOnManagedNodeGroups() {
+		x86Found, rocketFound := false, false
+		for _, asg := range cfg.AddOnManagedNodeGroups.MNGs {
+			switch asg.AMIType {
+			case eks.AMITypesAl2X8664,
+				eks.AMITypesAl2X8664Gpu:
+				x86Found = true
+			case ec2config.AMITypeBottleRocketCPU:
+				rocketFound = true
+			}
+		}
+		if !x86Found && rocketFound {
+			return fmt.Errorf("AddOnWordpress.Enabled true but AddOnManagedNodeGroups [x86Found %v, rocketFound %v]", x86Found, rocketFound)
+		}
+	}
+	// TODO: nodeSelector does not work for mariadb
+	// this does not work when deployed with NG + MNG
+	// does not work even when assigned to NG, not to MNG
+	// only works when deployed with NG and not MNG
+	// only works when deployed with not NG and MNG
+	// don't mix...
+	// if cfg.IsEnabledAddOnNodeGroups() && cfg.IsEnabledAddOnManagedNodeGroups() {
+	// 	return errors.New("AddOnWordpress.Enable true but both node groups are enabled")
+	// }
+
+	if cfg.AddOnWordpress.Namespace == "" {
+		cfg.AddOnWordpress.Namespace = cfg.Name + "-wordpress"
+	}
+	if cfg.AddOnWordpress.UserName == "" {
+		cfg.AddOnWordpress.UserName = "user"
+	}
+	if cfg.AddOnWordpress.Password == "" {
+		cfg.AddOnWordpress.Password = randString(10)
 	}
 	return nil
 }

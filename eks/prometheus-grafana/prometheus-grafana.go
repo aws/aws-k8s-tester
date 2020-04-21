@@ -50,7 +50,7 @@ type tester struct {
 
 const (
 	chartRepoName = "stable"
-	chartURL      = "https://kubernetes-charts.storage.googleapis.com"
+	chartRepoURL  = "https://kubernetes-charts.storage.googleapis.com"
 
 	chartNamespacePrometheus = "prometheus"
 	chartNamespaceGrafana    = "grafana"
@@ -81,13 +81,13 @@ func (ts *tester) Create() error {
 	if err := k8s_client.CreateNamespace(ts.cfg.Logger, ts.cfg.K8SClient.KubernetesClientSet(), chartNamespaceGrafana); err != nil {
 		return err
 	}
-	if err := helm.RepoAdd(ts.cfg.Logger, chartRepoName, chartURL); err != nil {
+	if err := helm.RepoAdd(ts.cfg.Logger, chartRepoName, chartRepoURL); err != nil {
 		return err
 	}
-	if err := ts.installHelmPrometheus(); err != nil {
+	if err := ts.createHelmPrometheus(); err != nil {
 		return err
 	}
-	if err := ts.installHelmGrafana(); err != nil {
+	if err := ts.createHelmGrafana(); err != nil {
 		return err
 	}
 	if err := ts.waitServiceGrafana(); err != nil {
@@ -112,11 +112,11 @@ func (ts *tester) Delete() error {
 
 	var errs []string
 
-	if err := ts.uninstallHelmGrafana(); err != nil {
+	if err := ts.deleteHelmGrafana(); err != nil {
 		errs = append(errs, err.Error())
 	}
 
-	if err := ts.uninstallHelmPrometheus(); err != nil {
+	if err := ts.deleteHelmPrometheus(); err != nil {
 		errs = append(errs, err.Error())
 	}
 
@@ -144,114 +144,160 @@ func (ts *tester) Delete() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
-/*
-# https://eksworkshop.com/intermediate/240_monitoring/deploy-prometheus/
-# https://github.com/helm/charts/tree/master/stable/prometheus
-
-kubectl create namespace prometheus
-helm install prometheus stable/prometheus \
-  --namespace prometheus \
-  --set alertmanager.persistentVolume.storageClass="gp2" \
-  --set server.persistentVolume.storageClass="gp2"
-*/
-func (ts *tester) installHelmPrometheus() error {
+// https://eksworkshop.com/intermediate/240_monitoring/deploy-prometheus
+// https://github.com/helm/charts/blob/master/stable/prometheus/values.yaml
+func (ts *tester) createHelmPrometheus() error {
 	ngType := "custom"
 	if ts.cfg.EKSConfig.IsEnabledAddOnManagedNodeGroups() {
 		ngType = "managed"
 	}
 
+	// https://github.com/helm/charts/blob/master/stable/prometheus/values.yaml
 	values := make(map[string]interface{})
 
-	// TODO: PVC not working on BottleRocket
-	// do not assign mariadb to Bottlerocket
-	// e.g. MountVolume.MountDevice failed for volume "pvc-8e035a13-4d33-472f-a4c0-f36c7d39d170" : executable file not found in $PATH
-	values["nodeSelector"] = map[string]interface{}{"AMIType": ec2config.AMITypeAL2X8664, "NGType": ngType}
+	values["alertmanager"] = map[string]interface{}{
+		"nodeSelector": map[string]interface{}{
+			// do not deploy in bottlerocket; PVC not working
+			"AMIType": ec2config.AMITypeAL2X8664,
+			"NGType":  ngType,
+		},
+		"persistentVolume": map[string]interface{}{
+			"enabled": true,
+			// use CSI driver with volume type "gp2", as in launch configuration
+			"storageClass": "gp2",
+		},
+	}
+	values["server"] = map[string]interface{}{
+		"nodeSelector": map[string]interface{}{
+			// do not deploy in bottlerocket; PVC not working
+			"AMIType": ec2config.AMITypeAL2X8664,
+			"NGType":  ngType,
+		},
+		"persistentVolume": map[string]interface{}{
+			"enabled": true,
+			// use CSI driver with volume type "gp2", as in launch configuration
+			"storageClass": "gp2",
+		},
+	}
 
-	values["alertmanager.persistentVolume.storageClass"] = "gp2"
-	values["server.persistentVolume.storageClass"] = "gp2"
-
-	return helm.Install(
-		ts.cfg.Logger,
-		10*time.Minute,
-		ts.cfg.EKSConfig.KubeConfigPath,
-		chartNamespacePrometheus,
-		chartURL,
-		chartNamePrometheus,
-		chartNamePrometheus,
-		values,
-	)
+	return helm.Install(helm.InstallConfig{
+		Logger:         ts.cfg.Logger,
+		Timeout:        15 * time.Minute,
+		KubeConfigPath: ts.cfg.EKSConfig.KubeConfigPath,
+		Namespace:      chartNamespacePrometheus,
+		ChartRepoURL:   chartRepoURL,
+		ChartName:      chartNamePrometheus,
+		ReleaseName:    chartNamePrometheus,
+		Values:         values,
+	})
 }
 
-func (ts *tester) uninstallHelmPrometheus() error {
-	return helm.Uninstall(
-		ts.cfg.Logger,
-		10*time.Minute,
-		ts.cfg.EKSConfig.KubeConfigPath,
-		chartNamespacePrometheus,
-		chartNamePrometheus,
-	)
+func (ts *tester) deleteHelmPrometheus() error {
+	return helm.Uninstall(helm.InstallConfig{
+		Logger:         ts.cfg.Logger,
+		Timeout:        15 * time.Minute,
+		KubeConfigPath: ts.cfg.EKSConfig.KubeConfigPath,
+		Namespace:      chartNamespacePrometheus,
+		ChartName:      chartNamePrometheus,
+		ReleaseName:    chartNamePrometheus,
+	})
 }
 
-/*
-# https://eksworkshop.com/intermediate/240_monitoring/deploy-grafana/
-# https://github.com/helm/charts/tree/master/stable/grafana
-
-kubectl create namespace grafana
-helm install grafana stable/grafana \
-  --namespace grafana \
-  --set persistence.storageClassName="gp2" \
-  --set adminPassword='EKS!sAWSome' \
-  --set datasources."datasources\.yaml".apiVersion=1 \
-  --set datasources."datasources\.yaml".datasources[0].name=Prometheus \
-  --set datasources."datasources\.yaml".datasources[0].type=prometheus \
-  --set datasources."datasources\.yaml".datasources[0].url=http://prometheus-server.prometheus.svc.cluster.local \
-  --set datasources."datasources\.yaml".datasources[0].access=proxy \
-  --set datasources."datasources\.yaml".datasources[0].isDefault=true \
-  --set service.type=LoadBalancer
-*/
-func (ts *tester) installHelmGrafana() error {
+// https://eksworkshop.com/intermediate/240_monitoring/deploy-grafana
+// https://github.com/helm/charts/blob/master/stable/grafana/values.yaml
+func (ts *tester) createHelmGrafana() error {
 	ngType := "custom"
 	if ts.cfg.EKSConfig.IsEnabledAddOnManagedNodeGroups() {
 		ngType = "managed"
 	}
 
+	// https://github.com/helm/charts/blob/master/stable/grafana/values.yaml
 	values := make(map[string]interface{})
 
-	// TODO: PVC not working on BottleRocket
-	// do not assign mariadb to Bottlerocket
-	// e.g. MountVolume.MountDevice failed for volume "pvc-8e035a13-4d33-472f-a4c0-f36c7d39d170" : executable file not found in $PATH
-	values["nodeSelector"] = map[string]interface{}{"AMIType": ec2config.AMITypeAL2X8664, "NGType": ngType}
-
-	values["persistence.storageClassName"] = "gp2"
+	values["adminUser"] = ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaAdminUserName
 	values["adminPassword"] = ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaAdminPassword
-	values[`datasources."datasources.yaml".apiVersion`] = 1
-	values[`datasources."datasources.yaml".datasources[0].name`] = "Prometheus"
-	values[`datasources."datasources.yaml".datasources[0].type`] = "prometheus"
-	values[`datasources."datasources.yaml".datasources[0].url`] = "http://prometheus-server.prometheus.svc.cluster.local"
-	values[`datasources."datasources.yaml".datasources[0].access`] = "proxy"
-	values[`datasources."datasources.yaml".datasources[0].isDefault`] = true
-	values["service.type"] = "LoadBalancer"
 
-	return helm.Install(
-		ts.cfg.Logger,
-		10*time.Minute,
-		ts.cfg.EKSConfig.KubeConfigPath,
-		chartNamespaceGrafana,
-		chartURL,
-		chartNameGrafana,
-		chartNameGrafana,
-		values,
-	)
+	values["nodeSelector"] = map[string]interface{}{
+		// do not deploy in bottlerocket; PVC not working
+		"AMIType": ec2config.AMITypeAL2X8664,
+		"NGType":  ngType,
+	}
+
+	values["persistence"] = map[string]interface{}{
+		"enabled": true,
+		// use CSI driver with volume type "gp2", as in launch configuration
+		"storageClass": "gp2",
+	}
+
+	values["service"] = map[string]interface{}{
+		"type": "LoadBalancer",
+	}
+
+	values["datasources"] = map[string]interface{}{
+		"datasources.yaml": map[string]interface{}{
+			"apiVersion": 1,
+			"datasources": []map[string]interface{}{
+				{
+					"name":      "Prometheus",
+					"type":      "prometheus",
+					"url":       "http://prometheus-server.prometheus.svc.cluster.local",
+					"access":    "proxy",
+					"isDefault": true,
+				},
+			},
+		},
+	}
+
+	// TODO: not working
+	values["dashboardProviders"] = map[string]interface{}{
+		"dashboardproviders.yaml": map[string]interface{}{
+			"apiVersion": 1,
+			"providers": []map[string]interface{}{
+				{
+					"disableDeletion": false,
+					"editable":        true,
+					"folder":          "",
+					"name":            "default",
+					"options": map[string]interface{}{
+						"path": "/var/lib/grafana/dashboards/default",
+					},
+					"orgId": 1,
+					"type":  "file",
+				},
+			},
+		},
+	}
+	values["dashboards"] = map[string]interface{}{
+		"default": map[string]interface{}{
+			"kubernetes-cluster": map[string]interface{}{
+				"gnetId":     6417,
+				"revision":   1,
+				"datasource": "Prometheus",
+			},
+		},
+	}
+
+	return helm.Install(helm.InstallConfig{
+		Logger:         ts.cfg.Logger,
+		Timeout:        15 * time.Minute,
+		KubeConfigPath: ts.cfg.EKSConfig.KubeConfigPath,
+		Namespace:      chartNamespaceGrafana,
+		ChartRepoURL:   chartRepoURL,
+		ChartName:      chartNameGrafana,
+		ReleaseName:    chartNameGrafana,
+		Values:         values,
+	})
 }
 
-func (ts *tester) uninstallHelmGrafana() error {
-	return helm.Uninstall(
-		ts.cfg.Logger,
-		10*time.Minute,
-		ts.cfg.EKSConfig.KubeConfigPath,
-		chartNamespaceGrafana,
-		chartNameGrafana,
-	)
+func (ts *tester) deleteHelmGrafana() error {
+	return helm.Uninstall(helm.InstallConfig{
+		Logger:         ts.cfg.Logger,
+		Timeout:        15 * time.Minute,
+		KubeConfigPath: ts.cfg.EKSConfig.KubeConfigPath,
+		Namespace:      chartNamespaceGrafana,
+		ChartName:      chartNameGrafana,
+		ReleaseName:    chartNameGrafana,
+	})
 }
 
 func (ts *tester) waitServiceGrafana() error {
@@ -334,7 +380,7 @@ func (ts *tester) waitServiceGrafana() error {
 		return errors.New("failed to find host name")
 	}
 
-	ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaURL = "http://" + hostName
+	ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaURL = "http://" + hostName + "/login"
 
 	// TODO: is there any better way to find out the NLB name?
 	ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaNLBName = strings.Split(hostName, "-")[0]
@@ -347,9 +393,10 @@ func (ts *tester) waitServiceGrafana() error {
 		ss,
 	)
 
-	fmt.Printf("\nNLB Grafana ARN %s\n", ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaNLBARN)
-	fmt.Printf("NLB Grafana Name %s\n", ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaNLBName)
-	fmt.Printf("NLB Grafana URL %s\n\n", ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaURL)
+	fmt.Printf("\nNLB Grafana ARN: %s\n", ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaNLBARN)
+	fmt.Printf("NLB Grafana Name: %s\n", ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaNLBName)
+	fmt.Printf("NLB Grafana URL: %s\n\n", ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaURL)
+	fmt.Printf("NLB Grafana Admin User Name: %s\n\n", ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaAdminUserName)
 
 	ts.cfg.Logger.Info("waiting before testing Grafana Service")
 	time.Sleep(20 * time.Second)
@@ -375,7 +422,7 @@ func (ts *tester) waitServiceGrafana() error {
 		httpOutput := buf.String()
 		fmt.Printf("\nNLB Grafana Service output:\n%s\n", httpOutput)
 
-		if strings.Contains(httpOutput, `<p>Welcome to Grafana. This is your first post.`) || true {
+		if strings.Contains(httpOutput, `Loading Grafana`) || true {
 			ts.cfg.Logger.Info(
 				"read Grafana Service; exiting",
 				zap.String("host-name", hostName),

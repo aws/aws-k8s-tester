@@ -11,14 +11,13 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
-	k8sclient "github.com/aws/aws-k8s-tester/pkg/k8s-client"
+	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/dustin/go-humanize"
 	"go.uber.org/zap"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clientset "k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/yaml"
 )
 
@@ -30,11 +29,7 @@ type Config struct {
 	Sig   chan os.Signal
 
 	EKSConfig *eksconfig.Config
-	K8SClient k8sClientSetGetter
-}
-
-type k8sClientSetGetter interface {
-	KubernetesClientSet() *clientset.Clientset
+	K8SClient k8s_client.EKS
 }
 
 // Tester defines Job tester.
@@ -70,7 +65,7 @@ func (ts *tester) Create() error {
 		ts.cfg.EKSConfig.Sync()
 	}()
 
-	if err := k8sclient.CreateNamespace(ts.cfg.Logger, ts.cfg.K8SClient.KubernetesClientSet(), ts.cfg.EKSConfig.AddOnJobsPi.Namespace); err != nil {
+	if err := k8s_client.CreateNamespace(ts.cfg.Logger, ts.cfg.K8SClient.KubernetesClientSet(), ts.cfg.EKSConfig.AddOnJobsPi.Namespace); err != nil {
 		return err
 	}
 	obj, b, err := ts.createObject()
@@ -160,11 +155,11 @@ func (ts *tester) Delete() error {
 		ts.cfg.Logger.Info("deleted Job", zap.String("name", jobName))
 	}
 
-	if err := k8sclient.DeleteNamespaceAndWait(ts.cfg.Logger,
+	if err := k8s_client.DeleteNamespaceAndWait(ts.cfg.Logger,
 		ts.cfg.K8SClient.KubernetesClientSet(),
 		ts.cfg.EKSConfig.AddOnJobsPi.Namespace,
-		k8sclient.DefaultNamespaceDeletionInterval,
-		k8sclient.DefaultNamespaceDeletionTimeout); err != nil {
+		k8s_client.DefaultNamespaceDeletionInterval,
+		k8s_client.DefaultNamespaceDeletionTimeout); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete Jobs oi namespace (%v)", err))
 	}
 

@@ -60,6 +60,7 @@ Resources:
       ManagedPolicyArns: !Ref RoleManagedPolicyARNs
       Path: /
       Policies:
+      # https://docs.aws.amazon.com/eks/latest/userguide/ebs-csi.html
       # https://github.com/kubernetes-sigs/aws-alb-ingress-controller/blob/master/docs/examples/iam-policy.json
       # https://github.com/aws/eks-charts/tree/master/stable/appmesh-controller
       - PolicyName: !Join ['-', [!Ref RoleName, 'alb-appmesh-policy']]
@@ -92,6 +93,14 @@ Resources:
             - ec2:ModifyInstanceAttribute
             - ec2:ModifyNetworkInterfaceAttribute
             - ec2:RevokeSecurityGroupIngress
+            - ec2:AttachVolume
+            - ec2:CreateSnapshot
+            - ec2:CreateVolume
+            - ec2:DeleteSnapshot
+            - ec2:DeleteVolume
+            - ec2:DescribeSnapshots
+            - ec2:DescribeVolumes
+            - ec2:DetachVolume
             Resource: "*"
           - Effect: Allow
             Action:

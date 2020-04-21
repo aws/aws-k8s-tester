@@ -3,8 +3,10 @@ package eks
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io/ioutil"
+	"strings"
 	"text/template"
 	"time"
 
@@ -49,11 +51,11 @@ users:
 // https://docs.aws.amazon.com/cli/latest/reference/eks/update-kubeconfig.html
 // https://docs.aws.amazon.com/eks/latest/userguide/create-kubeconfig.html
 // aws eks update-kubeconfig --name --role-arn --kubeconfig
-func (ts *Tester) updateKUBECONFIG() error {
+func (ts *Tester) updateKUBECONFIG() (err error) {
 	if ts.cfg.AWSIAMAuthenticatorPath != "" && ts.cfg.AWSIAMAuthenticatorDownloadURL != "" {
 		tpl := template.Must(template.New("tmplKUBECONFIG").Parse(tmplKUBECONFIG))
 		buf := bytes.NewBuffer(nil)
-		if err := tpl.Execute(buf, kubeconfig{
+		if err = tpl.Execute(buf, kubeconfig{
 			ClusterAPIServerEndpoint: ts.cfg.Status.ClusterAPIServerEndpoint,
 			ClusterCA:                ts.cfg.Status.ClusterCA,
 			AWSIAMAuthenticatorPath:  ts.cfg.AWSIAMAuthenticatorPath,
@@ -62,7 +64,7 @@ func (ts *Tester) updateKUBECONFIG() error {
 			return err
 		}
 		ts.lg.Info("writing KUBECONFIG with aws-iam-authenticator", zap.String("kubeconfig-path", ts.cfg.KubeConfigPath))
-		if err := ioutil.WriteFile(ts.cfg.KubeConfigPath, buf.Bytes(), 0777); err != nil {
+		if err = ioutil.WriteFile(ts.cfg.KubeConfigPath, buf.Bytes(), 0777); err != nil {
 			return err
 		}
 		ts.lg.Info("wrote KUBECONFIG with aws-iam-authenticator", zap.String("kubeconfig-path", ts.cfg.KubeConfigPath))
@@ -70,6 +72,7 @@ func (ts *Tester) updateKUBECONFIG() error {
 	}
 
 	args := []string{
+		ts.cfg.AWSCLIPath,
 		"eks",
 		fmt.Sprintf("--region=%s", ts.cfg.Region),
 		"update-kubeconfig",
@@ -82,19 +85,38 @@ func (ts *Tester) updateKUBECONFIG() error {
 	}
 	ts.lg.Info("writing KUBECONFIG with 'aws eks update-kubeconfig'",
 		zap.String("kubeconfig-path", ts.cfg.KubeConfigPath),
-		zap.String("aws-cli-path", ts.cfg.AWSCLIPath),
 		zap.Strings("aws-args", args),
 	)
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	ao, err := exec.New().CommandContext(
-		ctx,
-		ts.cfg.AWSCLIPath,
-		args...,
-	).CombinedOutput()
-	cancel()
-	if err != nil {
-		return fmt.Errorf("'aws eks update-kubeconfig' failed (output %q, error %v)", string(ao), err)
+
+	retryStart, waitDur := time.Now(), 3*time.Minute
+	var output []byte
+	for time.Now().Sub(retryStart) < waitDur {
+		select {
+		case <-ts.stopCreationCh:
+			return errors.New("update-kubeconfig aborted")
+		case <-ts.interruptSig:
+			return errors.New("update-kubeconfig aborted")
+		case <-time.After(5 * time.Second):
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		output, err = exec.New().CommandContext(ctx, args[0], args[1:]...).CombinedOutput()
+		cancel()
+		if err != nil {
+			ts.lg.Warn("'aws eks update-kubeconfig' failed", zap.Error(err))
+			if !strings.Contains(string(output), "Cluster status not active") || !strings.Contains(err.Error(), "exit") {
+				return fmt.Errorf("'aws eks update-kubeconfig' failed (output %q, error %v)", string(output), err)
+			}
+			continue
+		}
+		ts.lg.Info("'aws eks update-kubeconfig' success", zap.String("kubeconfig-path", ts.cfg.KubeConfigPath))
+		break
 	}
-	ts.lg.Info("'aws eks update-kubeconfig' success", zap.String("kubeconfig-path", ts.cfg.KubeConfigPath))
-	return ts.cfg.Sync()
+
+	if err != nil {
+		ts.lg.Warn("failed 'aws eks update-kubeconfig'", zap.String("output", string(output)), zap.Error(err))
+		return err
+	}
+
+	ts.lg.Info("ran 'aws eks update-kubeconfig'", zap.String("output", string(output)))
+	return nil
 }

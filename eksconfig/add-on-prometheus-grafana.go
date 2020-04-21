@@ -35,6 +35,8 @@ type AddOnPrometheusGrafana struct {
 	// DeleteTookString is the duration that took to create the resource.
 	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
 
+	// GrafanaAdminUserName is the admin user for the Grafana service.
+	GrafanaAdminUserName string `json:"grafana-admin-user-name"`
 	// GrafanaAdminPassword is the admin password for the Grafana service.
 	GrafanaAdminPassword string `json:"grafana-admin-password"`
 	// GrafanaNLBARN is the ARN of the NLB created from the Grafana service.

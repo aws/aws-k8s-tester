@@ -16,7 +16,7 @@ import (
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	awscfn "github.com/aws/aws-k8s-tester/pkg/aws/cloudformation"
-	k8sclient "github.com/aws/aws-k8s-tester/pkg/k8s-client"
+	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/ssh"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
@@ -32,7 +32,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/utils/exec"
 )
 
@@ -43,14 +42,10 @@ type Config struct {
 	Stopc     chan struct{}
 	Sig       chan os.Signal
 	EKSConfig *eksconfig.Config
-	K8SClient k8sClientSetGetter
+	K8SClient k8s_client.EKS
 	CFNAPI    cloudformationiface.CloudFormationAPI
 	IAMAPI    iamiface.IAMAPI
 	S3API     s3iface.S3API
-}
-
-type k8sClientSetGetter interface {
-	KubernetesClientSet() *clientset.Clientset
 }
 
 // Tester defines IRSA tester.
@@ -93,7 +88,7 @@ func (ts *tester) Create() error {
 	if err := ts.createS3(); err != nil {
 		return err
 	}
-	if err := k8sclient.CreateNamespace(ts.cfg.Logger, ts.cfg.K8SClient.KubernetesClientSet(), ts.cfg.EKSConfig.AddOnIRSA.Namespace); err != nil {
+	if err := k8s_client.CreateNamespace(ts.cfg.Logger, ts.cfg.K8SClient.KubernetesClientSet(), ts.cfg.EKSConfig.AddOnIRSA.Namespace); err != nil {
 		return err
 	}
 	if err := ts.createOIDCProvider(); err != nil {
@@ -175,11 +170,11 @@ func (ts *tester) Delete() error {
 	ts.cfg.Logger.Info("wait for a minute after deleting namespace")
 	time.Sleep(time.Minute)
 
-	if err := k8sclient.DeleteNamespaceAndWait(ts.cfg.Logger,
+	if err := k8s_client.DeleteNamespaceAndWait(ts.cfg.Logger,
 		ts.cfg.K8SClient.KubernetesClientSet(),
 		ts.cfg.EKSConfig.AddOnIRSA.Namespace,
-		k8sclient.DefaultNamespaceDeletionInterval,
-		k8sclient.DefaultNamespaceDeletionTimeout); err != nil {
+		k8s_client.DefaultNamespaceDeletionInterval,
+		k8s_client.DefaultNamespaceDeletionTimeout); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete IRSA namespace (%v)", err))
 	}
 

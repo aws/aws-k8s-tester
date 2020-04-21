@@ -19,7 +19,6 @@ import (
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/utils/exec"
 )
 
@@ -30,11 +29,7 @@ type Config struct {
 	Sig    chan os.Signal
 
 	EKSConfig *eksconfig.Config
-	K8SClient k8sClientSetGetter
-}
-
-type k8sClientSetGetter interface {
-	KubernetesClientSet() *clientset.Clientset
+	K8SClient k8s_client.EKS
 }
 
 // Tester defines Wordpress tester
@@ -55,7 +50,7 @@ type tester struct {
 
 const (
 	chartRepoName = "bitnami"
-	chartURL      = "https://charts.bitnami.com/bitnami"
+	chartRepoURL  = "https://charts.bitnami.com/bitnami"
 	chartName     = "wordpress"
 )
 
@@ -78,10 +73,10 @@ func (ts *tester) Create() error {
 	if err := k8s_client.CreateNamespace(ts.cfg.Logger, ts.cfg.K8SClient.KubernetesClientSet(), ts.cfg.EKSConfig.AddOnWordpress.Namespace); err != nil {
 		return err
 	}
-	if err := helm.RepoAdd(ts.cfg.Logger, chartRepoName, chartURL); err != nil {
+	if err := helm.RepoAdd(ts.cfg.Logger, chartRepoName, chartRepoURL); err != nil {
 		return err
 	}
-	if err := ts.installHelm(); err != nil {
+	if err := ts.createHelmWordpress(); err != nil {
 		return err
 	}
 	if err := ts.waitService(); err != nil {
@@ -106,7 +101,7 @@ func (ts *tester) Delete() error {
 
 	var errs []string
 
-	if err := ts.uninstallHelm(); err != nil {
+	if err := ts.deleteHelmWordpress(); err != nil {
 		errs = append(errs, err.Error())
 	}
 
@@ -126,7 +121,9 @@ func (ts *tester) Delete() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
-func (ts *tester) installHelm() error {
+// https://github.com/helm/charts/blob/master/stable/wordpress/values.yaml
+// https://github.com/helm/charts/blob/master/stable/mariadb/values.yaml
+func (ts *tester) createHelmWordpress() error {
 	ngType := "custom"
 	if ts.cfg.EKSConfig.IsEnabledAddOnManagedNodeGroups() {
 		ngType = "managed"
@@ -134,43 +131,78 @@ func (ts *tester) installHelm() error {
 
 	values := make(map[string]interface{})
 
-	// TODO: PVC not working on BottleRocket
-	// do not assign mariadb to Bottlerocket
-	// e.g. MountVolume.MountDevice failed for volume "pvc-8e035a13-4d33-472f-a4c0-f36c7d39d170" : executable file not found in $PATH
-	values["nodeSelector"] = map[string]interface{}{"AMIType": ec2config.AMITypeAL2X8664, "NGType": ngType}
-
-	// TODO: not working...
-	values["mariadb.master.persistence.enabled"] = false
-	values["mariadb.master.nodeSelector"] = map[string]interface{}{"AMIType": ec2config.AMITypeAL2X8664, "NGType": ngType}
-	values["mariadb.slave.nodeSelector"] = map[string]interface{}{"AMIType": ec2config.AMITypeAL2X8664, "NGType": ngType}
-
+	// https://github.com/helm/charts/blob/master/stable/wordpress/values.yaml
+	values["nodeSelector"] = map[string]interface{}{
+		// do not deploy in bottlerocket; PVC not working
+		"AMIType": ec2config.AMITypeAL2X8664,
+		"NGType":  ngType,
+	}
 	values["wordpressUsername"] = ts.cfg.EKSConfig.AddOnWordpress.UserName
 	values["wordpressPassword"] = ts.cfg.EKSConfig.AddOnWordpress.Password
+	values["persistence"] = map[string]interface{}{
+		"enabled": true,
+		// use CSI driver with volume type "gp2", as in launch configuration
+		"storageClassName": "gp2",
+	}
 
-	return helm.Install(
-		ts.cfg.Logger,
-		10*time.Minute,
-		ts.cfg.EKSConfig.KubeConfigPath,
-		ts.cfg.EKSConfig.AddOnWordpress.Namespace,
-		chartURL,
-		chartName,
-		ts.cfg.EKSConfig.AddOnWordpress.Namespace,
-		values,
-	)
+	// https://github.com/helm/charts/blob/master/stable/mariadb/values.yaml
+	values["mariadb"] = map[string]interface{}{
+		"enabled": true,
+		"rootUser": map[string]interface{}{
+			"password":      ts.cfg.EKSConfig.AddOnWordpress.Password,
+			"forcePassword": false,
+		},
+		"db": map[string]interface{}{
+			"name":     "wordpress",
+			"user":     ts.cfg.EKSConfig.AddOnWordpress.UserName,
+			"password": ts.cfg.EKSConfig.AddOnWordpress.Password,
+		},
+		"master": map[string]interface{}{
+			"nodeSelector": map[string]interface{}{
+				// do not deploy in bottlerocket; PVC not working
+				"AMIType": ec2config.AMITypeAL2X8664,
+				"NGType":  ngType,
+			},
+			"persistence": map[string]interface{}{
+				"enabled": true,
+				// use CSI driver with volume type "gp2", as in launch configuration
+				"storageClassName": "gp2",
+			},
+		},
+		"slave": map[string]interface{}{
+			"nodeSelector": map[string]interface{}{
+				// do not deploy in bottlerocket; PVC not working
+				"AMIType": ec2config.AMITypeAL2X8664,
+				"NGType":  ngType,
+			},
+		},
+	}
+
+	return helm.Install(helm.InstallConfig{
+		Logger:         ts.cfg.Logger,
+		Timeout:        15 * time.Minute,
+		KubeConfigPath: ts.cfg.EKSConfig.KubeConfigPath,
+		Namespace:      ts.cfg.EKSConfig.AddOnWordpress.Namespace,
+		ChartRepoURL:   chartRepoURL,
+		ChartName:      chartName,
+		ReleaseName:    chartName,
+		Values:         values,
+	})
 }
 
-func (ts *tester) uninstallHelm() error {
-	return helm.Uninstall(
-		ts.cfg.Logger,
-		10*time.Minute,
-		ts.cfg.EKSConfig.KubeConfigPath,
-		ts.cfg.EKSConfig.AddOnWordpress.Namespace,
-		ts.cfg.EKSConfig.AddOnWordpress.Namespace,
-	)
+func (ts *tester) deleteHelmWordpress() error {
+	return helm.Uninstall(helm.InstallConfig{
+		Logger:         ts.cfg.Logger,
+		Timeout:        15 * time.Minute,
+		KubeConfigPath: ts.cfg.EKSConfig.KubeConfigPath,
+		Namespace:      ts.cfg.EKSConfig.AddOnWordpress.Namespace,
+		ChartName:      chartName,
+		ReleaseName:    chartName,
+	})
 }
 
 func (ts *tester) waitService() error {
-	svcName := ts.cfg.EKSConfig.AddOnWordpress.Namespace
+	svcName := "wordpress"
 	ts.cfg.Logger.Info("waiting for WordPress service")
 
 	waitDur := 2 * time.Minute
@@ -262,11 +294,11 @@ func (ts *tester) waitService() error {
 		ss,
 	)
 
-	fmt.Printf("\nNLB WordPress ARN %s\n", ts.cfg.EKSConfig.AddOnWordpress.NLBARN)
-	fmt.Printf("NLB WordPress Name %s\n", ts.cfg.EKSConfig.AddOnWordpress.NLBName)
-	fmt.Printf("NLB WordPress URL %s\n\n", ts.cfg.EKSConfig.AddOnWordpress.URL)
-	fmt.Printf("WordPress UserName %s\n", ts.cfg.EKSConfig.AddOnWordpress.UserName)
-	fmt.Printf("WordPress Password %d characters\n", len(ts.cfg.EKSConfig.AddOnWordpress.Password))
+	fmt.Printf("\nNLB WordPress ARN: %s\n", ts.cfg.EKSConfig.AddOnWordpress.NLBARN)
+	fmt.Printf("NLB WordPress Name: %s\n", ts.cfg.EKSConfig.AddOnWordpress.NLBName)
+	fmt.Printf("NLB WordPress URL: %s\n\n", ts.cfg.EKSConfig.AddOnWordpress.URL)
+	fmt.Printf("WordPress UserName: %s\n", ts.cfg.EKSConfig.AddOnWordpress.UserName)
+	fmt.Printf("WordPress Password: %d characters\n", len(ts.cfg.EKSConfig.AddOnWordpress.Password))
 
 	ts.cfg.Logger.Info("waiting before testing WordPress Service")
 	time.Sleep(20 * time.Second)

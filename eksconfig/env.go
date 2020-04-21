@@ -40,6 +40,8 @@ const (
 	EnvironmentVariablePrefixAddOnFargate = "AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_"
 	// EnvironmentVariablePrefixAddOnAppMesh is the environment variable prefix used for "eksconfig".
 	EnvironmentVariablePrefixAddOnAppMesh = "AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_"
+	// EnvironmentVariablePrefixAddOnCSIEBS is the environment variable prefix used for "eksconfig".
+	EnvironmentVariablePrefixAddOnCSIEBS = "AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_"
 	// EnvironmentVariablePrefixAddOnWordpress is the environment variable prefix used for "eksconfig".
 	EnvironmentVariablePrefixAddOnWordpress = "AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_"
 	// EnvironmentVariablePrefixAddOnKubernetesDashboard is the environment variable prefix used for "eksconfig".
@@ -247,6 +249,19 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		cfg.AddOnFargate = av
 	} else {
 		return fmt.Errorf("expected *AddOnFargate, got %T", vv)
+	}
+
+	if cfg.AddOnCSIEBS == nil {
+		cfg.AddOnCSIEBS = &AddOnCSIEBS{}
+	}
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnCSIEBS, cfg.AddOnCSIEBS)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*AddOnCSIEBS); ok {
+		cfg.AddOnCSIEBS = av
+	} else {
+		return fmt.Errorf("expected *AddOnCSIEBS, got %T", vv)
 	}
 
 	if cfg.AddOnAppMesh == nil {

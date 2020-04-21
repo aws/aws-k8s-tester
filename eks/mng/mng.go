@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
+	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-sdk-go/service/autoscaling/autoscalingiface"
 	"github.com/aws/aws-sdk-go/service/cloudformation/cloudformationiface"
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
@@ -16,7 +17,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/iam/iamiface"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"go.uber.org/zap"
-	clientset "k8s.io/client-go/kubernetes"
 )
 
 // Config defines Managed Node Group configuration.
@@ -25,17 +25,13 @@ type Config struct {
 	Stopc     chan struct{}
 	Sig       chan os.Signal
 	EKSConfig *eksconfig.Config
-	K8SClient k8sClientSetGetter
+	K8SClient k8s_client.EKS
 	IAMAPI    iamiface.IAMAPI
 	CFNAPI    cloudformationiface.CloudFormationAPI
 	EC2API    ec2iface.EC2API
 	ASGAPI    autoscalingiface.AutoScalingAPI
 	EKSAPI    eksiface.EKSAPI
 	S3API     s3iface.S3API
-}
-
-type k8sClientSetGetter interface {
-	KubernetesClientSet() *clientset.Clientset
 }
 
 // Tester implements EKS "Managed Node Group" for "kubetest2" Deployer.

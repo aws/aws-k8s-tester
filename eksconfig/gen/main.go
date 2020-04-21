@@ -78,11 +78,8 @@ func createDoc() string {
 	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnFargate, &eksconfig.AddOnFargate{}))
 
 	b.WriteByte('\n')
+	b.WriteByte('\n')
 	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnAppMesh, &eksconfig.AddOnAppMesh{}))
-
-	b.WriteByte('\n')
-	b.WriteByte('\n')
-	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnWordpress, &eksconfig.AddOnWordpress{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
@@ -90,7 +87,15 @@ func createDoc() string {
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
+	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnCSIEBS, &eksconfig.AddOnCSIEBS{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
 	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnPrometheusGrafana, &eksconfig.AddOnPrometheusGrafana{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
+	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnWordpress, &eksconfig.AddOnWordpress{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')

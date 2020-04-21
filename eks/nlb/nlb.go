@@ -15,7 +15,7 @@ import (
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/aws/elb"
-	k8sclient "github.com/aws/aws-k8s-tester/pkg/k8s-client"
+	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/elbv2/elbv2iface"
 	"go.uber.org/zap"
@@ -23,7 +23,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/utils/exec"
 )
 
@@ -33,12 +32,8 @@ type Config struct {
 	Stopc     chan struct{}
 	Sig       chan os.Signal
 	EKSConfig *eksconfig.Config
-	K8SClient k8sClientSetGetter
+	K8SClient k8s_client.EKS
 	ELB2API   elbv2iface.ELBV2API
-}
-
-type k8sClientSetGetter interface {
-	KubernetesClientSet() *clientset.Clientset
 }
 
 // Tester defines Job tester.
@@ -81,7 +76,7 @@ func (ts *tester) Create() error {
 		ts.cfg.EKSConfig.Sync()
 	}()
 
-	if err := k8sclient.CreateNamespace(ts.cfg.Logger, ts.cfg.K8SClient.KubernetesClientSet(), ts.cfg.EKSConfig.AddOnNLBHelloWorld.Namespace); err != nil {
+	if err := k8s_client.CreateNamespace(ts.cfg.Logger, ts.cfg.K8SClient.KubernetesClientSet(), ts.cfg.EKSConfig.AddOnNLBHelloWorld.Namespace); err != nil {
 		return err
 	}
 	if err := ts.createDeployment(); err != nil {
@@ -144,11 +139,11 @@ func (ts *tester) Delete() error {
 		errs = append(errs, fmt.Sprintf("failed to delete NLB hello-world (%v)", err))
 	}
 
-	if err := k8sclient.DeleteNamespaceAndWait(ts.cfg.Logger,
+	if err := k8s_client.DeleteNamespaceAndWait(ts.cfg.Logger,
 		ts.cfg.K8SClient.KubernetesClientSet(),
 		ts.cfg.EKSConfig.AddOnNLBHelloWorld.Namespace,
-		k8sclient.DefaultNamespaceDeletionInterval,
-		k8sclient.DefaultNamespaceDeletionTimeout); err != nil {
+		k8s_client.DefaultNamespaceDeletionInterval,
+		k8s_client.DefaultNamespaceDeletionTimeout); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete NLB namespace (%v)", err))
 	}
 

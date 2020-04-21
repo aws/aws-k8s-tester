@@ -16,7 +16,7 @@ import (
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/aws/elb"
-	k8sclient "github.com/aws/aws-k8s-tester/pkg/k8s-client"
+	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudformation/cloudformationiface"
 	"github.com/aws/aws-sdk-go/service/elbv2"
@@ -28,7 +28,6 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/utils/exec"
 )
 
@@ -39,12 +38,8 @@ type Config struct {
 	Sig       chan os.Signal
 	EKSConfig *eksconfig.Config
 	CFNAPI    cloudformationiface.CloudFormationAPI
-	K8SClient k8sClientSetGetter
+	K8SClient k8s_client.EKS
 	ELB2API   elbv2iface.ELBV2API
-}
-
-type k8sClientSetGetter interface {
-	KubernetesClientSet() *clientset.Clientset
 }
 
 // Tester defines Job tester.
@@ -109,7 +104,7 @@ func (ts *tester) Create() error {
 		ts.cfg.EKSConfig.Sync()
 	}()
 
-	if err := k8sclient.CreateNamespace(ts.cfg.Logger, ts.cfg.K8SClient.KubernetesClientSet(), ts.cfg.EKSConfig.AddOnALB2048.Namespace); err != nil {
+	if err := k8s_client.CreateNamespace(ts.cfg.Logger, ts.cfg.K8SClient.KubernetesClientSet(), ts.cfg.EKSConfig.AddOnALB2048.Namespace); err != nil {
 		return err
 	}
 
@@ -230,11 +225,11 @@ func (ts *tester) Delete() error {
 		errs = append(errs, fmt.Sprintf("failed to delete ALB (%v)", err))
 	}
 
-	if err := k8sclient.DeleteNamespaceAndWait(ts.cfg.Logger,
+	if err := k8s_client.DeleteNamespaceAndWait(ts.cfg.Logger,
 		ts.cfg.K8SClient.KubernetesClientSet(),
 		ts.cfg.EKSConfig.AddOnALB2048.Namespace,
-		k8sclient.DefaultNamespaceDeletionInterval,
-		k8sclient.DefaultNamespaceDeletionTimeout); err != nil {
+		k8s_client.DefaultNamespaceDeletionInterval,
+		k8s_client.DefaultNamespaceDeletionTimeout); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete ALB namespace (%v)", err))
 	}
 
@@ -532,7 +527,8 @@ func (ts *tester) createALBDeployment() error {
 							},
 							ServiceAccountName: albIngressControllerServiceAccountName,
 							NodeSelector: map[string]string{
-								"AMIType": ec2config.AMITypeAL2X8664, // do not deploy in bottlerocket or GPU
+								// do not deploy in bottlerocket; PVC not working
+								"AMIType": ec2config.AMITypeAL2X8664,
 							},
 						},
 					},
@@ -701,7 +697,8 @@ func (ts *tester) create2048Deployment() error {
 								},
 							},
 							NodeSelector: map[string]string{
-								"AMIType": ec2config.AMITypeAL2X8664, // do not deploy in bottlerocket or GPU
+								// do not deploy in bottlerocket; PVC not working
+								"AMIType": ec2config.AMITypeAL2X8664,
 							},
 						},
 					},
@@ -1069,9 +1066,9 @@ func (ts *tester) create2048Ingress() error {
 		break
 	}
 
-	fmt.Printf("\nALB 2048 ARN %s\n", ts.cfg.EKSConfig.AddOnALB2048.ALBARN)
-	fmt.Printf("ALB 2048 Name %s\n", ts.cfg.EKSConfig.AddOnALB2048.ALBName)
-	fmt.Printf("ALB 2048 URL %s\n\n", ts.cfg.EKSConfig.AddOnALB2048.URL)
+	fmt.Printf("\nALB 2048 ARN: %s\n", ts.cfg.EKSConfig.AddOnALB2048.ALBARN)
+	fmt.Printf("ALB 2048 Name: %s\n", ts.cfg.EKSConfig.AddOnALB2048.ALBName)
+	fmt.Printf("ALB 2048 URL: %s\n\n", ts.cfg.EKSConfig.AddOnALB2048.URL)
 
 	ts.cfg.Logger.Info("waiting before testing ALB 2048 Ingress")
 	time.Sleep(10 * time.Second)

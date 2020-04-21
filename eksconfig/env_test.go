@@ -1021,6 +1021,41 @@ func TestEnvAddOnManagedNodeGroupsInvalidInstanceType(t *testing.T) {
 	}
 }
 
+func TestEnvAddOnCSIEBS(t *testing.T) {
+	cfg := NewDefault()
+	defer func() {
+		os.RemoveAll(cfg.ConfigPath)
+		os.RemoveAll(cfg.KubectlCommandsOutputPath)
+		os.RemoveAll(cfg.RemoteAccessCommandsOutputPath)
+	}()
+
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE", `true`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE")
+
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_CREATED", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_CREATED")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_CHART_REPO_URL", "test-chart-repo")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_CHART_REPO_URL")
+
+	if err := cfg.UpdateFromEnvs(); err != nil {
+		t.Fatal(err)
+	}
+	err := cfg.ValidateAndSetDefaults()
+	assert.NoError(t, err)
+
+	if cfg.AddOnCSIEBS.Created { // read-only must be ignored
+		t.Fatalf("unexpected cfg.AddOnCSIEBS.Created %v", cfg.AddOnCSIEBS.Created)
+	}
+	if !cfg.AddOnCSIEBS.Enable {
+		t.Fatalf("unexpected cfg.AddOnCSIEBS.Enable %v", cfg.AddOnCSIEBS.Enable)
+	}
+	if cfg.AddOnCSIEBS.ChartRepoURL != "test-chart-repo" {
+		t.Fatalf("unexpected cfg.AddOnCSIEBS.ChartRepoURL %q", cfg.AddOnCSIEBS.ChartRepoURL)
+	}
+}
+
 func TestEnvAddOnAppMesh(t *testing.T) {
 	cfg := NewDefault()
 	defer func() {
@@ -1031,6 +1066,7 @@ func TestEnvAddOnAppMesh(t *testing.T) {
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE", `true`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE")
+
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ENABLE", `false`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ENABLE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_ENABLE", "true")
@@ -1070,6 +1106,8 @@ func TestEnvAddOnWordpress(t *testing.T) {
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE", `true`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_ENABLE")
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_ENABLE")
@@ -1157,11 +1195,15 @@ func TestEnvAddOnPrometheusGrafana(t *testing.T) {
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE", `true`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_ENABLE")
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_ENABLE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_CREATED", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_CREATED")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_GRAFANA_ADMIN_USER_NAME", "MY_ADMIN_USER_NAME")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_GRAFANA_ADMIN_USER_NAME")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_GRAFANA_ADMIN_PASSWORD", "MY_ADMIN_PASSWORD")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_GRAFANA_ADMIN_PASSWORD")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_GRAFANA_URL", "MY-URL")
@@ -1178,6 +1220,9 @@ func TestEnvAddOnPrometheusGrafana(t *testing.T) {
 	}
 	if !cfg.AddOnPrometheusGrafana.Enable {
 		t.Fatalf("unexpected cfg.AddOnPrometheusGrafana.Enable %v", cfg.AddOnPrometheusGrafana.Enable)
+	}
+	if cfg.AddOnPrometheusGrafana.GrafanaAdminUserName != "MY_ADMIN_USER_NAME" {
+		t.Fatalf("unexpected cfg.AddOnPrometheusGrafana.GrafanaAdminUserName %q", cfg.AddOnPrometheusGrafana.GrafanaAdminUserName)
 	}
 	if cfg.AddOnPrometheusGrafana.GrafanaAdminPassword != "MY_ADMIN_PASSWORD" {
 		t.Fatalf("unexpected cfg.AddOnPrometheusGrafana.GrafanaAdminPassword %q", cfg.AddOnPrometheusGrafana.GrafanaAdminPassword)

@@ -10,12 +10,12 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
+	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/utils/exec"
 )
 
@@ -25,12 +25,8 @@ type Config struct {
 	Stopc     chan struct{}
 	Sig       chan os.Signal
 	EKSConfig *eksconfig.Config
-	K8SClient k8sClientSetGetter
+	K8SClient k8s_client.EKS
 	Namespace string
-}
-
-type k8sClientSetGetter interface {
-	KubernetesClientSet() *clientset.Clientset
 }
 
 // Tester defines GPU tester.

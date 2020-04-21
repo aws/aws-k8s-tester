@@ -164,10 +164,9 @@ func (ts *tester) startProxy(dry bool) error {
 		}
 	}
 
-	fmt.Printf("\nKubernetes Dashboard URL %s\n\n%s\n\n",
-		ts.cfg.EKSConfig.AddOnKubernetesDashboard.URL,
-		strings.Join(args, " "),
-	)
+	fmt.Printf("\nkubectl proxy command:\n%s\n", strings.Join(args, " "))
+	fmt.Printf("\nKubernetes Dashboard Token:\n%s\n", ts.cfg.EKSConfig.AddOnKubernetesDashboard.AuthenticationToken)
+	fmt.Printf("\nKubernetes Dashboard URL:\n%s\n\n", ts.cfg.EKSConfig.AddOnKubernetesDashboard.URL)
 
 	return ts.cfg.EKSConfig.Sync()
 }
