@@ -39,11 +39,11 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.5...v1.0.6
 - Add [`AddOnWordpress`](https://github.com/aws/aws-k8s-tester/commit/eb3368cbf7c3fa961fe600cfc89f5444f8a80b77).
 - Add [`AddOnCSRs.InitialRequestConditionType` for simulate an initial CSR condition](https://github.com/aws/aws-k8s-tester/commit/eb3368cbf7c3fa961fe600cfc89f5444f8a80b77).
 - Support [variable evaluation for `AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_CLUSTER` and `AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_ADD_ONS`](https://github.com/aws/aws-k8s-tester/commit/eb3368cbf7c3fa961fe600cfc89f5444f8a80b77).
-  - `AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_CLUSTER="aws eks describe-cluster --endpoint https://api.beta.us-west-2.wesley.amazonaws.com/ --name GetRef.Name"`
+  - `AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_CLUSTER="aws eks describe-cluster --name GetRef.Name"`
   - `AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_ADD_ONS="echo GetRef.ClusterARN"`
 - Add [`AddOnKubernetesDashboard`](https://github.com/aws/aws-k8s-tester/commit/e07dedcf6dc2be7837f6a1a78fd7e37024ba17d8).
 - Add [`AddOnPrometheusGrafana`](https://github.com/aws/aws-k8s-tester/commit/115da16e9f9887dc71998ff6940cf5908f082af9).
-- Add [`AddOnCSIEBS`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`AddOnCSIEBS`](https://github.com/aws/aws-k8s-tester/commit/bd343e016ac8be7b912985c2972eb75361ac1599).
 
 ### `eks`
 
@@ -56,8 +56,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.5...v1.0.6
 - Add [`"github.com/aws/aws-k8s-tester/eks/wordpress"`](https://github.com/aws/aws-k8s-tester/commit/eb3368cbf7c3fa961fe600cfc89f5444f8a80b77).
 - Add [`"github.com/aws/aws-k8s-tester/eks/kubernetes-dashboard"`](https://github.com/aws/aws-k8s-tester/commit/c296d0587a07112bf5c08f709e96f8d806d2828e).
 - Add [`"github.com/aws/aws-k8s-tester/eks/prometheus-grafana"`](https://github.com/aws/aws-k8s-tester/commit/115da16e9f9887dc71998ff6940cf5908f082af9).
-- Add [`"github.com/aws/aws-k8s-tester/eks/csi-ebs"`](https://github.com/aws/aws-k8s-tester/commit/).
-- Add [retries to `aws eks update-kubeconfig`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`"github.com/aws/aws-k8s-tester/eks/csi-ebs"`](https://github.com/aws/aws-k8s-tester/commit/bd343e016ac8be7b912985c2972eb75361ac1599).
+- Add [retries to `aws eks update-kubeconfig`](https://github.com/aws/aws-k8s-tester/commit/bd343e016ac8be7b912985c2972eb75361ac1599).
 
 ### Dependency
 
