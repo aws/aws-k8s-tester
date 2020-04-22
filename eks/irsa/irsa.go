@@ -705,12 +705,6 @@ type deploymentScriptTemplate struct {
 }
 
 func (ts *tester) createDeployment() error {
-	ngType := "managed"
-	if ts.cfg.EKSConfig.IsEnabledAddOnNodeGroups() {
-		// TODO: test in MNG
-		ngType = "custom"
-	}
-
 	ts.cfg.Logger.Info("creating IRSA Deployment")
 
 	tpl := template.Must(template.New("TemplateDeploymentScript").Parse(TemplateDeploymentScript))
@@ -824,7 +818,6 @@ func (ts *tester) createDeployment() error {
 							NodeSelector: map[string]string{
 								// cannot fetch results from Bottlerocket
 								"AMIType": ec2config.AMITypeAL2X8664,
-								"NGType":  ngType,
 							},
 						},
 					},
@@ -1124,6 +1117,10 @@ func (ts *tester) countSuccess() (int, error) {
 	}
 	if ts.cfg.EKSConfig.IsEnabledAddOnManagedNodeGroups() && ts.cfg.EKSConfig.AddOnManagedNodeGroups.FetchLogs {
 		for name, nodeGroup := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
+			if nodeGroup.AMIType == ec2config.AMITypeBottleRocketCPU {
+				ts.cfg.Logger.Warn("skipping bottlerocket log fetch", zap.String("mng-name", name))
+				continue
+			}
 			ts.cfg.Logger.Info("fetching outputs from managed node group",
 				zap.String("mng-name", name),
 				zap.Int("nodes", len(nodeGroup.Instances)),
@@ -1198,7 +1195,11 @@ func (ts *tester) AggregateResults() error {
 	sfx := filepath.Base(outputFilePath)
 	if ts.cfg.EKSConfig.IsEnabledAddOnNodeGroups() && ts.cfg.EKSConfig.AddOnNodeGroups.FetchLogs {
 		ts.cfg.Logger.Info("fetching logs from ngs")
-		for _, v := range ts.cfg.EKSConfig.AddOnNodeGroups.ASGs {
+		for name, v := range ts.cfg.EKSConfig.AddOnNodeGroups.ASGs {
+			if v.AMIType == ec2config.AMITypeBottleRocketCPU {
+				ts.cfg.Logger.Warn("skipping bottlerocket log fetch", zap.String("ng-name", name))
+				continue
+			}
 			for _, fpaths := range v.Logs {
 				for _, fpath := range fpaths {
 					if !strings.HasSuffix(fpath, sfx) {
@@ -1225,7 +1226,11 @@ func (ts *tester) AggregateResults() error {
 	}
 	if ts.cfg.EKSConfig.IsEnabledAddOnManagedNodeGroups() && ts.cfg.EKSConfig.AddOnManagedNodeGroups.FetchLogs {
 		ts.cfg.Logger.Info("fetching logs from mngs")
-		for _, v := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
+		for name, v := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
+			if v.AMIType == ec2config.AMITypeBottleRocketCPU {
+				ts.cfg.Logger.Warn("skipping bottlerocket log fetch", zap.String("mng-name", name))
+				continue
+			}
 			for _, fpaths := range v.Logs {
 				for _, fpath := range fpaths {
 					if !strings.HasSuffix(fpath, sfx) {
