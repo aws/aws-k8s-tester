@@ -56,6 +56,7 @@ type tester struct {
 // ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
 // ref. https://docs.aws.amazon.com/eks/latest/userguide/gpu-ami.html
 // ref. https://github.com/NVIDIA/k8s-device-plugin
+// ref. https://github.com/NVIDIA/k8s-device-plugin/releases
 func (ts *tester) InstallNvidiaDriver() error {
 	ts.cfg.Logger.Info("applying daemon set for Nvidia GPU driver for worker nodes")
 	downloadURL := "https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/1.0.0-beta4/nvidia-device-plugin.yml"

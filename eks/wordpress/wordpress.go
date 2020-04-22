@@ -124,9 +124,10 @@ func (ts *tester) Delete() error {
 // https://github.com/helm/charts/blob/master/stable/wordpress/values.yaml
 // https://github.com/helm/charts/blob/master/stable/mariadb/values.yaml
 func (ts *tester) createHelmWordpress() error {
-	ngType := "custom"
-	if ts.cfg.EKSConfig.IsEnabledAddOnManagedNodeGroups() {
-		ngType = "managed"
+	ngType := "managed"
+	if ts.cfg.EKSConfig.IsEnabledAddOnNodeGroups() {
+		// TODO: test in MNG
+		ngType = "custom"
 	}
 
 	values := make(map[string]interface{})

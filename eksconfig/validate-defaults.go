@@ -1192,16 +1192,6 @@ func (cfg *Config) validateAddOnFargate() error {
 	return nil
 }
 
-func (cfg *Config) validateAddOnCSIEBS() error {
-	if !cfg.IsEnabledAddOnCSIEBS() {
-		return nil
-	}
-	if cfg.AddOnCSIEBS.ChartRepoURL == "" {
-		return errors.New("unexpected empty AddOnCSIEBS.ChartRepoURL")
-	}
-	return nil
-}
-
 func (cfg *Config) validateAddOnAppMesh() error {
 	if !cfg.IsEnabledAddOnAppMesh() {
 		return nil
@@ -1227,6 +1217,16 @@ func (cfg *Config) validateAddOnKubernetesDashboard() error {
 	}
 	if cfg.AddOnKubernetesDashboard.URL == "" {
 		cfg.AddOnKubernetesDashboard.URL = defaultKubernetesDashboardURL
+	}
+	return nil
+}
+
+func (cfg *Config) validateAddOnCSIEBS() error {
+	if !cfg.IsEnabledAddOnCSIEBS() {
+		return nil
+	}
+	if cfg.AddOnCSIEBS.ChartRepoURL == "" {
+		return errors.New("unexpected empty AddOnCSIEBS.ChartRepoURL")
 	}
 	return nil
 }
@@ -1277,15 +1277,6 @@ func (cfg *Config) validateAddOnPrometheusGrafana() error {
 			return fmt.Errorf("AddOnPrometheusGrafana.Enabled true but AddOnManagedNodeGroups [x86Found %v, rocketFound %v]", x86Found, rocketFound)
 		}
 	}
-	// TODO: nodeSelector does not work for mariadb
-	// this does not work when deployed with NG + MNG
-	// does not work even when assigned to NG, not to MNG
-	// only works when deployed with NG and not MNG
-	// only works when deployed with not NG and MNG
-	// don't mix...
-	// if cfg.IsEnabledAddOnNodeGroups() && cfg.IsEnabledAddOnManagedNodeGroups() {
-	// 	return errors.New("AddOnPrometheusGrafana.Enable true but both node groups are enabled")
-	// }
 
 	if cfg.AddOnPrometheusGrafana.GrafanaAdminUserName == "" {
 		cfg.AddOnPrometheusGrafana.GrafanaAdminUserName = randString(10)
@@ -1293,6 +1284,7 @@ func (cfg *Config) validateAddOnPrometheusGrafana() error {
 	if cfg.AddOnPrometheusGrafana.GrafanaAdminPassword == "" {
 		cfg.AddOnPrometheusGrafana.GrafanaAdminPassword = randString(10)
 	}
+
 	return nil
 }
 
@@ -1342,15 +1334,6 @@ func (cfg *Config) validateAddOnWordpress() error {
 			return fmt.Errorf("AddOnWordpress.Enabled true but AddOnManagedNodeGroups [x86Found %v, rocketFound %v]", x86Found, rocketFound)
 		}
 	}
-	// TODO: nodeSelector does not work for mariadb
-	// this does not work when deployed with NG + MNG
-	// does not work even when assigned to NG, not to MNG
-	// only works when deployed with NG and not MNG
-	// only works when deployed with not NG and MNG
-	// don't mix...
-	// if cfg.IsEnabledAddOnNodeGroups() && cfg.IsEnabledAddOnManagedNodeGroups() {
-	// 	return errors.New("AddOnWordpress.Enable true but both node groups are enabled")
-	// }
 
 	if cfg.AddOnWordpress.Namespace == "" {
 		cfg.AddOnWordpress.Namespace = cfg.Name + "-wordpress"
@@ -1361,6 +1344,7 @@ func (cfg *Config) validateAddOnWordpress() error {
 	if cfg.AddOnWordpress.Password == "" {
 		cfg.AddOnWordpress.Password = randString(10)
 	}
+
 	return nil
 }
 
