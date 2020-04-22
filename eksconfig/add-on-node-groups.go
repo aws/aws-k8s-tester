@@ -49,6 +49,7 @@ type AddOnNodeGroups struct {
 	// If empty, it stores in the same directory as "ConfigPath".
 	LogsDir string `json:"logs-dir,omitempty"`
 	// ASGs maps from EKS Node Group name to "ASG".
+	// "GetRef.Name" is the reserved key and NG name from eksconfig.Config.Name.
 	ASGs map[string]ASG `json:"asgs,omitempty"`
 }
 

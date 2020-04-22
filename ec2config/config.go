@@ -225,6 +225,8 @@ type ASG struct {
 
 	// SSMDocumentName is the name of SSM document.
 	SSMDocumentName string `json:"ssm-document-name"`
+	// SSMDocumentCFNStackName is the name of SSM document CFN stack.
+	SSMDocumentCFNStackName string `json:"ssm-document-cfn-stack-name"`
 	// SSMDocumentCreate is true to auto-create and delete SSM document.
 	SSMDocumentCreate bool `json:"ssm-document-create"`
 	// SSMDocumentCommands is the commands for SSM document.

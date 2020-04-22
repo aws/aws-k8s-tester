@@ -946,6 +946,69 @@ func TestEnvAddOnManagedNodeGroups(t *testing.T) {
 	}
 }
 
+func TestEnvAddOnNodeGroupsGetRef(t *testing.T) {
+	cfg := NewDefault()
+	defer func() {
+		os.RemoveAll(cfg.ConfigPath)
+		os.RemoveAll(cfg.KubectlCommandsOutputPath)
+		os.RemoveAll(cfg.RemoteAccessCommandsOutputPath)
+	}()
+
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE", `true`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS", `{"GetRef.Name-ng-for-cni":{"name":"GetRef.Name-ng-for-cni","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64","asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34,"image-id":"my-ami","instance-types":["type-2"],  "ssm-document-cfn-stack-name":"GetRef.Name-ssm", "ssm-document-name":"GetRef.Name-document",  "kubelet-extra-args":"aaa aa",  "volume-size":500}}`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE", `true`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS", `{"GetRef.Name-mng-for-cni":{"name":"GetRef.Name-mng-for-cni","remote-access-user-name":"ec2-user","tags":{"group":"amazon-vpc-cni-k8s"},"ami-type":"AL2_x86_64","asg-min-size":3,"asg-max-size":3,"asg-desired-capacity":3,"instance-types":["c5.xlarge"]}}`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS")
+
+	if err := cfg.UpdateFromEnvs(); err != nil {
+		t.Fatal(err)
+	}
+	if err := cfg.ValidateAndSetDefaults(); err != nil {
+		t.Fatal(err)
+	}
+
+	expectedNGs := map[string]ASG{
+		cfg.Name + "-ng-for-cni": {
+			ASG: ec2config.ASG{
+				Name:                    cfg.Name + "-ng-for-cni",
+				RemoteAccessUserName:    "ec2-user",
+				AMIType:                 eks.AMITypesAl2X8664,
+				SSMDocumentCFNStackName: cfg.Name + "-ssm",
+				SSMDocumentName:         cfg.Name + "-document",
+				ImageID:                 "my-ami",
+				ASGMinSize:              30,
+				ASGMaxSize:              35,
+				ASGDesiredCapacity:      34,
+				InstanceTypes:           []string{"type-2"},
+				VolumeSize:              500,
+			},
+			KubeletExtraArgs: "aaa aa",
+		},
+	}
+	if !reflect.DeepEqual(cfg.AddOnNodeGroups.ASGs, expectedNGs) {
+		t.Fatalf("expected cfg.AddOnNodeGroups.ASGs %+v, got %+v", expectedNGs, cfg.AddOnNodeGroups.ASGs)
+	}
+	expectedMNGs := map[string]MNG{
+		cfg.Name + "-mng-for-cni": {
+			Name:                 cfg.Name + "-mng-for-cni",
+			RemoteAccessUserName: "ec2-user",
+			Tags:                 map[string]string{"group": "amazon-vpc-cni-k8s"},
+			AMIType:              "AL2_x86_64",
+			ASGMinSize:           3,
+			ASGMaxSize:           3,
+			ASGDesiredCapacity:   3,
+			InstanceTypes:        []string{"c5.xlarge"},
+			VolumeSize:           40,
+		},
+	}
+	if !reflect.DeepEqual(cfg.AddOnManagedNodeGroups.MNGs, expectedMNGs) {
+		t.Fatalf("expected cfg.AddOnManagedNodeGroups.MNGs %+v, got %+v", expectedMNGs, cfg.AddOnManagedNodeGroups.MNGs)
+	}
+}
+
 // TestEnvAddOnManagedNodeGroupsCNI tests CNI integration test MNG settings.
 // https://github.com/aws/amazon-vpc-cni-k8s/blob/master/scripts/lib/cluster.sh
 func TestEnvAddOnManagedNodeGroupsCNI(t *testing.T) {

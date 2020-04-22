@@ -42,7 +42,7 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EC2_ASGS_FETCH_LOGS")
 	os.Setenv("AWS_K8S_TESTER_EC2_ASGS_LOGS_DIR", "hello")
 	defer os.Unsetenv("AWS_K8S_TESTER_EC2_ASGS_LOGS_DIR")
-	os.Setenv("AWS_K8S_TESTER_EC2_ASGS", `{"test-asg":{"name":"test-asg","ssm-document-create":true,"ssm-document-name":"my-doc","ssm-document-command-id":"no","ssm-document-cfn-stack-id":"invalid","ssm-document-commands":"echo 123; echo 456;","ssm-document-execution-timeout-in-seconds":10,"remote-access-user-name":"my-user","image-id":"123","image-id-ssm-parameter":"777","asg-launch-configuration-cfn-stack-id":"none","asg-cfn-stack-id":"bbb","ami-type":"BOTTLEROCKET_x86_64","asg-min-size":30,"asg-max-size":30,"asg-desired-capacity":30,"volume-size":120,"instance-types":["c5.xlarge"]}}`)
+	os.Setenv("AWS_K8S_TESTER_EC2_ASGS", `{"test-asg":{"name":"test-asg","ssm-document-create":true,"ssm-document-cfn-stack-name":"my-doc-cfn-stack","ssm-document-name":"my-doc","ssm-document-command-id":"no","ssm-document-cfn-stack-id":"invalid","ssm-document-commands":"echo 123; echo 456;","ssm-document-execution-timeout-in-seconds":10,"remote-access-user-name":"my-user","image-id":"123","image-id-ssm-parameter":"777","asg-launch-configuration-cfn-stack-id":"none","asg-cfn-stack-id":"bbb","ami-type":"BOTTLEROCKET_x86_64","asg-min-size":30,"asg-max-size":30,"asg-desired-capacity":30,"volume-size":120,"instance-types":["c5.xlarge"]}}`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EC2_ASGS")
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
@@ -99,6 +99,7 @@ func TestEnv(t *testing.T) {
 			Name:                               "test-asg",
 			RemoteAccessUserName:               "my-user",
 			SSMDocumentCreate:                  true,
+			SSMDocumentCFNStackName:            "my-doc-cfn-stack",
 			SSMDocumentName:                    "my-doc",
 			SSMDocumentCommands:                "echo 123; echo 456;",
 			SSMDocumentExecutionTimeoutSeconds: 10,

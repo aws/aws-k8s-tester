@@ -32,6 +32,11 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.5...v1.0.6
   - `--enable-prompt=true` by default.
   - `--enable-prompt=false` to disable.
 
+### `ecconfig`
+
+- Support [`GetRef.Name` in `Config.ASGs`](https://github.com/aws/aws-k8s-tester/commit/).
+  - e.g. `{"GetRef.Name-ng-for-cni":{"name":"GetRef.Name-ng-for-cni","ssm-document-cfn-stack-name":"GetRef.Name-doc", "ssm-document-name":"GetRef.Name-name", "remote...`
+
 ### `eksconfig`
 
 - Seperate [files for `AddOn*`](https://github.com/aws/aws-k8s-tester/commit/28d6baa83ce4df8e1c32b849c8e4d0ac5e3e3682).
@@ -45,6 +50,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.5...v1.0.6
 - Add [`AddOnPrometheusGrafana`](https://github.com/aws/aws-k8s-tester/commit/115da16e9f9887dc71998ff6940cf5908f082af9).
 - Add [`AddOnCSIEBS`](https://github.com/aws/aws-k8s-tester/commit/bd343e016ac8be7b912985c2972eb75361ac1599).
 - Fix [`AddOnFargate.ProfileName` reserved prefix validation check](https://github.com/aws/aws-k8s-tester/commit/5a032a78be4e8daf2a6325ba3889c2fb3e752eb0).
+- Support [`GetRef.Name` in `AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS` and `AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS`](https://github.com/aws/aws-k8s-tester/commit/).
+  - e.g. `{"GetRef.Name-ng-for-cni":{"name":"GetRef.Name-ng-for-cni","ssm-document-cfn-stack-name":"GetRef.Name-doc", "ssm-document-name":"GetRef.Name-name", "remote...`
 
 ### `eks`
 

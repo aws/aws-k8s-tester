@@ -69,6 +69,7 @@ type AddOnManagedNodeGroups struct {
 	// If empty, it stores in the same directory as "ConfigPath".
 	LogsDir string `json:"logs-dir,omitempty"`
 	// MNGs maps from EKS Managed Node Group name to "MNG".
+	// "GetRef.Name" is the reserved key and MNG name from eksconfig.Config.Name.
 	MNGs map[string]MNG `json:"mngs,omitempty"`
 }
 

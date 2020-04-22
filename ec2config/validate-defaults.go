@@ -60,6 +60,7 @@ func NewDefault() *Config {
 		cfg.Name + "-asg": {
 			Name:                               cfg.Name + "-asg",
 			RemoteAccessUserName:               "ec2-user", // for AL2
+			SSMDocumentCFNStackName:            cfg.Name + "-ssm-document",
 			SSMDocumentName:                    cfg.Name + "SSMDocument",
 			SSMDocumentCreate:                  false,
 			SSMDocumentCommands:                "",
@@ -281,8 +282,11 @@ func (cfg *Config) validateASGs() error {
 	if n > ASGsMaxLimit {
 		return fmt.Errorf("ASGs %d exceeds maximum number of ASGs which is %d", n, ASGsMaxLimit)
 	}
-	names := make(map[string]struct{})
+	names, processed := make(map[string]struct{}), make(map[string]ASG)
 	for k, v := range cfg.ASGs {
+		k = strings.ReplaceAll(k, "GetRef.Name", cfg.Name)
+		v.Name = strings.ReplaceAll(v.Name, "GetRef.Name", cfg.Name)
+
 		if v.Name == "" {
 			return fmt.Errorf("ASGs[%q].Name is empty", k)
 		}
@@ -359,6 +363,9 @@ func (cfg *Config) validateASGs() error {
 
 		switch v.SSMDocumentCreate {
 		case true: // need create one, or already created
+			if v.SSMDocumentCFNStackName == "" {
+				v.SSMDocumentCFNStackName = v.Name + "-ssm-document"
+			}
 			if v.SSMDocumentName == "" {
 				v.SSMDocumentName = v.Name + "SSMDocument"
 			}
@@ -369,9 +376,13 @@ func (cfg *Config) validateASGs() error {
 		case false: // use existing one, or don't run any SSM
 		}
 
-		cfg.ASGs[k] = v
+		v.SSMDocumentCFNStackName = strings.ReplaceAll(v.SSMDocumentCFNStackName, "GetRef.Name", cfg.Name)
+		v.SSMDocumentName = strings.ReplaceAll(v.SSMDocumentName, "GetRef.Name", cfg.Name)
+
+		processed[k] = v
 	}
 
+	cfg.ASGs = processed
 	return nil
 }
 

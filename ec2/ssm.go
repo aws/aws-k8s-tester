@@ -104,6 +104,7 @@ func (ts *Tester) createSSMDocument() error {
 		if !cur.SSMDocumentCreate {
 			ts.lg.Info("skipping SSM document create",
 				zap.String("asg-name", asgName),
+				zap.String("ssm-document-cfn-stack-name", cur.SSMDocumentCFNStackName),
 				zap.String("ssm-document-name", cur.SSMDocumentName),
 			)
 			continue
@@ -114,7 +115,7 @@ func (ts *Tester) createSSMDocument() error {
 		)
 
 		stackInput := &cloudformation.CreateStackInput{
-			StackName:    aws.String(cur.SSMDocumentName),
+			StackName:    aws.String(cur.SSMDocumentCFNStackName),
 			Capabilities: aws.StringSlice([]string{"CAPABILITY_IAM"}),
 			OnFailure:    aws.String(cloudformation.OnFailureDelete),
 			TemplateBody: aws.String(TemplateSSMDocument),
@@ -126,7 +127,7 @@ func (ts *Tester) createSSMDocument() error {
 			Parameters: []*cloudformation.Parameter{
 				{
 					ParameterKey:   aws.String("Name"),
-					ParameterValue: aws.String(ts.cfg.Name),
+					ParameterValue: aws.String(cur.SSMDocumentCFNStackName),
 				},
 				{
 					ParameterKey:   aws.String("DocumentName"),
@@ -185,6 +186,7 @@ func (ts *Tester) createSSMDocument() error {
 
 		ts.lg.Info("created SSM Document",
 			zap.String("asg-name", cur.Name),
+			zap.String("ssm-document-cfn-stack-name", cur.SSMDocumentCFNStackName),
 			zap.String("ssm-document-name", cur.SSMDocumentName),
 			zap.String("cfn-stack-id", cur.SSMDocumentCFNStackID),
 			zap.String("started", humanize.RelTime(createStart, time.Now(), "ago", "from now")),
@@ -201,12 +203,14 @@ func (ts *Tester) deleteSSMDocument() error {
 		if !cur.SSMDocumentCreate {
 			ts.lg.Info("skipping SSM document delete",
 				zap.String("asg-name", asgName),
+				zap.String("ssm-document-cfn-stack-name", cur.SSMDocumentCFNStackName),
 				zap.String("ssm-document-name", cur.SSMDocumentName),
 			)
 			continue
 		}
 		ts.lg.Info("deleting SSM document",
 			zap.String("asg-name", cur.Name),
+			zap.String("ssm-document-cfn-stack-name", cur.SSMDocumentCFNStackName),
 			zap.String("ssm-document-name", cur.SSMDocumentName),
 			zap.String("cfn-stack-id", cur.SSMDocumentCFNStackID),
 		)
@@ -246,6 +250,7 @@ func (ts *Tester) deleteSSMDocument() error {
 
 		ts.lg.Info("deleted SSM document",
 			zap.String("asg-name", cur.Name),
+			zap.String("ssm-document-cfn-stack-name", cur.SSMDocumentCFNStackName),
 			zap.String("ssm-document-name", cur.SSMDocumentName),
 		)
 	}

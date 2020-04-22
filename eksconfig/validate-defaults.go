@@ -649,8 +649,11 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 		}
 	}
 
-	names := make(map[string]struct{})
+	names, processed := make(map[string]struct{}), make(map[string]ASG)
 	for k, v := range cfg.AddOnNodeGroups.ASGs {
+		k = strings.ReplaceAll(k, "GetRef.Name", cfg.Name)
+		v.Name = strings.ReplaceAll(v.Name, "GetRef.Name", cfg.Name)
+
 		if v.Name == "" {
 			return fmt.Errorf("AddOnNodeGroups.ASGs[%q].Name is empty", k)
 		}
@@ -750,6 +753,9 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 
 		switch v.SSMDocumentCreate {
 		case true: // need create one, or already created
+			if v.SSMDocumentCFNStackName == "" {
+				v.SSMDocumentCFNStackName = v.Name + "-ssm-document"
+			}
 			if v.SSMDocumentName == "" {
 				v.SSMDocumentName = v.Name + "SSMDocument"
 			}
@@ -759,6 +765,9 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 
 		case false: // use existing one, or don't run any SSM
 		}
+
+		v.SSMDocumentCFNStackName = strings.ReplaceAll(v.SSMDocumentCFNStackName, "GetRef.Name", cfg.Name)
+		v.SSMDocumentName = strings.ReplaceAll(v.SSMDocumentName, "GetRef.Name", cfg.Name)
 
 		if cfg.IsEnabledAddOnNLBHelloWorld() && cfg.AddOnNLBHelloWorld.DeploymentReplicas < int32(v.ASGDesiredCapacity) {
 			cfg.AddOnNLBHelloWorld.DeploymentReplicas = int32(v.ASGDesiredCapacity)
@@ -770,9 +779,10 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 			cfg.AddOnALB2048.DeploymentReplicas2048 = int32(v.ASGDesiredCapacity)
 		}
 
-		cfg.AddOnNodeGroups.ASGs[k] = v
+		processed[k] = v
 	}
 
+	cfg.AddOnNodeGroups.ASGs = processed
 	return nil
 }
 
@@ -843,8 +853,11 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 		}
 	}
 
-	names := make(map[string]struct{})
+	names, processed := make(map[string]struct{}), make(map[string]MNG)
 	for k, v := range cfg.AddOnManagedNodeGroups.MNGs {
+		k = strings.ReplaceAll(k, "GetRef.Name", cfg.Name)
+		v.Name = strings.ReplaceAll(v.Name, "GetRef.Name", cfg.Name)
+
 		if v.Name == "" {
 			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].Name is empty", k)
 		}
@@ -944,9 +957,10 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 			cfg.AddOnALB2048.DeploymentReplicas2048 = int32(v.ASGDesiredCapacity)
 		}
 
-		cfg.AddOnManagedNodeGroups.MNGs[k] = v
+		processed[k] = v
 	}
 
+	cfg.AddOnManagedNodeGroups.MNGs = processed
 	return nil
 }
 
