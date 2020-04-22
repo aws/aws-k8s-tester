@@ -60,6 +60,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.5...v1.0.6
 - Add [`"github.com/aws/aws-k8s-tester/eks/csi-ebs"`](https://github.com/aws/aws-k8s-tester/commit/bd343e016ac8be7b912985c2972eb75361ac1599).
 - Add [retries to `aws eks update-kubeconfig`](https://github.com/aws/aws-k8s-tester/commit/bd343e016ac8be7b912985c2972eb75361ac1599).
 - Fix [`AddOnIRSA` count success operation for `BOTTLEROCKET_x86_64` AMI](https://github.com/aws/aws-k8s-tester/commit/5a032a78be4e8daf2a6325ba3889c2fb3e752eb0).
+- Add [`Name` tag to node group nodes](https://github.com/aws/aws-k8s-tester/commit/5a032a78be4e8daf2a6325ba3889c2fb3e752eb0).
 
 ### Dependency
 
