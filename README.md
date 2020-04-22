@@ -37,7 +37,7 @@ AWS_K8S_TESTER_EC2_ON_FAILURE_DELETE=true \
 AWS_K8S_TESTER_EC2_REGION=us-west-2 \
 AWS_K8S_TESTER_EC2_REMOTE_ACCESS_KEY_CREATE=true \
 AWS_K8S_TESTER_EC2_ASGS_FETCH_LOGS=true \
-AWS_K8S_TESTER_EC2_ASGS={\"${USER}-test-ec2-al2-cpu\":{\"name\":\"${USER}-test-ec2-al2-cpu\",\"remote-access-user-name\":\"ec2-user\",\"ami-type\":\"AL2_x86_64\",\"image-id-ssm-parameter\":\"/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2\",\"asg-min-size\":1,\"asg-max-size\":1,\"asg-desired-capacity\":1,\"instance-types\":[\"c5.xlarge\"],\"volume-size\":40},\"${USER}-test-ec2-bottlerocket\":{\"name\":\"${USER}-test-ec2-bottlerocket\",\"remote-access-user-name\":\"ec2-user\",\"ami-type\":\"BOTTLEROCKET_x86_64\",\"image-id-ssm-parameter\":\"/aws/service/bottlerocket/aws-k8s-1.15/x86_64/latest/image_id\",\"ssm-document-name\":\"${USER}InstallBottleRocket\",\"ssm-document-create\":true,\"ssm-document-commands\":\"enable-admin-container\",\"ssm-document-execution-timeout-seconds\":3600,\"asg-min-size\":1,\"asg-max-size\":1,\"asg-desired-capacity\":1,\"instance-types\":[\"c5.xlarge\"],\"volume-size\":40}} \
+AWS_K8S_TESTER_EC2_ASGS='{"GetRef.Name-al2-cpu":{"name":"GetRef.Name-al2-cpu","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64","image-id-ssm-parameter":"/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2","asg-min-size":1,"asg-max-size":1,"asg-desired-capacity":1,"instance-types":["c5.xlarge"],"volume-size":40},"GetRef.Name-bottlerocket":{"name":"GetRef.Name-bottlerocket","remote-access-user-name":"ec2-user","ami-type":"BOTTLEROCKET_x86_64","image-id-ssm-parameter":"/aws/service/bottlerocket/aws-k8s-1.15/x86_64/latest/image_id","ssm-document-cfn-stack-name":"GetRef.Name-install-bottlerocket","ssm-document-name":"GetRef.Name-install-bottlerocket","ssm-document-create":true,"ssm-document-commands":"enable-admin-container","ssm-document-execution-timeout-seconds":3600,"asg-min-size":1,"asg-max-size":1,"asg-desired-capacity":1,"instance-types":["c5.xlarge"],"volume-size":40}}' \
 AWS_K8S_TESTER_EC2_ROLE_CREATE=true \
 AWS_K8S_TESTER_EC2_VPC_CREATE=true \
 aws-k8s-tester ec2 create config -p /tmp/${USER}-test-ec2.yaml
@@ -74,6 +74,9 @@ AWS_K8S_TESTER_EC2_ROLE_ARN=${ROLE_ARN} \
 # to reuse an existing VPC
 AWS_K8S_TESTER_EC2_VPC_CREATE=false \
 AWS_K8S_TESTER_EC2_VPC_ID=${VPC_ID} \
+
+# to use ${USER}
+AWS_K8S_TESTER_EC2_ASGS={\"${USER}-test-ec2-al2-cpu\":{\"name\":\"${USER}-test-ec2-al2-cpu\",\"remote-access-user-name\":\"ec2-user\",\"ami-type\":\"AL2_x86_64\",\"image-id-ssm-parameter\":\"/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2\",\"asg-min-size\":1,\"asg-max-size\":1,\"asg-desired-capacity\":1,\"instance-types\":[\"c5.xlarge\"],\"volume-size\":40},\"${USER}-test-ec2-bottlerocket\":{\"name\":\"${USER}-test-ec2-bottlerocket\",\"remote-access-user-name\":\"ec2-user\",\"ami-type\":\"BOTTLEROCKET_x86_64\",\"image-id-ssm-parameter\":\"/aws/service/bottlerocket/aws-k8s-1.15/x86_64/latest/image_id\",\"ssm-document-cfn-stack-name\":\"${USER}-install-bottlerocket\",\"ssm-document-name\":\"${USER}InstallBottleRocket\",\"ssm-document-create\":true,\"ssm-document-commands\":\"enable-admin-container\",\"ssm-document-execution-timeout-seconds\":3600,\"asg-min-size\":1,\"asg-max-size\":1,\"asg-desired-capacity\":1,\"instance-types\":[\"c5.xlarge\"],\"volume-size\":40}} \
 COMMENT
 
 
@@ -108,10 +111,10 @@ AWS_K8S_TESTER_EKS_PARAMETERS_VERSION=1.15 \
 AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CREATE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_CREATE=true \
-AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS={\"${USER}-test-eks-ng-al2-cpu\":{\"name\":\"${USER}-test-eks-ng-al2-cpu\",\"remote-access-user-name\":\"ec2-user\",\"ami-type\":\"AL2_x86_64\",\"image-id-ssm-parameter\":\"/aws/service/eks/optimized-ami/1.15/amazon-linux-2/recommended/image_id\",\"asg-min-size\":1,\"asg-max-size\":1,\"asg-desired-capacity\":1,\"instance-types\":[\"c5.xlarge\"],\"volume-size\":40,\"kubelet-extra-args\":\"\"},\"${USER}-test-eks-ng-bottlerocket\":{\"name\":\"${USER}-test-eks-ng-bottlerocket\",\"remote-access-user-name\":\"ec2-user\",\"ami-type\":\"BOTTLEROCKET_x86_64\",\"image-id-ssm-parameter\":\"/aws/service/bottlerocket/aws-k8s-1.15/x86_64/latest/image_id\",\"ssm-document-name\":\"${USER}InstallBottleRocket\",\"ssm-document-create\":true,\"ssm-document-commands\":\"enable-admin-container\",\"ssm-document-execution-timeout-seconds\":3600,\"asg-min-size\":1,\"asg-max-size\":1,\"asg-desired-capacity\":1,\"instance-types\":[\"c5.xlarge\"],\"volume-size\":40}} \
+AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS='{"GetRef.Name-ng-al2-cpu":{"name":"GetRef.Name-ng-al2-cpu","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64","image-id":"ami-0554e52b061ffcbb3","asg-min-size":1,"asg-max-size":1,"asg-desired-capacity":1,"instance-types":["c5.xlarge"],"volume-size":40,"kubelet-extra-args":""},"GetRef.Name-ng-bottlerocket":{"name":"GetRef.Name-ng-bottlerocket","remote-access-user-name":"ec2-user","ami-type":"BOTTLEROCKET_x86_64","image-id-ssm-parameter":"/aws/service/bottlerocket/aws-k8s-1.15/x86_64/latest/image_id","ssm-document-cfn-stack-name":"GetRef.Name-install-bottlerocket","ssm-document-name":"GetRef.Name-install-bottlerocket","ssm-document-create":true,"ssm-document-commands":"enable-admin-container","ssm-document-execution-timeout-seconds":3600,"asg-min-size":1,"asg-max-size":1,"asg-desired-capacity":1,"instance-types":["c5.xlarge"],"volume-size":40}}' \
 AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_CREATE=true \
-AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS={\"${USER}-test-eks-mng-al2-cpu\":{\"name\":\"${USER}-test-eks-mng-al2-cpu\",\"remote-access-user-name\":\"ec2-user\",\"release-version\":\"\",\"ami-type\":\"AL2_x86_64\",\"asg-min-size\":1,\"asg-max-size\":1,\"asg-desired-capacity\":1,\"instance-types\":[\"c5.xlarge\"],\"volume-size\":40}} \
+AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS='{"GetRef.Name-mng-al2-cpu":{"name":"GetRef.Name-mng-al2-cpu","remote-access-user-name":"ec2-user","release-version":"","ami-type":"AL2_x86_64","asg-min-size":1,"asg-max-size":1,"asg-desired-capacity":1,"instance-types":["c5.xlarge"],"volume-size":40}}' \
 AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_ENABLE=true \
@@ -180,6 +183,10 @@ AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_ARN=${MNG_ROLE_ARN} \
 # to reuse an existing role for "Fargate"
 AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_CREATE=false \
 AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_ARN=${FARGATE_ROLE_ARN} \
+
+# to user ${USER} in node groups
+AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS={\"${USER}-test-eks-ng-al2-cpu\":{\"name\":\"${USER}-test-eks-ng-al2-cpu\",\"remote-access-user-name\":\"ec2-user\",\"ami-type\":\"AL2_x86_64\",\"image-id-ssm-parameter\":\"/aws/service/eks/optimized-ami/1.15/amazon-linux-2/recommended/image_id\",\"asg-min-size\":1,\"asg-max-size\":1,\"asg-desired-capacity\":1,\"instance-types\":[\"c5.xlarge\"],\"volume-size\":40,\"kubelet-extra-args\":\"\"},\"${USER}-test-eks-ng-bottlerocket\":{\"name\":\"${USER}-test-eks-ng-bottlerocket\",\"remote-access-user-name\":\"ec2-user\",\"ami-type\":\"BOTTLEROCKET_x86_64\",\"image-id-ssm-parameter\":\"/aws/service/bottlerocket/aws-k8s-1.15/x86_64/latest/image_id\",\"ssm-document-cfn-stack-name\":\"${USER}-install-bottle-rocket\",\"ssm-document-name\":\"${USER}InstallBottleRocket\",\"ssm-document-create\":true,\"ssm-document-commands\":\"enable-admin-container\",\"ssm-document-execution-timeout-seconds\":3600,\"asg-min-size\":1,\"asg-max-size\":1,\"asg-desired-capacity\":1,\"instance-types\":[\"c5.xlarge\"],\"volume-size\":40}} \
+AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS={\"${USER}-test-eks-mng-al2-cpu\":{\"name\":\"${USER}-test-eks-mng-al2-cpu\",\"remote-access-user-name\":\"ec2-user\",\"release-version\":\"\",\"ami-type\":\"AL2_x86_64\",\"asg-min-size\":1,\"asg-max-size\":1,\"asg-desired-capacity\":1,\"instance-types\":[\"c5.xlarge\"],\"volume-size\":40}} \
 COMMENT
 
 
