@@ -162,9 +162,8 @@ func (ts *tester) createHelmPrometheus() error {
 			"NGType":  ngType,
 		},
 		"persistentVolume": map[string]interface{}{
-			"enabled": true,
-			// use CSI driver with volume type "gp2", as in launch configuration
-			"storageClass": "gp2",
+			// takes >=5-min for PVC, user emptyDir for testing
+			"enabled": false,
 		},
 	}
 	values["server"] = map[string]interface{}{
@@ -395,8 +394,9 @@ func (ts *tester) waitServiceGrafana() error {
 
 	fmt.Printf("\nNLB Grafana ARN: %s\n", ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaNLBARN)
 	fmt.Printf("NLB Grafana Name: %s\n", ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaNLBName)
-	fmt.Printf("NLB Grafana URL: %s\n\n", ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaURL)
-	fmt.Printf("NLB Grafana Admin User Name: %s\n\n", ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaAdminUserName)
+	fmt.Printf("NLB Grafana URL: %s\n", ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaURL)
+	fmt.Printf("Grafana Admin User Name: %s\n", ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaAdminUserName)
+	fmt.Printf("Grafana Admin Password: %d characters\n\n", len(ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaAdminPassword))
 
 	ts.cfg.Logger.Info("waiting before testing Grafana Service")
 	time.Sleep(20 * time.Second)
@@ -432,6 +432,12 @@ func (ts *tester) waitServiceGrafana() error {
 
 		ts.cfg.Logger.Warn("unexpected Grafana Service output; retrying")
 	}
+
+	fmt.Printf("\nNLB Grafana ARN: %s\n", ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaNLBARN)
+	fmt.Printf("NLB Grafana Name: %s\n", ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaNLBName)
+	fmt.Printf("NLB Grafana URL: %s\n", ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaURL)
+	fmt.Printf("Grafana Admin User Name: %s\n", ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaAdminUserName)
+	fmt.Printf("Grafana Admin Password: %d characters\n\n", len(ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaAdminPassword))
 
 	return ts.cfg.EKSConfig.Sync()
 }

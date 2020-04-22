@@ -297,9 +297,9 @@ func (ts *tester) waitService() error {
 
 	fmt.Printf("\nNLB WordPress ARN: %s\n", ts.cfg.EKSConfig.AddOnWordpress.NLBARN)
 	fmt.Printf("NLB WordPress Name: %s\n", ts.cfg.EKSConfig.AddOnWordpress.NLBName)
-	fmt.Printf("NLB WordPress URL: %s\n\n", ts.cfg.EKSConfig.AddOnWordpress.URL)
+	fmt.Printf("NLB WordPress URL: %s\n", ts.cfg.EKSConfig.AddOnWordpress.URL)
 	fmt.Printf("WordPress UserName: %s\n", ts.cfg.EKSConfig.AddOnWordpress.UserName)
-	fmt.Printf("WordPress Password: %d characters\n", len(ts.cfg.EKSConfig.AddOnWordpress.Password))
+	fmt.Printf("WordPress Password: %d characters\n\n", len(ts.cfg.EKSConfig.AddOnWordpress.Password))
 
 	ts.cfg.Logger.Info("waiting before testing WordPress Service")
 	time.Sleep(20 * time.Second)
@@ -335,6 +335,12 @@ func (ts *tester) waitService() error {
 
 		ts.cfg.Logger.Warn("unexpected WordPress Service output; retrying")
 	}
+
+	fmt.Printf("\nNLB WordPress ARN: %s\n", ts.cfg.EKSConfig.AddOnWordpress.NLBARN)
+	fmt.Printf("NLB WordPress Name: %s\n", ts.cfg.EKSConfig.AddOnWordpress.NLBName)
+	fmt.Printf("NLB WordPress URL: %s\n", ts.cfg.EKSConfig.AddOnWordpress.URL)
+	fmt.Printf("WordPress UserName: %s\n", ts.cfg.EKSConfig.AddOnWordpress.UserName)
+	fmt.Printf("WordPress Password: %d characters\n\n", len(ts.cfg.EKSConfig.AddOnWordpress.Password))
 
 	return ts.cfg.EKSConfig.Sync()
 }

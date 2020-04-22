@@ -1114,6 +1114,10 @@ func (ts *tester) create2048Ingress() error {
 		ts.cfg.Logger.Warn("unexpected ALB 2048 Ingress output; retrying")
 	}
 
+	fmt.Printf("\nALB 2048 ARN: %s\n", ts.cfg.EKSConfig.AddOnALB2048.ALBARN)
+	fmt.Printf("ALB 2048 Name: %s\n", ts.cfg.EKSConfig.AddOnALB2048.ALBName)
+	fmt.Printf("ALB 2048 URL: %s\n\n", ts.cfg.EKSConfig.AddOnALB2048.URL)
+
 	return ts.cfg.EKSConfig.Sync()
 }
 

@@ -448,9 +448,9 @@ func (ts *tester) createService() error {
 	ts.cfg.EKSConfig.AddOnNLBHelloWorld.URL = "http://" + hostName
 	ts.cfg.EKSConfig.Sync()
 
-	fmt.Printf("\nNLB hello-world ARN %s\n", ts.cfg.EKSConfig.AddOnNLBHelloWorld.NLBARN)
-	fmt.Printf("NLB hello-world Name %s\n", ts.cfg.EKSConfig.AddOnNLBHelloWorld.NLBName)
-	fmt.Printf("NLB hello-world URL %s\n\n", ts.cfg.EKSConfig.AddOnNLBHelloWorld.URL)
+	fmt.Printf("\nNLB hello-world ARN: %s\n", ts.cfg.EKSConfig.AddOnNLBHelloWorld.NLBARN)
+	fmt.Printf("NLB hello-world Name: %s\n", ts.cfg.EKSConfig.AddOnNLBHelloWorld.NLBName)
+	fmt.Printf("NLB hello-world URL: %s\n\n", ts.cfg.EKSConfig.AddOnNLBHelloWorld.URL)
 
 	ts.cfg.Logger.Info("waiting before testing hello-world Service")
 	time.Sleep(20 * time.Second)
@@ -486,6 +486,10 @@ func (ts *tester) createService() error {
 
 		ts.cfg.Logger.Warn("unexpected hello-world Service output; retrying")
 	}
+
+	fmt.Printf("\nNLB hello-world ARN: %s\n", ts.cfg.EKSConfig.AddOnNLBHelloWorld.NLBARN)
+	fmt.Printf("NLB hello-world Name: %s\n", ts.cfg.EKSConfig.AddOnNLBHelloWorld.NLBName)
+	fmt.Printf("NLB hello-world URL: %s\n\n", ts.cfg.EKSConfig.AddOnNLBHelloWorld.URL)
 
 	return ts.cfg.EKSConfig.Sync()
 }
