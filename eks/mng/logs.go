@@ -7,7 +7,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"time"
 
@@ -122,9 +121,6 @@ func (ts *tester) FetchLogs() (err error) {
 
 	return ts.cfg.EKSConfig.Sync()
 }
-
-// only letters and numbers
-var regex = regexp.MustCompile("[^a-zA-Z0-9]+")
 
 func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string]string) error {
 	logsDir := ts.cfg.EKSConfig.AddOnManagedNodeGroups.LogsDir

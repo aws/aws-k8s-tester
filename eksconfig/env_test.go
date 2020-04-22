@@ -977,7 +977,7 @@ func TestEnvAddOnNodeGroupsGetRef(t *testing.T) {
 				RemoteAccessUserName:    "ec2-user",
 				AMIType:                 eks.AMITypesAl2X8664,
 				SSMDocumentCFNStackName: cfg.Name + "-ssm",
-				SSMDocumentName:         cfg.Name + "-document",
+				SSMDocumentName:         regex.ReplaceAllString(cfg.Name+"-document", ""),
 				ImageID:                 "my-ami",
 				ASGMinSize:              30,
 				ASGMaxSize:              35,

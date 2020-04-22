@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -378,6 +379,7 @@ func (cfg *Config) validateASGs() error {
 
 		v.SSMDocumentCFNStackName = strings.ReplaceAll(v.SSMDocumentCFNStackName, "GetRef.Name", cfg.Name)
 		v.SSMDocumentName = strings.ReplaceAll(v.SSMDocumentName, "GetRef.Name", cfg.Name)
+		v.SSMDocumentName = regex.ReplaceAllString(v.SSMDocumentName, "")
 
 		processed[k] = v
 	}
@@ -385,6 +387,9 @@ func (cfg *Config) validateASGs() error {
 	cfg.ASGs = processed
 	return nil
 }
+
+// only letters and numbers
+var regex = regexp.MustCompile("[^a-zA-Z0-9]+")
 
 // get "role-eks" from "arn:aws:iam::123:role/role-eks"
 func getNameFromARN(arn string) string {

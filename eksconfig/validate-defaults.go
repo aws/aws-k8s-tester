@@ -768,6 +768,7 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 
 		v.SSMDocumentCFNStackName = strings.ReplaceAll(v.SSMDocumentCFNStackName, "GetRef.Name", cfg.Name)
 		v.SSMDocumentName = strings.ReplaceAll(v.SSMDocumentName, "GetRef.Name", cfg.Name)
+		v.SSMDocumentName = regex.ReplaceAllString(v.SSMDocumentName, "")
 
 		if cfg.IsEnabledAddOnNLBHelloWorld() && cfg.AddOnNLBHelloWorld.DeploymentReplicas < int32(v.ASGDesiredCapacity) {
 			cfg.AddOnNLBHelloWorld.DeploymentReplicas = int32(v.ASGDesiredCapacity)
@@ -785,6 +786,9 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 	cfg.AddOnNodeGroups.ASGs = processed
 	return nil
 }
+
+// only letters and numbers
+var regex = regexp.MustCompile("[^a-zA-Z0-9]+")
 
 func (cfg *Config) validateAddOnManagedNodeGroups() error {
 	if !cfg.IsEnabledAddOnManagedNodeGroups() {
