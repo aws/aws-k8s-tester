@@ -36,6 +36,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.5...v1.0.6
 
 - Support [`GetRef.Name` in `Config.ASGs`](https://github.com/aws/aws-k8s-tester/commit/2629d4795cc423d6bed050fc89e6f0985844214a).
   - e.g. `{"GetRef.Name-ng-for-cni":{"name":"GetRef.Name-ng-for-cni","ssm-document-cfn-stack-name":"GetRef.Name-doc", "ssm-document-name":"GetRef.Name-name", "remote...`
+- Automatically [fix invalid SSM document name in `ec2config.ASG.SSMDocumentName`](https://github.com/aws/aws-k8s-tester/commit/4914ca5d5fec4127932d9646a2885af8898baa6b).
 
 ### `eksconfig`
 
@@ -52,6 +53,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.5...v1.0.6
 - Fix [`AddOnFargate.ProfileName` reserved prefix validation check](https://github.com/aws/aws-k8s-tester/commit/5a032a78be4e8daf2a6325ba3889c2fb3e752eb0).
 - Support [`GetRef.Name` in `AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS` and `AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS`](https://github.com/aws/aws-k8s-tester/commit/2629d4795cc423d6bed050fc89e6f0985844214a).
   - e.g. `{"GetRef.Name-ng-for-cni":{"name":"GetRef.Name-ng-for-cni","ssm-document-cfn-stack-name":"GetRef.Name-doc", "ssm-document-name":"GetRef.Name-name", "remote...`
+- Automatically [fix invalid SSM document name in `ec2config.ASG.SSMDocumentName`](https://github.com/aws/aws-k8s-tester/commit/4914ca5d5fec4127932d9646a2885af8898baa6b).
 
 ### `eks`
 
