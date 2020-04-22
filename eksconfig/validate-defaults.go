@@ -233,6 +233,7 @@ func NewDefault() *Config {
 		AddOnPrometheusGrafana: &AddOnPrometheusGrafana{
 			Enable:               false,
 			GrafanaAdminUserName: "admin",
+			GrafanaAdminPassword: "",
 		},
 
 		AddOnWordpress: &AddOnWordpress{
