@@ -44,7 +44,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.5...v1.0.6
 - Add [`AddOnKubernetesDashboard`](https://github.com/aws/aws-k8s-tester/commit/e07dedcf6dc2be7837f6a1a78fd7e37024ba17d8).
 - Add [`AddOnPrometheusGrafana`](https://github.com/aws/aws-k8s-tester/commit/115da16e9f9887dc71998ff6940cf5908f082af9).
 - Add [`AddOnCSIEBS`](https://github.com/aws/aws-k8s-tester/commit/bd343e016ac8be7b912985c2972eb75361ac1599).
-- Fix [`AddOnFargate.ProfileName` reserved prefix validation check](https://github.com/aws/aws-k8s-tester/commit/).
+- Fix [`AddOnFargate.ProfileName` reserved prefix validation check](https://github.com/aws/aws-k8s-tester/commit/5a032a78be4e8daf2a6325ba3889c2fb3e752eb0).
 
 ### `eks`
 
@@ -59,7 +59,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.5...v1.0.6
 - Add [`"github.com/aws/aws-k8s-tester/eks/prometheus-grafana"`](https://github.com/aws/aws-k8s-tester/commit/115da16e9f9887dc71998ff6940cf5908f082af9).
 - Add [`"github.com/aws/aws-k8s-tester/eks/csi-ebs"`](https://github.com/aws/aws-k8s-tester/commit/bd343e016ac8be7b912985c2972eb75361ac1599).
 - Add [retries to `aws eks update-kubeconfig`](https://github.com/aws/aws-k8s-tester/commit/bd343e016ac8be7b912985c2972eb75361ac1599).
-- Fix [`AddOnIRSA` count success operation for `BOTTLEROCKET_x86_64` AMI](https://github.com/aws/aws-k8s-tester/commit/).
+- Fix [`AddOnIRSA` count success operation for `BOTTLEROCKET_x86_64` AMI](https://github.com/aws/aws-k8s-tester/commit/5a032a78be4e8daf2a6325ba3889c2fb3e752eb0).
 
 ### Dependency
 
