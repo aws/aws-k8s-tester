@@ -48,7 +48,7 @@ Parameters:
 
   DocumentName:
     Type: String
-    Default: aws-k8s-tester-ec2-ssm-document
+    Default: awsK8sTesterEC2SSMDocument
 
   Commands:
     Type: String

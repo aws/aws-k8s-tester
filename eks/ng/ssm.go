@@ -48,7 +48,7 @@ Parameters:
 
   DocumentName:
     Type: String
-    Default: aws-k8s-tester-eks-ng-ssm-document
+    Default: awsK8sTesterEKSNGSSMDocument
 
   Commands:
     Type: String
