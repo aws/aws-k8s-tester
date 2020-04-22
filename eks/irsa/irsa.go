@@ -14,6 +14,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	awscfn "github.com/aws/aws-k8s-tester/pkg/aws/cloudformation"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
@@ -704,6 +705,12 @@ type deploymentScriptTemplate struct {
 }
 
 func (ts *tester) createDeployment() error {
+	ngType := "managed"
+	if ts.cfg.EKSConfig.IsEnabledAddOnNodeGroups() {
+		// TODO: test in MNG
+		ngType = "custom"
+	}
+
 	ts.cfg.Logger.Info("creating IRSA Deployment")
 
 	tpl := template.Must(template.New("TemplateDeploymentScript").Parse(TemplateDeploymentScript))
@@ -812,6 +819,12 @@ func (ts *tester) createDeployment() error {
 										EmptyDir: &v1.EmptyDirVolumeSource{},
 									},
 								},
+							},
+
+							NodeSelector: map[string]string{
+								// cannot fetch results from Bottlerocket
+								"AMIType": ec2config.AMITypeAL2X8664,
+								"NGType":  ngType,
 							},
 						},
 					},
@@ -1053,8 +1066,13 @@ func (ts *tester) countSuccess() (int, error) {
 	total := 0
 	if ts.cfg.EKSConfig.IsEnabledAddOnNodeGroups() && ts.cfg.EKSConfig.AddOnNodeGroups.FetchLogs {
 		for name, nodeGroup := range ts.cfg.EKSConfig.AddOnNodeGroups.ASGs {
+			if nodeGroup.AMIType == ec2config.AMITypeBottleRocketCPU {
+				ts.cfg.Logger.Warn("skipping bottlerocket log fetch", zap.String("ng-name", name))
+				continue
+			}
 			ts.cfg.Logger.Info("fetching outputs from node group",
-				zap.String("mng-name", name),
+				zap.String("ng-name", name),
+				zap.String("ami-type", nodeGroup.AMIType),
 				zap.Int("nodes", len(nodeGroup.Instances)),
 			)
 

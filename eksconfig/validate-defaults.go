@@ -1151,8 +1151,16 @@ func (cfg *Config) validateAddOnFargate() error {
 	if cfg.AddOnFargate.Namespace == "" {
 		cfg.AddOnFargate.Namespace = cfg.Name + "-fargate"
 	}
+	// do not prefix with "eks-"
+	// e.g. "The fargate profile name starts with the reserved prefix: 'eks-'."
 	if cfg.AddOnFargate.ProfileName == "" {
 		cfg.AddOnFargate.ProfileName = cfg.Name + "-fargate-profile"
+		if strings.HasPrefix(cfg.AddOnFargate.ProfileName, "eks-") {
+			cfg.AddOnFargate.ProfileName = strings.Replace(cfg.AddOnFargate.ProfileName, "eks-", "", 1)
+		}
+	}
+	if strings.HasPrefix(cfg.AddOnFargate.ProfileName, "eks-") {
+		return fmt.Errorf("AddOnFargate.ProfileName %q starts with the reserved prefix 'eks-'", cfg.AddOnFargate.ProfileName)
 	}
 	if cfg.AddOnFargate.SecretName == "" {
 		cfg.AddOnFargate.SecretName = cfg.Name + "addonfargatesecret"

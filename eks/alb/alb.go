@@ -478,6 +478,12 @@ func (ts *tester) deleteALBRBACClusterRoleBinding() error {
 // https://docs.aws.amazon.com/eks/latest/userguide/alb-ingress.html
 // https://github.com/kubernetes-sigs/aws-alb-ingress-controller/blob/master/docs/examples/alb-ingress-controller.yaml
 func (ts *tester) createALBDeployment() error {
+	ngType := "managed"
+	if ts.cfg.EKSConfig.IsEnabledAddOnNodeGroups() {
+		// TODO: test in MNG
+		ngType = "custom"
+	}
+
 	ts.cfg.Logger.Info("creating ALB Ingress Controller Deployment")
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.K8SClient.KubernetesClientSet().
@@ -528,7 +534,10 @@ func (ts *tester) createALBDeployment() error {
 							ServiceAccountName: albIngressControllerServiceAccountName,
 							NodeSelector: map[string]string{
 								// do not deploy in bottlerocket; PVC not working
+								// do not mix with MNG
+								// controller "msg"="Reconciler error" "error"="no object matching key \"eks-2020042119-bluee7qmz7kb-alb-2048/alb-2048-ingress\" in local store"  "controller"="alb-ingress-controller" "request"={"Namespace":"eks-2020042119-bluee7qmz7kb-alb-2048","Name":"alb-2048-ingress"}
 								"AMIType": ec2config.AMITypeAL2X8664,
+								"NGType":  ngType,
 							},
 						},
 					},
