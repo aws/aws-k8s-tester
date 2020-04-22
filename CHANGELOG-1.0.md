@@ -19,7 +19,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.6...v1.0.7
 <hr>
 
 
-## [v1.0.6](https://github.com/aws/aws-k8s-tester/releases/tag/v1.0.6) (2020-04-21)
+## [v1.0.6](https://github.com/aws/aws-k8s-tester/releases/tag/v1.0.6) (2020-04-22)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.5...v1.0.6).
 
