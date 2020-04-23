@@ -615,8 +615,8 @@ func (ts *tester) getPods(ns string) (*v1.PodList, error) {
 func (ts *tester) checkPod() error {
 	args := []string{
 		ts.cfg.EKSConfig.KubectlPath,
-		"--namespace=" + ts.cfg.EKSConfig.AddOnFargate.Namespace,
 		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+		"--namespace=" + ts.cfg.EKSConfig.AddOnFargate.Namespace,
 		"exec",
 		"-it",
 		ts.cfg.EKSConfig.AddOnFargate.PodName,
@@ -665,16 +665,16 @@ func (ts *tester) checkPod() error {
 
 	argsDesc := []string{
 		ts.cfg.EKSConfig.KubectlPath,
-		"--namespace=" + ts.cfg.EKSConfig.AddOnFargate.Namespace,
 		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+		"--namespace=" + ts.cfg.EKSConfig.AddOnFargate.Namespace,
 		"describe",
 		"pods/" + ts.cfg.EKSConfig.AddOnFargate.PodName,
 	}
 	cmdTxtDesc := strings.Join(argsDesc, " ")
 	argsLogs := []string{
 		ts.cfg.EKSConfig.KubectlPath,
-		"--namespace=" + ts.cfg.EKSConfig.AddOnFargate.Namespace,
 		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+		"--namespace=" + ts.cfg.EKSConfig.AddOnFargate.Namespace,
 		"logs",
 		"pods/" + ts.cfg.EKSConfig.AddOnFargate.PodName,
 		"--timestamps",

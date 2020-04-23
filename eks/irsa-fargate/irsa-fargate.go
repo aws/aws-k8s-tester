@@ -997,16 +997,16 @@ func (ts *tester) getPods(ns string) (*v1.PodList, error) {
 func (ts *tester) checkPod() error {
 	argsDesc := []string{
 		ts.cfg.EKSConfig.KubectlPath,
-		"--namespace=" + ts.cfg.EKSConfig.AddOnIRSAFargate.Namespace,
 		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+		"--namespace=" + ts.cfg.EKSConfig.AddOnIRSAFargate.Namespace,
 		"describe",
 		"pods/" + ts.cfg.EKSConfig.AddOnIRSAFargate.PodName,
 	}
 	cmdTxtDesc := strings.Join(argsDesc, " ")
 	argsLogs := []string{
 		ts.cfg.EKSConfig.KubectlPath,
-		"--namespace=" + ts.cfg.EKSConfig.AddOnIRSAFargate.Namespace,
 		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+		"--namespace=" + ts.cfg.EKSConfig.AddOnIRSAFargate.Namespace,
 		"logs",
 		"pods/" + ts.cfg.EKSConfig.AddOnIRSAFargate.PodName,
 		"--timestamps",
