@@ -1149,8 +1149,8 @@ func (ts *Tester) Up() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnIRSAFargate() {
-		if ts.fargateTester == nil {
-			return errors.New("ts.fargateTester == nil when AddOnIRSAFargate.Enable == true")
+		if ts.irsaFargateTester == nil {
+			return errors.New("ts.irsaFargateTester == nil when AddOnIRSAFargate.Enable == true")
 		}
 		fmt.Printf("\n*********************************\n")
 		fmt.Printf("irsaFargateTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnIRSAFargate.Namespace)
