@@ -12,6 +12,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.6...v1.0.7
 - Add [`"github.com/aws/aws-k8s-tester/eks/kubeflow"`](https://github.com/aws/aws-k8s-tester/commit/).
 - Add [`AddOnIRSAFargate` for "IAM Roles for Service Accounts (IRSA)" Pod with Fargate](https://github.com/aws/aws-k8s-tester/commit/a81b0245401cfdc51188dfaed1641bb39a77107d).
 
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.30.11`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.11) to [`v1.30.12`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.12).
+
 ### Go
 
 - Compile with [*Go 1.14.2*](https://golang.org/doc/devel/release.html#go1.14).
