@@ -38,6 +38,8 @@ const (
 	EnvironmentVariablePrefixAddOnIRSA = "AWS_K8S_TESTER_EKS_ADD_ON_IRSA_"
 	// EnvironmentVariablePrefixAddOnFargate is the environment variable prefix used for "eksconfig".
 	EnvironmentVariablePrefixAddOnFargate = "AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_"
+	// EnvironmentVariablePrefixAddOnIRSAFargate is the environment variable prefix used for "eksconfig".
+	EnvironmentVariablePrefixAddOnIRSAFargate = "AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_"
 	// EnvironmentVariablePrefixAddOnAppMesh is the environment variable prefix used for "eksconfig".
 	EnvironmentVariablePrefixAddOnAppMesh = "AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_"
 	// EnvironmentVariablePrefixAddOnCSIEBS is the environment variable prefix used for "eksconfig".
@@ -249,6 +251,19 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		cfg.AddOnFargate = av
 	} else {
 		return fmt.Errorf("expected *AddOnFargate, got %T", vv)
+	}
+
+	if cfg.AddOnIRSAFargate == nil {
+		cfg.AddOnIRSAFargate = &AddOnIRSAFargate{}
+	}
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnIRSAFargate, cfg.AddOnIRSAFargate)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*AddOnIRSAFargate); ok {
+		cfg.AddOnIRSAFargate = av
+	} else {
+		return fmt.Errorf("expected *AddOnIRSAFargate, got %T", vv)
 	}
 
 	if cfg.AddOnCSIEBS == nil {

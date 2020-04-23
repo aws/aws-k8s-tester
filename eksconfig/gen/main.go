@@ -79,6 +79,10 @@ func createDoc() string {
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
+	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnIRSAFargate, &eksconfig.AddOnIRSAFargate{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
 	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnAppMesh, &eksconfig.AddOnAppMesh{}))
 
 	b.WriteByte('\n')

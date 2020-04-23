@@ -28,6 +28,7 @@ import (
 	"github.com/aws/aws-k8s-tester/eks/fargate"
 	"github.com/aws/aws-k8s-tester/eks/gpu"
 	"github.com/aws/aws-k8s-tester/eks/irsa"
+	irsa_fargate "github.com/aws/aws-k8s-tester/eks/irsa-fargate"
 	jobs_echo "github.com/aws/aws-k8s-tester/eks/jobs-echo"
 	jobs_pi "github.com/aws/aws-k8s-tester/eks/jobs-pi"
 	kubernetes_dashboard "github.com/aws/aws-k8s-tester/eks/kubernetes-dashboard"
@@ -111,6 +112,7 @@ type Tester struct {
 	secretsTester             secrets.Tester
 	irsaTester                irsa.Tester
 	fargateTester             fargate.Tester
+	irsaFargateTester         irsa_fargate.Tester
 	appMeshTester             app_mesh.Tester
 	kubernetesDashboardTester kubernetes_dashboard.Tester
 	csiEBSTester              csi_ebs.Tester
@@ -569,6 +571,24 @@ func (ts *Tester) createSubTesters() (err error) {
 			IAMAPI:    ts.iamAPI,
 			CFNAPI:    ts.cfnAPI,
 			EKSAPI:    ts.eksAPI,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	if ts.cfg.IsEnabledAddOnIRSAFargate() {
+		ts.lg.Info("creating irsaFargateTester")
+		ts.irsaFargateTester, err = irsa_fargate.New(irsa_fargate.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			Sig:       ts.interruptSig,
+			EKSConfig: ts.cfg,
+			K8SClient: ts.k8sClient,
+			IAMAPI:    ts.iamAPI,
+			CFNAPI:    ts.cfnAPI,
+			EKSAPI:    ts.eksAPI,
+			S3API:     ts.s3API,
 		})
 		if err != nil {
 			return err
@@ -1128,6 +1148,23 @@ func (ts *Tester) Up() (err error) {
 		}
 	}
 
+	if ts.cfg.IsEnabledAddOnIRSAFargate() {
+		if ts.fargateTester == nil {
+			return errors.New("ts.fargateTester == nil when AddOnIRSAFargate.Enable == true")
+		}
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("irsaFargateTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnIRSAFargate.Namespace)
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.interruptSig,
+			ts.irsaFargateTester.Create,
+		); err != nil {
+			return err
+		}
+	}
+
 	if ts.cfg.IsEnabledAddOnAppMesh() {
 		if ts.appMeshTester == nil {
 			return errors.New("ts.appMeshTester == nil when AddOnAppMesh.Enable == true")
@@ -1434,6 +1471,15 @@ func (ts *Tester) down() (err error) {
 			fmt.Printf("appMeshTester.Delete (%q)\n", ts.cfg.ConfigPath)
 			if err := ts.appMeshTester.Delete(); err != nil {
 				ts.lg.Warn("appMeshTester.Delete failed", zap.Error(err))
+				errs = append(errs, err.Error())
+			}
+		}
+
+		if ts.cfg.IsEnabledAddOnIRSAFargate() && ts.cfg.AddOnIRSAFargate.Created {
+			fmt.Printf("\n*********************************\n")
+			fmt.Printf("irsaFargateTester.Delete (%q)\n", ts.cfg.ConfigPath)
+			if err := ts.irsaFargateTester.Delete(); err != nil {
+				ts.lg.Warn("irsaFargateTester.Delete failed", zap.Error(err))
 				errs = append(errs, err.Error())
 			}
 		}

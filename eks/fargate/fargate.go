@@ -28,8 +28,7 @@ import (
 	"k8s.io/utils/exec"
 )
 
-// Config defines "Secrets" configuration.
-// ref. https://aws.amazon.com/blogs/opensource/introducing-fine-grained-iam-roles-service-accounts/
+// Config defines "Fargate" configuration.
 type Config struct {
 	Logger    *zap.Logger
 	Stopc     chan struct{}

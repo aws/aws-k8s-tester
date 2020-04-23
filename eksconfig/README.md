@@ -250,6 +250,26 @@ AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_POD_NAME | *eksconfig.AddOnFargate.PodName | s
 AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_CONTAINER_NAME | *eksconfig.AddOnFargate.ContainerName | string | read-only "false"
 
 
+AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ENABLE | *eksconfig.AddOnIRSAFargate.Enable | bool | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_CREATED | *eksconfig.AddOnIRSAFargate.Created | bool | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_CREATE_TOOK | *eksconfig.AddOnIRSAFargate.CreateTook | time.Duration | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_CREATE_TOOK_STRING | *eksconfig.AddOnIRSAFargate.CreateTookString | string | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_DELETE_TOOK | *eksconfig.AddOnIRSAFargate.DeleteTook | time.Duration | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_DELETE_TOOK_STRING | *eksconfig.AddOnIRSAFargate.DeleteTookString | string | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_NAMESPACE | *eksconfig.AddOnIRSAFargate.Namespace | string | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ROLE_NAME | *eksconfig.AddOnIRSAFargate.RoleName | string | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ROLE_ARN | *eksconfig.AddOnIRSAFargate.RoleARN | string | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ROLE_SERVICE_PRINCIPALS | *eksconfig.AddOnIRSAFargate.RoleServicePrincipals | []string | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ROLE_MANAGED_POLICY_ARNS | *eksconfig.AddOnIRSAFargate.RoleManagedPolicyARNs | []string | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ROLE_CFN_STACK_ID | *eksconfig.AddOnIRSAFargate.RoleCFNStackID | string | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_SERVICE_ACCOUNT_NAME | *eksconfig.AddOnIRSAFargate.ServiceAccountName | string | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_CONFIG_MAP_NAME | *eksconfig.AddOnIRSAFargate.ConfigMapName | string | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_CONFIG_MAP_SCRIPT_FILE_NAME | *eksconfig.AddOnIRSAFargate.ConfigMapScriptFileName | string | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_S3_KEY | *eksconfig.AddOnIRSAFargate.S3Key | string | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_PROFILE_NAME | *eksconfig.AddOnIRSAFargate.ProfileName | string | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_POD_NAME | *eksconfig.AddOnIRSAFargate.PodName | string | read-only "false"
+
+
 AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_ENABLE | *eksconfig.AddOnAppMesh.Enable | bool | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_NAMESPACE | *eksconfig.AddOnAppMesh.Namespace | string | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_CONTROLLER_IMAGE | *eksconfig.AddOnAppMesh.ControllerImage | string | read-only "false"

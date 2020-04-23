@@ -304,8 +304,6 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_CONFIG_MAP_NAME")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_CONFIG_MAP_SCRIPT_FILE_NAME", "hello.sh")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_CONFIG_MAP_SCRIPT_FILE_NAME")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_S3_BUCKET_NAME", "hello")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_S3_BUCKET_NAME")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_S3_KEY", "hello")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_S3_KEY")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_DEPLOYMENT_NAME", "hello-deployment")
@@ -333,6 +331,33 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_POD_NAME")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_CONTAINER_NAME", "fargate-container")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_CONTAINER_NAME")
+
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_CREATED", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_CREATED")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_NAMESPACE", "hello")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ROLE_NAME", "hello")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ROLE_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ROLE_SERVICE_PRINCIPALS", "a,b,c")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ROLE_SERVICE_PRINCIPALS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ROLE_MANAGED_POLICY_ARNS", "a,b,c")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ROLE_MANAGED_POLICY_ARNS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_SERVICE_ACCOUNT_NAME", "hello")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_SERVICE_ACCOUNT_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_CONFIG_MAP_NAME", "hello")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_CONFIG_MAP_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_CONFIG_MAP_SCRIPT_FILE_NAME", "hello.sh")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_CONFIG_MAP_SCRIPT_FILE_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_S3_KEY", "hello")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_S3_KEY")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_PROFILE_NAME", "hello")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_PROFILE_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_POD_NAME", "fargate-pod")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_POD_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_CONTAINER_NAME", "fargate-container")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_CONTAINER_NAME")
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
 		t.Fatal(err)
@@ -887,6 +912,48 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.AddOnFargate.ContainerName != "fargate-container" {
 		t.Fatalf("unexpected cfg.AddOnFargate.ContainerName %q", cfg.AddOnFargate.ContainerName)
+	}
+
+	if cfg.AddOnIRSAFargate.Created { // read-only must be ignored
+		t.Fatalf("unexpected cfg.AddOnIRSAFargate.Created %v", cfg.AddOnIRSAFargate.Created)
+	}
+	if !cfg.AddOnIRSAFargate.Enable {
+		t.Fatalf("unexpected cfg.AddOnIRSAFargate.Enable %v", cfg.AddOnIRSAFargate.Enable)
+	}
+	if cfg.AddOnIRSAFargate.Namespace != "hello" {
+		t.Fatalf("unexpected cfg.AddOnIRSAFargate.Namespace %q", cfg.AddOnIRSAFargate.Namespace)
+	}
+	if cfg.AddOnIRSAFargate.RoleName != "hello" {
+		t.Fatalf("unexpected cfg.AddOnIRSAFargate.RoleName %q", cfg.AddOnIRSAFargate.RoleName)
+	}
+	expectedAddOnIRSAFargateRoleServicePrincipals := []string{"a", "b", "c"}
+	if !reflect.DeepEqual(cfg.AddOnIRSAFargate.RoleServicePrincipals, expectedAddOnIRSAFargateRoleServicePrincipals) {
+		t.Fatalf("unexpected cfg.AddOnIRSAFargate.RoleServicePrincipals %q", cfg.AddOnIRSAFargate.RoleServicePrincipals)
+	}
+	expectedAddOnIRSAFargateRoleManagedPolicyARNs := []string{"a", "b", "c"}
+	if !reflect.DeepEqual(cfg.AddOnIRSAFargate.RoleManagedPolicyARNs, expectedAddOnIRSAFargateRoleManagedPolicyARNs) {
+		t.Fatalf("unexpected cfg.AddOnIRSAFargate.RoleManagedPolicyARNs %q", cfg.AddOnIRSAFargate.RoleManagedPolicyARNs)
+	}
+	if cfg.AddOnIRSAFargate.ServiceAccountName != "hello" {
+		t.Fatalf("unexpected cfg.AddOnIRSAFargate.ServiceAccountName %q", cfg.AddOnIRSAFargate.ServiceAccountName)
+	}
+	if cfg.AddOnIRSAFargate.ConfigMapName != "hello" {
+		t.Fatalf("unexpected cfg.AddOnIRSAFargate.ConfigMapName %q", cfg.AddOnIRSAFargate.ConfigMapName)
+	}
+	if cfg.AddOnIRSAFargate.ConfigMapScriptFileName != "hello.sh" {
+		t.Fatalf("unexpected cfg.AddOnIRSAFargate.ConfigMapScriptFileName %q", cfg.AddOnIRSAFargate.ConfigMapScriptFileName)
+	}
+	if cfg.AddOnIRSAFargate.S3Key != "hello" {
+		t.Fatalf("unexpected cfg.AddOnIRSAFargate.S3Key %q", cfg.AddOnIRSAFargate.S3Key)
+	}
+	if cfg.AddOnIRSAFargate.ProfileName != "hello" {
+		t.Fatalf("unexpected cfg.AddOnIRSAFargate.ProfileName %q", cfg.AddOnIRSAFargate.ProfileName)
+	}
+	if cfg.AddOnIRSAFargate.PodName != "fargate-pod" {
+		t.Fatalf("unexpected cfg.AddOnIRSAFargate.PodName %q", cfg.AddOnIRSAFargate.PodName)
+	}
+	if cfg.AddOnIRSAFargate.ContainerName != "fargate-container" {
+		t.Fatalf("unexpected cfg.AddOnIRSAFargate.ContainerName %q", cfg.AddOnIRSAFargate.ContainerName)
 	}
 
 	cfg.Parameters.RoleManagedPolicyARNs = nil

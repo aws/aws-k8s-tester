@@ -36,7 +36,7 @@ import (
 	"k8s.io/utils/exec"
 )
 
-// Config defines "Secrets" configuration.
+// Config defines "IAM Roles for Service Accounts (IRSA)" configuration.
 // ref. https://aws.amazon.com/blogs/opensource/introducing-fine-grained-iam-roles-service-accounts/
 type Config struct {
 	Logger    *zap.Logger
@@ -86,10 +86,10 @@ func (ts *tester) Create() error {
 		ts.cfg.EKSConfig.Sync()
 	}()
 
-	if err := ts.createS3(); err != nil {
+	if err := k8s_client.CreateNamespace(ts.cfg.Logger, ts.cfg.K8SClient.KubernetesClientSet(), ts.cfg.EKSConfig.AddOnIRSA.Namespace); err != nil {
 		return err
 	}
-	if err := k8s_client.CreateNamespace(ts.cfg.Logger, ts.cfg.K8SClient.KubernetesClientSet(), ts.cfg.EKSConfig.AddOnIRSA.Namespace); err != nil {
+	if err := ts.createS3(); err != nil {
 		return err
 	}
 	if err := ts.createOIDCProvider(); err != nil {
@@ -168,7 +168,7 @@ func (ts *tester) Delete() error {
 	if err := ts.deleteOIDCProvider(); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete IAM Open ID Connect provider (%v)", err))
 	}
-	ts.cfg.Logger.Info("wait for a minute after deleting namespace")
+	ts.cfg.Logger.Info("wait for a minute after deleting OIDC provider")
 	time.Sleep(time.Minute)
 
 	if err := k8s_client.DeleteNamespaceAndWait(ts.cfg.Logger,
@@ -248,9 +248,6 @@ func (ts *tester) deleteS3() error {
 func (ts *tester) createOIDCProvider() error {
 	if ts.cfg.EKSConfig.Name == "" {
 		return errors.New("EKSConfig.Name is empty")
-	}
-	if ts.cfg.EKSConfig.Status.AWSIAMRoleARN == "" {
-		return errors.New("EKSConfig.Status.AWSIAMRoleARN is empty")
 	}
 	if ts.cfg.EKSConfig.Status.ClusterOIDCIssuerURL == "" {
 		return errors.New("EKSConfig.Status.ClusterOIDCIssuerURL is empty")

@@ -170,6 +170,9 @@ type Config struct {
 	// AddOnFargate defines parameters for EKS cluster
 	// add-on "EKS on Fargate".
 	AddOnFargate *AddOnFargate `json:"add-on-fargate,omitempty"`
+	// AddOnIRSAFargate defines parameters for EKS cluster
+	// add-on "IAM Roles for Service Accounts (IRSA)" with Fargate.
+	AddOnIRSAFargate *AddOnIRSAFargate `json:"add-on-irsa-fargate,omitempty"`
 	// AddOnAppMesh defines parameters for EKS cluster
 	// add-on "EKS App Mesh Integration".
 	AddOnAppMesh *AddOnAppMesh `json:"add-on-app-mesh,omitempty"`

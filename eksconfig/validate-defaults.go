@@ -42,12 +42,6 @@ const (
 	MNGMaxLimit = 100
 )
 
-const (
-	// AMITypeBottleRocketCPU is the default AMI type for Bottlerocket OS.
-	// https://github.com/bottlerocket-os/bottlerocket
-	AMITypeBottleRocketCPU = "BOTTLEROCKET_x86_64"
-)
-
 // NewDefault returns a default configuration.
 //  - empty string creates a non-nil object for pointer-type field
 //  - omitting an entire field returns nil value
@@ -114,6 +108,7 @@ func NewDefault() *Config {
 			RoleCreate: true,
 			LogsDir:    "", // to be auto-generated
 		},
+
 		AddOnManagedNodeGroups: &AddOnManagedNodeGroups{
 			Enable:      false,
 			FetchLogs:   true,
@@ -213,6 +208,10 @@ func NewDefault() *Config {
 		AddOnFargate: &AddOnFargate{
 			Enable:     false,
 			RoleCreate: true,
+		},
+
+		AddOnIRSAFargate: &AddOnIRSAFargate{
+			Enable: false,
 		},
 
 		AddOnAppMesh: &AddOnAppMesh{
@@ -354,6 +353,9 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 	if err := cfg.validateAddOnFargate(); err != nil {
 		return fmt.Errorf("validateAddOnFargate failed [%v]", err)
+	}
+	if err := cfg.validateAddOnIRSAFargate(); err != nil {
+		return fmt.Errorf("validateIRSAAddOnFargate failed [%v]", err)
 	}
 	if err := cfg.validateAddOnAppMesh(); err != nil {
 		return fmt.Errorf("validateAddOnAppMesh failed [%v]", err)
@@ -682,7 +684,7 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 		}
 
 		switch v.AMIType {
-		case AMITypeBottleRocketCPU:
+		case ec2config.AMITypeBottleRocketCPU:
 			if v.RemoteAccessUserName != "ec2-user" {
 				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", v.AMIType, v.RemoteAccessUserName)
 			}
@@ -705,7 +707,7 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 		}
 
 		switch v.AMIType {
-		case AMITypeBottleRocketCPU:
+		case ec2config.AMITypeBottleRocketCPU:
 			if len(v.InstanceTypes) == 0 {
 				v.InstanceTypes = []string{DefaultNodeInstanceTypeCPU}
 			}
@@ -1071,7 +1073,7 @@ func (cfg *Config) validateAddOnConfigMaps() error {
 		return errors.New("AddOnConfigMaps.Enable true but no node group is enabled")
 	}
 	if cfg.AddOnConfigMaps.Namespace == "" {
-		cfg.AddOnConfigMaps.Namespace = cfg.Name + "-config-maps"
+		cfg.AddOnConfigMaps.Namespace = cfg.Name + "-configmaps"
 	}
 	if cfg.AddOnConfigMaps.Size > 900000 {
 		return fmt.Errorf("AddOnConfigMaps.Size limit is 0.9 MB, got %d", cfg.AddOnConfigMaps.Size)
@@ -1133,22 +1135,22 @@ func (cfg *Config) validateAddOnIRSA() error {
 		cfg.AddOnIRSA.RoleName = cfg.Name + "-role-irsa"
 	}
 	if cfg.AddOnIRSA.ServiceAccountName == "" {
-		cfg.AddOnIRSA.ServiceAccountName = cfg.Name + "-irsa-service-account"
+		cfg.AddOnIRSA.ServiceAccountName = cfg.Name + "-service-account-irsa"
 	}
 	if cfg.AddOnIRSA.ConfigMapName == "" {
-		cfg.AddOnIRSA.ConfigMapName = cfg.Name + "-irsa-configmap"
+		cfg.AddOnIRSA.ConfigMapName = cfg.Name + "-configmap-irsa"
 	}
 	if cfg.AddOnIRSA.ConfigMapScriptFileName == "" {
-		cfg.AddOnIRSA.ConfigMapScriptFileName = cfg.Name + "-irsa-configmap.sh"
+		cfg.AddOnIRSA.ConfigMapScriptFileName = cfg.Name + "-configmap-irsa.sh"
 	}
 	if cfg.AddOnIRSA.S3Key == "" {
-		cfg.AddOnIRSA.S3Key = path.Join(cfg.Name, "irsa-s3-key")
+		cfg.AddOnIRSA.S3Key = path.Join(cfg.Name, "s3-key-irsa")
 	}
 	if cfg.AddOnIRSA.DeploymentName == "" {
-		cfg.AddOnIRSA.DeploymentName = cfg.Name + "-irsa-deployment"
+		cfg.AddOnIRSA.DeploymentName = cfg.Name + "-deployment-irsa"
 	}
 	if cfg.AddOnIRSA.DeploymentResultPath == "" {
-		cfg.AddOnIRSA.DeploymentResultPath = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-irsa-deployment-result.log")
+		cfg.AddOnIRSA.DeploymentResultPath = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-deployment-irsa-result.log")
 	}
 	return nil
 }
@@ -1173,18 +1175,15 @@ func (cfg *Config) validateAddOnFargate() error {
 	// e.g. "The fargate profile name starts with the reserved prefix: 'eks-'."
 	if cfg.AddOnFargate.ProfileName == "" {
 		cfg.AddOnFargate.ProfileName = cfg.Name + "-fargate-profile"
-		if strings.HasPrefix(cfg.AddOnFargate.ProfileName, "eks-") {
-			cfg.AddOnFargate.ProfileName = strings.Replace(cfg.AddOnFargate.ProfileName, "eks-", "", 1)
-		}
 	}
 	if strings.HasPrefix(cfg.AddOnFargate.ProfileName, "eks-") {
-		return fmt.Errorf("AddOnFargate.ProfileName %q starts with the reserved prefix 'eks-'", cfg.AddOnFargate.ProfileName)
+		cfg.AddOnFargate.ProfileName = strings.Replace(cfg.AddOnFargate.ProfileName, "eks-", "", 1)
 	}
 	if cfg.AddOnFargate.SecretName == "" {
 		cfg.AddOnFargate.SecretName = cfg.Name + "addonfargatesecret"
 	}
 	if cfg.AddOnFargate.PodName == "" {
-		cfg.AddOnFargate.PodName = cfg.Name + "-fargate-pod"
+		cfg.AddOnFargate.PodName = cfg.Name + "-pod-fargate"
 	}
 	if cfg.AddOnFargate.ContainerName == "" {
 		cfg.AddOnFargate.ContainerName = cfg.Name + "-" + randString(10)
@@ -1216,6 +1215,54 @@ func (cfg *Config) validateAddOnFargate() error {
 		}
 	}
 
+	return nil
+}
+
+func (cfg *Config) validateAddOnIRSAFargate() error {
+	if !cfg.IsEnabledAddOnIRSAFargate() {
+		return nil
+	}
+	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
+		return errors.New("AddOnIRSAFargate.Enable true but no node group is enabled")
+	}
+	if cfg.Parameters.VersionValue < 1.14 {
+		return fmt.Errorf("Version %q not supported for AddOnIRSAFargate", cfg.Parameters.Version)
+	}
+	if cfg.S3BucketName == "" {
+		return errors.New("AddOnIRSAFargate requires S3 bucket but S3BucketName empty")
+	}
+	if cfg.AddOnIRSAFargate.Namespace == "" {
+		cfg.AddOnIRSAFargate.Namespace = cfg.Name + "-irsa-fargate"
+	}
+	if cfg.AddOnIRSAFargate.RoleName == "" {
+		cfg.AddOnIRSAFargate.RoleName = cfg.Name + "-role-irsa-fargate"
+	}
+	if cfg.AddOnIRSAFargate.ServiceAccountName == "" {
+		cfg.AddOnIRSAFargate.ServiceAccountName = cfg.Name + "-service-account-irsa-fargate"
+	}
+	if cfg.AddOnIRSAFargate.ConfigMapName == "" {
+		cfg.AddOnIRSAFargate.ConfigMapName = cfg.Name + "-configmap-irsa-fargate"
+	}
+	if cfg.AddOnIRSAFargate.ConfigMapScriptFileName == "" {
+		cfg.AddOnIRSAFargate.ConfigMapScriptFileName = cfg.Name + "-configmap-irsa-fargate.sh"
+	}
+	if cfg.AddOnIRSAFargate.S3Key == "" {
+		cfg.AddOnIRSAFargate.S3Key = path.Join(cfg.Name, "s3-key-irsa-fargate")
+	}
+	// do not prefix with "eks-"
+	// e.g. "The fargate profile name starts with the reserved prefix: 'eks-'."
+	if cfg.AddOnIRSAFargate.ProfileName == "" {
+		cfg.AddOnIRSAFargate.ProfileName = cfg.Name + "-irsa-fargate-profile"
+	}
+	if strings.HasPrefix(cfg.AddOnIRSAFargate.ProfileName, "eks-") {
+		cfg.AddOnIRSAFargate.ProfileName = strings.Replace(cfg.AddOnIRSAFargate.ProfileName, "eks-", "", 1)
+	}
+	if cfg.AddOnIRSAFargate.PodName == "" {
+		cfg.AddOnIRSAFargate.PodName = cfg.Name + "-pod-irsa-fargate"
+	}
+	if cfg.AddOnIRSAFargate.ContainerName == "" {
+		cfg.AddOnIRSAFargate.ContainerName = cfg.Name + "-" + randString(10)
+	}
 	return nil
 }
 
