@@ -31,13 +31,13 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.5.1
 	go.etcd.io/etcd v0.0.0-20200410171415-59f5fb25a533
-	go.uber.org/zap v1.14.1
+	go.uber.org/zap v1.15.0
 	golang.org/x/crypto v0.0.0-20200414173820-0848c9571904
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4
 	gopkg.in/ini.v1 v1.46.0 // indirect
 	gopkg.in/yaml.v2 v2.2.8
-	helm.sh/helm/v3 v3.2.0-rc.1
+	helm.sh/helm/v3 v3.2.0
 	k8s.io/api v0.18.2
 	k8s.io/apimachinery v0.18.2
 	k8s.io/cli-runtime v0.18.2

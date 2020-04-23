@@ -11,6 +11,11 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.7...v1.0.8
 
 - Add [`"github.com/aws/aws-k8s-tester/eks/kubeflow"`](https://github.com/aws/aws-k8s-tester/commit/).
 
+### Dependency
+
+- Upgrade [`github.com/helm/helm`](https://github.com/helm/helm/releases) from [`v3.2.0-rc.1`](https://github.com/helm/helm/releases/tag/v3.2.0-rc.1) to [`v3.2.0`](https://github.com/helm/helm/releases/tag/v3.2.0).
+- Upgrade [`github.com/uber-go/zap`](https://github.com/uber-go/zap/releases) from [`v1.14.1`](https://github.com/uber-go/zap/releases/tag/v1.14.1) to [`v1.15.0`](https://github.com/uber-go/zap/releases/tag/v1.15.0).
+
 ### Go
 
 - Compile with [*Go 1.14.2*](https://golang.org/doc/devel/release.html#go1.14).
