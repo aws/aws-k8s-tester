@@ -268,6 +268,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_CONFIG_MAP_SCRIPT_FILE_NAME | *eksconfig.
 AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_S3_KEY | *eksconfig.AddOnIRSAFargate.S3Key | string | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_PROFILE_NAME | *eksconfig.AddOnIRSAFargate.ProfileName | string | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_POD_NAME | *eksconfig.AddOnIRSAFargate.PodName | string | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_CONTAINER_NAME | *eksconfig.AddOnIRSAFargate.ContainerName | string | read-only "false"
 
 
 AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_ENABLE | *eksconfig.AddOnAppMesh.Enable | bool | read-only "false"
