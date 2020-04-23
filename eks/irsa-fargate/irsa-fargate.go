@@ -13,7 +13,6 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/eks/fargate"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	awscfn "github.com/aws/aws-k8s-tester/pkg/aws/cloudformation"
@@ -934,11 +933,6 @@ func (ts *tester) createPod() error {
 					},
 				},
 			},
-
-			NodeSelector: map[string]string{
-				// cannot fetch results from Bottlerocket
-				"AMIType": ec2config.AMITypeAL2X8664,
-			},
 		},
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
@@ -1001,22 +995,30 @@ func (ts *tester) getPods(ns string) (*v1.PodList, error) {
 }
 
 func (ts *tester) checkPod() error {
-	args := []string{
+	argsDesc := []string{
+		ts.cfg.EKSConfig.KubectlPath,
+		"--namespace=" + ts.cfg.EKSConfig.AddOnIRSAFargate.Namespace,
+		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+		"describe",
+		"pods/" + ts.cfg.EKSConfig.AddOnIRSAFargate.PodName,
+	}
+	cmdTxtDesc := strings.Join(argsDesc, " ")
+	argsLogs := []string{
 		ts.cfg.EKSConfig.KubectlPath,
 		"--namespace=" + ts.cfg.EKSConfig.AddOnIRSAFargate.Namespace,
 		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
 		"logs",
-		"pod",
-		ts.cfg.EKSConfig.AddOnIRSAFargate.PodName,
+		"pods/" + ts.cfg.EKSConfig.AddOnIRSAFargate.PodName,
 		"--timestamps",
 	}
-	cmdTxt := strings.Join(args, " ")
+	cmdTxtLogs := strings.Join(argsLogs, " ")
 	ts.cfg.Logger.Info("checking Pod logs",
 		zap.String("pod-name", ts.cfg.EKSConfig.AddOnIRSAFargate.PodName),
 		zap.String("container-name", ts.cfg.EKSConfig.AddOnIRSAFargate.ContainerName),
-		zap.String("command", cmdTxt),
+		zap.String("command-describe", cmdTxtDesc),
+		zap.String("command-logs", cmdTxtLogs),
 	)
-	retryStart, waitDur := time.Now(), 3*time.Minute
+	retryStart, waitDur := time.Now(), 2*time.Minute
 	for time.Now().Sub(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
@@ -1024,18 +1026,41 @@ func (ts *tester) checkPod() error {
 			return nil
 		case <-time.After(5 * time.Second):
 		}
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		output, err := exec.New().CommandContext(ctx, args[0], args[1:]...).CombinedOutput()
+
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		output, err := exec.New().CommandContext(ctx, argsDesc[0], argsDesc[1:]...).CombinedOutput()
 		cancel()
 		out := string(output)
 		if err != nil {
+			ts.cfg.Logger.Warn("'kubectl describe' failed", zap.String("output", out), zap.Error(err))
+			continue
+		}
+		fmt.Printf("'%s' output:\n\n%s\n\n", cmdTxtDesc, out)
+
+		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
+		output, err = exec.New().CommandContext(ctx, argsLogs[0], argsLogs[1:]...).CombinedOutput()
+		cancel()
+		out = string(output)
+		if err != nil {
 			ts.cfg.Logger.Warn("'kubectl logs' failed", zap.String("output", out), zap.Error(err))
+			continue
+		}
+		fmt.Printf("'%s' output:\n\n%s\n\n", cmdTxtLogs, out)
+
+		ts.cfg.Logger.Info("checked Pod logs",
+			zap.String("pod-name", ts.cfg.EKSConfig.AddOnIRSAFargate.PodName),
+			zap.String("container-name", ts.cfg.EKSConfig.AddOnIRSAFargate.ContainerName),
+		)
+
+		if !strings.Contains(out, sleepMsg) {
+			ts.cfg.Logger.Warn("unexpected logs output", zap.String("output", out))
 			time.Sleep(5 * time.Second)
 			continue
 		}
-		fmt.Printf("'%s' output:\n\n%s\n\n", cmdTxt, out)
+
 		break
 	}
+
 	return ts.cfg.EKSConfig.Sync()
 }
 
