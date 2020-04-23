@@ -65,11 +65,11 @@ func NewDefault() *Config {
 		// log file named with cluster name will be added automatically
 		LogOutputs: []string{"stderr"},
 
+		KubectlPath: "/tmp/kubectl-test-v1.16.9",
 		// https://github.com/kubernetes/kubernetes/tags
 		// https://kubernetes.io/docs/tasks/tools/install-kubectl/
 		// https://docs.aws.amazon.com/eks/latest/userguide/install-kubectl.html
-		KubectlDownloadURL: "https://storage.googleapis.com/kubernetes-release/release/v1.16.8/bin/linux/amd64/kubectl",
-		KubectlPath:        "/tmp/kubectl-test-1.16.8",
+		KubectlDownloadURL: "https://storage.googleapis.com/kubernetes-release/release/v1.16.9/bin/linux/amd64/kubectl",
 
 		OnFailureDelete:            true,
 		OnFailureDeleteWaitSeconds: 120,
@@ -242,7 +242,9 @@ func NewDefault() *Config {
 		},
 
 		AddOnKubeflow: &AddOnKubeflow{
-			Enable: false,
+			Enable:           false,
+			KfctlPath:        "/tmp/kfctl-test-v1.0.2",
+			KfctlDownloadURL: "https://github.com/kubeflow/kfctl/releases/download/v1.0.2/kfctl_v1.0.2-0-ga476281_linux.tar.gz",
 		},
 
 		// read-only
@@ -263,6 +265,9 @@ func NewDefault() *Config {
 
 	if runtime.GOOS == "darwin" {
 		cfg.KubectlDownloadURL = strings.Replace(cfg.KubectlDownloadURL, "linux", "darwin", -1)
+		if cfg.IsEnabledAddOnKubeflow() {
+			cfg.AddOnKubeflow.KfctlDownloadURL = strings.Replace(cfg.AddOnKubeflow.KfctlDownloadURL, "linux", "darwin", -1)
+		}
 		cfg.RemoteAccessPrivateKeyPath = filepath.Join(os.TempDir(), randString(10)+".insecure.key")
 	}
 

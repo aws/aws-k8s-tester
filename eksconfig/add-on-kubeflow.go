@@ -17,12 +17,19 @@ func (cfg *Config) IsEnabledAddOnKubeflow() bool {
 
 // AddOnKubeflow defines parameters for EKS cluster
 // add-on Kubeflow.
+// ref. https://www.kubeflow.org/docs/aws/deploy/install-kubeflow/
 type AddOnKubeflow struct {
 	// Enable is 'true' to create this add-on.
 	Enable bool `json:"enable"`
 
 	// Namespace is the namespace to create "AppMesh" controller/injector.
 	Namespace string `json:"namespace"`
+
+	// KfctlPath is the path to download the "kfctl".
+	KfctlPath string `json:"kfctl-path,omitempty"`
+	// KfctlDownloadURL is the download URL to download "kfctl" binary from.
+	// https://github.com/kubeflow/kfctl/releases
+	KfctlDownloadURL string `json:"kfctl-download-url,omitempty"`
 
 	// Created is true when the resource has been created.
 	// Used for delete operations.

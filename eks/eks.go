@@ -31,6 +31,7 @@ import (
 	irsa_fargate "github.com/aws/aws-k8s-tester/eks/irsa-fargate"
 	jobs_echo "github.com/aws/aws-k8s-tester/eks/jobs-echo"
 	jobs_pi "github.com/aws/aws-k8s-tester/eks/jobs-pi"
+	"github.com/aws/aws-k8s-tester/eks/kubeflow"
 	kubernetes_dashboard "github.com/aws/aws-k8s-tester/eks/kubernetes-dashboard"
 	"github.com/aws/aws-k8s-tester/eks/mng"
 	"github.com/aws/aws-k8s-tester/eks/ng"
@@ -118,6 +119,7 @@ type Tester struct {
 	csiEBSTester              csi_ebs.Tester
 	prometheusGrafanaTester   prometheus_grafana.Tester
 	wordPressTester           wordpress.Tester
+	kubeflowTester            kubeflow.Tester
 }
 
 // New returns a new EKS kubetest2 Deployer.
@@ -632,6 +634,17 @@ func (ts *Tester) createSubTesters() (err error) {
 	if ts.cfg.IsEnabledAddOnWordpress() {
 		ts.lg.Info("creating wordPressTester")
 		ts.wordPressTester, err = wordpress.NewTester(wordpress.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			Sig:       ts.interruptSig,
+			EKSConfig: ts.cfg,
+			K8SClient: ts.k8sClient,
+		})
+	}
+
+	if ts.cfg.IsEnabledAddOnKubeflow() {
+		ts.lg.Info("creating kubeflowTester")
+		ts.kubeflowTester, err = kubeflow.NewTester(kubeflow.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			Sig:       ts.interruptSig,
@@ -1204,7 +1217,7 @@ func (ts *Tester) Up() (err error) {
 			return errors.New("ts.csiEBSTester == nil when AddOnCSIEBS.Enable == true")
 		}
 		fmt.Printf("\n*********************************\n")
-		fmt.Printf("csiEBSTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnWordpress.Namespace)
+		fmt.Printf("csiEBSTester.Create (%q, \"%s --namespace=kube-system get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		if err := catchInterrupt(
 			ts.lg,
 			ts.stopCreationCh,
@@ -1245,6 +1258,23 @@ func (ts *Tester) Up() (err error) {
 			ts.stopCreationChOnce,
 			ts.interruptSig,
 			ts.wordPressTester.Create,
+		); err != nil {
+			return err
+		}
+	}
+
+	if ts.cfg.IsEnabledAddOnKubeflow() {
+		if ts.kubeflowTester == nil {
+			return errors.New("ts.kubeflowTester == nil when AddOnWordpress.Enable == true")
+		}
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("kubeflowTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnKubeflow.Namespace)
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.interruptSig,
+			ts.kubeflowTester.Create,
 		); err != nil {
 			return err
 		}
@@ -1418,6 +1448,19 @@ func (ts *Tester) down() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnNodeGroups() || ts.cfg.IsEnabledAddOnManagedNodeGroups() {
+		if ts.cfg.IsEnabledAddOnKubeflow() && ts.cfg.AddOnKubeflow.Created {
+			fmt.Printf("\n*********************************\n")
+			fmt.Printf("kubeflowTester.Delete (%q)\n", ts.cfg.ConfigPath)
+			if err := ts.kubeflowTester.Delete(); err != nil {
+				ts.lg.Warn("kubeflowTester.Delete failed", zap.Error(err))
+				errs = append(errs, err.Error())
+			} else {
+				waitDur := 20 * time.Second
+				ts.lg.Info("sleeping after deleting kubeflowTester", zap.Duration("wait", waitDur))
+				time.Sleep(waitDur)
+			}
+		}
+
 		if ts.cfg.IsEnabledAddOnWordpress() && ts.cfg.AddOnWordpress.Created {
 			fmt.Printf("\n*********************************\n")
 			fmt.Printf("wordPressTester.Delete (%q)\n", ts.cfg.ConfigPath)

@@ -791,6 +791,10 @@ func (ts *tester) waitForNodes(asgName string) error {
 
 		readies := 0
 		for _, node := range items {
+			labels := node.GetLabels()
+			if labels["Name"] != asgName {
+				continue
+			}
 			nodeName := node.GetName()
 
 			// e.g. given node name ip-192-168-81-186.us-west-2.compute.internal + DHCP option my-private-dns
@@ -801,7 +805,7 @@ func (ts *tester) waitForNodes(asgName string) error {
 			// ExternalDNS == ec2-52-38-118-149.us-west-2.compute.amazonaws.com
 			ts.cfg.Logger.Info("checking node address with EC2 Private DNS",
 				zap.String("name", nodeName),
-				zap.String("labels", fmt.Sprintf("%v", node.Labels)),
+				zap.String("labels", fmt.Sprintf("%v", labels)),
 			)
 			hostName := ""
 			for _, av := range node.Status.Addresses {
@@ -833,7 +837,7 @@ func (ts *tester) waitForNodes(asgName string) error {
 				_, ok = ec2PrivateDNS[strings.Split(hostName, ".")[0]]
 			}
 			if !ok {
-				ts.cfg.Logger.Warn("node may not belong to this ASG", zap.String("host-name", hostName), zap.String("ec2-private-dnss", fmt.Sprintf("%v", ec2PrivateDNS)))
+				ts.cfg.Logger.Warn("node may not belong to this ASG", zap.String("host-name", hostName), zap.Int("ec2-private-dnss", len(ec2PrivateDNS)))
 				continue
 			}
 			ts.cfg.Logger.Info("checked node host name with EC2 Private DNS", zap.String("name", nodeName), zap.String("host-name", hostName))

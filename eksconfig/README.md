@@ -332,6 +332,8 @@ AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_URL | *eksconfig.AddOnWordpress.URL | string
 
 AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_ENABLE | *eksconfig.AddOnKubeflow.Enable | bool | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_NAMESPACE | *eksconfig.AddOnKubeflow.Namespace | string | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_KFCTL_PATH | *eksconfig.AddOnKubeflow.KfctlPath | string | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_KFCTL_DOWNLOAD_URL | *eksconfig.AddOnKubeflow.KfctlDownloadURL | string | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_CREATED | *eksconfig.AddOnKubeflow.Created | bool | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_CREATE_TOOK | *eksconfig.AddOnKubeflow.CreateTook | time.Duration | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_CREATE_TOOK_STRING | *eksconfig.AddOnKubeflow.CreateTookString | string | read-only "true"

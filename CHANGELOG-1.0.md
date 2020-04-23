@@ -11,9 +11,21 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.7...v1.0.8
 
 - Increase [`NGMaxLimit` from 100 to 300](https://github.com/aws/aws-k8s-tester/commit/6ba51a14f4689996b326c001e6045bbde8306274).
 
+### `ec2config`
+
+- Rename [`ASG.SSMDocumentCommandID` to `ASG.SSMDocumentCommandIDs` as `[]string` type](https://github.com/aws/aws-k8s-tester/commit/).
+
+### `ec2`
+
+- Batch [SSM execution by 50](https://github.com/aws/aws-k8s-tester/commit/).
+  - Fix `'instanceIds' failed to satisfy constraint: Member must have length less than or equal to 50`.
+
 ### `eks`
 
 - Add [`"github.com/aws/aws-k8s-tester/eks/kubeflow"`](https://github.com/aws/aws-k8s-tester/commit/).
+- Improve [node waits using node labels](https://github.com/aws/aws-k8s-tester/commit/).
+- Batch [SSM execution by 50](https://github.com/aws/aws-k8s-tester/commit/).
+  - Fix `'instanceIds' failed to satisfy constraint: Member must have length less than or equal to 50`.
 
 ### Dependency
 

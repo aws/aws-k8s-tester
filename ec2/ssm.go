@@ -267,47 +267,75 @@ func (ts *Tester) sendSSMDocumentCommand() error {
 			)
 			continue
 		}
+		if len(cur.Instances) == 0 {
+			return fmt.Errorf("no instance found for SSM document %q", cur.SSMDocumentName)
+		}
 		ids := make([]string, 0)
 		for id := range cur.Instances {
 			ids = append(ids, id)
 		}
-		if len(ids) == 0 {
-			return fmt.Errorf("no instance found for SSM document %q", cur.SSMDocumentName)
-		}
+
+		// batch by 50
+		// e.g. 'instanceIds' failed to satisfy constraint: Member must have length less than or equal to 50
 		ts.lg.Info("sending SSM document",
 			zap.String("asg-name", asgName),
 			zap.String("ssm-document-name", cur.SSMDocumentName),
-			zap.Strings("instance-ids", ids),
+			zap.Int("instance-ids", len(ids)),
 		)
-		ssmInput := &ssm.SendCommandInput{
-			DocumentName:   aws.String(cur.SSMDocumentName),
-			Comment:        aws.String(cur.SSMDocumentName + "-" + randString(10)),
-			InstanceIds:    aws.StringSlice(ids),
-			MaxConcurrency: aws.String(fmt.Sprintf("%d", len(ids))),
-			Parameters: map[string][]*string{
-				"region":                  aws.StringSlice([]string{ts.cfg.Region}),
-				"executionTimeoutSeconds": aws.StringSlice([]string{fmt.Sprintf("%d", cur.SSMDocumentExecutionTimeoutSeconds)}),
-			},
-			OutputS3BucketName: aws.String(ts.cfg.S3BucketName),
-			OutputS3KeyPrefix:  aws.String(path.Join(ts.cfg.Name, "ssm-outputs")),
+
+		left := make([]string, len(ids))
+		copy(left, ids)
+		for len(left) > 0 {
+			batch := make([]string, 0)
+			switch {
+			case len(left) <= 50:
+				batch = append(batch, left...)
+				left = left[:0:0]
+			case len(left) > 50:
+				batch = append(batch, left[:50]...)
+				left = left[50:]
+			}
+			ssmInput := &ssm.SendCommandInput{
+				DocumentName:   aws.String(cur.SSMDocumentName),
+				Comment:        aws.String(cur.SSMDocumentName + "-" + randString(10)),
+				InstanceIds:    aws.StringSlice(batch),
+				MaxConcurrency: aws.String(fmt.Sprintf("%d", len(batch))),
+				Parameters: map[string][]*string{
+					"region":                  aws.StringSlice([]string{ts.cfg.Region}),
+					"executionTimeoutSeconds": aws.StringSlice([]string{fmt.Sprintf("%d", cur.SSMDocumentExecutionTimeoutSeconds)}),
+				},
+				OutputS3BucketName: aws.String(ts.cfg.S3BucketName),
+				OutputS3KeyPrefix:  aws.String(path.Join(ts.cfg.Name, "ssm-outputs")),
+			}
+			if len(cur.SSMDocumentCommands) > 0 {
+				ssmInput.Parameters["moreCommands"] = aws.StringSlice([]string{cur.SSMDocumentCommands})
+			}
+			cmd, err := ts.ssmAPI.SendCommand(ssmInput)
+			if err != nil {
+				return err
+			}
+			docName := aws.StringValue(cmd.Command.DocumentName)
+			if docName != cur.SSMDocumentName {
+				return fmt.Errorf("SSM Document Name expected %q, got %q", cur.SSMDocumentName, docName)
+			}
+			cmdID := aws.StringValue(cmd.Command.CommandId)
+			cur.SSMDocumentCommandIDs = append(cur.SSMDocumentCommandIDs, cmdID)
+
+			ts.lg.Info("sent SSM document",
+				zap.String("asg-name", asgName),
+				zap.String("ssm-document-name", cur.SSMDocumentName),
+				zap.String("ssm-command-id", cmdID),
+				zap.Int("sent-instance-ids", len(batch)),
+				zap.Int("left-instance-ids", len(left)),
+			)
+			if len(left) == 0 {
+				break
+			}
+
+			ts.lg.Info("waiting for next SSM run batch", zap.Int("left", len(left)))
+			time.Sleep(15 * time.Second)
 		}
-		if len(cur.SSMDocumentCommands) > 0 {
-			ssmInput.Parameters["moreCommands"] = aws.StringSlice([]string{cur.SSMDocumentCommands})
-		}
-		cmd, err := ts.ssmAPI.SendCommand(ssmInput)
-		if err != nil {
-			return err
-		}
-		docName := aws.StringValue(cmd.Command.DocumentName)
-		if docName != cur.SSMDocumentName {
-			return fmt.Errorf("SSM Document Name expected %q, got %q", cur.SSMDocumentName, docName)
-		}
-		cur.SSMDocumentCommandID = aws.StringValue(cmd.Command.CommandId)
-		ts.lg.Info("sent SSM document",
-			zap.String("asg-name", asgName),
-			zap.String("ssm-document-name", cur.SSMDocumentName),
-			zap.String("ssm-command-id", cur.SSMDocumentCommandID),
-		)
+
 		ts.cfg.ASGs[asgName] = cur
 		ts.cfg.Sync()
 	}

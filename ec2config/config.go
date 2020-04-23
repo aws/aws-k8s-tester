@@ -233,9 +233,9 @@ type ASG struct {
 	// Only used if SSM doc is created.
 	SSMDocumentCommands string `json:"ssm-document-commands"`
 	// SSMDocumentExecutionTimeoutSeconds is the SSM document execution timeout in seconds.
-	SSMDocumentExecutionTimeoutSeconds int    `json:"ssm-document-execution-timeout-in-seconds"`
-	SSMDocumentCFNStackID              string `json:"ssm-document-cfn-stack-id" read-only:"true"`
-	SSMDocumentCommandID               string `json:"ssm-document-command-id" read-only:"true"`
+	SSMDocumentExecutionTimeoutSeconds int      `json:"ssm-document-execution-timeout-in-seconds"`
+	SSMDocumentCFNStackID              string   `json:"ssm-document-cfn-stack-id" read-only:"true"`
+	SSMDocumentCommandIDs              []string `json:"ssm-document-command-ids" read-only:"true"`
 
 	// TODO: support bootstrap arguments
 	// ref. https://github.com/awslabs/amazon-eks-ami/blob/master/amazon-eks-nodegroup.yaml

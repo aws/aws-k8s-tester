@@ -1379,6 +1379,10 @@ func TestEnvAddOnKubeflow(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_CREATED")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_NAMESPACE", "kubeflow")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_KFCTL_PATH", "kubeflow-path")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_KFCTL_PATH")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_KFCTL_DOWNLOAD_URL", "kubeflow-download-here")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_KFCTL_DOWNLOAD_URL")
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
 		t.Fatal(err)
@@ -1394,5 +1398,11 @@ func TestEnvAddOnKubeflow(t *testing.T) {
 	}
 	if cfg.AddOnKubeflow.Namespace != "kubeflow" {
 		t.Fatalf("unexpected cfg.AddOnKubeflow.Namespace %q", cfg.AddOnKubeflow.Namespace)
+	}
+	if cfg.AddOnKubeflow.KfctlPath != "kubeflow-path" {
+		t.Fatalf("unexpected cfg.AddOnKubeflow.KfctlPath %q", cfg.AddOnKubeflow.KfctlPath)
+	}
+	if cfg.AddOnKubeflow.KfctlDownloadURL != "kubeflow-download-here" {
+		t.Fatalf("unexpected cfg.AddOnKubeflow.KfctlDownloadURL %q", cfg.AddOnKubeflow.KfctlDownloadURL)
 	}
 }
