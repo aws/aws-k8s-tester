@@ -113,8 +113,8 @@ Resources:
         DesiredSize: !Ref ASGDesiredCapacity
       Subnets: !Ref PublicSubnetIDs
       Labels:
-        AMIType: !Ref AMIType
         NGType: managed
+        AMIType: !Ref AMIType
         Name: !Ref Name
 {{ if ne .PropertyReleaseVersion "" }}{{.PropertyReleaseVersion}}{{ end }}
 
@@ -203,8 +203,8 @@ func (ts *tester) createASG() error {
 					"aws-k8s-tester-version": aws.String(version.ReleaseVersion),
 				},
 				Labels: map[string]*string{
-					"AMIType": aws.String(cur.AMIType),
 					"NGType":  aws.String("managed"),
+					"AMIType": aws.String(cur.AMIType),
 					"Name":    aws.String(cur.Name),
 				},
 			}

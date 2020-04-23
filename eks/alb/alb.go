@@ -533,11 +533,11 @@ func (ts *tester) createALBDeployment() error {
 							},
 							ServiceAccountName: albIngressControllerServiceAccountName,
 							NodeSelector: map[string]string{
+								"NGType": ngType,
 								// do not deploy in bottlerocket; PVC not working
 								// do not mix with MNG
 								// controller "msg"="Reconciler error" "error"="no object matching key \"eks-2020042119-bluee7qmz7kb-alb-2048/alb-2048-ingress\" in local store"  "controller"="alb-ingress-controller" "request"={"Namespace":"eks-2020042119-bluee7qmz7kb-alb-2048","Name":"alb-2048-ingress"}
 								"AMIType": ec2config.AMITypeAL2X8664,
-								"NGType":  ngType,
 							},
 						},
 					},
