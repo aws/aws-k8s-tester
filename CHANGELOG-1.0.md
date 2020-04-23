@@ -11,6 +11,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.6...v1.0.7
 
 - Add [`"github.com/aws/aws-k8s-tester/eks/kubeflow"`](https://github.com/aws/aws-k8s-tester/commit/).
 - Add [`AddOnIRSAFargate` for "IAM Roles for Service Accounts (IRSA)" Pod with Fargate](https://github.com/aws/aws-k8s-tester/commit/a81b0245401cfdc51188dfaed1641bb39a77107d).
+- Fix [`eks/fargate` `kubectl logs`](https://github.com/aws/aws-k8s-tester/commit/13749885f2f189f610e9d7fef99d89e04fde3793).
 
 ### Dependency
 
