@@ -725,9 +725,10 @@ func (ts *tester) waitForNodes(asgName string) error {
 	}
 
 	ts.cfg.Logger.Info(
-		"describing EC2 instances in ASG",
+		"waiting for EC2 instances in ASG",
 		zap.String("asg-name", cur.Name),
 		zap.Strings("instance-ids", instanceIDs),
+		zap.Duration("wait", waitDur),
 	)
 	ec2Instances, err := awsapiec2.PollUntilRunning(
 		waitDur,
@@ -766,7 +767,7 @@ func (ts *tester) waitForNodes(asgName string) error {
 		ec2PrivateDNS[strings.Split(v.PrivateDNSName, ".")[0]] = struct{}{}
 	}
 
-	ts.cfg.Logger.Info("checking nodes readiness")
+	ts.cfg.Logger.Info("checking nodes readiness", zap.Duration("wait", waitDur))
 	var items []v1.Node
 	retryStart := time.Now()
 	ready := false
