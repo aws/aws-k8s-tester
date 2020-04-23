@@ -434,6 +434,15 @@ func (ts *tester) createRole() error {
 			},
 		},
 	}
+	if len(ts.cfg.EKSConfig.AddOnIRSAFargate.RoleServicePrincipals) > 0 {
+		ts.cfg.Logger.Info("creating a new IRSA role with role service principals",
+			zap.Strings("role-service-principals", ts.cfg.EKSConfig.AddOnIRSAFargate.RoleServicePrincipals),
+		)
+		stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
+			ParameterKey:   aws.String("RoleServicePrincipals"),
+			ParameterValue: aws.String(strings.Join(ts.cfg.EKSConfig.AddOnIRSAFargate.RoleServicePrincipals, ",")),
+		})
+	}
 	if len(ts.cfg.EKSConfig.AddOnIRSAFargate.RoleManagedPolicyARNs) > 0 {
 		ts.cfg.Logger.Info("creating a new IRSA role with custom managed role policies",
 			zap.Strings("policy-arns", ts.cfg.EKSConfig.AddOnIRSAFargate.RoleManagedPolicyARNs),
