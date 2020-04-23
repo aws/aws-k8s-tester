@@ -34,7 +34,7 @@ const (
 	// NGsMaxLimit is the maximum number of "Node Group"s per a EKS cluster.
 	NGsMaxLimit = 10
 	// NGMaxLimit is the maximum number of nodes per a "Node Group".
-	NGMaxLimit = 100
+	NGMaxLimit = 300
 
 	// MNGsMaxLimit is the maximum number of "Managed Node Group"s per a EKS cluster.
 	MNGsMaxLimit = 10
