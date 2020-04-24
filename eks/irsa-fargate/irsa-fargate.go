@@ -864,7 +864,7 @@ func (ts *tester) checkNode() error {
 }
 
 // TemplatePodScript is the script to run in Deployment.
-const TemplatePodScript = `cat /opt/{{ .ConfigMapScriptFileName }}; printf '\n\nexecuting...\n\n'; /opt/{{ .ConfigMapScriptFileName }};`
+const TemplatePodScript = `printf '\n\nexecuting...\n\n'; /opt/{{ .ConfigMapScriptFileName }};`
 
 type podScriptTemplate struct {
 	ConfigMapScriptFileName string
@@ -1018,7 +1018,7 @@ func (ts *tester) checkPod() error {
 		zap.String("command-describe", cmdTxtDesc),
 		zap.String("command-logs", cmdTxtLogs),
 	)
-	retryStart, waitDur := time.Now(), 2*time.Minute
+	retryStart, waitDur := time.Now(), 3*time.Minute
 	for time.Now().Sub(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
