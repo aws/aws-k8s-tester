@@ -29,6 +29,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.7...v1.0.8
 - Improve [node waits using node labels](https://github.com/aws/aws-k8s-tester/commit/7aed1aa60a370c5cf924357b3d197e60d04c1b92).
 - Batch [SSM execution by 50](https://github.com/aws/aws-k8s-tester/commit/7aed1aa60a370c5cf924357b3d197e60d04c1b92).
   - Fix `'instanceIds' failed to satisfy constraint: Member must have length less than or equal to 50`.
+- Add [`eks/helm.InstallConfig.QueryFunc` for debug](https://github.com/aws/aws-k8s-tester/commit/6e75d8eb022ed293e0cc762ec25f335c5df72cfa).
 
 ### Dependency
 
