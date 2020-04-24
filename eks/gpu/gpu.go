@@ -26,7 +26,6 @@ type Config struct {
 	Sig       chan os.Signal
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
-	Namespace string
 }
 
 // Tester defines GPU tester.

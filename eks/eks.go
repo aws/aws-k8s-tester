@@ -393,7 +393,6 @@ func (ts *Tester) createSubTesters() (err error) {
 		Sig:       ts.interruptSig,
 		EKSConfig: ts.cfg,
 		K8SClient: ts.k8sClient,
-		Namespace: ts.cfg.Name,
 	})
 	if err != nil {
 		return err
