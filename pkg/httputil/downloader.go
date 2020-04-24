@@ -146,7 +146,9 @@ func getSize(lg *zap.Logger, cli *http.Client, downloadURL string) (size int64, 
 			resp.Body.Close()
 			break
 		}
-		resp.Body.Close()
+		if resp != nil && resp.Body != nil {
+			resp.Body.Close()
+		}
 		lg.Warn("failed to get header; retrying", zap.Error(err))
 		time.Sleep(time.Second)
 	}
