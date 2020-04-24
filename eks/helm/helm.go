@@ -104,18 +104,31 @@ func RepoAdd(lg *zap.Logger, name, url string) error {
 
 // InstallConfig defines helm installation configuration.
 type InstallConfig struct {
-	Logger         *zap.Logger
-	Timeout        time.Duration
+	Logger *zap.Logger
+
+	Stopc   chan struct{}
+	Sig     chan os.Signal
+	Timeout time.Duration
+
 	KubeConfigPath string
 	Namespace      string
 	ChartRepoURL   string
 	ChartName      string
 	ReleaseName    string
 	Values         map[string]interface{}
+
+	QueryFunc     func()
+	QueryInterval time.Duration
 }
+
+const defaultQueryInterval = 30 * time.Second
 
 // Install installs a helm chart.
 func Install(cfg InstallConfig) (err error) {
+	if cfg.QueryInterval == 0 {
+		cfg.QueryInterval = defaultQueryInterval
+	}
+
 	cfg.Logger.Info("installing chart",
 		zap.String("namespace", cfg.Namespace),
 		zap.String("chart-repo-url", cfg.ChartRepoURL),
@@ -235,17 +248,52 @@ func Install(cfg InstallConfig) (err error) {
 		)
 	}
 
+	donec1, donec2 := make(chan struct{}), make(chan struct{})
+	if cfg.QueryFunc != nil {
+		go func() {
+			cfg.Logger.Info("starting query function for-loop", zap.Duration("interval", cfg.QueryInterval))
+			for {
+				select {
+				case <-donec1:
+					cfg.Logger.Warn("closing goroutine")
+					close(donec2)
+					return
+				case <-cfg.Stopc:
+					cfg.Logger.Warn("stopping goroutine")
+					return
+				case sig := <-cfg.Sig:
+					cfg.Logger.Warn("stopping goroutine", zap.String("signal", sig.String()))
+					return
+				case <-time.After(cfg.QueryInterval):
+				}
+
+				cfg.Logger.Info("executing query function")
+				cfg.QueryFunc()
+			}
+		}()
+	}
+
 	rs, err := install.Run(chart, cfg.Values)
 	if err != nil {
 		cfg.Logger.Warn("failed to install chart", zap.String("release-name", cfg.ReleaseName), zap.Error(err))
-		return err
+	} else {
+		cfg.Logger.Info("installed chart",
+			zap.String("namespace", rs.Namespace),
+			zap.String("name", rs.Name),
+			zap.String("version", fmt.Sprintf("%v", rs.Version)),
+		)
 	}
-	cfg.Logger.Info("installed chart",
-		zap.String("namespace", rs.Namespace),
-		zap.String("name", rs.Name),
-		zap.String("version", fmt.Sprintf("%v", rs.Version)),
-	)
-	return nil
+
+	if cfg.QueryFunc != nil {
+		close(donec1)
+		select {
+		case <-donec2:
+		case <-cfg.Stopc:
+		case <-cfg.Sig:
+		}
+	}
+
+	return err
 }
 
 // Uninstall uninstalls a helm chart.

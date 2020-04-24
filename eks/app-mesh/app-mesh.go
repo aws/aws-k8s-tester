@@ -321,6 +321,8 @@ func (ts *tester) createHelmController() error {
 	}
 	return helm.Install(helm.InstallConfig{
 		Logger:         ts.cfg.Logger,
+		Stopc:          ts.cfg.Stopc,
+		Sig:            ts.cfg.Sig,
 		Timeout:        15 * time.Minute,
 		KubeConfigPath: ts.cfg.EKSConfig.KubeConfigPath,
 		Namespace:      ts.cfg.EKSConfig.AddOnAppMesh.Namespace,
@@ -328,6 +330,8 @@ func (ts *tester) createHelmController() error {
 		ChartName:      chartNameController,
 		ReleaseName:    chartNameController,
 		Values:         values,
+		QueryFunc:      nil,
+		QueryInterval:  30 * time.Second,
 	})
 }
 
@@ -357,6 +361,8 @@ func (ts *tester) createHelmInjector() error {
 	}
 	return helm.Install(helm.InstallConfig{
 		Logger:         ts.cfg.Logger,
+		Stopc:          ts.cfg.Stopc,
+		Sig:            ts.cfg.Sig,
 		Timeout:        15 * time.Minute,
 		KubeConfigPath: ts.cfg.EKSConfig.KubeConfigPath,
 		Namespace:      ts.cfg.EKSConfig.AddOnAppMesh.Namespace,
@@ -364,6 +370,8 @@ func (ts *tester) createHelmInjector() error {
 		ChartName:      chartNameInjector,
 		ReleaseName:    chartNameInjector,
 		Values:         values,
+		QueryFunc:      nil,
+		QueryInterval:  30 * time.Second,
 	})
 }
 

@@ -178,6 +178,8 @@ func (ts *tester) createHelmPrometheus() error {
 
 	return helm.Install(helm.InstallConfig{
 		Logger:         ts.cfg.Logger,
+		Stopc:          ts.cfg.Stopc,
+		Sig:            ts.cfg.Sig,
 		Timeout:        15 * time.Minute,
 		KubeConfigPath: ts.cfg.EKSConfig.KubeConfigPath,
 		Namespace:      chartNamespacePrometheus,
@@ -185,6 +187,8 @@ func (ts *tester) createHelmPrometheus() error {
 		ChartName:      chartNamePrometheus,
 		ReleaseName:    chartNamePrometheus,
 		Values:         values,
+		QueryFunc:      nil,
+		QueryInterval:  30 * time.Second,
 	})
 }
 
@@ -274,6 +278,8 @@ func (ts *tester) createHelmGrafana() error {
 
 	return helm.Install(helm.InstallConfig{
 		Logger:         ts.cfg.Logger,
+		Stopc:          ts.cfg.Stopc,
+		Sig:            ts.cfg.Sig,
 		Timeout:        15 * time.Minute,
 		KubeConfigPath: ts.cfg.EKSConfig.KubeConfigPath,
 		Namespace:      chartNamespaceGrafana,
@@ -281,6 +287,8 @@ func (ts *tester) createHelmGrafana() error {
 		ChartName:      chartNameGrafana,
 		ReleaseName:    chartNameGrafana,
 		Values:         values,
+		QueryFunc:      nil,
+		QueryInterval:  30 * time.Second,
 	})
 }
 

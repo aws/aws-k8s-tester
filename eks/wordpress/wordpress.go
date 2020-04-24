@@ -178,6 +178,8 @@ func (ts *tester) createHelmWordpress() error {
 
 	return helm.Install(helm.InstallConfig{
 		Logger:         ts.cfg.Logger,
+		Stopc:          ts.cfg.Stopc,
+		Sig:            ts.cfg.Sig,
 		Timeout:        15 * time.Minute,
 		KubeConfigPath: ts.cfg.EKSConfig.KubeConfigPath,
 		Namespace:      ts.cfg.EKSConfig.AddOnWordpress.Namespace,
@@ -185,6 +187,8 @@ func (ts *tester) createHelmWordpress() error {
 		ChartName:      chartName,
 		ReleaseName:    chartName,
 		Values:         values,
+		QueryFunc:      nil,
+		QueryInterval:  30 * time.Second,
 	})
 }
 

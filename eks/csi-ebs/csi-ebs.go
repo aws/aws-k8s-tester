@@ -4,7 +4,9 @@
 package csiebs
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -13,6 +15,7 @@ import (
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"go.uber.org/zap"
+	"k8s.io/utils/exec"
 )
 
 // Config defines AWS EBS CSI Driver configuration.
@@ -101,22 +104,44 @@ func (ts *tester) createHelmCSI() error {
 	values["enableVolumeResizing"] = true
 	values["enableVolumeSnapshot"] = true
 
+	args := []string{
+		ts.cfg.EKSConfig.KubectlPath,
+		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+		"--namespace=kube-system",
+		"describe",
+		"deployment.apps/ebs-csi-controller",
+	}
+	cmdTxt := strings.Join(args, " ")
 	return helm.Install(helm.InstallConfig{
 		Logger:         ts.cfg.Logger,
-		Timeout:        10 * time.Minute,
+		Stopc:          ts.cfg.Stopc,
+		Sig:            ts.cfg.Sig,
+		Timeout:        15 * time.Minute,
 		KubeConfigPath: ts.cfg.EKSConfig.KubeConfigPath,
 		Namespace:      "kube-system",
 		ChartRepoURL:   ts.cfg.EKSConfig.AddOnCSIEBS.ChartRepoURL,
 		ChartName:      chartName,
 		ReleaseName:    chartName,
 		Values:         values,
+		QueryFunc: func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			output, err := exec.New().CommandContext(ctx, args[0], args[1:]...).CombinedOutput()
+			cancel()
+			out := string(output)
+			if err != nil {
+				ts.cfg.Logger.Warn("'kubectl describe' failed", zap.String("output", out), zap.Error(err))
+			} else {
+				fmt.Printf("'%s' output:\n\n%s\n\n", cmdTxt, out)
+			}
+		},
+		QueryInterval: 30 * time.Second,
 	})
 }
 
 func (ts *tester) deleteHelmCSI() error {
 	return helm.Uninstall(helm.InstallConfig{
 		Logger:         ts.cfg.Logger,
-		Timeout:        10 * time.Minute,
+		Timeout:        15 * time.Minute,
 		KubeConfigPath: ts.cfg.EKSConfig.KubeConfigPath,
 		Namespace:      "kube-system",
 		ChartName:      chartName,
