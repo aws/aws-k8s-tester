@@ -15,6 +15,19 @@ https://github.com/kubernetes/enhancements/blob/master/keps/provider-aws/2018112
 - Flexible add-on support via environmental variables
 - Extensible as a Go package; `eks.Tester.Up` to create EKS
 
+The main goal is to create "temporary" EC2 instances or EKS clusters for "testing" purposes:
+
+* Upstream conformance tests
+    * https://github.com/kubernetes/test-infra/blob/master/config/jobs/kubernetes/sig-cloud-provider/aws/eks/eks-periodics.yaml
+    * https://github.com/kubernetes/test-infra/pull/16890
+* CNI plugin conformance tests
+    * https://github.com/aws/amazon-vpc-cni-k8s/blob/master/scripts/lib/cluster.sh
+    * https://github.com/aws/amazon-vpc-cni-k8s/pull/875
+    * https://github.com/aws/amazon-vpc-cni-k8s/pull/878
+* AppMesh scalability testing
+    * https://github.com/aws/aws-app-mesh-controller-for-k8s/pull/137
+
+
 ## Install
 
 https://github.com/aws/aws-k8s-tester/releases
