@@ -24,6 +24,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.7...v1.0.8
 
 ### `eks`
 
+- Fix [`eks/irsa-fargate` `kubectl logs` test](https://github.com/aws/aws-k8s-tester/commit/27605323e451b0d09c0abaff82333e1a20a93fb3).
 - Add [`"github.com/aws/aws-k8s-tester/eks/kubeflow"`](https://github.com/aws/aws-k8s-tester/commit/).
 - Improve [node waits using node labels](https://github.com/aws/aws-k8s-tester/commit/7aed1aa60a370c5cf924357b3d197e60d04c1b92).
 - Batch [SSM execution by 50](https://github.com/aws/aws-k8s-tester/commit/7aed1aa60a370c5cf924357b3d197e60d04c1b92).
