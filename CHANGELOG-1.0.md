@@ -35,6 +35,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.7...v1.0.8
 
 - Upgrade [`github.com/helm/helm`](https://github.com/helm/helm/releases) from [`v3.2.0-rc.1`](https://github.com/helm/helm/releases/tag/v3.2.0-rc.1) to [`v3.2.0`](https://github.com/helm/helm/releases/tag/v3.2.0).
 - Upgrade [`github.com/uber-go/zap`](https://github.com/uber-go/zap/releases) from [`v1.14.1`](https://github.com/uber-go/zap/releases/tag/v1.14.1) to [`v1.15.0`](https://github.com/uber-go/zap/releases/tag/v1.15.0).
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.30.13`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.13) to [`v1.30.14`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.14).
 
 ### Go
 
