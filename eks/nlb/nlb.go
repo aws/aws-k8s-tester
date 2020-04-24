@@ -2,19 +2,16 @@
 package nlb
 
 import (
-	"bytes"
 	"context"
-	"crypto/tls"
 	"errors"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/aws/elb"
+	"github.com/aws/aws-k8s-tester/pkg/httputil"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/elbv2/elbv2iface"
@@ -465,15 +462,13 @@ func (ts *tester) createService() error {
 		case <-time.After(5 * time.Second):
 		}
 
-		buf := bytes.NewBuffer(nil)
-		err = httpReadInsecure(ts.cfg.Logger, ts.cfg.EKSConfig.AddOnNLBHelloWorld.URL, buf)
+		out, err := httputil.ReadInsecure(ts.cfg.Logger, os.Stderr, ts.cfg.EKSConfig.AddOnNLBHelloWorld.URL)
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to read NLB hello-world Service; retrying", zap.Error(err))
 			time.Sleep(5 * time.Second)
 			continue
 		}
-
-		httpOutput := buf.String()
+		httpOutput := string(out)
 		fmt.Printf("\nNLB hello-world Service output:\n%s\n", httpOutput)
 
 		if strings.Contains(httpOutput, `<h1>Hello world!</h1>`) {
@@ -516,32 +511,4 @@ func (ts *tester) deleteService() error {
 
 	ts.cfg.Logger.Info("deleted NLB hello-world Service", zap.Error(err))
 	return ts.cfg.EKSConfig.Sync()
-}
-
-// curl -k [URL]
-func httpReadInsecure(lg *zap.Logger, u string, wr io.Writer) error {
-	lg.Info("reading", zap.String("url", u))
-	cli := &http.Client{
-		Timeout: 5 * time.Second,
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		}}
-	r, err := cli.Get(u)
-	if err != nil {
-		return err
-	}
-	defer r.Body.Close()
-	if r.StatusCode >= 400 {
-		return fmt.Errorf("%q returned %d", u, r.StatusCode)
-	}
-
-	_, err = io.Copy(wr, r.Body)
-	if err != nil {
-		lg.Warn("failed to read", zap.String("url", u), zap.Error(err))
-	} else {
-		lg.Info("read", zap.String("url", u))
-	}
-	return err
 }

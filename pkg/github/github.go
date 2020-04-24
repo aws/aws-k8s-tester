@@ -4,21 +4,18 @@ package github
 import (
 	"bytes"
 	"context"
-	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"path/filepath"
-	"reflect"
 	"runtime"
 	"strings"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
+	"github.com/aws/aws-k8s-tester/pkg/httputil"
 	"github.com/dustin/go-humanize"
 	"go.uber.org/zap"
 	"k8s.io/utils/exec"
@@ -78,15 +75,8 @@ func Download(lg *zap.Logger, tag string, fpath string) (string, error) {
 	if err := os.RemoveAll(fpath); err != nil {
 		return fpath, err
 	}
-	f, err := os.Create(fpath)
-	if err != nil {
-		return fpath, fmt.Errorf("failed to create %q (%v)", fpath, err)
-	}
-	if err := httpDownloadFile(lg, downloadURL, f); err != nil {
+	if err := httputil.Download(lg, os.Stderr, downloadURL, fpath); err != nil {
 		return fpath, err
-	}
-	if err := f.Close(); err != nil {
-		return fpath, fmt.Errorf("failed to close %v", err)
 	}
 	if err := fileutil.EnsureExecutable(fpath); err != nil {
 		// file may be already executable while the process does not own the file/directory
@@ -137,12 +127,12 @@ func Query(lg *zap.Logger, tag string) (*Release, error) {
 	}
 
 	lg.Info("querying release", zap.String("url", url))
-	buf := bytes.NewBuffer(nil)
-	if err := httpReadInsecure(lg, url, buf); err != nil {
+	out, err := httputil.ReadInsecure(lg, os.Stderr, url)
+	if err != nil {
 		return nil, err
 	}
 	r := &Release{}
-	if err := json.NewDecoder(buf).Decode(r); err != nil {
+	if err := json.NewDecoder(bytes.NewReader(out)).Decode(r); err != nil {
 		return nil, err
 	}
 
@@ -192,73 +182,4 @@ type Asset struct {
 	CreatedAgo         string
 	UpdatedAt          time.Time `json:"updated_at"`
 	UpdatedAgo         string
-}
-
-// curl -k [URL]
-func httpReadInsecure(lg *zap.Logger, u string, wr io.Writer) error {
-	lg.Info("reading", zap.String("url", u))
-	cli := &http.Client{
-		Timeout: 5 * time.Second,
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		}}
-	r, err := cli.Get(u)
-	if err != nil {
-		return err
-	}
-	defer r.Body.Close()
-	if r.StatusCode >= 400 {
-		return fmt.Errorf("%q returned %d", u, r.StatusCode)
-	}
-
-	_, err = io.Copy(wr, r.Body)
-	if err != nil {
-		lg.Warn("failed to read", zap.String("url", u), zap.Error(err))
-	} else {
-		lg.Info("read",
-			zap.String("url", u),
-		)
-	}
-	return err
-}
-
-var httpFileTransport *http.Transport
-
-func init() {
-	httpFileTransport = new(http.Transport)
-	httpFileTransport.RegisterProtocol("file", http.NewFileTransport(http.Dir("/")))
-}
-
-// curl -L [URL] | writer
-func httpDownloadFile(lg *zap.Logger, u string, wr io.Writer) error {
-	lg.Info("downloading", zap.String("url", u))
-	cli := &http.Client{Transport: httpFileTransport}
-	r, err := cli.Get(u)
-	if err != nil {
-		return err
-	}
-	defer r.Body.Close()
-	if r.StatusCode >= 400 {
-		return fmt.Errorf("%q returned %d", u, r.StatusCode)
-	}
-
-	_, err = io.Copy(wr, r.Body)
-	if err != nil {
-		lg.Warn("failed to download", zap.String("url", u), zap.Error(err))
-	} else {
-		if f, ok := wr.(*os.File); ok {
-			lg.Info("downloaded",
-				zap.String("url", u),
-				zap.String("file-path", f.Name()),
-			)
-		} else {
-			lg.Info("downloaded",
-				zap.String("url", u),
-				zap.String("value-of", reflect.ValueOf(wr).String()),
-			)
-		}
-	}
-	return err
 }

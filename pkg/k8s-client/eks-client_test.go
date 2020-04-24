@@ -2,14 +2,13 @@ package k8sclient
 
 import (
 	"fmt"
-	"strings"
 	"testing"
 
 	"go.uber.org/zap"
 )
 
 func TestParseVersion(t *testing.T) {
-	body := `	{
+	body := []byte(`	{
 				"major": "1",
 				"minor": "16+",
 				"gitVersion": "v1.16.8-eks-e16311",
@@ -19,8 +18,8 @@ func TestParseVersion(t *testing.T) {
 				"goVersion": "go1.13.8",
 				"compiler": "gc",
 				"platform": "linux/amd64"
-			}`
-	ver, err := parseVersion(zap.NewExample(), strings.NewReader(body))
+			}`)
+	ver, err := parseVersion(zap.NewExample(), body)
 	if err != nil {
 		t.Fatal(err)
 	}

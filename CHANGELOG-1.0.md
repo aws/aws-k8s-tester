@@ -17,6 +17,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.7...v1.0.8
 
 ### `ec2`
 
+- Replace [`httpDownloadFile` with `httputil.Download`](https://github.com/aws/aws-k8s-tester/commit/).
+- Replace [`httpReadInsecure` with `httputil.ReadInsecure`](https://github.com/aws/aws-k8s-tester/commit/).
 - Batch [SSM execution by 50](https://github.com/aws/aws-k8s-tester/commit/7aed1aa60a370c5cf924357b3d197e60d04c1b92).
   - Fix `'instanceIds' failed to satisfy constraint: Member must have length less than or equal to 50`.
 

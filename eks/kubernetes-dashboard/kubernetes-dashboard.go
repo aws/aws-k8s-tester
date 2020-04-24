@@ -2,13 +2,9 @@
 package kubernetesdashboard
 
 import (
-	"bytes"
 	"context"
-	"crypto/tls"
 	"errors"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 	"os/exec"
 	"strings"
@@ -16,6 +12,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
+	"github.com/aws/aws-k8s-tester/pkg/httputil"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"go.uber.org/zap"
 )
@@ -144,15 +141,13 @@ func (ts *tester) startProxy(dry bool) error {
 			case <-time.After(5 * time.Second):
 			}
 
-			buf := bytes.NewBuffer(nil)
-			err := httpReadInsecure(ts.cfg.Logger, ts.cfg.EKSConfig.AddOnKubernetesDashboard.URL, buf)
+			out, err := httputil.ReadInsecure(ts.cfg.Logger, os.Stderr, ts.cfg.EKSConfig.AddOnKubernetesDashboard.URL)
 			if err != nil {
 				ts.cfg.Logger.Warn("failed to read Kubernetes Dashboard proxy; retrying", zap.Error(err))
 				time.Sleep(5 * time.Second)
 				continue
 			}
-
-			httpOutput := buf.String()
+			httpOutput := string(out)
 			fmt.Printf("\nKubernetes Dashboard proxy output:\n%s\n", httpOutput)
 
 			if strings.Contains(httpOutput, `The Kubernetes Authors.`) || true {
@@ -203,32 +198,4 @@ func (ts *tester) stopProxy() error {
 	ts.cfg.Logger.Info("stopped Kubernetes Dashboard proxy")
 
 	return nil
-}
-
-// curl -k [URL]
-func httpReadInsecure(lg *zap.Logger, u string, wr io.Writer) error {
-	lg.Info("reading", zap.String("url", u))
-	cli := &http.Client{
-		Timeout: 5 * time.Second,
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		}}
-	r, err := cli.Get(u)
-	if err != nil {
-		return err
-	}
-	defer r.Body.Close()
-	if r.StatusCode >= 400 {
-		return fmt.Errorf("%q returned %d", u, r.StatusCode)
-	}
-
-	_, err = io.Copy(wr, r.Body)
-	if err != nil {
-		lg.Warn("failed to read", zap.String("url", u), zap.Error(err))
-	} else {
-		lg.Info("read", zap.String("url", u))
-	}
-	return err
 }

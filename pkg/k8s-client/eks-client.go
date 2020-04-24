@@ -4,12 +4,10 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -20,6 +18,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
+	"github.com/aws/aws-k8s-tester/pkg/httputil"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -493,11 +492,11 @@ func (e *eks) checkHealth() error {
 	fmt.Printf("\n\"kubectl version\" output:\n%s\n\n", out)
 
 	ep := e.cfg.ClusterAPIServerEndpoint + "/version"
-	buf := bytes.NewBuffer(nil)
-	if err = httpReadInsecure(e.cfg.Logger, ep, buf); err != nil {
+	output, err = httputil.ReadInsecure(e.cfg.Logger, os.Stderr, ep)
+	if err != nil {
 		return err
 	}
-	out = strings.TrimSpace(buf.String())
+	out = strings.TrimSpace(string(output))
 	if e.cfg.ServerVersion != "" && !strings.Contains(out, fmt.Sprintf(`"gitVersion": "v%s`, e.cfg.ServerVersion)) {
 		return fmt.Errorf("%q does not contain version %q", out, e.cfg.ServerVersion)
 	}
@@ -536,11 +535,11 @@ func (e *eks) checkHealth() error {
 	fmt.Printf("\n\"kubectl get cs\" output:\n%s\n\n", out)
 
 	ep = e.cfg.ClusterAPIServerEndpoint + "/healthz?verbose"
-	buf.Reset()
-	if err := httpReadInsecure(e.cfg.Logger, ep, buf); err != nil {
+	output, err = httputil.ReadInsecure(e.cfg.Logger, os.Stderr, ep)
+	if err != nil {
 		return err
 	}
-	out = strings.TrimSpace(buf.String())
+	out = strings.TrimSpace(string(output))
 	if !strings.Contains(out, "healthz check passed") {
 		return fmt.Errorf("%q does not contain 'healthz check passed'", out)
 	}
@@ -714,18 +713,18 @@ func (e *eks) FetchServerVersion() (ServerVersionInfo, error) {
 func (e *eks) fetchServerVersion() (ServerVersionInfo, error) {
 	ep := e.cfg.ClusterAPIServerEndpoint + "/version"
 	e.cfg.Logger.Info("fetching version", zap.String("url", ep))
-	buf := bytes.NewBuffer(nil)
-	if err := httpReadInsecure(e.cfg.Logger, ep, buf); err != nil {
+	d, err := httputil.ReadInsecure(e.cfg.Logger, os.Stderr, ep)
+	if err != nil {
 		return ServerVersionInfo{}, nil
 	}
-	return parseVersion(e.cfg.Logger, buf)
+	return parseVersion(e.cfg.Logger, d)
 }
 
 var regex = regexp.MustCompile("[^0-9]+")
 
-func parseVersion(lg *zap.Logger, rd io.Reader) (ServerVersionInfo, error) {
+func parseVersion(lg *zap.Logger, d []byte) (ServerVersionInfo, error) {
 	var ver ServerVersionInfo
-	err := json.NewDecoder(rd).Decode(&ver)
+	err := json.NewDecoder(bytes.NewReader(d)).Decode(&ver)
 	if err != nil {
 		lg.Warn("failed to fetch version", zap.Error(err))
 		return ServerVersionInfo{}, err
@@ -740,36 +739,6 @@ func parseVersion(lg *zap.Logger, rd io.Reader) (ServerVersionInfo, error) {
 
 	lg.Info("fetched version", zap.String("version", fmt.Sprintf("%+v", ver)))
 	return ver, nil
-}
-
-// curl -k [URL]
-func httpReadInsecure(lg *zap.Logger, u string, wr io.Writer) error {
-	lg.Info("reading", zap.String("url", u))
-	cli := &http.Client{
-		Timeout: 5 * time.Second,
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		}}
-	r, err := cli.Get(u)
-	if err != nil {
-		return err
-	}
-	defer r.Body.Close()
-	if r.StatusCode >= 400 {
-		return fmt.Errorf("%q returned %d", u, r.StatusCode)
-	}
-
-	_, err = io.Copy(wr, r.Body)
-	if err != nil {
-		lg.Warn("failed to read", zap.String("url", u), zap.Error(err))
-	} else {
-		lg.Info("read",
-			zap.String("url", u),
-		)
-	}
-	return err
 }
 
 func (e *eks) FetchSupportedAPIGroupVersions() (float64, map[string]struct{}, error) {

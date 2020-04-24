@@ -118,7 +118,7 @@ var InstanceTypes = map[string]*InstanceType{
 )
 
 func main() {
-	maxPodsData, merr := httputil.Download(lg, os.Stdout, "https://raw.githubusercontent.com/awslabs/amazon-eks-ami/master/files/eni-max-pods.txt")
+	maxPodsData, merr := httputil.Read(lg, os.Stdout, "https://raw.githubusercontent.com/awslabs/amazon-eks-ami/master/files/eni-max-pods.txt")
 	if merr != nil {
 		lg.Fatal("failed to download ENI max pods", zap.Error(merr))
 	}
@@ -153,7 +153,7 @@ func main() {
 		lg.Info("partition", zap.String("id", p.ID()), zap.Int("total-regions", len(p.Regions())))
 		for _, r := range p.Regions() {
 			u := "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/current/" + r.ID() + "/index.json"
-			d, err := httputil.Download(lg, os.Stdout, u)
+			d, err := httputil.Read(lg, os.Stdout, u)
 			if err != nil {
 				lg.Warn("failed to download", zap.String("url", u), zap.String("data", string(d)), zap.Error(err))
 				continue

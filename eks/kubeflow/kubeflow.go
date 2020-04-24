@@ -6,17 +6,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
-	"io/ioutil"
-	"net/http"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
+	"github.com/aws/aws-k8s-tester/pkg/httputil"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/mholt/archiver/v3"
 	"go.uber.org/zap"
@@ -66,8 +63,7 @@ func (ts *tester) Create() error {
 	}()
 
 	if err := ts.downloadInstallKfctl(); err != nil {
-		// return err
-		fmt.Println("error:", err)
+		return err
 	}
 
 	return ts.cfg.EKSConfig.Sync()
@@ -103,25 +99,17 @@ func (ts *tester) downloadInstallKfctl() (err error) {
 	}
 
 	if !fileutil.Exist(ts.cfg.EKSConfig.AddOnKubeflow.KfctlPath) {
-		tarF, err := ioutil.TempFile(os.TempDir(), "kfctl.tar.gz")
-		if err != nil {
+		tarPath := filepath.Join(os.TempDir(), fmt.Sprintf("kfctl-%x.tar.gz", time.Now().UnixNano()))
+		if err = httputil.Download(ts.cfg.Logger, os.Stderr, ts.cfg.EKSConfig.AddOnKubeflow.KfctlDownloadURL, tarPath); err != nil {
 			return err
 		}
-		tarPath := tarF.Name()
-		ts.cfg.Logger.Info("downloading kfctl",
-			zap.String("kfctl-path", ts.cfg.EKSConfig.AddOnKubeflow.KfctlPath),
-			zap.String("tar-gz-path", tarPath),
-		)
-		if err := httpDownloadFile(ts.cfg.Logger, ts.cfg.EKSConfig.AddOnKubeflow.KfctlDownloadURL, tarF); err != nil {
-			tarF.Close()
-			return err
-		}
-		if err := tarF.Close(); err != nil {
-			return fmt.Errorf("failed to close kfctl tar file %v", err)
-		}
-		ts.cfg.EKSConfig.AddOnKubeflow.KfctlPath, _ = filepath.Abs(ts.cfg.EKSConfig.AddOnKubeflow.KfctlPath)
-		if err := archiver.DecompressFile(tarPath, ts.cfg.EKSConfig.AddOnKubeflow.KfctlPath); err != nil {
+		tmpPath := filepath.Join(os.TempDir(), "kfctl")
+		os.RemoveAll(tmpPath)
+		if err = archiver.Unarchive(tarPath, os.TempDir()); err != nil {
 			return fmt.Errorf("failed to decompress kfctl tar file %v", err)
+		}
+		if err = fileutil.Copy(tmpPath, ts.cfg.EKSConfig.AddOnKubeflow.KfctlPath); err != nil {
+			return fmt.Errorf("failed to copy file %v", err)
 		}
 	} else {
 		ts.cfg.Logger.Info("skipping kfctl download; already exist", zap.String("kfctl-path", ts.cfg.EKSConfig.AddOnKubeflow.KfctlPath))
@@ -133,11 +121,12 @@ func (ts *tester) downloadInstallKfctl() (err error) {
 		ts.cfg.Logger.Warn("failed to ensure executable", zap.Error(err))
 		err = nil
 	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	var output []byte
 	output, err = exec.New().CommandContext(ctx, ts.cfg.EKSConfig.AddOnKubeflow.KfctlPath, "version").CombinedOutput()
 	cancel()
-	out := string(output)
+	out := strings.TrimSpace(string(output))
 	if err != nil {
 		return fmt.Errorf("'kfctl version' failed (output %q, error %v)", out, err)
 	}
@@ -148,43 +137,4 @@ func (ts *tester) downloadInstallKfctl() (err error) {
 	)
 
 	return nil
-}
-
-var httpFileTransport *http.Transport
-
-func init() {
-	httpFileTransport = new(http.Transport)
-	httpFileTransport.RegisterProtocol("file", http.NewFileTransport(http.Dir("/")))
-}
-
-// curl -L [URL] | writer
-func httpDownloadFile(lg *zap.Logger, u string, wr io.Writer) error {
-	lg.Info("downloading", zap.String("url", u))
-	cli := &http.Client{Transport: httpFileTransport}
-	r, err := cli.Get(u)
-	if err != nil {
-		return err
-	}
-	defer r.Body.Close()
-	if r.StatusCode >= 400 {
-		return fmt.Errorf("%q returned %d", u, r.StatusCode)
-	}
-
-	_, err = io.Copy(wr, r.Body)
-	if err != nil {
-		lg.Warn("failed to download", zap.String("url", u), zap.Error(err))
-	} else {
-		if f, ok := wr.(*os.File); ok {
-			lg.Info("downloaded",
-				zap.String("url", u),
-				zap.String("file-path", f.Name()),
-			)
-		} else {
-			lg.Info("downloaded",
-				zap.String("url", u),
-				zap.String("value-of", reflect.ValueOf(wr).String()),
-			)
-		}
-	}
-	return err
 }
