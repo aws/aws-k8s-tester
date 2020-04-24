@@ -1113,17 +1113,17 @@ func (ts *tester) countSuccess() (int, error) {
 		}
 	}
 	if ts.cfg.EKSConfig.IsEnabledAddOnManagedNodeGroups() && ts.cfg.EKSConfig.AddOnManagedNodeGroups.FetchLogs {
-		for name, nodeGroup := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
-			if nodeGroup.AMIType == ec2config.AMITypeBottleRocketCPU {
-				ts.cfg.Logger.Warn("skipping bottlerocket log fetch", zap.String("mng-name", name))
+		for mngName, cur := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
+			if cur.AMIType == ec2config.AMITypeBottleRocketCPU {
+				ts.cfg.Logger.Warn("skipping bottlerocket log fetch", zap.String("mng-name", mngName))
 				continue
 			}
 			ts.cfg.Logger.Info("fetching outputs from managed node group",
-				zap.String("mng-name", name),
-				zap.Int("nodes", len(nodeGroup.Instances)),
+				zap.String("mng-name", mngName),
+				zap.Int("nodes", len(cur.Instances)),
 			)
 
-			for instID, iv := range nodeGroup.Instances {
+			for instID, iv := range cur.Instances {
 				select {
 				case <-ts.cfg.Stopc:
 					ts.cfg.Logger.Warn("exiting fetcher")
@@ -1223,12 +1223,12 @@ func (ts *tester) AggregateResults() error {
 	}
 	if ts.cfg.EKSConfig.IsEnabledAddOnManagedNodeGroups() && ts.cfg.EKSConfig.AddOnManagedNodeGroups.FetchLogs {
 		ts.cfg.Logger.Info("fetching logs from mngs")
-		for name, v := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
-			if v.AMIType == ec2config.AMITypeBottleRocketCPU {
-				ts.cfg.Logger.Warn("skipping bottlerocket log fetch", zap.String("mng-name", name))
+		for mngName, cur := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
+			if cur.AMIType == ec2config.AMITypeBottleRocketCPU {
+				ts.cfg.Logger.Warn("skipping bottlerocket log fetch", zap.String("mng-name", mngName))
 				continue
 			}
-			for _, fpaths := range v.Logs {
+			for _, fpaths := range cur.Logs {
 				for _, fpath := range fpaths {
 					if !strings.HasSuffix(fpath, sfx) {
 						continue

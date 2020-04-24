@@ -804,13 +804,13 @@ func (ts *tester) waitForNodes(asgName string) error {
 			// InternalDNS == ip-192-168-81-186.my-private-dns
 			// ExternalDNS == ec2-52-38-118-149.us-west-2.compute.amazonaws.com
 			ts.cfg.Logger.Info("checking node address with EC2 Private DNS",
-				zap.String("name", nodeName),
+				zap.String("node-name", nodeName),
 				zap.String("labels", fmt.Sprintf("%v", labels)),
 			)
 			hostName := ""
 			for _, av := range node.Status.Addresses {
 				ts.cfg.Logger.Info("node status address",
-					zap.String("name", nodeName),
+					zap.String("node-name", nodeName),
 					zap.String("type", string(av.Type)),
 					zap.String("address", string(av.Address)),
 				)

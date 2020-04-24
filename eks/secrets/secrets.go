@@ -813,8 +813,8 @@ func (ts *tester) AggregateResults() error {
 	}
 	if ts.cfg.EKSConfig.IsEnabledAddOnManagedNodeGroups() && ts.cfg.EKSConfig.AddOnManagedNodeGroups.FetchLogs {
 		ts.cfg.Logger.Info("fetching logs from mngs")
-		for _, v := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
-			for _, fpaths := range v.Logs {
+		for _, cur := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
+			for _, fpaths := range cur.Logs {
 				for _, fpath := range fpaths {
 					if !strings.HasSuffix(fpath, ResultSuffixRead) {
 						continue

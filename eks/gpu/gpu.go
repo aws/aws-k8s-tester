@@ -80,17 +80,17 @@ func (ts *tester) InstallNvidiaDriver() error {
 
 	readyMNGs := make(map[string]struct{})
 	for time.Now().Sub(retryStart) < waitDur {
-		for _, mv := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
-			switch mv.AMIType {
-			case eks.AMITypesAl2X8664Gpu:
-			default:
+		for mngName, cur := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
+			if cur.AMIType != eks.AMITypesAl2X8664Gpu {
+				ts.cfg.Logger.Warn("skipping non-GPU AMI", zap.String("mng-name", mngName))
 				continue
 			}
-			if _, ok := readyMNGs[mv.Name]; ok {
+			if _, ok := readyMNGs[mngName]; ok {
+				ts.cfg.Logger.Info("skipping already ready mng", zap.String("mng-name", mngName))
 				continue
 			}
 
-			ts.cfg.Logger.Info("listing GPU nodes via client-go", zap.String("mng-name", mv.Name))
+			ts.cfg.Logger.Info("listing GPU nodes via client-go", zap.String("mng-name", mngName))
 			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 			nodes, err := ts.cfg.K8SClient.KubernetesClientSet().CoreV1().Nodes().List(
 				ctx,
@@ -106,16 +106,22 @@ func (ts *tester) InstallNvidiaDriver() error {
 				continue
 			}
 			items = nodes.Items
-			ts.cfg.Logger.Info("listed GPU nodes via client-go", zap.String("mng-name", mv.Name), zap.Int("nodes", len(items)))
+			ts.cfg.Logger.Info("listed GPU nodes via client-go", zap.String("mng-name", mngName), zap.Int("nodes", len(items)))
 
 			readies := 0
 			for _, node := range items {
+				labels := node.GetLabels()
+				if labels["Name"] != mngName {
+					continue
+				}
+				nodeName := node.GetName()
+				ts.cfg.Logger.Info("checking node-info conditions", zap.String("node-name", nodeName), zap.String("labels", fmt.Sprintf("%+v", labels)))
 				for _, cond := range node.Status.Conditions {
 					if cond.Type != v1.NodeReady {
 						continue
 					}
 					ts.cfg.Logger.Info("node info",
-						zap.String("name", node.GetName()),
+						zap.String("node-name", nodeName),
 						zap.String("type", fmt.Sprintf("%s", cond.Type)),
 						zap.String("status", fmt.Sprintf("%s", cond.Status)),
 					)
@@ -126,11 +132,11 @@ func (ts *tester) InstallNvidiaDriver() error {
 			}
 			ts.cfg.Logger.Info("nodes",
 				zap.Int("current-ready-nodes", readies),
-				zap.Int("desired-ready-nodes", mv.ASGDesiredCapacity),
+				zap.Int("desired-ready-nodes", cur.ASGDesiredCapacity),
 			)
 
-			if mv.ASGDesiredCapacity <= readies {
-				readyMNGs[mv.Name] = struct{}{}
+			if readies >= cur.ASGDesiredCapacity {
+				readyMNGs[mngName] = struct{}{}
 				break
 			}
 		}

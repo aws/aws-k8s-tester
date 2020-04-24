@@ -835,17 +835,19 @@ func (ts *tester) checkNode() error {
 
 		readies := 0
 		for _, node := range items {
+			labels := node.GetLabels()
+			nodeName := node.GetName()
+			ts.cfg.Logger.Info("checking node-info conditions", zap.String("node-name", nodeName), zap.String("labels", fmt.Sprintf("%+v", labels)))
 			for _, cond := range node.Status.Conditions {
 				if cond.Type != v1.NodeReady {
 					continue
 				}
-				name := node.GetName()
 				ts.cfg.Logger.Info("node info",
-					zap.String("name", name),
+					zap.String("node-name", nodeName),
 					zap.String("type", fmt.Sprintf("%s", cond.Type)),
 					zap.String("status", fmt.Sprintf("%s", cond.Status)),
 				)
-				if cond.Status == v1.ConditionTrue && strings.HasPrefix(name, "fargate-") {
+				if cond.Status == v1.ConditionTrue && strings.HasPrefix(nodeName, "fargate-") {
 					readies++
 				}
 			}

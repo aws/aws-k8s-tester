@@ -496,8 +496,8 @@ func (ts *tester) DownloadClusterLogs(artifactDir string) error {
 	ts.logsMu.RLock()
 	defer ts.logsMu.RUnlock()
 
-	for _, v := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
-		for _, fpaths := range v.Logs {
+	for _, cur := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
+		for _, fpaths := range cur.Logs {
 			for _, fpath := range fpaths {
 				newPath := filepath.Join(artifactDir, filepath.Base(fpath))
 				if err := fileutil.Copy(fpath, newPath); err != nil {
