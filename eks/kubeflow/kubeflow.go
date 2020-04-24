@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -17,6 +18,7 @@ import (
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
+	"github.com/mholt/archiver/v3"
 	"go.uber.org/zap"
 	"k8s.io/utils/exec"
 )
@@ -64,7 +66,8 @@ func (ts *tester) Create() error {
 	}()
 
 	if err := ts.downloadInstallKfctl(); err != nil {
-		return err
+		// return err
+		fmt.Println("error:", err)
 	}
 
 	return ts.cfg.EKSConfig.Sync()
@@ -100,20 +103,25 @@ func (ts *tester) downloadInstallKfctl() (err error) {
 	}
 
 	if !fileutil.Exist(ts.cfg.EKSConfig.AddOnKubeflow.KfctlPath) {
-		ts.cfg.Logger.Info("downloading kfctl", zap.String("kfctl-path", ts.cfg.EKSConfig.AddOnKubeflow.KfctlPath))
-		var f *os.File
-		f, err = os.Create(ts.cfg.EKSConfig.AddOnKubeflow.KfctlPath)
+		tarF, err := ioutil.TempFile(os.TempDir(), "kfctl.tar.gz")
 		if err != nil {
-			return fmt.Errorf("failed to create %q (%v)", ts.cfg.EKSConfig.AddOnKubeflow.KfctlPath, err)
-		}
-		ts.cfg.EKSConfig.AddOnKubeflow.KfctlPath = f.Name()
-		ts.cfg.EKSConfig.AddOnKubeflow.KfctlPath, _ = filepath.Abs(ts.cfg.EKSConfig.AddOnKubeflow.KfctlPath)
-		if err := httpDownloadFile(ts.cfg.Logger, ts.cfg.EKSConfig.AddOnKubeflow.KfctlDownloadURL, f); err != nil {
-			f.Close()
 			return err
 		}
-		if err = f.Close(); err != nil {
-			return fmt.Errorf("failed to close kfctl %v", err)
+		tarPath := tarF.Name()
+		ts.cfg.Logger.Info("downloading kfctl",
+			zap.String("kfctl-path", ts.cfg.EKSConfig.AddOnKubeflow.KfctlPath),
+			zap.String("tar-gz-path", tarPath),
+		)
+		if err := httpDownloadFile(ts.cfg.Logger, ts.cfg.EKSConfig.AddOnKubeflow.KfctlDownloadURL, tarF); err != nil {
+			tarF.Close()
+			return err
+		}
+		if err := tarF.Close(); err != nil {
+			return fmt.Errorf("failed to close kfctl tar file %v", err)
+		}
+		ts.cfg.EKSConfig.AddOnKubeflow.KfctlPath, _ = filepath.Abs(ts.cfg.EKSConfig.AddOnKubeflow.KfctlPath)
+		if err := archiver.DecompressFile(tarPath, ts.cfg.EKSConfig.AddOnKubeflow.KfctlPath); err != nil {
+			return fmt.Errorf("failed to decompress kfctl tar file %v", err)
 		}
 	} else {
 		ts.cfg.Logger.Info("skipping kfctl download; already exist", zap.String("kfctl-path", ts.cfg.EKSConfig.AddOnKubeflow.KfctlPath))
