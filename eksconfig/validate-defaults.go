@@ -1437,6 +1437,11 @@ func (cfg *Config) validateAddOnKubeflow() error {
 	if cfg.AddOnKubeflow.Namespace == "" {
 		cfg.AddOnKubeflow.Namespace = cfg.Name + "-kubeflow"
 	}
+	if cfg.AddOnKubeflow.BaseDir == "" {
+		cfg.AddOnKubeflow.BaseDir = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-kubeflow")
+	}
+	cfg.AddOnKubeflow.KfDir = filepath.Join(cfg.AddOnKubeflow.BaseDir, cfg.Name)
+	cfg.AddOnKubeflow.KfctlConfigPath = filepath.Join(cfg.AddOnKubeflow.KfDir, "kfctl_aws.yaml")
 	return nil
 }
 

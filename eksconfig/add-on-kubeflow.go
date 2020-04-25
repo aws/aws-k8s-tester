@@ -42,4 +42,12 @@ type AddOnKubeflow struct {
 	DeleteTook time.Duration `json:"delete-took,omitempty" read-only:"true"`
 	// DeleteTookString is the duration that took to create the resource.
 	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
+
+	// BaseDir is the base directory where you want to store one or more
+	// Kubeflow deployments.
+	BaseDir string `json:"base-dir"`
+	KfDir   string `json:"kf-dir" read-only:"true"`
+	// KfctlConfigPath is the path to write "kfctl" configuration.
+	// The existing configuration file is overwritten.
+	KfctlConfigPath string `json:"kfctl-config-path" read-only:"true"`
 }
