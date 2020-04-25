@@ -620,9 +620,6 @@ func (ts *tester) installKfConfig() error {
 		"KF_DIR=" + ts.cfg.EKSConfig.AddOnKubeflow.KfDir,
 		"CONFIG_FILE=" + ts.cfg.EKSConfig.AddOnKubeflow.KfctlConfigPath,
 	}
-	buf := bytes.NewBuffer(nil)
-	cmd.Stderr = buf
-	cmd.Stdout = buf
 
 	pwd, _ := os.Getwd()
 	defer func() {

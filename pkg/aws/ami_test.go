@@ -51,9 +51,15 @@ func TestAMI(t *testing.T) {
 	}
 	fmt.Printf("%+v\n", a2)
 
-	a3, err := FetchAMI(sm, "/aws/service/bottlerocket/aws-k8s-1.15/x86_64/latest/image_id")
+	a3, err := FetchAMI(sm, "/aws/service/eks/optimized-ami/1.15/amazon-linux-2-gpu/recommended/image_id")
 	if err != nil {
 		t.Fatal(err)
 	}
 	fmt.Printf("%+v\n", a3)
+
+	a4, err := FetchAMI(sm, "/aws/service/bottlerocket/aws-k8s-1.15/x86_64/latest/image_id")
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Printf("%+v\n", a4)
 }
