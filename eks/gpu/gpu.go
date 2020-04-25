@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-sdk-go/service/eks"
@@ -80,13 +81,24 @@ func (ts *tester) InstallNvidiaDriver() error {
 	ts.cfg.Logger.Info("applied daemon set for nvidia GPU driver for worker nodes", zap.String("output", string(out)))
 
 	if ts.cfg.EKSConfig.IsEnabledAddOnNodeGroups() {
+		cnt := 0
+		for _, cur := range ts.cfg.EKSConfig.AddOnNodeGroups.ASGs {
+			if cur.AMIType == ec2config.AMITypeAL2X8664GPU {
+				cnt++
+			}
+		}
+
 		waitDur := 5 * time.Minute
 		var items []v1.Node
 		retryStart := time.Now()
+
 		readyNGs := make(map[string]struct{})
 		for time.Now().Sub(retryStart) < waitDur {
+			if len(readyNGs) == cnt {
+				break
+			}
 			for ngName, cur := range ts.cfg.EKSConfig.AddOnNodeGroups.ASGs {
-				if cur.AMIType != eks.AMITypesAl2X8664Gpu {
+				if cur.AMIType != ec2config.AMITypeAL2X8664GPU {
 					ts.cfg.Logger.Warn("skipping non-GPU AMI", zap.String("ng-name", ngName))
 					continue
 				}
@@ -94,7 +106,6 @@ func (ts *tester) InstallNvidiaDriver() error {
 					ts.cfg.Logger.Info("skipping already ready mng", zap.String("ng-name", ngName))
 					continue
 				}
-
 				ts.cfg.Logger.Info("listing GPU nodes via client-go", zap.String("ng-name", ngName))
 				ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 				nodes, err := ts.cfg.K8SClient.KubernetesClientSet().CoreV1().Nodes().List(
@@ -113,7 +124,7 @@ func (ts *tester) InstallNvidiaDriver() error {
 				items = nodes.Items
 				ts.cfg.Logger.Info("listed GPU nodes via client-go", zap.String("ng-name", ngName), zap.Int("nodes", len(items)))
 
-				readies := int64(0)
+				foundReady := int64(0)
 				for _, node := range items {
 					labels := node.GetLabels()
 					if labels["Name"] != ngName {
@@ -131,16 +142,17 @@ func (ts *tester) InstallNvidiaDriver() error {
 							zap.String("status", fmt.Sprintf("%s", cond.Status)),
 						)
 						if cond.Status == v1.ConditionTrue {
-							readies++
+							foundReady++
 						}
 					}
 				}
 				ts.cfg.Logger.Info("nodes",
-					zap.Int64("current-ready-nodes", readies),
+					zap.Int64("current-ready-nodes", foundReady),
 					zap.Int64("desired-ready-nodes", cur.ASGDesiredCapacity),
 				)
+				time.Sleep(5 * time.Second)
 
-				if readies >= cur.ASGDesiredCapacity {
+				if foundReady >= cur.ASGDesiredCapacity {
 					readyNGs[ngName] = struct{}{}
 					break
 				}
@@ -149,11 +161,22 @@ func (ts *tester) InstallNvidiaDriver() error {
 	}
 
 	if ts.cfg.EKSConfig.IsEnabledAddOnManagedNodeGroups() {
+		cnt := 0
+		for _, cur := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
+			if cur.AMIType == eks.AMITypesAl2X8664Gpu {
+				cnt++
+			}
+		}
+
 		waitDur := 5 * time.Minute
 		var items []v1.Node
 		retryStart := time.Now()
+
 		readyMNGs := make(map[string]struct{})
 		for time.Now().Sub(retryStart) < waitDur {
+			if len(readyMNGs) == cnt {
+				break
+			}
 			for mngName, cur := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
 				if cur.AMIType != eks.AMITypesAl2X8664Gpu {
 					ts.cfg.Logger.Warn("skipping non-GPU AMI", zap.String("mng-name", mngName))
@@ -163,7 +186,6 @@ func (ts *tester) InstallNvidiaDriver() error {
 					ts.cfg.Logger.Info("skipping already ready mng", zap.String("mng-name", mngName))
 					continue
 				}
-
 				ts.cfg.Logger.Info("listing GPU nodes via client-go", zap.String("mng-name", mngName))
 				ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 				nodes, err := ts.cfg.K8SClient.KubernetesClientSet().CoreV1().Nodes().List(
@@ -182,7 +204,7 @@ func (ts *tester) InstallNvidiaDriver() error {
 				items = nodes.Items
 				ts.cfg.Logger.Info("listed GPU nodes via client-go", zap.String("mng-name", mngName), zap.Int("nodes", len(items)))
 
-				readies := 0
+				foundReady := 0
 				for _, node := range items {
 					labels := node.GetLabels()
 					if labels["Name"] != mngName {
@@ -200,16 +222,17 @@ func (ts *tester) InstallNvidiaDriver() error {
 							zap.String("status", fmt.Sprintf("%s", cond.Status)),
 						)
 						if cond.Status == v1.ConditionTrue {
-							readies++
+							foundReady++
 						}
 					}
 				}
 				ts.cfg.Logger.Info("nodes",
-					zap.Int("current-ready-nodes", readies),
+					zap.Int("current-ready-nodes", foundReady),
 					zap.Int("desired-ready-nodes", cur.ASGDesiredCapacity),
 				)
+				time.Sleep(5 * time.Second)
 
-				if readies >= cur.ASGDesiredCapacity {
+				if foundReady >= cur.ASGDesiredCapacity {
 					readyMNGs[mngName] = struct{}{}
 					break
 				}
