@@ -270,6 +270,7 @@ func (ts *tester) createHelmJupyterHub() error {
 	}
 	// https://github.com/jupyterhub/zero-to-jupyterhub-k8s/blob/master/jupyterhub/values.yaml
 	values := map[string]interface{}{
+		// https://github.com/jupyterhub/zero-to-jupyterhub-k8s/blob/master/jupyterhub/values.yaml
 		"hub": map[string]interface{}{
 			"nodeSelector": map[string]interface{}{
 				"NGType": ngType,
@@ -277,10 +278,12 @@ func (ts *tester) createHelmJupyterHub() error {
 				"AMIType": ec2config.AMITypeAL2X8664GPU,
 			},
 		},
+		// https://github.com/jupyterhub/zero-to-jupyterhub-k8s/blob/master/jupyterhub/values.yaml
 		"proxy": map[string]interface{}{
 			"secretToken": ts.cfg.EKSConfig.AddOnJupyterHub.ProxySecretToken,
 		},
 		// https://zero-to-jupyterhub.readthedocs.io/en/latest/administrator/optimization.html
+		// https://github.com/jupyterhub/zero-to-jupyterhub-k8s/blob/master/jupyterhub/values.yaml
 		"scheduling": map[string]interface{}{
 			"userScheduler": map[string]interface{}{
 				"nodeSelector": map[string]interface{}{
@@ -291,6 +294,7 @@ func (ts *tester) createHelmJupyterHub() error {
 			},
 		},
 		// https://zero-to-jupyterhub.readthedocs.io/en/latest/administrator/optimization.html#additional-sources
+		// https://github.com/jupyterhub/zero-to-jupyterhub-k8s/blob/master/jupyterhub/values.yaml
 		// "singleuser": map[string]interface{}{
 		// 	"serviceAccountName": "tiller",
 		// 	"image": map[string]interface{}{
