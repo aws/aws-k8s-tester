@@ -150,32 +150,31 @@ func (ts *tester) createHelmPrometheus() error {
 	}
 
 	// https://github.com/helm/charts/blob/master/stable/prometheus/values.yaml
-	values := make(map[string]interface{})
-
-	values["alertmanager"] = map[string]interface{}{
-		"nodeSelector": map[string]interface{}{
-			"NGType": ngType,
-			// do not deploy in bottlerocket; PVC not working
-			"AMIType": ec2config.AMITypeAL2X8664,
+	values := map[string]interface{}{
+		"alertmanager": map[string]interface{}{
+			"nodeSelector": map[string]interface{}{
+				"NGType": ngType,
+				// do not deploy in bottlerocket; PVC not working
+				"AMIType": ec2config.AMITypeAL2X8664,
+			},
+			"persistentVolume": map[string]interface{}{
+				// takes >=5-min for PVC, user emptyDir for testing
+				"enabled": false,
+			},
 		},
-		"persistentVolume": map[string]interface{}{
-			// takes >=5-min for PVC, user emptyDir for testing
-			"enabled": false,
+		"server": map[string]interface{}{
+			"nodeSelector": map[string]interface{}{
+				"NGType": ngType,
+				// do not deploy in bottlerocket; PVC not working
+				"AMIType": ec2config.AMITypeAL2X8664,
+			},
+			"persistentVolume": map[string]interface{}{
+				"enabled": true,
+				// use CSI driver with volume type "gp2", as in launch configuration
+				"storageClass": "gp2",
+			},
 		},
 	}
-	values["server"] = map[string]interface{}{
-		"nodeSelector": map[string]interface{}{
-			"NGType": ngType,
-			// do not deploy in bottlerocket; PVC not working
-			"AMIType": ec2config.AMITypeAL2X8664,
-		},
-		"persistentVolume": map[string]interface{}{
-			"enabled": true,
-			// use CSI driver with volume type "gp2", as in launch configuration
-			"storageClass": "gp2",
-		},
-	}
-
 	return helm.Install(helm.InstallConfig{
 		Logger:         ts.cfg.Logger,
 		Stopc:          ts.cfg.Stopc,
@@ -210,72 +209,65 @@ func (ts *tester) createHelmGrafana() error {
 	if ts.cfg.EKSConfig.IsEnabledAddOnManagedNodeGroups() {
 		ngType = "managed"
 	}
-
 	// https://github.com/helm/charts/blob/master/stable/grafana/values.yaml
-	values := make(map[string]interface{})
-
-	values["adminUser"] = ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaAdminUserName
-	values["adminPassword"] = ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaAdminPassword
-
-	values["nodeSelector"] = map[string]interface{}{
-		"NGType": ngType,
-		// do not deploy in bottlerocket; PVC not working
-		"AMIType": ec2config.AMITypeAL2X8664,
-	}
-
-	values["persistence"] = map[string]interface{}{
-		"enabled": true,
-		// use CSI driver with volume type "gp2", as in launch configuration
-		"storageClass": "gp2",
-	}
-
-	values["service"] = map[string]interface{}{
-		"type": "LoadBalancer",
-	}
-
-	values["datasources"] = map[string]interface{}{
-		"datasources.yaml": map[string]interface{}{
-			"apiVersion": 1,
-			"datasources": []map[string]interface{}{
-				{
-					"name":      "Prometheus",
-					"type":      "prometheus",
-					"url":       "http://prometheus-server.prometheus.svc.cluster.local",
-					"access":    "proxy",
-					"isDefault": true,
-				},
-			},
+	values := map[string]interface{}{
+		"adminUser":     ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaAdminUserName,
+		"adminPassword": ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaAdminPassword,
+		"nodeSelector": map[string]interface{}{
+			"NGType": ngType,
+			// do not deploy in bottlerocket; PVC not working
+			"AMIType": ec2config.AMITypeAL2X8664,
 		},
-	}
-
-	values["dashboardProviders"] = map[string]interface{}{
-		"dashboardproviders.yaml": map[string]interface{}{
-			"apiVersion": 1,
-			"providers": []map[string]interface{}{
-				{
-					"disableDeletion": false,
-					"editable":        true,
-					"folder":          "",
-					"name":            "default",
-					"options": map[string]interface{}{
-						"path": "/var/lib/grafana/dashboards/default",
+		"persistence": map[string]interface{}{
+			"enabled": true,
+			// use CSI driver with volume type "gp2", as in launch configuration
+			"storageClass": "gp2",
+		},
+		"service": map[string]interface{}{
+			"type": "LoadBalancer",
+		},
+		"datasources": map[string]interface{}{
+			"datasources.yaml": map[string]interface{}{
+				"apiVersion": 1,
+				"datasources": []map[string]interface{}{
+					{
+						"name":      "Prometheus",
+						"type":      "prometheus",
+						"url":       "http://prometheus-server.prometheus.svc.cluster.local",
+						"access":    "proxy",
+						"isDefault": true,
 					},
-					"orgId": 1,
-					"type":  "file",
+				},
+			},
+		},
+		"dashboardProviders": map[string]interface{}{
+			"dashboardproviders.yaml": map[string]interface{}{
+				"apiVersion": 1,
+				"providers": []map[string]interface{}{
+					{
+						"disableDeletion": false,
+						"editable":        true,
+						"folder":          "",
+						"name":            "default",
+						"options": map[string]interface{}{
+							"path": "/var/lib/grafana/dashboards/default",
+						},
+						"orgId": 1,
+						"type":  "file",
+					},
+				},
+			},
+		},
+		"dashboards": map[string]interface{}{
+			"default": map[string]interface{}{
+				"kubernetes-cluster": map[string]interface{}{
+					"gnetId":     6417,
+					"revision":   1,
+					"datasource": "Prometheus",
 				},
 			},
 		},
 	}
-	values["dashboards"] = map[string]interface{}{
-		"default": map[string]interface{}{
-			"kubernetes-cluster": map[string]interface{}{
-				"gnetId":     6417,
-				"revision":   1,
-				"datasource": "Prometheus",
-			},
-		},
-	}
-
 	return helm.Install(helm.InstallConfig{
 		Logger:         ts.cfg.Logger,
 		Stopc:          ts.cfg.Stopc,

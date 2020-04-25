@@ -22,9 +22,6 @@ type AddOnKubeflow struct {
 	// Enable is 'true' to create this add-on.
 	Enable bool `json:"enable"`
 
-	// Namespace is the namespace to create "AppMesh" controller/injector.
-	Namespace string `json:"namespace"`
-
 	// KfctlPath is the path to download the "kfctl".
 	KfctlPath string `json:"kfctl-path,omitempty"`
 	// KfctlDownloadURL is the download URL to download "kfctl" binary from.

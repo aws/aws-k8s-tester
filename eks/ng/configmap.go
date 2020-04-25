@@ -21,7 +21,7 @@ func (ts *tester) createConfigMap() error {
 		return err
 	}
 	ts.cfg.Logger.Info("applying ConfigMap")
-	fmt.Printf("\naws-auth ConfigMap:\n\n%s\n\n", body)
+	fmt.Printf("\naws-auth ConfigMap:\n\n%s\n", body)
 
 	var output []byte
 	// might take several minutes for DNS to propagate

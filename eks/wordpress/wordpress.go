@@ -127,51 +127,50 @@ func (ts *tester) createHelmWordpress() error {
 		ngType = "custom"
 	}
 
-	values := make(map[string]interface{})
-
 	// https://github.com/helm/charts/blob/master/stable/wordpress/values.yaml
-	values["nodeSelector"] = map[string]interface{}{
-		"NGType": ngType,
-		// do not deploy in bottlerocket; PVC not working
-		"AMIType": ec2config.AMITypeAL2X8664,
-	}
-	values["wordpressUsername"] = ts.cfg.EKSConfig.AddOnWordpress.UserName
-	values["wordpressPassword"] = ts.cfg.EKSConfig.AddOnWordpress.Password
-	values["persistence"] = map[string]interface{}{
-		"enabled": true,
-		// use CSI driver with volume type "gp2", as in launch configuration
-		"storageClassName": "gp2",
-	}
-
-	// https://github.com/helm/charts/blob/master/stable/mariadb/values.yaml
-	values["mariadb"] = map[string]interface{}{
-		"enabled": true,
-		"rootUser": map[string]interface{}{
-			"password":      ts.cfg.EKSConfig.AddOnWordpress.Password,
-			"forcePassword": false,
+	values := map[string]interface{}{
+		"nodeSelector": map[string]interface{}{
+			"NGType": ngType,
+			// do not deploy in bottlerocket; PVC not working
+			"AMIType": ec2config.AMITypeAL2X8664,
 		},
-		"db": map[string]interface{}{
-			"name":     "wordpress",
-			"user":     ts.cfg.EKSConfig.AddOnWordpress.UserName,
-			"password": ts.cfg.EKSConfig.AddOnWordpress.Password,
+		"wordpressUsername": ts.cfg.EKSConfig.AddOnWordpress.UserName,
+		"wordpressPassword": ts.cfg.EKSConfig.AddOnWordpress.Password,
+		"persistence": map[string]interface{}{
+			"enabled": true,
+			// use CSI driver with volume type "gp2", as in launch configuration
+			"storageClassName": "gp2",
 		},
-		"master": map[string]interface{}{
-			"nodeSelector": map[string]interface{}{
-				"NGType": ngType,
-				// do not deploy in bottlerocket; PVC not working
-				"AMIType": ec2config.AMITypeAL2X8664,
+		// https://github.com/helm/charts/blob/master/stable/mariadb/values.yaml
+		"mariadb": map[string]interface{}{
+			"enabled": true,
+			"rootUser": map[string]interface{}{
+				"password":      ts.cfg.EKSConfig.AddOnWordpress.Password,
+				"forcePassword": false,
 			},
-			"persistence": map[string]interface{}{
-				"enabled": true,
-				// use CSI driver with volume type "gp2", as in launch configuration
-				"storageClassName": "gp2",
+			"db": map[string]interface{}{
+				"name":     "wordpress",
+				"user":     ts.cfg.EKSConfig.AddOnWordpress.UserName,
+				"password": ts.cfg.EKSConfig.AddOnWordpress.Password,
 			},
-		},
-		"slave": map[string]interface{}{
-			"nodeSelector": map[string]interface{}{
-				"NGType": ngType,
-				// do not deploy in bottlerocket; PVC not working
-				"AMIType": ec2config.AMITypeAL2X8664,
+			"master": map[string]interface{}{
+				"nodeSelector": map[string]interface{}{
+					"NGType": ngType,
+					// do not deploy in bottlerocket; PVC not working
+					"AMIType": ec2config.AMITypeAL2X8664,
+				},
+				"persistence": map[string]interface{}{
+					"enabled": true,
+					// use CSI driver with volume type "gp2", as in launch configuration
+					"storageClassName": "gp2",
+				},
+			},
+			"slave": map[string]interface{}{
+				"nodeSelector": map[string]interface{}{
+					"NGType": ngType,
+					// do not deploy in bottlerocket; PVC not working
+					"AMIType": ec2config.AMITypeAL2X8664,
+				},
 			},
 		},
 	}

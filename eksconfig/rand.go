@@ -1,6 +1,7 @@
 package eksconfig
 
 import (
+	"encoding/hex"
 	"math/rand"
 	"time"
 )
@@ -19,6 +20,25 @@ func randString(n int) string {
 		s = s[:n]
 	}
 	return s
+}
+
+func randBytes(n int) []byte {
+	b := make([]byte, n)
+	for i := range b {
+		rand.Seed(time.Now().UnixNano())
+		b[i] = ll[rand.Intn(len(ll))]
+	}
+	pfx := randoms[rand.Intn(len(randoms))]
+	s := pfx + string(b)
+	if len(s) > n {
+		s = s[:n]
+	}
+	return []byte(s)
+}
+
+// openssl rand -hex 32
+func randHex(n int) string {
+	return hex.EncodeToString(randBytes(n))
 }
 
 var randoms = []string{

@@ -58,26 +58,16 @@ type tester struct {
 }
 
 const (
-	albIngressControllerName = "alb-ingress-controller"
-
-	albIngressControllerServiceAccountName      = "alb-ingress-controller-service-account"
-	albIngressControllerServiceAccountNamespace = metav1.NamespaceSystem
-
-	// cluster-wide role
-	albIngressControllerRBACRoleName      = "alb-ingress-controller-rbac-cluster-role"
-	albIngressControllerRBACRoleNamespace = "default"
-
-	// cluster-wide role binding
-	albIngressControllerRBACClusterRoleBindingName      = "alb-ingress-controller-rbac-cluster-role-binding"
-	albIngressControllerRBACClusterRoleBindingNamespace = "default"
-
-	albIngressControllerDeploymentName      = "alb-ingress-controller-deployment"
-	albIngressControllerDeploymentNamespace = metav1.NamespaceSystem
+	albIngressControllerName                       = "alb-ingress-controller"
+	albIngressControllerServiceAccountName         = "alb-ingress-controller-service-account"
+	albIngressControllerRBACRoleName               = "alb-ingress-controller-rbac-cluster-role"
+	albIngressControllerRBACClusterRoleBindingName = "alb-ingress-controller-rbac-cluster-role-binding"
+	albIngressControllerDeploymentName             = "alb-ingress-controller-deployment"
 
 	alb2048AppName        = "alb-2048"
 	alb2048ImageName      = "alexwhen/docker-2048"
 	alb2048DeploymentName = "alb-2048-deployment"
-	alb2048ServiceName    = "alb-2048-service"
+	alb2048SvcName        = "alb-2048-service"
 	alb2048IngressName    = "alb-2048-ingress"
 )
 
@@ -104,7 +94,6 @@ func (ts *tester) Create() error {
 	if err := k8s_client.CreateNamespace(ts.cfg.Logger, ts.cfg.K8SClient.KubernetesClientSet(), ts.cfg.EKSConfig.AddOnALB2048.Namespace); err != nil {
 		return err
 	}
-
 	if err := ts.createALBServiceAccount(); err != nil {
 		return err
 	}
@@ -120,7 +109,6 @@ func (ts *tester) Create() error {
 	if err := ts.waitDeploymentALB(); err != nil {
 		return err
 	}
-
 	if err := ts.create2048Deployment(); err != nil {
 		return err
 	}
@@ -241,11 +229,11 @@ func (ts *tester) Delete() error {
 // https://docs.aws.amazon.com/eks/latest/userguide/alb-ingress.html
 // https://github.com/kubernetes-sigs/aws-alb-ingress-controller/blob/master/docs/examples/rbac-role.yaml
 func (ts *tester) createALBServiceAccount() error {
-	ts.cfg.Logger.Info("creating ALB Ingress Controller  ServiceAccount")
+	ts.cfg.Logger.Info("creating ALB Ingress Controller ServiceAccount")
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.K8SClient.KubernetesClientSet().
 		CoreV1().
-		ServiceAccounts(albIngressControllerServiceAccountNamespace).
+		ServiceAccounts("kube-system").
 		Create(
 			ctx,
 			&v1.ServiceAccount{
@@ -255,7 +243,7 @@ func (ts *tester) createALBServiceAccount() error {
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      albIngressControllerServiceAccountName,
-					Namespace: albIngressControllerServiceAccountNamespace,
+					Namespace: "kube-system",
 					Labels: map[string]string{
 						"app.kubernetes.io/name": albIngressControllerName,
 					},
@@ -280,7 +268,7 @@ func (ts *tester) deleteALBServiceAccount() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	err := ts.cfg.K8SClient.KubernetesClientSet().
 		CoreV1().
-		ServiceAccounts(albIngressControllerServiceAccountNamespace).
+		ServiceAccounts("kube-system").
 		Delete(
 			ctx,
 			albIngressControllerServiceAccountName,
@@ -315,7 +303,7 @@ func (ts *tester) createALBRBACClusterRole() error {
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      albIngressControllerRBACRoleName,
-					Namespace: albIngressControllerRBACRoleNamespace,
+					Namespace: "default",
 					Labels: map[string]string{
 						"app.kubernetes.io/name": albIngressControllerName,
 					},
@@ -417,7 +405,7 @@ func (ts *tester) createALBRBACClusterRoleBinding() error {
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      albIngressControllerRBACClusterRoleBindingName,
-					Namespace: albIngressControllerRBACClusterRoleBindingNamespace,
+					Namespace: "default",
 					Labels: map[string]string{
 						"app.kubernetes.io/name": albIngressControllerName,
 					},
@@ -426,7 +414,7 @@ func (ts *tester) createALBRBACClusterRoleBinding() error {
 					{
 						Kind:      "ServiceAccount",
 						Name:      albIngressControllerServiceAccountName,
-						Namespace: albIngressControllerServiceAccountNamespace,
+						Namespace: "kube-system",
 					},
 				},
 				RoleRef: rbacv1.RoleRef{
@@ -485,7 +473,7 @@ func (ts *tester) createALBDeployment() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.K8SClient.KubernetesClientSet().
 		AppsV1().
-		Deployments(albIngressControllerDeploymentNamespace).
+		Deployments("kube-system").
 		Create(
 			ctx,
 			&appsv1.Deployment{
@@ -495,7 +483,7 @@ func (ts *tester) createALBDeployment() error {
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      albIngressControllerDeploymentName,
-					Namespace: albIngressControllerDeploymentNamespace,
+					Namespace: "kube-system",
 					Labels: map[string]string{
 						"app.kubernetes.io/name": albIngressControllerName,
 					},
@@ -559,7 +547,7 @@ func (ts *tester) deleteALBDeployment() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	err := ts.cfg.K8SClient.KubernetesClientSet().
 		AppsV1().
-		Deployments(albIngressControllerDeploymentNamespace).
+		Deployments("kube-system").
 		Delete(
 			ctx,
 			albIngressControllerDeploymentName,
@@ -584,7 +572,7 @@ func (ts *tester) waitDeploymentALB() error {
 		ctx,
 		ts.cfg.EKSConfig.KubectlPath,
 		"--kubeconfig="+ts.cfg.EKSConfig.KubeConfigPath,
-		"--namespace="+albIngressControllerDeploymentNamespace,
+		"--namespace="+"kube-system",
 		"describe",
 		"deployment",
 		albIngressControllerDeploymentName,
@@ -611,7 +599,7 @@ func (ts *tester) waitDeploymentALB() error {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		dresp, err := ts.cfg.K8SClient.KubernetesClientSet().
 			AppsV1().
-			Deployments(albIngressControllerDeploymentNamespace).
+			Deployments("kube-system").
 			Get(ctx, albIngressControllerDeploymentName, metav1.GetOptions{})
 		cancel()
 		if err != nil {
@@ -839,7 +827,7 @@ func (ts *tester) create2048Service() error {
 					Kind:       "Service",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      alb2048ServiceName,
+					Name:      alb2048SvcName,
 					Namespace: ts.cfg.EKSConfig.AddOnALB2048.Namespace,
 				},
 				Spec: v1.ServiceSpec{
@@ -878,7 +866,7 @@ func (ts *tester) delete2048Service() error {
 		Services(ts.cfg.EKSConfig.AddOnALB2048.Namespace).
 		Delete(
 			ctx,
-			alb2048ServiceName,
+			alb2048SvcName,
 			metav1.DeleteOptions{
 				GracePeriodSeconds: aws.Int64(0),
 				PropagationPolicy:  &foreground,
@@ -928,7 +916,7 @@ func (ts *tester) create2048Ingress() error {
 										{
 											Path: "/*",
 											Backend: v1beta1.IngressBackend{
-												ServiceName: alb2048ServiceName,
+												ServiceName: alb2048SvcName,
 												ServicePort: intstr.FromInt(80),
 											},
 										},
@@ -959,7 +947,7 @@ func (ts *tester) create2048Ingress() error {
 
 	logCmdFlags := []string{
 		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
-		"--namespace=" + albIngressControllerDeploymentNamespace,
+		"--namespace=" + "kube-system",
 		"logs",
 		"--selector=" + "app.kubernetes.io/name" + "=" + albIngressControllerName,
 	}
@@ -969,7 +957,7 @@ func (ts *tester) create2048Ingress() error {
 		"--namespace=" + ts.cfg.EKSConfig.AddOnALB2048.Namespace,
 		"describe",
 		"svc",
-		alb2048ServiceName,
+		alb2048SvcName,
 	}
 	dss := ts.cfg.EKSConfig.KubectlPath + strings.Join(describeCmdFlags, " ")
 

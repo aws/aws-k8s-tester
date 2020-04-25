@@ -1,6 +1,7 @@
 package eksconfig
 
 import (
+	"encoding/hex"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -358,6 +359,16 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_POD_NAME")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_CONTAINER_NAME", "fargate-container")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_CONTAINER_NAME")
+
+	proxySecretToken := hex.EncodeToString(randBytes(32))
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_CREATED", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_CREATED")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_NAMESPACE", "jhhub")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_PROXY_SECRET_TOKEN", proxySecretToken)
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_PROXY_SECRET_TOKEN")
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
 		t.Fatal(err)
@@ -956,6 +967,19 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("unexpected cfg.AddOnIRSAFargate.ContainerName %q", cfg.AddOnIRSAFargate.ContainerName)
 	}
 
+	if cfg.AddOnJupyterHub.Created { // read-only must be ignored
+		t.Fatalf("unexpected cfg.AddOnJupyterHub.Created %v", cfg.AddOnJupyterHub.Created)
+	}
+	if !cfg.AddOnJupyterHub.Enable {
+		t.Fatalf("unexpected cfg.AddOnJupyterHub.Enable %v", cfg.AddOnJupyterHub.Enable)
+	}
+	if cfg.AddOnJupyterHub.Namespace != "jhhub" {
+		t.Fatalf("unexpected cfg.AddOnJupyterHub.Namespace %q", cfg.AddOnJupyterHub.Namespace)
+	}
+	if cfg.AddOnJupyterHub.ProxySecretToken != proxySecretToken {
+		t.Fatalf("unexpected cfg.AddOnJupyterHub.ProxySecretToken %q", cfg.AddOnJupyterHub.ProxySecretToken)
+	}
+
 	cfg.Parameters.RoleManagedPolicyARNs = nil
 	cfg.Parameters.RoleServicePrincipals = nil
 	cfg.AddOnManagedNodeGroups.RoleName = ""
@@ -1395,9 +1419,6 @@ func TestEnvAddOnKubeflow(t *testing.T) {
 	}
 	if !cfg.AddOnKubeflow.Enable {
 		t.Fatalf("unexpected cfg.AddOnKubeflow.Enable %v", cfg.AddOnKubeflow.Enable)
-	}
-	if cfg.AddOnKubeflow.Namespace != "kubeflow" {
-		t.Fatalf("unexpected cfg.AddOnKubeflow.Namespace %q", cfg.AddOnKubeflow.Namespace)
 	}
 	if cfg.AddOnKubeflow.KfctlDownloadURL != "kubeflow-download-here" {
 		t.Fatalf("unexpected cfg.AddOnKubeflow.KfctlDownloadURL %q", cfg.AddOnKubeflow.KfctlDownloadURL)

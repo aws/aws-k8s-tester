@@ -50,6 +50,8 @@ const (
 	EnvironmentVariablePrefixAddOnKubernetesDashboard = "AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_"
 	// EnvironmentVariablePrefixAddOnPrometheusGrafana is the environment variable prefix used for "eksconfig".
 	EnvironmentVariablePrefixAddOnPrometheusGrafana = "AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_"
+	// EnvironmentVariablePrefixAddOnJupyterHub is the environment variable prefix used for "eksconfig".
+	EnvironmentVariablePrefixAddOnJupyterHub = "AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_"
 	// EnvironmentVariablePrefixAddOnKubeflow is the environment variable prefix used for "eksconfig".
 	EnvironmentVariablePrefixAddOnKubeflow = "AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_"
 )
@@ -329,6 +331,19 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		cfg.AddOnPrometheusGrafana = av
 	} else {
 		return fmt.Errorf("expected *AddOnPrometheusGrafana, got %T", vv)
+	}
+
+	if cfg.AddOnJupyterHub == nil {
+		cfg.AddOnJupyterHub = &AddOnJupyterHub{}
+	}
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnJupyterHub, cfg.AddOnJupyterHub)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*AddOnJupyterHub); ok {
+		cfg.AddOnJupyterHub = av
+	} else {
+		return fmt.Errorf("expected *AddOnJupyterHub, got %T", vv)
 	}
 
 	if cfg.AddOnKubeflow == nil {

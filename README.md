@@ -17,15 +17,15 @@ https://github.com/kubernetes/enhancements/blob/master/keps/provider-aws/2018112
 
 The main goal is to create "temporary" EC2 instances or EKS clusters for "testing" purposes:
 
-* Upstream conformance tests
-    * https://github.com/kubernetes/test-infra/blob/master/config/jobs/kubernetes/sig-cloud-provider/aws/eks/eks-periodics.yaml
-    * https://github.com/kubernetes/test-infra/pull/16890
-* CNI plugin conformance tests
-    * https://github.com/aws/amazon-vpc-cni-k8s/blob/master/scripts/lib/cluster.sh
-    * https://github.com/aws/amazon-vpc-cni-k8s/pull/875
-    * https://github.com/aws/amazon-vpc-cni-k8s/pull/878
-* AppMesh scalability testing
-    * https://github.com/aws/aws-app-mesh-controller-for-k8s/pull/137
+- Upstream conformance tests
+  - https://github.com/kubernetes/test-infra/blob/master/config/jobs/kubernetes/sig-cloud-provider/aws/eks/eks-periodics.yaml
+  - https://github.com/kubernetes/test-infra/pull/16890
+- CNI plugin conformance tests
+  - https://github.com/aws/amazon-vpc-cni-k8s/blob/master/scripts/lib/cluster.sh
+  - https://github.com/aws/amazon-vpc-cni-k8s/pull/875
+  - https://github.com/aws/amazon-vpc-cni-k8s/pull/878
+- AppMesh scalability testing
+  - https://github.com/aws/aws-app-mesh-controller-for-k8s/pull/137
 
 
 ## Install
@@ -124,10 +124,10 @@ AWS_K8S_TESTER_EKS_PARAMETERS_VERSION=1.15 \
 AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CREATE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_CREATE=true \
-AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS='{"GetRef.Name-ng-al2-cpu":{"name":"GetRef.Name-ng-al2-cpu","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64","image-id":"ami-0554e52b061ffcbb3","asg-min-size":1,"asg-max-size":1,"asg-desired-capacity":1,"instance-types":["c5.xlarge"],"volume-size":40,"kubelet-extra-args":""},"GetRef.Name-ng-bottlerocket":{"name":"GetRef.Name-ng-bottlerocket","remote-access-user-name":"ec2-user","ami-type":"BOTTLEROCKET_x86_64","image-id-ssm-parameter":"/aws/service/bottlerocket/aws-k8s-1.15/x86_64/latest/image_id","ssm-document-cfn-stack-name":"GetRef.Name-install-bottlerocket","ssm-document-name":"GetRef.Name-install-bottlerocket","ssm-document-create":true,"ssm-document-commands":"enable-admin-container","ssm-document-execution-timeout-seconds":3600,"asg-min-size":1,"asg-max-size":1,"asg-desired-capacity":1,"instance-types":["c5.xlarge"],"volume-size":40}}' \
+AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS='{"GetRef.Name-ng-al2-cpu":{"name":"GetRef.Name-ng-al2-cpu","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64","image-id":"ami-09febb36c6403661c","asg-min-size":2,"asg-max-size":2,"asg-desired-capacity":2,"instance-types":["c5.xlarge"],"volume-size":40,"kubelet-extra-args":""},"GetRef.Name-ng-al2-gpu":{"name":"GetRef.Name-ng-al2-gpu","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64_GPU","image-id":"ami-09c404af3afbdf7d5","asg-min-size":2,"asg-max-size":2,"asg-desired-capacity":2,"instance-types":["p3.8xlarge"],"volume-size":40,"kubelet-extra-args":""},"GetRef.Name-ng-bottlerocket":{"name":"GetRef.Name-ng-bottlerocket","remote-access-user-name":"ec2-user","ami-type":"BOTTLEROCKET_x86_64","image-id-ssm-parameter":"/aws/service/bottlerocket/aws-k8s-1.15/x86_64/latest/image_id","ssm-document-cfn-stack-name":"GetRef.Name-install-bottlerocket","ssm-document-name":"GetRef.Name-InstallBottlerocket","ssm-document-create":true,"ssm-document-commands":"enable-admin-container","ssm-document-execution-timeout-seconds":3600,"asg-min-size":2,"asg-max-size":2,"asg-desired-capacity":2,"instance-types":["c5.xlarge"],"volume-size":40}}' \
 AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_CREATE=true \
-AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS='{"GetRef.Name-mng-al2-cpu":{"name":"GetRef.Name-mng-al2-cpu","remote-access-user-name":"ec2-user","release-version":"","ami-type":"AL2_x86_64","asg-min-size":1,"asg-max-size":1,"asg-desired-capacity":1,"instance-types":["c5.xlarge"],"volume-size":40}}' \
+AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS='{"GetRef.Name-mng-al2-cpu":{"name":"GetRef.Name-mng-al2-cpu","remote-access-user-name":"ec2-user","release-version":"","ami-type":"AL2_x86_64","asg-min-size":1,"asg-max-size":1,"asg-desired-capacity":1,"instance-types":["c5.xlarge"],"volume-size":40},"GetRef.Name-mng-al2-gpu":{"name":"GetRef.Name-mng-al2-gpu","remote-access-user-name":"ec2-user","release-version":"","ami-type":"AL2_x86_64_GPU","asg-min-size":1,"asg-max-size":1,"asg-desired-capacity":1,"instance-types":["p3.8xlarge"],"volume-size":40}}' \
 AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_ENABLE=true \
@@ -145,6 +145,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_ENABLE=true \
+AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_ENABLE=true \
 aws-k8s-tester eks create config -p /tmp/${USER}-test-eks.yaml
 
 <<COMMENT

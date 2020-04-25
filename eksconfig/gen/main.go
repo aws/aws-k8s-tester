@@ -103,6 +103,12 @@ func createDoc() string {
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
+	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnJupyterHub, &eksconfig.AddOnJupyterHub{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
+	b.WriteString("# NOT WORKING...")
+	b.WriteByte('\n')
 	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnKubeflow, &eksconfig.AddOnKubeflow{}))
 
 	b.WriteByte('\n')

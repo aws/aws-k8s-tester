@@ -188,6 +188,9 @@ type Config struct {
 	// AddOnWordpress defines parameters for EKS cluster
 	// add-on WordPress.
 	AddOnWordpress *AddOnWordpress `json:"add-on-wordpress,omitempty"`
+	// AddOnJupyterHub defines parameters for EKS cluster
+	// add-on JupyterHub.
+	AddOnJupyterHub *AddOnJupyterHub `json:"add-on-jupyter-hub,omitempty"`
 	// AddOnKubeflow defines parameters for EKS cluster
 	// add-on Kubeflow.
 	AddOnKubeflow *AddOnKubeflow `json:"add-on-kubeflow,omitempty"`

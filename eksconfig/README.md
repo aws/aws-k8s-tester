@@ -330,8 +330,21 @@ AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_NLB_NAME | *eksconfig.AddOnWordpress.NLBName
 AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_URL | *eksconfig.AddOnWordpress.URL | string | read-only "true"
 
 
+AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_ENABLE | *eksconfig.AddOnJupyterHub.Enable | bool | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_NAMESPACE | *eksconfig.AddOnJupyterHub.Namespace | string | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_CREATED | *eksconfig.AddOnJupyterHub.Created | bool | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_CREATE_TOOK | *eksconfig.AddOnJupyterHub.CreateTook | time.Duration | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_CREATE_TOOK_STRING | *eksconfig.AddOnJupyterHub.CreateTookString | string | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_DELETE_TOOK | *eksconfig.AddOnJupyterHub.DeleteTook | time.Duration | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_DELETE_TOOK_STRING | *eksconfig.AddOnJupyterHub.DeleteTookString | string | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_PROXY_SECRET_TOKEN | *eksconfig.AddOnJupyterHub.ProxySecretToken | string | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_NLB_ARN | *eksconfig.AddOnJupyterHub.NLBARN | string | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_NLB_NAME | *eksconfig.AddOnJupyterHub.NLBName | string | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_URL | *eksconfig.AddOnJupyterHub.URL | string | read-only "true"
+
+
+# NOT WORKING...
 AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_ENABLE | *eksconfig.AddOnKubeflow.Enable | bool | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_NAMESPACE | *eksconfig.AddOnKubeflow.Namespace | string | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_KFCTL_PATH | *eksconfig.AddOnKubeflow.KfctlPath | string | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_KFCTL_DOWNLOAD_URL | *eksconfig.AddOnKubeflow.KfctlDownloadURL | string | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_CREATED | *eksconfig.AddOnKubeflow.Created | bool | read-only "true"
@@ -339,6 +352,9 @@ AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_CREATE_TOOK | *eksconfig.AddOnKubeflow.Create
 AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_CREATE_TOOK_STRING | *eksconfig.AddOnKubeflow.CreateTookString | string | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_DELETE_TOOK | *eksconfig.AddOnKubeflow.DeleteTook | time.Duration | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_DELETE_TOOK_STRING | *eksconfig.AddOnKubeflow.DeleteTookString | string | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_BASE_DIR | *eksconfig.AddOnKubeflow.BaseDir | string | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_KF_DIR | *eksconfig.AddOnKubeflow.KfDir | string | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_KFCTL_CONFIG_PATH | *eksconfig.AddOnKubeflow.KfctlConfigPath | string | read-only "true"
 
 
 ```

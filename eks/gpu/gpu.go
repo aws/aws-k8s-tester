@@ -38,10 +38,10 @@ type Tester interface {
 	// ref. https://docs.aws.amazon.com/eks/latest/userguide/gpu-ami.html
 	// ref. https://github.com/NVIDIA/k8s-device-plugin
 	InstallNvidiaDriver() error
-	// RunNvidiaSMI launches a pod manifest that launches a Cuda container that
+	// CreateNvidiaSMI launches a pod manifest that launches a Cuda container that
 	// runs "nvidia-smi" on a GPU worker node.
 	// ref. https://docs.aws.amazon.com/eks/latest/userguide/gpu-ami.html
-	RunNvidiaSMI() error
+	CreateNvidiaSMI() error
 }
 
 // New creates a new Job tester.
@@ -267,7 +267,7 @@ kubectl logs nvidia-smi
 |  No running processes found                                                 |
 +-----------------------------------------------------------------------------+
 */
-func (ts *tester) RunNvidiaSMI() error {
+func (ts *tester) CreateNvidiaSMI() error {
 	ts.cfg.Logger.Info("creating nvidia-smi")
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.K8SClient.
@@ -297,6 +297,9 @@ func (ts *tester) RunNvidiaSMI() error {
 								},
 							},
 						},
+					},
+					NodeSelector: map[string]string{
+						"AMIType": ec2config.AMITypeAL2X8664GPU,
 					},
 				},
 			},
@@ -333,6 +336,7 @@ func (ts *tester) RunNvidiaSMI() error {
 			ctx,
 			ts.cfg.EKSConfig.KubectlPath,
 			"--kubeconfig="+ts.cfg.EKSConfig.KubeConfigPath,
+			"--namespace=default",
 			"logs",
 			"nvidia-smi",
 		).CombinedOutput()
@@ -340,7 +344,7 @@ func (ts *tester) RunNvidiaSMI() error {
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to fetch logs", zap.Error(err))
 		}
-		fmt.Println("nvidia-smi output:", string(out))
+		fmt.Printf("\n\nnvidia-smi output:\n\n%s\n\n", string(out))
 
 		if strings.Contains(string(out), "GPU-Util") {
 			break

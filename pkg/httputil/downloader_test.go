@@ -12,9 +12,9 @@ import (
 func TestGet(t *testing.T) {
 	t.Skip()
 
-	d, err := Download(zap.NewExample(), os.Stdout, "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/current/us-west-2/index.json")
+	d, err := Read(zap.NewExample(), os.Stdout, "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/current/us-west-2/index.json")
 	if err != nil {
 		t.Fatal(err)
 	}
-	fmt.Println("downloaded", humanize.Bytes(uint64(len(d))))
+	fmt.Println("read", humanize.Bytes(uint64(len(d))))
 }

@@ -36,6 +36,12 @@ helm search repo bitnami
 helm repo add eks https://aws.github.io/eks-charts
 helm repo update
 helm search repo eks
+
+helm repo add jupyterhub https://jupyterhub.github.io/helm-chart/
+helm repo update
+helm search repo jupyterhub
+
+https://github.com/jupyterhub/zero-to-jupyterhub-k8s/blob/master/jupyterhub/values.yaml
 */
 
 var settings *cli.EnvSettings
@@ -269,6 +275,7 @@ func Install(cfg InstallConfig) (err error) {
 
 				cfg.Logger.Info("executing query function")
 				cfg.QueryFunc()
+				cfg.Logger.Info("executed query function")
 			}
 		}()
 	}

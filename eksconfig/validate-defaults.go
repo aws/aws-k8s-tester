@@ -1,6 +1,7 @@
 package eksconfig
 
 import (
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"os"
@@ -241,6 +242,10 @@ func NewDefault() *Config {
 			Password: "",
 		},
 
+		AddOnJupyterHub: &AddOnJupyterHub{
+			Enable: false,
+		},
+
 		AddOnKubeflow: &AddOnKubeflow{
 			Enable:           false,
 			KfctlPath:        "/tmp/kfctl-test-v1.0.2",
@@ -376,6 +381,9 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 	if err := cfg.validateAddOnWordpress(); err != nil {
 		return fmt.Errorf("validateAddOnWordpress failed [%v]", err)
+	}
+	if err := cfg.validateAddOnJupyterHub(); err != nil {
+		return fmt.Errorf("validateAddOnJupyterHub failed [%v]", err)
 	}
 	if err := cfg.validateAddOnKubeflow(); err != nil {
 		return fmt.Errorf("validateAddOnKubeflow failed [%v]", err)
@@ -1427,15 +1435,58 @@ func (cfg *Config) validateAddOnWordpress() error {
 	return nil
 }
 
+func (cfg *Config) validateAddOnJupyterHub() error {
+	if !cfg.IsEnabledAddOnJupyterHub() {
+		return nil
+	}
+	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
+		return errors.New("AddOnJupyterHub.Enable true but no node group is enabled")
+	}
+
+	gpuFound := false
+	if cfg.IsEnabledAddOnNodeGroups() {
+		for _, cur := range cfg.AddOnNodeGroups.ASGs {
+			if cur.AMIType == ec2config.AMITypeAL2X8664GPU {
+				gpuFound = true
+				break
+			}
+		}
+	}
+	if !gpuFound && cfg.IsEnabledAddOnManagedNodeGroups() {
+		for _, cur := range cfg.AddOnManagedNodeGroups.MNGs {
+			if cur.AMIType == eks.AMITypesAl2X8664Gpu {
+				gpuFound = true
+				break
+			}
+		}
+	}
+	if !gpuFound {
+		return errors.New("AddOnJupyterHub requires GPU AMI")
+	}
+
+	if cfg.AddOnJupyterHub.Namespace == "" {
+		cfg.AddOnJupyterHub.Namespace = cfg.Name + "-jupyter-hub"
+	}
+
+	if cfg.AddOnJupyterHub.ProxySecretToken == "" {
+		cfg.AddOnJupyterHub.ProxySecretToken = randHex(32)
+	}
+	_, err := hex.DecodeString(cfg.AddOnJupyterHub.ProxySecretToken)
+	if err != nil {
+		return fmt.Errorf("cannot hex decode AddOnJupyterHub.ProxySecretToken %q", err)
+	}
+
+	return nil
+}
+
+const defaultTestToken = "e1e2d4c72944d601ba3fe1d4413a1abb5124212c80e45b0b3708b9f81017f35b"
+
 func (cfg *Config) validateAddOnKubeflow() error {
 	if !cfg.IsEnabledAddOnKubeflow() {
 		return nil
 	}
 	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
 		return errors.New("AddOnKubeflow.Enable true but no node group is enabled")
-	}
-	if cfg.AddOnKubeflow.Namespace == "" {
-		cfg.AddOnKubeflow.Namespace = cfg.Name + "-kubeflow"
 	}
 	if cfg.AddOnKubeflow.BaseDir == "" {
 		cfg.AddOnKubeflow.BaseDir = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-kubeflow")

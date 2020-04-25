@@ -99,11 +99,11 @@ func (ts *tester) Delete() error {
 // https://github.com/helm/charts/blob/master/stable/wordpress/values.yaml
 // https://github.com/helm/charts/blob/master/stable/mariadb/values.yaml
 func (ts *tester) createHelmCSI() error {
-	values := make(map[string]interface{})
-	values["enableVolumeScheduling"] = true
-	values["enableVolumeResizing"] = true
-	values["enableVolumeSnapshot"] = true
-
+	values := map[string]interface{}{
+		"enableVolumeScheduling": true,
+		"enableVolumeResizing":   true,
+		"enableVolumeSnapshot":   true,
+	}
 	args := []string{
 		ts.cfg.EKSConfig.KubectlPath,
 		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
