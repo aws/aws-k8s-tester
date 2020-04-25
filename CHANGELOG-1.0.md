@@ -24,14 +24,14 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.7...v1.0.8
 
 ### `eksconfig`
 
-- Add [`AddOnJupyterHub`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`AddOnJupyterHub`](https://github.com/aws/aws-k8s-tester/commit/b5660b1187d184b4be3fb8d09077bbe321f16d91).
 
 ### `eks`
 
 - Remove [unused `eks/gpu.Tester` `Config.Namespace` field](https://github.com/aws/aws-k8s-tester/commit/01a13907005c17ee4ba465570e7772d57f39d3d0). 
 - Fix [`eks/irsa-fargate` `kubectl logs` test](https://github.com/aws/aws-k8s-tester/commit/27605323e451b0d09c0abaff82333e1a20a93fb3).
-- Add [`"github.com/aws/aws-k8s-tester/eks/jupyter-hub"`](https://github.com/aws/aws-k8s-tester/commit/).
-- Add [`"github.com/aws/aws-k8s-tester/eks/kubeflow"`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`"github.com/aws/aws-k8s-tester/eks/jupyter-hub"`](https://github.com/aws/aws-k8s-tester/commit/b5660b1187d184b4be3fb8d09077bbe321f16d91).
+- Add [`"github.com/aws/aws-k8s-tester/eks/kubeflow"`](https://github.com/aws/aws-k8s-tester/commit/b5660b1187d184b4be3fb8d09077bbe321f16d91).
 - Improve [node waits using node labels](https://github.com/aws/aws-k8s-tester/commit/7aed1aa60a370c5cf924357b3d197e60d04c1b92).
 - Batch [SSM execution by 50](https://github.com/aws/aws-k8s-tester/commit/7aed1aa60a370c5cf924357b3d197e60d04c1b92).
   - Fix `'instanceIds' failed to satisfy constraint: Member must have length less than or equal to 50`.
