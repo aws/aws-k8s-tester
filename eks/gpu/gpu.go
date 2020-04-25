@@ -57,6 +57,11 @@ type tester struct {
 // ref. https://github.com/NVIDIA/k8s-device-plugin
 // ref. https://github.com/NVIDIA/k8s-device-plugin/releases
 func (ts *tester) InstallNvidiaDriver() error {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnNodeGroups() && !ts.cfg.EKSConfig.IsEnabledAddOnManagedNodeGroups() {
+		ts.cfg.Logger.Info("skipping nvidia driver install")
+		return nil
+	}
+
 	ts.cfg.Logger.Info("applying daemon set for Nvidia GPU driver for worker nodes")
 	downloadURL := "https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/1.0.0-beta4/nvidia-device-plugin.yml"
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
@@ -72,72 +77,142 @@ func (ts *tester) InstallNvidiaDriver() error {
 	if err != nil {
 		return fmt.Errorf("'kubectl apply' failed (output %q, error %v)", string(out), err)
 	}
-	ts.cfg.Logger.Info("applied daemon set for Nvidia GPU driver for worker nodes", zap.String("output", string(out)))
+	ts.cfg.Logger.Info("applied daemon set for nvidia GPU driver for worker nodes", zap.String("output", string(out)))
 
-	waitDur := 5 * time.Minute
-	var items []v1.Node
-	retryStart := time.Now()
-
-	readyMNGs := make(map[string]struct{})
-	for time.Now().Sub(retryStart) < waitDur {
-		for mngName, cur := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
-			if cur.AMIType != eks.AMITypesAl2X8664Gpu {
-				ts.cfg.Logger.Warn("skipping non-GPU AMI", zap.String("mng-name", mngName))
-				continue
-			}
-			if _, ok := readyMNGs[mngName]; ok {
-				ts.cfg.Logger.Info("skipping already ready mng", zap.String("mng-name", mngName))
-				continue
-			}
-
-			ts.cfg.Logger.Info("listing GPU nodes via client-go", zap.String("mng-name", mngName))
-			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-			nodes, err := ts.cfg.K8SClient.KubernetesClientSet().CoreV1().Nodes().List(
-				ctx,
-				metav1.ListOptions{
-					// TODO: filter by GPU?
-					// FieldSelector: fields.OneTermEqualSelector("metadata.name", "GPU").String(),
-				},
-			)
-			cancel()
-			if err != nil {
-				ts.cfg.Logger.Warn("get nodes failed", zap.Error(err))
-				time.Sleep(5 * time.Second)
-				continue
-			}
-			items = nodes.Items
-			ts.cfg.Logger.Info("listed GPU nodes via client-go", zap.String("mng-name", mngName), zap.Int("nodes", len(items)))
-
-			readies := 0
-			for _, node := range items {
-				labels := node.GetLabels()
-				if labels["Name"] != mngName {
+	if ts.cfg.EKSConfig.IsEnabledAddOnNodeGroups() {
+		waitDur := 5 * time.Minute
+		var items []v1.Node
+		retryStart := time.Now()
+		readyNGs := make(map[string]struct{})
+		for time.Now().Sub(retryStart) < waitDur {
+			for ngName, cur := range ts.cfg.EKSConfig.AddOnNodeGroups.ASGs {
+				if cur.AMIType != eks.AMITypesAl2X8664Gpu {
+					ts.cfg.Logger.Warn("skipping non-GPU AMI", zap.String("ng-name", ngName))
 					continue
 				}
-				nodeName := node.GetName()
-				ts.cfg.Logger.Info("checking node-info conditions", zap.String("node-name", nodeName), zap.String("labels", fmt.Sprintf("%+v", labels)))
-				for _, cond := range node.Status.Conditions {
-					if cond.Type != v1.NodeReady {
+				if _, ok := readyNGs[ngName]; ok {
+					ts.cfg.Logger.Info("skipping already ready mng", zap.String("ng-name", ngName))
+					continue
+				}
+
+				ts.cfg.Logger.Info("listing GPU nodes via client-go", zap.String("ng-name", ngName))
+				ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+				nodes, err := ts.cfg.K8SClient.KubernetesClientSet().CoreV1().Nodes().List(
+					ctx,
+					metav1.ListOptions{
+						// TODO: filter by GPU?
+						// FieldSelector: fields.OneTermEqualSelector("metadata.name", "GPU").String(),
+					},
+				)
+				cancel()
+				if err != nil {
+					ts.cfg.Logger.Warn("get nodes failed", zap.Error(err))
+					time.Sleep(5 * time.Second)
+					continue
+				}
+				items = nodes.Items
+				ts.cfg.Logger.Info("listed GPU nodes via client-go", zap.String("ng-name", ngName), zap.Int("nodes", len(items)))
+
+				readies := int64(0)
+				for _, node := range items {
+					labels := node.GetLabels()
+					if labels["Name"] != ngName {
 						continue
 					}
-					ts.cfg.Logger.Info("node info",
-						zap.String("node-name", nodeName),
-						zap.String("type", fmt.Sprintf("%s", cond.Type)),
-						zap.String("status", fmt.Sprintf("%s", cond.Status)),
-					)
-					if cond.Status == v1.ConditionTrue {
-						readies++
+					nodeName := node.GetName()
+					ts.cfg.Logger.Info("checking node-info conditions", zap.String("node-name", nodeName), zap.String("labels", fmt.Sprintf("%+v", labels)))
+					for _, cond := range node.Status.Conditions {
+						if cond.Type != v1.NodeReady {
+							continue
+						}
+						ts.cfg.Logger.Info("node info",
+							zap.String("node-name", nodeName),
+							zap.String("type", fmt.Sprintf("%s", cond.Type)),
+							zap.String("status", fmt.Sprintf("%s", cond.Status)),
+						)
+						if cond.Status == v1.ConditionTrue {
+							readies++
+						}
 					}
 				}
-			}
-			ts.cfg.Logger.Info("nodes",
-				zap.Int("current-ready-nodes", readies),
-				zap.Int("desired-ready-nodes", cur.ASGDesiredCapacity),
-			)
+				ts.cfg.Logger.Info("nodes",
+					zap.Int64("current-ready-nodes", readies),
+					zap.Int64("desired-ready-nodes", cur.ASGDesiredCapacity),
+				)
 
-			if readies >= cur.ASGDesiredCapacity {
-				readyMNGs[mngName] = struct{}{}
-				break
+				if readies >= cur.ASGDesiredCapacity {
+					readyNGs[ngName] = struct{}{}
+					break
+				}
+			}
+		}
+	}
+
+	if ts.cfg.EKSConfig.IsEnabledAddOnManagedNodeGroups() {
+		waitDur := 5 * time.Minute
+		var items []v1.Node
+		retryStart := time.Now()
+		readyMNGs := make(map[string]struct{})
+		for time.Now().Sub(retryStart) < waitDur {
+			for mngName, cur := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
+				if cur.AMIType != eks.AMITypesAl2X8664Gpu {
+					ts.cfg.Logger.Warn("skipping non-GPU AMI", zap.String("mng-name", mngName))
+					continue
+				}
+				if _, ok := readyMNGs[mngName]; ok {
+					ts.cfg.Logger.Info("skipping already ready mng", zap.String("mng-name", mngName))
+					continue
+				}
+
+				ts.cfg.Logger.Info("listing GPU nodes via client-go", zap.String("mng-name", mngName))
+				ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+				nodes, err := ts.cfg.K8SClient.KubernetesClientSet().CoreV1().Nodes().List(
+					ctx,
+					metav1.ListOptions{
+						// TODO: filter by GPU?
+						// FieldSelector: fields.OneTermEqualSelector("metadata.name", "GPU").String(),
+					},
+				)
+				cancel()
+				if err != nil {
+					ts.cfg.Logger.Warn("get nodes failed", zap.Error(err))
+					time.Sleep(5 * time.Second)
+					continue
+				}
+				items = nodes.Items
+				ts.cfg.Logger.Info("listed GPU nodes via client-go", zap.String("mng-name", mngName), zap.Int("nodes", len(items)))
+
+				readies := 0
+				for _, node := range items {
+					labels := node.GetLabels()
+					if labels["Name"] != mngName {
+						continue
+					}
+					nodeName := node.GetName()
+					ts.cfg.Logger.Info("checking node-info conditions", zap.String("node-name", nodeName), zap.String("labels", fmt.Sprintf("%+v", labels)))
+					for _, cond := range node.Status.Conditions {
+						if cond.Type != v1.NodeReady {
+							continue
+						}
+						ts.cfg.Logger.Info("node info",
+							zap.String("node-name", nodeName),
+							zap.String("type", fmt.Sprintf("%s", cond.Type)),
+							zap.String("status", fmt.Sprintf("%s", cond.Status)),
+						)
+						if cond.Status == v1.ConditionTrue {
+							readies++
+						}
+					}
+				}
+				ts.cfg.Logger.Info("nodes",
+					zap.Int("current-ready-nodes", readies),
+					zap.Int("desired-ready-nodes", cur.ASGDesiredCapacity),
+				)
+
+				if readies >= cur.ASGDesiredCapacity {
+					readyMNGs[mngName] = struct{}{}
+					break
+				}
 			}
 		}
 	}
