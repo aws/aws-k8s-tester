@@ -678,6 +678,7 @@ func Poll(
 				return
 			case aws_eks.ClusterStatusFailed:
 				ch <- ClusterStatus{Cluster: cluster, Error: fmt.Errorf("unexpected cluster status %q", aws_eks.ClusterStatusFailed)}
+				lg.Warn("cluster status failed", zap.String("cluster-status", currentStatus), zap.String("desired-status", desiredClusterStatus))
 				close(ch)
 				return
 			default:
