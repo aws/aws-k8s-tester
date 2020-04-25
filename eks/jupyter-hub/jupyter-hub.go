@@ -281,11 +281,27 @@ func (ts *tester) createHelmJupyterHub() error {
 		// https://github.com/jupyterhub/zero-to-jupyterhub-k8s/blob/master/jupyterhub/values.yaml
 		"proxy": map[string]interface{}{
 			"secretToken": ts.cfg.EKSConfig.AddOnJupyterHub.ProxySecretToken,
+			"service": map[string]interface{}{
+				"type":                  "LoadBalancer",
+				"port":                  80,
+				"httpsPort":             443,
+				"httpsTargetPort":       "https",
+				"externalTrafficPolicy": "Cluster",
+			},
+			"nodeSelector": map[string]interface{}{
+				"NGType": ngType,
+				// do not deploy in bottlerocket; PVC not working
+				"AMIType": ec2config.AMITypeAL2X8664GPU,
+			},
+			"https": map[string]interface{}{
+				"enabled": false,
+			},
 		},
 		// https://zero-to-jupyterhub.readthedocs.io/en/latest/administrator/optimization.html
 		// https://github.com/jupyterhub/zero-to-jupyterhub-k8s/blob/master/jupyterhub/values.yaml
 		"scheduling": map[string]interface{}{
 			"userScheduler": map[string]interface{}{
+				"enabled": true,
 				"nodeSelector": map[string]interface{}{
 					"NGType": ngType,
 					// do not deploy in bottlerocket; PVC not working
