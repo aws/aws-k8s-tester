@@ -337,7 +337,7 @@ func (ts *tester) createHelmJupyterHub() error {
 		Logger:         ts.cfg.Logger,
 		Stopc:          ts.cfg.Stopc,
 		Sig:            ts.cfg.Sig,
-		Timeout:        15 * time.Minute,
+		Timeout:        20 * time.Minute,
 		KubeConfigPath: ts.cfg.EKSConfig.KubeConfigPath,
 		Namespace:      ts.cfg.EKSConfig.AddOnJupyterHub.Namespace,
 		ChartRepoURL:   chartRepoURL,
@@ -352,7 +352,7 @@ func (ts *tester) createHelmJupyterHub() error {
 func (ts *tester) deleteHelmJupyterHub() error {
 	return helm.Uninstall(helm.InstallConfig{
 		Logger:         ts.cfg.Logger,
-		Timeout:        15 * time.Minute,
+		Timeout:        20 * time.Minute,
 		KubeConfigPath: ts.cfg.EKSConfig.KubeConfigPath,
 		Namespace:      ts.cfg.EKSConfig.AddOnJupyterHub.Namespace,
 		ChartName:      chartName,
