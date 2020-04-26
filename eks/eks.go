@@ -320,12 +320,13 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 		Logger:            ts.lg,
 		Region:            ts.cfg.Region,
 		ClusterName:       ts.cfg.Name,
-		ClientQPS:         ts.cfg.ClientQPS,
-		ClientBurst:       ts.cfg.ClientBurst,
 		KubeConfigPath:    ts.cfg.KubeConfigPath,
 		KubectlPath:       ts.cfg.KubectlPath,
 		ServerVersion:     ts.cfg.Parameters.Version,
 		EncryptionEnabled: ts.cfg.Parameters.EncryptionCMKARN != "",
+		Clients:           1,
+		ClientQPS:         ts.cfg.ClientQPS,
+		ClientBurst:       ts.cfg.ClientBurst,
 	}
 	if ts.cfg.Status != nil {
 		kcfg.ClusterAPIServerEndpoint = ts.cfg.Status.ClusterAPIServerEndpoint

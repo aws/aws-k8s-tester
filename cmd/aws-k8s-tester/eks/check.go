@@ -59,13 +59,14 @@ func checkFunc(cmd *cobra.Command, args []string) {
 		panic(errors.New("'kubectl' not found"))
 	}
 	kcfg := &k8sclient.EKSConfig{
-		ClientQPS:         checkClientQPS,
-		ClientBurst:       checkClientBurst,
 		KubeConfigPath:    checkKubeConfigPath,
 		KubeConfigContext: checkKubeConfigContext,
 		KubectlPath:       checkKubectlPath,
 		ServerVersion:     checkServerVersion,
 		EncryptionEnabled: checkEncryptionEnabled,
+		Clients:           1,
+		ClientQPS:         checkClientQPS,
+		ClientBurst:       checkClientBurst,
 	}
 	cli, err := k8sclient.NewEKS(kcfg)
 	if err != nil {

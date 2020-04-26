@@ -44,11 +44,12 @@ func supportedFunc(cmd *cobra.Command, args []string) {
 	lg := zap.NewExample()
 
 	kcfg := &k8sclient.EKSConfig{
-		ClientQPS:         clientQPS,
-		ClientBurst:       clientBurst,
 		KubeConfigPath:    kubeConfigPath,
 		KubeConfigContext: kubeConfigContext,
 		KubectlPath:       kubectlPath,
+		Clients:           1,
+		ClientQPS:         clientQPS,
+		ClientBurst:       clientBurst,
 	}
 	cli, err := k8sclient.NewEKS(kcfg)
 	if err != nil {

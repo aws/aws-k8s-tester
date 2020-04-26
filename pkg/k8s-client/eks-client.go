@@ -42,6 +42,74 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+// EKSConfig defines EKS client configuration.
+type EKSConfig struct {
+	// Logger is the logger to log client operations.
+	Logger *zap.Logger
+	// Region is used for EKS auth provider configuration.
+	Region string
+	// ClusterName is the EKS cluster name.
+	// Used for EKS auth provider configuration.
+	ClusterName string
+	// ClusterAPIServerEndpoint is the EKS kube-apiserver endpoint.
+	// Use for kubeconfig.
+	ClusterAPIServerEndpoint string
+	// ClusterCADecoded is the cluster CA base64-decoded.
+	// Use for kubeconfig.
+	ClusterCADecoded string
+	// KubectlPath is the kubectl path, used for health checks.
+	KubectlPath string
+	// KubeConfigPath is the kubeconfig path to load.
+	KubeConfigPath string
+	// KubeConfigContext is the kubeconfig context.
+	KubeConfigContext string
+	// ServerVersion is the kube-apiserver version.
+	// If not empty, this is used for health checks.
+	ServerVersion string
+	// EncryptionEnabled is true if EKS cluster is created with KMS encryption enabled.
+	// If true, the health check checks if data encryption key has been generated
+	// to encrypt initial service account tokens, via kube-apiserver metrics endpoint.
+	EncryptionEnabled bool
+	// EnablePrompt is true to enable interactive mode.
+	EnablePrompt bool
+	// Dir is the directory to store all upgrade/rollback files.
+	Dir string
+
+	// Clients is the number of kubernetes clients to create.
+	// Default is 1.
+	Clients int
+	// ClientQPS is the QPS for kubernetes client.
+	// To use while talking with kubernetes apiserver.
+	//
+	// Kubernetes client DefaultQPS is 5.
+	// Kubernetes client DefaultBurst is 10.
+	// ref. https://github.com/kubernetes/kubernetes/blob/4d0e86f0b8d1eae00a202009858c8739e4c9402e/staging/src/k8s.io/client-go/rest/config.go#L43-L46
+	//
+	// kube-apiserver default inflight requests limits are:
+	// FLAG: --max-mutating-requests-inflight="200"
+	// FLAG: --max-requests-inflight="400"
+	// ref. https://github.com/kubernetes/kubernetes/blob/4d0e86f0b8d1eae00a202009858c8739e4c9402e/staging/src/k8s.io/apiserver/pkg/server/config.go#L300-L301
+	//
+	ClientQPS float32
+	// ClientBurst is the burst for kubernetes client.
+	// To use while talking with kubernetes apiserver
+	//
+	// Kubernetes client DefaultQPS is 5.
+	// Kubernetes client DefaultBurst is 10.
+	// ref. https://github.com/kubernetes/kubernetes/blob/4d0e86f0b8d1eae00a202009858c8739e4c9402e/staging/src/k8s.io/client-go/rest/config.go#L43-L46
+	//
+	// kube-apiserver default inflight requests limits are:
+	// FLAG: --max-mutating-requests-inflight="200"
+	// FLAG: --max-requests-inflight="400"
+	// ref. https://github.com/kubernetes/kubernetes/blob/4d0e86f0b8d1eae00a202009858c8739e4c9402e/staging/src/k8s.io/apiserver/pkg/server/config.go#L300-L301
+	//
+	ClientBurst int
+	// ListBatch is non-zero to configure list batch limit.
+	ListBatch int64
+	// ListInterval is the wait interval between batched list operations.
+	ListInterval time.Duration
+}
+
 // EKS defines EKS client operations.
 type EKS interface {
 	// KubernetesClientSet returns a new kubernetes client set.
@@ -108,108 +176,16 @@ type EKS interface {
 	Deprecate() error
 }
 
-// EKSConfig defines EKS client configuration.
-type EKSConfig struct {
-	Logger *zap.Logger
-
-	Region string
-
-	ClusterName              string
-	ClusterAPIServerEndpoint string
-	ClusterCADecoded         string
-
-	// ClientQPS is the QPS for kubernetes client.
-	// To use while talking with kubernetes apiserver.
-	//
-	// Kubernetes client DefaultQPS is 5.
-	// Kubernetes client DefaultBurst is 10.
-	// ref. https://github.com/kubernetes/kubernetes/blob/4d0e86f0b8d1eae00a202009858c8739e4c9402e/staging/src/k8s.io/client-go/rest/config.go#L43-L46
-	//
-	// kube-apiserver default inflight requests limits are:
-	// FLAG: --max-mutating-requests-inflight="200"
-	// FLAG: --max-requests-inflight="400"
-	// ref. https://github.com/kubernetes/kubernetes/blob/4d0e86f0b8d1eae00a202009858c8739e4c9402e/staging/src/k8s.io/apiserver/pkg/server/config.go#L300-L301
-	//
-	ClientQPS float32
-	// ClientBurst is the burst for kubernetes client.
-	// To use while talking with kubernetes apiserver
-	//
-	// Kubernetes client DefaultQPS is 5.
-	// Kubernetes client DefaultBurst is 10.
-	// ref. https://github.com/kubernetes/kubernetes/blob/4d0e86f0b8d1eae00a202009858c8739e4c9402e/staging/src/k8s.io/client-go/rest/config.go#L43-L46
-	//
-	// kube-apiserver default inflight requests limits are:
-	// FLAG: --max-mutating-requests-inflight="200"
-	// FLAG: --max-requests-inflight="400"
-	// ref. https://github.com/kubernetes/kubernetes/blob/4d0e86f0b8d1eae00a202009858c8739e4c9402e/staging/src/k8s.io/apiserver/pkg/server/config.go#L300-L301
-	//
-	ClientBurst int
-
-	KubectlPath string
-
-	KubeConfigPath    string
-	KubeConfigContext string
-
-	ServerVersion string
-
-	EncryptionEnabled bool
-
-	// ListBatch is non-zero to configure list batch limit.
-	ListBatch int64
-	// ListInterval is the wait interval between batched list operations.
-	ListInterval time.Duration
-	// EnablePrompt is true to enable interactive mode.
-	EnablePrompt bool
-	// Dir is the directory to store all upgrade/rollback files.
-	Dir string
-}
-
-// Object contains all object metadata.
-type Object struct {
-	// Kind is a string value representing the REST resource this object represents.
-	// Servers may infer this from the endpoint the client submits requests to.
-	// Cannot be updated.
-	// In CamelCase.
-	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-	// ref. metav1.TypeMeta
-	Kind string `json:"kind"`
-	// APIVersion defines the versioned schema of this representation of an object.
-	// Servers should convert recognized schemas to the latest internal value, and
-	// may reject unrecognized values.
-	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-	// ref. metav1.TypeMeta
-	APIVersion string `json:"apiVersion"`
-
-	ObjectMeta metav1.ObjectMeta `json:"metadata"`
-}
-
 type eks struct {
 	cfg *EKSConfig
-	cli *kubernetes.Clientset
-	mu  sync.Mutex
-}
 
-// ServerVersionInfo is the server version info from kube-apiserver
-type ServerVersionInfo struct {
-	version.Info
-	VersionValue float64 `json:"version-value"`
-}
-
-func (sv ServerVersionInfo) String() string {
-	d, err := json.Marshal(sv)
-	if err != nil {
-		return sv.GitVersion
-	}
-	return string(d)
-}
-
-// KubernetesClientSet returns a new kubernetes client set.
-func (e *eks) KubernetesClientSet() *kubernetes.Clientset {
-	return e.cli
+	mu      sync.Mutex
+	clients []*kubernetes.Clientset
+	cur     int
 }
 
 // NewEKS returns a new EKS client.
-func NewEKS(cfg *EKSConfig) (EKS, error) {
+func NewEKS(cfg *EKSConfig) (e EKS, err error) {
 	if cfg == nil {
 		return nil, errors.New("nil EKSConfig")
 	}
@@ -220,9 +196,35 @@ func NewEKS(cfg *EKSConfig) (EKS, error) {
 			return nil, err
 		}
 	}
+	if cfg.Clients < 1 {
+		cfg.Clients = 1
+	}
+	if cfg.Dir == "" {
+		cfg.Dir, err = ioutil.TempDir(os.TempDir(), "eks-dir")
+		if err != nil {
+			return nil, err
+		}
+	}
+	if err = os.MkdirAll(cfg.Dir, 0700); err != nil {
+		return nil, err
+	}
+	cfg.Logger.Info("created dir", zap.String("dir", cfg.Dir))
 
+	ek := &eks{cfg: cfg}
+	for i := 0; i < cfg.Clients; i++ {
+		cli, err := createClient(cfg)
+		if err != nil {
+			cfg.Logger.Warn("failed to create client", zap.Int("index", i), zap.Error(err))
+			return nil, err
+		}
+		ek.clients = append(ek.clients, cli)
+	}
+	e = ek
+	return ek, nil
+}
+
+func createClient(cfg *EKSConfig) (cli *kubernetes.Clientset, err error) {
 	var kcfg *restclient.Config
-	var err error
 	if cfg.KubeConfigPath != "" {
 		switch {
 		case cfg.KubeConfigContext != "":
@@ -323,26 +325,44 @@ func NewEKS(cfg *EKSConfig) (EKS, error) {
 		kcfg.Burst = cfg.ClientBurst
 	}
 
-	ek := &eks{cfg: cfg}
-	ek.cli, err = kubernetes.NewForConfig(kcfg)
+	cli, err = kubernetes.NewForConfig(kcfg)
 	if err != nil {
 		cfg.Logger.Warn("failed to create k8s client", zap.Error(err))
 		return nil, err
 	}
 	cfg.Logger.Info("created k8s client", zap.Float32("qps", kcfg.QPS), zap.Int("burst", kcfg.Burst))
+	return cli, nil
+}
 
-	if cfg.Dir == "" {
-		cfg.Dir, err = ioutil.TempDir(os.TempDir(), "eks-dir")
-		if err != nil {
-			return nil, err
-		}
-	}
-	if err = os.MkdirAll(cfg.Dir, 0700); err != nil {
-		return nil, err
-	}
-	cfg.Logger.Info("created dir", zap.String("dir", cfg.Dir))
+// ServerVersionInfo is the server version info from kube-apiserver
+type ServerVersionInfo struct {
+	version.Info
+	VersionValue float64 `json:"version-value"`
+}
 
-	return ek, nil
+func (sv ServerVersionInfo) String() string {
+	d, err := json.Marshal(sv)
+	if err != nil {
+		return sv.GitVersion
+	}
+	return string(d)
+}
+
+func (e *eks) getClient() *kubernetes.Clientset {
+	e.mu.Lock()
+	if len(e.clients) == 0 {
+		e.mu.Unlock()
+		return nil
+	}
+	e.cur = (e.cur + 1) % len(e.clients)
+	cli := e.clients[e.cur]
+	e.mu.Unlock()
+	return cli
+}
+
+// KubernetesClientSet returns a new kubernetes client set.
+func (e *eks) KubernetesClientSet() *kubernetes.Clientset {
+	return e.getClient()
 }
 
 const authProviderName = "eks"
@@ -446,10 +466,7 @@ func (s *eksTokenSource) Token() (*oauth2.Token, error) {
 
 // CheckHealth checks the EKS health.
 func (e *eks) CheckHealth() error {
-	// allow only one health check at a time
-	e.mu.Lock()
 	err := e.checkHealth()
-	e.mu.Unlock()
 	return err
 }
 
@@ -563,7 +580,7 @@ func (e *eks) checkHealth() error {
 
 	fmt.Printf("\n\"kubectl get pods -n=kube-system\" output:\n")
 	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
-	pods, err := e.cli.CoreV1().Pods("kube-system").List(ctx, metav1.ListOptions{})
+	pods, err := e.getClient().CoreV1().Pods("kube-system").List(ctx, metav1.ListOptions{})
 	cancel()
 	if err != nil {
 		return fmt.Errorf("failed to get pods %v", err)
@@ -623,7 +640,7 @@ func (e *eks) checkHealth() error {
 
 	fmt.Printf("\n\"curl -sL http://localhost:8080/metrics | grep storage_\" output:\n")
 	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
-	output, err = e.cli.
+	output, err = e.getClient().
 		CoreV1().
 		RESTClient().
 		Get().
@@ -690,7 +707,7 @@ func (e *eks) checkHealth() error {
 		zap.Int64("cache-miss-count", cacheMissCnt),
 	)
 	if e.cfg.EncryptionEnabled {
-		if dekGenCnt <= 0 && cacheMissCnt <= 0 {
+		if dekGenCnt == 0 && cacheMissCnt == 0 {
 			return errors.New("encrypted enabled, unexpected /metrics")
 		}
 		e.cfg.Logger.Info("successfully checked encryption")
@@ -717,10 +734,7 @@ func (e *eks) checkHealth() error {
 //	}
 //
 func (e *eks) FetchServerVersion() (ServerVersionInfo, error) {
-	// allow only one version check at a time
-	e.mu.Lock()
 	ver, err := e.fetchServerVersion()
-	e.mu.Unlock()
 	return ver, err
 }
 
@@ -756,14 +770,12 @@ func parseVersion(lg *zap.Logger, d []byte) (ServerVersionInfo, error) {
 }
 
 func (e *eks) FetchSupportedAPIGroupVersions() (float64, map[string]struct{}, error) {
-	e.mu.Lock()
 	vv, m, err := e.fetchSupportedAPIGroupVersions()
-	e.mu.Unlock()
 	return vv, m, err
 }
 
 func (e *eks) fetchSupportedAPIGroupVersions() (float64, map[string]struct{}, error) {
-	if e.cli == nil {
+	if len(e.clients) == 0 {
 		return 0.0, nil, errors.New("nil client")
 	}
 	ver, err := e.fetchServerVersion()
@@ -772,7 +784,7 @@ func (e *eks) fetchSupportedAPIGroupVersions() (float64, map[string]struct{}, er
 	}
 	vv := ver.VersionValue
 
-	dc := e.cli.Discovery()
+	dc := e.getClient().Discovery()
 
 	e.cfg.Logger.Info("listing supported api-resources from kube-apiserver", zap.Float64("version-value", vv))
 	groupList, err := dc.ServerGroups() // returns the supported groups
@@ -789,9 +801,7 @@ func (e *eks) fetchSupportedAPIGroupVersions() (float64, map[string]struct{}, er
 }
 
 func (e *eks) ListNamespaces(limit int64, interval time.Duration) ([]v1.Namespace, error) {
-	e.mu.Lock()
 	ns, err := e.listNamespaces(limit, interval)
-	e.mu.Unlock()
 	return ns, err
 }
 
@@ -799,7 +809,7 @@ func (e *eks) listNamespaces(limit int64, interval time.Duration) (ns []v1.Names
 	rs := &v1.NamespaceList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		rs, err = e.cli.CoreV1().Namespaces().List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		rs, err = e.getClient().CoreV1().Namespaces().List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
 		cancel()
 		if err != nil {
 			return nil, err
@@ -822,9 +832,7 @@ func (e *eks) listNamespaces(limit int64, interval time.Duration) (ns []v1.Names
 }
 
 func (e *eks) ListNodes(limit int64, interval time.Duration) ([]v1.Node, error) {
-	e.mu.Lock()
 	ns, err := e.listNodes(limit, interval)
-	e.mu.Unlock()
 	return ns, err
 }
 
@@ -832,7 +840,7 @@ func (e *eks) listNodes(limit int64, interval time.Duration) (nodes []v1.Node, e
 	rs := &v1.NodeList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		rs, err = e.cli.CoreV1().Nodes().List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		rs, err = e.getClient().CoreV1().Nodes().List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
 		cancel()
 		if err != nil {
 			return nil, err
@@ -855,9 +863,7 @@ func (e *eks) listNodes(limit int64, interval time.Duration) (nodes []v1.Node, e
 }
 
 func (e *eks) ListPods(namespace string, limit int64, interval time.Duration) ([]v1.Pod, error) {
-	e.mu.Lock()
 	ns, err := e.listPods(namespace, limit, interval)
-	e.mu.Unlock()
 	return ns, err
 }
 
@@ -865,7 +871,7 @@ func (e *eks) listPods(namespace string, limit int64, interval time.Duration) (p
 	rs := &v1.PodList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		rs, err = e.cli.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		rs, err = e.getClient().CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
 		cancel()
 		if err != nil {
 			return nil, err
@@ -889,9 +895,7 @@ func (e *eks) listPods(namespace string, limit int64, interval time.Duration) (p
 }
 
 func (e *eks) ListSecrets(namespace string, limit int64, interval time.Duration) ([]v1.Secret, error) {
-	e.mu.Lock()
 	ss, err := e.listSecrets(namespace, limit, interval)
-	e.mu.Unlock()
 	return ss, err
 }
 
@@ -899,7 +903,7 @@ func (e *eks) listSecrets(namespace string, limit int64, interval time.Duration)
 	rs := &v1.SecretList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		rs, err = e.cli.CoreV1().Secrets(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		rs, err = e.getClient().CoreV1().Secrets(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
 		cancel()
 		if err != nil {
 			return nil, err
@@ -925,7 +929,7 @@ func (e *eks) ListAppsV1Deployments(namespace string, limit int64, interval time
 	rs := &apps_v1.DeploymentList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		rs, err = e.cli.AppsV1().Deployments(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		rs, err = e.getClient().AppsV1().Deployments(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
 		cancel()
 		if err != nil {
 			return nil, err
@@ -963,7 +967,7 @@ func (e *eks) ListAppsV1StatefulSets(namespace string, limit int64, interval tim
 	rs := &apps_v1.StatefulSetList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		rs, err = e.cli.AppsV1().StatefulSets(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		rs, err = e.getClient().AppsV1().StatefulSets(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
 		cancel()
 		if err != nil {
 			return nil, err
@@ -1001,7 +1005,7 @@ func (e *eks) ListAppsV1DaemonSets(namespace string, limit int64, interval time.
 	rs := &apps_v1.DaemonSetList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		rs, err = e.cli.AppsV1().DaemonSets(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		rs, err = e.getClient().AppsV1().DaemonSets(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
 		cancel()
 		if err != nil {
 			return nil, err
@@ -1039,7 +1043,7 @@ func (e *eks) ListAppsV1ReplicaSets(namespace string, limit int64, interval time
 	rs := &apps_v1.ReplicaSetList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		rs, err = e.cli.AppsV1().ReplicaSets(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		rs, err = e.getClient().AppsV1().ReplicaSets(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
 		cancel()
 		if err != nil {
 			return nil, err
@@ -1077,7 +1081,7 @@ func (e *eks) ListNetworkingV1NetworkPolicies(namespace string, limit int64, int
 	rs := &networking_v1.NetworkPolicyList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		rs, err = e.cli.NetworkingV1().NetworkPolicies(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		rs, err = e.getClient().NetworkingV1().NetworkPolicies(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
 		cancel()
 		if err != nil {
 			return nil, err
@@ -1115,7 +1119,7 @@ func (e *eks) ListPolicyV1beta1PodSecurityPolicies(limit int64, interval time.Du
 	rs := &policy_v1beta1.PodSecurityPolicyList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		rs, err = e.cli.PolicyV1beta1().PodSecurityPolicies().List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		rs, err = e.getClient().PolicyV1beta1().PodSecurityPolicies().List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
 		cancel()
 		if err != nil {
 			return nil, err
@@ -1149,7 +1153,7 @@ func (e *eks) ListAppsV1beta1Deployments(namespace string, limit int64, interval
 	rs := &apps_v1beta1.DeploymentList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		rs, err = e.cli.AppsV1beta1().Deployments(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		rs, err = e.getClient().AppsV1beta1().Deployments(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
 		cancel()
 		if err != nil {
 			return nil, err
@@ -1187,7 +1191,7 @@ func (e *eks) ListAppsV1beta1StatefulSets(namespace string, limit int64, interva
 	rs := &apps_v1beta1.StatefulSetList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		rs, err = e.cli.AppsV1beta1().StatefulSets(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		rs, err = e.getClient().AppsV1beta1().StatefulSets(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
 		cancel()
 		if err != nil {
 			return nil, err
@@ -1225,7 +1229,7 @@ func (e *eks) ListAppsV1beta2Deployments(namespace string, limit int64, interval
 	rs := &apps_v1beta2.DeploymentList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		rs, err = e.cli.AppsV1beta2().Deployments(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		rs, err = e.getClient().AppsV1beta2().Deployments(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
 		cancel()
 		if err != nil {
 			return nil, err
@@ -1263,7 +1267,7 @@ func (e *eks) ListAppsV1beta2StatefulSets(namespace string, limit int64, interva
 	rs := &apps_v1beta2.StatefulSetList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		rs, err = e.cli.AppsV1beta2().StatefulSets(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		rs, err = e.getClient().AppsV1beta2().StatefulSets(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
 		cancel()
 		if err != nil {
 			return nil, err
@@ -1301,7 +1305,7 @@ func (e *eks) ListExtensionsV1beta1DaemonSets(namespace string, limit int64, int
 	rs := &extensions_v1beta1.DaemonSetList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		rs, err = e.cli.ExtensionsV1beta1().DaemonSets(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		rs, err = e.getClient().ExtensionsV1beta1().DaemonSets(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
 		cancel()
 		if err != nil {
 			return nil, err
@@ -1339,7 +1343,7 @@ func (e *eks) ListExtensionsV1beta1Deployments(namespace string, limit int64, in
 	rs := &extensions_v1beta1.DeploymentList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		rs, err = e.cli.ExtensionsV1beta1().Deployments(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		rs, err = e.getClient().ExtensionsV1beta1().Deployments(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
 		cancel()
 		if err != nil {
 			return nil, err
@@ -1377,7 +1381,7 @@ func (e *eks) ListExtensionsV1beta1ReplicaSets(namespace string, limit int64, in
 	rs := &extensions_v1beta1.ReplicaSetList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		rs, err = e.cli.ExtensionsV1beta1().ReplicaSets(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		rs, err = e.getClient().ExtensionsV1beta1().ReplicaSets(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
 		cancel()
 		if err != nil {
 			return nil, err
@@ -1415,7 +1419,7 @@ func (e *eks) ListExtensionsV1beta1NetworkPolicies(namespace string, limit int64
 	rs := &extensions_v1beta1.NetworkPolicyList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		rs, err = e.cli.ExtensionsV1beta1().NetworkPolicies(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		rs, err = e.getClient().ExtensionsV1beta1().NetworkPolicies(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
 		cancel()
 		if err != nil {
 			return nil, err
@@ -1453,7 +1457,7 @@ func (e *eks) ListExtensionsV1beta1PodSecurityPolicies(limit int64, interval tim
 	rs := &extensions_v1beta1.PodSecurityPolicyList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		rs, err = e.cli.ExtensionsV1beta1().PodSecurityPolicies().List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		rs, err = e.getClient().ExtensionsV1beta1().PodSecurityPolicies().List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
 		cancel()
 		if err != nil {
 			return nil, err
@@ -1488,6 +1492,25 @@ func int64Value(p *int64) int64 {
 		return 0
 	}
 	return *p
+}
+
+// Object contains all object metadata.
+type Object struct {
+	// Kind is a string value representing the REST resource this object represents.
+	// Servers may infer this from the endpoint the client submits requests to.
+	// Cannot be updated.
+	// In CamelCase.
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+	// ref. metav1.TypeMeta
+	Kind string `json:"kind"`
+	// APIVersion defines the versioned schema of this representation of an object.
+	// Servers should convert recognized schemas to the latest internal value, and
+	// may reject unrecognized values.
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+	// ref. metav1.TypeMeta
+	APIVersion string `json:"apiVersion"`
+
+	ObjectMeta metav1.ObjectMeta `json:"metadata"`
 }
 
 func (e *eks) GetObject(namespace string, kind string, name string) (obj Object, d []byte, err error) {

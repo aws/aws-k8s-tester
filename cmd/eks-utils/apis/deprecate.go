@@ -41,15 +41,16 @@ func deprecatedFunc(cmd *cobra.Command, args []string) {
 
 	lg := zap.NewExample()
 	kcfg := &k8sclient.EKSConfig{
-		ClientQPS:         clientQPS,
-		ClientBurst:       clientBurst,
 		KubeConfigPath:    kubeConfigPath,
 		KubeConfigContext: kubeConfigContext,
 		KubectlPath:       kubectlPath,
-		ListBatch:         listBatch,
-		ListInterval:      listInterval,
 		EnablePrompt:      enablePrompt,
 		Dir:               dir,
+		Clients:           1,
+		ClientQPS:         clientQPS,
+		ClientBurst:       clientBurst,
+		ListBatch:         listBatch,
+		ListInterval:      listInterval,
 	}
 	cli, err := k8sclient.NewEKS(kcfg)
 	if err != nil {

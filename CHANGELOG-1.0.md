@@ -9,8 +9,18 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.8...v1.0.9
 
 ### `pkg/k8s-client`
 
-- Use [`apiserver_storage_data_key_generation_duration_seconds_count` for encryption provider health checks](adec2b25a47ce8fb04f22c315e695069a2ee5dd7).
+- Use [`apiserver_storage_data_key_generation_duration_seconds_count` for encryption provider health checks](https://github.com/aws/aws-k8s-tester/commit/adec2b25a47ce8fb04f22c315e695069a2ee5dd7).
   - `apiserver_storage_data_key_generation_latencies_microseconds_count` is being turned off in Kubernetes 1.17.
+
+### `eks`
+
+- Add [`github.com/aws/aws-k8s-tester/eks/cluster-loader`](https://github.com/aws/aws-k8s-tester/commit/).
+  - ref. https://github.com/kubernetes/perf-tests
+
+### `pkg/k8s-client`
+
+- Support [multiple clients in `github.com/aws/aws-k8s-tester/pkg/k8s-client.EKS` interface](https://github.com/aws/aws-k8s-tester/commit/).
+  - Useful for cluster load tests.
 
 ### Go
 
