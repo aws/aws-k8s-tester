@@ -3,6 +3,23 @@
 <hr>
 
 
+## [v1.0.9](https://github.com/aws/aws-k8s-tester/releases/tag/v1.0.9) (2020-04)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.8...v1.0.9).
+
+### `pkg/k8s-client`
+
+- Use [`apiserver_storage_data_key_generation_duration_seconds_count` for encryption provider health checks](adec2b25a47ce8fb04f22c315e695069a2ee5dd7).
+  - `apiserver_storage_data_key_generation_latencies_microseconds_count` is being turned off in Kubernetes 1.17.
+
+### Go
+
+- Compile with [*Go 1.14.2*](https://golang.org/doc/devel/release.html#go1.14).
+
+
+<hr>
+
+
 ## [v1.0.8](https://github.com/aws/aws-k8s-tester/releases/tag/v1.0.8) (2020-04-25)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.7...v1.0.8).

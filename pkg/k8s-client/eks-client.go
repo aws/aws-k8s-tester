@@ -648,7 +648,7 @@ func (e *eks) checkHealth() error {
 		case strings.HasPrefix(line, "# "):
 			continue
 
-			// https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG/CHANGELOG-1.17.md#deprecatedchanged-metrics
+		// https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG/CHANGELOG-1.17.md#deprecatedchanged-metrics
 		case strings.HasPrefix(line, metricDEKGenSecondsCount+" "):
 			vs := strings.TrimSpace(strings.Replace(line, metricDEKGenSecondsCount, "", -1))
 			dekGenCnt, err = strconv.ParseInt(vs, 10, 64)
@@ -659,7 +659,7 @@ func (e *eks) checkHealth() error {
 				)
 			}
 
-			// https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG/CHANGELOG-1.17.md#deprecatedchanged-metrics
+		// https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG/CHANGELOG-1.17.md#deprecatedchanged-metrics
 		case strings.HasPrefix(line, metricDEKGenMicroSecondsCount+" "):
 			vs := strings.TrimSpace(strings.Replace(line, metricDEKGenMicroSecondsCount, "", -1))
 			dekGenCnt, err = strconv.ParseInt(vs, 10, 64)
