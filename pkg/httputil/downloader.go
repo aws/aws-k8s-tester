@@ -138,27 +138,13 @@ func drawTextFormatBytes(progress, total int64) string {
 }
 
 func getSize(lg *zap.Logger, cli *http.Client, downloadURL string) (size int64, err error) {
-	length := ""
-	for i := 0; i < 3; i++ {
-		resp, err := cli.Head(downloadURL)
-		if err == nil && resp.Header.Get("Content-Length") != "" {
-			length = resp.Header.Get("Content-Length")
-			resp.Body.Close()
-			break
-		}
-		if resp != nil && resp.Body != nil {
-			resp.Body.Close()
-		}
-		lg.Warn("failed to get header; retrying", zap.Error(err))
-		time.Sleep(time.Second)
-	}
+	resp, err := cli.Head(downloadURL)
 	if err != nil {
+		lg.Warn("failed to get header", zap.Error(err))
 		return 0, err
 	}
+	defer resp.Body.Close()
 
-	size, err = strconv.ParseInt(length, 10, 64)
-	if err != nil {
-		return 0, err
-	}
-	return size, err
+	length := resp.Header.Get("Content-Length")
+	return strconv.ParseInt(length, 10, 64)
 }
