@@ -9,7 +9,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.7...v1.0.8
 
 ### `aws-k8s-tester`
 
-- Now [`aws-k8s-tester eks create cluster` writes a new configuration file if `--path` file does not exist](https://github.com/aws/aws-k8s-tester/commit/).
+- Now [`aws-k8s-tester eks create cluster` writes a new configuration file if `--path` file does not exist](https://github.com/aws/aws-k8s-tester/commit/d556f1c4fa3565f9c19a8abe21eaa586acafe0fa).
 
 ### `eksconfig`
 
