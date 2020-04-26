@@ -7,6 +7,10 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.7...v1.0.8).
 
+### `aws-k8s-tester`
+
+- Now [`aws-k8s-tester eks create cluster` writes a new configuration file if `--path` file does not exist](https://github.com/aws/aws-k8s-tester/commit/).
+
 ### `eksconfig`
 
 - Increase [`NGMaxLimit` from 100 to 300](https://github.com/aws/aws-k8s-tester/commit/6ba51a14f4689996b326c001e6045bbde8306274).
