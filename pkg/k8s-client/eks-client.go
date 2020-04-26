@@ -635,8 +635,10 @@ func (e *eks) checkHealth() error {
 		return fmt.Errorf("failed to fetch /metrics (%v)", err)
 	}
 	const (
-		metricDEKGen            = "apiserver_storage_data_key_generation_latencies_microseconds_count"
-		metricEnvelopeCacheMiss = "apiserver_storage_envelope_transformation_cache_misses_total"
+		// https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG/CHANGELOG-1.17.md#deprecatedchanged-metrics
+		metricDEKGenSecondsCount      = "apiserver_storage_data_key_generation_duration_seconds_count"
+		metricDEKGenMicroSecondsCount = "apiserver_storage_data_key_generation_latencies_microseconds_count"
+		metricEnvelopeCacheMiss       = "apiserver_storage_envelope_transformation_cache_misses_total"
 	)
 	dekGenCnt, cacheMissCnt := int64(0), int64(0)
 	scanner := bufio.NewScanner(bytes.NewReader(output))
@@ -646,8 +648,20 @@ func (e *eks) checkHealth() error {
 		case strings.HasPrefix(line, "# "):
 			continue
 
-		case strings.HasPrefix(line, metricDEKGen+" "):
-			vs := strings.TrimSpace(strings.Replace(line, metricDEKGen, "", -1))
+			// https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG/CHANGELOG-1.17.md#deprecatedchanged-metrics
+		case strings.HasPrefix(line, metricDEKGenSecondsCount+" "):
+			vs := strings.TrimSpace(strings.Replace(line, metricDEKGenSecondsCount, "", -1))
+			dekGenCnt, err = strconv.ParseInt(vs, 10, 64)
+			if err != nil {
+				e.cfg.Logger.Warn("failed to parse",
+					zap.String("line", line),
+					zap.Error(err),
+				)
+			}
+
+			// https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG/CHANGELOG-1.17.md#deprecatedchanged-metrics
+		case strings.HasPrefix(line, metricDEKGenMicroSecondsCount+" "):
+			vs := strings.TrimSpace(strings.Replace(line, metricDEKGenMicroSecondsCount, "", -1))
 			dekGenCnt, err = strconv.ParseInt(vs, 10, 64)
 			if err != nil {
 				e.cfg.Logger.Warn("failed to parse",
