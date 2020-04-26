@@ -19,7 +19,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.8...v1.0.9
 
 ### `pkg/k8s-client`
 
-- Support [multiple clients in `github.com/aws/aws-k8s-tester/pkg/k8s-client.EKS` interface](https://github.com/aws/aws-k8s-tester/commit/).
+- Support [multiple clients in `github.com/aws/aws-k8s-tester/pkg/k8s-client.EKS` interface](https://github.com/aws/aws-k8s-tester/commit/7476747c725e6821c14e8144e0cdf78fb7da1bd5).
   - Useful for cluster load tests.
 
 ### Go
