@@ -3,7 +3,6 @@ package mng
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
 	awscfn "github.com/aws/aws-k8s-tester/pkg/aws/cloudformation"
@@ -232,7 +231,6 @@ func (ts *tester) createIngressEgress(name string) error {
 	ch := awscfn.Poll(
 		ctx,
 		ts.cfg.Stopc,
-		ts.cfg.Sig,
 		ts.cfg.Logger,
 		ts.cfg.CFNAPI,
 		cur.RemoteAccessSecurityGroupIngressEgressCFNStackID,
@@ -285,8 +283,8 @@ func (ts *tester) deleteIngressEgress(name string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
 	ch := awscfn.Poll(
 		ctx,
-		make(chan struct{}),  // do not exit on stop
-		make(chan os.Signal), // do not exit on stop
+		make(chan struct{}), // do not exit on stop
+
 		ts.cfg.Logger,
 		ts.cfg.CFNAPI,
 		cur.RemoteAccessSecurityGroupIngressEgressCFNStackID,

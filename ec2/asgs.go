@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 	"text/template"
 	"time"
@@ -516,7 +515,6 @@ func (ts *Tester) createASGs() (err error) {
 		ch := awscfn.Poll(
 			ctx,
 			ts.stopCreationCh,
-			ts.interruptSig,
 			ts.lg,
 			ts.cfnAPI,
 			cur.ASGCFNStackID,
@@ -656,8 +654,7 @@ func (ts *Tester) deleteASGs() (err error) {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
 		ch := awscfn.Poll(
 			ctx,
-			make(chan struct{}),  // do not exit on stop
-			make(chan os.Signal), // do not exit on stop
+			make(chan struct{}), // do not exit on stop
 			ts.lg,
 			ts.cfnAPI,
 			cur.ASGCFNStackID,

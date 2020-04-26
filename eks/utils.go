@@ -18,12 +18,12 @@ func catchInterrupt(lg *zap.Logger, stopc chan struct{}, once *sync.Once, sigc c
 	select {
 	case <-stopc:
 		lg.Info("interrupting")
-		gerr := <-errc
-		lg.Info("interrupted", zap.Error(gerr))
-		err = fmt.Errorf("interrupted (run function returned %v)", gerr)
+		serr := <-errc
+		lg.Info("interrupted", zap.Error(serr))
+		err = fmt.Errorf("interrupted (run function returned %v)", serr)
 	case sig := <-sigc:
 		once.Do(func() { close(stopc) })
-		err = fmt.Errorf("received os signal %v (interrupted %v)", sig, <-errc)
+		err = fmt.Errorf("received os signal %v, closed stopc (interrupted %v)", sig, <-errc)
 	case err = <-errc:
 	}
 	return err

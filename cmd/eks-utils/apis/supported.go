@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"time"
 
 	k8sclient "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/spf13/cobra"
@@ -50,6 +51,7 @@ func supportedFunc(cmd *cobra.Command, args []string) {
 		Clients:           1,
 		ClientQPS:         clientQPS,
 		ClientBurst:       clientBurst,
+		ClientTimeout:     30 * time.Second,
 	}
 	cli, err := k8sclient.NewEKS(kcfg)
 	if err != nil {

@@ -31,8 +31,6 @@ func (ts *tester) createConfigMap() error {
 		select {
 		case <-ts.cfg.Stopc:
 			return errors.New("create ConfigMap aborted")
-		case <-ts.cfg.Sig:
-			return errors.New("create ConfigMap aborted")
 		case <-time.After(5 * time.Second):
 		}
 

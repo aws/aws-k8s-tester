@@ -686,8 +686,6 @@ func (ts *tester) waitForPodsCompleted() error {
 			return errors.New("aborted")
 		case <-ts.cfg.Stopc:
 			return errors.New("aborted")
-		case sig := <-ts.cfg.Sig:
-			return fmt.Errorf("aborted with %v", sig)
 		case <-ticker.C:
 		}
 

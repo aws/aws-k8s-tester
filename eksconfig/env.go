@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -54,6 +55,8 @@ const (
 	EnvironmentVariablePrefixAddOnJupyterHub = "AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_"
 	// EnvironmentVariablePrefixAddOnKubeflow is the environment variable prefix used for "eksconfig".
 	EnvironmentVariablePrefixAddOnKubeflow = "AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_"
+	// EnvironmentVariablePrefixAddOnClusterLoader is the environment variable prefix used for "eksconfig".
+	EnvironmentVariablePrefixAddOnClusterLoader = "AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_"
 )
 
 // UpdateFromEnvs updates fields from environmental variables.
@@ -359,6 +362,19 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *AddOnKubeflow, got %T", vv)
 	}
 
+	if cfg.AddOnClusterLoader == nil {
+		cfg.AddOnClusterLoader = &AddOnClusterLoader{}
+	}
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnClusterLoader, cfg.AddOnClusterLoader)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*AddOnClusterLoader); ok {
+		cfg.AddOnClusterLoader = av
+	} else {
+		return fmt.Errorf("expected *AddOnClusterLoader, got %T", vv)
+	}
+
 	return nil
 }
 
@@ -393,11 +409,19 @@ func parseEnvs(pfx string, addOn interface{}) (interface{}, error) {
 			vv.Field(i).SetBool(bb)
 
 		case reflect.Int, reflect.Int32, reflect.Int64:
-			iv, err := strconv.ParseInt(sv, 10, 64)
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse %q (field name %q, environmental variable key %q, error %v)", sv, fieldName, env, err)
+			if vv.Field(i).Type().Name() == "Duration" {
+				iv, err := time.ParseDuration(sv)
+				if err != nil {
+					return nil, fmt.Errorf("failed to parse %q (field name %q, environmental variable key %q, error %v)", sv, fieldName, env, err)
+				}
+				vv.Field(i).SetInt(int64(iv))
+			} else {
+				iv, err := strconv.ParseInt(sv, 10, 64)
+				if err != nil {
+					return nil, fmt.Errorf("failed to parse %q (field name %q, environmental variable key %q, error %v)", sv, fieldName, env, err)
+				}
+				vv.Field(i).SetInt(iv)
 			}
-			vv.Field(i).SetInt(iv)
 
 		case reflect.Uint, reflect.Uint32, reflect.Uint64:
 			iv, err := strconv.ParseUint(sv, 10, 64)

@@ -12,10 +12,16 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.8...v1.0.9
 - Use [`apiserver_storage_data_key_generation_duration_seconds_count` for encryption provider health checks](https://github.com/aws/aws-k8s-tester/commit/adec2b25a47ce8fb04f22c315e695069a2ee5dd7).
   - `apiserver_storage_data_key_generation_latencies_microseconds_count` is being turned off in Kubernetes 1.17.
 
+### `eksconfig`
+
+- Add [`eksconfig.Config.Clients` and `eksconfig.Config.ClientTimeout` to configure the number of clients and request timeouts](https://github.com/aws/aws-k8s-tester/commit/).
+
 ### `eks`
 
 - Add [`github.com/aws/aws-k8s-tester/eks/cluster-loader`](https://github.com/aws/aws-k8s-tester/commit/).
   - ref. https://github.com/kubernetes/perf-tests
+- Add [retries to `InstallNvidiaDriver`](https://github.com/aws/aws-k8s-tester/commit/).
+- Use [`NVIDIA/k8s-device-plugin` `v1.0.0-beta5`, previously `v1.0.0-beta4`](https://github.com/NVIDIA/k8s-device-plugin/releases/tag/1.0.0-beta5).
 
 ### `pkg/k8s-client`
 

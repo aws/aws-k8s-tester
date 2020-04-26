@@ -462,7 +462,6 @@ func (ts *tester) createRole() error {
 	ch := awscfn.Poll(
 		ctx,
 		ts.cfg.Stopc,
-		ts.cfg.Sig,
 		ts.cfg.Logger,
 		ts.cfg.CFNAPI,
 		ts.cfg.EKSConfig.AddOnIRSAFargate.RoleCFNStackID,
@@ -515,8 +514,8 @@ func (ts *tester) deleteRole() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
 	ch := awscfn.Poll(
 		ctx,
-		make(chan struct{}),  // do not exit on stop
-		make(chan os.Signal), // do not exit on stop
+		make(chan struct{}), // do not exit on stop
+
 		ts.cfg.Logger,
 		ts.cfg.CFNAPI,
 		ts.cfg.EKSConfig.AddOnIRSAFargate.RoleCFNStackID,

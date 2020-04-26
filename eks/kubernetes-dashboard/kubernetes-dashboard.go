@@ -21,7 +21,6 @@ import (
 type Config struct {
 	Logger *zap.Logger
 	Stopc  chan struct{}
-	Sig    chan os.Signal
 
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
@@ -136,8 +135,6 @@ func (ts *tester) startProxy(dry bool) error {
 			select {
 			case <-ts.cfg.Stopc:
 				return errors.New("Kubernetes Dashboard proxy creation aborted")
-			case sig := <-ts.cfg.Sig:
-				return fmt.Errorf("received os signal %v", sig)
 			case <-time.After(5 * time.Second):
 			}
 

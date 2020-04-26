@@ -49,6 +49,7 @@ func deprecatedFunc(cmd *cobra.Command, args []string) {
 		Clients:           1,
 		ClientQPS:         clientQPS,
 		ClientBurst:       clientBurst,
+		ClientTimeout:     30 * time.Second,
 		ListBatch:         listBatch,
 		ListInterval:      listInterval,
 	}

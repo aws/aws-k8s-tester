@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-sdk-go/service/eks"
@@ -50,6 +51,10 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_S3_BUCKET_CREATE")
 	os.Setenv("AWS_K8S_TESTER_EKS_S3_BUCKET_LIFECYCLE_EXPIRATION_DAYS", `10`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_S3_BUCKET_LIFECYCLE_EXPIRATION_DAYS")
+	os.Setenv("AWS_K8S_TESTER_EKS_CLIENTS", `333`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_CLIENTS")
+	os.Setenv("AWS_K8S_TESTER_EKS_CLIENT_TIMEOUT", `10m`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_CLIENT_TIMEOUT")
 	os.Setenv("AWS_K8S_TESTER_EKS_CLIENT_QPS", `99555.77`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_CLIENT_QPS")
 	os.Setenv("AWS_K8S_TESTER_EKS_CLIENT_BURST", `177`)
@@ -370,6 +375,13 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_PROXY_SECRET_TOKEN", proxySecretToken)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_PROXY_SECRET_TOKEN")
 
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_CREATED", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_CREATED")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_DURATION", "7m30s")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_DURATION")
+
 	if err := cfg.UpdateFromEnvs(); err != nil {
 		t.Fatal(err)
 	}
@@ -415,6 +427,12 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.S3BucketLifecycleExpirationDays != 10 {
 		t.Fatalf("unexpected cfg.S3BucketLifecycleExpirationDays %d", cfg.S3BucketLifecycleExpirationDays)
+	}
+	if cfg.Clients != 333 {
+		t.Fatalf("unexpected cfg.Clients %d", cfg.Clients)
+	}
+	if cfg.ClientTimeout != 10*time.Minute {
+		t.Fatalf("unexpected cfg.ClientTimeout %v", cfg.ClientTimeout)
 	}
 	if cfg.ClientQPS != 99555.77 {
 		t.Fatalf("unexpected cfg.ClientQPS %f", cfg.ClientQPS)
@@ -980,6 +998,16 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("unexpected cfg.AddOnJupyterHub.ProxySecretToken %q", cfg.AddOnJupyterHub.ProxySecretToken)
 	}
 
+	if cfg.AddOnClusterLoader.Created { // read-only must be ignored
+		t.Fatalf("unexpected cfg.AddOnClusterLoader.Created %v", cfg.AddOnClusterLoader.Created)
+	}
+	if !cfg.AddOnClusterLoader.Enable {
+		t.Fatalf("unexpected cfg.AddOnClusterLoader.Enable %v", cfg.AddOnClusterLoader.Enable)
+	}
+	if cfg.AddOnClusterLoader.Duration != 7*time.Minute+30*time.Second {
+		t.Fatalf("unexpected cfg.AddOnClusterLoader.Duration %v", cfg.AddOnClusterLoader.Duration)
+	}
+
 	cfg.Parameters.RoleManagedPolicyARNs = nil
 	cfg.Parameters.RoleServicePrincipals = nil
 	cfg.AddOnManagedNodeGroups.RoleName = ""
@@ -994,6 +1022,10 @@ func TestEnv(t *testing.T) {
 	cfg.AddOnJobsPi.Enable = false
 	if err := cfg.ValidateAndSetDefaults(); err != nil {
 		t.Fatal(err)
+	}
+
+	if cfg.ClientTimeoutString != "10m0s" {
+		t.Fatalf("unexpected ClientTimeoutString %q", cfg.ClientTimeoutString)
 	}
 
 	if cfg.AddOnFargate.SecretName != "hellosecret" {

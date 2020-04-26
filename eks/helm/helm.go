@@ -113,7 +113,6 @@ type InstallConfig struct {
 	Logger *zap.Logger
 
 	Stopc   chan struct{}
-	Sig     chan os.Signal
 	Timeout time.Duration
 
 	KubeConfigPath string
@@ -267,9 +266,6 @@ func Install(cfg InstallConfig) (err error) {
 				case <-cfg.Stopc:
 					cfg.Logger.Warn("stopping goroutine")
 					return
-				case sig := <-cfg.Sig:
-					cfg.Logger.Warn("stopping goroutine", zap.String("signal", sig.String()))
-					return
 				case <-time.After(cfg.QueryInterval):
 				}
 
@@ -296,7 +292,6 @@ func Install(cfg InstallConfig) (err error) {
 		select {
 		case <-donec2:
 		case <-cfg.Stopc:
-		case <-cfg.Sig:
 		}
 	}
 

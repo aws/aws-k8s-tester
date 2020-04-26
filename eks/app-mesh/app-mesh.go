@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -24,7 +23,6 @@ import (
 type Config struct {
 	Logger *zap.Logger
 	Stopc  chan struct{}
-	Sig    chan os.Signal
 
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
@@ -220,7 +218,6 @@ func (ts *tester) createPolicy() error {
 	ch := awscfn.Poll(
 		ctx,
 		ts.cfg.Stopc,
-		ts.cfg.Sig,
 		ts.cfg.Logger,
 		ts.cfg.CFNAPI,
 		ts.cfg.EKSConfig.AddOnAppMesh.PolicyCFNStackID,
@@ -268,8 +265,8 @@ func (ts *tester) deletePolicy() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	ch := awscfn.Poll(
 		ctx,
-		make(chan struct{}),  // do not exit on stop
-		make(chan os.Signal), // do not exit on stop
+		make(chan struct{}), // do not exit on stop
+
 		ts.cfg.Logger,
 		ts.cfg.CFNAPI,
 		ts.cfg.EKSConfig.AddOnAppMesh.PolicyCFNStackID,
@@ -322,7 +319,6 @@ func (ts *tester) createHelmController() error {
 	return helm.Install(helm.InstallConfig{
 		Logger:         ts.cfg.Logger,
 		Stopc:          ts.cfg.Stopc,
-		Sig:            ts.cfg.Sig,
 		Timeout:        15 * time.Minute,
 		KubeConfigPath: ts.cfg.EKSConfig.KubeConfigPath,
 		Namespace:      ts.cfg.EKSConfig.AddOnAppMesh.Namespace,
@@ -362,7 +358,6 @@ func (ts *tester) createHelmInjector() error {
 	return helm.Install(helm.InstallConfig{
 		Logger:         ts.cfg.Logger,
 		Stopc:          ts.cfg.Stopc,
-		Sig:            ts.cfg.Sig,
 		Timeout:        15 * time.Minute,
 		KubeConfigPath: ts.cfg.EKSConfig.KubeConfigPath,
 		Namespace:      ts.cfg.EKSConfig.AddOnAppMesh.Namespace,

@@ -113,6 +113,10 @@ func createDoc() string {
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
+	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnClusterLoader, &eksconfig.AddOnClusterLoader{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
 
 	return b.String()
 }

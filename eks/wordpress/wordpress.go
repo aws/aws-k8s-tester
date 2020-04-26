@@ -23,7 +23,6 @@ import (
 type Config struct {
 	Logger *zap.Logger
 	Stopc  chan struct{}
-	Sig    chan os.Signal
 
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
@@ -178,7 +177,6 @@ func (ts *tester) createHelmWordpress() error {
 	return helm.Install(helm.InstallConfig{
 		Logger:         ts.cfg.Logger,
 		Stopc:          ts.cfg.Stopc,
-		Sig:            ts.cfg.Sig,
 		Timeout:        15 * time.Minute,
 		KubeConfigPath: ts.cfg.EKSConfig.KubeConfigPath,
 		Namespace:      ts.cfg.EKSConfig.AddOnWordpress.Namespace,
@@ -211,8 +209,6 @@ func (ts *tester) waitService() error {
 	select {
 	case <-ts.cfg.Stopc:
 		return errors.New("WordPress service creation aborted")
-	case sig := <-ts.cfg.Sig:
-		return fmt.Errorf("received os signal %v", sig)
 	case <-time.After(waitDur):
 	}
 
@@ -231,8 +227,6 @@ func (ts *tester) waitService() error {
 		select {
 		case <-ts.cfg.Stopc:
 			return errors.New("WordPress service creation aborted")
-		case sig := <-ts.cfg.Sig:
-			return fmt.Errorf("received os signal %v", sig)
 		case <-time.After(5 * time.Second):
 		}
 
@@ -309,8 +303,6 @@ func (ts *tester) waitService() error {
 		select {
 		case <-ts.cfg.Stopc:
 			return errors.New("WordPress Service creation aborted")
-		case sig := <-ts.cfg.Sig:
-			return fmt.Errorf("received os signal %v", sig)
 		case <-time.After(5 * time.Second):
 		}
 

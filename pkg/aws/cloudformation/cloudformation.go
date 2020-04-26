@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -27,7 +26,6 @@ type StackStatus struct {
 func Poll(
 	ctx context.Context,
 	stopc chan struct{},
-	osSig chan os.Signal,
 	lg *zap.Logger,
 	cfnAPI cloudformationiface.CloudFormationAPI,
 	stackID string,
@@ -60,12 +58,6 @@ func Poll(
 			case <-stopc:
 				lg.Warn("wait stopped", zap.Error(ctx.Err()))
 				ch <- StackStatus{Stack: nil, Error: errors.New("wait stopped")}
-				close(ch)
-				return
-
-			case sig := <-osSig:
-				lg.Warn("wait stopped", zap.String("os-signal", sig.String()))
-				ch <- StackStatus{Stack: nil, Error: fmt.Errorf("wait stopped with %s", sig)}
 				close(ch)
 				return
 
@@ -154,7 +146,7 @@ func Poll(
 
 			ch <- StackStatus{Stack: stack, Error: nil}
 			if currentStatus == desiredStackStatus {
-				lg.Info("became desired stack status; exiting", zap.String("current-stack-status", currentStatus))
+				lg.Info("desired stack status; done", zap.String("current-stack-status", currentStatus))
 				close(ch)
 				return
 			}
@@ -172,12 +164,6 @@ func Poll(
 				case <-stopc:
 					lg.Warn("wait stopped", zap.Error(ctx.Err()))
 					ch <- StackStatus{Stack: nil, Error: errors.New("wait stopped")}
-					close(ch)
-					return
-
-				case sig := <-osSig:
-					lg.Warn("wait stopped", zap.String("os-signal", sig.String()))
-					ch <- StackStatus{Stack: nil, Error: fmt.Errorf("wait stopped with %s", sig)}
 					close(ch)
 					return
 

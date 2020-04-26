@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync"
 	"text/template"
+	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"sigs.k8s.io/yaml"
@@ -104,6 +105,11 @@ type Config struct {
 	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
 	RemoteAccessPrivateKeyPath string `json:"remote-access-private-key-path,omitempty"`
 
+	// Clients is the number of kubernetes clients to create.
+	// Default is 1.
+	// This field is used for "eks/cluster-loader" tester. Configure accordingly.
+	// Rate limit is done via "k8s.io/client-go/util/flowcontrol.NewTokenBucketRateLimiter".
+	Clients int `json:"clients"`
 	// ClientQPS is the QPS for kubernetes client.
 	// To use while talking with kubernetes apiserver.
 	//
@@ -116,6 +122,8 @@ type Config struct {
 	// FLAG: --max-requests-inflight="400"
 	// ref. https://github.com/kubernetes/kubernetes/blob/4d0e86f0b8d1eae00a202009858c8739e4c9402e/staging/src/k8s.io/apiserver/pkg/server/config.go#L300-L301
 	//
+	// This field is used for "eks/cluster-loader" tester. Configure accordingly.
+	// Rate limit is done via "k8s.io/client-go/util/flowcontrol.NewTokenBucketRateLimiter".
 	ClientQPS float32 `json:"client-qps"`
 	// ClientBurst is the burst for kubernetes client.
 	// To use while talking with kubernetes apiserver
@@ -129,7 +137,12 @@ type Config struct {
 	// FLAG: --max-requests-inflight="400"
 	// ref. https://github.com/kubernetes/kubernetes/blob/4d0e86f0b8d1eae00a202009858c8739e4c9402e/staging/src/k8s.io/apiserver/pkg/server/config.go#L300-L301
 	//
+	// This field is used for "eks/cluster-loader" tester. Configure accordingly.
+	// Rate limit is done via "k8s.io/client-go/util/flowcontrol.NewTokenBucketRateLimiter".
 	ClientBurst int `json:"client-burst"`
+	// ClientTimeout is the client timeout.
+	ClientTimeout       time.Duration `json:"client-timeout"`
+	ClientTimeoutString string        `json:"client-timeout-string,omitempty" read-only:"true"`
 
 	// AddOnNodeGroups defines EKS "Node Group"
 	// creation parameters.
@@ -194,6 +207,9 @@ type Config struct {
 	// AddOnKubeflow defines parameters for EKS cluster
 	// add-on Kubeflow.
 	AddOnKubeflow *AddOnKubeflow `json:"add-on-kubeflow,omitempty"`
+	// AddOnClusterLoader defines parameters for EKS cluster
+	// add-on Cluster Loader.
+	AddOnClusterLoader *AddOnClusterLoader `json:"add-on-cluster-loader,omitempty"`
 
 	// Status represents the current status of AWS resources.
 	// Status is read-only.

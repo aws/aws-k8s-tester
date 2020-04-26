@@ -591,8 +591,6 @@ func (ts *tester) waitDeploymentALB() error {
 		select {
 		case <-ts.cfg.Stopc:
 			return errors.New("check aborted")
-		case <-ts.cfg.Sig:
-			return errors.New("check aborted")
 		case <-time.After(15 * time.Second):
 		}
 
@@ -760,8 +758,6 @@ func (ts *tester) waitDeployment2048() error {
 	for time.Now().Sub(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
-			return errors.New("check aborted")
-		case <-ts.cfg.Sig:
 			return errors.New("check aborted")
 		case <-time.After(15 * time.Second):
 		}
@@ -940,8 +936,6 @@ func (ts *tester) create2048Ingress() error {
 	select {
 	case <-ts.cfg.Stopc:
 		return errors.New("ALB 2048 Ingress creation aborted")
-	case sig := <-ts.cfg.Sig:
-		return fmt.Errorf("received os signal %v", sig)
 	case <-time.After(waitDur):
 	}
 
@@ -968,8 +962,6 @@ func (ts *tester) create2048Ingress() error {
 		select {
 		case <-ts.cfg.Stopc:
 			return errors.New("ALB 2048 Ingress creation aborted")
-		case sig := <-ts.cfg.Sig:
-			return fmt.Errorf("received os signal %v", sig)
 		case <-time.After(5 * time.Second):
 		}
 
@@ -1072,8 +1064,6 @@ func (ts *tester) create2048Ingress() error {
 		select {
 		case <-ts.cfg.Stopc:
 			return errors.New("ALB 2048 Ingress creation aborted")
-		case sig := <-ts.cfg.Sig:
-			return fmt.Errorf("received os signal %v", sig)
 		case <-time.After(5 * time.Second):
 		}
 

@@ -104,6 +104,9 @@ type EKSConfig struct {
 	// ref. https://github.com/kubernetes/kubernetes/blob/4d0e86f0b8d1eae00a202009858c8739e4c9402e/staging/src/k8s.io/apiserver/pkg/server/config.go#L300-L301
 	//
 	ClientBurst int
+	// ClientTimeout is the client timeout.
+	ClientTimeout time.Duration
+
 	// ListBatch is non-zero to configure list batch limit.
 	ListBatch int64
 	// ListInterval is the wait interval between batched list operations.
@@ -196,9 +199,7 @@ func NewEKS(cfg *EKSConfig) (e EKS, err error) {
 			return nil, err
 		}
 	}
-	if cfg.Clients < 1 {
-		cfg.Clients = 1
-	}
+
 	if cfg.Dir == "" {
 		cfg.Dir, err = ioutil.TempDir(os.TempDir(), "eks-dir")
 		if err != nil {
@@ -210,14 +211,20 @@ func NewEKS(cfg *EKSConfig) (e EKS, err error) {
 	}
 	cfg.Logger.Info("created dir", zap.String("dir", cfg.Dir))
 
-	ek := &eks{cfg: cfg}
+	if cfg.Clients < 1 {
+		cfg.Clients = 1
+	}
+	ek := &eks{
+		cfg:     cfg,
+		clients: make([]*kubernetes.Clientset, cfg.Clients),
+	}
 	for i := 0; i < cfg.Clients; i++ {
-		cli, err := createClient(cfg)
+		ek.clients[i], err = createClient(cfg)
 		if err != nil {
 			cfg.Logger.Warn("failed to create client", zap.Int("index", i), zap.Error(err))
 			return nil, err
 		}
-		ek.clients = append(ek.clients, cli)
+		cfg.Logger.Info("added a client", zap.Int("index", i), zap.Int("total-clients", cfg.Clients))
 	}
 	e = ek
 	return ek, nil
@@ -323,6 +330,9 @@ func createClient(cfg *EKSConfig) (cli *kubernetes.Clientset, err error) {
 	}
 	if cfg.ClientBurst > 0 {
 		kcfg.Burst = cfg.ClientBurst
+	}
+	if cfg.ClientTimeout > 0 {
+		kcfg.Timeout = cfg.ClientTimeout
 	}
 
 	cli, err = kubernetes.NewForConfig(kcfg)
@@ -595,9 +605,9 @@ func (e *eks) checkHealth() error {
 		ctx,
 		e.cfg.KubectlPath,
 		"--kubeconfig="+e.cfg.KubeConfigPath,
+		"--namespace=kube-system",
 		"get",
 		"configmaps",
-		"--namespace=kube-system",
 	).CombinedOutput()
 	cancel()
 	out = strings.TrimSpace(string(output))

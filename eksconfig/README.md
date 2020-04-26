@@ -27,8 +27,11 @@ AWS_K8S_TESTER_EKS_S3_BUCKET_LIFECYCLE_EXPIRATION_DAYS | *eksconfig.Config.S3Buc
 AWS_K8S_TESTER_EKS_REMOTE_ACCESS_KEY_CREATE | *eksconfig.Config.RemoteAccessKeyCreate | bool | read-only "false"
 AWS_K8S_TESTER_EKS_REMOTE_ACCESS_KEY_NAME | *eksconfig.Config.RemoteAccessKeyName | string | read-only "false"
 AWS_K8S_TESTER_EKS_REMOTE_ACCESS_PRIVATE_KEY_PATH | *eksconfig.Config.RemoteAccessPrivateKeyPath | string | read-only "false"
+AWS_K8S_TESTER_EKS_CLIENTS | *eksconfig.Config.Clients | int | read-only "false"
 AWS_K8S_TESTER_EKS_CLIENT_QPS | *eksconfig.Config.ClientQPS | float32 | read-only "false"
 AWS_K8S_TESTER_EKS_CLIENT_BURST | *eksconfig.Config.ClientBurst | int | read-only "false"
+AWS_K8S_TESTER_EKS_CLIENT_TIMEOUT | *eksconfig.Config.ClientTimeout | time.Duration | read-only "false"
+AWS_K8S_TESTER_EKS_CLIENT_TIMEOUT_STRING | *eksconfig.Config.ClientTimeoutString | string | read-only "true"
 
 
 AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_NAME | *eksconfig.Parameters.RoleName | string | read-only "false"
@@ -355,6 +358,18 @@ AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_DELETE_TOOK_STRING | *eksconfig.AddOnKubeflow
 AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_BASE_DIR | *eksconfig.AddOnKubeflow.BaseDir | string | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_KF_DIR | *eksconfig.AddOnKubeflow.KfDir | string | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_KFCTL_CONFIG_PATH | *eksconfig.AddOnKubeflow.KfctlConfigPath | string | read-only "true"
+
+
+AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_ENABLE | *eksconfig.AddOnClusterLoader.Enable | bool | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_NAMESPACE | *eksconfig.AddOnClusterLoader.Namespace | string | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_CREATED | *eksconfig.AddOnClusterLoader.Created | bool | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_CREATE_TOOK | *eksconfig.AddOnClusterLoader.CreateTook | time.Duration | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_CREATE_TOOK_STRING | *eksconfig.AddOnClusterLoader.CreateTookString | string | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_DELETE_TOOK | *eksconfig.AddOnClusterLoader.DeleteTook | time.Duration | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_DELETE_TOOK_STRING | *eksconfig.AddOnClusterLoader.DeleteTookString | string | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_DURATION | *eksconfig.AddOnClusterLoader.Duration | time.Duration | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_DURATION_STRING | *eksconfig.AddOnClusterLoader.DurationString | string | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_HOLLOW_NODES | *eksconfig.AddOnClusterLoader.HollowNodes | int | read-only "false"
 
 
 ```

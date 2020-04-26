@@ -24,6 +24,15 @@ import (
 )
 
 const (
+	// DefaultClients is the default number of clients to create.
+	DefaultClients = 2
+	// DefaultClientQPS is the default client QPS.
+	DefaultClientQPS float32 = 5.0
+	// DefaultClientBurst is the default client burst.
+	DefaultClientBurst = 10
+	// DefaultClientTimeout is the default client timeout.
+	DefaultClientTimeout = 30 * time.Second
+
 	// DefaultNodeInstanceTypeCPU is the default EC2 instance type for CPU worker node.
 	DefaultNodeInstanceTypeCPU = "c5.xlarge"
 	// DefaultNodeInstanceTypeGPU is the default EC2 instance type for GPU worker node.
@@ -100,8 +109,9 @@ func NewDefault() *Config {
 		// FLAG: --max-requests-inflight="400"
 		// ref. https://github.com/kubernetes/kubernetes/blob/4d0e86f0b8d1eae00a202009858c8739e4c9402e/staging/src/k8s.io/apiserver/pkg/server/config.go#L300-L301
 		//
-		ClientQPS:   5.0,
-		ClientBurst: 10,
+		Clients:     DefaultClients,
+		ClientQPS:   DefaultClientQPS,
+		ClientBurst: DefaultClientBurst,
 
 		AddOnNodeGroups: &AddOnNodeGroups{
 			Enable:     false,
@@ -252,6 +262,10 @@ func NewDefault() *Config {
 			KfctlDownloadURL: "https://github.com/kubeflow/kfctl/releases/download/v1.0.2/kfctl_v1.0.2-0-ga476281_linux.tar.gz",
 		},
 
+		AddOnClusterLoader: &AddOnClusterLoader{
+			Enable: false,
+		},
+
 		// read-only
 		Status: &Status{Up: false},
 	}
@@ -388,6 +402,9 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	if err := cfg.validateAddOnKubeflow(); err != nil {
 		return fmt.Errorf("validateAddOnKubeflow failed [%v]", err)
 	}
+	if err := cfg.validateAddOnClusterLoader(); err != nil {
+		return fmt.Errorf("validateAddOnClusterLoader failed [%v]", err)
+	}
 
 	return nil
 }
@@ -405,6 +422,20 @@ func (cfg *Config) validateConfig() error {
 	if len(cfg.LogOutputs) == 0 {
 		return errors.New("LogOutputs is not empty")
 	}
+
+	if cfg.Clients == 0 {
+		cfg.Clients = DefaultClients
+	}
+	if cfg.ClientQPS == 0 {
+		cfg.ClientQPS = DefaultClientQPS
+	}
+	if cfg.ClientBurst == 0 {
+		cfg.ClientBurst = DefaultClientBurst
+	}
+	if cfg.ClientTimeout == time.Duration(0) {
+		cfg.ClientTimeout = DefaultClientTimeout
+	}
+	cfg.ClientTimeoutString = cfg.ClientTimeout.String()
 
 	if cfg.ConfigPath == "" {
 		rootDir, err := os.Getwd()
@@ -1479,8 +1510,6 @@ func (cfg *Config) validateAddOnJupyterHub() error {
 	return nil
 }
 
-const defaultTestToken = "e1e2d4c72944d601ba3fe1d4413a1abb5124212c80e45b0b3708b9f81017f35b"
-
 func (cfg *Config) validateAddOnKubeflow() error {
 	if !cfg.IsEnabledAddOnKubeflow() {
 		return nil
@@ -1493,6 +1522,25 @@ func (cfg *Config) validateAddOnKubeflow() error {
 	}
 	cfg.AddOnKubeflow.KfDir = filepath.Join(cfg.AddOnKubeflow.BaseDir, cfg.Name)
 	cfg.AddOnKubeflow.KfctlConfigPath = filepath.Join(cfg.AddOnKubeflow.KfDir, "kfctl_aws.yaml")
+	return nil
+}
+
+func (cfg *Config) validateAddOnClusterLoader() error {
+	if !cfg.IsEnabledAddOnClusterLoader() {
+		return nil
+	}
+	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
+		return errors.New("AddOnClusterLoader.Enable true but no node group is enabled")
+	}
+
+	if cfg.AddOnClusterLoader.Namespace == "" {
+		cfg.AddOnClusterLoader.Namespace = cfg.Name + "-cluster-loader"
+	}
+	if cfg.AddOnClusterLoader.Duration == time.Duration(0) {
+		cfg.AddOnClusterLoader.Duration = 2 * time.Minute
+	}
+	cfg.AddOnClusterLoader.DurationString = cfg.AddOnClusterLoader.Duration.String()
+
 	return nil
 }
 

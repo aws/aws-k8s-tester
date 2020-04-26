@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"sort"
 	"strings"
 	"text/template"
@@ -574,7 +573,6 @@ func (ts *tester) createASGs() error {
 		ch := awscfn.Poll(
 			ctx,
 			ts.cfg.Stopc,
-			ts.cfg.Sig,
 			ts.cfg.Logger,
 			ts.cfg.CFNAPI,
 			cur.ASGCFNStackID,
@@ -666,8 +664,8 @@ func (ts *tester) deleteASGs() error {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
 		ch := awscfn.Poll(
 			ctx,
-			make(chan struct{}),  // do not exit on stop
-			make(chan os.Signal), // do not exit on stop
+			make(chan struct{}), // do not exit on stop
+
 			ts.cfg.Logger,
 			ts.cfg.CFNAPI,
 			cur.ASGCFNStackID,
@@ -774,8 +772,6 @@ func (ts *tester) waitForNodes(asgName string) error {
 	for time.Now().Sub(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
-			return errors.New("checking node aborted")
-		case <-ts.cfg.Sig:
 			return errors.New("checking node aborted")
 		case <-time.After(5 * time.Second):
 		}
@@ -894,9 +890,9 @@ func (ts *tester) waitForNodes(asgName string) error {
 		if err != nil {
 			ts.cfg.Logger.Warn("'kubectl get nodes -o=wide' failed", zap.Error(err))
 		}
-		fmt.Printf("\n\"%s get nodes -o=wide\":\n%s\n\n", ts.cfg.EKSConfig.KubectlCommand(), out)
+		fmt.Printf("\n\"%s get nodes -o=wide\":\n%s\n", ts.cfg.EKSConfig.KubectlCommand(), out)
 
-		if int64(readies) >= cur.ASGDesiredCapacity { // TODO: check per node group
+		if int64(readies) >= cur.ASGDesiredCapacity {
 			ready = true
 			break
 		}
@@ -905,7 +901,6 @@ func (ts *tester) waitForNodes(asgName string) error {
 		return fmt.Errorf("NG %q not ready", asgName)
 	}
 
-	println()
 	fmt.Printf("%q nodes are ready!\n", asgName)
 	for _, v := range items {
 		fmt.Printf("node %q address: %+v\n", v.GetName(), v.Status.Addresses)

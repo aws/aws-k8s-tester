@@ -264,8 +264,6 @@ func (ts *tester) waitDeployment() error {
 		select {
 		case <-ts.cfg.Stopc:
 			return errors.New("check aborted")
-		case <-ts.cfg.Sig:
-			return errors.New("check aborted")
 		case <-time.After(15 * time.Second):
 		}
 
@@ -361,8 +359,6 @@ func (ts *tester) createService() error {
 	select {
 	case <-ts.cfg.Stopc:
 		return errors.New("NLB hello-world Service creation aborted")
-	case sig := <-ts.cfg.Sig:
-		return fmt.Errorf("received os signal %v", sig)
 	case <-time.After(waitDur):
 	}
 
@@ -381,8 +377,6 @@ func (ts *tester) createService() error {
 		select {
 		case <-ts.cfg.Stopc:
 			return errors.New("NLB hello-world Service creation aborted")
-		case sig := <-ts.cfg.Sig:
-			return fmt.Errorf("received os signal %v", sig)
 		case <-time.After(5 * time.Second):
 		}
 
@@ -457,8 +451,6 @@ func (ts *tester) createService() error {
 		select {
 		case <-ts.cfg.Stopc:
 			return errors.New("hello-world Service creation aborted")
-		case sig := <-ts.cfg.Sig:
-			return fmt.Errorf("received os signal %v", sig)
 		case <-time.After(5 * time.Second):
 		}
 

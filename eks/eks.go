@@ -21,6 +21,7 @@ import (
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/eks/alb"
 	app_mesh "github.com/aws/aws-k8s-tester/eks/app-mesh"
+	cluster_loader "github.com/aws/aws-k8s-tester/eks/cluster-loader"
 	"github.com/aws/aws-k8s-tester/eks/configmaps"
 	"github.com/aws/aws-k8s-tester/eks/cronjobs"
 	csi_ebs "github.com/aws/aws-k8s-tester/eks/csi-ebs"
@@ -123,6 +124,7 @@ type Tester struct {
 	wordPressTester           wordpress.Tester
 	jupyterHubTester          jupyter_hub.Tester
 	kubeflowTester            kubeflow.Tester
+	clusterLoaderTester       cluster_loader.Tester
 }
 
 // New returns a new EKS kubetest2 Deployer.
@@ -327,6 +329,7 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 		Clients:           1,
 		ClientQPS:         ts.cfg.ClientQPS,
 		ClientBurst:       ts.cfg.ClientBurst,
+		ClientTimeout:     ts.cfg.ClientTimeout,
 	}
 	if ts.cfg.Status != nil {
 		kcfg.ClusterAPIServerEndpoint = ts.cfg.Status.ClusterAPIServerEndpoint
@@ -356,7 +359,6 @@ func (ts *Tester) createSubTesters() (err error) {
 	ts.ngTester, err = ng.New(ng.Config{
 		Logger:    ts.lg,
 		Stopc:     ts.stopCreationCh,
-		Sig:       ts.interruptSig,
 		EKSConfig: ts.cfg,
 		K8SClient: ts.k8sClient,
 		IAMAPI:    ts.iamAPI,
@@ -375,7 +377,6 @@ func (ts *Tester) createSubTesters() (err error) {
 	ts.mngTester, err = mng.New(mng.Config{
 		Logger:    ts.lg,
 		Stopc:     ts.stopCreationCh,
-		Sig:       ts.interruptSig,
 		EKSConfig: ts.cfg,
 		K8SClient: ts.k8sClient,
 		IAMAPI:    ts.iamAPI,
@@ -393,7 +394,6 @@ func (ts *Tester) createSubTesters() (err error) {
 	ts.gpuTester, err = gpu.New(gpu.Config{
 		Logger:    ts.lg,
 		Stopc:     ts.stopCreationCh,
-		Sig:       ts.interruptSig,
 		EKSConfig: ts.cfg,
 		K8SClient: ts.k8sClient,
 	})
@@ -406,7 +406,6 @@ func (ts *Tester) createSubTesters() (err error) {
 		ts.nlbHelloWorldTester, err = nlb.New(nlb.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
-			Sig:       ts.interruptSig,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 			ELB2API:   ts.elbv2API,
@@ -421,7 +420,6 @@ func (ts *Tester) createSubTesters() (err error) {
 		ts.alb2048Tester, err = alb.New(alb.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
-			Sig:       ts.interruptSig,
 			CFNAPI:    ts.cfnAPI,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
@@ -437,7 +435,6 @@ func (ts *Tester) createSubTesters() (err error) {
 		ts.jobsPiTester, err = jobs_pi.New(jobs_pi.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
-			Sig:       ts.interruptSig,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 		})
@@ -451,7 +448,6 @@ func (ts *Tester) createSubTesters() (err error) {
 		ts.jobsEchoTester, err = jobs_echo.New(jobs_echo.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
-			Sig:       ts.interruptSig,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 		})
@@ -465,7 +461,6 @@ func (ts *Tester) createSubTesters() (err error) {
 		ts.cronJobsTester, err = cronjobs.New(cronjobs.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
-			Sig:       ts.interruptSig,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 		})
@@ -479,7 +474,6 @@ func (ts *Tester) createSubTesters() (err error) {
 		ts.csrsTester, err = csrs.New(csrs.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
-			Sig:       ts.interruptSig,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 		})
@@ -493,7 +487,6 @@ func (ts *Tester) createSubTesters() (err error) {
 		ts.configMapsTester, err = configmaps.New(configmaps.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
-			Sig:       ts.interruptSig,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 		})
@@ -507,7 +500,6 @@ func (ts *Tester) createSubTesters() (err error) {
 		ts.configMapsTester, err = configmaps.New(configmaps.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
-			Sig:       ts.interruptSig,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 		})
@@ -521,7 +513,6 @@ func (ts *Tester) createSubTesters() (err error) {
 		ts.secretsTester, err = secrets.New(secrets.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
-			Sig:       ts.interruptSig,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 		})
@@ -535,7 +526,6 @@ func (ts *Tester) createSubTesters() (err error) {
 		ts.irsaTester, err = irsa.New(irsa.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
-			Sig:       ts.interruptSig,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 			CFNAPI:    ts.cfnAPI,
@@ -552,7 +542,6 @@ func (ts *Tester) createSubTesters() (err error) {
 		ts.fargateTester, err = fargate.New(fargate.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
-			Sig:       ts.interruptSig,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 			IAMAPI:    ts.iamAPI,
@@ -569,7 +558,6 @@ func (ts *Tester) createSubTesters() (err error) {
 		ts.irsaFargateTester, err = irsa_fargate.New(irsa_fargate.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
-			Sig:       ts.interruptSig,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 			IAMAPI:    ts.iamAPI,
@@ -587,7 +575,6 @@ func (ts *Tester) createSubTesters() (err error) {
 		ts.appMeshTester, err = app_mesh.NewTester(app_mesh.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
-			Sig:       ts.interruptSig,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 			CFNAPI:    ts.cfnAPI,
@@ -599,7 +586,6 @@ func (ts *Tester) createSubTesters() (err error) {
 		ts.kubernetesDashboardTester, err = kubernetes_dashboard.NewTester(kubernetes_dashboard.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
-			Sig:       ts.interruptSig,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 		})
@@ -610,40 +596,6 @@ func (ts *Tester) createSubTesters() (err error) {
 		ts.csiEBSTester, err = csi_ebs.NewTester(csi_ebs.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
-			Sig:       ts.interruptSig,
-			EKSConfig: ts.cfg,
-			K8SClient: ts.k8sClient,
-		})
-	}
-
-	if ts.cfg.IsEnabledAddOnWordpress() {
-		ts.lg.Info("creating wordPressTester")
-		ts.wordPressTester, err = wordpress.NewTester(wordpress.Config{
-			Logger:    ts.lg,
-			Stopc:     ts.stopCreationCh,
-			Sig:       ts.interruptSig,
-			EKSConfig: ts.cfg,
-			K8SClient: ts.k8sClient,
-		})
-	}
-
-	if ts.cfg.IsEnabledAddOnJupyterHub() {
-		ts.lg.Info("creating jupyterHubTester")
-		ts.jupyterHubTester, err = jupyter_hub.NewTester(jupyter_hub.Config{
-			Logger:    ts.lg,
-			Stopc:     ts.stopCreationCh,
-			Sig:       ts.interruptSig,
-			EKSConfig: ts.cfg,
-			K8SClient: ts.k8sClient,
-		})
-	}
-
-	if ts.cfg.IsEnabledAddOnKubeflow() {
-		ts.lg.Info("creating kubeflowTester")
-		ts.kubeflowTester, err = kubeflow.NewTester(kubeflow.Config{
-			Logger:    ts.lg,
-			Stopc:     ts.stopCreationCh,
-			Sig:       ts.interruptSig,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 		})
@@ -654,7 +606,46 @@ func (ts *Tester) createSubTesters() (err error) {
 		ts.prometheusGrafanaTester, err = prometheus_grafana.NewTester(prometheus_grafana.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
-			Sig:       ts.interruptSig,
+			EKSConfig: ts.cfg,
+			K8SClient: ts.k8sClient,
+		})
+	}
+
+	if ts.cfg.IsEnabledAddOnWordpress() {
+		ts.lg.Info("creating wordPressTester")
+		ts.wordPressTester, err = wordpress.NewTester(wordpress.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			EKSConfig: ts.cfg,
+			K8SClient: ts.k8sClient,
+		})
+	}
+
+	if ts.cfg.IsEnabledAddOnJupyterHub() {
+		ts.lg.Info("creating jupyterHubTester")
+		ts.jupyterHubTester, err = jupyter_hub.NewTester(jupyter_hub.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			EKSConfig: ts.cfg,
+			K8SClient: ts.k8sClient,
+		})
+	}
+
+	if ts.cfg.IsEnabledAddOnKubeflow() {
+		ts.lg.Info("creating kubeflowTester")
+		ts.kubeflowTester, err = kubeflow.NewTester(kubeflow.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			EKSConfig: ts.cfg,
+			K8SClient: ts.k8sClient,
+		})
+	}
+
+	if ts.cfg.IsEnabledAddOnClusterLoader() {
+		ts.lg.Info("creating clusterLoaderTester")
+		ts.clusterLoaderTester, err = cluster_loader.NewTester(cluster_loader.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 		})
@@ -952,6 +943,7 @@ func (ts *Tester) Up() (err error) {
 			ts.gpuTester.InstallNvidiaDriver,
 		); err != nil {
 			ts.lg.Warn("failed to install Nvidia driver", zap.Error(err))
+			return err
 		}
 
 		fmt.Printf("\n*********************************\n")
@@ -1261,7 +1253,7 @@ func (ts *Tester) Up() (err error) {
 
 	if ts.cfg.IsEnabledAddOnJupyterHub() {
 		if ts.jupyterHubTester == nil {
-			return errors.New("ts.jupyterHubTester == nil when AddOnWordpress.Enable == true")
+			return errors.New("ts.jupyterHubTester == nil when AddOnJupyterHub.Enable == true")
 		}
 		fmt.Printf("\n*********************************\n")
 		fmt.Printf("jupyterHubTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnJupyterHub.Namespace)
@@ -1278,7 +1270,7 @@ func (ts *Tester) Up() (err error) {
 
 	if ts.cfg.IsEnabledAddOnKubeflow() {
 		if ts.kubeflowTester == nil {
-			return errors.New("ts.kubeflowTester == nil when AddOnWordpress.Enable == true")
+			return errors.New("ts.kubeflowTester == nil when AddOnKubeflow.Enable == true")
 		}
 		fmt.Printf("\n*********************************\n")
 		fmt.Printf("kubeflowTester.Create (%q, \"%s --namespace=kube-system get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
@@ -1288,6 +1280,23 @@ func (ts *Tester) Up() (err error) {
 			ts.stopCreationChOnce,
 			ts.interruptSig,
 			ts.kubeflowTester.Create,
+		); err != nil {
+			return err
+		}
+	}
+
+	if ts.cfg.IsEnabledAddOnClusterLoader() {
+		if ts.clusterLoaderTester == nil {
+			return errors.New("ts.clusterLoaderTester == nil when AddOnWordpress.Enable == true")
+		}
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("clusterLoaderTester.Create (%q, \"%s --namespace=kube-system get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.interruptSig,
+			ts.clusterLoaderTester.Create,
 		); err != nil {
 			return err
 		}
@@ -1461,15 +1470,15 @@ func (ts *Tester) down() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnNodeGroups() || ts.cfg.IsEnabledAddOnManagedNodeGroups() {
-		if ts.cfg.IsEnabledAddOnJupyterHub() && ts.cfg.AddOnJupyterHub.Created {
+		if ts.cfg.IsEnabledAddOnClusterLoader() && ts.cfg.AddOnClusterLoader.Created {
 			fmt.Printf("\n*********************************\n")
-			fmt.Printf("jupyterHubTester.Delete (%q)\n", ts.cfg.ConfigPath)
-			if err := ts.jupyterHubTester.Delete(); err != nil {
-				ts.lg.Warn("jupyterHubTester.Delete failed", zap.Error(err))
+			fmt.Printf("clusterLoaderTester.Delete (%q)\n", ts.cfg.ConfigPath)
+			if err := ts.clusterLoaderTester.Delete(); err != nil {
+				ts.lg.Warn("clusterLoaderTester.Delete failed", zap.Error(err))
 				errs = append(errs, err.Error())
 			} else {
 				waitDur := 20 * time.Second
-				ts.lg.Info("sleeping after deleting jupyterHubTester", zap.Duration("wait", waitDur))
+				ts.lg.Info("sleeping after deleting clusterLoaderTester", zap.Duration("wait", waitDur))
 				time.Sleep(waitDur)
 			}
 		}
@@ -1483,6 +1492,19 @@ func (ts *Tester) down() (err error) {
 			} else {
 				waitDur := 20 * time.Second
 				ts.lg.Info("sleeping after deleting kubeflowTester", zap.Duration("wait", waitDur))
+				time.Sleep(waitDur)
+			}
+		}
+
+		if ts.cfg.IsEnabledAddOnJupyterHub() && ts.cfg.AddOnJupyterHub.Created {
+			fmt.Printf("\n*********************************\n")
+			fmt.Printf("jupyterHubTester.Delete (%q)\n", ts.cfg.ConfigPath)
+			if err := ts.jupyterHubTester.Delete(); err != nil {
+				ts.lg.Warn("jupyterHubTester.Delete failed", zap.Error(err))
+				errs = append(errs, err.Error())
+			} else {
+				waitDur := 20 * time.Second
+				ts.lg.Info("sleeping after deleting jupyterHubTester", zap.Duration("wait", waitDur))
 				time.Sleep(waitDur)
 			}
 		}

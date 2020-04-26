@@ -119,6 +119,9 @@ AWS_K8S_TESTER_EKS_PARAMETERS_ENCRYPTION_CMK_CREATE=true \
 AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_CREATE=true \
 AWS_K8S_TESTER_EKS_PARAMETERS_VERSION=1.15 \
 AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CREATE=true \
+AWS_K8S_TESTER_EKS_CLIENTS=5 \
+AWS_K8S_TESTER_EKS_CLIENT_QPS=30 \
+AWS_K8S_TESTER_EKS_CLIENT_BURST=20 \
 AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_CREATE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS='{"GetRef.Name-ng-al2-cpu":{"name":"GetRef.Name-ng-al2-cpu","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64","image-id":"ami-09febb36c6403661c","asg-min-size":2,"asg-max-size":2,"asg-desired-capacity":2,"instance-types":["c5.xlarge"],"volume-size":40,"kubelet-extra-args":""},"GetRef.Name-ng-al2-gpu":{"name":"GetRef.Name-ng-al2-gpu","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64_GPU","image-id":"ami-09c404af3afbdf7d5","asg-min-size":2,"asg-max-size":2,"asg-desired-capacity":2,"instance-types":["p3.8xlarge"],"volume-size":40,"kubelet-extra-args":""},"GetRef.Name-ng-bottlerocket":{"name":"GetRef.Name-ng-bottlerocket","remote-access-user-name":"ec2-user","ami-type":"BOTTLEROCKET_x86_64","image-id-ssm-parameter":"/aws/service/bottlerocket/aws-k8s-1.15/x86_64/latest/image_id","ssm-document-cfn-stack-name":"GetRef.Name-install-bottlerocket","ssm-document-name":"GetRef.Name-InstallBottlerocket","ssm-document-create":true,"ssm-document-commands":"enable-admin-container","ssm-document-execution-timeout-seconds":3600,"asg-min-size":2,"asg-max-size":2,"asg-desired-capacity":2,"instance-types":["c5.xlarge"],"volume-size":40}}' \
@@ -143,6 +146,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_ENABLE=true \
+AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_ENABLE=true \
 aws-k8s-tester eks create cluster --enable-prompt=true -p /tmp/${USER}-test-eks.yaml
 
 <<COMMENT

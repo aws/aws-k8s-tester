@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 	"text/template"
 	"time"
@@ -119,6 +118,7 @@ func (ts *Tester) createCluster() (err error) {
 		Clients:           1,
 		ClientQPS:         ts.cfg.ClientQPS,
 		ClientBurst:       ts.cfg.ClientBurst,
+		ClientTimeout:     ts.cfg.ClientTimeout,
 	}
 	if ts.cfg.Status != nil {
 		kcfg.ClusterAPIServerEndpoint = ts.cfg.Status.ClusterAPIServerEndpoint
@@ -296,7 +296,6 @@ func (ts *Tester) createEKS() error {
 		ch := awscfn.Poll(
 			ctx,
 			ts.stopCreationCh,
-			ts.interruptSig,
 			ts.lg,
 			ts.cfnAPI,
 			ts.cfg.Status.ClusterCFNStackID,
@@ -385,8 +384,7 @@ func (ts *Tester) deleteCluster() error {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
 		ch := awscfn.Poll(
 			ctx,
-			make(chan struct{}),  // do not exit on stop
-			make(chan os.Signal), // do not exit on stop
+			make(chan struct{}), // do not exit on stop
 			ts.lg,
 			ts.cfnAPI,
 			ts.cfg.Status.ClusterCFNStackID,
@@ -674,7 +672,7 @@ func Poll(
 			switch currentStatus {
 			case desiredClusterStatus:
 				ch <- ClusterStatus{Cluster: cluster, Error: nil}
-				lg.Info("became desired cluster status; exiting", zap.String("cluster-status", currentStatus))
+				lg.Info("desired cluster status; done", zap.String("cluster-status", currentStatus))
 				close(ch)
 				return
 			case aws_eks.ClusterStatusFailed:

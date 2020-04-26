@@ -268,7 +268,6 @@ func (ts *tester) createRole() error {
 	ch := awscfn.Poll(
 		ctx,
 		ts.cfg.Stopc,
-		ts.cfg.Sig,
 		ts.cfg.Logger,
 		ts.cfg.CFNAPI,
 		ts.cfg.EKSConfig.AddOnFargate.RoleCFNStackID,
@@ -321,8 +320,8 @@ func (ts *tester) deleteRole() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
 	ch := awscfn.Poll(
 		ctx,
-		make(chan struct{}),  // do not exit on stop
-		make(chan os.Signal), // do not exit on stop
+		make(chan struct{}), // do not exit on stop
+
 		ts.cfg.Logger,
 		ts.cfg.CFNAPI,
 		ts.cfg.EKSConfig.AddOnFargate.RoleCFNStackID,
@@ -898,7 +897,7 @@ func Poll(
 			switch currentStatus {
 			case desiredStatus:
 				ch <- FargateProfileStatus{FargateProfile: fargateProfile, Error: nil}
-				lg.Info("became desired fargate profile status; exiting", zap.String("status", currentStatus))
+				lg.Info("desired fargate profile status; done", zap.String("status", currentStatus))
 				close(ch)
 				return
 

@@ -95,7 +95,6 @@ func (ts *tester) Create() error {
 	completedJobs, err := waitJobs(
 		ts.cfg.Logger,
 		ts.cfg.Stopc,
-		ts.cfg.Sig,
 		ts.cfg.K8SClient.KubernetesClientSet(),
 		waitDur,
 		5*time.Second,

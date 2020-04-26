@@ -441,7 +441,6 @@ func (ts *tester) createRole() error {
 	ch := awscfn.Poll(
 		ctx,
 		ts.cfg.Stopc,
-		ts.cfg.Sig,
 		ts.cfg.Logger,
 		ts.cfg.CFNAPI,
 		ts.cfg.EKSConfig.AddOnIRSA.RoleCFNStackID,
@@ -494,8 +493,7 @@ func (ts *tester) deleteRole() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
 	ch := awscfn.Poll(
 		ctx,
-		make(chan struct{}),  // do not exit on stop
-		make(chan os.Signal), // do not exit on stop
+		make(chan struct{}), // do not exit on stop
 		ts.cfg.Logger,
 		ts.cfg.CFNAPI,
 		ts.cfg.EKSConfig.AddOnIRSA.RoleCFNStackID,
@@ -868,8 +866,6 @@ foundBreak:
 		select {
 		case <-ts.cfg.Stopc:
 			return errors.New("check aborted")
-		case <-ts.cfg.Sig:
-			return errors.New("check aborted")
 		case <-time.After(5 * time.Second):
 		}
 
@@ -948,8 +944,6 @@ func (ts *tester) waitDeployment() error {
 	select {
 	case <-ts.cfg.Stopc:
 		return errors.New("check aborted")
-	case <-ts.cfg.Sig:
-		return errors.New("check aborted")
 	case <-time.After(initialWait):
 	}
 	ts.cfg.Logger.Info("initial waited", zap.Duration("duration", initialWait))
@@ -960,8 +954,6 @@ func (ts *tester) waitDeployment() error {
 	for time.Now().Sub(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
-			return errors.New("check aborted")
-		case <-ts.cfg.Sig:
 			return errors.New("check aborted")
 		case <-time.After(time.Minute):
 		}
@@ -1023,8 +1015,6 @@ func (ts *tester) waitOutputLogs() error {
 	for time.Now().Sub(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
-			return errors.New("check aborted")
-		case <-ts.cfg.Sig:
 			return errors.New("check aborted")
 		case <-time.After(20 * time.Second):
 		}

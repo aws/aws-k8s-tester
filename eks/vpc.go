@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -775,7 +774,6 @@ func (ts *Tester) createVPC() error {
 	ch := awscfn.Poll(
 		ctx,
 		ts.stopCreationCh,
-		ts.interruptSig,
 		ts.lg,
 		ts.cfnAPI,
 		ts.cfg.Parameters.VPCCFNStackID,
@@ -856,8 +854,7 @@ func (ts *Tester) deleteVPC() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	ch := awscfn.Poll(
 		ctx,
-		make(chan struct{}),  // do not exit on stop
-		make(chan os.Signal), // do not exit on stop
+		make(chan struct{}), // do not exit on stop
 		ts.lg,
 		ts.cfnAPI,
 		ts.cfg.Parameters.VPCCFNStackID,

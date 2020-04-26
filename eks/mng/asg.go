@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"sort"
 	"strings"
 	"text/template"
@@ -377,7 +376,6 @@ func (ts *tester) createASG() error {
 			ch := awscfn.Poll(
 				ctx,
 				ts.cfg.Stopc,
-				ts.cfg.Sig,
 				ts.cfg.Logger,
 				ts.cfg.CFNAPI,
 				mngStackID,
@@ -520,8 +518,8 @@ func (ts *tester) deleteASG() error {
 			ctx, cancel := context.WithTimeout(context.Background(), timeout)
 			ch := awscfn.Poll(
 				ctx,
-				make(chan struct{}),  // do not exit on stop
-				make(chan os.Signal), // do not exit on stop
+				make(chan struct{}), // do not exit on stop
+
 				ts.cfg.Logger,
 				ts.cfg.CFNAPI,
 				cur.CFNStackID,
@@ -694,7 +692,7 @@ func Poll(
 			switch currentStatus {
 			case desiredNodeGroupStatus:
 				ch <- ManagedNodeGroupStatus{NodeGroupName: mngName, NodeGroup: nodeGroup, Error: nil}
-				lg.Info("became desired managed node group status; exiting", zap.String("status", currentStatus))
+				lg.Info("desired managed node group status; done", zap.String("status", currentStatus))
 				close(ch)
 				return
 			case awseks.NodegroupStatusCreateFailed,
@@ -868,8 +866,6 @@ func (ts *tester) waitForNodes(mngName string) error {
 		select {
 		case <-ts.cfg.Stopc:
 			return errors.New("checking node aborted")
-		case <-ts.cfg.Sig:
-			return errors.New("checking node aborted")
 		case <-time.After(5 * time.Second):
 		}
 
@@ -987,9 +983,9 @@ func (ts *tester) waitForNodes(mngName string) error {
 		if err != nil {
 			ts.cfg.Logger.Warn("'kubectl get nodes -o=wide' failed", zap.Error(err))
 		}
-		fmt.Printf("\n\"%s get nodes -o=wide\":\n%s\n\n", ts.cfg.EKSConfig.KubectlCommand(), out)
+		fmt.Printf("\n\"%s get nodes -o=wide\":\n%s\n", ts.cfg.EKSConfig.KubectlCommand(), out)
 
-		if readies >= cur.ASGDesiredCapacity { // TODO: check per node group
+		if readies >= cur.ASGDesiredCapacity {
 			ready = true
 			break
 		}
@@ -998,7 +994,6 @@ func (ts *tester) waitForNodes(mngName string) error {
 		return fmt.Errorf("MNG %q not ready", mngName)
 	}
 
-	println()
 	fmt.Printf("%q nodes are ready!\n", mngName)
 	for _, v := range items {
 		fmt.Printf("node %q address: %+v\n", v.GetName(), v.Status.Addresses)

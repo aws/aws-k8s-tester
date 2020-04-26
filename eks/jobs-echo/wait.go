@@ -3,8 +3,6 @@ package jobsecho
 import (
 	"context"
 	"errors"
-	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -17,7 +15,6 @@ import (
 func waitJobs(
 	lg *zap.Logger,
 	stopc chan struct{},
-	sigc chan os.Signal,
 	clientSet *clientset.Clientset,
 	timeout time.Duration,
 	interval time.Duration,
@@ -37,8 +34,6 @@ func waitJobs(
 		select {
 		case <-stopc:
 			return nil, errors.New("Pod polling aborted")
-		case sig := <-sigc:
-			return nil, fmt.Errorf("received os signal %v", sig)
 		case <-time.After(interval):
 		}
 

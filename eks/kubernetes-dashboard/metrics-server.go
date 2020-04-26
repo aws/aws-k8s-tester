@@ -197,8 +197,6 @@ func (ts *tester) installMetricsServer() error {
 		select {
 		case <-ts.cfg.Stopc:
 			return errors.New("create metrics-server aborted")
-		case <-ts.cfg.Sig:
-			return errors.New("create metrics-server aborted")
 		case <-time.After(5 * time.Second):
 		}
 
@@ -257,8 +255,6 @@ func (ts *tester) waitDeploymentMetricsServer() error {
 	for time.Now().Sub(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
-			return errors.New("check aborted")
-		case <-ts.cfg.Sig:
 			return errors.New("check aborted")
 		case <-time.After(15 * time.Second):
 		}
