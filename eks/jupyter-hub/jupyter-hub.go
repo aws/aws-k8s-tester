@@ -479,7 +479,7 @@ func (ts *tester) waitService() error {
 		httpOutput := string(out)
 		fmt.Printf("\nNLB JupyterHub Service output:\n%s\n", httpOutput)
 
-		if strings.Contains(httpOutput, `jupyterhub-logo`) || true {
+		if strings.Contains(httpOutput, `jupyterhub-logo`) {
 			ts.cfg.Logger.Info(
 				"read JupyterHub Service; exiting",
 				zap.String("host-name", hostName),

@@ -150,7 +150,7 @@ func (ts *tester) startProxy(dry bool) error {
 			httpOutput := string(out)
 			fmt.Printf("\nKubernetes Dashboard proxy output:\n%s\n", httpOutput)
 
-			if strings.Contains(httpOutput, `The Kubernetes Authors.`) || true {
+			if strings.Contains(httpOutput, `The Kubernetes Authors`) {
 				ts.cfg.Logger.Info("read Kubernetes Dashboard proxy; exiting")
 				break
 			}

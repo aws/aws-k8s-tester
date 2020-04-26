@@ -323,7 +323,7 @@ func (ts *tester) waitService() error {
 		httpOutput := string(out)
 		fmt.Printf("\nNLB WordPress Service output:\n%s\n", httpOutput)
 
-		if strings.Contains(httpOutput, `<p>Welcome to WordPress. This is your first post.`) || true {
+		if strings.Contains(httpOutput, `<p>Welcome to WordPress. This is your first post`) {
 			ts.cfg.Logger.Info(
 				"read WordPress Service; exiting",
 				zap.String("host-name", hostName),

@@ -416,7 +416,7 @@ func (ts *tester) waitServiceGrafana() error {
 		httpOutput := string(out)
 		fmt.Printf("\nNLB Grafana Service output:\n%s\n", httpOutput)
 
-		if strings.Contains(httpOutput, `Loading Grafana`) || true {
+		if strings.Contains(httpOutput, `Loading Grafana`) {
 			ts.cfg.Logger.Info(
 				"read Grafana Service; exiting",
 				zap.String("host-name", hostName),
