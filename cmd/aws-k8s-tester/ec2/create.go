@@ -80,20 +80,27 @@ func newCreateCluster() *cobra.Command {
 }
 
 func createClusterFunc(cmd *cobra.Command, args []string) {
-	if !fileutil.Exist(path) {
-		fmt.Fprintf(os.Stderr, "cannot find configuration %q\n", path)
+	if path == "" {
+		fmt.Fprintln(os.Stderr, "'--path' flag is not specified")
 		os.Exit(1)
 	}
 
-	cfg, err := ec2config.Load(path)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to load configuration %q (%v)\n", path, err)
-		os.Exit(1)
-	}
-
-	if err = cfg.ValidateAndSetDefaults(); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to validate configuration %q (%v)\n", path, err)
-		os.Exit(1)
+	var cfg *ec2config.Config
+	var err error
+	if fileutil.Exist(path) {
+		cfg, err = ec2config.Load(path)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to load configuration %q (%v)\n", path, err)
+			os.Exit(1)
+		}
+		if err = cfg.ValidateAndSetDefaults(); err != nil {
+			fmt.Fprintf(os.Stderr, "failed to validate configuration %q (%v)\n", path, err)
+			os.Exit(1)
+		}
+	} else {
+		fmt.Fprintf(os.Stderr, "cannot find configuration %q; writing...\n", path)
+		cfg := ec2config.NewDefault()
+		cfg.ConfigPath = path
 	}
 
 	fmt.Printf("\n*********************************\n")

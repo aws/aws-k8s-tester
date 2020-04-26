@@ -59,6 +59,9 @@ aws-k8s-tester ec2 create config -p /tmp/${USER}-test-ec2.yaml
 # Or just run
 aws-k8s-tester ec2 create config -p /tmp/${USER}-test-ec2.yaml
 # to write initial configuration with default values
+
+# run the following command with those envs overwrites configuration, and create
+aws-k8s-tester ec2 create cluster --enable-prompt=true -p /tmp/${USER}-test-ec2.yaml
 COMMENT
 
 <<COMMENT
@@ -152,6 +155,9 @@ aws-k8s-tester eks create config -p /tmp/${USER}-test-eks.yaml
 # Or just run
 aws-k8s-tester eks create config -p /tmp/${USER}-test-eks.yaml
 # to write initial configuration with default values
+
+# run the following command with those envs overwrites configuration, and create
+aws-k8s-tester eks create cluster --enable-prompt=true -p /tmp/${USER}-test-eks.yaml
 COMMENT
 
 <<COMMENT
