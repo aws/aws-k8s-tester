@@ -586,7 +586,7 @@ func (e *eks) checkHealth() error {
 	if err != nil {
 		return fmt.Errorf("'kubectl get all -n=kube-system' failed %v (output %q)", err, out)
 	}
-	fmt.Printf("\n\"kubectl all -n=kube-system\" output:\n%s\n", out)
+	fmt.Printf("\n\"kubectl all -n=kube-system\" output:\n%s\n\n", out)
 
 	fmt.Printf("\n\"kubectl get pods -n=kube-system\" output:\n")
 	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
