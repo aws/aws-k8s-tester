@@ -1,3 +1,5 @@
+// Package cloud wraps AWS API.
+// Used for CSI EBS driver testing.
 package cloud
 
 import (

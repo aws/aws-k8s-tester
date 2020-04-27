@@ -1,3 +1,5 @@
+// Package framework implements e2e testing.
+// Used for CSI EBS driver testing.
 package framework
 
 import (
