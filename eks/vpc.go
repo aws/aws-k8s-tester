@@ -453,6 +453,7 @@ Resources:
         Value: !Sub '${AWS::StackName}-NATGateway2'
 
   NATGateway3:
+    Condition: HasMoreThan2Azs
     Type: AWS::EC2::NatGateway
     DependsOn:
     - VPC
