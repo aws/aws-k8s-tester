@@ -5,15 +5,12 @@ package clusterloader
 import (
 	"context"
 	"errors"
-	"fmt"
-	"math/rand"
 	"strings"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"go.uber.org/zap"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -41,12 +38,12 @@ type Tester interface {
 // nodelease.NewController, kubemark.GetHollowKubeletConfig
 
 func NewTester(cfg Config) (Tester, error) {
-	return &tester{cfg: cfg, cancelc: make(chan struct{})}, nil
+	return &tester{cfg: cfg, donec: make(chan struct{})}, nil
 }
 
 type tester struct {
-	cfg     Config
-	cancelc chan struct{}
+	cfg   Config
+	donec chan struct{}
 }
 
 func (ts *tester) Create() error {
@@ -66,20 +63,14 @@ func (ts *tester) Create() error {
 		ts.cfg.EKSConfig.Sync()
 	}()
 
-	if err := k8s_client.CreateNamespace(ts.cfg.Logger, ts.cfg.K8SClient.KubernetesClientSet(), ts.cfg.EKSConfig.AddOnClusterLoader.Namespace); err != nil {
-		return err
-	}
-
 	for i := 0; i < ts.cfg.EKSConfig.Clients; i++ {
-		go listNodes(ts.cfg.Logger, ts.cfg.Stopc, ts.cancelc, ts.cfg.K8SClient.KubernetesClientSet())
-		go listPods(ts.cfg.Logger, ts.cfg.Stopc, ts.cancelc, ts.cfg.K8SClient.KubernetesClientSet())
-		go writeEvents(ts.cfg.Logger, ts.cfg.EKSConfig.AddOnClusterLoader.Namespace, ts.cfg.Stopc, ts.cancelc, ts.cfg.K8SClient.KubernetesClientSet())
-		go listEvents(ts.cfg.Logger, ts.cfg.EKSConfig.AddOnClusterLoader.Namespace, ts.cfg.Stopc, ts.cancelc, ts.cfg.K8SClient.KubernetesClientSet())
+		go listNodes(ts.cfg.Logger, ts.cfg.Stopc, ts.donec, ts.cfg.K8SClient.KubernetesClientSet())
+		go listPods(ts.cfg.Logger, ts.cfg.Stopc, ts.donec, ts.cfg.K8SClient.KubernetesClientSet())
 	}
 	select {
 	case <-ts.cfg.Stopc:
 	case <-time.After(ts.cfg.EKSConfig.AddOnClusterLoader.Duration):
-		close(ts.cancelc)
+		close(ts.donec)
 		ts.cfg.Logger.Info("completing load testing", zap.Duration("duration", ts.cfg.EKSConfig.AddOnClusterLoader.Duration))
 	}
 
@@ -101,14 +92,6 @@ func (ts *tester) Delete() error {
 
 	var errs []string
 
-	if err := k8s_client.DeleteNamespaceAndWait(ts.cfg.Logger,
-		ts.cfg.K8SClient.KubernetesClientSet(),
-		ts.cfg.EKSConfig.AddOnClusterLoader.Namespace,
-		k8s_client.DefaultNamespaceDeletionInterval,
-		k8s_client.DefaultNamespaceDeletionTimeout); err != nil {
-		errs = append(errs, fmt.Sprintf("failed to delete Cluster Loader namespace (%v)", err))
-	}
-
 	if len(errs) > 0 {
 		return errors.New(strings.Join(errs, ", "))
 	}
@@ -121,10 +104,10 @@ func listNodes(lg *zap.Logger, stopc chan struct{}, donec chan struct{}, cli *ku
 	for {
 		select {
 		case <-stopc:
-			lg.Warn("list node stopped")
+			lg.Warn("list nodes stopped")
 			return
 		case <-donec:
-			lg.Info("list node done")
+			lg.Info("list nodes done")
 			return
 		default:
 		}
@@ -144,10 +127,10 @@ func listPods(lg *zap.Logger, stopc chan struct{}, donec chan struct{}, cli *kub
 	for {
 		select {
 		case <-stopc:
-			lg.Warn("list node stopped")
+			lg.Warn("list pods stopped")
 			return
 		case <-donec:
-			lg.Info("list node done")
+			lg.Info("list pods done")
 			return
 		default:
 		}
@@ -172,69 +155,4 @@ func listPods(lg *zap.Logger, stopc chan struct{}, donec chan struct{}, cli *kub
 			lg.Info("listed pods", zap.String("namespace", item.GetName()), zap.Int("pods", len(pods.Items)))
 		}
 	}
-}
-
-func writeEvents(lg *zap.Logger, namespace string, stopc chan struct{}, donec chan struct{}, cli *kubernetes.Clientset) {
-	for {
-		select {
-		case <-stopc:
-			lg.Warn("list node stopped")
-			return
-		case <-donec:
-			lg.Info("list node done")
-			return
-		default:
-		}
-
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		_, err := cli.CoreV1().Events(namespace).Create(
-			ctx,
-			&v1.Event{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: fmt.Sprintf("test-event-%s-%x", namespace, randNum()),
-				},
-				Reason:  "testing events",
-				Message: fmt.Sprintf("%x", randNum()),
-			},
-			metav1.CreateOptions{},
-		)
-		cancel()
-		if err != nil {
-			lg.Warn("create event failed", zap.Error(err))
-		} else {
-			lg.Info("created events")
-		}
-	}
-}
-
-func listEvents(lg *zap.Logger, namespace string, stopc chan struct{}, donec chan struct{}, cli *kubernetes.Clientset) {
-	for {
-		select {
-		case <-stopc:
-			lg.Warn("list node stopped")
-			return
-		case <-donec:
-			lg.Info("list node done")
-			return
-		default:
-		}
-
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		evs, err := cli.CoreV1().Events(namespace).List(ctx, metav1.ListOptions{})
-		cancel()
-		if err != nil {
-			lg.Warn("list event failed", zap.Error(err))
-		} else {
-			lg.Info("listed events", zap.Int("events", len(evs.Items)))
-		}
-	}
-}
-
-func randNum() int64 {
-	ts := time.Now().UnixNano()
-	sign := int64(-1)
-	if ts%2 == 0 {
-		sign = 1
-	}
-	return time.Now().UnixNano() + sign*int64(rand.Intn(3000))
 }

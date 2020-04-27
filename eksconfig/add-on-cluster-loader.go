@@ -22,9 +22,6 @@ type AddOnClusterLoader struct {
 	// Enable is 'true' to create this add-on.
 	Enable bool `json:"enable"`
 
-	// Namespace is the namespace to create cluster loads.
-	Namespace string `json:"namespace"`
-
 	// Created is true when the resource has been created.
 	// Used for delete operations.
 	Created bool `json:"created" read-only:"true"`
@@ -40,6 +37,7 @@ type AddOnClusterLoader struct {
 	// Duration is the duration to run load testing.
 	Duration       time.Duration `json:"duration,omitempty"`
 	DurationString string        `json:"duration-string,omitempty" read-only:"true"`
+
 	// HollowNodes is the number of hollow nodes to create.
 	// Writes happen concurrently with multiple clients
 	// e.g. 10 clients with each client 5 QPS can create 50 objects per second.

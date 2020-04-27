@@ -361,7 +361,6 @@ AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_KFCTL_CONFIG_PATH | *eksconfig.AddOnKubeflow.
 
 
 AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_ENABLE | *eksconfig.AddOnClusterLoader.Enable | bool | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_NAMESPACE | *eksconfig.AddOnClusterLoader.Namespace | string | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_CREATED | *eksconfig.AddOnClusterLoader.Created | bool | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_CREATE_TOOK | *eksconfig.AddOnClusterLoader.CreateTook | time.Duration | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_CREATE_TOOK_STRING | *eksconfig.AddOnClusterLoader.CreateTookString | string | read-only "true"

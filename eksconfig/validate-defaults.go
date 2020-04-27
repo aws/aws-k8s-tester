@@ -1533,9 +1533,6 @@ func (cfg *Config) validateAddOnClusterLoader() error {
 		return errors.New("AddOnClusterLoader.Enable true but no node group is enabled")
 	}
 
-	if cfg.AddOnClusterLoader.Namespace == "" {
-		cfg.AddOnClusterLoader.Namespace = cfg.Name + "-cluster-loader"
-	}
 	if cfg.AddOnClusterLoader.Duration == time.Duration(0) {
 		cfg.AddOnClusterLoader.Duration = time.Minute
 	}
