@@ -1537,7 +1537,7 @@ func (cfg *Config) validateAddOnClusterLoader() error {
 		cfg.AddOnClusterLoader.Namespace = cfg.Name + "-cluster-loader"
 	}
 	if cfg.AddOnClusterLoader.Duration == time.Duration(0) {
-		cfg.AddOnClusterLoader.Duration = 2 * time.Minute
+		cfg.AddOnClusterLoader.Duration = time.Minute
 	}
 	cfg.AddOnClusterLoader.DurationString = cfg.AddOnClusterLoader.Duration.String()
 
