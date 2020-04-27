@@ -7,6 +7,14 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.9...v1.1.0).
 
+### `ec2`
+
+- Fix [VPC creation template for 2-AZ regions](https://github.com/aws/aws-k8s-tester/commit/c8f4e888d4249cc4934be335672d096b37479eec).
+
+### `eks`
+
+- Fix [VPC creation template for 2-AZ regions](https://github.com/aws/aws-k8s-tester/commit/c8f4e888d4249cc4934be335672d096b37479eec).
+
 ### `eksconfig`
 
 - Add [`Config.CommandAfterCreateClusterTimeout` and `Config.CommandAfterCreateAddOnsTimeout`](https://github.com/aws/aws-k8s-tester/commit/558cccb8cf01554c365784509815c88470ec58c9).
