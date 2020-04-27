@@ -113,6 +113,7 @@ See https://github.com/aws/aws-k8s-tester/blob/master/eksconfig/README.md for mo
 ```bash
 cd /tmp
 AWS_K8S_TESTER_EKS_REGION=us-west-2 \
+AWS_K8S_TESTER_EKS_S3_BUCKET_CREATE=true \
 AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_CLUSTER="aws eks describe-cluster --name GetRef.Name" \
 AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_ADD_ONS="aws eks describe-cluster --name GetRef.Name" \
 AWS_K8S_TESTER_EKS_PARAMETERS_ENCRYPTION_CMK_CREATE=true \
@@ -240,7 +241,7 @@ less +FG /tmp/config.yaml
 Install `eks-utils` from https://github.com/aws/aws-k8s-tester/releases.
 
 ```
-AWS_K8S_TESTER_VERSION=v1.0.10
+AWS_K8S_TESTER_VERSION=v1.1.0
 
 DOWNLOAD_URL=https://github.com/aws/aws-k8s-tester/releases/download
 rm -rf /tmp/aws-k8s-tester
