@@ -14,13 +14,13 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.8...v1.0.9
 
 ### `eksconfig`
 
-- Add [`eksconfig.Config.Clients` and `eksconfig.Config.ClientTimeout` to configure the number of clients and request timeouts](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`eksconfig.Config.Clients` and `eksconfig.Config.ClientTimeout` to configure the number of clients and request timeouts](https://github.com/aws/aws-k8s-tester/commit/e7f3519de45e5dd74ef87553088f448060e93679).
 
 ### `eks`
 
-- Add [`github.com/aws/aws-k8s-tester/eks/cluster-loader`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`github.com/aws/aws-k8s-tester/eks/cluster-loader`](https://github.com/aws/aws-k8s-tester/commit/e7f3519de45e5dd74ef87553088f448060e93679).
   - ref. https://github.com/kubernetes/perf-tests
-- Add [retries to `InstallNvidiaDriver`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [retries to `InstallNvidiaDriver`](https://github.com/aws/aws-k8s-tester/commit/e7f3519de45e5dd74ef87553088f448060e93679).
 - Use [`NVIDIA/k8s-device-plugin` `v1.0.0-beta5`, previously `v1.0.0-beta4`](https://github.com/NVIDIA/k8s-device-plugin/releases/tag/1.0.0-beta5).
 
 ### `pkg/k8s-client`
