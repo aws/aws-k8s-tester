@@ -69,6 +69,7 @@ func (ts *tester) Create() error {
 	}
 	select {
 	case <-ts.cfg.Stopc:
+		close(ts.donec)
 	case <-time.After(ts.cfg.EKSConfig.AddOnClusterLoader.Duration):
 		close(ts.donec)
 		ts.cfg.Logger.Info("completing load testing", zap.Duration("duration", ts.cfg.EKSConfig.AddOnClusterLoader.Duration))
@@ -153,6 +154,16 @@ func listPods(lg *zap.Logger, stopc chan struct{}, donec chan struct{}, cli *kub
 				continue
 			}
 			lg.Info("listed pods", zap.String("namespace", item.GetName()), zap.Int("pods", len(pods.Items)))
+
+			select {
+			case <-stopc:
+				lg.Warn("list pods stopped")
+				return
+			case <-donec:
+				lg.Info("list pods done")
+				return
+			default:
+			}
 		}
 	}
 }
