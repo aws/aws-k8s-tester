@@ -861,7 +861,7 @@ func (ts *Tester) Up() (err error) {
 		}
 		fmt.Printf("\n*********************************\n")
 		fmt.Printf("\nrunCommand CommandAfterCreateCluster (%q)\n", ts.cfg.CommandAfterCreateCluster)
-		out, err := runCommand(ts.lg, ts.cfg.CommandAfterCreateCluster)
+		out, err := runCommand(ts.lg, ts.cfg.CommandAfterCreateCluster, ts.cfg.CommandAfterCreateClusterTimeout)
 		if err != nil {
 			err = ioutil.WriteFile(ts.cfg.CommandAfterCreateClusterOutputPath, []byte(ts.cfg.CommandAfterCreateCluster+"\n\n# output\n"+string(out)+"\n\n# error\n"+err.Error()), 0600)
 			if err != nil {
@@ -1397,7 +1397,7 @@ func (ts *Tester) Up() (err error) {
 			return err
 		}
 		fmt.Printf("\nrunCommand CommandAfterCreateAddOns (%q)\n", ts.cfg.CommandAfterCreateAddOns)
-		out, err := runCommand(ts.lg, ts.cfg.CommandAfterCreateAddOns)
+		out, err := runCommand(ts.lg, ts.cfg.CommandAfterCreateAddOns, ts.cfg.CommandAfterCreateAddOnsTimeout)
 		if err != nil {
 			err = ioutil.WriteFile(ts.cfg.CommandAfterCreateAddOnsOutputPath, []byte(ts.cfg.CommandAfterCreateAddOns+"\n\n# output\n"+string(out)+"\n\n# error\n"+err.Error()), 0600)
 			if err != nil {

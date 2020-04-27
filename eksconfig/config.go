@@ -71,14 +71,18 @@ type Config struct {
 	// Currently supported variables are:
 	//  - "GetRef.Name" for cluster name
 	//  - "GetRef.ClusterARN" for cluster ARN
-	CommandAfterCreateCluster           string `json:"command-after-create-cluster"`
-	CommandAfterCreateClusterOutputPath string `json:"command-after-create-cluster-output-path" read-only:"true"`
+	CommandAfterCreateCluster              string        `json:"command-after-create-cluster"`
+	CommandAfterCreateClusterOutputPath    string        `json:"command-after-create-cluster-output-path" read-only:"true"`
+	CommandAfterCreateClusterTimeout       time.Duration `json:"command-after-create-cluster-timeout"`
+	CommandAfterCreateClusterTimeoutString string        `json:"command-after-create-cluster-timeout-string" read-only:"true"`
 	// CommandAfterCreateAddOns is the command to execute after creating clusters and add-ons.
 	// Currently supported variables are:
 	//  - "GetRef.Name" for cluster name
 	//  - "GetRef.ClusterARN" for cluster ARN
-	CommandAfterCreateAddOns           string `json:"command-after-create-add-ons"`
-	CommandAfterCreateAddOnsOutputPath string `json:"command-after-create-add-ons-output-path" read-only:"true"`
+	CommandAfterCreateAddOns              string        `json:"command-after-create-add-ons"`
+	CommandAfterCreateAddOnsOutputPath    string        `json:"command-after-create-add-ons-output-path" read-only:"true"`
+	CommandAfterCreateAddOnsTimeout       time.Duration `json:"command-after-create-add-ons-timeout"`
+	CommandAfterCreateAddOnsTimeoutString string        `json:"command-after-create-add-ons-timeout-string" read-only:"true"`
 
 	// S3BucketName is the name of cluster S3.
 	S3BucketName string `json:"s3-bucket-name"`

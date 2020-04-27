@@ -33,6 +33,9 @@ const (
 	// DefaultClientTimeout is the default client timeout.
 	DefaultClientTimeout = 30 * time.Second
 
+	DefaultCommandAfterCreateClusterTimeout = 3 * time.Minute
+	DefaultCommandAfterCreateAddOnsTimeout  = 3 * time.Minute
+
 	// DefaultNodeInstanceTypeCPU is the default EC2 instance type for CPU worker node.
 	DefaultNodeInstanceTypeCPU = "c5.xlarge"
 	// DefaultNodeInstanceTypeGPU is the default EC2 instance type for GPU worker node.
@@ -473,18 +476,29 @@ func (cfg *Config) validateConfig() error {
 	if filepath.Ext(cfg.RemoteAccessCommandsOutputPath) != ".sh" {
 		cfg.RemoteAccessCommandsOutputPath = cfg.RemoteAccessCommandsOutputPath + ".sh"
 	}
+
+	if filepath.Ext(cfg.CommandAfterCreateClusterOutputPath) != ".log" {
+		cfg.CommandAfterCreateClusterOutputPath = cfg.CommandAfterCreateClusterOutputPath + ".log"
+	}
 	if cfg.CommandAfterCreateClusterOutputPath == "" {
 		cfg.CommandAfterCreateClusterOutputPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".after-create-cluster.out.log"
 	}
-	if filepath.Ext(cfg.CommandAfterCreateClusterOutputPath) != ".log" {
-		cfg.CommandAfterCreateClusterOutputPath = cfg.CommandAfterCreateClusterOutputPath + ".log"
+	if cfg.CommandAfterCreateClusterTimeout == time.Duration(0) {
+		cfg.CommandAfterCreateClusterTimeout = DefaultCommandAfterCreateClusterTimeout
+	}
+	cfg.CommandAfterCreateClusterTimeoutString = cfg.CommandAfterCreateClusterTimeout.String()
+
+	if filepath.Ext(cfg.CommandAfterCreateAddOnsOutputPath) != ".log" {
+		cfg.CommandAfterCreateAddOnsOutputPath = cfg.CommandAfterCreateAddOnsOutputPath + ".log"
 	}
 	if cfg.CommandAfterCreateAddOnsOutputPath == "" {
 		cfg.CommandAfterCreateAddOnsOutputPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".after-create-add-ons.out.log"
 	}
-	if filepath.Ext(cfg.CommandAfterCreateAddOnsOutputPath) != ".log" {
-		cfg.CommandAfterCreateAddOnsOutputPath = cfg.CommandAfterCreateAddOnsOutputPath + ".log"
+	if cfg.CommandAfterCreateAddOnsTimeout == time.Duration(0) {
+		cfg.CommandAfterCreateAddOnsTimeout = DefaultCommandAfterCreateAddOnsTimeout
 	}
+	cfg.CommandAfterCreateAddOnsTimeoutString = cfg.CommandAfterCreateAddOnsTimeout.String()
+
 	if cfg.KubeConfigPath == "" {
 		cfg.KubeConfigPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".kubeconfig.yaml"
 	}

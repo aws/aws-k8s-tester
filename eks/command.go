@@ -11,23 +11,22 @@ import (
 	"k8s.io/utils/exec"
 )
 
-func runCommand(lg *zap.Logger, s string) ([]byte, error) {
+func runCommand(lg *zap.Logger, s string, timeout time.Duration) ([]byte, error) {
 	if len(s) == 0 {
 		return nil, errors.New("empty command")
 	}
-	ss := strings.Split(s, " ")
-	if len(ss) == 0 {
+	args := strings.Split(s, " ")
+	if len(args) == 0 {
 		return nil, errors.New("empty command")
 	}
-	cmd, args := ss[0], ss[1:]
-	p, err := exec.New().LookPath(cmd)
+	p, err := exec.New().LookPath(args[0])
 	if err != nil {
 		return nil, fmt.Errorf("%q does not exist (%v)", p, err)
 	}
 
-	lg.Info("running command", zap.String("cmd-path", p), zap.Strings("ars", args))
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	out, err := exec.New().CommandContext(ctx, p, args...).CombinedOutput()
+	lg.Info("running command", zap.String("command", strings.Join(args, " ")))
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	out, err := exec.New().CommandContext(ctx, args[0], args[1:]...).CombinedOutput()
 	cancel()
 	if err == nil {
 		lg.Info("ran command")

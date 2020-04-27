@@ -11,7 +11,7 @@ go 1.14
 // https://github.com/gyuho/semver/releases
 // https://github.com/manifoldco/promptui/releases
 require (
-	github.com/aws/aws-sdk-go v1.30.14
+	github.com/aws/aws-sdk-go v1.30.15
 	github.com/cihub/seelog v0.0.0-20170130134532-f561c5e57575
 	github.com/davecgh/go-spew v1.1.1
 	github.com/dustin/go-humanize v1.0.0
