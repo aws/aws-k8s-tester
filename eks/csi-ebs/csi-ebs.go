@@ -157,7 +157,7 @@ func (ts *tester) createHelmCSI() error {
 			if err != nil {
 				ts.cfg.Logger.Warn("'kubectl logs' failed", zap.String("output", out), zap.Error(err))
 			} else {
-				fmt.Printf("'%s' output:\n\n%s\n\n", logsCmd, out)
+				fmt.Printf("\n\n'%s' output:\n\n%s\n\n", logsCmd, out)
 			}
 
 			ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
