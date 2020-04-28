@@ -389,6 +389,25 @@ func (ts *tester) CreateNvidiaSMI() error {
 	case <-time.After(time.Minute):
 	}
 
+	descArgs := []string{
+		ts.cfg.EKSConfig.KubectlPath,
+		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+		"--namespace=default",
+		"describe",
+		"po",
+		"nvidia-smi",
+	}
+	descCmd := strings.Join(descArgs, " ")
+
+	logsArgs := []string{
+		ts.cfg.EKSConfig.KubectlPath,
+		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+		"--namespace=default",
+		"logs",
+		"nvidia-smi",
+	}
+	logsCmd := strings.Join(logsArgs, " ")
+
 	waitDur := 2 * time.Minute
 	retryStart := time.Now()
 	for time.Now().Sub(retryStart) < waitDur {
@@ -397,22 +416,23 @@ func (ts *tester) CreateNvidiaSMI() error {
 			return errors.New("nvidia-smi check aborted")
 		case <-time.After(5 * time.Second):
 		}
-		ts.cfg.Logger.Info("querying nvidia-smi logs")
+		ts.cfg.Logger.Info("querying nvidia-smi Pod")
 
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-		out, err := exec.New().CommandContext(
-			ctx,
-			ts.cfg.EKSConfig.KubectlPath,
-			"--kubeconfig="+ts.cfg.EKSConfig.KubeConfigPath,
-			"--namespace=default",
-			"logs",
-			"nvidia-smi",
-		).CombinedOutput()
+		out, err := exec.New().CommandContext(ctx, descArgs[0], descArgs[1:]...).CombinedOutput()
 		cancel()
 		if err != nil {
-			ts.cfg.Logger.Warn("failed to fetch logs", zap.Error(err))
+			ts.cfg.Logger.Warn("failed to kubectl describe", zap.Error(err))
 		}
-		fmt.Printf("\n\nnvidia-smi output:\n\n%s\n\n", string(out))
+		fmt.Printf("\n\n'%s' output:\n\n%s\n\n", descCmd, string(out))
+
+		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
+		out, err = exec.New().CommandContext(ctx, logsArgs[0], logsArgs[1:]...).CombinedOutput()
+		cancel()
+		if err != nil {
+			ts.cfg.Logger.Warn("failed to kubectl logs", zap.Error(err))
+		}
+		fmt.Printf("\n\n'%s' output:\n\n%s\n\n", logsCmd, string(out))
 
 		if strings.Contains(string(out), "GPU-Util") {
 			break
