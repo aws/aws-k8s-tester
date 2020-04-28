@@ -75,7 +75,7 @@ func (ts *tester) Create() error {
 		ts.cfg.Logger.Info("completing load testing", zap.Duration("duration", ts.cfg.EKSConfig.AddOnClusterLoader.Duration))
 	}
 
-	time.Sleep(10*time.Second)
+	time.Sleep(10 * time.Second)
 	return ts.cfg.EKSConfig.Sync()
 }
 
