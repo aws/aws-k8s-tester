@@ -939,21 +939,24 @@ func (ts *tester) create2048Ingress() error {
 	case <-time.After(waitDur):
 	}
 
-	logCmdFlags := []string{
+	logsArgs := []string{
+		ts.cfg.EKSConfig.KubectlPath,
 		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
-		"--namespace=" + "kube-system",
+		"--namespace=kube-system",
 		"logs",
-		"--selector=" + "app.kubernetes.io/name" + "=" + albIngressControllerName,
+		"--selector=app.kubernetes.io/name=" + albIngressControllerName,
 	}
-	css := ts.cfg.EKSConfig.KubectlPath + strings.Join(logCmdFlags, " ")
-	describeCmdFlags := []string{
+	logsCmd := strings.Join(logsArgs, " ")
+
+	descArgs := []string{
+		ts.cfg.EKSConfig.KubectlPath,
 		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
 		"--namespace=" + ts.cfg.EKSConfig.AddOnALB2048.Namespace,
 		"describe",
 		"svc",
 		alb2048SvcName,
 	}
-	dss := ts.cfg.EKSConfig.KubectlPath + strings.Join(describeCmdFlags, " ")
+	descCmd := strings.Join(descArgs, " ")
 
 	hostName := ""
 	waitDur = 4 * time.Minute
@@ -965,26 +968,26 @@ func (ts *tester) create2048Ingress() error {
 		case <-time.After(5 * time.Second):
 		}
 
-		ts.cfg.Logger.Info("fetching ALB pod logs", zap.String("cmd", css))
+		ts.cfg.Logger.Info("fetching ALB pod logs", zap.String("logs-command", logsCmd))
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-		logsOutput, err := exec.New().CommandContext(ctx, ts.cfg.EKSConfig.KubectlPath, logCmdFlags...).CombinedOutput()
+		logsOutput, err := exec.New().CommandContext(ctx, logsArgs[0], logsArgs[1:]...).CombinedOutput()
 		cancel()
 		out := string(logsOutput)
 		if err != nil {
 			ts.cfg.Logger.Warn("'kubectl logs alb' failed", zap.String("output", out), zap.Error(err))
 			continue
 		}
-		fmt.Printf("\n\n\n\"%s\" output:\n\n%s\n\n", css, out)
+		fmt.Printf("\n\n\n\"%s\" output:\n\n%s\n\n", logsCmd, out)
 
-		ts.cfg.Logger.Info("describing ALB service", zap.String("cmd", dss))
+		ts.cfg.Logger.Info("describing ALB service", zap.String("describe-command", descCmd))
 		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
-		clusterInfoOut, err := exec.New().CommandContext(ctx, ts.cfg.EKSConfig.KubectlPath, describeCmdFlags...).CombinedOutput()
+		descOutput, err := exec.New().CommandContext(ctx, descArgs[0], descArgs[1:]...).CombinedOutput()
 		cancel()
 		if err != nil {
 			ts.cfg.Logger.Warn("'kubectl describe svc' failed", zap.Error(err))
 		}
-		out = string(clusterInfoOut)
-		fmt.Printf("\n\n\n\"%s\" output:\n\n%s\n\n", dss, out)
+		out = string(descOutput)
+		fmt.Printf("\n\n\n\"%s\" output:\n\n%s\n\n", descCmd, out)
 
 		ts.cfg.Logger.Info("querying ALB 2048 Ingress for HTTP endpoint")
 		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)

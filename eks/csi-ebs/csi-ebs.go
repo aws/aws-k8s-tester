@@ -94,22 +94,51 @@ func (ts *tester) Delete() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
-// https://github.com/helm/charts/blob/master/stable/wordpress/values.yaml
-// https://github.com/helm/charts/blob/master/stable/mariadb/values.yaml
+// https://github.com/kubernetes-sigs/aws-ebs-csi-driver/blob/master/aws-ebs-csi-driver/values.yaml
 func (ts *tester) createHelmCSI() error {
 	values := map[string]interface{}{
 		"enableVolumeScheduling": true,
 		"enableVolumeResizing":   true,
 		"enableVolumeSnapshot":   true,
 	}
-	args := []string{
+
+	logArgs := []string{
+		ts.cfg.EKSConfig.KubectlPath,
+		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+		"--namespace=kube-system",
+		"logs",
+		"--selector=" + "app=ebs-csi-node",
+	}
+	logsCmd := strings.Join(logArgs, " ")
+
+	descArgsDs := []string{
+		ts.cfg.EKSConfig.KubectlPath,
+		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+		"--namespace=kube-system",
+		"describe",
+		"ds",
+		"ebs-csi-node",
+	}
+	descCmdDs := strings.Join(descArgsDs, " ")
+
+	descArgsDp := []string{
 		ts.cfg.EKSConfig.KubectlPath,
 		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
 		"--namespace=kube-system",
 		"describe",
 		"deployment.apps/ebs-csi-controller",
 	}
-	cmdTxt := strings.Join(args, " ")
+	descCmdDp := strings.Join(descArgsDp, " ")
+
+	getAllArgs := []string{
+		ts.cfg.EKSConfig.KubectlPath,
+		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+		"--namespace=kube-system",
+		"get",
+		"all",
+	}
+	getAllCmd := strings.Join(getAllArgs, " ")
+
 	return helm.Install(helm.InstallConfig{
 		Logger:         ts.cfg.Logger,
 		Stopc:          ts.cfg.Stopc,
@@ -122,13 +151,43 @@ func (ts *tester) createHelmCSI() error {
 		Values:         values,
 		QueryFunc: func() {
 			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-			output, err := exec.New().CommandContext(ctx, args[0], args[1:]...).CombinedOutput()
+			output, err := exec.New().CommandContext(ctx, logArgs[0], logArgs[1:]...).CombinedOutput()
 			cancel()
 			out := string(output)
 			if err != nil {
+				ts.cfg.Logger.Warn("'kubectl logs' failed", zap.String("output", out), zap.Error(err))
+			} else {
+				fmt.Printf("'%s' output:\n\n%s\n\n", logsCmd, out)
+			}
+
+			ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
+			output, err = exec.New().CommandContext(ctx, descArgsDs[0], descArgsDs[1:]...).CombinedOutput()
+			cancel()
+			out = string(output)
+			if err != nil {
 				ts.cfg.Logger.Warn("'kubectl describe' failed", zap.String("output", out), zap.Error(err))
 			} else {
-				fmt.Printf("'%s' output:\n\n%s\n\n", cmdTxt, out)
+				fmt.Printf("'%s' output:\n\n%s\n\n", descCmdDs, out)
+			}
+
+			ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
+			output, err = exec.New().CommandContext(ctx, descArgsDp[0], descArgsDp[1:]...).CombinedOutput()
+			cancel()
+			out = string(output)
+			if err != nil {
+				ts.cfg.Logger.Warn("'kubectl describe' failed", zap.String("output", out), zap.Error(err))
+			} else {
+				fmt.Printf("'%s' output:\n\n%s\n\n", descCmdDp, out)
+			}
+
+			ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
+			output, err = exec.New().CommandContext(ctx, getAllArgs[0], getAllArgs[1:]...).CombinedOutput()
+			cancel()
+			out = string(output)
+			if err != nil {
+				ts.cfg.Logger.Warn("'kubectl get all' failed", zap.String("output", out), zap.Error(err))
+			} else {
+				fmt.Printf("'%s' output:\n\n%s\n\n", getAllCmd, out)
 			}
 		},
 		QueryInterval: 30 * time.Second,
