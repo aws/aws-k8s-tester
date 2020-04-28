@@ -66,6 +66,8 @@ func (ts *tester) Create() error {
 	for i := 0; i < ts.cfg.EKSConfig.Clients; i++ {
 		go listNodes(ts.cfg.Logger, ts.cfg.Stopc, ts.donec, ts.cfg.K8SClient.KubernetesClientSet())
 		go listPods(ts.cfg.Logger, ts.cfg.Stopc, ts.donec, ts.cfg.K8SClient.KubernetesClientSet())
+		go listEndpoints(ts.cfg.Logger, ts.cfg.Stopc, ts.donec, ts.cfg.K8SClient.KubernetesClientSet())
+		go listSecrets(ts.cfg.Logger, ts.cfg.Stopc, ts.donec, ts.cfg.K8SClient.KubernetesClientSet())
 	}
 	select {
 	case <-ts.cfg.Stopc:
@@ -162,6 +164,94 @@ func listPods(lg *zap.Logger, stopc chan struct{}, donec chan struct{}, cli *kub
 				return
 			case <-donec:
 				lg.Info("list pods done")
+				return
+			default:
+			}
+		}
+	}
+}
+
+func listEndpoints(lg *zap.Logger, stopc chan struct{}, donec chan struct{}, cli *kubernetes.Clientset) {
+	for {
+		select {
+		case <-stopc:
+			lg.Warn("list pods stopped")
+			return
+		case <-donec:
+			lg.Info("list pods done")
+			return
+		default:
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		ns, err := cli.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
+		cancel()
+		if err != nil {
+			lg.Warn("list namespaces failed", zap.Error(err))
+			continue
+		}
+		lg.Info("listed namespaces", zap.Int("namespaces", len(ns.Items)))
+
+		for _, item := range ns.Items {
+			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+			es, err := cli.CoreV1().Endpoints(item.GetName()).List(ctx, metav1.ListOptions{})
+			cancel()
+			if err != nil {
+				lg.Warn("list endpoints failed", zap.String("namespace", item.GetName()), zap.Error(err))
+				continue
+			}
+			lg.Info("listed endpoints", zap.String("namespace", item.GetName()), zap.Int("endpoints", len(es.Items)))
+
+			select {
+			case <-stopc:
+				lg.Warn("list endpoints stopped")
+				return
+			case <-donec:
+				lg.Info("list endpoints done")
+				return
+			default:
+			}
+		}
+	}
+}
+
+func listSecrets(lg *zap.Logger, stopc chan struct{}, donec chan struct{}, cli *kubernetes.Clientset) {
+	for {
+		select {
+		case <-stopc:
+			lg.Warn("list pods stopped")
+			return
+		case <-donec:
+			lg.Info("list pods done")
+			return
+		default:
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		ns, err := cli.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
+		cancel()
+		if err != nil {
+			lg.Warn("list namespaces failed", zap.Error(err))
+			continue
+		}
+		lg.Info("listed namespaces", zap.Int("namespaces", len(ns.Items)))
+
+		for _, item := range ns.Items {
+			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+			ss, err := cli.CoreV1().Secrets(item.GetName()).List(ctx, metav1.ListOptions{})
+			cancel()
+			if err != nil {
+				lg.Warn("list secrets failed", zap.String("namespace", item.GetName()), zap.Error(err))
+				continue
+			}
+			lg.Info("listed secrets", zap.String("namespace", item.GetName()), zap.Int("secrets", len(ss.Items)))
+
+			select {
+			case <-stopc:
+				lg.Warn("list secrets stopped")
+				return
+			case <-donec:
+				lg.Info("list secrets done")
 				return
 			default:
 			}
