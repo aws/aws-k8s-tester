@@ -14,6 +14,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.9...v1.1.0
 ### `eks`
 
 - Fix [VPC creation template for 2-AZ regions](https://github.com/aws/aws-k8s-tester/commit/c8f4e888d4249cc4934be335672d096b37479eec).
+- Logs [`CSI` `EBS` daemon-set driver logs](https://github.com/aws/aws-k8s-tester/commit/a77c3c33710324e9ec8d98fa76a75ca3a68cba89).
 
 ### `eksconfig`
 
