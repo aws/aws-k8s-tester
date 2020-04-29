@@ -303,6 +303,9 @@ func Install(cfg InstallConfig) (err error) {
 		}
 	}
 
+	if err == nil {
+		return nil
+	}
 	return fmt.Errorf("failed to install chart %q (version %q) with error %v", chart.Name(), chart.AppVersion(), err)
 }
 
