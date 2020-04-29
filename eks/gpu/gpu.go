@@ -203,7 +203,12 @@ func (ts *tester) InstallNvidiaDriver() (err error) {
 						continue
 					}
 					nodeName := node.GetName()
-					ts.cfg.Logger.Info("checking node-info conditions", zap.String("node-name", nodeName), zap.String("labels", fmt.Sprintf("%+v", labels)))
+
+					ts.cfg.Logger.Info("checking node-info conditions",
+						zap.String("node-name", nodeName),
+						zap.String("labels", fmt.Sprintf("%+v", labels)),
+						zap.String("allocatable", fmt.Sprintf("%+v", node.Status.Allocatable)),
+					)
 					for _, cond := range node.Status.Conditions {
 						if cond.Type != v1.NodeReady {
 							continue
@@ -370,9 +375,12 @@ func (ts *tester) CreateNvidiaSMI() error {
 							},
 						},
 					},
-					NodeSelector: map[string]string{
-						"AMIType": ec2config.AMITypeAL2X8664GPU,
-					},
+
+					// DO NOT SET node selector, it fails with
+					// "Warning  FailedScheduling  20s (x2 over 91s)  default-scheduler  0/5 nodes are available: 3 node(s) didn't match node selector, 5 Insufficient nvidia.com/gpu."
+					// NodeSelector: map[string]string{
+					// 	"AMIType": ec2config.AMITypeAL2X8664GPU,
+					// },
 				},
 			},
 			metav1.CreateOptions{},
@@ -408,8 +416,8 @@ func (ts *tester) CreateNvidiaSMI() error {
 	}
 	logsCmd := strings.Join(logsArgs, " ")
 
-	waitDur := 2 * time.Minute
-	retryStart := time.Now()
+	installed := false
+	retryStart, waitDur := time.Now(), 3*time.Minute
 	for time.Now().Sub(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
@@ -429,16 +437,22 @@ func (ts *tester) CreateNvidiaSMI() error {
 		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 		out, err = exec.New().CommandContext(ctx, logsArgs[0], logsArgs[1:]...).CombinedOutput()
 		cancel()
+		output := string(out)
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to kubectl logs", zap.Error(err))
 		}
-		fmt.Printf("\n\n'%s' output:\n\n%s\n\n", logsCmd, string(out))
+		fmt.Printf("\n\n'%s' output:\n\n%s\n\n", logsCmd, output)
 
-		if strings.Contains(string(out), "GPU-Util") {
+		if strings.Contains(output, "NVIDIA-SMI") && strings.Contains(output, "GPU-Util") {
+			installed = true
 			break
 		}
 	}
 
-	ts.cfg.Logger.Info("checked nvidia-smi")
-	return ts.cfg.EKSConfig.Sync()
+	if installed {
+		ts.cfg.Logger.Info("checked nvidia-smi")
+		return ts.cfg.EKSConfig.Sync()
+	}
+	ts.cfg.Logger.Warn("failed to test nvidia-smi")
+	return errors.New("nvidia-smi failed")
 }

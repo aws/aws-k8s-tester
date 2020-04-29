@@ -102,12 +102,22 @@ func (ts *tester) createHelmCSI() error {
 		"enableVolumeSnapshot":   true,
 	}
 
+	getAllArgs := []string{
+		ts.cfg.EKSConfig.KubectlPath,
+		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+		"--namespace=kube-system",
+		"get",
+		"all",
+	}
+	getAllCmd := strings.Join(getAllArgs, " ")
+
 	logArgs := []string{
 		ts.cfg.EKSConfig.KubectlPath,
 		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
 		"--namespace=kube-system",
 		"logs",
-		"--selector=" + "app=ebs-csi-node",
+		"--selector=app=ebs-csi-node",
+		"--all-containers=true",
 	}
 	logsCmd := strings.Join(logArgs, " ")
 
@@ -130,15 +140,6 @@ func (ts *tester) createHelmCSI() error {
 	}
 	descCmdDp := strings.Join(descArgsDp, " ")
 
-	getAllArgs := []string{
-		ts.cfg.EKSConfig.KubectlPath,
-		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
-		"--namespace=kube-system",
-		"get",
-		"all",
-	}
-	getAllCmd := strings.Join(getAllArgs, " ")
-
 	return helm.Install(helm.InstallConfig{
 		Logger:         ts.cfg.Logger,
 		Stopc:          ts.cfg.Stopc,
@@ -150,10 +151,22 @@ func (ts *tester) createHelmCSI() error {
 		ReleaseName:    chartName,
 		Values:         values,
 		QueryFunc: func() {
+			println()
+
 			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-			output, err := exec.New().CommandContext(ctx, logArgs[0], logArgs[1:]...).CombinedOutput()
+			output, err := exec.New().CommandContext(ctx, getAllArgs[0], getAllArgs[1:]...).CombinedOutput()
 			cancel()
-			out := string(output)
+			out := strings.TrimSpace(string(output))
+			if err != nil {
+				ts.cfg.Logger.Warn("'kubectl get all' failed", zap.String("output", out), zap.Error(err))
+			} else {
+				fmt.Printf("\n\n'%s' output:\n\n%s\n\n", getAllCmd, out)
+			}
+
+			ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
+			output, err = exec.New().CommandContext(ctx, logArgs[0], logArgs[1:]...).CombinedOutput()
+			cancel()
+			out = strings.TrimSpace(string(output))
 			if err != nil {
 				ts.cfg.Logger.Warn("'kubectl logs' failed", zap.String("output", out), zap.Error(err))
 			} else {
@@ -163,32 +176,24 @@ func (ts *tester) createHelmCSI() error {
 			ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 			output, err = exec.New().CommandContext(ctx, descArgsDs[0], descArgsDs[1:]...).CombinedOutput()
 			cancel()
-			out = string(output)
+			out = strings.TrimSpace(string(output))
 			if err != nil {
 				ts.cfg.Logger.Warn("'kubectl describe' failed", zap.String("output", out), zap.Error(err))
 			} else {
-				fmt.Printf("'%s' output:\n\n%s\n\n", descCmdDs, out)
+				fmt.Printf("\n\n'%s' output:\n\n%s\n\n", descCmdDs, out)
 			}
 
 			ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 			output, err = exec.New().CommandContext(ctx, descArgsDp[0], descArgsDp[1:]...).CombinedOutput()
 			cancel()
-			out = string(output)
+			out = strings.TrimSpace(string(output))
 			if err != nil {
 				ts.cfg.Logger.Warn("'kubectl describe' failed", zap.String("output", out), zap.Error(err))
 			} else {
-				fmt.Printf("'%s' output:\n\n%s\n\n", descCmdDp, out)
+				fmt.Printf("\n\n'%s' output:\n\n%s\n\n", descCmdDp, out)
 			}
 
-			ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
-			output, err = exec.New().CommandContext(ctx, getAllArgs[0], getAllArgs[1:]...).CombinedOutput()
-			cancel()
-			out = string(output)
-			if err != nil {
-				ts.cfg.Logger.Warn("'kubectl get all' failed", zap.String("output", out), zap.Error(err))
-			} else {
-				fmt.Printf("'%s' output:\n\n%s\n\n", getAllCmd, out)
-			}
+			println()
 		},
 		QueryInterval: 30 * time.Second,
 	})

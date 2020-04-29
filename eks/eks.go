@@ -942,7 +942,7 @@ func (ts *Tester) Up() (err error) {
 			ts.interruptSig,
 			ts.gpuTester.InstallNvidiaDriver,
 		); err != nil {
-			ts.lg.Warn("failed to install Nvidia driver", zap.Error(err))
+			ts.lg.Warn("failed to install nvidia driver", zap.Error(err))
 			return err
 		}
 
@@ -955,6 +955,7 @@ func (ts *Tester) Up() (err error) {
 			ts.interruptSig,
 			ts.gpuTester.CreateNvidiaSMI,
 		); err != nil {
+			ts.lg.Warn("failed to create nvidia-smi", zap.Error(err))
 			return err
 		}
 	}

@@ -269,9 +269,13 @@ func Install(cfg InstallConfig) (err error) {
 				case <-time.After(cfg.QueryInterval):
 				}
 
+				println()
 				cfg.Logger.Info("executing query function")
+				println()
 				cfg.QueryFunc()
+				println()
 				cfg.Logger.Info("executed query function")
+				println()
 			}
 		}()
 	}

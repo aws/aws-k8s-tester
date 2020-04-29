@@ -3,9 +3,15 @@
 <hr>
 
 
-## [v1.1.1](https://github.com/aws/aws-k8s-tester/releases/tag/v1.1.1) (2020-04)
+## [v1.1.1](https://github.com/aws/aws-k8s-tester/releases/tag/v1.1.1) (2020-04-28)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.0...v1.1.1).
+
+### `eks`
+
+- Fix [`nvidia-smi` Pod tests](https://github.com/aws/aws-k8s-tester/commit/).
+- Fix [`eks/csi-ebs` `ebs-plugin` log fetch](https://github.com/aws/aws-k8s-tester/commit/).
+- Improve [`eks/helm` `QueryFunc` output](https://github.com/aws/aws-k8s-tester/commit/).
 
 ### Dependency
 
