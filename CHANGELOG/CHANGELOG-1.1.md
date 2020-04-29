@@ -3,20 +3,7 @@
 <hr>
 
 
-## [v1.1.2](https://github.com/aws/aws-k8s-tester/releases/tag/v1.1.2) (2020-04)
-
-See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.1...v1.1.2).
-
-### `eks`
-
-- Add [health check after load testing](https://github.com/aws/aws-k8s-tester/commit/f6bea5e350a665dff4f628720adc8e564e2b6670).
-- Clean up [`eks/gpu` `kubectl` outputs](https://github.com/aws/aws-k8s-tester/commit/0d99ab95c6ae3e645a5dffd8e8934f33c1592437).
-
-
-<hr>
-
-
-## [v1.1.1](https://github.com/aws/aws-k8s-tester/releases/tag/v1.1.1) (2020-04-28)
+## [v1.1.1](https://github.com/aws/aws-k8s-tester/releases/tag/v1.1.1) (2020-04-29)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.0...v1.1.1).
 
@@ -27,6 +14,9 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.0...v1.1.1
 - Fix [`eks/csi-ebs` `ebs-plugin` log fetch](https://github.com/aws/aws-k8s-tester/commit/ccaf87bbd6c3dc281f33e9fd52d058406bd7cb12).
 - Improve [`eks/helm` `QueryFunc` output](https://github.com/aws/aws-k8s-tester/commit/ccaf87bbd6c3dc281f33e9fd52d058406bd7cb12).
 - Improve [`eks/gpu` `nvidia-device-plugin-daemonset` logs](https://github.com/aws/aws-k8s-tester/commit/a66de07db067e6e2ee56749c522f841f65fa6c64).
+- Add [health check after load testing](https://github.com/aws/aws-k8s-tester/commit/f6bea5e350a665dff4f628720adc8e564e2b6670).
+- Clean up [`eks/gpu` `kubectl` outputs](https://github.com/aws/aws-k8s-tester/commit/0d99ab95c6ae3e645a5dffd8e8934f33c1592437).
+- Improve [`eks/csi-ebs` `app=ebs-csi-node` debugging outputs](https://github.com/aws/aws-k8s-tester/commit/aac285d62a6570007ee502a37e784575ff81fb5f).
 
 ### Dependency
 
