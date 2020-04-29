@@ -25,7 +25,7 @@ import (
 
 const (
 	// DefaultClients is the default number of clients to create.
-	DefaultClients = 2
+	DefaultClients = 3
 	// DefaultClientQPS is the default client QPS.
 	DefaultClientQPS float32 = 5.0
 	// DefaultClientBurst is the default client burst.
