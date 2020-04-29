@@ -111,16 +111,6 @@ func (ts *tester) createHelmCSI() error {
 	}
 	getAllCmd := strings.Join(getAllArgs, " ")
 
-	logArgs := []string{
-		ts.cfg.EKSConfig.KubectlPath,
-		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
-		"--namespace=kube-system",
-		"logs",
-		"--selector=app=ebs-csi-node",
-		"--all-containers=true",
-	}
-	logsCmd := strings.Join(logArgs, " ")
-
 	descArgsDs := []string{
 		ts.cfg.EKSConfig.KubectlPath,
 		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
@@ -138,6 +128,26 @@ func (ts *tester) createHelmCSI() error {
 		"deployment.apps/ebs-csi-controller",
 	}
 	descCmdDp := strings.Join(descArgsDp, " ")
+
+	descArgsPods := []string{
+		ts.cfg.EKSConfig.KubectlPath,
+		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+		"--namespace=kube-system",
+		"describe",
+		"pods",
+		"--selector=app=ebs-csi-node",
+	}
+	descCmdPods := strings.Join(descArgsPods, " ")
+
+	logArgs := []string{
+		ts.cfg.EKSConfig.KubectlPath,
+		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+		"--namespace=kube-system",
+		"logs",
+		"--selector=app=ebs-csi-node",
+		"--all-containers=true",
+	}
+	logsCmd := strings.Join(logArgs, " ")
 
 	return helm.Install(helm.InstallConfig{
 		Logger:         ts.cfg.Logger,
@@ -163,21 +173,11 @@ func (ts *tester) createHelmCSI() error {
 			}
 
 			ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
-			output, err = exec.New().CommandContext(ctx, logArgs[0], logArgs[1:]...).CombinedOutput()
-			cancel()
-			out = strings.TrimSpace(string(output))
-			if err != nil {
-				ts.cfg.Logger.Warn("'kubectl logs' failed", zap.String("output", out), zap.Error(err))
-			} else {
-				fmt.Printf("\n\n'%s' output:\n\n%s\n\n", logsCmd, out)
-			}
-
-			ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 			output, err = exec.New().CommandContext(ctx, descArgsDs[0], descArgsDs[1:]...).CombinedOutput()
 			cancel()
 			out = strings.TrimSpace(string(output))
 			if err != nil {
-				ts.cfg.Logger.Warn("'kubectl describe' failed", zap.String("output", out), zap.Error(err))
+				ts.cfg.Logger.Warn("'kubectl describe daemonset' failed", zap.String("output", out), zap.Error(err))
 			} else {
 				fmt.Printf("\n\n'%s' output:\n\n%s\n\n", descCmdDs, out)
 			}
@@ -187,9 +187,29 @@ func (ts *tester) createHelmCSI() error {
 			cancel()
 			out = strings.TrimSpace(string(output))
 			if err != nil {
-				ts.cfg.Logger.Warn("'kubectl describe' failed", zap.String("output", out), zap.Error(err))
+				ts.cfg.Logger.Warn("'kubectl describe deployment' failed", zap.String("output", out), zap.Error(err))
 			} else {
 				fmt.Printf("\n\n'%s' output:\n\n%s\n\n", descCmdDp, out)
+			}
+
+			ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
+			output, err = exec.New().CommandContext(ctx, descArgsPods[0], descArgsPods[1:]...).CombinedOutput()
+			cancel()
+			out = strings.TrimSpace(string(output))
+			if err != nil {
+				ts.cfg.Logger.Warn("'kubectl describe pods' failed", zap.String("output", out), zap.Error(err))
+			} else {
+				fmt.Printf("\n\n'%s' output:\n\n%s\n\n", descCmdPods, out)
+			}
+
+			ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
+			output, err = exec.New().CommandContext(ctx, logArgs[0], logArgs[1:]...).CombinedOutput()
+			cancel()
+			out = strings.TrimSpace(string(output))
+			if err != nil {
+				ts.cfg.Logger.Warn("'kubectl logs' failed", zap.String("output", out), zap.Error(err))
+			} else {
+				fmt.Printf("\n\n'%s' output:\n\n%s\n\n", logsCmd, out)
 			}
 
 			println()

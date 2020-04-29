@@ -1062,6 +1062,8 @@ func (ts *tester) checkPod() error {
 		break
 	}
 
+	// TODO: fail if "sleepMsg" not found?
+
 	return ts.cfg.EKSConfig.Sync()
 }
 
