@@ -421,7 +421,7 @@ export KUBECTL="{{ .KubectlCommand }}"
 {{ end }}
 
 # sonobuoy commands
-go get -v -u github.com/heptio/sonobuoy
+go get -v -u github.com/vmware-tanzu/sonobuoy
 sonobuoy delete --wait --kubeconfig={{ .KubeConfigPath }}
 sonobuoy run --mode Quick --wait --kube-conformance-image gcr.io/heptio-images/kube-conformance:v{{ .Version }}.0 --kubeconfig={{ .KubeConfigPath }}
 sonobuoy delete --wait --kubeconfig={{ .KubeConfigPath }}
