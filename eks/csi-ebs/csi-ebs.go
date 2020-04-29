@@ -126,8 +126,7 @@ func (ts *tester) createHelmCSI() error {
 		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
 		"--namespace=kube-system",
 		"describe",
-		"ds",
-		"ebs-csi-node",
+		"daemonset.apps/ebs-csi-node",
 	}
 	descCmdDs := strings.Join(descArgsDs, " ")
 

@@ -11,11 +11,10 @@ import (
 
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/eksconfig"
+	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"go.uber.org/zap"
-	apps_v1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -55,6 +54,73 @@ type tester struct {
 	cfg Config
 }
 
+// https://github.com/NVIDIA/k8s-device-plugin/blob/master/nvidia-device-plugin.yml
+// https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/1.0.0-beta5/nvidia-device-plugin.yml
+const nvidiaDriverTemplate = `
+# Copyright (c) 2019, NVIDIA CORPORATION.  All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: nvidia-device-plugin-daemonset
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      name: nvidia-device-plugin-ds
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      # This annotation is deprecated. Kept here for backward compatibility
+      # See https://kubernetes.io/docs/tasks/administer-cluster/guaranteed-scheduling-critical-addon-pods/
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ""
+      labels:
+        name: nvidia-device-plugin-ds
+    spec:
+      tolerations:
+      # This toleration is deprecated. Kept here for backward compatibility
+      # See https://kubernetes.io/docs/tasks/administer-cluster/guaranteed-scheduling-critical-addon-pods/
+      - key: CriticalAddonsOnly
+        operator: Exists
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+      # Mark this pod as a critical add-on; when enabled, the critical add-on
+      # scheduler reserves resources for critical add-on pods so that they can
+      # be rescheduled after a failure.
+      # See https://kubernetes.io/docs/tasks/administer-cluster/guaranteed-scheduling-critical-addon-pods/
+      priorityClassName: "system-node-critical"
+      containers:
+      - image: nvidia/k8s-device-plugin:1.0.0-beta5
+        name: nvidia-device-plugin-ctr
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+        volumeMounts:
+          - name: device-plugin
+            mountPath: /var/lib/kubelet/device-plugins
+      volumes:
+        - name: device-plugin
+          hostPath:
+            path: /var/lib/kubelet/device-plugins
+
+`
+
 // https://github.com/NVIDIA/k8s-device-plugin/releases
 // https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
 // https://docs.aws.amazon.com/eks/latest/userguide/gpu-ami.html
@@ -67,6 +133,19 @@ func (ts *tester) InstallNvidiaDriver() (err error) {
 		return nil
 	}
 
+	fpath, err := fileutil.WriteTempFile([]byte(nvidiaDriverTemplate))
+	if err != nil {
+		return err
+	}
+	applyArgs := []string{
+		ts.cfg.EKSConfig.KubectlPath,
+		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+		"apply",
+		"-f",
+		fpath,
+	}
+	applyCmd := strings.Join(applyArgs, " ")
+
 	retryStart, waitDur := time.Now(), 3*time.Minute
 	for time.Now().Sub(retryStart) < waitDur {
 		select {
@@ -75,80 +154,19 @@ func (ts *tester) InstallNvidiaDriver() (err error) {
 			return nil
 		case <-time.After(5 * time.Second):
 		}
+
 		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-		_, err = ts.cfg.K8SClient.KubernetesClientSet().
-			AppsV1().
-			DaemonSets("kube-system").
-			Create(
-				ctx,
-				&apps_v1.DaemonSet{
-					TypeMeta: metav1.TypeMeta{
-						APIVersion: "apps/v1",
-						Kind:       "DaemonSet",
-					},
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "nvidia-device-plugin-daemonset",
-						Namespace: "kube-system",
-					},
-					Spec: apps_v1.DaemonSetSpec{
-						Selector: &metav1.LabelSelector{
-							MatchLabels: map[string]string{
-								"name": "nvidia-device-plugin-ds",
-							},
-						},
-						UpdateStrategy: apps_v1.DaemonSetUpdateStrategy{
-							Type: apps_v1.RollingUpdateDaemonSetStrategyType,
-						},
-						Template: v1.PodTemplateSpec{
-							ObjectMeta: metav1.ObjectMeta{
-								Labels: map[string]string{
-									"name": "nvidia-device-plugin-ds",
-								},
-							},
-							Spec: v1.PodSpec{
-								Tolerations: []v1.Toleration{
-									{
-										Key:      "nvidia.com/gpu",
-										Operator: v1.TolerationOpExists,
-										Effect:   v1.TaintEffectNoSchedule,
-									},
-								},
-								PriorityClassName: "system-node-critical",
-								Containers: []v1.Container{
-									{
-										Image: "nvidia/k8s-device-plugin:1.0.0-beta5",
-										Name:  "nvidia-device-plugin-ctr",
-										SecurityContext: &v1.SecurityContext{
-											AllowPrivilegeEscalation: aws.Bool(false),
-											Capabilities: &v1.Capabilities{
-												Drop: []v1.Capability{v1.Capability("ALL")},
-											},
-										},
-									},
-								},
-								Volumes: []v1.Volume{
-									{
-										Name: "device-plugin",
-										VolumeSource: v1.VolumeSource{
-											HostPath: &v1.HostPathVolumeSource{
-												Path: "/var/lib/kubelet/device-plugins",
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-				metav1.CreateOptions{},
-			)
+		output, err := exec.New().CommandContext(ctx, applyArgs[0], applyArgs[1:]...).CombinedOutput()
 		cancel()
+		out := strings.TrimSpace(string(output))
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to create nvidia GPU driver", zap.Error(err))
 			time.Sleep(5 * time.Second)
 			continue
 		}
+
 		ts.cfg.Logger.Info("created nvidia GPU driver")
+		fmt.Printf("\n\n'%s' output:\n\n%s\n\n", applyCmd, out)
 		break
 	}
 
