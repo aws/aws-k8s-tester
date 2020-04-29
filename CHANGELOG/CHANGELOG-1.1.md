@@ -9,7 +9,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.0...v1.1.1
 
 ### `eksconfig`
 
-- Reorder [`AddOnCSIEBS`](https://github.com/aws/aws-k8s-tester/commit/).
+- Reorder [`AddOnCSIEBS`](https://github.com/aws/aws-k8s-tester/commit/a6429ad9566427f6515ad6579f5ae619b31d19af).
 
 ### `eks`
 
@@ -24,7 +24,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.0...v1.1.1
 - Improve [`eks/helm` error message](https://github.com/aws/aws-k8s-tester/commit/89e7039ab99ea1377fc88fa0de38190533c21d74).
 - Add [`eks/helm.InstallConfig.LogFunc`](https://github.com/aws/aws-k8s-tester/commit/86c2867ac0e0f56010dba27b9bb64cb87ba4eed7).
 - Upload [artifacts to S3 after cluster creation](https://github.com/aws/aws-k8s-tester/commit/912da1f877424871df5b4f21e6217da6d619bae1).
-- Reorder [`eks/csi-ebs` installation](https://github.com/aws/aws-k8s-tester/commit/).
+- Reorder [`eks/csi-ebs` installation](https://github.com/aws/aws-k8s-tester/commit/a6429ad9566427f6515ad6579f5ae619b31d19af).
 
 ### `pkg/k8s-client`
 
