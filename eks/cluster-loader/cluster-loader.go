@@ -78,6 +78,10 @@ func (ts *tester) Create() error {
 	}
 
 	time.Sleep(10 * time.Second)
+
+	if err := ts.cfg.K8SClient.CheckHealth(); err != nil {
+		return err
+	}
 	return ts.cfg.EKSConfig.Sync()
 }
 
