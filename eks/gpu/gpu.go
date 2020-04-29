@@ -415,15 +415,23 @@ func (ts *tester) CreateNvidiaSMI() error {
 	case <-time.After(time.Minute):
 	}
 
-	descArgs := []string{
+	descDsArgs := []string{
+		ts.cfg.EKSConfig.KubectlPath,
+		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+		"--namespace=kube-system",
+		"describe",
+		"daemonset.apps/nvidia-device-plugin-daemonset",
+	}
+	descDsCmd := strings.Join(descDsArgs, " ")
+
+	descPoArgs := []string{
 		ts.cfg.EKSConfig.KubectlPath,
 		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
 		"--namespace=default",
 		"describe",
-		"po",
-		"nvidia-smi",
+		"pod/nvidia-smi",
 	}
-	descCmd := strings.Join(descArgs, " ")
+	descPoCmd := strings.Join(descPoArgs, " ")
 
 	logsArgs := []string{
 		ts.cfg.EKSConfig.KubectlPath,
@@ -442,15 +450,23 @@ func (ts *tester) CreateNvidiaSMI() error {
 			return errors.New("nvidia-smi check aborted")
 		case <-time.After(5 * time.Second):
 		}
-		ts.cfg.Logger.Info("querying nvidia-smi Pod")
+		ts.cfg.Logger.Info("querying nvidia-smi")
 
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-		out, err := exec.New().CommandContext(ctx, descArgs[0], descArgs[1:]...).CombinedOutput()
+		out, err := exec.New().CommandContext(ctx, descDsArgs[0], descDsArgs[1:]...).CombinedOutput()
 		cancel()
 		if err != nil {
-			ts.cfg.Logger.Warn("failed to kubectl describe", zap.Error(err))
+			ts.cfg.Logger.Warn("failed to kubectl describe daemonset.apps/nvidia-device-plugin-daemonset", zap.Error(err))
 		}
-		fmt.Printf("\n\n'%s' output:\n\n%s\n\n", descCmd, string(out))
+		fmt.Printf("\n\n'%s' output:\n\n%s\n\n", descDsCmd, string(out))
+
+		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
+		out, err = exec.New().CommandContext(ctx, descPoArgs[0], descPoArgs[1:]...).CombinedOutput()
+		cancel()
+		if err != nil {
+			ts.cfg.Logger.Warn("failed to kubectl describe pod/nvidia-smi", zap.Error(err))
+		}
+		fmt.Printf("\n\n'%s' output:\n\n%s\n\n", descPoCmd, string(out))
 
 		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 		out, err = exec.New().CommandContext(ctx, logsArgs[0], logsArgs[1:]...).CombinedOutput()
