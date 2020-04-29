@@ -3,6 +3,18 @@
 <hr>
 
 
+## [v1.1.2](https://github.com/aws/aws-k8s-tester/releases/tag/v1.1.2) (2020-04)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.1...v1.1.2).
+
+### `eks`
+
+- Add [health check after load testing](https://github.com/aws/aws-k8s-tester/commit/f6bea5e350a665dff4f628720adc8e564e2b6670).
+
+
+<hr>
+
+
 ## [v1.1.1](https://github.com/aws/aws-k8s-tester/releases/tag/v1.1.1) (2020-04-28)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.0...v1.1.1).
