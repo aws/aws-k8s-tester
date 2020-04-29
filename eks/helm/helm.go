@@ -244,7 +244,6 @@ func Install(cfg InstallConfig) (err error) {
 		cfg.Logger.Info("loaded chart via remote repo",
 			zap.String("namespace", cfg.Namespace),
 			zap.String("chart-repo", cfg.ChartRepoURL),
-			zap.String("chart-name", cfg.ChartName),
 			zap.String("release-name", cfg.ReleaseName),
 			zap.String("chart-path", chartPath),
 			zap.String("chart-full-path", chart.ChartFullPath()),
