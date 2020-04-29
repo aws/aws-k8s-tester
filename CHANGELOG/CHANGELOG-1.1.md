@@ -9,9 +9,9 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.0...v1.1.1
 
 ### `eks`
 
-- Fix [`nvidia-smi` Pod tests](https://github.com/aws/aws-k8s-tester/commit/).
-- Fix [`eks/csi-ebs` `ebs-plugin` log fetch](https://github.com/aws/aws-k8s-tester/commit/).
-- Improve [`eks/helm` `QueryFunc` output](https://github.com/aws/aws-k8s-tester/commit/).
+- Fix [`nvidia-smi` Pod tests](https://github.com/aws/aws-k8s-tester/commit/ccaf87bbd6c3dc281f33e9fd52d058406bd7cb12).
+- Fix [`eks/csi-ebs` `ebs-plugin` log fetch](https://github.com/aws/aws-k8s-tester/commit/ccaf87bbd6c3dc281f33e9fd52d058406bd7cb12).
+- Improve [`eks/helm` `QueryFunc` output](https://github.com/aws/aws-k8s-tester/commit/ccaf87bbd6c3dc281f33e9fd52d058406bd7cb12).
 
 ### Dependency
 
