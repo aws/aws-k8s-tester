@@ -10,7 +10,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.1...v1.1.2
 ### `eks`
 
 - Add [health check after load testing](https://github.com/aws/aws-k8s-tester/commit/f6bea5e350a665dff4f628720adc8e564e2b6670).
-- Clean up [`eks/gpu` `kubectl` outputs](https://github.com/aws/aws-k8s-tester/commit/).
+- Clean up [`eks/gpu` `kubectl` outputs](https://github.com/aws/aws-k8s-tester/commit/0d99ab95c6ae3e645a5dffd8e8934f33c1592437).
 
 
 <hr>
