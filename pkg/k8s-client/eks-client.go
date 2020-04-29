@@ -351,7 +351,7 @@ type ServerVersionInfo struct {
 }
 
 func (sv ServerVersionInfo) String() string {
-	d, err := json.Marshal(sv)
+	d, err := json.MarshalIndent(sv, "", "    ")
 	if err != nil {
 		return sv.GitVersion
 	}
@@ -517,6 +517,12 @@ func (e *eks) checkHealth() error {
 		return fmt.Errorf("'kubectl version' failed %v (output %q)", err, out)
 	}
 	fmt.Printf("\n\"kubectl version\" output:\n%s\n\n", out)
+
+	vf, err := e.fetchServerVersion()
+	if err != nil {
+		return fmt.Errorf("fetch version info failed %v", err)
+	}
+	fmt.Printf("\n\"kubectl version\" info output:\n%s\n\n", vf.String())
 
 	ep := e.cfg.ClusterAPIServerEndpoint + "/version"
 	output, err = httputil.ReadInsecure(e.cfg.Logger, os.Stderr, ep)
