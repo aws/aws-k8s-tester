@@ -379,7 +379,7 @@ func (cfg *Config) KubectlCommands() (s string) {
 	if err := tpl.Execute(buf, struct {
 		KubeConfigPath                         string
 		KubectlCommand                         string
-		Version                                string
+		Version string 
 		KubernetesDashboardEnabled             bool
 		KubernetesDashboardURL                 string
 		KubernetesDashboardAuthenticationToken string
@@ -396,7 +396,9 @@ func (cfg *Config) KubectlCommands() (s string) {
 	return buf.String()
 }
 
-const kubectlTmpl = `# kubectl commands
+const kubectlTmpl = `
+###########################
+# kubectl commands
 export KUBECONFIG={{ .KubeConfigPath }}
 export KUBECTL="{{ .KubectlCommand }}"
 
@@ -409,8 +411,9 @@ export KUBECTL="{{ .KubectlCommand }}"
 {{ .KubectlCommand }} get csr -o=yaml
 {{ .KubectlCommand }} get nodes --show-labels -o=wide
 {{ .KubectlCommand }} get nodes -o=wide
-
+###########################
 {{ if .KubernetesDashboardEnabled }}
+###########################
 {{ .KubectlCommand }} proxy
 
 # Kubernetes Dashboard URL:
@@ -418,18 +421,35 @@ export KUBECTL="{{ .KubectlCommand }}"
 
 # Kubernetes Dashboard Authentication Token:
 {{ .KubernetesDashboardAuthenticationToken }}
+###########################
 {{ end }}
 
+###########################
 # sonobuoy commands
-go get -v -u github.com/vmware-tanzu/sonobuoy
-sonobuoy delete --wait --kubeconfig={{ .KubeConfigPath }}
-sonobuoy run --mode Quick --wait --kube-conformance-image gcr.io/heptio-images/kube-conformance:v{{ .Version }}.0 --kubeconfig={{ .KubeConfigPath }}
-sonobuoy delete --wait --kubeconfig={{ .KubeConfigPath }}
-sonobuoy run --wait --kube-conformance-image gcr.io/heptio-images/kube-conformance:v{{ .Version }}.0 --kubeconfig={{ .KubeConfigPath }}
-sonobuoy status --kubeconfig={{ .KubeConfigPath }}
-results=$(sonobuoy retrieve --kubeconfig={{ .KubeConfigPath }})
-sonobuoy e2e --kubeconfig={{ .KubeConfigPath }} $results --show all
-sonobuoy e2e --kubeconfig={{ .KubeConfigPath }} $results
+# https://github.com/vmware-tanzu/sonobuoy
+# https://github.com/cncf/k8s-conformance/blob/master/instructions.md
+rm -f /tmp/sonobuoy.tar.gz
+rm -f /tmp/sonobuoy
+curl -L https://github.com/vmware-tanzu/sonobuoy/releases/download/v0.18.1/sonobuoy_0.18.1_linux_amd64.tar.gz -o /tmp/sonobuoy.tar.gz
+tar xzvf /tmp/sonobuoy.tar.gz -C /tmp/
+/tmp/sonobuoy -h
+/tmp/sonobuoy delete --wait --kubeconfig={{ .KubeConfigPath }}
+
+/tmp/sonobuoy run \
+  --mode=certified-conformance \
+  --kubeconfig={{ .KubeConfigPath }} \
+  --kube-conformance-image gcr.io/google-containers/conformance:v{{ .Version }}.0
+
+/tmp/sonobuoy status --kubeconfig={{ .KubeConfigPath }}
+/tmp/sonobuoy logs -f --kubeconfig={{ .KubeConfigPath }}
+/tmp/sonobuoy results --kubeconfig={{ .KubeConfigPath }}
+
+SONOBUOY_OUTPUT=$(/tmp/sonobuoy retrieve --kubeconfig={{ .KubeConfigPath }})
+mkdir -p /tmp/results
+tar xzf $SONOBUOY_OUTPUT -C /tmp/results
+find /tmp/results
+###########################
+
 `
 
 // SSHCommands returns the SSH commands.
