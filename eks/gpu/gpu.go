@@ -455,23 +455,25 @@ func (ts *tester) CreateNvidiaSMI() error {
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		out, err := exec.New().CommandContext(ctx, descDsArgs[0], descDsArgs[1:]...).CombinedOutput()
 		cancel()
+		output := strings.TrimSpace(string(out))
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to kubectl describe daemonset.apps/nvidia-device-plugin-daemonset", zap.Error(err))
 		}
-		fmt.Printf("\n\n'%s' output:\n\n%s\n\n", descDsCmd, string(out))
+		fmt.Printf("\n\n'%s' output:\n\n%s\n\n", descDsCmd, output)
 
 		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 		out, err = exec.New().CommandContext(ctx, descPoArgs[0], descPoArgs[1:]...).CombinedOutput()
 		cancel()
+		output = strings.TrimSpace(string(out))
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to kubectl describe pod/nvidia-smi", zap.Error(err))
 		}
-		fmt.Printf("\n\n'%s' output:\n\n%s\n\n", descPoCmd, string(out))
+		fmt.Printf("\n\n'%s' output:\n\n%s\n\n", descPoCmd, output)
 
 		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 		out, err = exec.New().CommandContext(ctx, logsArgs[0], logsArgs[1:]...).CombinedOutput()
 		cancel()
-		output := string(out)
+		output = strings.TrimSpace(string(out))
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to kubectl logs", zap.Error(err))
 		}
