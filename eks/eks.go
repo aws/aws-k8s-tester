@@ -980,6 +980,11 @@ func (ts *Tester) Up() (err error) {
 	ts.lg.Sugar().Infof("kubectl (%s)", ts.cfg.ConfigPath)
 	fmt.Println(ts.cfg.KubectlCommands())
 
+	fmt.Printf("\n*********************************\n")
+	if serr := ts.uploadToS3(); serr != nil {
+		ts.lg.Warn("failed to upload artifacts to S3", zap.Error(serr))
+	}
+
 	if ts.cfg.IsEnabledAddOnNLBHelloWorld() {
 		if ts.nlbHelloWorldTester == nil {
 			return errors.New("ts.nlbHelloWorldTester == nil when AddOnNLBHelloWorld.Enable == true")
