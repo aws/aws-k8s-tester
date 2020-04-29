@@ -122,6 +122,7 @@ type InstallConfig struct {
 	ReleaseName    string
 	Values         map[string]interface{}
 
+	LogFunc       action.DebugLog
 	QueryFunc     func()
 	QueryInterval time.Duration
 }
@@ -145,14 +146,18 @@ func Install(cfg InstallConfig) (err error) {
 	cfgFlags.KubeConfig = &cfg.KubeConfigPath
 	cfgFlags.Namespace = &cfg.Namespace
 
+	logFunc := func(format string, v ...interface{}) {
+		cfg.Logger.Info(fmt.Sprintf("[install] "+format, v...))
+	}
+	if cfg.LogFunc != nil {
+		logFunc = cfg.LogFunc
+	}
 	act := new(action.Configuration)
 	if err := act.Init(
 		cfgFlags,
 		cfg.Namespace,
 		"secrets",
-		func(format string, v ...interface{}) {
-			cfg.Logger.Info(fmt.Sprintf("[install] "+format, v...))
-		},
+		logFunc,
 	); err != nil {
 		return err
 	}

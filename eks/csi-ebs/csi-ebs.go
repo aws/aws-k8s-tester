@@ -159,6 +159,11 @@ func (ts *tester) createHelmCSI() error {
 		ChartName:      chartName,
 		ReleaseName:    chartName,
 		Values:         values,
+		LogFunc: func(format string, v ...interface{}) {
+			println()
+			ts.cfg.Logger.Info(fmt.Sprintf("[install] "+format, v...))
+			println()
+		},
 		QueryFunc: func() {
 			println()
 
