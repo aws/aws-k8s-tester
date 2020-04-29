@@ -19,6 +19,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.0...v1.1.1
 - Improve [`eks/csi-ebs` `app=ebs-csi-node` debugging outputs](https://github.com/aws/aws-k8s-tester/commit/aac285d62a6570007ee502a37e784575ff81fb5f).
 - Improve [`eks/helm` error message](https://github.com/aws/aws-k8s-tester/89e7039ab99ea1377fc88fa0de38190533c21d74).
 - Add [`eks/helm.InstallConfig.LogFunc`](https://github.com/aws/aws-k8s-tester/86c2867ac0e0f56010dba27b9bb64cb87ba4eed7).
+- Upload [artifacts to S3 after cluster creation](https://github.com/aws/aws-k8s-tester/912da1f877424871df5b4f21e6217da6d619bae1).
 
 ### Dependency
 
