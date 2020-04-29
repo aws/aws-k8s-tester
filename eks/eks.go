@@ -106,6 +106,7 @@ type Tester struct {
 	ngTester                  ng.Tester
 	mngTester                 mng.Tester
 	gpuTester                 gpu.Tester
+	csiEBSTester              csi_ebs.Tester
 	nlbHelloWorldTester       alb.Tester
 	alb2048Tester             alb.Tester
 	jobsPiTester              jobs_pi.Tester
@@ -119,7 +120,6 @@ type Tester struct {
 	irsaFargateTester         irsa_fargate.Tester
 	appMeshTester             app_mesh.Tester
 	kubernetesDashboardTester kubernetes_dashboard.Tester
-	csiEBSTester              csi_ebs.Tester
 	prometheusGrafanaTester   prometheus_grafana.Tester
 	wordPressTester           wordpress.Tester
 	jupyterHubTester          jupyter_hub.Tester
@@ -355,50 +355,66 @@ func (ts *Tester) createSubTesters() (err error) {
 	fmt.Printf("\n*********************************\n")
 	fmt.Printf("createSubTesters (%q)\n", ts.cfg.ConfigPath)
 
-	ts.lg.Info("creating ngTester")
-	ts.ngTester, err = ng.New(ng.Config{
-		Logger:    ts.lg,
-		Stopc:     ts.stopCreationCh,
-		EKSConfig: ts.cfg,
-		K8SClient: ts.k8sClient,
-		IAMAPI:    ts.iamAPI,
-		CFNAPI:    ts.cfnAPI,
-		EC2API:    ts.ec2API,
-		ASGAPI:    ts.asgAPI,
-		EKSAPI:    ts.eksAPI,
-		SSMAPI:    ts.ssmAPI,
-		S3API:     ts.s3API,
-	})
-	if err != nil {
-		return err
+	if ts.cfg.IsEnabledAddOnNodeGroups() {
+		ts.lg.Info("creating ngTester")
+		ts.ngTester, err = ng.New(ng.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			EKSConfig: ts.cfg,
+			K8SClient: ts.k8sClient,
+			IAMAPI:    ts.iamAPI,
+			CFNAPI:    ts.cfnAPI,
+			EC2API:    ts.ec2API,
+			ASGAPI:    ts.asgAPI,
+			EKSAPI:    ts.eksAPI,
+			SSMAPI:    ts.ssmAPI,
+			S3API:     ts.s3API,
+		})
+		if err != nil {
+			return err
+		}
 	}
 
-	ts.lg.Info("creating mngTester")
-	ts.mngTester, err = mng.New(mng.Config{
-		Logger:    ts.lg,
-		Stopc:     ts.stopCreationCh,
-		EKSConfig: ts.cfg,
-		K8SClient: ts.k8sClient,
-		IAMAPI:    ts.iamAPI,
-		CFNAPI:    ts.cfnAPI,
-		EC2API:    ts.ec2API,
-		ASGAPI:    ts.asgAPI,
-		EKSAPI:    ts.eksAPI,
-		S3API:     ts.s3API,
-	})
-	if err != nil {
-		return err
+	if ts.cfg.IsEnabledAddOnManagedNodeGroups() {
+		ts.lg.Info("creating mngTester")
+		ts.mngTester, err = mng.New(mng.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			EKSConfig: ts.cfg,
+			K8SClient: ts.k8sClient,
+			IAMAPI:    ts.iamAPI,
+			CFNAPI:    ts.cfnAPI,
+			EC2API:    ts.ec2API,
+			ASGAPI:    ts.asgAPI,
+			EKSAPI:    ts.eksAPI,
+			S3API:     ts.s3API,
+		})
+		if err != nil {
+			return err
+		}
 	}
 
-	ts.lg.Info("creating gpuTester")
-	ts.gpuTester, err = gpu.New(gpu.Config{
-		Logger:    ts.lg,
-		Stopc:     ts.stopCreationCh,
-		EKSConfig: ts.cfg,
-		K8SClient: ts.k8sClient,
-	})
-	if err != nil {
-		return err
+	if ts.cfg.IsEnabledAddOnNodeGroups() || ts.cfg.IsEnabledAddOnManagedNodeGroups() {
+		ts.lg.Info("creating gpuTester")
+		ts.gpuTester, err = gpu.New(gpu.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			EKSConfig: ts.cfg,
+			K8SClient: ts.k8sClient,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	if ts.cfg.IsEnabledAddOnCSIEBS() {
+		ts.lg.Info("creating csiEBSTester")
+		ts.csiEBSTester, err = csi_ebs.NewTester(csi_ebs.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			EKSConfig: ts.cfg,
+			K8SClient: ts.k8sClient,
+		})
 	}
 
 	if ts.cfg.IsEnabledAddOnNLBHelloWorld() {
@@ -472,19 +488,6 @@ func (ts *Tester) createSubTesters() (err error) {
 	if ts.cfg.IsEnabledAddOnCSRs() {
 		ts.lg.Info("creating csrsTester")
 		ts.csrsTester, err = csrs.New(csrs.Config{
-			Logger:    ts.lg,
-			Stopc:     ts.stopCreationCh,
-			EKSConfig: ts.cfg,
-			K8SClient: ts.k8sClient,
-		})
-		if err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnConfigMaps() {
-		ts.lg.Info("creating configMapsTester")
-		ts.configMapsTester, err = configmaps.New(configmaps.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
@@ -584,16 +587,6 @@ func (ts *Tester) createSubTesters() (err error) {
 	if ts.cfg.IsEnabledAddOnKubernetesDashboard() {
 		ts.lg.Info("creating kubernetesDashboardTester")
 		ts.kubernetesDashboardTester, err = kubernetes_dashboard.NewTester(kubernetes_dashboard.Config{
-			Logger:    ts.lg,
-			Stopc:     ts.stopCreationCh,
-			EKSConfig: ts.cfg,
-			K8SClient: ts.k8sClient,
-		})
-	}
-
-	if ts.cfg.IsEnabledAddOnCSIEBS() {
-		ts.lg.Info("creating csiEBSTester")
-		ts.csiEBSTester, err = csi_ebs.NewTester(csi_ebs.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
@@ -839,7 +832,7 @@ func (ts *Tester) Up() (err error) {
 		return err
 	}
 
-	waitDur := time.Minute
+	waitDur := 30 * time.Second
 	ts.lg.Info("waiting before running health check", zap.Duration("wait", waitDur))
 	time.Sleep(waitDur)
 
@@ -956,6 +949,23 @@ func (ts *Tester) Up() (err error) {
 			ts.gpuTester.CreateNvidiaSMI,
 		); err != nil {
 			ts.lg.Warn("failed to create nvidia-smi", zap.Error(err))
+			return err
+		}
+	}
+
+	if ts.cfg.IsEnabledAddOnCSIEBS() {
+		if ts.csiEBSTester == nil {
+			return errors.New("ts.csiEBSTester == nil when AddOnCSIEBS.Enable == true")
+		}
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("csiEBSTester.Create (%q, \"%s --namespace=kube-system get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.interruptSig,
+			ts.csiEBSTester.Create,
+		); err != nil {
 			return err
 		}
 	}
@@ -1201,23 +1211,6 @@ func (ts *Tester) Up() (err error) {
 			ts.stopCreationChOnce,
 			ts.interruptSig,
 			ts.kubernetesDashboardTester.Create,
-		); err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnCSIEBS() {
-		if ts.csiEBSTester == nil {
-			return errors.New("ts.csiEBSTester == nil when AddOnCSIEBS.Enable == true")
-		}
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("csiEBSTester.Create (%q, \"%s --namespace=kube-system get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.interruptSig,
-			ts.csiEBSTester.Create,
 		); err != nil {
 			return err
 		}
@@ -1475,208 +1468,206 @@ func (ts *Tester) down() (err error) {
 		errs = append(errs, err.Error())
 	}
 
-	if ts.cfg.IsEnabledAddOnNodeGroups() || ts.cfg.IsEnabledAddOnManagedNodeGroups() {
-		if ts.cfg.IsEnabledAddOnClusterLoader() && ts.cfg.AddOnClusterLoader.Created {
-			fmt.Printf("\n*********************************\n")
-			fmt.Printf("clusterLoaderTester.Delete (%q)\n", ts.cfg.ConfigPath)
-			if err := ts.clusterLoaderTester.Delete(); err != nil {
-				ts.lg.Warn("clusterLoaderTester.Delete failed", zap.Error(err))
-				errs = append(errs, err.Error())
-			} else {
-				waitDur := 20 * time.Second
-				ts.lg.Info("sleeping after deleting clusterLoaderTester", zap.Duration("wait", waitDur))
-				time.Sleep(waitDur)
-			}
+	if ts.cfg.IsEnabledAddOnClusterLoader() && ts.cfg.AddOnClusterLoader.Created {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("clusterLoaderTester.Delete (%q)\n", ts.cfg.ConfigPath)
+		if err := ts.clusterLoaderTester.Delete(); err != nil {
+			ts.lg.Warn("clusterLoaderTester.Delete failed", zap.Error(err))
+			errs = append(errs, err.Error())
+		} else {
+			waitDur := 20 * time.Second
+			ts.lg.Info("sleeping after deleting clusterLoaderTester", zap.Duration("wait", waitDur))
+			time.Sleep(waitDur)
 		}
+	}
 
-		if ts.cfg.IsEnabledAddOnKubeflow() && ts.cfg.AddOnKubeflow.Created {
-			fmt.Printf("\n*********************************\n")
-			fmt.Printf("kubeflowTester.Delete (%q)\n", ts.cfg.ConfigPath)
-			if err := ts.kubeflowTester.Delete(); err != nil {
-				ts.lg.Warn("kubeflowTester.Delete failed", zap.Error(err))
-				errs = append(errs, err.Error())
-			} else {
-				waitDur := 20 * time.Second
-				ts.lg.Info("sleeping after deleting kubeflowTester", zap.Duration("wait", waitDur))
-				time.Sleep(waitDur)
-			}
+	if ts.cfg.IsEnabledAddOnKubeflow() && ts.cfg.AddOnKubeflow.Created {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("kubeflowTester.Delete (%q)\n", ts.cfg.ConfigPath)
+		if err := ts.kubeflowTester.Delete(); err != nil {
+			ts.lg.Warn("kubeflowTester.Delete failed", zap.Error(err))
+			errs = append(errs, err.Error())
+		} else {
+			waitDur := 20 * time.Second
+			ts.lg.Info("sleeping after deleting kubeflowTester", zap.Duration("wait", waitDur))
+			time.Sleep(waitDur)
 		}
+	}
 
-		if ts.cfg.IsEnabledAddOnJupyterHub() && ts.cfg.AddOnJupyterHub.Created {
-			fmt.Printf("\n*********************************\n")
-			fmt.Printf("jupyterHubTester.Delete (%q)\n", ts.cfg.ConfigPath)
-			if err := ts.jupyterHubTester.Delete(); err != nil {
-				ts.lg.Warn("jupyterHubTester.Delete failed", zap.Error(err))
-				errs = append(errs, err.Error())
-			} else {
-				waitDur := 20 * time.Second
-				ts.lg.Info("sleeping after deleting jupyterHubTester", zap.Duration("wait", waitDur))
-				time.Sleep(waitDur)
-			}
+	if ts.cfg.IsEnabledAddOnJupyterHub() && ts.cfg.AddOnJupyterHub.Created {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("jupyterHubTester.Delete (%q)\n", ts.cfg.ConfigPath)
+		if err := ts.jupyterHubTester.Delete(); err != nil {
+			ts.lg.Warn("jupyterHubTester.Delete failed", zap.Error(err))
+			errs = append(errs, err.Error())
+		} else {
+			waitDur := 20 * time.Second
+			ts.lg.Info("sleeping after deleting jupyterHubTester", zap.Duration("wait", waitDur))
+			time.Sleep(waitDur)
 		}
+	}
 
-		if ts.cfg.IsEnabledAddOnWordpress() && ts.cfg.AddOnWordpress.Created {
-			fmt.Printf("\n*********************************\n")
-			fmt.Printf("wordPressTester.Delete (%q)\n", ts.cfg.ConfigPath)
-			if err := ts.wordPressTester.Delete(); err != nil {
-				ts.lg.Warn("wordPressTester.Delete failed", zap.Error(err))
-				errs = append(errs, err.Error())
-			} else {
-				waitDur := 20 * time.Second
-				ts.lg.Info("sleeping after deleting wordPressTester", zap.Duration("wait", waitDur))
-				time.Sleep(waitDur)
-			}
+	if ts.cfg.IsEnabledAddOnWordpress() && ts.cfg.AddOnWordpress.Created {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("wordPressTester.Delete (%q)\n", ts.cfg.ConfigPath)
+		if err := ts.wordPressTester.Delete(); err != nil {
+			ts.lg.Warn("wordPressTester.Delete failed", zap.Error(err))
+			errs = append(errs, err.Error())
+		} else {
+			waitDur := 20 * time.Second
+			ts.lg.Info("sleeping after deleting wordPressTester", zap.Duration("wait", waitDur))
+			time.Sleep(waitDur)
 		}
+	}
 
-		if ts.cfg.IsEnabledAddOnPrometheusGrafana() && ts.cfg.AddOnPrometheusGrafana.Created {
-			fmt.Printf("\n*********************************\n")
-			fmt.Printf("prometheusGrafanaTester.Delete (%q)\n", ts.cfg.ConfigPath)
-			if err := ts.prometheusGrafanaTester.Delete(); err != nil {
-				ts.lg.Warn("prometheusGrafanaTester.Delete failed", zap.Error(err))
-				errs = append(errs, err.Error())
-			} else {
-				waitDur := 20 * time.Second
-				ts.lg.Info("sleeping after deleting prometheusGrafanaTester", zap.Duration("wait", waitDur))
-				time.Sleep(waitDur)
-			}
+	if ts.cfg.IsEnabledAddOnPrometheusGrafana() && ts.cfg.AddOnPrometheusGrafana.Created {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("prometheusGrafanaTester.Delete (%q)\n", ts.cfg.ConfigPath)
+		if err := ts.prometheusGrafanaTester.Delete(); err != nil {
+			ts.lg.Warn("prometheusGrafanaTester.Delete failed", zap.Error(err))
+			errs = append(errs, err.Error())
+		} else {
+			waitDur := 20 * time.Second
+			ts.lg.Info("sleeping after deleting prometheusGrafanaTester", zap.Duration("wait", waitDur))
+			time.Sleep(waitDur)
 		}
+	}
 
-		if ts.cfg.IsEnabledAddOnCSIEBS() && ts.cfg.AddOnCSIEBS.Created {
-			fmt.Printf("\n*********************************\n")
-			fmt.Printf("csiEBSTester.Delete (%q)\n", ts.cfg.ConfigPath)
-			if err := ts.csiEBSTester.Delete(); err != nil {
-				ts.lg.Warn("csiEBSTester.Delete failed", zap.Error(err))
-				errs = append(errs, err.Error())
-			} else {
-				waitDur := 20 * time.Second
-				ts.lg.Info("sleeping after deleting csiEBSTester", zap.Duration("wait", waitDur))
-				time.Sleep(waitDur)
-			}
+	if ts.cfg.IsEnabledAddOnKubernetesDashboard() && ts.cfg.AddOnKubernetesDashboard.Created {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("kubernetesDashboardTester.Delete (%q)\n", ts.cfg.ConfigPath)
+		if err := ts.kubernetesDashboardTester.Delete(); err != nil {
+			ts.lg.Warn("kubernetesDashboardTester.Delete failed", zap.Error(err))
+			errs = append(errs, err.Error())
 		}
+	}
 
-		if ts.cfg.IsEnabledAddOnKubernetesDashboard() && ts.cfg.AddOnKubernetesDashboard.Created {
-			fmt.Printf("\n*********************************\n")
-			fmt.Printf("kubernetesDashboardTester.Delete (%q)\n", ts.cfg.ConfigPath)
-			if err := ts.kubernetesDashboardTester.Delete(); err != nil {
-				ts.lg.Warn("kubernetesDashboardTester.Delete failed", zap.Error(err))
-				errs = append(errs, err.Error())
-			}
+	if ts.cfg.IsEnabledAddOnAppMesh() && ts.cfg.AddOnAppMesh.Created {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("appMeshTester.Delete (%q)\n", ts.cfg.ConfigPath)
+		if err := ts.appMeshTester.Delete(); err != nil {
+			ts.lg.Warn("appMeshTester.Delete failed", zap.Error(err))
+			errs = append(errs, err.Error())
 		}
+	}
 
-		if ts.cfg.IsEnabledAddOnAppMesh() && ts.cfg.AddOnAppMesh.Created {
-			fmt.Printf("\n*********************************\n")
-			fmt.Printf("appMeshTester.Delete (%q)\n", ts.cfg.ConfigPath)
-			if err := ts.appMeshTester.Delete(); err != nil {
-				ts.lg.Warn("appMeshTester.Delete failed", zap.Error(err))
-				errs = append(errs, err.Error())
-			}
+	if ts.cfg.IsEnabledAddOnIRSAFargate() && ts.cfg.AddOnIRSAFargate.Created {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("irsaFargateTester.Delete (%q)\n", ts.cfg.ConfigPath)
+		if err := ts.irsaFargateTester.Delete(); err != nil {
+			ts.lg.Warn("irsaFargateTester.Delete failed", zap.Error(err))
+			errs = append(errs, err.Error())
 		}
+	}
 
-		if ts.cfg.IsEnabledAddOnIRSAFargate() && ts.cfg.AddOnIRSAFargate.Created {
-			fmt.Printf("\n*********************************\n")
-			fmt.Printf("irsaFargateTester.Delete (%q)\n", ts.cfg.ConfigPath)
-			if err := ts.irsaFargateTester.Delete(); err != nil {
-				ts.lg.Warn("irsaFargateTester.Delete failed", zap.Error(err))
-				errs = append(errs, err.Error())
-			}
+	if ts.cfg.IsEnabledAddOnFargate() && ts.cfg.AddOnFargate.Created {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("fargateTester.Delete (%q)\n", ts.cfg.ConfigPath)
+		if err := ts.fargateTester.Delete(); err != nil {
+			ts.lg.Warn("fargateTester.Delete failed", zap.Error(err))
+			errs = append(errs, err.Error())
 		}
+	}
 
-		if ts.cfg.IsEnabledAddOnFargate() && ts.cfg.AddOnFargate.Created {
-			fmt.Printf("\n*********************************\n")
-			fmt.Printf("fargateTester.Delete (%q)\n", ts.cfg.ConfigPath)
-			if err := ts.fargateTester.Delete(); err != nil {
-				ts.lg.Warn("fargateTester.Delete failed", zap.Error(err))
-				errs = append(errs, err.Error())
-			}
+	if ts.cfg.IsEnabledAddOnIRSA() && ts.cfg.AddOnIRSA.Created {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("irsaTester.Delete (%q)\n", ts.cfg.ConfigPath)
+		if err := ts.irsaTester.Delete(); err != nil {
+			ts.lg.Warn("irsaTester.Delete failed", zap.Error(err))
+			errs = append(errs, err.Error())
 		}
+	}
 
-		if ts.cfg.IsEnabledAddOnIRSA() && ts.cfg.AddOnIRSA.Created {
-			fmt.Printf("\n*********************************\n")
-			fmt.Printf("irsaTester.Delete (%q)\n", ts.cfg.ConfigPath)
-			if err := ts.irsaTester.Delete(); err != nil {
-				ts.lg.Warn("irsaTester.Delete failed", zap.Error(err))
-				errs = append(errs, err.Error())
-			}
+	if ts.cfg.IsEnabledAddOnSecrets() && ts.cfg.AddOnSecrets.Created {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("secretsTester.Delete (%q)\n", ts.cfg.ConfigPath)
+		if err := ts.secretsTester.Delete(); err != nil {
+			ts.lg.Warn("secretsTester.Delete failed", zap.Error(err))
+			errs = append(errs, err.Error())
 		}
+	}
 
-		if ts.cfg.IsEnabledAddOnSecrets() && ts.cfg.AddOnSecrets.Created {
-			fmt.Printf("\n*********************************\n")
-			fmt.Printf("secretsTester.Delete (%q)\n", ts.cfg.ConfigPath)
-			if err := ts.secretsTester.Delete(); err != nil {
-				ts.lg.Warn("secretsTester.Delete failed", zap.Error(err))
-				errs = append(errs, err.Error())
-			}
+	if ts.cfg.IsEnabledAddOnConfigMaps() && ts.cfg.AddOnConfigMaps.Created {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("configMapsTester.Delete (%q)\n", ts.cfg.ConfigPath)
+		if err := ts.configMapsTester.Delete(); err != nil {
+			ts.lg.Warn("configMapsTester.Delete failed", zap.Error(err))
+			errs = append(errs, err.Error())
 		}
+	}
 
-		if ts.cfg.IsEnabledAddOnConfigMaps() && ts.cfg.AddOnConfigMaps.Created {
-			fmt.Printf("\n*********************************\n")
-			fmt.Printf("configMapsTester.Delete (%q)\n", ts.cfg.ConfigPath)
-			if err := ts.configMapsTester.Delete(); err != nil {
-				ts.lg.Warn("configMapsTester.Delete failed", zap.Error(err))
-				errs = append(errs, err.Error())
-			}
+	if ts.cfg.IsEnabledAddOnCSRs() && ts.cfg.AddOnCSRs.Created {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("csrsTester.Delete (%q)\n", ts.cfg.ConfigPath)
+		if err := ts.csrsTester.Delete(); err != nil {
+			ts.lg.Warn("csrsTester.Delete failed", zap.Error(err))
+			errs = append(errs, err.Error())
 		}
+	}
 
-		if ts.cfg.IsEnabledAddOnCSRs() && ts.cfg.AddOnCSRs.Created {
-			fmt.Printf("\n*********************************\n")
-			fmt.Printf("csrsTester.Delete (%q)\n", ts.cfg.ConfigPath)
-			if err := ts.csrsTester.Delete(); err != nil {
-				ts.lg.Warn("csrsTester.Delete failed", zap.Error(err))
-				errs = append(errs, err.Error())
-			}
+	if ts.cfg.IsEnabledAddOnCronJobs() && ts.cfg.AddOnCronJobs.Created {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("cronJobsTester.Delete (%q)\n", ts.cfg.ConfigPath)
+		if err := ts.cronJobsTester.Delete(); err != nil {
+			ts.lg.Warn("cronJobsTester.Delete failed", zap.Error(err))
+			errs = append(errs, err.Error())
 		}
+	}
 
-		if ts.cfg.IsEnabledAddOnCronJobs() && ts.cfg.AddOnCronJobs.Created {
-			fmt.Printf("\n*********************************\n")
-			fmt.Printf("cronJobsTester.Delete (%q)\n", ts.cfg.ConfigPath)
-			if err := ts.cronJobsTester.Delete(); err != nil {
-				ts.lg.Warn("cronJobsTester.Delete failed", zap.Error(err))
-				errs = append(errs, err.Error())
-			}
+	if ts.cfg.IsEnabledAddOnJobsEcho() && ts.cfg.AddOnJobsEcho.Created {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("jobsEchoTester.Delete (%q)\n", ts.cfg.ConfigPath)
+		if err := ts.jobsEchoTester.Delete(); err != nil {
+			ts.lg.Warn("jobsEchoTester.Delete failed", zap.Error(err))
+			errs = append(errs, err.Error())
 		}
+	}
 
-		if ts.cfg.IsEnabledAddOnJobsEcho() && ts.cfg.AddOnJobsEcho.Created {
-			fmt.Printf("\n*********************************\n")
-			fmt.Printf("jobsEchoTester.Delete (%q)\n", ts.cfg.ConfigPath)
-			if err := ts.jobsEchoTester.Delete(); err != nil {
-				ts.lg.Warn("jobsEchoTester.Delete failed", zap.Error(err))
-				errs = append(errs, err.Error())
-			}
+	if ts.cfg.IsEnabledAddOnJobsPi() && ts.cfg.AddOnJobsPi.Created {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("jobsPiTester.Delete (%q)\n", ts.cfg.ConfigPath)
+		if err := ts.jobsPiTester.Delete(); err != nil {
+			ts.lg.Warn("jobsPiTester.Delete failed", zap.Error(err))
+			errs = append(errs, err.Error())
 		}
+	}
 
-		if ts.cfg.IsEnabledAddOnJobsPi() && ts.cfg.AddOnJobsPi.Created {
-			fmt.Printf("\n*********************************\n")
-			fmt.Printf("jobsPiTester.Delete (%q)\n", ts.cfg.ConfigPath)
-			if err := ts.jobsPiTester.Delete(); err != nil {
-				ts.lg.Warn("jobsPiTester.Delete failed", zap.Error(err))
-				errs = append(errs, err.Error())
-			}
+	if ts.cfg.IsEnabledAddOnALB2048() && ts.cfg.AddOnALB2048.Created {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("alb2048Tester.Delete (%q)\n", ts.cfg.ConfigPath)
+		if err := ts.alb2048Tester.Delete(); err != nil {
+			ts.lg.Warn("alb2048Tester.Delete failed", zap.Error(err))
+			errs = append(errs, err.Error())
+		} else {
+			waitDur := time.Minute
+			ts.lg.Info("sleeping after deleting ALB", zap.Duration("wait", waitDur))
+			time.Sleep(waitDur)
 		}
+	}
 
-		if ts.cfg.IsEnabledAddOnALB2048() && ts.cfg.AddOnALB2048.Created {
-			fmt.Printf("\n*********************************\n")
-			fmt.Printf("alb2048Tester.Delete (%q)\n", ts.cfg.ConfigPath)
-			if err := ts.alb2048Tester.Delete(); err != nil {
-				ts.lg.Warn("alb2048Tester.Delete failed", zap.Error(err))
-				errs = append(errs, err.Error())
-			} else {
-				waitDur := time.Minute
-				ts.lg.Info("sleeping after deleting ALB", zap.Duration("wait", waitDur))
-				time.Sleep(waitDur)
-			}
+	if ts.cfg.IsEnabledAddOnNLBHelloWorld() && ts.cfg.AddOnNLBHelloWorld.Created {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("nlbHelloWorldTester.Delete (%q)\n", ts.cfg.ConfigPath)
+		if err := ts.nlbHelloWorldTester.Delete(); err != nil {
+			ts.lg.Warn("nlbHelloWorldTester.Delete failed", zap.Error(err))
+			errs = append(errs, err.Error())
+		} else {
+			waitDur := time.Minute
+			ts.lg.Info("sleeping after deleting NLB", zap.Duration("wait", waitDur))
+			time.Sleep(waitDur)
 		}
+	}
 
-		if ts.cfg.IsEnabledAddOnNLBHelloWorld() && ts.cfg.AddOnNLBHelloWorld.Created {
-			fmt.Printf("\n*********************************\n")
-			fmt.Printf("nlbHelloWorldTester.Delete (%q)\n", ts.cfg.ConfigPath)
-			if err := ts.nlbHelloWorldTester.Delete(); err != nil {
-				ts.lg.Warn("nlbHelloWorldTester.Delete failed", zap.Error(err))
-				errs = append(errs, err.Error())
-			} else {
-				waitDur := time.Minute
-				ts.lg.Info("sleeping after deleting NLB", zap.Duration("wait", waitDur))
-				time.Sleep(waitDur)
-			}
+	if ts.cfg.IsEnabledAddOnCSIEBS() && ts.cfg.AddOnCSIEBS.Created {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("csiEBSTester.Delete (%q)\n", ts.cfg.ConfigPath)
+		if err := ts.csiEBSTester.Delete(); err != nil {
+			ts.lg.Warn("csiEBSTester.Delete failed", zap.Error(err))
+			errs = append(errs, err.Error())
+		} else {
+			waitDur := 20 * time.Second
+			ts.lg.Info("sleeping after deleting csiEBSTester", zap.Duration("wait", waitDur))
+			time.Sleep(waitDur)
 		}
 	}
 
@@ -1799,10 +1790,15 @@ func (ts *Tester) IsUp() (up bool, err error) {
 // ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Deployer
 // ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Options
 func (ts *Tester) DumpClusterLogs() error {
-	if err := ts.ngTester.FetchLogs(); err != nil {
-		return err
+	if ts.cfg.IsEnabledAddOnNodeGroups() {
+		if err := ts.ngTester.FetchLogs(); err != nil {
+			return err
+		}
 	}
-	return ts.mngTester.FetchLogs()
+	if ts.cfg.IsEnabledAddOnManagedNodeGroups() {
+		return ts.mngTester.FetchLogs()
+	}
+	return nil
 }
 
 // DownloadClusterLogs dumps all logs to artifact directory.
@@ -1811,7 +1807,15 @@ func (ts *Tester) DumpClusterLogs() error {
 // ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Deployer
 // ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Options
 func (ts *Tester) DownloadClusterLogs(artifactDir, _ string) error {
-	return ts.mngTester.DownloadClusterLogs(artifactDir)
+	if ts.cfg.IsEnabledAddOnNodeGroups() {
+		if err := ts.mngTester.DownloadClusterLogs(artifactDir); err != nil {
+			return err
+		}
+	}
+	if ts.cfg.IsEnabledAddOnManagedNodeGroups() {
+		return ts.ngTester.DownloadClusterLogs(artifactDir)
+	}
+	return nil
 }
 
 // Build should build kubernetes and package it in whatever format

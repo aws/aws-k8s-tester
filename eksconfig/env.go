@@ -128,6 +128,19 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *AddOnManagedNodeGroups, got %T", vv)
 	}
 
+	if cfg.AddOnCSIEBS == nil {
+		cfg.AddOnCSIEBS = &AddOnCSIEBS{}
+	}
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnCSIEBS, cfg.AddOnCSIEBS)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*AddOnCSIEBS); ok {
+		cfg.AddOnCSIEBS = av
+	} else {
+		return fmt.Errorf("expected *AddOnCSIEBS, got %T", vv)
+	}
+
 	if cfg.AddOnNLBHelloWorld == nil {
 		cfg.AddOnNLBHelloWorld = &AddOnNLBHelloWorld{}
 	}
@@ -269,19 +282,6 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		cfg.AddOnIRSAFargate = av
 	} else {
 		return fmt.Errorf("expected *AddOnIRSAFargate, got %T", vv)
-	}
-
-	if cfg.AddOnCSIEBS == nil {
-		cfg.AddOnCSIEBS = &AddOnCSIEBS{}
-	}
-	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnCSIEBS, cfg.AddOnCSIEBS)
-	if err != nil {
-		return err
-	}
-	if av, ok := vv.(*AddOnCSIEBS); ok {
-		cfg.AddOnCSIEBS = av
-	} else {
-		return fmt.Errorf("expected *AddOnCSIEBS, got %T", vv)
 	}
 
 	if cfg.AddOnAppMesh == nil {

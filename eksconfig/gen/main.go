@@ -39,6 +39,10 @@ func createDoc() string {
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
+	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnCSIEBS, &eksconfig.AddOnCSIEBS{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
 	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnNLBHelloWorld, &eksconfig.AddOnNLBHelloWorld{}))
 
 	b.WriteByte('\n')
@@ -88,10 +92,6 @@ func createDoc() string {
 	b.WriteByte('\n')
 	b.WriteByte('\n')
 	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnKubernetesDashboard, &eksconfig.AddOnKubernetesDashboard{}))
-
-	b.WriteByte('\n')
-	b.WriteByte('\n')
-	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnCSIEBS, &eksconfig.AddOnCSIEBS{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')

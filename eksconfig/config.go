@@ -157,6 +157,10 @@ type Config struct {
 	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
 	AddOnManagedNodeGroups *AddOnManagedNodeGroups `json:"add-on-managed-node-groups,omitempty"`
 
+	// AddOnCSIEBS defines parameters for EKS cluster
+	// add-on AWS EBS CSI Driver.
+	AddOnCSIEBS *AddOnCSIEBS `json:"add-on-csi-ebs,omitempty"`
+
 	// AddOnNLBHelloWorld defines parameters for EKS cluster
 	// add-on NLB hello-world service.
 	AddOnNLBHelloWorld *AddOnNLBHelloWorld `json:"add-on-nlb-hello-world,omitempty"`
@@ -196,9 +200,6 @@ type Config struct {
 	// AddOnKubernetesDashboard defines parameters for EKS cluster
 	// add-on Dashboard.
 	AddOnKubernetesDashboard *AddOnKubernetesDashboard `json:"add-on-kubernetes-dashboard,omitempty"`
-	// AddOnCSIEBS defines parameters for EKS cluster
-	// add-on AWS EBS CSI Driver.
-	AddOnCSIEBS *AddOnCSIEBS `json:"add-on-csi-ebs,omitempty"`
 	// AddOnPrometheusGrafana defines parameters for EKS cluster
 	// add-on Prometheus/Grafana.
 	AddOnPrometheusGrafana *AddOnPrometheusGrafana `json:"add-on-prometheus-grafana,omitempty"`

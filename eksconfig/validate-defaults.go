@@ -131,6 +131,12 @@ func NewDefault() *Config {
 			LogsDir:     "", // to be auto-generated
 		},
 
+		AddOnCSIEBS: &AddOnCSIEBS{
+			Enable: false,
+			// https://github.com/kubernetes-sigs/aws-ebs-csi-driver#deploy-driver
+			ChartRepoURL: "https://github.com/kubernetes-sigs/aws-ebs-csi-driver/releases/download/v0.5.0/helm-chart.tgz",
+		},
+
 		AddOnNLBHelloWorld: &AddOnNLBHelloWorld{
 			Enable:             false,
 			DeploymentReplicas: 3,
@@ -235,12 +241,6 @@ func NewDefault() *Config {
 		AddOnKubernetesDashboard: &AddOnKubernetesDashboard{
 			Enable: false,
 			URL:    defaultKubernetesDashboardURL,
-		},
-
-		AddOnCSIEBS: &AddOnCSIEBS{
-			Enable: false,
-			// https://github.com/kubernetes-sigs/aws-ebs-csi-driver#deploy-driver
-			ChartRepoURL: "https://github.com/kubernetes-sigs/aws-ebs-csi-driver/releases/download/v0.5.0/helm-chart.tgz",
 		},
 
 		AddOnPrometheusGrafana: &AddOnPrometheusGrafana{
@@ -351,6 +351,9 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	if err := cfg.validateAddOnManagedNodeGroups(); err != nil {
 		return fmt.Errorf("validateAddOnManagedNodeGroups failed [%v]", err)
 	}
+	if err := cfg.validateAddOnCSIEBS(); err != nil {
+		return fmt.Errorf("validateAddOnCSIEBS failed [%v]", err)
+	}
 	if err := cfg.validateAddOnNLBHelloWorld(); err != nil {
 		return fmt.Errorf("validateAddOnNLBHelloWorld failed [%v]", err)
 	}
@@ -389,9 +392,6 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 	if err := cfg.validateAddOnKubernetesDashboard(); err != nil {
 		return fmt.Errorf("validateAddOnKubernetesDashboard failed [%v]", err)
-	}
-	if err := cfg.validateAddOnCSIEBS(); err != nil {
-		return fmt.Errorf("validateAddOnCSIEBS failed [%v]", err)
 	}
 	if err := cfg.validateAddOnPrometheusGrafana(); err != nil {
 		return fmt.Errorf("validateAddOnPrometheusGrafana failed [%v]", err)
@@ -1028,6 +1028,16 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 	return nil
 }
 
+func (cfg *Config) validateAddOnCSIEBS() error {
+	if !cfg.IsEnabledAddOnCSIEBS() {
+		return nil
+	}
+	if cfg.AddOnCSIEBS.ChartRepoURL == "" {
+		return errors.New("unexpected empty AddOnCSIEBS.ChartRepoURL")
+	}
+	return nil
+}
+
 func (cfg *Config) validateAddOnNLBHelloWorld() error {
 	if !cfg.IsEnabledAddOnNLBHelloWorld() {
 		return nil
@@ -1349,16 +1359,6 @@ func (cfg *Config) validateAddOnKubernetesDashboard() error {
 	}
 	if cfg.AddOnKubernetesDashboard.URL == "" {
 		cfg.AddOnKubernetesDashboard.URL = defaultKubernetesDashboardURL
-	}
-	return nil
-}
-
-func (cfg *Config) validateAddOnCSIEBS() error {
-	if !cfg.IsEnabledAddOnCSIEBS() {
-		return nil
-	}
-	if cfg.AddOnCSIEBS.ChartRepoURL == "" {
-		return errors.New("unexpected empty AddOnCSIEBS.ChartRepoURL")
 	}
 	return nil
 }

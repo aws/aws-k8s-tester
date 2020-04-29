@@ -104,6 +104,15 @@ AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_LOGS_DIR | *eksconfig.AddOnManaged
 AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS | *eksconfig.AddOnManagedNodeGroups.MNGs | map[string]eksconfig.MNG | read-only "false"
 
 
+AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_ENABLE | *eksconfig.AddOnCSIEBS.Enable | bool | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_CREATED | *eksconfig.AddOnCSIEBS.Created | bool | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_CREATE_TOOK | *eksconfig.AddOnCSIEBS.CreateTook | time.Duration | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_CREATE_TOOK_STRING | *eksconfig.AddOnCSIEBS.CreateTookString | string | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_DELETE_TOOK | *eksconfig.AddOnCSIEBS.DeleteTook | time.Duration | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_DELETE_TOOK_STRING | *eksconfig.AddOnCSIEBS.DeleteTookString | string | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_CHART_REPO_URL | *eksconfig.AddOnCSIEBS.ChartRepoURL | string | read-only "false"
+
+
 AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_ENABLE | *eksconfig.AddOnNLBHelloWorld.Enable | bool | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_CREATED | *eksconfig.AddOnNLBHelloWorld.Created | bool | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_CREATE_TOOK | *eksconfig.AddOnNLBHelloWorld.CreateTook | time.Duration | read-only "true"
@@ -299,15 +308,6 @@ AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_DELETE_TOOK_STRING | *eksconfig.A
 AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_AUTHENTICATION_TOKEN | *eksconfig.AddOnKubernetesDashboard.AuthenticationToken | string | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_URL | *eksconfig.AddOnKubernetesDashboard.URL | string | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_KUBECTL_PROXY_PID | *eksconfig.AddOnKubernetesDashboard.KubectlProxyPID | int | read-only "true"
-
-
-AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_ENABLE | *eksconfig.AddOnCSIEBS.Enable | bool | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_CREATED | *eksconfig.AddOnCSIEBS.Created | bool | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_CREATE_TOOK | *eksconfig.AddOnCSIEBS.CreateTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_CREATE_TOOK_STRING | *eksconfig.AddOnCSIEBS.CreateTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_DELETE_TOOK | *eksconfig.AddOnCSIEBS.DeleteTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_DELETE_TOOK_STRING | *eksconfig.AddOnCSIEBS.DeleteTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_CHART_REPO_URL | *eksconfig.AddOnCSIEBS.ChartRepoURL | string | read-only "false"
 
 
 AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_ENABLE | *eksconfig.AddOnPrometheusGrafana.Enable | bool | read-only "false"
