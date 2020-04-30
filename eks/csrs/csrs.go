@@ -291,9 +291,9 @@ func (ts *tester) createCSRsParallel(pfx string, failThreshold int) error {
 	for i := 0; i < ts.cfg.EKSConfig.AddOnCSRs.Objects; i++ {
 		go func(i int) {
 			if !rateLimiter.Allow() {
-				ts.cfg.Logger.Warn("waiting for rate limiter creating CSR", zap.Int("index", i))
+				ts.cfg.Logger.Debug("waiting for rate limiter creating CSR", zap.Int("index", i))
 				werr := rateLimiter.Wait(context.Background())
-				ts.cfg.Logger.Warn("waited for rate limiter", zap.Int("index", i), zap.Error(werr))
+				ts.cfg.Logger.Debug("waited for rate limiter", zap.Int("index", i), zap.Error(werr))
 			}
 			select {
 			case <-ts.cancel:
@@ -324,6 +324,16 @@ func (ts *tester) createCSRsParallel(pfx string, failThreshold int) error {
 				case rch <- result{csr: csr, err: err, took: t2.Sub(t1), start: t1, end: t2}:
 				}
 				return
+			}
+
+			select {
+			case <-ts.cancel:
+				ts.cfg.Logger.Warn("exiting")
+				return
+			case <-ts.cfg.Stopc:
+				ts.cfg.Logger.Warn("exiting")
+				return
+			case rch <- result{csr: csr, err: nil, took: t2.Sub(t1), start: t1, end: t2}:
 			}
 
 			if ts.cfg.EKSConfig.LogLevel == "debug" || i%50 == 0 {
