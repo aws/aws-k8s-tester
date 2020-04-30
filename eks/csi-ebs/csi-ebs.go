@@ -170,7 +170,7 @@ func (ts *tester) createHelmCSI() error {
 			cancel()
 			out := strings.TrimSpace(string(output))
 			if err != nil {
-				ts.cfg.Logger.Warn("'kubectl get all' failed", zap.String("output", out), zap.Error(err))
+				ts.cfg.Logger.Warn("'kubectl get all' failed", zap.Error(err))
 			} else {
 				fmt.Printf("\n\n'%s' output:\n\n%s\n\n", getAllCmd, out)
 			}
@@ -180,7 +180,7 @@ func (ts *tester) createHelmCSI() error {
 			cancel()
 			out = strings.TrimSpace(string(output))
 			if err != nil {
-				ts.cfg.Logger.Warn("'kubectl describe daemonset' failed", zap.String("output", out), zap.Error(err))
+				ts.cfg.Logger.Warn("'kubectl describe daemonset' failed", zap.Error(err))
 			} else {
 				fmt.Printf("\n\n'%s' output:\n\n%s\n\n", descCmdDs, out)
 			}
@@ -190,7 +190,7 @@ func (ts *tester) createHelmCSI() error {
 			cancel()
 			out = strings.TrimSpace(string(output))
 			if err != nil {
-				ts.cfg.Logger.Warn("'kubectl describe deployment' failed", zap.String("output", out), zap.Error(err))
+				ts.cfg.Logger.Warn("'kubectl describe deployment' failed", zap.Error(err))
 			} else {
 				fmt.Printf("\n\n'%s' output:\n\n%s\n\n", descCmdDp, out)
 			}
@@ -200,7 +200,7 @@ func (ts *tester) createHelmCSI() error {
 			cancel()
 			out = strings.TrimSpace(string(output))
 			if err != nil {
-				ts.cfg.Logger.Warn("'kubectl describe pods' failed", zap.String("output", out), zap.Error(err))
+				ts.cfg.Logger.Warn("'kubectl describe pods' failed", zap.Error(err))
 			} else {
 				fmt.Printf("\n\n'%s' output:\n\n%s\n\n", descCmdPods, out)
 			}
@@ -210,7 +210,7 @@ func (ts *tester) createHelmCSI() error {
 			cancel()
 			out = strings.TrimSpace(string(output))
 			if err != nil {
-				ts.cfg.Logger.Warn("'kubectl logs' failed", zap.String("output", out), zap.Error(err))
+				ts.cfg.Logger.Warn("'kubectl logs' failed", zap.Error(err))
 			} else {
 				fmt.Printf("\n\n'%s' output:\n\n%s\n\n", logsCmd, out)
 			}
