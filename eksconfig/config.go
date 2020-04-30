@@ -379,7 +379,7 @@ func (cfg *Config) KubectlCommands() (s string) {
 	if err := tpl.Execute(buf, struct {
 		KubeConfigPath                         string
 		KubectlCommand                         string
-		Version string 
+		Version                                string
 		KubernetesDashboardEnabled             bool
 		KubernetesDashboardURL                 string
 		KubernetesDashboardAuthenticationToken string
