@@ -41,6 +41,9 @@ type AddOnSecrets struct {
 	// Size is the "Secret" value size in bytes.
 	Size int `json:"size"`
 
+	// FailThreshold is the number of write failures to allow.
+	FailThreshold int `json:"fail-threshold"`
+
 	// CreatedSecretsNames is the list of created "Secret" object names.
 	CreatedSecretsNames []string `json:"created-secrets-names" read-only:"true"`
 	// CreatedPodNames is the list of created "Pod" object names.

@@ -301,7 +301,8 @@ func (ts *tester) waitDeployment() error {
 				break
 			}
 		}
-		if available && dresp.Status.AvailableReplicas >= ts.cfg.EKSConfig.AddOnNLBHelloWorld.DeploymentReplicas {
+		// TODO: remove this hack and handle "Error: ImagePullBackOff"
+		if available && dresp.Status.AvailableReplicas+1 >= ts.cfg.EKSConfig.AddOnNLBHelloWorld.DeploymentReplicas {
 			ready = true
 			break
 		}

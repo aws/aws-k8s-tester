@@ -188,6 +188,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CSRS_NAMESPACE | *eksconfig.AddOnCSRs.Namespace | stri
 AWS_K8S_TESTER_EKS_ADD_ON_CSRS_INITIAL_REQUEST_CONDITION_TYPE | *eksconfig.AddOnCSRs.InitialRequestConditionType | string | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_CSRS_OBJECTS | *eksconfig.AddOnCSRs.Objects | int | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_CSRS_CREATED_NAMES | *eksconfig.AddOnCSRs.CreatedNames | []string | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_CSRS_FAIL_THRESHOLD | *eksconfig.AddOnCSRs.FailThreshold | int | read-only "false"
 
 
 AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_ENABLE | *eksconfig.AddOnConfigMaps.Enable | bool | read-only "false"
@@ -200,6 +201,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_NAMESPACE | *eksconfig.AddOnConfigMaps.Nam
 AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_OBJECTS | *eksconfig.AddOnConfigMaps.Objects | int | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_SIZE | *eksconfig.AddOnConfigMaps.Size | int | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_CREATED_NAMES | *eksconfig.AddOnConfigMaps.CreatedNames | []string | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_FAIL_THRESHOLD | *eksconfig.AddOnConfigMaps.FailThreshold | int | read-only "false"
 
 
 AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_ENABLE | *eksconfig.AddOnSecrets.Enable | bool | read-only "false"
@@ -211,6 +213,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_DELETE_TOOK_STRING | *eksconfig.AddOnSecrets.D
 AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_NAMESPACE | *eksconfig.AddOnSecrets.Namespace | string | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_OBJECTS | *eksconfig.AddOnSecrets.Objects | int | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_SIZE | *eksconfig.AddOnSecrets.Size | int | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_FAIL_THRESHOLD | *eksconfig.AddOnSecrets.FailThreshold | int | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_CREATED_SECRETS_NAMES | *eksconfig.AddOnSecrets.CreatedSecretsNames | []string | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_CREATED_POD_NAMES | *eksconfig.AddOnSecrets.CreatedPodNames | []string | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_WRITES_RESULT_PATH | *eksconfig.AddOnSecrets.WritesResultPath | string | read-only "false"

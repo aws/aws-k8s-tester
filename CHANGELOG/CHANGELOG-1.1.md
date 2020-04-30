@@ -12,6 +12,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.1...v1.1.2
 - Replace [`AddOnConfigMaps.QPS`, `AddOnCSRs.QPS`, `AddOnSecrets.SecretsQPS`, `AddOnSecrets.PodQPS` with `ClientQPS`](https://github.com/aws/aws-k8s-tester/commit/35a3f0f5b7356d0c5e5871e30e5c25df3d6e18c3).
 - Replace [`AddOnConfigMaps.Burst`, `AddOnCSRs.Burst`, `AddOnSecrets.SecretsBurst`, `AddOnSecrets.PodBurst` with `ClientBurst`](https://github.com/aws/aws-k8s-tester/commit/35a3f0f5b7356d0c5e5871e30e5c25df3d6e18c3).
 - Make [`1.16` as default EKS version](https://github.com/aws/aws-k8s-tester/commit/3ec335f6e3478ee67f8bbc98a6628ce0ed26a5e4).
+- Add [`AddOnCSRs.FailThreshold`, `AddOnConfigMaps.FailThreshold` and `AddOnSecrets.FailThreshold`](https://github.com/aws/aws-k8s-tester/commit/).
 
 ### `eks`
 

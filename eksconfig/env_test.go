@@ -253,6 +253,8 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_OBJECTS")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_CREATED_NAMES", "a,b,c")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_CREATED_NAMES")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_FAIL_THRESHOLD", "100")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_FAIL_THRESHOLD")
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_ENABLE")
@@ -266,6 +268,8 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_SIZE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_CREATED_NAMES", "a,b,c")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_CREATED_NAMES")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_FAIL_THRESHOLD", "100")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_FAIL_THRESHOLD")
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_ENABLE")
@@ -281,6 +285,8 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_WRITES_RESULT_PATH")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_READS_RESULT_PATH", "reads.csv")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_READS_RESULT_PATH")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_FAIL_THRESHOLD", "1000")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_FAIL_THRESHOLD")
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ENABLE")
@@ -803,6 +809,9 @@ func TestEnv(t *testing.T) {
 	if len(cfg.AddOnCSRs.CreatedNames) > 0 { // read-only must be ignored
 		t.Fatalf("unexpected cfg.AddOnCSRs.CreatedNames %v", cfg.AddOnCSRs.CreatedNames)
 	}
+	if cfg.AddOnCSRs.FailThreshold != 100 {
+		t.Fatalf("unexpected cfg.AddOnCSRs.FailThreshold %q", cfg.AddOnCSRs.FailThreshold)
+	}
 
 	if cfg.AddOnConfigMaps.Created { // read-only must be ignored
 		t.Fatalf("unexpected cfg.AddOnConfigMaps.Created %v", cfg.AddOnConfigMaps.Created)
@@ -821,6 +830,9 @@ func TestEnv(t *testing.T) {
 	}
 	if len(cfg.AddOnConfigMaps.CreatedNames) > 0 { // read-only must be ignored
 		t.Fatalf("unexpected cfg.AddOnConfigMaps.CreatedNames %v", cfg.AddOnConfigMaps.CreatedNames)
+	}
+	if cfg.AddOnConfigMaps.FailThreshold != 100 {
+		t.Fatalf("unexpected cfg.AddOnConfigMaps.FailThreshold %q", cfg.AddOnConfigMaps.FailThreshold)
 	}
 
 	if cfg.AddOnSecrets.Created { // read-only must be ignored
@@ -843,6 +855,9 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.AddOnSecrets.ReadsResultPath != "reads.csv" {
 		t.Fatalf("unexpected cfg.AddOnSecrets.ReadsResultPath %q", cfg.AddOnSecrets.ReadsResultPath)
+	}
+	if cfg.AddOnSecrets.FailThreshold != 1000 {
+		t.Fatalf("unexpected cfg.AddOnSecrets.FailThreshold %q", cfg.AddOnSecrets.FailThreshold)
 	}
 
 	if cfg.AddOnIRSA.Created { // read-only must be ignored

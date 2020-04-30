@@ -102,8 +102,6 @@ func (ts *tester) Delete() error {
 // only letters and numbers for ConfigMap key names
 var regex = regexp.MustCompile("[^a-zA-Z0-9]+")
 
-const writesFailThreshold = 10
-
 func (ts *tester) createConfigMaps() (err error) {
 	size := humanize.Bytes(uint64(ts.cfg.EKSConfig.AddOnConfigMaps.Size))
 	ts.cfg.Logger.Info("creating ConfigMaps",
@@ -120,9 +118,9 @@ func (ts *tester) createConfigMaps() (err error) {
 	ts.cfg.EKSConfig.Sync()
 
 	if ts.cfg.EKSConfig.ClientQPS <= 1 {
-		err = ts.createConfigMapsSequential(pfx, val, writesFailThreshold)
+		err = ts.createConfigMapsSequential(pfx, val, ts.cfg.EKSConfig.AddOnConfigMaps.FailThreshold)
 	} else {
-		err = ts.createConfigMapsParallel(pfx, val, writesFailThreshold)
+		err = ts.createConfigMapsParallel(pfx, val, ts.cfg.EKSConfig.AddOnConfigMaps.FailThreshold)
 	}
 	ts.cfg.EKSConfig.Sync()
 	return err

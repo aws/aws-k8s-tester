@@ -101,8 +101,6 @@ func (ts *tester) Delete() error {
 // only letters and numbers for CSR key names
 var regex = regexp.MustCompile("[^a-zA-Z0-9]+")
 
-const writesFailThreshold = 10
-
 func (ts *tester) createCSRs() (err error) {
 	ts.cfg.Logger.Info("creating CSRs",
 		zap.Int("objects", ts.cfg.EKSConfig.AddOnCSRs.Objects),
@@ -116,9 +114,9 @@ func (ts *tester) createCSRs() (err error) {
 	ts.cfg.EKSConfig.Sync()
 
 	if ts.cfg.EKSConfig.ClientQPS <= 1 {
-		err = ts.createCSRsSequential(pfx, writesFailThreshold)
+		err = ts.createCSRsSequential(pfx, ts.cfg.EKSConfig.AddOnCSRs.FailThreshold)
 	} else {
-		err = ts.createCSRsParallel(pfx, writesFailThreshold)
+		err = ts.createCSRsParallel(pfx, ts.cfg.EKSConfig.AddOnCSRs.FailThreshold)
 	}
 	ts.cfg.EKSConfig.Sync()
 	return err
@@ -194,7 +192,7 @@ func (ts *tester) createCSR(idx int, name string) *certificatesv1beta1.Certifica
 			Name:              name,
 			Namespace:         ts.cfg.EKSConfig.AddOnCSRs.Namespace,
 			GenerateName:      name,
-			CreationTimestamp: metav1.Time{time.Now().Add(-20 * time.Minute)},
+			CreationTimestamp: metav1.Time{Time: time.Now().Add(-20 * time.Minute)},
 		},
 		Spec: certificatesv1beta1.CertificateSigningRequestSpec{
 			Groups:  []string{"system:bootstrappers", "system:nodes", "system:authenticated"},

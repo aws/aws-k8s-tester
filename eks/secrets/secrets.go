@@ -117,8 +117,6 @@ const ResultSuffixRead = "-secret-read.csv"
 // only letters and numbers for Secret key names
 var regex = regexp.MustCompile("[^a-zA-Z0-9]+")
 
-const writesFailThreshold = 10
-
 func (ts *tester) createSecrets() (err error) {
 	size := humanize.Bytes(uint64(ts.cfg.EKSConfig.AddOnSecrets.Size))
 	ts.cfg.Logger.Info("creating Secrets",
@@ -141,9 +139,9 @@ func (ts *tester) createSecrets() (err error) {
 	ts.cfg.EKSConfig.Sync()
 
 	if ts.cfg.EKSConfig.ClientQPS <= 1 {
-		err = ts.createSecretsSequential(pfx, valSfx, writesFailThreshold)
+		err = ts.createSecretsSequential(pfx, valSfx, ts.cfg.EKSConfig.AddOnSecrets.FailThreshold)
 	} else {
-		err = ts.createSecretsParallel(pfx, valSfx, writesFailThreshold)
+		err = ts.createSecretsParallel(pfx, valSfx, ts.cfg.EKSConfig.AddOnSecrets.FailThreshold)
 	}
 	ts.cfg.EKSConfig.Sync()
 	return err
@@ -238,7 +236,7 @@ func (ts *tester) createSecretsSequential(pfx, valSfx string, failThreshold int)
 			wr.Flush()
 		}
 
-		if ts.cfg.EKSConfig.LogLevel == "debug" || i%200 == 0 {
+		if ts.cfg.EKSConfig.LogLevel == "debug" || i%50 == 0 {
 			ts.cfg.Logger.Info("created Secret",
 				zap.String("key", secret.GetObjectMeta().GetName()),
 				zap.Duration("took", t2.Sub(t1)),
@@ -332,7 +330,7 @@ func (ts *tester) createSecretsParallel(pfx, valSfx string, failThreshold int) e
 			case rch <- result{secret: secret, err: nil, took: t2.Sub(t1), start: t1, end: t2}:
 			}
 
-			if ts.cfg.EKSConfig.LogLevel == "debug" || i%200 == 0 {
+			if ts.cfg.EKSConfig.LogLevel == "debug" || i%50 == 0 {
 				ts.cfg.Logger.Info("created Secret",
 					zap.String("key", secret.GetObjectMeta().GetName()),
 					zap.Duration("took", t2.Sub(t1)),
@@ -547,7 +545,7 @@ func (ts *tester) createPodsSequential(pods []*v1.Pod) error {
 		ts.cfg.EKSConfig.AddOnSecrets.CreatedPodNames = append(ts.cfg.EKSConfig.AddOnSecrets.CreatedPodNames, podName)
 		ts.cfg.EKSConfig.Sync()
 
-		if ts.cfg.EKSConfig.LogLevel == "debug" || idx%200 == 0 {
+		if ts.cfg.EKSConfig.LogLevel == "debug" || idx%50 == 0 {
 			ts.cfg.Logger.Info("created Pod",
 				zap.String("name", podName),
 				zap.Duration("took", t2.Sub(t1)),
@@ -619,7 +617,7 @@ func (ts *tester) createPodsParallel(pods []*v1.Pod) error {
 			case rch <- result{pod: pod, err: nil}:
 			}
 
-			if ts.cfg.EKSConfig.LogLevel == "debug" || i%200 == 0 {
+			if ts.cfg.EKSConfig.LogLevel == "debug" || i%50 == 0 {
 				ts.cfg.Logger.Info("created Pod",
 					zap.String("name", pod.GetObjectMeta().GetName()),
 					zap.Duration("took", t2.Sub(t1)),

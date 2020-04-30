@@ -52,4 +52,7 @@ type AddOnCSRs struct {
 	Objects int `json:"objects"`
 	// CreatedNames is the list of created "CertificateSigningRequest" object names.
 	CreatedNames []string `json:"created-names" read-only:"true"`
+
+	// FailThreshold is the number of write failures to allow.
+	FailThreshold int `json:"fail-threshold"`
 }

@@ -188,9 +188,10 @@ func NewDefault() *Config {
 		},
 
 		AddOnConfigMaps: &AddOnConfigMaps{
-			Enable:  false,
-			Objects: 10,
-			Size:    10 * 1024, // 10 KB
+			Enable:        false,
+			Objects:       10,
+			Size:          10 * 1024, // 10 KB
+			FailThreshold: 10,
 
 			// writes total 300 MB data to etcd
 			// Objects: 1000,
@@ -198,9 +199,10 @@ func NewDefault() *Config {
 		},
 
 		AddOnSecrets: &AddOnSecrets{
-			Enable:  false,
-			Objects: 10,
-			Size:    10 * 1024, // 10 KB
+			Enable:        false,
+			Objects:       10,
+			Size:          10 * 1024, // 10 KB
+			FailThreshold: 10,
 
 			// writes total 100 MB for "Secret" objects,
 			// plus "Pod" objects, writes total 330 MB to etcd

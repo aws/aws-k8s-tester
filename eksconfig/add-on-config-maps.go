@@ -42,4 +42,7 @@ type AddOnConfigMaps struct {
 	Size int `json:"size"`
 	// CreatedNames is the list of created "ConfigMap" object names.
 	CreatedNames []string `json:"created-names" read-only:"true"`
+
+	// FailThreshold is the number of write failures to allow.
+	FailThreshold int `json:"fail-threshold"`
 }
