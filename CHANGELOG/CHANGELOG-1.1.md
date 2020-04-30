@@ -25,7 +25,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.1...v1.1.2
 - Update [results output to `UP SUCCESS/FAIL` and `DOWN SUCCESS/FAIL`](https://github.com/aws/aws-k8s-tester/commit/5e7937ea974df455b8e07786a0b2f7aed3e7d6a8).
 - Reorder [add-on deployment order to create `AddOnKubernetesDashboard` and `AddOnPrometheusGrafana` first](https://github.com/aws/aws-k8s-tester/commit/5234fb7a1515a44aa947cf48ddcb7062fdce6c45).
 - Fix [`eks/irsa` test results count](https://github.com/aws/aws-k8s-tester/commit/1b702d5d4519438105c5de231597bf558ab8112e).
-- Improve [`kubectl logs/exec` outputs in `eks/fargate` and `eks/irsa-fargate`](https://github.com/aws/aws-k8s-tester/commit/).
+- Improve [`kubectl logs/exec` outputs in `eks/fargate` and `eks/irsa-fargate`](https://github.com/aws/aws-k8s-tester/commit/9418e475d056a2cf791f2e3a4f8aa87cc41c4ec6).
 
 ### Dependency
 
