@@ -1,3 +1,5 @@
+// Package utils implements Kubernetes utilities.
+// Used for CSI EBS driver testing.
 package utils
 
 import (
@@ -9,7 +11,6 @@ import (
 
 	"github.com/aws/aws-k8s-tester/e2e/framework"
 	"github.com/aws/aws-k8s-tester/e2e/resources"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/request"
