@@ -1021,13 +1021,13 @@ func (ts *tester) waitOutputLogs() error {
 
 		cnt, err := ts.countSuccess()
 		if err != nil {
-			ts.cfg.Logger.Warn("failed to count from remotes", zap.Error(err))
-			continue
+			ts.cfg.Logger.Warn("failed to count from remotes", zap.Int("count", cnt), zap.Error(err))
+		} else {
+			ts.cfg.Logger.Info("counting success",
+				zap.Int("expects", expects),
+				zap.Int("current", cnt),
+			)
 		}
-		ts.cfg.Logger.Info("counting success",
-			zap.Int("expects", expects),
-			zap.Int("current", cnt),
-		)
 		if cnt >= expects {
 			ts.cfg.EKSConfig.AddOnIRSA.DeploymentTook = time.Since(ts.deploymentCreated)
 			ts.cfg.EKSConfig.AddOnIRSA.DeploymentTookString = ts.cfg.EKSConfig.AddOnIRSA.DeploymentTook.String()
@@ -1083,18 +1083,20 @@ func (ts *tester) countSuccess() (int, error) {
 					UserName:      iv.RemoteAccessUserName,
 				})
 				if err != nil {
-					return 0, err
+					ts.cfg.Logger.Warn("failed to create SSH", zap.Error(err))
+					continue
 				}
 				if err = sh.Connect(); err != nil {
 					ts.cfg.Logger.Warn("failed to connect to SSH", zap.Error(err))
 					sh.Close()
-					return 0, err
+					continue
 				}
 				catCmd := "sudo cat " + outputFilePath
 				out, err := sh.Run(catCmd, sshOpt)
 				if err != nil {
+					ts.cfg.Logger.Warn("failed to run SSH command", zap.Error(err))
 					sh.Close()
-					return 0, err
+					continue
 				}
 				sh.Close()
 
@@ -1140,18 +1142,20 @@ func (ts *tester) countSuccess() (int, error) {
 					UserName:      iv.RemoteAccessUserName,
 				})
 				if err != nil {
-					return 0, err
+					ts.cfg.Logger.Warn("failed to create SSH", zap.Error(err))
+					continue
 				}
 				if err = sh.Connect(); err != nil {
 					ts.cfg.Logger.Warn("failed to connect to SSH", zap.Error(err))
 					sh.Close()
-					return 0, err
+					continue
 				}
 				catCmd := "sudo cat " + outputFilePath
 				out, err := sh.Run(catCmd, sshOpt)
 				if err != nil {
+					ts.cfg.Logger.Warn("failed to run SSH command", zap.Error(err))
 					sh.Close()
-					return 0, err
+					continue
 				}
 				sh.Close()
 
