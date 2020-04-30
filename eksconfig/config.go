@@ -160,6 +160,12 @@ type Config struct {
 	// AddOnCSIEBS defines parameters for EKS cluster
 	// add-on AWS EBS CSI Driver.
 	AddOnCSIEBS *AddOnCSIEBS `json:"add-on-csi-ebs,omitempty"`
+	// AddOnKubernetesDashboard defines parameters for EKS cluster
+	// add-on Dashboard.
+	AddOnKubernetesDashboard *AddOnKubernetesDashboard `json:"add-on-kubernetes-dashboard,omitempty"`
+	// AddOnPrometheusGrafana defines parameters for EKS cluster
+	// add-on Prometheus/Grafana.
+	AddOnPrometheusGrafana *AddOnPrometheusGrafana `json:"add-on-prometheus-grafana,omitempty"`
 
 	// AddOnNLBHelloWorld defines parameters for EKS cluster
 	// add-on NLB hello-world service.
@@ -197,12 +203,6 @@ type Config struct {
 	// AddOnAppMesh defines parameters for EKS cluster
 	// add-on "EKS App Mesh Integration".
 	AddOnAppMesh *AddOnAppMesh `json:"add-on-app-mesh,omitempty"`
-	// AddOnKubernetesDashboard defines parameters for EKS cluster
-	// add-on Dashboard.
-	AddOnKubernetesDashboard *AddOnKubernetesDashboard `json:"add-on-kubernetes-dashboard,omitempty"`
-	// AddOnPrometheusGrafana defines parameters for EKS cluster
-	// add-on Prometheus/Grafana.
-	AddOnPrometheusGrafana *AddOnPrometheusGrafana `json:"add-on-prometheus-grafana,omitempty"`
 	// AddOnWordpress defines parameters for EKS cluster
 	// add-on WordPress.
 	AddOnWordpress *AddOnWordpress `json:"add-on-wordpress,omitempty"`

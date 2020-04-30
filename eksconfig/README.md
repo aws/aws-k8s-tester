@@ -113,6 +113,30 @@ AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_DELETE_TOOK_STRING | *eksconfig.AddOnCSIEBS.De
 AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_CHART_REPO_URL | *eksconfig.AddOnCSIEBS.ChartRepoURL | string | read-only "false"
 
 
+AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_ENABLE | *eksconfig.AddOnKubernetesDashboard.Enable | bool | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_CREATED | *eksconfig.AddOnKubernetesDashboard.Created | bool | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_CREATE_TOOK | *eksconfig.AddOnKubernetesDashboard.CreateTook | time.Duration | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_CREATE_TOOK_STRING | *eksconfig.AddOnKubernetesDashboard.CreateTookString | string | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_DELETE_TOOK | *eksconfig.AddOnKubernetesDashboard.DeleteTook | time.Duration | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_DELETE_TOOK_STRING | *eksconfig.AddOnKubernetesDashboard.DeleteTookString | string | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_AUTHENTICATION_TOKEN | *eksconfig.AddOnKubernetesDashboard.AuthenticationToken | string | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_URL | *eksconfig.AddOnKubernetesDashboard.URL | string | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_KUBECTL_PROXY_PID | *eksconfig.AddOnKubernetesDashboard.KubectlProxyPID | int | read-only "true"
+
+
+AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_ENABLE | *eksconfig.AddOnPrometheusGrafana.Enable | bool | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_CREATED | *eksconfig.AddOnPrometheusGrafana.Created | bool | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_CREATE_TOOK | *eksconfig.AddOnPrometheusGrafana.CreateTook | time.Duration | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_CREATE_TOOK_STRING | *eksconfig.AddOnPrometheusGrafana.CreateTookString | string | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_DELETE_TOOK | *eksconfig.AddOnPrometheusGrafana.DeleteTook | time.Duration | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_DELETE_TOOK_STRING | *eksconfig.AddOnPrometheusGrafana.DeleteTookString | string | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_GRAFANA_ADMIN_USER_NAME | *eksconfig.AddOnPrometheusGrafana.GrafanaAdminUserName | string | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_GRAFANA_ADMIN_PASSWORD | *eksconfig.AddOnPrometheusGrafana.GrafanaAdminPassword | string | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_GRAFANA_NLB_ARN | *eksconfig.AddOnPrometheusGrafana.GrafanaNLBARN | string | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_GRAFANA_NLB_NAME | *eksconfig.AddOnPrometheusGrafana.GrafanaNLBName | string | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_GRAFANA_URL | *eksconfig.AddOnPrometheusGrafana.GrafanaURL | string | read-only "true"
+
+
 AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_ENABLE | *eksconfig.AddOnNLBHelloWorld.Enable | bool | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_CREATED | *eksconfig.AddOnNLBHelloWorld.Created | bool | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_CREATE_TOOK | *eksconfig.AddOnNLBHelloWorld.CreateTook | time.Duration | read-only "true"
@@ -292,30 +316,6 @@ AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_CREATE_TOOK_STRING | *eksconfig.AddOnAppMesh.
 AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_DELETE_TOOK | *eksconfig.AddOnAppMesh.DeleteTook | time.Duration | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_DELETE_TOOK_STRING | *eksconfig.AddOnAppMesh.DeleteTookString | string | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_POLICY_CFN_STACK_ID | *eksconfig.AddOnAppMesh.PolicyCFNStackID | string | read-only "true"
-
-
-AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_ENABLE | *eksconfig.AddOnKubernetesDashboard.Enable | bool | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_CREATED | *eksconfig.AddOnKubernetesDashboard.Created | bool | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_CREATE_TOOK | *eksconfig.AddOnKubernetesDashboard.CreateTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_CREATE_TOOK_STRING | *eksconfig.AddOnKubernetesDashboard.CreateTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_DELETE_TOOK | *eksconfig.AddOnKubernetesDashboard.DeleteTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_DELETE_TOOK_STRING | *eksconfig.AddOnKubernetesDashboard.DeleteTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_AUTHENTICATION_TOKEN | *eksconfig.AddOnKubernetesDashboard.AuthenticationToken | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_URL | *eksconfig.AddOnKubernetesDashboard.URL | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_KUBECTL_PROXY_PID | *eksconfig.AddOnKubernetesDashboard.KubectlProxyPID | int | read-only "true"
-
-
-AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_ENABLE | *eksconfig.AddOnPrometheusGrafana.Enable | bool | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_CREATED | *eksconfig.AddOnPrometheusGrafana.Created | bool | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_CREATE_TOOK | *eksconfig.AddOnPrometheusGrafana.CreateTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_CREATE_TOOK_STRING | *eksconfig.AddOnPrometheusGrafana.CreateTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_DELETE_TOOK | *eksconfig.AddOnPrometheusGrafana.DeleteTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_DELETE_TOOK_STRING | *eksconfig.AddOnPrometheusGrafana.DeleteTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_GRAFANA_ADMIN_USER_NAME | *eksconfig.AddOnPrometheusGrafana.GrafanaAdminUserName | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_GRAFANA_ADMIN_PASSWORD | *eksconfig.AddOnPrometheusGrafana.GrafanaAdminPassword | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_GRAFANA_NLB_ARN | *eksconfig.AddOnPrometheusGrafana.GrafanaNLBARN | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_GRAFANA_NLB_NAME | *eksconfig.AddOnPrometheusGrafana.GrafanaNLBName | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_GRAFANA_URL | *eksconfig.AddOnPrometheusGrafana.GrafanaURL | string | read-only "true"
 
 
 AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_ENABLE | *eksconfig.AddOnWordpress.Enable | bool | read-only "false"

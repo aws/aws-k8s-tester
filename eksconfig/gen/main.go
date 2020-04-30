@@ -43,6 +43,14 @@ func createDoc() string {
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
+	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnKubernetesDashboard, &eksconfig.AddOnKubernetesDashboard{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
+	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnPrometheusGrafana, &eksconfig.AddOnPrometheusGrafana{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
 	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnNLBHelloWorld, &eksconfig.AddOnNLBHelloWorld{}))
 
 	b.WriteByte('\n')
@@ -88,14 +96,6 @@ func createDoc() string {
 	b.WriteByte('\n')
 	b.WriteByte('\n')
 	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnAppMesh, &eksconfig.AddOnAppMesh{}))
-
-	b.WriteByte('\n')
-	b.WriteByte('\n')
-	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnKubernetesDashboard, &eksconfig.AddOnKubernetesDashboard{}))
-
-	b.WriteByte('\n')
-	b.WriteByte('\n')
-	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnPrometheusGrafana, &eksconfig.AddOnPrometheusGrafana{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
