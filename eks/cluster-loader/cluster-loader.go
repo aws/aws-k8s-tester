@@ -71,6 +71,8 @@ func (ts *tester) Create() error {
 		go listSecrets(ts.cfg.Logger, ts.cfg.Stopc, ts.donec, ts.cfg.K8SClient.KubernetesClientSet())
 		go listConfigMaps(ts.cfg.Logger, ts.cfg.Stopc, ts.donec, ts.cfg.K8SClient.KubernetesClientSet())
 		go listServiceAccounts(ts.cfg.Logger, ts.cfg.Stopc, ts.donec, ts.cfg.K8SClient.KubernetesClientSet())
+		go listJobs(ts.cfg.Logger, ts.cfg.Stopc, ts.donec, ts.cfg.K8SClient.KubernetesClientSet())
+		go listCronJobs(ts.cfg.Logger, ts.cfg.Stopc, ts.donec, ts.cfg.K8SClient.KubernetesClientSet())
 	}
 
 	select {
@@ -404,6 +406,98 @@ func listServiceAccounts(lg *zap.Logger, stopc chan struct{}, donec chan struct{
 				return
 			case <-donec:
 				lg.Info("list serviceaccounts done")
+				return
+			default:
+			}
+		}
+	}
+}
+
+func listJobs(lg *zap.Logger, stopc chan struct{}, donec chan struct{}, cli *kubernetes.Clientset) {
+	for {
+		select {
+		case <-stopc:
+			lg.Warn("list jobs stopped")
+			return
+		case <-donec:
+			lg.Info("list jobs done")
+			return
+		default:
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		ns, err := cli.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
+		cancel()
+		if err != nil {
+			lg.Warn("list namespaces failed", zap.Error(err))
+			continue
+		}
+		lg.Info("listed namespaces", zap.Int("namespaces", len(ns.Items)))
+
+		for _, item := range ns.Items {
+			nv := item.GetName()
+
+			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+			ss, err := cli.BatchV1().Jobs(nv).List(ctx, metav1.ListOptions{})
+			cancel()
+			if err != nil {
+				lg.Warn("list jobs failed", zap.String("namespace", nv), zap.Error(err))
+				continue
+			}
+			lg.Info("listed jobs", zap.String("namespace", nv), zap.Int("jobs", len(ss.Items)))
+
+			select {
+			case <-stopc:
+				lg.Warn("list jobs stopped")
+				return
+			case <-donec:
+				lg.Info("list jobs done")
+				return
+			default:
+			}
+		}
+	}
+}
+
+func listCronJobs(lg *zap.Logger, stopc chan struct{}, donec chan struct{}, cli *kubernetes.Clientset) {
+	for {
+		select {
+		case <-stopc:
+			lg.Warn("list cronjobs stopped")
+			return
+		case <-donec:
+			lg.Info("list cronjobs done")
+			return
+		default:
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		ns, err := cli.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
+		cancel()
+		if err != nil {
+			lg.Warn("list namespaces failed", zap.Error(err))
+			continue
+		}
+		lg.Info("listed namespaces", zap.Int("namespaces", len(ns.Items)))
+
+		for _, item := range ns.Items {
+			nv := item.GetName()
+
+			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+			ss, err := cli.BatchV1beta1().CronJobs(nv).List(ctx, metav1.ListOptions{})
+			cancel()
+			if err != nil {
+				lg.Warn("list cronjobs failed", zap.String("namespace", nv), zap.Error(err))
+				continue
+			}
+			lg.Info("listed cronjobs", zap.String("namespace", nv), zap.Int("cronjobs", len(ss.Items)))
+
+			select {
+			case <-stopc:
+				lg.Warn("list cronjobs stopped")
+				return
+			case <-donec:
+				lg.Info("list jobs done")
 				return
 			default:
 			}
