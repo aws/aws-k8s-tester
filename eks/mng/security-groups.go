@@ -149,23 +149,23 @@ Resources:
       FromPort: 22
       ToPort: 22
 
-  Ingress1024ForGuestBook:
+  IngressForGuestBook:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
       GroupId: !Ref ManagedNodeGroupSecurityGroupID
       IpProtocol: 'tcp'
       CidrIp: '0.0.0.0/0'
       FromPort: 1
-      ToPort: 1024
+      ToPort: 10000
 
-  Egress1024ForGuestBook:
+  EgressForGuestBook:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
       GroupId: !Ref ClusterControlPlaneSecurityGroupID
       IpProtocol: 'tcp'
       CidrIp: '0.0.0.0/0'
       FromPort: 1
-      ToPort: 1024
+      ToPort: 10000
 
   IngressForNodePortConformance:
     Type: AWS::EC2::SecurityGroupIngress
