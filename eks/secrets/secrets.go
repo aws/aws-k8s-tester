@@ -232,7 +232,7 @@ func (ts *tester) createSecretsSequential(pfx, valSfx string, failThreshold int)
 		}); err != nil {
 			return err
 		}
-		if i%100 == 0 {
+		if i%50 == 0 {
 			wr.Flush()
 		}
 
@@ -386,7 +386,7 @@ func (ts *tester) createSecretsParallel(pfx, valSfx string, failThreshold int) e
 		if err = wr.Write([]string{secretName, fmt.Sprintf("%f", rv.took.Seconds()), rv.start.String(), rv.end.String()}); err != nil {
 			return err
 		}
-		if i%100 == 0 {
+		if i%50 == 0 {
 			wr.Flush()
 		}
 	}
