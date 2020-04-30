@@ -652,13 +652,13 @@ func (ts *Tester) createSubTesters() (err error) {
 // ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Options
 func (ts *Tester) Up() (err error) {
 	fmt.Printf("\n*********************************\n")
-	fmt.Printf("Up start (%q)\n", ts.cfg.ConfigPath)
+	fmt.Printf("UP START (%q)\n", ts.cfg.ConfigPath)
 
 	now := time.Now()
 
 	defer func() {
 		fmt.Printf("\n*********************************\n")
-		fmt.Printf("Up.defer start (%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		fmt.Printf("UP DEFER START (%q, %q)\n\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 
 		if serr := ts.uploadToS3(); serr != nil {
 			ts.lg.Warn("failed to upload artifacts to S3", zap.Error(serr))
@@ -680,9 +680,9 @@ func (ts *Tester) Up() (err error) {
 
 				fmt.Printf("\n*********************************\n")
 				ts.lg.Sugar().Infof("Up.defer end (%s, %s)", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-				fmt.Printf("\n\n💯 😁 👍 :)  Up success\n\n\n")
+				fmt.Printf("\n\n💯 😁 👍 :)  UP START\n\n\n")
 			} else {
-				fmt.Printf("\n\n😲 😲 😲  aborted Up ???\n\n\n")
+				fmt.Printf("\n\n😲 😲 😲  UP ABORTED ???\n\n\n")
 			}
 			return
 		}
@@ -707,7 +707,7 @@ func (ts *Tester) Up() (err error) {
 
 			fmt.Printf("\n*********************************\n")
 			ts.lg.Sugar().Infof("Up.defer end (%s, %s)", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-			fmt.Printf("\n\n🔥 💀 👽 😱 😡 (-_-)  Up fail\n\n\n")
+			fmt.Printf("\n\n🔥 💀 👽 😱 😡 (-_-)  UP FAIL\n\n\n")
 			return
 		}
 
@@ -724,7 +724,7 @@ func (ts *Tester) Up() (err error) {
 		fmt.Printf("\n\n\nUP FAIL ERROR:\n\n%v\n\n\n", err)
 
 		fmt.Printf("\n*********************************\n")
-		fmt.Printf("🔥 💀 👽 😱 😡 (-_-) Up fail\n")
+		fmt.Printf("🔥 💀 👽 😱 😡 (-_-) UP FAIL\n")
 		ts.lg.Warn("Up failed; reverting resource creation",
 			zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			zap.Error(err),
@@ -1425,7 +1425,7 @@ func (ts *Tester) Down() error {
 
 func (ts *Tester) down() (err error) {
 	fmt.Printf("\n*********************************\n")
-	fmt.Printf("Down start (%q)\n\n", ts.cfg.ConfigPath)
+	fmt.Printf("DOWN START (%q)\n\n", ts.cfg.ConfigPath)
 
 	now := time.Now()
 	ts.lg.Warn("starting Down",
@@ -1440,8 +1440,8 @@ func (ts *Tester) down() (err error) {
 		ts.cfg.Sync()
 		if err == nil {
 			fmt.Printf("\n*********************************\n")
-			fmt.Printf("Down.defer end (%q)\n\n", ts.cfg.ConfigPath)
-			fmt.Printf("\n\n😁 😁  :) Down success\n\n\n")
+			fmt.Printf("DOWN DEFER START (%q)\n\n", ts.cfg.ConfigPath)
+			fmt.Printf("\n\n😁 😁  :) DOWN SUCCESS\n\n\n")
 
 			ts.lg.Info("successfully finished Down",
 				zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
@@ -1449,8 +1449,8 @@ func (ts *Tester) down() (err error) {
 
 		} else {
 			fmt.Printf("\n*********************************\n")
-			fmt.Printf("Down.defer end (%q)\n\n", ts.cfg.ConfigPath)
-			fmt.Printf("\n\n🔥 💀 👽 😱 😡 (-_-) Down fail\n\n\n")
+			fmt.Printf("DOWN DEFER START (%q)\n\n", ts.cfg.ConfigPath)
+			fmt.Printf("\n\n🔥 💀 👽 😱 😡 (-_-) DOWN FAIL\n\n\n")
 
 			ts.lg.Info("failed Down",
 				zap.Error(err),

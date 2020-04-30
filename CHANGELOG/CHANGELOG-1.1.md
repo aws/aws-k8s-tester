@@ -22,6 +22,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.1...v1.1.2
 - Fix [`eks/job` query](https://github.com/aws/aws-k8s-tester/commit/11f8d9faf768983b713cf46a8be51accbfddcaca).
 - Use [`AddOnCSRs.FailThreshold`, `AddOnConfigMaps.FailThreshold` and `AddOnSecrets.FailThreshold`](https://github.com/aws/aws-k8s-tester/commit/1ca247353e98152fe8ef21ba14e06ad85e0d22a8).
 - Open [`1-10000` node group ports for upstream conformance tests (e.g. guestbook)](https://github.com/aws/aws-k8s-tester/commit/1e45a83b000d9a314ff1181ac0acf5bd3f3d98ca).
+- Update [results output to `UP SUCCESS/FAIL` and `DOWN SUCCESS/FAIL`](https://github.com/aws/aws-k8s-tester/commit/).
 
 ### Dependency
 
