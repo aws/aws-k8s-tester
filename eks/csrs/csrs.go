@@ -266,6 +266,7 @@ func (ts *tester) createCSRsSequential(pfx string, failThreshold int) error {
 				zap.String("key", csrName),
 				zap.Int("index", i),
 				zap.Int("created", len(ts.cfg.EKSConfig.AddOnCSRs.CreatedNames)),
+				zap.Int("target-total", ts.cfg.EKSConfig.AddOnCSRs.Objects),
 				zap.Duration("took", t2.Sub(t1)),
 			)
 		}
@@ -341,6 +342,7 @@ func (ts *tester) createCSRsParallel(pfx string, failThreshold int) error {
 					zap.String("key", csr.GetObjectMeta().GetName()),
 					zap.Int("index", i),
 					zap.Int("created", len(ts.cfg.EKSConfig.AddOnCSRs.CreatedNames)),
+					zap.Int("target-total", ts.cfg.EKSConfig.AddOnCSRs.Objects),
 					zap.Duration("took", t2.Sub(t1)),
 				)
 			}
