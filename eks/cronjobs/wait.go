@@ -73,7 +73,7 @@ func waitJobs(
 			}
 			count++
 		}
-		if count == targets {
+		if count >= targets {
 			lg.Info("found all targets", zap.Int("target", targets))
 			break
 		}
