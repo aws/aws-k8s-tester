@@ -623,9 +623,10 @@ func (ts *tester) checkPod() error {
 		"cat",
 		fmt.Sprintf("/tmp/%s", ts.cfg.EKSConfig.AddOnFargate.SecretName),
 	}
+	cmdTxt := strings.Join(args, " ")
 	ts.cfg.Logger.Info("checking Pod exec",
 		zap.String("container-name", ts.cfg.EKSConfig.AddOnFargate.ContainerName),
-		zap.String("command", strings.Join(args, " ")),
+		zap.String("command", cmdTxt),
 	)
 	found := false
 	retryStart, waitDur := time.Now(), 3*time.Minute
@@ -642,17 +643,15 @@ func (ts *tester) checkPod() error {
 		cancel()
 		out := string(output)
 		if err != nil {
-			ts.cfg.Logger.Warn("'kubectl exec' failed", zap.String("output", out), zap.Error(err))
-			continue
+			ts.cfg.Logger.Warn("'kubectl exec' failed", zap.Error(err))
 		}
+		fmt.Printf("\n'%s' output:\n\n%s\n\n", cmdTxt, out)
+
 		if !strings.Contains(out, secretReadTxt) {
 			ts.cfg.Logger.Warn("unexpected exec output", zap.String("output", out))
-			continue
+		} else {
+			ts.cfg.Logger.Info("successfully checked Pod exec", zap.String("container-name", ts.cfg.EKSConfig.AddOnFargate.ContainerName))
 		}
-		ts.cfg.Logger.Info("successfully checked Pod exec",
-			zap.String("container-name", ts.cfg.EKSConfig.AddOnFargate.ContainerName),
-			zap.String("output", out),
-		)
 		found = true
 		break
 	}
@@ -699,20 +698,18 @@ func (ts *tester) checkPod() error {
 		cancel()
 		out := string(output)
 		if err != nil {
-			ts.cfg.Logger.Warn("'kubectl describe' failed", zap.String("output", out), zap.Error(err))
-			continue
+			ts.cfg.Logger.Warn("'kubectl describe' failed", zap.Error(err))
 		}
-		fmt.Printf("'%s' output:\n\n%s\n\n", cmdTxtDesc, out)
+		fmt.Printf("\n'%s' output:\n\n%s\n\n", cmdTxtDesc, out)
 
 		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 		output, err = exec.New().CommandContext(ctx, argsLogs[0], argsLogs[1:]...).CombinedOutput()
 		cancel()
 		out = string(output)
 		if err != nil {
-			ts.cfg.Logger.Warn("'kubectl logs' failed", zap.String("output", out), zap.Error(err))
-			continue
+			ts.cfg.Logger.Warn("'kubectl logs' failed", zap.Error(err))
 		}
-		fmt.Printf("'%s' output:\n\n%s\n\n", cmdTxtLogs, out)
+		fmt.Printf("\n'%s' output:\n\n%s\n\n", cmdTxtLogs, out)
 
 		ts.cfg.Logger.Info("checked Pod logs",
 			zap.String("pod-name", ts.cfg.EKSConfig.AddOnFargate.PodName),

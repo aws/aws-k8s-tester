@@ -1040,6 +1040,7 @@ func (ts *tester) waitOutputLogs() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
+// TODO: only SSH into the one with IRSA deployment Pod
 func (ts *tester) countSuccess() (int, error) {
 	sshOpt := ssh.WithVerbose(ts.cfg.EKSConfig.LogLevel == "debug")
 	rateLimiter := rate.NewLimiter(rate.Limit(50), 10)

@@ -1033,20 +1033,18 @@ func (ts *tester) checkPod() error {
 		cancel()
 		out := string(output)
 		if err != nil {
-			ts.cfg.Logger.Warn("'kubectl describe' failed", zap.String("output", out), zap.Error(err))
-			continue
+			ts.cfg.Logger.Warn("'kubectl describe' failed", zap.Error(err))
 		}
-		fmt.Printf("'%s' output:\n\n%s\n\n", cmdTxtDesc, out)
+		fmt.Printf("\n'%s' output:\n\n%s\n\n", cmdTxtDesc, out)
 
 		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 		output, err = exec.New().CommandContext(ctx, argsLogs[0], argsLogs[1:]...).CombinedOutput()
 		cancel()
 		out = string(output)
 		if err != nil {
-			ts.cfg.Logger.Warn("'kubectl logs' failed", zap.String("output", out), zap.Error(err))
-			continue
+			ts.cfg.Logger.Warn("'kubectl logs' failed", zap.Error(err))
 		}
-		fmt.Printf("'%s' output:\n\n%s\n\n", cmdTxtLogs, out)
+		fmt.Printf("\n'%s' output:\n\n%s\n\n", cmdTxtLogs, out)
 
 		ts.cfg.Logger.Info("checked Pod logs",
 			zap.String("pod-name", ts.cfg.EKSConfig.AddOnIRSAFargate.PodName),
