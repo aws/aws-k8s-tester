@@ -227,7 +227,7 @@ func (ts *tester) createCSRsSequential(pfx string, failThreshold int) error {
 		key := fmt.Sprintf("%s%06d", pfx, i)
 		req := ts.createCSR(i, key)
 		t1 := time.Now()
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		csr, err := ts.cfg.K8SClient.KubernetesClientSet().
 			CertificatesV1beta1().
 			CertificateSigningRequests().
@@ -260,8 +260,14 @@ func (ts *tester) createCSRsSequential(pfx string, failThreshold int) error {
 		ts.cfg.EKSConfig.AddOnCSRs.CreatedNames = append(ts.cfg.EKSConfig.AddOnCSRs.CreatedNames, csrName)
 		ts.cfg.EKSConfig.Sync()
 
-		if ts.cfg.EKSConfig.LogLevel == "debug" || i%200 == 0 {
-			ts.cfg.Logger.Info("created CSR", zap.String("key", csrName), zap.Duration("took", t2.Sub(t1)))
+		if ts.cfg.EKSConfig.LogLevel == "debug" || i%50 == 0 {
+			ts.cfg.Logger.Info(
+				"created CSR",
+				zap.String("key", csrName),
+				zap.Int("index", i),
+				zap.Int("created", len(ts.cfg.EKSConfig.AddOnCSRs.CreatedNames)),
+				zap.Duration("took", t2.Sub(t1)),
+			)
 		}
 	}
 
@@ -285,9 +291,9 @@ func (ts *tester) createCSRsParallel(pfx string, failThreshold int) error {
 	for i := 0; i < ts.cfg.EKSConfig.AddOnCSRs.Objects; i++ {
 		go func(i int) {
 			if !rateLimiter.Allow() {
-				ts.cfg.Logger.Debug("waiting for rate limiter creating CSR", zap.Int("index", i))
+				ts.cfg.Logger.Warn("waiting for rate limiter creating CSR", zap.Int("index", i))
 				werr := rateLimiter.Wait(context.Background())
-				ts.cfg.Logger.Debug("waited for rate limiter", zap.Int("index", i), zap.Error(werr))
+				ts.cfg.Logger.Warn("waited for rate limiter", zap.Int("index", i), zap.Error(werr))
 			}
 			select {
 			case <-ts.cancel:
@@ -300,7 +306,7 @@ func (ts *tester) createCSRsParallel(pfx string, failThreshold int) error {
 			key := fmt.Sprintf("%s%06d", pfx, i)
 			req := ts.createCSR(i, key)
 			t1 := time.Now()
-			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 			csr, err := ts.cfg.K8SClient.KubernetesClientSet().
 				CertificatesV1beta1().
 				CertificateSigningRequests().
@@ -320,10 +326,11 @@ func (ts *tester) createCSRsParallel(pfx string, failThreshold int) error {
 				return
 			}
 
-			if ts.cfg.EKSConfig.LogLevel == "debug" || i%200 == 0 {
+			if ts.cfg.EKSConfig.LogLevel == "debug" || i%50 == 0 {
 				ts.cfg.Logger.Info("created CSR",
-					zap.String("key",
-						csr.GetObjectMeta().GetName()),
+					zap.String("key", csr.GetObjectMeta().GetName()),
+					zap.Int("index", i),
+					zap.Int("created", len(ts.cfg.EKSConfig.AddOnCSRs.CreatedNames)),
 					zap.Duration("took", t2.Sub(t1)),
 				)
 			}
