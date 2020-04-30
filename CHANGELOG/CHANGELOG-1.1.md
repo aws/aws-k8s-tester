@@ -12,7 +12,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.1...v1.1.2
 - Replace [`AddOnConfigMaps.QPS`, `AddOnCSRs.QPS`, `AddOnSecrets.SecretsQPS`, `AddOnSecrets.PodQPS` with `ClientQPS`](https://github.com/aws/aws-k8s-tester/commit/35a3f0f5b7356d0c5e5871e30e5c25df3d6e18c3).
 - Replace [`AddOnConfigMaps.Burst`, `AddOnCSRs.Burst`, `AddOnSecrets.SecretsBurst`, `AddOnSecrets.PodBurst` with `ClientBurst`](https://github.com/aws/aws-k8s-tester/commit/35a3f0f5b7356d0c5e5871e30e5c25df3d6e18c3).
 - Make [`1.16` as default EKS version](https://github.com/aws/aws-k8s-tester/commit/3ec335f6e3478ee67f8bbc98a6628ce0ed26a5e4).
-- Add [`AddOnCSRs.FailThreshold`, `AddOnConfigMaps.FailThreshold` and `AddOnSecrets.FailThreshold`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`AddOnCSRs.FailThreshold`, `AddOnConfigMaps.FailThreshold` and `AddOnSecrets.FailThreshold`](https://github.com/aws/aws-k8s-tester/commit/1ca247353e98152fe8ef21ba14e06ad85e0d22a8).
 
 ### `eks`
 
@@ -20,6 +20,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.1...v1.1.2
 - Fix [`eks/csrs` parallel creation](https://github.com/aws/aws-k8s-tester/commit/8fd9a10a8a1f2c604fd19fe969ca9a858c15d60b).
 - Clean up [`eks/csi-ebs` command outputs](https://github.com/aws/aws-k8s-tester/commit/a72d437aad67021fc34e3ee091d8bdb281effad8).
 - Fix [`eks/job` query](https://github.com/aws/aws-k8s-tester/commit/11f8d9faf768983b713cf46a8be51accbfddcaca).
+- Use [`AddOnCSRs.FailThreshold`, `AddOnConfigMaps.FailThreshold` and `AddOnSecrets.FailThreshold`](https://github.com/aws/aws-k8s-tester/commit/1ca247353e98152fe8ef21ba14e06ad85e0d22a8).
 
 ### Dependency
 
