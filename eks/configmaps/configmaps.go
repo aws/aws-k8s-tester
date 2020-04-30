@@ -119,7 +119,7 @@ func (ts *tester) createConfigMaps() (err error) {
 	ts.cfg.EKSConfig.AddOnConfigMaps.CreatedNames = make([]string, 0, ts.cfg.EKSConfig.AddOnConfigMaps.Objects)
 	ts.cfg.EKSConfig.Sync()
 
-	if ts.cfg.EKSConfig.AddOnConfigMaps.QPS <= 1 {
+	if ts.cfg.EKSConfig.ClientQPS <= 1 {
 		err = ts.createConfigMapsSequential(pfx, val, writesFailThreshold)
 	} else {
 		err = ts.createConfigMapsParallel(pfx, val, writesFailThreshold)
@@ -129,9 +129,8 @@ func (ts *tester) createConfigMaps() (err error) {
 }
 
 func (ts *tester) createConfigMapsSequential(pfx, val string, failThreshold int) error {
-	qps := float64(ts.cfg.EKSConfig.AddOnConfigMaps.QPS)
-	burst := int(ts.cfg.EKSConfig.AddOnConfigMaps.Burst)
-	rateLimiter := rate.NewLimiter(rate.Limit(qps), burst)
+	qps := float64(ts.cfg.EKSConfig.ClientQPS)
+	burst := int(ts.cfg.EKSConfig.ClientBurst)
 	ts.cfg.Logger.Info("creating ConfigMaps sequential",
 		zap.Float64("qps", qps),
 		zap.Int("burst", burst),
@@ -139,12 +138,6 @@ func (ts *tester) createConfigMapsSequential(pfx, val string, failThreshold int)
 
 	fails := 0
 	for i := 0; i < ts.cfg.EKSConfig.AddOnConfigMaps.Objects; i++ {
-		if !rateLimiter.Allow() {
-			ts.cfg.Logger.Debug("waiting for rate limiter creating ConfigMap", zap.Int("index", i))
-			werr := rateLimiter.Wait(context.Background())
-			ts.cfg.Logger.Debug("waited for rate limiter", zap.Int("index", i), zap.Error(werr))
-		}
-
 		key := fmt.Sprintf("%s%06d", pfx, i)
 		configMap := &v1.ConfigMap{
 			TypeMeta: metav1.TypeMeta{
@@ -208,8 +201,8 @@ func (ts *tester) createConfigMapsSequential(pfx, val string, failThreshold int)
 }
 
 func (ts *tester) createConfigMapsParallel(pfx, val string, failThreshold int) error {
-	qps := float64(ts.cfg.EKSConfig.AddOnConfigMaps.QPS)
-	burst := int(ts.cfg.EKSConfig.AddOnConfigMaps.Burst)
+	qps := float64(ts.cfg.EKSConfig.ClientQPS)
+	burst := int(ts.cfg.EKSConfig.ClientBurst)
 	rateLimiter := rate.NewLimiter(rate.Limit(qps), burst)
 	ts.cfg.Logger.Info("creating ConfigMaps parallel",
 		zap.Float64("qps", qps),

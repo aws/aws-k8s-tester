@@ -115,7 +115,7 @@ func (ts *tester) createCSRs() (err error) {
 	ts.cfg.EKSConfig.AddOnCSRs.CreatedNames = make([]string, 0, ts.cfg.EKSConfig.AddOnCSRs.Objects)
 	ts.cfg.EKSConfig.Sync()
 
-	if ts.cfg.EKSConfig.AddOnCSRs.QPS <= 1 {
+	if ts.cfg.EKSConfig.ClientQPS <= 1 {
 		err = ts.createCSRsSequential(pfx, writesFailThreshold)
 	} else {
 		err = ts.createCSRsParallel(pfx, writesFailThreshold)
@@ -215,9 +215,8 @@ func (ts *tester) createCSR(idx int, name string) *certificatesv1beta1.Certifica
 }
 
 func (ts *tester) createCSRsSequential(pfx string, failThreshold int) error {
-	qps := float64(ts.cfg.EKSConfig.AddOnCSRs.QPS)
-	burst := int(ts.cfg.EKSConfig.AddOnCSRs.Burst)
-	rateLimiter := rate.NewLimiter(rate.Limit(qps), burst)
+	qps := float64(ts.cfg.EKSConfig.ClientQPS)
+	burst := int(ts.cfg.EKSConfig.ClientBurst)
 	ts.cfg.Logger.Info("creating CSRs sequential",
 		zap.Float64("qps", qps),
 		zap.Int("burst", burst),
@@ -225,12 +224,6 @@ func (ts *tester) createCSRsSequential(pfx string, failThreshold int) error {
 
 	fails := 0
 	for i := 0; i < ts.cfg.EKSConfig.AddOnCSRs.Objects; i++ {
-		if !rateLimiter.Allow() {
-			ts.cfg.Logger.Debug("waiting for rate limiter creating CSR", zap.Int("index", i))
-			werr := rateLimiter.Wait(context.Background())
-			ts.cfg.Logger.Debug("waited for rate limiter", zap.Int("index", i), zap.Error(werr))
-		}
-
 		key := fmt.Sprintf("%s%06d", pfx, i)
 		req := ts.createCSR(i, key)
 		t1 := time.Now()
@@ -280,8 +273,8 @@ func (ts *tester) createCSRsSequential(pfx string, failThreshold int) error {
 }
 
 func (ts *tester) createCSRsParallel(pfx string, failThreshold int) error {
-	qps := float64(ts.cfg.EKSConfig.AddOnCSRs.QPS)
-	burst := int(ts.cfg.EKSConfig.AddOnCSRs.Burst)
+	qps := float64(ts.cfg.EKSConfig.ClientQPS)
+	burst := int(ts.cfg.EKSConfig.ClientBurst)
 	rateLimiter := rate.NewLimiter(rate.Limit(qps), burst)
 	ts.cfg.Logger.Info("creating CSRs parallel",
 		zap.Float64("qps", qps),

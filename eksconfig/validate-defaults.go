@@ -182,8 +182,6 @@ func NewDefault() *Config {
 			InitialRequestConditionType: "",
 
 			Objects: 10,
-			QPS:     1,
-			Burst:   1,
 
 			// writes total 5 MB data to etcd
 			// Objects: 1000,
@@ -193,8 +191,6 @@ func NewDefault() *Config {
 			Enable:  false,
 			Objects: 10,
 			Size:    10 * 1024, // 10 KB
-			QPS:     1,
-			Burst:   1,
 
 			// writes total 300 MB data to etcd
 			// Objects: 1000,
@@ -202,13 +198,9 @@ func NewDefault() *Config {
 		},
 
 		AddOnSecrets: &AddOnSecrets{
-			Enable:       false,
-			Objects:      10,
-			Size:         10 * 1024, // 10 KB
-			SecretsQPS:   1,
-			SecretsBurst: 1,
-			PodQPS:       1,
-			PodBurst:     1,
+			Enable:  false,
+			Objects: 10,
+			Size:    10 * 1024, // 10 KB
 
 			// writes total 100 MB for "Secret" objects,
 			// plus "Pod" objects, writes total 330 MB to etcd
@@ -1119,9 +1111,6 @@ func (cfg *Config) validateAddOnCSRs() error {
 	if cfg.AddOnCSRs.Namespace == "" {
 		cfg.AddOnCSRs.Namespace = cfg.Name + "-csrs"
 	}
-	if cfg.ClientQPS > 0 && float32(cfg.AddOnCSRs.QPS) > cfg.ClientQPS {
-		return fmt.Errorf("AddOnCSRs.QPS %d > ClientQPS %f", cfg.AddOnCSRs.QPS, cfg.ClientQPS)
-	}
 	switch cfg.AddOnCSRs.InitialRequestConditionType {
 	case "Approved":
 	case "Denied":
@@ -1145,9 +1134,6 @@ func (cfg *Config) validateAddOnConfigMaps() error {
 	}
 	if cfg.AddOnConfigMaps.Size > 900000 {
 		return fmt.Errorf("AddOnConfigMaps.Size limit is 0.9 MB, got %d", cfg.AddOnConfigMaps.Size)
-	}
-	if cfg.ClientQPS > 0 && float32(cfg.AddOnConfigMaps.QPS) > cfg.ClientQPS {
-		return fmt.Errorf("AddOnConfigMaps.QPS %d > ClientQPS %f", cfg.AddOnConfigMaps.QPS, cfg.ClientQPS)
 	}
 	return nil
 }
@@ -1173,12 +1159,6 @@ func (cfg *Config) validateAddOnSecrets() error {
 	}
 	if filepath.Ext(cfg.AddOnSecrets.ReadsResultPath) != ".csv" {
 		return fmt.Errorf("expected .csv extension for ReadsResultPath, got %q", cfg.AddOnSecrets.ReadsResultPath)
-	}
-	if cfg.ClientQPS > 0 && float32(cfg.AddOnSecrets.SecretsQPS) > cfg.ClientQPS {
-		return fmt.Errorf("AddOnSecrets.SecretsQPS %d > ClientQPS %f", cfg.AddOnSecrets.SecretsQPS, cfg.ClientQPS)
-	}
-	if cfg.ClientQPS > 0 && float32(cfg.AddOnSecrets.PodQPS) > cfg.ClientQPS {
-		return fmt.Errorf("AddOnSecrets.PodQPS %d > ClientQPS %f", cfg.AddOnSecrets.PodQPS, cfg.ClientQPS)
 	}
 	return nil
 }

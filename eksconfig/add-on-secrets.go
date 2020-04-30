@@ -41,35 +41,8 @@ type AddOnSecrets struct {
 	// Size is the "Secret" value size in bytes.
 	Size int `json:"size"`
 
-	// SecretsQPS is the number of "Secret" create requests to send
-	// per second. Requests may be throttled by kube-apiserver.
-	// Default rate limits from kube-apiserver are:
-	// FLAG: --max-mutating-requests-inflight="200"
-	// FLAG: --max-requests-inflight="400"
-	SecretsQPS uint `json:"secret-qps"`
-	// SecretsBurst is the number of "Secret" create requests that
-	// a client can make in excess of the rate specified by the limiter.
-	// Requests may be throttled by kube-apiserver.
-	// Default rate limits from kube-apiserver are:
-	// FLAG: --max-mutating-requests-inflight="200"
-	// FLAG: --max-requests-inflight="400"
-	SecretsBurst uint `json:"secret-burst"`
 	// CreatedSecretsNames is the list of created "Secret" object names.
 	CreatedSecretsNames []string `json:"created-secrets-names" read-only:"true"`
-
-	// PodQPS is the number of "Pod" create requests to send
-	// per second. Requests may be throttled by kube-apiserver.
-	// Default rate limits from kube-apiserver are:
-	// FLAG: --max-mutating-requests-inflight="200"
-	// FLAG: --max-requests-inflight="400"
-	PodQPS uint `json:"pod-qps"`
-	// PodBurst is the number of "Pod" create requests that
-	// a client can make in excess of the rate specified by the limiter.
-	// Requests may be throttled by kube-apiserver.
-	// Default rate limits from kube-apiserver are:
-	// FLAG: --max-mutating-requests-inflight="200"
-	// FLAG: --max-requests-inflight="400"
-	PodBurst uint `json:"pod-burst"`
 	// CreatedPodNames is the list of created "Pod" object names.
 	CreatedPodNames []string `json:"created-pod-names" read-only:"true"`
 

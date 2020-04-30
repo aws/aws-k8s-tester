@@ -251,10 +251,6 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_INITIAL_REQUEST_CONDITION_TYPE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_OBJECTS", "10000")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_OBJECTS")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_QPS", "222")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_QPS")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_BURST", "777")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_BURST")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_CREATED_NAMES", "a,b,c")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_CREATED_NAMES")
 
@@ -268,10 +264,6 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_OBJECTS")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_SIZE", "555")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_SIZE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_QPS", "333")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_QPS")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_BURST", "777")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_BURST")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_CREATED_NAMES", "a,b,c")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_CREATED_NAMES")
 
@@ -285,14 +277,6 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_OBJECTS")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_SIZE", "10")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_SIZE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_SECRET_QPS", "10")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_SECRET_QPS")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_SECRET_BURST", "10")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_SECRET_BURST")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_POD_QPS", "10")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_POD_QPS")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_POD_BURST", "10")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_POD_BURST")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_WRITES_RESULT_PATH", "writes.csv")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_WRITES_RESULT_PATH")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_READS_RESULT_PATH", "reads.csv")
@@ -816,12 +800,6 @@ func TestEnv(t *testing.T) {
 	if cfg.AddOnCSRs.Objects != 10000 {
 		t.Fatalf("unexpected cfg.AddOnCSRs.Objects %d", cfg.AddOnCSRs.Objects)
 	}
-	if cfg.AddOnCSRs.QPS != 222 {
-		t.Fatalf("unexpected cfg.AddOnCSRs.QPS %d", cfg.AddOnCSRs.QPS)
-	}
-	if cfg.AddOnCSRs.Burst != 777 {
-		t.Fatalf("unexpected cfg.AddOnCSRs.Burst %d", cfg.AddOnCSRs.Burst)
-	}
 	if len(cfg.AddOnCSRs.CreatedNames) > 0 { // read-only must be ignored
 		t.Fatalf("unexpected cfg.AddOnCSRs.CreatedNames %v", cfg.AddOnCSRs.CreatedNames)
 	}
@@ -841,12 +819,6 @@ func TestEnv(t *testing.T) {
 	if cfg.AddOnConfigMaps.Size != 555 {
 		t.Fatalf("unexpected cfg.AddOnConfigMaps.Size %d", cfg.AddOnConfigMaps.Size)
 	}
-	if cfg.AddOnConfigMaps.QPS != 333 {
-		t.Fatalf("unexpected cfg.AddOnConfigMaps.QPS %d", cfg.AddOnConfigMaps.QPS)
-	}
-	if cfg.AddOnConfigMaps.Burst != 777 {
-		t.Fatalf("unexpected cfg.AddOnConfigMaps.Burst %d", cfg.AddOnConfigMaps.Burst)
-	}
 	if len(cfg.AddOnConfigMaps.CreatedNames) > 0 { // read-only must be ignored
 		t.Fatalf("unexpected cfg.AddOnConfigMaps.CreatedNames %v", cfg.AddOnConfigMaps.CreatedNames)
 	}
@@ -865,18 +837,6 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.AddOnSecrets.Size != 10 {
 		t.Fatalf("unexpected cfg.AddOnSecrets.Size %v", cfg.AddOnSecrets.Size)
-	}
-	if cfg.AddOnSecrets.SecretsQPS != 10 {
-		t.Fatalf("unexpected cfg.AddOnSecrets.SecretsQPS %v", cfg.AddOnSecrets.SecretsQPS)
-	}
-	if cfg.AddOnSecrets.SecretsBurst != 10 {
-		t.Fatalf("unexpected cfg.AddOnSecrets.SecretsBurst %v", cfg.AddOnSecrets.SecretsBurst)
-	}
-	if cfg.AddOnSecrets.PodQPS != 10 {
-		t.Fatalf("unexpected cfg.AddOnSecrets.PodQPS %v", cfg.AddOnSecrets.PodQPS)
-	}
-	if cfg.AddOnSecrets.PodBurst != 10 {
-		t.Fatalf("unexpected cfg.AddOnSecrets.PodBurst %v", cfg.AddOnSecrets.PodBurst)
 	}
 	if cfg.AddOnSecrets.WritesResultPath != "writes.csv" {
 		t.Fatalf("unexpected cfg.AddOnSecrets.WritesResultPath %q", cfg.AddOnSecrets.WritesResultPath)

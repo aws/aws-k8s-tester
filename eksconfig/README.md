@@ -187,8 +187,6 @@ AWS_K8S_TESTER_EKS_ADD_ON_CSRS_DELETE_TOOK_STRING | *eksconfig.AddOnCSRs.DeleteT
 AWS_K8S_TESTER_EKS_ADD_ON_CSRS_NAMESPACE | *eksconfig.AddOnCSRs.Namespace | string | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_CSRS_INITIAL_REQUEST_CONDITION_TYPE | *eksconfig.AddOnCSRs.InitialRequestConditionType | string | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_CSRS_OBJECTS | *eksconfig.AddOnCSRs.Objects | int | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_CSRS_QPS | *eksconfig.AddOnCSRs.QPS | uint | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_CSRS_BURST | *eksconfig.AddOnCSRs.Burst | uint | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_CSRS_CREATED_NAMES | *eksconfig.AddOnCSRs.CreatedNames | []string | read-only "true"
 
 
@@ -201,8 +199,6 @@ AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_DELETE_TOOK_STRING | *eksconfig.AddOnConfi
 AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_NAMESPACE | *eksconfig.AddOnConfigMaps.Namespace | string | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_OBJECTS | *eksconfig.AddOnConfigMaps.Objects | int | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_SIZE | *eksconfig.AddOnConfigMaps.Size | int | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_QPS | *eksconfig.AddOnConfigMaps.QPS | uint | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_BURST | *eksconfig.AddOnConfigMaps.Burst | uint | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_CREATED_NAMES | *eksconfig.AddOnConfigMaps.CreatedNames | []string | read-only "true"
 
 
@@ -215,11 +211,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_DELETE_TOOK_STRING | *eksconfig.AddOnSecrets.D
 AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_NAMESPACE | *eksconfig.AddOnSecrets.Namespace | string | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_OBJECTS | *eksconfig.AddOnSecrets.Objects | int | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_SIZE | *eksconfig.AddOnSecrets.Size | int | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_SECRET_QPS | *eksconfig.AddOnSecrets.SecretsQPS | uint | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_SECRET_BURST | *eksconfig.AddOnSecrets.SecretsBurst | uint | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_CREATED_SECRETS_NAMES | *eksconfig.AddOnSecrets.CreatedSecretsNames | []string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_POD_QPS | *eksconfig.AddOnSecrets.PodQPS | uint | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_POD_BURST | *eksconfig.AddOnSecrets.PodBurst | uint | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_CREATED_POD_NAMES | *eksconfig.AddOnSecrets.CreatedPodNames | []string | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_WRITES_RESULT_PATH | *eksconfig.AddOnSecrets.WritesResultPath | string | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_READS_RESULT_PATH | *eksconfig.AddOnSecrets.ReadsResultPath | string | read-only "false"

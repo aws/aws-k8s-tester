@@ -140,7 +140,7 @@ func (ts *tester) createSecrets() (err error) {
 	ts.cfg.EKSConfig.AddOnSecrets.CreatedSecretsNames = make([]string, 0, ts.cfg.EKSConfig.AddOnSecrets.Objects)
 	ts.cfg.EKSConfig.Sync()
 
-	if ts.cfg.EKSConfig.AddOnSecrets.SecretsQPS <= 1 {
+	if ts.cfg.EKSConfig.ClientQPS <= 1 {
 		err = ts.createSecretsSequential(pfx, valSfx, writesFailThreshold)
 	} else {
 		err = ts.createSecretsParallel(pfx, valSfx, writesFailThreshold)
@@ -150,9 +150,8 @@ func (ts *tester) createSecrets() (err error) {
 }
 
 func (ts *tester) createSecretsSequential(pfx, valSfx string, failThreshold int) error {
-	qps := float64(ts.cfg.EKSConfig.AddOnSecrets.SecretsQPS)
-	burst := int(ts.cfg.EKSConfig.AddOnSecrets.SecretsBurst)
-	rateLimiter := rate.NewLimiter(rate.Limit(qps), burst)
+	qps := float64(ts.cfg.EKSConfig.ClientQPS)
+	burst := int(ts.cfg.EKSConfig.ClientBurst)
 	ts.cfg.Logger.Info("creating Secrets sequential",
 		zap.Float64("qps", qps),
 		zap.Int("burst", burst),
@@ -173,12 +172,6 @@ func (ts *tester) createSecretsSequential(pfx, valSfx string, failThreshold int)
 
 	fails := 0
 	for i := 0; i < ts.cfg.EKSConfig.AddOnSecrets.Objects; i++ {
-		if !rateLimiter.Allow() {
-			ts.cfg.Logger.Debug("waiting for rate limiter creating Secret", zap.Int("index", i))
-			werr := rateLimiter.Wait(context.Background())
-			ts.cfg.Logger.Debug("waited for rate limiter", zap.Int("index", i), zap.Error(werr))
-		}
-
 		key := fmt.Sprintf("%s%06d", pfx, i)
 		val := []byte(fmt.Sprintf("%06d", i) + valSfx)
 
@@ -264,8 +257,8 @@ func (ts *tester) createSecretsSequential(pfx, valSfx string, failThreshold int)
 }
 
 func (ts *tester) createSecretsParallel(pfx, valSfx string, failThreshold int) error {
-	qps := float64(ts.cfg.EKSConfig.AddOnSecrets.SecretsQPS)
-	burst := int(ts.cfg.EKSConfig.AddOnSecrets.SecretsBurst)
+	qps := float64(ts.cfg.EKSConfig.ClientQPS)
+	burst := int(ts.cfg.EKSConfig.ClientBurst)
 	rateLimiter := rate.NewLimiter(rate.Limit(qps), burst)
 	ts.cfg.Logger.Info("creating Secrets parallel",
 		zap.Float64("qps", qps),
@@ -505,7 +498,7 @@ func (ts *tester) createPods() error {
 	ts.cfg.EKSConfig.AddOnSecrets.CreatedPodNames = make([]string, 0, ts.cfg.EKSConfig.AddOnSecrets.Objects)
 	ts.cfg.EKSConfig.Sync()
 
-	if ts.cfg.EKSConfig.AddOnSecrets.PodQPS <= 1 {
+	if ts.cfg.EKSConfig.ClientQPS <= 1 {
 		if err := ts.createPodsSequential(pods); err != nil {
 			return err
 		}
@@ -519,9 +512,8 @@ func (ts *tester) createPods() error {
 }
 
 func (ts *tester) createPodsSequential(pods []*v1.Pod) error {
-	qps := float64(ts.cfg.EKSConfig.AddOnSecrets.PodQPS)
-	burst := int(ts.cfg.EKSConfig.AddOnSecrets.PodBurst)
-	rateLimiter := rate.NewLimiter(rate.Limit(qps), burst)
+	qps := float64(ts.cfg.EKSConfig.ClientQPS)
+	burst := int(ts.cfg.EKSConfig.ClientBurst)
 	ts.cfg.Logger.Info("creating Pods sequential",
 		zap.Float64("qps", qps),
 		zap.Int("burst", burst),
@@ -529,12 +521,6 @@ func (ts *tester) createPodsSequential(pods []*v1.Pod) error {
 	)
 
 	for idx, pod := range pods {
-		if !rateLimiter.Allow() {
-			ts.cfg.Logger.Debug("waiting for rate limiter creating Pod")
-			werr := rateLimiter.Wait(context.Background())
-			ts.cfg.Logger.Debug("waited for rate limiter", zap.Error(werr))
-		}
-
 		t1 := time.Now()
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		_, err := ts.cfg.K8SClient.KubernetesClientSet().
@@ -577,8 +563,8 @@ func (ts *tester) createPodsSequential(pods []*v1.Pod) error {
 }
 
 func (ts *tester) createPodsParallel(pods []*v1.Pod) error {
-	qps := float64(ts.cfg.EKSConfig.AddOnSecrets.PodQPS)
-	burst := int(ts.cfg.EKSConfig.AddOnSecrets.PodBurst)
+	qps := float64(ts.cfg.EKSConfig.ClientQPS)
+	burst := int(ts.cfg.EKSConfig.ClientBurst)
 	rateLimiter := rate.NewLimiter(rate.Limit(qps), burst)
 	ts.cfg.Logger.Info("creating Pods parallel",
 		zap.Float64("qps", qps),
