@@ -9,8 +9,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.1...v1.1.2
 
 ### `eksconfig`
 
-- Replace [`AddOnConfigMaps.QPS`, `AddOnCSRs.QPS`, `AddOnSecrets.SecretsQPS`, `AddOnSecrets.PodQPS` with `ClientQPS`](https://github.com/aws/aws-k8s-tester/commit/).
-- Replace [`AddOnConfigMaps.Burst`, `AddOnCSRs.Burst`, `AddOnSecrets.SecretsBurst`, `AddOnSecrets.PodBurst` with `ClientBurst`](https://github.com/aws/aws-k8s-tester/commit/).
+- Replace [`AddOnConfigMaps.QPS`, `AddOnCSRs.QPS`, `AddOnSecrets.SecretsQPS`, `AddOnSecrets.PodQPS` with `ClientQPS`](https://github.com/aws/aws-k8s-tester/commit/35a3f0f5b7356d0c5e5871e30e5c25df3d6e18c3).
+- Replace [`AddOnConfigMaps.Burst`, `AddOnCSRs.Burst`, `AddOnSecrets.SecretsBurst`, `AddOnSecrets.PodBurst` with `ClientBurst`](https://github.com/aws/aws-k8s-tester/commit/35a3f0f5b7356d0c5e5871e30e5c25df3d6e18c3).
 
 ### `eks`
 
