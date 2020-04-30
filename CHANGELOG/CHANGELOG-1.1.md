@@ -18,6 +18,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.1...v1.1.2
 - Add [`listJobs` and `listCronJobs` to cluster loader](https://github.com/aws/aws-k8s-tester/commit/a4eb3fe1367275fdc8c413efe3c0751e81907e4c).
 - Fix [`eks/csrs` parallel creation](https://github.com/aws/aws-k8s-tester/commit/8fd9a10a8a1f2c604fd19fe969ca9a858c15d60b).
 - Clean up [`eks/csi-ebs` command outputs](https://github.com/aws/aws-k8s-tester/commit/a72d437aad67021fc34e3ee091d8bdb281effad8).
+- Fix [`eks/job` query](https://github.com/aws/aws-k8s-tester/commit/11f8d9faf768983b713cf46a8be51accbfddcaca).
 
 ### Dependency
 
