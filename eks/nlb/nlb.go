@@ -282,6 +282,8 @@ func (ts *tester) waitDeployment() error {
 			zap.Int32("unavailable-replicas", dresp.Status.UnavailableReplicas),
 			zap.Int32("ready-replicas", dresp.Status.ReadyReplicas),
 		)
+
+		// TODO: remove the pod with "Error: ImagePullBackOff"
 		available := false
 		for _, cond := range dresp.Status.Conditions {
 			ts.cfg.Logger.Info("condition",

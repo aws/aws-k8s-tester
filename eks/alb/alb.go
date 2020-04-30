@@ -974,8 +974,7 @@ func (ts *tester) create2048Ingress() error {
 		cancel()
 		out := string(logsOutput)
 		if err != nil {
-			ts.cfg.Logger.Warn("'kubectl logs alb' failed", zap.String("output", out), zap.Error(err))
-			continue
+			ts.cfg.Logger.Warn("'kubectl logs alb' failed", zap.Error(err))
 		}
 		fmt.Printf("\n\n\n\"%s\" output:\n\n%s\n\n", logsCmd, out)
 

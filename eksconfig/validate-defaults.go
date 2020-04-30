@@ -78,10 +78,10 @@ func NewDefault() *Config {
 		// log file named with cluster name will be added automatically
 		LogOutputs: []string{"stderr"},
 
-		KubectlPath: "/tmp/kubectl-test-v1.16.9",
 		// https://github.com/kubernetes/kubernetes/tags
 		// https://kubernetes.io/docs/tasks/tools/install-kubectl/
 		// https://docs.aws.amazon.com/eks/latest/userguide/install-kubectl.html
+		KubectlPath:        "/tmp/kubectl-test-v1.16.9",
 		KubectlDownloadURL: "https://storage.googleapis.com/kubernetes-release/release/v1.16.9/bin/linux/amd64/kubectl",
 
 		OnFailureDelete:            true,
@@ -95,7 +95,7 @@ func NewDefault() *Config {
 			RoleCreate:          true,
 			VPCCreate:           true,
 			SigningName:         "eks",
-			Version:             "1.15",
+			Version:             "1.16",
 			EncryptionCMKCreate: true,
 		},
 
@@ -291,7 +291,8 @@ func NewDefault() *Config {
 				Name:                 cfg.Name + "-ng-asg-cpu",
 				RemoteAccessUserName: "ec2-user", // assume Amazon Linux 2
 				AMIType:              eks.AMITypesAl2X8664,
-				ImageIDSSMParameter:  "/aws/service/eks/optimized-ami/1.15/amazon-linux-2/recommended/image_id",
+				ImageID:              "",
+				ImageIDSSMParameter:  "/aws/service/eks/optimized-ami/1.16/amazon-linux-2/recommended/image_id",
 				ASGMinSize:           1,
 				ASGMaxSize:           1,
 				ASGDesiredCapacity:   1,
@@ -307,9 +308,9 @@ func NewDefault() *Config {
 			RemoteAccessUserName: "ec2-user", // assume Amazon Linux 2
 			ReleaseVersion:       "",         // to be auto-filled by EKS API
 			AMIType:              eks.AMITypesAl2X8664,
-			ASGMinSize:           2,
-			ASGMaxSize:           2,
-			ASGDesiredCapacity:   2,
+			ASGMinSize:           1,
+			ASGMaxSize:           1,
+			ASGDesiredCapacity:   1,
 			InstanceTypes:        []string{DefaultNodeInstanceTypeCPU},
 			VolumeSize:           DefaultNodeVolumeSize,
 		},
