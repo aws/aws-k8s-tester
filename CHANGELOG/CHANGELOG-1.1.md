@@ -9,7 +9,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.1...v1.1.2
 
 ### `eks`
 
-- Add [`listJobs` and `listCronJobs` to cluster loader](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`listJobs` and `listCronJobs` to cluster loader](https://github.com/aws/aws-k8s-tester/commit/a4eb3fe1367275fdc8c413efe3c0751e81907e4c).
 
 ### Dependency
 
