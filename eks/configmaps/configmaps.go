@@ -155,7 +155,7 @@ func (ts *tester) createConfigMapsSequential(pfx, val string, failThreshold int)
 		}
 
 		t1 := time.Now()
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 		_, err := ts.cfg.K8SClient.KubernetesClientSet().
 			CoreV1().
 			ConfigMaps(ts.cfg.EKSConfig.AddOnConfigMaps.Namespace).
@@ -188,8 +188,13 @@ func (ts *tester) createConfigMapsSequential(pfx, val string, failThreshold int)
 		ts.cfg.EKSConfig.AddOnConfigMaps.CreatedNames = append(ts.cfg.EKSConfig.AddOnConfigMaps.CreatedNames, configMapName)
 		ts.cfg.EKSConfig.Sync()
 
-		if ts.cfg.EKSConfig.LogLevel == "debug" || i%200 == 0 {
-			ts.cfg.Logger.Info("created ConfigMap", zap.String("key", configMapName), zap.Duration("took", t2.Sub(t1)))
+		if ts.cfg.EKSConfig.LogLevel == "debug" || i%50 == 0 {
+			ts.cfg.Logger.Info("created ConfigMap",
+				zap.String("key", configMapName),
+				zap.Int("created", len(ts.cfg.EKSConfig.AddOnConfigMaps.CreatedNames)),
+				zap.Int("target-total", ts.cfg.EKSConfig.AddOnConfigMaps.Objects),
+				zap.Duration("took", t2.Sub(t1)),
+			)
 		}
 	}
 
@@ -242,7 +247,7 @@ func (ts *tester) createConfigMapsParallel(pfx, val string, failThreshold int) e
 			}
 
 			t1 := time.Now()
-			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+			ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 			_, err := ts.cfg.K8SClient.KubernetesClientSet().
 				CoreV1().
 				ConfigMaps(ts.cfg.EKSConfig.AddOnConfigMaps.Namespace).
@@ -272,9 +277,12 @@ func (ts *tester) createConfigMapsParallel(pfx, val string, failThreshold int) e
 			case rch <- result{configMap: configMap, err: nil, took: t2.Sub(t1), start: t1, end: t2}:
 			}
 
-			if ts.cfg.EKSConfig.LogLevel == "debug" || i%200 == 0 {
+			if ts.cfg.EKSConfig.LogLevel == "debug" || i%50 == 0 {
 				ts.cfg.Logger.Info("created ConfigMap",
 					zap.String("key", configMap.GetObjectMeta().GetName()),
+					zap.Int("index", i),
+					zap.Int("created", len(ts.cfg.EKSConfig.AddOnConfigMaps.CreatedNames)),
+					zap.Int("target-total", ts.cfg.EKSConfig.AddOnConfigMaps.Objects),
 					zap.Duration("took", t2.Sub(t1)),
 				)
 			}

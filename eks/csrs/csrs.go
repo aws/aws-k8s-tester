@@ -227,7 +227,7 @@ func (ts *tester) createCSRsSequential(pfx string, failThreshold int) error {
 		key := fmt.Sprintf("%s%06d", pfx, i)
 		req := ts.createCSR(i, key)
 		t1 := time.Now()
-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 		csr, err := ts.cfg.K8SClient.KubernetesClientSet().
 			CertificatesV1beta1().
 			CertificateSigningRequests().
@@ -307,7 +307,7 @@ func (ts *tester) createCSRsParallel(pfx string, failThreshold int) error {
 			key := fmt.Sprintf("%s%06d", pfx, i)
 			req := ts.createCSR(i, key)
 			t1 := time.Now()
-			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 			csr, err := ts.cfg.K8SClient.KubernetesClientSet().
 				CertificatesV1beta1().
 				CertificateSigningRequests().
