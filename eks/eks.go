@@ -680,7 +680,7 @@ func (ts *Tester) Up() (err error) {
 
 				fmt.Printf("\n*********************************\n")
 				ts.lg.Sugar().Infof("Up.defer end (%s, %s)", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-				fmt.Printf("\n\n💯 😁 👍 :)  UP START\n\n\n")
+				fmt.Printf("\n\n💯 😁 👍 :)  UP SUCCESS\n\n\n")
 			} else {
 				fmt.Printf("\n\n😲 😲 😲  UP ABORTED ???\n\n\n")
 			}
