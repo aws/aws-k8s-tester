@@ -19,109 +19,119 @@ func main() {
 }
 
 func createDoc() string {
+	es := &enableEnvVars{envs: make([]string, 0)}
 	b := strings.Builder{}
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefix, &eksconfig.Config{}))
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefix, &eksconfig.Config{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixParameters, &eksconfig.Parameters{}))
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixParameters, &eksconfig.Parameters{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnNodeGroups, &eksconfig.AddOnNodeGroups{}))
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnNodeGroups, &eksconfig.AddOnNodeGroups{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnManagedNodeGroups, &eksconfig.AddOnManagedNodeGroups{}))
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnManagedNodeGroups, &eksconfig.AddOnManagedNodeGroups{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnCSIEBS, &eksconfig.AddOnCSIEBS{}))
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnCSIEBS, &eksconfig.AddOnCSIEBS{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnKubernetesDashboard, &eksconfig.AddOnKubernetesDashboard{}))
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnKubernetesDashboard, &eksconfig.AddOnKubernetesDashboard{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnPrometheusGrafana, &eksconfig.AddOnPrometheusGrafana{}))
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnPrometheusGrafana, &eksconfig.AddOnPrometheusGrafana{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnNLBHelloWorld, &eksconfig.AddOnNLBHelloWorld{}))
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnNLBHelloWorld, &eksconfig.AddOnNLBHelloWorld{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnALB2048, &eksconfig.AddOnALB2048{}))
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnALB2048, &eksconfig.AddOnALB2048{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnJobsPi, &eksconfig.AddOnJobsPi{}))
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnJobsPi, &eksconfig.AddOnJobsPi{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnJobsEcho, &eksconfig.AddOnJobsEcho{}))
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnJobsEcho, &eksconfig.AddOnJobsEcho{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnCronJobs, &eksconfig.AddOnCronJobs{}))
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnCronJobs, &eksconfig.AddOnCronJobs{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnCSRs, &eksconfig.AddOnCSRs{}))
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnCSRs, &eksconfig.AddOnCSRs{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnConfigMaps, &eksconfig.AddOnConfigMaps{}))
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnConfigMaps, &eksconfig.AddOnConfigMaps{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnSecrets, &eksconfig.AddOnSecrets{}))
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnSecrets, &eksconfig.AddOnSecrets{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnIRSA, &eksconfig.AddOnIRSA{}))
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnIRSA, &eksconfig.AddOnIRSA{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnFargate, &eksconfig.AddOnFargate{}))
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnFargate, &eksconfig.AddOnFargate{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnIRSAFargate, &eksconfig.AddOnIRSAFargate{}))
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnIRSAFargate, &eksconfig.AddOnIRSAFargate{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnAppMesh, &eksconfig.AddOnAppMesh{}))
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnAppMesh, &eksconfig.AddOnAppMesh{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnWordpress, &eksconfig.AddOnWordpress{}))
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnWordpress, &eksconfig.AddOnWordpress{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnJupyterHub, &eksconfig.AddOnJupyterHub{}))
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnJupyterHub, &eksconfig.AddOnJupyterHub{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
 	b.WriteString("# NOT WORKING...")
 	b.WriteByte('\n')
-	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnKubeflow, &eksconfig.AddOnKubeflow{}))
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnKubeflow, &eksconfig.AddOnKubeflow{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(writeDoc(eksconfig.EnvironmentVariablePrefixAddOnClusterLoader, &eksconfig.AddOnClusterLoader{}))
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnClusterLoader, &eksconfig.AddOnClusterLoader{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
 
-	return b.String()
+	txt := b.String()
+
+	return "# set the following *_ENABLE env vars to enable add-ons, rest are set with default values\n" +
+		strings.Join(es.envs, "\n") +
+		"\n\n" +
+		txt
 }
 
-func writeDoc(pfx string, st interface{}) string {
+type enableEnvVars struct {
+	envs []string
+}
+
+func (es *enableEnvVars) writeDoc(pfx string, st interface{}) string {
 	var b strings.Builder
 	ts := reflect.TypeOf(st)
 	tp, vv := reflect.TypeOf(st).Elem(), reflect.ValueOf(st).Elem()
@@ -148,6 +158,9 @@ func writeDoc(pfx string, st interface{}) string {
 			vv.Field(i).Type(),
 			rv,
 		))
+		if strings.HasSuffix(env, "_ENABLE") {
+			es.envs = append(es.envs, env+"=true \\")
+		}
 	}
 	return b.String()
 }
