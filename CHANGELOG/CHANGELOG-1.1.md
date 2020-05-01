@@ -3,6 +3,22 @@
 <hr>
 
 
+## [v1.1.3](https://github.com/aws/aws-k8s-tester/releases/tag/v1.1.3) (2020-05)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.2...v1.1.3).
+
+### `eksconfig`
+
+TODO
+
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.30.18`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.18) to [`v1.30.19`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.19).
+
+
+<hr>
+
+
 ## [v1.1.2](https://github.com/aws/aws-k8s-tester/releases/tag/v1.1.2) (2020-04-30)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.1...v1.1.2).
