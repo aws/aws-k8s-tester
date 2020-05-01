@@ -10,6 +10,7 @@ import (
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
+	"github.com/dustin/go-humanize"
 	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -63,34 +64,43 @@ func (ts *tester) Create() error {
 		ts.cfg.EKSConfig.Sync()
 	}()
 
+	deadline := time.Now().Add(ts.cfg.EKSConfig.AddOnClusterLoader.Duration)
 	for i := 0; i < ts.cfg.EKSConfig.Clients; i++ {
-		go listNodes(ts.cfg.Logger, ts.cfg.Stopc, ts.donec, ts.cfg.K8SClient.KubernetesClientSet())
-		go listPods(ts.cfg.Logger, ts.cfg.Stopc, ts.donec, ts.cfg.K8SClient.KubernetesClientSet())
-		go listServices(ts.cfg.Logger, ts.cfg.Stopc, ts.donec, ts.cfg.K8SClient.KubernetesClientSet())
-		go listEndpoints(ts.cfg.Logger, ts.cfg.Stopc, ts.donec, ts.cfg.K8SClient.KubernetesClientSet())
-		go listSecrets(ts.cfg.Logger, ts.cfg.Stopc, ts.donec, ts.cfg.K8SClient.KubernetesClientSet())
-		go listConfigMaps(ts.cfg.Logger, ts.cfg.Stopc, ts.donec, ts.cfg.K8SClient.KubernetesClientSet())
-		go listServiceAccounts(ts.cfg.Logger, ts.cfg.Stopc, ts.donec, ts.cfg.K8SClient.KubernetesClientSet())
-		go listJobs(ts.cfg.Logger, ts.cfg.Stopc, ts.donec, ts.cfg.K8SClient.KubernetesClientSet())
-		go listCronJobs(ts.cfg.Logger, ts.cfg.Stopc, ts.donec, ts.cfg.K8SClient.KubernetesClientSet())
+		go listNodes(ts.cfg.Logger, deadline, ts.cfg.Stopc, ts.donec, ts.cfg.K8SClient.KubernetesClientSet())
+		go listPods(ts.cfg.Logger, deadline, ts.cfg.Stopc, ts.donec, ts.cfg.K8SClient.KubernetesClientSet())
+		go listServices(ts.cfg.Logger, deadline, ts.cfg.Stopc, ts.donec, ts.cfg.K8SClient.KubernetesClientSet())
+		go listEndpoints(ts.cfg.Logger, deadline, ts.cfg.Stopc, ts.donec, ts.cfg.K8SClient.KubernetesClientSet())
+		go listSecrets(ts.cfg.Logger, deadline, ts.cfg.Stopc, ts.donec, ts.cfg.K8SClient.KubernetesClientSet())
+		go listConfigMaps(ts.cfg.Logger, deadline, ts.cfg.Stopc, ts.donec, ts.cfg.K8SClient.KubernetesClientSet())
+		go listServiceAccounts(ts.cfg.Logger, deadline, ts.cfg.Stopc, ts.donec, ts.cfg.K8SClient.KubernetesClientSet())
+		go listJobs(ts.cfg.Logger, deadline, ts.cfg.Stopc, ts.donec, ts.cfg.K8SClient.KubernetesClientSet())
+		go listCronJobs(ts.cfg.Logger, deadline, ts.cfg.Stopc, ts.donec, ts.cfg.K8SClient.KubernetesClientSet())
 	}
 
 	select {
 	case <-ts.cfg.Stopc:
+		ts.cfg.Logger.Warn("cluster loader aborted")
 		close(ts.donec)
+		return nil
 	case <-time.After(ts.cfg.EKSConfig.AddOnClusterLoader.Duration):
 		close(ts.donec)
 		ts.cfg.Logger.Info("completing load testing", zap.Duration("duration", ts.cfg.EKSConfig.AddOnClusterLoader.Duration))
-	}
 
-	time.Sleep(15 * time.Second)
+		select {
+		case <-ts.cfg.Stopc:
+			ts.cfg.Logger.Warn("cluster loader aborted")
+			return nil
+		case <-time.After(30 * time.Second):
+		}
+	}
 
 	var err error
 	waitDur, retryStart := 5*time.Minute, time.Now()
 	for time.Now().Sub(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
-			return errors.New("health check aborted")
+			ts.cfg.Logger.Warn("health check aborted")
+			return nil
 		case <-time.After(5 * time.Second):
 		}
 		err = ts.cfg.K8SClient.CheckHealth()
@@ -131,7 +141,7 @@ func (ts *tester) Delete() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
-func listNodes(lg *zap.Logger, stopc chan struct{}, donec chan struct{}, cli *kubernetes.Clientset) {
+func listNodes(lg *zap.Logger, deadline time.Time, stopc chan struct{}, donec chan struct{}, cli *kubernetes.Clientset) {
 	cnt := 0
 	for {
 		cnt++
@@ -152,13 +162,13 @@ func listNodes(lg *zap.Logger, stopc chan struct{}, donec chan struct{}, cli *ku
 			lg.Warn("list nodes failed", zap.Error(err))
 		} else {
 			if cnt%50 == 0 {
-				lg.Info("listed nodes", zap.Int("iteration", cnt), zap.Int("nodes", len(rs.Items)))
+				lg.Info("listed nodes", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.Int("nodes", len(rs.Items)))
 			}
 		}
 	}
 }
 
-func listPods(lg *zap.Logger, stopc chan struct{}, donec chan struct{}, cli *kubernetes.Clientset) {
+func listPods(lg *zap.Logger, deadline time.Time, stopc chan struct{}, donec chan struct{}, cli *kubernetes.Clientset) {
 	cnt := 0
 	for {
 		cnt++
@@ -179,7 +189,9 @@ func listPods(lg *zap.Logger, stopc chan struct{}, donec chan struct{}, cli *kub
 			lg.Warn("list namespaces failed", zap.Error(err))
 			continue
 		}
-		lg.Info("listed namespaces", zap.Int("iteration", cnt), zap.Int("namespaces", len(ns.Items)))
+		if cnt%50 == 0 {
+			lg.Info("listed namespaces", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.Int("namespaces", len(ns.Items)))
+		}
 
 		for _, item := range ns.Items {
 			nv := item.GetName()
@@ -192,7 +204,7 @@ func listPods(lg *zap.Logger, stopc chan struct{}, donec chan struct{}, cli *kub
 				continue
 			}
 			if cnt%50 == 0 {
-				lg.Info("listed pods", zap.Int("iteration", cnt), zap.String("namespace", nv), zap.Int("pods", len(pods.Items)))
+				lg.Info("listed pods", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.String("namespace", nv), zap.Int("pods", len(pods.Items)))
 			}
 
 			select {
@@ -208,7 +220,7 @@ func listPods(lg *zap.Logger, stopc chan struct{}, donec chan struct{}, cli *kub
 	}
 }
 
-func listServices(lg *zap.Logger, stopc chan struct{}, donec chan struct{}, cli *kubernetes.Clientset) {
+func listServices(lg *zap.Logger, deadline time.Time, stopc chan struct{}, donec chan struct{}, cli *kubernetes.Clientset) {
 	cnt := 0
 	for {
 		cnt++
@@ -229,7 +241,9 @@ func listServices(lg *zap.Logger, stopc chan struct{}, donec chan struct{}, cli 
 			lg.Warn("list namespaces failed", zap.Error(err))
 			continue
 		}
-		lg.Info("listed namespaces", zap.Int("iteration", cnt), zap.Int("namespaces", len(ns.Items)))
+		if cnt%50 == 0 {
+			lg.Info("listed namespaces", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.Int("namespaces", len(ns.Items)))
+		}
 
 		for _, item := range ns.Items {
 			nv := item.GetName()
@@ -242,7 +256,7 @@ func listServices(lg *zap.Logger, stopc chan struct{}, donec chan struct{}, cli 
 				continue
 			}
 			if cnt%50 == 0 {
-				lg.Info("listed services", zap.Int("iteration", cnt), zap.String("namespace", nv), zap.Int("services", len(es.Items)))
+				lg.Info("listed services", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.String("namespace", nv), zap.Int("services", len(es.Items)))
 			}
 
 			select {
@@ -258,7 +272,7 @@ func listServices(lg *zap.Logger, stopc chan struct{}, donec chan struct{}, cli 
 	}
 }
 
-func listEndpoints(lg *zap.Logger, stopc chan struct{}, donec chan struct{}, cli *kubernetes.Clientset) {
+func listEndpoints(lg *zap.Logger, deadline time.Time, stopc chan struct{}, donec chan struct{}, cli *kubernetes.Clientset) {
 	cnt := 0
 	for {
 		cnt++
@@ -279,7 +293,9 @@ func listEndpoints(lg *zap.Logger, stopc chan struct{}, donec chan struct{}, cli
 			lg.Warn("list namespaces failed", zap.Error(err))
 			continue
 		}
-		lg.Info("listed namespaces", zap.Int("iteration", cnt), zap.Int("namespaces", len(ns.Items)))
+		if cnt%50 == 0 {
+			lg.Info("listed namespaces", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.Int("namespaces", len(ns.Items)))
+		}
 
 		for _, item := range ns.Items {
 			nv := item.GetName()
@@ -292,7 +308,7 @@ func listEndpoints(lg *zap.Logger, stopc chan struct{}, donec chan struct{}, cli
 				continue
 			}
 			if cnt%50 == 0 {
-				lg.Info("listed endpoints", zap.Int("iteration", cnt), zap.String("namespace", nv), zap.Int("endpoints", len(es.Items)))
+				lg.Info("listed endpoints", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.String("namespace", nv), zap.Int("endpoints", len(es.Items)))
 			}
 
 			select {
@@ -308,7 +324,7 @@ func listEndpoints(lg *zap.Logger, stopc chan struct{}, donec chan struct{}, cli
 	}
 }
 
-func listSecrets(lg *zap.Logger, stopc chan struct{}, donec chan struct{}, cli *kubernetes.Clientset) {
+func listSecrets(lg *zap.Logger, deadline time.Time, stopc chan struct{}, donec chan struct{}, cli *kubernetes.Clientset) {
 	cnt := 0
 	for {
 		cnt++
@@ -329,7 +345,9 @@ func listSecrets(lg *zap.Logger, stopc chan struct{}, donec chan struct{}, cli *
 			lg.Warn("list namespaces failed", zap.Error(err))
 			continue
 		}
-		lg.Info("listed namespaces", zap.Int("iteration", cnt), zap.Int("namespaces", len(ns.Items)))
+		if cnt%50 == 0 {
+			lg.Info("listed namespaces", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.Int("namespaces", len(ns.Items)))
+		}
 
 		for _, item := range ns.Items {
 			nv := item.GetName()
@@ -342,7 +360,7 @@ func listSecrets(lg *zap.Logger, stopc chan struct{}, donec chan struct{}, cli *
 				continue
 			}
 			if cnt%50 == 0 {
-				lg.Info("listed secrets", zap.Int("iteration", cnt), zap.String("namespace", nv), zap.Int("secrets", len(ss.Items)))
+				lg.Info("listed secrets", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.String("namespace", nv), zap.Int("secrets", len(ss.Items)))
 			}
 
 			select {
@@ -358,7 +376,7 @@ func listSecrets(lg *zap.Logger, stopc chan struct{}, donec chan struct{}, cli *
 	}
 }
 
-func listConfigMaps(lg *zap.Logger, stopc chan struct{}, donec chan struct{}, cli *kubernetes.Clientset) {
+func listConfigMaps(lg *zap.Logger, deadline time.Time, stopc chan struct{}, donec chan struct{}, cli *kubernetes.Clientset) {
 	cnt := 0
 	for {
 		cnt++
@@ -380,7 +398,7 @@ func listConfigMaps(lg *zap.Logger, stopc chan struct{}, donec chan struct{}, cl
 			continue
 		}
 		if cnt%50 == 0 {
-			lg.Info("listed namespaces", zap.Int("iteration", cnt), zap.Int("namespaces", len(ns.Items)))
+			lg.Info("listed namespaces", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.Int("namespaces", len(ns.Items)))
 		}
 
 		for _, item := range ns.Items {
@@ -394,7 +412,7 @@ func listConfigMaps(lg *zap.Logger, stopc chan struct{}, donec chan struct{}, cl
 				continue
 			}
 			if cnt%50 == 0 {
-				lg.Info("listed configmaps", zap.Int("iteration", cnt), zap.String("namespace", nv), zap.Int("configmaps", len(ss.Items)))
+				lg.Info("listed configmaps", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.String("namespace", nv), zap.Int("configmaps", len(ss.Items)))
 			}
 
 			select {
@@ -410,7 +428,7 @@ func listConfigMaps(lg *zap.Logger, stopc chan struct{}, donec chan struct{}, cl
 	}
 }
 
-func listServiceAccounts(lg *zap.Logger, stopc chan struct{}, donec chan struct{}, cli *kubernetes.Clientset) {
+func listServiceAccounts(lg *zap.Logger, deadline time.Time, stopc chan struct{}, donec chan struct{}, cli *kubernetes.Clientset) {
 	cnt := 0
 	for {
 		cnt++
@@ -431,7 +449,9 @@ func listServiceAccounts(lg *zap.Logger, stopc chan struct{}, donec chan struct{
 			lg.Warn("list namespaces failed", zap.Error(err))
 			continue
 		}
-		lg.Info("listed namespaces", zap.Int("iteration", cnt), zap.Int("namespaces", len(ns.Items)))
+		if cnt%50 == 0 {
+			lg.Info("listed namespaces", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.Int("namespaces", len(ns.Items)))
+		}
 
 		for _, item := range ns.Items {
 			nv := item.GetName()
@@ -444,7 +464,7 @@ func listServiceAccounts(lg *zap.Logger, stopc chan struct{}, donec chan struct{
 				continue
 			}
 			if cnt%50 == 0 {
-				lg.Info("listed serviceaccounts", zap.Int("iteration", cnt), zap.String("namespace", nv), zap.Int("serviceaccounts", len(ss.Items)))
+				lg.Info("listed serviceaccounts", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.String("namespace", nv), zap.Int("serviceaccounts", len(ss.Items)))
 			}
 
 			select {
@@ -460,7 +480,7 @@ func listServiceAccounts(lg *zap.Logger, stopc chan struct{}, donec chan struct{
 	}
 }
 
-func listJobs(lg *zap.Logger, stopc chan struct{}, donec chan struct{}, cli *kubernetes.Clientset) {
+func listJobs(lg *zap.Logger, deadline time.Time, stopc chan struct{}, donec chan struct{}, cli *kubernetes.Clientset) {
 	cnt := 0
 	for {
 		cnt++
@@ -481,7 +501,9 @@ func listJobs(lg *zap.Logger, stopc chan struct{}, donec chan struct{}, cli *kub
 			lg.Warn("list namespaces failed", zap.Error(err))
 			continue
 		}
-		lg.Info("listed namespaces", zap.Int("iteration", cnt), zap.Int("namespaces", len(ns.Items)))
+		if cnt%50 == 0 {
+			lg.Info("listed namespaces", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.Int("namespaces", len(ns.Items)))
+		}
 
 		for _, item := range ns.Items {
 			nv := item.GetName()
@@ -494,7 +516,7 @@ func listJobs(lg *zap.Logger, stopc chan struct{}, donec chan struct{}, cli *kub
 				continue
 			}
 			if cnt%50 == 0 {
-				lg.Info("listed jobs", zap.Int("iteration", cnt), zap.String("namespace", nv), zap.Int("jobs", len(ss.Items)))
+				lg.Info("listed jobs", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.String("namespace", nv), zap.Int("jobs", len(ss.Items)))
 			}
 
 			select {
@@ -510,7 +532,7 @@ func listJobs(lg *zap.Logger, stopc chan struct{}, donec chan struct{}, cli *kub
 	}
 }
 
-func listCronJobs(lg *zap.Logger, stopc chan struct{}, donec chan struct{}, cli *kubernetes.Clientset) {
+func listCronJobs(lg *zap.Logger, deadline time.Time, stopc chan struct{}, donec chan struct{}, cli *kubernetes.Clientset) {
 	cnt := 0
 	for {
 		cnt++
@@ -531,7 +553,9 @@ func listCronJobs(lg *zap.Logger, stopc chan struct{}, donec chan struct{}, cli 
 			lg.Warn("list namespaces failed", zap.Error(err))
 			continue
 		}
-		lg.Info("listed namespaces", zap.Int("iteration", cnt), zap.Int("namespaces", len(ns.Items)))
+		if cnt%50 == 0 {
+			lg.Info("listed namespaces", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.Int("namespaces", len(ns.Items)))
+		}
 
 		for _, item := range ns.Items {
 			nv := item.GetName()
@@ -544,7 +568,7 @@ func listCronJobs(lg *zap.Logger, stopc chan struct{}, donec chan struct{}, cli 
 				continue
 			}
 			if cnt%50 == 0 {
-				lg.Info("listed cronjobs", zap.Int("iteration", cnt), zap.String("namespace", nv), zap.Int("cronjobs", len(ss.Items)))
+				lg.Info("listed cronjobs", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.String("namespace", nv), zap.Int("cronjobs", len(ss.Items)))
 			}
 
 			select {
