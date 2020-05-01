@@ -27,6 +27,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.1...v1.1.2
   - Otherwise, `prometheus-server` Pod was being evicted due to `"The node was low on resource: memory. Container prometheus-server was using 3885112Ki, which exceeds its request of 0. Container prometheus-server-configmap-reload was using 2100Ki, which exceeds its request of 0."`.
 - Fix [`eks/irsa` test results count](https://github.com/aws/aws-k8s-tester/commit/1b702d5d4519438105c5de231597bf558ab8112e).
 - Improve [`kubectl logs/exec` outputs in `eks/fargate` and `eks/irsa-fargate`](https://github.com/aws/aws-k8s-tester/commit/9418e475d056a2cf791f2e3a4f8aa87cc41c4ec6).
+- Improve [`eks/cluster-loader` logging outputs](https://github.com/aws/aws-k8s-tester/commit/c6cafeb0f3c93121d2c4669c1a46c81868de7a28).
+- Remove [unnecessary log fetch operation from all worker nodes in `eks/irsa`](https://github.com/aws/aws-k8s-tester/commit/c6cafeb0f3c93121d2c4669c1a46c81868de7a28).
 
 ### Dependency
 
