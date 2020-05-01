@@ -1019,7 +1019,7 @@ func (ts *tester) waitOutputLogs() error {
 		case <-time.After(20 * time.Second):
 		}
 
-		cnt, err := ts.countSuccess()
+		cnt, err := ts.countSuccess(expects)
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to count from remotes", zap.Int("count", cnt), zap.Error(err))
 		} else {
@@ -1041,7 +1041,7 @@ func (ts *tester) waitOutputLogs() error {
 }
 
 // TODO: only SSH into the one with IRSA deployment Pod
-func (ts *tester) countSuccess() (int, error) {
+func (ts *tester) countSuccess(expects int) (int, error) {
 	sshOpt := ssh.WithVerbose(ts.cfg.EKSConfig.LogLevel == "debug")
 	rateLimiter := rate.NewLimiter(rate.Limit(50), 10)
 	total := 0
@@ -1102,10 +1102,14 @@ func (ts *tester) countSuccess() (int, error) {
 				sh.Close()
 
 				total += strings.Count(string(out), sleepMsg)
+				if total >= expects {
+					break
+				}
 			}
 		}
 	}
-	if ts.cfg.EKSConfig.IsEnabledAddOnManagedNodeGroups() && ts.cfg.EKSConfig.AddOnManagedNodeGroups.FetchLogs {
+	if total < expects &&
+		ts.cfg.EKSConfig.IsEnabledAddOnManagedNodeGroups() && ts.cfg.EKSConfig.AddOnManagedNodeGroups.FetchLogs {
 		for mngName, cur := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
 			if cur.AMIType == ec2config.AMITypeBottleRocketCPU {
 				ts.cfg.Logger.Warn("skipping bottlerocket log fetch", zap.String("mng-name", mngName))
