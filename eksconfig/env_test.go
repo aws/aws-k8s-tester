@@ -49,10 +49,12 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_ADD_ONS")
 	os.Setenv("AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_ADD_ONS_TIMEOUT", "17m")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_ADD_ONS_TIMEOUT")
+	os.Setenv("AWS_K8S_TESTER_EKS_S3_BUCKET_CREATE", `true`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_S3_BUCKET_CREATE")
+	os.Setenv("AWS_K8S_TESTER_EKS_S3_BUCKET_CREATE_KEEP", `true`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_S3_BUCKET_CREATE_KEEP")
 	os.Setenv("AWS_K8S_TESTER_EKS_S3_BUCKET_NAME", `my-bucket`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_S3_BUCKET_NAME")
-	os.Setenv("AWS_K8S_TESTER_EKS_S3_BUCKET_CREATE", `false`)
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_S3_BUCKET_CREATE")
 	os.Setenv("AWS_K8S_TESTER_EKS_S3_BUCKET_LIFECYCLE_EXPIRATION_DAYS", `10`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_S3_BUCKET_LIFECYCLE_EXPIRATION_DAYS")
 	os.Setenv("AWS_K8S_TESTER_EKS_CLIENTS", `333`)
@@ -390,11 +392,14 @@ func TestEnv(t *testing.T) {
 	if cfg.CommandAfterCreateAddOnsTimeout != 17*time.Minute {
 		t.Fatalf("unexpected CommandAfterCreateAddOnsTimeout %v", cfg.CommandAfterCreateAddOnsTimeout)
 	}
+	if !cfg.S3BucketCreate {
+		t.Fatalf("unexpected cfg.S3BucketCreate %v", cfg.S3BucketCreate)
+	}
+	if !cfg.S3BucketCreateKeep {
+		t.Fatalf("unexpected cfg.S3BucketCreateKeep %v", cfg.S3BucketCreateKeep)
+	}
 	if cfg.S3BucketName != "my-bucket" {
 		t.Fatalf("unexpected cfg.S3BucketName %q", cfg.S3BucketName)
-	}
-	if cfg.S3BucketCreate {
-		t.Fatalf("unexpected cfg.S3BucketCreate %v", cfg.S3BucketCreate)
 	}
 	if cfg.S3BucketLifecycleExpirationDays != 10 {
 		t.Fatalf("unexpected cfg.S3BucketLifecycleExpirationDays %d", cfg.S3BucketLifecycleExpirationDays)

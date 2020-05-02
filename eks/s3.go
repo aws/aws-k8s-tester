@@ -166,7 +166,11 @@ func (ts *Tester) createBucket() (bool, error) {
 
 func (ts *Tester) deleteS3() error {
 	if !ts.cfg.S3BucketCreate {
-		ts.lg.Info("skipping S3 bucket deletion")
+		ts.lg.Info("skipping S3 bucket deletion", zap.String("s3-bucket-name", ts.cfg.S3BucketName))
+		return nil
+	}
+	if ts.cfg.S3BucketCreateKeep {
+		ts.lg.Info("skipping S3 bucket deletion", zap.String("s3-bucket-name", ts.cfg.S3BucketName), zap.Bool("s3-bucket-create-keep", ts.cfg.S3BucketCreateKeep))
 		return nil
 	}
 
