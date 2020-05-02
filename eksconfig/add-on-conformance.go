@@ -111,7 +111,7 @@ func (cfg *Config) validateAddOnConformance() error {
 	if cfg.AddOnConformance.SonobuoyResultTarGzPath == "" {
 		cfg.AddOnConformance.SonobuoyResultTarGzPath = filepath.Join(
 			filepath.Dir(cfg.ConfigPath),
-			fmt.Sprintf("%s-sonobuoy-result-retrieve.tar.gz", cfg.Name),
+			fmt.Sprintf("%s-sonobuoy-result.tar.gz", cfg.Name),
 		)
 		os.RemoveAll(cfg.AddOnConformance.SonobuoyResultTarGzPath)
 	}
@@ -127,7 +127,7 @@ func (cfg *Config) validateAddOnConformance() error {
 	if cfg.AddOnConformance.SonobuoyResultE2eLogPath == "" {
 		cfg.AddOnConformance.SonobuoyResultE2eLogPath = filepath.Join(
 			filepath.Dir(cfg.ConfigPath),
-			fmt.Sprintf("%s-sonobuoy-result-e2e.log", cfg.Name),
+			fmt.Sprintf("%s-sonobuoy-result.e2e.log", cfg.Name),
 		)
 		os.RemoveAll(cfg.AddOnConformance.SonobuoyResultE2eLogPath)
 	}
@@ -138,7 +138,7 @@ func (cfg *Config) validateAddOnConformance() error {
 	if cfg.AddOnConformance.SonobuoyResultJunitXMLPath == "" {
 		cfg.AddOnConformance.SonobuoyResultJunitXMLPath = filepath.Join(
 			filepath.Dir(cfg.ConfigPath),
-			fmt.Sprintf("%s-sonobuoy-result-junit.xml", cfg.Name),
+			fmt.Sprintf("%s-sonobuoy-result.junit.xml", cfg.Name),
 		)
 		os.RemoveAll(cfg.AddOnConformance.SonobuoyResultJunitXMLPath)
 	}
