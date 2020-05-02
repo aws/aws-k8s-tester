@@ -90,10 +90,13 @@ type Config struct {
 	// all resources on creation fail.
 	OnFailureDeleteWaitSeconds uint64 `json:"on-failure-delete-wait-seconds"`
 
-	// S3BucketName is the name of cluster S3.
-	S3BucketName string `json:"s3-bucket-name"`
 	// S3BucketCreate is true to auto-create S3 bucket.
 	S3BucketCreate bool `json:"s3-bucket-create"`
+	// S3BucketCreateKeep is true to not delete auto-created S3 bucket.
+	// The created S3 bucket is kept.
+	S3BucketCreateKeep bool `json:"s3-bucket-create-keep"`
+	// S3BucketName is the name of cluster S3.
+	S3BucketName string `json:"s3-bucket-name"`
 	// S3BucketLifecycleExpirationDays is expiration in days for the lifecycle of the object.
 	S3BucketLifecycleExpirationDays int64 `json:"s3-bucket-lifecycle-expiration-days"`
 

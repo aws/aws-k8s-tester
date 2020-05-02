@@ -14,10 +14,12 @@ func TestEnv(t *testing.T) {
 		os.RemoveAll(cfg.RemoteAccessCommandsOutputPath)
 	}()
 
+	os.Setenv("AWS_K8S_TESTER_EC2_S3_BUCKET_CREATE", `true`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EC2_S3_BUCKET_CREATE")
+	os.Setenv("AWS_K8S_TESTER_EC2_S3_BUCKET_CREATE_KEEP", `true`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EC2_S3_BUCKET_CREATE_KEEP")
 	os.Setenv("AWS_K8S_TESTER_EC2_S3_BUCKET_NAME", `my-bucket`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EC2_S3_BUCKET_NAME")
-	os.Setenv("AWS_K8S_TESTER_EC2_S3_BUCKET_CREATE", `false`)
-	defer os.Unsetenv("AWS_K8S_TESTER_EC2_S3_BUCKET_CREATE")
 	os.Setenv("AWS_K8S_TESTER_EC2_S3_BUCKET_LIFECYCLE_EXPIRATION_DAYS", `10`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EC2_S3_BUCKET_LIFECYCLE_EXPIRATION_DAYS")
 	os.Setenv("AWS_K8S_TESTER_EC2_ROLE_CREATE", `false`)
@@ -49,11 +51,14 @@ func TestEnv(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	if !cfg.S3BucketCreate {
+		t.Fatalf("unexpected cfg.S3BucketCreate %v", cfg.S3BucketCreate)
+	}
+	if !cfg.S3BucketCreateKeep {
+		t.Fatalf("unexpected cfg.S3BucketCreateKeep %v", cfg.S3BucketCreateKeep)
+	}
 	if cfg.S3BucketName != "my-bucket" {
 		t.Fatalf("unexpected cfg.S3BucketName %q", cfg.S3BucketName)
-	}
-	if cfg.S3BucketCreate {
-		t.Fatalf("unexpected cfg.S3BucketCreate %v", cfg.S3BucketCreate)
 	}
 	if cfg.S3BucketLifecycleExpirationDays != 10 {
 		t.Fatalf("unexpected cfg.S3BucketLifecycleExpirationDays %d", cfg.S3BucketLifecycleExpirationDays)

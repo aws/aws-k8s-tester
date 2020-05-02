@@ -15,12 +15,13 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.2...v1.1.3
 
 ### `ec2config`
 
+- Add [`ec2config.Config.S3BucketCreateKeep` to keep S3 bucket after auto-creation](https://github.com/aws/aws-k8s-tester/commit/).
 - Fail [`ValidateAndSetDefaults` and return errors if `"read-only" fields are set by environmental variables](https://github.com/aws/aws-k8s-tester/commit/a8ca56ffd0c33657bf51cfd5889a98ea9669d60f).
   - ref. https://github.com/aws/aws-k8s-tester/tree/master/ec2config
 
 ### `eksconfig`
 
-- Add [`eksconfig.Config.S3BucketCreateKeep` to keep S3 bucket after auto-creation](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`eksconfig.Config.S3BucketCreateKeep` to keep S3 bucket after auto-creation](https://github.com/aws/aws-k8s-tester/commit/1cf50a645531dfc5c962e3585bb4c7b198044153).
 - Fail [`ValidateAndSetDefaults` and return errors if `"read-only" fields are set by environmental variables](https://github.com/aws/aws-k8s-tester/commit/a8ca56ffd0c33657bf51cfd5889a98ea9669d60f).
   - e.g. `AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_CREATED`, `AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_CREATED_NAMES`, `AWS_K8S_TESTER_EKS_ADD_ON_CSRS_CREATED_NAMES` cannot be set because they are read-only.
   - ref. https://github.com/aws/aws-k8s-tester/tree/master/eksconfig

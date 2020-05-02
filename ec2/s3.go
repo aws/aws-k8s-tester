@@ -11,11 +11,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/dustin/go-humanize"
 	"go.uber.org/zap"
 )
 
@@ -163,7 +166,11 @@ func (ts *Tester) createBucket() (bool, error) {
 
 func (ts *Tester) deleteS3() error {
 	if !ts.cfg.S3BucketCreate {
-		ts.lg.Info("skipping S3 bucket deletion")
+		ts.lg.Info("skipping S3 bucket deletion", zap.String("s3-bucket-name", ts.cfg.S3BucketName))
+		return nil
+	}
+	if ts.cfg.S3BucketCreateKeep {
+		ts.lg.Info("skipping S3 bucket deletion", zap.String("s3-bucket-name", ts.cfg.S3BucketName), zap.Bool("s3-bucket-create-keep", ts.cfg.S3BucketCreateKeep))
 		return nil
 	}
 
@@ -225,19 +232,51 @@ func getTS() string {
 	)
 }
 
-func (ts *Tester) uploadToS3() error {
+func (ts *Tester) uploadToS3() (err error) {
 	if ts.cfg.S3BucketName == "" {
 		ts.lg.Info("skipping s3 uploads; s3 bucket name is empty")
 		return nil
 	}
 
-	d, err := ioutil.ReadFile(ts.cfg.ConfigPath)
+	if err = uploadFileToS3(
+		ts.lg,
+		ts.s3API,
+		ts.cfg.S3BucketName,
+		path.Join(ts.cfg.Name, "aws-k8s-tester-ec2.config.yaml"),
+		ts.cfg.ConfigPath,
+	); err != nil {
+		return err
+	}
+
+	logFilePath := ""
+	for _, fpath := range ts.cfg.LogOutputs {
+		if filepath.Ext(fpath) == ".log" {
+			logFilePath = fpath
+			break
+		}
+	}
+	if fileutil.Exist(logFilePath) {
+		if err = uploadFileToS3(
+			ts.lg,
+			ts.s3API,
+			ts.cfg.S3BucketName,
+			path.Join(ts.cfg.Name, "aws-k8s-tester-ec2.log"),
+			logFilePath,
+		); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func uploadFileToS3(lg *zap.Logger, s3API s3iface.S3API, bucketName string, s3Key string, fpath string) error {
+	d, err := ioutil.ReadFile(fpath)
 	if err != nil {
 		return err
 	}
-	s3Key := path.Join(ts.cfg.Name, "aws-k8s-tester-eks.config.yaml")
-	_, err = ts.s3API.PutObject(&s3.PutObjectInput{
-		Bucket: aws.String(ts.cfg.S3BucketName),
+	_, err = s3API.PutObject(&s3.PutObjectInput{
+		Bucket: aws.String(bucketName),
 		Key:    aws.String(s3Key),
 		Body:   bytes.NewReader(d),
 
@@ -250,59 +289,17 @@ func (ts *Tester) uploadToS3() error {
 		},
 	})
 	if err == nil {
-		ts.lg.Info("uploaded the config file",
-			zap.String("bucket", ts.cfg.S3BucketName),
+		lg.Info("uploaded",
+			zap.String("bucket", bucketName),
 			zap.String("remote-path", s3Key),
+			zap.String("size", humanize.Bytes(uint64(len(d)))),
 		)
 	} else {
-		ts.lg.Warn("failed to upload the config file",
-			zap.String("bucket", ts.cfg.S3BucketName),
+		lg.Warn("failed to upload",
+			zap.String("bucket", bucketName),
 			zap.String("remote-path", s3Key),
 			zap.Error(err),
 		)
-		return err
 	}
-
-	logFilePath := ""
-	for _, fpath := range ts.cfg.LogOutputs {
-		if filepath.Ext(fpath) == ".log" {
-			logFilePath = fpath
-			break
-		}
-	}
-	if logFilePath != "" {
-		d, err = ioutil.ReadFile(logFilePath)
-		if err != nil {
-			return err
-		}
-		s3Key = path.Join(ts.cfg.Name, "aws-k8s-tester-eks.log")
-		_, err = ts.s3API.PutObject(&s3.PutObjectInput{
-			Bucket: aws.String(ts.cfg.S3BucketName),
-			Key:    aws.String(s3Key),
-			Body:   bytes.NewReader(d),
-
-			// https://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html#canned-acl
-			// vs. "public-read"
-			ACL: aws.String("private"),
-
-			Metadata: map[string]*string{
-				"Kind": aws.String("aws-k8s-tester"),
-			},
-		})
-		if err == nil {
-			ts.lg.Info("uploaded the log file",
-				zap.String("bucket", ts.cfg.S3BucketName),
-				zap.String("remote-path", s3Key),
-			)
-		} else {
-			ts.lg.Warn("failed to upload the log file",
-				zap.String("bucket", ts.cfg.S3BucketName),
-				zap.String("remote-path", s3Key),
-				zap.Error(err),
-			)
-			return err
-		}
-	}
-
 	return err
 }

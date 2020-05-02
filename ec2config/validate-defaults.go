@@ -41,6 +41,7 @@ func NewDefault() *Config {
 
 		S3BucketName:                    "",
 		S3BucketCreate:                  false,
+		S3BucketCreateKeep:              false,
 		S3BucketLifecycleExpirationDays: 0,
 
 		RoleCreate:                 true,
@@ -158,7 +159,6 @@ func (cfg *Config) validateConfig() error {
 		if cfg.S3BucketLifecycleExpirationDays > 0 && cfg.S3BucketLifecycleExpirationDays < 3 {
 			cfg.S3BucketLifecycleExpirationDays = 3
 		}
-
 	case false: // use existing one
 	}
 
