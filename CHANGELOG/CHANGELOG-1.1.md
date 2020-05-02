@@ -10,6 +10,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.2...v1.1.3
 ### `eks`
 
 - Add [`eks/conformance`](https://github.com/aws/aws-k8s-tester/commit/a8ca56ffd0c33657bf51cfd5889a98ea9669d60f).
+  - Fix [`"sonobuoy retrieve/results"` operations](https://github.com/aws/aws-k8s-tester/commit/4443165882af944513555b23d5c8459385c5757f).
 - Fix [`eksconfig.Config.Clients` for Kubernetes clients](https://github.com/aws/aws-k8s-tester/commit/a8ca56ffd0c33657bf51cfd5889a98ea9669d60f).
 
 ### `ec2config`
