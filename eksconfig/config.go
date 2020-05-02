@@ -218,6 +218,9 @@ type Config struct {
 	// AddOnKubeflow defines parameters for EKS cluster
 	// add-on Kubeflow.
 	AddOnKubeflow *AddOnKubeflow `json:"add-on-kubeflow,omitempty"`
+	// AddOnConformance defines parameters for EKS cluster
+	// add-on Hollow Nodes.
+	AddOnHollowNodes *AddOnHollowNodes `json:"add-on-hollow-nodes,omitempty"`
 	// AddOnClusterLoader defines parameters for EKS cluster
 	// add-on Cluster Loader.
 	AddOnClusterLoader *AddOnClusterLoader `json:"add-on-cluster-loader,omitempty"`

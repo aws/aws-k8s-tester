@@ -11,6 +11,19 @@ import (
 	"time"
 )
 
+// MkTmpDir creates a temp directory.
+func MkTmpDir(baseDir string, pfx string) (dir string) {
+	if baseDir == "" {
+		baseDir = os.TempDir()
+	}
+	var err error
+	dir, err = ioutil.TempDir(baseDir, pfx)
+	if err != nil {
+		panic(err)
+	}
+	return dir
+}
+
 // WriteTempFile writes data to a temporary file.
 func WriteTempFile(d []byte) (path string, err error) {
 	var f *os.File

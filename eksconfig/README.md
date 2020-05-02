@@ -21,6 +21,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_ENABLE=true \
+AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_ENABLE=true \
 
@@ -384,6 +385,25 @@ AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_KF_DIR | *eksconfig.AddOnKubeflow.KfDir | str
 AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_KFCTL_CONFIG_PATH | *eksconfig.AddOnKubeflow.KfctlConfigPath | string | read-only "true"
 
 
+AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_ENABLE | *eksconfig.AddOnHollowNodes.Enable | bool | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_CREATED | *eksconfig.AddOnHollowNodes.Created | bool | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_CREATE_TOOK | *eksconfig.AddOnHollowNodes.CreateTook | time.Duration | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_CREATE_TOOK_STRING | *eksconfig.AddOnHollowNodes.CreateTookString | string | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_DELETE_TOOK | *eksconfig.AddOnHollowNodes.DeleteTook | time.Duration | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_DELETE_TOOK_STRING | *eksconfig.AddOnHollowNodes.DeleteTookString | string | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_NAMESPACE | *eksconfig.AddOnHollowNodes.Namespace | string | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_NODES | *eksconfig.AddOnHollowNodes.Nodes | int | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_NODE_LABEL_PREFIX | *eksconfig.AddOnHollowNodes.NodeLabelPrefix | string | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_NODE_LABELS | *eksconfig.AddOnHollowNodes.NodeLabels | map[string]string | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_MAX_OPEN_FILES | *eksconfig.AddOnHollowNodes.MaxOpenFiles | int64 | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE | *eksconfig.AddOnHollowNodes.Remote | bool | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REPOSITORY_NAME | *eksconfig.AddOnHollowNodes.RepositoryName | string | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REPOSITORY_URI | *eksconfig.AddOnHollowNodes.RepositoryURI | string | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REPOSITORY_IMAGE_TAG | *eksconfig.AddOnHollowNodes.RepositoryImageTag | string | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_DEPLOYMENT_REPLICAS | *eksconfig.AddOnHollowNodes.DeploymentReplicas | int32 | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_CREATED_NODE_NAMES | *eksconfig.AddOnHollowNodes.CreatedNodeNames | []string | read-only "true"
+
+
 AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_ENABLE | *eksconfig.AddOnClusterLoader.Enable | bool | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_CREATED | *eksconfig.AddOnClusterLoader.Created | bool | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_CREATE_TOOK | *eksconfig.AddOnClusterLoader.CreateTook | time.Duration | read-only "true"
@@ -392,7 +412,6 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_DELETE_TOOK | *eksconfig.AddOnClusterLo
 AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_DELETE_TOOK_STRING | *eksconfig.AddOnClusterLoader.DeleteTookString | string | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_DURATION | *eksconfig.AddOnClusterLoader.Duration | time.Duration | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_DURATION_STRING | *eksconfig.AddOnClusterLoader.DurationString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_HOLLOW_NODES | *eksconfig.AddOnClusterLoader.HollowNodes | int | read-only "false"
 
 
 AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_ENABLE | *eksconfig.AddOnConformance.Enable | bool | read-only "false"

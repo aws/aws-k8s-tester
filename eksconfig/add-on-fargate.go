@@ -66,6 +66,13 @@ func (cfg *Config) IsEnabledAddOnFargate() bool {
 	return false
 }
 
+func getDefaultAddOnFargate() *AddOnFargate {
+	return &AddOnFargate{
+		Enable:     false,
+		RoleCreate: true,
+	}
+}
+
 // only letters and numbers for Secret key names
 var fargateSecretRegex = regexp.MustCompile("[^a-zA-Z0-9]+")
 

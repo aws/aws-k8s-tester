@@ -752,10 +752,10 @@ func (ts *tester) createDeployment() error {
 
 							Containers: []v1.Container{
 								{
-									Name:  ts.cfg.EKSConfig.AddOnIRSA.ConfigMapName,
-									Image: "amazonlinux",
-
+									Name:            ts.cfg.EKSConfig.AddOnIRSA.ConfigMapName,
+									Image:           "amazonlinux",
 									ImagePullPolicy: v1.PullIfNotPresent,
+
 									Command: []string{
 										"sh",
 										"-c",

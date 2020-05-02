@@ -217,7 +217,7 @@ func (ts *tester) InstallNvidiaDriver() (err error) {
 				foundReady := int64(0)
 				for _, node := range items {
 					labels := node.GetLabels()
-					if labels["Name"] != ngName {
+					if labels["NGName"] != ngName {
 						continue
 					}
 					nodeName := node.GetName()
@@ -302,7 +302,7 @@ func (ts *tester) InstallNvidiaDriver() (err error) {
 				foundReady := 0
 				for _, node := range items {
 					labels := node.GetLabels()
-					if labels["Name"] != mngName {
+					if labels["NGName"] != mngName {
 						continue
 					}
 					nodeName := node.GetName()

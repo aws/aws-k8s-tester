@@ -44,6 +44,14 @@ func (cfg *Config) IsEnabledAddOnCSIEBS() bool {
 	return false
 }
 
+func getDefaultAddOnCSIEBS() *AddOnCSIEBS {
+	return &AddOnCSIEBS{
+		Enable: false,
+		// https://github.com/kubernetes-sigs/aws-ebs-csi-driver#deploy-driver
+		ChartRepoURL: "https://github.com/kubernetes-sigs/aws-ebs-csi-driver/releases/download/v0.5.0/helm-chart.tgz",
+	}
+}
+
 func (cfg *Config) validateAddOnCSIEBS() error {
 	if !cfg.IsEnabledAddOnCSIEBS() {
 		return nil

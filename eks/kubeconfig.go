@@ -83,9 +83,11 @@ func (ts *Tester) updateKUBECONFIG() (err error) {
 	if ts.cfg.Parameters.ResolverURL != "" {
 		args = append(args, fmt.Sprintf("--endpoint=%s", ts.cfg.Parameters.ResolverURL))
 	}
+	cmd := strings.Join(args, " ")
+
 	ts.lg.Info("writing KUBECONFIG with 'aws eks update-kubeconfig'",
 		zap.String("kubeconfig-path", ts.cfg.KubeConfigPath),
-		zap.Strings("aws-args", args),
+		zap.String("cmd", cmd),
 	)
 
 	retryStart, waitDur := time.Now(), 3*time.Minute
@@ -117,6 +119,8 @@ func (ts *Tester) updateKUBECONFIG() (err error) {
 		return err
 	}
 
-	ts.lg.Info("ran 'aws eks update-kubeconfig'", zap.String("output", string(output)))
+	ts.lg.Info("ran 'aws eks update-kubeconfig'")
+	fmt.Printf("\n\n'%s' output:\n\n%s\n\n", cmd, strings.TrimSpace(string(output)))
+
 	return nil
 }

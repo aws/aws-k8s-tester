@@ -78,6 +78,32 @@ func (cfg *Config) IsEnabledAddOnNodeGroups() bool {
 	return false
 }
 
+func getDefaultAddOnNodeGroups(name string) *AddOnNodeGroups {
+	return &AddOnNodeGroups{
+		Enable:     false,
+		FetchLogs:  true,
+		RoleCreate: true,
+		LogsDir:    "", // to be auto-generated
+		ASGs: map[string]ASG{
+			name + "-ng-asg-cpu": ASG{
+				ASG: ec2config.ASG{
+					Name:                 name + "-ng-asg-cpu",
+					RemoteAccessUserName: "ec2-user", // assume Amazon Linux 2
+					AMIType:              eks.AMITypesAl2X8664,
+					ImageID:              "",
+					ImageIDSSMParameter:  "/aws/service/eks/optimized-ami/1.16/amazon-linux-2/recommended/image_id",
+					ASGMinSize:           1,
+					ASGMaxSize:           1,
+					ASGDesiredCapacity:   1,
+					InstanceTypes:        []string{DefaultNodeInstanceTypeCPU},
+					VolumeSize:           DefaultNodeVolumeSize,
+				},
+				KubeletExtraArgs: "",
+			},
+		},
+	}
+}
+
 func (cfg *Config) validateAddOnNodeGroups() error {
 	if !cfg.IsEnabledAddOnNodeGroups() {
 		return nil

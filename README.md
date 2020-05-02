@@ -239,6 +239,22 @@ cat /tmp/config.yaml
 less +FG /tmp/config.yaml
 ```
 
+To run hollow nodes with remote Pods, build ECR container:
+
+```bash
+cd ${GOPATH}/src/github.com/aws/aws-k8s-tester
+make docker-push ACCOUNT_ID=[ACCT-ID]
+
+# and set
+AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_ENABLE=true \
+AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE=true \
+AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_NODES=5 \
+AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_DEPLOYMENT_REPLICAS=10 \
+AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REPOSITORY_NAME=aws/aws-k8s-tester \
+AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REPOSITORY_URI=[ACCT-ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester \
+AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REPOSITORY_IMAGE_TAG=latest \
+```
+
 
 ## `eks-utils apis`
 

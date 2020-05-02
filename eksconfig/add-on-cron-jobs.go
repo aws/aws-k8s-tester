@@ -63,6 +63,18 @@ func (cfg *Config) IsEnabledAddOnCronJobs() bool {
 	return false
 }
 
+func getDefaultAddOnCronJobs() *AddOnCronJobs {
+	return &AddOnCronJobs{
+		Enable:                     false,
+		Schedule:                   "*/10 * * * *", // every 10-min
+		Completes:                  10,
+		Parallels:                  10,
+		SuccessfulJobsHistoryLimit: 3,
+		FailedJobsHistoryLimit:     1,
+		EchoSize:                   100 * 1024, // 100 KB
+	}
+}
+
 func (cfg *Config) validateAddOnCronJobs() error {
 	if !cfg.IsEnabledAddOnCronJobs() {
 		return nil

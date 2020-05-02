@@ -62,6 +62,24 @@ func (cfg *Config) IsEnabledAddOnSecrets() bool {
 	return false
 }
 
+func getDefaultAddOnSecrets() *AddOnSecrets {
+	return &AddOnSecrets{
+		Enable:        false,
+		Objects:       10,
+		Size:          10 * 1024, // 10 KB
+		FailThreshold: 10,
+
+		// writes total 100 MB for "Secret" objects,
+		// plus "Pod" objects, writes total 330 MB to etcd
+		//
+		// with 3 nodes, takes about 1.5 hour for all
+		// these "Pod"s to complete
+		//
+		// Objects:     10000,
+		// Size:        10 * 1024, // 10 KB
+	}
+}
+
 func (cfg *Config) validateAddOnSecrets() error {
 	if !cfg.IsEnabledAddOnSecrets() {
 		return nil

@@ -63,6 +63,14 @@ func (cfg *Config) IsEnabledAddOnWordpress() bool {
 	return false
 }
 
+func getDefaultAddOnWordpress() *AddOnWordpress {
+	return &AddOnWordpress{
+		Enable:   false,
+		UserName: "user",
+		Password: "",
+	}
+}
+
 func (cfg *Config) validateAddOnWordpress() error {
 	if !cfg.IsEnabledAddOnWordpress() {
 		return nil

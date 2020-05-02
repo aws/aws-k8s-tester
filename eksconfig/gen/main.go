@@ -114,6 +114,10 @@ func createDoc() string {
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnHollowNodes, &eksconfig.AddOnHollowNodes{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnClusterLoader, &eksconfig.AddOnClusterLoader{}))
 
 	b.WriteByte('\n')

@@ -1,7 +1,6 @@
 package eksconfig
 
 import (
-	"errors"
 	"time"
 )
 
@@ -24,13 +23,10 @@ type AddOnClusterLoader struct {
 	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
 
 	// Duration is the duration to run load testing.
+	// The cluster loader waits "one" "Duration" for hollow ones.
+	// And other one for cluster loader.
 	Duration       time.Duration `json:"duration,omitempty"`
 	DurationString string        `json:"duration-string,omitempty" read-only:"true"`
-
-	// HollowNodes is the number of hollow nodes to create.
-	// Writes happen concurrently with multiple clients
-	// e.g. 10 clients with each client 5 QPS can create 50 objects per second.
-	HollowNodes int `json:"hollow-nodes"`
 }
 
 // EnvironmentVariablePrefixAddOnClusterLoader is the environment variable prefix used for "eksconfig".
@@ -49,12 +45,16 @@ func (cfg *Config) IsEnabledAddOnClusterLoader() bool {
 	return false
 }
 
+func getDefaultAddOnClusterLoader() *AddOnClusterLoader {
+	return &AddOnClusterLoader{
+		Enable:   false,
+		Duration: time.Minute,
+	}
+}
+
 func (cfg *Config) validateAddOnClusterLoader() error {
 	if !cfg.IsEnabledAddOnClusterLoader() {
 		return nil
-	}
-	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
-		return errors.New("AddOnClusterLoader.Enable true but no node group is enabled")
 	}
 
 	if cfg.AddOnClusterLoader.Duration == time.Duration(0) {

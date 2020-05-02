@@ -48,6 +48,14 @@ func (cfg *Config) IsEnabledAddOnJobsPi() bool {
 	return false
 }
 
+func getDefaultAddOnJobsPi() *AddOnJobsPi {
+	return &AddOnJobsPi{
+		Enable:    false,
+		Completes: 30,
+		Parallels: 10,
+	}
+}
+
 func (cfg *Config) validateAddOnJobsPi() error {
 	if !cfg.IsEnabledAddOnJobsPi() {
 		return nil

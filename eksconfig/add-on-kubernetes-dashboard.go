@@ -62,6 +62,13 @@ func (cfg *Config) getAddOnKubernetesDashboardURL() string {
 	return cfg.AddOnKubernetesDashboard.URL
 }
 
+func getDefaultAddOnKubernetesDashboard() *AddOnKubernetesDashboard {
+	return &AddOnKubernetesDashboard{
+		Enable: false,
+		URL:    defaultKubernetesDashboardURL,
+	}
+}
+
 // ref. https://docs.aws.amazon.com/eks/latest/userguide/dashboard-tutorial.html
 const defaultKubernetesDashboardURL = "http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/#/login"
 

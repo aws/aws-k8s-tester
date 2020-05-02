@@ -147,6 +147,29 @@ func (cfg *Config) IsEnabledAddOnManagedNodeGroups() bool {
 	return false
 }
 
+func getDefaultAddOnManagedNodeGroups(name string) *AddOnManagedNodeGroups {
+	return &AddOnManagedNodeGroups{
+		Enable:      false,
+		FetchLogs:   true,
+		SigningName: "eks",
+		RoleCreate:  true,
+		LogsDir:     "", // to be auto-generated
+		MNGs: map[string]MNG{
+			name + "-mng-cpu": {
+				Name:                 name + "-mng-cpu",
+				RemoteAccessUserName: "ec2-user", // assume Amazon Linux 2
+				ReleaseVersion:       "",         // to be auto-filled by EKS API
+				AMIType:              eks.AMITypesAl2X8664,
+				ASGMinSize:           1,
+				ASGMaxSize:           1,
+				ASGDesiredCapacity:   1,
+				InstanceTypes:        []string{DefaultNodeInstanceTypeCPU},
+				VolumeSize:           DefaultNodeVolumeSize,
+			},
+		},
+	}
+}
+
 func (cfg *Config) validateAddOnManagedNodeGroups() error {
 	if !cfg.IsEnabledAddOnManagedNodeGroups() {
 		return nil

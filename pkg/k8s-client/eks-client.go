@@ -214,10 +214,9 @@ func NewEKS(cfg *EKSConfig) (e EKS, err error) {
 	if cfg.Clients < 1 {
 		cfg.Clients = 1
 	}
-	ek := &eks{
-		cfg:     cfg,
-		clients: make([]*kubernetes.Clientset, cfg.Clients),
-	}
+
+	cfg.Logger.Info("creating clients", zap.String("kubeconfig", cfg.KubeConfigPath))
+	ek := &eks{cfg: cfg, clients: make([]*kubernetes.Clientset, cfg.Clients)}
 	for i := 0; i < cfg.Clients; i++ {
 		ek.clients[i], err = createClient(cfg)
 		if err != nil {

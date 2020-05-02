@@ -56,6 +56,14 @@ func (cfg *Config) IsEnabledAddOnPrometheusGrafana() bool {
 	return false
 }
 
+func getDefaultAddOnPrometheusGrafana() *AddOnPrometheusGrafana {
+	return &AddOnPrometheusGrafana{
+		Enable:               false,
+		GrafanaAdminUserName: "admin",
+		GrafanaAdminPassword: "",
+	}
+}
+
 func (cfg *Config) validateAddOnPrometheusGrafana() error {
 	if !cfg.IsEnabledAddOnPrometheusGrafana() {
 		return nil

@@ -572,7 +572,7 @@ func (ts *tester) waitDeploymentALB() error {
 		ctx,
 		ts.cfg.EKSConfig.KubectlPath,
 		"--kubeconfig="+ts.cfg.EKSConfig.KubeConfigPath,
-		"--namespace="+"kube-system",
+		"--namespace=kube-system",
 		"describe",
 		"deployment",
 		albIngressControllerDeploymentName,

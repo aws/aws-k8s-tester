@@ -3,6 +3,8 @@ package eksconfig
 import (
 	"errors"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"time"
 )
 
@@ -53,6 +55,18 @@ func (cfg *Config) IsEnabledAddOnKubeflow() bool {
 	}
 	cfg.AddOnKubeflow = nil
 	return false
+}
+
+func getDefaultAddOnKubeflow() *AddOnKubeflow {
+	addOn := &AddOnKubeflow{
+		Enable:           false,
+		KfctlPath:        "/tmp/kfctl-test-v1.0.2",
+		KfctlDownloadURL: "https://github.com/kubeflow/kfctl/releases/download/v1.0.2/kfctl_v1.0.2-0-ga476281_linux.tar.gz",
+	}
+	if runtime.GOOS == "darwin" {
+		addOn.KfctlDownloadURL = strings.Replace(addOn.KfctlDownloadURL, "linux", "darwin", -1)
+	}
+	return addOn
 }
 
 func (cfg *Config) validateAddOnKubeflow() error {

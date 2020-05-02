@@ -43,11 +43,12 @@ func NewTester(cfg Config) (Tester, error) {
 }
 
 type tester struct {
-	cfg   Config
+	cfg Config
+
 	donec chan struct{}
 }
 
-func (ts *tester) Create() error {
+func (ts *tester) Create() (err error) {
 	if ts.cfg.EKSConfig.AddOnClusterLoader.Created {
 		ts.cfg.Logger.Info("skipping create AddOnClusterLoader")
 		return nil
@@ -82,9 +83,10 @@ func (ts *tester) Create() error {
 		ts.cfg.Logger.Warn("cluster loader aborted")
 		close(ts.donec)
 		return nil
+
 	case <-time.After(ts.cfg.EKSConfig.AddOnClusterLoader.Duration):
-		close(ts.donec)
 		ts.cfg.Logger.Info("completing load testing", zap.Duration("duration", ts.cfg.EKSConfig.AddOnClusterLoader.Duration))
+		close(ts.donec)
 
 		select {
 		case <-ts.cfg.Stopc:
@@ -94,7 +96,6 @@ func (ts *tester) Create() error {
 		}
 	}
 
-	var err error
 	waitDur, retryStart := 5*time.Minute, time.Now()
 	for time.Now().Sub(retryStart) < waitDur {
 		select {

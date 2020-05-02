@@ -29,6 +29,7 @@ import (
 	"github.com/aws/aws-k8s-tester/eks/csrs"
 	"github.com/aws/aws-k8s-tester/eks/fargate"
 	"github.com/aws/aws-k8s-tester/eks/gpu"
+	hollow_nodes "github.com/aws/aws-k8s-tester/eks/hollow-nodes"
 	"github.com/aws/aws-k8s-tester/eks/irsa"
 	irsa_fargate "github.com/aws/aws-k8s-tester/eks/irsa-fargate"
 	jobs_echo "github.com/aws/aws-k8s-tester/eks/jobs-echo"
@@ -57,6 +58,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/cloudformation/cloudformationiface"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
+	"github.com/aws/aws-sdk-go/service/ecr"
+	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
 	aws_eks "github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
 	"github.com/aws/aws-sdk-go/service/elbv2"
@@ -98,6 +101,7 @@ type Tester struct {
 	s3API      s3iface.S3API
 	asgAPI     autoscalingiface.AutoScalingAPI
 	elbv2API   elbv2iface.ELBV2API
+	ecrAPI     ecriface.ECRAPI
 
 	eksSession *session.Session
 	eksAPI     eksiface.EKSAPI
@@ -125,6 +129,7 @@ type Tester struct {
 	wordPressTester           wordpress.Tester
 	jupyterHubTester          jupyter_hub.Tester
 	kubeflowTester            kubeflow.Tester
+	hollowNodesTester         hollow_nodes.Tester
 	clusterLoaderTester       cluster_loader.Tester
 	conformanceTester         conformance.Tester
 }
@@ -291,6 +296,19 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 	ts.s3API = s3.New(ts.awsSession)
 	ts.asgAPI = autoscaling.New(ts.awsSession)
 	ts.elbv2API = elbv2.New(ts.awsSession)
+	ts.ecrAPI = ecr.New(ts.awsSession)
+
+	ts.lg.Info("checking ECR API availability; listing repositories")
+	ecrResp, err := ts.ecrAPI.DescribeRepositories(&ecr.DescribeRepositoriesInput{
+		MaxResults: aws.Int64(20),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to describe repositories using ECR API (%v)", err)
+	}
+	ts.lg.Info("listed repositories with limit 20", zap.Int("repositories", len(ecrResp.Repositories)))
+	for _, v := range ecrResp.Repositories {
+		ts.lg.Info("EKS repository", zap.String("repository-uri", aws.StringValue(v.RepositoryUri)))
+	}
 
 	// create a separate session for EKS (for resolver endpoint)
 	ts.eksSession, _, ts.cfg.Status.AWSCredentialPath, err = pkg_aws.New(&pkg_aws.Config{
@@ -305,15 +323,14 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 	}
 	ts.eksAPI = aws_eks.New(ts.eksSession)
 
-	// check EKS API availability
+	ts.lg.Info("checking EKS API availability; listing clusters")
 	lresp, err := ts.eksAPI.ListClusters(&aws_eks.ListClustersInput{
 		MaxResults: aws.Int64(20),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list clusters using EKS API (%v)", err)
 	}
-	fmt.Println("EKS API available!")
-	ts.lg.Info("listing EKS clusters with limit 20", zap.Int("clusters", len(lresp.Clusters)))
+	ts.lg.Info("listed clusters with limit 20", zap.Int("clusters", len(lresp.Clusters)))
 	for _, v := range lresp.Clusters {
 		ts.lg.Info("EKS cluster", zap.String("name", aws.StringValue(v)))
 	}
@@ -636,6 +653,17 @@ func (ts *Tester) createSubTesters() (err error) {
 		})
 	}
 
+	if ts.cfg.IsEnabledAddOnHollowNodes() {
+		ts.lg.Info("creating hollowNodesTester")
+		ts.hollowNodesTester, err = hollow_nodes.NewTester(hollow_nodes.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			EKSConfig: ts.cfg,
+			K8SClient: ts.k8sClient,
+			ECRAPI:    ts.ecrAPI,
+		})
+	}
+
 	if ts.cfg.IsEnabledAddOnClusterLoader() {
 		ts.lg.Info("creating clusterLoaderTester")
 		ts.clusterLoaderTester, err = cluster_loader.NewTester(cluster_loader.Config{
@@ -696,6 +724,7 @@ func (ts *Tester) Up() (err error) {
 			} else {
 				fmt.Printf("\n\n😲 😲 😲  UP ABORTED ???\n\n\n")
 			}
+			fmt.Printf("\n# to delete cluster\naws-k8s-tester eks delete cluster --path %q\n\n", ts.cfg.ConfigPath)
 			return
 		}
 
@@ -720,6 +749,7 @@ func (ts *Tester) Up() (err error) {
 			fmt.Printf("\n*********************************\n")
 			ts.lg.Sugar().Infof("Up.defer end (%s, %s)", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 			fmt.Printf("\n\n🔥 💀 👽 😱 😡 (-_-)  UP FAIL\n\n\n")
+			fmt.Printf("\n# to delete cluster\naws-k8s-tester eks delete cluster --path %q\n\n", ts.cfg.ConfigPath)
 			return
 		}
 
@@ -1296,6 +1326,23 @@ func (ts *Tester) Up() (err error) {
 		}
 	}
 
+	if ts.cfg.IsEnabledAddOnHollowNodes() {
+		if ts.hollowNodesTester == nil {
+			return errors.New("ts.hollowNodesTester == nil when AddOnHollowNodes.Enable == true")
+		}
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("hollowNodesTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnHollowNodes.Namespace)
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.interruptSig,
+			ts.hollowNodesTester.Create,
+		); err != nil {
+			return err
+		}
+	}
+
 	if ts.cfg.IsEnabledAddOnClusterLoader() {
 		if ts.clusterLoaderTester == nil {
 			return errors.New("ts.clusterLoaderTester == nil when AddOnClusterLoader.Enable == true")
@@ -1519,6 +1566,19 @@ func (ts *Tester) down() (err error) {
 		} else {
 			waitDur := 20 * time.Second
 			ts.lg.Info("sleeping after deleting clusterLoaderTester", zap.Duration("wait", waitDur))
+			time.Sleep(waitDur)
+		}
+	}
+
+	if ts.cfg.IsEnabledAddOnHollowNodes() && ts.cfg.AddOnHollowNodes.Created {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("hollowNodesTester.Delete (%q)\n", ts.cfg.ConfigPath)
+		if err := ts.hollowNodesTester.Delete(); err != nil {
+			ts.lg.Warn("hollowNodesTester.Delete failed", zap.Error(err))
+			errs = append(errs, err.Error())
+		} else {
+			waitDur := 20 * time.Second
+			ts.lg.Info("sleeping after deleting hollowNodesTester", zap.Duration("wait", waitDur))
 			time.Sleep(waitDur)
 		}
 	}

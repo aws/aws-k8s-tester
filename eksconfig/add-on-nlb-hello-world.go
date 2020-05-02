@@ -52,6 +52,13 @@ func (cfg *Config) IsEnabledAddOnNLBHelloWorld() bool {
 	return false
 }
 
+func getDefaultAddOnNLBHelloWorld() *AddOnNLBHelloWorld {
+	return &AddOnNLBHelloWorld{
+		Enable:             false,
+		DeploymentReplicas: 3,
+	}
+}
+
 func (cfg *Config) validateAddOnNLBHelloWorld() error {
 	if !cfg.IsEnabledAddOnNLBHelloWorld() {
 		return nil

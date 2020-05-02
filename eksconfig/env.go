@@ -313,6 +313,19 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *AddOnKubeflow, got %T", vv)
 	}
 
+	if cfg.AddOnHollowNodes == nil {
+		cfg.AddOnHollowNodes = &AddOnHollowNodes{}
+	}
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnHollowNodes, cfg.AddOnHollowNodes)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*AddOnHollowNodes); ok {
+		cfg.AddOnHollowNodes = av
+	} else {
+		return fmt.Errorf("expected *AddOnHollowNodes, got %T", vv)
+	}
+
 	if cfg.AddOnClusterLoader == nil {
 		cfg.AddOnClusterLoader = &AddOnClusterLoader{}
 	}

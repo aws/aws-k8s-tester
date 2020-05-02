@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 )
@@ -69,6 +70,18 @@ func (cfg *Config) IsEnabledAddOnConformance() bool {
 	}
 	cfg.AddOnConformance = nil
 	return false
+}
+
+func getDefaultAddOnConformance() *AddOnConformance {
+	addOn := &AddOnConformance{
+		Enable:              false,
+		SonobuoyPath:        "/tmp/sonobuoy-v0.18.1",
+		SonobuoyDownloadURL: "https://github.com/vmware-tanzu/sonobuoy/releases/download/v0.18.1/sonobuoy_0.18.1_linux_amd64.tar.gz",
+	}
+	if runtime.GOOS == "darwin" {
+		addOn.SonobuoyDownloadURL = strings.Replace(addOn.SonobuoyDownloadURL, "linux", "darwin", -1)
+	}
+	return addOn
 }
 
 func (cfg *Config) validateAddOnConformance() error {

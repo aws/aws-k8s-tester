@@ -63,6 +63,19 @@ func (cfg *Config) IsEnabledAddOnCSRs() bool {
 	return false
 }
 
+func getDefaultAddOnCSRs() *AddOnCSRs {
+	return &AddOnCSRs{
+		Enable: false,
+
+		InitialRequestConditionType: "",
+
+		Objects: 10,
+
+		// writes total 5 MB data to etcd
+		// Objects: 1000,
+	}
+}
+
 func (cfg *Config) validateAddOnCSRs() error {
 	if !cfg.IsEnabledAddOnCSRs() {
 		return nil

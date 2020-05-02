@@ -50,6 +50,12 @@ func (cfg *Config) IsEnabledAddOnAppMesh() bool {
 	return false
 }
 
+func getDefaultAddOnAppMesh() *AddOnAppMesh {
+	return &AddOnAppMesh{
+		Enable: false,
+	}
+}
+
 func (cfg *Config) validateAddOnAppMesh() error {
 	if !cfg.IsEnabledAddOnAppMesh() {
 		return nil

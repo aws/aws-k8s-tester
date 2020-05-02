@@ -24,7 +24,9 @@ echo "BUILD_TIME:" ${BUILD_TIME}
 
 mkdir -p ./bin
 
-for os in linux darwin; do
+_BUILD_TARGETS=${BUILD_TARGETS:-'linux darwin'}
+
+for os in ${_BUILD_TARGETS}; do
   CGO_ENABLED=0 GOOS=${os} GOARCH=$(go env GOARCH) \
     go build -v \
     -ldflags "-s -w \

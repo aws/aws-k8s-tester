@@ -79,3 +79,13 @@ type Parameters struct {
 	// enabled.
 	EncryptionCMKARN string `json:"encryption-cmk-arn"`
 }
+
+func getDefaultParameters() *Parameters {
+	return &Parameters{
+		RoleCreate:          true,
+		VPCCreate:           true,
+		SigningName:         "eks",
+		Version:             "1.16",
+		EncryptionCMKCreate: true,
+	}
+}

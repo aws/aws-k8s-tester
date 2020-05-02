@@ -332,6 +332,25 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_DURATION", "7m30s")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_DURATION")
 
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_NAMESPACE", "test-hollow-nodes-namespace")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_NODES", "333")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_NODES")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_NODE_LABEL_PREFIX", "hollow-prefix")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_NODE_LABEL_PREFIX")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_MAX_OPEN_FILES", "333")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_MAX_OPEN_FILES")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REPOSITORY_NAME", "hollow-nodes-repo-name")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REPOSITORY_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REPOSITORY_URI", "hollow-nodes-repo-uri")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REPOSITORY_URI")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REPOSITORY_IMAGE_TAG", "hollow-nodes-repo-image-tag")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REPOSITORY_IMAGE_TAG")
+
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_ENABLE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_NAMESPACE", "conformance-test")
@@ -891,6 +910,34 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.AddOnJupyterHub.ProxySecretToken != proxySecretToken {
 		t.Fatalf("unexpected cfg.AddOnJupyterHub.ProxySecretToken %q", cfg.AddOnJupyterHub.ProxySecretToken)
+	}
+
+	if !cfg.AddOnHollowNodes.Enable {
+		t.Fatalf("unexpected cfg.AddOnHollowNodes.Enable %v", cfg.AddOnHollowNodes.Enable)
+	}
+	if cfg.AddOnHollowNodes.Namespace != "test-hollow-nodes-namespace" {
+		t.Fatalf("unexpected cfg.AddOnHollowNodes.Namespace %v", cfg.AddOnHollowNodes.Namespace)
+	}
+	if cfg.AddOnHollowNodes.Nodes != 333 {
+		t.Fatalf("unexpected cfg.AddOnHollowNodes.Nodes %v", cfg.AddOnHollowNodes.Nodes)
+	}
+	if cfg.AddOnHollowNodes.NodeLabelPrefix != "hollow-prefix" {
+		t.Fatalf("unexpected cfg.AddOnHollowNodes.NodeLabelPrefix %q", cfg.AddOnHollowNodes.NodeLabelPrefix)
+	}
+	if cfg.AddOnHollowNodes.MaxOpenFiles != 333 {
+		t.Fatalf("unexpected cfg.AddOnHollowNodes.MaxOpenFiles %v", cfg.AddOnHollowNodes.MaxOpenFiles)
+	}
+	if !cfg.AddOnHollowNodes.Remote {
+		t.Fatalf("unexpected cfg.AddOnHollowNodes.Remote %v", cfg.AddOnHollowNodes.Remote)
+	}
+	if cfg.AddOnHollowNodes.RepositoryName != "hollow-nodes-repo-name" {
+		t.Fatalf("unexpected cfg.AddOnHollowNodes.RepositoryName %v", cfg.AddOnHollowNodes.RepositoryName)
+	}
+	if cfg.AddOnHollowNodes.RepositoryURI != "hollow-nodes-repo-uri" {
+		t.Fatalf("unexpected cfg.AddOnHollowNodes.RepositoryURI %v", cfg.AddOnHollowNodes.RepositoryURI)
+	}
+	if cfg.AddOnHollowNodes.RepositoryImageTag != "hollow-nodes-repo-image-tag" {
+		t.Fatalf("unexpected cfg.AddOnHollowNodes.RepositoryImageTag %v", cfg.AddOnHollowNodes.RepositoryImageTag)
 	}
 
 	if !cfg.AddOnClusterLoader.Enable {

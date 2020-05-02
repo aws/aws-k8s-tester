@@ -13,11 +13,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/pkg/aws"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
-	"github.com/aws/aws-sdk-go/service/eks"
 	"k8s.io/client-go/util/homedir"
 )
 
@@ -25,9 +23,9 @@ const (
 	// DefaultClients is the default number of clients to create.
 	DefaultClients = 3
 	// DefaultClientQPS is the default client QPS.
-	DefaultClientQPS float32 = 5.0
+	DefaultClientQPS float32 = 10
 	// DefaultClientBurst is the default client burst.
-	DefaultClientBurst = 10
+	DefaultClientBurst = 20
 	// DefaultClientTimeout is the default client timeout.
 	DefaultClientTimeout = 30 * time.Second
 
@@ -58,10 +56,15 @@ const (
 //  - omitting an entire field returns nil value
 //  - make sure to check both
 func NewDefault() *Config {
+	name := fmt.Sprintf("eks-%s-%s", getTS()[:10], randString(12))
+	if v := os.Getenv(AWS_K8S_TESTER_EKS_PREFIX + "NAME"); v != "" {
+		name = v
+	}
+
 	cfg := Config{
 		mu: new(sync.RWMutex),
 
-		Name: fmt.Sprintf("eks-%s-%s", getTS()[:10], randString(12)),
+		Name: name,
 
 		// to be auto-generated
 		ConfigPath:                "",
@@ -90,13 +93,7 @@ func NewDefault() *Config {
 		S3BucketCreateKeep:              false,
 		S3BucketLifecycleExpirationDays: 0,
 
-		Parameters: &Parameters{
-			RoleCreate:          true,
-			VPCCreate:           true,
-			SigningName:         "eks",
-			Version:             "1.16",
-			EncryptionCMKCreate: true,
-		},
+		Parameters: getDefaultParameters(),
 
 		RemoteAccessKeyCreate: true,
 		// keep in-sync with the default value in https://pkg.go.dev/k8s.io/kubernetes/test/e2e/framework#GetSigner
@@ -115,165 +112,32 @@ func NewDefault() *Config {
 		ClientQPS:   DefaultClientQPS,
 		ClientBurst: DefaultClientBurst,
 
-		AddOnNodeGroups: &AddOnNodeGroups{
-			Enable:     false,
-			FetchLogs:  true,
-			RoleCreate: true,
-			LogsDir:    "", // to be auto-generated
-		},
-
-		AddOnManagedNodeGroups: &AddOnManagedNodeGroups{
-			Enable:      false,
-			FetchLogs:   true,
-			SigningName: "eks",
-			RoleCreate:  true,
-			LogsDir:     "", // to be auto-generated
-		},
-
-		AddOnCSIEBS: &AddOnCSIEBS{
-			Enable: false,
-			// https://github.com/kubernetes-sigs/aws-ebs-csi-driver#deploy-driver
-			ChartRepoURL: "https://github.com/kubernetes-sigs/aws-ebs-csi-driver/releases/download/v0.5.0/helm-chart.tgz",
-		},
-
-		AddOnKubernetesDashboard: &AddOnKubernetesDashboard{
-			Enable: false,
-			URL:    defaultKubernetesDashboardURL,
-		},
-
-		AddOnPrometheusGrafana: &AddOnPrometheusGrafana{
-			Enable:               false,
-			GrafanaAdminUserName: "admin",
-			GrafanaAdminPassword: "",
-		},
-
-		AddOnNLBHelloWorld: &AddOnNLBHelloWorld{
-			Enable:             false,
-			DeploymentReplicas: 3,
-		},
-
-		AddOnALB2048: &AddOnALB2048{
-			Enable:                 false,
-			DeploymentReplicasALB:  3,
-			DeploymentReplicas2048: 3,
-		},
-
-		AddOnJobsPi: &AddOnJobsPi{
-			Enable:    false,
-			Completes: 30,
-			Parallels: 10,
-		},
-
-		AddOnJobsEcho: &AddOnJobsEcho{
-			Enable:    false,
-			Completes: 10,
-			Parallels: 10,
-			EchoSize:  100 * 1024, // 100 KB
-
-			// writes total 100 MB data to etcd
-			// Completes: 1000,
-			// Parallels: 100,
-			// EchoSize: 100 * 1024, // 100 KB
-		},
-
-		AddOnCronJobs: &AddOnCronJobs{
-			Enable:                     false,
-			Schedule:                   "*/10 * * * *", // every 10-min
-			Completes:                  10,
-			Parallels:                  10,
-			SuccessfulJobsHistoryLimit: 3,
-			FailedJobsHistoryLimit:     1,
-			EchoSize:                   100 * 1024, // 100 KB
-		},
-
-		AddOnCSRs: &AddOnCSRs{
-			Enable: false,
-
-			InitialRequestConditionType: "",
-
-			Objects: 10,
-
-			// writes total 5 MB data to etcd
-			// Objects: 1000,
-		},
-
-		AddOnConfigMaps: &AddOnConfigMaps{
-			Enable:        false,
-			Objects:       10,
-			Size:          10 * 1024, // 10 KB
-			FailThreshold: 10,
-
-			// writes total 300 MB data to etcd
-			// Objects: 1000,
-			// Size: 300000, // 0.3 MB
-		},
-
-		AddOnSecrets: &AddOnSecrets{
-			Enable:        false,
-			Objects:       10,
-			Size:          10 * 1024, // 10 KB
-			FailThreshold: 10,
-
-			// writes total 100 MB for "Secret" objects,
-			// plus "Pod" objects, writes total 330 MB to etcd
-			//
-			// with 3 nodes, takes about 1.5 hour for all
-			// these "Pod"s to complete
-			//
-			// Objects:     10000,
-			// Size:        10 * 1024, // 10 KB
-		},
-
-		AddOnIRSA: &AddOnIRSA{
-			Enable:             false,
-			DeploymentReplicas: 10,
-		},
-
-		AddOnFargate: &AddOnFargate{
-			Enable:     false,
-			RoleCreate: true,
-		},
-
-		AddOnIRSAFargate: &AddOnIRSAFargate{
-			Enable: false,
-		},
-
-		AddOnAppMesh: &AddOnAppMesh{
-			Enable: false,
-		},
-
-		AddOnWordpress: &AddOnWordpress{
-			Enable:   false,
-			UserName: "user",
-			Password: "",
-		},
-
-		AddOnJupyterHub: &AddOnJupyterHub{
-			Enable: false,
-		},
-
-		AddOnKubeflow: &AddOnKubeflow{
-			Enable:           false,
-			KfctlPath:        "/tmp/kfctl-test-v1.0.2",
-			KfctlDownloadURL: "https://github.com/kubeflow/kfctl/releases/download/v1.0.2/kfctl_v1.0.2-0-ga476281_linux.tar.gz",
-		},
-
-		AddOnClusterLoader: &AddOnClusterLoader{
-			Enable: false,
-		},
-
-		AddOnConformance: &AddOnConformance{
-			Enable:              false,
-			SonobuoyPath:        "/tmp/sonobuoy-v0.18.1",
-			SonobuoyDownloadURL: "https://github.com/vmware-tanzu/sonobuoy/releases/download/v0.18.1/sonobuoy_0.18.1_linux_amd64.tar.gz",
-		},
+		AddOnNodeGroups:          getDefaultAddOnNodeGroups(name),
+		AddOnManagedNodeGroups:   getDefaultAddOnManagedNodeGroups(name),
+		AddOnCSIEBS:              getDefaultAddOnCSIEBS(),
+		AddOnKubernetesDashboard: getDefaultAddOnKubernetesDashboard(),
+		AddOnPrometheusGrafana:   getDefaultAddOnPrometheusGrafana(),
+		AddOnNLBHelloWorld:       getDefaultAddOnNLBHelloWorld(),
+		AddOnALB2048:             getDefaultAddOnALB2048(),
+		AddOnJobsPi:              getDefaultAddOnJobsPi(),
+		AddOnJobsEcho:            getDefaultAddOnJobsEcho(),
+		AddOnCronJobs:            getDefaultAddOnCronJobs(),
+		AddOnCSRs:                getDefaultAddOnCSRs(),
+		AddOnConfigMaps:          getDefaultAddOnConfigMaps(),
+		AddOnSecrets:             getDefaultAddOnSecrets(),
+		AddOnIRSA:                getDefaultAddOnIRSA(),
+		AddOnFargate:             getDefaultAddOnFargate(),
+		AddOnIRSAFargate:         getDefaultAddOnIRSAFargate(),
+		AddOnAppMesh:             getDefaultAddOnAppMesh(),
+		AddOnWordpress:           getDefaultAddOnWordpress(),
+		AddOnJupyterHub:          getDefaultAddOnJupyterHub(),
+		AddOnKubeflow:            getDefaultAddOnKubeflow(),
+		AddOnHollowNodes:         getDefaultAddOnHollowNodes(),
+		AddOnClusterLoader:       getDefaultAddOnClusterLoader(),
+		AddOnConformance:         getDefaultAddOnConformance(),
 
 		// read-only
 		Status: &Status{Up: false},
-	}
-
-	if name := os.Getenv(AWS_K8S_TESTER_EKS_PREFIX + "NAME"); name != "" {
-		cfg.Name = name
 	}
 
 	// https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-welcome.html
@@ -286,44 +150,7 @@ func NewDefault() *Config {
 
 	if runtime.GOOS == "darwin" {
 		cfg.KubectlDownloadURL = strings.Replace(cfg.KubectlDownloadURL, "linux", "darwin", -1)
-		if cfg.IsEnabledAddOnKubeflow() {
-			cfg.AddOnKubeflow.KfctlDownloadURL = strings.Replace(cfg.AddOnKubeflow.KfctlDownloadURL, "linux", "darwin", -1)
-		}
-		if cfg.IsEnabledAddOnConformance() {
-			cfg.AddOnConformance.SonobuoyDownloadURL = strings.Replace(cfg.AddOnConformance.SonobuoyDownloadURL, "linux", "darwin", -1)
-		}
 		cfg.RemoteAccessPrivateKeyPath = filepath.Join(os.TempDir(), randString(10)+".insecure.key")
-	}
-
-	cfg.AddOnNodeGroups.ASGs = map[string]ASG{
-		cfg.Name + "-ng-asg-cpu": ASG{
-			ASG: ec2config.ASG{
-				Name:                 cfg.Name + "-ng-asg-cpu",
-				RemoteAccessUserName: "ec2-user", // assume Amazon Linux 2
-				AMIType:              eks.AMITypesAl2X8664,
-				ImageID:              "",
-				ImageIDSSMParameter:  "/aws/service/eks/optimized-ami/1.16/amazon-linux-2/recommended/image_id",
-				ASGMinSize:           1,
-				ASGMaxSize:           1,
-				ASGDesiredCapacity:   1,
-				InstanceTypes:        []string{DefaultNodeInstanceTypeCPU},
-				VolumeSize:           DefaultNodeVolumeSize,
-			},
-			KubeletExtraArgs: "",
-		},
-	}
-	cfg.AddOnManagedNodeGroups.MNGs = map[string]MNG{
-		cfg.Name + "-mng-cpu": {
-			Name:                 cfg.Name + "-mng-cpu",
-			RemoteAccessUserName: "ec2-user", // assume Amazon Linux 2
-			ReleaseVersion:       "",         // to be auto-filled by EKS API
-			AMIType:              eks.AMITypesAl2X8664,
-			ASGMinSize:           1,
-			ASGMaxSize:           1,
-			ASGDesiredCapacity:   1,
-			InstanceTypes:        []string{DefaultNodeInstanceTypeCPU},
-			VolumeSize:           DefaultNodeVolumeSize,
-		},
 	}
 
 	return &cfg
@@ -408,6 +235,9 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 	if err := cfg.validateAddOnKubeflow(); err != nil {
 		return fmt.Errorf("validateAddOnKubeflow failed [%v]", err)
+	}
+	if err := cfg.validateAddOnHollowNodes(); err != nil {
+		return fmt.Errorf("validateAddOnHollowNodes failed [%v]", err)
 	}
 	if err := cfg.validateAddOnClusterLoader(); err != nil {
 		return fmt.Errorf("validateAddOnClusterLoader failed [%v]", err)

@@ -74,6 +74,13 @@ func (cfg *Config) IsEnabledAddOnIRSA() bool {
 	return false
 }
 
+func getDefaultAddOnIRSA() *AddOnIRSA {
+	return &AddOnIRSA{
+		Enable:             false,
+		DeploymentReplicas: 10,
+	}
+}
+
 func (cfg *Config) validateAddOnIRSA() error {
 	if !cfg.IsEnabledAddOnIRSA() {
 		return nil

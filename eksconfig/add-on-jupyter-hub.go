@@ -59,6 +59,12 @@ func (cfg *Config) IsEnabledAddOnJupyterHub() bool {
 	return false
 }
 
+func getDefaultAddOnJupyterHub() *AddOnJupyterHub {
+	return &AddOnJupyterHub{
+		Enable: false,
+	}
+}
+
 func (cfg *Config) validateAddOnJupyterHub() error {
 	if !cfg.IsEnabledAddOnJupyterHub() {
 		return nil

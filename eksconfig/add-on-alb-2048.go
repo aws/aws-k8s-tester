@@ -54,6 +54,14 @@ func (cfg *Config) IsEnabledAddOnALB2048() bool {
 	return false
 }
 
+func getDefaultAddOnALB2048() *AddOnALB2048 {
+	return &AddOnALB2048{
+		Enable:                 false,
+		DeploymentReplicasALB:  3,
+		DeploymentReplicas2048: 3,
+	}
+}
+
 func (cfg *Config) validateAddOnALB2048() error {
 	if !cfg.IsEnabledAddOnALB2048() {
 		return nil

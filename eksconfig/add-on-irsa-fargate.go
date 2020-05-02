@@ -72,6 +72,12 @@ func (cfg *Config) IsEnabledAddOnIRSAFargate() bool {
 	return false
 }
 
+func getDefaultAddOnIRSAFargate() *AddOnIRSAFargate {
+	return &AddOnIRSAFargate{
+		Enable: false,
+	}
+}
+
 func (cfg *Config) validateAddOnIRSAFargate() error {
 	if !cfg.IsEnabledAddOnIRSAFargate() {
 		return nil

@@ -53,6 +53,19 @@ func (cfg *Config) IsEnabledAddOnConfigMaps() bool {
 	return false
 }
 
+func getDefaultAddOnConfigMaps() *AddOnConfigMaps {
+	return &AddOnConfigMaps{
+		Enable:        false,
+		Objects:       10,
+		Size:          10 * 1024, // 10 KB
+		FailThreshold: 10,
+
+		// writes total 300 MB data to etcd
+		// Objects: 1000,
+		// Size: 300000, // 0.3 MB
+	}
+}
+
 func (cfg *Config) validateAddOnConfigMaps() error {
 	if !cfg.IsEnabledAddOnConfigMaps() {
 		return nil

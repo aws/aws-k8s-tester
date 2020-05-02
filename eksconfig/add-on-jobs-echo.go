@@ -54,6 +54,20 @@ func (cfg *Config) IsEnabledAddOnJobsEcho() bool {
 	return false
 }
 
+func getDefaultAddOnJobsEcho() *AddOnJobsEcho {
+	return &AddOnJobsEcho{
+		Enable:    false,
+		Completes: 10,
+		Parallels: 10,
+		EchoSize:  100 * 1024, // 100 KB
+
+		// writes total 100 MB data to etcd
+		// Completes: 1000,
+		// Parallels: 100,
+		// EchoSize: 100 * 1024, // 100 KB
+	}
+}
+
 func (cfg *Config) validateAddOnJobsEcho() error {
 	if !cfg.IsEnabledAddOnJobsEcho() {
 		return nil
