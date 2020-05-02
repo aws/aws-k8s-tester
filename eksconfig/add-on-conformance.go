@@ -49,8 +49,10 @@ type AddOnConformance struct {
 	SonobuoyRunMode                 string `json:"sonobuoy-run-mode"`
 	SonobuoyRunKubeConformanceImage string `json:"sonobuoy-run-kube-conformance-image"`
 
-	// SonobuoyRetrievePath is the file path to store the "sonobuoy retrieve" results.
-	SonobuoyRetrievePath string `json:"sonobuoy-retrieve-path"`
+	SonobuoyResultTarGzPath    string `json:"sonobuoy-result-tar-gz-path" read-only:"true"`
+	SonobuoyResultDir          string `json:"sonobuoy-result-dir" read-only:"true"`
+	SonobuoyResultE2eLogPath   string `json:"sonobuoy-result-e2e-log-path" read-only:"true"`
+	SonobuoyResultJunitXMLPath string `json:"sonobuoy-result-junit-xml-path" read-only:"true"`
 }
 
 // EnvironmentVariablePrefixAddOnConformance is the environment variable prefix used for "eksconfig".
@@ -106,12 +108,42 @@ func (cfg *Config) validateAddOnConformance() error {
 		cfg.AddOnConformance.SonobuoyRunKubeConformanceImage = fmt.Sprintf("gcr.io/google-containers/conformance:v%s.0", cfg.Parameters.Version)
 	}
 
-	if cfg.AddOnConformance.SonobuoyRetrievePath == "" {
-		cfg.AddOnConformance.SonobuoyRetrievePath = filepath.Join(os.TempDir(), fmt.Sprintf("%s-sonobuoy-retrieve-%X.tar.gz", cfg.Name, time.Now().UnixNano()))
-		os.RemoveAll(cfg.AddOnConformance.SonobuoyRetrievePath)
+	if cfg.AddOnConformance.SonobuoyResultTarGzPath == "" {
+		cfg.AddOnConformance.SonobuoyResultTarGzPath = filepath.Join(
+			filepath.Dir(cfg.ConfigPath),
+			fmt.Sprintf("%s-sonobuoy-result-retrieve.tar.gz", cfg.Name),
+		)
+		os.RemoveAll(cfg.AddOnConformance.SonobuoyResultTarGzPath)
 	}
-	if !strings.HasSuffix(cfg.AddOnConformance.SonobuoyRetrievePath, ".tar.gz") {
-		return fmt.Errorf("AddOnConformance.SonobuoyRetrievePath[%q] must have '.tar.gz' extension", cfg.AddOnConformance.SonobuoyRetrievePath)
+	if !strings.HasSuffix(cfg.AddOnConformance.SonobuoyResultTarGzPath, ".tar.gz") {
+		return fmt.Errorf("AddOnConformance.SonobuoyResultTarGzPath[%q] must have '.tar.gz' extension", cfg.AddOnConformance.SonobuoyResultTarGzPath)
+	}
+
+	cfg.AddOnConformance.SonobuoyResultDir = filepath.Join(
+		filepath.Dir(cfg.ConfigPath),
+		fmt.Sprintf("%s-sonobuoy-results", cfg.Name),
+	)
+
+	if cfg.AddOnConformance.SonobuoyResultE2eLogPath == "" {
+		cfg.AddOnConformance.SonobuoyResultE2eLogPath = filepath.Join(
+			filepath.Dir(cfg.ConfigPath),
+			fmt.Sprintf("%s-sonobuoy-result-e2e.log", cfg.Name),
+		)
+		os.RemoveAll(cfg.AddOnConformance.SonobuoyResultE2eLogPath)
+	}
+	if !strings.HasSuffix(cfg.AddOnConformance.SonobuoyResultE2eLogPath, ".log") {
+		return fmt.Errorf("AddOnConformance.SonobuoyResultE2eLogPath[%q] must have '.log' extension", cfg.AddOnConformance.SonobuoyResultTarGzPath)
+	}
+
+	if cfg.AddOnConformance.SonobuoyResultJunitXMLPath == "" {
+		cfg.AddOnConformance.SonobuoyResultJunitXMLPath = filepath.Join(
+			filepath.Dir(cfg.ConfigPath),
+			fmt.Sprintf("%s-sonobuoy-result-junit.xml", cfg.Name),
+		)
+		os.RemoveAll(cfg.AddOnConformance.SonobuoyResultJunitXMLPath)
+	}
+	if !strings.HasSuffix(cfg.AddOnConformance.SonobuoyResultJunitXMLPath, ".xml") {
+		return fmt.Errorf("AddOnConformance.SonobuoyResultJunitXMLPath[%q] must have '.xml' extension", cfg.AddOnConformance.SonobuoyResultTarGzPath)
 	}
 
 	return nil

@@ -409,7 +409,10 @@ AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_TIMEOUT | *eksconfig.AddOnCon
 AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_TIMEOUT_STRING | *eksconfig.AddOnConformance.SonobuoyRunTimeoutString | string | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_MODE | *eksconfig.AddOnConformance.SonobuoyRunMode | string | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_KUBE_CONFORMANCE_IMAGE | *eksconfig.AddOnConformance.SonobuoyRunKubeConformanceImage | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RETRIEVE_PATH | *eksconfig.AddOnConformance.SonobuoyRetrievePath | string | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RESULT_TAR_GZ_PATH | *eksconfig.AddOnConformance.SonobuoyResultTarGzPath | string | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RESULT_DIR | *eksconfig.AddOnConformance.SonobuoyResultDir | string | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RESULT_E2E_LOG_PATH | *eksconfig.AddOnConformance.SonobuoyResultE2eLogPath | string | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RESULT_JUNIT_XML_PATH | *eksconfig.AddOnConformance.SonobuoyResultJunitXMLPath | string | read-only "true"
 
 
 ```

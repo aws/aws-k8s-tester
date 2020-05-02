@@ -17,6 +17,7 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/pkg/httputil"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
+	"github.com/dustin/go-humanize"
 	"github.com/mholt/archiver/v3"
 	"go.uber.org/zap"
 	"k8s.io/utils/exec"
@@ -77,7 +78,7 @@ func (ts *tester) Create() error {
 	if err := ts.checkSonobuoy(); err != nil {
 		return err
 	}
-	if err := ts.getResultsSonobuoy(); err != nil {
+	if err := ts.checkResults(); err != nil {
 		return err
 	}
 
@@ -177,7 +178,6 @@ func (ts *tester) downloadInstallSonobuoy() (err error) {
 		zap.String("sonobuoy-path", ts.cfg.EKSConfig.AddOnConformance.SonobuoyPath),
 		zap.String("sonobuoy-version", out),
 	)
-
 	return nil
 }
 
@@ -275,9 +275,19 @@ func (ts *tester) checkSonobuoy() (err error) {
 		zap.String("status-command", cmdStatus),
 	)
 
+	deadline := time.Now().Add(ts.cfg.EKSConfig.AddOnConformance.SonobuoyRunTimeout)
 	donec := time.After(ts.cfg.EKSConfig.AddOnConformance.SonobuoyRunTimeout)
 	start, waitDur := time.Now(), ts.cfg.EKSConfig.AddOnConformance.SonobuoyRunTimeout
+
+	interval := 10 * time.Minute
+
 	for time.Now().Sub(start) < waitDur {
+		ts.cfg.Logger.Info(
+			"waiting for sonobuoy run",
+			zap.Duration("interval", interval),
+			zap.String("time", humanize.Time(deadline)),
+			zap.Duration("timeout", ts.cfg.EKSConfig.AddOnConformance.SonobuoyRunTimeout),
+		)
 		select {
 		case <-ts.cfg.Stopc:
 			ts.cfg.Logger.Warn("sonobuoy check stopped")
@@ -285,7 +295,7 @@ func (ts *tester) checkSonobuoy() (err error) {
 		case <-donec:
 			ts.cfg.Logger.Warn("sonobuoy check timeout")
 			return fmt.Errorf("sonobuoy run took too long (exceeded %v)", ts.cfg.EKSConfig.AddOnConformance.SonobuoyRunTimeout)
-		case <-time.After(time.Minute):
+		case <-time.After(interval):
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
@@ -307,52 +317,37 @@ func (ts *tester) checkSonobuoy() (err error) {
 		fmt.Printf("\n'%s' output:\n\n%s\n\n", cmdStatus, out)
 
 		// ref. https://github.com/vmware-tanzu/sonobuoy/blob/master/cmd/sonobuoy/app/status.go
-		if strings.Contains(out, "Sonobuoy has completed. ") || strings.Contains(out, "Sonobuoy plugins have completed. ") {
+		if strings.Contains(out, "Sonobuoy has completed. ") ||
+			strings.Contains(out, "Sonobuoy plugins have completed. ") {
 			break
 		}
-		if strings.Contains(out, "Sonobuoy has failed. ") || strings.Contains(out, "Sonobuoy is in unknown state") {
+		if strings.Contains(out, "Sonobuoy has failed. ") ||
+			strings.Contains(out, "Sonobuoy is in unknown state") {
 			return errors.New("sonobuoy run failed")
+		}
+
+		interval /= 2
+		if interval < time.Minute {
+			interval = time.Minute
 		}
 	}
 
 	return ts.cfg.EKSConfig.Sync()
 }
 
-/*
-/tmp/sonobuoy status --kubeconfig={{ .KubeConfigPath }}
-/tmp/sonobuoy logs -f --kubeconfig={{ .KubeConfigPath }}
-/tmp/sonobuoy results --kubeconfig={{ .KubeConfigPath }}
-
-SONOBUOY_OUTPUT=$(/tmp/sonobuoy retrieve --kubeconfig={{ .KubeConfigPath }})
-mkdir -p /tmp/results
-tar xzf $SONOBUOY_OUTPUT -C /tmp/results
-find /tmp/results
-*/
-
-func (ts *tester) getResultsSonobuoy() (err error) {
+func (ts *tester) checkResults() (err error) {
 	argsRetrieve := []string{
 		ts.cfg.EKSConfig.AddOnConformance.SonobuoyPath,
 		"retrieve",
 		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
 		"--namespace=" + ts.cfg.EKSConfig.AddOnConformance.Namespace,
-		ts.cfg.EKSConfig.AddOnConformance.SonobuoyRetrievePath,
+		os.TempDir(),
 	}
 	cmdRetrieve := strings.Join(argsRetrieve, " ")
 
-	argsResults := []string{
-		ts.cfg.EKSConfig.AddOnConformance.SonobuoyPath,
-		"results",
-		ts.cfg.EKSConfig.AddOnConformance.SonobuoyRetrievePath,
-		"--mode=detailed",
-	}
-	cmdResults := strings.Join(argsResults, " ")
+	ts.cfg.Logger.Info("running sonobuoy", zap.String("retrieve-command", cmdRetrieve))
 
-	ts.cfg.Logger.Info("running sonobuoy",
-		zap.String("retrieve-command", cmdRetrieve),
-		zap.String("results-command", cmdResults),
-	)
-
-	os.RemoveAll(ts.cfg.EKSConfig.AddOnConformance.SonobuoyRetrievePath)
+	os.RemoveAll(ts.cfg.EKSConfig.AddOnConformance.SonobuoyResultTarGzPath)
 	start, waitDur := time.Now(), 3*time.Minute
 	for time.Now().Sub(start) < waitDur {
 		select {
@@ -371,22 +366,94 @@ func (ts *tester) getResultsSonobuoy() (err error) {
 			continue
 		}
 		fmt.Printf("\n'%s' output:\n\n%s\n\n", cmdRetrieve, out)
+
+		if err = fileutil.Copy(out, ts.cfg.EKSConfig.AddOnConformance.SonobuoyResultTarGzPath); err != nil {
+			ts.cfg.Logger.Warn("failed to copy sonobuoy retrieve results", zap.Error(err))
+			return err
+		}
+
+		ts.cfg.Logger.Info("retrieved sonobuoy results", zap.String("path", ts.cfg.EKSConfig.AddOnConformance.SonobuoyResultTarGzPath))
 		break
 	}
 
-	if !fileutil.Exist(ts.cfg.EKSConfig.AddOnConformance.SonobuoyRetrievePath) {
-		return fmt.Errorf("AddOnConformance.SonobuoyRetrievePath does not exist [%q]", ts.cfg.EKSConfig.AddOnConformance.SonobuoyRetrievePath)
+	err = readResults(
+		ts.cfg.Logger,
+		ts.cfg.EKSConfig.AddOnConformance.SonobuoyPath,
+		ts.cfg.EKSConfig.AddOnConformance.SonobuoyResultTarGzPath,
+	)
+	if err != nil {
+		ts.cfg.Logger.Warn("read results failed", zap.Error(err))
 	}
 
+	logPath, xmlPath, terr := untarResults(
+		ts.cfg.Logger,
+		ts.cfg.EKSConfig.AddOnConformance.SonobuoyResultTarGzPath,
+		ts.cfg.EKSConfig.AddOnConformance.SonobuoyResultDir,
+	)
+	if terr != nil {
+		ts.cfg.Logger.Warn("failed to untar results", zap.Error(terr))
+		if err == nil {
+			err = terr
+		} else {
+			err = fmt.Errorf("read results error [%v], untar error [%v]", err, terr)
+		}
+	}
+	if err != nil {
+		return err
+	}
+	if err = fileutil.Copy(logPath, ts.cfg.EKSConfig.AddOnConformance.SonobuoyResultE2eLogPath); err != nil {
+		return err
+	}
+	if err = fileutil.Copy(xmlPath, ts.cfg.EKSConfig.AddOnConformance.SonobuoyResultJunitXMLPath); err != nil {
+		return err
+	}
+	return nil
+}
+
+func readResults(lg *zap.Logger, sonobuoyPath string, tarGzPath string) error {
+	if !fileutil.Exist(tarGzPath) {
+		return fmt.Errorf("AddOnConformance.SonobuoyResultTarGzPath does not exist [%q]", tarGzPath)
+	}
+
+	args := []string{sonobuoyPath, "results", tarGzPath}
+	cmd := strings.Join(args, " ")
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	output, err := exec.New().CommandContext(ctx, argsResults[0], argsResults[1:]...).CombinedOutput()
+	output, err := exec.New().CommandContext(ctx, args[0], args[1:]...).CombinedOutput()
 	cancel()
 	out := strings.TrimSpace(string(output))
 	if err != nil {
-		ts.cfg.Logger.Warn("failed to run sonobuoy results", zap.String("command", cmdResults), zap.Error(err))
-		return
+		lg.Warn("failed to run sonobuoy results", zap.String("command", cmd), zap.Error(err))
+		return err
 	}
-	fmt.Printf("\n'%s' output:\n\n%s\n\n", cmdResults, out)
+	fmt.Printf("\n'%s' output:\n\n%s\n\n", cmd, out)
 
+	if !strings.Contains(out, "Plugin: e2e\nStatus: passed") {
+		return errors.New("sonobuoy tests failed (expected 'Status: passed')")
+	}
+
+	lg.Info("sonobuoy results passed", zap.String("path", tarGzPath))
 	return nil
+}
+
+func untarResults(lg *zap.Logger, tarGzPath string, outputDir string) (logPath string, xmlPath string, err error) {
+	if !fileutil.Exist(tarGzPath) {
+		return "", "", fmt.Errorf("AddOnConformance.SonobuoyResultTarGzPath does not exist [%q]", tarGzPath)
+	}
+
+	err = archiver.Unarchive(tarGzPath, outputDir)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to decompress sonobuoy results tar file %v", err)
+	}
+	lg.Info("untar success", zap.String("tar-gz-path", tarGzPath), zap.String("output-directory", outputDir))
+
+	logPath = filepath.Join(outputDir, "plugins", "e2e", "results", "global", "e2e.log")
+	if !fileutil.Exist(logPath) {
+		return "", "", fmt.Errorf("result dir %q does not have e2e.log %q", outputDir, logPath)
+	}
+	xmlPath = filepath.Join(outputDir, "plugins", "e2e", "results", "global", "junit_01.xml")
+	if !fileutil.Exist(xmlPath) {
+		return "", "", fmt.Errorf("result dir %q does not have junit_01.xml %q", outputDir, xmlPath)
+	}
+	return logPath, xmlPath, nil
 }
