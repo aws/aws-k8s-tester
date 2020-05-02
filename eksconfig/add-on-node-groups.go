@@ -1,19 +1,14 @@
 package eksconfig
 
-import "github.com/aws/aws-k8s-tester/ec2config"
+import (
+	"errors"
+	"fmt"
+	"path/filepath"
+	"strings"
 
-// IsEnabledAddOnNodeGroups returns true if "AddOnNodeGroups" is enabled.
-// Otherwise, nil the field for "omitempty".
-func (cfg *Config) IsEnabledAddOnNodeGroups() bool {
-	if cfg.AddOnNodeGroups == nil {
-		return false
-	}
-	if cfg.AddOnNodeGroups.Enable {
-		return len(cfg.AddOnNodeGroups.ASGs) > 0
-	}
-	cfg.AddOnNodeGroups = nil
-	return false
-}
+	"github.com/aws/aws-k8s-tester/ec2config"
+	"github.com/aws/aws-sdk-go/service/eks"
+)
 
 // AddOnNodeGroups defines parameters for EKS "Managed Node Group" creation.
 // ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
@@ -65,4 +60,225 @@ type ASG struct {
 	// TODO: handle conflicting flag '--cloud-provider aws'
 	// ref. https://github.com/kubernetes/kubernetes/issues/64659
 	KubeletExtraArgs string `json:"kubelet-extra-args"`
+}
+
+// EnvironmentVariablePrefixAddOnNodeGroups is the environment variable prefix used for "eksconfig".
+const EnvironmentVariablePrefixAddOnNodeGroups = AWS_K8S_TESTER_EKS_PREFIX + "ADD_ON_NODE_GROUPS_"
+
+// IsEnabledAddOnNodeGroups returns true if "AddOnNodeGroups" is enabled.
+// Otherwise, nil the field for "omitempty".
+func (cfg *Config) IsEnabledAddOnNodeGroups() bool {
+	if cfg.AddOnNodeGroups == nil {
+		return false
+	}
+	if cfg.AddOnNodeGroups.Enable {
+		return len(cfg.AddOnNodeGroups.ASGs) > 0
+	}
+	cfg.AddOnNodeGroups = nil
+	return false
+}
+
+func (cfg *Config) validateAddOnNodeGroups() error {
+	if !cfg.IsEnabledAddOnNodeGroups() {
+		return nil
+	}
+
+	n := len(cfg.AddOnNodeGroups.ASGs)
+	if n == 0 {
+		return errors.New("empty ASGs")
+	}
+	if n > NGsMaxLimit {
+		return fmt.Errorf("NGs %d exceeds maximum number of NGs which is %d", n, NGsMaxLimit)
+	}
+
+	if cfg.Parameters.VersionValue < 1.14 {
+		return fmt.Errorf("Version %q not supported for AddOnNodeGroups", cfg.Parameters.Version)
+	}
+
+	if cfg.AddOnNodeGroups.LogsDir == "" {
+		cfg.AddOnNodeGroups.LogsDir = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-logs-ngs")
+	}
+
+	switch cfg.AddOnNodeGroups.RoleCreate {
+	case true: // need create one, or already created
+		if cfg.AddOnNodeGroups.RoleName == "" {
+			cfg.AddOnNodeGroups.RoleName = cfg.Name + "-role-ng"
+		}
+		if cfg.AddOnNodeGroups.RoleARN != "" {
+			// just ignore...
+			// could be populated from previous run
+			// do not error, so long as RoleCreate false, role won't be deleted
+		}
+		if len(cfg.AddOnNodeGroups.RoleServicePrincipals) > 0 {
+			/*
+				create node group request failed (InvalidParameterException: Following required service principals [ec2.amazonaws.com] were not found in the trust relationships of nodeRole arn:aws:iam::...:role/test-ng-role
+				{
+				  ClusterName: "test",
+				  Message_: "Following required service principals [ec2.amazonaws.com] were not found in the trust relationships of nodeRole arn:aws:iam::...:role/test-ng-role",
+				  NodegroupName: "test-ng-cpu"
+				})
+			*/
+			found := false
+			for _, pv := range cfg.AddOnNodeGroups.RoleServicePrincipals {
+				if pv == "ec2.amazonaws.com" { // TODO: support China regions ec2.amazonaws.com.cn or eks.amazonaws.com.cn
+					found = true
+					break
+				}
+			}
+			if !found {
+				return fmt.Errorf("AddOnNodeGroups.RoleServicePrincipals %q must include 'ec2.amazonaws.com'", cfg.AddOnNodeGroups.RoleServicePrincipals)
+			}
+		}
+
+	case false: // use existing one
+		if cfg.AddOnNodeGroups.RoleARN == "" {
+			return fmt.Errorf("AddOnNodeGroups.RoleCreate false; expect non-empty RoleARN but got %q", cfg.AddOnNodeGroups.RoleARN)
+		}
+		if cfg.AddOnNodeGroups.RoleName == "" {
+			cfg.AddOnNodeGroups.RoleName = getNameFromARN(cfg.AddOnNodeGroups.RoleARN)
+		}
+		if len(cfg.AddOnNodeGroups.RoleManagedPolicyARNs) > 0 {
+			return fmt.Errorf("AddOnNodeGroups.RoleCreate false; expect empty RoleManagedPolicyARNs but got %q", cfg.AddOnNodeGroups.RoleManagedPolicyARNs)
+		}
+		if len(cfg.AddOnNodeGroups.RoleServicePrincipals) > 0 {
+			return fmt.Errorf("AddOnNodeGroups.RoleCreate false; expect empty RoleServicePrincipals but got %q", cfg.AddOnNodeGroups.RoleServicePrincipals)
+		}
+	}
+
+	names, processed := make(map[string]struct{}), make(map[string]ASG)
+	for k, v := range cfg.AddOnNodeGroups.ASGs {
+		k = strings.ReplaceAll(k, "GetRef.Name", cfg.Name)
+		v.Name = strings.ReplaceAll(v.Name, "GetRef.Name", cfg.Name)
+
+		if v.Name == "" {
+			return fmt.Errorf("AddOnNodeGroups.ASGs[%q].Name is empty", k)
+		}
+		if k != v.Name {
+			return fmt.Errorf("AddOnNodeGroups.ASGs[%q].Name has different Name field %q", k, v.Name)
+		}
+		_, ok := names[v.Name]
+		if !ok {
+			names[v.Name] = struct{}{}
+		} else {
+			return fmt.Errorf("AddOnNodeGroups.ASGs[%q].Name %q is redundant", k, v.Name)
+		}
+
+		if len(v.InstanceTypes) > 4 {
+			return fmt.Errorf("too many InstaceTypes[%q]", v.InstanceTypes)
+		}
+		if v.VolumeSize == 0 {
+			v.VolumeSize = DefaultNodeVolumeSize
+		}
+		if v.RemoteAccessUserName == "" {
+			v.RemoteAccessUserName = "ec2-user"
+		}
+
+		if v.ImageID == "" && v.ImageIDSSMParameter == "" {
+			return fmt.Errorf("%q both ImageID and ImageIDSSMParameter are empty", v.Name)
+		}
+
+		switch v.AMIType {
+		case ec2config.AMITypeBottleRocketCPU:
+			if v.RemoteAccessUserName != "ec2-user" {
+				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", v.AMIType, v.RemoteAccessUserName)
+			}
+			if v.SSMDocumentName != "" && cfg.S3BucketName == "" {
+				return fmt.Errorf("AMIType %q requires SSMDocumentName %q but no S3BucketName", v.AMIType, v.SSMDocumentName)
+			}
+			if v.KubeletExtraArgs != "" {
+				return fmt.Errorf("AMIType %q but unexpected KubeletExtraArgs %q", v.AMIType, v.KubeletExtraArgs)
+			}
+		case eks.AMITypesAl2X8664:
+			if v.RemoteAccessUserName != "ec2-user" {
+				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", v.AMIType, v.RemoteAccessUserName)
+			}
+		case eks.AMITypesAl2X8664Gpu:
+			if v.RemoteAccessUserName != "ec2-user" {
+				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", v.AMIType, v.RemoteAccessUserName)
+			}
+		default:
+			return fmt.Errorf("unknown ASGs[%q].AMIType %q", k, v.AMIType)
+		}
+
+		switch v.AMIType {
+		case ec2config.AMITypeBottleRocketCPU:
+			if len(v.InstanceTypes) == 0 {
+				v.InstanceTypes = []string{DefaultNodeInstanceTypeCPU}
+			}
+		case eks.AMITypesAl2X8664:
+			if len(v.InstanceTypes) == 0 {
+				v.InstanceTypes = []string{DefaultNodeInstanceTypeCPU}
+			}
+		case eks.AMITypesAl2X8664Gpu:
+			if len(v.InstanceTypes) == 0 {
+				v.InstanceTypes = []string{DefaultNodeInstanceTypeGPU}
+			}
+		default:
+			return fmt.Errorf("unknown AddOnNodeGroups.ASGs[%q].AMIType %q", k, v.AMIType)
+		}
+
+		if cfg.IsEnabledAddOnNLBHelloWorld() || cfg.IsEnabledAddOnALB2048() {
+			// "m3.xlarge" or "c4.xlarge" will fail with "InvalidTarget: Targets {...} are not supported"
+			// ref. https://github.com/aws/amazon-vpc-cni-k8s/pull/821
+			// ref. https://github.com/kubernetes/kubernetes/issues/66044#issuecomment-408188524
+			for _, ivt := range v.InstanceTypes {
+
+				switch {
+				case strings.HasPrefix(ivt, "m3."),
+					strings.HasPrefix(ivt, "c4."):
+					return fmt.Errorf("AddOnNLBHelloWorld.Enable[%v] || AddOnALB2048.Enable[%v], but older instance type InstanceType %q for %q",
+						cfg.IsEnabledAddOnNLBHelloWorld(),
+						cfg.IsEnabledAddOnALB2048(),
+						ivt, k)
+				}
+			}
+		}
+
+		if v.ASGMinSize > v.ASGMaxSize {
+			return fmt.Errorf("AddOnNodeGroups.ASGs[%q].ASGMinSize %d > ASGMaxSize %d", k, v.ASGMinSize, v.ASGMaxSize)
+		}
+		if v.ASGDesiredCapacity > v.ASGMaxSize {
+			return fmt.Errorf("AddOnNodeGroups.ASGs[%q].ASGDesiredCapacity %d > ASGMaxSize %d", k, v.ASGDesiredCapacity, v.ASGMaxSize)
+		}
+		if v.ASGMaxSize > NGMaxLimit {
+			return fmt.Errorf("AddOnNodeGroups.ASGs[%q].ASGMaxSize %d > NGMaxLimit %d", k, v.ASGMaxSize, NGMaxLimit)
+		}
+		if v.ASGDesiredCapacity > NGMaxLimit {
+			return fmt.Errorf("AddOnNodeGroups.ASGs[%q].ASGDesiredCapacity %d > NGMaxLimit %d", k, v.ASGDesiredCapacity, NGMaxLimit)
+		}
+
+		switch v.SSMDocumentCreate {
+		case true: // need create one, or already created
+			if v.SSMDocumentCFNStackName == "" {
+				v.SSMDocumentCFNStackName = v.Name + "-ssm-document"
+			}
+			if v.SSMDocumentName == "" {
+				v.SSMDocumentName = v.Name + "SSMDocument"
+			}
+			if v.SSMDocumentExecutionTimeoutSeconds == 0 {
+				v.SSMDocumentExecutionTimeoutSeconds = 3600
+			}
+
+		case false: // use existing one, or don't run any SSM
+		}
+
+		v.SSMDocumentCFNStackName = strings.ReplaceAll(v.SSMDocumentCFNStackName, "GetRef.Name", cfg.Name)
+		v.SSMDocumentName = strings.ReplaceAll(v.SSMDocumentName, "GetRef.Name", cfg.Name)
+		v.SSMDocumentName = regex.ReplaceAllString(v.SSMDocumentName, "")
+
+		if cfg.IsEnabledAddOnNLBHelloWorld() && cfg.AddOnNLBHelloWorld.DeploymentReplicas < int32(v.ASGDesiredCapacity) {
+			cfg.AddOnNLBHelloWorld.DeploymentReplicas = int32(v.ASGDesiredCapacity)
+		}
+		if cfg.IsEnabledAddOnALB2048() && cfg.AddOnALB2048.DeploymentReplicasALB < int32(v.ASGDesiredCapacity) {
+			cfg.AddOnALB2048.DeploymentReplicasALB = int32(v.ASGDesiredCapacity)
+		}
+		if cfg.IsEnabledAddOnALB2048() && cfg.AddOnALB2048.DeploymentReplicas2048 < int32(v.ASGDesiredCapacity) {
+			cfg.AddOnALB2048.DeploymentReplicas2048 = int32(v.ASGDesiredCapacity)
+		}
+
+		processed[k] = v
+	}
+
+	cfg.AddOnNodeGroups.ASGs = processed
+	return nil
 }

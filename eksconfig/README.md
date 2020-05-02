@@ -22,6 +22,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_ENABLE=true \
+AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_ENABLE=true \
 
 
 
@@ -143,7 +144,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_CREATE_TOOK_STRING | *eksconfig.A
 AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_DELETE_TOOK | *eksconfig.AddOnKubernetesDashboard.DeleteTook | time.Duration | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_DELETE_TOOK_STRING | *eksconfig.AddOnKubernetesDashboard.DeleteTookString | string | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_AUTHENTICATION_TOKEN | *eksconfig.AddOnKubernetesDashboard.AuthenticationToken | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_URL | *eksconfig.AddOnKubernetesDashboard.URL | string | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_URL | *eksconfig.AddOnKubernetesDashboard.URL | string | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_KUBECTL_PROXY_PID | *eksconfig.AddOnKubernetesDashboard.KubectlProxyPID | int | read-only "true"
 
 
@@ -166,8 +167,8 @@ AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_CREATE_TOOK | *eksconfig.AddOnNLBHello
 AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_CREATE_TOOK_STRING | *eksconfig.AddOnNLBHelloWorld.CreateTookString | string | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_DELETE_TOOK | *eksconfig.AddOnNLBHelloWorld.DeleteTook | time.Duration | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_DELETE_TOOK_STRING | *eksconfig.AddOnNLBHelloWorld.DeleteTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_DEPLOYMENT_REPLICAS | *eksconfig.AddOnNLBHelloWorld.DeploymentReplicas | int32 | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_NAMESPACE | *eksconfig.AddOnNLBHelloWorld.Namespace | string | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_DEPLOYMENT_REPLICAS | *eksconfig.AddOnNLBHelloWorld.DeploymentReplicas | int32 | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_NLB_ARN | *eksconfig.AddOnNLBHelloWorld.NLBARN | string | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_NLB_NAME | *eksconfig.AddOnNLBHelloWorld.NLBName | string | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_URL | *eksconfig.AddOnNLBHelloWorld.URL | string | read-only "true"
@@ -330,24 +331,24 @@ AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_CONTAINER_NAME | *eksconfig.AddOnIRSAFarg
 
 
 AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_ENABLE | *eksconfig.AddOnAppMesh.Enable | bool | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_NAMESPACE | *eksconfig.AddOnAppMesh.Namespace | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_CONTROLLER_IMAGE | *eksconfig.AddOnAppMesh.ControllerImage | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_INJECTOR_IMAGE | *eksconfig.AddOnAppMesh.InjectorImage | string | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_CREATED | *eksconfig.AddOnAppMesh.Created | bool | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_CREATE_TOOK | *eksconfig.AddOnAppMesh.CreateTook | time.Duration | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_CREATE_TOOK_STRING | *eksconfig.AddOnAppMesh.CreateTookString | string | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_DELETE_TOOK | *eksconfig.AddOnAppMesh.DeleteTook | time.Duration | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_DELETE_TOOK_STRING | *eksconfig.AddOnAppMesh.DeleteTookString | string | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_NAMESPACE | *eksconfig.AddOnAppMesh.Namespace | string | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_CONTROLLER_IMAGE | *eksconfig.AddOnAppMesh.ControllerImage | string | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_INJECTOR_IMAGE | *eksconfig.AddOnAppMesh.InjectorImage | string | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_POLICY_CFN_STACK_ID | *eksconfig.AddOnAppMesh.PolicyCFNStackID | string | read-only "true"
 
 
 AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_ENABLE | *eksconfig.AddOnWordpress.Enable | bool | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_NAMESPACE | *eksconfig.AddOnWordpress.Namespace | string | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_CREATED | *eksconfig.AddOnWordpress.Created | bool | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_CREATE_TOOK | *eksconfig.AddOnWordpress.CreateTook | time.Duration | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_CREATE_TOOK_STRING | *eksconfig.AddOnWordpress.CreateTookString | string | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_DELETE_TOOK | *eksconfig.AddOnWordpress.DeleteTook | time.Duration | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_DELETE_TOOK_STRING | *eksconfig.AddOnWordpress.DeleteTookString | string | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_NAMESPACE | *eksconfig.AddOnWordpress.Namespace | string | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_USER_NAME | *eksconfig.AddOnWordpress.UserName | string | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_PASSWORD | *eksconfig.AddOnWordpress.Password | string | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_NLB_ARN | *eksconfig.AddOnWordpress.NLBARN | string | read-only "true"
@@ -356,12 +357,12 @@ AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_URL | *eksconfig.AddOnWordpress.URL | string
 
 
 AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_ENABLE | *eksconfig.AddOnJupyterHub.Enable | bool | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_NAMESPACE | *eksconfig.AddOnJupyterHub.Namespace | string | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_CREATED | *eksconfig.AddOnJupyterHub.Created | bool | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_CREATE_TOOK | *eksconfig.AddOnJupyterHub.CreateTook | time.Duration | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_CREATE_TOOK_STRING | *eksconfig.AddOnJupyterHub.CreateTookString | string | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_DELETE_TOOK | *eksconfig.AddOnJupyterHub.DeleteTook | time.Duration | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_DELETE_TOOK_STRING | *eksconfig.AddOnJupyterHub.DeleteTookString | string | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_NAMESPACE | *eksconfig.AddOnJupyterHub.Namespace | string | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_PROXY_SECRET_TOKEN | *eksconfig.AddOnJupyterHub.ProxySecretToken | string | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_NLB_ARN | *eksconfig.AddOnJupyterHub.NLBARN | string | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_NLB_NAME | *eksconfig.AddOnJupyterHub.NLBName | string | read-only "true"
@@ -370,13 +371,13 @@ AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_URL | *eksconfig.AddOnJupyterHub.URL | str
 
 # NOT WORKING...
 AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_ENABLE | *eksconfig.AddOnKubeflow.Enable | bool | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_KFCTL_PATH | *eksconfig.AddOnKubeflow.KfctlPath | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_KFCTL_DOWNLOAD_URL | *eksconfig.AddOnKubeflow.KfctlDownloadURL | string | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_CREATED | *eksconfig.AddOnKubeflow.Created | bool | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_CREATE_TOOK | *eksconfig.AddOnKubeflow.CreateTook | time.Duration | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_CREATE_TOOK_STRING | *eksconfig.AddOnKubeflow.CreateTookString | string | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_DELETE_TOOK | *eksconfig.AddOnKubeflow.DeleteTook | time.Duration | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_DELETE_TOOK_STRING | *eksconfig.AddOnKubeflow.DeleteTookString | string | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_KFCTL_PATH | *eksconfig.AddOnKubeflow.KfctlPath | string | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_KFCTL_DOWNLOAD_URL | *eksconfig.AddOnKubeflow.KfctlDownloadURL | string | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_BASE_DIR | *eksconfig.AddOnKubeflow.BaseDir | string | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_KF_DIR | *eksconfig.AddOnKubeflow.KfDir | string | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_KFCTL_CONFIG_PATH | *eksconfig.AddOnKubeflow.KfctlConfigPath | string | read-only "true"
@@ -391,6 +392,24 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_DELETE_TOOK_STRING | *eksconfig.AddOnCl
 AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_DURATION | *eksconfig.AddOnClusterLoader.Duration | time.Duration | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_DURATION_STRING | *eksconfig.AddOnClusterLoader.DurationString | string | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_HOLLOW_NODES | *eksconfig.AddOnClusterLoader.HollowNodes | int | read-only "false"
+
+
+AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_ENABLE | *eksconfig.AddOnConformance.Enable | bool | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_CREATED | *eksconfig.AddOnConformance.Created | bool | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_CREATE_TOOK | *eksconfig.AddOnConformance.CreateTook | time.Duration | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_CREATE_TOOK_STRING | *eksconfig.AddOnConformance.CreateTookString | string | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_DELETE_TOOK | *eksconfig.AddOnConformance.DeleteTook | time.Duration | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_DELETE_TOOK_STRING | *eksconfig.AddOnConformance.DeleteTookString | string | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_NAMESPACE | *eksconfig.AddOnConformance.Namespace | string | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_PATH | *eksconfig.AddOnConformance.SonobuoyPath | string | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_DOWNLOAD_URL | *eksconfig.AddOnConformance.SonobuoyDownloadURL | string | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_DELETE_TIMEOUT | *eksconfig.AddOnConformance.SonobuoyDeleteTimeout | time.Duration | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_DELETE_TIMEOUT_STRING | *eksconfig.AddOnConformance.SonobuoyDeleteTimeoutString | string | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_TIMEOUT | *eksconfig.AddOnConformance.SonobuoyRunTimeout | time.Duration | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_TIMEOUT_STRING | *eksconfig.AddOnConformance.SonobuoyRunTimeoutString | string | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_MODE | *eksconfig.AddOnConformance.SonobuoyRunMode | string | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_KUBE_CONFORMANCE_IMAGE | *eksconfig.AddOnConformance.SonobuoyRunKubeConformanceImage | string | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RETRIEVE_PATH | *eksconfig.AddOnConformance.SonobuoyRetrievePath | string | read-only "false"
 
 
 ```

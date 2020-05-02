@@ -16,6 +16,9 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+// AWS_K8S_TESTER_EKS_PREFIX is the environment variable prefix used for "eksconfig".
+const AWS_K8S_TESTER_EKS_PREFIX = "AWS_K8S_TESTER_EKS_"
+
 // Config defines EKS configuration.
 type Config struct {
 	mu *sync.RWMutex
@@ -215,6 +218,9 @@ type Config struct {
 	// AddOnClusterLoader defines parameters for EKS cluster
 	// add-on Cluster Loader.
 	AddOnClusterLoader *AddOnClusterLoader `json:"add-on-cluster-loader,omitempty"`
+	// AddOnConformance defines parameters for EKS cluster
+	// add-on Conformance.
+	AddOnConformance *AddOnConformance `json:"add-on-conformance,omitempty"`
 
 	// Status represents the current status of AWS resources.
 	// Status is read-only.
@@ -379,14 +385,12 @@ func (cfg *Config) KubectlCommands() (s string) {
 	if err := tpl.Execute(buf, struct {
 		KubeConfigPath                         string
 		KubectlCommand                         string
-		Version                                string
 		KubernetesDashboardEnabled             bool
 		KubernetesDashboardURL                 string
 		KubernetesDashboardAuthenticationToken string
 	}{
 		cfg.KubeConfigPath,
 		cfg.KubectlCommand(),
-		cfg.Parameters.Version,
 		cfg.IsEnabledAddOnKubernetesDashboard(),
 		cfg.getAddOnKubernetesDashboardURL(),
 		cfg.getAddOnKubernetesDashboardAuthenticationToken(),
@@ -423,33 +427,6 @@ export KUBECTL="{{ .KubectlCommand }}"
 {{ .KubernetesDashboardAuthenticationToken }}
 ###########################
 {{ end }}
-
-###########################
-# sonobuoy commands
-# https://github.com/vmware-tanzu/sonobuoy
-# https://github.com/cncf/k8s-conformance/blob/master/instructions.md
-rm -f /tmp/sonobuoy.tar.gz
-rm -f /tmp/sonobuoy
-curl -L https://github.com/vmware-tanzu/sonobuoy/releases/download/v0.18.1/sonobuoy_0.18.1_linux_amd64.tar.gz -o /tmp/sonobuoy.tar.gz
-tar xzvf /tmp/sonobuoy.tar.gz -C /tmp/
-/tmp/sonobuoy -h
-/tmp/sonobuoy delete --wait --kubeconfig={{ .KubeConfigPath }}
-
-/tmp/sonobuoy run \
-  --mode=certified-conformance \
-  --kubeconfig={{ .KubeConfigPath }} \
-  --kube-conformance-image gcr.io/google-containers/conformance:v{{ .Version }}.0
-
-/tmp/sonobuoy status --kubeconfig={{ .KubeConfigPath }}
-/tmp/sonobuoy logs -f --kubeconfig={{ .KubeConfigPath }}
-/tmp/sonobuoy results --kubeconfig={{ .KubeConfigPath }}
-
-SONOBUOY_OUTPUT=$(/tmp/sonobuoy retrieve --kubeconfig={{ .KubeConfigPath }})
-mkdir -p /tmp/results
-tar xzf $SONOBUOY_OUTPUT -C /tmp/results
-find /tmp/results
-###########################
-
 `
 
 // SSHCommands returns the SSH commands.

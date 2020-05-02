@@ -7,9 +7,22 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.2...v1.1.3).
 
+### `eks`
+
+- Add [`eks/conformance`](https://github.com/aws/aws-k8s-tester/commit/).
+- Fix [`eksconfig.Config.Clients` for Kubernetes clients](https://github.com/aws/aws-k8s-tester/commit/).
+
+### `ec2config`
+
+- Fail [`ValidateAndSetDefaults` and return errors if `"read-only" fields are set by environmental variables](https://github.com/aws/aws-k8s-tester/commit/).
+  - ref. https://github.com/aws/aws-k8s-tester/tree/master/ec2config
+
 ### `eksconfig`
 
-TODO
+- Fail [`ValidateAndSetDefaults` and return errors if `"read-only" fields are set by environmental variables](https://github.com/aws/aws-k8s-tester/commit/).
+  - e.g. `AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_CREATED`, `AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_CREATED_NAMES`, `AWS_K8S_TESTER_EKS_ADD_ON_CSRS_CREATED_NAMES` cannot be set because they are read-only.
+  - ref. https://github.com/aws/aws-k8s-tester/tree/master/eksconfig
+- Add [`AddOnConformance` to run Kubernetes conformance tests](https://github.com/aws/aws-k8s-tester/commit/).
 
 ### Dependency
 

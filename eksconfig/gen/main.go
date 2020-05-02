@@ -24,7 +24,7 @@ func createDoc() string {
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefix, &eksconfig.Config{}))
+	b.WriteString(es.writeDoc(eksconfig.AWS_K8S_TESTER_EKS_PREFIX, &eksconfig.Config{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
@@ -115,6 +115,10 @@ func createDoc() string {
 	b.WriteByte('\n')
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnClusterLoader, &eksconfig.AddOnClusterLoader{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnConformance, &eksconfig.AddOnConformance{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')

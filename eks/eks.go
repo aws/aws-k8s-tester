@@ -23,6 +23,7 @@ import (
 	app_mesh "github.com/aws/aws-k8s-tester/eks/app-mesh"
 	cluster_loader "github.com/aws/aws-k8s-tester/eks/cluster-loader"
 	"github.com/aws/aws-k8s-tester/eks/configmaps"
+	"github.com/aws/aws-k8s-tester/eks/conformance"
 	"github.com/aws/aws-k8s-tester/eks/cronjobs"
 	csi_ebs "github.com/aws/aws-k8s-tester/eks/csi-ebs"
 	"github.com/aws/aws-k8s-tester/eks/csrs"
@@ -125,6 +126,7 @@ type Tester struct {
 	jupyterHubTester          jupyter_hub.Tester
 	kubeflowTester            kubeflow.Tester
 	clusterLoaderTester       cluster_loader.Tester
+	conformanceTester         conformance.Tester
 }
 
 // New returns a new EKS kubetest2 Deployer.
@@ -326,7 +328,7 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 		KubectlPath:       ts.cfg.KubectlPath,
 		ServerVersion:     ts.cfg.Parameters.Version,
 		EncryptionEnabled: ts.cfg.Parameters.EncryptionCMKARN != "",
-		Clients:           1,
+		Clients:           ts.cfg.Clients,
 		ClientQPS:         ts.cfg.ClientQPS,
 		ClientBurst:       ts.cfg.ClientBurst,
 		ClientTimeout:     ts.cfg.ClientTimeout,
@@ -637,6 +639,16 @@ func (ts *Tester) createSubTesters() (err error) {
 	if ts.cfg.IsEnabledAddOnClusterLoader() {
 		ts.lg.Info("creating clusterLoaderTester")
 		ts.clusterLoaderTester, err = cluster_loader.NewTester(cluster_loader.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			EKSConfig: ts.cfg,
+			K8SClient: ts.k8sClient,
+		})
+	}
+
+	if ts.cfg.IsEnabledAddOnConformance() {
+		ts.lg.Info("creating conformanceTester")
+		ts.conformanceTester, err = conformance.NewTester(conformance.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
@@ -1286,7 +1298,7 @@ func (ts *Tester) Up() (err error) {
 
 	if ts.cfg.IsEnabledAddOnClusterLoader() {
 		if ts.clusterLoaderTester == nil {
-			return errors.New("ts.clusterLoaderTester == nil when AddOnWordpress.Enable == true")
+			return errors.New("ts.clusterLoaderTester == nil when AddOnClusterLoader.Enable == true")
 		}
 		fmt.Printf("\n*********************************\n")
 		fmt.Printf("clusterLoaderTester.Create (%q, \"%s --namespace=kube-system get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
@@ -1296,6 +1308,23 @@ func (ts *Tester) Up() (err error) {
 			ts.stopCreationChOnce,
 			ts.interruptSig,
 			ts.clusterLoaderTester.Create,
+		); err != nil {
+			return err
+		}
+	}
+
+	if ts.cfg.IsEnabledAddOnConformance() {
+		if ts.conformanceTester == nil {
+			return errors.New("ts.conformanceTester == nil when AddOnConformance.Enable == true")
+		}
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("conformanceTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnConformance.Namespace)
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.interruptSig,
+			ts.conformanceTester.Create,
 		); err != nil {
 			return err
 		}
@@ -1466,6 +1495,19 @@ func (ts *Tester) down() (err error) {
 	if err := ts.deleteKeyPair(); err != nil {
 		ts.lg.Warn("failed to delete key pair", zap.Error(err))
 		errs = append(errs, err.Error())
+	}
+
+	if ts.cfg.IsEnabledAddOnConformance() && ts.cfg.AddOnConformance.Created {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("conformanceTester.Delete (%q)\n", ts.cfg.ConfigPath)
+		if err := ts.conformanceTester.Delete(); err != nil {
+			ts.lg.Warn("conformanceTester.Delete failed", zap.Error(err))
+			errs = append(errs, err.Error())
+		} else {
+			waitDur := 20 * time.Second
+			ts.lg.Info("sleeping after deleting conformanceTester", zap.Duration("wait", waitDur))
+			time.Sleep(waitDur)
+		}
 	}
 
 	if ts.cfg.IsEnabledAddOnClusterLoader() && ts.cfg.AddOnClusterLoader.Created {

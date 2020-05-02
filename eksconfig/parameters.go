@@ -1,5 +1,8 @@
 package eksconfig
 
+// EnvironmentVariablePrefixParameters is the environment variable prefix used for "eksconfig".
+const EnvironmentVariablePrefixParameters = AWS_K8S_TESTER_EKS_PREFIX + "PARAMETERS_"
+
 // Parameters defines parameters for EKS "cluster" creation.
 type Parameters struct {
 	// RoleName is the name of cluster role.

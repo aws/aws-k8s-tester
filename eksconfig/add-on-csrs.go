@@ -1,19 +1,10 @@
 package eksconfig
 
-import "time"
-
-// IsEnabledAddOnCSRs returns true if "AddOnCSRs" is enabled.
-// Otherwise, nil the field for "omitempty".
-func (cfg *Config) IsEnabledAddOnCSRs() bool {
-	if cfg.AddOnCSRs == nil {
-		return false
-	}
-	if cfg.AddOnCSRs.Enable {
-		return true
-	}
-	cfg.AddOnCSRs = nil
-	return false
-}
+import (
+	"errors"
+	"fmt"
+	"time"
+)
 
 // AddOnCSRs defines parameters for EKS cluster
 // add-on "CertificateSigningRequest".
@@ -23,7 +14,6 @@ type AddOnCSRs struct {
 	// Created is true when the resource has been created.
 	// Used for delete operations.
 	Created bool `json:"created" read-only:"true"`
-
 	// CreateTook is the duration that took to create the resource.
 	CreateTook time.Duration `json:"create-took,omitempty" read-only:"true"`
 	// CreateTookString is the duration that took to create the resource.
@@ -33,7 +23,7 @@ type AddOnCSRs struct {
 	// DeleteTookString is the duration that took to create the resource.
 	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
 
-	// Namespace is the namespace to create "CertificateSigningRequest" objects in.
+	// Namespace is the namespace to create objects in.
 	Namespace string `json:"namespace"`
 
 	// InitialRequestConditionType is the initial CSR condition type
@@ -55,4 +45,41 @@ type AddOnCSRs struct {
 
 	// FailThreshold is the number of write failures to allow.
 	FailThreshold int `json:"fail-threshold"`
+}
+
+// EnvironmentVariablePrefixAddOnCSRs is the environment variable prefix used for "eksconfig".
+const EnvironmentVariablePrefixAddOnCSRs = AWS_K8S_TESTER_EKS_PREFIX + "ADD_ON_CSRS_"
+
+// IsEnabledAddOnCSRs returns true if "AddOnCSRs" is enabled.
+// Otherwise, nil the field for "omitempty".
+func (cfg *Config) IsEnabledAddOnCSRs() bool {
+	if cfg.AddOnCSRs == nil {
+		return false
+	}
+	if cfg.AddOnCSRs.Enable {
+		return true
+	}
+	cfg.AddOnCSRs = nil
+	return false
+}
+
+func (cfg *Config) validateAddOnCSRs() error {
+	if !cfg.IsEnabledAddOnCSRs() {
+		return nil
+	}
+	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
+		return errors.New("AddOnCSRs.Enable true but no node group is enabled")
+	}
+	if cfg.AddOnCSRs.Namespace == "" {
+		cfg.AddOnCSRs.Namespace = cfg.Name + "-csrs"
+	}
+	switch cfg.AddOnCSRs.InitialRequestConditionType {
+	case "Approved":
+	case "Denied":
+	case "Pending", "":
+	case "Random":
+	default:
+		return fmt.Errorf("unknown AddOnCSRs.InitialRequestConditionType %q", cfg.AddOnCSRs.InitialRequestConditionType)
+	}
+	return nil
 }

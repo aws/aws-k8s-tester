@@ -113,8 +113,9 @@ func (ts *tester) downloadInstallKfctl() (err error) {
 		if err = httputil.Download(ts.cfg.Logger, os.Stderr, ts.cfg.EKSConfig.AddOnKubeflow.KfctlDownloadURL, tarPath); err != nil {
 			return err
 		}
-		tmpPath := filepath.Join(os.TempDir(), "kfctl")
+		tmpPath := filepath.Join(os.TempDir(), fmt.Sprintf("kfctl-%x", time.Now().UnixNano()))
 		os.RemoveAll(tmpPath)
+		defer os.RemoveAll(tmpPath)
 		if err = archiver.Unarchive(tarPath, os.TempDir()); err != nil {
 			return fmt.Errorf("failed to decompress kfctl tar file %v", err)
 		}

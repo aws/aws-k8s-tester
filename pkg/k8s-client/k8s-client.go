@@ -25,6 +25,7 @@ import (
 	"go.uber.org/zap"
 	apiv1 "k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -202,9 +203,13 @@ func CreateNamespace(lg *zap.Logger, c clientset.Interface, namespace string) er
 		cancel()
 		if err == nil {
 			lg.Info("created namespace", zap.String("namespace", namespace))
-		} else {
-			lg.Warn("failed to create namespace", zap.String("namespace", namespace), zap.Error(err))
+			return nil
 		}
+		if kerrors.IsAlreadyExists(err) {
+			lg.Info("namespace already exists", zap.String("namespace", namespace), zap.Error(err))
+			return nil
+		}
+		lg.Warn("failed to create namespace", zap.String("namespace", namespace), zap.Error(err))
 		return err
 	}
 	return RetryWithExponentialBackOff(RetryFunction(createFunc, Allow(apierrs.IsAlreadyExists)))
@@ -227,9 +232,13 @@ func DeleteNamespace(lg *zap.Logger, c clientset.Interface, namespace string) er
 		cancel()
 		if err == nil {
 			lg.Info("deleted namespace", zap.String("namespace", namespace))
-		} else {
-			lg.Warn("failed to delete namespace", zap.String("namespace", namespace), zap.Error(err))
+			return nil
 		}
+		if kerrors.IsNotFound(err) || kerrors.IsGone(err) {
+			lg.Info("namespace already deleted", zap.String("namespace", namespace), zap.Error(err))
+			return nil
+		}
+		lg.Warn("failed to delete namespace", zap.String("namespace", namespace), zap.Error(err))
 		return err
 	}
 	// requires "apierrs.IsNotFound"

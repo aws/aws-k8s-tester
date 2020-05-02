@@ -116,8 +116,6 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_REMOTE_ACCESS_PRIVATE_KEY_PATH", "a")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_REMOTE_ACCESS_PRIVATE_KEY_PATH")
 
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_CREATED", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_CREATED")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_FETCH_LOGS", "false")
@@ -137,8 +135,6 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_LOGS_DIR", "a")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_LOGS_DIR")
 
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_CREATED", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_CREATED")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_FETCH_LOGS", "false")
@@ -168,14 +164,6 @@ func TestEnv(t *testing.T) {
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_CREATED", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_CREATED")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_NLB_ARN", "invalid")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_NLB_ARN")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_NLB_NAME", "invalid")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_NLB_NAME")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_URL", "invalid")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_URL")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_DEPLOYMENT_REPLICAS", "333")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_DEPLOYMENT_REPLICAS")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_NAMESPACE", "test-namespace")
@@ -183,14 +171,6 @@ func TestEnv(t *testing.T) {
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_CREATED", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_CREATED")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_ALB_ARN", "invalid")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_ALB_ARN")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_ALB_NAME", "invalid")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_ALB_NAME")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_URL", "invalid")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_URL")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_DEPLOYMENT_REPLICAS_ALB", "333")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_DEPLOYMENT_REPLICAS_ALB")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_DEPLOYMENT_REPLICAS_2048", "555")
@@ -200,8 +180,6 @@ func TestEnv(t *testing.T) {
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_CREATED", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_CREATED")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_NAMESPACE", "hello1")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_NAMESPACE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_COMPLETES", "100")
@@ -211,8 +189,6 @@ func TestEnv(t *testing.T) {
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_CREATED", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_CREATED")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_NAMESPACE", "hello2")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_NAMESPACE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_COMPLETES", "1000")
@@ -224,8 +200,6 @@ func TestEnv(t *testing.T) {
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_CREATED", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_CREATED")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_NAMESPACE", "hello3")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_NAMESPACE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_SCHEDULE", "*/1 * * * *")
@@ -243,38 +217,28 @@ func TestEnv(t *testing.T) {
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_CREATED", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_CREATED")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_NAMESPACE", "csr-namespace")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_NAMESPACE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_INITIAL_REQUEST_CONDITION_TYPE", "Random")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_INITIAL_REQUEST_CONDITION_TYPE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_OBJECTS", "10000")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_OBJECTS")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_CREATED_NAMES", "a,b,c")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_CREATED_NAMES")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_FAIL_THRESHOLD", "100")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_FAIL_THRESHOLD")
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_CREATED", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_CREATED")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_NAMESPACE", "config-map-namespace")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_NAMESPACE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_OBJECTS", "10000")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_OBJECTS")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_SIZE", "555")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_SIZE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_CREATED_NAMES", "a,b,c")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_CREATED_NAMES")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_FAIL_THRESHOLD", "100")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_FAIL_THRESHOLD")
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_CREATED", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_CREATED")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_NAMESPACE", "hello")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_NAMESPACE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_OBJECTS", "5")
@@ -290,8 +254,6 @@ func TestEnv(t *testing.T) {
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_CREATED", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_CREATED")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_NAMESPACE", "hello")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_NAMESPACE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_NAME", "hello")
@@ -313,8 +275,6 @@ func TestEnv(t *testing.T) {
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_CREATED", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_CREATED")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_NAMESPACE", "hello")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_NAMESPACE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_NAME", "hello")
@@ -334,8 +294,6 @@ func TestEnv(t *testing.T) {
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_CREATED", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_CREATED")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_NAMESPACE", "hello")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_NAMESPACE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ROLE_NAME", "hello")
@@ -362,8 +320,6 @@ func TestEnv(t *testing.T) {
 	proxySecretToken := hex.EncodeToString(randBytes(32))
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_CREATED", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_CREATED")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_NAMESPACE", "jhhub")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_NAMESPACE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_PROXY_SECRET_TOKEN", proxySecretToken)
@@ -371,10 +327,27 @@ func TestEnv(t *testing.T) {
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_CREATED", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_CREATED")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_DURATION", "7m30s")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_DURATION")
+
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_NAMESPACE", "conformance-test")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_PATH", "aaaaa")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_PATH")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_DOWNLOAD_URL", "sonobuoy-download-here")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_DOWNLOAD_URL")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_DELETE_TIMEOUT", "10s")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_DELETE_TIMEOUT")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_TIMEOUT", "10h")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_TIMEOUT")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_MODE", "non-disruptive-conformance")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_MODE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_KUBE_CONFORMANCE_IMAGE", "hello.com/v1")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_KUBE_CONFORMANCE_IMAGE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RETRIEVE_PATH", "hello.retrieve.tar.gz")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RETRIEVE_PATH")
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
 		t.Fatal(err)
@@ -529,9 +502,6 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("unexpected cfg.RemoteAccessPrivateKeyPath %q", cfg.RemoteAccessPrivateKeyPath)
 	}
 
-	if cfg.AddOnNodeGroups.Created { // read-only must be ignored
-		t.Fatalf("unexpected cfg.AddOnNodeGroups.Created %v", cfg.AddOnNodeGroups.Created)
-	}
 	if !cfg.AddOnNodeGroups.Enable {
 		t.Fatalf("unexpected cfg.AddOnNodeGroups.Enable %v", cfg.AddOnNodeGroups.Enable)
 	}
@@ -601,9 +571,6 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("unexpected cfg.AddOnNodeGroups.LogsDir %q", cfg.AddOnNodeGroups.LogsDir)
 	}
 
-	if cfg.AddOnManagedNodeGroups.Created { // read-only must be ignored
-		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.Created %v", cfg.AddOnManagedNodeGroups.Created)
-	}
 	if !cfg.AddOnManagedNodeGroups.Enable {
 		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.Enable %v", cfg.AddOnManagedNodeGroups.Enable)
 	}
@@ -681,20 +648,8 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.LogsDir %q", cfg.AddOnManagedNodeGroups.LogsDir)
 	}
 
-	if cfg.AddOnNLBHelloWorld.Created { // read-only must be ignored
-		t.Fatalf("unexpected cfg.AddOnNLBHelloWorld.Created %v", cfg.AddOnNLBHelloWorld.Created)
-	}
 	if !cfg.AddOnNLBHelloWorld.Enable {
 		t.Fatalf("unexpected cfg.AddOnNLBHelloWorld.Enable %v", cfg.AddOnNLBHelloWorld.Enable)
-	}
-	if cfg.AddOnNLBHelloWorld.NLBARN != "" { // env should be ignored for read-only
-		t.Fatalf("unexpected cfg.AddOnNLBHelloWorld.NLBARN %q", cfg.AddOnNLBHelloWorld.NLBARN)
-	}
-	if cfg.AddOnNLBHelloWorld.NLBName != "" { // env should be ignored for read-only
-		t.Fatalf("unexpected cfg.AddOnNLBHelloWorld.NLBName %q", cfg.AddOnNLBHelloWorld.NLBName)
-	}
-	if cfg.AddOnNLBHelloWorld.URL != "" { // env should be ignored for read-only
-		t.Fatalf("unexpected cfg.AddOnNLBHelloWorld.URL %q", cfg.AddOnNLBHelloWorld.URL)
 	}
 	if cfg.AddOnNLBHelloWorld.DeploymentReplicas != 333 {
 		t.Fatalf("unexpected cfg.AddOnNLBHelloWorld.DeploymentReplicas %d", cfg.AddOnNLBHelloWorld.DeploymentReplicas)
@@ -703,20 +658,8 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("unexpected cfg.AddOnNLBHelloWorld.Namespace %q", cfg.AddOnNLBHelloWorld.Namespace)
 	}
 
-	if cfg.AddOnALB2048.Created { // read-only must be ignored
-		t.Fatalf("unexpected cfg.AddOnALB2048.Created %v", cfg.AddOnALB2048.Created)
-	}
 	if !cfg.AddOnALB2048.Enable {
 		t.Fatalf("unexpected cfg.AddOnALB2048.Enable %v", cfg.AddOnALB2048.Enable)
-	}
-	if cfg.AddOnALB2048.ALBARN != "" { // env should be ignored for read-only
-		t.Fatalf("unexpected cfg.AddOnALB2048.ALBARN %q", cfg.AddOnALB2048.ALBARN)
-	}
-	if cfg.AddOnALB2048.ALBName != "" { // env should be ignored for read-only
-		t.Fatalf("unexpected cfg.AddOnALB2048.ALBName %q", cfg.AddOnALB2048.ALBName)
-	}
-	if cfg.AddOnALB2048.URL != "" { // env should be ignored for read-only
-		t.Fatalf("unexpected cfg.AddOnALB2048.URL %q", cfg.AddOnALB2048.URL)
 	}
 	if cfg.AddOnALB2048.DeploymentReplicasALB != 333 {
 		t.Fatalf("unexpected cfg.AddOnALB2048.DeploymentReplicasALB %d", cfg.AddOnALB2048.DeploymentReplicasALB)
@@ -728,9 +671,6 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("unexpected cfg.AddOnALB2048.Namespace %q", cfg.AddOnALB2048.Namespace)
 	}
 
-	if cfg.AddOnJobsPi.Created { // read-only must be ignored
-		t.Fatalf("unexpected cfg.AddOnJobsPi.Created %v", cfg.AddOnJobsPi.Created)
-	}
 	if !cfg.AddOnJobsPi.Enable {
 		t.Fatalf("unexpected cfg.AddOnJobsPi.Enable %v", cfg.AddOnJobsPi.Enable)
 	}
@@ -744,9 +684,6 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("unexpected cfg.AddOnJobsPi.Parallels %v", cfg.AddOnJobsPi.Parallels)
 	}
 
-	if cfg.AddOnJobsEcho.Created { // read-only must be ignored
-		t.Fatalf("unexpected cfg.AddOnJobsEcho.Created %v", cfg.AddOnJobsEcho.Created)
-	}
 	if !cfg.AddOnJobsEcho.Enable {
 		t.Fatalf("unexpected cfg.AddOnJobsEcho.Enable %v", cfg.AddOnJobsEcho.Enable)
 	}
@@ -763,9 +700,6 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("unexpected cfg.AddOnJobsEcho.EchoSize %v", cfg.AddOnJobsEcho.EchoSize)
 	}
 
-	if cfg.AddOnCronJobs.Created { // read-only must be ignored
-		t.Fatalf("unexpected cfg.AddOnCronJobs.Created %v", cfg.AddOnCronJobs.Created)
-	}
 	if !cfg.AddOnCronJobs.Enable {
 		t.Fatalf("unexpected cfg.AddOnCronJobs.Enable %v", cfg.AddOnCronJobs.Enable)
 	}
@@ -791,9 +725,6 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("unexpected cfg.AddOnCronJobs.EchoSize %d", cfg.AddOnCronJobs.EchoSize)
 	}
 
-	if cfg.AddOnCSRs.Created { // read-only must be ignored
-		t.Fatalf("unexpected cfg.AddOnCSRs.Created %v", cfg.AddOnCSRs.Created)
-	}
 	if !cfg.AddOnCSRs.Enable {
 		t.Fatalf("unexpected cfg.AddOnCSRs.Enable %v", cfg.AddOnCSRs.Enable)
 	}
@@ -806,16 +737,10 @@ func TestEnv(t *testing.T) {
 	if cfg.AddOnCSRs.Objects != 10000 {
 		t.Fatalf("unexpected cfg.AddOnCSRs.Objects %d", cfg.AddOnCSRs.Objects)
 	}
-	if len(cfg.AddOnCSRs.CreatedNames) > 0 { // read-only must be ignored
-		t.Fatalf("unexpected cfg.AddOnCSRs.CreatedNames %v", cfg.AddOnCSRs.CreatedNames)
-	}
 	if cfg.AddOnCSRs.FailThreshold != 100 {
 		t.Fatalf("unexpected cfg.AddOnCSRs.FailThreshold %q", cfg.AddOnCSRs.FailThreshold)
 	}
 
-	if cfg.AddOnConfigMaps.Created { // read-only must be ignored
-		t.Fatalf("unexpected cfg.AddOnConfigMaps.Created %v", cfg.AddOnConfigMaps.Created)
-	}
 	if !cfg.AddOnConfigMaps.Enable {
 		t.Fatalf("unexpected cfg.AddOnConfigMaps.Enable %v", cfg.AddOnConfigMaps.Enable)
 	}
@@ -828,16 +753,10 @@ func TestEnv(t *testing.T) {
 	if cfg.AddOnConfigMaps.Size != 555 {
 		t.Fatalf("unexpected cfg.AddOnConfigMaps.Size %d", cfg.AddOnConfigMaps.Size)
 	}
-	if len(cfg.AddOnConfigMaps.CreatedNames) > 0 { // read-only must be ignored
-		t.Fatalf("unexpected cfg.AddOnConfigMaps.CreatedNames %v", cfg.AddOnConfigMaps.CreatedNames)
-	}
 	if cfg.AddOnConfigMaps.FailThreshold != 100 {
 		t.Fatalf("unexpected cfg.AddOnConfigMaps.FailThreshold %q", cfg.AddOnConfigMaps.FailThreshold)
 	}
 
-	if cfg.AddOnSecrets.Created { // read-only must be ignored
-		t.Fatalf("unexpected cfg.AddOnSecrets.Created %v", cfg.AddOnSecrets.Created)
-	}
 	if !cfg.AddOnSecrets.Enable {
 		t.Fatalf("unexpected cfg.AddOnSecrets.Enable %v", cfg.AddOnSecrets.Enable)
 	}
@@ -860,9 +779,6 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("unexpected cfg.AddOnSecrets.FailThreshold %q", cfg.AddOnSecrets.FailThreshold)
 	}
 
-	if cfg.AddOnIRSA.Created { // read-only must be ignored
-		t.Fatalf("unexpected cfg.AddOnIRSA.Created %v", cfg.AddOnIRSA.Created)
-	}
 	if !cfg.AddOnIRSA.Enable {
 		t.Fatalf("unexpected cfg.AddOnIRSA.Enable %v", cfg.AddOnIRSA.Enable)
 	}
@@ -895,9 +811,6 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("unexpected cfg.AddOnIRSA.DeploymentResultPath %q", cfg.AddOnIRSA.DeploymentResultPath)
 	}
 
-	if cfg.AddOnFargate.Created { // read-only must be ignored
-		t.Fatalf("unexpected cfg.AddOnFargate.Created %v", cfg.AddOnFargate.Created)
-	}
 	if !cfg.AddOnFargate.Enable {
 		t.Fatalf("unexpected cfg.AddOnFargate.Enable %v", cfg.AddOnFargate.Enable)
 	}
@@ -928,9 +841,6 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("unexpected cfg.AddOnFargate.ContainerName %q", cfg.AddOnFargate.ContainerName)
 	}
 
-	if cfg.AddOnIRSAFargate.Created { // read-only must be ignored
-		t.Fatalf("unexpected cfg.AddOnIRSAFargate.Created %v", cfg.AddOnIRSAFargate.Created)
-	}
 	if !cfg.AddOnIRSAFargate.Enable {
 		t.Fatalf("unexpected cfg.AddOnIRSAFargate.Enable %v", cfg.AddOnIRSAFargate.Enable)
 	}
@@ -970,9 +880,6 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("unexpected cfg.AddOnIRSAFargate.ContainerName %q", cfg.AddOnIRSAFargate.ContainerName)
 	}
 
-	if cfg.AddOnJupyterHub.Created { // read-only must be ignored
-		t.Fatalf("unexpected cfg.AddOnJupyterHub.Created %v", cfg.AddOnJupyterHub.Created)
-	}
 	if !cfg.AddOnJupyterHub.Enable {
 		t.Fatalf("unexpected cfg.AddOnJupyterHub.Enable %v", cfg.AddOnJupyterHub.Enable)
 	}
@@ -983,14 +890,39 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("unexpected cfg.AddOnJupyterHub.ProxySecretToken %q", cfg.AddOnJupyterHub.ProxySecretToken)
 	}
 
-	if cfg.AddOnClusterLoader.Created { // read-only must be ignored
-		t.Fatalf("unexpected cfg.AddOnClusterLoader.Created %v", cfg.AddOnClusterLoader.Created)
-	}
 	if !cfg.AddOnClusterLoader.Enable {
 		t.Fatalf("unexpected cfg.AddOnClusterLoader.Enable %v", cfg.AddOnClusterLoader.Enable)
 	}
 	if cfg.AddOnClusterLoader.Duration != 7*time.Minute+30*time.Second {
 		t.Fatalf("unexpected cfg.AddOnClusterLoader.Duration %v", cfg.AddOnClusterLoader.Duration)
+	}
+
+	if !cfg.AddOnConformance.Enable {
+		t.Fatalf("unexpected cfg.AddOnConformance.Enable %v", cfg.AddOnConformance.Enable)
+	}
+	if cfg.AddOnConformance.Namespace != "conformance-test" {
+		t.Fatalf("unexpected cfg.AddOnConformance.Namespace %q", cfg.AddOnConformance.Namespace)
+	}
+	if cfg.AddOnConformance.SonobuoyPath != "aaaaa" {
+		t.Fatalf("unexpected cfg.AddOnConformance.SonobuoyPath %q", cfg.AddOnConformance.SonobuoyPath)
+	}
+	if cfg.AddOnConformance.SonobuoyDownloadURL != "sonobuoy-download-here" {
+		t.Fatalf("unexpected cfg.AddOnConformance.SonobuoyDownloadURL %q", cfg.AddOnConformance.SonobuoyDownloadURL)
+	}
+	if cfg.AddOnConformance.SonobuoyDeleteTimeout != 10*time.Second {
+		t.Fatalf("unexpected cfg.AddOnConformance.SonobuoyDeleteTimeout %v", cfg.AddOnConformance.SonobuoyDeleteTimeout)
+	}
+	if cfg.AddOnConformance.SonobuoyRunTimeout != 10*time.Hour {
+		t.Fatalf("unexpected cfg.AddOnConformance.SonobuoyRunTimeout %v", cfg.AddOnConformance.SonobuoyRunTimeout)
+	}
+	if cfg.AddOnConformance.SonobuoyRunMode != "non-disruptive-conformance" {
+		t.Fatalf("unexpected cfg.AddOnConformance.SonobuoyRunMode %q", cfg.AddOnConformance.SonobuoyRunMode)
+	}
+	if cfg.AddOnConformance.SonobuoyRunKubeConformanceImage != "hello.com/v1" {
+		t.Fatalf("unexpected cfg.AddOnConformance.SonobuoyRunKubeConformanceImage %q", cfg.AddOnConformance.SonobuoyRunKubeConformanceImage)
+	}
+	if cfg.AddOnConformance.SonobuoyRetrievePath != "hello.retrieve.tar.gz" {
+		t.Fatalf("unexpected cfg.AddOnConformance.SonobuoyRetrievePath %q", cfg.AddOnConformance.SonobuoyRetrievePath)
 	}
 
 	cfg.Parameters.RoleManagedPolicyARNs = nil
@@ -1205,8 +1137,6 @@ func TestEnvAddOnCSIEBS(t *testing.T) {
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_CREATED", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_CREATED")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_CHART_REPO_URL", "test-chart-repo")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_CHART_REPO_URL")
 
@@ -1216,9 +1146,6 @@ func TestEnvAddOnCSIEBS(t *testing.T) {
 	err := cfg.ValidateAndSetDefaults()
 	assert.NoError(t, err)
 
-	if cfg.AddOnCSIEBS.Created { // read-only must be ignored
-		t.Fatalf("unexpected cfg.AddOnCSIEBS.Created %v", cfg.AddOnCSIEBS.Created)
-	}
 	if !cfg.AddOnCSIEBS.Enable {
 		t.Fatalf("unexpected cfg.AddOnCSIEBS.Enable %v", cfg.AddOnCSIEBS.Enable)
 	}
@@ -1248,8 +1175,6 @@ func TestEnvAddOnAppMesh(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_CONTROLLER_IMAGE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_INJECTOR_IMAGE", "repo/injector:v1.1.3")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_INJECTOR_IMAGE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_POLICY_CFN_STACK_ID", `hello`)
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_POLICY_CFN_STACK_ID")
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
 		t.Fatal(err)
@@ -1282,16 +1207,12 @@ func TestEnvAddOnWordpress(t *testing.T) {
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_CREATED", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_CREATED")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_NAMESPACE", "word-press")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_NAMESPACE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_USER_NAME", "my-user")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_USER_NAME")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_PASSWORD", "my-password")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_PASSWORD")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_URL", "MY-URL")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_URL")
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
 		t.Fatal(err)
@@ -1299,9 +1220,6 @@ func TestEnvAddOnWordpress(t *testing.T) {
 	err := cfg.ValidateAndSetDefaults()
 	assert.NoError(t, err)
 
-	if cfg.AddOnWordpress.Created { // read-only must be ignored
-		t.Fatalf("unexpected cfg.AddOnWordpress.Created %v", cfg.AddOnWordpress.Created)
-	}
 	if !cfg.AddOnWordpress.Enable {
 		t.Fatalf("unexpected cfg.AddOnWordpress.Enable %v", cfg.AddOnWordpress.Enable)
 	}
@@ -1313,9 +1231,6 @@ func TestEnvAddOnWordpress(t *testing.T) {
 	}
 	if cfg.AddOnWordpress.Password != "my-password" {
 		t.Fatalf("unexpected cfg.AddOnWordpress.Password %q", cfg.AddOnWordpress.Password)
-	}
-	if cfg.AddOnWordpress.URL != "" {
-		t.Fatalf("unexpected cfg.AddOnWordpress.URL %q", cfg.AddOnWordpress.URL)
 	}
 }
 
@@ -1332,10 +1247,6 @@ func TestEnvAddOnKubernetesDashboard(t *testing.T) {
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_CREATED", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_CREATED")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_URL", "MY-URL")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_URL")
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
 		t.Fatal(err)
@@ -1343,16 +1254,9 @@ func TestEnvAddOnKubernetesDashboard(t *testing.T) {
 	err := cfg.ValidateAndSetDefaults()
 	assert.NoError(t, err)
 
-	if cfg.AddOnKubernetesDashboard.Created { // read-only must be ignored
-		t.Fatalf("unexpected cfg.AddOnKubernetesDashboard.Created %v", cfg.AddOnKubernetesDashboard.Created)
-	}
 	if !cfg.AddOnKubernetesDashboard.Enable {
 		t.Fatalf("unexpected cfg.AddOnKubernetesDashboard.Enable %v", cfg.AddOnKubernetesDashboard.Enable)
 	}
-	if cfg.AddOnKubernetesDashboard.URL != "MY-URL" {
-		t.Fatalf("unexpected cfg.AddOnKubernetesDashboard.URL %q", cfg.AddOnKubernetesDashboard.URL)
-	}
-
 	fmt.Println(cfg.KubectlCommands())
 }
 
@@ -1371,14 +1275,10 @@ func TestEnvAddOnPrometheusGrafana(t *testing.T) {
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_CREATED", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_CREATED")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_GRAFANA_ADMIN_USER_NAME", "MY_ADMIN_USER_NAME")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_GRAFANA_ADMIN_USER_NAME")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_GRAFANA_ADMIN_PASSWORD", "MY_ADMIN_PASSWORD")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_GRAFANA_ADMIN_PASSWORD")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_GRAFANA_URL", "MY-URL")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_GRAFANA_URL")
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
 		t.Fatal(err)
@@ -1386,9 +1286,6 @@ func TestEnvAddOnPrometheusGrafana(t *testing.T) {
 	err := cfg.ValidateAndSetDefaults()
 	assert.NoError(t, err)
 
-	if cfg.AddOnPrometheusGrafana.Created { // read-only must be ignored
-		t.Fatalf("unexpected cfg.AddOnPrometheusGrafana.Created %v", cfg.AddOnPrometheusGrafana.Created)
-	}
 	if !cfg.AddOnPrometheusGrafana.Enable {
 		t.Fatalf("unexpected cfg.AddOnPrometheusGrafana.Enable %v", cfg.AddOnPrometheusGrafana.Enable)
 	}
@@ -1397,9 +1294,6 @@ func TestEnvAddOnPrometheusGrafana(t *testing.T) {
 	}
 	if cfg.AddOnPrometheusGrafana.GrafanaAdminPassword != "MY_ADMIN_PASSWORD" {
 		t.Fatalf("unexpected cfg.AddOnPrometheusGrafana.GrafanaAdminPassword %q", cfg.AddOnPrometheusGrafana.GrafanaAdminPassword)
-	}
-	if cfg.AddOnPrometheusGrafana.GrafanaURL != "" {
-		t.Fatalf("unexpected cfg.AddOnPrometheusGrafana.GrafanaURL %q", cfg.AddOnPrometheusGrafana.GrafanaURL)
 	}
 }
 
@@ -1416,8 +1310,6 @@ func TestEnvAddOnKubeflow(t *testing.T) {
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_CREATED", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_CREATED")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_NAMESPACE", "kubeflow")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_NAMESPACE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_KFCTL_DOWNLOAD_URL", "kubeflow-download-here")
@@ -1431,9 +1323,6 @@ func TestEnvAddOnKubeflow(t *testing.T) {
 	err := cfg.ValidateAndSetDefaults()
 	assert.NoError(t, err)
 
-	if cfg.AddOnKubeflow.Created { // read-only must be ignored
-		t.Fatalf("unexpected cfg.AddOnKubeflow.Created %v", cfg.AddOnKubeflow.Created)
-	}
 	if !cfg.AddOnKubeflow.Enable {
 		t.Fatalf("unexpected cfg.AddOnKubeflow.Enable %v", cfg.AddOnKubeflow.Enable)
 	}

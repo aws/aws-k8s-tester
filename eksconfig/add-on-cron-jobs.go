@@ -1,19 +1,10 @@
 package eksconfig
 
-import "time"
-
-// IsEnabledAddOnCronJobs returns true if "AddOnCronJobs" is enabled.
-// Otherwise, nil the field for "omitempty".
-func (cfg *Config) IsEnabledAddOnCronJobs() bool {
-	if cfg.AddOnCronJobs == nil {
-		return false
-	}
-	if cfg.AddOnCronJobs.Enable {
-		return true
-	}
-	cfg.AddOnCronJobs = nil
-	return false
-}
+import (
+	"errors"
+	"fmt"
+	"time"
+)
 
 // AddOnCronJobs defines parameters for EKS cluster
 // add-on with CronJob.
@@ -23,7 +14,6 @@ type AddOnCronJobs struct {
 	// Created is true when the resource has been created.
 	// Used for delete operations.
 	Created bool `json:"created" read-only:"true"`
-
 	// CreateTook is the duration that took to create the resource.
 	CreateTook time.Duration `json:"create-took,omitempty" read-only:"true"`
 	// CreateTookString is the duration that took to create the resource.
@@ -33,7 +23,7 @@ type AddOnCronJobs struct {
 	// DeleteTookString is the duration that took to create the resource.
 	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
 
-	// Namespace is the namespace to create "Job" objects in.
+	// Namespace is the namespace to create objects in.
 	Namespace string `json:"namespace"`
 
 	// Schedule is the cron schedule (e.g. "*/1 * * * *").
@@ -55,4 +45,36 @@ type AddOnCronJobs struct {
 	// "The Job "echo" is invalid: metadata.annotations:
 	// Too long: must have at most 262144 characters". (0.26 MB)
 	EchoSize int `json:"echo-size"`
+}
+
+// EnvironmentVariablePrefixAddOnCronJobs is the environment variable prefix used for "eksconfig".
+const EnvironmentVariablePrefixAddOnCronJobs = AWS_K8S_TESTER_EKS_PREFIX + "ADD_ON_CRON_JOBS_"
+
+// IsEnabledAddOnCronJobs returns true if "AddOnCronJobs" is enabled.
+// Otherwise, nil the field for "omitempty".
+func (cfg *Config) IsEnabledAddOnCronJobs() bool {
+	if cfg.AddOnCronJobs == nil {
+		return false
+	}
+	if cfg.AddOnCronJobs.Enable {
+		return true
+	}
+	cfg.AddOnCronJobs = nil
+	return false
+}
+
+func (cfg *Config) validateAddOnCronJobs() error {
+	if !cfg.IsEnabledAddOnCronJobs() {
+		return nil
+	}
+	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
+		return errors.New("AddOnCronJobs.Enable true but no node group is enabled")
+	}
+	if cfg.AddOnCronJobs.Namespace == "" {
+		cfg.AddOnCronJobs.Namespace = cfg.Name + "-cronjob"
+	}
+	if cfg.AddOnCronJobs.EchoSize > 250000 {
+		return fmt.Errorf("echo size limit is 0.25 MB, got %d", cfg.AddOnCronJobs.EchoSize)
+	}
+	return nil
 }

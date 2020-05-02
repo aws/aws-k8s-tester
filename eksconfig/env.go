@@ -10,55 +10,6 @@ import (
 	"time"
 )
 
-const (
-	// EnvironmentVariablePrefix is the environment variable prefix used for "eksconfig".
-	EnvironmentVariablePrefix = "AWS_K8S_TESTER_EKS_"
-	// EnvironmentVariablePrefixParameters is the environment variable prefix used for "eksconfig".
-	EnvironmentVariablePrefixParameters = "AWS_K8S_TESTER_EKS_PARAMETERS_"
-	// EnvironmentVariablePrefixAddOnNodeGroups is the environment variable prefix used for "eksconfig".
-	EnvironmentVariablePrefixAddOnNodeGroups = "AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_"
-	// EnvironmentVariablePrefixAddOnManagedNodeGroups is the environment variable prefix used for "eksconfig".
-	EnvironmentVariablePrefixAddOnManagedNodeGroups = "AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_"
-	// EnvironmentVariablePrefixAddOnNLBHelloWorld is the environment variable prefix used for "eksconfig".
-	EnvironmentVariablePrefixAddOnNLBHelloWorld = "AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_"
-	// EnvironmentVariablePrefixAddOnALB2048 is the environment variable prefix used for "eksconfig".
-	EnvironmentVariablePrefixAddOnALB2048 = "AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_"
-	// EnvironmentVariablePrefixAddOnJobsPi is the environment variable prefix used for "eksconfig".
-	EnvironmentVariablePrefixAddOnJobsPi = "AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_"
-	// EnvironmentVariablePrefixAddOnJobsEcho is the environment variable prefix used for "eksconfig".
-	EnvironmentVariablePrefixAddOnJobsEcho = "AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_"
-	// EnvironmentVariablePrefixAddOnCronJobs is the environment variable prefix used for "eksconfig".
-	EnvironmentVariablePrefixAddOnCronJobs = "AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_"
-	// EnvironmentVariablePrefixAddOnCSRs is the environment variable prefix used for "eksconfig".
-	EnvironmentVariablePrefixAddOnCSRs = "AWS_K8S_TESTER_EKS_ADD_ON_CSRS_"
-	// EnvironmentVariablePrefixAddOnConfigMaps is the environment variable prefix used for "eksconfig".
-	EnvironmentVariablePrefixAddOnConfigMaps = "AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_"
-	// EnvironmentVariablePrefixAddOnSecrets is the environment variable prefix used for "eksconfig".
-	EnvironmentVariablePrefixAddOnSecrets = "AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_"
-	// EnvironmentVariablePrefixAddOnIRSA is the environment variable prefix used for "eksconfig".
-	EnvironmentVariablePrefixAddOnIRSA = "AWS_K8S_TESTER_EKS_ADD_ON_IRSA_"
-	// EnvironmentVariablePrefixAddOnFargate is the environment variable prefix used for "eksconfig".
-	EnvironmentVariablePrefixAddOnFargate = "AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_"
-	// EnvironmentVariablePrefixAddOnIRSAFargate is the environment variable prefix used for "eksconfig".
-	EnvironmentVariablePrefixAddOnIRSAFargate = "AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_"
-	// EnvironmentVariablePrefixAddOnAppMesh is the environment variable prefix used for "eksconfig".
-	EnvironmentVariablePrefixAddOnAppMesh = "AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_"
-	// EnvironmentVariablePrefixAddOnCSIEBS is the environment variable prefix used for "eksconfig".
-	EnvironmentVariablePrefixAddOnCSIEBS = "AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_"
-	// EnvironmentVariablePrefixAddOnWordpress is the environment variable prefix used for "eksconfig".
-	EnvironmentVariablePrefixAddOnWordpress = "AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_"
-	// EnvironmentVariablePrefixAddOnKubernetesDashboard is the environment variable prefix used for "eksconfig".
-	EnvironmentVariablePrefixAddOnKubernetesDashboard = "AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_"
-	// EnvironmentVariablePrefixAddOnPrometheusGrafana is the environment variable prefix used for "eksconfig".
-	EnvironmentVariablePrefixAddOnPrometheusGrafana = "AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_"
-	// EnvironmentVariablePrefixAddOnJupyterHub is the environment variable prefix used for "eksconfig".
-	EnvironmentVariablePrefixAddOnJupyterHub = "AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_"
-	// EnvironmentVariablePrefixAddOnKubeflow is the environment variable prefix used for "eksconfig".
-	EnvironmentVariablePrefixAddOnKubeflow = "AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_"
-	// EnvironmentVariablePrefixAddOnClusterLoader is the environment variable prefix used for "eksconfig".
-	EnvironmentVariablePrefixAddOnClusterLoader = "AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_"
-)
-
 // UpdateFromEnvs updates fields from environmental variables.
 // Empty values are ignored and do not overwrite fields with empty values.
 // WARNING: The environmetal variable value always overwrites current field
@@ -74,7 +25,7 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		cfg.Parameters = &Parameters{}
 	}
 	var vv interface{}
-	vv, err = parseEnvs(EnvironmentVariablePrefix, cfg)
+	vv, err = parseEnvs(AWS_K8S_TESTER_EKS_PREFIX, cfg)
 	if err != nil {
 		return err
 	}
@@ -375,6 +326,19 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *AddOnClusterLoader, got %T", vv)
 	}
 
+	if cfg.AddOnConformance == nil {
+		cfg.AddOnConformance = &AddOnConformance{}
+	}
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnConformance, cfg.AddOnConformance)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*AddOnConformance); ok {
+		cfg.AddOnConformance = av
+	} else {
+		return fmt.Errorf("expected *AddOnConformance, got %T", vv)
+	}
+
 	return nil
 }
 
@@ -392,8 +356,8 @@ func parseEnvs(pfx string, addOn interface{}) (interface{}, error) {
 		if sv == "" {
 			continue
 		}
-		if tp.Field(i).Tag.Get("read-only") == "true" { // skip updating read-only field
-			continue
+		if tp.Field(i).Tag.Get("read-only") == "true" { // error when read-only field is set for update
+			return nil, fmt.Errorf("'%s=%s' is 'read-only' field; should not be set!", env, sv)
 		}
 		fieldName := tp.Field(i).Name
 

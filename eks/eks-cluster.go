@@ -115,7 +115,7 @@ func (ts *Tester) createCluster() (err error) {
 		KubectlPath:       ts.cfg.KubectlPath,
 		ServerVersion:     ts.cfg.Parameters.Version,
 		EncryptionEnabled: ts.cfg.Parameters.EncryptionCMKARN != "",
-		Clients:           1,
+		Clients:           ts.cfg.Clients,
 		ClientQPS:         ts.cfg.ClientQPS,
 		ClientBurst:       ts.cfg.ClientBurst,
 		ClientTimeout:     ts.cfg.ClientTimeout,

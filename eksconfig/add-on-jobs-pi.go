@@ -1,6 +1,39 @@
 package eksconfig
 
-import "time"
+import (
+	"errors"
+	"time"
+)
+
+// AddOnJobsPi defines parameters for EKS cluster
+// add-on Job with Perl.
+type AddOnJobsPi struct {
+	// Enable is 'true' to create this add-on.
+	Enable bool `json:"enable"`
+	// Created is true when the resource has been created.
+	// Used for delete operations.
+	Created bool `json:"created" read-only:"true"`
+	// CreateTook is the duration that took to create the resource.
+	CreateTook time.Duration `json:"create-took,omitempty" read-only:"true"`
+	// CreateTookString is the duration that took to create the resource.
+	CreateTookString string `json:"create-took-string,omitempty" read-only:"true"`
+	// DeleteTook is the duration that took to create the resource.
+	DeleteTook time.Duration `json:"delete-took,omitempty" read-only:"true"`
+	// DeleteTookString is the duration that took to create the resource.
+	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
+
+	// Namespace is the namespace to create objects in.
+	Namespace string `json:"namespace"`
+
+	// Completes is the desired number of successfully finished pods.
+	Completes int `json:"completes"`
+	// Parallels is the the maximum desired number of pods the
+	// job should run at any given time.
+	Parallels int `json:"parallels"`
+}
+
+// EnvironmentVariablePrefixAddOnJobsPi is the environment variable prefix used for "eksconfig".
+const EnvironmentVariablePrefixAddOnJobsPi = AWS_K8S_TESTER_EKS_PREFIX + "ADD_ON_JOBS_PI_"
 
 // IsEnabledAddOnJobsPi returns true if "AddOnJobsPi" is enabled.
 // Otherwise, nil the field for "omitempty".
@@ -15,30 +48,15 @@ func (cfg *Config) IsEnabledAddOnJobsPi() bool {
 	return false
 }
 
-// AddOnJobsPi defines parameters for EKS cluster
-// add-on Job with Perl.
-type AddOnJobsPi struct {
-	// Enable is 'true' to create this add-on.
-	Enable bool `json:"enable"`
-	// Created is true when the resource has been created.
-	// Used for delete operations.
-	Created bool `json:"created" read-only:"true"`
-
-	// CreateTook is the duration that took to create the resource.
-	CreateTook time.Duration `json:"create-took,omitempty" read-only:"true"`
-	// CreateTookString is the duration that took to create the resource.
-	CreateTookString string `json:"create-took-string,omitempty" read-only:"true"`
-	// DeleteTook is the duration that took to create the resource.
-	DeleteTook time.Duration `json:"delete-took,omitempty" read-only:"true"`
-	// DeleteTookString is the duration that took to create the resource.
-	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
-
-	// Namespace is the namespace to create "Job" objects in.
-	Namespace string `json:"namespace"`
-
-	// Completes is the desired number of successfully finished pods.
-	Completes int `json:"completes"`
-	// Parallels is the the maximum desired number of pods the
-	// job should run at any given time.
-	Parallels int `json:"parallels"`
+func (cfg *Config) validateAddOnJobsPi() error {
+	if !cfg.IsEnabledAddOnJobsPi() {
+		return nil
+	}
+	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
+		return errors.New("AddOnJobsPi.Enable true but no node group is enabled")
+	}
+	if cfg.AddOnJobsPi.Namespace == "" {
+		cfg.AddOnJobsPi.Namespace = cfg.Name + "-job-perl"
+	}
+	return nil
 }

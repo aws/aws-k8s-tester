@@ -1,23 +1,15 @@
 package eksconfig
 
 import (
+	"errors"
+	"fmt"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
+	"github.com/aws/aws-sdk-go/service/eks"
 )
-
-// IsEnabledAddOnManagedNodeGroups returns true if "AddOnManagedNodeGroups" is enabled.
-// Otherwise, nil the field for "omitempty".
-func (cfg *Config) IsEnabledAddOnManagedNodeGroups() bool {
-	if cfg.AddOnManagedNodeGroups == nil {
-		return false
-	}
-	if cfg.AddOnManagedNodeGroups.Enable {
-		return len(cfg.AddOnManagedNodeGroups.MNGs) > 0
-	}
-	cfg.AddOnManagedNodeGroups = nil
-	return false
-}
 
 // AddOnManagedNodeGroups defines parameters for EKS "Managed Node Group" creation.
 // ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
@@ -25,7 +17,6 @@ func (cfg *Config) IsEnabledAddOnManagedNodeGroups() bool {
 type AddOnManagedNodeGroups struct {
 	// Enable is true to auto-create a managed node group.
 	Enable bool `json:"enable"`
-
 	// Created is true when the resource has been created.
 	// Used for delete operations.
 	Created bool `json:"created" read-only:"true"`
@@ -138,4 +129,198 @@ type MNG struct {
 	Instances map[string]ec2config.Instance `json:"instances" read-only:"true"`
 	// Logs maps each instance ID to a list of log file paths fetched via SSH access.
 	Logs map[string][]string `json:"logs" read-only:"true"`
+}
+
+// EnvironmentVariablePrefixAddOnManagedNodeGroups is the environment variable prefix used for "eksconfig".
+const EnvironmentVariablePrefixAddOnManagedNodeGroups = AWS_K8S_TESTER_EKS_PREFIX + "ADD_ON_MANAGED_NODE_GROUPS_"
+
+// IsEnabledAddOnManagedNodeGroups returns true if "AddOnManagedNodeGroups" is enabled.
+// Otherwise, nil the field for "omitempty".
+func (cfg *Config) IsEnabledAddOnManagedNodeGroups() bool {
+	if cfg.AddOnManagedNodeGroups == nil {
+		return false
+	}
+	if cfg.AddOnManagedNodeGroups.Enable {
+		return len(cfg.AddOnManagedNodeGroups.MNGs) > 0
+	}
+	cfg.AddOnManagedNodeGroups = nil
+	return false
+}
+
+func (cfg *Config) validateAddOnManagedNodeGroups() error {
+	if !cfg.IsEnabledAddOnManagedNodeGroups() {
+		return nil
+	}
+
+	n := len(cfg.AddOnManagedNodeGroups.MNGs)
+	if n == 0 {
+		return errors.New("empty MNGs")
+	}
+	if n > MNGsMaxLimit {
+		return fmt.Errorf("MNGs %d exceeds maximum number of MNGs which is %d", n, MNGsMaxLimit)
+	}
+
+	if cfg.Parameters.VersionValue < 1.14 {
+		return fmt.Errorf("Version %q not supported for AddOnManagedNodeGroups", cfg.Parameters.Version)
+	}
+
+	if cfg.AddOnManagedNodeGroups.LogsDir == "" {
+		cfg.AddOnManagedNodeGroups.LogsDir = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-logs-mngs")
+	}
+
+	switch cfg.AddOnManagedNodeGroups.RoleCreate {
+	case true: // need create one, or already created
+		if cfg.AddOnManagedNodeGroups.RoleName == "" {
+			cfg.AddOnManagedNodeGroups.RoleName = cfg.Name + "-role-mng"
+		}
+		if cfg.AddOnManagedNodeGroups.RoleARN != "" {
+			// just ignore...
+			// could be populated from previous run
+			// do not error, so long as RoleCreate false, role won't be deleted
+		}
+		if len(cfg.AddOnManagedNodeGroups.RoleServicePrincipals) > 0 {
+			/*
+				create node group request failed (InvalidParameterException: Following required service principals [ec2.amazonaws.com] were not found in the trust relationships of nodeRole arn:aws:iam::...:role/test-mng-role
+				{
+				  ClusterName: "test",
+				  Message_: "Following required service principals [ec2.amazonaws.com] were not found in the trust relationships of nodeRole arn:aws:iam::...:role/test-mng-role",
+				  NodegroupName: "test-mng-cpu"
+				})
+			*/
+			found := false
+			for _, pv := range cfg.AddOnManagedNodeGroups.RoleServicePrincipals {
+				if pv == "ec2.amazonaws.com" { // TODO: support China regions ec2.amazonaws.com.cn or eks.amazonaws.com.cn
+					found = true
+					break
+				}
+			}
+			if !found {
+				return fmt.Errorf("AddOnManagedNodeGroups.RoleServicePrincipals %q must include 'ec2.amazonaws.com'", cfg.AddOnManagedNodeGroups.RoleServicePrincipals)
+			}
+		}
+
+	case false: // use existing one
+		if cfg.AddOnManagedNodeGroups.RoleARN == "" {
+			return fmt.Errorf("AddOnManagedNodeGroups.RoleCreate false; expect non-empty RoleARN but got %q", cfg.AddOnManagedNodeGroups.RoleARN)
+		}
+		if cfg.AddOnManagedNodeGroups.RoleName == "" {
+			cfg.AddOnManagedNodeGroups.RoleName = getNameFromARN(cfg.AddOnManagedNodeGroups.RoleARN)
+		}
+		if len(cfg.AddOnManagedNodeGroups.RoleManagedPolicyARNs) > 0 {
+			return fmt.Errorf("AddOnManagedNodeGroups.RoleCreate false; expect empty RoleManagedPolicyARNs but got %q", cfg.AddOnManagedNodeGroups.RoleManagedPolicyARNs)
+		}
+		if len(cfg.AddOnManagedNodeGroups.RoleServicePrincipals) > 0 {
+			return fmt.Errorf("AddOnManagedNodeGroups.RoleCreate false; expect empty RoleServicePrincipals but got %q", cfg.AddOnManagedNodeGroups.RoleServicePrincipals)
+		}
+	}
+
+	names, processed := make(map[string]struct{}), make(map[string]MNG)
+	for k, v := range cfg.AddOnManagedNodeGroups.MNGs {
+		k = strings.ReplaceAll(k, "GetRef.Name", cfg.Name)
+		v.Name = strings.ReplaceAll(v.Name, "GetRef.Name", cfg.Name)
+
+		if v.Name == "" {
+			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].Name is empty", k)
+		}
+		if k != v.Name {
+			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].Name has different Name field %q", k, v.Name)
+		}
+		_, ok := names[v.Name]
+		if !ok {
+			names[v.Name] = struct{}{}
+		} else {
+			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].Name %q is redundant", k, v.Name)
+		}
+		if cfg.IsEnabledAddOnNodeGroups() {
+			_, ok = cfg.AddOnNodeGroups.ASGs[v.Name]
+			if ok {
+				return fmt.Errorf("MNGs[%q] name is conflicting with NG ASG", v.Name)
+			}
+		}
+
+		if len(v.InstanceTypes) > 4 {
+			return fmt.Errorf("too many InstaceTypes[%q]", v.InstanceTypes)
+		}
+		if v.VolumeSize == 0 {
+			v.VolumeSize = DefaultNodeVolumeSize
+		}
+		if v.RemoteAccessUserName == "" {
+			v.RemoteAccessUserName = "ec2-user"
+		}
+
+		if v.RemoteAccessUserName == "" {
+			v.RemoteAccessUserName = "ec2-user"
+		}
+
+		switch v.AMIType {
+		case eks.AMITypesAl2X8664:
+			if v.RemoteAccessUserName != "ec2-user" {
+				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", v.AMIType, v.RemoteAccessUserName)
+			}
+		case eks.AMITypesAl2X8664Gpu:
+			if v.RemoteAccessUserName != "ec2-user" {
+				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", v.AMIType, v.RemoteAccessUserName)
+			}
+		default:
+			return fmt.Errorf("unknown ASGs[%q].AMIType %q", k, v.AMIType)
+		}
+
+		switch v.AMIType {
+		case eks.AMITypesAl2X8664:
+			if len(v.InstanceTypes) == 0 {
+				v.InstanceTypes = []string{DefaultNodeInstanceTypeCPU}
+			}
+		case eks.AMITypesAl2X8664Gpu:
+			if len(v.InstanceTypes) == 0 {
+				v.InstanceTypes = []string{DefaultNodeInstanceTypeGPU}
+			}
+		default:
+			return fmt.Errorf("unknown AddOnManagedNodeGroups.MNGs[%q].AMIType %q", k, v.AMIType)
+		}
+
+		if cfg.IsEnabledAddOnNLBHelloWorld() || cfg.IsEnabledAddOnALB2048() {
+			for _, itp := range v.InstanceTypes {
+				// "m3.xlarge" or "c4.xlarge" will fail with "InvalidTarget: Targets {...} are not supported"
+				// ref. https://github.com/aws/amazon-vpc-cni-k8s/pull/821
+				// ref. https://github.com/kubernetes/kubernetes/issues/66044#issuecomment-408188524
+				switch {
+				case strings.HasPrefix(itp, "m3."),
+					strings.HasPrefix(itp, "c4."):
+					return fmt.Errorf("AddOnNLBHelloWorld.Enable[%v] || AddOnALB2048.Enable[%v], but older instance type InstanceTypes %q for %q",
+						cfg.IsEnabledAddOnNLBHelloWorld(),
+						cfg.IsEnabledAddOnALB2048(),
+						itp, k)
+				default:
+				}
+			}
+		}
+
+		if v.ASGMinSize > v.ASGMaxSize {
+			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].ASGMinSize %d > ASGMaxSize %d", k, v.ASGMinSize, v.ASGMaxSize)
+		}
+		if v.ASGDesiredCapacity > v.ASGMaxSize {
+			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].ASGDesiredCapacity %d > ASGMaxSize %d", k, v.ASGDesiredCapacity, v.ASGMaxSize)
+		}
+		if v.ASGMaxSize > MNGMaxLimit {
+			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].ASGMaxSize %d > MNGMaxLimit %d", k, v.ASGMaxSize, MNGMaxLimit)
+		}
+		if v.ASGDesiredCapacity > MNGMaxLimit {
+			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].ASGDesiredCapacity %d > MNGMaxLimit %d", k, v.ASGDesiredCapacity, MNGMaxLimit)
+		}
+
+		if cfg.IsEnabledAddOnNLBHelloWorld() && cfg.AddOnNLBHelloWorld.DeploymentReplicas < int32(v.ASGDesiredCapacity) {
+			cfg.AddOnNLBHelloWorld.DeploymentReplicas = int32(v.ASGDesiredCapacity)
+		}
+		if cfg.IsEnabledAddOnALB2048() && cfg.AddOnALB2048.DeploymentReplicasALB < int32(v.ASGDesiredCapacity) {
+			cfg.AddOnALB2048.DeploymentReplicasALB = int32(v.ASGDesiredCapacity)
+		}
+		if cfg.IsEnabledAddOnALB2048() && cfg.AddOnALB2048.DeploymentReplicas2048 < int32(v.ASGDesiredCapacity) {
+			cfg.AddOnALB2048.DeploymentReplicas2048 = int32(v.ASGDesiredCapacity)
+		}
+
+		processed[k] = v
+	}
+
+	cfg.AddOnManagedNodeGroups.MNGs = processed
+	return nil
 }

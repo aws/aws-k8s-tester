@@ -10,6 +10,7 @@ go 1.14
 // https://github.com/blang/semver/releases
 // https://github.com/gyuho/semver/releases
 // https://github.com/manifoldco/promptui/releases
+
 require (
 	github.com/aws/aws-sdk-go v1.30.19
 	github.com/cihub/seelog v0.0.0-20170130134532-f561c5e57575

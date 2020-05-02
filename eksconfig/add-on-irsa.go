@@ -1,19 +1,12 @@
 package eksconfig
 
-import "time"
-
-// IsEnabledAddOnIRSA returns true if "AddOnIRSA" is enabled.
-// Otherwise, nil the field for "omitempty".
-func (cfg *Config) IsEnabledAddOnIRSA() bool {
-	if cfg.AddOnIRSA == nil {
-		return false
-	}
-	if cfg.AddOnIRSA.Enable {
-		return true
-	}
-	cfg.AddOnIRSA = nil
-	return false
-}
+import (
+	"errors"
+	"fmt"
+	"path"
+	"path/filepath"
+	"time"
+)
 
 // AddOnIRSA defines parameters for EKS cluster
 // add-on "IAM Roles for Service Accounts (IRSA)".
@@ -23,7 +16,6 @@ type AddOnIRSA struct {
 	// Created is true when the resource has been created.
 	// Used for delete operations.
 	Created bool `json:"created" read-only:"true"`
-
 	// CreateTook is the duration that took to create the resource.
 	CreateTook time.Duration `json:"create-took,omitempty" read-only:"true"`
 	// CreateTookString is the duration that took to create the resource.
@@ -33,7 +25,7 @@ type AddOnIRSA struct {
 	// DeleteTookString is the duration that took to create the resource.
 	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
 
-	// Namespace is the namespace to create "Secret" and "Pod" objects in.
+	// Namespace is the namespace to create objects in.
 	Namespace string `json:"namespace"`
 
 	// RoleName is the role name for IRSA.
@@ -64,4 +56,60 @@ type AddOnIRSA struct {
 	DeploymentTook time.Duration `json:"deployment-took,omitempty" read-only:"true"`
 	// DeploymentTookString is the duration that took for Deployment resource.
 	DeploymentTookString string `json:"deployment-took-string,omitempty" read-only:"true"`
+}
+
+// EnvironmentVariablePrefixAddOnIRSA is the environment variable prefix used for "eksconfig".
+const EnvironmentVariablePrefixAddOnIRSA = AWS_K8S_TESTER_EKS_PREFIX + "ADD_ON_IRSA_"
+
+// IsEnabledAddOnIRSA returns true if "AddOnIRSA" is enabled.
+// Otherwise, nil the field for "omitempty".
+func (cfg *Config) IsEnabledAddOnIRSA() bool {
+	if cfg.AddOnIRSA == nil {
+		return false
+	}
+	if cfg.AddOnIRSA.Enable {
+		return true
+	}
+	cfg.AddOnIRSA = nil
+	return false
+}
+
+func (cfg *Config) validateAddOnIRSA() error {
+	if !cfg.IsEnabledAddOnIRSA() {
+		return nil
+	}
+	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
+		return errors.New("AddOnIRSA.Enable true but no node group is enabled")
+	}
+	if cfg.Parameters.VersionValue < 1.14 {
+		return fmt.Errorf("Version %q not supported for AddOnIRSA", cfg.Parameters.Version)
+	}
+	if cfg.S3BucketName == "" {
+		return errors.New("AddOnIRSA requires S3 bucket but S3BucketName empty")
+	}
+	if cfg.AddOnIRSA.Namespace == "" {
+		cfg.AddOnIRSA.Namespace = cfg.Name + "-irsa"
+	}
+	if cfg.AddOnIRSA.RoleName == "" {
+		cfg.AddOnIRSA.RoleName = cfg.Name + "-role-irsa"
+	}
+	if cfg.AddOnIRSA.ServiceAccountName == "" {
+		cfg.AddOnIRSA.ServiceAccountName = cfg.Name + "-service-account-irsa"
+	}
+	if cfg.AddOnIRSA.ConfigMapName == "" {
+		cfg.AddOnIRSA.ConfigMapName = cfg.Name + "-configmap-irsa"
+	}
+	if cfg.AddOnIRSA.ConfigMapScriptFileName == "" {
+		cfg.AddOnIRSA.ConfigMapScriptFileName = cfg.Name + "-configmap-irsa.sh"
+	}
+	if cfg.AddOnIRSA.S3Key == "" {
+		cfg.AddOnIRSA.S3Key = path.Join(cfg.Name, "s3-key-irsa")
+	}
+	if cfg.AddOnIRSA.DeploymentName == "" {
+		cfg.AddOnIRSA.DeploymentName = cfg.Name + "-deployment-irsa"
+	}
+	if cfg.AddOnIRSA.DeploymentResultPath == "" {
+		cfg.AddOnIRSA.DeploymentResultPath = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-deployment-irsa-result.log")
+	}
+	return nil
 }
