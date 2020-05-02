@@ -15,7 +15,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.2...v1.1.3
 
 ### `ec2config`
 
-- Add [`ec2config.Config.S3BucketCreateKeep` to keep S3 bucket after auto-creation](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`ec2config.Config.S3BucketCreateKeep` to keep S3 bucket after auto-creation](https://github.com/aws/aws-k8s-tester/commit/ac7172f4dfa1bc519a8cc6d83060774f1262cb3c).
 - Fail [`ValidateAndSetDefaults` and return errors if `"read-only" fields are set by environmental variables](https://github.com/aws/aws-k8s-tester/commit/a8ca56ffd0c33657bf51cfd5889a98ea9669d60f).
   - ref. https://github.com/aws/aws-k8s-tester/tree/master/ec2config
 
