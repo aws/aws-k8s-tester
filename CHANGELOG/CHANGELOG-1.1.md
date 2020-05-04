@@ -9,7 +9,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.2...v1.1.3
 
 ### `aws-k8s-tester`
 
-- Add [`"aws-k8s-tester eks create hollow-nodes"`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`"aws-k8s-tester eks create hollow-nodes"`](https://github.com/aws/aws-k8s-tester/commit/48e97fb8935bbebcb6d1716f5f2d3416a2d5bddf).
 
 ### `ec2config`
 
@@ -19,17 +19,17 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.2...v1.1.3
 
 ### `eks`
 
-- Implement [`eks/hollow-nodes`](https://github.com/aws/aws-k8s-tester/commit/).
-  - Implement [`eks/hollow-nodes` inside Kubernetes Pod](https://github.com/aws/aws-k8s-tester/commit/).
+- Implement [`eks/hollow-nodes`](https://github.com/aws/aws-k8s-tester/commit/48e97fb8935bbebcb6d1716f5f2d3416a2d5bddf).
+  - Implement [`eks/hollow-nodes` inside Kubernetes Pod](https://github.com/aws/aws-k8s-tester/commit/48e97fb8935bbebcb6d1716f5f2d3416a2d5bddf).
   - Automate https://github.com/kubernetes/kubernetes/blob/master/test/kubemark/start-kubemark.sh.
 - Add [`eks/conformance`](https://github.com/aws/aws-k8s-tester/commit/a8ca56ffd0c33657bf51cfd5889a98ea9669d60f).
   - Fix [`"sonobuoy retrieve/results"` operations](https://github.com/aws/aws-k8s-tester/commit/4443165882af944513555b23d5c8459385c5757f).
 - Fix [`eksconfig.Config.Clients` for Kubernetes clients](https://github.com/aws/aws-k8s-tester/commit/a8ca56ffd0c33657bf51cfd5889a98ea9669d60f).
-- Rename [node label from `"Name"` to `"NGName"`](https://github.com/aws/aws-k8s-tester/commit/).
+- Rename [node label from `"Name"` to `"NGName"`](https://github.com/aws/aws-k8s-tester/commit/48e97fb8935bbebcb6d1716f5f2d3416a2d5bddf).
 
 ### `eksconfig`
 
-- Add [`AddOnHollowNodes`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`AddOnHollowNodes`](https://github.com/aws/aws-k8s-tester/commit/48e97fb8935bbebcb6d1716f5f2d3416a2d5bddf).
 - Add [`eksconfig.Config.S3BucketCreateKeep` to keep S3 bucket after auto-creation](https://github.com/aws/aws-k8s-tester/commit/1cf50a645531dfc5c962e3585bb4c7b198044153).
 - Fail [`ValidateAndSetDefaults` and return errors if `"read-only" fields are set by environmental variables](https://github.com/aws/aws-k8s-tester/commit/a8ca56ffd0c33657bf51cfd5889a98ea9669d60f).
   - e.g. `AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_CREATED`, `AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_CREATED_NAMES`, `AWS_K8S_TESTER_EKS_ADD_ON_CSRS_CREATED_NAMES` cannot be set because they are read-only.
@@ -39,7 +39,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.2...v1.1.3
 
 ### Dependency
 
-- Vendor [`k8s.io/kubernetes` for hollow node implementation with `"k8s.io/kubernetes/cmd/kubelet/app/options"`](https://github.com/aws/aws-k8s-tester/commit/).
+- Vendor [`k8s.io/kubernetes` for hollow node implementation with `"k8s.io/kubernetes/cmd/kubelet/app/options"`](https://github.com/aws/aws-k8s-tester/commit/48e97fb8935bbebcb6d1716f5f2d3416a2d5bddf).
 - Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.30.18`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.18) to [`v1.30.20`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.20).
 
 
