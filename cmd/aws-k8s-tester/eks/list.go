@@ -6,12 +6,12 @@ import (
 	"strings"
 	"time"
 
-	pkgaws "github.com/aws/aws-k8s-tester/pkg/aws"
+	pkg_aws "github.com/aws/aws-k8s-tester/pkg/aws"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/request"
-	awseks "github.com/aws/aws-sdk-go/service/eks"
+	aws_eks "github.com/aws/aws-sdk-go/service/eks"
 	"github.com/dustin/go-humanize"
 	"github.com/spf13/cobra"
 )
@@ -53,20 +53,20 @@ func newListClusters() *cobra.Command {
 
 func listClustersFunc(cmd *cobra.Command, args []string) {
 	lg, _ := logutil.GetDefaultZapLogger()
-	awsCfgEKS := &pkgaws.Config{
+	awsCfgEKS := &pkg_aws.Config{
 		Logger:      lg,
 		Region:      listRegion,
 		ResolverURL: listResolverURL,
 		SigningName: listSigningName,
 	}
-	ssEKS, _, _, err := pkgaws.New(awsCfgEKS)
+	ssEKS, _, _, err := pkg_aws.New(awsCfgEKS)
 	if err != nil {
 		panic(err)
 	}
-	svc := awseks.New(ssEKS)
+	svc := aws_eks.New(ssEKS)
 	clusterNames := make([]string, 0)
-	if err = svc.ListClustersPages(&awseks.ListClustersInput{},
-		func(output *awseks.ListClustersOutput, lastPage bool) bool {
+	if err = svc.ListClustersPages(&aws_eks.ListClustersInput{},
+		func(output *aws_eks.ListClustersOutput, lastPage bool) bool {
 			for _, name := range output.Clusters {
 				clusterNames = append(clusterNames, aws.StringValue(name))
 			}
@@ -82,7 +82,7 @@ func listClustersFunc(cmd *cobra.Command, args []string) {
 	fmt.Printf("Listing %d clusters\n", len(clusterNames))
 
 	for i, name := range clusterNames {
-		out, err := svc.DescribeCluster(&awseks.DescribeClusterInput{
+		out, err := svc.DescribeCluster(&aws_eks.DescribeClusterInput{
 			Name: aws.String(name),
 		})
 		if err != nil {
@@ -100,7 +100,7 @@ func listClustersFunc(cmd *cobra.Command, args []string) {
 				strings.HasPrefix(awsErr.Message(), "No cluster found for") {
 				fmt.Printf("deleting %q (reason: %v)\n", name, err)
 				if !listDeleteDry {
-					_, derr := svc.DeleteCluster(&awseks.DeleteClusterInput{Name: aws.String(name)})
+					_, derr := svc.DeleteCluster(&aws_eks.DeleteClusterInput{Name: aws.String(name)})
 					fmt.Println("deleted", name, derr)
 				}
 			}
@@ -132,7 +132,7 @@ func listClustersFunc(cmd *cobra.Command, args []string) {
 		if listDeleteFailed && aws.StringValue(clus.Status) == "FAILED" {
 			fmt.Printf("deleting %q (reason: %v)\n", name, aws.StringValue(clus.Status))
 			if !listDeleteDry {
-				_, derr := svc.DeleteCluster(&awseks.DeleteClusterInput{Name: aws.String(name)})
+				_, derr := svc.DeleteCluster(&aws_eks.DeleteClusterInput{Name: aws.String(name)})
 				fmt.Println("deleted", name, derr)
 			}
 
@@ -144,7 +144,7 @@ func listClustersFunc(cmd *cobra.Command, args []string) {
 		if len(listDeletePrefix) > 0 && strings.HasPrefix(name, listDeletePrefix) {
 			fmt.Printf("deleting %q (reason: %q)\n", name, listDeletePrefix)
 			if !listDeleteDry {
-				_, derr := svc.DeleteCluster(&awseks.DeleteClusterInput{Name: aws.String(name)})
+				_, derr := svc.DeleteCluster(&aws_eks.DeleteClusterInput{Name: aws.String(name)})
 				fmt.Println("deleted", name, derr)
 			}
 
@@ -162,7 +162,7 @@ func listClustersFunc(cmd *cobra.Command, args []string) {
 				createDur,
 			)
 			if !listDeleteDry {
-				_, derr := svc.DeleteCluster(&awseks.DeleteClusterInput{Name: aws.String(name)})
+				_, derr := svc.DeleteCluster(&aws_eks.DeleteClusterInput{Name: aws.String(name)})
 				fmt.Println("deleted", name, derr)
 			}
 

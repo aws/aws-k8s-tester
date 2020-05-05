@@ -20,7 +20,7 @@ set -xeu
 
 `
 
-func (e *eks) Deprecate() (err error) {
+func (e *eks) Deprecate(batchLimit int64, batchInterval time.Duration) (err error) {
 	rbPath := filepath.Join(e.cfg.Dir, "rollback.sh")
 	var rbF *os.File
 	rbF, err = createBashScript(rbPath)
@@ -87,8 +87,8 @@ func (e *eks) Deprecate() (err error) {
 
 	e.cfg.Logger.Info("😎 🙏 🚶 ✔️ 👍  checking deprecated APIs",
 		zap.Bool("enable-prompt", e.cfg.EnablePrompt),
-		zap.Int64("list-batch", e.cfg.ListBatch),
-		zap.Duration("list-interval", e.cfg.ListInterval),
+		zap.Int64("batch-limit", batchLimit),
+		zap.Duration("batch-interval", batchInterval),
 		zap.String("rollback-script", rbPath),
 		zap.String("upgrade-script", upPath),
 		zap.String("version-current", fmt.Sprintf("%.2f", cur)),
@@ -136,22 +136,19 @@ func (e *eks) Deprecate() (err error) {
 					zap.String("namespace", namespace),
 				)
 
-				rs1, err := e.ListAppsV1beta1Deployments(namespace, e.cfg.ListBatch, e.cfg.ListInterval)
+				rs1, err := e.ListAppsV1beta1Deployments(namespace, batchLimit, batchInterval)
 				if err != nil {
 					return err
 				}
-				time.Sleep(e.cfg.ListInterval)
-				rs2, err := e.ListAppsV1beta2Deployments(namespace, e.cfg.ListBatch, e.cfg.ListInterval)
+				rs2, err := e.ListAppsV1beta2Deployments(namespace, batchLimit, batchInterval)
 				if err != nil {
 					return err
 				}
-				time.Sleep(e.cfg.ListInterval)
-				rs3, err := e.ListAppsV1Deployments(namespace, e.cfg.ListBatch, e.cfg.ListInterval)
+				rs3, err := e.ListAppsV1Deployments(namespace, batchLimit, batchInterval)
 				if err != nil {
 					return err
 				}
-				time.Sleep(e.cfg.ListInterval)
-				rs4, err := e.ListExtensionsV1beta1Deployments(namespace, e.cfg.ListBatch, e.cfg.ListInterval)
+				rs4, err := e.ListExtensionsV1beta1Deployments(namespace, batchLimit, batchInterval)
 				if err != nil {
 					return err
 				}
@@ -162,7 +159,6 @@ func (e *eks) Deprecate() (err error) {
 						zap.String("from-kind", from.Kind),
 						zap.String("namespace", namespace),
 					)
-					time.Sleep(e.cfg.ListInterval)
 					continue
 				}
 				resources := make(map[string]struct{})
@@ -199,6 +195,7 @@ func (e *eks) Deprecate() (err error) {
 							zap.String("current-api-version", orig.APIVersion),
 							zap.String("expected-api-version", to.APIVersion),
 						)
+						time.Sleep(batchInterval)
 						continue
 					}
 
@@ -254,17 +251,15 @@ func (e *eks) Deprecate() (err error) {
 					zap.String("namespace", namespace),
 				)
 
-				rs1, err := e.ListAppsV1beta1StatefulSets(namespace, e.cfg.ListBatch, e.cfg.ListInterval)
+				rs1, err := e.ListAppsV1beta1StatefulSets(namespace, batchLimit, batchInterval)
 				if err != nil {
 					return err
 				}
-				time.Sleep(e.cfg.ListInterval)
-				rs2, err := e.ListAppsV1beta2StatefulSets(namespace, e.cfg.ListBatch, e.cfg.ListInterval)
+				rs2, err := e.ListAppsV1beta2StatefulSets(namespace, batchLimit, batchInterval)
 				if err != nil {
 					return err
 				}
-				time.Sleep(e.cfg.ListInterval)
-				rs3, err := e.ListAppsV1StatefulSets(namespace, e.cfg.ListBatch, e.cfg.ListInterval)
+				rs3, err := e.ListAppsV1StatefulSets(namespace, batchLimit, batchInterval)
 				if err != nil {
 					return err
 				}
@@ -275,7 +270,7 @@ func (e *eks) Deprecate() (err error) {
 						zap.String("from-kind", from.Kind),
 						zap.String("namespace", namespace),
 					)
-					time.Sleep(e.cfg.ListInterval)
+					time.Sleep(batchInterval)
 					continue
 				}
 				resources := make(map[string]struct{})
@@ -363,12 +358,12 @@ func (e *eks) Deprecate() (err error) {
 					zap.String("namespace", namespace),
 				)
 
-				rs1, err := e.ListExtensionsV1beta1DaemonSets(namespace, e.cfg.ListBatch, e.cfg.ListInterval)
+				rs1, err := e.ListExtensionsV1beta1DaemonSets(namespace, batchLimit, batchInterval)
 				if err != nil {
 					return err
 				}
-				time.Sleep(e.cfg.ListInterval)
-				rs2, err := e.ListAppsV1DaemonSets(namespace, e.cfg.ListBatch, e.cfg.ListInterval)
+				time.Sleep(batchInterval)
+				rs2, err := e.ListAppsV1DaemonSets(namespace, batchLimit, batchInterval)
 				if err != nil {
 					return err
 				}
@@ -379,7 +374,7 @@ func (e *eks) Deprecate() (err error) {
 						zap.String("from-kind", from.Kind),
 						zap.String("namespace", namespace),
 					)
-					time.Sleep(e.cfg.ListInterval)
+					time.Sleep(batchInterval)
 					continue
 				}
 				resources := make(map[string]struct{})
@@ -464,12 +459,12 @@ func (e *eks) Deprecate() (err error) {
 					zap.String("namespace", namespace),
 				)
 
-				rs1, err := e.ListExtensionsV1beta1ReplicaSets(namespace, e.cfg.ListBatch, e.cfg.ListInterval)
+				rs1, err := e.ListExtensionsV1beta1ReplicaSets(namespace, batchLimit, batchInterval)
 				if err != nil {
 					return err
 				}
-				time.Sleep(e.cfg.ListInterval)
-				rs2, err := e.ListAppsV1ReplicaSets(namespace, e.cfg.ListBatch, e.cfg.ListInterval)
+				time.Sleep(batchInterval)
+				rs2, err := e.ListAppsV1ReplicaSets(namespace, batchLimit, batchInterval)
 				if err != nil {
 					return err
 				}
@@ -480,7 +475,7 @@ func (e *eks) Deprecate() (err error) {
 						zap.String("from-kind", from.Kind),
 						zap.String("namespace", namespace),
 					)
-					time.Sleep(e.cfg.ListInterval)
+					time.Sleep(batchInterval)
 					continue
 				}
 				resources := make(map[string]struct{})
@@ -565,12 +560,11 @@ func (e *eks) Deprecate() (err error) {
 					zap.String("namespace", namespace),
 				)
 
-				rs1, err := e.ListExtensionsV1beta1NetworkPolicies(namespace, e.cfg.ListBatch, e.cfg.ListInterval)
+				rs1, err := e.ListExtensionsV1beta1NetworkPolicies(namespace, batchLimit, batchInterval)
 				if err != nil {
 					return err
 				}
-				time.Sleep(e.cfg.ListInterval)
-				rs2, err := e.ListNetworkingV1NetworkPolicies(namespace, e.cfg.ListBatch, e.cfg.ListInterval)
+				rs2, err := e.ListNetworkingV1NetworkPolicies(namespace, batchLimit, batchInterval)
 				if err != nil {
 					return err
 				}
@@ -581,7 +575,7 @@ func (e *eks) Deprecate() (err error) {
 						zap.String("from-kind", from.Kind),
 						zap.String("namespace", namespace),
 					)
-					time.Sleep(e.cfg.ListInterval)
+					time.Sleep(batchInterval)
 					continue
 				}
 				resources := make(map[string]struct{})
@@ -664,12 +658,11 @@ func (e *eks) Deprecate() (err error) {
 				zap.String("to-kind", to.Kind),
 			)
 
-			rs1, err := e.ListExtensionsV1beta1PodSecurityPolicies(e.cfg.ListBatch, e.cfg.ListInterval)
+			rs1, err := e.ListExtensionsV1beta1PodSecurityPolicies(batchLimit, batchInterval)
 			if err != nil {
 				return err
 			}
-			time.Sleep(e.cfg.ListInterval)
-			rs2, err := e.ListPolicyV1beta1PodSecurityPolicies(e.cfg.ListBatch, e.cfg.ListInterval)
+			rs2, err := e.ListPolicyV1beta1PodSecurityPolicies(batchLimit, batchInterval)
 			if err != nil {
 				return err
 			}
@@ -679,7 +672,7 @@ func (e *eks) Deprecate() (err error) {
 					zap.String("from-api-version", from.APIVersion),
 					zap.String("from-kind", from.Kind),
 				)
-				time.Sleep(e.cfg.ListInterval)
+				time.Sleep(batchInterval)
 				continue
 			}
 			resources := make(map[string]struct{})

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	awscfn "github.com/aws/aws-k8s-tester/pkg/aws/cloudformation"
+	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -705,7 +705,7 @@ func (ts *Tester) createVPC() error {
 		Capabilities: aws.StringSlice([]string{"CAPABILITY_IAM"}),
 		OnFailure:    aws.String(cloudformation.OnFailureDelete),
 		TemplateBody: aws.String(templateBody),
-		Tags: awscfn.NewTags(map[string]string{
+		Tags: cfn.NewTags(map[string]string{
 			"Kind":                   "aws-k8s-tester",
 			"Name":                   ts.cfg.Name,
 			"Network":                cfnNetworkTagValue,
@@ -772,7 +772,7 @@ func (ts *Tester) createVPC() error {
 	}
 	ts.cfg.Parameters.VPCCFNStackID = aws.StringValue(stackOutput.StackId)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
-	ch := awscfn.Poll(
+	ch := cfn.Poll(
 		ctx,
 		ts.stopCreationCh,
 		ts.lg,
@@ -782,7 +782,7 @@ func (ts *Tester) createVPC() error {
 		time.Minute+30*time.Second,
 		20*time.Second,
 	)
-	var st awscfn.StackStatus
+	var st cfn.StackStatus
 	for st = range ch {
 		select {
 		case <-ts.stopCreationCh:
@@ -853,7 +853,7 @@ func (ts *Tester) deleteVPC() error {
 		return err
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
-	ch := awscfn.Poll(
+	ch := cfn.Poll(
 		ctx,
 		make(chan struct{}), // do not exit on stop
 		ts.lg,
@@ -864,7 +864,7 @@ func (ts *Tester) deleteVPC() error {
 		20*time.Second,
 	)
 
-	var st awscfn.StackStatus
+	var st cfn.StackStatus
 	for st = range ch {
 		if st.Error != nil {
 			cancel()

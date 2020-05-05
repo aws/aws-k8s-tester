@@ -3,6 +3,7 @@ package mng
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sort"
@@ -11,15 +12,16 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
-	awscfn "github.com/aws/aws-k8s-tester/pkg/aws/cloudformation"
-	awsapiec2 "github.com/aws/aws-k8s-tester/pkg/aws/ec2"
+	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
+	aws_ec2 "github.com/aws/aws-k8s-tester/pkg/aws/ec2"
+	k8s_object "github.com/aws/aws-k8s-tester/pkg/k8s-object"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/autoscaling"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/eks"
-	awseks "github.com/aws/aws-sdk-go/service/eks"
+	aws_eks "github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
 	"github.com/dustin/go-humanize"
 	"go.uber.org/zap"
@@ -181,17 +183,17 @@ func (ts *tester) createASG() error {
 			}
 
 			ts.cfg.Logger.Info("creating a managed node group using EKS API", zap.String("mng-name", cur.Name))
-			createInput := awseks.CreateNodegroupInput{
+			createInput := aws_eks.CreateNodegroupInput{
 				ClusterName:   aws.String(ts.cfg.EKSConfig.Name),
 				NodegroupName: aws.String(cur.Name),
 				NodeRole:      aws.String(ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleARN),
 				AmiType:       aws.String(cur.AMIType),
 				DiskSize:      aws.Int64(int64(cur.VolumeSize)),
 				InstanceTypes: aws.StringSlice(cur.InstanceTypes),
-				RemoteAccess: &awseks.RemoteAccessConfig{
+				RemoteAccess: &aws_eks.RemoteAccessConfig{
 					Ec2SshKey: aws.String(ts.cfg.EKSConfig.RemoteAccessKeyName),
 				},
-				ScalingConfig: &awseks.NodegroupScalingConfig{
+				ScalingConfig: &aws_eks.NodegroupScalingConfig{
 					MinSize:     aws.Int64(int64(cur.ASGMinSize)),
 					MaxSize:     aws.Int64(int64(cur.ASGMaxSize)),
 					DesiredSize: aws.Int64(int64(cur.ASGDesiredCapacity)),
@@ -232,7 +234,7 @@ func (ts *tester) createASG() error {
 			}
 
 			cur.CreateRequested = true
-			cur.Status = awseks.NodegroupStatusCreating
+			cur.Status = aws_eks.NodegroupStatusCreating
 			cur.Instances = make(map[string]ec2config.Instance)
 			cur.Logs = make(map[string][]string)
 			ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName] = cur
@@ -261,7 +263,7 @@ func (ts *tester) createASG() error {
 				StackName:    aws.String(cur.Name),
 				Capabilities: aws.StringSlice([]string{"CAPABILITY_IAM"}),
 				OnFailure:    aws.String(cloudformation.OnFailureDelete),
-				Tags: awscfn.NewTags(map[string]string{
+				Tags: cfn.NewTags(map[string]string{
 					"Kind":                   "aws-k8s-tester",
 					"Name":                   ts.cfg.EKSConfig.Name,
 					"aws-k8s-tester-version": version.ReleaseVersion,
@@ -373,7 +375,7 @@ func (ts *tester) createASG() error {
 		mngStackID := cur.CFNStackID
 		if mngStackID != "" {
 			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
-			ch := awscfn.Poll(
+			ch := cfn.Poll(
 				ctx,
 				ts.cfg.Stopc,
 				ts.cfg.Logger,
@@ -383,7 +385,7 @@ func (ts *tester) createASG() error {
 				2*time.Minute,
 				15*time.Second,
 			)
-			var st awscfn.StackStatus
+			var st cfn.StackStatus
 			for st = range ch {
 				if st.Error != nil {
 					cur.Status = fmt.Sprintf("failed to create managed node group (%v)", st.Error)
@@ -413,7 +415,7 @@ func (ts *tester) createASG() error {
 			ts.cfg.EKSAPI,
 			ts.cfg.EKSConfig.Name,
 			mngName,
-			awseks.NodegroupStatusActive,
+			aws_eks.NodegroupStatusActive,
 			time.Minute,
 			20*time.Second,
 		)
@@ -423,7 +425,7 @@ func (ts *tester) createASG() error {
 				return serr
 			}
 			ss := aws.StringValue(sv.NodeGroup.Status)
-			if sv.Error != nil && ss == awseks.NodegroupStatusCreateFailed {
+			if sv.Error != nil && ss == aws_eks.NodegroupStatusCreateFailed {
 				ts.cfg.Logger.Warn("node group failed to create",
 					zap.String("node-group-status", ss),
 					zap.Error(sv.Error),
@@ -482,7 +484,7 @@ func (ts *tester) deleteASG() error {
 			})
 		} else {
 			ts.cfg.Logger.Info("deleting managed node group using EKS API", zap.String("name", mngName))
-			_, err = ts.cfg.EKSAPI.DeleteNodegroup(&awseks.DeleteNodegroupInput{
+			_, err = ts.cfg.EKSAPI.DeleteNodegroup(&aws_eks.DeleteNodegroupInput{
 				ClusterName:   aws.String(ts.cfg.EKSConfig.Name),
 				NodegroupName: aws.String(mngName),
 			})
@@ -516,7 +518,7 @@ func (ts *tester) deleteASG() error {
 				initialWait, timeout = 3*time.Minute, 20*time.Minute
 			}
 			ctx, cancel := context.WithTimeout(context.Background(), timeout)
-			ch := awscfn.Poll(
+			ch := cfn.Poll(
 				ctx,
 				make(chan struct{}), // do not exit on stop
 				ts.cfg.Logger,
@@ -526,7 +528,7 @@ func (ts *tester) deleteASG() error {
 				initialWait,
 				15*time.Second,
 			)
-			var st awscfn.StackStatus
+			var st cfn.StackStatus
 			for st = range ch {
 				if st.Error != nil {
 					cancel()
@@ -593,7 +595,7 @@ const ManagedNodeGroupStatusDELETEDORNOTEXIST = "DELETED/NOT-EXIST"
 // ManagedNodeGroupStatus represents the CloudFormation status.
 type ManagedNodeGroupStatus struct {
 	NodeGroupName string
-	NodeGroup     *awseks.Nodegroup
+	NodeGroup     *aws_eks.Nodegroup
 	Error         error
 }
 
@@ -649,7 +651,7 @@ func Poll(
 				}
 			}
 
-			output, err := eksAPI.DescribeNodegroup(&awseks.DescribeNodegroupInput{
+			output, err := eksAPI.DescribeNodegroup(&aws_eks.DescribeNodegroupInput{
 				ClusterName:   aws.String(clusterName),
 				NodegroupName: aws.String(mngName),
 			})
@@ -694,9 +696,9 @@ func Poll(
 				lg.Info("desired managed node group status; done", zap.String("status", currentStatus))
 				close(ch)
 				return
-			case awseks.NodegroupStatusCreateFailed,
-				awseks.NodegroupStatusDeleteFailed,
-				awseks.NodegroupStatusDegraded:
+			case aws_eks.NodegroupStatusCreateFailed,
+				aws_eks.NodegroupStatusDeleteFailed,
+				aws_eks.NodegroupStatusDegraded:
 				ch <- ManagedNodeGroupStatus{NodeGroupName: mngName, NodeGroup: nodeGroup, Error: fmt.Errorf("unexpected mng status %q", currentStatus)}
 				close(ch)
 				return
@@ -820,7 +822,7 @@ func (ts *tester) waitForNodes(mngName string) error {
 		zap.String("asg-name", cur.ASGName),
 		zap.Strings("instance-ids", instanceIDs),
 	)
-	ec2Instances, err := awsapiec2.PollUntilRunning(
+	ec2Instances, err := aws_ec2.PollUntilRunning(
 		waitDur,
 		ts.cfg.Logger,
 		ts.cfg.EC2API,
@@ -903,6 +905,7 @@ func (ts *tester) waitForNodes(mngName string) error {
 				continue
 			}
 			nodeName := node.GetName()
+			nodeInfo, _ := json.Marshal(k8s_object.ParseNodeInfo(node.Status.NodeInfo))
 
 			// e.g. given node name ip-192-168-81-186.us-west-2.compute.internal + DHCP option my-private-dns
 			// InternalIP == 192.168.81.186
@@ -912,8 +915,10 @@ func (ts *tester) waitForNodes(mngName string) error {
 			// ExternalDNS == ec2-52-38-118-149.us-west-2.compute.amazonaws.com
 			ts.cfg.Logger.Info("checking node address with EC2 Private DNS",
 				zap.String("node-name", nodeName),
+				zap.String("node-info", string(nodeInfo)),
 				zap.String("labels", fmt.Sprintf("%v", labels)),
 			)
+
 			hostName := ""
 			for _, av := range node.Status.Addresses {
 				ts.cfg.Logger.Info("node status address",

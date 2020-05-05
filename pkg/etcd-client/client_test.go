@@ -9,15 +9,18 @@ import (
 )
 
 func TestEtcd(t *testing.T) {
-	t.Skip()
+	// t.Skip()
 
 	e, err := New(Config{
 		EtcdClientConfig: clientv3.Config{
 			Endpoints: []string{"localhost:2379"},
 		},
-		ListBath:     1,
-		ListInterval: 100 * time.Millisecond,
 	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = e.Put(5*time.Second, "a", "b", 15*time.Second)
 	if err != nil {
 		t.Fatal(err)
 	}

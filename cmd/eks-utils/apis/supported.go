@@ -6,7 +6,8 @@ import (
 	"sort"
 	"time"
 
-	k8sclient "github.com/aws/aws-k8s-tester/pkg/k8s-client"
+	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
+	"github.com/aws/aws-k8s-tester/pkg/logutil"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
@@ -40,11 +41,14 @@ func supportedFunc(cmd *cobra.Command, args []string) {
 	if kubectlPath == "" {
 		panic(errors.New("'kubectl' not found"))
 	}
+
 	fmt.Printf("\n\n************************\nstarting 'eks-utils apis supported'\n\n")
+	lg, err := logutil.GetDefaultZapLogger()
+	if err != nil {
+		panic(err)
+	}
 
-	lg := zap.NewExample()
-
-	kcfg := &k8sclient.EKSConfig{
+	kcfg := &k8s_client.EKSConfig{
 		KubeConfigPath:    kubeConfigPath,
 		KubeConfigContext: kubeConfigContext,
 		KubectlPath:       kubectlPath,
@@ -53,7 +57,7 @@ func supportedFunc(cmd *cobra.Command, args []string) {
 		ClientBurst:       clientBurst,
 		ClientTimeout:     30 * time.Second,
 	}
-	cli, err := k8sclient.NewEKS(kcfg)
+	cli, err := k8s_client.NewEKS(kcfg)
 	if err != nil {
 		lg.Fatal("failed to create client", zap.Error(err))
 	}

@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
-	awscfn "github.com/aws/aws-k8s-tester/pkg/aws/cloudformation"
-	awsapiec2 "github.com/aws/aws-k8s-tester/pkg/aws/ec2"
+	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
+	aws_ec2 "github.com/aws/aws-k8s-tester/pkg/aws/ec2"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/autoscaling"
@@ -410,7 +410,7 @@ func (ts *Tester) createASGs() (err error) {
 			Capabilities: aws.StringSlice([]string{"CAPABILITY_NAMED_IAM"}),
 			OnFailure:    aws.String(cloudformation.OnFailureDelete),
 			TemplateBody: aws.String(tmpl),
-			Tags: awscfn.NewTags(map[string]string{
+			Tags: cfn.NewTags(map[string]string{
 				"Kind":                   "aws-k8s-tester",
 				"Name":                   ts.cfg.Name,
 				"aws-k8s-tester-version": version.ReleaseVersion,
@@ -512,7 +512,7 @@ func (ts *Tester) createASGs() (err error) {
 		ts.lg.Info("waiting for ASG", zap.String("name", asgName))
 
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
-		ch := awscfn.Poll(
+		ch := cfn.Poll(
 			ctx,
 			ts.stopCreationCh,
 			ts.lg,
@@ -522,7 +522,7 @@ func (ts *Tester) createASGs() (err error) {
 			2*time.Minute,
 			30*time.Second,
 		)
-		var st awscfn.StackStatus
+		var st cfn.StackStatus
 		for st = range ch {
 			if st.Error != nil {
 				ts.cfg.RecordStatus(fmt.Sprintf("failed to create ASG (%v)", st.Error))
@@ -584,7 +584,7 @@ func (ts *Tester) createASGs() (err error) {
 			zap.String("asg-name", asgName),
 			zap.Strings("instance-ids", instanceIDs),
 		)
-		ec2Instances, err := awsapiec2.PollUntilRunning(
+		ec2Instances, err := aws_ec2.PollUntilRunning(
 			10*time.Minute,
 			ts.lg,
 			ts.ec2API,
@@ -652,7 +652,7 @@ func (ts *Tester) deleteASGs() (err error) {
 		ts.lg.Info("waiting for ASG", zap.String("name", asgName))
 
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
-		ch := awscfn.Poll(
+		ch := cfn.Poll(
 			ctx,
 			make(chan struct{}), // do not exit on stop
 			ts.lg,
@@ -663,7 +663,7 @@ func (ts *Tester) deleteASGs() (err error) {
 			20*time.Second,
 		)
 
-		var st awscfn.StackStatus
+		var st cfn.StackStatus
 		for st = range ch {
 			if st.Error != nil {
 				cancel()

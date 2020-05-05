@@ -298,7 +298,7 @@ func (cfg *Config) validateConfig() error {
 	}
 
 	if len(cfg.LogOutputs) == 1 && (cfg.LogOutputs[0] == "stderr" || cfg.LogOutputs[0] == "stdout") {
-		cfg.LogOutputs = append(cfg.LogOutputs, cfg.ConfigPath+".log")
+		cfg.LogOutputs = append(cfg.LogOutputs, strings.ReplaceAll(cfg.ConfigPath, ".yaml", "")+".log")
 	}
 
 	if cfg.KubectlCommandsOutputPath == "" {

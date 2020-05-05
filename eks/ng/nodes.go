@@ -3,6 +3,7 @@ package ng
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sort"
@@ -11,8 +12,9 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
-	awscfn "github.com/aws/aws-k8s-tester/pkg/aws/cloudformation"
-	awsapiec2 "github.com/aws/aws-k8s-tester/pkg/aws/ec2"
+	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
+	aws_ec2 "github.com/aws/aws-k8s-tester/pkg/aws/ec2"
+	k8s_object "github.com/aws/aws-k8s-tester/pkg/k8s-object"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/autoscaling"
@@ -32,15 +34,12 @@ https://raw.githubusercontent.com/awslabs/amazon-eks-ami/master/amazon-eks-nodeg
 
 https://aws.amazon.com/about-aws/whats-new/2019/09/amazon-eks-provides-eks-optimized-ami-metadata-via-ssm-parameters/
 
-
-
 e.g.
 aws ssm get-parameters --names /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
 
 e.g.
-aws ssm get-parameters --names /aws/service/eks/optimized-ami/1.15/amazon-linux-2/recommended/image_id
-aws ssm get-parameters --names /aws/service/bottlerocket/aws-k8s-1.15/x86_64/latest/image_id
-
+aws ssm get-parameters --names /aws/service/eks/optimized-ami/1.16/amazon-linux-2/recommended/image_id
+aws ssm get-parameters --names /aws/service/bottlerocket/aws-k8s-1.16/x86_64/latest/image_id
 
 TODO
 
@@ -456,7 +455,7 @@ func (ts *tester) createASGs() error {
 			Capabilities: aws.StringSlice([]string{"CAPABILITY_NAMED_IAM"}),
 			OnFailure:    aws.String(cloudformation.OnFailureDelete),
 			TemplateBody: aws.String(tmpl),
-			Tags: awscfn.NewTags(map[string]string{
+			Tags: cfn.NewTags(map[string]string{
 				"Kind":                   "aws-k8s-tester",
 				"Name":                   ts.cfg.EKSConfig.Name,
 				"aws-k8s-tester-version": version.ReleaseVersion,
@@ -570,7 +569,7 @@ func (ts *tester) createASGs() error {
 
 		now := time.Now()
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
-		ch := awscfn.Poll(
+		ch := cfn.Poll(
 			ctx,
 			ts.cfg.Stopc,
 			ts.cfg.Logger,
@@ -580,7 +579,7 @@ func (ts *tester) createASGs() error {
 			2*time.Minute,
 			30*time.Second,
 		)
-		var st awscfn.StackStatus
+		var st cfn.StackStatus
 		for st = range ch {
 			if st.Error != nil {
 				ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("failed to create ASG (%v)", st.Error))
@@ -662,7 +661,7 @@ func (ts *tester) deleteASGs() error {
 	for asgName, cur := range ts.cfg.EKSConfig.AddOnNodeGroups.ASGs {
 		timeStart := time.Now()
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
-		ch := awscfn.Poll(
+		ch := cfn.Poll(
 			ctx,
 			make(chan struct{}), // do not exit on stop
 			ts.cfg.Logger,
@@ -672,7 +671,7 @@ func (ts *tester) deleteASGs() error {
 			2*time.Minute,
 			20*time.Second,
 		)
-		var st awscfn.StackStatus
+		var st cfn.StackStatus
 		for st = range ch {
 			if st.Error != nil {
 				cancel()
@@ -727,7 +726,7 @@ func (ts *tester) waitForNodes(asgName string) error {
 		zap.Strings("instance-ids", instanceIDs),
 		zap.Duration("wait", waitDur),
 	)
-	ec2Instances, err := awsapiec2.PollUntilRunning(
+	ec2Instances, err := aws_ec2.PollUntilRunning(
 		waitDur,
 		ts.cfg.Logger,
 		ts.cfg.EC2API,
@@ -810,6 +809,7 @@ func (ts *tester) waitForNodes(asgName string) error {
 				continue
 			}
 			nodeName := node.GetName()
+			nodeInfo, _ := json.Marshal(k8s_object.ParseNodeInfo(node.Status.NodeInfo))
 
 			// e.g. given node name ip-192-168-81-186.us-west-2.compute.internal + DHCP option my-private-dns
 			// InternalIP == 192.168.81.186
@@ -819,8 +819,10 @@ func (ts *tester) waitForNodes(asgName string) error {
 			// ExternalDNS == ec2-52-38-118-149.us-west-2.compute.amazonaws.com
 			ts.cfg.Logger.Info("checking node address with EC2 Private DNS",
 				zap.String("node-name", nodeName),
+				zap.String("node-info", string(nodeInfo)),
 				zap.String("labels", fmt.Sprintf("%v", labels)),
 			)
+
 			hostName := ""
 			for _, av := range node.Status.Addresses {
 				ts.cfg.Logger.Info("node status address",

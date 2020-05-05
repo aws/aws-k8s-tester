@@ -3,6 +3,45 @@
 <hr>
 
 
+## [v1.1.5](https://github.com/aws/aws-k8s-tester/releases/tag/v1.1.5) (2020-05-05)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.4...v1.1.5).
+
+### `eks-utils`
+
+- Rename [`eks-utils apis deprecate --list-batch` flag to `--batch-limit`](https://github.com/aws/aws-k8s-tester/commit/).
+- Rename [`eks-utils apis deprecate --list-interval` flag to `--batch-interval`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`eks-utils nodes list` command](https://github.com/aws/aws-k8s-tester/commit/).
+
+### `etcd-utils`
+
+- Rename [`etcd-utils k8s list --csv-output` flag to `--output`](https://github.com/aws/aws-k8s-tester/commit/).
+- Rename [`etcd-utils k8s list --prefix` flag to `--prefixes`](https://github.com/aws/aws-k8s-tester/commit/).
+- Rename [`etcd-utils k8s list --batch` flag to `--batch-limit`](https://github.com/aws/aws-k8s-tester/commit/).
+- Rename [`etcd-utils k8s list --interval` flag to `--batch-interval`](https://github.com/aws/aws-k8s-tester/commit/).
+- Remove [`etcd-utils k8s list --csv-ids` flag](https://github.com/aws/aws-k8s-tester/commit/).
+- Remove [`etcd-utils k8s list --csv-aggregated-ids` flag](https://github.com/aws/aws-k8s-tester/commit/).
+- Remove [`etcd-utils k8s list --csv-aggregated-output` flag](https://github.com/aws/aws-k8s-tester/commit/).
+- Output [prefix with no resource found with "none"](https://github.com/aws/aws-k8s-tester/commit/).
+
+### `pkg/k8s-client`
+
+- Change [`Deprecate()` method signature to `Deprecate(batchLimit int64, batchInterval time.Duration)`](https://github.com/aws/aws-k8s-tester/commit/).
+- Remove [`EKSConfig.ListBatch`](https://github.com/aws/aws-k8s-tester/commit/).
+- Remove [`EKSConfig.ListInterval`](https://github.com/aws/aws-k8s-tester/commit/).
+
+### `pkg/aws/cloudformation` is now `pkg/aws/cfn`
+
+- Rename [`"github.com/aws/aws-k8s-tester/pkg/aws/cloudformation"` to `"github.com/aws/aws-k8s-tester/pkg/aws/cfn"`](https://github.com/aws/aws-k8s-tester/commit/).
+
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.30.20`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.20) to [`v1.30.21`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.21).
+
+
+<hr>
+
+
 ## [v1.1.4](https://github.com/aws/aws-k8s-tester/releases/tag/v1.1.4) (2020-05-04)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.3...v1.1.4).

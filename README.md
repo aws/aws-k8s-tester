@@ -262,7 +262,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REPOSITORY_IMAGE_TAG=latest \
 Install `eks-utils` from https://github.com/aws/aws-k8s-tester/releases.
 
 ```
-AWS_K8S_TESTER_VERSION=v1.1.4
+AWS_K8S_TESTER_VERSION=v1.1.5
 
 DOWNLOAD_URL=https://github.com/aws/aws-k8s-tester/releases/download
 rm -rf /tmp/aws-k8s-tester
@@ -296,7 +296,7 @@ eks-utils apis \
 
 # to write API upgrade/rollback scripts and YAML files in "/tmp/eks-utils"
 #
-# make sure to set proper "--list-batch" and "--list-interval"
+# make sure to set proper "--batch-limit" and "--batch-interval"
 # to not overload EKS master; if it's set too high, it can affect
 # production workloads slowing down kube-apiserver
 rm -rf /tmp/eks-utils-resources
@@ -304,9 +304,9 @@ eks-utils apis \
   --kubeconfig /tmp/kubeconfig.yaml \
   --enable-prompt \
   deprecate \
-  --dir /tmp/eks-utils-resources \
-  --list-batch 10 \
-  --list-interval 2s
+  --batch-limit 10 \
+  --batch-interval 2s \
+  --dir /tmp/eks-utils-resources
 
 # this command does not apply or create any resources
 # it only lists the resources that need be upgraded
@@ -332,42 +332,8 @@ To minimize the impact of list calls, `etcd-utils k8s list` reads keys with lead
 etcd-utils k8s \
   --endpoints http://localhost:2379 \
   list \
-  --election-prefix __etcd_utils_k8s_list \
-  --election-timeout 30s \
-  --batch 10 \
-  --interval 5s \
-  --prefix /registry/deployments \
-  --csv-ids id1,id2 \
-  --csv-output /tmp/etcd-utils-k8s-list.output.csv \
-  --csv-aggregated-ids id1,id2 \
-  --csv-aggregated-output /tmp/etcd-utils-k8s-list.output.aggregated.csv \
-  --done-key __etcd_utils_k8s_list_done
-```
+  --prefixes /registry/deployments \
+  --output /tmp/etcd-utils-k8s-list.output.yaml
 
-Example outputs:
-
-```
-************************
-starting 'etcd-utils k8s list'
-
-{"level":"info","ts":"14.662Z","caller":"etcd-client.go:91","msg":"campaigning","prefix":"__etcd_utils_k8s_list_deployments_election"}
-{"level":"info","ts":"14.665Z","caller":"etcd-client.go:96","msg":"elected as a leader"}
-{"level":"info","ts":"14.667Z","caller":"etcd-client.go:71","msg":"getting","key":"__etcd_utils_k8s_list_deployments_done"}
-{"level":"info","ts":"14.668Z","caller":"etcd-client.go:78","msg":"got","key":"__etcd_utils_k8s_list_deployments_done","kvs":0}
-{"level":"info","ts":"14.674Z","caller":"etcd-client.go:121","msg":"getting response","start-key":"/registry/deployments","kvs":200,"more":true}
-{"level":"info","ts":"19.686Z","caller":"etcd-client.go:121","msg":"getting response","start-key":"/registry/deployments/es79k901jdcb/elasticsearch-exporter\u0000","kvs":200,"more":true}
-{"level":"info","ts":"24.703Z","caller":"etcd-client.go:121","msg":"getting response","start-key":"/registry/deployments/prod-design/instance-irmx3blzfd\u0000","kvs":200,"more":true}
-{"level":"info","ts":"29.724Z","caller":"etcd-client.go:121","msg":"getting response","start-key":"/registry/deployments/prod-field-aaa-design/instance-3d4kgyy16c\u0000","kvs":200,"more":true}
-{"level":"info","ts":"34.742Z","caller":"etcd-client.go:121","msg":"getting response","start-key":"/registry/deployments/prod-pto-aaa-cytym3zgrj-design-profilemanager/profile-manager-service\u0000","kvs":200,"more":true}
-{"level":"info","ts":"39.759Z","caller":"etcd-client.go:121","msg":"getting response","start-key":"/registry/deployments/test-deploy/instance-7ntf7309\u0000","kvs":200,"more":true}
-{"level":"info","ts":"44.777Z","caller":"etcd-client.go:121","msg":"getting response","start-key":"/registry/deployments/test-deploy/instance-mn934h8n3z\u0000","kvs":200,"more":true}
-...
-{"level":"info","ts":"54.794Z","caller":"etcd-client.go:135","msg":"got response","kvs":1660}
-{"level":"info","ts":"54.794Z","caller":"k8s/list.go:139","msg":"writing to CSV","ids":["id1","id2"],"path":"/tmp/etcd_utils_k8s_list_deployments.csv"}
-{"level":"info","ts":"54.818Z","caller":"k8s/list.go:152","msg":"saved to CSV","ids":["us-west-2","id2"],"path":"/tmp/etcd_utils_k8s_list_deployments.csv"}
-{"level":"info","ts":"54.818Z","caller":"etcd-client.go:62","msg":"writing","key":"__etcd_utils_k8s_list_deployments_done"}
-{"level":"info","ts":"54.820Z","caller":"etcd-client.go:66","msg":"wrote","key":"__etcd_utils_k8s_list_deployments_done"}
-
-'etcd-utils k8s list' success
-{"level":"info","ts":"54.820Z","caller":"etcd-client.go:58","msg":"closed client"}
+# or ".json"
 ```

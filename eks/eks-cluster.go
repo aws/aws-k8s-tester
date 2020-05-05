@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
-	awscfn "github.com/aws/aws-k8s-tester/pkg/aws/cloudformation"
+	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
@@ -250,7 +250,7 @@ func (ts *Tester) createEKS() error {
 			Capabilities: aws.StringSlice([]string{"CAPABILITY_IAM"}),
 			OnFailure:    aws.String(cloudformation.OnFailureDelete),
 			TemplateBody: aws.String(tmpl),
-			Tags: awscfn.NewTags(map[string]string{
+			Tags: cfn.NewTags(map[string]string{
 				"Kind":                   "aws-k8s-tester",
 				"Name":                   ts.cfg.Name,
 				"aws-k8s-tester-version": version.ReleaseVersion,
@@ -293,7 +293,7 @@ func (ts *Tester) createEKS() error {
 		}
 		ts.cfg.Status.ClusterCFNStackID = aws.StringValue(stackOutput.StackId)
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
-		ch := awscfn.Poll(
+		ch := cfn.Poll(
 			ctx,
 			ts.stopCreationCh,
 			ts.lg,
@@ -303,7 +303,7 @@ func (ts *Tester) createEKS() error {
 			9*time.Minute,
 			30*time.Second,
 		)
-		var st awscfn.StackStatus
+		var st cfn.StackStatus
 		for st = range ch {
 			if st.Error != nil {
 				ts.cfg.RecordStatus(fmt.Sprintf("failed to create cluster (%v)", st.Error))
@@ -382,7 +382,7 @@ func (ts *Tester) deleteCluster() error {
 		ts.cfg.Status.Up = false
 		ts.cfg.Sync()
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
-		ch := awscfn.Poll(
+		ch := cfn.Poll(
 			ctx,
 			make(chan struct{}), // do not exit on stop
 			ts.lg,
@@ -392,7 +392,7 @@ func (ts *Tester) deleteCluster() error {
 			3*time.Minute,
 			20*time.Second,
 		)
-		var st awscfn.StackStatus
+		var st cfn.StackStatus
 		for st = range ch {
 			if st.Error != nil {
 				cancel()

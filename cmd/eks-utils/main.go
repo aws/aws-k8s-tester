@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/aws/aws-k8s-tester/cmd/eks-utils/apis"
+	"github.com/aws/aws-k8s-tester/cmd/eks-utils/nodes"
 	"github.com/aws/aws-k8s-tester/cmd/eks-utils/version"
 	"github.com/spf13/cobra"
 )
@@ -23,6 +24,7 @@ func init() {
 func init() {
 	rootCmd.AddCommand(
 		apis.NewCommand(),
+		nodes.NewCommand(),
 		version.NewCommand(),
 	)
 }

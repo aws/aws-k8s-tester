@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	awscfn "github.com/aws/aws-k8s-tester/pkg/aws/cloudformation"
+	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
 	awsiam "github.com/aws/aws-k8s-tester/pkg/aws/iam"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
@@ -97,7 +97,7 @@ func (ts *Tester) createRole() error {
 		Capabilities: aws.StringSlice([]string{"CAPABILITY_NAMED_IAM"}),
 		OnFailure:    aws.String(cloudformation.OnFailureDelete),
 		TemplateBody: aws.String(tmpl),
-		Tags: awscfn.NewTags(map[string]string{
+		Tags: cfn.NewTags(map[string]string{
 			"Kind":                   "aws-k8s-tester",
 			"Name":                   ts.cfg.Name,
 			"aws-k8s-tester-version": version.ReleaseVersion,
@@ -133,7 +133,7 @@ func (ts *Tester) createRole() error {
 	}
 	ts.cfg.RoleCFNStackID = aws.StringValue(stackOutput.StackId)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
-	ch := awscfn.Poll(
+	ch := cfn.Poll(
 		ctx,
 		ts.stopCreationCh,
 		ts.lg,
@@ -143,7 +143,7 @@ func (ts *Tester) createRole() error {
 		25*time.Second,
 		10*time.Second,
 	)
-	var st awscfn.StackStatus
+	var st cfn.StackStatus
 	for st = range ch {
 		if st.Error != nil {
 			cancel()
@@ -190,7 +190,7 @@ func (ts *Tester) deleteRole() error {
 		return err
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
-	ch := awscfn.Poll(
+	ch := cfn.Poll(
 		ctx,
 		make(chan struct{}), // do not exit on stop
 		ts.lg,
@@ -200,7 +200,7 @@ func (ts *Tester) deleteRole() error {
 		25*time.Second,
 		10*time.Second,
 	)
-	var st awscfn.StackStatus
+	var st cfn.StackStatus
 	for st = range ch {
 		if st.Error != nil {
 			cancel()

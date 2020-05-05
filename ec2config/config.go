@@ -11,7 +11,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
-	"sigs.k8s.io/yaml"
+	"sigs.k8s.io/yaml" // must use "sigs.k8s.io/yaml"
 )
 
 const (

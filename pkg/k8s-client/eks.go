@@ -106,11 +106,6 @@ type EKSConfig struct {
 	ClientBurst int
 	// ClientTimeout is the client timeout.
 	ClientTimeout time.Duration
-
-	// ListBatch is non-zero to configure list batch limit.
-	ListBatch int64
-	// ListInterval is the wait interval between batched list operations.
-	ListInterval time.Duration
 }
 
 // EKS defines EKS client operations.
@@ -144,30 +139,30 @@ type EKS interface {
 	FetchSupportedAPIGroupVersions() (float64, map[string]struct{}, error)
 
 	// ListNamespaces returns the list of existing namespace names.
-	ListNamespaces(limit int64, interval time.Duration) ([]v1.Namespace, error)
+	ListNamespaces(batchLimit int64, batchInterval time.Duration) ([]v1.Namespace, error)
 	// ListNodes returns the list of existing nodes.
-	ListNodes(limit int64, interval time.Duration) ([]v1.Node, error)
+	ListNodes(batchLimit int64, batchInterval time.Duration) ([]v1.Node, error)
 	// ListPods returns the list of existing namespace names.
-	ListPods(namespace string, limit int64, interval time.Duration) ([]v1.Pod, error)
+	ListPods(namespace string, batchLimit int64, batchInterval time.Duration) ([]v1.Pod, error)
 	// ListSecrets returns the list of existing Secret objects.
-	ListSecrets(namespace string, limit int64, interval time.Duration) ([]v1.Secret, error)
+	ListSecrets(namespace string, batchLimit int64, batchInterval time.Duration) ([]v1.Secret, error)
 
-	ListAppsV1Deployments(namespace string, limit int64, interval time.Duration) (ss []apps_v1.Deployment, err error)
-	ListAppsV1StatefulSets(namespace string, limit int64, interval time.Duration) (ss []apps_v1.StatefulSet, err error)
-	ListAppsV1DaemonSets(namespace string, limit int64, interval time.Duration) (ss []apps_v1.DaemonSet, err error)
-	ListAppsV1ReplicaSets(namespace string, limit int64, interval time.Duration) (ss []apps_v1.ReplicaSet, err error)
-	ListNetworkingV1NetworkPolicies(namespace string, limit int64, interval time.Duration) (ss []networking_v1.NetworkPolicy, err error)
-	ListPolicyV1beta1PodSecurityPolicies(limit int64, interval time.Duration) (ss []policy_v1beta1.PodSecurityPolicy, err error)
+	ListAppsV1Deployments(namespace string, batchLimit int64, batchInterval time.Duration) (ss []apps_v1.Deployment, err error)
+	ListAppsV1StatefulSets(namespace string, batchLimit int64, batchInterval time.Duration) (ss []apps_v1.StatefulSet, err error)
+	ListAppsV1DaemonSets(namespace string, batchLimit int64, batchInterval time.Duration) (ss []apps_v1.DaemonSet, err error)
+	ListAppsV1ReplicaSets(namespace string, batchLimit int64, batchInterval time.Duration) (ss []apps_v1.ReplicaSet, err error)
+	ListNetworkingV1NetworkPolicies(namespace string, batchLimit int64, batchInterval time.Duration) (ss []networking_v1.NetworkPolicy, err error)
+	ListPolicyV1beta1PodSecurityPolicies(batchLimit int64, batchInterval time.Duration) (ss []policy_v1beta1.PodSecurityPolicy, err error)
 
-	ListAppsV1beta1Deployments(namespace string, limit int64, interval time.Duration) (ss []apps_v1beta1.Deployment, err error)
-	ListAppsV1beta1StatefulSets(namespace string, limit int64, interval time.Duration) (ss []apps_v1beta1.StatefulSet, err error)
-	ListAppsV1beta2Deployments(namespace string, limit int64, interval time.Duration) (ss []apps_v1beta2.Deployment, err error)
-	ListAppsV1beta2StatefulSets(namespace string, limit int64, interval time.Duration) (ss []apps_v1beta2.StatefulSet, err error)
-	ListExtensionsV1beta1DaemonSets(namespace string, limit int64, interval time.Duration) (ss []extensions_v1beta1.DaemonSet, err error)
-	ListExtensionsV1beta1Deployments(namespace string, limit int64, interval time.Duration) (ss []extensions_v1beta1.Deployment, err error)
-	ListExtensionsV1beta1ReplicaSets(namespace string, limit int64, interval time.Duration) (ss []extensions_v1beta1.ReplicaSet, err error)
-	ListExtensionsV1beta1NetworkPolicies(namespace string, limit int64, interval time.Duration) (ss []extensions_v1beta1.NetworkPolicy, err error)
-	ListExtensionsV1beta1PodSecurityPolicies(limit int64, interval time.Duration) (ss []extensions_v1beta1.PodSecurityPolicy, err error)
+	ListAppsV1beta1Deployments(namespace string, batchLimit int64, batchInterval time.Duration) (ss []apps_v1beta1.Deployment, err error)
+	ListAppsV1beta1StatefulSets(namespace string, batchLimit int64, batchInterval time.Duration) (ss []apps_v1beta1.StatefulSet, err error)
+	ListAppsV1beta2Deployments(namespace string, batchLimit int64, batchInterval time.Duration) (ss []apps_v1beta2.Deployment, err error)
+	ListAppsV1beta2StatefulSets(namespace string, batchLimit int64, batchInterval time.Duration) (ss []apps_v1beta2.StatefulSet, err error)
+	ListExtensionsV1beta1DaemonSets(namespace string, batchLimit int64, batchInterval time.Duration) (ss []extensions_v1beta1.DaemonSet, err error)
+	ListExtensionsV1beta1Deployments(namespace string, batchLimit int64, batchInterval time.Duration) (ss []extensions_v1beta1.Deployment, err error)
+	ListExtensionsV1beta1ReplicaSets(namespace string, batchLimit int64, batchInterval time.Duration) (ss []extensions_v1beta1.ReplicaSet, err error)
+	ListExtensionsV1beta1NetworkPolicies(namespace string, batchLimit int64, batchInterval time.Duration) (ss []extensions_v1beta1.NetworkPolicy, err error)
+	ListExtensionsV1beta1PodSecurityPolicies(batchLimit int64, batchInterval time.Duration) (ss []extensions_v1beta1.PodSecurityPolicy, err error)
 
 	// GetObject get object type and object metadata using kubectl.
 	// The internal API group version is not exposed,
@@ -176,7 +171,7 @@ type EKS interface {
 	GetObject(namespace string, kind string, name string) (obj Object, d []byte, err error)
 
 	// Deprecate checks deprecated API groups based on the current kube-apiserver version.
-	Deprecate() error
+	Deprecate(batchLimit int64, batchInterval time.Duration) error
 }
 
 type eks struct {
@@ -815,16 +810,16 @@ func (e *eks) fetchSupportedAPIGroupVersions() (float64, map[string]struct{}, er
 	return vv, m, nil
 }
 
-func (e *eks) ListNamespaces(limit int64, interval time.Duration) ([]v1.Namespace, error) {
-	ns, err := e.listNamespaces(limit, interval)
+func (e *eks) ListNamespaces(batchLimit int64, batchInterval time.Duration) ([]v1.Namespace, error) {
+	ns, err := e.listNamespaces(batchLimit, batchInterval)
 	return ns, err
 }
 
-func (e *eks) listNamespaces(limit int64, interval time.Duration) (ns []v1.Namespace, err error) {
+func (e *eks) listNamespaces(batchLimit int64, batchInterval time.Duration) (ns []v1.Namespace, err error) {
 	rs := &v1.NamespaceList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		rs, err = e.getClient().CoreV1().Namespaces().List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		rs, err = e.getClient().CoreV1().Namespaces().List(ctx, metav1.ListOptions{Limit: batchLimit, Continue: rs.Continue})
 		cancel()
 		if err != nil {
 			return nil, err
@@ -832,30 +827,30 @@ func (e *eks) listNamespaces(limit int64, interval time.Duration) (ns []v1.Names
 		ns = append(ns, rs.Items...)
 		remained := int64Value(rs.RemainingItemCount)
 		e.cfg.Logger.Info("listing namespace",
-			zap.Int64("limit", limit),
+			zap.Int64("batch-limit", batchLimit),
 			zap.Int64("remained", remained),
 			zap.String("continue", rs.Continue),
-			zap.Duration("interval", interval),
+			zap.Duration("batch-interval", batchInterval),
 			zap.Int("items", len(rs.Items)),
 		)
 		if rs.Continue == "" {
 			break
 		}
-		time.Sleep(interval)
+		time.Sleep(batchInterval)
 	}
 	return ns, err
 }
 
-func (e *eks) ListNodes(limit int64, interval time.Duration) ([]v1.Node, error) {
-	ns, err := e.listNodes(limit, interval)
+func (e *eks) ListNodes(batchLimit int64, batchInterval time.Duration) ([]v1.Node, error) {
+	ns, err := e.listNodes(batchLimit, batchInterval)
 	return ns, err
 }
 
-func (e *eks) listNodes(limit int64, interval time.Duration) (nodes []v1.Node, err error) {
+func (e *eks) listNodes(batchLimit int64, batchInterval time.Duration) (nodes []v1.Node, err error) {
 	rs := &v1.NodeList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		rs, err = e.getClient().CoreV1().Nodes().List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		rs, err = e.getClient().CoreV1().Nodes().List(ctx, metav1.ListOptions{Limit: batchLimit, Continue: rs.Continue})
 		cancel()
 		if err != nil {
 			return nil, err
@@ -863,30 +858,30 @@ func (e *eks) listNodes(limit int64, interval time.Duration) (nodes []v1.Node, e
 		nodes = append(nodes, rs.Items...)
 		remained := int64Value(rs.RemainingItemCount)
 		e.cfg.Logger.Info("listing nodes",
-			zap.Int64("limit", limit),
+			zap.Int64("batch-limit", batchLimit),
 			zap.Int64("remained", remained),
 			zap.String("continue", rs.Continue),
-			zap.Duration("interval", interval),
+			zap.Duration("batch-interval", batchInterval),
 			zap.Int("items", len(rs.Items)),
 		)
 		if rs.Continue == "" {
 			break
 		}
-		time.Sleep(interval)
+		time.Sleep(batchInterval)
 	}
 	return nodes, err
 }
 
-func (e *eks) ListPods(namespace string, limit int64, interval time.Duration) ([]v1.Pod, error) {
-	ns, err := e.listPods(namespace, limit, interval)
+func (e *eks) ListPods(namespace string, batchLimit int64, batchInterval time.Duration) ([]v1.Pod, error) {
+	ns, err := e.listPods(namespace, batchLimit, batchInterval)
 	return ns, err
 }
 
-func (e *eks) listPods(namespace string, limit int64, interval time.Duration) (pods []v1.Pod, err error) {
+func (e *eks) listPods(namespace string, batchLimit int64, batchInterval time.Duration) (pods []v1.Pod, err error) {
 	rs := &v1.PodList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		rs, err = e.getClient().CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		rs, err = e.getClient().CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{Limit: batchLimit, Continue: rs.Continue})
 		cancel()
 		if err != nil {
 			return nil, err
@@ -895,30 +890,30 @@ func (e *eks) listPods(namespace string, limit int64, interval time.Duration) (p
 		remained := int64Value(rs.RemainingItemCount)
 		e.cfg.Logger.Info("listing pods",
 			zap.String("namespace", namespace),
-			zap.Int64("limit", limit),
+			zap.Int64("batch-limit", batchLimit),
 			zap.Int64("remained", remained),
 			zap.String("continue", rs.Continue),
-			zap.Duration("interval", interval),
+			zap.Duration("batch-interval", batchInterval),
 			zap.Int("items", len(rs.Items)),
 		)
 		if rs.Continue == "" {
 			break
 		}
-		time.Sleep(interval)
+		time.Sleep(batchInterval)
 	}
 	return pods, err
 }
 
-func (e *eks) ListSecrets(namespace string, limit int64, interval time.Duration) ([]v1.Secret, error) {
-	ss, err := e.listSecrets(namespace, limit, interval)
+func (e *eks) ListSecrets(namespace string, batchLimit int64, batchInterval time.Duration) ([]v1.Secret, error) {
+	ss, err := e.listSecrets(namespace, batchLimit, batchInterval)
 	return ss, err
 }
 
-func (e *eks) listSecrets(namespace string, limit int64, interval time.Duration) (ss []v1.Secret, err error) {
+func (e *eks) listSecrets(namespace string, batchLimit int64, batchInterval time.Duration) (ss []v1.Secret, err error) {
 	rs := &v1.SecretList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		rs, err = e.getClient().CoreV1().Secrets(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		rs, err = e.getClient().CoreV1().Secrets(namespace).List(ctx, metav1.ListOptions{Limit: batchLimit, Continue: rs.Continue})
 		cancel()
 		if err != nil {
 			return nil, err
@@ -926,25 +921,25 @@ func (e *eks) listSecrets(namespace string, limit int64, interval time.Duration)
 		ss = append(ss, rs.Items...)
 		remained := int64Value(rs.RemainingItemCount)
 		e.cfg.Logger.Info("listing secret",
-			zap.Int64("limit", limit),
+			zap.Int64("batch-limit", batchLimit),
 			zap.Int64("remained", remained),
 			zap.String("continue", rs.Continue),
-			zap.Duration("interval", interval),
+			zap.Duration("batch-interval", batchInterval),
 			zap.Int("items", len(rs.Items)),
 		)
 		if rs.Continue == "" {
 			break
 		}
-		time.Sleep(interval)
+		time.Sleep(batchInterval)
 	}
 	return ss, err
 }
 
-func (e *eks) ListAppsV1Deployments(namespace string, limit int64, interval time.Duration) (ss []apps_v1.Deployment, err error) {
+func (e *eks) ListAppsV1Deployments(namespace string, batchLimit int64, batchInterval time.Duration) (ss []apps_v1.Deployment, err error) {
 	rs := &apps_v1.DeploymentList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		rs, err = e.getClient().AppsV1().Deployments(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		rs, err = e.getClient().AppsV1().Deployments(namespace).List(ctx, metav1.ListOptions{Limit: batchLimit, Continue: rs.Continue})
 		cancel()
 		if err != nil {
 			return nil, err
@@ -953,16 +948,16 @@ func (e *eks) ListAppsV1Deployments(namespace string, limit int64, interval time
 		remained := int64Value(rs.RemainingItemCount)
 		e.cfg.Logger.Info("listing deployments apps/v1",
 			zap.String("namespace", namespace),
-			zap.Int64("limit", limit),
+			zap.Int64("batch-limit", batchLimit),
 			zap.Int64("remained", remained),
 			zap.String("continue", rs.Continue),
-			zap.Duration("interval", interval),
+			zap.Duration("batch-interval", batchInterval),
 			zap.Int("items", len(rs.Items)),
 		)
 		if rs.Continue == "" {
 			break
 		}
-		time.Sleep(interval)
+		time.Sleep(batchInterval)
 	}
 	for i := range ss {
 		if ss[i].TypeMeta.APIVersion == "" {
@@ -978,11 +973,11 @@ func (e *eks) ListAppsV1Deployments(namespace string, limit int64, interval time
 	return ss, err
 }
 
-func (e *eks) ListAppsV1StatefulSets(namespace string, limit int64, interval time.Duration) (ss []apps_v1.StatefulSet, err error) {
+func (e *eks) ListAppsV1StatefulSets(namespace string, batchLimit int64, batchInterval time.Duration) (ss []apps_v1.StatefulSet, err error) {
 	rs := &apps_v1.StatefulSetList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		rs, err = e.getClient().AppsV1().StatefulSets(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		rs, err = e.getClient().AppsV1().StatefulSets(namespace).List(ctx, metav1.ListOptions{Limit: batchLimit, Continue: rs.Continue})
 		cancel()
 		if err != nil {
 			return nil, err
@@ -991,16 +986,16 @@ func (e *eks) ListAppsV1StatefulSets(namespace string, limit int64, interval tim
 		remained := int64Value(rs.RemainingItemCount)
 		e.cfg.Logger.Info("listing statefulsets apps/v1",
 			zap.String("namespace", namespace),
-			zap.Int64("limit", limit),
+			zap.Int64("batch-limit", batchLimit),
 			zap.Int64("remained", remained),
 			zap.String("continue", rs.Continue),
-			zap.Duration("interval", interval),
+			zap.Duration("batch-interval", batchInterval),
 			zap.Int("items", len(rs.Items)),
 		)
 		if rs.Continue == "" {
 			break
 		}
-		time.Sleep(interval)
+		time.Sleep(batchInterval)
 	}
 	for i := range ss {
 		if ss[i].TypeMeta.APIVersion == "" {
@@ -1016,11 +1011,11 @@ func (e *eks) ListAppsV1StatefulSets(namespace string, limit int64, interval tim
 	return ss, err
 }
 
-func (e *eks) ListAppsV1DaemonSets(namespace string, limit int64, interval time.Duration) (ss []apps_v1.DaemonSet, err error) {
+func (e *eks) ListAppsV1DaemonSets(namespace string, batchLimit int64, batchInterval time.Duration) (ss []apps_v1.DaemonSet, err error) {
 	rs := &apps_v1.DaemonSetList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		rs, err = e.getClient().AppsV1().DaemonSets(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		rs, err = e.getClient().AppsV1().DaemonSets(namespace).List(ctx, metav1.ListOptions{Limit: batchLimit, Continue: rs.Continue})
 		cancel()
 		if err != nil {
 			return nil, err
@@ -1029,16 +1024,16 @@ func (e *eks) ListAppsV1DaemonSets(namespace string, limit int64, interval time.
 		remained := int64Value(rs.RemainingItemCount)
 		e.cfg.Logger.Info("listing daemonsets apps/v1",
 			zap.String("namespace", namespace),
-			zap.Int64("limit", limit),
+			zap.Int64("batch-limit", batchLimit),
 			zap.Int64("remained", remained),
 			zap.String("continue", rs.Continue),
-			zap.Duration("interval", interval),
+			zap.Duration("batch-interval", batchInterval),
 			zap.Int("items", len(rs.Items)),
 		)
 		if rs.Continue == "" {
 			break
 		}
-		time.Sleep(interval)
+		time.Sleep(batchInterval)
 	}
 	for i := range ss {
 		if ss[i].TypeMeta.APIVersion == "" {
@@ -1054,11 +1049,11 @@ func (e *eks) ListAppsV1DaemonSets(namespace string, limit int64, interval time.
 	return ss, err
 }
 
-func (e *eks) ListAppsV1ReplicaSets(namespace string, limit int64, interval time.Duration) (ss []apps_v1.ReplicaSet, err error) {
+func (e *eks) ListAppsV1ReplicaSets(namespace string, batchLimit int64, batchInterval time.Duration) (ss []apps_v1.ReplicaSet, err error) {
 	rs := &apps_v1.ReplicaSetList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		rs, err = e.getClient().AppsV1().ReplicaSets(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		rs, err = e.getClient().AppsV1().ReplicaSets(namespace).List(ctx, metav1.ListOptions{Limit: batchLimit, Continue: rs.Continue})
 		cancel()
 		if err != nil {
 			return nil, err
@@ -1067,16 +1062,16 @@ func (e *eks) ListAppsV1ReplicaSets(namespace string, limit int64, interval time
 		remained := int64Value(rs.RemainingItemCount)
 		e.cfg.Logger.Info("listing replicasets apps/v1",
 			zap.String("namespace", namespace),
-			zap.Int64("limit", limit),
+			zap.Int64("batch-limit", batchLimit),
 			zap.Int64("remained", remained),
 			zap.String("continue", rs.Continue),
-			zap.Duration("interval", interval),
+			zap.Duration("batch-interval", batchInterval),
 			zap.Int("items", len(rs.Items)),
 		)
 		if rs.Continue == "" {
 			break
 		}
-		time.Sleep(interval)
+		time.Sleep(batchInterval)
 	}
 	for i := range ss {
 		if ss[i].TypeMeta.APIVersion == "" {
@@ -1092,11 +1087,11 @@ func (e *eks) ListAppsV1ReplicaSets(namespace string, limit int64, interval time
 	return ss, err
 }
 
-func (e *eks) ListNetworkingV1NetworkPolicies(namespace string, limit int64, interval time.Duration) (ss []networking_v1.NetworkPolicy, err error) {
+func (e *eks) ListNetworkingV1NetworkPolicies(namespace string, batchLimit int64, batchInterval time.Duration) (ss []networking_v1.NetworkPolicy, err error) {
 	rs := &networking_v1.NetworkPolicyList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		rs, err = e.getClient().NetworkingV1().NetworkPolicies(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		rs, err = e.getClient().NetworkingV1().NetworkPolicies(namespace).List(ctx, metav1.ListOptions{Limit: batchLimit, Continue: rs.Continue})
 		cancel()
 		if err != nil {
 			return nil, err
@@ -1105,16 +1100,16 @@ func (e *eks) ListNetworkingV1NetworkPolicies(namespace string, limit int64, int
 		remained := int64Value(rs.RemainingItemCount)
 		e.cfg.Logger.Info("listing networkpolicies networking.k8s.io/v1",
 			zap.String("namespace", namespace),
-			zap.Int64("limit", limit),
+			zap.Int64("batch-limit", batchLimit),
 			zap.Int64("remained", remained),
 			zap.String("continue", rs.Continue),
-			zap.Duration("interval", interval),
+			zap.Duration("batch-interval", batchInterval),
 			zap.Int("items", len(rs.Items)),
 		)
 		if rs.Continue == "" {
 			break
 		}
-		time.Sleep(interval)
+		time.Sleep(batchInterval)
 	}
 	for i := range ss {
 		if ss[i].TypeMeta.APIVersion == "" {
@@ -1130,11 +1125,11 @@ func (e *eks) ListNetworkingV1NetworkPolicies(namespace string, limit int64, int
 	return ss, err
 }
 
-func (e *eks) ListPolicyV1beta1PodSecurityPolicies(limit int64, interval time.Duration) (ss []policy_v1beta1.PodSecurityPolicy, err error) {
+func (e *eks) ListPolicyV1beta1PodSecurityPolicies(batchLimit int64, batchInterval time.Duration) (ss []policy_v1beta1.PodSecurityPolicy, err error) {
 	rs := &policy_v1beta1.PodSecurityPolicyList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		rs, err = e.getClient().PolicyV1beta1().PodSecurityPolicies().List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		rs, err = e.getClient().PolicyV1beta1().PodSecurityPolicies().List(ctx, metav1.ListOptions{Limit: batchLimit, Continue: rs.Continue})
 		cancel()
 		if err != nil {
 			return nil, err
@@ -1142,16 +1137,16 @@ func (e *eks) ListPolicyV1beta1PodSecurityPolicies(limit int64, interval time.Du
 		ss = append(ss, rs.Items...)
 		remained := int64Value(rs.RemainingItemCount)
 		e.cfg.Logger.Info("listing podsecuritypolicies policy/v1beta1",
-			zap.Int64("limit", limit),
+			zap.Int64("batch-limit", batchLimit),
 			zap.Int64("remained", remained),
 			zap.String("continue", rs.Continue),
-			zap.Duration("interval", interval),
+			zap.Duration("batch-interval", batchInterval),
 			zap.Int("items", len(rs.Items)),
 		)
 		if rs.Continue == "" {
 			break
 		}
-		time.Sleep(interval)
+		time.Sleep(batchInterval)
 	}
 	for i := range ss {
 		if ss[i].TypeMeta.APIVersion == "" {
@@ -1164,11 +1159,11 @@ func (e *eks) ListPolicyV1beta1PodSecurityPolicies(limit int64, interval time.Du
 	return ss, err
 }
 
-func (e *eks) ListAppsV1beta1Deployments(namespace string, limit int64, interval time.Duration) (ss []apps_v1beta1.Deployment, err error) {
+func (e *eks) ListAppsV1beta1Deployments(namespace string, batchLimit int64, batchInterval time.Duration) (ss []apps_v1beta1.Deployment, err error) {
 	rs := &apps_v1beta1.DeploymentList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		rs, err = e.getClient().AppsV1beta1().Deployments(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		rs, err = e.getClient().AppsV1beta1().Deployments(namespace).List(ctx, metav1.ListOptions{Limit: batchLimit, Continue: rs.Continue})
 		cancel()
 		if err != nil {
 			return nil, err
@@ -1177,16 +1172,16 @@ func (e *eks) ListAppsV1beta1Deployments(namespace string, limit int64, interval
 		remained := int64Value(rs.RemainingItemCount)
 		e.cfg.Logger.Info("listing deployments apps/v1beta1",
 			zap.String("namespace", namespace),
-			zap.Int64("limit", limit),
+			zap.Int64("batch-limit", batchLimit),
 			zap.Int64("remained", remained),
 			zap.String("continue", rs.Continue),
-			zap.Duration("interval", interval),
+			zap.Duration("batch-interval", batchInterval),
 			zap.Int("items", len(rs.Items)),
 		)
 		if rs.Continue == "" {
 			break
 		}
-		time.Sleep(interval)
+		time.Sleep(batchInterval)
 	}
 	for i := range ss {
 		if ss[i].TypeMeta.APIVersion == "" {
@@ -1202,11 +1197,11 @@ func (e *eks) ListAppsV1beta1Deployments(namespace string, limit int64, interval
 	return ss, err
 }
 
-func (e *eks) ListAppsV1beta1StatefulSets(namespace string, limit int64, interval time.Duration) (ss []apps_v1beta1.StatefulSet, err error) {
+func (e *eks) ListAppsV1beta1StatefulSets(namespace string, batchLimit int64, batchInterval time.Duration) (ss []apps_v1beta1.StatefulSet, err error) {
 	rs := &apps_v1beta1.StatefulSetList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		rs, err = e.getClient().AppsV1beta1().StatefulSets(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		rs, err = e.getClient().AppsV1beta1().StatefulSets(namespace).List(ctx, metav1.ListOptions{Limit: batchLimit, Continue: rs.Continue})
 		cancel()
 		if err != nil {
 			return nil, err
@@ -1215,16 +1210,16 @@ func (e *eks) ListAppsV1beta1StatefulSets(namespace string, limit int64, interva
 		remained := int64Value(rs.RemainingItemCount)
 		e.cfg.Logger.Info("listing statefulsets apps/v1beta1",
 			zap.String("namespace", namespace),
-			zap.Int64("limit", limit),
+			zap.Int64("batch-limit", batchLimit),
 			zap.Int64("remained", remained),
 			zap.String("continue", rs.Continue),
-			zap.Duration("interval", interval),
+			zap.Duration("batch-interval", batchInterval),
 			zap.Int("items", len(rs.Items)),
 		)
 		if rs.Continue == "" {
 			break
 		}
-		time.Sleep(interval)
+		time.Sleep(batchInterval)
 	}
 	for i := range ss {
 		if ss[i].TypeMeta.APIVersion == "" {
@@ -1240,11 +1235,11 @@ func (e *eks) ListAppsV1beta1StatefulSets(namespace string, limit int64, interva
 	return ss, err
 }
 
-func (e *eks) ListAppsV1beta2Deployments(namespace string, limit int64, interval time.Duration) (ss []apps_v1beta2.Deployment, err error) {
+func (e *eks) ListAppsV1beta2Deployments(namespace string, batchLimit int64, batchInterval time.Duration) (ss []apps_v1beta2.Deployment, err error) {
 	rs := &apps_v1beta2.DeploymentList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		rs, err = e.getClient().AppsV1beta2().Deployments(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		rs, err = e.getClient().AppsV1beta2().Deployments(namespace).List(ctx, metav1.ListOptions{Limit: batchLimit, Continue: rs.Continue})
 		cancel()
 		if err != nil {
 			return nil, err
@@ -1253,16 +1248,16 @@ func (e *eks) ListAppsV1beta2Deployments(namespace string, limit int64, interval
 		remained := int64Value(rs.RemainingItemCount)
 		e.cfg.Logger.Info("listing deployments apps/v1beta2",
 			zap.String("namespace", namespace),
-			zap.Int64("limit", limit),
+			zap.Int64("batch-limit", batchLimit),
 			zap.Int64("remained", remained),
 			zap.String("continue", rs.Continue),
-			zap.Duration("interval", interval),
+			zap.Duration("batch-interval", batchInterval),
 			zap.Int("items", len(rs.Items)),
 		)
 		if rs.Continue == "" {
 			break
 		}
-		time.Sleep(interval)
+		time.Sleep(batchInterval)
 	}
 	for i := range ss {
 		if ss[i].TypeMeta.APIVersion == "" {
@@ -1278,11 +1273,11 @@ func (e *eks) ListAppsV1beta2Deployments(namespace string, limit int64, interval
 	return ss, err
 }
 
-func (e *eks) ListAppsV1beta2StatefulSets(namespace string, limit int64, interval time.Duration) (ss []apps_v1beta2.StatefulSet, err error) {
+func (e *eks) ListAppsV1beta2StatefulSets(namespace string, batchLimit int64, batchInterval time.Duration) (ss []apps_v1beta2.StatefulSet, err error) {
 	rs := &apps_v1beta2.StatefulSetList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		rs, err = e.getClient().AppsV1beta2().StatefulSets(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		rs, err = e.getClient().AppsV1beta2().StatefulSets(namespace).List(ctx, metav1.ListOptions{Limit: batchLimit, Continue: rs.Continue})
 		cancel()
 		if err != nil {
 			return nil, err
@@ -1291,16 +1286,16 @@ func (e *eks) ListAppsV1beta2StatefulSets(namespace string, limit int64, interva
 		remained := int64Value(rs.RemainingItemCount)
 		e.cfg.Logger.Info("listing statefulsets apps/v1beta2",
 			zap.String("namespace", namespace),
-			zap.Int64("limit", limit),
+			zap.Int64("batch-limit", batchLimit),
 			zap.Int64("remained", remained),
 			zap.String("continue", rs.Continue),
-			zap.Duration("interval", interval),
+			zap.Duration("batch-interval", batchInterval),
 			zap.Int("items", len(rs.Items)),
 		)
 		if rs.Continue == "" {
 			break
 		}
-		time.Sleep(interval)
+		time.Sleep(batchInterval)
 	}
 	for i := range ss {
 		if ss[i].TypeMeta.APIVersion == "" {
@@ -1316,11 +1311,11 @@ func (e *eks) ListAppsV1beta2StatefulSets(namespace string, limit int64, interva
 	return ss, err
 }
 
-func (e *eks) ListExtensionsV1beta1DaemonSets(namespace string, limit int64, interval time.Duration) (ss []extensions_v1beta1.DaemonSet, err error) {
+func (e *eks) ListExtensionsV1beta1DaemonSets(namespace string, batchLimit int64, batchInterval time.Duration) (ss []extensions_v1beta1.DaemonSet, err error) {
 	rs := &extensions_v1beta1.DaemonSetList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		rs, err = e.getClient().ExtensionsV1beta1().DaemonSets(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		rs, err = e.getClient().ExtensionsV1beta1().DaemonSets(namespace).List(ctx, metav1.ListOptions{Limit: batchLimit, Continue: rs.Continue})
 		cancel()
 		if err != nil {
 			return nil, err
@@ -1329,16 +1324,16 @@ func (e *eks) ListExtensionsV1beta1DaemonSets(namespace string, limit int64, int
 		remained := int64Value(rs.RemainingItemCount)
 		e.cfg.Logger.Info("listing daemonsets extensions/v1beta1",
 			zap.String("namespace", namespace),
-			zap.Int64("limit", limit),
+			zap.Int64("batch-limit", batchLimit),
 			zap.Int64("remained", remained),
 			zap.String("continue", rs.Continue),
-			zap.Duration("interval", interval),
+			zap.Duration("batch-interval", batchInterval),
 			zap.Int("items", len(rs.Items)),
 		)
 		if rs.Continue == "" {
 			break
 		}
-		time.Sleep(interval)
+		time.Sleep(batchInterval)
 	}
 	for i := range ss {
 		if ss[i].TypeMeta.APIVersion == "" {
@@ -1354,11 +1349,11 @@ func (e *eks) ListExtensionsV1beta1DaemonSets(namespace string, limit int64, int
 	return ss, err
 }
 
-func (e *eks) ListExtensionsV1beta1Deployments(namespace string, limit int64, interval time.Duration) (ss []extensions_v1beta1.Deployment, err error) {
+func (e *eks) ListExtensionsV1beta1Deployments(namespace string, batchLimit int64, batchInterval time.Duration) (ss []extensions_v1beta1.Deployment, err error) {
 	rs := &extensions_v1beta1.DeploymentList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		rs, err = e.getClient().ExtensionsV1beta1().Deployments(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		rs, err = e.getClient().ExtensionsV1beta1().Deployments(namespace).List(ctx, metav1.ListOptions{Limit: batchLimit, Continue: rs.Continue})
 		cancel()
 		if err != nil {
 			return nil, err
@@ -1367,16 +1362,16 @@ func (e *eks) ListExtensionsV1beta1Deployments(namespace string, limit int64, in
 		remained := int64Value(rs.RemainingItemCount)
 		e.cfg.Logger.Info("listing deployments extensions/v1beta1",
 			zap.String("namespace", namespace),
-			zap.Int64("limit", limit),
+			zap.Int64("batch-limit", batchLimit),
 			zap.Int64("remained", remained),
 			zap.String("continue", rs.Continue),
-			zap.Duration("interval", interval),
+			zap.Duration("batch-interval", batchInterval),
 			zap.Int("items", len(rs.Items)),
 		)
 		if rs.Continue == "" {
 			break
 		}
-		time.Sleep(interval)
+		time.Sleep(batchInterval)
 	}
 	for i := range ss {
 		if ss[i].TypeMeta.APIVersion == "" {
@@ -1392,11 +1387,11 @@ func (e *eks) ListExtensionsV1beta1Deployments(namespace string, limit int64, in
 	return ss, err
 }
 
-func (e *eks) ListExtensionsV1beta1ReplicaSets(namespace string, limit int64, interval time.Duration) (ss []extensions_v1beta1.ReplicaSet, err error) {
+func (e *eks) ListExtensionsV1beta1ReplicaSets(namespace string, batchLimit int64, batchInterval time.Duration) (ss []extensions_v1beta1.ReplicaSet, err error) {
 	rs := &extensions_v1beta1.ReplicaSetList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		rs, err = e.getClient().ExtensionsV1beta1().ReplicaSets(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		rs, err = e.getClient().ExtensionsV1beta1().ReplicaSets(namespace).List(ctx, metav1.ListOptions{Limit: batchLimit, Continue: rs.Continue})
 		cancel()
 		if err != nil {
 			return nil, err
@@ -1405,16 +1400,16 @@ func (e *eks) ListExtensionsV1beta1ReplicaSets(namespace string, limit int64, in
 		remained := int64Value(rs.RemainingItemCount)
 		e.cfg.Logger.Info("listing replicasets extensions/v1beta1",
 			zap.String("namespace", namespace),
-			zap.Int64("limit", limit),
+			zap.Int64("batch-limit", batchLimit),
 			zap.Int64("remained", remained),
 			zap.String("continue", rs.Continue),
-			zap.Duration("interval", interval),
+			zap.Duration("batch-interval", batchInterval),
 			zap.Int("items", len(rs.Items)),
 		)
 		if rs.Continue == "" {
 			break
 		}
-		time.Sleep(interval)
+		time.Sleep(batchInterval)
 	}
 	for i := range ss {
 		if ss[i].TypeMeta.APIVersion == "" {
@@ -1430,11 +1425,11 @@ func (e *eks) ListExtensionsV1beta1ReplicaSets(namespace string, limit int64, in
 	return ss, err
 }
 
-func (e *eks) ListExtensionsV1beta1NetworkPolicies(namespace string, limit int64, interval time.Duration) (ss []extensions_v1beta1.NetworkPolicy, err error) {
+func (e *eks) ListExtensionsV1beta1NetworkPolicies(namespace string, batchLimit int64, batchInterval time.Duration) (ss []extensions_v1beta1.NetworkPolicy, err error) {
 	rs := &extensions_v1beta1.NetworkPolicyList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		rs, err = e.getClient().ExtensionsV1beta1().NetworkPolicies(namespace).List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		rs, err = e.getClient().ExtensionsV1beta1().NetworkPolicies(namespace).List(ctx, metav1.ListOptions{Limit: batchLimit, Continue: rs.Continue})
 		cancel()
 		if err != nil {
 			return nil, err
@@ -1443,16 +1438,16 @@ func (e *eks) ListExtensionsV1beta1NetworkPolicies(namespace string, limit int64
 		remained := int64Value(rs.RemainingItemCount)
 		e.cfg.Logger.Info("listing networkpolicies extensions/v1beta1",
 			zap.String("namespace", namespace),
-			zap.Int64("limit", limit),
+			zap.Int64("batch-limit", batchLimit),
 			zap.Int64("remained", remained),
 			zap.String("continue", rs.Continue),
-			zap.Duration("interval", interval),
+			zap.Duration("batch-interval", batchInterval),
 			zap.Int("items", len(rs.Items)),
 		)
 		if rs.Continue == "" {
 			break
 		}
-		time.Sleep(interval)
+		time.Sleep(batchInterval)
 	}
 	for i := range ss {
 		if ss[i].TypeMeta.APIVersion == "" {
@@ -1468,11 +1463,11 @@ func (e *eks) ListExtensionsV1beta1NetworkPolicies(namespace string, limit int64
 	return ss, err
 }
 
-func (e *eks) ListExtensionsV1beta1PodSecurityPolicies(limit int64, interval time.Duration) (ss []extensions_v1beta1.PodSecurityPolicy, err error) {
+func (e *eks) ListExtensionsV1beta1PodSecurityPolicies(batchLimit int64, batchInterval time.Duration) (ss []extensions_v1beta1.PodSecurityPolicy, err error) {
 	rs := &extensions_v1beta1.PodSecurityPolicyList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		rs, err = e.getClient().ExtensionsV1beta1().PodSecurityPolicies().List(ctx, metav1.ListOptions{Limit: limit, Continue: rs.Continue})
+		rs, err = e.getClient().ExtensionsV1beta1().PodSecurityPolicies().List(ctx, metav1.ListOptions{Limit: batchLimit, Continue: rs.Continue})
 		cancel()
 		if err != nil {
 			return nil, err
@@ -1480,16 +1475,16 @@ func (e *eks) ListExtensionsV1beta1PodSecurityPolicies(limit int64, interval tim
 		ss = append(ss, rs.Items...)
 		remained := int64Value(rs.RemainingItemCount)
 		e.cfg.Logger.Info("listing podsecuritypolicies extensions/v1beta1",
-			zap.Int64("limit", limit),
+			zap.Int64("batch-limit", batchLimit),
 			zap.Int64("remained", remained),
 			zap.String("continue", rs.Continue),
-			zap.Duration("interval", interval),
+			zap.Duration("batch-interval", batchInterval),
 			zap.Int("items", len(rs.Items)),
 		)
 		if rs.Continue == "" {
 			break
 		}
-		time.Sleep(interval)
+		time.Sleep(batchInterval)
 	}
 	for i := range ss {
 		if ss[i].TypeMeta.APIVersion == "" {

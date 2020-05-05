@@ -1,5 +1,5 @@
-// Package cloudformation implements common CloudFormation utilities.
-package cloudformation
+// Package cfn implements common CloudFormation utilities.
+package cfn
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
-	svccfn "github.com/aws/aws-sdk-go/service/cloudformation"
+	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/cloudformation/cloudformationiface"
 	"github.com/dustin/go-humanize"
 	"go.uber.org/zap"
@@ -17,7 +17,7 @@ import (
 
 // StackStatus represents the CloudFormation status.
 type StackStatus struct {
-	Stack *svccfn.Stack
+	Stack *cloudformation.Stack
 	Error error
 }
 
@@ -70,12 +70,12 @@ func Poll(
 				}
 			}
 
-			output, err := cfnAPI.DescribeStacks(&svccfn.DescribeStacksInput{
+			output, err := cfnAPI.DescribeStacks(&cloudformation.DescribeStacksInput{
 				StackName: aws.String(stackID),
 			})
 			if err != nil {
 				if StackNotExist(err) {
-					if desiredStackStatus == svccfn.ResourceStatusDeleteComplete {
+					if desiredStackStatus == cloudformation.ResourceStatusDeleteComplete {
 						lg.Info("stack is already deleted as desired; exiting", zap.Error(err))
 						ch <- StackStatus{Stack: nil, Error: nil}
 						close(ch)
@@ -116,8 +116,8 @@ func Poll(
 				zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			)
 
-			if desiredStackStatus != svccfn.ResourceStatusDeleteComplete &&
-				currentStatus == svccfn.ResourceStatusDeleteComplete {
+			if desiredStackStatus != cloudformation.ResourceStatusDeleteComplete &&
+				currentStatus == cloudformation.ResourceStatusDeleteComplete {
 				lg.Warn("create stack failed; aborting")
 				ch <- StackStatus{
 					Stack: stack,
@@ -130,8 +130,8 @@ func Poll(
 				return
 			}
 
-			if desiredStackStatus == svccfn.ResourceStatusDeleteComplete &&
-				currentStatus == svccfn.ResourceStatusDeleteFailed {
+			if desiredStackStatus == cloudformation.ResourceStatusDeleteComplete &&
+				currentStatus == cloudformation.ResourceStatusDeleteFailed {
 				lg.Warn("delete stack failed; aborting")
 				ch <- StackStatus{
 					Stack: stack,
@@ -221,9 +221,9 @@ func StackNotExist(err error) bool {
 }
 
 // NewTags returns a list of default CloudFormation tags.
-func NewTags(input map[string]string) (tags []*svccfn.Tag) {
+func NewTags(input map[string]string) (tags []*cloudformation.Tag) {
 	for k, v := range input {
-		tags = append(tags, &svccfn.Tag{Key: aws.String(k), Value: aws.String(v)})
+		tags = append(tags, &cloudformation.Tag{Key: aws.String(k), Value: aws.String(v)})
 	}
 	return tags
 }

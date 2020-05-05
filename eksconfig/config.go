@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
-	"sigs.k8s.io/yaml"
+	"sigs.k8s.io/yaml" // must use "sigs.k8s.io/yaml"
 )
 
 // AWS_K8S_TESTER_EKS_PREFIX is the environment variable prefix used for "eksconfig".

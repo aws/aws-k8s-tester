@@ -17,8 +17,6 @@ import (
 type Config struct {
 	Logger           *zap.Logger
 	EtcdClientConfig clientv3.Config
-	ListBath         int64
-	ListInterval     time.Duration
 }
 
 type etcd struct {
@@ -47,10 +45,10 @@ func New(cfg Config) (Etcd, error) {
 
 // Etcd defines etcd client operations.
 type Etcd interface {
-	Put(timeout time.Duration, k, v string) error
+	Put(timeout time.Duration, k, v string, leaseTTL time.Duration) error
 	Get(timeout time.Duration, k string) ([]*mvccpb.KeyValue, error)
 	Campaign(pfx string, timeout time.Duration) (ok bool, err error)
-	List(pfx string, listBatch int64, listInterval time.Duration) (rs []*mvccpb.KeyValue, err error)
+	List(pfx string, listBatchLimit int64, listBatchInterval time.Duration) (rs []*mvccpb.KeyValue, err error)
 	Close()
 }
 
@@ -58,12 +56,29 @@ func (e *etcd) Close() {
 	e.cfg.Logger.Info("closed client", zap.Error(e.cli.Close()))
 }
 
-func (e *etcd) Put(timeout time.Duration, k, v string) error {
-	e.cfg.Logger.Info("writing", zap.String("key", k))
+func (e *etcd) Put(timeout time.Duration, k, v string, leaseTTL time.Duration) error {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	_, err := e.cli.Put(ctx, k, v)
+	gresp, err := e.cli.Grant(ctx, int64(leaseTTL.Seconds()))
 	cancel()
-	e.cfg.Logger.Info("wrote", zap.String("key", k), zap.Error(err))
+	if err != nil {
+		e.cfg.Logger.Warn("failed to grant a lease", zap.Error(err))
+		return err
+	}
+
+	e.cfg.Logger.Info("writing", zap.String("key", k), zap.String("lease-id", fmt.Sprintf("%x", int64(gresp.ID))), zap.Duration("ttl", leaseTTL))
+	ctx, cancel = context.WithTimeout(context.Background(), timeout)
+	_, err = e.cli.Put(ctx, k, v, clientv3.WithLease(gresp.ID))
+	cancel()
+	if err == nil {
+		e.cfg.Logger.Info("wrote", zap.String("key", k))
+	} else {
+		e.cfg.Logger.Warn("failed to write", zap.String("key", k), zap.Error(err))
+		ctx, cancel = context.WithTimeout(context.Background(), timeout)
+		_, gerr := e.cli.Revoke(ctx, gresp.ID)
+		cancel()
+		e.cfg.Logger.Warn("revoked lease", zap.Error(gerr))
+	}
+
 	return err
 }
 
@@ -75,7 +90,7 @@ func (e *etcd) Get(timeout time.Duration, k string) ([]*mvccpb.KeyValue, error) 
 	if err != nil {
 		return nil, err
 	}
-	e.cfg.Logger.Info("got", zap.String("key", k), zap.Int("kvs", len(resp.Kvs)), zap.Error(err))
+	e.cfg.Logger.Info("got", zap.String("key", k), zap.Int("kvs", len(resp.Kvs)))
 	return resp.Kvs, err
 }
 
@@ -100,15 +115,15 @@ func (e *etcd) Campaign(pfx string, timeout time.Duration) (ok bool, err error) 
 	return err == nil, nil
 }
 
-func (e *etcd) List(pfx string, listBatch int64, listInterval time.Duration) (rs []*mvccpb.KeyValue, err error) {
-	if listBatch == 0 {
-		return nil, fmt.Errorf("invalid list batch limit %d", listBatch)
+func (e *etcd) List(pfx string, listBatchLimit int64, listBatchInterval time.Duration) (rs []*mvccpb.KeyValue, err error) {
+	if listBatchLimit == 0 {
+		return nil, fmt.Errorf("invalid list batch limit %d", listBatchLimit)
 	}
 	// see "k8s.io/apiserver/pkg/storage/etcd3" to see how kube-apiserver paginates
 	// https://github.com/kubernetes/kubernetes/blob/master/staging/src/k8s.io/apiserver/pkg/storage/etcd3/store.go
 	opts := []clientv3.OpOption{
 		clientv3.WithRange(clientv3.GetPrefixRangeEnd(pfx)),
-		clientv3.WithLimit(listBatch),
+		clientv3.WithLimit(listBatchLimit),
 	}
 	key, resp := pfx, &clientv3.GetResponse{More: true}
 	for {
@@ -130,7 +145,7 @@ func (e *etcd) List(pfx string, listBatch int64, listInterval time.Duration) (rs
 		lastKey := resp.Kvs[len(resp.Kvs)-1].Key
 		key = string(lastKey) + "\x00"
 
-		time.Sleep(e.cfg.ListInterval)
+		time.Sleep(listBatchInterval)
 	}
 	e.cfg.Logger.Info("got response", zap.Int("kvs", len(rs)))
 	return rs, err

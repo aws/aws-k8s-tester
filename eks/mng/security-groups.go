@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	awscfn "github.com/aws/aws-k8s-tester/pkg/aws/cloudformation"
+	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
@@ -202,7 +202,7 @@ func (ts *tester) createIngressEgress(name string) error {
 		StackName:    aws.String(name + "-mng-sg"),
 		OnFailure:    aws.String(cloudformation.OnFailureDelete),
 		TemplateBody: aws.String(TemplateSG),
-		Tags: awscfn.NewTags(map[string]string{
+		Tags: cfn.NewTags(map[string]string{
 			"Kind":                   "aws-k8s-tester",
 			"Name":                   ts.cfg.EKSConfig.Name,
 			"aws-k8s-tester-version": version.ReleaseVersion,
@@ -228,7 +228,7 @@ func (ts *tester) createIngressEgress(name string) error {
 	ts.cfg.EKSConfig.Sync()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
-	ch := awscfn.Poll(
+	ch := cfn.Poll(
 		ctx,
 		ts.cfg.Stopc,
 		ts.cfg.Logger,
@@ -281,7 +281,7 @@ func (ts *tester) deleteIngressEgress(name string) error {
 		return err
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
-	ch := awscfn.Poll(
+	ch := cfn.Poll(
 		ctx,
 		make(chan struct{}), // do not exit on stop
 
@@ -292,7 +292,7 @@ func (ts *tester) deleteIngressEgress(name string) error {
 		time.Minute,
 		10*time.Second,
 	)
-	var st awscfn.StackStatus
+	var st cfn.StackStatus
 	for st = range ch {
 		if st.Error != nil {
 			cancel()
