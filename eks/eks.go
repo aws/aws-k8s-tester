@@ -930,7 +930,7 @@ func (ts *Tester) Up() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnManagedNodeGroups() {
-		if ts.ngTester == nil {
+		if ts.mngTester == nil {
 			return errors.New("ts.mngTester == nil when AddOnManagedNodeGroups.Enable == true")
 		}
 		fmt.Printf("\n*********************************\n")
