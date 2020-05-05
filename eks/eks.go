@@ -724,7 +724,7 @@ func (ts *Tester) Up() (err error) {
 			} else {
 				fmt.Printf("\n\n😲 😲 😲  UP ABORTED ???\n\n\n")
 			}
-			fmt.Printf("\n# to delete cluster\naws-k8s-tester eks delete cluster --path %q\n\n", ts.cfg.ConfigPath)
+			fmt.Printf("\n\n# to delete cluster\naws-k8s-tester eks delete cluster --path %s\n\n", ts.cfg.ConfigPath)
 			return
 		}
 
@@ -749,7 +749,7 @@ func (ts *Tester) Up() (err error) {
 			fmt.Printf("\n*********************************\n")
 			ts.lg.Sugar().Infof("Up.defer end (%s, %s)", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 			fmt.Printf("\n\n🔥 💀 👽 😱 😡 (-_-)  UP FAIL\n\n\n")
-			fmt.Printf("\n# to delete cluster\naws-k8s-tester eks delete cluster --path %q\n\n", ts.cfg.ConfigPath)
+			fmt.Printf("\n\n# to delete cluster\naws-k8s-tester eks delete cluster --path %s\n\n", ts.cfg.ConfigPath)
 			return
 		}
 
