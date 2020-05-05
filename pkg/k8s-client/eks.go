@@ -242,18 +242,24 @@ func createClient(cfg *EKSConfig) (cli *kubernetes.Clientset, err error) {
 					ClusterInfo:    clientcmdapi.Cluster{Server: ""},
 				},
 			).ClientConfig()
+
 		case cfg.KubeConfigContext == "":
 			cfg.Logger.Info("creating k8s client using KUBECONFIG",
 				zap.String("kubeconfig", cfg.KubeConfigPath),
 			)
 			kcfg, err = clientcmd.BuildConfigFromFlags("", cfg.KubeConfigPath)
 		}
+
 		if err != nil {
 			cfg.Logger.Warn("failed to read kubeconfig", zap.Error(err))
 		}
 	}
 	if kcfg == nil {
 		kcfg = createClientConfigEKS(cfg)
+	}
+	if kcfg == nil {
+		defaultConfig := clientcmd.DefaultClientConfig
+		kcfg, _ = defaultConfig.ClientConfig()
 	}
 	if kcfg == nil {
 		cfg.Logger.Warn("failed to create k8s client config")
@@ -289,7 +295,7 @@ func createClient(cfg *EKSConfig) (cli *kubernetes.Clientset, err error) {
 		)
 	}
 	if cfg.ClusterCADecoded == "" {
-		return nil, errors.New("empty ClusterCADecoded")
+		cfg.Logger.Warn("no cluster CA found in k8s client")
 	}
 
 	if kcfg.AuthProvider != nil {
