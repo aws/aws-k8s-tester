@@ -262,7 +262,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REPOSITORY_IMAGE_TAG=latest \
 Install `eks-utils` from https://github.com/aws/aws-k8s-tester/releases.
 
 ```
-AWS_K8S_TESTER_VERSION=v1.1.3
+AWS_K8S_TESTER_VERSION=v1.1.4
 
 DOWNLOAD_URL=https://github.com/aws/aws-k8s-tester/releases/download
 rm -rf /tmp/aws-k8s-tester

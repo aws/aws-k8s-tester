@@ -3,6 +3,18 @@
 <hr>
 
 
+## [v1.1.4](https://github.com/aws/aws-k8s-tester/releases/tag/v1.1.4) (2020-05-04)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.3...v1.1.4).
+
+### `eks`
+
+- Fix [managed node group creation when `AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE=false`](https://github.com/aws/aws-k8s-tester/commit/bae9748e9de81f29ef21cad987b816d01cbbdb0f).
+
+
+<hr>
+
+
 ## [v1.1.3](https://github.com/aws/aws-k8s-tester/releases/tag/v1.1.3) (2020-05-04)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.2...v1.1.3).
