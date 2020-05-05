@@ -9,30 +9,30 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.4...v1.1.5
 
 ### `eks-utils`
 
-- Rename [`eks-utils apis deprecate --list-batch` flag to `--batch-limit`](https://github.com/aws/aws-k8s-tester/commit/).
-- Rename [`eks-utils apis deprecate --list-interval` flag to `--batch-interval`](https://github.com/aws/aws-k8s-tester/commit/).
-- Add [`eks-utils nodes list` command](https://github.com/aws/aws-k8s-tester/commit/).
+- Rename [`eks-utils apis deprecate --list-batch` flag to `--batch-limit`](https://github.com/aws/aws-k8s-tester/commit/d984a26045ae79e694c0b926e611cb570cac33b9).
+- Rename [`eks-utils apis deprecate --list-interval` flag to `--batch-interval`](https://github.com/aws/aws-k8s-tester/commit/d984a26045ae79e694c0b926e611cb570cac33b9).
+- Add [`eks-utils nodes list` command](https://github.com/aws/aws-k8s-tester/commit/d984a26045ae79e694c0b926e611cb570cac33b9).
 
 ### `etcd-utils`
 
-- Rename [`etcd-utils k8s list --csv-output` flag to `--output`](https://github.com/aws/aws-k8s-tester/commit/).
-- Rename [`etcd-utils k8s list --prefix` flag to `--prefixes`](https://github.com/aws/aws-k8s-tester/commit/).
-- Rename [`etcd-utils k8s list --batch` flag to `--batch-limit`](https://github.com/aws/aws-k8s-tester/commit/).
-- Rename [`etcd-utils k8s list --interval` flag to `--batch-interval`](https://github.com/aws/aws-k8s-tester/commit/).
-- Remove [`etcd-utils k8s list --csv-ids` flag](https://github.com/aws/aws-k8s-tester/commit/).
-- Remove [`etcd-utils k8s list --csv-aggregated-ids` flag](https://github.com/aws/aws-k8s-tester/commit/).
-- Remove [`etcd-utils k8s list --csv-aggregated-output` flag](https://github.com/aws/aws-k8s-tester/commit/).
-- Output [prefix with no resource found with "none"](https://github.com/aws/aws-k8s-tester/commit/).
+- Rename [`etcd-utils k8s list --csv-output` flag to `--output`](https://github.com/aws/aws-k8s-tester/commit/d984a26045ae79e694c0b926e611cb570cac33b9).
+- Rename [`etcd-utils k8s list --prefix` flag to `--prefixes`](https://github.com/aws/aws-k8s-tester/commit/d984a26045ae79e694c0b926e611cb570cac33b9).
+- Rename [`etcd-utils k8s list --batch` flag to `--batch-limit`](https://github.com/aws/aws-k8s-tester/commit/d984a26045ae79e694c0b926e611cb570cac33b9).
+- Rename [`etcd-utils k8s list --interval` flag to `--batch-interval`](https://github.com/aws/aws-k8s-tester/commit/d984a26045ae79e694c0b926e611cb570cac33b9).
+- Remove [`etcd-utils k8s list --csv-ids` flag](https://github.com/aws/aws-k8s-tester/commit/d984a26045ae79e694c0b926e611cb570cac33b9).
+- Remove [`etcd-utils k8s list --csv-aggregated-ids` flag](https://github.com/aws/aws-k8s-tester/commit/d984a26045ae79e694c0b926e611cb570cac33b9).
+- Remove [`etcd-utils k8s list --csv-aggregated-output` flag](https://github.com/aws/aws-k8s-tester/commit/d984a26045ae79e694c0b926e611cb570cac33b9).
+- Output [prefix with no resource found with "none"](https://github.com/aws/aws-k8s-tester/commit/d984a26045ae79e694c0b926e611cb570cac33b9).
 
 ### `pkg/k8s-client`
 
-- Change [`Deprecate()` method signature to `Deprecate(batchLimit int64, batchInterval time.Duration)`](https://github.com/aws/aws-k8s-tester/commit/).
-- Remove [`EKSConfig.ListBatch`](https://github.com/aws/aws-k8s-tester/commit/).
-- Remove [`EKSConfig.ListInterval`](https://github.com/aws/aws-k8s-tester/commit/).
+- Change [`Deprecate()` method signature to `Deprecate(batchLimit int64, batchInterval time.Duration)`](https://github.com/aws/aws-k8s-tester/commit/d984a26045ae79e694c0b926e611cb570cac33b9).
+- Remove [`EKSConfig.ListBatch`](https://github.com/aws/aws-k8s-tester/commit/d984a26045ae79e694c0b926e611cb570cac33b9).
+- Remove [`EKSConfig.ListInterval`](https://github.com/aws/aws-k8s-tester/commit/d984a26045ae79e694c0b926e611cb570cac33b9).
 
 ### `pkg/aws/cloudformation` is now `pkg/aws/cfn`
 
-- Rename [`"github.com/aws/aws-k8s-tester/pkg/aws/cloudformation"` to `"github.com/aws/aws-k8s-tester/pkg/aws/cfn"`](https://github.com/aws/aws-k8s-tester/commit/).
+- Rename [`"github.com/aws/aws-k8s-tester/pkg/aws/cloudformation"` to `"github.com/aws/aws-k8s-tester/pkg/aws/cfn"`](https://github.com/aws/aws-k8s-tester/commit/d984a26045ae79e694c0b926e611cb570cac33b9).
 
 ### Dependency
 
