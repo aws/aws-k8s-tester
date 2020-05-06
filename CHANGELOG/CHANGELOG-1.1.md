@@ -7,9 +7,18 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.7...v1.1.8).
 
-### `eks`
+### `cw-utils`
 
-TODO
+- Add [`cw-utils metrics-image --log-level` flag](https://github.com/aws/aws-k8s-tester/commit/).
+
+### `eks-utils`
+
+- Add [`eks-utils apis --log-level` flag](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`eks-utils nodes --log-level` flag](https://github.com/aws/aws-k8s-tester/commit/).
+
+### `etcd-utils`
+
+- Add [`etcd-utils k8s --log-level` flag](https://github.com/aws/aws-k8s-tester/commit/).
 
 
 <hr>

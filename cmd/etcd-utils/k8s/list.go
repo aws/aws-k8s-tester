@@ -45,7 +45,7 @@ var defaultListPfxs = []string{
 }
 
 func newListCommand() *cobra.Command {
-	ac := &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "list",
 		Run:   listFunc,
 		Short: "List all resources",
@@ -53,6 +53,7 @@ func newListCommand() *cobra.Command {
 etcd-utils k8s \
   --endpoints=${ETCD_ENDPOINT} \
   --enable-prompt=false \
+  --log-level=fatal \
   list \
   --prefixes /registry/daemonsets,/registry/deployments,/registry/replicasets,/registry/networkpolicies,/registry/podsecuritypolicy \
   --output /tmp/etcd_utils_k8s_list.csv
@@ -60,16 +61,16 @@ etcd-utils k8s \
 `,
 	}
 
-	ac.PersistentFlags().StringVar(&listElectionPfx, "election-prefix", defaultListElectionPfx, "Prefix to campaign for")
-	ac.PersistentFlags().DurationVar(&listElectionTimeout, "election-timeout", 30*time.Second, "Campaign timeout")
-	ac.PersistentFlags().StringVar(&listDoneKey, "done-key", defaultListDoneKey, "Key to write once list is done")
+	cmd.PersistentFlags().StringVar(&listElectionPfx, "election-prefix", defaultListElectionPfx, "Prefix to campaign for")
+	cmd.PersistentFlags().DurationVar(&listElectionTimeout, "election-timeout", 30*time.Second, "Campaign timeout")
+	cmd.PersistentFlags().StringVar(&listDoneKey, "done-key", defaultListDoneKey, "Key to write once list is done")
 
-	ac.PersistentFlags().StringSliceVar(&listPfxs, "prefixes", defaultListPfxs, "Prefixes to list")
-	ac.PersistentFlags().Int64Var(&listBatchLimit, "batch-limit", 200, "etcd list call batch")
-	ac.PersistentFlags().DurationVar(&listBatchInterval, "batch-interval", 5*time.Second, "etcd list call batch interval")
-	ac.PersistentFlags().StringVar(&listOutput, "output", "", "Output path (.json or .yaml)")
+	cmd.PersistentFlags().StringSliceVar(&listPfxs, "prefixes", defaultListPfxs, "Prefixes to list")
+	cmd.PersistentFlags().Int64Var(&listBatchLimit, "batch-limit", 200, "etcd list call batch")
+	cmd.PersistentFlags().DurationVar(&listBatchInterval, "batch-interval", 5*time.Second, "etcd list call batch interval")
+	cmd.PersistentFlags().StringVar(&listOutput, "output", "", "Output path (.json or .yaml)")
 
-	return ac
+	return cmd
 }
 
 // ListResults defines the "etcd-utils k8s list" results.
@@ -111,12 +112,19 @@ func (rs Results) Swap(i, j int) {
 }
 
 func listFunc(cmd *cobra.Command, args []string) {
+	lcfg := logutil.GetDefaultZapLoggerConfig()
+	lcfg.Level = zap.NewAtomicLevelAt(logutil.ConvertToZapLevel(logLevel))
+	lg, err := lcfg.Build()
+	if err != nil {
+		panic(err)
+	}
+
 	ext := filepath.Ext(listOutput)
 	if ext != ".json" && ext != ".yaml" {
 		panic(fmt.Sprintf("invalid file extension '--output=%s'", listOutput))
 	}
 
-	fmt.Printf("\n\n************************\nstarting 'etcd-utils k8s list'\n\n")
+	lg.Info("starting 'etcd-utils k8s list'")
 	if enablePrompt {
 		prompt := promptui.Select{
 			Label: "Ready to list resources, should we continue?",
@@ -132,12 +140,6 @@ func listFunc(cmd *cobra.Command, args []string) {
 		if idx != 1 {
 			return
 		}
-	}
-
-	lcfg := logutil.GetDefaultZapLoggerConfig()
-	lg, err := lcfg.Build()
-	if err != nil {
-		panic(err)
 	}
 
 	e, err := etcd_client.New(etcd_client.Config{
@@ -223,7 +225,5 @@ func listFunc(cmd *cobra.Command, args []string) {
 	if err != nil {
 		panic(err)
 	}
-	println()
-	fmt.Println("'etcd-utils k8s list' success")
-	println()
+	lg.Info("'etcd-utils k8s list' success")
 }

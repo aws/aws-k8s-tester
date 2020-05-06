@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	k8sclient "github.com/aws/aws-k8s-tester/pkg/k8s-client"
+	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/spf13/cobra"
 	"k8s.io/utils/exec"
 )
@@ -26,7 +26,7 @@ func init() {
 }
 
 func newCheck() *cobra.Command {
-	ac := &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "check",
 		Run:   checkFunc,
 		Short: "Check EKS cluster status",
@@ -44,21 +44,21 @@ aws-k8s-tester eks check \
   --kubeconfig-context prow-hkg
 `,
 	}
-	ac.PersistentFlags().Float32Var(&checkClientQPS, "client-qps", 5.0, "EKS client qps")
-	ac.PersistentFlags().IntVar(&checkClientBurst, "client-burst", 10, "EKS client burst")
-	ac.PersistentFlags().StringVar(&checkKubeConfigPath, "kubeconfig", "", "EKS KUBECONFIG")
-	ac.PersistentFlags().StringVar(&checkKubeConfigContext, "kubeconfig-context", "", "EKS KUBECONFIG context")
-	ac.PersistentFlags().StringVar(&checkKubectlPath, "kubectl", defaultKubectlPath, "kubectl path")
-	ac.PersistentFlags().StringVar(&checkServerVersion, "server-version", "", "EKS server version")
-	ac.PersistentFlags().BoolVar(&checkEncryptionEnabled, "encryption-enabled", false, "'true' to check EKS encryption")
-	return ac
+	cmd.PersistentFlags().Float32Var(&checkClientQPS, "client-qps", 5.0, "EKS client qps")
+	cmd.PersistentFlags().IntVar(&checkClientBurst, "client-burst", 10, "EKS client burst")
+	cmd.PersistentFlags().StringVar(&checkKubeConfigPath, "kubeconfig", "", "EKS KUBECONFIG")
+	cmd.PersistentFlags().StringVar(&checkKubeConfigContext, "kubeconfig-context", "", "EKS KUBECONFIG context")
+	cmd.PersistentFlags().StringVar(&checkKubectlPath, "kubectl", defaultKubectlPath, "kubectl path")
+	cmd.PersistentFlags().StringVar(&checkServerVersion, "server-version", "", "EKS server version")
+	cmd.PersistentFlags().BoolVar(&checkEncryptionEnabled, "encryption-enabled", false, "'true' to check EKS encryption")
+	return cmd
 }
 
 func checkFunc(cmd *cobra.Command, args []string) {
 	if checkKubectlPath == "" {
 		panic(errors.New("'kubectl' not found"))
 	}
-	kcfg := &k8sclient.EKSConfig{
+	kcfg := &k8s_client.EKSConfig{
 		KubeConfigPath:    checkKubeConfigPath,
 		KubeConfigContext: checkKubeConfigContext,
 		KubectlPath:       checkKubectlPath,
@@ -68,7 +68,7 @@ func checkFunc(cmd *cobra.Command, args []string) {
 		ClientQPS:         checkClientQPS,
 		ClientBurst:       checkClientBurst,
 	}
-	cli, err := k8sclient.NewEKS(kcfg)
+	cli, err := k8s_client.NewEKS(kcfg)
 	if err != nil {
 		panic(fmt.Errorf("failed to create client %v", err))
 	}

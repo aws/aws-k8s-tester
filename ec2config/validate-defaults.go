@@ -124,7 +124,7 @@ func (cfg *Config) validateConfig() error {
 	}
 	regions := partition.Regions()
 	if _, ok := regions[cfg.Region]; !ok {
-		return fmt.Errorf("region %q for partition %q not found in %+v", cfg.Partition, regions)
+		return fmt.Errorf("region %q for partition %q not found in %+v", cfg.Region, cfg.Partition, regions)
 	}
 
 	if len(cfg.LogOutputs) == 0 {

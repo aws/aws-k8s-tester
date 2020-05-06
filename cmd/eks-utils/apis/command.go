@@ -10,6 +10,7 @@ import (
 )
 
 var (
+	logLevel          string
 	enablePrompt      bool
 	clientQPS         float32
 	clientBurst       int
@@ -36,19 +37,20 @@ func init() {
 
 // NewCommand implements "eks-utils apis" command.
 func NewCommand() *cobra.Command {
-	ac := &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "apis",
 		Short: "EKS API commands",
 	}
-	ac.PersistentFlags().BoolVar(&enablePrompt, "enable-prompt", true, "'true' to enable prompt mode")
-	ac.PersistentFlags().Float32Var(&clientQPS, "client-qps", 5.0, "EKS client qps")
-	ac.PersistentFlags().IntVar(&clientBurst, "client-burst", 10, "EKS client burst")
-	ac.PersistentFlags().StringVar(&kubeConfigPath, "kubeconfig", "", "EKS KUBECONFIG")
-	ac.PersistentFlags().StringVar(&kubeConfigContext, "kubeconfig-context", "", "EKS KUBECONFIG context")
-	ac.PersistentFlags().StringVar(&kubectlPath, "kubectl", defaultKubectlPath, "kubectl path")
-	ac.AddCommand(
+	cmd.PersistentFlags().StringVar(&logLevel, "log-level", "info", "Log level (debug, info, warn, error, dpanic, panic, fatal)")
+	cmd.PersistentFlags().BoolVar(&enablePrompt, "enable-prompt", true, "'true' to enable prompt mode")
+	cmd.PersistentFlags().Float32Var(&clientQPS, "client-qps", 5.0, "EKS client qps")
+	cmd.PersistentFlags().IntVar(&clientBurst, "client-burst", 10, "EKS client burst")
+	cmd.PersistentFlags().StringVar(&kubeConfigPath, "kubeconfig", "", "EKS KUBECONFIG")
+	cmd.PersistentFlags().StringVar(&kubeConfigContext, "kubeconfig-context", "", "EKS KUBECONFIG context")
+	cmd.PersistentFlags().StringVar(&kubectlPath, "kubectl", defaultKubectlPath, "kubectl path")
+	cmd.AddCommand(
 		newSupportedCommand(),
 		newDeprecateCommand(),
 	)
-	return ac
+	return cmd
 }

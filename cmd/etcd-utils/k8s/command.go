@@ -6,6 +6,7 @@ import (
 )
 
 var (
+	logLevel     string
 	enablePrompt bool
 	endpoints    []string
 )
@@ -16,14 +17,15 @@ func init() {
 
 // NewCommand implements "eks-utils apis" command.
 func NewCommand() *cobra.Command {
-	ac := &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "k8s",
 		Short: "k8s commands",
 	}
-	ac.PersistentFlags().BoolVar(&enablePrompt, "enable-prompt", true, "'true' to enable prompt mode")
-	ac.PersistentFlags().StringSliceVar(&endpoints, "endpoints", []string{"localhost:2379"}, "etcd endpoints")
-	ac.AddCommand(
+	cmd.PersistentFlags().StringVar(&logLevel, "log-level", "info", "Log level (debug, info, warn, error, dpanic, panic, fatal)")
+	cmd.PersistentFlags().BoolVar(&enablePrompt, "enable-prompt", true, "'true' to enable prompt mode")
+	cmd.PersistentFlags().StringSliceVar(&endpoints, "endpoints", []string{"localhost:2379"}, "etcd endpoints")
+	cmd.AddCommand(
 		newListCommand(),
 	)
-	return ac
+	return cmd
 }

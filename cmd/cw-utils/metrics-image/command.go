@@ -16,6 +16,7 @@ import (
 )
 
 var (
+	logLevel  string
 	partition string
 	region    string
 	queryPath string
@@ -27,21 +28,29 @@ func init() {
 
 // NewCommand implements "eks-utils nodes" command.
 func NewCommand() *cobra.Command {
-	ac := &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "metrics-image [OUTPUT-PATH]",
 		Short: "AWS CloudWatch metrics image commands",
 		Run:   metricsImageFunc,
 	}
-	ac.PersistentFlags().StringVar(&partition, "partition", "aws", "AWS partition")
-	ac.PersistentFlags().StringVar(&region, "region", "us-west-2", "AWS region")
-	ac.PersistentFlags().StringVar(&queryPath, "query-path", "", "JSON query to load")
-	return ac
+	cmd.PersistentFlags().StringVar(&logLevel, "log-level", "info", "Log level (debug, info, warn, error, dpanic, panic, fatal)")
+	cmd.PersistentFlags().StringVar(&partition, "partition", "aws", "AWS partition")
+	cmd.PersistentFlags().StringVar(&region, "region", "us-west-2", "AWS region")
+	cmd.PersistentFlags().StringVar(&queryPath, "query-path", "", "JSON query to load")
+	return cmd
 }
 
 func metricsImageFunc(cmd *cobra.Command, args []string) {
 	if len(args) != 1 {
 		fmt.Fprintf(os.Stderr, "expected 1 argument for image output; got %q", args)
 		os.Exit(1)
+	}
+
+	lcfg := logutil.GetDefaultZapLoggerConfig()
+	lcfg.Level = zap.NewAtomicLevelAt(logutil.ConvertToZapLevel(logLevel))
+	lg, err := lcfg.Build()
+	if err != nil {
+		panic(err)
 	}
 
 	if !fileutil.Exist(queryPath) {
@@ -55,10 +64,6 @@ func metricsImageFunc(cmd *cobra.Command, args []string) {
 	}
 	query := string(d)
 
-	lg, err := logutil.GetDefaultZapLogger()
-	if err != nil {
-		panic(err)
-	}
 	ss, _, _, err := aws.New(&aws.Config{
 		Logger:    lg,
 		Partition: partition,
