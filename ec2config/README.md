@@ -1,8 +1,9 @@
 
 ```
 AWS_K8S_TESTER_EC2_NAME | *ec2config.Config.Name | string | read-only "false"
-AWS_K8S_TESTER_EC2_CONFIG_PATH | *ec2config.Config.ConfigPath | string | read-only "false"
+AWS_K8S_TESTER_EC2_PARTITION | *ec2config.Config.Partition | string | read-only "false"
 AWS_K8S_TESTER_EC2_REGION | *ec2config.Config.Region | string | read-only "false"
+AWS_K8S_TESTER_EC2_CONFIG_PATH | *ec2config.Config.ConfigPath | string | read-only "false"
 AWS_K8S_TESTER_EC2_AWS_ACCOUNT_ID | *ec2config.Config.AWSAccountID | string | read-only "true"
 AWS_K8S_TESTER_EC2_AWS_USER_ID | *ec2config.Config.AWSUserID | string | read-only "true"
 AWS_K8S_TESTER_EC2_AWS_IAM_ROLE_ARN | *ec2config.Config.AWSIAMRoleARN | string | read-only "true"

@@ -20,7 +20,7 @@ func main() {
 
 func createDoc() string {
 	b := strings.Builder{}
-	b.WriteString(writeDoc(ec2config.EnvironmentVariablePrefix, &ec2config.Config{}))
+	b.WriteString(writeDoc(ec2config.AWS_K8S_TESTER_EC2_PREFIX, &ec2config.Config{}))
 	return b.String()
 }
 

@@ -27,11 +27,12 @@ AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_ENABLE=true \
 
 
 
+AWS_K8S_TESTER_EKS_NAME | *eksconfig.Config.Name | string | read-only "false"
+AWS_K8S_TESTER_EKS_PARTITION | *eksconfig.Config.Partition | string | read-only "false"
+AWS_K8S_TESTER_EKS_REGION | *eksconfig.Config.Region | string | read-only "false"
 AWS_K8S_TESTER_EKS_CONFIG_PATH | *eksconfig.Config.ConfigPath | string | read-only "false"
 AWS_K8S_TESTER_EKS_KUBECTL_COMMANDS_OUTPUT_PATH | *eksconfig.Config.KubectlCommandsOutputPath | string | read-only "false"
 AWS_K8S_TESTER_EKS_REMOTE_ACCESS_COMMANDS_OUTPUT_PATH | *eksconfig.Config.RemoteAccessCommandsOutputPath | string | read-only "false"
-AWS_K8S_TESTER_EKS_REGION | *eksconfig.Config.Region | string | read-only "false"
-AWS_K8S_TESTER_EKS_NAME | *eksconfig.Config.Name | string | read-only "false"
 AWS_K8S_TESTER_EKS_LOG_LEVEL | *eksconfig.Config.LogLevel | string | read-only "false"
 AWS_K8S_TESTER_EKS_LOG_OUTPUTS | *eksconfig.Config.LogOutputs | []string | read-only "false"
 AWS_K8S_TESTER_EKS_AWS_CLI_PATH | *eksconfig.Config.AWSCLIPath | string | read-only "false"
