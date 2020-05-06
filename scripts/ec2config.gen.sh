@@ -9,3 +9,7 @@ fi
 rm -f ec2config/README.md
 go run ec2config/gen/main.go
 cat ec2config/README.md
+
+go install -v ./cmd/aws-k8s-tester
+aws-k8s-tester ec2 create config --path ./ec2config/default.yaml
+rm -f ./ec2config/default.ssh.sh

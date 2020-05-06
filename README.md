@@ -43,10 +43,12 @@ Make sure AWS credential is located in your machine:
 aws sts get-caller-identity --query Arn --output text
 ```
 
-See https://github.com/aws/aws-k8s-tester/blob/master/ec2config/README.md for more.
+See the following for more fields:
+- https://github.com/aws/aws-k8s-tester/blob/master/ec2config/README.md
+- https://pkg.go.dev/github.com/aws/aws-k8s-tester/ec2config?tab=doc
+- https://github.com/aws/aws-k8s-tester/blob/master/ec2config/default.yaml
 
 ```bash
-cd /tmp
 AWS_K8S_TESTER_EC2_ON_FAILURE_DELETE=true \
 AWS_K8S_TESTER_EC2_REGION=us-west-2 \
 AWS_K8S_TESTER_EC2_S3_BUCKET_CREATE=true \
@@ -111,10 +113,20 @@ Make sure AWS credential is located in your machine:
 aws sts get-caller-identity --query Arn --output text
 ```
 
-See https://github.com/aws/aws-k8s-tester/blob/master/eksconfig/README.md for more.
+See the following for more fields:
+- https://github.com/aws/aws-k8s-tester/blob/master/eksconfig/README.md
+- https://pkg.go.dev/github.com/aws/aws-k8s-tester/eksconfig?tab=doc
+- https://github.com/aws/aws-k8s-tester/blob/master/eksconfig/default.yaml
 
 ```bash
-cd /tmp
+# easiest way, use the defaults
+# creates role, VPC, EKS cluster
+rm -rf /tmp/${USER}-test-eks-prod*
+aws-k8s-tester eks create cluster --enable-prompt=true -p /tmp/${USER}-test-prod-eks.yaml
+aws-k8s-tester eks delete cluster --enable-prompt=true -p /tmp/${USER}-test-prod-eks.yaml
+
+# advanced options can be set via environmental variables
+# e.g. node groups, managed node groups, add-ons
 AWS_K8S_TESTER_EKS_REGION=us-west-2 \
 AWS_K8S_TESTER_EKS_S3_BUCKET_CREATE=true \
 AWS_K8S_TESTER_EKS_S3_BUCKET_CREATE_KEEP=true \
@@ -262,7 +274,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REPOSITORY_IMAGE_TAG=latest \
 Install `eks-utils` from https://github.com/aws/aws-k8s-tester/releases.
 
 ```
-AWS_K8S_TESTER_VERSION=v1.1.5
+AWS_K8S_TESTER_VERSION=v1.1.6
 
 DOWNLOAD_URL=https://github.com/aws/aws-k8s-tester/releases/download
 rm -rf /tmp/aws-k8s-tester

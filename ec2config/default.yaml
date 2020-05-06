@@ -1,0 +1,64 @@
+asgs:
+  ec2-2020050610-sunf5nd46nho-asg:
+    ami-type: AL2_x86_64
+    asg-cfn-stack-id: ""
+    asg-desired-capacity: 1
+    asg-max-size: 1
+    asg-min-size: 1
+    image-id: ""
+    image-id-ssm-parameter: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+    instanaces: null
+    instance-types:
+    - c5.xlarge
+    logs: null
+    name: ec2-2020050610-sunf5nd46nho-asg
+    remote-access-user-name: ec2-user
+    ssm-document-cfn-stack-id: ""
+    ssm-document-cfn-stack-name: ec2-2020050610-sunf5nd46nho-ssm-document
+    ssm-document-command-ids: null
+    ssm-document-commands: ""
+    ssm-document-create: false
+    ssm-document-execution-timeout-in-seconds: 3600
+    ssm-document-name: ec22020050610sunf5nd46nhoSSMDocument
+    volume-size: 40
+asgs-fetch-logs: true
+asgs-logs-dir: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/ec2-2020050610-sunf5nd46nho-logs-remote
+aws-account-id: ""
+aws-credential-path: ""
+aws-iam-role-arn: ""
+aws-user-id: ""
+config-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/default.yaml
+dhcp-options-domain-name: ""
+dhcp-options-domain-name-servers: null
+log-level: info
+log-outputs:
+- stderr
+- /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/default.yaml.log
+name: ec2-2020050610-sunf5nd46nho
+on-failure-delete: true
+on-failure-delete-wait-seconds: 120
+private-subnet-ids: null
+public-subnet-ids: null
+region: us-west-2
+remote-access-commands-output-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/default.ssh.sh
+remote-access-key-create: true
+remote-access-key-name: ec2-2020050610-sunf5nd46nho-key-ec2
+remote-access-private-key-path: /tmp/inventiveu.insecure.key
+role-arn: ""
+role-cfn-stack-id: ""
+role-create: true
+role-managed-policy-arns: null
+role-name: ec2-2020050610-sunf5nd46nho-role-ec2
+role-service-principals: null
+s3-bucket-create: false
+s3-bucket-create-keep: false
+s3-bucket-lifecycle-expiration-days: 0
+s3-bucket-name: ""
+security-group-id: ""
+ssh-ingress-ipv4-range: ""
+status: null
+status-current: ""
+up: false
+vpc-cfn-stack-id: ""
+vpc-create: true
+vpc-id: ""
