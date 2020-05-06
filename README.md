@@ -25,6 +25,7 @@ The main goal is to create "temporary" EC2 instances or EKS clusters for "testin
   - https://github.com/aws/amazon-vpc-cni-k8s/pull/875
   - https://github.com/aws/amazon-vpc-cni-k8s/pull/878
   - https://github.com/aws/amazon-vpc-cni-k8s/pull/951
+  - https://github.com/aws/amazon-vpc-cni-k8s/pull/957
 - AppMesh scalability testing
   - https://github.com/aws/aws-app-mesh-controller-for-k8s/pull/137
 
