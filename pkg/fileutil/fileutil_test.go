@@ -2,6 +2,7 @@ package fileutil
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -27,4 +28,6 @@ func TestWriteTempFile(t *testing.T) {
 	if !bytes.Equal(txt, d) {
 		t.Fatalf("expected %q, got %q", string(txt), string(d))
 	}
+
+	fmt.Println(IsDirWriteable(os.TempDir()))
 }

@@ -275,7 +275,7 @@ func (cfg *Config) validateConfig() error {
 	}
 	regions := partition.Regions()
 	if _, ok := regions[cfg.Region]; !ok {
-		return fmt.Errorf("region %q for partition %q not found in %+v", cfg.Partition, regions)
+		return fmt.Errorf("region %q for partition %q not found in %+v", cfg.Region, cfg.Partition, regions)
 	}
 	if len(cfg.LogOutputs) == 0 {
 		return errors.New("LogOutputs is not empty")
@@ -314,6 +314,9 @@ func (cfg *Config) validateConfig() error {
 	if err := os.MkdirAll(filepath.Dir(cfg.ConfigPath), 0700); err != nil {
 		return err
 	}
+	if err := fileutil.IsDirWriteable(filepath.Dir(cfg.ConfigPath)); err != nil {
+		return err
+	}
 
 	if len(cfg.LogOutputs) == 1 && (cfg.LogOutputs[0] == "stderr" || cfg.LogOutputs[0] == "stdout") {
 		cfg.LogOutputs = append(cfg.LogOutputs, strings.ReplaceAll(cfg.ConfigPath, ".yaml", "")+".log")
@@ -325,11 +328,17 @@ func (cfg *Config) validateConfig() error {
 	if filepath.Ext(cfg.KubectlCommandsOutputPath) != ".sh" {
 		cfg.KubectlCommandsOutputPath = cfg.KubectlCommandsOutputPath + ".sh"
 	}
+	if err := fileutil.IsDirWriteable(filepath.Dir(cfg.KubectlCommandsOutputPath)); err != nil {
+		return err
+	}
 	if cfg.RemoteAccessCommandsOutputPath == "" {
 		cfg.RemoteAccessCommandsOutputPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".ssh.sh"
 	}
 	if filepath.Ext(cfg.RemoteAccessCommandsOutputPath) != ".sh" {
 		cfg.RemoteAccessCommandsOutputPath = cfg.RemoteAccessCommandsOutputPath + ".sh"
+	}
+	if err := fileutil.IsDirWriteable(filepath.Dir(cfg.RemoteAccessCommandsOutputPath)); err != nil {
+		return err
 	}
 
 	if filepath.Ext(cfg.CommandAfterCreateClusterOutputPath) != ".log" {
@@ -337,6 +346,9 @@ func (cfg *Config) validateConfig() error {
 	}
 	if cfg.CommandAfterCreateClusterOutputPath == "" {
 		cfg.CommandAfterCreateClusterOutputPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".after-create-cluster.out.log"
+	}
+	if err := fileutil.IsDirWriteable(filepath.Dir(cfg.CommandAfterCreateClusterOutputPath)); err != nil {
+		return err
 	}
 	if cfg.CommandAfterCreateClusterTimeout == time.Duration(0) {
 		cfg.CommandAfterCreateClusterTimeout = DefaultCommandAfterCreateClusterTimeout
@@ -349,6 +361,9 @@ func (cfg *Config) validateConfig() error {
 	if cfg.CommandAfterCreateAddOnsOutputPath == "" {
 		cfg.CommandAfterCreateAddOnsOutputPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".after-create-add-ons.out.log"
 	}
+	if err := fileutil.IsDirWriteable(filepath.Dir(cfg.CommandAfterCreateAddOnsOutputPath)); err != nil {
+		return err
+	}
 	if cfg.CommandAfterCreateAddOnsTimeout == time.Duration(0) {
 		cfg.CommandAfterCreateAddOnsTimeout = DefaultCommandAfterCreateAddOnsTimeout
 	}
@@ -356,6 +371,9 @@ func (cfg *Config) validateConfig() error {
 
 	if cfg.KubeConfigPath == "" {
 		cfg.KubeConfigPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".kubeconfig.yaml"
+	}
+	if err := fileutil.IsDirWriteable(filepath.Dir(cfg.KubeConfigPath)); err != nil {
+		return err
 	}
 
 	if !strings.Contains(cfg.KubectlDownloadURL, runtime.GOOS) {
@@ -491,6 +509,10 @@ func (cfg *Config) validateParameters() error {
 		if !fileutil.Exist(cfg.RemoteAccessPrivateKeyPath) {
 			return fmt.Errorf("RemoteAccessPrivateKeyPath %q does not exist", cfg.RemoteAccessPrivateKeyPath)
 		}
+	}
+	keyDir := filepath.Dir(cfg.RemoteAccessPrivateKeyPath)
+	if err := fileutil.IsDirWriteable(keyDir); err != nil {
+		return err
 	}
 
 	return nil

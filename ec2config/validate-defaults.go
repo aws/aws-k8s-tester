@@ -150,6 +150,9 @@ func (cfg *Config) validateConfig() error {
 	if err := os.MkdirAll(filepath.Dir(cfg.ConfigPath), 0700); err != nil {
 		return err
 	}
+	if err := fileutil.IsDirWriteable(filepath.Dir(cfg.ConfigPath)); err != nil {
+		return err
+	}
 
 	if len(cfg.LogOutputs) == 1 && (cfg.LogOutputs[0] == "stderr" || cfg.LogOutputs[0] == "stdout") {
 		cfg.LogOutputs = append(cfg.LogOutputs, cfg.ConfigPath+".log")
@@ -163,6 +166,9 @@ func (cfg *Config) validateConfig() error {
 	}
 	if filepath.Ext(cfg.RemoteAccessCommandsOutputPath) != ".sh" {
 		cfg.RemoteAccessCommandsOutputPath = cfg.RemoteAccessCommandsOutputPath + ".sh"
+	}
+	if err := fileutil.IsDirWriteable(filepath.Dir(cfg.RemoteAccessCommandsOutputPath)); err != nil {
+		return err
 	}
 
 	switch cfg.S3BucketCreate {
@@ -284,6 +290,9 @@ func (cfg *Config) validateConfig() error {
 		if !fileutil.Exist(cfg.RemoteAccessPrivateKeyPath) {
 			return fmt.Errorf("RemoteAccessPrivateKeyPath %q does not exist", cfg.RemoteAccessPrivateKeyPath)
 		}
+	}
+	if err := fileutil.IsDirWriteable(filepath.Dir(cfg.RemoteAccessPrivateKeyPath)); err != nil {
+		return err
 	}
 
 	return nil

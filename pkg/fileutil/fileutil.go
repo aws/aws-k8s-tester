@@ -114,3 +114,18 @@ func EnsureExecutable(p string) error {
 	}
 	return nil
 }
+
+// IsDirWriteable checks if dir is writable by writing and removing a file.
+// It returns error if dir is NOT writable.
+// If the director does not exist, it returns nil.
+func IsDirWriteable(dir string) error {
+	if !Exist(dir) {
+		return nil
+	}
+	f := filepath.Join(dir, ".touch")
+	// grants owner to make/remove files inside the directory
+	if err := ioutil.WriteFile(f, []byte(""), 0700); err != nil {
+		return err
+	}
+	return os.Remove(f)
+}
