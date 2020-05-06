@@ -168,7 +168,7 @@ Once cluster is created, check cluster state using AWS CLI:
 
 ```bash
 aws eks describe-cluster \
-  --name ${USER}-test-eks \
+  --name ${EKS_CLUSTER_NAME} \
   --query cluster.status
 
 "ACTIVE"
