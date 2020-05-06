@@ -14,8 +14,9 @@ func TestCW(t *testing.T) {
 
 	lg := zap.NewExample()
 	ss, _, _, err := aws.New(&aws.Config{
-		Logger: lg,
-		Region: "us-west-2",
+		Logger:    lg,
+		Partition: "aws",
+		Region:    "us-west-2",
 	})
 	if err != nil {
 		t.Skip(err)

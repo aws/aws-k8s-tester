@@ -13,10 +13,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/aws/aws-k8s-tester/pkg/aws"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
 	"github.com/aws/aws-k8s-tester/pkg/randutil"
+	"github.com/aws/aws-sdk-go/aws/endpoints"
 	"k8s.io/client-go/util/homedir"
 )
 
@@ -65,15 +65,15 @@ func NewDefault() *Config {
 	cfg := Config{
 		mu: new(sync.RWMutex),
 
-		Name: name,
+		Name:      name,
+		Partition: endpoints.AwsPartitionID,
+		Region:    endpoints.UsWest2RegionID,
 
 		// to be auto-generated
 		ConfigPath:                "",
 		KubectlCommandsOutputPath: "",
 		KubeConfigPath:            "",
 		AWSCLIPath:                "",
-
-		Region: "us-west-2",
 
 		LogLevel: logutil.DefaultLogLevel,
 		// default, stderr, stdout, or file name
@@ -251,14 +251,31 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 }
 
 func (cfg *Config) validateConfig() error {
-	if _, ok := aws.RegionToAiport[cfg.Region]; !ok {
-		return fmt.Errorf("region %q not found", cfg.Region)
-	}
 	if len(cfg.Name) == 0 {
 		return errors.New("Name is empty")
 	}
 	if cfg.Name != strings.ToLower(cfg.Name) {
 		return fmt.Errorf("Name %q must be in lower-case", cfg.Name)
+	}
+
+	var partition endpoints.Partition
+	switch cfg.Partition {
+	case endpoints.AwsPartitionID:
+		partition = endpoints.AwsPartition()
+	case endpoints.AwsCnPartitionID:
+		partition = endpoints.AwsCnPartition()
+	case endpoints.AwsUsGovPartitionID:
+		partition = endpoints.AwsUsGovPartition()
+	case endpoints.AwsIsoPartitionID:
+		partition = endpoints.AwsIsoPartition()
+	case endpoints.AwsIsoBPartitionID:
+		partition = endpoints.AwsIsoBPartition()
+	default:
+		return fmt.Errorf("unknown partition %q", cfg.Partition)
+	}
+	regions := partition.Regions()
+	if _, ok := regions[cfg.Region]; !ok {
+		return fmt.Errorf("region %q for partition %q not found in %+v", cfg.Partition, regions)
 	}
 	if len(cfg.LogOutputs) == 0 {
 		return errors.New("LogOutputs is not empty")

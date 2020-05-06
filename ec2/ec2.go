@@ -96,6 +96,7 @@ func New(cfg *ec2config.Config) (*Tester, error) {
 	awsCfg := &pkgaws.Config{
 		Logger:        ts.lg,
 		DebugAPICalls: ts.cfg.LogLevel == "debug",
+		Partition:     ts.cfg.Partition,
 		Region:        ts.cfg.Region,
 	}
 	var stsOutput *sts.GetCallerIdentityOutput

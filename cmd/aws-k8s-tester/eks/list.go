@@ -17,6 +17,7 @@ import (
 )
 
 var (
+	listPartition   string
 	listRegion      string
 	listResolverURL string
 	listSigningName string
@@ -32,6 +33,7 @@ func newList() *cobra.Command {
 		Use:   "list <subcommand>",
 		Short: "List EKS resources",
 	}
+	ac.PersistentFlags().StringVar(&listPartition, "partition", "aws", "AWS partition")
 	ac.PersistentFlags().StringVar(&listRegion, "region", "us-west-2", "EKS region")
 	ac.PersistentFlags().StringVar(&listResolverURL, "resolver-url", "", "EKS resolver endpoint URL")
 	ac.PersistentFlags().StringVar(&listSigningName, "signing-name", "", "EKS signing name")
@@ -55,6 +57,7 @@ func listClustersFunc(cmd *cobra.Command, args []string) {
 	lg, _ := logutil.GetDefaultZapLogger()
 	awsCfgEKS := &pkg_aws.Config{
 		Logger:      lg,
+		Partition:   listPartition,
 		Region:      listRegion,
 		ResolverURL: listResolverURL,
 		SigningName: listSigningName,

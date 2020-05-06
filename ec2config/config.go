@@ -14,6 +14,9 @@ import (
 	"sigs.k8s.io/yaml" // must use "sigs.k8s.io/yaml"
 )
 
+// AWS_K8S_TESTER_EC2_PREFIX is the environment variable prefix used for "ec2config".
+const AWS_K8S_TESTER_EC2_PREFIX = "AWS_K8S_TESTER_EC2_"
+
 const (
 	// AMITypeBottleRocketCPU is the AMI type for Bottlerocket OS.
 	// https://github.com/bottlerocket-os/bottlerocket
@@ -44,14 +47,19 @@ const RFC3339Micro = "2006-01-02T15:04:05.999Z07:00"
 type Config struct {
 	mu *sync.RWMutex
 
-	// Name is the name of EC2 tester.
+	// Name is the cluster name.
+	// If empty, deployer auto-populates it.
 	Name string `json:"name"`
+	// Partition is the AWS partition for EC2 deployment region.
+	// If empty, set default partition "aws".
+	Partition string `json:"partition"`
+	// Region is the AWS geographic area for EC2 deployment.
+	// If empty, set default region.
+	Region string `json:"region"`
+
 	// ConfigPath is the configuration file path.
 	// Deployer is expected to update this file with latest status.
 	ConfigPath string `json:"config-path,omitempty"`
-	// Region is the AWS geographic area for EC2 deployment.
-	// If empty, set default region.
-	Region string `json:"region,omitempty"`
 
 	// AWSAccountID is the account ID of the eks tester caller session.
 	AWSAccountID string `json:"aws-account-id" read-only:"true"`

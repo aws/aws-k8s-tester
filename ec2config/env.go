@@ -9,9 +9,6 @@ import (
 	"strings"
 )
 
-// EnvironmentVariablePrefix is the environment variable prefix used for "ec2config".
-const EnvironmentVariablePrefix = "AWS_K8S_TESTER_EC2_"
-
 // UpdateFromEnvs updates fields from environmental variables.
 // Empty values are ignored and do not overwrite fields with empty values.
 // WARNING: The environmental variable value always overwrites current field
@@ -24,7 +21,7 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 	}()
 
 	var vv interface{}
-	vv, err = parseEnvs(EnvironmentVariablePrefix, cfg)
+	vv, err = parseEnvs(AWS_K8S_TESTER_EC2_PREFIX, cfg)
 	if err != nil {
 		return err
 	}

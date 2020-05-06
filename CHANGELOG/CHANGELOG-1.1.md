@@ -3,7 +3,29 @@
 <hr>
 
 
+## [v1.1.8](https://github.com/aws/aws-k8s-tester/releases/tag/v1.1.8) (2020-05)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.7...v1.1.8).
+
+### `ec2config`
+
+- Add [`Config.Partition`](https://github.com/aws/aws-k8s-tester/commit/).
+
+### `eksconfig`
+
+- Add [`Config.Partition`](https://github.com/aws/aws-k8s-tester/commit/).
+
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.30.21`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.21) to [`v1.30.22`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.22).
+
+
+<hr>
+
+
 ## [v1.1.7](https://github.com/aws/aws-k8s-tester/releases/tag/v1.1.7) (2020-05-06)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.6...v1.1.7).
 
 ### `aws-k8s-tester`
 
@@ -31,6 +53,8 @@
 
 
 ## [v1.1.6](https://github.com/aws/aws-k8s-tester/releases/tag/v1.1.6) (2020-05-06)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.5...v1.1.6).
 
 ### `cw-utils`
 

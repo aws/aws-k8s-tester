@@ -24,6 +24,8 @@ type Config struct {
 	// DebugAPICalls is true to log all AWS API call debugging messages.
 	DebugAPICalls bool
 
+	// Partition is an AWS partition (default "aws").
+	Partition string
 	// Region is a separate AWS geographic area for EKS service.
 	// Each AWS Region has multiple, isolated locations known as Availability Zones.
 	Region string
@@ -42,6 +44,9 @@ func New(cfg *Config) (ss *session.Session, stsOutput *sts.GetCallerIdentityOutp
 	}
 	if cfg.Logger == nil {
 		return nil, nil, "", fmt.Errorf("missing logger")
+	}
+	if cfg.Partition == "" {
+		return nil, nil, "", fmt.Errorf("missing partition")
 	}
 	if cfg.Region == "" {
 		return nil, nil, "", fmt.Errorf("missing region")
@@ -100,6 +105,8 @@ func New(cfg *Config) (ss *session.Session, stsOutput *sts.GetCallerIdentityOutp
 	}
 	cfg.Logger.Info(
 		"creating AWS session",
+		zap.String("partition", cfg.Partition),
+		zap.String("region", cfg.Region),
 		zap.String("account-id", *stsOutput.Account),
 		zap.String("user-id", *stsOutput.UserId),
 		zap.String("arn", *stsOutput.Arn),

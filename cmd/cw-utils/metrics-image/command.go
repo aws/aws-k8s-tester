@@ -16,6 +16,7 @@ import (
 )
 
 var (
+	partition string
 	region    string
 	queryPath string
 )
@@ -31,6 +32,7 @@ func NewCommand() *cobra.Command {
 		Short: "AWS CloudWatch metrics image commands",
 		Run:   metricsImageFunc,
 	}
+	ac.PersistentFlags().StringVar(&partition, "partition", "aws", "AWS partition")
 	ac.PersistentFlags().StringVar(&region, "region", "us-west-2", "AWS region")
 	ac.PersistentFlags().StringVar(&queryPath, "query-path", "", "JSON query to load")
 	return ac
@@ -58,8 +60,9 @@ func metricsImageFunc(cmd *cobra.Command, args []string) {
 		panic(err)
 	}
 	ss, _, _, err := aws.New(&aws.Config{
-		Logger: lg,
-		Region: region,
+		Logger:    lg,
+		Partition: partition,
+		Region:    region,
 	})
 	if err != nil {
 		lg.Fatal("failed to create AWS session", zap.Error(err))

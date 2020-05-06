@@ -10,10 +10,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/aws/aws-k8s-tester/pkg/aws"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
 	"github.com/aws/aws-k8s-tester/pkg/randutil"
+	"github.com/aws/aws-sdk-go/aws/endpoints"
 )
 
 // NewDefault returns a default configuration.
@@ -21,16 +21,20 @@ import (
 //  - omitting an entire field returns nil value
 //  - make sure to check both
 func NewDefault() *Config {
-	cfg := Config{
+	name := fmt.Sprintf("ec2-%s-%s", getTS()[:10], randutil.String(12))
+	if v := os.Getenv(AWS_K8S_TESTER_EC2_PREFIX + "NAME"); v != "" {
+		name = v
+	}
+	return &Config{
 		mu: new(sync.RWMutex),
 
-		Name: fmt.Sprintf("ec2-%s-%s", getTS()[:10], randutil.String(12)),
+		Name:      name,
+		Partition: endpoints.AwsPartitionID,
+		Region:    endpoints.UsWest2RegionID,
 
 		// to be auto-generated
 		ConfigPath:                     "",
 		RemoteAccessCommandsOutputPath: "",
-
-		Region: "us-west-2",
 
 		LogLevel: logutil.DefaultLogLevel,
 		// default, stderr, stdout, or file name
@@ -51,32 +55,25 @@ func NewDefault() *Config {
 		RemoteAccessPrivateKeyPath: filepath.Join(os.TempDir(), randutil.String(10)+".insecure.key"),
 
 		ASGsFetchLogs: true,
-	}
-
-	if name := os.Getenv(EnvironmentVariablePrefix + "NAME"); name != "" {
-		cfg.Name = name
-	}
-
-	cfg.ASGs = map[string]ASG{
-		cfg.Name + "-asg": {
-			Name:                               cfg.Name + "-asg",
-			SSMDocumentCreate:                  false,
-			SSMDocumentName:                    "",
-			SSMDocumentCommands:                "",
-			SSMDocumentExecutionTimeoutSeconds: 3600,
-			RemoteAccessUserName:               "ec2-user", // for AL2
-			AMIType:                            AMITypeAL2X8664,
-			ImageID:                            "",
-			ImageIDSSMParameter:                "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2",
-			InstanceTypes:                      []string{DefaultNodeInstanceTypeCPU},
-			VolumeSize:                         DefaultNodeVolumeSize,
-			ASGMinSize:                         1,
-			ASGMaxSize:                         1,
-			ASGDesiredCapacity:                 1,
+		ASGs: map[string]ASG{
+			name + "-asg": {
+				Name:                               name + "-asg",
+				SSMDocumentCreate:                  false,
+				SSMDocumentName:                    "",
+				SSMDocumentCommands:                "",
+				SSMDocumentExecutionTimeoutSeconds: 3600,
+				RemoteAccessUserName:               "ec2-user", // for AL2
+				AMIType:                            AMITypeAL2X8664,
+				ImageID:                            "",
+				ImageIDSSMParameter:                "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2",
+				InstanceTypes:                      []string{DefaultNodeInstanceTypeCPU},
+				VolumeSize:                         DefaultNodeVolumeSize,
+				ASGMinSize:                         1,
+				ASGMaxSize:                         1,
+				ASGDesiredCapacity:                 1,
+			},
 		},
 	}
-
-	return &cfg
 }
 
 // ValidateAndSetDefaults returns an error for invalid configurations.
@@ -103,15 +100,33 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 }
 
 func (cfg *Config) validateConfig() error {
-	if _, ok := aws.RegionToAiport[cfg.Region]; !ok {
-		return fmt.Errorf("region %q not found", cfg.Region)
-	}
 	if len(cfg.Name) == 0 {
 		return errors.New("Name is empty")
 	}
 	if cfg.Name != strings.ToLower(cfg.Name) {
 		return fmt.Errorf("Name %q must be in lower-case", cfg.Name)
 	}
+
+	var partition endpoints.Partition
+	switch cfg.Partition {
+	case endpoints.AwsPartitionID:
+		partition = endpoints.AwsPartition()
+	case endpoints.AwsCnPartitionID:
+		partition = endpoints.AwsCnPartition()
+	case endpoints.AwsUsGovPartitionID:
+		partition = endpoints.AwsUsGovPartition()
+	case endpoints.AwsIsoPartitionID:
+		partition = endpoints.AwsIsoPartition()
+	case endpoints.AwsIsoBPartitionID:
+		partition = endpoints.AwsIsoBPartition()
+	default:
+		return fmt.Errorf("unknown partition %q", cfg.Partition)
+	}
+	regions := partition.Regions()
+	if _, ok := regions[cfg.Region]; !ok {
+		return fmt.Errorf("region %q for partition %q not found in %+v", cfg.Partition, regions)
+	}
+
 	if len(cfg.LogOutputs) == 0 {
 		return errors.New("LogOutputs is not empty")
 	}

@@ -259,6 +259,7 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 	awsCfg := &pkg_aws.Config{
 		Logger:        ts.lg,
 		DebugAPICalls: ts.cfg.LogLevel == "debug",
+		Partition:     ts.cfg.Partition,
 		Region:        ts.cfg.Region,
 	}
 	var stsOutput *sts.GetCallerIdentityOutput
@@ -304,6 +305,7 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 	ts.eksSession, _, ts.cfg.Status.AWSCredentialPath, err = pkg_aws.New(&pkg_aws.Config{
 		Logger:        ts.lg,
 		DebugAPICalls: ts.cfg.LogLevel == "debug",
+		Partition:     ts.cfg.Partition,
 		Region:        ts.cfg.Region,
 		ResolverURL:   ts.cfg.Parameters.ResolverURL,
 		SigningName:   ts.cfg.Parameters.SigningName,

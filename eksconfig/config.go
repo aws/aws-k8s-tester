@@ -23,6 +23,16 @@ const AWS_K8S_TESTER_EKS_PREFIX = "AWS_K8S_TESTER_EKS_"
 type Config struct {
 	mu *sync.RWMutex
 
+	// Name is the cluster name.
+	// If empty, deployer auto-populates it.
+	Name string `json:"name"`
+	// Partition is the AWS partition for EKS deployment region.
+	// If empty, set default partition "aws".
+	Partition string `json:"partition"`
+	// Region is the AWS geographic area for EKS deployment.
+	// If empty, set default region.
+	Region string `json:"region"`
+
 	// ConfigPath is the configuration file path.
 	// Deployer is expected to update this file with latest status.
 	ConfigPath string `json:"config-path,omitempty"`
@@ -30,13 +40,6 @@ type Config struct {
 	KubectlCommandsOutputPath string `json:"kubectl-commands-output-path,omitempty"`
 	// RemoteAccessCommandsOutputPath is the output path for ssh commands.
 	RemoteAccessCommandsOutputPath string `json:"remote-access-commands-output-path,omitempty"`
-
-	// Region is the AWS geographic area for EKS deployment.
-	// If empty, set default region.
-	Region string `json:"region,omitempty"`
-	// Name is the cluster name.
-	// If empty, deployer auto-populates it.
-	Name string `json:"name,omitempty"`
 
 	// LogLevel configures log level. Only supports debug, info, warn, error, panic, or fatal. Default 'info'.
 	LogLevel string `json:"log-level"`

@@ -1043,7 +1043,7 @@ func TestEnvAddOnNodeGroupsGetRef(t *testing.T) {
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE", `true`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS", `{"GetRef.Name-ng-for-cni":{"name":"GetRef.Name-ng-for-cni","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64","asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34,"image-id":"my-ami","instance-types":["type-2"],  "ssm-document-cfn-stack-name":"GetRef.Name-ssm", "ssm-document-name":"GetRef.Name-document",  "kubelet-extra-args":"aaa aa",  "volume-size":500}}`)
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS", `{"GetRef.Name-ng-for-cni":{"name":"GetRef.Name-ng-for-cni","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64","asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34,"image-id":"my-ami",  "ssm-document-create":true,   "instance-types":["type-2"],  "ssm-document-cfn-stack-name":"GetRef.Name-ssm", "ssm-document-name":"GetRef.Name-document",     "kubelet-extra-args":"aaa aa",  "volume-size":500}}`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE", `true`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE")
@@ -1060,17 +1060,19 @@ func TestEnvAddOnNodeGroupsGetRef(t *testing.T) {
 	expectedNGs := map[string]ASG{
 		cfg.Name + "-ng-for-cni": {
 			ASG: ec2config.ASG{
-				Name:                    cfg.Name + "-ng-for-cni",
-				RemoteAccessUserName:    "ec2-user",
-				AMIType:                 eks.AMITypesAl2X8664,
-				SSMDocumentCFNStackName: cfg.Name + "-ssm",
-				SSMDocumentName:         regex.ReplaceAllString(cfg.Name+"-document", ""),
-				ImageID:                 "my-ami",
-				ASGMinSize:              30,
-				ASGMaxSize:              35,
-				ASGDesiredCapacity:      34,
-				InstanceTypes:           []string{"type-2"},
-				VolumeSize:              500,
+				Name:                               cfg.Name + "-ng-for-cni",
+				RemoteAccessUserName:               "ec2-user",
+				SSMDocumentName:                    regex.ReplaceAllString(cfg.Name+"-document", ""),
+				SSMDocumentCFNStackName:            cfg.Name + "-ssm",
+				SSMDocumentExecutionTimeoutSeconds: 3600,
+				SSMDocumentCreate:                  true,
+				ImageID:                            "my-ami",
+				AMIType:                            eks.AMITypesAl2X8664,
+				InstanceTypes:                      []string{"type-2"},
+				VolumeSize:                         500,
+				ASGMinSize:                         30,
+				ASGMaxSize:                         35,
+				ASGDesiredCapacity:                 34,
 			},
 			KubeletExtraArgs: "aaa aa",
 		},
