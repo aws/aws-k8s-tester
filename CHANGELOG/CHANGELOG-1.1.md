@@ -7,8 +7,8 @@
 
 ### `eksconfig`
 
-- Add [`Status.TimeUTCCreateComplete`](https://github.com/aws/aws-k8s-tester/commit/).
-- Add [`Status.TimeUTCDeleteStart`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`Status.TimeUTCCreateComplete`](https://github.com/aws/aws-k8s-tester/commit/c5d1010f9a12efd85b61ae93d9d1afb004c7387e).
+- Add [`Status.TimeUTCDeleteStart`](https://github.com/aws/aws-k8s-tester/commit/c5d1010f9a12efd85b61ae93d9d1afb004c7387e).
 
 
 <hr>
