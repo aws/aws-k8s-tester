@@ -51,7 +51,7 @@ func (r *Resources) ExpectDeploySuccessful(ctx context.Context, f *framework.Fra
 		}
 		By(fmt.Sprintf("wait service (%s)", service.Name))
 		ctxto, cancel := context.WithTimeout(ctx, timeout)
-		svc, err = f.ResourceManager.WaitServiceHasEndpointsNum(ctxto, svc, int(*dp.Spec.Replicas))
+		_, err = f.ResourceManager.WaitServiceHasEndpointsNum(ctxto, svc, int(*dp.Spec.Replicas))
 		cancel()
 		if err != nil {
 			Expect(err).NotTo(HaveOccurred())
