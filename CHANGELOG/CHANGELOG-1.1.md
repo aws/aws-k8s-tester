@@ -3,28 +3,28 @@
 <hr>
 
 
-## [v1.1.7](https://github.com/aws/aws-k8s-tester/releases/tag/v1.1.7) (2020-05)
+## [v1.1.7](https://github.com/aws/aws-k8s-tester/releases/tag/v1.1.7) (2020-05-06)
 
 ### `aws-k8s-tester`
 
-- Remove [`aws-k8s-tester ec2`](https://github.com/aws/aws-k8s-tester/commit/).
+- Remove [`aws-k8s-tester ec2`](https://github.com/aws/aws-k8s-tester/commit/cb47ca22ca042be3b6f8464680ec7463e2e8f01f).
   - `aws-k8s-tester ec2 create cluster` is now `ec2-utils create instances`.
   - `aws-k8s-tester ec2 delete cluster` is now `ec2-utils delete instances`.
 
 ### `ec2-utils`
 
-- Rename [`aws-k8s-tester ec2` to `ec2-utils`](https://github.com/aws/aws-k8s-tester/commit/).
+- Rename [`aws-k8s-tester ec2` to `ec2-utils`](https://github.com/aws/aws-k8s-tester/commit/cb47ca22ca042be3b6f8464680ec7463e2e8f01f).
   - `aws-k8s-tester ec2 create config` is now `ec2-utils create config`.
   - `aws-k8s-tester ec2 create cluster` is now `ec2-utils create instances`.
   - `aws-k8s-tester ec2 delete cluster` is now `ec2-utils delete instances`.
 
 ### `ec2`
 
-- Fix [`ec2config.ASG.SSMDocumentCreate` `false` for ASGs](https://github.com/aws/aws-k8s-tester/commit/).
+- Fix [`ec2config.ASG.SSMDocumentCreate` `false` for ASGs](https://github.com/aws/aws-k8s-tester/commit/cb47ca22ca042be3b6f8464680ec7463e2e8f01f).
 
 ### `eks`
 
-- Fix [`ec2config.ASG.SSMDocumentCreate` `false` for node groups](https://github.com/aws/aws-k8s-tester/commit/).
+- Fix [`ec2config.ASG.SSMDocumentCreate` `false` for node groups](https://github.com/aws/aws-k8s-tester/commit/cb47ca22ca042be3b6f8464680ec7463e2e8f01f).
 
 
 <hr>
