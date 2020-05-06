@@ -406,6 +406,9 @@ func WaitForASGInstancesAndNodesReady(ctx context.Context, f *framework.Framewor
 
 	By("wait until ASG instances are ready")
 	err := f.Cloud.AutoScaling().WaitUntilAutoScalingGroupInService(aws.BackgroundContext(), describeASGsInput)
+	if err != nil {
+		return err
+	}
 
 	// Get instance IDs
 	asgInstances, err := f.Cloud.AutoScaling().DescribeInServiceAutoScalingGroupInstancesAsList(aws.BackgroundContext(), describeASGsInput)

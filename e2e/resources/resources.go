@@ -51,6 +51,9 @@ func (r *Resources) ExpectDeploySuccessful(ctx context.Context, f *framework.Fra
 		ctxto, cancel := context.WithTimeout(ctx, timeout)
 		svc, err = f.ResourceManager.WaitServiceHasEndpointsNum(ctxto, svc, int(*dp.Spec.Replicas))
 		cancel()
+		if err != nil {
+			Expect(err).NotTo(HaveOccurred())
+		}
 		Expect(err).NotTo(HaveOccurred())
 	}
 }
@@ -98,6 +101,9 @@ func (r *Resources) ExpectDeploymentScaleSuccessful(ctx context.Context, f *fram
 		},
 	}
 	patchBytes, err := json.Marshal(patch)
+	if err != nil {
+		Expect(err).NotTo(HaveOccurred())
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	dp, err := f.ClientSet.AppsV1().Deployments(ns.Name).Patch(ctx, r.Deployment.Name, types.JSONPatchType, patchBytes, metav1.PatchOptions{})
