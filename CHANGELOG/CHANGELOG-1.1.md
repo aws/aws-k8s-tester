@@ -3,6 +3,17 @@
 <hr>
 
 
+## [v1.1.6](https://github.com/aws/aws-k8s-tester/releases/tag/v1.1.6) (2020-05)
+
+### `eksconfig`
+
+- Add [`Status.TimeUTCCreateComplete`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`Status.TimeUTCDeleteStart`](https://github.com/aws/aws-k8s-tester/commit/).
+
+
+<hr>
+
+
 ## [v1.1.5](https://github.com/aws/aws-k8s-tester/releases/tag/v1.1.5) (2020-05-05)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.4...v1.1.5).

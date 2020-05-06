@@ -1535,6 +1535,9 @@ func (ts *Tester) down() (err error) {
 		}
 	}()
 
+	ts.cfg.Status.TimeUTCDeleteStart = time.Now().UTC()
+	ts.cfg.Sync()
+
 	var errs []string
 
 	fmt.Printf("\n*********************************\n")

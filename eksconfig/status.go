@@ -24,6 +24,10 @@ type Status struct {
 	DeleteTook time.Duration `json:"delete-took,omitempty" read-only:"true"`
 	// DeleteTookString is the duration that took to create the resource.
 	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
+	// TimeUTCCreateComplete is the time when cluster creation is complete.
+	TimeUTCCreateComplete time.Time `json:"time-utc-create-complete,omitempty" read-only:"true"`
+	// TimeUTCDeleteStart is the time when cluster and add-on deletion is started.
+	TimeUTCDeleteStart time.Time `json:"time-utc-delete-start,omitempty" read-only:"true"`
 
 	// AWSAccountID is the account ID of the eks tester caller session.
 	AWSAccountID string `json:"aws-account-id"`

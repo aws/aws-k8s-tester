@@ -131,18 +131,15 @@ func (ts *Tester) createCluster() (err error) {
 		ts.lg.Info("created k8s client")
 	}
 
-	if err = ts.createSubTesters(); err != nil {
-		return err
-	}
-
-	return ts.cfg.Sync()
+	return ts.createSubTesters()
 }
 
-func (ts *Tester) createEKS() error {
+func (ts *Tester) createEKS() (err error) {
 	createStart := time.Now()
 	defer func() {
 		ts.cfg.Status.CreateTook = time.Since(createStart)
 		ts.cfg.Status.CreateTookString = ts.cfg.Status.CreateTook.String()
+		ts.cfg.Status.TimeUTCCreateComplete = time.Now().UTC()
 		ts.cfg.Sync()
 	}()
 
@@ -226,7 +223,7 @@ func (ts *Tester) createEKS() error {
 				zap.String("value", ts.cfg.Parameters.RequestHeaderValue),
 			)
 		}
-		err := req.Send()
+		err = req.Send()
 		if err != nil {
 			return err
 		}
