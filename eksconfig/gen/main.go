@@ -60,6 +60,10 @@ func createDoc() string {
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnAppMesh, &eksconfig.AddOnAppMesh{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnJobsPi, &eksconfig.AddOnJobsPi{}))
 
 	b.WriteByte('\n')
@@ -93,10 +97,6 @@ func createDoc() string {
 	b.WriteByte('\n')
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnIRSAFargate, &eksconfig.AddOnIRSAFargate{}))
-
-	b.WriteByte('\n')
-	b.WriteByte('\n')
-	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnAppMesh, &eksconfig.AddOnAppMesh{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')

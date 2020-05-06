@@ -182,6 +182,9 @@ type Config struct {
 	// AddOnALB2048 defines parameters for EKS cluster
 	// add-on ALB 2048 service.
 	AddOnALB2048 *AddOnALB2048 `json:"add-on-alb-2048,omitempty"`
+	// AddOnAppMesh defines parameters for EKS cluster
+	// add-on "EKS App Mesh Integration".
+	AddOnAppMesh *AddOnAppMesh `json:"add-on-app-mesh,omitempty"`
 	// AddOnJobsPi defines parameters for EKS cluster
 	// add-on Job with pi Perl command.
 	AddOnJobsPi *AddOnJobsPi `json:"add-on-jobs-pi,omitempty"`
@@ -209,9 +212,6 @@ type Config struct {
 	// AddOnIRSAFargate defines parameters for EKS cluster
 	// add-on "IAM Roles for Service Accounts (IRSA)" with Fargate.
 	AddOnIRSAFargate *AddOnIRSAFargate `json:"add-on-irsa-fargate,omitempty"`
-	// AddOnAppMesh defines parameters for EKS cluster
-	// add-on "EKS App Mesh Integration".
-	AddOnAppMesh *AddOnAppMesh `json:"add-on-app-mesh,omitempty"`
 	// AddOnWordpress defines parameters for EKS cluster
 	// add-on WordPress.
 	AddOnWordpress *AddOnWordpress `json:"add-on-wordpress,omitempty"`

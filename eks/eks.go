@@ -114,8 +114,9 @@ type Tester struct {
 	csiEBSTester              csi_ebs.Tester
 	kubernetesDashboardTester kubernetes_dashboard.Tester
 	prometheusGrafanaTester   prometheus_grafana.Tester
-	nlbHelloWorldTester       alb.Tester
+	nlbHelloWorldTester       nlb.Tester
 	alb2048Tester             alb.Tester
+	appMeshTester             app_mesh.Tester
 	jobsPiTester              jobs_pi.Tester
 	jobsEchoTester            jobs_echo.Tester
 	cronJobsTester            cronjobs.Tester
@@ -125,7 +126,6 @@ type Tester struct {
 	irsaTester                irsa.Tester
 	fargateTester             fargate.Tester
 	irsaFargateTester         irsa_fargate.Tester
-	appMeshTester             app_mesh.Tester
 	wordPressTester           wordpress.Tester
 	jupyterHubTester          jupyter_hub.Tester
 	kubeflowTester            kubeflow.Tester
@@ -478,6 +478,17 @@ func (ts *Tester) createSubTesters() (err error) {
 		}
 	}
 
+	if ts.cfg.IsEnabledAddOnAppMesh() {
+		ts.lg.Info("creating appMeshTester")
+		ts.appMeshTester, err = app_mesh.NewTester(app_mesh.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			EKSConfig: ts.cfg,
+			K8SClient: ts.k8sClient,
+			CFNAPI:    ts.cfnAPI,
+		})
+	}
+
 	if ts.cfg.IsEnabledAddOnJobsPi() {
 		ts.lg.Info("creating jobsPiTester")
 		ts.jobsPiTester, err = jobs_pi.New(jobs_pi.Config{
@@ -603,17 +614,6 @@ func (ts *Tester) createSubTesters() (err error) {
 		if err != nil {
 			return err
 		}
-	}
-
-	if ts.cfg.IsEnabledAddOnAppMesh() {
-		ts.lg.Info("creating appMeshTester")
-		ts.appMeshTester, err = app_mesh.NewTester(app_mesh.Config{
-			Logger:    ts.lg,
-			Stopc:     ts.stopCreationCh,
-			EKSConfig: ts.cfg,
-			K8SClient: ts.k8sClient,
-			CFNAPI:    ts.cfnAPI,
-		})
 	}
 
 	if ts.cfg.IsEnabledAddOnWordpress() {
@@ -1098,6 +1098,23 @@ func (ts *Tester) Up() (err error) {
 		}
 	}
 
+	if ts.cfg.IsEnabledAddOnAppMesh() {
+		if ts.appMeshTester == nil {
+			return errors.New("ts.appMeshTester == nil when AddOnAppMesh.Enable == true")
+		}
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("appMeshTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnAppMesh.Namespace)
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.interruptSig,
+			ts.appMeshTester.Create,
+		); err != nil {
+			return err
+		}
+	}
+
 	if ts.cfg.IsEnabledAddOnJobsPi() {
 		if ts.jobsPiTester == nil {
 			return errors.New("ts.jobsPiTester == nil when AddOnJobsPi.Enable == true")
@@ -1246,23 +1263,6 @@ func (ts *Tester) Up() (err error) {
 			ts.stopCreationChOnce,
 			ts.interruptSig,
 			ts.irsaFargateTester.Create,
-		); err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnAppMesh() {
-		if ts.appMeshTester == nil {
-			return errors.New("ts.appMeshTester == nil when AddOnAppMesh.Enable == true")
-		}
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("appMeshTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnAppMesh.Namespace)
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.interruptSig,
-			ts.appMeshTester.Create,
 		); err != nil {
 			return err
 		}
@@ -1619,15 +1619,6 @@ func (ts *Tester) down() (err error) {
 		}
 	}
 
-	if ts.cfg.IsEnabledAddOnAppMesh() && ts.cfg.AddOnAppMesh.Created {
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("appMeshTester.Delete (%q)\n", ts.cfg.ConfigPath)
-		if err := ts.appMeshTester.Delete(); err != nil {
-			ts.lg.Warn("appMeshTester.Delete failed", zap.Error(err))
-			errs = append(errs, err.Error())
-		}
-	}
-
 	if ts.cfg.IsEnabledAddOnIRSAFargate() && ts.cfg.AddOnIRSAFargate.Created {
 		fmt.Printf("\n*********************************\n")
 		fmt.Printf("irsaFargateTester.Delete (%q)\n", ts.cfg.ConfigPath)
@@ -1705,6 +1696,15 @@ func (ts *Tester) down() (err error) {
 		fmt.Printf("jobsPiTester.Delete (%q)\n", ts.cfg.ConfigPath)
 		if err := ts.jobsPiTester.Delete(); err != nil {
 			ts.lg.Warn("jobsPiTester.Delete failed", zap.Error(err))
+			errs = append(errs, err.Error())
+		}
+	}
+
+	if ts.cfg.IsEnabledAddOnAppMesh() && ts.cfg.AddOnAppMesh.Created {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("appMeshTester.Delete (%q)\n", ts.cfg.ConfigPath)
+		if err := ts.appMeshTester.Delete(); err != nil {
+			ts.lg.Warn("appMeshTester.Delete failed", zap.Error(err))
 			errs = append(errs, err.Error())
 		}
 	}

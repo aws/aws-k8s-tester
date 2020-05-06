@@ -148,9 +148,8 @@ func (ts *Tester) createEKS() (err error) {
 		ts.cfg.Status.ClusterARN != "" ||
 		ts.cfg.Status.ClusterAPIServerEndpoint != "" ||
 		ts.cfg.Status.ClusterCA != "" ||
-		ts.cfg.Status.ClusterCADecoded != "" ||
-		ts.cfg.Status.ClusterStatusCurrent != "" {
-		ts.lg.Info("non-empty cluster given; no need to create a new one")
+		ts.cfg.Status.ClusterCADecoded != "" {
+		ts.lg.Info("non-empty cluster given; no need to create a new one", zap.String("status", ts.cfg.Status.ClusterStatusCurrent))
 		return nil
 	}
 	if ts.cfg.Status.Up {

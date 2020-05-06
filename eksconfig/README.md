@@ -8,6 +8,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_ENABLE=true \
+AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_ENABLE=true \
@@ -17,7 +18,6 @@ AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ENABLE=true \
-AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_ENABLE=true \
@@ -191,6 +191,18 @@ AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_ALB_NAME | *eksconfig.AddOnALB2048.ALBName | 
 AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_URL | *eksconfig.AddOnALB2048.URL | string | read-only "true"
 
 
+AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_ENABLE | *eksconfig.AddOnAppMesh.Enable | bool | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_CREATED | *eksconfig.AddOnAppMesh.Created | bool | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_CREATE_TOOK | *eksconfig.AddOnAppMesh.CreateTook | time.Duration | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_CREATE_TOOK_STRING | *eksconfig.AddOnAppMesh.CreateTookString | string | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_DELETE_TOOK | *eksconfig.AddOnAppMesh.DeleteTook | time.Duration | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_DELETE_TOOK_STRING | *eksconfig.AddOnAppMesh.DeleteTookString | string | read-only "true"
+AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_NAMESPACE | *eksconfig.AddOnAppMesh.Namespace | string | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_CONTROLLER_IMAGE | *eksconfig.AddOnAppMesh.ControllerImage | string | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_INJECTOR_IMAGE | *eksconfig.AddOnAppMesh.InjectorImage | string | read-only "false"
+AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_POLICY_CFN_STACK_ID | *eksconfig.AddOnAppMesh.PolicyCFNStackID | string | read-only "true"
+
+
 AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_ENABLE | *eksconfig.AddOnJobsPi.Enable | bool | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_CREATED | *eksconfig.AddOnJobsPi.Created | bool | read-only "true"
 AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_CREATE_TOOK | *eksconfig.AddOnJobsPi.CreateTook | time.Duration | read-only "true"
@@ -331,18 +343,6 @@ AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_S3_KEY | *eksconfig.AddOnIRSAFargate.S3Ke
 AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_PROFILE_NAME | *eksconfig.AddOnIRSAFargate.ProfileName | string | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_POD_NAME | *eksconfig.AddOnIRSAFargate.PodName | string | read-only "false"
 AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_CONTAINER_NAME | *eksconfig.AddOnIRSAFargate.ContainerName | string | read-only "false"
-
-
-AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_ENABLE | *eksconfig.AddOnAppMesh.Enable | bool | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_CREATED | *eksconfig.AddOnAppMesh.Created | bool | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_CREATE_TOOK | *eksconfig.AddOnAppMesh.CreateTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_CREATE_TOOK_STRING | *eksconfig.AddOnAppMesh.CreateTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_DELETE_TOOK | *eksconfig.AddOnAppMesh.DeleteTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_DELETE_TOOK_STRING | *eksconfig.AddOnAppMesh.DeleteTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_NAMESPACE | *eksconfig.AddOnAppMesh.Namespace | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_CONTROLLER_IMAGE | *eksconfig.AddOnAppMesh.ControllerImage | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_INJECTOR_IMAGE | *eksconfig.AddOnAppMesh.InjectorImage | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_POLICY_CFN_STACK_ID | *eksconfig.AddOnAppMesh.PolicyCFNStackID | string | read-only "true"
 
 
 AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_ENABLE | *eksconfig.AddOnWordpress.Enable | bool | read-only "false"
