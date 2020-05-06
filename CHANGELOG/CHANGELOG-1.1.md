@@ -7,18 +7,9 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.7...v1.1.8).
 
-### `ec2config`
+### `eks`
 
-- Add [`Config.Partition`](https://github.com/aws/aws-k8s-tester/commit/70f46239078f7612f423a86b8df2712557b57b38).
-
-### `eksconfig`
-
-- Add [`Config.Partition`](https://github.com/aws/aws-k8s-tester/commit/70f46239078f7612f423a86b8df2712557b57b38).
-
-### Dependency
-
-- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.30.21`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.21) to [`v1.30.22`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.22).
-
+TODO
 
 <hr>
 
@@ -40,6 +31,14 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.6...v1.1.7
   - `aws-k8s-tester ec2 create cluster` is now `ec2-utils create instances`.
   - `aws-k8s-tester ec2 delete cluster` is now `ec2-utils delete instances`.
 
+### `ec2config`
+
+- Add [`Config.Partition`](https://github.com/aws/aws-k8s-tester/commit/70f46239078f7612f423a86b8df2712557b57b38).
+
+### `eksconfig`
+
+- Add [`Config.Partition`](https://github.com/aws/aws-k8s-tester/commit/70f46239078f7612f423a86b8df2712557b57b38).
+
 ### `ec2`
 
 - Fix [`ec2config.ASG.SSMDocumentCreate` `false` for ASGs](https://github.com/aws/aws-k8s-tester/commit/cb47ca22ca042be3b6f8464680ec7463e2e8f01f).
@@ -47,6 +46,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.6...v1.1.7
 ### `eks`
 
 - Fix [`ec2config.ASG.SSMDocumentCreate` `false` for node groups](https://github.com/aws/aws-k8s-tester/commit/cb47ca22ca042be3b6f8464680ec7463e2e8f01f).
+
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.30.21`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.21) to [`v1.30.22`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.22).
 
 
 <hr>
