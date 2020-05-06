@@ -19,7 +19,15 @@ COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/bin/ec2
 COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/bin/eks-utils-${RELEASE_VERSION}-linux-amd64 /eks-utils
 COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/bin/etcd-utils-${RELEASE_VERSION}-linux-amd64 /etcd-utils
 COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/bin/cw-utils-${RELEASE_VERSION}-linux-amd64 /cw-utils
-WORKDIR /
 RUN rm -rf /go/src/github.com/aws/aws-k8s-tester
+RUN chmod +x /aws-k8s-tester /ec2-utils /eks-utils /etcd-utils /cw-utils
+WORKDIR /
 
+RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.16.9/bin/linux/amd64/kubectl && chmod +x ./kubectl && mv ./kubectl /usr/local/bin/kubectl
+RUN aws --version
+RUN /ec2-utils version
+RUN /eks-utils version
+RUN /etcd-utils version
+RUN /cw-utils version
 RUN /aws-k8s-tester version
+RUN kubectl version --client=true
