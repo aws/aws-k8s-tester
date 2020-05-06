@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
+	"github.com/aws/aws-k8s-tester/pkg/randutil"
 	"github.com/aws/aws-sdk-go/service/eks"
 )
 
@@ -99,7 +100,7 @@ func (cfg *Config) validateAddOnJupyterHub() error {
 	}
 
 	if cfg.AddOnJupyterHub.ProxySecretToken == "" {
-		cfg.AddOnJupyterHub.ProxySecretToken = randHex(32)
+		cfg.AddOnJupyterHub.ProxySecretToken = randutil.Hex(32)
 	}
 	_, err := hex.DecodeString(cfg.AddOnJupyterHub.ProxySecretToken)
 	if err != nil {

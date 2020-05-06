@@ -4,13 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math/rand"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
+	"github.com/aws/aws-k8s-tester/pkg/randutil"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -70,7 +70,7 @@ func (ng *nodeGroup) Start() (err error) {
 
 	ng.cfg.Logger.Info("creating node group with hollow nodes", zap.Int("nodes", ng.cfg.Nodes), zap.Any("node-labels", ng.cfg.NodeLabels))
 	for i := 0; i < ng.cfg.Nodes; i++ {
-		nodeName := fmt.Sprintf("fake-node-%06d-%s", i, string(randBytes(5)))
+		nodeName := fmt.Sprintf("fake-node-%06d-%s", i, randutil.String(5))
 		ng.kubelets[i], err = newKubelet(kubeletConfig{
 			lg:           ng.cfg.Logger,
 			cli:          ng.cfg.Client,
@@ -233,15 +233,4 @@ func (ng *nodeGroup) checkNodes() (readyNodes []string, createdNodes []string, e
 
 	ng.cfg.Logger.Info("checked hollow node group", zap.Int("ready-nodes", len(readyNodes)), zap.Int("created-nodes", len(createdNodes)), zap.Int("desired-nodes", ng.cfg.Nodes))
 	return readyNodes, createdNodes, err
-}
-
-const ll = "0123456789abcdefghijklmnopqrstuvwxyz"
-
-func randBytes(n int) []byte {
-	b := make([]byte, n)
-	for i := range b {
-		rand.Seed(time.Now().UnixNano())
-		b[i] = ll[rand.Intn(len(ll))]
-	}
-	return b
 }

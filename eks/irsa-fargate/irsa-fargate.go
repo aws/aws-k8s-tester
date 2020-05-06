@@ -7,7 +7,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math/rand"
 	"os"
 	"strings"
 	"text/template"
@@ -17,6 +16,7 @@ import (
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
+	"github.com/aws/aws-k8s-tester/pkg/randutil"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -194,7 +194,7 @@ func (ts *tester) createS3() (err error) {
 	_, err = ts.cfg.S3API.PutObject(&s3.PutObjectInput{
 		Bucket:  aws.String(ts.cfg.EKSConfig.S3BucketName),
 		Key:     aws.String(ts.cfg.EKSConfig.AddOnIRSAFargate.S3Key),
-		Body:    bytes.NewReader(randBytes(1024)),
+		Body:    bytes.NewReader(randutil.Bytes(1024)),
 		Expires: aws.Time(time.Now().Add(24 * time.Hour)),
 
 		// https://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html#canned-acl
@@ -1059,15 +1059,4 @@ func (ts *tester) checkPod() error {
 	// TODO: fail if "sleepMsg" not found?
 
 	return ts.cfg.EKSConfig.Sync()
-}
-
-const ll = "0123456789abcdefghijklmnopqrstuvwxyz"
-
-func randBytes(n int) []byte {
-	b := make([]byte, n)
-	for i := range b {
-		rand.Seed(time.Now().UnixNano())
-		b[i] = ll[rand.Intn(len(ll))]
-	}
-	return b
 }

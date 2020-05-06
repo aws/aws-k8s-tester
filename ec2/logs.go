@@ -11,6 +11,7 @@ import (
 
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
+	"github.com/aws/aws-k8s-tester/pkg/randutil"
 	"github.com/aws/aws-k8s-tester/ssh"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
@@ -468,7 +469,7 @@ func shorten(lg *zap.Logger, name string) string {
 	ext := filepath.Ext(name)
 	oldName := name
 
-	name = name[:230] + randString(5) + ext
+	name = name[:230] + randutil.String(5) + ext
 	lg.Info("file name too long; renamed", zap.String("old", oldName), zap.String("new", name))
 	return name
 }

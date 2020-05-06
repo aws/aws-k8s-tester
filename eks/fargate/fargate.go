@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math/rand"
 	"os"
 	"strings"
 	"time"
@@ -942,15 +941,4 @@ func IsProfileDeleted(err error) bool {
 	}
 
 	return strings.Contains(err.Error(), " not found ")
-}
-
-const ll = "0123456789abcdefghijklmnopqrstuvwxyz"
-
-func randString(n int) string {
-	b := make([]byte, n)
-	for i := range b {
-		rand.Seed(time.Now().UnixNano())
-		b[i] = ll[rand.Intn(len(ll))]
-	}
-	return string(b)
 }

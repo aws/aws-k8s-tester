@@ -8,6 +8,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+// DefaultLogLevel is the default log level.
 var DefaultLogLevel = "info"
 
 // ConvertToZapLevel converts log level string to zapcore.Level.

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
+	"github.com/aws/aws-k8s-tester/pkg/randutil"
 	"github.com/aws/aws-sdk-go/service/eks"
 )
 
@@ -125,7 +126,7 @@ func (cfg *Config) validateAddOnWordpress() error {
 		cfg.AddOnWordpress.UserName = "user"
 	}
 	if cfg.AddOnWordpress.Password == "" {
-		cfg.AddOnWordpress.Password = randString(10)
+		cfg.AddOnWordpress.Password = randutil.String(10)
 	}
 
 	return nil

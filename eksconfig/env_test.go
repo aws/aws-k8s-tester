@@ -1,7 +1,6 @@
 package eksconfig
 
 import (
-	"encoding/hex"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -11,6 +10,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
+	"github.com/aws/aws-k8s-tester/pkg/randutil"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/stretchr/testify/assert"
 )
@@ -319,7 +319,7 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_CONTAINER_NAME", "fargate-container")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_CONTAINER_NAME")
 
-	proxySecretToken := hex.EncodeToString(randBytes(32))
+	proxySecretToken := randutil.Hex(32)
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_ENABLE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_NAMESPACE", "jhhub")

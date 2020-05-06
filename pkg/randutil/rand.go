@@ -1,24 +1,38 @@
-package ec2config
+// Package randutil implements random utilities.
+package randutil
 
 import (
+	"encoding/hex"
 	"math/rand"
 	"time"
 )
 
 const ll = "0123456789abcdefghijklmnopqrstuvwxyz"
 
-func randString(n int) string {
+func String(n int) string {
 	b := make([]byte, n)
 	for i := range b {
 		rand.Seed(time.Now().UnixNano())
 		b[i] = ll[rand.Intn(len(ll))]
 	}
+
+	rand.Seed(time.Now().UnixNano())
 	pfx := randoms[rand.Intn(len(randoms))]
 	s := pfx + string(b)
 	if len(s) > n {
 		s = s[:n]
 	}
+
 	return s
+}
+
+func Bytes(n int) []byte {
+	return []byte(String(n))
+}
+
+// openssl rand -hex 32
+func Hex(n int) string {
+	return hex.EncodeToString(Bytes(n))
 }
 
 var randoms = []string{
@@ -33,13 +47,15 @@ var randoms = []string{
 	"amazon",
 	"flow",
 	"cherry",
+	"grand",
 	"tree",
 	"frost",
+	"deluxe",
+	"superb",
 	"morning",
 	"grand",
 	"sparkling",
 	"wandering",
-	"snowy",
 	"summertime",
 	"butterfly",
 	"boldly",
@@ -48,8 +64,11 @@ var randoms = []string{
 	"breeze",
 	"hiking",
 	"proud",
+	"great",
+	"mochi",
 	"floral",
-	"divine",
+	"spectacular",
+	"dune",
 	"modern",
 	"delight",
 	"lively",
@@ -61,6 +80,7 @@ var randoms = []string{
 	"atlas",
 	"grass",
 	"haze",
+	"spotlight",
 	"glacial",
 	"mountain",
 	"snowflake",
@@ -79,12 +99,14 @@ var randoms = []string{
 	"hello",
 	"seattle",
 	"wind",
+	"breeze",
 	"watermelon",
 	"sea",
 	"ocean",
 	"kirkland",
 	"bellevue",
 	"sunrise",
+	"waterfront",
 	"magnificent",
 	"exclusive",
 	"tropical",
@@ -92,7 +114,6 @@ var randoms = []string{
 	"sunset",
 	"blueshift",
 	"dynamic",
-	"leaf",
 	"forest",
 	"impressive",
 	"amelia",

@@ -2,10 +2,8 @@ package ec2
 
 import (
 	"fmt"
-	"math/rand"
 	"os"
 	"sync"
-	"time"
 
 	"go.uber.org/zap"
 )
@@ -27,15 +25,4 @@ func catchInterrupt(lg *zap.Logger, stopc chan struct{}, once *sync.Once, sigc c
 	case err = <-errc:
 	}
 	return err
-}
-
-const ll = "0123456789abcdefghijklmnopqrstuvwxyz"
-
-func randString(n int) string {
-	b := make([]byte, n)
-	for i := range b {
-		rand.Seed(time.Now().UnixNano())
-		b[i] = ll[rand.Intn(len(ll))]
-	}
-	return string(b)
 }

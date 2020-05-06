@@ -3,7 +3,6 @@ package eks
 import (
 	"fmt"
 	"io/ioutil"
-	"math/rand"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -17,6 +16,7 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/httputil"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
+	"github.com/aws/aws-k8s-tester/pkg/randutil"
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -189,7 +189,7 @@ func newCreateHollowNodes() *cobra.Command {
 		Short: "Creates hollow nodes",
 		Run:   createHollowNodesFunc,
 	}
-	cmd.PersistentFlags().StringVar(&hollowNodesPrefix, "prefix", string(randBytes(5)), "Prefix to label hollow node groups")
+	cmd.PersistentFlags().StringVar(&hollowNodesPrefix, "prefix", randutil.String(5), "Prefix to label hollow node groups")
 	cmd.PersistentFlags().StringVar(&hollowNodesKubectlPath, "kubectl", "", "kubectl path")
 	cmd.PersistentFlags().StringVar(&hollowNodesKubectlDownloadURL, "kubectl-download-url", "https://storage.googleapis.com/kubernetes-release/release/v1.16.9/bin/linux/amd64/kubectl", "kubectl download URL")
 	cmd.PersistentFlags().StringVar(&hollowNodesKubeConfigPath, "kubeconfig", "", "kubeconfig path")
@@ -245,7 +245,7 @@ func createHollowNodesFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	sfx := string(randBytes(5))
+	sfx := randutil.String(5)
 
 	stopc := make(chan struct{})
 	ng, err := hollow_nodes.CreateNodeGroup(hollow_nodes.NodeGroupConfig{
@@ -304,15 +304,4 @@ func createHollowNodesFunc(cmd *cobra.Command, args []string) {
 
 	fmt.Printf("\n*********************************\n")
 	fmt.Printf("'aws-k8s-tester eks create hollow-nodes' success\n")
-}
-
-const ll = "0123456789abcdefghijklmnopqrstuvwxyz"
-
-func randBytes(n int) []byte {
-	b := make([]byte, n)
-	for i := range b {
-		rand.Seed(time.Now().UnixNano())
-		b[i] = ll[rand.Intn(len(ll))]
-	}
-	return b
 }

@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math/rand"
 	"os"
 	"strings"
 	"time"
@@ -216,15 +215,4 @@ func (ts *tester) createObject() (batchv1.Job, string, error) {
 	}
 	b, err := yaml.Marshal(jobObj)
 	return jobObj, string(b), err
-}
-
-const ll = "0123456789abcdefghijklmnopqrstuvwxyz"
-
-func randString(n int) string {
-	b := make([]byte, n)
-	for i := range b {
-		rand.Seed(time.Now().UnixNano())
-		b[i] = ll[rand.Intn(len(ll))]
-	}
-	return string(b)
 }

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
+	"github.com/aws/aws-k8s-tester/pkg/randutil"
 	"github.com/aws/aws-sdk-go/service/eks"
 )
 
@@ -112,10 +113,10 @@ func (cfg *Config) validateAddOnPrometheusGrafana() error {
 	}
 
 	if cfg.AddOnPrometheusGrafana.GrafanaAdminUserName == "" {
-		cfg.AddOnPrometheusGrafana.GrafanaAdminUserName = randString(10)
+		cfg.AddOnPrometheusGrafana.GrafanaAdminUserName = randutil.String(10)
 	}
 	if cfg.AddOnPrometheusGrafana.GrafanaAdminPassword == "" {
-		cfg.AddOnPrometheusGrafana.GrafanaAdminPassword = randString(10)
+		cfg.AddOnPrometheusGrafana.GrafanaAdminPassword = randutil.String(10)
 	}
 
 	return nil

@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math/rand"
 	"os"
 	"regexp"
 	"strings"
@@ -13,6 +12,7 @@ import (
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
+	"github.com/aws/aws-k8s-tester/pkg/randutil"
 	"github.com/dustin/go-humanize"
 	"go.uber.org/zap"
 	"golang.org/x/time/rate"
@@ -111,7 +111,7 @@ func (ts *tester) createConfigMaps() (err error) {
 
 	// valid config key must consist of alphanumeric characters
 	pfx := strings.ToLower(regex.ReplaceAllString(ts.cfg.EKSConfig.Name, ""))
-	val := randString(ts.cfg.EKSConfig.AddOnConfigMaps.Size)
+	val := randutil.String(ts.cfg.EKSConfig.AddOnConfigMaps.Size)
 
 	// overwrite if any
 	ts.cfg.EKSConfig.AddOnConfigMaps.CreatedNames = make([]string, 0, ts.cfg.EKSConfig.AddOnConfigMaps.Objects)
@@ -332,15 +332,4 @@ type result struct {
 	took      time.Duration
 	start     time.Time
 	end       time.Time
-}
-
-const ll = "0123456789abcdefghijklmnopqrstuvwxyz"
-
-func randString(n int) string {
-	b := make([]byte, n)
-	for i := range b {
-		rand.Seed(time.Now().UnixNano())
-		b[i] = ll[rand.Intn(len(ll))]
-	}
-	return string(b)
 }

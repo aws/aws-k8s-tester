@@ -13,6 +13,7 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/aws"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
+	"github.com/aws/aws-k8s-tester/pkg/randutil"
 )
 
 // NewDefault returns a default configuration.
@@ -23,7 +24,7 @@ func NewDefault() *Config {
 	cfg := Config{
 		mu: new(sync.RWMutex),
 
-		Name: fmt.Sprintf("ec2-%s-%s", getTS()[:10], randString(12)),
+		Name: fmt.Sprintf("ec2-%s-%s", getTS()[:10], randutil.String(12)),
 
 		// to be auto-generated
 		ConfigPath:                     "",
@@ -47,7 +48,7 @@ func NewDefault() *Config {
 		RoleCreate:                 true,
 		VPCCreate:                  true,
 		RemoteAccessKeyCreate:      true,
-		RemoteAccessPrivateKeyPath: filepath.Join(os.TempDir(), randString(10)+".insecure.key"),
+		RemoteAccessPrivateKeyPath: filepath.Join(os.TempDir(), randutil.String(10)+".insecure.key"),
 
 		ASGsFetchLogs: true,
 	}
@@ -255,7 +256,7 @@ func (cfg *Config) validateConfig() error {
 			cfg.RemoteAccessKeyName = cfg.Name + "-key-ec2"
 		}
 		if cfg.RemoteAccessPrivateKeyPath == "" {
-			cfg.RemoteAccessPrivateKeyPath = filepath.Join(os.TempDir(), randString(10)+".insecure.key")
+			cfg.RemoteAccessPrivateKeyPath = filepath.Join(os.TempDir(), randutil.String(10)+".insecure.key")
 		}
 
 	case false: // use existing one

@@ -6,6 +6,8 @@ import (
 	"path"
 	"strings"
 	"time"
+
+	"github.com/aws/aws-k8s-tester/pkg/randutil"
 )
 
 // AddOnIRSAFargate defines parameters for EKS cluster
@@ -121,7 +123,7 @@ func (cfg *Config) validateAddOnIRSAFargate() error {
 		cfg.AddOnIRSAFargate.PodName = cfg.Name + "-pod-irsa-fargate"
 	}
 	if cfg.AddOnIRSAFargate.ContainerName == "" {
-		cfg.AddOnIRSAFargate.ContainerName = cfg.Name + "-" + randString(10)
+		cfg.AddOnIRSAFargate.ContainerName = cfg.Name + "-" + randutil.String(10)
 	}
 	return nil
 }

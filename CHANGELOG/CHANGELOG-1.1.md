@@ -18,6 +18,10 @@
 
 - Initial [commit](https://github.com/aws/aws-k8s-tester/commit/971be62f5cbd581f2ef7d278553ed169f0ff1284).
 
+### `pkg/randutil`
+
+- Initial [commit](https://github.com/aws/aws-k8s-tester/commit/).
+
 
 <hr>
 

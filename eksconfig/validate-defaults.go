@@ -16,6 +16,7 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/aws"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
+	"github.com/aws/aws-k8s-tester/pkg/randutil"
 	"k8s.io/client-go/util/homedir"
 )
 
@@ -56,7 +57,7 @@ const (
 //  - omitting an entire field returns nil value
 //  - make sure to check both
 func NewDefault() *Config {
-	name := fmt.Sprintf("eks-%s-%s", getTS()[:10], randString(12))
+	name := fmt.Sprintf("eks-%s-%s", getTS()[:10], randutil.String(12))
 	if v := os.Getenv(AWS_K8S_TESTER_EKS_PREFIX + "NAME"); v != "" {
 		name = v
 	}
@@ -150,7 +151,7 @@ func NewDefault() *Config {
 
 	if runtime.GOOS == "darwin" {
 		cfg.KubectlDownloadURL = strings.Replace(cfg.KubectlDownloadURL, "linux", "darwin", -1)
-		cfg.RemoteAccessPrivateKeyPath = filepath.Join(os.TempDir(), randString(10)+".insecure.key")
+		cfg.RemoteAccessPrivateKeyPath = filepath.Join(os.TempDir(), randutil.String(10)+".insecure.key")
 	}
 
 	return &cfg
@@ -460,7 +461,7 @@ func (cfg *Config) validateParameters() error {
 			cfg.RemoteAccessKeyName = cfg.Name + "-key-nodes"
 		}
 		if cfg.RemoteAccessPrivateKeyPath == "" {
-			cfg.RemoteAccessPrivateKeyPath = filepath.Join(os.TempDir(), randString(10)+".insecure.key")
+			cfg.RemoteAccessPrivateKeyPath = filepath.Join(os.TempDir(), randutil.String(10)+".insecure.key")
 		}
 
 	case false: // use existing one

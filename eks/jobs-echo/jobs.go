@@ -5,13 +5,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math/rand"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
+	"github.com/aws/aws-k8s-tester/pkg/randutil"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/dustin/go-humanize"
 	"go.uber.org/zap"
@@ -188,7 +188,7 @@ func (ts *tester) createObject() (batchv1.Job, string, error) {
 					Command: []string{
 						"/bin/sh",
 						"-ec",
-						fmt.Sprintf("echo -n '%s' >> /config/output.txt", randString(ts.cfg.EKSConfig.AddOnJobsEcho.EchoSize)),
+						fmt.Sprintf("echo -n '%s' >> /config/output.txt", randutil.String(ts.cfg.EKSConfig.AddOnJobsEcho.EchoSize)),
 					},
 					VolumeMounts: []v1.VolumeMount{
 						{
@@ -230,15 +230,4 @@ func (ts *tester) createObject() (batchv1.Job, string, error) {
 	}
 	b, err := yaml.Marshal(jobObj)
 	return jobObj, string(b), err
-}
-
-const ll = "0123456789abcdefghijklmnopqrstuvwxyz"
-
-func randString(n int) string {
-	b := make([]byte, n)
-	for i := range b {
-		rand.Seed(time.Now().UnixNano())
-		b[i] = ll[rand.Intn(len(ll))]
-	}
-	return string(b)
 }

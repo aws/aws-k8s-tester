@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/aws/aws-k8s-tester/pkg/randutil"
 )
 
 // AddOnFargate defines parameters for EKS cluster
@@ -104,7 +106,7 @@ func (cfg *Config) validateAddOnFargate() error {
 		cfg.AddOnFargate.PodName = cfg.Name + "-pod-fargate"
 	}
 	if cfg.AddOnFargate.ContainerName == "" {
-		cfg.AddOnFargate.ContainerName = cfg.Name + "-" + randString(10)
+		cfg.AddOnFargate.ContainerName = cfg.Name + "-" + randutil.String(10)
 	}
 	cfg.AddOnFargate.SecretName = strings.ToLower(fargateSecretRegex.ReplaceAllString(cfg.AddOnFargate.SecretName, ""))
 
