@@ -48,12 +48,12 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.6...v1.1.7
 ### `ec2config`
 
 - Add [`Config.Partition`](https://github.com/aws/aws-k8s-tester/commit/70f46239078f7612f423a86b8df2712557b57b38).
-- Check [write permissions](https://github.com/aws/aws-k8s-tester/commit/).
+- Check [write permissions](https://github.com/aws/aws-k8s-tester/commit/e9206641604ff76715ef64bdb74a0d018bbf3ed2).
 
 ### `eksconfig`
 
 - Add [`Config.Partition`](https://github.com/aws/aws-k8s-tester/commit/70f46239078f7612f423a86b8df2712557b57b38).
-- Check [write permissions](https://github.com/aws/aws-k8s-tester/commit/).
+- Check [write permissions](https://github.com/aws/aws-k8s-tester/commit/e9206641604ff76715ef64bdb74a0d018bbf3ed2).
 
 ### `ec2`
 
