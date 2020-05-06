@@ -376,7 +376,7 @@ func (cfg *Config) validateParameters() error {
 	switch cfg.Parameters.RoleCreate {
 	case true: // need create one, or already created
 		if cfg.Parameters.RoleName == "" {
-			cfg.Parameters.RoleName = cfg.Name + "-role-cluster"
+			cfg.Parameters.RoleName = cfg.Name + "-role"
 		}
 		if cfg.Parameters.RoleARN != "" {
 			// just ignore...

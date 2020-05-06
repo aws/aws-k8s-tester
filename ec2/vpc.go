@@ -712,7 +712,7 @@ func (ts *Tester) createVPC() error {
 
 	templateBody, cfnNetworkTagValue := TemplateVPCPublicPrivate, "Public/Private"
 
-	vpcName := ts.cfg.Name + "-vpc-ec2"
+	vpcName := ts.cfg.Name + "-vpc"
 	// VPC attributes are empty, create a new VPC
 	// otherwise, use the existing one
 	ts.lg.Info("creating a new VPC")

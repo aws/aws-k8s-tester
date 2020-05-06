@@ -164,7 +164,7 @@ func (cfg *Config) validateConfig() error {
 	switch cfg.RoleCreate {
 	case true: // need create one, or already created
 		if cfg.RoleName == "" {
-			cfg.RoleName = cfg.Name + "-role-ec2"
+			cfg.RoleName = cfg.Name + "-role"
 		}
 		if cfg.RoleARN != "" {
 			// just ignore...
@@ -253,7 +253,7 @@ func (cfg *Config) validateConfig() error {
 	switch cfg.RemoteAccessKeyCreate {
 	case true: // need create one, or already created
 		if cfg.RemoteAccessKeyName == "" {
-			cfg.RemoteAccessKeyName = cfg.Name + "-key-ec2"
+			cfg.RemoteAccessKeyName = cfg.Name + "-key"
 		}
 		if cfg.RemoteAccessPrivateKeyPath == "" {
 			cfg.RemoteAccessPrivateKeyPath = filepath.Join(os.TempDir(), randutil.String(10)+".insecure.key")
