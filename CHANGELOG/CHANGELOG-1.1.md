@@ -7,18 +7,9 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.7...v1.1.8).
 
-### `cw-utils`
+### `eks`
 
-- Add [`cw-utils metrics-image --log-level` flag](https://github.com/aws/aws-k8s-tester/commit/27f614b199b3d6ca8ff6774163e396e1f09aac55).
-
-### `eks-utils`
-
-- Add [`eks-utils apis --log-level` flag](https://github.com/aws/aws-k8s-tester/commit/27f614b199b3d6ca8ff6774163e396e1f09aac55).
-- Add [`eks-utils nodes --log-level` flag](https://github.com/aws/aws-k8s-tester/commit/27f614b199b3d6ca8ff6774163e396e1f09aac55).
-
-### `etcd-utils`
-
-- Add [`etcd-utils k8s --log-level` flag](https://github.com/aws/aws-k8s-tester/commit/27f614b199b3d6ca8ff6774163e396e1f09aac55).
+TODO
 
 
 <hr>
@@ -34,12 +25,25 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.6...v1.1.7
   - `aws-k8s-tester ec2 create cluster` is now `ec2-utils create instances`.
   - `aws-k8s-tester ec2 delete cluster` is now `ec2-utils delete instances`.
 
+### `cw-utils`
+
+- Add [`cw-utils metrics-image --log-level` flag](https://github.com/aws/aws-k8s-tester/commit/27f614b199b3d6ca8ff6774163e396e1f09aac55).
+
+### `eks-utils`
+
+- Add [`eks-utils apis --log-level` flag](https://github.com/aws/aws-k8s-tester/commit/27f614b199b3d6ca8ff6774163e396e1f09aac55).
+- Add [`eks-utils nodes --log-level` flag](https://github.com/aws/aws-k8s-tester/commit/27f614b199b3d6ca8ff6774163e396e1f09aac55).
+
 ### `ec2-utils`
 
 - Rename [`aws-k8s-tester ec2` to `ec2-utils`](https://github.com/aws/aws-k8s-tester/commit/cb47ca22ca042be3b6f8464680ec7463e2e8f01f).
   - `aws-k8s-tester ec2 create config` is now `ec2-utils create config`.
   - `aws-k8s-tester ec2 create cluster` is now `ec2-utils create instances`.
   - `aws-k8s-tester ec2 delete cluster` is now `ec2-utils delete instances`.
+
+### `etcd-utils`
+
+- Add [`etcd-utils k8s --log-level` flag](https://github.com/aws/aws-k8s-tester/commit/27f614b199b3d6ca8ff6774163e396e1f09aac55).
 
 ### `ec2config`
 
