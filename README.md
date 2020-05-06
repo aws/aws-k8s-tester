@@ -59,6 +59,7 @@ aws-k8s-tester eks delete cluster --enable-prompt=true -p /tmp/${USER}-test-prod
 # advanced options can be set via environmental variables
 # e.g. node groups, managed node groups, add-ons
 rm -rf /tmp/${USER}-test-eks*
+AWS_K8S_TESTER_EKS_PARTITION=aws \
 AWS_K8S_TESTER_EKS_REGION=us-west-2 \
 AWS_K8S_TESTER_EKS_S3_BUCKET_CREATE=true \
 AWS_K8S_TESTER_EKS_S3_BUCKET_CREATE_KEEP=true \
@@ -225,6 +226,7 @@ ec2-utils delete instances --enable-prompt=true -p /tmp/${USER}-test-ec2.yaml
 # advanced options can be set via environmental variables
 rm -rf /tmp/${USER}-test-ec2*
 AWS_K8S_TESTER_EC2_ON_FAILURE_DELETE=true \
+AWS_K8S_TESTER_EC2_PARTITION=aws \
 AWS_K8S_TESTER_EC2_REGION=us-west-2 \
 AWS_K8S_TESTER_EC2_S3_BUCKET_CREATE=true \
 AWS_K8S_TESTER_EC2_S3_BUCKET_CREATE_KEEP=true \
