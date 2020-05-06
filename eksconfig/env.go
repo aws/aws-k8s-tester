@@ -12,7 +12,7 @@ import (
 
 // UpdateFromEnvs updates fields from environmental variables.
 // Empty values are ignored and do not overwrite fields with empty values.
-// WARNING: The environmetal variable value always overwrites current field
+// WARNING: The environmental variable value always overwrites current field
 // values if there's a conflict.
 func (cfg *Config) UpdateFromEnvs() (err error) {
 	cfg.mu.Lock()

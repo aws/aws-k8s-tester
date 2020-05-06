@@ -12,11 +12,11 @@ func init() {
 	cobra.EnablePrefixMatching = true
 }
 
-// NewCommand implements "aws-k8s-tester version" command.
+// NewCommand implements "cw-utils version" command.
 func NewCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:   "version",
-		Short: "Prints out aws-k8s-tester version",
+		Short: "Prints out cw-utils version",
 		Run:   versionFunc,
 	}
 }

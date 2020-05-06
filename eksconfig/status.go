@@ -7,6 +7,8 @@ import (
 	aws_eks "github.com/aws/aws-sdk-go/service/eks"
 )
 
+const RFC3339Micro = "2006-01-02T15:04:05.999Z07:00"
+
 // Status represents the current status of AWS resources.
 // Read-only. Cannot be configured via environmental variables.
 type Status struct {
@@ -25,9 +27,11 @@ type Status struct {
 	// DeleteTookString is the duration that took to create the resource.
 	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
 	// TimeUTCCreateComplete is the time when cluster creation is complete.
-	TimeUTCCreateComplete time.Time `json:"time-utc-create-complete,omitempty" read-only:"true"`
+	TimeUTCCreateComplete             time.Time `json:"time-utc-create-complete,omitempty" read-only:"true"`
+	TimeUTCCreateCompleteRFC3339Micro string    `json:"time-utc-create-complete-rfc3339-micro,omitempty" read-only:"true"`
 	// TimeUTCDeleteStart is the time when cluster and add-on deletion is started.
-	TimeUTCDeleteStart time.Time `json:"time-utc-delete-start,omitempty" read-only:"true"`
+	TimeUTCDeleteStart             time.Time `json:"time-utc-delete-start,omitempty" read-only:"true"`
+	TimeUTCDeleteStartRFC3339Micro string    `json:"time-utc-delete-start-rfc3339-micro,omitempty" read-only:"true"`
 
 	// AWSAccountID is the account ID of the eks tester caller session.
 	AWSAccountID string `json:"aws-account-id"`

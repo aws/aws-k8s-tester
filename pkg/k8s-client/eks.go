@@ -221,7 +221,7 @@ func NewEKS(cfg *EKSConfig) (e EKS, err error) {
 		cfg.Logger.Info("added a client", zap.Int("index", i), zap.Int("total-clients", cfg.Clients))
 	}
 	e = ek
-	return ek, nil
+	return e, nil
 }
 
 func createClient(cfg *EKSConfig) (cli *kubernetes.Clientset, err error) {

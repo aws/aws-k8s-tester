@@ -76,7 +76,7 @@ func createConfigFunc(cmd *cobra.Command, args []string) {
 	println()
 
 	fmt.Printf("\n*********************************\n")
-	fmt.Printf("'aws-k8s-tester eks create config' successs\n")
+	fmt.Printf("'aws-k8s-tester eks create config' success\n")
 }
 
 func newCreateCluster() *cobra.Command {
@@ -168,7 +168,7 @@ func createClusterFunc(cmd *cobra.Command, args []string) {
 	}
 
 	fmt.Printf("\n*********************************\n")
-	fmt.Printf("'aws-k8s-tester eks create cluster' successs\n")
+	fmt.Printf("'aws-k8s-tester eks create cluster' success\n")
 }
 
 var (
@@ -303,7 +303,7 @@ func createHollowNodesFunc(cmd *cobra.Command, args []string) {
 	}
 
 	fmt.Printf("\n*********************************\n")
-	fmt.Printf("'aws-k8s-tester eks create hollow-nodes' successs\n")
+	fmt.Printf("'aws-k8s-tester eks create hollow-nodes' success\n")
 }
 
 const ll = "0123456789abcdefghijklmnopqrstuvwxyz"

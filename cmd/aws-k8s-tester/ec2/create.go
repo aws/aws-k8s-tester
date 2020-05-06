@@ -66,7 +66,7 @@ func configFunc(cmd *cobra.Command, args []string) {
 	println()
 
 	fmt.Printf("\n*********************************\n")
-	fmt.Printf("'aws-k8s-tester ec2 create config' successs\n")
+	fmt.Printf("'aws-k8s-tester ec2 create config' success\n")
 }
 
 func newCreateCluster() *cobra.Command {
@@ -156,5 +156,5 @@ func createClusterFunc(cmd *cobra.Command, args []string) {
 	}
 
 	fmt.Printf("\n*********************************\n")
-	fmt.Printf("'aws-k8s-tester ec2 create cluster' successs\n")
+	fmt.Printf("'aws-k8s-tester ec2 create cluster' success\n")
 }

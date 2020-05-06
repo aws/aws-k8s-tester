@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/aws/aws-k8s-tester/version"
-
 	"github.com/spf13/cobra"
 )
 
@@ -23,5 +22,5 @@ func NewCommand() *cobra.Command {
 }
 
 func versionFunc(cmd *cobra.Command, args []string) {
-	fmt.Print(version.Version())
+	fmt.Println(version.Version())
 }

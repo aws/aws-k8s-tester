@@ -557,7 +557,7 @@ func TestEnv(t *testing.T) {
 	}
 	cpuName, gpuName := "ng-test-name-cpu", "ng-test-name-gpu"
 	expectedASGs := map[string]ASG{
-		cpuName: ASG{
+		cpuName: {
 			ASG: ec2config.ASG{
 				Name:                 cpuName,
 				RemoteAccessUserName: "ec2-user",
@@ -571,7 +571,7 @@ func TestEnv(t *testing.T) {
 			},
 			KubeletExtraArgs: "bbb qq",
 		},
-		gpuName: ASG{
+		gpuName: {
 			ASG: ec2config.ASG{
 				Name:                 gpuName,
 				RemoteAccessUserName: "ec2-user",

@@ -5,10 +5,18 @@
 
 ## [v1.1.6](https://github.com/aws/aws-k8s-tester/releases/tag/v1.1.6) (2020-05)
 
+### `cw-utils`
+
+- Initial [commit](https://github.com/aws/aws-k8s-tester/commit/).
+
 ### `eksconfig`
 
 - Add [`Status.TimeUTCCreateComplete`](https://github.com/aws/aws-k8s-tester/commit/c5d1010f9a12efd85b61ae93d9d1afb004c7387e).
 - Add [`Status.TimeUTCDeleteStart`](https://github.com/aws/aws-k8s-tester/commit/c5d1010f9a12efd85b61ae93d9d1afb004c7387e).
+
+### `pkd/aws/cw`
+
+- Initial [commit](https://github.com/aws/aws-k8s-tester/commit/).
 
 
 <hr>

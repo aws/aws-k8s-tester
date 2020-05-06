@@ -16,12 +16,12 @@ goimports -w ./pkg
 goimports -w ./ssh
 goimports -w ./version
 
-gofmt -w ./cmd
-gofmt -w ./e2e
-gofmt -w ./ec2
-gofmt -w ./ec2config
-gofmt -w ./eks
-gofmt -w ./eksconfig
-gofmt -w ./pkg
-gofmt -w ./ssh
-gofmt -w ./version
+gofmt -s -w ./cmd
+gofmt -s -w ./e2e
+gofmt -s -w ./ec2
+gofmt -s -w ./ec2config
+gofmt -s -w ./eks
+gofmt -s -w ./eksconfig
+gofmt -s -w ./pkg
+gofmt -s -w ./ssh
+gofmt -s -w ./version

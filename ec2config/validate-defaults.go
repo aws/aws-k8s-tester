@@ -56,14 +56,12 @@ func NewDefault() *Config {
 		cfg.Name = name
 	}
 
-	ssmDocName := cfg.Name + "SSMDocument"
-	ssmDocName = strings.ReplaceAll(ssmDocName, "-", "")
 	cfg.ASGs = map[string]ASG{
 		cfg.Name + "-asg": {
 			Name:                               cfg.Name + "-asg",
 			RemoteAccessUserName:               "ec2-user", // for AL2
 			SSMDocumentCFNStackName:            cfg.Name + "-ssm-document",
-			SSMDocumentName:                    cfg.Name + "SSMDocument",
+			SSMDocumentName:                    ssmDocNameRegex.ReplaceAllString(cfg.Name+"SSMDocument", ""),
 			SSMDocumentCreate:                  false,
 			SSMDocumentCommands:                "",
 			SSMDocumentExecutionTimeoutSeconds: 3600,
@@ -379,7 +377,7 @@ func (cfg *Config) validateASGs() error {
 
 		v.SSMDocumentCFNStackName = strings.ReplaceAll(v.SSMDocumentCFNStackName, "GetRef.Name", cfg.Name)
 		v.SSMDocumentName = strings.ReplaceAll(v.SSMDocumentName, "GetRef.Name", cfg.Name)
-		v.SSMDocumentName = regex.ReplaceAllString(v.SSMDocumentName, "")
+		v.SSMDocumentName = ssmDocNameRegex.ReplaceAllString(v.SSMDocumentName, "")
 
 		processed[k] = v
 	}
@@ -389,7 +387,7 @@ func (cfg *Config) validateASGs() error {
 }
 
 // only letters and numbers
-var regex = regexp.MustCompile("[^a-zA-Z0-9]+")
+var ssmDocNameRegex = regexp.MustCompile("[^a-zA-Z0-9]+")
 
 // get "role-eks" from "arn:aws:iam::123:role/role-eks"
 func getNameFromARN(arn string) string {

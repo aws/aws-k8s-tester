@@ -83,7 +83,7 @@ type PatchSpec struct {
 	Value int32  `json:"value"`
 }
 
-// ExpectDeploymentScaleSuccessful expects a deployment to scale sucessfully
+// ExpectDeploymentScaleSuccessful expects a deployment to scale successfully
 func (r *Resources) ExpectDeploymentScaleSuccessful(ctx context.Context, f *framework.Framework, timeout time.Duration, ns *corev1.Namespace, replicas int32) {
 	// TODO: change to scale when client-go is updated
 	// scale, err := f.ClientSet.AppsV1().Deployments(ns.Name).GetScale(r.Deployment.Name, &metav1.GetOptions{})

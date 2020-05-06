@@ -59,7 +59,7 @@ func getEncType(d []byte) ([]byte, encType) {
 		}
 		err := json.Unmarshal(d, &msg)
 		if err == nil {
-			d, err = msg.MarshalJSON()
+			d, _ = msg.MarshalJSON()
 			return d, jsonType
 		}
 		d = d[1:]

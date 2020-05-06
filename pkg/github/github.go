@@ -22,7 +22,7 @@ import (
 )
 
 // Download downloads aws-k8s-tester binary from github release.
-func Download(lg *zap.Logger, tag string, fpath string) (string, error) {
+func Download(lg *zap.Logger, tag string, fpath string) (outputPath string, err error) {
 	if lg == nil {
 		lg = zap.NewNop()
 	}
@@ -39,13 +39,14 @@ func Download(lg *zap.Logger, tag string, fpath string) (string, error) {
 		os.RemoveAll(fpath)
 	}
 	fpath, _ = filepath.Abs(fpath)
+	outputPath = fpath
 
 	now := time.Now()
 
 	r, err := Query(lg, tag)
 	if err != nil {
 		lg.Warn("failed to query release", zap.Error(err))
-		return fpath, err
+		return outputPath, err
 	}
 	downloadURL := ""
 	for _, asset := range r.Assets {
@@ -65,20 +66,20 @@ func Download(lg *zap.Logger, tag string, fpath string) (string, error) {
 	}
 	if downloadURL == "" {
 		lg.Warn("failed to find release asset")
-		return fpath, errors.New("no release asset found")
+		return outputPath, errors.New("no release asset found")
 	}
 
 	lg.Info("mkdir", zap.String("dir", filepath.Dir(fpath)))
 	if err := os.MkdirAll(filepath.Dir(fpath), 0700); err != nil {
-		return fpath, fmt.Errorf("could not create %q (%v)", filepath.Dir(fpath), err)
+		return outputPath, fmt.Errorf("could not create %q (%v)", filepath.Dir(fpath), err)
 	}
-	if err := os.RemoveAll(fpath); err != nil {
-		return fpath, err
+	if err = os.RemoveAll(fpath); err != nil {
+		return outputPath, err
 	}
-	if err := httputil.Download(lg, os.Stderr, downloadURL, fpath); err != nil {
-		return fpath, err
+	if err = httputil.Download(lg, os.Stderr, downloadURL, fpath); err != nil {
+		return outputPath, err
 	}
-	if err := fileutil.EnsureExecutable(fpath); err != nil {
+	if err = fileutil.EnsureExecutable(fpath); err != nil {
 		// file may be already executable while the process does not own the file/directory
 		// ref. https://github.com/aws/aws-k8s-tester/issues/66
 		lg.Warn("failed to ensure executable", zap.Error(err))
@@ -87,26 +88,22 @@ func Download(lg *zap.Logger, tag string, fpath string) (string, error) {
 
 	// aws-iam-authenticator version
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	co, err := exec.New().CommandContext(
-		ctx,
-		fpath,
-		"version",
-	).CombinedOutput()
+	co, err := exec.New().CommandContext(ctx, fpath, "version").CombinedOutput()
 	cancel()
 	if err != nil {
-		return fpath, fmt.Errorf("'aws-k8s-tester version' failed (output %q, error %v)", string(co), err)
+		return outputPath, fmt.Errorf("'aws-k8s-tester version' failed (output %q, error %v)", string(co), err)
 	}
 
-	st, err := os.Stat(fpath)
+	st, err := os.Stat(outputPath)
 	lg.Info(
 		"downloaded release",
-		zap.String("file-path", fpath),
+		zap.String("file-path", outputPath),
 		zap.String("version", string(co)),
 		zap.String("size", humanize.Bytes(uint64(st.Size()))),
 		zap.String("took", humanize.Time(now)),
 		zap.Error(err),
 	)
-	return fpath, nil
+	return outputPath, nil
 }
 
 // Query fetches github release information.

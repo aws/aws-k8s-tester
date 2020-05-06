@@ -85,7 +85,7 @@ func getDefaultAddOnNodeGroups(name string) *AddOnNodeGroups {
 		RoleCreate: true,
 		LogsDir:    "", // to be auto-generated
 		ASGs: map[string]ASG{
-			name + "-ng-asg-cpu": ASG{
+			name + "-ng-asg-cpu": {
 				ASG: ec2config.ASG{
 					Name:                 name + "-ng-asg-cpu",
 					RemoteAccessUserName: "ec2-user", // assume Amazon Linux 2

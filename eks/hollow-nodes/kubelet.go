@@ -133,7 +133,7 @@ func newKubelet(cfg kubeletConfig) (*hollowKubelet, error) {
 	c.HairpinMode = kubelet_config.HairpinVeth
 
 	// "cmd/kubelet/app.rlimit.SetNumFiles(MaxOpenFiles)" sets this for the host
-	// TOOD: increase if we run this in remote
+	// TODO: increase if we run this in remote
 	c.MaxOpenFiles = 1000000
 
 	c.RegistryBurst = 10

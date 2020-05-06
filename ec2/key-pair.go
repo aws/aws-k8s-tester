@@ -111,6 +111,9 @@ func (ts *Tester) deleteKeyPair() error {
 	}
 
 	err := os.RemoveAll(ts.cfg.RemoteAccessPrivateKeyPath)
+	if err != nil {
+		return err
+	}
 	ts.lg.Info("deleted EC2 private key on disk", zap.String("key-path", ts.cfg.RemoteAccessPrivateKeyPath))
 
 	ts.lg.Info("deleting EC2 key pair", zap.String("key-pair-name", ts.cfg.RemoteAccessKeyName))

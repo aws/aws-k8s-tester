@@ -771,11 +771,7 @@ func (ts *tester) deleteProfile() error {
 			ClusterName:        aws.String(ts.cfg.EKSConfig.Name),
 			FargateProfileName: aws.String(ts.cfg.EKSConfig.AddOnIRSAFargate.ProfileName),
 		})
-		if err != nil {
-			if fargate.IsProfileDeleted(err) {
-				err = nil
-				break
-			}
+		if err != nil && fargate.IsProfileDeleted(err) {
 			ts.cfg.Logger.Warn("failed to delete fargate profile; retrying", zap.Error(err))
 			select {
 			case <-ts.cfg.Stopc:

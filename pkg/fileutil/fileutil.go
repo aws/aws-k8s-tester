@@ -51,6 +51,18 @@ func WriteToTempDir(p string, d []byte) (path string, err error) {
 	return path, err
 }
 
+// GetTempFilePath creates a file path to a temporary file that does not exist yet.
+func GetTempFilePath() (path string, err error) {
+	var f *os.File
+	f, err = ioutil.TempFile(os.TempDir(), fmt.Sprintf("%X", time.Now().UnixNano()))
+	if err != nil {
+		return "", err
+	}
+	path = f.Name()
+	f.Close()
+	return path, nil
+}
+
 // Exist returns true if a file or directory exists.
 func Exist(name string) bool {
 	_, err := os.Stat(name)

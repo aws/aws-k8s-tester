@@ -140,6 +140,7 @@ func (ts *Tester) createEKS() (err error) {
 		ts.cfg.Status.CreateTook = time.Since(createStart)
 		ts.cfg.Status.CreateTookString = ts.cfg.Status.CreateTook.String()
 		ts.cfg.Status.TimeUTCCreateComplete = time.Now().UTC()
+		ts.cfg.Status.TimeUTCCreateCompleteRFC3339Micro = ts.cfg.Status.TimeUTCCreateComplete.Format(eksconfig.RFC3339Micro)
 		ts.cfg.Sync()
 	}()
 

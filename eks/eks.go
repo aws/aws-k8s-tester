@@ -137,7 +137,7 @@ type Tester struct {
 // New returns a new EKS kubetest2 Deployer.
 // ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Deployer
 // ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Options
-func New(cfg *eksconfig.Config) (*Tester, error) {
+func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 	fmt.Println("😎 🙏 🚶 ✔️ 👍")
 	fmt.Println(version.Version())
 	fmt.Printf("\n*********************************\n")
@@ -148,7 +148,8 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 
 	lcfg := logutil.AddOutputPaths(logutil.GetDefaultZapLoggerConfig(), cfg.LogOutputs, cfg.LogOutputs)
 	lcfg.Level = zap.NewAtomicLevelAt(logutil.ConvertToZapLevel(cfg.LogLevel))
-	lg, err := lcfg.Build()
+	var lg *zap.Logger
+	lg, err = lcfg.Build()
 	if err != nil {
 		return nil, err
 	}
@@ -162,14 +163,11 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 
 	// aws --version
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	vo, verr := exec.New().CommandContext(
-		ctx,
-		cfg.AWSCLIPath,
-		"--version",
-	).CombinedOutput()
+	var vo []byte
+	vo, err = exec.New().CommandContext(ctx, cfg.AWSCLIPath, "--version").CombinedOutput()
 	cancel()
-	if verr != nil {
-		return nil, fmt.Errorf("'aws --version' failed (output %q, error %v)", string(vo), verr)
+	if err != nil {
+		return nil, fmt.Errorf("'aws --version' failed (output %q, error %v)", string(vo), err)
 	}
 	lg.Info(
 		"aws version",
@@ -178,19 +176,19 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 	)
 
 	lg.Info("mkdir", zap.String("kubectl-path-dir", filepath.Dir(cfg.KubectlPath)))
-	if err := os.MkdirAll(filepath.Dir(cfg.KubectlPath), 0700); err != nil {
+	if err = os.MkdirAll(filepath.Dir(cfg.KubectlPath), 0700); err != nil {
 		return nil, fmt.Errorf("could not create %q (%v)", filepath.Dir(cfg.KubectlPath), err)
 	}
 	if !fileutil.Exist(cfg.KubectlPath) {
 		cfg.KubectlPath, _ = filepath.Abs(cfg.KubectlPath)
 		lg.Info("downloading kubectl", zap.String("kubectl-path", cfg.KubectlPath))
-		if err := httputil.Download(lg, os.Stderr, cfg.KubectlDownloadURL, cfg.KubectlPath); err != nil {
+		if err = httputil.Download(lg, os.Stderr, cfg.KubectlDownloadURL, cfg.KubectlPath); err != nil {
 			return nil, err
 		}
 	} else {
 		lg.Info("skipping kubectl download; already exist", zap.String("kubectl-path", cfg.KubectlPath))
 	}
-	if err := fileutil.EnsureExecutable(cfg.KubectlPath); err != nil {
+	if err = fileutil.EnsureExecutable(cfg.KubectlPath); err != nil {
 		// file may be already executable while the process does not own the file/directory
 		// ref. https://github.com/aws/aws-k8s-tester/issues/66
 		lg.Warn("failed to ensure executable", zap.Error(err))
@@ -198,15 +196,10 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 	}
 	// kubectl version --client=true
 	ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
-	vo, verr = exec.New().CommandContext(
-		ctx,
-		cfg.KubectlPath,
-		"version",
-		"--client=true",
-	).CombinedOutput()
+	vo, err = exec.New().CommandContext(ctx, cfg.KubectlPath, "version", "--client=true").CombinedOutput()
 	cancel()
-	if verr != nil {
-		return nil, fmt.Errorf("'kubectl version' failed (output %q, error %v)", string(vo), verr)
+	if err != nil {
+		return nil, fmt.Errorf("'kubectl version' failed (output %q, error %v)", string(vo), err)
 	}
 	lg.Info(
 		"kubectl version",
@@ -216,22 +209,22 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 
 	if cfg.AWSIAMAuthenticatorPath != "" && cfg.AWSIAMAuthenticatorDownloadURL != "" {
 		lg.Info("mkdir", zap.String("aws-iam-authenticator-path-dir", filepath.Dir(cfg.AWSIAMAuthenticatorPath)))
-		if err := os.MkdirAll(filepath.Dir(cfg.AWSIAMAuthenticatorPath), 0700); err != nil {
+		if err = os.MkdirAll(filepath.Dir(cfg.AWSIAMAuthenticatorPath), 0700); err != nil {
 			return nil, fmt.Errorf("could not create %q (%v)", filepath.Dir(cfg.AWSIAMAuthenticatorPath), err)
 		}
 		if !fileutil.Exist(cfg.AWSIAMAuthenticatorPath) {
 			cfg.AWSIAMAuthenticatorPath, _ = filepath.Abs(cfg.AWSIAMAuthenticatorPath)
 			lg.Info("downloading aws-iam-authenticator", zap.String("aws-iam-authenticator-path", cfg.AWSIAMAuthenticatorPath))
-			if err := os.RemoveAll(cfg.AWSIAMAuthenticatorPath); err != nil {
+			if err = os.RemoveAll(cfg.AWSIAMAuthenticatorPath); err != nil {
 				return nil, err
 			}
-			if err := httputil.Download(lg, os.Stderr, cfg.AWSIAMAuthenticatorDownloadURL, cfg.AWSIAMAuthenticatorPath); err != nil {
+			if err = httputil.Download(lg, os.Stderr, cfg.AWSIAMAuthenticatorDownloadURL, cfg.AWSIAMAuthenticatorPath); err != nil {
 				return nil, err
 			}
 		} else {
 			lg.Info("skipping aws-iam-authenticator download; already exist", zap.String("aws-iam-authenticator-path", cfg.AWSIAMAuthenticatorPath))
 		}
-		if err := fileutil.EnsureExecutable(cfg.AWSIAMAuthenticatorPath); err != nil {
+		if err = fileutil.EnsureExecutable(cfg.AWSIAMAuthenticatorPath); err != nil {
 			// file may be already executable while the process does not own the file/directory
 			// ref. https://github.com/aws/aws-k8s-tester/issues/66
 			lg.Warn("failed to ensure executable", zap.Error(err))
@@ -239,14 +232,10 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 		}
 		// aws-iam-authenticator version
 		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
-		vo, verr = exec.New().CommandContext(
-			ctx,
-			cfg.AWSIAMAuthenticatorPath,
-			"version",
-		).CombinedOutput()
+		vo, err = exec.New().CommandContext(ctx, cfg.AWSIAMAuthenticatorPath, "version").CombinedOutput()
 		cancel()
-		if verr != nil {
-			return nil, fmt.Errorf("'aws-iam-authenticator version' failed (output %q, error %v)", string(vo), verr)
+		if err != nil {
+			return nil, fmt.Errorf("'aws-iam-authenticator version' failed (output %q, error %v)", string(vo), err)
 		}
 		lg.Info(
 			"aws-iam-authenticator version",
@@ -255,7 +244,7 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 		)
 	}
 
-	ts := &Tester{
+	ts = &Tester{
 		stopCreationCh:     make(chan struct{}),
 		stopCreationChOnce: new(sync.Once),
 		interruptSig:       make(chan os.Signal),
@@ -288,7 +277,7 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 	ts.cfnAPI = cloudformation.New(ts.awsSession)
 
 	ts.ec2API = ec2.New(ts.awsSession)
-	if _, err := ts.ec2API.DescribeInstances(&ec2.DescribeInstancesInput{MaxResults: aws.Int64(5)}); err != nil {
+	if _, err = ts.ec2API.DescribeInstances(&ec2.DescribeInstancesInput{MaxResults: aws.Int64(5)}); err != nil {
 		return nil, fmt.Errorf("failed to describe instances using EC2 API (%v)", err)
 	}
 	fmt.Println("EC2 API available!")
@@ -299,7 +288,8 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 	ts.ecrAPI = ecr.New(ts.awsSession)
 
 	ts.lg.Info("checking ECR API availability; listing repositories")
-	ecrResp, err := ts.ecrAPI.DescribeRepositories(&ecr.DescribeRepositoriesInput{
+	var ecrResp *ecr.DescribeRepositoriesOutput
+	ecrResp, err = ts.ecrAPI.DescribeRepositories(&ecr.DescribeRepositoriesInput{
 		MaxResults: aws.Int64(20),
 	})
 	if err != nil {
@@ -324,14 +314,15 @@ func New(cfg *eksconfig.Config) (*Tester, error) {
 	ts.eksAPI = aws_eks.New(ts.eksSession)
 
 	ts.lg.Info("checking EKS API availability; listing clusters")
-	lresp, err := ts.eksAPI.ListClusters(&aws_eks.ListClustersInput{
+	var eksListResp *aws_eks.ListClustersOutput
+	eksListResp, err = ts.eksAPI.ListClusters(&aws_eks.ListClustersInput{
 		MaxResults: aws.Int64(20),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list clusters using EKS API (%v)", err)
 	}
-	ts.lg.Info("listed clusters with limit 20", zap.Int("clusters", len(lresp.Clusters)))
-	for _, v := range lresp.Clusters {
+	ts.lg.Info("listed clusters with limit 20", zap.Int("clusters", len(eksListResp.Clusters)))
+	for _, v := range eksListResp.Clusters {
 		ts.lg.Info("EKS cluster", zap.String("name", aws.StringValue(v)))
 	}
 
@@ -1536,6 +1527,7 @@ func (ts *Tester) down() (err error) {
 	}()
 
 	ts.cfg.Status.TimeUTCDeleteStart = time.Now().UTC()
+	ts.cfg.Status.TimeUTCDeleteStartRFC3339Micro = ts.cfg.Status.TimeUTCDeleteStart.Format(eksconfig.RFC3339Micro)
 	ts.cfg.Sync()
 
 	var errs []string
