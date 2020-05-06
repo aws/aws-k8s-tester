@@ -46,7 +46,9 @@ func (r *Resources) ExpectDeploySuccessful(ctx context.Context, f *framework.Fra
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		svc, err := f.ClientSet.CoreV1().Services(ns.Name).Create(ctx, service, metav1.CreateOptions{})
 		cancel()
-		Expect(err).NotTo(HaveOccurred())
+		if err != nil {
+			Expect(err).NotTo(HaveOccurred())
+		}
 		By(fmt.Sprintf("wait service (%s)", service.Name))
 		ctxto, cancel := context.WithTimeout(ctx, timeout)
 		svc, err = f.ResourceManager.WaitServiceHasEndpointsNum(ctxto, svc, int(*dp.Spec.Replicas))
@@ -54,7 +56,6 @@ func (r *Resources) ExpectDeploySuccessful(ctx context.Context, f *framework.Fra
 		if err != nil {
 			Expect(err).NotTo(HaveOccurred())
 		}
-		Expect(err).NotTo(HaveOccurred())
 	}
 }
 
