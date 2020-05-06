@@ -9,11 +9,11 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.7...v1.1.8
 
 ### `ec2config`
 
-- Add [`Config.Partition`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`Config.Partition`](https://github.com/aws/aws-k8s-tester/commit/70f46239078f7612f423a86b8df2712557b57b38).
 
 ### `eksconfig`
 
-- Add [`Config.Partition`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`Config.Partition`](https://github.com/aws/aws-k8s-tester/commit/70f46239078f7612f423a86b8df2712557b57b38).
 
 ### Dependency
 
