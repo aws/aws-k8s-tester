@@ -1,4 +1,4 @@
-// aws-k8s-tester is a set of AWS test commands.
+// aws-k8s-tester is a set of AWS Kubernetes test commands.
 package main
 
 import (
