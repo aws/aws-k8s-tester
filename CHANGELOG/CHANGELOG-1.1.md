@@ -3,11 +3,11 @@
 <hr>
 
 
-## [v1.1.6](https://github.com/aws/aws-k8s-tester/releases/tag/v1.1.6) (2020-05)
+## [v1.1.6](https://github.com/aws/aws-k8s-tester/releases/tag/v1.1.6) (2020-05-06)
 
 ### `cw-utils`
 
-- Initial [commit](https://github.com/aws/aws-k8s-tester/commit/).
+- Initial [commit](https://github.com/aws/aws-k8s-tester/commit/971be62f5cbd581f2ef7d278553ed169f0ff1284).
 
 ### `eksconfig`
 
@@ -16,7 +16,7 @@
 
 ### `pkd/aws/cw`
 
-- Initial [commit](https://github.com/aws/aws-k8s-tester/commit/).
+- Initial [commit](https://github.com/aws/aws-k8s-tester/commit/971be62f5cbd581f2ef7d278553ed169f0ff1284).
 
 
 <hr>
