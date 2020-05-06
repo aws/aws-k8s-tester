@@ -1,5 +1,5 @@
 asgs:
-  ec2-2020050610-sunf5nd46nho-asg:
+  ec2-2020050611-fortexldld67-asg:
     ami-type: AL2_x86_64
     asg-cfn-stack-id: ""
     asg-desired-capacity: 1
@@ -11,18 +11,18 @@ asgs:
     instance-types:
     - c5.xlarge
     logs: null
-    name: ec2-2020050610-sunf5nd46nho-asg
+    name: ec2-2020050611-fortexldld67-asg
     remote-access-user-name: ec2-user
     ssm-document-cfn-stack-id: ""
-    ssm-document-cfn-stack-name: ec2-2020050610-sunf5nd46nho-ssm-document
+    ssm-document-cfn-stack-name: ec2-2020050611-fortexldld67-ssm-document
     ssm-document-command-ids: null
     ssm-document-commands: ""
     ssm-document-create: false
     ssm-document-execution-timeout-in-seconds: 3600
-    ssm-document-name: ec22020050610sunf5nd46nhoSSMDocument
+    ssm-document-name: ec22020050611fortexldld67SSMDocument
     volume-size: 40
 asgs-fetch-logs: true
-asgs-logs-dir: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/ec2-2020050610-sunf5nd46nho-logs-remote
+asgs-logs-dir: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/ec2-2020050611-fortexldld67-logs-remote
 aws-account-id: ""
 aws-credential-path: ""
 aws-iam-role-arn: ""
@@ -34,7 +34,7 @@ log-level: info
 log-outputs:
 - stderr
 - /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/default.yaml.log
-name: ec2-2020050610-sunf5nd46nho
+name: ec2-2020050611-fortexldld67
 on-failure-delete: true
 on-failure-delete-wait-seconds: 120
 private-subnet-ids: null
@@ -42,13 +42,13 @@ public-subnet-ids: null
 region: us-west-2
 remote-access-commands-output-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/default.ssh.sh
 remote-access-key-create: true
-remote-access-key-name: ec2-2020050610-sunf5nd46nho-key-ec2
-remote-access-private-key-path: /tmp/inventiveu.insecure.key
+remote-access-key-name: ec2-2020050611-fortexldld67-key-ec2
+remote-access-private-key-path: /tmp/impressive.insecure.key
 role-arn: ""
 role-cfn-stack-id: ""
 role-create: true
 role-managed-policy-arns: null
-role-name: ec2-2020050610-sunf5nd46nho-role-ec2
+role-name: ec2-2020050611-fortexldld67-role-ec2
 role-service-principals: null
 s3-bucket-create: false
 s3-bucket-create-keep: false
@@ -58,6 +58,8 @@ security-group-id: ""
 ssh-ingress-ipv4-range: ""
 status: null
 status-current: ""
+time-utc-create-complete: "0001-01-01T00:00:00Z"
+time-utc-delete-start: "0001-01-01T00:00:00Z"
 up: false
 vpc-cfn-stack-id: ""
 vpc-create: true

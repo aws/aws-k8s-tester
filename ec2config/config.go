@@ -37,6 +37,9 @@ const (
 	ASGMaxLimit = 100
 )
 
+// RFC3339Micro is the RFC3339 time format.
+const RFC3339Micro = "2006-01-02T15:04:05.999Z07:00"
+
 // Config defines EC2 configuration.
 type Config struct {
 	mu *sync.RWMutex
@@ -68,6 +71,12 @@ type Config struct {
 	DeleteTook time.Duration `json:"delete-took,omitempty" read-only:"true"`
 	// DeleteTookString is the duration that took to create the resource.
 	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
+	// TimeUTCCreateComplete is the time when creation is complete.
+	TimeUTCCreateComplete             time.Time `json:"time-utc-create-complete,omitempty" read-only:"true"`
+	TimeUTCCreateCompleteRFC3339Micro string    `json:"time-utc-create-complete-rfc3339-micro,omitempty" read-only:"true"`
+	// TimeUTCDeleteStart is the time when deletion is started.
+	TimeUTCDeleteStart             time.Time `json:"time-utc-delete-start,omitempty" read-only:"true"`
+	TimeUTCDeleteStartRFC3339Micro string    `json:"time-utc-delete-start-rfc3339-micro,omitempty" read-only:"true"`
 
 	// LogLevel configures log level. Only supports debug, info, warn, error, panic, or fatal. Default 'info'.
 	LogLevel string `json:"log-level"`
@@ -226,12 +235,12 @@ type ASG struct {
 	// RemoteAccessUserName is the user name used for running init scripts or SSH access.
 	RemoteAccessUserName string `json:"remote-access-user-name"`
 
+	// SSMDocumentCreate is true to auto-create and delete SSM document.
+	SSMDocumentCreate bool `json:"ssm-document-create"`
 	// SSMDocumentName is the name of SSM document.
 	SSMDocumentName string `json:"ssm-document-name"`
 	// SSMDocumentCFNStackName is the name of SSM document CFN stack.
 	SSMDocumentCFNStackName string `json:"ssm-document-cfn-stack-name"`
-	// SSMDocumentCreate is true to auto-create and delete SSM document.
-	SSMDocumentCreate bool `json:"ssm-document-create"`
 	// SSMDocumentCommands is the commands for SSM document.
 	// Only used if SSM doc is created.
 	SSMDocumentCommands string `json:"ssm-document-commands"`
@@ -254,6 +263,7 @@ type ASG struct {
 	// ImageIDSSMParameter is the AWS Systems Manager Parameter Store
 	// parameter of the AMI ID.
 	ImageIDSSMParameter string `json:"image-id-ssm-parameter"`
+
 	// InstanceTypes is the list of EC2 instance types.
 	InstanceTypes []string `json:"instance-types"`
 	// VolumeSize is the size of the default volume, in GiB.

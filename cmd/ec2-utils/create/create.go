@@ -1,4 +1,5 @@
-package ec2
+// Package create implements "ec2-utils create" commands.
+package create
 
 import (
 	"fmt"
@@ -12,14 +13,23 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newCreate() *cobra.Command {
+var (
+	path         string
+	enablePrompt bool
+)
+
+// NewCommand implements "ec2-utils create" command.
+func NewCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "create <subcommand>",
-		Short: "Create commands",
+		Use:        "create",
+		Short:      "EC2 create commands",
+		SuggestFor: []string{"creat"},
 	}
+	cmd.PersistentFlags().StringVarP(&path, "path", "p", "", "ec2 test configuration file path")
+	cmd.PersistentFlags().BoolVarP(&enablePrompt, "enable-prompt", "e", true, "'true' to enable prompt mode")
 	cmd.AddCommand(
 		newCreateConfig(),
-		newCreateCluster(),
+		newCreateInstances(),
 	)
 	return cmd
 }
@@ -27,13 +37,13 @@ func newCreate() *cobra.Command {
 func newCreateConfig() *cobra.Command {
 	return &cobra.Command{
 		Use:   "config",
-		Short: "Writes an aws-k8s-tester ec2 configuration with default values",
+		Short: "Writes an ec2-utils configuration with default values",
 		Long:  "Configuration values are overwritten by environment variables.",
-		Run:   configFunc,
+		Run:   createConfigFunc,
 	}
 }
 
-func configFunc(cmd *cobra.Command, args []string) {
+func createConfigFunc(cmd *cobra.Command, args []string) {
 	if path == "" {
 		fmt.Fprintln(os.Stderr, "'--path' flag is not specified")
 		os.Exit(1)
@@ -52,7 +62,7 @@ func configFunc(cmd *cobra.Command, args []string) {
 
 	if err = cfg.ValidateAndSetDefaults(); err != nil {
 		fmt.Printf("\n*********************************\n")
-		fmt.Printf("'aws-k8s-tester ec2 create config' fail %err\n", err)
+		fmt.Printf("'ec2-utils create config' fail %err\n", err)
 		os.Exit(1)
 	}
 
@@ -66,20 +76,20 @@ func configFunc(cmd *cobra.Command, args []string) {
 	println()
 
 	fmt.Printf("\n*********************************\n")
-	fmt.Printf("'aws-k8s-tester ec2 create config' success\n")
+	fmt.Printf("'ec2-utils create config' success\n")
 }
 
-func newCreateCluster() *cobra.Command {
+func newCreateInstances() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "cluster",
-		Short: "Create an ec2 cluster",
+		Use:   "instances",
+		Short: "Create EC2 instances",
 		Long:  "Configuration values are overwritten by environment variables.",
-		Run:   createClusterFunc,
+		Run:   createInstancesFunc,
 	}
 	return cmd
 }
 
-func createClusterFunc(cmd *cobra.Command, args []string) {
+func createInstancesFunc(cmd *cobra.Command, args []string) {
 	if path == "" {
 		fmt.Fprintln(os.Stderr, "'--path' flag is not specified")
 		os.Exit(1)
@@ -99,7 +109,7 @@ func createClusterFunc(cmd *cobra.Command, args []string) {
 		}
 	} else {
 		fmt.Fprintf(os.Stderr, "cannot find configuration %q; writing...\n", path)
-		cfg := ec2config.NewDefault()
+		cfg = ec2config.NewDefault()
 		cfg.ConfigPath = path
 	}
 
@@ -151,10 +161,10 @@ func createClusterFunc(cmd *cobra.Command, args []string) {
 
 	if err = tester.Up(); err != nil {
 		fmt.Printf("\n*********************************\n")
-		fmt.Printf("'aws-k8s-tester ec2 create cluster' fail %v\n", err)
+		fmt.Printf("'ec2-utils create instances' fail %v\n", err)
 		os.Exit(1)
 	}
 
 	fmt.Printf("\n*********************************\n")
-	fmt.Printf("'aws-k8s-tester ec2 create cluster' success\n")
+	fmt.Printf("'ec2-utils create instances' success\n")
 }

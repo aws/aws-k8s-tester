@@ -1,4 +1,5 @@
-package ec2
+// Package delete implements "ec2-utils delete" commands.
+package delete
 
 import (
 	"fmt"
@@ -12,24 +13,37 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newDelete() *cobra.Command {
+var (
+	path         string
+	enablePrompt bool
+)
+
+// NewCommand implements "ec2-utils delete" command.
+func NewCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "delete <subcommand>",
-		Short: "Delete commands",
+		Use:        "delete",
+		Short:      "EC2 delete commands",
+		SuggestFor: []string{"delet"},
 	}
-	cmd.AddCommand(newDeleteCluster())
+	cmd.PersistentFlags().StringVarP(&path, "path", "p", "", "ec2 test configuration file path")
+	cmd.PersistentFlags().BoolVarP(&enablePrompt, "enable-prompt", "e", true, "'true' to enable prompt mode")
+	cmd.AddCommand(
+		newDeleteInstances(),
+	)
 	return cmd
 }
 
-func newDeleteCluster() *cobra.Command {
-	return &cobra.Command{
-		Use:   "cluster",
-		Short: "Delete EC2 cluster",
-		Run:   deleteClusterFunc,
+func newDeleteInstances() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "instances",
+		Short: "Delete EC2 instances",
+		Long:  "Configuration values are overwritten by environment variables.",
+		Run:   deleteInstancesFunc,
 	}
+	return cmd
 }
 
-func deleteClusterFunc(cmd *cobra.Command, args []string) {
+func deleteInstancesFunc(cmd *cobra.Command, args []string) {
 	if !fileutil.Exist(path) {
 		fmt.Fprintf(os.Stderr, "cannot find configuration %q\n", path)
 		os.Exit(1)
@@ -76,10 +90,10 @@ func deleteClusterFunc(cmd *cobra.Command, args []string) {
 
 	if err = tester.Down(); err != nil {
 		fmt.Printf("\n*********************************\n")
-		fmt.Printf("'aws-k8s-tester ec2 delete cluster' fail %v\n", err)
+		fmt.Printf("'ec2-utils delete instances' fail %v\n", err)
 		os.Exit(1)
 	}
 
 	fmt.Printf("\n*********************************\n")
-	fmt.Printf("'aws-k8s-tester ec2 delete cluster' success\n")
+	fmt.Printf("'ec2-utils delete instances' success\n")
 }

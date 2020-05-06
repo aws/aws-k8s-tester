@@ -3,6 +3,33 @@
 <hr>
 
 
+## [v1.1.7](https://github.com/aws/aws-k8s-tester/releases/tag/v1.1.7) (2020-05)
+
+### `aws-k8s-tester`
+
+- Remove [`aws-k8s-tester ec2`](https://github.com/aws/aws-k8s-tester/commit/).
+  - `aws-k8s-tester ec2 create cluster` is now `ec2-utils create instances`.
+  - `aws-k8s-tester ec2 delete cluster` is now `ec2-utils delete instances`.
+
+### `ec2-utils`
+
+- Rename [`aws-k8s-tester ec2` to `ec2-utils`](https://github.com/aws/aws-k8s-tester/commit/).
+  - `aws-k8s-tester ec2 create config` is now `ec2-utils create config`.
+  - `aws-k8s-tester ec2 create cluster` is now `ec2-utils create instances`.
+  - `aws-k8s-tester ec2 delete cluster` is now `ec2-utils delete instances`.
+
+### `ec2`
+
+- Fix [`ec2config.ASG.SSMDocumentCreate` `false` for ASGs](https://github.com/aws/aws-k8s-tester/commit/).
+
+### `eks`
+
+- Fix [`ec2config.ASG.SSMDocumentCreate` `false` for node groups](https://github.com/aws/aws-k8s-tester/commit/).
+
+
+<hr>
+
+
 ## [v1.1.6](https://github.com/aws/aws-k8s-tester/releases/tag/v1.1.6) (2020-05-06)
 
 ### `cw-utils`

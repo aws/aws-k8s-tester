@@ -85,11 +85,22 @@ type MNG struct {
 	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
 	// ref. https://docs.aws.amazon.com/eks/latest/userguide/eks-linux-ami-versions.html
 	ReleaseVersion string `json:"release-version,omitempty"`
+
 	// AMIType is the AMI type for the node group.
 	// Allowed values are AL2_x86_64 and AL2_x86_64_GPU.
 	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
 	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
 	AMIType string `json:"ami-type,omitempty"`
+
+	// InstanceTypes is the EC2 instance types for the node instances.
+	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
+	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
+	InstanceTypes []string `json:"instance-types,omitempty"`
+	// VolumeSize is the node volume size.
+	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
+	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
+	VolumeSize int `json:"volume-size,omitempty"`
+
 	// ASGMinSize is the minimum size of Node Group Auto Scaling Group.
 	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
 	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
@@ -102,14 +113,6 @@ type MNG struct {
 	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
 	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
 	ASGDesiredCapacity int `json:"asg-desired-capacity,omitempty"`
-	// InstanceTypes is the EC2 instance types for the node instances.
-	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
-	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
-	InstanceTypes []string `json:"instance-types,omitempty"`
-	// VolumeSize is the node volume size.
-	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
-	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
-	VolumeSize int `json:"volume-size,omitempty"`
 
 	// CreateRequested is true if "CreateNodegroupRequest" has been sent.
 	CreateRequested bool `json:"create-requested" read-only:"true"`
@@ -160,11 +163,11 @@ func getDefaultAddOnManagedNodeGroups(name string) *AddOnManagedNodeGroups {
 				RemoteAccessUserName: "ec2-user", // assume Amazon Linux 2
 				ReleaseVersion:       "",         // to be auto-filled by EKS API
 				AMIType:              eks.AMITypesAl2X8664,
+				InstanceTypes:        []string{DefaultNodeInstanceTypeCPU},
+				VolumeSize:           DefaultNodeVolumeSize,
 				ASGMinSize:           1,
 				ASGMaxSize:           1,
 				ASGDesiredCapacity:   1,
-				InstanceTypes:        []string{DefaultNodeInstanceTypeCPU},
-				VolumeSize:           DefaultNodeVolumeSize,
 			},
 		},
 	}

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/aws/aws-k8s-tester/cmd/aws-k8s-tester/ec2"
 	"github.com/aws/aws-k8s-tester/cmd/aws-k8s-tester/eks"
 	"github.com/aws/aws-k8s-tester/cmd/aws-k8s-tester/version"
 	"github.com/spf13/cobra"
@@ -13,7 +12,7 @@ import (
 
 var rootCmd = &cobra.Command{
 	Use:        "aws-k8s-tester",
-	Short:      "AWS test CLI",
+	Short:      "AWS Kubernetes test CLI",
 	SuggestFor: []string{"awstest"},
 }
 
@@ -23,7 +22,6 @@ func init() {
 
 func init() {
 	rootCmd.AddCommand(
-		ec2.NewCommand(),
 		eks.NewCommand(),
 		version.NewCommand(),
 	)

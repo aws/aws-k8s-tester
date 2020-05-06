@@ -60,13 +60,13 @@ func NewDefault() *Config {
 	cfg.ASGs = map[string]ASG{
 		cfg.Name + "-asg": {
 			Name:                               cfg.Name + "-asg",
-			RemoteAccessUserName:               "ec2-user", // for AL2
-			SSMDocumentCFNStackName:            cfg.Name + "-ssm-document",
-			SSMDocumentName:                    ssmDocNameRegex.ReplaceAllString(cfg.Name+"SSMDocument", ""),
 			SSMDocumentCreate:                  false,
+			SSMDocumentName:                    "",
 			SSMDocumentCommands:                "",
 			SSMDocumentExecutionTimeoutSeconds: 3600,
+			RemoteAccessUserName:               "ec2-user", // for AL2
 			AMIType:                            AMITypeAL2X8664,
+			ImageID:                            "",
 			ImageIDSSMParameter:                "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2",
 			InstanceTypes:                      []string{DefaultNodeInstanceTypeCPU},
 			VolumeSize:                         DefaultNodeVolumeSize,
@@ -369,16 +369,15 @@ func (cfg *Config) validateASGs() error {
 			if v.SSMDocumentName == "" {
 				v.SSMDocumentName = v.Name + "SSMDocument"
 			}
+			v.SSMDocumentCFNStackName = strings.ReplaceAll(v.SSMDocumentCFNStackName, "GetRef.Name", cfg.Name)
+			v.SSMDocumentName = strings.ReplaceAll(v.SSMDocumentName, "GetRef.Name", cfg.Name)
+			v.SSMDocumentName = ssmDocNameRegex.ReplaceAllString(v.SSMDocumentName, "")
 			if v.SSMDocumentExecutionTimeoutSeconds == 0 {
 				v.SSMDocumentExecutionTimeoutSeconds = 3600
 			}
 
 		case false: // use existing one, or don't run any SSM
 		}
-
-		v.SSMDocumentCFNStackName = strings.ReplaceAll(v.SSMDocumentCFNStackName, "GetRef.Name", cfg.Name)
-		v.SSMDocumentName = strings.ReplaceAll(v.SSMDocumentName, "GetRef.Name", cfg.Name)
-		v.SSMDocumentName = ssmDocNameRegex.ReplaceAllString(v.SSMDocumentName, "")
 
 		processed[k] = v
 	}

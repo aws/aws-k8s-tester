@@ -87,16 +87,20 @@ func getDefaultAddOnNodeGroups(name string) *AddOnNodeGroups {
 		ASGs: map[string]ASG{
 			name + "-ng-asg-cpu": {
 				ASG: ec2config.ASG{
-					Name:                 name + "-ng-asg-cpu",
-					RemoteAccessUserName: "ec2-user", // assume Amazon Linux 2
-					AMIType:              eks.AMITypesAl2X8664,
-					ImageID:              "",
-					ImageIDSSMParameter:  "/aws/service/eks/optimized-ami/1.16/amazon-linux-2/recommended/image_id",
-					ASGMinSize:           1,
-					ASGMaxSize:           1,
-					ASGDesiredCapacity:   1,
-					InstanceTypes:        []string{DefaultNodeInstanceTypeCPU},
-					VolumeSize:           DefaultNodeVolumeSize,
+					Name:                               name + "-ng-asg-cpu",
+					SSMDocumentCreate:                  false,
+					SSMDocumentName:                    "",
+					SSMDocumentCommands:                "",
+					SSMDocumentExecutionTimeoutSeconds: 3600,
+					RemoteAccessUserName:               "ec2-user", // assume Amazon Linux 2
+					AMIType:                            eks.AMITypesAl2X8664,
+					ImageID:                            "",
+					ImageIDSSMParameter:                "/aws/service/eks/optimized-ami/1.16/amazon-linux-2/recommended/image_id",
+					InstanceTypes:                      []string{DefaultNodeInstanceTypeCPU},
+					VolumeSize:                         DefaultNodeVolumeSize,
+					ASGMinSize:                         1,
+					ASGMaxSize:                         1,
+					ASGDesiredCapacity:                 1,
 				},
 				KubeletExtraArgs: "",
 			},
@@ -281,16 +285,15 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 			if v.SSMDocumentName == "" {
 				v.SSMDocumentName = v.Name + "SSMDocument"
 			}
+			v.SSMDocumentCFNStackName = strings.ReplaceAll(v.SSMDocumentCFNStackName, "GetRef.Name", cfg.Name)
+			v.SSMDocumentName = strings.ReplaceAll(v.SSMDocumentName, "GetRef.Name", cfg.Name)
+			v.SSMDocumentName = regex.ReplaceAllString(v.SSMDocumentName, "")
 			if v.SSMDocumentExecutionTimeoutSeconds == 0 {
 				v.SSMDocumentExecutionTimeoutSeconds = 3600
 			}
 
 		case false: // use existing one, or don't run any SSM
 		}
-
-		v.SSMDocumentCFNStackName = strings.ReplaceAll(v.SSMDocumentCFNStackName, "GetRef.Name", cfg.Name)
-		v.SSMDocumentName = strings.ReplaceAll(v.SSMDocumentName, "GetRef.Name", cfg.Name)
-		v.SSMDocumentName = regex.ReplaceAllString(v.SSMDocumentName, "")
 
 		if cfg.IsEnabledAddOnNLBHelloWorld() && cfg.AddOnNLBHelloWorld.DeploymentReplicas < int32(v.ASGDesiredCapacity) {
 			cfg.AddOnNLBHelloWorld.DeploymentReplicas = int32(v.ASGDesiredCapacity)

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	k8s "github.com/aws/aws-k8s-tester/cmd/etcd-utils/k8s"
+	"github.com/aws/aws-k8s-tester/cmd/etcd-utils/k8s"
 	"github.com/aws/aws-k8s-tester/cmd/etcd-utils/version"
 	"github.com/spf13/cobra"
 )
