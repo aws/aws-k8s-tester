@@ -9,7 +9,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.7...v1.1.8
 
 ### `eks`
 
-- Improve [fargate `kubectl exec/logs` test output logging](https://github.com/aws/aws-k8s-tester/commit/).
+- Improve [fargate `kubectl exec/logs` test output logging](https://github.com/aws/aws-k8s-tester/commit/a9597f61e99f3ab6a0959cc54ec409e104f64d3c).
 
 
 <hr>
