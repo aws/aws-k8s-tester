@@ -1015,6 +1015,7 @@ func (ts *tester) checkPod() error {
 		zap.String("command-describe", cmdTxtDesc),
 		zap.String("command-logs", cmdTxtLogs),
 	)
+	found := false
 	retryStart, waitDur := time.Now(), 3*time.Minute
 	for time.Now().Sub(retryStart) < waitDur {
 		select {
@@ -1053,10 +1054,14 @@ func (ts *tester) checkPod() error {
 			continue
 		}
 
+		found = true
+		ts.cfg.Logger.Info("found expected output from kubectl logs; success!")
 		break
 	}
-
-	// TODO: fail if "sleepMsg" not found?
+	if !found {
+		// TODO: fail if not found?
+		ts.cfg.Logger.Warn("failed to find expected output from kubectl logs; fail!")
+	}
 
 	return ts.cfg.EKSConfig.Sync()
 }

@@ -644,16 +644,16 @@ func (ts *tester) checkPod() error {
 
 		if !strings.Contains(out, secretReadTxt) {
 			ts.cfg.Logger.Warn("unexpected exec output", zap.String("output", out))
-		} else {
-			ts.cfg.Logger.Info("successfully checked Pod exec", zap.String("container-name", ts.cfg.EKSConfig.AddOnFargate.ContainerName))
+			time.Sleep(5 * time.Second)
+			continue
 		}
 		found = true
+		ts.cfg.Logger.Info("successfully checked Pod exec", zap.String("container-name", ts.cfg.EKSConfig.AddOnFargate.ContainerName))
 		break
 	}
-
 	if !found {
 		ts.cfg.EKSConfig.Sync()
-		return errors.New("failed to check Pod")
+		return errors.New("failed to find expected output from kubectl exec")
 	}
 
 	argsDesc := []string{
@@ -679,6 +679,8 @@ func (ts *tester) checkPod() error {
 		zap.String("command-describe", cmdTxtDesc),
 		zap.String("command-logs", cmdTxtLogs),
 	)
+
+	found = false
 	retryStart, waitDur = time.Now(), 2*time.Minute
 	for time.Now().Sub(retryStart) < waitDur {
 		select {
@@ -716,8 +718,13 @@ func (ts *tester) checkPod() error {
 			time.Sleep(5 * time.Second)
 			continue
 		}
-
+		found = true
+		ts.cfg.Logger.Info("found expected output from kubectl logs; success!")
 		break
+	}
+	if !found {
+		// TODO: fail if not found?
+		ts.cfg.Logger.Warn("failed to find expected output from kubectl logs; fail!")
 	}
 
 	return ts.cfg.EKSConfig.Sync()
