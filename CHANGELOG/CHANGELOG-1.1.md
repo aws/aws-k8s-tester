@@ -33,7 +33,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.6...v1.1.7
 
 - Add [`eks-utils apis --log-level` flag](https://github.com/aws/aws-k8s-tester/commit/27f614b199b3d6ca8ff6774163e396e1f09aac55).
 - Add [`eks-utils nodes --log-level` flag](https://github.com/aws/aws-k8s-tester/commit/27f614b199b3d6ca8ff6774163e396e1f09aac55).
-- Add [OS/Arch node labels to `eks-utils nodes` output](https://github.com/aws/aws-k8s-tester/commit/)
+- Add [OS/Arch node labels to `eks-utils nodes` output](https://github.com/aws/aws-k8s-tester/commit/0badfceea2316cb7a08d03e466b72715d8c5a8f0)
   - e.g. `kubernetes.io/arch` and `kubernetes.io/os`.
 
 ### `ec2-utils`
