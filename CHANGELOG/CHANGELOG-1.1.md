@@ -15,7 +15,7 @@ TODO
 <hr>
 
 
-## [v1.1.7](https://github.com/aws/aws-k8s-tester/releases/tag/v1.1.7) (2020-05-06)
+## [v1.1.7](https://github.com/aws/aws-k8s-tester/releases/tag/v1.1.7) (2020-05-07)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.6...v1.1.7).
 
@@ -68,7 +68,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.6...v1.1.7
 
 ### `pkg/aws/ssm`
 
-- Initial [commit](https://github.com/aws/aws-k8s-tester/commit/).
+- Initial [commit](https://github.com/aws/aws-k8s-tester/commit/e6a0a0ec7c3e6bc0b73ea01601321609b029bef8).
 
 ### Dependency
 
