@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"sort"
+	"strings"
 	"time"
 
 	etcd_client "github.com/aws/aws-k8s-tester/pkg/etcd-client"
@@ -76,6 +77,7 @@ type Result struct {
 	OSImage          string  `json:"os-image"`
 	KubeletVersion   float64 `json:"kubelet-version"`
 	KubeProxyVersion float64 `json:"kube-proxy-version"`
+	OsArchLabels     string  `json:"os-arch-labels"`
 	Count            int     `json:"count"`
 }
 
@@ -194,13 +196,24 @@ func listFunc(cmd *cobra.Command, args []string) {
 	counts := make(map[Result]int)
 	for _, node := range nodes {
 		nodeName := node.GetName()
+		labels := make([]string, 0)
+		for k, v := range node.GetLabels() {
+			switch {
+			case strings.Contains(k, "kubernetes.io/arch"),
+				strings.Contains(k, "kubernetes.io/os"):
+				labels = append(labels, k+"="+v)
+			}
+		}
 		info := k8s_object.ParseNodeInfo(node.Status.NodeInfo)
 		b, _ := json.Marshal(info)
-		lg.Info("node", zap.String("name", nodeName), zap.String("info", string(b)))
+		sort.Strings(labels)
+		lv := strings.Join(labels, ",")
+		lg.Info("node", zap.String("name", nodeName), zap.String("info", string(b)), zap.Strings("os-arch-labels", labels))
 		counts[Result{
 			OSImage:          info.OSImage,
 			KubeletVersion:   info.KubeletMinorVersionValue,
 			KubeProxyVersion: info.KubeProxyMinorVersionValue,
+			OsArchLabels:     lv,
 		}]++
 	}
 	rs := ListResults{}
