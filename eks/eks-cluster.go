@@ -134,13 +134,15 @@ func (ts *Tester) createCluster() (err error) {
 	return ts.createSubTesters()
 }
 
+const rfc3339Micro = "2006-01-02T15:04:05.999Z07:00"
+
 func (ts *Tester) createEKS() (err error) {
 	createStart := time.Now()
 	defer func() {
 		ts.cfg.Status.CreateTook = time.Since(createStart)
 		ts.cfg.Status.CreateTookString = ts.cfg.Status.CreateTook.String()
 		ts.cfg.Status.TimeUTCCreateComplete = time.Now().UTC()
-		ts.cfg.Status.TimeUTCCreateCompleteRFC3339Micro = ts.cfg.Status.TimeUTCCreateComplete.Format(eksconfig.RFC3339Micro)
+		ts.cfg.Status.TimeUTCCreateCompleteRFC3339Micro = ts.cfg.Status.TimeUTCCreateComplete.Format(rfc3339Micro)
 		ts.cfg.Sync()
 	}()
 

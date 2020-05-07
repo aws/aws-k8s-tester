@@ -66,6 +66,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.6...v1.1.7
 - Reorder [`AddOnAppMesh` to the front](https://github.com/aws/aws-k8s-tester/commit/843e1c297ef0ce0a093267dd9fa2c1ffefdecba7).
 - Fix [`ec2config.ASG.SSMDocumentCreate` `false` for node groups](https://github.com/aws/aws-k8s-tester/commit/cb47ca22ca042be3b6f8464680ec7463e2e8f01f).
 
+### `pkg/aws/ssm`
+
+- Initial [commit](https://github.com/aws/aws-k8s-tester/commit/).
+
 ### Dependency
 
 - Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.30.21`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.21) to [`v1.30.22`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.22).

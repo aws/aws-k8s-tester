@@ -40,9 +40,6 @@ const (
 	ASGMaxLimit = 100
 )
 
-// RFC3339Micro is the RFC3339 time format.
-const RFC3339Micro = "2006-01-02T15:04:05.999Z07:00"
-
 // Config defines EC2 configuration.
 type Config struct {
 	mu *sync.RWMutex

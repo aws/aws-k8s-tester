@@ -1529,7 +1529,7 @@ func (ts *Tester) down() (err error) {
 	}()
 
 	ts.cfg.Status.TimeUTCDeleteStart = time.Now().UTC()
-	ts.cfg.Status.TimeUTCDeleteStartRFC3339Micro = ts.cfg.Status.TimeUTCDeleteStart.Format(eksconfig.RFC3339Micro)
+	ts.cfg.Status.TimeUTCDeleteStartRFC3339Micro = ts.cfg.Status.TimeUTCDeleteStart.Format(rfc3339Micro)
 	ts.cfg.Sync()
 
 	var errs []string
