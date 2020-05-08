@@ -145,17 +145,18 @@ func listFunc(cmd *cobra.Command, args []string) {
 	}
 
 	var e etcd_client.Etcd
+	e, err = etcd_client.New(etcd_client.Config{
+		Logger:           lg,
+		EtcdClientConfig: clientv3.Config{LogConfig: &lcfg, Endpoints: endpoints},
+	})
+	if err != nil {
+		lg.Fatal("failed to create etcd instance")
+	}
+	defer func() {
+		e.Close()
+	}()
+
 	if listLeadershipElection {
-		e, err = etcd_client.New(etcd_client.Config{
-			Logger:           lg,
-			EtcdClientConfig: clientv3.Config{LogConfig: &lcfg, Endpoints: endpoints},
-		})
-		if err != nil {
-			lg.Fatal("failed to create etcd instance")
-		}
-		defer func() {
-			e.Close()
-		}()
 		ok, err := e.Campaign(listElectionPfx, listElectionTimeout)
 		if err != nil {
 			lg.Fatal("failed to campaign")
