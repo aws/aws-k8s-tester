@@ -23,10 +23,11 @@ import (
 )
 
 var (
-	listEtcdEndpoints   []string
-	listElectionPfx     string
-	listElectionTimeout time.Duration
-	listDoneKey         string
+	listLeadershipElection bool
+	listEtcdEndpoints      []string
+	listElectionPfx        string
+	listElectionTimeout    time.Duration
+	listDoneKey            string
 
 	listBatchLimit    int64
 	listBatchInterval time.Duration
@@ -55,6 +56,7 @@ eks-utils nodes \
 `,
 	}
 
+	cmd.PersistentFlags().BoolVar(&listLeadershipElection, "leadership-election", false, "true to enable leadership election")
 	cmd.PersistentFlags().StringSliceVar(&listEtcdEndpoints, "etcd-endpoints", []string{"localhost:2379"}, "etcd endpoints")
 	cmd.PersistentFlags().StringVar(&listElectionPfx, "election-prefix", defaultListElectionPfx, "Prefix to campaign for")
 	cmd.PersistentFlags().DurationVar(&listElectionTimeout, "election-timeout", 30*time.Second, "Campaign timeout")
@@ -141,7 +143,7 @@ func listFunc(cmd *cobra.Command, args []string) {
 	}
 
 	var e etcd_client.Etcd
-	if len(listEtcdEndpoints) > 0 {
+	if listLeadershipElection && len(listEtcdEndpoints) > 0 {
 		e, err = etcd_client.New(etcd_client.Config{
 			Logger:           lg,
 			EtcdClientConfig: clientv3.Config{LogConfig: &lcfg, Endpoints: listEtcdEndpoints},
@@ -239,7 +241,7 @@ func listFunc(cmd *cobra.Command, args []string) {
 	}
 	lg.Info("wrote", zap.String("path", listOutput))
 
-	if len(listEtcdEndpoints) > 0 {
+	if listLeadershipElection && len(listEtcdEndpoints) > 0 {
 		err = e.Put(10*time.Second, listDoneKey, "done", time.Hour)
 		if err != nil {
 			panic(err)

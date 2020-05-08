@@ -174,6 +174,16 @@ func (ts *tester) createHelmPrometheus() error {
 			},
 		},
 	}
+
+	descArgsSvc := []string{
+		ts.cfg.EKSConfig.KubectlPath,
+		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+		"--namespace=" + chartNamespaceGrafana,
+		"describe",
+		"service/grafana",
+	}
+	descCmdSvc := strings.Join(descArgsSvc, " ")
+
 	return helm.Install(helm.InstallConfig{
 		Logger:         ts.cfg.Logger,
 		Stopc:          ts.cfg.Stopc,
@@ -184,8 +194,22 @@ func (ts *tester) createHelmPrometheus() error {
 		ChartName:      chartNamePrometheus,
 		ReleaseName:    chartNamePrometheus,
 		Values:         values,
-		QueryFunc:      nil,
-		QueryInterval:  30 * time.Second,
+		QueryFunc: func() {
+			println()
+
+			// to catch errors
+			// e.g. "Error syncing load balancer: failed to ensure load balancer: TooManyLoadBalancers: Exceeded quota of account 123123"
+			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			output, err := exec.New().CommandContext(ctx, descArgsSvc[0], descArgsSvc[1:]...).CombinedOutput()
+			cancel()
+			out := strings.TrimSpace(string(output))
+			if err != nil {
+				ts.cfg.Logger.Warn("'kubectl describe service/grafana' failed", zap.Error(err))
+			} else {
+				fmt.Printf("\n\n'%s' output:\n\n%s\n\n", descCmdSvc, out)
+			}
+		},
+		QueryInterval: 30 * time.Second,
 	})
 }
 

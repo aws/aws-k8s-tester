@@ -19,9 +19,10 @@ import (
 )
 
 var (
-	listElectionPfx     string
-	listElectionTimeout time.Duration
-	listDoneKey         string
+	listLeadershipElection bool
+	listElectionPfx        string
+	listElectionTimeout    time.Duration
+	listDoneKey            string
 
 	listPfxs          []string
 	listBatchLimit    int64
@@ -61,6 +62,7 @@ etcd-utils k8s \
 `,
 	}
 
+	cmd.PersistentFlags().BoolVar(&listLeadershipElection, "leadership-election", false, "true to enable leadership election")
 	cmd.PersistentFlags().StringVar(&listElectionPfx, "election-prefix", defaultListElectionPfx, "Prefix to campaign for")
 	cmd.PersistentFlags().DurationVar(&listElectionTimeout, "election-timeout", 30*time.Second, "Campaign timeout")
 	cmd.PersistentFlags().StringVar(&listDoneKey, "done-key", defaultListDoneKey, "Key to write once list is done")
@@ -142,37 +144,40 @@ func listFunc(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	e, err := etcd_client.New(etcd_client.Config{
-		Logger:           lg,
-		EtcdClientConfig: clientv3.Config{LogConfig: &lcfg, Endpoints: endpoints},
-	})
-	if err != nil {
-		lg.Fatal("failed to create etcd instance")
-	}
-	defer func() {
-		e.Close()
-	}()
-	ok, err := e.Campaign(listElectionPfx, listElectionTimeout)
-	if err != nil {
-		lg.Fatal("failed to campaign")
-	}
-	if !ok {
-		lg.Warn("lost campaign; exiting")
-		return
-	}
-	kvs, err := e.Get(5*time.Second, listDoneKey)
-	if err != nil {
-		lg.Warn("failed to get", zap.Error(err))
-		return
-	}
-	if len(kvs) > 0 {
-		lg.Info("done key already written; skipping", zap.String("key", fmt.Sprintf("%v", kvs)))
-		return
+	var e etcd_client.Etcd
+	if listLeadershipElection {
+		e, err = etcd_client.New(etcd_client.Config{
+			Logger:           lg,
+			EtcdClientConfig: clientv3.Config{LogConfig: &lcfg, Endpoints: endpoints},
+		})
+		if err != nil {
+			lg.Fatal("failed to create etcd instance")
+		}
+		defer func() {
+			e.Close()
+		}()
+		ok, err := e.Campaign(listElectionPfx, listElectionTimeout)
+		if err != nil {
+			lg.Fatal("failed to campaign")
+		}
+		if !ok {
+			lg.Warn("lost campaign; exiting")
+			return
+		}
+		kvs, err := e.Get(5*time.Second, listDoneKey)
+		if err != nil {
+			lg.Warn("failed to get", zap.Error(err))
+			return
+		}
+		if len(kvs) > 0 {
+			lg.Info("done key already written; skipping", zap.String("key", fmt.Sprintf("%v", kvs)))
+			return
+		}
 	}
 
 	counts := make(map[Result]int)
 	for _, pfx := range listPfxs {
-		kvs, err = e.List(pfx, listBatchLimit, listBatchInterval)
+		kvs, err := e.List(pfx, listBatchLimit, listBatchInterval)
 		if err != nil {
 			lg.Warn("failed to list", zap.Error(err))
 		}
@@ -221,9 +226,11 @@ func listFunc(cmd *cobra.Command, args []string) {
 	}
 	lg.Info("wrote", zap.String("path", listOutput))
 
-	err = e.Put(10*time.Second, listDoneKey, "done", time.Hour)
-	if err != nil {
-		panic(err)
+	if listLeadershipElection {
+		err = e.Put(10*time.Second, listDoneKey, "done", time.Hour)
+		if err != nil {
+			panic(err)
+		}
 	}
 	lg.Info("'etcd-utils k8s list' success")
 }

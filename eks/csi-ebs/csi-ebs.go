@@ -214,8 +214,6 @@ func (ts *tester) createHelmCSI() error {
 			} else {
 				fmt.Printf("\n\n'%s' output:\n\n%s\n\n", logsCmd, out)
 			}
-
-			println()
 		},
 		QueryInterval: 30 * time.Second,
 	})

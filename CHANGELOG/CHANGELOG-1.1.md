@@ -7,9 +7,21 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.7...v1.1.8).
 
+### `etcd-utils k8s`
+
+- Add [`etcd-utils k8s --leadership-election` flag to enable/disable leadership election](https://github.com/aws/aws-k8s-tester/commit/).
+  - `--leadership-election=false` by default.
+
+### `eks-utils nodes`
+
+- Add [`eks-utils nodes --leadership-election` flag to enable/disable leadership election](https://github.com/aws/aws-k8s-tester/commit/).
+  - `--leadership-election=false` by default.
+
 ### `eks`
 
 - Improve [fargate `kubectl exec/logs` test output logging](https://github.com/aws/aws-k8s-tester/commit/a9597f61e99f3ab6a0959cc54ec409e104f64d3c).
+- Output [Grafana service debugging information via `kubectl --namespace=grafana describe service/grafana` in `eks/prometheus-grafana`](https://github.com/aws/aws-k8s-tester/commit/).
+  - e.g. It can fail due to `Error syncing load balancer: failed to ensure load balancer: TooManyLoadBalancers: Exceeded quota of account 123123`
 
 ### Dependency
 
