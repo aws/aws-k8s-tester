@@ -3,29 +3,29 @@
 <hr>
 
 
-## [v1.1.8](https://github.com/aws/aws-k8s-tester/releases/tag/v1.1.8) (2020-05)
+## [v1.1.8](https://github.com/aws/aws-k8s-tester/releases/tag/v1.1.8) (2020-05-08)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.7...v1.1.8).
 
 ### `etcd-utils k8s`
 
-- Add [`etcd-utils k8s --leadership-election` flag to enable/disable leadership election](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`etcd-utils k8s --leadership-election` flag to enable/disable leadership election](https://github.com/aws/aws-k8s-tester/commit/368ed48915eb3130e8e622f138a06636ebe3a06a).
   - `--leadership-election=false` by default.
 
 ### `eks-utils nodes`
 
-- Add [`eks-utils nodes --leadership-election` flag to enable/disable leadership election](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`eks-utils nodes --leadership-election` flag to enable/disable leadership election](https://github.com/aws/aws-k8s-tester/commit/368ed48915eb3130e8e622f138a06636ebe3a06a).
   - `--leadership-election=false` by default.
 
 ### `eks`
 
 - Improve [fargate `kubectl exec/logs` test output logging](https://github.com/aws/aws-k8s-tester/commit/a9597f61e99f3ab6a0959cc54ec409e104f64d3c).
-- Output [Grafana service debugging information via `kubectl --namespace=grafana describe service/grafana` in `eks/prometheus-grafana`](https://github.com/aws/aws-k8s-tester/commit/).
+- Output [Grafana service debugging information via `kubectl --namespace=grafana describe service/grafana` in `eks/prometheus-grafana`](https://github.com/aws/aws-k8s-tester/commit368ed48915eb3130e8e622f138a06636ebe3a06a).
   - e.g. It can fail due to `Error syncing load balancer: failed to ensure load balancer: TooManyLoadBalancers: Exceeded quota of account 123123`
 
 ### Dependency
 
-- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.30.22`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.22) to [`v1.30.23`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.23).
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.30.22`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.22) to [`v1.30.24`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.24).
 
 
 <hr>
