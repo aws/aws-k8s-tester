@@ -4,145 +4,160 @@ package clusterloader
 
 import (
 	"context"
-	"errors"
-	"strings"
+	"sync"
 	"time"
 
-	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
+	"github.com/aws/aws-k8s-tester/pkg/metrics"
 	"github.com/dustin/go-humanize"
+	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
-// Config defines Cluster Loader configuration.
-// ref. https://github.com/kubernetes/perf-tests
+var (
+	clientReqLatencyMs = prometheus.NewHistogram(
+		prometheus.HistogramOpts{
+			Namespace: "cluster_loader",
+			Subsystem: "client",
+			Name:      "request_latency_milliseconds",
+			Help:      "Bucketed histogram of client-side request and response latency.",
+
+			// lowest bucket start of upper bound 0.5 ms with factor 2
+			// highest bucket start of 0.5 ms * 2^13 == 4.096 sec
+			Buckets: prometheus.ExponentialBuckets(0.5, 2, 14),
+		})
+
+	requestsSuccessTotal = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Namespace: "cluster_loader",
+			Subsystem: "client",
+			Name:      "requests_success_total",
+			Help:      "Total number of successful requests.",
+		})
+
+	requestsFailureTotal = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Namespace: "cluster_loader",
+			Subsystem: "client",
+			Name:      "requests_failure_total",
+			Help:      "Total number of successful requests.",
+		})
+)
+
+func init() {
+	prometheus.MustRegister(clientReqLatencyMs)
+	prometheus.MustRegister(requestsSuccessTotal)
+	prometheus.MustRegister(requestsFailureTotal)
+}
+
+// Config configures cluster loader.
 type Config struct {
 	Logger *zap.Logger
-	Stopc  chan struct{}
 
-	EKSConfig *eksconfig.Config
-	K8SClient k8s_client.EKS
+	Client k8s_client.EKS
+
+	// Groups is the number of loader groups to launch.
+	// The total number of goroutines is Groups * number of
+	// load functons defined below.
+	Groups int
+
+	Stopc chan struct{}
+
+	Deadline time.Time
+	Timeout  time.Duration
+
+	Namespaces []string
 }
 
-// Tester defines Cluster Loader tester.
-// ref. https://github.com/kubernetes/perf-tests
-type Tester interface {
-	// Create installs Cluster Loader.
-	Create() error
-	// Delete deletes Cluster Loader.
-	Delete() error
+// Loader defines cluster loader operations.
+type Loader interface {
+	Start()
+	Stop()
+	GetMetrics() (success float64, failure float64, hs metrics.HistogramBuckets, err error)
 }
 
-// TODO: use kubemark
-// nodelease.NewController, kubemark.GetHollowKubeletConfig
-
-func NewTester(cfg Config) (Tester, error) {
-	return &tester{cfg: cfg, donec: make(chan struct{})}, nil
+type loader struct {
+	cfg            Config
+	wg             *sync.WaitGroup
+	donec          chan struct{}
+	donecCloseOnce *sync.Once
 }
 
-type tester struct {
-	cfg Config
-
-	donec chan struct{}
-}
-
-func (ts *tester) Create() (err error) {
-	if ts.cfg.EKSConfig.AddOnClusterLoader.Created {
-		ts.cfg.Logger.Info("skipping create AddOnClusterLoader")
-		return nil
+func New(cfg Config) Loader {
+	return &loader{
+		cfg:            cfg,
+		wg:             new(sync.WaitGroup),
+		donec:          make(chan struct{}),
+		donecCloseOnce: new(sync.Once),
 	}
+}
 
-	ts.cfg.Logger.Info("starting load testing", zap.Duration("duration", ts.cfg.EKSConfig.AddOnClusterLoader.Duration))
-	ts.cfg.EKSConfig.AddOnClusterLoader.Created = true
-	ts.cfg.EKSConfig.Sync()
-	createStart := time.Now()
+func (ld *loader) Start() {
+	n := ld.cfg.Groups * opFuncN
+	ld.wg.Add(n)
 
-	defer func() {
-		ts.cfg.EKSConfig.AddOnClusterLoader.CreateTook = time.Since(createStart)
-		ts.cfg.EKSConfig.AddOnClusterLoader.CreateTookString = ts.cfg.EKSConfig.AddOnClusterLoader.CreateTook.String()
-		ts.cfg.EKSConfig.Sync()
-	}()
-
-	deadline := time.Now().Add(ts.cfg.EKSConfig.AddOnClusterLoader.Duration)
-	for i := 0; i < ts.cfg.EKSConfig.Clients; i++ {
-		go listNodes(ts.cfg.Logger, deadline, ts.cfg.Stopc, ts.donec, ts.cfg.K8SClient.KubernetesClientSet())
-		go listPods(ts.cfg.Logger, deadline, ts.cfg.Stopc, ts.donec, ts.cfg.K8SClient.KubernetesClientSet())
-		go listServices(ts.cfg.Logger, deadline, ts.cfg.Stopc, ts.donec, ts.cfg.K8SClient.KubernetesClientSet())
-		go listEndpoints(ts.cfg.Logger, deadline, ts.cfg.Stopc, ts.donec, ts.cfg.K8SClient.KubernetesClientSet())
-		go listSecrets(ts.cfg.Logger, deadline, ts.cfg.Stopc, ts.donec, ts.cfg.K8SClient.KubernetesClientSet())
-		go listConfigMaps(ts.cfg.Logger, deadline, ts.cfg.Stopc, ts.donec, ts.cfg.K8SClient.KubernetesClientSet())
-		go listServiceAccounts(ts.cfg.Logger, deadline, ts.cfg.Stopc, ts.donec, ts.cfg.K8SClient.KubernetesClientSet())
-		go listJobs(ts.cfg.Logger, deadline, ts.cfg.Stopc, ts.donec, ts.cfg.K8SClient.KubernetesClientSet())
-		go listCronJobs(ts.cfg.Logger, deadline, ts.cfg.Stopc, ts.donec, ts.cfg.K8SClient.KubernetesClientSet())
+	ld.cfg.Logger.Info("starting load functions", zap.Strings("namespaces", ld.cfg.Namespaces), zap.Int("workers", n))
+	for i := 0; i < ld.cfg.Groups; i++ {
+		cli := ld.cfg.Client.KubernetesClientSet()
+		go listNodes(ld.cfg.Logger, cli, ld.cfg.Deadline, ld.cfg.Timeout, ld.wg, ld.cfg.Stopc, ld.donec)
+		go listPods(ld.cfg.Logger, cli, ld.cfg.Namespaces, ld.cfg.Deadline, ld.cfg.Timeout, ld.wg, ld.cfg.Stopc, ld.donec)
+		go listServices(ld.cfg.Logger, cli, ld.cfg.Namespaces, ld.cfg.Deadline, ld.cfg.Timeout, ld.wg, ld.cfg.Stopc, ld.donec)
+		go listEndpoints(ld.cfg.Logger, cli, ld.cfg.Namespaces, ld.cfg.Deadline, ld.cfg.Timeout, ld.wg, ld.cfg.Stopc, ld.donec)
+		go listSecrets(ld.cfg.Logger, cli, ld.cfg.Namespaces, ld.cfg.Deadline, ld.cfg.Timeout, ld.wg, ld.cfg.Stopc, ld.donec)
+		go listConfigMaps(ld.cfg.Logger, cli, ld.cfg.Namespaces, ld.cfg.Deadline, ld.cfg.Timeout, ld.wg, ld.cfg.Stopc, ld.donec)
+		go listJobs(ld.cfg.Logger, cli, ld.cfg.Namespaces, ld.cfg.Deadline, ld.cfg.Timeout, ld.wg, ld.cfg.Stopc, ld.donec)
+		go listCronJobs(ld.cfg.Logger, cli, ld.cfg.Namespaces, ld.cfg.Deadline, ld.cfg.Timeout, ld.wg, ld.cfg.Stopc, ld.donec)
 	}
+	ld.cfg.Logger.Info("started load functions", zap.Strings("namespaces", ld.cfg.Namespaces), zap.Int("workers", n))
+}
 
-	select {
-	case <-ts.cfg.Stopc:
-		ts.cfg.Logger.Warn("cluster loader aborted")
-		close(ts.donec)
-		return nil
+func (ld *loader) Stop() {
+	ld.cfg.Logger.Info("stopping and waiting for load functions")
+	ld.donecCloseOnce.Do(func() {
+		close(ld.donec)
+	})
+	ld.wg.Wait()
+	ld.cfg.Logger.Info("stopped and waited for load functions")
+}
 
-	case <-time.After(ts.cfg.EKSConfig.AddOnClusterLoader.Duration):
-		ts.cfg.Logger.Info("completing load testing", zap.Duration("duration", ts.cfg.EKSConfig.AddOnClusterLoader.Duration))
-		close(ts.donec)
+// GetMetrics locally fetches output from registered metrics.
+// ref. https://pkg.go.dev/github.com/prometheus/client_golang@v1.6.0/prometheus/promhttp?tab=doc#Handler
+func (ld *loader) GetMetrics() (success float64, failure float64, hs metrics.HistogramBuckets, err error) {
+	// https://pkg.go.dev/github.com/prometheus/client_golang/prometheus?tab=doc#Gatherer
+	mfs, err := prometheus.DefaultGatherer.Gather()
+	if err != nil {
+		ld.cfg.Logger.Warn("failed to gather prometheus metrics", zap.Error(err))
+		return 0, 0, nil, err
+	}
+	for _, mf := range mfs {
+		if mf == nil {
+			continue
+		}
+		switch *mf.Name {
+		case "cluster_loader_client_request_latency_milliseconds":
+			hs, err = metrics.ParseHistogram("milliseconds", mf.Metric[0].GetHistogram())
+			if err != nil {
+				return 0, 0, nil, err
+			}
+		case "cluster_loader_client_requests_success_total":
+			gg := mf.Metric[0].GetGauge()
+			success = gg.GetValue()
 
-		select {
-		case <-ts.cfg.Stopc:
-			ts.cfg.Logger.Warn("cluster loader aborted")
-			return nil
-		case <-time.After(30 * time.Second):
+		case "cluster_loader_client_requests_failure_total":
+			gg := mf.Metric[0].GetGauge()
+			failure = gg.GetValue()
 		}
 	}
-
-	waitDur, retryStart := 5*time.Minute, time.Now()
-	for time.Now().Sub(retryStart) < waitDur {
-		select {
-		case <-ts.cfg.Stopc:
-			ts.cfg.Logger.Warn("health check aborted")
-			return nil
-		case <-time.After(5 * time.Second):
-		}
-		err = ts.cfg.K8SClient.CheckHealth()
-		if err == nil {
-			break
-		}
-		ts.cfg.Logger.Warn("health check failed", zap.Error(err))
-	}
-	ts.cfg.EKSConfig.Sync()
-	if err == nil {
-		ts.cfg.Logger.Info("health check success after load testing")
-	} else {
-		ts.cfg.Logger.Warn("health check failed after load testing", zap.Error(err))
-	}
-	return err
+	return success, failure, hs, nil
 }
 
-func (ts *tester) Delete() error {
-	if !ts.cfg.EKSConfig.AddOnClusterLoader.Created {
-		ts.cfg.Logger.Info("skipping delete AddOnClusterLoader")
-		return nil
-	}
+const opFuncN = 8
 
-	deleteStart := time.Now()
-	defer func() {
-		ts.cfg.EKSConfig.AddOnClusterLoader.DeleteTook = time.Since(deleteStart)
-		ts.cfg.EKSConfig.AddOnClusterLoader.DeleteTookString = ts.cfg.EKSConfig.AddOnClusterLoader.DeleteTook.String()
-		ts.cfg.EKSConfig.Sync()
-	}()
-
-	var errs []string
-
-	if len(errs) > 0 {
-		return errors.New(strings.Join(errs, ", "))
-	}
-
-	ts.cfg.EKSConfig.AddOnClusterLoader.Created = false
-	return ts.cfg.EKSConfig.Sync()
-}
-
-func listNodes(lg *zap.Logger, deadline time.Time, stopc chan struct{}, donec chan struct{}, cli *kubernetes.Clientset) {
+func listNodes(lg *zap.Logger, cli *kubernetes.Clientset, deadline time.Time, timeout time.Duration, wg *sync.WaitGroup, stopc chan struct{}, donec chan struct{}) {
+	lg.Info("starting listNodes")
+	defer wg.Done()
 	cnt := 0
 	for {
 		cnt++
@@ -156,20 +171,26 @@ func listNodes(lg *zap.Logger, deadline time.Time, stopc chan struct{}, donec ch
 		default:
 		}
 
+		start := time.Now()
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		rs, err := cli.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 		cancel()
+		clientReqLatencyMs.Observe(float64(time.Since(start) / time.Millisecond))
 		if err != nil {
+			requestsFailureTotal.Inc()
 			lg.Warn("list nodes failed", zap.Error(err))
 		} else {
-			if cnt%50 == 0 {
+			requestsSuccessTotal.Inc()
+			if cnt%20 == 0 {
 				lg.Info("listed nodes", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.Int("nodes", len(rs.Items)))
 			}
 		}
 	}
 }
 
-func listPods(lg *zap.Logger, deadline time.Time, stopc chan struct{}, donec chan struct{}, cli *kubernetes.Clientset) {
+func listPods(lg *zap.Logger, cli *kubernetes.Clientset, ns []string, deadline time.Time, timeout time.Duration, wg *sync.WaitGroup, stopc chan struct{}, donec chan struct{}) {
+	lg.Info("starting listPods", zap.Strings("namespaces", ns))
+	defer wg.Done()
 	cnt := 0
 	for {
 		cnt++
@@ -183,28 +204,19 @@ func listPods(lg *zap.Logger, deadline time.Time, stopc chan struct{}, donec cha
 		default:
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		ns, err := cli.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
-		cancel()
-		if err != nil {
-			lg.Warn("list namespaces failed", zap.Error(err))
-			continue
-		}
-		if cnt%50 == 0 {
-			lg.Info("listed namespaces", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.Int("namespaces", len(ns.Items)))
-		}
-
-		for _, item := range ns.Items {
-			nv := item.GetName()
-
-			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		for _, nv := range ns {
+			start := time.Now()
+			ctx, cancel := context.WithTimeout(context.Background(), timeout)
 			pods, err := cli.CoreV1().Pods(nv).List(ctx, metav1.ListOptions{})
 			cancel()
+			clientReqLatencyMs.Observe(float64(time.Since(start) / time.Millisecond))
 			if err != nil {
+				requestsFailureTotal.Inc()
 				lg.Warn("list pods failed", zap.String("namespace", nv), zap.Error(err))
 				continue
 			}
-			if cnt%50 == 0 {
+			requestsSuccessTotal.Inc()
+			if cnt%20 == 0 {
 				lg.Info("listed pods", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.String("namespace", nv), zap.Int("pods", len(pods.Items)))
 			}
 
@@ -221,7 +233,9 @@ func listPods(lg *zap.Logger, deadline time.Time, stopc chan struct{}, donec cha
 	}
 }
 
-func listServices(lg *zap.Logger, deadline time.Time, stopc chan struct{}, donec chan struct{}, cli *kubernetes.Clientset) {
+func listServices(lg *zap.Logger, cli *kubernetes.Clientset, ns []string, deadline time.Time, timeout time.Duration, wg *sync.WaitGroup, stopc chan struct{}, donec chan struct{}) {
+	lg.Info("starting listServices", zap.Strings("namespaces", ns))
+	defer wg.Done()
 	cnt := 0
 	for {
 		cnt++
@@ -235,28 +249,19 @@ func listServices(lg *zap.Logger, deadline time.Time, stopc chan struct{}, donec
 		default:
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		ns, err := cli.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
-		cancel()
-		if err != nil {
-			lg.Warn("list namespaces failed", zap.Error(err))
-			continue
-		}
-		if cnt%50 == 0 {
-			lg.Info("listed namespaces", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.Int("namespaces", len(ns.Items)))
-		}
-
-		for _, item := range ns.Items {
-			nv := item.GetName()
-
-			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		for _, nv := range ns {
+			start := time.Now()
+			ctx, cancel := context.WithTimeout(context.Background(), timeout)
 			es, err := cli.CoreV1().Services(nv).List(ctx, metav1.ListOptions{})
 			cancel()
+			clientReqLatencyMs.Observe(float64(time.Since(start) / time.Millisecond))
 			if err != nil {
+				requestsFailureTotal.Inc()
 				lg.Warn("list services failed", zap.String("namespace", nv), zap.Error(err))
 				continue
 			}
-			if cnt%50 == 0 {
+			requestsSuccessTotal.Inc()
+			if cnt%20 == 0 {
 				lg.Info("listed services", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.String("namespace", nv), zap.Int("services", len(es.Items)))
 			}
 
@@ -273,7 +278,9 @@ func listServices(lg *zap.Logger, deadline time.Time, stopc chan struct{}, donec
 	}
 }
 
-func listEndpoints(lg *zap.Logger, deadline time.Time, stopc chan struct{}, donec chan struct{}, cli *kubernetes.Clientset) {
+func listEndpoints(lg *zap.Logger, cli *kubernetes.Clientset, ns []string, deadline time.Time, timeout time.Duration, wg *sync.WaitGroup, stopc chan struct{}, donec chan struct{}) {
+	lg.Info("starting listEndpoints", zap.Strings("namespaces", ns))
+	defer wg.Done()
 	cnt := 0
 	for {
 		cnt++
@@ -287,28 +294,19 @@ func listEndpoints(lg *zap.Logger, deadline time.Time, stopc chan struct{}, done
 		default:
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		ns, err := cli.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
-		cancel()
-		if err != nil {
-			lg.Warn("list namespaces failed", zap.Error(err))
-			continue
-		}
-		if cnt%50 == 0 {
-			lg.Info("listed namespaces", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.Int("namespaces", len(ns.Items)))
-		}
-
-		for _, item := range ns.Items {
-			nv := item.GetName()
-
-			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		for _, nv := range ns {
+			start := time.Now()
+			ctx, cancel := context.WithTimeout(context.Background(), timeout)
 			es, err := cli.CoreV1().Endpoints(nv).List(ctx, metav1.ListOptions{})
 			cancel()
+			clientReqLatencyMs.Observe(float64(time.Since(start) / time.Millisecond))
 			if err != nil {
+				requestsFailureTotal.Inc()
 				lg.Warn("list endpoints failed", zap.String("namespace", nv), zap.Error(err))
 				continue
 			}
-			if cnt%50 == 0 {
+			requestsSuccessTotal.Inc()
+			if cnt%20 == 0 {
 				lg.Info("listed endpoints", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.String("namespace", nv), zap.Int("endpoints", len(es.Items)))
 			}
 
@@ -325,7 +323,9 @@ func listEndpoints(lg *zap.Logger, deadline time.Time, stopc chan struct{}, done
 	}
 }
 
-func listSecrets(lg *zap.Logger, deadline time.Time, stopc chan struct{}, donec chan struct{}, cli *kubernetes.Clientset) {
+func listSecrets(lg *zap.Logger, cli *kubernetes.Clientset, ns []string, deadline time.Time, timeout time.Duration, wg *sync.WaitGroup, stopc chan struct{}, donec chan struct{}) {
+	lg.Info("starting listSecrets", zap.Strings("namespaces", ns))
+	defer wg.Done()
 	cnt := 0
 	for {
 		cnt++
@@ -339,28 +339,19 @@ func listSecrets(lg *zap.Logger, deadline time.Time, stopc chan struct{}, donec 
 		default:
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		ns, err := cli.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
-		cancel()
-		if err != nil {
-			lg.Warn("list namespaces failed", zap.Error(err))
-			continue
-		}
-		if cnt%50 == 0 {
-			lg.Info("listed namespaces", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.Int("namespaces", len(ns.Items)))
-		}
-
-		for _, item := range ns.Items {
-			nv := item.GetName()
-
-			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		for _, nv := range ns {
+			start := time.Now()
+			ctx, cancel := context.WithTimeout(context.Background(), timeout)
 			ss, err := cli.CoreV1().Secrets(nv).List(ctx, metav1.ListOptions{})
 			cancel()
+			clientReqLatencyMs.Observe(float64(time.Since(start) / time.Millisecond))
 			if err != nil {
+				requestsFailureTotal.Inc()
 				lg.Warn("list secrets failed", zap.String("namespace", nv), zap.Error(err))
 				continue
 			}
-			if cnt%50 == 0 {
+			requestsSuccessTotal.Inc()
+			if cnt%20 == 0 {
 				lg.Info("listed secrets", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.String("namespace", nv), zap.Int("secrets", len(ss.Items)))
 			}
 
@@ -377,7 +368,9 @@ func listSecrets(lg *zap.Logger, deadline time.Time, stopc chan struct{}, donec 
 	}
 }
 
-func listConfigMaps(lg *zap.Logger, deadline time.Time, stopc chan struct{}, donec chan struct{}, cli *kubernetes.Clientset) {
+func listConfigMaps(lg *zap.Logger, cli *kubernetes.Clientset, ns []string, deadline time.Time, timeout time.Duration, wg *sync.WaitGroup, stopc chan struct{}, donec chan struct{}) {
+	lg.Info("starting listConfigMaps", zap.Strings("namespaces", ns))
+	defer wg.Done()
 	cnt := 0
 	for {
 		cnt++
@@ -391,28 +384,19 @@ func listConfigMaps(lg *zap.Logger, deadline time.Time, stopc chan struct{}, don
 		default:
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		ns, err := cli.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
-		cancel()
-		if err != nil {
-			lg.Warn("list namespaces failed", zap.Error(err))
-			continue
-		}
-		if cnt%50 == 0 {
-			lg.Info("listed namespaces", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.Int("namespaces", len(ns.Items)))
-		}
-
-		for _, item := range ns.Items {
-			nv := item.GetName()
-
-			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		for _, nv := range ns {
+			start := time.Now()
+			ctx, cancel := context.WithTimeout(context.Background(), timeout)
 			ss, err := cli.CoreV1().ConfigMaps(nv).List(ctx, metav1.ListOptions{})
 			cancel()
+			clientReqLatencyMs.Observe(float64(time.Since(start) / time.Millisecond))
 			if err != nil {
+				requestsFailureTotal.Inc()
 				lg.Warn("list configmaps failed", zap.String("namespace", nv), zap.Error(err))
 				continue
 			}
-			if cnt%50 == 0 {
+			requestsSuccessTotal.Inc()
+			if cnt%20 == 0 {
 				lg.Info("listed configmaps", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.String("namespace", nv), zap.Int("configmaps", len(ss.Items)))
 			}
 
@@ -429,59 +413,9 @@ func listConfigMaps(lg *zap.Logger, deadline time.Time, stopc chan struct{}, don
 	}
 }
 
-func listServiceAccounts(lg *zap.Logger, deadline time.Time, stopc chan struct{}, donec chan struct{}, cli *kubernetes.Clientset) {
-	cnt := 0
-	for {
-		cnt++
-		select {
-		case <-stopc:
-			lg.Warn("list serviceaccounts stopped")
-			return
-		case <-donec:
-			lg.Info("list serviceaccounts done")
-			return
-		default:
-		}
-
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		ns, err := cli.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
-		cancel()
-		if err != nil {
-			lg.Warn("list namespaces failed", zap.Error(err))
-			continue
-		}
-		if cnt%50 == 0 {
-			lg.Info("listed namespaces", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.Int("namespaces", len(ns.Items)))
-		}
-
-		for _, item := range ns.Items {
-			nv := item.GetName()
-
-			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-			ss, err := cli.CoreV1().ServiceAccounts(nv).List(ctx, metav1.ListOptions{})
-			cancel()
-			if err != nil {
-				lg.Warn("list serviceaccounts failed", zap.String("namespace", nv), zap.Error(err))
-				continue
-			}
-			if cnt%50 == 0 {
-				lg.Info("listed serviceaccounts", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.String("namespace", nv), zap.Int("serviceaccounts", len(ss.Items)))
-			}
-
-			select {
-			case <-stopc:
-				lg.Warn("list serviceaccounts stopped")
-				return
-			case <-donec:
-				lg.Info("list serviceaccounts done")
-				return
-			default:
-			}
-		}
-	}
-}
-
-func listJobs(lg *zap.Logger, deadline time.Time, stopc chan struct{}, donec chan struct{}, cli *kubernetes.Clientset) {
+func listJobs(lg *zap.Logger, cli *kubernetes.Clientset, ns []string, deadline time.Time, timeout time.Duration, wg *sync.WaitGroup, stopc chan struct{}, donec chan struct{}) {
+	lg.Info("starting listJobs", zap.Strings("namespaces", ns))
+	defer wg.Done()
 	cnt := 0
 	for {
 		cnt++
@@ -495,28 +429,19 @@ func listJobs(lg *zap.Logger, deadline time.Time, stopc chan struct{}, donec cha
 		default:
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		ns, err := cli.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
-		cancel()
-		if err != nil {
-			lg.Warn("list namespaces failed", zap.Error(err))
-			continue
-		}
-		if cnt%50 == 0 {
-			lg.Info("listed namespaces", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.Int("namespaces", len(ns.Items)))
-		}
-
-		for _, item := range ns.Items {
-			nv := item.GetName()
-
-			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		for _, nv := range ns {
+			start := time.Now()
+			ctx, cancel := context.WithTimeout(context.Background(), timeout)
 			ss, err := cli.BatchV1().Jobs(nv).List(ctx, metav1.ListOptions{})
 			cancel()
+			clientReqLatencyMs.Observe(float64(time.Since(start) / time.Millisecond))
 			if err != nil {
+				requestsFailureTotal.Inc()
 				lg.Warn("list jobs failed", zap.String("namespace", nv), zap.Error(err))
 				continue
 			}
-			if cnt%50 == 0 {
+			requestsSuccessTotal.Inc()
+			if cnt%20 == 0 {
 				lg.Info("listed jobs", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.String("namespace", nv), zap.Int("jobs", len(ss.Items)))
 			}
 
@@ -533,7 +458,9 @@ func listJobs(lg *zap.Logger, deadline time.Time, stopc chan struct{}, donec cha
 	}
 }
 
-func listCronJobs(lg *zap.Logger, deadline time.Time, stopc chan struct{}, donec chan struct{}, cli *kubernetes.Clientset) {
+func listCronJobs(lg *zap.Logger, cli *kubernetes.Clientset, ns []string, deadline time.Time, timeout time.Duration, wg *sync.WaitGroup, stopc chan struct{}, donec chan struct{}) {
+	lg.Info("starting listCronJobs", zap.Strings("namespaces", ns))
+	defer wg.Done()
 	cnt := 0
 	for {
 		cnt++
@@ -547,28 +474,19 @@ func listCronJobs(lg *zap.Logger, deadline time.Time, stopc chan struct{}, donec
 		default:
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		ns, err := cli.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
-		cancel()
-		if err != nil {
-			lg.Warn("list namespaces failed", zap.Error(err))
-			continue
-		}
-		if cnt%50 == 0 {
-			lg.Info("listed namespaces", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.Int("namespaces", len(ns.Items)))
-		}
-
-		for _, item := range ns.Items {
-			nv := item.GetName()
-
-			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		for _, nv := range ns {
+			start := time.Now()
+			ctx, cancel := context.WithTimeout(context.Background(), timeout)
 			ss, err := cli.BatchV1beta1().CronJobs(nv).List(ctx, metav1.ListOptions{})
 			cancel()
+			clientReqLatencyMs.Observe(float64(time.Since(start) / time.Millisecond))
 			if err != nil {
+				requestsFailureTotal.Inc()
 				lg.Warn("list cronjobs failed", zap.String("namespace", nv), zap.Error(err))
 				continue
 			}
-			if cnt%50 == 0 {
+			requestsSuccessTotal.Inc()
+			if cnt%20 == 0 {
 				lg.Info("listed cronjobs", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.String("namespace", nv), zap.Int("cronjobs", len(ss.Items)))
 			}
 

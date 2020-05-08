@@ -129,9 +129,9 @@ func (ts *tester) createHelmWordpress() error {
 	// https://github.com/helm/charts/blob/master/stable/wordpress/values.yaml
 	values := map[string]interface{}{
 		"nodeSelector": map[string]interface{}{
-			"NGType": ngType,
 			// do not deploy in bottlerocket; PVC not working
 			"AMIType": ec2config.AMITypeAL2X8664,
+			"NGType":  ngType,
 		},
 		"wordpressUsername": ts.cfg.EKSConfig.AddOnWordpress.UserName,
 		"wordpressPassword": ts.cfg.EKSConfig.AddOnWordpress.Password,
@@ -154,9 +154,9 @@ func (ts *tester) createHelmWordpress() error {
 			},
 			"master": map[string]interface{}{
 				"nodeSelector": map[string]interface{}{
-					"NGType": ngType,
 					// do not deploy in bottlerocket; PVC not working
 					"AMIType": ec2config.AMITypeAL2X8664,
+					"NGType":  ngType,
 				},
 				"persistence": map[string]interface{}{
 					"enabled": true,
@@ -166,9 +166,9 @@ func (ts *tester) createHelmWordpress() error {
 			},
 			"slave": map[string]interface{}{
 				"nodeSelector": map[string]interface{}{
-					"NGType": ngType,
 					// do not deploy in bottlerocket; PVC not working
 					"AMIType": ec2config.AMITypeAL2X8664,
+					"NGType":  ngType,
 				},
 			},
 		},

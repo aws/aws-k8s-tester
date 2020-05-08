@@ -11,7 +11,7 @@ if [[ -z "${GIT_COMMIT}" ]]; then
 fi
 
 if [[ -z "${RELEASE_VERSION}" ]]; then
-  RELEASE_VERSION=$(git rev-parse --short=12 HEAD || echo "GitNotFound")
+  RELEASE_VERSION=v$(date -u '+%Y%m%d.%H%M%S')
 fi
 
 if [[ -z "${BUILD_TIME}" ]]; then

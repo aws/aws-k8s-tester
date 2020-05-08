@@ -152,9 +152,9 @@ func (ts *tester) createHelmPrometheus() error {
 	values := map[string]interface{}{
 		"alertmanager": map[string]interface{}{
 			"nodeSelector": map[string]interface{}{
-				"NGType": ngType,
 				// do not deploy in bottlerocket; PVC not working
 				"AMIType": ec2config.AMITypeAL2X8664,
+				"NGType":  ngType,
 			},
 			"persistentVolume": map[string]interface{}{
 				// takes >=5-min for PVC, user emptyDir for testing
@@ -163,9 +163,9 @@ func (ts *tester) createHelmPrometheus() error {
 		},
 		"server": map[string]interface{}{
 			"nodeSelector": map[string]interface{}{
-				"NGType": ngType,
 				// do not deploy in bottlerocket; PVC not working
 				"AMIType": ec2config.AMITypeAL2X8664,
+				"NGType":  ngType,
 			},
 			"persistentVolume": map[string]interface{}{
 				"enabled": true,
@@ -236,9 +236,9 @@ func (ts *tester) createHelmGrafana() error {
 		"adminUser":     ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaAdminUserName,
 		"adminPassword": ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaAdminPassword,
 		"nodeSelector": map[string]interface{}{
-			"NGType": ngType,
 			// do not deploy in bottlerocket; PVC not working
 			"AMIType": ec2config.AMITypeAL2X8664,
+			"NGType":  ngType,
 		},
 		"persistence": map[string]interface{}{
 			"enabled": true,

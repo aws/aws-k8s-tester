@@ -313,6 +313,20 @@ func (ts *Tester) uploadToS3() (err error) {
 		}
 	}
 
+	if ts.cfg.IsEnabledAddOnClusterLoaderRemote() {
+		if fileutil.Exist(ts.cfg.AddOnClusterLoaderRemote.RequestsSummaryAggregatedPath) {
+			if err = uploadFileToS3(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "cluster-loader-remote-requests-summary.json"),
+				ts.cfg.AddOnClusterLoaderRemote.RequestsSummaryAggregatedPath,
+			); err != nil {
+				return err
+			}
+		}
+	}
+
 	return err
 }
 

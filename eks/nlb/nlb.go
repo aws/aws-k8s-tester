@@ -18,6 +18,7 @@ import (
 	"go.uber.org/zap"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
+	api_errors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/exec"
@@ -230,7 +231,7 @@ func (ts *tester) deleteDeployment() error {
 			},
 		)
 	cancel()
-	if err != nil && !strings.Contains(err.Error(), " not found") {
+	if err != nil && !api_errors.IsNotFound(err) {
 		return fmt.Errorf("failed to delete NLB hello-world Deployment (%v)", err)
 	}
 
@@ -500,7 +501,7 @@ func (ts *tester) deleteService() error {
 			},
 		)
 	cancel()
-	if err != nil && !strings.Contains(err.Error(), " not found") {
+	if err != nil && !api_errors.IsNotFound(err) {
 		return fmt.Errorf("failed to delete NLB hello-world Service (%v)", err)
 	}
 

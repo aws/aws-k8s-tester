@@ -19,6 +19,7 @@ import (
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	api_errors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/exec"
 )
@@ -185,7 +186,7 @@ func (ts *tester) deleteTillerServiceAccount() error {
 			},
 		)
 	cancel()
-	if err != nil && !strings.Contains(err.Error(), " not found") {
+	if err != nil && !api_errors.IsNotFound(err) {
 		return fmt.Errorf("failed to delete Tiller ServiceAccount (%v)", err)
 	}
 	ts.cfg.Logger.Info("deleted Tiller ServiceAccount", zap.Error(err))
@@ -211,17 +212,18 @@ func (ts *tester) createTillerRBACClusterRoleBinding() error {
 					Name:      "tiller",
 					Namespace: "default",
 				},
-				Subjects: []rbacv1.Subject{
-					{
-						Kind:      "ServiceAccount",
-						Name:      "tiller",
-						Namespace: "kube-system",
-					},
-				},
 				RoleRef: rbacv1.RoleRef{
 					APIGroup: "rbac.authorization.k8s.io",
 					Kind:     "ClusterRole",
 					Name:     "cluster-admin",
+				},
+				Subjects: []rbacv1.Subject{
+					{
+						APIGroup:  "",
+						Kind:      "ServiceAccount",
+						Name:      "tiller",
+						Namespace: "kube-system",
+					},
 				},
 			},
 			metav1.CreateOptions{},
@@ -252,7 +254,7 @@ func (ts *tester) deleteTillerRBACClusterRoleBinding() error {
 			},
 		)
 	cancel()
-	if err != nil && !strings.Contains(err.Error(), " not found") {
+	if err != nil && !api_errors.IsNotFound(err) {
 		return fmt.Errorf("failed to delete Tiller RBAC ClusterRoleBinding (%v)", err)
 	}
 
@@ -272,9 +274,9 @@ func (ts *tester) createHelmJupyterHub() error {
 		// https://github.com/jupyterhub/zero-to-jupyterhub-k8s/blob/master/jupyterhub/values.yaml
 		"hub": map[string]interface{}{
 			"nodeSelector": map[string]interface{}{
-				"NGType": ngType,
 				// do not deploy in bottlerocket; PVC not working
 				"AMIType": ec2config.AMITypeAL2X8664GPU,
+				"NGType":  ngType,
 			},
 		},
 		// https://github.com/jupyterhub/zero-to-jupyterhub-k8s/blob/master/jupyterhub/values.yaml
@@ -288,9 +290,9 @@ func (ts *tester) createHelmJupyterHub() error {
 				"externalTrafficPolicy": "Cluster",
 			},
 			"nodeSelector": map[string]interface{}{
-				"NGType": ngType,
 				// do not deploy in bottlerocket; PVC not working
 				"AMIType": ec2config.AMITypeAL2X8664GPU,
+				"NGType":  ngType,
 			},
 			"https": map[string]interface{}{
 				"enabled": false,
@@ -302,9 +304,9 @@ func (ts *tester) createHelmJupyterHub() error {
 			"userScheduler": map[string]interface{}{
 				"enabled": true,
 				"nodeSelector": map[string]interface{}{
-					"NGType": ngType,
 					// do not deploy in bottlerocket; PVC not working
 					"AMIType": ec2config.AMITypeAL2X8664GPU,
+					"NGType":  ngType,
 				},
 			},
 		},

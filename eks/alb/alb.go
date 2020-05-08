@@ -23,6 +23,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	v1beta1 "k8s.io/api/extensions/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	api_errors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/exec"
@@ -278,7 +279,7 @@ func (ts *tester) deleteALBServiceAccount() error {
 			},
 		)
 	cancel()
-	if err != nil && !strings.Contains(err.Error(), " not found") {
+	if err != nil && !api_errors.IsNotFound(err) {
 		return fmt.Errorf("failed to delete ALB Ingress Controller ServiceAccount (%v)", err)
 	}
 	ts.cfg.Logger.Info("deleted ALB Ingress Controller ServiceAccount", zap.Error(err))
@@ -380,7 +381,7 @@ func (ts *tester) deleteALBRBACClusterRole() error {
 			},
 		)
 	cancel()
-	if err != nil && !strings.Contains(err.Error(), " not found") {
+	if err != nil && !api_errors.IsNotFound(err) {
 		return fmt.Errorf("failed to delete ALB Ingress Controller RBAC ClusterRole (%v)", err)
 	}
 
@@ -410,17 +411,18 @@ func (ts *tester) createALBRBACClusterRoleBinding() error {
 						"app.kubernetes.io/name": albIngressControllerName,
 					},
 				},
-				Subjects: []rbacv1.Subject{
-					{
-						Kind:      "ServiceAccount",
-						Name:      albIngressControllerServiceAccountName,
-						Namespace: "kube-system",
-					},
-				},
 				RoleRef: rbacv1.RoleRef{
 					APIGroup: "rbac.authorization.k8s.io",
 					Kind:     "ClusterRole",
 					Name:     albIngressControllerRBACRoleName,
+				},
+				Subjects: []rbacv1.Subject{
+					{
+						APIGroup:  "",
+						Kind:      "ServiceAccount",
+						Name:      albIngressControllerServiceAccountName,
+						Namespace: "kube-system",
+					},
 				},
 			},
 			metav1.CreateOptions{},
@@ -452,7 +454,7 @@ func (ts *tester) deleteALBRBACClusterRoleBinding() error {
 			},
 		)
 	cancel()
-	if err != nil && !strings.Contains(err.Error(), " not found") {
+	if err != nil && !api_errors.IsNotFound(err) {
 		return fmt.Errorf("failed to delete ALB Ingress Controller RBAC ClusterRoleBinding (%v)", err)
 	}
 
@@ -518,11 +520,11 @@ func (ts *tester) createALBDeployment() error {
 							},
 							ServiceAccountName: albIngressControllerServiceAccountName,
 							NodeSelector: map[string]string{
-								"NGType": ngType,
 								// do not deploy in bottlerocket; PVC not working
 								// do not mix with MNG
 								// controller "msg"="Reconciler error" "error"="no object matching key \"eks-2020042119-bluee7qmz7kb-alb-2048/alb-2048-ingress\" in local store"  "controller"="alb-ingress-controller" "request"={"Namespace":"eks-2020042119-bluee7qmz7kb-alb-2048","Name":"alb-2048-ingress"}
 								"AMIType": ec2config.AMITypeAL2X8664,
+								"NGType":  ngType,
 							},
 						},
 					},
@@ -557,7 +559,7 @@ func (ts *tester) deleteALBDeployment() error {
 			},
 		)
 	cancel()
-	if err != nil && !strings.Contains(err.Error(), " not found") {
+	if err != nil && !api_errors.IsNotFound(err) {
 		return fmt.Errorf("failed to delete ALB Ingress Controller Deployment (%v)", err)
 	}
 
@@ -725,7 +727,7 @@ func (ts *tester) delete2048Deployment() error {
 			},
 		)
 	cancel()
-	if err != nil && !strings.Contains(err.Error(), " not found") {
+	if err != nil && !api_errors.IsNotFound(err) {
 		return fmt.Errorf("failed to delete ALB 2048 Deployment (%v)", err)
 	}
 
@@ -869,7 +871,7 @@ func (ts *tester) delete2048Service() error {
 			},
 		)
 	cancel()
-	if err != nil && !strings.Contains(err.Error(), " not found") {
+	if err != nil && !api_errors.IsNotFound(err) {
 		return fmt.Errorf("failed to delete ALB 2048 Service (%v)", err)
 	}
 
@@ -1114,7 +1116,7 @@ func (ts *tester) delete2048Ingress() error {
 			},
 		)
 	cancel()
-	if err != nil && !strings.Contains(err.Error(), " not found") {
+	if err != nil && !api_errors.IsNotFound(err) {
 		return fmt.Errorf("failed to delete ALB 2048 Ingress (%v)", err)
 	}
 	ts.cfg.Logger.Info("deleted ALB 2048 Ingress", zap.Error(err))

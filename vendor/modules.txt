@@ -80,7 +80,7 @@ github.com/andybalholm/brotli
 github.com/armon/circbuf
 # github.com/asaskevich/govalidator v0.0.0-20200108200545-475eaeb16496
 github.com/asaskevich/govalidator
-# github.com/aws/aws-sdk-go v1.30.24
+# github.com/aws/aws-sdk-go v1.30.26
 ## explicit
 github.com/aws/aws-sdk-go/aws
 github.com/aws/aws-sdk-go/aws/arn
@@ -681,6 +681,7 @@ github.com/prometheus/client_golang/prometheus/internal
 github.com/prometheus/client_golang/prometheus/promhttp
 github.com/prometheus/client_golang/prometheus/testutil
 # github.com/prometheus/client_model v0.2.0
+## explicit
 github.com/prometheus/client_model/go
 # github.com/prometheus/common v0.4.1
 ## explicit

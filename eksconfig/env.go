@@ -313,30 +313,56 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *AddOnKubeflow, got %T", vv)
 	}
 
-	if cfg.AddOnHollowNodes == nil {
-		cfg.AddOnHollowNodes = &AddOnHollowNodes{}
+	if cfg.AddOnHollowNodesLocal == nil {
+		cfg.AddOnHollowNodesLocal = &AddOnHollowNodesLocal{}
 	}
-	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnHollowNodes, cfg.AddOnHollowNodes)
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnHollowNodesLocal, cfg.AddOnHollowNodesLocal)
 	if err != nil {
 		return err
 	}
-	if av, ok := vv.(*AddOnHollowNodes); ok {
-		cfg.AddOnHollowNodes = av
+	if av, ok := vv.(*AddOnHollowNodesLocal); ok {
+		cfg.AddOnHollowNodesLocal = av
 	} else {
-		return fmt.Errorf("expected *AddOnHollowNodes, got %T", vv)
+		return fmt.Errorf("expected *AddOnHollowNodesLocal, got %T", vv)
 	}
 
-	if cfg.AddOnClusterLoader == nil {
-		cfg.AddOnClusterLoader = &AddOnClusterLoader{}
+	if cfg.AddOnHollowNodesRemote == nil {
+		cfg.AddOnHollowNodesRemote = &AddOnHollowNodesRemote{}
 	}
-	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnClusterLoader, cfg.AddOnClusterLoader)
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnHollowNodesRemote, cfg.AddOnHollowNodesRemote)
 	if err != nil {
 		return err
 	}
-	if av, ok := vv.(*AddOnClusterLoader); ok {
-		cfg.AddOnClusterLoader = av
+	if av, ok := vv.(*AddOnHollowNodesRemote); ok {
+		cfg.AddOnHollowNodesRemote = av
 	} else {
-		return fmt.Errorf("expected *AddOnClusterLoader, got %T", vv)
+		return fmt.Errorf("expected *AddOnHollowNodesRemote, got %T", vv)
+	}
+
+	if cfg.AddOnClusterLoaderLocal == nil {
+		cfg.AddOnClusterLoaderLocal = &AddOnClusterLoaderLocal{}
+	}
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnClusterLoaderLocal, cfg.AddOnClusterLoaderLocal)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*AddOnClusterLoaderLocal); ok {
+		cfg.AddOnClusterLoaderLocal = av
+	} else {
+		return fmt.Errorf("expected *AddOnClusterLoaderLocal, got %T", vv)
+	}
+
+	if cfg.AddOnClusterLoaderRemote == nil {
+		cfg.AddOnClusterLoaderRemote = &AddOnClusterLoaderRemote{}
+	}
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnClusterLoaderRemote, cfg.AddOnClusterLoaderRemote)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*AddOnClusterLoaderRemote); ok {
+		cfg.AddOnClusterLoaderRemote = av
+	} else {
+		return fmt.Errorf("expected *AddOnClusterLoaderRemote, got %T", vv)
 	}
 
 	if cfg.AddOnConformance == nil {

@@ -133,8 +133,8 @@ func NewDefault() *Config {
 		AddOnWordpress:           getDefaultAddOnWordpress(),
 		AddOnJupyterHub:          getDefaultAddOnJupyterHub(),
 		AddOnKubeflow:            getDefaultAddOnKubeflow(),
-		AddOnHollowNodes:         getDefaultAddOnHollowNodes(),
-		AddOnClusterLoader:       getDefaultAddOnClusterLoader(),
+		AddOnHollowNodesLocal:    getDefaultAddOnHollowNodesLocal(),
+		AddOnClusterLoaderLocal:  getDefaultAddOnClusterLoaderLocal(),
 		AddOnConformance:         getDefaultAddOnConformance(),
 
 		// read-only
@@ -237,12 +237,21 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	if err := cfg.validateAddOnKubeflow(); err != nil {
 		return fmt.Errorf("validateAddOnKubeflow failed [%v]", err)
 	}
-	if err := cfg.validateAddOnHollowNodes(); err != nil {
-		return fmt.Errorf("validateAddOnHollowNodes failed [%v]", err)
+
+	if err := cfg.validateAddOnHollowNodesLocal(); err != nil {
+		return fmt.Errorf("validateAddOnHollowNodesLocal failed [%v]", err)
 	}
-	if err := cfg.validateAddOnClusterLoader(); err != nil {
-		return fmt.Errorf("validateAddOnClusterLoader failed [%v]", err)
+	if err := cfg.validateAddOnHollowNodesRemote(); err != nil {
+		return fmt.Errorf("validateAddOnHollowNodesRemote failed [%v]", err)
 	}
+
+	if err := cfg.validateAddOnClusterLoaderLocal(); err != nil {
+		return fmt.Errorf("validateAddOnClusterLoaderLocal failed [%v]", err)
+	}
+	if err := cfg.validateAddOnClusterLoaderRemote(); err != nil {
+		return fmt.Errorf("validateAddOnClusterLoaderRemote failed [%v]", err)
+	}
+
 	if err := cfg.validateAddOnConformance(); err != nil {
 		return fmt.Errorf("validateAddOnConformance failed [%v]", err)
 	}

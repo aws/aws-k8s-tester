@@ -1,6 +1,7 @@
 package eks
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/eks"
+	cluster_loader "github.com/aws/aws-k8s-tester/eks/cluster-loader"
 	hollow_nodes "github.com/aws/aws-k8s-tester/eks/hollow-nodes"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
@@ -31,6 +33,7 @@ func newCreate() *cobra.Command {
 		newCreateConfig(),
 		newCreateCluster(),
 		newCreateHollowNodes(),
+		newCreateClusterLoader(),
 	)
 	return ac
 }
@@ -201,7 +204,7 @@ func newCreateHollowNodes() *cobra.Command {
 }
 
 func createHollowNodesFunc(cmd *cobra.Command, args []string) {
-	if !fileutil.Exist(hollowNodesKubeConfigPath) {
+	if hollowNodesKubeConfigPath != "" && !fileutil.Exist(hollowNodesKubeConfigPath) {
 		fmt.Fprintf(os.Stderr, "kubeconfig not found %q\n", hollowNodesKubeConfigPath)
 		os.Exit(1)
 	}
@@ -254,8 +257,8 @@ func createHollowNodesFunc(cmd *cobra.Command, args []string) {
 		Stopc:  stopc,
 		Nodes:  hollowNodesNodes,
 		NodeLabels: map[string]string{
-			"NGType":  hollowNodesPrefix + "-ng-type-" + sfx,
 			"AMIType": hollowNodesPrefix + "-ami-type-" + sfx,
+			"NGType":  hollowNodesPrefix + "-ng-type-" + sfx,
 			"NGName":  hollowNodesPrefix + "-ng-name-" + sfx,
 		},
 		KubectlPath:    hollowNodesKubectlPath,
@@ -273,7 +276,7 @@ func createHollowNodesFunc(cmd *cobra.Command, args []string) {
 
 	select {
 	case sig := <-sigs:
-		fmt.Printf("signal received %v\n", sig)
+		lg.Info("received OS signal", zap.String("signal", sig.String()))
 		close(stopc)
 		ng.Stop()
 		os.Exit(0)
@@ -296,12 +299,161 @@ func createHollowNodesFunc(cmd *cobra.Command, args []string) {
 
 	select {
 	case sig := <-sigs:
-		fmt.Printf("signal received %v\n", sig)
+		lg.Info("received OS signal", zap.String("signal", sig.String()))
 		close(stopc)
 		ng.Stop()
-		os.Exit(0)
 	}
 
 	fmt.Printf("\n*********************************\n")
 	fmt.Printf("'aws-k8s-tester eks create hollow-nodes' success\n")
+}
+
+var (
+	clusterLoaderPrefix             string
+	clusterLoaderKubectlPath        string
+	clusterLoaderKubectlDownloadURL string
+	clusterLoaderKubeConfigPath     string
+
+	clusterLoaderClients     int
+	clusterLoaderClientQPS   float32
+	clusterLoaderClientBurst int
+	clusterLoaderNamespaces  []string
+
+	clusterLoaderDuration         time.Duration
+	clusterLoaderOutputPathPrefix string
+	clusterLoaderBlock            bool
+)
+
+func newCreateClusterLoader() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "cluster-loader",
+		Short: "Creates cluster loader",
+		Run:   createClusterLoaderFunc,
+	}
+	cmd.PersistentFlags().StringVar(&clusterLoaderKubectlPath, "kubectl", "", "kubectl path")
+	cmd.PersistentFlags().StringVar(&clusterLoaderKubectlDownloadURL, "kubectl-download-url", "https://storage.googleapis.com/kubernetes-release/release/v1.16.9/bin/linux/amd64/kubectl", "kubectl download URL")
+	cmd.PersistentFlags().StringVar(&clusterLoaderKubeConfigPath, "kubeconfig", "", "kubeconfig path")
+	cmd.PersistentFlags().IntVar(&clusterLoaderClients, "clients", eksconfig.DefaultClients, "Number of clients to create")
+	cmd.PersistentFlags().Float32Var(&clusterLoaderClientQPS, "client-qps", eksconfig.DefaultClientQPS, "kubelet client setup for QPS")
+	cmd.PersistentFlags().IntVar(&clusterLoaderClientBurst, "client-burst", eksconfig.DefaultClientBurst, "kubelet client setup for burst")
+	cmd.PersistentFlags().StringSliceVar(&clusterLoaderNamespaces, "namespaces", []string{"default"}, "namespaces to send reads")
+	cmd.PersistentFlags().DurationVar(&clusterLoaderDuration, "duration", 5*time.Minute, "duration to run cluster loader")
+	cmd.PersistentFlags().StringVar(&clusterLoaderOutputPathPrefix, "output-path-prefix", "/var/log/cluster-loader-remote-", "Results output path")
+	cmd.PersistentFlags().BoolVar(&clusterLoaderBlock, "block", false, "true to block process exit after cluster loader complete")
+	return cmd
+}
+
+func createClusterLoaderFunc(cmd *cobra.Command, args []string) {
+	if clusterLoaderKubeConfigPath != "" && !fileutil.Exist(clusterLoaderKubeConfigPath) {
+		fmt.Fprintf(os.Stderr, "kubeconfig not found %q\n", clusterLoaderKubeConfigPath)
+		os.Exit(1)
+	}
+
+	lg, err := logutil.GetDefaultZapLogger()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to create logger %v\n", err)
+		os.Exit(1)
+	}
+
+	lg.Info("mkdir", zap.String("kubectl-path-dir", filepath.Dir(clusterLoaderKubectlPath)))
+	if err := os.MkdirAll(filepath.Dir(clusterLoaderKubectlPath), 0700); err != nil {
+		fmt.Fprintf(os.Stderr, "could not create %q (%v)", filepath.Dir(clusterLoaderKubectlPath), err)
+		os.Exit(1)
+	}
+	if !fileutil.Exist(clusterLoaderKubectlPath) {
+		clusterLoaderKubectlPath, _ = filepath.Abs(clusterLoaderKubectlPath)
+		lg.Info("downloading kubectl", zap.String("kubectl-path", clusterLoaderKubectlPath))
+		if err := httputil.Download(lg, os.Stderr, clusterLoaderKubectlDownloadURL, clusterLoaderKubectlPath); err != nil {
+			fmt.Fprintf(os.Stderr, "failed to download kubectl %v\n", err)
+			os.Exit(1)
+		}
+	} else {
+		lg.Info("skipping kubectl download; already exist", zap.String("kubectl-path", clusterLoaderKubectlPath))
+	}
+	if err := fileutil.EnsureExecutable(clusterLoaderKubectlPath); err != nil {
+		// file may be already executable while the process does not own the file/directory
+		// ref. https://github.com/aws/aws-k8s-tester/issues/66
+		lg.Warn("failed to ensure executable", zap.Error(err))
+	}
+
+	cli, err := k8s_client.NewEKS(&k8s_client.EKSConfig{
+		Logger:         lg,
+		KubeConfigPath: clusterLoaderKubeConfigPath,
+		Clients:        clusterLoaderClients,
+		ClientQPS:      clusterLoaderClientQPS,
+		ClientBurst:    clusterLoaderClientBurst,
+	})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to create client %v\n", err)
+		os.Exit(1)
+	}
+
+	stopc := make(chan struct{})
+
+	loader := cluster_loader.New(cluster_loader.Config{
+		Logger:     lg,
+		Client:     cli,
+		Groups:     clusterLoaderClients,
+		Stopc:      stopc,
+		Deadline:   time.Now().Add(clusterLoaderDuration),
+		Timeout:    10 * time.Second,
+		Namespaces: clusterLoaderNamespaces,
+	})
+	loader.Start()
+
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT)
+
+	select {
+	case sig := <-sigs:
+		lg.Info("received OS signal", zap.String("signal", sig.String()))
+		os.Exit(0)
+	case <-time.After(clusterLoaderDuration):
+	}
+
+	outputPath := clusterLoaderOutputPathPrefix + "-" + randutil.String(5) + ".json"
+	if err = os.MkdirAll(filepath.Dir(outputPath), 0700); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to create dir %v\n", err)
+		os.Exit(1)
+	}
+	if err = fileutil.IsDirWriteable(filepath.Dir(outputPath)); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to write dir %v\n", err)
+		os.Exit(1)
+	}
+
+	success, failure, hs, err := loader.GetMetrics()
+	if err != nil {
+		lg.Warn("failed to get metrics", zap.Error(err))
+	} else {
+		rs := eksconfig.RequestsSummary{
+			SuccessTotal:     success,
+			FailureTotal:     failure,
+			LatencyHistogram: hs,
+		}
+		b, err := json.Marshal(rs)
+		if err != nil {
+			lg.Warn("failed to marshal metrics", zap.Error(err))
+		} else {
+			lg.Info("writing results output", zap.String("output", outputPath))
+			err = ioutil.WriteFile(outputPath, b, 0600)
+			if err != nil {
+				lg.Warn("failed to write file", zap.Error(err))
+			}
+		}
+	}
+
+	close(stopc)
+	loader.Stop()
+
+	fmt.Printf("\n*********************************\n")
+	fmt.Printf("'aws-k8s-tester eks create cluster-loader' success\n")
+
+	if clusterLoaderBlock {
+		lg.Info("waiting for OS signal")
+		select {
+		case sig := <-sigs:
+			lg.Info("received OS signal", zap.String("signal", sig.String()))
+			os.Exit(0)
+		}
+	}
 }

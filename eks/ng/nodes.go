@@ -407,8 +407,8 @@ func (ts *tester) createASGs() error {
               cluster-certificate = "%s"
               api-server = "%s"
               [settings.kubernetes.node-labels]
-              NGType = "custom"
               AMIType = "%s"
+              NGType = "custom"
               NGName = "%s"
 `,
 				ts.cfg.EKSConfig.Name,

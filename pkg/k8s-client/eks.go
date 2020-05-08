@@ -229,7 +229,7 @@ func createClient(cfg *EKSConfig) (cli *kubernetes.Clientset, err error) {
 	if cfg.KubeConfigPath != "" {
 		switch {
 		case cfg.KubeConfigContext != "":
-			cfg.Logger.Info("creating k8s client using KUBECONFIG and context",
+			cfg.Logger.Info("creating restclient.Config from KUBECONFIG and context",
 				zap.String("kubeconfig", cfg.KubeConfigPath),
 				zap.String("context", cfg.KubeConfigContext),
 			)
@@ -242,35 +242,53 @@ func createClient(cfg *EKSConfig) (cli *kubernetes.Clientset, err error) {
 					ClusterInfo:    clientcmdapi.Cluster{Server: ""},
 				},
 			).ClientConfig()
+			if kcfg == nil || err != nil {
+				cfg.Logger.Warn("failed to create restclient.Config from KUBECONFIG and context", zap.Error(err))
+				kcfg = nil
+			}
 
 		case cfg.KubeConfigContext == "":
-			cfg.Logger.Info("creating k8s client using KUBECONFIG",
+			cfg.Logger.Info("creating restclient.Config from KUBECONFIG",
 				zap.String("kubeconfig", cfg.KubeConfigPath),
 			)
 			kcfg, err = clientcmd.BuildConfigFromFlags("", cfg.KubeConfigPath)
-		}
-
-		if err != nil {
-			cfg.Logger.Warn("failed to read kubeconfig", zap.Error(err))
+			if kcfg == nil || err != nil {
+				cfg.Logger.Warn("failed to create restclient.Config from KUBECONFIG", zap.Error(err))
+				kcfg = nil
+			}
 		}
 	}
 	if kcfg == nil {
+		cfg.Logger.Info("creating restclient.Config from previous cluster state")
 		kcfg = createClientConfigEKS(cfg)
+		if kcfg == nil {
+			cfg.Logger.Warn("failed to create restclient.Config previous cluster state")
+			kcfg = nil
+		}
 	}
 	if kcfg == nil {
+		// https://github.com/kubernetes/client-go/blob/master/examples/in-cluster-client-configuration/main.go
+		cfg.Logger.Info("creating restclient.Config from in-cluster config")
+		kcfg, err = restclient.InClusterConfig()
+		if kcfg == nil || err != nil {
+			cfg.Logger.Warn("failed to create restclient.Config from in-cluster config", zap.Error(err))
+			kcfg = nil
+		}
+	}
+	if kcfg == nil {
+		cfg.Logger.Info("creating restclient.Config from client defaults")
 		defaultConfig := clientcmd.DefaultClientConfig
-		kcfg, _ = defaultConfig.ClientConfig()
+		kcfg, err = defaultConfig.ClientConfig()
+		if kcfg == nil || err != nil {
+			cfg.Logger.Warn("failed to create restclient.Config from client defaults", zap.Error(err))
+			kcfg = nil
+		}
 	}
 	if kcfg == nil {
-		cfg.Logger.Warn("failed to create k8s client config")
-		return nil, errors.New("failed to create k8s client config")
+		cfg.Logger.Warn("failed to create restclient.Config config")
+		err = errors.New("failed to create restclient.Config config")
+		return nil, err
 	}
-
-	cfg.Logger.Info("loaded k8s client config",
-		zap.String("host", kcfg.Host),
-		zap.String("user-name", kcfg.Username),
-		zap.String("server-name", kcfg.ServerName),
-	)
 
 	if cfg.ClusterAPIServerEndpoint == "" {
 		cfg.ClusterAPIServerEndpoint = kcfg.Host
@@ -287,7 +305,7 @@ func createClient(cfg *EKSConfig) (cli *kubernetes.Clientset, err error) {
 
 	if cfg.ClusterCADecoded == "" {
 		cfg.ClusterCADecoded = string(kcfg.TLSClientConfig.CAData)
-		cfg.Logger.Info("updated cluster ca from kubeconfig", zap.String("cluster-ca", string(kcfg.TLSClientConfig.CAData)))
+		cfg.Logger.Info("updated cluster ca from kubeconfig", zap.String("cluster-ca", cfg.ClusterCADecoded))
 	} else if cfg.ClusterCADecoded != string(kcfg.TLSClientConfig.CAData) {
 		cfg.Logger.Warn("unexpected cluster ca",
 			zap.String("cluster-ca", cfg.ClusterCADecoded),
@@ -295,7 +313,7 @@ func createClient(cfg *EKSConfig) (cli *kubernetes.Clientset, err error) {
 		)
 	}
 	if cfg.ClusterCADecoded == "" {
-		cfg.Logger.Warn("no cluster CA found in k8s client")
+		cfg.Logger.Warn("no cluster CA found in restclient.Config")
 	}
 
 	if kcfg.AuthProvider != nil {
@@ -319,10 +337,10 @@ func createClient(cfg *EKSConfig) (cli *kubernetes.Clientset, err error) {
 		}
 	}
 	if cfg.Region == "" {
-		cfg.Logger.Warn("no region found in k8s client")
+		cfg.Logger.Warn("no region found in restclient.Config")
 	}
 	if cfg.ClusterName == "" {
-		cfg.Logger.Warn("no cluster name found in k8s client")
+		cfg.Logger.Warn("no cluster name found in restclient.Config")
 	}
 
 	if cfg.ClientQPS > 0 {
@@ -335,12 +353,19 @@ func createClient(cfg *EKSConfig) (cli *kubernetes.Clientset, err error) {
 		kcfg.Timeout = cfg.ClientTimeout
 	}
 
+	cfg.Logger.Info("successfully created restclient.Config",
+		zap.String("cluster-api-server-endpoint", cfg.ClusterAPIServerEndpoint),
+		zap.String("host", kcfg.Host),
+		zap.String("server-name", kcfg.ServerName),
+		zap.String("user-name", kcfg.Username),
+	)
+
 	cli, err = kubernetes.NewForConfig(kcfg)
 	if err != nil {
-		cfg.Logger.Warn("failed to create k8s client", zap.Error(err))
+		cfg.Logger.Warn("failed to create kubernetes.ClientSet", zap.Error(err))
 		return nil, err
 	}
-	cfg.Logger.Info("created k8s client", zap.Float32("qps", kcfg.QPS), zap.Int("burst", kcfg.Burst))
+	cfg.Logger.Info("successfully created kubernetes.ClientSet", zap.Float32("qps", kcfg.QPS), zap.Int("burst", kcfg.Burst))
 	return cli, nil
 }
 
@@ -390,7 +415,7 @@ func createClientConfigEKS(cfg *EKSConfig) *restclient.Config {
 	if cfg.ClusterCADecoded == "" {
 		return nil
 	}
-	cfg.Logger.Info("creating k8s client using status")
+	cfg.Logger.Info("created restclient.Config from previous cluster status")
 	return &restclient.Config{
 		Host: cfg.ClusterAPIServerEndpoint,
 		TLSClientConfig: restclient.TLSClientConfig{

@@ -21,7 +21,8 @@ import (
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/eks/alb"
 	app_mesh "github.com/aws/aws-k8s-tester/eks/app-mesh"
-	cluster_loader "github.com/aws/aws-k8s-tester/eks/cluster-loader"
+	cluster_loader_local "github.com/aws/aws-k8s-tester/eks/cluster-loader/local"
+	cluster_loader_remote "github.com/aws/aws-k8s-tester/eks/cluster-loader/remote"
 	"github.com/aws/aws-k8s-tester/eks/configmaps"
 	"github.com/aws/aws-k8s-tester/eks/conformance"
 	"github.com/aws/aws-k8s-tester/eks/cronjobs"
@@ -29,7 +30,8 @@ import (
 	"github.com/aws/aws-k8s-tester/eks/csrs"
 	"github.com/aws/aws-k8s-tester/eks/fargate"
 	"github.com/aws/aws-k8s-tester/eks/gpu"
-	hollow_nodes "github.com/aws/aws-k8s-tester/eks/hollow-nodes"
+	hollow_nodes_local "github.com/aws/aws-k8s-tester/eks/hollow-nodes/local"
+	hollow_nodes_remote "github.com/aws/aws-k8s-tester/eks/hollow-nodes/remote"
 	"github.com/aws/aws-k8s-tester/eks/irsa"
 	irsa_fargate "github.com/aws/aws-k8s-tester/eks/irsa-fargate"
 	jobs_echo "github.com/aws/aws-k8s-tester/eks/jobs-echo"
@@ -129,8 +131,10 @@ type Tester struct {
 	wordPressTester           wordpress.Tester
 	jupyterHubTester          jupyter_hub.Tester
 	kubeflowTester            kubeflow.Tester
-	hollowNodesTester         hollow_nodes.Tester
-	clusterLoaderTester       cluster_loader.Tester
+	hollowNodesLocalTester    hollow_nodes_local.Tester
+	hollowNodesRemoteTester   hollow_nodes_remote.Tester
+	clusterLoaderLocalTester  cluster_loader_local.Tester
+	clusterLoaderRemoteTester cluster_loader_remote.Tester
 	conformanceTester         conformance.Tester
 }
 
@@ -646,9 +650,19 @@ func (ts *Tester) createSubTesters() (err error) {
 		})
 	}
 
-	if ts.cfg.IsEnabledAddOnHollowNodes() {
-		ts.lg.Info("creating hollowNodesTester")
-		ts.hollowNodesTester, err = hollow_nodes.NewTester(hollow_nodes.Config{
+	if ts.cfg.IsEnabledAddOnHollowNodesLocal() {
+		ts.lg.Info("creating hollowNodesLocalTester")
+		ts.hollowNodesLocalTester, err = hollow_nodes_local.NewTester(hollow_nodes_local.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			EKSConfig: ts.cfg,
+			K8SClient: ts.k8sClient,
+		})
+	}
+
+	if ts.cfg.IsEnabledAddOnHollowNodesRemote() {
+		ts.lg.Info("creating hollowNodesRemoteTester")
+		ts.hollowNodesRemoteTester, err = hollow_nodes_remote.NewTester(hollow_nodes_remote.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
@@ -657,13 +671,24 @@ func (ts *Tester) createSubTesters() (err error) {
 		})
 	}
 
-	if ts.cfg.IsEnabledAddOnClusterLoader() {
-		ts.lg.Info("creating clusterLoaderTester")
-		ts.clusterLoaderTester, err = cluster_loader.NewTester(cluster_loader.Config{
+	if ts.cfg.IsEnabledAddOnClusterLoaderLocal() {
+		ts.lg.Info("creating clusterLoaderLocalTester")
+		ts.clusterLoaderLocalTester, err = cluster_loader_local.NewTester(cluster_loader_local.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
+		})
+	}
+
+	if ts.cfg.IsEnabledAddOnClusterLoaderRemote() {
+		ts.lg.Info("creating clusterLoaderRemoteTester")
+		ts.clusterLoaderRemoteTester, err = cluster_loader_remote.NewTester(cluster_loader_remote.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			EKSConfig: ts.cfg,
+			K8SClient: ts.k8sClient,
+			ECRAPI:    ts.ecrAPI,
 		})
 	}
 
@@ -1319,35 +1344,69 @@ func (ts *Tester) Up() (err error) {
 		}
 	}
 
-	if ts.cfg.IsEnabledAddOnHollowNodes() {
-		if ts.hollowNodesTester == nil {
-			return errors.New("ts.hollowNodesTester == nil when AddOnHollowNodes.Enable == true")
+	if ts.cfg.IsEnabledAddOnHollowNodesLocal() {
+		if ts.hollowNodesLocalTester == nil {
+			return errors.New("ts.hollowNodesLocalTester == nil when AddOnHollowNodesLocal.Enable == true")
 		}
 		fmt.Printf("\n*********************************\n")
-		fmt.Printf("hollowNodesTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnHollowNodes.Namespace)
+		fmt.Printf("hollowNodesLocalTester.Create (%q, \"%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		if err := catchInterrupt(
 			ts.lg,
 			ts.stopCreationCh,
 			ts.stopCreationChOnce,
 			ts.interruptSig,
-			ts.hollowNodesTester.Create,
+			ts.hollowNodesLocalTester.Create,
 		); err != nil {
 			return err
 		}
 	}
 
-	if ts.cfg.IsEnabledAddOnClusterLoader() {
-		if ts.clusterLoaderTester == nil {
-			return errors.New("ts.clusterLoaderTester == nil when AddOnClusterLoader.Enable == true")
+	if ts.cfg.IsEnabledAddOnHollowNodesRemote() {
+		if ts.hollowNodesRemoteTester == nil {
+			return errors.New("ts.hollowNodesRemoteTester == nil when AddOnHollowNodesRemote.Enable == true")
 		}
 		fmt.Printf("\n*********************************\n")
-		fmt.Printf("clusterLoaderTester.Create (%q, \"%s --namespace=kube-system get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		fmt.Printf("hollowNodesRemoteTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnHollowNodesRemote.Namespace)
 		if err := catchInterrupt(
 			ts.lg,
 			ts.stopCreationCh,
 			ts.stopCreationChOnce,
 			ts.interruptSig,
-			ts.clusterLoaderTester.Create,
+			ts.hollowNodesRemoteTester.Create,
+		); err != nil {
+			return err
+		}
+	}
+
+	if ts.cfg.IsEnabledAddOnClusterLoaderLocal() {
+		if ts.clusterLoaderLocalTester == nil {
+			return errors.New("ts.clusterLoaderLocalTester == nil when AddOnClusterLoader.Enable == true")
+		}
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("clusterLoaderLocalTester.Create (%q, \"%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.interruptSig,
+			ts.clusterLoaderLocalTester.Create,
+		); err != nil {
+			return err
+		}
+	}
+
+	if ts.cfg.IsEnabledAddOnClusterLoaderRemote() {
+		if ts.clusterLoaderRemoteTester == nil {
+			return errors.New("ts.clusterLoaderRemoteTester == nil when AddOnClusterLoader.Enable == true")
+		}
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("clusterLoaderRemoteTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnClusterLoaderRemote.Namespace)
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.interruptSig,
+			ts.clusterLoaderRemoteTester.Create,
 		); err != nil {
 			return err
 		}
@@ -1442,6 +1501,20 @@ func (ts *Tester) Up() (err error) {
 				ts.stopCreationChOnce,
 				ts.interruptSig,
 				ts.irsaTester.AggregateResults,
+			); err != nil {
+				return err
+			}
+		}
+
+		if ts.cfg.IsEnabledAddOnClusterLoaderRemote() {
+			fmt.Printf("\n*********************************\n")
+			fmt.Printf("clusterLoaderRemoteTester.AggregateResults (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnClusterLoaderRemote.Namespace)
+			if err := catchInterrupt(
+				ts.lg,
+				ts.stopCreationCh,
+				ts.stopCreationChOnce,
+				ts.interruptSig,
+				ts.clusterLoaderRemoteTester.AggregateResults,
 			); err != nil {
 				return err
 			}
@@ -1554,29 +1627,47 @@ func (ts *Tester) down() (err error) {
 		}
 	}
 
-	if ts.cfg.IsEnabledAddOnClusterLoader() && ts.cfg.AddOnClusterLoader.Created {
+	if ts.cfg.IsEnabledAddOnClusterLoaderRemote() && ts.cfg.AddOnClusterLoaderRemote.Created {
 		fmt.Printf("\n*********************************\n")
-		fmt.Printf("clusterLoaderTester.Delete (%q)\n", ts.cfg.ConfigPath)
-		if err := ts.clusterLoaderTester.Delete(); err != nil {
-			ts.lg.Warn("clusterLoaderTester.Delete failed", zap.Error(err))
+		fmt.Printf("clusterLoaderRemoteTester.Delete (%q)\n", ts.cfg.ConfigPath)
+		if err := ts.clusterLoaderRemoteTester.Delete(); err != nil {
+			ts.lg.Warn("clusterLoaderRemoteTester.Delete failed", zap.Error(err))
 			errs = append(errs, err.Error())
 		} else {
 			waitDur := 20 * time.Second
-			ts.lg.Info("sleeping after deleting clusterLoaderTester", zap.Duration("wait", waitDur))
+			ts.lg.Info("sleeping after deleting clusterLoaderRemoteTester", zap.Duration("wait", waitDur))
 			time.Sleep(waitDur)
 		}
 	}
 
-	if ts.cfg.IsEnabledAddOnHollowNodes() && ts.cfg.AddOnHollowNodes.Created {
+	if ts.cfg.IsEnabledAddOnClusterLoaderLocal() && ts.cfg.AddOnClusterLoaderLocal.Created {
 		fmt.Printf("\n*********************************\n")
-		fmt.Printf("hollowNodesTester.Delete (%q)\n", ts.cfg.ConfigPath)
-		if err := ts.hollowNodesTester.Delete(); err != nil {
-			ts.lg.Warn("hollowNodesTester.Delete failed", zap.Error(err))
+		fmt.Printf("clusterLoaderLocalTester.Delete (%q)\n", ts.cfg.ConfigPath)
+		if err := ts.clusterLoaderLocalTester.Delete(); err != nil {
+			ts.lg.Warn("clusterLoaderLocalTester.Delete failed", zap.Error(err))
 			errs = append(errs, err.Error())
 		} else {
 			waitDur := 20 * time.Second
-			ts.lg.Info("sleeping after deleting hollowNodesTester", zap.Duration("wait", waitDur))
+			ts.lg.Info("sleeping after deleting clusterLoaderLocalTester", zap.Duration("wait", waitDur))
 			time.Sleep(waitDur)
+		}
+	}
+
+	if ts.cfg.IsEnabledAddOnHollowNodesRemote() && ts.cfg.AddOnHollowNodesRemote.Created {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("hollowNodesRemoteTester.Delete (%q)\n", ts.cfg.ConfigPath)
+		if err := ts.hollowNodesRemoteTester.Delete(); err != nil {
+			ts.lg.Warn("hollowNodesRemoteTester.Delete failed", zap.Error(err))
+			errs = append(errs, err.Error())
+		}
+	}
+
+	if ts.cfg.IsEnabledAddOnHollowNodesLocal() && ts.cfg.AddOnHollowNodesLocal.Created {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("hollowNodesLocalTester.Delete (%q)\n", ts.cfg.ConfigPath)
+		if err := ts.hollowNodesLocalTester.Delete(); err != nil {
+			ts.lg.Warn("hollowNodesLocalTester.Delete failed", zap.Error(err))
+			errs = append(errs, err.Error())
 		}
 	}
 
@@ -1586,10 +1677,6 @@ func (ts *Tester) down() (err error) {
 		if err := ts.kubeflowTester.Delete(); err != nil {
 			ts.lg.Warn("kubeflowTester.Delete failed", zap.Error(err))
 			errs = append(errs, err.Error())
-		} else {
-			waitDur := 20 * time.Second
-			ts.lg.Info("sleeping after deleting kubeflowTester", zap.Duration("wait", waitDur))
-			time.Sleep(waitDur)
 		}
 	}
 

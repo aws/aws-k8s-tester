@@ -42,7 +42,7 @@ replace (
 )
 
 require (
-	github.com/aws/aws-sdk-go v1.30.24
+	github.com/aws/aws-sdk-go v1.30.26
 	github.com/cihub/seelog v0.0.0-20170130134532-f561c5e57575
 	github.com/davecgh/go-spew v1.1.1
 	github.com/dustin/go-humanize v1.0.0
@@ -56,6 +56,7 @@ require (
 	github.com/onsi/ginkgo v1.11.0
 	github.com/onsi/gomega v1.7.1
 	github.com/prometheus/client_golang v1.0.0
+	github.com/prometheus/client_model v0.2.0
 	github.com/prometheus/common v0.4.1
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/pflag v1.0.5

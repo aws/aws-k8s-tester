@@ -27,6 +27,7 @@ The main goal is to create "temporary" EC2 instances or EKS clusters for "testin
   - https://github.com/aws/amazon-vpc-cni-k8s/pull/951
   - https://github.com/aws/amazon-vpc-cni-k8s/pull/957
 - AppMesh scalability testing
+  - https://github.com/aws/aws-app-mesh-controller-for-k8s/blob/master/scripts/lib/cluster.sh
   - https://github.com/aws/aws-app-mesh-controller-for-k8s/pull/137
 
 
@@ -96,7 +97,8 @@ AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_ENABLE=true \
-AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_ENABLE=true \
+AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_ENABLE=true \
+AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_ENABLE=true \
 aws-k8s-tester eks create cluster --enable-prompt=true -p /tmp/${USER}-test-eks.yaml
 
@@ -287,7 +289,7 @@ COMMENT
 Install `eks-utils` from https://github.com/aws/aws-k8s-tester/releases.
 
 ```
-AWS_K8S_TESTER_VERSION=v1.1.7
+AWS_K8S_TESTER_VERSION=v1.1.9
 
 DOWNLOAD_URL=https://github.com/aws/aws-k8s-tester/releases/download
 rm -rf /tmp/aws-k8s-tester

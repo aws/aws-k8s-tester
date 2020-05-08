@@ -327,29 +327,41 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_PROXY_SECRET_TOKEN", proxySecretToken)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_PROXY_SECRET_TOKEN")
 
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_ENABLE", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_DURATION", "7m30s")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_DURATION")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_NODE_LABEL_PREFIX", "hollow-prefix")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_NODE_LABEL_PREFIX")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_MAX_OPEN_FILES", "333")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_MAX_OPEN_FILES")
 
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_ENABLE", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_NAMESPACE", "test-hollow-nodes-namespace")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_NAMESPACE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_NODES", "333")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_NODES")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_NODE_LABEL_PREFIX", "hollow-prefix")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_NODE_LABEL_PREFIX")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_MAX_OPEN_FILES", "333")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_MAX_OPEN_FILES")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REPOSITORY_NAME", "hollow-nodes-repo-name")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REPOSITORY_NAME")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REPOSITORY_URI", "hollow-nodes-repo-uri")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REPOSITORY_URI")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REPOSITORY_IMAGE_TAG", "hollow-nodes-repo-image-tag")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REPOSITORY_IMAGE_TAG")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NAMESPACE", "test-hollow-nodes-namespace")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NODES", "333")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NODES")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_NAME", "hollow-nodes-repo-name")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_URI", "hollow-nodes-repo-uri")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_URI")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_IMAGE_TAG", "hollow-nodes-repo-image-tag")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_IMAGE_TAG")
+
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_DURATION", "7m30s")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_DURATION")
+
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_DURATION", "7m30s")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_DURATION")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_NAME", "cluster-loader-repo-name")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_URI", "cluster-loader-repo-uri")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_URI")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_IMAGE_TAG", "cluster-loader-repo-image-tag")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_IMAGE_TAG")
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_ENABLE")
@@ -912,39 +924,56 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("unexpected cfg.AddOnJupyterHub.ProxySecretToken %q", cfg.AddOnJupyterHub.ProxySecretToken)
 	}
 
-	if !cfg.AddOnHollowNodes.Enable {
-		t.Fatalf("unexpected cfg.AddOnHollowNodes.Enable %v", cfg.AddOnHollowNodes.Enable)
+	if !cfg.AddOnHollowNodesLocal.Enable {
+		t.Fatalf("unexpected cfg.AddOnHollowNodesLocal.Enable %v", cfg.AddOnHollowNodesLocal.Enable)
 	}
-	if cfg.AddOnHollowNodes.Namespace != "test-hollow-nodes-namespace" {
-		t.Fatalf("unexpected cfg.AddOnHollowNodes.Namespace %v", cfg.AddOnHollowNodes.Namespace)
+	if cfg.AddOnHollowNodesLocal.NodeLabelPrefix != "hollow-prefix" {
+		t.Fatalf("unexpected cfg.AddOnHollowNodesLocal.NodeLabelPrefix %q", cfg.AddOnHollowNodesLocal.NodeLabelPrefix)
 	}
-	if cfg.AddOnHollowNodes.Nodes != 333 {
-		t.Fatalf("unexpected cfg.AddOnHollowNodes.Nodes %v", cfg.AddOnHollowNodes.Nodes)
-	}
-	if cfg.AddOnHollowNodes.NodeLabelPrefix != "hollow-prefix" {
-		t.Fatalf("unexpected cfg.AddOnHollowNodes.NodeLabelPrefix %q", cfg.AddOnHollowNodes.NodeLabelPrefix)
-	}
-	if cfg.AddOnHollowNodes.MaxOpenFiles != 333 {
-		t.Fatalf("unexpected cfg.AddOnHollowNodes.MaxOpenFiles %v", cfg.AddOnHollowNodes.MaxOpenFiles)
-	}
-	if !cfg.AddOnHollowNodes.Remote {
-		t.Fatalf("unexpected cfg.AddOnHollowNodes.Remote %v", cfg.AddOnHollowNodes.Remote)
-	}
-	if cfg.AddOnHollowNodes.RepositoryName != "hollow-nodes-repo-name" {
-		t.Fatalf("unexpected cfg.AddOnHollowNodes.RepositoryName %v", cfg.AddOnHollowNodes.RepositoryName)
-	}
-	if cfg.AddOnHollowNodes.RepositoryURI != "hollow-nodes-repo-uri" {
-		t.Fatalf("unexpected cfg.AddOnHollowNodes.RepositoryURI %v", cfg.AddOnHollowNodes.RepositoryURI)
-	}
-	if cfg.AddOnHollowNodes.RepositoryImageTag != "hollow-nodes-repo-image-tag" {
-		t.Fatalf("unexpected cfg.AddOnHollowNodes.RepositoryImageTag %v", cfg.AddOnHollowNodes.RepositoryImageTag)
+	if cfg.AddOnHollowNodesLocal.MaxOpenFiles != 333 {
+		t.Fatalf("unexpected cfg.AddOnHollowNodesLocal.MaxOpenFiles %v", cfg.AddOnHollowNodesLocal.MaxOpenFiles)
 	}
 
-	if !cfg.AddOnClusterLoader.Enable {
-		t.Fatalf("unexpected cfg.AddOnClusterLoader.Enable %v", cfg.AddOnClusterLoader.Enable)
+	if !cfg.AddOnHollowNodesRemote.Enable {
+		t.Fatalf("unexpected cfg.AddOnHollowNodesRemote.Enable %v", cfg.AddOnHollowNodesRemote.Enable)
 	}
-	if cfg.AddOnClusterLoader.Duration != 7*time.Minute+30*time.Second {
-		t.Fatalf("unexpected cfg.AddOnClusterLoader.Duration %v", cfg.AddOnClusterLoader.Duration)
+	if cfg.AddOnHollowNodesRemote.Nodes != 333 {
+		t.Fatalf("unexpected cfg.AddOnHollowNodesRemote.Nodes %v", cfg.AddOnHollowNodesRemote.Nodes)
+	}
+	if cfg.AddOnHollowNodesRemote.Namespace != "test-hollow-nodes-namespace" {
+		t.Fatalf("unexpected cfg.AddOnHollowNodesRemote.Namespace %v", cfg.AddOnHollowNodesRemote.Namespace)
+	}
+	if cfg.AddOnHollowNodesRemote.RepositoryName != "hollow-nodes-repo-name" {
+		t.Fatalf("unexpected cfg.AddOnHollowNodesRemote.RepositoryName %v", cfg.AddOnHollowNodesRemote.RepositoryName)
+	}
+	if cfg.AddOnHollowNodesRemote.RepositoryURI != "hollow-nodes-repo-uri" {
+		t.Fatalf("unexpected cfg.AddOnHollowNodesRemote.RepositoryURI %v", cfg.AddOnHollowNodesRemote.RepositoryURI)
+	}
+	if cfg.AddOnHollowNodesRemote.RepositoryImageTag != "hollow-nodes-repo-image-tag" {
+		t.Fatalf("unexpected cfg.AddOnHollowNodesRemote.RepositoryImageTag %v", cfg.AddOnHollowNodesRemote.RepositoryImageTag)
+	}
+
+	if !cfg.AddOnClusterLoaderLocal.Enable {
+		t.Fatalf("unexpected cfg.AddOnClusterLoaderLocal.Enable %v", cfg.AddOnClusterLoaderLocal.Enable)
+	}
+	if cfg.AddOnClusterLoaderLocal.Duration != 7*time.Minute+30*time.Second {
+		t.Fatalf("unexpected cfg.AddOnClusterLoaderLocal.Duration %v", cfg.AddOnClusterLoaderLocal.Duration)
+	}
+
+	if !cfg.AddOnClusterLoaderRemote.Enable {
+		t.Fatalf("unexpected cfg.AddOnClusterLoaderRemote.Enable %v", cfg.AddOnClusterLoaderRemote.Enable)
+	}
+	if cfg.AddOnClusterLoaderRemote.Duration != 7*time.Minute+30*time.Second {
+		t.Fatalf("unexpected cfg.AddOnClusterLoaderRemote.Duration %v", cfg.AddOnClusterLoaderRemote.Duration)
+	}
+	if cfg.AddOnClusterLoaderRemote.RepositoryName != "cluster-loader-repo-name" {
+		t.Fatalf("unexpected cfg.AddOnClusterLoaderRemote.RepositoryName %v", cfg.AddOnClusterLoaderRemote.RepositoryName)
+	}
+	if cfg.AddOnClusterLoaderRemote.RepositoryURI != "cluster-loader-repo-uri" {
+		t.Fatalf("unexpected cfg.AddOnClusterLoaderRemote.RepositoryURI %v", cfg.AddOnClusterLoaderRemote.RepositoryURI)
+	}
+	if cfg.AddOnClusterLoaderRemote.RepositoryImageTag != "cluster-loader-repo-image-tag" {
+		t.Fatalf("unexpected cfg.AddOnClusterLoaderRemote.RepositoryImageTag %v", cfg.AddOnClusterLoaderRemote.RepositoryImageTag)
 	}
 
 	if !cfg.AddOnConformance.Enable {

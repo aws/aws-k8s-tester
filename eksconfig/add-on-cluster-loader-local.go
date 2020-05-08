@@ -4,10 +4,10 @@ import (
 	"time"
 )
 
-// AddOnClusterLoader defines parameters for EKS cluster
-// add-on Cluster Loader.
+// AddOnClusterLoaderLocal defines parameters for EKS cluster
+// add-on local Cluster Loader.
 // ref. https://github.com/kubernetes/perf-tests
-type AddOnClusterLoader struct {
+type AddOnClusterLoaderLocal struct {
 	// Enable is 'true' to create this add-on.
 	Enable bool `json:"enable"`
 	// Created is true when the resource has been created.
@@ -27,40 +27,43 @@ type AddOnClusterLoader struct {
 	// And other one for cluster loader.
 	Duration       time.Duration `json:"duration,omitempty"`
 	DurationString string        `json:"duration-string,omitempty" read-only:"true"`
+
+	// RequestsSummary is the cluster loader results.
+	RequestsSummary RequestsSummary `json:"requests-summary,omitempty" read-only:"true"`
 }
 
-// EnvironmentVariablePrefixAddOnClusterLoader is the environment variable prefix used for "eksconfig".
-const EnvironmentVariablePrefixAddOnClusterLoader = AWS_K8S_TESTER_EKS_PREFIX + "ADD_ON_CLUSTER_LOADER_"
+// EnvironmentVariablePrefixAddOnClusterLoaderLocal is the environment variable prefix used for "eksconfig".
+const EnvironmentVariablePrefixAddOnClusterLoaderLocal = AWS_K8S_TESTER_EKS_PREFIX + "ADD_ON_CLUSTER_LOADER_LOCAL_"
 
-// IsEnabledAddOnClusterLoader returns true if "AddOnClusterLoader" is enabled.
+// IsEnabledAddOnClusterLoaderLocal returns true if "AddOnClusterLoaderLocal" is enabled.
 // Otherwise, nil the field for "omitempty".
-func (cfg *Config) IsEnabledAddOnClusterLoader() bool {
-	if cfg.AddOnClusterLoader == nil {
+func (cfg *Config) IsEnabledAddOnClusterLoaderLocal() bool {
+	if cfg.AddOnClusterLoaderLocal == nil {
 		return false
 	}
-	if cfg.AddOnClusterLoader.Enable {
+	if cfg.AddOnClusterLoaderLocal.Enable {
 		return true
 	}
-	cfg.AddOnClusterLoader = nil
+	cfg.AddOnClusterLoaderLocal = nil
 	return false
 }
 
-func getDefaultAddOnClusterLoader() *AddOnClusterLoader {
-	return &AddOnClusterLoader{
+func getDefaultAddOnClusterLoaderLocal() *AddOnClusterLoaderLocal {
+	return &AddOnClusterLoaderLocal{
 		Enable:   false,
 		Duration: time.Minute,
 	}
 }
 
-func (cfg *Config) validateAddOnClusterLoader() error {
-	if !cfg.IsEnabledAddOnClusterLoader() {
+func (cfg *Config) validateAddOnClusterLoaderLocal() error {
+	if !cfg.IsEnabledAddOnClusterLoaderLocal() {
 		return nil
 	}
 
-	if cfg.AddOnClusterLoader.Duration == time.Duration(0) {
-		cfg.AddOnClusterLoader.Duration = time.Minute
+	if cfg.AddOnClusterLoaderLocal.Duration == time.Duration(0) {
+		cfg.AddOnClusterLoaderLocal.Duration = time.Minute
 	}
-	cfg.AddOnClusterLoader.DurationString = cfg.AddOnClusterLoader.Duration.String()
+	cfg.AddOnClusterLoaderLocal.DurationString = cfg.AddOnClusterLoaderLocal.Duration.String()
 
 	return nil
 }

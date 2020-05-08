@@ -405,6 +405,7 @@ func (ts *tester) createPods() error {
 	ts.cfg.Logger.Info("mounting and read Secrets using Pod")
 
 	fileOrCreate := v1.HostPathFileOrCreate
+	dirOrCreate := v1.HostPathDirectoryOrCreate
 	pods := make([]*v1.Pod, len(ts.cfg.EKSConfig.AddOnSecrets.CreatedSecretsNames))
 	for i, secretName := range ts.cfg.EKSConfig.AddOnSecrets.CreatedSecretsNames {
 		podName := "pod-" + secretName
@@ -454,7 +455,7 @@ func (ts *tester) createPods() error {
 								ReadOnly:  false,
 							},
 							{
-								Name:      "var-log",
+								Name:      "varlog",
 								MountPath: "/var/log",
 								ReadOnly:  false,
 							},
@@ -482,9 +483,12 @@ func (ts *tester) createPods() error {
 						},
 					},
 					{ // to write
-						Name: "var-log",
+						Name: "varlog",
 						VolumeSource: v1.VolumeSource{
-							EmptyDir: &v1.EmptyDirVolumeSource{},
+							HostPath: &v1.HostPathVolumeSource{
+								Path: "/var/log",
+								Type: &dirOrCreate,
+							},
 						},
 					},
 				},
