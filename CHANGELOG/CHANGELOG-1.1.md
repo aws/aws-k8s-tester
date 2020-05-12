@@ -9,20 +9,20 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.8...v1.1.9
 
 ### `aws-k8s-tester`
 
-- Add [`"aws-k8s-tester eks create cluster-loader"`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`"aws-k8s-tester eks create cluster-loader"`](https://github.com/aws/aws-k8s-tester/commit/10dd6aced059e78a69d18229d56e58a1819cc9d5).
   - Implemented in `eks/cluster-loader`.
 
 ### `eks`
 
-- Add [RBAC to `hollow-nodes` and `cluster-loader`](https://github.com/aws/aws-k8s-tester/commit/).
-- Fix [volume mounts](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [RBAC to `hollow-nodes` and `cluster-loader`](https://github.com/aws/aws-k8s-tester/commit/10dd6aced059e78a69d18229d56e58a1819cc9d5).
+- Fix [volume mounts](https://github.com/aws/aws-k8s-tester/commit/10dd6aced059e78a69d18229d56e58a1819cc9d5).
   - Switch `"k8s.io/api/core/v1".EmptyDirVolumeSource` to `"k8s.io/api/core/v1".HostPathVolumeSource`.
 
 ### `eksconfig`
 
-- Rename [`AddOnClusterLoader` to `AddOnClusterLoaderLocal` and `AddOnClusterLoaderRemote`](https://github.com/aws/aws-k8s-tester/commit/).
+- Rename [`AddOnClusterLoader` to `AddOnClusterLoaderLocal` and `AddOnClusterLoaderRemote`](https://github.com/aws/aws-k8s-tester/commit/10dd6aced059e78a69d18229d56e58a1819cc9d5).
   - `AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_ENABLE` is now `AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_ENABLE` or `AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_ENABLE`.
-- Rename [`AddOnHollowNodes` to `AddOnHollowNodesLocal` and `AddOnHollowNodesRemote`](https://github.com/aws/aws-k8s-tester/commit/).
+- Rename [`AddOnHollowNodes` to `AddOnHollowNodesLocal` and `AddOnHollowNodesRemote`](https://github.com/aws/aws-k8s-tester/commit/10dd6aced059e78a69d18229d56e58a1819cc9d5).
   - `AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_ENABLE` is now `AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_ENABLE` or `AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_ENABLE`.
 
 ### Dependency
