@@ -515,7 +515,6 @@ func (ts *tester) deleteRole() error {
 	ch := cfn.Poll(
 		ctx,
 		make(chan struct{}), // do not exit on stop
-
 		ts.cfg.Logger,
 		ts.cfg.CFNAPI,
 		ts.cfg.EKSConfig.AddOnIRSAFargate.RoleCFNStackID,
@@ -595,12 +594,12 @@ func (ts *tester) deleteServiceAccount() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
-// TemplateConfigMap is the IRSA config map.
+// TemplateConfigMap is the IRSA Fargate config map.
 const TemplateConfigMap = `
 #!/usr/bin/env bash
 set -e
-printf "\nInstalling AWS CLI...\n"
-yum install -y -q python3-pip
+printf "Installing AWS CLI..."
+yum install -y python3-pip
 pip3 install --upgrade --quiet awscli
 printf "\nAWS CLI version:\n"
 aws --version

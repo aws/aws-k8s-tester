@@ -578,8 +578,8 @@ func (ts *tester) deleteServiceAccount() error {
 const TemplateConfigMap = `
 #!/usr/bin/env bash
 set -e
-printf "\nInstalling AWS CLI...\n"
-yum install -y -q python3-pip
+printf "Installing AWS CLI..."
+yum install -y python3-pip
 pip3 install --upgrade --quiet awscli
 printf "\nAWS CLI version:\n"
 aws --version
