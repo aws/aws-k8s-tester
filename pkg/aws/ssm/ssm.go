@@ -2,6 +2,7 @@
 package ssm
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -14,6 +15,7 @@ import (
 type FetchConfig struct {
 	Logger        *zap.Logger
 	SSMAPI        ssmiface.SSMAPI
+	CommandID     string
 	DocumentName  string
 	InvokedAfter  time.Time
 	BatchLimit    int64
@@ -26,6 +28,9 @@ const rfc3339Micro = "2006-01-02T15:04:05.999Z07:00"
 // It only returns the invocation whose status is "Success".
 // e.g. aws ssm list-command-invocations --details --filter key=DocumentName,value=ResourceCounterSSMDocDevStack
 func FetchOutputs(cfg FetchConfig) (ivs []*ssm.CommandInvocation, err error) {
+	if cfg.BatchLimit > 50 {
+		return nil, fmt.Errorf("batch limit exceeded 50, got %v", cfg.BatchLimit)
+	}
 	cfg.Logger.Info("fetching SSM doc outputs", zap.String("document-name", cfg.DocumentName), zap.Int64("batch-limit", cfg.BatchLimit))
 	input := &ssm.ListCommandInvocationsInput{
 		Details:    aws.Bool(true),
@@ -40,6 +45,9 @@ func FetchOutputs(cfg FetchConfig) (ivs []*ssm.CommandInvocation, err error) {
 				Value: aws.String(cfg.InvokedAfter.Format(rfc3339Micro)),
 			},
 		},
+	}
+	if cfg.CommandID != "" {
+		input.CommandId = aws.String(cfg.CommandID)
 	}
 	var output *ssm.ListCommandInvocationsOutput
 	for {

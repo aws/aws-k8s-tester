@@ -55,7 +55,6 @@ type Config struct {
 	// KubectlPath is the path to download the "kubectl".
 	KubectlPath string `json:"kubectl-path,omitempty"`
 	// KubectlDownloadURL is the download URL to download "kubectl" binary from.
-	// https://docs.aws.amazon.com/eks/latest/userguide/install-kubectl.html
 	KubectlDownloadURL string `json:"kubectl-download-url,omitempty"`
 	// KubeConfigPath is the file path of KUBECONFIG for the EKS cluster.
 	// If empty, auto-generate one.
