@@ -204,6 +204,10 @@ func createHollowNodesFunc(cmd *cobra.Command, args []string) {
 		fmt.Fprintf(os.Stderr, "kubeconfig not found %q\n", hollowNodesKubeConfigPath)
 		os.Exit(1)
 	}
+	if len(hollowNodesPrefix) > 40 {
+		fmt.Fprintf(os.Stderr, "invalid node label prefix %q (%d characters, label value can not be more than 63 characters)\n", hollowNodesPrefix, len(hollowNodesPrefix))
+		os.Exit(1)
+	}
 
 	lg, err := logutil.GetDefaultZapLogger()
 	if err != nil {

@@ -2,7 +2,10 @@ package eksconfig
 
 import (
 	"errors"
+	"fmt"
 	"time"
+
+	"github.com/aws/aws-k8s-tester/pkg/randutil"
 )
 
 // AddOnHollowNodesRemote defines parameters for EKS cluster
@@ -98,8 +101,12 @@ func (cfg *Config) validateAddOnHollowNodesRemote() error {
 		cfg.AddOnHollowNodesRemote.DeploymentReplicas = 5
 	}
 
+	// e.g. Unable to register node "fake-node-000004-evere" with API server: Node "fake-node-000004-evere" is invalid: [metadata.labels: Invalid value: "...-hollow-nodes-remote-fake-ami-type-duneg": must be no more than 63 characters, metadata.labels: Invalid value: "...-hollow-nodes-remote-fake-ng-name-duneg": must be no more than 63 characters, metadata.labels: Invalid value: "...-hollow-nodes-remote-fake-ng-type-duneg": must be no more than 63 characters]
 	if cfg.AddOnHollowNodesRemote.NodeLabelPrefix == "" {
-		cfg.AddOnHollowNodesRemote.NodeLabelPrefix = cfg.Name + "-hollow-nodes-remote-fake"
+		cfg.AddOnHollowNodesRemote.NodeLabelPrefix = "fake" + randutil.String(10)
+	}
+	if len(cfg.AddOnHollowNodesRemote.NodeLabelPrefix) > 55 {
+		return fmt.Errorf("invalid node label prefix %q (%d characters, label value can not be more than 63 characters)", cfg.AddOnHollowNodesRemote.NodeLabelPrefix, len(cfg.AddOnHollowNodesRemote.NodeLabelPrefix))
 	}
 	cfg.AddOnHollowNodesRemote.NodeLabels = map[string]string{
 		"AMIType": cfg.AddOnHollowNodesRemote.NodeLabelPrefix + "-ami-type",

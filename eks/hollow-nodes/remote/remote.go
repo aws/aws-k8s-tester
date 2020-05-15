@@ -335,6 +335,8 @@ func (ts *tester) createALBRBACClusterRole() error {
 						},
 						Resources: []string{
 							"leases",
+							"runtimeclasses", // for API group "node.k8s.io"
+							"csidrivers",     // for API group "storage.k8s.io"
 							"nodes",
 							"pods",
 							"secrets",
