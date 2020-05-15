@@ -334,6 +334,7 @@ func (ts *tester) createALBRBACClusterRole() error {
 							"*",
 						},
 						Resources: []string{
+							"leases",
 							"nodes",
 							"pods",
 							"secrets",
