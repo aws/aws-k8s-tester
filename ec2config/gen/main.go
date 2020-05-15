@@ -72,4 +72,3 @@ func writeDoc(pfx string, st interface{}) string {
 	tb.Render()
 	return buf.String()
 }
-
