@@ -21,7 +21,7 @@ log-level: info
 log-outputs:
 - stderr
 - /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.log
-name: eks-2020051500-spotlightmqv
+name: eks-2020051509-amzn98ke1ycs
 on-failure-delete: true
 on-failure-delete-wait-seconds: 120
 parameters:
@@ -38,7 +38,7 @@ parameters:
   role-cfn-stack-id: ""
   role-create: true
   role-managed-policy-arns: null
-  role-name: eks-2020051500-spotlightmqv-role
+  role-name: eks-2020051509-amzn98ke1ycs-role
   role-service-principals: null
   signing-name: eks
   tags: null
@@ -51,7 +51,7 @@ partition: aws
 region: us-west-2
 remote-access-commands-output-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.ssh.sh
 remote-access-key-create: true
-remote-access-key-name: eks-2020051500-spotlightmqv-key-nodes
+remote-access-key-name: eks-2020051509-amzn98ke1ycs-key-nodes
 remote-access-private-key-path: /home/ANT.AMAZON.COM/leegyuho/.ssh/kube_aws_rsa
 s3-bucket-create: false
 s3-bucket-create-keep: false
