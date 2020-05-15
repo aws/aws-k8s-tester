@@ -37,6 +37,7 @@ func writeDoc(pfx string, st interface{}) string {
 	buf := bytes.NewBuffer(nil)
 	tb := tablewriter.NewWriter(buf)
 	tb.SetAutoWrapText(false)
+	tb.SetAlignment(tablewriter.ALIGN_LEFT)
 	tb.SetColWidth(1500)
 	tb.SetCenterSeparator("*")
 	tb.SetHeader(columns)
@@ -68,7 +69,6 @@ func writeDoc(pfx string, st interface{}) string {
 		})
 	}
 
-	tb.SetAlignment(tablewriter.ALIGN_CENTER)
 	tb.Render()
 	return buf.String()
 }

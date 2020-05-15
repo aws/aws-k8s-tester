@@ -42,6 +42,17 @@ type AddOnFargate struct {
 
 	// ProfileName is the profile name for Fargate.
 	ProfileName string `json:"profile-name"`
+
+	// RepositoryName is the repositoryName for tester.
+	// e.g. "aws/aws-k8s-tester" for "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester"
+	RepositoryName string `json:"repository-name,omitempty"`
+	// RepositoryURI is the repositoryUri for tester.
+	// e.g. "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester"
+	RepositoryURI string `json:"repository-uri,omitempty"`
+	// RepositoryImageTag is the image tag for tester.
+	// e.g. "latest" for image URI "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester:latest"
+	RepositoryImageTag string `json:"repository-image-tag,omitempty"`
+
 	// SecretName is the secret name for Fargate.
 	SecretName string `json:"secret-name"`
 }
@@ -93,6 +104,7 @@ func (cfg *Config) validateAddOnFargate() error {
 	if strings.HasPrefix(cfg.AddOnFargate.ProfileName, "eks-") {
 		cfg.AddOnFargate.ProfileName = strings.Replace(cfg.AddOnFargate.ProfileName, "eks-", "", 1)
 	}
+
 	if cfg.AddOnFargate.SecretName == "" {
 		cfg.AddOnFargate.SecretName = cfg.Name + "addonfargatesecret"
 	}

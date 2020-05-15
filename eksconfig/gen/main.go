@@ -90,11 +90,11 @@ func createDoc() string {
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnIRSA, &eksconfig.AddOnIRSA{}))
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnFargate, &eksconfig.AddOnFargate{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnFargate, &eksconfig.AddOnFargate{}))
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnIRSA, &eksconfig.AddOnIRSA{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
@@ -160,6 +160,7 @@ func (es *enableEnvVars) writeDoc(pfx string, st interface{}) string {
 	buf := bytes.NewBuffer(nil)
 	tb := tablewriter.NewWriter(buf)
 	tb.SetAutoWrapText(false)
+	tb.SetAlignment(tablewriter.ALIGN_LEFT)
 	tb.SetColWidth(1500)
 	tb.SetCenterSeparator("*")
 	tb.SetHeader(columns)
@@ -195,7 +196,6 @@ func (es *enableEnvVars) writeDoc(pfx string, st interface{}) string {
 		}
 	}
 
-	tb.SetAlignment(tablewriter.ALIGN_CENTER)
 	tb.Render()
 	return buf.String()
 }

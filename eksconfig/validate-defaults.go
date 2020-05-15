@@ -126,8 +126,8 @@ func NewDefault() *Config {
 		AddOnCSRs:                getDefaultAddOnCSRs(),
 		AddOnConfigMaps:          getDefaultAddOnConfigMaps(),
 		AddOnSecrets:             getDefaultAddOnSecrets(),
-		AddOnIRSA:                getDefaultAddOnIRSA(),
 		AddOnFargate:             getDefaultAddOnFargate(),
+		AddOnIRSA:                getDefaultAddOnIRSA(),
 		AddOnIRSAFargate:         getDefaultAddOnIRSAFargate(),
 		AddOnAppMesh:             getDefaultAddOnAppMesh(),
 		AddOnWordpress:           getDefaultAddOnWordpress(),
@@ -216,11 +216,11 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	if err := cfg.validateAddOnSecrets(); err != nil {
 		return fmt.Errorf("validateAddOnSecrets failed [%v]", err)
 	}
-	if err := cfg.validateAddOnIRSA(); err != nil {
-		return fmt.Errorf("validateAddOnIRSA failed [%v]", err)
-	}
 	if err := cfg.validateAddOnFargate(); err != nil {
 		return fmt.Errorf("validateAddOnFargate failed [%v]", err)
+	}
+	if err := cfg.validateAddOnIRSA(); err != nil {
+		return fmt.Errorf("validateAddOnIRSA failed [%v]", err)
 	}
 	if err := cfg.validateAddOnIRSAFargate(); err != nil {
 		return fmt.Errorf("validateIRSAAddOnFargate failed [%v]", err)

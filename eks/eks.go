@@ -125,8 +125,8 @@ type Tester struct {
 	csrsTester                csrs.Tester
 	configMapsTester          configmaps.Tester
 	secretsTester             secrets.Tester
-	irsaTester                irsa.Tester
 	fargateTester             fargate.Tester
+	irsaTester                irsa.Tester
 	irsaFargateTester         irsa_fargate.Tester
 	wordPressTester           wordpress.Tester
 	jupyterHubTester          jupyter_hub.Tester
@@ -571,6 +571,23 @@ func (ts *Tester) createSubTesters() (err error) {
 		}
 	}
 
+	if ts.cfg.IsEnabledAddOnFargate() {
+		ts.lg.Info("creating fargateTester")
+		ts.fargateTester, err = fargate.New(fargate.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			EKSConfig: ts.cfg,
+			K8SClient: ts.k8sClient,
+			IAMAPI:    ts.iamAPI,
+			CFNAPI:    ts.cfnAPI,
+			EKSAPI:    ts.eksAPI,
+			ECRAPI:    ts.ecrAPI,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
 	if ts.cfg.IsEnabledAddOnIRSA() {
 		ts.lg.Info("creating irsaTester")
 		ts.irsaTester, err = irsa.New(irsa.Config{
@@ -582,22 +599,6 @@ func (ts *Tester) createSubTesters() (err error) {
 			IAMAPI:    ts.iamAPI,
 			S3API:     ts.s3API,
 			ECRAPI:    ts.ecrAPI,
-		})
-		if err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnFargate() {
-		ts.lg.Info("creating fargateTester")
-		ts.fargateTester, err = fargate.New(fargate.Config{
-			Logger:    ts.lg,
-			Stopc:     ts.stopCreationCh,
-			EKSConfig: ts.cfg,
-			K8SClient: ts.k8sClient,
-			IAMAPI:    ts.iamAPI,
-			CFNAPI:    ts.cfnAPI,
-			EKSAPI:    ts.eksAPI,
 		})
 		if err != nil {
 			return err
@@ -1244,23 +1245,6 @@ func (ts *Tester) Up() (err error) {
 		}
 	}
 
-	if ts.cfg.IsEnabledAddOnIRSA() {
-		if ts.irsaTester == nil {
-			return errors.New("ts.irsaTester == nil when AddOnIRSA.Enable == true")
-		}
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("irsaTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnIRSA.Namespace)
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.interruptSig,
-			ts.irsaTester.Create,
-		); err != nil {
-			return err
-		}
-	}
-
 	if ts.cfg.IsEnabledAddOnFargate() {
 		if ts.fargateTester == nil {
 			return errors.New("ts.fargateTester == nil when AddOnFargate.Enable == true")
@@ -1273,6 +1257,23 @@ func (ts *Tester) Up() (err error) {
 			ts.stopCreationChOnce,
 			ts.interruptSig,
 			ts.fargateTester.Create,
+		); err != nil {
+			return err
+		}
+	}
+
+	if ts.cfg.IsEnabledAddOnIRSA() {
+		if ts.irsaTester == nil {
+			return errors.New("ts.irsaTester == nil when AddOnIRSA.Enable == true")
+		}
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("irsaTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnIRSA.Namespace)
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.interruptSig,
+			ts.irsaTester.Create,
 		); err != nil {
 			return err
 		}
@@ -1717,20 +1718,20 @@ func (ts *Tester) down() (err error) {
 		}
 	}
 
-	if ts.cfg.IsEnabledAddOnFargate() && ts.cfg.AddOnFargate.Created {
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("fargateTester.Delete (%q)\n", ts.cfg.ConfigPath)
-		if err := ts.fargateTester.Delete(); err != nil {
-			ts.lg.Warn("fargateTester.Delete failed", zap.Error(err))
-			errs = append(errs, err.Error())
-		}
-	}
-
 	if ts.cfg.IsEnabledAddOnIRSA() && ts.cfg.AddOnIRSA.Created {
 		fmt.Printf("\n*********************************\n")
 		fmt.Printf("irsaTester.Delete (%q)\n", ts.cfg.ConfigPath)
 		if err := ts.irsaTester.Delete(); err != nil {
 			ts.lg.Warn("irsaTester.Delete failed", zap.Error(err))
+			errs = append(errs, err.Error())
+		}
+	}
+
+	if ts.cfg.IsEnabledAddOnFargate() && ts.cfg.AddOnFargate.Created {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("fargateTester.Delete (%q)\n", ts.cfg.ConfigPath)
+		if err := ts.fargateTester.Delete(); err != nil {
+			ts.lg.Warn("fargateTester.Delete failed", zap.Error(err))
 			errs = append(errs, err.Error())
 		}
 	}

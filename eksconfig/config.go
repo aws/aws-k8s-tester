@@ -202,12 +202,12 @@ type Config struct {
 	// AddOnSecrets defines parameters for EKS cluster
 	// add-on "Secrets".
 	AddOnSecrets *AddOnSecrets `json:"add-on-secrets,omitempty"`
-	// AddOnIRSA defines parameters for EKS cluster
-	// add-on "IAM Roles for Service Accounts (IRSA)".
-	AddOnIRSA *AddOnIRSA `json:"add-on-irsa,omitempty"`
 	// AddOnFargate defines parameters for EKS cluster
 	// add-on "EKS on Fargate".
 	AddOnFargate *AddOnFargate `json:"add-on-fargate,omitempty"`
+	// AddOnIRSA defines parameters for EKS cluster
+	// add-on "IAM Roles for Service Accounts (IRSA)".
+	AddOnIRSA *AddOnIRSA `json:"add-on-irsa,omitempty"`
 	// AddOnIRSAFargate defines parameters for EKS cluster
 	// add-on "IAM Roles for Service Accounts (IRSA)" with Fargate.
 	AddOnIRSAFargate *AddOnIRSAFargate `json:"add-on-irsa-fargate,omitempty"`

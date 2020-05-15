@@ -254,6 +254,27 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_FAIL_THRESHOLD", "1000")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_FAIL_THRESHOLD")
 
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_NAMESPACE", "hello")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_NAME", "hello")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_SERVICE_PRINCIPALS", "a,b,c")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_SERVICE_PRINCIPALS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_MANAGED_POLICY_ARNS", "a,b,c")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_MANAGED_POLICY_ARNS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_PROFILE_NAME", "hello")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_PROFILE_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_REPOSITORY_NAME", "fargate-repo-name")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_REPOSITORY_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_REPOSITORY_URI", "fargate-repo-uri")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_REPOSITORY_URI")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_REPOSITORY_IMAGE_TAG", "fargate-repo-image-tag")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_REPOSITORY_IMAGE_TAG")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_SECRET_NAME", "HELLO-SECRET")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_SECRET_NAME")
+
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ENABLE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_NAMESPACE", "hello")
@@ -270,25 +291,8 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_REPOSITORY_URI")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_REPOSITORY_IMAGE_TAG", "irsa-repo-image-tag")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_REPOSITORY_IMAGE_TAG")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_DEPLOYMENT_NAME", "hello-deployment")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_DEPLOYMENT_NAME")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_DEPLOYMENT_RESULT_PATH", "hello-deployment.log")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_DEPLOYMENT_RESULT_PATH")
-
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ENABLE", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_NAMESPACE", "hello")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_NAMESPACE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_NAME", "hello")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_NAME")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_SERVICE_PRINCIPALS", "a,b,c")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_SERVICE_PRINCIPALS")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_MANAGED_POLICY_ARNS", "a,b,c")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_MANAGED_POLICY_ARNS")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_PROFILE_NAME", "hello")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_PROFILE_NAME")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_SECRET_NAME", "HELLO-SECRET")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_SECRET_NAME")
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ENABLE")
@@ -805,6 +809,39 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("unexpected cfg.AddOnSecrets.FailThreshold %q", cfg.AddOnSecrets.FailThreshold)
 	}
 
+	if !cfg.AddOnFargate.Enable {
+		t.Fatalf("unexpected cfg.AddOnFargate.Enable %v", cfg.AddOnFargate.Enable)
+	}
+	if cfg.AddOnFargate.Namespace != "hello" {
+		t.Fatalf("unexpected cfg.AddOnFargate.Namespace %q", cfg.AddOnFargate.Namespace)
+	}
+	if cfg.AddOnFargate.RoleName != "hello" {
+		t.Fatalf("unexpected cfg.AddOnFargate.RoleName %q", cfg.AddOnFargate.RoleName)
+	}
+	expectedAddOnFargateRoleServicePrincipals := []string{"a", "b", "c"}
+	if !reflect.DeepEqual(cfg.AddOnFargate.RoleServicePrincipals, expectedAddOnFargateRoleServicePrincipals) {
+		t.Fatalf("unexpected cfg.AddOnFargate.RoleServicePrincipals %q", cfg.AddOnFargate.RoleServicePrincipals)
+	}
+	expectedAddOnFargateRoleManagedPolicyARNs := []string{"a", "b", "c"}
+	if !reflect.DeepEqual(cfg.AddOnFargate.RoleManagedPolicyARNs, expectedAddOnFargateRoleManagedPolicyARNs) {
+		t.Fatalf("unexpected cfg.AddOnFargate.RoleManagedPolicyARNs %q", cfg.AddOnFargate.RoleManagedPolicyARNs)
+	}
+	if cfg.AddOnFargate.ProfileName != "hello" {
+		t.Fatalf("unexpected cfg.AddOnFargate.ProfileName %q", cfg.AddOnFargate.ProfileName)
+	}
+	if cfg.AddOnFargate.RepositoryName != "fargate-repo-name" {
+		t.Fatalf("unexpected cfg.AddOnFargate.RepositoryName %v", cfg.AddOnFargate.RepositoryName)
+	}
+	if cfg.AddOnFargate.RepositoryURI != "fargate-repo-uri" {
+		t.Fatalf("unexpected cfg.AddOnFargate.RepositoryURI %v", cfg.AddOnFargate.RepositoryURI)
+	}
+	if cfg.AddOnFargate.RepositoryImageTag != "fargate-repo-image-tag" {
+		t.Fatalf("unexpected cfg.AddOnFargate.RepositoryImageTag %v", cfg.AddOnFargate.RepositoryImageTag)
+	}
+	if cfg.AddOnFargate.SecretName != "HELLO-SECRET" {
+		t.Fatalf("unexpected cfg.AddOnFargate.SecretName %q", cfg.AddOnFargate.SecretName)
+	}
+
 	if !cfg.AddOnIRSA.Enable {
 		t.Fatalf("unexpected cfg.AddOnIRSA.Enable %v", cfg.AddOnIRSA.Enable)
 	}
@@ -832,30 +869,6 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.AddOnIRSA.DeploymentResultPath != "hello-deployment.log" {
 		t.Fatalf("unexpected cfg.AddOnIRSA.DeploymentResultPath %q", cfg.AddOnIRSA.DeploymentResultPath)
-	}
-
-	if !cfg.AddOnFargate.Enable {
-		t.Fatalf("unexpected cfg.AddOnFargate.Enable %v", cfg.AddOnFargate.Enable)
-	}
-	if cfg.AddOnFargate.Namespace != "hello" {
-		t.Fatalf("unexpected cfg.AddOnFargate.Namespace %q", cfg.AddOnFargate.Namespace)
-	}
-	if cfg.AddOnFargate.RoleName != "hello" {
-		t.Fatalf("unexpected cfg.AddOnFargate.RoleName %q", cfg.AddOnFargate.RoleName)
-	}
-	expectedAddOnFargateRoleServicePrincipals := []string{"a", "b", "c"}
-	if !reflect.DeepEqual(cfg.AddOnFargate.RoleServicePrincipals, expectedAddOnFargateRoleServicePrincipals) {
-		t.Fatalf("unexpected cfg.AddOnFargate.RoleServicePrincipals %q", cfg.AddOnFargate.RoleServicePrincipals)
-	}
-	expectedAddOnFargateRoleManagedPolicyARNs := []string{"a", "b", "c"}
-	if !reflect.DeepEqual(cfg.AddOnFargate.RoleManagedPolicyARNs, expectedAddOnFargateRoleManagedPolicyARNs) {
-		t.Fatalf("unexpected cfg.AddOnFargate.RoleManagedPolicyARNs %q", cfg.AddOnFargate.RoleManagedPolicyARNs)
-	}
-	if cfg.AddOnFargate.ProfileName != "hello" {
-		t.Fatalf("unexpected cfg.AddOnFargate.ProfileName %q", cfg.AddOnFargate.ProfileName)
-	}
-	if cfg.AddOnFargate.SecretName != "HELLO-SECRET" {
-		t.Fatalf("unexpected cfg.AddOnFargate.SecretName %q", cfg.AddOnFargate.SecretName)
 	}
 
 	if !cfg.AddOnIRSAFargate.Enable {

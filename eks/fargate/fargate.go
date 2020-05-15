@@ -17,6 +17,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/cloudformation/cloudformationiface"
+	"github.com/aws/aws-sdk-go/service/ecr"
+	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
 	"github.com/aws/aws-sdk-go/service/iam/iamiface"
@@ -37,6 +39,7 @@ type Config struct {
 	CFNAPI    cloudformationiface.CloudFormationAPI
 	EKSAPI    eksiface.EKSAPI
 	IAMAPI    iamiface.IAMAPI
+	ECRAPI    ecriface.ECRAPI
 }
 
 // Tester defines Fargate tester.
@@ -72,6 +75,11 @@ func (ts *tester) Create() error {
 		ts.cfg.EKSConfig.Sync()
 	}()
 
+	if ts.cfg.EKSConfig.AddOnFargate.RepositoryURI != "" && ts.cfg.EKSConfig.AddOnFargate.RepositoryImageTag != "" {
+		if err := ts.checkECR(); err != nil {
+			return err
+		}
+	}
 	if err := k8s_client.CreateNamespace(ts.cfg.Logger, ts.cfg.K8SClient.KubernetesClientSet(), ts.cfg.EKSConfig.AddOnFargate.Namespace); err != nil {
 		return err
 	}
@@ -147,6 +155,64 @@ func (ts *tester) Delete() error {
 
 	ts.cfg.EKSConfig.AddOnFargate.Created = false
 	return ts.cfg.EKSConfig.Sync()
+}
+
+func (ts *tester) checkECR() error {
+	ts.cfg.Logger.Info("describing ECR repositories")
+	out, err := ts.cfg.ECRAPI.DescribeRepositories(&ecr.DescribeRepositoriesInput{
+		RepositoryNames: aws.StringSlice([]string{ts.cfg.EKSConfig.AddOnFargate.RepositoryName}),
+	})
+	if err != nil {
+		return err
+	}
+	if len(out.Repositories) != 1 {
+		return fmt.Errorf("%q expected 1 ECR repository, got %d", ts.cfg.EKSConfig.AddOnFargate.RepositoryName, len(out.Repositories))
+	}
+	repo := out.Repositories[0]
+	arn := aws.StringValue(repo.RepositoryArn)
+	name := aws.StringValue(repo.RepositoryName)
+	uri := aws.StringValue(repo.RepositoryUri)
+	ts.cfg.Logger.Info(
+		"described ECR repository",
+		zap.String("arn", arn),
+		zap.String("name", name),
+		zap.String("uri", uri),
+	)
+
+	if name != ts.cfg.EKSConfig.AddOnFargate.RepositoryName {
+		return fmt.Errorf("unexpected ECR repository name %q", name)
+	}
+	if uri != ts.cfg.EKSConfig.AddOnFargate.RepositoryURI {
+		return fmt.Errorf("unexpected ECR repository uri %q", uri)
+	}
+
+	ts.cfg.Logger.Info("describing images")
+	imgOut, err := ts.cfg.ECRAPI.DescribeImages(&ecr.DescribeImagesInput{
+		RepositoryName: aws.String(ts.cfg.EKSConfig.AddOnFargate.RepositoryName),
+		ImageIds: []*ecr.ImageIdentifier{
+			{
+				ImageTag: aws.String(ts.cfg.EKSConfig.AddOnFargate.RepositoryImageTag),
+			},
+		},
+	})
+	if err != nil {
+		return err
+	}
+	if len(imgOut.ImageDetails) == 0 {
+		return fmt.Errorf("image tag %q not found", ts.cfg.EKSConfig.AddOnFargate.RepositoryImageTag)
+	}
+	ts.cfg.Logger.Info("described images", zap.Int("images", len(imgOut.ImageDetails)))
+	for i, img := range imgOut.ImageDetails {
+		ts.cfg.Logger.Info("found an image",
+			zap.Int("index", i),
+			zap.String("requested-tag", ts.cfg.EKSConfig.AddOnFargate.RepositoryImageTag),
+			zap.Strings("returned-tags", aws.StringValueSlice(img.ImageTags)),
+			zap.String("digest", aws.StringValue(img.ImageDigest)),
+			zap.String("pushed-at", humanize.Time(aws.TimeValue(img.ImagePushedAt))),
+			zap.String("size", humanize.Bytes(uint64(aws.Int64Value(img.ImageSizeInBytes)))),
+		)
+	}
+	return nil
 }
 
 // TemplateRole is the CloudFormation template for EKS Fargate role.
@@ -504,7 +570,11 @@ func (ts *tester) createPod() error {
 		ts.cfg.Logger.Warn("listing pods failed", zap.Error(err))
 	}
 
-	ts.cfg.Logger.Info("creating Pod")
+	image := "amazonlinux:latest"
+	if ts.cfg.EKSConfig.AddOnFargate.RepositoryURI != "" && ts.cfg.EKSConfig.AddOnFargate.RepositoryImageTag != "" {
+		image = ts.cfg.EKSConfig.AddOnFargate.RepositoryURI + ":" + ts.cfg.EKSConfig.AddOnFargate.RepositoryImageTag
+	}
+	ts.cfg.Logger.Info("creating Fargate Pod", zap.String("image", image))
 
 	pod := &v1.Pod{
 		TypeMeta: metav1.TypeMeta{
@@ -520,7 +590,7 @@ func (ts *tester) createPod() error {
 			Containers: []v1.Container{
 				{
 					Name:            fargateContainerName,
-					Image:           "amazonlinux:latest",
+					Image:           image,
 					ImagePullPolicy: v1.PullIfNotPresent,
 					Command: []string{
 						"/bin/sh",
