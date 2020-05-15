@@ -785,6 +785,16 @@ func (ts *tester) waitDeployment() error {
 }
 
 func (ts *tester) checkNodes() error {
+	argsLogs := []string{
+		ts.cfg.EKSConfig.KubectlPath,
+		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+		"--namespace=" + ts.cfg.EKSConfig.AddOnHollowNodesRemote.Namespace,
+		"logs",
+		"--selector=app.kubernetes.io/name=" + hollowNodesAppName,
+		"--tail=10",
+	}
+	cmdLogs := strings.Join(argsLogs, " ")
+
 	argsGetCSRs := []string{
 		ts.cfg.EKSConfig.KubectlPath,
 		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
@@ -857,9 +867,18 @@ func (ts *tester) checkNodes() error {
 		)
 
 		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
-		output, err := exec.New().CommandContext(ctx, argsGetCSRs[0], argsGetCSRs[1:]...).CombinedOutput()
+		output, err := exec.New().CommandContext(ctx, argsLogs[0], argsLogs[1:]...).CombinedOutput()
 		cancel()
 		out := string(output)
+		if err != nil {
+			ts.cfg.Logger.Warn("'kubectl logs' failed", zap.Error(err))
+		}
+		fmt.Printf("\n\n\"%s\":\n%s\n", cmdLogs, out)
+
+		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
+		output, err = exec.New().CommandContext(ctx, argsGetCSRs[0], argsGetCSRs[1:]...).CombinedOutput()
+		cancel()
+		out = string(output)
 		if err != nil {
 			ts.cfg.Logger.Warn("'kubectl get csr' failed", zap.Error(err))
 		}
