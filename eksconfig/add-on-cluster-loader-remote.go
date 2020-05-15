@@ -48,15 +48,14 @@ type AddOnClusterLoaderRemote struct {
 	// e.g. "latest" for image URI "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester:latest"
 	RepositoryImageTag string `json:"repository-image-tag,omitempty"`
 
-	// OutputPathPrefix is the output path used in remote cluster loader.
-	OutputPathPrefix string `json:"output-path-prefix"`
-
-	// RequestsSummary is the cluster loader "aggregated" results from remote nodes.
-	RequestsSummary RequestsSummary `json:"requests-summary,omitempty" read-only:"true"`
-	// RequestsSummaryJSONPath is the file path to store requests summary results in JSON format.
-	RequestsSummaryJSONPath string `json:"requests-summary-json-path" read-only:"true"`
-	// RequestsSummaryTablePath is the file path to store requests summary results in table format.
-	RequestsSummaryTablePath string `json:"requests-summary-table-path" read-only:"true"`
+	// RequestSummaryReadOutputPathPrefix is the output path used in remote cluster loader.
+	RequestSummaryReadOutputPathPrefix string `json:"request-summary-read-output-path-prefix"`
+	// RequestsSummaryRead is the read cluster loader results, aggregated from remote nodes.
+	RequestsSummaryRead RequestsSummary `json:"requests-summary-read,omitempty" read-only:"true"`
+	// RequestsSummaryReadJSONPath is the file path to store requests summary results in JSON format.
+	RequestsSummaryReadJSONPath string `json:"requests-summary-read-json-path" read-only:"true"`
+	// RequestsSummaryReadTablePath is the file path to store requests summary results in table format.
+	RequestsSummaryReadTablePath string `json:"requests-summary-read-table-path" read-only:"true"`
 }
 
 // EnvironmentVariablePrefixAddOnClusterLoaderRemote is the environment variable prefix used for "eksconfig".
@@ -77,10 +76,10 @@ func (cfg *Config) IsEnabledAddOnClusterLoaderRemote() bool {
 
 func getDefaultAddOnClusterLoaderRemote() *AddOnClusterLoaderRemote {
 	return &AddOnClusterLoaderRemote{
-		Enable:             false,
-		DeploymentReplicas: 5,
-		Duration:           time.Minute,
-		OutputPathPrefix:   randutil.String(10),
+		Enable:                             false,
+		DeploymentReplicas:                 5,
+		Duration:                           time.Minute,
+		RequestSummaryReadOutputPathPrefix: randutil.String(10),
 	}
 }
 
@@ -112,14 +111,14 @@ func (cfg *Config) validateAddOnClusterLoaderRemote() error {
 		return errors.New("AddOnClusterLoaderRemote.RepositoryImageTag empty")
 	}
 
-	if cfg.AddOnClusterLoaderRemote.OutputPathPrefix == "" {
-		cfg.AddOnClusterLoaderRemote.OutputPathPrefix = randutil.String(10)
+	if cfg.AddOnClusterLoaderRemote.RequestSummaryReadOutputPathPrefix == "" {
+		cfg.AddOnClusterLoaderRemote.RequestSummaryReadOutputPathPrefix = randutil.String(10)
 	}
-	if cfg.AddOnClusterLoaderRemote.RequestsSummaryJSONPath == "" {
-		cfg.AddOnClusterLoaderRemote.RequestsSummaryJSONPath = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-cluster-loader-remote-request-summary.json")
+	if cfg.AddOnClusterLoaderRemote.RequestsSummaryReadJSONPath == "" {
+		cfg.AddOnClusterLoaderRemote.RequestsSummaryReadJSONPath = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-cluster-loader-remote-request-summary-read.json")
 	}
-	if cfg.AddOnClusterLoaderRemote.RequestsSummaryTablePath == "" {
-		cfg.AddOnClusterLoaderRemote.RequestsSummaryTablePath = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-cluster-loader-remote-request-summary.txt")
+	if cfg.AddOnClusterLoaderRemote.RequestsSummaryReadTablePath == "" {
+		cfg.AddOnClusterLoaderRemote.RequestsSummaryReadTablePath = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-cluster-loader-remote-request-summary-read.txt")
 	}
 
 	return nil

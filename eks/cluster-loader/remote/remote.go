@@ -576,7 +576,7 @@ func (ts *tester) createDeployment() error {
 		ts.cfg.EKSConfig.ClientBurst,
 		strings.Join(ns, ","),
 		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Duration,
-		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.OutputPathPrefix,
+		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.RequestSummaryReadOutputPathPrefix,
 	)
 
 	image := ts.cfg.EKSConfig.AddOnClusterLoaderRemote.RepositoryURI + ":" + ts.cfg.EKSConfig.AddOnClusterLoaderRemote.RepositoryImageTag
@@ -803,7 +803,7 @@ func (ts *tester) AggregateResults() error {
 		for _, v := range ts.cfg.EKSConfig.AddOnNodeGroups.ASGs {
 			for _, fpaths := range v.Logs {
 				for _, fpath := range fpaths {
-					if !strings.Contains(fpath, ts.cfg.EKSConfig.AddOnClusterLoaderRemote.OutputPathPrefix) {
+					if !strings.Contains(fpath, ts.cfg.EKSConfig.AddOnClusterLoaderRemote.RequestSummaryReadOutputPathPrefix) {
 						continue
 					}
 					b, err := ioutil.ReadFile(fpath)
@@ -833,7 +833,7 @@ func (ts *tester) AggregateResults() error {
 		for _, cur := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
 			for _, fpaths := range cur.Logs {
 				for _, fpath := range fpaths {
-					if !strings.Contains(fpath, ts.cfg.EKSConfig.AddOnClusterLoaderRemote.OutputPathPrefix) {
+					if !strings.Contains(fpath, ts.cfg.EKSConfig.AddOnClusterLoaderRemote.RequestSummaryReadOutputPathPrefix) {
 						continue
 					}
 					b, err := ioutil.ReadFile(fpath)
@@ -859,31 +859,15 @@ func (ts *tester) AggregateResults() error {
 		}
 	}
 
-	ts.cfg.EKSConfig.AddOnClusterLoaderRemote.RequestsSummary = rs
+	ts.cfg.EKSConfig.AddOnClusterLoaderRemote.RequestsSummaryRead = rs
 	ts.cfg.EKSConfig.Sync()
 
-	b, err := json.Marshal(rs)
-	if err != nil {
-		ts.cfg.Logger.Warn("failed to marshal JSON", zap.Error(err))
-		return err
-	}
-	err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnClusterLoaderRemote.RequestsSummaryJSONPath, b, 0600)
+	err := ioutil.WriteFile(ts.cfg.EKSConfig.AddOnClusterLoaderRemote.RequestsSummaryReadJSONPath, []byte(rs.JSON()), 0600)
 	if err != nil {
 		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 		return err
 	}
-
-	tableBody := ts.cfg.EKSConfig.AddOnClusterLoaderRemote.RequestsSummary.LatencyHistogram.Table()
-	tableBody = fmt.Sprintf(`
-
-SUCCESS TOTAL: %.2f
-FAILURE TOTAL: %.2f
-
-`,
-		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.RequestsSummary.SuccessTotal,
-		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.RequestsSummary.FailureTotal,
-	) + tableBody
-	err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnClusterLoaderRemote.RequestsSummaryTablePath, []byte(tableBody), 0600)
+	err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnClusterLoaderRemote.RequestsSummaryReadTablePath, []byte(rs.Table()), 0600)
 	if err != nil {
 		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 		return err

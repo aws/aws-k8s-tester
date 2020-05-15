@@ -117,7 +117,7 @@ func (buckets HistogramBuckets) Table() string {
 	tb.SetColWidth(1500)
 	tb.SetCenterSeparator("*")
 	tb.SetAlignment(tablewriter.ALIGN_CENTER)
-	tb.SetCaption(true, fmt.Sprintf("(%q scale)", buckets[0].Scale))
+	tb.SetCaption(true, fmt.Sprintf("	(%q scale)", buckets[0].Scale))
 	tb.SetHeader([]string{"lower bound", "upper bound", "count"})
 	for _, v := range buckets {
 		lo := fmt.Sprintf("%f", v.LowerBound)
@@ -129,7 +129,7 @@ func (buckets HistogramBuckets) Table() string {
 			hi = fmt.Sprintf("%.3f", v.UpperBound)
 		}
 		if v.UpperBound == math.MaxFloat64 {
-			hi = "MAX"
+			hi = "math.MaxFloat64"
 		}
 		tb.Append([]string{lo, hi, fmt.Sprintf("%d", v.Count)})
 	}

@@ -314,24 +314,24 @@ func (ts *Tester) uploadToS3() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnClusterLoaderLocal() {
-		if fileutil.Exist(ts.cfg.AddOnClusterLoaderLocal.RequestsSummaryJSONPath) {
+		if fileutil.Exist(ts.cfg.AddOnClusterLoaderLocal.RequestsSummaryReadJSONPath) {
 			if err = uploadFileToS3(
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "cluster-loader-local-requests-summary.json"),
-				ts.cfg.AddOnClusterLoaderLocal.RequestsSummaryJSONPath,
+				path.Join(ts.cfg.Name, "cluster-loader-local-requests-summary-read.json"),
+				ts.cfg.AddOnClusterLoaderLocal.RequestsSummaryReadJSONPath,
 			); err != nil {
 				return err
 			}
 		}
-		if fileutil.Exist(ts.cfg.AddOnClusterLoaderLocal.RequestsSummaryTablePath) {
+		if fileutil.Exist(ts.cfg.AddOnClusterLoaderLocal.RequestsSummaryReadTablePath) {
 			if err = uploadFileToS3(
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "cluster-loader-local-requests-summary.txt"),
-				ts.cfg.AddOnClusterLoaderLocal.RequestsSummaryTablePath,
+				path.Join(ts.cfg.Name, "cluster-loader-local-requests-summary-read.txt"),
+				ts.cfg.AddOnClusterLoaderLocal.RequestsSummaryReadTablePath,
 			); err != nil {
 				return err
 			}
@@ -339,24 +339,24 @@ func (ts *Tester) uploadToS3() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnClusterLoaderRemote() {
-		if fileutil.Exist(ts.cfg.AddOnClusterLoaderRemote.RequestsSummaryJSONPath) {
+		if fileutil.Exist(ts.cfg.AddOnClusterLoaderRemote.RequestsSummaryReadJSONPath) {
 			if err = uploadFileToS3(
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "cluster-loader-remote-requests-summary.json"),
-				ts.cfg.AddOnClusterLoaderRemote.RequestsSummaryJSONPath,
+				path.Join(ts.cfg.Name, "cluster-loader-remote-requests-summary-read.json"),
+				ts.cfg.AddOnClusterLoaderRemote.RequestsSummaryReadJSONPath,
 			); err != nil {
 				return err
 			}
 		}
-		if fileutil.Exist(ts.cfg.AddOnClusterLoaderRemote.RequestsSummaryTablePath) {
+		if fileutil.Exist(ts.cfg.AddOnClusterLoaderRemote.RequestsSummaryReadTablePath) {
 			if err = uploadFileToS3(
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "cluster-loader-remote-requests-summary.txt"),
-				ts.cfg.AddOnClusterLoaderRemote.RequestsSummaryTablePath,
+				path.Join(ts.cfg.Name, "cluster-loader-remote-requests-summary-read.txt"),
+				ts.cfg.AddOnClusterLoaderRemote.RequestsSummaryReadTablePath,
 			); err != nil {
 				return err
 			}

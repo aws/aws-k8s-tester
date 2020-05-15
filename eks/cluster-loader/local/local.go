@@ -4,9 +4,7 @@ package local
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"strings"
 	"time"
@@ -95,35 +93,18 @@ func (ts *tester) Create() (err error) {
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to get metrics", zap.Error(err))
 		} else {
-			ts.cfg.EKSConfig.AddOnClusterLoaderLocal.RequestsSummary = eksconfig.RequestsSummary{
+			ts.cfg.EKSConfig.AddOnClusterLoaderLocal.RequestsSummaryRead = eksconfig.RequestsSummary{
 				SuccessTotal:     success,
 				FailureTotal:     failure,
 				LatencyHistogram: hs,
 			}
 			ts.cfg.EKSConfig.Sync()
-
-			b, err := json.Marshal(ts.cfg.EKSConfig.AddOnClusterLoaderLocal.RequestsSummary)
-			if err != nil {
-				ts.cfg.Logger.Warn("failed to marshal JSON", zap.Error(err))
-				return err
-			}
-			err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnClusterLoaderLocal.RequestsSummaryJSONPath, b, 0600)
+			err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnClusterLoaderLocal.RequestsSummaryReadJSONPath, []byte(ts.cfg.EKSConfig.AddOnClusterLoaderLocal.RequestsSummaryRead.JSON()), 0600)
 			if err != nil {
 				ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 				return err
 			}
-
-			tableBody := ts.cfg.EKSConfig.AddOnClusterLoaderLocal.RequestsSummary.LatencyHistogram.Table()
-			tableBody = fmt.Sprintf(`
-
-SUCCESS TOTAL: %.2f
-FAILURE TOTAL: %.2f
-
-`,
-				ts.cfg.EKSConfig.AddOnClusterLoaderLocal.RequestsSummary.SuccessTotal,
-				ts.cfg.EKSConfig.AddOnClusterLoaderLocal.RequestsSummary.FailureTotal,
-			) + tableBody
-			err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnClusterLoaderLocal.RequestsSummaryTablePath, []byte(tableBody), 0600)
+			err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnClusterLoaderLocal.RequestsSummaryReadTablePath, []byte(ts.cfg.EKSConfig.AddOnClusterLoaderLocal.RequestsSummaryRead.Table()), 0600)
 			if err != nil {
 				ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 				return err
@@ -138,35 +119,18 @@ FAILURE TOTAL: %.2f
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to get metrics", zap.Error(err))
 		} else {
-			ts.cfg.EKSConfig.AddOnClusterLoaderLocal.RequestsSummary = eksconfig.RequestsSummary{
+			ts.cfg.EKSConfig.AddOnClusterLoaderLocal.RequestsSummaryRead = eksconfig.RequestsSummary{
 				SuccessTotal:     success,
 				FailureTotal:     failure,
 				LatencyHistogram: hs,
 			}
 			ts.cfg.EKSConfig.Sync()
-
-			b, err := json.Marshal(ts.cfg.EKSConfig.AddOnClusterLoaderLocal.RequestsSummary)
-			if err != nil {
-				ts.cfg.Logger.Warn("failed to marshal JSON", zap.Error(err))
-				return err
-			}
-			err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnClusterLoaderLocal.RequestsSummaryJSONPath, b, 0600)
+			err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnClusterLoaderLocal.RequestsSummaryReadJSONPath, []byte(ts.cfg.EKSConfig.AddOnClusterLoaderLocal.RequestsSummaryRead.JSON()), 0600)
 			if err != nil {
 				ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 				return err
 			}
-
-			tableBody := ts.cfg.EKSConfig.AddOnClusterLoaderLocal.RequestsSummary.LatencyHistogram.Table()
-			tableBody = fmt.Sprintf(`
-
-SUCCESS TOTAL: %.2f
-FAILURE TOTAL: %.2f
-
-`,
-				ts.cfg.EKSConfig.AddOnClusterLoaderLocal.RequestsSummary.SuccessTotal,
-				ts.cfg.EKSConfig.AddOnClusterLoaderLocal.RequestsSummary.FailureTotal,
-			) + tableBody
-			err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnClusterLoaderLocal.RequestsSummaryTablePath, []byte(tableBody), 0600)
+			err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnClusterLoaderLocal.RequestsSummaryReadTablePath, []byte(ts.cfg.EKSConfig.AddOnClusterLoaderLocal.RequestsSummaryRead.Table()), 0600)
 			if err != nil {
 				ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 				return err

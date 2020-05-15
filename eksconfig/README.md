@@ -513,44 +513,44 @@ AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_ENABLE=true \
 *--------------------------------------------------------------------*-------------------*------------------------------------------------------*-------------------*
 
 
-*----------------------------------------------------------------------------*-------------------*-------------------------------------------------------------*---------------------------*
-|                           ENVIRONMENTAL VARIABLE                           |     READ ONLY     |                            TYPE                             |          GO TYPE          |
-*----------------------------------------------------------------------------*-------------------*-------------------------------------------------------------*---------------------------*
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_ENABLE                      | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.Enable                   | bool                      |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_CREATED                     | read-only "true"  | *eksconfig.AddOnClusterLoaderLocal.Created                  | bool                      |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_CREATE_TOOK                 | read-only "true"  | *eksconfig.AddOnClusterLoaderLocal.CreateTook               | time.Duration             |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_CREATE_TOOK_STRING          | read-only "true"  | *eksconfig.AddOnClusterLoaderLocal.CreateTookString         | string                    |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_DELETE_TOOK                 | read-only "true"  | *eksconfig.AddOnClusterLoaderLocal.DeleteTook               | time.Duration             |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_DELETE_TOOK_STRING          | read-only "true"  | *eksconfig.AddOnClusterLoaderLocal.DeleteTookString         | string                    |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_DURATION                    | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.Duration                 | time.Duration             |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_DURATION_STRING             | read-only "true"  | *eksconfig.AddOnClusterLoaderLocal.DurationString           | string                    |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_REQUESTS_SUMMARY            | read-only "true"  | *eksconfig.AddOnClusterLoaderLocal.RequestsSummary          | eksconfig.RequestsSummary |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_REQUESTS_SUMMARY_JSON_PATH  | read-only "true"  | *eksconfig.AddOnClusterLoaderLocal.RequestsSummaryJSONPath  | string                    |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_REQUESTS_SUMMARY_TABLE_PATH | read-only "true"  | *eksconfig.AddOnClusterLoaderLocal.RequestsSummaryTablePath | string                    |
-*----------------------------------------------------------------------------*-------------------*-------------------------------------------------------------*---------------------------*
+*---------------------------------------------------------------------------------*-------------------*-----------------------------------------------------------------*---------------------------*
+|                             ENVIRONMENTAL VARIABLE                              |     READ ONLY     |                              TYPE                               |          GO TYPE          |
+*---------------------------------------------------------------------------------*-------------------*-----------------------------------------------------------------*---------------------------*
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_ENABLE                           | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.Enable                       | bool                      |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_CREATED                          | read-only "true"  | *eksconfig.AddOnClusterLoaderLocal.Created                      | bool                      |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_CREATE_TOOK                      | read-only "true"  | *eksconfig.AddOnClusterLoaderLocal.CreateTook                   | time.Duration             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_CREATE_TOOK_STRING               | read-only "true"  | *eksconfig.AddOnClusterLoaderLocal.CreateTookString             | string                    |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_DELETE_TOOK                      | read-only "true"  | *eksconfig.AddOnClusterLoaderLocal.DeleteTook                   | time.Duration             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_DELETE_TOOK_STRING               | read-only "true"  | *eksconfig.AddOnClusterLoaderLocal.DeleteTookString             | string                    |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_DURATION                         | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.Duration                     | time.Duration             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_DURATION_STRING                  | read-only "true"  | *eksconfig.AddOnClusterLoaderLocal.DurationString               | string                    |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_REQUESTS_SUMMARY_READ            | read-only "true"  | *eksconfig.AddOnClusterLoaderLocal.RequestsSummaryRead          | eksconfig.RequestsSummary |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_REQUESTS_SUMMARY_READ_JSON_PATH  | read-only "true"  | *eksconfig.AddOnClusterLoaderLocal.RequestsSummaryReadJSONPath  | string                    |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_REQUESTS_SUMMARY_READ_TABLE_PATH | read-only "true"  | *eksconfig.AddOnClusterLoaderLocal.RequestsSummaryReadTablePath | string                    |
+*---------------------------------------------------------------------------------*-------------------*-----------------------------------------------------------------*---------------------------*
 
 
-*-----------------------------------------------------------------------------*-------------------*--------------------------------------------------------------*---------------------------*
-|                           ENVIRONMENTAL VARIABLE                            |     READ ONLY     |                             TYPE                             |          GO TYPE          |
-*-----------------------------------------------------------------------------*-------------------*--------------------------------------------------------------*---------------------------*
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_ENABLE                      | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.Enable                   | bool                      |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_CREATED                     | read-only "true"  | *eksconfig.AddOnClusterLoaderRemote.Created                  | bool                      |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_CREATE_TOOK                 | read-only "true"  | *eksconfig.AddOnClusterLoaderRemote.CreateTook               | time.Duration             |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_CREATE_TOOK_STRING          | read-only "true"  | *eksconfig.AddOnClusterLoaderRemote.CreateTookString         | string                    |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_DELETE_TOOK                 | read-only "true"  | *eksconfig.AddOnClusterLoaderRemote.DeleteTook               | time.Duration             |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_DELETE_TOOK_STRING          | read-only "true"  | *eksconfig.AddOnClusterLoaderRemote.DeleteTookString         | string                    |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_NAMESPACE                   | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.Namespace                | string                    |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_DEPLOYMENT_REPLICAS         | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.DeploymentReplicas       | int32                     |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_DURATION                    | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.Duration                 | time.Duration             |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_DURATION_STRING             | read-only "true"  | *eksconfig.AddOnClusterLoaderRemote.DurationString           | string                    |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_NAME             | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.RepositoryName           | string                    |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_URI              | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.RepositoryURI            | string                    |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_IMAGE_TAG        | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.RepositoryImageTag       | string                    |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_OUTPUT_PATH_PREFIX          | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.OutputPathPrefix         | string                    |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REQUESTS_SUMMARY            | read-only "true"  | *eksconfig.AddOnClusterLoaderRemote.RequestsSummary          | eksconfig.RequestsSummary |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REQUESTS_SUMMARY_JSON_PATH  | read-only "true"  | *eksconfig.AddOnClusterLoaderRemote.RequestsSummaryJSONPath  | string                    |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REQUESTS_SUMMARY_TABLE_PATH | read-only "true"  | *eksconfig.AddOnClusterLoaderRemote.RequestsSummaryTablePath | string                    |
-*-----------------------------------------------------------------------------*-------------------*--------------------------------------------------------------*---------------------------*
+*-----------------------------------------------------------------------------------------*-------------------*------------------------------------------------------------------------*---------------------------*
+|                                 ENVIRONMENTAL VARIABLE                                  |     READ ONLY     |                                  TYPE                                  |          GO TYPE          |
+*-----------------------------------------------------------------------------------------*-------------------*------------------------------------------------------------------------*---------------------------*
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_ENABLE                                  | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.Enable                             | bool                      |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_CREATED                                 | read-only "true"  | *eksconfig.AddOnClusterLoaderRemote.Created                            | bool                      |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_CREATE_TOOK                             | read-only "true"  | *eksconfig.AddOnClusterLoaderRemote.CreateTook                         | time.Duration             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_CREATE_TOOK_STRING                      | read-only "true"  | *eksconfig.AddOnClusterLoaderRemote.CreateTookString                   | string                    |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_DELETE_TOOK                             | read-only "true"  | *eksconfig.AddOnClusterLoaderRemote.DeleteTook                         | time.Duration             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_DELETE_TOOK_STRING                      | read-only "true"  | *eksconfig.AddOnClusterLoaderRemote.DeleteTookString                   | string                    |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_NAMESPACE                               | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.Namespace                          | string                    |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_DEPLOYMENT_REPLICAS                     | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.DeploymentReplicas                 | int32                     |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_DURATION                                | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.Duration                           | time.Duration             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_DURATION_STRING                         | read-only "true"  | *eksconfig.AddOnClusterLoaderRemote.DurationString                     | string                    |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_NAME                         | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.RepositoryName                     | string                    |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_URI                          | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.RepositoryURI                      | string                    |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_IMAGE_TAG                    | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.RepositoryImageTag                 | string                    |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REQUEST_SUMMARY_READ_OUTPUT_PATH_PREFIX | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.RequestSummaryReadOutputPathPrefix | string                    |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REQUESTS_SUMMARY_READ                   | read-only "true"  | *eksconfig.AddOnClusterLoaderRemote.RequestsSummaryRead                | eksconfig.RequestsSummary |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REQUESTS_SUMMARY_READ_JSON_PATH         | read-only "true"  | *eksconfig.AddOnClusterLoaderRemote.RequestsSummaryReadJSONPath        | string                    |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REQUESTS_SUMMARY_READ_TABLE_PATH        | read-only "true"  | *eksconfig.AddOnClusterLoaderRemote.RequestsSummaryReadTablePath       | string                    |
+*-----------------------------------------------------------------------------------------*-------------------*------------------------------------------------------------------------*---------------------------*
 
 
 *---------------------------------------------------------------------------*-------------------*-------------------------------------------------------------*---------------*

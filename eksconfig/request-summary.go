@@ -1,6 +1,9 @@
 package eksconfig
 
 import (
+	"encoding/json"
+	"fmt"
+
 	"github.com/aws/aws-k8s-tester/pkg/metrics"
 )
 
@@ -12,4 +15,21 @@ type RequestsSummary struct {
 	FailureTotal float64 `json:"failure-total" read-only:"true"`
 	// LatencyHistogram is the client requests latency histogram.
 	LatencyHistogram metrics.HistogramBuckets `json:"latency-histogram,omitempty" read-only:"true"`
+}
+
+func (rs RequestsSummary) JSON() string {
+	b, _ := json.Marshal(rs)
+	return string(b)
+}
+
+func (rs RequestsSummary) Table() string {
+	return fmt.Sprintf(`
+
+SUCCESS TOTAL: %.2f
+FAILURE TOTAL: %.2f
+
+`,
+		rs.SuccessTotal,
+		rs.FailureTotal,
+	) + rs.LatencyHistogram.Table()
 }

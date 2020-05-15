@@ -1,7 +1,6 @@
 package eksconfig
 
 import (
-	"encoding/json"
 	"fmt"
 	"math"
 	"testing"
@@ -31,6 +30,6 @@ func TestRequestsSummary(t *testing.T) {
 			{Scale: "milliseconds", LowerBound: 4096, UpperBound: math.MaxFloat64, Count: 4},
 		}),
 	}
-	b, _ := json.Marshal(rs)
-	fmt.Println(string(b))
+	fmt.Println(rs.JSON())
+	fmt.Println(rs.Table())
 }

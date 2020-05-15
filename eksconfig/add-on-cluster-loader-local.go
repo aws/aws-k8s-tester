@@ -29,12 +29,12 @@ type AddOnClusterLoaderLocal struct {
 	Duration       time.Duration `json:"duration,omitempty"`
 	DurationString string        `json:"duration-string,omitempty" read-only:"true"`
 
-	// RequestsSummary is the cluster loader results.
-	RequestsSummary RequestsSummary `json:"requests-summary,omitempty" read-only:"true"`
-	// RequestsSummaryJSONPath is the file path to store requests summary results in JSON format.
-	RequestsSummaryJSONPath string `json:"requests-summary-json-path" read-only:"true"`
-	// RequestsSummaryTablePath is the file path to store requests summary results in table format.
-	RequestsSummaryTablePath string `json:"requests-summary-table-path" read-only:"true"`
+	// RequestsSummaryRead is the read cluster loader results.
+	RequestsSummaryRead RequestsSummary `json:"requests-summary-read,omitempty" read-only:"true"`
+	// RequestsSummaryReadJSONPath is the file path to store requests summary results in JSON format.
+	RequestsSummaryReadJSONPath string `json:"requests-summary-read-json-path" read-only:"true"`
+	// RequestsSummaryReadTablePath is the file path to store requests summary results in table format.
+	RequestsSummaryReadTablePath string `json:"requests-summary-read-table-path" read-only:"true"`
 }
 
 // EnvironmentVariablePrefixAddOnClusterLoaderLocal is the environment variable prefix used for "eksconfig".
@@ -70,11 +70,11 @@ func (cfg *Config) validateAddOnClusterLoaderLocal() error {
 	}
 	cfg.AddOnClusterLoaderLocal.DurationString = cfg.AddOnClusterLoaderLocal.Duration.String()
 
-	if cfg.AddOnClusterLoaderLocal.RequestsSummaryJSONPath == "" {
-		cfg.AddOnClusterLoaderLocal.RequestsSummaryJSONPath = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-cluster-loader-local-request-summary.json")
+	if cfg.AddOnClusterLoaderLocal.RequestsSummaryReadJSONPath == "" {
+		cfg.AddOnClusterLoaderLocal.RequestsSummaryReadJSONPath = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-cluster-loader-local-request-summary-read.json")
 	}
-	if cfg.AddOnClusterLoaderLocal.RequestsSummaryTablePath == "" {
-		cfg.AddOnClusterLoaderLocal.RequestsSummaryTablePath = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-cluster-loader-local-request-summary.txt")
+	if cfg.AddOnClusterLoaderLocal.RequestsSummaryReadTablePath == "" {
+		cfg.AddOnClusterLoaderLocal.RequestsSummaryReadTablePath = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-cluster-loader-local-request-summary-read.txt")
 	}
 
 	return nil
