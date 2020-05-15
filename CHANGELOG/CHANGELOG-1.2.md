@@ -34,6 +34,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.9...v1.2.0
 
 ### `eks`
 
+- Fix [`eks/hollow-nodes` RBAC and node labels](https://github.com/aws/aws-k8s-tester/commit/0f2c940680a8b1d430bf5726d6217d246cfa1ca2).
 - Fix and improve [`eks/irsa` configmap tests](https://github.com/aws/aws-k8s-tester/commit/52666165f7564922deb2e6e304c1f1c73412d691).
 - Fix and improve [`eks/irsa-fargate` configmap tests](https://github.com/aws/aws-k8s-tester/commit/52666165f7564922deb2e6e304c1f1c73412d691).
 
