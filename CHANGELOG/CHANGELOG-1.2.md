@@ -9,11 +9,11 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.9...v1.2.0
 
 ### `ec2config`
 
-- Improve [README](https://github.com/aws/aws-k8s-tester/commit/).
+- Improve [README](https://github.com/aws/aws-k8s-tester/commit/4a15ae1d61cf58d286263c16e6074f8e3745077a).
 
 ### `eksconfig`
 
-- Improve [README](https://github.com/aws/aws-k8s-tester/commit/).
+- Improve [README](https://github.com/aws/aws-k8s-tester/commit/4a15ae1d61cf58d286263c16e6074f8e3745077a).
 
 ### `pkg/aws/ssm`
 
