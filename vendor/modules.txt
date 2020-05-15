@@ -597,6 +597,9 @@ github.com/munnerz/goautoneg
 github.com/mxk/go-flowrate/flowrate
 # github.com/nwaples/rardecode v1.0.0
 github.com/nwaples/rardecode
+# github.com/olekukonko/tablewriter v0.0.2
+## explicit
+github.com/olekukonko/tablewriter
 # github.com/onsi/ginkgo v1.11.0
 ## explicit
 github.com/onsi/ginkgo

@@ -29,444 +29,552 @@ AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_ENABLE=true \
 
 
 
-AWS_K8S_TESTER_EKS_NAME | *eksconfig.Config.Name | string | read-only "false"
-AWS_K8S_TESTER_EKS_PARTITION | *eksconfig.Config.Partition | string | read-only "false"
-AWS_K8S_TESTER_EKS_REGION | *eksconfig.Config.Region | string | read-only "false"
-AWS_K8S_TESTER_EKS_CONFIG_PATH | *eksconfig.Config.ConfigPath | string | read-only "false"
-AWS_K8S_TESTER_EKS_KUBECTL_COMMANDS_OUTPUT_PATH | *eksconfig.Config.KubectlCommandsOutputPath | string | read-only "false"
-AWS_K8S_TESTER_EKS_REMOTE_ACCESS_COMMANDS_OUTPUT_PATH | *eksconfig.Config.RemoteAccessCommandsOutputPath | string | read-only "false"
-AWS_K8S_TESTER_EKS_LOG_LEVEL | *eksconfig.Config.LogLevel | string | read-only "false"
-AWS_K8S_TESTER_EKS_LOG_OUTPUTS | *eksconfig.Config.LogOutputs | []string | read-only "false"
-AWS_K8S_TESTER_EKS_AWS_CLI_PATH | *eksconfig.Config.AWSCLIPath | string | read-only "false"
-AWS_K8S_TESTER_EKS_KUBECTL_PATH | *eksconfig.Config.KubectlPath | string | read-only "false"
-AWS_K8S_TESTER_EKS_KUBECTL_DOWNLOAD_URL | *eksconfig.Config.KubectlDownloadURL | string | read-only "false"
-AWS_K8S_TESTER_EKS_KUBECONFIG_PATH | *eksconfig.Config.KubeConfigPath | string | read-only "false"
-AWS_K8S_TESTER_EKS_AWS_IAM_AUTHENTICATOR_PATH | *eksconfig.Config.AWSIAMAuthenticatorPath | string | read-only "false"
-AWS_K8S_TESTER_EKS_AWS_IAM_AUTHENTICATOR_DOWNLOAD_URL | *eksconfig.Config.AWSIAMAuthenticatorDownloadURL | string | read-only "false"
-AWS_K8S_TESTER_EKS_ON_FAILURE_DELETE | *eksconfig.Config.OnFailureDelete | bool | read-only "false"
-AWS_K8S_TESTER_EKS_ON_FAILURE_DELETE_WAIT_SECONDS | *eksconfig.Config.OnFailureDeleteWaitSeconds | uint64 | read-only "false"
-AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_CLUSTER | *eksconfig.Config.CommandAfterCreateCluster | string | read-only "false"
-AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_CLUSTER_OUTPUT_PATH | *eksconfig.Config.CommandAfterCreateClusterOutputPath | string | read-only "true"
-AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_CLUSTER_TIMEOUT | *eksconfig.Config.CommandAfterCreateClusterTimeout | time.Duration | read-only "false"
-AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_CLUSTER_TIMEOUT_STRING | *eksconfig.Config.CommandAfterCreateClusterTimeoutString | string | read-only "true"
-AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_ADD_ONS | *eksconfig.Config.CommandAfterCreateAddOns | string | read-only "false"
-AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_ADD_ONS_OUTPUT_PATH | *eksconfig.Config.CommandAfterCreateAddOnsOutputPath | string | read-only "true"
-AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_ADD_ONS_TIMEOUT | *eksconfig.Config.CommandAfterCreateAddOnsTimeout | time.Duration | read-only "false"
-AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_ADD_ONS_TIMEOUT_STRING | *eksconfig.Config.CommandAfterCreateAddOnsTimeoutString | string | read-only "true"
-AWS_K8S_TESTER_EKS_S3_BUCKET_CREATE | *eksconfig.Config.S3BucketCreate | bool | read-only "false"
-AWS_K8S_TESTER_EKS_S3_BUCKET_CREATE_KEEP | *eksconfig.Config.S3BucketCreateKeep | bool | read-only "false"
-AWS_K8S_TESTER_EKS_S3_BUCKET_NAME | *eksconfig.Config.S3BucketName | string | read-only "false"
-AWS_K8S_TESTER_EKS_S3_BUCKET_LIFECYCLE_EXPIRATION_DAYS | *eksconfig.Config.S3BucketLifecycleExpirationDays | int64 | read-only "false"
-AWS_K8S_TESTER_EKS_REMOTE_ACCESS_KEY_CREATE | *eksconfig.Config.RemoteAccessKeyCreate | bool | read-only "false"
-AWS_K8S_TESTER_EKS_REMOTE_ACCESS_KEY_NAME | *eksconfig.Config.RemoteAccessKeyName | string | read-only "false"
-AWS_K8S_TESTER_EKS_REMOTE_ACCESS_PRIVATE_KEY_PATH | *eksconfig.Config.RemoteAccessPrivateKeyPath | string | read-only "false"
-AWS_K8S_TESTER_EKS_CLIENTS | *eksconfig.Config.Clients | int | read-only "false"
-AWS_K8S_TESTER_EKS_CLIENT_QPS | *eksconfig.Config.ClientQPS | float32 | read-only "false"
-AWS_K8S_TESTER_EKS_CLIENT_BURST | *eksconfig.Config.ClientBurst | int | read-only "false"
-AWS_K8S_TESTER_EKS_CLIENT_TIMEOUT | *eksconfig.Config.ClientTimeout | time.Duration | read-only "false"
-AWS_K8S_TESTER_EKS_CLIENT_TIMEOUT_STRING | *eksconfig.Config.ClientTimeoutString | string | read-only "true"
+*----------------------------------------------------------------*-------------------*----------------------------------------------------------*---------------*
+|                     ENVIRONMENTAL VARIABLE                     |     READ ONLY     |                           TYPE                           |    GO TYPE    |
+*----------------------------------------------------------------*-------------------*----------------------------------------------------------*---------------*
+|                    AWS_K8S_TESTER_EKS_NAME                     | read-only "false" |                  *eksconfig.Config.Name                  |    string     |
+|                  AWS_K8S_TESTER_EKS_PARTITION                  | read-only "false" |               *eksconfig.Config.Partition                |    string     |
+|                   AWS_K8S_TESTER_EKS_REGION                    | read-only "false" |                 *eksconfig.Config.Region                 |    string     |
+|                 AWS_K8S_TESTER_EKS_CONFIG_PATH                 | read-only "false" |               *eksconfig.Config.ConfigPath               |    string     |
+|        AWS_K8S_TESTER_EKS_KUBECTL_COMMANDS_OUTPUT_PATH         | read-only "false" |       *eksconfig.Config.KubectlCommandsOutputPath        |    string     |
+|     AWS_K8S_TESTER_EKS_REMOTE_ACCESS_COMMANDS_OUTPUT_PATH      | read-only "false" |     *eksconfig.Config.RemoteAccessCommandsOutputPath     |    string     |
+|                  AWS_K8S_TESTER_EKS_LOG_LEVEL                  | read-only "false" |                *eksconfig.Config.LogLevel                |    string     |
+|                 AWS_K8S_TESTER_EKS_LOG_OUTPUTS                 | read-only "false" |               *eksconfig.Config.LogOutputs               |   []string    |
+|                AWS_K8S_TESTER_EKS_AWS_CLI_PATH                 | read-only "false" |               *eksconfig.Config.AWSCLIPath               |    string     |
+|                AWS_K8S_TESTER_EKS_KUBECTL_PATH                 | read-only "false" |              *eksconfig.Config.KubectlPath               |    string     |
+|            AWS_K8S_TESTER_EKS_KUBECTL_DOWNLOAD_URL             | read-only "false" |           *eksconfig.Config.KubectlDownloadURL           |    string     |
+|               AWS_K8S_TESTER_EKS_KUBECONFIG_PATH               | read-only "false" |             *eksconfig.Config.KubeConfigPath             |    string     |
+|         AWS_K8S_TESTER_EKS_AWS_IAM_AUTHENTICATOR_PATH          | read-only "false" |        *eksconfig.Config.AWSIAMAuthenticatorPath         |    string     |
+|     AWS_K8S_TESTER_EKS_AWS_IAM_AUTHENTICATOR_DOWNLOAD_URL      | read-only "false" |     *eksconfig.Config.AWSIAMAuthenticatorDownloadURL     |    string     |
+|              AWS_K8S_TESTER_EKS_ON_FAILURE_DELETE              | read-only "false" |            *eksconfig.Config.OnFailureDelete             |     bool      |
+|       AWS_K8S_TESTER_EKS_ON_FAILURE_DELETE_WAIT_SECONDS        | read-only "false" |       *eksconfig.Config.OnFailureDeleteWaitSeconds       |    uint64     |
+|        AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_CLUSTER         | read-only "false" |       *eksconfig.Config.CommandAfterCreateCluster        |    string     |
+|  AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_CLUSTER_OUTPUT_PATH   | read-only "true"  |  *eksconfig.Config.CommandAfterCreateClusterOutputPath   |    string     |
+|    AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_CLUSTER_TIMEOUT     | read-only "false" |    *eksconfig.Config.CommandAfterCreateClusterTimeout    | time.Duration |
+| AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_CLUSTER_TIMEOUT_STRING | read-only "true"  | *eksconfig.Config.CommandAfterCreateClusterTimeoutString |    string     |
+|        AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_ADD_ONS         | read-only "false" |        *eksconfig.Config.CommandAfterCreateAddOns        |    string     |
+|  AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_ADD_ONS_OUTPUT_PATH   | read-only "true"  |   *eksconfig.Config.CommandAfterCreateAddOnsOutputPath   |    string     |
+|    AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_ADD_ONS_TIMEOUT     | read-only "false" |    *eksconfig.Config.CommandAfterCreateAddOnsTimeout     | time.Duration |
+| AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_ADD_ONS_TIMEOUT_STRING | read-only "true"  | *eksconfig.Config.CommandAfterCreateAddOnsTimeoutString  |    string     |
+|              AWS_K8S_TESTER_EKS_S3_BUCKET_CREATE               | read-only "false" |             *eksconfig.Config.S3BucketCreate             |     bool      |
+|            AWS_K8S_TESTER_EKS_S3_BUCKET_CREATE_KEEP            | read-only "false" |           *eksconfig.Config.S3BucketCreateKeep           |     bool      |
+|               AWS_K8S_TESTER_EKS_S3_BUCKET_NAME                | read-only "false" |              *eksconfig.Config.S3BucketName              |    string     |
+|     AWS_K8S_TESTER_EKS_S3_BUCKET_LIFECYCLE_EXPIRATION_DAYS     | read-only "false" |    *eksconfig.Config.S3BucketLifecycleExpirationDays     |     int64     |
+|          AWS_K8S_TESTER_EKS_REMOTE_ACCESS_KEY_CREATE           | read-only "false" |         *eksconfig.Config.RemoteAccessKeyCreate          |     bool      |
+|           AWS_K8S_TESTER_EKS_REMOTE_ACCESS_KEY_NAME            | read-only "false" |          *eksconfig.Config.RemoteAccessKeyName           |    string     |
+|       AWS_K8S_TESTER_EKS_REMOTE_ACCESS_PRIVATE_KEY_PATH        | read-only "false" |       *eksconfig.Config.RemoteAccessPrivateKeyPath       |    string     |
+|                   AWS_K8S_TESTER_EKS_CLIENTS                   | read-only "false" |                *eksconfig.Config.Clients                 |      int      |
+|                 AWS_K8S_TESTER_EKS_CLIENT_QPS                  | read-only "false" |               *eksconfig.Config.ClientQPS                |    float32    |
+|                AWS_K8S_TESTER_EKS_CLIENT_BURST                 | read-only "false" |              *eksconfig.Config.ClientBurst               |      int      |
+|               AWS_K8S_TESTER_EKS_CLIENT_TIMEOUT                | read-only "false" |             *eksconfig.Config.ClientTimeout              | time.Duration |
+|            AWS_K8S_TESTER_EKS_CLIENT_TIMEOUT_STRING            | read-only "true"  |          *eksconfig.Config.ClientTimeoutString           |    string     |
+*----------------------------------------------------------------*-------------------*----------------------------------------------------------*---------------*
 
 
-AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_NAME | *eksconfig.Parameters.RoleName | string | read-only "false"
-AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_CREATE | *eksconfig.Parameters.RoleCreate | bool | read-only "false"
-AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_ARN | *eksconfig.Parameters.RoleARN | string | read-only "false"
-AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_SERVICE_PRINCIPALS | *eksconfig.Parameters.RoleServicePrincipals | []string | read-only "false"
-AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_MANAGED_POLICY_ARNS | *eksconfig.Parameters.RoleManagedPolicyARNs | []string | read-only "false"
-AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_CFN_STACK_ID | *eksconfig.Parameters.RoleCFNStackID | string | read-only "true"
-AWS_K8S_TESTER_EKS_PARAMETERS_TAGS | *eksconfig.Parameters.Tags | map[string]string | read-only "false"
-AWS_K8S_TESTER_EKS_PARAMETERS_REQUEST_HEADER_KEY | *eksconfig.Parameters.RequestHeaderKey | string | read-only "false"
-AWS_K8S_TESTER_EKS_PARAMETERS_REQUEST_HEADER_VALUE | *eksconfig.Parameters.RequestHeaderValue | string | read-only "false"
-AWS_K8S_TESTER_EKS_PARAMETERS_RESOLVER_URL | *eksconfig.Parameters.ResolverURL | string | read-only "false"
-AWS_K8S_TESTER_EKS_PARAMETERS_SIGNING_NAME | *eksconfig.Parameters.SigningName | string | read-only "false"
-AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CREATE | *eksconfig.Parameters.VPCCreate | bool | read-only "false"
-AWS_K8S_TESTER_EKS_PARAMETERS_VPC_ID | *eksconfig.Parameters.VPCID | string | read-only "false"
-AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CFN_STACK_ID | *eksconfig.Parameters.VPCCFNStackID | string | read-only "true"
-AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CIDR | *eksconfig.Parameters.VPCCIDR | string | read-only "false"
-AWS_K8S_TESTER_EKS_PARAMETERS_PUBLIC_SUBNET_CIDR_1 | *eksconfig.Parameters.PublicSubnetCIDR1 | string | read-only "false"
-AWS_K8S_TESTER_EKS_PARAMETERS_PUBLIC_SUBNET_CIDR_2 | *eksconfig.Parameters.PublicSubnetCIDR2 | string | read-only "false"
-AWS_K8S_TESTER_EKS_PARAMETERS_PUBLIC_SUBNET_CIDR_3 | *eksconfig.Parameters.PublicSubnetCIDR3 | string | read-only "false"
-AWS_K8S_TESTER_EKS_PARAMETERS_PRIVATE_SUBNET_CIDR_1 | *eksconfig.Parameters.PrivateSubnetCIDR1 | string | read-only "false"
-AWS_K8S_TESTER_EKS_PARAMETERS_PRIVATE_SUBNET_CIDR_2 | *eksconfig.Parameters.PrivateSubnetCIDR2 | string | read-only "false"
-AWS_K8S_TESTER_EKS_PARAMETERS_PUBLIC_SUBNET_IDS | *eksconfig.Parameters.PublicSubnetIDs | []string | read-only "true"
-AWS_K8S_TESTER_EKS_PARAMETERS_PRIVATE_SUBNET_IDS | *eksconfig.Parameters.PrivateSubnetIDs | []string | read-only "true"
-AWS_K8S_TESTER_EKS_PARAMETERS_DHCP_OPTIONS_DOMAIN_NAME | *eksconfig.Parameters.DHCPOptionsDomainName | string | read-only "false"
-AWS_K8S_TESTER_EKS_PARAMETERS_DHCP_OPTIONS_DOMAIN_NAME_SERVERS | *eksconfig.Parameters.DHCPOptionsDomainNameServers | []string | read-only "false"
-AWS_K8S_TESTER_EKS_PARAMETERS_VERSION | *eksconfig.Parameters.Version | string | read-only "false"
-AWS_K8S_TESTER_EKS_PARAMETERS_VERSION_VALUE | *eksconfig.Parameters.VersionValue | float64 | read-only "true"
-AWS_K8S_TESTER_EKS_PARAMETERS_ENCRYPTION_CMK_CREATE | *eksconfig.Parameters.EncryptionCMKCreate | bool | read-only "false"
-AWS_K8S_TESTER_EKS_PARAMETERS_ENCRYPTION_CMK_ARN | *eksconfig.Parameters.EncryptionCMKARN | string | read-only "false"
+*----------------------------------------------------------------*-------------------*----------------------------------------------------*-------------------*
+|                     ENVIRONMENTAL VARIABLE                     |     READ ONLY     |                        TYPE                        |      GO TYPE      |
+*----------------------------------------------------------------*-------------------*----------------------------------------------------*-------------------*
+|            AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_NAME             | read-only "false" |           *eksconfig.Parameters.RoleName           |      string       |
+|           AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_CREATE            | read-only "false" |          *eksconfig.Parameters.RoleCreate          |       bool        |
+|             AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_ARN             | read-only "false" |           *eksconfig.Parameters.RoleARN            |      string       |
+|     AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_SERVICE_PRINCIPALS      | read-only "false" |    *eksconfig.Parameters.RoleServicePrincipals     |     []string      |
+|     AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_MANAGED_POLICY_ARNS     | read-only "false" |    *eksconfig.Parameters.RoleManagedPolicyARNs     |     []string      |
+|        AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_CFN_STACK_ID         | read-only "true"  |        *eksconfig.Parameters.RoleCFNStackID        |      string       |
+|               AWS_K8S_TESTER_EKS_PARAMETERS_TAGS               | read-only "false" |             *eksconfig.Parameters.Tags             | map[string]string |
+|        AWS_K8S_TESTER_EKS_PARAMETERS_REQUEST_HEADER_KEY        | read-only "false" |       *eksconfig.Parameters.RequestHeaderKey       |      string       |
+|       AWS_K8S_TESTER_EKS_PARAMETERS_REQUEST_HEADER_VALUE       | read-only "false" |      *eksconfig.Parameters.RequestHeaderValue      |      string       |
+|           AWS_K8S_TESTER_EKS_PARAMETERS_RESOLVER_URL           | read-only "false" |         *eksconfig.Parameters.ResolverURL          |      string       |
+|           AWS_K8S_TESTER_EKS_PARAMETERS_SIGNING_NAME           | read-only "false" |         *eksconfig.Parameters.SigningName          |      string       |
+|            AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CREATE            | read-only "false" |          *eksconfig.Parameters.VPCCreate           |       bool        |
+|              AWS_K8S_TESTER_EKS_PARAMETERS_VPC_ID              | read-only "false" |            *eksconfig.Parameters.VPCID             |      string       |
+|         AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CFN_STACK_ID         | read-only "true"  |        *eksconfig.Parameters.VPCCFNStackID         |      string       |
+|             AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CIDR             | read-only "false" |           *eksconfig.Parameters.VPCCIDR            |      string       |
+|       AWS_K8S_TESTER_EKS_PARAMETERS_PUBLIC_SUBNET_CIDR_1       | read-only "false" |      *eksconfig.Parameters.PublicSubnetCIDR1       |      string       |
+|       AWS_K8S_TESTER_EKS_PARAMETERS_PUBLIC_SUBNET_CIDR_2       | read-only "false" |      *eksconfig.Parameters.PublicSubnetCIDR2       |      string       |
+|       AWS_K8S_TESTER_EKS_PARAMETERS_PUBLIC_SUBNET_CIDR_3       | read-only "false" |      *eksconfig.Parameters.PublicSubnetCIDR3       |      string       |
+|      AWS_K8S_TESTER_EKS_PARAMETERS_PRIVATE_SUBNET_CIDR_1       | read-only "false" |      *eksconfig.Parameters.PrivateSubnetCIDR1      |      string       |
+|      AWS_K8S_TESTER_EKS_PARAMETERS_PRIVATE_SUBNET_CIDR_2       | read-only "false" |      *eksconfig.Parameters.PrivateSubnetCIDR2      |      string       |
+|        AWS_K8S_TESTER_EKS_PARAMETERS_PUBLIC_SUBNET_IDS         | read-only "true"  |       *eksconfig.Parameters.PublicSubnetIDs        |     []string      |
+|        AWS_K8S_TESTER_EKS_PARAMETERS_PRIVATE_SUBNET_IDS        | read-only "true"  |       *eksconfig.Parameters.PrivateSubnetIDs       |     []string      |
+|     AWS_K8S_TESTER_EKS_PARAMETERS_DHCP_OPTIONS_DOMAIN_NAME     | read-only "false" |    *eksconfig.Parameters.DHCPOptionsDomainName     |      string       |
+| AWS_K8S_TESTER_EKS_PARAMETERS_DHCP_OPTIONS_DOMAIN_NAME_SERVERS | read-only "false" | *eksconfig.Parameters.DHCPOptionsDomainNameServers |     []string      |
+|             AWS_K8S_TESTER_EKS_PARAMETERS_VERSION              | read-only "false" |           *eksconfig.Parameters.Version            |      string       |
+|          AWS_K8S_TESTER_EKS_PARAMETERS_VERSION_VALUE           | read-only "true"  |         *eksconfig.Parameters.VersionValue         |      float64      |
+|      AWS_K8S_TESTER_EKS_PARAMETERS_ENCRYPTION_CMK_CREATE       | read-only "false" |     *eksconfig.Parameters.EncryptionCMKCreate      |       bool        |
+|        AWS_K8S_TESTER_EKS_PARAMETERS_ENCRYPTION_CMK_ARN        | read-only "false" |       *eksconfig.Parameters.EncryptionCMKARN       |      string       |
+*----------------------------------------------------------------*-------------------*----------------------------------------------------*-------------------*
 
 
-AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE | *eksconfig.AddOnNodeGroups.Enable | bool | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_CREATED | *eksconfig.AddOnNodeGroups.Created | bool | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_FETCH_LOGS | *eksconfig.AddOnNodeGroups.FetchLogs | bool | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_NAME | *eksconfig.AddOnNodeGroups.RoleName | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_CREATE | *eksconfig.AddOnNodeGroups.RoleCreate | bool | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_ARN | *eksconfig.AddOnNodeGroups.RoleARN | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_SERVICE_PRINCIPALS | *eksconfig.AddOnNodeGroups.RoleServicePrincipals | []string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_MANAGED_POLICY_ARNS | *eksconfig.AddOnNodeGroups.RoleManagedPolicyARNs | []string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_CFN_STACK_ID | *eksconfig.AddOnNodeGroups.RoleCFNStackID | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_NODE_GROUP_SECURITY_GROUP_ID | *eksconfig.AddOnNodeGroups.NodeGroupSecurityGroupID | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_NODE_GROUP_SECURITY_GROUP_CFN_STACK_ID | *eksconfig.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackID | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_LOGS_DIR | *eksconfig.AddOnNodeGroups.LogsDir | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS | *eksconfig.AddOnNodeGroups.ASGs | map[string]eksconfig.ASG | read-only "false"
+*------------------------------------------------------------------------------*-------------------*-------------------------------------------------------------*--------------------------*
+|                            ENVIRONMENTAL VARIABLE                            |     READ ONLY     |                            TYPE                             |         GO TYPE          |
+*------------------------------------------------------------------------------*-------------------*-------------------------------------------------------------*--------------------------*
+|                 AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE                 | read-only "false" |              *eksconfig.AddOnNodeGroups.Enable              |           bool           |
+|                AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_CREATED                 | read-only "true"  |             *eksconfig.AddOnNodeGroups.Created              |           bool           |
+|               AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_FETCH_LOGS               | read-only "false" |            *eksconfig.AddOnNodeGroups.FetchLogs             |           bool           |
+|               AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_NAME                | read-only "false" |             *eksconfig.AddOnNodeGroups.RoleName             |          string          |
+|              AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_CREATE               | read-only "false" |            *eksconfig.AddOnNodeGroups.RoleCreate            |           bool           |
+|                AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_ARN                | read-only "false" |             *eksconfig.AddOnNodeGroups.RoleARN              |          string          |
+|        AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_SERVICE_PRINCIPALS         | read-only "false" |      *eksconfig.AddOnNodeGroups.RoleServicePrincipals       |         []string         |
+|        AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_MANAGED_POLICY_ARNS        | read-only "false" |      *eksconfig.AddOnNodeGroups.RoleManagedPolicyARNs       |         []string         |
+|           AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_CFN_STACK_ID            | read-only "true"  |          *eksconfig.AddOnNodeGroups.RoleCFNStackID          |          string          |
+|      AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_NODE_GROUP_SECURITY_GROUP_ID      | read-only "true"  |     *eksconfig.AddOnNodeGroups.NodeGroupSecurityGroupID     |          string          |
+| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_NODE_GROUP_SECURITY_GROUP_CFN_STACK_ID | read-only "true"  | *eksconfig.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackID |          string          |
+|                AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_LOGS_DIR                | read-only "false" |             *eksconfig.AddOnNodeGroups.LogsDir              |          string          |
+|                  AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS                  | read-only "false" |               *eksconfig.AddOnNodeGroups.ASGs               | map[string]eksconfig.ASG |
+*------------------------------------------------------------------------------*-------------------*-------------------------------------------------------------*--------------------------*
 
 
-AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE | *eksconfig.AddOnManagedNodeGroups.Enable | bool | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_CREATED | *eksconfig.AddOnManagedNodeGroups.Created | bool | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_CREATE_TOOK | *eksconfig.AddOnManagedNodeGroups.CreateTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_CREATE_TOOK_STRING | *eksconfig.AddOnManagedNodeGroups.CreateTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_DELETE_TOOK | *eksconfig.AddOnManagedNodeGroups.DeleteTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_DELETE_TOOK_STRING | *eksconfig.AddOnManagedNodeGroups.DeleteTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_FETCH_LOGS | *eksconfig.AddOnManagedNodeGroups.FetchLogs | bool | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_NAME | *eksconfig.AddOnManagedNodeGroups.RoleName | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_CREATE | *eksconfig.AddOnManagedNodeGroups.RoleCreate | bool | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_ARN | *eksconfig.AddOnManagedNodeGroups.RoleARN | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_SERVICE_PRINCIPALS | *eksconfig.AddOnManagedNodeGroups.RoleServicePrincipals | []string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_MANAGED_POLICY_ARNS | *eksconfig.AddOnManagedNodeGroups.RoleManagedPolicyARNs | []string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_CFN_STACK_ID | *eksconfig.AddOnManagedNodeGroups.RoleCFNStackID | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_REQUEST_HEADER_KEY | *eksconfig.AddOnManagedNodeGroups.RequestHeaderKey | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_REQUEST_HEADER_VALUE | *eksconfig.AddOnManagedNodeGroups.RequestHeaderValue | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_RESOLVER_URL | *eksconfig.AddOnManagedNodeGroups.ResolverURL | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_SIGNING_NAME | *eksconfig.AddOnManagedNodeGroups.SigningName | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_LOGS_DIR | *eksconfig.AddOnManagedNodeGroups.LogsDir | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS | *eksconfig.AddOnManagedNodeGroups.MNGs | map[string]eksconfig.MNG | read-only "false"
+*------------------------------------------------------------------------*-------------------*---------------------------------------------------------*--------------------------*
+|                         ENVIRONMENTAL VARIABLE                         |     READ ONLY     |                          TYPE                           |         GO TYPE          |
+*------------------------------------------------------------------------*-------------------*---------------------------------------------------------*--------------------------*
+|          AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE          | read-only "false" |        *eksconfig.AddOnManagedNodeGroups.Enable         |           bool           |
+|         AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_CREATED          | read-only "true"  |        *eksconfig.AddOnManagedNodeGroups.Created        |           bool           |
+|       AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_CREATE_TOOK        | read-only "true"  |      *eksconfig.AddOnManagedNodeGroups.CreateTook       |      time.Duration       |
+|    AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_CREATE_TOOK_STRING    | read-only "true"  |   *eksconfig.AddOnManagedNodeGroups.CreateTookString    |          string          |
+|       AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_DELETE_TOOK        | read-only "true"  |      *eksconfig.AddOnManagedNodeGroups.DeleteTook       |      time.Duration       |
+|    AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_DELETE_TOOK_STRING    | read-only "true"  |   *eksconfig.AddOnManagedNodeGroups.DeleteTookString    |          string          |
+|        AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_FETCH_LOGS        | read-only "false" |       *eksconfig.AddOnManagedNodeGroups.FetchLogs       |           bool           |
+|        AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_NAME         | read-only "false" |       *eksconfig.AddOnManagedNodeGroups.RoleName        |          string          |
+|       AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_CREATE        | read-only "false" |      *eksconfig.AddOnManagedNodeGroups.RoleCreate       |           bool           |
+|         AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_ARN         | read-only "false" |        *eksconfig.AddOnManagedNodeGroups.RoleARN        |          string          |
+| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_SERVICE_PRINCIPALS  | read-only "false" | *eksconfig.AddOnManagedNodeGroups.RoleServicePrincipals |         []string         |
+| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_MANAGED_POLICY_ARNS | read-only "false" | *eksconfig.AddOnManagedNodeGroups.RoleManagedPolicyARNs |         []string         |
+|    AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_CFN_STACK_ID     | read-only "true"  |    *eksconfig.AddOnManagedNodeGroups.RoleCFNStackID     |          string          |
+|    AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_REQUEST_HEADER_KEY    | read-only "false" |   *eksconfig.AddOnManagedNodeGroups.RequestHeaderKey    |          string          |
+|   AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_REQUEST_HEADER_VALUE   | read-only "false" |  *eksconfig.AddOnManagedNodeGroups.RequestHeaderValue   |          string          |
+|       AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_RESOLVER_URL       | read-only "false" |      *eksconfig.AddOnManagedNodeGroups.ResolverURL      |          string          |
+|       AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_SIGNING_NAME       | read-only "false" |      *eksconfig.AddOnManagedNodeGroups.SigningName      |          string          |
+|         AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_LOGS_DIR         | read-only "false" |        *eksconfig.AddOnManagedNodeGroups.LogsDir        |          string          |
+|           AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS           | read-only "false" |         *eksconfig.AddOnManagedNodeGroups.MNGs          | map[string]eksconfig.MNG |
+*------------------------------------------------------------------------*-------------------*---------------------------------------------------------*--------------------------*
 
 
-AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_ENABLE | *eksconfig.AddOnCSIEBS.Enable | bool | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_CREATED | *eksconfig.AddOnCSIEBS.Created | bool | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_CREATE_TOOK | *eksconfig.AddOnCSIEBS.CreateTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_CREATE_TOOK_STRING | *eksconfig.AddOnCSIEBS.CreateTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_DELETE_TOOK | *eksconfig.AddOnCSIEBS.DeleteTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_DELETE_TOOK_STRING | *eksconfig.AddOnCSIEBS.DeleteTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_CHART_REPO_URL | *eksconfig.AddOnCSIEBS.ChartRepoURL | string | read-only "false"
+*------------------------------------------------------*-------------------*-----------------------------------------*---------------*
+|                ENVIRONMENTAL VARIABLE                |     READ ONLY     |                  TYPE                   |    GO TYPE    |
+*------------------------------------------------------*-------------------*-----------------------------------------*---------------*
+|       AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_ENABLE       | read-only "false" |      *eksconfig.AddOnCSIEBS.Enable      |     bool      |
+|      AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_CREATED       | read-only "true"  |     *eksconfig.AddOnCSIEBS.Created      |     bool      |
+|    AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_CREATE_TOOK     | read-only "true"  |    *eksconfig.AddOnCSIEBS.CreateTook    | time.Duration |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_CREATE_TOOK_STRING | read-only "true"  | *eksconfig.AddOnCSIEBS.CreateTookString |    string     |
+|    AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_DELETE_TOOK     | read-only "true"  |    *eksconfig.AddOnCSIEBS.DeleteTook    | time.Duration |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_DELETE_TOOK_STRING | read-only "true"  | *eksconfig.AddOnCSIEBS.DeleteTookString |    string     |
+|   AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_CHART_REPO_URL   | read-only "false" |   *eksconfig.AddOnCSIEBS.ChartRepoURL   |    string     |
+*------------------------------------------------------*-------------------*-----------------------------------------*---------------*
 
 
-AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_ENABLE | *eksconfig.AddOnKubernetesDashboard.Enable | bool | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_CREATED | *eksconfig.AddOnKubernetesDashboard.Created | bool | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_CREATE_TOOK | *eksconfig.AddOnKubernetesDashboard.CreateTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_CREATE_TOOK_STRING | *eksconfig.AddOnKubernetesDashboard.CreateTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_DELETE_TOOK | *eksconfig.AddOnKubernetesDashboard.DeleteTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_DELETE_TOOK_STRING | *eksconfig.AddOnKubernetesDashboard.DeleteTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_AUTHENTICATION_TOKEN | *eksconfig.AddOnKubernetesDashboard.AuthenticationToken | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_URL | *eksconfig.AddOnKubernetesDashboard.URL | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_KUBECTL_PROXY_PID | *eksconfig.AddOnKubernetesDashboard.KubectlProxyPID | int | read-only "true"
+*---------------------------------------------------------------------*-------------------*---------------------------------------------------------*---------------*
+|                       ENVIRONMENTAL VARIABLE                        |     READ ONLY     |                          TYPE                           |    GO TYPE    |
+*---------------------------------------------------------------------*-------------------*---------------------------------------------------------*---------------*
+|        AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_ENABLE        | read-only "false" |       *eksconfig.AddOnKubernetesDashboard.Enable        |     bool      |
+|       AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_CREATED        | read-only "true"  |       *eksconfig.AddOnKubernetesDashboard.Created       |     bool      |
+|     AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_CREATE_TOOK      | read-only "true"  |     *eksconfig.AddOnKubernetesDashboard.CreateTook      | time.Duration |
+|  AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_CREATE_TOOK_STRING  | read-only "true"  |  *eksconfig.AddOnKubernetesDashboard.CreateTookString   |    string     |
+|     AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_DELETE_TOOK      | read-only "true"  |     *eksconfig.AddOnKubernetesDashboard.DeleteTook      | time.Duration |
+|  AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_DELETE_TOOK_STRING  | read-only "true"  |  *eksconfig.AddOnKubernetesDashboard.DeleteTookString   |    string     |
+| AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_AUTHENTICATION_TOKEN | read-only "true"  | *eksconfig.AddOnKubernetesDashboard.AuthenticationToken |    string     |
+|         AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_URL          | read-only "true"  |         *eksconfig.AddOnKubernetesDashboard.URL         |    string     |
+|  AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_KUBECTL_PROXY_PID   | read-only "true"  |   *eksconfig.AddOnKubernetesDashboard.KubectlProxyPID   |      int      |
+*---------------------------------------------------------------------*-------------------*---------------------------------------------------------*---------------*
 
 
-AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_ENABLE | *eksconfig.AddOnPrometheusGrafana.Enable | bool | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_CREATED | *eksconfig.AddOnPrometheusGrafana.Created | bool | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_CREATE_TOOK | *eksconfig.AddOnPrometheusGrafana.CreateTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_CREATE_TOOK_STRING | *eksconfig.AddOnPrometheusGrafana.CreateTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_DELETE_TOOK | *eksconfig.AddOnPrometheusGrafana.DeleteTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_DELETE_TOOK_STRING | *eksconfig.AddOnPrometheusGrafana.DeleteTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_GRAFANA_ADMIN_USER_NAME | *eksconfig.AddOnPrometheusGrafana.GrafanaAdminUserName | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_GRAFANA_ADMIN_PASSWORD | *eksconfig.AddOnPrometheusGrafana.GrafanaAdminPassword | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_GRAFANA_NLB_ARN | *eksconfig.AddOnPrometheusGrafana.GrafanaNLBARN | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_GRAFANA_NLB_NAME | *eksconfig.AddOnPrometheusGrafana.GrafanaNLBName | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_GRAFANA_URL | *eksconfig.AddOnPrometheusGrafana.GrafanaURL | string | read-only "true"
+*----------------------------------------------------------------------*-------------------*--------------------------------------------------------*---------------*
+|                        ENVIRONMENTAL VARIABLE                        |     READ ONLY     |                          TYPE                          |    GO TYPE    |
+*----------------------------------------------------------------------*-------------------*--------------------------------------------------------*---------------*
+|         AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_ENABLE          | read-only "false" |        *eksconfig.AddOnPrometheusGrafana.Enable        |     bool      |
+|         AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_CREATED         | read-only "true"  |       *eksconfig.AddOnPrometheusGrafana.Created        |     bool      |
+|       AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_CREATE_TOOK       | read-only "true"  |      *eksconfig.AddOnPrometheusGrafana.CreateTook      | time.Duration |
+|   AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_CREATE_TOOK_STRING    | read-only "true"  |   *eksconfig.AddOnPrometheusGrafana.CreateTookString   |    string     |
+|       AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_DELETE_TOOK       | read-only "true"  |      *eksconfig.AddOnPrometheusGrafana.DeleteTook      | time.Duration |
+|   AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_DELETE_TOOK_STRING    | read-only "true"  |   *eksconfig.AddOnPrometheusGrafana.DeleteTookString   |    string     |
+| AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_GRAFANA_ADMIN_USER_NAME | read-only "false" | *eksconfig.AddOnPrometheusGrafana.GrafanaAdminUserName |    string     |
+| AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_GRAFANA_ADMIN_PASSWORD  | read-only "false" | *eksconfig.AddOnPrometheusGrafana.GrafanaAdminPassword |    string     |
+|     AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_GRAFANA_NLB_ARN     | read-only "true"  |    *eksconfig.AddOnPrometheusGrafana.GrafanaNLBARN     |    string     |
+|    AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_GRAFANA_NLB_NAME     | read-only "true"  |    *eksconfig.AddOnPrometheusGrafana.GrafanaNLBName    |    string     |
+|       AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_GRAFANA_URL       | read-only "true"  |      *eksconfig.AddOnPrometheusGrafana.GrafanaURL      |    string     |
+*----------------------------------------------------------------------*-------------------*--------------------------------------------------------*---------------*
 
 
-AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_ENABLE | *eksconfig.AddOnNLBHelloWorld.Enable | bool | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_CREATED | *eksconfig.AddOnNLBHelloWorld.Created | bool | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_CREATE_TOOK | *eksconfig.AddOnNLBHelloWorld.CreateTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_CREATE_TOOK_STRING | *eksconfig.AddOnNLBHelloWorld.CreateTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_DELETE_TOOK | *eksconfig.AddOnNLBHelloWorld.DeleteTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_DELETE_TOOK_STRING | *eksconfig.AddOnNLBHelloWorld.DeleteTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_NAMESPACE | *eksconfig.AddOnNLBHelloWorld.Namespace | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_DEPLOYMENT_REPLICAS | *eksconfig.AddOnNLBHelloWorld.DeploymentReplicas | int32 | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_NLB_ARN | *eksconfig.AddOnNLBHelloWorld.NLBARN | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_NLB_NAME | *eksconfig.AddOnNLBHelloWorld.NLBName | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_URL | *eksconfig.AddOnNLBHelloWorld.URL | string | read-only "true"
+*---------------------------------------------------------------*-------------------*--------------------------------------------------*---------------*
+|                    ENVIRONMENTAL VARIABLE                     |     READ ONLY     |                       TYPE                       |    GO TYPE    |
+*---------------------------------------------------------------*-------------------*--------------------------------------------------*---------------*
+|       AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_ENABLE        | read-only "false" |       *eksconfig.AddOnNLBHelloWorld.Enable       |     bool      |
+|       AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_CREATED       | read-only "true"  |      *eksconfig.AddOnNLBHelloWorld.Created       |     bool      |
+|     AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_CREATE_TOOK     | read-only "true"  |     *eksconfig.AddOnNLBHelloWorld.CreateTook     | time.Duration |
+| AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_CREATE_TOOK_STRING  | read-only "true"  |  *eksconfig.AddOnNLBHelloWorld.CreateTookString  |    string     |
+|     AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_DELETE_TOOK     | read-only "true"  |     *eksconfig.AddOnNLBHelloWorld.DeleteTook     | time.Duration |
+| AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_DELETE_TOOK_STRING  | read-only "true"  |  *eksconfig.AddOnNLBHelloWorld.DeleteTookString  |    string     |
+|      AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_NAMESPACE      | read-only "false" |     *eksconfig.AddOnNLBHelloWorld.Namespace      |    string     |
+| AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_DEPLOYMENT_REPLICAS | read-only "false" | *eksconfig.AddOnNLBHelloWorld.DeploymentReplicas |     int32     |
+|       AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_NLB_ARN       | read-only "true"  |       *eksconfig.AddOnNLBHelloWorld.NLBARN       |    string     |
+|      AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_NLB_NAME       | read-only "true"  |      *eksconfig.AddOnNLBHelloWorld.NLBName       |    string     |
+|         AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_URL         | read-only "true"  |        *eksconfig.AddOnNLBHelloWorld.URL         |    string     |
+*---------------------------------------------------------------*-------------------*--------------------------------------------------*---------------*
 
 
-AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_ENABLE | *eksconfig.AddOnALB2048.Enable | bool | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_CREATED | *eksconfig.AddOnALB2048.Created | bool | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_CREATE_TOOK | *eksconfig.AddOnALB2048.CreateTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_CREATE_TOOK_STRING | *eksconfig.AddOnALB2048.CreateTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_DELETE_TOOK | *eksconfig.AddOnALB2048.DeleteTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_DELETE_TOOK_STRING | *eksconfig.AddOnALB2048.DeleteTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_NAMESPACE | *eksconfig.AddOnALB2048.Namespace | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_DEPLOYMENT_REPLICAS_ALB | *eksconfig.AddOnALB2048.DeploymentReplicasALB | int32 | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_DEPLOYMENT_REPLICAS_2048 | *eksconfig.AddOnALB2048.DeploymentReplicas2048 | int32 | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_ALB_ARN | *eksconfig.AddOnALB2048.ALBARN | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_ALB_NAME | *eksconfig.AddOnALB2048.ALBName | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_URL | *eksconfig.AddOnALB2048.URL | string | read-only "true"
+*-------------------------------------------------------------*-------------------*------------------------------------------------*---------------*
+|                   ENVIRONMENTAL VARIABLE                    |     READ ONLY     |                      TYPE                      |    GO TYPE    |
+*-------------------------------------------------------------*-------------------*------------------------------------------------*---------------*
+|          AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_ENABLE          | read-only "false" |         *eksconfig.AddOnALB2048.Enable         |     bool      |
+|         AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_CREATED          | read-only "true"  |        *eksconfig.AddOnALB2048.Created         |     bool      |
+|       AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_CREATE_TOOK        | read-only "true"  |       *eksconfig.AddOnALB2048.CreateTook       | time.Duration |
+|    AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_CREATE_TOOK_STRING    | read-only "true"  |    *eksconfig.AddOnALB2048.CreateTookString    |    string     |
+|       AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_DELETE_TOOK        | read-only "true"  |       *eksconfig.AddOnALB2048.DeleteTook       | time.Duration |
+|    AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_DELETE_TOOK_STRING    | read-only "true"  |    *eksconfig.AddOnALB2048.DeleteTookString    |    string     |
+|        AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_NAMESPACE         | read-only "false" |       *eksconfig.AddOnALB2048.Namespace        |    string     |
+| AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_DEPLOYMENT_REPLICAS_ALB  | read-only "false" | *eksconfig.AddOnALB2048.DeploymentReplicasALB  |     int32     |
+| AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_DEPLOYMENT_REPLICAS_2048 | read-only "false" | *eksconfig.AddOnALB2048.DeploymentReplicas2048 |     int32     |
+|         AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_ALB_ARN          | read-only "true"  |         *eksconfig.AddOnALB2048.ALBARN         |    string     |
+|         AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_ALB_NAME         | read-only "true"  |        *eksconfig.AddOnALB2048.ALBName         |    string     |
+|           AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_URL            | read-only "true"  |          *eksconfig.AddOnALB2048.URL           |    string     |
+*-------------------------------------------------------------*-------------------*------------------------------------------------*---------------*
 
 
-AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_ENABLE | *eksconfig.AddOnAppMesh.Enable | bool | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_CREATED | *eksconfig.AddOnAppMesh.Created | bool | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_CREATE_TOOK | *eksconfig.AddOnAppMesh.CreateTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_CREATE_TOOK_STRING | *eksconfig.AddOnAppMesh.CreateTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_DELETE_TOOK | *eksconfig.AddOnAppMesh.DeleteTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_DELETE_TOOK_STRING | *eksconfig.AddOnAppMesh.DeleteTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_NAMESPACE | *eksconfig.AddOnAppMesh.Namespace | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_CONTROLLER_IMAGE | *eksconfig.AddOnAppMesh.ControllerImage | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_INJECTOR_IMAGE | *eksconfig.AddOnAppMesh.InjectorImage | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_POLICY_CFN_STACK_ID | *eksconfig.AddOnAppMesh.PolicyCFNStackID | string | read-only "true"
+*--------------------------------------------------------*-------------------*------------------------------------------*---------------*
+|                 ENVIRONMENTAL VARIABLE                 |     READ ONLY     |                   TYPE                   |    GO TYPE    |
+*--------------------------------------------------------*-------------------*------------------------------------------*---------------*
+|       AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_ENABLE        | read-only "false" |      *eksconfig.AddOnAppMesh.Enable      |     bool      |
+|       AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_CREATED       | read-only "true"  |     *eksconfig.AddOnAppMesh.Created      |     bool      |
+|     AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_CREATE_TOOK     | read-only "true"  |    *eksconfig.AddOnAppMesh.CreateTook    | time.Duration |
+| AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_CREATE_TOOK_STRING  | read-only "true"  | *eksconfig.AddOnAppMesh.CreateTookString |    string     |
+|     AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_DELETE_TOOK     | read-only "true"  |    *eksconfig.AddOnAppMesh.DeleteTook    | time.Duration |
+| AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_DELETE_TOOK_STRING  | read-only "true"  | *eksconfig.AddOnAppMesh.DeleteTookString |    string     |
+|      AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_NAMESPACE      | read-only "false" |    *eksconfig.AddOnAppMesh.Namespace     |    string     |
+|  AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_CONTROLLER_IMAGE   | read-only "false" | *eksconfig.AddOnAppMesh.ControllerImage  |    string     |
+|   AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_INJECTOR_IMAGE    | read-only "false" |  *eksconfig.AddOnAppMesh.InjectorImage   |    string     |
+| AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_POLICY_CFN_STACK_ID | read-only "true"  | *eksconfig.AddOnAppMesh.PolicyCFNStackID |    string     |
+*--------------------------------------------------------*-------------------*------------------------------------------*---------------*
 
 
-AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_ENABLE | *eksconfig.AddOnJobsPi.Enable | bool | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_CREATED | *eksconfig.AddOnJobsPi.Created | bool | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_CREATE_TOOK | *eksconfig.AddOnJobsPi.CreateTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_CREATE_TOOK_STRING | *eksconfig.AddOnJobsPi.CreateTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_DELETE_TOOK | *eksconfig.AddOnJobsPi.DeleteTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_DELETE_TOOK_STRING | *eksconfig.AddOnJobsPi.DeleteTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_NAMESPACE | *eksconfig.AddOnJobsPi.Namespace | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_COMPLETES | *eksconfig.AddOnJobsPi.Completes | int | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_PARALLELS | *eksconfig.AddOnJobsPi.Parallels | int | read-only "false"
+*------------------------------------------------------*-------------------*-----------------------------------------*---------------*
+|                ENVIRONMENTAL VARIABLE                |     READ ONLY     |                  TYPE                   |    GO TYPE    |
+*------------------------------------------------------*-------------------*-----------------------------------------*---------------*
+|       AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_ENABLE       | read-only "false" |      *eksconfig.AddOnJobsPi.Enable      |     bool      |
+|      AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_CREATED       | read-only "true"  |     *eksconfig.AddOnJobsPi.Created      |     bool      |
+|    AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_CREATE_TOOK     | read-only "true"  |    *eksconfig.AddOnJobsPi.CreateTook    | time.Duration |
+| AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_CREATE_TOOK_STRING | read-only "true"  | *eksconfig.AddOnJobsPi.CreateTookString |    string     |
+|    AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_DELETE_TOOK     | read-only "true"  |    *eksconfig.AddOnJobsPi.DeleteTook    | time.Duration |
+| AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_DELETE_TOOK_STRING | read-only "true"  | *eksconfig.AddOnJobsPi.DeleteTookString |    string     |
+|     AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_NAMESPACE      | read-only "false" |    *eksconfig.AddOnJobsPi.Namespace     |    string     |
+|     AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_COMPLETES      | read-only "false" |    *eksconfig.AddOnJobsPi.Completes     |      int      |
+|     AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_PARALLELS      | read-only "false" |    *eksconfig.AddOnJobsPi.Parallels     |      int      |
+*------------------------------------------------------*-------------------*-----------------------------------------*---------------*
 
 
-AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_ENABLE | *eksconfig.AddOnJobsEcho.Enable | bool | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_CREATED | *eksconfig.AddOnJobsEcho.Created | bool | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_CREATE_TOOK | *eksconfig.AddOnJobsEcho.CreateTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_CREATE_TOOK_STRING | *eksconfig.AddOnJobsEcho.CreateTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_DELETE_TOOK | *eksconfig.AddOnJobsEcho.DeleteTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_DELETE_TOOK_STRING | *eksconfig.AddOnJobsEcho.DeleteTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_NAMESPACE | *eksconfig.AddOnJobsEcho.Namespace | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_COMPLETES | *eksconfig.AddOnJobsEcho.Completes | int | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_PARALLELS | *eksconfig.AddOnJobsEcho.Parallels | int | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_ECHO_SIZE | *eksconfig.AddOnJobsEcho.EchoSize | int | read-only "false"
+*--------------------------------------------------------*-------------------*-------------------------------------------*---------------*
+|                 ENVIRONMENTAL VARIABLE                 |     READ ONLY     |                   TYPE                    |    GO TYPE    |
+*--------------------------------------------------------*-------------------*-------------------------------------------*---------------*
+|       AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_ENABLE       | read-only "false" |      *eksconfig.AddOnJobsEcho.Enable      |     bool      |
+|      AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_CREATED       | read-only "true"  |     *eksconfig.AddOnJobsEcho.Created      |     bool      |
+|    AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_CREATE_TOOK     | read-only "true"  |    *eksconfig.AddOnJobsEcho.CreateTook    | time.Duration |
+| AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_CREATE_TOOK_STRING | read-only "true"  | *eksconfig.AddOnJobsEcho.CreateTookString |    string     |
+|    AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_DELETE_TOOK     | read-only "true"  |    *eksconfig.AddOnJobsEcho.DeleteTook    | time.Duration |
+| AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_DELETE_TOOK_STRING | read-only "true"  | *eksconfig.AddOnJobsEcho.DeleteTookString |    string     |
+|     AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_NAMESPACE      | read-only "false" |    *eksconfig.AddOnJobsEcho.Namespace     |    string     |
+|     AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_COMPLETES      | read-only "false" |    *eksconfig.AddOnJobsEcho.Completes     |      int      |
+|     AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_PARALLELS      | read-only "false" |    *eksconfig.AddOnJobsEcho.Parallels     |      int      |
+|     AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_ECHO_SIZE      | read-only "false" |     *eksconfig.AddOnJobsEcho.EchoSize     |      int      |
+*--------------------------------------------------------*-------------------*-------------------------------------------*---------------*
 
 
-AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_ENABLE | *eksconfig.AddOnCronJobs.Enable | bool | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_CREATED | *eksconfig.AddOnCronJobs.Created | bool | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_CREATE_TOOK | *eksconfig.AddOnCronJobs.CreateTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_CREATE_TOOK_STRING | *eksconfig.AddOnCronJobs.CreateTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_DELETE_TOOK | *eksconfig.AddOnCronJobs.DeleteTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_DELETE_TOOK_STRING | *eksconfig.AddOnCronJobs.DeleteTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_NAMESPACE | *eksconfig.AddOnCronJobs.Namespace | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_SCHEDULE | *eksconfig.AddOnCronJobs.Schedule | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_COMPLETES | *eksconfig.AddOnCronJobs.Completes | int | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_PARALLELS | *eksconfig.AddOnCronJobs.Parallels | int | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_SUCCESSFUL_JOBS_HISTORY_LIMIT | *eksconfig.AddOnCronJobs.SuccessfulJobsHistoryLimit | int32 | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_FAILED_JOBS_HISTORY_LIMIT | *eksconfig.AddOnCronJobs.FailedJobsHistoryLimit | int32 | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_ECHO_SIZE | *eksconfig.AddOnCronJobs.EchoSize | int | read-only "false"
+*-------------------------------------------------------------------*-------------------*-----------------------------------------------------*---------------*
+|                      ENVIRONMENTAL VARIABLE                       |     READ ONLY     |                        TYPE                         |    GO TYPE    |
+*-------------------------------------------------------------------*-------------------*-----------------------------------------------------*---------------*
+|            AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_ENABLE             | read-only "false" |           *eksconfig.AddOnCronJobs.Enable           |     bool      |
+|            AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_CREATED            | read-only "true"  |          *eksconfig.AddOnCronJobs.Created           |     bool      |
+|          AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_CREATE_TOOK          | read-only "true"  |         *eksconfig.AddOnCronJobs.CreateTook         | time.Duration |
+|      AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_CREATE_TOOK_STRING       | read-only "true"  |      *eksconfig.AddOnCronJobs.CreateTookString      |    string     |
+|          AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_DELETE_TOOK          | read-only "true"  |         *eksconfig.AddOnCronJobs.DeleteTook         | time.Duration |
+|      AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_DELETE_TOOK_STRING       | read-only "true"  |      *eksconfig.AddOnCronJobs.DeleteTookString      |    string     |
+|           AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_NAMESPACE           | read-only "false" |         *eksconfig.AddOnCronJobs.Namespace          |    string     |
+|           AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_SCHEDULE            | read-only "false" |          *eksconfig.AddOnCronJobs.Schedule          |    string     |
+|           AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_COMPLETES           | read-only "false" |         *eksconfig.AddOnCronJobs.Completes          |      int      |
+|           AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_PARALLELS           | read-only "false" |         *eksconfig.AddOnCronJobs.Parallels          |      int      |
+| AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_SUCCESSFUL_JOBS_HISTORY_LIMIT | read-only "false" | *eksconfig.AddOnCronJobs.SuccessfulJobsHistoryLimit |     int32     |
+|   AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_FAILED_JOBS_HISTORY_LIMIT   | read-only "false" |   *eksconfig.AddOnCronJobs.FailedJobsHistoryLimit   |     int32     |
+|           AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_ECHO_SIZE           | read-only "false" |          *eksconfig.AddOnCronJobs.EchoSize          |      int      |
+*-------------------------------------------------------------------*-------------------*-----------------------------------------------------*---------------*
 
 
-AWS_K8S_TESTER_EKS_ADD_ON_CSRS_ENABLE | *eksconfig.AddOnCSRs.Enable | bool | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_CSRS_CREATED | *eksconfig.AddOnCSRs.Created | bool | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CSRS_CREATE_TOOK | *eksconfig.AddOnCSRs.CreateTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CSRS_CREATE_TOOK_STRING | *eksconfig.AddOnCSRs.CreateTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CSRS_DELETE_TOOK | *eksconfig.AddOnCSRs.DeleteTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CSRS_DELETE_TOOK_STRING | *eksconfig.AddOnCSRs.DeleteTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CSRS_NAMESPACE | *eksconfig.AddOnCSRs.Namespace | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_CSRS_INITIAL_REQUEST_CONDITION_TYPE | *eksconfig.AddOnCSRs.InitialRequestConditionType | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_CSRS_OBJECTS | *eksconfig.AddOnCSRs.Objects | int | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_CSRS_CREATED_NAMES | *eksconfig.AddOnCSRs.CreatedNames | []string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CSRS_FAIL_THRESHOLD | *eksconfig.AddOnCSRs.FailThreshold | int | read-only "false"
+*---------------------------------------------------------------*-------------------*--------------------------------------------------*---------------*
+|                    ENVIRONMENTAL VARIABLE                     |     READ ONLY     |                       TYPE                       |    GO TYPE    |
+*---------------------------------------------------------------*-------------------*--------------------------------------------------*---------------*
+|             AWS_K8S_TESTER_EKS_ADD_ON_CSRS_ENABLE             | read-only "false" |           *eksconfig.AddOnCSRs.Enable            |     bool      |
+|            AWS_K8S_TESTER_EKS_ADD_ON_CSRS_CREATED             | read-only "true"  |           *eksconfig.AddOnCSRs.Created           |     bool      |
+|          AWS_K8S_TESTER_EKS_ADD_ON_CSRS_CREATE_TOOK           | read-only "true"  |         *eksconfig.AddOnCSRs.CreateTook          | time.Duration |
+|       AWS_K8S_TESTER_EKS_ADD_ON_CSRS_CREATE_TOOK_STRING       | read-only "true"  |      *eksconfig.AddOnCSRs.CreateTookString       |    string     |
+|          AWS_K8S_TESTER_EKS_ADD_ON_CSRS_DELETE_TOOK           | read-only "true"  |         *eksconfig.AddOnCSRs.DeleteTook          | time.Duration |
+|       AWS_K8S_TESTER_EKS_ADD_ON_CSRS_DELETE_TOOK_STRING       | read-only "true"  |      *eksconfig.AddOnCSRs.DeleteTookString       |    string     |
+|           AWS_K8S_TESTER_EKS_ADD_ON_CSRS_NAMESPACE            | read-only "false" |          *eksconfig.AddOnCSRs.Namespace          |    string     |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_INITIAL_REQUEST_CONDITION_TYPE | read-only "false" | *eksconfig.AddOnCSRs.InitialRequestConditionType |    string     |
+|            AWS_K8S_TESTER_EKS_ADD_ON_CSRS_OBJECTS             | read-only "false" |           *eksconfig.AddOnCSRs.Objects           |      int      |
+|         AWS_K8S_TESTER_EKS_ADD_ON_CSRS_CREATED_NAMES          | read-only "true"  |        *eksconfig.AddOnCSRs.CreatedNames         |   []string    |
+|         AWS_K8S_TESTER_EKS_ADD_ON_CSRS_FAIL_THRESHOLD         | read-only "false" |        *eksconfig.AddOnCSRs.FailThreshold        |      int      |
+*---------------------------------------------------------------*-------------------*--------------------------------------------------*---------------*
 
 
-AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_ENABLE | *eksconfig.AddOnConfigMaps.Enable | bool | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_CREATED | *eksconfig.AddOnConfigMaps.Created | bool | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_CREATE_TOOK | *eksconfig.AddOnConfigMaps.CreateTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_CREATE_TOOK_STRING | *eksconfig.AddOnConfigMaps.CreateTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_DELETE_TOOK | *eksconfig.AddOnConfigMaps.DeleteTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_DELETE_TOOK_STRING | *eksconfig.AddOnConfigMaps.DeleteTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_NAMESPACE | *eksconfig.AddOnConfigMaps.Namespace | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_OBJECTS | *eksconfig.AddOnConfigMaps.Objects | int | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_SIZE | *eksconfig.AddOnConfigMaps.Size | int | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_CREATED_NAMES | *eksconfig.AddOnConfigMaps.CreatedNames | []string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_FAIL_THRESHOLD | *eksconfig.AddOnConfigMaps.FailThreshold | int | read-only "false"
+*----------------------------------------------------------*-------------------*---------------------------------------------*---------------*
+|                  ENVIRONMENTAL VARIABLE                  |     READ ONLY     |                    TYPE                     |    GO TYPE    |
+*----------------------------------------------------------*-------------------*---------------------------------------------*---------------*
+|       AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_ENABLE       | read-only "false" |      *eksconfig.AddOnConfigMaps.Enable      |     bool      |
+|      AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_CREATED       | read-only "true"  |     *eksconfig.AddOnConfigMaps.Created      |     bool      |
+|    AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_CREATE_TOOK     | read-only "true"  |    *eksconfig.AddOnConfigMaps.CreateTook    | time.Duration |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_CREATE_TOOK_STRING | read-only "true"  | *eksconfig.AddOnConfigMaps.CreateTookString |    string     |
+|    AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_DELETE_TOOK     | read-only "true"  |    *eksconfig.AddOnConfigMaps.DeleteTook    | time.Duration |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_DELETE_TOOK_STRING | read-only "true"  | *eksconfig.AddOnConfigMaps.DeleteTookString |    string     |
+|     AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_NAMESPACE      | read-only "false" |    *eksconfig.AddOnConfigMaps.Namespace     |    string     |
+|      AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_OBJECTS       | read-only "false" |     *eksconfig.AddOnConfigMaps.Objects      |      int      |
+|        AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_SIZE        | read-only "false" |       *eksconfig.AddOnConfigMaps.Size       |      int      |
+|   AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_CREATED_NAMES    | read-only "true"  |   *eksconfig.AddOnConfigMaps.CreatedNames   |   []string    |
+|   AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_FAIL_THRESHOLD   | read-only "false" |  *eksconfig.AddOnConfigMaps.FailThreshold   |      int      |
+*----------------------------------------------------------*-------------------*---------------------------------------------*---------------*
 
 
-AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_ENABLE | *eksconfig.AddOnSecrets.Enable | bool | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_CREATED | *eksconfig.AddOnSecrets.Created | bool | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_CREATE_TOOK | *eksconfig.AddOnSecrets.CreateTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_CREATE_TOOK_STRING | *eksconfig.AddOnSecrets.CreateTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_DELETE_TOOK | *eksconfig.AddOnSecrets.DeleteTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_DELETE_TOOK_STRING | *eksconfig.AddOnSecrets.DeleteTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_NAMESPACE | *eksconfig.AddOnSecrets.Namespace | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_OBJECTS | *eksconfig.AddOnSecrets.Objects | int | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_SIZE | *eksconfig.AddOnSecrets.Size | int | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_FAIL_THRESHOLD | *eksconfig.AddOnSecrets.FailThreshold | int | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_CREATED_SECRETS_NAMES | *eksconfig.AddOnSecrets.CreatedSecretsNames | []string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_CREATED_POD_NAMES | *eksconfig.AddOnSecrets.CreatedPodNames | []string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_WRITES_RESULT_PATH | *eksconfig.AddOnSecrets.WritesResultPath | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_READS_RESULT_PATH | *eksconfig.AddOnSecrets.ReadsResultPath | string | read-only "false"
+*---------------------------------------------------------*-------------------*---------------------------------------------*---------------*
+|                 ENVIRONMENTAL VARIABLE                  |     READ ONLY     |                    TYPE                     |    GO TYPE    |
+*---------------------------------------------------------*-------------------*---------------------------------------------*---------------*
+|        AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_ENABLE         | read-only "false" |       *eksconfig.AddOnSecrets.Enable        |     bool      |
+|        AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_CREATED        | read-only "true"  |       *eksconfig.AddOnSecrets.Created       |     bool      |
+|      AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_CREATE_TOOK      | read-only "true"  |     *eksconfig.AddOnSecrets.CreateTook      | time.Duration |
+|  AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_CREATE_TOOK_STRING   | read-only "true"  |  *eksconfig.AddOnSecrets.CreateTookString   |    string     |
+|      AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_DELETE_TOOK      | read-only "true"  |     *eksconfig.AddOnSecrets.DeleteTook      | time.Duration |
+|  AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_DELETE_TOOK_STRING   | read-only "true"  |  *eksconfig.AddOnSecrets.DeleteTookString   |    string     |
+|       AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_NAMESPACE       | read-only "false" |      *eksconfig.AddOnSecrets.Namespace      |    string     |
+|        AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_OBJECTS        | read-only "false" |       *eksconfig.AddOnSecrets.Objects       |      int      |
+|         AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_SIZE          | read-only "false" |        *eksconfig.AddOnSecrets.Size         |      int      |
+|    AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_FAIL_THRESHOLD     | read-only "false" |    *eksconfig.AddOnSecrets.FailThreshold    |      int      |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_CREATED_SECRETS_NAMES | read-only "true"  | *eksconfig.AddOnSecrets.CreatedSecretsNames |   []string    |
+|   AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_CREATED_POD_NAMES   | read-only "true"  |   *eksconfig.AddOnSecrets.CreatedPodNames   |   []string    |
+|  AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_WRITES_RESULT_PATH   | read-only "false" |  *eksconfig.AddOnSecrets.WritesResultPath   |    string     |
+|   AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_READS_RESULT_PATH   | read-only "false" |   *eksconfig.AddOnSecrets.ReadsResultPath   |    string     |
+*---------------------------------------------------------*-------------------*---------------------------------------------*---------------*
 
 
-AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ENABLE | *eksconfig.AddOnIRSA.Enable | bool | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_IRSA_CREATED | *eksconfig.AddOnIRSA.Created | bool | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_IRSA_CREATE_TOOK | *eksconfig.AddOnIRSA.CreateTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_IRSA_CREATE_TOOK_STRING | *eksconfig.AddOnIRSA.CreateTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_IRSA_DELETE_TOOK | *eksconfig.AddOnIRSA.DeleteTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_IRSA_DELETE_TOOK_STRING | *eksconfig.AddOnIRSA.DeleteTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_IRSA_NAMESPACE | *eksconfig.AddOnIRSA.Namespace | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_NAME | *eksconfig.AddOnIRSA.RoleName | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_ARN | *eksconfig.AddOnIRSA.RoleARN | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_MANAGED_POLICY_ARNS | *eksconfig.AddOnIRSA.RoleManagedPolicyARNs | []string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_CFN_STACK_ID | *eksconfig.AddOnIRSA.RoleCFNStackID | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_IRSA_SERVICE_ACCOUNT_NAME | *eksconfig.AddOnIRSA.ServiceAccountName | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_IRSA_CONFIG_MAP_NAME | *eksconfig.AddOnIRSA.ConfigMapName | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_IRSA_CONFIG_MAP_SCRIPT_FILE_NAME | *eksconfig.AddOnIRSA.ConfigMapScriptFileName | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_IRSA_S3_KEY | *eksconfig.AddOnIRSA.S3Key | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_IRSA_DEPLOYMENT_NAME | *eksconfig.AddOnIRSA.DeploymentName | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_IRSA_DEPLOYMENT_REPLICAS | *eksconfig.AddOnIRSA.DeploymentReplicas | int32 | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_IRSA_DEPLOYMENT_RESULT_PATH | *eksconfig.AddOnIRSA.DeploymentResultPath | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_IRSA_DEPLOYMENT_TOOK | *eksconfig.AddOnIRSA.DeploymentTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_IRSA_DEPLOYMENT_TOOK_STRING | *eksconfig.AddOnIRSA.DeploymentTookString | string | read-only "true"
+*------------------------------------------------------------*-------------------*----------------------------------------------*---------------*
+|                   ENVIRONMENTAL VARIABLE                   |     READ ONLY     |                     TYPE                     |    GO TYPE    |
+*------------------------------------------------------------*-------------------*----------------------------------------------*---------------*
+|           AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ENABLE            | read-only "false" |         *eksconfig.AddOnIRSA.Enable          |     bool      |
+|           AWS_K8S_TESTER_EKS_ADD_ON_IRSA_CREATED           | read-only "true"  |         *eksconfig.AddOnIRSA.Created         |     bool      |
+|         AWS_K8S_TESTER_EKS_ADD_ON_IRSA_CREATE_TOOK         | read-only "true"  |       *eksconfig.AddOnIRSA.CreateTook        | time.Duration |
+|     AWS_K8S_TESTER_EKS_ADD_ON_IRSA_CREATE_TOOK_STRING      | read-only "true"  |    *eksconfig.AddOnIRSA.CreateTookString     |    string     |
+|         AWS_K8S_TESTER_EKS_ADD_ON_IRSA_DELETE_TOOK         | read-only "true"  |       *eksconfig.AddOnIRSA.DeleteTook        | time.Duration |
+|     AWS_K8S_TESTER_EKS_ADD_ON_IRSA_DELETE_TOOK_STRING      | read-only "true"  |    *eksconfig.AddOnIRSA.DeleteTookString     |    string     |
+|          AWS_K8S_TESTER_EKS_ADD_ON_IRSA_NAMESPACE          | read-only "false" |        *eksconfig.AddOnIRSA.Namespace        |    string     |
+|          AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_NAME          | read-only "false" |        *eksconfig.AddOnIRSA.RoleName         |    string     |
+|          AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_ARN           | read-only "false" |         *eksconfig.AddOnIRSA.RoleARN         |    string     |
+|  AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_MANAGED_POLICY_ARNS   | read-only "false" |  *eksconfig.AddOnIRSA.RoleManagedPolicyARNs  |   []string    |
+|      AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_CFN_STACK_ID      | read-only "true"  |     *eksconfig.AddOnIRSA.RoleCFNStackID      |    string     |
+|    AWS_K8S_TESTER_EKS_ADD_ON_IRSA_SERVICE_ACCOUNT_NAME     | read-only "false" |   *eksconfig.AddOnIRSA.ServiceAccountName    |    string     |
+|       AWS_K8S_TESTER_EKS_ADD_ON_IRSA_CONFIG_MAP_NAME       | read-only "false" |      *eksconfig.AddOnIRSA.ConfigMapName      |    string     |
+| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_CONFIG_MAP_SCRIPT_FILE_NAME | read-only "false" | *eksconfig.AddOnIRSA.ConfigMapScriptFileName |    string     |
+|           AWS_K8S_TESTER_EKS_ADD_ON_IRSA_S3_KEY            | read-only "false" |          *eksconfig.AddOnIRSA.S3Key          |    string     |
+|       AWS_K8S_TESTER_EKS_ADD_ON_IRSA_DEPLOYMENT_NAME       | read-only "false" |     *eksconfig.AddOnIRSA.DeploymentName      |    string     |
+|     AWS_K8S_TESTER_EKS_ADD_ON_IRSA_DEPLOYMENT_REPLICAS     | read-only "false" |   *eksconfig.AddOnIRSA.DeploymentReplicas    |     int32     |
+|   AWS_K8S_TESTER_EKS_ADD_ON_IRSA_DEPLOYMENT_RESULT_PATH    | read-only "false" |  *eksconfig.AddOnIRSA.DeploymentResultPath   |    string     |
+|       AWS_K8S_TESTER_EKS_ADD_ON_IRSA_DEPLOYMENT_TOOK       | read-only "true"  |     *eksconfig.AddOnIRSA.DeploymentTook      | time.Duration |
+|   AWS_K8S_TESTER_EKS_ADD_ON_IRSA_DEPLOYMENT_TOOK_STRING    | read-only "true"  |  *eksconfig.AddOnIRSA.DeploymentTookString   |    string     |
+*------------------------------------------------------------*-------------------*----------------------------------------------*---------------*
 
 
-AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ENABLE | *eksconfig.AddOnFargate.Enable | bool | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_CREATED | *eksconfig.AddOnFargate.Created | bool | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_CREATE_TOOK | *eksconfig.AddOnFargate.CreateTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_CREATE_TOOK_STRING | *eksconfig.AddOnFargate.CreateTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_DELETE_TOOK | *eksconfig.AddOnFargate.DeleteTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_DELETE_TOOK_STRING | *eksconfig.AddOnFargate.DeleteTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_NAMESPACE | *eksconfig.AddOnFargate.Namespace | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_NAME | *eksconfig.AddOnFargate.RoleName | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_CREATE | *eksconfig.AddOnFargate.RoleCreate | bool | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_ARN | *eksconfig.AddOnFargate.RoleARN | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_SERVICE_PRINCIPALS | *eksconfig.AddOnFargate.RoleServicePrincipals | []string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_MANAGED_POLICY_ARNS | *eksconfig.AddOnFargate.RoleManagedPolicyARNs | []string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_CFN_STACK_ID | *eksconfig.AddOnFargate.RoleCFNStackID | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_PROFILE_NAME | *eksconfig.AddOnFargate.ProfileName | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_SECRET_NAME | *eksconfig.AddOnFargate.SecretName | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_POD_NAME | *eksconfig.AddOnFargate.PodName | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_CONTAINER_NAME | *eksconfig.AddOnFargate.ContainerName | string | read-only "false"
+*------------------------------------------------------------*-------------------*-----------------------------------------------*---------------*
+|                   ENVIRONMENTAL VARIABLE                   |     READ ONLY     |                     TYPE                      |    GO TYPE    |
+*------------------------------------------------------------*-------------------*-----------------------------------------------*---------------*
+|          AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ENABLE          | read-only "false" |        *eksconfig.AddOnFargate.Enable         |     bool      |
+|         AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_CREATED          | read-only "true"  |        *eksconfig.AddOnFargate.Created        |     bool      |
+|       AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_CREATE_TOOK        | read-only "true"  |      *eksconfig.AddOnFargate.CreateTook       | time.Duration |
+|    AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_CREATE_TOOK_STRING    | read-only "true"  |   *eksconfig.AddOnFargate.CreateTookString    |    string     |
+|       AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_DELETE_TOOK        | read-only "true"  |      *eksconfig.AddOnFargate.DeleteTook       | time.Duration |
+|    AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_DELETE_TOOK_STRING    | read-only "true"  |   *eksconfig.AddOnFargate.DeleteTookString    |    string     |
+|        AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_NAMESPACE         | read-only "false" |       *eksconfig.AddOnFargate.Namespace       |    string     |
+|        AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_NAME         | read-only "false" |       *eksconfig.AddOnFargate.RoleName        |    string     |
+|       AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_CREATE        | read-only "false" |      *eksconfig.AddOnFargate.RoleCreate       |     bool      |
+|         AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_ARN         | read-only "false" |        *eksconfig.AddOnFargate.RoleARN        |    string     |
+| AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_SERVICE_PRINCIPALS  | read-only "false" | *eksconfig.AddOnFargate.RoleServicePrincipals |   []string    |
+| AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_MANAGED_POLICY_ARNS | read-only "false" | *eksconfig.AddOnFargate.RoleManagedPolicyARNs |   []string    |
+|    AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_CFN_STACK_ID     | read-only "true"  |    *eksconfig.AddOnFargate.RoleCFNStackID     |    string     |
+|       AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_PROFILE_NAME       | read-only "false" |      *eksconfig.AddOnFargate.ProfileName      |    string     |
+|       AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_SECRET_NAME        | read-only "false" |      *eksconfig.AddOnFargate.SecretName       |    string     |
+|         AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_POD_NAME         | read-only "false" |        *eksconfig.AddOnFargate.PodName        |    string     |
+|      AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_CONTAINER_NAME      | read-only "false" |     *eksconfig.AddOnFargate.ContainerName     |    string     |
+*------------------------------------------------------------*-------------------*-----------------------------------------------*---------------*
 
 
-AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ENABLE | *eksconfig.AddOnIRSAFargate.Enable | bool | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_CREATED | *eksconfig.AddOnIRSAFargate.Created | bool | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_CREATE_TOOK | *eksconfig.AddOnIRSAFargate.CreateTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_CREATE_TOOK_STRING | *eksconfig.AddOnIRSAFargate.CreateTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_DELETE_TOOK | *eksconfig.AddOnIRSAFargate.DeleteTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_DELETE_TOOK_STRING | *eksconfig.AddOnIRSAFargate.DeleteTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_NAMESPACE | *eksconfig.AddOnIRSAFargate.Namespace | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ROLE_NAME | *eksconfig.AddOnIRSAFargate.RoleName | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ROLE_ARN | *eksconfig.AddOnIRSAFargate.RoleARN | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ROLE_SERVICE_PRINCIPALS | *eksconfig.AddOnIRSAFargate.RoleServicePrincipals | []string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ROLE_MANAGED_POLICY_ARNS | *eksconfig.AddOnIRSAFargate.RoleManagedPolicyARNs | []string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ROLE_CFN_STACK_ID | *eksconfig.AddOnIRSAFargate.RoleCFNStackID | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_SERVICE_ACCOUNT_NAME | *eksconfig.AddOnIRSAFargate.ServiceAccountName | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_CONFIG_MAP_NAME | *eksconfig.AddOnIRSAFargate.ConfigMapName | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_CONFIG_MAP_SCRIPT_FILE_NAME | *eksconfig.AddOnIRSAFargate.ConfigMapScriptFileName | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_S3_KEY | *eksconfig.AddOnIRSAFargate.S3Key | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_PROFILE_NAME | *eksconfig.AddOnIRSAFargate.ProfileName | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_POD_NAME | *eksconfig.AddOnIRSAFargate.PodName | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_CONTAINER_NAME | *eksconfig.AddOnIRSAFargate.ContainerName | string | read-only "false"
+*--------------------------------------------------------------------*-------------------*-----------------------------------------------------*---------------*
+|                       ENVIRONMENTAL VARIABLE                       |     READ ONLY     |                        TYPE                         |    GO TYPE    |
+*--------------------------------------------------------------------*-------------------*-----------------------------------------------------*---------------*
+|           AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ENABLE            | read-only "false" |         *eksconfig.AddOnIRSAFargate.Enable          |     bool      |
+|           AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_CREATED           | read-only "true"  |         *eksconfig.AddOnIRSAFargate.Created         |     bool      |
+|         AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_CREATE_TOOK         | read-only "true"  |       *eksconfig.AddOnIRSAFargate.CreateTook        | time.Duration |
+|     AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_CREATE_TOOK_STRING      | read-only "true"  |    *eksconfig.AddOnIRSAFargate.CreateTookString     |    string     |
+|         AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_DELETE_TOOK         | read-only "true"  |       *eksconfig.AddOnIRSAFargate.DeleteTook        | time.Duration |
+|     AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_DELETE_TOOK_STRING      | read-only "true"  |    *eksconfig.AddOnIRSAFargate.DeleteTookString     |    string     |
+|          AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_NAMESPACE          | read-only "false" |        *eksconfig.AddOnIRSAFargate.Namespace        |    string     |
+|          AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ROLE_NAME          | read-only "false" |        *eksconfig.AddOnIRSAFargate.RoleName         |    string     |
+|          AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ROLE_ARN           | read-only "false" |         *eksconfig.AddOnIRSAFargate.RoleARN         |    string     |
+|   AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ROLE_SERVICE_PRINCIPALS   | read-only "false" |  *eksconfig.AddOnIRSAFargate.RoleServicePrincipals  |   []string    |
+|  AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ROLE_MANAGED_POLICY_ARNS   | read-only "false" |  *eksconfig.AddOnIRSAFargate.RoleManagedPolicyARNs  |   []string    |
+|      AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ROLE_CFN_STACK_ID      | read-only "true"  |     *eksconfig.AddOnIRSAFargate.RoleCFNStackID      |    string     |
+|    AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_SERVICE_ACCOUNT_NAME     | read-only "false" |   *eksconfig.AddOnIRSAFargate.ServiceAccountName    |    string     |
+|       AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_CONFIG_MAP_NAME       | read-only "false" |      *eksconfig.AddOnIRSAFargate.ConfigMapName      |    string     |
+| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_CONFIG_MAP_SCRIPT_FILE_NAME | read-only "false" | *eksconfig.AddOnIRSAFargate.ConfigMapScriptFileName |    string     |
+|           AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_S3_KEY            | read-only "false" |          *eksconfig.AddOnIRSAFargate.S3Key          |    string     |
+|        AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_PROFILE_NAME         | read-only "false" |       *eksconfig.AddOnIRSAFargate.ProfileName       |    string     |
+|          AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_POD_NAME           | read-only "false" |         *eksconfig.AddOnIRSAFargate.PodName         |    string     |
+|       AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_CONTAINER_NAME        | read-only "false" |      *eksconfig.AddOnIRSAFargate.ContainerName      |    string     |
+*--------------------------------------------------------------------*-------------------*-----------------------------------------------------*---------------*
 
 
-AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_ENABLE | *eksconfig.AddOnWordpress.Enable | bool | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_CREATED | *eksconfig.AddOnWordpress.Created | bool | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_CREATE_TOOK | *eksconfig.AddOnWordpress.CreateTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_CREATE_TOOK_STRING | *eksconfig.AddOnWordpress.CreateTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_DELETE_TOOK | *eksconfig.AddOnWordpress.DeleteTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_DELETE_TOOK_STRING | *eksconfig.AddOnWordpress.DeleteTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_NAMESPACE | *eksconfig.AddOnWordpress.Namespace | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_USER_NAME | *eksconfig.AddOnWordpress.UserName | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_PASSWORD | *eksconfig.AddOnWordpress.Password | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_NLB_ARN | *eksconfig.AddOnWordpress.NLBARN | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_NLB_NAME | *eksconfig.AddOnWordpress.NLBName | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_URL | *eksconfig.AddOnWordpress.URL | string | read-only "true"
+*--------------------------------------------------------*-------------------*--------------------------------------------*---------------*
+|                 ENVIRONMENTAL VARIABLE                 |     READ ONLY     |                    TYPE                    |    GO TYPE    |
+*--------------------------------------------------------*-------------------*--------------------------------------------*---------------*
+|       AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_ENABLE       | read-only "false" |      *eksconfig.AddOnWordpress.Enable      |     bool      |
+|      AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_CREATED       | read-only "true"  |     *eksconfig.AddOnWordpress.Created      |     bool      |
+|    AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_CREATE_TOOK     | read-only "true"  |    *eksconfig.AddOnWordpress.CreateTook    | time.Duration |
+| AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_CREATE_TOOK_STRING | read-only "true"  | *eksconfig.AddOnWordpress.CreateTookString |    string     |
+|    AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_DELETE_TOOK     | read-only "true"  |    *eksconfig.AddOnWordpress.DeleteTook    | time.Duration |
+| AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_DELETE_TOOK_STRING | read-only "true"  | *eksconfig.AddOnWordpress.DeleteTookString |    string     |
+|     AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_NAMESPACE      | read-only "false" |    *eksconfig.AddOnWordpress.Namespace     |    string     |
+|     AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_USER_NAME      | read-only "false" |     *eksconfig.AddOnWordpress.UserName     |    string     |
+|      AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_PASSWORD      | read-only "false" |     *eksconfig.AddOnWordpress.Password     |    string     |
+|      AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_NLB_ARN       | read-only "true"  |      *eksconfig.AddOnWordpress.NLBARN      |    string     |
+|      AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_NLB_NAME      | read-only "true"  |     *eksconfig.AddOnWordpress.NLBName      |    string     |
+|        AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_URL         | read-only "true"  |       *eksconfig.AddOnWordpress.URL        |    string     |
+*--------------------------------------------------------*-------------------*--------------------------------------------*---------------*
 
 
-AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_ENABLE | *eksconfig.AddOnJupyterHub.Enable | bool | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_CREATED | *eksconfig.AddOnJupyterHub.Created | bool | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_CREATE_TOOK | *eksconfig.AddOnJupyterHub.CreateTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_CREATE_TOOK_STRING | *eksconfig.AddOnJupyterHub.CreateTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_DELETE_TOOK | *eksconfig.AddOnJupyterHub.DeleteTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_DELETE_TOOK_STRING | *eksconfig.AddOnJupyterHub.DeleteTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_NAMESPACE | *eksconfig.AddOnJupyterHub.Namespace | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_PROXY_SECRET_TOKEN | *eksconfig.AddOnJupyterHub.ProxySecretToken | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_NLB_ARN | *eksconfig.AddOnJupyterHub.NLBARN | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_NLB_NAME | *eksconfig.AddOnJupyterHub.NLBName | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_URL | *eksconfig.AddOnJupyterHub.URL | string | read-only "true"
+*----------------------------------------------------------*-------------------*---------------------------------------------*---------------*
+|                  ENVIRONMENTAL VARIABLE                  |     READ ONLY     |                    TYPE                     |    GO TYPE    |
+*----------------------------------------------------------*-------------------*---------------------------------------------*---------------*
+|       AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_ENABLE       | read-only "false" |      *eksconfig.AddOnJupyterHub.Enable      |     bool      |
+|      AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_CREATED       | read-only "true"  |     *eksconfig.AddOnJupyterHub.Created      |     bool      |
+|    AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_CREATE_TOOK     | read-only "true"  |    *eksconfig.AddOnJupyterHub.CreateTook    | time.Duration |
+| AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_CREATE_TOOK_STRING | read-only "true"  | *eksconfig.AddOnJupyterHub.CreateTookString |    string     |
+|    AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_DELETE_TOOK     | read-only "true"  |    *eksconfig.AddOnJupyterHub.DeleteTook    | time.Duration |
+| AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_DELETE_TOOK_STRING | read-only "true"  | *eksconfig.AddOnJupyterHub.DeleteTookString |    string     |
+|     AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_NAMESPACE      | read-only "false" |    *eksconfig.AddOnJupyterHub.Namespace     |    string     |
+| AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_PROXY_SECRET_TOKEN | read-only "false" | *eksconfig.AddOnJupyterHub.ProxySecretToken |    string     |
+|      AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_NLB_ARN       | read-only "true"  |      *eksconfig.AddOnJupyterHub.NLBARN      |    string     |
+|      AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_NLB_NAME      | read-only "true"  |     *eksconfig.AddOnJupyterHub.NLBName      |    string     |
+|        AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_URL         | read-only "true"  |       *eksconfig.AddOnJupyterHub.URL        |    string     |
+*----------------------------------------------------------*-------------------*---------------------------------------------*---------------*
 
 
 # NOT WORKING...
-AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_ENABLE | *eksconfig.AddOnKubeflow.Enable | bool | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_CREATED | *eksconfig.AddOnKubeflow.Created | bool | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_CREATE_TOOK | *eksconfig.AddOnKubeflow.CreateTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_CREATE_TOOK_STRING | *eksconfig.AddOnKubeflow.CreateTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_DELETE_TOOK | *eksconfig.AddOnKubeflow.DeleteTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_DELETE_TOOK_STRING | *eksconfig.AddOnKubeflow.DeleteTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_KFCTL_PATH | *eksconfig.AddOnKubeflow.KfctlPath | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_KFCTL_DOWNLOAD_URL | *eksconfig.AddOnKubeflow.KfctlDownloadURL | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_BASE_DIR | *eksconfig.AddOnKubeflow.BaseDir | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_KF_DIR | *eksconfig.AddOnKubeflow.KfDir | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_KFCTL_CONFIG_PATH | *eksconfig.AddOnKubeflow.KfctlConfigPath | string | read-only "true"
+*-------------------------------------------------------*-------------------*-------------------------------------------*---------------*
+|                ENVIRONMENTAL VARIABLE                 |     READ ONLY     |                   TYPE                    |    GO TYPE    |
+*-------------------------------------------------------*-------------------*-------------------------------------------*---------------*
+|       AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_ENABLE       | read-only "false" |      *eksconfig.AddOnKubeflow.Enable      |     bool      |
+|      AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_CREATED       | read-only "true"  |     *eksconfig.AddOnKubeflow.Created      |     bool      |
+|    AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_CREATE_TOOK     | read-only "true"  |    *eksconfig.AddOnKubeflow.CreateTook    | time.Duration |
+| AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_CREATE_TOOK_STRING | read-only "true"  | *eksconfig.AddOnKubeflow.CreateTookString |    string     |
+|    AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_DELETE_TOOK     | read-only "true"  |    *eksconfig.AddOnKubeflow.DeleteTook    | time.Duration |
+| AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_DELETE_TOOK_STRING | read-only "true"  | *eksconfig.AddOnKubeflow.DeleteTookString |    string     |
+|     AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_KFCTL_PATH     | read-only "false" |    *eksconfig.AddOnKubeflow.KfctlPath     |    string     |
+| AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_KFCTL_DOWNLOAD_URL | read-only "false" | *eksconfig.AddOnKubeflow.KfctlDownloadURL |    string     |
+|      AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_BASE_DIR      | read-only "false" |     *eksconfig.AddOnKubeflow.BaseDir      |    string     |
+|       AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_KF_DIR       | read-only "true"  |      *eksconfig.AddOnKubeflow.KfDir       |    string     |
+| AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_KFCTL_CONFIG_PATH  | read-only "true"  | *eksconfig.AddOnKubeflow.KfctlConfigPath  |    string     |
+*-------------------------------------------------------*-------------------*-------------------------------------------*---------------*
 
 
-AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_ENABLE | *eksconfig.AddOnHollowNodesLocal.Enable | bool | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_CREATED | *eksconfig.AddOnHollowNodesLocal.Created | bool | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_CREATE_TOOK | *eksconfig.AddOnHollowNodesLocal.CreateTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_CREATE_TOOK_STRING | *eksconfig.AddOnHollowNodesLocal.CreateTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_DELETE_TOOK | *eksconfig.AddOnHollowNodesLocal.DeleteTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_DELETE_TOOK_STRING | *eksconfig.AddOnHollowNodesLocal.DeleteTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_NODE_LABEL_PREFIX | *eksconfig.AddOnHollowNodesLocal.NodeLabelPrefix | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_NODE_LABELS | *eksconfig.AddOnHollowNodesLocal.NodeLabels | map[string]string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_NODES | *eksconfig.AddOnHollowNodesLocal.Nodes | int | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_MAX_OPEN_FILES | *eksconfig.AddOnHollowNodesLocal.MaxOpenFiles | int64 | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_CREATED_NODE_NAMES | *eksconfig.AddOnHollowNodesLocal.CreatedNodeNames | []string | read-only "true"
+*-----------------------------------------------------------------*-------------------*---------------------------------------------------*-------------------*
+|                     ENVIRONMENTAL VARIABLE                      |     READ ONLY     |                       TYPE                        |      GO TYPE      |
+*-----------------------------------------------------------------*-------------------*---------------------------------------------------*-------------------*
+|       AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_ENABLE       | read-only "false" |      *eksconfig.AddOnHollowNodesLocal.Enable      |       bool        |
+|      AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_CREATED       | read-only "true"  |     *eksconfig.AddOnHollowNodesLocal.Created      |       bool        |
+|    AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_CREATE_TOOK     | read-only "true"  |    *eksconfig.AddOnHollowNodesLocal.CreateTook    |   time.Duration   |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_CREATE_TOOK_STRING | read-only "true"  | *eksconfig.AddOnHollowNodesLocal.CreateTookString |      string       |
+|    AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_DELETE_TOOK     | read-only "true"  |    *eksconfig.AddOnHollowNodesLocal.DeleteTook    |   time.Duration   |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_DELETE_TOOK_STRING | read-only "true"  | *eksconfig.AddOnHollowNodesLocal.DeleteTookString |      string       |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_NODE_LABEL_PREFIX  | read-only "false" | *eksconfig.AddOnHollowNodesLocal.NodeLabelPrefix  |      string       |
+|    AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_NODE_LABELS     | read-only "true"  |    *eksconfig.AddOnHollowNodesLocal.NodeLabels    | map[string]string |
+|       AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_NODES        | read-only "false" |      *eksconfig.AddOnHollowNodesLocal.Nodes       |        int        |
+|   AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_MAX_OPEN_FILES   | read-only "false" |   *eksconfig.AddOnHollowNodesLocal.MaxOpenFiles   |       int64       |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_CREATED_NODE_NAMES | read-only "true"  | *eksconfig.AddOnHollowNodesLocal.CreatedNodeNames |     []string      |
+*-----------------------------------------------------------------*-------------------*---------------------------------------------------*-------------------*
 
 
-AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_ENABLE | *eksconfig.AddOnHollowNodesRemote.Enable | bool | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_CREATED | *eksconfig.AddOnHollowNodesRemote.Created | bool | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_CREATE_TOOK | *eksconfig.AddOnHollowNodesRemote.CreateTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_CREATE_TOOK_STRING | *eksconfig.AddOnHollowNodesRemote.CreateTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_DELETE_TOOK | *eksconfig.AddOnHollowNodesRemote.DeleteTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_DELETE_TOOK_STRING | *eksconfig.AddOnHollowNodesRemote.DeleteTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NAMESPACE | *eksconfig.AddOnHollowNodesRemote.Namespace | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NODE_LABEL_PREFIX | *eksconfig.AddOnHollowNodesRemote.NodeLabelPrefix | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NODE_LABELS | *eksconfig.AddOnHollowNodesRemote.NodeLabels | map[string]string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NODES | *eksconfig.AddOnHollowNodesRemote.Nodes | int | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_DEPLOYMENT_REPLICAS | *eksconfig.AddOnHollowNodesRemote.DeploymentReplicas | int32 | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_MAX_OPEN_FILES | *eksconfig.AddOnHollowNodesRemote.MaxOpenFiles | int64 | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_NAME | *eksconfig.AddOnHollowNodesRemote.RepositoryName | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_URI | *eksconfig.AddOnHollowNodesRemote.RepositoryURI | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_IMAGE_TAG | *eksconfig.AddOnHollowNodesRemote.RepositoryImageTag | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_CREATED_NODE_NAMES | *eksconfig.AddOnHollowNodesRemote.CreatedNodeNames | []string | read-only "true"
+*--------------------------------------------------------------------*-------------------*------------------------------------------------------*-------------------*
+|                       ENVIRONMENTAL VARIABLE                       |     READ ONLY     |                         TYPE                         |      GO TYPE      |
+*--------------------------------------------------------------------*-------------------*------------------------------------------------------*-------------------*
+|        AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_ENABLE        | read-only "false" |       *eksconfig.AddOnHollowNodesRemote.Enable       |       bool        |
+|       AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_CREATED        | read-only "true"  |      *eksconfig.AddOnHollowNodesRemote.Created       |       bool        |
+|     AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_CREATE_TOOK      | read-only "true"  |     *eksconfig.AddOnHollowNodesRemote.CreateTook     |   time.Duration   |
+|  AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_CREATE_TOOK_STRING  | read-only "true"  |  *eksconfig.AddOnHollowNodesRemote.CreateTookString  |      string       |
+|     AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_DELETE_TOOK      | read-only "true"  |     *eksconfig.AddOnHollowNodesRemote.DeleteTook     |   time.Duration   |
+|  AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_DELETE_TOOK_STRING  | read-only "true"  |  *eksconfig.AddOnHollowNodesRemote.DeleteTookString  |      string       |
+|      AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NAMESPACE       | read-only "false" |     *eksconfig.AddOnHollowNodesRemote.Namespace      |      string       |
+|  AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NODE_LABEL_PREFIX   | read-only "false" |  *eksconfig.AddOnHollowNodesRemote.NodeLabelPrefix   |      string       |
+|     AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NODE_LABELS      | read-only "true"  |     *eksconfig.AddOnHollowNodesRemote.NodeLabels     | map[string]string |
+|        AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NODES         | read-only "false" |       *eksconfig.AddOnHollowNodesRemote.Nodes        |        int        |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_DEPLOYMENT_REPLICAS  | read-only "false" | *eksconfig.AddOnHollowNodesRemote.DeploymentReplicas |       int32       |
+|    AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_MAX_OPEN_FILES    | read-only "false" |    *eksconfig.AddOnHollowNodesRemote.MaxOpenFiles    |       int64       |
+|   AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_NAME    | read-only "false" |   *eksconfig.AddOnHollowNodesRemote.RepositoryName   |      string       |
+|    AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_URI    | read-only "false" |   *eksconfig.AddOnHollowNodesRemote.RepositoryURI    |      string       |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_IMAGE_TAG | read-only "false" | *eksconfig.AddOnHollowNodesRemote.RepositoryImageTag |      string       |
+|  AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_CREATED_NODE_NAMES  | read-only "true"  |  *eksconfig.AddOnHollowNodesRemote.CreatedNodeNames  |     []string      |
+*--------------------------------------------------------------------*-------------------*------------------------------------------------------*-------------------*
 
 
-AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_ENABLE | *eksconfig.AddOnClusterLoaderLocal.Enable | bool | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_CREATED | *eksconfig.AddOnClusterLoaderLocal.Created | bool | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_CREATE_TOOK | *eksconfig.AddOnClusterLoaderLocal.CreateTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_CREATE_TOOK_STRING | *eksconfig.AddOnClusterLoaderLocal.CreateTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_DELETE_TOOK | *eksconfig.AddOnClusterLoaderLocal.DeleteTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_DELETE_TOOK_STRING | *eksconfig.AddOnClusterLoaderLocal.DeleteTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_DURATION | *eksconfig.AddOnClusterLoaderLocal.Duration | time.Duration | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_DURATION_STRING | *eksconfig.AddOnClusterLoaderLocal.DurationString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_REQUESTS_SUMMARY | *eksconfig.AddOnClusterLoaderLocal.RequestsSummary | eksconfig.RequestsSummary | read-only "true"
+*-------------------------------------------------------------------*-------------------*-----------------------------------------------------*---------------------------*
+|                      ENVIRONMENTAL VARIABLE                       |     READ ONLY     |                        TYPE                         |          GO TYPE          |
+*-------------------------------------------------------------------*-------------------*-----------------------------------------------------*---------------------------*
+|       AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_ENABLE       | read-only "false" |      *eksconfig.AddOnClusterLoaderLocal.Enable      |           bool            |
+|      AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_CREATED       | read-only "true"  |     *eksconfig.AddOnClusterLoaderLocal.Created      |           bool            |
+|    AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_CREATE_TOOK     | read-only "true"  |    *eksconfig.AddOnClusterLoaderLocal.CreateTook    |       time.Duration       |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_CREATE_TOOK_STRING | read-only "true"  | *eksconfig.AddOnClusterLoaderLocal.CreateTookString |          string           |
+|    AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_DELETE_TOOK     | read-only "true"  |    *eksconfig.AddOnClusterLoaderLocal.DeleteTook    |       time.Duration       |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_DELETE_TOOK_STRING | read-only "true"  | *eksconfig.AddOnClusterLoaderLocal.DeleteTookString |          string           |
+|      AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_DURATION      | read-only "false" |     *eksconfig.AddOnClusterLoaderLocal.Duration     |       time.Duration       |
+|  AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_DURATION_STRING   | read-only "true"  |  *eksconfig.AddOnClusterLoaderLocal.DurationString  |          string           |
+|  AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_REQUESTS_SUMMARY  | read-only "true"  | *eksconfig.AddOnClusterLoaderLocal.RequestsSummary  | eksconfig.RequestsSummary |
+*-------------------------------------------------------------------*-------------------*-----------------------------------------------------*---------------------------*
 
 
-AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_ENABLE | *eksconfig.AddOnClusterLoaderRemote.Enable | bool | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_CREATED | *eksconfig.AddOnClusterLoaderRemote.Created | bool | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_CREATE_TOOK | *eksconfig.AddOnClusterLoaderRemote.CreateTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_CREATE_TOOK_STRING | *eksconfig.AddOnClusterLoaderRemote.CreateTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_DELETE_TOOK | *eksconfig.AddOnClusterLoaderRemote.DeleteTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_DELETE_TOOK_STRING | *eksconfig.AddOnClusterLoaderRemote.DeleteTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_NAMESPACE | *eksconfig.AddOnClusterLoaderRemote.Namespace | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_DEPLOYMENT_REPLICAS | *eksconfig.AddOnClusterLoaderRemote.DeploymentReplicas | int32 | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_DURATION | *eksconfig.AddOnClusterLoaderRemote.Duration | time.Duration | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_DURATION_STRING | *eksconfig.AddOnClusterLoaderRemote.DurationString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_NAME | *eksconfig.AddOnClusterLoaderRemote.RepositoryName | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_URI | *eksconfig.AddOnClusterLoaderRemote.RepositoryURI | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_IMAGE_TAG | *eksconfig.AddOnClusterLoaderRemote.RepositoryImageTag | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_OUTPUT_PATH_PREFIX | *eksconfig.AddOnClusterLoaderRemote.OutputPathPrefix | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REQUESTS_SUMMARY | *eksconfig.AddOnClusterLoaderRemote.RequestsSummary | eksconfig.RequestsSummary | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REQUESTS_SUMMARY_AGGREGATED_PATH | *eksconfig.AddOnClusterLoaderRemote.RequestsSummaryAggregatedPath | string | read-only "false"
+*----------------------------------------------------------------------------------*-------------------*-------------------------------------------------------------------*---------------------------*
+|                              ENVIRONMENTAL VARIABLE                              |     READ ONLY     |                               TYPE                                |          GO TYPE          |
+*----------------------------------------------------------------------------------*-------------------*-------------------------------------------------------------------*---------------------------*
+|              AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_ENABLE              | read-only "false" |            *eksconfig.AddOnClusterLoaderRemote.Enable             |           bool            |
+|             AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_CREATED              | read-only "true"  |            *eksconfig.AddOnClusterLoaderRemote.Created            |           bool            |
+|           AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_CREATE_TOOK            | read-only "true"  |          *eksconfig.AddOnClusterLoaderRemote.CreateTook           |       time.Duration       |
+|        AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_CREATE_TOOK_STRING        | read-only "true"  |       *eksconfig.AddOnClusterLoaderRemote.CreateTookString        |          string           |
+|           AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_DELETE_TOOK            | read-only "true"  |          *eksconfig.AddOnClusterLoaderRemote.DeleteTook           |       time.Duration       |
+|        AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_DELETE_TOOK_STRING        | read-only "true"  |       *eksconfig.AddOnClusterLoaderRemote.DeleteTookString        |          string           |
+|            AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_NAMESPACE             | read-only "false" |           *eksconfig.AddOnClusterLoaderRemote.Namespace           |          string           |
+|       AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_DEPLOYMENT_REPLICAS        | read-only "false" |      *eksconfig.AddOnClusterLoaderRemote.DeploymentReplicas       |           int32           |
+|             AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_DURATION             | read-only "false" |           *eksconfig.AddOnClusterLoaderRemote.Duration            |       time.Duration       |
+|         AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_DURATION_STRING          | read-only "true"  |        *eksconfig.AddOnClusterLoaderRemote.DurationString         |          string           |
+|         AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_NAME          | read-only "false" |        *eksconfig.AddOnClusterLoaderRemote.RepositoryName         |          string           |
+|          AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_URI          | read-only "false" |         *eksconfig.AddOnClusterLoaderRemote.RepositoryURI         |          string           |
+|       AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_IMAGE_TAG       | read-only "false" |      *eksconfig.AddOnClusterLoaderRemote.RepositoryImageTag       |          string           |
+|        AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_OUTPUT_PATH_PREFIX        | read-only "false" |       *eksconfig.AddOnClusterLoaderRemote.OutputPathPrefix        |          string           |
+|         AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REQUESTS_SUMMARY         | read-only "true"  |        *eksconfig.AddOnClusterLoaderRemote.RequestsSummary        | eksconfig.RequestsSummary |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REQUESTS_SUMMARY_AGGREGATED_PATH | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.RequestsSummaryAggregatedPath |          string           |
+*----------------------------------------------------------------------------------*-------------------*-------------------------------------------------------------------*---------------------------*
 
 
-AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_ENABLE | *eksconfig.AddOnConformance.Enable | bool | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_CREATED | *eksconfig.AddOnConformance.Created | bool | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_CREATE_TOOK | *eksconfig.AddOnConformance.CreateTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_CREATE_TOOK_STRING | *eksconfig.AddOnConformance.CreateTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_DELETE_TOOK | *eksconfig.AddOnConformance.DeleteTook | time.Duration | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_DELETE_TOOK_STRING | *eksconfig.AddOnConformance.DeleteTookString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_NAMESPACE | *eksconfig.AddOnConformance.Namespace | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_PATH | *eksconfig.AddOnConformance.SonobuoyPath | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_DOWNLOAD_URL | *eksconfig.AddOnConformance.SonobuoyDownloadURL | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_DELETE_TIMEOUT | *eksconfig.AddOnConformance.SonobuoyDeleteTimeout | time.Duration | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_DELETE_TIMEOUT_STRING | *eksconfig.AddOnConformance.SonobuoyDeleteTimeoutString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_TIMEOUT | *eksconfig.AddOnConformance.SonobuoyRunTimeout | time.Duration | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_TIMEOUT_STRING | *eksconfig.AddOnConformance.SonobuoyRunTimeoutString | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_MODE | *eksconfig.AddOnConformance.SonobuoyRunMode | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_KUBE_CONFORMANCE_IMAGE | *eksconfig.AddOnConformance.SonobuoyRunKubeConformanceImage | string | read-only "false"
-AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RESULT_TAR_GZ_PATH | *eksconfig.AddOnConformance.SonobuoyResultTarGzPath | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RESULT_DIR | *eksconfig.AddOnConformance.SonobuoyResultDir | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RESULT_E2E_LOG_PATH | *eksconfig.AddOnConformance.SonobuoyResultE2eLogPath | string | read-only "true"
-AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RESULT_JUNIT_XML_PATH | *eksconfig.AddOnConformance.SonobuoyResultJunitXMLPath | string | read-only "true"
+*---------------------------------------------------------------------------*-------------------*-------------------------------------------------------------*---------------*
+|                          ENVIRONMENTAL VARIABLE                           |     READ ONLY     |                            TYPE                             |    GO TYPE    |
+*---------------------------------------------------------------------------*-------------------*-------------------------------------------------------------*---------------*
+|               AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_ENABLE                | read-only "false" |             *eksconfig.AddOnConformance.Enable              |     bool      |
+|               AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_CREATED               | read-only "true"  |             *eksconfig.AddOnConformance.Created             |     bool      |
+|             AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_CREATE_TOOK             | read-only "true"  |           *eksconfig.AddOnConformance.CreateTook            | time.Duration |
+|         AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_CREATE_TOOK_STRING          | read-only "true"  |        *eksconfig.AddOnConformance.CreateTookString         |    string     |
+|             AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_DELETE_TOOK             | read-only "true"  |           *eksconfig.AddOnConformance.DeleteTook            | time.Duration |
+|         AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_DELETE_TOOK_STRING          | read-only "true"  |        *eksconfig.AddOnConformance.DeleteTookString         |    string     |
+|              AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_NAMESPACE              | read-only "false" |            *eksconfig.AddOnConformance.Namespace            |    string     |
+|            AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_PATH            | read-only "false" |          *eksconfig.AddOnConformance.SonobuoyPath           |    string     |
+|        AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_DOWNLOAD_URL        | read-only "false" |       *eksconfig.AddOnConformance.SonobuoyDownloadURL       |    string     |
+|       AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_DELETE_TIMEOUT       | read-only "false" |      *eksconfig.AddOnConformance.SonobuoyDeleteTimeout      | time.Duration |
+|   AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_DELETE_TIMEOUT_STRING    | read-only "true"  |   *eksconfig.AddOnConformance.SonobuoyDeleteTimeoutString   |    string     |
+|        AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_TIMEOUT         | read-only "false" |       *eksconfig.AddOnConformance.SonobuoyRunTimeout        | time.Duration |
+|     AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_TIMEOUT_STRING     | read-only "true"  |    *eksconfig.AddOnConformance.SonobuoyRunTimeoutString     |    string     |
+|          AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_MODE          | read-only "false" |         *eksconfig.AddOnConformance.SonobuoyRunMode         |    string     |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_KUBE_CONFORMANCE_IMAGE | read-only "false" | *eksconfig.AddOnConformance.SonobuoyRunKubeConformanceImage |    string     |
+|     AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RESULT_TAR_GZ_PATH     | read-only "true"  |     *eksconfig.AddOnConformance.SonobuoyResultTarGzPath     |    string     |
+|         AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RESULT_DIR         | read-only "true"  |        *eksconfig.AddOnConformance.SonobuoyResultDir        |    string     |
+|    AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RESULT_E2E_LOG_PATH     | read-only "true"  |    *eksconfig.AddOnConformance.SonobuoyResultE2eLogPath     |    string     |
+|   AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RESULT_JUNIT_XML_PATH    | read-only "true"  |   *eksconfig.AddOnConformance.SonobuoyResultJunitXMLPath    |    string     |
+*---------------------------------------------------------------------------*-------------------*-------------------------------------------------------------*---------------*
 
 
 ```

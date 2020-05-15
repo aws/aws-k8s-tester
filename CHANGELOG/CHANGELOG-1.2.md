@@ -7,6 +7,14 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.9...v1.2.0).
 
+### `ec2config`
+
+- Improve [README](https://github.com/aws/aws-k8s-tester/commit/).
+
+### `eksconfig`
+
+- Improve [README](https://github.com/aws/aws-k8s-tester/commit/).
+
 ### `pkg/aws/ssm`
 
 - Check [`ssm.ListCommandInvocationsInput` batch limit](https://github.com/aws/aws-k8s-tester/commit/23d21857342930ceb0e165628ba8c124fb99198d).
