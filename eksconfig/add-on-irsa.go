@@ -119,7 +119,7 @@ func (cfg *Config) validateAddOnIRSA() error {
 	if cfg.AddOnIRSA.RepositoryURI == "" {
 		return errors.New("AddOnIRSA.RepositoryURI empty")
 	}
-	if strings.Contains(cfg.AddOnIRSA.RepositoryURI, cfg.AddOnIRSA.RepositoryAccountID) {
+	if !strings.Contains(cfg.AddOnIRSA.RepositoryURI, cfg.AddOnIRSA.RepositoryAccountID) {
 		return fmt.Errorf("AddOnIRSA.RepositoryURI %q does not have AddOnIRSA.RepositoryAccountID %q", cfg.AddOnIRSA.RepositoryURI, cfg.AddOnIRSA.RepositoryAccountID)
 	}
 	if cfg.AddOnIRSA.RepositoryImageTag == "" {

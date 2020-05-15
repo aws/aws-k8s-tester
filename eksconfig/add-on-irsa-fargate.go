@@ -118,7 +118,7 @@ func (cfg *Config) validateAddOnIRSAFargate() error {
 	if cfg.AddOnIRSAFargate.RepositoryURI == "" {
 		return errors.New("AddOnIRSAFargate.RepositoryURI empty")
 	}
-	if strings.Contains(cfg.AddOnIRSAFargate.RepositoryURI, cfg.AddOnIRSAFargate.RepositoryAccountID) {
+	if !strings.Contains(cfg.AddOnIRSAFargate.RepositoryURI, cfg.AddOnIRSAFargate.RepositoryAccountID) {
 		return fmt.Errorf("AddOnIRSAFargate.RepositoryURI %q does not have AddOnIRSAFargate.RepositoryAccountID %q", cfg.AddOnIRSAFargate.RepositoryURI, cfg.AddOnIRSAFargate.RepositoryAccountID)
 	}
 	if cfg.AddOnIRSAFargate.RepositoryImageTag == "" {

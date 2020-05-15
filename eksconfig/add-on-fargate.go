@@ -145,7 +145,7 @@ func (cfg *Config) validateAddOnFargate() error {
 		if cfg.AddOnFargate.RepositoryName == "" {
 			return errors.New("AddOnFargate.RepositoryName empty")
 		}
-		if strings.Contains(cfg.AddOnFargate.RepositoryURI, cfg.AddOnFargate.RepositoryAccountID) {
+		if !strings.Contains(cfg.AddOnFargate.RepositoryURI, cfg.AddOnFargate.RepositoryAccountID) {
 			return fmt.Errorf("AddOnFargate.RepositoryURI %q does not have AddOnFargate.RepositoryAccountID %q", cfg.AddOnFargate.RepositoryURI, cfg.AddOnFargate.RepositoryAccountID)
 		}
 		if cfg.AddOnFargate.RepositoryImageTag == "" {

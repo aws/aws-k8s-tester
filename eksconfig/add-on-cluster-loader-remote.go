@@ -115,7 +115,7 @@ func (cfg *Config) validateAddOnClusterLoaderRemote() error {
 	if cfg.AddOnClusterLoaderRemote.RepositoryURI == "" {
 		return errors.New("AddOnClusterLoaderRemote.RepositoryURI empty")
 	}
-	if strings.Contains(cfg.AddOnClusterLoaderRemote.RepositoryURI, cfg.AddOnClusterLoaderRemote.RepositoryAccountID) {
+	if !strings.Contains(cfg.AddOnClusterLoaderRemote.RepositoryURI, cfg.AddOnClusterLoaderRemote.RepositoryAccountID) {
 		return fmt.Errorf("AddOnClusterLoaderRemote.RepositoryURI %q does not have AddOnClusterLoaderRemote.RepositoryAccountID %q", cfg.AddOnClusterLoaderRemote.RepositoryURI, cfg.AddOnClusterLoaderRemote.RepositoryAccountID)
 	}
 	if cfg.AddOnClusterLoaderRemote.RepositoryImageTag == "" {

@@ -266,6 +266,8 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_MANAGED_POLICY_ARNS")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_PROFILE_NAME", "hello")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_PROFILE_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_REPOSITORY_ACCOUNT_ID", "uri")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_REPOSITORY_ACCOUNT_ID")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_REPOSITORY_NAME", "fargate-repo-name")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_REPOSITORY_NAME")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_REPOSITORY_URI", "fargate-repo-uri")
@@ -285,6 +287,8 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_MANAGED_POLICY_ARNS")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_S3_KEY", "hello")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_S3_KEY")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_REPOSITORY_ACCOUNT_ID", "uri")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_REPOSITORY_ACCOUNT_ID")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_REPOSITORY_NAME", "irsa-repo-name")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_REPOSITORY_NAME")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_REPOSITORY_URI", "irsa-repo-uri")
@@ -308,6 +312,8 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_S3_KEY")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_PROFILE_NAME", "hello")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_PROFILE_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_REPOSITORY_ACCOUNT_ID", "uri")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_REPOSITORY_ACCOUNT_ID")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_REPOSITORY_NAME", "irsa-fargate-repo-name")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_REPOSITORY_NAME")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_REPOSITORY_URI", "irsa-fargate-repo-uri")
@@ -336,6 +342,8 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NAMESPACE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NODES", "333")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NODES")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_ACCOUNT_ID", "uri")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_ACCOUNT_ID")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_NAME", "hollow-nodes-repo-name")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_NAME")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_URI", "hollow-nodes-repo-uri")
@@ -352,6 +360,8 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_ENABLE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_DURATION", "7m30s")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_DURATION")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_ACCOUNT_ID", "uri")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_ACCOUNT_ID")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_NAME", "cluster-loader-repo-name")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_NAME")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_URI", "cluster-loader-repo-uri")
@@ -829,6 +839,9 @@ func TestEnv(t *testing.T) {
 	if cfg.AddOnFargate.ProfileName != "hello" {
 		t.Fatalf("unexpected cfg.AddOnFargate.ProfileName %q", cfg.AddOnFargate.ProfileName)
 	}
+	if cfg.AddOnFargate.RepositoryAccountID != "uri" {
+		t.Fatalf("unexpected cfg.AddOnFargate.RepositoryAccountID %v", cfg.AddOnFargate.RepositoryAccountID)
+	}
 	if cfg.AddOnFargate.RepositoryName != "fargate-repo-name" {
 		t.Fatalf("unexpected cfg.AddOnFargate.RepositoryName %v", cfg.AddOnFargate.RepositoryName)
 	}
@@ -857,6 +870,9 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.AddOnIRSA.S3Key != "hello" {
 		t.Fatalf("unexpected cfg.AddOnIRSA.S3Key %q", cfg.AddOnIRSA.S3Key)
+	}
+	if cfg.AddOnIRSA.RepositoryAccountID != "uri" {
+		t.Fatalf("unexpected cfg.AddOnIRSA.RepositoryAccountID %v", cfg.AddOnIRSA.RepositoryAccountID)
 	}
 	if cfg.AddOnIRSA.RepositoryName != "irsa-repo-name" {
 		t.Fatalf("unexpected cfg.AddOnIRSA.RepositoryName %v", cfg.AddOnIRSA.RepositoryName)
@@ -893,6 +909,9 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.AddOnIRSAFargate.ProfileName != "hello" {
 		t.Fatalf("unexpected cfg.AddOnIRSAFargate.ProfileName %q", cfg.AddOnIRSAFargate.ProfileName)
+	}
+	if cfg.AddOnIRSAFargate.RepositoryAccountID != "uri" {
+		t.Fatalf("unexpected cfg.AddOnIRSAFargate.RepositoryAccountID %v", cfg.AddOnIRSAFargate.RepositoryAccountID)
 	}
 	if cfg.AddOnIRSAFargate.RepositoryName != "irsa-fargate-repo-name" {
 		t.Fatalf("unexpected cfg.AddOnIRSAFargate.RepositoryName %v", cfg.AddOnIRSAFargate.RepositoryName)
@@ -933,6 +952,9 @@ func TestEnv(t *testing.T) {
 	if cfg.AddOnHollowNodesRemote.Namespace != "test-hollow-nodes-namespace" {
 		t.Fatalf("unexpected cfg.AddOnHollowNodesRemote.Namespace %v", cfg.AddOnHollowNodesRemote.Namespace)
 	}
+	if cfg.AddOnHollowNodesRemote.RepositoryAccountID != "uri" {
+		t.Fatalf("unexpected cfg.AddOnHollowNodesRemote.RepositoryAccountID %v", cfg.AddOnHollowNodesRemote.RepositoryAccountID)
+	}
 	if cfg.AddOnHollowNodesRemote.RepositoryName != "hollow-nodes-repo-name" {
 		t.Fatalf("unexpected cfg.AddOnHollowNodesRemote.RepositoryName %v", cfg.AddOnHollowNodesRemote.RepositoryName)
 	}
@@ -955,6 +977,9 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.AddOnClusterLoaderRemote.Duration != 7*time.Minute+30*time.Second {
 		t.Fatalf("unexpected cfg.AddOnClusterLoaderRemote.Duration %v", cfg.AddOnClusterLoaderRemote.Duration)
+	}
+	if cfg.AddOnClusterLoaderRemote.RepositoryAccountID != "uri" {
+		t.Fatalf("unexpected cfg.AddOnClusterLoaderRemote.RepositoryAccountID %v", cfg.AddOnClusterLoaderRemote.RepositoryAccountID)
 	}
 	if cfg.AddOnClusterLoaderRemote.RepositoryName != "cluster-loader-repo-name" {
 		t.Fatalf("unexpected cfg.AddOnClusterLoaderRemote.RepositoryName %v", cfg.AddOnClusterLoaderRemote.RepositoryName)

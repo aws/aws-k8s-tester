@@ -47,7 +47,6 @@ type AddOnHollowNodesRemote struct {
 	// "cmd/kubelet/app.rlimit.SetNumFiles(MaxOpenFiles)" sets this for the host.
 	MaxOpenFiles int64 `json:"max-open-files"`
 
-
 	// RepositoryAccountID is the account ID for tester ECR image.
 	// e.g. "aws/aws-k8s-tester" for "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester"
 	RepositoryAccountID string `json:"repository-account-id,omitempty"`
@@ -132,7 +131,7 @@ func (cfg *Config) validateAddOnHollowNodesRemote() error {
 	if cfg.AddOnHollowNodesRemote.RepositoryURI == "" {
 		return errors.New("AddOnHollowNodesRemote.RepositoryURI empty")
 	}
-	if strings.Contains(cfg.AddOnHollowNodesRemote.RepositoryURI, cfg.AddOnHollowNodesRemote.RepositoryAccountID) {
+	if !strings.Contains(cfg.AddOnHollowNodesRemote.RepositoryURI, cfg.AddOnHollowNodesRemote.RepositoryAccountID) {
 		return fmt.Errorf("AddOnHollowNodesRemote.RepositoryURI %q does not have AddOnHollowNodesRemote.RepositoryAccountID %q", cfg.AddOnHollowNodesRemote.RepositoryURI, cfg.AddOnHollowNodesRemote.RepositoryAccountID)
 	}
 	if cfg.AddOnHollowNodesRemote.RepositoryImageTag == "" {
