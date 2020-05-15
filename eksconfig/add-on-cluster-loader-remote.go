@@ -2,7 +2,9 @@ package eksconfig
 
 import (
 	"errors"
+	"fmt"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/pkg/randutil"
@@ -38,13 +40,16 @@ type AddOnClusterLoaderRemote struct {
 	Duration       time.Duration `json:"duration,omitempty"`
 	DurationString string        `json:"duration-string,omitempty" read-only:"true"`
 
-	// RepositoryName is the repositoryName for tester.
+	// RepositoryAccountID is the account ID for tester ECR image.
+	// e.g. "aws/aws-k8s-tester" for "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester"
+	RepositoryAccountID string `json:"repository-account-id,omitempty"`
+	// RepositoryName is the repositoryName for tester ECR image.
 	// e.g. "aws/aws-k8s-tester" for "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester"
 	RepositoryName string `json:"repository-name,omitempty"`
-	// RepositoryURI is the repositoryUri for tester.
+	// RepositoryURI is the repositoryUri for tester ECR image.
 	// e.g. "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester"
 	RepositoryURI string `json:"repository-uri,omitempty"`
-	// RepositoryImageTag is the image tag for tester.
+	// RepositoryImageTag is the image tag for tester ECR image.
 	// e.g. "latest" for image URI "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester:latest"
 	RepositoryImageTag string `json:"repository-image-tag,omitempty"`
 
@@ -101,11 +106,17 @@ func (cfg *Config) validateAddOnClusterLoaderRemote() error {
 	}
 	cfg.AddOnClusterLoaderRemote.DurationString = cfg.AddOnClusterLoaderRemote.Duration.String()
 
+	if cfg.AddOnClusterLoaderRemote.RepositoryAccountID == "" {
+		return errors.New("AddOnClusterLoaderRemote.RepositoryAccountID empty")
+	}
 	if cfg.AddOnClusterLoaderRemote.RepositoryName == "" {
 		return errors.New("AddOnClusterLoaderRemote.RepositoryName empty")
 	}
 	if cfg.AddOnClusterLoaderRemote.RepositoryURI == "" {
 		return errors.New("AddOnClusterLoaderRemote.RepositoryURI empty")
+	}
+	if strings.Contains(cfg.AddOnClusterLoaderRemote.RepositoryURI, cfg.AddOnClusterLoaderRemote.RepositoryAccountID) {
+		return fmt.Errorf("AddOnClusterLoaderRemote.RepositoryURI %q does not have AddOnClusterLoaderRemote.RepositoryAccountID %q", cfg.AddOnClusterLoaderRemote.RepositoryURI, cfg.AddOnClusterLoaderRemote.RepositoryAccountID)
 	}
 	if cfg.AddOnClusterLoaderRemote.RepositoryImageTag == "" {
 		return errors.New("AddOnClusterLoaderRemote.RepositoryImageTag empty")

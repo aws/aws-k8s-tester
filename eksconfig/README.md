@@ -366,6 +366,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_MANAGED_POLICY_ARNS | read-only "false" | *eksconfig.AddOnFargate.RoleManagedPolicyARNs | []string      |
 | AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_CFN_STACK_ID        | read-only "true"  | *eksconfig.AddOnFargate.RoleCFNStackID        | string        |
 | AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_PROFILE_NAME             | read-only "false" | *eksconfig.AddOnFargate.ProfileName           | string        |
+| AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_REPOSITORY_ACCOUNT_ID    | read-only "false" | *eksconfig.AddOnFargate.RepositoryAccountID   | string        |
 | AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_REPOSITORY_NAME          | read-only "false" | *eksconfig.AddOnFargate.RepositoryName        | string        |
 | AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_REPOSITORY_URI           | read-only "false" | *eksconfig.AddOnFargate.RepositoryURI         | string        |
 | AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_REPOSITORY_IMAGE_TAG     | read-only "false" | *eksconfig.AddOnFargate.RepositoryImageTag    | string        |
@@ -388,6 +389,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_MANAGED_POLICY_ARNS | read-only "false" | *eksconfig.AddOnIRSA.RoleManagedPolicyARNs | []string      |
 | AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_CFN_STACK_ID        | read-only "true"  | *eksconfig.AddOnIRSA.RoleCFNStackID        | string        |
 | AWS_K8S_TESTER_EKS_ADD_ON_IRSA_S3_KEY                   | read-only "false" | *eksconfig.AddOnIRSA.S3Key                 | string        |
+| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_REPOSITORY_ACCOUNT_ID    | read-only "false" | *eksconfig.AddOnIRSA.RepositoryAccountID   | string        |
 | AWS_K8S_TESTER_EKS_ADD_ON_IRSA_REPOSITORY_NAME          | read-only "false" | *eksconfig.AddOnIRSA.RepositoryName        | string        |
 | AWS_K8S_TESTER_EKS_ADD_ON_IRSA_REPOSITORY_URI           | read-only "false" | *eksconfig.AddOnIRSA.RepositoryURI         | string        |
 | AWS_K8S_TESTER_EKS_ADD_ON_IRSA_REPOSITORY_IMAGE_TAG     | read-only "false" | *eksconfig.AddOnIRSA.RepositoryImageTag    | string        |
@@ -415,6 +417,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ROLE_CFN_STACK_ID        | read-only "true"  | *eksconfig.AddOnIRSAFargate.RoleCFNStackID        | string        |
 | AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_S3_KEY                   | read-only "false" | *eksconfig.AddOnIRSAFargate.S3Key                 | string        |
 | AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_PROFILE_NAME             | read-only "false" | *eksconfig.AddOnIRSAFargate.ProfileName           | string        |
+| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_REPOSITORY_ACCOUNT_ID    | read-only "false" | *eksconfig.AddOnIRSAFargate.RepositoryAccountID   | string        |
 | AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_REPOSITORY_NAME          | read-only "false" | *eksconfig.AddOnIRSAFargate.RepositoryName        | string        |
 | AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_REPOSITORY_URI           | read-only "false" | *eksconfig.AddOnIRSAFargate.RepositoryURI         | string        |
 | AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_REPOSITORY_IMAGE_TAG     | read-only "false" | *eksconfig.AddOnIRSAFargate.RepositoryImageTag    | string        |
@@ -491,26 +494,27 @@ AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_ENABLE=true \
 *-----------------------------------------------------------------*-------------------*---------------------------------------------------*-------------------*
 
 
-*--------------------------------------------------------------------*-------------------*------------------------------------------------------*-------------------*
-|                       ENVIRONMENTAL VARIABLE                       |     READ ONLY     |                         TYPE                         |      GO TYPE      |
-*--------------------------------------------------------------------*-------------------*------------------------------------------------------*-------------------*
-| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_ENABLE               | read-only "false" | *eksconfig.AddOnHollowNodesRemote.Enable             | bool              |
-| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_CREATED              | read-only "true"  | *eksconfig.AddOnHollowNodesRemote.Created            | bool              |
-| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_CREATE_TOOK          | read-only "true"  | *eksconfig.AddOnHollowNodesRemote.CreateTook         | time.Duration     |
-| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_CREATE_TOOK_STRING   | read-only "true"  | *eksconfig.AddOnHollowNodesRemote.CreateTookString   | string            |
-| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_DELETE_TOOK          | read-only "true"  | *eksconfig.AddOnHollowNodesRemote.DeleteTook         | time.Duration     |
-| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_DELETE_TOOK_STRING   | read-only "true"  | *eksconfig.AddOnHollowNodesRemote.DeleteTookString   | string            |
-| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NAMESPACE            | read-only "false" | *eksconfig.AddOnHollowNodesRemote.Namespace          | string            |
-| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NODE_LABEL_PREFIX    | read-only "false" | *eksconfig.AddOnHollowNodesRemote.NodeLabelPrefix    | string            |
-| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NODE_LABELS          | read-only "true"  | *eksconfig.AddOnHollowNodesRemote.NodeLabels         | map[string]string |
-| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NODES                | read-only "false" | *eksconfig.AddOnHollowNodesRemote.Nodes              | int               |
-| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_DEPLOYMENT_REPLICAS  | read-only "false" | *eksconfig.AddOnHollowNodesRemote.DeploymentReplicas | int32             |
-| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_MAX_OPEN_FILES       | read-only "false" | *eksconfig.AddOnHollowNodesRemote.MaxOpenFiles       | int64             |
-| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_NAME      | read-only "false" | *eksconfig.AddOnHollowNodesRemote.RepositoryName     | string            |
-| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_URI       | read-only "false" | *eksconfig.AddOnHollowNodesRemote.RepositoryURI      | string            |
-| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_IMAGE_TAG | read-only "false" | *eksconfig.AddOnHollowNodesRemote.RepositoryImageTag | string            |
-| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_CREATED_NODE_NAMES   | read-only "true"  | *eksconfig.AddOnHollowNodesRemote.CreatedNodeNames   | []string          |
-*--------------------------------------------------------------------*-------------------*------------------------------------------------------*-------------------*
+*---------------------------------------------------------------------*-------------------*-------------------------------------------------------*-------------------*
+|                       ENVIRONMENTAL VARIABLE                        |     READ ONLY     |                         TYPE                          |      GO TYPE      |
+*---------------------------------------------------------------------*-------------------*-------------------------------------------------------*-------------------*
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_ENABLE                | read-only "false" | *eksconfig.AddOnHollowNodesRemote.Enable              | bool              |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_CREATED               | read-only "true"  | *eksconfig.AddOnHollowNodesRemote.Created             | bool              |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_CREATE_TOOK           | read-only "true"  | *eksconfig.AddOnHollowNodesRemote.CreateTook          | time.Duration     |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_CREATE_TOOK_STRING    | read-only "true"  | *eksconfig.AddOnHollowNodesRemote.CreateTookString    | string            |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_DELETE_TOOK           | read-only "true"  | *eksconfig.AddOnHollowNodesRemote.DeleteTook          | time.Duration     |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_DELETE_TOOK_STRING    | read-only "true"  | *eksconfig.AddOnHollowNodesRemote.DeleteTookString    | string            |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NAMESPACE             | read-only "false" | *eksconfig.AddOnHollowNodesRemote.Namespace           | string            |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NODE_LABEL_PREFIX     | read-only "false" | *eksconfig.AddOnHollowNodesRemote.NodeLabelPrefix     | string            |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NODE_LABELS           | read-only "true"  | *eksconfig.AddOnHollowNodesRemote.NodeLabels          | map[string]string |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NODES                 | read-only "false" | *eksconfig.AddOnHollowNodesRemote.Nodes               | int               |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_DEPLOYMENT_REPLICAS   | read-only "false" | *eksconfig.AddOnHollowNodesRemote.DeploymentReplicas  | int32             |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_MAX_OPEN_FILES        | read-only "false" | *eksconfig.AddOnHollowNodesRemote.MaxOpenFiles        | int64             |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_ACCOUNT_ID | read-only "false" | *eksconfig.AddOnHollowNodesRemote.RepositoryAccountID | string            |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_NAME       | read-only "false" | *eksconfig.AddOnHollowNodesRemote.RepositoryName      | string            |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_URI        | read-only "false" | *eksconfig.AddOnHollowNodesRemote.RepositoryURI       | string            |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_IMAGE_TAG  | read-only "false" | *eksconfig.AddOnHollowNodesRemote.RepositoryImageTag  | string            |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_CREATED_NODE_NAMES    | read-only "true"  | *eksconfig.AddOnHollowNodesRemote.CreatedNodeNames    | []string          |
+*---------------------------------------------------------------------*-------------------*-------------------------------------------------------*-------------------*
 
 
 *---------------------------------------------------------------------------------*-------------------*-----------------------------------------------------------------*---------------------------*
@@ -543,6 +547,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_DEPLOYMENT_REPLICAS                     | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.DeploymentReplicas                 | int32                     |
 | AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_DURATION                                | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.Duration                           | time.Duration             |
 | AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_DURATION_STRING                         | read-only "true"  | *eksconfig.AddOnClusterLoaderRemote.DurationString                     | string                    |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_ACCOUNT_ID                   | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.RepositoryAccountID                | string                    |
 | AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_NAME                         | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.RepositoryName                     | string                    |
 | AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_URI                          | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.RepositoryURI                      | string                    |
 | AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_IMAGE_TAG                    | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.RepositoryImageTag                 | string                    |

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"path"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -40,13 +41,16 @@ type AddOnIRSA struct {
 	// S3Key is the S3 key to write for IRSA tests.
 	S3Key string `json:"s3-key"`
 
-	// RepositoryName is the repositoryName for tester.
+	// RepositoryAccountID is the account ID for tester ECR image.
+	// e.g. "aws/aws-k8s-tester" for "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester"
+	RepositoryAccountID string `json:"repository-account-id,omitempty"`
+	// RepositoryName is the repositoryName for tester ECR image.
 	// e.g. "aws/aws-k8s-tester" for "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester"
 	RepositoryName string `json:"repository-name,omitempty"`
-	// RepositoryURI is the repositoryUri for tester.
+	// RepositoryURI is the repositoryUri for tester ECR image.
 	// e.g. "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester"
 	RepositoryURI string `json:"repository-uri,omitempty"`
-	// RepositoryImageTag is the image tag for tester.
+	// RepositoryImageTag is the image tag for tester ECR image.
 	// e.g. "latest" for image URI "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester:latest"
 	RepositoryImageTag string `json:"repository-image-tag,omitempty"`
 
@@ -106,11 +110,17 @@ func (cfg *Config) validateAddOnIRSA() error {
 		cfg.AddOnIRSA.S3Key = path.Join(cfg.Name, "s3-key-irsa")
 	}
 
+	if cfg.AddOnIRSA.RepositoryAccountID == "" {
+		return errors.New("AddOnIRSA.RepositoryAccountID empty")
+	}
 	if cfg.AddOnIRSA.RepositoryName == "" {
 		return errors.New("AddOnIRSA.RepositoryName empty")
 	}
 	if cfg.AddOnIRSA.RepositoryURI == "" {
 		return errors.New("AddOnIRSA.RepositoryURI empty")
+	}
+	if strings.Contains(cfg.AddOnIRSA.RepositoryURI, cfg.AddOnIRSA.RepositoryAccountID) {
+		return fmt.Errorf("AddOnIRSA.RepositoryURI %q does not have AddOnIRSA.RepositoryAccountID %q", cfg.AddOnIRSA.RepositoryURI, cfg.AddOnIRSA.RepositoryAccountID)
 	}
 	if cfg.AddOnIRSA.RepositoryImageTag == "" {
 		return errors.New("AddOnIRSA.RepositoryImageTag empty")

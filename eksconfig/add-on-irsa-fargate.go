@@ -45,13 +45,16 @@ type AddOnIRSAFargate struct {
 	// ProfileName is the profile name for Fargate.
 	ProfileName string `json:"profile-name"`
 
-	// RepositoryName is the repositoryName for tester.
+	// RepositoryAccountID is the account ID for tester ECR image.
+	// e.g. "aws/aws-k8s-tester" for "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester"
+	RepositoryAccountID string `json:"repository-account-id,omitempty"`
+	// RepositoryName is the repositoryName for tester ECR image.
 	// e.g. "aws/aws-k8s-tester" for "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester"
 	RepositoryName string `json:"repository-name,omitempty"`
-	// RepositoryURI is the repositoryUri for tester.
+	// RepositoryURI is the repositoryUri for tester ECR image.
 	// e.g. "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester"
 	RepositoryURI string `json:"repository-uri,omitempty"`
-	// RepositoryImageTag is the image tag for tester.
+	// RepositoryImageTag is the image tag for tester ECR image.
 	// e.g. "latest" for image URI "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester:latest"
 	RepositoryImageTag string `json:"repository-image-tag,omitempty"`
 }
@@ -106,11 +109,17 @@ func (cfg *Config) validateAddOnIRSAFargate() error {
 		cfg.AddOnIRSAFargate.ProfileName = cfg.Name + "-irsa-fargate-profile"
 	}
 
+	if cfg.AddOnIRSAFargate.RepositoryAccountID == "" {
+		return errors.New("AddOnIRSAFargate.RepositoryAccountID empty")
+	}
 	if cfg.AddOnIRSAFargate.RepositoryName == "" {
 		return errors.New("AddOnIRSAFargate.RepositoryName empty")
 	}
 	if cfg.AddOnIRSAFargate.RepositoryURI == "" {
 		return errors.New("AddOnIRSAFargate.RepositoryURI empty")
+	}
+	if strings.Contains(cfg.AddOnIRSAFargate.RepositoryURI, cfg.AddOnIRSAFargate.RepositoryAccountID) {
+		return fmt.Errorf("AddOnIRSAFargate.RepositoryURI %q does not have AddOnIRSAFargate.RepositoryAccountID %q", cfg.AddOnIRSAFargate.RepositoryURI, cfg.AddOnIRSAFargate.RepositoryAccountID)
 	}
 	if cfg.AddOnIRSAFargate.RepositoryImageTag == "" {
 		return errors.New("AddOnIRSAFargate.RepositoryImageTag empty")

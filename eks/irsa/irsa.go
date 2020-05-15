@@ -198,6 +198,7 @@ func (ts *tester) Delete() error {
 func (ts *tester) checkECR() error {
 	ts.cfg.Logger.Info("describing ECR repositories")
 	out, err := ts.cfg.ECRAPI.DescribeRepositories(&ecr.DescribeRepositoriesInput{
+		RegistryId:      aws.String(ts.cfg.EKSConfig.AddOnIRSA.RepositoryAccountID),
 		RepositoryNames: aws.StringSlice([]string{ts.cfg.EKSConfig.AddOnIRSA.RepositoryName}),
 	})
 	if err != nil {
@@ -226,6 +227,7 @@ func (ts *tester) checkECR() error {
 
 	ts.cfg.Logger.Info("describing images")
 	imgOut, err := ts.cfg.ECRAPI.DescribeImages(&ecr.DescribeImagesInput{
+		RegistryId:     aws.String(ts.cfg.EKSConfig.AddOnIRSA.RepositoryAccountID),
 		RepositoryName: aws.String(ts.cfg.EKSConfig.AddOnIRSA.RepositoryName),
 		ImageIds: []*ecr.ImageIdentifier{
 			{

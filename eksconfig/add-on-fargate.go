@@ -43,13 +43,16 @@ type AddOnFargate struct {
 	// ProfileName is the profile name for Fargate.
 	ProfileName string `json:"profile-name"`
 
-	// RepositoryName is the repositoryName for tester.
+	// RepositoryAccountID is the account ID for tester ECR image.
+	// e.g. "aws/aws-k8s-tester" for "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester"
+	RepositoryAccountID string `json:"repository-account-id,omitempty"`
+	// RepositoryName is the repositoryName for tester ECR image.
 	// e.g. "aws/aws-k8s-tester" for "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester"
 	RepositoryName string `json:"repository-name,omitempty"`
-	// RepositoryURI is the repositoryUri for tester.
+	// RepositoryURI is the repositoryUri for tester ECR image.
 	// e.g. "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester"
 	RepositoryURI string `json:"repository-uri,omitempty"`
-	// RepositoryImageTag is the image tag for tester.
+	// RepositoryImageTag is the image tag for tester ECR image.
 	// e.g. "latest" for image URI "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester:latest"
 	RepositoryImageTag string `json:"repository-image-tag,omitempty"`
 
@@ -132,6 +135,21 @@ func (cfg *Config) validateAddOnFargate() error {
 		}
 		if len(cfg.AddOnFargate.RoleServicePrincipals) > 0 {
 			return fmt.Errorf("AddOnFargate.RoleCreate false; expect empty RoleServicePrincipals but got %q", cfg.AddOnFargate.RoleServicePrincipals)
+		}
+	}
+
+	if cfg.AddOnFargate.RepositoryURI != "" {
+		if cfg.AddOnFargate.RepositoryAccountID == "" {
+			return errors.New("AddOnFargate.RepositoryAccountID empty")
+		}
+		if cfg.AddOnFargate.RepositoryName == "" {
+			return errors.New("AddOnFargate.RepositoryName empty")
+		}
+		if strings.Contains(cfg.AddOnFargate.RepositoryURI, cfg.AddOnFargate.RepositoryAccountID) {
+			return fmt.Errorf("AddOnFargate.RepositoryURI %q does not have AddOnFargate.RepositoryAccountID %q", cfg.AddOnFargate.RepositoryURI, cfg.AddOnFargate.RepositoryAccountID)
+		}
+		if cfg.AddOnFargate.RepositoryImageTag == "" {
+			return errors.New("AddOnFargate.RepositoryImageTag empty")
 		}
 	}
 

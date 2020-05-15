@@ -3,6 +3,7 @@ package eksconfig
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/pkg/randutil"
@@ -46,13 +47,17 @@ type AddOnHollowNodesRemote struct {
 	// "cmd/kubelet/app.rlimit.SetNumFiles(MaxOpenFiles)" sets this for the host.
 	MaxOpenFiles int64 `json:"max-open-files"`
 
-	// RepositoryName is the repositoryName for tester.
+
+	// RepositoryAccountID is the account ID for tester ECR image.
+	// e.g. "aws/aws-k8s-tester" for "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester"
+	RepositoryAccountID string `json:"repository-account-id,omitempty"`
+	// RepositoryName is the repositoryName for tester ECR image.
 	// e.g. "aws/aws-k8s-tester" for "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester"
 	RepositoryName string `json:"repository-name,omitempty"`
-	// RepositoryURI is the repositoryUri for tester.
+	// RepositoryURI is the repositoryUri for tester ECR image.
 	// e.g. "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester"
 	RepositoryURI string `json:"repository-uri,omitempty"`
-	// RepositoryImageTag is the image tag for tester.
+	// RepositoryImageTag is the image tag for tester ECR image.
 	// e.g. "latest" for image URI "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester:latest"
 	RepositoryImageTag string `json:"repository-image-tag,omitempty"`
 
@@ -118,11 +123,17 @@ func (cfg *Config) validateAddOnHollowNodesRemote() error {
 		cfg.AddOnHollowNodesRemote.MaxOpenFiles = 1000000
 	}
 
+	if cfg.AddOnHollowNodesRemote.RepositoryAccountID == "" {
+		return errors.New("AddOnHollowNodesRemote.RepositoryAccountID empty")
+	}
 	if cfg.AddOnHollowNodesRemote.RepositoryName == "" {
 		return errors.New("AddOnHollowNodesRemote.RepositoryName empty")
 	}
 	if cfg.AddOnHollowNodesRemote.RepositoryURI == "" {
 		return errors.New("AddOnHollowNodesRemote.RepositoryURI empty")
+	}
+	if strings.Contains(cfg.AddOnHollowNodesRemote.RepositoryURI, cfg.AddOnHollowNodesRemote.RepositoryAccountID) {
+		return fmt.Errorf("AddOnHollowNodesRemote.RepositoryURI %q does not have AddOnHollowNodesRemote.RepositoryAccountID %q", cfg.AddOnHollowNodesRemote.RepositoryURI, cfg.AddOnHollowNodesRemote.RepositoryAccountID)
 	}
 	if cfg.AddOnHollowNodesRemote.RepositoryImageTag == "" {
 		return errors.New("AddOnHollowNodesRemote.RepositoryImageTag empty")
