@@ -1128,8 +1128,8 @@ func (ts *tester) checkPod() error {
 		break
 	}
 	if !found {
-		// TODO: fail if not found?
-		ts.cfg.Logger.Warn("failed to find expected output from kubectl logs; fail!")
+		// TODO: not working... fail if not found?
+		ts.cfg.Logger.Warn("failed to find expected output from kubectl logs; fail!", zap.String("expected", sleepMsg))
 	}
 
 	return ts.cfg.EKSConfig.Sync()
