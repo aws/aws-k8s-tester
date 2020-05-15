@@ -556,6 +556,10 @@ func (ts *tester) createDeployment() error {
 	// "/opt/"+hollowNodesKubeConfigConfigMapFileName,
 	// do not specify "kubeconfig", and use in-cluster config via "pkg/k8s-client"
 	// ref. https://github.com/kubernetes/client-go/blob/master/examples/in-cluster-client-configuration/main.go
+	//
+	// randomize node label, for node checking
+	// in case multiple pods are creating hollow nodes
+	//
 	testerCmd := fmt.Sprintf("/aws-k8s-tester eks create hollow-nodes --prefix=%s --nodes=%d --clients=%d --client-qps=%f --client-burst=%d",
 		ts.cfg.EKSConfig.AddOnHollowNodesRemote.NodeLabelPrefix,
 		ts.cfg.EKSConfig.AddOnHollowNodesRemote.Nodes,

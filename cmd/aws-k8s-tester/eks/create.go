@@ -227,6 +227,8 @@ func createHollowNodesFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
+	// randomize node label, for node checking
+	// in case multiple pods are creating hollow nodes
 	sfx := randutil.String(5)
 
 	stopc := make(chan struct{})
