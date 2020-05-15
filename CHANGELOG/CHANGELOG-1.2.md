@@ -3,13 +3,33 @@
 <hr>
 
 
-## [v1.2.1](https://github.com/aws/aws-k8s-tester/releases/tag/v1.2.1) (2020-05)
+## [v1.2.2](https://github.com/aws/aws-k8s-tester/releases/tag/v1.2.2) (2020-05)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.1...v1.2.2).
+
+### `eks`
+
+TODO: update secret, config map writes
+
+### Dependency
+
+- TODO
+
+
+<hr>
+
+
+## [v1.2.1](https://github.com/aws/aws-k8s-tester/releases/tag/v1.2.1) (2020-05-15)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.0...v1.2.1).
 
+### `eks`
+
+- Fix [`ecriface.ECRAPI.DescribeRepositories` calls](https://github.com/aws/aws-k8s-tester/commit/cc418cc3e8c01727c94c3b8fa8099775106020f5).
+
 ### `eksconfig`
 
-TODO: update secret, config map writes
+- Add [`RepositoryAccountID` fields to `AddOnFargate`, `AddOnIRSA`, `AddOnIRSAFargate`, `AddOnHollowNodesRemote`, `AddOnClusterLoaderRemote`](https://github.com/aws/aws-k8s-tester/commit/cc418cc3e8c01727c94c3b8fa8099775106020f5).
 
 ### Dependency
 
