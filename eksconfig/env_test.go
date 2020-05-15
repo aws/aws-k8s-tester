@@ -262,14 +262,14 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_NAME")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_MANAGED_POLICY_ARNS", "a,b,c")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_MANAGED_POLICY_ARNS")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_SERVICE_ACCOUNT_NAME", "hello")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_SERVICE_ACCOUNT_NAME")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_CONFIG_MAP_NAME", "hello")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_CONFIG_MAP_NAME")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_CONFIG_MAP_SCRIPT_FILE_NAME", "hello.sh")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_CONFIG_MAP_SCRIPT_FILE_NAME")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_S3_KEY", "hello")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_S3_KEY")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_REPOSITORY_NAME", "irsa-repo-name")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_REPOSITORY_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_REPOSITORY_URI", "irsa-repo-uri")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_REPOSITORY_URI")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_REPOSITORY_IMAGE_TAG", "irsa-repo-image-tag")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_REPOSITORY_IMAGE_TAG")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_DEPLOYMENT_NAME", "hello-deployment")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_DEPLOYMENT_NAME")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_DEPLOYMENT_RESULT_PATH", "hello-deployment.log")
@@ -289,10 +289,6 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_PROFILE_NAME")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_SECRET_NAME", "HELLO-SECRET")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_SECRET_NAME")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_POD_NAME", "fargate-pod")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_POD_NAME")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_CONTAINER_NAME", "fargate-container")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_CONTAINER_NAME")
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ENABLE")
@@ -304,20 +300,16 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ROLE_SERVICE_PRINCIPALS")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ROLE_MANAGED_POLICY_ARNS", "a,b,c")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ROLE_MANAGED_POLICY_ARNS")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_SERVICE_ACCOUNT_NAME", "hello")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_SERVICE_ACCOUNT_NAME")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_CONFIG_MAP_NAME", "hello")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_CONFIG_MAP_NAME")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_CONFIG_MAP_SCRIPT_FILE_NAME", "hello.sh")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_CONFIG_MAP_SCRIPT_FILE_NAME")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_S3_KEY", "hello")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_S3_KEY")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_PROFILE_NAME", "hello")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_PROFILE_NAME")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_POD_NAME", "fargate-pod")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_POD_NAME")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_CONTAINER_NAME", "fargate-container")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_CONTAINER_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_REPOSITORY_NAME", "irsa-fargate-repo-name")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_REPOSITORY_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_REPOSITORY_URI", "irsa-fargate-repo-uri")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_REPOSITORY_URI")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_REPOSITORY_IMAGE_TAG", "irsa-fargate-repo-image-tag")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_REPOSITORY_IMAGE_TAG")
 
 	proxySecretToken := randutil.Hex(32)
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_ENABLE", "true")
@@ -826,20 +818,17 @@ func TestEnv(t *testing.T) {
 	if !reflect.DeepEqual(cfg.AddOnIRSA.RoleManagedPolicyARNs, expectedAddOnIRSARoleManagedPolicyARNs) {
 		t.Fatalf("unexpected cfg.AddOnIRSA.RoleManagedPolicyARNs %q", cfg.AddOnIRSA.RoleManagedPolicyARNs)
 	}
-	if cfg.AddOnIRSA.ServiceAccountName != "hello" {
-		t.Fatalf("unexpected cfg.AddOnIRSA.ServiceAccountName %q", cfg.AddOnIRSA.ServiceAccountName)
-	}
-	if cfg.AddOnIRSA.ConfigMapName != "hello" {
-		t.Fatalf("unexpected cfg.AddOnIRSA.ConfigMapName %q", cfg.AddOnIRSA.ConfigMapName)
-	}
-	if cfg.AddOnIRSA.ConfigMapScriptFileName != "hello.sh" {
-		t.Fatalf("unexpected cfg.AddOnIRSA.ConfigMapScriptFileName %q", cfg.AddOnIRSA.ConfigMapScriptFileName)
-	}
 	if cfg.AddOnIRSA.S3Key != "hello" {
 		t.Fatalf("unexpected cfg.AddOnIRSA.S3Key %q", cfg.AddOnIRSA.S3Key)
 	}
-	if cfg.AddOnIRSA.DeploymentName != "hello-deployment" {
-		t.Fatalf("unexpected cfg.AddOnIRSA.DeploymentName %q", cfg.AddOnIRSA.DeploymentName)
+	if cfg.AddOnIRSA.RepositoryName != "irsa-repo-name" {
+		t.Fatalf("unexpected cfg.AddOnIRSA.RepositoryName %v", cfg.AddOnIRSA.RepositoryName)
+	}
+	if cfg.AddOnIRSA.RepositoryURI != "irsa-repo-uri" {
+		t.Fatalf("unexpected cfg.AddOnIRSA.RepositoryURI %v", cfg.AddOnIRSA.RepositoryURI)
+	}
+	if cfg.AddOnIRSA.RepositoryImageTag != "irsa-repo-image-tag" {
+		t.Fatalf("unexpected cfg.AddOnIRSA.RepositoryImageTag %v", cfg.AddOnIRSA.RepositoryImageTag)
 	}
 	if cfg.AddOnIRSA.DeploymentResultPath != "hello-deployment.log" {
 		t.Fatalf("unexpected cfg.AddOnIRSA.DeploymentResultPath %q", cfg.AddOnIRSA.DeploymentResultPath)
@@ -868,12 +857,6 @@ func TestEnv(t *testing.T) {
 	if cfg.AddOnFargate.SecretName != "HELLO-SECRET" {
 		t.Fatalf("unexpected cfg.AddOnFargate.SecretName %q", cfg.AddOnFargate.SecretName)
 	}
-	if cfg.AddOnFargate.PodName != "fargate-pod" {
-		t.Fatalf("unexpected cfg.AddOnFargate.PodName %q", cfg.AddOnFargate.PodName)
-	}
-	if cfg.AddOnFargate.ContainerName != "fargate-container" {
-		t.Fatalf("unexpected cfg.AddOnFargate.ContainerName %q", cfg.AddOnFargate.ContainerName)
-	}
 
 	if !cfg.AddOnIRSAFargate.Enable {
 		t.Fatalf("unexpected cfg.AddOnIRSAFargate.Enable %v", cfg.AddOnIRSAFargate.Enable)
@@ -892,26 +875,20 @@ func TestEnv(t *testing.T) {
 	if !reflect.DeepEqual(cfg.AddOnIRSAFargate.RoleManagedPolicyARNs, expectedAddOnIRSAFargateRoleManagedPolicyARNs) {
 		t.Fatalf("unexpected cfg.AddOnIRSAFargate.RoleManagedPolicyARNs %q", cfg.AddOnIRSAFargate.RoleManagedPolicyARNs)
 	}
-	if cfg.AddOnIRSAFargate.ServiceAccountName != "hello" {
-		t.Fatalf("unexpected cfg.AddOnIRSAFargate.ServiceAccountName %q", cfg.AddOnIRSAFargate.ServiceAccountName)
-	}
-	if cfg.AddOnIRSAFargate.ConfigMapName != "hello" {
-		t.Fatalf("unexpected cfg.AddOnIRSAFargate.ConfigMapName %q", cfg.AddOnIRSAFargate.ConfigMapName)
-	}
-	if cfg.AddOnIRSAFargate.ConfigMapScriptFileName != "hello.sh" {
-		t.Fatalf("unexpected cfg.AddOnIRSAFargate.ConfigMapScriptFileName %q", cfg.AddOnIRSAFargate.ConfigMapScriptFileName)
-	}
 	if cfg.AddOnIRSAFargate.S3Key != "hello" {
 		t.Fatalf("unexpected cfg.AddOnIRSAFargate.S3Key %q", cfg.AddOnIRSAFargate.S3Key)
 	}
 	if cfg.AddOnIRSAFargate.ProfileName != "hello" {
 		t.Fatalf("unexpected cfg.AddOnIRSAFargate.ProfileName %q", cfg.AddOnIRSAFargate.ProfileName)
 	}
-	if cfg.AddOnIRSAFargate.PodName != "fargate-pod" {
-		t.Fatalf("unexpected cfg.AddOnIRSAFargate.PodName %q", cfg.AddOnIRSAFargate.PodName)
+	if cfg.AddOnIRSAFargate.RepositoryName != "irsa-fargate-repo-name" {
+		t.Fatalf("unexpected cfg.AddOnIRSAFargate.RepositoryName %v", cfg.AddOnIRSAFargate.RepositoryName)
 	}
-	if cfg.AddOnIRSAFargate.ContainerName != "fargate-container" {
-		t.Fatalf("unexpected cfg.AddOnIRSAFargate.ContainerName %q", cfg.AddOnIRSAFargate.ContainerName)
+	if cfg.AddOnIRSAFargate.RepositoryURI != "irsa-fargate-repo-uri" {
+		t.Fatalf("unexpected cfg.AddOnIRSAFargate.RepositoryURI %v", cfg.AddOnIRSAFargate.RepositoryURI)
+	}
+	if cfg.AddOnIRSAFargate.RepositoryImageTag != "irsa-fargate-repo-image-tag" {
+		t.Fatalf("unexpected cfg.AddOnIRSAFargate.RepositoryImageTag %v", cfg.AddOnIRSAFargate.RepositoryImageTag)
 	}
 
 	if !cfg.AddOnJupyterHub.Enable {

@@ -37,17 +37,19 @@ type AddOnIRSA struct {
 	RoleManagedPolicyARNs []string `json:"role-managed-policy-arns"`
 	RoleCFNStackID        string   `json:"role-cfn-stack-id" read-only:"true"`
 
-	// ServiceAccountName is the ServiceAccount name.
-	ServiceAccountName string `json:"service-account-name"`
-	// ConfigMapName is the ConfigMap name.
-	ConfigMapName string `json:"config-map-name"`
-	// ConfigMapScriptFileName is the ConfigMap script name.
-	ConfigMapScriptFileName string `json:"config-map-script-file-name"`
 	// S3Key is the S3 key to write for IRSA tests.
 	S3Key string `json:"s3-key"`
 
-	// DeploymentName is the Deployment name.
-	DeploymentName string `json:"deployment-name"`
+	// RepositoryName is the repositoryName for tester.
+	// e.g. "aws/aws-k8s-tester" for "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester"
+	RepositoryName string `json:"repository-name,omitempty"`
+	// RepositoryURI is the repositoryUri for tester.
+	// e.g. "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester"
+	RepositoryURI string `json:"repository-uri,omitempty"`
+	// RepositoryImageTag is the image tag for tester.
+	// e.g. "latest" for image URI "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester:latest"
+	RepositoryImageTag string `json:"repository-image-tag,omitempty"`
+
 	// DeploymentReplicas is the number of Deployment replicas.
 	DeploymentReplicas int32 `json:"deployment-replicas"`
 	// DeploymentResultPath is the output of "Deployment" run.
@@ -100,21 +102,20 @@ func (cfg *Config) validateAddOnIRSA() error {
 	if cfg.AddOnIRSA.RoleName == "" {
 		cfg.AddOnIRSA.RoleName = cfg.Name + "-role-irsa"
 	}
-	if cfg.AddOnIRSA.ServiceAccountName == "" {
-		cfg.AddOnIRSA.ServiceAccountName = cfg.Name + "-service-account-irsa"
-	}
-	if cfg.AddOnIRSA.ConfigMapName == "" {
-		cfg.AddOnIRSA.ConfigMapName = cfg.Name + "-configmap-irsa"
-	}
-	if cfg.AddOnIRSA.ConfigMapScriptFileName == "" {
-		cfg.AddOnIRSA.ConfigMapScriptFileName = cfg.Name + "-configmap-irsa.sh"
-	}
 	if cfg.AddOnIRSA.S3Key == "" {
 		cfg.AddOnIRSA.S3Key = path.Join(cfg.Name, "s3-key-irsa")
 	}
-	if cfg.AddOnIRSA.DeploymentName == "" {
-		cfg.AddOnIRSA.DeploymentName = cfg.Name + "-deployment-irsa"
+
+	if cfg.AddOnIRSA.RepositoryName == "" {
+		return errors.New("AddOnIRSA.RepositoryName empty")
 	}
+	if cfg.AddOnIRSA.RepositoryURI == "" {
+		return errors.New("AddOnIRSA.RepositoryURI empty")
+	}
+	if cfg.AddOnIRSA.RepositoryImageTag == "" {
+		return errors.New("AddOnIRSA.RepositoryImageTag empty")
+	}
+
 	if cfg.AddOnIRSA.DeploymentResultPath == "" {
 		cfg.AddOnIRSA.DeploymentResultPath = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-deployment-irsa-result.log")
 	}

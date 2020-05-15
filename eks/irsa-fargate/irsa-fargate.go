@@ -22,12 +22,15 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/cloudformation/cloudformationiface"
+	"github.com/aws/aws-sdk-go/service/ecr"
+	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/aws/aws-sdk-go/service/iam/iamiface"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
+	"github.com/dustin/go-humanize"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -46,6 +49,7 @@ type Config struct {
 	EKSAPI    eksiface.EKSAPI
 	IAMAPI    iamiface.IAMAPI
 	S3API     s3iface.S3API
+	ECRAPI    ecriface.ECRAPI
 }
 
 // Tester defines Fargate tester.
@@ -81,6 +85,9 @@ func (ts *tester) Create() error {
 		ts.cfg.EKSConfig.Sync()
 	}()
 
+	if err := ts.checkECR(); err != nil {
+		return err
+	}
 	if err := k8s_client.CreateNamespace(ts.cfg.Logger, ts.cfg.K8SClient.KubernetesClientSet(), ts.cfg.EKSConfig.AddOnIRSAFargate.Namespace); err != nil {
 		return err
 	}
@@ -185,6 +192,64 @@ func (ts *tester) Delete() error {
 
 	ts.cfg.EKSConfig.AddOnIRSAFargate.Created = false
 	return ts.cfg.EKSConfig.Sync()
+}
+
+func (ts *tester) checkECR() error {
+	ts.cfg.Logger.Info("describing ECR repositories")
+	out, err := ts.cfg.ECRAPI.DescribeRepositories(&ecr.DescribeRepositoriesInput{
+		RepositoryNames: aws.StringSlice([]string{ts.cfg.EKSConfig.AddOnIRSAFargate.RepositoryName}),
+	})
+	if err != nil {
+		return err
+	}
+	if len(out.Repositories) != 1 {
+		return fmt.Errorf("%q expected 1 ECR repository, got %d", ts.cfg.EKSConfig.AddOnIRSAFargate.RepositoryName, len(out.Repositories))
+	}
+	repo := out.Repositories[0]
+	arn := aws.StringValue(repo.RepositoryArn)
+	name := aws.StringValue(repo.RepositoryName)
+	uri := aws.StringValue(repo.RepositoryUri)
+	ts.cfg.Logger.Info(
+		"described ECR repository",
+		zap.String("arn", arn),
+		zap.String("name", name),
+		zap.String("uri", uri),
+	)
+
+	if name != ts.cfg.EKSConfig.AddOnIRSAFargate.RepositoryName {
+		return fmt.Errorf("unexpected ECR repository name %q", name)
+	}
+	if uri != ts.cfg.EKSConfig.AddOnIRSAFargate.RepositoryURI {
+		return fmt.Errorf("unexpected ECR repository uri %q", uri)
+	}
+
+	ts.cfg.Logger.Info("describing images")
+	imgOut, err := ts.cfg.ECRAPI.DescribeImages(&ecr.DescribeImagesInput{
+		RepositoryName: aws.String(ts.cfg.EKSConfig.AddOnIRSAFargate.RepositoryName),
+		ImageIds: []*ecr.ImageIdentifier{
+			{
+				ImageTag: aws.String(ts.cfg.EKSConfig.AddOnIRSAFargate.RepositoryImageTag),
+			},
+		},
+	})
+	if err != nil {
+		return err
+	}
+	if len(imgOut.ImageDetails) == 0 {
+		return fmt.Errorf("image tag %q not found", ts.cfg.EKSConfig.AddOnIRSAFargate.RepositoryImageTag)
+	}
+	ts.cfg.Logger.Info("described images", zap.Int("images", len(imgOut.ImageDetails)))
+	for i, img := range imgOut.ImageDetails {
+		ts.cfg.Logger.Info("found an image",
+			zap.Int("index", i),
+			zap.String("requested-tag", ts.cfg.EKSConfig.AddOnIRSAFargate.RepositoryImageTag),
+			zap.Strings("returned-tags", aws.StringValueSlice(img.ImageTags)),
+			zap.String("digest", aws.StringValue(img.ImageDigest)),
+			zap.String("pushed-at", humanize.Time(aws.TimeValue(img.ImagePushedAt))),
+			zap.String("size", humanize.Bytes(uint64(aws.Int64Value(img.ImageSizeInBytes)))),
+		)
+	}
+	return nil
 }
 
 func (ts *tester) createS3() (err error) {
@@ -429,7 +494,7 @@ func (ts *tester) createRole() error {
 			},
 			{
 				ParameterKey:   aws.String("ServiceAccountName"),
-				ParameterValue: aws.String(ts.cfg.EKSConfig.AddOnIRSAFargate.ServiceAccountName),
+				ParameterValue: aws.String(irsaFargateServiceAccountName),
 			},
 		},
 	}
@@ -537,8 +602,16 @@ func (ts *tester) deleteRole() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
+const (
+	irsaFargateServiceAccountName = "irsa-fargate-service-account"
+	irsaFargateConfigMapName      = "irsa-fargate-config-map"
+	irsaFargateConfigMapFileName  = "irsa-fargate-config-map.bash"
+	irsaFargatePodName            = "irsa-fargate-pod"
+	irsaFargateContainerName      = "irsa-fargate-container"
+)
+
 func (ts *tester) createServiceAccount() error {
-	ts.cfg.Logger.Info("creating service account", zap.String("name", ts.cfg.EKSConfig.AddOnIRSAFargate.ServiceAccountName))
+	ts.cfg.Logger.Info("creating service account", zap.String("name", irsaFargateServiceAccountName))
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.K8SClient.KubernetesClientSet().
 		CoreV1().
@@ -551,10 +624,10 @@ func (ts *tester) createServiceAccount() error {
 					Kind:       "ServiceAccount",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      ts.cfg.EKSConfig.AddOnIRSAFargate.ServiceAccountName,
+					Name:      irsaFargateServiceAccountName,
 					Namespace: ts.cfg.EKSConfig.AddOnIRSAFargate.Namespace,
 					Labels: map[string]string{
-						"name": ts.cfg.EKSConfig.AddOnIRSAFargate.ServiceAccountName,
+						"name": irsaFargateServiceAccountName,
 					},
 					Annotations: map[string]string{
 						"eks.amazonaws.com/role-arn": ts.cfg.EKSConfig.AddOnIRSAFargate.RoleARN,
@@ -567,12 +640,12 @@ func (ts *tester) createServiceAccount() error {
 	if err != nil {
 		return err
 	}
-	ts.cfg.Logger.Info("created service account", zap.String("name", ts.cfg.EKSConfig.AddOnIRSAFargate.ServiceAccountName))
+	ts.cfg.Logger.Info("created service account", zap.String("name", irsaFargateServiceAccountName))
 	return ts.cfg.EKSConfig.Sync()
 }
 
 func (ts *tester) deleteServiceAccount() error {
-	ts.cfg.Logger.Info("deleting service account", zap.String("name", ts.cfg.EKSConfig.AddOnIRSAFargate.ServiceAccountName))
+	ts.cfg.Logger.Info("deleting service account", zap.String("name", irsaFargateServiceAccountName))
 	foreground := metav1.DeletePropagationForeground
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	err := ts.cfg.K8SClient.KubernetesClientSet().
@@ -580,7 +653,7 @@ func (ts *tester) deleteServiceAccount() error {
 		ServiceAccounts(ts.cfg.EKSConfig.AddOnIRSAFargate.Namespace).
 		Delete(
 			ctx,
-			ts.cfg.EKSConfig.AddOnIRSAFargate.ServiceAccountName,
+			irsaFargateServiceAccountName,
 			metav1.DeleteOptions{
 				GracePeriodSeconds: aws.Int64(0),
 				PropagationPolicy:  &foreground,
@@ -590,7 +663,7 @@ func (ts *tester) deleteServiceAccount() error {
 	if err != nil {
 		return err
 	}
-	ts.cfg.Logger.Info("deleted service account", zap.String("name", ts.cfg.EKSConfig.AddOnIRSAFargate.ServiceAccountName))
+	ts.cfg.Logger.Info("deleted service account", zap.String("name", irsaFargateServiceAccountName))
 	return ts.cfg.EKSConfig.Sync()
 }
 
@@ -598,10 +671,6 @@ func (ts *tester) deleteServiceAccount() error {
 const TemplateConfigMap = `
 #!/usr/bin/env bash
 set -e
-printf "Installing AWS CLI..."
-yum install -y python3-pip
-pip3 install --upgrade --quiet awscli
-printf "\nAWS CLI version:\n"
 aws --version
 printf "\nProjected ServiceAccount token:\n"
 cat $AWS_WEB_IDENTITY_TOKEN_FILE; echo
@@ -639,7 +708,7 @@ type configMapTemplate struct {
 }
 
 func (ts *tester) createConfigMap() error {
-	ts.cfg.Logger.Info("creating IRSA config map", zap.String("name", ts.cfg.EKSConfig.AddOnIRSAFargate.ConfigMapName))
+	ts.cfg.Logger.Info("creating IRSA config map", zap.String("name", irsaFargateConfigMapName))
 
 	tpl := template.Must(template.New("TemplateConfigMap").Parse(TemplateConfigMap))
 	buf := bytes.NewBuffer(nil)
@@ -665,14 +734,14 @@ func (ts *tester) createConfigMap() error {
 					Kind:       "ConfigMap",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      ts.cfg.EKSConfig.AddOnIRSAFargate.ConfigMapName,
+					Name:      irsaFargateConfigMapName,
 					Namespace: ts.cfg.EKSConfig.AddOnIRSAFargate.Namespace,
 					Labels: map[string]string{
-						"name": ts.cfg.EKSConfig.AddOnIRSAFargate.ConfigMapName,
+						"name": irsaFargateConfigMapName,
 					},
 				},
 				Data: map[string]string{
-					ts.cfg.EKSConfig.AddOnIRSAFargate.ConfigMapScriptFileName: tplTxt,
+					irsaFargateConfigMapFileName: tplTxt,
 				},
 			},
 			metav1.CreateOptions{},
@@ -682,12 +751,12 @@ func (ts *tester) createConfigMap() error {
 		return err
 	}
 
-	ts.cfg.Logger.Info("created IRSA config map", zap.String("name", ts.cfg.EKSConfig.AddOnIRSAFargate.ConfigMapName))
+	ts.cfg.Logger.Info("created IRSA config map", zap.String("name", irsaFargateConfigMapName))
 	return ts.cfg.EKSConfig.Sync()
 }
 
 func (ts *tester) deleteConfigMaps() error {
-	ts.cfg.Logger.Info("deleting config maps", zap.String("name", ts.cfg.EKSConfig.AddOnIRSAFargate.ConfigMapName))
+	ts.cfg.Logger.Info("deleting config maps", zap.String("name", irsaFargateConfigMapName))
 	foreground := metav1.DeletePropagationForeground
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	err := ts.cfg.K8SClient.KubernetesClientSet().
@@ -695,7 +764,7 @@ func (ts *tester) deleteConfigMaps() error {
 		ConfigMaps(ts.cfg.EKSConfig.AddOnIRSAFargate.Namespace).
 		Delete(
 			ctx,
-			ts.cfg.EKSConfig.AddOnIRSAFargate.ConfigMapName,
+			irsaFargateConfigMapName,
 			metav1.DeleteOptions{
 				GracePeriodSeconds: aws.Int64(0),
 				PropagationPolicy:  &foreground,
@@ -706,7 +775,7 @@ func (ts *tester) deleteConfigMaps() error {
 		return err
 	}
 
-	ts.cfg.Logger.Info("deleted config map", zap.String("name", ts.cfg.EKSConfig.AddOnIRSAFargate.ConfigMapName))
+	ts.cfg.Logger.Info("deleted config map", zap.String("name", irsaFargateConfigMapName))
 	return ts.cfg.EKSConfig.Sync()
 }
 
@@ -874,29 +943,30 @@ func (ts *tester) createPod() error {
 	tpl := template.Must(template.New("TemplatePodScript").Parse(TemplatePodScript))
 	buf := bytes.NewBuffer(nil)
 	if err := tpl.Execute(buf, podScriptTemplate{
-		ConfigMapScriptFileName: ts.cfg.EKSConfig.AddOnIRSAFargate.ConfigMapScriptFileName,
+		ConfigMapScriptFileName: irsaFargateConfigMapFileName,
 	}); err != nil {
 		return err
 	}
 	tplTxt := buf.String()
 
-	ts.cfg.Logger.Info("creating Pod")
+	image := ts.cfg.EKSConfig.AddOnIRSAFargate.RepositoryURI + ":" + ts.cfg.EKSConfig.AddOnIRSAFargate.RepositoryImageTag
+	ts.cfg.Logger.Info("creating IRSA Fargate Pod", zap.String("image", image))
 	pod := &v1.Pod{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
 			Kind:       "Pod",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      ts.cfg.EKSConfig.AddOnIRSAFargate.PodName,
+			Name:      irsaFargatePodName,
 			Namespace: ts.cfg.EKSConfig.AddOnIRSAFargate.Namespace,
 		},
 		Spec: v1.PodSpec{
 			RestartPolicy:      v1.RestartPolicyOnFailure,
-			ServiceAccountName: ts.cfg.EKSConfig.AddOnIRSAFargate.ServiceAccountName,
+			ServiceAccountName: irsaFargateServiceAccountName,
 			Containers: []v1.Container{
 				{
-					Name:  ts.cfg.EKSConfig.AddOnIRSAFargate.ContainerName,
-					Image: "amazonlinux",
+					Name:  irsaFargateContainerName,
+					Image: image,
 
 					ImagePullPolicy: v1.PullIfNotPresent,
 					Command: []string{
@@ -908,7 +978,7 @@ func (ts *tester) createPod() error {
 					// ref. https://kubernetes.io/docs/concepts/cluster-administration/logging/
 					VolumeMounts: []v1.VolumeMount{
 						{ // to execute
-							Name:      ts.cfg.EKSConfig.AddOnIRSAFargate.ConfigMapName,
+							Name:      irsaFargateConfigMapName,
 							MountPath: "/opt",
 						},
 					},
@@ -918,11 +988,11 @@ func (ts *tester) createPod() error {
 			// ref. https://kubernetes.io/docs/concepts/cluster-administration/logging/
 			Volumes: []v1.Volume{
 				{ // to execute
-					Name: ts.cfg.EKSConfig.AddOnIRSAFargate.ConfigMapName,
+					Name: irsaFargateConfigMapName,
 					VolumeSource: v1.VolumeSource{
 						ConfigMap: &v1.ConfigMapVolumeSource{
 							LocalObjectReference: v1.LocalObjectReference{
-								Name: ts.cfg.EKSConfig.AddOnIRSAFargate.ConfigMapName,
+								Name: irsaFargateConfigMapName,
 							},
 							DefaultMode: aws.Int32(0777),
 						},
@@ -948,7 +1018,7 @@ func (ts *tester) createPod() error {
 var propagationBackground = metav1.DeletePropagationBackground
 
 func (ts *tester) deletePod() error {
-	ts.cfg.Logger.Info("deleting Pod", zap.String("name", ts.cfg.EKSConfig.AddOnIRSAFargate.PodName))
+	ts.cfg.Logger.Info("deleting Pod", zap.String("name", irsaFargatePodName))
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	err := ts.cfg.
 		K8SClient.KubernetesClientSet().
@@ -956,7 +1026,7 @@ func (ts *tester) deletePod() error {
 		Pods(ts.cfg.EKSConfig.AddOnIRSAFargate.Namespace).
 		Delete(
 			ctx,
-			ts.cfg.EKSConfig.AddOnIRSAFargate.PodName,
+			irsaFargatePodName,
 			metav1.DeleteOptions{
 				GracePeriodSeconds: aws.Int64(0),
 				PropagationPolicy:  &propagationBackground,
@@ -964,9 +1034,9 @@ func (ts *tester) deletePod() error {
 		)
 	cancel()
 	if err != nil {
-		return fmt.Errorf("failed to delete Pod %q (%v)", ts.cfg.EKSConfig.AddOnIRSAFargate.PodName, err)
+		return fmt.Errorf("failed to delete Pod %q (%v)", irsaFargatePodName, err)
 	}
-	ts.cfg.Logger.Info("deleted Pod", zap.String("name", ts.cfg.EKSConfig.AddOnIRSAFargate.PodName))
+	ts.cfg.Logger.Info("deleted Pod", zap.String("name", irsaFargatePodName))
 	return ts.cfg.EKSConfig.Sync()
 }
 
@@ -996,7 +1066,7 @@ func (ts *tester) checkPod() error {
 		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
 		"--namespace=" + ts.cfg.EKSConfig.AddOnIRSAFargate.Namespace,
 		"describe",
-		"pods/" + ts.cfg.EKSConfig.AddOnIRSAFargate.PodName,
+		"pods/" + irsaFargatePodName,
 	}
 	cmdTxtDesc := strings.Join(argsDesc, " ")
 	argsLogs := []string{
@@ -1004,13 +1074,13 @@ func (ts *tester) checkPod() error {
 		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
 		"--namespace=" + ts.cfg.EKSConfig.AddOnIRSAFargate.Namespace,
 		"logs",
-		"pods/" + ts.cfg.EKSConfig.AddOnIRSAFargate.PodName,
+		"pods/" + irsaFargatePodName,
 		"--timestamps",
 	}
 	cmdTxtLogs := strings.Join(argsLogs, " ")
 	ts.cfg.Logger.Info("checking Pod logs",
-		zap.String("pod-name", ts.cfg.EKSConfig.AddOnIRSAFargate.PodName),
-		zap.String("container-name", ts.cfg.EKSConfig.AddOnIRSAFargate.ContainerName),
+		zap.String("pod-name", irsaFargatePodName),
+		zap.String("container-name", irsaFargateContainerName),
 		zap.String("command-describe", cmdTxtDesc),
 		zap.String("command-logs", cmdTxtLogs),
 	)
@@ -1043,8 +1113,8 @@ func (ts *tester) checkPod() error {
 		fmt.Printf("\n'%s' output:\n\n%s\n\n", cmdTxtLogs, out)
 
 		ts.cfg.Logger.Info("checked Pod logs",
-			zap.String("pod-name", ts.cfg.EKSConfig.AddOnIRSAFargate.PodName),
-			zap.String("container-name", ts.cfg.EKSConfig.AddOnIRSAFargate.ContainerName),
+			zap.String("pod-name", irsaFargatePodName),
+			zap.String("container-name", irsaFargateContainerName),
 		)
 
 		if !strings.Contains(out, sleepMsg) {

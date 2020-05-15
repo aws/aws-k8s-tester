@@ -1,6 +1,7 @@
 package eksconfig
 
 import (
+	"path/filepath"
 	"time"
 )
 
@@ -30,6 +31,10 @@ type AddOnClusterLoaderLocal struct {
 
 	// RequestsSummary is the cluster loader results.
 	RequestsSummary RequestsSummary `json:"requests-summary,omitempty" read-only:"true"`
+	// RequestsSummaryJSONPath is the file path to store requests summary results in JSON format.
+	RequestsSummaryJSONPath string `json:"requests-summary-json-path" read-only:"true"`
+	// RequestsSummaryTablePath is the file path to store requests summary results in table format.
+	RequestsSummaryTablePath string `json:"requests-summary-table-path" read-only:"true"`
 }
 
 // EnvironmentVariablePrefixAddOnClusterLoaderLocal is the environment variable prefix used for "eksconfig".
@@ -64,6 +69,13 @@ func (cfg *Config) validateAddOnClusterLoaderLocal() error {
 		cfg.AddOnClusterLoaderLocal.Duration = time.Minute
 	}
 	cfg.AddOnClusterLoaderLocal.DurationString = cfg.AddOnClusterLoaderLocal.Duration.String()
+
+	if cfg.AddOnClusterLoaderLocal.RequestsSummaryJSONPath == "" {
+		cfg.AddOnClusterLoaderLocal.RequestsSummaryJSONPath = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-cluster-loader-local-request-summary.json")
+	}
+	if cfg.AddOnClusterLoaderLocal.RequestsSummaryTablePath == "" {
+		cfg.AddOnClusterLoaderLocal.RequestsSummaryTablePath = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-cluster-loader-local-request-summary.txt")
+	}
 
 	return nil
 }

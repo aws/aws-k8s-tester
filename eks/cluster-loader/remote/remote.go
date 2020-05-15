@@ -80,11 +80,10 @@ func (ts *tester) Create() (err error) {
 		ts.cfg.EKSConfig.Sync()
 	}()
 
-	if err := k8s_client.CreateNamespace(ts.cfg.Logger, ts.cfg.K8SClient.KubernetesClientSet(), ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Namespace); err != nil {
+	if err = ts.checkECR(); err != nil {
 		return err
 	}
-
-	if err = ts.checkECR(); err != nil {
+	if err := k8s_client.CreateNamespace(ts.cfg.Logger, ts.cfg.K8SClient.KubernetesClientSet(), ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Namespace); err != nil {
 		return err
 	}
 	if err = ts.createServiceAccount(); err != nil {
@@ -570,7 +569,7 @@ func (ts *tester) createDeployment() error {
 	// do not specify "kubeconfig", and use in-cluster config via "pkg/k8s-client"
 	// otherwise, error "namespaces is forbidden: User "system:node:ip-192-168-84..."
 	// ref. https://github.com/kubernetes/client-go/blob/master/examples/in-cluster-client-configuration/main.go
-	testerCmd := fmt.Sprintf("/aws-k8s-tester eks create cluster-loader --kubectl=/kubectl --clients=%d --client-qps=%f --client-burst=%d --namespaces=%s --duration=%s --output-path-prefix=/var/log/%s --block=true",
+	testerCmd := fmt.Sprintf("/aws-k8s-tester eks create cluster-loader --clients=%d --client-qps=%f --client-burst=%d --namespaces=%s --duration=%s --output-path-prefix=/var/log/%s --block=true",
 		ts.cfg.EKSConfig.Clients,
 		ts.cfg.EKSConfig.ClientQPS,
 		ts.cfg.EKSConfig.ClientBurst,
@@ -580,7 +579,6 @@ func (ts *tester) createDeployment() error {
 	)
 
 	image := ts.cfg.EKSConfig.AddOnClusterLoaderRemote.RepositoryURI + ":" + ts.cfg.EKSConfig.AddOnClusterLoaderRemote.RepositoryImageTag
-
 	ts.cfg.Logger.Info("creating cluster loader Deployment", zap.String("image", image), zap.String("tester-command", testerCmd))
 	dirOrCreate := v1.HostPathDirectoryOrCreate
 	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
@@ -868,14 +866,28 @@ func (ts *tester) AggregateResults() error {
 		ts.cfg.Logger.Warn("failed to marshal JSON", zap.Error(err))
 		return err
 	}
-	err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnClusterLoaderRemote.RequestsSummaryAggregatedPath, b, 0600)
+	err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnClusterLoaderRemote.RequestsSummaryJSONPath, b, 0600)
 	if err != nil {
 		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 		return err
 	}
 
-	ts.cfg.Logger.Info("aggregated results from Pods",
-		zap.String("result-path", ts.cfg.EKSConfig.AddOnClusterLoaderRemote.RequestsSummaryAggregatedPath),
-	)
+	tableBody := ts.cfg.EKSConfig.AddOnClusterLoaderRemote.RequestsSummary.LatencyHistogram.Table()
+	tableBody = fmt.Sprintf(`
+
+SUCCESS TOTAL: %.2f
+FAILURE TOTAL: %.2f
+
+`,
+		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.RequestsSummary.SuccessTotal,
+		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.RequestsSummary.FailureTotal,
+	) + tableBody
+	err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnClusterLoaderRemote.RequestsSummaryTablePath, []byte(tableBody), 0600)
+	if err != nil {
+		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
+		return err
+	}
+
+	ts.cfg.Logger.Info("aggregated results from Pods")
 	return ts.cfg.EKSConfig.Sync()
 }

@@ -77,11 +77,10 @@ func (ts *tester) Create() (err error) {
 		ts.cfg.EKSConfig.Sync()
 	}()
 
-	if err := k8s_client.CreateNamespace(ts.cfg.Logger, ts.cfg.K8SClient.KubernetesClientSet(), ts.cfg.EKSConfig.AddOnHollowNodesRemote.Namespace); err != nil {
+	if err = ts.checkECR(); err != nil {
 		return err
 	}
-
-	if err = ts.checkECR(); err != nil {
+	if err := k8s_client.CreateNamespace(ts.cfg.Logger, ts.cfg.K8SClient.KubernetesClientSet(), ts.cfg.EKSConfig.AddOnHollowNodesRemote.Namespace); err != nil {
 		return err
 	}
 	if err = ts.createServiceAccount(); err != nil {
@@ -554,7 +553,7 @@ func (ts *tester) createDeployment() error {
 	// "/opt/"+hollowNodesKubeConfigConfigMapFileName,
 	// do not specify "kubeconfig", and use in-cluster config via "pkg/k8s-client"
 	// ref. https://github.com/kubernetes/client-go/blob/master/examples/in-cluster-client-configuration/main.go
-	testerCmd := fmt.Sprintf("/aws-k8s-tester eks create hollow-nodes --kubectl=/kubectl --prefix=%s --nodes=%d --clients=%d --client-qps=%f --client-burst=%d",
+	testerCmd := fmt.Sprintf("/aws-k8s-tester eks create hollow-nodes --prefix=%s --nodes=%d --clients=%d --client-qps=%f --client-burst=%d",
 		ts.cfg.EKSConfig.AddOnHollowNodesRemote.NodeLabelPrefix,
 		ts.cfg.EKSConfig.AddOnHollowNodesRemote.Nodes,
 		ts.cfg.EKSConfig.Clients,
@@ -563,7 +562,6 @@ func (ts *tester) createDeployment() error {
 	)
 
 	image := ts.cfg.EKSConfig.AddOnHollowNodesRemote.RepositoryURI + ":" + ts.cfg.EKSConfig.AddOnHollowNodesRemote.RepositoryImageTag
-
 	ts.cfg.Logger.Info("creating hollow nodes Deployment", zap.String("image", image), zap.String("tester-command", testerCmd))
 	dirOrCreate := v1.HostPathDirectoryOrCreate
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)

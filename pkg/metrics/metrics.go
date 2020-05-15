@@ -2,12 +2,14 @@
 package metrics
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
 	"sort"
 
+	"github.com/olekukonko/tablewriter"
 	dto "github.com/prometheus/client_model/go"
 )
 
@@ -105,4 +107,32 @@ func MergeHistograms(a HistogramBuckets, b HistogramBuckets) (HistogramBuckets, 
 	}
 	sort.Sort(HistogramBuckets(hs))
 	return hs, nil
+}
+
+// Table converts "HistogramBuckets" to table.
+func (buckets HistogramBuckets) Table() string {
+	buf := bytes.NewBuffer(nil)
+	tb := tablewriter.NewWriter(buf)
+	tb.SetAutoWrapText(false)
+	tb.SetColWidth(1500)
+	tb.SetCenterSeparator("*")
+	tb.SetAlignment(tablewriter.ALIGN_CENTER)
+	tb.SetCaption(true, fmt.Sprintf("(%q scale)", buckets[0].Scale))
+	tb.SetHeader([]string{"lower bound", "upper bound", "count"})
+	for _, v := range buckets {
+		lo := fmt.Sprintf("%f", v.LowerBound)
+		if v.Scale == "milliseconds" {
+			lo = fmt.Sprintf("%.3f", v.LowerBound)
+		}
+		hi := fmt.Sprintf("%f", v.UpperBound)
+		if v.Scale == "milliseconds" {
+			hi = fmt.Sprintf("%.3f", v.UpperBound)
+		}
+		if v.UpperBound == math.MaxFloat64 {
+			hi = "MAX"
+		}
+		tb.Append([]string{lo, hi, fmt.Sprintf("%d", v.Count)})
+	}
+	tb.Render()
+	return buf.String()
 }

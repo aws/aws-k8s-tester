@@ -15,7 +15,6 @@ import (
 	hollow_nodes "github.com/aws/aws-k8s-tester/eks/hollow-nodes"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
-	"github.com/aws/aws-k8s-tester/pkg/httputil"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
 	"github.com/aws/aws-k8s-tester/pkg/randutil"
@@ -175,11 +174,9 @@ func createClusterFunc(cmd *cobra.Command, args []string) {
 }
 
 var (
-	hollowNodesPrefix             string
-	hollowNodesKubectlPath        string
-	hollowNodesKubectlDownloadURL string
-	hollowNodesKubeConfigPath     string
-	hollowNodesNodes              int
+	hollowNodesPrefix         string
+	hollowNodesKubeConfigPath string
+	hollowNodesNodes          int
 
 	hollowNodesClients     int
 	hollowNodesClientQPS   float32
@@ -193,8 +190,6 @@ func newCreateHollowNodes() *cobra.Command {
 		Run:   createHollowNodesFunc,
 	}
 	cmd.PersistentFlags().StringVar(&hollowNodesPrefix, "prefix", randutil.String(5), "Prefix to label hollow node groups")
-	cmd.PersistentFlags().StringVar(&hollowNodesKubectlPath, "kubectl", "", "kubectl path")
-	cmd.PersistentFlags().StringVar(&hollowNodesKubectlDownloadURL, "kubectl-download-url", "https://storage.googleapis.com/kubernetes-release/release/v1.16.9/bin/linux/amd64/kubectl", "kubectl download URL")
 	cmd.PersistentFlags().StringVar(&hollowNodesKubeConfigPath, "kubeconfig", "", "kubeconfig path")
 	cmd.PersistentFlags().IntVar(&hollowNodesNodes, "nodes", 10, "Number of hollow nodes to create")
 	cmd.PersistentFlags().IntVar(&hollowNodesClients, "clients", eksconfig.DefaultClients, "Number of clients to create")
@@ -204,6 +199,7 @@ func newCreateHollowNodes() *cobra.Command {
 }
 
 func createHollowNodesFunc(cmd *cobra.Command, args []string) {
+	// optional
 	if hollowNodesKubeConfigPath != "" && !fileutil.Exist(hollowNodesKubeConfigPath) {
 		fmt.Fprintf(os.Stderr, "kubeconfig not found %q\n", hollowNodesKubeConfigPath)
 		os.Exit(1)
@@ -213,27 +209,6 @@ func createHollowNodesFunc(cmd *cobra.Command, args []string) {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create logger %v\n", err)
 		os.Exit(1)
-	}
-
-	lg.Info("mkdir", zap.String("kubectl-path-dir", filepath.Dir(hollowNodesKubectlPath)))
-	if err := os.MkdirAll(filepath.Dir(hollowNodesKubectlPath), 0700); err != nil {
-		fmt.Fprintf(os.Stderr, "could not create %q (%v)", filepath.Dir(hollowNodesKubectlPath), err)
-		os.Exit(1)
-	}
-	if !fileutil.Exist(hollowNodesKubectlPath) {
-		hollowNodesKubectlPath, _ = filepath.Abs(hollowNodesKubectlPath)
-		lg.Info("downloading kubectl", zap.String("kubectl-path", hollowNodesKubectlPath))
-		if err := httputil.Download(lg, os.Stderr, hollowNodesKubectlDownloadURL, hollowNodesKubectlPath); err != nil {
-			fmt.Fprintf(os.Stderr, "failed to download kubectl %v\n", err)
-			os.Exit(1)
-		}
-	} else {
-		lg.Info("skipping kubectl download; already exist", zap.String("kubectl-path", hollowNodesKubectlPath))
-	}
-	if err := fileutil.EnsureExecutable(hollowNodesKubectlPath); err != nil {
-		// file may be already executable while the process does not own the file/directory
-		// ref. https://github.com/aws/aws-k8s-tester/issues/66
-		lg.Warn("failed to ensure executable", zap.Error(err))
 	}
 
 	cli, err := k8s_client.NewEKS(&k8s_client.EKSConfig{
@@ -261,8 +236,6 @@ func createHollowNodesFunc(cmd *cobra.Command, args []string) {
 			"NGType":  hollowNodesPrefix + "-ng-type-" + sfx,
 			"NGName":  hollowNodesPrefix + "-ng-name-" + sfx,
 		},
-		KubectlPath:    hollowNodesKubectlPath,
-		KubeConfigPath: hollowNodesKubeConfigPath,
 	})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create hollow nodes group %v\n", err)
@@ -309,10 +282,8 @@ func createHollowNodesFunc(cmd *cobra.Command, args []string) {
 }
 
 var (
-	clusterLoaderPrefix             string
-	clusterLoaderKubectlPath        string
-	clusterLoaderKubectlDownloadURL string
-	clusterLoaderKubeConfigPath     string
+	clusterLoaderPrefix         string
+	clusterLoaderKubeConfigPath string
 
 	clusterLoaderClients     int
 	clusterLoaderClientQPS   float32
@@ -330,8 +301,6 @@ func newCreateClusterLoader() *cobra.Command {
 		Short: "Creates cluster loader",
 		Run:   createClusterLoaderFunc,
 	}
-	cmd.PersistentFlags().StringVar(&clusterLoaderKubectlPath, "kubectl", "", "kubectl path")
-	cmd.PersistentFlags().StringVar(&clusterLoaderKubectlDownloadURL, "kubectl-download-url", "https://storage.googleapis.com/kubernetes-release/release/v1.16.9/bin/linux/amd64/kubectl", "kubectl download URL")
 	cmd.PersistentFlags().StringVar(&clusterLoaderKubeConfigPath, "kubeconfig", "", "kubeconfig path")
 	cmd.PersistentFlags().IntVar(&clusterLoaderClients, "clients", eksconfig.DefaultClients, "Number of clients to create")
 	cmd.PersistentFlags().Float32Var(&clusterLoaderClientQPS, "client-qps", eksconfig.DefaultClientQPS, "kubelet client setup for QPS")
@@ -344,6 +313,7 @@ func newCreateClusterLoader() *cobra.Command {
 }
 
 func createClusterLoaderFunc(cmd *cobra.Command, args []string) {
+	// optional
 	if clusterLoaderKubeConfigPath != "" && !fileutil.Exist(clusterLoaderKubeConfigPath) {
 		fmt.Fprintf(os.Stderr, "kubeconfig not found %q\n", clusterLoaderKubeConfigPath)
 		os.Exit(1)
@@ -353,27 +323,6 @@ func createClusterLoaderFunc(cmd *cobra.Command, args []string) {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create logger %v\n", err)
 		os.Exit(1)
-	}
-
-	lg.Info("mkdir", zap.String("kubectl-path-dir", filepath.Dir(clusterLoaderKubectlPath)))
-	if err := os.MkdirAll(filepath.Dir(clusterLoaderKubectlPath), 0700); err != nil {
-		fmt.Fprintf(os.Stderr, "could not create %q (%v)", filepath.Dir(clusterLoaderKubectlPath), err)
-		os.Exit(1)
-	}
-	if !fileutil.Exist(clusterLoaderKubectlPath) {
-		clusterLoaderKubectlPath, _ = filepath.Abs(clusterLoaderKubectlPath)
-		lg.Info("downloading kubectl", zap.String("kubectl-path", clusterLoaderKubectlPath))
-		if err := httputil.Download(lg, os.Stderr, clusterLoaderKubectlDownloadURL, clusterLoaderKubectlPath); err != nil {
-			fmt.Fprintf(os.Stderr, "failed to download kubectl %v\n", err)
-			os.Exit(1)
-		}
-	} else {
-		lg.Info("skipping kubectl download; already exist", zap.String("kubectl-path", clusterLoaderKubectlPath))
-	}
-	if err := fileutil.EnsureExecutable(clusterLoaderKubectlPath); err != nil {
-		// file may be already executable while the process does not own the file/directory
-		// ref. https://github.com/aws/aws-k8s-tester/issues/66
-		lg.Warn("failed to ensure executable", zap.Error(err))
 	}
 
 	cli, err := k8s_client.NewEKS(&k8s_client.EKSConfig{

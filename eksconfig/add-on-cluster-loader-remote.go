@@ -51,10 +51,12 @@ type AddOnClusterLoaderRemote struct {
 	// OutputPathPrefix is the output path used in remote cluster loader.
 	OutputPathPrefix string `json:"output-path-prefix"`
 
-	// RequestsSummary is the cluster loader results.
+	// RequestsSummary is the cluster loader "aggregated" results from remote nodes.
 	RequestsSummary RequestsSummary `json:"requests-summary,omitempty" read-only:"true"`
-	// RequestsSummaryAggregatedPath is the file path to store requests summary results.
-	RequestsSummaryAggregatedPath string `json:"requests-summary-aggregated-path"`
+	// RequestsSummaryJSONPath is the file path to store requests summary results in JSON format.
+	RequestsSummaryJSONPath string `json:"requests-summary-json-path" read-only:"true"`
+	// RequestsSummaryTablePath is the file path to store requests summary results in table format.
+	RequestsSummaryTablePath string `json:"requests-summary-table-path" read-only:"true"`
 }
 
 // EnvironmentVariablePrefixAddOnClusterLoaderRemote is the environment variable prefix used for "eksconfig".
@@ -113,8 +115,11 @@ func (cfg *Config) validateAddOnClusterLoaderRemote() error {
 	if cfg.AddOnClusterLoaderRemote.OutputPathPrefix == "" {
 		cfg.AddOnClusterLoaderRemote.OutputPathPrefix = randutil.String(10)
 	}
-	if cfg.AddOnClusterLoaderRemote.RequestsSummaryAggregatedPath == "" {
-		cfg.AddOnClusterLoaderRemote.RequestsSummaryAggregatedPath = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-cluster-loader-remote.json")
+	if cfg.AddOnClusterLoaderRemote.RequestsSummaryJSONPath == "" {
+		cfg.AddOnClusterLoaderRemote.RequestsSummaryJSONPath = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-cluster-loader-remote-request-summary.json")
+	}
+	if cfg.AddOnClusterLoaderRemote.RequestsSummaryTablePath == "" {
+		cfg.AddOnClusterLoaderRemote.RequestsSummaryTablePath = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-cluster-loader-remote-request-summary.txt")
 	}
 
 	return nil

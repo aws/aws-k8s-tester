@@ -41,14 +41,12 @@ func NewTester(cfg Config) (Tester, error) {
 	ts := &tester{cfg: cfg}
 	var err error
 	ts.ng, err = hollow_nodes.CreateNodeGroup(hollow_nodes.NodeGroupConfig{
-		Logger:         ts.cfg.Logger,
-		Client:         ts.cfg.K8SClient,
-		Stopc:          ts.cfg.Stopc,
-		Nodes:          ts.cfg.EKSConfig.AddOnHollowNodesLocal.Nodes,
-		NodeLabels:     ts.cfg.EKSConfig.AddOnHollowNodesLocal.NodeLabels,
-		MaxOpenFiles:   ts.cfg.EKSConfig.AddOnHollowNodesLocal.MaxOpenFiles,
-		KubectlPath:    ts.cfg.EKSConfig.KubectlPath,
-		KubeConfigPath: ts.cfg.EKSConfig.KubeConfigPath,
+		Logger:       ts.cfg.Logger,
+		Client:       ts.cfg.K8SClient,
+		Stopc:        ts.cfg.Stopc,
+		Nodes:        ts.cfg.EKSConfig.AddOnHollowNodesLocal.Nodes,
+		NodeLabels:   ts.cfg.EKSConfig.AddOnHollowNodesLocal.NodeLabels,
+		MaxOpenFiles: ts.cfg.EKSConfig.AddOnHollowNodesLocal.MaxOpenFiles,
 	})
 	if err != nil {
 		return nil, err

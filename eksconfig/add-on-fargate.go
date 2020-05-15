@@ -6,8 +6,6 @@ import (
 	"regexp"
 	"strings"
 	"time"
-
-	"github.com/aws/aws-k8s-tester/pkg/randutil"
 )
 
 // AddOnFargate defines parameters for EKS cluster
@@ -46,10 +44,6 @@ type AddOnFargate struct {
 	ProfileName string `json:"profile-name"`
 	// SecretName is the secret name for Fargate.
 	SecretName string `json:"secret-name"`
-	// PodName is the name of the Fargate Pod.
-	PodName string `json:"pod-name"`
-	// ContainerName is the name of the Fargate container.
-	ContainerName string `json:"container-name"`
 }
 
 // EnvironmentVariablePrefixAddOnFargate is the environment variable prefix used for "eksconfig".
@@ -101,12 +95,6 @@ func (cfg *Config) validateAddOnFargate() error {
 	}
 	if cfg.AddOnFargate.SecretName == "" {
 		cfg.AddOnFargate.SecretName = cfg.Name + "addonfargatesecret"
-	}
-	if cfg.AddOnFargate.PodName == "" {
-		cfg.AddOnFargate.PodName = cfg.Name + "-pod-fargate"
-	}
-	if cfg.AddOnFargate.ContainerName == "" {
-		cfg.AddOnFargate.ContainerName = cfg.Name + "-" + randutil.String(10)
 	}
 	cfg.AddOnFargate.SecretName = strings.ToLower(fargateSecretRegex.ReplaceAllString(cfg.AddOnFargate.SecretName, ""))
 

@@ -313,14 +313,50 @@ func (ts *Tester) uploadToS3() (err error) {
 		}
 	}
 
+	if ts.cfg.IsEnabledAddOnClusterLoaderLocal() {
+		if fileutil.Exist(ts.cfg.AddOnClusterLoaderLocal.RequestsSummaryJSONPath) {
+			if err = uploadFileToS3(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "cluster-loader-local-requests-summary.json"),
+				ts.cfg.AddOnClusterLoaderLocal.RequestsSummaryJSONPath,
+			); err != nil {
+				return err
+			}
+		}
+		if fileutil.Exist(ts.cfg.AddOnClusterLoaderLocal.RequestsSummaryTablePath) {
+			if err = uploadFileToS3(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "cluster-loader-local-requests-summary.txt"),
+				ts.cfg.AddOnClusterLoaderLocal.RequestsSummaryTablePath,
+			); err != nil {
+				return err
+			}
+		}
+	}
+
 	if ts.cfg.IsEnabledAddOnClusterLoaderRemote() {
-		if fileutil.Exist(ts.cfg.AddOnClusterLoaderRemote.RequestsSummaryAggregatedPath) {
+		if fileutil.Exist(ts.cfg.AddOnClusterLoaderRemote.RequestsSummaryJSONPath) {
 			if err = uploadFileToS3(
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
 				path.Join(ts.cfg.Name, "cluster-loader-remote-requests-summary.json"),
-				ts.cfg.AddOnClusterLoaderRemote.RequestsSummaryAggregatedPath,
+				ts.cfg.AddOnClusterLoaderRemote.RequestsSummaryJSONPath,
+			); err != nil {
+				return err
+			}
+		}
+		if fileutil.Exist(ts.cfg.AddOnClusterLoaderRemote.RequestsSummaryTablePath) {
+			if err = uploadFileToS3(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "cluster-loader-remote-requests-summary.txt"),
+				ts.cfg.AddOnClusterLoaderRemote.RequestsSummaryTablePath,
 			); err != nil {
 				return err
 			}

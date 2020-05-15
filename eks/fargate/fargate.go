@@ -494,6 +494,11 @@ func (ts *tester) deleteProfile() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
+const (
+	fargatePodName       = "fargate-pod"
+	fargateContainerName = "fargate-container"
+)
+
 func (ts *tester) createPod() error {
 	if err := ts.listPods(ts.cfg.EKSConfig.AddOnFargate.Namespace); err != nil {
 		ts.cfg.Logger.Warn("listing pods failed", zap.Error(err))
@@ -507,15 +512,15 @@ func (ts *tester) createPod() error {
 			Kind:       "Pod",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      ts.cfg.EKSConfig.AddOnFargate.PodName,
+			Name:      fargatePodName,
 			Namespace: ts.cfg.EKSConfig.AddOnFargate.Namespace,
 		},
 		Spec: v1.PodSpec{
 			RestartPolicy: v1.RestartPolicyOnFailure,
 			Containers: []v1.Container{
 				{
-					Name:            ts.cfg.EKSConfig.AddOnFargate.ContainerName,
-					Image:           "amazonlinux",
+					Name:            fargateContainerName,
+					Image:           "amazonlinux:latest",
 					ImagePullPolicy: v1.PullIfNotPresent,
 					Command: []string{
 						"/bin/sh",
@@ -564,7 +569,7 @@ func (ts *tester) createPod() error {
 }
 
 func (ts *tester) deletePod() error {
-	ts.cfg.Logger.Info("deleting Pod", zap.String("name", ts.cfg.EKSConfig.AddOnFargate.PodName))
+	ts.cfg.Logger.Info("deleting Pod", zap.String("name", fargatePodName))
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	err := ts.cfg.
 		K8SClient.KubernetesClientSet().
@@ -572,7 +577,7 @@ func (ts *tester) deletePod() error {
 		Pods(ts.cfg.EKSConfig.AddOnFargate.Namespace).
 		Delete(
 			ctx,
-			ts.cfg.EKSConfig.AddOnFargate.PodName,
+			fargatePodName,
 			metav1.DeleteOptions{
 				GracePeriodSeconds: aws.Int64(0),
 				PropagationPolicy:  &propagationBackground,
@@ -580,9 +585,9 @@ func (ts *tester) deletePod() error {
 		)
 	cancel()
 	if err != nil {
-		return fmt.Errorf("failed to delete Pod %q (%v)", ts.cfg.EKSConfig.AddOnFargate.PodName, err)
+		return fmt.Errorf("failed to delete Pod %q (%v)", fargatePodName, err)
 	}
-	ts.cfg.Logger.Info("deleted Pod", zap.String("name", ts.cfg.EKSConfig.AddOnFargate.PodName))
+	ts.cfg.Logger.Info("deleted Pod", zap.String("name", fargatePodName))
 	return ts.cfg.EKSConfig.Sync()
 }
 
@@ -613,14 +618,14 @@ func (ts *tester) checkPod() error {
 		"--namespace=" + ts.cfg.EKSConfig.AddOnFargate.Namespace,
 		"exec",
 		"-it",
-		ts.cfg.EKSConfig.AddOnFargate.PodName,
+		fargatePodName,
 		"--",
 		"cat",
 		fmt.Sprintf("/tmp/%s", ts.cfg.EKSConfig.AddOnFargate.SecretName),
 	}
 	cmdTxt := strings.Join(args, " ")
 	ts.cfg.Logger.Info("checking Pod exec",
-		zap.String("container-name", ts.cfg.EKSConfig.AddOnFargate.ContainerName),
+		zap.String("container-name", fargateContainerName),
 		zap.String("command", cmdTxt),
 	)
 	found := false
@@ -648,7 +653,7 @@ func (ts *tester) checkPod() error {
 			continue
 		}
 		found = true
-		ts.cfg.Logger.Info("successfully checked Pod exec", zap.String("container-name", ts.cfg.EKSConfig.AddOnFargate.ContainerName))
+		ts.cfg.Logger.Info("successfully checked Pod exec", zap.String("container-name", fargateContainerName))
 		break
 	}
 	if !found {
@@ -661,7 +666,7 @@ func (ts *tester) checkPod() error {
 		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
 		"--namespace=" + ts.cfg.EKSConfig.AddOnFargate.Namespace,
 		"describe",
-		"pods/" + ts.cfg.EKSConfig.AddOnFargate.PodName,
+		"pods/" + fargatePodName,
 	}
 	cmdTxtDesc := strings.Join(argsDesc, " ")
 	argsLogs := []string{
@@ -669,13 +674,13 @@ func (ts *tester) checkPod() error {
 		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
 		"--namespace=" + ts.cfg.EKSConfig.AddOnFargate.Namespace,
 		"logs",
-		"pods/" + ts.cfg.EKSConfig.AddOnFargate.PodName,
+		"pods/" + fargatePodName,
 		"--timestamps",
 	}
 	cmdTxtLogs := strings.Join(argsLogs, " ")
 	ts.cfg.Logger.Info("checking Pod logs",
-		zap.String("pod-name", ts.cfg.EKSConfig.AddOnFargate.PodName),
-		zap.String("container-name", ts.cfg.EKSConfig.AddOnFargate.ContainerName),
+		zap.String("pod-name", fargatePodName),
+		zap.String("container-name", fargateContainerName),
 		zap.String("command-describe", cmdTxtDesc),
 		zap.String("command-logs", cmdTxtLogs),
 	)
@@ -709,8 +714,8 @@ func (ts *tester) checkPod() error {
 		fmt.Printf("\n'%s' output:\n\n%s\n\n", cmdTxtLogs, out)
 
 		ts.cfg.Logger.Info("checked Pod logs",
-			zap.String("pod-name", ts.cfg.EKSConfig.AddOnFargate.PodName),
-			zap.String("container-name", ts.cfg.EKSConfig.AddOnFargate.ContainerName),
+			zap.String("pod-name", fargatePodName),
+			zap.String("container-name", fargateContainerName),
 		)
 
 		if !strings.Contains(out, secretReadTxt) {

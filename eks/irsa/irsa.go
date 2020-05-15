@@ -24,13 +24,16 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/cloudformation/cloudformationiface"
+	"github.com/aws/aws-sdk-go/service/ecr"
+	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/aws/aws-sdk-go/service/iam/iamiface"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
+	"github.com/dustin/go-humanize"
 	"go.uber.org/zap"
 	"golang.org/x/time/rate"
-	appsv1 "k8s.io/api/apps/v1"
+	apps_v1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	api_errors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -48,6 +51,7 @@ type Config struct {
 	CFNAPI    cloudformationiface.CloudFormationAPI
 	IAMAPI    iamiface.IAMAPI
 	S3API     s3iface.S3API
+	ECRAPI    ecriface.ECRAPI
 }
 
 // Tester defines IRSA tester.
@@ -87,6 +91,9 @@ func (ts *tester) Create() error {
 		ts.cfg.EKSConfig.Sync()
 	}()
 
+	if err := ts.checkECR(); err != nil {
+		return err
+	}
 	if err := k8s_client.CreateNamespace(ts.cfg.Logger, ts.cfg.K8SClient.KubernetesClientSet(), ts.cfg.EKSConfig.AddOnIRSA.Namespace); err != nil {
 		return err
 	}
@@ -186,6 +193,64 @@ func (ts *tester) Delete() error {
 
 	ts.cfg.EKSConfig.AddOnIRSA.Created = false
 	return ts.cfg.EKSConfig.Sync()
+}
+
+func (ts *tester) checkECR() error {
+	ts.cfg.Logger.Info("describing ECR repositories")
+	out, err := ts.cfg.ECRAPI.DescribeRepositories(&ecr.DescribeRepositoriesInput{
+		RepositoryNames: aws.StringSlice([]string{ts.cfg.EKSConfig.AddOnIRSA.RepositoryName}),
+	})
+	if err != nil {
+		return err
+	}
+	if len(out.Repositories) != 1 {
+		return fmt.Errorf("%q expected 1 ECR repository, got %d", ts.cfg.EKSConfig.AddOnIRSA.RepositoryName, len(out.Repositories))
+	}
+	repo := out.Repositories[0]
+	arn := aws.StringValue(repo.RepositoryArn)
+	name := aws.StringValue(repo.RepositoryName)
+	uri := aws.StringValue(repo.RepositoryUri)
+	ts.cfg.Logger.Info(
+		"described ECR repository",
+		zap.String("arn", arn),
+		zap.String("name", name),
+		zap.String("uri", uri),
+	)
+
+	if name != ts.cfg.EKSConfig.AddOnIRSA.RepositoryName {
+		return fmt.Errorf("unexpected ECR repository name %q", name)
+	}
+	if uri != ts.cfg.EKSConfig.AddOnIRSA.RepositoryURI {
+		return fmt.Errorf("unexpected ECR repository uri %q", uri)
+	}
+
+	ts.cfg.Logger.Info("describing images")
+	imgOut, err := ts.cfg.ECRAPI.DescribeImages(&ecr.DescribeImagesInput{
+		RepositoryName: aws.String(ts.cfg.EKSConfig.AddOnIRSA.RepositoryName),
+		ImageIds: []*ecr.ImageIdentifier{
+			{
+				ImageTag: aws.String(ts.cfg.EKSConfig.AddOnIRSA.RepositoryImageTag),
+			},
+		},
+	})
+	if err != nil {
+		return err
+	}
+	if len(imgOut.ImageDetails) == 0 {
+		return fmt.Errorf("image tag %q not found", ts.cfg.EKSConfig.AddOnIRSA.RepositoryImageTag)
+	}
+	ts.cfg.Logger.Info("described images", zap.Int("images", len(imgOut.ImageDetails)))
+	for i, img := range imgOut.ImageDetails {
+		ts.cfg.Logger.Info("found an image",
+			zap.Int("index", i),
+			zap.String("requested-tag", ts.cfg.EKSConfig.AddOnIRSA.RepositoryImageTag),
+			zap.Strings("returned-tags", aws.StringValueSlice(img.ImageTags)),
+			zap.String("digest", aws.StringValue(img.ImageDigest)),
+			zap.String("pushed-at", humanize.Time(aws.TimeValue(img.ImagePushedAt))),
+			zap.String("size", humanize.Bytes(uint64(aws.Int64Value(img.ImageSizeInBytes)))),
+		)
+	}
+	return nil
 }
 
 func (ts *tester) createS3() (err error) {
@@ -418,7 +483,7 @@ func (ts *tester) createRole() error {
 			},
 			{
 				ParameterKey:   aws.String("IRSAServiceAccountName"),
-				ParameterValue: aws.String(ts.cfg.EKSConfig.AddOnIRSA.ServiceAccountName),
+				ParameterValue: aws.String(irsaServiceAccountName),
 			},
 		},
 	}
@@ -517,8 +582,15 @@ func (ts *tester) deleteRole() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
+const (
+	irsaServiceAccountName = "irsa-service-account"
+	irsaConfigMapName      = "irsa-config-map"
+	irsaConfigMapFileName  = "irsa-config-map.bash"
+	irsaDeploymentName     = "irsa-deployment"
+)
+
 func (ts *tester) createServiceAccount() error {
-	ts.cfg.Logger.Info("creating service account", zap.String("name", ts.cfg.EKSConfig.AddOnIRSA.ServiceAccountName))
+	ts.cfg.Logger.Info("creating service account", zap.String("name", irsaServiceAccountName))
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.K8SClient.KubernetesClientSet().
 		CoreV1().
@@ -531,10 +603,10 @@ func (ts *tester) createServiceAccount() error {
 					Kind:       "ServiceAccount",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      ts.cfg.EKSConfig.AddOnIRSA.ServiceAccountName,
+					Name:      irsaServiceAccountName,
 					Namespace: ts.cfg.EKSConfig.AddOnIRSA.Namespace,
 					Labels: map[string]string{
-						"name": ts.cfg.EKSConfig.AddOnIRSA.ServiceAccountName,
+						"name": irsaServiceAccountName,
 					},
 					Annotations: map[string]string{
 						"eks.amazonaws.com/role-arn": ts.cfg.EKSConfig.AddOnIRSA.RoleARN,
@@ -547,12 +619,12 @@ func (ts *tester) createServiceAccount() error {
 	if err != nil {
 		return err
 	}
-	ts.cfg.Logger.Info("created service account", zap.String("name", ts.cfg.EKSConfig.AddOnIRSA.ServiceAccountName))
+	ts.cfg.Logger.Info("created service account", zap.String("name", irsaServiceAccountName))
 	return ts.cfg.EKSConfig.Sync()
 }
 
 func (ts *tester) deleteServiceAccount() error {
-	ts.cfg.Logger.Info("deleting service account", zap.String("name", ts.cfg.EKSConfig.AddOnIRSA.ServiceAccountName))
+	ts.cfg.Logger.Info("deleting service account", zap.String("name", irsaServiceAccountName))
 	foreground := metav1.DeletePropagationForeground
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	err := ts.cfg.K8SClient.KubernetesClientSet().
@@ -560,7 +632,7 @@ func (ts *tester) deleteServiceAccount() error {
 		ServiceAccounts(ts.cfg.EKSConfig.AddOnIRSA.Namespace).
 		Delete(
 			ctx,
-			ts.cfg.EKSConfig.AddOnIRSA.ServiceAccountName,
+			irsaServiceAccountName,
 			metav1.DeleteOptions{
 				GracePeriodSeconds: aws.Int64(0),
 				PropagationPolicy:  &foreground,
@@ -570,7 +642,7 @@ func (ts *tester) deleteServiceAccount() error {
 	if err != nil {
 		return err
 	}
-	ts.cfg.Logger.Info("deleted service account", zap.String("name", ts.cfg.EKSConfig.AddOnIRSA.ServiceAccountName))
+	ts.cfg.Logger.Info("deleted service account", zap.String("name", irsaServiceAccountName))
 	return ts.cfg.EKSConfig.Sync()
 }
 
@@ -578,10 +650,6 @@ func (ts *tester) deleteServiceAccount() error {
 const TemplateConfigMap = `
 #!/usr/bin/env bash
 set -e
-printf "Installing AWS CLI..."
-yum install -y python3-pip
-pip3 install --upgrade --quiet awscli
-printf "\nAWS CLI version:\n"
 aws --version
 printf "\nProjected ServiceAccount token:\n"
 cat $AWS_WEB_IDENTITY_TOKEN_FILE; echo
@@ -619,7 +687,7 @@ type configMapTemplate struct {
 }
 
 func (ts *tester) createConfigMaps() error {
-	ts.cfg.Logger.Info("creating config maps", zap.String("name", ts.cfg.EKSConfig.AddOnIRSA.ConfigMapName))
+	ts.cfg.Logger.Info("creating config maps", zap.String("name", irsaConfigMapName))
 
 	tpl := template.Must(template.New("TemplateConfigMap").Parse(TemplateConfigMap))
 	buf := bytes.NewBuffer(nil)
@@ -645,14 +713,14 @@ func (ts *tester) createConfigMaps() error {
 					Kind:       "ConfigMap",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      ts.cfg.EKSConfig.AddOnIRSA.ConfigMapName,
+					Name:      irsaConfigMapName,
 					Namespace: ts.cfg.EKSConfig.AddOnIRSA.Namespace,
 					Labels: map[string]string{
-						"name": ts.cfg.EKSConfig.AddOnIRSA.ConfigMapName,
+						"name": irsaConfigMapName,
 					},
 				},
 				Data: map[string]string{
-					ts.cfg.EKSConfig.AddOnIRSA.ConfigMapScriptFileName: tplTxt,
+					irsaConfigMapFileName: tplTxt,
 				},
 			},
 			metav1.CreateOptions{},
@@ -662,12 +730,12 @@ func (ts *tester) createConfigMaps() error {
 		return err
 	}
 
-	ts.cfg.Logger.Info("created config maps", zap.String("name", ts.cfg.EKSConfig.AddOnIRSA.ConfigMapName))
+	ts.cfg.Logger.Info("created config maps", zap.String("name", irsaConfigMapName))
 	return ts.cfg.EKSConfig.Sync()
 }
 
 func (ts *tester) deleteConfigMaps() error {
-	ts.cfg.Logger.Info("deleting config maps", zap.String("name", ts.cfg.EKSConfig.AddOnIRSA.ConfigMapName))
+	ts.cfg.Logger.Info("deleting config maps", zap.String("name", irsaConfigMapName))
 	foreground := metav1.DeletePropagationForeground
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	err := ts.cfg.K8SClient.KubernetesClientSet().
@@ -675,7 +743,7 @@ func (ts *tester) deleteConfigMaps() error {
 		ConfigMaps(ts.cfg.EKSConfig.AddOnIRSA.Namespace).
 		Delete(
 			ctx,
-			ts.cfg.EKSConfig.AddOnIRSA.ConfigMapName,
+			irsaConfigMapName,
 			metav1.DeleteOptions{
 				GracePeriodSeconds: aws.Int64(0),
 				PropagationPolicy:  &foreground,
@@ -686,7 +754,7 @@ func (ts *tester) deleteConfigMaps() error {
 		return err
 	}
 
-	ts.cfg.Logger.Info("deleted config maps", zap.String("name", ts.cfg.EKSConfig.AddOnIRSA.ConfigMapName))
+	ts.cfg.Logger.Info("deleted config maps", zap.String("name", irsaConfigMapName))
 	return ts.cfg.EKSConfig.Sync()
 }
 
@@ -706,12 +774,15 @@ func (ts *tester) createDeployment() error {
 	tpl := template.Must(template.New("TemplateDeploymentScript").Parse(TemplateDeploymentScript))
 	buf := bytes.NewBuffer(nil)
 	if err := tpl.Execute(buf, deploymentScriptTemplate{
-		ConfigMapScriptFileName: ts.cfg.EKSConfig.AddOnIRSA.ConfigMapScriptFileName,
+		ConfigMapScriptFileName: irsaConfigMapFileName,
 		OutputFilePath:          outputFilePath,
 	}); err != nil {
 		return err
 	}
 	tplTxt := buf.String()
+
+	image := ts.cfg.EKSConfig.AddOnIRSAFargate.RepositoryURI + ":" + ts.cfg.EKSConfig.AddOnIRSAFargate.RepositoryImageTag
+	ts.cfg.Logger.Info("creating IRSA Deployment", zap.String("image", image))
 
 	fileOrCreate := v1.HostPathFileOrCreate
 	dirOrCreate := v1.HostPathDirectoryOrCreate
@@ -721,41 +792,41 @@ func (ts *tester) createDeployment() error {
 		Deployments(ts.cfg.EKSConfig.AddOnIRSA.Namespace).
 		Create(
 			ctx,
-			&appsv1.Deployment{
+			&apps_v1.Deployment{
 				TypeMeta: metav1.TypeMeta{
 					APIVersion: "apps/v1",
 					Kind:       "Deployment",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      ts.cfg.EKSConfig.AddOnIRSA.DeploymentName,
+					Name:      irsaDeploymentName,
 					Namespace: ts.cfg.EKSConfig.AddOnIRSA.Namespace,
 					Labels: map[string]string{
-						"test": ts.cfg.EKSConfig.AddOnIRSA.ConfigMapScriptFileName,
+						"test": irsaConfigMapFileName,
 					},
 				},
-				Spec: appsv1.DeploymentSpec{
+				Spec: apps_v1.DeploymentSpec{
 					Replicas: aws.Int32(ts.cfg.EKSConfig.AddOnIRSA.DeploymentReplicas),
 					Selector: &metav1.LabelSelector{
 						MatchLabels: map[string]string{
-							"test": ts.cfg.EKSConfig.AddOnIRSA.ConfigMapScriptFileName,
+							"test": irsaConfigMapFileName,
 						},
 					},
 					Template: v1.PodTemplateSpec{
 						ObjectMeta: metav1.ObjectMeta{
 							Labels: map[string]string{
-								"test": ts.cfg.EKSConfig.AddOnIRSA.ConfigMapScriptFileName,
+								"test": irsaConfigMapFileName,
 							},
 						},
 						Spec: v1.PodSpec{
-							ServiceAccountName: ts.cfg.EKSConfig.AddOnIRSA.ServiceAccountName,
+							ServiceAccountName: irsaServiceAccountName,
 
 							// invalid: spec.template.spec.restartPolicy: Unsupported value: \"OnFailure\": supported values: \"Always\")"
 							RestartPolicy: v1.RestartPolicyAlways,
 
 							Containers: []v1.Container{
 								{
-									Name:            ts.cfg.EKSConfig.AddOnIRSA.ConfigMapName,
-									Image:           "amazonlinux",
+									Name:            irsaConfigMapName,
+									Image:           image,
 									ImagePullPolicy: v1.PullIfNotPresent,
 
 									Command: []string{
@@ -767,7 +838,7 @@ func (ts *tester) createDeployment() error {
 									// ref. https://kubernetes.io/docs/concepts/cluster-administration/logging/
 									VolumeMounts: []v1.VolumeMount{
 										{ // to execute
-											Name:      ts.cfg.EKSConfig.AddOnIRSA.ConfigMapName,
+											Name:      irsaConfigMapName,
 											MountPath: "/opt",
 										},
 										{ // to write
@@ -786,11 +857,11 @@ func (ts *tester) createDeployment() error {
 							// ref. https://kubernetes.io/docs/concepts/cluster-administration/logging/
 							Volumes: []v1.Volume{
 								{ // to execute
-									Name: ts.cfg.EKSConfig.AddOnIRSA.ConfigMapName,
+									Name: irsaConfigMapName,
 									VolumeSource: v1.VolumeSource{
 										ConfigMap: &v1.ConfigMapVolumeSource{
 											LocalObjectReference: v1.LocalObjectReference{
-												Name: ts.cfg.EKSConfig.AddOnIRSA.ConfigMapName,
+												Name: irsaConfigMapName,
 											},
 											DefaultMode: aws.Int32(0777),
 										},
@@ -845,7 +916,7 @@ func (ts *tester) deleteDeployment() error {
 		Deployments(ts.cfg.EKSConfig.AddOnIRSA.Namespace).
 		Delete(
 			ctx,
-			ts.cfg.EKSConfig.AddOnIRSA.DeploymentName,
+			irsaDeploymentName,
 			metav1.DeleteOptions{
 				GracePeriodSeconds: aws.Int64(0),
 				PropagationPolicy:  &foreground,
@@ -933,7 +1004,7 @@ func (ts *tester) waitDeployment() error {
 		"--namespace="+ts.cfg.EKSConfig.AddOnIRSA.Namespace,
 		"describe",
 		"deployment",
-		ts.cfg.EKSConfig.AddOnIRSA.DeploymentName,
+		irsaDeploymentName,
 	).CombinedOutput()
 	cancel()
 	if err != nil {
@@ -968,7 +1039,7 @@ func (ts *tester) waitDeployment() error {
 		dresp, err := ts.cfg.K8SClient.KubernetesClientSet().
 			AppsV1().
 			Deployments(ts.cfg.EKSConfig.AddOnIRSA.Namespace).
-			Get(ctx, ts.cfg.EKSConfig.AddOnIRSA.DeploymentName, metav1.GetOptions{})
+			Get(ctx, irsaDeploymentName, metav1.GetOptions{})
 		cancel()
 		if err != nil {
 			return fmt.Errorf("failed to get Deployment (%v)", err)
@@ -991,7 +1062,7 @@ func (ts *tester) waitDeployment() error {
 			if cond.Status != v1.ConditionTrue {
 				continue
 			}
-			if cond.Type == appsv1.DeploymentAvailable {
+			if cond.Type == apps_v1.DeploymentAvailable {
 				available = true
 				break
 			}

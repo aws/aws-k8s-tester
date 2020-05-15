@@ -11,7 +11,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strings"
 	"sync"
 	"time"
 
@@ -54,7 +53,6 @@ import (
 	"k8s.io/kubernetes/pkg/volume/storageos"
 	"k8s.io/kubernetes/pkg/volume/util/hostutil"
 	"k8s.io/kubernetes/pkg/volume/util/subpath"
-	"k8s.io/utils/exec"
 	"k8s.io/utils/mount"
 )
 
@@ -276,14 +274,12 @@ type NodeGroup interface {
 
 // NodeGroupConfig is the hollow nodes configuration.
 type NodeGroupConfig struct {
-	Logger         *zap.Logger
-	Client         k8s_client.EKS
-	Stopc          chan struct{}
-	Nodes          int
-	NodeLabels     map[string]string
-	MaxOpenFiles   int64
-	KubectlPath    string
-	KubeConfigPath string
+	Logger       *zap.Logger
+	Client       k8s_client.EKS
+	Stopc        chan struct{}
+	Nodes        int
+	NodeLabels   map[string]string
+	MaxOpenFiles int64
 }
 
 type nodeGroup struct {
@@ -299,12 +295,6 @@ type nodeGroup struct {
 
 // CreateNodeGroup creates a new hollow node group.
 func CreateNodeGroup(cfg NodeGroupConfig) (ng NodeGroup, err error) {
-	if !fileutil.Exist(cfg.KubectlPath) {
-		return nil, fmt.Errorf("KubectlPath does not exist [%q]", cfg.KubectlPath)
-	}
-	if !fileutil.Exist(cfg.KubeConfigPath) {
-		return nil, fmt.Errorf("KubeConfigPath does not exist [%q]", cfg.KubeConfigPath)
-	}
 	return &nodeGroup{
 		cfg:            cfg,
 		donec:          make(chan struct{}),
@@ -365,25 +355,6 @@ func (ng *nodeGroup) CheckNodes() (readyNodes []string, createdNodes []string, e
 }
 
 func (ng *nodeGroup) checkNodes() (readyNodes []string, createdNodes []string, err error) {
-	argsGetCSRs := []string{
-		ng.cfg.KubectlPath,
-		"--kubeconfig=" + ng.cfg.KubeConfigPath,
-		"get",
-		"csr",
-		"-o=wide",
-	}
-	cmdGetCSRs := strings.Join(argsGetCSRs, " ")
-
-	argsGetNodes := []string{
-		ng.cfg.KubectlPath,
-		"--kubeconfig=" + ng.cfg.KubeConfigPath,
-		"get",
-		"nodes",
-		"--show-labels",
-		"-o=wide",
-	}
-	cmdGetNodes := strings.Join(argsGetNodes, " ")
-
 	waitDur := 5 * time.Minute
 	ng.cfg.Logger.Info("checking nodes readiness", zap.Duration("wait", waitDur))
 	retryStart, ready := time.Now(), false
@@ -452,24 +423,6 @@ func (ng *nodeGroup) checkNodes() (readyNodes []string, createdNodes []string, e
 			zap.Int("current-ready-nodes", readies),
 			zap.Int("desired-ready-nodes", ng.cfg.Nodes),
 		)
-
-		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
-		output, err := exec.New().CommandContext(ctx, argsGetCSRs[0], argsGetCSRs[1:]...).CombinedOutput()
-		cancel()
-		out := string(output)
-		if err != nil {
-			ng.cfg.Logger.Warn("'kubectl get csr' failed", zap.Error(err))
-		}
-		fmt.Printf("\n\n\"%s\":\n%s\n", cmdGetCSRs, out)
-
-		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
-		output, err = exec.New().CommandContext(ctx, argsGetNodes[0], argsGetNodes[1:]...).CombinedOutput()
-		cancel()
-		out = string(output)
-		if err != nil {
-			ng.cfg.Logger.Warn("'kubectl get nodes' failed", zap.Error(err))
-		}
-		fmt.Printf("\n\"%s\":\n%s\n", cmdGetNodes, out)
 
 		if readies >= ng.cfg.Nodes {
 			ready = true

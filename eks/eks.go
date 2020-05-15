@@ -581,6 +581,7 @@ func (ts *Tester) createSubTesters() (err error) {
 			CFNAPI:    ts.cfnAPI,
 			IAMAPI:    ts.iamAPI,
 			S3API:     ts.s3API,
+			ECRAPI:    ts.ecrAPI,
 		})
 		if err != nil {
 			return err
@@ -614,6 +615,7 @@ func (ts *Tester) createSubTesters() (err error) {
 			CFNAPI:    ts.cfnAPI,
 			EKSAPI:    ts.eksAPI,
 			S3API:     ts.s3API,
+			ECRAPI:    ts.ecrAPI,
 		})
 		if err != nil {
 			return err

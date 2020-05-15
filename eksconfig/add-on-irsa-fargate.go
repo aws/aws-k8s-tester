@@ -6,8 +6,6 @@ import (
 	"path"
 	"strings"
 	"time"
-
-	"github.com/aws/aws-k8s-tester/pkg/randutil"
 )
 
 // AddOnIRSAFargate defines parameters for EKS cluster
@@ -41,21 +39,21 @@ type AddOnIRSAFargate struct {
 	RoleManagedPolicyARNs []string `json:"role-managed-policy-arns"`
 	RoleCFNStackID        string   `json:"role-cfn-stack-id" read-only:"true"`
 
-	// ServiceAccountName is the IRSA ServiceAccount name.
-	ServiceAccountName string `json:"service-account-name"`
-	// ConfigMapName is the ConfigMap name.
-	ConfigMapName string `json:"config-map-name"`
-	// ConfigMapScriptFileName is the IRSA ConfigMap script name.
-	ConfigMapScriptFileName string `json:"config-map-script-file-name"`
 	// S3Key is the S3 key to write for IRSA tests.
 	S3Key string `json:"s3-key"`
 
 	// ProfileName is the profile name for Fargate.
 	ProfileName string `json:"profile-name"`
-	// PodName is the name of the Fargate Pod with IRSA.
-	PodName string `json:"pod-name"`
-	// ContainerName is the name of the Fargate container.
-	ContainerName string `json:"container-name"`
+
+	// RepositoryName is the repositoryName for tester.
+	// e.g. "aws/aws-k8s-tester" for "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester"
+	RepositoryName string `json:"repository-name,omitempty"`
+	// RepositoryURI is the repositoryUri for tester.
+	// e.g. "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester"
+	RepositoryURI string `json:"repository-uri,omitempty"`
+	// RepositoryImageTag is the image tag for tester.
+	// e.g. "latest" for image URI "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester:latest"
+	RepositoryImageTag string `json:"repository-image-tag,omitempty"`
 }
 
 // EnvironmentVariablePrefixAddOnIRSAFargate is the environment variable prefix used for "eksconfig".
@@ -99,15 +97,6 @@ func (cfg *Config) validateAddOnIRSAFargate() error {
 	if cfg.AddOnIRSAFargate.RoleName == "" {
 		cfg.AddOnIRSAFargate.RoleName = cfg.Name + "-role-irsa-fargate"
 	}
-	if cfg.AddOnIRSAFargate.ServiceAccountName == "" {
-		cfg.AddOnIRSAFargate.ServiceAccountName = cfg.Name + "-service-account-irsa-fargate"
-	}
-	if cfg.AddOnIRSAFargate.ConfigMapName == "" {
-		cfg.AddOnIRSAFargate.ConfigMapName = cfg.Name + "-configmap-irsa-fargate"
-	}
-	if cfg.AddOnIRSAFargate.ConfigMapScriptFileName == "" {
-		cfg.AddOnIRSAFargate.ConfigMapScriptFileName = cfg.Name + "-configmap-irsa-fargate.sh"
-	}
 	if cfg.AddOnIRSAFargate.S3Key == "" {
 		cfg.AddOnIRSAFargate.S3Key = path.Join(cfg.Name, "s3-key-irsa-fargate")
 	}
@@ -116,14 +105,20 @@ func (cfg *Config) validateAddOnIRSAFargate() error {
 	if cfg.AddOnIRSAFargate.ProfileName == "" {
 		cfg.AddOnIRSAFargate.ProfileName = cfg.Name + "-irsa-fargate-profile"
 	}
+
+	if cfg.AddOnIRSAFargate.RepositoryName == "" {
+		return errors.New("AddOnIRSAFargate.RepositoryName empty")
+	}
+	if cfg.AddOnIRSAFargate.RepositoryURI == "" {
+		return errors.New("AddOnIRSAFargate.RepositoryURI empty")
+	}
+	if cfg.AddOnIRSAFargate.RepositoryImageTag == "" {
+		return errors.New("AddOnIRSAFargate.RepositoryImageTag empty")
+	}
+
 	if strings.HasPrefix(cfg.AddOnIRSAFargate.ProfileName, "eks-") {
 		cfg.AddOnIRSAFargate.ProfileName = strings.Replace(cfg.AddOnIRSAFargate.ProfileName, "eks-", "", 1)
 	}
-	if cfg.AddOnIRSAFargate.PodName == "" {
-		cfg.AddOnIRSAFargate.PodName = cfg.Name + "-pod-irsa-fargate"
-	}
-	if cfg.AddOnIRSAFargate.ContainerName == "" {
-		cfg.AddOnIRSAFargate.ContainerName = cfg.Name + "-" + randutil.String(10)
-	}
+
 	return nil
 }

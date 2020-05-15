@@ -74,6 +74,8 @@ func TestMetricsHistogram(t *testing.T) {
 	if !reflect.DeepEqual(expected, hs) {
 		t.Fatalf("expected %+v, got %+v", expected, hs)
 	}
+
+	fmt.Println(expected.Table())
 }
 
 func TestMergeHistogram(t *testing.T) {
