@@ -306,6 +306,10 @@ func (ts *tester) deleteServiceAccount() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
+// need RBAC, otherwise
+// kubelet_node_status.go:92] Unable to register node "fake-node-000000-8pkvl" with API server: nodes "fake-node-000000-8pkvl" is forbidden: node "ip-192-168-83-61.us-west-2.compute.internal" is not allowed to modify node "fake-node-000000-8pkvl"
+// ref. https://github.com/kubernetes/kubernetes/issues/47695
+// ref. https://kubernetes.io/docs/reference/access-authn-authz/node
 // ref. https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration
 // ref. https://kubernetes.io/docs/reference/access-authn-authz/rbac/
 func (ts *tester) createALBRBACClusterRole() error {
@@ -542,12 +546,7 @@ func (ts *tester) deleteConfigMap() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
-// TODO: use "ReplicationController"?
-// TODO: not working for now
-// kubelet_node_status.go:92] Unable to register node "fake-node-000000-8pkvl" with API server: nodes "fake-node-000000-8pkvl" is forbidden: node "ip-192-168-83-61.us-west-2.compute.internal" is not allowed to modify node "fake-node-000000-8pkvl"
-// need remove "NodeRestriction" from "kube-apiserver --enable-admission-plugins"
-// ref. https://github.com/kubernetes/kubernetes/issues/47695
-// ref. https://kubernetes.io/docs/reference/access-authn-authz/node
+// TODO: use "ReplicationController" to max out
 
 func (ts *tester) createDeployment() error {
 	ngType := "custom"
