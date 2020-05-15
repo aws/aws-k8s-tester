@@ -3,6 +3,22 @@
 <hr>
 
 
+## [v1.2.1](https://github.com/aws/aws-k8s-tester/releases/tag/v1.2.1) (2020-05)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.0...v1.2.1).
+
+### `eksconfig`
+
+TODO: update secret, config map writes
+
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.30.28`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.28) to [`v1.30.29`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.29).
+
+
+<hr>
+
+
 ## [v1.2.0](https://github.com/aws/aws-k8s-tester/releases/tag/v1.2.0) (2020-05-15)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.9...v1.2.0).
