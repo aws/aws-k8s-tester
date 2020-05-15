@@ -14,13 +14,13 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.9...v1.2.0
 ### `eksconfig`
 
 - Improve [README](https://github.com/aws/aws-k8s-tester/commit/4a15ae1d61cf58d286263c16e6074f8e3745077a).
-- Remove [unnecessary fields from `AddOnIRSA`](https://github.com/aws/aws-k8s-tester/commit/).
-- Remove [unnecessary fields from `AddOnIRSAFargate`](https://github.com/aws/aws-k8s-tester/commit/).
+- Remove [unnecessary fields from `AddOnIRSA`](https://github.com/aws/aws-k8s-tester/commit/52666165f7564922deb2e6e304c1f1c73412d691).
+- Remove [unnecessary fields from `AddOnIRSAFargate`](https://github.com/aws/aws-k8s-tester/commit/52666165f7564922deb2e6e304c1f1c73412d691).
 
 ### `eks`
 
-- Fix and improve [`eks/irsa` configmap tests](https://github.com/aws/aws-k8s-tester/commit/).
-- Fix and improve [`eks/irsa-fargate` configmap tests](https://github.com/aws/aws-k8s-tester/commit/).
+- Fix and improve [`eks/irsa` configmap tests](https://github.com/aws/aws-k8s-tester/commit/52666165f7564922deb2e6e304c1f1c73412d691).
+- Fix and improve [`eks/irsa-fargate` configmap tests](https://github.com/aws/aws-k8s-tester/commit/52666165f7564922deb2e6e304c1f1c73412d691).
 
 ### `pkg/aws/ssm`
 
@@ -28,7 +28,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.9...v1.2.0
 
 ### `pkg/metrics`
 
-- Add [`HistogramBuckets.Table` method](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`HistogramBuckets.Table` method](https://github.com/aws/aws-k8s-tester/commit/52666165f7564922deb2e6e304c1f1c73412d691).
 
 ### Dependency
 
