@@ -28,6 +28,16 @@ type AddOnFargate struct {
 	// Namespace is the namespace to create objects in.
 	Namespace string `json:"namespace"`
 
+	// RepositoryAccountID is the account ID for tester ECR image.
+	// e.g. "aws/aws-k8s-tester" for "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/aws/aws-k8s-tester"
+	RepositoryAccountID string `json:"repository-account-id,omitempty"`
+	// RepositoryName is the repositoryName for tester ECR image.
+	// e.g. "aws/aws-k8s-tester" for "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/aws/aws-k8s-tester"
+	RepositoryName string `json:"repository-name,omitempty"`
+	// RepositoryImageTag is the image tag for tester ECR image.
+	// e.g. "latest" for image URI "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/aws/aws-k8s-tester:latest"
+	RepositoryImageTag string `json:"repository-image-tag,omitempty"`
+
 	// RoleName is the role name for Fargate.
 	RoleName string `json:"role-name"`
 	// RoleCreate is true to auto-create and delete role.
@@ -42,19 +52,6 @@ type AddOnFargate struct {
 
 	// ProfileName is the profile name for Fargate.
 	ProfileName string `json:"profile-name"`
-
-	// RepositoryAccountID is the account ID for tester ECR image.
-	// e.g. "aws/aws-k8s-tester" for "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester"
-	RepositoryAccountID string `json:"repository-account-id,omitempty"`
-	// RepositoryName is the repositoryName for tester ECR image.
-	// e.g. "aws/aws-k8s-tester" for "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester"
-	RepositoryName string `json:"repository-name,omitempty"`
-	// RepositoryURI is the repositoryUri for tester ECR image.
-	// e.g. "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester"
-	RepositoryURI string `json:"repository-uri,omitempty"`
-	// RepositoryImageTag is the image tag for tester ECR image.
-	// e.g. "latest" for image URI "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester:latest"
-	RepositoryImageTag string `json:"repository-image-tag,omitempty"`
 
 	// SecretName is the secret name for Fargate.
 	SecretName string `json:"secret-name"`
@@ -96,9 +93,20 @@ func (cfg *Config) validateAddOnFargate() error {
 	if cfg.Parameters.VersionValue < 1.14 {
 		return fmt.Errorf("Version %q not supported for AddOnFargate", cfg.Parameters.Version)
 	}
+
 	if cfg.AddOnFargate.Namespace == "" {
 		cfg.AddOnFargate.Namespace = cfg.Name + "-fargate"
 	}
+
+	if cfg.AddOnFargate.RepositoryName != "" {
+		if cfg.AddOnFargate.RepositoryAccountID == "" {
+			return errors.New("AddOnFargate.RepositoryAccountID empty")
+		}
+		if cfg.AddOnFargate.RepositoryImageTag == "" {
+			return errors.New("AddOnFargate.RepositoryImageTag empty")
+		}
+	}
+
 	// do not prefix with "eks-"
 	// e.g. "The fargate profile name starts with the reserved prefix: 'eks-'."
 	if cfg.AddOnFargate.ProfileName == "" {
@@ -135,21 +143,6 @@ func (cfg *Config) validateAddOnFargate() error {
 		}
 		if len(cfg.AddOnFargate.RoleServicePrincipals) > 0 {
 			return fmt.Errorf("AddOnFargate.RoleCreate false; expect empty RoleServicePrincipals but got %q", cfg.AddOnFargate.RoleServicePrincipals)
-		}
-	}
-
-	if cfg.AddOnFargate.RepositoryURI != "" {
-		if cfg.AddOnFargate.RepositoryAccountID == "" {
-			return errors.New("AddOnFargate.RepositoryAccountID empty")
-		}
-		if cfg.AddOnFargate.RepositoryName == "" {
-			return errors.New("AddOnFargate.RepositoryName empty")
-		}
-		if !strings.Contains(cfg.AddOnFargate.RepositoryURI, cfg.AddOnFargate.RepositoryAccountID) {
-			return fmt.Errorf("AddOnFargate.RepositoryURI %q does not have AddOnFargate.RepositoryAccountID %q", cfg.AddOnFargate.RepositoryURI, cfg.AddOnFargate.RepositoryAccountID)
-		}
-		if cfg.AddOnFargate.RepositoryImageTag == "" {
-			return errors.New("AddOnFargate.RepositoryImageTag empty")
 		}
 	}
 

@@ -7,9 +7,39 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.1...v1.2.2).
 
+### `aws-k8s-tester`
+
+- Rename [`aws-k8s-tester eks create cluster-loader` to `aws-k8s-tester eks create stresser`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`aws-k8s-tester eks create config-maps`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`aws-k8s-tester eks create csrs`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`aws-k8s-tester eks create secrets`](https://github.com/aws/aws-k8s-tester/commit/).
+
+### `eksconfig`
+
+- Rename [`AddOnSecrets` to `AddOnSecretsLocal` and `AddOnSecretsRemote`](https://github.com/aws/aws-k8s-tester/commit/).
+  - `ADD_ON_SECRETS_*` is now `ADD_ON_SECRETS_LOCAL_` (or `ADD_ON_SECRETS_REMOTE_`).
+- Rename [`AddOnConfigMaps` to `AddOnConfigMapsLocal` and `AddOnConfigMapsRemote`](https://github.com/aws/aws-k8s-tester/commit/).
+  - `ADD_ON_CONFIG_MAPS_*` is now `ADD_ON_CONFIG_MAPS_LOCAL_` (or `ADD_ON_CONFIG_MAPS_REMOTE_`).
+- Rename [`AddOnCSRs` to `AddOnCSRsLocal` and `AddOnCSRsRemote`](https://github.com/aws/aws-k8s-tester/commit/).
+  - `ADD_ON_CSRS_*` is now `ADD_ON_CSRS_LOCAL_` (or `ADD_ON_CSRS_REMOTE_`).
+- Rename [`AddOnClusterLoader*` to `AddOnStresser*`](https://github.com/aws/aws-k8s-tester/commit/).
+  - Add [`AddOnStresserLocal.RequestsSummaryWrite*`](https://github.com/aws/aws-k8s-tester/commit/).
+  - Add [`AddOnStresserRemote.RequestsSummaryWrite*`](https://github.com/aws/aws-k8s-tester/commit/).
+  - `ADD_ON_CLUSTER_LOADER_*` is now `ADD_ON_STRESSER_*`.
+
 ### `eks`
 
-TODO: update secret, config map writes
+- Update [`eks/alb-2048` to use `aws-alb-ingress-controller` `v1.1.7` with new `wafv2:*` IAM permissions](https://github.com/aws/aws-k8s-tester/commit/).
+  - See https://github.com/kubernetes-sigs/aws-alb-ingress-controller/releases/tag/v1.1.7.
+- Rename [`eks/alb` to `eks/alb-2048`](https://github.com/aws/aws-k8s-tester/commit/).
+- Rename [`eks/nlb` to `eks/nlb-hello-world`](https://github.com/aws/aws-k8s-tester/commit/).
+- Rename [`eks/cluster-loader` to `eks/cluster-stresser`](https://github.com/aws/aws-k8s-tester/commit/).
+- Rename directory [`eks/configmaps` to `eks/config-maps`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`eks/config-maps/local` and `eks/config-maps/remote`](https://github.com/aws/aws-k8s-tester/commit/).
+- Rename directory [`eks/cronjobs` to `eks/cron-jobs`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`eks/cron-jobs/local` and `eks/cron-jobs/remote`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`eks/secrets/local` and `eks/secrets/remote`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`NodeType=regular` node labels (to differentiate from hollow nodes, `NodeType=hollow-nodes`)](https://github.com/aws/aws-k8s-tester/commit/).
 
 ### Dependency
 

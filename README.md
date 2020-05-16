@@ -10,10 +10,12 @@ https://github.com/kubernetes/enhancements/blob/master/keps/provider-aws/2018112
 
 `aws-k8s-tester` is a set of utilities and libraries for "testing" Kubernetes on AWS.
 
-- Uses AWS CloudFormation for resource creation
-- Supports automatic rollback and resource deletion
-- Flexible add-on support via environmental variables
-- Extensible as a Go package; `eks.Tester.Up` to create EKS
+- Implements [`test-infra/kubetest2` interface](https://github.com/kubernetes/test-infra/tree/master/kubetest2).
+- Uses AWS CloudFormation for resource creation.
+- Supports automatic rollback and resource deletion.
+- Flexible add-on support via environmental variables.
+- Extensible as a Go package; `eks.Tester.Up` to create EKS.
+- Performance tests suites.
 
 The main goal is to create "temporary" EC2 instances or EKS clusters for "testing" purposes:
 
@@ -82,15 +84,15 @@ AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS='{"GetRef.Name-mng-al2-cpu":{
 AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_ENABLE=true \
+AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_ENABLE=true \
-AWS_K8S_TESTER_EKS_ADD_ON_CSRS_ENABLE=true \
-AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_ENABLE=true \
-AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_ENABLE=true \
-AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_ENABLE=true \
+AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_ENABLE=true \
+AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_LOCAL_ENABLE=true \
+AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_ENABLE=true \

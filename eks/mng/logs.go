@@ -20,7 +20,7 @@ import (
 	"golang.org/x/time/rate"
 )
 
-var logCmds = map[string]string{
+var defaultLogs = map[string]string{
 	// kernel logs
 	"sudo journalctl --no-pager --output=short-precise -k": "kernel.out.log",
 
@@ -51,7 +51,7 @@ func (ts *tester) FetchLogs() (err error) {
 		return err
 	}
 
-	err = ts.fetchLogs(150, 10, logCmds)
+	err = ts.fetchLogs(150, 10)
 	if err != nil {
 		ts.cfg.Logger.Warn("failed to fetch logs", zap.Error(err))
 		return err
@@ -121,7 +121,7 @@ func (ts *tester) FetchLogs() (err error) {
 	return ts.cfg.EKSConfig.Sync()
 }
 
-func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string]string) error {
+func (ts *tester) fetchLogs(qps float32, burst int) error {
 	logsDir := ts.cfg.EKSConfig.AddOnManagedNodeGroups.LogsDir
 	sshOpt := ssh.WithVerbose(ts.cfg.EKSConfig.LogLevel == "debug")
 	rateLimiter := rate.NewLimiter(rate.Limit(qps), burst)
@@ -178,7 +178,7 @@ func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 
 				data := instanceLogs{mngName: name, instanceID: instID}
 				// fetch default logs
-				for cmd, fileName := range commandToFileName {
+				for cmd, fileName := range defaultLogs {
 					if !rateLimiter.Allow() {
 						ts.cfg.Logger.Debug("waiting for rate limiter before fetching file")
 						werr := rateLimiter.Wait(context.Background())
@@ -370,17 +370,17 @@ func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 						oerr,
 					))
 				} else {
-					varLogCmdToFileName := make(map[string]string)
+					varLogPaths := make(map[string]string)
 					for _, line := range strings.Split(string(out), "\n") {
 						if len(line) == 0 {
 							// last value
 							continue
 						}
 						logCmd := "sudo cat " + line
-						logName := filepath.Base(line)
-						varLogCmdToFileName[logCmd] = logName
+						logPath := filepath.Base(line)
+						varLogPaths[logCmd] = logPath
 					}
-					for cmd, fileName := range varLogCmdToFileName {
+					for cmd, logPath := range varLogPaths {
 						if !rateLimiter.Allow() {
 							ts.cfg.Logger.Debug("waiting for rate limiter before fetching file")
 							werr := rateLimiter.Wait(context.Background())
@@ -397,7 +397,7 @@ func (ts *tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 							continue
 						}
 
-						fpath := filepath.Join(logsDir, shorten(ts.cfg.Logger, pfx+fileName))
+						fpath := filepath.Join(logsDir, shorten(ts.cfg.Logger, pfx+logPath))
 						f, err := os.Create(fpath)
 						if err != nil {
 							data.errs = append(data.errs, fmt.Sprintf(

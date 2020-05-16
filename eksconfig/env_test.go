@@ -104,7 +104,7 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_SERVICE_PRINCIPALS")
 	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_MANAGED_POLICY_ARNS", "arn:aws:iam::aws:policy/AmazonEKSServicePolicy,arn:aws:iam::aws:policy/AmazonEKSClusterPolicy,arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_MANAGED_POLICY_ARNS")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_VERSION", "1.15")
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_VERSION", "1.16")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_VERSION")
 	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_ENCRYPTION_CMK_CREATE", "false")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_ENCRYPTION_CMK_CREATE")
@@ -217,42 +217,75 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_ECHO_SIZE", "10000")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_ECHO_SIZE")
 
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_ENABLE", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_NAMESPACE", "csr-namespace")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_NAMESPACE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_INITIAL_REQUEST_CONDITION_TYPE", "Random")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_INITIAL_REQUEST_CONDITION_TYPE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_OBJECTS", "10000")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_OBJECTS")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_FAIL_THRESHOLD", "100")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_FAIL_THRESHOLD")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_INITIAL_REQUEST_CONDITION_TYPE", "Random")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_INITIAL_REQUEST_CONDITION_TYPE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_OBJECTS", "10000")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_OBJECTS")
 
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_ENABLE", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_NAMESPACE", "config-map-namespace")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_NAMESPACE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_OBJECTS", "10000")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_OBJECTS")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_SIZE", "555")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_SIZE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_FAIL_THRESHOLD", "100")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_FAIL_THRESHOLD")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_NAMESPACE", "csr-namespace")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_INITIAL_REQUEST_CONDITION_TYPE", "Random")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_INITIAL_REQUEST_CONDITION_TYPE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_OBJECTS", "10000")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_OBJECTS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REPOSITORY_ACCOUNT_ID", "uri")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REPOSITORY_ACCOUNT_ID")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REPOSITORY_NAME", "csrs-repo-name")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REPOSITORY_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REPOSITORY_IMAGE_TAG", "csrs-repo-image-tag")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REPOSITORY_IMAGE_TAG")
 
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_ENABLE", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_NAMESPACE", "hello")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_NAMESPACE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_OBJECTS", "5")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_OBJECTS")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_SIZE", "10")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_SIZE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_WRITES_RESULT_PATH", "writes.csv")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_WRITES_RESULT_PATH")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_READS_RESULT_PATH", "reads.csv")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_READS_RESULT_PATH")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_FAIL_THRESHOLD", "1000")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_FAIL_THRESHOLD")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_LOCAL_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_LOCAL_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_LOCAL_NAMESPACE", "config-map-namespace")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_LOCAL_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_LOCAL_OBJECTS", "10000")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_LOCAL_OBJECTS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_LOCAL_OBJECT_SIZE", "555")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_LOCAL_OBJECT_SIZE")
+
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_NAMESPACE", "config-map-namespace")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_OBJECTS", "10000")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_OBJECTS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_OBJECT_SIZE", "555")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_OBJECT_SIZE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_REPOSITORY_ACCOUNT_ID", "uri")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_REPOSITORY_ACCOUNT_ID")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_REPOSITORY_NAME", "config-maps-repo-name")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_REPOSITORY_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_REPOSITORY_IMAGE_TAG", "config-maps-repo-image-tag")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_REPOSITORY_IMAGE_TAG")
+
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_NAMESPACE", "hello")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_OBJECTS", "5")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_OBJECTS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_OBJECT_SIZE", "10")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_OBJECT_SIZE")
+
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_NAMESPACE", "hello")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_OBJECTS", "5")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_OBJECTS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_OBJECT_SIZE", "10")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_OBJECT_SIZE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REPOSITORY_ACCOUNT_ID", "uri")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REPOSITORY_ACCOUNT_ID")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REPOSITORY_NAME", "secrets-repo-name")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REPOSITORY_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REPOSITORY_IMAGE_TAG", "secrets-repo-image-tag")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REPOSITORY_IMAGE_TAG")
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ENABLE")
@@ -270,8 +303,6 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_REPOSITORY_ACCOUNT_ID")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_REPOSITORY_NAME", "fargate-repo-name")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_REPOSITORY_NAME")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_REPOSITORY_URI", "fargate-repo-uri")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_REPOSITORY_URI")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_REPOSITORY_IMAGE_TAG", "fargate-repo-image-tag")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_REPOSITORY_IMAGE_TAG")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_SECRET_NAME", "HELLO-SECRET")
@@ -291,8 +322,6 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_REPOSITORY_ACCOUNT_ID")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_REPOSITORY_NAME", "irsa-repo-name")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_REPOSITORY_NAME")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_REPOSITORY_URI", "irsa-repo-uri")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_REPOSITORY_URI")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_REPOSITORY_IMAGE_TAG", "irsa-repo-image-tag")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_REPOSITORY_IMAGE_TAG")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_DEPLOYMENT_RESULT_PATH", "hello-deployment.log")
@@ -316,8 +345,6 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_REPOSITORY_ACCOUNT_ID")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_REPOSITORY_NAME", "irsa-fargate-repo-name")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_REPOSITORY_NAME")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_REPOSITORY_URI", "irsa-fargate-repo-uri")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_REPOSITORY_URI")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_REPOSITORY_IMAGE_TAG", "irsa-fargate-repo-image-tag")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_REPOSITORY_IMAGE_TAG")
 
@@ -351,23 +378,29 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_IMAGE_TAG", "hollow-nodes-repo-image-tag")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_IMAGE_TAG")
 
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_ENABLE", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_DURATION", "7m30s")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_DURATION")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_DURATION", "7m30s")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_DURATION")
 
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_ENABLE", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_DURATION", "7m30s")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_DURATION")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_ACCOUNT_ID", "uri")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_ACCOUNT_ID")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_NAME", "cluster-loader-repo-name")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_NAME")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_URI", "cluster-loader-repo-uri")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_URI")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_IMAGE_TAG", "cluster-loader-repo-image-tag")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_IMAGE_TAG")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_DURATION", "7m30s")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_DURATION")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REPOSITORY_ACCOUNT_ID", "uri")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REPOSITORY_ACCOUNT_ID")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REPOSITORY_NAME", "stresser-repo-name")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REPOSITORY_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REPOSITORY_IMAGE_TAG", "stresser-repo-image-tag")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REPOSITORY_IMAGE_TAG")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_DEPLOYMENT_REPLICAS", "500")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_DEPLOYMENT_REPLICAS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_OBJECT_SIZE", "512")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_WRITES_OUTPUT_NAME_PREFIX", "stresser-out-pfx")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_WRITES_OUTPUT_NAME_PREFIX")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_READS_OUTPUT_NAME_PREFIX", "stresser-out-pfx")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_READS_OUTPUT_NAME_PREFIX")
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_ENABLE")
@@ -522,7 +555,7 @@ func TestEnv(t *testing.T) {
 	if !reflect.DeepEqual(expectedRoleManagedPolicyARNs, cfg.Parameters.RoleManagedPolicyARNs) {
 		t.Fatalf("unexpected Parameters.RoleManagedPolicyARNs %+v", cfg.Parameters.RoleManagedPolicyARNs)
 	}
-	if cfg.Parameters.Version != "1.15" {
+	if cfg.Parameters.Version != "1.16" {
 		t.Fatalf("unexpected Parameters.Version %q", cfg.Parameters.Version)
 	}
 	if cfg.Parameters.EncryptionCMKCreate {
@@ -765,58 +798,105 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("unexpected cfg.AddOnCronJobs.EchoSize %d", cfg.AddOnCronJobs.EchoSize)
 	}
 
-	if !cfg.AddOnCSRs.Enable {
-		t.Fatalf("unexpected cfg.AddOnCSRs.Enable %v", cfg.AddOnCSRs.Enable)
+	if !cfg.AddOnCSRsLocal.Enable {
+		t.Fatalf("unexpected cfg.AddOnCSRsLocal.Enable %v", cfg.AddOnCSRsLocal.Enable)
 	}
-	if cfg.AddOnCSRs.Namespace != "csr-namespace" {
-		t.Fatalf("unexpected cfg.AddOnCSRs.Namespace %q", cfg.AddOnCSRs.Namespace)
+	if cfg.AddOnCSRsLocal.InitialRequestConditionType != "Random" {
+		t.Fatalf("unexpected cfg.AddOnCSRsLocal.InitialRequestConditionType %q", cfg.AddOnCSRsLocal.InitialRequestConditionType)
 	}
-	if cfg.AddOnCSRs.InitialRequestConditionType != "Random" {
-		t.Fatalf("unexpected cfg.AddOnCSRs.InitialRequestConditionType %q", cfg.AddOnCSRs.InitialRequestConditionType)
-	}
-	if cfg.AddOnCSRs.Objects != 10000 {
-		t.Fatalf("unexpected cfg.AddOnCSRs.Objects %d", cfg.AddOnCSRs.Objects)
-	}
-	if cfg.AddOnCSRs.FailThreshold != 100 {
-		t.Fatalf("unexpected cfg.AddOnCSRs.FailThreshold %q", cfg.AddOnCSRs.FailThreshold)
+	if cfg.AddOnCSRsLocal.Objects != 10000 {
+		t.Fatalf("unexpected cfg.AddOnCSRsLocal.Objects %d", cfg.AddOnCSRsLocal.Objects)
 	}
 
-	if !cfg.AddOnConfigMaps.Enable {
-		t.Fatalf("unexpected cfg.AddOnConfigMaps.Enable %v", cfg.AddOnConfigMaps.Enable)
+	if !cfg.AddOnCSRsRemote.Enable {
+		t.Fatalf("unexpected cfg.AddOnCSRsRemote.Enable %v", cfg.AddOnCSRsRemote.Enable)
 	}
-	if cfg.AddOnConfigMaps.Namespace != "config-map-namespace" {
-		t.Fatalf("unexpected cfg.AddOnConfigMaps.Namespace %q", cfg.AddOnConfigMaps.Namespace)
+	if cfg.AddOnCSRsRemote.Namespace != "csr-namespace" {
+		t.Fatalf("unexpected cfg.AddOnCSRsRemote.Namespace %q", cfg.AddOnCSRsRemote.Namespace)
 	}
-	if cfg.AddOnConfigMaps.Objects != 10000 {
-		t.Fatalf("unexpected cfg.AddOnConfigMaps.Objects %d", cfg.AddOnConfigMaps.Objects)
+	if cfg.AddOnCSRsRemote.InitialRequestConditionType != "Random" {
+		t.Fatalf("unexpected cfg.AddOnCSRsRemote.InitialRequestConditionType %q", cfg.AddOnCSRsRemote.InitialRequestConditionType)
 	}
-	if cfg.AddOnConfigMaps.Size != 555 {
-		t.Fatalf("unexpected cfg.AddOnConfigMaps.Size %d", cfg.AddOnConfigMaps.Size)
+	if cfg.AddOnCSRsRemote.Objects != 10000 {
+		t.Fatalf("unexpected cfg.AddOnCSRsRemote.Objects %d", cfg.AddOnCSRsRemote.Objects)
 	}
-	if cfg.AddOnConfigMaps.FailThreshold != 100 {
-		t.Fatalf("unexpected cfg.AddOnConfigMaps.FailThreshold %q", cfg.AddOnConfigMaps.FailThreshold)
+	if cfg.AddOnCSRsRemote.RepositoryAccountID != "uri" {
+		t.Fatalf("unexpected cfg.AddOnCSRsRemote.RepositoryAccountID %v", cfg.AddOnCSRsRemote.RepositoryAccountID)
+	}
+	if cfg.AddOnCSRsRemote.RepositoryName != "csrs-repo-name" {
+		t.Fatalf("unexpected cfg.AddOnCSRsRemote.RepositoryName %v", cfg.AddOnCSRsRemote.RepositoryName)
+	}
+	if cfg.AddOnCSRsRemote.RepositoryImageTag != "csrs-repo-image-tag" {
+		t.Fatalf("unexpected cfg.AddOnCSRsRemote.RepositoryImageTag %v", cfg.AddOnCSRsRemote.RepositoryImageTag)
 	}
 
-	if !cfg.AddOnSecrets.Enable {
-		t.Fatalf("unexpected cfg.AddOnSecrets.Enable %v", cfg.AddOnSecrets.Enable)
+	if !cfg.AddOnConfigMapsLocal.Enable {
+		t.Fatalf("unexpected cfg.AddOnConfigMapsLocal.Enable %v", cfg.AddOnConfigMapsLocal.Enable)
 	}
-	if cfg.AddOnSecrets.Namespace != "hello" {
-		t.Fatalf("unexpected cfg.AddOnSecrets.Namespace %q", cfg.AddOnSecrets.Namespace)
+	if cfg.AddOnConfigMapsLocal.Namespace != "config-map-namespace" {
+		t.Fatalf("unexpected cfg.AddOnConfigMapsLocal.Namespace %q", cfg.AddOnConfigMapsLocal.Namespace)
 	}
-	if cfg.AddOnSecrets.Objects != 5 {
-		t.Fatalf("unexpected cfg.AddOnSecrets.Objects %v", cfg.AddOnSecrets.Objects)
+	if cfg.AddOnConfigMapsLocal.Objects != 10000 {
+		t.Fatalf("unexpected cfg.AddOnConfigMapsLocal.Objects %d", cfg.AddOnConfigMapsLocal.Objects)
 	}
-	if cfg.AddOnSecrets.Size != 10 {
-		t.Fatalf("unexpected cfg.AddOnSecrets.Size %v", cfg.AddOnSecrets.Size)
+	if cfg.AddOnConfigMapsLocal.ObjectSize != 555 {
+		t.Fatalf("unexpected cfg.AddOnConfigMapsLocal.ObjectSize %d", cfg.AddOnConfigMapsLocal.ObjectSize)
 	}
-	if cfg.AddOnSecrets.WritesResultPath != "writes.csv" {
-		t.Fatalf("unexpected cfg.AddOnSecrets.WritesResultPath %q", cfg.AddOnSecrets.WritesResultPath)
+	if !cfg.AddOnConfigMapsRemote.Enable {
+		t.Fatalf("unexpected cfg.AddOnConfigMapsRemote.Enable %v", cfg.AddOnConfigMapsRemote.Enable)
 	}
-	if cfg.AddOnSecrets.ReadsResultPath != "reads.csv" {
-		t.Fatalf("unexpected cfg.AddOnSecrets.ReadsResultPath %q", cfg.AddOnSecrets.ReadsResultPath)
+	if cfg.AddOnConfigMapsRemote.Namespace != "config-map-namespace" {
+		t.Fatalf("unexpected cfg.AddOnConfigMapsRemote.Namespace %q", cfg.AddOnConfigMapsRemote.Namespace)
 	}
-	if cfg.AddOnSecrets.FailThreshold != 1000 {
-		t.Fatalf("unexpected cfg.AddOnSecrets.FailThreshold %q", cfg.AddOnSecrets.FailThreshold)
+	if cfg.AddOnConfigMapsRemote.Objects != 10000 {
+		t.Fatalf("unexpected cfg.AddOnConfigMapsRemote.Objects %d", cfg.AddOnConfigMapsRemote.Objects)
+	}
+	if cfg.AddOnConfigMapsRemote.ObjectSize != 555 {
+		t.Fatalf("unexpected cfg.AddOnConfigMapsRemote.ObjectSize %d", cfg.AddOnConfigMapsRemote.ObjectSize)
+	}
+	if cfg.AddOnConfigMapsRemote.RepositoryAccountID != "uri" {
+		t.Fatalf("unexpected cfg.AddOnConfigMapsRemote.RepositoryAccountID %v", cfg.AddOnConfigMapsRemote.RepositoryAccountID)
+	}
+	if cfg.AddOnConfigMapsRemote.RepositoryName != "config-maps-repo-name" {
+		t.Fatalf("unexpected cfg.AddOnConfigMapsRemote.RepositoryName %v", cfg.AddOnConfigMapsRemote.RepositoryName)
+	}
+	if cfg.AddOnConfigMapsRemote.RepositoryImageTag != "config-maps-repo-image-tag" {
+		t.Fatalf("unexpected cfg.AddOnConfigMapsRemote.RepositoryImageTag %v", cfg.AddOnConfigMapsRemote.RepositoryImageTag)
+	}
+
+	if !cfg.AddOnSecretsLocal.Enable {
+		t.Fatalf("unexpected cfg.AddOnSecretsLocal.Enable %v", cfg.AddOnSecretsLocal.Enable)
+	}
+	if cfg.AddOnSecretsLocal.Namespace != "hello" {
+		t.Fatalf("unexpected cfg.AddOnSecretsLocal.Namespace %q", cfg.AddOnSecretsLocal.Namespace)
+	}
+	if cfg.AddOnSecretsLocal.Objects != 5 {
+		t.Fatalf("unexpected cfg.AddOnSecretsLocal.Objects %v", cfg.AddOnSecretsLocal.Objects)
+	}
+	if cfg.AddOnSecretsLocal.ObjectSize != 10 {
+		t.Fatalf("unexpected cfg.AddOnSecretsLocal.ObjectSize %v", cfg.AddOnSecretsLocal.ObjectSize)
+	}
+
+	if !cfg.AddOnSecretsRemote.Enable {
+		t.Fatalf("unexpected cfg.AddOnSecretsRemote.Enable %v", cfg.AddOnSecretsRemote.Enable)
+	}
+	if cfg.AddOnSecretsRemote.Namespace != "hello" {
+		t.Fatalf("unexpected cfg.AddOnSecretsRemote.Namespace %q", cfg.AddOnSecretsRemote.Namespace)
+	}
+	if cfg.AddOnSecretsRemote.Objects != 5 {
+		t.Fatalf("unexpected cfg.AddOnSecretsRemote.Objects %v", cfg.AddOnSecretsRemote.Objects)
+	}
+	if cfg.AddOnSecretsRemote.ObjectSize != 10 {
+		t.Fatalf("unexpected cfg.AddOnSecretsRemote.ObjectSize %v", cfg.AddOnSecretsRemote.ObjectSize)
+	}
+	if cfg.AddOnSecretsRemote.RepositoryAccountID != "uri" {
+		t.Fatalf("unexpected cfg.AddOnSecretsRemote.RepositoryAccountID %v", cfg.AddOnSecretsRemote.RepositoryAccountID)
+	}
+	if cfg.AddOnSecretsRemote.RepositoryName != "secrets-repo-name" {
+		t.Fatalf("unexpected cfg.AddOnSecretsRemote.RepositoryName %v", cfg.AddOnSecretsRemote.RepositoryName)
+	}
+	if cfg.AddOnSecretsRemote.RepositoryImageTag != "secrets-repo-image-tag" {
+		t.Fatalf("unexpected cfg.AddOnSecretsRemote.RepositoryImageTag %v", cfg.AddOnSecretsRemote.RepositoryImageTag)
 	}
 
 	if !cfg.AddOnFargate.Enable {
@@ -844,9 +924,6 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.AddOnFargate.RepositoryName != "fargate-repo-name" {
 		t.Fatalf("unexpected cfg.AddOnFargate.RepositoryName %v", cfg.AddOnFargate.RepositoryName)
-	}
-	if cfg.AddOnFargate.RepositoryURI != "fargate-repo-uri" {
-		t.Fatalf("unexpected cfg.AddOnFargate.RepositoryURI %v", cfg.AddOnFargate.RepositoryURI)
 	}
 	if cfg.AddOnFargate.RepositoryImageTag != "fargate-repo-image-tag" {
 		t.Fatalf("unexpected cfg.AddOnFargate.RepositoryImageTag %v", cfg.AddOnFargate.RepositoryImageTag)
@@ -876,9 +953,6 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.AddOnIRSA.RepositoryName != "irsa-repo-name" {
 		t.Fatalf("unexpected cfg.AddOnIRSA.RepositoryName %v", cfg.AddOnIRSA.RepositoryName)
-	}
-	if cfg.AddOnIRSA.RepositoryURI != "irsa-repo-uri" {
-		t.Fatalf("unexpected cfg.AddOnIRSA.RepositoryURI %v", cfg.AddOnIRSA.RepositoryURI)
 	}
 	if cfg.AddOnIRSA.RepositoryImageTag != "irsa-repo-image-tag" {
 		t.Fatalf("unexpected cfg.AddOnIRSA.RepositoryImageTag %v", cfg.AddOnIRSA.RepositoryImageTag)
@@ -915,9 +989,6 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.AddOnIRSAFargate.RepositoryName != "irsa-fargate-repo-name" {
 		t.Fatalf("unexpected cfg.AddOnIRSAFargate.RepositoryName %v", cfg.AddOnIRSAFargate.RepositoryName)
-	}
-	if cfg.AddOnIRSAFargate.RepositoryURI != "irsa-fargate-repo-uri" {
-		t.Fatalf("unexpected cfg.AddOnIRSAFargate.RepositoryURI %v", cfg.AddOnIRSAFargate.RepositoryURI)
 	}
 	if cfg.AddOnIRSAFargate.RepositoryImageTag != "irsa-fargate-repo-image-tag" {
 		t.Fatalf("unexpected cfg.AddOnIRSAFargate.RepositoryImageTag %v", cfg.AddOnIRSAFargate.RepositoryImageTag)
@@ -958,37 +1029,43 @@ func TestEnv(t *testing.T) {
 	if cfg.AddOnHollowNodesRemote.RepositoryName != "hollow-nodes-repo-name" {
 		t.Fatalf("unexpected cfg.AddOnHollowNodesRemote.RepositoryName %v", cfg.AddOnHollowNodesRemote.RepositoryName)
 	}
-	if cfg.AddOnHollowNodesRemote.RepositoryURI != "hollow-nodes-repo-uri" {
-		t.Fatalf("unexpected cfg.AddOnHollowNodesRemote.RepositoryURI %v", cfg.AddOnHollowNodesRemote.RepositoryURI)
-	}
 	if cfg.AddOnHollowNodesRemote.RepositoryImageTag != "hollow-nodes-repo-image-tag" {
 		t.Fatalf("unexpected cfg.AddOnHollowNodesRemote.RepositoryImageTag %v", cfg.AddOnHollowNodesRemote.RepositoryImageTag)
 	}
 
-	if !cfg.AddOnClusterLoaderLocal.Enable {
-		t.Fatalf("unexpected cfg.AddOnClusterLoaderLocal.Enable %v", cfg.AddOnClusterLoaderLocal.Enable)
+	if !cfg.AddOnStresserLocal.Enable {
+		t.Fatalf("unexpected cfg.AddOnStresserLocal.Enable %v", cfg.AddOnStresserLocal.Enable)
 	}
-	if cfg.AddOnClusterLoaderLocal.Duration != 7*time.Minute+30*time.Second {
-		t.Fatalf("unexpected cfg.AddOnClusterLoaderLocal.Duration %v", cfg.AddOnClusterLoaderLocal.Duration)
+	if cfg.AddOnStresserLocal.Duration != 7*time.Minute+30*time.Second {
+		t.Fatalf("unexpected cfg.AddOnStresserLocal.Duration %v", cfg.AddOnStresserLocal.Duration)
 	}
 
-	if !cfg.AddOnClusterLoaderRemote.Enable {
-		t.Fatalf("unexpected cfg.AddOnClusterLoaderRemote.Enable %v", cfg.AddOnClusterLoaderRemote.Enable)
+	if !cfg.AddOnStresserRemote.Enable {
+		t.Fatalf("unexpected cfg.AddOnStresserRemote.Enable %v", cfg.AddOnStresserRemote.Enable)
 	}
-	if cfg.AddOnClusterLoaderRemote.Duration != 7*time.Minute+30*time.Second {
-		t.Fatalf("unexpected cfg.AddOnClusterLoaderRemote.Duration %v", cfg.AddOnClusterLoaderRemote.Duration)
+	if cfg.AddOnStresserRemote.Duration != 7*time.Minute+30*time.Second {
+		t.Fatalf("unexpected cfg.AddOnStresserRemote.Duration %v", cfg.AddOnStresserRemote.Duration)
 	}
-	if cfg.AddOnClusterLoaderRemote.RepositoryAccountID != "uri" {
-		t.Fatalf("unexpected cfg.AddOnClusterLoaderRemote.RepositoryAccountID %v", cfg.AddOnClusterLoaderRemote.RepositoryAccountID)
+	if cfg.AddOnStresserRemote.RepositoryAccountID != "uri" {
+		t.Fatalf("unexpected cfg.AddOnStresserRemote.RepositoryAccountID %v", cfg.AddOnStresserRemote.RepositoryAccountID)
 	}
-	if cfg.AddOnClusterLoaderRemote.RepositoryName != "cluster-loader-repo-name" {
-		t.Fatalf("unexpected cfg.AddOnClusterLoaderRemote.RepositoryName %v", cfg.AddOnClusterLoaderRemote.RepositoryName)
+	if cfg.AddOnStresserRemote.RepositoryName != "stresser-repo-name" {
+		t.Fatalf("unexpected cfg.AddOnStresserRemote.RepositoryName %v", cfg.AddOnStresserRemote.RepositoryName)
 	}
-	if cfg.AddOnClusterLoaderRemote.RepositoryURI != "cluster-loader-repo-uri" {
-		t.Fatalf("unexpected cfg.AddOnClusterLoaderRemote.RepositoryURI %v", cfg.AddOnClusterLoaderRemote.RepositoryURI)
+	if cfg.AddOnStresserRemote.RepositoryImageTag != "stresser-repo-image-tag" {
+		t.Fatalf("unexpected cfg.AddOnStresserRemote.RepositoryImageTag %v", cfg.AddOnStresserRemote.RepositoryImageTag)
 	}
-	if cfg.AddOnClusterLoaderRemote.RepositoryImageTag != "cluster-loader-repo-image-tag" {
-		t.Fatalf("unexpected cfg.AddOnClusterLoaderRemote.RepositoryImageTag %v", cfg.AddOnClusterLoaderRemote.RepositoryImageTag)
+	if cfg.AddOnStresserRemote.DeploymentReplicas != 500 {
+		t.Fatalf("unexpected cfg.AddOnStresserRemote.DeploymentReplicas %v", cfg.AddOnStresserRemote.DeploymentReplicas)
+	}
+	if cfg.AddOnStresserRemote.ObjectSize != 512 {
+		t.Fatalf("unexpected cfg.AddOnStresserRemote.ObjectSize %v", cfg.AddOnStresserRemote.ObjectSize)
+	}
+	if cfg.AddOnStresserRemote.RequestsSummaryWritesOutputNamePrefix != "stresser-out-pfx" {
+		t.Fatalf("unexpected cfg.AddOnStresserRemote.RequestsSummaryWritesOutputNamePrefix %v", cfg.AddOnStresserRemote.RequestsSummaryWritesOutputNamePrefix)
+	}
+	if cfg.AddOnStresserRemote.RequestsSummaryReadsOutputNamePrefix != "stresser-out-pfx" {
+		t.Fatalf("unexpected cfg.AddOnStresserRemote.RequestsSummaryReadsOutputNamePrefix %v", cfg.AddOnStresserRemote.RequestsSummaryReadsOutputNamePrefix)
 	}
 
 	if !cfg.AddOnConformance.Enable {

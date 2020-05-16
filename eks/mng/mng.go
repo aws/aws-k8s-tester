@@ -79,22 +79,20 @@ func (ts *tester) Create() (err error) {
 		return errors.New("empty EKSConfig.Parameters.PublicSubnetIDs")
 	}
 
-	defer func() {
-		ts.cfg.EKSConfig.AddOnManagedNodeGroups.Created = true
-		ts.cfg.EKSConfig.Sync()
-	}()
-
 	if err = ts.createRole(); err != nil {
 		return err
 	}
 	if err = ts.createASG(); err != nil {
 		return err
 	}
+
 	for name := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
 		if err = ts.createIngressEgress(name); err != nil {
 			return err
 		}
 	}
+
+	ts.cfg.EKSConfig.AddOnManagedNodeGroups.Created = true
 	return ts.cfg.EKSConfig.Sync()
 }
 
@@ -134,9 +132,6 @@ func (ts *tester) Delete() error {
 		errs = append(errs, err.Error())
 	}
 
-	ts.cfg.EKSConfig.AddOnManagedNodeGroups.Created = false
-	ts.cfg.EKSConfig.Sync()
-
 	waitDur := 5 * time.Second
 	ts.cfg.Logger.Info("sleeping before node group role deletion", zap.Duration("wait", waitDur))
 	time.Sleep(waitDur)
@@ -151,5 +146,7 @@ func (ts *tester) Delete() error {
 	if len(errs) > 0 {
 		return errors.New(strings.Join(errs, ", "))
 	}
+
+	ts.cfg.EKSConfig.AddOnManagedNodeGroups.Created = false
 	return ts.cfg.EKSConfig.Sync()
 }

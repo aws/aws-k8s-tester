@@ -64,7 +64,11 @@ func (ts *tester) Create() error {
 		ts.cfg.EKSConfig.Sync()
 	}()
 
-	if err := k8s_client.CreateNamespace(ts.cfg.Logger, ts.cfg.K8SClient.KubernetesClientSet(), ts.cfg.EKSConfig.AddOnJobsPi.Namespace); err != nil {
+	if err := k8s_client.CreateNamespace(
+		ts.cfg.Logger,
+		ts.cfg.K8SClient.KubernetesClientSet(),
+		ts.cfg.EKSConfig.AddOnJobsPi.Namespace,
+	); err != nil {
 		return err
 	}
 	obj, b, err := ts.createObject()
@@ -153,11 +157,13 @@ func (ts *tester) Delete() error {
 		ts.cfg.Logger.Info("deleted Job", zap.String("name", jobName))
 	}
 
-	if err := k8s_client.DeleteNamespaceAndWait(ts.cfg.Logger,
+	if err := k8s_client.DeleteNamespaceAndWait(
+		ts.cfg.Logger,
 		ts.cfg.K8SClient.KubernetesClientSet(),
 		ts.cfg.EKSConfig.AddOnJobsPi.Namespace,
 		k8s_client.DefaultNamespaceDeletionInterval,
-		k8s_client.DefaultNamespaceDeletionTimeout); err != nil {
+		k8s_client.DefaultNamespaceDeletionTimeout,
+	); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete Jobs Pi namespace (%v)", err))
 	}
 

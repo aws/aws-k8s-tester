@@ -92,6 +92,19 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *AddOnCSIEBS, got %T", vv)
 	}
 
+	if cfg.AddOnAppMesh == nil {
+		cfg.AddOnAppMesh = &AddOnAppMesh{}
+	}
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnAppMesh, cfg.AddOnAppMesh)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*AddOnAppMesh); ok {
+		cfg.AddOnAppMesh = av
+	} else {
+		return fmt.Errorf("expected *AddOnAppMesh, got %T", vv)
+	}
+
 	if cfg.AddOnNLBHelloWorld == nil {
 		cfg.AddOnNLBHelloWorld = &AddOnNLBHelloWorld{}
 	}
@@ -157,56 +170,82 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *AddOnCronJobs, got %T", vv)
 	}
 
-	if cfg.AddOnCSRs == nil {
-		cfg.AddOnCSRs = &AddOnCSRs{}
+	if cfg.AddOnCSRsLocal == nil {
+		cfg.AddOnCSRsLocal = &AddOnCSRsLocal{}
 	}
-	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnCSRs, cfg.AddOnCSRs)
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnCSRsLocal, cfg.AddOnCSRsLocal)
 	if err != nil {
 		return err
 	}
-	if av, ok := vv.(*AddOnCSRs); ok {
-		cfg.AddOnCSRs = av
+	if av, ok := vv.(*AddOnCSRsLocal); ok {
+		cfg.AddOnCSRsLocal = av
 	} else {
-		return fmt.Errorf("expected *AddOnCSRs, got %T", vv)
+		return fmt.Errorf("expected *AddOnCSRsLocal, got %T", vv)
 	}
 
-	if cfg.AddOnConfigMaps == nil {
-		cfg.AddOnConfigMaps = &AddOnConfigMaps{}
+	if cfg.AddOnCSRsRemote == nil {
+		cfg.AddOnCSRsRemote = &AddOnCSRsRemote{}
 	}
-	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnConfigMaps, cfg.AddOnConfigMaps)
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnCSRsRemote, cfg.AddOnCSRsRemote)
 	if err != nil {
 		return err
 	}
-	if av, ok := vv.(*AddOnConfigMaps); ok {
-		cfg.AddOnConfigMaps = av
+	if av, ok := vv.(*AddOnCSRsRemote); ok {
+		cfg.AddOnCSRsRemote = av
 	} else {
-		return fmt.Errorf("expected *AddOnConfigMaps, got %T", vv)
+		return fmt.Errorf("expected *AddOnCSRsRemote, got %T", vv)
 	}
 
-	if cfg.AddOnSecrets == nil {
-		cfg.AddOnSecrets = &AddOnSecrets{}
+	if cfg.AddOnConfigMapsLocal == nil {
+		cfg.AddOnConfigMapsLocal = &AddOnConfigMapsLocal{}
 	}
-	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnSecrets, cfg.AddOnSecrets)
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnConfigMapsLocal, cfg.AddOnConfigMapsLocal)
 	if err != nil {
 		return err
 	}
-	if av, ok := vv.(*AddOnSecrets); ok {
-		cfg.AddOnSecrets = av
+	if av, ok := vv.(*AddOnConfigMapsLocal); ok {
+		cfg.AddOnConfigMapsLocal = av
 	} else {
-		return fmt.Errorf("expected *AddOnSecrets, got %T", vv)
+		return fmt.Errorf("expected *AddOnConfigMapsLocal, got %T", vv)
 	}
 
-	if cfg.AddOnIRSA == nil {
-		cfg.AddOnIRSA = &AddOnIRSA{}
+	if cfg.AddOnConfigMapsRemote == nil {
+		cfg.AddOnConfigMapsRemote = &AddOnConfigMapsRemote{}
 	}
-	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnIRSA, cfg.AddOnIRSA)
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnConfigMapsRemote, cfg.AddOnConfigMapsRemote)
 	if err != nil {
 		return err
 	}
-	if av, ok := vv.(*AddOnIRSA); ok {
-		cfg.AddOnIRSA = av
+	if av, ok := vv.(*AddOnConfigMapsRemote); ok {
+		cfg.AddOnConfigMapsRemote = av
 	} else {
-		return fmt.Errorf("expected *AddOnIRSA, got %T", vv)
+		return fmt.Errorf("expected *AddOnConfigMapsRemote, got %T", vv)
+	}
+
+	if cfg.AddOnSecretsLocal == nil {
+		cfg.AddOnSecretsLocal = &AddOnSecretsLocal{}
+	}
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnSecretsLocal, cfg.AddOnSecretsLocal)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*AddOnSecretsLocal); ok {
+		cfg.AddOnSecretsLocal = av
+	} else {
+		return fmt.Errorf("expected *AddOnSecretsLocal, got %T", vv)
+	}
+
+	if cfg.AddOnSecretsRemote == nil {
+		cfg.AddOnSecretsRemote = &AddOnSecretsRemote{}
+	}
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnSecretsRemote, cfg.AddOnSecretsRemote)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*AddOnSecretsRemote); ok {
+		cfg.AddOnSecretsRemote = av
+	} else {
+		return fmt.Errorf("expected *AddOnSecretsRemote, got %T", vv)
 	}
 
 	if cfg.AddOnFargate == nil {
@@ -222,6 +261,19 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *AddOnFargate, got %T", vv)
 	}
 
+	if cfg.AddOnIRSA == nil {
+		cfg.AddOnIRSA = &AddOnIRSA{}
+	}
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnIRSA, cfg.AddOnIRSA)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*AddOnIRSA); ok {
+		cfg.AddOnIRSA = av
+	} else {
+		return fmt.Errorf("expected *AddOnIRSA, got %T", vv)
+	}
+
 	if cfg.AddOnIRSAFargate == nil {
 		cfg.AddOnIRSAFargate = &AddOnIRSAFargate{}
 	}
@@ -233,19 +285,6 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		cfg.AddOnIRSAFargate = av
 	} else {
 		return fmt.Errorf("expected *AddOnIRSAFargate, got %T", vv)
-	}
-
-	if cfg.AddOnAppMesh == nil {
-		cfg.AddOnAppMesh = &AddOnAppMesh{}
-	}
-	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnAppMesh, cfg.AddOnAppMesh)
-	if err != nil {
-		return err
-	}
-	if av, ok := vv.(*AddOnAppMesh); ok {
-		cfg.AddOnAppMesh = av
-	} else {
-		return fmt.Errorf("expected *AddOnAppMesh, got %T", vv)
 	}
 
 	if cfg.AddOnWordpress == nil {
@@ -339,30 +378,30 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *AddOnHollowNodesRemote, got %T", vv)
 	}
 
-	if cfg.AddOnClusterLoaderLocal == nil {
-		cfg.AddOnClusterLoaderLocal = &AddOnClusterLoaderLocal{}
+	if cfg.AddOnStresserLocal == nil {
+		cfg.AddOnStresserLocal = &AddOnStresserLocal{}
 	}
-	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnClusterLoaderLocal, cfg.AddOnClusterLoaderLocal)
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnStresserLocal, cfg.AddOnStresserLocal)
 	if err != nil {
 		return err
 	}
-	if av, ok := vv.(*AddOnClusterLoaderLocal); ok {
-		cfg.AddOnClusterLoaderLocal = av
+	if av, ok := vv.(*AddOnStresserLocal); ok {
+		cfg.AddOnStresserLocal = av
 	} else {
-		return fmt.Errorf("expected *AddOnClusterLoaderLocal, got %T", vv)
+		return fmt.Errorf("expected *AddOnStresserLocal, got %T", vv)
 	}
 
-	if cfg.AddOnClusterLoaderRemote == nil {
-		cfg.AddOnClusterLoaderRemote = &AddOnClusterLoaderRemote{}
+	if cfg.AddOnStresserRemote == nil {
+		cfg.AddOnStresserRemote = &AddOnStresserRemote{}
 	}
-	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnClusterLoaderRemote, cfg.AddOnClusterLoaderRemote)
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnStresserRemote, cfg.AddOnStresserRemote)
 	if err != nil {
 		return err
 	}
-	if av, ok := vv.(*AddOnClusterLoaderRemote); ok {
-		cfg.AddOnClusterLoaderRemote = av
+	if av, ok := vv.(*AddOnStresserRemote); ok {
+		cfg.AddOnStresserRemote = av
 	} else {
-		return fmt.Errorf("expected *AddOnClusterLoaderRemote, got %T", vv)
+		return fmt.Errorf("expected *AddOnStresserRemote, got %T", vv)
 	}
 
 	if cfg.AddOnConformance == nil {

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"path"
 	"path/filepath"
-	"strings"
 	"time"
 )
 
@@ -29,6 +28,16 @@ type AddOnIRSA struct {
 	// Namespace is the namespace to create objects in.
 	Namespace string `json:"namespace"`
 
+	// RepositoryAccountID is the account ID for tester ECR image.
+	// e.g. "aws/aws-k8s-tester" for "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/aws/aws-k8s-tester"
+	RepositoryAccountID string `json:"repository-account-id,omitempty"`
+	// RepositoryName is the repositoryName for tester ECR image.
+	// e.g. "aws/aws-k8s-tester" for "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/aws/aws-k8s-tester"
+	RepositoryName string `json:"repository-name,omitempty"`
+	// RepositoryImageTag is the image tag for tester ECR image.
+	// e.g. "latest" for image URI "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/aws/aws-k8s-tester:latest"
+	RepositoryImageTag string `json:"repository-image-tag,omitempty"`
+
 	// RoleName is the role name for IRSA.
 	RoleName string `json:"role-name"`
 	// RoleARN is the role ARN for IRSA.
@@ -40,19 +49,6 @@ type AddOnIRSA struct {
 
 	// S3Key is the S3 key to write for IRSA tests.
 	S3Key string `json:"s3-key"`
-
-	// RepositoryAccountID is the account ID for tester ECR image.
-	// e.g. "aws/aws-k8s-tester" for "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester"
-	RepositoryAccountID string `json:"repository-account-id,omitempty"`
-	// RepositoryName is the repositoryName for tester ECR image.
-	// e.g. "aws/aws-k8s-tester" for "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester"
-	RepositoryName string `json:"repository-name,omitempty"`
-	// RepositoryURI is the repositoryUri for tester ECR image.
-	// e.g. "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester"
-	RepositoryURI string `json:"repository-uri,omitempty"`
-	// RepositoryImageTag is the image tag for tester ECR image.
-	// e.g. "latest" for image URI "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester:latest"
-	RepositoryImageTag string `json:"repository-image-tag,omitempty"`
 
 	// DeploymentReplicas is the number of Deployment replicas.
 	DeploymentReplicas int32 `json:"deployment-replicas"`
@@ -97,17 +93,9 @@ func (cfg *Config) validateAddOnIRSA() error {
 	if cfg.Parameters.VersionValue < 1.14 {
 		return fmt.Errorf("Version %q not supported for AddOnIRSA", cfg.Parameters.Version)
 	}
-	if cfg.S3BucketName == "" {
-		return errors.New("AddOnIRSA requires S3 bucket but S3BucketName empty")
-	}
+
 	if cfg.AddOnIRSA.Namespace == "" {
 		cfg.AddOnIRSA.Namespace = cfg.Name + "-irsa"
-	}
-	if cfg.AddOnIRSA.RoleName == "" {
-		cfg.AddOnIRSA.RoleName = cfg.Name + "-role-irsa"
-	}
-	if cfg.AddOnIRSA.S3Key == "" {
-		cfg.AddOnIRSA.S3Key = path.Join(cfg.Name, "s3-key-irsa")
 	}
 
 	if cfg.AddOnIRSA.RepositoryAccountID == "" {
@@ -116,14 +104,19 @@ func (cfg *Config) validateAddOnIRSA() error {
 	if cfg.AddOnIRSA.RepositoryName == "" {
 		return errors.New("AddOnIRSA.RepositoryName empty")
 	}
-	if cfg.AddOnIRSA.RepositoryURI == "" {
-		return errors.New("AddOnIRSA.RepositoryURI empty")
-	}
-	if !strings.Contains(cfg.AddOnIRSA.RepositoryURI, cfg.AddOnIRSA.RepositoryAccountID) {
-		return fmt.Errorf("AddOnIRSA.RepositoryURI %q does not have AddOnIRSA.RepositoryAccountID %q", cfg.AddOnIRSA.RepositoryURI, cfg.AddOnIRSA.RepositoryAccountID)
-	}
 	if cfg.AddOnIRSA.RepositoryImageTag == "" {
 		return errors.New("AddOnIRSA.RepositoryImageTag empty")
+	}
+
+	if cfg.S3BucketName == "" {
+		return errors.New("AddOnIRSA requires S3 bucket but S3BucketName empty")
+	}
+
+	if cfg.AddOnIRSA.RoleName == "" {
+		cfg.AddOnIRSA.RoleName = cfg.Name + "-role-irsa"
+	}
+	if cfg.AddOnIRSA.S3Key == "" {
+		cfg.AddOnIRSA.S3Key = path.Join(cfg.Name, "s3-key-irsa")
 	}
 
 	if cfg.AddOnIRSA.DeploymentResultPath == "" {

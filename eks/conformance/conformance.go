@@ -40,7 +40,7 @@ type Tester interface {
 	Delete() error
 }
 
-func NewTester(cfg Config) (Tester, error) {
+func New(cfg Config) (Tester, error) {
 	return &tester{cfg: cfg, donec: make(chan struct{})}, nil
 }
 

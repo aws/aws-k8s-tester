@@ -80,11 +80,6 @@ func (ts *tester) Create() (err error) {
 		return errors.New("empty EKSConfig.Parameters.PublicSubnetIDs")
 	}
 
-	defer func() {
-		ts.cfg.EKSConfig.AddOnNodeGroups.Created = true
-		ts.cfg.EKSConfig.Sync()
-	}()
-
 	if err = ts.createRole(); err != nil {
 		return err
 	}
@@ -101,6 +96,7 @@ func (ts *tester) Create() (err error) {
 		return err
 	}
 
+	ts.cfg.EKSConfig.AddOnNodeGroups.Created = true
 	return ts.cfg.EKSConfig.Sync()
 }
 
@@ -134,5 +130,7 @@ func (ts *tester) Delete() error {
 	if len(errs) > 0 {
 		return errors.New(strings.Join(errs, ", "))
 	}
+
+	ts.cfg.EKSConfig.AddOnNodeGroups.Created = false
 	return ts.cfg.EKSConfig.Sync()
 }

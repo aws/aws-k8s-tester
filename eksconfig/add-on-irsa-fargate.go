@@ -28,6 +28,16 @@ type AddOnIRSAFargate struct {
 	// Namespace is the namespace to create objects in.
 	Namespace string `json:"namespace"`
 
+	// RepositoryAccountID is the account ID for tester ECR image.
+	// e.g. "aws/aws-k8s-tester" for "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/aws/aws-k8s-tester"
+	RepositoryAccountID string `json:"repository-account-id,omitempty"`
+	// RepositoryName is the repositoryName for tester ECR image.
+	// e.g. "aws/aws-k8s-tester" for "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/aws/aws-k8s-tester"
+	RepositoryName string `json:"repository-name,omitempty"`
+	// RepositoryImageTag is the image tag for tester ECR image.
+	// e.g. "latest" for image URI "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/aws/aws-k8s-tester:latest"
+	RepositoryImageTag string `json:"repository-image-tag,omitempty"`
+
 	// RoleName is the role name for IRSA.
 	RoleName string `json:"role-name"`
 	// RoleARN is the role ARN for IRSA.
@@ -44,19 +54,6 @@ type AddOnIRSAFargate struct {
 
 	// ProfileName is the profile name for Fargate.
 	ProfileName string `json:"profile-name"`
-
-	// RepositoryAccountID is the account ID for tester ECR image.
-	// e.g. "aws/aws-k8s-tester" for "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester"
-	RepositoryAccountID string `json:"repository-account-id,omitempty"`
-	// RepositoryName is the repositoryName for tester ECR image.
-	// e.g. "aws/aws-k8s-tester" for "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester"
-	RepositoryName string `json:"repository-name,omitempty"`
-	// RepositoryURI is the repositoryUri for tester ECR image.
-	// e.g. "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester"
-	RepositoryURI string `json:"repository-uri,omitempty"`
-	// RepositoryImageTag is the image tag for tester ECR image.
-	// e.g. "latest" for image URI "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester:latest"
-	RepositoryImageTag string `json:"repository-image-tag,omitempty"`
 }
 
 // EnvironmentVariablePrefixAddOnIRSAFargate is the environment variable prefix used for "eksconfig".
@@ -91,12 +88,25 @@ func (cfg *Config) validateAddOnIRSAFargate() error {
 	if cfg.Parameters.VersionValue < 1.14 {
 		return fmt.Errorf("Version %q not supported for AddOnIRSAFargate", cfg.Parameters.Version)
 	}
-	if cfg.S3BucketName == "" {
-		return errors.New("AddOnIRSAFargate requires S3 bucket but S3BucketName empty")
-	}
+
 	if cfg.AddOnIRSAFargate.Namespace == "" {
 		cfg.AddOnIRSAFargate.Namespace = cfg.Name + "-irsa-fargate"
 	}
+
+	if cfg.AddOnIRSAFargate.RepositoryAccountID == "" {
+		return errors.New("AddOnIRSAFargate.RepositoryAccountID empty")
+	}
+	if cfg.AddOnIRSAFargate.RepositoryName == "" {
+		return errors.New("AddOnIRSAFargate.RepositoryName empty")
+	}
+	if cfg.AddOnIRSAFargate.RepositoryImageTag == "" {
+		return errors.New("AddOnIRSAFargate.RepositoryImageTag empty")
+	}
+
+	if cfg.S3BucketName == "" {
+		return errors.New("AddOnIRSAFargate requires S3 bucket but S3BucketName empty")
+	}
+
 	if cfg.AddOnIRSAFargate.RoleName == "" {
 		cfg.AddOnIRSAFargate.RoleName = cfg.Name + "-role-irsa-fargate"
 	}
@@ -107,22 +117,6 @@ func (cfg *Config) validateAddOnIRSAFargate() error {
 	// e.g. "The fargate profile name starts with the reserved prefix: 'eks-'."
 	if cfg.AddOnIRSAFargate.ProfileName == "" {
 		cfg.AddOnIRSAFargate.ProfileName = cfg.Name + "-irsa-fargate-profile"
-	}
-
-	if cfg.AddOnIRSAFargate.RepositoryAccountID == "" {
-		return errors.New("AddOnIRSAFargate.RepositoryAccountID empty")
-	}
-	if cfg.AddOnIRSAFargate.RepositoryName == "" {
-		return errors.New("AddOnIRSAFargate.RepositoryName empty")
-	}
-	if cfg.AddOnIRSAFargate.RepositoryURI == "" {
-		return errors.New("AddOnIRSAFargate.RepositoryURI empty")
-	}
-	if !strings.Contains(cfg.AddOnIRSAFargate.RepositoryURI, cfg.AddOnIRSAFargate.RepositoryAccountID) {
-		return fmt.Errorf("AddOnIRSAFargate.RepositoryURI %q does not have AddOnIRSAFargate.RepositoryAccountID %q", cfg.AddOnIRSAFargate.RepositoryURI, cfg.AddOnIRSAFargate.RepositoryAccountID)
-	}
-	if cfg.AddOnIRSAFargate.RepositoryImageTag == "" {
-		return errors.New("AddOnIRSAFargate.RepositoryImageTag empty")
 	}
 
 	if strings.HasPrefix(cfg.AddOnIRSAFargate.ProfileName, "eks-") {

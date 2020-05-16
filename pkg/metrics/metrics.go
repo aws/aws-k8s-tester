@@ -111,6 +111,9 @@ func MergeHistograms(a HistogramBuckets, b HistogramBuckets) (HistogramBuckets, 
 
 // Table converts "HistogramBuckets" to table.
 func (buckets HistogramBuckets) Table() string {
+	if len(buckets) == 0 {
+		return ""
+	}
 	buf := bytes.NewBuffer(nil)
 	tb := tablewriter.NewWriter(buf)
 	tb.SetAutoWrapText(false)

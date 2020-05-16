@@ -96,7 +96,7 @@ func (ts *Tester) updateKUBECONFIG() (err error) {
 		select {
 		case <-ts.stopCreationCh:
 			return errors.New("update-kubeconfig aborted")
-		case <-ts.interruptSig:
+		case <-ts.osSig:
 			return errors.New("update-kubeconfig aborted")
 		case <-time.After(5 * time.Second):
 		}

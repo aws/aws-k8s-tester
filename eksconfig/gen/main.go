@@ -46,6 +46,10 @@ func createDoc() string {
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnAppMesh, &eksconfig.AddOnAppMesh{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnKubernetesDashboard, &eksconfig.AddOnKubernetesDashboard{}))
 
 	b.WriteByte('\n')
@@ -62,10 +66,6 @@ func createDoc() string {
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnAppMesh, &eksconfig.AddOnAppMesh{}))
-
-	b.WriteByte('\n')
-	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnJobsPi, &eksconfig.AddOnJobsPi{}))
 
 	b.WriteByte('\n')
@@ -78,15 +78,27 @@ func createDoc() string {
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnCSRs, &eksconfig.AddOnCSRs{}))
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnCSRsLocal, &eksconfig.AddOnCSRsLocal{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnConfigMaps, &eksconfig.AddOnConfigMaps{}))
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnCSRsRemote, &eksconfig.AddOnCSRsRemote{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnSecrets, &eksconfig.AddOnSecrets{}))
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnConfigMapsLocal, &eksconfig.AddOnConfigMapsLocal{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnConfigMapsRemote, &eksconfig.AddOnConfigMapsRemote{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnSecretsLocal, &eksconfig.AddOnSecretsLocal{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnSecretsRemote, &eksconfig.AddOnSecretsRemote{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
@@ -124,11 +136,11 @@ func createDoc() string {
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnClusterLoaderLocal, &eksconfig.AddOnClusterLoaderLocal{}))
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnStresserLocal, &eksconfig.AddOnStresserLocal{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnClusterLoaderRemote, &eksconfig.AddOnClusterLoaderRemote{}))
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnStresserRemote, &eksconfig.AddOnStresserRemote{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')

@@ -3,938 +3,270 @@ package secrets
 
 import (
 	"context"
-	"encoding/csv"
-	"errors"
 	"fmt"
-	"io/ioutil"
-	"os"
-	"regexp"
-	"strconv"
-	"strings"
+	"sync"
 	"time"
 
-	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
-	"github.com/dustin/go-humanize"
+	"github.com/aws/aws-k8s-tester/pkg/metrics"
+	"github.com/aws/aws-k8s-tester/pkg/randutil"
+	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
-	"golang.org/x/time/rate"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
-// Config defines "Secrets" configuration.
+var (
+	writeRequestsSuccessTotal = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Namespace: "secrets",
+			Subsystem: "client",
+			Name:      "write_requests_success_total",
+			Help:      "Total number of successful write requests.",
+		})
+	writeRequestsFailureTotal = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Namespace: "secrets",
+			Subsystem: "client",
+			Name:      "write_requests_failure_total",
+			Help:      "Total number of successful write requests.",
+		})
+	writeRequestLatencyMs = prometheus.NewHistogram(
+		prometheus.HistogramOpts{
+			Namespace: "secrets",
+			Subsystem: "client",
+			Name:      "write_request_latency_milliseconds",
+			Help:      "Bucketed histogram of client-side write request and response latency.",
+
+			// lowest bucket start of upper bound 0.5 ms with factor 2
+			// highest bucket start of 0.5 ms * 2^13 == 4.096 sec
+			Buckets: prometheus.ExponentialBuckets(0.5, 2, 14),
+		})
+
+	readRequestsSuccessTotal = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Namespace: "secrets",
+			Subsystem: "client",
+			Name:      "read_requests_success_total",
+			Help:      "Total number of successful read requests.",
+		})
+	readRequestsFailureTotal = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Namespace: "secrets",
+			Subsystem: "client",
+			Name:      "read_requests_failure_total",
+			Help:      "Total number of successful read requests.",
+		})
+	readRequestLatencyMs = prometheus.NewHistogram(
+		prometheus.HistogramOpts{
+			Namespace: "secrets",
+			Subsystem: "client",
+			Name:      "read_request_latency_milliseconds",
+			Help:      "Bucketed histogram of client-side read request and response latency.",
+
+			// lowest bucket start of upper bound 0.5 ms with factor 2
+			// highest bucket start of 0.5 ms * 2^13 == 4.096 sec
+			Buckets: prometheus.ExponentialBuckets(0.5, 2, 14),
+		})
+)
+
+func init() {
+	prometheus.MustRegister(writeRequestsSuccessTotal)
+	prometheus.MustRegister(writeRequestsFailureTotal)
+	prometheus.MustRegister(writeRequestLatencyMs)
+	prometheus.MustRegister(readRequestsSuccessTotal)
+	prometheus.MustRegister(readRequestsFailureTotal)
+	prometheus.MustRegister(readRequestLatencyMs)
+}
+
+// Config configures Secret loader.
 type Config struct {
-	Logger    *zap.Logger
-	Stopc     chan struct{}
-	Sig       chan os.Signal
-	EKSConfig *eksconfig.Config
-	K8SClient k8s_client.EKS
+	Logger *zap.Logger
+	Stopc  chan struct{}
+
+	Client        k8s_client.EKS
+	ClientTimeout time.Duration
+
+	Namespace string
+
+	// NamePrefix is the prefix of Secret name.
+	// If multiple Secret loader is running,
+	// this must be unique per worker to avoid name conflicts.
+	NamePrefix string
+
+	Objects    int
+	ObjectSize int
 }
 
-// Tester defines "Secret" tester.
-type Tester interface {
-	// Create creates "Secret" objects to test "Secret" writes,
-	// and "Pod" objects to test "Secret" reads.
-	// ref. https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
-	// Then, aggregate all reads results from remote nodes.
-	Create() error
-	// Delete deletes Secrets and Pods by deleting the namespace.
-	Delete() error
-	// AggregateResults aggregates all test results from remote nodes.
-	AggregateResults() error
+// Loader defines Secret loader operations.
+type Loader interface {
+	Start()
+	Stop()
+	GetMetrics() (writes metrics.RequestsSummary, reads metrics.RequestsSummary, err error)
 }
 
-// New creates a new Secret tester.
-func New(cfg Config) (Tester, error) {
-	return &tester{cfg: cfg, cancel: make(chan struct{})}, nil
+type loader struct {
+	cfg            Config
+	donec          chan struct{}
+	donecCloseOnce *sync.Once
 }
 
-type tester struct {
-	cfg    Config
-	cancel chan struct{}
+func New(cfg Config) Loader {
+	return &loader{
+		cfg:            cfg,
+		donec:          make(chan struct{}),
+		donecCloseOnce: new(sync.Once),
+	}
 }
 
-func (ts *tester) Create() error {
-	if ts.cfg.EKSConfig.AddOnSecrets.Created {
-		ts.cfg.Logger.Info("skipping create AddOnSecrets")
-		return nil
-	}
+func (ld *loader) Start() {
+	ld.cfg.Logger.Info("starting write function", zap.String("namespace-write", ld.cfg.Namespace))
+	created := startWrites(ld.cfg.Logger, ld.cfg.Client.KubernetesClientSet(), ld.cfg.ClientTimeout, ld.cfg.Namespace, ld.cfg.NamePrefix, ld.cfg.Objects, ld.cfg.ObjectSize, ld.cfg.Stopc, ld.donec)
+	ld.cfg.Logger.Info("completed write function", zap.String("namespace-write", ld.cfg.Namespace))
 
-	ts.cfg.EKSConfig.AddOnSecrets.Created = true
-	ts.cfg.EKSConfig.Sync()
+	// TODO: create Pod with created secrets mounted as volume, read them, measure latency
+	// as implemented in aws-k8s-tester <= v1.2.1
+	// ref. https://github.com/aws/aws-k8s-tester/blob/v1.2.1/eks/secrets/secrets.go#L404-L514
 
-	createStart := time.Now()
-	defer func() {
-		ts.cfg.EKSConfig.AddOnSecrets.CreateTook = time.Since(createStart)
-		ts.cfg.EKSConfig.AddOnSecrets.CreateTookString = ts.cfg.EKSConfig.AddOnSecrets.CreateTook.String()
-		ts.cfg.EKSConfig.Sync()
-	}()
-
-	if err := k8s_client.CreateNamespace(ts.cfg.Logger, ts.cfg.K8SClient.KubernetesClientSet(), ts.cfg.EKSConfig.AddOnSecrets.Namespace); err != nil {
-		return err
-	}
-	if err := ts.createSecrets(); err != nil {
-		return err
-	}
-	if err := ts.createPods(); err != nil {
-		return err
-	}
-	if err := ts.waitForPodsCompleted(); err != nil {
-		return err
-	}
-
-	return ts.cfg.EKSConfig.Sync()
+	ld.cfg.Logger.Info("starting read function", zap.String("namespace-read", ld.cfg.Namespace))
+	startReads(ld.cfg.Logger, ld.cfg.Client.KubernetesClientSet(), ld.cfg.ClientTimeout, ld.cfg.Namespace, created, ld.cfg.Stopc, ld.donec)
+	ld.cfg.Logger.Info("completed read function", zap.String("namespace-read", ld.cfg.Namespace))
 }
 
-func (ts *tester) Delete() error {
-	if !ts.cfg.EKSConfig.AddOnSecrets.Created {
-		ts.cfg.Logger.Info("skipping delete AddOnSecrets")
-		return nil
-	}
-
-	deleteStart := time.Now()
-	defer func() {
-		ts.cfg.EKSConfig.AddOnSecrets.DeleteTook = time.Since(deleteStart)
-		ts.cfg.EKSConfig.AddOnSecrets.DeleteTookString = ts.cfg.EKSConfig.AddOnSecrets.DeleteTook.String()
-		ts.cfg.EKSConfig.Sync()
-	}()
-
-	if err := k8s_client.DeleteNamespaceAndWait(ts.cfg.Logger,
-		ts.cfg.K8SClient.KubernetesClientSet(),
-		ts.cfg.EKSConfig.AddOnSecrets.Namespace,
-		k8s_client.DefaultNamespaceDeletionInterval,
-		k8s_client.DefaultNamespaceDeletionTimeout); err != nil {
-		return fmt.Errorf("failed to delete Secrets namespace (%v)", err)
-	}
-
-	ts.cfg.EKSConfig.AddOnSecrets.Created = false
-	return ts.cfg.EKSConfig.Sync()
+func (ld *loader) Stop() {
+	ld.cfg.Logger.Info("stopping and waiting")
+	ld.donecCloseOnce.Do(func() {
+		close(ld.donec)
+	})
+	ld.cfg.Logger.Info("stopped and waited")
 }
 
-// ResultSuffixRead is the suffix of the result file for "Secret" reads.
-const ResultSuffixRead = "-secret-read.csv"
-
-// only letters and numbers for Secret key names
-var regex = regexp.MustCompile("[^a-zA-Z0-9]+")
-
-func (ts *tester) createSecrets() (err error) {
-	size := humanize.Bytes(uint64(ts.cfg.EKSConfig.AddOnSecrets.Size))
-	ts.cfg.Logger.Info("creating Secrets",
-		zap.Int("objects", ts.cfg.EKSConfig.AddOnSecrets.Objects),
-		zap.String("each-size", size),
-	)
-
-	// valid config key must consist of alphanumeric characters
-	pfx := strings.ToLower(regex.ReplaceAllString(ts.cfg.EKSConfig.Name, ""))
-
-	// no need generate random bytes in goroutine,
-	// which can pressure host machine
-	var valSfx string
-	if ts.cfg.EKSConfig.AddOnSecrets.Size > 6 {
-		valSfx = strings.Repeat("0", ts.cfg.EKSConfig.AddOnSecrets.Size-6)
-	}
-
-	// overwrite if any
-	ts.cfg.EKSConfig.AddOnSecrets.CreatedSecretsNames = make([]string, 0, ts.cfg.EKSConfig.AddOnSecrets.Objects)
-	ts.cfg.EKSConfig.Sync()
-
-	if ts.cfg.EKSConfig.ClientQPS <= 1 {
-		err = ts.createSecretsSequential(pfx, valSfx, ts.cfg.EKSConfig.AddOnSecrets.FailThreshold)
-	} else {
-		err = ts.createSecretsParallel(pfx, valSfx, ts.cfg.EKSConfig.AddOnSecrets.FailThreshold)
-	}
-	ts.cfg.EKSConfig.Sync()
-	return err
-}
-
-func (ts *tester) createSecretsSequential(pfx, valSfx string, failThreshold int) error {
-	qps := float64(ts.cfg.EKSConfig.ClientQPS)
-	burst := int(ts.cfg.EKSConfig.ClientBurst)
-	ts.cfg.Logger.Info("creating Secrets sequential",
-		zap.Float64("qps", qps),
-		zap.Int("burst", burst),
-	)
-
-	f, err := os.OpenFile(ts.cfg.EKSConfig.AddOnSecrets.WritesResultPath, os.O_RDWR|os.O_TRUNC, 0777)
+// GetMetrics locally fetches output from registered metrics.
+// ref. https://pkg.go.dev/github.com/prometheus/client_golang@v1.6.0/prometheus/promhttp?tab=doc#Handler
+func (ld *loader) GetMetrics() (writes metrics.RequestsSummary, reads metrics.RequestsSummary, err error) {
+	// https://pkg.go.dev/github.com/prometheus/client_golang/prometheus?tab=doc#Gatherer
+	mfs, err := prometheus.DefaultGatherer.Gather()
 	if err != nil {
-		f, err = os.Create(ts.cfg.EKSConfig.AddOnSecrets.WritesResultPath)
-		if err != nil {
-			return err
-		}
+		ld.cfg.Logger.Warn("failed to gather prometheus metrics", zap.Error(err))
+		return metrics.RequestsSummary{}, metrics.RequestsSummary{}, err
 	}
-	defer f.Close()
-	wr := csv.NewWriter(f)
-	if err = wr.Write([]string{"secret-name", "write-took-in-seconds", "start", "end"}); err != nil {
-		return err
-	}
-
-	fails := 0
-	for i := 0; i < ts.cfg.EKSConfig.AddOnSecrets.Objects; i++ {
-		key := fmt.Sprintf("%s%06d", pfx, i)
-		val := []byte(fmt.Sprintf("%06d", i) + valSfx)
-
-		secret := &v1.Secret{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "v1",
-				Kind:       "Secret",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      key,
-				Namespace: ts.cfg.EKSConfig.AddOnSecrets.Namespace,
-				Labels: map[string]string{
-					"name": key,
-				},
-			},
-			Type: v1.SecretTypeOpaque,
-			Data: map[string][]byte{key: val},
-		}
-
-		t1 := time.Now()
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		_, err := ts.cfg.K8SClient.KubernetesClientSet().
-			CoreV1().
-			Secrets(ts.cfg.EKSConfig.AddOnSecrets.Namespace).
-			Create(ctx, secret, metav1.CreateOptions{})
-		cancel()
-		t2 := time.Now()
-		if err != nil {
-			select {
-			case <-ts.cancel:
-				return errors.New("Secret creation aborted")
-			case <-ts.cfg.Stopc:
-				return errors.New("Secret creation aborted")
-			default:
-				fails++
-				ts.cfg.Logger.Warn("create Secret failed",
-					zap.Int("fails", fails),
-					zap.Int("threshold", failThreshold),
-					zap.Error(err),
-				)
-				if fails >= failThreshold {
-					close(ts.cancel)
-					return fmt.Errorf("exceeded secret writes fail threshold %d (%v)", failThreshold, err)
-				}
-			}
+	for _, mf := range mfs {
+		if mf == nil {
 			continue
 		}
-		fails = 0
+		switch *mf.Name {
+		case "secrets_client_write_requests_success_total":
+			gg := mf.Metric[0].GetGauge()
+			writes.SuccessTotal = gg.GetValue()
+		case "secrets_client_write_requests_failure_total":
+			gg := mf.Metric[0].GetGauge()
+			writes.FailureTotal = gg.GetValue()
+		case "secrets_client_write_request_latency_milliseconds":
+			writes.LatencyHistogram, err = metrics.ParseHistogram("milliseconds", mf.Metric[0].GetHistogram())
+			if err != nil {
+				return metrics.RequestsSummary{}, metrics.RequestsSummary{}, err
+			}
 
-		secretName := secret.GetObjectMeta().GetName()
-
-		ts.cfg.EKSConfig.AddOnSecrets.CreatedSecretsNames = append(ts.cfg.EKSConfig.AddOnSecrets.CreatedSecretsNames, secretName)
-		ts.cfg.EKSConfig.Sync()
-
-		if err = wr.Write([]string{
-			secretName,
-			fmt.Sprintf("%f", t2.Sub(t1).Seconds()),
-			t1.String(),
-			t2.String(),
-		}); err != nil {
-			return err
-		}
-		if i%50 == 0 {
-			wr.Flush()
-		}
-
-		if ts.cfg.EKSConfig.LogLevel == "debug" || i%50 == 0 {
-			ts.cfg.Logger.Info("created Secret",
-				zap.String("key", secret.GetObjectMeta().GetName()),
-				zap.Duration("took", t2.Sub(t1)),
-			)
+		case "secrets_client_read_requests_success_total":
+			gg := mf.Metric[0].GetGauge()
+			reads.SuccessTotal = gg.GetValue()
+		case "secrets_client_read_requests_failure_total":
+			gg := mf.Metric[0].GetGauge()
+			reads.FailureTotal = gg.GetValue()
+		case "secrets_client_read_request_latency_milliseconds":
+			reads.LatencyHistogram, err = metrics.ParseHistogram("milliseconds", mf.Metric[0].GetHistogram())
+			if err != nil {
+				return metrics.RequestsSummary{}, metrics.RequestsSummary{}, err
+			}
 		}
 	}
-	wr.Flush()
-
-	ts.cfg.Logger.Info("created sequential",
-		zap.Int("objects", ts.cfg.EKSConfig.AddOnSecrets.Objects),
-		zap.Int("success", len(ts.cfg.EKSConfig.AddOnSecrets.CreatedSecretsNames)),
-		zap.String("writes-result-path", ts.cfg.EKSConfig.AddOnSecrets.WritesResultPath),
-		zap.Error(wr.Error()),
-	)
-	return ts.cfg.EKSConfig.Sync()
+	return writes, reads, nil
 }
 
-func (ts *tester) createSecretsParallel(pfx, valSfx string, failThreshold int) error {
-	qps := float64(ts.cfg.EKSConfig.ClientQPS)
-	burst := int(ts.cfg.EKSConfig.ClientBurst)
-	rateLimiter := rate.NewLimiter(rate.Limit(qps), burst)
-	ts.cfg.Logger.Info("creating Secrets parallel",
-		zap.Float64("qps", qps),
-		zap.Int("burst", burst),
-	)
+func startWrites(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration, namespace string, namePrefix string, objects int, objectSize int, stopc chan struct{}, donec chan struct{}) (created []string) {
+	lg.Info("starting startWrites", zap.Int("objects", objects), zap.Int("object-size", objectSize))
 
-	rch := make(chan result, int(qps))
-	for i := 0; i < ts.cfg.EKSConfig.AddOnSecrets.Objects; i++ {
-		go func(i int) {
-			if !rateLimiter.Allow() {
-				ts.cfg.Logger.Debug("waiting for rate limiter creating Secret", zap.Int("index", i))
-				werr := rateLimiter.Wait(context.Background())
-				ts.cfg.Logger.Debug("waited for rate limiter", zap.Int("index", i), zap.Error(werr))
-			}
+	val := randutil.String(objectSize)
+	for i := 0; i < objects; i++ {
+		select {
+		case <-stopc:
+			lg.Warn("writes stopped")
+			return created
+		case <-donec:
+			lg.Info("writes done")
+			return created
+		default:
+		}
 
-			select {
-			case <-ts.cancel:
-				return
-			case <-ts.cfg.Stopc:
-				return
-			default:
-			}
+		key := fmt.Sprintf("%s%d", namePrefix, i)
 
-			key := fmt.Sprintf("%s%06d", pfx, i)
-			val := []byte(fmt.Sprintf("%06d", i) + valSfx)
-
-			secret := &v1.Secret{
+		start := time.Now()
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+		_, err := cli.
+			CoreV1().
+			Secrets(namespace).
+			Create(ctx, &v1.Secret{
 				TypeMeta: metav1.TypeMeta{
 					APIVersion: "v1",
 					Kind:       "Secret",
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      key,
-					Namespace: ts.cfg.EKSConfig.AddOnSecrets.Namespace,
+					Namespace: namespace,
 					Labels: map[string]string{
 						"name": key,
 					},
 				},
 				Type: v1.SecretTypeOpaque,
-				Data: map[string][]byte{key: val},
-			}
-
-			t1 := time.Now()
-			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-			_, err := ts.cfg.K8SClient.KubernetesClientSet().
-				CoreV1().
-				Secrets(ts.cfg.EKSConfig.AddOnSecrets.Namespace).
-				Create(ctx, secret, metav1.CreateOptions{})
-			cancel()
-			t2 := time.Now()
-			if err != nil {
-				select {
-				case <-ts.cancel:
-					ts.cfg.Logger.Warn("exiting")
-					return
-				case <-ts.cfg.Stopc:
-					ts.cfg.Logger.Warn("exiting")
-					return
-				case rch <- result{secret: secret, err: err, took: t2.Sub(t1), start: t1, end: t2}:
-				}
-				return
-			}
-
-			select {
-			case <-ts.cancel:
-				ts.cfg.Logger.Warn("exiting")
-				return
-			case <-ts.cfg.Stopc:
-				ts.cfg.Logger.Warn("exiting")
-				return
-			case rch <- result{secret: secret, err: nil, took: t2.Sub(t1), start: t1, end: t2}:
-			}
-
-			if ts.cfg.EKSConfig.LogLevel == "debug" || i%50 == 0 {
-				ts.cfg.Logger.Info("created Secret",
-					zap.String("key", secret.GetObjectMeta().GetName()),
-					zap.Duration("took", t2.Sub(t1)),
-				)
-			}
-		}(i)
-	}
-
-	f, err := os.OpenFile(ts.cfg.EKSConfig.AddOnSecrets.WritesResultPath, os.O_RDWR|os.O_TRUNC, 0777)
-	if err != nil {
-		f, err = os.Create(ts.cfg.EKSConfig.AddOnSecrets.WritesResultPath)
-		if err != nil {
-			return err
-		}
-	}
-	defer f.Close()
-	wr := csv.NewWriter(f)
-	if err = wr.Write([]string{"secret-name", "write-took-in-seconds", "start", "end"}); err != nil {
-		return err
-	}
-
-	fails := 0
-	for i := 0; i < ts.cfg.EKSConfig.AddOnSecrets.Objects; i++ {
-		var rv result
-		select {
-		case rv = <-rch:
-		case <-ts.cancel:
-			ts.cfg.Logger.Warn("exiting")
-			return errors.New("aborted")
-		case <-ts.cfg.Stopc:
-			ts.cfg.Logger.Warn("exiting")
-			return errors.New("aborted")
-		}
-		if rv.err != nil {
-			fails++
-			ts.cfg.Logger.Warn("create Secret failed",
-				zap.Int("fails", fails),
-				zap.Int("threshold", failThreshold),
-				zap.Error(rv.err),
-			)
-			if fails >= failThreshold {
-				close(ts.cancel)
-				return fmt.Errorf("exceeded secret writes fail threshold %d (%v)", failThreshold, err)
-			}
-			continue
-		}
-		fails = 0
-
-		secretName := rv.secret.GetObjectMeta().GetName()
-		ts.cfg.EKSConfig.AddOnSecrets.CreatedSecretsNames = append(ts.cfg.EKSConfig.AddOnSecrets.CreatedSecretsNames, secretName)
-		ts.cfg.EKSConfig.Sync()
-
-		if err = wr.Write([]string{secretName, fmt.Sprintf("%f", rv.took.Seconds()), rv.start.String(), rv.end.String()}); err != nil {
-			return err
-		}
-		if i%50 == 0 {
-			wr.Flush()
-		}
-	}
-	wr.Flush()
-
-	ts.cfg.Logger.Info("created parallel",
-		zap.Int("objects", ts.cfg.EKSConfig.AddOnSecrets.Objects),
-		zap.Int("success", len(ts.cfg.EKSConfig.AddOnSecrets.CreatedSecretsNames)),
-		zap.String("writes-result-path", ts.cfg.EKSConfig.AddOnSecrets.WritesResultPath),
-		zap.Error(wr.Error()),
-	)
-	return ts.cfg.EKSConfig.Sync()
-}
-
-func (ts *tester) createPods() error {
-	ts.cfg.Logger.Info("mounting and read Secrets using Pod")
-
-	fileOrCreate := v1.HostPathFileOrCreate
-	dirOrCreate := v1.HostPathDirectoryOrCreate
-	pods := make([]*v1.Pod, len(ts.cfg.EKSConfig.AddOnSecrets.CreatedSecretsNames))
-	for i, secretName := range ts.cfg.EKSConfig.AddOnSecrets.CreatedSecretsNames {
-		podName := "pod-" + secretName
-		csvFilePath := fmt.Sprintf("/var/log/%s%s", secretName, ResultSuffixRead)
-
-		pods[i] = &v1.Pod{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "v1",
-				Kind:       "Pod",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      podName,
-				Namespace: ts.cfg.EKSConfig.AddOnSecrets.Namespace,
-			},
-			Spec: v1.PodSpec{
-				RestartPolicy: v1.RestartPolicyOnFailure,
-				Containers: []v1.Container{
-					{
-						Name:            podName,
-						Image:           "amazonlinux",
-						ImagePullPolicy: v1.PullIfNotPresent,
-						Command: []string{
-							"/bin/sh",
-							"-c",
-						},
-						Args: []string{
-							`date +%s.%N | tr -d '\n'` + " > " + csvFilePath + "; " +
-								`echo , | tr -d '\n'` + " >> " + csvFilePath + "; " +
-
-								fmt.Sprintf(`echo '%s-' | tr -d '\n'`, podName) + " >> " + csvFilePath + "; " +
-								fmt.Sprintf(`cat /etc/secret-volume/%s | head -c 5`, secretName) + " >> " + csvFilePath + "; " +
-								`echo , | tr -d '\n'` + " >> " + csvFilePath + "; " +
-
-								`date +%s.%N | tr -d '\n'` + " >> " + csvFilePath + ";",
-						},
-
-						// ref. https://kubernetes.io/docs/concepts/cluster-administration/logging/
-						VolumeMounts: []v1.VolumeMount{
-							{
-								Name:      "secret-volume",
-								MountPath: "/etc/secret-volume",
-								ReadOnly:  true,
-							},
-							{
-								Name:      "csv-file",
-								MountPath: csvFilePath,
-								ReadOnly:  false,
-							},
-							{
-								Name:      "varlog",
-								MountPath: "/var/log",
-								ReadOnly:  false,
-							},
-						},
-					},
-				},
-
-				// ref. https://kubernetes.io/docs/concepts/cluster-administration/logging/
-				Volumes: []v1.Volume{
-					{ // to read
-						Name: "secret-volume",
-						VolumeSource: v1.VolumeSource{
-							Secret: &v1.SecretVolumeSource{
-								SecretName: secretName,
-							},
-						},
-					},
-					{ // to write
-						Name: "csv-file",
-						VolumeSource: v1.VolumeSource{
-							HostPath: &v1.HostPathVolumeSource{
-								Path: csvFilePath,
-								Type: &fileOrCreate,
-							},
-						},
-					},
-					{ // to write
-						Name: "varlog",
-						VolumeSource: v1.VolumeSource{
-							HostPath: &v1.HostPathVolumeSource{
-								Path: "/var/log",
-								Type: &dirOrCreate,
-							},
-						},
-					},
-				},
-			},
-		}
-	}
-
-	// overwrite if any
-	ts.cfg.EKSConfig.AddOnSecrets.CreatedPodNames = make([]string, 0, ts.cfg.EKSConfig.AddOnSecrets.Objects)
-	ts.cfg.EKSConfig.Sync()
-
-	if ts.cfg.EKSConfig.ClientQPS <= 1 {
-		if err := ts.createPodsSequential(pods); err != nil {
-			return err
-		}
-	} else {
-		if err := ts.createPodsParallel(pods); err != nil {
-			return err
-		}
-	}
-
-	return ts.cfg.EKSConfig.Sync()
-}
-
-func (ts *tester) createPodsSequential(pods []*v1.Pod) error {
-	qps := float64(ts.cfg.EKSConfig.ClientQPS)
-	burst := int(ts.cfg.EKSConfig.ClientBurst)
-	ts.cfg.Logger.Info("creating Pods sequential",
-		zap.Float64("qps", qps),
-		zap.Int("burst", burst),
-		zap.Int("pods", len(pods)),
-	)
-
-	for idx, pod := range pods {
-		t1 := time.Now()
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		_, err := ts.cfg.K8SClient.KubernetesClientSet().
-			CoreV1().
-			Pods(ts.cfg.EKSConfig.AddOnSecrets.Namespace).
-			Create(ctx, pod, metav1.CreateOptions{})
+				Data: map[string][]byte{key: []byte(val)},
+			}, metav1.CreateOptions{})
 		cancel()
-		t2 := time.Now()
+		writeRequestLatencyMs.Observe(float64(time.Since(start) / time.Millisecond))
 		if err != nil {
-			select {
-			case <-ts.cancel:
-				ts.cfg.Logger.Warn("exiting")
-				return errors.New("aborted")
-			case <-ts.cfg.Stopc:
-				ts.cfg.Logger.Warn("exiting")
-				return errors.New("aborted")
-			default:
-				ts.cfg.Logger.Warn("create Pod failed", zap.Error(err))
+			writeRequestsFailureTotal.Inc()
+			lg.Warn("write secret failed", zap.String("namespace", namespace), zap.Error(err))
+		} else {
+			writeRequestsSuccessTotal.Inc()
+			created = append(created, key)
+			if i%20 == 0 {
+				lg.Info("wrote secret", zap.Int("iteration", i), zap.String("namespace", namespace))
 			}
-			continue
-		}
-
-		podName := pod.GetObjectMeta().GetName()
-		ts.cfg.EKSConfig.AddOnSecrets.CreatedPodNames = append(ts.cfg.EKSConfig.AddOnSecrets.CreatedPodNames, podName)
-		ts.cfg.EKSConfig.Sync()
-
-		if ts.cfg.EKSConfig.LogLevel == "debug" || idx%50 == 0 {
-			ts.cfg.Logger.Info("created Pod",
-				zap.String("name", podName),
-				zap.Duration("took", t2.Sub(t1)),
-			)
 		}
 	}
-
-	ts.cfg.Logger.Info("created Pods sequential",
-		zap.Int("objects", ts.cfg.EKSConfig.AddOnSecrets.Objects),
-		zap.Int("success", len(ts.cfg.EKSConfig.AddOnSecrets.CreatedPodNames)),
-	)
-	return ts.cfg.EKSConfig.Sync()
+	return created
 }
 
-func (ts *tester) createPodsParallel(pods []*v1.Pod) error {
-	qps := float64(ts.cfg.EKSConfig.ClientQPS)
-	burst := int(ts.cfg.EKSConfig.ClientBurst)
-	rateLimiter := rate.NewLimiter(rate.Limit(qps), burst)
-	ts.cfg.Logger.Info("creating Pods parallel",
-		zap.Float64("qps", qps),
-		zap.Int("burst", burst),
-		zap.Int("pods", len(pods)),
-	)
+func startReads(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration, namespace string, created []string, stopc chan struct{}, donec chan struct{}) {
+	lg.Info("starting startReads", zap.Int("created-secrets", len(created)))
 
-	rch := make(chan result, int(qps))
-	for idx, s := range pods {
-		go func(i int, pod *v1.Pod) {
-			if !rateLimiter.Allow() {
-				ts.cfg.Logger.Debug("waiting for rate limiter creating Pod")
-				werr := rateLimiter.Wait(context.Background())
-				ts.cfg.Logger.Debug("waited for rate limiter", zap.Error(werr))
-			}
-			select {
-			case <-ts.cancel:
-				return
-			case <-ts.cfg.Stopc:
-				return
-			default:
-			}
-
-			t1 := time.Now()
-			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-			_, err := ts.cfg.K8SClient.KubernetesClientSet().
-				CoreV1().
-				Pods(ts.cfg.EKSConfig.AddOnSecrets.Namespace).
-				Create(ctx, pod, metav1.CreateOptions{})
-			cancel()
-			t2 := time.Now()
-			if err != nil {
-				select {
-				case <-ts.cancel:
-					ts.cfg.Logger.Warn("exiting")
-					return
-				case <-ts.cfg.Stopc:
-					ts.cfg.Logger.Warn("exiting")
-					return
-				case rch <- result{pod: pod, err: err}:
-				}
-				return
-			}
-
-			select {
-			case <-ts.cancel:
-				ts.cfg.Logger.Warn("exiting")
-				return
-			case <-ts.cfg.Stopc:
-				ts.cfg.Logger.Warn("exiting")
-				return
-			case rch <- result{pod: pod, err: nil}:
-			}
-
-			if ts.cfg.EKSConfig.LogLevel == "debug" || i%50 == 0 {
-				ts.cfg.Logger.Info("created Pod",
-					zap.String("name", pod.GetObjectMeta().GetName()),
-					zap.Duration("took", t2.Sub(t1)),
-				)
-			}
-		}(idx, s)
-	}
-
-	for range pods {
-		var rv result
+	for i, key := range created {
 		select {
-		case rv = <-rch:
-		case <-ts.cancel:
-			ts.cfg.Logger.Warn("exiting")
-			return ts.cfg.EKSConfig.Sync()
-		case <-ts.cfg.Stopc:
-			ts.cfg.Logger.Warn("exiting")
-			return ts.cfg.EKSConfig.Sync()
-		}
-		if rv.err != nil {
-			ts.cfg.Logger.Warn("create Pod failed", zap.Error(rv.err))
-			continue
-		}
-		ts.cfg.EKSConfig.AddOnSecrets.CreatedPodNames = append(ts.cfg.EKSConfig.AddOnSecrets.CreatedPodNames, rv.pod.GetObjectMeta().GetName())
-		ts.cfg.EKSConfig.Sync()
-	}
-
-	ts.cfg.Logger.Info("created Pods parallel",
-		zap.Int("objects", ts.cfg.EKSConfig.AddOnSecrets.Objects),
-		zap.Int("success", len(ts.cfg.EKSConfig.AddOnSecrets.CreatedPodNames)),
-	)
-	return ts.cfg.EKSConfig.Sync()
-}
-
-func (ts *tester) waitForPodsCompleted() error {
-	interval, timeout := 30*time.Second, 20*time.Minute
-	target := len(ts.cfg.EKSConfig.AddOnSecrets.CreatedPodNames)
-	if target > 3000 { // takes 20-min to create 3K pods, 0.4 seconds per Pod
-		timeout += 500 * time.Millisecond * time.Duration(target-3000)
-	}
-	ts.cfg.Logger.Info("waiting for completed Pods", zap.Duration("timeout", timeout))
-
-	ticker := time.NewTicker(interval)
-	defer ticker.Stop()
-
-	retryStart := time.Now()
-	for time.Now().Sub(retryStart) < timeout {
-		select {
-		case <-ts.cancel:
-			return errors.New("aborted")
-		case <-ts.cfg.Stopc:
-			return errors.New("aborted")
-		case <-ticker.C:
+		case <-stopc:
+			lg.Warn("reads stopped")
+			return
+		case <-donec:
+			lg.Info("reads done")
+			return
+		default:
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		pods, err := ts.cfg.K8SClient.KubernetesClientSet().
+		start := time.Now()
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+		_, err := cli.
 			CoreV1().
-			Pods(ts.cfg.EKSConfig.AddOnSecrets.Namespace).
-			List(ctx, metav1.ListOptions{})
+			Secrets(namespace).
+			Get(ctx, key, metav1.GetOptions{})
 		cancel()
+		readRequestLatencyMs.Observe(float64(time.Since(start) / time.Millisecond))
 		if err != nil {
-			ts.cfg.Logger.Warn("failed to list Pod", zap.Error(err))
-			continue
-		}
-		if len(pods.Items) == 0 {
-			ts.cfg.Logger.Warn("got an empty list of Pod")
-			continue
-		}
-
-		completed, other := 0, make(map[string]int)
-		for _, p := range pods.Items {
-			other[fmt.Sprintf("%v", p.Status.Phase)]++
-			if p.Status.Phase == v1.PodSucceeded {
-				completed++
-			}
-		}
-
-		ts.cfg.Logger.Info("polling",
-			zap.Int("completed", completed),
-			zap.Int("target", target),
-			zap.String("pod-phases", fmt.Sprintf("%+v", other)),
-		)
-		if completed == target {
-			ts.cfg.Logger.Info("found all targets", zap.Int("target", target))
-			break
-		}
-	}
-
-	ts.cfg.Logger.Info("waited for completed Pods")
-	return ts.cfg.EKSConfig.Sync()
-}
-
-func (ts *tester) AggregateResults() error {
-	if !ts.cfg.EKSConfig.AddOnSecrets.Created {
-		ts.cfg.Logger.Info("skipping aggregating AddOnSecrets")
-		return nil
-	}
-
-	ts.cfg.Logger.Info("aggregating results from Pods")
-
-	f, err := os.OpenFile(ts.cfg.EKSConfig.AddOnSecrets.ReadsResultPath, os.O_RDWR|os.O_TRUNC, 0777)
-	if err != nil {
-		f, err = os.Create(ts.cfg.EKSConfig.AddOnSecrets.ReadsResultPath)
-		if err != nil {
-			return err
-		}
-	}
-	defer f.Close()
-	wr := csv.NewWriter(f)
-	if err = wr.Write([]string{"secret-name", "read-took-in-seconds", "start", "end"}); err != nil {
-		return err
-	}
-	if ts.cfg.EKSConfig.IsEnabledAddOnNodeGroups() && ts.cfg.EKSConfig.AddOnNodeGroups.FetchLogs {
-		ts.cfg.Logger.Info("fetching logs from ngs")
-		for _, v := range ts.cfg.EKSConfig.AddOnNodeGroups.ASGs {
-			for _, fpaths := range v.Logs {
-				for _, fpath := range fpaths {
-					if !strings.HasSuffix(fpath, ResultSuffixRead) {
-						continue
-					}
-					rf, err := os.OpenFile(fpath, os.O_RDONLY, 0444)
-					if err != nil {
-						return fmt.Errorf("failed to open %q (%v)", fpath, err)
-					}
-					rd := csv.NewReader(rf)
-
-					rows, err := rd.ReadAll()
-					if err != nil {
-						return fmt.Errorf("failed to read CSV %q (%v)", fpath, err)
-					}
-					if len(rows) != 1 {
-						ts.cfg.Logger.Warn("unexpected rows", zap.String("path", fpath), zap.String("rows", fmt.Sprintf("%v", rows)))
-						wr.Flush()
-						rf.Close()
-						continue
-					}
-
-					row := rows[0]
-					if len(row) != 3 {
-						ts.cfg.Logger.Warn("unexpected column", zap.String("path", fpath), zap.String("row", fmt.Sprintf("%v", row)))
-						wr.Flush()
-						rf.Close()
-						continue
-					}
-
-					start, secretName, end := row[0], row[1], row[2]
-					startFv, err := strconv.ParseFloat(start, 64)
-					if err != nil {
-						ts.cfg.Logger.Warn("unexpected float value", zap.String("path", fpath), zap.String("start", start))
-						wr.Flush()
-						rf.Close()
-						continue
-					}
-					endFv, err := strconv.ParseFloat(end, 64)
-					if err != nil {
-						ts.cfg.Logger.Warn("unexpected float value", zap.String("path", fpath), zap.String("end", end))
-						wr.Flush()
-						rf.Close()
-						continue
-					}
-
-					if err = wr.Write([]string{secretName, fmt.Sprintf("%f", endFv-startFv), start, end}); err != nil {
-						return err
-					}
-
-					wr.Flush()
-					if err = wr.Error(); err != nil {
-						return fmt.Errorf("CSV %q has unexpected error %v", fpath, err)
-					}
-					rf.Close()
-				}
+			readRequestsFailureTotal.Inc()
+			lg.Warn("read secret failed", zap.String("namespace", namespace), zap.Error(err))
+		} else {
+			readRequestsSuccessTotal.Inc()
+			if i%20 == 0 {
+				lg.Info("read secret", zap.Int("iteration", i), zap.String("namespace", namespace))
 			}
 		}
 	}
-	if ts.cfg.EKSConfig.IsEnabledAddOnManagedNodeGroups() && ts.cfg.EKSConfig.AddOnManagedNodeGroups.FetchLogs {
-		ts.cfg.Logger.Info("fetching logs from mngs")
-		for _, cur := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
-			for _, fpaths := range cur.Logs {
-				for _, fpath := range fpaths {
-					if !strings.HasSuffix(fpath, ResultSuffixRead) {
-						continue
-					}
-					rf, err := os.OpenFile(fpath, os.O_RDONLY, 0444)
-					if err != nil {
-						return fmt.Errorf("failed to open %q (%v)", fpath, err)
-					}
-					rd := csv.NewReader(rf)
-
-					rows, err := rd.ReadAll()
-					if err != nil {
-						return fmt.Errorf("failed to read CSV %q (%v)", fpath, err)
-					}
-					if len(rows) != 1 {
-						ts.cfg.Logger.Warn("unexpected rows", zap.String("path", fpath), zap.String("rows", fmt.Sprintf("%v", rows)))
-						wr.Flush()
-						rf.Close()
-						continue
-					}
-
-					row := rows[0]
-					if len(row) != 3 {
-						ts.cfg.Logger.Warn("unexpected column", zap.String("path", fpath), zap.String("row", fmt.Sprintf("%v", row)))
-						wr.Flush()
-						rf.Close()
-						continue
-					}
-
-					start, secretName, end := row[0], row[1], row[2]
-					startFv, err := strconv.ParseFloat(start, 64)
-					if err != nil {
-						ts.cfg.Logger.Warn("unexpected float value", zap.String("path", fpath), zap.String("start", start))
-						wr.Flush()
-						rf.Close()
-						continue
-					}
-					endFv, err := strconv.ParseFloat(end, 64)
-					if err != nil {
-						ts.cfg.Logger.Warn("unexpected float value", zap.String("path", fpath), zap.String("end", end))
-						wr.Flush()
-						rf.Close()
-						continue
-					}
-
-					if err = wr.Write([]string{secretName, fmt.Sprintf("%f", endFv-startFv), start, end}); err != nil {
-						return err
-					}
-
-					wr.Flush()
-					if err = wr.Error(); err != nil {
-						return fmt.Errorf("CSV %q has unexpected error %v", fpath, err)
-					}
-					rf.Close()
-				}
-			}
-		}
-	}
-
-	ts.cfg.Logger.Info("aggregated results from Pods",
-		zap.String("reads-result-path", ts.cfg.EKSConfig.AddOnSecrets.ReadsResultPath),
-	)
-	return ts.cfg.EKSConfig.Sync()
-}
-
-type result struct {
-	secret *v1.Secret
-	pod    *v1.Pod
-	err    error
-	took   time.Duration
-	start  time.Time
-	end    time.Time
-}
-
-// mountAWSCred mounts AWS credentials as a "Secret" object.
-// TODO: not used for now
-func (ts *tester) mountAWSCred() error {
-	d, err := ioutil.ReadFile(ts.cfg.EKSConfig.Status.AWSCredentialPath)
-	if err != nil {
-		return err
-	}
-	size := humanize.Bytes(uint64(len(d)))
-
-	ts.cfg.Logger.Info("creating and mounting AWS credential as Secret",
-		zap.String("path", ts.cfg.EKSConfig.Status.AWSCredentialPath),
-		zap.String("size", size),
-	)
-
-	// awsCredName is the name of the mounted AWS Credential Secret.
-	const awsCredName = "aws-cred-aws-k8s-tester"
-
-	/*
-	  kubectl \
-	    --namespace=[NAMESPACE] \
-	    create secret generic aws-cred-aws-k8s-tester \
-	    --from-file=aws-cred-aws-k8s-tester/[FILE-PATH]
-	*/
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	so, err := ts.cfg.K8SClient.KubernetesClientSet().
-		CoreV1().
-		Secrets(ts.cfg.EKSConfig.AddOnSecrets.Namespace).
-		Create(
-			ctx,
-			&v1.Secret{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "v1",
-					Kind:       "Secret",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      awsCredName,
-					Namespace: ts.cfg.EKSConfig.AddOnSecrets.Namespace,
-				},
-				Type: v1.SecretTypeOpaque,
-				Data: map[string][]byte{
-					awsCredName: d,
-				},
-			},
-			metav1.CreateOptions{},
-		)
-	cancel()
-	if err != nil {
-		return fmt.Errorf("failed to create AWS credential as Secret (%v)", err)
-	}
-
-	/*
-	  kubectl \
-	    --namespace=[NAMESPACE] \
-	    get secret aws-cred-aws-k8s-tester \
-	    --output=yaml
-	*/
-	ts.cfg.Logger.Info("mounted AWS credential as Secret",
-		zap.String("path", ts.cfg.EKSConfig.Status.AWSCredentialPath),
-		zap.String("size", size),
-		zap.String("created-timestamp", so.GetCreationTimestamp().String()),
-	)
-	return ts.cfg.EKSConfig.Sync()
 }

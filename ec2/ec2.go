@@ -44,7 +44,7 @@ type Tester struct {
 	stopCreationCh     chan struct{}
 	stopCreationChOnce *sync.Once
 
-	interruptSig chan os.Signal
+	osSig chan os.Signal
 
 	downMu *sync.Mutex
 	logsMu *sync.RWMutex
@@ -83,13 +83,13 @@ func New(cfg *ec2config.Config) (*Tester, error) {
 	ts := &Tester{
 		stopCreationCh:     make(chan struct{}),
 		stopCreationChOnce: new(sync.Once),
-		interruptSig:       make(chan os.Signal),
+		osSig:              make(chan os.Signal),
 		downMu:             new(sync.Mutex),
 		logsMu:             new(sync.RWMutex),
 		lg:                 lg,
 		cfg:                cfg,
 	}
-	signal.Notify(ts.interruptSig, syscall.SIGTERM, syscall.SIGINT)
+	signal.Notify(ts.osSig, syscall.SIGTERM, syscall.SIGINT)
 
 	defer ts.cfg.Sync()
 
@@ -197,7 +197,7 @@ func (ts *Tester) Up() (err error) {
 			select {
 			case <-ts.stopCreationCh:
 				ts.lg.Info("wait aborted before clean up")
-			case <-ts.interruptSig:
+			case <-ts.osSig:
 				ts.lg.Info("wait aborted before clean up")
 			case <-time.After(waitDur):
 			}
@@ -226,7 +226,7 @@ func (ts *Tester) Up() (err error) {
 		ts.lg,
 		ts.stopCreationCh,
 		ts.stopCreationChOnce,
-		ts.interruptSig,
+		ts.osSig,
 		ts.createS3,
 	); err != nil {
 		return err
@@ -238,7 +238,7 @@ func (ts *Tester) Up() (err error) {
 		ts.lg,
 		ts.stopCreationCh,
 		ts.stopCreationChOnce,
-		ts.interruptSig,
+		ts.osSig,
 		ts.createRole,
 	); err != nil {
 		return err
@@ -250,7 +250,7 @@ func (ts *Tester) Up() (err error) {
 		ts.lg,
 		ts.stopCreationCh,
 		ts.stopCreationChOnce,
-		ts.interruptSig,
+		ts.osSig,
 		ts.createVPC,
 	); err != nil {
 		return err
@@ -262,7 +262,7 @@ func (ts *Tester) Up() (err error) {
 		ts.lg,
 		ts.stopCreationCh,
 		ts.stopCreationChOnce,
-		ts.interruptSig,
+		ts.osSig,
 		ts.createKeyPair,
 	); err != nil {
 		return err
@@ -274,7 +274,7 @@ func (ts *Tester) Up() (err error) {
 		ts.lg,
 		ts.stopCreationCh,
 		ts.stopCreationChOnce,
-		ts.interruptSig,
+		ts.osSig,
 		ts.createASGs,
 	); err != nil {
 		return err
@@ -286,7 +286,7 @@ func (ts *Tester) Up() (err error) {
 		ts.lg,
 		ts.stopCreationCh,
 		ts.stopCreationChOnce,
-		ts.interruptSig,
+		ts.osSig,
 		ts.createSSM,
 	); err != nil {
 		return err
@@ -302,7 +302,7 @@ func (ts *Tester) Up() (err error) {
 			ts.lg,
 			ts.stopCreationCh,
 			ts.stopCreationChOnce,
-			ts.interruptSig,
+			ts.osSig,
 			ts.FetchLogs,
 		); err != nil {
 			return err

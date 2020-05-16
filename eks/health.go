@@ -23,7 +23,7 @@ func (ts *Tester) checkHealth() (err error) {
 		select {
 		case <-ts.stopCreationCh:
 			return errors.New("health check aborted")
-		case <-ts.interruptSig:
+		case <-ts.osSig:
 			return errors.New("health check aborted")
 		case <-time.After(5 * time.Second):
 		}

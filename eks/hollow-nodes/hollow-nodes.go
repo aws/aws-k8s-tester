@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -62,9 +63,10 @@ import (
 // ref. https://github.com/kubernetes/kubernetes/blob/master/pkg/kubemark/hollow_kubelet.go
 type KubeletConfig struct {
 	Logger *zap.Logger
-	Client k8s_client.EKS
 	Stopc  chan struct{}
 	Donec  chan struct{}
+
+	Client k8s_client.EKS
 
 	NodeName     string
 	NodeLabels   map[string]string
@@ -274,12 +276,13 @@ type NodeGroup interface {
 
 // NodeGroupConfig is the hollow nodes configuration.
 type NodeGroupConfig struct {
-	Logger       *zap.Logger
-	Client       k8s_client.EKS
-	Stopc        chan struct{}
-	Nodes        int
-	NodeLabels   map[string]string
-	MaxOpenFiles int64
+	Logger         *zap.Logger
+	Stopc          chan struct{}
+	Client         k8s_client.EKS
+	Nodes          int
+	NodeNamePrefix string
+	NodeLabels     map[string]string
+	MaxOpenFiles   int64
 }
 
 type nodeGroup struct {
@@ -308,15 +311,18 @@ func (ng *nodeGroup) Start() (err error) {
 
 	ng.kubelets = make([]Kubelet, ng.cfg.Nodes)
 
-	ng.cfg.Logger.Info("creating node group with hollow nodes", zap.Int("nodes", ng.cfg.Nodes), zap.Any("node-labels", ng.cfg.NodeLabels))
+	ng.cfg.Logger.Info("creating node group with hollow nodes",
+		zap.Int("nodes", ng.cfg.Nodes),
+		zap.String("node-name-prefix", ng.cfg.NodeNamePrefix),
+		zap.Any("node-labels", ng.cfg.NodeLabels),
+	)
 	for i := 0; i < ng.cfg.Nodes; i++ {
-		nodeName := fmt.Sprintf("fake-node-%06d-%s", i, randutil.String(5))
 		ng.kubelets[i], err = NewKubelet(KubeletConfig{
 			Logger:       ng.cfg.Logger,
-			Client:       ng.cfg.Client,
 			Stopc:        ng.cfg.Stopc,
 			Donec:        ng.donec,
-			NodeName:     nodeName,
+			Client:       ng.cfg.Client,
+			NodeName:     ng.cfg.NodeNamePrefix + randutil.String(10),
 			NodeLabels:   ng.cfg.NodeLabels,
 			MaxOpenFiles: ng.cfg.MaxOpenFiles,
 		})
@@ -382,6 +388,9 @@ func (ng *nodeGroup) checkNodes() (readyNodes []string, createdNodes []string, e
 		readies := 0
 		for _, node := range items {
 			nodeName := node.GetName()
+			if strings.HasPrefix(nodeName, ng.cfg.NodeNamePrefix) {
+				continue
+			}
 			labels := node.GetLabels()
 			notMatch := false
 			for k, v1 := range ng.cfg.NodeLabels {
@@ -396,7 +405,7 @@ func (ng *nodeGroup) checkNodes() (readyNodes []string, createdNodes []string, e
 				}
 			}
 			if notMatch {
-				ng.cfg.Logger.Warn("unexpected node labels", zap.String("node-name", nodeName), zap.Any("expected", ng.cfg.NodeLabels), zap.Any("got", labels))
+				ng.cfg.Logger.Warn("node labels not match", zap.String("node-name", nodeName), zap.Any("expected", ng.cfg.NodeLabels), zap.Any("got", labels))
 				continue
 			}
 

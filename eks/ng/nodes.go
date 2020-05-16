@@ -407,6 +407,7 @@ func (ts *tester) createASGs() error {
               cluster-certificate = "%s"
               api-server = "%s"
               [settings.kubernetes.node-labels]
+              NodeType = "normal"
               AMIType = "%s"
               NGType = "custom"
               NGName = "%s"
@@ -432,7 +433,7 @@ func (ts *tester) createASGs() error {
 				tg.UserData += fmt.Sprintf(` --b64-cluster-ca %s --apiserver-endpoint %s`, ts.cfg.EKSConfig.Status.ClusterCA, ts.cfg.EKSConfig.Status.ClusterAPIServerEndpoint)
 			}
 			// https://aws.amazon.com/blogs/opensource/improvements-eks-worker-node-provisioning/
-			tg.UserData += fmt.Sprintf(` --kubelet-extra-args '--node-labels=NGType=custom,AMIType=%s,NGName=%s`, cur.AMIType, asgName)
+			tg.UserData += fmt.Sprintf(` --kubelet-extra-args '--node-labels=NodeType=regular,AMIType=%s,NGType=custom,NGName=%s`, cur.AMIType, asgName)
 			if cur.KubeletExtraArgs != "" {
 				ts.cfg.Logger.Info("adding extra bootstrap arguments --kubelet-extra-args to user data",
 					zap.String("kubelet-extra-args", cur.KubeletExtraArgs),

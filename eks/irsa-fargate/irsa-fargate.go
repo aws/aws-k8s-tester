@@ -15,6 +15,7 @@ import (
 	"github.com/aws/aws-k8s-tester/eks/fargate"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
+	aws_ecr "github.com/aws/aws-k8s-tester/pkg/aws/ecr"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/randutil"
 	"github.com/aws/aws-k8s-tester/version"
@@ -22,7 +23,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/cloudformation/cloudformationiface"
-	"github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
@@ -30,7 +30,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/iam/iamiface"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
-	"github.com/dustin/go-humanize"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -66,10 +65,11 @@ func New(cfg Config) (Tester, error) {
 }
 
 type tester struct {
-	cfg Config
+	cfg      Config
+	ecrImage string
 }
 
-func (ts *tester) Create() error {
+func (ts *tester) Create() (err error) {
 	if ts.cfg.EKSConfig.AddOnIRSAFargate.Created {
 		ts.cfg.Logger.Info("skipping create AddOnIRSAFargate")
 		return nil
@@ -85,37 +85,47 @@ func (ts *tester) Create() error {
 		ts.cfg.EKSConfig.Sync()
 	}()
 
-	if err := ts.checkECR(); err != nil {
+	if ts.ecrImage, err = aws_ecr.Check(
+		ts.cfg.Logger,
+		ts.cfg.ECRAPI,
+		ts.cfg.EKSConfig.AddOnIRSAFargate.RepositoryAccountID,
+		ts.cfg.EKSConfig.AddOnIRSAFargate.RepositoryName,
+		ts.cfg.EKSConfig.AddOnIRSAFargate.RepositoryImageTag,
+	); err != nil {
 		return err
 	}
-	if err := k8s_client.CreateNamespace(ts.cfg.Logger, ts.cfg.K8SClient.KubernetesClientSet(), ts.cfg.EKSConfig.AddOnIRSAFargate.Namespace); err != nil {
+	if err = k8s_client.CreateNamespace(
+		ts.cfg.Logger,
+		ts.cfg.K8SClient.KubernetesClientSet(),
+		ts.cfg.EKSConfig.AddOnIRSAFargate.Namespace,
+	); err != nil {
 		return err
 	}
-	if err := ts.createS3(); err != nil {
+	if err = ts.createS3(); err != nil {
 		return err
 	}
-	if err := ts.createOIDCProvider(); err != nil {
+	if err = ts.createOIDCProvider(); err != nil {
 		return err
 	}
-	if err := ts.createRole(); err != nil {
+	if err = ts.createRole(); err != nil {
 		return err
 	}
-	if err := ts.createServiceAccount(); err != nil {
+	if err = ts.createServiceAccount(); err != nil {
 		return err
 	}
-	if err := ts.createConfigMap(); err != nil {
+	if err = ts.createConfigMap(); err != nil {
 		return err
 	}
-	if err := ts.createProfile(); err != nil {
+	if err = ts.createProfile(); err != nil {
 		return err
 	}
-	if err := ts.createPod(); err != nil {
+	if err = ts.createPod(); err != nil {
 		return err
 	}
-	if err := ts.checkPod(); err != nil {
+	if err = ts.checkPod(); err != nil {
 		return err
 	}
-	if err := ts.checkNode(); err != nil {
+	if err = ts.checkNode(); err != nil {
 		return err
 	}
 
@@ -178,11 +188,13 @@ func (ts *tester) Delete() error {
 	ts.cfg.Logger.Info("wait after deleting S3")
 	time.Sleep(20 * time.Second)
 
-	if err := k8s_client.DeleteNamespaceAndWait(ts.cfg.Logger,
+	if err := k8s_client.DeleteNamespaceAndWait(
+		ts.cfg.Logger,
 		ts.cfg.K8SClient.KubernetesClientSet(),
 		ts.cfg.EKSConfig.AddOnIRSAFargate.Namespace,
 		k8s_client.DefaultNamespaceDeletionInterval,
-		k8s_client.DefaultNamespaceDeletionTimeout); err != nil {
+		k8s_client.DefaultNamespaceDeletionTimeout,
+	); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete Fargate namespace (%v)", err))
 	}
 
@@ -192,66 +204,6 @@ func (ts *tester) Delete() error {
 
 	ts.cfg.EKSConfig.AddOnIRSAFargate.Created = false
 	return ts.cfg.EKSConfig.Sync()
-}
-
-func (ts *tester) checkECR() error {
-	ts.cfg.Logger.Info("describing ECR repositories")
-	out, err := ts.cfg.ECRAPI.DescribeRepositories(&ecr.DescribeRepositoriesInput{
-		RegistryId:      aws.String(ts.cfg.EKSConfig.AddOnIRSAFargate.RepositoryAccountID),
-		RepositoryNames: aws.StringSlice([]string{ts.cfg.EKSConfig.AddOnIRSAFargate.RepositoryName}),
-	})
-	if err != nil {
-		return err
-	}
-	if len(out.Repositories) != 1 {
-		return fmt.Errorf("%q expected 1 ECR repository, got %d", ts.cfg.EKSConfig.AddOnIRSAFargate.RepositoryName, len(out.Repositories))
-	}
-	repo := out.Repositories[0]
-	arn := aws.StringValue(repo.RepositoryArn)
-	name := aws.StringValue(repo.RepositoryName)
-	uri := aws.StringValue(repo.RepositoryUri)
-	ts.cfg.Logger.Info(
-		"described ECR repository",
-		zap.String("arn", arn),
-		zap.String("name", name),
-		zap.String("uri", uri),
-	)
-
-	if name != ts.cfg.EKSConfig.AddOnIRSAFargate.RepositoryName {
-		return fmt.Errorf("unexpected ECR repository name %q", name)
-	}
-	if uri != ts.cfg.EKSConfig.AddOnIRSAFargate.RepositoryURI {
-		return fmt.Errorf("unexpected ECR repository uri %q", uri)
-	}
-
-	ts.cfg.Logger.Info("describing images")
-	imgOut, err := ts.cfg.ECRAPI.DescribeImages(&ecr.DescribeImagesInput{
-		RegistryId:     aws.String(ts.cfg.EKSConfig.AddOnIRSAFargate.RepositoryAccountID),
-		RepositoryName: aws.String(ts.cfg.EKSConfig.AddOnIRSAFargate.RepositoryName),
-		ImageIds: []*ecr.ImageIdentifier{
-			{
-				ImageTag: aws.String(ts.cfg.EKSConfig.AddOnIRSAFargate.RepositoryImageTag),
-			},
-		},
-	})
-	if err != nil {
-		return err
-	}
-	if len(imgOut.ImageDetails) == 0 {
-		return fmt.Errorf("image tag %q not found", ts.cfg.EKSConfig.AddOnIRSAFargate.RepositoryImageTag)
-	}
-	ts.cfg.Logger.Info("described images", zap.Int("images", len(imgOut.ImageDetails)))
-	for i, img := range imgOut.ImageDetails {
-		ts.cfg.Logger.Info("found an image",
-			zap.Int("index", i),
-			zap.String("requested-tag", ts.cfg.EKSConfig.AddOnIRSAFargate.RepositoryImageTag),
-			zap.Strings("returned-tags", aws.StringValueSlice(img.ImageTags)),
-			zap.String("digest", aws.StringValue(img.ImageDigest)),
-			zap.String("pushed-at", humanize.Time(aws.TimeValue(img.ImagePushedAt))),
-			zap.String("size", humanize.Bytes(uint64(aws.Int64Value(img.ImageSizeInBytes)))),
-		)
-	}
-	return nil
 }
 
 func (ts *tester) createS3() (err error) {
@@ -951,8 +903,7 @@ func (ts *tester) createPod() error {
 	}
 	tplTxt := buf.String()
 
-	image := ts.cfg.EKSConfig.AddOnIRSAFargate.RepositoryURI + ":" + ts.cfg.EKSConfig.AddOnIRSAFargate.RepositoryImageTag
-	ts.cfg.Logger.Info("creating IRSA Fargate Pod", zap.String("image", image))
+	ts.cfg.Logger.Info("creating IRSA Fargate Pod", zap.String("image", ts.ecrImage))
 	pod := &v1.Pod{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -968,7 +919,7 @@ func (ts *tester) createPod() error {
 			Containers: []v1.Container{
 				{
 					Name:  irsaFargateContainerName,
-					Image: image,
+					Image: ts.ecrImage,
 
 					ImagePullPolicy: v1.PullIfNotPresent,
 					Command: []string{

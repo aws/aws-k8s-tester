@@ -36,7 +36,7 @@ type Tester interface {
 	Delete() error
 }
 
-func NewTester(cfg Config) (Tester, error) {
+func New(cfg Config) (Tester, error) {
 	return &tester{cfg: cfg}, nil
 }
 
@@ -71,10 +71,16 @@ func (ts *tester) Create() error {
 		ts.cfg.EKSConfig.Sync()
 	}()
 
-	if err := k8s_client.CreateNamespace(ts.cfg.Logger, ts.cfg.K8SClient.KubernetesClientSet(), chartNamespacePrometheus); err != nil {
+	if err := k8s_client.CreateNamespace(
+		ts.cfg.Logger,
+		ts.cfg.K8SClient.KubernetesClientSet(),
+		chartNamespacePrometheus); err != nil {
 		return err
 	}
-	if err := k8s_client.CreateNamespace(ts.cfg.Logger, ts.cfg.K8SClient.KubernetesClientSet(), chartNamespaceGrafana); err != nil {
+	if err := k8s_client.CreateNamespace(
+		ts.cfg.Logger,
+		ts.cfg.K8SClient.KubernetesClientSet(),
+		chartNamespaceGrafana); err != nil {
 		return err
 	}
 	if err := helm.RepoAdd(ts.cfg.Logger, chartRepoName, chartRepoURL); err != nil {
@@ -116,19 +122,23 @@ func (ts *tester) Delete() error {
 		errs = append(errs, err.Error())
 	}
 
-	if err := k8s_client.DeleteNamespaceAndWait(ts.cfg.Logger,
+	if err := k8s_client.DeleteNamespaceAndWait(
+		ts.cfg.Logger,
 		ts.cfg.K8SClient.KubernetesClientSet(),
 		chartNamespaceGrafana,
 		k8s_client.DefaultNamespaceDeletionInterval,
-		k8s_client.DefaultNamespaceDeletionTimeout); err != nil {
+		k8s_client.DefaultNamespaceDeletionTimeout,
+	); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete Wordpress namespace (%v)", err))
 	}
 
-	if err := k8s_client.DeleteNamespaceAndWait(ts.cfg.Logger,
+	if err := k8s_client.DeleteNamespaceAndWait(
+		ts.cfg.Logger,
 		ts.cfg.K8SClient.KubernetesClientSet(),
 		chartNamespacePrometheus,
 		k8s_client.DefaultNamespaceDeletionInterval,
-		k8s_client.DefaultNamespaceDeletionTimeout); err != nil {
+		k8s_client.DefaultNamespaceDeletionTimeout,
+	); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete Wordpress namespace (%v)", err))
 	}
 

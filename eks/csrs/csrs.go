@@ -4,123 +4,233 @@ package csrs
 import (
 	"context"
 	"encoding/base64"
-	"errors"
 	"fmt"
-	"os"
-	"regexp"
-	"strings"
+	"sync"
 	"time"
 
-	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
+	"github.com/aws/aws-k8s-tester/pkg/metrics"
+	"github.com/aws/aws-k8s-tester/pkg/randutil"
+	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
-	"golang.org/x/time/rate"
 	certificatesv1beta1 "k8s.io/api/certificates/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
-// Config defines "CertificateSigningRequest" configuration.
+var (
+	writeRequestsSuccessTotal = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Namespace: "csrs",
+			Subsystem: "client",
+			Name:      "write_requests_success_total",
+			Help:      "Total number of successful write requests.",
+		})
+	writeRequestsFailureTotal = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Namespace: "csrs",
+			Subsystem: "client",
+			Name:      "write_requests_failure_total",
+			Help:      "Total number of successful write requests.",
+		})
+	writeRequestLatencyMs = prometheus.NewHistogram(
+		prometheus.HistogramOpts{
+			Namespace: "csrs",
+			Subsystem: "client",
+			Name:      "write_request_latency_milliseconds",
+			Help:      "Bucketed histogram of client-side write request and response latency.",
+
+			// lowest bucket start of upper bound 0.5 ms with factor 2
+			// highest bucket start of 0.5 ms * 2^13 == 4.096 sec
+			Buckets: prometheus.ExponentialBuckets(0.5, 2, 14),
+		})
+)
+
+func init() {
+	prometheus.MustRegister(writeRequestsSuccessTotal)
+	prometheus.MustRegister(writeRequestsFailureTotal)
+	prometheus.MustRegister(writeRequestLatencyMs)
+}
+
+// Config configures CSR loader.
 type Config struct {
-	Logger    *zap.Logger
-	Stopc     chan struct{}
-	Sig       chan os.Signal
-	EKSConfig *eksconfig.Config
-	K8SClient k8s_client.EKS
+	Logger *zap.Logger
+	Stopc  chan struct{}
+
+	Client        k8s_client.EKS
+	ClientTimeout time.Duration
+
+	Objects int
+
+	// InitialRequestConditionType is the initial CSR condition type
+	// to simulate CSR condition.
+	//
+	// Valid values are:
+	//   "k8s.io/api/certificates/v1beta1.CertificateApproved" == "Approved"
+	//   "k8s.io/api/certificates/v1beta1.CertificateDenied" == "Denied"
+	//   "Random"
+	//   "Pending"
+	//   ""
+	//
+	InitialRequestConditionType string
 }
 
-// Tester defines CertificateSigningRequest tester.
-type Tester interface {
-	// Create creates "CertificateSigningRequest" objects to test CertificateSigningRequest.
-	Create() error
-	// Delete deletes "CertificateSigningRequest" and Pods.
-	Delete() error
+// Loader defines CSR loader operations.
+type Loader interface {
+	Start()
+	Stop()
+	GetMetrics() (writes metrics.RequestsSummary, err error)
 }
 
-// New creates a new CSR tester.
-func New(cfg Config) (Tester, error) {
-	return &tester{cfg: cfg, cancel: make(chan struct{})}, nil
+type loader struct {
+	cfg            Config
+	donec          chan struct{}
+	donecCloseOnce *sync.Once
 }
 
-type tester struct {
-	cfg               Config
-	deploymentCreated time.Time
-	cancel            chan struct{}
-}
-
-func (ts *tester) Create() error {
-	if ts.cfg.EKSConfig.AddOnCSRs.Created {
-		ts.cfg.Logger.Info("skipping create AddOnCSRs")
-		return nil
+func New(cfg Config) Loader {
+	return &loader{
+		cfg:            cfg,
+		donec:          make(chan struct{}),
+		donecCloseOnce: new(sync.Once),
 	}
-
-	ts.cfg.EKSConfig.AddOnCSRs.Created = true
-	ts.cfg.EKSConfig.Sync()
-
-	createStart := time.Now()
-	defer func() {
-		ts.cfg.EKSConfig.AddOnCSRs.CreateTook = time.Since(createStart)
-		ts.cfg.EKSConfig.AddOnCSRs.CreateTookString = ts.cfg.EKSConfig.AddOnCSRs.CreateTook.String()
-		ts.cfg.EKSConfig.Sync()
-	}()
-
-	if err := k8s_client.CreateNamespace(ts.cfg.Logger, ts.cfg.K8SClient.KubernetesClientSet(), ts.cfg.EKSConfig.AddOnCSRs.Namespace); err != nil {
-		return err
-	}
-	if err := ts.createCSRs(); err != nil {
-		return err
-	}
-
-	return ts.cfg.EKSConfig.Sync()
 }
 
-func (ts *tester) Delete() error {
-	if !ts.cfg.EKSConfig.AddOnCSRs.Created {
-		ts.cfg.Logger.Info("skipping delete AddOnCSRs")
-		return nil
-	}
-
-	deleteStart := time.Now()
-	defer func() {
-		ts.cfg.EKSConfig.AddOnCSRs.DeleteTook = time.Since(deleteStart)
-		ts.cfg.EKSConfig.AddOnCSRs.DeleteTookString = ts.cfg.EKSConfig.AddOnCSRs.DeleteTook.String()
-		ts.cfg.EKSConfig.Sync()
-	}()
-
-	if err := k8s_client.DeleteNamespaceAndWait(ts.cfg.Logger,
-		ts.cfg.K8SClient.KubernetesClientSet(),
-		ts.cfg.EKSConfig.AddOnCSRs.Namespace,
-		k8s_client.DefaultNamespaceDeletionInterval,
-		k8s_client.DefaultNamespaceDeletionTimeout); err != nil {
-		return fmt.Errorf("failed to delete CSRs namespace (%v)", err)
-	}
-
-	ts.cfg.EKSConfig.AddOnCSRs.Created = false
-	return ts.cfg.EKSConfig.Sync()
+func (ld *loader) Start() {
+	ld.cfg.Logger.Info("starting write function")
+	startWrites(ld.cfg.Logger, ld.cfg.Client.KubernetesClientSet(), ld.cfg.ClientTimeout, ld.cfg.Objects, ld.cfg.InitialRequestConditionType, ld.cfg.Stopc, ld.donec)
+	ld.cfg.Logger.Info("completed write function")
 }
 
-// only letters and numbers for CSR key names
-var regex = regexp.MustCompile("[^a-zA-Z0-9]+")
-
-func (ts *tester) createCSRs() (err error) {
-	ts.cfg.Logger.Info("creating CSRs",
-		zap.Int("objects", ts.cfg.EKSConfig.AddOnCSRs.Objects),
-	)
-
-	// valid config key must consist of alphanumeric characters
-	pfx := strings.ToLower(regex.ReplaceAllString(ts.cfg.EKSConfig.Name, ""))
-
-	// overwrite if any
-	ts.cfg.EKSConfig.AddOnCSRs.CreatedNames = make([]string, 0, ts.cfg.EKSConfig.AddOnCSRs.Objects)
-	ts.cfg.EKSConfig.Sync()
-
-	if ts.cfg.EKSConfig.ClientQPS <= 1 {
-		err = ts.createCSRsSequential(pfx, ts.cfg.EKSConfig.AddOnCSRs.FailThreshold)
-	} else {
-		err = ts.createCSRsParallel(pfx, ts.cfg.EKSConfig.AddOnCSRs.FailThreshold)
-	}
-	ts.cfg.EKSConfig.Sync()
-	return err
+func (ld *loader) Stop() {
+	ld.cfg.Logger.Info("stopping and waiting for write function")
+	ld.donecCloseOnce.Do(func() {
+		close(ld.donec)
+	})
+	ld.cfg.Logger.Info("stopped and waited for write function")
 }
+
+// GetMetrics locally fetches output from registered metrics.
+// ref. https://pkg.go.dev/github.com/prometheus/client_golang@v1.6.0/prometheus/promhttp?tab=doc#Handler
+func (ld *loader) GetMetrics() (writes metrics.RequestsSummary, err error) {
+	// https://pkg.go.dev/github.com/prometheus/client_golang/prometheus?tab=doc#Gatherer
+	mfs, err := prometheus.DefaultGatherer.Gather()
+	if err != nil {
+		ld.cfg.Logger.Warn("failed to gather prometheus metrics", zap.Error(err))
+		return metrics.RequestsSummary{}, err
+	}
+	for _, mf := range mfs {
+		if mf == nil {
+			continue
+		}
+		switch *mf.Name {
+		case "csrs_client_write_requests_success_total":
+			gg := mf.Metric[0].GetGauge()
+			writes.SuccessTotal = gg.GetValue()
+		case "csrs_client_write_requests_failure_total":
+			gg := mf.Metric[0].GetGauge()
+			writes.FailureTotal = gg.GetValue()
+		case "csrs_client_write_request_latency_milliseconds":
+			writes.LatencyHistogram, err = metrics.ParseHistogram("milliseconds", mf.Metric[0].GetHistogram())
+			if err != nil {
+				return metrics.RequestsSummary{}, err
+			}
+		}
+	}
+	return writes, nil
+}
+
+func startWrites(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration, objects int, condType string, stopc chan struct{}, donec chan struct{}) {
+	lg.Info("starting startWrites", zap.Int("objects", objects))
+
+	for i := 0; i < objects; i++ {
+		select {
+		case <-stopc:
+			lg.Warn("writes stopped")
+			return
+		case <-donec:
+			lg.Info("writes done")
+			return
+		default:
+		}
+
+		// only letters and numbers for CSR key names
+		key := fmt.Sprintf("csr%d%s", i, randutil.String(7))
+		cd := createCond(i, "Testing via "+key, condType)
+
+		start := time.Now()
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+		_, err := cli.
+			CertificatesV1beta1().
+			CertificateSigningRequests().
+			Create(ctx, &certificatesv1beta1.CertificateSigningRequest{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "certificates.k8s.io/v1beta1",
+					Kind:       "CertificateSigningRequest",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:              key,
+					GenerateName:      key,
+					CreationTimestamp: metav1.Time{Time: time.Now().Add(-20 * time.Minute)},
+				},
+				Spec: certificatesv1beta1.CertificateSigningRequestSpec{
+					Groups:  []string{"system:bootstrappers", "system:nodes", "system:authenticated"},
+					Request: reqData,
+					UID:     "heptio-authenticator-aws:280347406217:AROAUCRQB56EUYTYXXJKV",
+					Usages: []certificatesv1beta1.KeyUsage{
+						certificatesv1beta1.UsageDigitalSignature,
+						certificatesv1beta1.UsageKeyEncipherment,
+						certificatesv1beta1.UsageServerAuth,
+					},
+					Username: "system:node:ip-172-20-32-89.us-west-2.compute.internal",
+				},
+				Status: certificatesv1beta1.CertificateSigningRequestStatus{
+					Certificate: nil,
+					Conditions:  cd,
+				},
+			}, metav1.CreateOptions{})
+		cancel()
+		writeRequestLatencyMs.Observe(float64(time.Since(start) / time.Millisecond))
+		if err != nil {
+			writeRequestsFailureTotal.Inc()
+			lg.Warn("write csr failed", zap.Error(err))
+		} else {
+			writeRequestsSuccessTotal.Inc()
+			if i%20 == 0 {
+				lg.Info("wrote csr", zap.Int("iteration", i))
+			}
+		}
+	}
+}
+
+var conds = []certificatesv1beta1.RequestConditionType{
+	certificatesv1beta1.CertificateApproved,
+	certificatesv1beta1.CertificateDenied,
+	certificatesv1beta1.RequestConditionType(""),
+}
+
+func createCond(idx int, msg string, tp string) (cs []certificatesv1beta1.CertificateSigningRequestCondition) {
+	cs = []certificatesv1beta1.CertificateSigningRequestCondition{
+		{
+			Reason:         "Test",
+			Message:        msg,
+			LastUpdateTime: metav1.NewTime(time.Now().Add(-time.Hour)),
+		},
+	}
+	switch tp {
+	case string(certificatesv1beta1.CertificateApproved):
+		cs[0].Type = certificatesv1beta1.CertificateApproved
+	case string(certificatesv1beta1.CertificateDenied):
+		cs[0].Type = certificatesv1beta1.CertificateDenied
+	case "Pending", "":
+		cs = make([]certificatesv1beta1.CertificateSigningRequestCondition, 0)
+	case "Random":
+		cs[0].Type = conds[idx%3]
+	}
+	return cs
+}
+
+var reqData, _ = base64.StdEncoding.DecodeString("LS0tLS1CRUdJTiBDRVJUSUZJQ0FURSBSRVFVRVNULS0tLS0KTUlJQnJEQ0NBVk1DQVFBd1dERVZNQk1HQTFVRUNoTU1jM2x6ZEdWdE9tNXZaR1Z6TVQ4d1BRWURWUVFERXpaegplWE4wWlcwNmJtOWtaVHBwY0MweE56SXRNakF0TXpJdE9Ea3VkWE10ZDJWemRDMHlMbU52YlhCMWRHVXVhVzUwClpYSnVZV3d3V1RBVEJnY3Foa2pPUFFJQkJnZ3Foa2pPUFFNQkJ3TkNBQVJGSzI3L2w4U2NtMXF1K2xXbEs5WFoKUUtVM0grSnFENTZuSEFYOXBUQ25YVWRQaUppemRzc01QaSs2emtCU1I2MXVJcVRsdnNIcjkwbFNyU2tQeDd1aQpvSUdZTUlHVkJna3Foa2lHOXcwQkNRNHhnWWN3Z1lRd2dZRUdBMVVkRVFSNk1IaUNNbVZqTWkwMU5DMHhPRFV0Ck1qUTJMVEV5T0M1MWN5MTNaWE4wTFRJdVkyOXRjSFYwWlM1aGJXRjZiMjVoZDNNdVkyOXRod1NzRkNCWmh3UTIKdWZhQWhqWnplWE4wWlcwNmJtOWtaVHBwY0MweE56SXRNakF0TXpJdE9Ea3VkWE10ZDJWemRDMHlMbU52YlhCMQpkR1V1YVc1MFpYSnVZV3d3Q2dZSUtvWkl6ajBFQXdJRFJ3QXdSQUlnVTUrNEFkWVcvRm9kdDExMmgvRjV4RHFQClFJS1BJemk4TUJMSTBBaVE2cGtDSUdqOHZPNDlTQldJVlo2SnhJL1lENldrRVhXdlZEbFp4cjFlZmVMM0NIeEgKLS0tLS1FTkQgQ0VSVElGSUNBVEUgUkVRVUVTVC0tLS0tCg==")
 
 /*
 https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster/
@@ -179,244 +289,3 @@ $ cat server.csr | base64 --wrap=0
 $ echo "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURSBSRVFVRVNULS0tLS0KTUlJQnJEQ0NBVk1DQVFBd1dERVZNQk1HQTFVRUNoTU1jM2x6ZEdWdE9tNXZaR1Z6TVQ4d1BRWURWUVFERXpaegplWE4wWlcwNmJtOWtaVHBwY0MweE56SXRNakF0TXpJdE9Ea3VkWE10ZDJWemRDMHlMbU52YlhCMWRHVXVhVzUwClpYSnVZV3d3V1RBVEJnY3Foa2pPUFFJQkJnZ3Foa2pPUFFNQkJ3TkNBQVJGSzI3L2w4U2NtMXF1K2xXbEs5WFoKUUtVM0grSnFENTZuSEFYOXBUQ25YVWRQaUppemRzc01QaSs2emtCU1I2MXVJcVRsdnNIcjkwbFNyU2tQeDd1aQpvSUdZTUlHVkJna3Foa2lHOXcwQkNRNHhnWWN3Z1lRd2dZRUdBMVVkRVFSNk1IaUNNbVZqTWkwMU5DMHhPRFV0Ck1qUTJMVEV5T0M1MWN5MTNaWE4wTFRJdVkyOXRjSFYwWlM1aGJXRjZiMjVoZDNNdVkyOXRod1NzRkNCWmh3UTIKdWZhQWhqWnplWE4wWlcwNmJtOWtaVHBwY0MweE56SXRNakF0TXpJdE9Ea3VkWE10ZDJWemRDMHlMbU52YlhCMQpkR1V1YVc1MFpYSnVZV3d3Q2dZSUtvWkl6ajBFQXdJRFJ3QXdSQUlnVTUrNEFkWVcvRm9kdDExMmgvRjV4RHFQClFJS1BJemk4TUJMSTBBaVE2cGtDSUdqOHZPNDlTQldJVlo2SnhJL1lENldrRVhXdlZEbFp4cjFlZmVMM0NIeEgKLS0tLS1FTkQgQ0VSVElGSUNBVEUgUkVRVUVTVC0tLS0tCg==" | base64 --decode > /tmp/csr.out && openssl req -text -noout -in /tmp/csr.out
 
 */
-
-var reqData, _ = base64.StdEncoding.DecodeString("LS0tLS1CRUdJTiBDRVJUSUZJQ0FURSBSRVFVRVNULS0tLS0KTUlJQnJEQ0NBVk1DQVFBd1dERVZNQk1HQTFVRUNoTU1jM2x6ZEdWdE9tNXZaR1Z6TVQ4d1BRWURWUVFERXpaegplWE4wWlcwNmJtOWtaVHBwY0MweE56SXRNakF0TXpJdE9Ea3VkWE10ZDJWemRDMHlMbU52YlhCMWRHVXVhVzUwClpYSnVZV3d3V1RBVEJnY3Foa2pPUFFJQkJnZ3Foa2pPUFFNQkJ3TkNBQVJGSzI3L2w4U2NtMXF1K2xXbEs5WFoKUUtVM0grSnFENTZuSEFYOXBUQ25YVWRQaUppemRzc01QaSs2emtCU1I2MXVJcVRsdnNIcjkwbFNyU2tQeDd1aQpvSUdZTUlHVkJna3Foa2lHOXcwQkNRNHhnWWN3Z1lRd2dZRUdBMVVkRVFSNk1IaUNNbVZqTWkwMU5DMHhPRFV0Ck1qUTJMVEV5T0M1MWN5MTNaWE4wTFRJdVkyOXRjSFYwWlM1aGJXRjZiMjVoZDNNdVkyOXRod1NzRkNCWmh3UTIKdWZhQWhqWnplWE4wWlcwNmJtOWtaVHBwY0MweE56SXRNakF0TXpJdE9Ea3VkWE10ZDJWemRDMHlMbU52YlhCMQpkR1V1YVc1MFpYSnVZV3d3Q2dZSUtvWkl6ajBFQXdJRFJ3QXdSQUlnVTUrNEFkWVcvRm9kdDExMmgvRjV4RHFQClFJS1BJemk4TUJMSTBBaVE2cGtDSUdqOHZPNDlTQldJVlo2SnhJL1lENldrRVhXdlZEbFp4cjFlZmVMM0NIeEgKLS0tLS1FTkQgQ0VSVElGSUNBVEUgUkVRVUVTVC0tLS0tCg==")
-
-func (ts *tester) createCSR(idx int, name string) *certificatesv1beta1.CertificateSigningRequest {
-	return &certificatesv1beta1.CertificateSigningRequest{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "certificates.k8s.io/v1beta1",
-			Kind:       "CertificateSigningRequest",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:              name,
-			Namespace:         ts.cfg.EKSConfig.AddOnCSRs.Namespace,
-			GenerateName:      name,
-			CreationTimestamp: metav1.Time{Time: time.Now().Add(-20 * time.Minute)},
-		},
-		Spec: certificatesv1beta1.CertificateSigningRequestSpec{
-			Groups:  []string{"system:bootstrappers", "system:nodes", "system:authenticated"},
-			Request: reqData,
-			UID:     "heptio-authenticator-aws:280347406217:AROAUCRQB56EUYTYXXJKV",
-			Usages: []certificatesv1beta1.KeyUsage{
-				certificatesv1beta1.UsageDigitalSignature,
-				certificatesv1beta1.UsageKeyEncipherment,
-				certificatesv1beta1.UsageServerAuth,
-			},
-			Username: "system:node:ip-172-20-32-89.us-west-2.compute.internal",
-		},
-		Status: certificatesv1beta1.CertificateSigningRequestStatus{
-			Certificate: nil,
-			Conditions:  pickCond(idx, "Testing via "+ts.cfg.EKSConfig.Name, ts.cfg.EKSConfig.AddOnCSRs.InitialRequestConditionType),
-		},
-	}
-}
-
-func (ts *tester) createCSRsSequential(pfx string, failThreshold int) error {
-	qps := float64(ts.cfg.EKSConfig.ClientQPS)
-	burst := int(ts.cfg.EKSConfig.ClientBurst)
-	ts.cfg.Logger.Info("creating CSRs sequential",
-		zap.Float64("qps", qps),
-		zap.Int("burst", burst),
-	)
-
-	fails := 0
-	for i := 0; i < ts.cfg.EKSConfig.AddOnCSRs.Objects; i++ {
-		key := fmt.Sprintf("%s%06d", pfx, i)
-		req := ts.createCSR(i, key)
-		t1 := time.Now()
-		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-		csr, err := ts.cfg.K8SClient.KubernetesClientSet().
-			CertificatesV1beta1().
-			CertificateSigningRequests().
-			Create(ctx, req, metav1.CreateOptions{})
-		cancel()
-		t2 := time.Now()
-		if err != nil {
-			select {
-			case <-ts.cancel:
-				return errors.New("CSR creation aborted")
-			case <-ts.cfg.Stopc:
-				return errors.New("CSR creation aborted")
-			default:
-				fails++
-				ts.cfg.Logger.Warn("create CSR failed",
-					zap.Int("fails", fails),
-					zap.Int("threshold", failThreshold),
-					zap.Error(err),
-				)
-				if fails >= failThreshold {
-					close(ts.cancel)
-					return fmt.Errorf("exceeded CSR writes fail threshold %d (%v)", failThreshold, err)
-				}
-			}
-			continue
-		}
-		fails = 0
-
-		csrName := csr.GetObjectMeta().GetName()
-		ts.cfg.EKSConfig.AddOnCSRs.CreatedNames = append(ts.cfg.EKSConfig.AddOnCSRs.CreatedNames, csrName)
-		ts.cfg.EKSConfig.Sync()
-
-		if ts.cfg.EKSConfig.LogLevel == "debug" || i%50 == 0 {
-			ts.cfg.Logger.Info(
-				"created CSR",
-				zap.String("key", csrName),
-				zap.Int("index", i),
-				zap.Int("created", len(ts.cfg.EKSConfig.AddOnCSRs.CreatedNames)),
-				zap.Int("target-total", ts.cfg.EKSConfig.AddOnCSRs.Objects),
-				zap.Duration("took", t2.Sub(t1)),
-			)
-		}
-	}
-
-	ts.cfg.Logger.Info("created CSRs sequential",
-		zap.Int("objects", ts.cfg.EKSConfig.AddOnCSRs.Objects),
-		zap.Int("success", len(ts.cfg.EKSConfig.AddOnCSRs.CreatedNames)),
-	)
-	return ts.cfg.EKSConfig.Sync()
-}
-
-func (ts *tester) createCSRsParallel(pfx string, failThreshold int) error {
-	qps := float64(ts.cfg.EKSConfig.ClientQPS)
-	burst := int(ts.cfg.EKSConfig.ClientBurst)
-	rateLimiter := rate.NewLimiter(rate.Limit(qps), burst)
-	ts.cfg.Logger.Info("creating CSRs parallel",
-		zap.Float64("qps", qps),
-		zap.Int("burst", burst),
-	)
-
-	rch := make(chan result, int(qps))
-	for i := 0; i < ts.cfg.EKSConfig.AddOnCSRs.Objects; i++ {
-		go func(i int) {
-			if !rateLimiter.Allow() {
-				ts.cfg.Logger.Debug("waiting for rate limiter creating CSR", zap.Int("index", i))
-				werr := rateLimiter.Wait(context.Background())
-				ts.cfg.Logger.Debug("waited for rate limiter", zap.Int("index", i), zap.Error(werr))
-			}
-			select {
-			case <-ts.cancel:
-				return
-			case <-ts.cfg.Stopc:
-				return
-			default:
-			}
-
-			key := fmt.Sprintf("%s%06d", pfx, i)
-			req := ts.createCSR(i, key)
-			t1 := time.Now()
-			ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-			csr, err := ts.cfg.K8SClient.KubernetesClientSet().
-				CertificatesV1beta1().
-				CertificateSigningRequests().
-				Create(ctx, req, metav1.CreateOptions{})
-			cancel()
-			t2 := time.Now()
-			if err != nil {
-				select {
-				case <-ts.cancel:
-					ts.cfg.Logger.Warn("exiting")
-					return
-				case <-ts.cfg.Stopc:
-					ts.cfg.Logger.Warn("exiting")
-					return
-				case rch <- result{csr: csr, err: err, took: t2.Sub(t1), start: t1, end: t2}:
-				}
-				return
-			}
-
-			select {
-			case <-ts.cancel:
-				ts.cfg.Logger.Warn("exiting")
-				return
-			case <-ts.cfg.Stopc:
-				ts.cfg.Logger.Warn("exiting")
-				return
-			case rch <- result{csr: csr, err: nil, took: t2.Sub(t1), start: t1, end: t2}:
-			}
-
-			if ts.cfg.EKSConfig.LogLevel == "debug" || i%50 == 0 {
-				ts.cfg.Logger.Info("created CSR",
-					zap.String("key", csr.GetObjectMeta().GetName()),
-					zap.Int("index", i),
-					zap.Int("created", len(ts.cfg.EKSConfig.AddOnCSRs.CreatedNames)),
-					zap.Int("target-total", ts.cfg.EKSConfig.AddOnCSRs.Objects),
-					zap.Duration("took", t2.Sub(t1)),
-				)
-			}
-		}(i)
-	}
-
-	fails := 0
-	for i := 0; i < ts.cfg.EKSConfig.AddOnCSRs.Objects; i++ {
-		var rv result
-		select {
-		case rv = <-rch:
-		case <-ts.cancel:
-			ts.cfg.Logger.Warn("exiting")
-			return errors.New("aborted")
-		case <-ts.cfg.Stopc:
-			ts.cfg.Logger.Warn("exiting")
-			return errors.New("aborted")
-		}
-		if rv.err != nil {
-			fails++
-			ts.cfg.Logger.Warn("create CSR failed",
-				zap.Int("fails", fails),
-				zap.Int("threshold", failThreshold),
-				zap.Error(rv.err),
-			)
-			if fails >= failThreshold {
-				close(ts.cancel)
-				return fmt.Errorf("exceeded CSR writes fail threshold %d (%v)", failThreshold, rv.err)
-			}
-			continue
-		}
-		fails = 0
-
-		csrName := rv.csr.GetObjectMeta().GetName()
-		ts.cfg.EKSConfig.AddOnCSRs.CreatedNames = append(ts.cfg.EKSConfig.AddOnCSRs.CreatedNames, csrName)
-		ts.cfg.EKSConfig.Sync()
-	}
-
-	ts.cfg.Logger.Info("created CSRs parallel",
-		zap.Int("objects", ts.cfg.EKSConfig.AddOnCSRs.Objects),
-		zap.Int("success", len(ts.cfg.EKSConfig.AddOnCSRs.CreatedNames)),
-	)
-	return ts.cfg.EKSConfig.Sync()
-}
-
-type result struct {
-	csr   *certificatesv1beta1.CertificateSigningRequest
-	err   error
-	took  time.Duration
-	start time.Time
-	end   time.Time
-}
-
-var conds = []certificatesv1beta1.RequestConditionType{
-	certificatesv1beta1.CertificateApproved,
-	certificatesv1beta1.CertificateDenied,
-	certificatesv1beta1.RequestConditionType(""),
-}
-
-func pickCond(idx int, msg string, tp string) (cs []certificatesv1beta1.CertificateSigningRequestCondition) {
-	cs = []certificatesv1beta1.CertificateSigningRequestCondition{
-		{
-			Reason:         "Test",
-			Message:        msg,
-			LastUpdateTime: metav1.NewTime(time.Now().Add(-time.Hour)),
-		},
-	}
-	switch tp {
-	case string(certificatesv1beta1.CertificateApproved):
-		cs[0].Type = certificatesv1beta1.CertificateApproved
-	case string(certificatesv1beta1.CertificateDenied):
-		cs[0].Type = certificatesv1beta1.CertificateDenied
-	case "Pending", "":
-		cs = make([]certificatesv1beta1.CertificateSigningRequestCondition, 0)
-	case "Random":
-		cs[0].Type = conds[idx%3]
-	}
-	return cs
-}

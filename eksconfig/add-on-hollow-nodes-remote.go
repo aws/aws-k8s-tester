@@ -3,14 +3,16 @@ package eksconfig
 import (
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/pkg/randutil"
 )
 
 // AddOnHollowNodesRemote defines parameters for EKS cluster
-// add-on local Hollow Nodes.
+// add-on hollow nodes remote.
+// It generates loads from the remote workers (Pod) in the cluster.
+// Each worker writes serially with no concurrency.
+// Configure "DeploymentReplicas" accordingly to increase the concurrency.
 type AddOnHollowNodesRemote struct {
 	// Enable is 'true' to create this add-on.
 	Enable bool `json:"enable"`
@@ -29,36 +31,31 @@ type AddOnHollowNodesRemote struct {
 	// Namespace is the namespace to create objects in.
 	Namespace string `json:"namespace"`
 
+	// RepositoryAccountID is the account ID for tester ECR image.
+	// e.g. "aws/aws-k8s-tester" for "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/aws/aws-k8s-tester"
+	RepositoryAccountID string `json:"repository-account-id,omitempty"`
+	// RepositoryName is the repositoryName for tester ECR image.
+	// e.g. "aws/aws-k8s-tester" for "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/aws/aws-k8s-tester"
+	RepositoryName string `json:"repository-name,omitempty"`
+	// RepositoryImageTag is the image tag for tester ECR image.
+	// e.g. "latest" for image URI "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/aws/aws-k8s-tester:latest"
+	RepositoryImageTag string `json:"repository-image-tag,omitempty"`
+
+	// DeploymentReplicas is the number of replicas to create for workers.
+	// The total number of objects to be created is "DeploymentReplicas" * "Nodes".
+	DeploymentReplicas int32 `json:"deployment-replicas,omitempty"`
+	// Nodes is the number of hollow nodes to create.
+	// The total number of objects to be created is "DeploymentReplicas" * "Nodes".
+	Nodes int `json:"nodes"`
+
+	// NodeNamePrefix is the node name prefix for node names.
+	NodeNamePrefix string `json:"node-name-prefix"`
 	// NodeLabelPrefix is the node prefix.
 	NodeLabelPrefix string `json:"node-label-prefix"`
-	// NodeLabels is the node labels to attach when creating hollow nodes.
-	NodeLabels map[string]string `json:"node-labels" read-only:"true"`
-
-	// Nodes is the number of hollow nodes to create.
-	// If "Local" equals to "false", the number of nodes deployed
-	// will be multiplied by "DeploymentReplicas".
-	// e.g. each Pod creates 5 hollow nodes, while deployment replicas are 10.
-	// The deployment will create total 50 nodes (= 5 times 10).
-	Nodes int `json:"nodes"`
-	// DeploymentReplicas is the number of replicas to deploy when hollow nodes are deployed via Pod.
-	DeploymentReplicas int32 `json:"deployment-replicas,omitempty"`
 
 	// MaxOpenFiles is number of files that can be opened by kubelet process.
 	// "cmd/kubelet/app.rlimit.SetNumFiles(MaxOpenFiles)" sets this for the host.
 	MaxOpenFiles int64 `json:"max-open-files"`
-
-	// RepositoryAccountID is the account ID for tester ECR image.
-	// e.g. "aws/aws-k8s-tester" for "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester"
-	RepositoryAccountID string `json:"repository-account-id,omitempty"`
-	// RepositoryName is the repositoryName for tester ECR image.
-	// e.g. "aws/aws-k8s-tester" for "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester"
-	RepositoryName string `json:"repository-name,omitempty"`
-	// RepositoryURI is the repositoryUri for tester ECR image.
-	// e.g. "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester"
-	RepositoryURI string `json:"repository-uri,omitempty"`
-	// RepositoryImageTag is the image tag for tester ECR image.
-	// e.g. "latest" for image URI "[ACCOUNT_ID].dkr.ecr.us-west-2.amazonaws.com/aws/aws-k8s-tester:latest"
-	RepositoryImageTag string `json:"repository-image-tag,omitempty"`
 
 	// CreatedNodeNames is the list of created "Node" object names.
 	CreatedNodeNames []string `json:"created-node-names" read-only:"true"`
@@ -83,8 +80,10 @@ func (cfg *Config) IsEnabledAddOnHollowNodesRemote() bool {
 func getDefaultAddOnHollowNodesRemote() *AddOnHollowNodesRemote {
 	return &AddOnHollowNodesRemote{
 		Enable:             false,
-		Nodes:              2,
 		DeploymentReplicas: 5,
+		Nodes:              2,
+		NodeNamePrefix:     "hollow" + randutil.String(5),
+		NodeLabelPrefix:    "hollow" + randutil.String(5),
 		MaxOpenFiles:       1000000,
 	}
 }
@@ -98,44 +97,36 @@ func (cfg *Config) validateAddOnHollowNodesRemote() error {
 		cfg.AddOnHollowNodesRemote.Namespace = cfg.Name + "-hollow-nodes-remote"
 	}
 
-	if cfg.AddOnHollowNodesRemote.Nodes == 0 {
-		cfg.AddOnHollowNodesRemote.Nodes = 2
-	}
-	if cfg.AddOnHollowNodesRemote.DeploymentReplicas == 0 {
-		cfg.AddOnHollowNodesRemote.DeploymentReplicas = 5
-	}
-
-	// e.g. Unable to register node "fake-node-000004-evere" with API server: Node "fake-node-000004-evere" is invalid: [metadata.labels: Invalid value: "...-hollow-nodes-remote-fake-ami-type-duneg": must be no more than 63 characters, metadata.labels: Invalid value: "...-hollow-nodes-remote-fake-ng-name-duneg": must be no more than 63 characters, metadata.labels: Invalid value: "...-hollow-nodes-remote-fake-ng-type-duneg": must be no more than 63 characters]
-	if cfg.AddOnHollowNodesRemote.NodeLabelPrefix == "" {
-		cfg.AddOnHollowNodesRemote.NodeLabelPrefix = "fake" + randutil.String(10)
-	}
-	if len(cfg.AddOnHollowNodesRemote.NodeLabelPrefix) > 55 {
-		return fmt.Errorf("invalid node label prefix %q (%d characters, label value can not be more than 63 characters)", cfg.AddOnHollowNodesRemote.NodeLabelPrefix, len(cfg.AddOnHollowNodesRemote.NodeLabelPrefix))
-	}
-	cfg.AddOnHollowNodesRemote.NodeLabels = map[string]string{
-		"AMIType": cfg.AddOnHollowNodesRemote.NodeLabelPrefix + "-ami-type",
-		"NGType":  cfg.AddOnHollowNodesRemote.NodeLabelPrefix + "-ng-type",
-		"NGName":  cfg.AddOnHollowNodesRemote.NodeLabelPrefix + "-ng-name",
-	}
-
-	if cfg.AddOnHollowNodesRemote.MaxOpenFiles == 0 {
-		cfg.AddOnHollowNodesRemote.MaxOpenFiles = 1000000
-	}
-
 	if cfg.AddOnHollowNodesRemote.RepositoryAccountID == "" {
 		return errors.New("AddOnHollowNodesRemote.RepositoryAccountID empty")
 	}
 	if cfg.AddOnHollowNodesRemote.RepositoryName == "" {
 		return errors.New("AddOnHollowNodesRemote.RepositoryName empty")
 	}
-	if cfg.AddOnHollowNodesRemote.RepositoryURI == "" {
-		return errors.New("AddOnHollowNodesRemote.RepositoryURI empty")
-	}
-	if !strings.Contains(cfg.AddOnHollowNodesRemote.RepositoryURI, cfg.AddOnHollowNodesRemote.RepositoryAccountID) {
-		return fmt.Errorf("AddOnHollowNodesRemote.RepositoryURI %q does not have AddOnHollowNodesRemote.RepositoryAccountID %q", cfg.AddOnHollowNodesRemote.RepositoryURI, cfg.AddOnHollowNodesRemote.RepositoryAccountID)
-	}
 	if cfg.AddOnHollowNodesRemote.RepositoryImageTag == "" {
 		return errors.New("AddOnHollowNodesRemote.RepositoryImageTag empty")
+	}
+
+	if cfg.AddOnHollowNodesRemote.DeploymentReplicas == 0 {
+		cfg.AddOnHollowNodesRemote.DeploymentReplicas = 5
+	}
+	if cfg.AddOnHollowNodesRemote.Nodes == 0 {
+		cfg.AddOnHollowNodesRemote.Nodes = 2
+	}
+	if cfg.AddOnHollowNodesRemote.NodeNamePrefix == "" {
+		cfg.AddOnHollowNodesRemote.NodeNamePrefix = "hollow" + randutil.String(5)
+	}
+
+	// e.g. Unable to register node "fake-node-000004-evere" with API server: Node "fake-node-000004-evere" is invalid: [metadata.labels: Invalid value: "...-hollow-nodes-remote-fake-ami-type-duneg": must be no more than 63 characters, metadata.labels: Invalid value: "...-hollow-nodes-remote-fake-ng-name-duneg": must be no more than 63 characters, metadata.labels: Invalid value: "...-hollow-nodes-remote-fake-ng-type-duneg": must be no more than 63 characters]
+	if cfg.AddOnHollowNodesRemote.NodeLabelPrefix == "" {
+		cfg.AddOnHollowNodesRemote.NodeLabelPrefix = "hollow" + randutil.String(5)
+	}
+	if len(cfg.AddOnHollowNodesRemote.NodeLabelPrefix) > 55 {
+		return fmt.Errorf("invalid node label prefix %q (%d characters, label value can not be more than 63 characters)", cfg.AddOnHollowNodesRemote.NodeLabelPrefix, len(cfg.AddOnHollowNodesRemote.NodeLabelPrefix))
+	}
+
+	if cfg.AddOnHollowNodesRemote.MaxOpenFiles == 0 {
+		cfg.AddOnHollowNodesRemote.MaxOpenFiles = 1000000
 	}
 
 	return nil
