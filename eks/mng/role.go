@@ -165,6 +165,13 @@ Resources:
             Resource: "*"
           - Effect: Allow
             Action:
+            - wafv2:GetWebACL
+            - wafv2:GetWebACLForResource
+            - wafv2:AssociateWebACL
+            - wafv2:DisassociateWebACL
+            Resource: "*"
+          - Effect: Allow
+            Action:
             - shield:DescribeProtection
             - shield:GetSubscriptionState
             - shield:DeleteProtection
