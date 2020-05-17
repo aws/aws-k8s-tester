@@ -31,6 +31,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.1...v1.2.2
 
 - Update [`eks/alb-2048` to use `aws-alb-ingress-controller` `v1.1.7` with new `wafv2:*` IAM permissions](https://github.com/aws/aws-k8s-tester/commit/84a53b6c73f51dd9babb98f0b2eb04ad8d7618fe).
   - See https://github.com/kubernetes-sigs/aws-alb-ingress-controller/releases/tag/v1.1.7.
+  - Add [`wafv2:*` to node groups](https://github.com/aws/aws-k8s-tester/commit/a0c7d18428538ef7f69eaf3d0e5af4c9887d8f98).
+  - e.g. `controller.go:217] kubebuilder/controller "msg"="Reconciler error" "error"="failed get WAFv2 webACL for load balancer arn:aws:elasticloadbalancing:us-west-2:607362164682:loadbalancer/app/7fbd7e3d-eks2020051714char-ad37/26de385bd4f0a46a: AccessDeniedException: User: arn:aws:sts::607362164682:assumed-role/eks-2020051714-charisma6fxe-role-ng/i-06acdfc5db3ccf8fd is not authorized to perform: wafv2:GetWebACLForResource on resource: arn:aws:wafv2:us-west-2:607362164682:regional/webacl/*\n\tstatus code: 400, request id: 3c6b7245-b68a-43e5-af74-92e994670229"  "controller"="alb-ingress-controller" "request"={"Namespace":"eks-2020051714-charisma6fxe-alb-2048","Name":"alb-2048-ingress"}`
 - Rename [`eks/alb` to `eks/alb-2048`](https://github.com/aws/aws-k8s-tester/commit/84a53b6c73f51dd9babb98f0b2eb04ad8d7618fe).
 - Rename [`eks/nlb` to `eks/nlb-hello-world`](https://github.com/aws/aws-k8s-tester/commit/84a53b6c73f51dd9babb98f0b2eb04ad8d7618fe).
 - Rename [`eks/cluster-loader` to `eks/cluster-stresser`](https://github.com/aws/aws-k8s-tester/commit/84a53b6c73f51dd9babb98f0b2eb04ad8d7618fe).
