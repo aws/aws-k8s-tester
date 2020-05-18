@@ -1,6 +1,20 @@
 
 
+
 <hr>
+
+
+## [v1.2.3](https://github.com/aws/aws-k8s-tester/releases/tag/v1.2.3) (2020-05)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.2...v1.2.3).
+
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.30.29`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.29) to [`v1.31.0`](https://github.com/aws/aws-sdk-go/releases/tag/v1.31.0).
+
+
+<hr>
+
 
 
 ## [v1.2.2](https://github.com/aws/aws-k8s-tester/releases/tag/v1.2.2) (2020-05-17)
