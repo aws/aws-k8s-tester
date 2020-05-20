@@ -29,6 +29,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.8...v1.1.9
 
 - Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.30.24`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.24) to [`v1.30.26`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.26).
 
+### Go
+
+- Compile with [*Go 1.14.2*](https://golang.org/doc/devel/release.html#go1.14).
+
 
 <hr>
 
@@ -56,6 +60,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.7...v1.1.8
 ### Dependency
 
 - Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.30.22`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.22) to [`v1.30.24`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.24).
+
+### Go
+
+- Compile with [*Go 1.14.2*](https://golang.org/doc/devel/release.html#go1.14).
 
 
 <hr>
@@ -120,6 +128,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.6...v1.1.7
 
 - Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.30.21`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.21) to [`v1.30.22`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.22).
 
+### Go
+
+- Compile with [*Go 1.14.2*](https://golang.org/doc/devel/release.html#go1.14).
+
 
 <hr>
 
@@ -144,6 +156,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.5...v1.1.6
 ### `pkg/randutil`
 
 - Initial [commit](https://github.com/aws/aws-k8s-tester/commit/c0091bd75a3c1ae4ba4df798775bc18b59dfc6fa).
+
+### Go
+
+- Compile with [*Go 1.14.2*](https://golang.org/doc/devel/release.html#go1.14).
 
 
 <hr>
@@ -184,6 +200,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.4...v1.1.5
 
 - Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.30.20`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.20) to [`v1.30.21`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.21).
 
+### Go
+
+- Compile with [*Go 1.14.2*](https://golang.org/doc/devel/release.html#go1.14).
+
 
 <hr>
 
@@ -195,6 +215,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.3...v1.1.4
 ### `eks`
 
 - Fix [managed node group creation when `AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE=false`](https://github.com/aws/aws-k8s-tester/commit/bae9748e9de81f29ef21cad987b816d01cbbdb0f).
+
+### Go
+
+- Compile with [*Go 1.14.2*](https://golang.org/doc/devel/release.html#go1.14).
 
 
 <hr>
@@ -239,6 +263,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.2...v1.1.3
 - Vendor [`k8s.io/kubernetes` for hollow node implementation with `"k8s.io/kubernetes/cmd/kubelet/app/options"`](https://github.com/aws/aws-k8s-tester/commit/48e97fb8935bbebcb6d1716f5f2d3416a2d5bddf).
 - Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.30.18`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.18) to [`v1.30.20`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.20).
 
+### Go
+
+- Compile with [*Go 1.14.2*](https://golang.org/doc/devel/release.html#go1.14).
+
 
 <hr>
 
@@ -274,6 +302,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.1...v1.1.2
 ### Dependency
 
 - Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.30.16`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.16) to [`v1.30.18`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.18).
+
+### Go
+
+- Compile with [*Go 1.14.2*](https://golang.org/doc/devel/release.html#go1.14).
 
 
 <hr>
@@ -311,6 +343,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.0...v1.1.1
 
 - Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.30.15`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.15) to [`v1.30.16`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.16).
 
+### Go
+
+- Compile with [*Go 1.14.2*](https://golang.org/doc/devel/release.html#go1.14).
+
 
 <hr>
 
@@ -336,6 +372,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.0.9...v1.1.0
 ### Dependency
 
 - Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.30.14`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.14) to [`v1.30.15`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.15).
+
+### Go
+
+- Compile with [*Go 1.14.2*](https://golang.org/doc/devel/release.html#go1.14).
 
 
 <hr>

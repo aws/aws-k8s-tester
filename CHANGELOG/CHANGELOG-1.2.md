@@ -9,7 +9,13 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.2...v1.2.3
 
 ### Dependency
 
-- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.30.29`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.29) to [`v1.31.0`](https://github.com/aws/aws-sdk-go/releases/tag/v1.31.0).
+- Upgrade [`github.com/kubernetes/client-go`](https://github.com/kubernetes/client-go/releases) from [`v0.18.2`](https://github.com/kubernetes/clienthttps://github.com/kubernetes/client-go/releases/tag/v0.18.2) to [`v0.18.3`](https://github.com/kubernetes/client-go/releases/tag/v0.18.3).
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.30.29`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.29) to [`v1.31.2`](https://github.com/aws/aws-sdk-go/releases/tag/v1.31.2).
+- Upgrade [`github.com/prometheus/client_golang`](https://github.com/prometheus/client_golang/releases) from [`v1.0.0`](https://github.com/prometheus/client_golang/releases/tag/v1.0.0) to [`v1.6.0`](https://github.com/prometheus/client_golang/releases/tag/v1.6.0).
+
+### Go
+
+- Compile with [*Go 1.14.3*](https://golang.org/doc/devel/release.html#go1.14).
 
 
 <hr>
@@ -59,6 +65,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.1...v1.2.2
 
 - Upgrade [`helm.sh/helm/v3`](https://github.com/helm/helm/releases) from [`v3.2.0`](https://github.com/helm/helm/releases/tag/v3.2.0) to [`v3.2.1`](https://github.com/helm/helm/releases/tag/v3.2.1).
 
+### Go
+
+- Compile with [*Go 1.14.3*](https://golang.org/doc/devel/release.html#go1.14).
+
 
 <hr>
 
@@ -78,6 +88,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.0...v1.2.1
 ### Dependency
 
 - Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.30.28`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.28) to [`v1.30.29`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.29).
+
+### Go
+
+- Compile with [*Go 1.14.3*](https://golang.org/doc/devel/release.html#go1.14).
 
 
 <hr>
@@ -133,6 +147,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.1.9...v1.2.0
 ### Dependency
 
 - Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.30.26`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.26) to [`v1.30.28`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.28).
+
+### Go
+
+- Compile with [*Go 1.14.3*](https://golang.org/doc/devel/release.html#go1.14).
 
 
 <hr>
