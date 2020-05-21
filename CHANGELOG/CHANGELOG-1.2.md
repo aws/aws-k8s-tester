@@ -10,7 +10,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.2...v1.2.3
 ### Dependency
 
 - Upgrade [`github.com/kubernetes/client-go`](https://github.com/kubernetes/client-go/releases) from [`v0.18.2`](https://github.com/kubernetes/clienthttps://github.com/kubernetes/client-go/releases/tag/v0.18.2) to [`v0.18.3`](https://github.com/kubernetes/client-go/releases/tag/v0.18.3).
-- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.30.29`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.29) to [`v1.31.2`](https://github.com/aws/aws-sdk-go/releases/tag/v1.31.2).
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.30.29`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.29) to [`v1.31.3`](https://github.com/aws/aws-sdk-go/releases/tag/v1.31.3).
 - Upgrade [`github.com/prometheus/client_golang`](https://github.com/prometheus/client_golang/releases) from [`v1.0.0`](https://github.com/prometheus/client_golang/releases/tag/v1.0.0) to [`v1.6.0`](https://github.com/prometheus/client_golang/releases/tag/v1.6.0).
 
 ### Go
