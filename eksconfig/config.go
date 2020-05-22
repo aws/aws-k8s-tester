@@ -250,6 +250,10 @@ type Config struct {
 	// add-on Kubeflow.
 	AddOnKubeflow *AddOnKubeflow `json:"add-on-kubeflow,omitempty"`
 
+	// AddOnConformance defines parameters for EKS cluster
+	// add-on Conformance.
+	AddOnConformance *AddOnConformance `json:"add-on-conformance,omitempty"`
+
 	// AddOnHollowNodesLocal defines parameters for EKS cluster
 	// add-on hollow nodes local.
 	// It generates loads from the local host machine.
@@ -269,10 +273,6 @@ type Config struct {
 	// It generates loads from the remote workers (Pod) in the cluster.
 	// ref. https://github.com/kubernetes/perf-tests
 	AddOnStresserRemote *AddOnStresserRemote `json:"add-on-stresser-remote,omitempty"`
-
-	// AddOnConformance defines parameters for EKS cluster
-	// add-on Conformance.
-	AddOnConformance *AddOnConformance `json:"add-on-conformance,omitempty"`
 
 	// Status represents the current status of AWS resources.
 	// Status is read-only.
@@ -643,11 +643,11 @@ func NewDefault() *Config {
 		AddOnWordpress:           getDefaultAddOnWordpress(),
 		AddOnJupyterHub:          getDefaultAddOnJupyterHub(),
 		AddOnKubeflow:            getDefaultAddOnKubeflow(),
+		AddOnConformance:         getDefaultAddOnConformance(),
 		AddOnHollowNodesLocal:    getDefaultAddOnHollowNodesLocal(),
 		AddOnHollowNodesRemote:   getDefaultAddOnHollowNodesRemote(),
 		AddOnStresserLocal:       getDefaultAddOnStresserLocal(),
 		AddOnStresserRemote:      getDefaultAddOnStresserRemote(),
-		AddOnConformance:         getDefaultAddOnConformance(),
 
 		// read-only
 		Status: &Status{Up: false},

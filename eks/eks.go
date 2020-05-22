@@ -145,13 +145,13 @@ type Tester struct {
 	jupyterHubTester  jupyter_hub.Tester
 	kubeflowTester    kubeflow.Tester
 
+	conformanceTester conformance.Tester
+
 	hollowNodesLocalTester  hollow_nodes_local.Tester
 	hollowNodesRemoteTester hollow_nodes_remote.Tester
 
 	stresserLocalTester  stresser_local.Tester
 	stresserRemoteTester stresser_remote.Tester
-
-	conformanceTester conformance.Tester
 }
 
 // New returns a new EKS kubetest2 Deployer.
@@ -708,6 +708,16 @@ func (ts *Tester) createSubTesters() (err error) {
 		})
 	}
 
+	if ts.cfg.IsEnabledAddOnConformance() {
+		ts.lg.Info("creating conformanceTester")
+		ts.conformanceTester, err = conformance.New(conformance.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			EKSConfig: ts.cfg,
+			K8SClient: ts.k8sClient,
+		})
+	}
+
 	if ts.cfg.IsEnabledAddOnHollowNodesLocal() {
 		ts.lg.Info("creating hollowNodesLocalTester")
 		ts.hollowNodesLocalTester, err = hollow_nodes_local.New(hollow_nodes_local.Config{
@@ -745,16 +755,6 @@ func (ts *Tester) createSubTesters() (err error) {
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 			ECRAPI:    ts.ecrAPI,
-		})
-	}
-
-	if ts.cfg.IsEnabledAddOnConformance() {
-		ts.lg.Info("creating conformanceTester")
-		ts.conformanceTester, err = conformance.New(conformance.Config{
-			Logger:    ts.lg,
-			Stopc:     ts.stopCreationCh,
-			EKSConfig: ts.cfg,
-			K8SClient: ts.k8sClient,
 		})
 	}
 
@@ -1448,6 +1448,23 @@ func (ts *Tester) Up() (err error) {
 		}
 	}
 
+	if ts.cfg.IsEnabledAddOnConformance() {
+		if ts.conformanceTester == nil {
+			return errors.New("ts.conformanceTester == nil when AddOnConformance.Enable == true")
+		}
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("conformanceTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnConformance.Namespace)
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.osSig,
+			ts.conformanceTester.Create,
+		); err != nil {
+			return err
+		}
+	}
+
 	if ts.cfg.IsEnabledAddOnHollowNodesLocal() {
 		if ts.hollowNodesLocalTester == nil {
 			return errors.New("ts.hollowNodesLocalTester == nil when AddOnHollowNodesLocal.Enable == true")
@@ -1509,23 +1526,6 @@ func (ts *Tester) Up() (err error) {
 			ts.stopCreationChOnce,
 			ts.osSig,
 			ts.stresserRemoteTester.Create,
-		); err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnConformance() {
-		if ts.conformanceTester == nil {
-			return errors.New("ts.conformanceTester == nil when AddOnConformance.Enable == true")
-		}
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("conformanceTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnConformance.Namespace)
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.osSig,
-			ts.conformanceTester.Create,
 		); err != nil {
 			return err
 		}
@@ -1594,20 +1594,6 @@ func (ts *Tester) Up() (err error) {
 			}
 		}
 
-		if ts.cfg.IsEnabledAddOnConfigMapsRemote() {
-			fmt.Printf("\n*********************************\n")
-			fmt.Printf("configMapsRemoteTester.AggregateResults (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnConfigMapsRemote.Namespace)
-			if err := catchInterrupt(
-				ts.lg,
-				ts.stopCreationCh,
-				ts.stopCreationChOnce,
-				ts.osSig,
-				ts.configMapsRemoteTester.AggregateResults,
-			); err != nil {
-				return err
-			}
-		}
-
 		if ts.cfg.IsEnabledAddOnSecretsRemote() {
 			fmt.Printf("\n*********************************\n")
 			fmt.Printf("secretsRemoteTester.AggregateResults (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnSecretsRemote.Namespace)
@@ -1631,6 +1617,20 @@ func (ts *Tester) Up() (err error) {
 				ts.stopCreationChOnce,
 				ts.osSig,
 				ts.irsaTester.AggregateResults,
+			); err != nil {
+				return err
+			}
+		}
+
+		if ts.cfg.IsEnabledAddOnConfigMapsRemote() {
+			fmt.Printf("\n*********************************\n")
+			fmt.Printf("configMapsRemoteTester.AggregateResults (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnConfigMapsRemote.Namespace)
+			if err := catchInterrupt(
+				ts.lg,
+				ts.stopCreationCh,
+				ts.stopCreationChOnce,
+				ts.osSig,
+				ts.configMapsRemoteTester.AggregateResults,
 			); err != nil {
 				return err
 			}
@@ -1745,19 +1745,6 @@ func (ts *Tester) down() (err error) {
 		errs = append(errs, err.Error())
 	}
 
-	if ts.cfg.IsEnabledAddOnConformance() && ts.cfg.AddOnConformance.Created {
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("conformanceTester.Delete (%q)\n", ts.cfg.ConfigPath)
-		if err := ts.conformanceTester.Delete(); err != nil {
-			ts.lg.Warn("conformanceTester.Delete failed", zap.Error(err))
-			errs = append(errs, err.Error())
-		} else {
-			waitDur := 20 * time.Second
-			ts.lg.Info("sleeping after deleting conformanceTester", zap.Duration("wait", waitDur))
-			time.Sleep(waitDur)
-		}
-	}
-
 	if ts.cfg.IsEnabledAddOnStresserRemote() && ts.cfg.AddOnStresserRemote.Created {
 		fmt.Printf("\n*********************************\n")
 		fmt.Printf("stresserRemoteTester.Delete (%q)\n", ts.cfg.ConfigPath)
@@ -1797,6 +1784,19 @@ func (ts *Tester) down() (err error) {
 		if err := ts.hollowNodesLocalTester.Delete(); err != nil {
 			ts.lg.Warn("hollowNodesLocalTester.Delete failed", zap.Error(err))
 			errs = append(errs, err.Error())
+		}
+	}
+
+	if ts.cfg.IsEnabledAddOnConformance() && ts.cfg.AddOnConformance.Created {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("conformanceTester.Delete (%q)\n", ts.cfg.ConfigPath)
+		if err := ts.conformanceTester.Delete(); err != nil {
+			ts.lg.Warn("conformanceTester.Delete failed", zap.Error(err))
+			errs = append(errs, err.Error())
+		} else {
+			waitDur := 20 * time.Second
+			ts.lg.Info("sleeping after deleting conformanceTester", zap.Duration("wait", waitDur))
+			time.Sleep(waitDur)
 		}
 	}
 

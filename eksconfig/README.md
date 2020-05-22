@@ -24,11 +24,11 @@ AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_ENABLE=true \
+AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_ENABLE=true \
-AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_ENABLE=true \
 
 
 
@@ -559,6 +559,31 @@ AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_ENABLE=true \
 *-------------------------------------------------------*-------------------*-------------------------------------------*---------------*
 
 
+*---------------------------------------------------------------------------*-------------------*-------------------------------------------------------------*---------------*
+|                          ENVIRONMENTAL VARIABLE                           |     READ ONLY     |                            TYPE                             |    GO TYPE    |
+*---------------------------------------------------------------------------*-------------------*-------------------------------------------------------------*---------------*
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_ENABLE                              | read-only "false" | *eksconfig.AddOnConformance.Enable                          | bool          |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_CREATED                             | read-only "true"  | *eksconfig.AddOnConformance.Created                         | bool          |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_CREATE_TOOK                         | read-only "true"  | *eksconfig.AddOnConformance.CreateTook                      | time.Duration |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_CREATE_TOOK_STRING                  | read-only "true"  | *eksconfig.AddOnConformance.CreateTookString                | string        |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_DELETE_TOOK                         | read-only "true"  | *eksconfig.AddOnConformance.DeleteTook                      | time.Duration |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_DELETE_TOOK_STRING                  | read-only "true"  | *eksconfig.AddOnConformance.DeleteTookString                | string        |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_NAMESPACE                           | read-only "false" | *eksconfig.AddOnConformance.Namespace                       | string        |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_PATH                       | read-only "false" | *eksconfig.AddOnConformance.SonobuoyPath                    | string        |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_DOWNLOAD_URL               | read-only "false" | *eksconfig.AddOnConformance.SonobuoyDownloadURL             | string        |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_DELETE_TIMEOUT             | read-only "false" | *eksconfig.AddOnConformance.SonobuoyDeleteTimeout           | time.Duration |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_DELETE_TIMEOUT_STRING      | read-only "true"  | *eksconfig.AddOnConformance.SonobuoyDeleteTimeoutString     | string        |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_TIMEOUT                | read-only "false" | *eksconfig.AddOnConformance.SonobuoyRunTimeout              | time.Duration |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_TIMEOUT_STRING         | read-only "true"  | *eksconfig.AddOnConformance.SonobuoyRunTimeoutString        | string        |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_MODE                   | read-only "false" | *eksconfig.AddOnConformance.SonobuoyRunMode                 | string        |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_KUBE_CONFORMANCE_IMAGE | read-only "false" | *eksconfig.AddOnConformance.SonobuoyRunKubeConformanceImage | string        |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RESULT_TAR_GZ_PATH         | read-only "true"  | *eksconfig.AddOnConformance.SonobuoyResultTarGzPath         | string        |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RESULT_DIR                 | read-only "true"  | *eksconfig.AddOnConformance.SonobuoyResultDir               | string        |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RESULT_E2E_LOG_PATH        | read-only "true"  | *eksconfig.AddOnConformance.SonobuoyResultE2eLogPath        | string        |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RESULT_JUNIT_XML_PATH      | read-only "true"  | *eksconfig.AddOnConformance.SonobuoyResultJunitXMLPath      | string        |
+*---------------------------------------------------------------------------*-------------------*-------------------------------------------------------------*---------------*
+
+
 *-----------------------------------------------------------------*-------------------*---------------------------------------------------*-------------------*
 |                     ENVIRONMENTAL VARIABLE                      |     READ ONLY     |                       TYPE                        |      GO TYPE      |
 *-----------------------------------------------------------------*-------------------*---------------------------------------------------*-------------------*
@@ -647,31 +672,6 @@ AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_WRITES_OUTPUT_NAME_PREFIX | read-only "false" | *eksconfig.AddOnStresserRemote.RequestsSummaryWritesOutputNamePrefix | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_READS_OUTPUT_NAME_PREFIX  | read-only "false" | *eksconfig.AddOnStresserRemote.RequestsSummaryReadsOutputNamePrefix  | string                  |
 *--------------------------------------------------------------------------------------*-------------------*----------------------------------------------------------------------*-------------------------*
-
-
-*---------------------------------------------------------------------------*-------------------*-------------------------------------------------------------*---------------*
-|                          ENVIRONMENTAL VARIABLE                           |     READ ONLY     |                            TYPE                             |    GO TYPE    |
-*---------------------------------------------------------------------------*-------------------*-------------------------------------------------------------*---------------*
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_ENABLE                              | read-only "false" | *eksconfig.AddOnConformance.Enable                          | bool          |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_CREATED                             | read-only "true"  | *eksconfig.AddOnConformance.Created                         | bool          |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_CREATE_TOOK                         | read-only "true"  | *eksconfig.AddOnConformance.CreateTook                      | time.Duration |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_CREATE_TOOK_STRING                  | read-only "true"  | *eksconfig.AddOnConformance.CreateTookString                | string        |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_DELETE_TOOK                         | read-only "true"  | *eksconfig.AddOnConformance.DeleteTook                      | time.Duration |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_DELETE_TOOK_STRING                  | read-only "true"  | *eksconfig.AddOnConformance.DeleteTookString                | string        |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_NAMESPACE                           | read-only "false" | *eksconfig.AddOnConformance.Namespace                       | string        |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_PATH                       | read-only "false" | *eksconfig.AddOnConformance.SonobuoyPath                    | string        |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_DOWNLOAD_URL               | read-only "false" | *eksconfig.AddOnConformance.SonobuoyDownloadURL             | string        |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_DELETE_TIMEOUT             | read-only "false" | *eksconfig.AddOnConformance.SonobuoyDeleteTimeout           | time.Duration |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_DELETE_TIMEOUT_STRING      | read-only "true"  | *eksconfig.AddOnConformance.SonobuoyDeleteTimeoutString     | string        |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_TIMEOUT                | read-only "false" | *eksconfig.AddOnConformance.SonobuoyRunTimeout              | time.Duration |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_TIMEOUT_STRING         | read-only "true"  | *eksconfig.AddOnConformance.SonobuoyRunTimeoutString        | string        |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_MODE                   | read-only "false" | *eksconfig.AddOnConformance.SonobuoyRunMode                 | string        |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_KUBE_CONFORMANCE_IMAGE | read-only "false" | *eksconfig.AddOnConformance.SonobuoyRunKubeConformanceImage | string        |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RESULT_TAR_GZ_PATH         | read-only "true"  | *eksconfig.AddOnConformance.SonobuoyResultTarGzPath         | string        |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RESULT_DIR                 | read-only "true"  | *eksconfig.AddOnConformance.SonobuoyResultDir               | string        |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RESULT_E2E_LOG_PATH        | read-only "true"  | *eksconfig.AddOnConformance.SonobuoyResultE2eLogPath        | string        |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RESULT_JUNIT_XML_PATH      | read-only "true"  | *eksconfig.AddOnConformance.SonobuoyResultJunitXMLPath      | string        |
-*---------------------------------------------------------------------------*-------------------*-------------------------------------------------------------*---------------*
 
 
 ```

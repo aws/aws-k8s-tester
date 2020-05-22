@@ -449,6 +449,42 @@ func (ts *Tester) uploadToS3() (err error) {
 		}
 	}
 
+	if ts.cfg.IsEnabledAddOnConformance() {
+		if fileutil.Exist(ts.cfg.AddOnConformance.SonobuoyResultTarGzPath) {
+			if err = uploadFileToS3(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "sonobuoy-result.tar.gz"),
+				ts.cfg.AddOnConformance.SonobuoyResultTarGzPath,
+			); err != nil {
+				return err
+			}
+		}
+		if fileutil.Exist(ts.cfg.AddOnConformance.SonobuoyResultE2eLogPath) {
+			if err = uploadFileToS3(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "sonobuoy-result.e2e.log"),
+				ts.cfg.AddOnConformance.SonobuoyResultE2eLogPath,
+			); err != nil {
+				return err
+			}
+		}
+		if fileutil.Exist(ts.cfg.AddOnConformance.SonobuoyResultJunitXMLPath) {
+			if err = uploadFileToS3(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "sonobuoy-result.junit.xml"),
+				ts.cfg.AddOnConformance.SonobuoyResultJunitXMLPath,
+			); err != nil {
+				return err
+			}
+		}
+	}
+
 	if ts.cfg.IsEnabledAddOnStresserLocal() {
 		if fileutil.Exist(ts.cfg.AddOnStresserLocal.RequestsSummaryWritesJSONPath) {
 			if err = uploadFileToS3(
@@ -537,42 +573,6 @@ func (ts *Tester) uploadToS3() (err error) {
 				ts.cfg.S3BucketName,
 				path.Join(ts.cfg.Name, "stresser-remote-requests-summary-reads.txt"),
 				ts.cfg.AddOnStresserRemote.RequestsSummaryReadsTablePath,
-			); err != nil {
-				return err
-			}
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnConformance() {
-		if fileutil.Exist(ts.cfg.AddOnConformance.SonobuoyResultTarGzPath) {
-			if err = uploadFileToS3(
-				ts.lg,
-				ts.s3API,
-				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "sonobuoy-result.tar.gz"),
-				ts.cfg.AddOnConformance.SonobuoyResultTarGzPath,
-			); err != nil {
-				return err
-			}
-		}
-		if fileutil.Exist(ts.cfg.AddOnConformance.SonobuoyResultE2eLogPath) {
-			if err = uploadFileToS3(
-				ts.lg,
-				ts.s3API,
-				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "sonobuoy-result.e2e.log"),
-				ts.cfg.AddOnConformance.SonobuoyResultE2eLogPath,
-			); err != nil {
-				return err
-			}
-		}
-		if fileutil.Exist(ts.cfg.AddOnConformance.SonobuoyResultJunitXMLPath) {
-			if err = uploadFileToS3(
-				ts.lg,
-				ts.s3API,
-				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "sonobuoy-result.junit.xml"),
-				ts.cfg.AddOnConformance.SonobuoyResultJunitXMLPath,
 			); err != nil {
 				return err
 			}

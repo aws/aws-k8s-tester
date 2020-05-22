@@ -1,5 +1,23 @@
 
 
+
+<hr>
+
+
+## [v1.2.4](https://github.com/aws/aws-k8s-tester/releases/tag/v1.2.4) (2020-05-22)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.3...v1.2.4).
+
+### `eks`
+
+- Run  [`AddOnConformance` before `AddOnHollowNodes*` and `AddOnStresser*`](https://github.com/aws/aws-k8s-tester/commit/).
+  - Do not run conformance tests with hollow nodes.
+
+### Go
+
+- Compile with [*Go 1.14.3*](https://golang.org/doc/devel/release.html#go1.14).
+
+
 <hr>
 
 
