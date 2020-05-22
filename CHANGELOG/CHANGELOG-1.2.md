@@ -10,7 +10,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.3...v1.2.4
 
 ### `eks`
 
-- Run  [`AddOnConformance` before `AddOnHollowNodes*` and `AddOnStresser*`](https://github.com/aws/aws-k8s-tester/commit/).
+- Run  [`AddOnConformance` before `AddOnHollowNodes*` and `AddOnStresser*`](https://github.com/aws/aws-k8s-tester/commit/6499c5d462f165bb36f4cb26439309cc6fa19e46).
   - Do not run conformance tests with hollow nodes.
 
 ### Go
