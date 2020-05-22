@@ -311,7 +311,7 @@ func (ts *tester) checkSonobuoy() (err error) {
 			lines = lines[:300]
 			out = strings.Join(lines, "\n")
 		}
-		fmt.Printf("\n'%s' output (last 300 lines):\n\n%s\n\n", cmdLogs, out)
+		fmt.Printf("\n'%s' output (total %d lines, last 300 lines):\n\n%s\n\n", cmdLogs, linesN, out)
 
 		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 		output, err = exec.New().CommandContext(ctx, argsStatus[0], argsStatus[1:]...).CombinedOutput()
