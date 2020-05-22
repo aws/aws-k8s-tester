@@ -502,6 +502,15 @@ func parseEnvs(pfx string, addOn interface{}) (interface{}, error) {
 					vv.Field(i).SetMapIndex(reflect.ValueOf(fields[0]), reflect.ValueOf(fields[1]))
 				}
 
+			case "DeploymentNodeSelector",
+				"DeploymentNodeSelector2048":
+				vv.Field(i).Set(reflect.ValueOf(make(map[string]string)))
+				mm := make(map[string]string)
+				if err := json.Unmarshal([]byte(sv), &mm); err != nil {
+					return nil, fmt.Errorf("failed to parse %q (field name %q, environmental variable key %q, error %v)", sv, fieldName, env, err)
+				}
+				vv.Field(i).Set(reflect.ValueOf(mm))
+
 			case "ASGs":
 				asgs := make(map[string]ASG)
 				if err := json.Unmarshal([]byte(sv), &asgs); err != nil {

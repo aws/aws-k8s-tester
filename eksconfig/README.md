@@ -213,39 +213,41 @@ AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_ENABLE=true \
 *----------------------------------------------------------------------*-------------------*--------------------------------------------------------*---------------*
 
 
-*---------------------------------------------------------------*-------------------*--------------------------------------------------*---------------*
-|                    ENVIRONMENTAL VARIABLE                     |     READ ONLY     |                       TYPE                       |    GO TYPE    |
-*---------------------------------------------------------------*-------------------*--------------------------------------------------*---------------*
-| AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_ENABLE              | read-only "false" | *eksconfig.AddOnNLBHelloWorld.Enable             | bool          |
-| AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_CREATED             | read-only "true"  | *eksconfig.AddOnNLBHelloWorld.Created            | bool          |
-| AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_CREATE_TOOK         | read-only "true"  | *eksconfig.AddOnNLBHelloWorld.CreateTook         | time.Duration |
-| AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_CREATE_TOOK_STRING  | read-only "true"  | *eksconfig.AddOnNLBHelloWorld.CreateTookString   | string        |
-| AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_DELETE_TOOK         | read-only "true"  | *eksconfig.AddOnNLBHelloWorld.DeleteTook         | time.Duration |
-| AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_DELETE_TOOK_STRING  | read-only "true"  | *eksconfig.AddOnNLBHelloWorld.DeleteTookString   | string        |
-| AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_NAMESPACE           | read-only "false" | *eksconfig.AddOnNLBHelloWorld.Namespace          | string        |
-| AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_DEPLOYMENT_REPLICAS | read-only "false" | *eksconfig.AddOnNLBHelloWorld.DeploymentReplicas | int32         |
-| AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_NLB_ARN             | read-only "true"  | *eksconfig.AddOnNLBHelloWorld.NLBARN             | string        |
-| AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_NLB_NAME            | read-only "true"  | *eksconfig.AddOnNLBHelloWorld.NLBName            | string        |
-| AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_URL                 | read-only "true"  | *eksconfig.AddOnNLBHelloWorld.URL                | string        |
-*---------------------------------------------------------------*-------------------*--------------------------------------------------*---------------*
+*--------------------------------------------------------------------*-------------------*------------------------------------------------------*-------------------*
+|                       ENVIRONMENTAL VARIABLE                       |     READ ONLY     |                         TYPE                         |      GO TYPE      |
+*--------------------------------------------------------------------*-------------------*------------------------------------------------------*-------------------*
+| AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_ENABLE                   | read-only "false" | *eksconfig.AddOnNLBHelloWorld.Enable                 | bool              |
+| AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_CREATED                  | read-only "true"  | *eksconfig.AddOnNLBHelloWorld.Created                | bool              |
+| AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_CREATE_TOOK              | read-only "true"  | *eksconfig.AddOnNLBHelloWorld.CreateTook             | time.Duration     |
+| AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_CREATE_TOOK_STRING       | read-only "true"  | *eksconfig.AddOnNLBHelloWorld.CreateTookString       | string            |
+| AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_DELETE_TOOK              | read-only "true"  | *eksconfig.AddOnNLBHelloWorld.DeleteTook             | time.Duration     |
+| AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_DELETE_TOOK_STRING       | read-only "true"  | *eksconfig.AddOnNLBHelloWorld.DeleteTookString       | string            |
+| AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_NAMESPACE                | read-only "false" | *eksconfig.AddOnNLBHelloWorld.Namespace              | string            |
+| AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_DEPLOYMENT_REPLICAS      | read-only "false" | *eksconfig.AddOnNLBHelloWorld.DeploymentReplicas     | int32             |
+| AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_DEPLOYMENT_NODE_SELECTOR | read-only "false" | *eksconfig.AddOnNLBHelloWorld.DeploymentNodeSelector | map[string]string |
+| AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_NLB_ARN                  | read-only "true"  | *eksconfig.AddOnNLBHelloWorld.NLBARN                 | string            |
+| AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_NLB_NAME                 | read-only "true"  | *eksconfig.AddOnNLBHelloWorld.NLBName                | string            |
+| AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_URL                      | read-only "true"  | *eksconfig.AddOnNLBHelloWorld.URL                    | string            |
+*--------------------------------------------------------------------*-------------------*------------------------------------------------------*-------------------*
 
 
-*-------------------------------------------------------------*-------------------*------------------------------------------------*---------------*
-|                   ENVIRONMENTAL VARIABLE                    |     READ ONLY     |                      TYPE                      |    GO TYPE    |
-*-------------------------------------------------------------*-------------------*------------------------------------------------*---------------*
-| AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_ENABLE                   | read-only "false" | *eksconfig.AddOnALB2048.Enable                 | bool          |
-| AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_CREATED                  | read-only "true"  | *eksconfig.AddOnALB2048.Created                | bool          |
-| AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_CREATE_TOOK              | read-only "true"  | *eksconfig.AddOnALB2048.CreateTook             | time.Duration |
-| AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_CREATE_TOOK_STRING       | read-only "true"  | *eksconfig.AddOnALB2048.CreateTookString       | string        |
-| AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_DELETE_TOOK              | read-only "true"  | *eksconfig.AddOnALB2048.DeleteTook             | time.Duration |
-| AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_DELETE_TOOK_STRING       | read-only "true"  | *eksconfig.AddOnALB2048.DeleteTookString       | string        |
-| AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_NAMESPACE                | read-only "false" | *eksconfig.AddOnALB2048.Namespace              | string        |
-| AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_DEPLOYMENT_REPLICAS_ALB  | read-only "false" | *eksconfig.AddOnALB2048.DeploymentReplicasALB  | int32         |
-| AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_DEPLOYMENT_REPLICAS_2048 | read-only "false" | *eksconfig.AddOnALB2048.DeploymentReplicas2048 | int32         |
-| AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_ALB_ARN                  | read-only "true"  | *eksconfig.AddOnALB2048.ALBARN                 | string        |
-| AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_ALB_NAME                 | read-only "true"  | *eksconfig.AddOnALB2048.ALBName                | string        |
-| AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_URL                      | read-only "true"  | *eksconfig.AddOnALB2048.URL                    | string        |
-*-------------------------------------------------------------*-------------------*------------------------------------------------*---------------*
+*------------------------------------------------------------------*-------------------*----------------------------------------------------*-------------------*
+|                      ENVIRONMENTAL VARIABLE                      |     READ ONLY     |                        TYPE                        |      GO TYPE      |
+*------------------------------------------------------------------*-------------------*----------------------------------------------------*-------------------*
+| AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_ENABLE                        | read-only "false" | *eksconfig.AddOnALB2048.Enable                     | bool              |
+| AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_CREATED                       | read-only "true"  | *eksconfig.AddOnALB2048.Created                    | bool              |
+| AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_CREATE_TOOK                   | read-only "true"  | *eksconfig.AddOnALB2048.CreateTook                 | time.Duration     |
+| AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_CREATE_TOOK_STRING            | read-only "true"  | *eksconfig.AddOnALB2048.CreateTookString           | string            |
+| AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_DELETE_TOOK                   | read-only "true"  | *eksconfig.AddOnALB2048.DeleteTook                 | time.Duration     |
+| AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_DELETE_TOOK_STRING            | read-only "true"  | *eksconfig.AddOnALB2048.DeleteTookString           | string            |
+| AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_NAMESPACE                     | read-only "false" | *eksconfig.AddOnALB2048.Namespace                  | string            |
+| AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_DEPLOYMENT_REPLICAS_ALB       | read-only "false" | *eksconfig.AddOnALB2048.DeploymentReplicasALB      | int32             |
+| AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_DEPLOYMENT_REPLICAS_2048      | read-only "false" | *eksconfig.AddOnALB2048.DeploymentReplicas2048     | int32             |
+| AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_DEPLOYMENT_NODE_SELECTOR_2048 | read-only "false" | *eksconfig.AddOnALB2048.DeploymentNodeSelector2048 | map[string]string |
+| AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_ALB_ARN                       | read-only "true"  | *eksconfig.AddOnALB2048.ALBARN                     | string            |
+| AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_ALB_NAME                      | read-only "true"  | *eksconfig.AddOnALB2048.ALBName                    | string            |
+| AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_URL                           | read-only "true"  | *eksconfig.AddOnALB2048.URL                        | string            |
+*------------------------------------------------------------------*-------------------*----------------------------------------------------*-------------------*
 
 
 *------------------------------------------------------*-------------------*-----------------------------------------*---------------*

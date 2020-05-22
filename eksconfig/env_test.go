@@ -170,6 +170,8 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_DEPLOYMENT_REPLICAS")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_NAMESPACE", "test-namespace")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_DEPLOYMENT_NODE_SELECTOR", `{"a":"b","c":"d"}`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_DEPLOYMENT_NODE_SELECTOR")
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_ENABLE")
@@ -179,6 +181,8 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_DEPLOYMENT_REPLICAS_2048")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_NAMESPACE", "test-namespace")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_DEPLOYMENT_NODE_SELECTOR_2048", `{"1":"2","3":"4", "5":"6"}`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_DEPLOYMENT_NODE_SELECTOR_2048")
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_ENABLE")
@@ -730,6 +734,10 @@ func TestEnv(t *testing.T) {
 	if cfg.AddOnNLBHelloWorld.Namespace != "test-namespace" {
 		t.Fatalf("unexpected cfg.AddOnNLBHelloWorld.Namespace %q", cfg.AddOnNLBHelloWorld.Namespace)
 	}
+	expectedNodeSelectorNLB := map[string]string{"a": "b", "c": "d"}
+	if !reflect.DeepEqual(cfg.AddOnNLBHelloWorld.DeploymentNodeSelector, expectedNodeSelectorNLB) {
+		t.Fatalf("unexpected cfg.AddOnNLBHelloWorld.DeploymentNodeSelector %v", cfg.AddOnNLBHelloWorld.DeploymentNodeSelector)
+	}
 
 	if !cfg.AddOnALB2048.Enable {
 		t.Fatalf("unexpected cfg.AddOnALB2048.Enable %v", cfg.AddOnALB2048.Enable)
@@ -742,6 +750,10 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.AddOnALB2048.Namespace != "test-namespace" {
 		t.Fatalf("unexpected cfg.AddOnALB2048.Namespace %q", cfg.AddOnALB2048.Namespace)
+	}
+	expectedNodeSelectorALB := map[string]string{"1": "2", "3": "4", "5": "6"}
+	if !reflect.DeepEqual(cfg.AddOnALB2048.DeploymentNodeSelector2048, expectedNodeSelectorALB) {
+		t.Fatalf("unexpected cfg.AddOnALB2048.DeploymentNodeSelector2048 %v", cfg.AddOnALB2048.DeploymentNodeSelector2048)
 	}
 
 	if !cfg.AddOnJobsPi.Enable {

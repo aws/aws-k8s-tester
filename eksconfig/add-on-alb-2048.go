@@ -29,6 +29,9 @@ type AddOnALB2048 struct {
 	DeploymentReplicasALB int32 `json:"deployment-replicas-alb"`
 	// DeploymentReplicas2048 is the number of 2048 replicas to deploy using "Deployment" object.
 	DeploymentReplicas2048 int32 `json:"deployment-replicas-2048"`
+	// DeploymentNodeSelector2048 is configured to overwrite existing node selector
+	// for ALB 2048 deployment. If left empty, tester sets default selector.
+	DeploymentNodeSelector2048 map[string]string `json:"deployment-node-selector-2048"`
 
 	// ALBARN is the ARN of the ALB created from the service.
 	ALBARN string `json:"alb-arn" read-only:"true"`
@@ -56,9 +59,10 @@ func (cfg *Config) IsEnabledAddOnALB2048() bool {
 
 func getDefaultAddOnALB2048() *AddOnALB2048 {
 	return &AddOnALB2048{
-		Enable:                 false,
-		DeploymentReplicasALB:  3,
-		DeploymentReplicas2048: 3,
+		Enable:                     false,
+		DeploymentReplicasALB:      3,
+		DeploymentReplicas2048:     3,
+		DeploymentNodeSelector2048: make(map[string]string),
 	}
 }
 

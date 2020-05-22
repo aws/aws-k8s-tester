@@ -27,6 +27,9 @@ type AddOnNLBHelloWorld struct {
 
 	// DeploymentReplicas is the number of replicas to deploy using "Deployment" object.
 	DeploymentReplicas int32 `json:"deployment-replicas"`
+	// DeploymentNodeSelector is configured to overwrite existing node selector
+	// for NLB hello world deployment. If left empty, tester sets default selector.
+	DeploymentNodeSelector map[string]string `json:"deployment-node-selector"`
 
 	// NLBARN is the ARN of the NLB created from the service.
 	NLBARN string `json:"nlb-arn" read-only:"true"`
@@ -54,8 +57,9 @@ func (cfg *Config) IsEnabledAddOnNLBHelloWorld() bool {
 
 func getDefaultAddOnNLBHelloWorld() *AddOnNLBHelloWorld {
 	return &AddOnNLBHelloWorld{
-		Enable:             false,
-		DeploymentReplicas: 3,
+		Enable:                 false,
+		DeploymentReplicas:     3,
+		DeploymentNodeSelector: make(map[string]string),
 	}
 }
 

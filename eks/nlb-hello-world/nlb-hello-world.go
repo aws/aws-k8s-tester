@@ -160,7 +160,13 @@ func (ts *tester) Delete() error {
 }
 
 func (ts *tester) createDeployment() error {
-	ts.cfg.Logger.Info("creating NLB hello-world Deployment")
+	var nodeSelector map[string]string
+	if len(ts.cfg.EKSConfig.AddOnNLBHelloWorld.DeploymentNodeSelector) > 0 {
+		nodeSelector = ts.cfg.EKSConfig.AddOnNLBHelloWorld.DeploymentNodeSelector
+	} else {
+		nodeSelector = nil
+	}
+	ts.cfg.Logger.Info("creating NLB hello-world Deployment", zap.Any("node-selector", nodeSelector))
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.K8SClient.KubernetesClientSet().
 		AppsV1().
@@ -206,6 +212,7 @@ func (ts *tester) createDeployment() error {
 									},
 								},
 							},
+							NodeSelector: nodeSelector,
 						},
 					},
 				},
