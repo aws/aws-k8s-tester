@@ -9,15 +9,15 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.2...v1.2.3
 
 ### `eks`
 
-- `eks/nlb-hello-world` uses [`AddOnNLBHelloWorld.DeploymentNodeSelector` to overwrite node selector](https://github.com/aws/aws-k8s-tester/commit/).
-- `eks/alb-2048` uses [`AddOnALB2048.DeploymentNodeSelector2048` to overwrite node selector](https://github.com/aws/aws-k8s-tester/commit/).
+- `eks/nlb-hello-world` uses [`AddOnNLBHelloWorld.DeploymentNodeSelector` to overwrite node selector](https://github.com/aws/aws-k8s-tester/commit/107e88f1c7b4f6d859eb386138cae5e792c71a86).
+- `eks/alb-2048` uses [`AddOnALB2048.DeploymentNodeSelector2048` to overwrite node selector](https://github.com/aws/aws-k8s-tester/commit/107e88f1c7b4f6d859eb386138cae5e792c71a86).
 
 ### `eksconfig`
 
-- Add [optional `AddOnNLBHelloWorld.DeploymentNodeSelector`](https://github.com/aws/aws-k8s-tester/commit/).
-  - `AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_DEPLOYMENT_NODE_SELECTOR`.
-- Add [optional `AddOnALB2048.DeploymentNodeSelector2048`](https://github.com/aws/aws-k8s-tester/commit/).
-  - `AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_DEPLOYMENT_NODE_SELECTOR_2048`.
+- Add [optional `AddOnNLBHelloWorld.DeploymentNodeSelector`](https://github.com/aws/aws-k8s-tester/commit/107e88f1c7b4f6d859eb386138cae5e792c71a86).
+  - e.g. `AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_DEPLOYMENT_NODE_SELECTOR='{"a":"b","c":"d"}'`.
+- Add [optional `AddOnALB2048.DeploymentNodeSelector2048`](https://github.com/aws/aws-k8s-tester/commit/107e88f1c7b4f6d859eb386138cae5e792c71a86).
+  - e.g. `AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_DEPLOYMENT_NODE_SELECTOR_2048='{"a":"b","c":"d"}'`.
 
 ### Dependency
 
