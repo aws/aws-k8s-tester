@@ -79,6 +79,19 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *AddOnManagedNodeGroups, got %T", vv)
 	}
 
+	if cfg.AddOnConformance == nil {
+		cfg.AddOnConformance = &AddOnConformance{}
+	}
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnConformance, cfg.AddOnConformance)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*AddOnConformance); ok {
+		cfg.AddOnConformance = av
+	} else {
+		return fmt.Errorf("expected *AddOnConformance, got %T", vv)
+	}
+
 	if cfg.AddOnCSIEBS == nil {
 		cfg.AddOnCSIEBS = &AddOnCSIEBS{}
 	}
@@ -402,19 +415,6 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		cfg.AddOnStresserRemote = av
 	} else {
 		return fmt.Errorf("expected *AddOnStresserRemote, got %T", vv)
-	}
-
-	if cfg.AddOnConformance == nil {
-		cfg.AddOnConformance = &AddOnConformance{}
-	}
-	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnConformance, cfg.AddOnConformance)
-	if err != nil {
-		return err
-	}
-	if av, ok := vv.(*AddOnConformance); ok {
-		cfg.AddOnConformance = av
-	} else {
-		return fmt.Errorf("expected *AddOnConformance, got %T", vv)
 	}
 
 	return nil

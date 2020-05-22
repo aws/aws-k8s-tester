@@ -81,6 +81,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS='{"GetRef.Name-ng-al2-cpu":{"name":"G
 AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_CREATE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS='{"GetRef.Name-mng-al2-cpu":{"name":"GetRef.Name-mng-al2-cpu","remote-access-user-name":"ec2-user","release-version":"","ami-type":"AL2_x86_64","instance-types":["c5.xlarge"],"volume-size":40,"asg-min-size":2,"asg-max-size":2,"asg-desired-capacity":2},"GetRef.Name-mng-al2-gpu":{"name":"GetRef.Name-mng-al2-gpu","remote-access-user-name":"ec2-user","release-version":"","ami-type":"AL2_x86_64_GPU","instance-types":["p3.8xlarge"],"volume-size":40,"asg-min-size":1,"asg-max-size":1,"asg-desired-capacity":1}}' \
+AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_ENABLE=true \
@@ -97,7 +98,6 @@ AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_ENABLE=true \
-AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_ENABLE=true \
 aws-k8s-tester eks create cluster --enable-prompt=true -p /tmp/${USER}-test-eks.yaml
 
 <<COMMENT

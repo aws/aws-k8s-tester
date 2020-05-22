@@ -118,6 +118,8 @@ type Tester struct {
 	mngTester mng.Tester
 	gpuTester gpu.Tester
 
+	conformanceTester conformance.Tester
+
 	csiEBSTester  csi_ebs.Tester
 	appMeshTester app_mesh.Tester
 
@@ -144,8 +146,6 @@ type Tester struct {
 	wordPressTester   wordpress.Tester
 	jupyterHubTester  jupyter_hub.Tester
 	kubeflowTester    kubeflow.Tester
-
-	conformanceTester conformance.Tester
 
 	hollowNodesLocalTester  hollow_nodes_local.Tester
 	hollowNodesRemoteTester hollow_nodes_remote.Tester
@@ -439,6 +439,16 @@ func (ts *Tester) createSubTesters() (err error) {
 		}
 	}
 
+	if ts.cfg.IsEnabledAddOnConformance() {
+		ts.lg.Info("creating conformanceTester")
+		ts.conformanceTester, err = conformance.New(conformance.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			EKSConfig: ts.cfg,
+			K8SClient: ts.k8sClient,
+		})
+	}
+
 	if ts.cfg.IsEnabledAddOnCSIEBS() {
 		ts.lg.Info("creating csiEBSTester")
 		ts.csiEBSTester, err = csi_ebs.New(csi_ebs.Config{
@@ -701,16 +711,6 @@ func (ts *Tester) createSubTesters() (err error) {
 	if ts.cfg.IsEnabledAddOnKubeflow() {
 		ts.lg.Info("creating kubeflowTester")
 		ts.kubeflowTester, err = kubeflow.New(kubeflow.Config{
-			Logger:    ts.lg,
-			Stopc:     ts.stopCreationCh,
-			EKSConfig: ts.cfg,
-			K8SClient: ts.k8sClient,
-		})
-	}
-
-	if ts.cfg.IsEnabledAddOnConformance() {
-		ts.lg.Info("creating conformanceTester")
-		ts.conformanceTester, err = conformance.New(conformance.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
@@ -1065,6 +1065,38 @@ func (ts *Tester) Up() (err error) {
 			ts.gpuTester.CreateNvidiaSMI,
 		); err != nil {
 			ts.lg.Warn("failed to create nvidia-smi", zap.Error(err))
+			return err
+		}
+	}
+
+	if ts.cfg.IsEnabledAddOnConformance() {
+		if ts.conformanceTester == nil {
+			return errors.New("ts.conformanceTester == nil when AddOnConformance.Enable == true")
+		}
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("conformanceTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnConformance.Namespace)
+		err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.osSig,
+			ts.conformanceTester.Create,
+		)
+
+		fmt.Printf("\n*********************************\n")
+		ts.lg.Sugar().Infof("SSH (%s)", ts.cfg.ConfigPath)
+		fmt.Println(ts.cfg.SSHCommands())
+
+		fmt.Printf("\n*********************************\n")
+		ts.lg.Sugar().Infof("kubectl (%s)", ts.cfg.ConfigPath)
+		fmt.Println(ts.cfg.KubectlCommands())
+
+		fmt.Printf("\n*********************************\n")
+		if serr := ts.uploadToS3(); serr != nil {
+			ts.lg.Warn("failed to upload artifacts to S3", zap.Error(serr))
+		}
+
+		if err != nil {
 			return err
 		}
 	}
@@ -1448,23 +1480,6 @@ func (ts *Tester) Up() (err error) {
 		}
 	}
 
-	if ts.cfg.IsEnabledAddOnConformance() {
-		if ts.conformanceTester == nil {
-			return errors.New("ts.conformanceTester == nil when AddOnConformance.Enable == true")
-		}
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("conformanceTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnConformance.Namespace)
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.osSig,
-			ts.conformanceTester.Create,
-		); err != nil {
-			return err
-		}
-	}
-
 	if ts.cfg.IsEnabledAddOnHollowNodesLocal() {
 		if ts.hollowNodesLocalTester == nil {
 			return errors.New("ts.hollowNodesLocalTester == nil when AddOnHollowNodesLocal.Enable == true")
@@ -1787,19 +1802,6 @@ func (ts *Tester) down() (err error) {
 		}
 	}
 
-	if ts.cfg.IsEnabledAddOnConformance() && ts.cfg.AddOnConformance.Created {
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("conformanceTester.Delete (%q)\n", ts.cfg.ConfigPath)
-		if err := ts.conformanceTester.Delete(); err != nil {
-			ts.lg.Warn("conformanceTester.Delete failed", zap.Error(err))
-			errs = append(errs, err.Error())
-		} else {
-			waitDur := 20 * time.Second
-			ts.lg.Info("sleeping after deleting conformanceTester", zap.Duration("wait", waitDur))
-			time.Sleep(waitDur)
-		}
-	}
-
 	if ts.cfg.IsEnabledAddOnKubeflow() && ts.cfg.AddOnKubeflow.Created {
 		fmt.Printf("\n*********************************\n")
 		fmt.Printf("kubeflowTester.Delete (%q)\n", ts.cfg.ConfigPath)
@@ -1989,6 +1991,19 @@ func (ts *Tester) down() (err error) {
 		} else {
 			waitDur := 20 * time.Second
 			ts.lg.Info("sleeping after deleting csiEBSTester", zap.Duration("wait", waitDur))
+			time.Sleep(waitDur)
+		}
+	}
+
+	if ts.cfg.IsEnabledAddOnConformance() && ts.cfg.AddOnConformance.Created {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("conformanceTester.Delete (%q)\n", ts.cfg.ConfigPath)
+		if err := ts.conformanceTester.Delete(); err != nil {
+			ts.lg.Warn("conformanceTester.Delete failed", zap.Error(err))
+			errs = append(errs, err.Error())
+		} else {
+			waitDur := 20 * time.Second
+			ts.lg.Info("sleeping after deleting conformanceTester", zap.Duration("wait", waitDur))
 			time.Sleep(waitDur)
 		}
 	}

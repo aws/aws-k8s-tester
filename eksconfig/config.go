@@ -175,6 +175,10 @@ type Config struct {
 	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
 	AddOnManagedNodeGroups *AddOnManagedNodeGroups `json:"add-on-managed-node-groups,omitempty"`
 
+	// AddOnConformance defines parameters for EKS cluster
+	// add-on Conformance.
+	AddOnConformance *AddOnConformance `json:"add-on-conformance,omitempty"`
+
 	// AddOnCSIEBS defines parameters for EKS cluster
 	// add-on AWS EBS CSI Driver.
 	AddOnCSIEBS *AddOnCSIEBS `json:"add-on-csi-ebs,omitempty"`
@@ -249,10 +253,6 @@ type Config struct {
 	// AddOnKubeflow defines parameters for EKS cluster
 	// add-on Kubeflow.
 	AddOnKubeflow *AddOnKubeflow `json:"add-on-kubeflow,omitempty"`
-
-	// AddOnConformance defines parameters for EKS cluster
-	// add-on Conformance.
-	AddOnConformance *AddOnConformance `json:"add-on-conformance,omitempty"`
 
 	// AddOnHollowNodesLocal defines parameters for EKS cluster
 	// add-on hollow nodes local.
@@ -622,6 +622,7 @@ func NewDefault() *Config {
 
 		AddOnNodeGroups:          getDefaultAddOnNodeGroups(name),
 		AddOnManagedNodeGroups:   getDefaultAddOnManagedNodeGroups(name),
+		AddOnConformance:         getDefaultAddOnConformance(),
 		AddOnCSIEBS:              getDefaultAddOnCSIEBS(),
 		AddOnAppMesh:             getDefaultAddOnAppMesh(),
 		AddOnKubernetesDashboard: getDefaultAddOnKubernetesDashboard(),
@@ -643,7 +644,6 @@ func NewDefault() *Config {
 		AddOnWordpress:           getDefaultAddOnWordpress(),
 		AddOnJupyterHub:          getDefaultAddOnJupyterHub(),
 		AddOnKubeflow:            getDefaultAddOnKubeflow(),
-		AddOnConformance:         getDefaultAddOnConformance(),
 		AddOnHollowNodesLocal:    getDefaultAddOnHollowNodesLocal(),
 		AddOnHollowNodesRemote:   getDefaultAddOnHollowNodesRemote(),
 		AddOnStresserLocal:       getDefaultAddOnStresserLocal(),
