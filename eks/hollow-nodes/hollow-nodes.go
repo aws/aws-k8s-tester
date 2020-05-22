@@ -132,8 +132,22 @@ func NewKubelet(cfg KubeletConfig) (Kubelet, error) {
 
 	c.FileCheckFrequency.Duration = 20 * time.Second
 	c.HTTPCheckFrequency.Duration = 20 * time.Second
+
+	// default is 10-second
+	// https://github.com/kubernetes/kubernetes/blob/master/pkg/kubelet/apis/config/v1beta1/defaults.go
 	c.NodeStatusUpdateFrequency.Duration = 10 * time.Second
+
+	// default is 5-minute
+	// https://github.com/kubernetes/kubernetes/blob/master/pkg/kubelet/apis/config/v1beta1/defaults.go
+	// "tryUpdateNodeStatus" patches node status
+	// https://github.com/kubernetes/kubernetes/blob/master/pkg/kubelet/kubelet_node_status.go
 	c.NodeStatusReportFrequency.Duration = 5 * time.Minute
+
+	// node lease renew interval
+	// default is 40 seconds
+	// https://github.com/kubernetes/kubernetes/blob/master/pkg/kubelet/apis/config/v1beta1/defaults.go
+	c.NodeLeaseDurationSeconds = 40
+
 	c.SyncFrequency.Duration = 10 * time.Second
 	c.EvictionPressureTransitionPeriod.Duration = 5 * time.Minute
 	c.MaxPods = 1
