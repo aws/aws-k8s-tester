@@ -102,7 +102,7 @@ func (cfg *Config) validateAddOnConformance() error {
 	cfg.AddOnConformance.SonobuoyDeleteTimeoutString = cfg.AddOnConformance.SonobuoyDeleteTimeout.String()
 
 	if cfg.AddOnConformance.SonobuoyRunTimeout == time.Duration(0) {
-		cfg.AddOnConformance.SonobuoyRunTimeout = 2 * time.Hour
+		cfg.AddOnConformance.SonobuoyRunTimeout = 3*time.Hour + 30*time.Minute
 	}
 	cfg.AddOnConformance.SonobuoyRunTimeoutString = cfg.AddOnConformance.SonobuoyRunTimeout.String()
 
