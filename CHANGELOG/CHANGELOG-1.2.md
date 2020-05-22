@@ -25,7 +25,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.3...v1.2.4
 
 - Run  [`AddOnConformance` before `AddOnHollowNodes*` and `AddOnStresser*`](https://github.com/aws/aws-k8s-tester/commit/6499c5d462f165bb36f4cb26439309cc6fa19e46).
   - Do not run conformance tests with hollow nodes.
-- Tail [`eks/conformance` `sonobuoy` output max 300 lines per interval](https://github.com/aws/aws-k8s-tester/commit/).
+- Tail [`eks/conformance` `sonobuoy` output max 300 lines per interval](https://github.com/aws/aws-k8s-tester/commit/11926a6dd40c82bb5b46184095aa42180c15ce7a).
 
 ### Dependency
 
