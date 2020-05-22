@@ -60,7 +60,7 @@ require (
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.5.1
-	go.etcd.io/etcd v0.0.0-20200410171415-59f5fb25a533
+	go.etcd.io/etcd v0.0.0-20200520232829-54ba9589114f
 	go.uber.org/zap v1.15.0
 	golang.org/x/crypto v0.0.0-20200414173820-0848c9571904
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45

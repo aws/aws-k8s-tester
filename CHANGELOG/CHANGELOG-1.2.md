@@ -3,7 +3,7 @@
 <hr>
 
 
-## [v1.2.3](https://github.com/aws/aws-k8s-tester/releases/tag/v1.2.3) (2020-05)
+## [v1.2.3](https://github.com/aws/aws-k8s-tester/releases/tag/v1.2.3) (2020-05-21)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.2...v1.2.3).
 
@@ -12,6 +12,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.2...v1.2.3
 - Upgrade [`github.com/kubernetes/client-go`](https://github.com/kubernetes/client-go/releases) from [`v0.18.2`](https://github.com/kubernetes/clienthttps://github.com/kubernetes/client-go/releases/tag/v0.18.2) to [`v0.18.3`](https://github.com/kubernetes/client-go/releases/tag/v0.18.3).
 - Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.30.29`](https://github.com/aws/aws-sdk-go/releases/tag/v1.30.29) to [`v1.31.3`](https://github.com/aws/aws-sdk-go/releases/tag/v1.31.3).
 - Upgrade [`github.com/prometheus/client_golang`](https://github.com/prometheus/client_golang/releases) from [`v1.0.0`](https://github.com/prometheus/client_golang/releases/tag/v1.0.0) to [`v1.6.0`](https://github.com/prometheus/client_golang/releases/tag/v1.6.0).
+- Upgrade [`go.etcd.io/etcd`](https://github.com/etcd-io/etcd/releases) from [`59f5fb25a533`](https://github.com/etcd-io/etcd/commit/59f5fb25a5333adb32377f517ea81daf66992713) to [`54ba9589114f` (`v3.4.9`)](https://github.com/etcd-io/etcd/commit/54ba9589114fc3fa5cc36c313550b3c0c0938c91).
 
 ### Go
 
