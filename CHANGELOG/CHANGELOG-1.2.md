@@ -7,9 +7,7 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.4...v1.2.5).
 
-### Dependency
-
-- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.31.3`](https://github.com/aws/aws-sdk-go/releases/tag/v1.31.3) to [`v1.31.4`](https://github.com/aws/aws-sdk-go/releases/tag/v1.31.4).
+TODO
 
 ### Go
 
@@ -27,6 +25,11 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.3...v1.2.4
 
 - Run  [`AddOnConformance` before `AddOnHollowNodes*` and `AddOnStresser*`](https://github.com/aws/aws-k8s-tester/commit/6499c5d462f165bb36f4cb26439309cc6fa19e46).
   - Do not run conformance tests with hollow nodes.
+- Tail [`eks/conformance` `sonobuoy` output max 300 lines per interval](https://github.com/aws/aws-k8s-tester/commit/).
+
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.31.3`](https://github.com/aws/aws-sdk-go/releases/tag/v1.31.3) to [`v1.31.4`](https://github.com/aws/aws-sdk-go/releases/tag/v1.31.4).
 
 ### Go
 

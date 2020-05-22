@@ -279,7 +279,7 @@ func (ts *tester) checkSonobuoy() (err error) {
 	donec := time.After(ts.cfg.EKSConfig.AddOnConformance.SonobuoyRunTimeout)
 	start, waitDur := time.Now(), ts.cfg.EKSConfig.AddOnConformance.SonobuoyRunTimeout
 
-	interval := 10 * time.Minute
+	interval := 15 * time.Minute
 
 	for time.Now().Sub(start) < waitDur {
 		ts.cfg.Logger.Info(
@@ -305,7 +305,13 @@ func (ts *tester) checkSonobuoy() (err error) {
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to run sonobuoy logs", zap.String("command", cmdLogs), zap.Error(err))
 		}
-		fmt.Printf("\n'%s' output:\n\n%s\n\n", cmdLogs, out)
+		lines := strings.Split(out, "\n")
+		linesN := len(lines)
+		if linesN > 300 {
+			lines = lines[:300]
+			out = strings.Join(lines, "\n")
+		}
+		fmt.Printf("\n'%s' output (last 300 lines):\n\n%s\n\n", cmdLogs, out)
 
 		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 		output, err = exec.New().CommandContext(ctx, argsStatus[0], argsStatus[1:]...).CombinedOutput()
@@ -326,7 +332,7 @@ func (ts *tester) checkSonobuoy() (err error) {
 			return errors.New("sonobuoy run failed")
 		}
 
-		interval /= 2
+		interval = time.Duration(float64(interval) * 0.7)
 		if interval < time.Minute {
 			interval = time.Minute
 		}
