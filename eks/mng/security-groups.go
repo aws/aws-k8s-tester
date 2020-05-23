@@ -1,8 +1,10 @@
 package mng
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"text/template"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
@@ -170,14 +172,24 @@ Resources:
   IngressForNodePortConformance:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
-      Description: NodePort requires 30000-32767 open from nodes to internet, request to node over public IP in those range https://github.com/kubernetes/kubernetes/blob/release-1.16/test/e2e/network/service.go#L544
+      Description: NodePort requires {{.InternetIngressFromPort}}-{{.InternetIngressToPort}} open from nodes to internet, request to node over public IP in those range https://github.com/kubernetes/kubernetes/blob/release-1.16/test/e2e/network/service.go#L544
       GroupId: !Ref ManagedNodeGroupSecurityGroupID
       IpProtocol: 'tcp'
       CidrIp: '0.0.0.0/0'
-      FromPort: 30000
-      ToPort: 32767
+      FromPort: {{.InternetIngressFromPort}}
+      ToPort: {{.InternetIngressToPort}}
 
 `
+
+// "[sig-network] Networking Granular Checks" in "test/e2e/network/dns.go"
+// requires "e2enetwork.EndpointUDPPort/EndpointHTTPPort", 8081 and 8080
+// just open all for now...
+// TODO: restrict ports
+
+type templateSG struct {
+	InternetIngressFromPort int
+	InternetIngressToPort   int
+}
 
 func (ts *tester) createIngressEgress(name string) error {
 	cur, ok := ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[name]
@@ -195,13 +207,32 @@ func (ts *tester) createIngressEgress(name string) error {
 		return nil
 	}
 
+	fromPort := 30000
+	if ts.cfg.EKSConfig.IsEnabledAddOnConformance() {
+		fromPort = 0
+	}
+	tpl := template.Must(template.New("TemplateSG").Parse(TemplateSG))
+	buf := bytes.NewBuffer(nil)
+	if err := tpl.Execute(buf, templateSG{
+		InternetIngressFromPort: fromPort,
+		InternetIngressToPort:   32767,
+	}); err != nil {
+		return err
+	}
+	tmpl := buf.String()
+
 	sgID := cur.RemoteAccessSecurityGroupID
 
-	ts.cfg.Logger.Info("creating ingress/egress for mng using CFN", zap.String("mng-name", name), zap.String("security-group-id", sgID))
+	ts.cfg.Logger.Info("creating ingress/egress for mng using CFN",
+		zap.String("mng-name", name),
+		zap.String("security-group-id", sgID),
+		zap.Int("internet-ingress-from-port", fromPort),
+		zap.Int("internet-ingress-to-port", 32767),
+	)
 	stackInput := &cloudformation.CreateStackInput{
 		StackName:    aws.String(name + "-mng-sg"),
 		OnFailure:    aws.String(cloudformation.OnFailureDelete),
-		TemplateBody: aws.String(TemplateSG),
+		TemplateBody: aws.String(tmpl),
 		Tags: cfn.NewTags(map[string]string{
 			"Kind":                   "aws-k8s-tester",
 			"Name":                   ts.cfg.EKSConfig.Name,
