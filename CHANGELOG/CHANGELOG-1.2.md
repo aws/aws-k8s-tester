@@ -3,15 +3,15 @@
 <hr>
 
 
-## [v1.2.5](https://github.com/aws/aws-k8s-tester/releases/tag/v1.2.5) (2020-05)
+## [v1.2.5](https://github.com/aws/aws-k8s-tester/releases/tag/v1.2.5) (2020-05-22)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.4...v1.2.5).
 
 ### `eks`
 
-- Cut [`eks/conformance` tail output to max 30-line](https://github.com/aws/aws-k8s-tester/commit/).
-- Set [`eks/conformance` `sonobuoy run --timeout`](https://github.com/aws/aws-k8s-tester/commit/).
-- Improve [`eks/conformance` log outputs](https://github.com/aws/aws-k8s-tester/commit/).
+- Cut [`eks/conformance` tail output to max 30-line](https://github.com/aws/aws-k8s-tester/commit/24fc00cfa8986a3ca0e4230fbd286141b64c34fb).
+- Set [`eks/conformance` `sonobuoy run --timeout`](https://github.com/aws/aws-k8s-tester/commit/24fc00cfa8986a3ca0e4230fbd286141b64c34fb).
+- Improve [`eks/conformance` log outputs](https://github.com/aws/aws-k8s-tester/commit/24fc00cfa8986a3ca0e4230fbd286141b64c34fb).
 - Update [`sonobuoy` version to `v0.18.2`](https://github.com/vmware-tanzu/sonobuoy/releases/tag/v0.18.2).
 
 ### Go
