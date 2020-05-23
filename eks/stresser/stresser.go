@@ -230,7 +230,7 @@ func startWrites(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duratio
 		} else {
 			writeRequestsSuccessTotal.Inc()
 			if cnt%20 == 0 {
-				lg.Info("wrote configmap", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.String("namespace", namespace))
+				lg.Info("wrote configmap", zap.String("deadline", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.String("namespace", namespace))
 			}
 		}
 		select {
@@ -272,7 +272,7 @@ func startWrites(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duratio
 		} else {
 			writeRequestsSuccessTotal.Inc()
 			if cnt%20 == 0 {
-				lg.Info("wrote secret", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.String("namespace", namespace))
+				lg.Info("wrote secret", zap.String("deadline", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.String("namespace", namespace))
 			}
 		}
 		select {
@@ -314,7 +314,7 @@ func startReads(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration
 		} else {
 			readRequestsSuccessTotal.Inc()
 			if cnt%20 == 0 {
-				lg.Info("listed nodes", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.Int("nodes", len(rs.Items)))
+				lg.Info("listed nodes", zap.String("deadline", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.Int("nodes", len(rs.Items)))
 			}
 		}
 
@@ -330,7 +330,7 @@ func startReads(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration
 			} else {
 				readRequestsSuccessTotal.Inc()
 				if cnt%20 == 0 {
-					lg.Info("listed pods", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.String("namespace", nv), zap.Int("pods", len(pods.Items)))
+					lg.Info("listed pods", zap.String("deadline", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.String("namespace", nv), zap.Int("pods", len(pods.Items)))
 				}
 			}
 			select {
@@ -354,7 +354,7 @@ func startReads(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration
 			} else {
 				readRequestsSuccessTotal.Inc()
 				if cnt%20 == 0 {
-					lg.Info("listed services", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.String("namespace", nv), zap.Int("services", len(svcs.Items)))
+					lg.Info("listed services", zap.String("deadline", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.String("namespace", nv), zap.Int("services", len(svcs.Items)))
 				}
 			}
 			select {
@@ -378,7 +378,7 @@ func startReads(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration
 			} else {
 				readRequestsSuccessTotal.Inc()
 				if cnt%20 == 0 {
-					lg.Info("listed endpoints", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.String("namespace", nv), zap.Int("endpoints", len(eps.Items)))
+					lg.Info("listed endpoints", zap.String("deadline", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.String("namespace", nv), zap.Int("endpoints", len(eps.Items)))
 				}
 			}
 			select {
@@ -402,7 +402,7 @@ func startReads(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration
 			} else {
 				readRequestsSuccessTotal.Inc()
 				if cnt%20 == 0 {
-					lg.Info("listed configmaps", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.String("namespace", nv), zap.Int("configmaps", len(cms.Items)))
+					lg.Info("listed configmaps", zap.String("deadline", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.String("namespace", nv), zap.Int("configmaps", len(cms.Items)))
 				}
 			}
 			select {
@@ -427,7 +427,7 @@ func startReads(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration
 			}
 			readRequestsSuccessTotal.Inc()
 			if cnt%20 == 0 {
-				lg.Info("listed secrets", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.String("namespace", nv), zap.Int("secrets", len(ss.Items)))
+				lg.Info("listed secrets", zap.String("deadline", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.String("namespace", nv), zap.Int("secrets", len(ss.Items)))
 			}
 			select {
 			case <-stopc:
@@ -450,7 +450,7 @@ func startReads(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration
 			} else {
 				readRequestsSuccessTotal.Inc()
 				if cnt%20 == 0 {
-					lg.Info("listed jobs", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.String("namespace", nv), zap.Int("jobs", len(jobs.Items)))
+					lg.Info("listed jobs", zap.String("deadline", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.String("namespace", nv), zap.Int("jobs", len(jobs.Items)))
 				}
 			}
 			select {
@@ -474,7 +474,7 @@ func startReads(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration
 			} else {
 				readRequestsSuccessTotal.Inc()
 				if cnt%20 == 0 {
-					lg.Info("listed cronjobs", zap.String("time", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.String("namespace", nv), zap.Int("cronjobs", len(cjbs.Items)))
+					lg.Info("listed cronjobs", zap.String("deadline", humanize.Time(deadline)), zap.Int("iteration", cnt), zap.String("namespace", nv), zap.Int("cronjobs", len(cjbs.Items)))
 				}
 			}
 			select {

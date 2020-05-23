@@ -75,8 +75,8 @@ func (cfg *Config) IsEnabledAddOnConformance() bool {
 func getDefaultAddOnConformance() *AddOnConformance {
 	addOn := &AddOnConformance{
 		Enable:              false,
-		SonobuoyPath:        "/tmp/sonobuoy-v0.18.1",
-		SonobuoyDownloadURL: "https://github.com/vmware-tanzu/sonobuoy/releases/download/v0.18.1/sonobuoy_0.18.1_linux_amd64.tar.gz",
+		SonobuoyPath:        "/tmp/sonobuoy-v0.18.2",
+		SonobuoyDownloadURL: "https://github.com/vmware-tanzu/sonobuoy/releases/download/v0.18.2/sonobuoy_0.18.2_linux_amd64.tar.gz",
 	}
 	if runtime.GOOS == "darwin" {
 		addOn.SonobuoyDownloadURL = strings.Replace(addOn.SonobuoyDownloadURL, "linux", "darwin", -1)
@@ -101,8 +101,9 @@ func (cfg *Config) validateAddOnConformance() error {
 	}
 	cfg.AddOnConformance.SonobuoyDeleteTimeoutString = cfg.AddOnConformance.SonobuoyDeleteTimeout.String()
 
+	// "certified-conformance" takes >=3-hour
 	if cfg.AddOnConformance.SonobuoyRunTimeout == time.Duration(0) {
-		cfg.AddOnConformance.SonobuoyRunTimeout = 3*time.Hour + 30*time.Minute
+		cfg.AddOnConformance.SonobuoyRunTimeout = 5 * time.Hour
 	}
 	cfg.AddOnConformance.SonobuoyRunTimeoutString = cfg.AddOnConformance.SonobuoyRunTimeout.String()
 

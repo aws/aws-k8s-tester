@@ -20,6 +20,8 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/mholt/archiver/v3"
 	"go.uber.org/zap"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/exec"
 )
 
@@ -215,6 +217,7 @@ func (ts *tester) deleteSonobuoy() (err error) {
 }
 
 func (ts *tester) runSonobuoy() (err error) {
+	timeoutSeconds := int64(ts.cfg.EKSConfig.AddOnConformance.SonobuoyRunTimeout.Seconds())
 	args := []string{
 		ts.cfg.EKSConfig.AddOnConformance.SonobuoyPath,
 		"--logtostderr",
@@ -226,10 +229,16 @@ func (ts *tester) runSonobuoy() (err error) {
 		"--mode=" + ts.cfg.EKSConfig.AddOnConformance.SonobuoyRunMode,
 		"--kube-conformance-image=" + ts.cfg.EKSConfig.AddOnConformance.SonobuoyRunKubeConformanceImage,
 		"--show-default-podspec=true",
+		fmt.Sprintf("--timeout=%d", timeoutSeconds), // default "10800", 3-hour
 	}
 	cmd := strings.Join(args, " ")
 
-	ts.cfg.Logger.Info("running sonobuoy", zap.String("command", cmd))
+	ts.cfg.Logger.Info("running sonobuoy",
+		zap.Duration("timeout", ts.cfg.EKSConfig.AddOnConformance.SonobuoyRunTimeout),
+		zap.Int64("timeout-seconds", timeoutSeconds),
+		zap.String("mode", ts.cfg.EKSConfig.AddOnConformance.SonobuoyRunMode),
+		zap.String("command", cmd),
+	)
 
 	var output []byte
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute) // do not wait, so just set timeout for launching tests
@@ -242,12 +251,55 @@ func (ts *tester) runSonobuoy() (err error) {
 	}
 	fmt.Printf("\n'%s' output:\n\n%s\n\n", cmd, out)
 
-	ts.cfg.Logger.Info("ran sonobuoy", zap.String("command", cmd))
+	ts.cfg.Logger.Info("ran sonobuoy", zap.String("mode", ts.cfg.EKSConfig.AddOnConformance.SonobuoyRunMode), zap.String("command", cmd))
 	return nil
 }
 
 func (ts *tester) checkSonobuoy() (err error) {
-	argsLogs := []string{
+	ts.cfg.Logger.Info("checking pod/sonobuoy-e2e-job")
+	sonobuoyE2EJobPod := ""
+	retryStart := time.Now()
+	for time.Now().Sub(retryStart) < 10*time.Minute {
+		select {
+		case <-ts.cfg.Stopc:
+			ts.cfg.Logger.Warn("sonobuoy check stopped")
+			return nil
+		case <-ts.cfg.Stopc:
+			ts.cfg.Logger.Warn("sonobuoy check timeout")
+			return fmt.Errorf("sonobuoy run took too long (exceeded %v)", ts.cfg.EKSConfig.AddOnConformance.SonobuoyRunTimeout)
+		case <-time.After(10 * time.Second):
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		var pods *v1.PodList
+		pods, err = ts.cfg.K8SClient.
+			KubernetesClientSet().
+			CoreV1().
+			Pods(ts.cfg.EKSConfig.AddOnConformance.Namespace).
+			List(ctx, metav1.ListOptions{})
+		cancel()
+		if err != nil {
+			ts.cfg.Logger.Warn("failed to list pods", zap.Error(err))
+			continue
+		}
+
+		for _, pv := range pods.Items {
+			ts.cfg.Logger.Info("found pod", zap.String("name", pv.GetName()))
+			if strings.HasPrefix(pv.GetName(), "sonobuoy-e2e-job-") {
+				sonobuoyE2EJobPod = pv.GetName()
+				break
+			}
+		}
+		if sonobuoyE2EJobPod != "" {
+			break
+		}
+	}
+	if sonobuoyE2EJobPod == "" {
+		return fmt.Errorf("failed to find pod/sonobuoy-e2e-job in %q", ts.cfg.EKSConfig.AddOnConformance.Namespace)
+	}
+	ts.cfg.Logger.Info("found pod/sonobuoy-e2e-job", zap.String("name", sonobuoyE2EJobPod))
+
+	argsLogsSonobuoy := []string{
 		ts.cfg.EKSConfig.AddOnConformance.SonobuoyPath,
 		"--logtostderr",
 		"--alsologtostderr",
@@ -256,7 +308,18 @@ func (ts *tester) checkSonobuoy() (err error) {
 		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
 		"--namespace=" + ts.cfg.EKSConfig.AddOnConformance.Namespace,
 	}
-	cmdLogs := strings.Join(argsLogs, " ")
+	cmdLogsSonobuoy := strings.Join(argsLogsSonobuoy, " ")
+
+	argsLogsPod := []string{
+		ts.cfg.EKSConfig.KubectlPath,
+		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+		"--namespace=" + ts.cfg.EKSConfig.AddOnConformance.Namespace,
+		"logs",
+		fmt.Sprintf("pod/%s", sonobuoyE2EJobPod),
+		"e2e",
+		"--tail=30",
+	}
+	cmdLogsPod := strings.Join(argsLogsPod, " ")
 
 	argsStatus := []string{
 		ts.cfg.EKSConfig.AddOnConformance.SonobuoyPath,
@@ -271,7 +334,8 @@ func (ts *tester) checkSonobuoy() (err error) {
 	cmdStatus := strings.Join(argsStatus, " ")
 
 	ts.cfg.Logger.Info("running sonobuoy",
-		zap.String("logs-command", cmdLogs),
+		zap.String("logs-command-sonobuoy", cmdLogsSonobuoy),
+		zap.String("logs-command-pod", cmdLogsPod),
 		zap.String("status-command", cmdStatus),
 	)
 
@@ -280,12 +344,13 @@ func (ts *tester) checkSonobuoy() (err error) {
 	start, waitDur := time.Now(), ts.cfg.EKSConfig.AddOnConformance.SonobuoyRunTimeout
 
 	interval := 15 * time.Minute
-
+	cnt := 0
 	for time.Now().Sub(start) < waitDur {
+		cnt++
 		ts.cfg.Logger.Info(
 			"waiting for sonobuoy run",
 			zap.Duration("interval", interval),
-			zap.String("time", humanize.Time(deadline)),
+			zap.String("deadline", humanize.Time(deadline)),
 			zap.Duration("timeout", ts.cfg.EKSConfig.AddOnConformance.SonobuoyRunTimeout),
 		)
 		select {
@@ -298,20 +363,24 @@ func (ts *tester) checkSonobuoy() (err error) {
 		case <-time.After(interval):
 		}
 
+		argsLogs, cmdLogs := argsLogsSonobuoy, cmdLogsSonobuoy
+		if cnt%2 == 0 {
+			argsLogs, cmdLogs = argsLogsPod, cmdLogsPod
+		}
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		output, err := exec.New().CommandContext(ctx, argsLogs[0], argsLogs[1:]...).CombinedOutput()
 		cancel()
 		out := strings.TrimSpace(string(output))
 		if err != nil {
-			ts.cfg.Logger.Warn("failed to run sonobuoy logs", zap.String("command", cmdLogs), zap.Error(err))
+			ts.cfg.Logger.Warn("failed to fetch sonobuoy logs", zap.String("command", cmdLogs), zap.Error(err))
 		}
 		lines := strings.Split(out, "\n")
 		linesN := len(lines)
-		if linesN > 300 {
-			lines = lines[:300]
+		if linesN > 30 { // tail 30 lines
+			lines = lines[linesN-30:]
 			out = strings.Join(lines, "\n")
 		}
-		fmt.Printf("\n'%s' output (total %d lines, last 300 lines):\n\n%s\n\n", cmdLogs, linesN, out)
+		fmt.Printf("\n'%s' output (total lines %d, last 30 lines):\n\n%s\n\n", cmdLogs, linesN, out)
 
 		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 		output, err = exec.New().CommandContext(ctx, argsStatus[0], argsStatus[1:]...).CombinedOutput()
@@ -333,8 +402,8 @@ func (ts *tester) checkSonobuoy() (err error) {
 		}
 
 		interval = time.Duration(float64(interval) * 0.7)
-		if interval < time.Minute {
-			interval = time.Minute
+		if interval < 2*time.Minute {
+			interval = 2 * time.Minute
 		}
 	}
 
