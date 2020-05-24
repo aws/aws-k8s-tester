@@ -17,7 +17,6 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/pkg/httputil"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
-	"github.com/dustin/go-humanize"
 	"github.com/mholt/archiver/v3"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
@@ -350,7 +349,7 @@ func (ts *tester) checkSonobuoy() (err error) {
 		ts.cfg.Logger.Info(
 			"waiting for sonobuoy run",
 			zap.Duration("interval", interval),
-			zap.String("deadline", humanize.Time(deadline)),
+			zap.String("time-left", deadline.Sub(time.Now()).String()),
 			zap.Duration("timeout", ts.cfg.EKSConfig.AddOnConformance.SonobuoyRunTimeout),
 		)
 		select {

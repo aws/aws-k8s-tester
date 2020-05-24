@@ -62,7 +62,7 @@ func Check(lg *zap.Logger, svc ecriface.ECRAPI, repoAccountID string, repoName s
 			zap.String("requested-tag", imgTag),
 			zap.Strings("returned-tags", aws.StringValueSlice(img.ImageTags)),
 			zap.String("digest", aws.StringValue(img.ImageDigest)),
-			zap.String("pushed-at", humanize.Time(aws.TimeValue(img.ImagePushedAt))),
+			zap.String("pushed-at", fmt.Sprintf("%v", aws.TimeValue(img.ImagePushedAt))),
 			zap.String("size", humanize.Bytes(uint64(aws.Int64Value(img.ImageSizeInBytes)))),
 		)
 	}
