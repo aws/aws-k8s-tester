@@ -7,9 +7,18 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.5...v1.2.6).
 
+### `eksconfig`
+
+- Increase [`NGMaxLimit` from 300 to 5000](https://github.com/aws/aws-k8s-tester/commit/).
+
 ### `eks`
 
+- Fix [typos in `eks/prometheus-grafana`](https://github.com/aws/aws-k8s-tester/commit/).
 - Delete [`eks/hollow-nodes` deployment first, before deleting created node objects](https://github.com/aws/aws-k8s-tester/commit/04a9af55fb73b2ba3836bdf7bb036f2c8c01b498).
+
+### `pkg/k8s-client`
+
+- Increase [`DefaultNamespaceDeletionTimeout` from 10- to 15-minute](https://github.com/aws/aws-k8s-tester/commit/).
 
 ### Go
 

@@ -118,6 +118,8 @@ func (ts *tester) Delete() error {
 		errs = append(errs, err.Error())
 	}
 
+	time.Sleep(15*time.Second)
+
 	if err := ts.deleteHelmPrometheus(); err != nil {
 		errs = append(errs, err.Error())
 	}
@@ -129,7 +131,7 @@ func (ts *tester) Delete() error {
 		k8s_client.DefaultNamespaceDeletionInterval,
 		k8s_client.DefaultNamespaceDeletionTimeout,
 	); err != nil {
-		errs = append(errs, fmt.Sprintf("failed to delete Wordpress namespace (%v)", err))
+		errs = append(errs, fmt.Sprintf("failed to delete Grafana namespace (%v)", err))
 	}
 
 	if err := k8s_client.DeleteNamespaceAndWait(
@@ -139,7 +141,7 @@ func (ts *tester) Delete() error {
 		k8s_client.DefaultNamespaceDeletionInterval,
 		k8s_client.DefaultNamespaceDeletionTimeout,
 	); err != nil {
-		errs = append(errs, fmt.Sprintf("failed to delete Wordpress namespace (%v)", err))
+		errs = append(errs, fmt.Sprintf("failed to delete Prometheus namespace (%v)", err))
 	}
 
 	if len(errs) > 0 {
