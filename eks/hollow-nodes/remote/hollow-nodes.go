@@ -491,7 +491,7 @@ func (ts *tester) deleteConfigMap() error {
 			},
 		)
 	cancel()
-	if err != nil {
+	if err != nil && !api_errors.IsNotFound(err) {
 		return err
 	}
 	ts.cfg.Logger.Info("deleted config map")
@@ -655,7 +655,7 @@ func (ts *tester) deleteDeployment() error {
 			},
 		)
 	cancel()
-	if err != nil {
+	if err != nil && !api_errors.IsNotFound(err) {
 		return err
 	}
 	ts.cfg.Logger.Info("deleted deployment")
@@ -864,7 +864,7 @@ func (ts *tester) deleteCreatedNodes() error {
 			},
 		)
 		cancel()
-		if err != nil {
+		if err != nil && !api_errors.IsNotFound(err) {
 			ts.cfg.Logger.Warn("failed to delete node", zap.Int("index", i), zap.String("name", nodeName), zap.Error(err))
 			errs = append(errs, err.Error())
 		} else {
