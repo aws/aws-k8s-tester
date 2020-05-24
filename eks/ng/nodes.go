@@ -703,7 +703,6 @@ func (ts *tester) waitForNodes(asgName string) error {
 	if !ok {
 		return fmt.Errorf("Node Group %q not found", asgName)
 	}
-	waitDur := 3*time.Minute + time.Duration(15*cur.ASGDesiredCapacity)*time.Second
 
 	aout, err := ts.cfg.ASGAPI.DescribeAutoScalingGroups(&autoscaling.DescribeAutoScalingGroupsInput{
 		AutoScalingGroupNames: aws.StringSlice([]string{cur.Name}),
@@ -727,6 +726,7 @@ func (ts *tester) waitForNodes(asgName string) error {
 		zap.Strings("instance-ids", instanceIDs),
 		zap.Duration("wait", waitDur),
 	)
+	waitDur := 3*time.Minute + time.Duration(10*cur.ASGDesiredCapacity)*time.Second
 	ec2Instances, err := aws_ec2.PollUntilRunning(
 		waitDur,
 		ts.cfg.Logger,

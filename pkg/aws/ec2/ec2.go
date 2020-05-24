@@ -28,11 +28,11 @@ func PollUntilRunning(
 	lg.Info("polling instance status", zap.Int("target-total", targetN))
 	retryStart := time.Now()
 	for time.Now().Sub(retryStart) < timeout {
-		// batch by 10
-		batch := make([]string, 0, 10)
+		// batch by 30
+		batch := make([]string, 0, 30)
 		for id := range left {
 			batch = append(batch, id)
-			if len(batch) >= 10 {
+			if len(batch) >= 30 {
 				break
 			}
 		}
@@ -71,7 +71,7 @@ func PollUntilRunning(
 		if len(left) == 0 {
 			break
 		}
-		time.Sleep(15 * time.Second)
+		time.Sleep(10 * time.Second)
 	}
 
 	return ec2Instances, err
