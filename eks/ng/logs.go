@@ -441,12 +441,11 @@ func (ts *tester) fetchLogs(qps float32, burst int) error {
 			return ts.cfg.EKSConfig.Sync()
 		}
 		if len(data.errs) > 0 {
-			ts.cfg.Logger.Warn("failed to fetch logs",
+			ts.cfg.Logger.Warn("failed to fetch logs, but keeping whatever available",
 				zap.String("mng-name", data.asgName),
 				zap.String("instance-id", data.instanceID),
 				zap.Strings("errors", data.errs),
 			)
-			continue
 		}
 		mv, ok := ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[data.asgName]
 		if !ok {
