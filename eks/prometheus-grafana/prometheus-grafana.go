@@ -118,7 +118,7 @@ func (ts *tester) Delete() error {
 		errs = append(errs, err.Error())
 	}
 
-	time.Sleep(15*time.Second)
+	time.Sleep(15 * time.Second)
 
 	if err := ts.deleteHelmPrometheus(); err != nil {
 		errs = append(errs, err.Error())

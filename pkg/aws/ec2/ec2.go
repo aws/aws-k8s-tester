@@ -2,7 +2,6 @@
 package ec2
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -18,64 +17,62 @@ func PollUntilRunning(
 	lg *zap.Logger,
 	ec2API ec2iface.EC2API,
 	instanceIDs ...string) (ec2Instances map[string]*ec2.Instance, err error) {
+	targetN := len(instanceIDs)
+	ec2Instances = make(map[string]*ec2.Instance, targetN)
+
+	left := make(map[string]struct{}, targetN)
+	for _, id := range instanceIDs {
+		left[id] = struct{}{}
+	}
+
+	lg.Info("polling instance status", zap.Int("target-total", targetN))
 	retryStart := time.Now()
 	for time.Now().Sub(retryStart) < timeout {
-		ec2Instances, err = describeByBatch(lg, ec2API, instanceIDs...)
-		if err == nil {
-			return ec2Instances, nil
+		// batch by 10
+		batch := make([]string, 0, 10)
+		for id := range left {
+			batch = append(batch, id)
+			if len(batch) >= 10 {
+				break
+			}
 		}
-		lg.Warn("failed to describe instances", zap.Error(err))
-		time.Sleep(10 * time.Second)
-	}
-	return ec2Instances, err
-}
 
-func describeByBatch(
-	lg *zap.Logger,
-	ec2API ec2iface.EC2API,
-	instanceIDs ...string) (ec2Instances map[string]*ec2.Instance, err error) {
-	ec2Instances = make(map[string]*ec2.Instance, len(instanceIDs))
-
-	last := make([]string, len(instanceIDs))
-	copy(last, instanceIDs)
-
-	// batch by 10
-	for len(last) > 0 {
-		batch := last
-		if len(last) > 10 {
-			batch = last[:10]
-		}
+		lg.Info("describing batch", zap.Int("batch-total", len(batch)))
 		var dout *ec2.DescribeInstancesOutput
 		dout, err = ec2API.DescribeInstances(&ec2.DescribeInstancesInput{
 			InstanceIds: aws.StringSlice(batch),
 		})
 		if err != nil {
-			return nil, fmt.Errorf("failed to describe instances %v", err)
+			lg.Warn("failed to describe instances", zap.Error(err))
+			time.Sleep(5 * time.Second)
+			continue
 		}
 
-		runningCnt := 0
 		for _, rsrv := range dout.Reservations {
 			for _, iv := range rsrv.Instances {
-				if aws.StringValue(iv.State.Name) == ec2.InstanceStateNameRunning {
-					runningCnt++
+				state := aws.StringValue(iv.State.Name)
+				if state != ec2.InstanceStateNameRunning {
+					continue
 				}
-				ec2Instances[aws.StringValue(iv.InstanceId)] = iv
+				instanceID := aws.StringValue(iv.InstanceId)
+				ec2Instances[instanceID] = iv
 			}
 		}
-		if runningCnt != len(batch) {
-			return nil, fmt.Errorf("running instances expected %d, got %d", len(batch), runningCnt)
-		}
-		lg.Info("EC2 instances are running",
+		lg.Info("checking ec2 instances",
 			zap.Int("reservations", len(dout.Reservations)),
-			zap.Int("instances-so-far", len(ec2Instances)),
+			zap.Int("running-instances-so-far", len(ec2Instances)),
+			zap.Int("target-total", targetN),
 		)
 
-		if len(last) <= 10 {
+		// remove completed instances from next batch
+		for id := range ec2Instances {
+			delete(left, id)
+		}
+		if len(left) == 0 {
 			break
 		}
-		last = last[10:]
-		time.Sleep(5 * time.Second)
+		time.Sleep(15 * time.Second)
 	}
 
-	return ec2Instances, nil
+	return ec2Instances, err
 }
