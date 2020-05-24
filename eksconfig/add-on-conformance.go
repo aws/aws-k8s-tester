@@ -84,12 +84,46 @@ func getDefaultAddOnConformance() *AddOnConformance {
 	return addOn
 }
 
+/*
+TODO: fix this... conformance with managed node group does not work
+
+Plugin: e2e
+Status: failed
+Total: 4897
+Passed: 267
+Failed: 9
+Skipped: 4621
+
+Failed tests:
+[sig-network] Services should be able to change the type from ClusterIP to ExternalName [Conformance]
+[sig-network] Services should be able to create a functioning NodePort service [Conformance]
+[sig-api-machinery] Aggregator Should be able to support the 1.10 Sample API Server using the current Aggregator [Conformance]
+[sig-network] Networking Granular Checks: Pods should function for intra-pod communication: udp [LinuxOnly] [NodeConformance] [Conformance]
+[sig-cli] Kubectl client Kubectl run --rm job should create a job from an image, then delete the job  [Conformance]
+[sig-network] Services should be able to change the type from ExternalName to NodePort [Conformance]
+[sig-network] DNS should provide DNS for ExternalName services [Conformance]
+[sig-network] Networking Granular Checks: Pods should function for node-pod communication: udp [LinuxOnly] [NodeConformance] [Conformance]
+[sig-network] DNS should provide DNS for pods for Hostname [LinuxOnly] [Conformance]
+
+Plugin: systemd-logs
+Status: passed
+Total: 14
+Passed: 14
+Failed: 0
+Skipped: 0
+*/
+
 func (cfg *Config) validateAddOnConformance() error {
 	if !cfg.IsEnabledAddOnConformance() {
 		return nil
 	}
 	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
 		return errors.New("AddOnConformance.Enable true but no node group is enabled")
+	}
+
+	// TODO: fix this...
+	if cfg.IsEnabledAddOnManagedNodeGroups() {
+		return errors.New("AddOnConformance.Enable true with AddOnManagedNodeGroups.Enable true")
 	}
 
 	if cfg.AddOnConformance.Namespace == "" {

@@ -406,23 +406,6 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_READS_OUTPUT_NAME_PREFIX", "stresser-out-pfx")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_READS_OUTPUT_NAME_PREFIX")
 
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_ENABLE", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_NAMESPACE", "conformance-test")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_NAMESPACE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_PATH", "aaaaa")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_PATH")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_DOWNLOAD_URL", "sonobuoy-download-here")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_DOWNLOAD_URL")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_DELETE_TIMEOUT", "10s")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_DELETE_TIMEOUT")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_TIMEOUT", "10h")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_TIMEOUT")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_MODE", "non-disruptive-conformance")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_MODE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_KUBE_CONFORMANCE_IMAGE", "hello.com/v1")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_KUBE_CONFORMANCE_IMAGE")
-
 	if err := cfg.UpdateFromEnvs(); err != nil {
 		t.Fatal(err)
 	}
@@ -1080,31 +1063,6 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("unexpected cfg.AddOnStresserRemote.RequestsSummaryReadsOutputNamePrefix %v", cfg.AddOnStresserRemote.RequestsSummaryReadsOutputNamePrefix)
 	}
 
-	if !cfg.AddOnConformance.Enable {
-		t.Fatalf("unexpected cfg.AddOnConformance.Enable %v", cfg.AddOnConformance.Enable)
-	}
-	if cfg.AddOnConformance.Namespace != "conformance-test" {
-		t.Fatalf("unexpected cfg.AddOnConformance.Namespace %q", cfg.AddOnConformance.Namespace)
-	}
-	if cfg.AddOnConformance.SonobuoyPath != "aaaaa" {
-		t.Fatalf("unexpected cfg.AddOnConformance.SonobuoyPath %q", cfg.AddOnConformance.SonobuoyPath)
-	}
-	if cfg.AddOnConformance.SonobuoyDownloadURL != "sonobuoy-download-here" {
-		t.Fatalf("unexpected cfg.AddOnConformance.SonobuoyDownloadURL %q", cfg.AddOnConformance.SonobuoyDownloadURL)
-	}
-	if cfg.AddOnConformance.SonobuoyDeleteTimeout != 10*time.Second {
-		t.Fatalf("unexpected cfg.AddOnConformance.SonobuoyDeleteTimeout %v", cfg.AddOnConformance.SonobuoyDeleteTimeout)
-	}
-	if cfg.AddOnConformance.SonobuoyRunTimeout != 10*time.Hour {
-		t.Fatalf("unexpected cfg.AddOnConformance.SonobuoyRunTimeout %v", cfg.AddOnConformance.SonobuoyRunTimeout)
-	}
-	if cfg.AddOnConformance.SonobuoyRunMode != "non-disruptive-conformance" {
-		t.Fatalf("unexpected cfg.AddOnConformance.SonobuoyRunMode %q", cfg.AddOnConformance.SonobuoyRunMode)
-	}
-	if cfg.AddOnConformance.SonobuoyRunKubeConformanceImage != "hello.com/v1" {
-		t.Fatalf("unexpected cfg.AddOnConformance.SonobuoyRunKubeConformanceImage %q", cfg.AddOnConformance.SonobuoyRunKubeConformanceImage)
-	}
-
 	cfg.Parameters.RoleManagedPolicyARNs = nil
 	cfg.Parameters.RoleServicePrincipals = nil
 	cfg.AddOnManagedNodeGroups.RoleName = ""
@@ -1228,6 +1186,69 @@ func TestEnvAddOnNodeGroupsGetRef(t *testing.T) {
 	}
 	if !reflect.DeepEqual(cfg.AddOnManagedNodeGroups.MNGs, expectedMNGs) {
 		t.Fatalf("expected cfg.AddOnManagedNodeGroups.MNGs %+v, got %+v", expectedMNGs, cfg.AddOnManagedNodeGroups.MNGs)
+	}
+}
+
+func TestEnvAddOnConformance(t *testing.T) {
+	cfg := NewDefault()
+	defer func() {
+		os.RemoveAll(cfg.ConfigPath)
+		os.RemoveAll(cfg.KubectlCommandsOutputPath)
+		os.RemoveAll(cfg.RemoteAccessCommandsOutputPath)
+	}()
+
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE", `true`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS", `{"GetRef.Name-ng-for-cni":{"name":"GetRef.Name-ng-for-cni","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64","asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34,"image-id":"my-ami",  "ssm-document-create":true,   "instance-types":["type-2"],  "ssm-document-cfn-stack-name":"GetRef.Name-ssm", "ssm-document-name":"GetRef.Name-document",     "kubelet-extra-args":"aaa aa",  "volume-size":500}}`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS")
+
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_NAMESPACE", "conformance-test")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_PATH", "aaaaa")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_PATH")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_DOWNLOAD_URL", "sonobuoy-download-here")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_DOWNLOAD_URL")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_DELETE_TIMEOUT", "10s")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_DELETE_TIMEOUT")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_TIMEOUT", "10h")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_TIMEOUT")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_MODE", "non-disruptive-conformance")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_MODE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_KUBE_CONFORMANCE_IMAGE", "hello.com/v1")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_KUBE_CONFORMANCE_IMAGE")
+
+	if err := cfg.UpdateFromEnvs(); err != nil {
+		t.Fatal(err)
+	}
+	if err := cfg.ValidateAndSetDefaults(); err != nil {
+		t.Fatal(err)
+	}
+
+	if !cfg.AddOnConformance.Enable {
+		t.Fatalf("unexpected cfg.AddOnConformance.Enable %v", cfg.AddOnConformance.Enable)
+	}
+	if cfg.AddOnConformance.Namespace != "conformance-test" {
+		t.Fatalf("unexpected cfg.AddOnConformance.Namespace %q", cfg.AddOnConformance.Namespace)
+	}
+	if cfg.AddOnConformance.SonobuoyPath != "aaaaa" {
+		t.Fatalf("unexpected cfg.AddOnConformance.SonobuoyPath %q", cfg.AddOnConformance.SonobuoyPath)
+	}
+	if cfg.AddOnConformance.SonobuoyDownloadURL != "sonobuoy-download-here" {
+		t.Fatalf("unexpected cfg.AddOnConformance.SonobuoyDownloadURL %q", cfg.AddOnConformance.SonobuoyDownloadURL)
+	}
+	if cfg.AddOnConformance.SonobuoyDeleteTimeout != 10*time.Second {
+		t.Fatalf("unexpected cfg.AddOnConformance.SonobuoyDeleteTimeout %v", cfg.AddOnConformance.SonobuoyDeleteTimeout)
+	}
+	if cfg.AddOnConformance.SonobuoyRunTimeout != 10*time.Hour {
+		t.Fatalf("unexpected cfg.AddOnConformance.SonobuoyRunTimeout %v", cfg.AddOnConformance.SonobuoyRunTimeout)
+	}
+	if cfg.AddOnConformance.SonobuoyRunMode != "non-disruptive-conformance" {
+		t.Fatalf("unexpected cfg.AddOnConformance.SonobuoyRunMode %q", cfg.AddOnConformance.SonobuoyRunMode)
+	}
+	if cfg.AddOnConformance.SonobuoyRunKubeConformanceImage != "hello.com/v1" {
+		t.Fatalf("unexpected cfg.AddOnConformance.SonobuoyRunKubeConformanceImage %q", cfg.AddOnConformance.SonobuoyRunKubeConformanceImage)
 	}
 }
 
