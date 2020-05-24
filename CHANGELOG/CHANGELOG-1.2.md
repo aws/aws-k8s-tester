@@ -3,6 +3,20 @@
 <hr>
 
 
+## [v1.2.6](https://github.com/aws/aws-k8s-tester/releases/tag/v1.2.6) (2020-05)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.5...v1.2.6).
+
+TODO
+
+### Go
+
+- Compile with [*Go 1.14.3*](https://golang.org/doc/devel/release.html#go1.14).
+
+
+<hr>
+
+
 ## [v1.2.5](https://github.com/aws/aws-k8s-tester/releases/tag/v1.2.5) (2020-05-23)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.4...v1.2.5).
@@ -11,6 +25,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.4...v1.2.5
 
 - Open [more ingress security group ports for conformance tests](https://github.com/aws/aws-k8s-tester/commit/ab67a9d2066dfe11eb47707e1ebf4d1e8d787840).
 - Clean up [time outputs](https://github.com/aws/aws-k8s-tester/commit/133588f8859bb0d438b033ee3c77556aa2f4a5c8).
+
+### `eksconfig`
+
+- Do [not run `sonobuoy` conformance with `eks/mng`](https://github.com/aws/aws-k8s-tester/commit/3f23edbbd87fce8762e29f6fce807e7cd0b2f2b8).
 
 ### Go
 
