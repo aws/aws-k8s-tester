@@ -18,7 +18,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.5...v1.2.6
 
 ### `pkg`
 
-- Improve [`pkg/aws/ec2` poll batch operations](https://github.com/aws/aws-k8s-tester/commit/d8c6baa6d7a48bd86140b52cdac9f46044e4d9b9).
+- Improve [`pkg/aws/ec2` poll batch operations](https://github.com/aws/aws-k8s-tester/commit/4c1bfcef17e61d590c9904b4136b03fe4e28babc).
 - Increase [`pkg/k8s-client` `DefaultNamespaceDeletionTimeout` from 10- to 15-minute](https://github.com/aws/aws-k8s-tester/commit/34bbeb50a034d86a854017591bb6c69e35e5a699).
 
 ### Go
