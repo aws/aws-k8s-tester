@@ -7,6 +7,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
@@ -125,7 +126,7 @@ func (ts *tester) FetchLogs() (err error) {
 
 func (ts *tester) fetchLogs(qps float32, burst int) error {
 	logsDir := ts.cfg.EKSConfig.AddOnNodeGroups.LogsDir
-	sshOpt := ssh.WithVerbose(ts.cfg.EKSConfig.LogLevel == "debug")
+	sshOptLog := ssh.WithVerbose(ts.cfg.EKSConfig.LogLevel == "debug")
 	rateLimiter := rate.NewLimiter(rate.Limit(qps), burst)
 	rch, waits := make(chan instanceLogs, 10), 0
 
@@ -186,7 +187,7 @@ func (ts *tester) fetchLogs(qps float32, burst int) error {
 						werr := rateLimiter.Wait(context.Background())
 						ts.cfg.Logger.Debug("waited for rate limiter", zap.Error(werr))
 					}
-					out, oerr := sh.Run(cmd, sshOpt)
+					out, oerr := sh.Run(cmd, sshOptLog)
 					if oerr != nil {
 						data.errs = append(data.errs, fmt.Sprintf("failed to run command %q for %q (error %v)", cmd, instID, oerr))
 						continue
@@ -225,7 +226,7 @@ func (ts *tester) fetchLogs(qps float32, burst int) error {
 				}
 				ts.cfg.Logger.Info("listing systemd service units", zap.String("instance-id", instID))
 				listCmd := "sudo systemctl list-units -t service --no-pager --no-legend --all"
-				out, oerr := sh.Run(listCmd, sshOpt)
+				out, oerr := sh.Run(listCmd, sshOptLog)
 				if oerr != nil {
 					data.errs = append(data.errs, fmt.Sprintf(
 						"failed to run command %q for %q (error %v)",
@@ -261,7 +262,7 @@ func (ts *tester) fetchLogs(qps float32, burst int) error {
 							werr := rateLimiter.Wait(context.Background())
 							ts.cfg.Logger.Debug("waited for rate limiter", zap.Error(werr))
 						}
-						out, oerr := sh.Run(cmd, sshOpt)
+						out, oerr := sh.Run(cmd, sshOptLog)
 						if oerr != nil {
 							data.errs = append(data.errs, fmt.Sprintf(
 								"failed to run command %q for %q (error %v)",
@@ -308,7 +309,7 @@ func (ts *tester) fetchLogs(qps float32, burst int) error {
 				// https://github.com/aws/amazon-vpc-cni-k8s/blob/master/scripts/aws-cni-support.sh
 				ts.cfg.Logger.Info("fetching ENI information", zap.String("instance-id", instID))
 				eniCmd := "curl -s http://localhost:61679/v1/enis"
-				out, oerr = sh.Run(eniCmd, sshOpt)
+				out, oerr = sh.Run(eniCmd, sshOptLog)
 				if oerr != nil {
 					data.errs = append(data.errs, fmt.Sprintf(
 						"failed to run command %q for %q (error %v)",
@@ -344,7 +345,7 @@ func (ts *tester) fetchLogs(qps float32, burst int) error {
 
 				ts.cfg.Logger.Info("running /opt/cni/bin/aws-cni-support.sh", zap.String("instance-id", instID))
 				cniCmd := "sudo /opt/cni/bin/aws-cni-support.sh || true"
-				out, oerr = sh.Run(cniCmd, sshOpt)
+				out, oerr = sh.Run(cniCmd, sshOptLog)
 				if oerr != nil {
 					data.errs = append(data.errs, fmt.Sprintf(
 						"failed to run command %q for %q (error %v)",
@@ -363,7 +364,7 @@ func (ts *tester) fetchLogs(qps float32, burst int) error {
 				}
 				ts.cfg.Logger.Info("listing /var/log", zap.String("instance-id", instID))
 				findCmd := "sudo find /var/log ! -type d"
-				out, oerr = sh.Run(findCmd, sshOpt)
+				out, oerr = sh.Run(findCmd, sshOptLog, ssh.WithRetry(5, 3*time.Second))
 				if oerr != nil {
 					data.errs = append(data.errs, fmt.Sprintf(
 						"failed to run command %q for %q (error %v)",
@@ -388,7 +389,8 @@ func (ts *tester) fetchLogs(qps float32, burst int) error {
 							werr := rateLimiter.Wait(context.Background())
 							ts.cfg.Logger.Debug("waited for rate limiter", zap.Error(werr))
 						}
-						out, oerr := sh.Run(cmd, sshOpt)
+						// e.g. "read tcp 10.119.223.210:58688->54.184.39.156:22: read: connection timed out"
+						out, oerr := sh.Run(cmd, sshOptLog, ssh.WithRetry(2, 3*time.Second))
 						if oerr != nil {
 							data.errs = append(data.errs, fmt.Sprintf(
 								"failed to run command %q for %q (error %v)",

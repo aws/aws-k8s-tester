@@ -90,15 +90,16 @@ type ssh struct {
 	conn net.Conn
 	cli  *cryptossh.Client
 
-	retries map[string]int
+	// retry counter per instance + command
+	retryCounter map[string]int
 }
 
 // New returns a new SSH.
 func New(cfg Config) (s SSH, err error) {
 	sh := &ssh{
-		cfg:     cfg,
-		lg:      cfg.Logger,
-		retries: make(map[string]int),
+		cfg:          cfg,
+		lg:           cfg.Logger,
+		retryCounter: make(map[string]int),
 	}
 	if sh.lg == nil {
 		sh.lg = zap.NewNop()
@@ -223,12 +224,12 @@ func (sh *ssh) Close() {
 }
 
 func (sh *ssh) Run(cmd string, opts ...OpOption) (out []byte, err error) {
-	ret := Op{verbose: false, retries: 0, retryInterval: time.Duration(0), timeout: 0, envs: make(map[string]string)}
+	ret := Op{verbose: false, retriesLeft: 0, retryInterval: time.Duration(0), timeout: 0, envs: make(map[string]string)}
 	ret.applyOpts(opts)
 
 	key := fmt.Sprintf("%s%s", sh.cfg.PublicDNSName, cmd)
-	if _, ok := sh.retries[key]; !ok {
-		sh.retries[key] = ret.retries
+	if _, ok := sh.retryCounter[key]; !ok {
+		sh.retryCounter[key] = ret.retriesLeft
 	}
 
 	now := time.Now()
@@ -292,21 +293,30 @@ func (sh *ssh) Run(cmd string, opts ...OpOption) (out []byte, err error) {
 	}
 
 	if err != nil {
-		sh.lg.Warn("command failed", zap.String("cmd", cmd), zap.Error(err))
-		if sh.retries[key] != 0 {
-			sh.lg.Warn("retrying", zap.Int("retries", sh.retries[key]))
+		oerr, ok := err.(*net.OpError)
+		if ok {
+			sh.lg.Warn("command run failed", zap.String("cmd", cmd), zap.Bool("op-error-temporary", oerr.Temporary()), zap.Bool("op-error-timeout", oerr.Timeout()), zap.Error(err))
+		} else {
+			sh.lg.Warn("command run failed", zap.String("cmd", cmd), zap.String("error-type", reflect.TypeOf(err).String()), zap.Error(err))
+		}
+		if sh.retryCounter[key] > 0 {
+			sh.lg.Warn("retrying command run", zap.Int("retries", sh.retryCounter[key]))
 			sh.Close()
-			connErr := errors.New("")
-			for connErr != nil {
-				sh.retries[key]--
-				connErr = sh.Connect()
+			for {
+				sh.retryCounter[key]--
+				if connErr := sh.Connect(); connErr == nil {
+					break
+				}
+				time.Sleep(3 * time.Second)
 			}
 			time.Sleep(ret.retryInterval)
+
+			// recursively retry
 			out, err = sh.Run(cmd, opts...)
 		}
 	}
 	if err == nil {
-		delete(sh.retries, key)
+		delete(sh.retryCounter, key)
 	}
 	return out, err
 }
@@ -339,12 +349,12 @@ scp -oStrictHostKeyChecking=no \
 */
 
 func (sh *ssh) Send(localPath, remotePath string, opts ...OpOption) (out []byte, err error) {
-	ret := Op{verbose: false, retries: 0, retryInterval: time.Duration(0), timeout: 0, envs: make(map[string]string)}
+	ret := Op{verbose: false, retriesLeft: 0, retryInterval: time.Duration(0), timeout: 0, envs: make(map[string]string)}
 	ret.applyOpts(opts)
 
 	key := fmt.Sprintf("%s%s", sh.cfg.PublicDNSName, localPath)
-	if _, ok := sh.retries[key]; !ok {
-		sh.retries[key] = ret.retries
+	if _, ok := sh.retryCounter[key]; !ok {
+		sh.retryCounter[key] = ret.retriesLeft
 	}
 
 	now := time.Now()
@@ -410,33 +420,41 @@ func (sh *ssh) Send(localPath, remotePath string, opts ...OpOption) (out []byte,
 	}
 
 	if err != nil {
-		sh.lg.Warn("SCP send command failed", zap.Error(err))
-
-		if sh.retries[key] != 0 {
-			sh.lg.Warn("retrying", zap.Int("retries", sh.retries[key]))
+		oerr, ok := err.(*net.OpError)
+		if ok {
+			sh.lg.Warn("command scp send failed", zap.Bool("op-error-temporary", oerr.Temporary()), zap.Bool("op-error-timeout", oerr.Timeout()), zap.Error(err))
+		} else {
+			sh.lg.Warn("command scp send failed", zap.String("error-type", reflect.TypeOf(err).String()), zap.Error(err))
+		}
+		if sh.retryCounter[key] > 0 {
+			sh.lg.Warn("retrying scp send", zap.Int("retries", sh.retryCounter[key]))
 			sh.Close()
-			connErr := errors.New("")
-			for connErr != nil {
-				sh.retries[key]--
-				connErr = sh.Connect()
+			for {
+				sh.retryCounter[key]--
+				if connErr := sh.Connect(); connErr == nil {
+					break
+				}
+				time.Sleep(3 * time.Second)
 			}
 			time.Sleep(ret.retryInterval)
+
+			// recursively retry
 			out, err = sh.Send(localPath, remotePath, opts...)
 		}
 	}
 	if err == nil {
-		delete(sh.retries, key)
+		delete(sh.retryCounter, key)
 	}
 	return out, err
 }
 
 func (sh *ssh) Download(remotePath, localPath string, opts ...OpOption) (out []byte, err error) {
-	ret := Op{verbose: false, retries: 0, retryInterval: time.Duration(0), timeout: 0, envs: make(map[string]string)}
+	ret := Op{verbose: false, retriesLeft: 0, retryInterval: time.Duration(0), timeout: 0, envs: make(map[string]string)}
 	ret.applyOpts(opts)
 
 	key := fmt.Sprintf("%s%s", sh.cfg.PublicDNSName, localPath)
-	if _, ok := sh.retries[key]; !ok {
-		sh.retries[key] = ret.retries
+	if _, ok := sh.retryCounter[key]; !ok {
+		sh.retryCounter[key] = ret.retriesLeft
 	}
 
 	now := time.Now()
@@ -501,22 +519,30 @@ func (sh *ssh) Download(remotePath, localPath string, opts ...OpOption) (out []b
 	}
 
 	if err != nil {
-		sh.lg.Warn("SCP download command failed", zap.Error(err))
-
-		if sh.retries[key] != 0 {
-			sh.lg.Warn("retrying", zap.Int("retries", sh.retries[key]))
+		oerr, ok := err.(*net.OpError)
+		if ok {
+			sh.lg.Warn("command scp download failed", zap.Bool("op-error-temporary", oerr.Temporary()), zap.Bool("op-error-timeout", oerr.Timeout()), zap.Error(err))
+		} else {
+			sh.lg.Warn("command scp download failed", zap.String("error-type", reflect.TypeOf(err).String()), zap.Error(err))
+		}
+		if sh.retryCounter[key] > 0 {
+			sh.lg.Warn("retrying scp download", zap.Int("retries", sh.retryCounter[key]))
 			sh.Close()
-			connErr := errors.New("")
-			for connErr != nil {
-				sh.retries[key]--
-				connErr = sh.Connect()
+			for {
+				sh.retryCounter[key]--
+				if connErr := sh.Connect(); connErr == nil {
+					break
+				}
+				time.Sleep(3 * time.Second)
 			}
 			time.Sleep(ret.retryInterval)
+
+			// recursively retry
 			out, err = sh.Download(remotePath, localPath, opts...)
 		}
 	}
 	if err == nil {
-		delete(sh.retries, key)
+		delete(sh.retryCounter, key)
 	}
 	return out, err
 }
@@ -524,7 +550,7 @@ func (sh *ssh) Download(remotePath, localPath string, opts ...OpOption) (out []b
 // Op represents a SSH operation.
 type Op struct {
 	verbose       bool
-	retries       int
+	retriesLeft   int
 	retryInterval time.Duration
 	timeout       time.Duration
 	envs          map[string]string
@@ -543,7 +569,7 @@ func WithVerbose(b bool) OpOption {
 // WithRetry(-1) to retry forever until success.
 func WithRetry(retries int, interval time.Duration) OpOption {
 	return func(op *Op) {
-		op.retries = retries
+		op.retriesLeft = retries
 		op.retryInterval = interval
 	}
 }

@@ -15,6 +15,12 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.5...v1.2.6
 
 - Fix [typos in `eks/prometheus-grafana`](https://github.com/aws/aws-k8s-tester/commit/34bbeb50a034d86a854017591bb6c69e35e5a699).
 - Delete [`eks/hollow-nodes` deployment first, before deleting created node objects](https://github.com/aws/aws-k8s-tester/commit/04a9af55fb73b2ba3836bdf7bb036f2c8c01b498).
+- Keep [whatever available when `eks/ng` and `eks/mng` fail a log fetch command](https://github.com/aws/aws-k8s-tester/commit/3b791ee2d69416c9b2ae9c801c60f50bc8ef7573).
+- Improve [retries in `eks/ng` and `eks/mng` log fetcher](https://github.com/aws/aws-k8s-tester/commit/).
+
+### `ssh`
+
+- Improve [retries in `eks/ng` and `eks/mng` log fetcher](https://github.com/aws/aws-k8s-tester/commit/).
 
 ### `pkg`
 
