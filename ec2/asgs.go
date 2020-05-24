@@ -583,7 +583,7 @@ func (ts *Tester) createASGs() (err error) {
 		for _, iv := range av.Instances {
 			instanceIDs = append(instanceIDs, aws.StringValue(iv.InstanceId))
 		}
-		waitDur := 3*time.Minute + time.Duration(10*cur.ASGDesiredCapacity)*time.Second
+		waitDur := 3*time.Minute + time.Duration(5*cur.ASGDesiredCapacity)*time.Second
 		ts.lg.Info(
 			"describing EC2 instances in ASG",
 			zap.String("asg-name", asgName),
