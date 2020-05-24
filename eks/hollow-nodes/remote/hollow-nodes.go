@@ -151,10 +151,10 @@ func (ts *tester) Delete() (err error) {
 
 	var errs []string
 
-	if err := ts.deleteCreatedNodes(); err != nil {
+	if err := ts.deleteDeployment(); err != nil {
 		errs = append(errs, err.Error())
 	}
-	if err := ts.deleteDeployment(); err != nil {
+	if err := ts.deleteCreatedNodes(); err != nil {
 		errs = append(errs, err.Error())
 	}
 	if err := ts.deleteConfigMap(); err != nil {

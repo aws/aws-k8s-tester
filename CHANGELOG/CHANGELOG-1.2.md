@@ -7,7 +7,9 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.5...v1.2.6).
 
-TODO
+### `eks`
+
+- Delete [`eks/hollow-nodes` deployment first, before deleting created node objects](https://github.com/aws/aws-k8s-tester/commit/).
 
 ### Go
 
