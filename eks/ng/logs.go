@@ -54,7 +54,7 @@ func (ts *tester) FetchLogs() (err error) {
 		return err
 	}
 
-	err = ts.fetchLogs(150, 10)
+	err = ts.fetchLogs(250, 10)
 	if err != nil {
 		ts.cfg.Logger.Warn("failed to fetch logs", zap.Error(err))
 		return err
