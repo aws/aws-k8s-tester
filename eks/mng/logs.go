@@ -469,6 +469,8 @@ func (ts *tester) fetchLogs(qps float32, burst int) error {
 			zap.String("instance-id", data.instanceID),
 			zap.Int("files", files),
 			zap.Int("total-downloaded-files", total),
+			zap.Int("total-waits", waits),
+			zap.Int("current-wait", i),
 		)
 	}
 
