@@ -10,7 +10,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.4...v1.2.5
 ### `eks`
 
 - Open [more ingress security group ports for conformance tests](https://github.com/aws/aws-k8s-tester/commit/ab67a9d2066dfe11eb47707e1ebf4d1e8d787840).
-- Clean up [time outputs](https://github.com/aws/aws-k8s-tester/commit/).
+- Clean up [time outputs](https://github.com/aws/aws-k8s-tester/commit/133588f8859bb0d438b033ee3c77556aa2f4a5c8).
 
 ### Go
 
