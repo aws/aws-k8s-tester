@@ -818,12 +818,13 @@ func (ts *tester) waitForNodes(mngName string) error {
 		instanceIDs = append(instanceIDs, aws.StringValue(iv.InstanceId))
 	}
 
+	waitDur := 3*time.Minute + time.Duration(10*cur.ASGDesiredCapacity)*time.Second
 	ts.cfg.Logger.Info(
 		"describing EC2 instances in ASG",
 		zap.String("asg-name", cur.ASGName),
 		zap.Strings("instance-ids", instanceIDs),
+		zap.Duration("wait", waitDur),
 	)
-	waitDur := 3*time.Minute + time.Duration(10*cur.ASGDesiredCapacity)*time.Second
 	ec2Instances, err := aws_ec2.PollUntilRunning(
 		waitDur,
 		ts.cfg.Logger,
