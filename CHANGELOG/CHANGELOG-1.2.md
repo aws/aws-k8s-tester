@@ -24,6 +24,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.5...v1.2.6
 ### `ec2`
 
 - Increase [log fetcher QPS from 150 to 250](https://github.com/aws/aws-k8s-tester/commit/fa7eb513d4112fcf767abcb28b9f47ba21635a3c).
+- Adjust [`pkg/aws/ec2.PollUntilRunning` timeout](https://github.com/aws/aws-k8s-tester/commit/9423d1775258c77c23ea3f76a056aabee2d89ad2).
 
 ### `eksconfig`
 
@@ -36,6 +37,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.5...v1.2.6
 - Keep [whatever available when `eks/ng` and `eks/mng` fail a log fetch command](https://github.com/aws/aws-k8s-tester/commit/3b791ee2d69416c9b2ae9c801c60f50bc8ef7573).
 - Improve [retries in `eks/ng` and `eks/mng` log fetcher](https://github.com/aws/aws-k8s-tester/commit/76f08a328090ab17711836c54bea9a3388e3fedf).
 - Increase [log fetcher QPS from 150 to 250](https://github.com/aws/aws-k8s-tester/commit/fa7eb513d4112fcf767abcb28b9f47ba21635a3c).
+- Adjust [`pkg/aws/ec2.PollUntilRunning` timeout](https://github.com/aws/aws-k8s-tester/commit/9423d1775258c77c23ea3f76a056aabee2d89ad2).
 
 ### `ssh`
 
@@ -45,6 +47,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.5...v1.2.6
 
 - Improve [`pkg/aws/ec2` poll batch operations](https://github.com/aws/aws-k8s-tester/commit/4c1bfcef17e61d590c9904b4136b03fe4e28babc).
 - Increase [`pkg/k8s-client` `DefaultNamespaceDeletionTimeout` from 10- to 15-minute](https://github.com/aws/aws-k8s-tester/commit/34bbeb50a034d86a854017591bb6c69e35e5a699).
+- Adjust [`pkg/aws/ec2.PollUntilRunning` timeout](https://github.com/aws/aws-k8s-tester/commit/9423d1775258c77c23ea3f76a056aabee2d89ad2).
 
 ### Go
 
