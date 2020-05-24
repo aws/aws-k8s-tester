@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-k8s-tester/eks"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
+	"github.com/aws/aws-k8s-tester/version"
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
 )
@@ -48,7 +49,7 @@ func createClusterFunc(cmd *cobra.Command, args []string) {
 	}
 
 	fmt.Printf("\n*********************************\n")
-	fmt.Printf("overwriting config file from environment variables...\n")
+	fmt.Printf("overwriting config file from environment variables with %s\n", version.Version())
 	err = cfg.UpdateFromEnvs()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to load configuration from environment variables: %v\n", err)
