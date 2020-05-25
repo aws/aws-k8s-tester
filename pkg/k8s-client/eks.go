@@ -39,7 +39,6 @@ import (
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
-	apis_core "k8s.io/kubernetes/pkg/apis/core"
 	"k8s.io/utils/exec"
 	"sigs.k8s.io/yaml"
 )
@@ -627,7 +626,7 @@ func (e *eks) checkHealth() error {
 	for _, v := range pods {
 		cond := "Pending"
 		for _, cv := range v.Status.Conditions {
-			if cv.Status != apis_core.ConditionTrue {
+			if cv.Status != v1.ConditionTrue {
 				continue
 			}
 			cond = string(cv.Type)
