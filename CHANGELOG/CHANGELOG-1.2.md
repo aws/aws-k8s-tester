@@ -39,7 +39,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.5...v1.2.6
 
 ### `eks`
 
-- Add [missing `eks/hollow-nodes/remote` RBAC `"csinodes"` resource](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [missing `eks/hollow-nodes/remote` RBAC `"csinodes"` resource](https://github.com/aws/aws-k8s-tester/commit/d28d6fd6cea97c1cf8d7cbdc51c5694bcb1b79c4).
 - Add [hollow `kube-proxy` to `eks/hollow-nodes`](https://github.com/aws/aws-k8s-tester/commit/73d9ccc494cd07848b25d81f130e3e503cc93475).
 - Fix [`eks/hollow-nodes.CheckNodes`](https://github.com/aws/aws-k8s-tester/commit/62d2c126fca9806941d6331c8c8403ed0c35449a).
 - Fix [typos in `eks/prometheus-grafana`](https://github.com/aws/aws-k8s-tester/commit/34bbeb50a034d86a854017591bb6c69e35e5a699).
