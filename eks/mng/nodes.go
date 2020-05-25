@@ -801,6 +801,7 @@ func (ts *tester) waitForNodes(mngName string, retriesLeft int) error {
 	}
 	if cur.RemoteAccessSecurityGroupID == "" {
 		cur.RemoteAccessSecurityGroupID = aws.StringValue(dout.Nodegroup.Resources.RemoteAccessSecurityGroup)
+		ts.cfg.Logger.Info("checking MNG security group", zap.String("mng-name", cur.Name), zap.String("security-group-id", cur.RemoteAccessSecurityGroupID))
 	}
 	if cur.RemoteAccessSecurityGroupID == "" {
 		if retriesLeft > 0 {
