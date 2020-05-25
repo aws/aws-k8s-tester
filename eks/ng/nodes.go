@@ -21,9 +21,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/autoscaling"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"go.uber.org/zap"
+	certificatesv1beta1 "k8s.io/api/certificates/v1beta1"
 	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/exec"
 )
 
 /*
@@ -768,27 +767,7 @@ func (ts *tester) waitForNodes(asgName string) error {
 		ec2PrivateDNS[strings.Split(v.PrivateDNSName, ".")[0]] = struct{}{}
 	}
 
-	argsGetCSRs := []string{
-		ts.cfg.EKSConfig.KubectlPath,
-		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
-		"get",
-		"csr",
-		"-o=wide",
-	}
-	cmdGetCSRs := strings.Join(argsGetCSRs, " ")
-
-	argsGetNodes := []string{
-		ts.cfg.EKSConfig.KubectlPath,
-		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
-		"get",
-		"nodes",
-		"--show-labels",
-		"-o=wide",
-	}
-	cmdGetNodes := strings.Join(argsGetNodes, " ")
-
 	ts.cfg.Logger.Info("checking nodes readiness", zap.Duration("wait", waitDur))
-	var items []v1.Node
 	retryStart := time.Now()
 	ready := false
 	for time.Now().Sub(retryStart) < waitDur {
@@ -798,17 +777,14 @@ func (ts *tester) waitForNodes(asgName string) error {
 		case <-time.After(5 * time.Second):
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		nodes, err := ts.cfg.K8SClient.KubernetesClientSet().CoreV1().Nodes().List(ctx, metav1.ListOptions{})
-		cancel()
+		nodes, err := ts.cfg.K8SClient.ListNodes(150, 5*time.Second)
 		if err != nil {
 			ts.cfg.Logger.Warn("get nodes failed", zap.Error(err))
 			continue
 		}
-		items = nodes.Items
 
 		readies := 0
-		for _, node := range items {
+		for _, node := range nodes {
 			labels := node.GetLabels()
 			if labels["NGName"] != asgName {
 				continue
@@ -870,7 +846,7 @@ func (ts *tester) waitForNodes(asgName string) error {
 				if cond.Type != v1.NodeReady {
 					continue
 				}
-				ts.cfg.Logger.Info("checked node readiness",
+				ts.cfg.Logger.Info("node is ready!",
 					zap.String("name", nodeName),
 					zap.String("type", fmt.Sprintf("%s", cond.Type)),
 					zap.String("status", fmt.Sprintf("%s", cond.Status)),
@@ -884,23 +860,25 @@ func (ts *tester) waitForNodes(asgName string) error {
 			zap.Int64("desired-ready-nodes", cur.ASGDesiredCapacity),
 		)
 
-		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
-		output, err := exec.New().CommandContext(ctx, argsGetCSRs[0], argsGetCSRs[1:]...).CombinedOutput()
-		cancel()
-		out := string(output)
+		/*
+			e.g.
+			"/tmp/kubectl-test-v1.16.9 --kubeconfig=/tmp/leegyuho-test-eks.kubeconfig.yaml get csr -o=wide":
+			NAME        AGE   REQUESTOR                                                   CONDITION
+			csr-4msk5   58s   system:node:ip-192-168-65-124.us-west-2.compute.internal    Approved,Issued
+			csr-9dbs8   57s   system:node:ip-192-168-208-6.us-west-2.compute.internal     Approved,Issued
+		*/
+		output, err := ts.cfg.K8SClient.ListCSRs(150, 5*time.Second)
 		if err != nil {
-			ts.cfg.Logger.Warn("'kubectl get csr' failed", zap.Error(err))
+			ts.cfg.Logger.Warn("list CSRs failed", zap.Error(err))
+		} else {
+			for _, cv := range output {
+				ts.cfg.Logger.Info("current CSR",
+					zap.String("name", cv.GetName()),
+					zap.String("requester", cv.Spec.Username),
+					zap.String("status", extractCSRStatus(cv)),
+				)
+			}
 		}
-		fmt.Printf("\n\n\"%s\":\n%s\n", cmdGetCSRs, out)
-
-		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
-		output, err = exec.New().CommandContext(ctx, argsGetNodes[0], argsGetNodes[1:]...).CombinedOutput()
-		cancel()
-		out = string(output)
-		if err != nil {
-			ts.cfg.Logger.Warn("'kubectl get nodes' failed", zap.Error(err))
-		}
-		fmt.Printf("\n\"%s\":\n%s\n", cmdGetNodes, out)
 
 		if int64(readies) >= cur.ASGDesiredCapacity {
 			ready = true
@@ -911,10 +889,33 @@ func (ts *tester) waitForNodes(asgName string) error {
 		return fmt.Errorf("NG %q not ready", asgName)
 	}
 
-	fmt.Printf("%q nodes are ready!\n", asgName)
-	for _, v := range items {
-		fmt.Printf("node %q address: %+v\n", v.GetName(), v.Status.Addresses)
-	}
-	println()
 	return ts.cfg.EKSConfig.Sync()
+}
+
+// "pkg/printers/internalversion/printers.go"
+func extractCSRStatus(csr certificatesv1beta1.CertificateSigningRequest) string {
+	var approved, denied bool
+	for _, c := range csr.Status.Conditions {
+		switch c.Type {
+		case certificatesv1beta1.CertificateApproved:
+			approved = true
+		case certificatesv1beta1.CertificateDenied:
+			denied = true
+		default:
+			return ""
+		}
+	}
+	var status string
+	// must be in order of presidence
+	if denied {
+		status += "Denied"
+	} else if approved {
+		status += "Approved"
+	} else {
+		status += "Pending"
+	}
+	if len(csr.Status.Certificate) > 0 {
+		status += ",Issued"
+	}
+	return status
 }

@@ -1,4 +1,5 @@
-// Package remote implements remote Hollow Nodes.
+// Package remote implements remote hollow nodes.
+//
 // ref. https://github.com/kubernetes/kubernetes/blob/master/pkg/kubemark/hollow_kubelet.go
 //
 // The purpose is to make it easy to run on EKS.
@@ -750,15 +751,6 @@ func (ts *tester) checkNodes() error {
 	}
 	cmdLogs := strings.Join(argsLogs, " ")
 
-	argsGetNodes := []string{
-		ts.cfg.EKSConfig.KubectlPath,
-		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
-		"get",
-		"nodes",
-		"-o=wide",
-	}
-	cmdGetNodes := strings.Join(argsGetNodes, " ")
-
 	expectedNodes := ts.cfg.EKSConfig.AddOnHollowNodesRemote.Nodes * int(ts.cfg.EKSConfig.AddOnHollowNodesRemote.DeploymentReplicas)
 
 	// TODO: :some" hollow nodes may fail from resource quota
@@ -801,7 +793,7 @@ func (ts *tester) checkNodes() error {
 				if cond.Type != v1.NodeReady {
 					continue
 				}
-				ts.cfg.Logger.Info("checked node readiness",
+				ts.cfg.Logger.Info("node is ready!",
 					zap.String("name", nodeName),
 					zap.String("type", fmt.Sprintf("%s", cond.Type)),
 					zap.String("status", fmt.Sprintf("%s", cond.Status)),
@@ -824,15 +816,6 @@ func (ts *tester) checkNodes() error {
 			ts.cfg.Logger.Warn("'kubectl logs' failed", zap.Error(err))
 		}
 		fmt.Printf("\n\n\"%s\":\n%s\n", cmdLogs, out)
-
-		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
-		output, err = exec.New().CommandContext(ctx, argsGetNodes[0], argsGetNodes[1:]...).CombinedOutput()
-		cancel()
-		out = string(output)
-		if err != nil {
-			ts.cfg.Logger.Warn("'kubectl get nodes' failed", zap.Error(err))
-		}
-		fmt.Printf("\n\"%s\":\n%s\n", cmdGetNodes, out)
 
 		ts.cfg.EKSConfig.AddOnHollowNodesRemote.CreatedNodeNames = createdNodeNames
 		ts.cfg.EKSConfig.Sync()

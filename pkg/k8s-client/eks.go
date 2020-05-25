@@ -28,6 +28,7 @@ import (
 	apps_v1 "k8s.io/api/apps/v1"
 	apps_v1beta1 "k8s.io/api/apps/v1beta1"
 	apps_v1beta2 "k8s.io/api/apps/v1beta2"
+	certificatesv1beta1 "k8s.io/api/certificates/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	extensions_v1beta1 "k8s.io/api/extensions/v1beta1"
 	networking_v1 "k8s.io/api/networking/v1"
@@ -142,6 +143,8 @@ type EKS interface {
 	ListNamespaces(batchLimit int64, batchInterval time.Duration) ([]v1.Namespace, error)
 	// ListNodes returns the list of existing nodes.
 	ListNodes(batchLimit int64, batchInterval time.Duration) ([]v1.Node, error)
+	// ListNodes returns the list of existing CSRs.
+	ListCSRs(batchLimit int64, batchInterval time.Duration) ([]certificatesv1beta1.CertificateSigningRequest, error)
 	// ListPods returns the list of existing namespace names.
 	ListPods(namespace string, batchLimit int64, batchInterval time.Duration) ([]v1.Pod, error)
 	// ListSecrets returns the list of existing Secret objects.
@@ -737,7 +740,7 @@ func (e *eks) checkHealth() error {
 		e.cfg.Logger.Info("successfully checked encryption")
 	}
 
-	e.cfg.Logger.Info("checked /metrics")
+	e.cfg.Logger.Info("successfully checked health")
 	return nil
 }
 
@@ -884,6 +887,40 @@ func (e *eks) listNodes(batchLimit int64, batchInterval time.Duration) (nodes []
 		time.Sleep(batchInterval)
 	}
 	return nodes, err
+}
+
+func (e *eks) ListCSRs(batchLimit int64, batchInterval time.Duration) ([]certificatesv1beta1.CertificateSigningRequest, error) {
+	ns, err := e.listCSRs(batchLimit, batchInterval)
+	return ns, err
+}
+
+func (e *eks) listCSRs(batchLimit int64, batchInterval time.Duration) (csrs []certificatesv1beta1.CertificateSigningRequest, err error) {
+	rs := &certificatesv1beta1.CertificateSigningRequestList{ListMeta: metav1.ListMeta{Continue: ""}}
+	for {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		rs, err = e.getClient().
+			CertificatesV1beta1().
+			CertificateSigningRequests().
+			List(ctx, metav1.ListOptions{Limit: batchLimit, Continue: rs.Continue})
+		cancel()
+		if err != nil {
+			return nil, err
+		}
+		csrs = append(csrs, rs.Items...)
+		remained := int64Value(rs.RemainingItemCount)
+		e.cfg.Logger.Info("listing csrs",
+			zap.Int64("batch-limit", batchLimit),
+			zap.Int64("remained", remained),
+			zap.String("continue", rs.Continue),
+			zap.Duration("batch-interval", batchInterval),
+			zap.Int("items", len(rs.Items)),
+		)
+		if rs.Continue == "" {
+			break
+		}
+		time.Sleep(batchInterval)
+	}
+	return csrs, err
 }
 
 func (e *eks) ListPods(namespace string, batchLimit int64, batchInterval time.Duration) ([]v1.Pod, error) {

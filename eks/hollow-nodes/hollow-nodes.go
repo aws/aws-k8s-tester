@@ -232,7 +232,7 @@ func (ng *nodeGroup) checkNodes() (readyNodes []string, createdNodes []string, e
 				if cond.Type != v1.NodeReady {
 					continue
 				}
-				ng.cfg.Logger.Info("checked node readiness",
+				ng.cfg.Logger.Info("node is ready!",
 					zap.String("name", nodeName),
 					zap.String("type", fmt.Sprintf("%s", cond.Type)),
 					zap.String("status", fmt.Sprintf("%s", cond.Status)),
