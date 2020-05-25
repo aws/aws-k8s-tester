@@ -552,6 +552,7 @@ func (ts *tester) createASGs() error {
 		}
 		cur.ASGCFNStackID = aws.StringValue(stackOutput.StackId)
 		ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName] = cur
+		ts.cfg.EKSConfig.AddOnNodeGroups.Created = true
 		ts.cfg.EKSConfig.Sync()
 
 		tss = append(tss, tupleTime{ts: time.Now(), name: asgName})
