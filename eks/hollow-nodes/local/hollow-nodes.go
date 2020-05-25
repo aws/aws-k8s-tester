@@ -50,6 +50,7 @@ func New(cfg Config) (Tester, error) {
 		NodeNamePrefix: ts.cfg.EKSConfig.AddOnHollowNodesLocal.NodeNamePrefix,
 		NodeLabels:     ts.cfg.EKSConfig.AddOnHollowNodesLocal.NodeLabels,
 		MaxOpenFiles:   ts.cfg.EKSConfig.AddOnHollowNodesLocal.MaxOpenFiles,
+		Remote:         false,
 	})
 	if err != nil {
 		return nil, err

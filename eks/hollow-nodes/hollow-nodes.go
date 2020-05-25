@@ -1,5 +1,6 @@
 // Package hollownodes implements Hollow Nodes.
 // ref. https://github.com/kubernetes/kubernetes/blob/master/pkg/kubemark/hollow_kubelet.go
+// ref. https://github.com/kubernetes/kubernetes/blob/master/pkg/kubemark/hollow_proxy.go
 //
 // The purpose is to make it easy to run on EKS.
 // ref. https://github.com/kubernetes/kubernetes/blob/master/test/kubemark/start-kubemark.sh
@@ -10,6 +11,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 	"os"
 	"strings"
 	"sync"
@@ -21,9 +23,13 @@ import (
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
+	proxy_app "k8s.io/kubernetes/cmd/kube-proxy/app"
 	kubelet_app "k8s.io/kubernetes/cmd/kubelet/app"
 	kubelet_options "k8s.io/kubernetes/cmd/kubelet/app/options"
-	"k8s.io/kubernetes/pkg/kubelet"
+	"k8s.io/kubernetes/pkg/api/legacyscheme"
+	pkg_kubelet "k8s.io/kubernetes/pkg/kubelet"
 	kubelet_config "k8s.io/kubernetes/pkg/kubelet/apis/config"
 	cadvisor_test "k8s.io/kubernetes/pkg/kubelet/cadvisor/testing"
 	kubelet_cm "k8s.io/kubernetes/pkg/kubelet/cm"
@@ -31,10 +37,18 @@ import (
 	kubelet_remote "k8s.io/kubernetes/pkg/kubelet/remote"
 	kubelet_remote_fake "k8s.io/kubernetes/pkg/kubelet/remote/fake"
 	kubelet_types "k8s.io/kubernetes/pkg/kubelet/types"
+	"k8s.io/kubernetes/pkg/proxy"
+	proxy_config "k8s.io/kubernetes/pkg/proxy/config"
+	proxy_iptables "k8s.io/kubernetes/pkg/proxy/iptables"
+	utils_iptables "k8s.io/kubernetes/pkg/proxy/util/iptables"
+	iptables_testing "k8s.io/kubernetes/pkg/util/iptables/testing"
+	util_node "k8s.io/kubernetes/pkg/util/node"
 	"k8s.io/kubernetes/pkg/util/oom"
+	sysctl_testing "k8s.io/kubernetes/pkg/util/sysctl/testing"
 	"k8s.io/kubernetes/pkg/volume"
 	"k8s.io/kubernetes/pkg/volume/cephfs"
 	"k8s.io/kubernetes/pkg/volume/configmap"
+	"k8s.io/kubernetes/pkg/volume/csi"
 	"k8s.io/kubernetes/pkg/volume/downwardapi"
 	"k8s.io/kubernetes/pkg/volume/emptydir"
 	"k8s.io/kubernetes/pkg/volume/fc"
@@ -54,232 +68,10 @@ import (
 	"k8s.io/kubernetes/pkg/volume/storageos"
 	"k8s.io/kubernetes/pkg/volume/util/hostutil"
 	"k8s.io/kubernetes/pkg/volume/util/subpath"
+	exec_testing "k8s.io/utils/exec/testing"
 	"k8s.io/utils/mount"
+	util_pointer "k8s.io/utils/pointer"
 )
-
-// KubeletConfig is the kubelet configuration.
-// TODO: contribute to upstream, revisit EKS auth provider
-// ref. https://github.com/kubernetes/kubernetes/pull/81796
-// ref. https://github.com/kubernetes/kubernetes/blob/master/pkg/kubemark/hollow_kubelet.go
-type KubeletConfig struct {
-	Logger *zap.Logger
-	Stopc  chan struct{}
-	Donec  chan struct{}
-
-	Client k8s_client.EKS
-
-	NodeName     string
-	NodeLabels   map[string]string
-	MaxOpenFiles int64
-}
-
-type hollowKubelet struct {
-	cfg               KubeletConfig
-	f                 *kubelet_options.KubeletFlags
-	c                 *kubelet_config.KubeletConfiguration
-	fakeRemoteRuntime *kubelet_remote_fake.RemoteRuntime
-	deps              *kubelet.Dependencies
-}
-
-type Kubelet interface {
-	Start()
-	Stop()
-}
-
-// NewKubelet creates a new Kubelet.
-// ref. "pkg/kubemark.GetHollowKubeletConfig"
-// ref. https://github.com/kubernetes/kubernetes/blob/master/pkg/kubemark/hollow_kubelet.go
-// "pkg/kubelet".fastStatusUpdateOnce runs updates every 100ms
-func NewKubelet(cfg KubeletConfig) (Kubelet, error) {
-	cfg.Logger.Info("creating kubelet flags")
-	f := kubelet_options.NewKubeletFlags()
-
-	cfg.Logger.Info("creating kubelet configuration")
-	c, err := kubelet_options.NewKubeletConfiguration()
-	if err != nil {
-		return nil, err
-	}
-
-	rootDir := fileutil.MkTmpDir(os.TempDir(), "hollow-kubelet")
-	f.RootDirectory = rootDir
-
-	// podFilesDir := fileutil.MkTmpDir(os.TempDir(), "static-pods")
-	// c.StaticPodPath = podFilesDir
-	c.StaticPodPath = ""
-	c.StaticPodURL = ""
-
-	// f.EnableServer = true
-	// c.Port = int32(cfg.kubeletPort)
-	// c.ReadOnlyPort = int32(cfg.kubeletReadOnlyPort)
-	f.ReallyCrashForTesting = true
-	f.EnableServer = false
-	c.Port = 0
-	c.ReadOnlyPort = 0
-
-	f.HostnameOverride = cfg.NodeName
-	f.NodeLabels = cfg.NodeLabels
-
-	f.MinimumGCAge = metav1.Duration{Duration: 1 * time.Minute}
-	f.MaxContainerCount = 1
-	f.MaxPerPodContainerCount = 1
-	f.ContainerRuntimeOptions.ContainerRuntime = kubelet_types.RemoteContainerRuntime
-	f.RegisterNode = true
-	f.RegisterSchedulable = true
-	f.ProviderID = fmt.Sprintf("kubemark://%v", cfg.NodeName)
-
-	c.Address = "0.0.0.0" /* bind address */
-	c.Authentication.Anonymous.Enabled = true
-
-	c.FileCheckFrequency.Duration = 20 * time.Second
-	c.HTTPCheckFrequency.Duration = 20 * time.Second
-
-	// default is 10-second
-	// https://github.com/kubernetes/kubernetes/blob/master/pkg/kubelet/apis/config/v1beta1/defaults.go
-	c.NodeStatusUpdateFrequency.Duration = 10 * time.Second
-
-	// default is 5-minute
-	// https://github.com/kubernetes/kubernetes/blob/master/pkg/kubelet/apis/config/v1beta1/defaults.go
-	// "tryUpdateNodeStatus" patches node status
-	// https://github.com/kubernetes/kubernetes/blob/master/pkg/kubelet/kubelet_node_status.go
-	c.NodeStatusReportFrequency.Duration = 5 * time.Minute
-
-	// node lease renew interval
-	// default is 40 seconds
-	// https://github.com/kubernetes/kubernetes/blob/master/pkg/kubelet/apis/config/v1beta1/defaults.go
-	c.NodeLeaseDurationSeconds = 40
-
-	c.SyncFrequency.Duration = 10 * time.Second
-	c.EvictionPressureTransitionPeriod.Duration = 5 * time.Minute
-	c.MaxPods = 1
-	c.PodsPerCore = 1
-	c.ClusterDNS = []string{}
-	c.ImageGCHighThresholdPercent = 90
-	c.ImageGCLowThresholdPercent = 80
-	c.VolumeStatsAggPeriod.Duration = time.Minute
-	c.CgroupRoot = ""
-	c.CPUCFSQuota = true
-	c.EnableControllerAttachDetach = false
-	c.EnableDebuggingHandlers = true
-	c.CgroupsPerQOS = false
-	// hairpin-veth is used to allow hairpin packets. Note that this deviates from
-	// what the "real" kubelet currently does, because there's no way to
-	// set promiscuous mode on docker0.
-	c.HairpinMode = kubelet_config.HairpinVeth
-
-	// "cmd/kubelet/app.rlimit.SetNumFiles(MaxOpenFiles)" sets this for the host
-	// TODO: increase if we run this in remote
-	c.MaxOpenFiles = 1000000
-
-	c.RegistryBurst = 10
-	c.RegistryPullQPS = 5.0
-	c.ResolverConfig = kubelet_types.ResolvConfDefault
-	c.KubeletCgroups = "/kubelet"
-	c.SerializeImagePulls = true
-	c.SystemCgroups = ""
-	c.ProtectKernelDefaults = false
-
-	cadvisorInterface := &cadvisor_test.Fake{
-		NodeName: cfg.NodeName,
-	}
-	containerManager := kubelet_cm.NewStubContainerManager()
-
-	endpoint, err := kubelet_remote_fake.GenerateEndpoint()
-	if err != nil {
-		cfg.Logger.Warn("failed to generate fake endpoint", zap.Error(err))
-		return nil, err
-	}
-	fakeRemoteRuntime := kubelet_remote_fake.NewFakeRemoteRuntime()
-	if err = fakeRemoteRuntime.Start(endpoint); err != nil {
-		cfg.Logger.Warn("failed to start fake runtime", zap.Error(err))
-		return nil, err
-	}
-	runtimeService, err := kubelet_remote.NewRemoteRuntimeService(endpoint, 15*time.Second)
-	if err != nil {
-		cfg.Logger.Warn("failed to init runtime service", zap.Error(err))
-		return nil, err
-	}
-
-	return &hollowKubelet{
-		cfg:               cfg,
-		f:                 f,
-		c:                 c,
-		fakeRemoteRuntime: fakeRemoteRuntime,
-		deps: &kubelet.Dependencies{
-			KubeClient:           cfg.Client.KubernetesClientSet(),
-			HeartbeatClient:      cfg.Client.KubernetesClientSet(),
-			RemoteRuntimeService: runtimeService,
-			RemoteImageService:   fakeRemoteRuntime.ImageService,
-			CAdvisorInterface:    cadvisorInterface,
-
-			// TODO: mock
-			Cloud: nil,
-
-			OSInterface:      &container_test.FakeOS{},
-			ContainerManager: containerManager,
-			VolumePlugins:    volumePlugins(),
-
-			TLSOptions: nil,
-
-			OOMAdjuster: oom.NewFakeOOMAdjuster(),
-			Mounter:     &mount.FakeMounter{},
-			Subpather:   &subpath.FakeSubpath{},
-			HostUtil:    hostutil.NewFakeHostUtil(nil),
-		},
-	}, nil
-}
-
-func (k *hollowKubelet) Start() {
-	k.cfg.Logger.Info("running a new kubelet", zap.String("node-name", k.cfg.NodeName))
-	if err := kubelet_app.RunKubelet(&kubelet_options.KubeletServer{
-		KubeletFlags:         *k.f,
-		KubeletConfiguration: *k.c,
-	}, k.deps, false); err != nil {
-		k.cfg.Logger.Warn("failed to run kubelet", zap.Error(err))
-		return
-	}
-	select {
-	case <-k.cfg.Stopc:
-		k.cfg.Logger.Info("kubelet run stopped", zap.String("node-name", k.cfg.NodeName))
-		return
-	case <-k.cfg.Donec:
-		k.cfg.Logger.Info("kubelet run canceled", zap.String("node-name", k.cfg.NodeName))
-		return
-	}
-}
-
-func (k *hollowKubelet) Stop() {
-	k.cfg.Logger.Info("stopping hollow node", zap.String("node-name", k.cfg.NodeName))
-	k.fakeRemoteRuntime.Stop()
-	k.cfg.Logger.Info("stopped hollow node", zap.String("node-name", k.cfg.NodeName))
-}
-
-func volumePlugins() []volume.VolumePlugin {
-	// csi.ProbeVolumePlugins not working
-
-	allPlugins := []volume.VolumePlugin{}
-	allPlugins = append(allPlugins, emptydir.ProbeVolumePlugins()...)
-	allPlugins = append(allPlugins, git_repo.ProbeVolumePlugins()...)
-	allPlugins = append(allPlugins, hostpath.ProbeVolumePlugins(volume.VolumeConfig{})...)
-	allPlugins = append(allPlugins, nfs.ProbeVolumePlugins(volume.VolumeConfig{})...)
-	allPlugins = append(allPlugins, secret.ProbeVolumePlugins()...)
-	allPlugins = append(allPlugins, iscsi.ProbeVolumePlugins()...)
-	allPlugins = append(allPlugins, glusterfs.ProbeVolumePlugins()...)
-	allPlugins = append(allPlugins, rbd.ProbeVolumePlugins()...)
-	allPlugins = append(allPlugins, quobyte.ProbeVolumePlugins()...)
-	allPlugins = append(allPlugins, cephfs.ProbeVolumePlugins()...)
-	allPlugins = append(allPlugins, downwardapi.ProbeVolumePlugins()...)
-	allPlugins = append(allPlugins, fc.ProbeVolumePlugins()...)
-	allPlugins = append(allPlugins, flocker.ProbeVolumePlugins()...)
-	allPlugins = append(allPlugins, configmap.ProbeVolumePlugins()...)
-	allPlugins = append(allPlugins, projected.ProbeVolumePlugins()...)
-	allPlugins = append(allPlugins, portworx.ProbeVolumePlugins()...)
-	allPlugins = append(allPlugins, scaleio.ProbeVolumePlugins()...)
-	allPlugins = append(allPlugins, local.ProbeVolumePlugins()...)
-	allPlugins = append(allPlugins, storageos.ProbeVolumePlugins()...)
-	// allPlugins = append(allPlugins, csi.ProbeVolumePlugins()...)
-
-	return allPlugins
-}
 
 // NodeGroup represents a set of hollow node objects.
 type NodeGroup interface {
@@ -297,6 +89,9 @@ type NodeGroupConfig struct {
 	NodeNamePrefix string
 	NodeLabels     map[string]string
 	MaxOpenFiles   int64
+
+	// Remote is true if run in remote nodes (inside Pod).
+	Remote bool
 }
 
 type nodeGroup struct {
@@ -307,7 +102,8 @@ type nodeGroup struct {
 	donec          chan struct{}
 	donecCloseOnce *sync.Once
 
-	kubelets []Kubelet
+	kubelets    []kubelet
+	kubeProxies []kubeProxy
 }
 
 // CreateNodeGroup creates a new hollow node group.
@@ -323,7 +119,8 @@ func (ng *nodeGroup) Start() (err error) {
 	ng.mu.Lock()
 	defer ng.mu.Unlock()
 
-	ng.kubelets = make([]Kubelet, ng.cfg.Nodes)
+	ng.kubelets = make([]kubelet, ng.cfg.Nodes)
+	ng.kubeProxies = make([]kubeProxy, ng.cfg.Nodes)
 
 	ng.cfg.Logger.Info("creating node group with hollow nodes",
 		zap.Int("nodes", ng.cfg.Nodes),
@@ -331,24 +128,27 @@ func (ng *nodeGroup) Start() (err error) {
 		zap.Any("node-labels", ng.cfg.NodeLabels),
 	)
 	for i := 0; i < ng.cfg.Nodes; i++ {
-		ng.kubelets[i], err = NewKubelet(KubeletConfig{
-			Logger:       ng.cfg.Logger,
-			Stopc:        ng.cfg.Stopc,
-			Donec:        ng.donec,
-			Client:       ng.cfg.Client,
-			NodeName:     ng.cfg.NodeNamePrefix + randutil.String(10),
-			NodeLabels:   ng.cfg.NodeLabels,
-			MaxOpenFiles: ng.cfg.MaxOpenFiles,
+		ng.kubelets[i], ng.kubeProxies[i], err = newNode(nodeConfig{
+			lg:           ng.cfg.Logger,
+			stopc:        ng.cfg.Stopc,
+			donec:        ng.donec,
+			cli:          ng.cfg.Client,
+			nodeName:     ng.cfg.NodeNamePrefix + randutil.String(10),
+			nodeLabels:   ng.cfg.NodeLabels,
+			maxOpenFiles: ng.cfg.MaxOpenFiles,
+			remote:       ng.cfg.Remote,
 		})
 		if err != nil {
+			ng.cfg.Logger.Warn("failed to create hollow node", zap.Error(err))
 			return err
 		}
 	}
 	ng.cfg.Logger.Info("created node group with hollow nodes", zap.Int("nodes", ng.cfg.Nodes))
 
 	ng.cfg.Logger.Info("starting hollow node group")
-	for _, node := range ng.kubelets {
-		go node.Start()
+	for idx := range ng.kubelets {
+		go ng.kubelets[idx].Start()
+		go ng.kubeProxies[idx].Start()
 	}
 	ng.cfg.Logger.Info("started hollow node group")
 	return nil
@@ -362,8 +162,9 @@ func (ng *nodeGroup) Stop() {
 	ng.donecCloseOnce.Do(func() {
 		close(ng.donec)
 	})
-	for _, node := range ng.kubelets {
-		node.Stop()
+	for idx := range ng.kubeProxies {
+		ng.kubeProxies[idx].Stop()
+		ng.kubelets[idx].Stop()
 	}
 	ng.cfg.Logger.Info("stopped hollow node group")
 }
@@ -419,7 +220,7 @@ func (ng *nodeGroup) checkNodes() (readyNodes []string, createdNodes []string, e
 				}
 			}
 			if notMatch {
-				ng.cfg.Logger.Warn("node labels not match", zap.String("node-name", nodeName), zap.Any("expected", ng.cfg.NodeLabels), zap.Any("got", labels))
+				ng.cfg.Logger.Debug("node labels not match", zap.String("node-name", nodeName), zap.Any("expected", ng.cfg.NodeLabels), zap.Any("got", labels))
 				continue
 			}
 
@@ -459,4 +260,353 @@ func (ng *nodeGroup) checkNodes() (readyNodes []string, createdNodes []string, e
 
 	ng.cfg.Logger.Info("checked hollow node group", zap.Int("ready-nodes", len(readyNodes)), zap.Int("created-nodes", len(createdNodes)), zap.Int("desired-nodes", ng.cfg.Nodes))
 	return readyNodes, createdNodes, err
+}
+
+// nodeConfig is the kubelet configuration.
+// TODO: contribute to upstream, revisit EKS auth provider
+// ref. https://github.com/kubernetes/kubernetes/pull/81796
+// ref. https://github.com/kubernetes/kubernetes/blob/master/pkg/kubemark/hollow_kubelet.go
+type nodeConfig struct {
+	lg    *zap.Logger
+	stopc chan struct{}
+	donec chan struct{}
+
+	cli k8s_client.EKS
+
+	nodeName     string
+	nodeLabels   map[string]string
+	maxOpenFiles int64
+
+	remote bool
+}
+
+type hollowKubelet struct {
+	cfg nodeConfig
+
+	kubeletFlags      *kubelet_options.KubeletFlags
+	kubeletConfig     *kubelet_config.KubeletConfiguration
+	fakeRemoteRuntime *kubelet_remote_fake.RemoteRuntime
+	deps              *pkg_kubelet.Dependencies
+}
+
+// kubelet defines hollow kubelet interface.
+type kubelet interface {
+	Start()
+	Stop()
+}
+
+type hollowKubeProxy struct {
+	cfg    nodeConfig
+	server *proxy_app.ProxyServer
+}
+
+// kubeProxy defines hollow kube-proxy interface.
+type kubeProxy interface {
+	Start()
+	Stop()
+}
+
+// newNode creates a new kubelet and kube-proxy.
+// ref. "pkg/kubemark.GetHollowKubeletConfig"
+// ref. https://github.com/kubernetes/kubernetes/blob/master/pkg/kubemark/hollow_kubelet.go
+// "pkg/kubelet".fastStatusUpdateOnce runs updates every 100ms
+func newNode(cfg nodeConfig) (kubelet, kubeProxy, error) {
+	cfg.lg.Info("creating kubelet flags")
+	kubeletFlags := kubelet_options.NewKubeletFlags()
+
+	cfg.lg.Info("creating kubelet configuration")
+	kubeletConfig, err := kubelet_options.NewKubeletConfiguration()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	rootDir := fileutil.MkTmpDir(os.TempDir(), "hollow-kubelet")
+	kubeletFlags.RootDirectory = rootDir
+
+	// podFilesDir := fileutil.MkTmpDir(os.TempDir(), "static-pods")
+	// c.StaticPodPath = podFilesDir
+	kubeletConfig.StaticPodPath = ""
+	kubeletConfig.StaticPodURL = ""
+
+	// f.EnableServer = true
+	// c.Port = int32(cfg.kubeletPort)
+	// c.ReadOnlyPort = int32(cfg.kubeletReadOnlyPort)
+	kubeletFlags.ReallyCrashForTesting = true
+	kubeletFlags.EnableServer = false
+	kubeletConfig.Port = 0
+	kubeletConfig.ReadOnlyPort = 0
+
+	kubeletFlags.HostnameOverride = cfg.nodeName
+	kubeletFlags.NodeLabels = cfg.nodeLabels
+
+	kubeletFlags.MinimumGCAge = metav1.Duration{Duration: 1 * time.Minute}
+	kubeletFlags.MaxContainerCount = 1
+	kubeletFlags.MaxPerPodContainerCount = 1
+	kubeletFlags.ContainerRuntimeOptions.ContainerRuntime = kubelet_types.RemoteContainerRuntime
+	kubeletFlags.RegisterNode = true
+	kubeletFlags.RegisterSchedulable = true
+	kubeletFlags.ProviderID = fmt.Sprintf("kubemark://%v", cfg.nodeName)
+
+	kubeletConfig.Address = "0.0.0.0" /* bind address */
+	kubeletConfig.Authentication.Anonymous.Enabled = true
+
+	kubeletConfig.FileCheckFrequency.Duration = 20 * time.Second
+	kubeletConfig.HTTPCheckFrequency.Duration = 20 * time.Second
+
+	// default is 10-second
+	// https://github.com/kubernetes/kubernetes/blob/master/pkg/kubelet/apis/config/v1beta1/defaults.go
+	kubeletConfig.NodeStatusUpdateFrequency.Duration = 10 * time.Second
+
+	// default is 5-minute
+	// https://github.com/kubernetes/kubernetes/blob/master/pkg/kubelet/apis/config/v1beta1/defaults.go
+	// "tryUpdateNodeStatus" patches node status
+	// https://github.com/kubernetes/kubernetes/blob/master/pkg/kubelet/kubelet_node_status.go
+	kubeletConfig.NodeStatusReportFrequency.Duration = 5 * time.Minute
+
+	// node lease renew interval
+	// default is 40 seconds
+	// https://github.com/kubernetes/kubernetes/blob/master/pkg/kubelet/apis/config/v1beta1/defaults.go
+	kubeletConfig.NodeLeaseDurationSeconds = 40
+
+	kubeletConfig.SyncFrequency.Duration = 10 * time.Second
+	kubeletConfig.EvictionPressureTransitionPeriod.Duration = 5 * time.Minute
+	kubeletConfig.MaxPods = 1
+	kubeletConfig.PodsPerCore = 1
+	kubeletConfig.ClusterDNS = []string{}
+	kubeletConfig.ImageGCHighThresholdPercent = 90
+	kubeletConfig.ImageGCLowThresholdPercent = 80
+	kubeletConfig.VolumeStatsAggPeriod.Duration = time.Minute
+	kubeletConfig.CgroupRoot = ""
+	kubeletConfig.CPUCFSQuota = true
+	kubeletConfig.EnableControllerAttachDetach = false
+	kubeletConfig.EnableDebuggingHandlers = true
+	kubeletConfig.CgroupsPerQOS = false
+	// hairpin-veth is used to allow hairpin packets. Note that this deviates from
+	// what the "real" kubelet currently does, because there's no way to
+	// set promiscuous mode on docker0.
+	kubeletConfig.HairpinMode = kubelet_config.HairpinVeth
+
+	// "cmd/kubelet/app.rlimit.SetNumFiles(MaxOpenFiles)" sets this for the host
+	// TODO: increase if we run this in remote
+	kubeletConfig.MaxOpenFiles = 1000000
+
+	kubeletConfig.RegistryBurst = 10
+	kubeletConfig.RegistryPullQPS = 5.0
+	kubeletConfig.ResolverConfig = kubelet_types.ResolvConfDefault
+	kubeletConfig.KubeletCgroups = "/kubelet"
+	kubeletConfig.SerializeImagePulls = true
+	kubeletConfig.SystemCgroups = ""
+	kubeletConfig.ProtectKernelDefaults = false
+
+	cadvisorInterface := &cadvisor_test.Fake{NodeName: cfg.nodeName}
+	containerManager := kubelet_cm.NewStubContainerManager()
+
+	fakeEndpoint, err := kubelet_remote_fake.GenerateEndpoint()
+	if err != nil {
+		cfg.lg.Warn("failed to generate fake endpoint", zap.Error(err))
+		return nil, nil, err
+	}
+	fakeRemoteRuntime := kubelet_remote_fake.NewFakeRemoteRuntime()
+	if err = fakeRemoteRuntime.Start(fakeEndpoint); err != nil {
+		cfg.lg.Warn("failed to start fake runtime", zap.Error(err))
+		return nil, nil, err
+	}
+	fakeRuntimeService, err := kubelet_remote.NewRemoteRuntimeService(fakeEndpoint, 15*time.Second)
+	if err != nil {
+		cfg.lg.Warn("failed to init runtime service", zap.Error(err))
+		return nil, nil, err
+	}
+	hollowKube := &hollowKubelet{
+		cfg: cfg,
+
+		kubeletFlags:  kubeletFlags,
+		kubeletConfig: kubeletConfig,
+
+		fakeRemoteRuntime: fakeRemoteRuntime,
+
+		deps: &pkg_kubelet.Dependencies{
+			KubeClient:      cfg.cli.KubernetesClientSet(),
+			HeartbeatClient: cfg.cli.KubernetesClientSet(),
+
+			RemoteRuntimeService: fakeRuntimeService,
+			RemoteImageService:   fakeRemoteRuntime.ImageService,
+			CAdvisorInterface:    cadvisorInterface,
+
+			// TODO: mock
+			Cloud: nil,
+
+			OSInterface:      &container_test.FakeOS{},
+			ContainerManager: containerManager,
+			VolumePlugins:    volumePlugins(cfg.remote),
+
+			TLSOptions: nil,
+
+			OOMAdjuster: oom.NewFakeOOMAdjuster(),
+			Mounter:     &mount.FakeMounter{},
+			Subpather:   &subpath.FakeSubpath{},
+			HostUtil:    hostutil.NewFakeHostUtil(nil),
+		},
+	}
+
+	fakeIptables := iptables_testing.NewFake()
+	fakeSysctl := sysctl_testing.NewFake()
+	fakeExec := &exec_testing.FakeExec{
+		LookPathFunc: func(_ string) (string, error) { return "", errors.New("fake execer") },
+	}
+	fakeEventBroadcaster := record.NewBroadcaster()
+	fakeRecorder := fakeEventBroadcaster.NewRecorder(legacyscheme.Scheme, v1.EventSource{Component: "kube-proxy", Host: cfg.nodeName})
+
+	var proxier proxy.Provider
+	if cfg.remote {
+		nodeIP := util_node.GetNodeIP(cfg.cli.KubernetesClientSet(), cfg.nodeName)
+		if nodeIP == nil {
+			cfg.lg.Warn("failed to find node IP; assuming 127.0.0.1", zap.String("node-name", cfg.nodeName))
+			nodeIP = net.ParseIP("127.0.0.1")
+		} else {
+			cfg.lg.Warn("found node IP", zap.String("node-name", cfg.nodeName), zap.String("node-ip", fmt.Sprintf("%+v", nodeIP)))
+		}
+		proxier, err = proxy_iptables.NewProxier(
+			fakeIptables,
+			fakeSysctl,
+			fakeExec,
+			30*time.Second,
+			0,
+			false,
+			0,
+			utils_iptables.NewNoOpLocalDetector(),
+			cfg.nodeName,
+			nodeIP,
+			fakeRecorder,
+			nil,
+			[]string{},
+		)
+		if err != nil {
+			cfg.lg.Warn("failed to create a new proxier", zap.String("node-name", cfg.nodeName), zap.Error(err))
+			proxier = nil
+		}
+	}
+	if proxier == nil {
+		cfg.lg.Info("use fakeProxier", zap.String("node-name", cfg.nodeName))
+		proxier = &fakeProxier{}
+	}
+	hollowPxy := &hollowKubeProxy{
+		cfg: cfg,
+		server: &proxy_app.ProxyServer{
+			Client:       cfg.cli.KubernetesClientSet(),
+			EventClient:  cfg.cli.KubernetesClientSet().CoreV1(),
+			IptInterface: fakeIptables,
+			Proxier:      proxier,
+			Broadcaster:  fakeEventBroadcaster,
+			Recorder:     fakeRecorder,
+			ProxyMode:    "fake",
+			NodeRef: &v1.ObjectReference{
+				Kind:      "Node",
+				Name:      cfg.nodeName,
+				UID:       types.UID(cfg.nodeName),
+				Namespace: "",
+			},
+			OOMScoreAdj:      util_pointer.Int32Ptr(0),
+			ConfigSyncPeriod: 30 * time.Second,
+		},
+	}
+	return hollowKube, hollowPxy, nil
+}
+
+func (k *hollowKubelet) Start() {
+	k.cfg.lg.Info("starting hollow node kubelet", zap.String("node-name", k.cfg.nodeName))
+	if err := kubelet_app.RunKubelet(&kubelet_options.KubeletServer{
+		KubeletFlags:         *k.kubeletFlags,
+		KubeletConfiguration: *k.kubeletConfig,
+	}, k.deps, false); err != nil {
+		k.cfg.lg.Warn("failed to run kubelet", zap.Error(err))
+		return
+	}
+	k.cfg.lg.Info("started hollow node kubelet", zap.String("node-name", k.cfg.nodeName))
+
+	select {
+	case <-k.cfg.stopc:
+		k.cfg.lg.Info("hollow node kubelet stopped", zap.String("node-name", k.cfg.nodeName))
+		return
+	case <-k.cfg.donec:
+		k.cfg.lg.Info("hollow node kubelet canceled", zap.String("node-name", k.cfg.nodeName))
+		return
+	}
+}
+
+func (k *hollowKubelet) Stop() {
+	k.cfg.lg.Info("stopping hollow node kubelet", zap.String("node-name", k.cfg.nodeName))
+	k.fakeRemoteRuntime.Stop()
+	k.cfg.lg.Info("stopped hollow node kubelet", zap.String("node-name", k.cfg.nodeName))
+}
+
+func (k *hollowKubeProxy) Start() {
+	k.cfg.lg.Info("starting hollow node kube-proxy", zap.String("node-name", k.cfg.nodeName))
+	if err := k.server.Run(); err != nil {
+		k.cfg.lg.Warn("failed to run kube-proxy", zap.String("node-name", k.cfg.nodeName), zap.Error(err))
+		return
+	}
+	k.cfg.lg.Info("started hollow node kube-proxy", zap.String("node-name", k.cfg.nodeName))
+
+	select {
+	case <-k.cfg.stopc:
+		k.cfg.lg.Info("hollow node kube-proxy stopped", zap.String("node-name", k.cfg.nodeName))
+		return
+	case <-k.cfg.donec:
+		k.cfg.lg.Info("hollow node kube-proxy canceled", zap.String("node-name", k.cfg.nodeName))
+		return
+	}
+}
+
+func (k *hollowKubeProxy) Stop() {
+	k.cfg.lg.Info("stopping hollow node kube-proxy", zap.String("node-name", k.cfg.nodeName))
+	if err := k.server.CleanupAndExit(); err != nil {
+		k.cfg.lg.Warn("failed to stop kube-proxy", zap.String("node-name", k.cfg.nodeName), zap.Error(err))
+		return
+	}
+	k.cfg.lg.Info("stopped hollow node kube-proxy", zap.String("node-name", k.cfg.nodeName))
+}
+
+type fakeProxier struct {
+	proxy_config.NoopEndpointSliceHandler
+	proxy_config.NoopNodeHandler
+}
+
+func (*fakeProxier) Sync() {}
+func (*fakeProxier) SyncLoop() {
+	select {}
+}
+func (*fakeProxier) OnServiceAdd(service *v1.Service)                        {}
+func (*fakeProxier) OnServiceUpdate(oldService, service *v1.Service)         {}
+func (*fakeProxier) OnServiceDelete(service *v1.Service)                     {}
+func (*fakeProxier) OnServiceSynced()                                        {}
+func (*fakeProxier) OnEndpointsAdd(endpoints *v1.Endpoints)                  {}
+func (*fakeProxier) OnEndpointsUpdate(oldEndpoints, endpoints *v1.Endpoints) {}
+func (*fakeProxier) OnEndpointsDelete(endpoints *v1.Endpoints)               {}
+func (*fakeProxier) OnEndpointsSynced()                                      {}
+
+func volumePlugins(remote bool) []volume.VolumePlugin {
+	allPlugins := []volume.VolumePlugin{}
+	allPlugins = append(allPlugins, emptydir.ProbeVolumePlugins()...)
+	allPlugins = append(allPlugins, git_repo.ProbeVolumePlugins()...)
+	allPlugins = append(allPlugins, hostpath.ProbeVolumePlugins(volume.VolumeConfig{})...)
+	allPlugins = append(allPlugins, nfs.ProbeVolumePlugins(volume.VolumeConfig{})...)
+	allPlugins = append(allPlugins, secret.ProbeVolumePlugins()...)
+	allPlugins = append(allPlugins, iscsi.ProbeVolumePlugins()...)
+	allPlugins = append(allPlugins, glusterfs.ProbeVolumePlugins()...)
+	allPlugins = append(allPlugins, rbd.ProbeVolumePlugins()...)
+	allPlugins = append(allPlugins, quobyte.ProbeVolumePlugins()...)
+	allPlugins = append(allPlugins, cephfs.ProbeVolumePlugins()...)
+	allPlugins = append(allPlugins, downwardapi.ProbeVolumePlugins()...)
+	allPlugins = append(allPlugins, fc.ProbeVolumePlugins()...)
+	allPlugins = append(allPlugins, flocker.ProbeVolumePlugins()...)
+	allPlugins = append(allPlugins, configmap.ProbeVolumePlugins()...)
+	allPlugins = append(allPlugins, projected.ProbeVolumePlugins()...)
+	allPlugins = append(allPlugins, portworx.ProbeVolumePlugins()...)
+	allPlugins = append(allPlugins, scaleio.ProbeVolumePlugins()...)
+	allPlugins = append(allPlugins, local.ProbeVolumePlugins()...)
+	allPlugins = append(allPlugins, storageos.ProbeVolumePlugins()...)
+	if remote {
+		allPlugins = append(allPlugins, csi.ProbeVolumePlugins()...)
+	}
+	return allPlugins
 }

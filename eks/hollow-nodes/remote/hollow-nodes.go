@@ -508,7 +508,7 @@ func (ts *tester) createDeployment() error {
 	// randomize node label, for node checking
 	// in case multiple pods are creating hollow nodes
 	//
-	testerCmd := fmt.Sprintf("/aws-k8s-tester eks create hollow-nodes --clients=%d --client-qps=%f --client-burst=%d --nodes=%d --node-name-prefix=%s --node-label-prefix=%s",
+	testerCmd := fmt.Sprintf("/aws-k8s-tester eks create hollow-nodes --clients=%d --client-qps=%f --client-burst=%d --nodes=%d --node-name-prefix=%s --node-label-prefix=%s --remote=true",
 		ts.cfg.EKSConfig.Clients,
 		ts.cfg.EKSConfig.ClientQPS,
 		ts.cfg.EKSConfig.ClientBurst,

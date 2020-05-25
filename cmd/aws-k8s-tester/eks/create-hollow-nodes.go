@@ -25,6 +25,7 @@ var (
 	hollowNodesNodes          int
 	hollowNodeNamePrefix      string
 	hollowNodeLabelPrefix     string
+	hollowNodesRemote         bool
 )
 
 func newCreateHollowNodes() *cobra.Command {
@@ -40,6 +41,7 @@ func newCreateHollowNodes() *cobra.Command {
 	cmd.PersistentFlags().IntVar(&hollowNodesNodes, "nodes", 10, "Number of hollow nodes to create")
 	cmd.PersistentFlags().StringVar(&hollowNodeNamePrefix, "node-name-prefix", "hollow"+randutil.String(5), "Prefix to name hollow nodes")
 	cmd.PersistentFlags().StringVar(&hollowNodeLabelPrefix, "node-label-prefix", randutil.String(5), "Prefix to label hollow nodes")
+	cmd.PersistentFlags().BoolVar(&hollowNodesRemote, "remote", false, "'true' if run inside Pod")
 	return cmd
 }
 
@@ -93,6 +95,7 @@ func createHollowNodesFunc(cmd *cobra.Command, args []string) {
 			"NGType":   hollowNodeLabelPrefix + "-ng-type-" + sfx,
 			"NGName":   hollowNodeLabelPrefix + "-ng-name-" + sfx,
 		},
+		Remote: hollowNodesRemote,
 	})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create hollow nodes group %v\n", err)
