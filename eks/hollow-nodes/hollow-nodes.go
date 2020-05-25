@@ -513,6 +513,7 @@ func newNode(cfg nodeConfig) (kubelet, kubeProxy, error) {
 }
 
 func (k *hollowKubelet) Start() {
+	// non-blocking run
 	k.cfg.lg.Info("starting hollow node kubelet", zap.String("node-name", k.cfg.nodeName))
 	if err := kubelet_app.RunKubelet(&kubelet_options.KubeletServer{
 		KubeletFlags:         *k.kubeletFlags,
@@ -540,6 +541,7 @@ func (k *hollowKubelet) Stop() {
 }
 
 func (k *hollowKubeProxy) Start() {
+	// blocking run
 	k.cfg.lg.Info("starting hollow node kube-proxy", zap.String("node-name", k.cfg.nodeName))
 	if err := k.server.Run(); err != nil {
 		k.cfg.lg.Warn("failed to run kube-proxy", zap.String("node-name", k.cfg.nodeName), zap.Error(err))
