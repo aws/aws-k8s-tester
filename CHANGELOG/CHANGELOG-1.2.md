@@ -33,7 +33,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.5...v1.2.6
 
 ### `eksconfig`
 
-- Add [`AddOnStresserLocal.ListLimit` and `AddOnStresserRemote.ListLimit`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`AddOnStresserLocal.ListLimit` and `AddOnStresserRemote.ListLimit`](https://github.com/aws/aws-k8s-tester/commit/4661d46bf63074230c5da66b658f909d647b2c70).
 - Add [`eksconfig.Config.TotalNodes` read-only field](https://github.com/aws/aws-k8s-tester/commit/c2f658b54107493960e14e9ec3aa11f8bb818b12).
 - Increase [`NGMaxLimit` from 300 to 5000](https://github.com/aws/aws-k8s-tester/commit/34bbeb50a034d86a854017591bb6c69e35e5a699).
 - Add [`timeutil.TimeFrame` read-only fields for create/delete](https://github.com/aws/aws-k8s-tester/commit/ffff58e526627de630ec4d9697863568d43c8181).
@@ -41,7 +41,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.5...v1.2.6
 
 ### `eks`
 
-- Add [`ListLimit` to `eks/stresser`](https://github.com/aws/aws-k8s-tester/commit/).
+- Retries [when managed node group security group ID has not been created yet in `eks/mng`](https://github.com/aws/aws-k8s-tester/commit/9a070c9db7adeabd8151379c48494ff80b7e0899).
+- Add [`ListLimit` to `eks/stresser`](https://github.com/aws/aws-k8s-tester/commit/4661d46bf63074230c5da66b658f909d647b2c70).
 - Use [`client-go` to list nodes and CSRs](https://github.com/aws/aws-k8s-tester/commit/bd8a46b728fa41ab7bc049ce85524dc2b6d587ad).
 - Disable [`eks/hollow-nodes` CSI driver](https://github.com/aws/aws-k8s-tester/commit/876d0a6650f333076ee8137d416adbe5477a2fc7).
   - `"E | csi_plugin.go:271] Failed to initialize CSINodeInfo: error updating CSINode annotation: timed out waiting for the condition; caused by: the server could not find the requested resource"`
