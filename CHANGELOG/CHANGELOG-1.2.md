@@ -33,7 +33,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.5...v1.2.6
 
 ### `eksconfig`
 
-- Add [`eksconfig.Config.TotalNodes` read-only field](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`eksconfig.Config.TotalNodes` read-only field](https://github.com/aws/aws-k8s-tester/commit/c2f658b54107493960e14e9ec3aa11f8bb818b12).
 - Increase [`NGMaxLimit` from 300 to 5000](https://github.com/aws/aws-k8s-tester/commit/34bbeb50a034d86a854017591bb6c69e35e5a699).
 - Add [`timeutil.TimeFrame` read-only fields for create/delete](https://github.com/aws/aws-k8s-tester/commit/ffff58e526627de630ec4d9697863568d43c8181).
   - `ec2config.Config.TimeUTCCreateCompleteRFC3339Micro` is now `pkg/timeutil.TimeFrame`.

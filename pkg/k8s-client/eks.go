@@ -662,23 +662,6 @@ func (e *eks) checkHealth() error {
 	}
 	fmt.Printf("\n\"kubectl get namespaces\" output:\n%s\n\n", out)
 
-	ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
-	output, err = exec.New().CommandContext(
-		ctx,
-		e.cfg.KubectlPath,
-		"--kubeconfig="+e.cfg.KubeConfigPath,
-		"get",
-		"nodes",
-		"--show-labels",
-		"-o=wide",
-	).CombinedOutput()
-	cancel()
-	out = strings.TrimSpace(string(output))
-	if err != nil {
-		return fmt.Errorf("'kubectl get nodes --show-labels -o=wide' failed %v (output %q)", err, out)
-	}
-	fmt.Printf("\n\"kubectl get nodes --show-labels -o=wide\" output:\n%s\n\n", out)
-
 	fmt.Printf("\n\"curl -sL http://localhost:8080/metrics | grep storage_\" output:\n")
 	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 	output, err = e.getClient().
