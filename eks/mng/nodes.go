@@ -447,7 +447,7 @@ func (ts *tester) createASG() error {
 		ts.cfg.EKSConfig.Sync()
 
 		timeStart = time.Now()
-		if err := ts.waitForNodes(cur.Name); err != nil {
+		if err := ts.waitForNodes(cur.Name, 3); err != nil {
 			return err
 		}
 		timeEnd = time.Now()
@@ -774,7 +774,7 @@ func (ts *tester) setStatus(sv ManagedNodeGroupStatus) error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
-func (ts *tester) waitForNodes(mngName string) error {
+func (ts *tester) waitForNodes(mngName string, retriesLeft int) error {
 	cur, ok := ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName]
 	if !ok {
 		return fmt.Errorf("Managed Node Group %q not found", mngName)
@@ -799,6 +799,14 @@ func (ts *tester) waitForNodes(mngName string) error {
 	}
 	if cur.RemoteAccessSecurityGroupID == "" {
 		cur.RemoteAccessSecurityGroupID = aws.StringValue(dout.Nodegroup.Resources.RemoteAccessSecurityGroup)
+	}
+	if cur.RemoteAccessSecurityGroupID == "" {
+		if retriesLeft > 0 {
+			ts.cfg.Logger.Warn("remote access security group ID not found; retrying", zap.String("mng-name", mngName), zap.Int("retries-left", retriesLeft))
+			time.Sleep(5 * time.Second)
+			return ts.waitForNodes(mngName, retriesLeft-1)
+		}
+		return fmt.Errorf("remote access security group ID not found for mng %q", mngName)
 	}
 	ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName] = cur
 	ts.cfg.EKSConfig.Sync()
