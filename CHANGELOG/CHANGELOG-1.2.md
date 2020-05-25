@@ -23,7 +23,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.5...v1.2.6
 
 ### `ec2config`
 
-- Add [`timeutil.TimeFrame` read-only fields for create/delete](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`timeutil.TimeFrame` read-only fields for create/delete](https://github.com/aws/aws-k8s-tester/commit/ffff58e526627de630ec4d9697863568d43c8181).
   - `ec2config.Config.TimeUTCCreateCompleteRFC3339Micro` is now `pkg/timeutil.TimeFrame`.
 
 ### `ec2`
@@ -34,7 +34,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.5...v1.2.6
 ### `eksconfig`
 
 - Increase [`NGMaxLimit` from 300 to 5000](https://github.com/aws/aws-k8s-tester/commit/34bbeb50a034d86a854017591bb6c69e35e5a699).
-- Add [`timeutil.TimeFrame` read-only fields for create/delete](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`timeutil.TimeFrame` read-only fields for create/delete](https://github.com/aws/aws-k8s-tester/commit/ffff58e526627de630ec4d9697863568d43c8181).
   - `ec2config.Config.TimeUTCCreateCompleteRFC3339Micro` is now `pkg/timeutil.TimeFrame`.
 
 ### `eks`
@@ -52,6 +52,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.5...v1.2.6
 
 ### `pkg`
 
+- Add [`pkg/timeutil`](https://github.com/aws/aws-k8s-tester/commit/ffff58e526627de630ec4d9697863568d43c8181).
 - Improve [`pkg/aws/ec2` poll batch operations](https://github.com/aws/aws-k8s-tester/commit/4c1bfcef17e61d590c9904b4136b03fe4e28babc).
 - Increase [`pkg/k8s-client` `DefaultNamespaceDeletionTimeout` from 10- to 15-minute](https://github.com/aws/aws-k8s-tester/commit/34bbeb50a034d86a854017591bb6c69e35e5a699).
 - Adjust [`pkg/aws/ec2.PollUntilRunning` timeout](https://github.com/aws/aws-k8s-tester/commit/9423d1775258c77c23ea3f76a056aabee2d89ad2).
