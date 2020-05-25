@@ -39,6 +39,7 @@ import (
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
+	apis_core "k8s.io/kubernetes/pkg/apis/core"
 	"k8s.io/utils/exec"
 	"sigs.k8s.io/yaml"
 )
@@ -624,7 +625,14 @@ func (e *eks) checkHealth() error {
 		return fmt.Errorf("failed to list pods %v", err)
 	}
 	for _, v := range pods {
-		e.cfg.Logger.Info("kube-system pod", zap.String("name", v.GetName()))
+		cond := "Pending"
+		for _, cv := range v.Status.Conditions {
+			if cv.Status != apis_core.ConditionTrue {
+				continue
+			}
+			cond = string(cv.Type)
+		}
+		e.cfg.Logger.Info("kube-system pod", zap.String("name", v.GetName()), zap.String("condition", cond))
 	}
 	println()
 
