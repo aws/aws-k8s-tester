@@ -147,6 +147,8 @@ type EKS interface {
 	ListCSRs(batchLimit int64, batchInterval time.Duration) ([]certificatesv1beta1.CertificateSigningRequest, error)
 	// ListPods returns the list of existing namespace names.
 	ListPods(namespace string, batchLimit int64, batchInterval time.Duration) ([]v1.Pod, error)
+	// ListConfigMaps returns the list of existing config maps.
+	ListConfigMaps(namespace string, batchLimit int64, batchInterval time.Duration) ([]v1.ConfigMap, error)
 	// ListSecrets returns the list of existing Secret objects.
 	ListSecrets(namespace string, batchLimit int64, batchInterval time.Duration) ([]v1.Secret, error)
 
@@ -606,64 +608,35 @@ func (e *eks) checkHealth() error {
 	}
 	fmt.Printf("\n\n\"%s\" output (\"kubectl get --raw /healthz?verbose\"):\n%s\n", ep, out)
 
-	ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
-	output, err = exec.New().CommandContext(
-		ctx,
-		e.cfg.KubectlPath,
-		"--kubeconfig="+e.cfg.KubeConfigPath,
-		"--namespace=kube-system",
-		"get",
-		"all",
-	).CombinedOutput()
-	cancel()
-	out = strings.TrimSpace(string(output))
+	fmt.Printf("\n\"kubectl get namespaces\" output:\n")
+	ns, err := e.listNamespaces(150, 5*time.Second)
 	if err != nil {
-		return fmt.Errorf("'kubectl get all -n=kube-system' failed %v (output %q)", err, out)
+		return fmt.Errorf("failed to list namespaces %v", err)
 	}
-	fmt.Printf("\n\"kubectl all -n=kube-system\" output:\n%s\n\n", out)
-
-	fmt.Printf("\n\"kubectl get pods -n=kube-system\" output:\n")
-	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
-	pods, err := e.getClient().CoreV1().Pods("kube-system").List(ctx, metav1.ListOptions{})
-	cancel()
-	if err != nil {
-		return fmt.Errorf("failed to get pods %v", err)
-	}
-	for _, v := range pods.Items {
-		fmt.Printf("kube-system Pod: %q\n", v.Name)
+	for _, v := range ns {
+		e.cfg.Logger.Info("namespace", zap.String("name", v.GetName()))
 	}
 	println()
 
-	ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
-	output, err = exec.New().CommandContext(
-		ctx,
-		e.cfg.KubectlPath,
-		"--kubeconfig="+e.cfg.KubeConfigPath,
-		"--namespace=kube-system",
-		"get",
-		"configmaps",
-	).CombinedOutput()
-	cancel()
-	out = strings.TrimSpace(string(output))
+	fmt.Printf("\n\"kubectl get pods -n=kube-system\" output:\n")
+	pods, err := e.listPods("kube-system", 150, 5*time.Second)
 	if err != nil {
-		return fmt.Errorf("'kubectl get configmaps --namespace=kube-system' failed %v (output %q)", err, out)
+		return fmt.Errorf("failed to list pods %v", err)
 	}
-	fmt.Printf("\n\"kubectl get configmaps --namespace=kube-system\" output:\n%s\n\n", out)
+	for _, v := range pods {
+		e.cfg.Logger.Info("kube-system pod", zap.String("name", v.GetName()))
+	}
+	println()
 
-	ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
-	output, err = exec.New().CommandContext(
-		ctx,
-		e.cfg.KubectlPath,
-		"--kubeconfig="+e.cfg.KubeConfigPath,
-		"get",
-		"namespaces",
-	).CombinedOutput()
-	cancel()
-	out = strings.TrimSpace(string(output))
+	fmt.Printf("\n\"kubectl get configmaps -n=kube-system\" output:\n")
+	configMaps, err := e.listConfigMaps("kube-system", 150, 5*time.Second)
 	if err != nil {
-		return fmt.Errorf("'kubectl get namespaces' failed %v (output %q)", err, out)
+		return fmt.Errorf("failed to list configmaps %v", err)
 	}
-	fmt.Printf("\n\"kubectl get namespaces\" output:\n%s\n\n", out)
+	for _, v := range configMaps {
+		e.cfg.Logger.Info("kube-system configmap", zap.String("name", v.GetName()))
+	}
+	println()
 
 	fmt.Printf("\n\"curl -sL http://localhost:8080/metrics | grep storage_\" output:\n")
 	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
@@ -953,6 +926,38 @@ func (e *eks) listPods(namespace string, batchLimit int64, batchInterval time.Du
 		time.Sleep(batchInterval)
 	}
 	return pods, err
+}
+
+func (e *eks) ListConfigMaps(namespace string, batchLimit int64, batchInterval time.Duration) ([]v1.ConfigMap, error) {
+	ns, err := e.listConfigMaps(namespace, batchLimit, batchInterval)
+	return ns, err
+}
+
+func (e *eks) listConfigMaps(namespace string, batchLimit int64, batchInterval time.Duration) (configMaps []v1.ConfigMap, err error) {
+	rs := &v1.ConfigMapList{ListMeta: metav1.ListMeta{Continue: ""}}
+	for {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		rs, err = e.getClient().CoreV1().ConfigMaps(namespace).List(ctx, metav1.ListOptions{Limit: batchLimit, Continue: rs.Continue})
+		cancel()
+		if err != nil {
+			return nil, err
+		}
+		configMaps = append(configMaps, rs.Items...)
+		remained := int64Value(rs.RemainingItemCount)
+		e.cfg.Logger.Info("listing configmaps",
+			zap.String("namespace", namespace),
+			zap.Int64("batch-limit", batchLimit),
+			zap.Int64("remained", remained),
+			zap.String("continue", rs.Continue),
+			zap.Duration("batch-interval", batchInterval),
+			zap.Int("items", len(rs.Items)),
+		)
+		if rs.Continue == "" {
+			break
+		}
+		time.Sleep(batchInterval)
+	}
+	return configMaps, err
 }
 
 func (e *eks) ListSecrets(namespace string, batchLimit int64, batchInterval time.Duration) ([]v1.Secret, error) {
