@@ -606,8 +606,12 @@ func volumePlugins(remote bool) []volume.VolumePlugin {
 	allPlugins = append(allPlugins, storageos.ProbeVolumePlugins()...)
 	if remote {
 		// TODO: not working in local
-		// E0524 22:33:18.036219   20838 csi_plugin.go:271] Failed to initialize CSINodeInfo: error updating CSINode annotation: timed out waiting for the condition; caused by: the server could not find the requested resource
-		// F0524 22:33:18.036237   20838 csi_plugin.go:285] Failed to initialize CSINodeInfo after retrying
+		// E0524 | csi_plugin.go:271] Failed to initialize CSINodeInfo: error updating CSINode annotation: timed out waiting for the condition; caused by: the server could not find the requested resource
+		// F0524 | 20838 csi_plugin.go:285] Failed to initialize CSINodeInfo after retrying
+		//
+		// for remote nodes, make sure to update role
+		// E0525 | csi_plugin.go:271] Failed to initialize CSINodeInfo: error updating CSINode annotation: timed out waiting for the condition; caused by: csinodes.storage.k8s.io "hollowwandefortegreen6wd8z" is forbidden: User "system:serviceaccount:eks-2020052423-boldlyuxvugd-hollow-nodes-remote:hollow-nodes-remote-service-account" cannot get resource "csinodes" in API group "storage.k8s.io" at the cluster scope
+		// F0525 | csi_plugin.go:285] Failed to initialize CSINodeInfo after retrying
 		allPlugins = append(allPlugins, csi.ProbeVolumePlugins()...)
 	}
 	return allPlugins
