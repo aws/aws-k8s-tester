@@ -41,6 +41,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.5...v1.2.6
 
 ### `eks`
 
+- Fix [`eks/mng` delete](https://github.com/aws/aws-k8s-tester/commit/34b37f632c5cc1c81345deb0fedee2cc3082bf4b).
+- Fix [`eks/ng` delete](https://github.com/aws/aws-k8s-tester/commit/c6bfc8d240d54c23471d96a5ca3d4eca0c52bf64).
 - Retries [when managed node group security group ID has not been created yet in `eks/mng`](https://github.com/aws/aws-k8s-tester/commit/9a070c9db7adeabd8151379c48494ff80b7e0899).
 - Add [`ListLimit` to `eks/stresser`](https://github.com/aws/aws-k8s-tester/commit/4661d46bf63074230c5da66b658f909d647b2c70).
 - Use [`client-go` to list nodes and CSRs](https://github.com/aws/aws-k8s-tester/commit/bd8a46b728fa41ab7bc049ce85524dc2b6d587ad).
