@@ -48,7 +48,6 @@ import (
 	"k8s.io/kubernetes/pkg/volume"
 	"k8s.io/kubernetes/pkg/volume/cephfs"
 	"k8s.io/kubernetes/pkg/volume/configmap"
-	"k8s.io/kubernetes/pkg/volume/csi"
 	"k8s.io/kubernetes/pkg/volume/downwardapi"
 	"k8s.io/kubernetes/pkg/volume/emptydir"
 	"k8s.io/kubernetes/pkg/volume/fc"
@@ -437,7 +436,7 @@ func newNode(cfg nodeConfig) (kubelet, kubeProxy, error) {
 
 			OSInterface:      &container_test.FakeOS{},
 			ContainerManager: containerManager,
-			VolumePlugins:    volumePlugins(cfg.remote),
+			VolumePlugins:    volumePlugins(),
 
 			TLSOptions: nil,
 
@@ -583,7 +582,7 @@ func (*fakeProxier) OnEndpointsUpdate(oldEndpoints, endpoints *v1.Endpoints) {}
 func (*fakeProxier) OnEndpointsDelete(endpoints *v1.Endpoints)               {}
 func (*fakeProxier) OnEndpointsSynced()                                      {}
 
-func volumePlugins(remote bool) []volume.VolumePlugin {
+func volumePlugins() []volume.VolumePlugin {
 	allPlugins := []volume.VolumePlugin{}
 	allPlugins = append(allPlugins, emptydir.ProbeVolumePlugins()...)
 	allPlugins = append(allPlugins, git_repo.ProbeVolumePlugins()...)
@@ -604,15 +603,17 @@ func volumePlugins(remote bool) []volume.VolumePlugin {
 	allPlugins = append(allPlugins, scaleio.ProbeVolumePlugins()...)
 	allPlugins = append(allPlugins, local.ProbeVolumePlugins()...)
 	allPlugins = append(allPlugins, storageos.ProbeVolumePlugins()...)
-	if remote {
-		// TODO: not working in local
-		// E0524 | csi_plugin.go:271] Failed to initialize CSINodeInfo: error updating CSINode annotation: timed out waiting for the condition; caused by: the server could not find the requested resource
-		// F0524 | 20838 csi_plugin.go:285] Failed to initialize CSINodeInfo after retrying
-		//
-		// for remote nodes, make sure to update role
-		// E0525 | csi_plugin.go:271] Failed to initialize CSINodeInfo: error updating CSINode annotation: timed out waiting for the condition; caused by: csinodes.storage.k8s.io "hollowwandefortegreen6wd8z" is forbidden: User "system:serviceaccount:eks-2020052423-boldlyuxvugd-hollow-nodes-remote:hollow-nodes-remote-service-account" cannot get resource "csinodes" in API group "storage.k8s.io" at the cluster scope
-		// F0525 | csi_plugin.go:285] Failed to initialize CSINodeInfo after retrying
-		allPlugins = append(allPlugins, csi.ProbeVolumePlugins()...)
-	}
+
+	// TODO: not working in local, not working in remote as well
+	// E0524 | csi_plugin.go:271] Failed to initialize CSINodeInfo: error updating CSINode annotation: timed out waiting for the condition; caused by: the server could not find the requested resource
+	// F0524 | 20838 csi_plugin.go:285] Failed to initialize CSINodeInfo after retrying
+	//
+	// for remote nodes, make sure to update role
+	// E0525 | csi_plugin.go:271] Failed to initialize CSINodeInfo: error updating CSINode annotation: timed out waiting for the condition; caused by: csinodes.storage.k8s.io "hollowwandefortegreen6wd8z" is forbidden: User "system:serviceaccount:eks-2020052423-boldlyuxvugd-hollow-nodes-remote:hollow-nodes-remote-service-account" cannot get resource "csinodes" in API group "storage.k8s.io" at the cluster scope
+	// F0525 | csi_plugin.go:285] Failed to initialize CSINodeInfo after retrying
+	//
+	// "k8s.io/kubernetes/pkg/volume/csi"
+	// allPlugins = append(allPlugins, csi.ProbeVolumePlugins()...)
+
 	return allPlugins
 }
