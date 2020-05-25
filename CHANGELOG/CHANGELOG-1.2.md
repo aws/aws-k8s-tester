@@ -39,7 +39,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.5...v1.2.6
 
 ### `eks`
 
-- Disable [`eks/hollow-nodes` CSI driver](https://github.com/aws/aws-k8s-tester/commit/).
+- Disable [`eks/hollow-nodes` CSI driver](https://github.com/aws/aws-k8s-tester/commit/876d0a6650f333076ee8137d416adbe5477a2fc7).
   - `"E | csi_plugin.go:271] Failed to initialize CSINodeInfo: error updating CSINode annotation: timed out waiting for the condition; caused by: the server could not find the requested resource"`
   - `"F | csi_plugin.go:285] Failed to initialize CSINodeInfo after retrying"`
 - Add [missing `eks/hollow-nodes/remote` RBAC `"csinodes"` resource](https://github.com/aws/aws-k8s-tester/commit/d28d6fd6cea97c1cf8d7cbdc51c5694bcb1b79c4).
