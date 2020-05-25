@@ -236,6 +236,7 @@ func (ts *tester) createASG() error {
 			cur.Instances = make(map[string]ec2config.Instance)
 			cur.Logs = make(map[string][]string)
 			ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName] = cur
+			ts.cfg.EKSConfig.AddOnManagedNodeGroups.Created = true
 			ts.cfg.EKSConfig.Sync()
 			ts.cfg.Logger.Info("sent create managed node group request")
 
@@ -356,6 +357,7 @@ func (ts *tester) createASG() error {
 			cur.Instances = make(map[string]ec2config.Instance)
 			cur.Logs = make(map[string][]string)
 			ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName] = cur
+			ts.cfg.EKSConfig.AddOnManagedNodeGroups.Created = true
 			ts.cfg.EKSConfig.Sync()
 
 			tss = append(tss, tupleTime{ts: time.Now(), name: mngName})
