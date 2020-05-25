@@ -1,4 +1,5 @@
-// Package hollownodes implements Hollow Nodes.
+// Package hollownodes implements hollow nodes.
+//
 // ref. https://github.com/kubernetes/kubernetes/blob/master/pkg/kubemark/hollow_kubelet.go
 // ref. https://github.com/kubernetes/kubernetes/blob/master/pkg/kubemark/hollow_proxy.go
 //
