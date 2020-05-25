@@ -203,7 +203,7 @@ func (ng *nodeGroup) checkNodes() (readyNodes []string, createdNodes []string, e
 		readies := 0
 		for _, node := range items {
 			nodeName := node.GetName()
-			if strings.HasPrefix(nodeName, ng.cfg.NodeNamePrefix) {
+			if !strings.HasPrefix(nodeName, ng.cfg.NodeNamePrefix) {
 				continue
 			}
 			labels := node.GetLabels()
@@ -220,7 +220,7 @@ func (ng *nodeGroup) checkNodes() (readyNodes []string, createdNodes []string, e
 				}
 			}
 			if notMatch {
-				ng.cfg.Logger.Debug("node labels not match", zap.String("node-name", nodeName), zap.Any("expected", ng.cfg.NodeLabels), zap.Any("got", labels))
+				ng.cfg.Logger.Info("node labels not match", zap.String("node-name", nodeName), zap.Any("expected", ng.cfg.NodeLabels), zap.Any("got", labels))
 				continue
 			}
 
@@ -559,10 +559,7 @@ func (k *hollowKubeProxy) Start() {
 
 func (k *hollowKubeProxy) Stop() {
 	k.cfg.lg.Info("stopping hollow node kube-proxy", zap.String("node-name", k.cfg.nodeName))
-	if err := k.server.CleanupAndExit(); err != nil {
-		k.cfg.lg.Warn("failed to stop kube-proxy", zap.String("node-name", k.cfg.nodeName), zap.Error(err))
-		return
-	}
+	// no-op
 	k.cfg.lg.Info("stopped hollow node kube-proxy", zap.String("node-name", k.cfg.nodeName))
 }
 
@@ -606,6 +603,9 @@ func volumePlugins(remote bool) []volume.VolumePlugin {
 	allPlugins = append(allPlugins, local.ProbeVolumePlugins()...)
 	allPlugins = append(allPlugins, storageos.ProbeVolumePlugins()...)
 	if remote {
+		// TODO: not working in local
+		// E0524 22:33:18.036219   20838 csi_plugin.go:271] Failed to initialize CSINodeInfo: error updating CSINode annotation: timed out waiting for the condition; caused by: the server could not find the requested resource
+		// F0524 22:33:18.036237   20838 csi_plugin.go:285] Failed to initialize CSINodeInfo after retrying
 		allPlugins = append(allPlugins, csi.ProbeVolumePlugins()...)
 	}
 	return allPlugins
