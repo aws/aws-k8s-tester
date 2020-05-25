@@ -520,12 +520,13 @@ func (ts *tester) createDeployment() error {
 	// do not specify "kubeconfig", and use in-cluster config via "pkg/k8s-client"
 	// otherwise, error "namespaces is forbidden: User "system:node:ip-192-168-84..."
 	// ref. https://github.com/kubernetes/client-go/blob/master/examples/in-cluster-client-configuration/main.go
-	testerCmd := fmt.Sprintf("/aws-k8s-tester eks create stresser --clients=%d --client-qps=%f --client-burst=%d --client-timeout=%s --object-size=%d --duration=%s --namespace-write=%s --namespaces-read=%s --writes-output-name-prefix=%s --reads-output-name-prefix=%s --block=true",
+	testerCmd := fmt.Sprintf("/aws-k8s-tester eks create stresser --clients=%d --client-qps=%f --client-burst=%d --client-timeout=%s --object-size=%d --list-limit=%d --duration=%s --namespace-write=%s --namespaces-read=%s --writes-output-name-prefix=%s --reads-output-name-prefix=%s --block=true",
 		ts.cfg.EKSConfig.Clients,
 		ts.cfg.EKSConfig.ClientQPS,
 		ts.cfg.EKSConfig.ClientBurst,
 		ts.cfg.EKSConfig.ClientTimeout,
 		ts.cfg.EKSConfig.AddOnStresserRemote.ObjectSize,
+		ts.cfg.EKSConfig.AddOnStresserRemote.ListLimit,
 		ts.cfg.EKSConfig.AddOnStresserRemote.Duration,
 		ts.cfg.EKSConfig.AddOnStresserRemote.Namespace,
 		strings.Join(ns, ","),

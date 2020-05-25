@@ -26,6 +26,7 @@ var (
 	stresserClientBurst   int
 	stresserClientTimeout time.Duration
 	stresserObjectSize    int
+	stresserListLimit     int64
 	stresserDuration      time.Duration
 
 	stresserNamespaceWrite string
@@ -49,6 +50,7 @@ func newCreateStresser() *cobra.Command {
 	cmd.PersistentFlags().IntVar(&stresserClientBurst, "client-burst", eksconfig.DefaultClientBurst, "kubelet client setup for burst")
 	cmd.PersistentFlags().DurationVar(&stresserClientTimeout, "client-timeout", eksconfig.DefaultClientTimeout, "kubelet client timeout")
 	cmd.PersistentFlags().IntVar(&stresserObjectSize, "object-size", 0, "Size of object per write (0 to disable writes)")
+	cmd.PersistentFlags().Int64Var(&stresserListLimit, "list-limit", 0, "Maximum number of items to return for list call (0 to list all)")
 	cmd.PersistentFlags().DurationVar(&stresserDuration, "duration", 5*time.Minute, "duration to run cluster loader")
 	cmd.PersistentFlags().StringVar(&stresserNamespaceWrite, "namespace-write", "default", "namespaces to send writes")
 	cmd.PersistentFlags().StringSliceVar(&stresserNamespacesRead, "namespaces-read", []string{"default"}, "namespaces to send reads")
@@ -102,6 +104,7 @@ func createStresserFunc(cmd *cobra.Command, args []string) {
 		NamespaceWrite: stresserNamespaceWrite,
 		NamespacesRead: stresserNamespacesRead,
 		ObjectSize:     stresserObjectSize,
+		ListLimit:      stresserListLimit,
 	})
 	loader.Start()
 

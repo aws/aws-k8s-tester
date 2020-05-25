@@ -586,6 +586,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_TIME_FRAME_DELETE                  | read-only "true"  | *eksconfig.AddOnStresserLocal.TimeFrameDelete                | timeutil.TimeFrame      |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_NAMESPACE                          | read-only "false" | *eksconfig.AddOnStresserLocal.Namespace                      | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_OBJECT_SIZE                        | read-only "false" | *eksconfig.AddOnStresserLocal.ObjectSize                     | int                     |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_LIST_LIMIT                         | read-only "false" | *eksconfig.AddOnStresserLocal.ListLimit                      | int64                   |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_DURATION                           | read-only "false" | *eksconfig.AddOnStresserLocal.Duration                       | time.Duration           |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_DURATION_STRING                    | read-only "true"  | *eksconfig.AddOnStresserLocal.DurationString                 | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_WRITES            | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryWrites          | metrics.RequestsSummary |
@@ -610,6 +611,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REPOSITORY_IMAGE_TAG                       | read-only "false" | *eksconfig.AddOnStresserRemote.RepositoryImageTag                    | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_DEPLOYMENT_REPLICAS                        | read-only "false" | *eksconfig.AddOnStresserRemote.DeploymentReplicas                    | int32                   |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_OBJECT_SIZE                                | read-only "false" | *eksconfig.AddOnStresserRemote.ObjectSize                            | int                     |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_LIST_LIMIT                                 | read-only "false" | *eksconfig.AddOnStresserRemote.ListLimit                             | int64                   |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_DURATION                                   | read-only "false" | *eksconfig.AddOnStresserRemote.Duration                              | time.Duration           |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_DURATION_STRING                            | read-only "true"  | *eksconfig.AddOnStresserRemote.DurationString                        | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_WRITES                    | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryWrites                 | metrics.RequestsSummary |

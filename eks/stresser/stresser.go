@@ -95,6 +95,7 @@ type Config struct {
 	NamespacesRead []string
 
 	ObjectSize int
+	ListLimit  int64
 }
 
 // Loader defines cluster loader operations.
@@ -127,7 +128,7 @@ func (ld *loader) Start() {
 		ld.wg.Add(1) // for writes
 		go startWrites(ld.cfg.Logger, ld.cfg.Client.KubernetesClientSet(), ld.cfg.ClientTimeout, ld.cfg.Deadline, ld.cfg.NamespaceWrite, ld.cfg.ObjectSize, ld.wg, ld.cfg.Stopc, ld.donec)
 	}
-	go startReads(ld.cfg.Logger, ld.cfg.Client.KubernetesClientSet(), ld.cfg.ClientTimeout, ld.cfg.Deadline, ld.cfg.NamespacesRead, ld.wg, ld.cfg.Stopc, ld.donec)
+	go startReads(ld.cfg.Logger, ld.cfg.Client.KubernetesClientSet(), ld.cfg.ClientTimeout, ld.cfg.Deadline, ld.cfg.NamespacesRead, ld.cfg.ListLimit, ld.wg, ld.cfg.Stopc, ld.donec)
 	ld.cfg.Logger.Info("started load functions", zap.String("namespace-write", ld.cfg.NamespaceWrite), zap.Strings("namespaces-read", ld.cfg.NamespacesRead))
 }
 
@@ -286,7 +287,7 @@ func startWrites(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duratio
 	}
 }
 
-func startReads(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration, deadline time.Time, ns []string, wg *sync.WaitGroup, stopc chan struct{}, donec chan struct{}) {
+func startReads(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration, deadline time.Time, ns []string, listLimit int64, wg *sync.WaitGroup, stopc chan struct{}, donec chan struct{}) {
 	lg.Info("starting startReads", zap.Strings("namespaces", ns))
 	defer wg.Done()
 	cnt := 0
@@ -304,7 +305,7 @@ func startReads(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration
 
 		start := time.Now()
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
-		rs, err := cli.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+		rs, err := cli.CoreV1().Nodes().List(ctx, metav1.ListOptions{Limit: listLimit})
 		cancel()
 		readRequestLatencyMs.Observe(float64(time.Since(start) / time.Millisecond))
 		if err != nil {
@@ -320,7 +321,7 @@ func startReads(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration
 		for _, nv := range ns {
 			start := time.Now()
 			ctx, cancel := context.WithTimeout(context.Background(), timeout)
-			pods, err := cli.CoreV1().Pods(nv).List(ctx, metav1.ListOptions{})
+			pods, err := cli.CoreV1().Pods(nv).List(ctx, metav1.ListOptions{Limit: listLimit})
 			cancel()
 			readRequestLatencyMs.Observe(float64(time.Since(start) / time.Millisecond))
 			if err != nil {
@@ -344,7 +345,7 @@ func startReads(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration
 
 			start = time.Now()
 			ctx, cancel = context.WithTimeout(context.Background(), timeout)
-			svcs, err := cli.CoreV1().Services(nv).List(ctx, metav1.ListOptions{})
+			svcs, err := cli.CoreV1().Services(nv).List(ctx, metav1.ListOptions{Limit: listLimit})
 			cancel()
 			readRequestLatencyMs.Observe(float64(time.Since(start) / time.Millisecond))
 			if err != nil {
@@ -368,7 +369,7 @@ func startReads(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration
 
 			start = time.Now()
 			ctx, cancel = context.WithTimeout(context.Background(), timeout)
-			eps, err := cli.CoreV1().Endpoints(nv).List(ctx, metav1.ListOptions{})
+			eps, err := cli.CoreV1().Endpoints(nv).List(ctx, metav1.ListOptions{Limit: listLimit})
 			cancel()
 			readRequestLatencyMs.Observe(float64(time.Since(start) / time.Millisecond))
 			if err != nil {
@@ -392,7 +393,7 @@ func startReads(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration
 
 			start = time.Now()
 			ctx, cancel = context.WithTimeout(context.Background(), timeout)
-			cms, err := cli.CoreV1().ConfigMaps(nv).List(ctx, metav1.ListOptions{})
+			cms, err := cli.CoreV1().ConfigMaps(nv).List(ctx, metav1.ListOptions{Limit: listLimit})
 			cancel()
 			readRequestLatencyMs.Observe(float64(time.Since(start) / time.Millisecond))
 			if err != nil {
@@ -416,7 +417,7 @@ func startReads(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration
 
 			start = time.Now()
 			ctx, cancel = context.WithTimeout(context.Background(), timeout)
-			ss, err := cli.CoreV1().Secrets(nv).List(ctx, metav1.ListOptions{})
+			ss, err := cli.CoreV1().Secrets(nv).List(ctx, metav1.ListOptions{Limit: listLimit})
 			cancel()
 			readRequestLatencyMs.Observe(float64(time.Since(start) / time.Millisecond))
 			if err != nil {
@@ -440,7 +441,7 @@ func startReads(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration
 
 			start = time.Now()
 			ctx, cancel = context.WithTimeout(context.Background(), timeout)
-			jobs, err := cli.BatchV1().Jobs(nv).List(ctx, metav1.ListOptions{})
+			jobs, err := cli.BatchV1().Jobs(nv).List(ctx, metav1.ListOptions{Limit: listLimit})
 			cancel()
 			readRequestLatencyMs.Observe(float64(time.Since(start) / time.Millisecond))
 			if err != nil {
@@ -464,7 +465,7 @@ func startReads(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration
 
 			start = time.Now()
 			ctx, cancel = context.WithTimeout(context.Background(), timeout)
-			cjbs, err := cli.BatchV1beta1().CronJobs(nv).List(ctx, metav1.ListOptions{})
+			cjbs, err := cli.BatchV1beta1().CronJobs(nv).List(ctx, metav1.ListOptions{Limit: listLimit})
 			cancel()
 			readRequestLatencyMs.Observe(float64(time.Since(start) / time.Millisecond))
 			if err != nil {

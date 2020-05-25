@@ -45,6 +45,10 @@ type AddOnStresserRemote struct {
 	// ObjectSize is the value size in bytes for write objects.
 	// If 0, do not write anything.
 	ObjectSize int `json:"object-size"`
+	// ListLimit is the maximum number of items in the list call.
+	// Sets "metav1.ListOptions".Limit field.
+	// 0 to list all.
+	ListLimit int64 `json:"list-limit"`
 	// Duration is the duration to run load testing.
 	// The cluster loader waits "one" "Duration" for hollow ones.
 	// And other one for cluster loader.
@@ -91,6 +95,7 @@ func getDefaultAddOnStresserRemote() *AddOnStresserRemote {
 		Enable:                                false,
 		DeploymentReplicas:                    5,
 		ObjectSize:                            0,
+		ListLimit:                             0,
 		Duration:                              time.Minute,
 		RequestsSummaryWritesOutputNamePrefix: "stresser-writes" + randutil.String(10),
 		RequestsSummaryReadsOutputNamePrefix:  "stresser-reads" + randutil.String(10),

@@ -93,6 +93,7 @@ func (ts *tester) Create() (err error) {
 		NamespaceWrite: ts.cfg.EKSConfig.AddOnStresserLocal.Namespace,
 		NamespacesRead: ns,
 		ObjectSize:     ts.cfg.EKSConfig.AddOnStresserLocal.ObjectSize,
+		ListLimit:      ts.cfg.EKSConfig.AddOnStresserLocal.ListLimit,
 	})
 	loader.Start()
 

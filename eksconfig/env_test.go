@@ -386,6 +386,8 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_ENABLE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_DURATION", "7m30s")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_DURATION")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_LIST_LIMIT", "133")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_LIST_LIMIT")
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_ENABLE")
@@ -400,7 +402,9 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_DEPLOYMENT_REPLICAS", "500")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_DEPLOYMENT_REPLICAS")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_OBJECT_SIZE", "512")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_ENABLE")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_OBJECT_SIZE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_LIST_LIMIT", "177")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_LIST_LIMIT")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_WRITES_OUTPUT_NAME_PREFIX", "stresser-out-pfx")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_WRITES_OUTPUT_NAME_PREFIX")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_READS_OUTPUT_NAME_PREFIX", "stresser-out-pfx")
@@ -1034,6 +1038,9 @@ func TestEnv(t *testing.T) {
 	if cfg.AddOnStresserLocal.Duration != 7*time.Minute+30*time.Second {
 		t.Fatalf("unexpected cfg.AddOnStresserLocal.Duration %v", cfg.AddOnStresserLocal.Duration)
 	}
+	if cfg.AddOnStresserLocal.ListLimit != 133 {
+		t.Fatalf("unexpected cfg.AddOnStresserLocal.ListLimit %v", cfg.AddOnStresserLocal.ListLimit)
+	}
 
 	if !cfg.AddOnStresserRemote.Enable {
 		t.Fatalf("unexpected cfg.AddOnStresserRemote.Enable %v", cfg.AddOnStresserRemote.Enable)
@@ -1055,6 +1062,9 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.AddOnStresserRemote.ObjectSize != 512 {
 		t.Fatalf("unexpected cfg.AddOnStresserRemote.ObjectSize %v", cfg.AddOnStresserRemote.ObjectSize)
+	}
+	if cfg.AddOnStresserRemote.ListLimit != 177 {
+		t.Fatalf("unexpected cfg.AddOnStresserRemote.ListLimit %v", cfg.AddOnStresserRemote.ListLimit)
 	}
 	if cfg.AddOnStresserRemote.RequestsSummaryWritesOutputNamePrefix != "stresser-out-pfx" {
 		t.Fatalf("unexpected cfg.AddOnStresserRemote.RequestsSummaryWritesOutputNamePrefix %v", cfg.AddOnStresserRemote.RequestsSummaryWritesOutputNamePrefix)
