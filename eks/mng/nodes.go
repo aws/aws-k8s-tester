@@ -944,8 +944,8 @@ func (ts *tester) waitForNodes(mngName string) error {
 				ts.cfg.Logger.Warn("node may not belong to this ASG", zap.String("host-name", hostName), zap.Int("ec2-private-dnss", len(ec2PrivateDNS)))
 				continue
 			}
-			ts.cfg.Logger.Info("checked node host name with EC2 Private DNS", zap.String("name", nodeName), zap.String("host-name", hostName))
-			ts.cfg.Logger.Info("checking node readiness", zap.String("name", nodeName))
+			ts.cfg.Logger.Debug("checked node host name with EC2 Private DNS", zap.String("name", nodeName), zap.String("host-name", hostName))
+
 			for _, cond := range node.Status.Conditions {
 				if cond.Status != v1.ConditionTrue {
 					continue

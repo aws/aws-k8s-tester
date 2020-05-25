@@ -223,7 +223,6 @@ func (ng *nodeGroup) checkNodes() (readyNodes []string, createdNodes []string, e
 				continue
 			}
 
-			ng.cfg.Logger.Info("checking node readiness", zap.String("name", nodeName))
 			for _, cond := range node.Status.Conditions {
 				if cond.Status != v1.ConditionTrue {
 					continue
