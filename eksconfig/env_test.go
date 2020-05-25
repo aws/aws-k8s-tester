@@ -1087,6 +1087,10 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("unexpected cfg.AddOnFargate.SecretName %q", cfg.AddOnFargate.SecretName)
 	}
 
+	if cfg.TotalNodes != 222 {
+		t.Fatalf("unexpected cfg.TotalNodes %d", cfg.TotalNodes)
+	}
+
 	d, err := ioutil.ReadFile(cfg.ConfigPath)
 	if err != nil {
 		t.Fatal(err)

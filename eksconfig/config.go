@@ -175,6 +175,9 @@ type Config struct {
 	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
 	AddOnManagedNodeGroups *AddOnManagedNodeGroups `json:"add-on-managed-node-groups,omitempty"`
 
+	// TotalNodes is the total number of nodes from all node groups.
+	TotalNodes int64 `json:"total-nodes" read-only:"true"`
+
 	// AddOnConformance defines parameters for EKS cluster
 	// add-on Conformance.
 	AddOnConformance *AddOnConformance `json:"add-on-conformance,omitempty"`
@@ -695,6 +698,19 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	if err := cfg.validateAddOnManagedNodeGroups(); err != nil {
 		return fmt.Errorf("validateAddOnManagedNodeGroups failed [%v]", err)
 	}
+
+	total := int64(0)
+	if cfg.IsEnabledAddOnNodeGroups() {
+		for _, cur := range cfg.AddOnNodeGroups.ASGs {
+			total += cur.ASGDesiredCapacity
+		}
+	}
+	if cfg.IsEnabledAddOnManagedNodeGroups() {
+		for _, cur := range cfg.AddOnManagedNodeGroups.MNGs {
+			total += int64(cur.ASGDesiredCapacity)
+		}
+	}
+	cfg.TotalNodes = total
 
 	if err := cfg.validateAddOnCSIEBS(); err != nil {
 		return fmt.Errorf("validateAddOnCSIEBS failed [%v]", err)
