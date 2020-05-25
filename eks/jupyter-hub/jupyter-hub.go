@@ -15,6 +15,7 @@ import (
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/httputil"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
+	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-sdk-go/aws"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
@@ -66,10 +67,9 @@ func (ts *tester) Create() error {
 	ts.cfg.EKSConfig.AddOnJupyterHub.Created = true
 	ts.cfg.EKSConfig.Sync()
 	createStart := time.Now()
-
 	defer func() {
-		ts.cfg.EKSConfig.AddOnJupyterHub.CreateTook = time.Since(createStart)
-		ts.cfg.EKSConfig.AddOnJupyterHub.CreateTookString = ts.cfg.EKSConfig.AddOnJupyterHub.CreateTook.String()
+		createEnd := time.Now()
+		ts.cfg.EKSConfig.AddOnJupyterHub.TimeFrameCreate = timeutil.NewTimeFrame(createStart, createEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 
@@ -108,8 +108,8 @@ func (ts *tester) Delete() error {
 
 	deleteStart := time.Now()
 	defer func() {
-		ts.cfg.EKSConfig.AddOnJupyterHub.DeleteTook = time.Since(deleteStart)
-		ts.cfg.EKSConfig.AddOnJupyterHub.DeleteTookString = ts.cfg.EKSConfig.AddOnJupyterHub.DeleteTook.String()
+		deleteEnd := time.Now()
+		ts.cfg.EKSConfig.AddOnJupyterHub.TimeFrameDelete = timeutil.NewTimeFrame(deleteStart, deleteEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 

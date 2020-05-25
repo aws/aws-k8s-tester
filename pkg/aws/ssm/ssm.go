@@ -22,8 +22,6 @@ type FetchConfig struct {
 	BatchInterval time.Duration
 }
 
-const rfc3339Micro = "2006-01-02T15:04:05.999Z07:00"
-
 // FetchOutputs downloads SSM doc run outputs.
 // It only returns the invocation whose status is "Success".
 // e.g. aws ssm list-command-invocations --details --filter key=DocumentName,value=ResourceCounterSSMDocDevStack
@@ -42,7 +40,7 @@ func FetchOutputs(cfg FetchConfig) (ivs []*ssm.CommandInvocation, err error) {
 			},
 			{
 				Key:   aws.String("InvokedAfter"),
-				Value: aws.String(cfg.InvokedAfter.Format(rfc3339Micro)),
+				Value: aws.String(cfg.InvokedAfter.Format(time.RFC3339Nano)),
 			},
 		},
 	}

@@ -21,6 +21,11 @@ TODO
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.5...v1.2.6).
 
+### `ec2config`
+
+- Add [`timeutil.TimeFrame` read-only fields for create/delete](https://github.com/aws/aws-k8s-tester/commit/).
+  - `ec2config.Config.TimeUTCCreateCompleteRFC3339Micro` is now `pkg/timeutil.TimeFrame`.
+
 ### `ec2`
 
 - Increase [log fetcher QPS from 150 to 250](https://github.com/aws/aws-k8s-tester/commit/fa7eb513d4112fcf767abcb28b9f47ba21635a3c).
@@ -29,6 +34,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.5...v1.2.6
 ### `eksconfig`
 
 - Increase [`NGMaxLimit` from 300 to 5000](https://github.com/aws/aws-k8s-tester/commit/34bbeb50a034d86a854017591bb6c69e35e5a699).
+- Add [`timeutil.TimeFrame` read-only fields for create/delete](https://github.com/aws/aws-k8s-tester/commit/).
+  - `ec2config.Config.TimeUTCCreateCompleteRFC3339Micro` is now `pkg/timeutil.TimeFrame`.
 
 ### `eks`
 

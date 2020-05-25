@@ -17,6 +17,7 @@ import (
 	aws_ecr "github.com/aws/aws-k8s-tester/pkg/aws/ecr"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/metrics"
+	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
 	"go.uber.org/zap"
@@ -71,10 +72,9 @@ func (ts *tester) Create() (err error) {
 	ts.cfg.EKSConfig.AddOnStresserRemote.Created = true
 	ts.cfg.EKSConfig.Sync()
 	createStart := time.Now()
-
 	defer func() {
-		ts.cfg.EKSConfig.AddOnStresserRemote.CreateTook = time.Since(createStart)
-		ts.cfg.EKSConfig.AddOnStresserRemote.CreateTookString = ts.cfg.EKSConfig.AddOnStresserRemote.CreateTook.String()
+		createEnd := time.Now()
+		ts.cfg.EKSConfig.AddOnStresserRemote.TimeFrameCreate = timeutil.NewTimeFrame(createStart, createEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 
@@ -160,8 +160,8 @@ func (ts *tester) Delete() error {
 
 	deleteStart := time.Now()
 	defer func() {
-		ts.cfg.EKSConfig.AddOnStresserRemote.DeleteTook = time.Since(deleteStart)
-		ts.cfg.EKSConfig.AddOnStresserRemote.DeleteTookString = ts.cfg.EKSConfig.AddOnStresserRemote.DeleteTook.String()
+		deleteEnd := time.Now()
+		ts.cfg.EKSConfig.AddOnStresserRemote.TimeFrameDelete = timeutil.NewTimeFrame(deleteStart, deleteEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 

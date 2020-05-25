@@ -17,6 +17,7 @@ import (
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
+	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -134,15 +135,11 @@ func (ts *Tester) createCluster() (err error) {
 	return ts.createSubTesters()
 }
 
-const rfc3339Micro = "2006-01-02T15:04:05.999Z07:00"
-
 func (ts *Tester) createEKS() (err error) {
 	createStart := time.Now()
 	defer func() {
-		ts.cfg.Status.CreateTook = time.Since(createStart)
-		ts.cfg.Status.CreateTookString = ts.cfg.Status.CreateTook.String()
-		ts.cfg.Status.TimeUTCCreateComplete = time.Now().UTC()
-		ts.cfg.Status.TimeUTCCreateCompleteRFC3339Micro = ts.cfg.Status.TimeUTCCreateComplete.Format(rfc3339Micro)
+		createEnd := time.Now()
+		ts.cfg.Status.TimeFrameCreate = timeutil.NewTimeFrame(createStart, createEnd)
 		ts.cfg.Sync()
 	}()
 
@@ -357,8 +354,8 @@ func (ts *Tester) createEKS() (err error) {
 func (ts *Tester) deleteCluster() error {
 	deleteStart := time.Now()
 	defer func() {
-		ts.cfg.Status.DeleteTook = time.Since(deleteStart)
-		ts.cfg.Status.DeleteTookString = ts.cfg.Status.DeleteTook.String()
+		deleteEnd := time.Now()
+		ts.cfg.Status.TimeFrameDelete = timeutil.NewTimeFrame(deleteStart, deleteEnd)
 		ts.cfg.Sync()
 	}()
 

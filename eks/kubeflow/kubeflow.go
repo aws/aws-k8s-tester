@@ -18,6 +18,7 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/pkg/httputil"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
+	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/mholt/archiver/v3"
 	"go.uber.org/zap"
 	"k8s.io/utils/exec"
@@ -59,10 +60,9 @@ func (ts *tester) Create() error {
 	ts.cfg.EKSConfig.AddOnKubeflow.Created = true
 	ts.cfg.EKSConfig.Sync()
 	createStart := time.Now()
-
 	defer func() {
-		ts.cfg.EKSConfig.AddOnKubeflow.CreateTook = time.Since(createStart)
-		ts.cfg.EKSConfig.AddOnKubeflow.CreateTookString = ts.cfg.EKSConfig.AddOnKubeflow.CreateTook.String()
+		createEnd := time.Now()
+		ts.cfg.EKSConfig.AddOnKubeflow.TimeFrameCreate = timeutil.NewTimeFrame(createStart, createEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 
@@ -87,8 +87,8 @@ func (ts *tester) Delete() error {
 
 	deleteStart := time.Now()
 	defer func() {
-		ts.cfg.EKSConfig.AddOnKubeflow.DeleteTook = time.Since(deleteStart)
-		ts.cfg.EKSConfig.AddOnKubeflow.DeleteTookString = ts.cfg.EKSConfig.AddOnKubeflow.DeleteTook.String()
+		deleteEnd := time.Now()
+		ts.cfg.EKSConfig.AddOnKubeflow.TimeFrameDelete = timeutil.NewTimeFrame(deleteStart, deleteEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 

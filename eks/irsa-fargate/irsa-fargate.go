@@ -18,6 +18,7 @@ import (
 	aws_ecr "github.com/aws/aws-k8s-tester/pkg/aws/ecr"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/randutil"
+	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -77,11 +78,10 @@ func (ts *tester) Create() (err error) {
 
 	ts.cfg.EKSConfig.AddOnIRSAFargate.Created = true
 	ts.cfg.EKSConfig.Sync()
-
 	createStart := time.Now()
 	defer func() {
-		ts.cfg.EKSConfig.AddOnIRSAFargate.CreateTook = time.Since(createStart)
-		ts.cfg.EKSConfig.AddOnIRSAFargate.CreateTookString = ts.cfg.EKSConfig.AddOnIRSAFargate.CreateTook.String()
+		createEnd := time.Now()
+		ts.cfg.EKSConfig.AddOnIRSAFargate.TimeFrameCreate = timeutil.NewTimeFrame(createStart, createEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 
@@ -140,8 +140,8 @@ func (ts *tester) Delete() error {
 
 	deleteStart := time.Now()
 	defer func() {
-		ts.cfg.EKSConfig.AddOnIRSAFargate.DeleteTook = time.Since(deleteStart)
-		ts.cfg.EKSConfig.AddOnIRSAFargate.DeleteTookString = ts.cfg.EKSConfig.AddOnIRSAFargate.DeleteTook.String()
+		deleteEnd := time.Now()
+		ts.cfg.EKSConfig.AddOnIRSAFargate.TimeFrameDelete = timeutil.NewTimeFrame(deleteStart, deleteEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 

@@ -13,6 +13,7 @@ import (
 	"github.com/aws/aws-k8s-tester/eks/helm"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
+	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"go.uber.org/zap"
 	"k8s.io/utils/exec"
 )
@@ -53,10 +54,9 @@ func (ts *tester) Create() error {
 	ts.cfg.EKSConfig.AddOnCSIEBS.Created = true
 	ts.cfg.EKSConfig.Sync()
 	createStart := time.Now()
-
 	defer func() {
-		ts.cfg.EKSConfig.AddOnCSIEBS.CreateTook = time.Since(createStart)
-		ts.cfg.EKSConfig.AddOnCSIEBS.CreateTookString = ts.cfg.EKSConfig.AddOnCSIEBS.CreateTook.String()
+		createEnd := time.Now()
+		ts.cfg.EKSConfig.AddOnCSIEBS.TimeFrameCreate = timeutil.NewTimeFrame(createStart, createEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 
@@ -75,8 +75,8 @@ func (ts *tester) Delete() error {
 
 	deleteStart := time.Now()
 	defer func() {
-		ts.cfg.EKSConfig.AddOnCSIEBS.DeleteTook = time.Since(deleteStart)
-		ts.cfg.EKSConfig.AddOnCSIEBS.DeleteTookString = ts.cfg.EKSConfig.AddOnCSIEBS.DeleteTook.String()
+		deleteEnd := time.Now()
+		ts.cfg.EKSConfig.AddOnCSIEBS.TimeFrameDelete = timeutil.NewTimeFrame(deleteStart, deleteEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 

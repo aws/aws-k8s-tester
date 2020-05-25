@@ -15,6 +15,7 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
 	aws_ec2 "github.com/aws/aws-k8s-tester/pkg/aws/ec2"
 	k8s_object "github.com/aws/aws-k8s-tester/pkg/k8s-object"
+	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/autoscaling"
@@ -545,8 +546,7 @@ func (ts *tester) createASGs() error {
 		}
 		stackOutput, err := ts.cfg.CFNAPI.CreateStack(stackInput)
 		if err != nil {
-			cur.CreateTook += time.Since(timeStart)
-			cur.CreateTookString = cur.CreateTook.String()
+			cur.TimeFrameCreate = timeutil.NewTimeFrame(timeStart, time.Now())
 			ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName] = cur
 			ts.cfg.EKSConfig.Sync()
 			return err
@@ -568,7 +568,7 @@ func (ts *tester) createASGs() error {
 			return fmt.Errorf("ASG name %q not found after creation", asgName)
 		}
 
-		now := time.Now()
+		timeStart := time.Now()
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
 		ch := cfn.Poll(
 			ctx,
@@ -589,8 +589,8 @@ func (ts *tester) createASGs() error {
 		}
 		cancel()
 		if st.Error != nil {
-			cur.CreateTook += time.Since(now)
-			cur.CreateTookString = cur.CreateTook.String()
+			timeEnd := time.Now()
+			cur.TimeFrameCreate = timeutil.NewTimeFrame(cur.TimeFrameCreate.StartUTC, cur.TimeFrameCreate.EndUTC.Add(timeEnd.Sub(timeStart)))
 			ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName] = cur
 			ts.cfg.EKSConfig.Sync()
 			return st.Error
@@ -603,8 +603,8 @@ func (ts *tester) createASGs() error {
 			case "InstanceProfileARN":
 				ts.cfg.Logger.Info("found InstanceProfileARN value from CFN", zap.String("value", aws.StringValue(o.OutputValue)))
 			default:
-				cur.CreateTook += time.Since(now)
-				cur.CreateTookString = cur.CreateTook.String()
+				timeEnd := time.Now()
+				cur.TimeFrameCreate = timeutil.NewTimeFrame(timeStart, timeEnd)
 				ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName] = cur
 				ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("unexpected key from ASG stack (%v)", k))
 				ts.cfg.EKSConfig.Sync()
@@ -616,8 +616,8 @@ func (ts *tester) createASGs() error {
 			zap.String("name", cur.Name),
 			zap.String("cfn-stack-id", cur.ASGCFNStackID),
 		)
-		cur.CreateTook += time.Since(now)
-		cur.CreateTookString = cur.CreateTook.String()
+		timeEnd := time.Now()
+		cur.TimeFrameCreate = timeutil.NewTimeFrame(timeStart, timeEnd)
 		ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName] = cur
 		ts.cfg.EKSConfig.Sync()
 
@@ -626,7 +626,7 @@ func (ts *tester) createASGs() error {
 		}
 		ts.cfg.Logger.Info("created a Node Group",
 			zap.String("ng-name", cur.Name),
-			zap.String("took", cur.CreateTookString),
+			zap.String("took", cur.TimeFrameCreate.TookString),
 		)
 	}
 
@@ -650,8 +650,8 @@ func (ts *tester) deleteASGs() error {
 			StackName: aws.String(cur.ASGCFNStackID),
 		})
 		if err != nil {
-			cur.DeleteTook += time.Since(timeStart)
-			cur.DeleteTookString = cur.DeleteTook.String()
+			timeEnd := time.Now()
+			cur.TimeFrameDelete = timeutil.NewTimeFrame(timeStart, timeEnd)
 			ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName] = cur
 			ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("failed to delete ASG (%v)", err))
 			ts.cfg.EKSConfig.Sync()
@@ -682,15 +682,15 @@ func (ts *tester) deleteASGs() error {
 		}
 		cancel()
 		if st.Error != nil {
-			cur.DeleteTook += time.Since(timeStart)
-			cur.DeleteTookString = cur.DeleteTook.String()
+			timeEnd := time.Now()
+			cur.TimeFrameDelete = timeutil.NewTimeFrame(cur.TimeFrameDelete.StartUTC, cur.TimeFrameDelete.EndUTC.Add(timeEnd.Sub(timeStart)))
 			ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName] = cur
 			ts.cfg.EKSConfig.Sync()
 			return st.Error
 		}
 		ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("%q/%s", asgName, ec2config.StatusDELETEDORNOTEXIST))
-		cur.DeleteTook += time.Since(timeStart)
-		cur.DeleteTookString = cur.DeleteTook.String()
+		timeEnd := time.Now()
+		cur.TimeFrameDelete = timeutil.NewTimeFrame(cur.TimeFrameDelete.StartUTC, cur.TimeFrameDelete.EndUTC.Add(timeEnd.Sub(timeStart)))
 		ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName] = cur
 		ts.cfg.EKSConfig.Sync()
 	}
@@ -703,6 +703,8 @@ func (ts *tester) waitForNodes(asgName string) error {
 	if !ok {
 		return fmt.Errorf("Node Group %q not found", asgName)
 	}
+
+	timeStart := time.Now()
 
 	aout, err := ts.cfg.ASGAPI.DescribeAutoScalingGroups(&autoscaling.DescribeAutoScalingGroupsInput{
 		AutoScalingGroupNames: aws.StringSlice([]string{cur.Name}),
@@ -746,6 +748,8 @@ func (ts *tester) waitForNodes(asgName string) error {
 		ivv.RemoteAccessUserName = cur.RemoteAccessUserName
 		cur.Instances[id] = ivv
 	}
+	timeEnd := time.Now()
+	cur.TimeFrameCreate = timeutil.NewTimeFrame(cur.TimeFrameCreate.StartUTC, cur.TimeFrameCreate.EndUTC.Add(timeEnd.Sub(timeStart)))
 	ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName] = cur
 	ts.cfg.EKSConfig.Sync()
 

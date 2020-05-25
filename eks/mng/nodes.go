@@ -15,6 +15,7 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
 	aws_ec2 "github.com/aws/aws-k8s-tester/pkg/aws/ec2"
 	k8s_object "github.com/aws/aws-k8s-tester/pkg/k8s-object"
+	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -140,12 +141,6 @@ type templateMNG struct {
 }
 
 func (ts *tester) createASG() error {
-	createStart := time.Now()
-	defer func() {
-		ts.cfg.EKSConfig.AddOnManagedNodeGroups.CreateTook = time.Since(createStart)
-		ts.cfg.EKSConfig.AddOnManagedNodeGroups.CreateTookString = ts.cfg.EKSConfig.AddOnManagedNodeGroups.CreateTook.String()
-	}()
-
 	if ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleARN == "" {
 		return errors.New("empty AddOnManagedNodeGroups.RoleARN")
 	}
@@ -220,6 +215,7 @@ func (ts *tester) createASG() error {
 				ts.cfg.Logger.Info("added EKS release version", zap.String("version", cur.ReleaseVersion))
 			}
 
+			timeStart := time.Now()
 			req, _ := ts.cfg.EKSAPI.CreateNodegroupRequest(&createInput)
 			if ts.cfg.EKSConfig.AddOnManagedNodeGroups.RequestHeaderKey != "" && ts.cfg.EKSConfig.AddOnManagedNodeGroups.RequestHeaderValue != "" {
 				req.HTTPRequest.Header[ts.cfg.EKSConfig.AddOnManagedNodeGroups.RequestHeaderKey] = []string{ts.cfg.EKSConfig.AddOnManagedNodeGroups.RequestHeaderValue}
@@ -235,6 +231,7 @@ func (ts *tester) createASG() error {
 				return fmt.Errorf("create node group request failed (%v)", err)
 			}
 
+			cur.TimeFrameCreate = timeutil.NewTimeFrame(timeStart, time.Now())
 			cur.CreateRequested = true
 			cur.Status = aws_eks.NodegroupStatusCreating
 			cur.Instances = make(map[string]ec2config.Instance)
@@ -347,11 +344,13 @@ func (ts *tester) createASG() error {
 				})
 			}
 
+			timeStart := time.Now()
 			stackOutput, err := ts.cfg.CFNAPI.CreateStack(stackInput)
 			if err != nil {
 				return err
 			}
 
+			cur.TimeFrameCreate = timeutil.NewTimeFrame(timeStart, time.Now())
 			cur.CreateRequested = true
 			cur.CFNStackID = aws.StringValue(stackOutput.StackId)
 			cur.Status = cloudformation.ResourceStatusCreateInProgress
@@ -376,6 +375,7 @@ func (ts *tester) createASG() error {
 
 		mngStackID := cur.CFNStackID
 		if mngStackID != "" {
+			timeStart := time.Now()
 			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
 			ch := cfn.Poll(
 				ctx,
@@ -390,6 +390,8 @@ func (ts *tester) createASG() error {
 			var st cfn.StackStatus
 			for st = range ch {
 				if st.Error != nil {
+					timeEnd := time.Now()
+					cur.TimeFrameCreate = timeutil.NewTimeFrame(cur.TimeFrameCreate.StartUTC, cur.TimeFrameCreate.EndUTC.Add(timeEnd.Sub(timeStart)))
 					cur.Status = fmt.Sprintf("failed to create managed node group (%v)", st.Error)
 					ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName] = cur
 					ts.cfg.EKSConfig.Sync()
@@ -399,6 +401,8 @@ func (ts *tester) createASG() error {
 			for _, o := range st.Stack.Outputs {
 				switch k := aws.StringValue(o.OutputKey); k {
 				case "MNGID":
+					timeEnd := time.Now()
+					cur.TimeFrameCreate = timeutil.NewTimeFrame(cur.TimeFrameCreate.StartUTC, cur.TimeFrameCreate.EndUTC.Add(timeEnd.Sub(timeStart)))
 					cur.PhysicalID = aws.StringValue(o.OutputValue)
 					ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName] = cur
 					ts.cfg.EKSConfig.Sync()
@@ -409,6 +413,7 @@ func (ts *tester) createASG() error {
 			}
 		}
 
+		timeStart := time.Now()
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
 		ch := Poll(
 			ctx,
@@ -437,10 +442,19 @@ func (ts *tester) createASG() error {
 			}
 		}
 		cancel()
+		timeEnd := time.Now()
+		cur.TimeFrameCreate = timeutil.NewTimeFrame(cur.TimeFrameCreate.StartUTC, cur.TimeFrameCreate.EndUTC.Add(timeEnd.Sub(timeStart)))
+		ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName] = cur
+		ts.cfg.EKSConfig.Sync()
 
+		timeStart = time.Now()
 		if err := ts.waitForNodes(cur.Name); err != nil {
 			return err
 		}
+		timeEnd = time.Now()
+		cur.TimeFrameCreate = timeutil.NewTimeFrame(cur.TimeFrameCreate.StartUTC, cur.TimeFrameCreate.EndUTC.Add(timeEnd.Sub(timeStart)))
+		ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName] = cur
+		ts.cfg.EKSConfig.Sync()
 
 		ts.cfg.Logger.Info("created a managed node group",
 			zap.String("mng-name", cur.Name),
@@ -451,13 +465,6 @@ func (ts *tester) createASG() error {
 }
 
 func (ts *tester) deleteASG() error {
-	deleteStart := time.Now()
-	defer func() {
-		ts.cfg.EKSConfig.AddOnManagedNodeGroups.DeleteTook = time.Since(deleteStart)
-		ts.cfg.EKSConfig.AddOnManagedNodeGroups.DeleteTookString = ts.cfg.EKSConfig.AddOnManagedNodeGroups.DeleteTook.String()
-		ts.cfg.EKSConfig.Sync()
-	}()
-
 	ts.cfg.Logger.Info("deleting managed node groups")
 	for mngName, cur := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
 		if mngName == "" {
@@ -510,6 +517,8 @@ func (ts *tester) deleteASG() error {
 			useCFN = false
 		}
 
+		timeStart := time.Now()
+
 		if useCFN {
 			ts.cfg.Logger.Info("waiting for delete managed node group using CFN",
 				zap.String("mng-name", mngName),
@@ -534,6 +543,8 @@ func (ts *tester) deleteASG() error {
 			for st = range ch {
 				if st.Error != nil {
 					cancel()
+					timeEnd := time.Now()
+					cur.TimeFrameDelete = timeutil.NewTimeFrame(timeStart, timeEnd)
 					cur.Status = fmt.Sprintf("failed to delete a managed node group (%v)", st.Error)
 					ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName] = cur
 					ts.cfg.EKSConfig.Sync()
@@ -573,6 +584,8 @@ func (ts *tester) deleteASG() error {
 			cancel()
 		}
 
+		timeEnd := time.Now()
+		cur.TimeFrameDelete = timeutil.NewTimeFrame(timeStart, timeEnd)
 		cur.Status = ManagedNodeGroupStatusDELETEDORNOTEXIST
 		ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName] = cur
 		ts.cfg.EKSConfig.Sync()

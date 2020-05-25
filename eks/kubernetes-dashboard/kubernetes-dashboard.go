@@ -14,6 +14,7 @@ import (
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/httputil"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
+	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"go.uber.org/zap"
 )
 
@@ -53,10 +54,9 @@ func (ts *tester) Create() error {
 	ts.cfg.EKSConfig.AddOnKubernetesDashboard.Created = true
 	ts.cfg.EKSConfig.Sync()
 	createStart := time.Now()
-
 	defer func() {
-		ts.cfg.EKSConfig.AddOnKubernetesDashboard.CreateTook = time.Since(createStart)
-		ts.cfg.EKSConfig.AddOnKubernetesDashboard.CreateTookString = ts.cfg.EKSConfig.AddOnKubernetesDashboard.CreateTook.String()
+		createEnd := time.Now()
+		ts.cfg.EKSConfig.AddOnKubernetesDashboard.TimeFrameCreate = timeutil.NewTimeFrame(createStart, createEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 
@@ -85,8 +85,8 @@ func (ts *tester) Delete() error {
 
 	deleteStart := time.Now()
 	defer func() {
-		ts.cfg.EKSConfig.AddOnKubernetesDashboard.DeleteTook = time.Since(deleteStart)
-		ts.cfg.EKSConfig.AddOnKubernetesDashboard.DeleteTookString = ts.cfg.EKSConfig.AddOnKubernetesDashboard.DeleteTook.String()
+		deleteEnd := time.Now()
+		ts.cfg.EKSConfig.AddOnKubernetesDashboard.TimeFrameDelete = timeutil.NewTimeFrame(deleteStart, deleteEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 

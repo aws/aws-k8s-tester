@@ -20,6 +20,7 @@ import (
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	aws_ecr "github.com/aws/aws-k8s-tester/pkg/aws/ecr"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
+	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
 	"go.uber.org/zap"
@@ -68,10 +69,9 @@ func (ts *tester) Create() (err error) {
 	ts.cfg.EKSConfig.AddOnHollowNodesRemote.Created = true
 	ts.cfg.EKSConfig.Sync()
 	createStart := time.Now()
-
 	defer func() {
-		ts.cfg.EKSConfig.AddOnHollowNodesRemote.CreateTook = time.Since(createStart)
-		ts.cfg.EKSConfig.AddOnHollowNodesRemote.CreateTookString = ts.cfg.EKSConfig.AddOnHollowNodesRemote.CreateTook.String()
+		createEnd := time.Now()
+		ts.cfg.EKSConfig.AddOnHollowNodesRemote.TimeFrameCreate = timeutil.NewTimeFrame(createStart, createEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 
@@ -144,8 +144,8 @@ func (ts *tester) Delete() (err error) {
 
 	deleteStart := time.Now()
 	defer func() {
-		ts.cfg.EKSConfig.AddOnHollowNodesRemote.DeleteTook = time.Since(deleteStart)
-		ts.cfg.EKSConfig.AddOnHollowNodesRemote.DeleteTookString = ts.cfg.EKSConfig.AddOnHollowNodesRemote.DeleteTook.String()
+		deleteEnd := time.Now()
+		ts.cfg.EKSConfig.AddOnHollowNodesRemote.TimeFrameDelete = timeutil.NewTimeFrame(deleteStart, deleteEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 
@@ -224,7 +224,7 @@ func (ts *tester) createServiceAccount() error {
 			metav1.CreateOptions{},
 		)
 	cancel()
-	if err != nil {
+	if err != nil && !api_errors.IsNotFound(err) {
 		return fmt.Errorf("failed to create cluster loader ServiceAccount (%v)", err)
 	}
 

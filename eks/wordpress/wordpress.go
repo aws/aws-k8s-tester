@@ -14,6 +14,7 @@ import (
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/httputil"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
+	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/exec"
@@ -59,10 +60,9 @@ func (ts *tester) Create() error {
 	ts.cfg.EKSConfig.AddOnWordpress.Created = true
 	ts.cfg.EKSConfig.Sync()
 	createStart := time.Now()
-
 	defer func() {
-		ts.cfg.EKSConfig.AddOnWordpress.CreateTook = time.Since(createStart)
-		ts.cfg.EKSConfig.AddOnWordpress.CreateTookString = ts.cfg.EKSConfig.AddOnWordpress.CreateTook.String()
+		createEnd := time.Now()
+		ts.cfg.EKSConfig.AddOnWordpress.TimeFrameCreate = timeutil.NewTimeFrame(createStart, createEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 
@@ -94,8 +94,8 @@ func (ts *tester) Delete() error {
 
 	deleteStart := time.Now()
 	defer func() {
-		ts.cfg.EKSConfig.AddOnWordpress.DeleteTook = time.Since(deleteStart)
-		ts.cfg.EKSConfig.AddOnWordpress.DeleteTookString = ts.cfg.EKSConfig.AddOnWordpress.DeleteTook.String()
+		deleteEnd := time.Now()
+		ts.cfg.EKSConfig.AddOnWordpress.TimeFrameDelete = timeutil.NewTimeFrame(deleteStart, deleteEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 

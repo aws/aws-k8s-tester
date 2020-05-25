@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
+	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-sdk-go/service/eks"
 )
 
@@ -18,7 +19,10 @@ type AddOnNodeGroups struct {
 	Enable bool `json:"enable"`
 	// Created is true when the resource has been created.
 	// Used for delete operations.
-	Created bool `json:"created" read-only:"true"`
+	Created         bool               `json:"created" read-only:"true"`
+	TimeFrameCreate timeutil.TimeFrame `json:"time-frame-create" read-only:"true"`
+	TimeFrameDelete timeutil.TimeFrame `json:"time-frame-delete" read-only:"true"`
+
 	// FetchLogs is true to fetch logs from remote nodes using SSH.
 	FetchLogs bool `json:"fetch-logs"`
 

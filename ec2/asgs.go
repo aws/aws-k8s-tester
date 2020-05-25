@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
 	aws_ec2 "github.com/aws/aws-k8s-tester/pkg/aws/ec2"
+	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/autoscaling"
@@ -367,15 +368,11 @@ type templateASG struct {
 	UserData string
 }
 
-const rfc3339Micro = "2006-01-02T15:04:05.999Z07:00"
-
 func (ts *Tester) createASGs() (err error) {
 	createStart := time.Now()
 	defer func() {
-		ts.cfg.CreateTook += time.Since(createStart)
-		ts.cfg.CreateTookString = ts.cfg.CreateTook.String()
-		ts.cfg.TimeUTCCreateComplete = time.Now().UTC()
-		ts.cfg.TimeUTCCreateCompleteRFC3339Micro = ts.cfg.TimeUTCCreateComplete.Format(rfc3339Micro)
+		createEnd := time.Now()
+		ts.cfg.TimeFrameCreate = timeutil.NewTimeFrame(createStart, createEnd)
 		ts.cfg.Sync()
 	}()
 
@@ -499,8 +496,8 @@ func (ts *Tester) createASGs() (err error) {
 		}
 		stackOutput, err := ts.cfnAPI.CreateStack(stackInput)
 		if err != nil {
-			cur.CreateTook += time.Since(timeStart)
-			cur.CreateTookString = cur.CreateTook.String()
+			timeEnd := time.Now()
+			cur.TimeFrameCreate = timeutil.NewTimeFrame(timeStart, timeEnd)
 			ts.cfg.ASGs[asgName] = cur
 			ts.cfg.Sync()
 			return err
@@ -535,8 +532,8 @@ func (ts *Tester) createASGs() (err error) {
 		}
 		cancel()
 		if st.Error != nil {
-			cur.CreateTook += time.Since(timeStart)
-			cur.CreateTookString = cur.CreateTook.String()
+			timeEnd := time.Now()
+			cur.TimeFrameCreate = timeutil.NewTimeFrame(timeStart, timeEnd)
 			ts.cfg.ASGs[asgName] = cur
 			ts.cfg.Sync()
 			return st.Error
@@ -549,8 +546,8 @@ func (ts *Tester) createASGs() (err error) {
 			case "InstanceProfileARN":
 				ts.lg.Info("found InstanceProfileARN value from CFN", zap.String("value", aws.StringValue(o.OutputValue)))
 			default:
-				cur.CreateTook += time.Since(timeStart)
-				cur.CreateTookString = cur.CreateTook.String()
+				timeEnd := time.Now()
+				cur.TimeFrameCreate = timeutil.NewTimeFrame(timeStart, timeEnd)
 				ts.cfg.ASGs[asgName] = cur
 				ts.cfg.Sync()
 				return fmt.Errorf("unexpected OutputKey %q from %q", k, cur.ASGCFNStackID)
@@ -562,8 +559,8 @@ func (ts *Tester) createASGs() (err error) {
 			zap.String("cfn-stack-id", cur.ASGCFNStackID),
 			zap.String("started", humanize.RelTime(createStart, time.Now(), "ago", "from now")),
 		)
-		cur.CreateTook += time.Since(timeStart)
-		cur.CreateTookString = cur.CreateTook.String()
+		timeEnd := time.Now()
+		cur.TimeFrameCreate = timeutil.NewTimeFrame(timeStart, timeEnd)
 		ts.cfg.ASGs[asgName] = cur
 		ts.cfg.Up = true
 		ts.cfg.Sync()
@@ -597,8 +594,8 @@ func (ts *Tester) createASGs() (err error) {
 			instanceIDs...,
 		)
 		if err != nil {
-			cur.CreateTook += time.Since(timeStart)
-			cur.CreateTookString = cur.CreateTook.String()
+			timeEnd := time.Now()
+			cur.TimeFrameCreate = timeutil.NewTimeFrame(timeStart, timeEnd)
 			ts.cfg.ASGs[asgName] = cur
 			ts.cfg.Sync()
 			return err
@@ -609,8 +606,8 @@ func (ts *Tester) createASGs() (err error) {
 			ivv.RemoteAccessUserName = cur.RemoteAccessUserName
 			cur.Instances[id] = ivv
 		}
-		cur.CreateTook += time.Since(timeStart)
-		cur.CreateTookString = cur.CreateTook.String()
+		timeEnd = time.Now()
+		cur.TimeFrameCreate = timeutil.NewTimeFrame(timeStart, timeEnd)
 		ts.cfg.ASGs[asgName] = cur
 		ts.cfg.RecordStatus(fmt.Sprintf("%q/%s", asgName, cloudformation.ResourceStatusCreateComplete))
 		ts.cfg.Sync()
@@ -622,16 +619,12 @@ func (ts *Tester) createASGs() (err error) {
 func (ts *Tester) deleteASGs() (err error) {
 	deleteStart := time.Now()
 	defer func() {
-		ts.cfg.DeleteTook += time.Since(deleteStart)
-		ts.cfg.DeleteTookString = ts.cfg.DeleteTook.String()
+		deleteEnd := time.Now()
+		ts.cfg.TimeFrameDelete = timeutil.NewTimeFrame(deleteStart, deleteEnd)
 		ts.cfg.Sync()
 	}()
 
 	var errs []string
-
-	ts.cfg.TimeUTCDeleteStart = time.Now().UTC()
-	ts.cfg.TimeUTCDeleteStartRFC3339Micro = ts.cfg.TimeUTCDeleteStart.Format(rfc3339Micro)
-	ts.cfg.Sync()
 
 	ts.lg.Info("deleting ASGs using CFN", zap.String("name", ts.cfg.Name))
 	for asgName, cur := range ts.cfg.ASGs {
@@ -645,8 +638,8 @@ func (ts *Tester) deleteASGs() (err error) {
 		})
 		if err != nil {
 			ts.cfg.RecordStatus(fmt.Sprintf("failed to delete ASG (%v)", err))
-			cur.DeleteTook += time.Since(timeStart)
-			cur.DeleteTookString = ts.cfg.DeleteTook.String()
+			timeEnd := time.Now()
+			cur.TimeFrameDelete = timeutil.NewTimeFrame(timeStart, timeEnd)
 			ts.cfg.ASGs[asgName] = cur
 			ts.cfg.Sync()
 			errs = append(errs, fmt.Sprintf("failed to delete ASG (%v)", err))
@@ -683,8 +676,8 @@ func (ts *Tester) deleteASGs() (err error) {
 		}
 		cancel()
 		if st.Error != nil {
-			cur.DeleteTook += time.Since(timeStart)
-			cur.DeleteTookString = ts.cfg.DeleteTook.String()
+			timeEnd := time.Now()
+			cur.TimeFrameDelete = timeutil.NewTimeFrame(timeStart, timeEnd)
 			ts.cfg.ASGs[asgName] = cur
 			ts.cfg.Sync()
 			errs = append(errs, fmt.Sprintf("failed to delete ASG (%v)", st.Error))
@@ -692,8 +685,8 @@ func (ts *Tester) deleteASGs() (err error) {
 		}
 
 		ts.cfg.RecordStatus(fmt.Sprintf("%q/%s", asgName, ec2config.StatusDELETEDORNOTEXIST))
-		cur.DeleteTook += time.Since(timeStart)
-		cur.DeleteTookString = ts.cfg.DeleteTook.String()
+		timeEnd := time.Now()
+		cur.TimeFrameDelete = timeutil.NewTimeFrame(timeStart, timeEnd)
 		ts.cfg.ASGs[asgName] = cur
 		ts.cfg.Sync()
 	}

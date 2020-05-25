@@ -1,5 +1,5 @@
 asgs:
-  ec2-2020051713-twilight16x5-asg:
+  ec2-2020052418-coralwl1bj85-asg:
     ami-type: AL2_x86_64
     asg-cfn-stack-id: ""
     asg-desired-capacity: 1
@@ -11,7 +11,7 @@ asgs:
     instance-types:
     - c5.xlarge
     logs: null
-    name: ec2-2020051713-twilight16x5-asg
+    name: ec2-2020052418-coralwl1bj85-asg
     remote-access-user-name: ec2-user
     ssm-document-cfn-stack-id: ""
     ssm-document-cfn-stack-name: ""
@@ -20,9 +20,23 @@ asgs:
     ssm-document-create: false
     ssm-document-execution-timeout-in-seconds: 3600
     ssm-document-name: ""
+    time-frame-create:
+      complete-utc: "0001-01-01T00:00:00Z"
+      complete-utc-rfc3339-nano: ""
+      start-utc: "0001-01-01T00:00:00Z"
+      start-utc-rfc3339-nano: ""
+      took: 0
+      took-string: ""
+    time-frame-delete:
+      complete-utc: "0001-01-01T00:00:00Z"
+      complete-utc-rfc3339-nano: ""
+      start-utc: "0001-01-01T00:00:00Z"
+      start-utc-rfc3339-nano: ""
+      took: 0
+      took-string: ""
     volume-size: 40
 asgs-fetch-logs: true
-asgs-logs-dir: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/ec2-2020051713-twilight16x5-logs-remote
+asgs-logs-dir: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/ec2-2020052418-coralwl1bj85-logs-remote
 aws-account-id: ""
 aws-credential-path: ""
 aws-iam-role-arn: ""
@@ -34,7 +48,7 @@ log-level: info
 log-outputs:
 - stderr
 - /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/default.yaml.log
-name: ec2-2020051713-twilight16x5
+name: ec2-2020052418-coralwl1bj85
 on-failure-delete: true
 on-failure-delete-wait-seconds: 120
 partition: aws
@@ -43,13 +57,13 @@ public-subnet-ids: null
 region: us-west-2
 remote-access-commands-output-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/default.ssh.sh
 remote-access-key-create: true
-remote-access-key-name: ec2-2020051713-twilight16x5-key
-remote-access-private-key-path: /tmp/mochirm9yf.insecure.key
+remote-access-key-name: ec2-2020052418-coralwl1bj85-key
+remote-access-private-key-path: /tmp/exclusivew.insecure.key
 role-arn: ""
 role-cfn-stack-id: ""
 role-create: true
 role-managed-policy-arns: null
-role-name: ec2-2020051713-twilight16x5-role
+role-name: ec2-2020052418-coralwl1bj85-role
 role-service-principals: null
 s3-bucket-create: false
 s3-bucket-create-keep: false
@@ -59,8 +73,20 @@ security-group-id: ""
 ssh-ingress-ipv4-range: ""
 status: null
 status-current: ""
-time-utc-create-complete: "0001-01-01T00:00:00Z"
-time-utc-delete-start: "0001-01-01T00:00:00Z"
+time-frame-create:
+  complete-utc: "0001-01-01T00:00:00Z"
+  complete-utc-rfc3339-nano: ""
+  start-utc: "0001-01-01T00:00:00Z"
+  start-utc-rfc3339-nano: ""
+  took: 0
+  took-string: ""
+time-frame-delete:
+  complete-utc: "0001-01-01T00:00:00Z"
+  complete-utc-rfc3339-nano: ""
+  start-utc: "0001-01-01T00:00:00Z"
+  start-utc-rfc3339-nano: ""
+  took: 0
+  took-string: ""
 up: false
 vpc-cfn-stack-id: ""
 vpc-create: true

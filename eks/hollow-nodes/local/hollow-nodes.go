@@ -15,8 +15,10 @@ import (
 	hollow_nodes "github.com/aws/aws-k8s-tester/eks/hollow-nodes"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
+	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-sdk-go/aws"
 	"go.uber.org/zap"
+	api_errors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -70,10 +72,9 @@ func (ts *tester) Create() (err error) {
 	ts.cfg.EKSConfig.AddOnHollowNodesLocal.Created = true
 	ts.cfg.EKSConfig.Sync()
 	createStart := time.Now()
-
 	defer func() {
-		ts.cfg.EKSConfig.AddOnHollowNodesLocal.CreateTook = time.Since(createStart)
-		ts.cfg.EKSConfig.AddOnHollowNodesLocal.CreateTookString = ts.cfg.EKSConfig.AddOnHollowNodesLocal.CreateTook.String()
+		createEnd := time.Now()
+		ts.cfg.EKSConfig.AddOnHollowNodesLocal.TimeFrameCreate = timeutil.NewTimeFrame(createStart, createEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 
@@ -117,8 +118,8 @@ func (ts *tester) Delete() (err error) {
 
 	deleteStart := time.Now()
 	defer func() {
-		ts.cfg.EKSConfig.AddOnHollowNodesLocal.DeleteTook = time.Since(deleteStart)
-		ts.cfg.EKSConfig.AddOnHollowNodesLocal.DeleteTookString = ts.cfg.EKSConfig.AddOnHollowNodesLocal.DeleteTook.String()
+		deleteEnd := time.Now()
+		ts.cfg.EKSConfig.AddOnHollowNodesLocal.TimeFrameDelete = timeutil.NewTimeFrame(deleteStart, deleteEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 
@@ -153,7 +154,7 @@ func (ts *tester) deleteCreatedNodes() error {
 			},
 		)
 		cancel()
-		if err != nil {
+		if err != nil && !api_errors.IsNotFound(err) {
 			ts.cfg.Logger.Warn("failed to delete node", zap.Int("index", i), zap.String("name", nodeName), zap.Error(err))
 			errs = append(errs, err.Error())
 		} else {

@@ -11,6 +11,7 @@ import (
 	config_maps "github.com/aws/aws-k8s-tester/eks/config-maps"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
+	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"go.uber.org/zap"
 )
 
@@ -49,10 +50,9 @@ func (ts *tester) Create() (err error) {
 	ts.cfg.EKSConfig.AddOnConfigMapsLocal.Created = true
 	ts.cfg.EKSConfig.Sync()
 	createStart := time.Now()
-
 	defer func() {
-		ts.cfg.EKSConfig.AddOnConfigMapsLocal.CreateTook = time.Since(createStart)
-		ts.cfg.EKSConfig.AddOnConfigMapsLocal.CreateTookString = ts.cfg.EKSConfig.AddOnConfigMapsLocal.CreateTook.String()
+		createEnd := time.Now()
+		ts.cfg.EKSConfig.AddOnConfigMapsLocal.TimeFrameCreate = timeutil.NewTimeFrame(createStart, createEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 
@@ -125,8 +125,8 @@ func (ts *tester) Delete() error {
 
 	deleteStart := time.Now()
 	defer func() {
-		ts.cfg.EKSConfig.AddOnConfigMapsLocal.DeleteTook = time.Since(deleteStart)
-		ts.cfg.EKSConfig.AddOnConfigMapsLocal.DeleteTookString = ts.cfg.EKSConfig.AddOnConfigMapsLocal.DeleteTook.String()
+		deleteEnd := time.Now()
+		ts.cfg.EKSConfig.AddOnConfigMapsLocal.TimeFrameDelete = timeutil.NewTimeFrame(deleteStart, deleteEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 

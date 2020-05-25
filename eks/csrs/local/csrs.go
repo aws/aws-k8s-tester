@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-k8s-tester/eks/csrs"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
+	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"go.uber.org/zap"
 )
 
@@ -49,10 +50,9 @@ func (ts *tester) Create() (err error) {
 	ts.cfg.EKSConfig.AddOnCSRsLocal.Created = true
 	ts.cfg.EKSConfig.Sync()
 	createStart := time.Now()
-
 	defer func() {
-		ts.cfg.EKSConfig.AddOnCSRsLocal.CreateTook = time.Since(createStart)
-		ts.cfg.EKSConfig.AddOnCSRsLocal.CreateTookString = ts.cfg.EKSConfig.AddOnCSRsLocal.CreateTook.String()
+		createEnd := time.Now()
+		ts.cfg.EKSConfig.AddOnCSRsLocal.TimeFrameCreate = timeutil.NewTimeFrame(createStart, createEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 
@@ -117,8 +117,8 @@ func (ts *tester) Delete() error {
 
 	deleteStart := time.Now()
 	defer func() {
-		ts.cfg.EKSConfig.AddOnCSRsLocal.DeleteTook = time.Since(deleteStart)
-		ts.cfg.EKSConfig.AddOnCSRsLocal.DeleteTookString = ts.cfg.EKSConfig.AddOnCSRsLocal.DeleteTook.String()
+		deleteEnd := time.Now()
+		ts.cfg.EKSConfig.AddOnCSRsLocal.TimeFrameDelete = timeutil.NewTimeFrame(deleteStart, deleteEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 

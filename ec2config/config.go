@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"sigs.k8s.io/yaml" // must use "sigs.k8s.io/yaml"
@@ -44,6 +45,15 @@ const (
 type Config struct {
 	mu *sync.RWMutex
 
+	// Up is true if the cluster is up.
+	Up              bool               `json:"up"`
+	TimeFrameCreate timeutil.TimeFrame `json:"time-frame-create" read-only:"true"`
+	TimeFrameDelete timeutil.TimeFrame `json:"time-frame-delete" read-only:"true"`
+	// StatusCurrent represents the current status of the cluster.
+	StatusCurrent string `json:"status-current"`
+	// Status represents the status of the cluster.
+	Status []Status `json:"status"`
+
 	// Name is the cluster name.
 	// If empty, deployer auto-populates it.
 	Name string `json:"name"`
@@ -68,21 +78,6 @@ type Config struct {
 	// And to be mounted as a volume as 'Secret' object.
 	AWSCredentialPath string `json:"aws-credential-path" read-only:"true"`
 
-	// CreateTook is the duration that took to create the resource.
-	CreateTook time.Duration `json:"create-took,omitempty" read-only:"true"`
-	// CreateTookString is the duration that took to create the resource.
-	CreateTookString string `json:"create-took-string,omitempty" read-only:"true"`
-	// DeleteTook is the duration that took to create the resource.
-	DeleteTook time.Duration `json:"delete-took,omitempty" read-only:"true"`
-	// DeleteTookString is the duration that took to create the resource.
-	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
-	// TimeUTCCreateComplete is the time when creation is complete.
-	TimeUTCCreateComplete             time.Time `json:"time-utc-create-complete,omitempty" read-only:"true"`
-	TimeUTCCreateCompleteRFC3339Micro string    `json:"time-utc-create-complete-rfc3339-micro,omitempty" read-only:"true"`
-	// TimeUTCDeleteStart is the time when deletion is started.
-	TimeUTCDeleteStart             time.Time `json:"time-utc-delete-start,omitempty" read-only:"true"`
-	TimeUTCDeleteStartRFC3339Micro string    `json:"time-utc-delete-start-rfc3339-micro,omitempty" read-only:"true"`
-
 	// LogLevel configures log level. Only supports debug, info, warn, error, panic, or fatal. Default 'info'.
 	LogLevel string `json:"log-level"`
 	// LogOutputs is a list of log outputs. Valid values are 'default', 'stderr', 'stdout', or file names.
@@ -90,13 +85,6 @@ type Config struct {
 	// Multiple values are accepted. If empty, it sets to 'default', which outputs to stderr.
 	// See https://pkg.go.dev/go.uber.org/zap#Open and https://pkg.go.dev/go.uber.org/zap#Config for more details.
 	LogOutputs []string `json:"log-outputs,omitempty"`
-
-	// Up is true if the cluster is up.
-	Up bool `json:"up"`
-	// StatusCurrent represents the current status of the cluster.
-	StatusCurrent string `json:"status-current"`
-	// Status represents the status of the cluster.
-	Status []Status `json:"status"`
 
 	// OnFailureDelete is true to delete all resources on creation fail.
 	OnFailureDelete bool `json:"on-failure-delete"`
@@ -228,14 +216,8 @@ type ASG struct {
 	Name          string `json:"name"`
 	ASGCFNStackID string `json:"asg-cfn-stack-id" read-only:"true"`
 
-	// CreateTook is the duration that took to create the resource.
-	CreateTook time.Duration `json:"create-took,omitempty" read-only:"true"`
-	// CreateTookString is the duration that took to create the resource.
-	CreateTookString string `json:"create-took-string,omitempty" read-only:"true"`
-	// DeleteTook is the duration that took to create the resource.
-	DeleteTook time.Duration `json:"delete-took,omitempty" read-only:"true"`
-	// DeleteTookString is the duration that took to create the resource.
-	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
+	TimeFrameCreate timeutil.TimeFrame `json:"time-frame-create" read-only:"true"`
+	TimeFrameDelete timeutil.TimeFrame `json:"time-frame-delete" read-only:"true"`
 
 	// RemoteAccessUserName is the user name used for running init scripts or SSH access.
 	RemoteAccessUserName string `json:"remote-access-user-name"`

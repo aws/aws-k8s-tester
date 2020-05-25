@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
+	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
@@ -54,10 +55,9 @@ func (ts *tester) Create() error {
 	ts.cfg.EKSConfig.AddOnAppMesh.Created = true
 	ts.cfg.EKSConfig.Sync()
 	createStart := time.Now()
-
 	defer func() {
-		ts.cfg.EKSConfig.AddOnAppMesh.CreateTook = time.Since(createStart)
-		ts.cfg.EKSConfig.AddOnAppMesh.CreateTookString = ts.cfg.EKSConfig.AddOnAppMesh.CreateTook.String()
+		createEnd := time.Now()
+		ts.cfg.EKSConfig.AddOnAppMesh.TimeFrameCreate = timeutil.NewTimeFrame(createStart, createEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 
@@ -91,8 +91,8 @@ func (ts *tester) Delete() error {
 
 	deleteStart := time.Now()
 	defer func() {
-		ts.cfg.EKSConfig.AddOnAppMesh.DeleteTook = time.Since(deleteStart)
-		ts.cfg.EKSConfig.AddOnAppMesh.DeleteTookString = ts.cfg.EKSConfig.AddOnAppMesh.DeleteTook.String()
+		deleteEnd := time.Now()
+		ts.cfg.EKSConfig.AddOnAppMesh.TimeFrameDelete = timeutil.NewTimeFrame(deleteStart, deleteEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 

@@ -6,9 +6,11 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
+	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-sdk-go/service/autoscaling/autoscalingiface"
 	"github.com/aws/aws-sdk-go/service/cloudformation/cloudformationiface"
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
@@ -80,6 +82,13 @@ func (ts *tester) Create() (err error) {
 		return errors.New("empty EKSConfig.Parameters.PublicSubnetIDs")
 	}
 
+	createStart := time.Now()
+	defer func() {
+		createEnd := time.Now()
+		ts.cfg.EKSConfig.AddOnNodeGroups.TimeFrameCreate = timeutil.NewTimeFrame(createStart, createEnd)
+		ts.cfg.EKSConfig.Sync()
+	}()
+
 	if err = ts.createRole(); err != nil {
 		return err
 	}
@@ -108,6 +117,13 @@ func (ts *tester) Delete() error {
 		ts.cfg.Logger.Info("ManagedNodeGroup is not created; skipping deletion")
 		return nil
 	}
+
+	deleteStart := time.Now()
+	defer func() {
+		deleteEnd := time.Now()
+		ts.cfg.EKSConfig.AddOnNodeGroups.TimeFrameDelete = timeutil.NewTimeFrame(deleteStart, deleteEnd)
+		ts.cfg.EKSConfig.Sync()
+	}()
 
 	var errs []string
 	if err := ts.deleteSSM(); err != nil {

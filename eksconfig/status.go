@@ -4,6 +4,7 @@ import (
 	"time"
 
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
+	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	aws_eks "github.com/aws/aws-sdk-go/service/eks"
 )
 
@@ -13,23 +14,11 @@ type Status struct {
 	// Up is true if the cluster is up.
 	Up bool `json:"up"`
 
+	TimeFrameCreate timeutil.TimeFrame `json:"time-frame-create" read-only:"true"`
+	TimeFrameDelete timeutil.TimeFrame `json:"time-frame-delete" read-only:"true"`
+
 	// ServerVersionInfo is the server version from EKS kube-apiserver.
 	ServerVersionInfo k8s_client.ServerVersionInfo `json:"server-version-info" read-only:"true"`
-
-	// CreateTook is the duration that took to create the resource.
-	CreateTook time.Duration `json:"create-took,omitempty" read-only:"true"`
-	// CreateTookString is the duration that took to create the resource.
-	CreateTookString string `json:"create-took-string,omitempty" read-only:"true"`
-	// DeleteTook is the duration that took to create the resource.
-	DeleteTook time.Duration `json:"delete-took,omitempty" read-only:"true"`
-	// DeleteTookString is the duration that took to create the resource.
-	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
-	// TimeUTCCreateComplete is the time when cluster creation is complete.
-	TimeUTCCreateComplete             time.Time `json:"time-utc-create-complete,omitempty" read-only:"true"`
-	TimeUTCCreateCompleteRFC3339Micro string    `json:"time-utc-create-complete-rfc3339-micro,omitempty" read-only:"true"`
-	// TimeUTCDeleteStart is the time when cluster and add-on deletion is started.
-	TimeUTCDeleteStart             time.Time `json:"time-utc-delete-start,omitempty" read-only:"true"`
-	TimeUTCDeleteStartRFC3339Micro string    `json:"time-utc-delete-start-rfc3339-micro,omitempty" read-only:"true"`
 
 	// AWSAccountID is the account ID of the eks tester caller session.
 	AWSAccountID string `json:"aws-account-id"`

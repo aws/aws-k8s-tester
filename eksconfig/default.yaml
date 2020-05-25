@@ -21,7 +21,7 @@ log-level: info
 log-outputs:
 - stderr
 - /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.log
-name: eks-2020052410-embarkds9bun
+name: eks-2020052418-forten5aliwl
 on-failure-delete: true
 on-failure-delete-wait-seconds: 120
 parameters:
@@ -38,7 +38,7 @@ parameters:
   role-cfn-stack-id: ""
   role-create: true
   role-managed-policy-arns: null
-  role-name: eks-2020052410-embarkds9bun-role
+  role-name: eks-2020052418-forten5aliwl-role
   role-service-principals: null
   signing-name: eks
   tags: null
@@ -51,7 +51,7 @@ partition: aws
 region: us-west-2
 remote-access-commands-output-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.ssh.sh
 remote-access-key-create: true
-remote-access-key-name: eks-2020052410-embarkds9bun-remote-access-key
+remote-access-key-name: eks-2020052418-forten5aliwl-remote-access-key
 remote-access-private-key-path: /home/ANT.AMAZON.COM/leegyuho/.ssh/kube_aws_rsa
 s3-bucket-create: false
 s3-bucket-create-keep: false
@@ -85,6 +85,18 @@ status:
     minor: ""
     platform: ""
     version-value: 0
-  time-utc-create-complete: "0001-01-01T00:00:00Z"
-  time-utc-delete-start: "0001-01-01T00:00:00Z"
+  time-frame-create:
+    complete-utc: "0001-01-01T00:00:00Z"
+    complete-utc-rfc3339-nano: ""
+    start-utc: "0001-01-01T00:00:00Z"
+    start-utc-rfc3339-nano: ""
+    took: 0
+    took-string: ""
+  time-frame-delete:
+    complete-utc: "0001-01-01T00:00:00Z"
+    complete-utc-rfc3339-nano: ""
+    start-utc: "0001-01-01T00:00:00Z"
+    start-utc-rfc3339-nano: ""
+    took: 0
+    took-string: ""
   up: false

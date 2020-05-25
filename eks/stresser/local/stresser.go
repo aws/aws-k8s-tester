@@ -13,6 +13,7 @@ import (
 	"github.com/aws/aws-k8s-tester/eks/stresser"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
+	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -57,10 +58,9 @@ func (ts *tester) Create() (err error) {
 	ts.cfg.EKSConfig.AddOnStresserLocal.Created = true
 	ts.cfg.EKSConfig.Sync()
 	createStart := time.Now()
-
 	defer func() {
-		ts.cfg.EKSConfig.AddOnStresserLocal.CreateTook = time.Since(createStart)
-		ts.cfg.EKSConfig.AddOnStresserLocal.CreateTookString = ts.cfg.EKSConfig.AddOnStresserLocal.CreateTook.String()
+		createEnd := time.Now()
+		ts.cfg.EKSConfig.AddOnStresserLocal.TimeFrameCreate = timeutil.NewTimeFrame(createStart, createEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 
@@ -201,8 +201,8 @@ func (ts *tester) Delete() error {
 
 	deleteStart := time.Now()
 	defer func() {
-		ts.cfg.EKSConfig.AddOnStresserLocal.DeleteTook = time.Since(deleteStart)
-		ts.cfg.EKSConfig.AddOnStresserLocal.DeleteTookString = ts.cfg.EKSConfig.AddOnStresserLocal.DeleteTook.String()
+		deleteEnd := time.Now()
+		ts.cfg.EKSConfig.AddOnStresserLocal.TimeFrameDelete = timeutil.NewTimeFrame(deleteStart, deleteEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 

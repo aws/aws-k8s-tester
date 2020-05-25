@@ -13,6 +13,7 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/aws/elb"
 	"github.com/aws/aws-k8s-tester/pkg/httputil"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
+	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/elbv2/elbv2iface"
 	"go.uber.org/zap"
@@ -66,11 +67,10 @@ func (ts *tester) Create() error {
 
 	ts.cfg.EKSConfig.AddOnNLBHelloWorld.Created = true
 	ts.cfg.EKSConfig.Sync()
-
 	createStart := time.Now()
 	defer func() {
-		ts.cfg.EKSConfig.AddOnNLBHelloWorld.CreateTook = time.Since(createStart)
-		ts.cfg.EKSConfig.AddOnNLBHelloWorld.CreateTookString = ts.cfg.EKSConfig.AddOnNLBHelloWorld.CreateTook.String()
+		createEnd := time.Now()
+		ts.cfg.EKSConfig.AddOnNLBHelloWorld.TimeFrameCreate = timeutil.NewTimeFrame(createStart, createEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 
@@ -101,8 +101,8 @@ func (ts *tester) Delete() error {
 
 	deleteStart := time.Now()
 	defer func() {
-		ts.cfg.EKSConfig.AddOnNLBHelloWorld.DeleteTook = time.Since(deleteStart)
-		ts.cfg.EKSConfig.AddOnNLBHelloWorld.DeleteTookString = ts.cfg.EKSConfig.AddOnNLBHelloWorld.DeleteTook.String()
+		deleteEnd := time.Now()
+		ts.cfg.EKSConfig.AddOnNLBHelloWorld.TimeFrameDelete = timeutil.NewTimeFrame(deleteStart, deleteEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 

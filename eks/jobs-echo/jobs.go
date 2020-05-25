@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/randutil"
+	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/dustin/go-humanize"
 	"go.uber.org/zap"
@@ -57,11 +58,10 @@ func (ts *tester) Create() error {
 
 	ts.cfg.EKSConfig.AddOnJobsEcho.Created = true
 	ts.cfg.EKSConfig.Sync()
-
 	createStart := time.Now()
 	defer func() {
-		ts.cfg.EKSConfig.AddOnJobsEcho.CreateTook = time.Since(createStart)
-		ts.cfg.EKSConfig.AddOnJobsEcho.CreateTookString = ts.cfg.EKSConfig.AddOnJobsEcho.CreateTook.String()
+		createEnd := time.Now()
+		ts.cfg.EKSConfig.AddOnJobsEcho.TimeFrameCreate = timeutil.NewTimeFrame(createStart, createEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 
@@ -128,10 +128,11 @@ func (ts *tester) Delete() error {
 		ts.cfg.Logger.Info("skipping delete AddOnJobsPi")
 		return nil
 	}
+
 	deleteStart := time.Now()
 	defer func() {
-		ts.cfg.EKSConfig.AddOnJobsEcho.DeleteTook = time.Since(deleteStart)
-		ts.cfg.EKSConfig.AddOnJobsEcho.DeleteTookString = ts.cfg.EKSConfig.AddOnJobsEcho.DeleteTook.String()
+		deleteEnd := time.Now()
+		ts.cfg.EKSConfig.AddOnJobsEcho.TimeFrameDelete = timeutil.NewTimeFrame(deleteStart, deleteEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 

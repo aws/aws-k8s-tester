@@ -17,6 +17,7 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/pkg/httputil"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
+	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/mholt/archiver/v3"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
@@ -60,10 +61,9 @@ func (ts *tester) Create() error {
 	ts.cfg.EKSConfig.AddOnConformance.Created = true
 	ts.cfg.EKSConfig.Sync()
 	createStart := time.Now()
-
 	defer func() {
-		ts.cfg.EKSConfig.AddOnConformance.CreateTook = time.Since(createStart)
-		ts.cfg.EKSConfig.AddOnConformance.CreateTookString = ts.cfg.EKSConfig.AddOnConformance.CreateTook.String()
+		createEnd := time.Now()
+		ts.cfg.EKSConfig.AddOnConformance.TimeFrameCreate = timeutil.NewTimeFrame(createStart, createEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 
@@ -94,8 +94,8 @@ func (ts *tester) Delete() error {
 
 	deleteStart := time.Now()
 	defer func() {
-		ts.cfg.EKSConfig.AddOnConformance.DeleteTook = time.Since(deleteStart)
-		ts.cfg.EKSConfig.AddOnConformance.DeleteTookString = ts.cfg.EKSConfig.AddOnConformance.DeleteTook.String()
+		deleteEnd := time.Now()
+		ts.cfg.EKSConfig.AddOnConformance.TimeFrameDelete = timeutil.NewTimeFrame(deleteStart, deleteEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 

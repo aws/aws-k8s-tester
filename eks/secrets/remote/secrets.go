@@ -14,6 +14,7 @@ import (
 	aws_ecr "github.com/aws/aws-k8s-tester/pkg/aws/ecr"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/metrics"
+	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
 	"go.uber.org/zap"
@@ -65,10 +66,9 @@ func (ts *tester) Create() (err error) {
 	ts.cfg.EKSConfig.AddOnSecretsRemote.Created = true
 	ts.cfg.EKSConfig.Sync()
 	createStart := time.Now()
-
 	defer func() {
-		ts.cfg.EKSConfig.AddOnSecretsRemote.CreateTook = time.Since(createStart)
-		ts.cfg.EKSConfig.AddOnSecretsRemote.CreateTookString = ts.cfg.EKSConfig.AddOnSecretsRemote.CreateTook.String()
+		createEnd := time.Now()
+		ts.cfg.EKSConfig.AddOnSecretsRemote.TimeFrameCreate = timeutil.NewTimeFrame(createStart, createEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 
@@ -146,8 +146,8 @@ func (ts *tester) Delete() error {
 
 	deleteStart := time.Now()
 	defer func() {
-		ts.cfg.EKSConfig.AddOnSecretsRemote.DeleteTook = time.Since(deleteStart)
-		ts.cfg.EKSConfig.AddOnSecretsRemote.DeleteTookString = ts.cfg.EKSConfig.AddOnSecretsRemote.DeleteTook.String()
+		deleteEnd := time.Now()
+		ts.cfg.EKSConfig.AddOnSecretsRemote.TimeFrameDelete = timeutil.NewTimeFrame(deleteStart, deleteEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 

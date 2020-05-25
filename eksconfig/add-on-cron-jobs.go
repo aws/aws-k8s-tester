@@ -3,7 +3,8 @@ package eksconfig
 import (
 	"errors"
 	"fmt"
-	"time"
+
+	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 )
 
 // AddOnCronJobs defines parameters for EKS cluster
@@ -13,15 +14,9 @@ type AddOnCronJobs struct {
 	Enable bool `json:"enable"`
 	// Created is true when the resource has been created.
 	// Used for delete operations.
-	Created bool `json:"created" read-only:"true"`
-	// CreateTook is the duration that took to create the resource.
-	CreateTook time.Duration `json:"create-took,omitempty" read-only:"true"`
-	// CreateTookString is the duration that took to create the resource.
-	CreateTookString string `json:"create-took-string,omitempty" read-only:"true"`
-	// DeleteTook is the duration that took to create the resource.
-	DeleteTook time.Duration `json:"delete-took,omitempty" read-only:"true"`
-	// DeleteTookString is the duration that took to create the resource.
-	DeleteTookString string `json:"delete-took-string,omitempty" read-only:"true"`
+	Created         bool               `json:"created" read-only:"true"`
+	TimeFrameCreate timeutil.TimeFrame `json:"time-frame-create" read-only:"true"`
+	TimeFrameDelete timeutil.TimeFrame `json:"time-frame-delete" read-only:"true"`
 
 	// Namespace is the namespace to create objects in.
 	Namespace string `json:"namespace"`

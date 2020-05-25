@@ -14,6 +14,7 @@ import (
 	aws_ecr "github.com/aws/aws-k8s-tester/pkg/aws/ecr"
 	awsiam "github.com/aws/aws-k8s-tester/pkg/aws/iam"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
+	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
@@ -68,11 +69,10 @@ func (ts *tester) Create() (err error) {
 
 	ts.cfg.EKSConfig.AddOnFargate.Created = true
 	ts.cfg.EKSConfig.Sync()
-
 	createStart := time.Now()
 	defer func() {
-		ts.cfg.EKSConfig.AddOnFargate.CreateTook = time.Since(createStart)
-		ts.cfg.EKSConfig.AddOnFargate.CreateTookString = ts.cfg.EKSConfig.AddOnFargate.CreateTook.String()
+		createEnd := time.Now()
+		ts.cfg.EKSConfig.AddOnFargate.TimeFrameCreate = timeutil.NewTimeFrame(createStart, createEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 
@@ -124,8 +124,8 @@ func (ts *tester) Delete() error {
 
 	deleteStart := time.Now()
 	defer func() {
-		ts.cfg.EKSConfig.AddOnFargate.DeleteTook = time.Since(deleteStart)
-		ts.cfg.EKSConfig.AddOnFargate.DeleteTookString = ts.cfg.EKSConfig.AddOnFargate.DeleteTook.String()
+		deleteEnd := time.Now()
+		ts.cfg.EKSConfig.AddOnFargate.TimeFrameDelete = timeutil.NewTimeFrame(deleteStart, deleteEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 
