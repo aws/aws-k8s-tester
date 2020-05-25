@@ -484,8 +484,8 @@ func newNode(cfg nodeConfig) (kubelet, kubeProxy, error) {
 		}
 	}
 	if proxier == nil {
-		cfg.lg.Info("use fakeProxier", zap.String("node-name", cfg.nodeName))
-		proxier = &fakeProxier{}
+		cfg.lg.Info("use fake proxy", zap.String("node-name", cfg.nodeName))
+		proxier = &fakeProxy{}
 	}
 	hollowPxy := &hollowKubeProxy{
 		cfg: cfg,
@@ -563,45 +563,44 @@ func (k *hollowKubeProxy) Stop() {
 	k.cfg.lg.Info("stopped hollow node kube-proxy", zap.String("node-name", k.cfg.nodeName))
 }
 
-type fakeProxier struct {
+type fakeProxy struct {
 	proxy_config.NoopEndpointSliceHandler
 	proxy_config.NoopNodeHandler
 }
 
-func (*fakeProxier) Sync() {}
-func (*fakeProxier) SyncLoop() {
+func (*fakeProxy) Sync() {}
+func (*fakeProxy) SyncLoop() {
 	select {}
 }
-func (*fakeProxier) OnServiceAdd(service *v1.Service)                        {}
-func (*fakeProxier) OnServiceUpdate(oldService, service *v1.Service)         {}
-func (*fakeProxier) OnServiceDelete(service *v1.Service)                     {}
-func (*fakeProxier) OnServiceSynced()                                        {}
-func (*fakeProxier) OnEndpointsAdd(endpoints *v1.Endpoints)                  {}
-func (*fakeProxier) OnEndpointsUpdate(oldEndpoints, endpoints *v1.Endpoints) {}
-func (*fakeProxier) OnEndpointsDelete(endpoints *v1.Endpoints)               {}
-func (*fakeProxier) OnEndpointsSynced()                                      {}
+func (*fakeProxy) OnServiceAdd(service *v1.Service)                        {}
+func (*fakeProxy) OnServiceUpdate(oldService, service *v1.Service)         {}
+func (*fakeProxy) OnServiceDelete(service *v1.Service)                     {}
+func (*fakeProxy) OnServiceSynced()                                        {}
+func (*fakeProxy) OnEndpointsAdd(endpoints *v1.Endpoints)                  {}
+func (*fakeProxy) OnEndpointsUpdate(oldEndpoints, endpoints *v1.Endpoints) {}
+func (*fakeProxy) OnEndpointsDelete(endpoints *v1.Endpoints)               {}
+func (*fakeProxy) OnEndpointsSynced()                                      {}
 
-func volumePlugins() []volume.VolumePlugin {
-	allPlugins := []volume.VolumePlugin{}
-	allPlugins = append(allPlugins, emptydir.ProbeVolumePlugins()...)
-	allPlugins = append(allPlugins, git_repo.ProbeVolumePlugins()...)
-	allPlugins = append(allPlugins, hostpath.ProbeVolumePlugins(volume.VolumeConfig{})...)
-	allPlugins = append(allPlugins, nfs.ProbeVolumePlugins(volume.VolumeConfig{})...)
-	allPlugins = append(allPlugins, secret.ProbeVolumePlugins()...)
-	allPlugins = append(allPlugins, iscsi.ProbeVolumePlugins()...)
-	allPlugins = append(allPlugins, glusterfs.ProbeVolumePlugins()...)
-	allPlugins = append(allPlugins, rbd.ProbeVolumePlugins()...)
-	allPlugins = append(allPlugins, quobyte.ProbeVolumePlugins()...)
-	allPlugins = append(allPlugins, cephfs.ProbeVolumePlugins()...)
-	allPlugins = append(allPlugins, downwardapi.ProbeVolumePlugins()...)
-	allPlugins = append(allPlugins, fc.ProbeVolumePlugins()...)
-	allPlugins = append(allPlugins, flocker.ProbeVolumePlugins()...)
-	allPlugins = append(allPlugins, configmap.ProbeVolumePlugins()...)
-	allPlugins = append(allPlugins, projected.ProbeVolumePlugins()...)
-	allPlugins = append(allPlugins, portworx.ProbeVolumePlugins()...)
-	allPlugins = append(allPlugins, scaleio.ProbeVolumePlugins()...)
-	allPlugins = append(allPlugins, local.ProbeVolumePlugins()...)
-	allPlugins = append(allPlugins, storageos.ProbeVolumePlugins()...)
+func volumePlugins() (pgs []volume.VolumePlugin) {
+	pgs = append(pgs, emptydir.ProbeVolumePlugins()...)
+	pgs = append(pgs, git_repo.ProbeVolumePlugins()...)
+	pgs = append(pgs, hostpath.ProbeVolumePlugins(volume.VolumeConfig{})...)
+	pgs = append(pgs, nfs.ProbeVolumePlugins(volume.VolumeConfig{})...)
+	pgs = append(pgs, secret.ProbeVolumePlugins()...)
+	pgs = append(pgs, iscsi.ProbeVolumePlugins()...)
+	pgs = append(pgs, glusterfs.ProbeVolumePlugins()...)
+	pgs = append(pgs, rbd.ProbeVolumePlugins()...)
+	pgs = append(pgs, quobyte.ProbeVolumePlugins()...)
+	pgs = append(pgs, cephfs.ProbeVolumePlugins()...)
+	pgs = append(pgs, downwardapi.ProbeVolumePlugins()...)
+	pgs = append(pgs, fc.ProbeVolumePlugins()...)
+	pgs = append(pgs, flocker.ProbeVolumePlugins()...)
+	pgs = append(pgs, configmap.ProbeVolumePlugins()...)
+	pgs = append(pgs, projected.ProbeVolumePlugins()...)
+	pgs = append(pgs, portworx.ProbeVolumePlugins()...)
+	pgs = append(pgs, scaleio.ProbeVolumePlugins()...)
+	pgs = append(pgs, local.ProbeVolumePlugins()...)
+	pgs = append(pgs, storageos.ProbeVolumePlugins()...)
 
 	// TODO: not working in local, not working in remote as well
 	// E0524 | csi_plugin.go:271] Failed to initialize CSINodeInfo: error updating CSINode annotation: timed out waiting for the condition; caused by: the server could not find the requested resource
@@ -612,7 +611,7 @@ func volumePlugins() []volume.VolumePlugin {
 	// F0525 | csi_plugin.go:285] Failed to initialize CSINodeInfo after retrying
 	//
 	// "k8s.io/kubernetes/pkg/volume/csi"
-	// allPlugins = append(allPlugins, csi.ProbeVolumePlugins()...)
+	// pgs = append(pgs, csi.ProbeVolumePlugins()...)
 
-	return allPlugins
+	return pgs
 }
