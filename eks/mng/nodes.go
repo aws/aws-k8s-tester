@@ -167,12 +167,11 @@ func (ts *tester) createASG() error {
 			ts.cfg.EKSConfig.AddOnManagedNodeGroups.RequestHeaderValue != "") {
 
 		for mngName, cur := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
-			vv, ok := ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName]
-			if ok && (vv.CreateRequested || vv.CFNStackID != "") {
+			if cur.CreateRequested || cur.CFNStackID != "" {
 				ts.cfg.Logger.Warn("no need to create a new one, skipping",
 					zap.String("mng-name", mngName),
-					zap.Bool("create-requested", vv.CreateRequested),
-					zap.String("cfn-stack-id", vv.CFNStackID),
+					zap.Bool("create-requested", cur.CreateRequested),
+					zap.String("cfn-stack-id", cur.CFNStackID),
 				)
 				continue
 			}
@@ -247,12 +246,11 @@ func (ts *tester) createASG() error {
 	} else {
 
 		for mngName, cur := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
-			vv, ok := ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName]
-			if ok && (vv.CreateRequested || vv.CFNStackID != "") {
+			if cur.CreateRequested || cur.CFNStackID != "" {
 				ts.cfg.Logger.Warn("no need to create a new one, skipping",
 					zap.String("mng-name", mngName),
-					zap.Bool("create-requested", vv.CreateRequested),
-					zap.String("cfn-stack-id", vv.CFNStackID),
+					zap.Bool("create-requested", cur.CreateRequested),
+					zap.String("cfn-stack-id", cur.CFNStackID),
 				)
 				continue
 			}
@@ -391,6 +389,11 @@ func (ts *tester) createASG() error {
 			var st cfn.StackStatus
 			for st = range ch {
 				if st.Error != nil {
+					cur, ok = ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName]
+					if !ok {
+						cancel()
+						return fmt.Errorf("MNG name %q not found after creation", mngName)
+					}
 					timeEnd := time.Now()
 					cur.TimeFrameCreate = timeutil.NewTimeFrame(cur.TimeFrameCreate.StartUTC, cur.TimeFrameCreate.EndUTC.Add(timeEnd.Sub(timeStart)))
 					cur.Status = fmt.Sprintf("failed to create managed node group (%v)", st.Error)
@@ -402,6 +405,10 @@ func (ts *tester) createASG() error {
 			for _, o := range st.Stack.Outputs {
 				switch k := aws.StringValue(o.OutputKey); k {
 				case "MNGID":
+					cur, ok = ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName]
+					if !ok {
+						return fmt.Errorf("MNG name %q not found after creation", mngName)
+					}
 					timeEnd := time.Now()
 					cur.TimeFrameCreate = timeutil.NewTimeFrame(cur.TimeFrameCreate.StartUTC, cur.TimeFrameCreate.EndUTC.Add(timeEnd.Sub(timeStart)))
 					cur.PhysicalID = aws.StringValue(o.OutputValue)
@@ -443,6 +450,10 @@ func (ts *tester) createASG() error {
 			}
 		}
 		cancel()
+		cur, ok = ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName]
+		if !ok {
+			return fmt.Errorf("MNG name %q not found after creation", mngName)
+		}
 		timeEnd := time.Now()
 		cur.TimeFrameCreate = timeutil.NewTimeFrame(cur.TimeFrameCreate.StartUTC, cur.TimeFrameCreate.EndUTC.Add(timeEnd.Sub(timeStart)))
 		ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName] = cur
@@ -451,6 +462,10 @@ func (ts *tester) createASG() error {
 		timeStart = time.Now()
 		if err := ts.waitForNodes(cur.Name, 3); err != nil {
 			return err
+		}
+		cur, ok = ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName]
+		if !ok {
+			return fmt.Errorf("MNG name %q not found after creation", mngName)
 		}
 		timeEnd = time.Now()
 		cur.TimeFrameCreate = timeutil.NewTimeFrame(cur.TimeFrameCreate.StartUTC, cur.TimeFrameCreate.EndUTC.Add(timeEnd.Sub(timeStart)))
@@ -543,7 +558,12 @@ func (ts *tester) deleteASG() error {
 			var st cfn.StackStatus
 			for st = range ch {
 				if st.Error != nil {
-					cancel()
+					var ok bool
+					cur, ok = ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName]
+					if !ok {
+						cancel()
+						return fmt.Errorf("MNG name %q not found after creation", mngName)
+					}
 					timeEnd := time.Now()
 					cur.TimeFrameDelete = timeutil.NewTimeFrame(timeStart, timeEnd)
 					cur.Status = fmt.Sprintf("failed to delete a managed node group (%v)", st.Error)
@@ -585,6 +605,11 @@ func (ts *tester) deleteASG() error {
 			cancel()
 		}
 
+		var ok bool
+		cur, ok = ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName]
+		if !ok {
+			return fmt.Errorf("MNG name %q not found after creation", mngName)
+		}
 		timeEnd := time.Now()
 		cur.TimeFrameDelete = timeutil.NewTimeFrame(timeStart, timeEnd)
 		cur.Status = ManagedNodeGroupStatusDELETEDORNOTEXIST
@@ -754,25 +779,25 @@ func (ts *tester) setStatus(sv ManagedNodeGroupStatus) error {
 	if name == "" {
 		return errors.New("EKS Managed Node Group empty name")
 	}
-	mv, ok := ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[name]
+	cur, ok := ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[name]
 	if !ok {
 		return fmt.Errorf("EKS Managed Node Group %q not found", name)
 	}
 
 	if sv.NodeGroup == nil {
 		if sv.Error != nil {
-			mv.Status = fmt.Sprintf("%q failed with error %v", sv.NodeGroupName, sv.Error)
+			cur.Status = fmt.Sprintf("%q failed with error %v", sv.NodeGroupName, sv.Error)
 		} else {
-			mv.Status = ManagedNodeGroupStatusDELETEDORNOTEXIST
+			cur.Status = ManagedNodeGroupStatusDELETEDORNOTEXIST
 		}
 	} else {
-		mv.Status = aws.StringValue(sv.NodeGroup.Status)
-		if sv.NodeGroup.Resources != nil && mv.RemoteAccessSecurityGroupID == "" {
-			mv.RemoteAccessSecurityGroupID = aws.StringValue(sv.NodeGroup.Resources.RemoteAccessSecurityGroup)
+		cur.Status = aws.StringValue(sv.NodeGroup.Status)
+		if sv.NodeGroup.Resources != nil && cur.RemoteAccessSecurityGroupID == "" {
+			cur.RemoteAccessSecurityGroupID = aws.StringValue(sv.NodeGroup.Resources.RemoteAccessSecurityGroup)
 		}
 	}
 
-	ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[name] = mv
+	ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[name] = cur
 	return ts.cfg.EKSConfig.Sync()
 }
 
