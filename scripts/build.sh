@@ -28,7 +28,7 @@ _BUILD_TARGETS=${BUILD_TARGETS:-'linux darwin'}
 
 for os in ${_BUILD_TARGETS}; do
   CGO_ENABLED=0 GOOS=${os} GOARCH=$(go env GOARCH) \
-    go build -v \
+    go build -mod=vendor -v \
     -ldflags "-s -w \
     -X github.com/aws/aws-k8s-tester/version.GitCommit=${GIT_COMMIT} \
     -X github.com/aws/aws-k8s-tester/version.ReleaseVersion=${RELEASE_VERSION} \
@@ -37,7 +37,7 @@ for os in ${_BUILD_TARGETS}; do
     ./cmd/aws-k8s-tester
 
   CGO_ENABLED=0 GOOS=${os} GOARCH=$(go env GOARCH) \
-    go build -v \
+    go build -mod=vendor -v \
     -ldflags "-s -w \
     -X github.com/aws/aws-k8s-tester/version.GitCommit=${GIT_COMMIT} \
     -X github.com/aws/aws-k8s-tester/version.ReleaseVersion=${RELEASE_VERSION} \
@@ -46,7 +46,7 @@ for os in ${_BUILD_TARGETS}; do
     ./cmd/ec2-utils
 
   CGO_ENABLED=0 GOOS=${os} GOARCH=$(go env GOARCH) \
-    go build -v \
+    go build -mod=vendor -v \
     -ldflags "-s -w \
     -X github.com/aws/aws-k8s-tester/version.GitCommit=${GIT_COMMIT} \
     -X github.com/aws/aws-k8s-tester/version.ReleaseVersion=${RELEASE_VERSION} \
@@ -55,7 +55,7 @@ for os in ${_BUILD_TARGETS}; do
     ./cmd/eks-utils
 
   CGO_ENABLED=0 GOOS=${os} GOARCH=$(go env GOARCH) \
-    go build -v \
+    go build -mod=vendor -v \
     -ldflags "-s -w \
     -X github.com/aws/aws-k8s-tester/version.GitCommit=${GIT_COMMIT} \
     -X github.com/aws/aws-k8s-tester/version.ReleaseVersion=${RELEASE_VERSION} \
@@ -64,7 +64,7 @@ for os in ${_BUILD_TARGETS}; do
     ./cmd/etcd-utils
 
   CGO_ENABLED=0 GOOS=${os} GOARCH=$(go env GOARCH) \
-    go build -v \
+    go build -mod=vendor -v \
     -ldflags "-s -w \
     -X github.com/aws/aws-k8s-tester/version.GitCommit=${GIT_COMMIT} \
     -X github.com/aws/aws-k8s-tester/version.ReleaseVersion=${RELEASE_VERSION} \
