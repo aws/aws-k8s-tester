@@ -7,6 +7,13 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.6...v1.2.7).
 
+### `eksconfig`
+
+- Add [`eksconfig.AddOnClusterLoaderLocal`](https://github.com/aws/aws-k8s-tester/commit/).
+  - Automates https://github.com/kubernetes/perf-tests/tree/master/clusterloader2.
+  - Enable with `AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_ENABLE=true`.
+  - Enable with `AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_ENABLE=true`.
+
 ### `eks`
 
 - Add [`eks/cluster-loader`](https://github.com/aws/aws-k8s-tester/commit/).
