@@ -24,10 +24,12 @@ RUN chmod +x /aws-k8s-tester /ec2-utils /eks-utils /etcd-utils /cw-utils
 WORKDIR /
 
 RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.16.9/bin/linux/amd64/kubectl && chmod +x ./kubectl && mv ./kubectl /usr/local/bin/kubectl
+RUN curl -LO https://aws-k8s-tester-public.s3-us-west-2.amazonaws.com/clusterloader2 && chmod +x ./clusterloader2 && mv ./clusterloader2 /usr/local/bin/clusterloader2
 RUN aws --version
 RUN /ec2-utils version
 RUN /eks-utils version
 RUN /etcd-utils version
 RUN /cw-utils version
 RUN /aws-k8s-tester version
+RUN clusterloader2 --help || true
 RUN kubectl version --client=true

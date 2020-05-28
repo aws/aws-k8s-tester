@@ -10,6 +10,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.6...v1.2.7
 ### `eks`
 
 - Add [`eks/cluster-loader`](https://github.com/aws/aws-k8s-tester/commit/).
+  - Automates https://github.com/kubernetes/perf-tests/tree/master/clusterloader2.
 - Measure [`eks/config-maps` `LantencyP50`, `LantencyP99`, `LantencyP99.9`, and `LantencyP99.99` in `metrics.RequestsSummary`](https://github.com/aws/aws-k8s-tester/commit/b5525c898461c905815aa57054eec326849fa09b).
 - Measure [`eks/csrs` `LantencyP50`, `LantencyP99`, `LantencyP99.9`, and `LantencyP99.99` in `metrics.RequestsSummary`](https://github.com/aws/aws-k8s-tester/commit/b5525c898461c905815aa57054eec326849fa09b).
 - Measure [`eks/secrets` `LantencyP50`, `LantencyP99`, `LantencyP99.9`, and `LantencyP99.99` in `metrics.RequestsSummary`](https://github.com/aws/aws-k8s-tester/commit/b5525c898461c905815aa57054eec326849fa09b).
