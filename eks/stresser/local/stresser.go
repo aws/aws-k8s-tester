@@ -100,6 +100,7 @@ func (ts *tester) Create() (err error) {
 	select {
 	case <-ts.cfg.Stopc:
 		ts.cfg.Logger.Warn("cluster stresser aborted")
+		loader.Stop()
 		ts.cfg.EKSConfig.AddOnStresserLocal.RequestsSummaryWrites, ts.cfg.EKSConfig.AddOnStresserLocal.RequestsSummaryReads, err = loader.GetMetrics()
 		ts.cfg.EKSConfig.Sync()
 		if err != nil {
@@ -128,11 +129,11 @@ func (ts *tester) Create() (err error) {
 			}
 			fmt.Printf("\n\nAddOnStresserLocal.RequestsSummaryReads:\n%s\n", ts.cfg.EKSConfig.AddOnStresserLocal.RequestsSummaryReads.Table())
 		}
-		loader.Stop()
 		return nil
 
 	case <-time.After(ts.cfg.EKSConfig.AddOnStresserLocal.Duration):
 		ts.cfg.Logger.Info("completing load testing", zap.Duration("duration", ts.cfg.EKSConfig.AddOnStresserLocal.Duration))
+		loader.Stop()
 		ts.cfg.EKSConfig.AddOnStresserLocal.RequestsSummaryWrites, ts.cfg.EKSConfig.AddOnStresserLocal.RequestsSummaryReads, err = loader.GetMetrics()
 		ts.cfg.EKSConfig.Sync()
 		if err != nil {
@@ -161,7 +162,6 @@ func (ts *tester) Create() (err error) {
 			}
 			fmt.Printf("\n\nAddOnStresserLocal.RequestsSummaryReads:\n%s\n", ts.cfg.EKSConfig.AddOnStresserLocal.RequestsSummaryReads.Table())
 		}
-		loader.Stop()
 
 		select {
 		case <-ts.cfg.Stopc:

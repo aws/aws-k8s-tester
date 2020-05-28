@@ -159,6 +159,7 @@ func (ld *loader) Stop() {
 	ld.donecCloseOnce.Do(func() {
 		close(ld.donec)
 	})
+	time.Sleep(5 * time.Second) // enough time to stop goroutines
 	ld.cfg.Logger.Info("stopped and waited for load functions")
 }
 
@@ -554,11 +555,11 @@ func startReads(
 			if err != nil {
 				readRequestsFailureTotal.Inc()
 				lg.Warn("list secrets failed", zap.String("namespace", nv), zap.Error(err))
-				continue
-			}
-			readRequestsSuccessTotal.Inc()
-			if cnt%20 == 0 {
-				lg.Info("listed secrets", zap.String("time-left", deadline.Sub(time.Now()).String()), zap.Int("iteration", cnt), zap.String("namespace", nv), zap.Int("secrets", len(ss.Items)))
+			} else {
+				readRequestsSuccessTotal.Inc()
+				if cnt%20 == 0 {
+					lg.Info("listed secrets", zap.String("time-left", deadline.Sub(time.Now()).String()), zap.Int("iteration", cnt), zap.String("namespace", nv), zap.Int("secrets", len(ss.Items)))
+				}
 			}
 			select {
 			case <-stopc:

@@ -120,6 +120,10 @@ func createStresserFunc(cmd *cobra.Command, args []string) {
 	case <-time.After(stresserDuration):
 	}
 
+
+	close(stopc)
+	loader.Stop()
+
 	writes, reads, err := loader.GetMetrics()
 	if err != nil {
 		lg.Warn("failed to get metrics", zap.Error(err))
@@ -145,9 +149,6 @@ func createStresserFunc(cmd *cobra.Command, args []string) {
 			lg.Warn("failed to write read results", zap.Error(err))
 		}
 	}
-
-	close(stopc)
-	loader.Stop()
 
 	fmt.Printf("\n*********************************\n")
 	fmt.Printf("'aws-k8s-tester eks create stresser' success\n")
