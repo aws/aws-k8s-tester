@@ -202,6 +202,7 @@ func (ld *loader) GetMetrics() (writes metrics.RequestsSummary, reads metrics.Re
 		}
 	}
 
+	ld.cfg.Logger.Info("receiving write latency results")
 	select {
 	case lats := <-ld.writeLatencies:
 		ld.cfg.Logger.Info("received and sorting write latency results", zap.Int("total-data-points", lats.Len()))
@@ -213,10 +214,11 @@ func (ld *loader) GetMetrics() (writes metrics.RequestsSummary, reads metrics.Re
 		writes.LantencyP99 = lats.PickLantencyP99()
 		writes.LantencyP999 = lats.PickLantencyP999()
 		writes.LantencyP9999 = lats.PickLantencyP9999()
-	case <-time.After(30 * time.Second):
+	case <-time.After(2 * time.Minute):
 		ld.cfg.Logger.Warn("took too long to receive write latency results")
 	}
 
+	ld.cfg.Logger.Info("receiving read latency results")
 	select {
 	case lats := <-ld.readLatencies:
 		ld.cfg.Logger.Info("received and sorting read latency results", zap.Int("total-data-points", lats.Len()))
@@ -228,7 +230,7 @@ func (ld *loader) GetMetrics() (writes metrics.RequestsSummary, reads metrics.Re
 		reads.LantencyP99 = lats.PickLantencyP99()
 		reads.LantencyP999 = lats.PickLantencyP999()
 		reads.LantencyP9999 = lats.PickLantencyP9999()
-	case <-time.After(30 * time.Second):
+	case <-time.After(2 * time.Minute):
 		ld.cfg.Logger.Warn("took too long to receive read latency results")
 	}
 
@@ -249,9 +251,10 @@ func startWrites(
 	lg.Info("starting startWrites")
 	ds := make(metrics.Durations, 0, 20000)
 	defer func() {
+		lg.Info("sending write latency results", zap.Int("total-results", len(ds)))
 		select {
 		case writeLatencies <- ds:
-			lg.Info("sent write latency results")
+			lg.Info("sent write latency results", zap.Int("total-results", len(ds)))
 		case <-time.After(2 * time.Minute):
 			lg.Warn("took to long to send write latency results")
 			// in case, receiving takes long...
@@ -384,9 +387,10 @@ func startReads(
 	lg.Info("starting startReads", zap.Strings("namespaces", ns))
 	ds := make(metrics.Durations, 0, 20000)
 	defer func() {
+		lg.Info("sending read latency results", zap.Int("total-results", len(ds)))
 		select {
 		case readLatencies <- ds:
-			lg.Info("sent read latency results")
+			lg.Info("sent read latency results", zap.Int("total-results", len(ds)))
 		case <-time.After(2 * time.Minute):
 			lg.Warn("took to long to send read latency results")
 			// in case, receiving takes long...
