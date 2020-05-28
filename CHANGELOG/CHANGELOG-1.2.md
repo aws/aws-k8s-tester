@@ -18,7 +18,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.6...v1.2.7
 
 ### `pkg/metrics`
 
-- Add [`LantencyP50`, `LantencyP99`, and `LantencyP99.9` to `metrics.RequestsSummary`](https://github.com/aws/aws-k8s-tester/commit/849ca4cb2049cf232dad884c3648ee303a889bc5).
+- Add [`LantencyP50`, `LantencyP99`, `LantencyP99.9`, and `LantencyP99.99`  to `metrics.RequestsSummary`](https://github.com/aws/aws-k8s-tester/commit/849ca4cb2049cf232dad884c3648ee303a889bc5).
 
 ### Dependency
 
