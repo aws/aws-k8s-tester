@@ -7,11 +7,21 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.6...v1.2.7).
 
-TODO
+### `eks`
+
+- Add [`eks/cluster-loader`](https://github.com/aws/aws-k8s-tester/commit/).
+- Measure [`eks/config-maps` `LantencyP50`, `LantencyP99`, `LantencyP99.9`, and `LantencyP99.99` in `metrics.RequestsSummary`](https://github.com/aws/aws-k8s-tester/commit/).
+- Measure [`eks/csrs` `LantencyP50`, `LantencyP99`, `LantencyP99.9`, and `LantencyP99.99` in `metrics.RequestsSummary`](https://github.com/aws/aws-k8s-tester/commit/).
+- Measure [`eks/secrets` `LantencyP50`, `LantencyP99`, `LantencyP99.9`, and `LantencyP99.99` in `metrics.RequestsSummary`](https://github.com/aws/aws-k8s-tester/commit/).
+- Measure [`eks/stresser` `LantencyP50`, `LantencyP99`, `LantencyP99.9`, and `LantencyP99.99` in `metrics.RequestsSummary`](https://github.com/aws/aws-k8s-tester/commit/).
+
+### `pkg/metrics`
+
+- Add [`LantencyP50`, `LantencyP99`, and `LantencyP99.9` to `metrics.RequestsSummary`](https://github.com/aws/aws-k8s-tester/commit/14e08bf5d0ddbee716955e19a7f3046cbd0184cf).
 
 ### Dependency
 
-- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.31.4`](https://github.com/aws/aws-sdk-go/releases/tag/v1.31.4) to [`v1.31.5`](https://github.com/aws/aws-sdk-go/releases/tag/v1.31.5).
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.31.4`](https://github.com/aws/aws-sdk-go/releases/tag/v1.31.4) to [`v1.31.6`](https://github.com/aws/aws-sdk-go/releases/tag/v1.31.6).
 
 
 ### Go
