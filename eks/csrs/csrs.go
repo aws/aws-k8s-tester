@@ -190,7 +190,9 @@ func startWrites(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duratio
 				},
 			}, metav1.CreateOptions{})
 		cancel()
-		writeRequestLatencyMs.Observe(float64(time.Since(start) / time.Millisecond))
+		took := time.Since(start)
+		tookMS := float64(took / time.Millisecond)
+		writeRequestLatencyMs.Observe(tookMS)
 		if err != nil {
 			writeRequestsFailureTotal.Inc()
 			lg.Warn("write csr failed", zap.Error(err))

@@ -222,7 +222,9 @@ func startWrites(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duratio
 				Data: map[string][]byte{key: []byte(val)},
 			}, metav1.CreateOptions{})
 		cancel()
-		writeRequestLatencyMs.Observe(float64(time.Since(start) / time.Millisecond))
+		took := time.Since(start)
+		tookMS := float64(took / time.Millisecond)
+		writeRequestLatencyMs.Observe(tookMS)
 		if err != nil {
 			writeRequestsFailureTotal.Inc()
 			lg.Warn("write secret failed", zap.String("namespace", namespace), zap.Error(err))
@@ -258,7 +260,9 @@ func startReads(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration
 			Secrets(namespace).
 			Get(ctx, key, metav1.GetOptions{})
 		cancel()
-		readRequestLatencyMs.Observe(float64(time.Since(start) / time.Millisecond))
+		took := time.Since(start)
+		tookMS := float64(took / time.Millisecond)
+		readRequestLatencyMs.Observe(tookMS)
 		if err != nil {
 			readRequestsFailureTotal.Inc()
 			lg.Warn("read secret failed", zap.String("namespace", namespace), zap.Error(err))

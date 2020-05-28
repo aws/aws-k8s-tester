@@ -223,7 +223,9 @@ func startWrites(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duratio
 				Data: map[string]string{key: val},
 			}, metav1.CreateOptions{})
 		cancel()
-		writeRequestLatencyMs.Observe(float64(time.Since(start) / time.Millisecond))
+		took := time.Since(start)
+		tookMS := float64(took / time.Millisecond)
+		writeRequestLatencyMs.Observe(tookMS)
 		if err != nil {
 			writeRequestsFailureTotal.Inc()
 			lg.Warn("write configmap failed", zap.String("namespace", namespace), zap.Error(err))
@@ -265,7 +267,9 @@ func startWrites(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duratio
 				Data: map[string][]byte{key: []byte(val)},
 			}, metav1.CreateOptions{})
 		cancel()
-		writeRequestLatencyMs.Observe(float64(time.Since(start) / time.Millisecond))
+		took = time.Since(start)
+		tookMS = float64(took / time.Millisecond)
+		writeRequestLatencyMs.Observe(tookMS)
 		if err != nil {
 			writeRequestsFailureTotal.Inc()
 			lg.Warn("write secret failed", zap.String("namespace", namespace), zap.Error(err))
@@ -307,7 +311,9 @@ func startReads(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		rs, err := cli.CoreV1().Nodes().List(ctx, metav1.ListOptions{Limit: listLimit})
 		cancel()
-		readRequestLatencyMs.Observe(float64(time.Since(start) / time.Millisecond))
+		took := time.Since(start)
+		tookMS := float64(took / time.Millisecond)
+		readRequestLatencyMs.Observe(tookMS)
 		if err != nil {
 			readRequestsFailureTotal.Inc()
 			lg.Warn("list nodes failed", zap.Error(err))
@@ -323,7 +329,9 @@ func startReads(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration
 			ctx, cancel := context.WithTimeout(context.Background(), timeout)
 			pods, err := cli.CoreV1().Pods(nv).List(ctx, metav1.ListOptions{Limit: listLimit})
 			cancel()
-			readRequestLatencyMs.Observe(float64(time.Since(start) / time.Millisecond))
+			took := time.Since(start)
+			tookMS := float64(took / time.Millisecond)
+			readRequestLatencyMs.Observe(tookMS)
 			if err != nil {
 				readRequestsFailureTotal.Inc()
 				lg.Warn("list pods failed", zap.String("namespace", nv), zap.Error(err))
@@ -347,7 +355,9 @@ func startReads(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration
 			ctx, cancel = context.WithTimeout(context.Background(), timeout)
 			svcs, err := cli.CoreV1().Services(nv).List(ctx, metav1.ListOptions{Limit: listLimit})
 			cancel()
-			readRequestLatencyMs.Observe(float64(time.Since(start) / time.Millisecond))
+			took = time.Since(start)
+			tookMS = float64(took / time.Millisecond)
+			readRequestLatencyMs.Observe(tookMS)
 			if err != nil {
 				readRequestsFailureTotal.Inc()
 				lg.Warn("list services failed", zap.String("namespace", nv), zap.Error(err))
@@ -371,7 +381,9 @@ func startReads(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration
 			ctx, cancel = context.WithTimeout(context.Background(), timeout)
 			eps, err := cli.CoreV1().Endpoints(nv).List(ctx, metav1.ListOptions{Limit: listLimit})
 			cancel()
-			readRequestLatencyMs.Observe(float64(time.Since(start) / time.Millisecond))
+			took = time.Since(start)
+			tookMS = float64(took / time.Millisecond)
+			readRequestLatencyMs.Observe(tookMS)
 			if err != nil {
 				readRequestsFailureTotal.Inc()
 				lg.Warn("list endpoints failed", zap.String("namespace", nv), zap.Error(err))
@@ -395,7 +407,9 @@ func startReads(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration
 			ctx, cancel = context.WithTimeout(context.Background(), timeout)
 			cms, err := cli.CoreV1().ConfigMaps(nv).List(ctx, metav1.ListOptions{Limit: listLimit})
 			cancel()
-			readRequestLatencyMs.Observe(float64(time.Since(start) / time.Millisecond))
+			took = time.Since(start)
+			tookMS = float64(took / time.Millisecond)
+			readRequestLatencyMs.Observe(tookMS)
 			if err != nil {
 				readRequestsFailureTotal.Inc()
 				lg.Warn("list configmaps failed", zap.String("namespace", nv), zap.Error(err))
@@ -419,7 +433,9 @@ func startReads(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration
 			ctx, cancel = context.WithTimeout(context.Background(), timeout)
 			ss, err := cli.CoreV1().Secrets(nv).List(ctx, metav1.ListOptions{Limit: listLimit})
 			cancel()
-			readRequestLatencyMs.Observe(float64(time.Since(start) / time.Millisecond))
+			took = time.Since(start)
+			tookMS = float64(took / time.Millisecond)
+			readRequestLatencyMs.Observe(tookMS)
 			if err != nil {
 				readRequestsFailureTotal.Inc()
 				lg.Warn("list secrets failed", zap.String("namespace", nv), zap.Error(err))
@@ -443,7 +459,9 @@ func startReads(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration
 			ctx, cancel = context.WithTimeout(context.Background(), timeout)
 			jobs, err := cli.BatchV1().Jobs(nv).List(ctx, metav1.ListOptions{Limit: listLimit})
 			cancel()
-			readRequestLatencyMs.Observe(float64(time.Since(start) / time.Millisecond))
+			took = time.Since(start)
+			tookMS = float64(took / time.Millisecond)
+			readRequestLatencyMs.Observe(tookMS)
 			if err != nil {
 				readRequestsFailureTotal.Inc()
 				lg.Warn("list jobs failed", zap.String("namespace", nv), zap.Error(err))
@@ -467,7 +485,9 @@ func startReads(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration
 			ctx, cancel = context.WithTimeout(context.Background(), timeout)
 			cjbs, err := cli.BatchV1beta1().CronJobs(nv).List(ctx, metav1.ListOptions{Limit: listLimit})
 			cancel()
-			readRequestLatencyMs.Observe(float64(time.Since(start) / time.Millisecond))
+			took = time.Since(start)
+			tookMS = float64(took / time.Millisecond)
+			readRequestLatencyMs.Observe(tookMS)
 			if err != nil {
 				readRequestsFailureTotal.Inc()
 				lg.Warn("list cronjobs failed", zap.String("namespace", nv), zap.Error(err))
