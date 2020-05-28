@@ -1653,7 +1653,7 @@ func (ts *Tester) Up() (err error) {
 
 		if ts.cfg.IsEnabledAddOnStresserRemote() {
 			fmt.Printf("\n*********************************\n")
-			fmt.Printf("clusterLoaderRemoteTester.AggregateResults (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnStresserRemote.Namespace)
+			fmt.Printf("stresserRemoteTester.AggregateResults (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnStresserRemote.Namespace)
 			if err := catchInterrupt(
 				ts.lg,
 				ts.stopCreationCh,

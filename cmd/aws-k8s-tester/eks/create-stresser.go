@@ -120,7 +120,6 @@ func createStresserFunc(cmd *cobra.Command, args []string) {
 	case <-time.After(stresserDuration):
 	}
 
-
 	close(stopc)
 	loader.Stop()
 

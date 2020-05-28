@@ -391,6 +391,8 @@ func TestEnv(t *testing.T) {
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_NAMESPACE", "hello")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_NAMESPACE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_DURATION", "7m30s")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_DURATION")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REPOSITORY_ACCOUNT_ID", "uri")
@@ -409,6 +411,14 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_WRITES_OUTPUT_NAME_PREFIX")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_READS_OUTPUT_NAME_PREFIX", "stresser-out-pfx")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_READS_OUTPUT_NAME_PREFIX")
+
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_ENABLE")
+
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_NAMESPACE", "hello")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_NAMESPACE")
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
 		t.Fatal(err)
@@ -1045,6 +1055,9 @@ func TestEnv(t *testing.T) {
 	if !cfg.AddOnStresserRemote.Enable {
 		t.Fatalf("unexpected cfg.AddOnStresserRemote.Enable %v", cfg.AddOnStresserRemote.Enable)
 	}
+	if cfg.AddOnStresserRemote.Namespace != "hello" {
+		t.Fatalf("unexpected cfg.AddOnStresserRemote.Namespace %q", cfg.AddOnStresserRemote.Namespace)
+	}
 	if cfg.AddOnStresserRemote.Duration != 7*time.Minute+30*time.Second {
 		t.Fatalf("unexpected cfg.AddOnStresserRemote.Duration %v", cfg.AddOnStresserRemote.Duration)
 	}
@@ -1071,6 +1084,17 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.AddOnStresserRemote.RequestsSummaryReadsOutputNamePrefix != "stresser-out-pfx" {
 		t.Fatalf("unexpected cfg.AddOnStresserRemote.RequestsSummaryReadsOutputNamePrefix %v", cfg.AddOnStresserRemote.RequestsSummaryReadsOutputNamePrefix)
+	}
+
+	if !cfg.AddOnClusterLoaderLocal.Enable {
+		t.Fatalf("unexpected cfg.AddOnClusterLoaderLocal.Enable %v", cfg.AddOnClusterLoaderLocal.Enable)
+	}
+
+	if !cfg.AddOnClusterLoaderRemote.Enable {
+		t.Fatalf("unexpected cfg.AddOnClusterLoaderRemote.Enable %v", cfg.AddOnClusterLoaderRemote.Enable)
+	}
+	if cfg.AddOnClusterLoaderRemote.Namespace != "hello" {
+		t.Fatalf("unexpected cfg.AddOnClusterLoaderRemote.Namespace %q", cfg.AddOnClusterLoaderRemote.Namespace)
 	}
 
 	cfg.Parameters.RoleManagedPolicyARNs = nil
