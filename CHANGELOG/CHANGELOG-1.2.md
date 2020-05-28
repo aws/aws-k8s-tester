@@ -10,14 +10,14 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.6...v1.2.7
 ### `eks`
 
 - Add [`eks/cluster-loader`](https://github.com/aws/aws-k8s-tester/commit/).
-- Measure [`eks/config-maps` `LantencyP50`, `LantencyP99`, `LantencyP99.9`, and `LantencyP99.99` in `metrics.RequestsSummary`](https://github.com/aws/aws-k8s-tester/commit/).
-- Measure [`eks/csrs` `LantencyP50`, `LantencyP99`, `LantencyP99.9`, and `LantencyP99.99` in `metrics.RequestsSummary`](https://github.com/aws/aws-k8s-tester/commit/).
-- Measure [`eks/secrets` `LantencyP50`, `LantencyP99`, `LantencyP99.9`, and `LantencyP99.99` in `metrics.RequestsSummary`](https://github.com/aws/aws-k8s-tester/commit/).
-- Measure [`eks/stresser` `LantencyP50`, `LantencyP99`, `LantencyP99.9`, and `LantencyP99.99` in `metrics.RequestsSummary`](https://github.com/aws/aws-k8s-tester/commit/).
+- Measure [`eks/config-maps` `LantencyP50`, `LantencyP99`, `LantencyP99.9`, and `LantencyP99.99` in `metrics.RequestsSummary`](https://github.com/aws/aws-k8s-tester/commit/b5525c898461c905815aa57054eec326849fa09b).
+- Measure [`eks/csrs` `LantencyP50`, `LantencyP99`, `LantencyP99.9`, and `LantencyP99.99` in `metrics.RequestsSummary`](https://github.com/aws/aws-k8s-tester/commit/b5525c898461c905815aa57054eec326849fa09b).
+- Measure [`eks/secrets` `LantencyP50`, `LantencyP99`, `LantencyP99.9`, and `LantencyP99.99` in `metrics.RequestsSummary`](https://github.com/aws/aws-k8s-tester/commit/b5525c898461c905815aa57054eec326849fa09b).
+- Measure [`eks/stresser` `LantencyP50`, `LantencyP99`, `LantencyP99.9`, and `LantencyP99.99` in `metrics.RequestsSummary`](https://github.com/aws/aws-k8s-tester/commit/b5525c898461c905815aa57054eec326849fa09b).
 
 ### `pkg/metrics`
 
-- Add [`LantencyP50`, `LantencyP99`, and `LantencyP99.9` to `metrics.RequestsSummary`](https://github.com/aws/aws-k8s-tester/commit/14e08bf5d0ddbee716955e19a7f3046cbd0184cf).
+- Add [`LantencyP50`, `LantencyP99`, and `LantencyP99.9` to `metrics.RequestsSummary`](https://github.com/aws/aws-k8s-tester/commit/849ca4cb2049cf232dad884c3648ee303a889bc5).
 
 ### Dependency
 
