@@ -3,10 +3,26 @@ package metrics
 import (
 	"fmt"
 	"math"
+	"sort"
 	"testing"
+	"time"
 )
 
 func TestRequestsSummary(t *testing.T) {
+	ds := make(Durations, 20000)
+	for i := 0; i < 20000; i++ {
+		sign := 1
+		if i%2 == 0 {
+			sign = -1
+		}
+		dur := time.Second + time.Duration(sign*i)*time.Millisecond
+		if dur < 0 {
+			dur = 2 * time.Second
+		}
+		ds[20000-1-i] = dur
+	}
+	sort.Sort(ds)
+
 	rs := RequestsSummary{
 		SuccessTotal: 10,
 		FailureTotal: 10,
@@ -27,6 +43,11 @@ func TestRequestsSummary(t *testing.T) {
 			{Scale: "milliseconds", LowerBound: 2048, UpperBound: 4096, Count: 0},
 			{Scale: "milliseconds", LowerBound: 4096, UpperBound: math.MaxFloat64, Count: 4},
 		}),
+		LantencyP50:   ds.PickLantencyP50(),
+		LantencyP90:   ds.PickLantencyP90(),
+		LantencyP99:   ds.PickLantencyP99(),
+		LantencyP999:  ds.PickLantencyP999(),
+		LantencyP9999: ds.PickLantencyP9999(),
 	}
 	fmt.Println(rs.JSON())
 	fmt.Println(rs.Table())
