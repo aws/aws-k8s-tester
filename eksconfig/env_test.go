@@ -414,11 +414,47 @@ func TestEnv(t *testing.T) {
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_CLUSTER_LOADER_TEST_CONFIG_PATH", "artifacts/clusterloader2-testing-load-config.yaml")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_CLUSTER_LOADER_TEST_CONFIG_PATH")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_NODES", "11")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_NODES")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_NODES_PER_NAMESPACE", "11")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_NODES_PER_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_PODS_PER_NODE", "21")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_PODS_PER_NODE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_BIG_GROUP_SIZE", "26")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_BIG_GROUP_SIZE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_MEDIUM_GROUP_SIZE", "11")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_MEDIUM_GROUP_SIZE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_SMALL_GROUP_SIZE", "6")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_SMALL_GROUP_SIZE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_SMALL_STATEFUL_SETS_PER_NAMESPACE", "1")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_SMALL_STATEFUL_SETS_PER_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_MEDIUM_STATEFUL_SETS_PER_NAMESPACE", "1")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_MEDIUM_STATEFUL_SETS_PER_NAMESPACE")
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_ENABLE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_NAMESPACE", "hello")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_CLUSTER_LOADER_TEST_CONFIG_PATH", "artifacts/clusterloader2-testing-load-config.yaml")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_CLUSTER_LOADER_TEST_CONFIG_PATH")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_NODES", "11")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_NODES")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_NODES_PER_NAMESPACE", "11")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_NODES_PER_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_PODS_PER_NODE", "21")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_PODS_PER_NODE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_BIG_GROUP_SIZE", "26")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_BIG_GROUP_SIZE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_MEDIUM_GROUP_SIZE", "11")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_MEDIUM_GROUP_SIZE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_SMALL_GROUP_SIZE", "6")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_SMALL_GROUP_SIZE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_SMALL_STATEFUL_SETS_PER_NAMESPACE", "1")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_SMALL_STATEFUL_SETS_PER_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_MEDIUM_STATEFUL_SETS_PER_NAMESPACE", "1")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_MEDIUM_STATEFUL_SETS_PER_NAMESPACE")
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
 		t.Fatal(err)
@@ -1089,12 +1125,72 @@ func TestEnv(t *testing.T) {
 	if !cfg.AddOnClusterLoaderLocal.Enable {
 		t.Fatalf("unexpected cfg.AddOnClusterLoaderLocal.Enable %v", cfg.AddOnClusterLoaderLocal.Enable)
 	}
+	if cfg.AddOnClusterLoaderLocal.ClusterLoaderTestConfigPath != "artifacts/clusterloader2-testing-load-config.yaml" {
+		t.Fatalf("unexpected cfg.AddOnClusterLoaderLocal.ClusterLoaderTestConfigPath %v", cfg.AddOnClusterLoaderLocal.ClusterLoaderTestConfigPath)
+	}
+	if cfg.AddOnClusterLoaderLocal.Nodes != 11 {
+		t.Fatalf("unexpected cfg.AddOnClusterLoaderLocal.Nodes %v", cfg.AddOnClusterLoaderLocal.Nodes)
+	}
+	if cfg.AddOnClusterLoaderLocal.NodesPerNamespace != 11 {
+		t.Fatalf("unexpected cfg.AddOnClusterLoaderLocal.NodesPerNamespace %v", cfg.AddOnClusterLoaderLocal.NodesPerNamespace)
+	}
+	if cfg.AddOnClusterLoaderLocal.PodsPerNode != 21 {
+		t.Fatalf("unexpected cfg.AddOnClusterLoaderLocal.PodsPerNode %v", cfg.AddOnClusterLoaderLocal.PodsPerNode)
+	}
+	if cfg.AddOnClusterLoaderLocal.BigGroupSize != 26 {
+		t.Fatalf("unexpected cfg.AddOnClusterLoaderLocal.BigGroupSize %v", cfg.AddOnClusterLoaderLocal.BigGroupSize)
+	}
+	if cfg.AddOnClusterLoaderLocal.BigGroupSize != 26 {
+		t.Fatalf("unexpected cfg.AddOnClusterLoaderLocal.BigGroupSize %v", cfg.AddOnClusterLoaderLocal.BigGroupSize)
+	}
+	if cfg.AddOnClusterLoaderLocal.MediumGroupSize != 11 {
+		t.Fatalf("unexpected cfg.AddOnClusterLoaderLocal.MediumGroupSize %v", cfg.AddOnClusterLoaderLocal.MediumGroupSize)
+	}
+	if cfg.AddOnClusterLoaderLocal.SmallGroupSize != 6 {
+		t.Fatalf("unexpected cfg.AddOnClusterLoaderLocal.SmallGroupSize %v", cfg.AddOnClusterLoaderLocal.SmallGroupSize)
+	}
+	if cfg.AddOnClusterLoaderLocal.SmallStatefulSetsPerNamespace != 1 {
+		t.Fatalf("unexpected cfg.AddOnClusterLoaderLocal.SmallStatefulSetsPerNamespace %v", cfg.AddOnClusterLoaderLocal.SmallStatefulSetsPerNamespace)
+	}
+	if cfg.AddOnClusterLoaderLocal.MediumStatefulSetsPerNamespace != 1 {
+		t.Fatalf("unexpected cfg.AddOnClusterLoaderLocal.MediumStatefulSetsPerNamespace %v", cfg.AddOnClusterLoaderLocal.MediumStatefulSetsPerNamespace)
+	}
 
 	if !cfg.AddOnClusterLoaderRemote.Enable {
 		t.Fatalf("unexpected cfg.AddOnClusterLoaderRemote.Enable %v", cfg.AddOnClusterLoaderRemote.Enable)
 	}
 	if cfg.AddOnClusterLoaderRemote.Namespace != "hello" {
 		t.Fatalf("unexpected cfg.AddOnClusterLoaderRemote.Namespace %q", cfg.AddOnClusterLoaderRemote.Namespace)
+	}
+	if cfg.AddOnClusterLoaderRemote.ClusterLoaderTestConfigPath != "artifacts/clusterloader2-testing-load-config.yaml" {
+		t.Fatalf("unexpected cfg.AddOnClusterLoaderRemote.ClusterLoaderTestConfigPath %v", cfg.AddOnClusterLoaderRemote.ClusterLoaderTestConfigPath)
+	}
+	if cfg.AddOnClusterLoaderRemote.Nodes != 11 {
+		t.Fatalf("unexpected cfg.AddOnClusterLoaderRemote.Nodes %v", cfg.AddOnClusterLoaderRemote.Nodes)
+	}
+	if cfg.AddOnClusterLoaderRemote.NodesPerNamespace != 11 {
+		t.Fatalf("unexpected cfg.AddOnClusterLoaderRemote.NodesPerNamespace %v", cfg.AddOnClusterLoaderRemote.NodesPerNamespace)
+	}
+	if cfg.AddOnClusterLoaderRemote.PodsPerNode != 21 {
+		t.Fatalf("unexpected cfg.AddOnClusterLoaderRemote.PodsPerNode %v", cfg.AddOnClusterLoaderRemote.PodsPerNode)
+	}
+	if cfg.AddOnClusterLoaderRemote.BigGroupSize != 26 {
+		t.Fatalf("unexpected cfg.AddOnClusterLoaderRemote.BigGroupSize %v", cfg.AddOnClusterLoaderRemote.BigGroupSize)
+	}
+	if cfg.AddOnClusterLoaderRemote.BigGroupSize != 26 {
+		t.Fatalf("unexpected cfg.AddOnClusterLoaderRemote.BigGroupSize %v", cfg.AddOnClusterLoaderRemote.BigGroupSize)
+	}
+	if cfg.AddOnClusterLoaderRemote.MediumGroupSize != 11 {
+		t.Fatalf("unexpected cfg.AddOnClusterLoaderRemote.MediumGroupSize %v", cfg.AddOnClusterLoaderRemote.MediumGroupSize)
+	}
+	if cfg.AddOnClusterLoaderRemote.SmallGroupSize != 6 {
+		t.Fatalf("unexpected cfg.AddOnClusterLoaderRemote.SmallGroupSize %v", cfg.AddOnClusterLoaderRemote.SmallGroupSize)
+	}
+	if cfg.AddOnClusterLoaderRemote.SmallStatefulSetsPerNamespace != 1 {
+		t.Fatalf("unexpected cfg.AddOnClusterLoaderRemote.SmallStatefulSetsPerNamespace %v", cfg.AddOnClusterLoaderRemote.SmallStatefulSetsPerNamespace)
+	}
+	if cfg.AddOnClusterLoaderRemote.MediumStatefulSetsPerNamespace != 1 {
+		t.Fatalf("unexpected cfg.AddOnClusterLoaderRemote.MediumStatefulSetsPerNamespace %v", cfg.AddOnClusterLoaderRemote.MediumStatefulSetsPerNamespace)
 	}
 
 	cfg.Parameters.RoleManagedPolicyARNs = nil

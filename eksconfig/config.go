@@ -949,6 +949,9 @@ func (cfg *Config) validateConfig() error {
 		return err
 	}
 
+	if cfg.KubectlPath == "" && cfg.KubectlDownloadURL == "" {
+		return errors.New("empty KubectlPath and KubectlDownloadURL")
+	}
 	if !strings.Contains(cfg.KubectlDownloadURL, runtime.GOOS) {
 		return fmt.Errorf("kubectl-download-url %q build OS mismatch, expected %q", cfg.KubectlDownloadURL, runtime.GOOS)
 	}
