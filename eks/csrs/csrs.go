@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"sort"
 	"sync"
 	"time"
 
@@ -86,6 +87,8 @@ type loader struct {
 	cfg            Config
 	donec          chan struct{}
 	donecCloseOnce *sync.Once
+
+	writeLatencies metrics.Durations
 }
 
 func New(cfg Config) Loader {
@@ -98,7 +101,7 @@ func New(cfg Config) Loader {
 
 func (ld *loader) Start() {
 	ld.cfg.Logger.Info("starting write function")
-	startWrites(ld.cfg.Logger, ld.cfg.Client.KubernetesClientSet(), ld.cfg.ClientTimeout, ld.cfg.Objects, ld.cfg.InitialRequestConditionType, ld.cfg.Stopc, ld.donec)
+	ld.writeLatencies = startWrites(ld.cfg.Logger, ld.cfg.Client.KubernetesClientSet(), ld.cfg.ClientTimeout, ld.cfg.Objects, ld.cfg.InitialRequestConditionType, ld.cfg.Stopc, ld.donec)
 	ld.cfg.Logger.Info("completed write function")
 }
 
@@ -137,11 +140,23 @@ func (ld *loader) GetMetrics() (writes metrics.RequestsSummary, err error) {
 			}
 		}
 	}
+
+	ld.cfg.Logger.Info("sorting write latency results", zap.Int("total-data-points", ld.writeLatencies.Len()))
+	now := time.Now()
+	sort.Sort(ld.writeLatencies)
+	ld.cfg.Logger.Info("sorted write latency results", zap.Int("total-data-points", ld.writeLatencies.Len()), zap.String("took", time.Since(now).String()))
+	writes.LantencyP50 = ld.writeLatencies.PickLantencyP50()
+	writes.LantencyP90 = ld.writeLatencies.PickLantencyP90()
+	writes.LantencyP99 = ld.writeLatencies.PickLantencyP99()
+	writes.LantencyP999 = ld.writeLatencies.PickLantencyP999()
+	writes.LantencyP9999 = ld.writeLatencies.PickLantencyP9999()
+
 	return writes, nil
 }
 
-func startWrites(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration, objects int, condType string, stopc chan struct{}, donec chan struct{}) {
+func startWrites(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration, objects int, condType string, stopc chan struct{}, donec chan struct{}) (ds metrics.Durations) {
 	lg.Info("starting startWrites", zap.Int("objects", objects))
+	ds = make(metrics.Durations, 0, 20000)
 
 	for i := 0; i < objects; i++ {
 		select {
@@ -156,7 +171,7 @@ func startWrites(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duratio
 
 		// only letters and numbers for CSR key names
 		key := fmt.Sprintf("csr%d%s", i, randutil.String(7))
-		cd := createCond(i, "Testing via "+key, condType)
+		cd := createCond(i, "test via "+key, condType)
 
 		start := time.Now()
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
@@ -193,6 +208,7 @@ func startWrites(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duratio
 		took := time.Since(start)
 		tookMS := float64(took / time.Millisecond)
 		writeRequestLatencyMs.Observe(tookMS)
+		ds = append(ds, took)
 		if err != nil {
 			writeRequestsFailureTotal.Inc()
 			lg.Warn("write csr failed", zap.Error(err))
@@ -203,6 +219,7 @@ func startWrites(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duratio
 			}
 		}
 	}
+	return ds
 }
 
 var conds = []certificatesv1beta1.RequestConditionType{

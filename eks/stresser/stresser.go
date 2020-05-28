@@ -5,6 +5,7 @@ package stresser
 import (
 	"context"
 	"fmt"
+	"sort"
 	"sync"
 	"time"
 
@@ -107,28 +108,49 @@ type Loader interface {
 
 type loader struct {
 	cfg            Config
-	wg             *sync.WaitGroup
 	donec          chan struct{}
 	donecCloseOnce *sync.Once
+
+	writeLatencies chan metrics.Durations
+	readLatencies  chan metrics.Durations
 }
 
 func New(cfg Config) Loader {
 	return &loader{
 		cfg:            cfg,
-		wg:             new(sync.WaitGroup),
 		donec:          make(chan struct{}),
 		donecCloseOnce: new(sync.Once),
+		writeLatencies: make(chan metrics.Durations, 1), // buffer to not block send
+		readLatencies:  make(chan metrics.Durations, 1), // buffer to not block send
 	}
 }
 
 func (ld *loader) Start() {
 	ld.cfg.Logger.Info("starting load functions", zap.String("namespace-write", ld.cfg.NamespaceWrite), zap.Strings("namespaces-read", ld.cfg.NamespacesRead))
-	ld.wg.Add(1) // for reads
 	if ld.cfg.ObjectSize > 0 {
-		ld.wg.Add(1) // for writes
-		go startWrites(ld.cfg.Logger, ld.cfg.Client.KubernetesClientSet(), ld.cfg.ClientTimeout, ld.cfg.Deadline, ld.cfg.NamespaceWrite, ld.cfg.ObjectSize, ld.wg, ld.cfg.Stopc, ld.donec)
+		go startWrites(
+			ld.cfg.Logger,
+			ld.cfg.Client.KubernetesClientSet(),
+			ld.cfg.ClientTimeout,
+			ld.cfg.Deadline,
+			ld.cfg.NamespaceWrite,
+			ld.cfg.ObjectSize,
+			ld.cfg.Stopc,
+			ld.donec,
+			ld.writeLatencies,
+		)
 	}
-	go startReads(ld.cfg.Logger, ld.cfg.Client.KubernetesClientSet(), ld.cfg.ClientTimeout, ld.cfg.Deadline, ld.cfg.NamespacesRead, ld.cfg.ListLimit, ld.wg, ld.cfg.Stopc, ld.donec)
+	go startReads(
+		ld.cfg.Logger,
+		ld.cfg.Client.KubernetesClientSet(),
+		ld.cfg.ClientTimeout,
+		ld.cfg.Deadline,
+		ld.cfg.NamespacesRead,
+		ld.cfg.ListLimit,
+		ld.cfg.Stopc,
+		ld.donec,
+		ld.readLatencies,
+	)
 	ld.cfg.Logger.Info("started load functions", zap.String("namespace-write", ld.cfg.NamespaceWrite), zap.Strings("namespaces-read", ld.cfg.NamespacesRead))
 }
 
@@ -137,7 +159,6 @@ func (ld *loader) Stop() {
 	ld.donecCloseOnce.Do(func() {
 		close(ld.donec)
 	})
-	ld.wg.Wait()
 	ld.cfg.Logger.Info("stopped and waited for load functions")
 }
 
@@ -180,12 +201,68 @@ func (ld *loader) GetMetrics() (writes metrics.RequestsSummary, reads metrics.Re
 			}
 		}
 	}
+
+	select {
+	case lats := <-ld.writeLatencies:
+		ld.cfg.Logger.Info("received and sorting write latency results", zap.Int("total-data-points", lats.Len()))
+		now := time.Now()
+		sort.Sort(lats)
+		ld.cfg.Logger.Info("sorted write latency results", zap.Int("total-data-points", lats.Len()), zap.String("took", time.Since(now).String()))
+		writes.LantencyP50 = lats.PickLantencyP50()
+		writes.LantencyP90 = lats.PickLantencyP90()
+		writes.LantencyP99 = lats.PickLantencyP99()
+		writes.LantencyP999 = lats.PickLantencyP999()
+		writes.LantencyP9999 = lats.PickLantencyP9999()
+	case <-time.After(30 * time.Second):
+		ld.cfg.Logger.Warn("took too long to receive write latency results")
+	}
+
+	select {
+	case lats := <-ld.readLatencies:
+		ld.cfg.Logger.Info("received and sorting read latency results", zap.Int("total-data-points", lats.Len()))
+		now := time.Now()
+		sort.Sort(lats)
+		ld.cfg.Logger.Info("sorted read latency results", zap.Int("total-data-points", lats.Len()), zap.String("took", time.Since(now).String()))
+		reads.LantencyP50 = lats.PickLantencyP50()
+		reads.LantencyP90 = lats.PickLantencyP90()
+		reads.LantencyP99 = lats.PickLantencyP99()
+		reads.LantencyP999 = lats.PickLantencyP999()
+		reads.LantencyP9999 = lats.PickLantencyP9999()
+	case <-time.After(30 * time.Second):
+		ld.cfg.Logger.Warn("took too long to receive read latency results")
+	}
+
 	return writes, reads, nil
 }
 
-func startWrites(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration, deadline time.Time, namespace string, objectSize int, wg *sync.WaitGroup, stopc chan struct{}, donec chan struct{}) {
+func startWrites(
+	lg *zap.Logger,
+	cli *kubernetes.Clientset,
+	timeout time.Duration,
+	deadline time.Time,
+	namespace string,
+	objectSize int,
+	stopc chan struct{},
+	donec chan struct{},
+	writeLatencies chan<- metrics.Durations,
+) {
 	lg.Info("starting startWrites")
-	defer wg.Done()
+	ds := make(metrics.Durations, 0, 20000)
+	defer func() {
+		select {
+		case writeLatencies <- ds:
+			lg.Info("sent write latency results")
+		case <-time.After(2 * time.Minute):
+			lg.Warn("took to long to send write latency results")
+			// in case, receiving takes long...
+			select {
+			case <-stopc:
+				return
+			case <-donec:
+				return
+			}
+		}
+	}()
 
 	val := randutil.String(objectSize)
 	cnt := 0
@@ -226,6 +303,7 @@ func startWrites(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duratio
 		took := time.Since(start)
 		tookMS := float64(took / time.Millisecond)
 		writeRequestLatencyMs.Observe(tookMS)
+		ds = append(ds, took)
 		if err != nil {
 			writeRequestsFailureTotal.Inc()
 			lg.Warn("write configmap failed", zap.String("namespace", namespace), zap.Error(err))
@@ -270,6 +348,7 @@ func startWrites(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duratio
 		took = time.Since(start)
 		tookMS = float64(took / time.Millisecond)
 		writeRequestLatencyMs.Observe(tookMS)
+		ds = append(ds, took)
 		if err != nil {
 			writeRequestsFailureTotal.Inc()
 			lg.Warn("write secret failed", zap.String("namespace", namespace), zap.Error(err))
@@ -291,9 +370,35 @@ func startWrites(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duratio
 	}
 }
 
-func startReads(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration, deadline time.Time, ns []string, listLimit int64, wg *sync.WaitGroup, stopc chan struct{}, donec chan struct{}) {
+func startReads(
+	lg *zap.Logger,
+	cli *kubernetes.Clientset,
+	timeout time.Duration,
+	deadline time.Time,
+	ns []string,
+	listLimit int64,
+	stopc chan struct{},
+	donec chan struct{},
+	readLatencies chan<- metrics.Durations,
+) {
 	lg.Info("starting startReads", zap.Strings("namespaces", ns))
-	defer wg.Done()
+	ds := make(metrics.Durations, 0, 20000)
+	defer func() {
+		select {
+		case readLatencies <- ds:
+			lg.Info("sent read latency results")
+		case <-time.After(2 * time.Minute):
+			lg.Warn("took to long to send read latency results")
+			// in case, receiving takes long...
+			select {
+			case <-stopc:
+				return
+			case <-donec:
+				return
+			}
+		}
+	}()
+
 	cnt := 0
 	for {
 		cnt++
@@ -314,6 +419,7 @@ func startReads(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration
 		took := time.Since(start)
 		tookMS := float64(took / time.Millisecond)
 		readRequestLatencyMs.Observe(tookMS)
+		ds = append(ds, took)
 		if err != nil {
 			readRequestsFailureTotal.Inc()
 			lg.Warn("list nodes failed", zap.Error(err))
@@ -332,6 +438,7 @@ func startReads(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration
 			took := time.Since(start)
 			tookMS := float64(took / time.Millisecond)
 			readRequestLatencyMs.Observe(tookMS)
+			ds = append(ds, took)
 			if err != nil {
 				readRequestsFailureTotal.Inc()
 				lg.Warn("list pods failed", zap.String("namespace", nv), zap.Error(err))
@@ -358,6 +465,7 @@ func startReads(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration
 			took = time.Since(start)
 			tookMS = float64(took / time.Millisecond)
 			readRequestLatencyMs.Observe(tookMS)
+			ds = append(ds, took)
 			if err != nil {
 				readRequestsFailureTotal.Inc()
 				lg.Warn("list services failed", zap.String("namespace", nv), zap.Error(err))
@@ -384,6 +492,7 @@ func startReads(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration
 			took = time.Since(start)
 			tookMS = float64(took / time.Millisecond)
 			readRequestLatencyMs.Observe(tookMS)
+			ds = append(ds, took)
 			if err != nil {
 				readRequestsFailureTotal.Inc()
 				lg.Warn("list endpoints failed", zap.String("namespace", nv), zap.Error(err))
@@ -410,6 +519,7 @@ func startReads(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration
 			took = time.Since(start)
 			tookMS = float64(took / time.Millisecond)
 			readRequestLatencyMs.Observe(tookMS)
+			ds = append(ds, took)
 			if err != nil {
 				readRequestsFailureTotal.Inc()
 				lg.Warn("list configmaps failed", zap.String("namespace", nv), zap.Error(err))
@@ -436,6 +546,7 @@ func startReads(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration
 			took = time.Since(start)
 			tookMS = float64(took / time.Millisecond)
 			readRequestLatencyMs.Observe(tookMS)
+			ds = append(ds, took)
 			if err != nil {
 				readRequestsFailureTotal.Inc()
 				lg.Warn("list secrets failed", zap.String("namespace", nv), zap.Error(err))
@@ -462,6 +573,7 @@ func startReads(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration
 			took = time.Since(start)
 			tookMS = float64(took / time.Millisecond)
 			readRequestLatencyMs.Observe(tookMS)
+			ds = append(ds, took)
 			if err != nil {
 				readRequestsFailureTotal.Inc()
 				lg.Warn("list jobs failed", zap.String("namespace", nv), zap.Error(err))
@@ -488,6 +600,7 @@ func startReads(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration
 			took = time.Since(start)
 			tookMS = float64(took / time.Millisecond)
 			readRequestLatencyMs.Observe(tookMS)
+			ds = append(ds, took)
 			if err != nil {
 				readRequestsFailureTotal.Inc()
 				lg.Warn("list cronjobs failed", zap.String("namespace", nv), zap.Error(err))

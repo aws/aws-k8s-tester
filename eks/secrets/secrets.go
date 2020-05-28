@@ -4,6 +4,7 @@ package secrets
 import (
 	"context"
 	"fmt"
+	"sort"
 	"sync"
 	"time"
 
@@ -110,6 +111,9 @@ type loader struct {
 	cfg            Config
 	donec          chan struct{}
 	donecCloseOnce *sync.Once
+
+	writeLatencies metrics.Durations
+	readLatencies  metrics.Durations
 }
 
 func New(cfg Config) Loader {
@@ -122,7 +126,8 @@ func New(cfg Config) Loader {
 
 func (ld *loader) Start() {
 	ld.cfg.Logger.Info("starting write function", zap.String("namespace-write", ld.cfg.Namespace))
-	created := startWrites(ld.cfg.Logger, ld.cfg.Client.KubernetesClientSet(), ld.cfg.ClientTimeout, ld.cfg.Namespace, ld.cfg.NamePrefix, ld.cfg.Objects, ld.cfg.ObjectSize, ld.cfg.Stopc, ld.donec)
+	var created []string
+	ld.writeLatencies, created = startWrites(ld.cfg.Logger, ld.cfg.Client.KubernetesClientSet(), ld.cfg.ClientTimeout, ld.cfg.Namespace, ld.cfg.NamePrefix, ld.cfg.Objects, ld.cfg.ObjectSize, ld.cfg.Stopc, ld.donec)
 	ld.cfg.Logger.Info("completed write function", zap.String("namespace-write", ld.cfg.Namespace))
 
 	// TODO: create Pod with created secrets mounted as volume, read them, measure latency
@@ -130,7 +135,7 @@ func (ld *loader) Start() {
 	// ref. https://github.com/aws/aws-k8s-tester/blob/v1.2.1/eks/secrets/secrets.go#L404-L514
 
 	ld.cfg.Logger.Info("starting read function", zap.String("namespace-read", ld.cfg.Namespace))
-	startReads(ld.cfg.Logger, ld.cfg.Client.KubernetesClientSet(), ld.cfg.ClientTimeout, ld.cfg.Namespace, created, ld.cfg.Stopc, ld.donec)
+	ld.readLatencies = startReads(ld.cfg.Logger, ld.cfg.Client.KubernetesClientSet(), ld.cfg.ClientTimeout, ld.cfg.Namespace, created, ld.cfg.Stopc, ld.donec)
 	ld.cfg.Logger.Info("completed read function", zap.String("namespace-read", ld.cfg.Namespace))
 }
 
@@ -181,21 +186,43 @@ func (ld *loader) GetMetrics() (writes metrics.RequestsSummary, reads metrics.Re
 			}
 		}
 	}
+
+	ld.cfg.Logger.Info("sorting write latency results", zap.Int("total-data-points", ld.writeLatencies.Len()))
+	now := time.Now()
+	sort.Sort(ld.writeLatencies)
+	ld.cfg.Logger.Info("sorted write latency results", zap.Int("total-data-points", ld.writeLatencies.Len()), zap.String("took", time.Since(now).String()))
+	writes.LantencyP50 = ld.writeLatencies.PickLantencyP50()
+	writes.LantencyP90 = ld.writeLatencies.PickLantencyP90()
+	writes.LantencyP99 = ld.writeLatencies.PickLantencyP99()
+	writes.LantencyP999 = ld.writeLatencies.PickLantencyP999()
+	writes.LantencyP9999 = ld.writeLatencies.PickLantencyP9999()
+
+	ld.cfg.Logger.Info("sorting read latency results", zap.Int("total-data-points", ld.readLatencies.Len()))
+	now = time.Now()
+	sort.Sort(ld.readLatencies)
+	ld.cfg.Logger.Info("sorted read latency results", zap.Int("total-data-points", ld.readLatencies.Len()), zap.String("took", time.Since(now).String()))
+	reads.LantencyP50 = ld.readLatencies.PickLantencyP50()
+	reads.LantencyP90 = ld.readLatencies.PickLantencyP90()
+	reads.LantencyP99 = ld.readLatencies.PickLantencyP99()
+	reads.LantencyP999 = ld.readLatencies.PickLantencyP999()
+	reads.LantencyP9999 = ld.readLatencies.PickLantencyP9999()
+
 	return writes, reads, nil
 }
 
-func startWrites(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration, namespace string, namePrefix string, objects int, objectSize int, stopc chan struct{}, donec chan struct{}) (created []string) {
+func startWrites(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration, namespace string, namePrefix string, objects int, objectSize int, stopc chan struct{}, donec chan struct{}) (ds metrics.Durations, created []string) {
 	lg.Info("starting startWrites", zap.Int("objects", objects), zap.Int("object-size", objectSize))
+	ds = make(metrics.Durations, 0, 20000)
 
 	val := randutil.String(objectSize)
 	for i := 0; i < objects; i++ {
 		select {
 		case <-stopc:
 			lg.Warn("writes stopped")
-			return created
+			return ds, created
 		case <-donec:
 			lg.Info("writes done")
-			return created
+			return ds, created
 		default:
 		}
 
@@ -225,6 +252,7 @@ func startWrites(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duratio
 		took := time.Since(start)
 		tookMS := float64(took / time.Millisecond)
 		writeRequestLatencyMs.Observe(tookMS)
+		ds = append(ds, took)
 		if err != nil {
 			writeRequestsFailureTotal.Inc()
 			lg.Warn("write secret failed", zap.String("namespace", namespace), zap.Error(err))
@@ -236,11 +264,12 @@ func startWrites(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duratio
 			}
 		}
 	}
-	return created
+	return ds, created
 }
 
-func startReads(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration, namespace string, created []string, stopc chan struct{}, donec chan struct{}) {
+func startReads(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration, namespace string, created []string, stopc chan struct{}, donec chan struct{}) (ds metrics.Durations) {
 	lg.Info("starting startReads", zap.Int("created-secrets", len(created)))
+	ds = make(metrics.Durations, 0, 20000)
 
 	for i, key := range created {
 		select {
@@ -263,6 +292,7 @@ func startReads(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration
 		took := time.Since(start)
 		tookMS := float64(took / time.Millisecond)
 		readRequestLatencyMs.Observe(tookMS)
+		ds = append(ds, took)
 		if err != nil {
 			readRequestsFailureTotal.Inc()
 			lg.Warn("read secret failed", zap.String("namespace", namespace), zap.Error(err))
@@ -273,4 +303,5 @@ func startReads(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration
 			}
 		}
 	}
+	return ds
 }
