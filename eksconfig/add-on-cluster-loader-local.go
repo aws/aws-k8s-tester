@@ -34,6 +34,8 @@ type AddOnClusterLoaderLocal struct {
 	// ClusterLoaderReportDir is the clusterloader2 test report directory.
 	// Set via "--report-dir" flag.
 	ClusterLoaderReportDir string `json:"cluster-loader-report-dir"`
+	// ClusterLoaderLogsPath is the log file path to stream clusterloader binary runs.
+	ClusterLoaderLogsPath string `json:"cluster-loader-logs-path" read-only:"true"`
 
 	// Runs is the number of "clusterloader2" runs back-to-back.
 	Runs int `json:"runs"`
@@ -111,6 +113,10 @@ func getDefaultAddOnClusterLoaderLocal() *AddOnClusterLoaderLocal {
 func (cfg *Config) validateAddOnClusterLoaderLocal() error {
 	if !cfg.IsEnabledAddOnClusterLoaderLocal() {
 		return nil
+	}
+
+	if cfg.AddOnClusterLoaderLocal.ClusterLoaderLogsPath == "" {
+		cfg.AddOnClusterLoaderLocal.ClusterLoaderLogsPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-cluster-loader-local-logs.log"
 	}
 
 	if cfg.AddOnClusterLoaderLocal.ClusterLoaderPath == "" && cfg.AddOnClusterLoaderLocal.ClusterLoaderDownloadURL == "" {

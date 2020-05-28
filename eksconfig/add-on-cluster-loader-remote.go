@@ -37,6 +37,8 @@ type AddOnClusterLoaderRemote struct {
 	// ClusterLoaderReportDir is the clusterloader2 test report directory.
 	// Set via "--report-dir" flag.
 	ClusterLoaderReportDir string `json:"cluster-loader-report-dir"`
+	// ClusterLoaderLogsPath is the log file path to stream clusterloader binary runs.
+	ClusterLoaderLogsPath string `json:"cluster-loader-logs-path" read-only:"true"`
 
 	// Runs is the number of "clusterloader2" runs back-to-back.
 	Runs int `json:"runs"`
@@ -118,6 +120,10 @@ func (cfg *Config) validateAddOnClusterLoaderRemote() error {
 
 	if cfg.AddOnClusterLoaderRemote.Namespace == "" {
 		cfg.AddOnClusterLoaderRemote.Namespace = cfg.Name + "-cluster-loader-remote"
+	}
+
+	if cfg.AddOnClusterLoaderRemote.ClusterLoaderLogsPath == "" {
+		cfg.AddOnClusterLoaderRemote.ClusterLoaderLogsPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-cluster-loader-remote-logs.log"
 	}
 
 	if cfg.AddOnClusterLoaderRemote.ClusterLoaderPath == "" && cfg.AddOnClusterLoaderRemote.ClusterLoaderDownloadURL == "" {

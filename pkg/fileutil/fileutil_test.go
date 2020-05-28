@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -30,4 +31,20 @@ func TestWriteTempFile(t *testing.T) {
 	}
 
 	fmt.Println(IsDirWriteable(os.TempDir()))
+
+	defer os.RemoveAll("hello")
+	if err = CopyAppend(p, "hello"); err != nil {
+		t.Fatal(err)
+	}
+	if err = CopyAppend(p, "hello"); err != nil {
+		t.Fatal(err)
+	}
+
+	d, err = ioutil.ReadFile("hello")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Count(string(d), "hello world") != 2 {
+		t.Fatalf("unexpected 'hello world' count, %s", string(d))
+	}
 }

@@ -606,6 +606,34 @@ func (ts *Tester) uploadToS3() (err error) {
 		}
 	}
 
+	if ts.cfg.IsEnabledAddOnClusterLoaderLocal() {
+		if fileutil.Exist(ts.cfg.AddOnClusterLoaderLocal.ClusterLoaderLogsPath) {
+			if err = uploadFileToS3(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "cluster-loader-local-logs.log"),
+				ts.cfg.AddOnClusterLoaderLocal.ClusterLoaderLogsPath,
+			); err != nil {
+				return err
+			}
+		}
+	}
+
+	if ts.cfg.IsEnabledAddOnClusterLoaderRemote() {
+		if fileutil.Exist(ts.cfg.AddOnClusterLoaderRemote.ClusterLoaderLogsPath) {
+			if err = uploadFileToS3(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "cluster-loader-remote-logs.log"),
+				ts.cfg.AddOnClusterLoaderRemote.ClusterLoaderLogsPath,
+			); err != nil {
+				return err
+			}
+		}
+	}
+
 	return err
 }
 
@@ -618,11 +646,16 @@ func uploadFileToS3(lg *zap.Logger, s3API s3iface.S3API, bucketName string, s3Ke
 
 	rf, err := os.OpenFile(fpath, os.O_RDONLY, 0444)
 	if err != nil {
-		ts.cfg.Logger.Warn("failed to read a file", zap.Error(err))
+		ts.cfg.Logger.Warn("failed to read a file", zap.String("file-path", fpath), zap.Error(err))
 		return err
 	}
 	defer rf.Close()
 
+	lg.Info("uploading",
+		zap.String("bucket", bucketName),
+		zap.String("remote-path", s3Key),
+		zap.String("file-size", size),
+	)
 	_, err = s3API.PutObject(&s3.PutObjectInput{
 		Bucket: aws.String(bucketName),
 		Key:    aws.String(s3Key),

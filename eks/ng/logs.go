@@ -57,20 +57,18 @@ func (ts *tester) FetchLogs() (err error) {
 		return err
 	}
 
-	fpath := filepath.Join(os.TempDir(), ts.cfg.EKSConfig.Name+"-logs-ng.tar.gz")
-	err = os.RemoveAll(fpath)
+	ts.cfg.Logger.Info("gzipping logs dir", zap.String("logs-dir", ts.cfg.EKSConfig.AddOnNodeGroups.LogsDir), zap.String("file-path", ts.cfg.EKSConfig.AddOnNodeGroups.LogsTarGzPath))
+	err = os.RemoveAll(ts.cfg.EKSConfig.AddOnNodeGroups.LogsTarGzPath)
 	if err != nil {
 		ts.cfg.Logger.Warn("failed to remove temp file", zap.Error(err))
 		return err
 	}
-
-	ts.cfg.Logger.Info("gzipping logs dir", zap.String("logs-dir", ts.cfg.EKSConfig.AddOnNodeGroups.LogsDir), zap.String("file-path", ts.cfg.EKSConfig.AddOnNodeGroups.LogsTarGzPath))
-	err = archiver.Archive([]string{ts.cfg.EKSConfig.AddOnNodeGroups.LogsDir}, fpath)
+	err = archiver.Archive([]string{ts.cfg.EKSConfig.AddOnNodeGroups.LogsDir}, ts.cfg.EKSConfig.AddOnNodeGroups.LogsTarGzPath)
 	if err != nil {
 		ts.cfg.Logger.Warn("archive failed", zap.Error(err))
 		return err
 	}
-	stat, err := os.Stat(fpath)
+	stat, err := os.Stat(ts.cfg.EKSConfig.AddOnNodeGroups.LogsTarGzPath)
 	if err != nil {
 		ts.cfg.Logger.Warn("failed to os stat", zap.Error(err))
 		return err
@@ -421,6 +419,19 @@ func (ts *tester) fetchLogs(qps float32, burst int) error {
 		mv.Logs[data.instanceID] = data.paths
 
 		ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[data.asgName] = mv
+		ts.cfg.EKSConfig.Sync()
+
+		if ts.cfg.EKSConfig.IsEnabledAddOnClusterLoaderRemote() {
+			for _, p := range data.paths {
+				if strings.HasSuffix(p, "cluster-loader-remote-logs.log") {
+					if cerr := fileutil.CopyAppend(p, ts.cfg.EKSConfig.AddOnClusterLoaderRemote.ClusterLoaderLogsPath); cerr != nil {
+						ts.cfg.Logger.Warn("found AddOnClusterLoaderRemote cluster loader logs file but failed to copy", zap.String("original-file-path", p), zap.Error(cerr))
+					} else {
+						ts.cfg.Logger.Info("successfully copied AddOnClusterLoaderRemote cluster loader logs file", zap.String("original-file-path", p), zap.String("copy-file-path", ts.cfg.EKSConfig.AddOnClusterLoaderRemote.ClusterLoaderLogsPath))
+					}
+				}
+			}
+		}
 		ts.cfg.EKSConfig.Sync()
 
 		files := len(data.paths)
