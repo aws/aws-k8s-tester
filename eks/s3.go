@@ -1,10 +1,9 @@
 package eks
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path"
 	"path/filepath"
 	"reflect"
@@ -275,6 +274,34 @@ func (ts *Tester) uploadToS3() (err error) {
 		ts.cfg.KubeConfigPath,
 	); err != nil {
 		return err
+	}
+
+	if ts.cfg.IsEnabledAddOnNodeGroups() {
+		if fileutil.Exist(ts.cfg.AddOnNodeGroups.LogsTarGzPath) {
+			if err = uploadFileToS3(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "node-groups-logs-dir.tar.gz"),
+				ts.cfg.AddOnConformance.SonobuoyResultTarGzPath,
+			); err != nil {
+				return err
+			}
+		}
+	}
+
+	if ts.cfg.IsEnabledAddOnManagedNodeGroups() {
+		if fileutil.Exist(ts.cfg.AddOnManagedNodeGroups.LogsTarGzPath) {
+			if err = uploadFileToS3(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "managed-node-groups-logs-dir.tar.gz"),
+				ts.cfg.AddOnConformance.SonobuoyResultTarGzPath,
+			); err != nil {
+				return err
+			}
+		}
 	}
 
 	if ts.cfg.IsEnabledAddOnConformance() {
@@ -583,14 +610,23 @@ func (ts *Tester) uploadToS3() (err error) {
 }
 
 func uploadFileToS3(lg *zap.Logger, s3API s3iface.S3API, bucketName string, s3Key string, fpath string) error {
-	d, err := ioutil.ReadFile(fpath)
+	stat, err := os.Stat(fpath)
 	if err != nil {
 		return err
 	}
+	size := humanize.Bytes(uint64(stat.Size()))
+
+	rf, err := os.OpenFile(fpath, os.O_RDONLY, 0444)
+	if err != nil {
+		ts.cfg.Logger.Warn("failed to read a file", zap.Error(err))
+		return err
+	}
+	defer rf.Close()
+
 	_, err = s3API.PutObject(&s3.PutObjectInput{
 		Bucket: aws.String(bucketName),
 		Key:    aws.String(s3Key),
-		Body:   bytes.NewReader(d),
+		Body:   rf,
 
 		// https://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html#canned-acl
 		// vs. "public-read"
@@ -604,12 +640,13 @@ func uploadFileToS3(lg *zap.Logger, s3API s3iface.S3API, bucketName string, s3Ke
 		lg.Info("uploaded",
 			zap.String("bucket", bucketName),
 			zap.String("remote-path", s3Key),
-			zap.String("size", humanize.Bytes(uint64(len(d)))),
+			zap.String("file-size", size),
 		)
 	} else {
 		lg.Warn("failed to upload",
 			zap.String("bucket", bucketName),
 			zap.String("remote-path", s3Key),
+			zap.String("file-size", size),
 			zap.Error(err),
 		)
 	}

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -13,8 +12,6 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/pkg/randutil"
 	"github.com/aws/aws-k8s-tester/ssh"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/dustin/go-humanize"
 	"github.com/mholt/archiver/v3"
 	"go.uber.org/zap"
@@ -67,59 +64,19 @@ func (ts *tester) FetchLogs() (err error) {
 		return err
 	}
 
-	ts.cfg.Logger.Info("gzipping logs dir", zap.String("logs-dir", ts.cfg.EKSConfig.AddOnNodeGroups.LogsDir), zap.String("file-path", fpath))
+	ts.cfg.Logger.Info("gzipping logs dir", zap.String("logs-dir", ts.cfg.EKSConfig.AddOnNodeGroups.LogsDir), zap.String("file-path", ts.cfg.EKSConfig.AddOnNodeGroups.LogsTarGzPath))
 	err = archiver.Archive([]string{ts.cfg.EKSConfig.AddOnNodeGroups.LogsDir}, fpath)
 	if err != nil {
 		ts.cfg.Logger.Warn("archive failed", zap.Error(err))
 		return err
 	}
-	s, err := os.Stat(fpath)
+	stat, err := os.Stat(fpath)
 	if err != nil {
 		ts.cfg.Logger.Warn("failed to os stat", zap.Error(err))
 		return err
 	}
-	sz := humanize.Bytes(uint64(s.Size()))
-	ts.cfg.Logger.Info("gzipped logs dir", zap.String("logs-dir", ts.cfg.EKSConfig.AddOnNodeGroups.LogsDir), zap.String("file-path", fpath), zap.String("file-size", sz))
-
-	if ts.cfg.EKSConfig.S3BucketName != "" {
-		rf, err := os.OpenFile(fpath, os.O_RDONLY, 0444)
-		if err != nil {
-			ts.cfg.Logger.Warn("failed to read a file", zap.Error(err))
-			return err
-		}
-		defer rf.Close()
-
-		s3Key := path.Join(ts.cfg.EKSConfig.Name, filepath.Base(fpath))
-		_, err = ts.cfg.S3API.PutObject(&s3.PutObjectInput{
-			Bucket: aws.String(ts.cfg.EKSConfig.S3BucketName),
-			Key:    aws.String(s3Key),
-			Body:   rf,
-
-			// https://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html#canned-acl
-			// vs. "public-read"
-			ACL: aws.String("private"),
-
-			Metadata: map[string]*string{
-				"Kind": aws.String("aws-k8s-tester"),
-			},
-		})
-		if err == nil {
-			ts.cfg.Logger.Info("uploaded the gzipped file",
-				zap.String("bucket", ts.cfg.EKSConfig.S3BucketName),
-				zap.String("remote-path", s3Key),
-				zap.String("file-size", sz),
-			)
-		} else {
-			ts.cfg.Logger.Warn("failed to upload the gzipped file",
-				zap.String("bucket", ts.cfg.EKSConfig.S3BucketName),
-				zap.String("remote-path", s3Key),
-				zap.String("file-size", sz),
-				zap.Error(err),
-			)
-		}
-	} else {
-		ts.cfg.Logger.Info("skipping S3 uploads")
-	}
+	sz := humanize.Bytes(uint64(stat.Size()))
+	ts.cfg.Logger.Info("gzipped logs dir", zap.String("logs-dir", ts.cfg.EKSConfig.AddOnNodeGroups.LogsDir), zap.String("file-path", ts.cfg.EKSConfig.AddOnNodeGroups.LogsTarGzPath), zap.String("file-size", sz))
 
 	return ts.cfg.EKSConfig.Sync()
 }
