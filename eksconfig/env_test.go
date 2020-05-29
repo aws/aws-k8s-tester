@@ -414,8 +414,8 @@ func TestEnv(t *testing.T) {
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_CLUSTER_LOADER_TEST_CONFIG_PATH", "artifacts/clusterloader2-testing-load-config.yaml")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_CLUSTER_LOADER_TEST_CONFIG_PATH")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_TEST_CONFIG_PATH", "artifacts/clusterloader2-testing-load-config.yaml")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_TEST_CONFIG_PATH")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_RUNS", "11")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_RUNS")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_TIMEOUT", "3m30s")
@@ -441,8 +441,14 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_ENABLE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_NAMESPACE", "hello")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_NAMESPACE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_CLUSTER_LOADER_TEST_CONFIG_PATH", "artifacts/clusterloader2-testing-load-config.yaml")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_CLUSTER_LOADER_TEST_CONFIG_PATH")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_ACCOUNT_ID", "uri")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_ACCOUNT_ID")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_NAME", "hollow-nodes-repo-name")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_URI", "hollow-nodes-repo-uri")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_URI")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_IMAGE_TAG", "hollow-nodes-repo-image-tag")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_IMAGE_TAG")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_RUNS", "21")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_RUNS")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_TIMEOUT", "5m30s")
@@ -1133,8 +1139,8 @@ func TestEnv(t *testing.T) {
 	if !cfg.AddOnClusterLoaderLocal.Enable {
 		t.Fatalf("unexpected cfg.AddOnClusterLoaderLocal.Enable %v", cfg.AddOnClusterLoaderLocal.Enable)
 	}
-	if cfg.AddOnClusterLoaderLocal.ClusterLoaderTestConfigPath != "artifacts/clusterloader2-testing-load-config.yaml" {
-		t.Fatalf("unexpected cfg.AddOnClusterLoaderLocal.ClusterLoaderTestConfigPath %v", cfg.AddOnClusterLoaderLocal.ClusterLoaderTestConfigPath)
+	if cfg.AddOnClusterLoaderLocal.TestConfigPath != "artifacts/clusterloader2-testing-load-config.yaml" {
+		t.Fatalf("unexpected cfg.AddOnClusterLoaderLocal.TestConfigPath %v", cfg.AddOnClusterLoaderLocal.TestConfigPath)
 	}
 	if cfg.AddOnClusterLoaderLocal.Runs != 11 {
 		t.Fatalf("unexpected cfg.AddOnClusterLoaderLocal.Runs %v", cfg.AddOnClusterLoaderLocal.Runs)
@@ -1175,9 +1181,6 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.AddOnClusterLoaderRemote.Namespace != "hello" {
 		t.Fatalf("unexpected cfg.AddOnClusterLoaderRemote.Namespace %q", cfg.AddOnClusterLoaderRemote.Namespace)
-	}
-	if cfg.AddOnClusterLoaderRemote.ClusterLoaderTestConfigPath != "artifacts/clusterloader2-testing-load-config.yaml" {
-		t.Fatalf("unexpected cfg.AddOnClusterLoaderRemote.ClusterLoaderTestConfigPath %v", cfg.AddOnClusterLoaderRemote.ClusterLoaderTestConfigPath)
 	}
 	if cfg.AddOnClusterLoaderRemote.Runs != 21 {
 		t.Fatalf("unexpected cfg.AddOnClusterLoaderRemote.Runs %v", cfg.AddOnClusterLoaderRemote.Runs)

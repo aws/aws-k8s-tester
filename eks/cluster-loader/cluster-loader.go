@@ -16,6 +16,8 @@ import (
 
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/pkg/httputil"
+	"github.com/dustin/go-humanize"
+	"github.com/mholt/archiver/v3"
 	"go.uber.org/zap"
 	"k8s.io/utils/exec"
 )
@@ -33,14 +35,16 @@ type Config struct {
 	// ref. https://github.com/kubernetes/perf-tests/tree/master/clusterloader2
 	ClusterLoaderPath        string
 	ClusterLoaderDownloadURL string
-	// ClusterLoaderTestConfigPath is the clusterloader2 test configuration file.
+	// TestConfigPath is the clusterloader2 test configuration file.
 	// Set via "--testconfig" flag.
-	ClusterLoaderTestConfigPath string
-	// ClusterLoaderReportDir is the clusterloader2 test report directory.
+	TestConfigPath string
+	// ReportDir is the clusterloader2 test report directory.
 	// Set via "--report-dir" flag.
-	ClusterLoaderReportDir string
-	// ClusterLoaderLogsPath is the log file path to stream clusterloader binary runs.
-	ClusterLoaderLogsPath string
+	ReportDir string
+	// ReportTarGzPath is the .tar.gz file path for report directory.
+	ReportTarGzPath string
+	// LogPath is the log file path to stream clusterloader binary runs.
+	LogPath string
 
 	// Runs is the number of "clusterloader2" runs back-to-back.
 	Runs    int
@@ -73,7 +77,6 @@ type Config struct {
 type Loader interface {
 	Start() error
 	Stop()
-	GetResults()
 }
 
 type loader struct {
@@ -99,15 +102,15 @@ func New(cfg Config) Loader {
 func (ld *loader) Start() (err error) {
 	ld.cfg.Logger.Info("starting cluster loader")
 
-	if !fileutil.Exist(ld.cfg.ClusterLoaderTestConfigPath) {
-		ld.cfg.Logger.Warn("clusterloader test config file does not exist", zap.String("path", ld.cfg.ClusterLoaderTestConfigPath))
-		return fmt.Errorf("%q not found", ld.cfg.ClusterLoaderTestConfigPath)
+	if !fileutil.Exist(ld.cfg.TestConfigPath) {
+		ld.cfg.Logger.Warn("clusterloader test config file does not exist", zap.String("path", ld.cfg.TestConfigPath))
+		return fmt.Errorf("%q not found", ld.cfg.TestConfigPath)
 	}
 
-	if err = os.MkdirAll(ld.cfg.ClusterLoaderReportDir, 0700); err != nil {
+	if err = os.MkdirAll(ld.cfg.ReportDir, 0700); err != nil {
 		return err
 	}
-	if err = fileutil.IsDirWriteable(ld.cfg.ClusterLoaderReportDir); err != nil {
+	if err = fileutil.IsDirWriteable(ld.cfg.ReportDir); err != nil {
 		return err
 	}
 
@@ -121,16 +124,16 @@ func (ld *loader) Start() (err error) {
 	args := []string{
 		ld.cfg.ClusterLoaderPath,
 		"--alsologtostderr",
-		"--testconfig=" + ld.cfg.ClusterLoaderTestConfigPath,
+		"--testconfig=" + ld.cfg.TestConfigPath,
 		"--testoverrides=" + ld.testOverridesPath,
-		"--report-dir=" + ld.cfg.ClusterLoaderReportDir,
+		"--report-dir=" + ld.cfg.ReportDir,
 		"--nodes=" + fmt.Sprintf("%d", ld.cfg.Nodes),
 	}
 	if ld.cfg.KubeConfigPath != "" {
 		args = append(args, "--kubeconfig="+ld.cfg.KubeConfigPath)
 	}
 
-	ld.testLogsFile, err = os.OpenFile(ld.cfg.ClusterLoaderLogsPath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0600)
+	ld.testLogsFile, err = os.OpenFile(ld.cfg.LogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
 	if err != nil {
 		return err
 	}
@@ -138,6 +141,7 @@ func (ld *loader) Start() (err error) {
 		ld.testLogsFile.Sync()
 		ld.testLogsFile.Close()
 	}()
+	// stream command run outputs for debugging purposes
 	go func() {
 		for {
 			select {
@@ -154,7 +158,7 @@ func (ld *loader) Start() (err error) {
 				ld.testLogsFile.Sync()
 			}
 			ld.cfg.Logger.Info("checking cluster loader command output from logs file")
-			b, lerr := ioutil.ReadFile(ld.cfg.ClusterLoaderLogsPath)
+			b, lerr := ioutil.ReadFile(ld.cfg.LogPath)
 			if err != nil {
 				ld.cfg.Logger.Warn("failed to read cluster loader command output from logs file", zap.Error(lerr))
 				continue
@@ -167,7 +171,7 @@ func (ld *loader) Start() (err error) {
 			if linesN > 15 {
 				output = strings.Join(lines[linesN-15:], "\n")
 			}
-			fmt.Printf("\n%q output:\n%s\n\n", ld.cfg.ClusterLoaderLogsPath, output)
+			fmt.Printf("\n%q output:\n%s\n\n", ld.cfg.LogPath, output)
 		}
 	}()
 
@@ -203,7 +207,26 @@ func (ld *loader) Start() (err error) {
 	}
 	ld.rootCancel()
 
-	return err
+	ld.cfg.Logger.Info("gzipping report dir", zap.String("report-dir", ld.cfg.ReportDir), zap.String("file-path", ld.cfg.ReportTarGzPath))
+	err = os.RemoveAll(ld.cfg.ReportTarGzPath)
+	if err != nil {
+		ld.cfg.Logger.Warn("failed to remove temp file", zap.Error(err))
+		return err
+	}
+	err = archiver.Archive([]string{ld.cfg.ReportDir}, ld.cfg.ReportTarGzPath)
+	if err != nil {
+		ld.cfg.Logger.Warn("archive failed", zap.Error(err))
+		return err
+	}
+	stat, err := os.Stat(ld.cfg.ReportTarGzPath)
+	if err != nil {
+		ld.cfg.Logger.Warn("failed to os stat", zap.Error(err))
+		return err
+	}
+	sz := humanize.Bytes(uint64(stat.Size()))
+	ld.cfg.Logger.Info("gzipped report dir", zap.String("report-dir", ld.cfg.ReportDir), zap.String("file-path", ld.cfg.ReportTarGzPath), zap.String("file-size", sz))
+
+	return nil
 }
 
 func (ld *loader) Stop() {
@@ -214,16 +237,15 @@ func (ld *loader) Stop() {
 	ld.cfg.Logger.Info("stopped and waited for cluster loader")
 }
 
-func (ld *loader) GetResults() {
-
-}
-
 func (ld *loader) downloadClusterLoader() (err error) {
 	ld.cfg.Logger.Info("mkdir", zap.String("clusterloader-path-dir", filepath.Dir(ld.cfg.ClusterLoaderPath)))
 	if err = os.MkdirAll(filepath.Dir(ld.cfg.ClusterLoaderPath), 0700); err != nil {
 		return fmt.Errorf("could not create %q (%v)", filepath.Dir(ld.cfg.ClusterLoaderPath), err)
 	}
 	if !fileutil.Exist(ld.cfg.ClusterLoaderPath) {
+		if ld.cfg.ClusterLoaderDownloadURL == "" {
+			return fmt.Errorf("%q does not exist but no download URL", ld.cfg.ClusterLoaderPath)
+		}
 		ld.cfg.ClusterLoaderPath, _ = filepath.Abs(ld.cfg.ClusterLoaderPath)
 		ld.cfg.Logger.Info("downloading clusterloader", zap.String("clusterloader-path", ld.cfg.ClusterLoaderPath))
 		if err = httputil.Download(ld.cfg.Logger, os.Stderr, ld.cfg.ClusterLoaderDownloadURL, ld.cfg.ClusterLoaderPath); err != nil {

@@ -29,14 +29,16 @@ type AddOnClusterLoaderLocal struct {
 	// ref. https://github.com/kubernetes/perf-tests/tree/master/clusterloader2
 	ClusterLoaderPath        string `json:"cluster-loader-path"`
 	ClusterLoaderDownloadURL string `json:"cluster-loader-download-url"`
-	// ClusterLoaderTestConfigPath is the clusterloader2 test configuration file.
+	// TestConfigPath is the clusterloader2 test configuration file.
 	// Set via "--testconfig" flag.
-	ClusterLoaderTestConfigPath string `json:"cluster-loader-test-config-path"`
-	// ClusterLoaderReportDir is the clusterloader2 test report directory.
+	TestConfigPath string `json:"test-config-path"`
+	// ReportDir is the clusterloader2 test report directory.
 	// Set via "--report-dir" flag.
-	ClusterLoaderReportDir string `json:"cluster-loader-report-dir"`
-	// ClusterLoaderLogsPath is the log file path to stream clusterloader binary runs.
-	ClusterLoaderLogsPath string `json:"cluster-loader-logs-path" read-only:"true"`
+	ReportDir string `json:"report-dir"`
+	// ReportTarGzPath is the .tar.gz file path for report directory.
+	ReportTarGzPath string `json:"report-tar-gz-path" read-only:"true"`
+	// LogPath is the log file path to stream clusterloader binary runs.
+	LogPath string `json:"log-path" read-only:"true"`
 
 	// Runs is the number of "clusterloader2" runs back-to-back.
 	Runs int `json:"runs"`
@@ -61,9 +63,9 @@ type AddOnClusterLoaderLocal struct {
 	SmallStatefulSetsPerNamespace  int `json:"small-stateful-sets-per-namespace"`
 	MediumStatefulSetsPerNamespace int `json:"medium-stateful-sets-per-namespace"`
 
-	CL2EnablePVS              bool `json:"cl2-enable-pvs`
-	PrometheusScrapeKubeProxy bool `json:"prometheus-scrape-kube-proxy`
-	EnableSystemPodMetrics    bool `json:"enable-system-pod-metrics`
+	CL2EnablePVS              bool `json:"cl2-enable-pvs"`
+	PrometheusScrapeKubeProxy bool `json:"prometheus-scrape-kube-proxy"`
+	EnableSystemPodMetrics    bool `json:"enable-system-pod-metrics"`
 }
 
 // EnvironmentVariablePrefixAddOnClusterLoaderLocal is the environment variable prefix used for "eksconfig".
@@ -119,20 +121,23 @@ func (cfg *Config) validateAddOnClusterLoaderLocal() error {
 		return nil
 	}
 
-	if cfg.AddOnClusterLoaderLocal.ClusterLoaderLogsPath == "" {
-		cfg.AddOnClusterLoaderLocal.ClusterLoaderLogsPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-cluster-loader-local-logs.log"
+	if cfg.AddOnClusterLoaderLocal.ReportTarGzPath == "" {
+		cfg.AddOnClusterLoaderLocal.ReportTarGzPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-cluster-loader-local.tar.gz"
+	}
+	if cfg.AddOnClusterLoaderLocal.LogPath == "" {
+		cfg.AddOnClusterLoaderLocal.LogPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-cluster-loader-local.log"
 	}
 
 	if cfg.AddOnClusterLoaderLocal.ClusterLoaderPath == "" && cfg.AddOnClusterLoaderLocal.ClusterLoaderDownloadURL == "" {
 		return errors.New("empty AddOnClusterLoaderLocal.ClusterLoaderPath and ClusterLoaderDownloadURL")
 	}
-	if cfg.AddOnClusterLoaderLocal.ClusterLoaderTestConfigPath == "" {
-		return errors.New("empty AddOnClusterLoaderLocal.ClusterLoaderTestConfigPath")
+	if cfg.AddOnClusterLoaderLocal.TestConfigPath == "" {
+		return errors.New("empty AddOnClusterLoaderLocal.TestConfigPath")
 	}
-	if cfg.AddOnClusterLoaderLocal.ClusterLoaderReportDir == "" {
-		cfg.AddOnClusterLoaderLocal.ClusterLoaderReportDir = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-cluster-loader-local-report")
+	if cfg.AddOnClusterLoaderLocal.ReportDir == "" {
+		cfg.AddOnClusterLoaderLocal.ReportDir = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-cluster-loader-local-report")
 	}
-	if err := fileutil.IsDirWriteable(cfg.AddOnClusterLoaderLocal.ClusterLoaderReportDir); err != nil {
+	if err := fileutil.IsDirWriteable(cfg.AddOnClusterLoaderLocal.ReportDir); err != nil {
 		return err
 	}
 

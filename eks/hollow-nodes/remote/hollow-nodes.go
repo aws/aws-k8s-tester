@@ -17,7 +17,6 @@ import (
 	"strings"
 	"time"
 
-	hollow_nodes "github.com/aws/aws-k8s-tester/eks/hollow-nodes"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	aws_ecr "github.com/aws/aws-k8s-tester/pkg/aws/ecr"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
@@ -57,7 +56,6 @@ func New(cfg Config) (Tester, error) {
 type tester struct {
 	cfg      Config
 	ecrImage string
-	ng       hollow_nodes.NodeGroup
 }
 
 func (ts *tester) Create() (err error) {

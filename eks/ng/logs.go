@@ -421,19 +421,6 @@ func (ts *tester) fetchLogs(qps float32, burst int) error {
 		ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[data.asgName] = mv
 		ts.cfg.EKSConfig.Sync()
 
-		if ts.cfg.EKSConfig.IsEnabledAddOnClusterLoaderRemote() {
-			for _, p := range data.paths {
-				if strings.HasSuffix(p, "cluster-loader-remote-logs.log") {
-					if cerr := fileutil.CopyAppend(p, ts.cfg.EKSConfig.AddOnClusterLoaderRemote.ClusterLoaderLogsPath); cerr != nil {
-						ts.cfg.Logger.Warn("found AddOnClusterLoaderRemote cluster loader logs file but failed to copy", zap.String("original-file-path", p), zap.Error(cerr))
-					} else {
-						ts.cfg.Logger.Info("successfully copied AddOnClusterLoaderRemote cluster loader logs file", zap.String("original-file-path", p), zap.String("copy-file-path", ts.cfg.EKSConfig.AddOnClusterLoaderRemote.ClusterLoaderLogsPath))
-					}
-				}
-			}
-		}
-		ts.cfg.EKSConfig.Sync()
-
 		files := len(data.paths)
 		total += files
 		ts.cfg.Logger.Info("wrote log files",

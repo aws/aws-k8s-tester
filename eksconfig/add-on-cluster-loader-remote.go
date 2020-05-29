@@ -3,12 +3,10 @@ package eksconfig
 import (
 	"errors"
 	"fmt"
-	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
 
-	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 )
 
@@ -28,18 +26,30 @@ type AddOnClusterLoaderRemote struct {
 	// Namespace is the namespace to create objects in.
 	Namespace string `json:"namespace"`
 
+	// RepositoryAccountID is the account ID for tester ECR image.
+	// e.g. "aws/aws-k8s-tester" for "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/aws/aws-k8s-tester"
+	RepositoryAccountID string `json:"repository-account-id,omitempty"`
+	// RepositoryName is the repositoryName for tester ECR image.
+	// e.g. "aws/aws-k8s-tester" for "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/aws/aws-k8s-tester"
+	RepositoryName string `json:"repository-name,omitempty"`
+	// RepositoryImageTag is the image tag for tester ECR image.
+	// e.g. "latest" for image URI "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/aws/aws-k8s-tester:latest"
+	RepositoryImageTag string `json:"repository-image-tag,omitempty"`
+
+	// DeploymentReplicas is the number of "clusterloader2" Pods to run.
+	// For now, only 1 is supported.
+	DeploymentReplicas int32 `json:"deployment-replicas" read-only:"true"`
+
 	// ClusterLoaderPath is the clusterloader executable binary path.
 	// ref. https://github.com/kubernetes/perf-tests/tree/master/clusterloader2
 	ClusterLoaderPath        string `json:"cluster-loader-path"`
 	ClusterLoaderDownloadURL string `json:"cluster-loader-download-url"`
-	// ClusterLoaderTestConfigPath is the clusterloader2 test configuration file.
-	// Set via "--testconfig" flag.
-	ClusterLoaderTestConfigPath string `json:"cluster-loader-test-config-path"`
-	// ClusterLoaderReportDir is the clusterloader2 test report directory.
-	// Set via "--report-dir" flag.
-	ClusterLoaderReportDir string `json:"cluster-loader-report-dir"`
-	// ClusterLoaderLogsPath is the log file path to stream clusterloader binary runs.
-	ClusterLoaderLogsPath string `json:"cluster-loader-logs-path" read-only:"true"`
+
+	// ReportTarGzPath is the .tar.gz file path for report directory.
+	// This is the local path after downloaded from remote nodes.
+	ReportTarGzPath string `json:"report-tar-gz-path" read-only:"true"`
+	// LogPath is the log file path to stream clusterloader binary runs.
+	LogPath string `json:"log-path" read-only:"true"`
 
 	// Runs is the number of "clusterloader2" runs back-to-back.
 	Runs int `json:"runs"`
@@ -64,9 +74,9 @@ type AddOnClusterLoaderRemote struct {
 	SmallStatefulSetsPerNamespace  int `json:"small-stateful-sets-per-namespace"`
 	MediumStatefulSetsPerNamespace int `json:"medium-stateful-sets-per-namespace"`
 
-	CL2EnablePVS              bool `json:"cl2-enable-pvs`
-	PrometheusScrapeKubeProxy bool `json:"prometheus-scrape-kube-proxy`
-	EnableSystemPodMetrics    bool `json:"enable-system-pod-metrics`
+	CL2EnablePVS              bool `json:"cl2-enable-pvs"`
+	PrometheusScrapeKubeProxy bool `json:"prometheus-scrape-kube-proxy"`
+	EnableSystemPodMetrics    bool `json:"enable-system-pod-metrics"`
 }
 
 // EnvironmentVariablePrefixAddOnClusterLoaderRemote is the environment variable prefix used for "eksconfig".
@@ -92,8 +102,9 @@ func getDefaultAddOnClusterLoaderRemote() *AddOnClusterLoaderRemote {
 		ClusterLoaderPath:        "/tmp/clusterloader2",
 		ClusterLoaderDownloadURL: "https://github.com/aws/aws-k8s-tester/releases/download/v1.2.6/clusterloader2-linux-amd64",
 
-		Runs:    1,
-		Timeout: 30 * time.Minute,
+		Runs:               1,
+		DeploymentReplicas: 1,
+		Timeout:            30 * time.Minute,
 
 		Nodes: 10,
 
@@ -126,21 +137,29 @@ func (cfg *Config) validateAddOnClusterLoaderRemote() error {
 		cfg.AddOnClusterLoaderRemote.Namespace = cfg.Name + "-cluster-loader-remote"
 	}
 
-	if cfg.AddOnClusterLoaderRemote.ClusterLoaderLogsPath == "" {
-		cfg.AddOnClusterLoaderRemote.ClusterLoaderLogsPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-cluster-loader-remote-logs.log"
+	if cfg.AddOnClusterLoaderRemote.RepositoryAccountID == "" {
+		return errors.New("AddOnClusterLoaderRemote.RepositoryAccountID empty")
+	}
+	if cfg.AddOnClusterLoaderRemote.RepositoryName == "" {
+		return errors.New("AddOnClusterLoaderRemote.RepositoryName empty")
+	}
+	if cfg.AddOnClusterLoaderRemote.RepositoryImageTag == "" {
+		return errors.New("AddOnClusterLoaderRemote.RepositoryImageTag empty")
+	}
+
+	if cfg.AddOnClusterLoaderRemote.ReportTarGzPath == "" {
+		cfg.AddOnClusterLoaderRemote.ReportTarGzPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-cluster-loader-remote.tar.gz"
+	}
+	if cfg.AddOnClusterLoaderRemote.LogPath == "" {
+		cfg.AddOnClusterLoaderRemote.LogPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-cluster-loader-remote.log"
+	}
+
+	if cfg.AddOnClusterLoaderRemote.DeploymentReplicas != 1 {
+		return fmt.Errorf("unexpected AddOnClusterLoaderRemote.DeploymentReplicas %d", cfg.AddOnClusterLoaderRemote.DeploymentReplicas)
 	}
 
 	if cfg.AddOnClusterLoaderRemote.ClusterLoaderPath == "" && cfg.AddOnClusterLoaderRemote.ClusterLoaderDownloadURL == "" {
 		return errors.New("empty AddOnClusterLoaderRemote.ClusterLoaderPath and ClusterLoaderDownloadURL")
-	}
-	if cfg.AddOnClusterLoaderRemote.ClusterLoaderTestConfigPath == "" {
-		return errors.New("empty AddOnClusterLoaderRemote.ClusterLoaderTestConfigPath")
-	}
-	if cfg.AddOnClusterLoaderRemote.ClusterLoaderReportDir == "" {
-		cfg.AddOnClusterLoaderRemote.ClusterLoaderReportDir = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-cluster-loader-remote-report")
-	}
-	if err := fileutil.IsDirWriteable(cfg.AddOnClusterLoaderRemote.ClusterLoaderReportDir); err != nil {
-		return err
 	}
 
 	if cfg.AddOnClusterLoaderRemote.Runs == 0 {

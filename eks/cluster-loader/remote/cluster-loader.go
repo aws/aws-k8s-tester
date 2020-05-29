@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	hollow_nodes "github.com/aws/aws-k8s-tester/eks/hollow-nodes"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	aws_ecr "github.com/aws/aws-k8s-tester/pkg/aws/ecr"
+	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-sdk-go/aws"
@@ -26,7 +26,7 @@ import (
 	"k8s.io/utils/exec"
 )
 
-// Config defines hollow nodes configuration.
+// Config defines cluster loader configuration.
 type Config struct {
 	Logger    *zap.Logger
 	Stopc     chan struct{}
@@ -35,12 +35,14 @@ type Config struct {
 	ECRAPI    ecriface.ECRAPI
 }
 
-// Tester defines hollow nodes tester.
+// Tester defines cluster loader tester.
 type Tester interface {
-	// Create installs hollow nodes.
+	// Create installs cluster loader.
 	Create() error
-	// Delete deletes hollow nodes.
+	// Delete deletes cluster loader.
 	Delete() error
+	// AggregateResults aggregates all test results from remote nodes.
+	AggregateResults() error
 }
 
 func New(cfg Config) (Tester, error) {
@@ -50,38 +52,37 @@ func New(cfg Config) (Tester, error) {
 type tester struct {
 	cfg      Config
 	ecrImage string
-	ng       hollow_nodes.NodeGroup
 }
 
 func (ts *tester) Create() (err error) {
-	if ts.cfg.EKSConfig.AddOnHollowNodesRemote.Created {
-		ts.cfg.Logger.Info("skipping create AddOnHollowNodesRemote")
+	if ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Created {
+		ts.cfg.Logger.Info("skipping create AddOnClusterLoaderRemote")
 		return nil
 	}
 
-	ts.cfg.Logger.Info("starting hollow nodes testing")
-	ts.cfg.EKSConfig.AddOnHollowNodesRemote.Created = true
+	ts.cfg.Logger.Info("starting cluster loader testing")
+	ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Created = true
 	ts.cfg.EKSConfig.Sync()
 	createStart := time.Now()
 	defer func() {
 		createEnd := time.Now()
-		ts.cfg.EKSConfig.AddOnHollowNodesRemote.TimeFrameCreate = timeutil.NewTimeFrame(createStart, createEnd)
+		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.TimeFrameCreate = timeutil.NewTimeFrame(createStart, createEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 
 	if ts.ecrImage, err = aws_ecr.Check(
 		ts.cfg.Logger,
 		ts.cfg.ECRAPI,
-		ts.cfg.EKSConfig.AddOnHollowNodesRemote.RepositoryAccountID,
-		ts.cfg.EKSConfig.AddOnHollowNodesRemote.RepositoryName,
-		ts.cfg.EKSConfig.AddOnHollowNodesRemote.RepositoryImageTag,
+		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.RepositoryAccountID,
+		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.RepositoryName,
+		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.RepositoryImageTag,
 	); err != nil {
 		return err
 	}
 	if err = k8s_client.CreateNamespace(
 		ts.cfg.Logger,
 		ts.cfg.K8SClient.KubernetesClientSet(),
-		ts.cfg.EKSConfig.AddOnHollowNodesRemote.Namespace,
+		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Namespace,
 	); err != nil {
 		return err
 	}
@@ -101,9 +102,6 @@ func (ts *tester) Create() (err error) {
 		return err
 	}
 	if err = ts.waitDeployment(); err != nil {
-		return err
-	}
-	if err = ts.checkNodes(); err != nil {
 		return err
 	}
 
@@ -131,24 +129,21 @@ func (ts *tester) Create() (err error) {
 }
 
 func (ts *tester) Delete() (err error) {
-	if !ts.cfg.EKSConfig.AddOnHollowNodesRemote.Created {
-		ts.cfg.Logger.Info("skipping delete AddOnHollowNodesRemote")
+	if !ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Created {
+		ts.cfg.Logger.Info("skipping delete AddOnClusterLoaderRemote")
 		return nil
 	}
 
 	deleteStart := time.Now()
 	defer func() {
 		deleteEnd := time.Now()
-		ts.cfg.EKSConfig.AddOnHollowNodesRemote.TimeFrameDelete = timeutil.NewTimeFrame(deleteStart, deleteEnd)
+		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.TimeFrameDelete = timeutil.NewTimeFrame(deleteStart, deleteEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 
 	var errs []string
 
 	if err := ts.deleteDeployment(); err != nil {
-		errs = append(errs, err.Error())
-	}
-	if err := ts.deleteCreatedNodes(); err != nil {
 		errs = append(errs, err.Error())
 	}
 	if err := ts.deleteConfigMap(); err != nil {
@@ -167,29 +162,29 @@ func (ts *tester) Delete() (err error) {
 	if err := k8s_client.DeleteNamespaceAndWait(
 		ts.cfg.Logger,
 		ts.cfg.K8SClient.KubernetesClientSet(),
-		ts.cfg.EKSConfig.AddOnHollowNodesRemote.Namespace,
+		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Namespace,
 		k8s_client.DefaultNamespaceDeletionInterval,
 		k8s_client.DefaultNamespaceDeletionTimeout,
 	); err != nil {
-		errs = append(errs, fmt.Sprintf("failed to delete hollow nodes namespace (%v)", err))
+		errs = append(errs, fmt.Sprintf("failed to delete cluster loader namespace (%v)", err))
 	}
 
 	if len(errs) > 0 {
 		return errors.New(strings.Join(errs, ", "))
 	}
 
-	ts.cfg.EKSConfig.AddOnHollowNodesRemote.Created = false
+	ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Created = false
 	return ts.cfg.EKSConfig.Sync()
 }
 
 const (
-	hollowNodesServiceAccountName          = "hollow-nodes-remote-service-account"
-	hollowNodesRBACRoleName                = "hollow-nodes-remote-rbac-role"
-	hollowNodesRBACClusterRoleBindingName  = "hollow-nodes-remote-rbac-role-binding"
-	hollowNodesKubeConfigConfigMapName     = "hollow-nodes-remote-kubeconfig-config-map"
-	hollowNodesKubeConfigConfigMapFileName = "hollow-nodes-remote-kubeconfig-config-map.yaml"
-	hollowNodesDeploymentName              = "hollow-nodes-remote-deployment"
-	hollowNodesAppName                     = "hollow-nodes-remote-app"
+	clusterLoaderServiceAccountName          = "cluster-loader-remote-service-account"
+	clusterLoaderRBACRoleName                = "cluster-loader-remote-rbac-role"
+	clusterLoaderRBACClusterRoleBindingName  = "cluster-loader-remote-rbac-role-binding"
+	clusterLoaderKubeConfigConfigMapName     = "cluster-loader-remote-kubeconfig-config-map"
+	clusterLoaderKubeConfigConfigMapFileName = "cluster-loader-remote-kubeconfig-config-map.yaml"
+	clusterLoaderDeploymentName              = "cluster-loader-remote-deployment"
+	clusterLoaderAppName                     = "cluster-loader-remote-app"
 )
 
 // ref. https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration
@@ -199,7 +194,7 @@ func (ts *tester) createServiceAccount() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.K8SClient.KubernetesClientSet().
 		CoreV1().
-		ServiceAccounts(ts.cfg.EKSConfig.AddOnHollowNodesRemote.Namespace).
+		ServiceAccounts(ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Namespace).
 		Create(
 			ctx,
 			&v1.ServiceAccount{
@@ -208,10 +203,10 @@ func (ts *tester) createServiceAccount() error {
 					Kind:       "ServiceAccount",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      hollowNodesServiceAccountName,
-					Namespace: ts.cfg.EKSConfig.AddOnHollowNodesRemote.Namespace,
+					Name:      clusterLoaderServiceAccountName,
+					Namespace: ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Namespace,
 					Labels: map[string]string{
-						"app.kubernetes.io/name": hollowNodesAppName,
+						"app.kubernetes.io/name": clusterLoaderAppName,
 					},
 				},
 			},
@@ -234,10 +229,10 @@ func (ts *tester) deleteServiceAccount() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	err := ts.cfg.K8SClient.KubernetesClientSet().
 		CoreV1().
-		ServiceAccounts(ts.cfg.EKSConfig.AddOnHollowNodesRemote.Namespace).
+		ServiceAccounts(ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Namespace).
 		Delete(
 			ctx,
-			hollowNodesServiceAccountName,
+			clusterLoaderServiceAccountName,
 			metav1.DeleteOptions{
 				GracePeriodSeconds: aws.Int64(0),
 				PropagationPolicy:  &foreground,
@@ -272,45 +267,21 @@ func (ts *tester) createALBRBACClusterRole() error {
 					Kind:       "ClusterRole",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      hollowNodesRBACRoleName,
+					Name:      clusterLoaderRBACRoleName,
 					Namespace: "default",
 					Labels: map[string]string{
-						"app.kubernetes.io/name": hollowNodesAppName,
+						"app.kubernetes.io/name": clusterLoaderAppName,
 					},
 				},
 				Rules: []rbacv1.PolicyRule{
-					{
+					{ // TODO: make it more restrictive
 						APIGroups: []string{
 							"*",
 						},
 						Resources: []string{
-							"leases",
-							"runtimeclasses", // for API group "node.k8s.io"
-							"nodes",
-							"nodes/status", // to patch resource "nodes/status" in API group "" at the cluster scope
-							"pods",
-							"pods/status", // to patch resource in API group "" in the namespace "kube-system"
-							"secrets",
-							"services",
-							"namespaces",
-							"configmaps",
-							"endpoints",
-							"events",
-							"ingresses",
-							"ingresses/status",
-							"services",
-							"jobs",
-							"cronjobs",
-							"csidrivers", // for API group "storage.k8s.io"
-							"csinodes",   // Failed to initialize CSINodeInfo: error updating CSINode annotation: timed out waiting for the condition; caused by: csinodes.storage.k8s.io "hollowwandefortegreen6wd8z" is forbidden: User "system:serviceaccount:eks-2020052423-boldlyuxvugd-hollow-nodes-remote:hollow-nodes-remote-service-account" cannot get resource "csinodes" in API group "storage.k8s.io" at the cluster scope
-						},
+							"*"},
 						Verbs: []string{
-							"create",
-							"get",
-							"list",
-							"update",
-							"watch",
-							"patch",
+							"*",
 						},
 					},
 				},
@@ -337,7 +308,7 @@ func (ts *tester) deleteALBRBACClusterRole() error {
 		ClusterRoles().
 		Delete(
 			ctx,
-			hollowNodesRBACRoleName,
+			clusterLoaderRBACRoleName,
 			metav1.DeleteOptions{
 				GracePeriodSeconds: aws.Int64(0),
 				PropagationPolicy:  &foreground,
@@ -368,23 +339,23 @@ func (ts *tester) createALBRBACClusterRoleBinding() error {
 					Kind:       "ClusterRoleBinding",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      hollowNodesRBACClusterRoleBindingName,
+					Name:      clusterLoaderRBACClusterRoleBindingName,
 					Namespace: "default",
 					Labels: map[string]string{
-						"app.kubernetes.io/name": hollowNodesAppName,
+						"app.kubernetes.io/name": clusterLoaderAppName,
 					},
 				},
 				RoleRef: rbacv1.RoleRef{
 					APIGroup: "rbac.authorization.k8s.io",
 					Kind:     "ClusterRole",
-					Name:     hollowNodesRBACRoleName,
+					Name:     clusterLoaderRBACRoleName,
 				},
 				Subjects: []rbacv1.Subject{
 					{
 						APIGroup:  "",
 						Kind:      "ServiceAccount",
-						Name:      hollowNodesServiceAccountName,
-						Namespace: ts.cfg.EKSConfig.AddOnHollowNodesRemote.Namespace,
+						Name:      clusterLoaderServiceAccountName,
+						Namespace: ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Namespace,
 					},
 					{ // https://kubernetes.io/docs/reference/access-authn-authz/rbac/
 						APIGroup: "rbac.authorization.k8s.io",
@@ -415,7 +386,7 @@ func (ts *tester) deleteALBRBACClusterRoleBinding() error {
 		ClusterRoleBindings().
 		Delete(
 			ctx,
-			hollowNodesRBACClusterRoleBindingName,
+			clusterLoaderRBACClusterRoleBindingName,
 			metav1.DeleteOptions{
 				GracePeriodSeconds: aws.Int64(0),
 				PropagationPolicy:  &foreground,
@@ -440,7 +411,7 @@ func (ts *tester) createConfigMap() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err = ts.cfg.K8SClient.KubernetesClientSet().
 		CoreV1().
-		ConfigMaps(ts.cfg.EKSConfig.AddOnHollowNodesRemote.Namespace).
+		ConfigMaps(ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Namespace).
 		Create(
 			ctx,
 			&v1.ConfigMap{
@@ -449,14 +420,14 @@ func (ts *tester) createConfigMap() error {
 					Kind:       "ConfigMap",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      hollowNodesKubeConfigConfigMapName,
-					Namespace: ts.cfg.EKSConfig.AddOnHollowNodesRemote.Namespace,
+					Name:      clusterLoaderKubeConfigConfigMapName,
+					Namespace: ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Namespace,
 					Labels: map[string]string{
-						"name": hollowNodesKubeConfigConfigMapName,
+						"name": clusterLoaderKubeConfigConfigMapName,
 					},
 				},
 				Data: map[string]string{
-					hollowNodesKubeConfigConfigMapFileName: string(b),
+					clusterLoaderKubeConfigConfigMapFileName: string(b),
 				},
 			},
 			metav1.CreateOptions{},
@@ -476,10 +447,10 @@ func (ts *tester) deleteConfigMap() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	err := ts.cfg.K8SClient.KubernetesClientSet().
 		CoreV1().
-		ConfigMaps(ts.cfg.EKSConfig.AddOnHollowNodesRemote.Namespace).
+		ConfigMaps(ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Namespace).
 		Delete(
 			ctx,
-			hollowNodesKubeConfigConfigMapName,
+			clusterLoaderKubeConfigConfigMapName,
 			metav1.DeleteOptions{
 				GracePeriodSeconds: aws.Int64(0),
 				PropagationPolicy:  &foreground,
@@ -496,28 +467,31 @@ func (ts *tester) deleteConfigMap() error {
 // TODO: use "ReplicationController" to max out
 
 func (ts *tester) createDeployment() error {
-	// "/opt/"+hollowNodesKubeConfigConfigMapFileName,
+	// "/opt/"+clusterLoaderKubeConfigConfigMapFileName,
 	// do not specify "kubeconfig", and use in-cluster config via "pkg/k8s-client"
 	// ref. https://github.com/kubernetes/client-go/blob/master/examples/in-cluster-client-configuration/main.go
-	//
-	// randomize node label, for node checking
-	// in case multiple pods are creating hollow nodes
-	//
-	testerCmd := fmt.Sprintf("/aws-k8s-tester eks create hollow-nodes --clients=%d --client-qps=%f --client-burst=%d --nodes=%d --node-name-prefix=%s --node-label-prefix=%s --remote=true",
-		ts.cfg.EKSConfig.Clients,
-		ts.cfg.EKSConfig.ClientQPS,
-		ts.cfg.EKSConfig.ClientBurst,
-		ts.cfg.EKSConfig.AddOnHollowNodesRemote.Nodes,
-		ts.cfg.EKSConfig.AddOnHollowNodesRemote.NodeNamePrefix,
-		ts.cfg.EKSConfig.AddOnHollowNodesRemote.NodeLabelPrefix,
+	testerCmd := fmt.Sprintf("/aws-k8s-tester eks create cluster-loader --cluster-loader-path=/clusterloader2 --test-config-path=/clusterloader2-test-config.yaml --report-dir=/var/log/cluster-loader-remote --report-tar-gz-path=/var/log/cluster-loader-remote.tar.gz --logs-path=/var/log/cluster-loader-remote.log --runs=%d --timeout=%v --nodes=%d --nodes-per-namespace=%d --pods-per-node=%d --big-group-size=%d --medium-group-size=%d --small-group-size=%d --small-stateful-sets-per-namespace=%d --medium-stateful-sets-per-namespace=%d --cl2-enable-pvs=%v --prometheus-scrape-kube-proxy=%v --enable-system-pod-metrics=%v",
+		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Runs,
+		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Timeout,
+		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Nodes,
+		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.NodesPerNamespace,
+		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.PodsPerNode,
+		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.BigGroupSize,
+		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.MediumGroupSize,
+		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.SmallGroupSize,
+		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.SmallStatefulSetsPerNamespace,
+		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.MediumStatefulSetsPerNamespace,
+		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.CL2EnablePVS,
+		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.PrometheusScrapeKubeProxy,
+		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.EnableSystemPodMetrics,
 	)
 
-	ts.cfg.Logger.Info("creating hollow nodes Deployment", zap.String("image", ts.ecrImage), zap.String("tester-command", testerCmd))
+	ts.cfg.Logger.Info("creating cluster loader Deployment", zap.String("image", ts.ecrImage), zap.String("tester-command", testerCmd))
 	dirOrCreate := v1.HostPathDirectoryOrCreate
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.K8SClient.KubernetesClientSet().
 		AppsV1().
-		Deployments(ts.cfg.EKSConfig.AddOnHollowNodesRemote.Namespace).
+		Deployments(ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Namespace).
 		Create(
 			ctx,
 			&appsv1.Deployment{
@@ -526,32 +500,32 @@ func (ts *tester) createDeployment() error {
 					Kind:       "Deployment",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      hollowNodesDeploymentName,
-					Namespace: ts.cfg.EKSConfig.AddOnHollowNodesRemote.Namespace,
+					Name:      clusterLoaderDeploymentName,
+					Namespace: ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Namespace,
 					Labels: map[string]string{
-						"app.kubernetes.io/name": hollowNodesAppName,
+						"app.kubernetes.io/name": clusterLoaderAppName,
 					},
 				},
 				Spec: appsv1.DeploymentSpec{
-					Replicas: aws.Int32(ts.cfg.EKSConfig.AddOnHollowNodesRemote.DeploymentReplicas),
+					Replicas: aws.Int32(ts.cfg.EKSConfig.AddOnClusterLoaderRemote.DeploymentReplicas),
 					Selector: &metav1.LabelSelector{
 						MatchLabels: map[string]string{
-							"app.kubernetes.io/name": hollowNodesAppName,
+							"app.kubernetes.io/name": clusterLoaderAppName,
 						},
 					},
 					Template: v1.PodTemplateSpec{
 						ObjectMeta: metav1.ObjectMeta{
 							Labels: map[string]string{
-								"app.kubernetes.io/name": hollowNodesAppName,
+								"app.kubernetes.io/name": clusterLoaderAppName,
 							},
 						},
 						Spec: v1.PodSpec{
-							ServiceAccountName: hollowNodesServiceAccountName,
+							ServiceAccountName: clusterLoaderServiceAccountName,
 
 							// TODO: set resource limits
 							Containers: []v1.Container{
 								{
-									Name:            hollowNodesAppName,
+									Name:            clusterLoaderAppName,
 									Image:           ts.ecrImage,
 									ImagePullPolicy: v1.PullAlways,
 
@@ -569,12 +543,8 @@ func (ts *tester) createDeployment() error {
 									// ref. https://kubernetes.io/docs/concepts/cluster-administration/logging/
 									VolumeMounts: []v1.VolumeMount{
 										{ // to execute
-											Name:      hollowNodesKubeConfigConfigMapName,
+											Name:      clusterLoaderKubeConfigConfigMapName,
 											MountPath: "/opt",
-										},
-										{ // for hollow node kubelet, kubelet requires "/dev/kmsg"
-											Name:      "kmsg",
-											MountPath: "/dev/kmsg",
 										},
 										{ // to write
 											Name:      "varlog",
@@ -588,21 +558,13 @@ func (ts *tester) createDeployment() error {
 							// ref. https://kubernetes.io/docs/concepts/cluster-administration/logging/
 							Volumes: []v1.Volume{
 								{ // to execute
-									Name: hollowNodesKubeConfigConfigMapName,
+									Name: clusterLoaderKubeConfigConfigMapName,
 									VolumeSource: v1.VolumeSource{
 										ConfigMap: &v1.ConfigMapVolumeSource{
 											LocalObjectReference: v1.LocalObjectReference{
-												Name: hollowNodesKubeConfigConfigMapName,
+												Name: clusterLoaderKubeConfigConfigMapName,
 											},
 											DefaultMode: aws.Int32(0777),
-										},
-									},
-								},
-								{ // for hollow node kubelet
-									Name: "kmsg",
-									VolumeSource: v1.VolumeSource{
-										HostPath: &v1.HostPathVolumeSource{
-											Path: "/dev/kmsg",
 										},
 									},
 								},
@@ -640,10 +602,10 @@ func (ts *tester) deleteDeployment() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	err := ts.cfg.K8SClient.KubernetesClientSet().
 		AppsV1().
-		Deployments(ts.cfg.EKSConfig.AddOnHollowNodesRemote.Namespace).
+		Deployments(ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Namespace).
 		Delete(
 			ctx,
-			hollowNodesDeploymentName,
+			clusterLoaderDeploymentName,
 			metav1.DeleteOptions{
 				GracePeriodSeconds: aws.Int64(0),
 				PropagationPolicy:  &foreground,
@@ -658,16 +620,16 @@ func (ts *tester) deleteDeployment() error {
 }
 
 func (ts *tester) waitDeployment() error {
-	ts.cfg.Logger.Info("waiting for hollow nodes Deployment")
+	ts.cfg.Logger.Info("waiting for cluster loader Deployment")
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	output, err := exec.New().CommandContext(
 		ctx,
 		ts.cfg.EKSConfig.KubectlPath,
 		"--kubeconfig="+ts.cfg.EKSConfig.KubeConfigPath,
-		"--namespace="+ts.cfg.EKSConfig.AddOnHollowNodesRemote.Namespace,
+		"--namespace="+ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Namespace,
 		"describe",
 		"deployment",
-		hollowNodesDeploymentName,
+		clusterLoaderDeploymentName,
 	).CombinedOutput()
 	cancel()
 	if err != nil {
@@ -677,7 +639,7 @@ func (ts *tester) waitDeployment() error {
 	fmt.Printf("\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
 
 	ready := false
-	waitDur := 5*time.Minute + time.Duration(ts.cfg.EKSConfig.AddOnHollowNodesRemote.DeploymentReplicas)*time.Minute
+	waitDur := 5*time.Minute + time.Duration(ts.cfg.EKSConfig.AddOnClusterLoaderRemote.DeploymentReplicas)*time.Minute
 	retryStart := time.Now()
 	for time.Now().Sub(retryStart) < waitDur {
 		select {
@@ -689,8 +651,8 @@ func (ts *tester) waitDeployment() error {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		dresp, err := ts.cfg.K8SClient.KubernetesClientSet().
 			AppsV1().
-			Deployments(ts.cfg.EKSConfig.AddOnHollowNodesRemote.Namespace).
-			Get(ctx, hollowNodesDeploymentName, metav1.GetOptions{})
+			Deployments(ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Namespace).
+			Get(ctx, clusterLoaderDeploymentName, metav1.GetOptions{})
 		cancel()
 		if err != nil {
 			return fmt.Errorf("failed to get Deployment (%v)", err)
@@ -718,7 +680,7 @@ func (ts *tester) waitDeployment() error {
 				break
 			}
 		}
-		if available && dresp.Status.AvailableReplicas >= ts.cfg.EKSConfig.AddOnHollowNodesRemote.DeploymentReplicas {
+		if available && dresp.Status.AvailableReplicas >= ts.cfg.EKSConfig.AddOnClusterLoaderRemote.DeploymentReplicas {
 			ready = true
 			break
 		}
@@ -729,130 +691,65 @@ func (ts *tester) waitDeployment() error {
 		ts.cfg.Logger.Warn("Deployment not ready")
 	}
 
-	ts.cfg.Logger.Info("waited for hollow nodes Deployment")
+	ts.cfg.Logger.Info("waited for cluster loader Deployment")
 	return ts.cfg.EKSConfig.Sync()
 }
 
-func (ts *tester) checkNodes() error {
-	argsLogs := []string{
-		ts.cfg.EKSConfig.KubectlPath,
-		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
-		"--namespace=" + ts.cfg.EKSConfig.AddOnHollowNodesRemote.Namespace,
-		"logs",
-		"--selector=app.kubernetes.io/name=" + hollowNodesAppName,
-		"--tail=10",
+func (ts *tester) AggregateResults() (err error) {
+	if !ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Created {
+		ts.cfg.Logger.Info("skipping aggregating AddOnClusterLoaderRemote")
+		return nil
 	}
-	cmdLogs := strings.Join(argsLogs, " ")
 
-	expectedNodes := ts.cfg.EKSConfig.AddOnHollowNodesRemote.Nodes * int(ts.cfg.EKSConfig.AddOnHollowNodesRemote.DeploymentReplicas)
+	ts.cfg.Logger.Info("aggregating results from Pods")
+	if ts.cfg.EKSConfig.IsEnabledAddOnNodeGroups() && ts.cfg.EKSConfig.AddOnNodeGroups.FetchLogs {
+		ts.cfg.Logger.Info("fetching logs from ngs")
+		for _, v := range ts.cfg.EKSConfig.AddOnNodeGroups.ASGs {
+			for _, fpaths := range v.Logs {
+				for _, fpath := range fpaths {
+					if strings.HasSuffix(fpath, "cluster-loader-remote.tar.gz") {
+						if cerr := fileutil.Copy(fpath, ts.cfg.EKSConfig.AddOnClusterLoaderRemote.ReportTarGzPath); cerr != nil {
+							ts.cfg.Logger.Warn("found AddOnClusterLoaderRemote cluster loader report dir .tar.gz file but failed to copy", zap.String("original-file-path", fpath), zap.Error(cerr))
+						} else {
+							ts.cfg.Logger.Info("successfully copied AddOnClusterLoaderRemote cluster loader report dir .tar.gz file", zap.String("original-file-path", fpath), zap.String("copy-file-path", ts.cfg.EKSConfig.AddOnClusterLoaderRemote.LogPath))
+						}
+					}
+					if strings.HasSuffix(fpath, "cluster-loader-remote.log") {
+						if cerr := fileutil.CopyAppend(fpath, ts.cfg.EKSConfig.AddOnClusterLoaderRemote.LogPath); cerr != nil {
+							ts.cfg.Logger.Warn("found AddOnClusterLoaderRemote cluster loader logs file but failed to copy", zap.String("original-file-path", fpath), zap.Error(cerr))
+						} else {
+							ts.cfg.Logger.Info("successfully copied AddOnClusterLoaderRemote cluster loader logs file", zap.String("original-file-path", fpath), zap.String("copy-file-path", ts.cfg.EKSConfig.AddOnClusterLoaderRemote.LogPath))
+						}
+					}
 
-	// TODO: :some" hollow nodes may fail from resource quota
-	// find out why it's failing
-	expectedNodes /= 2
-
-	retryStart, waitDur := time.Now(), 5*time.Minute+2*time.Second*time.Duration(expectedNodes)
-	ts.cfg.Logger.Info("checking nodes readiness", zap.Duration("wait", waitDur), zap.Int("expected-nodes", expectedNodes))
-	ready := false
-	for time.Now().Sub(retryStart) < waitDur {
-		select {
-		case <-ts.cfg.Stopc:
-			return errors.New("checking node aborted")
-		case <-time.After(5 * time.Second):
-		}
-
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		nodes, err := ts.cfg.K8SClient.KubernetesClientSet().CoreV1().Nodes().List(ctx, metav1.ListOptions{})
-		cancel()
-		if err != nil {
-			ts.cfg.Logger.Warn("get nodes failed", zap.Error(err))
-			continue
-		}
-		items := nodes.Items
-
-		createdNodeNames := make([]string, 0)
-		readies := 0
-		for _, node := range items {
-			labels := node.GetLabels()
-			if !strings.HasPrefix(labels["NGName"], ts.cfg.EKSConfig.AddOnHollowNodesRemote.NodeLabelPrefix) {
-				continue
-			}
-			nodeName := node.GetName()
-
-			for _, cond := range node.Status.Conditions {
-				if cond.Status != v1.ConditionTrue {
-					continue
 				}
-				if cond.Type != v1.NodeReady {
-					continue
-				}
-				ts.cfg.Logger.Info("node is ready!",
-					zap.String("name", nodeName),
-					zap.String("type", fmt.Sprintf("%s", cond.Type)),
-					zap.String("status", fmt.Sprintf("%s", cond.Status)),
-				)
-				createdNodeNames = append(createdNodeNames, nodeName)
-				readies++
-				break
 			}
 		}
-		ts.cfg.Logger.Info("nodes",
-			zap.Int("current-ready-nodes", readies),
-			zap.Int("desired-ready-nodes", expectedNodes),
-		)
-
-		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
-		output, err := exec.New().CommandContext(ctx, argsLogs[0], argsLogs[1:]...).CombinedOutput()
-		cancel()
-		out := string(output)
-		if err != nil {
-			ts.cfg.Logger.Warn("'kubectl logs' failed", zap.Error(err))
-		}
-		fmt.Printf("\n\n\"%s\":\n%s\n", cmdLogs, out)
-
-		ts.cfg.EKSConfig.AddOnHollowNodesRemote.CreatedNodeNames = createdNodeNames
-		ts.cfg.EKSConfig.Sync()
-		if readies > 0 && readies >= expectedNodes {
-			ready = true
-			break
+	}
+	if ts.cfg.EKSConfig.IsEnabledAddOnManagedNodeGroups() && ts.cfg.EKSConfig.AddOnManagedNodeGroups.FetchLogs {
+		ts.cfg.Logger.Info("fetching logs from mngs")
+		for _, cur := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
+			for _, fpaths := range cur.Logs {
+				for _, fpath := range fpaths {
+					if strings.HasSuffix(fpath, "cluster-loader-remote.tar.gz") {
+						if cerr := fileutil.Copy(fpath, ts.cfg.EKSConfig.AddOnClusterLoaderRemote.ReportTarGzPath); cerr != nil {
+							ts.cfg.Logger.Warn("found AddOnClusterLoaderRemote cluster loader report dir .tar.gz file but failed to copy", zap.String("original-file-path", fpath), zap.Error(cerr))
+						} else {
+							ts.cfg.Logger.Info("successfully copied AddOnClusterLoaderRemote cluster loader report dir .tar.gz file", zap.String("original-file-path", fpath), zap.String("copy-file-path", ts.cfg.EKSConfig.AddOnClusterLoaderRemote.LogPath))
+						}
+					}
+					if strings.HasSuffix(fpath, "cluster-loader-remote.log") {
+						if cerr := fileutil.CopyAppend(fpath, ts.cfg.EKSConfig.AddOnClusterLoaderRemote.LogPath); cerr != nil {
+							ts.cfg.Logger.Warn("found AddOnClusterLoaderRemote cluster loader logs file but failed to copy", zap.String("original-file-path", fpath), zap.Error(cerr))
+						} else {
+							ts.cfg.Logger.Info("successfully copied AddOnClusterLoaderRemote cluster loader logs file", zap.String("original-file-path", fpath), zap.String("copy-file-path", ts.cfg.EKSConfig.AddOnClusterLoaderRemote.LogPath))
+						}
+					}
+				}
+			}
 		}
 	}
-	if !ready {
-		return fmt.Errorf("NG %q not ready", ts.cfg.EKSConfig.AddOnHollowNodesRemote.NodeLabelPrefix)
-	}
 
+	ts.cfg.Logger.Info("aggregated results from Pods")
 	return ts.cfg.EKSConfig.Sync()
-}
-
-func (ts *tester) deleteCreatedNodes() error {
-	var errs []string
-
-	ts.cfg.Logger.Info("deleting node objects", zap.Int("created-nodes", len(ts.cfg.EKSConfig.AddOnHollowNodesRemote.CreatedNodeNames)))
-	deleted := 0
-	foreground := metav1.DeletePropagationForeground
-	for i, nodeName := range ts.cfg.EKSConfig.AddOnHollowNodesRemote.CreatedNodeNames {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		err := ts.cfg.K8SClient.KubernetesClientSet().CoreV1().Nodes().Delete(
-			ctx,
-			nodeName,
-			metav1.DeleteOptions{
-				GracePeriodSeconds: aws.Int64(0),
-				PropagationPolicy:  &foreground,
-			},
-		)
-		cancel()
-		if err != nil && !api_errors.IsNotFound(err) {
-			ts.cfg.Logger.Warn("failed to delete node", zap.Int("index", i), zap.String("name", nodeName), zap.Error(err))
-			errs = append(errs, err.Error())
-		} else {
-			ts.cfg.Logger.Info("deleted node", zap.Int("index", i), zap.String("name", nodeName))
-			deleted++
-		}
-	}
-	ts.cfg.Logger.Info("deleted node objects", zap.Int("deleted", deleted), zap.Int("created-nodes", len(ts.cfg.EKSConfig.AddOnHollowNodesRemote.CreatedNodeNames)))
-
-	if len(errs) > 0 {
-		return errors.New(strings.Join(errs, ", "))
-	}
-
-	return nil
 }

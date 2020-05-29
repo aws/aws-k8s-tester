@@ -41,11 +41,12 @@ func New(cfg Config) Tester {
 
 			KubeConfigPath: cfg.EKSConfig.KubeConfigPath,
 
-			ClusterLoaderPath:           cfg.EKSConfig.AddOnClusterLoaderLocal.ClusterLoaderPath,
-			ClusterLoaderDownloadURL:    cfg.EKSConfig.AddOnClusterLoaderLocal.ClusterLoaderDownloadURL,
-			ClusterLoaderTestConfigPath: cfg.EKSConfig.AddOnClusterLoaderLocal.ClusterLoaderTestConfigPath,
-			ClusterLoaderReportDir:      cfg.EKSConfig.AddOnClusterLoaderLocal.ClusterLoaderReportDir,
-			ClusterLoaderLogsPath:       cfg.EKSConfig.AddOnClusterLoaderLocal.ClusterLoaderLogsPath,
+			ClusterLoaderPath:        cfg.EKSConfig.AddOnClusterLoaderLocal.ClusterLoaderPath,
+			ClusterLoaderDownloadURL: cfg.EKSConfig.AddOnClusterLoaderLocal.ClusterLoaderDownloadURL,
+			TestConfigPath:           cfg.EKSConfig.AddOnClusterLoaderLocal.TestConfigPath,
+			ReportDir:                cfg.EKSConfig.AddOnClusterLoaderLocal.ReportDir,
+			ReportTarGzPath:          cfg.EKSConfig.AddOnClusterLoaderLocal.ReportTarGzPath,
+			LogPath:                  cfg.EKSConfig.AddOnClusterLoaderLocal.LogPath,
 
 			Runs:    cfg.EKSConfig.AddOnClusterLoaderLocal.Runs,
 			Timeout: cfg.EKSConfig.AddOnClusterLoaderLocal.Timeout,

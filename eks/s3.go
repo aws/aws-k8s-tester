@@ -607,13 +607,24 @@ func (ts *Tester) uploadToS3() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnClusterLoaderLocal() {
-		if fileutil.Exist(ts.cfg.AddOnClusterLoaderLocal.ClusterLoaderLogsPath) {
+		if fileutil.Exist(ts.cfg.AddOnClusterLoaderLocal.ReportTarGzPath) {
 			if err = uploadFileToS3(
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "cluster-loader-local-logs.log"),
-				ts.cfg.AddOnClusterLoaderLocal.ClusterLoaderLogsPath,
+				path.Join(ts.cfg.Name, "cluster-loader-local.tar.gz"),
+				ts.cfg.AddOnClusterLoaderLocal.ReportTarGzPath,
+			); err != nil {
+				return err
+			}
+		}
+		if fileutil.Exist(ts.cfg.AddOnClusterLoaderLocal.LogPath) {
+			if err = uploadFileToS3(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "cluster-loader-local.log"),
+				ts.cfg.AddOnClusterLoaderLocal.LogPath,
 			); err != nil {
 				return err
 			}
@@ -621,13 +632,24 @@ func (ts *Tester) uploadToS3() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnClusterLoaderRemote() {
-		if fileutil.Exist(ts.cfg.AddOnClusterLoaderRemote.ClusterLoaderLogsPath) {
+		if fileutil.Exist(ts.cfg.AddOnClusterLoaderRemote.ReportTarGzPath) {
 			if err = uploadFileToS3(
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "cluster-loader-remote-logs.log"),
-				ts.cfg.AddOnClusterLoaderRemote.ClusterLoaderLogsPath,
+				path.Join(ts.cfg.Name, "cluster-loader-remote.tar.gz"),
+				ts.cfg.AddOnClusterLoaderRemote.ReportTarGzPath,
+			); err != nil {
+				return err
+			}
+		}
+		if fileutil.Exist(ts.cfg.AddOnClusterLoaderRemote.LogPath) {
+			if err = uploadFileToS3(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "cluster-loader-remote.log"),
+				ts.cfg.AddOnClusterLoaderRemote.LogPath,
 			); err != nil {
 				return err
 			}
@@ -646,7 +668,7 @@ func uploadFileToS3(lg *zap.Logger, s3API s3iface.S3API, bucketName string, s3Ke
 
 	rf, err := os.OpenFile(fpath, os.O_RDONLY, 0444)
 	if err != nil {
-		ts.cfg.Logger.Warn("failed to read a file", zap.String("file-path", fpath), zap.Error(err))
+		lg.Warn("failed to read a file", zap.String("file-path", fpath), zap.Error(err))
 		return err
 	}
 	defer rf.Close()
