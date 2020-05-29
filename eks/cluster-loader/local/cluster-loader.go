@@ -3,22 +3,18 @@
 package local
 
 import (
-	"context"
 	"errors"
 	"strings"
 	"time"
 
-	hollow_nodes "github.com/aws/aws-k8s-tester/eks/hollow-nodes"
+	cluster_loader "github.com/aws/aws-k8s-tester/eks/cluster-loader"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
-	"github.com/aws/aws-sdk-go/aws"
 	"go.uber.org/zap"
-	api_errors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// Config defines hollow nodes configuration.
+// Config defines cluster loader configuration.
 type Config struct {
 	Logger *zap.Logger
 	Stopc  chan struct{}
@@ -27,7 +23,7 @@ type Config struct {
 	K8SClient k8s_client.EKS
 }
 
-// Tester defines hollow nodes tester.
+// Tester defines cluster loader tester.
 type Tester interface {
 	// Create installs hollow nodes.
 	Create() error
@@ -35,54 +31,68 @@ type Tester interface {
 	Delete() error
 }
 
-func New(cfg Config) (Tester, error) {
-	ts := &tester{cfg: cfg}
-	var err error
-	ts.ng, err = hollow_nodes.CreateNodeGroup(hollow_nodes.NodeGroupConfig{
-		Logger:         ts.cfg.Logger,
-		Stopc:          ts.cfg.Stopc,
-		Client:         ts.cfg.K8SClient,
-		Nodes:          ts.cfg.EKSConfig.AddOnHollowNodesLocal.Nodes,
-		NodeNamePrefix: ts.cfg.EKSConfig.AddOnHollowNodesLocal.NodeNamePrefix,
-		NodeLabels:     ts.cfg.EKSConfig.AddOnHollowNodesLocal.NodeLabels,
-		MaxOpenFiles:   ts.cfg.EKSConfig.AddOnHollowNodesLocal.MaxOpenFiles,
-		Remote:         false,
-	})
-	if err != nil {
-		return nil, err
+func New(cfg Config) Tester {
+	return &tester{
+		cfg: cfg,
+
+		loader: cluster_loader.New(cluster_loader.Config{
+			Logger: cfg.Logger,
+			Stopc:  cfg.Stopc,
+
+			KubeConfigPath: cfg.EKSConfig.KubeConfigPath,
+
+			ClusterLoaderPath:           cfg.EKSConfig.AddOnClusterLoaderLocal.ClusterLoaderPath,
+			ClusterLoaderDownloadURL:    cfg.EKSConfig.AddOnClusterLoaderLocal.ClusterLoaderDownloadURL,
+			ClusterLoaderTestConfigPath: cfg.EKSConfig.AddOnClusterLoaderLocal.ClusterLoaderTestConfigPath,
+			ClusterLoaderReportDir:      cfg.EKSConfig.AddOnClusterLoaderLocal.ClusterLoaderReportDir,
+			ClusterLoaderLogsPath:       cfg.EKSConfig.AddOnClusterLoaderLocal.ClusterLoaderLogsPath,
+
+			Runs:    cfg.EKSConfig.AddOnClusterLoaderLocal.Runs,
+			Timeout: cfg.EKSConfig.AddOnClusterLoaderLocal.Timeout,
+
+			Nodes: cfg.EKSConfig.AddOnClusterLoaderLocal.Nodes,
+
+			NodesPerNamespace: cfg.EKSConfig.AddOnClusterLoaderLocal.NodesPerNamespace,
+			PodsPerNode:       cfg.EKSConfig.AddOnClusterLoaderLocal.PodsPerNode,
+
+			BigGroupSize:    cfg.EKSConfig.AddOnClusterLoaderLocal.BigGroupSize,
+			MediumGroupSize: cfg.EKSConfig.AddOnClusterLoaderLocal.MediumGroupSize,
+			SmallGroupSize:  cfg.EKSConfig.AddOnClusterLoaderLocal.SmallGroupSize,
+
+			SmallStatefulSetsPerNamespace:  cfg.EKSConfig.AddOnClusterLoaderLocal.SmallStatefulSetsPerNamespace,
+			MediumStatefulSetsPerNamespace: cfg.EKSConfig.AddOnClusterLoaderLocal.MediumStatefulSetsPerNamespace,
+
+			CL2EnablePVS:              cfg.EKSConfig.AddOnClusterLoaderLocal.CL2EnablePVS,
+			PrometheusScrapeKubeProxy: cfg.EKSConfig.AddOnClusterLoaderLocal.PrometheusScrapeKubeProxy,
+			EnableSystemPodMetrics:    cfg.EKSConfig.AddOnClusterLoaderLocal.EnableSystemPodMetrics,
+		}),
 	}
-	return ts, nil
 }
 
 type tester struct {
-	cfg Config
-	ng  hollow_nodes.NodeGroup
+	cfg    Config
+	loader cluster_loader.Loader
 }
 
 func (ts *tester) Create() (err error) {
-	if ts.cfg.EKSConfig.AddOnHollowNodesLocal.Created {
-		ts.cfg.Logger.Info("skipping create AddOnHollowNodesLocal")
+	if ts.cfg.EKSConfig.AddOnClusterLoaderLocal.Created {
+		ts.cfg.Logger.Info("skipping create AddOnClusterLoaderLocal")
 		return nil
 	}
 
-	ts.cfg.Logger.Info("starting hollow nodes testing")
-	ts.cfg.EKSConfig.AddOnHollowNodesLocal.Created = true
+	ts.cfg.Logger.Info("starting cluster loader testing")
+	ts.cfg.EKSConfig.AddOnClusterLoaderLocal.Created = true
 	ts.cfg.EKSConfig.Sync()
 	createStart := time.Now()
 	defer func() {
 		createEnd := time.Now()
-		ts.cfg.EKSConfig.AddOnHollowNodesLocal.TimeFrameCreate = timeutil.NewTimeFrame(createStart, createEnd)
+		ts.cfg.EKSConfig.AddOnClusterLoaderLocal.TimeFrameCreate = timeutil.NewTimeFrame(createStart, createEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 
-	if err = ts.ng.Start(); err != nil {
+	if err = ts.loader.Start(); err != nil {
 		return err
 	}
-	_, ts.cfg.EKSConfig.AddOnHollowNodesLocal.CreatedNodeNames, err = ts.ng.CheckNodes()
-	if err != nil {
-		return err
-	}
-	ts.cfg.EKSConfig.Sync()
 
 	waitDur, retryStart := 5*time.Minute, time.Now()
 	for time.Now().Sub(retryStart) < waitDur {
@@ -108,62 +118,28 @@ func (ts *tester) Create() (err error) {
 }
 
 func (ts *tester) Delete() (err error) {
-	if !ts.cfg.EKSConfig.AddOnHollowNodesLocal.Created {
-		ts.cfg.Logger.Info("skipping delete AddOnHollowNodesLocal")
+	if !ts.cfg.EKSConfig.AddOnClusterLoaderLocal.Created {
+		ts.cfg.Logger.Info("skipping delete AddOnClusterLoaderLocal")
 		return nil
 	}
 
 	deleteStart := time.Now()
 	defer func() {
 		deleteEnd := time.Now()
-		ts.cfg.EKSConfig.AddOnHollowNodesLocal.TimeFrameDelete = timeutil.NewTimeFrame(deleteStart, deleteEnd)
+		ts.cfg.EKSConfig.AddOnClusterLoaderLocal.TimeFrameDelete = timeutil.NewTimeFrame(deleteStart, deleteEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 
 	var errs []string
 
-	if err := ts.deleteCreatedNodes(); err != nil {
-		errs = append(errs, err.Error())
+	if ts.loader != nil {
+		ts.loader.Stop()
 	}
 
 	if len(errs) > 0 {
 		return errors.New(strings.Join(errs, ", "))
 	}
 
-	ts.cfg.EKSConfig.AddOnHollowNodesLocal.Created = false
+	ts.cfg.EKSConfig.AddOnClusterLoaderLocal.Created = false
 	return ts.cfg.EKSConfig.Sync()
-}
-
-func (ts *tester) deleteCreatedNodes() error {
-	var errs []string
-
-	ts.cfg.Logger.Info("deleting node objects", zap.Int("created-nodes", len(ts.cfg.EKSConfig.AddOnHollowNodesLocal.CreatedNodeNames)))
-	deleted := 0
-	foreground := metav1.DeletePropagationForeground
-	for i, nodeName := range ts.cfg.EKSConfig.AddOnHollowNodesLocal.CreatedNodeNames {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		err := ts.cfg.K8SClient.KubernetesClientSet().CoreV1().Nodes().Delete(
-			ctx,
-			nodeName,
-			metav1.DeleteOptions{
-				GracePeriodSeconds: aws.Int64(0),
-				PropagationPolicy:  &foreground,
-			},
-		)
-		cancel()
-		if err != nil && !api_errors.IsNotFound(err) {
-			ts.cfg.Logger.Warn("failed to delete node", zap.Int("index", i), zap.String("name", nodeName), zap.Error(err))
-			errs = append(errs, err.Error())
-		} else {
-			ts.cfg.Logger.Info("deleted node", zap.Int("index", i), zap.String("name", nodeName))
-			deleted++
-		}
-	}
-	ts.cfg.Logger.Info("deleted node objects", zap.Int("deleted", deleted), zap.Int("created-nodes", len(ts.cfg.EKSConfig.AddOnHollowNodesLocal.CreatedNodeNames)))
-
-	if len(errs) > 0 {
-		return errors.New(strings.Join(errs, ", "))
-	}
-
-	return nil
 }
