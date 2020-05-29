@@ -14,7 +14,7 @@ TAG ?= latest
 ACCOUNT_ID ?= $(aws sts get-caller-identity --query Account --output text)
 REGION ?= us-west-2
 
-docker: clean
+docker:
 	aws s3 cp --region us-west-2 s3://aws-k8s-tester-public/clusterloader2-linux-amd64 ./_tmp/clusterloader2
 	cp -rf ${HOME}/go/src/k8s.io/perf-tests/clusterloader2/testing/load ./_tmp/clusterloader2-testing-load
 	docker build --network host -t $(IMG_NAME):$(TAG) --build-arg RELEASE_VERSION=$(TAG) .
