@@ -767,7 +767,7 @@ func (ts *tester) checkClusterLoader() (err error) {
 	for time.Now().Sub(retryStart) < 10*time.Minute {
 		select {
 		case <-ts.cfg.Stopc:
-			ts.cfg.Logger.Warn("clusterloader check stopped")
+			ts.cfg.Logger.Warn("cluster loader check stopped")
 			return nil
 		case <-time.After(10 * time.Second):
 		}
