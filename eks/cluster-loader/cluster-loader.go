@@ -124,6 +124,7 @@ func (ld *loader) Start() (err error) {
 		return err
 	}
 
+	// ref. https://github.com/kubernetes/perf-tests/pull/1295
 	args := []string{
 		ld.cfg.ClusterLoaderPath,
 		"--alsologtostderr",
