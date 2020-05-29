@@ -76,6 +76,7 @@ type Config struct {
 
 // Loader defines cluster loader operations.
 type Loader interface {
+	// Start runs the cluster loader and waits for its completion.
 	Start() error
 	Stop()
 }
@@ -100,6 +101,7 @@ func New(cfg Config) Loader {
 	}
 }
 
+// Start runs the cluster loader and waits for its completion.
 func (ld *loader) Start() (err error) {
 	ld.cfg.Logger.Info("starting cluster loader")
 
@@ -316,6 +318,13 @@ func (ld *loader) downloadClusterLoader() (err error) {
 	cancel()
 	out := strings.TrimSpace(string(output))
 	fmt.Printf("'%s --help' output:\n\n%s\n(error: %v)\n\n", ld.cfg.ClusterLoaderPath, out, herr)
+	if !strings.Contains(out, "--alsologtostderr") {
+		if err == nil {
+			err = fmt.Errorf("%s --help failed", ld.cfg.ClusterLoaderPath)
+		} else {
+			err = fmt.Errorf("%v; %s --help failed", err, ld.cfg.ClusterLoaderPath)
+		}
+	}
 
 	return err
 }

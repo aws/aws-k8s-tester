@@ -24,9 +24,17 @@ RUN chmod +x /aws-k8s-tester /ec2-utils /eks-utils /etcd-utils /cw-utils
 WORKDIR /
 
 RUN curl -o /kubectl -LO https://storage.googleapis.com/kubernetes-release/release/v1.16.9/bin/linux/amd64/kubectl && chmod +x /kubectl && cp /kubectl /usr/local/bin/kubectl
+
 COPY _tmp/clusterloader2 /clusterloader2
 RUN chmod +x /clusterloader2
-RUN curl -o /clusterloader2-test-config.yaml -LO https://raw.githubusercontent.com/kubernetes/perf-tests/master/clusterloader2/testing/load/config.yaml
+
+# must copy all files from https://github.com/kubernetes/perf-tests/tree/master/clusterloader2/testing/load
+# the main config.yaml reads other resource spec (e.g. job.yaml) from the same directory
+# RUN curl -o /clusterloader2-test-config.yaml -LO https://raw.githubusercontent.com/kubernetes/perf-tests/master/clusterloader2/testing/load/config.yaml
+COPY _tmp/clusterloader-test-load/* /
+COPY _tmp/clusterloader-test-load/config.yaml /clusterloader2-test-config.yaml
+RUN ls /
+RUN ls /*.yaml
 RUN aws --version
 RUN /ec2-utils version
 RUN /eks-utils version

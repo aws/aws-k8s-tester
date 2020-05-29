@@ -12,6 +12,24 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 )
 
+
+/*
+Note: make sure all other test config is copied in the "same" directory as "--testconfig" (in local)
+
+"/var/log/cluster-loader-remote.log" output:
+I0529 18:59:08.745755      27 simple_test_executor.go:162] Step "Scaling and updating objects" ended
+W0529 18:59:08.745762      27 simple_test_executor.go:165] Got errors during step execution: [reading template (job.yaml) for identifier error: reading error: open /job.yaml: no such file or directory
+reading template (statefulset.yaml) for identifier error: reading error: open /statefulset.yaml: no such file or directory
+reading template (daemonset.yaml) for identifier error: reading error: open /daemonset.yaml: no such file or directory
+reading template (deployment.yaml) for identifier error: reading error: open /deployment.yaml: no such file or directory
+reading template (statefulset.yaml) for identifier error: reading error: open /statefulset.yaml: no such file or directory
+reading template (deployment.yaml) for identifier error: reading error: open /deployment.yaml: no such file or directory
+reading template (deployment.yaml) for identifier error: reading error: open /deployment.yaml: no such file or directory
+reading template (job.yaml) for identifier error: reading error: open /job.yaml: no such file or directory
+reading template (job.yaml) for identifier error: reading error: open /job.yaml: no such file or directory]
+I0529 18:59:08.745802      27 simple_test_executor.go:135] Step "Waiting for objects to become scaled" started
+*/
+
 // AddOnClusterLoaderLocal defines parameters for EKS cluster
 // add-on cluster loader local.
 // It generates loads from the local host machine.

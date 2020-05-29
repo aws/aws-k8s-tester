@@ -16,6 +16,7 @@ REGION ?= us-west-2
 
 docker: clean
 	aws s3 cp --region us-west-2 s3://aws-k8s-tester-public/clusterloader2-linux-amd64 ./_tmp/clusterloader2
+	cp -rf ${HOME}/go/src/k8s.io/perf-tests/clusterloader2/testing/load ./_tmp/clusterloader2-testing-load
 	docker build --network host -t $(IMG_NAME):$(TAG) --build-arg RELEASE_VERSION=$(TAG) .
 	docker tag $(IMG_NAME):$(TAG) $(ACCOUNT_ID).dkr.ecr.$(REGION).amazonaws.com/$(IMG_NAME):$(TAG)
 	docker run --rm -it $(IMG_NAME):$(TAG) aws --version

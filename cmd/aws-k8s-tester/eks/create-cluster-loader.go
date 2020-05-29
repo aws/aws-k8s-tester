@@ -132,8 +132,16 @@ func createClusterLoaderFunc(cmd *cobra.Command, args []string) {
 		<-errc
 		os.Exit(0)
 	case err = <-errc:
+		lg.Info("comleted cluster loader", zap.Error(err))
+		close(stopc)
+		loader.Stop()
 	}
-	lg.Info("comleted cluster loader", zap.Error(err))
+
+	lg.Info("waiting for OS signal after test completion")
+	select {
+	case sig := <-sigs:
+		lg.Info("received OS signal", zap.String("signal", sig.String()))
+	}
 
 	fmt.Printf("\n*********************************\n")
 	fmt.Printf("'aws-k8s-tester eks create cluster-loader' success\n")
