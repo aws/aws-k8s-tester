@@ -283,7 +283,7 @@ func (ts *Tester) uploadToS3() (err error) {
 				ts.s3API,
 				ts.cfg.S3BucketName,
 				path.Join(ts.cfg.Name, "node-groups-logs-dir.tar.gz"),
-				ts.cfg.AddOnConformance.SonobuoyResultTarGzPath,
+				ts.cfg.AddOnNodeGroups.LogsTarGzPath,
 			); err != nil {
 				return err
 			}
@@ -297,7 +297,7 @@ func (ts *Tester) uploadToS3() (err error) {
 				ts.s3API,
 				ts.cfg.S3BucketName,
 				path.Join(ts.cfg.Name, "managed-node-groups-logs-dir.tar.gz"),
-				ts.cfg.AddOnConformance.SonobuoyResultTarGzPath,
+				ts.cfg.AddOnManagedNodeGroups.LogsTarGzPath,
 			); err != nil {
 				return err
 			}
