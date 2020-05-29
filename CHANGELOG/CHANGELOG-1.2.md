@@ -9,7 +9,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.6...v1.2.7
 
 ### `eksconfig`
 
-- Add [`eksconfig.AddOnClusterLoaderLocal`](https://github.com/aws/aws-k8s-tester/pull/87).
+- Add [`eksconfig.AddOnClusterLoaderLocal` and `AddOnClusterLoaderRemote`](https://github.com/aws/aws-k8s-tester/pull/87).
   - Automates https://github.com/kubernetes/perf-tests/tree/master/clusterloader2.
   - Enable with `AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_ENABLE=true`.
   - Enable with `AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_ENABLE=true`.
@@ -25,6 +25,30 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.6...v1.2.7
 - Measure [`eks/csrs` `LantencyP50`, `LantencyP99`, `LantencyP99.9`, and `LantencyP99.99` in `metrics.RequestsSummary`](https://github.com/aws/aws-k8s-tester/commit/b5525c898461c905815aa57054eec326849fa09b).
 - Measure [`eks/secrets` `LantencyP50`, `LantencyP99`, `LantencyP99.9`, and `LantencyP99.99` in `metrics.RequestsSummary`](https://github.com/aws/aws-k8s-tester/commit/b5525c898461c905815aa57054eec326849fa09b).
 - Measure [`eks/stresser` `LantencyP50`, `LantencyP99`, `LantencyP99.9`, and `LantencyP99.99` in `metrics.RequestsSummary`](https://github.com/aws/aws-k8s-tester/commit/b5525c898461c905815aa57054eec326849fa09b).
+
+
+```
+# example outputs
+{"level":"info","ts":"2020-05-29T22:19:17.467Z","caller":"cluster-loader/cluster-loader.go:170","msg":"checking cluster loader command output from logs file"}
+{"level":"info","ts":"2020-05-29T22:19:17.467Z","caller":"cluster-loader/cluster-loader.go:180","msg":"checked cluster loader command output from logs file","total-lines":121}
+
+"/var/log/cluster-loader-remote.log" output:
+I0529 22:19:08.959943      27 wait_for_pods.go:92] WaitForControlledPodsRunning: namespace(test-vuigax-1), labelSelector(name=small-deployment-2): Pods: 6 out of 6 created, 6 running (6 updated), 0 pending scheduled, 0 not scheduled, 0 inactive, 0 terminating, 0 unknown, 0 runningButNotReady
+I0529 22:19:08.966399      27 wait_for_pods.go:92] WaitForControlledPodsRunning: namespace(test-vuigax-1), labelSelector(name=small-deployment-0): Pods: 4 out of 4 created, 4 running (4 updated), 0 pending scheduled, 0 not scheduled, 0 inactive, 1 terminating, 0 unknown, 0 runningButNotReady
+I0529 22:19:09.278369      27 wait_for_pods.go:92] WaitForControlledPodsRunning: namespace(test-vuigax-1), labelSelector(name=small-deployment-1): Pods: 2 out of 2 created, 2 running (2 updated), 0 pending scheduled, 0 not scheduled, 0 inactive, 2 terminating, 0 unknown, 0 runningButNotReady
+I0529 22:19:09.662882      27 wait_for_pods.go:92] WaitForControlledPodsRunning: namespace(test-vuigax-1), labelSelector(name=small-deployment-6): Pods: 7 out of 7 created, 7 running (7 updated), 0 pending scheduled, 0 not scheduled, 0 inactive, 0 terminating, 0 unknown, 0 runningButNotReady
+I0529 22:19:09.789102      27 wait_for_controlled_pods.go:246] WaitForControlledPodsRunning: running 0, deleted 0, timeout: 0, unknown: 0
+I0529 22:19:09.789134      27 wait_for_controlled_pods.go:260] WaitForControlledPodsRunning: 0/0 StatefulSets are running with all pods
+I0529 22:19:13.289856      27 wait_for_pods.go:92] WaitForControlledPodsRunning: namespace(test-vuigax-1), labelSelector(name=small-deployment-3): Pods: 2 out of 2 created, 2 running (2 updated), 0 pending scheduled, 0 not scheduled, 0 inactive, 0 terminating, 0 unknown, 0 runningButNotReady
+I0529 22:19:13.296852      27 wait_for_pods.go:92] WaitForControlledPodsRunning: namespace(test-vuigax-1), labelSelector(name=small-deployment-5): Pods: 6 out of 6 created, 6 running (6 updated), 0 pending scheduled, 0 not scheduled, 0 inactive, 0 terminating, 0 unknown, 0 runningButNotReady
+I0529 22:19:13.399956      27 wait_for_pods.go:92] WaitForControlledPodsRunning: namespace(test-vuigax-1), labelSelector(name=big-job-0): Pods: 12 out of 12 created, 12 running (12 updated), 0 pending scheduled, 0 not scheduled, 0 inactive, 2 terminating, 0 unknown, 0 runningButNotReady
+I0529 22:19:13.465363      27 wait_for_pods.go:92] WaitForControlledPodsRunning: namespace(test-vuigax-1), labelSelector(name=small-deployment-4): Pods: 2 out of 2 created, 2 running (2 updated), 0 pending scheduled, 0 not scheduled, 0 inactive, 0 terminating, 0 unknown, 0 runningButNotReady
+E0529 22:19:13.815100      27 wait_for_pods.go:85] WaitForControlledPodsRunning: namespace(test-vuigax-1), labelSelector(name=daemonset-0): 7 pods disappeared: daemonset-0-cd2tg, daemonset-0-8pn4w, daemonset-0-dv8hh, daemonset-0-jtp9s, daemonset-0-886h8, daemonset-0-m4v2j, daemonset-0-cc56b
+E0529 22:19:13.815133      27 wait_for_pods.go:89] WaitForControlledPodsRunning: namespace(test-vuigax-1), labelSelector(name=daemonset-0): 7 pods appeared: daemonset-0-7h66w, daemonset-0-vptjx, daemonset-0-lmkj5, daemonset-0-n6sm4, daemonset-0-rchmx, daemonset-0-2w28l, daemonset-0-th9kx
+I0529 22:19:13.815142      27 wait_for_pods.go:92] WaitForControlledPodsRunning: namespace(test-vuigax-1), labelSelector(name=daemonset-0): Pods: 9 out of 10 created, 7 running (7 updated), 2 pending scheduled, 0 not scheduled, 0 inactive, 1 terminating, 0 unknown, 0 runningButNotReady
+I0529 22:19:13.966681      27 wait_for_pods.go:92] WaitForControlledPodsRunning: namespace(test-vuigax-1), labelSelector(name=small-deployment-0): Pods: 4 out of 4 created, 4 running (4 updated), 0 pending scheduled, 0 not scheduled, 0 inactive, 0 terminating, 0 unknown, 0 runningButNotReady
+I0529 22:19:14.278630      27 wait_for_pods.go:92] WaitForControlledPodsRunning: namespace(test-vuigax-1), labelSelector(name=small-deployment-1): Pods: 2 out of 2 created, 2 running (2 updated), 0 pending scheduled, 0 not scheduled, 0 inactive, 1 terminating, 0 unknown, 0 runningButNotReady
+```
 
 ### `pkg/metrics`
 
