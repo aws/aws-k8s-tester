@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"html/template"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -83,6 +84,7 @@ type loader struct {
 	rootCtx           context.Context
 	rootCancel        context.CancelFunc
 	testOverridesPath string
+	testLogsFile      *os.File
 }
 
 func New(cfg Config) Loader {
@@ -127,32 +129,77 @@ func (ld *loader) Start() (err error) {
 	if ld.cfg.KubeConfigPath != "" {
 		args = append(args, "--kubeconfig="+ld.cfg.KubeConfigPath)
 	}
-	cmd := strings.Join(args, " ")
 
-	donec := make(chan struct{})
+	ld.testLogsFile, err = os.OpenFile(ld.cfg.ClusterLoaderLogsPath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0600)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		ld.testLogsFile.Sync()
+		ld.testLogsFile.Close()
+	}()
+	go func() {
+		for {
+			select {
+			case <-ld.cfg.Stopc:
+				ld.cfg.Logger.Info("exiting cluster loader command output checks")
+				return
+			case <-ld.rootCtx.Done():
+				ld.cfg.Logger.Info("exiting cluster loader command output checks")
+				return
+			case <-time.After(10 * time.Second):
+			}
+
+			if ld.testLogsFile != nil {
+				ld.testLogsFile.Sync()
+			}
+			ld.cfg.Logger.Info("checking cluster loader command output from logs file")
+			b, lerr := ioutil.ReadFile(ld.cfg.ClusterLoaderLogsPath)
+			if err != nil {
+				ld.cfg.Logger.Warn("failed to read cluster loader command output from logs file", zap.Error(lerr))
+				continue
+			}
+			output := strings.TrimSpace(string(b))
+			lines := strings.Split(output, "\n")
+			linesN := len(lines)
+
+			ld.cfg.Logger.Info("checked cluster loader command output from logs file", zap.Int("total-lines", linesN))
+			if linesN > 15 {
+				output = strings.Join(lines[linesN-15:], "\n")
+			}
+			fmt.Printf("\n%q output:\n%s\n\n", ld.cfg.ClusterLoaderLogsPath, output)
+		}
+	}()
+
+	errc := make(chan error)
 	ld.rootCtx, ld.rootCancel = context.WithTimeout(context.Background(), ld.cfg.Timeout)
 	go func() {
-		defer func() {
-			close(donec)
-		}()
 		for i := 0; i < ld.cfg.Runs; i++ {
 			select {
 			case <-ld.rootCtx.Done():
 				return
 			default:
 			}
-			if err = ld.run(i, args, cmd); err != nil {
-				return err
+			if err := ld.run(i, args); err != nil {
+				errc <- err
+				return
 			}
 		}
+		errc <- nil
 	}()
 	select {
+	case <-ld.donec:
+		ld.cfg.Logger.Info("done cluster loader")
 	case <-ld.cfg.Stopc:
 		ld.cfg.Logger.Info("stopping cluster loader")
 	case <-ld.rootCtx.Done():
 		ld.cfg.Logger.Info("timed out cluster loader")
-	case <-donec:
-		ld.cfg.Logger.Info("completed cluster loader")
+	case err = <-errc:
+		if err == nil {
+			ld.cfg.Logger.Info("completed cluster loader")
+		} else {
+			ld.cfg.Logger.Warn("failed cluster loader", zap.Error(err))
+		}
 	}
 	ld.rootCancel()
 
@@ -240,10 +287,14 @@ func (ld *loader) run(idx int, args []string) (err error) {
 	ld.cfg.Logger.Info("running cluster loader", zap.Int("index", idx), zap.String("command", strings.Join(args, " ")))
 	ctx, cancel := context.WithTimeout(ld.rootCtx, 20*time.Minute)
 	cmd := exec.New().CommandContext(ctx, args[0], args[1:]...)
-	output, err := cmd.CombinedOutput()
+	cmd.SetStderr(ld.testLogsFile)
+	cmd.SetStdout(ld.testLogsFile)
+	err = cmd.Run()
 	cancel()
 	if err != nil {
 		ld.cfg.Logger.Warn("failed to run cluster loader", zap.Error(err))
+	} else {
+		ld.cfg.Logger.Info("successfykkt run cluster loader")
 	}
 	return err
 }
