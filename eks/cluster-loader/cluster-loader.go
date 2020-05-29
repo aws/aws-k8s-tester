@@ -143,7 +143,11 @@ func (ld *loader) Start() (err error) {
 		ld.testLogsFile.Close()
 	}()
 	// stream command run outputs for debugging purposes
+	checkDonec := make(chan struct{})
 	go func() {
+		defer func() {
+			close(checkDonec)
+		}()
 		for {
 			select {
 			case <-ld.cfg.Stopc:
@@ -207,6 +211,12 @@ func (ld *loader) Start() (err error) {
 		}
 	}
 	ld.rootCancel()
+	select {
+	case <-checkDonec:
+		ld.cfg.Logger.Info("confirmed exit cluster loader command output checks")
+	case <-time.After(3 * time.Minute):
+		ld.cfg.Logger.Warn("took too long to confirm exit cluster loader command output checks")
+	}
 
 	ld.cfg.Logger.Info("gzipping report dir", zap.String("report-dir", ld.cfg.ReportDir), zap.String("file-path", ld.cfg.ReportTarGzPath))
 	err = os.RemoveAll(ld.cfg.ReportTarGzPath)
@@ -227,6 +237,13 @@ func (ld *loader) Start() (err error) {
 	sz := humanize.Bytes(uint64(stat.Size()))
 	ld.cfg.Logger.Info("gzipped report dir", zap.String("report-dir", ld.cfg.ReportDir), zap.String("file-path", ld.cfg.ReportTarGzPath), zap.String("file-size", sz))
 
+	// append results in "LogPath"
+	logFile, err := os.OpenFile(ld.cfg.LogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		return fmt.Errorf("open(%q): %v", ld.cfg.LogPath, err)
+	}
+	defer logFile.Close()
+
 	err = filepath.Walk(ld.cfg.ReportDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -234,8 +251,25 @@ func (ld *loader) Start() (err error) {
 		if info.IsDir() {
 			return nil
 		}
-		name := info.Name()
-		ld.cfg.Logger.Info("found report", zap.String("name", name))
+		ld.cfg.Logger.Info("found report", zap.String("path", path))
+
+		if _, werr := logFile.WriteString(fmt.Sprintf("\n\n\nreport output from %q:\n\n", path)); werr != nil {
+			ld.cfg.Logger.Warn("failed to write report to log file", zap.Error(werr))
+			return nil
+		}
+		b, lerr := ioutil.ReadFile(path)
+		if err != nil {
+			ld.cfg.Logger.Warn("failed to read cluster loader command output from logs file", zap.Error(lerr))
+			if _, werr := logFile.WriteString(fmt.Sprintf("failed to write %v", err)); werr != nil {
+				ld.cfg.Logger.Warn("failed to write report to log file", zap.Error(werr))
+				return nil
+			}
+		} else {
+			if _, werr := logFile.Write(b); werr != nil {
+				ld.cfg.Logger.Warn("failed to write report to log file", zap.Error(werr))
+				return nil
+			}
+		}
 		return nil
 	})
 	return err
@@ -317,7 +351,9 @@ PROMETHEUS_SCRAPE_KUBE_PROXY: {{ .PrometheusScrapeKubeProxy }}
 ENABLE_SYSTEM_POD_METRICS: {{ .EnableSystemPodMetrics }}
 `
 
+// takes about 2-minute
 func (ld *loader) run(idx int, args []string) (err error) {
+	now := time.Now()
 	ld.cfg.Logger.Info("running cluster loader", zap.Int("index", idx), zap.String("command", strings.Join(args, " ")))
 	ctx, cancel := context.WithTimeout(ld.rootCtx, 20*time.Minute)
 	cmd := exec.New().CommandContext(ctx, args[0], args[1:]...)
@@ -326,9 +362,9 @@ func (ld *loader) run(idx int, args []string) (err error) {
 	err = cmd.Run()
 	cancel()
 	if err != nil {
-		ld.cfg.Logger.Warn("failed to run cluster loader", zap.Error(err))
+		ld.cfg.Logger.Warn("failed to run cluster loader", zap.String("took", time.Since(now).String()), zap.Error(err))
 	} else {
-		ld.cfg.Logger.Info("successfykkt run cluster loader")
+		ld.cfg.Logger.Info("successfully ran cluster loader", zap.String("took", time.Since(now).String()))
 	}
 	return err
 }
