@@ -12,7 +12,6 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 )
 
-
 /*
 Note: make sure all other test config is copied in the "same" directory as "--testconfig" (in local)
 

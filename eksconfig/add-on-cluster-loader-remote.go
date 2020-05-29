@@ -30,6 +30,7 @@ I0529 18:59:08.745802      27 simple_test_executor.go:135] Step "Waiting for obj
 // AddOnClusterLoaderRemote defines parameters for EKS cluster
 // add-on cluster loader remote.
 // It generates loads from the remote host machine.
+// ref. https://github.com/kubernetes/perf-tests/pull/1295
 // ref. https://github.com/kubernetes/perf-tests/tree/master/clusterloader2
 type AddOnClusterLoaderRemote struct {
 	// Enable is 'true' to create this add-on.
