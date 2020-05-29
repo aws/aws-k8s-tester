@@ -105,6 +105,9 @@ func (ts *tester) Create() (err error) {
 	if err = ts.waitDeployment(); err != nil {
 		return err
 	}
+	if err = ts.checkClusterLoader(); err != nil {
+		return err
+	}
 
 	waitDur, retryStart := 5*time.Minute, time.Now()
 	for time.Now().Sub(retryStart) < waitDur {
@@ -754,5 +757,92 @@ func (ts *tester) AggregateResults() (err error) {
 	}
 
 	ts.cfg.Logger.Info("aggregated results from Pods")
+	return ts.cfg.EKSConfig.Sync()
+}
+
+func (ts *tester) checkClusterLoader() (err error) {
+	ts.cfg.Logger.Info("checking pod/cluster-loader-remote-deployment")
+	clusterloaderPod := ""
+	retryStart := time.Now()
+	for time.Now().Sub(retryStart) < 10*time.Minute {
+		select {
+		case <-ts.cfg.Stopc:
+			ts.cfg.Logger.Warn("clusterloader check stopped")
+			return nil
+		case <-time.After(10 * time.Second):
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		var pods *v1.PodList
+		pods, err = ts.cfg.K8SClient.
+			KubernetesClientSet().
+			CoreV1().
+			Pods(ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Namespace).
+			List(ctx, metav1.ListOptions{})
+		cancel()
+		if err != nil {
+			ts.cfg.Logger.Warn("failed to list pods", zap.Error(err))
+			continue
+		}
+
+		for _, pv := range pods.Items {
+			ts.cfg.Logger.Info("found pod", zap.String("name", pv.GetName()))
+			if strings.HasPrefix(pv.GetName(), "cluster-loader-remote-deployment-") {
+				clusterloaderPod = pv.GetName()
+				break
+			}
+		}
+		if clusterloaderPod != "" {
+			break
+		}
+	}
+	if clusterloaderPod == "" {
+		return fmt.Errorf("failed to find pod/cluster-loader-remote-deployment in %q", ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Namespace)
+	}
+	ts.cfg.Logger.Info("found pod/cluster-loader-remote-deployment", zap.String("name", clusterloaderPod))
+
+	argsLogsPod := []string{
+		ts.cfg.EKSConfig.KubectlPath,
+		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+		"--namespace=" + ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Namespace,
+		"logs",
+		fmt.Sprintf("pod/%s", clusterloaderPod),
+		"--tail=30",
+	}
+	cmdLogsPod := strings.Join(argsLogsPod, " ")
+
+	ts.cfg.Logger.Info("running cluster loader", zap.String("logs-command-pod", cmdLogsPod))
+
+	start, waitDur := time.Now(), (2*time.Minute+30*time.Second)*time.Duration(ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Runs)
+	interval := 15 * time.Second
+
+	for time.Now().Sub(start) < waitDur {
+		ts.cfg.Logger.Info("waiting for cluster loader run", zap.Duration("interval", interval))
+		select {
+		case <-ts.cfg.Stopc:
+			ts.cfg.Logger.Warn("cluster loader check stopped")
+			return nil
+		case <-time.After(interval):
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		output, err := exec.New().CommandContext(ctx, argsLogsPod[0], argsLogsPod[1:]...).CombinedOutput()
+		cancel()
+		out := strings.TrimSpace(string(output))
+		if err != nil {
+			ts.cfg.Logger.Warn("failed to fetch cluster loader logs", zap.String("command", cmdLogsPod), zap.Error(err))
+		}
+		lines := strings.Split(out, "\n")
+		linesN := len(lines)
+		if linesN > 30 { // tail 30 lines
+			out = strings.Join(lines[linesN-30:], "\n")
+		}
+		fmt.Printf("\n'%s' output (total lines %d, last 30 lines):\n\n%s\n\n", cmdLogsPod, linesN, out)
+
+		if strings.Contains(out, `"waiting for OS signal after test completion"`) {
+			break
+		}
+	}
+
 	return ts.cfg.EKSConfig.Sync()
 }

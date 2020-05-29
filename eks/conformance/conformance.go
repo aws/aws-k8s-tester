@@ -376,8 +376,7 @@ func (ts *tester) checkSonobuoy() (err error) {
 		lines := strings.Split(out, "\n")
 		linesN := len(lines)
 		if linesN > 30 { // tail 30 lines
-			lines = lines[linesN-30:]
-			out = strings.Join(lines, "\n")
+			out = strings.Join(lines[linesN-30:], "\n")
 		}
 		fmt.Printf("\n'%s' output (total lines %d, last 30 lines):\n\n%s\n\n", cmdLogs, linesN, out)
 
