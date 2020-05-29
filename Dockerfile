@@ -19,20 +19,17 @@ COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/bin/ec2
 COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/bin/eks-utils-${RELEASE_VERSION}-linux-amd64 /eks-utils
 COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/bin/etcd-utils-${RELEASE_VERSION}-linux-amd64 /etcd-utils
 COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/bin/cw-utils-${RELEASE_VERSION}-linux-amd64 /cw-utils
-RUN rm -rf /go/src/github.com/aws/aws-k8s-tester
-RUN chmod +x /aws-k8s-tester /ec2-utils /eks-utils /etcd-utils /cw-utils
-WORKDIR /
-
-RUN curl -o /kubectl -LO https://storage.googleapis.com/kubernetes-release/release/v1.16.9/bin/linux/amd64/kubectl && chmod +x /kubectl && cp /kubectl /usr/local/bin/kubectl
-
-COPY _tmp/clusterloader2 /clusterloader2
-RUN chmod +x /clusterloader2
-
 # must copy all files from https://github.com/kubernetes/perf-tests/tree/master/clusterloader2/testing/load
 # the main config.yaml reads other resource spec (e.g. job.yaml) from the same directory
 # RUN curl -o /clusterloader2-test-config.yaml -LO https://raw.githubusercontent.com/kubernetes/perf-tests/master/clusterloader2/testing/load/config.yaml
-COPY _tmp/clusterloader-test-load/* /
-COPY _tmp/clusterloader-test-load/config.yaml /clusterloader2-test-config.yaml
+COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/_tmp/clusterloader2-testing-load/ /
+COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/_tmp/clusterloader2-testing-load/config.yaml /clusterloader2-test-config.yaml
+COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/_tmp/clusterloader2 /clusterloader2
+RUN rm -rf /go/src/github.com/aws/aws-k8s-tester
+RUN chmod +x /aws-k8s-tester /ec2-utils /eks-utils /etcd-utils /cw-utils /clusterloader2
+WORKDIR /
+
+RUN curl -o /kubectl -LO https://storage.googleapis.com/kubernetes-release/release/v1.16.9/bin/linux/amd64/kubectl && chmod +x /kubectl && cp /kubectl /usr/local/bin/kubectl
 RUN ls /
 RUN ls /*.yaml
 RUN aws --version

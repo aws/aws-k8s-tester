@@ -1,7 +1,6 @@
 .git/
 .github/
 bin/
-_tmp/
 CHANGELOG/
 Dockerfile
 Makefile
