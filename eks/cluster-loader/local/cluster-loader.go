@@ -1,5 +1,6 @@
 // Package local implements local cluster loader.
 // ref. https://github.com/kubernetes/perf-tests/tree/master/clusterloader2
+// ref. https://github.com/kubernetes/perf-tests/tree/master/clusterloader2/testing/overrides
 package local
 
 import (

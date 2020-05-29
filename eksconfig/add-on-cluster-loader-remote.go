@@ -63,6 +63,7 @@ type AddOnClusterLoaderRemote struct {
 	//
 	//
 	// below are set via "--testoverrides" flag
+	// see https://github.com/kubernetes/perf-tests/tree/master/clusterloader2/testing/overrides for more.
 
 	NodesPerNamespace int `json:"nodes-per-namespace"`
 	PodsPerNode       int `json:"pods-per-node"`
