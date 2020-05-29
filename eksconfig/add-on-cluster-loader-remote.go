@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
@@ -46,6 +47,8 @@ type AddOnClusterLoaderRemote struct {
 	// Nodes is the number of nodes.
 	// Set via "--nodes" flag.
 	Nodes int `json:"nodes"`
+	// Timeout is the timeout for the total test runs.
+	Timeout time.Duration `json:"timeout"`
 
 	//
 	//
@@ -87,9 +90,10 @@ func getDefaultAddOnClusterLoaderRemote() *AddOnClusterLoaderRemote {
 		Enable: false,
 
 		ClusterLoaderPath:        "/tmp/clusterloader2",
-		ClusterLoaderDownloadURL: "https://aws-k8s-tester-public.s3-us-west-2.amazonaws.com/clusterloader2-amd64-linux",
+		ClusterLoaderDownloadURL: "https://github.com/aws/aws-k8s-tester/releases/download/v1.2.6/clusterloader2-linux-amd64",
 
-		Runs: 1,
+		Runs:    1,
+		Timeout: 30 * time.Minute,
 
 		Nodes: 10,
 
@@ -141,6 +145,9 @@ func (cfg *Config) validateAddOnClusterLoaderRemote() error {
 
 	if cfg.AddOnClusterLoaderRemote.Runs == 0 {
 		return errors.New("unexpected zero AddOnClusterLoaderRemote.Runs")
+	}
+	if cfg.AddOnClusterLoaderRemote.Timeout == 30*time.Minute {
+		return errors.New("unexpected zero AddOnClusterLoaderRemote.Timeout")
 	}
 
 	if cfg.AddOnClusterLoaderRemote.Nodes == 0 {

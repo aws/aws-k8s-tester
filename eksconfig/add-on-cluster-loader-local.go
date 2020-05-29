@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
@@ -39,6 +40,8 @@ type AddOnClusterLoaderLocal struct {
 
 	// Runs is the number of "clusterloader2" runs back-to-back.
 	Runs int `json:"runs"`
+	// Timeout is the timeout for the total test runs.
+	Timeout time.Duration `json:"timeout"`
 
 	// Nodes is the number of nodes.
 	// Set via "--nodes" flag.
@@ -84,9 +87,10 @@ func getDefaultAddOnClusterLoaderLocal() *AddOnClusterLoaderLocal {
 		Enable: false,
 
 		ClusterLoaderPath:        "/tmp/clusterloader2",
-		ClusterLoaderDownloadURL: "https://aws-k8s-tester-public.s3-us-west-2.amazonaws.com/clusterloader2-amd64-linux",
+		ClusterLoaderDownloadURL: "https://github.com/aws/aws-k8s-tester/releases/download/v1.2.6/clusterloader2-linux-amd64",
 
-		Runs: 1,
+		Runs:    1,
+		Timeout: 30 * time.Minute,
 
 		Nodes: 10,
 
@@ -134,6 +138,9 @@ func (cfg *Config) validateAddOnClusterLoaderLocal() error {
 
 	if cfg.AddOnClusterLoaderLocal.Runs == 0 {
 		return errors.New("unexpected zero AddOnClusterLoaderLocal.Runs")
+	}
+	if cfg.AddOnClusterLoaderLocal.Timeout == 30*time.Minute {
+		return errors.New("unexpected zero AddOnClusterLoaderLocal.Timeout")
 	}
 
 	if cfg.AddOnClusterLoaderLocal.Nodes == 0 {

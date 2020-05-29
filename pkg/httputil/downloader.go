@@ -61,7 +61,22 @@ func ReadInsecure(lg *zap.Logger, progressWriter io.Writer, downloadURL string) 
 
 // Download downloads to a file.
 func Download(lg *zap.Logger, progressWriter io.Writer, downloadURL string, fpath string) error {
-	cli := &http.Client{Transport: httpFileTransport}
+	return download(lg, &http.Client{Transport: httpFileTransport}, progressWriter, downloadURL, fpath)
+}
+
+// DownloadInsecure downloads to a file.
+func DownloadInsecure(lg *zap.Logger, progressWriter io.Writer, downloadURL string, fpath string) error {
+	cli := &http.Client{
+		Timeout: time.Minute,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		}}
+	return download(lg, cli, progressWriter, downloadURL, fpath)
+}
+
+func download(lg *zap.Logger, cli *http.Client, progressWriter io.Writer, downloadURL string, fpath string) error {
 	rd, closeFunc, err := createReader(lg, cli, progressWriter, downloadURL)
 	if err != nil {
 		return err

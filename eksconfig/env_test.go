@@ -416,6 +416,10 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_ENABLE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_CLUSTER_LOADER_TEST_CONFIG_PATH", "artifacts/clusterloader2-testing-load-config.yaml")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_CLUSTER_LOADER_TEST_CONFIG_PATH")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_RUNS", "11")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_RUNS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_TIMEOUT", "3m30s")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_TIMEOUT")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_NODES", "11")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_NODES")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_NODES_PER_NAMESPACE", "11")
@@ -439,6 +443,10 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_NAMESPACE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_CLUSTER_LOADER_TEST_CONFIG_PATH", "artifacts/clusterloader2-testing-load-config.yaml")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_CLUSTER_LOADER_TEST_CONFIG_PATH")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_RUNS", "21")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_RUNS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_TIMEOUT", "5m30s")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_TIMEOUT")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_NODES", "11")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_NODES")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_NODES_PER_NAMESPACE", "11")
@@ -1128,6 +1136,12 @@ func TestEnv(t *testing.T) {
 	if cfg.AddOnClusterLoaderLocal.ClusterLoaderTestConfigPath != "artifacts/clusterloader2-testing-load-config.yaml" {
 		t.Fatalf("unexpected cfg.AddOnClusterLoaderLocal.ClusterLoaderTestConfigPath %v", cfg.AddOnClusterLoaderLocal.ClusterLoaderTestConfigPath)
 	}
+	if cfg.AddOnClusterLoaderLocal.Runs != 11 {
+		t.Fatalf("unexpected cfg.AddOnClusterLoaderLocal.Runs %v", cfg.AddOnClusterLoaderLocal.Runs)
+	}
+	if cfg.AddOnClusterLoaderLocal.Timeout != 3*time.Minute+30*time.Second {
+		t.Fatalf("unexpected cfg.AddOnClusterLoaderLocal.Timeout %v", cfg.AddOnClusterLoaderLocal.Timeout)
+	}
 	if cfg.AddOnClusterLoaderLocal.Nodes != 11 {
 		t.Fatalf("unexpected cfg.AddOnClusterLoaderLocal.Nodes %v", cfg.AddOnClusterLoaderLocal.Nodes)
 	}
@@ -1164,6 +1178,12 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.AddOnClusterLoaderRemote.ClusterLoaderTestConfigPath != "artifacts/clusterloader2-testing-load-config.yaml" {
 		t.Fatalf("unexpected cfg.AddOnClusterLoaderRemote.ClusterLoaderTestConfigPath %v", cfg.AddOnClusterLoaderRemote.ClusterLoaderTestConfigPath)
+	}
+	if cfg.AddOnClusterLoaderRemote.Runs != 21 {
+		t.Fatalf("unexpected cfg.AddOnClusterLoaderRemote.Runs %v", cfg.AddOnClusterLoaderRemote.Runs)
+	}
+	if cfg.AddOnClusterLoaderRemote.Timeout != 5*time.Minute+30*time.Second {
+		t.Fatalf("unexpected cfg.AddOnClusterLoaderRemote.Timeout %v", cfg.AddOnClusterLoaderRemote.Timeout)
 	}
 	if cfg.AddOnClusterLoaderRemote.Nodes != 11 {
 		t.Fatalf("unexpected cfg.AddOnClusterLoaderRemote.Nodes %v", cfg.AddOnClusterLoaderRemote.Nodes)
