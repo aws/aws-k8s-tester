@@ -227,7 +227,18 @@ func (ld *loader) Start() (err error) {
 	sz := humanize.Bytes(uint64(stat.Size()))
 	ld.cfg.Logger.Info("gzipped report dir", zap.String("report-dir", ld.cfg.ReportDir), zap.String("file-path", ld.cfg.ReportTarGzPath), zap.String("file-size", sz))
 
-	return nil
+	err = filepath.Walk(ld.cfg.ReportDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+		name := info.Name()
+		ld.cfg.Logger.Info("found report", zap.String("name", name))
+		return nil
+	})
+	return err
 }
 
 func (ld *loader) Stop() {
