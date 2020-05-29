@@ -124,7 +124,6 @@ func (ld *loader) Start() (err error) {
 		return err
 	}
 
-	// ref. https://github.com/kubernetes/perf-tests/pull/1295
 	args := []string{
 		ld.cfg.ClusterLoaderPath,
 		"--alsologtostderr",
@@ -133,7 +132,10 @@ func (ld *loader) Start() (err error) {
 		"--report-dir=" + ld.cfg.ReportDir,
 		"--nodes=" + fmt.Sprintf("%d", ld.cfg.Nodes),
 	}
-	if ld.cfg.KubeConfigPath != "" {
+	if ld.cfg.KubeConfigPath == "" {
+		// ref. https://github.com/kubernetes/perf-tests/pull/1295
+		args = append(args, "--run-from-cluster=true")
+	} else {
 		args = append(args, "--kubeconfig="+ld.cfg.KubeConfigPath)
 	}
 
