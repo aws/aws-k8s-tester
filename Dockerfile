@@ -24,7 +24,7 @@ RUN chmod +x /aws-k8s-tester /ec2-utils /eks-utils /etcd-utils /cw-utils
 WORKDIR /
 
 RUN curl -o /kubectl -LO https://storage.googleapis.com/kubernetes-release/release/v1.16.9/bin/linux/amd64/kubectl && chmod +x /kubectl && cp /kubectl /usr/local/bin/kubectl
-RUN curl -o /clusterloader2 -LO https://github.com/aws/aws-k8s-tester/releases/download/v1.2.6/clusterloader2-linux-amd64 && mv /clusterloader2-linux-amd64 /clusterloader2 && chmod +x /clusterloader2
+RUN curl -o /clusterloader2 -LO https://github.com/aws/aws-k8s-tester/releases/download/v1.2.6/clusterloader2-linux-amd64 && chmod +x /clusterloader2
 RUN curl -o /clusterloader2-test-config.yaml -LO https://raw.githubusercontent.com/kubernetes/perf-tests/master/clusterloader2/testing/load/config.yaml
 RUN aws --version
 RUN /ec2-utils version
