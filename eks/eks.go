@@ -21,6 +21,8 @@ import (
 	"github.com/aws/aws-k8s-tester/ec2config"
 	alb_2048 "github.com/aws/aws-k8s-tester/eks/alb-2048"
 	app_mesh "github.com/aws/aws-k8s-tester/eks/app-mesh"
+	cluster_loader_local "github.com/aws/aws-k8s-tester/eks/cluster-loader/local"
+	cluster_loader_remote "github.com/aws/aws-k8s-tester/eks/cluster-loader/remote"
 	config_maps_local "github.com/aws/aws-k8s-tester/eks/config-maps/local"
 	config_maps_remote "github.com/aws/aws-k8s-tester/eks/config-maps/remote"
 	"github.com/aws/aws-k8s-tester/eks/conformance"
@@ -152,6 +154,9 @@ type Tester struct {
 
 	stresserLocalTester  stresser_local.Tester
 	stresserRemoteTester stresser_remote.Tester
+
+	clusterLoaderLocalTester  cluster_loader_local.Tester
+	clusterLoaderRemoteTester cluster_loader_remote.Tester
 }
 
 // New returns a new EKS kubetest2 Deployer.
@@ -200,6 +205,9 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 		return nil, fmt.Errorf("could not create %q (%v)", filepath.Dir(cfg.KubectlPath), err)
 	}
 	if !fileutil.Exist(cfg.KubectlPath) {
+		if cfg.KubectlDownloadURL == "" {
+			return nil, fmt.Errorf("%q does not exist but no download URL", cfg.KubectlPath)
+		}
 		cfg.KubectlPath, _ = filepath.Abs(cfg.KubectlPath)
 		lg.Info("downloading kubectl", zap.String("kubectl-path", cfg.KubectlPath))
 		if err = httputil.Download(lg, os.Stderr, cfg.KubectlDownloadURL, cfg.KubectlPath); err != nil {
@@ -696,6 +704,9 @@ func (ts *Tester) createSubTesters() (err error) {
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 		})
+		if err != nil {
+			return err
+		}
 	}
 
 	if ts.cfg.IsEnabledAddOnJupyterHub() {
@@ -716,6 +727,9 @@ func (ts *Tester) createSubTesters() (err error) {
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 		})
+		if err != nil {
+			return err
+		}
 	}
 
 	if ts.cfg.IsEnabledAddOnHollowNodesLocal() {
@@ -726,6 +740,9 @@ func (ts *Tester) createSubTesters() (err error) {
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 		})
+		if err != nil {
+			return err
+		}
 	}
 	if ts.cfg.IsEnabledAddOnHollowNodesRemote() {
 		ts.lg.Info("creating hollowNodesRemoteTester")
@@ -736,6 +753,9 @@ func (ts *Tester) createSubTesters() (err error) {
 			K8SClient: ts.k8sClient,
 			ECRAPI:    ts.ecrAPI,
 		})
+		if err != nil {
+			return err
+		}
 	}
 
 	if ts.cfg.IsEnabledAddOnStresserLocal() {
@@ -746,6 +766,9 @@ func (ts *Tester) createSubTesters() (err error) {
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 		})
+		if err != nil {
+			return err
+		}
 	}
 	if ts.cfg.IsEnabledAddOnStresserRemote() {
 		ts.lg.Info("creating stresserRemoteTester")
@@ -756,6 +779,32 @@ func (ts *Tester) createSubTesters() (err error) {
 			K8SClient: ts.k8sClient,
 			ECRAPI:    ts.ecrAPI,
 		})
+		if err != nil {
+			return err
+		}
+	}
+
+	if ts.cfg.IsEnabledAddOnClusterLoaderLocal() {
+		ts.lg.Info("creating clusterLoaderLocalTester")
+		ts.clusterLoaderLocalTester = cluster_loader_local.New(cluster_loader_local.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			EKSConfig: ts.cfg,
+			K8SClient: ts.k8sClient,
+		})
+	}
+	if ts.cfg.IsEnabledAddOnClusterLoaderRemote() {
+		ts.lg.Info("creating clusterLoaderRemoteTester")
+		ts.clusterLoaderRemoteTester, err = cluster_loader_remote.New(cluster_loader_remote.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			EKSConfig: ts.cfg,
+			K8SClient: ts.k8sClient,
+			ECRAPI:    ts.ecrAPI,
+		})
+		if err != nil {
+			return err
+		}
 	}
 
 	return ts.cfg.Sync()
@@ -1515,7 +1564,7 @@ func (ts *Tester) Up() (err error) {
 
 	if ts.cfg.IsEnabledAddOnStresserLocal() {
 		if ts.stresserLocalTester == nil {
-			return errors.New("ts.stresserLocalTester == nil when AddOnStresser.Enable == true")
+			return errors.New("ts.stresserLocalTester == nil when AddOnStresserLocal.Enable == true")
 		}
 		fmt.Printf("\n*********************************\n")
 		fmt.Printf("stresserLocalTester.Create (%q, \"%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
@@ -1531,7 +1580,7 @@ func (ts *Tester) Up() (err error) {
 	}
 	if ts.cfg.IsEnabledAddOnStresserRemote() {
 		if ts.stresserRemoteTester == nil {
-			return errors.New("ts.stresserRemoteTester == nil when AddOnStresser.Enable == true")
+			return errors.New("ts.stresserRemoteTester == nil when AddOnStresserRemote.Enable == true")
 		}
 		fmt.Printf("\n*********************************\n")
 		fmt.Printf("stresserRemoteTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnStresserRemote.Namespace)
@@ -1541,6 +1590,39 @@ func (ts *Tester) Up() (err error) {
 			ts.stopCreationChOnce,
 			ts.osSig,
 			ts.stresserRemoteTester.Create,
+		); err != nil {
+			return err
+		}
+	}
+
+	if ts.cfg.IsEnabledAddOnClusterLoaderLocal() {
+		if ts.clusterLoaderLocalTester == nil {
+			return errors.New("ts.clusterLoaderLocalTester == nil when AddOnClusterLoader.Enable == true")
+		}
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("clusterLoaderLocalTester.Create (%q, \"%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.osSig,
+			ts.clusterLoaderLocalTester.Create,
+		); err != nil {
+			return err
+		}
+	}
+	if ts.cfg.IsEnabledAddOnClusterLoaderRemote() {
+		if ts.clusterLoaderRemoteTester == nil {
+			return errors.New("ts.clusterLoaderRemoteTester == nil when AddOnClusterLoader.Enable == true")
+		}
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("clusterLoaderRemoteTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnClusterLoaderRemote.Namespace)
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.osSig,
+			ts.clusterLoaderRemoteTester.Create,
 		); err != nil {
 			return err
 		}
@@ -1653,13 +1735,27 @@ func (ts *Tester) Up() (err error) {
 
 		if ts.cfg.IsEnabledAddOnStresserRemote() {
 			fmt.Printf("\n*********************************\n")
-			fmt.Printf("clusterLoaderRemoteTester.AggregateResults (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnStresserRemote.Namespace)
+			fmt.Printf("stresserRemoteTester.AggregateResults (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnStresserRemote.Namespace)
 			if err := catchInterrupt(
 				ts.lg,
 				ts.stopCreationCh,
 				ts.stopCreationChOnce,
 				ts.osSig,
 				ts.stresserRemoteTester.AggregateResults,
+			); err != nil {
+				return err
+			}
+		}
+
+		if ts.cfg.IsEnabledAddOnClusterLoaderRemote() {
+			fmt.Printf("\n*********************************\n")
+			fmt.Printf("clusterLoaderRemoteTester.AggregateResults (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnClusterLoaderRemote.Namespace)
+			if err := catchInterrupt(
+				ts.lg,
+				ts.stopCreationCh,
+				ts.stopCreationChOnce,
+				ts.osSig,
+				ts.clusterLoaderRemoteTester.AggregateResults,
 			); err != nil {
 				return err
 			}
@@ -1754,6 +1850,31 @@ func (ts *Tester) down() (err error) {
 	if err := ts.deleteKeyPair(); err != nil {
 		ts.lg.Warn("failed to delete key pair", zap.Error(err))
 		errs = append(errs, err.Error())
+	}
+
+	if ts.cfg.IsEnabledAddOnClusterLoaderRemote() && ts.cfg.AddOnClusterLoaderRemote.Created {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("clusterLoaderRemoteTester.Delete (%q)\n", ts.cfg.ConfigPath)
+		if err := ts.clusterLoaderRemoteTester.Delete(); err != nil {
+			ts.lg.Warn("clusterLoaderRemoteTester.Delete failed", zap.Error(err))
+			errs = append(errs, err.Error())
+		} else {
+			waitDur := 20 * time.Second
+			ts.lg.Info("sleeping after deleting clusterLoaderRemoteTester", zap.Duration("wait", waitDur))
+			time.Sleep(waitDur)
+		}
+	}
+	if ts.cfg.IsEnabledAddOnClusterLoaderLocal() && ts.cfg.AddOnClusterLoaderLocal.Created {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("clusterLoaderRemoteTester.Delete (%q)\n", ts.cfg.ConfigPath)
+		if err := ts.clusterLoaderRemoteTester.Delete(); err != nil {
+			ts.lg.Warn("clusterLoaderRemoteTester.Delete failed", zap.Error(err))
+			errs = append(errs, err.Error())
+		} else {
+			waitDur := 20 * time.Second
+			ts.lg.Info("sleeping after deleting clusterLoaderRemoteTester", zap.Duration("wait", waitDur))
+			time.Sleep(waitDur)
+		}
 	}
 
 	if ts.cfg.IsEnabledAddOnStresserRemote() && ts.cfg.AddOnStresserRemote.Created {

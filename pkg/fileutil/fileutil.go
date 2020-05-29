@@ -69,7 +69,7 @@ func Exist(name string) bool {
 	return err == nil
 }
 
-// Copy copies a file.
+// Copy copies a file and writes/overwrites to the destination file.
 func Copy(src, dst string) error {
 	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
 		return fmt.Errorf("mkdirall: %v", err)
@@ -81,19 +81,49 @@ func Copy(src, dst string) error {
 	}
 	defer r.Close()
 
-	w, err := os.Create(dst)
+	f, err := os.Create(dst)
 	if err != nil {
 		return fmt.Errorf("create(%q): %v", dst, err)
 	}
-	defer w.Close()
+	defer f.Close()
 
-	if _, err = io.Copy(w, r); err != nil {
+	if _, err = io.Copy(f, r); err != nil {
 		return err
 	}
-	if err := w.Sync(); err != nil {
+	if err := f.Sync(); err != nil {
 		return err
 	}
-	if _, err := w.Seek(0, 0); err != nil {
+	if _, err := f.Seek(0, 0); err != nil {
+		return err
+	}
+	return nil
+}
+
+// CopyAppend copies a file and appends to the destination file.
+func CopyAppend(src, dst string) error {
+	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
+		return fmt.Errorf("mkdirall: %v", err)
+	}
+
+	r, err := os.Open(src)
+	if err != nil {
+		return fmt.Errorf("open(%q): %v", src, err)
+	}
+	defer r.Close()
+
+	f, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		return fmt.Errorf("open(%q): %v", dst, err)
+	}
+	defer f.Close()
+
+	if _, err = io.Copy(f, r); err != nil {
+		return err
+	}
+	if err := f.Sync(); err != nil {
+		return err
+	}
+	if _, err := f.Seek(0, 0); err != nil {
 		return err
 	}
 	return nil

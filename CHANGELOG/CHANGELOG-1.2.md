@@ -9,14 +9,17 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.6...v1.2.7
 
 ### `eksconfig`
 
-- Add [`eksconfig.AddOnClusterLoaderLocal`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`eksconfig.AddOnClusterLoaderLocal`](https://github.com/aws/aws-k8s-tester/pull/87).
   - Automates https://github.com/kubernetes/perf-tests/tree/master/clusterloader2.
   - Enable with `AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_ENABLE=true`.
   - Enable with `AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_ENABLE=true`.
+- Add [`eksconfig.AddOnNodeGroups.LogsTarGzPath` field](https://github.com/aws/aws-k8s-tester/pull/87).
+- Add [`eksconfig.AddOnManagedNodeGroups.LogsTarGzPath` field](https://github.com/aws/aws-k8s-tester/pull/87).
 
 ### `eks`
 
-- Add [`eks/cluster-loader`](https://github.com/aws/aws-k8s-tester/commit/).
+- Improve [`eks/ng,mng` `FetchLogs`](https://github.com/aws/aws-k8s-tester/pull/87).
+- Add [`eks/cluster-loader`](https://github.com/aws/aws-k8s-tester/pull/87).
   - Automates https://github.com/kubernetes/perf-tests/tree/master/clusterloader2.
 - Measure [`eks/config-maps` `LantencyP50`, `LantencyP99`, `LantencyP99.9`, and `LantencyP99.99` in `metrics.RequestsSummary`](https://github.com/aws/aws-k8s-tester/commit/b5525c898461c905815aa57054eec326849fa09b).
 - Measure [`eks/csrs` `LantencyP50`, `LantencyP99`, `LantencyP99.9`, and `LantencyP99.99` in `metrics.RequestsSummary`](https://github.com/aws/aws-k8s-tester/commit/b5525c898461c905815aa57054eec326849fa09b).
@@ -29,7 +32,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.6...v1.2.7
 
 ### Dependency
 
-- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.31.4`](https://github.com/aws/aws-sdk-go/releases/tag/v1.31.4) to [`v1.31.6`](https://github.com/aws/aws-sdk-go/releases/tag/v1.31.6).
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.31.4`](https://github.com/aws/aws-sdk-go/releases/tag/v1.31.4) to [`v1.31.7`](https://github.com/aws/aws-sdk-go/releases/tag/v1.31.7).
 
 ### Go
 

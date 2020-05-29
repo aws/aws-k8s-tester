@@ -277,6 +277,17 @@ type Config struct {
 	// ref. https://github.com/kubernetes/perf-tests
 	AddOnStresserRemote *AddOnStresserRemote `json:"add-on-stresser-remote,omitempty"`
 
+	// AddOnClusterLoaderLocal defines parameters for EKS cluster
+	// add-on cluster loader local.
+	// It generates loads from the local host machine.
+	// ref. https://github.com/kubernetes/perf-tests/tree/master/clusterloader2
+	AddOnClusterLoaderLocal *AddOnClusterLoaderLocal `json:"add-on-cluster-loader-local,omitempty"`
+	// AddOnClusterLoaderRemote defines parameters for EKS cluster
+	// add-on cluster loader remote.
+	// It generates loads from the remote host machine.
+	// ref. https://github.com/kubernetes/perf-tests/tree/master/clusterloader2
+	AddOnClusterLoaderRemote *AddOnClusterLoaderRemote `json:"add-on-cluster-loader-remote,omitempty"`
+
 	// Status represents the current status of AWS resources.
 	// Status is read-only.
 	// Status cannot be configured via environmental variables.
@@ -651,6 +662,8 @@ func NewDefault() *Config {
 		AddOnHollowNodesRemote:   getDefaultAddOnHollowNodesRemote(),
 		AddOnStresserLocal:       getDefaultAddOnStresserLocal(),
 		AddOnStresserRemote:      getDefaultAddOnStresserRemote(),
+		AddOnClusterLoaderLocal:  getDefaultAddOnClusterLoaderLocal(),
+		AddOnClusterLoaderRemote: getDefaultAddOnClusterLoaderRemote(),
 
 		// read-only
 		Status: &Status{Up: false},
@@ -711,6 +724,10 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		}
 	}
 	cfg.TotalNodes = total
+
+	if err := cfg.validateAddOnConformance(); err != nil {
+		return fmt.Errorf("validateAddOnConformance failed [%v]", err)
+	}
 
 	if err := cfg.validateAddOnCSIEBS(); err != nil {
 		return fmt.Errorf("validateAddOnCSIEBS failed [%v]", err)
@@ -796,8 +813,11 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		return fmt.Errorf("validateAddOnStresserRemote failed [%v]", err)
 	}
 
-	if err := cfg.validateAddOnConformance(); err != nil {
-		return fmt.Errorf("validateAddOnConformance failed [%v]", err)
+	if err := cfg.validateAddOnClusterLoaderLocal(); err != nil {
+		return fmt.Errorf("validateAddOnClusterLoaderLocal failed [%v]", err)
+	}
+	if err := cfg.validateAddOnClusterLoaderRemote(); err != nil {
+		return fmt.Errorf("validateAddOnClusterLoaderRemote failed [%v]", err)
 	}
 
 	return nil
@@ -929,6 +949,9 @@ func (cfg *Config) validateConfig() error {
 		return err
 	}
 
+	if cfg.KubectlPath == "" && cfg.KubectlDownloadURL == "" {
+		return errors.New("empty KubectlPath and KubectlDownloadURL")
+	}
 	if !strings.Contains(cfg.KubectlDownloadURL, runtime.GOOS) {
 		return fmt.Errorf("kubectl-download-url %q build OS mismatch, expected %q", cfg.KubectlDownloadURL, runtime.GOOS)
 	}

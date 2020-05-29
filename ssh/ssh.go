@@ -300,6 +300,7 @@ func (sh *ssh) Run(cmd string, opts ...OpOption) (out []byte, err error) {
 			sh.lg.Warn("command run failed", zap.String("cmd", cmd), zap.String("error-type", reflect.TypeOf(err).String()), zap.Error(err))
 		}
 		if sh.retryCounter[key] > 0 {
+			// e.g. "read tcp 10.119.223.210:58688->54.184.39.156:22: read: connection timed out"
 			sh.lg.Warn("retrying command run", zap.Int("retries", sh.retryCounter[key]))
 			sh.Close()
 			for {
@@ -567,6 +568,7 @@ func WithVerbose(b bool) OpOption {
 // WithRetry automatically retries the command on closed TCP connection error.
 // (e.g. retry immutable operation).
 // WithRetry(-1) to retry forever until success.
+// e.g. "read tcp 10.119.223.210:58688->54.184.39.156:22: read: connection timed out"
 func WithRetry(retries int, interval time.Duration) OpOption {
 	return func(op *Op) {
 		op.retriesLeft = retries

@@ -53,6 +53,8 @@ type AddOnManagedNodeGroups struct {
 	// LogsDir is set to specify the target directory to store all remote log files.
 	// If empty, it stores in the same directory as "ConfigPath".
 	LogsDir string `json:"logs-dir,omitempty"`
+	// LogsTarGzPath is the .tar.gz archived file for "LogsDir".
+	LogsTarGzPath string `json:"logs-tar-gz-path"`
 	// MNGs maps from EKS Managed Node Group name to "MNG".
 	// "GetRef.Name" is the reserved key and MNG name from eksconfig.Config.Name.
 	MNGs map[string]MNG `json:"mngs,omitempty"`
@@ -189,6 +191,12 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 
 	if cfg.AddOnManagedNodeGroups.LogsDir == "" {
 		cfg.AddOnManagedNodeGroups.LogsDir = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-logs-mngs")
+	}
+	if cfg.AddOnManagedNodeGroups.LogsTarGzPath == "" {
+		cfg.AddOnManagedNodeGroups.LogsTarGzPath = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-logs-ngs.tar.gz")
+	}
+	if !strings.HasSuffix(cfg.AddOnManagedNodeGroups.LogsTarGzPath, ".tar.gz") {
+		return fmt.Errorf("AddOnManagedNodeGroups.LogsTarGzPath %q must end with .tar.gz", cfg.AddOnManagedNodeGroups.LogsTarGzPath)
 	}
 
 	switch cfg.AddOnManagedNodeGroups.RoleCreate {

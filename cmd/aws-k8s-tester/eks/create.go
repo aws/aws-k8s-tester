@@ -15,6 +15,7 @@ func newCreate() *cobra.Command {
 		newCreateConfigMaps(),
 		newCreateSecrets(),
 		newCreateStresser(),
+		newCreateClusterLoader(),
 	)
 	return ac
 }
