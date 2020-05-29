@@ -32,5 +32,6 @@ RUN /eks-utils version
 RUN /etcd-utils version
 RUN /cw-utils version
 RUN /aws-k8s-tester version
+RUN cat /clusterloader2-test-config.yaml
 RUN /clusterloader2 --help || true
 RUN kubectl version --client=true
