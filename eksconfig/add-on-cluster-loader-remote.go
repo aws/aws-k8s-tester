@@ -166,7 +166,7 @@ func (cfg *Config) validateAddOnClusterLoaderRemote() error {
 	if cfg.AddOnClusterLoaderRemote.Runs == 0 {
 		return errors.New("unexpected zero AddOnClusterLoaderRemote.Runs")
 	}
-	if cfg.AddOnClusterLoaderRemote.Timeout == 30*time.Minute {
+	if cfg.AddOnClusterLoaderRemote.Timeout == 0 {
 		return errors.New("unexpected zero AddOnClusterLoaderRemote.Timeout")
 	}
 

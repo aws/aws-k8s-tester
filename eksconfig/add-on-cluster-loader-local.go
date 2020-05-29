@@ -145,7 +145,7 @@ func (cfg *Config) validateAddOnClusterLoaderLocal() error {
 	if cfg.AddOnClusterLoaderLocal.Runs == 0 {
 		return errors.New("unexpected zero AddOnClusterLoaderLocal.Runs")
 	}
-	if cfg.AddOnClusterLoaderLocal.Timeout == 30*time.Minute {
+	if cfg.AddOnClusterLoaderLocal.Timeout == 0 {
 		return errors.New("unexpected zero AddOnClusterLoaderLocal.Timeout")
 	}
 
