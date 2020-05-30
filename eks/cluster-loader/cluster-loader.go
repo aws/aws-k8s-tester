@@ -351,6 +351,8 @@ func (ld *loader) writeTestOverrides() (err error) {
 	return nil
 }
 
+// ref. https://github.com/kubernetes/perf-tests/tree/master/clusterloader2/testing/load
+// ref. https://github.com/kubernetes/perf-tests/tree/master/clusterloader2/testing/overrides
 const TemplateTestOverrides = `NODES_PER_NAMESPACE: {{ .NodesPerNamespace }}
 PODS_PER_NODE: {{ .PodsPerNode }}
 BIG_GROUP_SIZE: {{ .BigGroupSize }}
