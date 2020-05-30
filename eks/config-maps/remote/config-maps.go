@@ -778,7 +778,7 @@ func (ts *tester) AggregateResults() (err error) {
 		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 		return err
 	}
-	fmt.Printf("\n\nAddOnConfigMapsRemote.RequestsSummaryWritesTable:\n%s\n", writes.Table())
+	fmt.Printf("\n\nAddOnConfigMapsRemote.RequestsSummaryWrites:\n%s\n", writes.Table())
 
 	ts.cfg.Logger.Info("aggregated results from Pods")
 	return ts.cfg.EKSConfig.Sync()

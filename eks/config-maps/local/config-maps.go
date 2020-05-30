@@ -93,6 +93,7 @@ func (ts *tester) Create() (err error) {
 			return err
 		}
 	}
+	fmt.Printf("\n\nAddOnConfigMapsLocal.RequestsSummaryWrites:\n%s\n", ts.cfg.EKSConfig.AddOnConfigMapsLocal.RequestsSummaryWrites.Table())
 
 	waitDur, retryStart := 5*time.Minute, time.Now()
 	for time.Now().Sub(retryStart) < waitDur {

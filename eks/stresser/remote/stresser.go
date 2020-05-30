@@ -861,7 +861,7 @@ func (ts *tester) AggregateResults() (err error) {
 		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 		return err
 	}
-	fmt.Printf("\n\nAddOnStresserRemote.RequestsSummaryWritesTable:\n%s\n", writes.Table())
+	fmt.Printf("\n\nAddOnStresserRemote.RequestsSummaryWrites:\n%s\n", writes.Table())
 	if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsSummaryReadsJSONPath, []byte(reads.JSON()), 0600); err != nil {
 		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 		return err
@@ -870,7 +870,7 @@ func (ts *tester) AggregateResults() (err error) {
 		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 		return err
 	}
-	fmt.Printf("\n\nAddOnStresserRemote.RequestsSummaryReadsTable:\n%s\n", reads.Table())
+	fmt.Printf("\n\nAddOnStresserRemote.RequestsSummaryReads:\n%s\n", reads.Table())
 
 	ts.cfg.Logger.Info("aggregated results from Pods")
 	return ts.cfg.EKSConfig.Sync()
