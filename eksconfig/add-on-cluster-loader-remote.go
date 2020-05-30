@@ -195,9 +195,9 @@ func (cfg *Config) validateAddOnClusterLoaderRemote() error {
 		return errors.New("unexpected zero AddOnClusterLoaderRemote.Nodes")
 	}
 
-	if cfg.AddOnClusterLoaderLocal.CL2LoadTestThroughput == 0 {
+	if cfg.AddOnClusterLoaderRemote.CL2LoadTestThroughput == 0 {
 		// ref. https://github.com/kubernetes/perf-tests/blob/master/clusterloader2/testing/load/kubemark/throughput_override.yaml
-		cfg.AddOnClusterLoaderLocal.CL2LoadTestThroughput = 20
+		cfg.AddOnClusterLoaderRemote.CL2LoadTestThroughput = 20
 	}
 	if cfg.AddOnClusterLoaderRemote.PrometheusScrapeKubeProxy {
 		return fmt.Errorf("unexpected AddOnClusterLoaderRemote.PrometheusScrapeKubeProxy %v; not supported yet", cfg.AddOnClusterLoaderRemote.PrometheusScrapeKubeProxy)
