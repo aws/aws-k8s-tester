@@ -576,6 +576,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_SMALL_GROUP_SIZE                   | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.SmallGroupSize                 | int                |
 | AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_SMALL_STATEFUL_SETS_PER_NAMESPACE  | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.SmallStatefulSetsPerNamespace  | int                |
 | AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_MEDIUM_STATEFUL_SETS_PER_NAMESPACE | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.MediumStatefulSetsPerNamespace | int                |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_CL2_LOAD_TEST_THROUGHPUT           | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.CL2LoadTestThroughput          | int                |
 | AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_CL2_ENABLE_PVS                     | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.CL2EnablePVS                   | bool               |
 | AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_PROMETHEUS_SCRAPE_KUBE_PROXY       | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.PrometheusScrapeKubeProxy      | bool               |
 | AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_ENABLE_SYSTEM_POD_METRICS          | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.EnableSystemPodMetrics         | bool               |
@@ -608,6 +609,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_SMALL_GROUP_SIZE                   | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.SmallGroupSize                 | int                |
 | AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_SMALL_STATEFUL_SETS_PER_NAMESPACE  | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.SmallStatefulSetsPerNamespace  | int                |
 | AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_MEDIUM_STATEFUL_SETS_PER_NAMESPACE | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.MediumStatefulSetsPerNamespace | int                |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_CL2_LOAD_TEST_THROUGHPUT           | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.CL2LoadTestThroughput          | int                |
 | AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_CL2_ENABLE_PVS                     | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.CL2EnablePVS                   | bool               |
 | AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_PROMETHEUS_SCRAPE_KUBE_PROXY       | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.PrometheusScrapeKubeProxy      | bool               |
 | AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_ENABLE_SYSTEM_POD_METRICS          | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.EnableSystemPodMetrics         | bool               |

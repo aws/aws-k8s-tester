@@ -64,6 +64,7 @@ func New(cfg Config) Tester {
 			SmallStatefulSetsPerNamespace:  cfg.EKSConfig.AddOnClusterLoaderLocal.SmallStatefulSetsPerNamespace,
 			MediumStatefulSetsPerNamespace: cfg.EKSConfig.AddOnClusterLoaderLocal.MediumStatefulSetsPerNamespace,
 
+			CL2LoadTestThroughput:     cfg.EKSConfig.AddOnClusterLoaderLocal.CL2LoadTestThroughput,
 			CL2EnablePVS:              cfg.EKSConfig.AddOnClusterLoaderLocal.CL2EnablePVS,
 			PrometheusScrapeKubeProxy: cfg.EKSConfig.AddOnClusterLoaderLocal.PrometheusScrapeKubeProxy,
 			EnableSystemPodMetrics:    cfg.EKSConfig.AddOnClusterLoaderLocal.EnableSystemPodMetrics,

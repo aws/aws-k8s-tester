@@ -69,6 +69,7 @@ type Config struct {
 	SmallStatefulSetsPerNamespace  int
 	MediumStatefulSetsPerNamespace int
 
+	CL2LoadTestThroughput     int
 	CL2EnablePVS              bool
 	PrometheusScrapeKubeProxy bool
 	EnableSystemPodMetrics    bool
@@ -360,6 +361,7 @@ MEDIUM_GROUP_SIZE: {{ .MediumGroupSize }}
 SMALL_GROUP_SIZE: {{ .SmallGroupSize }}
 SMALL_STATEFUL_SETS_PER_NAMESPACE: {{ .SmallStatefulSetsPerNamespace }}
 MEDIUM_STATEFUL_SETS_PER_NAMESPACE: {{ .MediumStatefulSetsPerNamespace }}
+CL2_LOAD_TEST_THROUGHPUT: {{ .CL2LoadTestThroughput }}
 CL2_ENABLE_PVS: {{ .CL2EnablePVS }}
 PROMETHEUS_SCRAPE_KUBE_PROXY: {{ .PrometheusScrapeKubeProxy }}
 ENABLE_SYSTEM_POD_METRICS: {{ .EnableSystemPodMetrics }}

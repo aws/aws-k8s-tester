@@ -81,6 +81,7 @@ type AddOnClusterLoaderLocal struct {
 	SmallStatefulSetsPerNamespace  int `json:"small-stateful-sets-per-namespace"`
 	MediumStatefulSetsPerNamespace int `json:"medium-stateful-sets-per-namespace"`
 
+	CL2LoadTestThroughput     int  `json:"cl2-load-test-throughput"`
 	CL2EnablePVS              bool `json:"cl2-enable-pvs"`
 	PrometheusScrapeKubeProxy bool `json:"prometheus-scrape-kube-proxy"`
 	EnableSystemPodMetrics    bool `json:"enable-system-pod-metrics"`
@@ -124,6 +125,8 @@ func getDefaultAddOnClusterLoaderLocal() *AddOnClusterLoaderLocal {
 		SmallStatefulSetsPerNamespace:  0,
 		MediumStatefulSetsPerNamespace: 0,
 
+		// ref. https://github.com/kubernetes/perf-tests/blob/master/clusterloader2/testing/load/kubemark/throughput_override.yaml
+		CL2LoadTestThroughput:     20,
 		CL2EnablePVS:              false,
 		PrometheusScrapeKubeProxy: false,
 		EnableSystemPodMetrics:    false,
@@ -170,8 +173,9 @@ func (cfg *Config) validateAddOnClusterLoaderLocal() error {
 		return errors.New("unexpected zero AddOnClusterLoaderLocal.Nodes")
 	}
 
-	if cfg.AddOnClusterLoaderLocal.CL2EnablePVS {
-		return fmt.Errorf("unexpected AddOnClusterLoaderLocal.CL2EnablePVS %v; not supported yet", cfg.AddOnClusterLoaderLocal.CL2EnablePVS)
+	if cfg.AddOnClusterLoaderLocal.CL2LoadTestThroughput == 0 {
+		// ref. https://github.com/kubernetes/perf-tests/blob/master/clusterloader2/testing/load/kubemark/throughput_override.yaml
+		cfg.AddOnClusterLoaderLocal.CL2LoadTestThroughput = 20
 	}
 	if cfg.AddOnClusterLoaderLocal.PrometheusScrapeKubeProxy {
 		return fmt.Errorf("unexpected AddOnClusterLoaderLocal.PrometheusScrapeKubeProxy %v; not supported yet", cfg.AddOnClusterLoaderLocal.PrometheusScrapeKubeProxy)

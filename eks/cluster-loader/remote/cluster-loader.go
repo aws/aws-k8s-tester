@@ -476,7 +476,7 @@ func (ts *tester) createDeployment() error {
 	// ref. https://github.com/kubernetes/client-go/blob/master/examples/in-cluster-client-configuration/main.go
 
 	// ref. https://github.com/kubernetes/perf-tests/pull/1295
-	testerCmd := fmt.Sprintf("/aws-k8s-tester eks create cluster-loader --cluster-loader-path=/clusterloader2 --test-config-path=/clusterloader2-test-config.yaml --report-dir=/var/log/cluster-loader-remote --report-tar-gz-path=/var/log/cluster-loader-remote.tar.gz --logs-path=/var/log/cluster-loader-remote.log --runs=%d --timeout=%v --nodes=%d --nodes-per-namespace=%d --pods-per-node=%d --big-group-size=%d --medium-group-size=%d --small-group-size=%d --small-stateful-sets-per-namespace=%d --medium-stateful-sets-per-namespace=%d --cl2-enable-pvs=%v --prometheus-scrape-kube-proxy=%v --enable-system-pod-metrics=%v",
+	testerCmd := fmt.Sprintf("/aws-k8s-tester eks create cluster-loader --cluster-loader-path=/clusterloader2 --test-config-path=/clusterloader2-test-config.yaml --report-dir=/var/log/cluster-loader-remote --report-tar-gz-path=/var/log/cluster-loader-remote.tar.gz --logs-path=/var/log/cluster-loader-remote.log --runs=%d --timeout=%v --nodes=%d --nodes-per-namespace=%d --pods-per-node=%d --big-group-size=%d --medium-group-size=%d --small-group-size=%d --small-stateful-sets-per-namespace=%d --medium-stateful-sets-per-namespace=%d --cl2-load-test-throughput=%d --cl2-enable-pvs=%v --prometheus-scrape-kube-proxy=%v --enable-system-pod-metrics=%v",
 		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Runs,
 		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Timeout,
 		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Nodes,
@@ -487,6 +487,7 @@ func (ts *tester) createDeployment() error {
 		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.SmallGroupSize,
 		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.SmallStatefulSetsPerNamespace,
 		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.MediumStatefulSetsPerNamespace,
+		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.CL2LoadTestThroughput,
 		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.CL2EnablePVS,
 		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.PrometheusScrapeKubeProxy,
 		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.EnableSystemPodMetrics,
