@@ -16,7 +16,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.7...v1.2.8
 ### `eks`
 
 - Fix [remote latency collect with JSON files](https://github.com/aws/aws-k8s-tester/commit/cd80fc0328edc229c7e908f3feb8cd6554d15dd9).
-- Reorder to run [`eks/cluster-loader` after `eks/hollow-nodes`](https://github.com/aws/aws-k8s-tester/commit/).
+- Reorder to run [`eks/cluster-loader` after `eks/hollow-nodes`](https://github.com/aws/aws-k8s-tester/commit/311e0548f3acbfb08719f2f2e7181017cb1a3fb6).
 
 
 <hr>
