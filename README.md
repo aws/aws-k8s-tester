@@ -159,6 +159,16 @@ AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_ARN=${FARGATE_ROLE_ARN} \
 # to user ${USER} in node groups
 AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS={\"${USER}-test-eks-ng-al2-cpu\":{\"name\":\"${USER}-test-eks-ng-al2-cpu\",\"remote-access-user-name\":\"ec2-user\",\"ami-type\":\"AL2_x86_64\",\"image-id-ssm-parameter\":\"/aws/service/eks/optimized-ami/1.15/amazon-linux-2/recommended/image_id\",\"instance-types\":[\"c5.xlarge\"],\"volume-size\":40,\"asg-min-size\":1,\"asg-max-size\":1,\"asg-desired-capacity\":1,\"kubelet-extra-args\":\"\"},\"${USER}-test-eks-ng-bottlerocket\":{\"name\":\"${USER}-test-eks-ng-bottlerocket\",\"remote-access-user-name\":\"ec2-user\",\"ami-type\":\"BOTTLEROCKET_x86_64\",\"image-id-ssm-parameter\":\"/aws/service/bottlerocket/aws-k8s-1.15/x86_64/latest/image_id\",\"ssm-document-cfn-stack-name\":\"${USER}-install-bottle-rocket\",\"ssm-document-name\":\"${USER}InstallBottleRocket\",\"ssm-document-create\":true,\"ssm-document-commands\":\"enable-admin-container\",\"ssm-document-execution-timeout-seconds\":3600,\"instance-types\":[\"c5.xlarge\"],\"volume-size\":40,\"asg-min-size\":1,\"asg-max-size\":1,\"asg-desired-capacity\":1}} \
 AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS={\"${USER}-test-eks-mng-al2-cpu\":{\"name\":\"${USER}-test-eks-mng-al2-cpu\",\"remote-access-user-name\":\"ec2-user\",\"release-version\":\"\",\"ami-type\":\"AL2_x86_64\",\"instance-types\":[\"c5.xlarge\"],\"volume-size\":40,\"asg-min-size\":1,\"asg-max-size\":1,\"asg-desired-capacity\":1}} \
+
+# to build ECR images for remote tester add-ons
+cd ${GOPATH}/src/github.com/aws/aws-k8s-tester
+make docker-push ACCOUNT_ID=YOUR_ACCOUNT_ID TAG=latest
+
+AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_ENABLE=true \
+AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_RUNS=1 \
+AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_ACCOUNT_ID=YOUR_ACCOUNT_ID \
+AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_NAME=aws/aws-k8s-tester \
+AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_IMAGE_TAG=latest \
 COMMENT
 ```
 
