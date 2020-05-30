@@ -257,6 +257,15 @@ type Config struct {
 	// add-on Kubeflow.
 	AddOnKubeflow *AddOnKubeflow `json:"add-on-kubeflow,omitempty"`
 
+	// AddOnHollowNodesLocal defines parameters for EKS cluster
+	// add-on hollow nodes local.
+	// It generates loads from the local host machine.
+	AddOnHollowNodesLocal *AddOnHollowNodesLocal `json:"add-on-hollow-nodes-local,omitempty"`
+	// AddOnHollowNodesRemote defines parameters for EKS cluster
+	// add-on hollow nodes remote.
+	// It generates loads from the remote workers (Pod) in the cluster.
+	AddOnHollowNodesRemote *AddOnHollowNodesRemote `json:"add-on-hollow-nodes-remote,omitempty"`
+
 	// AddOnClusterLoaderLocal defines parameters for EKS cluster
 	// add-on cluster loader local.
 	// It generates loads from the local host machine.
@@ -267,15 +276,6 @@ type Config struct {
 	// It generates loads from the remote host machine.
 	// ref. https://github.com/kubernetes/perf-tests/tree/master/clusterloader2
 	AddOnClusterLoaderRemote *AddOnClusterLoaderRemote `json:"add-on-cluster-loader-remote,omitempty"`
-
-	// AddOnHollowNodesLocal defines parameters for EKS cluster
-	// add-on hollow nodes local.
-	// It generates loads from the local host machine.
-	AddOnHollowNodesLocal *AddOnHollowNodesLocal `json:"add-on-hollow-nodes-local,omitempty"`
-	// AddOnHollowNodesRemote defines parameters for EKS cluster
-	// add-on hollow nodes remote.
-	// It generates loads from the remote workers (Pod) in the cluster.
-	AddOnHollowNodesRemote *AddOnHollowNodesRemote `json:"add-on-hollow-nodes-remote,omitempty"`
 
 	// AddOnStresserLocal defines parameters for EKS cluster
 	// add-on cluster loader local.
@@ -658,10 +658,10 @@ func NewDefault() *Config {
 		AddOnWordpress:           getDefaultAddOnWordpress(),
 		AddOnJupyterHub:          getDefaultAddOnJupyterHub(),
 		AddOnKubeflow:            getDefaultAddOnKubeflow(),
-		AddOnClusterLoaderLocal:  getDefaultAddOnClusterLoaderLocal(),
-		AddOnClusterLoaderRemote: getDefaultAddOnClusterLoaderRemote(),
 		AddOnHollowNodesLocal:    getDefaultAddOnHollowNodesLocal(),
 		AddOnHollowNodesRemote:   getDefaultAddOnHollowNodesRemote(),
+		AddOnClusterLoaderLocal:  getDefaultAddOnClusterLoaderLocal(),
+		AddOnClusterLoaderRemote: getDefaultAddOnClusterLoaderRemote(),
 		AddOnStresserLocal:       getDefaultAddOnStresserLocal(),
 		AddOnStresserRemote:      getDefaultAddOnStresserRemote(),
 

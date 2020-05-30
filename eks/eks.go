@@ -1529,39 +1529,6 @@ func (ts *Tester) Up() (err error) {
 		}
 	}
 
-	if ts.cfg.IsEnabledAddOnClusterLoaderLocal() {
-		if ts.clusterLoaderLocalTester == nil {
-			return errors.New("ts.clusterLoaderLocalTester == nil when AddOnClusterLoader.Enable == true")
-		}
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("clusterLoaderLocalTester.Create (%q, \"%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.osSig,
-			ts.clusterLoaderLocalTester.Create,
-		); err != nil {
-			return err
-		}
-	}
-	if ts.cfg.IsEnabledAddOnClusterLoaderRemote() {
-		if ts.clusterLoaderRemoteTester == nil {
-			return errors.New("ts.clusterLoaderRemoteTester == nil when AddOnClusterLoader.Enable == true")
-		}
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("clusterLoaderRemoteTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnClusterLoaderRemote.Namespace)
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.osSig,
-			ts.clusterLoaderRemoteTester.Create,
-		); err != nil {
-			return err
-		}
-	}
-
 	if ts.cfg.IsEnabledAddOnHollowNodesLocal() {
 		if ts.hollowNodesLocalTester == nil {
 			return errors.New("ts.hollowNodesLocalTester == nil when AddOnHollowNodesLocal.Enable == true")
@@ -1590,6 +1557,39 @@ func (ts *Tester) Up() (err error) {
 			ts.stopCreationChOnce,
 			ts.osSig,
 			ts.hollowNodesRemoteTester.Create,
+		); err != nil {
+			return err
+		}
+	}
+
+	if ts.cfg.IsEnabledAddOnClusterLoaderLocal() {
+		if ts.clusterLoaderLocalTester == nil {
+			return errors.New("ts.clusterLoaderLocalTester == nil when AddOnClusterLoader.Enable == true")
+		}
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("clusterLoaderLocalTester.Create (%q, \"%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.osSig,
+			ts.clusterLoaderLocalTester.Create,
+		); err != nil {
+			return err
+		}
+	}
+	if ts.cfg.IsEnabledAddOnClusterLoaderRemote() {
+		if ts.clusterLoaderRemoteTester == nil {
+			return errors.New("ts.clusterLoaderRemoteTester == nil when AddOnClusterLoader.Enable == true")
+		}
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("clusterLoaderRemoteTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnClusterLoaderRemote.Namespace)
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.osSig,
+			ts.clusterLoaderRemoteTester.Create,
 		); err != nil {
 			return err
 		}
@@ -1877,23 +1877,6 @@ func (ts *Tester) down() (err error) {
 		}
 	}
 
-	if ts.cfg.IsEnabledAddOnHollowNodesRemote() && ts.cfg.AddOnHollowNodesRemote.Created {
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("hollowNodesRemoteTester.Delete (%q)\n", ts.cfg.ConfigPath)
-		if err := ts.hollowNodesRemoteTester.Delete(); err != nil {
-			ts.lg.Warn("hollowNodesRemoteTester.Delete failed", zap.Error(err))
-			errs = append(errs, err.Error())
-		}
-	}
-	if ts.cfg.IsEnabledAddOnHollowNodesLocal() && ts.cfg.AddOnHollowNodesLocal.Created {
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("hollowNodesLocalTester.Delete (%q)\n", ts.cfg.ConfigPath)
-		if err := ts.hollowNodesLocalTester.Delete(); err != nil {
-			ts.lg.Warn("hollowNodesLocalTester.Delete failed", zap.Error(err))
-			errs = append(errs, err.Error())
-		}
-	}
-
 	if ts.cfg.IsEnabledAddOnClusterLoaderRemote() && ts.cfg.AddOnClusterLoaderRemote.Created {
 		fmt.Printf("\n*********************************\n")
 		fmt.Printf("clusterLoaderRemoteTester.Delete (%q)\n", ts.cfg.ConfigPath)
@@ -1916,6 +1899,23 @@ func (ts *Tester) down() (err error) {
 			waitDur := 20 * time.Second
 			ts.lg.Info("sleeping after deleting clusterLoaderRemoteTester", zap.Duration("wait", waitDur))
 			time.Sleep(waitDur)
+		}
+	}
+
+	if ts.cfg.IsEnabledAddOnHollowNodesRemote() && ts.cfg.AddOnHollowNodesRemote.Created {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("hollowNodesRemoteTester.Delete (%q)\n", ts.cfg.ConfigPath)
+		if err := ts.hollowNodesRemoteTester.Delete(); err != nil {
+			ts.lg.Warn("hollowNodesRemoteTester.Delete failed", zap.Error(err))
+			errs = append(errs, err.Error())
+		}
+	}
+	if ts.cfg.IsEnabledAddOnHollowNodesLocal() && ts.cfg.AddOnHollowNodesLocal.Created {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("hollowNodesLocalTester.Delete (%q)\n", ts.cfg.ConfigPath)
+		if err := ts.hollowNodesLocalTester.Delete(); err != nil {
+			ts.lg.Warn("hollowNodesLocalTester.Delete failed", zap.Error(err))
+			errs = append(errs, err.Error())
 		}
 	}
 
