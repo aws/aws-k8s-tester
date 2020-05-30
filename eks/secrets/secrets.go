@@ -3,7 +3,9 @@ package secrets
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"sort"
 	"sync"
 	"time"
@@ -98,13 +100,16 @@ type Config struct {
 
 	Objects    int
 	ObjectSize int
+
+	WritesJSONPath string
+	ReadsJSONPath  string
 }
 
 // Loader defines Secret loader operations.
 type Loader interface {
 	Start()
 	Stop()
-	GetMetrics() (writes metrics.RequestsSummary, reads metrics.RequestsSummary, err error)
+	CollectMetrics() (writes metrics.RequestsSummary, reads metrics.RequestsSummary, err error)
 }
 
 type loader struct {
@@ -149,7 +154,7 @@ func (ld *loader) Stop() {
 
 // GetMetrics locally fetches output from registered metrics.
 // ref. https://pkg.go.dev/github.com/prometheus/client_golang@v1.6.0/prometheus/promhttp?tab=doc#Handler
-func (ld *loader) GetMetrics() (writes metrics.RequestsSummary, reads metrics.RequestsSummary, err error) {
+func (ld *loader) CollectMetrics() (writes metrics.RequestsSummary, reads metrics.RequestsSummary, err error) {
 	// https://pkg.go.dev/github.com/prometheus/client_golang/prometheus?tab=doc#Gatherer
 	mfs, err := prometheus.DefaultGatherer.Gather()
 	if err != nil {
@@ -197,6 +202,18 @@ func (ld *loader) GetMetrics() (writes metrics.RequestsSummary, reads metrics.Re
 	writes.LantencyP999 = ld.writeLatencies.PickLantencyP999()
 	writes.LantencyP9999 = ld.writeLatencies.PickLantencyP9999()
 
+	ld.cfg.Logger.Info("writing latency results in JSON to disk", zap.String("path", ld.cfg.WritesJSONPath))
+	wb, err := json.Marshal(ld.writeLatencies)
+	if err != nil {
+		ld.cfg.Logger.Warn("failed to encode latency results in JSON", zap.Error(err))
+		return metrics.RequestsSummary{}, metrics.RequestsSummary{}, err
+	}
+	if err = ioutil.WriteFile(ld.cfg.WritesJSONPath, wb, 0600); err != nil {
+		ld.cfg.Logger.Warn("failed to write latency results in JSON to disk", zap.String("path", ld.cfg.WritesJSONPath), zap.Error(err))
+		return metrics.RequestsSummary{}, metrics.RequestsSummary{}, err
+	}
+	ld.cfg.Logger.Info("wrote latency results in JSON to disk", zap.String("path", ld.cfg.WritesJSONPath))
+
 	ld.cfg.Logger.Info("sorting read latency results", zap.Int("total-data-points", ld.readLatencies.Len()))
 	now = time.Now()
 	sort.Sort(ld.readLatencies)
@@ -206,6 +223,18 @@ func (ld *loader) GetMetrics() (writes metrics.RequestsSummary, reads metrics.Re
 	reads.LantencyP99 = ld.readLatencies.PickLantencyP99()
 	reads.LantencyP999 = ld.readLatencies.PickLantencyP999()
 	reads.LantencyP9999 = ld.readLatencies.PickLantencyP9999()
+
+	ld.cfg.Logger.Info("writing latency results in JSON to disk", zap.String("path", ld.cfg.ReadsJSONPath))
+	wb, err = json.Marshal(ld.readLatencies)
+	if err != nil {
+		ld.cfg.Logger.Warn("failed to encode latency results in JSON", zap.Error(err))
+		return metrics.RequestsSummary{}, metrics.RequestsSummary{}, err
+	}
+	if err = ioutil.WriteFile(ld.cfg.ReadsJSONPath, wb, 0600); err != nil {
+		ld.cfg.Logger.Warn("failed to write latency results in JSON to disk", zap.String("path", ld.cfg.ReadsJSONPath), zap.Error(err))
+		return metrics.RequestsSummary{}, metrics.RequestsSummary{}, err
+	}
+	ld.cfg.Logger.Info("wrote latency results in JSON to disk", zap.String("path", ld.cfg.ReadsJSONPath))
 
 	return writes, reads, nil
 }

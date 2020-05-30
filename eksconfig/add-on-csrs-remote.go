@@ -56,15 +56,17 @@ type AddOnCSRsRemote struct {
 	//
 	InitialRequestConditionType string `json:"initial-request-condition-type"`
 
-	// RequestsSummaryWrites is the writes results.
-	RequestsSummaryWrites metrics.RequestsSummary `json:"requests-summary-writes,omitempty" read-only:"true"`
-	// RequestsSummaryWritesJSONPath is the file path to store writes requests summary in JSON format.
-	RequestsSummaryWritesJSONPath string `json:"requests-summary-writes-json-path" read-only:"true"`
-	// RequestsSummaryWritesTablePath is the file path to store writes requests summary in table format.
-	RequestsSummaryWritesTablePath string `json:"requests-summary-writes-table-path" read-only:"true"`
+	// RequestsWritesJSONPath is the file path to store writes requests in JSON format.
+	RequestsWritesJSONPath string `json:"requests-writes-json-path" read-only:"true"`
+	// RequestsWritesSummary is the writes results.
+	RequestsWritesSummary metrics.RequestsSummary `json:"requests-writes-summary,omitempty" read-only:"true"`
+	// RequestsWritesSummaryJSONPath is the file path to store writes requests summary in JSON format.
+	RequestsWritesSummaryJSONPath string `json:"requests-writes-summary-json-path" read-only:"true"`
+	// RequestsWritesSummaryTablePath is the file path to store writes requests summary in table format.
+	RequestsWritesSummaryTablePath string `json:"requests-writes-summary-table-path" read-only:"true"`
 
-	// RequestsSummaryWritesOutputNamePrefix is the output path name in "/var/log" directory, used in remote worker.
-	RequestsSummaryWritesOutputNamePrefix string `json:"requests-summary-writes-output-name-prefix"`
+	// RequestsWritesSummaryOutputNamePrefix is the output path name in "/var/log" directory, used in remote worker.
+	RequestsWritesSummaryOutputNamePrefix string `json:"requests-writes-summary-output-name-prefix"`
 }
 
 // EnvironmentVariablePrefixAddOnCSRsRemote is the environment variable prefix used for "eksconfig".
@@ -89,7 +91,7 @@ func getDefaultAddOnCSRsRemote() *AddOnCSRsRemote {
 		DeploymentReplicas:                    5,
 		Objects:                               10, // 1000 objects generates 5 MB data to etcd
 		InitialRequestConditionType:           "",
-		RequestsSummaryWritesOutputNamePrefix: "csrs-writes" + randutil.String(10),
+		RequestsWritesSummaryOutputNamePrefix: "csrs-writes" + randutil.String(10),
 	}
 }
 
@@ -131,15 +133,18 @@ func (cfg *Config) validateAddOnCSRsRemote() error {
 		return fmt.Errorf("unknown AddOnCSRsRemote.InitialRequestConditionType %q", cfg.AddOnCSRsRemote.InitialRequestConditionType)
 	}
 
-	if cfg.AddOnCSRsRemote.RequestsSummaryWritesJSONPath == "" {
-		cfg.AddOnCSRsRemote.RequestsSummaryWritesJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-csrs-remote-requests-summary-writes.json"
+	if cfg.AddOnCSRsRemote.RequestsWritesJSONPath == "" {
+		cfg.AddOnCSRsRemote.RequestsWritesJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-csrs-remote-requests-writes.csv"
 	}
-	if cfg.AddOnCSRsRemote.RequestsSummaryWritesTablePath == "" {
-		cfg.AddOnCSRsRemote.RequestsSummaryWritesTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-csrs-remote-requests-summary-writes.txt"
+	if cfg.AddOnCSRsRemote.RequestsWritesSummaryJSONPath == "" {
+		cfg.AddOnCSRsRemote.RequestsWritesSummaryJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-csrs-remote-requests-writes-summary.json"
+	}
+	if cfg.AddOnCSRsRemote.RequestsWritesSummaryTablePath == "" {
+		cfg.AddOnCSRsRemote.RequestsWritesSummaryTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-csrs-remote-requests-writes-summary.txt"
 	}
 
-	if cfg.AddOnCSRsRemote.RequestsSummaryWritesOutputNamePrefix == "" {
-		cfg.AddOnCSRsRemote.RequestsSummaryWritesOutputNamePrefix = "csrs-writes" + randutil.String(10)
+	if cfg.AddOnCSRsRemote.RequestsWritesSummaryOutputNamePrefix == "" {
+		cfg.AddOnCSRsRemote.RequestsWritesSummaryOutputNamePrefix = "csrs-writes" + randutil.String(10)
 	}
 
 	return nil

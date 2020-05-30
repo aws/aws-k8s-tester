@@ -367,51 +367,6 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_MAX_OPEN_FILES", "333")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_MAX_OPEN_FILES")
 
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_ENABLE", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NAMESPACE", "test-hollow-nodes-namespace")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NAMESPACE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NODES", "333")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NODES")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_ACCOUNT_ID", "uri")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_ACCOUNT_ID")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_NAME", "hollow-nodes-repo-name")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_NAME")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_URI", "hollow-nodes-repo-uri")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_URI")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_IMAGE_TAG", "hollow-nodes-repo-image-tag")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_IMAGE_TAG")
-
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_ENABLE", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_DURATION", "7m30s")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_DURATION")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_LIST_LIMIT", "133")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_LIST_LIMIT")
-
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_ENABLE", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_NAMESPACE", "hello")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_NAMESPACE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_DURATION", "7m30s")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_DURATION")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REPOSITORY_ACCOUNT_ID", "uri")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REPOSITORY_ACCOUNT_ID")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REPOSITORY_NAME", "stresser-repo-name")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REPOSITORY_NAME")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REPOSITORY_IMAGE_TAG", "stresser-repo-image-tag")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REPOSITORY_IMAGE_TAG")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_DEPLOYMENT_REPLICAS", "500")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_DEPLOYMENT_REPLICAS")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_OBJECT_SIZE", "512")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_OBJECT_SIZE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_LIST_LIMIT", "177")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_LIST_LIMIT")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_WRITES_OUTPUT_NAME_PREFIX", "stresser-out-pfx")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_WRITES_OUTPUT_NAME_PREFIX")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_READS_OUTPUT_NAME_PREFIX", "stresser-out-pfx")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_READS_OUTPUT_NAME_PREFIX")
-
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_ENABLE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_TEST_CONFIG_PATH", "artifacts/clusterloader2-testing-load-config.yaml")
@@ -469,6 +424,51 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_SMALL_STATEFUL_SETS_PER_NAMESPACE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_MEDIUM_STATEFUL_SETS_PER_NAMESPACE", "1")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_MEDIUM_STATEFUL_SETS_PER_NAMESPACE")
+
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NAMESPACE", "test-hollow-nodes-namespace")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NODES", "333")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NODES")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_ACCOUNT_ID", "uri")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_ACCOUNT_ID")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_NAME", "hollow-nodes-repo-name")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_URI", "hollow-nodes-repo-uri")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_URI")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_IMAGE_TAG", "hollow-nodes-repo-image-tag")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_IMAGE_TAG")
+
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_DURATION", "7m30s")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_DURATION")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_LIST_LIMIT", "133")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_LIST_LIMIT")
+
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_NAMESPACE", "hello")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_DURATION", "7m30s")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_DURATION")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REPOSITORY_ACCOUNT_ID", "uri")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REPOSITORY_ACCOUNT_ID")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REPOSITORY_NAME", "stresser-repo-name")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REPOSITORY_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REPOSITORY_IMAGE_TAG", "stresser-repo-image-tag")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REPOSITORY_IMAGE_TAG")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_DEPLOYMENT_REPLICAS", "500")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_DEPLOYMENT_REPLICAS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_OBJECT_SIZE", "512")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_OBJECT_SIZE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_LIST_LIMIT", "177")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_LIST_LIMIT")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_WRITES_SUMMARY_OUTPUT_NAME_PREFIX", "stresser-out-pfx")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_WRITES_SUMMARY_OUTPUT_NAME_PREFIX")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_READS_SUMMARY_OUTPUT_NAME_PREFIX", "stresser-out-pfx")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_READS_SUMMARY_OUTPUT_NAME_PREFIX")
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
 		t.Fatal(err)
@@ -1063,79 +1063,6 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("unexpected cfg.AddOnJupyterHub.ProxySecretToken %q", cfg.AddOnJupyterHub.ProxySecretToken)
 	}
 
-	if !cfg.AddOnHollowNodesLocal.Enable {
-		t.Fatalf("unexpected cfg.AddOnHollowNodesLocal.Enable %v", cfg.AddOnHollowNodesLocal.Enable)
-	}
-	if cfg.AddOnHollowNodesLocal.NodeLabelPrefix != "hollow-prefix" {
-		t.Fatalf("unexpected cfg.AddOnHollowNodesLocal.NodeLabelPrefix %q", cfg.AddOnHollowNodesLocal.NodeLabelPrefix)
-	}
-	if cfg.AddOnHollowNodesLocal.MaxOpenFiles != 333 {
-		t.Fatalf("unexpected cfg.AddOnHollowNodesLocal.MaxOpenFiles %v", cfg.AddOnHollowNodesLocal.MaxOpenFiles)
-	}
-
-	if !cfg.AddOnHollowNodesRemote.Enable {
-		t.Fatalf("unexpected cfg.AddOnHollowNodesRemote.Enable %v", cfg.AddOnHollowNodesRemote.Enable)
-	}
-	if cfg.AddOnHollowNodesRemote.Nodes != 333 {
-		t.Fatalf("unexpected cfg.AddOnHollowNodesRemote.Nodes %v", cfg.AddOnHollowNodesRemote.Nodes)
-	}
-	if cfg.AddOnHollowNodesRemote.Namespace != "test-hollow-nodes-namespace" {
-		t.Fatalf("unexpected cfg.AddOnHollowNodesRemote.Namespace %v", cfg.AddOnHollowNodesRemote.Namespace)
-	}
-	if cfg.AddOnHollowNodesRemote.RepositoryAccountID != "uri" {
-		t.Fatalf("unexpected cfg.AddOnHollowNodesRemote.RepositoryAccountID %v", cfg.AddOnHollowNodesRemote.RepositoryAccountID)
-	}
-	if cfg.AddOnHollowNodesRemote.RepositoryName != "hollow-nodes-repo-name" {
-		t.Fatalf("unexpected cfg.AddOnHollowNodesRemote.RepositoryName %v", cfg.AddOnHollowNodesRemote.RepositoryName)
-	}
-	if cfg.AddOnHollowNodesRemote.RepositoryImageTag != "hollow-nodes-repo-image-tag" {
-		t.Fatalf("unexpected cfg.AddOnHollowNodesRemote.RepositoryImageTag %v", cfg.AddOnHollowNodesRemote.RepositoryImageTag)
-	}
-
-	if !cfg.AddOnStresserLocal.Enable {
-		t.Fatalf("unexpected cfg.AddOnStresserLocal.Enable %v", cfg.AddOnStresserLocal.Enable)
-	}
-	if cfg.AddOnStresserLocal.Duration != 7*time.Minute+30*time.Second {
-		t.Fatalf("unexpected cfg.AddOnStresserLocal.Duration %v", cfg.AddOnStresserLocal.Duration)
-	}
-	if cfg.AddOnStresserLocal.ListLimit != 133 {
-		t.Fatalf("unexpected cfg.AddOnStresserLocal.ListLimit %v", cfg.AddOnStresserLocal.ListLimit)
-	}
-
-	if !cfg.AddOnStresserRemote.Enable {
-		t.Fatalf("unexpected cfg.AddOnStresserRemote.Enable %v", cfg.AddOnStresserRemote.Enable)
-	}
-	if cfg.AddOnStresserRemote.Namespace != "hello" {
-		t.Fatalf("unexpected cfg.AddOnStresserRemote.Namespace %q", cfg.AddOnStresserRemote.Namespace)
-	}
-	if cfg.AddOnStresserRemote.Duration != 7*time.Minute+30*time.Second {
-		t.Fatalf("unexpected cfg.AddOnStresserRemote.Duration %v", cfg.AddOnStresserRemote.Duration)
-	}
-	if cfg.AddOnStresserRemote.RepositoryAccountID != "uri" {
-		t.Fatalf("unexpected cfg.AddOnStresserRemote.RepositoryAccountID %v", cfg.AddOnStresserRemote.RepositoryAccountID)
-	}
-	if cfg.AddOnStresserRemote.RepositoryName != "stresser-repo-name" {
-		t.Fatalf("unexpected cfg.AddOnStresserRemote.RepositoryName %v", cfg.AddOnStresserRemote.RepositoryName)
-	}
-	if cfg.AddOnStresserRemote.RepositoryImageTag != "stresser-repo-image-tag" {
-		t.Fatalf("unexpected cfg.AddOnStresserRemote.RepositoryImageTag %v", cfg.AddOnStresserRemote.RepositoryImageTag)
-	}
-	if cfg.AddOnStresserRemote.DeploymentReplicas != 500 {
-		t.Fatalf("unexpected cfg.AddOnStresserRemote.DeploymentReplicas %v", cfg.AddOnStresserRemote.DeploymentReplicas)
-	}
-	if cfg.AddOnStresserRemote.ObjectSize != 512 {
-		t.Fatalf("unexpected cfg.AddOnStresserRemote.ObjectSize %v", cfg.AddOnStresserRemote.ObjectSize)
-	}
-	if cfg.AddOnStresserRemote.ListLimit != 177 {
-		t.Fatalf("unexpected cfg.AddOnStresserRemote.ListLimit %v", cfg.AddOnStresserRemote.ListLimit)
-	}
-	if cfg.AddOnStresserRemote.RequestsSummaryWritesOutputNamePrefix != "stresser-out-pfx" {
-		t.Fatalf("unexpected cfg.AddOnStresserRemote.RequestsSummaryWritesOutputNamePrefix %v", cfg.AddOnStresserRemote.RequestsSummaryWritesOutputNamePrefix)
-	}
-	if cfg.AddOnStresserRemote.RequestsSummaryReadsOutputNamePrefix != "stresser-out-pfx" {
-		t.Fatalf("unexpected cfg.AddOnStresserRemote.RequestsSummaryReadsOutputNamePrefix %v", cfg.AddOnStresserRemote.RequestsSummaryReadsOutputNamePrefix)
-	}
-
 	if !cfg.AddOnClusterLoaderLocal.Enable {
 		t.Fatalf("unexpected cfg.AddOnClusterLoaderLocal.Enable %v", cfg.AddOnClusterLoaderLocal.Enable)
 	}
@@ -1214,6 +1141,79 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.AddOnClusterLoaderRemote.MediumStatefulSetsPerNamespace != 1 {
 		t.Fatalf("unexpected cfg.AddOnClusterLoaderRemote.MediumStatefulSetsPerNamespace %v", cfg.AddOnClusterLoaderRemote.MediumStatefulSetsPerNamespace)
+	}
+
+	if !cfg.AddOnHollowNodesLocal.Enable {
+		t.Fatalf("unexpected cfg.AddOnHollowNodesLocal.Enable %v", cfg.AddOnHollowNodesLocal.Enable)
+	}
+	if cfg.AddOnHollowNodesLocal.NodeLabelPrefix != "hollow-prefix" {
+		t.Fatalf("unexpected cfg.AddOnHollowNodesLocal.NodeLabelPrefix %q", cfg.AddOnHollowNodesLocal.NodeLabelPrefix)
+	}
+	if cfg.AddOnHollowNodesLocal.MaxOpenFiles != 333 {
+		t.Fatalf("unexpected cfg.AddOnHollowNodesLocal.MaxOpenFiles %v", cfg.AddOnHollowNodesLocal.MaxOpenFiles)
+	}
+
+	if !cfg.AddOnHollowNodesRemote.Enable {
+		t.Fatalf("unexpected cfg.AddOnHollowNodesRemote.Enable %v", cfg.AddOnHollowNodesRemote.Enable)
+	}
+	if cfg.AddOnHollowNodesRemote.Nodes != 333 {
+		t.Fatalf("unexpected cfg.AddOnHollowNodesRemote.Nodes %v", cfg.AddOnHollowNodesRemote.Nodes)
+	}
+	if cfg.AddOnHollowNodesRemote.Namespace != "test-hollow-nodes-namespace" {
+		t.Fatalf("unexpected cfg.AddOnHollowNodesRemote.Namespace %v", cfg.AddOnHollowNodesRemote.Namespace)
+	}
+	if cfg.AddOnHollowNodesRemote.RepositoryAccountID != "uri" {
+		t.Fatalf("unexpected cfg.AddOnHollowNodesRemote.RepositoryAccountID %v", cfg.AddOnHollowNodesRemote.RepositoryAccountID)
+	}
+	if cfg.AddOnHollowNodesRemote.RepositoryName != "hollow-nodes-repo-name" {
+		t.Fatalf("unexpected cfg.AddOnHollowNodesRemote.RepositoryName %v", cfg.AddOnHollowNodesRemote.RepositoryName)
+	}
+	if cfg.AddOnHollowNodesRemote.RepositoryImageTag != "hollow-nodes-repo-image-tag" {
+		t.Fatalf("unexpected cfg.AddOnHollowNodesRemote.RepositoryImageTag %v", cfg.AddOnHollowNodesRemote.RepositoryImageTag)
+	}
+
+	if !cfg.AddOnStresserLocal.Enable {
+		t.Fatalf("unexpected cfg.AddOnStresserLocal.Enable %v", cfg.AddOnStresserLocal.Enable)
+	}
+	if cfg.AddOnStresserLocal.Duration != 7*time.Minute+30*time.Second {
+		t.Fatalf("unexpected cfg.AddOnStresserLocal.Duration %v", cfg.AddOnStresserLocal.Duration)
+	}
+	if cfg.AddOnStresserLocal.ListLimit != 133 {
+		t.Fatalf("unexpected cfg.AddOnStresserLocal.ListLimit %v", cfg.AddOnStresserLocal.ListLimit)
+	}
+
+	if !cfg.AddOnStresserRemote.Enable {
+		t.Fatalf("unexpected cfg.AddOnStresserRemote.Enable %v", cfg.AddOnStresserRemote.Enable)
+	}
+	if cfg.AddOnStresserRemote.Namespace != "hello" {
+		t.Fatalf("unexpected cfg.AddOnStresserRemote.Namespace %q", cfg.AddOnStresserRemote.Namespace)
+	}
+	if cfg.AddOnStresserRemote.Duration != 7*time.Minute+30*time.Second {
+		t.Fatalf("unexpected cfg.AddOnStresserRemote.Duration %v", cfg.AddOnStresserRemote.Duration)
+	}
+	if cfg.AddOnStresserRemote.RepositoryAccountID != "uri" {
+		t.Fatalf("unexpected cfg.AddOnStresserRemote.RepositoryAccountID %v", cfg.AddOnStresserRemote.RepositoryAccountID)
+	}
+	if cfg.AddOnStresserRemote.RepositoryName != "stresser-repo-name" {
+		t.Fatalf("unexpected cfg.AddOnStresserRemote.RepositoryName %v", cfg.AddOnStresserRemote.RepositoryName)
+	}
+	if cfg.AddOnStresserRemote.RepositoryImageTag != "stresser-repo-image-tag" {
+		t.Fatalf("unexpected cfg.AddOnStresserRemote.RepositoryImageTag %v", cfg.AddOnStresserRemote.RepositoryImageTag)
+	}
+	if cfg.AddOnStresserRemote.DeploymentReplicas != 500 {
+		t.Fatalf("unexpected cfg.AddOnStresserRemote.DeploymentReplicas %v", cfg.AddOnStresserRemote.DeploymentReplicas)
+	}
+	if cfg.AddOnStresserRemote.ObjectSize != 512 {
+		t.Fatalf("unexpected cfg.AddOnStresserRemote.ObjectSize %v", cfg.AddOnStresserRemote.ObjectSize)
+	}
+	if cfg.AddOnStresserRemote.ListLimit != 177 {
+		t.Fatalf("unexpected cfg.AddOnStresserRemote.ListLimit %v", cfg.AddOnStresserRemote.ListLimit)
+	}
+	if cfg.AddOnStresserRemote.RequestsWritesSummaryOutputNamePrefix != "stresser-out-pfx" {
+		t.Fatalf("unexpected cfg.AddOnStresserRemote.RequestsWritesSummaryOutputNamePrefix %v", cfg.AddOnStresserRemote.RequestsWritesSummaryOutputNamePrefix)
+	}
+	if cfg.AddOnStresserRemote.RequestsReadsSummaryOutputNamePrefix != "stresser-out-pfx" {
+		t.Fatalf("unexpected cfg.AddOnStresserRemote.RequestsReadsSummaryOutputNamePrefix %v", cfg.AddOnStresserRemote.RequestsReadsSummaryOutputNamePrefix)
 	}
 
 	cfg.Parameters.RoleManagedPolicyARNs = nil

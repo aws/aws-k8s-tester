@@ -149,14 +149,14 @@ type Tester struct {
 	jupyterHubTester  jupyter_hub.Tester
 	kubeflowTester    kubeflow.Tester
 
+	clusterLoaderLocalTester  cluster_loader_local.Tester
+	clusterLoaderRemoteTester cluster_loader_remote.Tester
+
 	hollowNodesLocalTester  hollow_nodes_local.Tester
 	hollowNodesRemoteTester hollow_nodes_remote.Tester
 
 	stresserLocalTester  stresser_local.Tester
 	stresserRemoteTester stresser_remote.Tester
-
-	clusterLoaderLocalTester  cluster_loader_local.Tester
-	clusterLoaderRemoteTester cluster_loader_remote.Tester
 }
 
 // New returns a new EKS kubetest2 Deployer.
@@ -732,6 +732,29 @@ func (ts *Tester) createSubTesters() (err error) {
 		}
 	}
 
+	if ts.cfg.IsEnabledAddOnClusterLoaderLocal() {
+		ts.lg.Info("creating clusterLoaderLocalTester")
+		ts.clusterLoaderLocalTester = cluster_loader_local.New(cluster_loader_local.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			EKSConfig: ts.cfg,
+			K8SClient: ts.k8sClient,
+		})
+	}
+	if ts.cfg.IsEnabledAddOnClusterLoaderRemote() {
+		ts.lg.Info("creating clusterLoaderRemoteTester")
+		ts.clusterLoaderRemoteTester, err = cluster_loader_remote.New(cluster_loader_remote.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			EKSConfig: ts.cfg,
+			K8SClient: ts.k8sClient,
+			ECRAPI:    ts.ecrAPI,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
 	if ts.cfg.IsEnabledAddOnHollowNodesLocal() {
 		ts.lg.Info("creating hollowNodesLocalTester")
 		ts.hollowNodesLocalTester, err = hollow_nodes_local.New(hollow_nodes_local.Config{
@@ -773,29 +796,6 @@ func (ts *Tester) createSubTesters() (err error) {
 	if ts.cfg.IsEnabledAddOnStresserRemote() {
 		ts.lg.Info("creating stresserRemoteTester")
 		ts.stresserRemoteTester, err = stresser_remote.New(stresser_remote.Config{
-			Logger:    ts.lg,
-			Stopc:     ts.stopCreationCh,
-			EKSConfig: ts.cfg,
-			K8SClient: ts.k8sClient,
-			ECRAPI:    ts.ecrAPI,
-		})
-		if err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnClusterLoaderLocal() {
-		ts.lg.Info("creating clusterLoaderLocalTester")
-		ts.clusterLoaderLocalTester = cluster_loader_local.New(cluster_loader_local.Config{
-			Logger:    ts.lg,
-			Stopc:     ts.stopCreationCh,
-			EKSConfig: ts.cfg,
-			K8SClient: ts.k8sClient,
-		})
-	}
-	if ts.cfg.IsEnabledAddOnClusterLoaderRemote() {
-		ts.lg.Info("creating clusterLoaderRemoteTester")
-		ts.clusterLoaderRemoteTester, err = cluster_loader_remote.New(cluster_loader_remote.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
@@ -1529,6 +1529,39 @@ func (ts *Tester) Up() (err error) {
 		}
 	}
 
+	if ts.cfg.IsEnabledAddOnClusterLoaderLocal() {
+		if ts.clusterLoaderLocalTester == nil {
+			return errors.New("ts.clusterLoaderLocalTester == nil when AddOnClusterLoader.Enable == true")
+		}
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("clusterLoaderLocalTester.Create (%q, \"%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.osSig,
+			ts.clusterLoaderLocalTester.Create,
+		); err != nil {
+			return err
+		}
+	}
+	if ts.cfg.IsEnabledAddOnClusterLoaderRemote() {
+		if ts.clusterLoaderRemoteTester == nil {
+			return errors.New("ts.clusterLoaderRemoteTester == nil when AddOnClusterLoader.Enable == true")
+		}
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("clusterLoaderRemoteTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnClusterLoaderRemote.Namespace)
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.osSig,
+			ts.clusterLoaderRemoteTester.Create,
+		); err != nil {
+			return err
+		}
+	}
+
 	if ts.cfg.IsEnabledAddOnHollowNodesLocal() {
 		if ts.hollowNodesLocalTester == nil {
 			return errors.New("ts.hollowNodesLocalTester == nil when AddOnHollowNodesLocal.Enable == true")
@@ -1590,39 +1623,6 @@ func (ts *Tester) Up() (err error) {
 			ts.stopCreationChOnce,
 			ts.osSig,
 			ts.stresserRemoteTester.Create,
-		); err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnClusterLoaderLocal() {
-		if ts.clusterLoaderLocalTester == nil {
-			return errors.New("ts.clusterLoaderLocalTester == nil when AddOnClusterLoader.Enable == true")
-		}
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("clusterLoaderLocalTester.Create (%q, \"%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.osSig,
-			ts.clusterLoaderLocalTester.Create,
-		); err != nil {
-			return err
-		}
-	}
-	if ts.cfg.IsEnabledAddOnClusterLoaderRemote() {
-		if ts.clusterLoaderRemoteTester == nil {
-			return errors.New("ts.clusterLoaderRemoteTester == nil when AddOnClusterLoader.Enable == true")
-		}
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("clusterLoaderRemoteTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnClusterLoaderRemote.Namespace)
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.osSig,
-			ts.clusterLoaderRemoteTester.Create,
 		); err != nil {
 			return err
 		}
@@ -1733,20 +1733,6 @@ func (ts *Tester) Up() (err error) {
 			}
 		}
 
-		if ts.cfg.IsEnabledAddOnStresserRemote() {
-			fmt.Printf("\n*********************************\n")
-			fmt.Printf("stresserRemoteTester.AggregateResults (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnStresserRemote.Namespace)
-			if err := catchInterrupt(
-				ts.lg,
-				ts.stopCreationCh,
-				ts.stopCreationChOnce,
-				ts.osSig,
-				ts.stresserRemoteTester.AggregateResults,
-			); err != nil {
-				return err
-			}
-		}
-
 		if ts.cfg.IsEnabledAddOnClusterLoaderRemote() {
 			fmt.Printf("\n*********************************\n")
 			fmt.Printf("clusterLoaderRemoteTester.AggregateResults (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnClusterLoaderRemote.Namespace)
@@ -1756,6 +1742,20 @@ func (ts *Tester) Up() (err error) {
 				ts.stopCreationChOnce,
 				ts.osSig,
 				ts.clusterLoaderRemoteTester.AggregateResults,
+			); err != nil {
+				return err
+			}
+		}
+
+		if ts.cfg.IsEnabledAddOnStresserRemote() {
+			fmt.Printf("\n*********************************\n")
+			fmt.Printf("stresserRemoteTester.AggregateResults (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnStresserRemote.Namespace)
+			if err := catchInterrupt(
+				ts.lg,
+				ts.stopCreationCh,
+				ts.stopCreationChOnce,
+				ts.osSig,
+				ts.stresserRemoteTester.AggregateResults,
 			); err != nil {
 				return err
 			}
@@ -1852,31 +1852,6 @@ func (ts *Tester) down() (err error) {
 		errs = append(errs, err.Error())
 	}
 
-	if ts.cfg.IsEnabledAddOnClusterLoaderRemote() && ts.cfg.AddOnClusterLoaderRemote.Created {
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("clusterLoaderRemoteTester.Delete (%q)\n", ts.cfg.ConfigPath)
-		if err := ts.clusterLoaderRemoteTester.Delete(); err != nil {
-			ts.lg.Warn("clusterLoaderRemoteTester.Delete failed", zap.Error(err))
-			errs = append(errs, err.Error())
-		} else {
-			waitDur := 20 * time.Second
-			ts.lg.Info("sleeping after deleting clusterLoaderRemoteTester", zap.Duration("wait", waitDur))
-			time.Sleep(waitDur)
-		}
-	}
-	if ts.cfg.IsEnabledAddOnClusterLoaderLocal() && ts.cfg.AddOnClusterLoaderLocal.Created {
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("clusterLoaderRemoteTester.Delete (%q)\n", ts.cfg.ConfigPath)
-		if err := ts.clusterLoaderRemoteTester.Delete(); err != nil {
-			ts.lg.Warn("clusterLoaderRemoteTester.Delete failed", zap.Error(err))
-			errs = append(errs, err.Error())
-		} else {
-			waitDur := 20 * time.Second
-			ts.lg.Info("sleeping after deleting clusterLoaderRemoteTester", zap.Duration("wait", waitDur))
-			time.Sleep(waitDur)
-		}
-	}
-
 	if ts.cfg.IsEnabledAddOnStresserRemote() && ts.cfg.AddOnStresserRemote.Created {
 		fmt.Printf("\n*********************************\n")
 		fmt.Printf("stresserRemoteTester.Delete (%q)\n", ts.cfg.ConfigPath)
@@ -1916,6 +1891,31 @@ func (ts *Tester) down() (err error) {
 		if err := ts.hollowNodesLocalTester.Delete(); err != nil {
 			ts.lg.Warn("hollowNodesLocalTester.Delete failed", zap.Error(err))
 			errs = append(errs, err.Error())
+		}
+	}
+
+	if ts.cfg.IsEnabledAddOnClusterLoaderRemote() && ts.cfg.AddOnClusterLoaderRemote.Created {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("clusterLoaderRemoteTester.Delete (%q)\n", ts.cfg.ConfigPath)
+		if err := ts.clusterLoaderRemoteTester.Delete(); err != nil {
+			ts.lg.Warn("clusterLoaderRemoteTester.Delete failed", zap.Error(err))
+			errs = append(errs, err.Error())
+		} else {
+			waitDur := 20 * time.Second
+			ts.lg.Info("sleeping after deleting clusterLoaderRemoteTester", zap.Duration("wait", waitDur))
+			time.Sleep(waitDur)
+		}
+	}
+	if ts.cfg.IsEnabledAddOnClusterLoaderLocal() && ts.cfg.AddOnClusterLoaderLocal.Created {
+		fmt.Printf("\n*********************************\n")
+		fmt.Printf("clusterLoaderRemoteTester.Delete (%q)\n", ts.cfg.ConfigPath)
+		if err := ts.clusterLoaderRemoteTester.Delete(); err != nil {
+			ts.lg.Warn("clusterLoaderRemoteTester.Delete failed", zap.Error(err))
+			errs = append(errs, err.Error())
+		} else {
+			waitDur := 20 * time.Second
+			ts.lg.Info("sleeping after deleting clusterLoaderRemoteTester", zap.Duration("wait", waitDur))
+			time.Sleep(waitDur)
 		}
 	}
 

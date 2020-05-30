@@ -4,7 +4,9 @@ package csrs
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"sort"
 	"sync"
 	"time"
@@ -74,13 +76,15 @@ type Config struct {
 	//   ""
 	//
 	InitialRequestConditionType string
+
+	WritesJSONPath string
 }
 
 // Loader defines CSR loader operations.
 type Loader interface {
 	Start()
 	Stop()
-	GetMetrics() (writes metrics.RequestsSummary, err error)
+	CollectMetrics() (writes metrics.RequestsSummary, err error)
 }
 
 type loader struct {
@@ -115,7 +119,7 @@ func (ld *loader) Stop() {
 
 // GetMetrics locally fetches output from registered metrics.
 // ref. https://pkg.go.dev/github.com/prometheus/client_golang@v1.6.0/prometheus/promhttp?tab=doc#Handler
-func (ld *loader) GetMetrics() (writes metrics.RequestsSummary, err error) {
+func (ld *loader) CollectMetrics() (writes metrics.RequestsSummary, err error) {
 	// https://pkg.go.dev/github.com/prometheus/client_golang/prometheus?tab=doc#Gatherer
 	mfs, err := prometheus.DefaultGatherer.Gather()
 	if err != nil {
@@ -150,6 +154,18 @@ func (ld *loader) GetMetrics() (writes metrics.RequestsSummary, err error) {
 	writes.LantencyP99 = ld.writeLatencies.PickLantencyP99()
 	writes.LantencyP999 = ld.writeLatencies.PickLantencyP999()
 	writes.LantencyP9999 = ld.writeLatencies.PickLantencyP9999()
+
+	ld.cfg.Logger.Info("writing latency results in JSON to disk", zap.String("path", ld.cfg.WritesJSONPath))
+	wb, err := json.Marshal(ld.writeLatencies)
+	if err != nil {
+		ld.cfg.Logger.Warn("failed to encode latency results in JSON", zap.Error(err))
+		return metrics.RequestsSummary{}, err
+	}
+	if err = ioutil.WriteFile(ld.cfg.WritesJSONPath, wb, 0600); err != nil {
+		ld.cfg.Logger.Warn("failed to write latency results in JSON to disk", zap.String("path", ld.cfg.WritesJSONPath), zap.Error(err))
+		return metrics.RequestsSummary{}, err
+	}
+	ld.cfg.Logger.Info("wrote latency results in JSON to disk", zap.String("path", ld.cfg.WritesJSONPath))
 
 	return writes, nil
 }

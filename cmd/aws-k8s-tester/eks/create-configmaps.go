@@ -100,31 +100,33 @@ func createConfigMapsFunc(cmd *cobra.Command, args []string) {
 		case <-donec:
 		}
 	}()
+
+	// to randomize results output files
+	// when multiple pods are created via deployment
+	// we do not want each pod to write to the same file
+	// we want to avoid conflicts and run checks for each pod
+	// enough for make them unique per worker
+	sfx := randutil.String(7)
+
 	loader := config_maps.New(config_maps.Config{
-		Logger:        lg,
-		Stopc:         stopc,
-		Client:        cli,
-		ClientTimeout: configmapsClientTimeout,
-		Namespace:     configmapsNamespace,
-		Objects:       configmapsObjects,
-		ObjectSize:    configmapsObjectSize,
+		Logger:         lg,
+		Stopc:          stopc,
+		Client:         cli,
+		ClientTimeout:  configmapsClientTimeout,
+		Namespace:      configmapsNamespace,
+		Objects:        configmapsObjects,
+		ObjectSize:     configmapsObjectSize,
+		WritesJSONPath: "/var/log/" + configmapsWritesOutputNamePrefix + "-" + sfx + "-writes.json",
 	})
 	loader.Start()
 	loader.Stop()
 	close(donec)
 
-	writes, err := loader.GetMetrics()
+	writes, err := loader.CollectMetrics()
 	if err != nil {
 		lg.Warn("failed to get metrics", zap.Error(err))
 	} else {
-		// to randomize results output files
-		// when multiple pods are created via deployment
-		// we do not want each pod to write to the same file
-		// we want to avoid conflicts and run checks for each pod
-		// enough for make them unique per worker
-		sfx := randutil.String(7)
-
-		writesPath := "/var/log/" + configmapsWritesOutputNamePrefix + "-" + sfx + "-writes.json"
+		writesPath := "/var/log/" + configmapsWritesOutputNamePrefix + "-" + sfx + "-writes-summary.json"
 		lg.Info("writing writes results output", zap.String("path", writesPath))
 		err = ioutil.WriteFile(writesPath, []byte(writes.JSON()), 0600)
 		if err != nil {

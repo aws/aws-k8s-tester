@@ -55,23 +55,28 @@ type AddOnStresserRemote struct {
 	Duration       time.Duration `json:"duration,omitempty"`
 	DurationString string        `json:"duration-string,omitempty" read-only:"true"`
 
-	// RequestsSummaryWrites is the writes results.
-	RequestsSummaryWrites metrics.RequestsSummary `json:"requests-summary-writes,omitempty" read-only:"true"`
-	// RequestsSummaryWritesJSONPath is the file path to store writes requests summary in JSON format.
-	RequestsSummaryWritesJSONPath string `json:"requests-summary-writes-json-path" read-only:"true"`
-	// RequestsSummaryWritesTablePath is the file path to store writes requests summary in table format.
-	RequestsSummaryWritesTablePath string `json:"requests-summary-writes-table-path" read-only:"true"`
-	// RequestsSummaryReads is the reads results.
-	RequestsSummaryReads metrics.RequestsSummary `json:"requests-summary-reads,omitempty" read-only:"true"`
-	// RequestsSummaryReadsJSONPath is the file path to store reads requests summary in JSON format.
-	RequestsSummaryReadsJSONPath string `json:"requests-summary-reads-json-path" read-only:"true"`
-	// RequestsSummaryReadsTablePath is the file path to store reads requests summary in table format.
-	RequestsSummaryReadsTablePath string `json:"requests-summary-reads-table-path" read-only:"true"`
+	// RequestsWritesJSONPath is the file path to store writes requests in JSON format.
+	RequestsWritesJSONPath string `json:"requests-writes-json-path" read-only:"true"`
+	// RequestsWritesSummary is the writes results.
+	RequestsWritesSummary metrics.RequestsSummary `json:"requests-writes-summary,omitempty" read-only:"true"`
+	// RequestsWritesSummaryJSONPath is the file path to store writes requests summary in JSON format.
+	RequestsWritesSummaryJSONPath string `json:"requests-writes-summary-json-path" read-only:"true"`
+	// RequestsWritesSummaryTablePath is the file path to store writes requests summary in table format.
+	RequestsWritesSummaryTablePath string `json:"requests-writes-summary-table-path" read-only:"true"`
 
-	// RequestsSummaryWritesOutputNamePrefix is the output path name in "/var/log" directory, used in remote worker.
-	RequestsSummaryWritesOutputNamePrefix string `json:"requests-summary-writes-output-name-prefix"`
-	// RequestsSummaryReadsOutputNamePrefix is the output path name in "/var/log" directory, used in remote worker.
-	RequestsSummaryReadsOutputNamePrefix string `json:"requests-summary-reads-output-name-prefix"`
+	// RequestsReadsJSONPath is the file path to store reads requests in JSON format.
+	RequestsReadsJSONPath string `json:"requests-reads-json-path" read-only:"true"`
+	// RequestsReadsSummary is the reads results.
+	RequestsReadsSummary metrics.RequestsSummary `json:"requests-reads-summary,omitempty" read-only:"true"`
+	// RequestsReadsSummaryJSONPath is the file path to store reads requests summary in JSON format.
+	RequestsReadsSummaryJSONPath string `json:"requests-reads-summary-json-path" read-only:"true"`
+	// RequestsReadsSummaryTablePath is the file path to store reads requests summary in table format.
+	RequestsReadsSummaryTablePath string `json:"requests-reads-summary-table-path" read-only:"true"`
+
+	// RequestsWritesSummaryOutputNamePrefix is the output path name in "/var/log" directory, used in remote worker.
+	RequestsWritesSummaryOutputNamePrefix string `json:"requests-writes-summary-output-name-prefix"`
+	// RequestsReadsSummaryOutputNamePrefix is the output path name in "/var/log" directory, used in remote worker.
+	RequestsReadsSummaryOutputNamePrefix string `json:"requests-reads-summary-output-name-prefix"`
 }
 
 // EnvironmentVariablePrefixAddOnStresserRemote is the environment variable prefix used for "eksconfig".
@@ -97,8 +102,8 @@ func getDefaultAddOnStresserRemote() *AddOnStresserRemote {
 		ObjectSize:                            0,
 		ListLimit:                             0,
 		Duration:                              time.Minute,
-		RequestsSummaryWritesOutputNamePrefix: "stresser-writes" + randutil.String(10),
-		RequestsSummaryReadsOutputNamePrefix:  "stresser-reads" + randutil.String(10),
+		RequestsWritesSummaryOutputNamePrefix: "stresser-writes" + randutil.String(10),
+		RequestsReadsSummaryOutputNamePrefix:  "stresser-reads" + randutil.String(10),
 	}
 }
 
@@ -129,24 +134,31 @@ func (cfg *Config) validateAddOnStresserRemote() error {
 	}
 	cfg.AddOnStresserRemote.DurationString = cfg.AddOnStresserRemote.Duration.String()
 
-	if cfg.AddOnStresserRemote.RequestsSummaryWritesJSONPath == "" {
-		cfg.AddOnStresserRemote.RequestsSummaryWritesJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-summary-writes.json"
+	if cfg.AddOnStresserRemote.RequestsWritesJSONPath == "" {
+		cfg.AddOnStresserRemote.RequestsWritesJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-writes.csv"
 	}
-	if cfg.AddOnStresserRemote.RequestsSummaryWritesTablePath == "" {
-		cfg.AddOnStresserRemote.RequestsSummaryWritesTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-summary-writes.txt"
+	if cfg.AddOnStresserRemote.RequestsWritesSummaryJSONPath == "" {
+		cfg.AddOnStresserRemote.RequestsWritesSummaryJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-writes-summary.json"
 	}
-	if cfg.AddOnStresserRemote.RequestsSummaryReadsJSONPath == "" {
-		cfg.AddOnStresserRemote.RequestsSummaryReadsJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-summary-reads.json"
-	}
-	if cfg.AddOnStresserRemote.RequestsSummaryReadsTablePath == "" {
-		cfg.AddOnStresserRemote.RequestsSummaryReadsTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-summary-reads.txt"
+	if cfg.AddOnStresserRemote.RequestsWritesSummaryTablePath == "" {
+		cfg.AddOnStresserRemote.RequestsWritesSummaryTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-writes-summary.txt"
 	}
 
-	if cfg.AddOnStresserRemote.RequestsSummaryWritesOutputNamePrefix == "" {
-		cfg.AddOnStresserRemote.RequestsSummaryWritesOutputNamePrefix = "stresser-writes" + randutil.String(10)
+	if cfg.AddOnStresserRemote.RequestsReadsJSONPath == "" {
+		cfg.AddOnStresserRemote.RequestsReadsJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-reads.csv"
 	}
-	if cfg.AddOnStresserRemote.RequestsSummaryReadsOutputNamePrefix == "" {
-		cfg.AddOnStresserRemote.RequestsSummaryReadsOutputNamePrefix = "stresser-reads" + randutil.String(10)
+	if cfg.AddOnStresserRemote.RequestsReadsSummaryJSONPath == "" {
+		cfg.AddOnStresserRemote.RequestsReadsSummaryJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-reads-summary.json"
+	}
+	if cfg.AddOnStresserRemote.RequestsReadsSummaryTablePath == "" {
+		cfg.AddOnStresserRemote.RequestsReadsSummaryTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-reads-summary.txt"
+	}
+
+	if cfg.AddOnStresserRemote.RequestsWritesSummaryOutputNamePrefix == "" {
+		cfg.AddOnStresserRemote.RequestsWritesSummaryOutputNamePrefix = "stresser-writes" + randutil.String(10)
+	}
+	if cfg.AddOnStresserRemote.RequestsReadsSummaryOutputNamePrefix == "" {
+		cfg.AddOnStresserRemote.RequestsReadsSummaryOutputNamePrefix = "stresser-reads" + randutil.String(10)
 	}
 
 	return nil

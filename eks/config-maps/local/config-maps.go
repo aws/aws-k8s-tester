@@ -65,35 +65,36 @@ func (ts *tester) Create() (err error) {
 	}
 
 	loader := config_maps.New(config_maps.Config{
-		Logger:        ts.cfg.Logger,
-		Stopc:         ts.cfg.Stopc,
-		Client:        ts.cfg.K8SClient,
-		ClientTimeout: ts.cfg.EKSConfig.ClientTimeout,
-		Namespace:     ts.cfg.EKSConfig.AddOnConfigMapsLocal.Namespace,
-		Objects:       ts.cfg.EKSConfig.AddOnConfigMapsLocal.Objects,
-		ObjectSize:    ts.cfg.EKSConfig.AddOnConfigMapsLocal.ObjectSize,
+		Logger:         ts.cfg.Logger,
+		Stopc:          ts.cfg.Stopc,
+		Client:         ts.cfg.K8SClient,
+		ClientTimeout:  ts.cfg.EKSConfig.ClientTimeout,
+		Namespace:      ts.cfg.EKSConfig.AddOnConfigMapsLocal.Namespace,
+		Objects:        ts.cfg.EKSConfig.AddOnConfigMapsLocal.Objects,
+		ObjectSize:     ts.cfg.EKSConfig.AddOnConfigMapsLocal.ObjectSize,
+		WritesJSONPath: ts.cfg.EKSConfig.AddOnConfigMapsLocal.RequestsWritesJSONPath,
 	})
 	loader.Start()
 	loader.Stop()
 
 	ts.cfg.Logger.Info("completing configmaps local tester")
-	ts.cfg.EKSConfig.AddOnConfigMapsLocal.RequestsSummaryWrites, err = loader.GetMetrics()
+	ts.cfg.EKSConfig.AddOnConfigMapsLocal.RequestsWritesSummary, err = loader.CollectMetrics()
 	ts.cfg.EKSConfig.Sync()
 	if err != nil {
 		ts.cfg.Logger.Warn("failed to get metrics", zap.Error(err))
 	} else {
-		err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnConfigMapsLocal.RequestsSummaryWritesJSONPath, []byte(ts.cfg.EKSConfig.AddOnConfigMapsLocal.RequestsSummaryWrites.JSON()), 0600)
+		err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnConfigMapsLocal.RequestsWritesSummaryJSONPath, []byte(ts.cfg.EKSConfig.AddOnConfigMapsLocal.RequestsWritesSummary.JSON()), 0600)
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 			return err
 		}
-		err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnConfigMapsLocal.RequestsSummaryWritesTablePath, []byte(ts.cfg.EKSConfig.AddOnConfigMapsLocal.RequestsSummaryWrites.Table()), 0600)
+		err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnConfigMapsLocal.RequestsWritesSummaryTablePath, []byte(ts.cfg.EKSConfig.AddOnConfigMapsLocal.RequestsWritesSummary.Table()), 0600)
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 			return err
 		}
 	}
-	fmt.Printf("\n\nAddOnConfigMapsLocal.RequestsSummaryWrites:\n%s\n", ts.cfg.EKSConfig.AddOnConfigMapsLocal.RequestsSummaryWrites.Table())
+	fmt.Printf("\n\nAddOnConfigMapsLocal.RequestsWritesSummary:\n%s\n", ts.cfg.EKSConfig.AddOnConfigMapsLocal.RequestsWritesSummary.Table())
 
 	waitDur, retryStart := 5*time.Minute, time.Now()
 	for time.Now().Sub(retryStart) < waitDur {

@@ -94,6 +94,8 @@ func (ts *tester) Create() (err error) {
 		NamespacesRead: ns,
 		ObjectSize:     ts.cfg.EKSConfig.AddOnStresserLocal.ObjectSize,
 		ListLimit:      ts.cfg.EKSConfig.AddOnStresserLocal.ListLimit,
+		WritesJSONPath: ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesJSONPath,
+		ReadsJSONPath:  ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsJSONPath,
 	})
 	loader.Start()
 
@@ -101,66 +103,66 @@ func (ts *tester) Create() (err error) {
 	case <-ts.cfg.Stopc:
 		ts.cfg.Logger.Warn("cluster stresser aborted")
 		loader.Stop()
-		ts.cfg.EKSConfig.AddOnStresserLocal.RequestsSummaryWrites, ts.cfg.EKSConfig.AddOnStresserLocal.RequestsSummaryReads, err = loader.GetMetrics()
+		ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummary, ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummary, err = loader.CollectMetrics()
 		ts.cfg.EKSConfig.Sync()
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to get metrics", zap.Error(err))
 		} else {
-			err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsSummaryWritesJSONPath, []byte(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsSummaryWrites.JSON()), 0600)
+			err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummaryJSONPath, []byte(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummary.JSON()), 0600)
 			if err != nil {
 				ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 				return err
 			}
-			err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsSummaryWritesTablePath, []byte(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsSummaryWrites.Table()), 0600)
+			err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummaryTablePath, []byte(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummary.Table()), 0600)
 			if err != nil {
 				ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 				return err
 			}
-			fmt.Printf("\n\nAddOnStresserLocal.RequestsSummaryWrites:\n%s\n", ts.cfg.EKSConfig.AddOnStresserLocal.RequestsSummaryWrites.Table())
-			err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsSummaryReadsJSONPath, []byte(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsSummaryReads.JSON()), 0600)
+			fmt.Printf("\n\nAddOnStresserLocal.RequestsWritesSummary:\n%s\n", ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummary.Table())
+			err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummaryJSONPath, []byte(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummary.JSON()), 0600)
 			if err != nil {
 				ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 				return err
 			}
-			err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsSummaryReadsTablePath, []byte(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsSummaryReads.Table()), 0600)
+			err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummaryTablePath, []byte(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummary.Table()), 0600)
 			if err != nil {
 				ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 				return err
 			}
-			fmt.Printf("\n\nAddOnStresserLocal.RequestsSummaryReads:\n%s\n", ts.cfg.EKSConfig.AddOnStresserLocal.RequestsSummaryReads.Table())
+			fmt.Printf("\n\nAddOnStresserLocal.RequestsReadsSummary:\n%s\n", ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummary.Table())
 		}
 		return nil
 
 	case <-time.After(ts.cfg.EKSConfig.AddOnStresserLocal.Duration):
 		ts.cfg.Logger.Info("completing load testing", zap.Duration("duration", ts.cfg.EKSConfig.AddOnStresserLocal.Duration))
 		loader.Stop()
-		ts.cfg.EKSConfig.AddOnStresserLocal.RequestsSummaryWrites, ts.cfg.EKSConfig.AddOnStresserLocal.RequestsSummaryReads, err = loader.GetMetrics()
+		ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummary, ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummary, err = loader.CollectMetrics()
 		ts.cfg.EKSConfig.Sync()
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to get metrics", zap.Error(err))
 		} else {
-			err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsSummaryWritesJSONPath, []byte(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsSummaryWrites.JSON()), 0600)
+			err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummaryJSONPath, []byte(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummary.JSON()), 0600)
 			if err != nil {
 				ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 				return err
 			}
-			err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsSummaryWritesTablePath, []byte(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsSummaryWrites.Table()), 0600)
+			err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummaryTablePath, []byte(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummary.Table()), 0600)
 			if err != nil {
 				ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 				return err
 			}
-			fmt.Printf("\n\nAddOnStresserLocal.RequestsSummaryWrites:\n%s\n", ts.cfg.EKSConfig.AddOnStresserLocal.RequestsSummaryWrites.Table())
-			err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsSummaryReadsJSONPath, []byte(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsSummaryReads.JSON()), 0600)
+			fmt.Printf("\n\nAddOnStresserLocal.RequestsWritesSummary:\n%s\n", ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummary.Table())
+			err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummaryJSONPath, []byte(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummary.JSON()), 0600)
 			if err != nil {
 				ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 				return err
 			}
-			err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsSummaryReadsTablePath, []byte(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsSummaryReads.Table()), 0600)
+			err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummaryTablePath, []byte(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummary.Table()), 0600)
 			if err != nil {
 				ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 				return err
 			}
-			fmt.Printf("\n\nAddOnStresserLocal.RequestsSummaryReads:\n%s\n", ts.cfg.EKSConfig.AddOnStresserLocal.RequestsSummaryReads.Table())
+			fmt.Printf("\n\nAddOnStresserLocal.RequestsReadsSummary:\n%s\n", ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummary.Table())
 		}
 
 		select {

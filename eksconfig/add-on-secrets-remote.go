@@ -51,24 +51,29 @@ type AddOnSecretsRemote struct {
 	// this must be unique per worker to avoid name conflicts.
 	NamePrefix string `json:"name-prefix"`
 
-	// RequestsSummaryWrites is the writes results.
-	RequestsSummaryWrites metrics.RequestsSummary `json:"requests-summary-writes,omitempty" read-only:"true"`
-	// RequestsSummaryWritesJSONPath is the file path to store writes requests summary in JSON format.
-	RequestsSummaryWritesJSONPath string `json:"requests-summary-writes-json-path" read-only:"true"`
-	// RequestsSummaryWritesTablePath is the file path to store writes requests summary in table format.
-	RequestsSummaryWritesTablePath string `json:"requests-summary-writes-table-path" read-only:"true"`
-	// RequestsSummaryReads is the reads results.
-	// Reads happen inside "Pod" where it reads "Secret" objects from the mounted volume.
-	RequestsSummaryReads metrics.RequestsSummary `json:"requests-summary-reads,omitempty" read-only:"true"`
-	// RequestsSummaryReadsJSONPath is the file path to store reads requests summary in JSON format.
-	RequestsSummaryReadsJSONPath string `json:"requests-summary-reads-json-path" read-only:"true"`
-	// RequestsSummaryReadsTablePath is the file path to store reads requests summary in table format.
-	RequestsSummaryReadsTablePath string `json:"requests-summary-reads-table-path" read-only:"true"`
+	// RequestsWritesJSONPath is the file path to store writes requests in JSON format.
+	RequestsWritesJSONPath string `json:"requests-writes-json-path" read-only:"true"`
+	// RequestsWritesSummary is the writes results.
+	RequestsWritesSummary metrics.RequestsSummary `json:"requests-writes-summary,omitempty" read-only:"true"`
+	// RequestsWritesSummaryJSONPath is the file path to store writes requests summary in JSON format.
+	RequestsWritesSummaryJSONPath string `json:"requests-writes-summary-json-path" read-only:"true"`
+	// RequestsWritesSummaryTablePath is the file path to store writes requests summary in table format.
+	RequestsWritesSummaryTablePath string `json:"requests-writes-summary-table-path" read-only:"true"`
 
-	// RequestsSummaryWritesOutputNamePrefix is the output path name in "/var/log" directory, used in remote worker.
-	RequestsSummaryWritesOutputNamePrefix string `json:"requests-summary-writes-output-name-prefix"`
-	// RequestsSummaryReadsOutputNamePrefix is the output path name in "/var/log" directory, used in remote worker.
-	RequestsSummaryReadsOutputNamePrefix string `json:"requests-summary-reads-output-name-prefix"`
+	// RequestsReadsJSONPath is the file path to store reads requests in JSON format.
+	RequestsReadsJSONPath string `json:"requests-reads-json-path" read-only:"true"`
+	// RequestsReadsSummary is the reads results.
+	// Reads happen inside "Pod" where it reads "Secret" objects from the mounted volume.
+	RequestsReadsSummary metrics.RequestsSummary `json:"requests-reads-summary,omitempty" read-only:"true"`
+	// RequestsReadsSummaryJSONPath is the file path to store reads requests summary in JSON format.
+	RequestsReadsSummaryJSONPath string `json:"requests-reads-summary-json-path" read-only:"true"`
+	// RequestsReadsSummaryTablePath is the file path to store reads requests summary in table format.
+	RequestsReadsSummaryTablePath string `json:"requests-reads-summary-table-path" read-only:"true"`
+
+	// RequestsWritesSummaryOutputNamePrefix is the output path name in "/var/log" directory, used in remote worker.
+	RequestsWritesSummaryOutputNamePrefix string `json:"requests-writes-summary-output-name-prefix"`
+	// RequestsReadsSummaryOutputNamePrefix is the output path name in "/var/log" directory, used in remote worker.
+	RequestsReadsSummaryOutputNamePrefix string `json:"requests-reads-summary-output-name-prefix"`
 }
 
 // EnvironmentVariablePrefixAddOnSecretsRemote is the environment variable prefix used for "eksconfig".
@@ -105,8 +110,8 @@ func getDefaultAddOnSecretsRemote() *AddOnSecretsRemote {
 
 		NamePrefix: "secret" + randutil.String(5),
 
-		RequestsSummaryWritesOutputNamePrefix: "secrets-writes" + randutil.String(10),
-		RequestsSummaryReadsOutputNamePrefix:  "secrets-reads" + randutil.String(10),
+		RequestsWritesSummaryOutputNamePrefix: "secrets-writes" + randutil.String(10),
+		RequestsReadsSummaryOutputNamePrefix:  "secrets-reads" + randutil.String(10),
 	}
 }
 
@@ -146,24 +151,31 @@ func (cfg *Config) validateAddOnSecretsRemote() error {
 		cfg.AddOnSecretsRemote.NamePrefix = "secret" + randutil.String(5)
 	}
 
-	if cfg.AddOnSecretsRemote.RequestsSummaryWritesJSONPath == "" {
-		cfg.AddOnSecretsRemote.RequestsSummaryWritesJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-remote-requests-summary-writes.json"
+	if cfg.AddOnSecretsRemote.RequestsWritesJSONPath == "" {
+		cfg.AddOnSecretsRemote.RequestsWritesJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-remote-requests-writes.csv"
 	}
-	if cfg.AddOnSecretsRemote.RequestsSummaryWritesTablePath == "" {
-		cfg.AddOnSecretsRemote.RequestsSummaryWritesTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-remote-requests-summary-writes.txt"
+	if cfg.AddOnSecretsRemote.RequestsWritesSummaryJSONPath == "" {
+		cfg.AddOnSecretsRemote.RequestsWritesSummaryJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-remote-requests-writes-summary.json"
 	}
-	if cfg.AddOnSecretsRemote.RequestsSummaryReadsJSONPath == "" {
-		cfg.AddOnSecretsRemote.RequestsSummaryReadsJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-remote-requests-summary-reads.json"
-	}
-	if cfg.AddOnSecretsRemote.RequestsSummaryReadsTablePath == "" {
-		cfg.AddOnSecretsRemote.RequestsSummaryReadsTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-remote-requests-summary-reads.txt"
+	if cfg.AddOnSecretsRemote.RequestsWritesSummaryTablePath == "" {
+		cfg.AddOnSecretsRemote.RequestsWritesSummaryTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-remote-requests-writes-summary.txt"
 	}
 
-	if cfg.AddOnSecretsRemote.RequestsSummaryWritesOutputNamePrefix == "" {
-		cfg.AddOnSecretsRemote.RequestsSummaryWritesOutputNamePrefix = "secrets-writes" + randutil.String(10)
+	if cfg.AddOnSecretsRemote.RequestsReadsJSONPath == "" {
+		cfg.AddOnSecretsRemote.RequestsReadsJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-remote-requests-reads.csv"
 	}
-	if cfg.AddOnSecretsRemote.RequestsSummaryReadsOutputNamePrefix == "" {
-		cfg.AddOnSecretsRemote.RequestsSummaryReadsOutputNamePrefix = "secrets-reads" + randutil.String(10)
+	if cfg.AddOnSecretsRemote.RequestsReadsSummaryJSONPath == "" {
+		cfg.AddOnSecretsRemote.RequestsReadsSummaryJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-remote-requests-reads-summary.json"
+	}
+	if cfg.AddOnSecretsRemote.RequestsReadsSummaryTablePath == "" {
+		cfg.AddOnSecretsRemote.RequestsReadsSummaryTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-remote-requests-reads-summary.txt"
+	}
+
+	if cfg.AddOnSecretsRemote.RequestsWritesSummaryOutputNamePrefix == "" {
+		cfg.AddOnSecretsRemote.RequestsWritesSummaryOutputNamePrefix = "secrets-writes" + randutil.String(10)
+	}
+	if cfg.AddOnSecretsRemote.RequestsReadsSummaryOutputNamePrefix == "" {
+		cfg.AddOnSecretsRemote.RequestsReadsSummaryOutputNamePrefix = "secrets-reads" + randutil.String(10)
 	}
 
 	return nil

@@ -104,39 +104,42 @@ func createSecretsFunc(cmd *cobra.Command, args []string) {
 		case <-donec:
 		}
 	}()
+
+	// to randomize results output files
+	// when multiple pods are created via deployment
+	// we do not want each pod to write to the same file
+	// we want to avoid conflicts and run checks for each pod
+	// enough for make them unique per worker
+	sfx := randutil.String(7)
+
 	loader := secrets.New(secrets.Config{
-		Logger:        lg,
-		Stopc:         stopc,
-		Client:        cli,
-		ClientTimeout: secretsClientTimeout,
-		Namespace:     secretsNamespace,
-		NamePrefix:    secretsNamePrefix,
-		Objects:       secretsObjects,
-		ObjectSize:    secretsObjectSize,
+		Logger:         lg,
+		Stopc:          stopc,
+		Client:         cli,
+		ClientTimeout:  secretsClientTimeout,
+		Namespace:      secretsNamespace,
+		NamePrefix:     secretsNamePrefix,
+		Objects:        secretsObjects,
+		ObjectSize:     secretsObjectSize,
+		WritesJSONPath: "/var/log/" + secretsWritesOutputNamePrefix + "-" + sfx + "-writes.json",
+		ReadsJSONPath:  "/var/log/" + secretsReadsOutputNamePrefix + "-" + sfx + "-reads.json",
 	})
 	loader.Start()
 	loader.Stop()
 	close(donec)
 
-	writes, reads, err := loader.GetMetrics()
+	writes, reads, err := loader.CollectMetrics()
 	if err != nil {
 		lg.Warn("failed to get metrics", zap.Error(err))
 	} else {
-		// to randomize results output files
-		// when multiple pods are created via deployment
-		// we do not want each pod to write to the same file
-		// we want to avoid conflicts and run checks for each pod
-		// enough for make them unique per worker
-		sfx := randutil.String(7)
-
-		writesPath := "/var/log/" + secretsWritesOutputNamePrefix + "-" + sfx + "-writes.json"
+		writesPath := "/var/log/" + secretsWritesOutputNamePrefix + "-" + sfx + "-writes-summary.json"
 		lg.Info("writing writes results output", zap.String("path", writesPath))
 		err = ioutil.WriteFile(writesPath, []byte(writes.JSON()), 0600)
 		if err != nil {
 			lg.Warn("failed to write write results", zap.Error(err))
 		}
 
-		readsPath := "/var/log/" + secretsReadsOutputNamePrefix + "-" + sfx + "-reads.json"
+		readsPath := "/var/log/" + secretsReadsOutputNamePrefix + "-" + sfx + "-reads-summary.json"
 		lg.Info("writing reads results output", zap.String("path", readsPath))
 		err = ioutil.WriteFile(readsPath, []byte(reads.JSON()), 0600)
 		if err != nil {

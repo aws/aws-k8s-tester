@@ -65,46 +65,48 @@ func (ts *tester) Create() (err error) {
 	}
 
 	loader := secrets.New(secrets.Config{
-		Logger:        ts.cfg.Logger,
-		Stopc:         ts.cfg.Stopc,
-		Client:        ts.cfg.K8SClient,
-		ClientTimeout: ts.cfg.EKSConfig.ClientTimeout,
-		Namespace:     ts.cfg.EKSConfig.AddOnSecretsLocal.Namespace,
-		NamePrefix:    ts.cfg.EKSConfig.AddOnSecretsLocal.NamePrefix,
-		Objects:       ts.cfg.EKSConfig.AddOnSecretsLocal.Objects,
-		ObjectSize:    ts.cfg.EKSConfig.AddOnSecretsLocal.ObjectSize,
+		Logger:         ts.cfg.Logger,
+		Stopc:          ts.cfg.Stopc,
+		Client:         ts.cfg.K8SClient,
+		ClientTimeout:  ts.cfg.EKSConfig.ClientTimeout,
+		Namespace:      ts.cfg.EKSConfig.AddOnSecretsLocal.Namespace,
+		NamePrefix:     ts.cfg.EKSConfig.AddOnSecretsLocal.NamePrefix,
+		Objects:        ts.cfg.EKSConfig.AddOnSecretsLocal.Objects,
+		ObjectSize:     ts.cfg.EKSConfig.AddOnSecretsLocal.ObjectSize,
+		WritesJSONPath: ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesJSONPath,
+		ReadsJSONPath:  ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsJSONPath,
 	})
 	loader.Start()
 	loader.Stop()
 
 	ts.cfg.Logger.Info("completing secrets local tester")
-	ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsSummaryWrites, ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsSummaryReads, err = loader.GetMetrics()
+	ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummary, ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummary, err = loader.CollectMetrics()
 	ts.cfg.EKSConfig.Sync()
 	if err != nil {
 		ts.cfg.Logger.Warn("failed to get metrics", zap.Error(err))
 	} else {
-		err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsSummaryWritesJSONPath, []byte(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsSummaryWrites.JSON()), 0600)
+		err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummaryJSONPath, []byte(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummary.JSON()), 0600)
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 			return err
 		}
-		err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsSummaryWritesTablePath, []byte(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsSummaryWrites.Table()), 0600)
+		err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummaryTablePath, []byte(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummary.Table()), 0600)
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 			return err
 		}
-		fmt.Printf("\n\nAddOnSecretsLocal.RequestsSummaryWrites:\n%s\n", ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsSummaryWrites.Table())
-		err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsSummaryReadsJSONPath, []byte(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsSummaryReads.JSON()), 0600)
+		fmt.Printf("\n\nAddOnSecretsLocal.RequestsWritesSummary:\n%s\n", ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummary.Table())
+		err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummaryJSONPath, []byte(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummary.JSON()), 0600)
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 			return err
 		}
-		err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsSummaryReadsTablePath, []byte(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsSummaryReads.Table()), 0600)
+		err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummaryTablePath, []byte(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummary.Table()), 0600)
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 			return err
 		}
-		fmt.Printf("\n\nAddOnSecretsLocal.RequestsSummaryReads:\n%s\n", ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsSummaryReads.Table())
+		fmt.Printf("\n\nAddOnSecretsLocal.RequestsReadsSummary:\n%s\n", ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummary.Table())
 	}
 
 	waitDur, retryStart := 5*time.Minute, time.Now()

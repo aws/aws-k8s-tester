@@ -38,18 +38,23 @@ type AddOnSecretsLocal struct {
 	// this must be unique per worker to avoid name conflicts.
 	NamePrefix string `json:"name-prefix"`
 
-	// RequestsSummaryWrites is the writes results.
-	RequestsSummaryWrites metrics.RequestsSummary `json:"requests-summary-writes,omitempty" read-only:"true"`
-	// RequestsSummaryWritesJSONPath is the file path to store writes requests summary in JSON format.
-	RequestsSummaryWritesJSONPath string `json:"requests-summary-writes-json-path" read-only:"true"`
-	// RequestsSummaryWritesTablePath is the file path to store writes requests summary in table format.
-	RequestsSummaryWritesTablePath string `json:"requests-summary-writes-table-path" read-only:"true"`
-	// RequestsSummaryReads is the reads results.
-	RequestsSummaryReads metrics.RequestsSummary `json:"requests-summary-reads,omitempty" read-only:"true"`
-	// RequestsSummaryReadsJSONPath is the file path to store reads requests summary in JSON format.
-	RequestsSummaryReadsJSONPath string `json:"requests-summary-reads-json-path" read-only:"true"`
-	// RequestsSummaryReadsTablePath is the file path to store reads requests summary in table format.
-	RequestsSummaryReadsTablePath string `json:"requests-summary-reads-table-path" read-only:"true"`
+	// RequestsWritesJSONPath is the file path to store writes requests in JSON format.
+	RequestsWritesJSONPath string `json:"requests-writes-json-path" read-only:"true"`
+	// RequestsWritesSummary is the writes results.
+	RequestsWritesSummary metrics.RequestsSummary `json:"requests-writes-summary,omitempty" read-only:"true"`
+	// RequestsWritesSummaryJSONPath is the file path to store writes requests summary in JSON format.
+	RequestsWritesSummaryJSONPath string `json:"requests-writes-summary-json-path" read-only:"true"`
+	// RequestsWritesSummaryTablePath is the file path to store writes requests summary in table format.
+	RequestsWritesSummaryTablePath string `json:"requests-writes-summary-table-path" read-only:"true"`
+
+	// RequestsReadsJSONPath is the file path to store reads requests in JSON format.
+	RequestsReadsJSONPath string `json:"requests-reads-json-path" read-only:"true"`
+	// RequestsReadsSummary is the reads results.
+	RequestsReadsSummary metrics.RequestsSummary `json:"requests-reads-summary,omitempty" read-only:"true"`
+	// RequestsReadsSummaryJSONPath is the file path to store reads requests summary in JSON format.
+	RequestsReadsSummaryJSONPath string `json:"requests-reads-summary-json-path" read-only:"true"`
+	// RequestsReadsSummaryTablePath is the file path to store reads requests summary in table format.
+	RequestsReadsSummaryTablePath string `json:"requests-reads-summary-table-path" read-only:"true"`
 }
 
 // EnvironmentVariablePrefixAddOnSecretsLocal is the environment variable prefix used for "eksconfig".
@@ -109,17 +114,24 @@ func (cfg *Config) validateAddOnSecretsLocal() error {
 		cfg.AddOnSecretsLocal.NamePrefix = "secret" + randutil.String(5)
 	}
 
-	if cfg.AddOnSecretsLocal.RequestsSummaryWritesJSONPath == "" {
-		cfg.AddOnSecretsLocal.RequestsSummaryWritesJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-summary-writes.json"
+	if cfg.AddOnSecretsLocal.RequestsWritesJSONPath == "" {
+		cfg.AddOnSecretsLocal.RequestsWritesJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-writes.csv"
 	}
-	if cfg.AddOnSecretsLocal.RequestsSummaryWritesTablePath == "" {
-		cfg.AddOnSecretsLocal.RequestsSummaryWritesTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-summary-writes.txt"
+	if cfg.AddOnSecretsLocal.RequestsWritesSummaryJSONPath == "" {
+		cfg.AddOnSecretsLocal.RequestsWritesSummaryJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-writes-summary.json"
 	}
-	if cfg.AddOnSecretsLocal.RequestsSummaryReadsJSONPath == "" {
-		cfg.AddOnSecretsLocal.RequestsSummaryReadsJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-summary-reads.json"
+	if cfg.AddOnSecretsLocal.RequestsWritesSummaryTablePath == "" {
+		cfg.AddOnSecretsLocal.RequestsWritesSummaryTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-writes-summary.txt"
 	}
-	if cfg.AddOnSecretsLocal.RequestsSummaryReadsTablePath == "" {
-		cfg.AddOnSecretsLocal.RequestsSummaryReadsTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-summary-reads.txt"
+
+	if cfg.AddOnSecretsLocal.RequestsReadsJSONPath == "" {
+		cfg.AddOnSecretsLocal.RequestsReadsJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-reads.csv"
+	}
+	if cfg.AddOnSecretsLocal.RequestsReadsSummaryJSONPath == "" {
+		cfg.AddOnSecretsLocal.RequestsReadsSummaryJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-reads-summary.json"
+	}
+	if cfg.AddOnSecretsLocal.RequestsReadsSummaryTablePath == "" {
+		cfg.AddOnSecretsLocal.RequestsReadsSummaryTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-reads-summary.txt"
 	}
 
 	return nil

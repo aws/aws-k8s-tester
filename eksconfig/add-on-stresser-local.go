@@ -37,18 +37,23 @@ type AddOnStresserLocal struct {
 	Duration       time.Duration `json:"duration,omitempty"`
 	DurationString string        `json:"duration-string,omitempty" read-only:"true"`
 
-	// RequestsSummaryWrites is the writes results.
-	RequestsSummaryWrites metrics.RequestsSummary `json:"requests-summary-writes,omitempty" read-only:"true"`
-	// RequestsSummaryWritesJSONPath is the file path to store writes requests summary in JSON format.
-	RequestsSummaryWritesJSONPath string `json:"requests-summary-writes-json-path" read-only:"true"`
-	// RequestsSummaryWritesTablePath is the file path to store writes requests summary in table format.
-	RequestsSummaryWritesTablePath string `json:"requests-summary-writes-table-path" read-only:"true"`
-	// RequestsSummaryReads is the reads results.
-	RequestsSummaryReads metrics.RequestsSummary `json:"requests-summary-reads,omitempty" read-only:"true"`
-	// RequestsSummaryReadsJSONPath is the file path to store reads requests summary in JSON format.
-	RequestsSummaryReadsJSONPath string `json:"requests-summary-reads-json-path" read-only:"true"`
-	// RequestsSummaryReadsTablePath is the file path to store reads requests summary in table format.
-	RequestsSummaryReadsTablePath string `json:"requests-summary-reads-table-path" read-only:"true"`
+	// RequestsWritesJSONPath is the file path to store writes requests in JSON format.
+	RequestsWritesJSONPath string `json:"requests-writes-json-path" read-only:"true"`
+	// RequestsWritesSummary is the writes results.
+	RequestsWritesSummary metrics.RequestsSummary `json:"requests-writes-summary,omitempty" read-only:"true"`
+	// RequestsWritesSummaryJSONPath is the file path to store writes requests summary in JSON format.
+	RequestsWritesSummaryJSONPath string `json:"requests-writes-summary-json-path" read-only:"true"`
+	// RequestsWritesSummaryTablePath is the file path to store writes requests summary in table format.
+	RequestsWritesSummaryTablePath string `json:"requests-writes-summary-table-path" read-only:"true"`
+
+	// RequestsReadsJSONPath is the file path to store reads requests in JSON format.
+	RequestsReadsJSONPath string `json:"requests-reads-json-path" read-only:"true"`
+	// RequestsReadsSummary is the reads results.
+	RequestsReadsSummary metrics.RequestsSummary `json:"requests-reads-summary,omitempty" read-only:"true"`
+	// RequestsReadsSummaryJSONPath is the file path to store reads requests summary in JSON format.
+	RequestsReadsSummaryJSONPath string `json:"requests-reads-summary-json-path" read-only:"true"`
+	// RequestsReadsSummaryTablePath is the file path to store reads requests summary in table format.
+	RequestsReadsSummaryTablePath string `json:"requests-reads-summary-table-path" read-only:"true"`
 }
 
 // EnvironmentVariablePrefixAddOnStresserLocal is the environment variable prefix used for "eksconfig".
@@ -90,17 +95,24 @@ func (cfg *Config) validateAddOnStresserLocal() error {
 	}
 	cfg.AddOnStresserLocal.DurationString = cfg.AddOnStresserLocal.Duration.String()
 
-	if cfg.AddOnStresserLocal.RequestsSummaryWritesJSONPath == "" {
-		cfg.AddOnStresserLocal.RequestsSummaryWritesJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-local-requests-summary-writes.json"
+	if cfg.AddOnStresserLocal.RequestsWritesJSONPath == "" {
+		cfg.AddOnStresserLocal.RequestsWritesJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-local-requests-writes.csv"
 	}
-	if cfg.AddOnStresserLocal.RequestsSummaryWritesTablePath == "" {
-		cfg.AddOnStresserLocal.RequestsSummaryWritesTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-local-requests-summary-writes.txt"
+	if cfg.AddOnStresserLocal.RequestsWritesSummaryJSONPath == "" {
+		cfg.AddOnStresserLocal.RequestsWritesSummaryJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-local-requests-writes-summary.json"
 	}
-	if cfg.AddOnStresserLocal.RequestsSummaryReadsJSONPath == "" {
-		cfg.AddOnStresserLocal.RequestsSummaryReadsJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-local-requests-summary-reads.json"
+	if cfg.AddOnStresserLocal.RequestsWritesSummaryTablePath == "" {
+		cfg.AddOnStresserLocal.RequestsWritesSummaryTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-local-requests-writes-summary.txt"
 	}
-	if cfg.AddOnStresserLocal.RequestsSummaryReadsTablePath == "" {
-		cfg.AddOnStresserLocal.RequestsSummaryReadsTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-local-requests-summary-reads.txt"
+
+	if cfg.AddOnStresserLocal.RequestsReadsJSONPath == "" {
+		cfg.AddOnStresserLocal.RequestsReadsJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-local-requests-reads.csv"
+	}
+	if cfg.AddOnStresserLocal.RequestsReadsSummaryJSONPath == "" {
+		cfg.AddOnStresserLocal.RequestsReadsSummaryJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-local-requests-reads-summary.json"
+	}
+	if cfg.AddOnStresserLocal.RequestsReadsSummaryTablePath == "" {
+		cfg.AddOnStresserLocal.RequestsReadsSummaryTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-local-requests-reads-summary.txt"
 	}
 
 	return nil

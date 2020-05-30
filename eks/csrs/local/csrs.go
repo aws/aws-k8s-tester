@@ -63,27 +63,28 @@ func (ts *tester) Create() (err error) {
 		ClientTimeout:               ts.cfg.EKSConfig.ClientTimeout,
 		Objects:                     ts.cfg.EKSConfig.AddOnCSRsLocal.Objects,
 		InitialRequestConditionType: ts.cfg.EKSConfig.AddOnCSRsLocal.InitialRequestConditionType,
+		WritesJSONPath:              ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesJSONPath,
 	})
 	loader.Start()
 	loader.Stop()
 
 	ts.cfg.Logger.Info("completing csrs local tester")
-	ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsSummaryWrites, err = loader.GetMetrics()
+	ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesSummary, err = loader.CollectMetrics()
 	ts.cfg.EKSConfig.Sync()
 	if err != nil {
 		ts.cfg.Logger.Warn("failed to get metrics", zap.Error(err))
 	} else {
-		err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsSummaryWritesJSONPath, []byte(ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsSummaryWrites.JSON()), 0600)
+		err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesSummaryJSONPath, []byte(ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesSummary.JSON()), 0600)
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 			return err
 		}
-		err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsSummaryWritesTablePath, []byte(ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsSummaryWrites.Table()), 0600)
+		err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesSummaryTablePath, []byte(ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesSummary.Table()), 0600)
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 			return err
 		}
-		fmt.Printf("\n\nAddOnCSRsLocal.RequestsSummaryWrites:\n%s\n", ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsSummaryWrites.Table())
+		fmt.Printf("\n\nAddOnCSRsLocal.RequestsWritesSummary:\n%s\n", ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesSummary.Table())
 	}
 
 	waitDur, retryStart := 5*time.Minute, time.Now()

@@ -25,12 +25,12 @@ AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_ENABLE=true \
+AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_ENABLE=true \
+AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_ENABLE=true \
-AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_ENABLE=true \
-AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_ENABLE=true \
 
 
 
@@ -320,9 +320,10 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_OBJECTS                            | read-only "false" | *eksconfig.AddOnCSRsLocal.Objects                        | int                     |
 | AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_INITIAL_REQUEST_CONDITION_TYPE     | read-only "false" | *eksconfig.AddOnCSRsLocal.InitialRequestConditionType    | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_CREATED_NAMES                      | read-only "true"  | *eksconfig.AddOnCSRsLocal.CreatedNames                   | []string                |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_SUMMARY_WRITES            | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsSummaryWrites          | metrics.RequestsSummary |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_SUMMARY_WRITES_JSON_PATH  | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsSummaryWritesJSONPath  | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_SUMMARY_WRITES_TABLE_PATH | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsSummaryWritesTablePath | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_WRITES_JSON_PATH          | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsWritesJSONPath         | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_WRITES_SUMMARY            | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsWritesSummary          | metrics.RequestsSummary |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_WRITES_SUMMARY_JSON_PATH  | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsWritesSummaryJSONPath  | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_WRITES_SUMMARY_TABLE_PATH | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsWritesSummaryTablePath | string                  |
 *-------------------------------------------------------------------------*-------------------*----------------------------------------------------------*-------------------------*
 
 
@@ -340,10 +341,11 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_DEPLOYMENT_REPLICAS                        | read-only "false" | *eksconfig.AddOnCSRsRemote.DeploymentReplicas                    | int32                   |
 | AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_OBJECTS                                    | read-only "false" | *eksconfig.AddOnCSRsRemote.Objects                               | int                     |
 | AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_INITIAL_REQUEST_CONDITION_TYPE             | read-only "false" | *eksconfig.AddOnCSRsRemote.InitialRequestConditionType           | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_SUMMARY_WRITES                    | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsSummaryWrites                 | metrics.RequestsSummary |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_SUMMARY_WRITES_JSON_PATH          | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsSummaryWritesJSONPath         | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_SUMMARY_WRITES_TABLE_PATH         | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsSummaryWritesTablePath        | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_SUMMARY_WRITES_OUTPUT_NAME_PREFIX | read-only "false" | *eksconfig.AddOnCSRsRemote.RequestsSummaryWritesOutputNamePrefix | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_WRITES_JSON_PATH                  | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsWritesJSONPath                | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_WRITES_SUMMARY                    | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsWritesSummary                 | metrics.RequestsSummary |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_WRITES_SUMMARY_JSON_PATH          | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsWritesSummaryJSONPath         | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_WRITES_SUMMARY_TABLE_PATH         | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsWritesSummaryTablePath        | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_WRITES_SUMMARY_OUTPUT_NAME_PREFIX | read-only "false" | *eksconfig.AddOnCSRsRemote.RequestsWritesSummaryOutputNamePrefix | string                  |
 *----------------------------------------------------------------------------------*-------------------*------------------------------------------------------------------*-------------------------*
 
 
@@ -358,9 +360,10 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_LOCAL_OBJECTS                            | read-only "false" | *eksconfig.AddOnConfigMapsLocal.Objects                        | int                     |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_LOCAL_OBJECT_SIZE                        | read-only "false" | *eksconfig.AddOnConfigMapsLocal.ObjectSize                     | int                     |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_LOCAL_CREATED_NAMES                      | read-only "true"  | *eksconfig.AddOnConfigMapsLocal.CreatedNames                   | []string                |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_LOCAL_REQUESTS_SUMMARY_WRITES            | read-only "true"  | *eksconfig.AddOnConfigMapsLocal.RequestsSummaryWrites          | metrics.RequestsSummary |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_LOCAL_REQUESTS_SUMMARY_WRITES_JSON_PATH  | read-only "true"  | *eksconfig.AddOnConfigMapsLocal.RequestsSummaryWritesJSONPath  | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_LOCAL_REQUESTS_SUMMARY_WRITES_TABLE_PATH | read-only "true"  | *eksconfig.AddOnConfigMapsLocal.RequestsSummaryWritesTablePath | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_LOCAL_REQUESTS_WRITES_JSON_PATH          | read-only "true"  | *eksconfig.AddOnConfigMapsLocal.RequestsWritesJSONPath         | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_LOCAL_REQUESTS_WRITES_SUMMARY            | read-only "true"  | *eksconfig.AddOnConfigMapsLocal.RequestsWritesSummary          | metrics.RequestsSummary |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_LOCAL_REQUESTS_WRITES_SUMMARY_JSON_PATH  | read-only "true"  | *eksconfig.AddOnConfigMapsLocal.RequestsWritesSummaryJSONPath  | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_LOCAL_REQUESTS_WRITES_SUMMARY_TABLE_PATH | read-only "true"  | *eksconfig.AddOnConfigMapsLocal.RequestsWritesSummaryTablePath | string                  |
 *--------------------------------------------------------------------------------*-------------------*----------------------------------------------------------------*-------------------------*
 
 
@@ -379,10 +382,11 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_OBJECTS                                    | read-only "false" | *eksconfig.AddOnConfigMapsRemote.Objects                               | int                     |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_OBJECT_SIZE                                | read-only "false" | *eksconfig.AddOnConfigMapsRemote.ObjectSize                            | int                     |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_CREATED_NAMES                              | read-only "true"  | *eksconfig.AddOnConfigMapsRemote.CreatedNames                          | []string                |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_REQUESTS_SUMMARY_WRITES                    | read-only "true"  | *eksconfig.AddOnConfigMapsRemote.RequestsSummaryWrites                 | metrics.RequestsSummary |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_REQUESTS_SUMMARY_WRITES_JSON_PATH          | read-only "true"  | *eksconfig.AddOnConfigMapsRemote.RequestsSummaryWritesJSONPath         | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_REQUESTS_SUMMARY_WRITES_TABLE_PATH         | read-only "true"  | *eksconfig.AddOnConfigMapsRemote.RequestsSummaryWritesTablePath        | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_REQUESTS_SUMMARY_WRITES_OUTPUT_NAME_PREFIX | read-only "false" | *eksconfig.AddOnConfigMapsRemote.RequestsSummaryWritesOutputNamePrefix | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_REQUESTS_WRITES_JSON_PATH                  | read-only "true"  | *eksconfig.AddOnConfigMapsRemote.RequestsWritesJSONPath                | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_REQUESTS_WRITES_SUMMARY                    | read-only "true"  | *eksconfig.AddOnConfigMapsRemote.RequestsWritesSummary                 | metrics.RequestsSummary |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_REQUESTS_WRITES_SUMMARY_JSON_PATH          | read-only "true"  | *eksconfig.AddOnConfigMapsRemote.RequestsWritesSummaryJSONPath         | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_REQUESTS_WRITES_SUMMARY_TABLE_PATH         | read-only "true"  | *eksconfig.AddOnConfigMapsRemote.RequestsWritesSummaryTablePath        | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_REQUESTS_WRITES_SUMMARY_OUTPUT_NAME_PREFIX | read-only "false" | *eksconfig.AddOnConfigMapsRemote.RequestsWritesSummaryOutputNamePrefix | string                  |
 *-----------------------------------------------------------------------------------------*-------------------*------------------------------------------------------------------------*-------------------------*
 
 
@@ -397,12 +401,14 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_OBJECTS                            | read-only "false" | *eksconfig.AddOnSecretsLocal.Objects                        | int                     |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_OBJECT_SIZE                        | read-only "false" | *eksconfig.AddOnSecretsLocal.ObjectSize                     | int                     |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_NAME_PREFIX                        | read-only "false" | *eksconfig.AddOnSecretsLocal.NamePrefix                     | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_WRITES            | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsSummaryWrites          | metrics.RequestsSummary |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_WRITES_JSON_PATH  | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsSummaryWritesJSONPath  | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_WRITES_TABLE_PATH | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsSummaryWritesTablePath | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_READS             | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsSummaryReads           | metrics.RequestsSummary |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_READS_JSON_PATH   | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsSummaryReadsJSONPath   | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_READS_TABLE_PATH  | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsSummaryReadsTablePath  | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_WRITES_JSON_PATH          | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsWritesJSONPath         | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_WRITES_SUMMARY            | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsWritesSummary          | metrics.RequestsSummary |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_WRITES_SUMMARY_JSON_PATH  | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsWritesSummaryJSONPath  | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_WRITES_SUMMARY_TABLE_PATH | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsWritesSummaryTablePath | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_READS_JSON_PATH           | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsReadsJSONPath          | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_READS_SUMMARY             | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsReadsSummary           | metrics.RequestsSummary |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_READS_SUMMARY_JSON_PATH   | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsReadsSummaryJSONPath   | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_READS_SUMMARY_TABLE_PATH  | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsReadsSummaryTablePath  | string                  |
 *----------------------------------------------------------------------------*-------------------*-------------------------------------------------------------*-------------------------*
 
 
@@ -421,14 +427,16 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_OBJECTS                                    | read-only "false" | *eksconfig.AddOnSecretsRemote.Objects                               | int                     |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_OBJECT_SIZE                                | read-only "false" | *eksconfig.AddOnSecretsRemote.ObjectSize                            | int                     |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_NAME_PREFIX                                | read-only "false" | *eksconfig.AddOnSecretsRemote.NamePrefix                            | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_WRITES                    | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsSummaryWrites                 | metrics.RequestsSummary |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_WRITES_JSON_PATH          | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsSummaryWritesJSONPath         | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_WRITES_TABLE_PATH         | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsSummaryWritesTablePath        | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_READS                     | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsSummaryReads                  | metrics.RequestsSummary |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_READS_JSON_PATH           | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsSummaryReadsJSONPath          | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_READS_TABLE_PATH          | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsSummaryReadsTablePath         | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_WRITES_OUTPUT_NAME_PREFIX | read-only "false" | *eksconfig.AddOnSecretsRemote.RequestsSummaryWritesOutputNamePrefix | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_READS_OUTPUT_NAME_PREFIX  | read-only "false" | *eksconfig.AddOnSecretsRemote.RequestsSummaryReadsOutputNamePrefix  | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_WRITES_JSON_PATH                  | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsWritesJSONPath                | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_WRITES_SUMMARY                    | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsWritesSummary                 | metrics.RequestsSummary |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_WRITES_SUMMARY_JSON_PATH          | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsWritesSummaryJSONPath         | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_WRITES_SUMMARY_TABLE_PATH         | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsWritesSummaryTablePath        | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_READS_JSON_PATH                   | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsReadsJSONPath                 | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_READS_SUMMARY                     | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsReadsSummary                  | metrics.RequestsSummary |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_READS_SUMMARY_JSON_PATH           | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsReadsSummaryJSONPath          | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_READS_SUMMARY_TABLE_PATH          | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsReadsSummaryTablePath         | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_WRITES_SUMMARY_OUTPUT_NAME_PREFIX | read-only "false" | *eksconfig.AddOnSecretsRemote.RequestsWritesSummaryOutputNamePrefix | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_READS_SUMMARY_OUTPUT_NAME_PREFIX  | read-only "false" | *eksconfig.AddOnSecretsRemote.RequestsReadsSummaryOutputNamePrefix  | string                  |
 *-------------------------------------------------------------------------------------*-------------------*---------------------------------------------------------------------*-------------------------*
 
 
@@ -545,90 +553,6 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_ENABLE=true \
 *-------------------------------------------------------*-------------------*-------------------------------------------*--------------------*
 
 
-*-----------------------------------------------------------------*-------------------*---------------------------------------------------*--------------------*
-|                     ENVIRONMENTAL VARIABLE                      |     READ ONLY     |                       TYPE                        |      GO TYPE       |
-*-----------------------------------------------------------------*-------------------*---------------------------------------------------*--------------------*
-| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_ENABLE             | read-only "false" | *eksconfig.AddOnHollowNodesLocal.Enable           | bool               |
-| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_CREATED            | read-only "true"  | *eksconfig.AddOnHollowNodesLocal.Created          | bool               |
-| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_TIME_FRAME_CREATE  | read-only "true"  | *eksconfig.AddOnHollowNodesLocal.TimeFrameCreate  | timeutil.TimeFrame |
-| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_TIME_FRAME_DELETE  | read-only "true"  | *eksconfig.AddOnHollowNodesLocal.TimeFrameDelete  | timeutil.TimeFrame |
-| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_NODES              | read-only "false" | *eksconfig.AddOnHollowNodesLocal.Nodes            | int                |
-| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_NODE_NAME_PREFIX   | read-only "false" | *eksconfig.AddOnHollowNodesLocal.NodeNamePrefix   | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_NODE_LABEL_PREFIX  | read-only "false" | *eksconfig.AddOnHollowNodesLocal.NodeLabelPrefix  | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_NODE_LABELS        | read-only "true"  | *eksconfig.AddOnHollowNodesLocal.NodeLabels       | map[string]string  |
-| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_MAX_OPEN_FILES     | read-only "false" | *eksconfig.AddOnHollowNodesLocal.MaxOpenFiles     | int64              |
-| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_CREATED_NODE_NAMES | read-only "true"  | *eksconfig.AddOnHollowNodesLocal.CreatedNodeNames | []string           |
-*-----------------------------------------------------------------*-------------------*---------------------------------------------------*--------------------*
-
-
-*---------------------------------------------------------------------*-------------------*-------------------------------------------------------*--------------------*
-|                       ENVIRONMENTAL VARIABLE                        |     READ ONLY     |                         TYPE                          |      GO TYPE       |
-*---------------------------------------------------------------------*-------------------*-------------------------------------------------------*--------------------*
-| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_ENABLE                | read-only "false" | *eksconfig.AddOnHollowNodesRemote.Enable              | bool               |
-| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_CREATED               | read-only "true"  | *eksconfig.AddOnHollowNodesRemote.Created             | bool               |
-| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_TIME_FRAME_CREATE     | read-only "true"  | *eksconfig.AddOnHollowNodesRemote.TimeFrameCreate     | timeutil.TimeFrame |
-| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_TIME_FRAME_DELETE     | read-only "true"  | *eksconfig.AddOnHollowNodesRemote.TimeFrameDelete     | timeutil.TimeFrame |
-| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NAMESPACE             | read-only "false" | *eksconfig.AddOnHollowNodesRemote.Namespace           | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_ACCOUNT_ID | read-only "false" | *eksconfig.AddOnHollowNodesRemote.RepositoryAccountID | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_NAME       | read-only "false" | *eksconfig.AddOnHollowNodesRemote.RepositoryName      | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_IMAGE_TAG  | read-only "false" | *eksconfig.AddOnHollowNodesRemote.RepositoryImageTag  | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_DEPLOYMENT_REPLICAS   | read-only "false" | *eksconfig.AddOnHollowNodesRemote.DeploymentReplicas  | int32              |
-| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NODES                 | read-only "false" | *eksconfig.AddOnHollowNodesRemote.Nodes               | int                |
-| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NODE_NAME_PREFIX      | read-only "false" | *eksconfig.AddOnHollowNodesRemote.NodeNamePrefix      | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NODE_LABEL_PREFIX     | read-only "false" | *eksconfig.AddOnHollowNodesRemote.NodeLabelPrefix     | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_MAX_OPEN_FILES        | read-only "false" | *eksconfig.AddOnHollowNodesRemote.MaxOpenFiles        | int64              |
-| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_CREATED_NODE_NAMES    | read-only "true"  | *eksconfig.AddOnHollowNodesRemote.CreatedNodeNames    | []string           |
-*---------------------------------------------------------------------*-------------------*-------------------------------------------------------*--------------------*
-
-
-*-----------------------------------------------------------------------------*-------------------*--------------------------------------------------------------*-------------------------*
-|                           ENVIRONMENTAL VARIABLE                            |     READ ONLY     |                             TYPE                             |         GO TYPE         |
-*-----------------------------------------------------------------------------*-------------------*--------------------------------------------------------------*-------------------------*
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_ENABLE                             | read-only "false" | *eksconfig.AddOnStresserLocal.Enable                         | bool                    |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_CREATED                            | read-only "true"  | *eksconfig.AddOnStresserLocal.Created                        | bool                    |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_TIME_FRAME_CREATE                  | read-only "true"  | *eksconfig.AddOnStresserLocal.TimeFrameCreate                | timeutil.TimeFrame      |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_TIME_FRAME_DELETE                  | read-only "true"  | *eksconfig.AddOnStresserLocal.TimeFrameDelete                | timeutil.TimeFrame      |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_NAMESPACE                          | read-only "false" | *eksconfig.AddOnStresserLocal.Namespace                      | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_OBJECT_SIZE                        | read-only "false" | *eksconfig.AddOnStresserLocal.ObjectSize                     | int                     |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_LIST_LIMIT                         | read-only "false" | *eksconfig.AddOnStresserLocal.ListLimit                      | int64                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_DURATION                           | read-only "false" | *eksconfig.AddOnStresserLocal.Duration                       | time.Duration           |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_DURATION_STRING                    | read-only "true"  | *eksconfig.AddOnStresserLocal.DurationString                 | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_WRITES            | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryWrites          | metrics.RequestsSummary |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_WRITES_JSON_PATH  | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryWritesJSONPath  | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_WRITES_TABLE_PATH | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryWritesTablePath | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_READS             | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryReads           | metrics.RequestsSummary |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_READS_JSON_PATH   | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryReadsJSONPath   | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_READS_TABLE_PATH  | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryReadsTablePath  | string                  |
-*-----------------------------------------------------------------------------*-------------------*--------------------------------------------------------------*-------------------------*
-
-
-*--------------------------------------------------------------------------------------*-------------------*----------------------------------------------------------------------*-------------------------*
-|                                ENVIRONMENTAL VARIABLE                                |     READ ONLY     |                                 TYPE                                 |         GO TYPE         |
-*--------------------------------------------------------------------------------------*-------------------*----------------------------------------------------------------------*-------------------------*
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_ENABLE                                     | read-only "false" | *eksconfig.AddOnStresserRemote.Enable                                | bool                    |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_CREATED                                    | read-only "true"  | *eksconfig.AddOnStresserRemote.Created                               | bool                    |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_TIME_FRAME_CREATE                          | read-only "true"  | *eksconfig.AddOnStresserRemote.TimeFrameCreate                       | timeutil.TimeFrame      |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_TIME_FRAME_DELETE                          | read-only "true"  | *eksconfig.AddOnStresserRemote.TimeFrameDelete                       | timeutil.TimeFrame      |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_NAMESPACE                                  | read-only "false" | *eksconfig.AddOnStresserRemote.Namespace                             | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REPOSITORY_ACCOUNT_ID                      | read-only "false" | *eksconfig.AddOnStresserRemote.RepositoryAccountID                   | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REPOSITORY_NAME                            | read-only "false" | *eksconfig.AddOnStresserRemote.RepositoryName                        | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REPOSITORY_IMAGE_TAG                       | read-only "false" | *eksconfig.AddOnStresserRemote.RepositoryImageTag                    | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_DEPLOYMENT_REPLICAS                        | read-only "false" | *eksconfig.AddOnStresserRemote.DeploymentReplicas                    | int32                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_OBJECT_SIZE                                | read-only "false" | *eksconfig.AddOnStresserRemote.ObjectSize                            | int                     |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_LIST_LIMIT                                 | read-only "false" | *eksconfig.AddOnStresserRemote.ListLimit                             | int64                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_DURATION                                   | read-only "false" | *eksconfig.AddOnStresserRemote.Duration                              | time.Duration           |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_DURATION_STRING                            | read-only "true"  | *eksconfig.AddOnStresserRemote.DurationString                        | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_WRITES                    | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryWrites                 | metrics.RequestsSummary |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_WRITES_JSON_PATH          | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryWritesJSONPath         | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_WRITES_TABLE_PATH         | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryWritesTablePath        | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_READS                     | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryReads                  | metrics.RequestsSummary |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_READS_JSON_PATH           | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryReadsJSONPath          | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_READS_TABLE_PATH          | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryReadsTablePath         | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_WRITES_OUTPUT_NAME_PREFIX | read-only "false" | *eksconfig.AddOnStresserRemote.RequestsSummaryWritesOutputNamePrefix | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_READS_OUTPUT_NAME_PREFIX  | read-only "false" | *eksconfig.AddOnStresserRemote.RequestsSummaryReadsOutputNamePrefix  | string                  |
-*--------------------------------------------------------------------------------------*-------------------*----------------------------------------------------------------------*-------------------------*
-
-
 *-----------------------------------------------------------------------------------*-------------------*-------------------------------------------------------------------*--------------------*
 |                              ENVIRONMENTAL VARIABLE                               |     READ ONLY     |                               TYPE                                |      GO TYPE       |
 *-----------------------------------------------------------------------------------*-------------------*-------------------------------------------------------------------*--------------------*
@@ -688,6 +612,94 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_PROMETHEUS_SCRAPE_KUBE_PROXY       | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.PrometheusScrapeKubeProxy      | bool               |
 | AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_ENABLE_SYSTEM_POD_METRICS          | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.EnableSystemPodMetrics         | bool               |
 *------------------------------------------------------------------------------------*-------------------*--------------------------------------------------------------------*--------------------*
+
+
+*-----------------------------------------------------------------*-------------------*---------------------------------------------------*--------------------*
+|                     ENVIRONMENTAL VARIABLE                      |     READ ONLY     |                       TYPE                        |      GO TYPE       |
+*-----------------------------------------------------------------*-------------------*---------------------------------------------------*--------------------*
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_ENABLE             | read-only "false" | *eksconfig.AddOnHollowNodesLocal.Enable           | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_CREATED            | read-only "true"  | *eksconfig.AddOnHollowNodesLocal.Created          | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_TIME_FRAME_CREATE  | read-only "true"  | *eksconfig.AddOnHollowNodesLocal.TimeFrameCreate  | timeutil.TimeFrame |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_TIME_FRAME_DELETE  | read-only "true"  | *eksconfig.AddOnHollowNodesLocal.TimeFrameDelete  | timeutil.TimeFrame |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_NODES              | read-only "false" | *eksconfig.AddOnHollowNodesLocal.Nodes            | int                |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_NODE_NAME_PREFIX   | read-only "false" | *eksconfig.AddOnHollowNodesLocal.NodeNamePrefix   | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_NODE_LABEL_PREFIX  | read-only "false" | *eksconfig.AddOnHollowNodesLocal.NodeLabelPrefix  | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_NODE_LABELS        | read-only "true"  | *eksconfig.AddOnHollowNodesLocal.NodeLabels       | map[string]string  |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_MAX_OPEN_FILES     | read-only "false" | *eksconfig.AddOnHollowNodesLocal.MaxOpenFiles     | int64              |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_CREATED_NODE_NAMES | read-only "true"  | *eksconfig.AddOnHollowNodesLocal.CreatedNodeNames | []string           |
+*-----------------------------------------------------------------*-------------------*---------------------------------------------------*--------------------*
+
+
+*---------------------------------------------------------------------*-------------------*-------------------------------------------------------*--------------------*
+|                       ENVIRONMENTAL VARIABLE                        |     READ ONLY     |                         TYPE                          |      GO TYPE       |
+*---------------------------------------------------------------------*-------------------*-------------------------------------------------------*--------------------*
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_ENABLE                | read-only "false" | *eksconfig.AddOnHollowNodesRemote.Enable              | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_CREATED               | read-only "true"  | *eksconfig.AddOnHollowNodesRemote.Created             | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_TIME_FRAME_CREATE     | read-only "true"  | *eksconfig.AddOnHollowNodesRemote.TimeFrameCreate     | timeutil.TimeFrame |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_TIME_FRAME_DELETE     | read-only "true"  | *eksconfig.AddOnHollowNodesRemote.TimeFrameDelete     | timeutil.TimeFrame |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NAMESPACE             | read-only "false" | *eksconfig.AddOnHollowNodesRemote.Namespace           | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_ACCOUNT_ID | read-only "false" | *eksconfig.AddOnHollowNodesRemote.RepositoryAccountID | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_NAME       | read-only "false" | *eksconfig.AddOnHollowNodesRemote.RepositoryName      | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_IMAGE_TAG  | read-only "false" | *eksconfig.AddOnHollowNodesRemote.RepositoryImageTag  | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_DEPLOYMENT_REPLICAS   | read-only "false" | *eksconfig.AddOnHollowNodesRemote.DeploymentReplicas  | int32              |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NODES                 | read-only "false" | *eksconfig.AddOnHollowNodesRemote.Nodes               | int                |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NODE_NAME_PREFIX      | read-only "false" | *eksconfig.AddOnHollowNodesRemote.NodeNamePrefix      | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NODE_LABEL_PREFIX     | read-only "false" | *eksconfig.AddOnHollowNodesRemote.NodeLabelPrefix     | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_MAX_OPEN_FILES        | read-only "false" | *eksconfig.AddOnHollowNodesRemote.MaxOpenFiles        | int64              |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_CREATED_NODE_NAMES    | read-only "true"  | *eksconfig.AddOnHollowNodesRemote.CreatedNodeNames    | []string           |
+*---------------------------------------------------------------------*-------------------*-------------------------------------------------------*--------------------*
+
+
+*-----------------------------------------------------------------------------*-------------------*--------------------------------------------------------------*-------------------------*
+|                           ENVIRONMENTAL VARIABLE                            |     READ ONLY     |                             TYPE                             |         GO TYPE         |
+*-----------------------------------------------------------------------------*-------------------*--------------------------------------------------------------*-------------------------*
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_ENABLE                             | read-only "false" | *eksconfig.AddOnStresserLocal.Enable                         | bool                    |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_CREATED                            | read-only "true"  | *eksconfig.AddOnStresserLocal.Created                        | bool                    |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_TIME_FRAME_CREATE                  | read-only "true"  | *eksconfig.AddOnStresserLocal.TimeFrameCreate                | timeutil.TimeFrame      |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_TIME_FRAME_DELETE                  | read-only "true"  | *eksconfig.AddOnStresserLocal.TimeFrameDelete                | timeutil.TimeFrame      |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_NAMESPACE                          | read-only "false" | *eksconfig.AddOnStresserLocal.Namespace                      | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_OBJECT_SIZE                        | read-only "false" | *eksconfig.AddOnStresserLocal.ObjectSize                     | int                     |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_LIST_LIMIT                         | read-only "false" | *eksconfig.AddOnStresserLocal.ListLimit                      | int64                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_DURATION                           | read-only "false" | *eksconfig.AddOnStresserLocal.Duration                       | time.Duration           |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_DURATION_STRING                    | read-only "true"  | *eksconfig.AddOnStresserLocal.DurationString                 | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_WRITES_JSON_PATH          | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsWritesJSONPath         | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_WRITES_SUMMARY            | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsWritesSummary          | metrics.RequestsSummary |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_WRITES_SUMMARY_JSON_PATH  | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsWritesSummaryJSONPath  | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_WRITES_SUMMARY_TABLE_PATH | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsWritesSummaryTablePath | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_READS_JSON_PATH           | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsReadsJSONPath          | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_READS_SUMMARY             | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsReadsSummary           | metrics.RequestsSummary |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_READS_SUMMARY_JSON_PATH   | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsReadsSummaryJSONPath   | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_READS_SUMMARY_TABLE_PATH  | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsReadsSummaryTablePath  | string                  |
+*-----------------------------------------------------------------------------*-------------------*--------------------------------------------------------------*-------------------------*
+
+
+*--------------------------------------------------------------------------------------*-------------------*----------------------------------------------------------------------*-------------------------*
+|                                ENVIRONMENTAL VARIABLE                                |     READ ONLY     |                                 TYPE                                 |         GO TYPE         |
+*--------------------------------------------------------------------------------------*-------------------*----------------------------------------------------------------------*-------------------------*
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_ENABLE                                     | read-only "false" | *eksconfig.AddOnStresserRemote.Enable                                | bool                    |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_CREATED                                    | read-only "true"  | *eksconfig.AddOnStresserRemote.Created                               | bool                    |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_TIME_FRAME_CREATE                          | read-only "true"  | *eksconfig.AddOnStresserRemote.TimeFrameCreate                       | timeutil.TimeFrame      |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_TIME_FRAME_DELETE                          | read-only "true"  | *eksconfig.AddOnStresserRemote.TimeFrameDelete                       | timeutil.TimeFrame      |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_NAMESPACE                                  | read-only "false" | *eksconfig.AddOnStresserRemote.Namespace                             | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REPOSITORY_ACCOUNT_ID                      | read-only "false" | *eksconfig.AddOnStresserRemote.RepositoryAccountID                   | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REPOSITORY_NAME                            | read-only "false" | *eksconfig.AddOnStresserRemote.RepositoryName                        | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REPOSITORY_IMAGE_TAG                       | read-only "false" | *eksconfig.AddOnStresserRemote.RepositoryImageTag                    | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_DEPLOYMENT_REPLICAS                        | read-only "false" | *eksconfig.AddOnStresserRemote.DeploymentReplicas                    | int32                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_OBJECT_SIZE                                | read-only "false" | *eksconfig.AddOnStresserRemote.ObjectSize                            | int                     |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_LIST_LIMIT                                 | read-only "false" | *eksconfig.AddOnStresserRemote.ListLimit                             | int64                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_DURATION                                   | read-only "false" | *eksconfig.AddOnStresserRemote.Duration                              | time.Duration           |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_DURATION_STRING                            | read-only "true"  | *eksconfig.AddOnStresserRemote.DurationString                        | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_WRITES_JSON_PATH                  | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsWritesJSONPath                | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_WRITES_SUMMARY                    | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsWritesSummary                 | metrics.RequestsSummary |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_WRITES_SUMMARY_JSON_PATH          | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsWritesSummaryJSONPath         | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_WRITES_SUMMARY_TABLE_PATH         | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsWritesSummaryTablePath        | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_READS_JSON_PATH                   | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsReadsJSONPath                 | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_READS_SUMMARY                     | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsReadsSummary                  | metrics.RequestsSummary |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_READS_SUMMARY_JSON_PATH           | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsReadsSummaryJSONPath          | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_READS_SUMMARY_TABLE_PATH          | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsReadsSummaryTablePath         | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_WRITES_SUMMARY_OUTPUT_NAME_PREFIX | read-only "false" | *eksconfig.AddOnStresserRemote.RequestsWritesSummaryOutputNamePrefix | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_READS_SUMMARY_OUTPUT_NAME_PREFIX  | read-only "false" | *eksconfig.AddOnStresserRemote.RequestsReadsSummaryOutputNamePrefix  | string                  |
+*--------------------------------------------------------------------------------------*-------------------*----------------------------------------------------------------------*-------------------------*
 
 
 ```

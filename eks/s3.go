@@ -341,24 +341,35 @@ func (ts *Tester) uploadToS3() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnCSRsLocal() {
-		if fileutil.Exist(ts.cfg.AddOnCSRsLocal.RequestsSummaryWritesJSONPath) {
+		if fileutil.Exist(ts.cfg.AddOnCSRsLocal.RequestsWritesJSONPath) {
 			if err = uploadFileToS3(
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "csrs-local-requests-summary-writes.json"),
-				ts.cfg.AddOnCSRsLocal.RequestsSummaryWritesJSONPath,
+				path.Join(ts.cfg.Name, "csrs-local-requests-writes.json"),
+				ts.cfg.AddOnCSRsLocal.RequestsWritesJSONPath,
 			); err != nil {
 				return err
 			}
 		}
-		if fileutil.Exist(ts.cfg.AddOnCSRsLocal.RequestsSummaryWritesTablePath) {
+		if fileutil.Exist(ts.cfg.AddOnCSRsLocal.RequestsWritesSummaryJSONPath) {
 			if err = uploadFileToS3(
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "csrs-local-requests-summary-writes.txt"),
-				ts.cfg.AddOnCSRsLocal.RequestsSummaryWritesTablePath,
+				path.Join(ts.cfg.Name, "csrs-local-requests-writes-summary.json"),
+				ts.cfg.AddOnCSRsLocal.RequestsWritesSummaryJSONPath,
+			); err != nil {
+				return err
+			}
+		}
+		if fileutil.Exist(ts.cfg.AddOnCSRsLocal.RequestsWritesSummaryTablePath) {
+			if err = uploadFileToS3(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "csrs-local-requests-writes-summary.txt"),
+				ts.cfg.AddOnCSRsLocal.RequestsWritesSummaryTablePath,
 			); err != nil {
 				return err
 			}
@@ -366,24 +377,35 @@ func (ts *Tester) uploadToS3() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnCSRsRemote() {
-		if fileutil.Exist(ts.cfg.AddOnCSRsRemote.RequestsSummaryWritesJSONPath) {
+		if fileutil.Exist(ts.cfg.AddOnCSRsRemote.RequestsWritesJSONPath) {
 			if err = uploadFileToS3(
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "csrs-remote-requests-summary-writes.json"),
-				ts.cfg.AddOnCSRsRemote.RequestsSummaryWritesJSONPath,
+				path.Join(ts.cfg.Name, "csrs-remote-requests-writes.json"),
+				ts.cfg.AddOnCSRsRemote.RequestsWritesJSONPath,
 			); err != nil {
 				return err
 			}
 		}
-		if fileutil.Exist(ts.cfg.AddOnCSRsRemote.RequestsSummaryWritesTablePath) {
+		if fileutil.Exist(ts.cfg.AddOnCSRsRemote.RequestsWritesSummaryJSONPath) {
 			if err = uploadFileToS3(
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "csrs-remote-requests-summary-writes.txt"),
-				ts.cfg.AddOnCSRsRemote.RequestsSummaryWritesTablePath,
+				path.Join(ts.cfg.Name, "csrs-remote-requests-writes-summary.json"),
+				ts.cfg.AddOnCSRsRemote.RequestsWritesSummaryJSONPath,
+			); err != nil {
+				return err
+			}
+		}
+		if fileutil.Exist(ts.cfg.AddOnCSRsRemote.RequestsWritesSummaryTablePath) {
+			if err = uploadFileToS3(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "csrs-remote-requests-writes-summary.txt"),
+				ts.cfg.AddOnCSRsRemote.RequestsWritesSummaryTablePath,
 			); err != nil {
 				return err
 			}
@@ -391,24 +413,35 @@ func (ts *Tester) uploadToS3() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnConfigMapsLocal() {
-		if fileutil.Exist(ts.cfg.AddOnConfigMapsLocal.RequestsSummaryWritesJSONPath) {
+		if fileutil.Exist(ts.cfg.AddOnConfigMapsLocal.RequestsWritesJSONPath) {
 			if err = uploadFileToS3(
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "config-maps-local-requests-summary-writes.json"),
-				ts.cfg.AddOnConfigMapsLocal.RequestsSummaryWritesJSONPath,
+				path.Join(ts.cfg.Name, "config-maps-local-requests-writes.json"),
+				ts.cfg.AddOnConfigMapsLocal.RequestsWritesJSONPath,
 			); err != nil {
 				return err
 			}
 		}
-		if fileutil.Exist(ts.cfg.AddOnConfigMapsLocal.RequestsSummaryWritesTablePath) {
+		if fileutil.Exist(ts.cfg.AddOnConfigMapsLocal.RequestsWritesSummaryJSONPath) {
 			if err = uploadFileToS3(
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "config-maps-local-requests-summary-writes.txt"),
-				ts.cfg.AddOnConfigMapsLocal.RequestsSummaryWritesTablePath,
+				path.Join(ts.cfg.Name, "config-maps-local-requests-writes-summary.json"),
+				ts.cfg.AddOnConfigMapsLocal.RequestsWritesSummaryJSONPath,
+			); err != nil {
+				return err
+			}
+		}
+		if fileutil.Exist(ts.cfg.AddOnConfigMapsLocal.RequestsWritesSummaryTablePath) {
+			if err = uploadFileToS3(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "config-maps-local-requests-writes-summary.txt"),
+				ts.cfg.AddOnConfigMapsLocal.RequestsWritesSummaryTablePath,
 			); err != nil {
 				return err
 			}
@@ -416,24 +449,35 @@ func (ts *Tester) uploadToS3() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnConfigMapsRemote() {
-		if fileutil.Exist(ts.cfg.AddOnConfigMapsRemote.RequestsSummaryWritesJSONPath) {
+		if fileutil.Exist(ts.cfg.AddOnConfigMapsRemote.RequestsWritesJSONPath) {
 			if err = uploadFileToS3(
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "config-maps-remote-requests-summary-writes.json"),
-				ts.cfg.AddOnConfigMapsRemote.RequestsSummaryWritesJSONPath,
+				path.Join(ts.cfg.Name, "config-maps-remote-requests-writes.json"),
+				ts.cfg.AddOnConfigMapsRemote.RequestsWritesJSONPath,
 			); err != nil {
 				return err
 			}
 		}
-		if fileutil.Exist(ts.cfg.AddOnConfigMapsRemote.RequestsSummaryWritesTablePath) {
+		if fileutil.Exist(ts.cfg.AddOnConfigMapsRemote.RequestsWritesSummaryJSONPath) {
 			if err = uploadFileToS3(
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "config-maps-remote-requests-summary-writes.txt"),
-				ts.cfg.AddOnConfigMapsRemote.RequestsSummaryWritesTablePath,
+				path.Join(ts.cfg.Name, "config-maps-remote-requests-writes-summary.json"),
+				ts.cfg.AddOnConfigMapsRemote.RequestsWritesSummaryJSONPath,
+			); err != nil {
+				return err
+			}
+		}
+		if fileutil.Exist(ts.cfg.AddOnConfigMapsRemote.RequestsWritesSummaryTablePath) {
+			if err = uploadFileToS3(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "config-maps-remote-requests-writes-summary.txt"),
+				ts.cfg.AddOnConfigMapsRemote.RequestsWritesSummaryTablePath,
 			); err != nil {
 				return err
 			}
@@ -441,24 +485,69 @@ func (ts *Tester) uploadToS3() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnSecretsLocal() {
-		if fileutil.Exist(ts.cfg.AddOnSecretsLocal.RequestsSummaryWritesJSONPath) {
+		if fileutil.Exist(ts.cfg.AddOnSecretsLocal.RequestsWritesJSONPath) {
 			if err = uploadFileToS3(
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "secrets-local-requests-summary-writes.json"),
-				ts.cfg.AddOnSecretsLocal.RequestsSummaryWritesJSONPath,
+				path.Join(ts.cfg.Name, "secrets-local-requests-writes.json"),
+				ts.cfg.AddOnSecretsLocal.RequestsWritesJSONPath,
 			); err != nil {
 				return err
 			}
 		}
-		if fileutil.Exist(ts.cfg.AddOnSecretsLocal.RequestsSummaryWritesTablePath) {
+		if fileutil.Exist(ts.cfg.AddOnSecretsLocal.RequestsWritesSummaryJSONPath) {
 			if err = uploadFileToS3(
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "secrets-local-requests-summary-writes.txt"),
-				ts.cfg.AddOnSecretsLocal.RequestsSummaryWritesTablePath,
+				path.Join(ts.cfg.Name, "secrets-local-requests-writes-summary.json"),
+				ts.cfg.AddOnSecretsLocal.RequestsWritesSummaryJSONPath,
+			); err != nil {
+				return err
+			}
+		}
+		if fileutil.Exist(ts.cfg.AddOnSecretsLocal.RequestsWritesSummaryTablePath) {
+			if err = uploadFileToS3(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "secrets-local-requests-writes-summary.txt"),
+				ts.cfg.AddOnSecretsLocal.RequestsWritesSummaryTablePath,
+			); err != nil {
+				return err
+			}
+		}
+
+		if fileutil.Exist(ts.cfg.AddOnSecretsLocal.RequestsReadsJSONPath) {
+			if err = uploadFileToS3(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "secrets-local-requests-reads.json"),
+				ts.cfg.AddOnSecretsLocal.RequestsReadsJSONPath,
+			); err != nil {
+				return err
+			}
+		}
+		if fileutil.Exist(ts.cfg.AddOnSecretsLocal.RequestsReadsSummaryJSONPath) {
+			if err = uploadFileToS3(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "secrets-local-requests-reads-summary.json"),
+				ts.cfg.AddOnSecretsLocal.RequestsReadsSummaryJSONPath,
+			); err != nil {
+				return err
+			}
+		}
+		if fileutil.Exist(ts.cfg.AddOnSecretsLocal.RequestsReadsSummaryTablePath) {
+			if err = uploadFileToS3(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "secrets-local-requests-reads-summary.txt"),
+				ts.cfg.AddOnSecretsLocal.RequestsReadsSummaryTablePath,
 			); err != nil {
 				return err
 			}
@@ -466,140 +555,69 @@ func (ts *Tester) uploadToS3() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnSecretsRemote() {
-		if fileutil.Exist(ts.cfg.AddOnSecretsRemote.RequestsSummaryWritesJSONPath) {
+		if fileutil.Exist(ts.cfg.AddOnSecretsRemote.RequestsWritesJSONPath) {
 			if err = uploadFileToS3(
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "secrets-remote-requests-summary-writes.json"),
-				ts.cfg.AddOnSecretsRemote.RequestsSummaryWritesJSONPath,
+				path.Join(ts.cfg.Name, "secrets-remote-requests-writes.json"),
+				ts.cfg.AddOnSecretsRemote.RequestsWritesJSONPath,
 			); err != nil {
 				return err
 			}
 		}
-		if fileutil.Exist(ts.cfg.AddOnSecretsRemote.RequestsSummaryWritesTablePath) {
+		if fileutil.Exist(ts.cfg.AddOnSecretsRemote.RequestsWritesSummaryJSONPath) {
 			if err = uploadFileToS3(
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "secrets-remote-requests-summary-writes.txt"),
-				ts.cfg.AddOnSecretsRemote.RequestsSummaryWritesTablePath,
+				path.Join(ts.cfg.Name, "secrets-remote-requests-writes-summary.json"),
+				ts.cfg.AddOnSecretsRemote.RequestsWritesSummaryJSONPath,
 			); err != nil {
 				return err
 			}
 		}
-		if fileutil.Exist(ts.cfg.AddOnSecretsRemote.RequestsSummaryReadsJSONPath) {
+		if fileutil.Exist(ts.cfg.AddOnSecretsRemote.RequestsWritesSummaryTablePath) {
 			if err = uploadFileToS3(
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "secrets-remote-requests-summary-reads.json"),
-				ts.cfg.AddOnSecretsRemote.RequestsSummaryReadsJSONPath,
+				path.Join(ts.cfg.Name, "secrets-remote-requests-writes-summary.txt"),
+				ts.cfg.AddOnSecretsRemote.RequestsWritesSummaryTablePath,
 			); err != nil {
 				return err
 			}
 		}
-		if fileutil.Exist(ts.cfg.AddOnSecretsRemote.RequestsSummaryReadsTablePath) {
-			if err = uploadFileToS3(
-				ts.lg,
-				ts.s3API,
-				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "secrets-remote-requests-summary-reads.txt"),
-				ts.cfg.AddOnSecretsRemote.RequestsSummaryReadsTablePath,
-			); err != nil {
-				return err
-			}
-		}
-	}
 
-	if ts.cfg.IsEnabledAddOnStresserLocal() {
-		if fileutil.Exist(ts.cfg.AddOnStresserLocal.RequestsSummaryWritesJSONPath) {
+		if fileutil.Exist(ts.cfg.AddOnSecretsRemote.RequestsReadsJSONPath) {
 			if err = uploadFileToS3(
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "stresser-local-requests-summary-writes.json"),
-				ts.cfg.AddOnStresserLocal.RequestsSummaryWritesJSONPath,
+				path.Join(ts.cfg.Name, "secrets-remote-requests-reads.json"),
+				ts.cfg.AddOnSecretsRemote.RequestsReadsJSONPath,
 			); err != nil {
 				return err
 			}
 		}
-		if fileutil.Exist(ts.cfg.AddOnStresserLocal.RequestsSummaryWritesTablePath) {
+		if fileutil.Exist(ts.cfg.AddOnSecretsRemote.RequestsReadsSummaryJSONPath) {
 			if err = uploadFileToS3(
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "stresser-local-requests-summary-writes.txt"),
-				ts.cfg.AddOnStresserLocal.RequestsSummaryWritesTablePath,
+				path.Join(ts.cfg.Name, "secrets-remote-requests-reads-summary.json"),
+				ts.cfg.AddOnSecretsRemote.RequestsReadsSummaryJSONPath,
 			); err != nil {
 				return err
 			}
 		}
-		if fileutil.Exist(ts.cfg.AddOnStresserLocal.RequestsSummaryReadsJSONPath) {
+		if fileutil.Exist(ts.cfg.AddOnSecretsRemote.RequestsReadsSummaryTablePath) {
 			if err = uploadFileToS3(
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "stresser-local-requests-summary-reads.json"),
-				ts.cfg.AddOnStresserLocal.RequestsSummaryReadsJSONPath,
-			); err != nil {
-				return err
-			}
-		}
-		if fileutil.Exist(ts.cfg.AddOnStresserLocal.RequestsSummaryReadsTablePath) {
-			if err = uploadFileToS3(
-				ts.lg,
-				ts.s3API,
-				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "stresser-local-requests-summary-reads.txt"),
-				ts.cfg.AddOnStresserLocal.RequestsSummaryReadsTablePath,
-			); err != nil {
-				return err
-			}
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnStresserRemote() {
-		if fileutil.Exist(ts.cfg.AddOnStresserRemote.RequestsSummaryWritesJSONPath) {
-			if err = uploadFileToS3(
-				ts.lg,
-				ts.s3API,
-				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "stresser-remote-requests-summary-writes.json"),
-				ts.cfg.AddOnStresserRemote.RequestsSummaryWritesJSONPath,
-			); err != nil {
-				return err
-			}
-		}
-		if fileutil.Exist(ts.cfg.AddOnStresserRemote.RequestsSummaryWritesTablePath) {
-			if err = uploadFileToS3(
-				ts.lg,
-				ts.s3API,
-				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "stresser-remote-requests-summary-writes.txt"),
-				ts.cfg.AddOnStresserRemote.RequestsSummaryWritesTablePath,
-			); err != nil {
-				return err
-			}
-		}
-		if fileutil.Exist(ts.cfg.AddOnStresserRemote.RequestsSummaryReadsJSONPath) {
-			if err = uploadFileToS3(
-				ts.lg,
-				ts.s3API,
-				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "stresser-remote-requests-summary-reads.json"),
-				ts.cfg.AddOnStresserRemote.RequestsSummaryReadsJSONPath,
-			); err != nil {
-				return err
-			}
-		}
-		if fileutil.Exist(ts.cfg.AddOnStresserRemote.RequestsSummaryReadsTablePath) {
-			if err = uploadFileToS3(
-				ts.lg,
-				ts.s3API,
-				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "stresser-remote-requests-summary-reads.txt"),
-				ts.cfg.AddOnStresserRemote.RequestsSummaryReadsTablePath,
+				path.Join(ts.cfg.Name, "secrets-remote-requests-reads-summary.txt"),
+				ts.cfg.AddOnSecretsRemote.RequestsReadsSummaryTablePath,
 			); err != nil {
 				return err
 			}
@@ -650,6 +668,146 @@ func (ts *Tester) uploadToS3() (err error) {
 				ts.cfg.S3BucketName,
 				path.Join(ts.cfg.Name, "cluster-loader-remote.log"),
 				ts.cfg.AddOnClusterLoaderRemote.LogPath,
+			); err != nil {
+				return err
+			}
+		}
+	}
+
+	if ts.cfg.IsEnabledAddOnStresserLocal() {
+		if fileutil.Exist(ts.cfg.AddOnStresserLocal.RequestsWritesJSONPath) {
+			if err = uploadFileToS3(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "stresser-local-requests-writes.json"),
+				ts.cfg.AddOnStresserLocal.RequestsWritesJSONPath,
+			); err != nil {
+				return err
+			}
+		}
+		if fileutil.Exist(ts.cfg.AddOnStresserLocal.RequestsWritesSummaryJSONPath) {
+			if err = uploadFileToS3(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "stresser-local-requests-writes-summary.json"),
+				ts.cfg.AddOnStresserLocal.RequestsWritesSummaryJSONPath,
+			); err != nil {
+				return err
+			}
+		}
+		if fileutil.Exist(ts.cfg.AddOnStresserLocal.RequestsWritesSummaryTablePath) {
+			if err = uploadFileToS3(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "stresser-local-requests-writes-summary.txt"),
+				ts.cfg.AddOnStresserLocal.RequestsWritesSummaryTablePath,
+			); err != nil {
+				return err
+			}
+		}
+
+		if fileutil.Exist(ts.cfg.AddOnStresserLocal.RequestsReadsJSONPath) {
+			if err = uploadFileToS3(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "stresser-local-requests-reads.json"),
+				ts.cfg.AddOnStresserLocal.RequestsReadsJSONPath,
+			); err != nil {
+				return err
+			}
+		}
+		if fileutil.Exist(ts.cfg.AddOnStresserLocal.RequestsReadsSummaryJSONPath) {
+			if err = uploadFileToS3(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "stresser-local-requests-reads-summary.json"),
+				ts.cfg.AddOnStresserLocal.RequestsReadsSummaryJSONPath,
+			); err != nil {
+				return err
+			}
+		}
+		if fileutil.Exist(ts.cfg.AddOnStresserLocal.RequestsReadsSummaryTablePath) {
+			if err = uploadFileToS3(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "stresser-local-requests-reads-summary.txt"),
+				ts.cfg.AddOnStresserLocal.RequestsReadsSummaryTablePath,
+			); err != nil {
+				return err
+			}
+		}
+	}
+
+	if ts.cfg.IsEnabledAddOnStresserRemote() {
+		if fileutil.Exist(ts.cfg.AddOnStresserRemote.RequestsWritesJSONPath) {
+			if err = uploadFileToS3(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "stresser-remote-requests-writes.json"),
+				ts.cfg.AddOnStresserRemote.RequestsWritesJSONPath,
+			); err != nil {
+				return err
+			}
+		}
+		if fileutil.Exist(ts.cfg.AddOnStresserRemote.RequestsWritesSummaryJSONPath) {
+			if err = uploadFileToS3(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "stresser-remote-requests-writes-summary.json"),
+				ts.cfg.AddOnStresserRemote.RequestsWritesSummaryJSONPath,
+			); err != nil {
+				return err
+			}
+		}
+		if fileutil.Exist(ts.cfg.AddOnStresserRemote.RequestsWritesSummaryTablePath) {
+			if err = uploadFileToS3(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "stresser-remote-requests-writes-summary.txt"),
+				ts.cfg.AddOnStresserRemote.RequestsWritesSummaryTablePath,
+			); err != nil {
+				return err
+			}
+		}
+
+		if fileutil.Exist(ts.cfg.AddOnStresserRemote.RequestsReadsJSONPath) {
+			if err = uploadFileToS3(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "stresser-remote-requests-reads.json"),
+				ts.cfg.AddOnStresserRemote.RequestsReadsJSONPath,
+			); err != nil {
+				return err
+			}
+		}
+		if fileutil.Exist(ts.cfg.AddOnStresserRemote.RequestsReadsSummaryJSONPath) {
+			if err = uploadFileToS3(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "stresser-remote-requests-reads-summary.json"),
+				ts.cfg.AddOnStresserRemote.RequestsReadsSummaryJSONPath,
+			); err != nil {
+				return err
+			}
+		}
+		if fileutil.Exist(ts.cfg.AddOnStresserRemote.RequestsReadsSummaryTablePath) {
+			if err = uploadFileToS3(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "stresser-remote-requests-reads-summary.txt"),
+				ts.cfg.AddOnStresserRemote.RequestsReadsSummaryTablePath,
 			); err != nil {
 				return err
 			}

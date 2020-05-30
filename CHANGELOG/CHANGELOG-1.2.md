@@ -3,6 +3,24 @@
 <hr>
 
 
+## [v1.2.8](https://github.com/aws/aws-k8s-tester/releases/tag/v1.2.8) (2020-05-30)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.7...v1.2.8).
+
+### `eksconfig`
+
+- Rename [`RequestsSummaryWrites` to `RequestsWritesSummary*`](https://github.com/aws/aws-k8s-tester/commit/).
+- Rename [`RequestsSummaryReads` to `RequestsReadsSummary*`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [JSON output fields to save latency data points on disk](https://github.com/aws/aws-k8s-tester/commit/).
+
+### `eks`
+
+- Fix [remote latency collect with JSON files](https://github.com/aws/aws-k8s-tester/commit/).
+
+
+<hr>
+
+
 ## [v1.2.7](https://github.com/aws/aws-k8s-tester/releases/tag/v1.2.7) (2020-05-29)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.6...v1.2.7).

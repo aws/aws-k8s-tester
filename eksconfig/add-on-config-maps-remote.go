@@ -49,15 +49,17 @@ type AddOnConfigMapsRemote struct {
 	// CreatedNames is the list of created "ConfigMap" object names.
 	CreatedNames []string `json:"created-names" read-only:"true"`
 
-	// RequestsSummaryWrites is the writes results.
-	RequestsSummaryWrites metrics.RequestsSummary `json:"requests-summary-writes,omitempty" read-only:"true"`
-	// RequestsSummaryWritesJSONPath is the file path to store writes requests summary in JSON format.
-	RequestsSummaryWritesJSONPath string `json:"requests-summary-writes-json-path" read-only:"true"`
-	// RequestsSummaryWritesTablePath is the file path to store writes requests summary in table format.
-	RequestsSummaryWritesTablePath string `json:"requests-summary-writes-table-path" read-only:"true"`
+	// RequestsWritesJSONPath is the file path to store writes requests in JSON format.
+	RequestsWritesJSONPath string `json:"requests-writes-json-path" read-only:"true"`
+	// RequestsWritesSummary is the writes results.
+	RequestsWritesSummary metrics.RequestsSummary `json:"requests-writes-summary,omitempty" read-only:"true"`
+	// RequestsWritesSummaryJSONPath is the file path to store writes requests summary in JSON format.
+	RequestsWritesSummaryJSONPath string `json:"requests-writes-summary-json-path" read-only:"true"`
+	// RequestsWritesSummaryTablePath is the file path to store writes requests summary in table format.
+	RequestsWritesSummaryTablePath string `json:"requests-writes-summary-table-path" read-only:"true"`
 
-	// RequestsSummaryWritesOutputNamePrefix is the output path name in "/var/log" directory, used in remote worker.
-	RequestsSummaryWritesOutputNamePrefix string `json:"requests-summary-writes-output-name-prefix"`
+	// RequestsWritesSummaryOutputNamePrefix is the output path name in "/var/log" directory, used in remote worker.
+	RequestsWritesSummaryOutputNamePrefix string `json:"requests-writes-summary-output-name-prefix"`
 }
 
 // EnvironmentVariablePrefixAddOnConfigMapsRemote is the environment variable prefix used for "eksconfig".
@@ -87,7 +89,7 @@ func getDefaultAddOnConfigMapsRemote() *AddOnConfigMapsRemote {
 		// Objects: 1000,
 		// ObjectSize: 300000, // 0.3 MB
 
-		RequestsSummaryWritesOutputNamePrefix: "config-maps-writes" + randutil.String(10),
+		RequestsWritesSummaryOutputNamePrefix: "config-maps-writes" + randutil.String(10),
 	}
 }
 
@@ -126,15 +128,18 @@ func (cfg *Config) validateAddOnConfigMapsRemote() error {
 		return fmt.Errorf("AddOnConfigMapsRemote.ObjectSize limit is 0.9 MB, got %d", cfg.AddOnConfigMapsRemote.ObjectSize)
 	}
 
-	if cfg.AddOnConfigMapsRemote.RequestsSummaryWritesJSONPath == "" {
-		cfg.AddOnConfigMapsRemote.RequestsSummaryWritesJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-config-maps-remote-requests-summary-writes.json"
+	if cfg.AddOnConfigMapsRemote.RequestsWritesJSONPath == "" {
+		cfg.AddOnConfigMapsRemote.RequestsWritesJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-config-maps-remote-requests-writes.csv"
 	}
-	if cfg.AddOnConfigMapsRemote.RequestsSummaryWritesTablePath == "" {
-		cfg.AddOnConfigMapsRemote.RequestsSummaryWritesTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-config-maps-remote-requests-summary-writes.txt"
+	if cfg.AddOnConfigMapsRemote.RequestsWritesSummaryJSONPath == "" {
+		cfg.AddOnConfigMapsRemote.RequestsWritesSummaryJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-config-maps-remote-requests-writes-summary.json"
+	}
+	if cfg.AddOnConfigMapsRemote.RequestsWritesSummaryTablePath == "" {
+		cfg.AddOnConfigMapsRemote.RequestsWritesSummaryTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-config-maps-remote-requests-writes-summary.txt"
 	}
 
-	if cfg.AddOnConfigMapsRemote.RequestsSummaryWritesOutputNamePrefix == "" {
-		cfg.AddOnConfigMapsRemote.RequestsSummaryWritesOutputNamePrefix = "config-maps-writes" + randutil.String(10)
+	if cfg.AddOnConfigMapsRemote.RequestsWritesSummaryOutputNamePrefix == "" {
+		cfg.AddOnConfigMapsRemote.RequestsWritesSummaryOutputNamePrefix = "config-maps-writes" + randutil.String(10)
 	}
 
 	return nil

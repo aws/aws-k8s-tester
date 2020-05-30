@@ -42,12 +42,14 @@ type AddOnCSRsLocal struct {
 	// CreatedNames is the list of created "CertificateSigningRequest" object names.
 	CreatedNames []string `json:"created-names" read-only:"true"`
 
-	// RequestsSummaryWrites is the writes results.
-	RequestsSummaryWrites metrics.RequestsSummary `json:"requests-summary-writes,omitempty" read-only:"true"`
-	// RequestsSummaryWritesJSONPath is the file path to store writes requests summary in JSON format.
-	RequestsSummaryWritesJSONPath string `json:"requests-summary-writes-json-path" read-only:"true"`
-	// RequestsSummaryWritesTablePath is the file path to store writes requests summary in table format.
-	RequestsSummaryWritesTablePath string `json:"requests-summary-writes-table-path" read-only:"true"`
+	// RequestsWritesJSONPath is the file path to store writes requests in JSON format.
+	RequestsWritesJSONPath string `json:"requests-writes-json-path" read-only:"true"`
+	// RequestsWritesSummary is the writes results.
+	RequestsWritesSummary metrics.RequestsSummary `json:"requests-writes-summary,omitempty" read-only:"true"`
+	// RequestsWritesSummaryJSONPath is the file path to store writes requests summary in JSON format.
+	RequestsWritesSummaryJSONPath string `json:"requests-writes-summary-json-path" read-only:"true"`
+	// RequestsWritesSummaryTablePath is the file path to store writes requests summary in table format.
+	RequestsWritesSummaryTablePath string `json:"requests-writes-summary-table-path" read-only:"true"`
 }
 
 // EnvironmentVariablePrefixAddOnCSRsLocal is the environment variable prefix used for "eksconfig".
@@ -95,11 +97,14 @@ func (cfg *Config) validateAddOnCSRsLocal() error {
 		return fmt.Errorf("unknown AddOnCSRsLocal.InitialRequestConditionType %q", cfg.AddOnCSRsLocal.InitialRequestConditionType)
 	}
 
-	if cfg.AddOnCSRsLocal.RequestsSummaryWritesJSONPath == "" {
-		cfg.AddOnCSRsLocal.RequestsSummaryWritesJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-csrs-local-requests-summary-writes.json"
+	if cfg.AddOnCSRsLocal.RequestsWritesJSONPath == "" {
+		cfg.AddOnCSRsLocal.RequestsWritesJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-csrs-local-requests-writes.csv"
 	}
-	if cfg.AddOnCSRsLocal.RequestsSummaryWritesTablePath == "" {
-		cfg.AddOnCSRsLocal.RequestsSummaryWritesTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-csrs-local-requests-summary-writes.txt"
+	if cfg.AddOnCSRsLocal.RequestsWritesSummaryJSONPath == "" {
+		cfg.AddOnCSRsLocal.RequestsWritesSummaryJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-csrs-local-requests-writes-summary.json"
+	}
+	if cfg.AddOnCSRsLocal.RequestsWritesSummaryTablePath == "" {
+		cfg.AddOnCSRsLocal.RequestsWritesSummaryTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-csrs-local-requests-writes-summary.txt"
 	}
 
 	return nil
