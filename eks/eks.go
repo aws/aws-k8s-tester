@@ -128,6 +128,8 @@ type Tester struct {
 	testers []eks_tester.Tester
 }
 
+// TODO: use "tput color" to print colors
+
 // New returns a new EKS kubetest2 Deployer.
 // ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Deployer
 // ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Options
