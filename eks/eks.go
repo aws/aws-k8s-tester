@@ -916,6 +916,7 @@ func (ts *Tester) Up() (err error) {
 
 		if idx%5 == 0 {
 			fmt.Printf("\n\n*********************************\n")
+			fmt.Printf("testers[%02d].uploadToS3 (%q)\n", idx, reflect.TypeOf(tss).PkgPath())
 			if serr := ts.uploadToS3(); serr != nil {
 				ts.lg.Warn("failed to upload artifacts to S3", zap.Error(serr))
 			}
@@ -1097,8 +1098,6 @@ func (ts *Tester) down() (err error) {
 			ts.lg.Warn("failed tester.Delete", zap.Error(err))
 			errs = append(errs, err.Error())
 		}
-
-		time.Sleep(30 * time.Second)
 	}
 
 	// NOTE(jaypipes): Wait for a bit here because we asked Kubernetes to
