@@ -9,7 +9,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.8...v1.2.9
 
 ### `eks`
 
-- Define [`eks/tester.Tester` interface](https://github.com/aws/aws-k8s-tester/commit/).
+- Define [`eks/tester.Tester` interface](https://github.com/aws/aws-k8s-tester/commit/035027a6c1caf7fc182f0a48b53cfd17cbc2e54f).
 
 
 <hr>
