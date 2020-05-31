@@ -852,6 +852,10 @@ func (ts *tester) deleteCreatedNodes() error {
 			ts.cfg.Logger.Info("deleted node", zap.Int("index", i), zap.String("name", nodeName))
 			deleted++
 		}
+		if i > 100 {
+			ts.cfg.Logger.Warn("skipping deleting created nodes; too many", zap.Int("deleted", deleted))
+			break
+		}
 	}
 	ts.cfg.Logger.Info("deleted node objects", zap.Int("deleted", deleted), zap.Int("created-nodes", len(ts.cfg.EKSConfig.AddOnHollowNodesRemote.CreatedNodeNames)))
 
