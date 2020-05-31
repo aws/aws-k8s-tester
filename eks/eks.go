@@ -116,6 +116,8 @@ type Tester struct {
 
 	k8sClient k8s_client.EKS
 
+	s3Uploaded bool
+
 	ngTester  ng.Tester
 	mngTester mng.Tester
 	gpuTester gpu.Tester
@@ -825,6 +827,8 @@ func (ts *Tester) Up() (err error) {
 
 		if serr := ts.uploadToS3(); serr != nil {
 			ts.lg.Warn("failed to upload artifacts to S3", zap.Error(serr))
+		} else {
+			ts.s3Uploaded = true
 		}
 
 		if err == nil {
@@ -1815,8 +1819,10 @@ func (ts *Tester) down() (err error) {
 		zap.String("name", ts.cfg.Name),
 		zap.String("cluster-arn", ts.cfg.Status.ClusterARN),
 	)
-	if serr := ts.uploadToS3(); serr != nil {
-		ts.lg.Warn("failed to upload artifacts to S3", zap.Error(serr))
+	if !ts.s3Uploaded {
+		if serr := ts.uploadToS3(); serr != nil {
+			ts.lg.Warn("failed to upload artifacts to S3", zap.Error(serr))
+		}
 	}
 
 	defer func() {
@@ -1891,13 +1897,13 @@ func (ts *Tester) down() (err error) {
 	}
 	if ts.cfg.IsEnabledAddOnClusterLoaderLocal() && ts.cfg.AddOnClusterLoaderLocal.Created {
 		fmt.Printf("\n*********************************\n")
-		fmt.Printf("clusterLoaderRemoteTester.Delete (%q)\n", ts.cfg.ConfigPath)
-		if err := ts.clusterLoaderRemoteTester.Delete(); err != nil {
-			ts.lg.Warn("clusterLoaderRemoteTester.Delete failed", zap.Error(err))
+		fmt.Printf("clusterLoaderLocalTester.Delete (%q)\n", ts.cfg.ConfigPath)
+		if err := ts.clusterLoaderLocalTester.Delete(); err != nil {
+			ts.lg.Warn("clusterLoaderLocalTester.Delete failed", zap.Error(err))
 			errs = append(errs, err.Error())
 		} else {
 			waitDur := 20 * time.Second
-			ts.lg.Info("sleeping after deleting clusterLoaderRemoteTester", zap.Duration("wait", waitDur))
+			ts.lg.Info("sleeping after deleting clusterLoaderLocalTester", zap.Duration("wait", waitDur))
 			time.Sleep(waitDur)
 		}
 	}
