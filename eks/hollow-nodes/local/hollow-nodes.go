@@ -35,19 +35,7 @@ type Config struct {
 
 func New(cfg Config) eks_tester.Tester {
 	cfg.Logger.Info("creating tester", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
-	return &tester{
-		cfg: cfg,
-		ng: hollow_nodes.CreateNodeGroup(hollow_nodes.NodeGroupConfig{
-			Logger:         cfg.Logger,
-			Stopc:          cfg.Stopc,
-			Client:         cfg.K8SClient,
-			Nodes:          cfg.EKSConfig.AddOnHollowNodesLocal.Nodes,
-			NodeNamePrefix: cfg.EKSConfig.AddOnHollowNodesLocal.NodeNamePrefix,
-			NodeLabels:     cfg.EKSConfig.AddOnHollowNodesLocal.NodeLabels,
-			MaxOpenFiles:   cfg.EKSConfig.AddOnHollowNodesLocal.MaxOpenFiles,
-			Remote:         false,
-		}),
-	}
+	return &tester{cfg: cfg}
 }
 
 type tester struct {
@@ -66,6 +54,17 @@ func (ts *tester) Create() (err error) {
 	}
 
 	ts.cfg.Logger.Info("starting tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	ts.ng = hollow_nodes.CreateNodeGroup(hollow_nodes.NodeGroupConfig{
+		Logger:         ts.cfg.Logger,
+		Stopc:          ts.cfg.Stopc,
+		Client:         ts.cfg.K8SClient,
+		Nodes:          ts.cfg.EKSConfig.AddOnHollowNodesLocal.Nodes,
+		NodeNamePrefix: ts.cfg.EKSConfig.AddOnHollowNodesLocal.NodeNamePrefix,
+		NodeLabels:     ts.cfg.EKSConfig.AddOnHollowNodesLocal.NodeLabels,
+		MaxOpenFiles:   ts.cfg.EKSConfig.AddOnHollowNodesLocal.MaxOpenFiles,
+		Remote:         false,
+	})
+
 	ts.cfg.EKSConfig.AddOnHollowNodesLocal.Created = true
 	ts.cfg.EKSConfig.Sync()
 	createStart := time.Now()

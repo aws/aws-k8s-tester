@@ -28,43 +28,7 @@ type Config struct {
 
 func New(cfg Config) eks_tester.Tester {
 	cfg.Logger.Info("creating tester", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
-	return &tester{
-		cfg: cfg,
-
-		loader: cluster_loader.New(cluster_loader.Config{
-			Logger: cfg.Logger,
-			Stopc:  cfg.Stopc,
-
-			KubeConfigPath: cfg.EKSConfig.KubeConfigPath,
-
-			ClusterLoaderPath:        cfg.EKSConfig.AddOnClusterLoaderLocal.ClusterLoaderPath,
-			ClusterLoaderDownloadURL: cfg.EKSConfig.AddOnClusterLoaderLocal.ClusterLoaderDownloadURL,
-			TestConfigPath:           cfg.EKSConfig.AddOnClusterLoaderLocal.TestConfigPath,
-			ReportDir:                cfg.EKSConfig.AddOnClusterLoaderLocal.ReportDir,
-			ReportTarGzPath:          cfg.EKSConfig.AddOnClusterLoaderLocal.ReportTarGzPath,
-			LogPath:                  cfg.EKSConfig.AddOnClusterLoaderLocal.LogPath,
-
-			Runs:    cfg.EKSConfig.AddOnClusterLoaderLocal.Runs,
-			Timeout: cfg.EKSConfig.AddOnClusterLoaderLocal.Timeout,
-
-			Nodes: cfg.EKSConfig.AddOnClusterLoaderLocal.Nodes,
-
-			NodesPerNamespace: cfg.EKSConfig.AddOnClusterLoaderLocal.NodesPerNamespace,
-			PodsPerNode:       cfg.EKSConfig.AddOnClusterLoaderLocal.PodsPerNode,
-
-			BigGroupSize:    cfg.EKSConfig.AddOnClusterLoaderLocal.BigGroupSize,
-			MediumGroupSize: cfg.EKSConfig.AddOnClusterLoaderLocal.MediumGroupSize,
-			SmallGroupSize:  cfg.EKSConfig.AddOnClusterLoaderLocal.SmallGroupSize,
-
-			SmallStatefulSetsPerNamespace:  cfg.EKSConfig.AddOnClusterLoaderLocal.SmallStatefulSetsPerNamespace,
-			MediumStatefulSetsPerNamespace: cfg.EKSConfig.AddOnClusterLoaderLocal.MediumStatefulSetsPerNamespace,
-
-			CL2LoadTestThroughput:     cfg.EKSConfig.AddOnClusterLoaderLocal.CL2LoadTestThroughput,
-			CL2EnablePVS:              cfg.EKSConfig.AddOnClusterLoaderLocal.CL2EnablePVS,
-			PrometheusScrapeKubeProxy: cfg.EKSConfig.AddOnClusterLoaderLocal.PrometheusScrapeKubeProxy,
-			EnableSystemPodMetrics:    cfg.EKSConfig.AddOnClusterLoaderLocal.EnableSystemPodMetrics,
-		}),
-	}
+	return &tester{cfg: cfg}
 }
 
 type tester struct {
@@ -83,6 +47,40 @@ func (ts *tester) Create() (err error) {
 	}
 
 	ts.cfg.Logger.Info("starting tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	ts.loader = cluster_loader.New(cluster_loader.Config{
+		Logger: ts.cfg.Logger,
+		Stopc:  ts.cfg.Stopc,
+
+		KubeConfigPath: ts.cfg.EKSConfig.KubeConfigPath,
+
+		ClusterLoaderPath:        ts.cfg.EKSConfig.AddOnClusterLoaderLocal.ClusterLoaderPath,
+		ClusterLoaderDownloadURL: ts.cfg.EKSConfig.AddOnClusterLoaderLocal.ClusterLoaderDownloadURL,
+		TestConfigPath:           ts.cfg.EKSConfig.AddOnClusterLoaderLocal.TestConfigPath,
+		ReportDir:                ts.cfg.EKSConfig.AddOnClusterLoaderLocal.ReportDir,
+		ReportTarGzPath:          ts.cfg.EKSConfig.AddOnClusterLoaderLocal.ReportTarGzPath,
+		LogPath:                  ts.cfg.EKSConfig.AddOnClusterLoaderLocal.LogPath,
+
+		Runs:    ts.cfg.EKSConfig.AddOnClusterLoaderLocal.Runs,
+		Timeout: ts.cfg.EKSConfig.AddOnClusterLoaderLocal.Timeout,
+
+		Nodes: ts.cfg.EKSConfig.AddOnClusterLoaderLocal.Nodes,
+
+		NodesPerNamespace: ts.cfg.EKSConfig.AddOnClusterLoaderLocal.NodesPerNamespace,
+		PodsPerNode:       ts.cfg.EKSConfig.AddOnClusterLoaderLocal.PodsPerNode,
+
+		BigGroupSize:    ts.cfg.EKSConfig.AddOnClusterLoaderLocal.BigGroupSize,
+		MediumGroupSize: ts.cfg.EKSConfig.AddOnClusterLoaderLocal.MediumGroupSize,
+		SmallGroupSize:  ts.cfg.EKSConfig.AddOnClusterLoaderLocal.SmallGroupSize,
+
+		SmallStatefulSetsPerNamespace:  ts.cfg.EKSConfig.AddOnClusterLoaderLocal.SmallStatefulSetsPerNamespace,
+		MediumStatefulSetsPerNamespace: ts.cfg.EKSConfig.AddOnClusterLoaderLocal.MediumStatefulSetsPerNamespace,
+
+		CL2LoadTestThroughput:     ts.cfg.EKSConfig.AddOnClusterLoaderLocal.CL2LoadTestThroughput,
+		CL2EnablePVS:              ts.cfg.EKSConfig.AddOnClusterLoaderLocal.CL2EnablePVS,
+		PrometheusScrapeKubeProxy: ts.cfg.EKSConfig.AddOnClusterLoaderLocal.PrometheusScrapeKubeProxy,
+		EnableSystemPodMetrics:    ts.cfg.EKSConfig.AddOnClusterLoaderLocal.EnableSystemPodMetrics,
+	})
+
 	ts.cfg.EKSConfig.AddOnClusterLoaderLocal.Created = true
 	ts.cfg.EKSConfig.Sync()
 	createStart := time.Now()
