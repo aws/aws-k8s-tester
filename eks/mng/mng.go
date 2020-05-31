@@ -4,6 +4,7 @@ package mng
 import (
 	"errors"
 	"os"
+	"reflect"
 	"strings"
 	"sync"
 	"time"
@@ -54,11 +55,12 @@ type Tester interface {
 }
 
 // New creates a new Job tester.
-func New(cfg Config) (Tester, error) {
+func New(cfg Config) Tester {
+	cfg.Logger.Info("creating tester", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	return &tester{
 		cfg:    cfg,
 		logsMu: new(sync.RWMutex),
-	}, nil
+	}
 }
 
 type tester struct {
@@ -80,6 +82,7 @@ func (ts *tester) Create() (err error) {
 		return errors.New("empty EKSConfig.Parameters.PublicSubnetIDs")
 	}
 
+	ts.cfg.Logger.Info("starting tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	createStart := time.Now()
 	defer func() {
 		createEnd := time.Now()
@@ -113,6 +116,7 @@ func (ts *tester) Delete() error {
 		return nil
 	}
 
+	ts.cfg.Logger.Info("starting tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	deleteStart := time.Now()
 	defer func() {
 		deleteEnd := time.Now()

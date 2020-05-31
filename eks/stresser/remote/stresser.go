@@ -10,10 +10,12 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"reflect"
 	"sort"
 	"strings"
 	"time"
 
+	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	aws_ecr "github.com/aws/aws-k8s-tester/pkg/aws/ecr"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
@@ -40,22 +42,12 @@ type Config struct {
 	ECRAPI    ecriface.ECRAPI
 }
 
-// Tester defines stresser tester.
-// ref. https://github.com/kubernetes/perf-tests
-type Tester interface {
-	// Create installs stresser tester.
-	Create() error
-	// Delete deletes stresser tester.
-	Delete() error
-	// AggregateResults aggregates all test results from remote nodes.
-	AggregateResults() error
-}
-
 // TODO: use kubemark
 // nodelease.NewController, kubemark.GetHollowKubeletConfig
 
-func New(cfg Config) (Tester, error) {
-	return &tester{cfg: cfg}, nil
+func New(cfg Config) eks_tester.Tester {
+	cfg.Logger.Info("creating tester", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	return &tester{cfg: cfg}
 }
 
 type tester struct {
@@ -64,12 +56,16 @@ type tester struct {
 }
 
 func (ts *tester) Create() (err error) {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnStresserRemote() {
+		ts.cfg.Logger.Info("skipping create AddOnStresserRemote")
+		return nil
+	}
 	if ts.cfg.EKSConfig.AddOnStresserRemote.Created {
 		ts.cfg.Logger.Info("skipping create AddOnStresserRemote")
 		return nil
 	}
 
-	ts.cfg.Logger.Info("starting load testing", zap.Duration("duration", ts.cfg.EKSConfig.AddOnStresserRemote.Duration))
+	ts.cfg.Logger.Info("starting tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	ts.cfg.EKSConfig.AddOnStresserRemote.Created = true
 	ts.cfg.EKSConfig.Sync()
 	createStart := time.Now()
@@ -154,11 +150,16 @@ func (ts *tester) Create() (err error) {
 }
 
 func (ts *tester) Delete() error {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnStresserRemote() {
+		ts.cfg.Logger.Info("skipping delete AddOnStresserRemote")
+		return nil
+	}
 	if !ts.cfg.EKSConfig.AddOnStresserRemote.Created {
 		ts.cfg.Logger.Info("skipping delete AddOnStresserRemote")
 		return nil
 	}
 
+	ts.cfg.Logger.Info("starting tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	deleteStart := time.Now()
 	defer func() {
 		deleteEnd := time.Now()
@@ -744,12 +745,16 @@ func (ts *tester) waitDeployment() error {
 }
 
 func (ts *tester) AggregateResults() (err error) {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnStresserRemote() {
+		ts.cfg.Logger.Info("skipping aggregate AddOnStresserRemote")
+		return nil
+	}
 	if !ts.cfg.EKSConfig.AddOnStresserRemote.Created {
-		ts.cfg.Logger.Info("skipping aggregating AddOnStresserRemote")
+		ts.cfg.Logger.Info("skipping aggregate AddOnStresserRemote")
 		return nil
 	}
 
-	ts.cfg.Logger.Info("aggregating results from Pods")
+	ts.cfg.Logger.Info("starting tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	writes, reads := metrics.RequestsSummary{}, metrics.RequestsSummary{}
 	writeLatencies, readLatencies := make(metrics.Durations, 0, 20000), make(metrics.Durations, 0, 20000)
 	if ts.cfg.EKSConfig.IsEnabledAddOnNodeGroups() && ts.cfg.EKSConfig.AddOnNodeGroups.FetchLogs {

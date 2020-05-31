@@ -107,12 +107,12 @@ type nodeGroup struct {
 }
 
 // CreateNodeGroup creates a new hollow node group.
-func CreateNodeGroup(cfg NodeGroupConfig) (ng NodeGroup, err error) {
+func CreateNodeGroup(cfg NodeGroupConfig) NodeGroup {
 	return &nodeGroup{
 		cfg:            cfg,
 		donec:          make(chan struct{}),
 		donecCloseOnce: new(sync.Once),
-	}, nil
+	}
 }
 
 func (ng *nodeGroup) Start() (err error) {

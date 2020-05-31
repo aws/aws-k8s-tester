@@ -5,10 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"reflect"
 	"strings"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/eks/csrs"
+	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
@@ -24,16 +26,9 @@ type Config struct {
 	K8SClient k8s_client.EKS
 }
 
-// Tester defines csrs local tester tester.
-type Tester interface {
-	// Create installs csrs local tester.
-	Create() error
-	// Delete deletes csrs local tester.
-	Delete() error
-}
-
-func New(cfg Config) (Tester, error) {
-	return &tester{cfg: cfg}, nil
+func New(cfg Config) eks_tester.Tester {
+	cfg.Logger.Info("creating tester", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	return &tester{cfg: cfg}
 }
 
 type tester struct {
@@ -41,12 +36,16 @@ type tester struct {
 }
 
 func (ts *tester) Create() (err error) {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnCSRsLocal() {
+		ts.cfg.Logger.Info("skipping create AddOnCSRsLocal")
+		return nil
+	}
 	if ts.cfg.EKSConfig.AddOnCSRsLocal.Created {
 		ts.cfg.Logger.Info("skipping create AddOnCSRsLocal")
 		return nil
 	}
 
-	ts.cfg.Logger.Info("starting csrs local tester")
+	ts.cfg.Logger.Info("starting tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	ts.cfg.EKSConfig.AddOnCSRsLocal.Created = true
 	ts.cfg.EKSConfig.Sync()
 	createStart := time.Now()
@@ -111,11 +110,16 @@ func (ts *tester) Create() (err error) {
 }
 
 func (ts *tester) Delete() error {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnCSRsLocal() {
+		ts.cfg.Logger.Info("skipping delete AddOnCSRsLocal")
+		return nil
+	}
 	if !ts.cfg.EKSConfig.AddOnCSRsLocal.Created {
 		ts.cfg.Logger.Info("skipping delete AddOnCSRsLocal")
 		return nil
 	}
 
+	ts.cfg.Logger.Info("starting tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	deleteStart := time.Now()
 	defer func() {
 		deleteEnd := time.Now()
@@ -131,4 +135,18 @@ func (ts *tester) Delete() error {
 
 	ts.cfg.EKSConfig.AddOnCSRsLocal.Created = false
 	return ts.cfg.EKSConfig.Sync()
+}
+
+func (ts *tester) AggregateResults() (err error) {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnCSRsLocal() {
+		ts.cfg.Logger.Info("skipping aggregate AddOnCSRsLocal")
+		return nil
+	}
+	if !ts.cfg.EKSConfig.AddOnCSRsLocal.Created {
+		ts.cfg.Logger.Info("skipping aggregate AddOnCSRsLocal")
+		return nil
+	}
+
+	ts.cfg.Logger.Info("starting tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	return nil
 }

@@ -6,11 +6,13 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"reflect"
 	"strings"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/eks/helm"
+	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/httputil"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
@@ -29,16 +31,9 @@ type Config struct {
 	K8SClient k8s_client.EKS
 }
 
-// Tester defines Prometheus/Grafana tester
-type Tester interface {
-	// Create installs Prometheus/Grafana.
-	Create() error
-	// Delete deletes Prometheus/Grafana.
-	Delete() error
-}
-
-func New(cfg Config) (Tester, error) {
-	return &tester{cfg: cfg}, nil
+func New(cfg Config) eks_tester.Tester {
+	cfg.Logger.Info("creating tester", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	return &tester{cfg: cfg}
 }
 
 type tester struct {
@@ -57,11 +52,16 @@ const (
 )
 
 func (ts *tester) Create() error {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnPrometheusGrafana() {
+		ts.cfg.Logger.Info("skipping create AddOnPrometheusGrafana")
+		return nil
+	}
 	if ts.cfg.EKSConfig.AddOnPrometheusGrafana.Created {
 		ts.cfg.Logger.Info("skipping create AddOnPrometheusGrafana")
 		return nil
 	}
 
+	ts.cfg.Logger.Info("starting tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	ts.cfg.EKSConfig.AddOnPrometheusGrafana.Created = true
 	ts.cfg.EKSConfig.Sync()
 	createStart := time.Now()
@@ -100,11 +100,16 @@ func (ts *tester) Create() error {
 }
 
 func (ts *tester) Delete() error {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnPrometheusGrafana() {
+		ts.cfg.Logger.Info("skipping delete AddOnPrometheusGrafana")
+		return nil
+	}
 	if !ts.cfg.EKSConfig.AddOnPrometheusGrafana.Created {
 		ts.cfg.Logger.Info("skipping delete AddOnPrometheusGrafana")
 		return nil
 	}
 
+	ts.cfg.Logger.Info("starting tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	deleteStart := time.Now()
 	defer func() {
 		deleteEnd := time.Now()
@@ -461,4 +466,18 @@ func (ts *tester) waitServiceGrafana() error {
 	fmt.Printf("Grafana Admin Password: %d characters\n\n", len(ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaAdminPassword))
 
 	return ts.cfg.EKSConfig.Sync()
+}
+
+func (ts *tester) AggregateResults() (err error) {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnPrometheusGrafana() {
+		ts.cfg.Logger.Info("skipping aggregate AddOnPrometheusGrafana")
+		return nil
+	}
+	if !ts.cfg.EKSConfig.AddOnPrometheusGrafana.Created {
+		ts.cfg.Logger.Info("skipping aggregate AddOnPrometheusGrafana")
+		return nil
+	}
+
+	ts.cfg.Logger.Info("starting tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	return nil
 }

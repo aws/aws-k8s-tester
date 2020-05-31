@@ -7,10 +7,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/eks/helm"
+	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
@@ -27,16 +29,9 @@ type Config struct {
 	K8SClient k8s_client.EKS
 }
 
-// Tester defines AWS EBS CSI Driver tester
-type Tester interface {
-	// Create installs AWS EBS CSI Driver.
-	Create() error
-	// Delete deletes AWS EBS CSI Driver.
-	Delete() error
-}
-
-func New(cfg Config) (Tester, error) {
-	return &tester{cfg: cfg}, nil
+func New(cfg Config) eks_tester.Tester {
+	cfg.Logger.Info("creating tester", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	return &tester{cfg: cfg}
 }
 
 type tester struct {
@@ -46,11 +41,16 @@ type tester struct {
 const chartName = "aws-ebs-csi-driver"
 
 func (ts *tester) Create() error {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnCSIEBS() {
+		ts.cfg.Logger.Info("skipping create AddOnCSIEBS")
+		return nil
+	}
 	if ts.cfg.EKSConfig.AddOnCSIEBS.Created {
 		ts.cfg.Logger.Info("skipping create AddOnCSIEBS")
 		return nil
 	}
 
+	ts.cfg.Logger.Info("starting tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	ts.cfg.EKSConfig.AddOnCSIEBS.Created = true
 	ts.cfg.EKSConfig.Sync()
 	createStart := time.Now()
@@ -68,11 +68,16 @@ func (ts *tester) Create() error {
 }
 
 func (ts *tester) Delete() error {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnCSIEBS() {
+		ts.cfg.Logger.Info("skipping delete AddOnCSIEBS")
+		return nil
+	}
 	if !ts.cfg.EKSConfig.AddOnCSIEBS.Created {
 		ts.cfg.Logger.Info("skipping delete AddOnCSIEBS")
 		return nil
 	}
 
+	ts.cfg.Logger.Info("starting tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	deleteStart := time.Now()
 	defer func() {
 		deleteEnd := time.Now()
@@ -228,4 +233,18 @@ func (ts *tester) deleteHelmCSI() error {
 		ChartName:      chartName,
 		ReleaseName:    chartName,
 	})
+}
+
+func (ts *tester) AggregateResults() (err error) {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnCSIEBS() {
+		ts.cfg.Logger.Info("skipping aggregate AddOnCSIEBS")
+		return nil
+	}
+	if !ts.cfg.EKSConfig.AddOnCSIEBS.Created {
+		ts.cfg.Logger.Info("skipping aggregate AddOnCSIEBS")
+		return nil
+	}
+
+	ts.cfg.Logger.Info("starting tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	return nil
 }

@@ -7,10 +7,12 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"reflect"
 	"sort"
 	"strings"
 	"time"
 
+	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	aws_ecr "github.com/aws/aws-k8s-tester/pkg/aws/ecr"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
@@ -37,19 +39,9 @@ type Config struct {
 	ECRAPI    ecriface.ECRAPI
 }
 
-// Tester defines configmaps tester.
-// ref. https://github.com/kubernetes/perf-tests
-type Tester interface {
-	// Create installs configmaps tester.
-	Create() error
-	// Delete deletes configmaps tester.
-	Delete() error
-	// AggregateResults aggregates all test results from remote nodes.
-	AggregateResults() error
-}
-
-func New(cfg Config) (Tester, error) {
-	return &tester{cfg: cfg}, nil
+func New(cfg Config) eks_tester.Tester {
+	cfg.Logger.Info("creating tester", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	return &tester{cfg: cfg}
 }
 
 type tester struct {
@@ -58,12 +50,16 @@ type tester struct {
 }
 
 func (ts *tester) Create() (err error) {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnConfigMapsRemote() {
+		ts.cfg.Logger.Info("skipping create AddOnConfigMapsRemote")
+		return nil
+	}
 	if ts.cfg.EKSConfig.AddOnConfigMapsRemote.Created {
 		ts.cfg.Logger.Info("skipping create AddOnConfigMapsRemote")
 		return nil
 	}
 
-	ts.cfg.Logger.Info("starting configmap testing")
+	ts.cfg.Logger.Info("starting tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	ts.cfg.EKSConfig.AddOnConfigMapsRemote.Created = true
 	ts.cfg.EKSConfig.Sync()
 	createStart := time.Now()
@@ -140,11 +136,16 @@ func (ts *tester) Create() (err error) {
 }
 
 func (ts *tester) Delete() error {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnConfigMapsRemote() {
+		ts.cfg.Logger.Info("skipping delete AddOnConfigMapsRemote")
+		return nil
+	}
 	if !ts.cfg.EKSConfig.AddOnConfigMapsRemote.Created {
 		ts.cfg.Logger.Info("skipping delete AddOnConfigMapsRemote")
 		return nil
 	}
 
+	ts.cfg.Logger.Info("starting tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	deleteStart := time.Now()
 	defer func() {
 		deleteEnd := time.Now()
@@ -702,12 +703,16 @@ func (ts *tester) waitDeployment() error {
 }
 
 func (ts *tester) AggregateResults() (err error) {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnConfigMapsRemote() {
+		ts.cfg.Logger.Info("skipping aggregate AddOnConfigMapsRemote")
+		return nil
+	}
 	if !ts.cfg.EKSConfig.AddOnConfigMapsRemote.Created {
-		ts.cfg.Logger.Info("skipping aggregating AddOnConfigMapsRemote")
+		ts.cfg.Logger.Info("skipping aggregate AddOnConfigMapsRemote")
 		return nil
 	}
 
-	ts.cfg.Logger.Info("aggregating results from Pods")
+	ts.cfg.Logger.Info("starting tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	writes := metrics.RequestsSummary{}
 	writeLatencies := make(metrics.Durations, 0, 20000)
 	if ts.cfg.EKSConfig.IsEnabledAddOnNodeGroups() && ts.cfg.EKSConfig.AddOnNodeGroups.FetchLogs {

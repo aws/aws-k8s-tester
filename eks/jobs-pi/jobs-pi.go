@@ -1,17 +1,18 @@
-// Package jobsecho creates Job objects in Kubernetes.
-package jobsecho
+// Package jobspi creates example Job objects in Kubernetes.
+package jobspi
 
 import (
 	"context"
 	"errors"
 	"fmt"
 	"os"
+	"reflect"
 	"strings"
 	"time"
 
+	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
-	"github.com/aws/aws-k8s-tester/pkg/randutil"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/dustin/go-humanize"
@@ -33,17 +34,10 @@ type Config struct {
 	K8SClient k8s_client.EKS
 }
 
-// Tester defines Job tester.
-type Tester interface {
-	// Create creates Job objects, and waits for completion.
-	Create() error
-	// Delete deletes all Job objects.
-	Delete() error
-}
-
 // New creates a new Job tester.
-func New(cfg Config) (Tester, error) {
-	return &tester{cfg: cfg}, nil
+func New(cfg Config) eks_tester.Tester {
+	cfg.Logger.Info("creating tester", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	return &tester{cfg: cfg}
 }
 
 type tester struct {
@@ -51,24 +45,29 @@ type tester struct {
 }
 
 func (ts *tester) Create() error {
-	if ts.cfg.EKSConfig.AddOnJobsEcho.Created {
-		ts.cfg.Logger.Info("skipping create AddOnJobsEcho")
+	if !ts.cfg.EKSConfig.IsEnabledAddOnJobsPi() {
+		ts.cfg.Logger.Info("skipping create AddOnJobsPi")
+		return nil
+	}
+	if ts.cfg.EKSConfig.AddOnJobsPi.Created {
+		ts.cfg.Logger.Info("skipping create AddOnJobsPi")
 		return nil
 	}
 
-	ts.cfg.EKSConfig.AddOnJobsEcho.Created = true
+	ts.cfg.Logger.Info("starting tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	ts.cfg.EKSConfig.AddOnJobsPi.Created = true
 	ts.cfg.EKSConfig.Sync()
 	createStart := time.Now()
 	defer func() {
 		createEnd := time.Now()
-		ts.cfg.EKSConfig.AddOnJobsEcho.TimeFrameCreate = timeutil.NewTimeFrame(createStart, createEnd)
+		ts.cfg.EKSConfig.AddOnJobsPi.TimeFrameCreate = timeutil.NewTimeFrame(createStart, createEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 
 	if err := k8s_client.CreateNamespace(
 		ts.cfg.Logger,
 		ts.cfg.K8SClient.KubernetesClientSet(),
-		ts.cfg.EKSConfig.AddOnJobsEcho.Namespace,
+		ts.cfg.EKSConfig.AddOnJobsPi.Namespace,
 	); err != nil {
 		return err
 	}
@@ -78,15 +77,15 @@ func (ts *tester) Create() error {
 	}
 	ts.cfg.Logger.Info("creating Job",
 		zap.String("name", jobName),
-		zap.Int("completes", ts.cfg.EKSConfig.AddOnJobsEcho.Completes),
-		zap.Int("parallels", ts.cfg.EKSConfig.AddOnJobsEcho.Parallels),
+		zap.Int("completes", ts.cfg.EKSConfig.AddOnJobsPi.Completes),
+		zap.Int("parallels", ts.cfg.EKSConfig.AddOnJobsPi.Parallels),
 		zap.String("object-size", humanize.Bytes(uint64(len(b)))),
 	)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err = ts.cfg.K8SClient.KubernetesClientSet().
 		BatchV1().
-		Jobs(ts.cfg.EKSConfig.AddOnJobsEcho.Namespace).
+		Jobs(ts.cfg.EKSConfig.AddOnJobsPi.Namespace).
 		Create(ctx, &obj, metav1.CreateOptions{})
 	cancel()
 	if err != nil {
@@ -94,7 +93,7 @@ func (ts *tester) Create() error {
 	}
 	ts.cfg.Logger.Info("created Job")
 
-	waitDur := 3*time.Minute + 10*time.Duration(ts.cfg.EKSConfig.AddOnJobsEcho.Completes)*time.Second
+	waitDur := 3*time.Minute + 10*time.Duration(ts.cfg.EKSConfig.AddOnJobsPi.Completes)*time.Second
 
 	completedJobs, err := waitJobs(
 		ts.cfg.Logger,
@@ -102,9 +101,9 @@ func (ts *tester) Create() error {
 		ts.cfg.K8SClient.KubernetesClientSet(),
 		waitDur,
 		5*time.Second,
-		ts.cfg.EKSConfig.AddOnJobsEcho.Namespace,
+		ts.cfg.EKSConfig.AddOnJobsPi.Namespace,
 		jobName,
-		int(ts.cfg.EKSConfig.AddOnJobsEcho.Completes),
+		int(ts.cfg.EKSConfig.AddOnJobsPi.Completes),
 		jobsFieldSelector,
 		v1.PodSucceeded,
 	)
@@ -124,15 +123,20 @@ func (ts *tester) Create() error {
 var propagationBackground = metav1.DeletePropagationBackground
 
 func (ts *tester) Delete() error {
-	if !ts.cfg.EKSConfig.AddOnJobsEcho.Created {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnJobsPi() {
+		ts.cfg.Logger.Info("skipping delete AddOnJobsPi")
+		return nil
+	}
+	if !ts.cfg.EKSConfig.AddOnJobsPi.Created {
 		ts.cfg.Logger.Info("skipping delete AddOnJobsPi")
 		return nil
 	}
 
+	ts.cfg.Logger.Info("starting tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	deleteStart := time.Now()
 	defer func() {
 		deleteEnd := time.Now()
-		ts.cfg.EKSConfig.AddOnJobsEcho.TimeFrameDelete = timeutil.NewTimeFrame(deleteStart, deleteEnd)
+		ts.cfg.EKSConfig.AddOnJobsPi.TimeFrameDelete = timeutil.NewTimeFrame(deleteStart, deleteEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 
@@ -143,7 +147,7 @@ func (ts *tester) Delete() error {
 	err := ts.cfg.
 		K8SClient.KubernetesClientSet().
 		BatchV1().
-		Jobs(ts.cfg.EKSConfig.AddOnJobsEcho.Namespace).
+		Jobs(ts.cfg.EKSConfig.AddOnJobsPi.Namespace).
 		Delete(
 			ctx,
 			jobName,
@@ -154,7 +158,7 @@ func (ts *tester) Delete() error {
 		)
 	cancel()
 	if err != nil {
-		errs = append(errs, fmt.Sprintf("failed to delete Job %q (%v)", jobName, err))
+		errs = append(errs, fmt.Sprintf("failed to delete Job pi %q (%v)", jobName, err))
 	} else {
 		ts.cfg.Logger.Info("deleted Job", zap.String("name", jobName))
 	}
@@ -162,26 +166,26 @@ func (ts *tester) Delete() error {
 	if err := k8s_client.DeleteNamespaceAndWait(
 		ts.cfg.Logger,
 		ts.cfg.K8SClient.KubernetesClientSet(),
-		ts.cfg.EKSConfig.AddOnJobsEcho.Namespace,
+		ts.cfg.EKSConfig.AddOnJobsPi.Namespace,
 		k8s_client.DefaultNamespaceDeletionInterval,
 		k8s_client.DefaultNamespaceDeletionTimeout,
 	); err != nil {
-		errs = append(errs, fmt.Sprintf("failed to delete Jobs echo namespace (%v)", err))
+		errs = append(errs, fmt.Sprintf("failed to delete Jobs Pi namespace (%v)", err))
 	}
 
 	if len(errs) > 0 {
 		return errors.New(strings.Join(errs, ", "))
 	}
 
-	ts.cfg.EKSConfig.AddOnJobsEcho.Created = false
+	ts.cfg.EKSConfig.AddOnJobsPi.Created = false
 	return ts.cfg.EKSConfig.Sync()
 }
 
 const (
 	// https://github.com/kubernetes/kubernetes/blob/d379ab2697251334774b7bd6f41b26cf39de470d/pkg/apis/batch/v1/conversion.go#L30-L41
 	jobsFieldSelector = "status.phase!=Running"
-	jobName           = "job-echo"
-	jobEchoImageName  = "busybox"
+	jobName           = "job-pi"
+	jobPiImageName    = "perl"
 )
 
 func (ts *tester) createObject() (batchv1.Job, string, error) {
@@ -190,32 +194,18 @@ func (ts *tester) createObject() (batchv1.Job, string, error) {
 			Containers: []v1.Container{
 				{
 					Name:            jobName,
-					Image:           jobEchoImageName,
+					Image:           jobPiImageName,
 					ImagePullPolicy: v1.PullAlways,
 					Command: []string{
-						"/bin/sh",
-						"-ec",
-						fmt.Sprintf("echo -n '%s' >> /config/output.txt", randutil.String(ts.cfg.EKSConfig.AddOnJobsEcho.EchoSize)),
-					},
-					VolumeMounts: []v1.VolumeMount{
-						{
-							Name:      "config",
-							MountPath: "/config",
-						},
+						"perl",
+						"-Mbignum=bpi",
+						"-wle",
+						"print bpi(2000)",
 					},
 				},
 			},
 			// spec.template.spec.restartPolicy: Unsupported value: "Always": supported values: "OnFailure", "Never"
 			RestartPolicy: v1.RestartPolicyOnFailure,
-
-			Volumes: []v1.Volume{
-				{
-					Name: "config",
-					VolumeSource: v1.VolumeSource{
-						EmptyDir: &v1.EmptyDirVolumeSource{},
-					},
-				},
-			},
 		},
 	}
 	jobObj := batchv1.Job{
@@ -225,11 +215,11 @@ func (ts *tester) createObject() (batchv1.Job, string, error) {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      jobName,
-			Namespace: ts.cfg.EKSConfig.AddOnJobsEcho.Namespace,
+			Namespace: ts.cfg.EKSConfig.AddOnJobsPi.Namespace,
 		},
 		Spec: batchv1.JobSpec{
-			Completions: aws.Int32(int32(ts.cfg.EKSConfig.AddOnJobsEcho.Completes)),
-			Parallelism: aws.Int32(int32(ts.cfg.EKSConfig.AddOnJobsEcho.Parallels)),
+			Completions: aws.Int32(int32(ts.cfg.EKSConfig.AddOnJobsPi.Completes)),
+			Parallelism: aws.Int32(int32(ts.cfg.EKSConfig.AddOnJobsPi.Parallels)),
 			Template:    podSpec,
 			// TODO: 'TTLSecondsAfterFinished' is still alpha
 			// https://kubernetes.io/docs/concepts/workloads/controllers/ttlafterfinished/
@@ -237,4 +227,18 @@ func (ts *tester) createObject() (batchv1.Job, string, error) {
 	}
 	b, err := yaml.Marshal(jobObj)
 	return jobObj, string(b), err
+}
+
+func (ts *tester) AggregateResults() (err error) {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnJobsPi() {
+		ts.cfg.Logger.Info("skipping aggregate AddOnJobsPi")
+		return nil
+	}
+	if !ts.cfg.EKSConfig.AddOnJobsPi.Created {
+		ts.cfg.Logger.Info("skipping aggregate AddOnJobsPi")
+		return nil
+	}
+
+	ts.cfg.Logger.Info("starting tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	return nil
 }

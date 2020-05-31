@@ -10,9 +10,11 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"time"
 
+	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/pkg/httputil"
@@ -34,16 +36,9 @@ type Config struct {
 	K8SClient k8s_client.EKS
 }
 
-// Tester defines Conformance tester.
-type Tester interface {
-	// Create installs Conformance.
-	Create() error
-	// Delete deletes Conformance.
-	Delete() error
-}
-
-func New(cfg Config) (Tester, error) {
-	return &tester{cfg: cfg, donec: make(chan struct{})}, nil
+func New(cfg Config) eks_tester.Tester {
+	cfg.Logger.Info("creating tester", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	return &tester{cfg: cfg, donec: make(chan struct{})}
 }
 
 type tester struct {
@@ -52,12 +47,16 @@ type tester struct {
 }
 
 func (ts *tester) Create() error {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnConformance() {
+		ts.cfg.Logger.Info("skipping create AddOnConformance")
+		return nil
+	}
 	if ts.cfg.EKSConfig.AddOnConformance.Created {
 		ts.cfg.Logger.Info("skipping create AddOnConformance")
 		return nil
 	}
 
-	ts.cfg.Logger.Info("starting conformance tests")
+	ts.cfg.Logger.Info("starting tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	ts.cfg.EKSConfig.AddOnConformance.Created = true
 	ts.cfg.EKSConfig.Sync()
 	createStart := time.Now()
@@ -87,11 +86,16 @@ func (ts *tester) Create() error {
 }
 
 func (ts *tester) Delete() error {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnConformance() {
+		ts.cfg.Logger.Info("skipping delete AddOnConformance")
+		return nil
+	}
 	if !ts.cfg.EKSConfig.AddOnConformance.Created {
 		ts.cfg.Logger.Info("skipping delete AddOnConformance")
 		return nil
 	}
 
+	ts.cfg.Logger.Info("starting tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	deleteStart := time.Now()
 	defer func() {
 		deleteEnd := time.Now()
@@ -529,4 +533,18 @@ func untarResults(lg *zap.Logger, tarGzPath string, outputDir string) (logPath s
 		return "", "", fmt.Errorf("result dir %q does not have junit_01.xml %q", outputDir, xmlPath)
 	}
 	return logPath, xmlPath, nil
+}
+
+func (ts *tester) AggregateResults() (err error) {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnConformance() {
+		ts.cfg.Logger.Info("skipping aggregate AddOnConformance")
+		return nil
+	}
+	if !ts.cfg.EKSConfig.AddOnConformance.Created {
+		ts.cfg.Logger.Info("skipping aggregate AddOnConformance")
+		return nil
+	}
+
+	ts.cfg.Logger.Info("starting tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	return nil
 }

@@ -14,9 +14,11 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"reflect"
 	"strings"
 	"time"
 
+	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	aws_ecr "github.com/aws/aws-k8s-tester/pkg/aws/ecr"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
@@ -41,16 +43,9 @@ type Config struct {
 	ECRAPI    ecriface.ECRAPI
 }
 
-// Tester defines hollow nodes tester.
-type Tester interface {
-	// Create installs hollow nodes.
-	Create() error
-	// Delete deletes hollow nodes.
-	Delete() error
-}
-
-func New(cfg Config) (Tester, error) {
-	return &tester{cfg: cfg}, nil
+func New(cfg Config) eks_tester.Tester {
+	cfg.Logger.Info("creating tester", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	return &tester{cfg: cfg}
 }
 
 type tester struct {
@@ -59,12 +54,16 @@ type tester struct {
 }
 
 func (ts *tester) Create() (err error) {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnHollowNodesRemote() {
+		ts.cfg.Logger.Info("skipping create AddOnHollowNodesRemote")
+		return nil
+	}
 	if ts.cfg.EKSConfig.AddOnHollowNodesRemote.Created {
 		ts.cfg.Logger.Info("skipping create AddOnHollowNodesRemote")
 		return nil
 	}
 
-	ts.cfg.Logger.Info("starting hollow nodes testing")
+	ts.cfg.Logger.Info("starting tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	ts.cfg.EKSConfig.AddOnHollowNodesRemote.Created = true
 	ts.cfg.EKSConfig.Sync()
 	createStart := time.Now()
@@ -136,11 +135,16 @@ func (ts *tester) Create() (err error) {
 }
 
 func (ts *tester) Delete() (err error) {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnHollowNodesRemote() {
+		ts.cfg.Logger.Info("skipping delete AddOnHollowNodesRemote")
+		return nil
+	}
 	if !ts.cfg.EKSConfig.AddOnHollowNodesRemote.Created {
 		ts.cfg.Logger.Info("skipping delete AddOnHollowNodesRemote")
 		return nil
 	}
 
+	ts.cfg.Logger.Info("starting tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	deleteStart := time.Now()
 	defer func() {
 		deleteEnd := time.Now()
@@ -863,5 +867,19 @@ func (ts *tester) deleteCreatedNodes() error {
 		return errors.New(strings.Join(errs, ", "))
 	}
 
+	return nil
+}
+
+func (ts *tester) AggregateResults() (err error) {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnHollowNodesRemote() {
+		ts.cfg.Logger.Info("skipping aggregate AddOnHollowNodesRemote")
+		return nil
+	}
+	if !ts.cfg.EKSConfig.AddOnHollowNodesRemote.Created {
+		ts.cfg.Logger.Info("skipping aggregate AddOnHollowNodesRemote")
+		return nil
+	}
+
+	ts.cfg.Logger.Info("starting tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	return nil
 }

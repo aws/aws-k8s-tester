@@ -8,9 +8,11 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"reflect"
 	"strings"
 	"time"
 
+	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	aws_ecr "github.com/aws/aws-k8s-tester/pkg/aws/ecr"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
@@ -36,18 +38,9 @@ type Config struct {
 	ECRAPI    ecriface.ECRAPI
 }
 
-// Tester defines cluster loader tester.
-type Tester interface {
-	// Create installs cluster loader.
-	Create() error
-	// Delete deletes cluster loader.
-	Delete() error
-	// AggregateResults aggregates all test results from remote nodes.
-	AggregateResults() error
-}
-
-func New(cfg Config) (Tester, error) {
-	return &tester{cfg: cfg}, nil
+func New(cfg Config) eks_tester.Tester {
+	cfg.Logger.Info("creating tester", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	return &tester{cfg: cfg}
 }
 
 type tester struct {
@@ -56,12 +49,16 @@ type tester struct {
 }
 
 func (ts *tester) Create() (err error) {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnClusterLoaderRemote() {
+		ts.cfg.Logger.Info("skipping create AddOnClusterLoaderRemote")
+		return nil
+	}
 	if ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Created {
 		ts.cfg.Logger.Info("skipping create AddOnClusterLoaderRemote")
 		return nil
 	}
 
-	ts.cfg.Logger.Info("starting cluster loader testing")
+	ts.cfg.Logger.Info("starting tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Created = true
 	ts.cfg.EKSConfig.Sync()
 	createStart := time.Now()
@@ -133,11 +130,16 @@ func (ts *tester) Create() (err error) {
 }
 
 func (ts *tester) Delete() (err error) {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnClusterLoaderRemote() {
+		ts.cfg.Logger.Info("skipping delete AddOnClusterLoaderRemote")
+		return nil
+	}
 	if !ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Created {
 		ts.cfg.Logger.Info("skipping delete AddOnClusterLoaderRemote")
 		return nil
 	}
 
+	ts.cfg.Logger.Info("starting tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	deleteStart := time.Now()
 	defer func() {
 		deleteEnd := time.Now()
@@ -703,12 +705,16 @@ func (ts *tester) waitDeployment() error {
 }
 
 func (ts *tester) AggregateResults() (err error) {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnClusterLoaderRemote() {
+		ts.cfg.Logger.Info("skipping aggregate AddOnClusterLoaderRemote")
+		return nil
+	}
 	if !ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Created {
-		ts.cfg.Logger.Info("skipping aggregating AddOnClusterLoaderRemote")
+		ts.cfg.Logger.Info("skipping aggregate AddOnClusterLoaderRemote")
 		return nil
 	}
 
-	ts.cfg.Logger.Info("aggregating results from Pods")
+	ts.cfg.Logger.Info("starting tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	if ts.cfg.EKSConfig.IsEnabledAddOnNodeGroups() && ts.cfg.EKSConfig.AddOnNodeGroups.FetchLogs {
 		ts.cfg.Logger.Info("fetching logs from ngs")
 		for _, v := range ts.cfg.EKSConfig.AddOnNodeGroups.ASGs {

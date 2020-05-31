@@ -5,10 +5,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/eks/helm"
+	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
@@ -30,16 +32,9 @@ type Config struct {
 	CFNAPI    cloudformationiface.CloudFormationAPI
 }
 
-// Tester defines AppMesh tester
-type Tester interface {
-	// Installs AppMesh controller/injector.
-	Create() error
-	// Clean up AppMesh controller/injector.
-	Delete() error
-}
-
-func New(cfg Config) (Tester, error) {
-	return &tester{cfg: cfg}, nil
+func New(cfg Config) eks_tester.Tester {
+	cfg.Logger.Info("creating tester", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	return &tester{cfg: cfg}
 }
 
 type tester struct {
@@ -47,11 +42,16 @@ type tester struct {
 }
 
 func (ts *tester) Create() error {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnAppMesh() {
+		ts.cfg.Logger.Info("skipping create AddOnAppMesh")
+		return nil
+	}
 	if ts.cfg.EKSConfig.AddOnAppMesh.Created {
 		ts.cfg.Logger.Info("skipping create AddOnAppMesh")
 		return nil
 	}
 
+	ts.cfg.Logger.Info("starting tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	ts.cfg.EKSConfig.AddOnAppMesh.Created = true
 	ts.cfg.EKSConfig.Sync()
 	createStart := time.Now()
@@ -84,11 +84,16 @@ func (ts *tester) Create() error {
 }
 
 func (ts *tester) Delete() error {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnAppMesh() {
+		ts.cfg.Logger.Info("skipping delete AddOnAppMesh")
+		return nil
+	}
 	if !ts.cfg.EKSConfig.AddOnAppMesh.Created {
 		ts.cfg.Logger.Info("skipping delete AddOnAppMesh")
 		return nil
 	}
 
+	ts.cfg.Logger.Info("starting tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	deleteStart := time.Now()
 	defer func() {
 		deleteEnd := time.Now()
@@ -385,6 +390,20 @@ func (ts *tester) deleteHelmInjector() error {
 		ChartName:      chartNameInjector,
 		ReleaseName:    chartNameInjector,
 	})
+}
+
+func (ts *tester) AggregateResults() (err error) {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnAppMesh() {
+		ts.cfg.Logger.Info("skipping aggregate AddOnAppMesh")
+		return nil
+	}
+	if !ts.cfg.EKSConfig.AddOnAppMesh.Created {
+		ts.cfg.Logger.Info("skipping aggregate AddOnAppMesh")
+		return nil
+	}
+
+	ts.cfg.Logger.Info("starting tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	return nil
 }
 
 // splitImageRepoAndTag parses a docker image in format <imageRepo>:<imageTag> into `imageRepo` and `imageTag`

@@ -10,10 +10,12 @@ import (
 	"os"
 	osexec "os/exec"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"text/template"
 	"time"
 
+	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/pkg/httputil"
@@ -34,17 +36,9 @@ type Config struct {
 	K8SClient k8s_client.EKS
 }
 
-// Tester defines Kubeflow tester.
-// ref. https://www.kubeflow.org/docs/aws/deploy/install-kubeflow/
-type Tester interface {
-	// Create installs Kubeflow.
-	Create() error
-	// Delete deletes Kubeflow.
-	Delete() error
-}
-
-func New(cfg Config) (Tester, error) {
-	return &tester{cfg: cfg}, nil
+func New(cfg Config) eks_tester.Tester {
+	cfg.Logger.Info("creating tester", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	return &tester{cfg: cfg}
 }
 
 type tester struct {
@@ -52,11 +46,16 @@ type tester struct {
 }
 
 func (ts *tester) Create() error {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnKubeflow() {
+		ts.cfg.Logger.Info("skipping create AddOnKubeflow")
+		return nil
+	}
 	if ts.cfg.EKSConfig.AddOnKubeflow.Created {
 		ts.cfg.Logger.Info("skipping create AddOnKubeflow")
 		return nil
 	}
 
+	ts.cfg.Logger.Info("starting tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	ts.cfg.EKSConfig.AddOnKubeflow.Created = true
 	ts.cfg.EKSConfig.Sync()
 	createStart := time.Now()
@@ -80,11 +79,16 @@ func (ts *tester) Create() error {
 }
 
 func (ts *tester) Delete() error {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnKubeflow() {
+		ts.cfg.Logger.Info("skipping delete AddOnKubeflow")
+		return nil
+	}
 	if !ts.cfg.EKSConfig.AddOnKubeflow.Created {
 		ts.cfg.Logger.Info("skipping delete AddOnKubeflow")
 		return nil
 	}
 
+	ts.cfg.Logger.Info("starting tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	deleteStart := time.Now()
 	defer func() {
 		deleteEnd := time.Now()
@@ -666,5 +670,19 @@ func (ts *tester) installKfConfig() error {
 		fmt.Println("3. run following")
 		fmt.Printf("\n\n%s\n\n%s\n\n", strings.Join(cmd.Env, "\n"), cmdTxt)
 	}
+	return nil
+}
+
+func (ts *tester) AggregateResults() (err error) {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnKubeflow() {
+		ts.cfg.Logger.Info("skipping aggregate AddOnKubeflow")
+		return nil
+	}
+	if !ts.cfg.EKSConfig.AddOnKubeflow.Created {
+		ts.cfg.Logger.Info("skipping aggregate AddOnKubeflow")
+		return nil
+	}
+
+	ts.cfg.Logger.Info("starting tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	return nil
 }

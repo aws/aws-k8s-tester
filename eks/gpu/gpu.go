@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"reflect"
 	"strings"
 	"time"
 
@@ -46,8 +47,9 @@ type Tester interface {
 }
 
 // New creates a new Job tester.
-func New(cfg Config) (Tester, error) {
-	return &tester{cfg: cfg}, nil
+func New(cfg Config) Tester {
+	cfg.Logger.Info("creating tester", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	return &tester{cfg: cfg}
 }
 
 type tester struct {
@@ -133,6 +135,7 @@ func (ts *tester) InstallNvidiaDriver() (err error) {
 		return nil
 	}
 
+	ts.cfg.Logger.Info("starting tester.InstallNvidiaDriver", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	fpath, err := fileutil.WriteTempFile([]byte(nvidiaDriverTemplate))
 	if err != nil {
 		return err
@@ -363,7 +366,7 @@ kubectl logs nvidia-smi
 +-----------------------------------------------------------------------------+
 */
 func (ts *tester) CreateNvidiaSMI() error {
-	ts.cfg.Logger.Info("creating nvidia-smi")
+	ts.cfg.Logger.Info("starting tester.CreateNvidiaSMI", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.K8SClient.
 		KubernetesClientSet().

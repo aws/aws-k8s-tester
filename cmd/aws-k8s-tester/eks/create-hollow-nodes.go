@@ -83,7 +83,7 @@ func createHollowNodesFunc(cmd *cobra.Command, args []string) {
 	sfx := randutil.String(5)
 
 	stopc := make(chan struct{})
-	ng, err := hollow_nodes.CreateNodeGroup(hollow_nodes.NodeGroupConfig{
+	ng := hollow_nodes.CreateNodeGroup(hollow_nodes.NodeGroupConfig{
 		Logger:         lg,
 		Client:         cli,
 		Stopc:          stopc,
@@ -97,11 +97,6 @@ func createHollowNodesFunc(cmd *cobra.Command, args []string) {
 		},
 		Remote: hollowNodesRemote,
 	})
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create hollow nodes group %v\n", err)
-		os.Exit(1)
-	}
-
 	ng.Start()
 
 	lg.Info("waiting before checking hollow nodes")

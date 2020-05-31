@@ -132,7 +132,7 @@ func (ts *Tester) createCluster() (err error) {
 		ts.lg.Info("created k8s client")
 	}
 
-	return ts.createSubTesters()
+	return ts.createTesters()
 }
 
 func (ts *Tester) createEKS() (err error) {

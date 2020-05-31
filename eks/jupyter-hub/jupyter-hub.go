@@ -7,11 +7,13 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"reflect"
 	"strings"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/eks/helm"
+	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/httputil"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
@@ -35,17 +37,9 @@ type Config struct {
 	K8SClient k8s_client.EKS
 }
 
-// Tester defines Jupyter Hub tester.
-// ref. https://zero-to-jupyterhub.readthedocs.io/en/latest/index.html
-type Tester interface {
-	// Create installs Jupyter Hub.
-	Create() error
-	// Delete deletes Jupyter Hub.
-	Delete() error
-}
-
-func New(cfg Config) (Tester, error) {
-	return &tester{cfg: cfg}, nil
+func New(cfg Config) eks_tester.Tester {
+	cfg.Logger.Info("creating tester", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	return &tester{cfg: cfg}
 }
 
 type tester struct {
@@ -59,11 +53,16 @@ const (
 )
 
 func (ts *tester) Create() error {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnJupyterHub() {
+		ts.cfg.Logger.Info("skipping create AddOnJupyterHub")
+		return nil
+	}
 	if ts.cfg.EKSConfig.AddOnJupyterHub.Created {
 		ts.cfg.Logger.Info("skipping create AddOnJupyterHub")
 		return nil
 	}
 
+	ts.cfg.Logger.Info("starting tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	ts.cfg.EKSConfig.AddOnJupyterHub.Created = true
 	ts.cfg.EKSConfig.Sync()
 	createStart := time.Now()
@@ -101,11 +100,16 @@ func (ts *tester) Create() error {
 }
 
 func (ts *tester) Delete() error {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnJupyterHub() {
+		ts.cfg.Logger.Info("skipping delete AddOnJupyterHub")
+		return nil
+	}
 	if !ts.cfg.EKSConfig.AddOnJupyterHub.Created {
 		ts.cfg.Logger.Info("skipping delete AddOnJupyterHub")
 		return nil
 	}
 
+	ts.cfg.Logger.Info("starting tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	deleteStart := time.Now()
 	defer func() {
 		deleteEnd := time.Now()
@@ -495,4 +499,18 @@ func (ts *tester) waitService() error {
 	fmt.Printf("NLB JupyterHub URL: %s\n\n", ts.cfg.EKSConfig.AddOnJupyterHub.URL)
 
 	return ts.cfg.EKSConfig.Sync()
+}
+
+func (ts *tester) AggregateResults() (err error) {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnJupyterHub() {
+		ts.cfg.Logger.Info("skipping aggregate AddOnJupyterHub")
+		return nil
+	}
+	if !ts.cfg.EKSConfig.AddOnJupyterHub.Created {
+		ts.cfg.Logger.Info("skipping aggregate AddOnJupyterHub")
+		return nil
+	}
+
+	ts.cfg.Logger.Info("starting tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	return nil
 }

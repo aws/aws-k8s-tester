@@ -5,10 +5,12 @@ package local
 
 import (
 	"errors"
+	"reflect"
 	"strings"
 	"time"
 
 	cluster_loader "github.com/aws/aws-k8s-tester/eks/cluster-loader"
+	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
@@ -24,15 +26,8 @@ type Config struct {
 	K8SClient k8s_client.EKS
 }
 
-// Tester defines cluster loader tester.
-type Tester interface {
-	// Create installs hollow nodes.
-	Create() error
-	// Delete deletes hollow nodes.
-	Delete() error
-}
-
-func New(cfg Config) Tester {
+func New(cfg Config) eks_tester.Tester {
+	cfg.Logger.Info("creating tester", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	return &tester{
 		cfg: cfg,
 
@@ -78,12 +73,16 @@ type tester struct {
 }
 
 func (ts *tester) Create() (err error) {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnClusterLoaderLocal() {
+		ts.cfg.Logger.Info("skipping create AddOnClusterLoaderLocal")
+		return nil
+	}
 	if ts.cfg.EKSConfig.AddOnClusterLoaderLocal.Created {
 		ts.cfg.Logger.Info("skipping create AddOnClusterLoaderLocal")
 		return nil
 	}
 
-	ts.cfg.Logger.Info("starting cluster loader testing")
+	ts.cfg.Logger.Info("starting tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	ts.cfg.EKSConfig.AddOnClusterLoaderLocal.Created = true
 	ts.cfg.EKSConfig.Sync()
 	createStart := time.Now()
@@ -121,11 +120,16 @@ func (ts *tester) Create() (err error) {
 }
 
 func (ts *tester) Delete() (err error) {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnClusterLoaderLocal() {
+		ts.cfg.Logger.Info("skipping delete AddOnClusterLoaderLocal")
+		return nil
+	}
 	if !ts.cfg.EKSConfig.AddOnClusterLoaderLocal.Created {
 		ts.cfg.Logger.Info("skipping delete AddOnClusterLoaderLocal")
 		return nil
 	}
 
+	ts.cfg.Logger.Info("starting tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	deleteStart := time.Now()
 	defer func() {
 		deleteEnd := time.Now()
@@ -145,4 +149,18 @@ func (ts *tester) Delete() (err error) {
 
 	ts.cfg.EKSConfig.AddOnClusterLoaderLocal.Created = false
 	return ts.cfg.EKSConfig.Sync()
+}
+
+func (ts *tester) AggregateResults() (err error) {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnClusterLoaderLocal() {
+		ts.cfg.Logger.Info("skipping aggregate AddOnClusterLoaderLocal")
+		return nil
+	}
+	if !ts.cfg.EKSConfig.AddOnClusterLoaderLocal.Created {
+		ts.cfg.Logger.Info("skipping aggregate AddOnClusterLoaderLocal")
+		return nil
+	}
+
+	ts.cfg.Logger.Info("starting tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	return nil
 }

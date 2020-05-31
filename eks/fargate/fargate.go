@@ -6,9 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"reflect"
 	"strings"
 	"time"
 
+	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
 	aws_ecr "github.com/aws/aws-k8s-tester/pkg/aws/ecr"
@@ -43,17 +45,10 @@ type Config struct {
 	ECRAPI    ecriface.ECRAPI
 }
 
-// Tester defines Fargate tester.
-type Tester interface {
-	// Create creates Fargate pods.
-	Create() error
-	// Delete deletes Fargate pods.
-	Delete() error
-}
-
 // New creates a new Job tester.
-func New(cfg Config) (Tester, error) {
-	return &tester{cfg: cfg}, nil
+func New(cfg Config) eks_tester.Tester {
+	cfg.Logger.Info("creating tester", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	return &tester{cfg: cfg}
 }
 
 type tester struct {
@@ -62,11 +57,16 @@ type tester struct {
 }
 
 func (ts *tester) Create() (err error) {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnFargate() {
+		ts.cfg.Logger.Info("skipping create AddOnFargate")
+		return nil
+	}
 	if ts.cfg.EKSConfig.AddOnFargate.Created {
 		ts.cfg.Logger.Info("skipping create AddOnFargate")
 		return nil
 	}
 
+	ts.cfg.Logger.Info("starting tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	ts.cfg.EKSConfig.AddOnFargate.Created = true
 	ts.cfg.EKSConfig.Sync()
 	createStart := time.Now()
@@ -117,11 +117,16 @@ func (ts *tester) Create() (err error) {
 }
 
 func (ts *tester) Delete() error {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnFargate() {
+		ts.cfg.Logger.Info("skipping delete AddOnFargate")
+		return nil
+	}
 	if !ts.cfg.EKSConfig.AddOnFargate.Created {
 		ts.cfg.Logger.Info("skipping delete AddOnFargate")
 		return nil
 	}
 
+	ts.cfg.Logger.Info("starting tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	deleteStart := time.Now()
 	defer func() {
 		deleteEnd := time.Now()
@@ -812,6 +817,20 @@ func (ts *tester) checkNode() error {
 
 	ts.cfg.Logger.Info("checked node")
 	return ts.cfg.EKSConfig.Sync()
+}
+
+func (ts *tester) AggregateResults() (err error) {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnFargate() {
+		ts.cfg.Logger.Info("skipping aggregate AddOnFargate")
+		return nil
+	}
+	if !ts.cfg.EKSConfig.AddOnFargate.Created {
+		ts.cfg.Logger.Info("skipping aggregate AddOnFargate")
+		return nil
+	}
+
+	ts.cfg.Logger.Info("starting tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	return nil
 }
 
 // FargateProfileStatusDELETEDORNOTEXIST defines the cluster status when the cluster is not found.

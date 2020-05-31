@@ -9,11 +9,13 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"text/template"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
+	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
 	aws_ecr "github.com/aws/aws-k8s-tester/pkg/aws/ecr"
@@ -54,20 +56,10 @@ type Config struct {
 	ECRAPI    ecriface.ECRAPI
 }
 
-// Tester defines IRSA tester.
-type Tester interface {
-	// Create creates "ServiceAccountToken" objects to test IRSA.
-	Create() error
-	// Delete deletes "ServiceAccountToken" and Pods.
-	Delete() error
-	// AggregateResults aggregates all test results from remote nodes.
-	// Assumes logs are already downloaded.
-	AggregateResults() error
-}
-
 // New creates a new Job tester.
-func New(cfg Config) (Tester, error) {
-	return &tester{cfg: cfg}, nil
+func New(cfg Config) eks_tester.Tester {
+	cfg.Logger.Info("creating tester", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	return &tester{cfg: cfg}
 }
 
 type tester struct {
@@ -77,11 +69,16 @@ type tester struct {
 }
 
 func (ts *tester) Create() (err error) {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnIRSA() {
+		ts.cfg.Logger.Info("skipping create AddOnIRSA")
+		return nil
+	}
 	if ts.cfg.EKSConfig.AddOnIRSA.Created {
 		ts.cfg.Logger.Info("skipping create AddOnIRSA")
 		return nil
 	}
 
+	ts.cfg.Logger.Info("starting tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	ts.cfg.EKSConfig.AddOnIRSA.Created = true
 	ts.cfg.EKSConfig.Sync()
 	createStart := time.Now()
@@ -139,11 +136,16 @@ func (ts *tester) Create() (err error) {
 }
 
 func (ts *tester) Delete() error {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnIRSA() {
+		ts.cfg.Logger.Info("skipping delete AddOnIRSA")
+		return nil
+	}
 	if !ts.cfg.EKSConfig.AddOnIRSA.Created {
 		ts.cfg.Logger.Info("skipping delete AddOnIRSA")
 		return nil
 	}
 
+	ts.cfg.Logger.Info("starting tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	deleteStart := time.Now()
 	defer func() {
 		deleteEnd := time.Now()
@@ -1201,13 +1203,16 @@ func (ts *tester) countSuccess(expects int) (int, error) {
 }
 
 func (ts *tester) AggregateResults() error {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnIRSA() {
+		ts.cfg.Logger.Info("skipping aggregate AddOnIRSA")
+		return nil
+	}
 	if !ts.cfg.EKSConfig.AddOnIRSA.Created {
-		ts.cfg.Logger.Info("skipping aggregating AddOnIRSA")
+		ts.cfg.Logger.Info("skipping aggregate AddOnIRSA")
 		return nil
 	}
 
-	ts.cfg.Logger.Info("aggregating results from Deployments")
-
+	ts.cfg.Logger.Info("starting tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	f, err := os.OpenFile(ts.cfg.EKSConfig.AddOnIRSA.DeploymentResultPath, os.O_RDWR|os.O_TRUNC, 0777)
 	if err != nil {
 		f, err = os.Create(ts.cfg.EKSConfig.AddOnIRSA.DeploymentResultPath)

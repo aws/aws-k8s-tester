@@ -7,10 +7,12 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"reflect"
 	"strings"
 	"syscall"
 	"time"
 
+	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/httputil"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
@@ -27,16 +29,9 @@ type Config struct {
 	K8SClient k8s_client.EKS
 }
 
-// Tester defines Dashboard tester
-type Tester interface {
-	// Create installs Dashboard.
-	Create() error
-	// Delete deletes Dashboard.
-	Delete() error
-}
-
-func New(cfg Config) (Tester, error) {
-	return &tester{cfg: cfg}, nil
+func New(cfg Config) eks_tester.Tester {
+	cfg.Logger.Info("creating tester", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	return &tester{cfg: cfg}
 }
 
 type tester struct {
@@ -46,11 +41,16 @@ type tester struct {
 }
 
 func (ts *tester) Create() error {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnKubernetesDashboard() {
+		ts.cfg.Logger.Info("skipping create AddOnKubernetesDashboard")
+		return nil
+	}
 	if ts.cfg.EKSConfig.AddOnKubernetesDashboard.Created {
 		ts.cfg.Logger.Info("skipping create AddOnKubernetesDashboard")
 		return nil
 	}
 
+	ts.cfg.Logger.Info("starting tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	ts.cfg.EKSConfig.AddOnKubernetesDashboard.Created = true
 	ts.cfg.EKSConfig.Sync()
 	createStart := time.Now()
@@ -78,11 +78,16 @@ func (ts *tester) Create() error {
 }
 
 func (ts *tester) Delete() error {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnKubernetesDashboard() {
+		ts.cfg.Logger.Info("skipping delete AddOnKubernetesDashboard")
+		return nil
+	}
 	if !ts.cfg.EKSConfig.AddOnKubernetesDashboard.Created {
 		ts.cfg.Logger.Info("skipping delete AddOnKubernetesDashboard")
 		return nil
 	}
 
+	ts.cfg.Logger.Info("starting tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	deleteStart := time.Now()
 	defer func() {
 		deleteEnd := time.Now()
@@ -194,5 +199,19 @@ func (ts *tester) stopProxy() error {
 
 	ts.cfg.Logger.Info("stopped Kubernetes Dashboard proxy")
 
+	return nil
+}
+
+func (ts *tester) AggregateResults() (err error) {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnKubernetesDashboard() {
+		ts.cfg.Logger.Info("skipping aggregate AddOnKubernetesDashboard")
+		return nil
+	}
+	if !ts.cfg.EKSConfig.AddOnKubernetesDashboard.Created {
+		ts.cfg.Logger.Info("skipping aggregate AddOnKubernetesDashboard")
+		return nil
+	}
+
+	ts.cfg.Logger.Info("starting tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	return nil
 }

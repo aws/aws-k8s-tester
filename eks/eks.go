@@ -49,6 +49,7 @@ import (
 	secrets_remote "github.com/aws/aws-k8s-tester/eks/secrets/remote"
 	stresser_local "github.com/aws/aws-k8s-tester/eks/stresser/local"
 	stresser_remote "github.com/aws/aws-k8s-tester/eks/stresser/remote"
+	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
 	"github.com/aws/aws-k8s-tester/eks/wordpress"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	pkg_aws "github.com/aws/aws-k8s-tester/pkg/aws"
@@ -122,43 +123,8 @@ type Tester struct {
 	mngTester mng.Tester
 	gpuTester gpu.Tester
 
-	conformanceTester conformance.Tester
-
-	csiEBSTester  csi_ebs.Tester
-	appMeshTester app_mesh.Tester
-
-	kubernetesDashboardTester kubernetes_dashboard.Tester
-	prometheusGrafanaTester   prometheus_grafana.Tester
-	nlbHelloWorldTester       nlb_hello_world.Tester
-	alb2048Tester             alb_2048.Tester
-	jobsPiTester              jobs_pi.Tester
-	jobsEchoTester            jobs_echo.Tester
-	cronJobsTester            cron_jobs.Tester
-
-	csrsLocalTester  csrs_local.Tester
-	csrsRemoteTester csrs_remote.Tester
-
-	configMapsLocalTester  config_maps_local.Tester
-	configMapsRemoteTester config_maps_remote.Tester
-
-	secretsLocalTester  secrets_local.Tester
-	secretsRemoteTester secrets_remote.Tester
-
-	fargateTester     fargate.Tester
-	irsaTester        irsa.Tester
-	irsaFargateTester irsa_fargate.Tester
-	wordPressTester   wordpress.Tester
-	jupyterHubTester  jupyter_hub.Tester
-	kubeflowTester    kubeflow.Tester
-
-	clusterLoaderLocalTester  cluster_loader_local.Tester
-	clusterLoaderRemoteTester cluster_loader_remote.Tester
-
-	hollowNodesLocalTester  hollow_nodes_local.Tester
-	hollowNodesRemoteTester hollow_nodes_remote.Tester
-
-	stresserLocalTester  stresser_local.Tester
-	stresserRemoteTester stresser_remote.Tester
+	// TODO: make order configurable
+	testers []eks_tester.Tester
 }
 
 // New returns a new EKS kubetest2 Deployer.
@@ -385,7 +351,7 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 		// call here, because "createCluster" won't be called
 		// if loaded from previous states
 		// e.g. delete
-		if err = ts.createSubTesters(); err != nil {
+		if err = ts.createTesters(); err != nil {
 			return nil, err
 		}
 	}
@@ -393,262 +359,147 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 	return ts, nil
 }
 
-func (ts *Tester) createSubTesters() (err error) {
+func (ts *Tester) createTesters() (err error) {
 	fmt.Printf("\n*********************************\n")
-	fmt.Printf("createSubTesters (%q)\n", ts.cfg.ConfigPath)
+	fmt.Printf("createTesters (%q)\n", ts.cfg.ConfigPath)
 
-	if ts.cfg.IsEnabledAddOnNodeGroups() {
-		ts.lg.Info("creating ngTester")
-		ts.ngTester, err = ng.New(ng.Config{
+	ts.ngTester = ng.New(ng.Config{
+		Logger:    ts.lg,
+		Stopc:     ts.stopCreationCh,
+		EKSConfig: ts.cfg,
+		K8SClient: ts.k8sClient,
+		IAMAPI:    ts.iamAPI,
+		CFNAPI:    ts.cfnAPI,
+		EC2API:    ts.ec2API,
+		ASGAPI:    ts.asgAPI,
+		EKSAPI:    ts.eksAPI,
+		SSMAPI:    ts.ssmAPI,
+		S3API:     ts.s3API,
+	})
+	ts.mngTester = mng.New(mng.Config{
+		Logger:    ts.lg,
+		Stopc:     ts.stopCreationCh,
+		EKSConfig: ts.cfg,
+		K8SClient: ts.k8sClient,
+		IAMAPI:    ts.iamAPI,
+		CFNAPI:    ts.cfnAPI,
+		EC2API:    ts.ec2API,
+		ASGAPI:    ts.asgAPI,
+		EKSAPI:    ts.eksAPI,
+		S3API:     ts.s3API,
+	})
+	ts.gpuTester = gpu.New(gpu.Config{
+		Logger:    ts.lg,
+		Stopc:     ts.stopCreationCh,
+		EKSConfig: ts.cfg,
+		K8SClient: ts.k8sClient,
+	})
+
+	ts.testers = []eks_tester.Tester{
+		conformance.New(conformance.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
-			IAMAPI:    ts.iamAPI,
-			CFNAPI:    ts.cfnAPI,
-			EC2API:    ts.ec2API,
-			ASGAPI:    ts.asgAPI,
-			EKSAPI:    ts.eksAPI,
-			SSMAPI:    ts.ssmAPI,
-			S3API:     ts.s3API,
-		})
-		if err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnManagedNodeGroups() {
-		ts.lg.Info("creating mngTester")
-		ts.mngTester, err = mng.New(mng.Config{
+		}),
+		csi_ebs.New(csi_ebs.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
-			IAMAPI:    ts.iamAPI,
-			CFNAPI:    ts.cfnAPI,
-			EC2API:    ts.ec2API,
-			ASGAPI:    ts.asgAPI,
-			EKSAPI:    ts.eksAPI,
-			S3API:     ts.s3API,
-		})
-		if err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnNodeGroups() || ts.cfg.IsEnabledAddOnManagedNodeGroups() {
-		ts.lg.Info("creating gpuTester")
-		ts.gpuTester, err = gpu.New(gpu.Config{
-			Logger:    ts.lg,
-			Stopc:     ts.stopCreationCh,
-			EKSConfig: ts.cfg,
-			K8SClient: ts.k8sClient,
-		})
-		if err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnConformance() {
-		ts.lg.Info("creating conformanceTester")
-		ts.conformanceTester, err = conformance.New(conformance.Config{
-			Logger:    ts.lg,
-			Stopc:     ts.stopCreationCh,
-			EKSConfig: ts.cfg,
-			K8SClient: ts.k8sClient,
-		})
-	}
-
-	if ts.cfg.IsEnabledAddOnCSIEBS() {
-		ts.lg.Info("creating csiEBSTester")
-		ts.csiEBSTester, err = csi_ebs.New(csi_ebs.Config{
-			Logger:    ts.lg,
-			Stopc:     ts.stopCreationCh,
-			EKSConfig: ts.cfg,
-			K8SClient: ts.k8sClient,
-		})
-	}
-
-	if ts.cfg.IsEnabledAddOnAppMesh() {
-		ts.lg.Info("creating appMeshTester")
-		ts.appMeshTester, err = app_mesh.New(app_mesh.Config{
+		}),
+		app_mesh.New(app_mesh.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 			CFNAPI:    ts.cfnAPI,
-		})
-	}
-
-	if ts.cfg.IsEnabledAddOnKubernetesDashboard() {
-		ts.lg.Info("creating kubernetesDashboardTester")
-		ts.kubernetesDashboardTester, err = kubernetes_dashboard.New(kubernetes_dashboard.Config{
+		}),
+		kubernetes_dashboard.New(kubernetes_dashboard.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
-		})
-	}
-
-	if ts.cfg.IsEnabledAddOnPrometheusGrafana() {
-		ts.lg.Info("creating prometheusGrafanaTester")
-		ts.prometheusGrafanaTester, err = prometheus_grafana.New(prometheus_grafana.Config{
+		}),
+		prometheus_grafana.New(prometheus_grafana.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
-		})
-	}
-
-	if ts.cfg.IsEnabledAddOnNLBHelloWorld() {
-		ts.lg.Info("creating nlbHelloWorldTester")
-		ts.nlbHelloWorldTester, err = nlb_hello_world.New(nlb_hello_world.Config{
+		}),
+		nlb_hello_world.New(nlb_hello_world.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 			ELB2API:   ts.elbv2API,
-		})
-		if err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnALB2048() {
-		ts.lg.Info("creating alb2048Tester")
-		ts.alb2048Tester, err = alb_2048.New(alb_2048.Config{
+		}),
+		alb_2048.New(alb_2048.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			CFNAPI:    ts.cfnAPI,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 			ELB2API:   ts.elbv2API,
-		})
-		if err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnJobsPi() {
-		ts.lg.Info("creating jobsPiTester")
-		ts.jobsPiTester, err = jobs_pi.New(jobs_pi.Config{
+		}),
+		jobs_pi.New(jobs_pi.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
-		})
-		if err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnJobsEcho() {
-		ts.lg.Info("creating jobsEchoTester")
-		ts.jobsEchoTester, err = jobs_echo.New(jobs_echo.Config{
+		}),
+		jobs_echo.New(jobs_echo.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
-		})
-		if err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnCronJobs() {
-		ts.lg.Info("creating cronJobsTester")
-		ts.cronJobsTester, err = cron_jobs.New(cron_jobs.Config{
+		}),
+		cron_jobs.New(cron_jobs.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
-		})
-		if err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnCSRsLocal() {
-		ts.lg.Info("creating csrsLocalTester")
-		ts.csrsLocalTester, err = csrs_local.New(csrs_local.Config{
+		}),
+		csrs_local.New(csrs_local.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
-		})
-		if err != nil {
-			return err
-		}
-	}
-	if ts.cfg.IsEnabledAddOnCSRsRemote() {
-		ts.lg.Info("creating csrsRemoteTester")
-		ts.csrsRemoteTester, err = csrs_remote.New(csrs_remote.Config{
+		}),
+		csrs_remote.New(csrs_remote.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 			ECRAPI:    ts.ecrAPI,
-		})
-		if err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnConfigMapsLocal() {
-		ts.lg.Info("creating configMapsLocalTester")
-		ts.configMapsLocalTester, err = config_maps_local.New(config_maps_local.Config{
+		}),
+		config_maps_local.New(config_maps_local.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
-		})
-		if err != nil {
-			return err
-		}
-	}
-	if ts.cfg.IsEnabledAddOnConfigMapsRemote() {
-		ts.lg.Info("creating configMapsRemoteTester")
-		ts.configMapsRemoteTester, err = config_maps_remote.New(config_maps_remote.Config{
+		}),
+		config_maps_remote.New(config_maps_remote.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 			ECRAPI:    ts.ecrAPI,
-		})
-		if err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnSecretsLocal() {
-		ts.lg.Info("creating secretsLocalTester")
-		ts.secretsLocalTester, err = secrets_local.New(secrets_local.Config{
+		}),
+		secrets_local.New(secrets_local.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
-		})
-		if err != nil {
-			return err
-		}
-	}
-	if ts.cfg.IsEnabledAddOnSecretsRemote() {
-		ts.lg.Info("creating secretsRemoteTester")
-		ts.secretsRemoteTester, err = secrets_remote.New(secrets_remote.Config{
+		}),
+		secrets_remote.New(secrets_remote.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 			ECRAPI:    ts.ecrAPI,
-		})
-		if err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnFargate() {
-		ts.lg.Info("creating fargateTester")
-		ts.fargateTester, err = fargate.New(fargate.Config{
+		}),
+		fargate.New(fargate.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
@@ -657,15 +508,8 @@ func (ts *Tester) createSubTesters() (err error) {
 			CFNAPI:    ts.cfnAPI,
 			EKSAPI:    ts.eksAPI,
 			ECRAPI:    ts.ecrAPI,
-		})
-		if err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnIRSA() {
-		ts.lg.Info("creating irsaTester")
-		ts.irsaTester, err = irsa.New(irsa.Config{
+		}),
+		irsa.New(irsa.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
@@ -674,15 +518,8 @@ func (ts *Tester) createSubTesters() (err error) {
 			IAMAPI:    ts.iamAPI,
 			S3API:     ts.s3API,
 			ECRAPI:    ts.ecrAPI,
-		})
-		if err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnIRSAFargate() {
-		ts.lg.Info("creating irsaFargateTester")
-		ts.irsaFargateTester, err = irsa_fargate.New(irsa_fargate.Config{
+		}),
+		irsa_fargate.New(irsa_fargate.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
@@ -692,121 +529,64 @@ func (ts *Tester) createSubTesters() (err error) {
 			EKSAPI:    ts.eksAPI,
 			S3API:     ts.s3API,
 			ECRAPI:    ts.ecrAPI,
-		})
-		if err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnWordpress() {
-		ts.lg.Info("creating wordPressTester")
-		ts.wordPressTester, err = wordpress.New(wordpress.Config{
+		}),
+		wordpress.New(wordpress.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
-		})
-		if err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnJupyterHub() {
-		ts.lg.Info("creating jupyterHubTester")
-		ts.jupyterHubTester, err = jupyter_hub.New(jupyter_hub.Config{
+		}),
+		jupyter_hub.New(jupyter_hub.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
-		})
-	}
-
-	if ts.cfg.IsEnabledAddOnKubeflow() {
-		ts.lg.Info("creating kubeflowTester")
-		ts.kubeflowTester, err = kubeflow.New(kubeflow.Config{
+		}),
+		kubeflow.New(kubeflow.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
-		})
-		if err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnClusterLoaderLocal() {
-		ts.lg.Info("creating clusterLoaderLocalTester")
-		ts.clusterLoaderLocalTester = cluster_loader_local.New(cluster_loader_local.Config{
+		}),
+		cluster_loader_local.New(cluster_loader_local.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
-		})
-	}
-	if ts.cfg.IsEnabledAddOnClusterLoaderRemote() {
-		ts.lg.Info("creating clusterLoaderRemoteTester")
-		ts.clusterLoaderRemoteTester, err = cluster_loader_remote.New(cluster_loader_remote.Config{
+		}),
+		cluster_loader_remote.New(cluster_loader_remote.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 			ECRAPI:    ts.ecrAPI,
-		})
-		if err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnHollowNodesLocal() {
-		ts.lg.Info("creating hollowNodesLocalTester")
-		ts.hollowNodesLocalTester, err = hollow_nodes_local.New(hollow_nodes_local.Config{
+		}),
+		hollow_nodes_local.New(hollow_nodes_local.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
-		})
-		if err != nil {
-			return err
-		}
-	}
-	if ts.cfg.IsEnabledAddOnHollowNodesRemote() {
-		ts.lg.Info("creating hollowNodesRemoteTester")
-		ts.hollowNodesRemoteTester, err = hollow_nodes_remote.New(hollow_nodes_remote.Config{
+		}),
+		hollow_nodes_remote.New(hollow_nodes_remote.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 			ECRAPI:    ts.ecrAPI,
-		})
-		if err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnStresserLocal() {
-		ts.lg.Info("creating stresserLocalTester")
-		ts.stresserLocalTester, err = stresser_local.New(stresser_local.Config{
+		}),
+		stresser_local.New(stresser_local.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
-		})
-		if err != nil {
-			return err
-		}
-	}
-	if ts.cfg.IsEnabledAddOnStresserRemote() {
-		ts.lg.Info("creating stresserRemoteTester")
-		ts.stresserRemoteTester, err = stresser_remote.New(stresser_remote.Config{
+		}),
+		stresser_remote.New(stresser_remote.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 			ECRAPI:    ts.ecrAPI,
-		})
-		if err != nil {
-			return err
-		}
+		}),
 	}
 
 	return ts.cfg.Sync()
@@ -1122,512 +902,32 @@ func (ts *Tester) Up() (err error) {
 		}
 	}
 
-	if ts.cfg.IsEnabledAddOnConformance() {
-		if ts.conformanceTester == nil {
-			return errors.New("ts.conformanceTester == nil when AddOnConformance.Enable == true")
-		}
+	for idx, tss := range ts.testers {
 		fmt.Printf("\n*********************************\n")
-		fmt.Printf("conformanceTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnConformance.Namespace)
 		err := catchInterrupt(
 			ts.lg,
 			ts.stopCreationCh,
 			ts.stopCreationChOnce,
 			ts.osSig,
-			ts.conformanceTester.Create,
+			tss.Create,
 		)
 
-		fmt.Printf("\n*********************************\n")
-		ts.lg.Sugar().Infof("SSH (%s)", ts.cfg.ConfigPath)
-		fmt.Println(ts.cfg.SSHCommands())
+		if idx%5 == 0 {
+			fmt.Printf("\n*********************************\n")
+			ts.lg.Sugar().Infof("SSH (%s)", ts.cfg.ConfigPath)
+			fmt.Println(ts.cfg.SSHCommands())
 
-		fmt.Printf("\n*********************************\n")
-		ts.lg.Sugar().Infof("kubectl (%s)", ts.cfg.ConfigPath)
-		fmt.Println(ts.cfg.KubectlCommands())
+			fmt.Printf("\n*********************************\n")
+			ts.lg.Sugar().Infof("kubectl (%s)", ts.cfg.ConfigPath)
+			fmt.Println(ts.cfg.KubectlCommands())
 
-		fmt.Printf("\n*********************************\n")
-		if serr := ts.uploadToS3(); serr != nil {
-			ts.lg.Warn("failed to upload artifacts to S3", zap.Error(serr))
+			fmt.Printf("\n*********************************\n")
+			if serr := ts.uploadToS3(); serr != nil {
+				ts.lg.Warn("failed to upload artifacts to S3", zap.Error(serr))
+			}
 		}
 
 		if err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnCSIEBS() {
-		if ts.csiEBSTester == nil {
-			return errors.New("ts.csiEBSTester == nil when AddOnCSIEBS.Enable == true")
-		}
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("csiEBSTester.Create (%q, \"%s --namespace=kube-system get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.osSig,
-			ts.csiEBSTester.Create,
-		); err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnAppMesh() {
-		if ts.appMeshTester == nil {
-			return errors.New("ts.appMeshTester == nil when AddOnAppMesh.Enable == true")
-		}
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("appMeshTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnAppMesh.Namespace)
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.osSig,
-			ts.appMeshTester.Create,
-		); err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnKubernetesDashboard() {
-		if ts.kubernetesDashboardTester == nil {
-			return errors.New("ts.kubernetesDashboardTester == nil when AddOnKubernetesDashboard.Enable == true")
-		}
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("kubernetesDashboardTester.Create (%q, \"%s --namespace=kube-system get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.osSig,
-			ts.kubernetesDashboardTester.Create,
-		); err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnPrometheusGrafana() {
-		if ts.prometheusGrafanaTester == nil {
-			return errors.New("ts.prometheusGrafanaTester == nil when AddOnKubernetesDashboard.Enable == true")
-		}
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("prometheusGrafanaTester.Create (%q, \"%s --namespace=prometheus/grafana get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.osSig,
-			ts.prometheusGrafanaTester.Create,
-		); err != nil {
-			return err
-		}
-	}
-
-	fmt.Printf("\n*********************************\n")
-	fmt.Printf("checkHealth (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-	if err := catchInterrupt(
-		ts.lg,
-		ts.stopCreationCh,
-		ts.stopCreationChOnce,
-		ts.osSig,
-		ts.checkHealth,
-	); err != nil {
-		return err
-	}
-
-	fmt.Printf("\n*********************************\n")
-	ts.lg.Sugar().Infof("SSH (%s)", ts.cfg.ConfigPath)
-	fmt.Println(ts.cfg.SSHCommands())
-
-	fmt.Printf("\n*********************************\n")
-	ts.lg.Sugar().Infof("kubectl (%s)", ts.cfg.ConfigPath)
-	fmt.Println(ts.cfg.KubectlCommands())
-
-	fmt.Printf("\n*********************************\n")
-	if serr := ts.uploadToS3(); serr != nil {
-		ts.lg.Warn("failed to upload artifacts to S3", zap.Error(serr))
-	}
-
-	if ts.cfg.IsEnabledAddOnNLBHelloWorld() {
-		if ts.nlbHelloWorldTester == nil {
-			return errors.New("ts.nlbHelloWorldTester == nil when AddOnNLBHelloWorld.Enable == true")
-		}
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("nlbHelloWorldTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnNLBHelloWorld.Namespace)
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.osSig,
-			ts.nlbHelloWorldTester.Create,
-		); err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnALB2048() {
-		if ts.alb2048Tester == nil {
-			return errors.New("ts.alb2048Tester == nil when AddOnALB2048.Enable == true")
-		}
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("alb2048Tester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnALB2048.Namespace)
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.osSig,
-			ts.alb2048Tester.Create,
-		); err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnJobsPi() {
-		if ts.jobsPiTester == nil {
-			return errors.New("ts.jobsPiTester == nil when AddOnJobsPi.Enable == true")
-		}
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("jobsPiTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnJobsPi.Namespace)
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.osSig,
-			ts.jobsPiTester.Create,
-		); err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnJobsEcho() {
-		if ts.jobsEchoTester == nil {
-			return errors.New("ts.jobsEchoTester == nil when AddOnJobsEcho.Enable == true")
-		}
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("jobsEchoTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnJobsEcho.Namespace)
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.osSig,
-			ts.jobsEchoTester.Create,
-		); err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnCronJobs() {
-		if ts.cronJobsTester == nil {
-			return errors.New("ts.cronJobsTester == nil when AddOnCronJobs.Enable == true")
-		}
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("cronJobsTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnCronJobs.Namespace)
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.osSig,
-			ts.cronJobsTester.Create,
-		); err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnCSRsLocal() {
-		if ts.csrsLocalTester == nil {
-			return errors.New("ts.csrsLocalTester == nil when AddOnCSRsLocal.Enable == true")
-		}
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("csrsLocalTester.Create (%q, \"%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.osSig,
-			ts.csrsLocalTester.Create,
-		); err != nil {
-			return err
-		}
-	}
-	if ts.cfg.IsEnabledAddOnCSRsRemote() {
-		if ts.csrsRemoteTester == nil {
-			return errors.New("ts.csrsRemoteTester == nil when AddOnCSRsRemote.Enable == true")
-		}
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("csrsRemoteTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnCSRsRemote.Namespace)
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.osSig,
-			ts.csrsRemoteTester.Create,
-		); err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnConfigMapsLocal() {
-		if ts.configMapsLocalTester == nil {
-			return errors.New("ts.configMapsLocalTester == nil when AddOnConfigMapsLocal.Enable == true")
-		}
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("configMapsLocalTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnConfigMapsLocal.Namespace)
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.osSig,
-			ts.configMapsLocalTester.Create,
-		); err != nil {
-			return err
-		}
-	}
-	if ts.cfg.IsEnabledAddOnConfigMapsRemote() {
-		if ts.configMapsRemoteTester == nil {
-			return errors.New("ts.configMapsRemoteTester == nil when AddOnConfigMapsRemote.Enable == true")
-		}
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("configMapsRemoteTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnConfigMapsRemote.Namespace)
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.osSig,
-			ts.configMapsRemoteTester.Create,
-		); err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnSecretsLocal() {
-		if ts.secretsLocalTester == nil {
-			return errors.New("ts.secretsLocalTester == nil when AddOnSecretsLocal.Enable == true")
-		}
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("secretsLocalTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnSecretsLocal.Namespace)
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.osSig,
-			ts.secretsLocalTester.Create,
-		); err != nil {
-			return err
-		}
-	}
-	if ts.cfg.IsEnabledAddOnSecretsRemote() {
-		if ts.secretsRemoteTester == nil {
-			return errors.New("ts.secretsRemoteTester == nil when AddOnSecretsRemote.Enable == true")
-		}
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("secretsRemoteTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnSecretsRemote.Namespace)
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.osSig,
-			ts.secretsRemoteTester.Create,
-		); err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnFargate() {
-		if ts.fargateTester == nil {
-			return errors.New("ts.fargateTester == nil when AddOnFargate.Enable == true")
-		}
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("fargateTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnFargate.Namespace)
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.osSig,
-			ts.fargateTester.Create,
-		); err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnIRSA() {
-		if ts.irsaTester == nil {
-			return errors.New("ts.irsaTester == nil when AddOnIRSA.Enable == true")
-		}
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("irsaTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnIRSA.Namespace)
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.osSig,
-			ts.irsaTester.Create,
-		); err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnIRSAFargate() {
-		if ts.irsaFargateTester == nil {
-			return errors.New("ts.irsaFargateTester == nil when AddOnIRSAFargate.Enable == true")
-		}
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("irsaFargateTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnIRSAFargate.Namespace)
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.osSig,
-			ts.irsaFargateTester.Create,
-		); err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnWordpress() {
-		if ts.wordPressTester == nil {
-			return errors.New("ts.wordPressTester == nil when AddOnWordpress.Enable == true")
-		}
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("wordPressTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnWordpress.Namespace)
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.osSig,
-			ts.wordPressTester.Create,
-		); err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnJupyterHub() {
-		if ts.jupyterHubTester == nil {
-			return errors.New("ts.jupyterHubTester == nil when AddOnJupyterHub.Enable == true")
-		}
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("jupyterHubTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnJupyterHub.Namespace)
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.osSig,
-			ts.jupyterHubTester.Create,
-		); err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnKubeflow() {
-		if ts.kubeflowTester == nil {
-			return errors.New("ts.kubeflowTester == nil when AddOnKubeflow.Enable == true")
-		}
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("kubeflowTester.Create (%q, \"%s --namespace=kube-system get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.osSig,
-			ts.kubeflowTester.Create,
-		); err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnHollowNodesLocal() {
-		if ts.hollowNodesLocalTester == nil {
-			return errors.New("ts.hollowNodesLocalTester == nil when AddOnHollowNodesLocal.Enable == true")
-		}
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("hollowNodesLocalTester.Create (%q, \"%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.osSig,
-			ts.hollowNodesLocalTester.Create,
-		); err != nil {
-			return err
-		}
-	}
-	if ts.cfg.IsEnabledAddOnHollowNodesRemote() {
-		if ts.hollowNodesRemoteTester == nil {
-			return errors.New("ts.hollowNodesRemoteTester == nil when AddOnHollowNodesRemote.Enable == true")
-		}
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("hollowNodesRemoteTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnHollowNodesRemote.Namespace)
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.osSig,
-			ts.hollowNodesRemoteTester.Create,
-		); err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnClusterLoaderLocal() {
-		if ts.clusterLoaderLocalTester == nil {
-			return errors.New("ts.clusterLoaderLocalTester == nil when AddOnClusterLoader.Enable == true")
-		}
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("clusterLoaderLocalTester.Create (%q, \"%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.osSig,
-			ts.clusterLoaderLocalTester.Create,
-		); err != nil {
-			return err
-		}
-	}
-	if ts.cfg.IsEnabledAddOnClusterLoaderRemote() {
-		if ts.clusterLoaderRemoteTester == nil {
-			return errors.New("ts.clusterLoaderRemoteTester == nil when AddOnClusterLoader.Enable == true")
-		}
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("clusterLoaderRemoteTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnClusterLoaderRemote.Namespace)
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.osSig,
-			ts.clusterLoaderRemoteTester.Create,
-		); err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnStresserLocal() {
-		if ts.stresserLocalTester == nil {
-			return errors.New("ts.stresserLocalTester == nil when AddOnStresserLocal.Enable == true")
-		}
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("stresserLocalTester.Create (%q, \"%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.osSig,
-			ts.stresserLocalTester.Create,
-		); err != nil {
-			return err
-		}
-	}
-	if ts.cfg.IsEnabledAddOnStresserRemote() {
-		if ts.stresserRemoteTester == nil {
-			return errors.New("ts.stresserRemoteTester == nil when AddOnStresserRemote.Enable == true")
-		}
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("stresserRemoteTester.Create (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnStresserRemote.Namespace)
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.osSig,
-			ts.stresserRemoteTester.Create,
-		); err != nil {
 			return err
 		}
 	}
@@ -1680,87 +980,16 @@ func (ts *Tester) Up() (err error) {
 
 	if (ts.cfg.IsEnabledAddOnNodeGroups() && ts.cfg.AddOnNodeGroups.Created && ts.cfg.AddOnNodeGroups.FetchLogs) ||
 		(ts.cfg.IsEnabledAddOnManagedNodeGroups() && ts.cfg.AddOnManagedNodeGroups.Created && ts.cfg.AddOnManagedNodeGroups.FetchLogs) {
-
-		if ts.cfg.IsEnabledAddOnCSRsRemote() {
+		for _, tss := range ts.testers {
 			fmt.Printf("\n*********************************\n")
-			fmt.Printf("csrsRemoteTester.AggregateResults (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnCSRsRemote.Namespace)
-			if err := catchInterrupt(
+			err := catchInterrupt(
 				ts.lg,
 				ts.stopCreationCh,
 				ts.stopCreationChOnce,
 				ts.osSig,
-				ts.csrsRemoteTester.AggregateResults,
-			); err != nil {
-				return err
-			}
-		}
-
-		if ts.cfg.IsEnabledAddOnSecretsRemote() {
-			fmt.Printf("\n*********************************\n")
-			fmt.Printf("secretsRemoteTester.AggregateResults (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnSecretsRemote.Namespace)
-			if err := catchInterrupt(
-				ts.lg,
-				ts.stopCreationCh,
-				ts.stopCreationChOnce,
-				ts.osSig,
-				ts.secretsRemoteTester.AggregateResults,
-			); err != nil {
-				return err
-			}
-		}
-
-		if ts.cfg.IsEnabledAddOnIRSA() {
-			fmt.Printf("\n*********************************\n")
-			fmt.Printf("irsaTester.AggregateResults (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnIRSA.Namespace)
-			if err := catchInterrupt(
-				ts.lg,
-				ts.stopCreationCh,
-				ts.stopCreationChOnce,
-				ts.osSig,
-				ts.irsaTester.AggregateResults,
-			); err != nil {
-				return err
-			}
-		}
-
-		if ts.cfg.IsEnabledAddOnConfigMapsRemote() {
-			fmt.Printf("\n*********************************\n")
-			fmt.Printf("configMapsRemoteTester.AggregateResults (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnConfigMapsRemote.Namespace)
-			if err := catchInterrupt(
-				ts.lg,
-				ts.stopCreationCh,
-				ts.stopCreationChOnce,
-				ts.osSig,
-				ts.configMapsRemoteTester.AggregateResults,
-			); err != nil {
-				return err
-			}
-		}
-
-		if ts.cfg.IsEnabledAddOnClusterLoaderRemote() {
-			fmt.Printf("\n*********************************\n")
-			fmt.Printf("clusterLoaderRemoteTester.AggregateResults (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnClusterLoaderRemote.Namespace)
-			if err := catchInterrupt(
-				ts.lg,
-				ts.stopCreationCh,
-				ts.stopCreationChOnce,
-				ts.osSig,
-				ts.clusterLoaderRemoteTester.AggregateResults,
-			); err != nil {
-				return err
-			}
-		}
-
-		if ts.cfg.IsEnabledAddOnStresserRemote() {
-			fmt.Printf("\n*********************************\n")
-			fmt.Printf("stresserRemoteTester.AggregateResults (%q, \"%s --namespace=%s get all\")\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand(), ts.cfg.AddOnStresserRemote.Namespace)
-			if err := catchInterrupt(
-				ts.lg,
-				ts.stopCreationCh,
-				ts.stopCreationChOnce,
-				ts.osSig,
-				ts.stresserRemoteTester.AggregateResults,
-			); err != nil {
+				tss.AggregateResults,
+			)
+			if err != nil {
 				return err
 			}
 		}
@@ -1858,277 +1087,21 @@ func (ts *Tester) down() (err error) {
 		errs = append(errs, err.Error())
 	}
 
-	if ts.cfg.IsEnabledAddOnStresserRemote() && ts.cfg.AddOnStresserRemote.Created {
+	for idx := range ts.testers {
 		fmt.Printf("\n*********************************\n")
-		fmt.Printf("stresserRemoteTester.Delete (%q)\n", ts.cfg.ConfigPath)
-		if err := ts.stresserRemoteTester.Delete(); err != nil {
-			ts.lg.Warn("stresserRemoteTester.Delete failed", zap.Error(err))
+		err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.osSig,
+			ts.testers[len(ts.testers)-1-idx].Delete,
+		)
+		if err != nil {
+			ts.lg.Warn("failed tester.Delete", zap.Error(err))
 			errs = append(errs, err.Error())
-		} else {
-			waitDur := 20 * time.Second
-			ts.lg.Info("sleeping after deleting stresserRemoteTester", zap.Duration("wait", waitDur))
-			time.Sleep(waitDur)
 		}
-	}
-	if ts.cfg.IsEnabledAddOnStresserLocal() && ts.cfg.AddOnStresserLocal.Created {
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("stresserLocalTester.Delete (%q)\n", ts.cfg.ConfigPath)
-		if err := ts.stresserLocalTester.Delete(); err != nil {
-			ts.lg.Warn("stresserLocalTester.Delete failed", zap.Error(err))
-			errs = append(errs, err.Error())
-		} else {
-			waitDur := 20 * time.Second
-			ts.lg.Info("sleeping after deleting stresserLocalTester", zap.Duration("wait", waitDur))
-			time.Sleep(waitDur)
-		}
-	}
 
-	if ts.cfg.IsEnabledAddOnClusterLoaderRemote() && ts.cfg.AddOnClusterLoaderRemote.Created {
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("clusterLoaderRemoteTester.Delete (%q)\n", ts.cfg.ConfigPath)
-		if err := ts.clusterLoaderRemoteTester.Delete(); err != nil {
-			ts.lg.Warn("clusterLoaderRemoteTester.Delete failed", zap.Error(err))
-			errs = append(errs, err.Error())
-		} else {
-			waitDur := 20 * time.Second
-			ts.lg.Info("sleeping after deleting clusterLoaderRemoteTester", zap.Duration("wait", waitDur))
-			time.Sleep(waitDur)
-		}
-	}
-	if ts.cfg.IsEnabledAddOnClusterLoaderLocal() && ts.cfg.AddOnClusterLoaderLocal.Created {
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("clusterLoaderLocalTester.Delete (%q)\n", ts.cfg.ConfigPath)
-		if err := ts.clusterLoaderLocalTester.Delete(); err != nil {
-			ts.lg.Warn("clusterLoaderLocalTester.Delete failed", zap.Error(err))
-			errs = append(errs, err.Error())
-		} else {
-			waitDur := 20 * time.Second
-			ts.lg.Info("sleeping after deleting clusterLoaderLocalTester", zap.Duration("wait", waitDur))
-			time.Sleep(waitDur)
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnHollowNodesRemote() && ts.cfg.AddOnHollowNodesRemote.Created {
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("hollowNodesRemoteTester.Delete (%q)\n", ts.cfg.ConfigPath)
-		if err := ts.hollowNodesRemoteTester.Delete(); err != nil {
-			ts.lg.Warn("hollowNodesRemoteTester.Delete failed", zap.Error(err))
-			errs = append(errs, err.Error())
-		}
-	}
-	if ts.cfg.IsEnabledAddOnHollowNodesLocal() && ts.cfg.AddOnHollowNodesLocal.Created {
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("hollowNodesLocalTester.Delete (%q)\n", ts.cfg.ConfigPath)
-		if err := ts.hollowNodesLocalTester.Delete(); err != nil {
-			ts.lg.Warn("hollowNodesLocalTester.Delete failed", zap.Error(err))
-			errs = append(errs, err.Error())
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnKubeflow() && ts.cfg.AddOnKubeflow.Created {
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("kubeflowTester.Delete (%q)\n", ts.cfg.ConfigPath)
-		if err := ts.kubeflowTester.Delete(); err != nil {
-			ts.lg.Warn("kubeflowTester.Delete failed", zap.Error(err))
-			errs = append(errs, err.Error())
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnJupyterHub() && ts.cfg.AddOnJupyterHub.Created {
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("jupyterHubTester.Delete (%q)\n", ts.cfg.ConfigPath)
-		if err := ts.jupyterHubTester.Delete(); err != nil {
-			ts.lg.Warn("jupyterHubTester.Delete failed", zap.Error(err))
-			errs = append(errs, err.Error())
-		} else {
-			waitDur := 20 * time.Second
-			ts.lg.Info("sleeping after deleting jupyterHubTester", zap.Duration("wait", waitDur))
-			time.Sleep(waitDur)
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnWordpress() && ts.cfg.AddOnWordpress.Created {
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("wordPressTester.Delete (%q)\n", ts.cfg.ConfigPath)
-		if err := ts.wordPressTester.Delete(); err != nil {
-			ts.lg.Warn("wordPressTester.Delete failed", zap.Error(err))
-			errs = append(errs, err.Error())
-		} else {
-			waitDur := 20 * time.Second
-			ts.lg.Info("sleeping after deleting wordPressTester", zap.Duration("wait", waitDur))
-			time.Sleep(waitDur)
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnIRSAFargate() && ts.cfg.AddOnIRSAFargate.Created {
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("irsaFargateTester.Delete (%q)\n", ts.cfg.ConfigPath)
-		if err := ts.irsaFargateTester.Delete(); err != nil {
-			ts.lg.Warn("irsaFargateTester.Delete failed", zap.Error(err))
-			errs = append(errs, err.Error())
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnIRSA() && ts.cfg.AddOnIRSA.Created {
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("irsaTester.Delete (%q)\n", ts.cfg.ConfigPath)
-		if err := ts.irsaTester.Delete(); err != nil {
-			ts.lg.Warn("irsaTester.Delete failed", zap.Error(err))
-			errs = append(errs, err.Error())
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnFargate() && ts.cfg.AddOnFargate.Created {
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("fargateTester.Delete (%q)\n", ts.cfg.ConfigPath)
-		if err := ts.fargateTester.Delete(); err != nil {
-			ts.lg.Warn("fargateTester.Delete failed", zap.Error(err))
-			errs = append(errs, err.Error())
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnSecretsLocal() && ts.cfg.AddOnSecretsLocal.Created {
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("secretsLocalTester.Delete (%q)\n", ts.cfg.ConfigPath)
-		if err := ts.secretsLocalTester.Delete(); err != nil {
-			ts.lg.Warn("secretsLocalTester.Delete failed", zap.Error(err))
-			errs = append(errs, err.Error())
-		}
-	}
-	if ts.cfg.IsEnabledAddOnSecretsRemote() && ts.cfg.AddOnSecretsRemote.Created {
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("secretsRemoteTester.Delete (%q)\n", ts.cfg.ConfigPath)
-		if err := ts.secretsRemoteTester.Delete(); err != nil {
-			ts.lg.Warn("secretsRemoteTester.Delete failed", zap.Error(err))
-			errs = append(errs, err.Error())
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnConfigMapsLocal() && ts.cfg.AddOnConfigMapsLocal.Created {
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("configMapsLocalTester.Delete (%q)\n", ts.cfg.ConfigPath)
-		if err := ts.configMapsLocalTester.Delete(); err != nil {
-			ts.lg.Warn("configMapsLocalTester.Delete failed", zap.Error(err))
-			errs = append(errs, err.Error())
-		}
-	}
-	if ts.cfg.IsEnabledAddOnCSRsRemote() && ts.cfg.AddOnCSRsRemote.Created {
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("csrsRemoteTester.Delete (%q)\n", ts.cfg.ConfigPath)
-		if err := ts.csrsRemoteTester.Delete(); err != nil {
-			ts.lg.Warn("csrsRemoteTester.Delete failed", zap.Error(err))
-			errs = append(errs, err.Error())
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnCronJobs() && ts.cfg.AddOnCronJobs.Created {
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("cronJobsTester.Delete (%q)\n", ts.cfg.ConfigPath)
-		if err := ts.cronJobsTester.Delete(); err != nil {
-			ts.lg.Warn("cronJobsTester.Delete failed", zap.Error(err))
-			errs = append(errs, err.Error())
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnJobsEcho() && ts.cfg.AddOnJobsEcho.Created {
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("jobsEchoTester.Delete (%q)\n", ts.cfg.ConfigPath)
-		if err := ts.jobsEchoTester.Delete(); err != nil {
-			ts.lg.Warn("jobsEchoTester.Delete failed", zap.Error(err))
-			errs = append(errs, err.Error())
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnJobsPi() && ts.cfg.AddOnJobsPi.Created {
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("jobsPiTester.Delete (%q)\n", ts.cfg.ConfigPath)
-		if err := ts.jobsPiTester.Delete(); err != nil {
-			ts.lg.Warn("jobsPiTester.Delete failed", zap.Error(err))
-			errs = append(errs, err.Error())
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnALB2048() && ts.cfg.AddOnALB2048.Created {
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("alb2048Tester.Delete (%q)\n", ts.cfg.ConfigPath)
-		if err := ts.alb2048Tester.Delete(); err != nil {
-			ts.lg.Warn("alb2048Tester.Delete failed", zap.Error(err))
-			errs = append(errs, err.Error())
-		} else {
-			waitDur := time.Minute
-			ts.lg.Info("sleeping after deleting ALB", zap.Duration("wait", waitDur))
-			time.Sleep(waitDur)
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnNLBHelloWorld() && ts.cfg.AddOnNLBHelloWorld.Created {
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("nlbHelloWorldTester.Delete (%q)\n", ts.cfg.ConfigPath)
-		if err := ts.nlbHelloWorldTester.Delete(); err != nil {
-			ts.lg.Warn("nlbHelloWorldTester.Delete failed", zap.Error(err))
-			errs = append(errs, err.Error())
-		} else {
-			waitDur := time.Minute
-			ts.lg.Info("sleeping after deleting NLB", zap.Duration("wait", waitDur))
-			time.Sleep(waitDur)
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnPrometheusGrafana() && ts.cfg.AddOnPrometheusGrafana.Created {
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("prometheusGrafanaTester.Delete (%q)\n", ts.cfg.ConfigPath)
-		if err := ts.prometheusGrafanaTester.Delete(); err != nil {
-			ts.lg.Warn("prometheusGrafanaTester.Delete failed", zap.Error(err))
-			errs = append(errs, err.Error())
-		} else {
-			waitDur := 20 * time.Second
-			ts.lg.Info("sleeping after deleting prometheusGrafanaTester", zap.Duration("wait", waitDur))
-			time.Sleep(waitDur)
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnKubernetesDashboard() && ts.cfg.AddOnKubernetesDashboard.Created {
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("kubernetesDashboardTester.Delete (%q)\n", ts.cfg.ConfigPath)
-		if err := ts.kubernetesDashboardTester.Delete(); err != nil {
-			ts.lg.Warn("kubernetesDashboardTester.Delete failed", zap.Error(err))
-			errs = append(errs, err.Error())
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnAppMesh() && ts.cfg.AddOnAppMesh.Created {
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("appMeshTester.Delete (%q)\n", ts.cfg.ConfigPath)
-		if err := ts.appMeshTester.Delete(); err != nil {
-			ts.lg.Warn("appMeshTester.Delete failed", zap.Error(err))
-			errs = append(errs, err.Error())
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnCSIEBS() && ts.cfg.AddOnCSIEBS.Created {
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("csiEBSTester.Delete (%q)\n", ts.cfg.ConfigPath)
-		if err := ts.csiEBSTester.Delete(); err != nil {
-			ts.lg.Warn("csiEBSTester.Delete failed", zap.Error(err))
-			errs = append(errs, err.Error())
-		} else {
-			waitDur := 20 * time.Second
-			ts.lg.Info("sleeping after deleting csiEBSTester", zap.Duration("wait", waitDur))
-			time.Sleep(waitDur)
-		}
-	}
-
-	if ts.cfg.IsEnabledAddOnConformance() && ts.cfg.AddOnConformance.Created {
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("conformanceTester.Delete (%q)\n", ts.cfg.ConfigPath)
-		if err := ts.conformanceTester.Delete(); err != nil {
-			ts.lg.Warn("conformanceTester.Delete failed", zap.Error(err))
-			errs = append(errs, err.Error())
-		} else {
-			waitDur := 20 * time.Second
-			ts.lg.Info("sleeping after deleting conformanceTester", zap.Duration("wait", waitDur))
-			time.Sleep(waitDur)
-		}
+		time.Sleep(30 * time.Second)
 	}
 
 	// NOTE(jaypipes): Wait for a bit here because we asked Kubernetes to
@@ -2160,7 +1133,7 @@ func (ts *Tester) down() (err error) {
 		fmt.Printf("\n*********************************\n")
 		fmt.Printf("mngTester.Delete (%q)\n", ts.cfg.ConfigPath)
 		if err := ts.mngTester.Delete(); err != nil {
-			ts.lg.Warn("mngTester.Delete failed", zap.Error(err))
+			ts.lg.Warn("failed mngTester.Delete", zap.Error(err))
 			errs = append(errs, err.Error())
 		}
 
@@ -2173,7 +1146,7 @@ func (ts *Tester) down() (err error) {
 		fmt.Printf("\n*********************************\n")
 		fmt.Printf("ngTester.Delete (%q)\n", ts.cfg.ConfigPath)
 		if err := ts.ngTester.Delete(); err != nil {
-			ts.lg.Warn("ngTester.Delete failed", zap.Error(err))
+			ts.lg.Warn("failed ngTester.Delete", zap.Error(err))
 			errs = append(errs, err.Error())
 		}
 
@@ -2185,21 +1158,21 @@ func (ts *Tester) down() (err error) {
 	fmt.Printf("\n*********************************\n")
 	fmt.Printf("deleteCluster (%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteCluster(); err != nil {
-		ts.lg.Warn("deleteCluster failed", zap.Error(err))
+		ts.lg.Warn("failed deleteCluster", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 
 	fmt.Printf("\n*********************************\n")
 	fmt.Printf("deleteEncryption (%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteEncryption(); err != nil {
-		ts.lg.Warn("deleteEncryption failed", zap.Error(err))
+		ts.lg.Warn("failed deleteEncryption", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 
 	fmt.Printf("\n*********************************\n")
 	fmt.Printf("deleteClusterRole (%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteClusterRole(); err != nil {
-		ts.lg.Warn("deleteClusterRole failed", zap.Error(err))
+		ts.lg.Warn("failed deleteClusterRole", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 
@@ -2212,14 +1185,14 @@ func (ts *Tester) down() (err error) {
 	fmt.Printf("\n*********************************\n")
 	fmt.Printf("deleteVPC (%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteVPC(); err != nil {
-		ts.lg.Warn("deleteVPC failed", zap.Error(err))
+		ts.lg.Warn("failed deleteVPC", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 
 	fmt.Printf("\n*********************************\n")
 	fmt.Printf("deleteS3 (%q)\n", ts.cfg.ConfigPath)
 	if err := ts.deleteS3(); err != nil {
-		ts.lg.Warn("deleteS3 failed", zap.Error(err))
+		ts.lg.Warn("failed deleteS3", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 
