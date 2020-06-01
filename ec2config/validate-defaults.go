@@ -13,6 +13,7 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
 	"github.com/aws/aws-k8s-tester/pkg/randutil"
+	"github.com/aws/aws-k8s-tester/pkg/terminal"
 	"github.com/aws/aws-sdk-go/aws/endpoints"
 )
 
@@ -36,6 +37,7 @@ func NewDefault() *Config {
 		ConfigPath:                     "",
 		RemoteAccessCommandsOutputPath: "",
 
+		LogColor: true,
 		LogLevel: logutil.DefaultLogLevel,
 		// default, stderr, stdout, or file name
 		// log file named with cluster name will be added automatically
@@ -127,6 +129,10 @@ func (cfg *Config) validateConfig() error {
 		return fmt.Errorf("region %q for partition %q not found in %+v", cfg.Region, cfg.Partition, regions)
 	}
 
+	_, cerr := terminal.IsColor()
+	if cfg.LogColor && cerr != nil {
+		cfg.LogColor = false
+	}
 	if len(cfg.LogOutputs) == 0 {
 		return errors.New("LogOutputs is not empty")
 	}

@@ -14,6 +14,8 @@ func TestEnv(t *testing.T) {
 		os.RemoveAll(cfg.RemoteAccessCommandsOutputPath)
 	}()
 
+	os.Setenv("AWS_K8S_TESTER_EC2_LOG_COLOR", `false`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EC2_LOG_COLOR")
 	os.Setenv("AWS_K8S_TESTER_EC2_S3_BUCKET_CREATE", `true`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EC2_S3_BUCKET_CREATE")
 	os.Setenv("AWS_K8S_TESTER_EC2_S3_BUCKET_CREATE_KEEP", `true`)
@@ -51,6 +53,9 @@ func TestEnv(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	if cfg.LogColor {
+		t.Fatalf("unexpected cfg.LogColor %v", cfg.LogColor)
+	}
 	if !cfg.S3BucketCreate {
 		t.Fatalf("unexpected cfg.S3BucketCreate %v", cfg.S3BucketCreate)
 	}

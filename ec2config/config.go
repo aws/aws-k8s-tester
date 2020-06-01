@@ -78,6 +78,8 @@ type Config struct {
 	// And to be mounted as a volume as 'Secret' object.
 	AWSCredentialPath string `json:"aws-credential-path" read-only:"true"`
 
+	// LogColor is true to output logs in color.
+	LogColor bool `json:"log-color"`
 	// LogLevel configures log level. Only supports debug, info, warn, error, panic, or fatal. Default 'info'.
 	LogLevel string `json:"log-level"`
 	// LogOutputs is a list of log outputs. Valid values are 'default', 'stderr', 'stdout', or file names.
@@ -457,7 +459,7 @@ func (cfg *Config) unsafeSSHCommands() (s string) {
 	for name, cur := range cfg.ASGs {
 		buf.WriteString("ASG name \"" + name + "\":\n")
 		buf.WriteString(cur.SSHCommands(cfg.Region, cfg.RemoteAccessPrivateKeyPath, cur.RemoteAccessUserName))
-		buf.WriteString("\n")
+		buf.WriteString("\n\n")
 	}
 	return buf.String()
 }

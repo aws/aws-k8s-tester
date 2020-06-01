@@ -16,6 +16,7 @@
 | AWS_K8S_TESTER_EC2_AWS_USER_ID                         | read-only "true"  | *ec2config.Config.AWSUserID                       | string                   |
 | AWS_K8S_TESTER_EC2_AWS_IAM_ROLE_ARN                    | read-only "true"  | *ec2config.Config.AWSIAMRoleARN                   | string                   |
 | AWS_K8S_TESTER_EC2_AWS_CREDENTIAL_PATH                 | read-only "true"  | *ec2config.Config.AWSCredentialPath               | string                   |
+| AWS_K8S_TESTER_EC2_LOG_COLOR                           | read-only "false" | *ec2config.Config.LogColor                        | bool                     |
 | AWS_K8S_TESTER_EC2_LOG_LEVEL                           | read-only "false" | *ec2config.Config.LogLevel                        | string                   |
 | AWS_K8S_TESTER_EC2_LOG_OUTPUTS                         | read-only "false" | *ec2config.Config.LogOutputs                      | []string                 |
 | AWS_K8S_TESTER_EC2_ON_FAILURE_DELETE                   | read-only "false" | *ec2config.Config.OnFailureDelete                 | bool                     |
