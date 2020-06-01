@@ -277,7 +277,7 @@ func (ts *tester) waitDeployment() error {
 	fmt.Printf("\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
 
 	ready := false
-	waitDur := 5*time.Minute + time.Duration(ts.cfg.EKSConfig.AddOnNLBHelloWorld.DeploymentReplicas)*time.Minute
+	waitDur := 7*time.Minute + time.Duration(ts.cfg.EKSConfig.AddOnNLBHelloWorld.DeploymentReplicas)*time.Minute
 	retryStart := time.Now()
 	for time.Now().Sub(retryStart) < waitDur {
 		select {

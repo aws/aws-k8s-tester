@@ -980,7 +980,7 @@ func (ts *tester) waitDeployment() error {
 	ts.cfg.Logger.Info("initial waited", zap.Duration("duration", initialWait))
 
 	ready := false
-	waitDur := 5*time.Minute + time.Duration(ts.cfg.EKSConfig.AddOnIRSA.DeploymentReplicas)*3*time.Second
+	waitDur := 7*time.Minute + time.Duration(ts.cfg.EKSConfig.AddOnIRSA.DeploymentReplicas)*3*time.Second
 	retryStart := time.Now()
 	for time.Now().Sub(retryStart) < waitDur {
 		select {

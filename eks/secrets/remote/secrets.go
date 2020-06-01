@@ -630,25 +630,27 @@ func (ts *tester) deleteDeployment() error {
 
 func (ts *tester) waitDeployment() error {
 	ts.cfg.Logger.Info("waiting for secrets Deployment")
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	output, err := exec.New().CommandContext(
-		ctx,
+	args := []string{
 		ts.cfg.EKSConfig.KubectlPath,
-		"--kubeconfig="+ts.cfg.EKSConfig.KubeConfigPath,
-		"--namespace="+ts.cfg.EKSConfig.AddOnSecretsRemote.Namespace,
+		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+		"--namespace=" + ts.cfg.EKSConfig.AddOnSecretsRemote.Namespace,
 		"describe",
 		"deployment",
 		secretsDeploymentName,
-	).CombinedOutput()
+	}
+	cmd := strings.Join(args, " ")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	output, err := exec.New().CommandContext(ctx, args[0], args[1:]...).CombinedOutput()
 	cancel()
 	if err != nil {
-		return fmt.Errorf("'kubectl describe deployment' failed %v", err)
+		return fmt.Errorf("'%s' failed %v", cmd, err)
 	}
 	out := string(output)
-	fmt.Printf("\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
+	fmt.Printf("\n\n\"%s\" output:\n%s\n\n", cmd, out)
 
 	ready := false
-	waitDur := 5*time.Minute + time.Duration(ts.cfg.EKSConfig.AddOnSecretsRemote.DeploymentReplicas)*time.Minute
+	waitDur := 7*time.Minute + time.Duration(ts.cfg.EKSConfig.AddOnSecretsRemote.DeploymentReplicas)*time.Minute
 	retryStart := time.Now()
 	for time.Now().Sub(retryStart) < waitDur {
 		select {
@@ -693,11 +695,20 @@ func (ts *tester) waitDeployment() error {
 			ready = true
 			break
 		}
+
+		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
+		output, err = exec.New().CommandContext(ctx, args[0], args[1:]...).CombinedOutput()
+		cancel()
+		out := string(output)
+		if err != nil {
+			ts.cfg.Logger.Warn("describe failed", zap.String("command", cmd), zap.Error(err))
+		} else {
+			fmt.Printf("\n\n\"%s\" output:\n%s\n\n", cmd, out)
+		}
 	}
 	if !ready {
-		// TODO: return error...
-		// return errors.New("Deployment not ready")
 		ts.cfg.Logger.Warn("Deployment not ready")
+		return errors.New("Deployment not ready")
 	}
 
 	ts.cfg.Logger.Info("waited for secrets Deployment")

@@ -378,7 +378,7 @@ func (ts *tester) waitDeploymentDashboard() error {
 	fmt.Printf("\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
 
 	ready := false
-	waitDur := time.Minute
+	waitDur := 3 * time.Minute
 	retryStart := time.Now()
 	for time.Now().Sub(retryStart) < waitDur {
 		select {

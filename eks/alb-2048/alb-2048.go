@@ -603,7 +603,7 @@ func (ts *tester) waitDeploymentALB() error {
 	fmt.Printf("\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
 
 	ready := false
-	waitDur := 5*time.Minute + time.Duration(ts.cfg.EKSConfig.AddOnALB2048.DeploymentReplicasALB)*time.Minute
+	waitDur := 7*time.Minute + time.Duration(ts.cfg.EKSConfig.AddOnALB2048.DeploymentReplicasALB)*time.Minute
 	retryStart := time.Now()
 	for time.Now().Sub(retryStart) < waitDur {
 		select {
@@ -771,7 +771,7 @@ func (ts *tester) waitDeployment2048() error {
 	fmt.Printf("\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
 
 	ready := false
-	waitDur := 5*time.Minute + time.Duration(ts.cfg.EKSConfig.AddOnALB2048.DeploymentReplicas2048)*time.Minute
+	waitDur := 7*time.Minute + time.Duration(ts.cfg.EKSConfig.AddOnALB2048.DeploymentReplicas2048)*time.Minute
 	retryStart := time.Now()
 	for time.Now().Sub(retryStart) < waitDur {
 		select {
