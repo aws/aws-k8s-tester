@@ -37,11 +37,11 @@ type tester struct {
 
 func (ts *tester) Create() (err error) {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnConfigMapsLocal() {
-		ts.cfg.Logger.Info("skipping create AddOnConfigMapsLocal")
+		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if ts.cfg.EKSConfig.AddOnConfigMapsLocal.Created {
-		ts.cfg.Logger.Info("skipping create AddOnConfigMapsLocal")
+		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 
@@ -120,11 +120,11 @@ func (ts *tester) Create() (err error) {
 
 func (ts *tester) Delete() error {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnConfigMapsLocal() {
-		ts.cfg.Logger.Info("skipping delete AddOnConfigMapsLocal")
+		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if !ts.cfg.EKSConfig.AddOnConfigMapsLocal.Created {
-		ts.cfg.Logger.Info("skipping delete AddOnConfigMapsLocal")
+		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 
@@ -158,11 +158,11 @@ func (ts *tester) Delete() error {
 
 func (ts *tester) AggregateResults() (err error) {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnConfigMapsLocal() {
-		ts.cfg.Logger.Info("skipping aggregate AddOnConfigMapsLocal")
+		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if !ts.cfg.EKSConfig.AddOnConfigMapsLocal.Created {
-		ts.cfg.Logger.Info("skipping aggregate AddOnConfigMapsLocal")
+		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 

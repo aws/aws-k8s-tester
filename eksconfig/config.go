@@ -518,7 +518,7 @@ func (cfg *Config) unsafeSSHCommands() (s string) {
 				Instances: cur.Instances,
 			}
 			buf.WriteString(asg.SSHCommands(cfg.Region, cfg.RemoteAccessPrivateKeyPath, cfg.AddOnNodeGroups.ASGs[name].RemoteAccessUserName))
-			buf.WriteString("\n")
+			buf.WriteString("\n\n")
 		}
 	}
 
@@ -534,7 +534,7 @@ func (cfg *Config) unsafeSSHCommands() (s string) {
 				Instances: cur.Instances,
 			}
 			buf.WriteString(asg.SSHCommands(cfg.Region, cfg.RemoteAccessPrivateKeyPath, cfg.AddOnManagedNodeGroups.MNGs[name].RemoteAccessUserName))
-			buf.WriteString("\n")
+			buf.WriteString("\n\n")
 		}
 	}
 

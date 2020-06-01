@@ -67,11 +67,11 @@ type tester struct {
 
 func (ts *tester) Create() (err error) {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnIRSAFargate() {
-		ts.cfg.Logger.Info("skipping create AddOnIRSAFargate")
+		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if ts.cfg.EKSConfig.AddOnIRSAFargate.Created {
-		ts.cfg.Logger.Info("skipping create AddOnIRSAFargate")
+		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 
@@ -134,11 +134,11 @@ func (ts *tester) Create() (err error) {
 
 func (ts *tester) Delete() error {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnIRSAFargate() {
-		ts.cfg.Logger.Info("skipping delete AddOnIRSAFargate")
+		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if !ts.cfg.EKSConfig.AddOnIRSAFargate.Created {
-		ts.cfg.Logger.Info("skipping delete AddOnIRSAFargate")
+		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 
@@ -1095,11 +1095,11 @@ func (ts *tester) checkPod() error {
 
 func (ts *tester) AggregateResults() (err error) {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnIRSAFargate() {
-		ts.cfg.Logger.Info("skipping aggregate AddOnIRSAFargate")
+		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if !ts.cfg.EKSConfig.AddOnIRSAFargate.Created {
-		ts.cfg.Logger.Info("skipping aggregate AddOnIRSAFargate")
+		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 

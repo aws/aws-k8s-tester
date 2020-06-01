@@ -58,11 +58,11 @@ type tester struct {
 
 func (ts *tester) Create() (err error) {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnFargate() {
-		ts.cfg.Logger.Info("skipping create AddOnFargate")
+		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if ts.cfg.EKSConfig.AddOnFargate.Created {
-		ts.cfg.Logger.Info("skipping create AddOnFargate")
+		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 
@@ -118,11 +118,11 @@ func (ts *tester) Create() (err error) {
 
 func (ts *tester) Delete() error {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnFargate() {
-		ts.cfg.Logger.Info("skipping delete AddOnFargate")
+		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if !ts.cfg.EKSConfig.AddOnFargate.Created {
-		ts.cfg.Logger.Info("skipping delete AddOnFargate")
+		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 
@@ -821,11 +821,11 @@ func (ts *tester) checkNode() error {
 
 func (ts *tester) AggregateResults() (err error) {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnFargate() {
-		ts.cfg.Logger.Info("skipping aggregate AddOnFargate")
+		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if !ts.cfg.EKSConfig.AddOnFargate.Created {
-		ts.cfg.Logger.Info("skipping aggregate AddOnFargate")
+		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 

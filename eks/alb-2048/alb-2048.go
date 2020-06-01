@@ -75,11 +75,11 @@ const ALBImageName = "docker.io/amazon/aws-alb-ingress-controller:v1.1.7"
 // https://docs.aws.amazon.com/eks/latest/userguide/alb-ingress.html
 func (ts *tester) Create() error {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnALB2048() {
-		ts.cfg.Logger.Info("skipping create AddOnALB2048")
+		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if ts.cfg.EKSConfig.AddOnALB2048.Created {
-		ts.cfg.Logger.Info("skipping create AddOnALB2048")
+		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 
@@ -133,11 +133,11 @@ func (ts *tester) Create() error {
 
 func (ts *tester) Delete() error {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnALB2048() {
-		ts.cfg.Logger.Info("skipping delete AddOnALB2048")
+		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if !ts.cfg.EKSConfig.AddOnALB2048.Created {
-		ts.cfg.Logger.Info("skipping delete AddOnALB2048")
+		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 
@@ -1142,11 +1142,11 @@ func (ts *tester) delete2048Ingress() error {
 
 func (ts *tester) AggregateResults() (err error) {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnALB2048() {
-		ts.cfg.Logger.Info("skipping aggregate AddOnALB2048")
+		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if !ts.cfg.EKSConfig.AddOnALB2048.Created {
-		ts.cfg.Logger.Info("skipping aggregate AddOnALB2048")
+		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 

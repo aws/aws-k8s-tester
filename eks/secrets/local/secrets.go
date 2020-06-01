@@ -37,11 +37,11 @@ type tester struct {
 
 func (ts *tester) Create() (err error) {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnSecretsLocal() {
-		ts.cfg.Logger.Info("skipping create AddOnSecretsLocal")
+		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if ts.cfg.EKSConfig.AddOnSecretsLocal.Created {
-		ts.cfg.Logger.Info("skipping create AddOnSecretsLocal")
+		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 
@@ -133,11 +133,11 @@ func (ts *tester) Create() (err error) {
 
 func (ts *tester) Delete() error {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnSecretsLocal() {
-		ts.cfg.Logger.Info("skipping delete AddOnSecretsLocal")
+		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if !ts.cfg.EKSConfig.AddOnSecretsLocal.Created {
-		ts.cfg.Logger.Info("skipping delete AddOnSecretsLocal")
+		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 
@@ -171,11 +171,11 @@ func (ts *tester) Delete() error {
 
 func (ts *tester) AggregateResults() (err error) {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnSecretsLocal() {
-		ts.cfg.Logger.Info("skipping aggregate AddOnSecretsLocal")
+		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if !ts.cfg.EKSConfig.AddOnSecretsLocal.Created {
-		ts.cfg.Logger.Info("skipping aggregate AddOnSecretsLocal")
+		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 

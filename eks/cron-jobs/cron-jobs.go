@@ -48,11 +48,11 @@ type tester struct {
 
 func (ts *tester) Create() error {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnCronJobs() {
-		ts.cfg.Logger.Info("skipping create AddOnCronJobs")
+		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if ts.cfg.EKSConfig.AddOnCronJobs.Created {
-		ts.cfg.Logger.Info("skipping create AddOnCronJobs")
+		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 
@@ -134,11 +134,11 @@ var propagationBackground = metav1.DeletePropagationBackground
 
 func (ts *tester) Delete() error {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnCronJobs() {
-		ts.cfg.Logger.Info("skipping delete AddOnCronJobs")
+		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if !ts.cfg.EKSConfig.AddOnCronJobs.Created {
-		ts.cfg.Logger.Info("skipping delete AddOnCronJobs")
+		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 
@@ -267,11 +267,11 @@ func (ts *tester) createCronJobs() (batch_v1beta1.CronJob, string, error) {
 
 func (ts *tester) AggregateResults() (err error) {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnCronJobs() {
-		ts.cfg.Logger.Info("skipping aggregate AddOnCronJobs")
+		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if !ts.cfg.EKSConfig.AddOnCronJobs.Created {
-		ts.cfg.Logger.Info("skipping aggregate AddOnCronJobs")
+		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 

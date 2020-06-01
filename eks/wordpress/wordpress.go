@@ -48,11 +48,11 @@ const (
 
 func (ts *tester) Create() error {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnWordpress() {
-		ts.cfg.Logger.Info("skipping create AddOnWordpress")
+		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if ts.cfg.EKSConfig.AddOnWordpress.Created {
-		ts.cfg.Logger.Info("skipping create AddOnWordpress")
+		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 
@@ -88,11 +88,11 @@ func (ts *tester) Create() error {
 
 func (ts *tester) Delete() error {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnWordpress() {
-		ts.cfg.Logger.Info("skipping delete AddOnWordpress")
+		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if !ts.cfg.EKSConfig.AddOnWordpress.Created {
-		ts.cfg.Logger.Info("skipping delete AddOnWordpress")
+		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 
@@ -348,11 +348,11 @@ func (ts *tester) waitService() error {
 
 func (ts *tester) AggregateResults() (err error) {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnWordpress() {
-		ts.cfg.Logger.Info("skipping aggregate AddOnWordpress")
+		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if !ts.cfg.EKSConfig.AddOnWordpress.Created {
-		ts.cfg.Logger.Info("skipping aggregate AddOnWordpress")
+		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 

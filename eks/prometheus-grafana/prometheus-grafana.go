@@ -53,11 +53,11 @@ const (
 
 func (ts *tester) Create() error {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnPrometheusGrafana() {
-		ts.cfg.Logger.Info("skipping create AddOnPrometheusGrafana")
+		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if ts.cfg.EKSConfig.AddOnPrometheusGrafana.Created {
-		ts.cfg.Logger.Info("skipping create AddOnPrometheusGrafana")
+		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 
@@ -101,11 +101,11 @@ func (ts *tester) Create() error {
 
 func (ts *tester) Delete() error {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnPrometheusGrafana() {
-		ts.cfg.Logger.Info("skipping delete AddOnPrometheusGrafana")
+		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if !ts.cfg.EKSConfig.AddOnPrometheusGrafana.Created {
-		ts.cfg.Logger.Info("skipping delete AddOnPrometheusGrafana")
+		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 
@@ -470,11 +470,11 @@ func (ts *tester) waitServiceGrafana() error {
 
 func (ts *tester) AggregateResults() (err error) {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnPrometheusGrafana() {
-		ts.cfg.Logger.Info("skipping aggregate AddOnPrometheusGrafana")
+		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if !ts.cfg.EKSConfig.AddOnPrometheusGrafana.Created {
-		ts.cfg.Logger.Info("skipping aggregate AddOnPrometheusGrafana")
+		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 

@@ -48,11 +48,11 @@ type tester struct {
 
 func (ts *tester) Create() error {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnConformance() {
-		ts.cfg.Logger.Info("skipping create AddOnConformance")
+		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if ts.cfg.EKSConfig.AddOnConformance.Created {
-		ts.cfg.Logger.Info("skipping create AddOnConformance")
+		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 
@@ -87,11 +87,11 @@ func (ts *tester) Create() error {
 
 func (ts *tester) Delete() error {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnConformance() {
-		ts.cfg.Logger.Info("skipping delete AddOnConformance")
+		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if !ts.cfg.EKSConfig.AddOnConformance.Created {
-		ts.cfg.Logger.Info("skipping delete AddOnConformance")
+		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 
@@ -537,11 +537,11 @@ func untarResults(lg *zap.Logger, tarGzPath string, outputDir string) (logPath s
 
 func (ts *tester) AggregateResults() (err error) {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnConformance() {
-		ts.cfg.Logger.Info("skipping aggregate AddOnConformance")
+		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if !ts.cfg.EKSConfig.AddOnConformance.Created {
-		ts.cfg.Logger.Info("skipping aggregate AddOnConformance")
+		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 

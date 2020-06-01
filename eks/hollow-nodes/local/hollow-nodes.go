@@ -45,11 +45,11 @@ type tester struct {
 
 func (ts *tester) Create() (err error) {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnHollowNodesLocal() {
-		ts.cfg.Logger.Info("skipping create AddOnHollowNodesLocal")
+		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if ts.cfg.EKSConfig.AddOnHollowNodesLocal.Created {
-		ts.cfg.Logger.Info("skipping create AddOnHollowNodesLocal")
+		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 
@@ -108,11 +108,11 @@ func (ts *tester) Create() (err error) {
 
 func (ts *tester) Delete() (err error) {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnHollowNodesLocal() {
-		ts.cfg.Logger.Info("skipping delete AddOnHollowNodesLocal")
+		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if !ts.cfg.EKSConfig.AddOnHollowNodesLocal.Created {
-		ts.cfg.Logger.Info("skipping delete AddOnHollowNodesLocal")
+		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 
@@ -178,11 +178,11 @@ func (ts *tester) deleteCreatedNodes() error {
 
 func (ts *tester) AggregateResults() (err error) {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnHollowNodesLocal() {
-		ts.cfg.Logger.Info("skipping aggregate AddOnHollowNodesLocal")
+		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if !ts.cfg.EKSConfig.AddOnHollowNodesLocal.Created {
-		ts.cfg.Logger.Info("skipping aggregate AddOnHollowNodesLocal")
+		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 

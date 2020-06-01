@@ -42,11 +42,11 @@ const chartName = "aws-ebs-csi-driver"
 
 func (ts *tester) Create() error {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnCSIEBS() {
-		ts.cfg.Logger.Info("skipping create AddOnCSIEBS")
+		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if ts.cfg.EKSConfig.AddOnCSIEBS.Created {
-		ts.cfg.Logger.Info("skipping create AddOnCSIEBS")
+		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 
@@ -69,11 +69,11 @@ func (ts *tester) Create() error {
 
 func (ts *tester) Delete() error {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnCSIEBS() {
-		ts.cfg.Logger.Info("skipping delete AddOnCSIEBS")
+		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if !ts.cfg.EKSConfig.AddOnCSIEBS.Created {
-		ts.cfg.Logger.Info("skipping delete AddOnCSIEBS")
+		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 
@@ -237,11 +237,11 @@ func (ts *tester) deleteHelmCSI() error {
 
 func (ts *tester) AggregateResults() (err error) {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnCSIEBS() {
-		ts.cfg.Logger.Info("skipping aggregate AddOnCSIEBS")
+		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if !ts.cfg.EKSConfig.AddOnCSIEBS.Created {
-		ts.cfg.Logger.Info("skipping aggregate AddOnCSIEBS")
+		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 

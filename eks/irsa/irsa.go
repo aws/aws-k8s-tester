@@ -70,11 +70,11 @@ type tester struct {
 
 func (ts *tester) Create() (err error) {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnIRSA() {
-		ts.cfg.Logger.Info("skipping create AddOnIRSA")
+		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if ts.cfg.EKSConfig.AddOnIRSA.Created {
-		ts.cfg.Logger.Info("skipping create AddOnIRSA")
+		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 
@@ -137,11 +137,11 @@ func (ts *tester) Create() (err error) {
 
 func (ts *tester) Delete() error {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnIRSA() {
-		ts.cfg.Logger.Info("skipping delete AddOnIRSA")
+		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if !ts.cfg.EKSConfig.AddOnIRSA.Created {
-		ts.cfg.Logger.Info("skipping delete AddOnIRSA")
+		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 
@@ -1204,11 +1204,11 @@ func (ts *tester) countSuccess(expects int) (int, error) {
 
 func (ts *tester) AggregateResults() error {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnIRSA() {
-		ts.cfg.Logger.Info("skipping aggregate AddOnIRSA")
+		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if !ts.cfg.EKSConfig.AddOnIRSA.Created {
-		ts.cfg.Logger.Info("skipping aggregate AddOnIRSA")
+		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 

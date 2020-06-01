@@ -51,11 +51,11 @@ type tester struct {
 
 func (ts *tester) Create() (err error) {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnCSRsRemote() {
-		ts.cfg.Logger.Info("skipping create AddOnCSRsRemote")
+		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if ts.cfg.EKSConfig.AddOnCSRsRemote.Created {
-		ts.cfg.Logger.Info("skipping create AddOnCSRsRemote")
+		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 
@@ -137,11 +137,11 @@ func (ts *tester) Create() (err error) {
 
 func (ts *tester) Delete() error {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnCSRsRemote() {
-		ts.cfg.Logger.Info("skipping delete AddOnCSRsRemote")
+		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if !ts.cfg.EKSConfig.AddOnCSRsRemote.Created {
-		ts.cfg.Logger.Info("skipping delete AddOnCSRsRemote")
+		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 
@@ -704,11 +704,11 @@ func (ts *tester) waitDeployment() error {
 
 func (ts *tester) AggregateResults() (err error) {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnCSRsRemote() {
-		ts.cfg.Logger.Info("skipping aggregate AddOnCSRsRemote")
+		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if !ts.cfg.EKSConfig.AddOnCSRsRemote.Created {
-		ts.cfg.Logger.Info("skipping aggregate AddOnCSRsRemote")
+		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 

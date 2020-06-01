@@ -46,11 +46,11 @@ type tester struct {
 
 func (ts *tester) Create() error {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnJobsPi() {
-		ts.cfg.Logger.Info("skipping create AddOnJobsPi")
+		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if ts.cfg.EKSConfig.AddOnJobsPi.Created {
-		ts.cfg.Logger.Info("skipping create AddOnJobsPi")
+		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 
@@ -124,11 +124,11 @@ var propagationBackground = metav1.DeletePropagationBackground
 
 func (ts *tester) Delete() error {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnJobsPi() {
-		ts.cfg.Logger.Info("skipping delete AddOnJobsPi")
+		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if !ts.cfg.EKSConfig.AddOnJobsPi.Created {
-		ts.cfg.Logger.Info("skipping delete AddOnJobsPi")
+		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 
@@ -231,11 +231,11 @@ func (ts *tester) createObject() (batchv1.Job, string, error) {
 
 func (ts *tester) AggregateResults() (err error) {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnJobsPi() {
-		ts.cfg.Logger.Info("skipping aggregate AddOnJobsPi")
+		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if !ts.cfg.EKSConfig.AddOnJobsPi.Created {
-		ts.cfg.Logger.Info("skipping aggregate AddOnJobsPi")
+		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 

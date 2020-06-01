@@ -42,11 +42,11 @@ type tester struct {
 
 func (ts *tester) Create() error {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnKubernetesDashboard() {
-		ts.cfg.Logger.Info("skipping create AddOnKubernetesDashboard")
+		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if ts.cfg.EKSConfig.AddOnKubernetesDashboard.Created {
-		ts.cfg.Logger.Info("skipping create AddOnKubernetesDashboard")
+		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 
@@ -79,11 +79,11 @@ func (ts *tester) Create() error {
 
 func (ts *tester) Delete() error {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnKubernetesDashboard() {
-		ts.cfg.Logger.Info("skipping delete AddOnKubernetesDashboard")
+		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if !ts.cfg.EKSConfig.AddOnKubernetesDashboard.Created {
-		ts.cfg.Logger.Info("skipping delete AddOnKubernetesDashboard")
+		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 
@@ -204,11 +204,11 @@ func (ts *tester) stopProxy() error {
 
 func (ts *tester) AggregateResults() (err error) {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnKubernetesDashboard() {
-		ts.cfg.Logger.Info("skipping aggregate AddOnKubernetesDashboard")
+		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 	if !ts.cfg.EKSConfig.AddOnKubernetesDashboard.Created {
-		ts.cfg.Logger.Info("skipping aggregate AddOnKubernetesDashboard")
+		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 
