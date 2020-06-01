@@ -1086,7 +1086,7 @@ func (ts *tester) checkPod() error {
 		break
 	}
 	if !found {
-		// TODO: not working... fail if not found?
+		// TODO: expected output not found, fail the whole tester
 		ts.cfg.Logger.Warn("failed to find expected output from kubectl logs; fail!", zap.String("expected", sleepMsg))
 	}
 
