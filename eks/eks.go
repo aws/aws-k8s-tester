@@ -907,7 +907,7 @@ func (ts *Tester) Up() (err error) {
 
 	for idx, tss := range ts.testers {
 		fmt.Printf("\n\n*********************************\n")
-		fmt.Printf("testers[%02d].Create (%q)\n", idx, reflect.TypeOf(tss).PkgPath())
+		fmt.Printf("testers[%02d].Create (%q)\n", idx, reflect.TypeOf(tss))
 		err := catchInterrupt(
 			ts.lg,
 			ts.stopCreationCh,
@@ -918,7 +918,7 @@ func (ts *Tester) Up() (err error) {
 
 		if idx%5 == 0 {
 			fmt.Printf("\n\n*********************************\n")
-			fmt.Printf("testers[%02d].uploadToS3 (%q)\n", idx, reflect.TypeOf(tss).PkgPath())
+			fmt.Printf("testers[%02d].uploadToS3 (%q)\n", idx, reflect.TypeOf(tss))
 			if serr := ts.uploadToS3(); serr != nil {
 				ts.lg.Warn("failed to upload artifacts to S3", zap.Error(serr))
 			}
@@ -979,7 +979,7 @@ func (ts *Tester) Up() (err error) {
 		(ts.cfg.IsEnabledAddOnManagedNodeGroups() && ts.cfg.AddOnManagedNodeGroups.Created && ts.cfg.AddOnManagedNodeGroups.FetchLogs) {
 		for idx, tss := range ts.testers {
 			fmt.Printf("\n\n*********************************\n")
-			fmt.Printf("testers[%02d].AggregateResults (%q)\n", idx, reflect.TypeOf(tss).PkgPath())
+			fmt.Printf("testers[%02d].AggregateResults (%q)\n", idx, reflect.TypeOf(tss))
 			err := catchInterrupt(
 				ts.lg,
 				ts.stopCreationCh,
@@ -1088,15 +1088,8 @@ func (ts *Tester) down() (err error) {
 	for idx := range ts.testers {
 		fmt.Printf("\n\n*********************************\n")
 		tss := ts.testers[len(ts.testers)-1-idx]
-		fmt.Printf("testers[%02d].Delete (%q)\n", idx, reflect.TypeOf(tss).PkgPath())
-		err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.osSig,
-			tss.Delete,
-		)
-		if err != nil {
+		fmt.Printf("testers[%02d].Delete (%q)\n", idx, reflect.TypeOf(tss))
+		if err := tss.Delete(); err != nil {
 			ts.lg.Warn("failed tester.Delete", zap.Error(err))
 			errs = append(errs, err.Error())
 		}
