@@ -50,6 +50,7 @@ require (
 	github.com/manifoldco/promptui v0.7.0
 	github.com/mattn/go-runewidth v0.0.8 // indirect
 	github.com/mholt/archiver/v3 v3.3.0
+	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db
 	github.com/mitchellh/ioprogress v0.0.0-20180201004757-6a23b12fa88e
 	github.com/olekukonko/tablewriter v0.0.2
 	github.com/onsi/ginkgo v1.11.0

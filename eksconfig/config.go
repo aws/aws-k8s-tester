@@ -21,6 +21,7 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
 	"github.com/aws/aws-k8s-tester/pkg/randutil"
+	"github.com/aws/aws-k8s-tester/pkg/terminal"
 	"github.com/aws/aws-sdk-go/aws/endpoints"
 	"k8s.io/client-go/util/homedir"
 	"sigs.k8s.io/yaml" // must use "sigs.k8s.io/yaml"
@@ -51,6 +52,8 @@ type Config struct {
 	// RemoteAccessCommandsOutputPath is the output path for ssh commands.
 	RemoteAccessCommandsOutputPath string `json:"remote-access-commands-output-path,omitempty"`
 
+	// LogColor is true to output logs in color.
+	LogColor bool `json:"log-color"`
 	// LogLevel configures log level. Only supports debug, info, warn, error, panic, or fatal. Default 'info'.
 	LogLevel string `json:"log-level"`
 	// LogOutputs is a list of log outputs. Valid values are 'default', 'stderr', 'stdout', or file names.
@@ -596,6 +599,7 @@ func NewDefault() *Config {
 		KubeConfigPath:            "",
 		AWSCLIPath:                "",
 
+		LogColor: true,
 		LogLevel: logutil.DefaultLogLevel,
 		// default, stderr, stdout, or file name
 		// log file named with cluster name will be added automatically
@@ -849,6 +853,11 @@ func (cfg *Config) validateConfig() error {
 	regions := partition.Regions()
 	if _, ok := regions[cfg.Region]; !ok {
 		return fmt.Errorf("region %q for partition %q not found in %+v", cfg.Region, cfg.Partition, regions)
+	}
+
+	_, cerr := terminal.IsColor()
+	if cfg.LogColor && cerr != nil {
+		cfg.LogColor = false
 	}
 	if len(cfg.LogOutputs) == 0 {
 		return errors.New("LogOutputs is not empty")
