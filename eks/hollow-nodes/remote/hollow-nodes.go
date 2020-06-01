@@ -289,13 +289,14 @@ func (ts *tester) createALBRBACClusterRole() error {
 						"app.kubernetes.io/name": hollowNodesAppName,
 					},
 				},
+				// e.g. "kubectl api-resources"
 				Rules: []rbacv1.PolicyRule{
 					{
 						APIGroups: []string{
 							"*",
 						},
 						Resources: []string{
-							"leases",
+							"leases",         // for API group "coordination.k8s.io"
 							"runtimeclasses", // for API group "node.k8s.io"
 							"nodes",
 							"nodes/status", // to patch resource "nodes/status" in API group "" at the cluster scope
@@ -312,6 +313,8 @@ func (ts *tester) createALBRBACClusterRole() error {
 							"services",
 							"jobs",
 							"cronjobs",
+							"storageclasses",
+							"volumeattachments",
 							"csidrivers", // for API group "storage.k8s.io"
 							"csinodes",   // Failed to initialize CSINodeInfo: error updating CSINode annotation: timed out waiting for the condition; caused by: csinodes.storage.k8s.io "hollowwandefortegreen6wd8z" is forbidden: User "system:serviceaccount:eks-2020052423-boldlyuxvugd-hollow-nodes-remote:hollow-nodes-remote-service-account" cannot get resource "csinodes" in API group "storage.k8s.io" at the cluster scope
 						},

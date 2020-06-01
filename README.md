@@ -64,6 +64,7 @@ aws-k8s-tester eks delete cluster --enable-prompt=true -p /tmp/${USER}-test-prod
 rm -rf /tmp/${USER}-test-eks*
 AWS_K8S_TESTER_EKS_PARTITION=aws \
 AWS_K8S_TESTER_EKS_REGION=us-west-2 \
+AWS_K8S_TESTER_EKS_LOG_COLOR=true \
 AWS_K8S_TESTER_EKS_S3_BUCKET_CREATE=true \
 AWS_K8S_TESTER_EKS_S3_BUCKET_CREATE_KEEP=true \
 AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_CLUSTER="aws eks describe-cluster --name GetRef.Name" \
