@@ -140,19 +140,19 @@ func createDoc() string {
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnClusterLoaderLocal, &eksconfig.AddOnClusterLoaderLocal{}))
-
-	b.WriteByte('\n')
-	b.WriteByte('\n')
-	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnClusterLoaderRemote, &eksconfig.AddOnClusterLoaderRemote{}))
-
-	b.WriteByte('\n')
-	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnStresserLocal, &eksconfig.AddOnStresserLocal{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnStresserRemote, &eksconfig.AddOnStresserRemote{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnClusterLoaderLocal, &eksconfig.AddOnClusterLoaderLocal{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnClusterLoaderRemote, &eksconfig.AddOnClusterLoaderRemote{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')

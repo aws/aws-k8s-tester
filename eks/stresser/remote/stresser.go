@@ -736,8 +736,8 @@ func (ts *tester) waitDeployment() error {
 	}
 	if !ready {
 		// TODO: return error...
-		// return errors.New("Deployment not ready")
 		ts.cfg.Logger.Warn("Deployment not ready")
+		return errors.New("Deployment not ready")
 	}
 
 	ts.cfg.Logger.Info("waited for stresser Deployment")

@@ -589,19 +589,6 @@ func (ts *Tester) createTesters() (err error) {
 			K8SClient: ts.k8sClient,
 			ECRAPI:    ts.ecrAPI,
 		}),
-		cluster_loader_local.New(cluster_loader_local.Config{
-			Logger:    ts.lg,
-			Stopc:     ts.stopCreationCh,
-			EKSConfig: ts.cfg,
-			K8SClient: ts.k8sClient,
-		}),
-		cluster_loader_remote.New(cluster_loader_remote.Config{
-			Logger:    ts.lg,
-			Stopc:     ts.stopCreationCh,
-			EKSConfig: ts.cfg,
-			K8SClient: ts.k8sClient,
-			ECRAPI:    ts.ecrAPI,
-		}),
 		stresser_local.New(stresser_local.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
@@ -609,6 +596,19 @@ func (ts *Tester) createTesters() (err error) {
 			K8SClient: ts.k8sClient,
 		}),
 		stresser_remote.New(stresser_remote.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			EKSConfig: ts.cfg,
+			K8SClient: ts.k8sClient,
+			ECRAPI:    ts.ecrAPI,
+		}),
+		cluster_loader_local.New(cluster_loader_local.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			EKSConfig: ts.cfg,
+			K8SClient: ts.k8sClient,
+		}),
+		cluster_loader_remote.New(cluster_loader_remote.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,

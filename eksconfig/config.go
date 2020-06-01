@@ -269,17 +269,6 @@ type Config struct {
 	// It generates loads from the remote workers (Pod) in the cluster.
 	AddOnHollowNodesRemote *AddOnHollowNodesRemote `json:"add-on-hollow-nodes-remote,omitempty"`
 
-	// AddOnClusterLoaderLocal defines parameters for EKS cluster
-	// add-on cluster loader local.
-	// It generates loads from the local host machine.
-	// ref. https://github.com/kubernetes/perf-tests/tree/master/clusterloader2
-	AddOnClusterLoaderLocal *AddOnClusterLoaderLocal `json:"add-on-cluster-loader-local,omitempty"`
-	// AddOnClusterLoaderRemote defines parameters for EKS cluster
-	// add-on cluster loader remote.
-	// It generates loads from the remote host machine.
-	// ref. https://github.com/kubernetes/perf-tests/tree/master/clusterloader2
-	AddOnClusterLoaderRemote *AddOnClusterLoaderRemote `json:"add-on-cluster-loader-remote,omitempty"`
-
 	// AddOnStresserLocal defines parameters for EKS cluster
 	// add-on cluster loader local.
 	// It generates loads from the local host machine.
@@ -290,6 +279,17 @@ type Config struct {
 	// It generates loads from the remote workers (Pod) in the cluster.
 	// ref. https://github.com/kubernetes/perf-tests
 	AddOnStresserRemote *AddOnStresserRemote `json:"add-on-stresser-remote,omitempty"`
+
+	// AddOnClusterLoaderLocal defines parameters for EKS cluster
+	// add-on cluster loader local.
+	// It generates loads from the local host machine.
+	// ref. https://github.com/kubernetes/perf-tests/tree/master/clusterloader2
+	AddOnClusterLoaderLocal *AddOnClusterLoaderLocal `json:"add-on-cluster-loader-local,omitempty"`
+	// AddOnClusterLoaderRemote defines parameters for EKS cluster
+	// add-on cluster loader remote.
+	// It generates loads from the remote host machine.
+	// ref. https://github.com/kubernetes/perf-tests/tree/master/clusterloader2
+	AddOnClusterLoaderRemote *AddOnClusterLoaderRemote `json:"add-on-cluster-loader-remote,omitempty"`
 
 	// Status represents the current status of AWS resources.
 	// Status is read-only.
@@ -664,10 +664,10 @@ func NewDefault() *Config {
 		AddOnKubeflow:            getDefaultAddOnKubeflow(),
 		AddOnHollowNodesLocal:    getDefaultAddOnHollowNodesLocal(),
 		AddOnHollowNodesRemote:   getDefaultAddOnHollowNodesRemote(),
-		AddOnClusterLoaderLocal:  getDefaultAddOnClusterLoaderLocal(),
-		AddOnClusterLoaderRemote: getDefaultAddOnClusterLoaderRemote(),
 		AddOnStresserLocal:       getDefaultAddOnStresserLocal(),
 		AddOnStresserRemote:      getDefaultAddOnStresserRemote(),
+		AddOnClusterLoaderLocal:  getDefaultAddOnClusterLoaderLocal(),
+		AddOnClusterLoaderRemote: getDefaultAddOnClusterLoaderRemote(),
 
 		// read-only
 		Status: &Status{Up: false},
