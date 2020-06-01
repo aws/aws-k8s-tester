@@ -23,6 +23,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.8...v1.2.9
 
 ### `eks`
 
+- Fail [the whole tester if one add-on deployment is not ready within some time period](https://github.com/aws/aws-k8s-tester/commit/6970c955cff2f2addc09651763fec27075269421).
 - Define [`eks/tester.Tester` interface](https://github.com/aws/aws-k8s-tester/commit/035027a6c1caf7fc182f0a48b53cfd17cbc2e54f).
 - Support [color print](https://github.com/aws/aws-k8s-tester/commit/b7d7df9d57ea6cdb268c37e7c186de6be850d5d3).
 
