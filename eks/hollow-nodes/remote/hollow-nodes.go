@@ -157,6 +157,8 @@ func (ts *tester) Delete() (err error) {
 	if err := ts.deleteDeployment(); err != nil {
 		errs = append(errs, err.Error())
 	}
+	time.Sleep(time.Minute)
+
 	if err := ts.deleteCreatedNodes(); err != nil {
 		errs = append(errs, err.Error())
 	}
@@ -856,7 +858,7 @@ func (ts *tester) deleteCreatedNodes() error {
 			ts.cfg.Logger.Info("deleted node", zap.Int("index", i), zap.String("name", nodeName))
 			deleted++
 		}
-		if i > 100 {
+		if i > 300 {
 			ts.cfg.Logger.Warn("skipping deleting created nodes; too many", zap.Int("deleted", deleted))
 			break
 		}

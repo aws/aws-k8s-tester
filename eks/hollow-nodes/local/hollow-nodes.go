@@ -162,7 +162,7 @@ func (ts *tester) deleteCreatedNodes() error {
 			ts.cfg.Logger.Info("deleted node", zap.Int("index", i), zap.String("name", nodeName))
 			deleted++
 		}
-		if i > 100 {
+		if i > 300 {
 			ts.cfg.Logger.Warn("skipping deleting created nodes; too many", zap.Int("deleted", deleted))
 			break
 		}
