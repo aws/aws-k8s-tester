@@ -385,7 +385,7 @@ func (ts *Tester) deleteCluster() error {
 			ts.cfnAPI,
 			ts.cfg.Status.ClusterCFNStackID,
 			cloudformation.ResourceStatusDeleteComplete,
-			3*time.Minute,
+			5*time.Minute,
 			20*time.Second,
 		)
 		var st cfn.StackStatus
@@ -422,7 +422,7 @@ func (ts *Tester) deleteCluster() error {
 			ts.eksAPI,
 			ts.cfg.Name,
 			eksconfig.ClusterStatusDELETEDORNOTEXIST,
-			3*time.Minute,
+			5*time.Minute,
 			20*time.Second,
 		)
 		for v := range csCh {
