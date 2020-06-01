@@ -464,7 +464,7 @@ func (ts *Tester) down() (err error) {
 			} else {
 				fmt.Printf("\n\n*********************************\n")
 				fmt.Printf("DOWN DEFER START (%q)\n\n", ts.cfg.ConfigPath)
-				fmt.Printf("🔥 💀 👽 😱 😡 (-_-) DOWN FAIL\n")
+				fmt.Printf("🔥 💀 👽 😱 😡 (-_-) DOWN FAIL\n\n")
 			}
 
 			ts.lg.Info("failed Down",
