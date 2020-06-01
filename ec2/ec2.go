@@ -164,10 +164,11 @@ func (ts *Tester) Up() (err error) {
 	defer func() {
 		if ts.color {
 			colorstring.Printf("\n\n[light_gray]*********************************\n")
+			colorstring.Printf("[light_green]UP DEFER START [default](%q)\n", ts.cfg.ConfigPath)
 		} else {
 			fmt.Printf("\n\n*********************************\n")
+			fmt.Printf("UP DEFER START (%q)\n", ts.cfg.ConfigPath)
 		}
-		ts.lg.Sugar().Infof("Up.defer start (%s)", ts.cfg.ConfigPath)
 
 		if serr := ts.uploadToS3(); serr != nil {
 			ts.lg.Warn("failed to upload artifacts to S3", zap.Error(serr))
@@ -189,8 +190,10 @@ func (ts *Tester) Up() (err error) {
 
 				if ts.color {
 					colorstring.Printf("\n\n[light_gray]*********************************\n")
+					colorstring.Printf("\n\n💯 😁 👍 :) [light_green]Up success\n\n\n")
 				} else {
 					fmt.Printf("\n\n*********************************\n")
+					fmt.Printf("\n\n💯 😁 👍 :) Up success\n\n\n")
 				}
 				ts.lg.Sugar().Infof("Up.defer end (%s)", ts.cfg.ConfigPath)
 				fmt.Printf("\n\n💯 😁 👍 :) Up success\n\n\n")
@@ -421,10 +424,11 @@ func (ts *Tester) Down() error {
 func (ts *Tester) down() (err error) {
 	if ts.color {
 		colorstring.Printf("\n\n[light_gray]*********************************\n")
+		colorstring.Printf("[light_blue]DOWN START [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 	} else {
 		fmt.Printf("\n\n*********************************\n")
+		fmt.Printf("DOWN START (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 	}
-	fmt.Printf("Down start (%q)\n\n", ts.cfg.ConfigPath)
 
 	now := time.Now()
 	ts.lg.Warn("starting Down",

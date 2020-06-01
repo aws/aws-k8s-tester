@@ -615,7 +615,6 @@ func (ts *Tester) createTesters() (err error) {
 			ECRAPI:    ts.ecrAPI,
 		}),
 	}
-
 	return ts.cfg.Sync()
 }
 

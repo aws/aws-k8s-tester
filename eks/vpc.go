@@ -1103,7 +1103,10 @@ func (ts *Tester) deleteENIs(deletedResources map[string]struct{}) bool {
 				NetworkInterfaceIds: aws.StringSlice([]string{eniID}),
 			})
 			if err == nil {
-				ts.lg.Warn("ENI still exists", zap.String("eni", eniID))
+				_, derr := ts.ec2API.DeleteNetworkInterface(&ec2.DeleteNetworkInterfaceInput{
+					NetworkInterfaceId: aws.String(eniID),
+				})
+				ts.lg.Warn("ENI still exists", zap.String("eni", eniID), zap.Error(derr))
 				continue
 			}
 			if awsErr, ok := err.(awserr.Error); ok {
@@ -1113,7 +1116,11 @@ func (ts *Tester) deleteENIs(deletedResources map[string]struct{}) bool {
 					break
 				}
 			}
-			ts.lg.Warn("ENI still exists", zap.String("eni", eniID), zap.Error(err))
+
+			_, derr := ts.ec2API.DeleteNetworkInterface(&ec2.DeleteNetworkInterfaceInput{
+				NetworkInterfaceId: aws.String(eniID),
+			})
+			ts.lg.Warn("ENI still exists", zap.String("eni", eniID), zap.String("errors", fmt.Sprintf("%v, %v", err, derr)))
 		}
 	}
 	return deleted
