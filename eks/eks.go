@@ -143,7 +143,7 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 	if err := cfg.ValidateAndSetDefaults(); err != nil {
 		return nil, err
 	}
-	ts.color = cfg.LogColor
+	isColor := cfg.LogColor
 
 	lcfg := logutil.AddOutputPaths(logutil.GetDefaultZapLoggerConfig(), cfg.LogOutputs, cfg.LogOutputs)
 	lcfg.Level = zap.NewAtomicLevelAt(logutil.ConvertToZapLevel(cfg.LogLevel))
@@ -153,12 +153,15 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 		return nil, err
 	}
 	co, cerr := terminal.IsColor()
-	if ts.color {
+	if isColor {
 		lg.Info("output in color", zap.String("output", co), zap.Error(cerr))
 		colorstring.Printf("[light_green]HELLO\n")
 	} else {
 		lg.Warn("output in no color", zap.String("output", co), zap.Error(cerr))
+		isColor = false
 	}
+	cfg.LogColor = isColor
+	cfg.Sync()
 
 	if err = fileutil.EnsureExecutable(cfg.AWSCLIPath); err != nil {
 		// file may be already executable while the process does not own the file/directory
@@ -254,6 +257,7 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 	}
 
 	ts = &Tester{
+		color:              isColor,
 		stopCreationCh:     make(chan struct{}),
 		stopCreationChOnce: new(sync.Once),
 		osSig:              make(chan os.Signal),
