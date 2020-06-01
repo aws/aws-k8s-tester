@@ -9,6 +9,15 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.8...v1.2.9
 
 ### `eksconfig`
 
+- Add [`eksconfig.Config.LogColor`](https://github.com/aws/aws-k8s-tester/commit/4bf8f1825058e265adc8b70aceb190ae2c6d66ff).
+  - Configured via `AWS_K8S_TESTER_EC2_LOG_COLOR`.
+
+### `ec2`
+
+- Support [color print](https://github.com/aws/aws-k8s-tester/commit/4bf8f1825058e265adc8b70aceb190ae2c6d66ff).
+
+### `eksconfig`
+
 - Add [`eksconfig.Config.LogColor`](https://github.com/aws/aws-k8s-tester/commit/b7d7df9d57ea6cdb268c37e7c186de6be850d5d3).
   - Configured via `AWS_K8S_TESTER_EKS_LOG_COLOR`.
 

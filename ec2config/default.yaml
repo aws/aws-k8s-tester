@@ -1,5 +1,5 @@
 asgs:
-  ec2-2020053122-charismahv23-asg:
+  ec2-2020053122-autumnheh64d-asg:
     ami-type: AL2_x86_64
     asg-cfn-stack-id: ""
     asg-desired-capacity: 1
@@ -11,7 +11,7 @@ asgs:
     instance-types:
     - c5.xlarge
     logs: null
-    name: ec2-2020053122-charismahv23-asg
+    name: ec2-2020053122-autumnheh64d-asg
     remote-access-user-name: ec2-user
     ssm-document-cfn-stack-id: ""
     ssm-document-cfn-stack-name: ""
@@ -36,7 +36,7 @@ asgs:
       took-string: ""
     volume-size: 40
 asgs-fetch-logs: true
-asgs-logs-dir: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/ec2-2020053122-charismahv23-logs-remote
+asgs-logs-dir: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/ec2-2020053122-autumnheh64d-logs-remote
 aws-account-id: ""
 aws-credential-path: ""
 aws-iam-role-arn: ""
@@ -49,7 +49,7 @@ log-level: info
 log-outputs:
 - stderr
 - /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/default.yaml.log
-name: ec2-2020053122-charismahv23
+name: ec2-2020053122-autumnheh64d
 on-failure-delete: true
 on-failure-delete-wait-seconds: 120
 partition: aws
@@ -58,13 +58,13 @@ public-subnet-ids: null
 region: us-west-2
 remote-access-commands-output-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/default.ssh.sh
 remote-access-key-create: true
-remote-access-key-name: ec2-2020053122-charismahv23-key
-remote-access-private-key-path: /tmp/forestobre.insecure.key
+remote-access-key-name: ec2-2020053122-autumnheh64d-key
+remote-access-private-key-path: /tmp/frosty7be1.insecure.key
 role-arn: ""
 role-cfn-stack-id: ""
 role-create: true
 role-managed-policy-arns: null
-role-name: ec2-2020053122-charismahv23-role
+role-name: ec2-2020053122-autumnheh64d-role
 role-service-principals: null
 s3-bucket-create: false
 s3-bucket-create-keep: false
