@@ -73,15 +73,6 @@ func New(cfg *ec2config.Config) (*Tester, error) {
 		return nil, err
 	}
 	isColor := cfg.LogColor
-	if isColor {
-		colorstring.Printf("\n\n[light_gray]*********************************\n")
-		fmt.Println("😎 🙏 🚶 ✔️ 👍")
-		fmt.Printf("[light_green]New [default]%q (%q)\n", cfg.ConfigPath, version.Version())
-	} else {
-		fmt.Printf("\n\n*********************************\n")
-		fmt.Println("😎 🙏 🚶 ✔️ 👍")
-		fmt.Printf("New %q (%q)\n", cfg.ConfigPath, version.Version())
-	}
 
 	lcfg := logutil.AddOutputPaths(logutil.GetDefaultZapLoggerConfig(), cfg.LogOutputs, cfg.LogOutputs)
 	lcfg.Level = zap.NewAtomicLevelAt(logutil.ConvertToZapLevel(cfg.LogLevel))
@@ -100,6 +91,16 @@ func New(cfg *ec2config.Config) (*Tester, error) {
 	}
 	cfg.LogColor = isColor
 	cfg.Sync()
+
+	if isColor {
+		colorstring.Printf("\n\n[light_gray]*********************************\n")
+		fmt.Println("😎 🙏 🚶 ✔️ 👍")
+		colorstring.Printf("[light_green]New [default]%q (%q)\n", cfg.ConfigPath, version.Version())
+	} else {
+		fmt.Printf("\n\n*********************************\n")
+		fmt.Println("😎 🙏 🚶 ✔️ 👍")
+		fmt.Printf("New %q (%q)\n", cfg.ConfigPath, version.Version())
+	}
 
 	ts := &Tester{
 		color:              isColor,
