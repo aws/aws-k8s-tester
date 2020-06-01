@@ -160,7 +160,7 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 	cfg.Sync()
 
 	if isColor {
-		colorstring.Printf("\n\n[light_gray]*********************************\n")
+		colorstring.Printf("\n\n[yellow]*********************************\n")
 		fmt.Println("😎 🙏 🚶 ✔️ 👍")
 		colorstring.Printf("[light_green]New [default]%q (%q)\n", cfg.ConfigPath, version.Version())
 	} else {
@@ -384,7 +384,7 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 
 func (ts *Tester) createTesters() (err error) {
 	if ts.color {
-		colorstring.Printf("\n\n[light_gray]*********************************\n")
+		colorstring.Printf("\n\n[yellow]*********************************\n")
 		colorstring.Printf("[light_green]createTesters [default](%q)\n", ts.cfg.ConfigPath)
 	} else {
 		fmt.Printf("\n\n*********************************\n")
@@ -624,7 +624,7 @@ func (ts *Tester) createTesters() (err error) {
 // ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Options
 func (ts *Tester) Up() (err error) {
 	if ts.color {
-		colorstring.Printf("\n\n[light_gray]*********************************\n")
+		colorstring.Printf("\n\n[yellow]*********************************\n")
 		colorstring.Printf("[light_green]UP START [default](%q)\n", ts.cfg.ConfigPath)
 	} else {
 		fmt.Printf("\n\n*********************************\n")
@@ -635,7 +635,7 @@ func (ts *Tester) Up() (err error) {
 
 	defer func() {
 		if ts.color {
-			colorstring.Printf("\n\n[light_gray]*********************************\n")
+			colorstring.Printf("\n\n[yellow]*********************************\n")
 			colorstring.Printf("[light_green]UP DEFER START [default](%q)\n", ts.cfg.ConfigPath)
 		} else {
 			fmt.Printf("\n\n*********************************\n")
@@ -651,7 +651,7 @@ func (ts *Tester) Up() (err error) {
 		if err == nil {
 			if ts.cfg.Status.Up {
 				if ts.color {
-					colorstring.Printf("\n\n[light_gray]*********************************\n")
+					colorstring.Printf("\n\n[yellow]*********************************\n")
 				} else {
 					fmt.Printf("\n\n*********************************\n")
 				}
@@ -659,7 +659,7 @@ func (ts *Tester) Up() (err error) {
 				fmt.Println(ts.cfg.SSHCommands())
 
 				if ts.color {
-					colorstring.Printf("\n\n[light_gray]*********************************\n")
+					colorstring.Printf("\n\n[yellow]*********************************\n")
 				} else {
 					fmt.Printf("\n\n*********************************\n")
 				}
@@ -673,7 +673,7 @@ func (ts *Tester) Up() (err error) {
 				ts.lg.Sugar().Infof("Up.defer end (%s, %s)", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 
 				if ts.color {
-					colorstring.Printf("\n\n[light_gray]*********************************\n")
+					colorstring.Printf("\n\n[yellow]*********************************\n")
 					colorstring.Printf("\n\n💯 😁 👍 :)  [light_green]UP SUCCESS\n\n\n")
 				} else {
 					fmt.Printf("\n\n*********************************\n")
@@ -681,7 +681,7 @@ func (ts *Tester) Up() (err error) {
 				}
 			} else {
 				if ts.color {
-					colorstring.Printf("\n\n[light_gray]*********************************\n")
+					colorstring.Printf("\n\n[yellow]*********************************\n")
 					colorstring.Printf("\n\n😲 😲 😲  [light_magenta]UP ABORTED ???\n\n\n")
 				} else {
 					fmt.Printf("\n\n*********************************\n")
@@ -695,7 +695,7 @@ func (ts *Tester) Up() (err error) {
 		if !ts.cfg.OnFailureDelete {
 			if ts.cfg.Status.Up {
 				if ts.color {
-					colorstring.Printf("\n\n[light_gray]*********************************\n")
+					colorstring.Printf("\n\n[yellow]*********************************\n")
 				} else {
 					fmt.Printf("\n\n*********************************\n")
 				}
@@ -703,7 +703,7 @@ func (ts *Tester) Up() (err error) {
 				fmt.Println(ts.cfg.SSHCommands())
 
 				if ts.color {
-					colorstring.Printf("\n\n[light_gray]*********************************\n")
+					colorstring.Printf("\n\n[yellow]*********************************\n")
 				} else {
 					fmt.Printf("\n\n*********************************\n")
 				}
@@ -722,7 +722,7 @@ func (ts *Tester) Up() (err error) {
 			}
 			ts.lg.Sugar().Infof("Up.defer end (%s, %s)", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 			if ts.color {
-				colorstring.Printf("\n\n[light_gray]*********************************\n")
+				colorstring.Printf("\n\n[yellow]*********************************\n")
 				fmt.Printf("\n\n🔥 💀 👽 😱 😡 (-_-)  UP FAIL\n\n\n")
 			} else {
 				fmt.Printf("\n\n*********************************\n")
@@ -733,7 +733,7 @@ func (ts *Tester) Up() (err error) {
 
 		if ts.cfg.Status.Up {
 			if ts.color {
-				colorstring.Printf("\n\n[light_gray]*********************************\n")
+				colorstring.Printf("\n\n[yellow]*********************************\n")
 			} else {
 				fmt.Printf("\n\n*********************************\n")
 			}
@@ -741,7 +741,7 @@ func (ts *Tester) Up() (err error) {
 			fmt.Println(ts.cfg.SSHCommands())
 
 			if ts.color {
-				colorstring.Printf("\n\n[light_gray]*********************************\n")
+				colorstring.Printf("\n\n[yellow]*********************************\n")
 			} else {
 				fmt.Printf("\n\n*********************************\n")
 			}
@@ -756,7 +756,7 @@ func (ts *Tester) Up() (err error) {
 		}
 
 		if ts.color {
-			colorstring.Printf("\n\n[light_gray]*********************************\n")
+			colorstring.Printf("\n\n[yellow]*********************************\n")
 			colorstring.Printf("🔥 💀 👽 😱 😡 (-_-) [light_magenta]UP FAIL\n")
 		} else {
 			fmt.Printf("\n\n*********************************\n")
@@ -791,7 +791,7 @@ func (ts *Tester) Up() (err error) {
 		}
 
 		if ts.color {
-			colorstring.Printf("\n\n[light_gray]*********************************\n")
+			colorstring.Printf("\n\n[yellow]*********************************\n")
 			colorstring.Printf("\n\n🔥 💀 👽 😱 😡 (-_-) [light_magenta]Up fail\n\n\n")
 		} else {
 			fmt.Printf("\n\n*********************************\n")
@@ -807,7 +807,7 @@ func (ts *Tester) Up() (err error) {
 	defer ts.cfg.Sync()
 
 	if ts.color {
-		colorstring.Printf("\n\n[light_gray]*********************************\n")
+		colorstring.Printf("\n\n[yellow]*********************************\n")
 		colorstring.Printf("[light_green]createS3 [default](%q)\n", ts.cfg.ConfigPath)
 	} else {
 		fmt.Printf("\n\n*********************************\n")
@@ -824,7 +824,7 @@ func (ts *Tester) Up() (err error) {
 	}
 
 	if ts.color {
-		colorstring.Printf("\n\n[light_gray]*********************************\n")
+		colorstring.Printf("\n\n[yellow]*********************************\n")
 		colorstring.Printf("[light_green]createEncryption [default](%q)\n", ts.cfg.ConfigPath)
 	} else {
 		fmt.Printf("\n\n*********************************\n")
@@ -841,7 +841,7 @@ func (ts *Tester) Up() (err error) {
 	}
 
 	if ts.color {
-		colorstring.Printf("\n\n[light_gray]*********************************\n")
+		colorstring.Printf("\n\n[yellow]*********************************\n")
 		colorstring.Printf("[light_green]createKeyPair [default](%q)\n", ts.cfg.ConfigPath)
 	} else {
 		fmt.Printf("\n\n*********************************\n")
@@ -858,7 +858,7 @@ func (ts *Tester) Up() (err error) {
 	}
 
 	if ts.color {
-		colorstring.Printf("\n\n[light_gray]*********************************\n")
+		colorstring.Printf("\n\n[yellow]*********************************\n")
 		colorstring.Printf("[light_green]createClusterRole [default](%q)\n", ts.cfg.ConfigPath)
 	} else {
 		fmt.Printf("\n\n*********************************\n")
@@ -875,7 +875,7 @@ func (ts *Tester) Up() (err error) {
 	}
 
 	if ts.color {
-		colorstring.Printf("\n\n[light_gray]*********************************\n")
+		colorstring.Printf("\n\n[yellow]*********************************\n")
 		colorstring.Printf("[light_green]createVPC [default](%q)\n", ts.cfg.ConfigPath)
 	} else {
 		fmt.Printf("\n\n*********************************\n")
@@ -895,7 +895,7 @@ func (ts *Tester) Up() (err error) {
 	}
 
 	if ts.color {
-		colorstring.Printf("\n\n[light_gray]*********************************\n")
+		colorstring.Printf("\n\n[yellow]*********************************\n")
 		colorstring.Printf("[light_green]createCluster [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 	} else {
 		fmt.Printf("\n\n*********************************\n")
@@ -916,7 +916,7 @@ func (ts *Tester) Up() (err error) {
 	time.Sleep(waitDur)
 
 	if ts.color {
-		colorstring.Printf("\n\n[light_gray]*********************************\n")
+		colorstring.Printf("\n\n[yellow]*********************************\n")
 		colorstring.Printf("[light_green]checkHealth [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 	} else {
 		fmt.Printf("\n\n*********************************\n")
@@ -937,7 +937,7 @@ func (ts *Tester) Up() (err error) {
 			return err
 		}
 		if ts.color {
-			colorstring.Printf("\n\n[light_gray]*********************************\n")
+			colorstring.Printf("\n\n[yellow]*********************************\n")
 		} else {
 			fmt.Printf("\n\n*********************************\n")
 		}
@@ -963,7 +963,7 @@ func (ts *Tester) Up() (err error) {
 		}
 		// create NG first, so MNG configmap update can be called afterwards
 		if ts.color {
-			colorstring.Printf("\n\n[light_gray]*********************************\n")
+			colorstring.Printf("\n\n[yellow]*********************************\n")
 			colorstring.Printf("[light_green]ngTester.Create [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		} else {
 			fmt.Printf("\n\n*********************************\n")
@@ -985,7 +985,7 @@ func (ts *Tester) Up() (err error) {
 			return errors.New("ts.mngTester == nil when AddOnManagedNodeGroups.Enable == true")
 		}
 		if ts.color {
-			colorstring.Printf("\n\n[light_gray]*********************************\n")
+			colorstring.Printf("\n\n[yellow]*********************************\n")
 			colorstring.Printf("[light_green]mngTester.Create [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		} else {
 			fmt.Printf("\n\n*********************************\n")
@@ -1025,7 +1025,7 @@ func (ts *Tester) Up() (err error) {
 	}
 	if needGPU {
 		if ts.color {
-			colorstring.Printf("\n\n[light_gray]*********************************\n")
+			colorstring.Printf("\n\n[yellow]*********************************\n")
 			colorstring.Printf("[light_green]gpuTester.InstallNvidiaDriver [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		} else {
 			fmt.Printf("\n\n*********************************\n")
@@ -1043,7 +1043,7 @@ func (ts *Tester) Up() (err error) {
 		}
 
 		if ts.color {
-			colorstring.Printf("\n\n[light_gray]*********************************\n")
+			colorstring.Printf("\n\n[yellow]*********************************\n")
 			colorstring.Printf("[light_green]gpuTester.CreateNvidiaSMI [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		} else {
 			fmt.Printf("\n\n*********************************\n")
@@ -1063,7 +1063,7 @@ func (ts *Tester) Up() (err error) {
 
 	for idx, tss := range ts.testers {
 		if ts.color {
-			colorstring.Printf("\n\n[light_gray]*********************************\n")
+			colorstring.Printf("\n\n[yellow]*********************************\n")
 			colorstring.Printf("[light_green]testers[%02d].Create [cyan]%q [default](%q, %q)\n", idx, reflect.TypeOf(tss), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		} else {
 			fmt.Printf("\n\n*********************************\n")
@@ -1079,7 +1079,7 @@ func (ts *Tester) Up() (err error) {
 
 		if idx%5 == 0 {
 			if ts.color {
-				colorstring.Printf("\n\n[light_gray]*********************************\n")
+				colorstring.Printf("\n\n[yellow]*********************************\n")
 				colorstring.Printf("[light_green]testers[%02d] uploadToS3 [cyan]%q [default](%q, %q)\n", idx, reflect.TypeOf(tss), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 			} else {
 				fmt.Printf("\n\n*********************************\n")
@@ -1101,7 +1101,7 @@ func (ts *Tester) Up() (err error) {
 		}
 
 		if ts.color {
-			colorstring.Printf("\n\n[light_gray]*********************************\n")
+			colorstring.Printf("\n\n[yellow]*********************************\n")
 			colorstring.Printf("[light_green]ngTester.FetchLogs [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		} else {
 			fmt.Printf("\n\n*********************************\n")
@@ -1129,7 +1129,7 @@ func (ts *Tester) Up() (err error) {
 		}
 
 		if ts.color {
-			colorstring.Printf("\n\n[light_gray]*********************************\n")
+			colorstring.Printf("\n\n[yellow]*********************************\n")
 			colorstring.Printf("[light_green]mngTester.FetchLogs [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		} else {
 			fmt.Printf("\n\n*********************************\n")
@@ -1155,7 +1155,7 @@ func (ts *Tester) Up() (err error) {
 		(ts.cfg.IsEnabledAddOnManagedNodeGroups() && ts.cfg.AddOnManagedNodeGroups.Created && ts.cfg.AddOnManagedNodeGroups.FetchLogs) {
 		for idx, tss := range ts.testers {
 			if ts.color {
-				colorstring.Printf("\n\n[light_gray]*********************************\n")
+				colorstring.Printf("\n\n[yellow]*********************************\n")
 				colorstring.Printf("[light_green]testers[%02d].AggregateResults [cyan]%q [default](%q, %q)\n", idx, reflect.TypeOf(tss), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 			} else {
 				fmt.Printf("\n\n*********************************\n")
@@ -1175,7 +1175,7 @@ func (ts *Tester) Up() (err error) {
 	}
 
 	if ts.color {
-		colorstring.Printf("\n\n[light_gray]*********************************\n")
+		colorstring.Printf("\n\n[yellow]*********************************\n")
 		colorstring.Printf("[light_green]checkHealth [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 	} else {
 		fmt.Printf("\n\n*********************************\n")
@@ -1225,7 +1225,7 @@ func (ts *Tester) Down() error {
 
 func (ts *Tester) down() (err error) {
 	if ts.color {
-		colorstring.Printf("\n\n[light_gray]*********************************\n")
+		colorstring.Printf("\n\n[yellow]*********************************\n")
 		colorstring.Printf("[light_blue]DOWN START [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 	} else {
 		fmt.Printf("\n\n*********************************\n")
@@ -1248,7 +1248,7 @@ func (ts *Tester) down() (err error) {
 
 		if err == nil {
 			if ts.color {
-				colorstring.Printf("\n\n[light_gray]*********************************\n")
+				colorstring.Printf("\n\n[yellow]*********************************\n")
 				colorstring.Printf("[light_blue]DOWN DEFER START [default](%q)\n", ts.cfg.ConfigPath)
 				colorstring.Printf("\n\n💯 😁 👍 :)  [light_blue]DOWN SUCCESS\n\n\n")
 			} else {
@@ -1264,7 +1264,7 @@ func (ts *Tester) down() (err error) {
 		} else {
 
 			if ts.color {
-				colorstring.Printf("\n\n[light_gray]*********************************\n")
+				colorstring.Printf("\n\n[yellow]*********************************\n")
 				colorstring.Printf("[light_blue]DOWN DEFER START [default](%q)\n", ts.cfg.ConfigPath)
 				colorstring.Printf("🔥 💀 👽 😱 😡 (-_-) [light_magenta]DOWN FAIL\n")
 			} else {
@@ -1283,7 +1283,7 @@ func (ts *Tester) down() (err error) {
 	var errs []string
 
 	if ts.color {
-		colorstring.Printf("\n\n[light_gray]*********************************\n")
+		colorstring.Printf("\n\n[yellow]*********************************\n")
 		colorstring.Printf("[light_blue]deleteKeyPair [default](%q)\n", ts.cfg.ConfigPath)
 	} else {
 		fmt.Printf("\n\n*********************************\n")
@@ -1297,7 +1297,7 @@ func (ts *Tester) down() (err error) {
 	for idx := range ts.testers {
 		tss := ts.testers[len(ts.testers)-1-idx]
 		if ts.color {
-			colorstring.Printf("\n\n[light_gray]*********************************\n")
+			colorstring.Printf("\n\n[yellow]*********************************\n")
 			colorstring.Printf("[light_blue]testers[%02d].Delete [cyan]%q [default](%q, %q)\n", idx, reflect.TypeOf(tss), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		} else {
 			fmt.Printf("\n\n*********************************\n")
@@ -1336,7 +1336,7 @@ func (ts *Tester) down() (err error) {
 	// e.g. cluster must be deleted before VPC delete
 	if ts.cfg.IsEnabledAddOnManagedNodeGroups() && ts.mngTester != nil {
 		if ts.color {
-			colorstring.Printf("\n\n[light_gray]*********************************\n")
+			colorstring.Printf("\n\n[yellow]*********************************\n")
 			colorstring.Printf("[light_blue]mngTester.Delete [default](%q)\n", ts.cfg.ConfigPath)
 		} else {
 			fmt.Printf("\n\n*********************************\n")
@@ -1354,7 +1354,7 @@ func (ts *Tester) down() (err error) {
 
 	if ts.cfg.IsEnabledAddOnNodeGroups() && ts.ngTester != nil {
 		if ts.color {
-			colorstring.Printf("\n\n[light_gray]*********************************\n")
+			colorstring.Printf("\n\n[yellow]*********************************\n")
 		} else {
 			fmt.Printf("\n\n*********************************\n")
 		}
@@ -1374,7 +1374,7 @@ func (ts *Tester) down() (err error) {
 	}
 
 	if ts.color {
-		colorstring.Printf("\n\n[light_gray]*********************************\n")
+		colorstring.Printf("\n\n[yellow]*********************************\n")
 	} else {
 		fmt.Printf("\n\n*********************************\n")
 	}
@@ -1389,7 +1389,7 @@ func (ts *Tester) down() (err error) {
 	}
 
 	if ts.color {
-		colorstring.Printf("\n\n[light_gray]*********************************\n")
+		colorstring.Printf("\n\n[yellow]*********************************\n")
 	} else {
 		fmt.Printf("\n\n*********************************\n")
 	}
@@ -1404,7 +1404,7 @@ func (ts *Tester) down() (err error) {
 	}
 
 	if ts.color {
-		colorstring.Printf("\n\n[light_gray]*********************************\n")
+		colorstring.Printf("\n\n[yellow]*********************************\n")
 	} else {
 		fmt.Printf("\n\n*********************************\n")
 	}
@@ -1425,7 +1425,7 @@ func (ts *Tester) down() (err error) {
 	}
 
 	if ts.color {
-		colorstring.Printf("\n\n[light_gray]*********************************\n")
+		colorstring.Printf("\n\n[yellow]*********************************\n")
 	} else {
 		fmt.Printf("\n\n*********************************\n")
 	}
@@ -1440,7 +1440,7 @@ func (ts *Tester) down() (err error) {
 	}
 
 	if ts.color {
-		colorstring.Printf("\n\n[light_gray]*********************************\n")
+		colorstring.Printf("\n\n[yellow]*********************************\n")
 	} else {
 		fmt.Printf("\n\n*********************************\n")
 	}

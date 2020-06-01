@@ -93,7 +93,7 @@ func New(cfg *ec2config.Config) (*Tester, error) {
 	cfg.Sync()
 
 	if isColor {
-		colorstring.Printf("\n\n[light_gray]*********************************\n")
+		colorstring.Printf("\n\n[yellow]*********************************\n")
 		fmt.Println("😎 🙏 🚶 ✔️ 👍")
 		colorstring.Printf("[light_green]New [default]%q (%q)\n", cfg.ConfigPath, version.Version())
 	} else {
@@ -153,7 +153,7 @@ func New(cfg *ec2config.Config) (*Tester, error) {
 // Up should provision a new cluster for testing
 func (ts *Tester) Up() (err error) {
 	if ts.color {
-		colorstring.Printf("\n\n[light_gray]*********************************\n")
+		colorstring.Printf("\n\n[yellow]*********************************\n")
 		colorstring.Printf("[light_green]UP START [default](%q)\n", ts.cfg.ConfigPath)
 	} else {
 		fmt.Printf("\n\n*********************************\n")
@@ -164,7 +164,7 @@ func (ts *Tester) Up() (err error) {
 
 	defer func() {
 		if ts.color {
-			colorstring.Printf("\n\n[light_gray]*********************************\n")
+			colorstring.Printf("\n\n[yellow]*********************************\n")
 			colorstring.Printf("[light_green]UP DEFER START [default](%q)\n", ts.cfg.ConfigPath)
 		} else {
 			fmt.Printf("\n\n*********************************\n")
@@ -178,7 +178,7 @@ func (ts *Tester) Up() (err error) {
 		if err == nil {
 			if ts.cfg.Up {
 				if ts.color {
-					colorstring.Printf("\n\n[light_gray]*********************************\n")
+					colorstring.Printf("\n\n[yellow]*********************************\n")
 				} else {
 					fmt.Printf("\n\n*********************************\n")
 				}
@@ -190,7 +190,7 @@ func (ts *Tester) Up() (err error) {
 				)
 
 				if ts.color {
-					colorstring.Printf("\n\n[light_gray]*********************************\n")
+					colorstring.Printf("\n\n[yellow]*********************************\n")
 					colorstring.Printf("\n\n💯 😁 👍 :) [light_green]Up success\n\n\n")
 				} else {
 					fmt.Printf("\n\n*********************************\n")
@@ -208,7 +208,7 @@ func (ts *Tester) Up() (err error) {
 		if !ts.cfg.OnFailureDelete {
 			if ts.cfg.Up {
 				if ts.color {
-					colorstring.Printf("\n\n[light_gray]*********************************\n")
+					colorstring.Printf("\n\n[yellow]*********************************\n")
 				} else {
 					fmt.Printf("\n\n*********************************\n")
 				}
@@ -222,7 +222,7 @@ func (ts *Tester) Up() (err error) {
 			)
 
 			if ts.color {
-				colorstring.Printf("\n\n[light_gray]*********************************\n")
+				colorstring.Printf("\n\n[yellow]*********************************\n")
 				colorstring.Printf("🔥 💀 👽 😱 😡 (-_-) [light_magenta]UP FAIL\n")
 			} else {
 				fmt.Printf("\n\n*********************************\n")
@@ -234,7 +234,7 @@ func (ts *Tester) Up() (err error) {
 
 		if ts.cfg.Up {
 			if ts.color {
-				colorstring.Printf("\n\n[light_gray]*********************************\n")
+				colorstring.Printf("\n\n[yellow]*********************************\n")
 			} else {
 				fmt.Printf("\n\n*********************************\n")
 			}
@@ -243,7 +243,7 @@ func (ts *Tester) Up() (err error) {
 		}
 
 		if ts.color {
-			colorstring.Printf("\n\n[light_gray]*********************************\n")
+			colorstring.Printf("\n\n[yellow]*********************************\n")
 			colorstring.Printf("🔥 💀 👽 😱 😡 (-_-) [light_magenta]UP FAIL\n")
 		} else {
 			fmt.Printf("\n\n*********************************\n")
@@ -273,7 +273,7 @@ func (ts *Tester) Up() (err error) {
 		}
 
 		if ts.color {
-			colorstring.Printf("\n\n[light_gray]*********************************\n")
+			colorstring.Printf("\n\n[yellow]*********************************\n")
 			colorstring.Printf("🔥 💀 👽 😱 😡 (-_-) [light_magenta]UP FAIL\n")
 		} else {
 			fmt.Printf("\n\n*********************************\n")
@@ -288,7 +288,7 @@ func (ts *Tester) Up() (err error) {
 	defer ts.cfg.Sync()
 
 	if ts.color {
-		colorstring.Printf("\n\n[light_gray]*********************************\n")
+		colorstring.Printf("\n\n[yellow]*********************************\n")
 		colorstring.Printf("[light_green]createS3 [default](%q)\n", ts.cfg.ConfigPath)
 	} else {
 		fmt.Printf("\n\n*********************************\n")
@@ -305,7 +305,7 @@ func (ts *Tester) Up() (err error) {
 	}
 
 	if ts.color {
-		colorstring.Printf("\n\n[light_gray]*********************************\n")
+		colorstring.Printf("\n\n[yellow]*********************************\n")
 		colorstring.Printf("[light_green]createRole [default](%q)\n", ts.cfg.ConfigPath)
 	} else {
 		fmt.Printf("\n\n*********************************\n")
@@ -322,7 +322,7 @@ func (ts *Tester) Up() (err error) {
 	}
 
 	if ts.color {
-		colorstring.Printf("\n\n[light_gray]*********************************\n")
+		colorstring.Printf("\n\n[yellow]*********************************\n")
 		colorstring.Printf("[light_green]createVPC [default](%q)\n", ts.cfg.ConfigPath)
 	} else {
 		fmt.Printf("\n\n*********************************\n")
@@ -339,7 +339,7 @@ func (ts *Tester) Up() (err error) {
 	}
 
 	if ts.color {
-		colorstring.Printf("\n\n[light_gray]*********************************\n")
+		colorstring.Printf("\n\n[yellow]*********************************\n")
 		colorstring.Printf("[light_green]createKeyPair [default](%q)\n", ts.cfg.ConfigPath)
 	} else {
 		fmt.Printf("\n\n*********************************\n")
@@ -356,7 +356,7 @@ func (ts *Tester) Up() (err error) {
 	}
 
 	if ts.color {
-		colorstring.Printf("\n\n[light_gray]*********************************\n")
+		colorstring.Printf("\n\n[yellow]*********************************\n")
 		colorstring.Printf("[light_green]createASGs [default](%q)\n", ts.cfg.ConfigPath)
 	} else {
 		fmt.Printf("\n\n*********************************\n")
@@ -373,7 +373,7 @@ func (ts *Tester) Up() (err error) {
 	}
 
 	if ts.color {
-		colorstring.Printf("\n\n[light_gray]*********************************\n")
+		colorstring.Printf("\n\n[yellow]*********************************\n")
 		colorstring.Printf("[light_green]createSSM [default](%q)\n", ts.cfg.ConfigPath)
 	} else {
 		fmt.Printf("\n\n*********************************\n")
@@ -391,7 +391,7 @@ func (ts *Tester) Up() (err error) {
 
 	if ts.cfg.ASGsFetchLogs {
 		if ts.color {
-			colorstring.Printf("\n\n[light_gray]*********************************\n")
+			colorstring.Printf("\n\n[yellow]*********************************\n")
 			colorstring.Printf("[light_green]FetchLogs [default](%q)\n", ts.cfg.ConfigPath)
 		} else {
 			fmt.Printf("\n\n*********************************\n")
@@ -424,7 +424,7 @@ func (ts *Tester) Down() error {
 
 func (ts *Tester) down() (err error) {
 	if ts.color {
-		colorstring.Printf("\n\n[light_gray]*********************************\n")
+		colorstring.Printf("\n\n[yellow]*********************************\n")
 		colorstring.Printf("[light_blue]DOWN START [default](%q)\n", ts.cfg.ConfigPath)
 	} else {
 		fmt.Printf("\n\n*********************************\n")
@@ -443,7 +443,7 @@ func (ts *Tester) down() (err error) {
 		ts.cfg.Sync()
 		if err == nil {
 			if ts.color {
-				colorstring.Printf("\n\n[light_gray]*********************************\n")
+				colorstring.Printf("\n\n[yellow]*********************************\n")
 				colorstring.Printf("[light_blue]DOWN DEFER START [default](%q)\n", ts.cfg.ConfigPath)
 				colorstring.Printf("\n\n💯 😁 👍 :)  [light_blue]DOWN SUCCESS\n\n\n")
 			} else {
@@ -459,7 +459,7 @@ func (ts *Tester) down() (err error) {
 		} else {
 
 			if ts.color {
-				colorstring.Printf("\n\n[light_gray]*********************************\n")
+				colorstring.Printf("\n\n[yellow]*********************************\n")
 				colorstring.Printf("[light_blue]DOWN DEFER START [default](%q)\n", ts.cfg.ConfigPath)
 				colorstring.Printf("🔥 💀 👽 😱 😡 (-_-) [light_magenta]DOWN FAIL\n")
 			} else {
@@ -478,7 +478,7 @@ func (ts *Tester) down() (err error) {
 	var errs []string
 
 	if ts.color {
-		colorstring.Printf("\n\n[light_gray]*********************************\n")
+		colorstring.Printf("\n\n[yellow]*********************************\n")
 		colorstring.Printf("[light_blue]deleteSSM [default](%q)\n", ts.cfg.ConfigPath)
 	} else {
 		fmt.Printf("\n\n*********************************\n")
@@ -490,7 +490,7 @@ func (ts *Tester) down() (err error) {
 	}
 
 	if ts.color {
-		colorstring.Printf("\n\n[light_gray]*********************************\n")
+		colorstring.Printf("\n\n[yellow]*********************************\n")
 		colorstring.Printf("[light_blue]deleteASGs [default](%q)\n", ts.cfg.ConfigPath)
 	} else {
 		fmt.Printf("\n\n*********************************\n")
@@ -502,7 +502,7 @@ func (ts *Tester) down() (err error) {
 	}
 
 	if ts.color {
-		colorstring.Printf("\n\n[light_gray]*********************************\n")
+		colorstring.Printf("\n\n[yellow]*********************************\n")
 		colorstring.Printf("[light_blue]deleteKeyPair [default](%q)\n", ts.cfg.ConfigPath)
 	} else {
 		fmt.Printf("\n\n*********************************\n")
@@ -514,7 +514,7 @@ func (ts *Tester) down() (err error) {
 	}
 
 	if ts.color {
-		colorstring.Printf("\n\n[light_gray]*********************************\n")
+		colorstring.Printf("\n\n[yellow]*********************************\n")
 		colorstring.Printf("[light_blue]deleteRole [default](%q)\n", ts.cfg.ConfigPath)
 	} else {
 		fmt.Printf("\n\n*********************************\n")
@@ -532,7 +532,7 @@ func (ts *Tester) down() (err error) {
 	}
 
 	if ts.color {
-		colorstring.Printf("\n\n[light_gray]*********************************\n")
+		colorstring.Printf("\n\n[yellow]*********************************\n")
 		colorstring.Printf("[light_blue]deleteVPC [default](%q)\n", ts.cfg.ConfigPath)
 	} else {
 		fmt.Printf("\n\n*********************************\n")
@@ -544,7 +544,7 @@ func (ts *Tester) down() (err error) {
 	}
 
 	if ts.color {
-		colorstring.Printf("\n\n[light_gray]*********************************\n")
+		colorstring.Printf("\n\n[yellow]*********************************\n")
 		colorstring.Printf("[light_blue]deleteS3 [default](%q)\n", ts.cfg.ConfigPath)
 	} else {
 		fmt.Printf("\n\n*********************************\n")
