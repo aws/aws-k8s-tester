@@ -197,6 +197,7 @@ func (ts *Tester) Up() (err error) {
 			} else {
 				fmt.Printf("\n\n😲 😲 aborted Up ???\n\n\n")
 			}
+			fmt.Printf("\n\n# to delete instances\nec2-utils delete instances --path %s\n\n", ts.cfg.ConfigPath)
 			return
 		}
 
@@ -223,6 +224,7 @@ func (ts *Tester) Up() (err error) {
 				fmt.Printf("\n\n*********************************\n")
 				fmt.Printf("🔥 💀 👽 😱 😡 (-_-) UP FAIL\n")
 			}
+			fmt.Printf("\n\n# to delete instances\nec2-utils delete instances --path %s\n\n", ts.cfg.ConfigPath)
 			return
 		}
 
