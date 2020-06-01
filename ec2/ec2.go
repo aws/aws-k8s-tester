@@ -424,10 +424,10 @@ func (ts *Tester) Down() error {
 func (ts *Tester) down() (err error) {
 	if ts.color {
 		colorstring.Printf("\n\n[light_gray]*********************************\n")
-		colorstring.Printf("[light_blue]DOWN START [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		colorstring.Printf("[light_blue]DOWN START [default](%q)\n", ts.cfg.ConfigPath)
 	} else {
 		fmt.Printf("\n\n*********************************\n")
-		fmt.Printf("DOWN START (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		fmt.Printf("DOWN START (%q)\n", ts.cfg.ConfigPath)
 	}
 
 	now := time.Now()
