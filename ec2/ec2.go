@@ -84,7 +84,7 @@ func New(cfg *ec2config.Config) (*Tester, error) {
 	co, cerr := terminal.IsColor()
 	if isColor {
 		lg.Info("output in color", zap.String("output", co), zap.Error(cerr))
-		colorstring.Printf("[light_green]HELLO COLOR\n")
+		colorstring.Printf("\n\n[light_green]HELLO COLOR\n\n")
 	} else {
 		lg.Warn("output in no color", zap.String("output", co), zap.Error(cerr))
 		isColor = false
