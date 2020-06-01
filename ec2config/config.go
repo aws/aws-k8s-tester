@@ -484,6 +484,8 @@ scp -i %s LOCAL_FILE_PATH %s@%s:REMOTE_FILE_PATH
 scp -i %s -r LOCAL_DIRECTORY_PATH %s@%s:REMOTE_DIRECTORY_PATH
 # SSM session (requires SSM agent)
 aws ssm --region %s start-session --target %s
+
+
 `,
 			v.InstanceID, v.PublicIP, v.PrivateIP, v.PublicDNSName,
 			keyPath, userName, v.PublicDNSName,
@@ -495,7 +497,7 @@ aws ssm --region %s start-session --target %s
 		)
 	}
 
-	return s + "\n"
+	return s
 }
 
 // ConvertInstance converts "aws ec2 describe-instances" to "config.Instance".
