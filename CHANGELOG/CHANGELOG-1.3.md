@@ -11,6 +11,7 @@ TODO
 
 ### Dependency
 
+- Upgrade [`e2e/tester/pkg` `kops` dependency to `1.17.6`](https://github.com/aws/aws-k8s-tester/pull/88).
 - Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.31.7`](https://github.com/aws/aws-sdk-go/releases/tag/v1.31.7) to [`v1.31.8`](https://github.com/aws/aws-sdk-go/releases/tag/v1.31.8).
 
 ### Go
