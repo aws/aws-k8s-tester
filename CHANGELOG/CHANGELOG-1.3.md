@@ -15,7 +15,7 @@ TODO
 
 ### Go
 
-- Compile with [*Go 1.14.3*](https://golang.org/doc/devel/release.html#go1.14).
+- Compile with [*Go 1.14.4*](https://golang.org/doc/devel/release.html#go1.14).
 
 
 <hr>
