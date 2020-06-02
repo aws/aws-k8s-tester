@@ -104,7 +104,7 @@ func (c *KopsClusterCreator) clusterName() string {
 
 func (c *KopsClusterCreator) downloadKops() error {
 	osArch := fmt.Sprintf("%s-amd64", runtime.GOOS)
-	url := fmt.Sprintf("https://github.com/kubernetes/kops/releases/download/1.14.0-alpha.1/kops-%s", osArch)
+	url := fmt.Sprintf("https://github.com/kubernetes/kops/releases/download/v1.17.0/kops-%s", osArch)
 	log.Printf("Downloading KOPS from %s to %s", url, c.KopsBinaryPath)
 	resp, err := http.Get(url)
 	if err != nil {
