@@ -3,7 +3,7 @@
 <hr>
 
 
-## [v1.3.0](https://github.com/aws/aws-k8s-tester/releases/tag/v1.3.0) (2020-06)
+## [v1.3.0](https://github.com/aws/aws-k8s-tester/releases/tag/v1.3.0) (2020-06-02)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.9...v1.3.0).
 
@@ -19,7 +19,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.9...v1.3.0
 ### Dependency
 
 - Upgrade [`e2e/tester/pkg` `kops` dependency to `1.17.6`](https://github.com/aws/aws-k8s-tester/pull/88).
-- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.31.7`](https://github.com/aws/aws-sdk-go/releases/tag/v1.31.7) to [`v1.31.8`](https://github.com/aws/aws-sdk-go/releases/tag/v1.31.8).
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.31.7`](https://github.com/aws/aws-sdk-go/releases/tag/v1.31.7) to [`v1.31.9`](https://github.com/aws/aws-sdk-go/releases/tag/v1.31.9).
 
 ### Go
 
