@@ -7,7 +7,9 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.0...v1.3.1).
 
-TODO
+### `eks`
+
+- Improve [`eks/cuda-vector-add` output checks](https://github.com/aws/aws-k8s-tester/commit/75ca40a81845eba3a3b2246fb7a67f0dcc82bf8b).
 
 ### Dependency
 
