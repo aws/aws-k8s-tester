@@ -8,7 +8,9 @@ import (
 	"github.com/aws/aws-sdk-go/service/eks"
 )
 
-type AddOnCudaVectorAdd struct {
+// AddOnCUDAVectorAdd defines parameters for EKS cluster
+// add-on cuda-vector-add.
+type AddOnCUDAVectorAdd struct {
 	// Enable is 'true' to create this add-on.
 	Enable bool `json:"enable"`
 	// Created is true when the resource has been created.
@@ -21,35 +23,35 @@ type AddOnCudaVectorAdd struct {
 	Namespace string `json:"namespace"`
 }
 
-// EnvironmentVariablePrefixAddOnCudaVectorAdd is the environment variable prefix used for "eksconfig".
-const EnvironmentVariablePrefixAddOnCudaVectorAdd = AWS_K8S_TESTER_EKS_PREFIX + "ADD_ON_CUDA_VECTOR_ADD_"
+// EnvironmentVariablePrefixAddOnCUDAVectorAdd is the environment variable prefix used for "eksconfig".
+const EnvironmentVariablePrefixAddOnCUDAVectorAdd = AWS_K8S_TESTER_EKS_PREFIX + "ADD_ON_CUDA_VECTOR_ADD_"
 
-// IsEnabledAddOnCudaVectorAdd returns true if "AddOnCudaVectorAdd" is enabled.
+// IsEnabledAddOnCUDAVectorAdd returns true if "AddOnCUDAVectorAdd" is enabled.
 // Otherwise, nil the field for "omitempty".
-func (cfg *Config) IsEnabledAddOnCudaVectorAdd() bool {
-	if cfg.AddOnCudaVectorAdd == nil {
+func (cfg *Config) IsEnabledAddOnCUDAVectorAdd() bool {
+	if cfg.AddOnCUDAVectorAdd == nil {
 		return false
 	}
-	if cfg.AddOnCudaVectorAdd.Enable {
+	if cfg.AddOnCUDAVectorAdd.Enable {
 		return true
 	}
-	cfg.AddOnCudaVectorAdd = nil
+	cfg.AddOnCUDAVectorAdd = nil
 	return false
 }
 
 // TBD !!!!!!!!!!!
-func getDefaultAddOnCudaVectorAdd() *AddOnCudaVectorAdd {
-	return &AddOnCudaVectorAdd{
+func getDefaultAddOnCUDAVectorAdd() *AddOnCUDAVectorAdd {
+	return &AddOnCUDAVectorAdd{
 		Enable: false,
 	}
 }
 
-func (cfg *Config) validateAddOnCudaVectorAdd() error {
-	if !cfg.IsEnabledAddOnCudaVectorAdd() {
+func (cfg *Config) validateAddOnCUDAVectorAdd() error {
+	if !cfg.IsEnabledAddOnCUDAVectorAdd() {
 		return nil
 	}
 	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
-		return errors.New("AddOnCudaVectorAdd.Enable true but no node group is enabled")
+		return errors.New("AddOnCUDAVectorAdd.Enable true but no node group is enabled")
 	}
 
 	gpuFound := false
@@ -70,11 +72,11 @@ func (cfg *Config) validateAddOnCudaVectorAdd() error {
 		}
 	}
 	if !gpuFound {
-		return errors.New("AddOnCudaVectorAdd requires GPU AMI")
+		return errors.New("AddOnCUDAVectorAdd requires GPU AMI")
 	}
 
-	if cfg.AddOnCudaVectorAdd.Namespace == "" {
-		cfg.AddOnCudaVectorAdd.Namespace = cfg.Name + "-cuda-vector-add"
+	if cfg.AddOnCUDAVectorAdd.Namespace == "" {
+		cfg.AddOnCUDAVectorAdd.Namespace = cfg.Name + "-cuda-vector-add"
 	}
 
 	return nil

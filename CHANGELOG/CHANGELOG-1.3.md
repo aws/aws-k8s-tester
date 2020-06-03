@@ -7,7 +7,14 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.9...v1.3.0).
 
-TODO
+### `eksconfig`
+
+- Add [`AddOnCUDAVectorAdd`](https://github.com/aws/aws-k8s-tester/pull/89).
+  - Can be enabled via `AWS_K8S_TESTER_EKS_ADD_ON_CUDA_VECTOR_ADD_ENABLE`.
+
+### `eks`
+
+- Add [`eks/cuda-vector-add`](https://github.com/aws/aws-k8s-tester/pull/89).
 
 ### Dependency
 

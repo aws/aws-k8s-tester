@@ -1100,8 +1100,8 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("unexpected cfg.AddOnJupyterHub.ProxySecretToken %q", cfg.AddOnJupyterHub.ProxySecretToken)
 	}
 
-	if !cfg.AddOnCudaVectorAdd.Enable {
-		t.Fatalf("Unexpected cfg.AddOnCudaVectorAdd.Enable #{cfg.AddOnCudaVectorAdd.Enable}")
+	if !cfg.AddOnCUDAVectorAdd.Enable {
+		t.Fatalf("Unexpected cfg.AddOnCUDAVectorAdd.Enable #{cfg.AddOnCUDAVectorAdd.Enable}")
 	}
 
 	if !cfg.AddOnClusterLoaderLocal.Enable {

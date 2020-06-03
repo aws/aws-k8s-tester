@@ -25,6 +25,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_WORDPRESS_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_ENABLE=true \
+AWS_K8S_TESTER_EKS_ADD_ON_CUDA_VECTOR_ADD_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_ENABLE=true \
@@ -552,6 +553,17 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_KF_DIR             | read-only "true"  | *eksconfig.AddOnKubeflow.KfDir            | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_KUBEFLOW_KFCTL_CONFIG_PATH  | read-only "true"  | *eksconfig.AddOnKubeflow.KfctlConfigPath  | string             |
 *-------------------------------------------------------*-------------------*-------------------------------------------*--------------------*
+
+
+*-------------------------------------------------------------*-------------------*-----------------------------------------------*--------------------*
+|                   ENVIRONMENTAL VARIABLE                    |     READ ONLY     |                     TYPE                      |      GO TYPE       |
+*-------------------------------------------------------------*-------------------*-----------------------------------------------*--------------------*
+| AWS_K8S_TESTER_EKS_ADD_ON_CUDA_VECTOR_ADD_ENABLE            | read-only "false" | *eksconfig.AddOnCUDAVectorAdd.Enable          | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_CUDA_VECTOR_ADD_CREATED           | read-only "true"  | *eksconfig.AddOnCUDAVectorAdd.Created         | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_CUDA_VECTOR_ADD_TIME_FRAME_CREATE | read-only "true"  | *eksconfig.AddOnCUDAVectorAdd.TimeFrameCreate | timeutil.TimeFrame |
+| AWS_K8S_TESTER_EKS_ADD_ON_CUDA_VECTOR_ADD_TIME_FRAME_DELETE | read-only "true"  | *eksconfig.AddOnCUDAVectorAdd.TimeFrameDelete | timeutil.TimeFrame |
+| AWS_K8S_TESTER_EKS_ADD_ON_CUDA_VECTOR_ADD_NAMESPACE         | read-only "false" | *eksconfig.AddOnCUDAVectorAdd.Namespace       | string             |
+*-------------------------------------------------------------*-------------------*-----------------------------------------------*--------------------*
 
 
 *-----------------------------------------------------------------*-------------------*---------------------------------------------------*--------------------*

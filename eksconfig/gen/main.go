@@ -132,6 +132,10 @@ func createDoc() string {
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnCUDAVectorAdd, &eksconfig.AddOnCUDAVectorAdd{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnHollowNodesLocal, &eksconfig.AddOnHollowNodesLocal{}))
 
 	b.WriteByte('\n')

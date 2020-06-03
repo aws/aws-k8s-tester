@@ -31,7 +31,7 @@ import (
 	csi_ebs "github.com/aws/aws-k8s-tester/eks/csi-ebs"
 	csrs_local "github.com/aws/aws-k8s-tester/eks/csrs/local"
 	csrs_remote "github.com/aws/aws-k8s-tester/eks/csrs/remote"
-	cuda_vector "github.com/aws/aws-k8s-tester/eks/cuda-vector"
+	cuda_vector_add "github.com/aws/aws-k8s-tester/eks/cuda-vector-add"
 	"github.com/aws/aws-k8s-tester/eks/fargate"
 	"github.com/aws/aws-k8s-tester/eks/gpu"
 	hollow_nodes_local "github.com/aws/aws-k8s-tester/eks/hollow-nodes/local"
@@ -577,7 +577,7 @@ func (ts *Tester) createTesters() (err error) {
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 		}),
-		cuda_vector.New(cuda_vector.Config{
+		cuda_vector_add.New(cuda_vector_add.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
