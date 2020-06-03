@@ -299,6 +299,41 @@ chmod +x /tmp/eks-utils
 /tmp/eks-utils version
 ```
 
+`kube-apiserver-audit` logs will show:
+
+```json
+{
+    "kind": "Event",
+    "apiVersion": "audit.k8s.io/v1",
+    "level": "Request",
+    "auditID": "b7ff399c-2d27-4f47-98b4-0b87c0ceb436",
+    "stage": "ResponseComplete",
+    "requestURI": "/api/v1/nodes?limit=30",
+    "verb": "list",
+    "user": {
+        "username": "system:unsecured",
+        "groups": [
+            "system:masters",
+            "system:authenticated"
+        ]
+    },
+    "sourceIPs": [
+        "127.0.0.1"
+    ],
+    "userAgent": "eks-utils/v0.0.0 (linux/amd64) kubernetes/$Format",
+    "objectRef": {
+        "resource": "nodes",
+        "apiVersion": "v1"
+    },
+    "responseStatus": {
+        "metadata": {},
+        "code": 200
+    },
+    "requestReceivedTimestamp": "2020-06-03T17:45:21.368826Z",
+    "stageTimestamp": "2020-06-03T17:45:21.372015Z"
+}
+```
+
 `eks-utils apis` helps with API deprecation (e.g. https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG/CHANGELOG-1.16.md#deprecations-and-removals).
 
 **WARNING**: `kubectl` internally converts API versions in the response (see [`kubernetes/issues#58131`](https://github.com/kubernetes/kubernetes/issues/58131#issuecomment-403829566)). Which means `kubectl get` output may have different API versions than the one persisted in `etcd` . Upstream Kubernetes recommends upgrading deprecated API with *get and put*:
