@@ -642,7 +642,7 @@ func (ts *tester) getPods(ns string) (*v1.PodList, error) {
 }
 
 func (ts *tester) checkPod() error {
-	args := []string{
+	execArgs := []string{
 		ts.cfg.EKSConfig.KubectlPath,
 		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
 		"--namespace=" + ts.cfg.EKSConfig.AddOnFargate.Namespace,
@@ -653,12 +653,14 @@ func (ts *tester) checkPod() error {
 		"cat",
 		fmt.Sprintf("/tmp/%s", ts.cfg.EKSConfig.AddOnFargate.SecretName),
 	}
-	cmdTxt := strings.Join(args, " ")
+	execCmd := strings.Join(execArgs, " ")
+
 	ts.cfg.Logger.Info("checking Pod exec",
 		zap.String("container-name", fargateContainerName),
-		zap.String("command", cmdTxt),
+		zap.String("command", execCmd),
 	)
-	found := false
+
+	succeeded := false
 	retryStart, waitDur := time.Now(), 3*time.Minute
 	for time.Now().Sub(retryStart) < waitDur {
 		select {
@@ -669,53 +671,60 @@ func (ts *tester) checkPod() error {
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-		output, err := exec.New().CommandContext(ctx, args[0], args[1:]...).CombinedOutput()
+		output, err := exec.New().CommandContext(ctx, execArgs[0], execArgs[1:]...).CombinedOutput()
 		cancel()
 		out := string(output)
 		if err != nil {
 			ts.cfg.Logger.Warn("'kubectl exec' failed", zap.Error(err))
 		}
-		fmt.Printf("\n'%s' output:\n\n%s\n\n", cmdTxt, out)
+		fmt.Printf("\n'%s' output:\n\n%s\n\n", execCmd, out)
 
 		if !strings.Contains(out, secretReadTxt) {
 			ts.cfg.Logger.Warn("unexpected exec output", zap.String("output", out))
 			time.Sleep(5 * time.Second)
 			continue
 		}
-		found = true
-		ts.cfg.Logger.Info("successfully checked Pod exec", zap.String("container-name", fargateContainerName))
+
+		succeeded = true
+		ts.cfg.Logger.Info("successfully checked Pod exec",
+			zap.String("pod-name", fargatePodName),
+			zap.String("container-name", fargateContainerName),
+		)
 		break
 	}
-	if !found {
+	if !succeeded {
 		ts.cfg.EKSConfig.Sync()
 		return errors.New("failed to find expected output from kubectl exec")
 	}
 
-	argsDesc := []string{
+	descArgsPods := []string{
 		ts.cfg.EKSConfig.KubectlPath,
 		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
 		"--namespace=" + ts.cfg.EKSConfig.AddOnFargate.Namespace,
 		"describe",
 		"pods/" + fargatePodName,
 	}
-	cmdTxtDesc := strings.Join(argsDesc, " ")
-	argsLogs := []string{
+	descCmdPods := strings.Join(descArgsPods, " ")
+
+	logArgs := []string{
 		ts.cfg.EKSConfig.KubectlPath,
 		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
 		"--namespace=" + ts.cfg.EKSConfig.AddOnFargate.Namespace,
 		"logs",
 		"pods/" + fargatePodName,
 		"--timestamps",
+		"--all-containers=true",
 	}
-	cmdTxtLogs := strings.Join(argsLogs, " ")
-	ts.cfg.Logger.Info("checking Pod logs",
+	logsCmd := strings.Join(logArgs, " ")
+
+	ts.cfg.Logger.Info("checking Pod",
 		zap.String("pod-name", fargatePodName),
 		zap.String("container-name", fargateContainerName),
-		zap.String("command-describe", cmdTxtDesc),
-		zap.String("command-logs", cmdTxtLogs),
+		zap.String("command-describe", descCmdPods),
+		zap.String("command-logs", logsCmd),
 	)
 
-	found = false
+	succeeded = false
 	retryStart, waitDur = time.Now(), 2*time.Minute
 	for time.Now().Sub(retryStart) < waitDur {
 		select {
@@ -726,38 +735,37 @@ func (ts *tester) checkPod() error {
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-		output, err := exec.New().CommandContext(ctx, argsDesc[0], argsDesc[1:]...).CombinedOutput()
+		output, err := exec.New().CommandContext(ctx, descArgsPods[0], descArgsPods[1:]...).CombinedOutput()
 		cancel()
 		out := string(output)
 		if err != nil {
 			ts.cfg.Logger.Warn("'kubectl describe' failed", zap.Error(err))
 		}
-		fmt.Printf("\n'%s' output:\n\n%s\n\n", cmdTxtDesc, out)
+		fmt.Printf("\n'%s' output:\n\n%s\n\n", descCmdPods, out)
 
 		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
-		output, err = exec.New().CommandContext(ctx, argsLogs[0], argsLogs[1:]...).CombinedOutput()
+		output, err = exec.New().CommandContext(ctx, logArgs[0], logArgs[1:]...).CombinedOutput()
 		cancel()
 		out = string(output)
 		if err != nil {
 			ts.cfg.Logger.Warn("'kubectl logs' failed", zap.Error(err))
 		}
-		fmt.Printf("\n'%s' output:\n\n%s\n\n", cmdTxtLogs, out)
-
-		ts.cfg.Logger.Info("checked Pod logs",
-			zap.String("pod-name", fargatePodName),
-			zap.String("container-name", fargateContainerName),
-		)
+		fmt.Printf("\n'%s' output:\n\n%s\n\n", logsCmd, out)
 
 		if !strings.Contains(out, secretReadTxt) {
 			ts.cfg.Logger.Warn("unexpected logs output", zap.String("output", out))
 			time.Sleep(5 * time.Second)
 			continue
 		}
-		found = true
-		ts.cfg.Logger.Info("found expected output from kubectl logs; success!")
+
+		succeeded = true
+		ts.cfg.Logger.Info("successfully checked Pod logs",
+			zap.String("pod-name", fargatePodName),
+			zap.String("container-name", fargateContainerName),
+		)
 		break
 	}
-	if !found {
+	if !succeeded {
 		// TODO: expected output not found, fail the whole tester
 		ts.cfg.Logger.Warn("failed to find expected output from kubectl logs; fail!", zap.String("expected", secretReadTxt))
 	}
