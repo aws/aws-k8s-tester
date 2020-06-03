@@ -795,7 +795,7 @@ func (ts *Tester) createVPC() error {
 		ts.cfnAPI,
 		ts.cfg.VPCCFNStackID,
 		cloudformation.ResourceStatusCreateComplete,
-		time.Minute+30*time.Second,
+		2*time.Minute,
 		20*time.Second,
 	)
 	var st cfn.StackStatus
@@ -876,7 +876,7 @@ func (ts *Tester) deleteVPC() error {
 		ts.cfnAPI,
 		ts.cfg.VPCCFNStackID,
 		cloudformation.ResourceStatusDeleteComplete,
-		time.Minute+30*time.Second,
+		2*time.Minute,
 		20*time.Second,
 	)
 
