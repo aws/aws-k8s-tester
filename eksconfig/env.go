@@ -365,6 +365,16 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *AddOnKubeflow, got %T", vv)
 	}
 
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnCudaVectorAdd, cfg.AddOnCudaVectorAdd)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*AddOnCudaVectorAdd); ok {
+		cfg.AddOnCudaVectorAdd = av
+	} else {
+		return fmt.Errorf("expected *AddOnCudaVectorAdd, got %T", vv)
+	}
+
 	if cfg.AddOnHollowNodesLocal == nil {
 		cfg.AddOnHollowNodesLocal = &AddOnHollowNodesLocal{}
 	}

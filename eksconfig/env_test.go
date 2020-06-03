@@ -362,6 +362,9 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_PROXY_SECRET_TOKEN", proxySecretToken)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JUPYTER_HUB_PROXY_SECRET_TOKEN")
 
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CUDA_VECTOR_ADD_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CUDA_VECTOR_ADD_ENABLE")
+
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_ENABLE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_NODE_LABEL_PREFIX", "hollow-prefix")
@@ -1095,6 +1098,10 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.AddOnJupyterHub.ProxySecretToken != proxySecretToken {
 		t.Fatalf("unexpected cfg.AddOnJupyterHub.ProxySecretToken %q", cfg.AddOnJupyterHub.ProxySecretToken)
+	}
+
+	if !cfg.AddOnCudaVectorAdd.Enable {
+		t.Fatalf("Unexpected cfg.AddOnCudaVectorAdd.Enable #{cfg.AddOnCudaVectorAdd.Enable}")
 	}
 
 	if !cfg.AddOnClusterLoaderLocal.Enable {

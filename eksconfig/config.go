@@ -259,6 +259,9 @@ type Config struct {
 	// AddOnKubeflow defines parameters for EKS cluster
 	// add-on Kubeflow.
 	AddOnKubeflow *AddOnKubeflow `json:"add-on-kubeflow,omitempty"`
+	// AddOnCudaVectorAdd defines parameters for EKS cluster
+	// add-on cuda-vector-add
+	AddOnCudaVectorAdd *AddOnCudaVectorAdd `json:"add-on-cuda-vector-add,omitempty"`
 
 	// AddOnHollowNodesLocal defines parameters for EKS cluster
 	// add-on hollow nodes local.
@@ -662,6 +665,7 @@ func NewDefault() *Config {
 		AddOnWordpress:           getDefaultAddOnWordpress(),
 		AddOnJupyterHub:          getDefaultAddOnJupyterHub(),
 		AddOnKubeflow:            getDefaultAddOnKubeflow(),
+		AddOnCudaVectorAdd:       getDefaultAddOnCudaVectorAdd(),
 		AddOnHollowNodesLocal:    getDefaultAddOnHollowNodesLocal(),
 		AddOnHollowNodesRemote:   getDefaultAddOnHollowNodesRemote(),
 		AddOnStresserLocal:       getDefaultAddOnStresserLocal(),
@@ -801,6 +805,9 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 	if err := cfg.validateAddOnKubeflow(); err != nil {
 		return fmt.Errorf("validateAddOnKubeflow failed [%v]", err)
+	}
+	if err := cfg.validateAddOnCudaVectorAdd(); err != nil {
+		return fmt.Errorf("validateAddOnCudaVectorAdd failed [%v]", err)
 	}
 
 	if err := cfg.validateAddOnClusterLoaderLocal(); err != nil {
