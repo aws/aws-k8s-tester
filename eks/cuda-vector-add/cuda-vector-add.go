@@ -29,7 +29,10 @@ type Config struct {
 	K8SClient k8s_client.EKS
 }
 
-const podName = "vector-add"
+const (
+	podName = "cuda-vector-add"
+	appName = "cuda-vector-add"
+)
 
 func New(cfg Config) eks_tester.Tester {
 	cfg.Logger.Info("creating tester", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
@@ -87,7 +90,7 @@ func (ts *tester) Create() error {
 					RestartPolicy: v1.RestartPolicyOnFailure,
 					Containers: []v1.Container{
 						{
-							Name: "cuda-vector-add",
+							Name: appName,
 							// https://github.com/kubernetes/kubernetes/blob/v1.7.11/test/images/nvidia-cuda/Dockerfile
 							Image: "k8s.gcr.io/cuda-vector-add:v0.1",
 							Resources: v1.ResourceRequirements{
@@ -157,8 +160,7 @@ func (ts *tester) Create() error {
 		break
 	}
 
-	ts.cfg.Logger.Info("created Cuda Vector Add Pod")
-
+	ts.cfg.Logger.Info("created pod", zap.String("pod-name", podName))
 	return ts.cfg.EKSConfig.Sync()
 }
 
@@ -208,8 +210,7 @@ func (ts *tester) Delete() error {
 	if err != nil {
 		return fmt.Errorf("failed to delete Pod (%v)", err)
 	}
-
-	ts.cfg.Logger.Info("deleted Cuda Vector Add Pod")
+	ts.cfg.Logger.Info("deleted pod", zap.String("pod-name", podName))
 
 	if err := k8s_client.DeleteNamespaceAndWait(
 		ts.cfg.Logger,
@@ -226,7 +227,6 @@ func (ts *tester) Delete() error {
 	}
 
 	ts.cfg.EKSConfig.AddOnCUDAVectorAdd.Created = false
-
 	return ts.cfg.EKSConfig.Sync()
 }
 
