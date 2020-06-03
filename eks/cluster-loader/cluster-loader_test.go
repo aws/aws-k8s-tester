@@ -19,14 +19,15 @@ func TestExec(t *testing.T) {
 		t.Skip(err)
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	output, err := exec.New().CommandContext(
+	var output []byte
+	output, err = exec.New().CommandContext(
 		ctx,
 		kubectlPath,
 		"--help",
 	).CombinedOutput()
 	cancel()
 	out := strings.TrimSpace(string(output))
-	fmt.Println(out)
+	fmt.Println(out, err)
 
 	loaderPath := "/tmp/clusterloader-test"
 	defer os.RemoveAll(loaderPath)
