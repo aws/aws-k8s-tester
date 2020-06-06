@@ -12,6 +12,7 @@ TODO
 ### Dependency
 
 - Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.31.10`](https://github.com/aws/aws-sdk-go/releases/tag/v1.31.10) to [`v1.31.12`](https://github.com/aws/aws-sdk-go/releases/tag/v1.31.12).
+- Upgrade [`helm.sh/helm/v3`](https://github.com/helm/helm/releases) from [`v3.2.1`](https://github.com/helm/helm/releases/tag/v3.2.1) to [`v3.2.2`](https://github.com/helm/helm/releases/tag/v3.2.2).
 
 ### Go
 
