@@ -58,6 +58,7 @@ type tester struct {
 
 // https://github.com/NVIDIA/k8s-device-plugin/blob/master/nvidia-device-plugin.yml
 // https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/1.0.0-beta5/nvidia-device-plugin.yml
+// kubectl apply -f apply -f https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/1.0.0-beta5/nvidia-device-plugin.yml
 const nvidiaDriverTemplate = `
 # Copyright (c) 2019, NVIDIA CORPORATION.  All rights reserved.
 #
@@ -149,6 +150,7 @@ func (ts *tester) InstallNvidiaDriver() (err error) {
 	}
 	applyCmd := strings.Join(applyArgs, " ")
 
+	applied := false
 	retryStart, waitDur := time.Now(), 3*time.Minute
 	for time.Now().Sub(retryStart) < waitDur {
 		select {
@@ -163,14 +165,18 @@ func (ts *tester) InstallNvidiaDriver() (err error) {
 		cancel()
 		out := strings.TrimSpace(string(output))
 		if err != nil {
-			ts.cfg.Logger.Warn("failed to create nvidia GPU driver", zap.Error(err))
+			ts.cfg.Logger.Warn("failed to create nvidia GPU driver", zap.String("output", out), zap.Error(err))
 			time.Sleep(5 * time.Second)
 			continue
 		}
 
+		applied = true
 		ts.cfg.Logger.Info("created nvidia GPU driver")
 		fmt.Printf("\n\n'%s' output:\n\n%s\n\n", applyCmd, out)
 		break
+	}
+	if !applied {
+		return errors.New("failed to install nvidia GPU driver")
 	}
 
 	if ts.cfg.EKSConfig.IsEnabledAddOnNodeGroups() {
