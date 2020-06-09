@@ -39,7 +39,23 @@ func TestParseNode(t *testing.T) {
 	if !reflect.DeepEqual(np2, exp2) {
 		t.Fatalf("expected %+v, got %+v", exp2, np2)
 	}
+	np3 := ParseNodeInfo(v1.NodeSystemInfo{
+		KubeletVersion:   "v1.17.6-eks-db76ccf",
+		KubeProxyVersion: "v1.17.6-eks-db76ccf",
+	})
+	exp3 := NodeInfo{
+		NodeSystemInfo: v1.NodeSystemInfo{
+			KubeletVersion:   "v1.17.6-eks-db76ccf",
+			KubeProxyVersion: "v1.17.6-eks-db76ccf",
+		},
+		KubeletMinorVersionValue:   1.17,
+		KubeProxyMinorVersionValue: 1.17,
+	}
+	if !reflect.DeepEqual(np3, exp3) {
+		t.Fatalf("expected %+v, got %+v", exp3, np3)
+	}
 
 	fmt.Printf("%+v\n", np1)
 	fmt.Printf("%+v\n", np2)
+	fmt.Printf("%+v\n", np3)
 }
