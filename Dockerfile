@@ -29,7 +29,7 @@ RUN rm -rf /go/src/github.com/aws/aws-k8s-tester
 RUN chmod +x /aws-k8s-tester /ec2-utils /eks-utils /etcd-utils /cw-utils /clusterloader2
 WORKDIR /
 
-RUN curl -o /kubectl -LO https://storage.googleapis.com/kubernetes-release/release/v1.16.9/bin/linux/amd64/kubectl && chmod +x /kubectl && cp /kubectl /usr/local/bin/kubectl
+RUN curl -o /kubectl -LO https://storage.googleapis.com/kubernetes-release/release/v1.17.6/bin/linux/amd64/kubectl && chmod +x /kubectl && cp /kubectl /usr/local/bin/kubectl
 RUN ls /
 RUN ls /*.yaml
 RUN aws --version

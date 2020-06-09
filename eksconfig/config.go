@@ -611,8 +611,8 @@ func NewDefault() *Config {
 		// https://github.com/kubernetes/kubernetes/tags
 		// https://kubernetes.io/docs/tasks/tools/install-kubectl/
 		// https://docs.aws.amazon.com/eks/latest/userguide/install-kubectl.html
-		KubectlPath:        "/tmp/kubectl-test-v1.16.9",
-		KubectlDownloadURL: "https://storage.googleapis.com/kubernetes-release/release/v1.16.9/bin/linux/amd64/kubectl",
+		KubectlPath:        "/tmp/kubectl-test-v1.17.6",
+		KubectlDownloadURL: "https://storage.googleapis.com/kubernetes-release/release/v1.17.6/bin/linux/amd64/kubectl",
 
 		OnFailureDelete:            true,
 		OnFailureDeleteWaitSeconds: 120,
