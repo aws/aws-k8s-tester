@@ -38,13 +38,12 @@ var deprecates = map[float64]map[metav1.TypeMeta]metav1.TypeMeta{
 		metav1.TypeMeta{APIVersion: "extensions/v1beta1", Kind: "ReplicaSet"}:        metav1.TypeMeta{APIVersion: "apps/v1", Kind: "ReplicaSet"},
 		metav1.TypeMeta{APIVersion: "extensions/v1beta1", Kind: "NetworkPolicy"}:     metav1.TypeMeta{APIVersion: "networking.k8s.io/v1", Kind: "NetworkPolicy"},
 		metav1.TypeMeta{APIVersion: "extensions/v1beta1", Kind: "PodSecurityPolicy"}: metav1.TypeMeta{APIVersion: "policy/v1beta1", Kind: "PodSecurityPolicy"},
-
 	},
 	1.17: {
-		metav1.TypeMeta{APIVersion: "rbac.authorization.k8s.io/v1alpha1", Kind: "ClusterRole"}: metav1.TypeMeta{APIVersion: "rbac.authorization.k8s.io/v1", Kind: "ClusterRole"},
-		metav1.TypeMeta{APIVersion: "rbac.authorization.k8s.io/v1beta1", Kind: "ClusterRole"}: metav1.TypeMeta{APIVersion: "rbac.authorization.k8s.io/v1", Kind: "ClusterRole"},
+		metav1.TypeMeta{APIVersion: "rbac.authorization.k8s.io/v1alpha1", Kind: "ClusterRole"}:        metav1.TypeMeta{APIVersion: "rbac.authorization.k8s.io/v1", Kind: "ClusterRole"},
+		metav1.TypeMeta{APIVersion: "rbac.authorization.k8s.io/v1beta1", Kind: "ClusterRole"}:         metav1.TypeMeta{APIVersion: "rbac.authorization.k8s.io/v1", Kind: "ClusterRole"},
 		metav1.TypeMeta{APIVersion: "rbac.authorization.k8s.io/v1alpha1", Kind: "ClusterRoleBinding"}: metav1.TypeMeta{APIVersion: "rbac.authorization.k8s.io/v1", Kind: "ClusterRoleBinding"},
-		metav1.TypeMeta{APIVersion: "rbac.authorization.k8s.io/v1beta1", Kind: "ClusterRoleBinding"}: metav1.TypeMeta{APIVersion: "rbac.authorization.k8s.io/v1", Kind: "ClusterRoleBinding"},
+		metav1.TypeMeta{APIVersion: "rbac.authorization.k8s.io/v1beta1", Kind: "ClusterRoleBinding"}:  metav1.TypeMeta{APIVersion: "rbac.authorization.k8s.io/v1", Kind: "ClusterRoleBinding"},
 	},
 }
 

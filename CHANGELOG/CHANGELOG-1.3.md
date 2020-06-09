@@ -7,7 +7,11 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.1...v1.3.2).
 
-### `eks/mng`
+### `eksconfig`
+
+- Use [`kubectl` `1.17` by default](https://github.com/aws/aws-k8s-tester/pull/95).
+
+### `eks`
 
 TODO
 
