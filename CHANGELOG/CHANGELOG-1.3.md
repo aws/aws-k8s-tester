@@ -13,6 +13,7 @@ TODO
 
 ### Dependency
 
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.31.13`](https://github.com/aws/aws-sdk-go/releases/tag/v1.31.13) to [`v1.31.14`](https://github.com/aws/aws-sdk-go/releases/tag/v1.31.14).
 - Upgrade [`github.com/kubernetes-sigs/aws-alb-ingress-controller`](https://github.com/kubernetes-sigs/aws-alb-ingress-controller/releases) from [`v1.1.7`](https://github.com/kubernetes-sigs/aws-alb-ingress-controller/releases/tag/v1.1.7) to [`v1.1.8`](https://github.com/kubernetes-sigs/aws-alb-ingress-controller/releases/tag/v1.1.8).
 
 
