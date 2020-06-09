@@ -3,16 +3,18 @@
 <hr>
 
 
-## [v1.3.1](https://github.com/aws/aws-k8s-tester/releases/tag/v1.3.1) (2020-06)
+## [v1.3.1](https://github.com/aws/aws-k8s-tester/releases/tag/v1.3.1) (2020-06-08)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.0...v1.3.1).
 
-TODO
+### `eks/mng`
+
+- Fix [managed node group create/delete status polling](https://github.com/aws/aws-k8s-tester/commit/7cfe06785990e4f6ce14b89496c337f02c0a3f7a).
 
 ### Dependency
 
-- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.31.10`](https://github.com/aws/aws-sdk-go/releases/tag/v1.31.10) to [`v1.31.12`](https://github.com/aws/aws-sdk-go/releases/tag/v1.31.12).
-- Upgrade [`helm.sh/helm/v3`](https://github.com/helm/helm/releases) from [`v3.2.1`](https://github.com/helm/helm/releases/tag/v3.2.1) to [`v3.2.2`](https://github.com/helm/helm/releases/tag/v3.2.2).
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.31.10`](https://github.com/aws/aws-sdk-go/releases/tag/v1.31.10) to [`v1.31.13`](https://github.com/aws/aws-sdk-go/releases/tag/v1.31.13).
+- Upgrade [`helm.sh/helm/v3`](https://github.com/helm/helm/releases) from [`v3.2.1`](https://github.com/helm/helm/releases/tag/v3.2.1) to [`v3.2.3`](https://github.com/helm/helm/releases/tag/v3.2.3).
 
 ### Go
 
