@@ -40,7 +40,7 @@ replace (
 )
 
 require (
-	github.com/aws/aws-sdk-go v1.31.12
+	github.com/aws/aws-sdk-go v1.31.13
 	github.com/cihub/seelog v0.0.0-20170130134532-f561c5e57575
 	github.com/davecgh/go-spew v1.1.1
 	github.com/dustin/go-humanize v1.0.0
@@ -69,7 +69,7 @@ require (
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0
 	gopkg.in/ini.v1 v1.46.0 // indirect
 	gopkg.in/yaml.v2 v2.2.8
-	helm.sh/helm/v3 v3.2.2
+	helm.sh/helm/v3 v3.2.3
 	k8s.io/api v0.18.3
 	k8s.io/apimachinery v0.18.3
 	k8s.io/cli-runtime v0.18.3
