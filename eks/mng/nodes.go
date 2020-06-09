@@ -435,13 +435,13 @@ func (ts *tester) createASG() error {
 			20*time.Second,
 		)
 		for sv := range ch {
-			if serr := ts.setStatus(sv); serr != nil {
+			ss, serr := ts.setStatus(sv)
+			if serr != nil {
 				cancel()
 				return serr
 			}
-			ss := aws.StringValue(sv.NodeGroup.Status)
 			if sv.Error != nil && ss == aws_eks.NodegroupStatusCreateFailed {
-				ts.cfg.Logger.Warn("node group failed to create",
+				ts.cfg.Logger.Warn("failed to create managed node group",
 					zap.String("node-group-status", ss),
 					zap.Error(sv.Error),
 				)
@@ -596,10 +596,19 @@ func (ts *tester) deleteASG() error {
 				initialWait,
 				20*time.Second,
 			)
-			for v := range ch {
-				if serr := ts.setStatus(v); serr != nil {
+			for sv := range ch {
+				ss, serr := ts.setStatus(sv)
+				if serr != nil {
 					cancel()
 					return serr
+				}
+				if sv.Error != nil && ss == aws_eks.NodegroupStatusDeleteFailed {
+					ts.cfg.Logger.Warn("failed to delete managed node group",
+						zap.String("node-group-status", ss),
+						zap.Error(sv.Error),
+					)
+					cancel()
+					return sv.Error
 				}
 			}
 			cancel()
@@ -608,7 +617,7 @@ func (ts *tester) deleteASG() error {
 		var ok bool
 		cur, ok = ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName]
 		if !ok {
-			return fmt.Errorf("MNG name %q not found after creation", mngName)
+			return fmt.Errorf("MNG name %q not found after deletion", mngName)
 		}
 		timeEnd := time.Now()
 		cur.TimeFrameDelete = timeutil.NewTimeFrame(timeStart, timeEnd)
@@ -774,14 +783,14 @@ func Poll(
 	return ch
 }
 
-func (ts *tester) setStatus(sv ManagedNodeGroupStatus) error {
+func (ts *tester) setStatus(sv ManagedNodeGroupStatus) (status string, err error) {
 	name := sv.NodeGroupName
 	if name == "" {
-		return errors.New("EKS Managed Node Group empty name")
+		return "", errors.New("EKS Managed Node Group empty name")
 	}
 	cur, ok := ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[name]
 	if !ok {
-		return fmt.Errorf("EKS Managed Node Group %q not found", name)
+		return "", fmt.Errorf("EKS Managed Node Group %q not found", name)
 	}
 
 	if sv.NodeGroup == nil {
@@ -798,7 +807,7 @@ func (ts *tester) setStatus(sv ManagedNodeGroupStatus) error {
 	}
 
 	ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[name] = cur
-	return ts.cfg.EKSConfig.Sync()
+	return cur.Status, ts.cfg.EKSConfig.Sync()
 }
 
 func (ts *tester) waitForNodes(mngName string, retriesLeft int) error {
