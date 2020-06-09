@@ -15,8 +15,8 @@ command-after-create-cluster-timeout-string: 3m0s
 config-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.yaml
 kubeconfig-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.kubeconfig.yaml
 kubectl-commands-output-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.kubectl.sh
-kubectl-download-url: https://storage.googleapis.com/kubernetes-release/release/v1.16.9/bin/linux/amd64/kubectl
-kubectl-path: /tmp/kubectl-test-v1.16.9
+kubectl-download-url: https://storage.googleapis.com/kubernetes-release/release/v1.17.6/bin/linux/amd64/kubectl
+kubectl-path: /tmp/kubectl-test-v1.17.6
 log-color: true
 log-level: info
 log-outputs:
@@ -43,8 +43,8 @@ parameters:
   role-service-principals: null
   signing-name: eks
   tags: null
-  version: "1.16"
-  version-value: 1.16
+  version: "1.17"
+  version-value: 1.17
   vpc-cfn-stack-id: ""
   vpc-create: true
   vpc-id: ""
