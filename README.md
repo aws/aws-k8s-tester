@@ -71,14 +71,14 @@ AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_CLUSTER="aws eks describe-cluster --name
 AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_ADD_ONS="aws eks describe-cluster --name GetRef.Name" \
 AWS_K8S_TESTER_EKS_PARAMETERS_ENCRYPTION_CMK_CREATE=true \
 AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_CREATE=true \
-AWS_K8S_TESTER_EKS_PARAMETERS_VERSION=1.16 \
+AWS_K8S_TESTER_EKS_PARAMETERS_VERSION=1.17 \
 AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CREATE=true \
 AWS_K8S_TESTER_EKS_CLIENTS=5 \
 AWS_K8S_TESTER_EKS_CLIENT_QPS=30 \
 AWS_K8S_TESTER_EKS_CLIENT_BURST=20 \
 AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_CREATE=true \
-AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS='{"GetRef.Name-ng-al2-cpu":{"name":"GetRef.Name-ng-al2-cpu","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64","image-id":"","image-id-ssm-parameter":"/aws/service/eks/optimized-ami/1.16/amazon-linux-2/recommended/image_id","instance-types":["c5.xlarge"],"volume-size":40,"asg-min-size":2,"asg-max-size":2,"asg-desired-capacity":2,"kubelet-extra-args":""},"GetRef.Name-ng-al2-gpu":{"name":"GetRef.Name-ng-al2-gpu","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64_GPU","image-id":"","image-id-ssm-parameter":"/aws/service/eks/optimized-ami/1.16/amazon-linux-2-gpu/recommended/image_id","instance-types":["p3.8xlarge"],"volume-size":40,"asg-min-size":1,"asg-max-size":1,"asg-desired-capacity":1,"kubelet-extra-args":""},"GetRef.Name-ng-bottlerocket":{"name":"GetRef.Name-ng-bottlerocket","remote-access-user-name":"ec2-user","ami-type":"BOTTLEROCKET_x86_64","image-id":"","image-id-ssm-parameter":"/aws/service/bottlerocket/aws-k8s-1.15/x86_64/latest/image_id","ssm-document-cfn-stack-name":"GetRef.Name-install-bottlerocket","ssm-document-name":"GetRef.Name-InstallBottlerocket","ssm-document-create":true,"ssm-document-commands":"enable-admin-container","ssm-document-execution-timeout-seconds":3600,"instance-types":["c5.xlarge"],"volume-size":40,"asg-min-size":2,"asg-max-size":2,"asg-desired-capacity":2}}' \
+AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS='{"GetRef.Name-ng-al2-cpu":{"name":"GetRef.Name-ng-al2-cpu","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64","image-id":"","image-id-ssm-parameter":"/aws/service/eks/optimized-ami/1.17/amazon-linux-2/recommended/image_id","instance-types":["c5.xlarge"],"volume-size":40,"asg-min-size":2,"asg-max-size":2,"asg-desired-capacity":2,"kubelet-extra-args":""},"GetRef.Name-ng-al2-gpu":{"name":"GetRef.Name-ng-al2-gpu","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64_GPU","image-id":"","image-id-ssm-parameter":"/aws/service/eks/optimized-ami/1.17/amazon-linux-2-gpu/recommended/image_id","instance-types":["p3.8xlarge"],"volume-size":40,"asg-min-size":1,"asg-max-size":1,"asg-desired-capacity":1,"kubelet-extra-args":""},"GetRef.Name-ng-bottlerocket":{"name":"GetRef.Name-ng-bottlerocket","remote-access-user-name":"ec2-user","ami-type":"BOTTLEROCKET_x86_64","image-id":"","image-id-ssm-parameter":"/aws/service/bottlerocket/aws-k8s-1.15/x86_64/latest/image_id","ssm-document-cfn-stack-name":"GetRef.Name-install-bottlerocket","ssm-document-name":"GetRef.Name-InstallBottlerocket","ssm-document-create":true,"ssm-document-commands":"enable-admin-container","ssm-document-execution-timeout-seconds":3600,"instance-types":["c5.xlarge"],"volume-size":40,"asg-min-size":2,"asg-max-size":2,"asg-desired-capacity":2}}' \
 AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_CREATE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS='{"GetRef.Name-mng-al2-cpu":{"name":"GetRef.Name-mng-al2-cpu","remote-access-user-name":"ec2-user","release-version":"","ami-type":"AL2_x86_64","instance-types":["c5.xlarge"],"volume-size":40,"asg-min-size":2,"asg-max-size":2,"asg-desired-capacity":2},"GetRef.Name-mng-al2-gpu":{"name":"GetRef.Name-mng-al2-gpu","remote-access-user-name":"ec2-user","release-version":"","ami-type":"AL2_x86_64_GPU","instance-types":["p3.8xlarge"],"volume-size":40,"asg-min-size":1,"asg-max-size":1,"asg-desired-capacity":1}}' \
@@ -334,7 +334,7 @@ chmod +x /tmp/eks-utils
 }
 ```
 
-`eks-utils apis` helps with API deprecation (e.g. https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG/CHANGELOG-1.16.md#deprecations-and-removals).
+`eks-utils apis` helps with API deprecation (e.g. https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG/CHANGELOG-1.17.md#deprecations-and-removals).
 
 **WARNING**: `kubectl` internally converts API versions in the response (see [`kubernetes/issues#58131`](https://github.com/kubernetes/kubernetes/issues/58131#issuecomment-403829566)). Which means `kubectl get` output may have different API versions than the one persisted in `etcd` . Upstream Kubernetes recommends upgrading deprecated API with *get and put*:
 
@@ -375,7 +375,7 @@ find /tmp/eks-utils-resources
 
 ## `etcd-utils k8s list`
 
-`etcd-utils k8s list` helps with API deprecation (e.g. https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG/CHANGELOG-1.16.md#deprecations-and-removals).
+`etcd-utils k8s list` helps with API deprecation (e.g. https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG/CHANGELOG-1.17.md#deprecations-and-removals).
 
 **WARNING**: `kubectl` internally converts API versions in the response (see [`kubernetes/issues#58131`](https://github.com/kubernetes/kubernetes/issues/58131#issuecomment-403829566)). Which means `kubectl get` output may have different API versions than the one persisted in `etcd` . Upstream Kubernetes recommends upgrading deprecated API with *get and put*:
 

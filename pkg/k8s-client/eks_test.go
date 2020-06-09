@@ -10,12 +10,12 @@ import (
 func TestParseVersion(t *testing.T) {
 	body := []byte(`	{
 				"major": "1",
-				"minor": "16+",
-				"gitVersion": "v1.16.8-eks-e16311",
-				"gitCommit": "e163110a04dcb2f39c3325af96d019b4925419eb",
+				"minor": "17+",
+				"gitVersion": "v1.17.6-eks-db76ccf",
+				"gitCommit": "db76ccfa14cf55a34024a0a573ed3f8631f40aad",
 				"gitTreeState": "clean",
-				"buildDate": "2020-03-27T22:37:12Z",
-				"goVersion": "go1.13.8",
+				"buildDate": "2020-05-21T23:51:40Z",
+				"goVersion": "go1.13.9",
 				"compiler": "gc",
 				"platform": "linux/amd64"
 			}`)
