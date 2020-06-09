@@ -101,7 +101,7 @@ func getDefaultAddOnNodeGroups(name string) *AddOnNodeGroups {
 					RemoteAccessUserName:               "ec2-user", // assume Amazon Linux 2
 					AMIType:                            eks.AMITypesAl2X8664,
 					ImageID:                            "",
-					ImageIDSSMParameter:                "/aws/service/eks/optimized-ami/1.17/amazon-linux-2/recommended/image_id",
+					ImageIDSSMParameter:                "/aws/service/eks/optimized-ami/1.16/amazon-linux-2/recommended/image_id",
 					InstanceTypes:                      []string{DefaultNodeInstanceTypeCPU},
 					VolumeSize:                         DefaultNodeVolumeSize,
 					ASGMinSize:                         1,

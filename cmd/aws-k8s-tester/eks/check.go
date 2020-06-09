@@ -36,7 +36,7 @@ aws-k8s-tester eks check \
 
 aws-k8s-tester eks check \
   --kubeconfig /tmp/kubeconfig.yaml \
-  --server-version 1.17 \
+  --server-version 1.16 \
   --encryption-enabled
 
 aws-k8s-tester eks check \
