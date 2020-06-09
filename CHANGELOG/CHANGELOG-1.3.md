@@ -3,6 +3,22 @@
 <hr>
 
 
+## [v1.3.2](https://github.com/aws/aws-k8s-tester/releases/tag/v1.3.2) (2020-06)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.1...v1.3.2).
+
+### `eks/mng`
+
+TODO
+
+### Dependency
+
+- Upgrade [`github.com/kubernetes-sigs/aws-alb-ingress-controller`](https://github.com/kubernetes-sigs/aws-alb-ingress-controller/releases) from [`v1.1.7`](https://github.com/kubernetes-sigs/aws-alb-ingress-controller/releases/tag/v1.1.7) to [`v1.1.8`](https://github.com/kubernetes-sigs/aws-alb-ingress-controller/releases/tag/v1.1.8).
+
+
+<hr>
+
+
 ## [v1.3.1](https://github.com/aws/aws-k8s-tester/releases/tag/v1.3.1) (2020-06-08)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.0...v1.3.1).
