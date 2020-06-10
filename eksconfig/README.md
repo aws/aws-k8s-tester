@@ -46,6 +46,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_KUBECTL_COMMANDS_OUTPUT_PATH                | read-only "false" | *eksconfig.Config.KubectlCommandsOutputPath              | string        |
 | AWS_K8S_TESTER_EKS_REMOTE_ACCESS_COMMANDS_OUTPUT_PATH          | read-only "false" | *eksconfig.Config.RemoteAccessCommandsOutputPath         | string        |
 | AWS_K8S_TESTER_EKS_LOG_COLOR                                   | read-only "false" | *eksconfig.Config.LogColor                               | bool          |
+| AWS_K8S_TESTER_EKS_LOG_COLOR_OVERRIDE                          | read-only "false" | *eksconfig.Config.LogColorOverride                       | bool          |
 | AWS_K8S_TESTER_EKS_LOG_LEVEL                                   | read-only "false" | *eksconfig.Config.LogLevel                               | string        |
 | AWS_K8S_TESTER_EKS_LOG_OUTPUTS                                 | read-only "false" | *eksconfig.Config.LogOutputs                             | []string      |
 | AWS_K8S_TESTER_EKS_AWS_CLI_PATH                                | read-only "false" | *eksconfig.Config.AWSCLIPath                             | string        |

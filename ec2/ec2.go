@@ -72,7 +72,6 @@ func New(cfg *ec2config.Config) (*Tester, error) {
 	if err := cfg.ValidateAndSetDefaults(); err != nil {
 		return nil, err
 	}
-	isColor := cfg.LogColor
 
 	lcfg := logutil.AddOutputPaths(logutil.GetDefaultZapLoggerConfig(), cfg.LogOutputs, cfg.LogOutputs)
 	lcfg.Level = zap.NewAtomicLevelAt(logutil.ConvertToZapLevel(cfg.LogLevel))
@@ -81,13 +80,17 @@ func New(cfg *ec2config.Config) (*Tester, error) {
 		return nil, err
 	}
 
+	isColor := cfg.LogColor
 	co, cerr := terminal.IsColor()
-	if isColor {
-		lg.Info("output in color", zap.String("output", co), zap.Error(cerr))
+	if cerr == nil {
+		lg.Info("requested output in color", zap.String("output", co), zap.Error(cerr))
 		colorstring.Printf("\n\n[light_green]HELLO COLOR\n\n")
-	} else {
-		lg.Warn("output in no color", zap.String("output", co), zap.Error(cerr))
+		isColor = true
+	} else if !cfg.LogColorOverride {
+		lg.Warn("requested output in color but not supported; overriding", zap.String("output", co), zap.Error(cerr))
 		isColor = false
+	} else {
+		lg.Info("requested output color", zap.Bool("is-color", isColor), zap.String("output", co), zap.Error(cerr))
 	}
 	cfg.LogColor = isColor
 	cfg.Sync()

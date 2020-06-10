@@ -1,5 +1,5 @@
 asgs:
-  ec2-2020060316-innovationj0-asg:
+  ec2-2020061011-awesomezyo34-asg:
     ami-type: AL2_x86_64
     asg-cfn-stack-id: ""
     asg-desired-capacity: 1
@@ -11,7 +11,7 @@ asgs:
     instance-types:
     - c5.xlarge
     logs: null
-    name: ec2-2020060316-innovationj0-asg
+    name: ec2-2020061011-awesomezyo34-asg
     remote-access-user-name: ec2-user
     ssm-document-cfn-stack-id: ""
     ssm-document-cfn-stack-name: ""
@@ -36,7 +36,7 @@ asgs:
       took-string: ""
     volume-size: 40
 asgs-fetch-logs: true
-asgs-logs-dir: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/ec2-2020060316-innovationj0-logs-remote
+asgs-logs-dir: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/ec2-2020061011-awesomezyo34-logs-remote
 aws-account-id: ""
 aws-credential-path: ""
 aws-iam-role-arn: ""
@@ -45,11 +45,12 @@ config-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/
 dhcp-options-domain-name: ""
 dhcp-options-domain-name-servers: null
 log-color: true
+log-color-override: false
 log-level: info
 log-outputs:
 - stderr
 - /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/default.yaml.log
-name: ec2-2020060316-innovationj0
+name: ec2-2020061011-awesomezyo34
 on-failure-delete: true
 on-failure-delete-wait-seconds: 120
 partition: aws
@@ -58,13 +59,13 @@ public-subnet-ids: null
 region: us-west-2
 remote-access-commands-output-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/default.ssh.sh
 remote-access-key-create: true
-remote-access-key-name: ec2-2020060316-innovationj0-key
-remote-access-private-key-path: /tmp/delightjvt.insecure.key
+remote-access-key-name: ec2-2020061011-awesomezyo34-key
+remote-access-private-key-path: /tmp/snowflakee.insecure.key
 role-arn: ""
 role-cfn-stack-id: ""
 role-create: true
 role-managed-policy-arns: null
-role-name: ec2-2020060316-innovationj0-role
+role-name: ec2-2020061011-awesomezyo34-role
 role-service-principals: null
 s3-bucket-create: false
 s3-bucket-create-keep: false

@@ -57,6 +57,10 @@ type Config struct {
 
 	// LogColor is true to output logs in color.
 	LogColor bool `json:"log-color"`
+	// LogColorOverride is true to use "LogColor" setting
+	// even if the current terminal does not support color outputs.
+	// Useful to output in color in HTML based log outputs (e.g. Prow).
+	LogColorOverride bool `json:"log-color-override"`
 	// LogLevel configures log level. Only supports debug, info, warn, error, panic, or fatal. Default 'info'.
 	LogLevel string `json:"log-level"`
 	// LogOutputs is a list of log outputs. Valid values are 'default', 'stderr', 'stdout', or file names.
@@ -696,8 +700,9 @@ func NewDefault() *Config {
 		KubeConfigPath:            "",
 		AWSCLIPath:                "",
 
-		LogColor: true,
-		LogLevel: logutil.DefaultLogLevel,
+		LogColor:         true,
+		LogColorOverride: false,
+		LogLevel:         logutil.DefaultLogLevel,
 		// default, stderr, stdout, or file name
 		// log file named with cluster name will be added automatically
 		LogOutputs: []string{"stderr"},
@@ -962,7 +967,7 @@ func (cfg *Config) validateConfig() error {
 	}
 
 	_, cerr := terminal.IsColor()
-	if cfg.LogColor && cerr != nil {
+	if cfg.LogColor && !cfg.LogColorOverride && cerr != nil {
 		cfg.LogColor = false
 	}
 	if len(cfg.LogOutputs) == 0 {

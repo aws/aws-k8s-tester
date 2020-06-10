@@ -25,6 +25,8 @@ func TestEnv(t *testing.T) {
 
 	os.Setenv("AWS_K8S_TESTER_EKS_LOG_COLOR", "false")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_LOG_COLOR")
+	os.Setenv("AWS_K8S_TESTER_EKS_LOG_COLOR_OVERRIDE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_LOG_COLOR_OVERRIDE")
 	os.Setenv("AWS_K8S_TESTER_EKS_KUBECTL_COMMANDS_OUTPUT_PATH", "hello-kubectl")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_KUBECTL_COMMANDS_OUTPUT_PATH")
 	os.Setenv("AWS_K8S_TESTER_EKS_REMOTE_ACCESS_COMMANDS_OUTPUT_PATH", "hello-ssh")
@@ -486,6 +488,9 @@ func TestEnv(t *testing.T) {
 
 	if cfg.LogColor {
 		t.Fatalf("unexpected LogColor %v", cfg.LogColor)
+	}
+	if !cfg.LogColorOverride {
+		t.Fatalf("unexpected LogColorOverride %v", cfg.LogColorOverride)
 	}
 	if cfg.KubectlCommandsOutputPath != "hello-kubectl" {
 		t.Fatalf("unexpected %q", cfg.KubectlCommandsOutputPath)

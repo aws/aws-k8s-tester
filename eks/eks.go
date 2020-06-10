@@ -154,13 +154,15 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 
 	isColor := cfg.LogColor
 	co, cerr := terminal.IsColor()
-	if isColor {
+	if cerr == nil {
 		lg.Info("requested output in color", zap.String("output", co), zap.Error(cerr))
 		colorstring.Printf("\n\n[light_green]HELLO COLOR\n\n")
 		isColor = true
-	} else {
-		lg.Warn("requested output in color but not supported", zap.String("output", co), zap.Error(cerr))
+	} else if !cfg.LogColorOverride {
+		lg.Warn("requested output in color but not supported; overriding", zap.String("output", co), zap.Error(cerr))
 		isColor = false
+	} else {
+		lg.Info("requested output color", zap.Bool("is-color", isColor), zap.String("output", co), zap.Error(cerr))
 	}
 	cfg.LogColor = isColor
 	cfg.Sync()

@@ -3,6 +3,22 @@
 <hr>
 
 
+## [v1.3.4](https://github.com/aws/aws-k8s-tester/releases/tag/v1.3.4) (2020-06)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.3...v1.3.4).
+
+### `ec2config`
+
+- Add [`LogColorOverride`](https://github.com/aws/aws-k8s-tester/commit/).
+
+### `eksconfig`
+
+- Add [`LogColorOverride`](https://github.com/aws/aws-k8s-tester/commit/).
+
+
+<hr>
+
+
 ## [v1.3.3](https://github.com/aws/aws-k8s-tester/releases/tag/v1.3.3) (2020-06-10)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.2...v1.3.3).

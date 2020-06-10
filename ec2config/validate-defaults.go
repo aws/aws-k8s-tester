@@ -130,7 +130,7 @@ func (cfg *Config) validateConfig() error {
 	}
 
 	_, cerr := terminal.IsColor()
-	if cfg.LogColor && cerr != nil {
+	if cfg.LogColor && !cfg.LogColorOverride && cerr != nil {
 		cfg.LogColor = false
 	}
 	if len(cfg.LogOutputs) == 0 {
