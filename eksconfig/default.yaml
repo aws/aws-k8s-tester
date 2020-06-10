@@ -22,7 +22,7 @@ log-level: info
 log-outputs:
 - stderr
 - /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.log
-name: eks-2020060316-waterfall9w1
+name: eks-2020060920-floral65c1p2
 on-failure-delete: true
 on-failure-delete-wait-seconds: 120
 parameters:
@@ -39,12 +39,12 @@ parameters:
   role-cfn-stack-id: ""
   role-create: true
   role-managed-policy-arns: null
-  role-name: eks-2020060316-waterfall9w1-role
+  role-name: eks-2020060920-floral65c1p2-role
   role-service-principals: null
   signing-name: eks
   tags: null
-  version: "1.17"
-  version-value: 1.17
+  version: "1.16"
+  version-value: 1.16
   vpc-cfn-stack-id: ""
   vpc-create: true
   vpc-id: ""
@@ -52,7 +52,7 @@ partition: aws
 region: us-west-2
 remote-access-commands-output-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.ssh.sh
 remote-access-key-create: true
-remote-access-key-name: eks-2020060316-waterfall9w1-remote-access-key
+remote-access-key-name: eks-2020060920-floral65c1p2-remote-access-key
 remote-access-private-key-path: /home/ANT.AMAZON.COM/leegyuho/.ssh/kube_aws_rsa
 s3-bucket-create: false
 s3-bucket-create-keep: false

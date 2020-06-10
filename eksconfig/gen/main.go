@@ -160,6 +160,10 @@ func createDoc() string {
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnClusterVersionUpgrade, &eksconfig.AddOnClusterVersionUpgrade{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
 
 	txt := b.String()
 

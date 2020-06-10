@@ -113,6 +113,11 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_ENCRYPTION_CMK_ARN", "key-arn")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_ENCRYPTION_CMK_ARN")
 
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_VERSION", "1.18")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_VERSION")
+
 	os.Setenv("AWS_K8S_TESTER_EKS_REMOTE_ACCESS_KEY_CREATE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_REMOTE_ACCESS_KEY_CREATE")
 	os.Setenv("AWS_K8S_TESTER_EKS_REMOTE_ACCESS_KEY_NAME", "a")
@@ -622,6 +627,13 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.Parameters.EncryptionCMKARN != "key-arn" {
 		t.Fatalf("unexpected Parameters.EncryptionCMKARN %q", cfg.Parameters.EncryptionCMKARN)
+	}
+
+	if !cfg.AddOnClusterVersionUpgrade.Enable {
+		t.Fatalf("unexpected AddOnClusterVersionUpgrade.Enable %v", cfg.AddOnClusterVersionUpgrade.Enable)
+	}
+	if cfg.AddOnClusterVersionUpgrade.Version != "1.18" {
+		t.Fatalf("unexpected AddOnClusterVersionUpgrade.Version %q", cfg.AddOnClusterVersionUpgrade.Version)
 	}
 
 	if !cfg.RemoteAccessKeyCreate {

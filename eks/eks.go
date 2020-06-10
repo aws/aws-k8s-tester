@@ -177,9 +177,10 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 		err = nil
 	}
 
+	var vo []byte
+
 	// aws --version
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	var vo []byte
 	vo, err = exec.New().CommandContext(ctx, cfg.AWSCLIPath, "--version").CombinedOutput()
 	cancel()
 	if err != nil {

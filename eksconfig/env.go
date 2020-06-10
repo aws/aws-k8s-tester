@@ -401,6 +401,32 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *AddOnHollowNodesRemote, got %T", vv)
 	}
 
+	if cfg.AddOnStresserLocal == nil {
+		cfg.AddOnStresserLocal = &AddOnStresserLocal{}
+	}
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnStresserLocal, cfg.AddOnStresserLocal)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*AddOnStresserLocal); ok {
+		cfg.AddOnStresserLocal = av
+	} else {
+		return fmt.Errorf("expected *AddOnStresserLocal, got %T", vv)
+	}
+
+	if cfg.AddOnStresserRemote == nil {
+		cfg.AddOnStresserRemote = &AddOnStresserRemote{}
+	}
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnStresserRemote, cfg.AddOnStresserRemote)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*AddOnStresserRemote); ok {
+		cfg.AddOnStresserRemote = av
+	} else {
+		return fmt.Errorf("expected *AddOnStresserRemote, got %T", vv)
+	}
+
 	if cfg.AddOnClusterLoaderLocal == nil {
 		cfg.AddOnClusterLoaderLocal = &AddOnClusterLoaderLocal{}
 	}
@@ -427,30 +453,17 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *AddOnClusterLoaderRemote, got %T", vv)
 	}
 
-	if cfg.AddOnStresserLocal == nil {
-		cfg.AddOnStresserLocal = &AddOnStresserLocal{}
+	if cfg.AddOnClusterVersionUpgrade == nil {
+		cfg.AddOnClusterVersionUpgrade = &AddOnClusterVersionUpgrade{}
 	}
-	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnStresserLocal, cfg.AddOnStresserLocal)
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnClusterVersionUpgrade, cfg.AddOnClusterVersionUpgrade)
 	if err != nil {
 		return err
 	}
-	if av, ok := vv.(*AddOnStresserLocal); ok {
-		cfg.AddOnStresserLocal = av
+	if av, ok := vv.(*AddOnClusterVersionUpgrade); ok {
+		cfg.AddOnClusterVersionUpgrade = av
 	} else {
-		return fmt.Errorf("expected *AddOnStresserLocal, got %T", vv)
-	}
-
-	if cfg.AddOnStresserRemote == nil {
-		cfg.AddOnStresserRemote = &AddOnStresserRemote{}
-	}
-	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnStresserRemote, cfg.AddOnStresserRemote)
-	if err != nil {
-		return err
-	}
-	if av, ok := vv.(*AddOnStresserRemote); ok {
-		cfg.AddOnStresserRemote = av
-	} else {
-		return fmt.Errorf("expected *AddOnStresserRemote, got %T", vv)
+		return fmt.Errorf("expected *AddOnClusterVersionUpgrade, got %T", vv)
 	}
 
 	return nil
