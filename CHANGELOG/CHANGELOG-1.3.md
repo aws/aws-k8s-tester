@@ -3,6 +3,20 @@
 <hr>
 
 
+
+
+## [v1.3.2](https://github.com/aws/aws-k8s-tester/releases/tag/v1.3.2) (2020-06-10)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.1...v1.3.2).
+
+### `eks`
+
+- Do [not run `aws eks update-kubeconfig"` if EKS cluster creation fails](https://github.com/aws/aws-k8s-tester/commit/94cc6fb279103c93a9f1d5d8a0b4e0282a58ee52).
+
+
+<hr>
+
+
 ## [v1.3.2](https://github.com/aws/aws-k8s-tester/releases/tag/v1.3.2) (2020-06-10)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.1...v1.3.2).
