@@ -689,7 +689,7 @@ func isClusterDeleted(err error) bool {
 	return strings.Contains(err.Error(), "No cluster found for name: ")
 }
 
-// ClusterStatus represents the CloudFormation status.
+// ClusterStatus represents the EKS cluster status.
 type ClusterStatus struct {
 	Cluster *aws_eks.Cluster
 	Error   error
