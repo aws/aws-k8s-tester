@@ -10,12 +10,13 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.1...v1.3.2
 ### `eksconfig`
 
 - Use [`kubectl` `1.17` by default](https://github.com/aws/aws-k8s-tester/pull/95).
-- Add [`AddOnClusterVersionUpgrade`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`AddOnClusterVersionUpgrade`](https://github.com/aws/aws-k8s-tester/commit/8471fa5951d0b3f295141aba55340ef51e7fa796).
   - `AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE`.
 
 ### `eks`
 
-TODO
+- Add [`eks/cluster`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`eks/version-upgrade`](https://github.com/aws/aws-k8s-tester/commit/).
 
 ### Dependency
 
