@@ -100,15 +100,16 @@ func (ts *tester) Create() (err error) {
 		return err
 	}
 
-	var ver k8s_client.ServerVersionInfo
-	ver, err = ts.cfg.K8SClient.FetchServerVersion()
+	ts.cfg.EKSConfig.Status.ServerVersionInfo, err = ts.cfg.K8SClient.FetchServerVersion()
 	if err != nil {
 		return err
 	}
-	cur := fmt.Sprintf("%.2f", ver.VersionValue)
+	ts.cfg.EKSConfig.Sync()
+
+	cur := fmt.Sprintf("%.2f", ts.cfg.EKSConfig.Status.ServerVersionInfo.VersionValue)
 	target := fmt.Sprintf("%.2f", ts.cfg.EKSConfig.AddOnClusterVersionUpgrade.VersionValue)
 	if cur != target {
-		return fmt.Errorf("EKS server version after upgrade expected %q, got %q [%+v]", target, cur, ver)
+		return fmt.Errorf("EKS server version after upgrade expected %q, got %q [%+v]", target, cur, ts.cfg.EKSConfig.Status.ServerVersionInfo)
 	}
 
 	waitDur, retryStart := 5*time.Minute, time.Now()
