@@ -170,17 +170,16 @@ func (ts *tester) AggregateResults() (err error) {
 // updateNotExists returns true if error from EKS API indicates that
 // the EKS cluster update does not exist.
 func updateNotExists(err error) bool {
-	fmt.Println("err:", err)
 	if err == nil {
 		return false
 	}
 	awsErr, ok := err.(awserr.Error)
 	if ok && awsErr.Code() == "ResourceNotFoundException" &&
-		strings.HasPrefix(awsErr.Message(), "No TODO for") {
+		strings.HasPrefix(awsErr.Message(), "No update found for") {
 		return true
 	}
-	// ResourceNotFoundException: No TODO for name: aws-k8s-tester-155468BC717E03B003\n\tstatus code: 404, request id: 1e3fe41c-b878-11e8-adca-b503e0ba731d
-	return strings.Contains(err.Error(), "No TODO for name: ")
+	// An error occurred (ResourceNotFoundException) when calling the DescribeUpdate operation: No update found for ID: 10bddb13-a71b-425a-b0a6-71cd03e59161
+	return strings.Contains(err.Error(), "No update found")
 }
 
 // UpdateStatus represents the CloudFormation status.
