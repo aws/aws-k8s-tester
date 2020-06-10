@@ -9,11 +9,11 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.3...v1.3.4
 
 ### `ec2config`
 
-- Add [`LogColorOverride`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`LogColorOverride`](https://github.com/aws/aws-k8s-tester/commit/5f19f50611d29a847e5f7d9b2c81affee906e564).
 
 ### `eksconfig`
 
-- Add [`LogColorOverride`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`LogColorOverride`](https://github.com/aws/aws-k8s-tester/commit/5f19f50611d29a847e5f7d9b2c81affee906e564).
 
 
 <hr>
