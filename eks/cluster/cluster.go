@@ -445,17 +445,44 @@ func (ts *tester) createEKS() (err error) {
 	)
 	for v := range ch {
 		ts.updateClusterStatus(v, aws_eks.ClusterStatusActive)
+		err = v.Error
 	}
 	cancel()
 
-	ts.cfg.Logger.Info("created a cluster",
-		zap.String("cluster-cfn-stack-id", ts.cfg.EKSConfig.Status.ClusterCFNStackID),
-		zap.String("cluster-arn", ts.cfg.EKSConfig.Status.ClusterARN),
-		zap.String("cluster-api-server-endpoint", ts.cfg.EKSConfig.Status.ClusterAPIServerEndpoint),
-		zap.Int("cluster-ca-bytes", len(ts.cfg.EKSConfig.Status.ClusterCA)),
-		zap.String("config-path", ts.cfg.EKSConfig.ConfigPath),
-		zap.String("started", humanize.RelTime(createStart, time.Now(), "ago", "from now")),
-	)
+	switch err {
+	case nil:
+		ts.cfg.Logger.Info("created a cluster",
+			zap.String("cluster-cfn-stack-id", ts.cfg.EKSConfig.Status.ClusterCFNStackID),
+			zap.String("cluster-arn", ts.cfg.EKSConfig.Status.ClusterARN),
+			zap.String("cluster-api-server-endpoint", ts.cfg.EKSConfig.Status.ClusterAPIServerEndpoint),
+			zap.Int("cluster-ca-bytes", len(ts.cfg.EKSConfig.Status.ClusterCA)),
+			zap.String("config-path", ts.cfg.EKSConfig.ConfigPath),
+			zap.String("started", humanize.RelTime(createStart, time.Now(), "ago", "from now")),
+		)
+
+	case context.DeadlineExceeded:
+		ts.cfg.Logger.Warn("cluster creation took too long",
+			zap.String("cluster-cfn-stack-id", ts.cfg.EKSConfig.Status.ClusterCFNStackID),
+			zap.String("cluster-arn", ts.cfg.EKSConfig.Status.ClusterARN),
+			zap.String("cluster-api-server-endpoint", ts.cfg.EKSConfig.Status.ClusterAPIServerEndpoint),
+			zap.String("config-path", ts.cfg.EKSConfig.ConfigPath),
+			zap.String("started", humanize.RelTime(createStart, time.Now(), "ago", "from now")),
+			zap.Error(err),
+		)
+		return err
+
+	default:
+		ts.cfg.Logger.Warn("failed to create cluster",
+			zap.String("cluster-cfn-stack-id", ts.cfg.EKSConfig.Status.ClusterCFNStackID),
+			zap.String("cluster-arn", ts.cfg.EKSConfig.Status.ClusterARN),
+			zap.String("cluster-api-server-endpoint", ts.cfg.EKSConfig.Status.ClusterAPIServerEndpoint),
+			zap.String("config-path", ts.cfg.EKSConfig.ConfigPath),
+			zap.String("started", humanize.RelTime(createStart, time.Now(), "ago", "from now")),
+			zap.Error(err),
+		)
+		return err
+	}
+
 	return ts.cfg.EKSConfig.Sync()
 }
 
@@ -916,14 +943,15 @@ func (ts *tester) createClient() (cli k8s_client.EKS, err error) {
 			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 			output, err = exec.New().CommandContext(ctx, args[0], args[1:]...).CombinedOutput()
 			cancel()
+			out := string(output)
 			if err != nil {
-				ts.cfg.Logger.Warn("'aws eks update-kubeconfig' failed", zap.Error(err))
-				if !strings.Contains(string(output), "Cluster status not active") || !strings.Contains(err.Error(), "exit") {
-					return nil, fmt.Errorf("'aws eks update-kubeconfig' failed (output %q, error %v)", string(output), err)
+				ts.cfg.Logger.Warn("'aws eks update-kubeconfig' failed", zap.String("output", out), zap.Error(err))
+				if !strings.Contains(out, "Cluster status not active") || !strings.Contains(err.Error(), "exit") {
+					return nil, fmt.Errorf("'aws eks update-kubeconfig' failed (output %q, error %v)", out, err)
 				}
 				continue
 			}
-			ts.cfg.Logger.Info("'aws eks update-kubeconfig' success", zap.String("kubeconfig-path", ts.cfg.EKSConfig.KubeConfigPath))
+			ts.cfg.Logger.Info("'aws eks update-kubeconfig' success", zap.String("output", out), zap.String("kubeconfig-path", ts.cfg.EKSConfig.KubeConfigPath))
 			break
 		}
 		if err != nil {
