@@ -80,7 +80,7 @@ func (ts *tester) Create() (err error) {
 
 	initialWait := 3 * time.Minute
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Minute)
 	ch := Poll(
 		ctx,
 		ts.cfg.Stopc,
@@ -100,19 +100,40 @@ func (ts *tester) Create() (err error) {
 		return err
 	}
 
-	ts.cfg.EKSConfig.Status.ServerVersionInfo, err = ts.cfg.K8SClient.FetchServerVersion()
+	// may take a while to shut down the last master instance with old cluster version
+	waitDur, retryStart := 5*time.Minute, time.Now()
+	for time.Now().Sub(retryStart) < waitDur {
+		select {
+		case <-ts.cfg.Stopc:
+			ts.cfg.Logger.Warn("version check aborted")
+			return nil
+		case <-time.After(5 * time.Second):
+		}
+
+		ts.cfg.EKSConfig.Status.ServerVersionInfo, err = ts.cfg.K8SClient.FetchServerVersion()
+		if err != nil {
+			ts.cfg.Logger.Warn("failed to fetch server version", zap.Error(err))
+			continue
+		}
+
+		ts.cfg.EKSConfig.Sync()
+		cur := fmt.Sprintf("%.2f", ts.cfg.EKSConfig.Status.ServerVersionInfo.VersionValue)
+		target := fmt.Sprintf("%.2f", ts.cfg.EKSConfig.AddOnClusterVersionUpgrade.VersionValue)
+
+		ts.cfg.Logger.Info("fetched version", zap.String("current", cur), zap.String("target", target))
+		if cur != target {
+			err = fmt.Errorf("EKS server version after upgrade expected %q, got %q [%+v]", target, cur, ts.cfg.EKSConfig.Status.ServerVersionInfo)
+			continue
+		}
+
+		err = nil
+		break
+	}
 	if err != nil {
 		return err
 	}
-	ts.cfg.EKSConfig.Sync()
 
-	cur := fmt.Sprintf("%.2f", ts.cfg.EKSConfig.Status.ServerVersionInfo.VersionValue)
-	target := fmt.Sprintf("%.2f", ts.cfg.EKSConfig.AddOnClusterVersionUpgrade.VersionValue)
-	if cur != target {
-		return fmt.Errorf("EKS server version after upgrade expected %q, got %q [%+v]", target, cur, ts.cfg.EKSConfig.Status.ServerVersionInfo)
-	}
-
-	waitDur, retryStart := 5*time.Minute, time.Now()
+	waitDur, retryStart = 5*time.Minute, time.Now()
 	for time.Now().Sub(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
