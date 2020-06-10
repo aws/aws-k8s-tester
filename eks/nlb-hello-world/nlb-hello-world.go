@@ -31,7 +31,6 @@ import (
 type Config struct {
 	Logger    *zap.Logger
 	Stopc     chan struct{}
-	Sig       chan os.Signal
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
 	ELB2API   elbv2iface.ELBV2API

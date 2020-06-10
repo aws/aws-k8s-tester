@@ -722,6 +722,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 |                       ENVIRONMENTAL VARIABLE                        |     READ ONLY     |                         TYPE                          |      GO TYPE       |
 *---------------------------------------------------------------------*-------------------*-------------------------------------------------------*--------------------*
 | AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE            | read-only "false" | *eksconfig.AddOnClusterVersionUpgrade.Enable          | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_CREATED           | read-only "true"  | *eksconfig.AddOnClusterVersionUpgrade.Created         | bool               |
 | AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_TIME_FRAME_CREATE | read-only "true"  | *eksconfig.AddOnClusterVersionUpgrade.TimeFrameCreate | timeutil.TimeFrame |
 | AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_VERSION           | read-only "false" | *eksconfig.AddOnClusterVersionUpgrade.Version         | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_VERSION_VALUE     | read-only "true"  | *eksconfig.AddOnClusterVersionUpgrade.VersionValue    | float64            |

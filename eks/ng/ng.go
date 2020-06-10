@@ -3,7 +3,6 @@ package ng
 
 import (
 	"errors"
-	"os"
 	"reflect"
 	"strings"
 	"sync"
@@ -26,7 +25,6 @@ import (
 type Config struct {
 	Logger    *zap.Logger
 	Stopc     chan struct{}
-	Sig       chan os.Signal
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
 	IAMAPI    iamiface.IAMAPI

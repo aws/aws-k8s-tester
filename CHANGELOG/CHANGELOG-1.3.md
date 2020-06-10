@@ -16,7 +16,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.1...v1.3.2
 ### `eks`
 
 - Add [`eks/cluster`](https://github.com/aws/aws-k8s-tester/commit/).
-- Add [`eks/version-upgrade`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`eks/cluster/version-upgrade`](https://github.com/aws/aws-k8s-tester/commit/).
 
 ### Dependency
 

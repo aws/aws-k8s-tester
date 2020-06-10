@@ -36,7 +36,6 @@ import (
 type Config struct {
 	Logger    *zap.Logger
 	Stopc     chan struct{}
-	Sig       chan os.Signal
 	EKSConfig *eksconfig.Config
 	CFNAPI    cloudformationiface.CloudFormationAPI
 	K8SClient k8s_client.EKS

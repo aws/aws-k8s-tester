@@ -1,4 +1,4 @@
-package eks
+package cluster
 
 import (
 	"bytes"
@@ -7,8 +7,8 @@ import (
 	"text/template"
 )
 
-func TestTemplateEKSCluster(t *testing.T) {
-	tpl := template.Must(template.New("TemplateEKSCluster").Parse(TemplateEKSCluster))
+func TestTemplateCluster(t *testing.T) {
+	tpl := template.Must(template.New("TemplateCluster").Parse(TemplateCluster))
 	buf := bytes.NewBuffer(nil)
 	if err := tpl.Execute(buf, templateEKSCluster{}); err != nil {
 		t.Fatal(err)

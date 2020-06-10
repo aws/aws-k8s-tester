@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"reflect"
 	"strings"
 	"time"
@@ -26,11 +25,8 @@ import (
 
 // Config defines 'Job' configuration.
 type Config struct {
-	Logger *zap.Logger
-
-	Stopc chan struct{}
-	Sig   chan os.Signal
-
+	Logger    *zap.Logger
+	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
 }

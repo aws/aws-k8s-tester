@@ -13,7 +13,9 @@ import (
 type AddOnClusterVersionUpgrade struct {
 	// Enable is 'true' to create this add-on.
 	Enable bool `json:"enable"`
-
+	// Created is true when the resource has been created.
+	// Used for delete operations.
+	Created         bool               `json:"created" read-only:"true"`
 	TimeFrameCreate timeutil.TimeFrame `json:"time-frame-create" read-only:"true"`
 
 	// Version is the version of EKS Kubernetes "cluster".

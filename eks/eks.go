@@ -22,8 +22,10 @@ import (
 	"github.com/aws/aws-k8s-tester/ec2config"
 	alb_2048 "github.com/aws/aws-k8s-tester/eks/alb-2048"
 	app_mesh "github.com/aws/aws-k8s-tester/eks/app-mesh"
+	"github.com/aws/aws-k8s-tester/eks/cluster"
 	cluster_loader_local "github.com/aws/aws-k8s-tester/eks/cluster-loader/local"
 	cluster_loader_remote "github.com/aws/aws-k8s-tester/eks/cluster-loader/remote"
+	cluster_version_upgrade "github.com/aws/aws-k8s-tester/eks/cluster/version-upgrade"
 	config_maps_local "github.com/aws/aws-k8s-tester/eks/config-maps/local"
 	config_maps_remote "github.com/aws/aws-k8s-tester/eks/config-maps/remote"
 	"github.com/aws/aws-k8s-tester/eks/conformance"
@@ -121,9 +123,10 @@ type Tester struct {
 	eksSession *session.Session
 	eksAPI     eksiface.EKSAPI
 
-	k8sClient k8s_client.EKS
-
 	s3Uploaded bool
+
+	clusterTester cluster.Tester
+	k8sClient     k8s_client.EKS
 
 	ngTester  ng.Tester
 	mngTester mng.Tester
@@ -368,6 +371,7 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 		kcfg.ClusterAPIServerEndpoint = ts.cfg.Status.ClusterAPIServerEndpoint
 		kcfg.ClusterCADecoded = ts.cfg.Status.ClusterCADecoded
 	}
+	// in case cluster has already been created
 	ts.k8sClient, err = k8s_client.NewEKS(kcfg)
 	if err != nil {
 		ts.lg.Warn("failed to create k8s client from previous states", zap.Error(err))
@@ -392,6 +396,18 @@ func (ts *Tester) createTesters() (err error) {
 		fmt.Printf("\n\n*********************************\n")
 		fmt.Printf("createTesters (%q)\n", ts.cfg.ConfigPath)
 	}
+
+	ts.clusterTester = cluster.New(cluster.Config{
+		Logger:    ts.lg,
+		Stopc:     ts.stopCreationCh,
+		EKSConfig: ts.cfg,
+		IAMAPI:    ts.iamAPI,
+		KMSAPI:    ts.kmsAPI,
+		CFNAPI:    ts.cfnAPI,
+		EC2API:    ts.ec2API,
+		EKSAPI:    ts.eksAPI,
+		ELBV2API:  ts.elbv2API,
+	})
 
 	ts.ngTester = ng.New(ng.Config{
 		Logger:    ts.lg,
@@ -623,6 +639,13 @@ func (ts *Tester) createTesters() (err error) {
 			K8SClient: ts.k8sClient,
 			ECRAPI:    ts.ecrAPI,
 		}),
+		cluster_version_upgrade.New(cluster_version_upgrade.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			EKSConfig: ts.cfg,
+			K8SClient: ts.k8sClient,
+			EKSAPI:    ts.eksAPI,
+		}),
 	}
 	return ts.cfg.Sync()
 }
@@ -833,23 +856,6 @@ func (ts *Tester) Up() (err error) {
 
 	if ts.color {
 		colorstring.Printf("\n\n[yellow]*********************************\n")
-		colorstring.Printf("[light_green]createEncryption [default](%q)\n", ts.cfg.ConfigPath)
-	} else {
-		fmt.Printf("\n\n*********************************\n")
-		fmt.Printf("createEncryption (%q)\n", ts.cfg.ConfigPath)
-	}
-	if err := catchInterrupt(
-		ts.lg,
-		ts.stopCreationCh,
-		ts.stopCreationChOnce,
-		ts.osSig,
-		ts.createEncryption,
-	); err != nil {
-		return err
-	}
-
-	if ts.color {
-		colorstring.Printf("\n\n[yellow]*********************************\n")
 		colorstring.Printf("[light_green]createKeyPair [default](%q)\n", ts.cfg.ConfigPath)
 	} else {
 		fmt.Printf("\n\n*********************************\n")
@@ -867,43 +873,6 @@ func (ts *Tester) Up() (err error) {
 
 	if ts.color {
 		colorstring.Printf("\n\n[yellow]*********************************\n")
-		colorstring.Printf("[light_green]createClusterRole [default](%q)\n", ts.cfg.ConfigPath)
-	} else {
-		fmt.Printf("\n\n*********************************\n")
-		fmt.Printf("createClusterRole (%q)\n", ts.cfg.ConfigPath)
-	}
-	if err := catchInterrupt(
-		ts.lg,
-		ts.stopCreationCh,
-		ts.stopCreationChOnce,
-		ts.osSig,
-		ts.createClusterRole,
-	); err != nil {
-		return err
-	}
-
-	if ts.color {
-		colorstring.Printf("\n\n[yellow]*********************************\n")
-		colorstring.Printf("[light_green]createVPC [default](%q)\n", ts.cfg.ConfigPath)
-	} else {
-		fmt.Printf("\n\n*********************************\n")
-		fmt.Printf("createVPC (%q)\n", ts.cfg.ConfigPath)
-	}
-	if ts.color {
-	} else {
-	}
-	if err := catchInterrupt(
-		ts.lg,
-		ts.stopCreationCh,
-		ts.stopCreationChOnce,
-		ts.osSig,
-		ts.createVPC,
-	); err != nil {
-		return err
-	}
-
-	if ts.color {
-		colorstring.Printf("\n\n[yellow]*********************************\n")
 		colorstring.Printf("[light_green]createCluster [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 	} else {
 		fmt.Printf("\n\n*********************************\n")
@@ -914,29 +883,12 @@ func (ts *Tester) Up() (err error) {
 		ts.stopCreationCh,
 		ts.stopCreationChOnce,
 		ts.osSig,
-		ts.createCluster,
+		ts.clusterTester.Create,
 	); err != nil {
 		return err
 	}
-
-	waitDur := 30 * time.Second
-	ts.lg.Info("waiting before running health check", zap.Duration("wait", waitDur))
-	time.Sleep(waitDur)
-
-	if ts.color {
-		colorstring.Printf("\n\n[yellow]*********************************\n")
-		colorstring.Printf("[light_green]checkHealth [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-	} else {
-		fmt.Printf("\n\n*********************************\n")
-		fmt.Printf("checkHealth (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-	}
-	if err := catchInterrupt(
-		ts.lg,
-		ts.stopCreationCh,
-		ts.stopCreationChOnce,
-		ts.osSig,
-		ts.checkHealth,
-	); err != nil {
+	ts.k8sClient = ts.clusterTester.Client()
+	if err := ts.createTesters(); err != nil {
 		return err
 	}
 
@@ -1184,17 +1136,17 @@ func (ts *Tester) Up() (err error) {
 
 	if ts.color {
 		colorstring.Printf("\n\n[yellow]*********************************\n")
-		colorstring.Printf("[light_green]checkHealth [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		colorstring.Printf("[light_green]clusterTester.CheckHealth [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 	} else {
 		fmt.Printf("\n\n*********************************\n")
-		fmt.Printf("checkHealth (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		fmt.Printf("clusterTester.CheckHealth (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 	}
 	if err := catchInterrupt(
 		ts.lg,
 		ts.stopCreationCh,
 		ts.stopCreationChOnce,
 		ts.osSig,
-		ts.checkHealth,
+		ts.clusterTester.CheckHealth,
 	); err != nil {
 		return err
 	}
@@ -1387,63 +1339,12 @@ func (ts *Tester) down() (err error) {
 		fmt.Printf("\n\n*********************************\n")
 	}
 	if ts.color {
-		colorstring.Printf("[light_blue]deleteCluster [default](%q)\n", ts.cfg.ConfigPath)
+		colorstring.Printf("[light_blue]clusterTester.Delete [default](%q)\n", ts.cfg.ConfigPath)
 	} else {
-		fmt.Printf("deleteCluster (%q)\n", ts.cfg.ConfigPath)
+		fmt.Printf("clusterTester.Delete (%q)\n", ts.cfg.ConfigPath)
 	}
-	if err := ts.deleteCluster(); err != nil {
-		ts.lg.Warn("failed deleteCluster", zap.Error(err))
-		errs = append(errs, err.Error())
-	}
-
-	if ts.color {
-		colorstring.Printf("\n\n[yellow]*********************************\n")
-	} else {
-		fmt.Printf("\n\n*********************************\n")
-	}
-	if ts.color {
-		colorstring.Printf("[light_blue]deleteEncryption [default](%q)\n", ts.cfg.ConfigPath)
-	} else {
-		fmt.Printf("deleteEncryption (%q)\n", ts.cfg.ConfigPath)
-	}
-	if err := ts.deleteEncryption(); err != nil {
-		ts.lg.Warn("failed deleteEncryption", zap.Error(err))
-		errs = append(errs, err.Error())
-	}
-
-	if ts.color {
-		colorstring.Printf("\n\n[yellow]*********************************\n")
-	} else {
-		fmt.Printf("\n\n*********************************\n")
-	}
-	if ts.color {
-		colorstring.Printf("[light_blue]deleteClusterRole [default](%q)\n", ts.cfg.ConfigPath)
-	} else {
-		fmt.Printf("deleteClusterRole (%q)\n", ts.cfg.ConfigPath)
-	}
-	if err := ts.deleteClusterRole(); err != nil {
-		ts.lg.Warn("failed deleteClusterRole", zap.Error(err))
-		errs = append(errs, err.Error())
-	}
-
-	if ts.cfg.Parameters.VPCCreate { // VPC was created
-		waitDur := 30 * time.Second
-		ts.lg.Info("sleeping before VPC deletion", zap.Duration("wait", waitDur))
-		time.Sleep(waitDur)
-	}
-
-	if ts.color {
-		colorstring.Printf("\n\n[yellow]*********************************\n")
-	} else {
-		fmt.Printf("\n\n*********************************\n")
-	}
-	if ts.color {
-		colorstring.Printf("[light_blue]deleteVPC [default](%q)\n", ts.cfg.ConfigPath)
-	} else {
-		fmt.Printf("deleteVPC (%q)\n", ts.cfg.ConfigPath)
-	}
-	if err := ts.deleteVPC(); err != nil {
-		ts.lg.Warn("failed deleteVPC", zap.Error(err))
+	if err := ts.clusterTester.Delete(); err != nil {
+		ts.lg.Warn("failed clusterTester.Delete", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 
@@ -1481,7 +1382,7 @@ func (ts *Tester) IsUp() (up bool, err error) {
 	if !ts.cfg.Status.Up {
 		return false, nil
 	}
-	return true, ts.checkHealth()
+	return true, ts.clusterTester.CheckHealth()
 }
 
 // DumpClusterLogs should export logs from the cluster. It may be called
@@ -1613,4 +1514,23 @@ func (ts *Tester) ArtifactsDir() string {
 		return ts.cfg.AddOnNodeGroups.LogsDir
 	}
 	return ""
+}
+
+func catchInterrupt(lg *zap.Logger, stopc chan struct{}, once *sync.Once, sigc chan os.Signal, run func() error) (err error) {
+	errc := make(chan error)
+	go func() {
+		errc <- run()
+	}()
+	select {
+	case _, ok := <-stopc:
+		rerr := <-errc
+		lg.Info("interrupted", zap.Error(rerr))
+		err = fmt.Errorf("stopc returned, stopc open %v, run function returned %v", ok, rerr)
+	case sig := <-sigc:
+		once.Do(func() { close(stopc) })
+		rerr := <-errc
+		err = fmt.Errorf("received os signal %v, closed stopc, run function returned %v", sig, rerr)
+	case err = <-errc:
+	}
+	return err
 }

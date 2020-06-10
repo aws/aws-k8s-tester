@@ -62,10 +62,7 @@ func (ts *Tester) createKeyPair() (err error) {
 	); err != nil {
 		return err
 	}
-	ts.lg.Info(
-		"wrote EC2 private key on disk",
-		zap.String("key-path", ts.cfg.RemoteAccessPrivateKeyPath),
-	)
+	ts.lg.Info("wrote EC2 private key on disk", zap.String("key-path", ts.cfg.RemoteAccessPrivateKeyPath))
 
 	if ts.cfg.S3BucketName != "" {
 		s3Key := path.Join(ts.cfg.Name, ts.cfg.RemoteAccessKeyName+".private.pem")
