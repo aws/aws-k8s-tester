@@ -209,7 +209,7 @@ Outputs:
 
 func (ts *tester) createClusterRole() error {
 	if ts.cfg.EKSConfig.LogColor {
-		colorstring.Printf("\n\n[yellow]*********************************\n")
+		colorstring.Printf("\n\n[yellow]*********************************[default]\n")
 		colorstring.Printf("[light_green]createClusterRole [default](%q)\n", ts.cfg.EKSConfig.ConfigPath)
 	} else {
 		fmt.Printf("\n\n*********************************\n")
@@ -325,7 +325,7 @@ func (ts *tester) createClusterRole() error {
 
 func (ts *tester) deleteClusterRole() error {
 	if ts.cfg.EKSConfig.LogColor {
-		colorstring.Printf("\n\n[yellow]*********************************\n")
+		colorstring.Printf("\n\n[yellow]*********************************[default]\n")
 		colorstring.Printf("[light_blue]deleteClusterRole [default](%q)\n", ts.cfg.EKSConfig.ConfigPath)
 	} else {
 		fmt.Printf("\n\n*********************************\n")

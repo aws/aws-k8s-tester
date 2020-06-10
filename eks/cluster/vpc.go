@@ -583,7 +583,7 @@ Outputs:
 
 func (ts *tester) createVPC() error {
 	if ts.cfg.EKSConfig.LogColor {
-		colorstring.Printf("\n\n[yellow]*********************************\n")
+		colorstring.Printf("\n\n[yellow]*********************************[default]\n")
 		colorstring.Printf("[light_green]createVPC [default](%q)\n", ts.cfg.EKSConfig.ConfigPath)
 	} else {
 		fmt.Printf("\n\n*********************************\n")
@@ -836,7 +836,7 @@ func (ts *tester) createVPC() error {
 
 func (ts *tester) deleteVPC() error {
 	if ts.cfg.EKSConfig.LogColor {
-		colorstring.Printf("\n\n[yellow]*********************************\n")
+		colorstring.Printf("\n\n[yellow]*********************************[default]\n")
 		colorstring.Printf("[light_blue]deleteVPC [default](%q)\n", ts.cfg.EKSConfig.ConfigPath)
 	} else {
 		fmt.Printf("\n\n*********************************\n")

@@ -103,7 +103,7 @@ func (ts *tester) Client() k8s_client.EKS { return ts.k8sClient }
 
 func (ts *tester) CheckHealth() (err error) {
 	if ts.cfg.EKSConfig.LogColor {
-		colorstring.Printf("\n\n[yellow]*********************************\n")
+		colorstring.Printf("\n\n[yellow]*********************************[default]\n")
 		colorstring.Printf("[light_green]CheckHealth [default](%q)\n", ts.cfg.EKSConfig.ConfigPath)
 	} else {
 		fmt.Printf("\n\n*********************************\n")
@@ -238,7 +238,7 @@ type templateEKSCluster struct {
 
 func (ts *tester) createEKS() (err error) {
 	if ts.cfg.EKSConfig.LogColor {
-		colorstring.Printf("\n\n[yellow]*********************************\n")
+		colorstring.Printf("\n\n[yellow]*********************************[default]\n")
 		colorstring.Printf("[light_green]createEKS [default](%q)\n", ts.cfg.EKSConfig.ConfigPath)
 	} else {
 		fmt.Printf("\n\n*********************************\n")
@@ -488,7 +488,7 @@ func (ts *tester) createEKS() (err error) {
 
 func (ts *tester) deleteEKS() error {
 	if ts.cfg.EKSConfig.LogColor {
-		colorstring.Printf("\n\n[yellow]*********************************\n")
+		colorstring.Printf("\n\n[yellow]*********************************[default]\n")
 		colorstring.Printf("[light_blue]deleteEKS [default](%q)\n", ts.cfg.EKSConfig.ConfigPath)
 	} else {
 		fmt.Printf("\n\n*********************************\n")
@@ -889,7 +889,7 @@ users:
 // "aws eks update-kubeconfig --name --role-arn --kubeconfig"
 func (ts *tester) createClient() (cli k8s_client.EKS, err error) {
 	if ts.cfg.EKSConfig.LogColor {
-		colorstring.Printf("\n\n[yellow]*********************************\n")
+		colorstring.Printf("\n\n[yellow]*********************************[default]\n")
 		colorstring.Printf("[light_green]createClient [default](%q)\n", ts.cfg.EKSConfig.ConfigPath)
 	} else {
 		fmt.Printf("\n\n*********************************\n")

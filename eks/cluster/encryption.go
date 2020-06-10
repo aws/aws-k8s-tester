@@ -14,7 +14,7 @@ import (
 
 func (ts *tester) createEncryption() error {
 	if ts.cfg.EKSConfig.LogColor {
-		colorstring.Printf("\n\n[yellow]*********************************\n")
+		colorstring.Printf("\n\n[yellow]*********************************[default]\n")
 		colorstring.Printf("[light_green]createEncryption [default](%q)\n", ts.cfg.EKSConfig.ConfigPath)
 	} else {
 		fmt.Printf("\n\n*********************************\n")
@@ -84,7 +84,7 @@ func (ts *tester) createEncryption() error {
 
 func (ts *tester) deleteEncryption() error {
 	if ts.cfg.EKSConfig.LogColor {
-		colorstring.Printf("\n\n[yellow]*********************************\n")
+		colorstring.Printf("\n\n[yellow]*********************************[default]\n")
 		colorstring.Printf("[light_blue]deleteEncryption [default](%q)\n", ts.cfg.EKSConfig.ConfigPath)
 	} else {
 		fmt.Printf("\n\n*********************************\n")

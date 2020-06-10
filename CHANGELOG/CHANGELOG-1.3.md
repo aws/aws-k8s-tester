@@ -10,6 +10,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.2...v1.3.3
 ### `eks`
 
 - Do [not run `aws eks update-kubeconfig"` if EKS cluster creation fails](https://github.com/aws/aws-k8s-tester/commit/94cc6fb279103c93a9f1d5d8a0b4e0282a58ee52).
+- Clean up [color outputs]().
 
 
 <hr>
