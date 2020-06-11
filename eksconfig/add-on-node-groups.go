@@ -144,7 +144,7 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 	switch cfg.AddOnNodeGroups.RoleCreate {
 	case true: // need create one, or already created
 		if cfg.AddOnNodeGroups.RoleName == "" {
-			cfg.AddOnNodeGroups.RoleName = cfg.Name + "-role-ng"
+			cfg.AddOnNodeGroups.RoleName = cfg.Name + "-ng-role"
 		}
 		if cfg.AddOnNodeGroups.RoleARN != "" {
 			// just ignore...

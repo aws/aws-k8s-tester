@@ -202,7 +202,7 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 	switch cfg.AddOnManagedNodeGroups.RoleCreate {
 	case true: // need create one, or already created
 		if cfg.AddOnManagedNodeGroups.RoleName == "" {
-			cfg.AddOnManagedNodeGroups.RoleName = cfg.Name + "-role-mng"
+			cfg.AddOnManagedNodeGroups.RoleName = cfg.Name + "-mng-role"
 		}
 		if cfg.AddOnManagedNodeGroups.RoleARN != "" {
 			// just ignore...
