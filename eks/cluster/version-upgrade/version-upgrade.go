@@ -81,7 +81,7 @@ func (ts *tester) Create() (err error) {
 	// takes ~30-min
 	initialWait := 10 * time.Minute
 
-	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Hour)
 	ch := Poll(
 		ctx,
 		ts.cfg.Stopc,
