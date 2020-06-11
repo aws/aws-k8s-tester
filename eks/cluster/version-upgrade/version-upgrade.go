@@ -130,7 +130,7 @@ func (ts *tester) Create() (err error) {
 		}
 
 		err = nil
-		ts.cfg.Logger.Info("version matched!")
+		ts.cfg.Logger.Info("version match success!")
 		break
 	}
 	if err != nil {
