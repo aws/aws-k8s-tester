@@ -324,7 +324,7 @@ func (ts *tester) waitDeploymentMetricsServer() error {
 
 		ts.cfg.Logger.Info("running kubectl top node")
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		output, err := exec.New().CommandContext(ctx, descArgs[0], descArgs[1:]...).CombinedOutput()
+		output, err := exec.New().CommandContext(ctx, topNodeArgs[0], topNodeArgs[1:]...).CombinedOutput()
 		out := string(output)
 		fmt.Printf("\n\n\"%s\" output:\n%s\n\n", topNodeCmd, out)
 		cancel()
