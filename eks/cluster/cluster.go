@@ -537,6 +537,7 @@ func (ts *tester) deleteEKS() error {
 		})
 		if err != nil {
 			ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("failed to delete cluster (%v)", err))
+			ts.cfg.Logger.Warn("failed to delete cluster", zap.Error(err))
 			return err
 		}
 		ts.cfg.EKSConfig.Status.Up = false
@@ -573,6 +574,7 @@ func (ts *tester) deleteEKS() error {
 		})
 		if err != nil {
 			ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("failed to delete cluster (%v)", err))
+			ts.cfg.Logger.Warn("failed to delete cluster", zap.Error(err))
 			return err
 		}
 		ts.cfg.EKSConfig.Status.Up = false
