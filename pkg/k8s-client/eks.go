@@ -555,7 +555,7 @@ func (e *eks) checkHealth() error {
 	fmt.Printf("\n\"kubectl version\" info output:\n%s\n\n", vf.String())
 
 	ep := e.cfg.ClusterAPIServerEndpoint + "/version"
-	output, err = httputil.ReadInsecure(e.cfg.Logger, os.Stderr, ep)
+	output, err = httputil.ReadInsecure(e.cfg.Logger, ioutil.Discard, ep)
 	if err != nil {
 		return err
 	}
@@ -748,7 +748,7 @@ func (e *eks) FetchServerVersion() (ServerVersionInfo, error) {
 func (e *eks) fetchServerVersion() (ServerVersionInfo, error) {
 	ep := e.cfg.ClusterAPIServerEndpoint + "/version"
 	e.cfg.Logger.Info("fetching version", zap.String("url", ep))
-	d, err := httputil.ReadInsecure(e.cfg.Logger, os.Stderr, ep)
+	d, err := httputil.ReadInsecure(e.cfg.Logger, ioutil.Discard, ep)
 	if err != nil {
 		return ServerVersionInfo{}, nil
 	}
