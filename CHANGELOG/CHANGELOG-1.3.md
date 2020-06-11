@@ -9,7 +9,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.4...v1.3.5
 
 ### `eksconfig`
 
-- Clean up [`"config-maps-"` string to `"configmaps-"`](https://github.com/aws/aws-k8s-tester/commit/).
+- Clean up [`"config-maps-"` string to `"configmaps-"`](https://github.com/aws/aws-k8s-tester/commit/6f424f20135285f24b078addbd7e3497b4e2cdf9).
 
 
 <hr>
