@@ -84,6 +84,9 @@ func (cfg *Config) RecordStatus(status string) {
 	cfg.mu.Lock()
 	defer cfg.mu.Unlock()
 
+	if cfg.Status == nil {
+		cfg.Status = &Status{}
+	}
 	cfg.Status.ClusterStatusCurrent = status
 	switch status {
 	case ClusterStatusDELETEDORNOTEXIST:

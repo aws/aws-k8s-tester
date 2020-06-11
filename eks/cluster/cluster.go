@@ -125,6 +125,14 @@ func (ts *tester) checkHealth() (err error) {
 		}
 	}()
 
+	if ts.k8sClient == nil {
+		ts.cfg.Logger.Info("empty client; creating client")
+		ts.k8sClient, err = ts.createClient()
+		if err != nil {
+			return err
+		}
+	}
+
 	// might take several minutes for DNS to propagate
 	waitDur := 5 * time.Minute
 	retryStart := time.Now()
@@ -134,9 +142,13 @@ func (ts *tester) checkHealth() (err error) {
 			return errors.New("health check aborted")
 		case <-time.After(5 * time.Second):
 		}
-		ts.cfg.EKSConfig.Status.ServerVersionInfo, err = ts.k8sClient.FetchServerVersion()
-		if err != nil {
-			ts.cfg.Logger.Warn("get version failed", zap.Error(err))
+		if ts.cfg.EKSConfig.Status == nil {
+			ts.cfg.Logger.Warn("empty EKSConfig.Status")
+		} else {
+			ts.cfg.EKSConfig.Status.ServerVersionInfo, err = ts.k8sClient.FetchServerVersion()
+			if err != nil {
+				ts.cfg.Logger.Warn("get version failed", zap.Error(err))
+			}
 		}
 		err = ts.k8sClient.CheckHealth()
 		if err == nil {
