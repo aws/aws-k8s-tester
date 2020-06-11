@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	config_maps "github.com/aws/aws-k8s-tester/eks/config-maps"
+	config_maps "github.com/aws/aws-k8s-tester/eks/configmaps"
 	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"

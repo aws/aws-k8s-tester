@@ -266,6 +266,7 @@ func (ts *tester) deleteServiceAccount() error {
 		)
 	cancel()
 	if err != nil && !api_errors.IsNotFound(err) {
+		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return fmt.Errorf("failed to delete stresser ServiceAccount (%v)", err)
 	}
 	ts.cfg.Logger.Info("deleted stresser ServiceAccount", zap.Error(err))
@@ -357,6 +358,7 @@ func (ts *tester) deleteALBRBACClusterRole() error {
 		)
 	cancel()
 	if err != nil && !api_errors.IsNotFound(err) {
+		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return fmt.Errorf("failed to delete stresser RBAC ClusterRole (%v)", err)
 	}
 
@@ -435,6 +437,7 @@ func (ts *tester) deleteALBRBACClusterRoleBinding() error {
 		)
 	cancel()
 	if err != nil && !api_errors.IsNotFound(err) {
+		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return fmt.Errorf("failed to delete stresser RBAC ClusterRoleBinding (%v)", err)
 	}
 

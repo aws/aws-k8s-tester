@@ -291,6 +291,7 @@ func (ts *tester) deleteALBServiceAccount() error {
 		)
 	cancel()
 	if err != nil && !api_errors.IsNotFound(err) {
+		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return fmt.Errorf("failed to delete ALB Ingress Controller ServiceAccount (%v)", err)
 	}
 	ts.cfg.Logger.Info("deleted ALB Ingress Controller ServiceAccount", zap.Error(err))
@@ -393,6 +394,7 @@ func (ts *tester) deleteALBRBACClusterRole() error {
 		)
 	cancel()
 	if err != nil && !api_errors.IsNotFound(err) {
+		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return fmt.Errorf("failed to delete ALB Ingress Controller RBAC ClusterRole (%v)", err)
 	}
 
@@ -466,6 +468,7 @@ func (ts *tester) deleteALBRBACClusterRoleBinding() error {
 		)
 	cancel()
 	if err != nil && !api_errors.IsNotFound(err) {
+		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return fmt.Errorf("failed to delete ALB Ingress Controller RBAC ClusterRoleBinding (%v)", err)
 	}
 
@@ -575,6 +578,7 @@ func (ts *tester) deleteALBDeployment() error {
 		)
 	cancel()
 	if err != nil && !api_errors.IsNotFound(err) {
+		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return fmt.Errorf("failed to delete ALB Ingress Controller Deployment (%v)", err)
 	}
 
@@ -743,6 +747,7 @@ func (ts *tester) delete2048Deployment() error {
 		)
 	cancel()
 	if err != nil && !api_errors.IsNotFound(err) {
+		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return fmt.Errorf("failed to delete ALB 2048 Deployment (%v)", err)
 	}
 
@@ -887,6 +892,7 @@ func (ts *tester) delete2048Service() error {
 		)
 	cancel()
 	if err != nil && !api_errors.IsNotFound(err) {
+		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return fmt.Errorf("failed to delete ALB 2048 Service (%v)", err)
 	}
 
@@ -1132,6 +1138,7 @@ func (ts *tester) delete2048Ingress() error {
 		)
 	cancel()
 	if err != nil && !api_errors.IsNotFound(err) {
+		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return fmt.Errorf("failed to delete ALB 2048 Ingress (%v)", err)
 	}
 	ts.cfg.Logger.Info("deleted ALB 2048 Ingress", zap.Error(err))

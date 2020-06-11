@@ -17,6 +17,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.3...v1.3.4
 
 ### `eks`
 
+- Rename [`eks/config-maps` to `eks/configmaps`](https://github.com/aws/aws-k8s-tester/commit/).
 - Run [`kubectl top` when `metrics-server` is installed via `eks/kubernetes-dashboard`](https://github.com/aws/aws-k8s-tester/commit/de2049b9586fddcc2d7b94eb54b8cc48be461818).
 - Fix [`panic: runtime error: invalid memory address or nil pointer dereference` in `eks/cluster.CheckHealth` panic](https://github.com/aws/aws-k8s-tester/commit/c84490b19bd845267a6263f551f79eca54d48eda).
 

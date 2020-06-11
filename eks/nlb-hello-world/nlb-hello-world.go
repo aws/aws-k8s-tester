@@ -249,6 +249,7 @@ func (ts *tester) deleteDeployment() error {
 		)
 	cancel()
 	if err != nil && !api_errors.IsNotFound(err) {
+		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return fmt.Errorf("failed to delete NLB hello-world Deployment (%v)", err)
 	}
 
@@ -519,6 +520,7 @@ func (ts *tester) deleteService() error {
 		)
 	cancel()
 	if err != nil && !api_errors.IsNotFound(err) {
+		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return fmt.Errorf("failed to delete NLB hello-world Service (%v)", err)
 	}
 

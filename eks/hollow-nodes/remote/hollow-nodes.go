@@ -230,6 +230,7 @@ func (ts *tester) createServiceAccount() error {
 		)
 	cancel()
 	if err != nil && !api_errors.IsNotFound(err) {
+		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return fmt.Errorf("failed to create cluster loader ServiceAccount (%v)", err)
 	}
 
@@ -256,6 +257,7 @@ func (ts *tester) deleteServiceAccount() error {
 		)
 	cancel()
 	if err != nil && !api_errors.IsNotFound(err) {
+		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return fmt.Errorf("failed to delete cluster loader ServiceAccount (%v)", err)
 	}
 	ts.cfg.Logger.Info("deleted cluster loader ServiceAccount", zap.Error(err))
@@ -359,6 +361,7 @@ func (ts *tester) deleteALBRBACClusterRole() error {
 		)
 	cancel()
 	if err != nil && !api_errors.IsNotFound(err) {
+		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return fmt.Errorf("failed to delete cluster loader RBAC ClusterRole (%v)", err)
 	}
 
@@ -437,6 +440,7 @@ func (ts *tester) deleteALBRBACClusterRoleBinding() error {
 		)
 	cancel()
 	if err != nil && !api_errors.IsNotFound(err) {
+		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return fmt.Errorf("failed to delete cluster loader RBAC ClusterRoleBinding (%v)", err)
 	}
 
@@ -501,6 +505,7 @@ func (ts *tester) deleteConfigMap() error {
 		)
 	cancel()
 	if err != nil && !api_errors.IsNotFound(err) {
+		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return err
 	}
 	ts.cfg.Logger.Info("deleted config map")
@@ -665,6 +670,7 @@ func (ts *tester) deleteDeployment() error {
 		)
 	cancel()
 	if err != nil && !api_errors.IsNotFound(err) {
+		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return err
 	}
 	ts.cfg.Logger.Info("deleted deployment")

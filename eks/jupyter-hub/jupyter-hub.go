@@ -197,6 +197,7 @@ func (ts *tester) deleteTillerServiceAccount() error {
 		)
 	cancel()
 	if err != nil && !api_errors.IsNotFound(err) {
+		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return fmt.Errorf("failed to delete Tiller ServiceAccount (%v)", err)
 	}
 	ts.cfg.Logger.Info("deleted Tiller ServiceAccount", zap.Error(err))
@@ -265,6 +266,7 @@ func (ts *tester) deleteTillerRBACClusterRoleBinding() error {
 		)
 	cancel()
 	if err != nil && !api_errors.IsNotFound(err) {
+		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return fmt.Errorf("failed to delete Tiller RBAC ClusterRoleBinding (%v)", err)
 	}
 

@@ -877,6 +877,7 @@ func (ts *tester) deleteDeployment() error {
 		)
 	cancel()
 	if err != nil && !api_errors.IsNotFound(err) {
+		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return fmt.Errorf("failed to delete IRSA Deployment (%v)", err)
 	}
 

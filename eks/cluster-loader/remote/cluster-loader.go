@@ -222,6 +222,7 @@ func (ts *tester) createServiceAccount() error {
 		)
 	cancel()
 	if err != nil && !api_errors.IsNotFound(err) {
+		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return fmt.Errorf("failed to create cluster loader ServiceAccount (%v)", err)
 	}
 
@@ -248,6 +249,7 @@ func (ts *tester) deleteServiceAccount() error {
 		)
 	cancel()
 	if err != nil && !api_errors.IsNotFound(err) {
+		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return fmt.Errorf("failed to delete cluster loader ServiceAccount (%v)", err)
 	}
 	ts.cfg.Logger.Info("deleted cluster loader ServiceAccount", zap.Error(err))
@@ -324,6 +326,7 @@ func (ts *tester) deleteALBRBACClusterRole() error {
 		)
 	cancel()
 	if err != nil && !api_errors.IsNotFound(err) {
+		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return fmt.Errorf("failed to delete cluster loader RBAC ClusterRole (%v)", err)
 	}
 
@@ -402,6 +405,7 @@ func (ts *tester) deleteALBRBACClusterRoleBinding() error {
 		)
 	cancel()
 	if err != nil && !api_errors.IsNotFound(err) {
+		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return fmt.Errorf("failed to delete cluster loader RBAC ClusterRoleBinding (%v)", err)
 	}
 
@@ -410,7 +414,7 @@ func (ts *tester) deleteALBRBACClusterRoleBinding() error {
 }
 
 func (ts *tester) createConfigMap() error {
-	ts.cfg.Logger.Info("creating config map")
+	ts.cfg.Logger.Info("creating configmap")
 
 	b, err := ioutil.ReadFile(ts.cfg.EKSConfig.KubeConfigPath)
 	if err != nil {
@@ -445,12 +449,12 @@ func (ts *tester) createConfigMap() error {
 		return err
 	}
 
-	ts.cfg.Logger.Info("created config map")
+	ts.cfg.Logger.Info("created configmap")
 	return ts.cfg.EKSConfig.Sync()
 }
 
 func (ts *tester) deleteConfigMap() error {
-	ts.cfg.Logger.Info("deleting config map")
+	ts.cfg.Logger.Info("deleting configmap")
 	foreground := metav1.DeletePropagationForeground
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	err := ts.cfg.K8SClient.KubernetesClientSet().
@@ -466,9 +470,10 @@ func (ts *tester) deleteConfigMap() error {
 		)
 	cancel()
 	if err != nil && !api_errors.IsNotFound(err) {
+		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return err
 	}
-	ts.cfg.Logger.Info("deleted config map")
+	ts.cfg.Logger.Info("deleted configmap")
 	return ts.cfg.EKSConfig.Sync()
 }
 
@@ -624,6 +629,7 @@ func (ts *tester) deleteDeployment() error {
 		)
 	cancel()
 	if err != nil && !api_errors.IsNotFound(err) {
+		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return err
 	}
 	ts.cfg.Logger.Info("deleted deployment")
