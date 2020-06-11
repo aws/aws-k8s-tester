@@ -3,6 +3,18 @@
 <hr>
 
 
+## [v1.3.5](https://github.com/aws/aws-k8s-tester/releases/tag/v1.3.5) (2020-06-11)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.4...v1.3.5).
+
+### `eksconfig`
+
+- Clean up [`"config-maps-"` string to `"configmaps-"`](https://github.com/aws/aws-k8s-tester/commit/).
+
+
+<hr>
+
+
 ## [v1.3.4](https://github.com/aws/aws-k8s-tester/releases/tag/v1.3.4) (2020-06-11)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.3...v1.3.4).

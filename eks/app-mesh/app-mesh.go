@@ -196,7 +196,7 @@ func (ts *tester) createPolicy() error {
 	}
 
 	ts.cfg.Logger.Info("creating app mesh controller policy")
-	stackName := ts.cfg.EKSConfig.Name + "-app-mesh-addOn"
+	stackName := ts.cfg.EKSConfig.Name + "-app-mesh"
 	policyName := ts.cfg.EKSConfig.Name + "-app-mesh-policy"
 	stackInput := &cloudformation.CreateStackInput{
 		StackName:    aws.String(stackName),

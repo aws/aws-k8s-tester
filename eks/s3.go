@@ -418,7 +418,7 @@ func (ts *Tester) uploadToS3() (err error) {
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "config-maps-local-requests-writes.json"),
+				path.Join(ts.cfg.Name, "configmaps-local-requests-writes.json"),
 				ts.cfg.AddOnConfigMapsLocal.RequestsWritesJSONPath,
 			); err != nil {
 				return err
@@ -429,7 +429,7 @@ func (ts *Tester) uploadToS3() (err error) {
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "config-maps-local-requests-writes-summary.json"),
+				path.Join(ts.cfg.Name, "configmaps-local-requests-writes-summary.json"),
 				ts.cfg.AddOnConfigMapsLocal.RequestsWritesSummaryJSONPath,
 			); err != nil {
 				return err
@@ -440,7 +440,7 @@ func (ts *Tester) uploadToS3() (err error) {
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "config-maps-local-requests-writes-summary.txt"),
+				path.Join(ts.cfg.Name, "configmaps-local-requests-writes-summary.txt"),
 				ts.cfg.AddOnConfigMapsLocal.RequestsWritesSummaryTablePath,
 			); err != nil {
 				return err
@@ -454,7 +454,7 @@ func (ts *Tester) uploadToS3() (err error) {
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "config-maps-remote-requests-writes.json"),
+				path.Join(ts.cfg.Name, "configmaps-remote-requests-writes.json"),
 				ts.cfg.AddOnConfigMapsRemote.RequestsWritesJSONPath,
 			); err != nil {
 				return err
@@ -465,7 +465,7 @@ func (ts *Tester) uploadToS3() (err error) {
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "config-maps-remote-requests-writes-summary.json"),
+				path.Join(ts.cfg.Name, "configmaps-remote-requests-writes-summary.json"),
 				ts.cfg.AddOnConfigMapsRemote.RequestsWritesSummaryJSONPath,
 			); err != nil {
 				return err
@@ -476,7 +476,7 @@ func (ts *Tester) uploadToS3() (err error) {
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "config-maps-remote-requests-writes-summary.txt"),
+				path.Join(ts.cfg.Name, "configmaps-remote-requests-writes-summary.txt"),
 				ts.cfg.AddOnConfigMapsRemote.RequestsWritesSummaryTablePath,
 			); err != nil {
 				return err

@@ -89,7 +89,7 @@ func getDefaultAddOnConfigMapsRemote() *AddOnConfigMapsRemote {
 		// Objects: 1000,
 		// ObjectSize: 300000, // 0.3 MB
 
-		RequestsWritesSummaryOutputNamePrefix: "config-maps-writes" + randutil.String(10),
+		RequestsWritesSummaryOutputNamePrefix: "configmaps-writes" + randutil.String(10),
 	}
 }
 
@@ -102,7 +102,7 @@ func (cfg *Config) validateAddOnConfigMapsRemote() error {
 	}
 
 	if cfg.AddOnConfigMapsRemote.Namespace == "" {
-		cfg.AddOnConfigMapsRemote.Namespace = cfg.Name + "-config-maps-remote"
+		cfg.AddOnConfigMapsRemote.Namespace = cfg.Name + "-configmaps-remote"
 	}
 
 	if cfg.AddOnConfigMapsRemote.RepositoryAccountID == "" {
@@ -129,17 +129,17 @@ func (cfg *Config) validateAddOnConfigMapsRemote() error {
 	}
 
 	if cfg.AddOnConfigMapsRemote.RequestsWritesJSONPath == "" {
-		cfg.AddOnConfigMapsRemote.RequestsWritesJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-config-maps-remote-requests-writes.csv"
+		cfg.AddOnConfigMapsRemote.RequestsWritesJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-configmaps-remote-requests-writes.csv"
 	}
 	if cfg.AddOnConfigMapsRemote.RequestsWritesSummaryJSONPath == "" {
-		cfg.AddOnConfigMapsRemote.RequestsWritesSummaryJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-config-maps-remote-requests-writes-summary.json"
+		cfg.AddOnConfigMapsRemote.RequestsWritesSummaryJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-configmaps-remote-requests-writes-summary.json"
 	}
 	if cfg.AddOnConfigMapsRemote.RequestsWritesSummaryTablePath == "" {
-		cfg.AddOnConfigMapsRemote.RequestsWritesSummaryTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-config-maps-remote-requests-writes-summary.txt"
+		cfg.AddOnConfigMapsRemote.RequestsWritesSummaryTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-configmaps-remote-requests-writes-summary.txt"
 	}
 
 	if cfg.AddOnConfigMapsRemote.RequestsWritesSummaryOutputNamePrefix == "" {
-		cfg.AddOnConfigMapsRemote.RequestsWritesSummaryOutputNamePrefix = "config-maps-writes" + randutil.String(10)
+		cfg.AddOnConfigMapsRemote.RequestsWritesSummaryOutputNamePrefix = "configmaps-writes" + randutil.String(10)
 	}
 
 	return nil

@@ -81,7 +81,7 @@ func (cfg *Config) validateAddOnConfigMapsLocal() error {
 		return errors.New("AddOnConfigMapsLocal.Enable true but no node group is enabled")
 	}
 	if cfg.AddOnConfigMapsLocal.Namespace == "" {
-		cfg.AddOnConfigMapsLocal.Namespace = cfg.Name + "-config-maps-local"
+		cfg.AddOnConfigMapsLocal.Namespace = cfg.Name + "-configmaps-local"
 	}
 
 	if cfg.AddOnConfigMapsLocal.Objects == 0 {
@@ -95,13 +95,13 @@ func (cfg *Config) validateAddOnConfigMapsLocal() error {
 	}
 
 	if cfg.AddOnConfigMapsLocal.RequestsWritesJSONPath == "" {
-		cfg.AddOnConfigMapsLocal.RequestsWritesJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-config-maps-local-requests-writes.csv"
+		cfg.AddOnConfigMapsLocal.RequestsWritesJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-configmaps-local-requests-writes.csv"
 	}
 	if cfg.AddOnConfigMapsLocal.RequestsWritesSummaryJSONPath == "" {
-		cfg.AddOnConfigMapsLocal.RequestsWritesSummaryJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-config-maps-local-requests-writes-summary.json"
+		cfg.AddOnConfigMapsLocal.RequestsWritesSummaryJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-configmaps-local-requests-writes-summary.json"
 	}
 	if cfg.AddOnConfigMapsLocal.RequestsWritesSummaryTablePath == "" {
-		cfg.AddOnConfigMapsLocal.RequestsWritesSummaryTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-config-maps-local-requests-writes-summary.txt"
+		cfg.AddOnConfigMapsLocal.RequestsWritesSummaryTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-configmaps-local-requests-writes-summary.txt"
 	}
 
 	return nil

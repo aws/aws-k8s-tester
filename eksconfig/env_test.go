@@ -271,9 +271,9 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_OBJECT_SIZE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_REPOSITORY_ACCOUNT_ID", "uri")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_REPOSITORY_ACCOUNT_ID")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_REPOSITORY_NAME", "config-maps-repo-name")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_REPOSITORY_NAME", "configmaps-repo-name")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_REPOSITORY_NAME")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_REPOSITORY_IMAGE_TAG", "config-maps-repo-image-tag")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_REPOSITORY_IMAGE_TAG", "configmaps-repo-image-tag")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_REPOSITORY_IMAGE_TAG")
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_ENABLE", "true")
@@ -941,10 +941,10 @@ func TestEnv(t *testing.T) {
 	if cfg.AddOnConfigMapsRemote.RepositoryAccountID != "uri" {
 		t.Fatalf("unexpected cfg.AddOnConfigMapsRemote.RepositoryAccountID %v", cfg.AddOnConfigMapsRemote.RepositoryAccountID)
 	}
-	if cfg.AddOnConfigMapsRemote.RepositoryName != "config-maps-repo-name" {
+	if cfg.AddOnConfigMapsRemote.RepositoryName != "configmaps-repo-name" {
 		t.Fatalf("unexpected cfg.AddOnConfigMapsRemote.RepositoryName %v", cfg.AddOnConfigMapsRemote.RepositoryName)
 	}
-	if cfg.AddOnConfigMapsRemote.RepositoryImageTag != "config-maps-repo-image-tag" {
+	if cfg.AddOnConfigMapsRemote.RepositoryImageTag != "configmaps-repo-image-tag" {
 		t.Fatalf("unexpected cfg.AddOnConfigMapsRemote.RepositoryImageTag %v", cfg.AddOnConfigMapsRemote.RepositoryImageTag)
 	}
 
