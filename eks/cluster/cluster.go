@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"reflect"
 	"strings"
+	"sync"
 	"text/template"
 	"time"
 
@@ -65,12 +66,14 @@ type Tester interface {
 // New creates a new Job tester.
 func New(cfg Config) Tester {
 	cfg.Logger.Info("creating tester", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
-	return &tester{cfg: cfg}
+	return &tester{cfg: cfg, checkHealthMu: new(sync.Mutex)}
 }
 
 type tester struct {
 	cfg       Config
 	k8sClient k8s_client.EKS
+
+	checkHealthMu *sync.Mutex
 }
 
 func (ts *tester) Create() (err error) {
@@ -102,12 +105,18 @@ func (ts *tester) Create() (err error) {
 func (ts *tester) Client() k8s_client.EKS { return ts.k8sClient }
 
 func (ts *tester) CheckHealth() (err error) {
+	ts.checkHealthMu.Lock()
+	defer ts.checkHealthMu.Unlock()
+	return ts.checkHealth()
+}
+
+func (ts *tester) checkHealth() (err error) {
 	if ts.cfg.EKSConfig.LogColor {
 		colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-		colorstring.Printf("[light_green]CheckHealth [default](%q)\n", ts.cfg.EKSConfig.ConfigPath)
+		colorstring.Printf("[light_green]checkHealth [default](%q)\n", ts.cfg.EKSConfig.ConfigPath)
 	} else {
 		fmt.Printf("\n\n*********************************\n")
-		fmt.Printf("CheckHealth (%q)\n", ts.cfg.EKSConfig.ConfigPath)
+		fmt.Printf("checkHealth (%q)\n", ts.cfg.EKSConfig.ConfigPath)
 	}
 
 	defer func() {
