@@ -78,7 +78,8 @@ func (ts *tester) Create() (err error) {
 	}
 	ts.cfg.Logger.Info("sent upgrade cluster request", zap.String("request-id", reqID))
 
-	initialWait := 3 * time.Minute
+	// takes ~30-min
+	initialWait := 10 * time.Minute
 
 	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Minute)
 	ch := Poll(
@@ -123,10 +124,12 @@ func (ts *tester) Create() (err error) {
 		ts.cfg.Logger.Info("fetched version", zap.String("current", cur), zap.String("target", target))
 		if cur != target {
 			err = fmt.Errorf("EKS server version after upgrade expected %q, got %q [%+v]", target, cur, ts.cfg.EKSConfig.Status.ServerVersionInfo)
+			ts.cfg.Logger.Warn("version mismatch; retrying")
 			continue
 		}
 
 		err = nil
+		ts.cfg.Logger.Info("version matched!")
 		break
 	}
 	if err != nil {
