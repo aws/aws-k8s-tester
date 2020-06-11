@@ -36,29 +36,29 @@ type tester struct {
 }
 
 func (ts *tester) Create() (err error) {
-	if !ts.cfg.EKSConfig.IsEnabledAddOnConfigMapsLocal() {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnConfigmapsLocal() {
 		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
-	if ts.cfg.EKSConfig.AddOnConfigMapsLocal.Created {
+	if ts.cfg.EKSConfig.AddOnConfigmapsLocal.Created {
 		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 
 	ts.cfg.Logger.Info("starting tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
-	ts.cfg.EKSConfig.AddOnConfigMapsLocal.Created = true
+	ts.cfg.EKSConfig.AddOnConfigmapsLocal.Created = true
 	ts.cfg.EKSConfig.Sync()
 	createStart := time.Now()
 	defer func() {
 		createEnd := time.Now()
-		ts.cfg.EKSConfig.AddOnConfigMapsLocal.TimeFrameCreate = timeutil.NewTimeFrame(createStart, createEnd)
+		ts.cfg.EKSConfig.AddOnConfigmapsLocal.TimeFrameCreate = timeutil.NewTimeFrame(createStart, createEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 
 	if err := k8s_client.CreateNamespace(
 		ts.cfg.Logger,
 		ts.cfg.K8SClient.KubernetesClientSet(),
-		ts.cfg.EKSConfig.AddOnConfigMapsLocal.Namespace,
+		ts.cfg.EKSConfig.AddOnConfigmapsLocal.Namespace,
 	); err != nil {
 		return err
 	}
@@ -68,32 +68,32 @@ func (ts *tester) Create() (err error) {
 		Stopc:          ts.cfg.Stopc,
 		Client:         ts.cfg.K8SClient,
 		ClientTimeout:  ts.cfg.EKSConfig.ClientTimeout,
-		Namespace:      ts.cfg.EKSConfig.AddOnConfigMapsLocal.Namespace,
-		Objects:        ts.cfg.EKSConfig.AddOnConfigMapsLocal.Objects,
-		ObjectSize:     ts.cfg.EKSConfig.AddOnConfigMapsLocal.ObjectSize,
-		WritesJSONPath: ts.cfg.EKSConfig.AddOnConfigMapsLocal.RequestsWritesJSONPath,
+		Namespace:      ts.cfg.EKSConfig.AddOnConfigmapsLocal.Namespace,
+		Objects:        ts.cfg.EKSConfig.AddOnConfigmapsLocal.Objects,
+		ObjectSize:     ts.cfg.EKSConfig.AddOnConfigmapsLocal.ObjectSize,
+		WritesJSONPath: ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesJSONPath,
 	})
 	loader.Start()
 	loader.Stop()
 
 	ts.cfg.Logger.Info("completing configmaps local tester")
-	ts.cfg.EKSConfig.AddOnConfigMapsLocal.RequestsWritesSummary, err = loader.CollectMetrics()
+	ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesSummary, err = loader.CollectMetrics()
 	ts.cfg.EKSConfig.Sync()
 	if err != nil {
 		ts.cfg.Logger.Warn("failed to get metrics", zap.Error(err))
 	} else {
-		err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnConfigMapsLocal.RequestsWritesSummaryJSONPath, []byte(ts.cfg.EKSConfig.AddOnConfigMapsLocal.RequestsWritesSummary.JSON()), 0600)
+		err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesSummaryJSONPath, []byte(ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesSummary.JSON()), 0600)
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 			return err
 		}
-		err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnConfigMapsLocal.RequestsWritesSummaryTablePath, []byte(ts.cfg.EKSConfig.AddOnConfigMapsLocal.RequestsWritesSummary.Table()), 0600)
+		err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesSummaryTablePath, []byte(ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesSummary.Table()), 0600)
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 			return err
 		}
 	}
-	fmt.Printf("\n\nAddOnConfigMapsLocal.RequestsWritesSummary:\n%s\n", ts.cfg.EKSConfig.AddOnConfigMapsLocal.RequestsWritesSummary.Table())
+	fmt.Printf("\n\nAddOnConfigmapsLocal.RequestsWritesSummary:\n%s\n", ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesSummary.Table())
 
 	waitDur, retryStart := 5*time.Minute, time.Now()
 	for time.Now().Sub(retryStart) < waitDur {
@@ -119,11 +119,11 @@ func (ts *tester) Create() (err error) {
 }
 
 func (ts *tester) Delete() error {
-	if !ts.cfg.EKSConfig.IsEnabledAddOnConfigMapsLocal() {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnConfigmapsLocal() {
 		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
-	if !ts.cfg.EKSConfig.AddOnConfigMapsLocal.Created {
+	if !ts.cfg.EKSConfig.AddOnConfigmapsLocal.Created {
 		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
@@ -132,7 +132,7 @@ func (ts *tester) Delete() error {
 	deleteStart := time.Now()
 	defer func() {
 		deleteEnd := time.Now()
-		ts.cfg.EKSConfig.AddOnConfigMapsLocal.TimeFrameDelete = timeutil.NewTimeFrame(deleteStart, deleteEnd)
+		ts.cfg.EKSConfig.AddOnConfigmapsLocal.TimeFrameDelete = timeutil.NewTimeFrame(deleteStart, deleteEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 
@@ -141,7 +141,7 @@ func (ts *tester) Delete() error {
 	if err := k8s_client.DeleteNamespaceAndWait(
 		ts.cfg.Logger,
 		ts.cfg.K8SClient.KubernetesClientSet(),
-		ts.cfg.EKSConfig.AddOnConfigMapsLocal.Namespace,
+		ts.cfg.EKSConfig.AddOnConfigmapsLocal.Namespace,
 		k8s_client.DefaultNamespaceDeletionInterval,
 		k8s_client.DefaultNamespaceDeletionTimeout,
 	); err != nil {
@@ -152,16 +152,16 @@ func (ts *tester) Delete() error {
 		return errors.New(strings.Join(errs, ", "))
 	}
 
-	ts.cfg.EKSConfig.AddOnConfigMapsLocal.Created = false
+	ts.cfg.EKSConfig.AddOnConfigmapsLocal.Created = false
 	return ts.cfg.EKSConfig.Sync()
 }
 
 func (ts *tester) AggregateResults() (err error) {
-	if !ts.cfg.EKSConfig.IsEnabledAddOnConfigMapsLocal() {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnConfigmapsLocal() {
 		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
-	if !ts.cfg.EKSConfig.AddOnConfigMapsLocal.Created {
+	if !ts.cfg.EKSConfig.AddOnConfigmapsLocal.Created {
 		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}

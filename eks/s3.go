@@ -412,72 +412,72 @@ func (ts *Tester) uploadToS3() (err error) {
 		}
 	}
 
-	if ts.cfg.IsEnabledAddOnConfigMapsLocal() {
-		if fileutil.Exist(ts.cfg.AddOnConfigMapsLocal.RequestsWritesJSONPath) {
+	if ts.cfg.IsEnabledAddOnConfigmapsLocal() {
+		if fileutil.Exist(ts.cfg.AddOnConfigmapsLocal.RequestsWritesJSONPath) {
 			if err = uploadFileToS3(
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
 				path.Join(ts.cfg.Name, "configmaps-local-requests-writes.json"),
-				ts.cfg.AddOnConfigMapsLocal.RequestsWritesJSONPath,
+				ts.cfg.AddOnConfigmapsLocal.RequestsWritesJSONPath,
 			); err != nil {
 				return err
 			}
 		}
-		if fileutil.Exist(ts.cfg.AddOnConfigMapsLocal.RequestsWritesSummaryJSONPath) {
+		if fileutil.Exist(ts.cfg.AddOnConfigmapsLocal.RequestsWritesSummaryJSONPath) {
 			if err = uploadFileToS3(
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
 				path.Join(ts.cfg.Name, "configmaps-local-requests-writes-summary.json"),
-				ts.cfg.AddOnConfigMapsLocal.RequestsWritesSummaryJSONPath,
+				ts.cfg.AddOnConfigmapsLocal.RequestsWritesSummaryJSONPath,
 			); err != nil {
 				return err
 			}
 		}
-		if fileutil.Exist(ts.cfg.AddOnConfigMapsLocal.RequestsWritesSummaryTablePath) {
+		if fileutil.Exist(ts.cfg.AddOnConfigmapsLocal.RequestsWritesSummaryTablePath) {
 			if err = uploadFileToS3(
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
 				path.Join(ts.cfg.Name, "configmaps-local-requests-writes-summary.txt"),
-				ts.cfg.AddOnConfigMapsLocal.RequestsWritesSummaryTablePath,
+				ts.cfg.AddOnConfigmapsLocal.RequestsWritesSummaryTablePath,
 			); err != nil {
 				return err
 			}
 		}
 	}
 
-	if ts.cfg.IsEnabledAddOnConfigMapsRemote() {
-		if fileutil.Exist(ts.cfg.AddOnConfigMapsRemote.RequestsWritesJSONPath) {
+	if ts.cfg.IsEnabledAddOnConfigmapsRemote() {
+		if fileutil.Exist(ts.cfg.AddOnConfigmapsRemote.RequestsWritesJSONPath) {
 			if err = uploadFileToS3(
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
 				path.Join(ts.cfg.Name, "configmaps-remote-requests-writes.json"),
-				ts.cfg.AddOnConfigMapsRemote.RequestsWritesJSONPath,
+				ts.cfg.AddOnConfigmapsRemote.RequestsWritesJSONPath,
 			); err != nil {
 				return err
 			}
 		}
-		if fileutil.Exist(ts.cfg.AddOnConfigMapsRemote.RequestsWritesSummaryJSONPath) {
+		if fileutil.Exist(ts.cfg.AddOnConfigmapsRemote.RequestsWritesSummaryJSONPath) {
 			if err = uploadFileToS3(
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
 				path.Join(ts.cfg.Name, "configmaps-remote-requests-writes-summary.json"),
-				ts.cfg.AddOnConfigMapsRemote.RequestsWritesSummaryJSONPath,
+				ts.cfg.AddOnConfigmapsRemote.RequestsWritesSummaryJSONPath,
 			); err != nil {
 				return err
 			}
 		}
-		if fileutil.Exist(ts.cfg.AddOnConfigMapsRemote.RequestsWritesSummaryTablePath) {
+		if fileutil.Exist(ts.cfg.AddOnConfigmapsRemote.RequestsWritesSummaryTablePath) {
 			if err = uploadFileToS3(
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
 				path.Join(ts.cfg.Name, "configmaps-remote-requests-writes-summary.txt"),
-				ts.cfg.AddOnConfigMapsRemote.RequestsWritesSummaryTablePath,
+				ts.cfg.AddOnConfigmapsRemote.RequestsWritesSummaryTablePath,
 			); err != nil {
 				return err
 			}

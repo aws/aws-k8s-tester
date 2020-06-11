@@ -230,14 +230,14 @@ type Config struct {
 	// It generates loads from the remote workers (Pod) in the cluster.
 	AddOnCSRsRemote *AddOnCSRsRemote `json:"add-on-csrs-remote,omitempty"`
 
-	// AddOnConfigMapsLocal defines parameters for EKS cluster
+	// AddOnConfigmapsLocal defines parameters for EKS cluster
 	// add-on "ConfigMap" local.
 	// It generates loads from the local host machine.
-	AddOnConfigMapsLocal *AddOnConfigMapsLocal `json:"add-on-config-maps-local,omitempty"`
-	// AddOnConfigMapsRemote defines parameters for EKS cluster
+	AddOnConfigmapsLocal *AddOnConfigmapsLocal `json:"add-on-configmaps-local,omitempty"`
+	// AddOnConfigmapsRemote defines parameters for EKS cluster
 	// add-on "ConfigMap" remote.
 	// It generates loads from the remote workers (Pod) in the cluster.
-	AddOnConfigMapsRemote *AddOnConfigMapsRemote `json:"add-on-config-maps-remote,omitempty"`
+	AddOnConfigmapsRemote *AddOnConfigmapsRemote `json:"add-on-configmaps-remote,omitempty"`
 
 	// AddOnSecretsLocal defines parameters for EKS cluster
 	// add-on "Secrets" local.
@@ -754,8 +754,8 @@ func NewDefault() *Config {
 		AddOnCronJobs:              getDefaultAddOnCronJobs(),
 		AddOnCSRsLocal:             getDefaultAddOnCSRsLocal(),
 		AddOnCSRsRemote:            getDefaultAddOnCSRsRemote(),
-		AddOnConfigMapsLocal:       getDefaultAddOnConfigMapsLocal(),
-		AddOnConfigMapsRemote:      getDefaultAddOnConfigMapsRemote(),
+		AddOnConfigmapsLocal:       getDefaultAddOnConfigmapsLocal(),
+		AddOnConfigmapsRemote:      getDefaultAddOnConfigmapsRemote(),
 		AddOnSecretsLocal:          getDefaultAddOnSecretsLocal(),
 		AddOnSecretsRemote:         getDefaultAddOnSecretsRemote(),
 		AddOnFargate:               getDefaultAddOnFargate(),
@@ -874,11 +874,11 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		return fmt.Errorf("validateAddOnCSRsRemote failed [%v]", err)
 	}
 
-	if err := cfg.validateAddOnConfigMapsLocal(); err != nil {
-		return fmt.Errorf("validateAddOnConfigMapsLocal failed [%v]", err)
+	if err := cfg.validateAddOnConfigmapsLocal(); err != nil {
+		return fmt.Errorf("validateAddOnConfigmapsLocal failed [%v]", err)
 	}
-	if err := cfg.validateAddOnConfigMapsRemote(); err != nil {
-		return fmt.Errorf("validateAddOnConfigMapsRemote failed [%v]", err)
+	if err := cfg.validateAddOnConfigmapsRemote(); err != nil {
+		return fmt.Errorf("validateAddOnConfigmapsRemote failed [%v]", err)
 	}
 
 	if err := cfg.validateAddOnSecretsLocal(); err != nil {

@@ -10,13 +10,13 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 )
 
-// AddOnConfigMapsRemote defines parameters for EKS cluster
+// AddOnConfigmapsRemote defines parameters for EKS cluster
 // add-on "ConfigMap" remote.
 // It generates loads from the remote workers (Pod) in the cluster.
 // Each worker writes serially with no concurrency.
 // Configure "DeploymentReplicas" accordingly to increase the concurrency.
 // The main use case is to write large objects to fill up etcd database.
-type AddOnConfigMapsRemote struct {
+type AddOnConfigmapsRemote struct {
 	// Enable is 'true' to create this add-on.
 	Enable bool `json:"enable"`
 	// Created is true when the resource has been created.
@@ -62,24 +62,24 @@ type AddOnConfigMapsRemote struct {
 	RequestsWritesSummaryOutputNamePrefix string `json:"requests-writes-summary-output-name-prefix"`
 }
 
-// EnvironmentVariablePrefixAddOnConfigMapsRemote is the environment variable prefix used for "eksconfig".
-const EnvironmentVariablePrefixAddOnConfigMapsRemote = AWS_K8S_TESTER_EKS_PREFIX + "ADD_ON_CONFIG_MAPS_REMOTE_"
+// EnvironmentVariablePrefixAddOnConfigmapsRemote is the environment variable prefix used for "eksconfig".
+const EnvironmentVariablePrefixAddOnConfigmapsRemote = AWS_K8S_TESTER_EKS_PREFIX + "ADD_ON_CONFIGMAPS_REMOTE_"
 
-// IsEnabledAddOnConfigMapsRemote returns true if "AddOnConfigMapsRemote" is enabled.
+// IsEnabledAddOnConfigmapsRemote returns true if "AddOnConfigmapsRemote" is enabled.
 // Otherwise, nil the field for "omitempty".
-func (cfg *Config) IsEnabledAddOnConfigMapsRemote() bool {
-	if cfg.AddOnConfigMapsRemote == nil {
+func (cfg *Config) IsEnabledAddOnConfigmapsRemote() bool {
+	if cfg.AddOnConfigmapsRemote == nil {
 		return false
 	}
-	if cfg.AddOnConfigMapsRemote.Enable {
+	if cfg.AddOnConfigmapsRemote.Enable {
 		return true
 	}
-	cfg.AddOnConfigMapsRemote = nil
+	cfg.AddOnConfigmapsRemote = nil
 	return false
 }
 
-func getDefaultAddOnConfigMapsRemote() *AddOnConfigMapsRemote {
-	return &AddOnConfigMapsRemote{
+func getDefaultAddOnConfigmapsRemote() *AddOnConfigmapsRemote {
+	return &AddOnConfigmapsRemote{
 		Enable:             false,
 		DeploymentReplicas: 5,
 		Objects:            10,
@@ -93,53 +93,53 @@ func getDefaultAddOnConfigMapsRemote() *AddOnConfigMapsRemote {
 	}
 }
 
-func (cfg *Config) validateAddOnConfigMapsRemote() error {
-	if !cfg.IsEnabledAddOnConfigMapsRemote() {
+func (cfg *Config) validateAddOnConfigmapsRemote() error {
+	if !cfg.IsEnabledAddOnConfigmapsRemote() {
 		return nil
 	}
 	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
-		return errors.New("AddOnConfigMapsRemote.Enable true but no node group is enabled")
+		return errors.New("AddOnConfigmapsRemote.Enable true but no node group is enabled")
 	}
 
-	if cfg.AddOnConfigMapsRemote.Namespace == "" {
-		cfg.AddOnConfigMapsRemote.Namespace = cfg.Name + "-configmaps-remote"
+	if cfg.AddOnConfigmapsRemote.Namespace == "" {
+		cfg.AddOnConfigmapsRemote.Namespace = cfg.Name + "-configmaps-remote"
 	}
 
-	if cfg.AddOnConfigMapsRemote.RepositoryAccountID == "" {
-		return errors.New("AddOnConfigMapsRemote.RepositoryAccountID empty")
+	if cfg.AddOnConfigmapsRemote.RepositoryAccountID == "" {
+		return errors.New("AddOnConfigmapsRemote.RepositoryAccountID empty")
 	}
-	if cfg.AddOnConfigMapsRemote.RepositoryName == "" {
-		return errors.New("AddOnConfigMapsRemote.RepositoryName empty")
+	if cfg.AddOnConfigmapsRemote.RepositoryName == "" {
+		return errors.New("AddOnConfigmapsRemote.RepositoryName empty")
 	}
-	if cfg.AddOnConfigMapsRemote.RepositoryImageTag == "" {
-		return errors.New("AddOnConfigMapsRemote.RepositoryImageTag empty")
-	}
-
-	if cfg.AddOnConfigMapsRemote.DeploymentReplicas == 0 {
-		cfg.AddOnConfigMapsRemote.DeploymentReplicas = 5
-	}
-	if cfg.AddOnConfigMapsRemote.Objects == 0 {
-		cfg.AddOnConfigMapsRemote.Objects = 10
-	}
-	if cfg.AddOnConfigMapsRemote.ObjectSize == 0 {
-		cfg.AddOnConfigMapsRemote.ObjectSize = 10 * 1024
-	}
-	if cfg.AddOnConfigMapsRemote.ObjectSize > 900000 {
-		return fmt.Errorf("AddOnConfigMapsRemote.ObjectSize limit is 0.9 MB, got %d", cfg.AddOnConfigMapsRemote.ObjectSize)
+	if cfg.AddOnConfigmapsRemote.RepositoryImageTag == "" {
+		return errors.New("AddOnConfigmapsRemote.RepositoryImageTag empty")
 	}
 
-	if cfg.AddOnConfigMapsRemote.RequestsWritesJSONPath == "" {
-		cfg.AddOnConfigMapsRemote.RequestsWritesJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-configmaps-remote-requests-writes.csv"
+	if cfg.AddOnConfigmapsRemote.DeploymentReplicas == 0 {
+		cfg.AddOnConfigmapsRemote.DeploymentReplicas = 5
 	}
-	if cfg.AddOnConfigMapsRemote.RequestsWritesSummaryJSONPath == "" {
-		cfg.AddOnConfigMapsRemote.RequestsWritesSummaryJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-configmaps-remote-requests-writes-summary.json"
+	if cfg.AddOnConfigmapsRemote.Objects == 0 {
+		cfg.AddOnConfigmapsRemote.Objects = 10
 	}
-	if cfg.AddOnConfigMapsRemote.RequestsWritesSummaryTablePath == "" {
-		cfg.AddOnConfigMapsRemote.RequestsWritesSummaryTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-configmaps-remote-requests-writes-summary.txt"
+	if cfg.AddOnConfigmapsRemote.ObjectSize == 0 {
+		cfg.AddOnConfigmapsRemote.ObjectSize = 10 * 1024
+	}
+	if cfg.AddOnConfigmapsRemote.ObjectSize > 900000 {
+		return fmt.Errorf("AddOnConfigmapsRemote.ObjectSize limit is 0.9 MB, got %d", cfg.AddOnConfigmapsRemote.ObjectSize)
 	}
 
-	if cfg.AddOnConfigMapsRemote.RequestsWritesSummaryOutputNamePrefix == "" {
-		cfg.AddOnConfigMapsRemote.RequestsWritesSummaryOutputNamePrefix = "configmaps-writes" + randutil.String(10)
+	if cfg.AddOnConfigmapsRemote.RequestsWritesJSONPath == "" {
+		cfg.AddOnConfigmapsRemote.RequestsWritesJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-configmaps-remote-requests-writes.csv"
+	}
+	if cfg.AddOnConfigmapsRemote.RequestsWritesSummaryJSONPath == "" {
+		cfg.AddOnConfigmapsRemote.RequestsWritesSummaryJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-configmaps-remote-requests-writes-summary.json"
+	}
+	if cfg.AddOnConfigmapsRemote.RequestsWritesSummaryTablePath == "" {
+		cfg.AddOnConfigmapsRemote.RequestsWritesSummaryTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-configmaps-remote-requests-writes-summary.txt"
+	}
+
+	if cfg.AddOnConfigmapsRemote.RequestsWritesSummaryOutputNamePrefix == "" {
+		cfg.AddOnConfigmapsRemote.RequestsWritesSummaryOutputNamePrefix = "configmaps-writes" + randutil.String(10)
 	}
 
 	return nil

@@ -9,13 +9,13 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 )
 
-// AddOnConfigMapsLocal defines parameters for EKS cluster
+// AddOnConfigmapsLocal defines parameters for EKS cluster
 // add-on "ConfigMap" local.
 // It generates loads from the local host machine.
 // Every object is written serially with no concurrency.
 // Use remote tester to write with concurrency.
 // The main use case is to write large objects to fill up etcd database.
-type AddOnConfigMapsLocal struct {
+type AddOnConfigmapsLocal struct {
 	// Enable is 'true' to create this add-on.
 	Enable bool `json:"enable"`
 	// Created is true when the resource has been created.
@@ -45,24 +45,24 @@ type AddOnConfigMapsLocal struct {
 	RequestsWritesSummaryTablePath string `json:"requests-writes-summary-table-path" read-only:"true"`
 }
 
-// EnvironmentVariablePrefixAddOnConfigMapsLocal is the environment variable prefix used for "eksconfig".
-const EnvironmentVariablePrefixAddOnConfigMapsLocal = AWS_K8S_TESTER_EKS_PREFIX + "ADD_ON_CONFIG_MAPS_LOCAL_"
+// EnvironmentVariablePrefixAddOnConfigmapsLocal is the environment variable prefix used for "eksconfig".
+const EnvironmentVariablePrefixAddOnConfigmapsLocal = AWS_K8S_TESTER_EKS_PREFIX + "ADD_ON_CONFIGMAPS_LOCAL_"
 
-// IsEnabledAddOnConfigMapsLocal returns true if "AddOnConfigMapsLocal" is enabled.
+// IsEnabledAddOnConfigmapsLocal returns true if "AddOnConfigmapsLocal" is enabled.
 // Otherwise, nil the field for "omitempty".
-func (cfg *Config) IsEnabledAddOnConfigMapsLocal() bool {
-	if cfg.AddOnConfigMapsLocal == nil {
+func (cfg *Config) IsEnabledAddOnConfigmapsLocal() bool {
+	if cfg.AddOnConfigmapsLocal == nil {
 		return false
 	}
-	if cfg.AddOnConfigMapsLocal.Enable {
+	if cfg.AddOnConfigmapsLocal.Enable {
 		return true
 	}
-	cfg.AddOnConfigMapsLocal = nil
+	cfg.AddOnConfigmapsLocal = nil
 	return false
 }
 
-func getDefaultAddOnConfigMapsLocal() *AddOnConfigMapsLocal {
-	return &AddOnConfigMapsLocal{
+func getDefaultAddOnConfigmapsLocal() *AddOnConfigmapsLocal {
+	return &AddOnConfigmapsLocal{
 		Enable:     false,
 		Objects:    10,
 		ObjectSize: 10 * 1024, // 10 KB
@@ -73,35 +73,35 @@ func getDefaultAddOnConfigMapsLocal() *AddOnConfigMapsLocal {
 	}
 }
 
-func (cfg *Config) validateAddOnConfigMapsLocal() error {
-	if !cfg.IsEnabledAddOnConfigMapsLocal() {
+func (cfg *Config) validateAddOnConfigmapsLocal() error {
+	if !cfg.IsEnabledAddOnConfigmapsLocal() {
 		return nil
 	}
 	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
-		return errors.New("AddOnConfigMapsLocal.Enable true but no node group is enabled")
+		return errors.New("AddOnConfigmapsLocal.Enable true but no node group is enabled")
 	}
-	if cfg.AddOnConfigMapsLocal.Namespace == "" {
-		cfg.AddOnConfigMapsLocal.Namespace = cfg.Name + "-configmaps-local"
-	}
-
-	if cfg.AddOnConfigMapsLocal.Objects == 0 {
-		cfg.AddOnConfigMapsLocal.Objects = 10
-	}
-	if cfg.AddOnConfigMapsLocal.ObjectSize == 0 {
-		cfg.AddOnConfigMapsLocal.ObjectSize = 10 * 1024
-	}
-	if cfg.AddOnConfigMapsLocal.ObjectSize > 900000 {
-		return fmt.Errorf("AddOnConfigMapsLocal.ObjectSize limit is 0.9 MB, got %d", cfg.AddOnConfigMapsLocal.ObjectSize)
+	if cfg.AddOnConfigmapsLocal.Namespace == "" {
+		cfg.AddOnConfigmapsLocal.Namespace = cfg.Name + "-configmaps-local"
 	}
 
-	if cfg.AddOnConfigMapsLocal.RequestsWritesJSONPath == "" {
-		cfg.AddOnConfigMapsLocal.RequestsWritesJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-configmaps-local-requests-writes.csv"
+	if cfg.AddOnConfigmapsLocal.Objects == 0 {
+		cfg.AddOnConfigmapsLocal.Objects = 10
 	}
-	if cfg.AddOnConfigMapsLocal.RequestsWritesSummaryJSONPath == "" {
-		cfg.AddOnConfigMapsLocal.RequestsWritesSummaryJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-configmaps-local-requests-writes-summary.json"
+	if cfg.AddOnConfigmapsLocal.ObjectSize == 0 {
+		cfg.AddOnConfigmapsLocal.ObjectSize = 10 * 1024
 	}
-	if cfg.AddOnConfigMapsLocal.RequestsWritesSummaryTablePath == "" {
-		cfg.AddOnConfigMapsLocal.RequestsWritesSummaryTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-configmaps-local-requests-writes-summary.txt"
+	if cfg.AddOnConfigmapsLocal.ObjectSize > 900000 {
+		return fmt.Errorf("AddOnConfigmapsLocal.ObjectSize limit is 0.9 MB, got %d", cfg.AddOnConfigmapsLocal.ObjectSize)
+	}
+
+	if cfg.AddOnConfigmapsLocal.RequestsWritesJSONPath == "" {
+		cfg.AddOnConfigmapsLocal.RequestsWritesJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-configmaps-local-requests-writes.csv"
+	}
+	if cfg.AddOnConfigmapsLocal.RequestsWritesSummaryJSONPath == "" {
+		cfg.AddOnConfigmapsLocal.RequestsWritesSummaryJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-configmaps-local-requests-writes-summary.json"
+	}
+	if cfg.AddOnConfigmapsLocal.RequestsWritesSummaryTablePath == "" {
+		cfg.AddOnConfigmapsLocal.RequestsWritesSummaryTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-configmaps-local-requests-writes-summary.txt"
 	}
 
 	return nil

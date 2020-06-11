@@ -50,38 +50,38 @@ type tester struct {
 }
 
 func (ts *tester) Create() (err error) {
-	if !ts.cfg.EKSConfig.IsEnabledAddOnConfigMapsRemote() {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnConfigmapsRemote() {
 		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
-	if ts.cfg.EKSConfig.AddOnConfigMapsRemote.Created {
+	if ts.cfg.EKSConfig.AddOnConfigmapsRemote.Created {
 		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
 
 	ts.cfg.Logger.Info("starting tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
-	ts.cfg.EKSConfig.AddOnConfigMapsRemote.Created = true
+	ts.cfg.EKSConfig.AddOnConfigmapsRemote.Created = true
 	ts.cfg.EKSConfig.Sync()
 	createStart := time.Now()
 	defer func() {
 		createEnd := time.Now()
-		ts.cfg.EKSConfig.AddOnConfigMapsRemote.TimeFrameCreate = timeutil.NewTimeFrame(createStart, createEnd)
+		ts.cfg.EKSConfig.AddOnConfigmapsRemote.TimeFrameCreate = timeutil.NewTimeFrame(createStart, createEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 
 	if ts.ecrImage, err = aws_ecr.Check(
 		ts.cfg.Logger,
 		ts.cfg.ECRAPI,
-		ts.cfg.EKSConfig.AddOnConfigMapsRemote.RepositoryAccountID,
-		ts.cfg.EKSConfig.AddOnConfigMapsRemote.RepositoryName,
-		ts.cfg.EKSConfig.AddOnConfigMapsRemote.RepositoryImageTag,
+		ts.cfg.EKSConfig.AddOnConfigmapsRemote.RepositoryAccountID,
+		ts.cfg.EKSConfig.AddOnConfigmapsRemote.RepositoryName,
+		ts.cfg.EKSConfig.AddOnConfigmapsRemote.RepositoryImageTag,
 	); err != nil {
 		return err
 	}
 	if err = k8s_client.CreateNamespace(
 		ts.cfg.Logger,
 		ts.cfg.K8SClient.KubernetesClientSet(),
-		ts.cfg.EKSConfig.AddOnConfigMapsRemote.Namespace,
+		ts.cfg.EKSConfig.AddOnConfigmapsRemote.Namespace,
 	); err != nil {
 		return err
 	}
@@ -136,11 +136,11 @@ func (ts *tester) Create() (err error) {
 }
 
 func (ts *tester) Delete() error {
-	if !ts.cfg.EKSConfig.IsEnabledAddOnConfigMapsRemote() {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnConfigmapsRemote() {
 		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
-	if !ts.cfg.EKSConfig.AddOnConfigMapsRemote.Created {
+	if !ts.cfg.EKSConfig.AddOnConfigmapsRemote.Created {
 		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
@@ -149,7 +149,7 @@ func (ts *tester) Delete() error {
 	deleteStart := time.Now()
 	defer func() {
 		deleteEnd := time.Now()
-		ts.cfg.EKSConfig.AddOnConfigMapsRemote.TimeFrameDelete = timeutil.NewTimeFrame(deleteStart, deleteEnd)
+		ts.cfg.EKSConfig.AddOnConfigmapsRemote.TimeFrameDelete = timeutil.NewTimeFrame(deleteStart, deleteEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
 
@@ -174,7 +174,7 @@ func (ts *tester) Delete() error {
 	if err := k8s_client.DeleteNamespaceAndWait(
 		ts.cfg.Logger,
 		ts.cfg.K8SClient.KubernetesClientSet(),
-		ts.cfg.EKSConfig.AddOnConfigMapsRemote.Namespace,
+		ts.cfg.EKSConfig.AddOnConfigmapsRemote.Namespace,
 		k8s_client.DefaultNamespaceDeletionInterval,
 		k8s_client.DefaultNamespaceDeletionTimeout,
 	); err != nil {
@@ -185,7 +185,7 @@ func (ts *tester) Delete() error {
 		return errors.New(strings.Join(errs, ", "))
 	}
 
-	ts.cfg.EKSConfig.AddOnConfigMapsRemote.Created = false
+	ts.cfg.EKSConfig.AddOnConfigmapsRemote.Created = false
 	return ts.cfg.EKSConfig.Sync()
 }
 
@@ -206,7 +206,7 @@ func (ts *tester) createServiceAccount() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.K8SClient.KubernetesClientSet().
 		CoreV1().
-		ServiceAccounts(ts.cfg.EKSConfig.AddOnConfigMapsRemote.Namespace).
+		ServiceAccounts(ts.cfg.EKSConfig.AddOnConfigmapsRemote.Namespace).
 		Create(
 			ctx,
 			&v1.ServiceAccount{
@@ -216,7 +216,7 @@ func (ts *tester) createServiceAccount() error {
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      configmapsServiceAccountName,
-					Namespace: ts.cfg.EKSConfig.AddOnConfigMapsRemote.Namespace,
+					Namespace: ts.cfg.EKSConfig.AddOnConfigmapsRemote.Namespace,
 					Labels: map[string]string{
 						"app.kubernetes.io/name": configmapsAppName,
 					},
@@ -241,7 +241,7 @@ func (ts *tester) deleteServiceAccount() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	err := ts.cfg.K8SClient.KubernetesClientSet().
 		CoreV1().
-		ServiceAccounts(ts.cfg.EKSConfig.AddOnConfigMapsRemote.Namespace).
+		ServiceAccounts(ts.cfg.EKSConfig.AddOnConfigmapsRemote.Namespace).
 		Delete(
 			ctx,
 			configmapsServiceAccountName,
@@ -371,7 +371,7 @@ func (ts *tester) createALBRBACClusterRoleBinding() error {
 						APIGroup:  "",
 						Kind:      "ServiceAccount",
 						Name:      configmapsServiceAccountName,
-						Namespace: ts.cfg.EKSConfig.AddOnConfigMapsRemote.Namespace,
+						Namespace: ts.cfg.EKSConfig.AddOnConfigmapsRemote.Namespace,
 					},
 					{ // https://kubernetes.io/docs/reference/access-authn-authz/rbac/
 						APIGroup: "rbac.authorization.k8s.io",
@@ -428,7 +428,7 @@ func (ts *tester) createConfigMap() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err = ts.cfg.K8SClient.KubernetesClientSet().
 		CoreV1().
-		ConfigMaps(ts.cfg.EKSConfig.AddOnConfigMapsRemote.Namespace).
+		ConfigMaps(ts.cfg.EKSConfig.AddOnConfigmapsRemote.Namespace).
 		Create(
 			ctx,
 			&v1.ConfigMap{
@@ -438,7 +438,7 @@ func (ts *tester) createConfigMap() error {
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      configmapsKubeConfigConfigMapName,
-					Namespace: ts.cfg.EKSConfig.AddOnConfigMapsRemote.Namespace,
+					Namespace: ts.cfg.EKSConfig.AddOnConfigmapsRemote.Namespace,
 					Labels: map[string]string{
 						"name": configmapsKubeConfigConfigMapName,
 					},
@@ -464,7 +464,7 @@ func (ts *tester) deleteConfigMap() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	err := ts.cfg.K8SClient.KubernetesClientSet().
 		CoreV1().
-		ConfigMaps(ts.cfg.EKSConfig.AddOnConfigMapsRemote.Namespace).
+		ConfigMaps(ts.cfg.EKSConfig.AddOnConfigmapsRemote.Namespace).
 		Delete(
 			ctx,
 			configmapsKubeConfigConfigMapName,
@@ -491,10 +491,10 @@ func (ts *tester) createDeployment() error {
 		ts.cfg.EKSConfig.ClientQPS,
 		ts.cfg.EKSConfig.ClientBurst,
 		ts.cfg.EKSConfig.ClientTimeout,
-		ts.cfg.EKSConfig.AddOnConfigMapsRemote.Namespace,
-		ts.cfg.EKSConfig.AddOnConfigMapsRemote.Objects,
-		ts.cfg.EKSConfig.AddOnConfigMapsRemote.ObjectSize,
-		ts.cfg.EKSConfig.AddOnConfigMapsRemote.RequestsWritesSummaryOutputNamePrefix,
+		ts.cfg.EKSConfig.AddOnConfigmapsRemote.Namespace,
+		ts.cfg.EKSConfig.AddOnConfigmapsRemote.Objects,
+		ts.cfg.EKSConfig.AddOnConfigmapsRemote.ObjectSize,
+		ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsWritesSummaryOutputNamePrefix,
 	)
 
 	ts.cfg.Logger.Info("creating configmaps Deployment", zap.String("image", ts.ecrImage), zap.String("tester-command", testerCmd))
@@ -502,7 +502,7 @@ func (ts *tester) createDeployment() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.K8SClient.KubernetesClientSet().
 		AppsV1().
-		Deployments(ts.cfg.EKSConfig.AddOnConfigMapsRemote.Namespace).
+		Deployments(ts.cfg.EKSConfig.AddOnConfigmapsRemote.Namespace).
 		Create(
 			ctx,
 			&appsv1.Deployment{
@@ -512,13 +512,13 @@ func (ts *tester) createDeployment() error {
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      configmapsDeploymentName,
-					Namespace: ts.cfg.EKSConfig.AddOnConfigMapsRemote.Namespace,
+					Namespace: ts.cfg.EKSConfig.AddOnConfigmapsRemote.Namespace,
 					Labels: map[string]string{
 						"app.kubernetes.io/name": configmapsAppName,
 					},
 				},
 				Spec: appsv1.DeploymentSpec{
-					Replicas: aws.Int32(ts.cfg.EKSConfig.AddOnConfigMapsRemote.DeploymentReplicas),
+					Replicas: aws.Int32(ts.cfg.EKSConfig.AddOnConfigmapsRemote.DeploymentReplicas),
 					Selector: &metav1.LabelSelector{
 						MatchLabels: map[string]string{
 							"app.kubernetes.io/name": configmapsAppName,
@@ -612,7 +612,7 @@ func (ts *tester) deleteDeployment() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	err := ts.cfg.K8SClient.KubernetesClientSet().
 		AppsV1().
-		Deployments(ts.cfg.EKSConfig.AddOnConfigMapsRemote.Namespace).
+		Deployments(ts.cfg.EKSConfig.AddOnConfigmapsRemote.Namespace).
 		Delete(
 			ctx,
 			configmapsDeploymentName,
@@ -634,7 +634,7 @@ func (ts *tester) waitDeployment() error {
 	args := []string{
 		ts.cfg.EKSConfig.KubectlPath,
 		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
-		"--namespace=" + ts.cfg.EKSConfig.AddOnConfigMapsRemote.Namespace,
+		"--namespace=" + ts.cfg.EKSConfig.AddOnConfigmapsRemote.Namespace,
 		"describe",
 		"deployment",
 		configmapsDeploymentName,
@@ -651,7 +651,7 @@ func (ts *tester) waitDeployment() error {
 	fmt.Printf("\n\n\"%s\" output:\n%s\n\n", cmd, out)
 
 	ready := false
-	waitDur := 7*time.Minute + time.Duration(ts.cfg.EKSConfig.AddOnConfigMapsRemote.DeploymentReplicas)*time.Minute
+	waitDur := 7*time.Minute + time.Duration(ts.cfg.EKSConfig.AddOnConfigmapsRemote.DeploymentReplicas)*time.Minute
 	retryStart := time.Now()
 	for time.Now().Sub(retryStart) < waitDur {
 		select {
@@ -663,7 +663,7 @@ func (ts *tester) waitDeployment() error {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		dresp, err := ts.cfg.K8SClient.KubernetesClientSet().
 			AppsV1().
-			Deployments(ts.cfg.EKSConfig.AddOnConfigMapsRemote.Namespace).
+			Deployments(ts.cfg.EKSConfig.AddOnConfigmapsRemote.Namespace).
 			Get(ctx, configmapsDeploymentName, metav1.GetOptions{})
 		cancel()
 		if err != nil {
@@ -692,7 +692,7 @@ func (ts *tester) waitDeployment() error {
 				break
 			}
 		}
-		if available && dresp.Status.AvailableReplicas >= ts.cfg.EKSConfig.AddOnConfigMapsRemote.DeploymentReplicas {
+		if available && dresp.Status.AvailableReplicas >= ts.cfg.EKSConfig.AddOnConfigmapsRemote.DeploymentReplicas {
 			ready = true
 			break
 		}
@@ -717,11 +717,11 @@ func (ts *tester) waitDeployment() error {
 }
 
 func (ts *tester) AggregateResults() (err error) {
-	if !ts.cfg.EKSConfig.IsEnabledAddOnConfigMapsRemote() {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnConfigmapsRemote() {
 		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
-	if !ts.cfg.EKSConfig.AddOnConfigMapsRemote.Created {
+	if !ts.cfg.EKSConfig.AddOnConfigmapsRemote.Created {
 		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 		return nil
 	}
@@ -734,7 +734,7 @@ func (ts *tester) AggregateResults() (err error) {
 		for _, v := range ts.cfg.EKSConfig.AddOnNodeGroups.ASGs {
 			for _, fpaths := range v.Logs {
 				for _, fpath := range fpaths {
-					if strings.Contains(fpath, ts.cfg.EKSConfig.AddOnConfigMapsRemote.RequestsWritesSummaryOutputNamePrefix) {
+					if strings.Contains(fpath, ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsWritesSummaryOutputNamePrefix) {
 						switch {
 						case strings.HasSuffix(fpath, "-writes-summary.json"):
 							b, err := ioutil.ReadFile(fpath)
@@ -777,7 +777,7 @@ func (ts *tester) AggregateResults() (err error) {
 		for _, cur := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
 			for _, fpaths := range cur.Logs {
 				for _, fpath := range fpaths {
-					if strings.Contains(fpath, ts.cfg.EKSConfig.AddOnConfigMapsRemote.RequestsWritesSummaryOutputNamePrefix) {
+					if strings.Contains(fpath, ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsWritesSummaryOutputNamePrefix) {
 						switch {
 						case strings.HasSuffix(fpath, "-writes-summary.json"):
 							b, err := ioutil.ReadFile(fpath)
@@ -825,7 +825,7 @@ func (ts *tester) AggregateResults() (err error) {
 	writes.LantencyP99 = writeLatencies.PickLantencyP99()
 	writes.LantencyP999 = writeLatencies.PickLantencyP999()
 	writes.LantencyP9999 = writeLatencies.PickLantencyP9999()
-	ts.cfg.EKSConfig.AddOnConfigMapsRemote.RequestsWritesSummary = writes
+	ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsWritesSummary = writes
 	ts.cfg.EKSConfig.Sync()
 
 	wb, err := json.Marshal(writeLatencies)
@@ -833,19 +833,19 @@ func (ts *tester) AggregateResults() (err error) {
 		ts.cfg.Logger.Warn("failed to encode JSON", zap.Error(err))
 		return err
 	}
-	if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnConfigMapsRemote.RequestsWritesJSONPath, wb, 0600); err != nil {
+	if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsWritesJSONPath, wb, 0600); err != nil {
 		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 		return err
 	}
-	if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnConfigMapsRemote.RequestsWritesSummaryJSONPath, []byte(writes.JSON()), 0600); err != nil {
+	if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsWritesSummaryJSONPath, []byte(writes.JSON()), 0600); err != nil {
 		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 		return err
 	}
-	if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnConfigMapsRemote.RequestsWritesSummaryTablePath, []byte(writes.Table()), 0600); err != nil {
+	if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsWritesSummaryTablePath, []byte(writes.Table()), 0600); err != nil {
 		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 		return err
 	}
-	fmt.Printf("\n\nAddOnConfigMapsRemote.RequestsWritesSummary:\n%s\n", writes.Table())
+	fmt.Printf("\n\nAddOnConfigmapsRemote.RequestsWritesSummary:\n%s\n", writes.Table())
 
 	ts.cfg.Logger.Info("aggregated results from Pods")
 	return ts.cfg.EKSConfig.Sync()

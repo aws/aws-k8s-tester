@@ -252,29 +252,29 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REPOSITORY_IMAGE_TAG", "csrs-repo-image-tag")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REPOSITORY_IMAGE_TAG")
 
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_LOCAL_ENABLE", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_LOCAL_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_LOCAL_NAMESPACE", "config-map-namespace")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_LOCAL_NAMESPACE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_LOCAL_OBJECTS", "10000")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_LOCAL_OBJECTS")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_LOCAL_OBJECT_SIZE", "555")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_LOCAL_OBJECT_SIZE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_NAMESPACE", "config-map-namespace")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_OBJECTS", "10000")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_OBJECTS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_OBJECT_SIZE", "555")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_OBJECT_SIZE")
 
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_ENABLE", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_NAMESPACE", "config-map-namespace")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_NAMESPACE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_OBJECTS", "10000")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_OBJECTS")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_OBJECT_SIZE", "555")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_OBJECT_SIZE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_REPOSITORY_ACCOUNT_ID", "uri")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_REPOSITORY_ACCOUNT_ID")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_REPOSITORY_NAME", "configmaps-repo-name")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_REPOSITORY_NAME")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_REPOSITORY_IMAGE_TAG", "configmaps-repo-image-tag")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_REPOSITORY_IMAGE_TAG")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_NAMESPACE", "config-map-namespace")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_OBJECTS", "10000")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_OBJECTS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_OBJECT_SIZE", "555")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_OBJECT_SIZE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REPOSITORY_ACCOUNT_ID", "uri")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REPOSITORY_ACCOUNT_ID")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REPOSITORY_NAME", "configmaps-repo-name")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REPOSITORY_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REPOSITORY_IMAGE_TAG", "configmaps-repo-image-tag")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REPOSITORY_IMAGE_TAG")
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_ENABLE")
@@ -914,38 +914,38 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("unexpected cfg.AddOnCSRsRemote.RepositoryImageTag %v", cfg.AddOnCSRsRemote.RepositoryImageTag)
 	}
 
-	if !cfg.AddOnConfigMapsLocal.Enable {
-		t.Fatalf("unexpected cfg.AddOnConfigMapsLocal.Enable %v", cfg.AddOnConfigMapsLocal.Enable)
+	if !cfg.AddOnConfigmapsLocal.Enable {
+		t.Fatalf("unexpected cfg.AddOnConfigmapsLocal.Enable %v", cfg.AddOnConfigmapsLocal.Enable)
 	}
-	if cfg.AddOnConfigMapsLocal.Namespace != "config-map-namespace" {
-		t.Fatalf("unexpected cfg.AddOnConfigMapsLocal.Namespace %q", cfg.AddOnConfigMapsLocal.Namespace)
+	if cfg.AddOnConfigmapsLocal.Namespace != "config-map-namespace" {
+		t.Fatalf("unexpected cfg.AddOnConfigmapsLocal.Namespace %q", cfg.AddOnConfigmapsLocal.Namespace)
 	}
-	if cfg.AddOnConfigMapsLocal.Objects != 10000 {
-		t.Fatalf("unexpected cfg.AddOnConfigMapsLocal.Objects %d", cfg.AddOnConfigMapsLocal.Objects)
+	if cfg.AddOnConfigmapsLocal.Objects != 10000 {
+		t.Fatalf("unexpected cfg.AddOnConfigmapsLocal.Objects %d", cfg.AddOnConfigmapsLocal.Objects)
 	}
-	if cfg.AddOnConfigMapsLocal.ObjectSize != 555 {
-		t.Fatalf("unexpected cfg.AddOnConfigMapsLocal.ObjectSize %d", cfg.AddOnConfigMapsLocal.ObjectSize)
+	if cfg.AddOnConfigmapsLocal.ObjectSize != 555 {
+		t.Fatalf("unexpected cfg.AddOnConfigmapsLocal.ObjectSize %d", cfg.AddOnConfigmapsLocal.ObjectSize)
 	}
-	if !cfg.AddOnConfigMapsRemote.Enable {
-		t.Fatalf("unexpected cfg.AddOnConfigMapsRemote.Enable %v", cfg.AddOnConfigMapsRemote.Enable)
+	if !cfg.AddOnConfigmapsRemote.Enable {
+		t.Fatalf("unexpected cfg.AddOnConfigmapsRemote.Enable %v", cfg.AddOnConfigmapsRemote.Enable)
 	}
-	if cfg.AddOnConfigMapsRemote.Namespace != "config-map-namespace" {
-		t.Fatalf("unexpected cfg.AddOnConfigMapsRemote.Namespace %q", cfg.AddOnConfigMapsRemote.Namespace)
+	if cfg.AddOnConfigmapsRemote.Namespace != "config-map-namespace" {
+		t.Fatalf("unexpected cfg.AddOnConfigmapsRemote.Namespace %q", cfg.AddOnConfigmapsRemote.Namespace)
 	}
-	if cfg.AddOnConfigMapsRemote.Objects != 10000 {
-		t.Fatalf("unexpected cfg.AddOnConfigMapsRemote.Objects %d", cfg.AddOnConfigMapsRemote.Objects)
+	if cfg.AddOnConfigmapsRemote.Objects != 10000 {
+		t.Fatalf("unexpected cfg.AddOnConfigmapsRemote.Objects %d", cfg.AddOnConfigmapsRemote.Objects)
 	}
-	if cfg.AddOnConfigMapsRemote.ObjectSize != 555 {
-		t.Fatalf("unexpected cfg.AddOnConfigMapsRemote.ObjectSize %d", cfg.AddOnConfigMapsRemote.ObjectSize)
+	if cfg.AddOnConfigmapsRemote.ObjectSize != 555 {
+		t.Fatalf("unexpected cfg.AddOnConfigmapsRemote.ObjectSize %d", cfg.AddOnConfigmapsRemote.ObjectSize)
 	}
-	if cfg.AddOnConfigMapsRemote.RepositoryAccountID != "uri" {
-		t.Fatalf("unexpected cfg.AddOnConfigMapsRemote.RepositoryAccountID %v", cfg.AddOnConfigMapsRemote.RepositoryAccountID)
+	if cfg.AddOnConfigmapsRemote.RepositoryAccountID != "uri" {
+		t.Fatalf("unexpected cfg.AddOnConfigmapsRemote.RepositoryAccountID %v", cfg.AddOnConfigmapsRemote.RepositoryAccountID)
 	}
-	if cfg.AddOnConfigMapsRemote.RepositoryName != "configmaps-repo-name" {
-		t.Fatalf("unexpected cfg.AddOnConfigMapsRemote.RepositoryName %v", cfg.AddOnConfigMapsRemote.RepositoryName)
+	if cfg.AddOnConfigmapsRemote.RepositoryName != "configmaps-repo-name" {
+		t.Fatalf("unexpected cfg.AddOnConfigmapsRemote.RepositoryName %v", cfg.AddOnConfigmapsRemote.RepositoryName)
 	}
-	if cfg.AddOnConfigMapsRemote.RepositoryImageTag != "configmaps-repo-image-tag" {
-		t.Fatalf("unexpected cfg.AddOnConfigMapsRemote.RepositoryImageTag %v", cfg.AddOnConfigMapsRemote.RepositoryImageTag)
+	if cfg.AddOnConfigmapsRemote.RepositoryImageTag != "configmaps-repo-image-tag" {
+		t.Fatalf("unexpected cfg.AddOnConfigmapsRemote.RepositoryImageTag %v", cfg.AddOnConfigmapsRemote.RepositoryImageTag)
 	}
 
 	if !cfg.AddOnSecretsLocal.Enable {

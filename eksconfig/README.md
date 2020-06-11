@@ -15,8 +15,8 @@ AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_ENABLE=true \
-AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_LOCAL_ENABLE=true \
-AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_ENABLE=true \
+AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_ENABLE=true \
+AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ENABLE=true \
@@ -353,45 +353,45 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 *----------------------------------------------------------------------------------*-------------------*------------------------------------------------------------------*-------------------------*
 
 
-*--------------------------------------------------------------------------------*-------------------*----------------------------------------------------------------*-------------------------*
-|                             ENVIRONMENTAL VARIABLE                             |     READ ONLY     |                              TYPE                              |         GO TYPE         |
-*--------------------------------------------------------------------------------*-------------------*----------------------------------------------------------------*-------------------------*
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_LOCAL_ENABLE                             | read-only "false" | *eksconfig.AddOnConfigMapsLocal.Enable                         | bool                    |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_LOCAL_CREATED                            | read-only "true"  | *eksconfig.AddOnConfigMapsLocal.Created                        | bool                    |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_LOCAL_TIME_FRAME_CREATE                  | read-only "true"  | *eksconfig.AddOnConfigMapsLocal.TimeFrameCreate                | timeutil.TimeFrame      |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_LOCAL_TIME_FRAME_DELETE                  | read-only "true"  | *eksconfig.AddOnConfigMapsLocal.TimeFrameDelete                | timeutil.TimeFrame      |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_LOCAL_NAMESPACE                          | read-only "false" | *eksconfig.AddOnConfigMapsLocal.Namespace                      | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_LOCAL_OBJECTS                            | read-only "false" | *eksconfig.AddOnConfigMapsLocal.Objects                        | int                     |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_LOCAL_OBJECT_SIZE                        | read-only "false" | *eksconfig.AddOnConfigMapsLocal.ObjectSize                     | int                     |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_LOCAL_CREATED_NAMES                      | read-only "true"  | *eksconfig.AddOnConfigMapsLocal.CreatedNames                   | []string                |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_LOCAL_REQUESTS_WRITES_JSON_PATH          | read-only "true"  | *eksconfig.AddOnConfigMapsLocal.RequestsWritesJSONPath         | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_LOCAL_REQUESTS_WRITES_SUMMARY            | read-only "true"  | *eksconfig.AddOnConfigMapsLocal.RequestsWritesSummary          | metrics.RequestsSummary |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_LOCAL_REQUESTS_WRITES_SUMMARY_JSON_PATH  | read-only "true"  | *eksconfig.AddOnConfigMapsLocal.RequestsWritesSummaryJSONPath  | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_LOCAL_REQUESTS_WRITES_SUMMARY_TABLE_PATH | read-only "true"  | *eksconfig.AddOnConfigMapsLocal.RequestsWritesSummaryTablePath | string                  |
-*--------------------------------------------------------------------------------*-------------------*----------------------------------------------------------------*-------------------------*
+*-------------------------------------------------------------------------------*-------------------*----------------------------------------------------------------*-------------------------*
+|                            ENVIRONMENTAL VARIABLE                             |     READ ONLY     |                              TYPE                              |         GO TYPE         |
+*-------------------------------------------------------------------------------*-------------------*----------------------------------------------------------------*-------------------------*
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_ENABLE                             | read-only "false" | *eksconfig.AddOnConfigmapsLocal.Enable                         | bool                    |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_CREATED                            | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.Created                        | bool                    |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_TIME_FRAME_CREATE                  | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.TimeFrameCreate                | timeutil.TimeFrame      |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_TIME_FRAME_DELETE                  | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.TimeFrameDelete                | timeutil.TimeFrame      |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_NAMESPACE                          | read-only "false" | *eksconfig.AddOnConfigmapsLocal.Namespace                      | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_OBJECTS                            | read-only "false" | *eksconfig.AddOnConfigmapsLocal.Objects                        | int                     |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_OBJECT_SIZE                        | read-only "false" | *eksconfig.AddOnConfigmapsLocal.ObjectSize                     | int                     |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_CREATED_NAMES                      | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.CreatedNames                   | []string                |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_WRITES_JSON_PATH          | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsWritesJSONPath         | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_WRITES_SUMMARY            | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsWritesSummary          | metrics.RequestsSummary |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_WRITES_SUMMARY_JSON_PATH  | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsWritesSummaryJSONPath  | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_WRITES_SUMMARY_TABLE_PATH | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsWritesSummaryTablePath | string                  |
+*-------------------------------------------------------------------------------*-------------------*----------------------------------------------------------------*-------------------------*
 
 
-*-----------------------------------------------------------------------------------------*-------------------*------------------------------------------------------------------------*-------------------------*
-|                                 ENVIRONMENTAL VARIABLE                                  |     READ ONLY     |                                  TYPE                                  |         GO TYPE         |
-*-----------------------------------------------------------------------------------------*-------------------*------------------------------------------------------------------------*-------------------------*
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_ENABLE                                     | read-only "false" | *eksconfig.AddOnConfigMapsRemote.Enable                                | bool                    |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_CREATED                                    | read-only "true"  | *eksconfig.AddOnConfigMapsRemote.Created                               | bool                    |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_TIME_FRAME_CREATE                          | read-only "true"  | *eksconfig.AddOnConfigMapsRemote.TimeFrameCreate                       | timeutil.TimeFrame      |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_TIME_FRAME_DELETE                          | read-only "true"  | *eksconfig.AddOnConfigMapsRemote.TimeFrameDelete                       | timeutil.TimeFrame      |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_NAMESPACE                                  | read-only "false" | *eksconfig.AddOnConfigMapsRemote.Namespace                             | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_REPOSITORY_ACCOUNT_ID                      | read-only "false" | *eksconfig.AddOnConfigMapsRemote.RepositoryAccountID                   | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_REPOSITORY_NAME                            | read-only "false" | *eksconfig.AddOnConfigMapsRemote.RepositoryName                        | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_REPOSITORY_IMAGE_TAG                       | read-only "false" | *eksconfig.AddOnConfigMapsRemote.RepositoryImageTag                    | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_DEPLOYMENT_REPLICAS                        | read-only "false" | *eksconfig.AddOnConfigMapsRemote.DeploymentReplicas                    | int32                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_OBJECTS                                    | read-only "false" | *eksconfig.AddOnConfigMapsRemote.Objects                               | int                     |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_OBJECT_SIZE                                | read-only "false" | *eksconfig.AddOnConfigMapsRemote.ObjectSize                            | int                     |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_CREATED_NAMES                              | read-only "true"  | *eksconfig.AddOnConfigMapsRemote.CreatedNames                          | []string                |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_REQUESTS_WRITES_JSON_PATH                  | read-only "true"  | *eksconfig.AddOnConfigMapsRemote.RequestsWritesJSONPath                | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_REQUESTS_WRITES_SUMMARY                    | read-only "true"  | *eksconfig.AddOnConfigMapsRemote.RequestsWritesSummary                 | metrics.RequestsSummary |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_REQUESTS_WRITES_SUMMARY_JSON_PATH          | read-only "true"  | *eksconfig.AddOnConfigMapsRemote.RequestsWritesSummaryJSONPath         | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_REQUESTS_WRITES_SUMMARY_TABLE_PATH         | read-only "true"  | *eksconfig.AddOnConfigMapsRemote.RequestsWritesSummaryTablePath        | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIG_MAPS_REMOTE_REQUESTS_WRITES_SUMMARY_OUTPUT_NAME_PREFIX | read-only "false" | *eksconfig.AddOnConfigMapsRemote.RequestsWritesSummaryOutputNamePrefix | string                  |
-*-----------------------------------------------------------------------------------------*-------------------*------------------------------------------------------------------------*-------------------------*
+*----------------------------------------------------------------------------------------*-------------------*------------------------------------------------------------------------*-------------------------*
+|                                 ENVIRONMENTAL VARIABLE                                 |     READ ONLY     |                                  TYPE                                  |         GO TYPE         |
+*----------------------------------------------------------------------------------------*-------------------*------------------------------------------------------------------------*-------------------------*
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_ENABLE                                     | read-only "false" | *eksconfig.AddOnConfigmapsRemote.Enable                                | bool                    |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_CREATED                                    | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.Created                               | bool                    |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_TIME_FRAME_CREATE                          | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.TimeFrameCreate                       | timeutil.TimeFrame      |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_TIME_FRAME_DELETE                          | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.TimeFrameDelete                       | timeutil.TimeFrame      |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_NAMESPACE                                  | read-only "false" | *eksconfig.AddOnConfigmapsRemote.Namespace                             | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REPOSITORY_ACCOUNT_ID                      | read-only "false" | *eksconfig.AddOnConfigmapsRemote.RepositoryAccountID                   | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REPOSITORY_NAME                            | read-only "false" | *eksconfig.AddOnConfigmapsRemote.RepositoryName                        | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REPOSITORY_IMAGE_TAG                       | read-only "false" | *eksconfig.AddOnConfigmapsRemote.RepositoryImageTag                    | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_DEPLOYMENT_REPLICAS                        | read-only "false" | *eksconfig.AddOnConfigmapsRemote.DeploymentReplicas                    | int32                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_OBJECTS                                    | read-only "false" | *eksconfig.AddOnConfigmapsRemote.Objects                               | int                     |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_OBJECT_SIZE                                | read-only "false" | *eksconfig.AddOnConfigmapsRemote.ObjectSize                            | int                     |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_CREATED_NAMES                              | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.CreatedNames                          | []string                |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_WRITES_JSON_PATH                  | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsWritesJSONPath                | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_WRITES_SUMMARY                    | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsWritesSummary                 | metrics.RequestsSummary |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_WRITES_SUMMARY_JSON_PATH          | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsWritesSummaryJSONPath         | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_WRITES_SUMMARY_TABLE_PATH         | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsWritesSummaryTablePath        | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_WRITES_SUMMARY_OUTPUT_NAME_PREFIX | read-only "false" | *eksconfig.AddOnConfigmapsRemote.RequestsWritesSummaryOutputNamePrefix | string                  |
+*----------------------------------------------------------------------------------------*-------------------*------------------------------------------------------------------------*-------------------------*
 
 
 *----------------------------------------------------------------------------*-------------------*-------------------------------------------------------------*-------------------------*

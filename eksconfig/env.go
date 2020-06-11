@@ -209,30 +209,30 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *AddOnCSRsRemote, got %T", vv)
 	}
 
-	if cfg.AddOnConfigMapsLocal == nil {
-		cfg.AddOnConfigMapsLocal = &AddOnConfigMapsLocal{}
+	if cfg.AddOnConfigmapsLocal == nil {
+		cfg.AddOnConfigmapsLocal = &AddOnConfigmapsLocal{}
 	}
-	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnConfigMapsLocal, cfg.AddOnConfigMapsLocal)
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnConfigmapsLocal, cfg.AddOnConfigmapsLocal)
 	if err != nil {
 		return err
 	}
-	if av, ok := vv.(*AddOnConfigMapsLocal); ok {
-		cfg.AddOnConfigMapsLocal = av
+	if av, ok := vv.(*AddOnConfigmapsLocal); ok {
+		cfg.AddOnConfigmapsLocal = av
 	} else {
-		return fmt.Errorf("expected *AddOnConfigMapsLocal, got %T", vv)
+		return fmt.Errorf("expected *AddOnConfigmapsLocal, got %T", vv)
 	}
 
-	if cfg.AddOnConfigMapsRemote == nil {
-		cfg.AddOnConfigMapsRemote = &AddOnConfigMapsRemote{}
+	if cfg.AddOnConfigmapsRemote == nil {
+		cfg.AddOnConfigmapsRemote = &AddOnConfigmapsRemote{}
 	}
-	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnConfigMapsRemote, cfg.AddOnConfigMapsRemote)
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnConfigmapsRemote, cfg.AddOnConfigmapsRemote)
 	if err != nil {
 		return err
 	}
-	if av, ok := vv.(*AddOnConfigMapsRemote); ok {
-		cfg.AddOnConfigMapsRemote = av
+	if av, ok := vv.(*AddOnConfigmapsRemote); ok {
+		cfg.AddOnConfigmapsRemote = av
 	} else {
-		return fmt.Errorf("expected *AddOnConfigMapsRemote, got %T", vv)
+		return fmt.Errorf("expected *AddOnConfigmapsRemote, got %T", vv)
 	}
 
 	if cfg.AddOnSecretsLocal == nil {

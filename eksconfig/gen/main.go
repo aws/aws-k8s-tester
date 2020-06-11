@@ -90,11 +90,11 @@ func createDoc() string {
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnConfigMapsLocal, &eksconfig.AddOnConfigMapsLocal{}))
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnConfigmapsLocal, &eksconfig.AddOnConfigmapsLocal{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnConfigMapsRemote, &eksconfig.AddOnConfigMapsRemote{}))
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnConfigmapsRemote, &eksconfig.AddOnConfigmapsRemote{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
