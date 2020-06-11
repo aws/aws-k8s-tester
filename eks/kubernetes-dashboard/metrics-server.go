@@ -193,7 +193,6 @@ func (ts *tester) installMetricsServer() error {
 
 	applyArgs := []string{
 		ts.cfg.EKSConfig.KubectlPath,
-		ts.cfg.EKSConfig.KubectlPath,
 		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
 		"apply",
 		"--filename=" + fpath,
