@@ -873,7 +873,7 @@ func Poll(
 	lg.Info("polling fargate profile",
 		zap.String("cluster-name", clusterName),
 		zap.String("profile-name", profileName),
-		zap.String("desired-fargate-status", desiredStatus),
+		zap.String("desired-status", desiredStatus),
 	)
 
 	now := time.Now()
@@ -945,7 +945,7 @@ func Poll(
 			lg.Info("poll",
 				zap.String("cluster-name", clusterName),
 				zap.String("fargate-name", profileName),
-				zap.String("fargate-status", currentStatus),
+				zap.String("status", currentStatus),
 				zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			)
 			switch currentStatus {

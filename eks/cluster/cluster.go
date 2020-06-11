@@ -620,7 +620,7 @@ func (ts *tester) describeCluster() {
 	}
 	ts.cfg.Logger.Info("described cluster",
 		zap.String("name", ts.cfg.EKSConfig.Name),
-		zap.String("cluster-status", ts.cfg.EKSConfig.Status.ClusterStatusCurrent),
+		zap.String("status", ts.cfg.EKSConfig.Status.ClusterStatusCurrent),
 	)
 }
 
@@ -759,7 +759,7 @@ func Poll(
 ) <-chan ClusterStatus {
 	lg.Info("polling cluster",
 		zap.String("cluster-name", clusterName),
-		zap.String("desired-cluster-status", desiredClusterStatus),
+		zap.String("desired-status", desiredClusterStatus),
 	)
 
 	now := time.Now()
@@ -828,18 +828,18 @@ func Poll(
 			currentStatus := aws.StringValue(cluster.Status)
 			lg.Info("poll",
 				zap.String("cluster-name", clusterName),
-				zap.String("cluster-status", currentStatus),
+				zap.String("status", currentStatus),
 				zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			)
 			switch currentStatus {
 			case desiredClusterStatus:
 				ch <- ClusterStatus{Cluster: cluster, Error: nil}
-				lg.Info("desired cluster status; done", zap.String("cluster-status", currentStatus))
+				lg.Info("desired cluster status; done", zap.String("status", currentStatus))
 				close(ch)
 				return
 			case aws_eks.ClusterStatusFailed:
 				ch <- ClusterStatus{Cluster: cluster, Error: fmt.Errorf("unexpected cluster status %q", aws_eks.ClusterStatusFailed)}
-				lg.Warn("cluster status failed", zap.String("cluster-status", currentStatus), zap.String("desired-status", desiredClusterStatus))
+				lg.Warn("cluster status failed", zap.String("status", currentStatus), zap.String("desired-status", desiredClusterStatus))
 				close(ch)
 				return
 			default:

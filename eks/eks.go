@@ -1257,8 +1257,10 @@ func (ts *Tester) down() (err error) {
 		errs = append(errs, err.Error())
 	}
 
+	testersN := len(ts.testers)
 	for idx := range ts.testers {
-		tss := ts.testers[len(ts.testers)-1-idx]
+		idx = testersN - idx - 1
+		tss := ts.testers[idx]
 		if ts.color {
 			colorstring.Printf("\n\n[yellow]*********************************[default]\n")
 			colorstring.Printf("[light_blue]testers[%02d].Delete [cyan]%q [default](%q, %q)\n", idx, reflect.TypeOf(tss), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())

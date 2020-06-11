@@ -81,7 +81,7 @@ func (ts *tester) Create() (err error) {
 	// takes ~30-min
 	initialWait := 10 * time.Minute
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Hour)
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Minute)
 	ch := Poll(
 		ctx,
 		ts.cfg.Stopc,
@@ -295,24 +295,24 @@ func Poll(
 			updateType := aws.StringValue(update.Type)
 			lg.Info("poll",
 				zap.String("cluster-name", clusterName),
-				zap.String("cluster-update-status", currentStatus),
+				zap.String("status", currentStatus),
 				zap.String("update-type", updateType),
 				zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			)
 			switch currentStatus {
 			case desiredUpdateStatus:
 				ch <- UpdateStatus{Update: update, Error: nil}
-				lg.Info("desired cluster update status; done", zap.String("cluster-update-status", currentStatus))
+				lg.Info("desired cluster update status; done", zap.String("status", currentStatus))
 				close(ch)
 				return
 			case eks.UpdateStatusCancelled:
 				ch <- UpdateStatus{Update: update, Error: fmt.Errorf("unexpected cluster update status %q", eks.UpdateStatusCancelled)}
-				lg.Warn("cluster update status cancelled", zap.String("cluster-update-status", currentStatus), zap.String("desired-status", desiredUpdateStatus))
+				lg.Warn("cluster update status cancelled", zap.String("status", currentStatus), zap.String("desired-status", desiredUpdateStatus))
 				close(ch)
 				return
 			case eks.UpdateStatusFailed:
 				ch <- UpdateStatus{Update: update, Error: fmt.Errorf("unexpected cluster update status %q", eks.UpdateStatusFailed)}
-				lg.Warn("cluster update status failed", zap.String("cluster-update-status", currentStatus), zap.String("desired-status", desiredUpdateStatus))
+				lg.Warn("cluster update status failed", zap.String("status", currentStatus), zap.String("desired-status", desiredUpdateStatus))
 				close(ch)
 				return
 			default:
