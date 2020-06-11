@@ -497,8 +497,9 @@ func (ts *tester) deleteProfile() error {
 		break
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
 	ch := Poll(
-		context.Background(),
+		ctx,
 		ts.cfg.Stopc,
 		ts.cfg.Logger,
 		ts.cfg.EKSAPI,
@@ -508,6 +509,7 @@ func (ts *tester) deleteProfile() error {
 		10*time.Second,
 		7*time.Second,
 	)
+	cancel()
 	for sv := range ch {
 		if sv.Error != nil {
 			return sv.Error
