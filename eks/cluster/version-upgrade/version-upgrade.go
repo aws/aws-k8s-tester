@@ -122,7 +122,7 @@ func (ts *tester) Create() (err error) {
 		cur := fmt.Sprintf("%.2f", ts.cfg.EKSConfig.Status.ServerVersionInfo.VersionValue)
 		target := fmt.Sprintf("%.2f", ts.cfg.EKSConfig.AddOnClusterVersionUpgrade.VersionValue)
 
-		ts.cfg.Logger.Info("fetched version", zap.String("current", cur), zap.String("target", target))
+		ts.cfg.Logger.Info("comparing version", zap.String("current", cur), zap.String("target", target))
 		if cur != target {
 			err = fmt.Errorf("EKS server version after upgrade expected %q, got %q [%+v]", target, cur, ts.cfg.EKSConfig.Status.ServerVersionInfo)
 			ts.cfg.Logger.Warn("version mismatch; retrying")
