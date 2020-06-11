@@ -17,6 +17,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.4...v1.3.5
 
 - Fix typo for [`kubectl top node` in `eks/kubernetes-dashboard`](https://github.com/aws/aws-k8s-tester/commit/).
 
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.31.15`](https://github.com/aws/aws-sdk-go/releases/tag/v1.31.15) to [`v1.32.0`](https://github.com/aws/aws-sdk-go/releases/tag/v1.32.0).
+
 
 <hr>
 
