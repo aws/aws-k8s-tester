@@ -313,8 +313,9 @@ func (ts *tester) waitDeploymentMetricsServer() error {
 		"node",
 	}
 	topNodeCmd := strings.Join(topNodeArgs, " ")
-	waitDur = 3 * time.Minute
-	retryStart = time.Now()
+
+	topNodeReady := false
+	waitDur, retryStart = 7*time.Minute, time.Now()
 	for time.Now().Sub(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
@@ -332,7 +333,13 @@ func (ts *tester) waitDeploymentMetricsServer() error {
 			ts.cfg.Logger.Warn("failed to run kubectl top node", zap.Error(err))
 			continue
 		}
-		break
+		if strings.Contains(out, "MEMORY") {
+			topNodeReady = true
+			break
+		}
+	}
+	if !topNodeReady {
+		return fmt.Errorf("%q not ready", topNodeCmd)
 	}
 
 	ts.cfg.Logger.Info("waited for metrics-server Deployment")
