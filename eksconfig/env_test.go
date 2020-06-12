@@ -168,7 +168,7 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_RESOLVER_URL")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_SIGNING_NAME", "a")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_SIGNING_NAME")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS", `{"mng-test-name-cpu":{"name":"mng-test-name-cpu","tags":{"cpu":"hello-world"},"remote-access-user-name":"ec2-user","release-version":"test-ver-cpu","ami-type":"AL2_x86_64","asg-min-size":17,"asg-max-size":99,"asg-desired-capacity":77,"instance-types":["type-cpu-1","type-cpu-2"],"volume-size":40},"mng-test-name-gpu":{"name":"mng-test-name-gpu","remote-access-user-name":"ec2-user","tags":{"gpu":"hello-world"},"release-version":"test-ver-gpu","ami-type":"AL2_x86_64_GPU","asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34,"instance-types":["type-gpu-1","type-gpu-2"],"volume-size":500}}`)
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS", `{"mng-test-name-cpu":{"name":"mng-test-name-cpu","tags":{"cpu":"hello-world"},"remote-access-user-name":"ec2-user","release-version":"","ami-type":"AL2_x86_64","asg-min-size":17,"version-upgrade":{"enable":true,"initial-wait-string":"13m","version":"1.18"},"asg-max-size":99,"asg-desired-capacity":77,"instance-types":["type-cpu-1","type-cpu-2"],"volume-size":40},"mng-test-name-gpu":{"name":"mng-test-name-gpu","remote-access-user-name":"ec2-user","tags":{"gpu":"hello-world"},"release-version":"1.16.8-20200609","ami-type":"AL2_x86_64_GPU","version-upgrade":{"enable":true,"initial-wait-string":"100ms",   "version":"1.17"},"asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34,"instance-types":["type-gpu-1","type-gpu-2"],"volume-size":500}}`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_LOGS_DIR", "a")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_LOGS_DIR")
@@ -769,25 +769,35 @@ func TestEnv(t *testing.T) {
 			Name:                 cpuName,
 			RemoteAccessUserName: "ec2-user",
 			Tags:                 map[string]string{"cpu": "hello-world"},
-			ReleaseVersion:       "test-ver-cpu",
+			ReleaseVersion:       "",
 			AMIType:              "AL2_x86_64",
 			ASGMinSize:           17,
 			ASGMaxSize:           99,
 			ASGDesiredCapacity:   77,
 			InstanceTypes:        []string{"type-cpu-1", "type-cpu-2"},
 			VolumeSize:           40,
+			VersionUpgrade: &MNGVersionUpgrade{
+				Enable:            true,
+				InitialWaitString: "13m",
+				Version:           "1.18",
+			},
 		},
 		gpuName: {
 			Name:                 gpuName,
 			RemoteAccessUserName: "ec2-user",
 			Tags:                 map[string]string{"gpu": "hello-world"},
-			ReleaseVersion:       "test-ver-gpu",
+			ReleaseVersion:       "1.16.8-20200609",
 			AMIType:              eks.AMITypesAl2X8664Gpu,
 			ASGMinSize:           30,
 			ASGMaxSize:           35,
 			ASGDesiredCapacity:   34,
 			InstanceTypes:        []string{"type-gpu-1", "type-gpu-2"},
 			VolumeSize:           500,
+			VersionUpgrade: &MNGVersionUpgrade{
+				Enable:            true,
+				InitialWaitString: "100ms",
+				Version:           "1.17",
+			},
 		},
 	}
 	if !reflect.DeepEqual(cfg.AddOnManagedNodeGroups.MNGs, expectedMNGs) {

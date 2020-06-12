@@ -4,7 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
@@ -81,10 +83,12 @@ type MNG struct {
 	Tags map[string]string `json:"tags,omitempty"`
 	// ReleaseVersion is the AMI version of the Amazon EKS-optimized AMI for the node group.
 	// The version may differ from EKS "cluster" version.
+	// e.g. "1.16.8-20200609"
 	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
 	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
 	// ref. https://docs.aws.amazon.com/eks/latest/userguide/eks-linux-ami-versions.html
-	ReleaseVersion string `json:"release-version,omitempty"`
+	ReleaseVersion      string  `json:"release-version,omitempty"`
+	ReleaseVersionValue float64 `json:"release-version-value" read-only:"true"`
 
 	// AMIType is the AMI type for the node group.
 	// Allowed values are AL2_x86_64 and AL2_x86_64_GPU.
@@ -134,6 +138,35 @@ type MNG struct {
 	Instances map[string]ec2config.Instance `json:"instances" read-only:"true"`
 	// Logs maps each instance ID to a list of log file paths fetched via SSH access.
 	Logs map[string][]string `json:"logs" read-only:"true"`
+
+	// VersionUpgrade configures MNG version upgarde.
+	VersionUpgrade *MNGVersionUpgrade `json:"version-upgrade,omitempty"`
+}
+
+// MNGVersionUpgrade defines parameters
+// for EKS managed node group version upgrade add-on.
+// ref. https://docs.aws.amazon.com/cli/latest/reference/eks/update-nodegroup-version.html
+type MNGVersionUpgrade struct {
+	// Enable is 'true' to create this add-on.
+	Enable bool `json:"enable"`
+	// InitialWait is the wait time before triggering version upgrades.
+	// All managed node group upgrades are triggered after all existing
+	// add-on installation is complete.
+	InitialWait time.Duration `json:"initial-wait"`
+	// InitialWaitString is not empty, then parses duration overwrites "InitialWait".
+	InitialWaitString string `json:"initial-wait-string"`
+	// Created is true when the resource has been created.
+	// Used for delete operations.
+	Created         bool               `json:"created" read-only:"true"`
+	TimeFrameCreate timeutil.TimeFrame `json:"time-frame-create" read-only:"true"`
+
+	// Version is the target version of EKS managed node group.
+	// This cannot be empty. Must be provided by the user.
+	// The value is passed via "aws eks update-nodegroup-version --kubernetes-version".
+	// e.g. Upgrade to "Version" == "1.17" when Parameters.Version is "1.16"
+	// that has created "1.16" MNG by default.
+	Version      string  `json:"version"`
+	VersionValue float64 `json:"version-value" read-only:"true"`
 }
 
 // EnvironmentVariablePrefixAddOnManagedNodeGroups is the environment variable prefix used for "eksconfig".
@@ -170,6 +203,7 @@ func getDefaultAddOnManagedNodeGroups(name string) *AddOnManagedNodeGroups {
 				ASGMinSize:           1,
 				ASGMaxSize:           1,
 				ASGDesiredCapacity:   1,
+				VersionUpgrade:       &MNGVersionUpgrade{Enable: false},
 			},
 		},
 	}
@@ -272,6 +306,53 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 			_, ok = cfg.AddOnNodeGroups.ASGs[cur.Name]
 			if ok {
 				return fmt.Errorf("MNGs[%q] name is conflicting with NG ASG", cur.Name)
+			}
+		}
+
+		if cur.ReleaseVersion != "" {
+			// e.g. "1.16.8-20200609"
+			ss := strings.Split(cur.ReleaseVersion, ".")
+			if len(ss) > 2 {
+				sv := strings.Join(ss[:2], ".")
+				var err error
+				cur.ReleaseVersionValue, err = strconv.ParseFloat(sv, 64)
+				if err != nil {
+					return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q] invalid ReleaseVersion %q (%q, %v)", cur.Name, cur.ReleaseVersion, sv, err)
+				}
+			}
+		}
+
+		// check optional mng version upgrade add-on
+		if cur.VersionUpgrade != nil && cur.VersionUpgrade.Enable {
+			var err error
+			if cur.VersionUpgrade.InitialWaitString != "" {
+				cur.VersionUpgrade.InitialWait, err = time.ParseDuration(cur.VersionUpgrade.InitialWaitString)
+				if err != nil {
+					return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q] invalid cur.VersionUpgrade.InitialWaitString %q (%v)", cur.Name, cur.VersionUpgrade.InitialWaitString, err)
+				}
+			}
+
+			// do not set any defaults
+			// hard to keep everything in sync and find right values:
+			// - original cluster version
+			// - cluster upgrade version
+			// - default mng version
+			// - custom mng version
+			if cur.VersionUpgrade.Version == "" {
+				return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q] VersionUpgrade.Enable but empty VersionUpgrade.Version", cur.Name)
+			}
+			cur.VersionUpgrade.VersionValue, err = strconv.ParseFloat(cur.VersionUpgrade.Version, 64)
+			if err != nil {
+				return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q] invalid VersionUpgrade.Version %q (%v)", cur.Name, cur.VersionUpgrade.Version, err)
+			}
+			origVer := cfg.Parameters.VersionValue
+			if cur.ReleaseVersionValue > 0.0 {
+				// e.g. "1.16" in "1.16.8-20200609"
+				origVer = cur.ReleaseVersionValue
+			}
+			delta := cur.VersionUpgrade.VersionValue - origVer
+			if fmt.Sprintf("%.2f", delta) != "0.01" {
+				return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q] VersionUpgrade only supports one minor version upgrade but got %.2f [cluster version %q, mng release version %q, mng upgrade version %q]", cur.Name, delta, cfg.Parameters.Version, cur.ReleaseVersion, cur.VersionUpgrade.Version)
 			}
 		}
 

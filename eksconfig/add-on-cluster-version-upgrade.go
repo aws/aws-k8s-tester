@@ -18,7 +18,7 @@ type AddOnClusterVersionUpgrade struct {
 	Created         bool               `json:"created" read-only:"true"`
 	TimeFrameCreate timeutil.TimeFrame `json:"time-frame-create" read-only:"true"`
 
-	// Version is the version of EKS Kubernetes "cluster".
+	// Version is the target version of EKS Kubernetes "cluster".
 	// If empty, set default version.
 	Version      string  `json:"version"`
 	VersionValue float64 `json:"version-value" read-only:"true"`
