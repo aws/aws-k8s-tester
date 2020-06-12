@@ -3,6 +3,18 @@
 <hr>
 
 
+## [v1.3.6](https://github.com/aws/aws-k8s-tester/releases/tag/v1.3.6) (2020-06)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.5...v1.3.6).
+
+### `eks`
+
+- Wait until [`kubectl top node` is ready](https://github.com/aws/aws-k8s-tester/commit/5301270bfa2253bda350407a2db03a38058d7e95).
+
+
+<hr>
+
+
 ## [v1.3.5](https://github.com/aws/aws-k8s-tester/releases/tag/v1.3.5) (2020-06-11)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.4...v1.3.5).
