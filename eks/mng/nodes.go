@@ -442,7 +442,7 @@ func (ts *tester) createASG() error {
 			}
 			if sv.Error != nil && ss == aws_eks.NodegroupStatusCreateFailed {
 				ts.cfg.Logger.Warn("failed to create managed node group",
-					zap.String("node-group-status", ss),
+					zap.String("status", ss),
 					zap.Error(sv.Error),
 				)
 				cancel()
@@ -515,10 +515,19 @@ func (ts *tester) deleteASG() error {
 			})
 		}
 		if err != nil {
-			cur.Status = fmt.Sprintf("failed to delete managed node group (%v)", err)
+			if strings.Contains(err.Error(), "No cluster found for") {
+				err = nil
+				ts.cfg.Logger.Warn("deleted managed node group; cluster has already been deleted", zap.Error(err))
+				cur.Status = fmt.Sprintf("deleted managed node group (%v)", err)
+			} else {
+				ts.cfg.Logger.Warn("failed to delete managed node group", zap.Error(err))
+				cur.Status = fmt.Sprintf("failed to delete managed node group (%v)", err)
+			}
 			ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName] = cur
 			ts.cfg.EKSConfig.Sync()
-			return err
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -566,10 +575,19 @@ func (ts *tester) deleteASG() error {
 					}
 					timeEnd := time.Now()
 					cur.TimeFrameDelete = timeutil.NewTimeFrame(timeStart, timeEnd)
-					cur.Status = fmt.Sprintf("failed to delete a managed node group (%v)", st.Error)
+					if strings.Contains(st.Error.Error(), "No cluster found for") {
+						st.Error = nil
+						ts.cfg.Logger.Warn("deleted managed node group; cluster has already been deleted", zap.Error(st.Error))
+						cur.Status = fmt.Sprintf("deleted a managed node group (%v)", st.Error)
+					} else {
+						ts.cfg.Logger.Warn("failed to delete managed node group", zap.Error(st.Error))
+						cur.Status = fmt.Sprintf("failed to delete a managed node group (%v)", st.Error)
+					}
 					ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName] = cur
 					ts.cfg.EKSConfig.Sync()
-					ts.cfg.Logger.Warn("polling errror", zap.Error(st.Error))
+					if st.Error == nil {
+						break
+					}
 				}
 			}
 			cancel()
@@ -602,13 +620,27 @@ func (ts *tester) deleteASG() error {
 					cancel()
 					return serr
 				}
-				if sv.Error != nil && ss == aws_eks.NodegroupStatusDeleteFailed {
+				if sv.Error != nil {
+					if ss == aws_eks.NodegroupStatusDeleteFailed {
+						ts.cfg.Logger.Warn("failed to delete managed node group",
+							zap.String("status", ss),
+							zap.Error(sv.Error),
+						)
+						cancel()
+						return sv.Error
+					}
+					if strings.Contains(sv.Error.Error(), "No cluster found for") {
+						sv.Error = nil
+						ts.cfg.Logger.Warn("deleted managed node group; cluster has already been deleted",
+							zap.String("status", ss),
+							zap.Error(sv.Error),
+						)
+						break
+					}
 					ts.cfg.Logger.Warn("failed to delete managed node group",
-						zap.String("node-group-status", ss),
+						zap.String("status", ss),
 						zap.Error(sv.Error),
 					)
-					cancel()
-					return sv.Error
 				}
 			}
 			cancel()
