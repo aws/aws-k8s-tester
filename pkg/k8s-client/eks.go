@@ -67,6 +67,9 @@ type EKSConfig struct {
 	// ServerVersion is the kube-apiserver version.
 	// If not empty, this is used for health checks.
 	ServerVersion string
+	// UpgradeServerVersion is the target cluster upgrade version
+	// used for sever version checks.
+	UpgradeServerVersion string
 	// EncryptionEnabled is true if EKS cluster is created with KMS encryption enabled.
 	// If true, the health check checks if data encryption key has been generated
 	// to encrypt initial service account tokens, via kube-apiserver metrics endpoint.
@@ -560,10 +563,21 @@ func (e *eks) checkHealth() error {
 		return err
 	}
 	out = strings.TrimSpace(string(output))
-	if e.cfg.ServerVersion != "" && !strings.Contains(out, fmt.Sprintf(`"gitVersion": "v%s`, e.cfg.ServerVersion)) {
-		return fmt.Errorf("%q does not contain version %q", out, e.cfg.ServerVersion)
-	}
 	fmt.Printf("\n\n\"%s\" output:\n%s\n\n", ep, out)
+
+	if e.cfg.ServerVersion != "" && !strings.Contains(out, fmt.Sprintf(`"gitVersion": "v%s`, e.cfg.ServerVersion)) {
+		err = fmt.Errorf("%q does not contain version %q", out, e.cfg.ServerVersion)
+	}
+	if err != nil && e.cfg.UpgradeServerVersion != "" {
+		if !strings.Contains(out, fmt.Sprintf(`"gitVersion": "v%s`, e.cfg.UpgradeServerVersion)) {
+			err = fmt.Errorf("%v; does not contain version %q either", err, e.cfg.UpgradeServerVersion)
+		} else {
+			err = nil
+		}
+	}
+	if err != nil {
+		return err
+	}
 
 	ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 	output, err = exec.New().CommandContext(

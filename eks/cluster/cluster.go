@@ -1005,6 +1005,9 @@ func (ts *tester) createClient() (cli k8s_client.EKS, err error) {
 		ClientBurst:       ts.cfg.EKSConfig.ClientBurst,
 		ClientTimeout:     ts.cfg.EKSConfig.ClientTimeout,
 	}
+	if ts.cfg.EKSConfig.IsEnabledAddOnClusterVersionUpgrade() {
+		kcfg.UpgradeServerVersion = ts.cfg.EKSConfig.AddOnClusterVersionUpgrade.Version
+	}
 	if ts.cfg.EKSConfig.Status != nil {
 		kcfg.ClusterAPIServerEndpoint = ts.cfg.EKSConfig.Status.ClusterAPIServerEndpoint
 		kcfg.ClusterCADecoded = ts.cfg.EKSConfig.Status.ClusterCADecoded
