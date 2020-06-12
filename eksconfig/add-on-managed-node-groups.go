@@ -105,6 +105,9 @@ type MNG struct {
 	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
 	VolumeSize int `json:"volume-size,omitempty"`
 
+	// ScaleConfigs is a list of minimum, maximum, and desired node counts for a nodegroup
+	ScaleConfigs []MNGScaleConfig `json:"scale-configs,omitempty"`
+
 	// ASGMinSize is the minimum size of Node Group Auto Scaling Group.
 	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
 	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
@@ -141,6 +144,13 @@ type MNG struct {
 
 	// VersionUpgrade configures MNG version upgarde.
 	VersionUpgrade *MNGVersionUpgrade `json:"version-upgrade,omitempty"`
+}
+
+// A MNGScaleConfig contains the minimum, maximum, and desired node counts for a nodegroup
+type MNGScaleConfig struct {
+	minSize     int `json:"min-size,omitempty"`
+	maxSize     int `json:"max-size,omitempty"`
+	desiredSize int `json:"desired-size,omitempty"`
 }
 
 // MNGVersionUpgrade defines parameters
