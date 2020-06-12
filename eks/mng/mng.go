@@ -11,9 +11,11 @@ import (
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/autoscaling/autoscalingiface"
 	"github.com/aws/aws-sdk-go/service/cloudformation/cloudformationiface"
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
+	aws_eks "github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
 	"github.com/aws/aws-sdk-go/service/iam/iamiface"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
@@ -166,4 +168,19 @@ func (ts *tester) Delete() error {
 
 	ts.cfg.EKSConfig.AddOnManagedNodeGroups.Created = false
 	return ts.cfg.EKSConfig.Sync()
+}
+
+func (ts *tester) scaleMNG() (err error) {
+	for mngName, cur := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
+		if len(cur.ScaleConfigs) != 0 {
+			nodegroupConfigInput := &aws_eks.UpdateNodegroupConfigInput{ClientRequestToken: "TODO STRING", //TODO
+				ClusterName:   aws.String(ts.cfg.EKSConfig.Name),
+				NodegroupName: aws.String(mngName),
+				ScalingConfig: &aws_eks.NodegroupScalingConfig{DesiredSize: cur.ScaleConfigs[0].desiredSize,
+					MaxSize: cur.ScaleConfigs[0].maxSize,
+					MinSize: cur.ScaleConfigs[0].minSize}}
+			copy(cur.ScaleConfigs[0:], cur.ScaleConfigs[1:])
+			ts.cfg.EKSAPI.UpdateNodegroupConfig(nodegroupConfigInput)
+		}
+	}
 }

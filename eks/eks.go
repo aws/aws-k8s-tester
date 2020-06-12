@@ -1548,3 +1548,15 @@ func catchInterrupt(lg *zap.Logger, stopc chan struct{}, once *sync.Once, sigc c
 	}
 	return err
 }
+
+func (ts *Tester) ScaleMNG() {
+	if err := catchInterrupt(
+		ts.lg,
+		ts.stopCreationCh,
+		ts.stopCreationChOnce,
+		ts.osSig,
+		ts.scaleMNG,
+	); err != nil {
+		return err
+	}
+}
