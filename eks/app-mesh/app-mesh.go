@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"reflect"
 	"strings"
 	"time"
@@ -195,11 +196,16 @@ func (ts *tester) createPolicy() error {
 		return errors.New("roles not found from node group or managed node group")
 	}
 
-	ts.cfg.Logger.Info("creating app mesh controller policy")
-	stackName := ts.cfg.EKSConfig.Name + "-appmesh"
+	if err := ioutil.WriteFile(ts.cfg.EKSConfig.AddOnAppMesh.PolicyCFNStackYAMLFilePath, []byte(templatePolicy), 0400); err != nil {
+		return err
+	}
 	policyName := ts.cfg.EKSConfig.Name + "-appmesh-policy"
-	stackInput := &cloudformation.CreateStackInput{
-		StackName:    aws.String(stackName),
+	ts.cfg.Logger.Info("creating app mesh controller policy",
+		zap.String("policy-name", policyName),
+		zap.String("policy-cfn-file-path", ts.cfg.EKSConfig.AddOnAppMesh.PolicyCFNStackYAMLFilePath),
+	)
+	stackOutput, err := ts.cfg.CFNAPI.CreateStack(&cloudformation.CreateStackInput{
+		StackName:    aws.String(policyName),
 		Capabilities: aws.StringSlice([]string{"CAPABILITY_NAMED_IAM"}),
 		OnFailure:    aws.String(cloudformation.OnFailureDelete),
 		TemplateBody: aws.String(templatePolicy),
@@ -218,9 +224,7 @@ func (ts *tester) createPolicy() error {
 				ParameterValue: aws.String(strings.Join(roleNames, ",")),
 			},
 		},
-	}
-
-	stackOutput, err := ts.cfg.CFNAPI.CreateStack(stackInput)
+	})
 	if err != nil {
 		return err
 	}

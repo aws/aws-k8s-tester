@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
 	"text/template"
 	"time"
 
@@ -219,20 +220,22 @@ func (ts *tester) createIngressEgress(name string) error {
 	}); err != nil {
 		return err
 	}
-	tmpl := buf.String()
 
+	if err := ioutil.WriteFile(cur.RemoteAccessSecurityCFNStackYAMLFilePath, buf.Bytes(), 0400); err != nil {
+		return err
+	}
 	sgID := cur.RemoteAccessSecurityGroupID
-
 	ts.cfg.Logger.Info("creating ingress/egress for mng using CFN",
 		zap.String("mng-name", name),
 		zap.String("security-group-id", sgID),
+		zap.String("security-cfn-stack-file", cur.RemoteAccessSecurityCFNStackYAMLFilePath),
 		zap.Int("internet-ingress-from-port", fromPort),
 		zap.Int("internet-ingress-to-port", 32767),
 	)
 	stackInput := &cloudformation.CreateStackInput{
 		StackName:    aws.String(name + "-mng-sg"),
 		OnFailure:    aws.String(cloudformation.OnFailureDelete),
-		TemplateBody: aws.String(tmpl),
+		TemplateBody: aws.String(buf.String()),
 		Tags: cfn.NewTags(map[string]string{
 			"Kind":                   "aws-k8s-tester",
 			"Name":                   ts.cfg.EKSConfig.Name,

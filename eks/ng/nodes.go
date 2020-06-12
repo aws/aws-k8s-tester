@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"sort"
 	"strings"
 	"text/template"
@@ -450,12 +451,20 @@ func (ts *tester) createASGs() error {
 		if err := tpl.Execute(buf, tg); err != nil {
 			return err
 		}
-		tmpl := buf.String()
+
+		if err := ioutil.WriteFile(cur.ASGCFNStackYAMLFilePath, buf.Bytes(), 0400); err != nil {
+			return err
+		}
+		ts.cfg.Logger.Info("creating a new NG using CFN",
+			zap.String("asg-name", asgName),
+			zap.String("asg-cfn-file-path", cur.ASGCFNStackYAMLFilePath),
+		)
+
 		stackInput := &cloudformation.CreateStackInput{
 			StackName:    aws.String(asgName),
 			Capabilities: aws.StringSlice([]string{"CAPABILITY_NAMED_IAM"}),
 			OnFailure:    aws.String(cloudformation.OnFailureDelete),
-			TemplateBody: aws.String(tmpl),
+			TemplateBody: aws.String(buf.String()),
 			Tags: cfn.NewTags(map[string]string{
 				"Kind":                   "aws-k8s-tester",
 				"Name":                   ts.cfg.EKSConfig.Name,

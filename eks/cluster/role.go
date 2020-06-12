@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"strings"
 	"time"
 
@@ -238,16 +239,20 @@ func (ts *tester) createClusterRole() error {
 		return errors.New("cannot create a cluster role with an empty Parameters.RoleName")
 	}
 
-	tmpl := TemplateClusterRole
-
+	if err := ioutil.WriteFile(ts.cfg.EKSConfig.Parameters.RoleCFNStackYAMLFilePath, []byte(TemplateClusterRole), 0400); err != nil {
+		return err
+	}
 	// role ARN is empty, create a default role
 	// otherwise, use the existing one
-	ts.cfg.Logger.Info("creating a new role", zap.String("cluster-role-name", ts.cfg.EKSConfig.Parameters.RoleName))
+	ts.cfg.Logger.Info("creating a new role",
+		zap.String("cluster-role-name", ts.cfg.EKSConfig.Parameters.RoleName),
+		zap.String("cluster-role-cfn-file-path", ts.cfg.EKSConfig.Parameters.RoleCFNStackYAMLFilePath),
+	)
 	stackInput := &cloudformation.CreateStackInput{
 		StackName:    aws.String(ts.cfg.EKSConfig.Parameters.RoleName),
 		Capabilities: aws.StringSlice([]string{"CAPABILITY_NAMED_IAM"}),
 		OnFailure:    aws.String(cloudformation.OnFailureDelete),
-		TemplateBody: aws.String(tmpl),
+		TemplateBody: aws.String(TemplateClusterRole),
 		Tags: cfn.NewTags(map[string]string{
 			"Kind":                   "aws-k8s-tester",
 			"Name":                   ts.cfg.EKSConfig.Name,

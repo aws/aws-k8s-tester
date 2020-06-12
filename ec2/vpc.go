@@ -716,7 +716,6 @@ func (ts *Tester) createVPC() error {
 	if err := ioutil.WriteFile(ts.cfg.VPCCFNStackYAMLFilePath, []byte(TemplateVPCPublicPrivate), 0400); err != nil {
 		return err
 	}
-
 	// VPC attributes are empty, create a new VPC
 	// otherwise, use the existing one
 	ts.lg.Info("creating a new VPC",

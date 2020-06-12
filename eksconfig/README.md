@@ -90,6 +90,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_SERVICE_PRINCIPALS          | read-only "false" | *eksconfig.Parameters.RoleServicePrincipals        | []string          |
 | AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_MANAGED_POLICY_ARNS         | read-only "false" | *eksconfig.Parameters.RoleManagedPolicyARNs        | []string          |
 | AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_CFN_STACK_ID                | read-only "true"  | *eksconfig.Parameters.RoleCFNStackID               | string            |
+| AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_CFN_STACK_YAML_FILE_PATH    | read-only "true"  | *eksconfig.Parameters.RoleCFNStackYAMLFilePath     | string            |
 | AWS_K8S_TESTER_EKS_PARAMETERS_TAGS                             | read-only "false" | *eksconfig.Parameters.Tags                         | map[string]string |
 | AWS_K8S_TESTER_EKS_PARAMETERS_REQUEST_HEADER_KEY               | read-only "false" | *eksconfig.Parameters.RequestHeaderKey             | string            |
 | AWS_K8S_TESTER_EKS_PARAMETERS_REQUEST_HEADER_VALUE             | read-only "false" | *eksconfig.Parameters.RequestHeaderValue           | string            |
@@ -98,6 +99,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CREATE                       | read-only "false" | *eksconfig.Parameters.VPCCreate                    | bool              |
 | AWS_K8S_TESTER_EKS_PARAMETERS_VPC_ID                           | read-only "false" | *eksconfig.Parameters.VPCID                        | string            |
 | AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CFN_STACK_ID                 | read-only "true"  | *eksconfig.Parameters.VPCCFNStackID                | string            |
+| AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CFN_STACK_YAML_FILE_PATH     | read-only "true"  | *eksconfig.Parameters.VPCCFNStackYAMLFilePath      | string            |
 | AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CIDR                         | read-only "false" | *eksconfig.Parameters.VPCCIDR                      | string            |
 | AWS_K8S_TESTER_EKS_PARAMETERS_PUBLIC_SUBNET_CIDR_1             | read-only "false" | *eksconfig.Parameters.PublicSubnetCIDR1            | string            |
 | AWS_K8S_TESTER_EKS_PARAMETERS_PUBLIC_SUBNET_CIDR_2             | read-only "false" | *eksconfig.Parameters.PublicSubnetCIDR2            | string            |
@@ -115,50 +117,53 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 *----------------------------------------------------------------*-------------------*----------------------------------------------------*-------------------*
 
 
-*------------------------------------------------------------------------------*-------------------*-------------------------------------------------------------*--------------------------*
-|                            ENVIRONMENTAL VARIABLE                            |     READ ONLY     |                            TYPE                             |         GO TYPE          |
-*------------------------------------------------------------------------------*-------------------*-------------------------------------------------------------*--------------------------*
-| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE                                 | read-only "false" | *eksconfig.AddOnNodeGroups.Enable                           | bool                     |
-| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_CREATED                                | read-only "true"  | *eksconfig.AddOnNodeGroups.Created                          | bool                     |
-| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_TIME_FRAME_CREATE                      | read-only "true"  | *eksconfig.AddOnNodeGroups.TimeFrameCreate                  | timeutil.TimeFrame       |
-| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_TIME_FRAME_DELETE                      | read-only "true"  | *eksconfig.AddOnNodeGroups.TimeFrameDelete                  | timeutil.TimeFrame       |
-| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_FETCH_LOGS                             | read-only "false" | *eksconfig.AddOnNodeGroups.FetchLogs                        | bool                     |
-| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_NAME                              | read-only "false" | *eksconfig.AddOnNodeGroups.RoleName                         | string                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_CREATE                            | read-only "false" | *eksconfig.AddOnNodeGroups.RoleCreate                       | bool                     |
-| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_ARN                               | read-only "false" | *eksconfig.AddOnNodeGroups.RoleARN                          | string                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_SERVICE_PRINCIPALS                | read-only "false" | *eksconfig.AddOnNodeGroups.RoleServicePrincipals            | []string                 |
-| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_MANAGED_POLICY_ARNS               | read-only "false" | *eksconfig.AddOnNodeGroups.RoleManagedPolicyARNs            | []string                 |
-| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_CFN_STACK_ID                      | read-only "true"  | *eksconfig.AddOnNodeGroups.RoleCFNStackID                   | string                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_NODE_GROUP_SECURITY_GROUP_ID           | read-only "true"  | *eksconfig.AddOnNodeGroups.NodeGroupSecurityGroupID         | string                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_NODE_GROUP_SECURITY_GROUP_CFN_STACK_ID | read-only "true"  | *eksconfig.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackID | string                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_LOGS_DIR                               | read-only "false" | *eksconfig.AddOnNodeGroups.LogsDir                          | string                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_LOGS_TAR_GZ_PATH                       | read-only "false" | *eksconfig.AddOnNodeGroups.LogsTarGzPath                    | string                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS                                   | read-only "false" | *eksconfig.AddOnNodeGroups.ASGs                             | map[string]eksconfig.ASG |
-*------------------------------------------------------------------------------*-------------------*-------------------------------------------------------------*--------------------------*
+*------------------------------------------------------------------------------------------*-------------------*-----------------------------------------------------------------------*--------------------------*
+|                                  ENVIRONMENTAL VARIABLE                                  |     READ ONLY     |                                 TYPE                                  |         GO TYPE          |
+*------------------------------------------------------------------------------------------*-------------------*-----------------------------------------------------------------------*--------------------------*
+| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE                                             | read-only "false" | *eksconfig.AddOnNodeGroups.Enable                                     | bool                     |
+| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_CREATED                                            | read-only "true"  | *eksconfig.AddOnNodeGroups.Created                                    | bool                     |
+| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_TIME_FRAME_CREATE                                  | read-only "true"  | *eksconfig.AddOnNodeGroups.TimeFrameCreate                            | timeutil.TimeFrame       |
+| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_TIME_FRAME_DELETE                                  | read-only "true"  | *eksconfig.AddOnNodeGroups.TimeFrameDelete                            | timeutil.TimeFrame       |
+| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_FETCH_LOGS                                         | read-only "false" | *eksconfig.AddOnNodeGroups.FetchLogs                                  | bool                     |
+| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_NAME                                          | read-only "false" | *eksconfig.AddOnNodeGroups.RoleName                                   | string                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_CREATE                                        | read-only "false" | *eksconfig.AddOnNodeGroups.RoleCreate                                 | bool                     |
+| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_ARN                                           | read-only "false" | *eksconfig.AddOnNodeGroups.RoleARN                                    | string                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_SERVICE_PRINCIPALS                            | read-only "false" | *eksconfig.AddOnNodeGroups.RoleServicePrincipals                      | []string                 |
+| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_MANAGED_POLICY_ARNS                           | read-only "false" | *eksconfig.AddOnNodeGroups.RoleManagedPolicyARNs                      | []string                 |
+| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_CFN_STACK_ID                                  | read-only "true"  | *eksconfig.AddOnNodeGroups.RoleCFNStackID                             | string                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_CFN_STACK_YAML_FILE_PATH                      | read-only "true"  | *eksconfig.AddOnNodeGroups.RoleCFNStackYAMLFilePath                   | string                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_NODE_GROUP_SECURITY_GROUP_ID                       | read-only "true"  | *eksconfig.AddOnNodeGroups.NodeGroupSecurityGroupID                   | string                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_NODE_GROUP_SECURITY_GROUP_CFN_STACK_ID             | read-only "true"  | *eksconfig.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackID           | string                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_NODE_GROUP_SECURITY_GROUP_CFN_STACK_YAML_FILE_PATH | read-only "true"  | *eksconfig.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackYAMLFilePath | string                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_LOGS_DIR                                           | read-only "false" | *eksconfig.AddOnNodeGroups.LogsDir                                    | string                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_LOGS_TAR_GZ_PATH                                   | read-only "false" | *eksconfig.AddOnNodeGroups.LogsTarGzPath                              | string                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS                                               | read-only "false" | *eksconfig.AddOnNodeGroups.ASGs                                       | map[string]eksconfig.ASG |
+*------------------------------------------------------------------------------------------*-------------------*-----------------------------------------------------------------------*--------------------------*
 
 
-*------------------------------------------------------------------------*-------------------*---------------------------------------------------------*--------------------------*
-|                         ENVIRONMENTAL VARIABLE                         |     READ ONLY     |                          TYPE                           |         GO TYPE          |
-*------------------------------------------------------------------------*-------------------*---------------------------------------------------------*--------------------------*
-| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE                   | read-only "false" | *eksconfig.AddOnManagedNodeGroups.Enable                | bool                     |
-| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_CREATED                  | read-only "true"  | *eksconfig.AddOnManagedNodeGroups.Created               | bool                     |
-| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_TIME_FRAME_CREATE        | read-only "true"  | *eksconfig.AddOnManagedNodeGroups.TimeFrameCreate       | timeutil.TimeFrame       |
-| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_TIME_FRAME_DELETE        | read-only "true"  | *eksconfig.AddOnManagedNodeGroups.TimeFrameDelete       | timeutil.TimeFrame       |
-| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_FETCH_LOGS               | read-only "false" | *eksconfig.AddOnManagedNodeGroups.FetchLogs             | bool                     |
-| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_NAME                | read-only "false" | *eksconfig.AddOnManagedNodeGroups.RoleName              | string                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_CREATE              | read-only "false" | *eksconfig.AddOnManagedNodeGroups.RoleCreate            | bool                     |
-| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_ARN                 | read-only "false" | *eksconfig.AddOnManagedNodeGroups.RoleARN               | string                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_SERVICE_PRINCIPALS  | read-only "false" | *eksconfig.AddOnManagedNodeGroups.RoleServicePrincipals | []string                 |
-| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_MANAGED_POLICY_ARNS | read-only "false" | *eksconfig.AddOnManagedNodeGroups.RoleManagedPolicyARNs | []string                 |
-| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_CFN_STACK_ID        | read-only "true"  | *eksconfig.AddOnManagedNodeGroups.RoleCFNStackID        | string                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_REQUEST_HEADER_KEY       | read-only "false" | *eksconfig.AddOnManagedNodeGroups.RequestHeaderKey      | string                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_REQUEST_HEADER_VALUE     | read-only "false" | *eksconfig.AddOnManagedNodeGroups.RequestHeaderValue    | string                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_RESOLVER_URL             | read-only "false" | *eksconfig.AddOnManagedNodeGroups.ResolverURL           | string                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_SIGNING_NAME             | read-only "false" | *eksconfig.AddOnManagedNodeGroups.SigningName           | string                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_LOGS_DIR                 | read-only "false" | *eksconfig.AddOnManagedNodeGroups.LogsDir               | string                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_LOGS_TAR_GZ_PATH         | read-only "false" | *eksconfig.AddOnManagedNodeGroups.LogsTarGzPath         | string                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS                     | read-only "false" | *eksconfig.AddOnManagedNodeGroups.MNGs                  | map[string]eksconfig.MNG |
-*------------------------------------------------------------------------*-------------------*---------------------------------------------------------*--------------------------*
+*-----------------------------------------------------------------------------*-------------------*------------------------------------------------------------*--------------------------*
+|                           ENVIRONMENTAL VARIABLE                            |     READ ONLY     |                            TYPE                            |         GO TYPE          |
+*-----------------------------------------------------------------------------*-------------------*------------------------------------------------------------*--------------------------*
+| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE                        | read-only "false" | *eksconfig.AddOnManagedNodeGroups.Enable                   | bool                     |
+| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_CREATED                       | read-only "true"  | *eksconfig.AddOnManagedNodeGroups.Created                  | bool                     |
+| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_TIME_FRAME_CREATE             | read-only "true"  | *eksconfig.AddOnManagedNodeGroups.TimeFrameCreate          | timeutil.TimeFrame       |
+| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_TIME_FRAME_DELETE             | read-only "true"  | *eksconfig.AddOnManagedNodeGroups.TimeFrameDelete          | timeutil.TimeFrame       |
+| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_FETCH_LOGS                    | read-only "false" | *eksconfig.AddOnManagedNodeGroups.FetchLogs                | bool                     |
+| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_NAME                     | read-only "false" | *eksconfig.AddOnManagedNodeGroups.RoleName                 | string                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_CREATE                   | read-only "false" | *eksconfig.AddOnManagedNodeGroups.RoleCreate               | bool                     |
+| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_ARN                      | read-only "false" | *eksconfig.AddOnManagedNodeGroups.RoleARN                  | string                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_SERVICE_PRINCIPALS       | read-only "false" | *eksconfig.AddOnManagedNodeGroups.RoleServicePrincipals    | []string                 |
+| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_MANAGED_POLICY_ARNS      | read-only "false" | *eksconfig.AddOnManagedNodeGroups.RoleManagedPolicyARNs    | []string                 |
+| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_CFN_STACK_ID             | read-only "true"  | *eksconfig.AddOnManagedNodeGroups.RoleCFNStackID           | string                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_CFN_STACK_YAML_FILE_PATH | read-only "true"  | *eksconfig.AddOnManagedNodeGroups.RoleCFNStackYAMLFilePath | string                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_REQUEST_HEADER_KEY            | read-only "false" | *eksconfig.AddOnManagedNodeGroups.RequestHeaderKey         | string                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_REQUEST_HEADER_VALUE          | read-only "false" | *eksconfig.AddOnManagedNodeGroups.RequestHeaderValue       | string                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_RESOLVER_URL                  | read-only "false" | *eksconfig.AddOnManagedNodeGroups.ResolverURL              | string                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_SIGNING_NAME                  | read-only "false" | *eksconfig.AddOnManagedNodeGroups.SigningName              | string                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_LOGS_DIR                      | read-only "false" | *eksconfig.AddOnManagedNodeGroups.LogsDir                  | string                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_LOGS_TAR_GZ_PATH              | read-only "false" | *eksconfig.AddOnManagedNodeGroups.LogsTarGzPath            | string                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS                          | read-only "false" | *eksconfig.AddOnManagedNodeGroups.MNGs                     | map[string]eksconfig.MNG |
+*-----------------------------------------------------------------------------*-------------------*------------------------------------------------------------*--------------------------*
 
 
 *---------------------------------------------------------------------------*-------------------*-------------------------------------------------------------*--------------------*
@@ -195,18 +200,19 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 *-----------------------------------------------------*-------------------*----------------------------------------*--------------------*
 
 
-*--------------------------------------------------------*-------------------*------------------------------------------*--------------------*
-|                 ENVIRONMENTAL VARIABLE                 |     READ ONLY     |                   TYPE                   |      GO TYPE       |
-*--------------------------------------------------------*-------------------*------------------------------------------*--------------------*
-| AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_ENABLE              | read-only "false" | *eksconfig.AddOnAppMesh.Enable           | bool               |
-| AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_CREATED             | read-only "true"  | *eksconfig.AddOnAppMesh.Created          | bool               |
-| AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_TIME_FRAME_CREATE   | read-only "true"  | *eksconfig.AddOnAppMesh.TimeFrameCreate  | timeutil.TimeFrame |
-| AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_TIME_FRAME_DELETE   | read-only "true"  | *eksconfig.AddOnAppMesh.TimeFrameDelete  | timeutil.TimeFrame |
-| AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_NAMESPACE           | read-only "false" | *eksconfig.AddOnAppMesh.Namespace        | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_CONTROLLER_IMAGE    | read-only "false" | *eksconfig.AddOnAppMesh.ControllerImage  | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_INJECTOR_IMAGE      | read-only "false" | *eksconfig.AddOnAppMesh.InjectorImage    | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_POLICY_CFN_STACK_ID | read-only "true"  | *eksconfig.AddOnAppMesh.PolicyCFNStackID | string             |
-*--------------------------------------------------------*-------------------*------------------------------------------*--------------------*
+*--------------------------------------------------------------------*-------------------*----------------------------------------------------*--------------------*
+|                       ENVIRONMENTAL VARIABLE                       |     READ ONLY     |                        TYPE                        |      GO TYPE       |
+*--------------------------------------------------------------------*-------------------*----------------------------------------------------*--------------------*
+| AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_ENABLE                          | read-only "false" | *eksconfig.AddOnAppMesh.Enable                     | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_CREATED                         | read-only "true"  | *eksconfig.AddOnAppMesh.Created                    | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_TIME_FRAME_CREATE               | read-only "true"  | *eksconfig.AddOnAppMesh.TimeFrameCreate            | timeutil.TimeFrame |
+| AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_TIME_FRAME_DELETE               | read-only "true"  | *eksconfig.AddOnAppMesh.TimeFrameDelete            | timeutil.TimeFrame |
+| AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_NAMESPACE                       | read-only "false" | *eksconfig.AddOnAppMesh.Namespace                  | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_CONTROLLER_IMAGE                | read-only "false" | *eksconfig.AddOnAppMesh.ControllerImage            | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_INJECTOR_IMAGE                  | read-only "false" | *eksconfig.AddOnAppMesh.InjectorImage              | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_POLICY_CFN_STACK_ID             | read-only "true"  | *eksconfig.AddOnAppMesh.PolicyCFNStackID           | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_POLICY_CFN_STACK_YAML_FILE_PATH | read-only "true"  | *eksconfig.AddOnAppMesh.PolicyCFNStackYAMLFilePath | string             |
+*--------------------------------------------------------------------*-------------------*----------------------------------------------------*--------------------*
 
 
 *---------------------------------------------------------------------*-------------------*---------------------------------------------------------*--------------------*
@@ -444,70 +450,73 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 *-------------------------------------------------------------------------------------*-------------------*---------------------------------------------------------------------*-------------------------*
 
 
-*------------------------------------------------------------*-------------------*-----------------------------------------------*--------------------*
-|                   ENVIRONMENTAL VARIABLE                   |     READ ONLY     |                     TYPE                      |      GO TYPE       |
-*------------------------------------------------------------*-------------------*-----------------------------------------------*--------------------*
-| AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ENABLE                   | read-only "false" | *eksconfig.AddOnFargate.Enable                | bool               |
-| AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_CREATED                  | read-only "true"  | *eksconfig.AddOnFargate.Created               | bool               |
-| AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_TIME_FRAME_CREATE        | read-only "true"  | *eksconfig.AddOnFargate.TimeFrameCreate       | timeutil.TimeFrame |
-| AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_TIME_FRAME_DELETE        | read-only "true"  | *eksconfig.AddOnFargate.TimeFrameDelete       | timeutil.TimeFrame |
-| AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_NAMESPACE                | read-only "false" | *eksconfig.AddOnFargate.Namespace             | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_REPOSITORY_ACCOUNT_ID    | read-only "false" | *eksconfig.AddOnFargate.RepositoryAccountID   | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_REPOSITORY_NAME          | read-only "false" | *eksconfig.AddOnFargate.RepositoryName        | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_REPOSITORY_IMAGE_TAG     | read-only "false" | *eksconfig.AddOnFargate.RepositoryImageTag    | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_NAME                | read-only "false" | *eksconfig.AddOnFargate.RoleName              | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_CREATE              | read-only "false" | *eksconfig.AddOnFargate.RoleCreate            | bool               |
-| AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_ARN                 | read-only "false" | *eksconfig.AddOnFargate.RoleARN               | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_SERVICE_PRINCIPALS  | read-only "false" | *eksconfig.AddOnFargate.RoleServicePrincipals | []string           |
-| AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_MANAGED_POLICY_ARNS | read-only "false" | *eksconfig.AddOnFargate.RoleManagedPolicyARNs | []string           |
-| AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_CFN_STACK_ID        | read-only "true"  | *eksconfig.AddOnFargate.RoleCFNStackID        | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_PROFILE_NAME             | read-only "false" | *eksconfig.AddOnFargate.ProfileName           | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_SECRET_NAME              | read-only "false" | *eksconfig.AddOnFargate.SecretName            | string             |
-*------------------------------------------------------------*-------------------*-----------------------------------------------*--------------------*
+*-----------------------------------------------------------------*-------------------*--------------------------------------------------*--------------------*
+|                     ENVIRONMENTAL VARIABLE                      |     READ ONLY     |                       TYPE                       |      GO TYPE       |
+*-----------------------------------------------------------------*-------------------*--------------------------------------------------*--------------------*
+| AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ENABLE                        | read-only "false" | *eksconfig.AddOnFargate.Enable                   | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_CREATED                       | read-only "true"  | *eksconfig.AddOnFargate.Created                  | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_TIME_FRAME_CREATE             | read-only "true"  | *eksconfig.AddOnFargate.TimeFrameCreate          | timeutil.TimeFrame |
+| AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_TIME_FRAME_DELETE             | read-only "true"  | *eksconfig.AddOnFargate.TimeFrameDelete          | timeutil.TimeFrame |
+| AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_NAMESPACE                     | read-only "false" | *eksconfig.AddOnFargate.Namespace                | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_REPOSITORY_ACCOUNT_ID         | read-only "false" | *eksconfig.AddOnFargate.RepositoryAccountID      | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_REPOSITORY_NAME               | read-only "false" | *eksconfig.AddOnFargate.RepositoryName           | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_REPOSITORY_IMAGE_TAG          | read-only "false" | *eksconfig.AddOnFargate.RepositoryImageTag       | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_NAME                     | read-only "false" | *eksconfig.AddOnFargate.RoleName                 | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_CREATE                   | read-only "false" | *eksconfig.AddOnFargate.RoleCreate               | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_ARN                      | read-only "false" | *eksconfig.AddOnFargate.RoleARN                  | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_SERVICE_PRINCIPALS       | read-only "false" | *eksconfig.AddOnFargate.RoleServicePrincipals    | []string           |
+| AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_MANAGED_POLICY_ARNS      | read-only "false" | *eksconfig.AddOnFargate.RoleManagedPolicyARNs    | []string           |
+| AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_CFN_STACK_ID             | read-only "true"  | *eksconfig.AddOnFargate.RoleCFNStackID           | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_CFN_STACK_YAML_FILE_PATH | read-only "true"  | *eksconfig.AddOnFargate.RoleCFNStackYAMLFilePath | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_PROFILE_NAME                  | read-only "false" | *eksconfig.AddOnFargate.ProfileName              | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_SECRET_NAME                   | read-only "false" | *eksconfig.AddOnFargate.SecretName               | string             |
+*-----------------------------------------------------------------*-------------------*--------------------------------------------------*--------------------*
 
 
-*---------------------------------------------------------*-------------------*--------------------------------------------*--------------------*
-|                 ENVIRONMENTAL VARIABLE                  |     READ ONLY     |                    TYPE                    |      GO TYPE       |
-*---------------------------------------------------------*-------------------*--------------------------------------------*--------------------*
-| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ENABLE                   | read-only "false" | *eksconfig.AddOnIRSA.Enable                | bool               |
-| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_CREATED                  | read-only "true"  | *eksconfig.AddOnIRSA.Created               | bool               |
-| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_TIME_FRAME_CREATE        | read-only "true"  | *eksconfig.AddOnIRSA.TimeFrameCreate       | timeutil.TimeFrame |
-| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_TIME_FRAME_DELETE        | read-only "true"  | *eksconfig.AddOnIRSA.TimeFrameDelete       | timeutil.TimeFrame |
-| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_NAMESPACE                | read-only "false" | *eksconfig.AddOnIRSA.Namespace             | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_REPOSITORY_ACCOUNT_ID    | read-only "false" | *eksconfig.AddOnIRSA.RepositoryAccountID   | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_REPOSITORY_NAME          | read-only "false" | *eksconfig.AddOnIRSA.RepositoryName        | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_REPOSITORY_IMAGE_TAG     | read-only "false" | *eksconfig.AddOnIRSA.RepositoryImageTag    | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_NAME                | read-only "false" | *eksconfig.AddOnIRSA.RoleName              | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_ARN                 | read-only "false" | *eksconfig.AddOnIRSA.RoleARN               | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_MANAGED_POLICY_ARNS | read-only "false" | *eksconfig.AddOnIRSA.RoleManagedPolicyARNs | []string           |
-| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_CFN_STACK_ID        | read-only "true"  | *eksconfig.AddOnIRSA.RoleCFNStackID        | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_S3_KEY                   | read-only "false" | *eksconfig.AddOnIRSA.S3Key                 | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_DEPLOYMENT_REPLICAS      | read-only "false" | *eksconfig.AddOnIRSA.DeploymentReplicas    | int32              |
-| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_DEPLOYMENT_RESULT_PATH   | read-only "false" | *eksconfig.AddOnIRSA.DeploymentResultPath  | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_DEPLOYMENT_TOOK          | read-only "true"  | *eksconfig.AddOnIRSA.DeploymentTook        | time.Duration      |
-| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_DEPLOYMENT_TOOK_STRING   | read-only "true"  | *eksconfig.AddOnIRSA.DeploymentTookString  | string             |
-*---------------------------------------------------------*-------------------*--------------------------------------------*--------------------*
+*--------------------------------------------------------------*-------------------*-----------------------------------------------*--------------------*
+|                    ENVIRONMENTAL VARIABLE                    |     READ ONLY     |                     TYPE                      |      GO TYPE       |
+*--------------------------------------------------------------*-------------------*-----------------------------------------------*--------------------*
+| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ENABLE                        | read-only "false" | *eksconfig.AddOnIRSA.Enable                   | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_CREATED                       | read-only "true"  | *eksconfig.AddOnIRSA.Created                  | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_TIME_FRAME_CREATE             | read-only "true"  | *eksconfig.AddOnIRSA.TimeFrameCreate          | timeutil.TimeFrame |
+| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_TIME_FRAME_DELETE             | read-only "true"  | *eksconfig.AddOnIRSA.TimeFrameDelete          | timeutil.TimeFrame |
+| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_NAMESPACE                     | read-only "false" | *eksconfig.AddOnIRSA.Namespace                | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_REPOSITORY_ACCOUNT_ID         | read-only "false" | *eksconfig.AddOnIRSA.RepositoryAccountID      | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_REPOSITORY_NAME               | read-only "false" | *eksconfig.AddOnIRSA.RepositoryName           | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_REPOSITORY_IMAGE_TAG          | read-only "false" | *eksconfig.AddOnIRSA.RepositoryImageTag       | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_NAME                     | read-only "false" | *eksconfig.AddOnIRSA.RoleName                 | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_ARN                      | read-only "false" | *eksconfig.AddOnIRSA.RoleARN                  | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_MANAGED_POLICY_ARNS      | read-only "false" | *eksconfig.AddOnIRSA.RoleManagedPolicyARNs    | []string           |
+| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_CFN_STACK_ID             | read-only "true"  | *eksconfig.AddOnIRSA.RoleCFNStackID           | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_CFN_STACK_YAML_FILE_PATH | read-only "true"  | *eksconfig.AddOnIRSA.RoleCFNStackYAMLFilePath | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_S3_KEY                        | read-only "false" | *eksconfig.AddOnIRSA.S3Key                    | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_DEPLOYMENT_REPLICAS           | read-only "false" | *eksconfig.AddOnIRSA.DeploymentReplicas       | int32              |
+| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_DEPLOYMENT_RESULT_PATH        | read-only "false" | *eksconfig.AddOnIRSA.DeploymentResultPath     | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_DEPLOYMENT_TOOK               | read-only "true"  | *eksconfig.AddOnIRSA.DeploymentTook           | time.Duration      |
+| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_DEPLOYMENT_TOOK_STRING        | read-only "true"  | *eksconfig.AddOnIRSA.DeploymentTookString     | string             |
+*--------------------------------------------------------------*-------------------*-----------------------------------------------*--------------------*
 
 
-*-----------------------------------------------------------------*-------------------*---------------------------------------------------*--------------------*
-|                     ENVIRONMENTAL VARIABLE                      |     READ ONLY     |                       TYPE                        |      GO TYPE       |
-*-----------------------------------------------------------------*-------------------*---------------------------------------------------*--------------------*
-| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ENABLE                   | read-only "false" | *eksconfig.AddOnIRSAFargate.Enable                | bool               |
-| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_CREATED                  | read-only "true"  | *eksconfig.AddOnIRSAFargate.Created               | bool               |
-| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_TIME_FRAME_CREATE        | read-only "true"  | *eksconfig.AddOnIRSAFargate.TimeFrameCreate       | timeutil.TimeFrame |
-| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_TIME_FRAME_DELETE        | read-only "true"  | *eksconfig.AddOnIRSAFargate.TimeFrameDelete       | timeutil.TimeFrame |
-| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_NAMESPACE                | read-only "false" | *eksconfig.AddOnIRSAFargate.Namespace             | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_REPOSITORY_ACCOUNT_ID    | read-only "false" | *eksconfig.AddOnIRSAFargate.RepositoryAccountID   | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_REPOSITORY_NAME          | read-only "false" | *eksconfig.AddOnIRSAFargate.RepositoryName        | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_REPOSITORY_IMAGE_TAG     | read-only "false" | *eksconfig.AddOnIRSAFargate.RepositoryImageTag    | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ROLE_NAME                | read-only "false" | *eksconfig.AddOnIRSAFargate.RoleName              | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ROLE_ARN                 | read-only "false" | *eksconfig.AddOnIRSAFargate.RoleARN               | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ROLE_SERVICE_PRINCIPALS  | read-only "false" | *eksconfig.AddOnIRSAFargate.RoleServicePrincipals | []string           |
-| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ROLE_MANAGED_POLICY_ARNS | read-only "false" | *eksconfig.AddOnIRSAFargate.RoleManagedPolicyARNs | []string           |
-| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ROLE_CFN_STACK_ID        | read-only "true"  | *eksconfig.AddOnIRSAFargate.RoleCFNStackID        | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_S3_KEY                   | read-only "false" | *eksconfig.AddOnIRSAFargate.S3Key                 | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_PROFILE_NAME             | read-only "false" | *eksconfig.AddOnIRSAFargate.ProfileName           | string             |
-*-----------------------------------------------------------------*-------------------*---------------------------------------------------*--------------------*
+*----------------------------------------------------------------------*-------------------*------------------------------------------------------*--------------------*
+|                        ENVIRONMENTAL VARIABLE                        |     READ ONLY     |                         TYPE                         |      GO TYPE       |
+*----------------------------------------------------------------------*-------------------*------------------------------------------------------*--------------------*
+| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ENABLE                        | read-only "false" | *eksconfig.AddOnIRSAFargate.Enable                   | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_CREATED                       | read-only "true"  | *eksconfig.AddOnIRSAFargate.Created                  | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_TIME_FRAME_CREATE             | read-only "true"  | *eksconfig.AddOnIRSAFargate.TimeFrameCreate          | timeutil.TimeFrame |
+| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_TIME_FRAME_DELETE             | read-only "true"  | *eksconfig.AddOnIRSAFargate.TimeFrameDelete          | timeutil.TimeFrame |
+| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_NAMESPACE                     | read-only "false" | *eksconfig.AddOnIRSAFargate.Namespace                | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_REPOSITORY_ACCOUNT_ID         | read-only "false" | *eksconfig.AddOnIRSAFargate.RepositoryAccountID      | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_REPOSITORY_NAME               | read-only "false" | *eksconfig.AddOnIRSAFargate.RepositoryName           | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_REPOSITORY_IMAGE_TAG          | read-only "false" | *eksconfig.AddOnIRSAFargate.RepositoryImageTag       | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ROLE_NAME                     | read-only "false" | *eksconfig.AddOnIRSAFargate.RoleName                 | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ROLE_ARN                      | read-only "false" | *eksconfig.AddOnIRSAFargate.RoleARN                  | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ROLE_SERVICE_PRINCIPALS       | read-only "false" | *eksconfig.AddOnIRSAFargate.RoleServicePrincipals    | []string           |
+| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ROLE_MANAGED_POLICY_ARNS      | read-only "false" | *eksconfig.AddOnIRSAFargate.RoleManagedPolicyARNs    | []string           |
+| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ROLE_CFN_STACK_ID             | read-only "true"  | *eksconfig.AddOnIRSAFargate.RoleCFNStackID           | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ROLE_CFN_STACK_YAML_FILE_PATH | read-only "true"  | *eksconfig.AddOnIRSAFargate.RoleCFNStackYAMLFilePath | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_S3_KEY                        | read-only "false" | *eksconfig.AddOnIRSAFargate.S3Key                    | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_PROFILE_NAME                  | read-only "false" | *eksconfig.AddOnIRSAFargate.ProfileName              | string             |
+*----------------------------------------------------------------------*-------------------*------------------------------------------------------*--------------------*
 
 
 *-------------------------------------------------------*-------------------*-------------------------------------------*--------------------*

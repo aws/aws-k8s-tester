@@ -7,6 +7,11 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.5...v1.3.6).
 
+### `eksconfig`
+
+- Add [`Parameters.RoleCFNStackYAMLFilePath`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`Parameters.VPCCFNStackYAMLFilePath`](https://github.com/aws/aws-k8s-tester/commit/).
+
 ### `ec2config`
 
 - Add [`Config.RoleCFNStackYAMLFilePath`](https://github.com/aws/aws-k8s-tester/commit/).

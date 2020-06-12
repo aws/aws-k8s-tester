@@ -277,29 +277,110 @@ func (ts *Tester) uploadToS3() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnNodeGroups() {
+		if fileutil.Exist(ts.cfg.AddOnNodeGroups.RoleCFNStackYAMLFilePath) {
+			if err = uploadFileToS3(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "cfn", "add-on-node-groups.role.cfn.yaml"),
+				ts.cfg.AddOnNodeGroups.RoleCFNStackYAMLFilePath,
+			); err != nil {
+				return err
+			}
+		}
+		if fileutil.Exist(ts.cfg.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackYAMLFilePath) {
+			if err = uploadFileToS3(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "cfn", "add-on-node-groups.sg.cfn.yaml"),
+				ts.cfg.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackYAMLFilePath,
+			); err != nil {
+				return err
+			}
+		}
 		if fileutil.Exist(ts.cfg.AddOnNodeGroups.LogsTarGzPath) {
 			if err = uploadFileToS3(
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "node-groups-logs-dir.tar.gz"),
+				path.Join(ts.cfg.Name, "add-on-node-groups-logs-dir.tar.gz"),
 				ts.cfg.AddOnNodeGroups.LogsTarGzPath,
 			); err != nil {
 				return err
 			}
 		}
+		for asgName, cur := range ts.cfg.AddOnNodeGroups.ASGs {
+			if fileutil.Exist(cur.ASGCFNStackYAMLFilePath) {
+				if err = uploadFileToS3(
+					ts.lg,
+					ts.s3API,
+					ts.cfg.S3BucketName,
+					path.Join(ts.cfg.Name, "cfn", "add-on-node-groups.asg.cfn."+asgName+".yaml"),
+					cur.ASGCFNStackYAMLFilePath,
+				); err != nil {
+					return err
+				}
+			}
+			if fileutil.Exist(cur.SSMDocumentCFNStackYAMLFilePath) {
+				if err = uploadFileToS3(
+					ts.lg,
+					ts.s3API,
+					ts.cfg.S3BucketName,
+					path.Join(ts.cfg.Name, "cfn", "add-on-node-groups.ssm.cfn."+asgName+".yaml"),
+					cur.SSMDocumentCFNStackYAMLFilePath,
+				); err != nil {
+					return err
+				}
+			}
+		}
 	}
 
 	if ts.cfg.IsEnabledAddOnManagedNodeGroups() {
+		if fileutil.Exist(ts.cfg.AddOnManagedNodeGroups.RoleCFNStackYAMLFilePath) {
+			if err = uploadFileToS3(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "cfn", "add-on-managed-node-groups.role.cfn.yaml"),
+				ts.cfg.AddOnManagedNodeGroups.RoleCFNStackYAMLFilePath,
+			); err != nil {
+				return err
+			}
+		}
 		if fileutil.Exist(ts.cfg.AddOnManagedNodeGroups.LogsTarGzPath) {
 			if err = uploadFileToS3(
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "managed-node-groups-logs-dir.tar.gz"),
+				path.Join(ts.cfg.Name, "add-on-managed-node-groups-logs-dir.tar.gz"),
 				ts.cfg.AddOnManagedNodeGroups.LogsTarGzPath,
 			); err != nil {
 				return err
+			}
+		}
+		for mngName, cur := range ts.cfg.AddOnManagedNodeGroups.MNGs {
+			if fileutil.Exist(cur.MNGCFNStackYAMLFilePath) {
+				if err = uploadFileToS3(
+					ts.lg,
+					ts.s3API,
+					ts.cfg.S3BucketName,
+					path.Join(ts.cfg.Name, "cfn", "add-on-managed-node-groups.mng.cfn."+mngName+".yaml"),
+					cur.MNGCFNStackYAMLFilePath,
+				); err != nil {
+					return err
+				}
+			}
+			if fileutil.Exist(cur.RemoteAccessSecurityCFNStackYAMLFilePath) {
+				if err = uploadFileToS3(
+					ts.lg,
+					ts.s3API,
+					ts.cfg.S3BucketName,
+					path.Join(ts.cfg.Name, "cfn", "add-on-managed-node-groups.sg.cfn."+mngName+".yaml"),
+					cur.RemoteAccessSecurityCFNStackYAMLFilePath,
+				); err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -334,6 +415,20 @@ func (ts *Tester) uploadToS3() (err error) {
 				ts.cfg.S3BucketName,
 				path.Join(ts.cfg.Name, "sonobuoy-result.junit.xml"),
 				ts.cfg.AddOnConformance.SonobuoyResultJunitXMLPath,
+			); err != nil {
+				return err
+			}
+		}
+	}
+
+	if ts.cfg.IsEnabledAddOnAppMesh() {
+		if fileutil.Exist(ts.cfg.AddOnAppMesh.PolicyCFNStackYAMLFilePath) {
+			if err = uploadFileToS3(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "cfn", "add-on-app-mesh.policy.cfn.yaml"),
+				ts.cfg.AddOnAppMesh.PolicyCFNStackYAMLFilePath,
 			); err != nil {
 				return err
 			}
@@ -618,6 +713,48 @@ func (ts *Tester) uploadToS3() (err error) {
 				ts.cfg.S3BucketName,
 				path.Join(ts.cfg.Name, "secrets-remote-requests-reads-summary.txt"),
 				ts.cfg.AddOnSecretsRemote.RequestsReadsSummaryTablePath,
+			); err != nil {
+				return err
+			}
+		}
+	}
+
+	if ts.cfg.IsEnabledAddOnFargate() {
+		if fileutil.Exist(ts.cfg.AddOnFargate.RoleCFNStackYAMLFilePath) {
+			if err = uploadFileToS3(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "cfn", "add-on-fargate.role.cfn.yaml"),
+				ts.cfg.AddOnFargate.RoleCFNStackYAMLFilePath,
+			); err != nil {
+				return err
+			}
+		}
+	}
+
+	if ts.cfg.IsEnabledAddOnIRSA() {
+		if fileutil.Exist(ts.cfg.AddOnIRSA.RoleCFNStackYAMLFilePath) {
+			if err = uploadFileToS3(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "cfn", "add-on-irsa.role.cfn.yaml"),
+				ts.cfg.AddOnIRSA.RoleCFNStackYAMLFilePath,
+			); err != nil {
+				return err
+			}
+		}
+	}
+
+	if ts.cfg.IsEnabledAddOnIRSAFargate() {
+		if fileutil.Exist(ts.cfg.AddOnIRSAFargate.RoleCFNStackYAMLFilePath) {
+			if err = uploadFileToS3(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "cfn", "add-on-irsa-fargate.role.cfn.yaml"),
+				ts.cfg.AddOnIRSAFargate.RoleCFNStackYAMLFilePath,
 			); err != nil {
 				return err
 			}

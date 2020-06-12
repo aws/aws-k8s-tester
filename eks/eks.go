@@ -919,6 +919,9 @@ func (ts *Tester) Up() (err error) {
 		}
 		fmt.Printf("\nrunCommand output:\n\n%s\n", string(out))
 	}
+	if serr := ts.uploadToS3(); serr != nil {
+		ts.lg.Warn("failed to upload artifacts to S3", zap.Error(serr))
+	}
 
 	if ts.cfg.IsEnabledAddOnNodeGroups() {
 		if ts.ngTester == nil {
@@ -1022,6 +1025,9 @@ func (ts *Tester) Up() (err error) {
 			ts.lg.Warn("failed to create nvidia-smi", zap.Error(err))
 			return err
 		}
+	}
+	if serr := ts.uploadToS3(); serr != nil {
+		ts.lg.Warn("failed to upload artifacts to S3", zap.Error(serr))
 	}
 
 	for idx, tss := range ts.testers {

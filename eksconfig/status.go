@@ -30,8 +30,9 @@ type Status struct {
 	// And to be mounted as a volume as 'Secret' object.
 	AWSCredentialPath string `json:"aws-credential-path"`
 
-	ClusterCFNStackID string `json:"cluster-cfn-stack-id"`
-	ClusterARN        string `json:"cluster-arn"`
+	ClusterARN                  string `json:"cluster-arn"`
+	ClusterCFNStackID           string `json:"cluster-cfn-stack-id"`
+	ClusterCFNStackYAMLFilePath string `json:"cluster-cfn-stack-yaml-file-path" read-only:"true"`
 
 	// ClusterControlPlaneSecurityGroupID is the security group ID for the cluster control
 	// plane communication with worker nodes.

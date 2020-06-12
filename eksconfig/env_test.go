@@ -1334,6 +1334,10 @@ func TestEnvAddOnNodeGroupsGetRef(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	cur1 := cfg.AddOnNodeGroups.ASGs[cfg.Name+"-ng-for-cni"]
+	cur1.ASGCFNStackYAMLFilePath = ""
+	cur1.SSMDocumentCFNStackYAMLFilePath = ""
+	cfg.AddOnNodeGroups.ASGs[cfg.Name+"-ng-for-cni"] = cur1
 	expectedNGs := map[string]ASG{
 		cfg.Name + "-ng-for-cni": {
 			ASG: ec2config.ASG{
@@ -1357,6 +1361,11 @@ func TestEnvAddOnNodeGroupsGetRef(t *testing.T) {
 	if !reflect.DeepEqual(cfg.AddOnNodeGroups.ASGs, expectedNGs) {
 		t.Fatalf("expected cfg.AddOnNodeGroups.ASGs %+v, got %+v", expectedNGs, cfg.AddOnNodeGroups.ASGs)
 	}
+
+	cur2 := cfg.AddOnManagedNodeGroups.MNGs[cfg.Name+"-mng-for-cni"]
+	cur2.MNGCFNStackYAMLFilePath = ""
+	cur2.RemoteAccessSecurityCFNStackYAMLFilePath = ""
+	cfg.AddOnManagedNodeGroups.MNGs[cfg.Name+"-mng-for-cni"] = cur2
 	expectedMNGs := map[string]MNG{
 		cfg.Name + "-mng-for-cni": {
 			Name:                 cfg.Name + "-mng-for-cni",
@@ -1465,6 +1474,10 @@ func TestEnvAddOnManagedNodeGroupsCNI(t *testing.T) {
 	if cfg.RemoteAccessPrivateKeyPath != "a" {
 		t.Fatalf("unexpected cfg.RemoteAccessPrivateKeyPath %q", cfg.RemoteAccessPrivateKeyPath)
 	}
+	cur := cfg.AddOnManagedNodeGroups.MNGs["test-mng-for-cni"]
+	cur.MNGCFNStackYAMLFilePath = ""
+	cur.RemoteAccessSecurityCFNStackYAMLFilePath = ""
+	cfg.AddOnManagedNodeGroups.MNGs["test-mng-for-cni"] = cur
 	expectedMNGs := map[string]MNG{
 		"test-mng-for-cni": {
 			Name:                 "test-mng-for-cni",

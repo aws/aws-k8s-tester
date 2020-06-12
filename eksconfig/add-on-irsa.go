@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"path"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
@@ -40,8 +41,9 @@ type AddOnIRSA struct {
 	RoleARN string `json:"role-arn"`
 	// RoleManagedPolicyARNs is IRSA role managed policy ARNs.
 	// ref. https://aws.amazon.com/blogs/opensource/introducing-fine-grained-iam-roles-service-accounts/
-	RoleManagedPolicyARNs []string `json:"role-managed-policy-arns"`
-	RoleCFNStackID        string   `json:"role-cfn-stack-id" read-only:"true"`
+	RoleManagedPolicyARNs    []string `json:"role-managed-policy-arns"`
+	RoleCFNStackID           string   `json:"role-cfn-stack-id" read-only:"true"`
+	RoleCFNStackYAMLFilePath string   `json:"role-cfn-stack-yaml-file-path" read-only:"true"`
 
 	// S3Key is the S3 key to write for IRSA tests.
 	S3Key string `json:"s3-key"`
@@ -111,6 +113,10 @@ func (cfg *Config) validateAddOnIRSA() error {
 	if cfg.AddOnIRSA.RoleName == "" {
 		cfg.AddOnIRSA.RoleName = cfg.Name + "-role-irsa"
 	}
+	if cfg.AddOnIRSA.RoleCFNStackYAMLFilePath == "" {
+		cfg.AddOnIRSA.RoleCFNStackYAMLFilePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".add-on-irsa.role.cfn.yaml"
+	}
+
 	if cfg.AddOnIRSA.S3Key == "" {
 		cfg.AddOnIRSA.S3Key = path.Join(cfg.Name, "s3-key-irsa")
 	}

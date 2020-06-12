@@ -26,7 +26,8 @@ type AddOnAppMesh struct {
 	InjectorImage string `json:"injector-image"`
 
 	// PolicyCFNStackID is the CFN stack ID for policy.
-	PolicyCFNStackID string `json:"policy-cfn-stack-id,omitempty" read-only:"true"`
+	PolicyCFNStackID           string `json:"policy-cfn-stack-id,omitempty" read-only:"true"`
+	PolicyCFNStackYAMLFilePath string `json:"policy-cfn-stack-yaml-file-path" read-only:"true"`
 }
 
 // EnvironmentVariablePrefixAddOnAppMesh is the environment variable prefix used for "eksconfig".

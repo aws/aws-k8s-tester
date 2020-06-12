@@ -23,7 +23,7 @@ log-level: info
 log-outputs:
 - stderr
 - /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.log
-name: eks-2020061115-watery59tmc1
+name: eks-2020061123-surftd42cohq
 on-failure-delete: true
 on-failure-delete-wait-seconds: 120
 parameters:
@@ -38,22 +38,24 @@ parameters:
   resolver-url: ""
   role-arn: ""
   role-cfn-stack-id: ""
+  role-cfn-stack-yaml-file-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.role.cfn.yaml
   role-create: true
   role-managed-policy-arns: null
-  role-name: eks-2020061115-watery59tmc1-role
+  role-name: eks-2020061123-surftd42cohq-role
   role-service-principals: null
   signing-name: eks
   tags: null
   version: "1.16"
   version-value: 1.16
   vpc-cfn-stack-id: ""
+  vpc-cfn-stack-yaml-file-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.vpc.cfn.yaml
   vpc-create: true
   vpc-id: ""
 partition: aws
 region: us-west-2
 remote-access-commands-output-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.ssh.sh
 remote-access-key-create: true
-remote-access-key-name: eks-2020061115-watery59tmc1-remote-access-key
+remote-access-key-name: eks-2020061123-surftd42cohq-remote-access-key
 remote-access-private-key-path: /home/ANT.AMAZON.COM/leegyuho/.ssh/kube_aws_rsa
 s3-bucket-create: false
 s3-bucket-create-keep: false
@@ -69,6 +71,7 @@ status:
   cluster-ca: ""
   cluster-ca-decoded: ""
   cluster-cfn-stack-id: ""
+  cluster-cfn-stack-yaml-file-path: ""
   cluster-control-plane-security-group-id: ""
   cluster-oidc-issuer-arn: ""
   cluster-oidc-issuer-ca-thumbprint: ""

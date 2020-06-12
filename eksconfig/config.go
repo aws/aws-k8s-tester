@@ -323,8 +323,9 @@ type Parameters struct {
 	// RoleServicePrincipals is the EKS Role Service Principals
 	RoleServicePrincipals []string `json:"role-service-principals"`
 	// RoleManagedPolicyARNs is EKS Role managed policy ARNs.
-	RoleManagedPolicyARNs []string `json:"role-managed-policy-arns"`
-	RoleCFNStackID        string   `json:"role-cfn-stack-id" read-only:"true"`
+	RoleManagedPolicyARNs    []string `json:"role-managed-policy-arns"`
+	RoleCFNStackID           string   `json:"role-cfn-stack-id" read-only:"true"`
+	RoleCFNStackYAMLFilePath string   `json:"role-cfn-stack-yaml-file-path" read-only:"true"`
 
 	// Tags defines EKS create cluster tags.
 	Tags map[string]string `json:"tags"`
@@ -344,8 +345,9 @@ type Parameters struct {
 	// VPCID is the VPC ID for cluster creation.
 	// If not empty, VPC is reused and not deleted.
 	// If empty, VPC is created anew and deleted on cluster deletion.
-	VPCID         string `json:"vpc-id"`
-	VPCCFNStackID string `json:"vpc-cfn-stack-id" read-only:"true"`
+	VPCID                   string `json:"vpc-id"`
+	VPCCFNStackID           string `json:"vpc-cfn-stack-id" read-only:"true"`
+	VPCCFNStackYAMLFilePath string `json:"vpc-cfn-stack-yaml-file-path" read-only:"true"`
 	// VpcCIDR is the IP range (CIDR notation) for VPC, must be a valid private
 	// (RFC 1918) CIDR range.
 	VPCCIDR string `json:"vpc-cidr,omitempty"`
@@ -1104,6 +1106,9 @@ func (cfg *Config) validateParameters() error {
 		return fmt.Errorf("cannot parse Parameters.Version %q (%v)", cfg.Parameters.Version, err)
 	}
 
+	if cfg.Parameters.RoleCFNStackYAMLFilePath == "" {
+		cfg.Parameters.RoleCFNStackYAMLFilePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".role.cfn.yaml"
+	}
 	switch cfg.Parameters.RoleCreate {
 	case true: // need create one, or already created
 		if cfg.Parameters.RoleName == "" {
@@ -1130,6 +1135,9 @@ func (cfg *Config) validateParameters() error {
 		}
 	}
 
+	if cfg.Parameters.VPCCFNStackYAMLFilePath == "" {
+		cfg.Parameters.VPCCFNStackYAMLFilePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".vpc.cfn.yaml"
+	}
 	switch cfg.Parameters.VPCCreate {
 	case true: // need create one, or already created
 		if cfg.Parameters.VPCID != "" {

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"sort"
 	"strings"
 	"text/template"
@@ -167,11 +168,11 @@ func (ts *tester) createASGs() error {
 			ts.cfg.EKSConfig.AddOnManagedNodeGroups.RequestHeaderValue != "") {
 
 		for mngName, cur := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
-			if cur.CreateRequested || cur.CFNStackID != "" {
+			if cur.CreateRequested || cur.MNGCFNStackID != "" {
 				ts.cfg.Logger.Warn("no need to create a new one, skipping",
 					zap.String("mng-name", mngName),
 					zap.Bool("create-requested", cur.CreateRequested),
-					zap.String("cfn-stack-id", cur.CFNStackID),
+					zap.String("cfn-stack-id", cur.MNGCFNStackID),
 				)
 				continue
 			}
@@ -246,16 +247,15 @@ func (ts *tester) createASGs() error {
 	} else {
 
 		for mngName, cur := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
-			if cur.CreateRequested || cur.CFNStackID != "" {
+			if cur.CreateRequested || cur.MNGCFNStackID != "" {
 				ts.cfg.Logger.Warn("no need to create a new one, skipping",
 					zap.String("mng-name", mngName),
 					zap.Bool("create-requested", cur.CreateRequested),
-					zap.String("cfn-stack-id", cur.CFNStackID),
+					zap.String("cfn-stack-id", cur.MNGCFNStackID),
 				)
 				continue
 			}
 
-			ts.cfg.Logger.Info("creating a new node group using CFN", zap.String("mng-name", cur.Name))
 			stackInput := &cloudformation.CreateStackInput{
 				StackName:    aws.String(cur.Name),
 				Capabilities: aws.StringSlice([]string{"CAPABILITY_IAM"}),
@@ -305,6 +305,14 @@ func (ts *tester) createASGs() error {
 			}
 			stackInput.TemplateBody = aws.String(buf.String())
 
+			if err := ioutil.WriteFile(cur.MNGCFNStackYAMLFilePath, buf.Bytes(), 0400); err != nil {
+				return err
+			}
+			ts.cfg.Logger.Info("creating a new MNG using CFN",
+				zap.String("mng-name", mngName),
+				zap.String("mng-cfn-file-path", cur.MNGCFNStackYAMLFilePath),
+			)
+
 			if cur.AMIType != "" {
 				stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
 					ParameterKey:   aws.String("AMIType"),
@@ -350,7 +358,7 @@ func (ts *tester) createASGs() error {
 
 			cur.TimeFrameCreate = timeutil.NewTimeFrame(timeStart, time.Now())
 			cur.CreateRequested = true
-			cur.CFNStackID = aws.StringValue(stackOutput.StackId)
+			cur.MNGCFNStackID = aws.StringValue(stackOutput.StackId)
 			cur.Status = cloudformation.ResourceStatusCreateInProgress
 			cur.Instances = make(map[string]ec2config.Instance)
 			cur.Logs = make(map[string][]string)
@@ -372,7 +380,7 @@ func (ts *tester) createASGs() error {
 			return fmt.Errorf("MNG name %q not found after creation", mngName)
 		}
 
-		mngStackID := cur.CFNStackID
+		mngStackID := cur.MNGCFNStackID
 		if mngStackID != "" {
 			timeStart := time.Now()
 			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
@@ -493,7 +501,7 @@ func (ts *tester) deleteASG() error {
 			continue
 		}
 
-		useCFN := cur.CFNStackID != ""
+		useCFN := cur.MNGCFNStackID != ""
 		if ts.failedOnce {
 			useCFN = false
 		}
@@ -502,10 +510,10 @@ func (ts *tester) deleteASG() error {
 		if useCFN {
 			ts.cfg.Logger.Info("deleting managed node group using CFN",
 				zap.String("mng-name", mngName),
-				zap.String("cfn-stack-id", cur.CFNStackID),
+				zap.String("cfn-stack-id", cur.MNGCFNStackID),
 			)
 			_, err = ts.cfg.CFNAPI.DeleteStack(&cloudformation.DeleteStackInput{
-				StackName: aws.String(cur.CFNStackID),
+				StackName: aws.String(cur.MNGCFNStackID),
 			})
 		} else {
 			ts.cfg.Logger.Info("deleting managed node group using EKS API", zap.String("name", mngName))
@@ -537,7 +545,7 @@ func (ts *tester) deleteASG() error {
 			continue
 		}
 
-		useCFN := cur.CFNStackID != ""
+		useCFN := cur.MNGCFNStackID != ""
 		if ts.failedOnce {
 			useCFN = false
 		}
@@ -547,7 +555,7 @@ func (ts *tester) deleteASG() error {
 		if useCFN {
 			ts.cfg.Logger.Info("waiting for delete managed node group using CFN",
 				zap.String("mng-name", mngName),
-				zap.String("cfn-stack-id", cur.CFNStackID),
+				zap.String("cfn-stack-id", cur.MNGCFNStackID),
 			)
 			initialWait, timeout := 2*time.Minute, 15*time.Minute
 			if len(cur.Instances) > 50 {
@@ -559,7 +567,7 @@ func (ts *tester) deleteASG() error {
 				make(chan struct{}), // do not exit on stop
 				ts.cfg.Logger,
 				ts.cfg.CFNAPI,
-				cur.CFNStackID,
+				cur.MNGCFNStackID,
 				cloudformation.ResourceStatusDeleteComplete,
 				initialWait,
 				15*time.Second,

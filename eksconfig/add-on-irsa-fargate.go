@@ -41,8 +41,9 @@ type AddOnIRSAFargate struct {
 	RoleServicePrincipals []string `json:"role-service-principals"`
 	// RoleManagedPolicyARNs is IRSA role managed policy ARNs.
 	// ref. https://aws.amazon.com/blogs/opensource/introducing-fine-grained-iam-roles-service-accounts/
-	RoleManagedPolicyARNs []string `json:"role-managed-policy-arns"`
-	RoleCFNStackID        string   `json:"role-cfn-stack-id" read-only:"true"`
+	RoleManagedPolicyARNs    []string `json:"role-managed-policy-arns"`
+	RoleCFNStackID           string   `json:"role-cfn-stack-id" read-only:"true"`
+	RoleCFNStackYAMLFilePath string   `json:"role-cfn-stack-yaml-file-path" read-only:"true"`
 
 	// S3Key is the S3 key to write for IRSA tests.
 	S3Key string `json:"s3-key"`
@@ -105,6 +106,10 @@ func (cfg *Config) validateAddOnIRSAFargate() error {
 	if cfg.AddOnIRSAFargate.RoleName == "" {
 		cfg.AddOnIRSAFargate.RoleName = cfg.Name + "-role-irsa-fargate"
 	}
+	if cfg.AddOnIRSAFargate.RoleCFNStackYAMLFilePath == "" {
+		cfg.AddOnIRSAFargate.RoleCFNStackYAMLFilePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".add-on-irsa-fargate.role.cfn.yaml"
+	}
+
 	if cfg.AddOnIRSAFargate.S3Key == "" {
 		cfg.AddOnIRSAFargate.S3Key = path.Join(cfg.Name, "s3-key-irsa-fargate")
 	}

@@ -410,14 +410,19 @@ func (ts *tester) createRole() error {
 	}); err != nil {
 		return err
 	}
-	tplTxt := buf.String()
 
-	ts.cfg.Logger.Info("creating a new IRSA role using CFN", zap.String("name", ts.cfg.EKSConfig.AddOnIRSA.RoleName))
+	if err := ioutil.WriteFile(ts.cfg.EKSConfig.AddOnIRSA.RoleCFNStackYAMLFilePath, buf.Bytes(), 0400); err != nil {
+		return err
+	}
+	ts.cfg.Logger.Info("creating a new IRSA role using CFN",
+		zap.String("role-name", ts.cfg.EKSConfig.AddOnIRSA.RoleName),
+		zap.String("role-cfn-file-path", ts.cfg.EKSConfig.AddOnIRSA.RoleCFNStackYAMLFilePath),
+	)
 	stackInput := &cloudformation.CreateStackInput{
 		StackName:    aws.String(ts.cfg.EKSConfig.AddOnIRSA.RoleName),
 		Capabilities: aws.StringSlice([]string{"CAPABILITY_NAMED_IAM"}),
 		OnFailure:    aws.String(cloudformation.OnFailureDelete),
-		TemplateBody: aws.String(tplTxt),
+		TemplateBody: aws.String(buf.String()),
 		Tags: cfn.NewTags(map[string]string{
 			"Kind":                   "aws-k8s-tester",
 			"Name":                   ts.cfg.EKSConfig.Name,

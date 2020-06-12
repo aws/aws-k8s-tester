@@ -366,15 +366,20 @@ func (ts *tester) createEKS() (err error) {
 		}); err != nil {
 			return err
 		}
-		tmpl := buf.String()
 
+		if err := ioutil.WriteFile(ts.cfg.EKSConfig.Status.ClusterCFNStackYAMLFilePath, buf.Bytes(), 0400); err != nil {
+			return err
+		}
 		initialWait = time.Minute
-		ts.cfg.Logger.Info("creating a cluster using CFN", zap.String("name", ts.cfg.EKSConfig.Name))
+		ts.cfg.Logger.Info("creating a cluster using CFN",
+			zap.String("name", ts.cfg.EKSConfig.Name),
+			zap.String("cfn-file-path", ts.cfg.EKSConfig.Status.ClusterCFNStackYAMLFilePath),
+		)
 		stackInput := &cloudformation.CreateStackInput{
 			StackName:    aws.String(ts.cfg.EKSConfig.Name + "-cluster"),
 			Capabilities: aws.StringSlice([]string{"CAPABILITY_IAM"}),
 			OnFailure:    aws.String(cloudformation.OnFailureDelete),
-			TemplateBody: aws.String(tmpl),
+			TemplateBody: aws.String(buf.String()),
 			Tags: cfn.NewTags(map[string]string{
 				"Kind":                   "aws-k8s-tester",
 				"Name":                   ts.cfg.EKSConfig.Name,

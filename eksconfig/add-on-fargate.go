@@ -42,8 +42,9 @@ type AddOnFargate struct {
 	// RoleServicePrincipals is the Fargate role Service Principals
 	RoleServicePrincipals []string `json:"role-service-principals"`
 	// RoleManagedPolicyARNs is Fargate role managed policy ARNs.
-	RoleManagedPolicyARNs []string `json:"role-managed-policy-arns"`
-	RoleCFNStackID        string   `json:"role-cfn-stack-id" read-only:"true"`
+	RoleManagedPolicyARNs    []string `json:"role-managed-policy-arns"`
+	RoleCFNStackID           string   `json:"role-cfn-stack-id" read-only:"true"`
+	RoleCFNStackYAMLFilePath string   `json:"role-cfn-stack-yaml-file-path" read-only:"true"`
 
 	// ProfileName is the profile name for Fargate.
 	ProfileName string `json:"profile-name"`
@@ -116,6 +117,9 @@ func (cfg *Config) validateAddOnFargate() error {
 	}
 	cfg.AddOnFargate.SecretName = strings.ToLower(fargateSecretRegex.ReplaceAllString(cfg.AddOnFargate.SecretName, ""))
 
+	if cfg.AddOnFargate.RoleCFNStackYAMLFilePath == "" {
+		cfg.AddOnFargate.RoleCFNStackYAMLFilePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".add-on-fargate.role.cfn.yaml"
+	}
 	switch cfg.AddOnFargate.RoleCreate {
 	case true: // need create one, or already created
 		if cfg.AddOnFargate.RoleName == "" {

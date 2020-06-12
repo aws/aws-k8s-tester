@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
 	"text/template"
 	"time"
 
@@ -189,17 +190,20 @@ func (ts *tester) createSG() error {
 	}); err != nil {
 		return err
 	}
-	tmpl := buf.String()
 
+	if err := ioutil.WriteFile(ts.cfg.EKSConfig.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackYAMLFilePath, buf.Bytes(), 0400); err != nil {
+		return err
+	}
 	ts.cfg.Logger.Info("creating a new node group security group using CFN",
 		zap.String("name", ts.cfg.EKSConfig.AddOnNodeGroups.RoleName),
+		zap.String("sg-cfn-file-path", ts.cfg.EKSConfig.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackYAMLFilePath),
 		zap.Int("internet-ingress-from-port", fromPort),
 		zap.Int("internet-ingress-to-port", 32767),
 	)
 	stackInput := &cloudformation.CreateStackInput{
 		StackName:    aws.String(ts.cfg.EKSConfig.Name + "-ng-sg"),
 		OnFailure:    aws.String(cloudformation.OnFailureDelete),
-		TemplateBody: aws.String(tmpl),
+		TemplateBody: aws.String(buf.String()),
 		Tags: cfn.NewTags(map[string]string{
 			"Kind":                   "aws-k8s-tester",
 			"Name":                   ts.cfg.EKSConfig.Name,

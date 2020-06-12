@@ -93,7 +93,10 @@ func (ts *Tester) createRole() error {
 	if err := ioutil.WriteFile(ts.cfg.RoleCFNStackYAMLFilePath, []byte(TemplateRoleBasic), 0400); err != nil {
 		return err
 	}
-	ts.lg.Info("creating a new role", zap.String("role-name", ts.cfg.RoleName), zap.String("role-cfn-file-path", ts.cfg.RoleCFNStackYAMLFilePath))
+	ts.lg.Info("creating a new role",
+		zap.String("role-name", ts.cfg.RoleName),
+		zap.String("role-cfn-file-path", ts.cfg.RoleCFNStackYAMLFilePath),
+	)
 	stackInput := &cloudformation.CreateStackInput{
 		StackName:    aws.String(ts.cfg.RoleName),
 		Capabilities: aws.StringSlice([]string{"CAPABILITY_NAMED_IAM"}),

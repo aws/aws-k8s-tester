@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"strings"
 	"time"
 
@@ -238,7 +239,13 @@ func (ts *tester) createRole() error {
 		return errors.New("cannot create a cluster role with an empty AddOnManagedNodeGroups.RoleName")
 	}
 
-	ts.cfg.Logger.Info("creating a new node group role using CFN", zap.String("name", ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleName))
+	if err := ioutil.WriteFile(ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleCFNStackYAMLFilePath, []byte(TemplateRole), 0400); err != nil {
+		return err
+	}
+	ts.cfg.Logger.Info("creating a new node group role using CFN",
+		zap.String("role-name", ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleName),
+		zap.String("role-cfn-file-path", ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleCFNStackYAMLFilePath),
+	)
 	stackInput := &cloudformation.CreateStackInput{
 		StackName:    aws.String(ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleName),
 		Capabilities: aws.StringSlice([]string{"CAPABILITY_NAMED_IAM"}),

@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"reflect"
 	"strings"
 	"time"
@@ -16,6 +17,7 @@ import (
 	awsiam "github.com/aws/aws-k8s-tester/pkg/aws/iam"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
+	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
@@ -245,15 +247,22 @@ func (ts *tester) createRole() error {
 		return errors.New("cannot create a cluster role with an empty AddOnFargate.RoleName")
 	}
 
-	ts.cfg.Logger.Info("creating a new Fargate role using CFN", zap.String("name", ts.cfg.EKSConfig.AddOnFargate.RoleName))
+	if err := ioutil.WriteFile(ts.cfg.EKSConfig.AddOnFargate.RoleCFNStackYAMLFilePath, []byte(TemplateRole), 0400); err != nil {
+		return err
+	}
+	ts.cfg.Logger.Info("creating a new Fargate role using CFN",
+		zap.String("role-name", ts.cfg.EKSConfig.AddOnFargate.RoleName),
+		zap.String("role-cfn-file-path", ts.cfg.EKSConfig.AddOnFargate.RoleCFNStackYAMLFilePath),
+	)
 	stackInput := &cloudformation.CreateStackInput{
 		StackName:    aws.String(ts.cfg.EKSConfig.AddOnFargate.RoleName),
 		Capabilities: aws.StringSlice([]string{"CAPABILITY_NAMED_IAM"}),
 		OnFailure:    aws.String(cloudformation.OnFailureDelete),
 		TemplateBody: aws.String(TemplateRole),
 		Tags: cfn.NewTags(map[string]string{
-			"Kind": "aws-k8s-tester",
-			"Name": ts.cfg.EKSConfig.Name,
+			"Kind":                   "aws-k8s-tester",
+			"Name":                   ts.cfg.EKSConfig.Name,
+			"aws-k8s-tester-version": version.ReleaseVersion,
 		}),
 		Parameters: []*cloudformation.Parameter{
 			{

@@ -37,8 +37,9 @@ type AddOnManagedNodeGroups struct {
 	// RoleServicePrincipals is the node group Service Principals
 	RoleServicePrincipals []string `json:"role-service-principals"`
 	// RoleManagedPolicyARNs is node group managed policy ARNs.
-	RoleManagedPolicyARNs []string `json:"role-managed-policy-arns"`
-	RoleCFNStackID        string   `json:"role-cfn-stack-id" read-only:"true"`
+	RoleManagedPolicyARNs    []string `json:"role-managed-policy-arns"`
+	RoleCFNStackID           string   `json:"role-cfn-stack-id" read-only:"true"`
+	RoleCFNStackYAMLFilePath string   `json:"role-cfn-stack-yaml-file-path" read-only:"true"`
 
 	// RequestHeaderKey defines EKS managed node group create cluster request header key.
 	RequestHeaderKey string `json:"request-header-key,omitempty"`
@@ -119,11 +120,13 @@ type MNG struct {
 	// PhysicalID is the Physical ID for the created "AWS::EKS::Nodegroup".
 	PhysicalID string `json:"physical-id" read-only:"true"`
 
-	// CFNStackID is the CloudFormation stack ID for a managed node group.
-	CFNStackID string `json:"cfn-stack-id" read-only:"true"`
+	// MNGCFNStackID is the CloudFormation stack ID for a managed node group.
+	MNGCFNStackID           string `json:"mng-cfn-stack-id" read-only:"true"`
+	MNGCFNStackYAMLFilePath string `json:"mng-cfn-stack-yaml-file-path" read-only:"true"`
 
 	RemoteAccessSecurityGroupID                      string `json:"remote-access-security-group-id" read-only:"true"`
 	RemoteAccessSecurityGroupIngressEgressCFNStackID string `json:"remote-access-security-group-ingress-egress-cfn-stack-id" read-only:"true"`
+	RemoteAccessSecurityCFNStackYAMLFilePath         string `json:"remote-access-security-group-cfn-stack-yaml-file-path" read-only:"true"`
 
 	// Status is the current status of EKS "Managed Node Group".
 	Status string `json:"status" read-only:"true"`
@@ -199,6 +202,9 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 		return fmt.Errorf("AddOnManagedNodeGroups.LogsTarGzPath %q must end with .tar.gz", cfg.AddOnManagedNodeGroups.LogsTarGzPath)
 	}
 
+	if cfg.AddOnManagedNodeGroups.RoleCFNStackYAMLFilePath == "" {
+		cfg.AddOnManagedNodeGroups.RoleCFNStackYAMLFilePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".add-on-managed-node-groups.role.cfn.yaml"
+	}
 	switch cfg.AddOnManagedNodeGroups.RoleCreate {
 	case true: // need create one, or already created
 		if cfg.AddOnManagedNodeGroups.RoleName == "" {
@@ -246,71 +252,74 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 	}
 
 	names, processed := make(map[string]struct{}), make(map[string]MNG)
-	for k, v := range cfg.AddOnManagedNodeGroups.MNGs {
+	for k, cur := range cfg.AddOnManagedNodeGroups.MNGs {
 		k = strings.ReplaceAll(k, "GetRef.Name", cfg.Name)
-		v.Name = strings.ReplaceAll(v.Name, "GetRef.Name", cfg.Name)
+		cur.Name = strings.ReplaceAll(cur.Name, "GetRef.Name", cfg.Name)
 
-		if v.Name == "" {
+		if cur.Name == "" {
 			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].Name is empty", k)
 		}
-		if k != v.Name {
-			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].Name has different Name field %q", k, v.Name)
+		if k != cur.Name {
+			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].Name has different Name field %q", k, cur.Name)
 		}
-		_, ok := names[v.Name]
+		_, ok := names[cur.Name]
 		if !ok {
-			names[v.Name] = struct{}{}
+			names[cur.Name] = struct{}{}
 		} else {
-			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].Name %q is redundant", k, v.Name)
+			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].Name %q is redundant", k, cur.Name)
 		}
 		if cfg.IsEnabledAddOnNodeGroups() {
-			_, ok = cfg.AddOnNodeGroups.ASGs[v.Name]
+			_, ok = cfg.AddOnNodeGroups.ASGs[cur.Name]
 			if ok {
-				return fmt.Errorf("MNGs[%q] name is conflicting with NG ASG", v.Name)
+				return fmt.Errorf("MNGs[%q] name is conflicting with NG ASG", cur.Name)
 			}
 		}
 
-		if len(v.InstanceTypes) > 4 {
-			return fmt.Errorf("too many InstaceTypes[%q]", v.InstanceTypes)
+		if len(cur.InstanceTypes) > 4 {
+			return fmt.Errorf("too many InstaceTypes[%q]", cur.InstanceTypes)
 		}
-		if v.VolumeSize == 0 {
-			v.VolumeSize = DefaultNodeVolumeSize
+		if cur.VolumeSize == 0 {
+			cur.VolumeSize = DefaultNodeVolumeSize
 		}
-		if v.RemoteAccessUserName == "" {
-			v.RemoteAccessUserName = "ec2-user"
-		}
-
-		if v.RemoteAccessUserName == "" {
-			v.RemoteAccessUserName = "ec2-user"
+		if cur.RemoteAccessUserName == "" {
+			cur.RemoteAccessUserName = "ec2-user"
 		}
 
-		switch v.AMIType {
+		if cur.MNGCFNStackYAMLFilePath == "" {
+			cur.MNGCFNStackYAMLFilePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".mng.cfn." + k + ".yaml"
+		}
+		if cur.RemoteAccessSecurityCFNStackYAMLFilePath == "" {
+			cur.RemoteAccessSecurityCFNStackYAMLFilePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".mng-sg.cfn." + k + ".yaml"
+		}
+
+		switch cur.AMIType {
 		case eks.AMITypesAl2X8664:
-			if v.RemoteAccessUserName != "ec2-user" {
-				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", v.AMIType, v.RemoteAccessUserName)
+			if cur.RemoteAccessUserName != "ec2-user" {
+				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", cur.AMIType, cur.RemoteAccessUserName)
 			}
 		case eks.AMITypesAl2X8664Gpu:
-			if v.RemoteAccessUserName != "ec2-user" {
-				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", v.AMIType, v.RemoteAccessUserName)
+			if cur.RemoteAccessUserName != "ec2-user" {
+				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", cur.AMIType, cur.RemoteAccessUserName)
 			}
 		default:
-			return fmt.Errorf("unknown ASGs[%q].AMIType %q", k, v.AMIType)
+			return fmt.Errorf("unknown ASGs[%q].AMIType %q", k, cur.AMIType)
 		}
 
-		switch v.AMIType {
+		switch cur.AMIType {
 		case eks.AMITypesAl2X8664:
-			if len(v.InstanceTypes) == 0 {
-				v.InstanceTypes = []string{DefaultNodeInstanceTypeCPU}
+			if len(cur.InstanceTypes) == 0 {
+				cur.InstanceTypes = []string{DefaultNodeInstanceTypeCPU}
 			}
 		case eks.AMITypesAl2X8664Gpu:
-			if len(v.InstanceTypes) == 0 {
-				v.InstanceTypes = []string{DefaultNodeInstanceTypeGPU}
+			if len(cur.InstanceTypes) == 0 {
+				cur.InstanceTypes = []string{DefaultNodeInstanceTypeGPU}
 			}
 		default:
-			return fmt.Errorf("unknown AddOnManagedNodeGroups.MNGs[%q].AMIType %q", k, v.AMIType)
+			return fmt.Errorf("unknown AddOnManagedNodeGroups.MNGs[%q].AMIType %q", k, cur.AMIType)
 		}
 
 		if cfg.IsEnabledAddOnNLBHelloWorld() || cfg.IsEnabledAddOnALB2048() {
-			for _, itp := range v.InstanceTypes {
+			for _, itp := range cur.InstanceTypes {
 				// "m3.xlarge" or "c4.xlarge" will fail with "InvalidTarget: Targets {...} are not supported"
 				// ref. https://github.com/aws/amazon-vpc-cni-k8s/pull/821
 				// ref. https://github.com/kubernetes/kubernetes/issues/66044#issuecomment-408188524
@@ -326,30 +335,30 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 			}
 		}
 
-		if v.ASGMinSize > v.ASGMaxSize {
-			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].ASGMinSize %d > ASGMaxSize %d", k, v.ASGMinSize, v.ASGMaxSize)
+		if cur.ASGMinSize > cur.ASGMaxSize {
+			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].ASGMinSize %d > ASGMaxSize %d", k, cur.ASGMinSize, cur.ASGMaxSize)
 		}
-		if v.ASGDesiredCapacity > v.ASGMaxSize {
-			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].ASGDesiredCapacity %d > ASGMaxSize %d", k, v.ASGDesiredCapacity, v.ASGMaxSize)
+		if cur.ASGDesiredCapacity > cur.ASGMaxSize {
+			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].ASGDesiredCapacity %d > ASGMaxSize %d", k, cur.ASGDesiredCapacity, cur.ASGMaxSize)
 		}
-		if v.ASGMaxSize > MNGMaxLimit {
-			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].ASGMaxSize %d > MNGMaxLimit %d", k, v.ASGMaxSize, MNGMaxLimit)
+		if cur.ASGMaxSize > MNGMaxLimit {
+			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].ASGMaxSize %d > MNGMaxLimit %d", k, cur.ASGMaxSize, MNGMaxLimit)
 		}
-		if v.ASGDesiredCapacity > MNGMaxLimit {
-			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].ASGDesiredCapacity %d > MNGMaxLimit %d", k, v.ASGDesiredCapacity, MNGMaxLimit)
-		}
-
-		if cfg.IsEnabledAddOnNLBHelloWorld() && cfg.AddOnNLBHelloWorld.DeploymentReplicas < int32(v.ASGDesiredCapacity) {
-			cfg.AddOnNLBHelloWorld.DeploymentReplicas = int32(v.ASGDesiredCapacity)
-		}
-		if cfg.IsEnabledAddOnALB2048() && cfg.AddOnALB2048.DeploymentReplicasALB < int32(v.ASGDesiredCapacity) {
-			cfg.AddOnALB2048.DeploymentReplicasALB = int32(v.ASGDesiredCapacity)
-		}
-		if cfg.IsEnabledAddOnALB2048() && cfg.AddOnALB2048.DeploymentReplicas2048 < int32(v.ASGDesiredCapacity) {
-			cfg.AddOnALB2048.DeploymentReplicas2048 = int32(v.ASGDesiredCapacity)
+		if cur.ASGDesiredCapacity > MNGMaxLimit {
+			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].ASGDesiredCapacity %d > MNGMaxLimit %d", k, cur.ASGDesiredCapacity, MNGMaxLimit)
 		}
 
-		processed[k] = v
+		if cfg.IsEnabledAddOnNLBHelloWorld() && cfg.AddOnNLBHelloWorld.DeploymentReplicas < int32(cur.ASGDesiredCapacity) {
+			cfg.AddOnNLBHelloWorld.DeploymentReplicas = int32(cur.ASGDesiredCapacity)
+		}
+		if cfg.IsEnabledAddOnALB2048() && cfg.AddOnALB2048.DeploymentReplicasALB < int32(cur.ASGDesiredCapacity) {
+			cfg.AddOnALB2048.DeploymentReplicasALB = int32(cur.ASGDesiredCapacity)
+		}
+		if cfg.IsEnabledAddOnALB2048() && cfg.AddOnALB2048.DeploymentReplicas2048 < int32(cur.ASGDesiredCapacity) {
+			cfg.AddOnALB2048.DeploymentReplicas2048 = int32(cur.ASGDesiredCapacity)
+		}
+
+		processed[k] = cur
 	}
 
 	cfg.AddOnManagedNodeGroups.MNGs = processed

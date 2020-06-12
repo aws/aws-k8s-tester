@@ -3,6 +3,7 @@ package ng
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"path"
 	"time"
 
@@ -108,11 +109,15 @@ func (ts *tester) createSSMDocument() error {
 			)
 			continue
 		}
+
+		if err := ioutil.WriteFile(cur.SSMDocumentCFNStackYAMLFilePath, []byte(TemplateSSMDocument), 0400); err != nil {
+			return err
+		}
 		ts.cfg.Logger.Info("creating SSM document",
 			zap.String("asg-name", asgName),
 			zap.String("ssm-document-name", cur.SSMDocumentName),
+			zap.String("ssm-cfn-file-path", cur.SSMDocumentCFNStackYAMLFilePath),
 		)
-
 		stackInput := &cloudformation.CreateStackInput{
 			StackName:    aws.String(cur.SSMDocumentName),
 			Capabilities: aws.StringSlice([]string{"CAPABILITY_IAM"}),

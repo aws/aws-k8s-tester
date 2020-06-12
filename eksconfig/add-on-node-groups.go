@@ -37,12 +37,14 @@ type AddOnNodeGroups struct {
 	// RoleServicePrincipals is the node group Service Principals
 	RoleServicePrincipals []string `json:"role-service-principals"`
 	// RoleManagedPolicyARNs is node groupd policy ARNs.
-	RoleManagedPolicyARNs []string `json:"role-managed-policy-arns"`
-	RoleCFNStackID        string   `json:"role-cfn-stack-id" read-only:"true"`
+	RoleManagedPolicyARNs    []string `json:"role-managed-policy-arns"`
+	RoleCFNStackID           string   `json:"role-cfn-stack-id" read-only:"true"`
+	RoleCFNStackYAMLFilePath string   `json:"role-cfn-stack-yaml-file-path" read-only:"true"`
 
 	// NodeGroupSecurityGroupID is the security group ID for the node group.
-	NodeGroupSecurityGroupID         string `json:"node-group-security-group-id" read-only:"true"`
-	NodeGroupSecurityGroupCFNStackID string `json:"node-group-security-group-cfn-stack-id" read-only:"true"`
+	NodeGroupSecurityGroupID                   string `json:"node-group-security-group-id" read-only:"true"`
+	NodeGroupSecurityGroupCFNStackID           string `json:"node-group-security-group-cfn-stack-id" read-only:"true"`
+	NodeGroupSecurityGroupCFNStackYAMLFilePath string `json:"node-group-security-group-cfn-stack-yaml-file-path" read-only:"true"`
 
 	// LogsDir is set to specify the target directory to store all remote log files.
 	// If empty, it stores in the same directory as "ConfigPath".
@@ -141,6 +143,13 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 		return fmt.Errorf("AddOnNodeGroups.LogsTarGzPath %q must end with .tar.gz", cfg.AddOnNodeGroups.LogsTarGzPath)
 	}
 
+	if cfg.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackYAMLFilePath == "" {
+		cfg.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackYAMLFilePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".add-on-node-groups.sg.cfn.yaml"
+	}
+
+	if cfg.AddOnNodeGroups.RoleCFNStackYAMLFilePath == "" {
+		cfg.AddOnNodeGroups.RoleCFNStackYAMLFilePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".add-on-node-groups.role.cfn.yaml"
+	}
 	switch cfg.AddOnNodeGroups.RoleCreate {
 	case true: // need create one, or already created
 		if cfg.AddOnNodeGroups.RoleName == "" {
@@ -188,82 +197,86 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 	}
 
 	names, processed := make(map[string]struct{}), make(map[string]ASG)
-	for k, v := range cfg.AddOnNodeGroups.ASGs {
+	for k, cur := range cfg.AddOnNodeGroups.ASGs {
 		k = strings.ReplaceAll(k, "GetRef.Name", cfg.Name)
-		v.Name = strings.ReplaceAll(v.Name, "GetRef.Name", cfg.Name)
+		cur.Name = strings.ReplaceAll(cur.Name, "GetRef.Name", cfg.Name)
 
-		if v.Name == "" {
+		if cur.Name == "" {
 			return fmt.Errorf("AddOnNodeGroups.ASGs[%q].Name is empty", k)
 		}
-		if k != v.Name {
-			return fmt.Errorf("AddOnNodeGroups.ASGs[%q].Name has different Name field %q", k, v.Name)
+		if k != cur.Name {
+			return fmt.Errorf("AddOnNodeGroups.ASGs[%q].Name has different Name field %q", k, cur.Name)
 		}
-		_, ok := names[v.Name]
+		_, ok := names[cur.Name]
 		if !ok {
-			names[v.Name] = struct{}{}
+			names[cur.Name] = struct{}{}
 		} else {
-			return fmt.Errorf("AddOnNodeGroups.ASGs[%q].Name %q is redundant", k, v.Name)
+			return fmt.Errorf("AddOnNodeGroups.ASGs[%q].Name %q is redundant", k, cur.Name)
 		}
 
-		if len(v.InstanceTypes) > 4 {
-			return fmt.Errorf("too many InstaceTypes[%q]", v.InstanceTypes)
-		}
-		if v.VolumeSize == 0 {
-			v.VolumeSize = DefaultNodeVolumeSize
-		}
-		if v.RemoteAccessUserName == "" {
-			v.RemoteAccessUserName = "ec2-user"
+		if cur.ASGCFNStackYAMLFilePath == "" {
+			cur.ASGCFNStackYAMLFilePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".asg.cfn." + k + ".yaml"
 		}
 
-		if v.ImageID == "" && v.ImageIDSSMParameter == "" {
-			return fmt.Errorf("%q both ImageID and ImageIDSSMParameter are empty", v.Name)
+		if len(cur.InstanceTypes) > 4 {
+			return fmt.Errorf("too many InstaceTypes[%q]", cur.InstanceTypes)
+		}
+		if cur.VolumeSize == 0 {
+			cur.VolumeSize = DefaultNodeVolumeSize
+		}
+		if cur.RemoteAccessUserName == "" {
+			cur.RemoteAccessUserName = "ec2-user"
 		}
 
-		switch v.AMIType {
+		if cur.ImageID == "" && cur.ImageIDSSMParameter == "" {
+			return fmt.Errorf("%q both ImageID and ImageIDSSMParameter are empty", cur.Name)
+		}
+
+		switch cur.AMIType {
 		case ec2config.AMITypeBottleRocketCPU:
-			if v.RemoteAccessUserName != "ec2-user" {
-				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", v.AMIType, v.RemoteAccessUserName)
+			if cur.RemoteAccessUserName != "ec2-user" {
+				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", cur.AMIType, cur.RemoteAccessUserName)
 			}
-			if v.SSMDocumentName != "" && cfg.S3BucketName == "" {
-				return fmt.Errorf("AMIType %q requires SSMDocumentName %q but no S3BucketName", v.AMIType, v.SSMDocumentName)
+			if cur.SSMDocumentName != "" && cfg.S3BucketName == "" {
+				return fmt.Errorf("AMIType %q requires SSMDocumentName %q but no S3BucketName", cur.AMIType, cur.SSMDocumentName)
 			}
-			if v.KubeletExtraArgs != "" {
-				return fmt.Errorf("AMIType %q but unexpected KubeletExtraArgs %q", v.AMIType, v.KubeletExtraArgs)
+			if cur.KubeletExtraArgs != "" {
+				return fmt.Errorf("AMIType %q but unexpected KubeletExtraArgs %q", cur.AMIType, cur.KubeletExtraArgs)
 			}
 		case eks.AMITypesAl2X8664:
-			if v.RemoteAccessUserName != "ec2-user" {
-				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", v.AMIType, v.RemoteAccessUserName)
+			if cur.RemoteAccessUserName != "ec2-user" {
+				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", cur.AMIType, cur.RemoteAccessUserName)
 			}
 		case eks.AMITypesAl2X8664Gpu:
-			if v.RemoteAccessUserName != "ec2-user" {
-				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", v.AMIType, v.RemoteAccessUserName)
+			if cur.RemoteAccessUserName != "ec2-user" {
+				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", cur.AMIType, cur.RemoteAccessUserName)
 			}
 		default:
-			return fmt.Errorf("unknown ASGs[%q].AMIType %q", k, v.AMIType)
+			return fmt.Errorf("unknown ASGs[%q].AMIType %q", k, cur.AMIType)
 		}
 
-		switch v.AMIType {
+		switch cur.AMIType {
 		case ec2config.AMITypeBottleRocketCPU:
-			if len(v.InstanceTypes) == 0 {
-				v.InstanceTypes = []string{DefaultNodeInstanceTypeCPU}
+			if len(cur.InstanceTypes) == 0 {
+				cur.InstanceTypes = []string{DefaultNodeInstanceTypeCPU}
 			}
 		case eks.AMITypesAl2X8664:
-			if len(v.InstanceTypes) == 0 {
-				v.InstanceTypes = []string{DefaultNodeInstanceTypeCPU}
+			if len(cur.InstanceTypes) == 0 {
+				cur.InstanceTypes = []string{DefaultNodeInstanceTypeCPU}
 			}
 		case eks.AMITypesAl2X8664Gpu:
-			if len(v.InstanceTypes) == 0 {
-				v.InstanceTypes = []string{DefaultNodeInstanceTypeGPU}
+			if len(cur.InstanceTypes) == 0 {
+				cur.InstanceTypes = []string{DefaultNodeInstanceTypeGPU}
 			}
 		default:
-			return fmt.Errorf("unknown AddOnNodeGroups.ASGs[%q].AMIType %q", k, v.AMIType)
+			return fmt.Errorf("unknown AddOnNodeGroups.ASGs[%q].AMIType %q", k, cur.AMIType)
 		}
 
 		if cfg.IsEnabledAddOnNLBHelloWorld() || cfg.IsEnabledAddOnALB2048() {
 			// "m3.xlarge" or "c4.xlarge" will fail with "InvalidTarget: Targets {...} are not supported"
 			// ref. https://github.com/aws/amazon-vpc-cni-k8s/pull/821
 			// ref. https://github.com/kubernetes/kubernetes/issues/66044#issuecomment-408188524
-			for _, ivt := range v.InstanceTypes {
+			for _, ivt := range cur.InstanceTypes {
 
 				switch {
 				case strings.HasPrefix(ivt, "m3."),
@@ -276,48 +289,51 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 			}
 		}
 
-		if v.ASGMinSize > v.ASGMaxSize {
-			return fmt.Errorf("AddOnNodeGroups.ASGs[%q].ASGMinSize %d > ASGMaxSize %d", k, v.ASGMinSize, v.ASGMaxSize)
+		if cur.ASGMinSize > cur.ASGMaxSize {
+			return fmt.Errorf("AddOnNodeGroups.ASGs[%q].ASGMinSize %d > ASGMaxSize %d", k, cur.ASGMinSize, cur.ASGMaxSize)
 		}
-		if v.ASGDesiredCapacity > v.ASGMaxSize {
-			return fmt.Errorf("AddOnNodeGroups.ASGs[%q].ASGDesiredCapacity %d > ASGMaxSize %d", k, v.ASGDesiredCapacity, v.ASGMaxSize)
+		if cur.ASGDesiredCapacity > cur.ASGMaxSize {
+			return fmt.Errorf("AddOnNodeGroups.ASGs[%q].ASGDesiredCapacity %d > ASGMaxSize %d", k, cur.ASGDesiredCapacity, cur.ASGMaxSize)
 		}
-		if v.ASGMaxSize > NGMaxLimit {
-			return fmt.Errorf("AddOnNodeGroups.ASGs[%q].ASGMaxSize %d > NGMaxLimit %d", k, v.ASGMaxSize, NGMaxLimit)
+		if cur.ASGMaxSize > NGMaxLimit {
+			return fmt.Errorf("AddOnNodeGroups.ASGs[%q].ASGMaxSize %d > NGMaxLimit %d", k, cur.ASGMaxSize, NGMaxLimit)
 		}
-		if v.ASGDesiredCapacity > NGMaxLimit {
-			return fmt.Errorf("AddOnNodeGroups.ASGs[%q].ASGDesiredCapacity %d > NGMaxLimit %d", k, v.ASGDesiredCapacity, NGMaxLimit)
+		if cur.ASGDesiredCapacity > NGMaxLimit {
+			return fmt.Errorf("AddOnNodeGroups.ASGs[%q].ASGDesiredCapacity %d > NGMaxLimit %d", k, cur.ASGDesiredCapacity, NGMaxLimit)
 		}
 
-		switch v.SSMDocumentCreate {
+		if cur.SSMDocumentCFNStackYAMLFilePath == "" {
+			cur.SSMDocumentCFNStackYAMLFilePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".ssm.cfn." + k + ".yaml"
+		}
+		switch cur.SSMDocumentCreate {
 		case true: // need create one, or already created
-			if v.SSMDocumentCFNStackName == "" {
-				v.SSMDocumentCFNStackName = v.Name + "-ssm-document"
+			if cur.SSMDocumentCFNStackName == "" {
+				cur.SSMDocumentCFNStackName = cur.Name + "-ssm-document"
 			}
-			if v.SSMDocumentName == "" {
-				v.SSMDocumentName = v.Name + "SSMDocument"
+			if cur.SSMDocumentName == "" {
+				cur.SSMDocumentName = cur.Name + "SSMDocument"
 			}
-			v.SSMDocumentCFNStackName = strings.ReplaceAll(v.SSMDocumentCFNStackName, "GetRef.Name", cfg.Name)
-			v.SSMDocumentName = strings.ReplaceAll(v.SSMDocumentName, "GetRef.Name", cfg.Name)
-			v.SSMDocumentName = regex.ReplaceAllString(v.SSMDocumentName, "")
-			if v.SSMDocumentExecutionTimeoutSeconds == 0 {
-				v.SSMDocumentExecutionTimeoutSeconds = 3600
+			cur.SSMDocumentCFNStackName = strings.ReplaceAll(cur.SSMDocumentCFNStackName, "GetRef.Name", cfg.Name)
+			cur.SSMDocumentName = strings.ReplaceAll(cur.SSMDocumentName, "GetRef.Name", cfg.Name)
+			cur.SSMDocumentName = regex.ReplaceAllString(cur.SSMDocumentName, "")
+			if cur.SSMDocumentExecutionTimeoutSeconds == 0 {
+				cur.SSMDocumentExecutionTimeoutSeconds = 3600
 			}
 
 		case false: // use existing one, or don't run any SSM
 		}
 
-		if cfg.IsEnabledAddOnNLBHelloWorld() && cfg.AddOnNLBHelloWorld.DeploymentReplicas < int32(v.ASGDesiredCapacity) {
-			cfg.AddOnNLBHelloWorld.DeploymentReplicas = int32(v.ASGDesiredCapacity)
+		if cfg.IsEnabledAddOnNLBHelloWorld() && cfg.AddOnNLBHelloWorld.DeploymentReplicas < int32(cur.ASGDesiredCapacity) {
+			cfg.AddOnNLBHelloWorld.DeploymentReplicas = int32(cur.ASGDesiredCapacity)
 		}
-		if cfg.IsEnabledAddOnALB2048() && cfg.AddOnALB2048.DeploymentReplicasALB < int32(v.ASGDesiredCapacity) {
-			cfg.AddOnALB2048.DeploymentReplicasALB = int32(v.ASGDesiredCapacity)
+		if cfg.IsEnabledAddOnALB2048() && cfg.AddOnALB2048.DeploymentReplicasALB < int32(cur.ASGDesiredCapacity) {
+			cfg.AddOnALB2048.DeploymentReplicasALB = int32(cur.ASGDesiredCapacity)
 		}
-		if cfg.IsEnabledAddOnALB2048() && cfg.AddOnALB2048.DeploymentReplicas2048 < int32(v.ASGDesiredCapacity) {
-			cfg.AddOnALB2048.DeploymentReplicas2048 = int32(v.ASGDesiredCapacity)
+		if cfg.IsEnabledAddOnALB2048() && cfg.AddOnALB2048.DeploymentReplicas2048 < int32(cur.ASGDesiredCapacity) {
+			cfg.AddOnALB2048.DeploymentReplicas2048 = int32(cur.ASGDesiredCapacity)
 		}
 
-		processed[k] = v
+		processed[k] = cur
 	}
 
 	cfg.AddOnNodeGroups.ASGs = processed

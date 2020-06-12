@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"strings"
 	"time"
 
@@ -703,21 +704,27 @@ func (ts *tester) createVPC() error {
 		return nil
 	}
 
-	templateBody, cfnNetworkTagValue := TemplateVPCPublicPrivate, "Public/Private"
-
 	vpcName := ts.cfg.EKSConfig.Name + "-vpc"
+
+	if err := ioutil.WriteFile(ts.cfg.EKSConfig.Parameters.VPCCFNStackYAMLFilePath, []byte(TemplateVPCPublicPrivate), 0400); err != nil {
+		return err
+	}
 	// VPC attributes are empty, create a new VPC
 	// otherwise, use the existing one
-	ts.cfg.Logger.Info("creating a new VPC")
+	ts.cfg.Logger.Info("creating a new VPC",
+		zap.String("vpc-stack-name", vpcName),
+		zap.String("vpc-cfn-file-path", ts.cfg.EKSConfig.Parameters.VPCCFNStackYAMLFilePath),
+	)
+
 	stackInput := &cloudformation.CreateStackInput{
 		StackName:    aws.String(vpcName),
 		Capabilities: aws.StringSlice([]string{"CAPABILITY_IAM"}),
 		OnFailure:    aws.String(cloudformation.OnFailureDelete),
-		TemplateBody: aws.String(templateBody),
+		TemplateBody: aws.String(TemplateVPCPublicPrivate),
 		Tags: cfn.NewTags(map[string]string{
 			"Kind":                   "aws-k8s-tester",
 			"Name":                   ts.cfg.EKSConfig.Name,
-			"Network":                cfnNetworkTagValue,
+			"Network":                "Public/Private",
 			"aws-k8s-tester-version": version.ReleaseVersion,
 		}),
 		Parameters: []*cloudformation.Parameter{
