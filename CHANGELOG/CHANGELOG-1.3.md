@@ -17,6 +17,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.4...v1.3.5
 
 - Fix typo for [`kubectl top node` in `eks/kubernetes-dashboard`](https://github.com/aws/aws-k8s-tester/commit/c0892a8353c9cf8add50b0c0fda84de7c883b963).
 - Set timeouts for [fargate profile delete in `eks/fargate`](https://github.com/aws/aws-k8s-tester/commit/32fb68855a6b07ad0827bb61ac0fb43063c3aa65).
+- Improve [`eks/mng` delete operation](https://github.com/aws/aws-k8s-tester/commit/9878594877f32c8b2c4023a5ad0d1534b46ddda2).
 
 ### Dependency
 
