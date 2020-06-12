@@ -12,6 +12,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.4...v1.3.5
 - Clean up [`"config-maps-"` string to `"configmaps-"`](https://github.com/aws/aws-k8s-tester/commit/6f424f20135285f24b078addbd7e3497b4e2cdf9).
   - `ADD_ON_CONFIG_MAPS_*` is now `ADD_ON_CONFIGMAPS_*`.
   - `AddOnConfigMaps*` is now `AddOnConfigmaps*`.
+- Set default [`eks/app-mesh` namespace suffix as `-appmesh`, not `appmesh-system`](https://github.com/aws/aws-k8s-tester/commit/1ac87bcadc03b58bc7ea3d5f3ce79f7e03202435).
 
 ### `eks`
 
