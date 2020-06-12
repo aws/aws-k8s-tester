@@ -9,15 +9,15 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.5...v1.3.6
 
 ### `eksconfig`
 
-- Add [`Parameters.RoleCFNStackYAMLFilePath`](https://github.com/aws/aws-k8s-tester/commit/).
-- Add [`Parameters.VPCCFNStackYAMLFilePath`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`Parameters.RoleCFNStackYAMLFilePath`](https://github.com/aws/aws-k8s-tester/commit/db0cb5d39e3b1d9758f31ca4f5425ad9d1f711ce).
+- Add [`Parameters.VPCCFNStackYAMLFilePath`](https://github.com/aws/aws-k8s-tester/commit/db0cb5d39e3b1d9758f31ca4f5425ad9d1f711ce).
 
 ### `ec2config`
 
-- Add [`Config.RoleCFNStackYAMLFilePath`](https://github.com/aws/aws-k8s-tester/commit/).
-- Add [`Config.VPCCFNStackYAMLFilePath`](https://github.com/aws/aws-k8s-tester/commit/).
-- Add [`ASG.ASGCFNStackYAMLFilePath`](https://github.com/aws/aws-k8s-tester/commit/).
-- Add [`ASG.SSMDocumentCFNStackYAMLFilePath`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`Config.RoleCFNStackYAMLFilePath`](https://github.com/aws/aws-k8s-tester/commit/13922f4a0eb9446705a757c816923ae54a03bb41).
+- Add [`Config.VPCCFNStackYAMLFilePath`](https://github.com/aws/aws-k8s-tester/commit/13922f4a0eb9446705a757c816923ae54a03bb41).
+- Add [`ASG.ASGCFNStackYAMLFilePath`](https://github.com/aws/aws-k8s-tester/commit/13922f4a0eb9446705a757c816923ae54a03bb41).
+- Add [`ASG.SSMDocumentCFNStackYAMLFilePath`](https://github.com/aws/aws-k8s-tester/commit/13922f4a0eb9446705a757c816923ae54a03bb41).
 
 ### `eks`
 
