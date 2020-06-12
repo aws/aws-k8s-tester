@@ -32,9 +32,11 @@
 | AWS_K8S_TESTER_EC2_ROLE_SERVICE_PRINCIPALS             | read-only "false" | *ec2config.Config.RoleServicePrincipals           | []string                 |
 | AWS_K8S_TESTER_EC2_ROLE_MANAGED_POLICY_ARNS            | read-only "false" | *ec2config.Config.RoleManagedPolicyARNs           | []string                 |
 | AWS_K8S_TESTER_EC2_ROLE_CFN_STACK_ID                   | read-only "true"  | *ec2config.Config.RoleCFNStackID                  | string                   |
+| AWS_K8S_TESTER_EC2_ROLE_CFN_STACK_YAML_FILE_PATH       | read-only "true"  | *ec2config.Config.RoleCFNStackYAMLFilePath        | string                   |
 | AWS_K8S_TESTER_EC2_VPC_CREATE                          | read-only "false" | *ec2config.Config.VPCCreate                       | bool                     |
 | AWS_K8S_TESTER_EC2_VPC_ID                              | read-only "false" | *ec2config.Config.VPCID                           | string                   |
 | AWS_K8S_TESTER_EC2_VPC_CFN_STACK_ID                    | read-only "true"  | *ec2config.Config.VPCCFNStackID                   | string                   |
+| AWS_K8S_TESTER_EC2_VPC_CFN_STACK_YAML_FILE_PATH        | read-only "true"  | *ec2config.Config.VPCCFNStackYAMLFilePath         | string                   |
 | AWS_K8S_TESTER_EC2_SSH_INGRESS_IPV4_RANGE              | read-only "false" | *ec2config.Config.SSHIngressIPv4Range             | string                   |
 | AWS_K8S_TESTER_EC2_VPC_CIDR                            | read-only "false" | *ec2config.Config.VPCCIDR                         | string                   |
 | AWS_K8S_TESTER_EC2_PUBLIC_SUBNET_CIDR_1                | read-only "false" | *ec2config.Config.PublicSubnetCIDR1               | string                   |

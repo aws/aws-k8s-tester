@@ -7,6 +7,13 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.5...v1.3.6).
 
+### `ec2config`
+
+- Add [`Config.RoleCFNStackYAMLFilePath`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`Config.VPCCFNStackYAMLFilePath`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`ASG.ASGCFNStackYAMLFilePath`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`ASG.SSMDocumentCFNStackYAMLFilePath`](https://github.com/aws/aws-k8s-tester/commit/).
+
 ### `eks`
 
 - Wait until [`kubectl top node` is ready](https://github.com/aws/aws-k8s-tester/commit/5301270bfa2253bda350407a2db03a38058d7e95).

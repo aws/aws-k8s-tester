@@ -118,16 +118,18 @@ type Config struct {
 	// RoleServicePrincipals is the EC2 Role Service Principals
 	RoleServicePrincipals []string `json:"role-service-principals"`
 	// RoleManagedPolicyARNs is EC2 Role managed policy ARNs.
-	RoleManagedPolicyARNs []string `json:"role-managed-policy-arns"`
-	RoleCFNStackID        string   `json:"role-cfn-stack-id" read-only:"true"`
+	RoleManagedPolicyARNs    []string `json:"role-managed-policy-arns"`
+	RoleCFNStackID           string   `json:"role-cfn-stack-id" read-only:"true"`
+	RoleCFNStackYAMLFilePath string   `json:"role-cfn-stack-yaml-file-path" read-only:"true"`
 
 	// VPCCreate is true to auto-create and delete VPC.
 	VPCCreate bool `json:"vpc-create"`
 	// VPCID is the VPC ID for cluster creation.
 	// If not empty, VPC is reused and not deleted.
 	// If empty, VPC is created anew and deleted on cluster deletion.
-	VPCID         string `json:"vpc-id"`
-	VPCCFNStackID string `json:"vpc-cfn-stack-id" read-only:"true"`
+	VPCID                   string `json:"vpc-id"`
+	VPCCFNStackID           string `json:"vpc-cfn-stack-id" read-only:"true"`
+	VPCCFNStackYAMLFilePath string `json:"vpc-cfn-stack-yaml-file-path" read-only:"true"`
 	// SSHIngressIPv4Range is the IP range for SSH inbound traffic.
 	SSHIngressIPv4Range string `json:"ssh-ingress-ipv4-range"`
 	// VpcCIDR is the IP range (CIDR notation) for VPC, must be a valid private
@@ -219,8 +221,9 @@ func (cfg *Config) RecordStatus(status string) {
 // ASG represents one ASG.
 type ASG struct {
 	// Name is the ASG name.
-	Name          string `json:"name"`
-	ASGCFNStackID string `json:"asg-cfn-stack-id" read-only:"true"`
+	Name                    string `json:"name"`
+	ASGCFNStackID           string `json:"asg-cfn-stack-id" read-only:"true"`
+	ASGCFNStackYAMLFilePath string `json:"asg-cfn-stack-yaml-file-path" read-only:"true"`
 
 	TimeFrameCreate timeutil.TimeFrame `json:"time-frame-create" read-only:"true"`
 	TimeFrameDelete timeutil.TimeFrame `json:"time-frame-delete" read-only:"true"`
@@ -240,6 +243,7 @@ type ASG struct {
 	// SSMDocumentExecutionTimeoutSeconds is the SSM document execution timeout in seconds.
 	SSMDocumentExecutionTimeoutSeconds int      `json:"ssm-document-execution-timeout-in-seconds"`
 	SSMDocumentCFNStackID              string   `json:"ssm-document-cfn-stack-id" read-only:"true"`
+	SSMDocumentCFNStackYAMLFilePath    string   `json:"ssm-document-cfn-stack-yaml-file-path" read-only:"true"`
 	SSMDocumentCommandIDs              []string `json:"ssm-document-command-ids" read-only:"true"`
 
 	// TODO: support bootstrap arguments

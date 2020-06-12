@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"strings"
 	"text/template"
 	"time"
@@ -384,7 +385,6 @@ func (ts *Tester) createASGs() (err error) {
 	ts.lg.Info("creating ASGs using CFN", zap.String("name", ts.cfg.Name))
 	for asgName, cur := range ts.cfg.ASGs {
 		timeStart := time.Now()
-		ts.lg.Info("creating ASG", zap.String("name", asgName))
 
 		// TODO: may not be necessary
 		// "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
@@ -402,15 +402,18 @@ func (ts *Tester) createASGs() (err error) {
 		}
 		tpl := template.Must(template.New("TemplateASG").Parse(TemplateASG))
 		buf := bytes.NewBuffer(nil)
-		if err := tpl.Execute(buf, tg); err != nil {
+		if err = tpl.Execute(buf, tg); err != nil {
 			return err
 		}
-		tmpl := buf.String()
+		if err = ioutil.WriteFile(cur.ASGCFNStackYAMLFilePath, buf.Bytes(), 0400); err != nil {
+			return err
+		}
+		ts.lg.Info("creating ASG", zap.String("asg-name", asgName), zap.String("asg-cfn-file-path", cur.ASGCFNStackYAMLFilePath))
 		stackInput := &cloudformation.CreateStackInput{
 			StackName:    aws.String(asgName),
 			Capabilities: aws.StringSlice([]string{"CAPABILITY_NAMED_IAM"}),
 			OnFailure:    aws.String(cloudformation.OnFailureDelete),
-			TemplateBody: aws.String(tmpl),
+			TemplateBody: aws.String(buf.String()),
 			Tags: cfn.NewTags(map[string]string{
 				"Kind":                   "aws-k8s-tester",
 				"Name":                   ts.cfg.Name,

@@ -91,7 +91,7 @@ func (ts *tester) Create() (err error) {
 	if err = ts.createRole(); err != nil {
 		return err
 	}
-	if err = ts.createASG(); err != nil {
+	if err = ts.createASGs(); err != nil {
 		return err
 	}
 

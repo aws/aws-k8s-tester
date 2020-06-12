@@ -188,6 +188,9 @@ func (cfg *Config) validateConfig() error {
 	case false: // use existing one
 	}
 
+	if cfg.RoleCFNStackYAMLFilePath == "" {
+		cfg.RoleCFNStackYAMLFilePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".role.cfn.yaml"
+	}
 	switch cfg.RoleCreate {
 	case true: // need create one, or already created
 		if cfg.RoleName == "" {
@@ -234,6 +237,9 @@ func (cfg *Config) validateConfig() error {
 		}
 	}
 
+	if cfg.VPCCFNStackYAMLFilePath == "" {
+		cfg.VPCCFNStackYAMLFilePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".vpc.cfn.yaml"
+	}
 	switch cfg.VPCCreate {
 	case true: // need create one, or already created
 		if cfg.VPCID != "" {
@@ -313,103 +319,110 @@ func (cfg *Config) validateASGs() error {
 		return fmt.Errorf("ASGs %d exceeds maximum number of ASGs which is %d", n, ASGsMaxLimit)
 	}
 	names, processed := make(map[string]struct{}), make(map[string]ASG)
-	for k, v := range cfg.ASGs {
+	for k, cur := range cfg.ASGs {
 		k = strings.ReplaceAll(k, "GetRef.Name", cfg.Name)
-		v.Name = strings.ReplaceAll(v.Name, "GetRef.Name", cfg.Name)
+		cur.Name = strings.ReplaceAll(cur.Name, "GetRef.Name", cfg.Name)
 
-		if v.Name == "" {
+		if cur.Name == "" {
 			return fmt.Errorf("ASGs[%q].Name is empty", k)
 		}
-		if k != v.Name {
-			return fmt.Errorf("ASGs[%q].Name has different Name field %q", k, v.Name)
+		if k != cur.Name {
+			return fmt.Errorf("ASGs[%q].Name has different Name field %q", k, cur.Name)
 		}
-		_, ok := names[v.Name]
+		_, ok := names[cur.Name]
 		if !ok {
-			names[v.Name] = struct{}{}
+			names[cur.Name] = struct{}{}
 		} else {
-			return fmt.Errorf("ASGs[%q].Name %q is redundant", k, v.Name)
+			return fmt.Errorf("ASGs[%q].Name %q is redundant", k, cur.Name)
 		}
 
-		if len(v.InstanceTypes) > 4 {
-			return fmt.Errorf("too many InstaceTypes[%q]", v.InstanceTypes)
-		}
-		if v.VolumeSize == 0 {
-			v.VolumeSize = DefaultNodeVolumeSize
-		}
-		if v.RemoteAccessUserName == "" {
-			v.RemoteAccessUserName = "ec2-user"
+		if cur.ASGCFNStackYAMLFilePath == "" {
+			cur.ASGCFNStackYAMLFilePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".asg.cfn." + k + ".yaml"
 		}
 
-		if v.ImageID == "" && v.ImageIDSSMParameter == "" {
-			return fmt.Errorf("%q both ImageID and ImageIDSSMParameter are empty", v.Name)
+		if len(cur.InstanceTypes) > 4 {
+			return fmt.Errorf("too many InstaceTypes[%q]", cur.InstanceTypes)
+		}
+		if cur.VolumeSize == 0 {
+			cur.VolumeSize = DefaultNodeVolumeSize
+		}
+		if cur.RemoteAccessUserName == "" {
+			cur.RemoteAccessUserName = "ec2-user"
 		}
 
-		switch v.AMIType {
+		if cur.ImageID == "" && cur.ImageIDSSMParameter == "" {
+			return fmt.Errorf("%q both ImageID and ImageIDSSMParameter are empty", cur.Name)
+		}
+
+		switch cur.AMIType {
 		case AMITypeBottleRocketCPU:
-			if v.RemoteAccessUserName != "ec2-user" {
-				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", v.AMIType, v.RemoteAccessUserName)
+			if cur.RemoteAccessUserName != "ec2-user" {
+				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", cur.AMIType, cur.RemoteAccessUserName)
 			}
 		case AMITypeAL2X8664:
-			if v.RemoteAccessUserName != "ec2-user" {
-				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", v.AMIType, v.RemoteAccessUserName)
+			if cur.RemoteAccessUserName != "ec2-user" {
+				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", cur.AMIType, cur.RemoteAccessUserName)
 			}
 		case AMITypeAL2X8664GPU:
-			if v.RemoteAccessUserName != "ec2-user" {
-				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", v.AMIType, v.RemoteAccessUserName)
+			if cur.RemoteAccessUserName != "ec2-user" {
+				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", cur.AMIType, cur.RemoteAccessUserName)
 			}
 		default:
-			return fmt.Errorf("unknown ASGs[%q].AMIType %q", k, v.AMIType)
+			return fmt.Errorf("unknown ASGs[%q].AMIType %q", k, cur.AMIType)
 		}
 
-		switch v.AMIType {
+		switch cur.AMIType {
 		case AMITypeBottleRocketCPU:
-			if len(v.InstanceTypes) == 0 {
-				v.InstanceTypes = []string{DefaultNodeInstanceTypeCPU}
+			if len(cur.InstanceTypes) == 0 {
+				cur.InstanceTypes = []string{DefaultNodeInstanceTypeCPU}
 			}
 		case AMITypeAL2X8664:
-			if len(v.InstanceTypes) == 0 {
-				v.InstanceTypes = []string{DefaultNodeInstanceTypeCPU}
+			if len(cur.InstanceTypes) == 0 {
+				cur.InstanceTypes = []string{DefaultNodeInstanceTypeCPU}
 			}
 		case AMITypeAL2X8664GPU:
-			if len(v.InstanceTypes) == 0 {
-				v.InstanceTypes = []string{DefaultNodeInstanceTypeGPU}
+			if len(cur.InstanceTypes) == 0 {
+				cur.InstanceTypes = []string{DefaultNodeInstanceTypeGPU}
 			}
 		default:
-			return fmt.Errorf("unknown ASGs[%q].AMIType %q", k, v.AMIType)
+			return fmt.Errorf("unknown ASGs[%q].AMIType %q", k, cur.AMIType)
 		}
 
-		if v.ASGMinSize > v.ASGMaxSize {
-			return fmt.Errorf("ASGs[%q].ASGMinSize %d > ASGMaxSize %d", k, v.ASGMinSize, v.ASGMaxSize)
+		if cur.ASGMinSize > cur.ASGMaxSize {
+			return fmt.Errorf("ASGs[%q].ASGMinSize %d > ASGMaxSize %d", k, cur.ASGMinSize, cur.ASGMaxSize)
 		}
-		if v.ASGDesiredCapacity > v.ASGMaxSize {
-			return fmt.Errorf("ASGs[%q].ASGDesiredCapacity %d > ASGMaxSize %d", k, v.ASGDesiredCapacity, v.ASGMaxSize)
+		if cur.ASGDesiredCapacity > cur.ASGMaxSize {
+			return fmt.Errorf("ASGs[%q].ASGDesiredCapacity %d > ASGMaxSize %d", k, cur.ASGDesiredCapacity, cur.ASGMaxSize)
 		}
-		if v.ASGMaxSize > ASGMaxLimit {
-			return fmt.Errorf("ASGs[%q].ASGMaxSize %d > ASGMaxLimit %d", k, v.ASGMaxSize, ASGMaxLimit)
+		if cur.ASGMaxSize > ASGMaxLimit {
+			return fmt.Errorf("ASGs[%q].ASGMaxSize %d > ASGMaxLimit %d", k, cur.ASGMaxSize, ASGMaxLimit)
 		}
-		if v.ASGDesiredCapacity > ASGMaxLimit {
-			return fmt.Errorf("ASGs[%q].ASGDesiredCapacity %d > ASGMaxLimit %d", k, v.ASGDesiredCapacity, ASGMaxLimit)
+		if cur.ASGDesiredCapacity > ASGMaxLimit {
+			return fmt.Errorf("ASGs[%q].ASGDesiredCapacity %d > ASGMaxLimit %d", k, cur.ASGDesiredCapacity, ASGMaxLimit)
 		}
 
-		switch v.SSMDocumentCreate {
+		if cur.SSMDocumentCFNStackYAMLFilePath == "" {
+			cur.SSMDocumentCFNStackYAMLFilePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".ssm.cfn." + k + ".yaml"
+		}
+		switch cur.SSMDocumentCreate {
 		case true: // need create one, or already created
-			if v.SSMDocumentCFNStackName == "" {
-				v.SSMDocumentCFNStackName = v.Name + "-ssm-document"
+			if cur.SSMDocumentCFNStackName == "" {
+				cur.SSMDocumentCFNStackName = cur.Name + "-ssm-document"
 			}
-			if v.SSMDocumentName == "" {
-				v.SSMDocumentName = v.Name + "SSMDocument"
+			if cur.SSMDocumentName == "" {
+				cur.SSMDocumentName = cur.Name + "SSMDocument"
 			}
-			v.SSMDocumentCFNStackName = strings.ReplaceAll(v.SSMDocumentCFNStackName, "GetRef.Name", cfg.Name)
-			v.SSMDocumentName = strings.ReplaceAll(v.SSMDocumentName, "GetRef.Name", cfg.Name)
-			v.SSMDocumentName = ssmDocNameRegex.ReplaceAllString(v.SSMDocumentName, "")
-			if v.SSMDocumentExecutionTimeoutSeconds == 0 {
-				v.SSMDocumentExecutionTimeoutSeconds = 3600
+			cur.SSMDocumentCFNStackName = strings.ReplaceAll(cur.SSMDocumentCFNStackName, "GetRef.Name", cfg.Name)
+			cur.SSMDocumentName = strings.ReplaceAll(cur.SSMDocumentName, "GetRef.Name", cfg.Name)
+			cur.SSMDocumentName = ssmDocNameRegex.ReplaceAllString(cur.SSMDocumentName, "")
+			if cur.SSMDocumentExecutionTimeoutSeconds == 0 {
+				cur.SSMDocumentExecutionTimeoutSeconds = 3600
 			}
 
 		case false: // use existing one, or don't run any SSM
 		}
 
-		processed[k] = v
+		processed[k] = cur
 	}
 
 	cfg.ASGs = processed

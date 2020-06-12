@@ -139,7 +139,7 @@ type templateMNG struct {
 	PropertyReleaseVersion  string
 }
 
-func (ts *tester) createASG() error {
+func (ts *tester) createASGs() error {
 	if ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleARN == "" {
 		return errors.New("empty AddOnManagedNodeGroups.RoleARN")
 	}

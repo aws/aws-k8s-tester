@@ -3,6 +3,7 @@ package ec2
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"path"
 	"time"
 
@@ -109,11 +110,14 @@ func (ts *Tester) createSSMDocument() error {
 			)
 			continue
 		}
+		if err := ioutil.WriteFile(cur.SSMDocumentCFNStackYAMLFilePath, []byte(TemplateSSMDocument), 0400); err != nil {
+			return err
+		}
 		ts.lg.Info("creating SSM document",
 			zap.String("asg-name", asgName),
 			zap.String("ssm-document-name", cur.SSMDocumentName),
+			zap.String("ssm-document-cfn-file-path", cur.SSMDocumentCFNStackYAMLFilePath),
 		)
-
 		stackInput := &cloudformation.CreateStackInput{
 			StackName:    aws.String(cur.SSMDocumentCFNStackName),
 			Capabilities: aws.StringSlice([]string{"CAPABILITY_IAM"}),

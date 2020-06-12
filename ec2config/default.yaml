@@ -1,7 +1,8 @@
 asgs:
-  ec2-2020061011-awesomezyo34-asg:
+  ec2-2020061122-floral05tr4z-asg:
     ami-type: AL2_x86_64
     asg-cfn-stack-id: ""
+    asg-cfn-stack-yaml-file-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/default.asg.cfn.ec2-2020061122-floral05tr4z-asg.yaml
     asg-desired-capacity: 1
     asg-max-size: 1
     asg-min-size: 1
@@ -11,10 +12,11 @@ asgs:
     instance-types:
     - c5.xlarge
     logs: null
-    name: ec2-2020061011-awesomezyo34-asg
+    name: ec2-2020061122-floral05tr4z-asg
     remote-access-user-name: ec2-user
     ssm-document-cfn-stack-id: ""
     ssm-document-cfn-stack-name: ""
+    ssm-document-cfn-stack-yaml-file-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/default.ssm.cfn.ec2-2020061122-floral05tr4z-asg.yaml
     ssm-document-command-ids: null
     ssm-document-commands: ""
     ssm-document-create: false
@@ -36,7 +38,7 @@ asgs:
       took-string: ""
     volume-size: 40
 asgs-fetch-logs: true
-asgs-logs-dir: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/ec2-2020061011-awesomezyo34-logs-remote
+asgs-logs-dir: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/ec2-2020061122-floral05tr4z-logs-remote
 aws-account-id: ""
 aws-credential-path: ""
 aws-iam-role-arn: ""
@@ -50,7 +52,7 @@ log-level: info
 log-outputs:
 - stderr
 - /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/default.yaml.log
-name: ec2-2020061011-awesomezyo34
+name: ec2-2020061122-floral05tr4z
 on-failure-delete: true
 on-failure-delete-wait-seconds: 120
 partition: aws
@@ -59,13 +61,14 @@ public-subnet-ids: null
 region: us-west-2
 remote-access-commands-output-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/default.ssh.sh
 remote-access-key-create: true
-remote-access-key-name: ec2-2020061011-awesomezyo34-key
-remote-access-private-key-path: /tmp/snowflakee.insecure.key
+remote-access-key-name: ec2-2020061122-floral05tr4z-key
+remote-access-private-key-path: /tmp/sea5vsmuds.insecure.key
 role-arn: ""
 role-cfn-stack-id: ""
+role-cfn-stack-yaml-file-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/default.role.cfn.yaml
 role-create: true
 role-managed-policy-arns: null
-role-name: ec2-2020061011-awesomezyo34-role
+role-name: ec2-2020061122-floral05tr4z-role
 role-service-principals: null
 s3-bucket-create: false
 s3-bucket-create-keep: false
@@ -91,5 +94,6 @@ time-frame-delete:
   took-string: ""
 up: false
 vpc-cfn-stack-id: ""
+vpc-cfn-stack-yaml-file-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/default.vpc.cfn.yaml
 vpc-create: true
 vpc-id: ""
