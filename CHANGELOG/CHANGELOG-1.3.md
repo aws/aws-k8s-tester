@@ -7,11 +7,6 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.5...v1.3.6).
 
-### `eksconfig`
-
-- Add [`Parameters.RoleCFNStackYAMLFilePath`](https://github.com/aws/aws-k8s-tester/commit/db0cb5d39e3b1d9758f31ca4f5425ad9d1f711ce).
-- Add [`Parameters.VPCCFNStackYAMLFilePath`](https://github.com/aws/aws-k8s-tester/commit/db0cb5d39e3b1d9758f31ca4f5425ad9d1f711ce).
-
 ### `ec2config`
 
 - Add [`Config.RoleCFNStackYAMLFilePath`](https://github.com/aws/aws-k8s-tester/commit/13922f4a0eb9446705a757c816923ae54a03bb41).
@@ -19,9 +14,21 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.5...v1.3.6
 - Add [`ASG.ASGCFNStackYAMLFilePath`](https://github.com/aws/aws-k8s-tester/commit/13922f4a0eb9446705a757c816923ae54a03bb41).
 - Add [`ASG.SSMDocumentCFNStackYAMLFilePath`](https://github.com/aws/aws-k8s-tester/commit/13922f4a0eb9446705a757c816923ae54a03bb41).
 
+### `eksconfig`
+
+- Add [`Parameters.RoleCFNStackYAMLFilePath`](https://github.com/aws/aws-k8s-tester/commit/db0cb5d39e3b1d9758f31ca4f5425ad9d1f711ce).
+- Add [`Parameters.VPCCFNStackYAMLFilePath`](https://github.com/aws/aws-k8s-tester/commit/db0cb5d39e3b1d9758f31ca4f5425ad9d1f711ce).
+- Add [`MNGVersionUpgrade` for managed node group version upgrades](https://github.com/aws/aws-k8s-tester/commit/8d4490b47d089064cf27306a59acaffaed53ab58).
+  - Set via `"version-upgrade"` within `MNG` configuration.
+  - e.g. `AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS=..."version-upgrade":{"enable":true,"initial-wait-string":"10m","version":"1.17"}...` when `AWS_K8S_TESTER_EKS_PARAMETERS_VERSION=1.16`.
+
 ### `eks`
 
+- Fix [`CheckHealth` to handle version upgrades](https://github.com/aws/aws-k8s-tester/commit/ef079fd2332e3c20c29cea1001aec1d1a95f1d87).
+  - See also [`eks` health check fix](https://github.com/aws/aws-k8s-tester/commit/afe2096a5bd51b043e59ebad937ba5921c8ded98).
 - Wait until [`kubectl top node` is ready](https://github.com/aws/aws-k8s-tester/commit/5301270bfa2253bda350407a2db03a38058d7e95).
+- Implement [`eks/mng` version upgrades](https://github.com/aws/aws-k8s-tester/commit/).
+  - Set via `"version-upgrade"` within `MNG` configuration.
 
 
 <hr>
