@@ -371,6 +371,9 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 		ClientBurst:       ts.cfg.ClientBurst,
 		ClientTimeout:     ts.cfg.ClientTimeout,
 	}
+	if ts.cfg.IsEnabledAddOnClusterVersionUpgrade() {
+		kcfg.UpgradeServerVersion = ts.cfg.AddOnClusterVersionUpgrade.Version
+	}
 	if ts.cfg.Status != nil {
 		kcfg.ClusterAPIServerEndpoint = ts.cfg.Status.ClusterAPIServerEndpoint
 		kcfg.ClusterCADecoded = ts.cfg.Status.ClusterCADecoded
