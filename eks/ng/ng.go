@@ -107,7 +107,9 @@ func (ts *tester) Create() (err error) {
 	if err = ts.createSSM(); err != nil {
 		return err
 	}
-
+	if err = ts.createCA(); err !=nil {
+		return err
+	}
 	ts.cfg.EKSConfig.AddOnNodeGroups.Created = true
 	return ts.cfg.EKSConfig.Sync()
 }

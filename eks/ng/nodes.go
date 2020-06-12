@@ -243,6 +243,10 @@ Resources:
         PropagateAtLaunch: true
       - Key: !Sub kubernetes.io/cluster/${ClusterName}
         Value: owned
+      - Key: !Sub k8s.io/cluster-autoscaler/${ClusterName}
+        Value: owned
+      - Key: k8s.io/cluster-autoscaler/enabled
+        Value: true
         PropagateAtLaunch: true
       MixedInstancesPolicy:
         InstancesDistribution:

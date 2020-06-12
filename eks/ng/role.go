@@ -195,7 +195,17 @@ Resources:
             - route53:ChangeResourceRecordSets
             - route53:DeleteHealthCheck
             Resource: "*"
-
+          - Effect: Allow
+			Action:
+            - autoscaling:DescribeAutoScalingGroups
+            - autoscaling:DescribeAutoScalingInstances 
+	        - autoscaling:DescribeLaunchConfigurations
+			- autoscaling:DescribeTags
+            - autoscaling:SetDesiredCapacity
+            - autoscaling:TerminateInstanceInAutoScalingGroup
+            - ec2:DescribeLaunchTemplateVersions
+            Resource: "*"
+          - Effect: Allow  
 Outputs:
 
   RoleARN:
