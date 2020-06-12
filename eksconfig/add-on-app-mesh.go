@@ -59,7 +59,7 @@ func (cfg *Config) validateAddOnAppMesh() error {
 		return errors.New("AddOnAppMesh.Enable true but no node group is enabled")
 	}
 	if cfg.AddOnAppMesh.Namespace == "" {
-		cfg.AddOnAppMesh.Namespace = "appmesh-system"
+		cfg.AddOnAppMesh.Namespace = "appmesh"
 	}
 	return nil
 }
