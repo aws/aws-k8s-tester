@@ -272,7 +272,7 @@ func (ts *Tester) uploadToS3() (err error) {
 			ts.lg,
 			ts.s3API,
 			ts.cfg.S3BucketName,
-			path.Join(ts.cfg.Name, "aws-k8s-tester-ec2.role.cfn.yaml"),
+			path.Join(ts.cfg.Name, "cfn", "aws-k8s-tester-ec2.role.cfn.yaml"),
 			ts.cfg.RoleCFNStackYAMLFilePath,
 		); err != nil {
 			return err
@@ -284,7 +284,7 @@ func (ts *Tester) uploadToS3() (err error) {
 			ts.lg,
 			ts.s3API,
 			ts.cfg.S3BucketName,
-			path.Join(ts.cfg.Name, "aws-k8s-tester-ec2.vpc.cfn.yaml"),
+			path.Join(ts.cfg.Name, "cfn", "aws-k8s-tester-ec2.vpc.cfn.yaml"),
 			ts.cfg.VPCCFNStackYAMLFilePath,
 		); err != nil {
 			return err
@@ -297,7 +297,7 @@ func (ts *Tester) uploadToS3() (err error) {
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, filepath.Base(cur.SSMDocumentCFNStackYAMLFilePath)),
+				path.Join(ts.cfg.Name, "cfn", filepath.Base(cur.SSMDocumentCFNStackYAMLFilePath)),
 				cur.SSMDocumentCFNStackYAMLFilePath,
 			); err != nil {
 				return err
@@ -308,7 +308,7 @@ func (ts *Tester) uploadToS3() (err error) {
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, filepath.Base(cur.ASGCFNStackYAMLFilePath)),
+				path.Join(ts.cfg.Name, "cfn", filepath.Base(cur.ASGCFNStackYAMLFilePath)),
 				cur.ASGCFNStackYAMLFilePath,
 			); err != nil {
 				return err
