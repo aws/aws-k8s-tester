@@ -19,6 +19,11 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.6...v1.3.7
 - Improve [polling operations for `eks/cron-jobs`, `eks/jobs-echo`, and `eks/jobs-pi` with pagination](https://github.com/aws/aws-k8s-tester/commit/7306c6e0979541c8461388ffd32938c384e06e31).
 - Update [default `sonobuoy` version to `v0.18.3` in `eks/conformance`](https://github.com/vmware-tanzu/sonobuoy/releases/tag/v0.18.3).
 - Improve [`eks/kubernetes-dashboard` `metrics-server` `kubectl top node` logging](https://github.com/aws/aws-k8s-tester/commit/b0889909a225497265a2fced0063bd51b813108c).
+- Add [sleep wait after deleting deployment objects](https://github.com/aws/aws-k8s-tester/commit/0f65f550a11b146d775dccaf867e6e3872da0894).
+
+### `pkg/k8s-client`
+
+- Increase [default namespace delete timeout from 15-min to 30-min](https://github.com/aws/aws-k8s-tester/commit/0f65f550a11b146d775dccaf867e6e3872da0894).
 
 ### Dependency
 
