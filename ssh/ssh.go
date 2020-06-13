@@ -302,19 +302,27 @@ func (sh *ssh) Run(cmd string, opts ...OpOption) (out []byte, err error) {
 				zap.Error(err),
 			)
 		} else {
-			serr, ok := err.(*cryptossh.ExitError)
-			if ok {
-				shouldRetry = false
-			}
 			if strings.Contains(err.Error(), "exited with status ") {
 				shouldRetry = false
 			}
-			sh.lg.Warn("command run failed",
-				zap.String("cmd", cmd),
-				zap.String("error-type", reflect.TypeOf(err).String()),
-				zap.Bool("should-retry", shouldRetry),
-				zap.Error(err),
-			)
+			serr, ok := err.(*cryptossh.ExitError)
+			if ok {
+				shouldRetry = false
+				sh.lg.Warn("command run failed with exit code",
+					zap.String("cmd", cmd),
+					zap.String("error-type", reflect.TypeOf(err).String()),
+					zap.Bool("should-retry", shouldRetry),
+					zap.Int("exit-code", serr.ExitStatus()),
+					zap.Error(err),
+				)
+			} else {
+				sh.lg.Warn("command run failed",
+					zap.String("cmd", cmd),
+					zap.String("error-type", reflect.TypeOf(err).String()),
+					zap.Bool("should-retry", shouldRetry),
+					zap.Error(err),
+				)
+			}
 		}
 
 		if shouldRetry && sh.retryCounter[key] > 0 {
