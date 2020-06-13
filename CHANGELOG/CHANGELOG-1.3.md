@@ -25,6 +25,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.5...v1.3.6
 - Add [`MNGVersionUpgrade` for managed node group version upgrades](https://github.com/aws/aws-k8s-tester/commit/8d4490b47d089064cf27306a59acaffaed53ab58).
   - Set via `"version-upgrade"` within `MNG` configuration.
   - e.g. `AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS=..."version-upgrade":{"enable":true,"initial-wait-string":"10m","version":"1.17"}...` when `AWS_K8S_TESTER_EKS_PARAMETERS_VERSION=1.16`.
+- Fix [empty default values for `CommandAfterCreateClusterOutputPath`](https://github.com/aws/aws-k8s-tester/commit/d382071054755be164a83a6a522a9bc8b0d1495a).
 
 ### `eks`
 
