@@ -185,7 +185,8 @@ type Config struct {
 	AddOnManagedNodeGroups *AddOnManagedNodeGroups `json:"add-on-managed-node-groups,omitempty"`
 
 	// TotalNodes is the total number of nodes from all node groups.
-	TotalNodes int64 `json:"total-nodes" read-only:"true"`
+	TotalNodes       int64 `json:"total-nodes" read-only:"true"`
+	TotalHollowNodes int64 `json:"total-hollow-nodes" read-only:"true"`
 
 	// AddOnConformance defines parameters for EKS cluster
 	// add-on Conformance.
@@ -837,6 +838,15 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		}
 	}
 	cfg.TotalNodes = total
+
+	totalHollowNodes := int64(0)
+	if cfg.IsEnabledAddOnHollowNodesLocal() {
+		totalHollowNodes += int64(cfg.AddOnHollowNodesLocal.Nodes)
+	}
+	if cfg.IsEnabledAddOnHollowNodesRemote() {
+		totalHollowNodes += int64(cfg.AddOnHollowNodesRemote.Nodes) * int64(cfg.AddOnHollowNodesRemote.DeploymentReplicas)
+	}
+	cfg.TotalHollowNodes = totalHollowNodes
 
 	if err := cfg.validateAddOnConformance(); err != nil {
 		return fmt.Errorf("validateAddOnConformance failed [%v]", err)
