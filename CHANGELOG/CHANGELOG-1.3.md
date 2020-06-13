@@ -9,6 +9,9 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.6...v1.3.7
 
 ### `eksconfig`
 
+- Add [`AddOnMetricsServer`](https://github.com/aws/aws-k8s-tester/commit/).
+  - Set via `AWS_K8S_TESTER_EKS_ADD_ON_METRICS_SERVER_ENABLE=true`.
+  - Now `AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_ENABLE=true` requires `AWS_K8S_TESTER_EKS_ADD_ON_METRICS_SERVER_ENABLE=true`.
 - Change [`Config.RemoteAccessPrivateKeyPath` from `filepath.Join(homedir.HomeDir(), ".ssh", "kube_aws_rsa")` to `filepath.Join(os.TempDir(), randutil.String(15)+".insecure.key")`](https://github.com/aws/aws-k8s-tester/commit/a1ca992fb27fee6a58f61f445f3169badfc13638).
   - Can be set via `AWS_K8S_TESTER_EKS_REMOTE_ACCESS_PRIVATE_KEY_PATH`.
   - May break upstream tests (to be in sync with https://pkg.go.dev/k8s.io/kubernetes/test/e2e/framework#GetSigner).
@@ -23,6 +26,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.6...v1.3.7
 - Rename [`eks/mng/node-waiter` to `eks/mng/wait`](https://github.com/aws/aws-k8s-tester/commit/6bed26a3eed0d73b47a1d516a17a8169d95f91e9).
 - Rename [`eks/ng/node-waiter` to `eks/ng/wait`](https://github.com/aws/aws-k8s-tester/commit/6bed26a3eed0d73b47a1d516a17a8169d95f91e9).
 - Increase [cluster create/delete timeout from 30-min to 1-hour](https://github.com/aws/aws-k8s-tester/commit/10523bb628162f1b2b1f1f4455efa0fa88564752).
+- Move [`eks/metrics-server` from `eks/kubernetes-dashboard`](https://github.com/aws/aws-k8s-tester/commit/).
 
 ### `pkg/k8s-client`
 
