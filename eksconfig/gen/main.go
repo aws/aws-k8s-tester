@@ -54,6 +54,10 @@ func createDoc() string {
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnMetricsServer, &eksconfig.AddOnMetricsServer{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnKubernetesDashboard, &eksconfig.AddOnKubernetesDashboard{}))
 
 	b.WriteByte('\n')

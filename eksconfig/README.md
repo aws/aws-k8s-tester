@@ -6,6 +6,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_ENABLE=true \
+AWS_K8S_TESTER_EKS_ADD_ON_METRICS_SERVER_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_ENABLE=true \
@@ -213,6 +214,16 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_POLICY_CFN_STACK_ID             | read-only "true"  | *eksconfig.AddOnAppMesh.PolicyCFNStackID           | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_POLICY_CFN_STACK_YAML_FILE_PATH | read-only "true"  | *eksconfig.AddOnAppMesh.PolicyCFNStackYAMLFilePath | string             |
 *--------------------------------------------------------------------*-------------------*----------------------------------------------------*--------------------*
+
+
+*------------------------------------------------------------*-------------------*-----------------------------------------------*--------------------*
+|                   ENVIRONMENTAL VARIABLE                   |     READ ONLY     |                     TYPE                      |      GO TYPE       |
+*------------------------------------------------------------*-------------------*-----------------------------------------------*--------------------*
+| AWS_K8S_TESTER_EKS_ADD_ON_METRICS_SERVER_ENABLE            | read-only "false" | *eksconfig.AddOnMetricsServer.Enable          | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_METRICS_SERVER_CREATED           | read-only "true"  | *eksconfig.AddOnMetricsServer.Created         | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_METRICS_SERVER_TIME_FRAME_CREATE | read-only "true"  | *eksconfig.AddOnMetricsServer.TimeFrameCreate | timeutil.TimeFrame |
+| AWS_K8S_TESTER_EKS_ADD_ON_METRICS_SERVER_TIME_FRAME_DELETE | read-only "true"  | *eksconfig.AddOnMetricsServer.TimeFrameDelete | timeutil.TimeFrame |
+*------------------------------------------------------------*-------------------*-----------------------------------------------*--------------------*
 
 
 *---------------------------------------------------------------------*-------------------*---------------------------------------------------------*--------------------*
