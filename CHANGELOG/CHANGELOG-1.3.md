@@ -7,6 +7,13 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.6...v1.3.7).
 
+### `eksconfig`
+
+- Change [`Config.RemoteAccessPrivateKeyPath` from `filepath.Join(homedir.HomeDir(), ".ssh", "kube_aws_rsa")` to `filepath.Join(os.TempDir(), randutil.String(15)+".insecure.key")`](https://github.com/aws/aws-k8s-tester/commit/a1ca992fb27fee6a58f61f445f3169badfc13638).
+  - Can be set via `AWS_K8S_TESTER_EKS_REMOTE_ACCESS_PRIVATE_KEY_PATH`.
+  - May break upstream tests (to be in sync with https://pkg.go.dev/k8s.io/kubernetes/test/e2e/framework#GetSigner).
+  - Randomize to help create multiple clusters locally.
+
 ### `eks`
 
 - Improve [polling operations for `eks/cron-jobs`, `eks/jobs-echo`, and `eks/jobs-pi` with pagination](https://github.com/aws/aws-k8s-tester/commit/7306c6e0979541c8461388ffd32938c384e06e31).
