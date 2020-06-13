@@ -904,10 +904,11 @@ func (ts *Tester) Up() (err error) {
 		}
 		if ts.color {
 			colorstring.Printf("\n\n[yellow]*********************************[default]\n")
+			colorstring.Printf("[light_green]runCommand.CommandAfterCreateCluster [default](%q)\n", ts.cfg.CommandAfterCreateCluster)
 		} else {
 			fmt.Printf("\n\n*********************************\n")
+			fmt.Printf("runCommand.CommandAfterCreateCluster (%q)\n", ts.cfg.CommandAfterCreateCluster)
 		}
-		fmt.Printf("\nrunCommand CommandAfterCreateCluster (%q)\n", ts.cfg.CommandAfterCreateCluster)
 		out, err := runCommand(ts.lg, ts.cfg.CommandAfterCreateCluster, ts.cfg.CommandAfterCreateClusterTimeout)
 		if err != nil {
 			err = ioutil.WriteFile(ts.cfg.CommandAfterCreateClusterOutputPath, []byte(ts.cfg.CommandAfterCreateCluster+"\n\n# output\n"+string(out)+"\n\n# error\n"+err.Error()), 0600)
