@@ -16,6 +16,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.6...v1.3.7
   - Can be set via `AWS_K8S_TESTER_EKS_REMOTE_ACCESS_PRIVATE_KEY_PATH`.
   - May break upstream tests (to be in sync with https://pkg.go.dev/k8s.io/kubernetes/test/e2e/framework#GetSigner).
   - Randomize to help create multiple clusters locally.
+- Add [`Config.TotalHollowNodes`](https://github.com/aws/aws-k8s-tester/commit/b902ecac6a8fe95b3f1b6268db58fbe950616b2f).
 
 ### `eks`
 
