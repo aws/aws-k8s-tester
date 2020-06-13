@@ -13,7 +13,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/aws/aws-k8s-tester/eks/fargate"
+	fargate_wait "github.com/aws/aws-k8s-tester/eks/fargate/wait"
 	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
@@ -769,7 +769,7 @@ func (ts *tester) createProfile() error {
 	ts.cfg.Logger.Info("sent create fargate profile request")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
-	ch := fargate.Poll(
+	ch := fargate_wait.Poll(
 		ctx,
 		ts.cfg.Stopc,
 		ts.cfg.Logger,
@@ -802,7 +802,7 @@ func (ts *tester) deleteProfile() error {
 			ClusterName:        aws.String(ts.cfg.EKSConfig.Name),
 			FargateProfileName: aws.String(ts.cfg.EKSConfig.AddOnIRSAFargate.ProfileName),
 		})
-		if err != nil && fargate.IsProfileDeleted(err) {
+		if err != nil && fargate_wait.IsProfileDeleted(err) {
 			ts.cfg.Logger.Warn("failed to delete fargate profile; retrying", zap.Error(err))
 			select {
 			case <-ts.cfg.Stopc:
@@ -816,14 +816,14 @@ func (ts *tester) deleteProfile() error {
 		break
 	}
 
-	ch := fargate.Poll(
+	ch := fargate_wait.Poll(
 		context.Background(),
 		ts.cfg.Stopc,
 		ts.cfg.Logger,
 		ts.cfg.EKSAPI,
 		ts.cfg.EKSConfig.Name,
 		ts.cfg.EKSConfig.AddOnIRSAFargate.ProfileName,
-		fargate.FargateProfileStatusDELETEDORNOTEXIST,
+		fargate_wait.FargateProfileStatusDELETEDORNOTEXIST,
 		10*time.Second,
 		7*time.Second,
 	)
