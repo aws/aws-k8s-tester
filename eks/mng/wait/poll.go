@@ -1,4 +1,4 @@
-package nodewaiter
+package wait
 
 import (
 	"context"

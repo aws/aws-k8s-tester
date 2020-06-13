@@ -1,5 +1,5 @@
-// Package nodewaiter implements node waiter.
-package nodewaiter
+// Package wait implements node waiter.
+package wait
 
 import (
 	"encoding/json"

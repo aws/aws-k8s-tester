@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"time"
 
-	node_waiter "github.com/aws/aws-k8s-tester/eks/mng/node-waiter"
+	"github.com/aws/aws-k8s-tester/eks/mng/wait"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
@@ -150,7 +150,7 @@ func (ts *tester) Upgrade(mngName string) (err error) {
 		return err
 	}
 
-	nodesCh := node_waiter.Poll(
+	nodesCh := wait.Poll(
 		ctx,
 		ts.cfg.Stopc,
 		ts.cfg.Logger,

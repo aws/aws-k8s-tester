@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	node_waiter "github.com/aws/aws-k8s-tester/eks/ng/node-waiter"
+	"github.com/aws/aws-k8s-tester/eks/ng/wait"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
@@ -60,7 +60,7 @@ func New(cfg Config) Tester {
 	cfg.Logger.Info("creating tester", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	return &tester{
 		cfg: cfg,
-		nodeWaiter: node_waiter.New(node_waiter.Config{
+		nodeWaiter: wait.New(wait.Config{
 			Logger:    cfg.Logger,
 			Stopc:     cfg.Stopc,
 			EKSConfig: cfg.EKSConfig,
@@ -76,7 +76,7 @@ func New(cfg Config) Tester {
 
 type tester struct {
 	cfg        Config
-	nodeWaiter node_waiter.NodeWaiter
+	nodeWaiter wait.NodeWaiter
 	logsMu     *sync.RWMutex
 	failedOnce bool
 }

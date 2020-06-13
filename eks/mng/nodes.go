@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
-	node_waiter "github.com/aws/aws-k8s-tester/eks/mng/node-waiter"
+	"github.com/aws/aws-k8s-tester/eks/mng/wait"
 	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-k8s-tester/version"
@@ -423,7 +423,7 @@ func (ts *tester) createASGs() error {
 
 		timeStart := time.Now()
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
-		ch := node_waiter.Poll(
+		ch := wait.Poll(
 			ctx,
 			ts.cfg.Stopc,
 			ts.cfg.Logger,
@@ -488,7 +488,7 @@ func (ts *tester) deleteASG() error {
 			delete(ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs, "")
 			continue
 		}
-		if cur.Status == "" || cur.Status == node_waiter.ManagedNodeGroupStatusDELETEDORNOTEXIST {
+		if cur.Status == "" || cur.Status == wait.ManagedNodeGroupStatusDELETEDORNOTEXIST {
 			ts.cfg.Logger.Info("managed node group already deleted; no need to delete managed node group", zap.String("name", mngName))
 			continue
 		}
@@ -532,7 +532,7 @@ func (ts *tester) deleteASG() error {
 	}
 
 	for mngName, cur := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
-		if cur.Status == "" || cur.Status == node_waiter.ManagedNodeGroupStatusDELETEDORNOTEXIST {
+		if cur.Status == "" || cur.Status == wait.ManagedNodeGroupStatusDELETEDORNOTEXIST {
 			ts.cfg.Logger.Info("managed node group already deleted; no need to delete managed node group", zap.String("name", mngName))
 			continue
 		}
@@ -603,14 +603,14 @@ func (ts *tester) deleteASG() error {
 				initialWait, timeout = 3*time.Minute, 20*time.Minute
 			}
 			ctx, cancel := context.WithTimeout(context.Background(), timeout)
-			ch := node_waiter.Poll(
+			ch := wait.Poll(
 				ctx,
 				ts.cfg.Stopc,
 				ts.cfg.Logger,
 				ts.cfg.EKSAPI,
 				ts.cfg.EKSConfig.Name,
 				mngName,
-				node_waiter.ManagedNodeGroupStatusDELETEDORNOTEXIST,
+				wait.ManagedNodeGroupStatusDELETEDORNOTEXIST,
 				initialWait,
 				20*time.Second,
 			)
@@ -653,7 +653,7 @@ func (ts *tester) deleteASG() error {
 		}
 		timeEnd := time.Now()
 		cur.TimeFrameDelete = timeutil.NewTimeFrame(timeStart, timeEnd)
-		cur.Status = node_waiter.ManagedNodeGroupStatusDELETEDORNOTEXIST
+		cur.Status = wait.ManagedNodeGroupStatusDELETEDORNOTEXIST
 		ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName] = cur
 		ts.cfg.EKSConfig.Sync()
 	}
@@ -662,7 +662,7 @@ func (ts *tester) deleteASG() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
-func (ts *tester) setStatus(sv node_waiter.ManagedNodeGroupStatus) (status string, err error) {
+func (ts *tester) setStatus(sv wait.ManagedNodeGroupStatus) (status string, err error) {
 	name := sv.NodeGroupName
 	if name == "" {
 		return "", errors.New("EKS Managed Node Group empty name")
@@ -676,7 +676,7 @@ func (ts *tester) setStatus(sv node_waiter.ManagedNodeGroupStatus) (status strin
 		if sv.Error != nil {
 			cur.Status = fmt.Sprintf("%q failed with error %v", sv.NodeGroupName, sv.Error)
 		} else {
-			cur.Status = node_waiter.ManagedNodeGroupStatusDELETEDORNOTEXIST
+			cur.Status = wait.ManagedNodeGroupStatusDELETEDORNOTEXIST
 		}
 	} else {
 		cur.Status = aws.StringValue(sv.NodeGroup.Status)
