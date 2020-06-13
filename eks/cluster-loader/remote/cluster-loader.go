@@ -152,7 +152,7 @@ func (ts *tester) Delete() (err error) {
 	if err := ts.deleteDeployment(); err != nil {
 		errs = append(errs, err.Error())
 	}
-	time.Sleep(time.Minute)
+	time.Sleep(2 * time.Minute)
 
 	if err := ts.deleteConfigMap(); err != nil {
 		errs = append(errs, err.Error())

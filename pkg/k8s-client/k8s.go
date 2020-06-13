@@ -50,7 +50,7 @@ const (
 	// DefaultNamespaceDeletionInterval is the default namespace deletion interval.
 	DefaultNamespaceDeletionInterval = 15 * time.Second
 	// DefaultNamespaceDeletionTimeout is the default namespace deletion timeout.
-	DefaultNamespaceDeletionTimeout = 15 * time.Minute
+	DefaultNamespaceDeletionTimeout = 30 * time.Minute
 )
 
 // RetryWithExponentialBackOff a utility for retrying the given function with exponential backoff.

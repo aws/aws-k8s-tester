@@ -121,8 +121,7 @@ func (ts *tester) Delete() error {
 	if err := ts.deleteDeployment(); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete NLB hello-world Deployment (%v)", err))
 	}
-	ts.cfg.Logger.Info("wait for a minute after deleting Deployment")
-	time.Sleep(time.Minute)
+	time.Sleep(2 * time.Minute)
 
 	/*
 	   # NLB tags

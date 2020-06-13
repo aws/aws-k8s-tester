@@ -163,8 +163,7 @@ func (ts *tester) Delete() error {
 	if err := ts.deleteDeployment(); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete Deployments (%v)", err))
 	}
-	ts.cfg.Logger.Info("wait after deleting Deployments")
-	time.Sleep(20 * time.Second)
+	time.Sleep(2 * time.Minute)
 
 	if err := ts.deleteConfigMaps(); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete ConfigMap (%v)", err))
