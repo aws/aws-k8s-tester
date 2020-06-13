@@ -291,13 +291,33 @@ func (sh *ssh) Run(cmd string, opts ...OpOption) (out []byte, err error) {
 	}
 
 	if err != nil {
+		shouldRetry := true
 		oerr, ok := err.(*net.OpError)
 		if ok {
-			sh.lg.Warn("command run failed", zap.String("cmd", cmd), zap.Bool("op-error-temporary", oerr.Temporary()), zap.Bool("op-error-timeout", oerr.Timeout()), zap.Error(err))
+			shouldRetry = oerr.Temporary()
+			sh.lg.Warn("command run failed",
+				zap.String("cmd", cmd),
+				zap.Bool("op-error-temporary", oerr.Temporary()),
+				zap.Bool("op-error-timeout", oerr.Timeout()),
+				zap.Error(err),
+			)
 		} else {
-			sh.lg.Warn("command run failed", zap.String("cmd", cmd), zap.String("error-type", reflect.TypeOf(err).String()), zap.Error(err))
+			serr, ok := err.(*cryptossh.ExitError)
+			if ok {
+				shouldRetry = false
+			}
+			if strings.Contains(err.Error(), "exited with status ") {
+				shouldRetry = false
+			}
+			sh.lg.Warn("command run failed",
+				zap.String("cmd", cmd),
+				zap.String("error-type", reflect.TypeOf(err).String()),
+				zap.Bool("should-retry", shouldRetry),
+				zap.Error(err),
+			)
 		}
-		if sh.retryCounter[key] > 0 {
+
+		if shouldRetry && sh.retryCounter[key] > 0 {
 			// e.g. "read tcp 10.119.223.210:58688->54.184.39.156:22: read: connection timed out"
 			sh.lg.Warn("retrying command run", zap.Int("retries", sh.retryCounter[key]))
 			sh.Close()
