@@ -79,6 +79,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_CLIENT_TIMEOUT                              | read-only "false" | *eksconfig.Config.ClientTimeout                          | time.Duration |
 | AWS_K8S_TESTER_EKS_CLIENT_TIMEOUT_STRING                       | read-only "true"  | *eksconfig.Config.ClientTimeoutString                    | string        |
 | AWS_K8S_TESTER_EKS_TOTAL_NODES                                 | read-only "true"  | *eksconfig.Config.TotalNodes                             | int64         |
+| AWS_K8S_TESTER_EKS_TOTAL_HOLLOW_NODES                          | read-only "true"  | *eksconfig.Config.TotalHollowNodes                       | int64         |
 *----------------------------------------------------------------*-------------------*----------------------------------------------------------*---------------*
 
 
