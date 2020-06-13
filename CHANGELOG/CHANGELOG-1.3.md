@@ -7,6 +7,10 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.6...v1.3.7).
 
+### `aws-k8s-tester`
+
+- Add [`aws-k8s-tester eks --auto-path` to automatically create configuration file path](https://github.com/aws/aws-k8s-tester/commit/e824a43f267830ecb16b2266daf060caa9ab5d61).
+
 ### `eksconfig`
 
 - Add [`AddOnMetricsServer`](https://github.com/aws/aws-k8s-tester/commit/17451bade7e3cab783f9839db3fca1df0825b4fd).
