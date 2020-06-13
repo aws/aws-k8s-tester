@@ -690,18 +690,20 @@ func (ts *Tester) Up() (err error) {
 			if ts.cfg.Status.Up {
 				if ts.color {
 					colorstring.Printf("\n\n[yellow]*********************************[default]\n")
+					colorstring.Printf("[light_green]SSH [default](%q)\n", ts.cfg.ConfigPath)
 				} else {
 					fmt.Printf("\n\n*********************************\n")
+					fmt.Printf("SSH (%q)\n\n", ts.cfg.ConfigPath)
 				}
-				ts.lg.Sugar().Infof("SSH (%s)", ts.cfg.ConfigPath)
 				fmt.Println(ts.cfg.SSHCommands())
 
 				if ts.color {
 					colorstring.Printf("\n\n[yellow]*********************************[default]\n")
+					colorstring.Printf("[light_green]kubectl [default](%q)\n", ts.cfg.ConfigPath)
 				} else {
 					fmt.Printf("\n\n*********************************\n")
+					fmt.Printf("kubectl (%q)\n\n", ts.cfg.ConfigPath)
 				}
-				ts.lg.Sugar().Infof("kubectl (%s)", ts.cfg.ConfigPath)
 				fmt.Println(ts.cfg.KubectlCommands())
 
 				ts.lg.Info("Up succeeded",
@@ -734,18 +736,20 @@ func (ts *Tester) Up() (err error) {
 			if ts.cfg.Status.Up {
 				if ts.color {
 					colorstring.Printf("\n\n[yellow]*********************************[default]\n")
+					colorstring.Printf("[light_green]SSH [default](%q)\n", ts.cfg.ConfigPath)
 				} else {
 					fmt.Printf("\n\n*********************************\n")
+					fmt.Printf("SSH (%q)\n\n", ts.cfg.ConfigPath)
 				}
-				ts.lg.Sugar().Infof("SSH (%s)", ts.cfg.ConfigPath)
 				fmt.Println(ts.cfg.SSHCommands())
 
 				if ts.color {
 					colorstring.Printf("\n\n[yellow]*********************************[default]\n")
+					colorstring.Printf("[light_green]kubectl [default](%q)\n", ts.cfg.ConfigPath)
 				} else {
 					fmt.Printf("\n\n*********************************\n")
+					fmt.Printf("kubectl (%q)\n\n", ts.cfg.ConfigPath)
 				}
-				ts.lg.Sugar().Infof("kubectl (%s)", ts.cfg.ConfigPath)
 				fmt.Println(ts.cfg.KubectlCommands())
 			}
 
@@ -774,18 +778,20 @@ func (ts *Tester) Up() (err error) {
 		if ts.cfg.Status.Up {
 			if ts.color {
 				colorstring.Printf("\n\n[yellow]*********************************[default]\n")
+				colorstring.Printf("[light_green]SSH [default](%q)\n", ts.cfg.ConfigPath)
 			} else {
 				fmt.Printf("\n\n*********************************\n")
+				fmt.Printf("SSH (%q)\n\n", ts.cfg.ConfigPath)
 			}
-			ts.lg.Sugar().Infof("SSH (%s)", ts.cfg.ConfigPath)
 			fmt.Println(ts.cfg.SSHCommands())
 
 			if ts.color {
 				colorstring.Printf("\n\n[yellow]*********************************[default]\n")
+				colorstring.Printf("[light_green]kubectl [default](%q)\n", ts.cfg.ConfigPath)
 			} else {
 				fmt.Printf("\n\n*********************************\n")
+				fmt.Printf("kubectl (%q)\n\n", ts.cfg.ConfigPath)
 			}
-			ts.lg.Sugar().Infof("kubectl (%s)", ts.cfg.ConfigPath)
 			fmt.Println(ts.cfg.KubectlCommands())
 		}
 
@@ -1336,12 +1342,9 @@ func (ts *Tester) down() (err error) {
 	if ts.cfg.IsEnabledAddOnNodeGroups() && ts.ngTester != nil {
 		if ts.color {
 			colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-		} else {
-			fmt.Printf("\n\n*********************************\n")
-		}
-		if ts.color {
 			colorstring.Printf("[light_blue]ngTester.Delete [default](%q)\n", ts.cfg.ConfigPath)
 		} else {
+			fmt.Printf("\n\n*********************************\n")
 			fmt.Printf("ngTester.Delete (%q)\n", ts.cfg.ConfigPath)
 		}
 		if err := ts.ngTester.Delete(); err != nil {
@@ -1356,12 +1359,9 @@ func (ts *Tester) down() (err error) {
 
 	if ts.color {
 		colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-	} else {
-		fmt.Printf("\n\n*********************************\n")
-	}
-	if ts.color {
 		colorstring.Printf("[light_blue]clusterTester.Delete [default](%q)\n", ts.cfg.ConfigPath)
 	} else {
+		fmt.Printf("\n\n*********************************\n")
 		fmt.Printf("clusterTester.Delete (%q)\n", ts.cfg.ConfigPath)
 	}
 	if err := ts.clusterTester.Delete(); err != nil {
@@ -1371,12 +1371,9 @@ func (ts *Tester) down() (err error) {
 
 	if ts.color {
 		colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-	} else {
-		fmt.Printf("\n\n*********************************\n")
-	}
-	if ts.color {
 		colorstring.Printf("[light_blue]deleteS3 [default](%q)\n", ts.cfg.ConfigPath)
 	} else {
+		fmt.Printf("\n\n*********************************\n")
 		fmt.Printf("deleteS3 (%q)\n", ts.cfg.ConfigPath)
 	}
 	if err := ts.deleteS3(); err != nil {
