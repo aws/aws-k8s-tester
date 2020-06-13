@@ -203,21 +203,19 @@ func (sh *ssh) Connect() (err error) {
 }
 
 func (sh *ssh) Close() {
-	sh.lg.Info("closing connection",
-		zap.String("public-ip", sh.cfg.PublicIP),
-		zap.String("public-dns-name", sh.cfg.PublicDNSName),
-	)
 	sh.cancel()
 	if sh.conn != nil {
 		cerr := sh.conn.Close()
-		sh.lg.Info("closed connection",
-			zap.String("public-ip", sh.cfg.PublicIP),
-			zap.String("public-dns-name", sh.cfg.PublicDNSName),
-			zap.Error(cerr),
-		)
-		return
+		if cerr != nil {
+			sh.lg.Warn("closed connection with error",
+				zap.String("public-ip", sh.cfg.PublicIP),
+				zap.String("public-dns-name", sh.cfg.PublicDNSName),
+				zap.Error(cerr),
+			)
+			return
+		}
 	}
-	sh.lg.Info("closed connection",
+	sh.lg.Debug("closed connection",
 		zap.String("public-ip", sh.cfg.PublicIP),
 		zap.String("public-dns-name", sh.cfg.PublicDNSName),
 	)
