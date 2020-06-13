@@ -257,6 +257,11 @@ type templateEKSCluster struct {
 	AWSEncryptionProviderCMKARN string
 }
 
+const (
+	ClusterCreateTimeout = time.Hour
+	ClusterDeleteTimeout = time.Hour
+)
+
 func (ts *tester) createEKS() (err error) {
 	if ts.cfg.EKSConfig.LogColor {
 		colorstring.Printf("\n\n[yellow]*********************************[default]\n")
@@ -422,7 +427,7 @@ func (ts *tester) createEKS() (err error) {
 			return err
 		}
 		ts.cfg.EKSConfig.Status.ClusterCFNStackID = aws.StringValue(stackOutput.StackId)
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
+		ctx, cancel := context.WithTimeout(context.Background(), ClusterCreateTimeout)
 		ch := cfn.Poll(
 			ctx,
 			ts.cfg.Stopc,
@@ -458,7 +463,7 @@ func (ts *tester) createEKS() (err error) {
 
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), ClusterCreateTimeout)
 	ch := Poll(
 		ctx,
 		ts.cfg.Stopc,
@@ -547,7 +552,7 @@ func (ts *tester) deleteEKS() error {
 		}
 		ts.cfg.EKSConfig.Status.Up = false
 		ts.cfg.EKSConfig.Sync()
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
+		ctx, cancel := context.WithTimeout(context.Background(), ClusterDeleteTimeout)
 		ch := cfn.Poll(
 			ctx,
 			make(chan struct{}), // do not exit on stop
@@ -585,7 +590,7 @@ func (ts *tester) deleteEKS() error {
 		ts.cfg.EKSConfig.Status.Up = false
 		ts.cfg.EKSConfig.Sync()
 
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
+		ctx, cancel := context.WithTimeout(context.Background(), ClusterDeleteTimeout)
 		csCh := Poll(
 			ctx,
 			make(chan struct{}), // do not exit on stop
