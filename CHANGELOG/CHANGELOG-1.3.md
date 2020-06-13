@@ -3,7 +3,7 @@
 <hr>
 
 
-## [v1.3.7](https://github.com/aws/aws-k8s-tester/releases/tag/v1.3.7) (2020-06)
+## [v1.3.7](https://github.com/aws/aws-k8s-tester/releases/tag/v1.3.7) (2020-06-13)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.6...v1.3.7).
 
