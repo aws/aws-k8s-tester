@@ -1168,7 +1168,13 @@ func (ts *Tester) Up() (err error) {
 		if err := ts.cfg.EvaluateCommandRefs(); err != nil {
 			return err
 		}
-		fmt.Printf("\nrunCommand CommandAfterCreateAddOns (%q)\n", ts.cfg.CommandAfterCreateAddOns)
+		if ts.color {
+			colorstring.Printf("\n\n[yellow]*********************************[default]\n")
+			colorstring.Printf("[light_green]runCommand.CommandAfterCreateAddOns [default](%q)\n", ts.cfg.CommandAfterCreateAddOns)
+		} else {
+			fmt.Printf("\n\n*********************************\n")
+			fmt.Printf("runCommand.CommandAfterCreateAddOns (%q)\n", ts.cfg.CommandAfterCreateAddOns)
+		}
 		out, err := runCommand(ts.lg, ts.cfg.CommandAfterCreateAddOns, ts.cfg.CommandAfterCreateAddOnsTimeout)
 		if err != nil {
 			err = ioutil.WriteFile(ts.cfg.CommandAfterCreateAddOnsOutputPath, []byte(ts.cfg.CommandAfterCreateAddOns+"\n\n# output\n"+string(out)+"\n\n# error\n"+err.Error()), 0600)
