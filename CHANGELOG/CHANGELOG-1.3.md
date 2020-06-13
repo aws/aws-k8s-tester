@@ -3,6 +3,23 @@
 <hr>
 
 
+## [v1.3.7](https://github.com/aws/aws-k8s-tester/releases/tag/v1.3.7) (2020-06)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.6...v1.3.7).
+
+### `eks`
+
+- Improve [polling operations for `eks/cron-jobs`, `eks/jobs-echo`, and `eks/jobs-pi` with pagination](https://github.com/aws/aws-k8s-tester/commit/7306c6e0979541c8461388ffd32938c384e06e31).
+- Update [default `sonobuoy` version to `v0.18.3` in `eks/conformance`](https://github.com/vmware-tanzu/sonobuoy/releases/tag/v0.18.3).
+
+### Dependency
+
+- Update [default `sonobuoy` version to `v0.18.3`](https://github.com/vmware-tanzu/sonobuoy/releases/tag/v0.18.3).
+
+
+<hr>
+
+
 ## [v1.3.6](https://github.com/aws/aws-k8s-tester/releases/tag/v1.3.6) (2020-06-12)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.5...v1.3.6).
