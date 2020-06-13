@@ -1196,6 +1196,90 @@ func (ts *Tester) Up() (err error) {
 		fmt.Printf("\nrunCommand output:\n\n%s\n", string(out))
 	}
 
+	upgradeRun := false
+	if ts.cfg.IsEnabledAddOnManagedNodeGroups() && ts.cfg.AddOnManagedNodeGroups.Created {
+		if ts.mngTester == nil {
+			return errors.New("ts.mngTester == nil when AddOnManagedNodeGroups.Enable == true")
+		}
+
+		for _, cur := range ts.cfg.AddOnManagedNodeGroups.MNGs {
+			if cur.VersionUpgrade != nil && cur.VersionUpgrade.Enable {
+				upgradeRun = true
+				break
+			}
+		}
+		if ts.color {
+			colorstring.Printf("\n\n[yellow]*********************************[default]\n")
+			colorstring.Printf("[light_green]mngTester.UpgradeVersion [default](%q, upgradeRun %v)\n", ts.cfg.ConfigPath, upgradeRun)
+		} else {
+			fmt.Printf("\n\n*********************************\n")
+			fmt.Printf("mngTester.UpgradeVersion (%q, upgradeRun %v)\n", ts.cfg.ConfigPath, upgradeRun)
+		}
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.osSig,
+			ts.mngTester.UpgradeVersion,
+		); err != nil {
+			return err
+		}
+	}
+
+	if upgradeRun && ts.cfg.IsEnabledAddOnManagedNodeGroups() && ts.cfg.AddOnManagedNodeGroups.Created && ts.cfg.AddOnManagedNodeGroups.FetchLogs {
+		if ts.mngTester == nil {
+			return errors.New("ts.mngTester == nil when AddOnManagedNodeGroups.Enable == true")
+		}
+
+		if ts.color {
+			colorstring.Printf("\n\n[yellow]*********************************[default]\n")
+			colorstring.Printf("[light_green]mngTester.FetchLogs after upgrade [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		} else {
+			fmt.Printf("\n\n*********************************\n")
+			fmt.Printf("mngTester.FetchLogs after upgrade (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		}
+
+		waitDur := 15 * time.Second
+		ts.lg.Info("sleeping before mngTester.FetchLogs", zap.Duration("wait", waitDur))
+		time.Sleep(waitDur)
+
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.osSig,
+			ts.mngTester.FetchLogs,
+		); err != nil {
+			return err
+		}
+	}
+
+	if ts.cfg.CommandAfterCreateAddOns != "" {
+		if err := ts.cfg.EvaluateCommandRefs(); err != nil {
+			return err
+		}
+		if ts.color {
+			colorstring.Printf("\n\n[yellow]*********************************[default]\n")
+			colorstring.Printf("[light_green]runCommand.CommandAfterCreateAddOns [default](%q)\n", ts.cfg.CommandAfterCreateAddOns)
+		} else {
+			fmt.Printf("\n\n*********************************\n")
+			fmt.Printf("runCommand.CommandAfterCreateAddOns (%q)\n", ts.cfg.CommandAfterCreateAddOns)
+		}
+		out, err := runCommand(ts.lg, ts.cfg.CommandAfterCreateAddOns, ts.cfg.CommandAfterCreateAddOnsTimeout)
+		if err != nil {
+			err = ioutil.WriteFile(ts.cfg.CommandAfterCreateAddOnsOutputPath, []byte(ts.cfg.CommandAfterCreateAddOns+"\n\n# output\n"+string(out)+"\n\n# error\n"+err.Error()), 0600)
+			if err != nil {
+				return fmt.Errorf("failed to write file %q (%v)", ts.cfg.CommandAfterCreateAddOnsOutputPath, err)
+			}
+		} else {
+			err = ioutil.WriteFile(ts.cfg.CommandAfterCreateAddOnsOutputPath, []byte(ts.cfg.CommandAfterCreateAddOns+"\n\n# output\n"+string(out)), 0600)
+			if err != nil {
+				return fmt.Errorf("failed to write file %q (%v)", ts.cfg.CommandAfterCreateAddOnsOutputPath, err)
+			}
+		}
+		fmt.Printf("\nrunCommand output:\n\n%s\n", string(out))
+	}
+
 	return ts.cfg.Sync()
 }
 
