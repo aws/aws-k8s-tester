@@ -9,7 +9,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.6...v1.3.7
 
 ### `eksconfig`
 
-- Add [`AddOnMetricsServer`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`AddOnMetricsServer`](https://github.com/aws/aws-k8s-tester/commit/17451bade7e3cab783f9839db3fca1df0825b4fd).
   - Set via `AWS_K8S_TESTER_EKS_ADD_ON_METRICS_SERVER_ENABLE=true`.
   - Now `AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_ENABLE=true` requires `AWS_K8S_TESTER_EKS_ADD_ON_METRICS_SERVER_ENABLE=true`.
 - Change [`Config.RemoteAccessPrivateKeyPath` from `filepath.Join(homedir.HomeDir(), ".ssh", "kube_aws_rsa")` to `filepath.Join(os.TempDir(), randutil.String(15)+".insecure.key")`](https://github.com/aws/aws-k8s-tester/commit/a1ca992fb27fee6a58f61f445f3169badfc13638).
@@ -26,13 +26,18 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.6...v1.3.7
 - Rename [`eks/mng/node-waiter` to `eks/mng/wait`](https://github.com/aws/aws-k8s-tester/commit/6bed26a3eed0d73b47a1d516a17a8169d95f91e9).
 - Rename [`eks/ng/node-waiter` to `eks/ng/wait`](https://github.com/aws/aws-k8s-tester/commit/6bed26a3eed0d73b47a1d516a17a8169d95f91e9).
 - Increase [cluster create/delete timeout from 30-min to 1-hour](https://github.com/aws/aws-k8s-tester/commit/10523bb628162f1b2b1f1f4455efa0fa88564752).
-- Move [`eks/metrics-server` from `eks/kubernetes-dashboard`](https://github.com/aws/aws-k8s-tester/commit/).
+- Move [`eks/metrics-server` from `eks/kubernetes-dashboard`](https://github.com/aws/aws-k8s-tester/commit/17451bade7e3cab783f9839db3fca1df0825b4fd).
 - Fix [`eks/fargate` delete profile polling operation](https://github.com/aws/aws-k8s-tester/commit/b32f65b38738a3563b1d35ac058bc6a44f338aac).
 - Move [`eks/fargate.Poll` to `eks/fargate/wait`](https://github.com/aws/aws-k8s-tester/commit/72ec6d81f1475acfef2e8561b8a62f35fad3d0df).
 
 ### `pkg/k8s-client`
 
 - Increase [default namespace delete timeout from 15-min to 30-min](https://github.com/aws/aws-k8s-tester/commit/0f65f550a11b146d775dccaf867e6e3872da0894).
+
+### `ssh`
+
+- Improve [retries, do not retry on non-zero command run exit codes](https://github.com/aws/aws-k8s-tester/commit/cb353464f24ed0607e8accd7f99fc68a46322a01).
+- Log [connection close with `Debug` level](https://github.com/aws/aws-k8s-tester/commit/7e8ce119986b682185d8e1e93dfdbaf9d3ed89cc).
 
 ### Dependency
 
