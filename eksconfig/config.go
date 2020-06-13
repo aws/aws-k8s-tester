@@ -23,7 +23,6 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/randutil"
 	"github.com/aws/aws-k8s-tester/pkg/terminal"
 	"github.com/aws/aws-sdk-go/aws/endpoints"
-	"k8s.io/client-go/util/homedir"
 	"sigs.k8s.io/yaml" // must use "sigs.k8s.io/yaml"
 )
 
@@ -727,7 +726,8 @@ func NewDefault() *Config {
 
 		RemoteAccessKeyCreate: true,
 		// keep in-sync with the default value in https://pkg.go.dev/k8s.io/kubernetes/test/e2e/framework#GetSigner
-		RemoteAccessPrivateKeyPath: filepath.Join(homedir.HomeDir(), ".ssh", "kube_aws_rsa"),
+		// RemoteAccessPrivateKeyPath: filepath.Join(homedir.HomeDir(), ".ssh", "kube_aws_rsa"),
+		RemoteAccessPrivateKeyPath: filepath.Join(os.TempDir(), randutil.String(15)+".insecure.key"),
 
 		// Kubernetes client DefaultQPS is 5.
 		// Kubernetes client DefaultBurst is 10.
@@ -789,7 +789,6 @@ func NewDefault() *Config {
 
 	if runtime.GOOS == "darwin" {
 		cfg.KubectlDownloadURL = strings.Replace(cfg.KubectlDownloadURL, "linux", "darwin", -1)
-		cfg.RemoteAccessPrivateKeyPath = filepath.Join(os.TempDir(), randutil.String(10)+".insecure.key")
 	}
 
 	return &cfg
