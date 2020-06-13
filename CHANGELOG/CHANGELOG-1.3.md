@@ -27,8 +27,15 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.5...v1.3.6
 - Fix [`CheckHealth` to handle version upgrades](https://github.com/aws/aws-k8s-tester/commit/ef079fd2332e3c20c29cea1001aec1d1a95f1d87).
   - See also [`eks` health check fix](https://github.com/aws/aws-k8s-tester/commit/afe2096a5bd51b043e59ebad937ba5921c8ded98).
 - Wait until [`kubectl top node` is ready](https://github.com/aws/aws-k8s-tester/commit/5301270bfa2253bda350407a2db03a38058d7e95).
-- Implement [`eks/mng` version upgrades](https://github.com/aws/aws-k8s-tester/commit/).
+- Merge [all logs from remote nodes in `eks/ng` and `eks/mng`](https://github.com/aws/aws-k8s-tester/commit/3abcece44beda975af7f3d62a35e46d06f609c7a).
+- Implement [`eks/mng` version upgrades](https://github.com/aws/aws-k8s-tester/commit/3abcece44beda975af7f3d62a35e46d06f609c7a).
   - Set via `"version-upgrade"` within `MNG` configuration.
+- Move all [polling operations to own directory; `eks/ng/node-waiter` and `eks/mng/node-waiter`](https://github.com/aws/aws-k8s-tester/commit/3abcece44beda975af7f3d62a35e46d06f609c7a).
+- Only upload [kubeconfig file if the file exists](https://github.com/aws/aws-k8s-tester/commit/3abcece44beda975af7f3d62a35e46d06f609c7a).
+
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.32.0`](https://github.com/aws/aws-sdk-go/releases/tag/v1.32.0) to [`v1.32.1`](https://github.com/aws/aws-sdk-go/releases/tag/v1.32.1).
 
 
 <hr>
