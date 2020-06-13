@@ -2,6 +2,7 @@ package eksconfig
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 )
@@ -59,8 +60,13 @@ func (cfg *Config) validateAddOnAppMesh() error {
 	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
 		return errors.New("AddOnAppMesh.Enable true but no node group is enabled")
 	}
+
 	if cfg.AddOnAppMesh.Namespace == "" {
-		cfg.AddOnAppMesh.Namespace = "appmesh"
+		cfg.AddOnAppMesh.Namespace = cfg.Name + "-appmesh"
 	}
+	if cfg.AddOnAppMesh.PolicyCFNStackYAMLFilePath == "" {
+		cfg.AddOnAppMesh.PolicyCFNStackYAMLFilePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".add-on-app-mesh.policy.cfn.yaml"
+	}
+
 	return nil
 }
