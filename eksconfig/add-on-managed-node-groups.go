@@ -359,7 +359,7 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 			// can't upgrade to 1.17 MNG when EKS is 1.16
 			// e.g. "Nodegroup Kubernetes version should be equal to Cluster kubernetes version 1.16 or NodeGroup kubernetes version 1.16"
 			if cur.ReleaseVersionValue == 0.0 && !cfg.IsEnabledAddOnClusterVersionUpgrade() {
-				return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q] VersionUpgrade %q would diverge from cluster version %q", cur.Name, cur.VersionUpgrade.Version, cfg.Parameters.Version)
+				return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q] VersionUpgrade %q would diverge from Parameters.Version %q (IsEnabledAddOnClusterVersionUpgrade %v)", cur.Name, cur.VersionUpgrade.Version, cfg.Parameters.Version, cfg.IsEnabledAddOnClusterVersionUpgrade())
 			}
 		}
 
