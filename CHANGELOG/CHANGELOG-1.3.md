@@ -33,6 +33,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.5...v1.3.6
 - Wait until [`kubectl top node` is ready](https://github.com/aws/aws-k8s-tester/commit/5301270bfa2253bda350407a2db03a38058d7e95).
 - Merge [all logs from remote nodes in `eks/ng` and `eks/mng`](https://github.com/aws/aws-k8s-tester/commit/3abcece44beda975af7f3d62a35e46d06f609c7a).
 - Implement [`eks/mng` version upgrades](https://github.com/aws/aws-k8s-tester/commit/3abcece44beda975af7f3d62a35e46d06f609c7a).
+  - See [how it's triggered after add-on creation](https://github.com/aws/aws-k8s-tester/commit/234917535d8dd2c72b6054db72a49b56b179f16a).
   - Set via `"version-upgrade"` within `MNG` configuration.
 - Move all [polling operations to own directory; `eks/ng/node-waiter` and `eks/mng/node-waiter`](https://github.com/aws/aws-k8s-tester/commit/3abcece44beda975af7f3d62a35e46d06f609c7a).
 - Only upload [kubeconfig file if the file exists](https://github.com/aws/aws-k8s-tester/commit/3abcece44beda975af7f3d62a35e46d06f609c7a).
