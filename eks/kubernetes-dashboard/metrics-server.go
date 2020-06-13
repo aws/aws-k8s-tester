@@ -16,6 +16,7 @@ import (
 )
 
 // ref. https://docs.aws.amazon.com/eks/latest/userguide/dashboard-tutorial.html
+// ref. https://github.com/kubernetes-sigs/metrics-server/releases
 // ref. https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.3.6/components.yaml
 const metricsServerYAML = `
 ---
@@ -245,6 +246,7 @@ func (ts *tester) waitDeploymentMetricsServer() error {
 		"metrics-server",
 	}
 	descCmd := strings.Join(descArgs, " ")
+
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	output, err := exec.New().CommandContext(ctx, descArgs[0], descArgs[1:]...).CombinedOutput()
 	cancel()
@@ -315,7 +317,7 @@ func (ts *tester) waitDeploymentMetricsServer() error {
 	topNodeCmd := strings.Join(topNodeArgs, " ")
 
 	topNodeReady := false
-	waitDur, retryStart = 7*time.Minute, time.Now()
+	waitDur, retryStart = 20*time.Minute, time.Now()
 	for time.Now().Sub(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
@@ -323,10 +325,19 @@ func (ts *tester) waitDeploymentMetricsServer() error {
 		case <-time.After(5 * time.Second):
 		}
 
-		ts.cfg.Logger.Info("running kubectl top node")
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		output, err := exec.New().CommandContext(ctx, topNodeArgs[0], topNodeArgs[1:]...).CombinedOutput()
-		out := string(output)
+		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
+		output, err = exec.New().CommandContext(ctx, descArgs[0], descArgs[1:]...).CombinedOutput()
+		cancel()
+		if err != nil {
+			ts.cfg.Logger.Warn("failed to run kubectl describe", zap.Error(err))
+			continue
+		}
+		out = string(output)
+		fmt.Printf("\n\n\"%s\" output:\n%s\n\n", descCmd, out)
+
+		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
+		output, err = exec.New().CommandContext(ctx, topNodeArgs[0], topNodeArgs[1:]...).CombinedOutput()
+		out = string(output)
 		fmt.Printf("\n\n\"%s\" output:\n%s\n\n", topNodeCmd, out)
 		cancel()
 		if err != nil {
