@@ -14,6 +14,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.5...v1.3.6
 - Add [`ASG.ASGCFNStackYAMLFilePath`](https://github.com/aws/aws-k8s-tester/commit/13922f4a0eb9446705a757c816923ae54a03bb41).
 - Add [`ASG.SSMDocumentCFNStackYAMLFilePath`](https://github.com/aws/aws-k8s-tester/commit/13922f4a0eb9446705a757c816923ae54a03bb41).
 
+### `ec2`
+
+- Improve [s3 upload error message](https://github.com/aws/aws-k8s-tester/commit/e29f3038135a1e43e4e5d201ad538ad3973a0c6a).
+
 ### `eksconfig`
 
 - Add [`Parameters.RoleCFNStackYAMLFilePath`](https://github.com/aws/aws-k8s-tester/commit/db0cb5d39e3b1d9758f31ca4f5425ad9d1f711ce).
@@ -32,6 +36,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.5...v1.3.6
   - Set via `"version-upgrade"` within `MNG` configuration.
 - Move all [polling operations to own directory; `eks/ng/node-waiter` and `eks/mng/node-waiter`](https://github.com/aws/aws-k8s-tester/commit/3abcece44beda975af7f3d62a35e46d06f609c7a).
 - Only upload [kubeconfig file if the file exists](https://github.com/aws/aws-k8s-tester/commit/3abcece44beda975af7f3d62a35e46d06f609c7a).
+- Improve [s3 upload error message](https://github.com/aws/aws-k8s-tester/commit/e29f3038135a1e43e4e5d201ad538ad3973a0c6a).
 
 ### Dependency
 
