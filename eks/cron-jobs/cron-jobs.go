@@ -21,7 +21,6 @@ import (
 	batch_v1beta1 "k8s.io/api/batch/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clientset "k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/yaml"
 )
 
@@ -105,13 +104,12 @@ func (ts *tester) Create() error {
 	completedJobs, err := waitJobs(
 		ts.cfg.Logger,
 		ts.cfg.Stopc,
-		ts.cfg.K8SClient.KubernetesClientSet(),
+		ts.cfg.K8SClient,
 		waitDur,
 		5*time.Second,
 		ts.cfg.EKSConfig.AddOnCronJobs.Namespace,
 		cronJobName,
 		int(ts.cfg.EKSConfig.AddOnCronJobs.Completes),
-		jobsFieldSelector,
 		v1.PodSucceeded,
 	)
 	if err != nil {
@@ -188,8 +186,6 @@ func (ts *tester) Delete() error {
 }
 
 const (
-	// https://github.com/kubernetes/kubernetes/blob/d379ab2697251334774b7bd6f41b26cf39de470d/pkg/apis/batch/v1/conversion.go#L30-L41
-	jobsFieldSelector    = "status.phase!=Running"
 	jobName              = "job-echo"
 	cronJobName          = "cronjob-echo"
 	cronJobEchoImageName = "busybox"
@@ -276,22 +272,22 @@ func (ts *tester) AggregateResults() (err error) {
 	return nil
 }
 
+// TODO: use field selector, "status.phase!=Running"
+// https://github.com/kubernetes/kubernetes/blob/d379ab2697251334774b7bd6f41b26cf39de470d/pkg/apis/batch/v1/conversion.go#L30-L41
 func waitJobs(
 	lg *zap.Logger,
 	stopc chan struct{},
-	clientSet *clientset.Clientset,
+	k8sClient k8s_client.EKS,
 	timeout time.Duration,
 	interval time.Duration,
 	namespace string,
 	jobName string,
 	targets int,
-	fieldSelector string,
 	desiredPodPhase v1.PodPhase,
 ) (pods []v1.Pod, err error) {
 	lg.Info("waiting Pod",
 		zap.String("namespace", namespace),
 		zap.String("job-name", jobName),
-		zap.String("field-selector", fieldSelector),
 	)
 	retryStart := time.Now()
 	for time.Now().Sub(retryStart) < timeout {
@@ -301,23 +297,15 @@ func waitJobs(
 		case <-time.After(interval):
 		}
 
-		// https://github.com/kubernetes/kubernetes/blob/d379ab2697251334774b7bd6f41b26cf39de470d/pkg/apis/batch/v1/conversion.go#L30-L41
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		jobs, err := clientSet.
-			CoreV1().
-			Pods(namespace).
-			List(ctx, metav1.ListOptions{FieldSelector: fieldSelector})
-		cancel()
+		pods, err := k8sClient.ListPods(namespace, 150, 5*time.Second)
 		if err != nil {
 			lg.Warn("failed to list Pod", zap.Error(err))
 			continue
 		}
-		pods = jobs.Items
 		if len(pods) == 0 {
 			lg.Warn("got an empty list of Pod",
 				zap.String("namespace", namespace),
 				zap.String("job-name", jobName),
-				zap.String("field-selector", fieldSelector),
 			)
 			continue
 		}
