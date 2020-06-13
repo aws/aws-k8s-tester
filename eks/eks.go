@@ -45,6 +45,7 @@ import (
 	jupyter_hub "github.com/aws/aws-k8s-tester/eks/jupyter-hub"
 	"github.com/aws/aws-k8s-tester/eks/kubeflow"
 	kubernetes_dashboard "github.com/aws/aws-k8s-tester/eks/kubernetes-dashboard"
+	metrics_server "github.com/aws/aws-k8s-tester/eks/metrics-server"
 	"github.com/aws/aws-k8s-tester/eks/mng"
 	"github.com/aws/aws-k8s-tester/eks/ng"
 	nlb_hello_world "github.com/aws/aws-k8s-tester/eks/nlb-hello-world"
@@ -467,6 +468,12 @@ func (ts *Tester) createTesters() (err error) {
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 			CFNAPI:    ts.cfnAPI,
+		}),
+		metrics_server.New(metrics_server.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			EKSConfig: ts.cfg,
+			K8SClient: ts.k8sClient,
 		}),
 		kubernetes_dashboard.New(kubernetes_dashboard.Config{
 			Logger:    ts.lg,

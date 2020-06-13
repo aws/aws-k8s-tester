@@ -756,8 +756,8 @@ func (ts *tester) waitDeployment() error {
 		}
 	}
 	if !ready {
-		ts.cfg.Logger.Warn("Deployment not ready")
-		return errors.New("Deployment not ready")
+		ts.cfg.Logger.Warn("deployment not ready")
+		return errors.New("deployment not ready")
 	}
 
 	ts.cfg.Logger.Info("waited for hollow nodes Deployment")

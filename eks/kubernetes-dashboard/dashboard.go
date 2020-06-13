@@ -425,7 +425,7 @@ func (ts *tester) waitDeploymentDashboard() error {
 		}
 	}
 	if !ready {
-		return errors.New("Deployment not ready")
+		return errors.New("deployment not ready")
 	}
 
 	ts.cfg.Logger.Info("waited for dashboard Deployment")

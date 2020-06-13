@@ -197,6 +197,9 @@ type Config struct {
 	// AddOnAppMesh defines parameters for EKS cluster
 	// add-on "EKS App Mesh Integration".
 	AddOnAppMesh *AddOnAppMesh `json:"add-on-app-mesh,omitempty"`
+	// AddOnMetricsServer defines parameters for EKS cluster
+	// add-on metrics server.
+	AddOnMetricsServer *AddOnMetricsServer `json:"add-on-metrics-server,omitempty"`
 	// AddOnKubernetesDashboard defines parameters for EKS cluster
 	// add-on Dashboard.
 	AddOnKubernetesDashboard *AddOnKubernetesDashboard `json:"add-on-kubernetes-dashboard,omitempty"`
@@ -747,6 +750,7 @@ func NewDefault() *Config {
 		AddOnConformance:           getDefaultAddOnConformance(),
 		AddOnCSIEBS:                getDefaultAddOnCSIEBS(),
 		AddOnAppMesh:               getDefaultAddOnAppMesh(),
+		AddOnMetricsServer:         getDefaultAddOnMetricsServer(),
 		AddOnKubernetesDashboard:   getDefaultAddOnKubernetesDashboard(),
 		AddOnPrometheusGrafana:     getDefaultAddOnPrometheusGrafana(),
 		AddOnNLBHelloWorld:         getDefaultAddOnNLBHelloWorld(),
@@ -845,6 +849,9 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		return fmt.Errorf("validateAddOnAppMesh failed [%v]", err)
 	}
 
+	if err := cfg.validateAddOnMetricsServer(); err != nil {
+		return fmt.Errorf("validateAddOnMetricsServer failed [%v]", err)
+	}
 	if err := cfg.validateAddOnKubernetesDashboard(); err != nil {
 		return fmt.Errorf("validateAddOnKubernetesDashboard failed [%v]", err)
 	}

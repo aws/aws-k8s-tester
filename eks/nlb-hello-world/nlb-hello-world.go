@@ -326,7 +326,7 @@ func (ts *tester) waitDeployment() error {
 		}
 	}
 	if !ready {
-		return errors.New("Deployment not ready")
+		return errors.New("deployment not ready")
 	}
 
 	ts.cfg.Logger.Info("waited for NLB hello-world Deployment")

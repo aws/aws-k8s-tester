@@ -653,7 +653,7 @@ func (ts *tester) waitDeploymentALB() error {
 		}
 	}
 	if !ready {
-		return errors.New("Deployment not ready")
+		return errors.New("deployment not ready")
 	}
 
 	ts.cfg.Logger.Info("waited for ALB Deployment")
@@ -822,7 +822,7 @@ func (ts *tester) waitDeployment2048() error {
 		}
 	}
 	if !ready {
-		return errors.New("Deployment not ready")
+		return errors.New("deployment not ready")
 	}
 
 	ts.cfg.Logger.Info("waited for 2048 Deployment")

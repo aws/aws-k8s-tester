@@ -313,6 +313,19 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *AddOnWordpress, got %T", vv)
 	}
 
+	if cfg.AddOnMetricsServer == nil {
+		cfg.AddOnMetricsServer = &AddOnMetricsServer{}
+	}
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnMetricsServer, cfg.AddOnMetricsServer)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*AddOnMetricsServer); ok {
+		cfg.AddOnMetricsServer = av
+	} else {
+		return fmt.Errorf("expected *AddOnMetricsServer, got %T", vv)
+	}
+
 	if cfg.AddOnKubernetesDashboard == nil {
 		cfg.AddOnKubernetesDashboard = &AddOnKubernetesDashboard{}
 	}

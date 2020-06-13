@@ -1657,6 +1657,8 @@ func TestEnvAddOnKubernetesDashboard(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE", `true`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE")
 
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_METRICS_SERVER_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_METRICS_SERVER_ENABLE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_ENABLE")
 
@@ -1666,6 +1668,9 @@ func TestEnvAddOnKubernetesDashboard(t *testing.T) {
 	err := cfg.ValidateAndSetDefaults()
 	assert.NoError(t, err)
 
+	if !cfg.AddOnMetricsServer.Enable {
+		t.Fatalf("unexpected cfg.AddOnMetricsServer.Enable %v", cfg.AddOnMetricsServer.Enable)
+	}
 	if !cfg.AddOnKubernetesDashboard.Enable {
 		t.Fatalf("unexpected cfg.AddOnKubernetesDashboard.Enable %v", cfg.AddOnKubernetesDashboard.Enable)
 	}
