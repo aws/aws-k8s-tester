@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	node_waiter "github.com/aws/aws-k8s-tester/eks/mng/node-waiter"
+	version_upgrade "github.com/aws/aws-k8s-tester/eks/mng/version-upgrade"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
@@ -43,6 +45,8 @@ type Tester interface {
 	Create() error
 	// Delete deletes all EKS "Managed Node Group" resources.
 	Delete() error
+	// UpgradeVersion upgrades EKS "Managed Node Group" version, and waits for completion.
+	UpgradeVersion() error
 
 	// FetchLogs fetches logs from all worker nodes.
 	FetchLogs() error
@@ -56,15 +60,34 @@ type Tester interface {
 func New(cfg Config) Tester {
 	cfg.Logger.Info("creating tester", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	return &tester{
-		cfg:    cfg,
-		logsMu: new(sync.RWMutex),
+		cfg: cfg,
+		nodeWaiter: node_waiter.New(node_waiter.Config{
+			Logger:    cfg.Logger,
+			Stopc:     cfg.Stopc,
+			EKSConfig: cfg.EKSConfig,
+			K8SClient: cfg.K8SClient,
+			EC2API:    cfg.EC2API,
+			ASGAPI:    cfg.ASGAPI,
+			EKSAPI:    cfg.EKSAPI,
+		}),
+		versionUpgrader: version_upgrade.New(version_upgrade.Config{
+			Logger:    cfg.Logger,
+			Stopc:     cfg.Stopc,
+			EKSConfig: cfg.EKSConfig,
+			K8SClient: cfg.K8SClient,
+			EKSAPI:    cfg.EKSAPI,
+		}),
+		logsMu:     new(sync.RWMutex),
+		failedOnce: false,
 	}
 }
 
 type tester struct {
-	cfg        Config
-	logsMu     *sync.RWMutex
-	failedOnce bool
+	cfg             Config
+	nodeWaiter      node_waiter.NodeWaiter
+	versionUpgrader version_upgrade.Upgrader
+	logsMu          *sync.RWMutex
+	failedOnce      bool
 }
 
 func (ts *tester) Create() (err error) {
@@ -102,6 +125,23 @@ func (ts *tester) Create() (err error) {
 	}
 
 	ts.cfg.EKSConfig.AddOnManagedNodeGroups.Created = true
+	return ts.cfg.EKSConfig.Sync()
+}
+
+func (ts *tester) UpgradeVersion() (err error) {
+	if !ts.cfg.EKSConfig.IsEnabledAddOnManagedNodeGroups() {
+		return nil
+	}
+	if !ts.cfg.EKSConfig.AddOnManagedNodeGroups.Created {
+		ts.cfg.Logger.Info("ManagedNodeGroup is not created; skipping upgrade")
+		return nil
+	}
+
+	for _, cur := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
+		if err = ts.versionUpgrader.Upgrade(cur.Name); err != nil {
+			return err
+		}
+	}
 	return ts.cfg.EKSConfig.Sync()
 }
 

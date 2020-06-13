@@ -266,14 +266,16 @@ func (ts *Tester) uploadToS3() (err error) {
 		}
 	}
 
-	if err = uploadFileToS3(
-		ts.lg,
-		ts.s3API,
-		ts.cfg.S3BucketName,
-		path.Join(ts.cfg.Name, "kubeconfig.yaml"),
-		ts.cfg.KubeConfigPath,
-	); err != nil {
-		return err
+	if fileutil.Exist(ts.cfg.KubeConfigPath) {
+		if err = uploadFileToS3(
+			ts.lg,
+			ts.s3API,
+			ts.cfg.S3BucketName,
+			path.Join(ts.cfg.Name, "kubeconfig.yaml"),
+			ts.cfg.KubeConfigPath,
+		); err != nil {
+			return err
+		}
 	}
 
 	if ts.cfg.IsEnabledAddOnNodeGroups() {
