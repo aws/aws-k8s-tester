@@ -19,7 +19,9 @@ import (
 	"go.uber.org/zap"
 )
 
-// SECURITY NOTE: MAKE SURE PRIVATE KEY NEVER GETS UPLOADED TO CLOUD STORAGE AND DLETE AFTER USE!!!
+// SECURITY NOTE:
+// MAKE SURE PRIVATE KEY NEVER GETS UPLOADED TO "PUBLIC" CLOUD STORAGE
+// MAKE SURE TO DELETE AFTER USE!!!
 
 func (ts *Tester) createKeyPair() (err error) {
 	if !ts.cfg.RemoteAccessKeyCreate {
