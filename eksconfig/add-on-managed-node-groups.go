@@ -350,9 +350,16 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 				// e.g. "1.16" in "1.16.8-20200609"
 				origVer = cur.ReleaseVersionValue
 			}
+
 			delta := cur.VersionUpgrade.VersionValue - origVer
 			if fmt.Sprintf("%.2f", delta) != "0.01" {
 				return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q] VersionUpgrade only supports one minor version upgrade but got %.2f [cluster version %q, mng release version %q, mng upgrade version %q]", cur.Name, delta, cfg.Parameters.Version, cur.ReleaseVersion, cur.VersionUpgrade.Version)
+			}
+			// target version must match with the Kubernetes control plane version
+			// can't upgrade to 1.17 MNG when EKS is 1.16
+			// e.g. "Nodegroup Kubernetes version should be equal to Cluster kubernetes version 1.16 or NodeGroup kubernetes version 1.16"
+			if cur.ReleaseVersionValue == 0.0 && !cfg.IsEnabledAddOnClusterVersionUpgrade() {
+				return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q] VersionUpgrade %q would diverge from cluster version %q", cur.Name, cur.VersionUpgrade.Version, cfg.Parameters.Version)
 			}
 		}
 
