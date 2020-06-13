@@ -506,7 +506,7 @@ func (ts *tester) deleteProfile() error {
 		break
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
 	ch := Poll(
 		ctx,
 		ts.cfg.Stopc,
@@ -518,12 +518,13 @@ func (ts *tester) deleteProfile() error {
 		10*time.Second,
 		7*time.Second,
 	)
-	cancel()
 	for sv := range ch {
 		if sv.Error != nil {
+			cancel()
 			return sv.Error
 		}
 	}
+	cancel()
 
 	ts.cfg.Logger.Info("deleted fargate profile", zap.String("name", ts.cfg.EKSConfig.AddOnFargate.ProfileName))
 	return ts.cfg.EKSConfig.Sync()

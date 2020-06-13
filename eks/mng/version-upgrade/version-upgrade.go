@@ -150,6 +150,7 @@ func (ts *tester) Upgrade(mngName string) (err error) {
 		return err
 	}
 
+	ctx, cancel = context.WithTimeout(context.Background(), totalWait)
 	nodesCh := wait.Poll(
 		ctx,
 		ts.cfg.Stopc,
