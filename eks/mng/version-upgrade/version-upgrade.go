@@ -38,7 +38,7 @@ type Config struct {
 
 // New creates a new Upgrader.
 func New(cfg Config) Upgrader {
-	cfg.Logger.Info("creating Upgrader", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	cfg.Logger.Info("creating tester", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	return &tester{cfg: cfg}
 }
 
