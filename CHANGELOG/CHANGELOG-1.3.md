@@ -27,6 +27,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.6...v1.3.7
 - Rename [`eks/ng/node-waiter` to `eks/ng/wait`](https://github.com/aws/aws-k8s-tester/commit/6bed26a3eed0d73b47a1d516a17a8169d95f91e9).
 - Increase [cluster create/delete timeout from 30-min to 1-hour](https://github.com/aws/aws-k8s-tester/commit/10523bb628162f1b2b1f1f4455efa0fa88564752).
 - Move [`eks/metrics-server` from `eks/kubernetes-dashboard`](https://github.com/aws/aws-k8s-tester/commit/).
+- Fix [`eks/fargate` delete profile polling operation](https://github.com/aws/aws-k8s-tester/commit/b32f65b38738a3563b1d35ac058bc6a44f338aac).
 
 ### `pkg/k8s-client`
 
