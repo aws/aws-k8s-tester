@@ -1036,25 +1036,25 @@ func (cfg *Config) validateConfig() error {
 		return err
 	}
 
-	if filepath.Ext(cfg.CommandAfterCreateClusterOutputPath) != ".log" {
-		cfg.CommandAfterCreateClusterOutputPath = cfg.CommandAfterCreateClusterOutputPath + ".log"
-	}
 	if cfg.CommandAfterCreateClusterOutputPath == "" {
 		cfg.CommandAfterCreateClusterOutputPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".after-create-cluster.out.log"
 	}
-	if err := fileutil.IsDirWriteable(filepath.Dir(cfg.CommandAfterCreateClusterOutputPath)); err != nil {
-		return err
+	if filepath.Ext(cfg.CommandAfterCreateClusterOutputPath) != ".log" {
+		cfg.CommandAfterCreateClusterOutputPath = cfg.CommandAfterCreateClusterOutputPath + ".log"
 	}
 	if cfg.CommandAfterCreateClusterTimeout == time.Duration(0) {
 		cfg.CommandAfterCreateClusterTimeout = DefaultCommandAfterCreateClusterTimeout
 	}
+	if err := fileutil.IsDirWriteable(filepath.Dir(cfg.CommandAfterCreateClusterOutputPath)); err != nil {
+		return err
+	}
 	cfg.CommandAfterCreateClusterTimeoutString = cfg.CommandAfterCreateClusterTimeout.String()
 
-	if filepath.Ext(cfg.CommandAfterCreateAddOnsOutputPath) != ".log" {
-		cfg.CommandAfterCreateAddOnsOutputPath = cfg.CommandAfterCreateAddOnsOutputPath + ".log"
-	}
 	if cfg.CommandAfterCreateAddOnsOutputPath == "" {
 		cfg.CommandAfterCreateAddOnsOutputPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".after-create-add-ons.out.log"
+	}
+	if filepath.Ext(cfg.CommandAfterCreateAddOnsOutputPath) != ".log" {
+		cfg.CommandAfterCreateAddOnsOutputPath = cfg.CommandAfterCreateAddOnsOutputPath + ".log"
 	}
 	if err := fileutil.IsDirWriteable(filepath.Dir(cfg.CommandAfterCreateAddOnsOutputPath)); err != nil {
 		return err
