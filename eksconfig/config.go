@@ -1093,6 +1093,12 @@ func (cfg *Config) validateConfig() error {
 	case false: // use existing one
 	}
 
+	if cfg.Status == nil {
+		cfg.Status = &Status{Up: false}
+	}
+	if cfg.Status.ClusterCFNStackYAMLFilePath == "" {
+		cfg.Status.ClusterCFNStackYAMLFilePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".cluster.cfn.yaml"
+	}
 	return nil
 }
 
