@@ -34,7 +34,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.6...v1.3.7
 - Move [`eks/metrics-server` from `eks/kubernetes-dashboard`](https://github.com/aws/aws-k8s-tester/commit/17451bade7e3cab783f9839db3fca1df0825b4fd).
 - Fix [`eks/fargate` delete profile polling operation](https://github.com/aws/aws-k8s-tester/commit/b32f65b38738a3563b1d35ac058bc6a44f338aac).
 - Move [`eks/fargate.Poll` to `eks/fargate/wait`](https://github.com/aws/aws-k8s-tester/commit/72ec6d81f1475acfef2e8561b8a62f35fad3d0df).
-- Improve [`eks/ng` and `eks/mng` deletion by pre-delete lingering ENIs](https://github.com/aws/aws-k8s-tester/commit/).
+- Improve [`eks/ng` and `eks/mng` deletion by pre-delete lingering ENIs](https://github.com/aws/aws-k8s-tester/commit/da879fcd5f20210f4401193103b996339fb97ca4).
 
 ### `pkg/k8s-client`
 
