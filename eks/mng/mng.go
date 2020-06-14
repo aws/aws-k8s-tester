@@ -164,16 +164,6 @@ func (ts *tester) Delete() error {
 
 	var errs []string
 	var err error
-	for name := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
-		time.Sleep(10 * time.Second)
-		if ok := ts.deleteENIs(name); ok {
-			time.Sleep(10 * time.Second)
-		}
-		err = ts.deleteSG(name)
-		if err != nil {
-			errs = append(errs, err.Error())
-		}
-	}
 
 	for i := 0; i < 5; i++ { // retry, leakly ENI may take awhile to be deleted
 		err = ts.deleteASG()
@@ -196,6 +186,17 @@ func (ts *tester) Delete() error {
 	waitDur := 5 * time.Second
 	ts.cfg.Logger.Info("sleeping before node group role deletion", zap.Duration("wait", waitDur))
 	time.Sleep(waitDur)
+
+	for name := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
+		time.Sleep(10 * time.Second)
+		if ok := ts.deleteENIs(name); ok {
+			time.Sleep(10 * time.Second)
+		}
+		err = ts.deleteSG(name)
+		if err != nil {
+			errs = append(errs, err.Error())
+		}
+	}
 
 	// must be run after deleting node group
 	// otherwise, "Cannot delete entity, must remove roles from instance profile first. (Service: AmazonIdentityManagement; Status Code: 409; Error Code: DeleteConflict; Request ID: 197f795b-1003-4386-81cc-44a926c42be7)"
