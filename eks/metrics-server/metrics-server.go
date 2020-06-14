@@ -198,8 +198,10 @@ spec:
         image: k8s.gcr.io/metrics-server-amd64:v0.3.6
         imagePullPolicy: IfNotPresent
         args:
-          - --cert-dir=/tmp
-          - --secure-port=4443
+        - --cert-dir=/tmp
+        - --secure-port=4443
+        - --kubelet-insecure-tls
+        - --kubelet-preferred-address-types=InternalIP
         ports:
         - name: main-port
           containerPort: 4443
@@ -327,6 +329,17 @@ func (ts *tester) create() error {
 
 func (ts *tester) waitDeployment() error {
 	ts.cfg.Logger.Info("waiting for metrics-server Deployment")
+
+	descArgs := []string{
+		ts.cfg.EKSConfig.KubectlPath,
+		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+		"--namespace=kube-system",
+		"describe",
+		"deployment",
+		deploymentName,
+	}
+	descCmd := strings.Join(descArgs, " ")
+
 	ready := false
 	waitDur := 3 * time.Minute
 	retryStart := time.Now()
@@ -337,7 +350,17 @@ func (ts *tester) waitDeployment() error {
 		case <-time.After(15 * time.Second):
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		output, err := exec.New().CommandContext(ctx, descArgs[0], descArgs[1:]...).CombinedOutput()
+		cancel()
+		if err != nil {
+			ts.cfg.Logger.Warn("failed to run kubectl describe", zap.Error(err))
+			continue
+		}
+		out := string(output)
+		fmt.Printf("\n\n\"%s\" output:\n%s\n\n", descCmd, out)
+
+		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 		dresp, err := ts.cfg.K8SClient.KubernetesClientSet().
 			AppsV1().
 			Deployments("kube-system").
@@ -378,16 +401,6 @@ func (ts *tester) waitDeployment() error {
 	if !ready {
 		return errors.New("deployment not ready")
 	}
-
-	descArgs := []string{
-		ts.cfg.EKSConfig.KubectlPath,
-		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
-		"--namespace=kube-system",
-		"describe",
-		"deployment",
-		deploymentName,
-	}
-	descCmd := strings.Join(descArgs, " ")
 
 	logArgs := []string{
 		ts.cfg.EKSConfig.KubectlPath,
