@@ -120,7 +120,9 @@ func (ts *tester) Delete() error {
 		k8s_client.DefaultNamespaceDeletionInterval,
 		k8s_client.DefaultNamespaceDeletionTimeout,
 	); err != nil {
-		errs = append(errs, fmt.Sprintf("failed to delete AppMesh namespace (%v)", err))
+		ts.cfg.Logger.Warn("failed to delete AppMesh namespace", zap.Error(err))
+		// TODO
+		// errs = append(errs, fmt.Sprintf("failed to delete AppMesh namespace (%v)", err))
 	}
 
 	if err := ts.deletePolicy(); err != nil {
