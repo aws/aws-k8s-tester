@@ -75,10 +75,10 @@ func (ts *tester) Create() error {
 	if err := helm.RepoAdd(ts.cfg.Logger, chartRepoName, chartRepoURL); err != nil {
 		return err
 	}
-	if err := ts.createHelmController(); err != nil {
+	if err := ts.createController(); err != nil {
 		return err
 	}
-	if err := ts.createHelmInjector(); err != nil {
+	if err := ts.createInjector(); err != nil {
 		return err
 	}
 	return ts.cfg.EKSConfig.Sync()
@@ -104,13 +104,14 @@ func (ts *tester) Delete() error {
 
 	var errs []string
 
-	if err := ts.deleteHelmInjector(); err != nil {
+	if err := ts.deleteInjector(); err != nil {
+		errs = append(errs, err.Error())
+	}
+	if err := ts.deleteController(); err != nil {
 		errs = append(errs, err.Error())
 	}
 
-	if err := ts.deleteHelmController(); err != nil {
-		errs = append(errs, err.Error())
-	}
+	time.Sleep(10 * time.Second)
 
 	if err := k8s_client.DeleteNamespaceAndWait(
 		ts.cfg.Logger,
@@ -318,7 +319,7 @@ const (
 )
 
 // https://github.com/aws/eks-charts/blob/master/stable/appmesh-controller/values.yaml
-func (ts *tester) createHelmController() error {
+func (ts *tester) createController() error {
 	// https://github.com/aws/eks-charts/blob/master/stable/appmesh-controller/values.yaml
 	values := make(map[string]interface{})
 	if ts.cfg.EKSConfig.AddOnAppMesh.ControllerImage != "" {
@@ -346,7 +347,7 @@ func (ts *tester) createHelmController() error {
 	})
 }
 
-func (ts *tester) deleteHelmController() error {
+func (ts *tester) deleteController() error {
 	return helm.Uninstall(helm.InstallConfig{
 		Logger:         ts.cfg.Logger,
 		Timeout:        15 * time.Minute,
@@ -358,7 +359,7 @@ func (ts *tester) deleteHelmController() error {
 }
 
 // https://github.com/aws/eks-charts/blob/master/stable/appmesh-injector/values.yaml
-func (ts *tester) createHelmInjector() error {
+func (ts *tester) createInjector() error {
 	values := make(map[string]interface{})
 	if ts.cfg.EKSConfig.AddOnAppMesh.InjectorImage != "" {
 		imageRepo, imageTag, err := splitImageRepoAndTag(ts.cfg.EKSConfig.AddOnAppMesh.InjectorImage)
@@ -385,7 +386,7 @@ func (ts *tester) createHelmInjector() error {
 	})
 }
 
-func (ts *tester) deleteHelmInjector() error {
+func (ts *tester) deleteInjector() error {
 	return helm.Uninstall(helm.InstallConfig{
 		Logger:         ts.cfg.Logger,
 		Timeout:        15 * time.Minute,
