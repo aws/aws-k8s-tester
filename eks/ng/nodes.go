@@ -494,11 +494,13 @@ func (ts *tester) createASGs() error {
 				},
 			},
 		}
-		ts.cfg.Logger.Info("added image ID", zap.String("image-id", cur.ImageID))
-		stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
-			ParameterKey:   aws.String("ImageID"),
-			ParameterValue: aws.String(cur.ImageID),
-		})
+		if cur.ImageID != "" {
+			ts.cfg.Logger.Info("added image ID", zap.String("image-id", cur.ImageID))
+			stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
+				ParameterKey:   aws.String("ImageID"),
+				ParameterValue: aws.String(cur.ImageID),
+			})
+		}
 		if cur.ImageIDSSMParameter != "" {
 			ts.cfg.Logger.Info("added image SSM parameter", zap.String("image-id-ssm-parameter", cur.ImageIDSSMParameter))
 			stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
