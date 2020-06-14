@@ -195,8 +195,8 @@ const (
 	csrsServiceAccountName          = "csrs-remote-service-account"
 	csrsRBACRoleName                = "csrs-remote-rbac-role"
 	csrsRBACClusterRoleBindingName  = "csrs-remote-rbac-role-binding"
-	csrsKubeConfigConfigMapName     = "csrs-remote-kubeconfig-config-map"
-	csrsKubeConfigConfigMapFileName = "csrs-remote-kubeconfig-config-map.yaml"
+	csrsKubeConfigConfigMapName     = "csrs-remote-kubeconfig-configmap"
+	csrsKubeConfigConfigMapFileName = "csrs-remote-kubeconfig-configmap.yaml"
 	csrsDeploymentName              = "csrs-remote-deployment"
 	csrsAppName                     = "csrs-remote-app"
 )

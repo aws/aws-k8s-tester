@@ -209,8 +209,8 @@ const (
 	stresserServiceAccountName          = "stresser-remote-service-account"
 	stresserRBACRoleName                = "stresser-remote-rbac-role"
 	stresserRBACClusterRoleBindingName  = "stresser-remote-rbac-role-binding"
-	stresserKubeConfigConfigMapName     = "stresser-remote-kubeconfig-config-map"
-	stresserKubeConfigConfigMapFileName = "stresser-remote-kubeconfig-config-map.yaml"
+	stresserKubeConfigConfigMapName     = "stresser-remote-kubeconfig-configmap"
+	stresserKubeConfigConfigMapFileName = "stresser-remote-kubeconfig-configmap.yaml"
 	stresserDeploymentName              = "stresser-remote-deployment"
 	stresserAppName                     = "stresser-remote-app"
 )

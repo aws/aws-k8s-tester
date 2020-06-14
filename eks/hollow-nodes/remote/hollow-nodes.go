@@ -197,8 +197,8 @@ const (
 	hollowNodesServiceAccountName          = "hollow-nodes-remote-service-account"
 	hollowNodesRBACRoleName                = "hollow-nodes-remote-rbac-role"
 	hollowNodesRBACClusterRoleBindingName  = "hollow-nodes-remote-rbac-role-binding"
-	hollowNodesKubeConfigConfigMapName     = "hollow-nodes-remote-kubeconfig-config-map"
-	hollowNodesKubeConfigConfigMapFileName = "hollow-nodes-remote-kubeconfig-config-map.yaml"
+	hollowNodesKubeConfigConfigMapName     = "hollow-nodes-remote-kubeconfig-configmap"
+	hollowNodesKubeConfigConfigMapFileName = "hollow-nodes-remote-kubeconfig-configmap.yaml"
 	hollowNodesDeploymentName              = "hollow-nodes-remote-deployment"
 	hollowNodesAppName                     = "hollow-nodes-remote-app"
 )

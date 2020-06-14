@@ -195,8 +195,8 @@ const (
 	secretsServiceAccountName          = "secrets-remote-service-account"
 	secretsRBACRoleName                = "secrets-remote-rbac-role"
 	secretsRBACClusterRoleBindingName  = "secrets-remote-rbac-role-binding"
-	secretsKubeConfigConfigMapName     = "secrets-remote-kubeconfig-config-map"
-	secretsKubeConfigConfigMapFileName = "secrets-remote-kubeconfig-config-map.yaml"
+	secretsKubeConfigConfigMapName     = "secrets-remote-kubeconfig-configmap"
+	secretsKubeConfigConfigMapFileName = "secrets-remote-kubeconfig-configmap.yaml"
 	secretsDeploymentName              = "secrets-remote-deployment"
 	secretsAppName                     = "secrets-remote-app"
 )

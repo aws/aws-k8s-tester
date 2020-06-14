@@ -189,8 +189,8 @@ const (
 	clusterLoaderServiceAccountName          = "cluster-loader-remote-service-account"
 	clusterLoaderRBACRoleName                = "cluster-loader-remote-rbac-role"
 	clusterLoaderRBACClusterRoleBindingName  = "cluster-loader-remote-rbac-role-binding"
-	clusterLoaderKubeConfigConfigMapName     = "cluster-loader-remote-kubeconfig-config-map"
-	clusterLoaderKubeConfigConfigMapFileName = "cluster-loader-remote-kubeconfig-config-map.yaml"
+	clusterLoaderKubeConfigConfigMapName     = "cluster-loader-remote-kubeconfig-configmap"
+	clusterLoaderKubeConfigConfigMapFileName = "cluster-loader-remote-kubeconfig-configmap.yaml"
 	clusterLoaderDeploymentName              = "cluster-loader-remote-deployment"
 	clusterLoaderAppName                     = "cluster-loader-remote-app"
 )

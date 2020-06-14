@@ -254,7 +254,7 @@ func TestEnv(t *testing.T) {
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_NAMESPACE", "config-map-namespace")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_NAMESPACE", "configmap-namespace")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_NAMESPACE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_OBJECTS", "10000")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_OBJECTS")
@@ -263,7 +263,7 @@ func TestEnv(t *testing.T) {
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_NAMESPACE", "config-map-namespace")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_NAMESPACE", "configmap-namespace")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_NAMESPACE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_OBJECTS", "10000")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_OBJECTS")
@@ -927,7 +927,7 @@ func TestEnv(t *testing.T) {
 	if !cfg.AddOnConfigmapsLocal.Enable {
 		t.Fatalf("unexpected cfg.AddOnConfigmapsLocal.Enable %v", cfg.AddOnConfigmapsLocal.Enable)
 	}
-	if cfg.AddOnConfigmapsLocal.Namespace != "config-map-namespace" {
+	if cfg.AddOnConfigmapsLocal.Namespace != "configmap-namespace" {
 		t.Fatalf("unexpected cfg.AddOnConfigmapsLocal.Namespace %q", cfg.AddOnConfigmapsLocal.Namespace)
 	}
 	if cfg.AddOnConfigmapsLocal.Objects != 10000 {
@@ -939,7 +939,7 @@ func TestEnv(t *testing.T) {
 	if !cfg.AddOnConfigmapsRemote.Enable {
 		t.Fatalf("unexpected cfg.AddOnConfigmapsRemote.Enable %v", cfg.AddOnConfigmapsRemote.Enable)
 	}
-	if cfg.AddOnConfigmapsRemote.Namespace != "config-map-namespace" {
+	if cfg.AddOnConfigmapsRemote.Namespace != "configmap-namespace" {
 		t.Fatalf("unexpected cfg.AddOnConfigmapsRemote.Namespace %q", cfg.AddOnConfigmapsRemote.Namespace)
 	}
 	if cfg.AddOnConfigmapsRemote.Objects != 10000 {
