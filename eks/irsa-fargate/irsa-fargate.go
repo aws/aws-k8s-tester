@@ -1007,8 +1007,8 @@ func (ts *tester) checkPod() error {
 		"--namespace=" + ts.cfg.EKSConfig.AddOnIRSAFargate.Namespace,
 		"logs",
 		"pods/" + irsaFargatePodName,
-		"--timestamps",
 		"--all-containers=true",
+		"--timestamps",
 	}
 	logsCmd := strings.Join(logArgs, " ")
 

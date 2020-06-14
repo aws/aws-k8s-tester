@@ -327,25 +327,6 @@ func (ts *tester) create() error {
 
 func (ts *tester) waitDeployment() error {
 	ts.cfg.Logger.Info("waiting for metrics-server Deployment")
-	descArgs := []string{
-		ts.cfg.EKSConfig.KubectlPath,
-		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
-		"--namespace=kube-system",
-		"describe",
-		"deployment",
-		deploymentName,
-	}
-	descCmd := strings.Join(descArgs, " ")
-
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	output, err := exec.New().CommandContext(ctx, descArgs[0], descArgs[1:]...).CombinedOutput()
-	cancel()
-	if err != nil {
-		return fmt.Errorf("'kubectl describe deployment' failed %v", err)
-	}
-	out := string(output)
-	fmt.Printf("\n\n\"%s\" output:\n%s\n\n", descCmd, out)
-
 	ready := false
 	waitDur := 3 * time.Minute
 	retryStart := time.Now()
@@ -398,6 +379,27 @@ func (ts *tester) waitDeployment() error {
 		return errors.New("deployment not ready")
 	}
 
+	descArgs := []string{
+		ts.cfg.EKSConfig.KubectlPath,
+		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+		"--namespace=kube-system",
+		"describe",
+		"deployment",
+		deploymentName,
+	}
+	descCmd := strings.Join(descArgs, " ")
+
+	logArgs := []string{
+		ts.cfg.EKSConfig.KubectlPath,
+		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+		"--namespace=kube-system",
+		"logs",
+		"--selector=k8s-app=metrics-server",
+		"--all-containers=true",
+		"--timestamps",
+	}
+	logsCmd := strings.Join(logArgs, " ")
+
 	topNodeArgs := []string{
 		ts.cfg.EKSConfig.KubectlPath,
 		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
@@ -407,7 +409,7 @@ func (ts *tester) waitDeployment() error {
 	topNodeCmd := strings.Join(topNodeArgs, " ")
 
 	topNodeReady := false
-	waitDur, retryStart = 20*time.Minute, time.Now()
+	waitDur, retryStart = 30*time.Minute, time.Now()
 	for time.Now().Sub(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
@@ -415,15 +417,25 @@ func (ts *tester) waitDeployment() error {
 		case <-time.After(5 * time.Second):
 		}
 
-		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
-		output, err = exec.New().CommandContext(ctx, descArgs[0], descArgs[1:]...).CombinedOutput()
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		output, err := exec.New().CommandContext(ctx, descArgs[0], descArgs[1:]...).CombinedOutput()
 		cancel()
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to run kubectl describe", zap.Error(err))
 			continue
 		}
-		out = string(output)
+		out := string(output)
 		fmt.Printf("\n\n\"%s\" output:\n%s\n\n", descCmd, out)
+
+		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
+		output, err = exec.New().CommandContext(ctx, logArgs[0], logArgs[1:]...).CombinedOutput()
+		cancel()
+		if err != nil {
+			ts.cfg.Logger.Warn("failed to run kubectl logs", zap.Error(err))
+			continue
+		}
+		out = string(output)
+		fmt.Printf("\n\n\"%s\" output:\n%s\n\n", logsCmd, out)
 
 		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 		output, err = exec.New().CommandContext(ctx, topNodeArgs[0], topNodeArgs[1:]...).CombinedOutput()
