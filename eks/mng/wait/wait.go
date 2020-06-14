@@ -96,7 +96,7 @@ func (ts *tester) waitForNodes(mngName string, retriesLeft int) error {
 
 	cur, ok = ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName]
 	if !ok {
-		return fmt.Errorf("Managed Node Group %q not found", mngName)
+		return fmt.Errorf("MNGs[%q] not found", mngName)
 	}
 	asg := dout.Nodegroup.Resources.AutoScalingGroups[0]
 	cur.ASGName = aws.StringValue(asg.Name)
@@ -139,7 +139,7 @@ func (ts *tester) waitForNodes(mngName string, retriesLeft int) error {
 	}
 	cur, ok = ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName]
 	if !ok {
-		return fmt.Errorf("Managed Node Group %q not found", mngName)
+		return fmt.Errorf("MNGs[%q] not found", mngName)
 	}
 	cur.Instances = make(map[string]ec2config.Instance)
 	for id, vv := range ec2Instances {
@@ -152,7 +152,7 @@ func (ts *tester) waitForNodes(mngName string, retriesLeft int) error {
 
 	cur, ok = ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName]
 	if !ok {
-		return fmt.Errorf("Managed Node Group %q not found", mngName)
+		return fmt.Errorf("MNGs[%q] not found", mngName)
 	}
 
 	// Hostname/InternalDNS == EC2 private DNS

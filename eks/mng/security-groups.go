@@ -195,7 +195,7 @@ type templateSG struct {
 func (ts *tester) createSG(name string) error {
 	cur, ok := ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[name]
 	if !ok {
-		return fmt.Errorf("Managed Node Group %q not found; cannot create ingress/egress security group", name)
+		return fmt.Errorf("MNGs[%q] not found; cannot create ingress/egress security group", name)
 	}
 	if cur.RemoteAccessSecurityGroupID == "" {
 		return fmt.Errorf("MNG[%q] security group ID not found; cannot create ingress/egress security group", name)
@@ -291,7 +291,7 @@ func (ts *tester) createSG(name string) error {
 func (ts *tester) deleteSG(name string) error {
 	cur, ok := ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[name]
 	if !ok {
-		return fmt.Errorf("Managed Node Group %q not found; cannot delete ingress/egress security group", name)
+		return fmt.Errorf("MNGs[%q] not found; cannot delete ingress/egress security group", name)
 	}
 	if cur.RemoteAccessSecurityGroupID == "" {
 		return fmt.Errorf("MNG[%q] security group ID not found; cannot delete ingress/egress security group", name)

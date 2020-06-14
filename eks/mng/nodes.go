@@ -369,7 +369,7 @@ func (ts *tester) createASGs() error {
 		mngName := tv.name
 		cur, ok := ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName]
 		if !ok {
-			return fmt.Errorf("MNG name %q not found after creation", mngName)
+			return fmt.Errorf("MNGs[%q] not found after creation", mngName)
 		}
 
 		mngStackID := cur.MNGCFNStackID
@@ -392,7 +392,7 @@ func (ts *tester) createASGs() error {
 					cur, ok = ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName]
 					if !ok {
 						cancel()
-						return fmt.Errorf("MNG name %q not found after creation", mngName)
+						return fmt.Errorf("MNGs[%q] not found after creation", mngName)
 					}
 					timeEnd := time.Now()
 					cur.TimeFrameCreate = timeutil.NewTimeFrame(cur.TimeFrameCreate.StartUTC, cur.TimeFrameCreate.EndUTC.Add(timeEnd.Sub(timeStart)))
@@ -407,7 +407,7 @@ func (ts *tester) createASGs() error {
 				case "MNGID":
 					cur, ok = ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName]
 					if !ok {
-						return fmt.Errorf("MNG name %q not found after creation", mngName)
+						return fmt.Errorf("MNGs[%q] not found after creation", mngName)
 					}
 					timeEnd := time.Now()
 					cur.TimeFrameCreate = timeutil.NewTimeFrame(cur.TimeFrameCreate.StartUTC, cur.TimeFrameCreate.EndUTC.Add(timeEnd.Sub(timeStart)))
@@ -480,185 +480,166 @@ func (ts *tester) createASGs() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
-func (ts *tester) deleteASG() error {
-	ts.cfg.Logger.Info("deleting managed node groups")
-	for mngName, cur := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
-		if mngName == "" {
-			ts.cfg.Logger.Warn("empty name found in status map")
-			delete(ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs, "")
-			continue
-		}
-		if cur.Status == "" || cur.Status == wait.ManagedNodeGroupStatusDELETEDORNOTEXIST {
-			ts.cfg.Logger.Info("managed node group already deleted; no need to delete managed node group", zap.String("name", mngName))
-			continue
-		}
+func (ts *tester) deleteASGs(mngName string) (err error) {
+	cur, ok := ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName]
+	if !ok {
+		return fmt.Errorf("MNGs[%q] not found; cannot create ingress/egress security group", mngName)
+	}
+	if cur.Status == "" || cur.Status == wait.ManagedNodeGroupStatusDELETEDORNOTEXIST {
+		ts.cfg.Logger.Info("managed node group already deleted; no need to delete managed node group", zap.String("name", mngName))
+		return nil
+	}
 
-		useCFN := cur.MNGCFNStackID != ""
-		if ts.failedOnce {
-			useCFN = false
-		}
+	ts.cfg.Logger.Info("deleting managed node group", zap.String("name", mngName))
+	useCFN := cur.MNGCFNStackID != ""
+	if _, ok := ts.deleteRequested[mngName]; ok {
+		useCFN = false
+	}
 
-		var err error
-		if useCFN {
-			ts.cfg.Logger.Info("deleting managed node group using CFN",
-				zap.String("mng-name", mngName),
-				zap.String("cfn-stack-id", cur.MNGCFNStackID),
-			)
-			_, err = ts.cfg.CFNAPI.DeleteStack(&cloudformation.DeleteStackInput{
-				StackName: aws.String(cur.MNGCFNStackID),
-			})
+	if useCFN {
+		ts.cfg.Logger.Info("deleting managed node group using CFN",
+			zap.String("mng-name", mngName),
+			zap.String("cfn-stack-id", cur.MNGCFNStackID),
+		)
+		_, err = ts.cfg.CFNAPI.DeleteStack(&cloudformation.DeleteStackInput{
+			StackName: aws.String(cur.MNGCFNStackID),
+		})
+	} else {
+		ts.cfg.Logger.Info("deleting managed node group using EKS API", zap.String("name", mngName))
+		_, err = ts.cfg.EKSAPI.DeleteNodegroup(&aws_eks.DeleteNodegroupInput{
+			ClusterName:   aws.String(ts.cfg.EKSConfig.Name),
+			NodegroupName: aws.String(mngName),
+		})
+	}
+	ts.deleteRequested[mngName] = struct{}{}
+
+	if err != nil {
+		if strings.Contains(err.Error(), "No cluster found for") {
+			err = nil
+			ts.cfg.Logger.Warn("deleted managed node group; cluster has already been deleted", zap.Error(err))
+			cur.Status = fmt.Sprintf("deleted managed node group (%v)", err)
 		} else {
-			ts.cfg.Logger.Info("deleting managed node group using EKS API", zap.String("name", mngName))
-			_, err = ts.cfg.EKSAPI.DeleteNodegroup(&aws_eks.DeleteNodegroupInput{
-				ClusterName:   aws.String(ts.cfg.EKSConfig.Name),
-				NodegroupName: aws.String(mngName),
-			})
+			ts.cfg.Logger.Warn("failed to delete managed node group", zap.Error(err))
+			cur.Status = fmt.Sprintf("failed to delete managed node group (%v)", err)
 		}
+		ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName] = cur
+		ts.cfg.EKSConfig.Sync()
 		if err != nil {
-			if strings.Contains(err.Error(), "No cluster found for") {
-				err = nil
-				ts.cfg.Logger.Warn("deleted managed node group; cluster has already been deleted", zap.Error(err))
-				cur.Status = fmt.Sprintf("deleted managed node group (%v)", err)
-			} else {
-				ts.cfg.Logger.Warn("failed to delete managed node group", zap.Error(err))
-				cur.Status = fmt.Sprintf("failed to delete managed node group (%v)", err)
-			}
-			ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName] = cur
-			ts.cfg.EKSConfig.Sync()
-			if err != nil {
-				return err
-			}
+			return err
 		}
 	}
 
-	for mngName, cur := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
-		if cur.Status == "" || cur.Status == wait.ManagedNodeGroupStatusDELETEDORNOTEXIST {
-			ts.cfg.Logger.Info("managed node group already deleted; no need to delete managed node group", zap.String("name", mngName))
-			continue
+	timeStart := time.Now()
+
+	if useCFN {
+		ts.cfg.Logger.Info("waiting for delete managed node group using CFN",
+			zap.String("mng-name", mngName),
+			zap.String("cfn-stack-id", cur.MNGCFNStackID),
+		)
+		initialWait, timeout := 2*time.Minute, 15*time.Minute
+		if len(cur.Instances) > 50 {
+			initialWait, timeout = 3*time.Minute, 20*time.Minute
 		}
-
-		useCFN := cur.MNGCFNStackID != ""
-		if ts.failedOnce {
-			useCFN = false
-		}
-
-		timeStart := time.Now()
-
-		if useCFN {
-			ts.cfg.Logger.Info("waiting for delete managed node group using CFN",
-				zap.String("mng-name", mngName),
-				zap.String("cfn-stack-id", cur.MNGCFNStackID),
-			)
-			initialWait, timeout := 2*time.Minute, 15*time.Minute
-			if len(cur.Instances) > 50 {
-				initialWait, timeout = 3*time.Minute, 20*time.Minute
-			}
-			ctx, cancel := context.WithTimeout(context.Background(), timeout)
-			ch := cfn.Poll(
-				ctx,
-				make(chan struct{}), // do not exit on stop
-				ts.cfg.Logger,
-				ts.cfg.CFNAPI,
-				cur.MNGCFNStackID,
-				cloudformation.ResourceStatusDeleteComplete,
-				initialWait,
-				15*time.Second,
-			)
-			var st cfn.StackStatus
-			for st = range ch {
-				if st.Error != nil {
-					var ok bool
-					cur, ok = ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName]
-					if !ok {
-						cancel()
-						return fmt.Errorf("MNG name %q not found after creation", mngName)
-					}
-					timeEnd := time.Now()
-					cur.TimeFrameDelete = timeutil.NewTimeFrame(timeStart, timeEnd)
-					if strings.Contains(st.Error.Error(), "No cluster found for") {
-						st.Error = nil
-						ts.cfg.Logger.Warn("deleted managed node group; cluster has already been deleted", zap.Error(st.Error))
-						cur.Status = fmt.Sprintf("deleted a managed node group (%v)", st.Error)
-					} else {
-						ts.cfg.Logger.Warn("failed to delete managed node group", zap.Error(st.Error))
-						cur.Status = fmt.Sprintf("failed to delete a managed node group (%v)", st.Error)
-					}
-					ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName] = cur
-					ts.cfg.EKSConfig.Sync()
-					if st.Error == nil {
-						break
-					}
-				}
-			}
-			cancel()
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+		ch := cfn.Poll(
+			ctx,
+			make(chan struct{}), // do not exit on stop
+			ts.cfg.Logger,
+			ts.cfg.CFNAPI,
+			cur.MNGCFNStackID,
+			cloudformation.ResourceStatusDeleteComplete,
+			initialWait,
+			15*time.Second,
+		)
+		var st cfn.StackStatus
+		for st = range ch {
 			if st.Error != nil {
-				return st.Error
-			}
-
-		} else {
-
-			ts.cfg.Logger.Info("waiting for delete managed node group using EKS API", zap.String("name", mngName))
-			initialWait, timeout := 2*time.Minute, 15*time.Minute
-			if len(cur.Instances) > 50 {
-				initialWait, timeout = 3*time.Minute, 20*time.Minute
-			}
-			ctx, cancel := context.WithTimeout(context.Background(), timeout)
-			ch := wait.Poll(
-				ctx,
-				ts.cfg.Stopc,
-				ts.cfg.Logger,
-				ts.cfg.EKSAPI,
-				ts.cfg.EKSConfig.Name,
-				mngName,
-				wait.ManagedNodeGroupStatusDELETEDORNOTEXIST,
-				initialWait,
-				20*time.Second,
-			)
-			for sv := range ch {
-				ss, serr := ts.setStatus(sv)
-				if serr != nil {
+				var ok bool
+				cur, ok = ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName]
+				if !ok {
 					cancel()
-					return serr
+					return fmt.Errorf("MNGs[%q] not found after creation", mngName)
 				}
-				if sv.Error != nil {
-					if ss == aws_eks.NodegroupStatusDeleteFailed {
-						ts.cfg.Logger.Warn("failed to delete managed node group",
-							zap.String("status", ss),
-							zap.Error(sv.Error),
-						)
-						cancel()
-						return sv.Error
-					}
-					if strings.Contains(sv.Error.Error(), "No cluster found for") {
-						sv.Error = nil
-						ts.cfg.Logger.Warn("deleted managed node group; cluster has already been deleted",
-							zap.String("status", ss),
-							zap.Error(sv.Error),
-						)
-						break
-					}
+				timeEnd := time.Now()
+				cur.TimeFrameDelete = timeutil.NewTimeFrame(timeStart, timeEnd)
+				if strings.Contains(st.Error.Error(), "No cluster found for") {
+					st.Error = nil
+					ts.cfg.Logger.Warn("deleted managed node group; cluster has already been deleted", zap.Error(st.Error))
+					cur.Status = fmt.Sprintf("deleted a managed node group (%v)", st.Error)
+				} else {
+					ts.cfg.Logger.Warn("failed to delete managed node group", zap.Error(st.Error))
+					cur.Status = fmt.Sprintf("failed to delete a managed node group (%v)", st.Error)
+				}
+				ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName] = cur
+				ts.cfg.EKSConfig.Sync()
+				if st.Error == nil {
+					break
+				}
+			}
+		}
+		cancel()
+		if st.Error != nil {
+			return st.Error
+		}
+
+	} else {
+
+		ts.cfg.Logger.Info("waiting for delete managed node group using EKS API", zap.String("name", mngName))
+		initialWait, timeout := 2*time.Minute, 15*time.Minute
+		if len(cur.Instances) > 50 {
+			initialWait, timeout = 3*time.Minute, 20*time.Minute
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+		ch := wait.Poll(
+			ctx,
+			ts.cfg.Stopc,
+			ts.cfg.Logger,
+			ts.cfg.EKSAPI,
+			ts.cfg.EKSConfig.Name,
+			mngName,
+			wait.ManagedNodeGroupStatusDELETEDORNOTEXIST,
+			initialWait,
+			20*time.Second,
+		)
+		for sv := range ch {
+			ss, serr := ts.setStatus(sv)
+			if serr != nil {
+				cancel()
+				return serr
+			}
+			if sv.Error != nil {
+				if ss == aws_eks.NodegroupStatusDeleteFailed {
 					ts.cfg.Logger.Warn("failed to delete managed node group",
 						zap.String("status", ss),
 						zap.Error(sv.Error),
 					)
+					cancel()
+					return sv.Error
 				}
+				if strings.Contains(sv.Error.Error(), "No cluster found for") {
+					sv.Error = nil
+					ts.cfg.Logger.Warn("deleted managed node group; cluster has already been deleted",
+						zap.String("status", ss),
+						zap.Error(sv.Error),
+					)
+					break
+				}
+				ts.cfg.Logger.Warn("failed to delete managed node group",
+					zap.String("status", ss),
+					zap.Error(sv.Error),
+				)
 			}
-			cancel()
 		}
-
-		var ok bool
-		cur, ok = ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName]
-		if !ok {
-			return fmt.Errorf("MNG name %q not found after deletion", mngName)
-		}
-		timeEnd := time.Now()
-		cur.TimeFrameDelete = timeutil.NewTimeFrame(timeStart, timeEnd)
-		cur.Status = wait.ManagedNodeGroupStatusDELETEDORNOTEXIST
-		ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName] = cur
-		ts.cfg.EKSConfig.Sync()
+		cancel()
 	}
 
-	ts.cfg.Logger.Info("deleted managed node groups")
+	timeEnd := time.Now()
+	cur.TimeFrameDelete = timeutil.NewTimeFrame(timeStart, timeEnd)
+	cur.Status = wait.ManagedNodeGroupStatusDELETEDORNOTEXIST
+	ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName] = cur
+	ts.cfg.EKSConfig.Sync()
+
+	ts.cfg.Logger.Info("deleted managed node group", zap.String("name", mngName))
 	return ts.cfg.EKSConfig.Sync()
 }
 
@@ -669,7 +650,7 @@ func (ts *tester) setStatus(sv wait.ManagedNodeGroupStatus) (status string, err 
 	}
 	cur, ok := ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[name]
 	if !ok {
-		return "", fmt.Errorf("EKS Managed Node Group %q not found", name)
+		return "", fmt.Errorf("EKS MNGs[%q] not found", name)
 	}
 
 	if sv.NodeGroup == nil {

@@ -21,6 +21,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/cloudformation/cloudformationiface"
 	"go.uber.org/zap"
+	"k8s.io/utils/exec"
 )
 
 // Config defines AppMesh configuration.
@@ -113,16 +114,37 @@ func (ts *tester) Delete() error {
 
 	time.Sleep(10 * time.Second)
 
+	getAllArgs := []string{
+		ts.cfg.EKSConfig.KubectlPath,
+		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+		"--namespace=" + ts.cfg.EKSConfig.AddOnAppMesh.Namespace,
+		"get",
+		"all",
+	}
+	getAllCmd := strings.Join(getAllArgs, " ")
+
 	if err := k8s_client.DeleteNamespaceAndWait(
 		ts.cfg.Logger,
 		ts.cfg.K8SClient.KubernetesClientSet(),
 		ts.cfg.EKSConfig.AddOnAppMesh.Namespace,
 		k8s_client.DefaultNamespaceDeletionInterval,
 		k8s_client.DefaultNamespaceDeletionTimeout,
+		k8s_client.WithQueryFunc(func() {
+			println()
+			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			output, err := exec.New().CommandContext(ctx, getAllArgs[0], getAllArgs[1:]...).CombinedOutput()
+			cancel()
+			out := strings.TrimSpace(string(output))
+			if err != nil {
+				ts.cfg.Logger.Warn("'kubectl get all' failed", zap.Error(err))
+			} else {
+				fmt.Printf("\n\n'%s' output:\n\n%s\n\n", getAllCmd, out)
+			}
+		}),
 	); err != nil {
-		ts.cfg.Logger.Warn("failed to delete AppMesh namespace", zap.Error(err))
 		// TODO
 		// errs = append(errs, fmt.Sprintf("failed to delete AppMesh namespace (%v)", err))
+		ts.cfg.Logger.Warn("failed to delete AppMesh namespace", zap.Error(err))
 	}
 
 	if err := ts.deletePolicy(); err != nil {

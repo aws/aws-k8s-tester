@@ -3,6 +3,7 @@ package mng
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 	"strings"
 	"sync"
@@ -77,8 +78,8 @@ func New(cfg Config) Tester {
 			K8SClient: cfg.K8SClient,
 			EKSAPI:    cfg.EKSAPI,
 		}),
-		logsMu:     new(sync.RWMutex),
-		failedOnce: false,
+		logsMu:          new(sync.RWMutex),
+		deleteRequested: make(map[string]struct{}),
 	}
 }
 
@@ -87,7 +88,7 @@ type tester struct {
 	nodeWaiter      wait.NodeWaiter
 	versionUpgrader version_upgrade.Upgrader
 	logsMu          *sync.RWMutex
-	failedOnce      bool
+	deleteRequested map[string]struct{}
 }
 
 func (ts *tester) Create() (err error) {
@@ -165,26 +166,35 @@ func (ts *tester) Delete() error {
 	var errs []string
 	var err error
 
-	for i := 0; i < 5; i++ { // retry, leakly ENI may take awhile to be deleted
-		err = ts.deleteASG()
-		if err == nil {
+	for name := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
+		var derr error
+		for i := 0; i < 5; i++ { // retry, leakly ENI may take awhile to be deleted
+			derr = ts.deleteASGs(name)
+			if derr != nil {
+				ts.cfg.Logger.Warn("failed to delete mng; retrying", zap.String("name", name), zap.Error(derr))
+				select {
+				case <-ts.cfg.Stopc:
+					ts.cfg.Logger.Warn("aborted")
+					return nil
+				case <-time.After(time.Minute):
+				}
+			}
 			break
 		}
-		ts.failedOnce = true
-		ts.cfg.Logger.Warn("failed to delete mng", zap.Error(err))
-		select {
-		case <-ts.cfg.Stopc:
-			ts.cfg.Logger.Warn("aborted")
-			return nil
-		case <-time.After(time.Minute):
+		if derr != nil {
+			if err == nil {
+				err = derr
+			} else {
+				err = fmt.Errorf("%v; %v", err, derr)
+			}
 		}
 	}
 	if err != nil {
 		errs = append(errs, err.Error())
 	}
 
-	waitDur := 5 * time.Second
-	ts.cfg.Logger.Info("sleeping before node group role deletion", zap.Duration("wait", waitDur))
+	waitDur := time.Minute
+	ts.cfg.Logger.Info("sleeping after MNG deletion", zap.Duration("wait", waitDur))
 	time.Sleep(waitDur)
 
 	for name := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
@@ -197,6 +207,9 @@ func (ts *tester) Delete() error {
 			errs = append(errs, err.Error())
 		}
 	}
+
+	ts.cfg.Logger.Info("sleeping after MNG ENI deletion", zap.Duration("wait", waitDur))
+	time.Sleep(waitDur)
 
 	// must be run after deleting node group
 	// otherwise, "Cannot delete entity, must remove roles from instance profile first. (Service: AmazonIdentityManagement; Status Code: 409; Error Code: DeleteConflict; Request ID: 197f795b-1003-4386-81cc-44a926c42be7)"
