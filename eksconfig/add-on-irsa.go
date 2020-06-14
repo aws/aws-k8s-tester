@@ -111,14 +111,14 @@ func (cfg *Config) validateAddOnIRSA() error {
 	}
 
 	if cfg.AddOnIRSA.RoleName == "" {
-		cfg.AddOnIRSA.RoleName = cfg.Name + "-role-irsa"
+		cfg.AddOnIRSA.RoleName = cfg.Name + "-add-on-irsa-role"
 	}
 	if cfg.AddOnIRSA.RoleCFNStackYAMLFilePath == "" {
 		cfg.AddOnIRSA.RoleCFNStackYAMLFilePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".add-on-irsa.role.cfn.yaml"
 	}
 
 	if cfg.AddOnIRSA.S3Key == "" {
-		cfg.AddOnIRSA.S3Key = path.Join(cfg.Name, "s3-key-irsa")
+		cfg.AddOnIRSA.S3Key = path.Join(cfg.Name, "irsa-s3-key")
 	}
 
 	if cfg.AddOnIRSA.DeploymentResultPath == "" {
