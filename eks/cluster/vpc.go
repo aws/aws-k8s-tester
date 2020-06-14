@@ -1142,6 +1142,7 @@ func (ts *tester) deleteENIs(deletedResources map[string]struct{}) bool {
 				if strings.Contains(awsErr.Code(), "InvalidNetworkInterfaceID.NotFound") {
 					ts.cfg.Logger.Info("confirmed ENI deletion", zap.String("eni", eniID))
 					deletedResources[eniID] = struct{}{}
+					deleted = true
 					break
 				}
 			}

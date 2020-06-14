@@ -287,7 +287,6 @@ func (ts *tester) deleteSG() error {
 	ch := cfn.Poll(
 		ctx,
 		make(chan struct{}), // do not exit on stop
-
 		ts.cfg.Logger,
 		ts.cfg.CFNAPI,
 		ts.cfg.EKSConfig.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackID,

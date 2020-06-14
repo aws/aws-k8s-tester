@@ -148,6 +148,10 @@ func (ts *tester) Delete() error {
 		ts.cfg.Logger.Warn("failed to delete ASGs", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
+	time.Sleep(10 * time.Second)
+	if ok := ts.deleteENIs(); ok {
+		time.Sleep(10 * time.Second)
+	}
 	if err := ts.deleteSG(); err != nil {
 		ts.cfg.Logger.Warn("failed to delete SG", zap.Error(err))
 		errs = append(errs, err.Error())

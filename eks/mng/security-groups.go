@@ -192,13 +192,13 @@ type templateSG struct {
 	InternetIngressToPort   int
 }
 
-func (ts *tester) createIngressEgress(name string) error {
+func (ts *tester) createSG(name string) error {
 	cur, ok := ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[name]
 	if !ok {
-		return fmt.Errorf("Managed Node Group %q not found; cannot create ingress/egress", name)
+		return fmt.Errorf("Managed Node Group %q not found; cannot create ingress/egress security group", name)
 	}
 	if cur.RemoteAccessSecurityGroupID == "" {
-		return fmt.Errorf("MNG[%q] security group ID not found; cannot create ingress/egress", name)
+		return fmt.Errorf("MNG[%q] security group ID not found; cannot create ingress/egress security group", name)
 	}
 	if cur.RemoteAccessSecurityGroupIngressEgressCFNStackID != "" {
 		ts.cfg.Logger.Info("managed node group already has opened ports",
@@ -225,7 +225,7 @@ func (ts *tester) createIngressEgress(name string) error {
 		return err
 	}
 	sgID := cur.RemoteAccessSecurityGroupID
-	ts.cfg.Logger.Info("creating ingress/egress for mng using CFN",
+	ts.cfg.Logger.Info("creating ingress/egress security group for mng using CFN",
 		zap.String("mng-name", name),
 		zap.String("security-group-id", sgID),
 		zap.String("security-cfn-stack-file", cur.RemoteAccessSecurityCFNStackYAMLFilePath),
@@ -275,26 +275,26 @@ func (ts *tester) createIngressEgress(name string) error {
 	for st := range ch {
 		if st.Error != nil {
 			cancel()
-			ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("failed to create managed node group ingress/egress (%v)", st.Error))
+			ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("failed to create managed node group ingress/egress security group (%v)", st.Error))
 			return st.Error
 		}
 	}
 	cancel()
 
-	ts.cfg.Logger.Info("created ingress/egress for mng",
+	ts.cfg.Logger.Info("created ingress/egress security group for mng",
 		zap.String("mng-name", name),
 		zap.String("cfn-stack-id", cur.RemoteAccessSecurityGroupIngressEgressCFNStackID),
 	)
 	return ts.cfg.EKSConfig.Sync()
 }
 
-func (ts *tester) deleteIngressEgress(name string) error {
+func (ts *tester) deleteSG(name string) error {
 	cur, ok := ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[name]
 	if !ok {
-		return fmt.Errorf("Managed Node Group %q not found; cannot delete ingress/egress", name)
+		return fmt.Errorf("Managed Node Group %q not found; cannot delete ingress/egress security group", name)
 	}
 	if cur.RemoteAccessSecurityGroupID == "" {
-		return fmt.Errorf("MNG[%q] security group ID not found; cannot delete ingress/egress", name)
+		return fmt.Errorf("MNG[%q] security group ID not found; cannot delete ingress/egress security group", name)
 	}
 	if cur.RemoteAccessSecurityGroupIngressEgressCFNStackID == "" {
 		ts.cfg.Logger.Info("managed node group has no open ports",
@@ -304,7 +304,7 @@ func (ts *tester) deleteIngressEgress(name string) error {
 		return nil
 	}
 
-	ts.cfg.Logger.Info("deleting managed node group ingress/egress CFN stack",
+	ts.cfg.Logger.Info("deleting managed node group ingress/egress security group CFN stack",
 		zap.String("mng-name", name),
 		zap.String("cfn-stack-id", cur.RemoteAccessSecurityGroupIngressEgressCFNStackID),
 	)
@@ -318,7 +318,6 @@ func (ts *tester) deleteIngressEgress(name string) error {
 	ch := cfn.Poll(
 		ctx,
 		make(chan struct{}), // do not exit on stop
-
 		ts.cfg.Logger,
 		ts.cfg.CFNAPI,
 		cur.RemoteAccessSecurityGroupIngressEgressCFNStackID,
@@ -330,12 +329,12 @@ func (ts *tester) deleteIngressEgress(name string) error {
 	for st = range ch {
 		if st.Error != nil {
 			cancel()
-			ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("failed to delete managed node group ingress/egress (%v)", st.Error))
+			ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("failed to delete managed node group ingress/egress security group (%v)", st.Error))
 			return st.Error
 		}
 	}
 	cancel()
-	ts.cfg.Logger.Info("deleted a managed node group ingress/egress",
+	ts.cfg.Logger.Info("deleted a managed node group ingress/egress security group",
 		zap.String("mng-name", name),
 		zap.String("cfn-stack-id", cur.RemoteAccessSecurityGroupIngressEgressCFNStackID),
 	)

@@ -119,7 +119,7 @@ func (ts *tester) Create() (err error) {
 	}
 
 	for name := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
-		if err = ts.createIngressEgress(name); err != nil {
+		if err = ts.createSG(name); err != nil {
 			return err
 		}
 	}
@@ -165,7 +165,11 @@ func (ts *tester) Delete() error {
 	var errs []string
 	var err error
 	for name := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
-		err = ts.deleteIngressEgress(name)
+		time.Sleep(10 * time.Second)
+		if ok := ts.deleteENIs(name); ok {
+			time.Sleep(10 * time.Second)
+		}
+		err = ts.deleteSG(name)
 		if err != nil {
 			errs = append(errs, err.Error())
 		}
