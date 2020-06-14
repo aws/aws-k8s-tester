@@ -3,6 +3,23 @@
 <hr>
 
 
+## [v1.3.8](https://github.com/aws/aws-k8s-tester/releases/tag/v1.3.8) (2020-06-14)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.7...v1.3.8).
+
+### `eks`
+
+- Improve [`eks/app-mesh` delete operation](https://github.com/aws/aws-k8s-tester/commit/2d1346cb3e28e7669dc984683b8c95ff7a384f93).
+- Improve [`eks/mng` delete operation](https://github.com/aws/aws-k8s-tester/commit/2d1346cb3e28e7669dc984683b8c95ff7a384f93).
+
+### `pkg/k8s-client`
+
+- Add [`WithQueryFunc` for namespace deletion](https://github.com/aws/aws-k8s-tester/commit/817591fa31b1cf57446a9aca12f296cfb8721d1e).
+
+
+<hr>
+
+
 ## [v1.3.7](https://github.com/aws/aws-k8s-tester/releases/tag/v1.3.7) (2020-06-13)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.6...v1.3.7).
