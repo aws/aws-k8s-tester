@@ -192,12 +192,12 @@ type Config struct {
 	// add-on Conformance.
 	AddOnConformance *AddOnConformance `json:"add-on-conformance,omitempty"`
 
-	// AddOnCSIEBS defines parameters for EKS cluster
-	// add-on AWS EBS CSI Driver.
-	AddOnCSIEBS *AddOnCSIEBS `json:"add-on-csi-ebs,omitempty"`
 	// AddOnAppMesh defines parameters for EKS cluster
 	// add-on "EKS App Mesh Integration".
 	AddOnAppMesh *AddOnAppMesh `json:"add-on-app-mesh,omitempty"`
+	// AddOnCSIEBS defines parameters for EKS cluster
+	// add-on AWS EBS CSI Driver.
+	AddOnCSIEBS *AddOnCSIEBS `json:"add-on-csi-ebs,omitempty"`
 	// AddOnMetricsServer defines parameters for EKS cluster
 	// add-on metrics server.
 	AddOnMetricsServer *AddOnMetricsServer `json:"add-on-metrics-server,omitempty"`
@@ -852,11 +852,11 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		return fmt.Errorf("validateAddOnConformance failed [%v]", err)
 	}
 
-	if err := cfg.validateAddOnCSIEBS(); err != nil {
-		return fmt.Errorf("validateAddOnCSIEBS failed [%v]", err)
-	}
 	if err := cfg.validateAddOnAppMesh(); err != nil {
 		return fmt.Errorf("validateAddOnAppMesh failed [%v]", err)
+	}
+	if err := cfg.validateAddOnCSIEBS(); err != nil {
+		return fmt.Errorf("validateAddOnCSIEBS failed [%v]", err)
 	}
 
 	if err := cfg.validateAddOnMetricsServer(); err != nil {

@@ -46,11 +46,11 @@ func createDoc() string {
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnCSIEBS, &eksconfig.AddOnCSIEBS{}))
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnAppMesh, &eksconfig.AddOnAppMesh{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnAppMesh, &eksconfig.AddOnAppMesh{}))
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnCSIEBS, &eksconfig.AddOnCSIEBS{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')

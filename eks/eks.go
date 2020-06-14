@@ -456,18 +456,18 @@ func (ts *Tester) createTesters() (err error) {
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 		}),
-		csi_ebs.New(csi_ebs.Config{
-			Logger:    ts.lg,
-			Stopc:     ts.stopCreationCh,
-			EKSConfig: ts.cfg,
-			K8SClient: ts.k8sClient,
-		}),
 		app_mesh.New(app_mesh.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 			CFNAPI:    ts.cfnAPI,
+		}),
+		csi_ebs.New(csi_ebs.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			EKSConfig: ts.cfg,
+			K8SClient: ts.k8sClient,
 		}),
 		metrics_server.New(metrics_server.Config{
 			Logger:    ts.lg,
