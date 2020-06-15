@@ -352,7 +352,6 @@ func (ts *tester) deleteRole() error {
 	ch := cfn.Poll(
 		ctx,
 		make(chan struct{}), // do not exit on stop
-
 		ts.cfg.Logger,
 		ts.cfg.CFNAPI,
 		ts.cfg.EKSConfig.AddOnFargate.RoleCFNStackID,

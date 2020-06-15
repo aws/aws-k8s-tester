@@ -21,6 +21,9 @@ import (
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/cloudformation/cloudformationiface"
 	"go.uber.org/zap"
+	v1 "k8s.io/api/apps/v1"
+	api_errors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/exec"
 )
 
@@ -306,7 +309,6 @@ func (ts *tester) deletePolicy() error {
 	ch := cfn.Poll(
 		ctx,
 		make(chan struct{}), // do not exit on stop
-
 		ts.cfg.Logger,
 		ts.cfg.CFNAPI,
 		ts.cfg.EKSConfig.AddOnAppMesh.PolicyCFNStackID,
@@ -410,7 +412,105 @@ func (ts *tester) createInjector() error {
 	})
 }
 
+/*
+$ /tmp/kubectl-test-v1.17.6 --kubeconfig=/tmp/proudpcgaspvcpn.kubeconfig.yaml -n eks-2020061416-prime6774tws-appmesh get all
+
+NAME                                      READY   STATUS    RESTARTS   AGE
+pod/appmesh-controller-55c7bdf448-s79zr   1/1     Running   0          2m16s
+pod/appmesh-inject-6fb67dbb44-jfqvq       1/1     Running   0          2m
+
+NAME                     TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE
+service/appmesh-inject   ClusterIP   10.100.67.220   <none>        443/TCP   2m
+
+NAME                                 READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/appmesh-controller   1/1     1            1           2m16s
+deployment.apps/appmesh-inject       1/1     1            1           2m
+
+NAME                                            DESIRED   CURRENT   READY   AGE
+replicaset.apps/appmesh-controller-55c7bdf448   1         1         1       2m16s
+replicaset.apps/appmesh-inject-6fb67dbb44       1         1         1       2m
+*/
+
 func (ts *tester) deleteInjector() error {
+	ts.cfg.Logger.Info("deleting AppMesh injector Service")
+	foreground := metav1.DeletePropagationForeground
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	err := ts.cfg.K8SClient.KubernetesClientSet().
+		CoreV1().
+		Services(ts.cfg.EKSConfig.AddOnAppMesh.Namespace).
+		Delete(
+			ctx,
+			chartNameInjector,
+			metav1.DeleteOptions{
+				GracePeriodSeconds: aws.Int64(0),
+				PropagationPolicy:  &foreground,
+			},
+		)
+	cancel()
+	if err != nil && !api_errors.IsNotFound(err) {
+		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
+	} else {
+		ts.cfg.Logger.Info("deleted AppMesh injector Service")
+	}
+	time.Sleep(20 * time.Second)
+
+	ts.cfg.Logger.Info("deleting all ReplicaSets")
+	var rs *v1.ReplicaSetList
+	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
+	rs, err = ts.cfg.K8SClient.KubernetesClientSet().
+		AppsV1().
+		ReplicaSets(ts.cfg.EKSConfig.AddOnAppMesh.Namespace).
+		List(ctx, metav1.ListOptions{})
+	cancel()
+	if err != nil {
+		ts.cfg.Logger.Warn("failed to list replicasets", zap.Error(err))
+	} else {
+		for _, v := range rs.Items {
+			name := v.Name
+			ts.cfg.Logger.Info("deleting replicaset", zap.String("name", name))
+			ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
+			err = ts.cfg.K8SClient.KubernetesClientSet().
+				AppsV1().
+				ReplicaSets(ts.cfg.EKSConfig.AddOnAppMesh.Namespace).
+				Delete(
+					ctx,
+					name,
+					metav1.DeleteOptions{
+						GracePeriodSeconds: aws.Int64(0),
+						PropagationPolicy:  &foreground,
+					},
+				)
+			cancel()
+			if err != nil && !api_errors.IsNotFound(err) {
+				ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
+			} else {
+				ts.cfg.Logger.Info("deleted AppMesh injector replicaset", zap.String("name", name))
+			}
+		}
+	}
+	time.Sleep(20 * time.Second)
+
+	ts.cfg.Logger.Info("deleting AppMesh injector Deployment")
+	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
+	err = ts.cfg.K8SClient.KubernetesClientSet().
+		AppsV1().
+		Deployments(ts.cfg.EKSConfig.AddOnAppMesh.Namespace).
+		Delete(
+			ctx,
+			chartNameInjector,
+			metav1.DeleteOptions{
+				GracePeriodSeconds: aws.Int64(0),
+				PropagationPolicy:  &foreground,
+			},
+		)
+	cancel()
+	if err != nil && !api_errors.IsNotFound(err) {
+		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
+	} else {
+		ts.cfg.Logger.Info("deleted AppMesh injector deployment")
+	}
+	time.Sleep(20 * time.Second)
+
 	return helm.Uninstall(helm.InstallConfig{
 		Logger:         ts.cfg.Logger,
 		Timeout:        15 * time.Minute,
