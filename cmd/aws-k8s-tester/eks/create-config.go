@@ -22,7 +22,7 @@ func newCreateConfig() *cobra.Command {
 }
 
 func createConfigFunc(cmd *cobra.Command, args []string) {
-	if autoPath && path == "" {
+	if autoPath {
 		path = filepath.Join(os.TempDir(), randutil.String(15)+".yaml")
 	}
 	if path == "" {

@@ -5,16 +5,19 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/aws/aws-k8s-tester/ec2"
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
+	"github.com/aws/aws-k8s-tester/pkg/randutil"
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
 )
 
 var (
 	path         string
+	autoPath     bool
 	enablePrompt bool
 )
 
@@ -26,6 +29,7 @@ func NewCommand() *cobra.Command {
 		SuggestFor: []string{"creat"},
 	}
 	cmd.PersistentFlags().StringVarP(&path, "path", "p", "", "ec2 test configuration file path")
+	cmd.PersistentFlags().BoolVarP(&autoPath, "auto-path", "a", false, "'true' to auto-generate path for create config/cluster, overwrites existing --path value")
 	cmd.PersistentFlags().BoolVarP(&enablePrompt, "enable-prompt", "e", true, "'true' to enable prompt mode")
 	cmd.AddCommand(
 		newCreateConfig(),
@@ -44,6 +48,9 @@ func newCreateConfig() *cobra.Command {
 }
 
 func createConfigFunc(cmd *cobra.Command, args []string) {
+	if autoPath {
+		path = filepath.Join(os.TempDir(), randutil.String(15)+".yaml")
+	}
 	if path == "" {
 		fmt.Fprintln(os.Stderr, "'--path' flag is not specified")
 		os.Exit(1)
@@ -90,6 +97,9 @@ func newCreateInstances() *cobra.Command {
 }
 
 func createInstancesFunc(cmd *cobra.Command, args []string) {
+	if autoPath {
+		path = filepath.Join(os.TempDir(), randutil.String(15)+".yaml")
+	}
 	if path == "" {
 		fmt.Fprintln(os.Stderr, "'--path' flag is not specified")
 		os.Exit(1)
