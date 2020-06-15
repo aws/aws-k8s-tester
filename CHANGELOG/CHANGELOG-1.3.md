@@ -11,11 +11,11 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.8...v1.3.9
 
 - Improve [`eks/cluster` delete operation](https://github.com/aws/aws-k8s-tester/commit/3b22aefdbf81576d01d2c02a92c59b179b661e69).
 - Fix [`eks/mng` delete operation](https://github.com/aws/aws-k8s-tester/commit/3b22aefdbf81576d01d2c02a92c59b179b661e69).
-- Add [`eks/nlb-guestbook`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`eks/nlb-guestbook`](https://github.com/aws/aws-k8s-tester/commit/abbfcaa5089e74590171dceaaa0ec8bbef76b23f).
 
 ### `eksconfig`
 
-- Add [`AddOnNLBGuestbook`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`AddOnNLBGuestbook`](https://github.com/aws/aws-k8s-tester/commit/abbfcaa5089e74590171dceaaa0ec8bbef76b23f).
   - Set via `ADD_ON_NLB_GUESTBOOK_ENABLE`.
 
 
