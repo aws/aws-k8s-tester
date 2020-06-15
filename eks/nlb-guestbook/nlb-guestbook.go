@@ -57,7 +57,7 @@ const (
 
 	nlbRedisFollowerDeploymentName = "redis-follower-deployment"
 	nlbRedisFollowerAppName        = "redis-follower"
-	nlbRedisFollowerAppImageName   = "redis:2.8.23" // ref. https://hub.docker.com/_/redis/?tab=tags
+	nlbRedisFollowerAppImageName   = "k8s.gcr.io/redis-slave:v2" // ref. https://hub.docker.com/_/redis/?tab=tags
 	nlbRedisFollowerServiceName    = "redis-follower-service"
 
 	nlbGuestbookDeploymentName = "guestbook-deployment"
@@ -269,6 +269,7 @@ func (ts *tester) createDeploymentRedisLeader() error {
 									ImagePullPolicy: v1.PullAlways,
 									Ports: []v1.ContainerPort{
 										{
+											Name:          "redis-server",
 											Protocol:      v1.ProtocolTCP,
 											ContainerPort: 6379,
 										},
@@ -415,12 +416,12 @@ func (ts *tester) createServiceRedisLeader() error {
 						"app.kubernetes.io/name": nlbRedisLeaderAppName,
 						"role":                   "leader",
 					},
-					Type: v1.ServiceTypeLoadBalancer,
+					Type: v1.ServiceTypeClusterIP,
 					Ports: []v1.ServicePort{
 						{
 							Protocol:   v1.ProtocolTCP,
 							Port:       6379,
-							TargetPort: intstr.FromInt(6379),
+							TargetPort: intstr.FromString("redis-server"),
 						},
 					},
 				},
@@ -557,6 +558,7 @@ func (ts *tester) createDeploymentRedisFollower() error {
 									ImagePullPolicy: v1.PullAlways,
 									Ports: []v1.ContainerPort{
 										{
+											Name:          "redis-server",
 											Protocol:      v1.ProtocolTCP,
 											ContainerPort: 6379,
 										},
@@ -703,12 +705,12 @@ func (ts *tester) createServiceRedisFollower() error {
 						"app.kubernetes.io/name": nlbRedisFollowerAppName,
 						"role":                   "follower",
 					},
-					Type: v1.ServiceTypeLoadBalancer,
+					Type: v1.ServiceTypeClusterIP,
 					Ports: []v1.ServicePort{
 						{
 							Protocol:   v1.ProtocolTCP,
 							Port:       6379,
-							TargetPort: intstr.FromInt(6379),
+							TargetPort: intstr.FromString("redis-server"),
 						},
 					},
 				},
