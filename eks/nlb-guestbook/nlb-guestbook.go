@@ -50,20 +50,24 @@ type tester struct {
 }
 
 const (
-	redisLeaderDeploymentName = "redis-leader-deployment"
+	redisLabelName = "redis"
+
+	redisLeaderDeploymentName = "redis-leader"
 	redisLeaderAppName        = "redis-master"
 	redisLeaderAppImageName   = "redis:2.8.23" // ref. https://hub.docker.com/_/redis/?tab=tags
 	redisLeaderServiceName    = "redis-master" // e..g "Connecting to MASTER redis-master:6379"
+	redisLeaderRoleName       = "master"       // TODO: change this to "leader"
 
-	redisFollowerDeploymentName = "redis-follower-deployment"
+	redisFollowerDeploymentName = "redis-follower"
 	redisFollowerAppName        = "redis-slave"
 	redisFollowerAppImageName   = "k8s.gcr.io/redis-slave:v2" // ref. https://hub.docker.com/_/redis/?tab=tags
 	redisFollowerServiceName    = "redis-slave"
+	redisFollowerRoleName       = "slave" // TODO: change this to "leader"
 
-	nlbGuestbookDeploymentName = "guestbook-deployment"
+	nlbGuestbookDeploymentName = "guestbook"
 	nlbGuestbookAppName        = "guestbook"
 	nlbGuestbookAppImageName   = "k8s.gcr.io/guestbook:v3"
-	nlbGuestbookServiceName    = "guestbook-service"
+	nlbGuestbookServiceName    = "guestbook"
 )
 
 func (ts *tester) Create() error {
@@ -242,23 +246,23 @@ func (ts *tester) createDeploymentRedisLeader() error {
 					Name:      redisLeaderDeploymentName,
 					Namespace: ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace,
 					Labels: map[string]string{
-						"app.kubernetes.io/name": redisLeaderAppName,
-						"role":                   "leader",
+						"app.kubernetes.io/name": redisLabelName,
+						"role":                   redisLeaderRoleName,
 					},
 				},
 				Spec: appsv1.DeploymentSpec{
 					Replicas: aws.Int32(1),
 					Selector: &metav1.LabelSelector{
 						MatchLabels: map[string]string{
-							"app.kubernetes.io/name": redisLeaderAppName,
-							"role":                   "leader",
+							"app.kubernetes.io/name": redisLabelName,
+							"role":                   redisLeaderRoleName,
 						},
 					},
 					Template: v1.PodTemplateSpec{
 						ObjectMeta: metav1.ObjectMeta{
 							Labels: map[string]string{
-								"app.kubernetes.io/name": redisLeaderAppName,
-								"role":                   "leader",
+								"app.kubernetes.io/name": redisLabelName,
+								"role":                   redisLeaderRoleName,
 							},
 						},
 						Spec: v1.PodSpec{
@@ -341,7 +345,7 @@ func (ts *tester) waitDeploymentRedisLeader() error {
 		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
 		"--namespace=" + ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace,
 		"logs",
-		"--selector=app.kubernetes.io/name=" + redisLeaderAppName,
+		"--selector=app.kubernetes.io/name=" + redisLabelName + ",role=" + redisFollowerRoleName,
 	}
 	logsCmd := strings.Join(logsArgs, " ")
 
@@ -429,11 +433,15 @@ func (ts *tester) createServiceRedisLeader() error {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      redisLeaderServiceName,
 					Namespace: ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace,
+					Labels: map[string]string{
+						"app.kubernetes.io/name": redisLabelName,
+						"role":                   redisLeaderRoleName,
+					},
 				},
 				Spec: v1.ServiceSpec{
 					Selector: map[string]string{
-						"app.kubernetes.io/name": redisLeaderAppName,
-						"role":                   "leader",
+						"app.kubernetes.io/name": redisLabelName,
+						"role":                   redisLeaderRoleName,
 					},
 					Type: v1.ServiceTypeClusterIP,
 					Ports: []v1.ServicePort{
@@ -550,23 +558,23 @@ func (ts *tester) createDeploymentRedisFollower() error {
 					Name:      redisFollowerDeploymentName,
 					Namespace: ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace,
 					Labels: map[string]string{
-						"app.kubernetes.io/name": redisFollowerAppName,
-						"role":                   "follower",
+						"app.kubernetes.io/name": redisLabelName,
+						"role":                   redisFollowerRoleName,
 					},
 				},
 				Spec: appsv1.DeploymentSpec{
 					Replicas: aws.Int32(2),
 					Selector: &metav1.LabelSelector{
 						MatchLabels: map[string]string{
-							"app.kubernetes.io/name": redisFollowerAppName,
-							"role":                   "follower",
+							"app.kubernetes.io/name": redisLabelName,
+							"role":                   redisFollowerRoleName,
 						},
 					},
 					Template: v1.PodTemplateSpec{
 						ObjectMeta: metav1.ObjectMeta{
 							Labels: map[string]string{
-								"app.kubernetes.io/name": redisFollowerAppName,
-								"role":                   "follower",
+								"app.kubernetes.io/name": redisLabelName,
+								"role":                   redisFollowerRoleName,
 							},
 						},
 						Spec: v1.PodSpec{
@@ -649,7 +657,7 @@ func (ts *tester) waitDeploymentRedisFollower() error {
 		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
 		"--namespace=" + ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace,
 		"logs",
-		"--selector=app.kubernetes.io/name=" + redisFollowerAppName,
+		"--selector=app.kubernetes.io/name=" + redisLabelName + ",role=" + redisLeaderRoleName,
 	}
 	logsCmd := strings.Join(logsArgs, " ")
 
@@ -737,11 +745,15 @@ func (ts *tester) createServiceRedisFollower() error {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      redisFollowerServiceName,
 					Namespace: ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace,
+					Labels: map[string]string{
+						"app.kubernetes.io/name": redisLabelName,
+						"role":                   redisFollowerRoleName,
+					},
 				},
 				Spec: v1.ServiceSpec{
 					Selector: map[string]string{
-						"app.kubernetes.io/name": redisFollowerAppName,
-						"role":                   "follower",
+						"app.kubernetes.io/name": redisLabelName,
+						"role":                   redisFollowerRoleName,
 					},
 					Type: v1.ServiceTypeClusterIP,
 					Ports: []v1.ServicePort{
@@ -884,6 +896,7 @@ func (ts *tester) createDeploymentGuestbook() error {
 										{
 											Protocol:      v1.ProtocolTCP,
 											ContainerPort: 3000,
+											Name:          "http-server",
 										},
 									},
 								},
@@ -1041,8 +1054,8 @@ func (ts *tester) createServiceGuestbook() error {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      nlbGuestbookServiceName,
 					Namespace: ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace,
-					Annotations: map[string]string{
-						"service.beta.kubernetes.io/aws-load-balancer-type": "nlb",
+					Labels: map[string]string{
+						"app.kubernetes.io/name": nlbGuestbookAppName,
 					},
 				},
 				Spec: v1.ServiceSpec{
@@ -1053,8 +1066,8 @@ func (ts *tester) createServiceGuestbook() error {
 					Ports: []v1.ServicePort{
 						{
 							Protocol:   v1.ProtocolTCP,
-							Port:       3000,
-							TargetPort: intstr.FromInt(3000),
+							Port:       80,
+							TargetPort: intstr.FromString("http-server"),
 						},
 					},
 				},
@@ -1192,7 +1205,7 @@ func (ts *tester) createServiceGuestbook() error {
 	fmt.Printf("NLB guestbook URL: %s\n\n", ts.cfg.EKSConfig.AddOnNLBGuestbook.URL)
 
 	if !htmlChecked {
-		return fmt.Errorf("NLB hello-world %q did not return expected HTML output", ts.cfg.EKSConfig.AddOnNLBHelloWorld.URL)
+		return fmt.Errorf("NLB hello-world %q did not return expected HTML output", ts.cfg.EKSConfig.AddOnNLBGuestbook.URL)
 	}
 	return ts.cfg.EKSConfig.Sync()
 }
