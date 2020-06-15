@@ -65,6 +65,9 @@ func GetTempFilePath() (path string, err error) {
 
 // Exist returns true if a file or directory exists.
 func Exist(name string) bool {
+	if name == "" {
+		return false
+	}
 	_, err := os.Stat(name)
 	return err == nil
 }

@@ -203,21 +203,19 @@ func (sh *ssh) Connect() (err error) {
 }
 
 func (sh *ssh) Close() {
-	sh.lg.Info("closing connection",
-		zap.String("public-ip", sh.cfg.PublicIP),
-		zap.String("public-dns-name", sh.cfg.PublicDNSName),
-	)
 	sh.cancel()
 	if sh.conn != nil {
 		cerr := sh.conn.Close()
-		sh.lg.Info("closed connection",
-			zap.String("public-ip", sh.cfg.PublicIP),
-			zap.String("public-dns-name", sh.cfg.PublicDNSName),
-			zap.Error(cerr),
-		)
-		return
+		if cerr != nil {
+			sh.lg.Warn("closed connection with error",
+				zap.String("public-ip", sh.cfg.PublicIP),
+				zap.String("public-dns-name", sh.cfg.PublicDNSName),
+				zap.Error(cerr),
+			)
+			return
+		}
 	}
-	sh.lg.Info("closed connection",
+	sh.lg.Debug("closed connection",
 		zap.String("public-ip", sh.cfg.PublicIP),
 		zap.String("public-dns-name", sh.cfg.PublicDNSName),
 	)
@@ -293,13 +291,41 @@ func (sh *ssh) Run(cmd string, opts ...OpOption) (out []byte, err error) {
 	}
 
 	if err != nil {
+		shouldRetry := true
 		oerr, ok := err.(*net.OpError)
 		if ok {
-			sh.lg.Warn("command run failed", zap.String("cmd", cmd), zap.Bool("op-error-temporary", oerr.Temporary()), zap.Bool("op-error-timeout", oerr.Timeout()), zap.Error(err))
+			shouldRetry = oerr.Temporary()
+			sh.lg.Warn("command run failed",
+				zap.String("cmd", cmd),
+				zap.Bool("op-error-temporary", oerr.Temporary()),
+				zap.Bool("op-error-timeout", oerr.Timeout()),
+				zap.Error(err),
+			)
 		} else {
-			sh.lg.Warn("command run failed", zap.String("cmd", cmd), zap.String("error-type", reflect.TypeOf(err).String()), zap.Error(err))
+			if strings.Contains(err.Error(), "exited with status ") {
+				shouldRetry = false
+			}
+			serr, ok := err.(*cryptossh.ExitError)
+			if ok {
+				shouldRetry = false
+				sh.lg.Warn("command run failed with exit code",
+					zap.String("cmd", cmd),
+					zap.String("error-type", reflect.TypeOf(err).String()),
+					zap.Bool("should-retry", shouldRetry),
+					zap.Int("exit-code", serr.ExitStatus()),
+					zap.Error(err),
+				)
+			} else {
+				sh.lg.Warn("command run failed",
+					zap.String("cmd", cmd),
+					zap.String("error-type", reflect.TypeOf(err).String()),
+					zap.Bool("should-retry", shouldRetry),
+					zap.Error(err),
+				)
+			}
 		}
-		if sh.retryCounter[key] > 0 {
+
+		if shouldRetry && sh.retryCounter[key] > 0 {
 			// e.g. "read tcp 10.119.223.210:58688->54.184.39.156:22: read: connection timed out"
 			sh.lg.Warn("retrying command run", zap.Int("retries", sh.retryCounter[key]))
 			sh.Close()

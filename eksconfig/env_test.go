@@ -182,6 +182,15 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_DEPLOYMENT_NODE_SELECTOR", `{"a":"b","c":"d"}`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_DEPLOYMENT_NODE_SELECTOR")
 
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_GUESTBOOK_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_GUESTBOOK_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_GUESTBOOK_DEPLOYMENT_REPLICAS", "333")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_GUESTBOOK_DEPLOYMENT_REPLICAS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_GUESTBOOK_NAMESPACE", "test-namespace")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_GUESTBOOK_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_GUESTBOOK_DEPLOYMENT_NODE_SELECTOR", `{"a":"b","c":"d"}`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_GUESTBOOK_DEPLOYMENT_NODE_SELECTOR")
+
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_ENABLE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_DEPLOYMENT_REPLICAS_ALB", "333")
@@ -254,7 +263,7 @@ func TestEnv(t *testing.T) {
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_NAMESPACE", "config-map-namespace")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_NAMESPACE", "configmap-namespace")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_NAMESPACE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_OBJECTS", "10000")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_OBJECTS")
@@ -263,7 +272,7 @@ func TestEnv(t *testing.T) {
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_NAMESPACE", "config-map-namespace")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_NAMESPACE", "configmap-namespace")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_NAMESPACE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_OBJECTS", "10000")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_OBJECTS")
@@ -821,6 +830,19 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("unexpected cfg.AddOnNLBHelloWorld.DeploymentNodeSelector %v", cfg.AddOnNLBHelloWorld.DeploymentNodeSelector)
 	}
 
+	if !cfg.AddOnNLBGuestbook.Enable {
+		t.Fatalf("unexpected cfg.AddOnNLBGuestbook.Enable %v", cfg.AddOnNLBGuestbook.Enable)
+	}
+	if cfg.AddOnNLBGuestbook.DeploymentReplicas != 333 {
+		t.Fatalf("unexpected cfg.AddOnNLBGuestbook.DeploymentReplicas %d", cfg.AddOnNLBGuestbook.DeploymentReplicas)
+	}
+	if cfg.AddOnNLBGuestbook.Namespace != "test-namespace" {
+		t.Fatalf("unexpected cfg.AddOnNLBGuestbook.Namespace %q", cfg.AddOnNLBGuestbook.Namespace)
+	}
+	if !reflect.DeepEqual(cfg.AddOnNLBGuestbook.DeploymentNodeSelector, expectedNodeSelectorNLB) {
+		t.Fatalf("unexpected cfg.AddOnNLBGuestbook.DeploymentNodeSelector %v", cfg.AddOnNLBGuestbook.DeploymentNodeSelector)
+	}
+
 	if !cfg.AddOnALB2048.Enable {
 		t.Fatalf("unexpected cfg.AddOnALB2048.Enable %v", cfg.AddOnALB2048.Enable)
 	}
@@ -927,7 +949,7 @@ func TestEnv(t *testing.T) {
 	if !cfg.AddOnConfigmapsLocal.Enable {
 		t.Fatalf("unexpected cfg.AddOnConfigmapsLocal.Enable %v", cfg.AddOnConfigmapsLocal.Enable)
 	}
-	if cfg.AddOnConfigmapsLocal.Namespace != "config-map-namespace" {
+	if cfg.AddOnConfigmapsLocal.Namespace != "configmap-namespace" {
 		t.Fatalf("unexpected cfg.AddOnConfigmapsLocal.Namespace %q", cfg.AddOnConfigmapsLocal.Namespace)
 	}
 	if cfg.AddOnConfigmapsLocal.Objects != 10000 {
@@ -939,7 +961,7 @@ func TestEnv(t *testing.T) {
 	if !cfg.AddOnConfigmapsRemote.Enable {
 		t.Fatalf("unexpected cfg.AddOnConfigmapsRemote.Enable %v", cfg.AddOnConfigmapsRemote.Enable)
 	}
-	if cfg.AddOnConfigmapsRemote.Namespace != "config-map-namespace" {
+	if cfg.AddOnConfigmapsRemote.Namespace != "configmap-namespace" {
 		t.Fatalf("unexpected cfg.AddOnConfigmapsRemote.Namespace %q", cfg.AddOnConfigmapsRemote.Namespace)
 	}
 	if cfg.AddOnConfigmapsRemote.Objects != 10000 {
@@ -1657,6 +1679,8 @@ func TestEnvAddOnKubernetesDashboard(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE", `true`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE")
 
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_METRICS_SERVER_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_METRICS_SERVER_ENABLE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_ENABLE")
 
@@ -1666,6 +1690,9 @@ func TestEnvAddOnKubernetesDashboard(t *testing.T) {
 	err := cfg.ValidateAndSetDefaults()
 	assert.NoError(t, err)
 
+	if !cfg.AddOnMetricsServer.Enable {
+		t.Fatalf("unexpected cfg.AddOnMetricsServer.Enable %v", cfg.AddOnMetricsServer.Enable)
+	}
 	if !cfg.AddOnKubernetesDashboard.Enable {
 		t.Fatalf("unexpected cfg.AddOnKubernetesDashboard.Enable %v", cfg.AddOnKubernetesDashboard.Enable)
 	}

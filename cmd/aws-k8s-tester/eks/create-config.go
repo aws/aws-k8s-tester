@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
+	"github.com/aws/aws-k8s-tester/pkg/randutil"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/spf13/cobra"
 )
@@ -20,6 +22,9 @@ func newCreateConfig() *cobra.Command {
 }
 
 func createConfigFunc(cmd *cobra.Command, args []string) {
+	if autoPath {
+		path = filepath.Join(os.TempDir(), randutil.String(15)+".yaml")
+	}
 	if path == "" {
 		fmt.Fprintln(os.Stderr, "'--path' flag is not specified")
 		os.Exit(1)
@@ -37,7 +42,7 @@ func createConfigFunc(cmd *cobra.Command, args []string) {
 
 	if err = cfg.ValidateAndSetDefaults(); err != nil {
 		fmt.Printf("\n*********************************\n")
-		fmt.Printf("'aws-k8s-tester eks create config' fail %v\n", err)
+		fmt.Printf("'aws-k8s-tester eks create config --path %q' fail %v\n", path, err)
 		os.Exit(1)
 	}
 
@@ -51,5 +56,5 @@ func createConfigFunc(cmd *cobra.Command, args []string) {
 	println()
 
 	fmt.Printf("\n*********************************\n")
-	fmt.Printf("'aws-k8s-tester eks create config' success\n")
+	fmt.Printf("'aws-k8s-tester eks create config --path %q' success\n", path)
 }

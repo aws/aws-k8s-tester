@@ -123,7 +123,7 @@ func (cfg *Config) validateAddOnFargate() error {
 	switch cfg.AddOnFargate.RoleCreate {
 	case true: // need create one, or already created
 		if cfg.AddOnFargate.RoleName == "" {
-			cfg.AddOnFargate.RoleName = cfg.Name + "-role-fargate"
+			cfg.AddOnFargate.RoleName = cfg.Name + "-add-on-fargate-role"
 		}
 		if cfg.AddOnFargate.RoleARN != "" {
 			// just ignore...

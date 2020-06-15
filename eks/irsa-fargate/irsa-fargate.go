@@ -13,7 +13,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/aws/aws-k8s-tester/eks/fargate"
+	fargate_wait "github.com/aws/aws-k8s-tester/eks/fargate/wait"
 	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
@@ -186,12 +186,6 @@ func (ts *tester) Delete() error {
 	ts.cfg.Logger.Info("wait for a minute after deleting OIDC provider")
 	time.Sleep(time.Minute)
 
-	if err := ts.deleteS3(); err != nil {
-		errs = append(errs, fmt.Sprintf("failed to delete S3 (%v)", err))
-	}
-	ts.cfg.Logger.Info("wait after deleting S3")
-	time.Sleep(20 * time.Second)
-
 	if err := k8s_client.DeleteNamespaceAndWait(
 		ts.cfg.Logger,
 		ts.cfg.K8SClient.KubernetesClientSet(),
@@ -241,31 +235,6 @@ func (ts *tester) createS3() (err error) {
 		)
 	}
 	return ts.cfg.EKSConfig.Sync()
-}
-
-func (ts *tester) deleteS3() error {
-	if ts.cfg.EKSConfig.S3BucketName == "" {
-		ts.cfg.Logger.Info("skipping S3 deletes for IRSA add-on")
-		return nil
-	}
-	s3Key := ts.cfg.EKSConfig.AddOnIRSAFargate.S3Key
-	_, err := ts.cfg.S3API.DeleteObject(&s3.DeleteObjectInput{
-		Bucket: aws.String(ts.cfg.EKSConfig.S3BucketName),
-		Key:    aws.String(s3Key),
-	})
-	if err == nil {
-		ts.cfg.Logger.Info("deleted the private key in S3",
-			zap.String("bucket", ts.cfg.EKSConfig.S3BucketName),
-			zap.String("remote-path", s3Key),
-		)
-	} else {
-		ts.cfg.Logger.Warn("failed to delete the private key in S3",
-			zap.String("bucket", ts.cfg.EKSConfig.S3BucketName),
-			zap.String("remote-path", s3Key),
-			zap.Error(err),
-		)
-	}
-	return err
 }
 
 func (ts *tester) createOIDCProvider() error {
@@ -567,8 +536,8 @@ func (ts *tester) deleteRole() error {
 
 const (
 	irsaFargateServiceAccountName = "irsa-fargate-service-account"
-	irsaFargateConfigMapName      = "irsa-fargate-config-map"
-	irsaFargateConfigMapFileName  = "irsa-fargate-config-map.bash"
+	irsaFargateConfigMapName      = "irsa-fargate-configmap"
+	irsaFargateConfigMapFileName  = "irsa-fargate-configmap.bash"
 	irsaFargatePodName            = "irsa-fargate-pod"
 	irsaFargateContainerName      = "irsa-fargate-container"
 )
@@ -769,7 +738,7 @@ func (ts *tester) createProfile() error {
 	ts.cfg.Logger.Info("sent create fargate profile request")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
-	ch := fargate.Poll(
+	ch := fargate_wait.Poll(
 		ctx,
 		ts.cfg.Stopc,
 		ts.cfg.Logger,
@@ -802,7 +771,7 @@ func (ts *tester) deleteProfile() error {
 			ClusterName:        aws.String(ts.cfg.EKSConfig.Name),
 			FargateProfileName: aws.String(ts.cfg.EKSConfig.AddOnIRSAFargate.ProfileName),
 		})
-		if err != nil && fargate.IsProfileDeleted(err) {
+		if err != nil && fargate_wait.IsProfileDeleted(err) {
 			ts.cfg.Logger.Warn("failed to delete fargate profile; retrying", zap.Error(err))
 			select {
 			case <-ts.cfg.Stopc:
@@ -816,14 +785,14 @@ func (ts *tester) deleteProfile() error {
 		break
 	}
 
-	ch := fargate.Poll(
+	ch := fargate_wait.Poll(
 		context.Background(),
 		ts.cfg.Stopc,
 		ts.cfg.Logger,
 		ts.cfg.EKSAPI,
 		ts.cfg.EKSConfig.Name,
 		ts.cfg.EKSConfig.AddOnIRSAFargate.ProfileName,
-		fargate.FargateProfileStatusDELETEDORNOTEXIST,
+		fargate_wait.FargateProfileStatusDELETEDORNOTEXIST,
 		10*time.Second,
 		7*time.Second,
 	)
@@ -1038,8 +1007,8 @@ func (ts *tester) checkPod() error {
 		"--namespace=" + ts.cfg.EKSConfig.AddOnIRSAFargate.Namespace,
 		"logs",
 		"pods/" + irsaFargatePodName,
-		"--timestamps",
 		"--all-containers=true",
+		"--timestamps",
 	}
 	logsCmd := strings.Join(logArgs, " ")
 
