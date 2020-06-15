@@ -118,7 +118,6 @@ func (ts *tester) Create() (err error) {
 	if err = ts.createASGs(); err != nil {
 		return err
 	}
-
 	for name := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
 		if err = ts.createSG(name); err != nil {
 			return err
@@ -167,10 +166,19 @@ func (ts *tester) Delete() error {
 	var err error
 
 	for name := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
+		err = ts.deleteSG(name)
+		if err != nil {
+			errs = append(errs, err.Error())
+		}
+	}
+	err = nil
+	failedMNGs := make(map[string]struct{})
+	for name := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
 		var derr error
 		for i := 0; i < 5; i++ { // retry, leakly ENI may take awhile to be deleted
-			derr = ts.deleteASGs(name)
+			derr = ts.deleteASG(name)
 			if derr != nil {
+				failedMNGs[name] = struct{}{}
 				ts.cfg.Logger.Warn("failed to delete mng; retrying", zap.String("name", name), zap.Error(derr))
 				select {
 				case <-ts.cfg.Stopc:
@@ -187,7 +195,9 @@ func (ts *tester) Delete() error {
 			} else {
 				err = fmt.Errorf("%v; %v", err, derr)
 			}
+			continue
 		}
+		delete(failedMNGs, name)
 	}
 	if err != nil {
 		errs = append(errs, err.Error())
@@ -202,14 +212,36 @@ func (ts *tester) Delete() error {
 		if ok := ts.deleteENIs(name); ok {
 			time.Sleep(10 * time.Second)
 		}
-		err = ts.deleteSG(name)
-		if err != nil {
-			errs = append(errs, err.Error())
-		}
 	}
-
-	ts.cfg.Logger.Info("sleeping after MNG ENI deletion", zap.Duration("wait", waitDur))
-	time.Sleep(waitDur)
+	err = nil
+	for name := range failedMNGs {
+		var derr error
+		for i := 0; i < 5; i++ { // retry, leakly ENI may take awhile to be deleted
+			derr = ts.deleteASG(name)
+			if derr != nil {
+				ts.cfg.Logger.Warn("failed to retry-delete mng; retrying", zap.String("name", name), zap.Error(derr))
+				select {
+				case <-ts.cfg.Stopc:
+					ts.cfg.Logger.Warn("aborted")
+					return nil
+				case <-time.After(time.Minute):
+				}
+			}
+			break
+		}
+		if derr != nil {
+			if err == nil {
+				err = derr
+			} else {
+				err = fmt.Errorf("%v; %v", err, derr)
+			}
+			continue
+		}
+		delete(failedMNGs, name)
+	}
+	if err != nil {
+		errs = append(errs, err.Error())
+	}
 
 	// must be run after deleting node group
 	// otherwise, "Cannot delete entity, must remove roles from instance profile first. (Service: AmazonIdentityManagement; Status Code: 409; Error Code: DeleteConflict; Request ID: 197f795b-1003-4386-81cc-44a926c42be7)"

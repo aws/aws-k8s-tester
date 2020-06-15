@@ -95,8 +95,8 @@ func (ts *tester) Create() (err error) {
 		initialWait,
 		30*time.Second,
 	)
-	for v := range ch {
-		err = v.Error
+	for sv := range ch {
+		err = sv.Error
 	}
 	cancel()
 	if err != nil {

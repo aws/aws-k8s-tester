@@ -98,9 +98,7 @@ func Poll(
 						close(ch)
 						return
 					}
-
 					lg.Warn("fargate profile does not exist", zap.Error(err))
-					lg.Warn("aborting", zap.Error(ctx.Err()))
 					ch <- FargateProfileStatus{FargateProfile: nil, Error: err}
 					close(ch)
 					return

@@ -98,14 +98,11 @@ func Poll(
 						close(ch)
 						return
 					}
-
 					lg.Warn("managed node group does not exist", zap.Error(err))
-					lg.Warn("aborting", zap.Error(ctx.Err()))
 					ch <- ManagedNodeGroupStatus{NodeGroupName: mngName, NodeGroup: nil, Error: err}
 					close(ch)
 					return
 				}
-
 				lg.Warn("describe managed node group failed; retrying", zap.Error(err))
 				ch <- ManagedNodeGroupStatus{NodeGroupName: mngName, NodeGroup: nil, Error: err}
 				continue
@@ -180,5 +177,6 @@ func IsDeleted(err error) bool {
 	}
 
 	// ResourceNotFoundException: nodeGroup eks-2019120505-pdx-us-west-2-tqy2d-managed-node-group not found for cluster eks-2019120505-pdx-us-west-2-tqy2d\n\tstatus code: 404, request id: 330998c1-22e9-4a8b-b180-420dadade090
-	return strings.Contains(err.Error(), " not found for cluster ")
+	return strings.Contains(err.Error(), "No cluster found for") ||
+		strings.Contains(err.Error(), " not found for cluster ")
 }
