@@ -50,15 +50,15 @@ type tester struct {
 }
 
 const (
-	nlbRedisLeaderDeploymentName = "redis-leader-deployment"
-	nlbRedisLeaderAppName        = "redis-leader"
-	nlbRedisLeaderAppImageName   = "redis:2.8.23" // ref. https://hub.docker.com/_/redis/?tab=tags
-	nlbRedisLeaderServiceName    = "redis-leader-service"
+	redisLeaderDeploymentName = "redis-leader-deployment"
+	redisLeaderAppName        = "redis-master"
+	redisLeaderAppImageName   = "redis:2.8.23" // ref. https://hub.docker.com/_/redis/?tab=tags
+	redisLeaderServiceName    = "redis-master" // e..g "Connecting to MASTER redis-master:6379"
 
-	nlbRedisFollowerDeploymentName = "redis-follower-deployment"
-	nlbRedisFollowerAppName        = "redis-follower"
-	nlbRedisFollowerAppImageName   = "k8s.gcr.io/redis-slave:v2" // ref. https://hub.docker.com/_/redis/?tab=tags
-	nlbRedisFollowerServiceName    = "redis-follower-service"
+	redisFollowerDeploymentName = "redis-follower-deployment"
+	redisFollowerAppName        = "redis-slave"
+	redisFollowerAppImageName   = "k8s.gcr.io/redis-slave:v2" // ref. https://hub.docker.com/_/redis/?tab=tags
+	redisFollowerServiceName    = "redis-slave"
 
 	nlbGuestbookDeploymentName = "guestbook-deployment"
 	nlbGuestbookAppName        = "guestbook"
@@ -239,10 +239,10 @@ func (ts *tester) createDeploymentRedisLeader() error {
 					Kind:       "Deployment",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      nlbRedisLeaderDeploymentName,
+					Name:      redisLeaderDeploymentName,
 					Namespace: ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace,
 					Labels: map[string]string{
-						"app.kubernetes.io/name": nlbRedisLeaderAppName,
+						"app.kubernetes.io/name": redisLeaderAppName,
 						"role":                   "leader",
 					},
 				},
@@ -250,22 +250,22 @@ func (ts *tester) createDeploymentRedisLeader() error {
 					Replicas: aws.Int32(1),
 					Selector: &metav1.LabelSelector{
 						MatchLabels: map[string]string{
-							"app.kubernetes.io/name": nlbRedisLeaderAppName,
+							"app.kubernetes.io/name": redisLeaderAppName,
 							"role":                   "leader",
 						},
 					},
 					Template: v1.PodTemplateSpec{
 						ObjectMeta: metav1.ObjectMeta{
 							Labels: map[string]string{
-								"app.kubernetes.io/name": nlbRedisLeaderAppName,
+								"app.kubernetes.io/name": redisLeaderAppName,
 								"role":                   "leader",
 							},
 						},
 						Spec: v1.PodSpec{
 							Containers: []v1.Container{
 								{
-									Name:            nlbRedisLeaderAppName,
-									Image:           nlbRedisLeaderAppImageName,
+									Name:            redisLeaderAppName,
+									Image:           redisLeaderAppImageName,
 									ImagePullPolicy: v1.PullAlways,
 									Ports: []v1.ContainerPort{
 										{
@@ -301,7 +301,7 @@ func (ts *tester) deleteDeploymentRedisLeader() error {
 		Deployments(ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace).
 		Delete(
 			ctx,
-			nlbRedisLeaderDeploymentName,
+			redisLeaderDeploymentName,
 			metav1.DeleteOptions{
 				GracePeriodSeconds: aws.Int64(0),
 				PropagationPolicy:  &foreground,
@@ -327,7 +327,7 @@ func (ts *tester) waitDeploymentRedisLeader() error {
 		"--namespace="+ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace,
 		"describe",
 		"deployment",
-		nlbRedisLeaderDeploymentName,
+		redisLeaderDeploymentName,
 	).CombinedOutput()
 	cancel()
 	if err != nil {
@@ -335,6 +335,15 @@ func (ts *tester) waitDeploymentRedisLeader() error {
 	}
 	out := string(output)
 	fmt.Printf("\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
+
+	logsArgs := []string{
+		ts.cfg.EKSConfig.KubectlPath,
+		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+		"--namespace=" + ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace,
+		"logs",
+		"--selector=app.kubernetes.io/name=" + redisLeaderAppName,
+	}
+	logsCmd := strings.Join(logsArgs, " ")
 
 	ready := false
 	waitDur := 7 * time.Minute
@@ -346,11 +355,21 @@ func (ts *tester) waitDeploymentRedisLeader() error {
 		case <-time.After(15 * time.Second):
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		ts.cfg.Logger.Info("fetching pod logs", zap.String("logs-command", logsCmd))
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		logsOutput, err := exec.New().CommandContext(ctx, logsArgs[0], logsArgs[1:]...).CombinedOutput()
+		cancel()
+		out := string(logsOutput)
+		if err != nil {
+			ts.cfg.Logger.Warn("'kubectl logs' failed", zap.Error(err))
+		}
+		fmt.Printf("\n\n\n\"%s\" output:\n\n%s\n\n", logsCmd, out)
+
+		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 		dresp, err := ts.cfg.K8SClient.KubernetesClientSet().
 			AppsV1().
 			Deployments(ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace).
-			Get(ctx, nlbRedisLeaderDeploymentName, metav1.GetOptions{})
+			Get(ctx, redisLeaderDeploymentName, metav1.GetOptions{})
 		cancel()
 		if err != nil {
 			return fmt.Errorf("failed to get Deployment (%v)", err)
@@ -408,12 +427,12 @@ func (ts *tester) createServiceRedisLeader() error {
 					Kind:       "Service",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      nlbRedisLeaderServiceName,
+					Name:      redisLeaderServiceName,
 					Namespace: ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace,
 				},
 				Spec: v1.ServiceSpec{
 					Selector: map[string]string{
-						"app.kubernetes.io/name": nlbRedisLeaderAppName,
+						"app.kubernetes.io/name": redisLeaderAppName,
 						"role":                   "leader",
 					},
 					Type: v1.ServiceTypeClusterIP,
@@ -440,7 +459,7 @@ func (ts *tester) createServiceRedisLeader() error {
 		"--namespace=" + ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace,
 		"describe",
 		"svc",
-		nlbRedisLeaderServiceName,
+		redisLeaderServiceName,
 	}
 	argsCmd := strings.Join(args, " ")
 
@@ -468,7 +487,7 @@ func (ts *tester) createServiceRedisLeader() error {
 		_, err = ts.cfg.K8SClient.KubernetesClientSet().
 			CoreV1().
 			Services(ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace).
-			Get(ctx, nlbRedisLeaderServiceName, metav1.GetOptions{})
+			Get(ctx, redisLeaderServiceName, metav1.GetOptions{})
 		cancel()
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to get redis leader Service; retrying", zap.Error(err))
@@ -492,7 +511,7 @@ func (ts *tester) deleteServiceRedisLeader() error {
 		Services(ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace).
 		Delete(
 			ctx,
-			nlbRedisLeaderServiceName,
+			redisLeaderServiceName,
 			metav1.DeleteOptions{
 				GracePeriodSeconds: aws.Int64(0),
 				PropagationPolicy:  &foreground,
@@ -528,10 +547,10 @@ func (ts *tester) createDeploymentRedisFollower() error {
 					Kind:       "Deployment",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      nlbRedisFollowerDeploymentName,
+					Name:      redisFollowerDeploymentName,
 					Namespace: ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace,
 					Labels: map[string]string{
-						"app.kubernetes.io/name": nlbRedisFollowerAppName,
+						"app.kubernetes.io/name": redisFollowerAppName,
 						"role":                   "follower",
 					},
 				},
@@ -539,22 +558,22 @@ func (ts *tester) createDeploymentRedisFollower() error {
 					Replicas: aws.Int32(2),
 					Selector: &metav1.LabelSelector{
 						MatchLabels: map[string]string{
-							"app.kubernetes.io/name": nlbRedisFollowerAppName,
+							"app.kubernetes.io/name": redisFollowerAppName,
 							"role":                   "follower",
 						},
 					},
 					Template: v1.PodTemplateSpec{
 						ObjectMeta: metav1.ObjectMeta{
 							Labels: map[string]string{
-								"app.kubernetes.io/name": nlbRedisFollowerAppName,
+								"app.kubernetes.io/name": redisFollowerAppName,
 								"role":                   "follower",
 							},
 						},
 						Spec: v1.PodSpec{
 							Containers: []v1.Container{
 								{
-									Name:            nlbRedisFollowerAppName,
-									Image:           nlbRedisFollowerAppImageName,
+									Name:            redisFollowerAppName,
+									Image:           redisFollowerAppImageName,
 									ImagePullPolicy: v1.PullAlways,
 									Ports: []v1.ContainerPort{
 										{
@@ -590,7 +609,7 @@ func (ts *tester) deleteDeploymentRedisFollower() error {
 		Deployments(ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace).
 		Delete(
 			ctx,
-			nlbRedisFollowerDeploymentName,
+			redisFollowerDeploymentName,
 			metav1.DeleteOptions{
 				GracePeriodSeconds: aws.Int64(0),
 				PropagationPolicy:  &foreground,
@@ -616,7 +635,7 @@ func (ts *tester) waitDeploymentRedisFollower() error {
 		"--namespace="+ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace,
 		"describe",
 		"deployment",
-		nlbRedisFollowerDeploymentName,
+		redisFollowerDeploymentName,
 	).CombinedOutput()
 	cancel()
 	if err != nil {
@@ -624,6 +643,15 @@ func (ts *tester) waitDeploymentRedisFollower() error {
 	}
 	out := string(output)
 	fmt.Printf("\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
+
+	logsArgs := []string{
+		ts.cfg.EKSConfig.KubectlPath,
+		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+		"--namespace=" + ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace,
+		"logs",
+		"--selector=app.kubernetes.io/name=" + redisFollowerAppName,
+	}
+	logsCmd := strings.Join(logsArgs, " ")
 
 	ready := false
 	waitDur := 7 * time.Minute
@@ -635,11 +663,21 @@ func (ts *tester) waitDeploymentRedisFollower() error {
 		case <-time.After(15 * time.Second):
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		ts.cfg.Logger.Info("fetching pod logs", zap.String("logs-command", logsCmd))
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		logsOutput, err := exec.New().CommandContext(ctx, logsArgs[0], logsArgs[1:]...).CombinedOutput()
+		cancel()
+		out := string(logsOutput)
+		if err != nil {
+			ts.cfg.Logger.Warn("'kubectl logs' failed", zap.Error(err))
+		}
+		fmt.Printf("\n\n\n\"%s\" output:\n\n%s\n\n", logsCmd, out)
+
+		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 		dresp, err := ts.cfg.K8SClient.KubernetesClientSet().
 			AppsV1().
 			Deployments(ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace).
-			Get(ctx, nlbRedisFollowerDeploymentName, metav1.GetOptions{})
+			Get(ctx, redisFollowerDeploymentName, metav1.GetOptions{})
 		cancel()
 		if err != nil {
 			return fmt.Errorf("failed to get Deployment (%v)", err)
@@ -697,12 +735,12 @@ func (ts *tester) createServiceRedisFollower() error {
 					Kind:       "Service",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      nlbRedisFollowerServiceName,
+					Name:      redisFollowerServiceName,
 					Namespace: ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace,
 				},
 				Spec: v1.ServiceSpec{
 					Selector: map[string]string{
-						"app.kubernetes.io/name": nlbRedisFollowerAppName,
+						"app.kubernetes.io/name": redisFollowerAppName,
 						"role":                   "follower",
 					},
 					Type: v1.ServiceTypeClusterIP,
@@ -729,7 +767,7 @@ func (ts *tester) createServiceRedisFollower() error {
 		"--namespace=" + ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace,
 		"describe",
 		"svc",
-		nlbRedisFollowerServiceName,
+		redisFollowerServiceName,
 	}
 	argsCmd := strings.Join(args, " ")
 
@@ -757,7 +795,7 @@ func (ts *tester) createServiceRedisFollower() error {
 		_, err = ts.cfg.K8SClient.KubernetesClientSet().
 			CoreV1().
 			Services(ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace).
-			Get(ctx, nlbRedisFollowerServiceName, metav1.GetOptions{})
+			Get(ctx, redisFollowerServiceName, metav1.GetOptions{})
 		cancel()
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to get redis follower Service; retrying", zap.Error(err))
@@ -781,7 +819,7 @@ func (ts *tester) deleteServiceRedisFollower() error {
 		Services(ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace).
 		Delete(
 			ctx,
-			nlbRedisFollowerServiceName,
+			redisFollowerServiceName,
 			metav1.DeleteOptions{
 				GracePeriodSeconds: aws.Int64(0),
 				PropagationPolicy:  &foreground,
@@ -845,7 +883,7 @@ func (ts *tester) createDeploymentGuestbook() error {
 									Ports: []v1.ContainerPort{
 										{
 											Protocol:      v1.ProtocolTCP,
-											ContainerPort: 80,
+											ContainerPort: 3000,
 										},
 									},
 								},
@@ -910,6 +948,15 @@ func (ts *tester) waitDeploymentGuestbook() error {
 	out := string(output)
 	fmt.Printf("\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
 
+	logsArgs := []string{
+		ts.cfg.EKSConfig.KubectlPath,
+		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+		"--namespace=" + ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace,
+		"logs",
+		"--selector=app.kubernetes.io/name=" + nlbGuestbookAppName,
+	}
+	logsCmd := strings.Join(logsArgs, " ")
+
 	ready := false
 	waitDur := 7*time.Minute + time.Duration(ts.cfg.EKSConfig.AddOnNLBGuestbook.DeploymentReplicas)*time.Minute
 	retryStart := time.Now()
@@ -920,7 +967,17 @@ func (ts *tester) waitDeploymentGuestbook() error {
 		case <-time.After(15 * time.Second):
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		ts.cfg.Logger.Info("fetching pod logs", zap.String("logs-command", logsCmd))
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		logsOutput, err := exec.New().CommandContext(ctx, logsArgs[0], logsArgs[1:]...).CombinedOutput()
+		cancel()
+		out := string(logsOutput)
+		if err != nil {
+			ts.cfg.Logger.Warn("'kubectl logs' failed", zap.Error(err))
+		}
+		fmt.Printf("\n\n\n\"%s\" output:\n\n%s\n\n", logsCmd, out)
+
+		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 		dresp, err := ts.cfg.K8SClient.KubernetesClientSet().
 			AppsV1().
 			Deployments(ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace).
@@ -996,8 +1053,8 @@ func (ts *tester) createServiceGuestbook() error {
 					Ports: []v1.ServicePort{
 						{
 							Protocol:   v1.ProtocolTCP,
-							Port:       80,
-							TargetPort: intstr.FromInt(80),
+							Port:       3000,
+							TargetPort: intstr.FromInt(3000),
 						},
 					},
 				},
@@ -1027,6 +1084,7 @@ func (ts *tester) createServiceGuestbook() error {
 		nlbGuestbookServiceName,
 	}
 	argsCmd := strings.Join(args, " ")
+
 	hostName := ""
 	retryStart := time.Now()
 	for time.Now().Sub(retryStart) < waitDur {
@@ -1102,6 +1160,7 @@ func (ts *tester) createServiceGuestbook() error {
 	ts.cfg.Logger.Info("waiting before testing guestbook Service")
 	time.Sleep(20 * time.Second)
 
+	htmlChecked := false
 	retryStart = time.Now()
 	for time.Now().Sub(retryStart) < waitDur {
 		select {
@@ -1119,11 +1178,9 @@ func (ts *tester) createServiceGuestbook() error {
 		httpOutput := string(out)
 		fmt.Printf("\nNLB guestbook Service output:\n%s\n", httpOutput)
 
-		if strings.Contains(httpOutput, `Guestbook`) {
-			ts.cfg.Logger.Info(
-				"read guestbook Service; exiting",
-				zap.String("host-name", hostName),
-			)
+		if strings.Contains(httpOutput, `<h1>Guestbook</h1>`) {
+			ts.cfg.Logger.Info("read guestbook Service; exiting", zap.String("host-name", hostName))
+			htmlChecked = true
 			break
 		}
 
@@ -1134,6 +1191,9 @@ func (ts *tester) createServiceGuestbook() error {
 	fmt.Printf("NLB guestbook Name: %s\n", ts.cfg.EKSConfig.AddOnNLBGuestbook.NLBName)
 	fmt.Printf("NLB guestbook URL: %s\n\n", ts.cfg.EKSConfig.AddOnNLBGuestbook.URL)
 
+	if !htmlChecked {
+		return fmt.Errorf("NLB hello-world %q did not return expected HTML output", ts.cfg.EKSConfig.AddOnNLBHelloWorld.URL)
+	}
 	return ts.cfg.EKSConfig.Sync()
 }
 

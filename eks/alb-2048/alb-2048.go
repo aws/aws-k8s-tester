@@ -1084,6 +1084,7 @@ func (ts *tester) create2048Ingress() error {
 	ts.cfg.Logger.Info("waiting before testing ALB 2048 Ingress")
 	time.Sleep(10 * time.Second)
 
+	htmlChecked := false
 	retryStart = time.Now()
 	for time.Now().Sub(retryStart) < waitDur {
 		select {
@@ -1102,10 +1103,8 @@ func (ts *tester) create2048Ingress() error {
 		fmt.Printf("\nALB 2048 Ingress output:\n%s\n", httpOutput)
 
 		if strings.Contains(httpOutput, `2048 tile!`) {
-			ts.cfg.Logger.Info(
-				"read ALB 2048 Service; exiting",
-				zap.String("host-name", hostName),
-			)
+			ts.cfg.Logger.Info("read ALB 2048 Service; exiting", zap.String("host-name", hostName))
+			htmlChecked = true
 			break
 		}
 
@@ -1116,6 +1115,9 @@ func (ts *tester) create2048Ingress() error {
 	fmt.Printf("ALB 2048 Name: %s\n", ts.cfg.EKSConfig.AddOnALB2048.ALBName)
 	fmt.Printf("ALB 2048 URL: %s\n\n", ts.cfg.EKSConfig.AddOnALB2048.URL)
 
+	if !htmlChecked {
+		return fmt.Errorf("ALB 2048 %q did not return expected HTML output", ts.cfg.EKSConfig.AddOnALB2048.URL)
+	}
 	return ts.cfg.EKSConfig.Sync()
 }
 
