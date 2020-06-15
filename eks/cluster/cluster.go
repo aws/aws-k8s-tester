@@ -125,6 +125,7 @@ func (ts *tester) checkHealth() (err error) {
 		}
 	}()
 
+	// TODO: investigate why "ts.k8sClient == nil" after cluster creation
 	if ts.k8sClient == nil {
 		ts.cfg.Logger.Info("empty client; creating client")
 		ts.k8sClient, err = ts.createClient()

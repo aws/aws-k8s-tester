@@ -1175,6 +1175,10 @@ func (ts *Tester) Up() (err error) {
 		fmt.Printf("\n\n*********************************\n")
 		fmt.Printf("clusterTester.CheckHealth (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 	}
+	// TODO: investigate why "ts.k8sClient == nil"
+	if ts.k8sClient == nil {
+		ts.lg.Warn("unexpected nil k8s client after cluster creation")
+	}
 	if err := catchInterrupt(
 		ts.lg,
 		ts.stopCreationCh,
