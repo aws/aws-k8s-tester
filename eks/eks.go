@@ -450,6 +450,12 @@ func (ts *Tester) createTesters() (err error) {
 	})
 
 	ts.testers = []eks_tester.Tester{
+		metrics_server.New(metrics_server.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			EKSConfig: ts.cfg,
+			K8SClient: ts.k8sClient,
+		}),
 		conformance.New(conformance.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
@@ -464,12 +470,6 @@ func (ts *Tester) createTesters() (err error) {
 			CFNAPI:    ts.cfnAPI,
 		}),
 		csi_ebs.New(csi_ebs.Config{
-			Logger:    ts.lg,
-			Stopc:     ts.stopCreationCh,
-			EKSConfig: ts.cfg,
-			K8SClient: ts.k8sClient,
-		}),
-		metrics_server.New(metrics_server.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,

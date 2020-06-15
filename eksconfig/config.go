@@ -188,6 +188,10 @@ type Config struct {
 	TotalNodes       int64 `json:"total-nodes" read-only:"true"`
 	TotalHollowNodes int64 `json:"total-hollow-nodes" read-only:"true"`
 
+	// AddOnMetricsServer defines parameters for EKS cluster
+	// add-on metrics server.
+	AddOnMetricsServer *AddOnMetricsServer `json:"add-on-metrics-server,omitempty"`
+
 	// AddOnConformance defines parameters for EKS cluster
 	// add-on Conformance.
 	AddOnConformance *AddOnConformance `json:"add-on-conformance,omitempty"`
@@ -198,9 +202,6 @@ type Config struct {
 	// AddOnCSIEBS defines parameters for EKS cluster
 	// add-on AWS EBS CSI Driver.
 	AddOnCSIEBS *AddOnCSIEBS `json:"add-on-csi-ebs,omitempty"`
-	// AddOnMetricsServer defines parameters for EKS cluster
-	// add-on metrics server.
-	AddOnMetricsServer *AddOnMetricsServer `json:"add-on-metrics-server,omitempty"`
 	// AddOnKubernetesDashboard defines parameters for EKS cluster
 	// add-on Dashboard.
 	AddOnKubernetesDashboard *AddOnKubernetesDashboard `json:"add-on-kubernetes-dashboard,omitempty"`
@@ -748,10 +749,10 @@ func NewDefault() *Config {
 
 		AddOnNodeGroups:            getDefaultAddOnNodeGroups(name),
 		AddOnManagedNodeGroups:     getDefaultAddOnManagedNodeGroups(name),
+		AddOnMetricsServer:         getDefaultAddOnMetricsServer(),
 		AddOnConformance:           getDefaultAddOnConformance(),
 		AddOnCSIEBS:                getDefaultAddOnCSIEBS(),
 		AddOnAppMesh:               getDefaultAddOnAppMesh(),
-		AddOnMetricsServer:         getDefaultAddOnMetricsServer(),
 		AddOnKubernetesDashboard:   getDefaultAddOnKubernetesDashboard(),
 		AddOnPrometheusGrafana:     getDefaultAddOnPrometheusGrafana(),
 		AddOnNLBHelloWorld:         getDefaultAddOnNLBHelloWorld(),
