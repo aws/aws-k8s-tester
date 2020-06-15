@@ -79,6 +79,7 @@ if [[ "${OSTYPE}" == "linux-gnu" ]]; then
   ./bin/eks-utils-${RELEASE_VERSION}-linux-$(go env GOARCH) version
   ./bin/etcd-utils-${RELEASE_VERSION}-linux-$(go env GOARCH) version
   ./bin/cw-utils-${RELEASE_VERSION}-linux-$(go env GOARCH) version
+  cp ./bin/aws-k8s-tester-${RELEASE_VERSION}-linux-$(go env GOARCH) ./aws-k8s-tester
 elif [[ "${OSTYPE}" == "darwin"* ]]; then
   ./bin/aws-k8s-tester-${RELEASE_VERSION}-darwin-$(go env GOARCH) version
   ./bin/ec2-utils-${RELEASE_VERSION}-darwin-$(go env GOARCH) version

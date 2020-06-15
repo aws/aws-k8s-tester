@@ -3,3 +3,4 @@
 /_tmp
 /.idea
 *.swp
+/aws-k8s-tester
