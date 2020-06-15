@@ -488,6 +488,20 @@ deployment.apps/appmesh-inject       1/1     1            1           2m
 NAME                                            DESIRED   CURRENT   READY   AGE
 replicaset.apps/appmesh-controller-55c7bdf448   1         1         1       2m16s
 replicaset.apps/appmesh-inject-6fb67dbb44       1         1         1       2m
+
+// ref. https://github.com/kubernetes/kubernetes/issues/60807
+
+/tmp/kubectl-test-v1.17.6 \
+   --kubeconfig=/tmp/proudpcgaspvcpn.kubeconfig.yaml \
+   -n eks-2020061416-prime6774tws-appmesh \
+   get all
+
+export KUBECONFIG=/tmp/proudpcgaspvcpn.kubeconfig.yaml
+kubectl get namespace "eks-2020061416-prime6774tws-appmesh" -o json \
+  | tr -d "\n" | sed "s/\"finalizers\": \[[^]]\+\]/\"finalizers\": []/" \
+  | kubectl replace --raw /api/v1/namespaces/eks-2020061416-prime6774tws-appmesh/finalize -f -
+
+{"kind":"Namespace","apiVersion":"v1","metadata":{"name":"eks-2020061416-prime6774tws-appmesh","selfLink":"/api/v1/namespaces/eks-2020061416-prime6774tws-appmesh/finalize","uid":"2ef68b28-0f24-43a1-934f-cb010553ee92","resourceVersion":"9462","creationTimestamp":"2020-06-14T23:47:08Z","deletionTimestamp":"2020-06-15T00:19:38Z"},"spec":{},"status":{"phase":"Terminating","conditions":[{"type":"NamespaceDeletionDiscoveryFailure","status":"True","lastTransitionTime":"2020-06-15T00:19:43Z","reason":"DiscoveryFailed","message":"Discovery failed for some groups, 1 failing: unable to retrieve the complete list of server APIs: metrics.k8s.io/v1beta1: the server is currently unable to handle the request"},{"type":"NamespaceDeletionGroupVersionParsingFailure","status":"False","lastTransitionTime":"2020-06-15T00:19:43Z","reason":"ParsedGroupVersions","message":"All legacy kube types successfully parsed"},{"type":"NamespaceDeletionContentFailure","status":"False","lastTransitionTime":"2020-06-15T00:19:43Z","reason":"ContentDeleted","message":"All content successfully deleted"}]}}
 */
 
 func (ts *tester) deleteInjector() (err error) {
