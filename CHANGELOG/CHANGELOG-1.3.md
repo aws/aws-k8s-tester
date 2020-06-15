@@ -11,6 +11,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.7...v1.3.8
 
 - Improve [`eks/app-mesh` delete operation](https://github.com/aws/aws-k8s-tester/commit/2d1346cb3e28e7669dc984683b8c95ff7a384f93).
 - Improve [`eks/mng` delete operation](https://github.com/aws/aws-k8s-tester/commit/2d1346cb3e28e7669dc984683b8c95ff7a384f93).
+- Install [`eks/metrics-server` at the very beginning, and delete at the end](https://github.com/aws/aws-k8s-tester/commit/f478b099b50f7f94559dd74bef31cd579f15836c).
+  - Fix namespace deletion stuck in `"Terminating"` state.
+  - See https://github.com/kubernetes/kubernetes/issues/60807 for more details.
+  - `"The fundamental issue is that an aggregated API group in your cluster is unavailable. It is intentional that the namespace cleanup controller blocks until all APIs are available, so that it can verify all resources from all API groups are cleaned up for that namespace."`
 
 ### `pkg/k8s-client`
 
