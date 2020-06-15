@@ -373,7 +373,66 @@ func (ts *tester) createController() error {
 	})
 }
 
-func (ts *tester) deleteController() error {
+func (ts *tester) deleteController() (err error) {
+	foreground := metav1.DeletePropagationForeground
+
+	ts.cfg.Logger.Info("deleting AppMesh controller Deployment")
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	err = ts.cfg.K8SClient.KubernetesClientSet().
+		AppsV1().
+		Deployments(ts.cfg.EKSConfig.AddOnAppMesh.Namespace).
+		Delete(
+			ctx,
+			chartNameController,
+			metav1.DeleteOptions{
+				GracePeriodSeconds: aws.Int64(0),
+				PropagationPolicy:  &foreground,
+			},
+		)
+	cancel()
+	if err != nil && !api_errors.IsNotFound(err) {
+		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
+	} else {
+		ts.cfg.Logger.Info("deleted AppMesh controller deployment")
+	}
+	time.Sleep(20 * time.Second)
+
+	ts.cfg.Logger.Info("deleting all ReplicaSets")
+	var rs *v1.ReplicaSetList
+	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
+	rs, err = ts.cfg.K8SClient.KubernetesClientSet().
+		AppsV1().
+		ReplicaSets(ts.cfg.EKSConfig.AddOnAppMesh.Namespace).
+		List(ctx, metav1.ListOptions{})
+	cancel()
+	if err != nil {
+		ts.cfg.Logger.Warn("failed to list replicasets", zap.Error(err))
+	} else {
+		for _, v := range rs.Items {
+			name := v.Name
+			ts.cfg.Logger.Info("deleting replicaset", zap.String("name", name))
+			ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
+			err = ts.cfg.K8SClient.KubernetesClientSet().
+				AppsV1().
+				ReplicaSets(ts.cfg.EKSConfig.AddOnAppMesh.Namespace).
+				Delete(
+					ctx,
+					name,
+					metav1.DeleteOptions{
+						GracePeriodSeconds: aws.Int64(0),
+						PropagationPolicy:  &foreground,
+					},
+				)
+			cancel()
+			if err != nil && !api_errors.IsNotFound(err) {
+				ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
+			} else {
+				ts.cfg.Logger.Info("deleted AppMesh injector replicaset", zap.String("name", name))
+			}
+		}
+	}
+	time.Sleep(20 * time.Second)
+
 	return helm.Uninstall(helm.InstallConfig{
 		Logger:         ts.cfg.Logger,
 		Timeout:        15 * time.Minute,
@@ -431,11 +490,12 @@ replicaset.apps/appmesh-controller-55c7bdf448   1         1         1       2m16
 replicaset.apps/appmesh-inject-6fb67dbb44       1         1         1       2m
 */
 
-func (ts *tester) deleteInjector() error {
-	ts.cfg.Logger.Info("deleting AppMesh injector Service")
+func (ts *tester) deleteInjector() (err error) {
 	foreground := metav1.DeletePropagationForeground
+
+	ts.cfg.Logger.Info("deleting AppMesh injector Service")
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	err := ts.cfg.K8SClient.KubernetesClientSet().
+	err = ts.cfg.K8SClient.KubernetesClientSet().
 		CoreV1().
 		Services(ts.cfg.EKSConfig.AddOnAppMesh.Namespace).
 		Delete(
@@ -451,6 +511,27 @@ func (ts *tester) deleteInjector() error {
 		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 	} else {
 		ts.cfg.Logger.Info("deleted AppMesh injector Service")
+	}
+	time.Sleep(20 * time.Second)
+
+	ts.cfg.Logger.Info("deleting AppMesh injector Deployment")
+	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
+	err = ts.cfg.K8SClient.KubernetesClientSet().
+		AppsV1().
+		Deployments(ts.cfg.EKSConfig.AddOnAppMesh.Namespace).
+		Delete(
+			ctx,
+			chartNameInjector,
+			metav1.DeleteOptions{
+				GracePeriodSeconds: aws.Int64(0),
+				PropagationPolicy:  &foreground,
+			},
+		)
+	cancel()
+	if err != nil && !api_errors.IsNotFound(err) {
+		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
+	} else {
+		ts.cfg.Logger.Info("deleted AppMesh injector deployment")
 	}
 	time.Sleep(20 * time.Second)
 
@@ -487,27 +568,6 @@ func (ts *tester) deleteInjector() error {
 				ts.cfg.Logger.Info("deleted AppMesh injector replicaset", zap.String("name", name))
 			}
 		}
-	}
-	time.Sleep(20 * time.Second)
-
-	ts.cfg.Logger.Info("deleting AppMesh injector Deployment")
-	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
-	err = ts.cfg.K8SClient.KubernetesClientSet().
-		AppsV1().
-		Deployments(ts.cfg.EKSConfig.AddOnAppMesh.Namespace).
-		Delete(
-			ctx,
-			chartNameInjector,
-			metav1.DeleteOptions{
-				GracePeriodSeconds: aws.Int64(0),
-				PropagationPolicy:  &foreground,
-			},
-		)
-	cancel()
-	if err != nil && !api_errors.IsNotFound(err) {
-		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
-	} else {
-		ts.cfg.Logger.Info("deleted AppMesh injector deployment")
 	}
 	time.Sleep(20 * time.Second)
 
