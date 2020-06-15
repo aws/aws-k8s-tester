@@ -146,11 +146,12 @@ type MNG struct {
 	VersionUpgrade *MNGVersionUpgrade `json:"version-upgrade,omitempty"`
 }
 
-// A MNGScaleConfig contains the minimum, maximum, and desired node counts for a nodegroup
+// MNGScaleConfig contains the minimum, maximum, and desired node counts for a nodegroup.
+// ref, https://docs.aws.amazon.com/cli/latest/reference/eks/update-nodegroup-config.html
 type MNGScaleConfig struct {
-	minSize     int `json:"min-size,omitempty"`
-	maxSize     int `json:"max-size,omitempty"`
-	desiredSize int `json:"desired-size,omitempty"`
+	MinSize     int64 `json:"min-size,omitempty"`
+	MaxSize     int64 `json:"max-size,omitempty"`
+	DesiredSize int64 `json:"desired-size,omitempty"`
 }
 
 // MNGVersionUpgrade defines parameters
