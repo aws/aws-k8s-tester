@@ -226,7 +226,7 @@ func (ts *tester) createDeploymentRedisLeader() error {
 	} else {
 		nodeSelector = nil
 	}
-	ts.cfg.Logger.Info("creating NLB redis leader Deployment", zap.Any("node-selector", nodeSelector))
+	ts.cfg.Logger.Info("creating redis leader Deployment", zap.Any("node-selector", nodeSelector))
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.K8SClient.KubernetesClientSet().
 		AppsV1().
@@ -285,15 +285,15 @@ func (ts *tester) createDeploymentRedisLeader() error {
 		)
 	cancel()
 	if err != nil {
-		return fmt.Errorf("failed to create NLB redis leader Deployment (%v)", err)
+		return fmt.Errorf("failed to create redis leader Deployment (%v)", err)
 	}
 
-	ts.cfg.Logger.Info("created NLB redis leader Deployment")
+	ts.cfg.Logger.Info("created redis leader Deployment")
 	return ts.cfg.EKSConfig.Sync()
 }
 
 func (ts *tester) deleteDeploymentRedisLeader() error {
-	ts.cfg.Logger.Info("deleting NLB redis leader Deployment")
+	ts.cfg.Logger.Info("deleting redis leader Deployment")
 	foreground := metav1.DeletePropagationForeground
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	err := ts.cfg.K8SClient.KubernetesClientSet().
@@ -310,15 +310,15 @@ func (ts *tester) deleteDeploymentRedisLeader() error {
 	cancel()
 	if err != nil && !api_errors.IsNotFound(err) {
 		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
-		return fmt.Errorf("failed to delete NLB redis leader Deployment (%v)", err)
+		return fmt.Errorf("failed to delete redis leader Deployment (%v)", err)
 	}
 
-	ts.cfg.Logger.Info("deleted NLB redis leader Deployment")
+	ts.cfg.Logger.Info("deleted redis leader Deployment")
 	return ts.cfg.EKSConfig.Sync()
 }
 
 func (ts *tester) waitDeploymentRedisLeader() error {
-	ts.cfg.Logger.Info("waiting for NLB redis leader Deployment")
+	ts.cfg.Logger.Info("waiting for redis leader Deployment")
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	output, err := exec.New().CommandContext(
 		ctx,
@@ -390,12 +390,12 @@ func (ts *tester) waitDeploymentRedisLeader() error {
 		return errors.New("deployment not ready")
 	}
 
-	ts.cfg.Logger.Info("waited for NLB redis leader Deployment")
+	ts.cfg.Logger.Info("waited for redis leader Deployment")
 	return ts.cfg.EKSConfig.Sync()
 }
 
 func (ts *tester) createServiceRedisLeader() error {
-	ts.cfg.Logger.Info("creating NLB redis leader Service")
+	ts.cfg.Logger.Info("creating redis leader Service")
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.K8SClient.KubernetesClientSet().
 		CoreV1().
@@ -430,9 +430,9 @@ func (ts *tester) createServiceRedisLeader() error {
 		)
 	cancel()
 	if err != nil {
-		return fmt.Errorf("failed to create NLB redis leader Service (%v)", err)
+		return fmt.Errorf("failed to create redis leader Service (%v)", err)
 	}
-	ts.cfg.Logger.Info("created NLB redis leader Service")
+	ts.cfg.Logger.Info("created redis leader Service")
 
 	args := []string{
 		ts.cfg.EKSConfig.KubectlPath,
@@ -449,7 +449,7 @@ func (ts *tester) createServiceRedisLeader() error {
 	for time.Now().Sub(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
-			return errors.New("NLB redis leader Service creation aborted")
+			return errors.New("redis leader Service creation aborted")
 		case <-time.After(5 * time.Second):
 		}
 
@@ -463,7 +463,7 @@ func (ts *tester) createServiceRedisLeader() error {
 			fmt.Printf("\n\n\"%s\" output:\n%s\n\n", argsCmd, out)
 		}
 
-		ts.cfg.Logger.Info("querying NLB redis leader Service")
+		ts.cfg.Logger.Info("querying redis leader Service")
 		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 		_, err = ts.cfg.K8SClient.KubernetesClientSet().
 			CoreV1().
@@ -471,12 +471,12 @@ func (ts *tester) createServiceRedisLeader() error {
 			Get(ctx, nlbRedisLeaderServiceName, metav1.GetOptions{})
 		cancel()
 		if err != nil {
-			ts.cfg.Logger.Warn("failed to get NLB redis leader Service; retrying", zap.Error(err))
+			ts.cfg.Logger.Warn("failed to get redis leader Service; retrying", zap.Error(err))
 			time.Sleep(5 * time.Second)
 			continue
 		}
 
-		ts.cfg.Logger.Info("NLB redis leader Service is ready")
+		ts.cfg.Logger.Info("redis leader Service is ready")
 		break
 	}
 
@@ -484,7 +484,7 @@ func (ts *tester) createServiceRedisLeader() error {
 }
 
 func (ts *tester) deleteServiceRedisLeader() error {
-	ts.cfg.Logger.Info("deleting NLB redis leader Service")
+	ts.cfg.Logger.Info("deleting redis leader Service")
 	foreground := metav1.DeletePropagationForeground
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	err := ts.cfg.K8SClient.KubernetesClientSet().
@@ -501,10 +501,10 @@ func (ts *tester) deleteServiceRedisLeader() error {
 	cancel()
 	if err != nil && !api_errors.IsNotFound(err) {
 		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
-		return fmt.Errorf("failed to delete NLB redis leader Service (%v)", err)
+		return fmt.Errorf("failed to delete redis leader Service (%v)", err)
 	}
 
-	ts.cfg.Logger.Info("deleted NLB redis leader Service", zap.Error(err))
+	ts.cfg.Logger.Info("deleted redis leader Service", zap.Error(err))
 	return ts.cfg.EKSConfig.Sync()
 }
 
@@ -515,7 +515,7 @@ func (ts *tester) createDeploymentRedisFollower() error {
 	} else {
 		nodeSelector = nil
 	}
-	ts.cfg.Logger.Info("creating NLB redis follower Deployment", zap.Any("node-selector", nodeSelector))
+	ts.cfg.Logger.Info("creating redis follower Deployment", zap.Any("node-selector", nodeSelector))
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.K8SClient.KubernetesClientSet().
 		AppsV1().
@@ -574,15 +574,15 @@ func (ts *tester) createDeploymentRedisFollower() error {
 		)
 	cancel()
 	if err != nil {
-		return fmt.Errorf("failed to create NLB redis follower Deployment (%v)", err)
+		return fmt.Errorf("failed to create redis follower Deployment (%v)", err)
 	}
 
-	ts.cfg.Logger.Info("created NLB redis follower Deployment")
+	ts.cfg.Logger.Info("created redis follower Deployment")
 	return ts.cfg.EKSConfig.Sync()
 }
 
 func (ts *tester) deleteDeploymentRedisFollower() error {
-	ts.cfg.Logger.Info("deleting NLB redis follower Deployment")
+	ts.cfg.Logger.Info("deleting redis follower Deployment")
 	foreground := metav1.DeletePropagationForeground
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	err := ts.cfg.K8SClient.KubernetesClientSet().
@@ -599,15 +599,15 @@ func (ts *tester) deleteDeploymentRedisFollower() error {
 	cancel()
 	if err != nil && !api_errors.IsNotFound(err) {
 		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
-		return fmt.Errorf("failed to delete NLB redis follower Deployment (%v)", err)
+		return fmt.Errorf("failed to delete redis follower Deployment (%v)", err)
 	}
 
-	ts.cfg.Logger.Info("deleted NLB redis follower Deployment")
+	ts.cfg.Logger.Info("deleted redis follower Deployment")
 	return ts.cfg.EKSConfig.Sync()
 }
 
 func (ts *tester) waitDeploymentRedisFollower() error {
-	ts.cfg.Logger.Info("waiting for NLB redis follower Deployment")
+	ts.cfg.Logger.Info("waiting for redis follower Deployment")
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	output, err := exec.New().CommandContext(
 		ctx,
@@ -679,12 +679,12 @@ func (ts *tester) waitDeploymentRedisFollower() error {
 		return errors.New("deployment not ready")
 	}
 
-	ts.cfg.Logger.Info("waited for NLB redis follower Deployment")
+	ts.cfg.Logger.Info("waited for redis follower Deployment")
 	return ts.cfg.EKSConfig.Sync()
 }
 
 func (ts *tester) createServiceRedisFollower() error {
-	ts.cfg.Logger.Info("creating NLB redis follower Service")
+	ts.cfg.Logger.Info("creating redis follower Service")
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.K8SClient.KubernetesClientSet().
 		CoreV1().
@@ -719,9 +719,9 @@ func (ts *tester) createServiceRedisFollower() error {
 		)
 	cancel()
 	if err != nil {
-		return fmt.Errorf("failed to create NLB redis follower Service (%v)", err)
+		return fmt.Errorf("failed to create redis follower Service (%v)", err)
 	}
-	ts.cfg.Logger.Info("created NLB redis follower Service")
+	ts.cfg.Logger.Info("created redis follower Service")
 
 	args := []string{
 		ts.cfg.EKSConfig.KubectlPath,
@@ -738,7 +738,7 @@ func (ts *tester) createServiceRedisFollower() error {
 	for time.Now().Sub(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
-			return errors.New("NLB redis follower Service creation aborted")
+			return errors.New("redis follower Service creation aborted")
 		case <-time.After(5 * time.Second):
 		}
 
@@ -752,7 +752,7 @@ func (ts *tester) createServiceRedisFollower() error {
 			fmt.Printf("\n\n\"%s\" output:\n%s\n\n", argsCmd, out)
 		}
 
-		ts.cfg.Logger.Info("querying NLB redis follower Service")
+		ts.cfg.Logger.Info("querying redis follower Service")
 		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 		_, err = ts.cfg.K8SClient.KubernetesClientSet().
 			CoreV1().
@@ -760,12 +760,12 @@ func (ts *tester) createServiceRedisFollower() error {
 			Get(ctx, nlbRedisFollowerServiceName, metav1.GetOptions{})
 		cancel()
 		if err != nil {
-			ts.cfg.Logger.Warn("failed to get NLB redis follower Service; retrying", zap.Error(err))
+			ts.cfg.Logger.Warn("failed to get redis follower Service; retrying", zap.Error(err))
 			time.Sleep(5 * time.Second)
 			continue
 		}
 
-		ts.cfg.Logger.Info("NLB redis follower Service is ready")
+		ts.cfg.Logger.Info("redis follower Service is ready")
 		break
 	}
 
@@ -773,7 +773,7 @@ func (ts *tester) createServiceRedisFollower() error {
 }
 
 func (ts *tester) deleteServiceRedisFollower() error {
-	ts.cfg.Logger.Info("deleting NLB redis follower Service")
+	ts.cfg.Logger.Info("deleting redis follower Service")
 	foreground := metav1.DeletePropagationForeground
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	err := ts.cfg.K8SClient.KubernetesClientSet().
@@ -790,10 +790,10 @@ func (ts *tester) deleteServiceRedisFollower() error {
 	cancel()
 	if err != nil && !api_errors.IsNotFound(err) {
 		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
-		return fmt.Errorf("failed to delete NLB redis follower Service (%v)", err)
+		return fmt.Errorf("failed to delete redis follower Service (%v)", err)
 	}
 
-	ts.cfg.Logger.Info("deleted NLB redis follower Service", zap.Error(err))
+	ts.cfg.Logger.Info("deleted redis follower Service", zap.Error(err))
 	return ts.cfg.EKSConfig.Sync()
 }
 
