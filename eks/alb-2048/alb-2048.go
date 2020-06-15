@@ -60,9 +60,9 @@ const (
 	albIngressControllerRBACClusterRoleBindingName = "alb-ingress-controller-rbac-cluster-role-binding"
 	albIngressControllerDeploymentName             = "alb-ingress-controller-deployment"
 
-	alb2048AppName        = "alb-2048"
-	alb2048ImageName      = "alexwhen/docker-2048"
 	alb2048DeploymentName = "alb-2048-deployment"
+	alb2048AppName        = "alb-2048"
+	alb2048AppImageName   = "alexwhen/docker-2048"
 	alb2048SvcName        = "alb-2048-service"
 	alb2048IngressName    = "alb-2048-ingress"
 )
@@ -699,7 +699,7 @@ func (ts *tester) create2048Deployment() error {
 							Containers: []v1.Container{
 								{
 									Name:            alb2048AppName,
-									Image:           alb2048ImageName,
+									Image:           alb2048AppImageName,
 									ImagePullPolicy: v1.PullAlways,
 									Ports: []v1.ContainerPort{
 										{

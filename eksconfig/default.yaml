@@ -23,7 +23,7 @@ log-level: info
 log-outputs:
 - stderr
 - /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.log
-name: eks-2020061417-grass9ev3hi4
+name: eks-2020061502-summerlusekq
 on-failure-delete: true
 on-failure-delete-wait-seconds: 120
 parameters:
@@ -41,7 +41,7 @@ parameters:
   role-cfn-stack-yaml-file-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.role.cfn.yaml
   role-create: true
   role-managed-policy-arns: null
-  role-name: eks-2020061417-grass9ev3hi4-role
+  role-name: eks-2020061502-summerlusekq-role
   role-service-principals: null
   signing-name: eks
   tags: null
@@ -55,8 +55,8 @@ partition: aws
 region: us-west-2
 remote-access-commands-output-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.ssh.sh
 remote-access-key-create: true
-remote-access-key-name: eks-2020061417-grass9ev3hi4-remote-access-key
-remote-access-private-key-path: /tmp/sunrise395jq7hj.insecure.key
+remote-access-key-name: eks-2020061502-summerlusekq-remote-access-key
+remote-access-private-key-path: /tmp/mariaysko2isrww.insecure.key
 s3-bucket-create: false
 s3-bucket-create-keep: false
 s3-bucket-lifecycle-expiration-days: 0

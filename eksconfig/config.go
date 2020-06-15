@@ -212,6 +212,10 @@ type Config struct {
 	// AddOnNLBHelloWorld defines parameters for EKS cluster
 	// add-on NLB hello-world service.
 	AddOnNLBHelloWorld *AddOnNLBHelloWorld `json:"add-on-nlb-hello-world,omitempty"`
+	// AddOnNLBGuestbook defines parameters for EKS cluster
+	// add-on NLB guestbook service.
+	// ref. https://docs.aws.amazon.com/eks/latest/userguide/eks-guestbook.html
+	AddOnNLBGuestbook *AddOnNLBGuestbook `json:"add-on-nlb-guestbook,omitempty"`
 	// AddOnALB2048 defines parameters for EKS cluster
 	// add-on ALB 2048 service.
 	AddOnALB2048 *AddOnALB2048 `json:"add-on-alb-2048,omitempty"`
@@ -756,6 +760,7 @@ func NewDefault() *Config {
 		AddOnKubernetesDashboard:   getDefaultAddOnKubernetesDashboard(),
 		AddOnPrometheusGrafana:     getDefaultAddOnPrometheusGrafana(),
 		AddOnNLBHelloWorld:         getDefaultAddOnNLBHelloWorld(),
+		AddOnNLBGuestbook:          getDefaultAddOnNLBGuestbook(),
 		AddOnALB2048:               getDefaultAddOnALB2048(),
 		AddOnJobsPi:                getDefaultAddOnJobsPi(),
 		AddOnJobsEcho:              getDefaultAddOnJobsEcho(),
@@ -872,6 +877,9 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 
 	if err := cfg.validateAddOnNLBHelloWorld(); err != nil {
 		return fmt.Errorf("validateAddOnNLBHelloWorld failed [%v]", err)
+	}
+	if err := cfg.validateAddOnNLBGuestbook(); err != nil {
+		return fmt.Errorf("validateAddOnNLBGuestbook failed [%v]", err)
 	}
 	if err := cfg.validateAddOnALB2048(); err != nil {
 		return fmt.Errorf("validateAddOnALB2048 failed [%v]", err)

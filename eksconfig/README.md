@@ -1,5 +1,6 @@
 
 ```
+# total 34 add-ons
 # set the following *_ENABLE env vars to enable add-ons, rest are set with default values
 AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE=true \
@@ -10,6 +11,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_ENABLE=true \
+AWS_K8S_TESTER_EKS_ADD_ON_NLB_GUESTBOOK_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_ENABLE=true \
@@ -269,6 +271,22 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_NLB_NAME                 | read-only "true"  | *eksconfig.AddOnNLBHelloWorld.NLBName                | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_URL                      | read-only "true"  | *eksconfig.AddOnNLBHelloWorld.URL                    | string             |
 *--------------------------------------------------------------------*-------------------*------------------------------------------------------*--------------------*
+
+
+*------------------------------------------------------------------*-------------------*-----------------------------------------------------*--------------------*
+|                      ENVIRONMENTAL VARIABLE                      |     READ ONLY     |                        TYPE                         |      GO TYPE       |
+*------------------------------------------------------------------*-------------------*-----------------------------------------------------*--------------------*
+| AWS_K8S_TESTER_EKS_ADD_ON_NLB_GUESTBOOK_ENABLE                   | read-only "false" | *eksconfig.AddOnNLBGuestbook.Enable                 | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_NLB_GUESTBOOK_CREATED                  | read-only "true"  | *eksconfig.AddOnNLBGuestbook.Created                | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_NLB_GUESTBOOK_TIME_FRAME_CREATE        | read-only "true"  | *eksconfig.AddOnNLBGuestbook.TimeFrameCreate        | timeutil.TimeFrame |
+| AWS_K8S_TESTER_EKS_ADD_ON_NLB_GUESTBOOK_TIME_FRAME_DELETE        | read-only "true"  | *eksconfig.AddOnNLBGuestbook.TimeFrameDelete        | timeutil.TimeFrame |
+| AWS_K8S_TESTER_EKS_ADD_ON_NLB_GUESTBOOK_NAMESPACE                | read-only "false" | *eksconfig.AddOnNLBGuestbook.Namespace              | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_NLB_GUESTBOOK_DEPLOYMENT_REPLICAS      | read-only "false" | *eksconfig.AddOnNLBGuestbook.DeploymentReplicas     | int32              |
+| AWS_K8S_TESTER_EKS_ADD_ON_NLB_GUESTBOOK_DEPLOYMENT_NODE_SELECTOR | read-only "false" | *eksconfig.AddOnNLBGuestbook.DeploymentNodeSelector | map[string]string  |
+| AWS_K8S_TESTER_EKS_ADD_ON_NLB_GUESTBOOK_NLB_ARN                  | read-only "true"  | *eksconfig.AddOnNLBGuestbook.NLBARN                 | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_NLB_GUESTBOOK_NLB_NAME                 | read-only "true"  | *eksconfig.AddOnNLBGuestbook.NLBName                | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_NLB_GUESTBOOK_URL                      | read-only "true"  | *eksconfig.AddOnNLBGuestbook.URL                    | string             |
+*------------------------------------------------------------------*-------------------*-----------------------------------------------------*--------------------*
 
 
 *------------------------------------------------------------------*-------------------*----------------------------------------------------*--------------------*

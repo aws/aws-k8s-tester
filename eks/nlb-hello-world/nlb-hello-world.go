@@ -1,4 +1,5 @@
-// Package nlbhelloworld implements NLB plugin with a simple hello world Pod.
+// Package nlbhelloworld implements NLB plugin
+// with a simple hello world service.
 package nlbhelloworld
 
 import (
@@ -27,7 +28,7 @@ import (
 	"k8s.io/utils/exec"
 )
 
-// Config defines ALB configuration.
+// Config defines NLB configuration.
 type Config struct {
 	Logger    *zap.Logger
 	Stopc     chan struct{}
@@ -47,9 +48,9 @@ type tester struct {
 }
 
 const (
+	nlbHelloWorldDeploymentName = "hello-world-deployment"
 	nlbHelloWorldAppName        = "hello-world"
 	nlbHelloWorldAppImageName   = "dockercloud/hello-world"
-	nlbHelloWorldDeploymentName = "hello-world-deployment"
 	nlbHelloWorldServiceName    = "hello-world-service"
 )
 
@@ -121,7 +122,8 @@ func (ts *tester) Delete() error {
 	if err := ts.deleteDeployment(); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete NLB hello-world Deployment (%v)", err))
 	}
-	time.Sleep(2 * time.Minute)
+	ts.cfg.Logger.Info("wait for a minute after deleting Deployment")
+	time.Sleep(time.Minute)
 
 	/*
 	   # NLB tags

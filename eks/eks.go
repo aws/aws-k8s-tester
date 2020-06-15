@@ -48,6 +48,7 @@ import (
 	metrics_server "github.com/aws/aws-k8s-tester/eks/metrics-server"
 	"github.com/aws/aws-k8s-tester/eks/mng"
 	"github.com/aws/aws-k8s-tester/eks/ng"
+	nlb_guestbook "github.com/aws/aws-k8s-tester/eks/nlb-guestbook"
 	nlb_hello_world "github.com/aws/aws-k8s-tester/eks/nlb-hello-world"
 	prometheus_grafana "github.com/aws/aws-k8s-tester/eks/prometheus-grafana"
 	secrets_local "github.com/aws/aws-k8s-tester/eks/secrets/local"
@@ -488,6 +489,13 @@ func (ts *Tester) createTesters() (err error) {
 			K8SClient: ts.k8sClient,
 		}),
 		nlb_hello_world.New(nlb_hello_world.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			EKSConfig: ts.cfg,
+			K8SClient: ts.k8sClient,
+			ELB2API:   ts.elbv2API,
+		}),
+		nlb_guestbook.New(nlb_guestbook.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
