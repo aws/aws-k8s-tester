@@ -345,7 +345,7 @@ func (ts *tester) waitDeploymentRedisLeader() error {
 		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
 		"--namespace=" + ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace,
 		"logs",
-		"--selector=app.kubernetes.io/name=" + redisLabelName + ",role=" + redisFollowerRoleName,
+		"--selector=app.kubernetes.io/name=" + redisLabelName + ",role=" + redisLeaderRoleName,
 	}
 	logsCmd := strings.Join(logsArgs, " ")
 
