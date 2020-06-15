@@ -28,6 +28,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.8...v1.3.9
 - Add [`AddOnNLBGuestbook`](https://github.com/aws/aws-k8s-tester/commit/abbfcaa5089e74590171dceaaa0ec8bbef76b23f).
   - Set via `ADD_ON_NLB_GUESTBOOK_ENABLE`.
 
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.32.1`](https://github.com/aws/aws-sdk-go/releases/tag/v1.32.1) to [`v1.32.2`](https://github.com/aws/aws-sdk-go/releases/tag/v1.32.2).
+
 
 <hr>
 
