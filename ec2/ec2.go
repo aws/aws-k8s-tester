@@ -157,10 +157,12 @@ func (ts *Tester) Up() (err error) {
 	defer func() {
 		fmt.Printf(ts.color("[light_green]UP DEFER START (%q)\n"), ts.cfg.ConfigPath)
 		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Printf("\n\n# to delete instances\nec2-utils delete instances --path %s\n\n", ts.cfg.ConfigPath)
 
 		if serr := ts.uploadToS3(); serr != nil {
 			ts.lg.Warn("failed to upload artifacts to S3", zap.Error(serr))
 		}
+		fmt.Printf("\n\n# to delete instances\nec2-utils delete instances --path %s\n\n", ts.cfg.ConfigPath)
 
 		if err == nil {
 			if ts.cfg.Up {
@@ -236,6 +238,7 @@ func (ts *Tester) Up() (err error) {
 		fmt.Printf(ts.color("🔥 💀 👽 😱 😡 (-_-) [light_magenta]UP FAIL\n"))
 		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 
+		fmt.Printf("\n\n# to delete instances\nec2-utils delete instances --path %s\n\n", ts.cfg.ConfigPath)
 	}()
 
 	ts.lg.Info("Up started",
