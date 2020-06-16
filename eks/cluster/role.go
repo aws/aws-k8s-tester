@@ -208,8 +208,8 @@ Outputs:
 `
 
 func (ts *tester) createClusterRole() error {
-	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_green]createClusterRole (%q)\n"), ts.cfg.EKSConfig.ConfigPath)
 	fmt.Printf(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
+	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_green]createClusterRole (%q)\n"), ts.cfg.EKSConfig.ConfigPath)
 
 	if !ts.cfg.EKSConfig.Parameters.RoleCreate {
 		ts.cfg.Logger.Info("Parameters.RoleCreate false; skipping creation")
@@ -323,8 +323,8 @@ func (ts *tester) createClusterRole() error {
 }
 
 func (ts *tester) deleteClusterRole() error {
-	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_blue]deleteClusterRole (%q)\n"), ts.cfg.EKSConfig.ConfigPath)
 	fmt.Printf(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
+	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_blue]deleteClusterRole (%q)\n"), ts.cfg.EKSConfig.ConfigPath)
 
 	if !ts.cfg.EKSConfig.Parameters.RoleCreate {
 		ts.cfg.Logger.Info("Parameters.RoleCreate false; skipping deletion")

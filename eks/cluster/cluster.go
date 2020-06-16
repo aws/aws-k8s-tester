@@ -110,8 +110,8 @@ func (ts *tester) CheckHealth() (err error) {
 }
 
 func (ts *tester) checkHealth() (err error) {
-	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_green]checkHealth (%q)\n"), ts.cfg.EKSConfig.ConfigPath)
 	fmt.Printf(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
+	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_green]checkHealth (%q)\n"), ts.cfg.EKSConfig.ConfigPath)
 
 	defer func() {
 		if err == nil {
@@ -258,8 +258,8 @@ const (
 )
 
 func (ts *tester) createEKS() (err error) {
-	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_green]createEKS (%q)\n"), ts.cfg.EKSConfig.ConfigPath)
 	fmt.Printf(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
+	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_green]createEKS (%q)\n"), ts.cfg.EKSConfig.ConfigPath)
 
 	if ts.cfg.EKSConfig.Status.ClusterCFNStackID != "" ||
 		ts.cfg.EKSConfig.Status.ClusterARN != "" ||
@@ -508,8 +508,8 @@ func (ts *tester) createEKS() (err error) {
 }
 
 func (ts *tester) deleteEKS() error {
-	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_blue]deleteEKS (%q)\n"), ts.cfg.EKSConfig.ConfigPath)
 	fmt.Printf(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
+	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_blue]deleteEKS (%q)\n"), ts.cfg.EKSConfig.ConfigPath)
 
 	ts.describeCluster()
 	if ts.cfg.EKSConfig.Status.ClusterStatusCurrent == "" || ts.cfg.EKSConfig.Status.ClusterStatusCurrent == eksconfig.ClusterStatusDELETEDORNOTEXIST {
@@ -757,8 +757,8 @@ users:
 // https://docs.aws.amazon.com/eks/latest/userguide/create-kubeconfig.html
 // "aws eks update-kubeconfig --name --role-arn --kubeconfig"
 func (ts *tester) createClient() (cli k8s_client.EKS, err error) {
-	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_green]createClient (%q)\n"), ts.cfg.EKSConfig.ConfigPath)
 	fmt.Printf(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
+	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_green]createClient (%q)\n"), ts.cfg.EKSConfig.ConfigPath)
 
 	if ts.cfg.EKSConfig.AWSIAMAuthenticatorPath != "" && ts.cfg.EKSConfig.AWSIAMAuthenticatorDownloadURL != "" {
 		tpl := template.Must(template.New("tmplKUBECONFIG").Parse(tmplKUBECONFIG))
