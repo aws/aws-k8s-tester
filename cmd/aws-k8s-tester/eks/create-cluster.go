@@ -10,7 +10,6 @@ import (
 	"github.com/aws/aws-k8s-tester/eks"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
-	"github.com/aws/aws-k8s-tester/pkg/randutil"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
@@ -27,17 +26,14 @@ func newCreateCluster() *cobra.Command {
 }
 
 func createClusterFunc(cmd *cobra.Command, args []string) {
-	if autoPath {
-		path = filepath.Join(os.TempDir(), randutil.String(15)+".yaml")
-	}
-	if path == "" {
+	if !autoPath && path == "" {
 		fmt.Fprintln(os.Stderr, "'--path' flag is not specified")
 		os.Exit(1)
 	}
 
 	var cfg *eksconfig.Config
 	var err error
-	if fileutil.Exist(path) {
+	if !autoPath && fileutil.Exist(path) {
 		cfg, err = eksconfig.Load(path)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "failed to load configuration %q (%v)\n", path, err)
@@ -48,9 +44,12 @@ func createClusterFunc(cmd *cobra.Command, args []string) {
 			os.Exit(1)
 		}
 	} else {
-		fmt.Fprintf(os.Stderr, "cannot find configuration %q; writing...\n", path)
 		cfg = eksconfig.NewDefault()
+		if autoPath {
+			path = filepath.Join(os.TempDir(), cfg.Name+".yaml")
+		}
 		cfg.ConfigPath = path
+		fmt.Fprintf(os.Stderr, "cannot find configuration; wrote a new one %q\n", path)
 	}
 
 	fmt.Printf("\n*********************************\n")

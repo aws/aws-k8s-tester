@@ -376,12 +376,30 @@ scp -oStrictHostKeyChecking=no \
 */
 
 func (sh *ssh) Send(localPath, remotePath string, opts ...OpOption) (out []byte, err error) {
+	scpCmd := exec.New()
+	var scpPath string
+	scpPath, err = scpCmd.LookPath("scp")
+	if err != nil {
+		return nil, err
+	}
+	if err = os.Chmod(sh.cfg.KeyPath, 0400); err != nil {
+		return nil, err
+	}
+
 	ret := Op{verbose: false, retriesLeft: 0, retryInterval: time.Duration(0), timeout: 0, envs: make(map[string]string)}
 	ret.applyOpts(opts)
 
 	key := fmt.Sprintf("%s%s", sh.cfg.PublicDNSName, localPath)
 	if _, ok := sh.retryCounter[key]; !ok {
 		sh.retryCounter[key] = ret.retriesLeft
+	}
+
+	scpArgs := []string{
+		scpPath,
+		"-oStrictHostKeyChecking=no",
+		"-i", sh.cfg.KeyPath,
+		localPath,
+		fmt.Sprintf("%s@%s:%s", sh.cfg.UserName, sh.cfg.PublicDNSName, remotePath),
 	}
 
 	now := time.Now()
@@ -392,26 +410,6 @@ func (sh *ssh) Send(localPath, remotePath string, opts ...OpOption) (out []byte,
 		ctx, cancel = context.WithCancel(sh.ctx)
 	} else {
 		ctx, cancel = context.WithTimeout(sh.ctx, ret.timeout)
-	}
-
-	scpCmd := exec.New()
-	var scpPath string
-	scpPath, err = scpCmd.LookPath("scp")
-	if err != nil {
-		cancel()
-		return nil, err
-	}
-	if err = os.Chmod(sh.cfg.KeyPath, 0400); err != nil {
-		cancel()
-		return nil, err
-	}
-
-	scpArgs := []string{
-		scpPath,
-		"-oStrictHostKeyChecking=no",
-		"-i", sh.cfg.KeyPath,
-		localPath,
-		fmt.Sprintf("%s@%s:%s", sh.cfg.UserName, sh.cfg.PublicDNSName, remotePath),
 	}
 	cmd := scpCmd.CommandContext(ctx, scpArgs[0], scpArgs[1:]...)
 	out, err = cmd.CombinedOutput()
@@ -476,6 +474,16 @@ func (sh *ssh) Send(localPath, remotePath string, opts ...OpOption) (out []byte,
 }
 
 func (sh *ssh) Download(remotePath, localPath string, opts ...OpOption) (out []byte, err error) {
+	scpCmd := exec.New()
+	var scpPath string
+	scpPath, err = scpCmd.LookPath("scp")
+	if err != nil {
+		return nil, err
+	}
+	if err = os.Chmod(sh.cfg.KeyPath, 0400); err != nil {
+		return nil, err
+	}
+
 	ret := Op{verbose: false, retriesLeft: 0, retryInterval: time.Duration(0), timeout: 0, envs: make(map[string]string)}
 	ret.applyOpts(opts)
 
@@ -494,17 +502,6 @@ func (sh *ssh) Download(remotePath, localPath string, opts ...OpOption) (out []b
 		ctx, cancel = context.WithTimeout(sh.ctx, ret.timeout)
 	}
 
-	scpCmd := exec.New()
-	var scpPath string
-	scpPath, err = scpCmd.LookPath("scp")
-	if err != nil {
-		cancel()
-		return nil, err
-	}
-	if err = os.Chmod(sh.cfg.KeyPath, 0400); err != nil {
-		cancel()
-		return nil, err
-	}
 	scpArgs := []string{
 		scpPath,
 		"-oStrictHostKeyChecking=no",

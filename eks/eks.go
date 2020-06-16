@@ -675,12 +675,14 @@ func (ts *Tester) Up() (err error) {
 	defer func() {
 		fmt.Printf(ts.color("[light_green]UP DEFER START (%q)\n"), ts.cfg.ConfigPath)
 		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Printf("\n\n# to delete cluster\naws-k8s-tester eks delete cluster --path %s\n\n", ts.cfg.ConfigPath)
 
 		if serr := ts.uploadToS3(); serr != nil {
 			ts.lg.Warn("failed to upload artifacts to S3", zap.Error(serr))
 		} else {
 			ts.s3Uploaded = true
 		}
+		fmt.Printf("\n\n# to delete cluster\naws-k8s-tester eks delete cluster --path %s\n\n", ts.cfg.ConfigPath)
 
 		if err == nil {
 			if ts.cfg.Status.Up {
@@ -775,6 +777,7 @@ func (ts *Tester) Up() (err error) {
 		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 
 		ts.lg.Sugar().Infof("Up.defer end (%s, %s)", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		fmt.Printf("\n\n# to delete cluster\naws-k8s-tester eks delete cluster --path %s\n\n", ts.cfg.ConfigPath)
 	}()
 
 	ts.lg.Info("Up started", zap.String("version", version.Version()), zap.String("name", ts.cfg.Name))
