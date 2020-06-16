@@ -35,7 +35,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/iam/iamiface"
 	"github.com/aws/aws-sdk-go/service/kms/kmsiface"
 	"github.com/dustin/go-humanize"
-	"github.com/mitchellh/colorstring"
 	"go.uber.org/zap"
 	"k8s.io/utils/exec"
 )
@@ -111,13 +110,8 @@ func (ts *tester) CheckHealth() (err error) {
 }
 
 func (ts *tester) checkHealth() (err error) {
-	if ts.cfg.EKSConfig.LogColor {
-		colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-		colorstring.Printf("[light_green]checkHealth [default](%q)\n", ts.cfg.EKSConfig.ConfigPath)
-	} else {
-		fmt.Printf("\n\n*********************************\n")
-		fmt.Printf("checkHealth (%q)\n", ts.cfg.EKSConfig.ConfigPath)
-	}
+	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_green]checkHealth (%q)\n"), ts.cfg.EKSConfig.ConfigPath)
+	fmt.Printf(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
 
 	defer func() {
 		if err == nil {
@@ -264,13 +258,8 @@ const (
 )
 
 func (ts *tester) createEKS() (err error) {
-	if ts.cfg.EKSConfig.LogColor {
-		colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-		colorstring.Printf("[light_green]createEKS [default](%q)\n", ts.cfg.EKSConfig.ConfigPath)
-	} else {
-		fmt.Printf("\n\n*********************************\n")
-		fmt.Printf("createEKS (%q)\n", ts.cfg.EKSConfig.ConfigPath)
-	}
+	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_green]createEKS (%q)\n"), ts.cfg.EKSConfig.ConfigPath)
+	fmt.Printf(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
 
 	if ts.cfg.EKSConfig.Status.ClusterCFNStackID != "" ||
 		ts.cfg.EKSConfig.Status.ClusterARN != "" ||
@@ -519,13 +508,8 @@ func (ts *tester) createEKS() (err error) {
 }
 
 func (ts *tester) deleteEKS() error {
-	if ts.cfg.EKSConfig.LogColor {
-		colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-		colorstring.Printf("[light_blue]deleteEKS [default](%q)\n", ts.cfg.EKSConfig.ConfigPath)
-	} else {
-		fmt.Printf("\n\n*********************************\n")
-		fmt.Printf("deleteEKS (%q)\n", ts.cfg.EKSConfig.ConfigPath)
-	}
+	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_blue]deleteEKS (%q)\n"), ts.cfg.EKSConfig.ConfigPath)
+	fmt.Printf(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
 
 	ts.describeCluster()
 	if ts.cfg.EKSConfig.Status.ClusterStatusCurrent == "" || ts.cfg.EKSConfig.Status.ClusterStatusCurrent == eksconfig.ClusterStatusDELETEDORNOTEXIST {
@@ -773,13 +757,8 @@ users:
 // https://docs.aws.amazon.com/eks/latest/userguide/create-kubeconfig.html
 // "aws eks update-kubeconfig --name --role-arn --kubeconfig"
 func (ts *tester) createClient() (cli k8s_client.EKS, err error) {
-	if ts.cfg.EKSConfig.LogColor {
-		colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-		colorstring.Printf("[light_green]createClient [default](%q)\n", ts.cfg.EKSConfig.ConfigPath)
-	} else {
-		fmt.Printf("\n\n*********************************\n")
-		fmt.Printf("createClient (%q)\n", ts.cfg.EKSConfig.ConfigPath)
-	}
+	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_green]createClient (%q)\n"), ts.cfg.EKSConfig.ConfigPath)
+	fmt.Printf(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
 
 	if ts.cfg.EKSConfig.AWSIAMAuthenticatorPath != "" && ts.cfg.EKSConfig.AWSIAMAuthenticatorDownloadURL != "" {
 		tpl := template.Must(template.New("tmplKUBECONFIG").Parse(tmplKUBECONFIG))

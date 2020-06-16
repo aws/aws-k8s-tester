@@ -15,7 +15,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/elbv2"
-	"github.com/mitchellh/colorstring"
 	"go.uber.org/zap"
 )
 
@@ -583,13 +582,8 @@ Outputs:
 `
 
 func (ts *tester) createVPC() error {
-	if ts.cfg.EKSConfig.LogColor {
-		colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-		colorstring.Printf("[light_green]createVPC [default](%q)\n", ts.cfg.EKSConfig.ConfigPath)
-	} else {
-		fmt.Printf("\n\n*********************************\n")
-		fmt.Printf("createVPC (%q)\n", ts.cfg.EKSConfig.ConfigPath)
-	}
+	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_green]createVPC (%q)\n"), ts.cfg.EKSConfig.ConfigPath)
+	fmt.Printf(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
 
 	if ts.cfg.EKSConfig.Parameters.VPCID != "" {
 		ts.cfg.Logger.Info("querying ELBv2", zap.String("vpc-id", ts.cfg.EKSConfig.Parameters.VPCID))
@@ -842,13 +836,8 @@ func (ts *tester) createVPC() error {
 }
 
 func (ts *tester) deleteVPC() error {
-	if ts.cfg.EKSConfig.LogColor {
-		colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-		colorstring.Printf("[light_blue]deleteVPC [default](%q)\n", ts.cfg.EKSConfig.ConfigPath)
-	} else {
-		fmt.Printf("\n\n*********************************\n")
-		fmt.Printf("deleteVPC (%q)\n", ts.cfg.EKSConfig.ConfigPath)
-	}
+	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_blue]deleteVPC (%q)\n"), ts.cfg.EKSConfig.ConfigPath)
+	fmt.Printf(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
 
 	if !ts.cfg.EKSConfig.Parameters.VPCCreate {
 		ts.cfg.Logger.Info("Parameters.VPCCreate false; skipping deletion")
