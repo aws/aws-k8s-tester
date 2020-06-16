@@ -12,8 +12,8 @@ import (
 )
 
 func (ts *tester) createEncryption() error {
-	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_green]createEncryption (%q)\n"), ts.cfg.EKSConfig.ConfigPath)
 	fmt.Printf(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
+	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_green]createEncryption (%q)\n"), ts.cfg.EKSConfig.ConfigPath)
 
 	if !ts.cfg.EKSConfig.Parameters.EncryptionCMKCreate {
 		ts.cfg.Logger.Info("Parameters.EncryptionCMKCreate false; no need to create a new one")
@@ -77,8 +77,8 @@ func (ts *tester) createEncryption() error {
 }
 
 func (ts *tester) deleteEncryption() error {
-	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_blue]deleteEncryption (%q)\n"), ts.cfg.EKSConfig.ConfigPath)
 	fmt.Printf(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
+	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_blue]deleteEncryption (%q)\n"), ts.cfg.EKSConfig.ConfigPath)
 
 	if !ts.cfg.EKSConfig.Parameters.EncryptionCMKCreate {
 		ts.cfg.Logger.Info("Parameters.EncryptionCMKCreate false; no need to delete one")

@@ -582,8 +582,8 @@ Outputs:
 `
 
 func (ts *tester) createVPC() error {
-	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_green]createVPC (%q)\n"), ts.cfg.EKSConfig.ConfigPath)
 	fmt.Printf(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
+	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_green]createVPC (%q)\n"), ts.cfg.EKSConfig.ConfigPath)
 
 	if ts.cfg.EKSConfig.Parameters.VPCID != "" {
 		ts.cfg.Logger.Info("querying ELBv2", zap.String("vpc-id", ts.cfg.EKSConfig.Parameters.VPCID))
@@ -836,8 +836,8 @@ func (ts *tester) createVPC() error {
 }
 
 func (ts *tester) deleteVPC() error {
-	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_blue]deleteVPC (%q)\n"), ts.cfg.EKSConfig.ConfigPath)
 	fmt.Printf(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
+	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_blue]deleteVPC (%q)\n"), ts.cfg.EKSConfig.ConfigPath)
 
 	if !ts.cfg.EKSConfig.Parameters.VPCCreate {
 		ts.cfg.Logger.Info("Parameters.VPCCreate false; skipping deletion")

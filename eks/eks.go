@@ -394,8 +394,8 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 }
 
 func (ts *Tester) createTesters() (err error) {
-	fmt.Printf(ts.color("[light_green]createTesters (%q)\n"), ts.cfg.ConfigPath)
 	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Printf(ts.color("[light_green]createTesters (%q)\n"), ts.cfg.ConfigPath)
 
 	ts.clusterTester = cluster.New(cluster.Config{
 		Logger:    ts.lg,
@@ -667,31 +667,29 @@ func (ts *Tester) createTesters() (err error) {
 // ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Deployer
 // ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Options
 func (ts *Tester) Up() (err error) {
-	fmt.Printf(ts.color("[light_green]UP START (%q)\n"), ts.cfg.ConfigPath)
 	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Printf(ts.color("[light_green]UP START (%q)\n"), ts.cfg.ConfigPath)
 
 	now := time.Now()
 
 	defer func() {
-		fmt.Printf(ts.color("[light_green]UP DEFER START (%q)\n"), ts.cfg.ConfigPath)
 		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-		fmt.Printf("\n\n# to delete cluster\naws-k8s-tester eks delete cluster --path %s\n\n", ts.cfg.ConfigPath)
+		fmt.Printf(ts.color("[light_green]UP DEFER START (%q)\n"), ts.cfg.ConfigPath)
 
 		if serr := ts.uploadToS3(); serr != nil {
 			ts.lg.Warn("failed to upload artifacts to S3", zap.Error(serr))
 		} else {
 			ts.s3Uploaded = true
 		}
-		fmt.Printf("\n\n# to delete cluster\naws-k8s-tester eks delete cluster --path %s\n\n", ts.cfg.ConfigPath)
 
 		if err == nil {
 			if ts.cfg.Status.Up {
-				fmt.Printf(ts.color("[light_green]SSH (%q)\n"), ts.cfg.ConfigPath)
 				fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+				fmt.Printf(ts.color("[light_green]SSH (%q)\n"), ts.cfg.ConfigPath)
 
 				fmt.Println(ts.cfg.SSHCommands())
-				fmt.Printf(ts.color("[light_green]kubectl (%q)\n"), ts.cfg.ConfigPath)
 				fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+				fmt.Printf(ts.color("[light_green]kubectl (%q)\n"), ts.cfg.ConfigPath)
 
 				fmt.Println(ts.cfg.KubectlCommands())
 
@@ -700,12 +698,12 @@ func (ts *Tester) Up() (err error) {
 				)
 
 				ts.lg.Sugar().Infof("Up.defer end (%s, %s)", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-				fmt.Printf(ts.color("\n\n💯 😁 👍 :) [light_green]UP SUCCESS\n\n\n"))
 				fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+				fmt.Printf(ts.color("\n\n💯 😁 👍 :) [light_green]UP SUCCESS\n\n\n"))
 
 			} else {
-				fmt.Printf(ts.color("\n\n😲 😲 😲  [light_magenta]UP ABORTED ???\n\n\n"))
 				fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+				fmt.Printf(ts.color("\n\n😲 😲 😲  [light_magenta]UP ABORTED ???\n\n\n"))
 
 			}
 			fmt.Printf("\n\n# to delete cluster\naws-k8s-tester eks delete cluster --path %s\n\n", ts.cfg.ConfigPath)
@@ -714,12 +712,12 @@ func (ts *Tester) Up() (err error) {
 
 		if !ts.cfg.OnFailureDelete {
 			if ts.cfg.Status.Up {
-				fmt.Printf(ts.color("[light_green]SSH (%q)\n"), ts.cfg.ConfigPath)
 				fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+				fmt.Printf(ts.color("[light_green]SSH (%q)\n"), ts.cfg.ConfigPath)
 
 				fmt.Println(ts.cfg.SSHCommands())
-				fmt.Printf(ts.color("[light_green]kubectl (%q)\n"), ts.cfg.ConfigPath)
 				fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+				fmt.Printf(ts.color("[light_green]kubectl (%q)\n"), ts.cfg.ConfigPath)
 
 				fmt.Println(ts.cfg.KubectlCommands())
 			}
@@ -738,18 +736,18 @@ func (ts *Tester) Up() (err error) {
 		}
 
 		if ts.cfg.Status.Up {
-			fmt.Printf(ts.color("[light_green]SSH (%q)\n"), ts.cfg.ConfigPath)
 			fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+			fmt.Printf(ts.color("[light_green]SSH (%q)\n"), ts.cfg.ConfigPath)
 
 			fmt.Println(ts.cfg.SSHCommands())
-			fmt.Printf(ts.color("[light_green]kubectl (%q)\n"), ts.cfg.ConfigPath)
 			fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+			fmt.Printf(ts.color("[light_green]kubectl (%q)\n"), ts.cfg.ConfigPath)
 
 			fmt.Println(ts.cfg.KubectlCommands())
 		}
 		fmt.Printf(ts.color("\n\n\n[light_magenta]UP FAIL ERROR:\n\n%v\n\n\n"), err)
-		fmt.Printf(ts.color("🔥 💀 👽 😱 😡 (-_-) [light_magenta]UP FAIL\n"))
 		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Printf(ts.color("🔥 💀 👽 😱 😡 (-_-) [light_magenta]UP FAIL\n"))
 
 		ts.lg.Warn("Up failed; reverting resource creation",
 			zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
@@ -773,17 +771,16 @@ func (ts *Tester) Up() (err error) {
 			ts.lg.Warn("reverted Up")
 		}
 		fmt.Printf(ts.color("\n\n\n[light_magenta]UP FAIL ERROR:\n\n%v\n\n\n"), err)
-		fmt.Printf(ts.color("\n\n🔥 💀 👽 😱 😡 (-_-) [light_magenta]UP FAIL\n\n\n"))
 		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Printf(ts.color("\n\n🔥 💀 👽 😱 😡 (-_-) [light_magenta]UP FAIL\n\n\n"))
 
 		ts.lg.Sugar().Infof("Up.defer end (%s, %s)", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-		fmt.Printf("\n\n# to delete cluster\naws-k8s-tester eks delete cluster --path %s\n\n", ts.cfg.ConfigPath)
 	}()
 
 	ts.lg.Info("Up started", zap.String("version", version.Version()), zap.String("name", ts.cfg.Name))
 	defer ts.cfg.Sync()
-	fmt.Printf(ts.color("[light_green]createS3 (%q)\n"), ts.cfg.ConfigPath)
 	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Printf(ts.color("[light_green]createS3 (%q)\n"), ts.cfg.ConfigPath)
 
 	if err := catchInterrupt(
 		ts.lg,
@@ -794,8 +791,8 @@ func (ts *Tester) Up() (err error) {
 	); err != nil {
 		return err
 	}
-	fmt.Printf(ts.color("[light_green]createKeyPair (%q)\n"), ts.cfg.ConfigPath)
 	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Printf(ts.color("[light_green]createKeyPair (%q)\n"), ts.cfg.ConfigPath)
 
 	if err := catchInterrupt(
 		ts.lg,
@@ -806,8 +803,8 @@ func (ts *Tester) Up() (err error) {
 	); err != nil {
 		return err
 	}
-	fmt.Printf(ts.color("[light_green]createCluster (%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Printf(ts.color("[light_green]createCluster (%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 
 	if err := catchInterrupt(
 		ts.lg,
@@ -827,8 +824,8 @@ func (ts *Tester) Up() (err error) {
 		if err := ts.cfg.EvaluateCommandRefs(); err != nil {
 			return err
 		}
-		fmt.Printf(ts.color("[light_green]runCommand.CommandAfterCreateCluster (%q)\n"), ts.cfg.CommandAfterCreateCluster)
 		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Printf(ts.color("[light_green]runCommand.CommandAfterCreateCluster (%q)\n"), ts.cfg.CommandAfterCreateCluster)
 
 		out, err := runCommand(ts.lg, ts.cfg.CommandAfterCreateCluster, ts.cfg.CommandAfterCreateClusterTimeout)
 		if err != nil {
@@ -852,10 +849,9 @@ func (ts *Tester) Up() (err error) {
 		if ts.ngTester == nil {
 			return errors.New("ts.ngTester == nil when AddOnNodeGroups.Enable == true")
 		}
-		fmt.
-			// create NG first, so MNG configmap update can be called afterwards
-			Printf(ts.color("[light_green]ngTester.Create (%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		// create NG first, so MNG configmap update can be called afterwards
 		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Printf(ts.color("[light_green]ngTester.Create (%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 
 		if err := catchInterrupt(
 			ts.lg,
@@ -872,8 +868,8 @@ func (ts *Tester) Up() (err error) {
 		if ts.mngTester == nil {
 			return errors.New("ts.mngTester == nil when AddOnManagedNodeGroups.Enable == true")
 		}
-		fmt.Printf(ts.color("[light_green]mngTester.Create (%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Printf(ts.color("[light_green]mngTester.Create (%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 
 		if err := catchInterrupt(
 			ts.lg,
@@ -908,8 +904,8 @@ func (ts *Tester) Up() (err error) {
 		}
 	}
 	if needGPU {
-		fmt.Printf(ts.color("[light_green]gpuTester.InstallNvidiaDriver (%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Printf(ts.color("[light_green]gpuTester.InstallNvidiaDriver (%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 
 		if err := catchInterrupt(
 			ts.lg,
@@ -921,8 +917,8 @@ func (ts *Tester) Up() (err error) {
 			ts.lg.Warn("failed to install nvidia driver", zap.Error(err))
 			return err
 		}
-		fmt.Printf(ts.color("[light_green]gpuTester.CreateNvidiaSMI (%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Printf(ts.color("[light_green]gpuTester.CreateNvidiaSMI (%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 
 		if err := catchInterrupt(
 			ts.lg,
@@ -940,8 +936,8 @@ func (ts *Tester) Up() (err error) {
 	}
 
 	for idx, tss := range ts.testers {
-		fmt.Printf(ts.color("[light_green]testers[%02d].Create [cyan]%q (%q, %q)\n"), idx, reflect.TypeOf(tss), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Printf(ts.color("[light_green]testers[%02d].Create [cyan]%q (%q, %q)\n"), idx, reflect.TypeOf(tss), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 
 		err := catchInterrupt(
 			ts.lg,
@@ -952,8 +948,8 @@ func (ts *Tester) Up() (err error) {
 		)
 
 		if idx%5 == 0 {
-			fmt.Printf(ts.color("[light_green]testers[%02d] uploadToS3 [cyan]%q (%q, %q)\n"), idx, reflect.TypeOf(tss), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 			fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+			fmt.Printf(ts.color("[light_green]testers[%02d] uploadToS3 [cyan]%q (%q, %q)\n"), idx, reflect.TypeOf(tss), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 
 			if serr := ts.uploadToS3(); serr != nil {
 				ts.lg.Warn("failed to upload artifacts to S3", zap.Error(serr))
@@ -969,8 +965,8 @@ func (ts *Tester) Up() (err error) {
 		if ts.ngTester == nil {
 			return errors.New("ts.ngTester == nil when AddOnNodeGroups.Enable == true")
 		}
-		fmt.Printf(ts.color("[light_green]ngTester.FetchLogs (%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Printf(ts.color("[light_green]ngTester.FetchLogs (%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 
 		waitDur := 15 * time.Second
 		ts.lg.Info("sleeping before ngTester.FetchLogs", zap.Duration("wait", waitDur))
@@ -991,8 +987,8 @@ func (ts *Tester) Up() (err error) {
 		if ts.mngTester == nil {
 			return errors.New("ts.mngTester == nil when AddOnManagedNodeGroups.Enable == true")
 		}
-		fmt.Printf(ts.color("[light_green]mngTester.FetchLogs (%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Printf(ts.color("[light_green]mngTester.FetchLogs (%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 
 		waitDur := 15 * time.Second
 		ts.lg.Info("sleeping before mngTester.FetchLogs", zap.Duration("wait", waitDur))
@@ -1012,8 +1008,8 @@ func (ts *Tester) Up() (err error) {
 	if (ts.cfg.IsEnabledAddOnNodeGroups() && ts.cfg.AddOnNodeGroups.Created && ts.cfg.AddOnNodeGroups.FetchLogs) ||
 		(ts.cfg.IsEnabledAddOnManagedNodeGroups() && ts.cfg.AddOnManagedNodeGroups.Created && ts.cfg.AddOnManagedNodeGroups.FetchLogs) {
 		for idx, tss := range ts.testers {
-			fmt.Printf(ts.color("[light_green]testers[%02d].AggregateResults [cyan]%q (%q, %q)\n"), idx, reflect.TypeOf(tss), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 			fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+			fmt.Printf(ts.color("[light_green]testers[%02d].AggregateResults [cyan]%q (%q, %q)\n"), idx, reflect.TypeOf(tss), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 
 			err := catchInterrupt(
 				ts.lg,
@@ -1027,8 +1023,8 @@ func (ts *Tester) Up() (err error) {
 			}
 		}
 	}
-	fmt.Printf(ts.color("[light_green]clusterTester.CheckHealth (%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Printf(ts.color("[light_green]clusterTester.CheckHealth (%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 
 	// TODO: investigate why "ts.k8sClient == nil"
 	if ts.k8sClient == nil {
@@ -1048,8 +1044,8 @@ func (ts *Tester) Up() (err error) {
 		if err := ts.cfg.EvaluateCommandRefs(); err != nil {
 			return err
 		}
-		fmt.Printf(ts.color("[light_green]runCommand.CommandAfterCreateAddOns (%q)\n"), ts.cfg.CommandAfterCreateAddOns)
 		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Printf(ts.color("[light_green]runCommand.CommandAfterCreateAddOns (%q)\n"), ts.cfg.CommandAfterCreateAddOns)
 
 		out, err := runCommand(ts.lg, ts.cfg.CommandAfterCreateAddOns, ts.cfg.CommandAfterCreateAddOnsTimeout)
 		if err != nil {
@@ -1078,8 +1074,8 @@ func (ts *Tester) Up() (err error) {
 				break
 			}
 		}
-		fmt.Printf(ts.color("[light_green]mngTester.UpgradeVersion (%q, upgradeRun %v)\n"), ts.cfg.ConfigPath, upgradeRun)
 		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Printf(ts.color("[light_green]mngTester.UpgradeVersion (%q, upgradeRun %v)\n"), ts.cfg.ConfigPath, upgradeRun)
 
 		if err := catchInterrupt(
 			ts.lg,
@@ -1096,8 +1092,8 @@ func (ts *Tester) Up() (err error) {
 		if ts.mngTester == nil {
 			return errors.New("ts.mngTester == nil when AddOnManagedNodeGroups.Enable == true")
 		}
-		fmt.Printf(ts.color("[light_green]mngTester.FetchLogs after upgrade (%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Printf(ts.color("[light_green]mngTester.FetchLogs after upgrade (%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 
 		waitDur := 15 * time.Second
 		ts.lg.Info("sleeping before mngTester.FetchLogs", zap.Duration("wait", waitDur))
@@ -1118,8 +1114,8 @@ func (ts *Tester) Up() (err error) {
 		if err := ts.cfg.EvaluateCommandRefs(); err != nil {
 			return err
 		}
-		fmt.Printf(ts.color("[light_green]runCommand.CommandAfterCreateAddOns (%q)\n"), ts.cfg.CommandAfterCreateAddOns)
 		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Printf(ts.color("[light_green]runCommand.CommandAfterCreateAddOns (%q)\n"), ts.cfg.CommandAfterCreateAddOns)
 
 		out, err := runCommand(ts.lg, ts.cfg.CommandAfterCreateAddOns, ts.cfg.CommandAfterCreateAddOnsTimeout)
 		if err != nil {
@@ -1149,8 +1145,8 @@ func (ts *Tester) Down() error {
 }
 
 func (ts *Tester) down() (err error) {
-	fmt.Printf(ts.color("[light_blue]DOWN START (%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Printf(ts.color("[light_blue]DOWN START (%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 
 	now := time.Now()
 	ts.lg.Warn("starting Down",
@@ -1167,18 +1163,18 @@ func (ts *Tester) down() (err error) {
 		ts.cfg.Sync()
 
 		if err == nil {
-			fmt.Printf(ts.color("\n\n💯 😁 👍 :) [light_blue]DOWN SUCCESS\n\n\n"))
-			fmt.Printf(ts.color("[light_blue]DOWN DEFER START (%q)\n"), ts.cfg.ConfigPath)
 			fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+			fmt.Printf(ts.color("[light_blue]DOWN DEFER START (%q)\n"), ts.cfg.ConfigPath)
+			fmt.Printf(ts.color("\n\n💯 😁 👍 :) [light_blue]DOWN SUCCESS\n\n\n"))
 
 			ts.lg.Info("successfully finished Down",
 				zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			)
 
 		} else {
-			fmt.Printf(ts.color("🔥 💀 👽 😱 😡 (-_-) [light_magenta]DOWN FAIL\n"))
-			fmt.Printf(ts.color("[light_blue]DOWN DEFER START (%q)\n"), ts.cfg.ConfigPath)
 			fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+			fmt.Printf(ts.color("[light_blue]DOWN DEFER START (%q)\n"), ts.cfg.ConfigPath)
+			fmt.Printf(ts.color("🔥 💀 👽 😱 😡 (-_-) [light_magenta]DOWN FAIL\n"))
 
 			ts.lg.Info("failed Down",
 				zap.Error(err),
@@ -1188,8 +1184,8 @@ func (ts *Tester) down() (err error) {
 	}()
 
 	var errs []string
-	fmt.Printf(ts.color("[light_blue]deleteKeyPair (%q)\n"), ts.cfg.ConfigPath)
 	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Printf(ts.color("[light_blue]deleteKeyPair (%q)\n"), ts.cfg.ConfigPath)
 
 	if err := ts.deleteKeyPair(); err != nil {
 		ts.lg.Warn("failed to delete key pair", zap.Error(err))
@@ -1200,8 +1196,8 @@ func (ts *Tester) down() (err error) {
 	for idx := range ts.testers {
 		idx = testersN - idx - 1
 		tss := ts.testers[idx]
-		fmt.Printf(ts.color("[light_blue]testers[%02d].Delete [cyan]%q (%q, %q)\n"), idx, reflect.TypeOf(tss), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Printf(ts.color("[light_blue]testers[%02d].Delete [cyan]%q (%q, %q)\n"), idx, reflect.TypeOf(tss), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 
 		if err := tss.Delete(); err != nil {
 			ts.lg.Warn("failed tester.Delete", zap.Error(err))
@@ -1235,8 +1231,8 @@ func (ts *Tester) down() (err error) {
 	// following need to be run in order to resolve delete dependency
 	// e.g. cluster must be deleted before VPC delete
 	if ts.cfg.IsEnabledAddOnManagedNodeGroups() && ts.mngTester != nil {
-		fmt.Printf(ts.color("[light_blue]mngTester.Delete (%q)\n"), ts.cfg.ConfigPath)
 		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Printf(ts.color("[light_blue]mngTester.Delete (%q)\n"), ts.cfg.ConfigPath)
 
 		if err := ts.mngTester.Delete(); err != nil {
 			ts.lg.Warn("failed mngTester.Delete", zap.Error(err))
@@ -1249,8 +1245,8 @@ func (ts *Tester) down() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnNodeGroups() && ts.ngTester != nil {
-		fmt.Printf(ts.color("[light_blue]ngTester.Delete (%q)\n"), ts.cfg.ConfigPath)
 		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Printf(ts.color("[light_blue]ngTester.Delete (%q)\n"), ts.cfg.ConfigPath)
 
 		if err := ts.ngTester.Delete(); err != nil {
 			ts.lg.Warn("failed ngTester.Delete", zap.Error(err))
@@ -1261,15 +1257,15 @@ func (ts *Tester) down() (err error) {
 		ts.lg.Info("sleeping before cluster deletion", zap.Duration("wait", waitDur))
 		time.Sleep(waitDur)
 	}
-	fmt.Printf(ts.color("[light_blue]clusterTester.Delete (%q)\n"), ts.cfg.ConfigPath)
 	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Printf(ts.color("[light_blue]clusterTester.Delete (%q)\n"), ts.cfg.ConfigPath)
 
 	if err := ts.clusterTester.Delete(); err != nil {
 		ts.lg.Warn("failed clusterTester.Delete", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
-	fmt.Printf(ts.color("[light_blue]deleteS3 (%q)\n"), ts.cfg.ConfigPath)
 	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Printf(ts.color("[light_blue]deleteS3 (%q)\n"), ts.cfg.ConfigPath)
 
 	if err := ts.deleteS3(); err != nil {
 		ts.lg.Warn("failed deleteS3", zap.Error(err))
