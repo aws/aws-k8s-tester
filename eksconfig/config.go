@@ -321,7 +321,11 @@ type Config struct {
 }
 
 func (c Config) Colorize(input string) string {
-	colorize := colorstring.Colorize{Disable: !c.LogColor, Reset: true}
+	colorize := colorstring.Colorize{
+		Colors:  colorstring.DefaultColors,
+		Disable: !c.LogColor,
+		Reset:   true,
+	}
 	return colorize.Color(input)
 }
 
