@@ -43,7 +43,7 @@ import (
 // Tester implements "kubetest2" Deployer.
 // ref. https://github.com/kubernetes/test-infra/blob/master/kubetest2/pkg/types/types.go
 type Tester struct {
-	color bool
+	color func(string) string
 
 	stopCreationCh     chan struct{}
 	stopCreationChOnce *sync.Once
@@ -95,18 +95,12 @@ func New(cfg *ec2config.Config) (*Tester, error) {
 	cfg.LogColor = isColor
 	cfg.Sync()
 
-	if isColor {
-		colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-		fmt.Println("😎 🙏 🚶 ✔️ 👍")
-		colorstring.Printf("[light_green]New [default]%q (%q)\n", cfg.ConfigPath, version.Version())
-	} else {
-		fmt.Printf("\n\n*********************************\n")
-		fmt.Println("😎 🙏 🚶 ✔️ 👍")
-		fmt.Printf("New %q (%q)\n", cfg.ConfigPath, version.Version())
-	}
+	fmt.Printf(cfg.Colorize("\n\n[yellow]*********************************\n"))
+	fmt.Println("😎 🙏 🚶 ✔️ 👍")
+	fmt.Printf(cfg.Colorize("[light_green]New %q (%q)\n"), cfg.ConfigPath, version.Version())
 
 	ts := &Tester{
-		color:              isColor,
+		color:              cfg.Colorize,
 		stopCreationCh:     make(chan struct{}),
 		stopCreationChOnce: new(sync.Once),
 		osSig:              make(chan os.Signal),
@@ -155,24 +149,14 @@ func New(cfg *ec2config.Config) (*Tester, error) {
 
 // Up should provision a new cluster for testing
 func (ts *Tester) Up() (err error) {
-	if ts.color {
-		colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-		colorstring.Printf("[light_green]UP START [default](%q)\n", ts.cfg.ConfigPath)
-	} else {
-		fmt.Printf("\n\n*********************************\n")
-		fmt.Printf("UP START (%q)\n", ts.cfg.ConfigPath)
-	}
+	fmt.Printf(ts.color("[light_green]UP START (%q)\n"), ts.cfg.ConfigPath)
+	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 
 	now := time.Now()
 
 	defer func() {
-		if ts.color {
-			colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-			colorstring.Printf("[light_green]UP DEFER START [default](%q)\n", ts.cfg.ConfigPath)
-		} else {
-			fmt.Printf("\n\n*********************************\n")
-			fmt.Printf("UP DEFER START (%q)\n", ts.cfg.ConfigPath)
-		}
+		fmt.Printf(ts.color("[light_green]UP DEFER START (%q)\n"), ts.cfg.ConfigPath)
+		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 
 		if serr := ts.uploadToS3(); serr != nil {
 			ts.lg.Warn("failed to upload artifacts to S3", zap.Error(serr))
@@ -180,25 +164,17 @@ func (ts *Tester) Up() (err error) {
 
 		if err == nil {
 			if ts.cfg.Up {
-				if ts.color {
-					colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-				} else {
-					fmt.Printf("\n\n*********************************\n")
-				}
+				fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+
 				ts.lg.Sugar().Infof("SSH (%s)", ts.cfg.ConfigPath)
 				fmt.Println(ts.cfg.SSHCommands())
 
 				ts.lg.Info("Up succeeded",
 					zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 				)
+				fmt.Printf(ts.color("\n\n💯 😁 👍 :) [light_green]Up success\n\n\n"))
+				fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 
-				if ts.color {
-					colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-					colorstring.Printf("\n\n💯 😁 👍 :) [light_green]Up success\n\n\n")
-				} else {
-					fmt.Printf("\n\n*********************************\n")
-					fmt.Printf("\n\n💯 😁 👍 :) Up success\n\n\n")
-				}
 				ts.lg.Sugar().Infof("Up.defer end (%s)", ts.cfg.ConfigPath)
 				fmt.Printf("\n\n💯 😁 👍 :) Up success\n\n\n")
 			} else {
@@ -210,11 +186,8 @@ func (ts *Tester) Up() (err error) {
 
 		if !ts.cfg.OnFailureDelete {
 			if ts.cfg.Up {
-				if ts.color {
-					colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-				} else {
-					fmt.Printf("\n\n*********************************\n")
-				}
+				fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+
 				ts.lg.Sugar().Infof("SSH (%s)", ts.cfg.ConfigPath)
 				fmt.Println(ts.cfg.SSHCommands())
 			}
@@ -223,35 +196,21 @@ func (ts *Tester) Up() (err error) {
 				zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 				zap.Error(err),
 			)
+			fmt.Printf(ts.color("🔥 💀 👽 😱 😡 (-_-) [light_magenta]UP FAIL\n"))
+			fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 
-			if ts.color {
-				colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-				colorstring.Printf("🔥 💀 👽 😱 😡 (-_-) [light_magenta]UP FAIL\n")
-			} else {
-				fmt.Printf("\n\n*********************************\n")
-				fmt.Printf("🔥 💀 👽 😱 😡 (-_-) UP FAIL\n")
-			}
 			fmt.Printf("\n\n# to delete instances\nec2-utils delete instances --path %s\n\n", ts.cfg.ConfigPath)
 			return
 		}
 
 		if ts.cfg.Up {
-			if ts.color {
-				colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-			} else {
-				fmt.Printf("\n\n*********************************\n")
-			}
+			fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+
 			ts.lg.Sugar().Infof("SSH (%s)", ts.cfg.ConfigPath)
 			fmt.Println(ts.cfg.SSHCommands())
 		}
-
-		if ts.color {
-			colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-			colorstring.Printf("🔥 💀 👽 😱 😡 (-_-) [light_magenta]UP FAIL\n")
-		} else {
-			fmt.Printf("\n\n*********************************\n")
-			fmt.Printf("🔥 💀 👽 😱 😡 (-_-) UP FAIL\n")
-		}
+		fmt.Printf(ts.color("🔥 💀 👽 😱 😡 (-_-) [light_magenta]UP FAIL\n"))
+		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 
 		ts.lg.Warn("Up failed; reverting resource creation",
 			zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
@@ -274,14 +233,9 @@ func (ts *Tester) Up() (err error) {
 		} else {
 			ts.lg.Warn("reverted Up")
 		}
+		fmt.Printf(ts.color("🔥 💀 👽 😱 😡 (-_-) [light_magenta]UP FAIL\n"))
+		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 
-		if ts.color {
-			colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-			colorstring.Printf("🔥 💀 👽 😱 😡 (-_-) [light_magenta]UP FAIL\n")
-		} else {
-			fmt.Printf("\n\n*********************************\n")
-			fmt.Printf("🔥 💀 👽 😱 😡 (-_-) UP FAIL\n")
-		}
 	}()
 
 	ts.lg.Info("Up started",
@@ -289,14 +243,9 @@ func (ts *Tester) Up() (err error) {
 		zap.String("name", ts.cfg.Name),
 	)
 	defer ts.cfg.Sync()
+	fmt.Printf(ts.color("[light_green]createS3 (%q)\n"), ts.cfg.ConfigPath)
+	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 
-	if ts.color {
-		colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-		colorstring.Printf("[light_green]createS3 [default](%q)\n", ts.cfg.ConfigPath)
-	} else {
-		fmt.Printf("\n\n*********************************\n")
-		fmt.Printf("createS3 (%q)\n", ts.cfg.ConfigPath)
-	}
 	if err := catchInterrupt(
 		ts.lg,
 		ts.stopCreationCh,
@@ -306,14 +255,9 @@ func (ts *Tester) Up() (err error) {
 	); err != nil {
 		return err
 	}
+	fmt.Printf(ts.color("[light_green]createRole (%q)\n"), ts.cfg.ConfigPath)
+	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 
-	if ts.color {
-		colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-		colorstring.Printf("[light_green]createRole [default](%q)\n", ts.cfg.ConfigPath)
-	} else {
-		fmt.Printf("\n\n*********************************\n")
-		fmt.Printf("createRole (%q)\n", ts.cfg.ConfigPath)
-	}
 	if err := catchInterrupt(
 		ts.lg,
 		ts.stopCreationCh,
@@ -323,14 +267,9 @@ func (ts *Tester) Up() (err error) {
 	); err != nil {
 		return err
 	}
+	fmt.Printf(ts.color("[light_green]createVPC (%q)\n"), ts.cfg.ConfigPath)
+	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 
-	if ts.color {
-		colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-		colorstring.Printf("[light_green]createVPC [default](%q)\n", ts.cfg.ConfigPath)
-	} else {
-		fmt.Printf("\n\n*********************************\n")
-		fmt.Printf("createVPC (%q)\n", ts.cfg.ConfigPath)
-	}
 	if err := catchInterrupt(
 		ts.lg,
 		ts.stopCreationCh,
@@ -340,14 +279,9 @@ func (ts *Tester) Up() (err error) {
 	); err != nil {
 		return err
 	}
+	fmt.Printf(ts.color("[light_green]createKeyPair (%q)\n"), ts.cfg.ConfigPath)
+	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 
-	if ts.color {
-		colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-		colorstring.Printf("[light_green]createKeyPair [default](%q)\n", ts.cfg.ConfigPath)
-	} else {
-		fmt.Printf("\n\n*********************************\n")
-		fmt.Printf("createKeyPair (%q)\n", ts.cfg.ConfigPath)
-	}
 	if err := catchInterrupt(
 		ts.lg,
 		ts.stopCreationCh,
@@ -357,14 +291,9 @@ func (ts *Tester) Up() (err error) {
 	); err != nil {
 		return err
 	}
+	fmt.Printf(ts.color("[light_green]createASGs (%q)\n"), ts.cfg.ConfigPath)
+	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 
-	if ts.color {
-		colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-		colorstring.Printf("[light_green]createASGs [default](%q)\n", ts.cfg.ConfigPath)
-	} else {
-		fmt.Printf("\n\n*********************************\n")
-		fmt.Printf("createASGs (%q)\n", ts.cfg.ConfigPath)
-	}
 	if err := catchInterrupt(
 		ts.lg,
 		ts.stopCreationCh,
@@ -374,14 +303,9 @@ func (ts *Tester) Up() (err error) {
 	); err != nil {
 		return err
 	}
+	fmt.Printf(ts.color("[light_green]createSSM (%q)\n"), ts.cfg.ConfigPath)
+	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 
-	if ts.color {
-		colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-		colorstring.Printf("[light_green]createSSM [default](%q)\n", ts.cfg.ConfigPath)
-	} else {
-		fmt.Printf("\n\n*********************************\n")
-		fmt.Printf("createSSM (%q)\n", ts.cfg.ConfigPath)
-	}
 	if err := catchInterrupt(
 		ts.lg,
 		ts.stopCreationCh,
@@ -393,13 +317,8 @@ func (ts *Tester) Up() (err error) {
 	}
 
 	if ts.cfg.ASGsFetchLogs {
-		if ts.color {
-			colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-			colorstring.Printf("[light_green]FetchLogs [default](%q)\n", ts.cfg.ConfigPath)
-		} else {
-			fmt.Printf("\n\n*********************************\n")
-			fmt.Printf("FetchLogs (%q)\n", ts.cfg.ConfigPath)
-		}
+		fmt.Printf(ts.color("[light_green]FetchLogs (%q)\n"), ts.cfg.ConfigPath)
+		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 
 		waitDur := 20 * time.Second
 		ts.lg.Info("sleeping before FetchLogs", zap.Duration("wait", waitDur))
@@ -426,13 +345,8 @@ func (ts *Tester) Down() error {
 }
 
 func (ts *Tester) down() (err error) {
-	if ts.color {
-		colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-		colorstring.Printf("[light_blue]DOWN START [default](%q)\n", ts.cfg.ConfigPath)
-	} else {
-		fmt.Printf("\n\n*********************************\n")
-		fmt.Printf("DOWN START (%q)\n", ts.cfg.ConfigPath)
-	}
+	fmt.Printf(ts.color("[light_blue]DOWN START (%q)\n"), ts.cfg.ConfigPath)
+	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 
 	now := time.Now()
 	ts.lg.Warn("starting Down",
@@ -445,31 +359,18 @@ func (ts *Tester) down() (err error) {
 	defer func() {
 		ts.cfg.Sync()
 		if err == nil {
-			if ts.color {
-				colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-				colorstring.Printf("[light_blue]DOWN DEFER START [default](%q)\n", ts.cfg.ConfigPath)
-				colorstring.Printf("\n\n💯 😁 👍 :)  [light_blue]DOWN SUCCESS\n\n\n")
-			} else {
-				fmt.Printf("\n\n*********************************\n")
-				fmt.Printf("DOWN DEFER START (%q)\n\n", ts.cfg.ConfigPath)
-				fmt.Printf("\n\n💯 😁 👍 :)  DOWN SUCCESS\n\n\n")
-			}
+			fmt.Printf(ts.color("\n\n💯 😁 👍 :)  [light_blue]DOWN SUCCESS\n\n\n"))
+			fmt.Printf(ts.color("[light_blue]DOWN DEFER START (%q)\n"), ts.cfg.ConfigPath)
+			fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 
 			ts.lg.Info("successfully finished Down",
 				zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			)
 
 		} else {
-
-			if ts.color {
-				colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-				colorstring.Printf("[light_blue]DOWN DEFER START [default](%q)\n", ts.cfg.ConfigPath)
-				colorstring.Printf("🔥 💀 👽 😱 😡 (-_-) [light_magenta]DOWN FAIL\n")
-			} else {
-				fmt.Printf("\n\n*********************************\n")
-				fmt.Printf("DOWN DEFER START (%q)\n\n", ts.cfg.ConfigPath)
-				fmt.Printf("🔥 💀 👽 😱 😡 (-_-) DOWN FAIL\n\n")
-			}
+			fmt.Printf(ts.color("🔥 💀 👽 😱 😡 (-_-) [light_magenta]DOWN FAIL\n"))
+			fmt.Printf(ts.color("[light_blue]DOWN DEFER START (%q)\n"), ts.cfg.ConfigPath)
+			fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 
 			ts.lg.Info("failed Down",
 				zap.Error(err),
@@ -479,50 +380,30 @@ func (ts *Tester) down() (err error) {
 	}()
 
 	var errs []string
+	fmt.Printf(ts.color("[light_blue]deleteSSM (%q)\n"), ts.cfg.ConfigPath)
+	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 
-	if ts.color {
-		colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-		colorstring.Printf("[light_blue]deleteSSM [default](%q)\n", ts.cfg.ConfigPath)
-	} else {
-		fmt.Printf("\n\n*********************************\n")
-		fmt.Printf("deleteSSM (%q)\n", ts.cfg.ConfigPath)
-	}
 	if err := ts.deleteSSM(); err != nil {
 		ts.lg.Warn("deleteSSM failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
+	fmt.Printf(ts.color("[light_blue]deleteASGs (%q)\n"), ts.cfg.ConfigPath)
+	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 
-	if ts.color {
-		colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-		colorstring.Printf("[light_blue]deleteASGs [default](%q)\n", ts.cfg.ConfigPath)
-	} else {
-		fmt.Printf("\n\n*********************************\n")
-		fmt.Printf("deleteASGs (%q)\n", ts.cfg.ConfigPath)
-	}
 	if err := ts.deleteASGs(); err != nil {
 		ts.lg.Warn("deleteASGs failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
+	fmt.Printf(ts.color("[light_blue]deleteKeyPair (%q)\n"), ts.cfg.ConfigPath)
+	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 
-	if ts.color {
-		colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-		colorstring.Printf("[light_blue]deleteKeyPair [default](%q)\n", ts.cfg.ConfigPath)
-	} else {
-		fmt.Printf("\n\n*********************************\n")
-		fmt.Printf("deleteKeyPair (%q)\n", ts.cfg.ConfigPath)
-	}
 	if err := ts.deleteKeyPair(); err != nil {
 		ts.lg.Warn("deleteKeyPair failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
+	fmt.Printf(ts.color("[light_blue]deleteRole (%q)\n"), ts.cfg.ConfigPath)
+	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 
-	if ts.color {
-		colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-		colorstring.Printf("[light_blue]deleteRole [default](%q)\n", ts.cfg.ConfigPath)
-	} else {
-		fmt.Printf("\n\n*********************************\n")
-		fmt.Printf("deleteRole (%q)\n", ts.cfg.ConfigPath)
-	}
 	if err := ts.deleteRole(); err != nil {
 		ts.lg.Warn("deleteRole failed", zap.Error(err))
 		errs = append(errs, err.Error())
@@ -533,26 +414,16 @@ func (ts *Tester) down() (err error) {
 		ts.lg.Info("sleeping before VPC deletion", zap.Duration("wait", waitDur))
 		time.Sleep(waitDur)
 	}
+	fmt.Printf(ts.color("[light_blue]deleteVPC (%q)\n"), ts.cfg.ConfigPath)
+	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 
-	if ts.color {
-		colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-		colorstring.Printf("[light_blue]deleteVPC [default](%q)\n", ts.cfg.ConfigPath)
-	} else {
-		fmt.Printf("\n\n*********************************\n")
-		fmt.Printf("deleteVPC (%q)\n", ts.cfg.ConfigPath)
-	}
 	if err := ts.deleteVPC(); err != nil {
 		ts.lg.Warn("deleteVPC failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
+	fmt.Printf(ts.color("[light_blue]deleteS3 (%q)\n"), ts.cfg.ConfigPath)
+	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 
-	if ts.color {
-		colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-		colorstring.Printf("[light_blue]deleteS3 [default](%q)\n", ts.cfg.ConfigPath)
-	} else {
-		fmt.Printf("\n\n*********************************\n")
-		fmt.Printf("deleteS3 (%q)\n", ts.cfg.ConfigPath)
-	}
 	if err := ts.deleteS3(); err != nil {
 		ts.lg.Warn("deleteS3 failed", zap.Error(err))
 		errs = append(errs, err.Error())

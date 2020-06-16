@@ -8,18 +8,12 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/kms"
-	"github.com/mitchellh/colorstring"
 	"go.uber.org/zap"
 )
 
 func (ts *tester) createEncryption() error {
-	if ts.cfg.EKSConfig.LogColor {
-		colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-		colorstring.Printf("[light_green]createEncryption [default](%q)\n", ts.cfg.EKSConfig.ConfigPath)
-	} else {
-		fmt.Printf("\n\n*********************************\n")
-		fmt.Printf("createEncryption (%q)\n", ts.cfg.EKSConfig.ConfigPath)
-	}
+	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_green]createEncryption (%q)\n"), ts.cfg.EKSConfig.ConfigPath)
+	fmt.Printf(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
 
 	if !ts.cfg.EKSConfig.Parameters.EncryptionCMKCreate {
 		ts.cfg.Logger.Info("Parameters.EncryptionCMKCreate false; no need to create a new one")
@@ -83,13 +77,8 @@ func (ts *tester) createEncryption() error {
 }
 
 func (ts *tester) deleteEncryption() error {
-	if ts.cfg.EKSConfig.LogColor {
-		colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-		colorstring.Printf("[light_blue]deleteEncryption [default](%q)\n", ts.cfg.EKSConfig.ConfigPath)
-	} else {
-		fmt.Printf("\n\n*********************************\n")
-		fmt.Printf("deleteEncryption (%q)\n", ts.cfg.EKSConfig.ConfigPath)
-	}
+	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_blue]deleteEncryption (%q)\n"), ts.cfg.EKSConfig.ConfigPath)
+	fmt.Printf(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
 
 	if !ts.cfg.EKSConfig.Parameters.EncryptionCMKCreate {
 		ts.cfg.Logger.Info("Parameters.EncryptionCMKCreate false; no need to delete one")

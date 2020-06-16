@@ -16,7 +16,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/eks"
 	aws_eks "github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
-	"github.com/mitchellh/colorstring"
 	"go.uber.org/zap"
 )
 
@@ -60,14 +59,8 @@ func (ts *tester) Upgrade(mngName string) (err error) {
 		ts.cfg.Logger.Info("MNG version upgrade is already completed; skipping upgrade", zap.String("mng-name", mngName))
 		return nil
 	}
-
-	if ts.cfg.EKSConfig.LogColor {
-		colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-		colorstring.Printf("[light_green]MNGs[%q].Upgrade[default]\n", mngName)
-	} else {
-		fmt.Printf("\n\n*********************************\n")
-		fmt.Printf("MNGs[%q].Upgrade\n", mngName)
-	}
+	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_green]MNGs[%q].Upgrade\n"), mngName)
+	fmt.Printf(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
 
 	ts.cfg.Logger.Info("starting tester.Upgrade", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	cur.VersionUpgrade.Created = true

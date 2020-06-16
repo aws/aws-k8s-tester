@@ -23,6 +23,7 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/randutil"
 	"github.com/aws/aws-k8s-tester/pkg/terminal"
 	"github.com/aws/aws-sdk-go/aws/endpoints"
+	"github.com/mitchellh/colorstring"
 	"sigs.k8s.io/yaml" // must use "sigs.k8s.io/yaml"
 )
 
@@ -317,6 +318,11 @@ type Config struct {
 	// Status is read-only.
 	// Status cannot be configured via environmental variables.
 	Status *Status `json:"status,omitempty" read-only:"true"`
+}
+
+func (c Config) Colorize(input string) string {
+	colorize := colorstring.Colorize{Disable: !c.LogColor, Reset: true}
+	return colorize.Color(input)
 }
 
 // Parameters defines parameters for EKS "cluster" creation.
