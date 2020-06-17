@@ -750,12 +750,12 @@ func (ts *tester) createProfile() error {
 		7*time.Second,
 	)
 	for sv := range ch {
-		if sv.Error != nil {
-			cancel()
-			return sv.Error
-		}
+		err = sv.Error
 	}
 	cancel()
+	if err != nil {
+		return err
+	}
 
 	ts.cfg.Logger.Info("created fargate profile", zap.String("name", ts.cfg.EKSConfig.AddOnIRSAFargate.ProfileName))
 	return ts.cfg.EKSConfig.Sync()
@@ -785,8 +785,9 @@ func (ts *tester) deleteProfile() error {
 		break
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
 	ch := fargate_wait.Poll(
-		context.Background(),
+		ctx,
 		ts.cfg.Stopc,
 		ts.cfg.Logger,
 		ts.cfg.EKSAPI,
@@ -797,9 +798,11 @@ func (ts *tester) deleteProfile() error {
 		7*time.Second,
 	)
 	for sv := range ch {
-		if sv.Error != nil {
-			return sv.Error
-		}
+		err = sv.Error
+	}
+	cancel()
+	if err != nil {
+		return err
 	}
 
 	ts.cfg.Logger.Info("deleted fargate profile", zap.String("name", ts.cfg.EKSConfig.AddOnIRSAFargate.ProfileName))

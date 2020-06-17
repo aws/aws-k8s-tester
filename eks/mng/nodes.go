@@ -132,7 +132,7 @@ type templateMNG struct {
 	PropertyReleaseVersion  string
 }
 
-func (ts *tester) createASGs() error {
+func (ts *tester) createASGs() (err error) {
 	if ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleARN == "" {
 		return errors.New("empty AddOnManagedNodeGroups.RoleARN")
 	}
@@ -297,7 +297,7 @@ func (ts *tester) createASGs() error {
 			}
 			stackInput.TemplateBody = aws.String(buf.String())
 
-			if err := ioutil.WriteFile(cur.MNGCFNStackYAMLFilePath, buf.Bytes(), 0400); err != nil {
+			if err = ioutil.WriteFile(cur.MNGCFNStackYAMLFilePath, buf.Bytes(), 0400); err != nil {
 				return err
 			}
 			ts.cfg.Logger.Info("creating a new MNG using CFN",
@@ -435,21 +435,18 @@ func (ts *tester) createASGs() error {
 			20*time.Second,
 		)
 		for sv := range ch {
-			ss, serr := ts.setStatus(sv)
+			serr := ts.setStatus(sv)
 			if serr != nil {
 				cancel()
 				return serr
 			}
-			if sv.Error != nil && ss == aws_eks.NodegroupStatusCreateFailed {
-				ts.cfg.Logger.Warn("failed to create managed node group",
-					zap.String("status", ss),
-					zap.Error(sv.Error),
-				)
-				cancel()
-				return sv.Error
-			}
+			err = sv.Error
 		}
 		cancel()
+		if err != nil {
+			return err
+		}
+
 		cur, ok = ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName]
 		if !ok {
 			return fmt.Errorf("MNGs[%q] not found after creation", mngName)
@@ -602,29 +599,17 @@ func (ts *tester) deleteASG(mngName string) (err error) {
 			20*time.Second,
 		)
 		for sv := range ch {
-			ss, serr := ts.setStatus(sv)
+			serr := ts.setStatus(sv)
 			if serr != nil {
 				cancel()
 				return serr
 			}
 			err = sv.Error
-			if err == nil {
-				continue
-			}
-			if ss == aws_eks.NodegroupStatusDeleteFailed {
-				ts.cfg.Logger.Warn("failed to delete managed node group",
-					zap.String("status", ss),
-					zap.Error(err),
-				)
-				cancel()
-				return fmt.Errorf("failed to delete MNGs[%q] %v", mngName, err)
-			}
-			ts.cfg.Logger.Warn("failed to delete managed node group",
-				zap.String("status", ss),
-				zap.Error(err),
-			)
 		}
 		cancel()
+		if err != nil {
+			return err
+		}
 	}
 
 	timeEnd := time.Now()
@@ -642,14 +627,14 @@ func (ts *tester) deleteASG(mngName string) (err error) {
 	return err
 }
 
-func (ts *tester) setStatus(sv wait.ManagedNodeGroupStatus) (status string, err error) {
+func (ts *tester) setStatus(sv wait.ManagedNodeGroupStatus) (err error) {
 	name := sv.NodeGroupName
 	if name == "" {
-		return "", errors.New("EKS Managed Node Group empty name")
+		return errors.New("EKS Managed Node Group empty name")
 	}
 	cur, ok := ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[name]
 	if !ok {
-		return "", fmt.Errorf("EKS MNGs[%q] not found", name)
+		return fmt.Errorf("EKS MNGs[%q] not found", name)
 	}
 
 	if sv.NodeGroup == nil {
@@ -666,5 +651,5 @@ func (ts *tester) setStatus(sv wait.ManagedNodeGroupStatus) (status string, err 
 	}
 
 	ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[name] = cur
-	return cur.Status, ts.cfg.EKSConfig.Sync()
+	return ts.cfg.EKSConfig.Sync()
 }

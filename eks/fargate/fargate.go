@@ -469,12 +469,12 @@ func (ts *tester) createProfile() error {
 		7*time.Second,
 	)
 	for sv := range ch {
-		if sv.Error != nil {
-			cancel()
-			return sv.Error
-		}
+		err = sv.Error
 	}
 	cancel()
+	if err != nil {
+		return err
+	}
 
 	ts.cfg.Logger.Info("created fargate profile", zap.String("name", ts.cfg.EKSConfig.AddOnFargate.ProfileName))
 	return ts.cfg.EKSConfig.Sync()
@@ -517,12 +517,12 @@ func (ts *tester) deleteProfile() error {
 		7*time.Second,
 	)
 	for sv := range ch {
-		if sv.Error != nil {
-			cancel()
-			return sv.Error
-		}
+		err = sv.Error
 	}
 	cancel()
+	if err != nil {
+		return err
+	}
 
 	ts.cfg.Logger.Info("deleted fargate profile", zap.String("name", ts.cfg.EKSConfig.AddOnFargate.ProfileName))
 	return ts.cfg.EKSConfig.Sync()

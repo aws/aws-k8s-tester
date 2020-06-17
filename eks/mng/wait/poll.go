@@ -128,12 +128,15 @@ func Poll(
 				lg.Info("desired managed node group status; done", zap.String("status", currentStatus))
 				close(ch)
 				return
+
 			case aws_eks.NodegroupStatusCreateFailed,
 				aws_eks.NodegroupStatusDeleteFailed,
 				aws_eks.NodegroupStatusDegraded:
+				lg.Warn("unexpected managed node group status; failed", zap.String("status", currentStatus))
 				ch <- ManagedNodeGroupStatus{NodeGroupName: mngName, NodeGroup: nodeGroup, Error: fmt.Errorf("unexpected mng status %q", currentStatus)}
 				close(ch)
 				return
+
 			default:
 				ch <- ManagedNodeGroupStatus{NodeGroupName: mngName, NodeGroup: nodeGroup, Error: nil}
 			}

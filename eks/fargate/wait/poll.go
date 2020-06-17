@@ -132,9 +132,11 @@ func Poll(
 
 			case eks.FargateProfileStatusCreateFailed,
 				eks.FargateProfileStatusDeleteFailed:
+				lg.Warn("unexpected fargate profile status; failed", zap.String("status", currentStatus))
 				ch <- FargateProfileStatus{FargateProfile: fargateProfile, Error: fmt.Errorf("unexpected fargate status %q", currentStatus)}
 				close(ch)
 				return
+
 			default:
 				ch <- FargateProfileStatus{FargateProfile: fargateProfile, Error: nil}
 			}
