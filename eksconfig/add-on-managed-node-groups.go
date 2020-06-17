@@ -105,9 +105,6 @@ type MNG struct {
 	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
 	VolumeSize int `json:"volume-size,omitempty"`
 
-	// ScaleConfigs is a list of minimum, maximum, and desired node counts for a nodegroup
-	ScaleConfigs []MNGScaleConfig `json:"scale-configs,omitempty"`
-
 	// ASGMinSize is the minimum size of Node Group Auto Scaling Group.
 	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
 	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
@@ -144,11 +141,26 @@ type MNG struct {
 
 	// VersionUpgrade configures MNG version upgarde.
 	VersionUpgrade *MNGVersionUpgrade `json:"version-upgrade,omitempty"`
+
+	// ConfigUpdate configures MNG config update.
+	ConfigUpdates []*MNGConfigUpdate `json:"config-update,omitempty"`
 }
 
-// MNGScaleConfig contains the minimum, maximum, and desired node counts for a nodegroup.
+// MNGConfigUpdate contains the minimum, maximum, and desired node counts for a nodegroup.
 // ref, https://docs.aws.amazon.com/cli/latest/reference/eks/update-nodegroup-config.html
-type MNGScaleConfig struct {
+type MNGConfigUpdate struct {
+	// Created is true when the resource has been created.
+	// Used for delete operations.
+	Created         bool               `json:"created" read-only:"true"`
+	TimeFrameCreate timeutil.TimeFrame `json:"time-frame-create" read-only:"true"`
+	// InitialWait is the wait time before triggering version upgrades.
+	// All managed node group upgrades are triggered after all existing
+	// add-on installation is complete.
+	InitialWait time.Duration `json:"initial-wait"`
+	// InitialWaitString is not empty, then parses duration overwrites "InitialWait".
+	InitialWaitString string `json:"initial-wait-string"`
+
+	// Sizes are the specifications for number of nodes in the mng.
 	MinSize     int64 `json:"min-size,omitempty"`
 	MaxSize     int64 `json:"max-size,omitempty"`
 	DesiredSize int64 `json:"desired-size,omitempty"`

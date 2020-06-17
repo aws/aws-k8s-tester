@@ -169,19 +169,3 @@ func (ts *tester) Delete() error {
 	ts.cfg.EKSConfig.AddOnManagedNodeGroups.Created = false
 	return ts.cfg.EKSConfig.Sync()
 }
-
-// Scales every MNG to the next scaling configuration in the array.
-func (ts *tester) scaleMNG() (err error) {
-	for mngName, cur := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
-		if len(cur.ScaleConfigs) != 0 {
-			nodegroupConfigInput := &aws_eks.UpdateNodegroupConfigInput{ClientRequestToken: aws.String("TODO STRING"), //TODO
-				ClusterName:   aws.String(ts.cfg.EKSConfig.Name),
-				NodegroupName: aws.String(mngName),
-				ScalingConfig: &aws_eks.NodegroupScalingConfig{DesiredSize: aws.Int64(cur.ScaleConfigs[0].DesiredSize),
-					MaxSize: aws.Int64(cur.ScaleConfigs[0].MaxSize),
-					MinSize: aws.Int64(cur.ScaleConfigs[0].MinSize)}}
-			copy(cur.ScaleConfigs[0:], cur.ScaleConfigs[1:])
-			ts.cfg.EKSAPI.UpdateNodegroupConfig(nodegroupConfigInput)
-		}
-	}
-}
