@@ -4,13 +4,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/eks"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
-	"github.com/aws/aws-k8s-tester/pkg/randutil"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
@@ -27,9 +25,6 @@ func newCreateCluster() *cobra.Command {
 }
 
 func createClusterFunc(cmd *cobra.Command, args []string) {
-	if autoPath {
-		path = filepath.Join(os.TempDir(), randutil.String(15)+".yaml")
-	}
 	if path == "" {
 		fmt.Fprintln(os.Stderr, "'--path' flag is not specified")
 		os.Exit(1)

@@ -1,9 +1,10 @@
 package ec2
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
-	"os"
+	"io/ioutil"
 	"path"
 	"path/filepath"
 	"reflect"
@@ -319,31 +320,14 @@ func (ts *Tester) uploadToS3() (err error) {
 }
 
 func uploadFileToS3(lg *zap.Logger, s3API s3iface.S3API, bucketName string, s3Key string, fpath string) error {
-	if !fileutil.Exist(fpath) {
-		return fmt.Errorf("file %q does not exist; failed to upload to %s/%s", fpath, bucketName, s3Key)
-	}
-	stat, err := os.Stat(fpath)
+	d, err := ioutil.ReadFile(fpath)
 	if err != nil {
 		return err
 	}
-	size := humanize.Bytes(uint64(stat.Size()))
-	lg.Info("uploading",
-		zap.String("bucket", bucketName),
-		zap.String("remote-path", s3Key),
-		zap.String("file-size", size),
-	)
-
-	rf, err := os.OpenFile(fpath, os.O_RDONLY, 0444)
-	if err != nil {
-		lg.Warn("failed to read a file", zap.String("file-path", fpath), zap.Error(err))
-		return err
-	}
-	defer rf.Close()
-
 	_, err = s3API.PutObject(&s3.PutObjectInput{
 		Bucket: aws.String(bucketName),
 		Key:    aws.String(s3Key),
-		Body:   rf,
+		Body:   bytes.NewReader(d),
 
 		// https://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html#canned-acl
 		// vs. "public-read"
@@ -357,13 +341,12 @@ func uploadFileToS3(lg *zap.Logger, s3API s3iface.S3API, bucketName string, s3Ke
 		lg.Info("uploaded",
 			zap.String("bucket", bucketName),
 			zap.String("remote-path", s3Key),
-			zap.String("size", size),
+			zap.String("size", humanize.Bytes(uint64(len(d)))),
 		)
 	} else {
 		lg.Warn("failed to upload",
 			zap.String("bucket", bucketName),
 			zap.String("remote-path", s3Key),
-			zap.String("file-size", size),
 			zap.Error(err),
 		)
 	}

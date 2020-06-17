@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 	"time"
 
@@ -403,38 +402,24 @@ func (ts *tester) fetchLogs(qps float32, burst int) error {
 				zap.Strings("errors", data.errs),
 			)
 		}
-		cur, ok := ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[data.mngName]
+		mv, ok := ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[data.mngName]
 		if !ok {
 			return fmt.Errorf("EKS Managed Node Group name %q is unknown", data.mngName)
 		}
-		if cur.Logs == nil {
-			cur.Logs = make(map[string][]string)
+		if mv.Logs == nil {
+			mv.Logs = make(map[string][]string)
 		}
-
-		// existing logs are already written out to disk, merge/list them all
-		var logs []string
-		logs, ok = cur.Logs[data.instanceID]
+		_, ok = mv.Logs[data.instanceID]
 		if ok {
 			return fmt.Errorf("EKS Managed Node Group name %q for instance %q logs are redundant", data.mngName, data.instanceID)
 		}
-		all := make(map[string]struct{})
-		for _, v := range logs {
-			all[v] = struct{}{}
-		}
-		for _, v := range data.paths {
-			all[v] = struct{}{}
-		}
-		logs = make([]string, 0, len(all))
-		for k := range all {
-			logs = append(logs, k)
-		}
-		sort.Strings(logs)
-		cur.Logs[data.instanceID] = logs
-		files := len(logs)
 
-		ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[data.mngName] = cur
+		mv.Logs[data.instanceID] = data.paths
+
+		ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[data.mngName] = mv
 		ts.cfg.EKSConfig.Sync()
 
+		files := len(data.paths)
 		total += files
 		ts.cfg.Logger.Info("wrote log files",
 			zap.String("instance-id", data.instanceID),

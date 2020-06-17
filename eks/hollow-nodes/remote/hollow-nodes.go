@@ -157,7 +157,7 @@ func (ts *tester) Delete() (err error) {
 	if err := ts.deleteDeployment(); err != nil {
 		errs = append(errs, err.Error())
 	}
-	time.Sleep(2 * time.Minute)
+	time.Sleep(time.Minute)
 
 	if err := ts.deleteCreatedNodes(); err != nil {
 		errs = append(errs, err.Error())
@@ -197,8 +197,8 @@ const (
 	hollowNodesServiceAccountName          = "hollow-nodes-remote-service-account"
 	hollowNodesRBACRoleName                = "hollow-nodes-remote-rbac-role"
 	hollowNodesRBACClusterRoleBindingName  = "hollow-nodes-remote-rbac-role-binding"
-	hollowNodesKubeConfigConfigMapName     = "hollow-nodes-remote-kubeconfig-configmap"
-	hollowNodesKubeConfigConfigMapFileName = "hollow-nodes-remote-kubeconfig-configmap.yaml"
+	hollowNodesKubeConfigConfigMapName     = "hollow-nodes-remote-kubeconfig-config-map"
+	hollowNodesKubeConfigConfigMapFileName = "hollow-nodes-remote-kubeconfig-config-map.yaml"
 	hollowNodesDeploymentName              = "hollow-nodes-remote-deployment"
 	hollowNodesAppName                     = "hollow-nodes-remote-app"
 )
@@ -756,8 +756,8 @@ func (ts *tester) waitDeployment() error {
 		}
 	}
 	if !ready {
-		ts.cfg.Logger.Warn("deployment not ready")
-		return errors.New("deployment not ready")
+		ts.cfg.Logger.Warn("Deployment not ready")
+		return errors.New("Deployment not ready")
 	}
 
 	ts.cfg.Logger.Info("waited for hollow nodes Deployment")

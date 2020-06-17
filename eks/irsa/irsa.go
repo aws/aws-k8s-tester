@@ -154,10 +154,17 @@ func (ts *tester) Delete() error {
 
 	var errs []string
 
+	if err := ts.deleteS3(); err != nil {
+		errs = append(errs, fmt.Sprintf("failed to delete S3 (%v)", err))
+	}
+	ts.cfg.Logger.Info("wait after deleting S3")
+	time.Sleep(20 * time.Second)
+
 	if err := ts.deleteDeployment(); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete Deployments (%v)", err))
 	}
-	time.Sleep(2 * time.Minute)
+	ts.cfg.Logger.Info("wait after deleting Deployments")
+	time.Sleep(20 * time.Second)
 
 	if err := ts.deleteConfigMaps(); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete ConfigMap (%v)", err))
@@ -232,6 +239,31 @@ func (ts *tester) createS3() (err error) {
 		)
 	}
 	return ts.cfg.EKSConfig.Sync()
+}
+
+func (ts *tester) deleteS3() error {
+	if ts.cfg.EKSConfig.S3BucketName == "" {
+		ts.cfg.Logger.Info("skipping S3 deletes for IRSA add-on")
+		return nil
+	}
+	s3Key := ts.cfg.EKSConfig.AddOnIRSA.S3Key
+	_, err := ts.cfg.S3API.DeleteObject(&s3.DeleteObjectInput{
+		Bucket: aws.String(ts.cfg.EKSConfig.S3BucketName),
+		Key:    aws.String(s3Key),
+	})
+	if err == nil {
+		ts.cfg.Logger.Info("deleted the private key in S3",
+			zap.String("bucket", ts.cfg.EKSConfig.S3BucketName),
+			zap.String("remote-path", s3Key),
+		)
+	} else {
+		ts.cfg.Logger.Warn("failed to delete the private key in S3",
+			zap.String("bucket", ts.cfg.EKSConfig.S3BucketName),
+			zap.String("remote-path", s3Key),
+			zap.Error(err),
+		)
+	}
+	return err
 }
 
 func (ts *tester) createOIDCProvider() error {
@@ -512,8 +544,8 @@ func (ts *tester) deleteRole() error {
 
 const (
 	irsaServiceAccountName = "irsa-service-account"
-	irsaConfigMapName      = "irsa-configmap"
-	irsaConfigMapFileName  = "irsa-configmap.bash"
+	irsaConfigMapName      = "irsa-config-map"
+	irsaConfigMapFileName  = "irsa-config-map.bash"
 	irsaDeploymentName     = "irsa-deployment"
 )
 
@@ -1000,7 +1032,7 @@ func (ts *tester) waitDeployment() error {
 		}
 	}
 	if !ready {
-		return errors.New("deployment not ready")
+		return errors.New("Deployment not ready")
 	}
 
 	ts.cfg.Logger.Info("waited for IRSA Deployment")

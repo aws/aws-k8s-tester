@@ -60,6 +60,9 @@ func (ts *tester) Create() error {
 		ts.cfg.EKSConfig.Sync()
 	}()
 
+	if err := ts.installMetricsServer(); err != nil {
+		return err
+	}
 	if err := ts.installDashboard(); err != nil {
 		return err
 	}
@@ -67,7 +70,7 @@ func (ts *tester) Create() error {
 		return err
 	}
 	// TODO: use ingress
-	if err := ts.startProxy(false); err != nil {
+	if err := ts.startProxy(true); err != nil {
 		return err
 	}
 
@@ -106,18 +109,17 @@ func (ts *tester) Delete() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
-func (ts *tester) startProxy(enable bool) error {
-	proxyArgs := []string{
+func (ts *tester) startProxy(dry bool) error {
+	args := []string{
 		ts.cfg.EKSConfig.KubectlPath,
 		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
 		"proxy",
 	}
-	proxyCmd := strings.Join(proxyArgs, " ")
 
-	if enable {
+	if !dry {
 		ts.cfg.Logger.Info("starting Kubernetes Dashboard proxy", zap.String("cmd-path", ts.cfg.EKSConfig.KubectlPath))
 		ctx, cancel := context.WithCancel(context.Background())
-		ts.proxyCmd = exec.CommandContext(ctx, proxyArgs[0], proxyArgs[1:]...)
+		ts.proxyCmd = exec.CommandContext(ctx, args[0], args[1:]...)
 		ts.proxyCmd.Stderr = os.Stderr
 		ts.proxyCmd.Stdout = os.Stdout
 		ts.proxyCancel = cancel
@@ -159,7 +161,7 @@ func (ts *tester) startProxy(enable bool) error {
 		}
 	}
 
-	fmt.Printf("\nkubectl proxy command:\n%s\n", proxyCmd)
+	fmt.Printf("\nkubectl proxy command:\n%s\n", strings.Join(args, " "))
 	fmt.Printf("\nKubernetes Dashboard Token:\n%s\n", ts.cfg.EKSConfig.AddOnKubernetesDashboard.AuthenticationToken)
 	fmt.Printf("\nKubernetes Dashboard URL:\n%s\n\n", ts.cfg.EKSConfig.AddOnKubernetesDashboard.URL)
 

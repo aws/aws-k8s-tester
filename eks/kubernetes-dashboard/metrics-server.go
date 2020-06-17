@@ -1,108 +1,21 @@
-// Package metricsserver implements Kubernetes metrics server.
-// ref. https://github.com/kubernetes-sigs/metrics-server/releases
-package metricsserver
+package kubernetesdashboard
 
 import (
 	"context"
 	"errors"
 	"fmt"
-	"reflect"
 	"strings"
 	"time"
 
-	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
-	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
-	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
-	"github.com/aws/aws-k8s-tester/pkg/timeutil"
-	"github.com/aws/aws-sdk-go/aws"
 	"go.uber.org/zap"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
-	api_errors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/exec"
 )
 
-// Config defines Dashboard configuration.
-type Config struct {
-	Logger *zap.Logger
-	Stopc  chan struct{}
-
-	EKSConfig *eksconfig.Config
-	K8SClient k8s_client.EKS
-}
-
-func New(cfg Config) eks_tester.Tester {
-	cfg.Logger.Info("creating tester", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
-	return &tester{cfg: cfg}
-}
-
-type tester struct {
-	cfg Config
-}
-
-func (ts *tester) Create() error {
-	if !ts.cfg.EKSConfig.IsEnabledAddOnMetricsServer() {
-		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
-		return nil
-	}
-	if ts.cfg.EKSConfig.AddOnMetricsServer.Created {
-		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
-		return nil
-	}
-
-	ts.cfg.Logger.Info("starting tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
-	ts.cfg.EKSConfig.AddOnMetricsServer.Created = true
-	ts.cfg.EKSConfig.Sync()
-	createStart := time.Now()
-	defer func() {
-		createEnd := time.Now()
-		ts.cfg.EKSConfig.AddOnMetricsServer.TimeFrameCreate = timeutil.NewTimeFrame(createStart, createEnd)
-		ts.cfg.EKSConfig.Sync()
-	}()
-
-	if err := ts.create(); err != nil {
-		return err
-	}
-
-	return ts.cfg.EKSConfig.Sync()
-}
-
-func (ts *tester) Delete() error {
-	if !ts.cfg.EKSConfig.IsEnabledAddOnMetricsServer() {
-		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
-		return nil
-	}
-	if !ts.cfg.EKSConfig.AddOnMetricsServer.Created {
-		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
-		return nil
-	}
-
-	ts.cfg.Logger.Info("starting tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
-	deleteStart := time.Now()
-	defer func() {
-		deleteEnd := time.Now()
-		ts.cfg.EKSConfig.AddOnMetricsServer.TimeFrameDelete = timeutil.NewTimeFrame(deleteStart, deleteEnd)
-		ts.cfg.EKSConfig.Sync()
-	}()
-
-	var errs []string
-
-	if err := ts.deleteDeployment(); err != nil {
-		errs = append(errs, err.Error())
-	}
-
-	if len(errs) > 0 {
-		return errors.New(strings.Join(errs, ", "))
-	}
-
-	ts.cfg.EKSConfig.AddOnMetricsServer.Created = false
-	return ts.cfg.EKSConfig.Sync()
-}
-
 // ref. https://docs.aws.amazon.com/eks/latest/userguide/dashboard-tutorial.html
-// ref. https://github.com/kubernetes-sigs/metrics-server/releases
 // ref. https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.3.6/components.yaml
 const metricsServerYAML = `
 ---
@@ -198,10 +111,8 @@ spec:
         image: k8s.gcr.io/metrics-server-amd64:v0.3.6
         imagePullPolicy: IfNotPresent
         args:
-        - --cert-dir=/tmp
-        - --secure-port=4443
-        - --kubelet-insecure-tls
-        - --kubelet-preferred-address-types=InternalIP
+          - --cert-dir=/tmp
+          - --secure-port=4443
         ports:
         - name: main-port
           containerPort: 4443
@@ -270,12 +181,8 @@ subjects:
 
 `
 
-const (
-	deploymentName = "metrics-server"
-)
-
 // ref. https://github.com/kubernetes-sigs/metrics-server
-func (ts *tester) create() error {
+func (ts *tester) installMetricsServer() error {
 	ts.cfg.Logger.Info("writing metrics-server YAML")
 	fpath, err := fileutil.WriteTempFile([]byte(metricsServerYAML))
 	if err != nil {
@@ -324,21 +231,28 @@ func (ts *tester) create() error {
 
 	ts.cfg.Logger.Info("created metrics-server")
 
-	return ts.waitDeployment()
+	return ts.waitDeploymentMetricsServer()
 }
 
-func (ts *tester) waitDeployment() error {
+func (ts *tester) waitDeploymentMetricsServer() error {
 	ts.cfg.Logger.Info("waiting for metrics-server Deployment")
-
 	descArgs := []string{
 		ts.cfg.EKSConfig.KubectlPath,
 		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
 		"--namespace=kube-system",
 		"describe",
 		"deployment",
-		deploymentName,
+		"metrics-server",
 	}
 	descCmd := strings.Join(descArgs, " ")
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	output, err := exec.New().CommandContext(ctx, descArgs[0], descArgs[1:]...).CombinedOutput()
+	cancel()
+	if err != nil {
+		return fmt.Errorf("'kubectl describe deployment' failed %v", err)
+	}
+	out := string(output)
+	fmt.Printf("\n\n\"%s\" output:\n%s\n\n", descCmd, out)
 
 	ready := false
 	waitDur := 3 * time.Minute
@@ -350,21 +264,11 @@ func (ts *tester) waitDeployment() error {
 		case <-time.After(15 * time.Second):
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-		output, err := exec.New().CommandContext(ctx, descArgs[0], descArgs[1:]...).CombinedOutput()
-		cancel()
-		if err != nil {
-			ts.cfg.Logger.Warn("failed to run kubectl describe", zap.Error(err))
-			continue
-		}
-		out := string(output)
-		fmt.Printf("\n\n\"%s\" output:\n%s\n\n", descCmd, out)
-
-		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		dresp, err := ts.cfg.K8SClient.KubernetesClientSet().
 			AppsV1().
 			Deployments("kube-system").
-			Get(ctx, deploymentName, metav1.GetOptions{})
+			Get(ctx, "metrics-server", metav1.GetOptions{})
 		cancel()
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to get deployment", zap.Error(err))
@@ -399,19 +303,8 @@ func (ts *tester) waitDeployment() error {
 		}
 	}
 	if !ready {
-		return errors.New("deployment not ready")
+		return errors.New("Deployment not ready")
 	}
-
-	logArgs := []string{
-		ts.cfg.EKSConfig.KubectlPath,
-		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
-		"--namespace=kube-system",
-		"logs",
-		"--selector=k8s-app=metrics-server",
-		"--all-containers=true",
-		"--timestamps",
-	}
-	logsCmd := strings.Join(logArgs, " ")
 
 	topNodeArgs := []string{
 		ts.cfg.EKSConfig.KubectlPath,
@@ -422,7 +315,7 @@ func (ts *tester) waitDeployment() error {
 	topNodeCmd := strings.Join(topNodeArgs, " ")
 
 	topNodeReady := false
-	waitDur, retryStart = 30*time.Minute, time.Now()
+	waitDur, retryStart = 7*time.Minute, time.Now()
 	for time.Now().Sub(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
@@ -430,29 +323,10 @@ func (ts *tester) waitDeployment() error {
 		case <-time.After(5 * time.Second):
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-		output, err := exec.New().CommandContext(ctx, descArgs[0], descArgs[1:]...).CombinedOutput()
-		cancel()
-		if err != nil {
-			ts.cfg.Logger.Warn("failed to run kubectl describe", zap.Error(err))
-			continue
-		}
+		ts.cfg.Logger.Info("running kubectl top node")
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		output, err := exec.New().CommandContext(ctx, topNodeArgs[0], topNodeArgs[1:]...).CombinedOutput()
 		out := string(output)
-		fmt.Printf("\n\n\"%s\" output:\n%s\n\n", descCmd, out)
-
-		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
-		output, err = exec.New().CommandContext(ctx, logArgs[0], logArgs[1:]...).CombinedOutput()
-		cancel()
-		if err != nil {
-			ts.cfg.Logger.Warn("failed to run kubectl logs", zap.Error(err))
-			continue
-		}
-		out = string(output)
-		fmt.Printf("\n\n\"%s\" output:\n%s\n\n", logsCmd, out)
-
-		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
-		output, err = exec.New().CommandContext(ctx, topNodeArgs[0], topNodeArgs[1:]...).CombinedOutput()
-		out = string(output)
 		fmt.Printf("\n\n\"%s\" output:\n%s\n\n", topNodeCmd, out)
 		cancel()
 		if err != nil {
@@ -470,42 +344,4 @@ func (ts *tester) waitDeployment() error {
 
 	ts.cfg.Logger.Info("waited for metrics-server Deployment")
 	return ts.cfg.EKSConfig.Sync()
-}
-
-func (ts *tester) deleteDeployment() error {
-	ts.cfg.Logger.Info("deleting deployment")
-	foreground := metav1.DeletePropagationForeground
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	err := ts.cfg.K8SClient.KubernetesClientSet().
-		AppsV1().
-		Deployments("kube-system").
-		Delete(
-			ctx,
-			deploymentName,
-			metav1.DeleteOptions{
-				GracePeriodSeconds: aws.Int64(0),
-				PropagationPolicy:  &foreground,
-			},
-		)
-	cancel()
-	if err != nil && !api_errors.IsNotFound(err) {
-		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
-		return err
-	}
-	ts.cfg.Logger.Info("deleted deployment")
-	return ts.cfg.EKSConfig.Sync()
-}
-
-func (ts *tester) AggregateResults() (err error) {
-	if !ts.cfg.EKSConfig.IsEnabledAddOnMetricsServer() {
-		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
-		return nil
-	}
-	if !ts.cfg.EKSConfig.AddOnMetricsServer.Created {
-		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
-		return nil
-	}
-
-	ts.cfg.Logger.Info("starting tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
-	return nil
 }

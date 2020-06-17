@@ -152,7 +152,7 @@ func (ts *tester) Delete() (err error) {
 	if err := ts.deleteDeployment(); err != nil {
 		errs = append(errs, err.Error())
 	}
-	time.Sleep(2 * time.Minute)
+	time.Sleep(time.Minute)
 
 	if err := ts.deleteConfigMap(); err != nil {
 		errs = append(errs, err.Error())
@@ -189,8 +189,8 @@ const (
 	clusterLoaderServiceAccountName          = "cluster-loader-remote-service-account"
 	clusterLoaderRBACRoleName                = "cluster-loader-remote-rbac-role"
 	clusterLoaderRBACClusterRoleBindingName  = "cluster-loader-remote-rbac-role-binding"
-	clusterLoaderKubeConfigConfigMapName     = "cluster-loader-remote-kubeconfig-configmap"
-	clusterLoaderKubeConfigConfigMapFileName = "cluster-loader-remote-kubeconfig-configmap.yaml"
+	clusterLoaderKubeConfigConfigMapName     = "cluster-loader-remote-kubeconfig-config-map"
+	clusterLoaderKubeConfigConfigMapFileName = "cluster-loader-remote-kubeconfig-config-map.yaml"
 	clusterLoaderDeploymentName              = "cluster-loader-remote-deployment"
 	clusterLoaderAppName                     = "cluster-loader-remote-app"
 )
@@ -715,8 +715,8 @@ func (ts *tester) waitDeployment() error {
 		}
 	}
 	if !ready {
-		ts.cfg.Logger.Warn("deployment not ready")
-		return errors.New("deployment not ready")
+		ts.cfg.Logger.Warn("Deployment not ready")
+		return errors.New("Deployment not ready")
 	}
 
 	ts.cfg.Logger.Info("waited for cluster loader Deployment")

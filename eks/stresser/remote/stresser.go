@@ -172,8 +172,6 @@ func (ts *tester) Delete() error {
 	if err := ts.deleteDeployment(); err != nil {
 		errs = append(errs, err.Error())
 	}
-	time.Sleep(2 * time.Minute)
-
 	if err := ts.deleteConfigMap(); err != nil {
 		errs = append(errs, err.Error())
 	}
@@ -209,8 +207,8 @@ const (
 	stresserServiceAccountName          = "stresser-remote-service-account"
 	stresserRBACRoleName                = "stresser-remote-rbac-role"
 	stresserRBACClusterRoleBindingName  = "stresser-remote-rbac-role-binding"
-	stresserKubeConfigConfigMapName     = "stresser-remote-kubeconfig-configmap"
-	stresserKubeConfigConfigMapFileName = "stresser-remote-kubeconfig-configmap.yaml"
+	stresserKubeConfigConfigMapName     = "stresser-remote-kubeconfig-config-map"
+	stresserKubeConfigConfigMapFileName = "stresser-remote-kubeconfig-config-map.yaml"
 	stresserDeploymentName              = "stresser-remote-deployment"
 	stresserAppName                     = "stresser-remote-app"
 )
@@ -752,8 +750,8 @@ func (ts *tester) waitDeployment() error {
 		}
 	}
 	if !ready {
-		ts.cfg.Logger.Warn("deployment not ready")
-		return errors.New("deployment not ready")
+		ts.cfg.Logger.Warn("Deployment not ready")
+		return errors.New("Deployment not ready")
 	}
 
 	ts.cfg.Logger.Info("waited for stresser Deployment")

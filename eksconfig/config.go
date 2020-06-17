@@ -23,6 +23,7 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/randutil"
 	"github.com/aws/aws-k8s-tester/pkg/terminal"
 	"github.com/aws/aws-sdk-go/aws/endpoints"
+	"k8s.io/client-go/util/homedir"
 	"sigs.k8s.io/yaml" // must use "sigs.k8s.io/yaml"
 )
 
@@ -185,23 +186,18 @@ type Config struct {
 	AddOnManagedNodeGroups *AddOnManagedNodeGroups `json:"add-on-managed-node-groups,omitempty"`
 
 	// TotalNodes is the total number of nodes from all node groups.
-	TotalNodes       int64 `json:"total-nodes" read-only:"true"`
-	TotalHollowNodes int64 `json:"total-hollow-nodes" read-only:"true"`
-
-	// AddOnMetricsServer defines parameters for EKS cluster
-	// add-on metrics server.
-	AddOnMetricsServer *AddOnMetricsServer `json:"add-on-metrics-server,omitempty"`
+	TotalNodes int64 `json:"total-nodes" read-only:"true"`
 
 	// AddOnConformance defines parameters for EKS cluster
 	// add-on Conformance.
 	AddOnConformance *AddOnConformance `json:"add-on-conformance,omitempty"`
 
-	// AddOnAppMesh defines parameters for EKS cluster
-	// add-on "EKS App Mesh Integration".
-	AddOnAppMesh *AddOnAppMesh `json:"add-on-app-mesh,omitempty"`
 	// AddOnCSIEBS defines parameters for EKS cluster
 	// add-on AWS EBS CSI Driver.
 	AddOnCSIEBS *AddOnCSIEBS `json:"add-on-csi-ebs,omitempty"`
+	// AddOnAppMesh defines parameters for EKS cluster
+	// add-on "EKS App Mesh Integration".
+	AddOnAppMesh *AddOnAppMesh `json:"add-on-app-mesh,omitempty"`
 	// AddOnKubernetesDashboard defines parameters for EKS cluster
 	// add-on Dashboard.
 	AddOnKubernetesDashboard *AddOnKubernetesDashboard `json:"add-on-kubernetes-dashboard,omitempty"`
@@ -212,10 +208,6 @@ type Config struct {
 	// AddOnNLBHelloWorld defines parameters for EKS cluster
 	// add-on NLB hello-world service.
 	AddOnNLBHelloWorld *AddOnNLBHelloWorld `json:"add-on-nlb-hello-world,omitempty"`
-	// AddOnNLBGuestbook defines parameters for EKS cluster
-	// add-on NLB guestbook service.
-	// ref. https://docs.aws.amazon.com/eks/latest/userguide/eks-guestbook.html
-	AddOnNLBGuestbook *AddOnNLBGuestbook `json:"add-on-nlb-guestbook,omitempty"`
 	// AddOnALB2048 defines parameters for EKS cluster
 	// add-on ALB 2048 service.
 	AddOnALB2048 *AddOnALB2048 `json:"add-on-alb-2048,omitempty"`
@@ -735,8 +727,7 @@ func NewDefault() *Config {
 
 		RemoteAccessKeyCreate: true,
 		// keep in-sync with the default value in https://pkg.go.dev/k8s.io/kubernetes/test/e2e/framework#GetSigner
-		// RemoteAccessPrivateKeyPath: filepath.Join(homedir.HomeDir(), ".ssh", "kube_aws_rsa"),
-		RemoteAccessPrivateKeyPath: filepath.Join(os.TempDir(), randutil.String(15)+".insecure.key"),
+		RemoteAccessPrivateKeyPath: filepath.Join(homedir.HomeDir(), ".ssh", "kube_aws_rsa"),
 
 		// Kubernetes client DefaultQPS is 5.
 		// Kubernetes client DefaultBurst is 10.
@@ -753,14 +744,12 @@ func NewDefault() *Config {
 
 		AddOnNodeGroups:            getDefaultAddOnNodeGroups(name),
 		AddOnManagedNodeGroups:     getDefaultAddOnManagedNodeGroups(name),
-		AddOnMetricsServer:         getDefaultAddOnMetricsServer(),
 		AddOnConformance:           getDefaultAddOnConformance(),
 		AddOnCSIEBS:                getDefaultAddOnCSIEBS(),
 		AddOnAppMesh:               getDefaultAddOnAppMesh(),
 		AddOnKubernetesDashboard:   getDefaultAddOnKubernetesDashboard(),
 		AddOnPrometheusGrafana:     getDefaultAddOnPrometheusGrafana(),
 		AddOnNLBHelloWorld:         getDefaultAddOnNLBHelloWorld(),
-		AddOnNLBGuestbook:          getDefaultAddOnNLBGuestbook(),
 		AddOnALB2048:               getDefaultAddOnALB2048(),
 		AddOnJobsPi:                getDefaultAddOnJobsPi(),
 		AddOnJobsEcho:              getDefaultAddOnJobsEcho(),
@@ -800,6 +789,7 @@ func NewDefault() *Config {
 
 	if runtime.GOOS == "darwin" {
 		cfg.KubectlDownloadURL = strings.Replace(cfg.KubectlDownloadURL, "linux", "darwin", -1)
+		cfg.RemoteAccessPrivateKeyPath = filepath.Join(os.TempDir(), randutil.String(10)+".insecure.key")
 	}
 
 	return &cfg
@@ -845,29 +835,17 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 	cfg.TotalNodes = total
 
-	totalHollowNodes := int64(0)
-	if cfg.IsEnabledAddOnHollowNodesLocal() {
-		totalHollowNodes += int64(cfg.AddOnHollowNodesLocal.Nodes)
-	}
-	if cfg.IsEnabledAddOnHollowNodesRemote() {
-		totalHollowNodes += int64(cfg.AddOnHollowNodesRemote.Nodes) * int64(cfg.AddOnHollowNodesRemote.DeploymentReplicas)
-	}
-	cfg.TotalHollowNodes = totalHollowNodes
-
 	if err := cfg.validateAddOnConformance(); err != nil {
 		return fmt.Errorf("validateAddOnConformance failed [%v]", err)
 	}
 
-	if err := cfg.validateAddOnAppMesh(); err != nil {
-		return fmt.Errorf("validateAddOnAppMesh failed [%v]", err)
-	}
 	if err := cfg.validateAddOnCSIEBS(); err != nil {
 		return fmt.Errorf("validateAddOnCSIEBS failed [%v]", err)
 	}
-
-	if err := cfg.validateAddOnMetricsServer(); err != nil {
-		return fmt.Errorf("validateAddOnMetricsServer failed [%v]", err)
+	if err := cfg.validateAddOnAppMesh(); err != nil {
+		return fmt.Errorf("validateAddOnAppMesh failed [%v]", err)
 	}
+
 	if err := cfg.validateAddOnKubernetesDashboard(); err != nil {
 		return fmt.Errorf("validateAddOnKubernetesDashboard failed [%v]", err)
 	}
@@ -877,9 +855,6 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 
 	if err := cfg.validateAddOnNLBHelloWorld(); err != nil {
 		return fmt.Errorf("validateAddOnNLBHelloWorld failed [%v]", err)
-	}
-	if err := cfg.validateAddOnNLBGuestbook(); err != nil {
-		return fmt.Errorf("validateAddOnNLBGuestbook failed [%v]", err)
 	}
 	if err := cfg.validateAddOnALB2048(); err != nil {
 		return fmt.Errorf("validateAddOnALB2048 failed [%v]", err)
@@ -1061,25 +1036,25 @@ func (cfg *Config) validateConfig() error {
 		return err
 	}
 
-	if cfg.CommandAfterCreateClusterOutputPath == "" {
-		cfg.CommandAfterCreateClusterOutputPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".after-create-cluster.out.log"
-	}
 	if filepath.Ext(cfg.CommandAfterCreateClusterOutputPath) != ".log" {
 		cfg.CommandAfterCreateClusterOutputPath = cfg.CommandAfterCreateClusterOutputPath + ".log"
 	}
-	if cfg.CommandAfterCreateClusterTimeout == time.Duration(0) {
-		cfg.CommandAfterCreateClusterTimeout = DefaultCommandAfterCreateClusterTimeout
+	if cfg.CommandAfterCreateClusterOutputPath == "" {
+		cfg.CommandAfterCreateClusterOutputPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".after-create-cluster.out.log"
 	}
 	if err := fileutil.IsDirWriteable(filepath.Dir(cfg.CommandAfterCreateClusterOutputPath)); err != nil {
 		return err
 	}
+	if cfg.CommandAfterCreateClusterTimeout == time.Duration(0) {
+		cfg.CommandAfterCreateClusterTimeout = DefaultCommandAfterCreateClusterTimeout
+	}
 	cfg.CommandAfterCreateClusterTimeoutString = cfg.CommandAfterCreateClusterTimeout.String()
 
-	if cfg.CommandAfterCreateAddOnsOutputPath == "" {
-		cfg.CommandAfterCreateAddOnsOutputPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".after-create-add-ons.out.log"
-	}
 	if filepath.Ext(cfg.CommandAfterCreateAddOnsOutputPath) != ".log" {
 		cfg.CommandAfterCreateAddOnsOutputPath = cfg.CommandAfterCreateAddOnsOutputPath + ".log"
+	}
+	if cfg.CommandAfterCreateAddOnsOutputPath == "" {
+		cfg.CommandAfterCreateAddOnsOutputPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".after-create-add-ons.out.log"
 	}
 	if err := fileutil.IsDirWriteable(filepath.Dir(cfg.CommandAfterCreateAddOnsOutputPath)); err != nil {
 		return err
@@ -1118,12 +1093,6 @@ func (cfg *Config) validateConfig() error {
 	case false: // use existing one
 	}
 
-	if cfg.Status == nil {
-		cfg.Status = &Status{Up: false}
-	}
-	if cfg.Status.ClusterCFNStackYAMLFilePath == "" {
-		cfg.Status.ClusterCFNStackYAMLFilePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".cluster.cfn.yaml"
-	}
 	return nil
 }
 

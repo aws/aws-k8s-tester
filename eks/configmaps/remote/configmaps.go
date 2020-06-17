@@ -158,8 +158,6 @@ func (ts *tester) Delete() error {
 	if err := ts.deleteDeployment(); err != nil {
 		errs = append(errs, err.Error())
 	}
-	time.Sleep(2 * time.Minute)
-
 	if err := ts.deleteConfigMap(); err != nil {
 		errs = append(errs, err.Error())
 	}
@@ -195,8 +193,8 @@ const (
 	configmapsServiceAccountName          = "configmaps-remote-service-account"
 	configmapsRBACRoleName                = "configmaps-remote-rbac-role"
 	configmapsRBACClusterRoleBindingName  = "configmaps-remote-rbac-role-binding"
-	configmapsKubeConfigConfigMapName     = "configmaps-remote-kubeconfig-configmap"
-	configmapsKubeConfigConfigMapFileName = "configmaps-remote-kubeconfig-configmap.yaml"
+	configmapsKubeConfigConfigMapName     = "configmaps-remote-kubeconfig-config-map"
+	configmapsKubeConfigConfigMapFileName = "configmaps-remote-kubeconfig-config-map.yaml"
 	configmapsDeploymentName              = "configmaps-remote-deployment"
 	configmapsAppName                     = "configmaps-remote-app"
 )
@@ -710,8 +708,8 @@ func (ts *tester) waitDeployment() error {
 		}
 	}
 	if !ready {
-		ts.cfg.Logger.Warn("deployment not ready")
-		return errors.New("deployment not ready")
+		ts.cfg.Logger.Warn("Deployment not ready")
+		return errors.New("Deployment not ready")
 	}
 
 	ts.cfg.Logger.Info("waited for configmaps Deployment")

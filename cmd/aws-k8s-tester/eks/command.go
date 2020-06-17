@@ -9,7 +9,6 @@ func init() {
 
 var (
 	path         string
-	autoPath     bool
 	enablePrompt bool
 )
 
@@ -21,7 +20,6 @@ func NewCommand() *cobra.Command {
 		SuggestFor: []string{"ekk", "ekstester"},
 	}
 	cmd.PersistentFlags().StringVarP(&path, "path", "p", "", "aws-k8s-tester EKS configuration file path")
-	cmd.PersistentFlags().BoolVarP(&autoPath, "auto-path", "a", false, "'true' to auto-generate path for create config/cluster, overwrites existing --path value")
 	cmd.PersistentFlags().BoolVarP(&enablePrompt, "enable-prompt", "e", true, "'true' to enable prompt mode")
 	cmd.AddCommand(
 		newCreate(),

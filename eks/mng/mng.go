@@ -3,14 +3,11 @@ package mng
 
 import (
 	"errors"
-	"fmt"
 	"reflect"
 	"strings"
 	"sync"
 	"time"
 
-	version_upgrade "github.com/aws/aws-k8s-tester/eks/mng/version-upgrade"
-	"github.com/aws/aws-k8s-tester/eks/mng/wait"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
@@ -48,8 +45,6 @@ type Tester interface {
 	Create() error
 	// Delete deletes all EKS "Managed Node Group" resources.
 	Delete() error
-	// UpgradeVersion upgrades EKS "Managed Node Group" version, and waits for completion.
-	UpgradeVersion() error
 
 	// FetchLogs fetches logs from all worker nodes.
 	FetchLogs() error
@@ -63,34 +58,15 @@ type Tester interface {
 func New(cfg Config) Tester {
 	cfg.Logger.Info("creating tester", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	return &tester{
-		cfg: cfg,
-		nodeWaiter: wait.New(wait.Config{
-			Logger:    cfg.Logger,
-			Stopc:     cfg.Stopc,
-			EKSConfig: cfg.EKSConfig,
-			K8SClient: cfg.K8SClient,
-			EC2API:    cfg.EC2API,
-			ASGAPI:    cfg.ASGAPI,
-			EKSAPI:    cfg.EKSAPI,
-		}),
-		versionUpgrader: version_upgrade.New(version_upgrade.Config{
-			Logger:    cfg.Logger,
-			Stopc:     cfg.Stopc,
-			EKSConfig: cfg.EKSConfig,
-			K8SClient: cfg.K8SClient,
-			EKSAPI:    cfg.EKSAPI,
-		}),
-		logsMu:          new(sync.RWMutex),
-		deleteRequested: make(map[string]struct{}),
+		cfg:    cfg,
+		logsMu: new(sync.RWMutex),
 	}
 }
 
 type tester struct {
-	cfg             Config
-	nodeWaiter      wait.NodeWaiter
-	versionUpgrader version_upgrade.Upgrader
-	logsMu          *sync.RWMutex
-	deleteRequested map[string]struct{}
+	cfg        Config
+	logsMu     *sync.RWMutex
+	failedOnce bool
 }
 
 func (ts *tester) Create() (err error) {
@@ -120,30 +96,14 @@ func (ts *tester) Create() (err error) {
 	if err = ts.createASGs(); err != nil {
 		return err
 	}
+
 	for name := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
-		if err = ts.createSG(name); err != nil {
+		if err = ts.createIngressEgress(name); err != nil {
 			return err
 		}
 	}
 
 	ts.cfg.EKSConfig.AddOnManagedNodeGroups.Created = true
-	return ts.cfg.EKSConfig.Sync()
-}
-
-func (ts *tester) UpgradeVersion() (err error) {
-	if !ts.cfg.EKSConfig.IsEnabledAddOnManagedNodeGroups() {
-		return nil
-	}
-	if !ts.cfg.EKSConfig.AddOnManagedNodeGroups.Created {
-		ts.cfg.Logger.Info("ManagedNodeGroup is not created; skipping upgrade")
-		return nil
-	}
-
-	for _, cur := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
-		if err = ts.versionUpgrader.Upgrade(cur.Name); err != nil {
-			return err
-		}
-	}
 	return ts.cfg.EKSConfig.Sync()
 }
 
@@ -166,84 +126,34 @@ func (ts *tester) Delete() error {
 
 	var errs []string
 	var err error
-
 	for name := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
-		err = ts.deleteSG(name)
+		err = ts.deleteIngressEgress(name)
 		if err != nil {
 			errs = append(errs, err.Error())
 		}
 	}
-	err = nil
-	failedMNGs := make(map[string]struct{})
-	for name := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
-		var derr error
-		for i := 0; i < 5; i++ { // retry, leakly ENI may take awhile to be deleted
-			derr = ts.deleteASG(name)
-			if derr != nil {
-				failedMNGs[name] = struct{}{}
-				ts.cfg.Logger.Warn("failed to delete mng; retrying", zap.String("name", name), zap.Error(derr))
-				select {
-				case <-ts.cfg.Stopc:
-					ts.cfg.Logger.Warn("aborted")
-					return nil
-				case <-time.After(time.Minute):
-				}
-			}
+
+	for i := 0; i < 5; i++ { // retry, leakly ENI may take awhile to be deleted
+		err = ts.deleteASG()
+		if err == nil {
 			break
 		}
-		if derr != nil {
-			if err == nil {
-				err = derr
-			} else {
-				err = fmt.Errorf("%v; %v", err, derr)
-			}
-			continue
+		ts.failedOnce = true
+		ts.cfg.Logger.Warn("failed to delete mng", zap.Error(err))
+		select {
+		case <-ts.cfg.Stopc:
+			ts.cfg.Logger.Warn("aborted")
+			return nil
+		case <-time.After(time.Minute):
 		}
-		delete(failedMNGs, name)
 	}
 	if err != nil {
 		errs = append(errs, err.Error())
 	}
 
-	waitDur := time.Minute
-	ts.cfg.Logger.Info("sleeping after MNG deletion", zap.Duration("wait", waitDur))
+	waitDur := 5 * time.Second
+	ts.cfg.Logger.Info("sleeping before node group role deletion", zap.Duration("wait", waitDur))
 	time.Sleep(waitDur)
-
-	for name := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
-		time.Sleep(10 * time.Second)
-		if ok := ts.deleteENIs(name); ok {
-			time.Sleep(10 * time.Second)
-		}
-	}
-	err = nil
-	for name := range failedMNGs {
-		var derr error
-		for i := 0; i < 5; i++ { // retry, leakly ENI may take awhile to be deleted
-			derr = ts.deleteASG(name)
-			if derr != nil {
-				ts.cfg.Logger.Warn("failed to retry-delete mng; retrying", zap.String("name", name), zap.Error(derr))
-				select {
-				case <-ts.cfg.Stopc:
-					ts.cfg.Logger.Warn("aborted")
-					return nil
-				case <-time.After(time.Minute):
-				}
-			}
-			break
-		}
-		if derr != nil {
-			if err == nil {
-				err = derr
-			} else {
-				err = fmt.Errorf("%v; %v", err, derr)
-			}
-			continue
-		}
-		delete(failedMNGs, name)
-	}
-	if err != nil {
-		errs = append(errs, err.Error())
-	}
 
 	// must be run after deleting node group
 	// otherwise, "Cannot delete entity, must remove roles from instance profile first. (Service: AmazonIdentityManagement; Status Code: 409; Error Code: DeleteConflict; Request ID: 197f795b-1003-4386-81cc-44a926c42be7)"

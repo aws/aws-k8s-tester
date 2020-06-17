@@ -104,20 +104,21 @@ func (cfg *Config) validateAddOnIRSAFargate() error {
 	}
 
 	if cfg.AddOnIRSAFargate.RoleName == "" {
-		cfg.AddOnIRSAFargate.RoleName = cfg.Name + "add-on-irsa-fargate-role"
+		cfg.AddOnIRSAFargate.RoleName = cfg.Name + "-role-irsa-fargate"
 	}
 	if cfg.AddOnIRSAFargate.RoleCFNStackYAMLFilePath == "" {
 		cfg.AddOnIRSAFargate.RoleCFNStackYAMLFilePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".add-on-irsa-fargate.role.cfn.yaml"
 	}
 
 	if cfg.AddOnIRSAFargate.S3Key == "" {
-		cfg.AddOnIRSAFargate.S3Key = path.Join(cfg.Name, "add-on-irsa-fargate-s3-key")
+		cfg.AddOnIRSAFargate.S3Key = path.Join(cfg.Name, "s3-key-irsa-fargate")
 	}
 	// do not prefix with "eks-"
 	// e.g. "The fargate profile name starts with the reserved prefix: 'eks-'."
 	if cfg.AddOnIRSAFargate.ProfileName == "" {
-		cfg.AddOnIRSAFargate.ProfileName = cfg.Name + "-add-on-irsa-fargate-profile"
+		cfg.AddOnIRSAFargate.ProfileName = cfg.Name + "-irsa-fargate-profile"
 	}
+
 	if strings.HasPrefix(cfg.AddOnIRSAFargate.ProfileName, "eks-") {
 		cfg.AddOnIRSAFargate.ProfileName = strings.Replace(cfg.AddOnIRSAFargate.ProfileName, "eks-", "", 1)
 	}

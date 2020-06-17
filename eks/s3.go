@@ -237,16 +237,14 @@ func (ts *Tester) uploadToS3() (err error) {
 		return nil
 	}
 
-	if fileutil.Exist(ts.cfg.ConfigPath) {
-		if err = uploadFileToS3(
-			ts.lg,
-			ts.s3API,
-			ts.cfg.S3BucketName,
-			path.Join(ts.cfg.Name, "aws-k8s-tester-eks.config.yaml"),
-			ts.cfg.ConfigPath,
-		); err != nil {
-			return err
-		}
+	if err = uploadFileToS3(
+		ts.lg,
+		ts.s3API,
+		ts.cfg.S3BucketName,
+		path.Join(ts.cfg.Name, "aws-k8s-tester-eks.config.yaml"),
+		ts.cfg.ConfigPath,
+	); err != nil {
+		return err
 	}
 
 	logFilePath := ""
@@ -268,16 +266,14 @@ func (ts *Tester) uploadToS3() (err error) {
 		}
 	}
 
-	if fileutil.Exist(ts.cfg.KubeConfigPath) {
-		if err = uploadFileToS3(
-			ts.lg,
-			ts.s3API,
-			ts.cfg.S3BucketName,
-			path.Join(ts.cfg.Name, "kubeconfig.yaml"),
-			ts.cfg.KubeConfigPath,
-		); err != nil {
-			return err
-		}
+	if err = uploadFileToS3(
+		ts.lg,
+		ts.s3API,
+		ts.cfg.S3BucketName,
+		path.Join(ts.cfg.Name, "kubeconfig.yaml"),
+		ts.cfg.KubeConfigPath,
+	); err != nil {
+		return err
 	}
 
 	if ts.cfg.IsEnabledAddOnNodeGroups() {
@@ -959,19 +955,11 @@ func (ts *Tester) uploadToS3() (err error) {
 }
 
 func uploadFileToS3(lg *zap.Logger, s3API s3iface.S3API, bucketName string, s3Key string, fpath string) error {
-	if !fileutil.Exist(fpath) {
-		return fmt.Errorf("file %q does not exist; failed to upload to %s/%s", fpath, bucketName, s3Key)
-	}
 	stat, err := os.Stat(fpath)
 	if err != nil {
 		return err
 	}
 	size := humanize.Bytes(uint64(stat.Size()))
-	lg.Info("uploading",
-		zap.String("bucket", bucketName),
-		zap.String("remote-path", s3Key),
-		zap.String("file-size", size),
-	)
 
 	rf, err := os.OpenFile(fpath, os.O_RDONLY, 0444)
 	if err != nil {
@@ -980,6 +968,11 @@ func uploadFileToS3(lg *zap.Logger, s3API s3iface.S3API, bucketName string, s3Ke
 	}
 	defer rf.Close()
 
+	lg.Info("uploading",
+		zap.String("bucket", bucketName),
+		zap.String("remote-path", s3Key),
+		zap.String("file-size", size),
+	)
 	_, err = s3API.PutObject(&s3.PutObjectInput{
 		Bucket: aws.String(bucketName),
 		Key:    aws.String(s3Key),

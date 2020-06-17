@@ -79,19 +79,6 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *AddOnManagedNodeGroups, got %T", vv)
 	}
 
-	if cfg.AddOnMetricsServer == nil {
-		cfg.AddOnMetricsServer = &AddOnMetricsServer{}
-	}
-	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnMetricsServer, cfg.AddOnMetricsServer)
-	if err != nil {
-		return err
-	}
-	if av, ok := vv.(*AddOnMetricsServer); ok {
-		cfg.AddOnMetricsServer = av
-	} else {
-		return fmt.Errorf("expected *AddOnMetricsServer, got %T", vv)
-	}
-
 	if cfg.AddOnConformance == nil {
 		cfg.AddOnConformance = &AddOnConformance{}
 	}
@@ -142,19 +129,6 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		cfg.AddOnNLBHelloWorld = av
 	} else {
 		return fmt.Errorf("expected *AddOnNLBHelloWorld, got %T", vv)
-	}
-
-	if cfg.AddOnNLBGuestbook == nil {
-		cfg.AddOnNLBGuestbook = &AddOnNLBGuestbook{}
-	}
-	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnNLBGuestbook, cfg.AddOnNLBGuestbook)
-	if err != nil {
-		return err
-	}
-	if av, ok := vv.(*AddOnNLBGuestbook); ok {
-		cfg.AddOnNLBGuestbook = av
-	} else {
-		return fmt.Errorf("expected *AddOnNLBGuestbook, got %T", vv)
 	}
 
 	if cfg.AddOnALB2048 == nil {

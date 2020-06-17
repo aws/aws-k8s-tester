@@ -45,10 +45,8 @@ import (
 	jupyter_hub "github.com/aws/aws-k8s-tester/eks/jupyter-hub"
 	"github.com/aws/aws-k8s-tester/eks/kubeflow"
 	kubernetes_dashboard "github.com/aws/aws-k8s-tester/eks/kubernetes-dashboard"
-	metrics_server "github.com/aws/aws-k8s-tester/eks/metrics-server"
 	"github.com/aws/aws-k8s-tester/eks/mng"
 	"github.com/aws/aws-k8s-tester/eks/ng"
-	nlb_guestbook "github.com/aws/aws-k8s-tester/eks/nlb-guestbook"
 	nlb_hello_world "github.com/aws/aws-k8s-tester/eks/nlb-hello-world"
 	prometheus_grafana "github.com/aws/aws-k8s-tester/eks/prometheus-grafana"
 	secrets_local "github.com/aws/aws-k8s-tester/eks/secrets/local"
@@ -451,13 +449,13 @@ func (ts *Tester) createTesters() (err error) {
 	})
 
 	ts.testers = []eks_tester.Tester{
-		metrics_server.New(metrics_server.Config{
+		conformance.New(conformance.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 		}),
-		conformance.New(conformance.Config{
+		csi_ebs.New(csi_ebs.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
@@ -469,12 +467,6 @@ func (ts *Tester) createTesters() (err error) {
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 			CFNAPI:    ts.cfnAPI,
-		}),
-		csi_ebs.New(csi_ebs.Config{
-			Logger:    ts.lg,
-			Stopc:     ts.stopCreationCh,
-			EKSConfig: ts.cfg,
-			K8SClient: ts.k8sClient,
 		}),
 		kubernetes_dashboard.New(kubernetes_dashboard.Config{
 			Logger:    ts.lg,
@@ -489,13 +481,6 @@ func (ts *Tester) createTesters() (err error) {
 			K8SClient: ts.k8sClient,
 		}),
 		nlb_hello_world.New(nlb_hello_world.Config{
-			Logger:    ts.lg,
-			Stopc:     ts.stopCreationCh,
-			EKSConfig: ts.cfg,
-			K8SClient: ts.k8sClient,
-			ELB2API:   ts.elbv2API,
-		}),
-		nlb_guestbook.New(nlb_guestbook.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
@@ -705,20 +690,18 @@ func (ts *Tester) Up() (err error) {
 			if ts.cfg.Status.Up {
 				if ts.color {
 					colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-					colorstring.Printf("[light_green]SSH [default](%q)\n", ts.cfg.ConfigPath)
 				} else {
 					fmt.Printf("\n\n*********************************\n")
-					fmt.Printf("SSH (%q)\n\n", ts.cfg.ConfigPath)
 				}
+				ts.lg.Sugar().Infof("SSH (%s)", ts.cfg.ConfigPath)
 				fmt.Println(ts.cfg.SSHCommands())
 
 				if ts.color {
 					colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-					colorstring.Printf("[light_green]kubectl [default](%q)\n", ts.cfg.ConfigPath)
 				} else {
 					fmt.Printf("\n\n*********************************\n")
-					fmt.Printf("kubectl (%q)\n\n", ts.cfg.ConfigPath)
 				}
+				ts.lg.Sugar().Infof("kubectl (%s)", ts.cfg.ConfigPath)
 				fmt.Println(ts.cfg.KubectlCommands())
 
 				ts.lg.Info("Up succeeded",
@@ -751,20 +734,18 @@ func (ts *Tester) Up() (err error) {
 			if ts.cfg.Status.Up {
 				if ts.color {
 					colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-					colorstring.Printf("[light_green]SSH [default](%q)\n", ts.cfg.ConfigPath)
 				} else {
 					fmt.Printf("\n\n*********************************\n")
-					fmt.Printf("SSH (%q)\n\n", ts.cfg.ConfigPath)
 				}
+				ts.lg.Sugar().Infof("SSH (%s)", ts.cfg.ConfigPath)
 				fmt.Println(ts.cfg.SSHCommands())
 
 				if ts.color {
 					colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-					colorstring.Printf("[light_green]kubectl [default](%q)\n", ts.cfg.ConfigPath)
 				} else {
 					fmt.Printf("\n\n*********************************\n")
-					fmt.Printf("kubectl (%q)\n\n", ts.cfg.ConfigPath)
 				}
+				ts.lg.Sugar().Infof("kubectl (%s)", ts.cfg.ConfigPath)
 				fmt.Println(ts.cfg.KubectlCommands())
 			}
 
@@ -793,20 +774,18 @@ func (ts *Tester) Up() (err error) {
 		if ts.cfg.Status.Up {
 			if ts.color {
 				colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-				colorstring.Printf("[light_green]SSH [default](%q)\n", ts.cfg.ConfigPath)
 			} else {
 				fmt.Printf("\n\n*********************************\n")
-				fmt.Printf("SSH (%q)\n\n", ts.cfg.ConfigPath)
 			}
+			ts.lg.Sugar().Infof("SSH (%s)", ts.cfg.ConfigPath)
 			fmt.Println(ts.cfg.SSHCommands())
 
 			if ts.color {
 				colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-				colorstring.Printf("[light_green]kubectl [default](%q)\n", ts.cfg.ConfigPath)
 			} else {
 				fmt.Printf("\n\n*********************************\n")
-				fmt.Printf("kubectl (%q)\n\n", ts.cfg.ConfigPath)
 			}
+			ts.lg.Sugar().Infof("kubectl (%s)", ts.cfg.ConfigPath)
 			fmt.Println(ts.cfg.KubectlCommands())
 		}
 
@@ -925,11 +904,10 @@ func (ts *Tester) Up() (err error) {
 		}
 		if ts.color {
 			colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-			colorstring.Printf("[light_green]runCommand.CommandAfterCreateCluster [default](%q)\n", ts.cfg.CommandAfterCreateCluster)
 		} else {
 			fmt.Printf("\n\n*********************************\n")
-			fmt.Printf("runCommand.CommandAfterCreateCluster (%q)\n", ts.cfg.CommandAfterCreateCluster)
 		}
+		fmt.Printf("\nrunCommand CommandAfterCreateCluster (%q)\n", ts.cfg.CommandAfterCreateCluster)
 		out, err := runCommand(ts.lg, ts.cfg.CommandAfterCreateCluster, ts.cfg.CommandAfterCreateClusterTimeout)
 		if err != nil {
 			err = ioutil.WriteFile(ts.cfg.CommandAfterCreateClusterOutputPath, []byte(ts.cfg.CommandAfterCreateCluster+"\n\n# output\n"+string(out)+"\n\n# error\n"+err.Error()), 0600)
@@ -1189,97 +1167,7 @@ func (ts *Tester) Up() (err error) {
 		if err := ts.cfg.EvaluateCommandRefs(); err != nil {
 			return err
 		}
-		if ts.color {
-			colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-			colorstring.Printf("[light_green]runCommand.CommandAfterCreateAddOns [default](%q)\n", ts.cfg.CommandAfterCreateAddOns)
-		} else {
-			fmt.Printf("\n\n*********************************\n")
-			fmt.Printf("runCommand.CommandAfterCreateAddOns (%q)\n", ts.cfg.CommandAfterCreateAddOns)
-		}
-		out, err := runCommand(ts.lg, ts.cfg.CommandAfterCreateAddOns, ts.cfg.CommandAfterCreateAddOnsTimeout)
-		if err != nil {
-			err = ioutil.WriteFile(ts.cfg.CommandAfterCreateAddOnsOutputPath, []byte(ts.cfg.CommandAfterCreateAddOns+"\n\n# output\n"+string(out)+"\n\n# error\n"+err.Error()), 0600)
-			if err != nil {
-				return fmt.Errorf("failed to write file %q (%v)", ts.cfg.CommandAfterCreateAddOnsOutputPath, err)
-			}
-		} else {
-			err = ioutil.WriteFile(ts.cfg.CommandAfterCreateAddOnsOutputPath, []byte(ts.cfg.CommandAfterCreateAddOns+"\n\n# output\n"+string(out)), 0600)
-			if err != nil {
-				return fmt.Errorf("failed to write file %q (%v)", ts.cfg.CommandAfterCreateAddOnsOutputPath, err)
-			}
-		}
-		fmt.Printf("\nrunCommand output:\n\n%s\n", string(out))
-	}
-
-	upgradeRun := false
-	if ts.cfg.IsEnabledAddOnManagedNodeGroups() && ts.cfg.AddOnManagedNodeGroups.Created {
-		if ts.mngTester == nil {
-			return errors.New("ts.mngTester == nil when AddOnManagedNodeGroups.Enable == true")
-		}
-
-		for _, cur := range ts.cfg.AddOnManagedNodeGroups.MNGs {
-			if cur.VersionUpgrade != nil && cur.VersionUpgrade.Enable {
-				upgradeRun = true
-				break
-			}
-		}
-		if ts.color {
-			colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-			colorstring.Printf("[light_green]mngTester.UpgradeVersion [default](%q, upgradeRun %v)\n", ts.cfg.ConfigPath, upgradeRun)
-		} else {
-			fmt.Printf("\n\n*********************************\n")
-			fmt.Printf("mngTester.UpgradeVersion (%q, upgradeRun %v)\n", ts.cfg.ConfigPath, upgradeRun)
-		}
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.osSig,
-			ts.mngTester.UpgradeVersion,
-		); err != nil {
-			return err
-		}
-	}
-
-	if upgradeRun && ts.cfg.IsEnabledAddOnManagedNodeGroups() && ts.cfg.AddOnManagedNodeGroups.Created && ts.cfg.AddOnManagedNodeGroups.FetchLogs {
-		if ts.mngTester == nil {
-			return errors.New("ts.mngTester == nil when AddOnManagedNodeGroups.Enable == true")
-		}
-
-		if ts.color {
-			colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-			colorstring.Printf("[light_green]mngTester.FetchLogs after upgrade [default](%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-		} else {
-			fmt.Printf("\n\n*********************************\n")
-			fmt.Printf("mngTester.FetchLogs after upgrade (%q, %q)\n", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-		}
-
-		waitDur := 15 * time.Second
-		ts.lg.Info("sleeping before mngTester.FetchLogs", zap.Duration("wait", waitDur))
-		time.Sleep(waitDur)
-
-		if err := catchInterrupt(
-			ts.lg,
-			ts.stopCreationCh,
-			ts.stopCreationChOnce,
-			ts.osSig,
-			ts.mngTester.FetchLogs,
-		); err != nil {
-			return err
-		}
-	}
-
-	if ts.cfg.CommandAfterCreateAddOns != "" {
-		if err := ts.cfg.EvaluateCommandRefs(); err != nil {
-			return err
-		}
-		if ts.color {
-			colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-			colorstring.Printf("[light_green]runCommand.CommandAfterCreateAddOns [default](%q)\n", ts.cfg.CommandAfterCreateAddOns)
-		} else {
-			fmt.Printf("\n\n*********************************\n")
-			fmt.Printf("runCommand.CommandAfterCreateAddOns (%q)\n", ts.cfg.CommandAfterCreateAddOns)
-		}
+		fmt.Printf("\nrunCommand CommandAfterCreateAddOns (%q)\n", ts.cfg.CommandAfterCreateAddOns)
 		out, err := runCommand(ts.lg, ts.cfg.CommandAfterCreateAddOns, ts.cfg.CommandAfterCreateAddOnsTimeout)
 		if err != nil {
 			err = ioutil.WriteFile(ts.cfg.CommandAfterCreateAddOnsOutputPath, []byte(ts.cfg.CommandAfterCreateAddOns+"\n\n# output\n"+string(out)+"\n\n# error\n"+err.Error()), 0600)
@@ -1441,9 +1329,12 @@ func (ts *Tester) down() (err error) {
 	if ts.cfg.IsEnabledAddOnNodeGroups() && ts.ngTester != nil {
 		if ts.color {
 			colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-			colorstring.Printf("[light_blue]ngTester.Delete [default](%q)\n", ts.cfg.ConfigPath)
 		} else {
 			fmt.Printf("\n\n*********************************\n")
+		}
+		if ts.color {
+			colorstring.Printf("[light_blue]ngTester.Delete [default](%q)\n", ts.cfg.ConfigPath)
+		} else {
 			fmt.Printf("ngTester.Delete (%q)\n", ts.cfg.ConfigPath)
 		}
 		if err := ts.ngTester.Delete(); err != nil {
@@ -1458,9 +1349,12 @@ func (ts *Tester) down() (err error) {
 
 	if ts.color {
 		colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-		colorstring.Printf("[light_blue]clusterTester.Delete [default](%q)\n", ts.cfg.ConfigPath)
 	} else {
 		fmt.Printf("\n\n*********************************\n")
+	}
+	if ts.color {
+		colorstring.Printf("[light_blue]clusterTester.Delete [default](%q)\n", ts.cfg.ConfigPath)
+	} else {
 		fmt.Printf("clusterTester.Delete (%q)\n", ts.cfg.ConfigPath)
 	}
 	if err := ts.clusterTester.Delete(); err != nil {
@@ -1470,9 +1364,12 @@ func (ts *Tester) down() (err error) {
 
 	if ts.color {
 		colorstring.Printf("\n\n[yellow]*********************************[default]\n")
-		colorstring.Printf("[light_blue]deleteS3 [default](%q)\n", ts.cfg.ConfigPath)
 	} else {
 		fmt.Printf("\n\n*********************************\n")
+	}
+	if ts.color {
+		colorstring.Printf("[light_blue]deleteS3 [default](%q)\n", ts.cfg.ConfigPath)
+	} else {
 		fmt.Printf("deleteS3 (%q)\n", ts.cfg.ConfigPath)
 	}
 	if err := ts.deleteS3(); err != nil {

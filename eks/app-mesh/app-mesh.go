@@ -21,10 +21,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/cloudformation/cloudformationiface"
 	"go.uber.org/zap"
-	v1 "k8s.io/api/apps/v1"
-	api_errors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/exec"
 )
 
 // Config defines AppMesh configuration.
@@ -79,10 +75,10 @@ func (ts *tester) Create() error {
 	if err := helm.RepoAdd(ts.cfg.Logger, chartRepoName, chartRepoURL); err != nil {
 		return err
 	}
-	if err := ts.createController(); err != nil {
+	if err := ts.createHelmController(); err != nil {
 		return err
 	}
-	if err := ts.createInjector(); err != nil {
+	if err := ts.createHelmInjector(); err != nil {
 		return err
 	}
 	return ts.cfg.EKSConfig.Sync()
@@ -108,23 +104,13 @@ func (ts *tester) Delete() error {
 
 	var errs []string
 
-	if err := ts.deleteInjector(); err != nil {
-		errs = append(errs, err.Error())
-	}
-	if err := ts.deleteController(); err != nil {
+	if err := ts.deleteHelmInjector(); err != nil {
 		errs = append(errs, err.Error())
 	}
 
-	time.Sleep(10 * time.Second)
-
-	getAllArgs := []string{
-		ts.cfg.EKSConfig.KubectlPath,
-		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
-		"--namespace=" + ts.cfg.EKSConfig.AddOnAppMesh.Namespace,
-		"get",
-		"all",
+	if err := ts.deleteHelmController(); err != nil {
+		errs = append(errs, err.Error())
 	}
-	getAllCmd := strings.Join(getAllArgs, " ")
 
 	if err := k8s_client.DeleteNamespaceAndWait(
 		ts.cfg.Logger,
@@ -132,22 +118,8 @@ func (ts *tester) Delete() error {
 		ts.cfg.EKSConfig.AddOnAppMesh.Namespace,
 		k8s_client.DefaultNamespaceDeletionInterval,
 		k8s_client.DefaultNamespaceDeletionTimeout,
-		k8s_client.WithQueryFunc(func() {
-			println()
-			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-			output, err := exec.New().CommandContext(ctx, getAllArgs[0], getAllArgs[1:]...).CombinedOutput()
-			cancel()
-			out := strings.TrimSpace(string(output))
-			if err != nil {
-				ts.cfg.Logger.Warn("'kubectl get all' failed", zap.Error(err))
-			} else {
-				fmt.Printf("\n\n'%s' output:\n\n%s\n\n", getAllCmd, out)
-			}
-		}),
 	); err != nil {
-		// TODO
-		// errs = append(errs, fmt.Sprintf("failed to delete AppMesh namespace (%v)", err))
-		ts.cfg.Logger.Warn("failed to delete AppMesh namespace", zap.Error(err))
+		errs = append(errs, fmt.Sprintf("failed to delete AppMesh namespace (%v)", err))
 	}
 
 	if err := ts.deletePolicy(); err != nil {
@@ -309,6 +281,7 @@ func (ts *tester) deletePolicy() error {
 	ch := cfn.Poll(
 		ctx,
 		make(chan struct{}), // do not exit on stop
+
 		ts.cfg.Logger,
 		ts.cfg.CFNAPI,
 		ts.cfg.EKSConfig.AddOnAppMesh.PolicyCFNStackID,
@@ -345,7 +318,7 @@ const (
 )
 
 // https://github.com/aws/eks-charts/blob/master/stable/appmesh-controller/values.yaml
-func (ts *tester) createController() error {
+func (ts *tester) createHelmController() error {
 	// https://github.com/aws/eks-charts/blob/master/stable/appmesh-controller/values.yaml
 	values := make(map[string]interface{})
 	if ts.cfg.EKSConfig.AddOnAppMesh.ControllerImage != "" {
@@ -373,66 +346,7 @@ func (ts *tester) createController() error {
 	})
 }
 
-func (ts *tester) deleteController() (err error) {
-	foreground := metav1.DeletePropagationForeground
-
-	ts.cfg.Logger.Info("deleting AppMesh controller Deployment")
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	err = ts.cfg.K8SClient.KubernetesClientSet().
-		AppsV1().
-		Deployments(ts.cfg.EKSConfig.AddOnAppMesh.Namespace).
-		Delete(
-			ctx,
-			chartNameController,
-			metav1.DeleteOptions{
-				GracePeriodSeconds: aws.Int64(0),
-				PropagationPolicy:  &foreground,
-			},
-		)
-	cancel()
-	if err != nil && !api_errors.IsNotFound(err) {
-		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
-	} else {
-		ts.cfg.Logger.Info("deleted AppMesh controller deployment")
-	}
-	time.Sleep(20 * time.Second)
-
-	ts.cfg.Logger.Info("deleting all ReplicaSets")
-	var rs *v1.ReplicaSetList
-	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
-	rs, err = ts.cfg.K8SClient.KubernetesClientSet().
-		AppsV1().
-		ReplicaSets(ts.cfg.EKSConfig.AddOnAppMesh.Namespace).
-		List(ctx, metav1.ListOptions{})
-	cancel()
-	if err != nil {
-		ts.cfg.Logger.Warn("failed to list replicasets", zap.Error(err))
-	} else {
-		for _, v := range rs.Items {
-			name := v.Name
-			ts.cfg.Logger.Info("deleting replicaset", zap.String("name", name))
-			ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
-			err = ts.cfg.K8SClient.KubernetesClientSet().
-				AppsV1().
-				ReplicaSets(ts.cfg.EKSConfig.AddOnAppMesh.Namespace).
-				Delete(
-					ctx,
-					name,
-					metav1.DeleteOptions{
-						GracePeriodSeconds: aws.Int64(0),
-						PropagationPolicy:  &foreground,
-					},
-				)
-			cancel()
-			if err != nil && !api_errors.IsNotFound(err) {
-				ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
-			} else {
-				ts.cfg.Logger.Info("deleted AppMesh injector replicaset", zap.String("name", name))
-			}
-		}
-	}
-	time.Sleep(20 * time.Second)
-
+func (ts *tester) deleteHelmController() error {
 	return helm.Uninstall(helm.InstallConfig{
 		Logger:         ts.cfg.Logger,
 		Timeout:        15 * time.Minute,
@@ -444,7 +358,7 @@ func (ts *tester) deleteController() (err error) {
 }
 
 // https://github.com/aws/eks-charts/blob/master/stable/appmesh-injector/values.yaml
-func (ts *tester) createInjector() error {
+func (ts *tester) createHelmInjector() error {
 	values := make(map[string]interface{})
 	if ts.cfg.EKSConfig.AddOnAppMesh.InjectorImage != "" {
 		imageRepo, imageTag, err := splitImageRepoAndTag(ts.cfg.EKSConfig.AddOnAppMesh.InjectorImage)
@@ -471,120 +385,7 @@ func (ts *tester) createInjector() error {
 	})
 }
 
-/*
-$ /tmp/kubectl-test-v1.17.6 --kubeconfig=/tmp/proudpcgaspvcpn.kubeconfig.yaml -n eks-2020061416-prime6774tws-appmesh get all
-
-NAME                                      READY   STATUS    RESTARTS   AGE
-pod/appmesh-controller-55c7bdf448-s79zr   1/1     Running   0          2m16s
-pod/appmesh-inject-6fb67dbb44-jfqvq       1/1     Running   0          2m
-
-NAME                     TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE
-service/appmesh-inject   ClusterIP   10.100.67.220   <none>        443/TCP   2m
-
-NAME                                 READY   UP-TO-DATE   AVAILABLE   AGE
-deployment.apps/appmesh-controller   1/1     1            1           2m16s
-deployment.apps/appmesh-inject       1/1     1            1           2m
-
-NAME                                            DESIRED   CURRENT   READY   AGE
-replicaset.apps/appmesh-controller-55c7bdf448   1         1         1       2m16s
-replicaset.apps/appmesh-inject-6fb67dbb44       1         1         1       2m
-
-// ref. https://github.com/kubernetes/kubernetes/issues/60807
-
-/tmp/kubectl-test-v1.17.6 \
-   --kubeconfig=/tmp/proudpcgaspvcpn.kubeconfig.yaml \
-   -n eks-2020061416-prime6774tws-appmesh \
-   get all
-
-export KUBECONFIG=/tmp/proudpcgaspvcpn.kubeconfig.yaml
-kubectl get namespace "eks-2020061416-prime6774tws-appmesh" -o json \
-  | tr -d "\n" | sed "s/\"finalizers\": \[[^]]\+\]/\"finalizers\": []/" \
-  | kubectl replace --raw /api/v1/namespaces/eks-2020061416-prime6774tws-appmesh/finalize -f -
-
-{"kind":"Namespace","apiVersion":"v1","metadata":{"name":"eks-2020061416-prime6774tws-appmesh","selfLink":"/api/v1/namespaces/eks-2020061416-prime6774tws-appmesh/finalize","uid":"2ef68b28-0f24-43a1-934f-cb010553ee92","resourceVersion":"9462","creationTimestamp":"2020-06-14T23:47:08Z","deletionTimestamp":"2020-06-15T00:19:38Z"},"spec":{},"status":{"phase":"Terminating","conditions":[{"type":"NamespaceDeletionDiscoveryFailure","status":"True","lastTransitionTime":"2020-06-15T00:19:43Z","reason":"DiscoveryFailed","message":"Discovery failed for some groups, 1 failing: unable to retrieve the complete list of server APIs: metrics.k8s.io/v1beta1: the server is currently unable to handle the request"},{"type":"NamespaceDeletionGroupVersionParsingFailure","status":"False","lastTransitionTime":"2020-06-15T00:19:43Z","reason":"ParsedGroupVersions","message":"All legacy kube types successfully parsed"},{"type":"NamespaceDeletionContentFailure","status":"False","lastTransitionTime":"2020-06-15T00:19:43Z","reason":"ContentDeleted","message":"All content successfully deleted"}]}}
-*/
-
-func (ts *tester) deleteInjector() (err error) {
-	foreground := metav1.DeletePropagationForeground
-
-	ts.cfg.Logger.Info("deleting AppMesh injector Service")
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	err = ts.cfg.K8SClient.KubernetesClientSet().
-		CoreV1().
-		Services(ts.cfg.EKSConfig.AddOnAppMesh.Namespace).
-		Delete(
-			ctx,
-			chartNameInjector,
-			metav1.DeleteOptions{
-				GracePeriodSeconds: aws.Int64(0),
-				PropagationPolicy:  &foreground,
-			},
-		)
-	cancel()
-	if err != nil && !api_errors.IsNotFound(err) {
-		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
-	} else {
-		ts.cfg.Logger.Info("deleted AppMesh injector Service")
-	}
-	time.Sleep(20 * time.Second)
-
-	ts.cfg.Logger.Info("deleting AppMesh injector Deployment")
-	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
-	err = ts.cfg.K8SClient.KubernetesClientSet().
-		AppsV1().
-		Deployments(ts.cfg.EKSConfig.AddOnAppMesh.Namespace).
-		Delete(
-			ctx,
-			chartNameInjector,
-			metav1.DeleteOptions{
-				GracePeriodSeconds: aws.Int64(0),
-				PropagationPolicy:  &foreground,
-			},
-		)
-	cancel()
-	if err != nil && !api_errors.IsNotFound(err) {
-		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
-	} else {
-		ts.cfg.Logger.Info("deleted AppMesh injector deployment")
-	}
-	time.Sleep(20 * time.Second)
-
-	ts.cfg.Logger.Info("deleting all ReplicaSets")
-	var rs *v1.ReplicaSetList
-	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
-	rs, err = ts.cfg.K8SClient.KubernetesClientSet().
-		AppsV1().
-		ReplicaSets(ts.cfg.EKSConfig.AddOnAppMesh.Namespace).
-		List(ctx, metav1.ListOptions{})
-	cancel()
-	if err != nil {
-		ts.cfg.Logger.Warn("failed to list replicasets", zap.Error(err))
-	} else {
-		for _, v := range rs.Items {
-			name := v.Name
-			ts.cfg.Logger.Info("deleting replicaset", zap.String("name", name))
-			ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
-			err = ts.cfg.K8SClient.KubernetesClientSet().
-				AppsV1().
-				ReplicaSets(ts.cfg.EKSConfig.AddOnAppMesh.Namespace).
-				Delete(
-					ctx,
-					name,
-					metav1.DeleteOptions{
-						GracePeriodSeconds: aws.Int64(0),
-						PropagationPolicy:  &foreground,
-					},
-				)
-			cancel()
-			if err != nil && !api_errors.IsNotFound(err) {
-				ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
-			} else {
-				ts.cfg.Logger.Info("deleted AppMesh injector replicaset", zap.String("name", name))
-			}
-		}
-	}
-	time.Sleep(20 * time.Second)
-
+func (ts *tester) deleteHelmInjector() error {
 	return helm.Uninstall(helm.InstallConfig{
 		Logger:         ts.cfg.Logger,
 		Timeout:        15 * time.Minute,

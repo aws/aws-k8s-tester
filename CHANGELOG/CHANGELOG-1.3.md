@@ -3,108 +3,7 @@
 <hr>
 
 
-## [v1.3.9](https://github.com/aws/aws-k8s-tester/releases/tag/v1.3.9) (2020-06-15)
-
-See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.8...v1.3.9).
-
-### `aws-k8s-tester`
-
-- [`aws-k8s-tester --auto-path` overwrites `aws-k8s-tester --auto-path --path` value](https://github.com/aws/aws-k8s-tester/commit/340a5dd92938499ba40f4b3d6ffd4a81b03d6cc7).
-
-### `ec2-utils`
-
-- Add [`ec2-utils --auto-path`](https://github.com/aws/aws-k8s-tester/commit/fa5ec0bda8894521e81a52c0bf5a8bd769d0484b).
-- [`ec2-utils --auto-path` overwrites `ec2-utils --path` value](https://github.com/aws/aws-k8s-tester/commit/fa5ec0bda8894521e81a52c0bf5a8bd769d0484b).
-
-### `eks`
-
-- Improve [`eks/cluster` delete operation](https://github.com/aws/aws-k8s-tester/commit/3b22aefdbf81576d01d2c02a92c59b179b661e69).
-- Fix [`eks/mng` delete operation](https://github.com/aws/aws-k8s-tester/commit/3b22aefdbf81576d01d2c02a92c59b179b661e69).
-- Add [`eks/nlb-guestbook`](https://github.com/aws/aws-k8s-tester/commit/abbfcaa5089e74590171dceaaa0ec8bbef76b23f).
-  - Fix [NLB type](https://github.com/aws/aws-k8s-tester/commit/).
-
-### `eksconfig`
-
-- Add [`AddOnNLBGuestbook`](https://github.com/aws/aws-k8s-tester/commit/abbfcaa5089e74590171dceaaa0ec8bbef76b23f).
-  - Set via `ADD_ON_NLB_GUESTBOOK_ENABLE`.
-
-
-<hr>
-
-
-## [v1.3.8](https://github.com/aws/aws-k8s-tester/releases/tag/v1.3.8) (2020-06-14)
-
-See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.7...v1.3.8).
-
-### `eks`
-
-- Improve [`eks/app-mesh` delete operation](https://github.com/aws/aws-k8s-tester/commit/2d1346cb3e28e7669dc984683b8c95ff7a384f93).
-- Improve [`eks/mng` delete operation](https://github.com/aws/aws-k8s-tester/commit/2d1346cb3e28e7669dc984683b8c95ff7a384f93).
-- Install [`eks/metrics-server` at the very beginning, and delete at the end](https://github.com/aws/aws-k8s-tester/commit/f478b099b50f7f94559dd74bef31cd579f15836c).
-  - Fix namespace deletion stuck in `"Terminating"` state.
-  - See https://github.com/kubernetes/kubernetes/issues/60807 for more details.
-  - `"The fundamental issue is that an aggregated API group in your cluster is unavailable. It is intentional that the namespace cleanup controller blocks until all APIs are available, so that it can verify all resources from all API groups are cleaned up for that namespace."`
-
-### `pkg/k8s-client`
-
-- Add [`WithQueryFunc` for namespace deletion](https://github.com/aws/aws-k8s-tester/commit/817591fa31b1cf57446a9aca12f296cfb8721d1e).
-
-
-<hr>
-
-
-## [v1.3.7](https://github.com/aws/aws-k8s-tester/releases/tag/v1.3.7) (2020-06-13)
-
-See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.6...v1.3.7).
-
-### `aws-k8s-tester`
-
-- Add [`aws-k8s-tester eks --auto-path` to automatically create configuration file path](https://github.com/aws/aws-k8s-tester/commit/e824a43f267830ecb16b2266daf060caa9ab5d61).
-
-### `eksconfig`
-
-- Add [`AddOnMetricsServer`](https://github.com/aws/aws-k8s-tester/commit/17451bade7e3cab783f9839db3fca1df0825b4fd).
-  - Set via `AWS_K8S_TESTER_EKS_ADD_ON_METRICS_SERVER_ENABLE=true`.
-  - Now `AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_ENABLE=true` requires `AWS_K8S_TESTER_EKS_ADD_ON_METRICS_SERVER_ENABLE=true`.
-- Change [`Config.RemoteAccessPrivateKeyPath` from `filepath.Join(homedir.HomeDir(), ".ssh", "kube_aws_rsa")` to `filepath.Join(os.TempDir(), randutil.String(15)+".insecure.key")`](https://github.com/aws/aws-k8s-tester/commit/a1ca992fb27fee6a58f61f445f3169badfc13638).
-  - Can be set via `AWS_K8S_TESTER_EKS_REMOTE_ACCESS_PRIVATE_KEY_PATH`.
-  - May break upstream tests (to be in sync with https://pkg.go.dev/k8s.io/kubernetes/test/e2e/framework#GetSigner).
-  - Randomize to help create multiple clusters locally.
-- Add [`Config.TotalHollowNodes`](https://github.com/aws/aws-k8s-tester/commit/b902ecac6a8fe95b3f1b6268db58fbe950616b2f).
-
-### `eks`
-
-- Improve [polling operations for `eks/cron-jobs`, `eks/jobs-echo`, and `eks/jobs-pi` with pagination](https://github.com/aws/aws-k8s-tester/commit/7306c6e0979541c8461388ffd32938c384e06e31).
-- Update [default `sonobuoy` version to `v0.18.3` in `eks/conformance`](https://github.com/vmware-tanzu/sonobuoy/releases/tag/v0.18.3).
-- Improve [`eks/kubernetes-dashboard` `metrics-server` `kubectl top node` logging](https://github.com/aws/aws-k8s-tester/commit/b0889909a225497265a2fced0063bd51b813108c).
-- Add [sleep wait after deleting deployment objects](https://github.com/aws/aws-k8s-tester/commit/0f65f550a11b146d775dccaf867e6e3872da0894).
-- Rename [`eks/mng/node-waiter` to `eks/mng/wait`](https://github.com/aws/aws-k8s-tester/commit/6bed26a3eed0d73b47a1d516a17a8169d95f91e9).
-- Rename [`eks/ng/node-waiter` to `eks/ng/wait`](https://github.com/aws/aws-k8s-tester/commit/6bed26a3eed0d73b47a1d516a17a8169d95f91e9).
-- Increase [cluster create/delete timeout from 30-min to 1-hour](https://github.com/aws/aws-k8s-tester/commit/10523bb628162f1b2b1f1f4455efa0fa88564752).
-- Move [`eks/metrics-server` from `eks/kubernetes-dashboard`](https://github.com/aws/aws-k8s-tester/commit/17451bade7e3cab783f9839db3fca1df0825b4fd).
-  - Fix [`kubectl top node`](https://github.com/aws/aws-k8s-tester/commit/ec76fedc824d48aa31fbc39c29ff7dc1d0bbfe27).
-- Fix [`eks/fargate` delete profile polling operation](https://github.com/aws/aws-k8s-tester/commit/b32f65b38738a3563b1d35ac058bc6a44f338aac).
-- Move [`eks/fargate.Poll` to `eks/fargate/wait`](https://github.com/aws/aws-k8s-tester/commit/72ec6d81f1475acfef2e8561b8a62f35fad3d0df).
-- Improve [`eks/ng` and `eks/mng` deletion by pre-delete lingering ENIs](https://github.com/aws/aws-k8s-tester/commit/da879fcd5f20210f4401193103b996339fb97ca4).
-
-### `pkg/k8s-client`
-
-- Increase [default namespace delete timeout from 15-min to 30-min](https://github.com/aws/aws-k8s-tester/commit/0f65f550a11b146d775dccaf867e6e3872da0894).
-
-### `ssh`
-
-- Improve [retries, do not retry on non-zero command run exit codes](https://github.com/aws/aws-k8s-tester/commit/cb353464f24ed0607e8accd7f99fc68a46322a01).
-- Log [connection close with `Debug` level](https://github.com/aws/aws-k8s-tester/commit/7e8ce119986b682185d8e1e93dfdbaf9d3ed89cc).
-
-### Dependency
-
-- Update [default `sonobuoy` version to `v0.18.3`](https://github.com/vmware-tanzu/sonobuoy/releases/tag/v0.18.3).
-
-
-<hr>
-
-
-## [v1.3.6](https://github.com/aws/aws-k8s-tester/releases/tag/v1.3.6) (2020-06-12)
+## [v1.3.6](https://github.com/aws/aws-k8s-tester/releases/tag/v1.3.6) (2020-06)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.5...v1.3.6).
 
@@ -115,10 +14,6 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.5...v1.3.6
 - Add [`ASG.ASGCFNStackYAMLFilePath`](https://github.com/aws/aws-k8s-tester/commit/13922f4a0eb9446705a757c816923ae54a03bb41).
 - Add [`ASG.SSMDocumentCFNStackYAMLFilePath`](https://github.com/aws/aws-k8s-tester/commit/13922f4a0eb9446705a757c816923ae54a03bb41).
 
-### `ec2`
-
-- Improve [s3 upload error message](https://github.com/aws/aws-k8s-tester/commit/e29f3038135a1e43e4e5d201ad538ad3973a0c6a).
-
 ### `eksconfig`
 
 - Add [`Parameters.RoleCFNStackYAMLFilePath`](https://github.com/aws/aws-k8s-tester/commit/db0cb5d39e3b1d9758f31ca4f5425ad9d1f711ce).
@@ -126,24 +21,14 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.5...v1.3.6
 - Add [`MNGVersionUpgrade` for managed node group version upgrades](https://github.com/aws/aws-k8s-tester/commit/8d4490b47d089064cf27306a59acaffaed53ab58).
   - Set via `"version-upgrade"` within `MNG` configuration.
   - e.g. `AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS=..."version-upgrade":{"enable":true,"initial-wait-string":"10m","version":"1.17"}...` when `AWS_K8S_TESTER_EKS_PARAMETERS_VERSION=1.16`.
-- Fix [empty default values for `CommandAfterCreateClusterOutputPath`](https://github.com/aws/aws-k8s-tester/commit/d382071054755be164a83a6a522a9bc8b0d1495a).
 
 ### `eks`
 
 - Fix [`CheckHealth` to handle version upgrades](https://github.com/aws/aws-k8s-tester/commit/ef079fd2332e3c20c29cea1001aec1d1a95f1d87).
   - See also [`eks` health check fix](https://github.com/aws/aws-k8s-tester/commit/afe2096a5bd51b043e59ebad937ba5921c8ded98).
 - Wait until [`kubectl top node` is ready](https://github.com/aws/aws-k8s-tester/commit/5301270bfa2253bda350407a2db03a38058d7e95).
-- Merge [all logs from remote nodes in `eks/ng` and `eks/mng`](https://github.com/aws/aws-k8s-tester/commit/3abcece44beda975af7f3d62a35e46d06f609c7a).
-- Implement [`eks/mng` version upgrades](https://github.com/aws/aws-k8s-tester/commit/3abcece44beda975af7f3d62a35e46d06f609c7a).
-  - See [how it's triggered after add-on creation](https://github.com/aws/aws-k8s-tester/commit/234917535d8dd2c72b6054db72a49b56b179f16a).
+- Implement [`eks/mng` version upgrades](https://github.com/aws/aws-k8s-tester/commit/).
   - Set via `"version-upgrade"` within `MNG` configuration.
-- Move all [polling operations to own directory; `eks/ng/node-waiter` and `eks/mng/node-waiter`](https://github.com/aws/aws-k8s-tester/commit/3abcece44beda975af7f3d62a35e46d06f609c7a).
-- Only upload [kubeconfig file if the file exists](https://github.com/aws/aws-k8s-tester/commit/3abcece44beda975af7f3d62a35e46d06f609c7a).
-- Improve [s3 upload error message](https://github.com/aws/aws-k8s-tester/commit/e29f3038135a1e43e4e5d201ad538ad3973a0c6a).
-
-### Dependency
-
-- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.32.0`](https://github.com/aws/aws-sdk-go/releases/tag/v1.32.0) to [`v1.32.1`](https://github.com/aws/aws-sdk-go/releases/tag/v1.32.1).
 
 
 <hr>

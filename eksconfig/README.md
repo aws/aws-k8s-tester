@@ -1,17 +1,14 @@
 
 ```
-# total 34 add-ons
 # set the following *_ENABLE env vars to enable add-ons, rest are set with default values
 AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE=true \
-AWS_K8S_TESTER_EKS_ADD_ON_METRICS_SERVER_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_ENABLE=true \
-AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_ENABLE=true \
+AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_ENABLE=true \
-AWS_K8S_TESTER_EKS_ADD_ON_NLB_GUESTBOOK_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_JOBS_PI_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_ENABLE=true \
@@ -81,7 +78,6 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_CLIENT_TIMEOUT                              | read-only "false" | *eksconfig.Config.ClientTimeout                          | time.Duration |
 | AWS_K8S_TESTER_EKS_CLIENT_TIMEOUT_STRING                       | read-only "true"  | *eksconfig.Config.ClientTimeoutString                    | string        |
 | AWS_K8S_TESTER_EKS_TOTAL_NODES                                 | read-only "true"  | *eksconfig.Config.TotalNodes                             | int64         |
-| AWS_K8S_TESTER_EKS_TOTAL_HOLLOW_NODES                          | read-only "true"  | *eksconfig.Config.TotalHollowNodes                       | int64         |
 *----------------------------------------------------------------*-------------------*----------------------------------------------------------*---------------*
 
 
@@ -170,16 +166,6 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 *-----------------------------------------------------------------------------*-------------------*------------------------------------------------------------*--------------------------*
 
 
-*------------------------------------------------------------*-------------------*-----------------------------------------------*--------------------*
-|                   ENVIRONMENTAL VARIABLE                   |     READ ONLY     |                     TYPE                      |      GO TYPE       |
-*------------------------------------------------------------*-------------------*-----------------------------------------------*--------------------*
-| AWS_K8S_TESTER_EKS_ADD_ON_METRICS_SERVER_ENABLE            | read-only "false" | *eksconfig.AddOnMetricsServer.Enable          | bool               |
-| AWS_K8S_TESTER_EKS_ADD_ON_METRICS_SERVER_CREATED           | read-only "true"  | *eksconfig.AddOnMetricsServer.Created         | bool               |
-| AWS_K8S_TESTER_EKS_ADD_ON_METRICS_SERVER_TIME_FRAME_CREATE | read-only "true"  | *eksconfig.AddOnMetricsServer.TimeFrameCreate | timeutil.TimeFrame |
-| AWS_K8S_TESTER_EKS_ADD_ON_METRICS_SERVER_TIME_FRAME_DELETE | read-only "true"  | *eksconfig.AddOnMetricsServer.TimeFrameDelete | timeutil.TimeFrame |
-*------------------------------------------------------------*-------------------*-----------------------------------------------*--------------------*
-
-
 *---------------------------------------------------------------------------*-------------------*-------------------------------------------------------------*--------------------*
 |                          ENVIRONMENTAL VARIABLE                           |     READ ONLY     |                            TYPE                             |      GO TYPE       |
 *---------------------------------------------------------------------------*-------------------*-------------------------------------------------------------*--------------------*
@@ -203,6 +189,17 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 *---------------------------------------------------------------------------*-------------------*-------------------------------------------------------------*--------------------*
 
 
+*-----------------------------------------------------*-------------------*----------------------------------------*--------------------*
+|               ENVIRONMENTAL VARIABLE                |     READ ONLY     |                  TYPE                  |      GO TYPE       |
+*-----------------------------------------------------*-------------------*----------------------------------------*--------------------*
+| AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_ENABLE            | read-only "false" | *eksconfig.AddOnCSIEBS.Enable          | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_CREATED           | read-only "true"  | *eksconfig.AddOnCSIEBS.Created         | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_TIME_FRAME_CREATE | read-only "true"  | *eksconfig.AddOnCSIEBS.TimeFrameCreate | timeutil.TimeFrame |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_TIME_FRAME_DELETE | read-only "true"  | *eksconfig.AddOnCSIEBS.TimeFrameDelete | timeutil.TimeFrame |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_CHART_REPO_URL    | read-only "false" | *eksconfig.AddOnCSIEBS.ChartRepoURL    | string             |
+*-----------------------------------------------------*-------------------*----------------------------------------*--------------------*
+
+
 *--------------------------------------------------------------------*-------------------*----------------------------------------------------*--------------------*
 |                       ENVIRONMENTAL VARIABLE                       |     READ ONLY     |                        TYPE                        |      GO TYPE       |
 *--------------------------------------------------------------------*-------------------*----------------------------------------------------*--------------------*
@@ -216,17 +213,6 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_POLICY_CFN_STACK_ID             | read-only "true"  | *eksconfig.AddOnAppMesh.PolicyCFNStackID           | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_POLICY_CFN_STACK_YAML_FILE_PATH | read-only "true"  | *eksconfig.AddOnAppMesh.PolicyCFNStackYAMLFilePath | string             |
 *--------------------------------------------------------------------*-------------------*----------------------------------------------------*--------------------*
-
-
-*-----------------------------------------------------*-------------------*----------------------------------------*--------------------*
-|               ENVIRONMENTAL VARIABLE                |     READ ONLY     |                  TYPE                  |      GO TYPE       |
-*-----------------------------------------------------*-------------------*----------------------------------------*--------------------*
-| AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_ENABLE            | read-only "false" | *eksconfig.AddOnCSIEBS.Enable          | bool               |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_CREATED           | read-only "true"  | *eksconfig.AddOnCSIEBS.Created         | bool               |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_TIME_FRAME_CREATE | read-only "true"  | *eksconfig.AddOnCSIEBS.TimeFrameCreate | timeutil.TimeFrame |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_TIME_FRAME_DELETE | read-only "true"  | *eksconfig.AddOnCSIEBS.TimeFrameDelete | timeutil.TimeFrame |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_CHART_REPO_URL    | read-only "false" | *eksconfig.AddOnCSIEBS.ChartRepoURL    | string             |
-*-----------------------------------------------------*-------------------*----------------------------------------*--------------------*
 
 
 *---------------------------------------------------------------------*-------------------*---------------------------------------------------------*--------------------*
@@ -271,22 +257,6 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_NLB_NAME                 | read-only "true"  | *eksconfig.AddOnNLBHelloWorld.NLBName                | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_URL                      | read-only "true"  | *eksconfig.AddOnNLBHelloWorld.URL                    | string             |
 *--------------------------------------------------------------------*-------------------*------------------------------------------------------*--------------------*
-
-
-*------------------------------------------------------------------*-------------------*-----------------------------------------------------*--------------------*
-|                      ENVIRONMENTAL VARIABLE                      |     READ ONLY     |                        TYPE                         |      GO TYPE       |
-*------------------------------------------------------------------*-------------------*-----------------------------------------------------*--------------------*
-| AWS_K8S_TESTER_EKS_ADD_ON_NLB_GUESTBOOK_ENABLE                   | read-only "false" | *eksconfig.AddOnNLBGuestbook.Enable                 | bool               |
-| AWS_K8S_TESTER_EKS_ADD_ON_NLB_GUESTBOOK_CREATED                  | read-only "true"  | *eksconfig.AddOnNLBGuestbook.Created                | bool               |
-| AWS_K8S_TESTER_EKS_ADD_ON_NLB_GUESTBOOK_TIME_FRAME_CREATE        | read-only "true"  | *eksconfig.AddOnNLBGuestbook.TimeFrameCreate        | timeutil.TimeFrame |
-| AWS_K8S_TESTER_EKS_ADD_ON_NLB_GUESTBOOK_TIME_FRAME_DELETE        | read-only "true"  | *eksconfig.AddOnNLBGuestbook.TimeFrameDelete        | timeutil.TimeFrame |
-| AWS_K8S_TESTER_EKS_ADD_ON_NLB_GUESTBOOK_NAMESPACE                | read-only "false" | *eksconfig.AddOnNLBGuestbook.Namespace              | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_NLB_GUESTBOOK_DEPLOYMENT_REPLICAS      | read-only "false" | *eksconfig.AddOnNLBGuestbook.DeploymentReplicas     | int32              |
-| AWS_K8S_TESTER_EKS_ADD_ON_NLB_GUESTBOOK_DEPLOYMENT_NODE_SELECTOR | read-only "false" | *eksconfig.AddOnNLBGuestbook.DeploymentNodeSelector | map[string]string  |
-| AWS_K8S_TESTER_EKS_ADD_ON_NLB_GUESTBOOK_NLB_ARN                  | read-only "true"  | *eksconfig.AddOnNLBGuestbook.NLBARN                 | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_NLB_GUESTBOOK_NLB_NAME                 | read-only "true"  | *eksconfig.AddOnNLBGuestbook.NLBName                | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_NLB_GUESTBOOK_URL                      | read-only "true"  | *eksconfig.AddOnNLBGuestbook.URL                    | string             |
-*------------------------------------------------------------------*-------------------*-----------------------------------------------------*--------------------*
 
 
 *------------------------------------------------------------------*-------------------*----------------------------------------------------*--------------------*

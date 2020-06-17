@@ -446,13 +446,11 @@ func (ts *Tester) createASGs() (err error) {
 				},
 			},
 		}
-		if cur.ImageID != "" {
-			ts.lg.Info("added image ID", zap.String("image-id", cur.ImageID))
-			stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
-				ParameterKey:   aws.String("ImageID"),
-				ParameterValue: aws.String(cur.ImageID),
-			})
-		}
+		ts.lg.Info("added image ID", zap.String("image-id", cur.ImageID))
+		stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
+			ParameterKey:   aws.String("ImageID"),
+			ParameterValue: aws.String(cur.ImageID),
+		})
 		if cur.ImageIDSSMParameter != "" {
 			ts.lg.Info("added image SSM parameter", zap.String("image-id-ssm-parameter", cur.ImageIDSSMParameter))
 			stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
@@ -670,6 +668,7 @@ func (ts *Tester) deleteASGs() (err error) {
 			2*time.Minute,
 			20*time.Second,
 		)
+
 		var st cfn.StackStatus
 		for st = range ch {
 			if st.Error != nil {

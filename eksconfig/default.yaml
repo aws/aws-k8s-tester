@@ -5,11 +5,11 @@ client-timeout: 15000000000
 client-timeout-string: 15s
 clients: 2
 command-after-create-add-ons: ""
-command-after-create-add-ons-output-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.after-create-add-ons.out.log
+command-after-create-add-ons-output-path: .log
 command-after-create-add-ons-timeout: 180000000000
 command-after-create-add-ons-timeout-string: 3m0s
 command-after-create-cluster: ""
-command-after-create-cluster-output-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.after-create-cluster.out.log
+command-after-create-cluster-output-path: .log
 command-after-create-cluster-timeout: 180000000000
 command-after-create-cluster-timeout-string: 3m0s
 config-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.yaml
@@ -23,7 +23,7 @@ log-level: info
 log-outputs:
 - stderr
 - /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.log
-name: eks-2020061502-summerlusekq
+name: eks-2020061213-morningbduz0
 on-failure-delete: true
 on-failure-delete-wait-seconds: 120
 parameters:
@@ -41,7 +41,7 @@ parameters:
   role-cfn-stack-yaml-file-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.role.cfn.yaml
   role-create: true
   role-managed-policy-arns: null
-  role-name: eks-2020061502-summerlusekq-role
+  role-name: eks-2020061213-morningbduz0-role
   role-service-principals: null
   signing-name: eks
   tags: null
@@ -55,8 +55,8 @@ partition: aws
 region: us-west-2
 remote-access-commands-output-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.ssh.sh
 remote-access-key-create: true
-remote-access-key-name: eks-2020061502-summerlusekq-remote-access-key
-remote-access-private-key-path: /tmp/mariaysko2isrww.insecure.key
+remote-access-key-name: eks-2020061213-morningbduz0-remote-access-key
+remote-access-private-key-path: /home/ANT.AMAZON.COM/leegyuho/.ssh/kube_aws_rsa
 s3-bucket-create: false
 s3-bucket-create-keep: false
 s3-bucket-lifecycle-expiration-days: 0
@@ -71,7 +71,7 @@ status:
   cluster-ca: ""
   cluster-ca-decoded: ""
   cluster-cfn-stack-id: ""
-  cluster-cfn-stack-yaml-file-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.cluster.cfn.yaml
+  cluster-cfn-stack-yaml-file-path: ""
   cluster-control-plane-security-group-id: ""
   cluster-oidc-issuer-arn: ""
   cluster-oidc-issuer-ca-thumbprint: ""
@@ -105,5 +105,4 @@ status:
     took: 0
     took-string: ""
   up: false
-total-hollow-nodes: 0
 total-nodes: 0

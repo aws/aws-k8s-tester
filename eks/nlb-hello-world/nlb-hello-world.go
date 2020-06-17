@@ -1,5 +1,4 @@
-// Package nlbhelloworld implements NLB plugin
-// with a simple hello world service.
+// Package nlbhelloworld implements NLB plugin with a simple hello world Pod.
 package nlbhelloworld
 
 import (
@@ -28,7 +27,7 @@ import (
 	"k8s.io/utils/exec"
 )
 
-// Config defines NLB configuration.
+// Config defines ALB configuration.
 type Config struct {
 	Logger    *zap.Logger
 	Stopc     chan struct{}
@@ -48,9 +47,9 @@ type tester struct {
 }
 
 const (
-	nlbHelloWorldDeploymentName = "hello-world-deployment"
 	nlbHelloWorldAppName        = "hello-world"
 	nlbHelloWorldAppImageName   = "dockercloud/hello-world"
+	nlbHelloWorldDeploymentName = "hello-world-deployment"
 	nlbHelloWorldServiceName    = "hello-world-service"
 )
 
@@ -328,7 +327,7 @@ func (ts *tester) waitDeployment() error {
 		}
 	}
 	if !ready {
-		return errors.New("deployment not ready")
+		return errors.New("Deployment not ready")
 	}
 
 	ts.cfg.Logger.Info("waited for NLB hello-world Deployment")
@@ -469,7 +468,6 @@ func (ts *tester) createService() error {
 	ts.cfg.Logger.Info("waiting before testing hello-world Service")
 	time.Sleep(20 * time.Second)
 
-	htmlChecked := false
 	retryStart = time.Now()
 	for time.Now().Sub(retryStart) < waitDur {
 		select {
@@ -488,8 +486,10 @@ func (ts *tester) createService() error {
 		fmt.Printf("\nNLB hello-world Service output:\n%s\n", httpOutput)
 
 		if strings.Contains(httpOutput, `<h1>Hello world!</h1>`) {
-			ts.cfg.Logger.Info("read hello-world Service; exiting", zap.String("host-name", hostName))
-			htmlChecked = true
+			ts.cfg.Logger.Info(
+				"read hello-world Service; exiting",
+				zap.String("host-name", hostName),
+			)
 			break
 		}
 
@@ -500,9 +500,6 @@ func (ts *tester) createService() error {
 	fmt.Printf("NLB hello-world Name: %s\n", ts.cfg.EKSConfig.AddOnNLBHelloWorld.NLBName)
 	fmt.Printf("NLB hello-world URL: %s\n\n", ts.cfg.EKSConfig.AddOnNLBHelloWorld.URL)
 
-	if !htmlChecked {
-		return fmt.Errorf("NLB hello-world %q did not return expected HTML output", ts.cfg.EKSConfig.AddOnNLBHelloWorld.URL)
-	}
 	return ts.cfg.EKSConfig.Sync()
 }
 

@@ -60,9 +60,9 @@ const (
 	albIngressControllerRBACClusterRoleBindingName = "alb-ingress-controller-rbac-cluster-role-binding"
 	albIngressControllerDeploymentName             = "alb-ingress-controller-deployment"
 
-	alb2048DeploymentName = "alb-2048-deployment"
 	alb2048AppName        = "alb-2048"
-	alb2048AppImageName   = "alexwhen/docker-2048"
+	alb2048ImageName      = "alexwhen/docker-2048"
+	alb2048DeploymentName = "alb-2048-deployment"
 	alb2048SvcName        = "alb-2048-service"
 	alb2048IngressName    = "alb-2048-ingress"
 )
@@ -653,7 +653,7 @@ func (ts *tester) waitDeploymentALB() error {
 		}
 	}
 	if !ready {
-		return errors.New("deployment not ready")
+		return errors.New("Deployment not ready")
 	}
 
 	ts.cfg.Logger.Info("waited for ALB Deployment")
@@ -699,7 +699,7 @@ func (ts *tester) create2048Deployment() error {
 							Containers: []v1.Container{
 								{
 									Name:            alb2048AppName,
-									Image:           alb2048AppImageName,
+									Image:           alb2048ImageName,
 									ImagePullPolicy: v1.PullAlways,
 									Ports: []v1.ContainerPort{
 										{
@@ -822,7 +822,7 @@ func (ts *tester) waitDeployment2048() error {
 		}
 	}
 	if !ready {
-		return errors.New("deployment not ready")
+		return errors.New("Deployment not ready")
 	}
 
 	ts.cfg.Logger.Info("waited for 2048 Deployment")
@@ -1084,7 +1084,6 @@ func (ts *tester) create2048Ingress() error {
 	ts.cfg.Logger.Info("waiting before testing ALB 2048 Ingress")
 	time.Sleep(10 * time.Second)
 
-	htmlChecked := false
 	retryStart = time.Now()
 	for time.Now().Sub(retryStart) < waitDur {
 		select {
@@ -1103,8 +1102,10 @@ func (ts *tester) create2048Ingress() error {
 		fmt.Printf("\nALB 2048 Ingress output:\n%s\n", httpOutput)
 
 		if strings.Contains(httpOutput, `2048 tile!`) {
-			ts.cfg.Logger.Info("read ALB 2048 Service; exiting", zap.String("host-name", hostName))
-			htmlChecked = true
+			ts.cfg.Logger.Info(
+				"read ALB 2048 Service; exiting",
+				zap.String("host-name", hostName),
+			)
 			break
 		}
 
@@ -1115,9 +1116,6 @@ func (ts *tester) create2048Ingress() error {
 	fmt.Printf("ALB 2048 Name: %s\n", ts.cfg.EKSConfig.AddOnALB2048.ALBName)
 	fmt.Printf("ALB 2048 URL: %s\n\n", ts.cfg.EKSConfig.AddOnALB2048.URL)
 
-	if !htmlChecked {
-		return fmt.Errorf("ALB 2048 %q did not return expected HTML output", ts.cfg.EKSConfig.AddOnALB2048.URL)
-	}
 	return ts.cfg.EKSConfig.Sync()
 }
 

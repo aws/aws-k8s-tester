@@ -94,12 +94,13 @@ func (ts *tester) Create() error {
 	completedJobs, err := waitJobs(
 		ts.cfg.Logger,
 		ts.cfg.Stopc,
-		ts.cfg.K8SClient,
+		ts.cfg.K8SClient.KubernetesClientSet(),
 		waitDur,
 		5*time.Second,
 		ts.cfg.EKSConfig.AddOnJobsPi.Namespace,
 		jobName,
 		int(ts.cfg.EKSConfig.AddOnJobsPi.Completes),
+		jobsFieldSelector,
 		v1.PodSucceeded,
 	)
 	if err != nil {
@@ -177,8 +178,10 @@ func (ts *tester) Delete() error {
 }
 
 const (
-	jobName        = "job-pi"
-	jobPiImageName = "perl"
+	// https://github.com/kubernetes/kubernetes/blob/d379ab2697251334774b7bd6f41b26cf39de470d/pkg/apis/batch/v1/conversion.go#L30-L41
+	jobsFieldSelector = "status.phase!=Running"
+	jobName           = "job-pi"
+	jobPiImageName    = "perl"
 )
 
 func (ts *tester) createObject() (batchv1.Job, string, error) {
@@ -234,71 +237,4 @@ func (ts *tester) AggregateResults() (err error) {
 
 	ts.cfg.Logger.Info("starting tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	return nil
-}
-
-func waitJobs(
-	lg *zap.Logger,
-	stopc chan struct{},
-	k8sClient k8s_client.EKS,
-	timeout time.Duration,
-	interval time.Duration,
-	namespace string,
-	jobName string,
-	targets int,
-	desiredPodPhase v1.PodPhase,
-) (pods []v1.Pod, err error) {
-	lg.Info("waiting Pod",
-		zap.String("namespace", namespace),
-		zap.String("job-name", jobName),
-	)
-	retryStart := time.Now()
-	for time.Now().Sub(retryStart) < timeout {
-		select {
-		case <-stopc:
-			return nil, errors.New("Pod polling aborted")
-		case <-time.After(interval):
-		}
-
-		pods, err := k8sClient.ListPods(namespace, 150, 5*time.Second)
-		if err != nil {
-			lg.Warn("failed to list Pod", zap.Error(err))
-			continue
-		}
-		if len(pods) == 0 {
-			lg.Warn("got an empty list of Pod",
-				zap.String("namespace", namespace),
-				zap.String("job-name", jobName),
-			)
-			continue
-		}
-
-		count := 0
-		for _, item := range pods {
-			jv, ok := item.Labels["job-name"]
-			match := ok && jv == jobName
-			if !match {
-				match = strings.HasPrefix(item.Name, jobName)
-			}
-			if !match {
-				continue
-			}
-			if item.Status.Phase != desiredPodPhase {
-				continue
-			}
-			count++
-		}
-		if count >= targets {
-			lg.Info("found all targets", zap.Int("target", targets))
-			break
-		}
-
-		lg.Info("polling",
-			zap.String("namespace", namespace),
-			zap.String("job-name", jobName),
-			zap.Int("count", count),
-			zap.Int("target", targets),
-		)
-	}
-
-	return pods, nil
 }

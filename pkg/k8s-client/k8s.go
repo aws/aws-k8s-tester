@@ -50,7 +50,7 @@ const (
 	// DefaultNamespaceDeletionInterval is the default namespace deletion interval.
 	DefaultNamespaceDeletionInterval = 15 * time.Second
 	// DefaultNamespaceDeletionTimeout is the default namespace deletion timeout.
-	DefaultNamespaceDeletionTimeout = 30 * time.Minute
+	DefaultNamespaceDeletionTimeout = 15 * time.Minute
 )
 
 // RetryWithExponentialBackOff a utility for retrying the given function with exponential backoff.
@@ -248,22 +248,19 @@ func DeleteNamespace(lg *zap.Logger, c clientset.Interface, namespace string) er
 
 // DeleteNamespaceAndWait deletes namespace with given name and waits for its deletion.
 // Default interval is 5-second and default timeout is 10-min.
-func DeleteNamespaceAndWait(lg *zap.Logger, c clientset.Interface, namespace string, interval time.Duration, timeout time.Duration, opts ...OpOption) error {
+func DeleteNamespaceAndWait(lg *zap.Logger, c clientset.Interface, namespace string, interval time.Duration, timeout time.Duration) error {
 	if err := DeleteNamespace(lg, c, namespace); err != nil {
 		return err
 	}
-	return waitForDeleteNamespace(lg, c, namespace, interval, timeout, opts...)
+	return waitForDeleteNamespace(lg, c, namespace, interval, timeout)
 }
 
 // WaitForDeleteNamespace waits untils namespace is terminated.
-func WaitForDeleteNamespace(lg *zap.Logger, c clientset.Interface, namespace string, opts ...OpOption) error {
-	return waitForDeleteNamespace(lg, c, namespace, DefaultNamespaceDeletionInterval, DefaultNamespaceDeletionTimeout, opts...)
+func WaitForDeleteNamespace(lg *zap.Logger, c clientset.Interface, namespace string) error {
+	return waitForDeleteNamespace(lg, c, namespace, DefaultNamespaceDeletionInterval, DefaultNamespaceDeletionTimeout)
 }
 
-func waitForDeleteNamespace(lg *zap.Logger, c clientset.Interface, namespace string, interval time.Duration, timeout time.Duration, opts ...OpOption) error {
-	ret := Op{}
-	ret.applyOpts(opts)
-
+func waitForDeleteNamespace(lg *zap.Logger, c clientset.Interface, namespace string, interval time.Duration, timeout time.Duration) error {
 	if interval == 0 {
 		interval = DefaultNamespaceDeletionInterval
 	}
@@ -289,11 +286,6 @@ func waitForDeleteNamespace(lg *zap.Logger, c clientset.Interface, namespace str
 			}
 		}
 		lg.Info("namespace still exists", zap.String("namespace", namespace))
-
-		if ret.f != nil {
-			ret.f()
-		}
-
 		return false, nil
 	}
 	return wait.PollImmediate(interval, timeout, retryWaitFunc)
@@ -350,23 +342,4 @@ func CreateObject(dynamicClient dynamic.Interface, namespace string, name string
 	}
 	options = append(options, Allow(apierrs.IsAlreadyExists))
 	return RetryWithExponentialBackOff(RetryFunction(createFunc, options...))
-}
-
-// Op represents a SSH operation.
-type Op struct {
-	f func()
-}
-
-// OpOption configures archiver operations.
-type OpOption func(*Op)
-
-// WithQueryFunc configures query function to be called in retry func.
-func WithQueryFunc(f func()) OpOption {
-	return func(op *Op) { op.f = f }
-}
-
-func (op *Op) applyOpts(opts []OpOption) {
-	for _, opt := range opts {
-		opt(op)
-	}
 }
