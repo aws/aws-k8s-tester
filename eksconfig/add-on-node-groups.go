@@ -243,7 +243,7 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 			return fmt.Errorf("%q both ImageID and ImageIDSSMParameter are empty", cur.Name)
 		}
 
-		if cur.ClusterAutoScaler.Enable && !cfg.AddOnNodeGroups.RoleCreate {
+		if cur.ClusterAutoScaler != nil && cur.ClusterAutoScaler.Enable && !cfg.AddOnNodeGroups.RoleCreate {
 			return fmt.Errorf("ClusterAutoScaler for ASG %q is enabled, it requires NodeGroup RoleCreate to be enabled", cur.ASG.Name)
 		}
 
