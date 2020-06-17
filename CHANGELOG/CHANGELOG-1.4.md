@@ -23,6 +23,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.9...v1.4.0
 
 - Clean up [`colorstring` printf](https://github.com/aws/aws-k8s-tester/pull/101).
 
+### `eksconfig`
+
+ - [`Add ClusterAutoScaler add-on per node-group using` AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS ='{"GetRef.Name-...":{..."cluster-autoscaler":{"enable":false}...}}`](https://github.com/aws/aws-k8s-tester/pull/99).
+
 ### `ssh`
 
 - Move [`"scp"` executable binary path check before creating context timeouts](https://github.com/aws/aws-k8s-tester/commit/4c3950e6582745684a9d628c5c0ea355e3f7edc1).
@@ -30,7 +34,6 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.9...v1.4.0
 ### Dependency
 
 - Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.32.2`](https://github.com/aws/aws-sdk-go/releases/tag/v1.32.2) to [`v1.32.3`](https://github.com/aws/aws-sdk-go/releases/tag/v1.32.3).
-
 
 <hr>
 

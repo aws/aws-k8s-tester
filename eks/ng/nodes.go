@@ -238,6 +238,7 @@ Resources:
       - Key: !Sub kubernetes.io/cluster/${ClusterName}
         Value: owned
         PropagateAtLaunch: true
+{{ if ne .AsgTagData "" }}{{.AsgTagData}}{{ end }}
       MixedInstancesPolicy:
         InstancesDistribution:
           OnDemandAllocationStrategy: "prioritized"
@@ -363,10 +364,18 @@ const userDataAL2InstallSSM = `        UserData:
               sudo docker info
 
 `
+const asgTagDataNG = `      - Key: !Sub k8s.io/cluster-autoscaler/${ClusterName}
+        Value: owned
+        PropagateAtLaunch: true
+      - Key: k8s.io/cluster-autoscaler/enabled
+        Value: true
+        PropagateAtLaunch: true
+`
 
 type templateASG struct {
-	Metadata string
-	UserData string
+	Metadata   string
+	UserData   string
+	AsgTagData string
 }
 
 func (ts *tester) createASGs() error {
@@ -438,7 +447,10 @@ func (ts *tester) createASGs() error {
 			tg.UserData += "\n"
 			tg.UserData += `              /opt/aws/bin/cfn-signal --exit-code $? --stack ${AWS::StackName} --resource ASG --region ${AWS::Region}`
 		}
-
+		tg.AsgTagData = ""
+		if cur.ClusterAutoScaler.Enable {
+			tg.AsgTagData = asgTagDataNG
+		}
 		tpl := template.Must(template.New("TemplateASG").Parse(TemplateASG))
 		buf := bytes.NewBuffer(nil)
 		if err := tpl.Execute(buf, tg); err != nil {

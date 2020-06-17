@@ -313,7 +313,6 @@ type Config struct {
 	// AddOnClusterVersionUpgrade defines parameters
 	// for EKS cluster version upgrade add-on.
 	AddOnClusterVersionUpgrade *AddOnClusterVersionUpgrade `json:"add-on-cluster-version-upgrade,omitempty"`
-
 	// Status represents the current status of AWS resources.
 	// Status is read-only.
 	// Status cannot be configured via environmental variables.

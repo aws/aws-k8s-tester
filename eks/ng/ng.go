@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aws/aws-k8s-tester/eks/ng/autoscaler"
 	"github.com/aws/aws-k8s-tester/eks/ng/wait"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
@@ -71,14 +72,22 @@ func New(cfg Config) Tester {
 		}),
 		logsMu:     new(sync.RWMutex),
 		failedOnce: false,
+		clusterAutoScaler: autoscaler.New(autoscaler.Config{
+			Logger:    cfg.Logger,
+			Stopc:     cfg.Stopc,
+			EKSConfig: cfg.EKSConfig,
+			K8SClient: cfg.K8SClient,
+			EKSAPI:    cfg.EKSAPI,
+		}),
 	}
 }
 
 type tester struct {
-	cfg        Config
-	nodeWaiter wait.NodeWaiter
-	logsMu     *sync.RWMutex
-	failedOnce bool
+	cfg               Config
+	nodeWaiter        wait.NodeWaiter
+	logsMu            *sync.RWMutex
+	failedOnce        bool
+	clusterAutoScaler autoscaler.ClusterAutoscaler
 }
 
 func (ts *tester) Create() (err error) {
@@ -117,7 +126,9 @@ func (ts *tester) Create() (err error) {
 	if err = ts.createSSM(); err != nil {
 		return err
 	}
-
+	if err = ts.clusterAutoScaler.Create(); err != nil {
+		return err
+	}
 	ts.cfg.EKSConfig.AddOnNodeGroups.Created = true
 	return ts.cfg.EKSConfig.Sync()
 }

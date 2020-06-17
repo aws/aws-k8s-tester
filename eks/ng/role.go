@@ -1,11 +1,13 @@
 package ng
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"strings"
+	"text/template"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
@@ -196,6 +198,7 @@ Resources:
             - route53:ChangeResourceRecordSets
             - route53:DeleteHealthCheck
             Resource: "*"
+{{ if ne .ASGPolicy "" }}{{.ASGPolicy}}{{ end }}
 
 Outputs:
 
@@ -203,6 +206,22 @@ Outputs:
     Value: !GetAtt Role.Arn
     Description: The node instance role ARN
 
+`
+
+type templateRole struct {
+	ASGPolicy string
+}
+
+const asgPolicyData = `          - Effect: Allow
+            Action:
+            - autoscaling:DescribeAutoScalingGroups
+            - autoscaling:DescribeAutoScalingInstances
+            - autoscaling:DescribeLaunchConfigurations
+            - autoscaling:DescribeTags
+            - autoscaling:SetDesiredCapacity
+            - autoscaling:TerminateInstanceInAutoScalingGroup
+            - ec2:DescribeLaunchTemplateVersions
+            Resource: "*"
 `
 
 func (ts *tester) createRole() error {
@@ -238,8 +257,14 @@ func (ts *tester) createRole() error {
 	if ts.cfg.EKSConfig.AddOnNodeGroups.RoleName == "" {
 		return errors.New("cannot create a cluster role with an empty AddOnNodeGroups.RoleName")
 	}
-
-	if err := ioutil.WriteFile(ts.cfg.EKSConfig.AddOnNodeGroups.RoleCFNStackYAMLFilePath, []byte(TemplateRole), 0400); err != nil {
+	tr := templateRole{}
+	tr.ASGPolicy = asgPolicyData
+	tpl := template.Must(template.New("TemplateRole").Parse(TemplateRole))
+	buf := bytes.NewBuffer(nil)
+	if err := tpl.Execute(buf, tr); err != nil {
+		return err
+	}
+	if err := ioutil.WriteFile(ts.cfg.EKSConfig.AddOnNodeGroups.RoleCFNStackYAMLFilePath, buf.Bytes(), 0400); err != nil {
 		return err
 	}
 	ts.cfg.Logger.Info("creating a new NG role using CFN",
@@ -250,7 +275,7 @@ func (ts *tester) createRole() error {
 		StackName:    aws.String(ts.cfg.EKSConfig.AddOnNodeGroups.RoleName),
 		Capabilities: aws.StringSlice([]string{"CAPABILITY_NAMED_IAM"}),
 		OnFailure:    aws.String(cloudformation.OnFailureDelete),
-		TemplateBody: aws.String(TemplateRole),
+		TemplateBody: aws.String(buf.String()),
 		Tags: cfn.NewTags(map[string]string{
 			"Kind":                   "aws-k8s-tester",
 			"Name":                   ts.cfg.EKSConfig.Name,

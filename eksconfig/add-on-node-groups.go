@@ -56,6 +56,14 @@ type AddOnNodeGroups struct {
 	ASGs map[string]ASG `json:"asgs,omitempty"`
 }
 
+type NGClusterAutoScaler struct {
+	Enable bool `json:"enable"`
+	// Created is true when the resource has been created.
+	// Used for delete operations.
+	Created         bool               `json:"created" read-only:"true"`
+	TimeFrameCreate timeutil.TimeFrame `json:"time-frame-create" read-only:"true"`
+}
+
 // ASG represents an EKS Node Group ASG.
 type ASG struct {
 	ec2config.ASG
@@ -68,6 +76,8 @@ type ASG struct {
 	// TODO: handle conflicting flag '--cloud-provider aws'
 	// ref. https://github.com/kubernetes/kubernetes/issues/64659
 	KubeletExtraArgs string `json:"kubelet-extra-args"`
+	// clusterautoscaler per nodegroup
+	ClusterAutoScaler *NGClusterAutoScaler `json:"cluster-autoscaler,omitempty"`
 }
 
 // EnvironmentVariablePrefixAddOnNodeGroups is the environment variable prefix used for "eksconfig".
@@ -110,7 +120,8 @@ func getDefaultAddOnNodeGroups(name string) *AddOnNodeGroups {
 					ASGMaxSize:                         1,
 					ASGDesiredCapacity:                 1,
 				},
-				KubeletExtraArgs: "",
+				KubeletExtraArgs:  "",
+				ClusterAutoScaler: &NGClusterAutoScaler{Enable: false},
 			},
 		},
 	}
@@ -230,6 +241,10 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 
 		if cur.ImageID == "" && cur.ImageIDSSMParameter == "" {
 			return fmt.Errorf("%q both ImageID and ImageIDSSMParameter are empty", cur.Name)
+		}
+
+		if cur.ClusterAutoScaler.Enable && !cfg.AddOnNodeGroups.RoleCreate {
+			return fmt.Errorf("ClusterAutoScaler for ASG %q is enabled, it requires NodeGroup RoleCreate to be enabled", cur.ASG.Name)
 		}
 
 		switch cur.AMIType {
