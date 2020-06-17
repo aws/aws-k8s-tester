@@ -238,7 +238,7 @@ type tester struct {
 func (ts *tester) Create() error {
 	needInstall := false
 	for _, cur := range ts.cfg.EKSConfig.AddOnNodeGroups.ASGs {
-		if cur.ClusterAutoScaler.Enable {
+		if cur.ClusterAutoScaler != nil && cur.ClusterAutoScaler.Enable {
 			needInstall = true
 			break
 		}
