@@ -13,9 +13,6 @@ import (
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
-	"github.com/aws/aws-sdk-go/service/autoscaling/autoscalingiface"
-	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
-	"github.com/aws/aws-sdk-go/service/eks/eksiface"
 	"go.uber.org/zap"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -23,7 +20,8 @@ import (
 	"k8s.io/utils/exec"
 )
 
-// reference - https://raw.githubusercontent.com/kubernetes/autoscaler/master/cluster-autoscaler/cloudprovider/aws/examples/cluster-autoscaler-autodiscover.yaml
+// auto discover
+// ref. https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/aws/examples/cluster-autoscaler-autodiscover.yaml
 const ClusterAutoscalerYAML = `
 ---
 apiVersion: v1
@@ -36,7 +34,6 @@ metadata:
   namespace: kube-system
 
 ---
-
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -93,7 +90,6 @@ rules:
     verbs: ["get", "update"]
 
 ---
-
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
@@ -112,7 +108,6 @@ rules:
     verbs: ["delete", "get", "update", "watch"]
 
 ---
-
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -130,7 +125,6 @@ subjects:
     namespace: kube-system
 
 ---
-
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
@@ -149,7 +143,6 @@ subjects:
     namespace: kube-system
 
 ---
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -203,9 +196,10 @@ spec:
             path: "/etc/ssl/certs/ca-bundle.crt"
 `
 
-var images = map[string]string{
-	"1.17": `        - image: us.gcr.io/k8s-artifacts-prod/autoscaling/cluster-autoscaler:v1.17.2`,
+// ref. https://github.com/kubernetes/autoscaler/releases
+var caImages = map[string]string{
 	"1.16": `        - image: us.gcr.io/k8s-artifacts-prod/autoscaling/cluster-autoscaler:v1.16.5`,
+	"1.17": `        - image: us.gcr.io/k8s-artifacts-prod/autoscaling/cluster-autoscaler:v1.17.2`,
 }
 
 const (
@@ -224,9 +218,6 @@ type Config struct {
 	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
-	EC2API    ec2iface.EC2API
-	ASGAPI    autoscalingiface.AutoScalingAPI
-	EKSAPI    eksiface.EKSAPI
 }
 
 // ClusterAutoScaler defines cluster autoscaler operation.
@@ -263,7 +254,7 @@ func (ts *tester) installCA() error {
 	ts.cfg.Logger.Info("creating CA using kubectl", zap.String("name", ts.cfg.EKSConfig.Name))
 	var ok bool
 	var caData = caSpecData{}
-	caData.ImageURI, ok = images[ts.cfg.EKSConfig.Parameters.Version]
+	caData.ImageURI, ok = caImages[ts.cfg.EKSConfig.Parameters.Version]
 	if !ok {
 		return fmt.Errorf("no CA found for %q", ts.cfg.EKSConfig.Parameters.Version)
 	}
@@ -273,7 +264,7 @@ func (ts *tester) installCA() error {
 	if err := tpl.Execute(buf, caData); err != nil {
 		return err
 	}
-	ts.cfg.Logger.Info("writing  cluster autoscaler YAML")
+	ts.cfg.Logger.Info("writing cluster autoscaler YAML")
 	fpath, err := fileutil.WriteTempFile(buf.Bytes())
 	if err != nil {
 		ts.cfg.Logger.Warn("failed to write cluster-autoscaler YAML", zap.Error(err))

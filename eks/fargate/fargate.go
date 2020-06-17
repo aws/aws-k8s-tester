@@ -456,7 +456,7 @@ func (ts *tester) createProfile() error {
 	}
 	ts.cfg.Logger.Info("sent create fargate profile request")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 7*time.Minute)
 	ch := wait.Poll(
 		ctx,
 		ts.cfg.Stopc,

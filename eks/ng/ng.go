@@ -77,7 +77,6 @@ func New(cfg Config) Tester {
 			Stopc:     cfg.Stopc,
 			EKSConfig: cfg.EKSConfig,
 			K8SClient: cfg.K8SClient,
-			EKSAPI:    cfg.EKSAPI,
 		}),
 	}
 }
@@ -129,6 +128,7 @@ func (ts *tester) Create() (err error) {
 	if err = ts.clusterAutoScaler.Create(); err != nil {
 		return err
 	}
+
 	ts.cfg.EKSConfig.AddOnNodeGroups.Created = true
 	return ts.cfg.EKSConfig.Sync()
 }
