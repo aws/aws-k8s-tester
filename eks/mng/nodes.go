@@ -219,7 +219,7 @@ func (ts *tester) createASGs() (err error) {
 			err := req.Send()
 			if err != nil {
 				ts.cfg.Logger.Warn("failed to created MNG", zap.Error(err))
-				return fmt.Errorf("create node group request failed (%v)", err)
+				return fmt.Errorf("MNGs[%q] create request failed (%v)", cur.Name, err)
 			}
 
 			cur.TimeFrameCreate = timeutil.NewTimeFrame(timeStart, time.Now())
@@ -345,7 +345,7 @@ func (ts *tester) createASGs() (err error) {
 			timeStart := time.Now()
 			stackOutput, err := ts.cfg.CFNAPI.CreateStack(stackInput)
 			if err != nil {
-				return err
+				return fmt.Errorf("MNGs[%q] create stack request failed (%v)", cur.Name, err)
 			}
 
 			cur.TimeFrameCreate = timeutil.NewTimeFrame(timeStart, time.Now())
@@ -576,7 +576,7 @@ func (ts *tester) deleteASG(mngName string) (err error) {
 		}
 		cancel()
 		if sv.Error != nil {
-			return fmt.Errorf("failed to delete MNGs[%q] %v", mngName, sv.Error)
+			return fmt.Errorf("MNGs[%q] failed to delete %v", mngName, sv.Error)
 		}
 
 	} else {
@@ -615,8 +615,8 @@ func (ts *tester) deleteASG(mngName string) (err error) {
 	timeEnd := time.Now()
 	cur.TimeFrameDelete = timeutil.NewTimeFrame(timeStart, timeEnd)
 	if err != nil {
-		cur.Status = fmt.Sprintf("failed to delete MNGs[%q] %v", mngName, err)
-		ts.cfg.Logger.Warn("failed to delete managed node group", zap.String("name", mngName))
+		cur.Status = fmt.Sprintf("MNGs[%q] failed to delete %v", mngName, err)
+		ts.cfg.Logger.Warn("failed to delete managed node group", zap.String("name", mngName), zap.Error(err))
 	} else {
 		cur.Status = wait.ManagedNodeGroupStatusDELETEDORNOTEXIST
 		ts.cfg.Logger.Info("deleted managed node group", zap.String("name", mngName))

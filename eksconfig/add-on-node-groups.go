@@ -173,7 +173,7 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 		}
 		if len(cfg.AddOnNodeGroups.RoleServicePrincipals) > 0 {
 			/*
-				create node group request failed (InvalidParameterException: Following required service principals [ec2.amazonaws.com] were not found in the trust relationships of nodeRole arn:aws:iam::...:role/test-ng-role
+				(InvalidParameterException: Following required service principals [ec2.amazonaws.com] were not found in the trust relationships of nodeRole arn:aws:iam::...:role/test-ng-role
 				{
 				  ClusterName: "test",
 				  Message_: "Following required service principals [ec2.amazonaws.com] were not found in the trust relationships of nodeRole arn:aws:iam::...:role/test-ng-role",
