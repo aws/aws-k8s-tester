@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/aws/aws-k8s-tester/eks/cluster/wait"
 	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
@@ -84,7 +85,7 @@ func (ts *tester) Create() (err error) {
 
 	// enough time for upgrade fail/rollback
 	ctx, cancel := context.WithTimeout(context.Background(), time.Hour+30*time.Minute)
-	ch := Poll(
+	ch := wait.PollUpdate(
 		ctx,
 		ts.cfg.Stopc,
 		ts.cfg.Logger,
@@ -100,7 +101,7 @@ func (ts *tester) Create() (err error) {
 	}
 	cancel()
 	if err != nil {
-		return err
+		return fmt.Errorf("Cluster %q update failed %v", ts.cfg.EKSConfig.Name, err)
 	}
 
 	// may take a while to shut down the last master instance with old cluster version

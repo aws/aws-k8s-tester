@@ -206,7 +206,7 @@ type UpdateStatus struct {
 	Error  error
 }
 
-// Poll periodically fetches the MNG update status
+// PollUpdate periodically fetches the MNG update status
 // until the MNG update becomes the desired state.
 // ref. https://docs.aws.amazon.com/eks/latest/APIReference/API_DescribeUpdate.html
 func PollUpdate(
