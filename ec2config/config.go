@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/mitchellh/colorstring"
 	"sigs.k8s.io/yaml" // must use "sigs.k8s.io/yaml"
 )
 
@@ -179,6 +180,15 @@ type Config struct {
 	ASGsLogsDir string `json:"asgs-logs-dir,omitempty"`
 	// ASGs is a map from each ASG name to EC2 ASG.
 	ASGs map[string]ASG `json:"asgs"`
+}
+
+func (c Config) Colorize(input string) string {
+	colorize := colorstring.Colorize{
+		Colors:  colorstring.DefaultColors,
+		Disable: !c.LogColor,
+		Reset:   true,
+	}
+	return colorize.Color(input)
 }
 
 // Status is the status.

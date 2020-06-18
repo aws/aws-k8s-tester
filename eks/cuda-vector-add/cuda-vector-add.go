@@ -138,8 +138,8 @@ func (ts *tester) checkPod() error {
 		"--namespace=" + ts.cfg.EKSConfig.AddOnCUDAVectorAdd.Namespace,
 		"logs",
 		"pods/" + podName,
-		"--timestamps",
 		"--all-containers=true",
+		"--timestamps",
 	}
 	logsCmd := strings.Join(logArgs, " ")
 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/aws/aws-k8s-tester/ec2"
 	"github.com/aws/aws-k8s-tester/ec2config"
@@ -15,6 +16,7 @@ import (
 
 var (
 	path         string
+	autoPath     bool
 	enablePrompt bool
 )
 
@@ -26,6 +28,7 @@ func NewCommand() *cobra.Command {
 		SuggestFor: []string{"creat"},
 	}
 	cmd.PersistentFlags().StringVarP(&path, "path", "p", "", "ec2 test configuration file path")
+	cmd.PersistentFlags().BoolVarP(&autoPath, "auto-path", "a", false, "'true' to auto-generate path for create config/cluster, overwrites existing --path value")
 	cmd.PersistentFlags().BoolVarP(&enablePrompt, "enable-prompt", "e", true, "'true' to enable prompt mode")
 	cmd.AddCommand(
 		newCreateConfig(),
@@ -44,11 +47,14 @@ func newCreateConfig() *cobra.Command {
 }
 
 func createConfigFunc(cmd *cobra.Command, args []string) {
-	if path == "" {
+	if !autoPath && path == "" {
 		fmt.Fprintln(os.Stderr, "'--path' flag is not specified")
 		os.Exit(1)
 	}
 	cfg := ec2config.NewDefault()
+	if autoPath {
+		path = filepath.Join(os.TempDir(), cfg.Name+".yaml")
+	}
 	cfg.ConfigPath = path
 	cfg.Sync()
 
@@ -90,14 +96,14 @@ func newCreateInstances() *cobra.Command {
 }
 
 func createInstancesFunc(cmd *cobra.Command, args []string) {
-	if path == "" {
+	if !autoPath && path == "" {
 		fmt.Fprintln(os.Stderr, "'--path' flag is not specified")
 		os.Exit(1)
 	}
 
 	var cfg *ec2config.Config
 	var err error
-	if fileutil.Exist(path) {
+	if !autoPath && fileutil.Exist(path) {
 		cfg, err = ec2config.Load(path)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "failed to load configuration %q (%v)\n", path, err)
@@ -108,8 +114,11 @@ func createInstancesFunc(cmd *cobra.Command, args []string) {
 			os.Exit(1)
 		}
 	} else {
-		fmt.Fprintf(os.Stderr, "cannot find configuration %q; writing...\n", path)
+		fmt.Fprintf(os.Stderr, "cannot find configuration; writing a new one %q...\n", path)
 		cfg = ec2config.NewDefault()
+		if autoPath {
+			path = filepath.Join(os.TempDir(), cfg.Name+".yaml")
+		}
 		cfg.ConfigPath = path
 	}
 

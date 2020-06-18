@@ -74,6 +74,9 @@ func (cfg *Config) validateAddOnKubernetesDashboard() error {
 	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
 		return errors.New("AddOnKubernetesDashboard.Enable true but no node group is enabled")
 	}
+	if !cfg.IsEnabledAddOnMetricsServer() {
+		return errors.New("AddOnKubernetesDashboard.Enable true but AddOnMetricsServer.Enable false")
+	}
 	if cfg.AddOnKubernetesDashboard.URL == "" {
 		cfg.AddOnKubernetesDashboard.URL = defaultKubernetesDashboardURL
 	}

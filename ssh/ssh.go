@@ -203,21 +203,19 @@ func (sh *ssh) Connect() (err error) {
 }
 
 func (sh *ssh) Close() {
-	sh.lg.Info("closing connection",
-		zap.String("public-ip", sh.cfg.PublicIP),
-		zap.String("public-dns-name", sh.cfg.PublicDNSName),
-	)
 	sh.cancel()
 	if sh.conn != nil {
 		cerr := sh.conn.Close()
-		sh.lg.Info("closed connection",
-			zap.String("public-ip", sh.cfg.PublicIP),
-			zap.String("public-dns-name", sh.cfg.PublicDNSName),
-			zap.Error(cerr),
-		)
-		return
+		if cerr != nil {
+			sh.lg.Warn("closed connection with error",
+				zap.String("public-ip", sh.cfg.PublicIP),
+				zap.String("public-dns-name", sh.cfg.PublicDNSName),
+				zap.Error(cerr),
+			)
+			return
+		}
 	}
-	sh.lg.Info("closed connection",
+	sh.lg.Debug("closed connection",
 		zap.String("public-ip", sh.cfg.PublicIP),
 		zap.String("public-dns-name", sh.cfg.PublicDNSName),
 	)
@@ -293,13 +291,41 @@ func (sh *ssh) Run(cmd string, opts ...OpOption) (out []byte, err error) {
 	}
 
 	if err != nil {
+		shouldRetry := true
 		oerr, ok := err.(*net.OpError)
 		if ok {
-			sh.lg.Warn("command run failed", zap.String("cmd", cmd), zap.Bool("op-error-temporary", oerr.Temporary()), zap.Bool("op-error-timeout", oerr.Timeout()), zap.Error(err))
+			shouldRetry = oerr.Temporary()
+			sh.lg.Warn("command run failed",
+				zap.String("cmd", cmd),
+				zap.Bool("op-error-temporary", oerr.Temporary()),
+				zap.Bool("op-error-timeout", oerr.Timeout()),
+				zap.Error(err),
+			)
 		} else {
-			sh.lg.Warn("command run failed", zap.String("cmd", cmd), zap.String("error-type", reflect.TypeOf(err).String()), zap.Error(err))
+			if strings.Contains(err.Error(), "exited with status ") {
+				shouldRetry = false
+			}
+			serr, ok := err.(*cryptossh.ExitError)
+			if ok {
+				shouldRetry = false
+				sh.lg.Warn("command run failed with exit code",
+					zap.String("cmd", cmd),
+					zap.String("error-type", reflect.TypeOf(err).String()),
+					zap.Bool("should-retry", shouldRetry),
+					zap.Int("exit-code", serr.ExitStatus()),
+					zap.Error(err),
+				)
+			} else {
+				sh.lg.Warn("command run failed",
+					zap.String("cmd", cmd),
+					zap.String("error-type", reflect.TypeOf(err).String()),
+					zap.Bool("should-retry", shouldRetry),
+					zap.Error(err),
+				)
+			}
 		}
-		if sh.retryCounter[key] > 0 {
+
+		if shouldRetry && sh.retryCounter[key] > 0 {
 			// e.g. "read tcp 10.119.223.210:58688->54.184.39.156:22: read: connection timed out"
 			sh.lg.Warn("retrying command run", zap.Int("retries", sh.retryCounter[key]))
 			sh.Close()
@@ -350,12 +376,30 @@ scp -oStrictHostKeyChecking=no \
 */
 
 func (sh *ssh) Send(localPath, remotePath string, opts ...OpOption) (out []byte, err error) {
+	scpCmd := exec.New()
+	var scpPath string
+	scpPath, err = scpCmd.LookPath("scp")
+	if err != nil {
+		return nil, err
+	}
+	if err = os.Chmod(sh.cfg.KeyPath, 0400); err != nil {
+		return nil, err
+	}
+
 	ret := Op{verbose: false, retriesLeft: 0, retryInterval: time.Duration(0), timeout: 0, envs: make(map[string]string)}
 	ret.applyOpts(opts)
 
 	key := fmt.Sprintf("%s%s", sh.cfg.PublicDNSName, localPath)
 	if _, ok := sh.retryCounter[key]; !ok {
 		sh.retryCounter[key] = ret.retriesLeft
+	}
+
+	scpArgs := []string{
+		scpPath,
+		"-oStrictHostKeyChecking=no",
+		"-i", sh.cfg.KeyPath,
+		localPath,
+		fmt.Sprintf("%s@%s:%s", sh.cfg.UserName, sh.cfg.PublicDNSName, remotePath),
 	}
 
 	now := time.Now()
@@ -366,26 +410,6 @@ func (sh *ssh) Send(localPath, remotePath string, opts ...OpOption) (out []byte,
 		ctx, cancel = context.WithCancel(sh.ctx)
 	} else {
 		ctx, cancel = context.WithTimeout(sh.ctx, ret.timeout)
-	}
-
-	scpCmd := exec.New()
-	var scpPath string
-	scpPath, err = scpCmd.LookPath("scp")
-	if err != nil {
-		cancel()
-		return nil, err
-	}
-	if err = os.Chmod(sh.cfg.KeyPath, 0400); err != nil {
-		cancel()
-		return nil, err
-	}
-
-	scpArgs := []string{
-		scpPath,
-		"-oStrictHostKeyChecking=no",
-		"-i", sh.cfg.KeyPath,
-		localPath,
-		fmt.Sprintf("%s@%s:%s", sh.cfg.UserName, sh.cfg.PublicDNSName, remotePath),
 	}
 	cmd := scpCmd.CommandContext(ctx, scpArgs[0], scpArgs[1:]...)
 	out, err = cmd.CombinedOutput()
@@ -450,6 +474,16 @@ func (sh *ssh) Send(localPath, remotePath string, opts ...OpOption) (out []byte,
 }
 
 func (sh *ssh) Download(remotePath, localPath string, opts ...OpOption) (out []byte, err error) {
+	scpCmd := exec.New()
+	var scpPath string
+	scpPath, err = scpCmd.LookPath("scp")
+	if err != nil {
+		return nil, err
+	}
+	if err = os.Chmod(sh.cfg.KeyPath, 0400); err != nil {
+		return nil, err
+	}
+
 	ret := Op{verbose: false, retriesLeft: 0, retryInterval: time.Duration(0), timeout: 0, envs: make(map[string]string)}
 	ret.applyOpts(opts)
 
@@ -468,17 +502,6 @@ func (sh *ssh) Download(remotePath, localPath string, opts ...OpOption) (out []b
 		ctx, cancel = context.WithTimeout(sh.ctx, ret.timeout)
 	}
 
-	scpCmd := exec.New()
-	var scpPath string
-	scpPath, err = scpCmd.LookPath("scp")
-	if err != nil {
-		cancel()
-		return nil, err
-	}
-	if err = os.Chmod(sh.cfg.KeyPath, 0400); err != nil {
-		cancel()
-		return nil, err
-	}
 	scpArgs := []string{
 		scpPath,
 		"-oStrictHostKeyChecking=no",

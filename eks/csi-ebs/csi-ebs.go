@@ -151,6 +151,7 @@ func (ts *tester) createHelmCSI() error {
 		"logs",
 		"--selector=app=ebs-csi-node",
 		"--all-containers=true",
+		"--timestamps",
 	}
 	logsCmd := strings.Join(logArgs, " ")
 

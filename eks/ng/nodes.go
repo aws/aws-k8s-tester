@@ -3,8 +3,6 @@ package ng
 import (
 	"bytes"
 	"context"
-	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"sort"
@@ -14,16 +12,11 @@ import (
 
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
-	aws_ec2 "github.com/aws/aws-k8s-tester/pkg/aws/ec2"
-	k8s_object "github.com/aws/aws-k8s-tester/pkg/k8s-object"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/autoscaling"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"go.uber.org/zap"
-	certificatesv1beta1 "k8s.io/api/certificates/v1beta1"
-	v1 "k8s.io/api/core/v1"
 )
 
 /*
@@ -245,6 +238,7 @@ Resources:
       - Key: !Sub kubernetes.io/cluster/${ClusterName}
         Value: owned
         PropagateAtLaunch: true
+{{ if ne .AsgTagData "" }}{{.AsgTagData}}{{ end }}
       MixedInstancesPolicy:
         InstancesDistribution:
           OnDemandAllocationStrategy: "prioritized"
@@ -370,10 +364,18 @@ const userDataAL2InstallSSM = `        UserData:
               sudo docker info
 
 `
+const asgTagDataNG = `      - Key: !Sub k8s.io/cluster-autoscaler/${ClusterName}
+        Value: owned
+        PropagateAtLaunch: true
+      - Key: k8s.io/cluster-autoscaler/enabled
+        Value: true
+        PropagateAtLaunch: true
+`
 
 type templateASG struct {
-	Metadata string
-	UserData string
+	Metadata   string
+	UserData   string
+	AsgTagData string
 }
 
 func (ts *tester) createASGs() error {
@@ -445,7 +447,10 @@ func (ts *tester) createASGs() error {
 			tg.UserData += "\n"
 			tg.UserData += `              /opt/aws/bin/cfn-signal --exit-code $? --stack ${AWS::StackName} --resource ASG --region ${AWS::Region}`
 		}
-
+		tg.AsgTagData = ""
+		if cur.ClusterAutoScaler != nil && cur.ClusterAutoScaler.Enable {
+			tg.AsgTagData = asgTagDataNG
+		}
 		tpl := template.Must(template.New("TemplateASG").Parse(TemplateASG))
 		buf := bytes.NewBuffer(nil)
 		if err := tpl.Execute(buf, tg); err != nil {
@@ -501,11 +506,13 @@ func (ts *tester) createASGs() error {
 				},
 			},
 		}
-		ts.cfg.Logger.Info("added image ID", zap.String("image-id", cur.ImageID))
-		stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
-			ParameterKey:   aws.String("ImageID"),
-			ParameterValue: aws.String(cur.ImageID),
-		})
+		if cur.ImageID != "" {
+			ts.cfg.Logger.Info("added image ID", zap.String("image-id", cur.ImageID))
+			stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
+				ParameterKey:   aws.String("ImageID"),
+				ParameterValue: aws.String(cur.ImageID),
+			})
+		}
 		if cur.ImageIDSSMParameter != "" {
 			ts.cfg.Logger.Info("added image SSM parameter", zap.String("image-id-ssm-parameter", cur.ImageIDSSMParameter))
 			stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
@@ -630,9 +637,19 @@ func (ts *tester) createASGs() error {
 		ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName] = cur
 		ts.cfg.EKSConfig.Sync()
 
-		if err := ts.waitForNodes(cur.Name); err != nil {
+		timeStart = time.Now()
+		if err := ts.nodeWaiter.Wait(cur.Name, 3); err != nil {
 			return err
 		}
+		cur, ok = ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName]
+		if !ok {
+			return fmt.Errorf("ASGs[%q] not found after creation", asgName)
+		}
+		timeEnd = time.Now()
+		cur.TimeFrameCreate = timeutil.NewTimeFrame(cur.TimeFrameCreate.StartUTC, cur.TimeFrameCreate.EndUTC.Add(timeEnd.Sub(timeStart)))
+		ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName] = cur
+		ts.cfg.EKSConfig.Sync()
+
 		ts.cfg.Logger.Info("created a Node Group",
 			zap.String("ng-name", cur.Name),
 			zap.String("took", cur.TimeFrameCreate.TookString),
@@ -705,227 +722,4 @@ func (ts *tester) deleteASGs() error {
 	}
 
 	return ts.cfg.EKSConfig.Sync()
-}
-
-func (ts *tester) waitForNodes(asgName string) error {
-	cur, ok := ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName]
-	if !ok {
-		return fmt.Errorf("Node Group %q not found", asgName)
-	}
-
-	timeStart := time.Now()
-
-	aout, err := ts.cfg.ASGAPI.DescribeAutoScalingGroups(&autoscaling.DescribeAutoScalingGroupsInput{
-		AutoScalingGroupNames: aws.StringSlice([]string{cur.Name}),
-	})
-	if err != nil {
-		return fmt.Errorf("ASG %q not found (%v)", cur.Name, err)
-	}
-	if len(aout.AutoScalingGroups) != 1 {
-		return fmt.Errorf("%q expected only 1 ASG, got %+v", cur.Name, aout.AutoScalingGroups)
-	}
-
-	av := aout.AutoScalingGroups[0]
-	instanceIDs := make([]string, 0, len(av.Instances))
-	for _, iv := range av.Instances {
-		instanceIDs = append(instanceIDs, aws.StringValue(iv.InstanceId))
-	}
-
-	waitDur := 3*time.Minute + time.Duration(5*cur.ASGDesiredCapacity)*time.Second
-	ts.cfg.Logger.Info(
-		"waiting for EC2 instances in ASG",
-		zap.String("asg-name", cur.Name),
-		zap.Strings("instance-ids", instanceIDs),
-		zap.Duration("wait", waitDur),
-	)
-	ec2Instances, err := aws_ec2.PollUntilRunning(
-		waitDur,
-		ts.cfg.Logger,
-		ts.cfg.EC2API,
-		instanceIDs...,
-	)
-	if err != nil {
-		return err
-	}
-	cur, ok = ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName]
-	if !ok {
-		return fmt.Errorf("Node Group %q not found", asgName)
-	}
-	cur.Instances = make(map[string]ec2config.Instance)
-	for id, vv := range ec2Instances {
-		ivv := ec2config.ConvertInstance(vv)
-		ivv.RemoteAccessUserName = cur.RemoteAccessUserName
-		cur.Instances[id] = ivv
-	}
-	timeEnd := time.Now()
-	cur.TimeFrameCreate = timeutil.NewTimeFrame(cur.TimeFrameCreate.StartUTC, cur.TimeFrameCreate.EndUTC.Add(timeEnd.Sub(timeStart)))
-	ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName] = cur
-	ts.cfg.EKSConfig.Sync()
-
-	cur, ok = ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName]
-	if !ok {
-		return fmt.Errorf("Node Group %q not found", asgName)
-	}
-
-	// Hostname/InternalDNS == EC2 private DNS
-	// TODO: handle DHCP option domain name
-	ec2PrivateDNS := make(map[string]struct{})
-	for _, v := range cur.Instances {
-		ts.cfg.Logger.Info("found private DNS for an EC2 instance", zap.String("instance-id", v.InstanceID), zap.String("private-dns-name", v.PrivateDNSName))
-		ec2PrivateDNS[v.PrivateDNSName] = struct{}{}
-		// "ip-192-168-81-186" from "ip-192-168-81-186.my-private-dns"
-		ec2PrivateDNS[strings.Split(v.PrivateDNSName, ".")[0]] = struct{}{}
-	}
-
-	ts.cfg.Logger.Info("checking nodes readiness", zap.Duration("wait", waitDur))
-	retryStart := time.Now()
-	ready := false
-	for time.Now().Sub(retryStart) < waitDur {
-		select {
-		case <-ts.cfg.Stopc:
-			return errors.New("checking node aborted")
-		case <-time.After(5 * time.Second):
-		}
-
-		nodes, err := ts.cfg.K8SClient.ListNodes(150, 5*time.Second)
-		if err != nil {
-			ts.cfg.Logger.Warn("get nodes failed", zap.Error(err))
-			continue
-		}
-
-		readies := 0
-		for _, node := range nodes {
-			labels := node.GetLabels()
-			if labels["NGName"] != asgName {
-				continue
-			}
-			nodeName := node.GetName()
-			nodeInfo, _ := json.Marshal(k8s_object.ParseNodeInfo(node.Status.NodeInfo))
-
-			// e.g. given node name ip-192-168-81-186.us-west-2.compute.internal + DHCP option my-private-dns
-			// InternalIP == 192.168.81.186
-			// ExternalIP == 52.38.118.149
-			// Hostname == my-private-dns (without DHCP option, it's "ip-192-168-81-186.my-private-dns", private DNS, InternalDNS)
-			// InternalDNS == ip-192-168-81-186.my-private-dns
-			// ExternalDNS == ec2-52-38-118-149.us-west-2.compute.amazonaws.com
-			ts.cfg.Logger.Info("checking node address with EC2 Private DNS",
-				zap.String("node-name", nodeName),
-				zap.String("node-info", string(nodeInfo)),
-				zap.String("labels", fmt.Sprintf("%v", labels)),
-			)
-
-			hostName := ""
-			for _, av := range node.Status.Addresses {
-				ts.cfg.Logger.Info("node status address",
-					zap.String("node-name", nodeName),
-					zap.String("type", string(av.Type)),
-					zap.String("address", string(av.Address)),
-				)
-				if av.Type != v1.NodeHostName && av.Type != v1.NodeInternalDNS {
-					continue
-				}
-				// handle when node is configured DHCP
-				hostName = av.Address
-				_, ok := ec2PrivateDNS[hostName]
-				if !ok {
-					// "ip-192-168-81-186" from "ip-192-168-81-186.my-private-dns"
-					_, ok = ec2PrivateDNS[strings.Split(hostName, ".")[0]]
-				}
-				if ok {
-					break
-				}
-			}
-			if hostName == "" {
-				return fmt.Errorf("%q not found for node %q", v1.NodeHostName, nodeName)
-			}
-			_, ok := ec2PrivateDNS[hostName]
-			if !ok {
-				// "ip-192-168-81-186" from "ip-192-168-81-186.my-private-dns"
-				_, ok = ec2PrivateDNS[strings.Split(hostName, ".")[0]]
-			}
-			if !ok {
-				ts.cfg.Logger.Warn("node may not belong to this ASG", zap.String("host-name", hostName), zap.Int("ec2-private-dnss", len(ec2PrivateDNS)))
-				continue
-			}
-			ts.cfg.Logger.Debug("checked node host name with EC2 Private DNS", zap.String("name", nodeName), zap.String("host-name", hostName))
-
-			for _, cond := range node.Status.Conditions {
-				if cond.Status != v1.ConditionTrue {
-					continue
-				}
-				if cond.Type != v1.NodeReady {
-					continue
-				}
-				ts.cfg.Logger.Info("node is ready!",
-					zap.String("name", nodeName),
-					zap.String("type", fmt.Sprintf("%s", cond.Type)),
-					zap.String("status", fmt.Sprintf("%s", cond.Status)),
-				)
-				readies++
-				break
-			}
-		}
-		ts.cfg.Logger.Info("nodes",
-			zap.Int("current-ready-nodes", readies),
-			zap.Int64("desired-ready-nodes", cur.ASGDesiredCapacity),
-		)
-
-		/*
-			e.g.
-			"/tmp/kubectl-test-v1.16.9 --kubeconfig=/tmp/leegyuho-test-eks.kubeconfig.yaml get csr -o=wide":
-			NAME        AGE   REQUESTOR                                                   CONDITION
-			csr-4msk5   58s   system:node:ip-192-168-65-124.us-west-2.compute.internal    Approved,Issued
-			csr-9dbs8   57s   system:node:ip-192-168-208-6.us-west-2.compute.internal     Approved,Issued
-		*/
-		output, err := ts.cfg.K8SClient.ListCSRs(150, 5*time.Second)
-		if err != nil {
-			ts.cfg.Logger.Warn("list CSRs failed", zap.Error(err))
-		} else {
-			for _, cv := range output {
-				ts.cfg.Logger.Info("current CSR",
-					zap.String("name", cv.GetName()),
-					zap.String("requester", cv.Spec.Username),
-					zap.String("status", extractCSRStatus(cv)),
-				)
-			}
-		}
-
-		if int64(readies) >= cur.ASGDesiredCapacity {
-			ready = true
-			break
-		}
-	}
-	if !ready {
-		return fmt.Errorf("NG %q not ready", asgName)
-	}
-
-	return ts.cfg.EKSConfig.Sync()
-}
-
-// "pkg/printers/internalversion/printers.go"
-func extractCSRStatus(csr certificatesv1beta1.CertificateSigningRequest) string {
-	var approved, denied bool
-	for _, c := range csr.Status.Conditions {
-		switch c.Type {
-		case certificatesv1beta1.CertificateApproved:
-			approved = true
-		case certificatesv1beta1.CertificateDenied:
-			denied = true
-		default:
-			return ""
-		}
-	}
-	var status string
-	// must be in order of presidence
-	if denied {
-		status += "Denied"
-	} else if approved {
-		status += "Approved"
-	} else {
-		status += "Pending"
-	}
-	if len(csr.Status.Certificate) > 0 {
-		status += ",Issued"
-	}
-	return status
 }

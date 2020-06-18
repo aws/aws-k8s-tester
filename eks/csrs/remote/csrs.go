@@ -158,6 +158,8 @@ func (ts *tester) Delete() error {
 	if err := ts.deleteDeployment(); err != nil {
 		errs = append(errs, err.Error())
 	}
+	time.Sleep(2 * time.Minute)
+
 	if err := ts.deleteConfigMap(); err != nil {
 		errs = append(errs, err.Error())
 	}
@@ -193,8 +195,8 @@ const (
 	csrsServiceAccountName          = "csrs-remote-service-account"
 	csrsRBACRoleName                = "csrs-remote-rbac-role"
 	csrsRBACClusterRoleBindingName  = "csrs-remote-rbac-role-binding"
-	csrsKubeConfigConfigMapName     = "csrs-remote-kubeconfig-config-map"
-	csrsKubeConfigConfigMapFileName = "csrs-remote-kubeconfig-config-map.yaml"
+	csrsKubeConfigConfigMapName     = "csrs-remote-kubeconfig-configmap"
+	csrsKubeConfigConfigMapFileName = "csrs-remote-kubeconfig-configmap.yaml"
 	csrsDeploymentName              = "csrs-remote-deployment"
 	csrsAppName                     = "csrs-remote-app"
 )
@@ -708,8 +710,8 @@ func (ts *tester) waitDeployment() error {
 		}
 	}
 	if !ready {
-		ts.cfg.Logger.Warn("Deployment not ready")
-		return errors.New("Deployment not ready")
+		ts.cfg.Logger.Warn("deployment not ready")
+		return errors.New("deployment not ready")
 	}
 
 	ts.cfg.Logger.Info("waited for csrs Deployment")

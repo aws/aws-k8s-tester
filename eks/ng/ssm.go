@@ -226,7 +226,6 @@ func (ts *tester) deleteSSMDocument() error {
 		ch := cfn.Poll(
 			ctx,
 			make(chan struct{}), // do not exit on stop
-
 			ts.cfg.Logger,
 			ts.cfg.CFNAPI,
 			cur.SSMDocumentCFNStackID,

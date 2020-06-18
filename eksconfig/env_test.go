@@ -141,7 +141,7 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_SERVICE_PRINCIPALS")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_MANAGED_POLICY_ARNS", "a,b,c")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_MANAGED_POLICY_ARNS")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS", `{"ng-test-name-cpu":{"name":"ng-test-name-cpu","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64","image-id-ssm-parameter":"/aws/service/eks/optimized-ami/1.30/amazon-linux-2/recommended/image_id","asg-min-size":17,"kubelet-extra-args":"bbb qq","asg-max-size":99,"asg-desired-capacity":77,"instance-types":["type-cpu-2"],"volume-size":40},"ng-test-name-gpu":{"name":"ng-test-name-gpu","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64_GPU","asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34,"instance-types":["type-gpu-2"],"image-id":"my-gpu-ami","volume-size":500, "kubelet-extra-args":"aaa aa"}}`)
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS", `{"ng-test-name-cpu":{"name":"ng-test-name-cpu","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64","image-id-ssm-parameter":"/aws/service/eks/optimized-ami/1.30/amazon-linux-2/recommended/image_id","asg-min-size":17,"kubelet-extra-args":"bbb qq", "cluster-autoscaler" : {"enable" : false}, "asg-max-size":99,"asg-desired-capacity":77,"instance-types":["type-cpu-2"],"volume-size":40},"ng-test-name-gpu":{"name":"ng-test-name-gpu","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64_GPU","asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34,"instance-types":["type-gpu-2"],"image-id":"my-gpu-ami","volume-size":500, "cluster-autoscaler": {"enable":false},"kubelet-extra-args":"aaa aa"}}`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_LOGS_DIR", "a")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_LOGS_DIR")
@@ -181,6 +181,15 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_NAMESPACE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_DEPLOYMENT_NODE_SELECTOR", `{"a":"b","c":"d"}`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_DEPLOYMENT_NODE_SELECTOR")
+
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_GUESTBOOK_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_GUESTBOOK_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_GUESTBOOK_DEPLOYMENT_REPLICAS", "333")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_GUESTBOOK_DEPLOYMENT_REPLICAS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_GUESTBOOK_NAMESPACE", "test-namespace")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_GUESTBOOK_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_GUESTBOOK_DEPLOYMENT_NODE_SELECTOR", `{"a":"b","c":"d"}`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_GUESTBOOK_DEPLOYMENT_NODE_SELECTOR")
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_ENABLE")
@@ -254,7 +263,7 @@ func TestEnv(t *testing.T) {
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_NAMESPACE", "config-map-namespace")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_NAMESPACE", "configmap-namespace")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_NAMESPACE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_OBJECTS", "10000")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_OBJECTS")
@@ -263,7 +272,7 @@ func TestEnv(t *testing.T) {
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_NAMESPACE", "config-map-namespace")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_NAMESPACE", "configmap-namespace")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_NAMESPACE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_OBJECTS", "10000")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_OBJECTS")
@@ -696,7 +705,8 @@ func TestEnv(t *testing.T) {
 				InstanceTypes:        []string{"type-cpu-2"},
 				VolumeSize:           40,
 			},
-			KubeletExtraArgs: "bbb qq",
+			KubeletExtraArgs:  "bbb qq",
+			ClusterAutoScaler: &NGClusterAutoScaler{Enable: false},
 		},
 		gpuName: {
 			ASG: ec2config.ASG{
@@ -710,7 +720,8 @@ func TestEnv(t *testing.T) {
 				InstanceTypes:        []string{"type-gpu-2"},
 				VolumeSize:           500,
 			},
-			KubeletExtraArgs: "aaa aa",
+			KubeletExtraArgs:  "aaa aa",
+			ClusterAutoScaler: &NGClusterAutoScaler{Enable: false},
 		},
 	}
 	if !reflect.DeepEqual(cfg.AddOnNodeGroups.ASGs, expectedASGs) {
@@ -821,6 +832,19 @@ func TestEnv(t *testing.T) {
 		t.Fatalf("unexpected cfg.AddOnNLBHelloWorld.DeploymentNodeSelector %v", cfg.AddOnNLBHelloWorld.DeploymentNodeSelector)
 	}
 
+	if !cfg.AddOnNLBGuestbook.Enable {
+		t.Fatalf("unexpected cfg.AddOnNLBGuestbook.Enable %v", cfg.AddOnNLBGuestbook.Enable)
+	}
+	if cfg.AddOnNLBGuestbook.DeploymentReplicas != 333 {
+		t.Fatalf("unexpected cfg.AddOnNLBGuestbook.DeploymentReplicas %d", cfg.AddOnNLBGuestbook.DeploymentReplicas)
+	}
+	if cfg.AddOnNLBGuestbook.Namespace != "test-namespace" {
+		t.Fatalf("unexpected cfg.AddOnNLBGuestbook.Namespace %q", cfg.AddOnNLBGuestbook.Namespace)
+	}
+	if !reflect.DeepEqual(cfg.AddOnNLBGuestbook.DeploymentNodeSelector, expectedNodeSelectorNLB) {
+		t.Fatalf("unexpected cfg.AddOnNLBGuestbook.DeploymentNodeSelector %v", cfg.AddOnNLBGuestbook.DeploymentNodeSelector)
+	}
+
 	if !cfg.AddOnALB2048.Enable {
 		t.Fatalf("unexpected cfg.AddOnALB2048.Enable %v", cfg.AddOnALB2048.Enable)
 	}
@@ -927,7 +951,7 @@ func TestEnv(t *testing.T) {
 	if !cfg.AddOnConfigmapsLocal.Enable {
 		t.Fatalf("unexpected cfg.AddOnConfigmapsLocal.Enable %v", cfg.AddOnConfigmapsLocal.Enable)
 	}
-	if cfg.AddOnConfigmapsLocal.Namespace != "config-map-namespace" {
+	if cfg.AddOnConfigmapsLocal.Namespace != "configmap-namespace" {
 		t.Fatalf("unexpected cfg.AddOnConfigmapsLocal.Namespace %q", cfg.AddOnConfigmapsLocal.Namespace)
 	}
 	if cfg.AddOnConfigmapsLocal.Objects != 10000 {
@@ -939,7 +963,7 @@ func TestEnv(t *testing.T) {
 	if !cfg.AddOnConfigmapsRemote.Enable {
 		t.Fatalf("unexpected cfg.AddOnConfigmapsRemote.Enable %v", cfg.AddOnConfigmapsRemote.Enable)
 	}
-	if cfg.AddOnConfigmapsRemote.Namespace != "config-map-namespace" {
+	if cfg.AddOnConfigmapsRemote.Namespace != "configmap-namespace" {
 		t.Fatalf("unexpected cfg.AddOnConfigmapsRemote.Namespace %q", cfg.AddOnConfigmapsRemote.Namespace)
 	}
 	if cfg.AddOnConfigmapsRemote.Objects != 10000 {
@@ -1330,7 +1354,7 @@ func TestEnvAddOnNodeGroupsGetRef(t *testing.T) {
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE", `true`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS", `{"GetRef.Name-ng-for-cni":{"name":"GetRef.Name-ng-for-cni","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64","asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34,"image-id":"my-ami",  "ssm-document-create":true,   "instance-types":["type-2"],  "ssm-document-cfn-stack-name":"GetRef.Name-ssm", "ssm-document-name":"GetRef.Name-document",     "kubelet-extra-args":"aaa aa",  "volume-size":500}}`)
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS", `{"GetRef.Name-ng-for-cni":{"name":"GetRef.Name-ng-for-cni","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64","asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34,"image-id":"my-ami",  "ssm-document-create":true,   "instance-types":["type-2"],  "ssm-document-cfn-stack-name":"GetRef.Name-ssm", "ssm-document-name":"GetRef.Name-document", "kubelet-extra-args":"aaa aa", "cluster-autoscaler": {"enable" : true}, "volume-size":500}}`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE", `true`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE")
@@ -1365,7 +1389,8 @@ func TestEnvAddOnNodeGroupsGetRef(t *testing.T) {
 				ASGMaxSize:                         35,
 				ASGDesiredCapacity:                 34,
 			},
-			KubeletExtraArgs: "aaa aa",
+			KubeletExtraArgs:  "aaa aa",
+			ClusterAutoScaler: &NGClusterAutoScaler{Enable: true},
 		},
 	}
 	if !reflect.DeepEqual(cfg.AddOnNodeGroups.ASGs, expectedNGs) {
@@ -1404,7 +1429,7 @@ func TestEnvAddOnConformance(t *testing.T) {
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE", `true`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS", `{"GetRef.Name-ng-for-cni":{"name":"GetRef.Name-ng-for-cni","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64","asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34,"image-id":"my-ami",  "ssm-document-create":true,   "instance-types":["type-2"],  "ssm-document-cfn-stack-name":"GetRef.Name-ssm", "ssm-document-name":"GetRef.Name-document",     "kubelet-extra-args":"aaa aa",  "volume-size":500}}`)
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS", `{"GetRef.Name-ng-for-cni":{"name":"GetRef.Name-ng-for-cni","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64","asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34,"image-id":"my-ami",  "ssm-document-create":true,   "instance-types":["type-2"],  "ssm-document-cfn-stack-name":"GetRef.Name-ssm", "ssm-document-name":"GetRef.Name-document", "cluster-autoscaler": {"enable" : false}, "kubelet-extra-args":"aaa aa",  "volume-size":500}}`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS")
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_ENABLE", "true")
@@ -1657,6 +1682,8 @@ func TestEnvAddOnKubernetesDashboard(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE", `true`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE")
 
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_METRICS_SERVER_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_METRICS_SERVER_ENABLE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_ENABLE")
 
@@ -1666,6 +1693,9 @@ func TestEnvAddOnKubernetesDashboard(t *testing.T) {
 	err := cfg.ValidateAndSetDefaults()
 	assert.NoError(t, err)
 
+	if !cfg.AddOnMetricsServer.Enable {
+		t.Fatalf("unexpected cfg.AddOnMetricsServer.Enable %v", cfg.AddOnMetricsServer.Enable)
+	}
 	if !cfg.AddOnKubernetesDashboard.Enable {
 		t.Fatalf("unexpected cfg.AddOnKubernetesDashboard.Enable %v", cfg.AddOnKubernetesDashboard.Enable)
 	}

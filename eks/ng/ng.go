@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aws/aws-k8s-tester/eks/ng/autoscaler"
+	"github.com/aws/aws-k8s-tester/eks/ng/wait"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
@@ -58,15 +60,33 @@ type Tester interface {
 func New(cfg Config) Tester {
 	cfg.Logger.Info("creating tester", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	return &tester{
-		cfg:    cfg,
-		logsMu: new(sync.RWMutex),
+		cfg: cfg,
+		nodeWaiter: wait.New(wait.Config{
+			Logger:    cfg.Logger,
+			Stopc:     cfg.Stopc,
+			EKSConfig: cfg.EKSConfig,
+			K8SClient: cfg.K8SClient,
+			EC2API:    cfg.EC2API,
+			ASGAPI:    cfg.ASGAPI,
+			EKSAPI:    cfg.EKSAPI,
+		}),
+		logsMu:     new(sync.RWMutex),
+		failedOnce: false,
+		clusterAutoScaler: autoscaler.New(autoscaler.Config{
+			Logger:    cfg.Logger,
+			Stopc:     cfg.Stopc,
+			EKSConfig: cfg.EKSConfig,
+			K8SClient: cfg.K8SClient,
+		}),
 	}
 }
 
 type tester struct {
-	cfg        Config
-	logsMu     *sync.RWMutex
-	failedOnce bool
+	cfg               Config
+	nodeWaiter        wait.NodeWaiter
+	logsMu            *sync.RWMutex
+	failedOnce        bool
+	clusterAutoScaler autoscaler.ClusterAutoscaler
 }
 
 func (ts *tester) Create() (err error) {
@@ -105,6 +125,9 @@ func (ts *tester) Create() (err error) {
 	if err = ts.createSSM(); err != nil {
 		return err
 	}
+	if err = ts.clusterAutoScaler.Create(); err != nil {
+		return err
+	}
 
 	ts.cfg.EKSConfig.AddOnNodeGroups.Created = true
 	return ts.cfg.EKSConfig.Sync()
@@ -135,6 +158,10 @@ func (ts *tester) Delete() error {
 	if err := ts.deleteASGs(); err != nil {
 		ts.cfg.Logger.Warn("failed to delete ASGs", zap.Error(err))
 		errs = append(errs, err.Error())
+	}
+	time.Sleep(10 * time.Second)
+	if ok := ts.deleteENIs(); ok {
+		time.Sleep(10 * time.Second)
 	}
 	if err := ts.deleteSG(); err != nil {
 		ts.cfg.Logger.Warn("failed to delete SG", zap.Error(err))

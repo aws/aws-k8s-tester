@@ -42,15 +42,19 @@ func createDoc() string {
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnMetricsServer, &eksconfig.AddOnMetricsServer{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnConformance, &eksconfig.AddOnConformance{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnCSIEBS, &eksconfig.AddOnCSIEBS{}))
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnAppMesh, &eksconfig.AddOnAppMesh{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnAppMesh, &eksconfig.AddOnAppMesh{}))
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnCSIEBS, &eksconfig.AddOnCSIEBS{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
@@ -63,6 +67,10 @@ func createDoc() string {
 	b.WriteByte('\n')
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnNLBHelloWorld, &eksconfig.AddOnNLBHelloWorld{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnNLBGuestbook, &eksconfig.AddOnNLBGuestbook{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
@@ -167,7 +175,8 @@ func createDoc() string {
 
 	txt := b.String()
 
-	return "# set the following *_ENABLE env vars to enable add-ons, rest are set with default values\n" +
+	return fmt.Sprintf("# total %d add-ons\n", len(es.envs)) +
+		"# set the following *_ENABLE env vars to enable add-ons, rest are set with default values\n" +
 		strings.Join(es.envs, "\n") +
 		"\n\n" +
 		txt
