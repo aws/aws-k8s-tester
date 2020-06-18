@@ -140,7 +140,10 @@ func (ts *tester) Upgrade(mngName string) (err error) {
 	}
 	cancel()
 	if err != nil {
-		return err
+		cur.Status = fmt.Sprintf("update failed %v", err)
+		ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName] = cur
+		ts.cfg.EKSConfig.Sync()
+		return fmt.Errorf("MNGs[%q] update failed %v", mngName, err)
 	}
 
 	ctx, cancel = context.WithTimeout(context.Background(), totalWait)
@@ -156,30 +159,15 @@ func (ts *tester) Upgrade(mngName string) (err error) {
 		20*time.Second,
 	)
 	for sv := range nodesCh {
-		status := ""
-		if sv.NodeGroup != nil {
-			status = aws.StringValue(sv.NodeGroup.Status)
-		}
-		if sv.Error != nil {
-			cur.Status = fmt.Sprintf("%q failed upgrade with error %v", sv.NodeGroupName, sv.Error)
-		} else {
-			cur.Status = status
-		}
-		if sv.Error != nil && status == aws_eks.NodegroupStatusCreateFailed {
-			ts.cfg.Logger.Warn("failed to upgrade managed node group",
-				zap.String("status", status),
-				zap.Error(sv.Error),
-			)
-			cancel()
-			ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName] = cur
-			ts.cfg.EKSConfig.Sync()
-			return sv.Error
-		}
-		ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName] = cur
-		cur, _ = ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName]
-		ts.cfg.EKSConfig.Sync()
+		err = sv.Error
 	}
 	cancel()
+	if err != nil {
+		cur.Status = fmt.Sprintf("update failed %v", err)
+		ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName] = cur
+		ts.cfg.EKSConfig.Sync()
+		return fmt.Errorf("MNGs[%q] update failed %v", mngName, err)
+	}
 
 	ts.cfg.Logger.Info("checking EKS server health after MNG version upgrade")
 	waitDur, retryStart := 5*time.Minute, time.Now()
