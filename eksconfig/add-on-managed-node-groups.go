@@ -139,16 +139,16 @@ type MNG struct {
 	// Logs maps each instance ID to a list of log file paths fetched via SSH access.
 	Logs map[string][]string `json:"logs" read-only:"true"`
 
+	// ConfigUpdate configures MNG config update.
+	ConfigUpdates []*MNGScaleUpdate `json:"scale-update,omitempty"`
+
 	// VersionUpgrade configures MNG version upgarde.
 	VersionUpgrade *MNGVersionUpgrade `json:"version-upgrade,omitempty"`
-
-	// ConfigUpdate configures MNG config update.
-	ConfigUpdates []*MNGConfigUpdate `json:"config-update,omitempty"`
 }
 
-// MNGConfigUpdate contains the minimum, maximum, and desired node counts for a nodegroup.
+// MNGScaleUpdate contains the minimum, maximum, and desired node counts for a nodegroup.
 // ref, https://docs.aws.amazon.com/cli/latest/reference/eks/update-nodegroup-config.html
-type MNGConfigUpdate struct {
+type MNGScaleUpdate struct {
 	// Created is true when the resource has been created.
 	// Used for delete operations.
 	Created         bool               `json:"created" read-only:"true"`
