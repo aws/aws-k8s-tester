@@ -123,7 +123,7 @@ func (ts *tester) Upgrade(mngName string) (err error) {
 
 	// enough time for upgrade fail/rollback
 	ctx, cancel := context.WithTimeout(context.Background(), totalWait)
-	updateCh := Poll(
+	updateCh := wait.PollUpdate(
 		ctx,
 		ts.cfg.Stopc,
 		ts.cfg.Logger,

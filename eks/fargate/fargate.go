@@ -473,7 +473,7 @@ func (ts *tester) createProfile() error {
 	}
 	cancel()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to wait for fargate profile creation %v", err)
 	}
 
 	ts.cfg.Logger.Info("created fargate profile", zap.String("name", ts.cfg.EKSConfig.AddOnFargate.ProfileName))
@@ -521,7 +521,7 @@ func (ts *tester) deleteProfile() error {
 	}
 	cancel()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to wait for fargate profile deletion %v", err)
 	}
 
 	ts.cfg.Logger.Info("deleted fargate profile", zap.String("name", ts.cfg.EKSConfig.AddOnFargate.ProfileName))

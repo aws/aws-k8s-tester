@@ -118,8 +118,8 @@ func (ts *tester) Create() (err error) {
 	if err = ts.createASGs(); err != nil {
 		return err
 	}
-	for name := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
-		if err = ts.createSG(name); err != nil {
+	for mngName := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
+		if err = ts.createSG(mngName); err != nil {
 			return err
 		}
 	}
