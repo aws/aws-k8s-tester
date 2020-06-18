@@ -6,7 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
+	"io/ioutil"
 	"reflect"
 	"strings"
 	"time"
@@ -476,7 +476,7 @@ func (ts *tester) waitService() error {
 		case <-time.After(5 * time.Second):
 		}
 
-		out, err := httputil.ReadInsecure(ts.cfg.Logger, os.Stderr, ts.cfg.EKSConfig.AddOnJupyterHub.URL)
+		out, err := httputil.ReadInsecure(ts.cfg.Logger, ioutil.Discard, ts.cfg.EKSConfig.AddOnJupyterHub.URL)
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to read NLB JupyterHub Service; retrying", zap.Error(err))
 			time.Sleep(5 * time.Second)

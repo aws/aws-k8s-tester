@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"reflect"
@@ -141,7 +142,7 @@ func (ts *tester) startProxy(enable bool) error {
 			case <-time.After(5 * time.Second):
 			}
 
-			out, err := httputil.ReadInsecure(ts.cfg.Logger, os.Stderr, ts.cfg.EKSConfig.AddOnKubernetesDashboard.URL)
+			out, err := httputil.ReadInsecure(ts.cfg.Logger, ioutil.Discard, ts.cfg.EKSConfig.AddOnKubernetesDashboard.URL)
 			if err != nil {
 				ts.cfg.Logger.Warn("failed to read Kubernetes Dashboard proxy; retrying", zap.Error(err))
 				time.Sleep(5 * time.Second)

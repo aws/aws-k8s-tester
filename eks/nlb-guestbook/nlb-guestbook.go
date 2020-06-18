@@ -8,7 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
+	"io/ioutil"
 	"reflect"
 	"strings"
 	"time"
@@ -1182,7 +1182,7 @@ func (ts *tester) createServiceGuestbook() error {
 		case <-time.After(5 * time.Second):
 		}
 
-		out, err := httputil.ReadInsecure(ts.cfg.Logger, os.Stderr, ts.cfg.EKSConfig.AddOnNLBGuestbook.URL)
+		out, err := httputil.ReadInsecure(ts.cfg.Logger, ioutil.Discard, ts.cfg.EKSConfig.AddOnNLBGuestbook.URL)
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to read NLB guestbook Service; retrying", zap.Error(err))
 			time.Sleep(5 * time.Second)

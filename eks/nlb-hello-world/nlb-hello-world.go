@@ -6,7 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
+	"io/ioutil"
 	"reflect"
 	"strings"
 	"time"
@@ -478,7 +478,7 @@ func (ts *tester) createService() error {
 		case <-time.After(5 * time.Second):
 		}
 
-		out, err := httputil.ReadInsecure(ts.cfg.Logger, os.Stderr, ts.cfg.EKSConfig.AddOnNLBHelloWorld.URL)
+		out, err := httputil.ReadInsecure(ts.cfg.Logger, ioutil.Discard, ts.cfg.EKSConfig.AddOnNLBHelloWorld.URL)
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to read NLB hello-world Service; retrying", zap.Error(err))
 			time.Sleep(5 * time.Second)

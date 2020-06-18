@@ -611,7 +611,7 @@ func (e *eks) checkHealth() error {
 	fmt.Printf("\n\"kubectl get cs\" output:\n%s\n\n", out)
 
 	ep = e.cfg.ClusterAPIServerEndpoint + "/healthz?verbose"
-	output, err = httputil.ReadInsecure(e.cfg.Logger, os.Stderr, ep)
+	output, err = httputil.ReadInsecure(e.cfg.Logger, ioutil.Discard, ep)
 	if err != nil {
 		return err
 	}
