@@ -26,7 +26,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.9...v1.4.0
 
 ### `eksconfig`
 
- - [`Add ClusterAutoScaler add-on per node-group using` AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS ='{"GetRef.Name-...":{..."cluster-autoscaler":{"enable":false}...}}`](https://github.com/aws/aws-k8s-tester/pull/99).
+ - [Add ClusterAutoScaler add-on per node-group using `AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS={"GetRef.Name-...":{..."cluster-autoscaler":{"enable":false}...}}`](https://github.com/aws/aws-k8s-tester/pull/99).
 
 ### `ssh`
 
