@@ -139,8 +139,8 @@ type MNG struct {
 	// Logs maps each instance ID to a list of log file paths fetched via SSH access.
 	Logs map[string][]string `json:"logs" read-only:"true"`
 
-	// ConfigUpdate configures MNG config update.
-	ConfigUpdates []*MNGScaleUpdate `json:"scale-update,omitempty"`
+	// ScaleUpdate configures MNG scale update.
+	ScaleUpdates []*MNGScaleUpdate `json:"scale-update,omitempty"`
 
 	// VersionUpgrade configures MNG version upgarde.
 	VersionUpgrade *MNGVersionUpgrade `json:"version-upgrade,omitempty"`
