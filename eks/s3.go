@@ -280,6 +280,30 @@ func (ts *Tester) uploadToS3() (err error) {
 		}
 	}
 
+	if fileutil.Exist(ts.cfg.Status.ClusterMetricsRawOutputDir) {
+		err = filepath.Walk(ts.cfg.Status.ClusterMetricsRawOutputDir, func(path string, info os.FileInfo, werr error) error {
+			if werr != nil {
+				return werr
+			}
+			if info.IsDir() {
+				return nil
+			}
+			if uerr := uploadFileToS3(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				filepath.Join(ts.cfg.Name, "metrics", filepath.Base(path)),
+				path,
+			); uerr != nil {
+				return uerr
+			}
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+	}
+
 	if ts.cfg.IsEnabledAddOnNodeGroups() {
 		if fileutil.Exist(ts.cfg.AddOnNodeGroups.RoleCFNStackYAMLFilePath) {
 			if err = uploadFileToS3(

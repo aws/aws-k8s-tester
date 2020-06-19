@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -78,6 +79,9 @@ type EKSConfig struct {
 	EnablePrompt bool
 	// Dir is the directory to store all upgrade/rollback files.
 	Dir string
+
+	// MetricsRawOutputDir is the directory to store all /metrics output.
+	MetricsRawOutputDir string
 
 	// Clients is the number of kubernetes clients to create.
 	// Default is 1.
@@ -648,16 +652,6 @@ func (e *eks) checkHealth() error {
 	}
 	println()
 
-	fmt.Printf("\n\"kubectl get configmaps -n=kube-system\" output:\n")
-	configMaps, err := e.listConfigMaps("kube-system", 150, 5*time.Second)
-	if err != nil {
-		return fmt.Errorf("failed to list configmaps %v", err)
-	}
-	for _, v := range configMaps {
-		e.cfg.Logger.Info("kube-system configmap", zap.String("name", v.GetName()))
-	}
-	println()
-
 	fmt.Printf("\n\"curl -sL http://localhost:8080/metrics | grep storage_\" output:\n")
 	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 	output, err = e.getClient().
@@ -671,6 +665,22 @@ func (e *eks) checkHealth() error {
 	if err != nil {
 		return fmt.Errorf("failed to fetch /metrics (%v)", err)
 	}
+	if e.cfg.MetricsRawOutputDir != "" {
+		if !fileutil.Exist(e.cfg.MetricsRawOutputDir) {
+			if err = os.MkdirAll(e.cfg.MetricsRawOutputDir, 0700); err != nil {
+				e.cfg.Logger.Warn("failed to mkdir", zap.String("dir", e.cfg.MetricsRawOutputDir), zap.Error(err))
+				return fmt.Errorf("failed to mkdir %q (%v)", e.cfg.MetricsRawOutputDir, err)
+			}
+		}
+		name := fmt.Sprintf("kube-apiserver-metrics-%s.out", time.Now().UTC().Format(time.RFC3339Nano))
+		fpath := filepath.Join(e.cfg.MetricsRawOutputDir, name)
+		if err := ioutil.WriteFile(fpath, output, 0777); err != nil {
+			e.cfg.Logger.Warn("failed to write /metrics", zap.String("path", fpath), zap.Error(err))
+			return err
+		}
+		e.cfg.Logger.Info("wrote /metrics", zap.String("path", fpath))
+	}
+
 	const (
 		// https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG/CHANGELOG-1.17.md#deprecatedchanged-metrics
 		metricDEKGenSecondsCount      = "apiserver_storage_data_key_generation_duration_seconds_count"

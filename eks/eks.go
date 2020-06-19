@@ -357,17 +357,18 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 	// update k8s client if cluster has already been created
 	ts.lg.Info("creating k8s client from previous states if any")
 	kcfg := &k8s_client.EKSConfig{
-		Logger:            ts.lg,
-		Region:            ts.cfg.Region,
-		ClusterName:       ts.cfg.Name,
-		KubeConfigPath:    ts.cfg.KubeConfigPath,
-		KubectlPath:       ts.cfg.KubectlPath,
-		ServerVersion:     ts.cfg.Parameters.Version,
-		EncryptionEnabled: ts.cfg.Parameters.EncryptionCMKARN != "",
-		Clients:           ts.cfg.Clients,
-		ClientQPS:         ts.cfg.ClientQPS,
-		ClientBurst:       ts.cfg.ClientBurst,
-		ClientTimeout:     ts.cfg.ClientTimeout,
+		Logger:              ts.lg,
+		Region:              ts.cfg.Region,
+		ClusterName:         ts.cfg.Name,
+		KubeConfigPath:      ts.cfg.KubeConfigPath,
+		KubectlPath:         ts.cfg.KubectlPath,
+		ServerVersion:       ts.cfg.Parameters.Version,
+		EncryptionEnabled:   ts.cfg.Parameters.EncryptionCMKARN != "",
+		MetricsRawOutputDir: ts.cfg.Status.ClusterMetricsRawOutputDir,
+		Clients:             ts.cfg.Clients,
+		ClientQPS:           ts.cfg.ClientQPS,
+		ClientBurst:         ts.cfg.ClientBurst,
+		ClientTimeout:       ts.cfg.ClientTimeout,
 	}
 	if ts.cfg.IsEnabledAddOnClusterVersionUpgrade() {
 		kcfg.UpgradeServerVersion = ts.cfg.AddOnClusterVersionUpgrade.Version
@@ -714,11 +715,10 @@ func (ts *Tester) Up() (err error) {
 			if ts.cfg.Status.Up {
 				fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 				fmt.Printf(ts.color("[light_green]SSH (%q)\n"), ts.cfg.ConfigPath)
-
 				fmt.Println(ts.cfg.SSHCommands())
+
 				fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 				fmt.Printf(ts.color("[light_green]kubectl (%q)\n"), ts.cfg.ConfigPath)
-
 				fmt.Println(ts.cfg.KubectlCommands())
 			}
 
@@ -739,11 +739,10 @@ func (ts *Tester) Up() (err error) {
 		if ts.cfg.Status.Up {
 			fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 			fmt.Printf(ts.color("[light_green]SSH (%q)\n"), ts.cfg.ConfigPath)
-
 			fmt.Println(ts.cfg.SSHCommands())
+
 			fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 			fmt.Printf(ts.color("[light_green]kubectl (%q)\n"), ts.cfg.ConfigPath)
-
 			fmt.Println(ts.cfg.KubectlCommands())
 		}
 		fmt.Printf(ts.color("\n\n\n[light_magenta]UP FAIL ERROR:\n\n%v\n\n\n"), err)
@@ -933,6 +932,22 @@ func (ts *Tester) Up() (err error) {
 			return err
 		}
 	}
+
+	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Printf(ts.color("[light_green]clusterTester.CheckHealth (%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+	if ts.k8sClient == nil {
+		// TODO: investigate why "ts.k8sClient == nil"
+		ts.lg.Warn("[TODO] unexpected nil k8s client after cluster creation")
+	}
+	if err := catchInterrupt(
+		ts.lg,
+		ts.stopCreationCh,
+		ts.stopCreationChOnce,
+		ts.osSig,
+		ts.clusterTester.CheckHealth,
+	); err != nil {
+		return err
+	}
 	if serr := ts.uploadToS3(); serr != nil {
 		ts.lg.Warn("failed to upload artifacts to S3", zap.Error(serr))
 	}
@@ -949,6 +964,22 @@ func (ts *Tester) Up() (err error) {
 		)
 
 		if idx%5 == 0 {
+			fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+			fmt.Printf(ts.color("[light_green]clusterTester.CheckHealth (%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+			if ts.k8sClient == nil {
+				// TODO: investigate why "ts.k8sClient == nil"
+				ts.lg.Warn("[TODO] unexpected nil k8s client after cluster creation")
+			}
+			if err := catchInterrupt(
+				ts.lg,
+				ts.stopCreationCh,
+				ts.stopCreationChOnce,
+				ts.osSig,
+				ts.clusterTester.CheckHealth,
+			); err != nil {
+				return err
+			}
+
 			fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 			fmt.Printf(ts.color("[light_green]testers[%02d] uploadToS3 [cyan]%q (%q, %q)\n"), idx, reflect.TypeOf(cur), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 			if serr := ts.uploadToS3(); serr != nil {
@@ -1426,12 +1457,15 @@ func catchInterrupt(lg *zap.Logger, stopc chan struct{}, once *sync.Once, sigc c
 	case _, ok := <-stopc:
 		rerr := <-errc
 		lg.Info("interrupted", zap.Error(rerr))
-		err = fmt.Errorf("stopc returned, stopc open %v, run function returned %v", ok, rerr)
+		err = fmt.Errorf("stopc returned, stopc open %v, run function returned %v (%v)", ok, rerr, reflect.TypeOf(run))
 	case sig := <-sigc:
 		once.Do(func() { close(stopc) })
 		rerr := <-errc
-		err = fmt.Errorf("received os signal %v, closed stopc, run function returned %v", sig, rerr)
+		err = fmt.Errorf("received os signal %v, closed stopc, run function returned %v (%v)", sig, rerr, reflect.TypeOf(run))
 	case err = <-errc:
+		if err != nil {
+			err = fmt.Errorf("run function returned %v (%v)", err, reflect.TypeOf(run))
+		}
 	}
 	return err
 }
