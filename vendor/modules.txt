@@ -1180,6 +1180,7 @@ k8s.io/apimachinery/pkg/util/httpstream
 k8s.io/apimachinery/pkg/util/httpstream/spdy
 k8s.io/apimachinery/pkg/util/intstr
 k8s.io/apimachinery/pkg/util/json
+k8s.io/apimachinery/pkg/util/jsonmergepatch
 k8s.io/apimachinery/pkg/util/mergepatch
 k8s.io/apimachinery/pkg/util/naming
 k8s.io/apimachinery/pkg/util/net
@@ -1782,6 +1783,7 @@ k8s.io/kubernetes/pkg/security/podsecuritypolicy/seccomp
 k8s.io/kubernetes/pkg/security/podsecuritypolicy/sysctl
 k8s.io/kubernetes/pkg/security/podsecuritypolicy/util
 k8s.io/kubernetes/pkg/securitycontext
+k8s.io/kubernetes/pkg/ssh
 k8s.io/kubernetes/pkg/util/async
 k8s.io/kubernetes/pkg/util/bandwidth
 k8s.io/kubernetes/pkg/util/config
@@ -1891,6 +1893,11 @@ k8s.io/legacy-cloud-providers/openstack
 k8s.io/legacy-cloud-providers/vsphere
 k8s.io/legacy-cloud-providers/vsphere/vclib
 k8s.io/legacy-cloud-providers/vsphere/vclib/diskmanagers
+# k8s.io/perf-tests/clusterloader2 v0.0.0-20200615121956-f3cf096d4378
+## explicit
+k8s.io/perf-tests/clusterloader2/pkg/framework/client
+k8s.io/perf-tests/clusterloader2/pkg/measurement/util
+k8s.io/perf-tests/clusterloader2/pkg/util
 # k8s.io/utils v0.0.0-20200324210504-a9aa75ae1b89
 ## explicit
 k8s.io/utils/buffer

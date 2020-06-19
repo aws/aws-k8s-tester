@@ -306,6 +306,7 @@ github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8/go.mod h1:xkRDCp4j0
 github.com/go-acme/lego v2.5.0+incompatible/go.mod h1:yzMNe9CasVUhkquNvti5nAtPmG94USbYxYrZfTkIn0M=
 github.com/go-bindata/go-bindata v3.1.1+incompatible/go.mod h1:xK8Dsgwmeed+BBsSy2XTopBn/8uK2HWuGSnA11C3Joo=
 github.com/go-critic/go-critic v0.3.5-0.20190526074819-1df300866540/go.mod h1:+sE8vrLDS2M0pZkBk0wy6+nLdKexVDrl/jBqQOTDThA=
+github.com/go-errors/errors v1.0.1/go.mod h1:f4zRHt4oKfwPJE5k8C9vpYG+aDHdBFUsgrm6/TyX73Q=
 github.com/go-ini/ini v1.9.0/go.mod h1:ByCAeIL28uOIIG0E3PJtZPDL8WnHpFKFOtgjp+3Ies8=
 github.com/go-ini/ini v1.25.4/go.mod h1:ByCAeIL28uOIIG0E3PJtZPDL8WnHpFKFOtgjp+3Ies8=
 github.com/go-ini/ini v1.55.0 h1:0wVcG9udk2C3TGgmdIGKK9ScOZHZB5nbG+gwji9fhhc=
@@ -1315,6 +1316,8 @@ k8s.io/kubernetes v1.18.4/go.mod h1:Efg82S+Ti02A/Mww53bxroc7IgzX2bgPsf6hT8gAs3M=
 k8s.io/legacy-cloud-providers v0.18.4 h1:YSQtnBkVnXl8/w4fxgnFZy/nGngpo2eTTVEjkUuBe34=
 k8s.io/legacy-cloud-providers v0.18.4/go.mod h1:Mnxtra7DxVrODfGZHPsrkLi22lwmZOlWkjyyO3vW+WM=
 k8s.io/metrics v0.18.4/go.mod h1:luze4fyI9JG4eLDZy0kFdYEebqNfi0QrG4xNEbPkHOs=
+k8s.io/perf-tests/clusterloader2 v0.0.0-20200615121956-f3cf096d4378 h1:oW8Pb48NXrSoalv4hx00YGRJw0DGZh+bxsiI1KyaKC4=
+k8s.io/perf-tests/clusterloader2 v0.0.0-20200615121956-f3cf096d4378/go.mod h1:nDVvVD705+1ERKC1KyFt5Id2SeGiS0SWOvzjnFolg4c=
 k8s.io/repo-infra v0.0.1-alpha.1/go.mod h1:wO1t9WaB99V80ljbeENTnayuEEwNZt7gECYh/CEyOJ8=
 k8s.io/sample-apiserver v0.18.4/go.mod h1:j5XH5FUmMd/ztoz+9ch0+hL+lsvWdgxnTV7l3P3Ijoo=
 k8s.io/system-validators v1.0.4/go.mod h1:HgSgTg4NAGNoYYjKsUyk52gdNi2PVDswQ9Iyn66R7NI=
