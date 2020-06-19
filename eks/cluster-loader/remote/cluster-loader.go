@@ -743,7 +743,7 @@ func (ts *tester) AggregateResults() (err error) {
 						if cerr := fileutil.Copy(fpath, ts.cfg.EKSConfig.AddOnClusterLoaderRemote.ReportTarGzPath); cerr != nil {
 							ts.cfg.Logger.Warn("found AddOnClusterLoaderRemote cluster loader report dir .tar.gz file but failed to copy", zap.String("original-file-path", fpath), zap.Error(cerr))
 						} else {
-							ts.cfg.Logger.Info("successfully copied AddOnClusterLoaderRemote cluster loader report dir .tar.gz file", zap.String("original-file-path", fpath), zap.String("copy-file-path", ts.cfg.EKSConfig.AddOnClusterLoaderRemote.LogPath))
+							ts.cfg.Logger.Info("successfully copied AddOnClusterLoaderRemote cluster loader report dir .tar.gz file", zap.String("original-file-path", fpath), zap.String("copy-file-path", ts.cfg.EKSConfig.AddOnClusterLoaderRemote.ReportTarGzPath))
 						}
 					}
 					if strings.HasSuffix(fpath, "cluster-loader-remote.log") {
@@ -839,9 +839,10 @@ func (ts *tester) checkClusterLoader() (err error) {
 
 	ts.cfg.Logger.Info("running cluster loader", zap.String("logs-command-pod", cmdLogsPod))
 
-	start, waitDur := time.Now(), (2*time.Minute+30*time.Second)*time.Duration(ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Runs)
+	start, waitDur := time.Now(), 20*time.Minute*time.Duration(ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Runs)
 	interval := 15 * time.Second
 
+	ready := false
 	for time.Now().Sub(start) < waitDur {
 		ts.cfg.Logger.Info("waiting for cluster loader run", zap.Duration("interval", interval))
 		select {
@@ -866,8 +867,12 @@ func (ts *tester) checkClusterLoader() (err error) {
 		fmt.Printf("\n'%s' output (total lines %d, last 30 lines):\n\n%s\n\n", cmdLogsPod, linesN, out)
 
 		if strings.Contains(out, `"waiting for OS signal after test completion"`) {
+			ready = true
 			break
 		}
+	}
+	if !ready {
+		return errors.New("cluster loader remote failed to complete")
 	}
 
 	return ts.cfg.EKSConfig.Sync()
