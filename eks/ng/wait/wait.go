@@ -109,6 +109,13 @@ func (ts *tester) waitForNodes(asgName string, retriesLeft int) error {
 		ivv.RemoteAccessUserName = cur.RemoteAccessUserName
 		cur.Instances[id] = ivv
 	}
+	for _, inst := range cur.Instances {
+		ts.cfg.EKSConfig.Status.PrivateDNSToSSHConfig[inst.PrivateDNSName] = eksconfig.SSHConfig{
+			PublicIP:      inst.PublicIP,
+			PublicDNSName: inst.PublicDNSName,
+			UserName:      cur.RemoteAccessUserName,
+		}
+	}
 	ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName] = cur
 	ts.cfg.EKSConfig.Sync()
 

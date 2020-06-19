@@ -93,10 +93,10 @@ func (ts *tester) fetchLogs(qps float32, burst int) error {
 		)
 		waits += len(nodeGroup.Instances)
 
-		for instID, iv := range nodeGroup.Instances {
+		for instID, cur := range nodeGroup.Instances {
 			pfx := instID + "-"
 
-			go func(instID, logsDir, pfx string, iv ec2config.Instance) {
+			go func(instID, logsDir, pfx string, cur ec2config.Instance) {
 				select {
 				case <-ts.cfg.Stopc:
 					ts.cfg.Logger.Warn("exiting fetch logger", zap.String("prefix", pfx))
@@ -121,9 +121,9 @@ func (ts *tester) fetchLogs(qps float32, burst int) error {
 				sh, err := ssh.New(ssh.Config{
 					Logger:        ts.cfg.Logger,
 					KeyPath:       ts.cfg.EKSConfig.RemoteAccessPrivateKeyPath,
-					PublicIP:      iv.PublicIP,
-					PublicDNSName: iv.PublicDNSName,
-					UserName:      iv.RemoteAccessUserName,
+					PublicIP:      cur.PublicIP,
+					PublicDNSName: cur.PublicDNSName,
+					UserName:      cur.RemoteAccessUserName,
 				})
 				if err != nil {
 					rch <- instanceLogs{asgName: name, errs: []string{err.Error()}}
@@ -384,7 +384,7 @@ func (ts *tester) fetchLogs(qps float32, burst int) error {
 					}
 				}
 				rch <- data
-			}(instID, logsDir, pfx, iv)
+			}(instID, logsDir, pfx, cur)
 		}
 	}
 

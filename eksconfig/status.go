@@ -1,6 +1,8 @@
 package eksconfig
 
 import (
+	"encoding/json"
+	"fmt"
 	"time"
 
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
@@ -60,7 +62,34 @@ type Status struct {
 	ClusterStatusCurrent string `json:"cluster-status-current"`
 	// ClusterStatus represents the status of the cluster.
 	ClusterStatus []ClusterStatus `json:"cluster-status"`
+
+	// PrivateDNSToSSHConfig maps each worker node's private IP to its public IP,
+	// public DNS, and SSH access user name.
+	// Worker node name in AWS is the node's EC2 instance private DNS.
+	// This is used for SSH access.
+	PrivateDNSToSSHConfig map[string]SSHConfig `json:"private-dns-to-ssh-config"`
 }
+
+// SSHConfig represents basic SSH access configuration for worker nodes.
+type SSHConfig struct {
+	PublicIP      string `json:"public-ip"`
+	PublicDNSName string `json:"public-dns-name"`
+	UserName      string `json:"user-name"`
+}
+
+func (sc SSHConfig) ToString() string {
+	b, err := json.Marshal(sc)
+	if err != nil {
+		return fmt.Sprintf("%+v", sc)
+	}
+	return string(b)
+}
+
+/*
+map all private IPs to public IP + public DNS
+map node name to internal ip, private ip
+pod node name to internal ip ->
+*/
 
 // ClusterStatus represents the cluster status.
 type ClusterStatus struct {

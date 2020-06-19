@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"reflect"
 	"strings"
 	"time"
@@ -18,6 +19,7 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
+	"github.com/aws/aws-k8s-tester/ssh"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
 	"go.uber.org/zap"
@@ -740,20 +742,27 @@ func (ts *tester) AggregateResults() (err error) {
 			for _, fpaths := range v.Logs {
 				for _, fpath := range fpaths {
 					if strings.HasSuffix(fpath, "cluster-loader-remote.tar.gz") {
-						if cerr := fileutil.Copy(fpath, ts.cfg.EKSConfig.AddOnClusterLoaderRemote.ReportTarGzPath); cerr != nil {
-							ts.cfg.Logger.Warn("found AddOnClusterLoaderRemote cluster loader report dir .tar.gz file but failed to copy", zap.String("original-file-path", fpath), zap.Error(cerr))
+						if !fileutil.Exist(ts.cfg.EKSConfig.AddOnClusterLoaderRemote.ReportTarGzPath) {
+							if cerr := fileutil.Copy(fpath, ts.cfg.EKSConfig.AddOnClusterLoaderRemote.ReportTarGzPath); cerr != nil {
+								ts.cfg.Logger.Warn("found AddOnClusterLoaderRemote cluster loader report dir .tar.gz file but failed to copy", zap.String("original-file-path", fpath), zap.Error(cerr))
+							} else {
+								ts.cfg.Logger.Info("successfully copied AddOnClusterLoaderRemote cluster loader report dir .tar.gz file", zap.String("original-file-path", fpath), zap.String("copy-file-path", ts.cfg.EKSConfig.AddOnClusterLoaderRemote.ReportTarGzPath))
+							}
 						} else {
-							ts.cfg.Logger.Info("successfully copied AddOnClusterLoaderRemote cluster loader report dir .tar.gz file", zap.String("original-file-path", fpath), zap.String("copy-file-path", ts.cfg.EKSConfig.AddOnClusterLoaderRemote.ReportTarGzPath))
+							ts.cfg.Logger.Info("AddOnClusterLoaderRemote cluster loader report dir .tar.gz file already exists; skipping copy", zap.String("original-file-path", fpath), zap.String("copy-file-path", ts.cfg.EKSConfig.AddOnClusterLoaderRemote.ReportTarGzPath))
 						}
 					}
 					if strings.HasSuffix(fpath, "cluster-loader-remote.log") {
-						if cerr := fileutil.CopyAppend(fpath, ts.cfg.EKSConfig.AddOnClusterLoaderRemote.LogPath); cerr != nil {
-							ts.cfg.Logger.Warn("found AddOnClusterLoaderRemote cluster loader logs file but failed to copy", zap.String("original-file-path", fpath), zap.Error(cerr))
+						if !fileutil.Exist(ts.cfg.EKSConfig.AddOnClusterLoaderRemote.LogPath) {
+							if cerr := fileutil.CopyAppend(fpath, ts.cfg.EKSConfig.AddOnClusterLoaderRemote.LogPath); cerr != nil {
+								ts.cfg.Logger.Warn("found AddOnClusterLoaderRemote cluster loader logs file but failed to copy", zap.String("original-file-path", fpath), zap.Error(cerr))
+							} else {
+								ts.cfg.Logger.Info("successfully copied AddOnClusterLoaderRemote cluster loader logs file", zap.String("original-file-path", fpath), zap.String("copy-file-path", ts.cfg.EKSConfig.AddOnClusterLoaderRemote.LogPath))
+							}
 						} else {
-							ts.cfg.Logger.Info("successfully copied AddOnClusterLoaderRemote cluster loader logs file", zap.String("original-file-path", fpath), zap.String("copy-file-path", ts.cfg.EKSConfig.AddOnClusterLoaderRemote.LogPath))
+							ts.cfg.Logger.Info("AddOnClusterLoaderRemote cluster loader report logs file already exists; skipping copy", zap.String("original-file-path", fpath), zap.String("copy-file-path", ts.cfg.EKSConfig.AddOnClusterLoaderRemote.LogPath))
 						}
 					}
-
 				}
 			}
 		}
@@ -825,7 +834,60 @@ func (ts *tester) checkClusterLoader() (err error) {
 	if clusterloaderPod == "" {
 		return fmt.Errorf("failed to find pod/cluster-loader-remote-deployment in %q", ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Namespace)
 	}
-	ts.cfg.Logger.Info("found pod/cluster-loader-remote-deployment", zap.String("name", clusterloaderPod))
+	ts.cfg.Logger.Info("found pod/cluster-loader-remote-deployment", zap.String("pod-name", clusterloaderPod))
+
+	ts.cfg.Logger.Info("checking node name for pod/cluster-loader-remote-deployment")
+	nodeName, podPhase := "", v1.PodPending
+	retryStart = time.Now()
+	for time.Now().Sub(retryStart) < 10*time.Minute {
+		select {
+		case <-ts.cfg.Stopc:
+			ts.cfg.Logger.Warn("cluster loader check stopped")
+			return nil
+		case <-time.After(10 * time.Second):
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		var pod *v1.Pod
+		pod, err = ts.cfg.K8SClient.
+			KubernetesClientSet().
+			CoreV1().
+			Pods(ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Namespace).
+			Get(ctx, clusterloaderPod, metav1.GetOptions{})
+		cancel()
+		if err != nil {
+			ts.cfg.Logger.Warn("failed to get pod", zap.Error(err))
+			continue
+		}
+		podPhase = pod.Status.Phase
+		nodeName = pod.Spec.NodeName
+		ts.cfg.Logger.Info("pod status",
+			zap.String("pod-name", pod.Name),
+			zap.String("pod-phase", fmt.Sprintf("%v", podPhase)),
+			zap.String("node-name", nodeName),
+		)
+		if podPhase == v1.PodRunning && nodeName != "" {
+			break
+		}
+	}
+	if podPhase != v1.PodRunning || nodeName == "" {
+		return fmt.Errorf("failed to find running pod and assigned node for %q", clusterloaderPod)
+	}
+
+	sshConfig, ok := ts.cfg.EKSConfig.Status.PrivateDNSToSSHConfig[nodeName]
+	if !ok {
+		ts.cfg.Logger.Warn("got pod/cluster-loader-remote-deployment, but no SSH config found for private DNS",
+			zap.String("pod-name", clusterloaderPod),
+			zap.String("pod-phase", fmt.Sprintf("%v", podPhase)),
+			zap.String("node-name", nodeName),
+		)
+		return fmt.Errorf("no SSH config found for node name (private DNS) %q", nodeName)
+	}
+	ts.cfg.Logger.Info("found node name for running pod/cluster-loader-remote-deployment",
+		zap.String("pod-name", clusterloaderPod),
+		zap.String("pod-phase", fmt.Sprintf("%v", podPhase)),
+		zap.String("node-name", nodeName),
+		zap.String("ssh-config", sshConfig.ToString()),
+	)
 
 	argsLogsPod := []string{
 		ts.cfg.EKSConfig.KubectlPath,
@@ -837,20 +899,17 @@ func (ts *tester) checkClusterLoader() (err error) {
 	}
 	cmdLogsPod := strings.Join(argsLogsPod, " ")
 
-	ts.cfg.Logger.Info("running cluster loader", zap.String("logs-command-pod", cmdLogsPod))
-
-	interval := 15 * time.Second
-
+	ts.cfg.Logger.Info("checking cluster loader logs", zap.String("logs-command-pod", cmdLogsPod))
 	waitDur := 20 * time.Minute * time.Duration(ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Runs)
 	start := time.Now()
 	ready := false
 	for time.Now().Sub(start) < waitDur {
-		ts.cfg.Logger.Info("waiting for cluster loader run", zap.Duration("interval", interval))
+		ts.cfg.Logger.Info("waiting for cluster loader run")
 		select {
 		case <-ts.cfg.Stopc:
 			ts.cfg.Logger.Warn("cluster loader check stopped")
 			return nil
-		case <-time.After(interval):
+		case <-time.After(15 * time.Second):
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
@@ -876,5 +935,52 @@ func (ts *tester) checkClusterLoader() (err error) {
 		return errors.New("cluster loader remote failed to complete")
 	}
 
+	ts.cfg.Logger.Info("checking cluster loader report .tar.gz")
+	sh, err := ssh.New(ssh.Config{
+		Logger:        ts.cfg.Logger,
+		KeyPath:       ts.cfg.EKSConfig.RemoteAccessPrivateKeyPath,
+		PublicIP:      sshConfig.PublicIP,
+		PublicDNSName: sshConfig.PublicDNSName,
+		UserName:      sshConfig.UserName,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create SSH config for %q (%v)", nodeName, err)
+	}
+	defer sh.Close()
+	if err = sh.Connect(); err != nil {
+		return fmt.Errorf("failed to SSH connect to %q (%v)", nodeName, err)
+	}
+	var out []byte
+	out, err = sh.Download(
+		"/var/log/cluster-loader-remote.tar.gz",
+		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.ReportTarGzPath,
+		ssh.WithVerbose(ts.cfg.EKSConfig.LogLevel == "debug"),
+		ssh.WithRetry(3, 10*time.Second),
+	)
+	if err != nil {
+		os.RemoveAll(ts.cfg.EKSConfig.AddOnClusterLoaderRemote.ReportTarGzPath)
+		return fmt.Errorf("failed to download '/var/log/cluster-loader-remote.tar.gz' from %q (%v)", nodeName, err)
+	}
+	fmt.Printf("\nDownloaded '/var/log/cluster-loader-remote.tar.gz' output:\n%s\n", string(out))
+
+	out, err = sh.Download(
+		"/var/log/cluster-loader-remote.log",
+		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.LogPath,
+		ssh.WithVerbose(ts.cfg.EKSConfig.LogLevel == "debug"),
+		ssh.WithRetry(3, 10*time.Second),
+	)
+	if err != nil {
+		os.RemoveAll(ts.cfg.EKSConfig.AddOnClusterLoaderRemote.LogPath)
+		return fmt.Errorf("failed to download '/var/log/cluster-loader-remote.log' from %q (%v)", nodeName, err)
+	}
+	fmt.Printf("\nDownloaded '/var/log/cluster-loader-remote.tar.gz' output:\n%s\n", string(out))
+
+	ts.cfg.Logger.Info("downloaded cluster loader results from remote node",
+		zap.String("tar-gz-path", ts.cfg.EKSConfig.AddOnClusterLoaderRemote.ReportTarGzPath),
+		zap.String("log-path", ts.cfg.EKSConfig.AddOnClusterLoaderRemote.LogPath),
+	)
+
 	return ts.cfg.EKSConfig.Sync()
 }
+
+// /var/log/cluster-loader-remote.tar.gz

@@ -796,7 +796,10 @@ func NewDefault() *Config {
 		AddOnClusterVersionUpgrade: getDefaultAddOnClusterVersionUpgrade(),
 
 		// read-only
-		Status: &Status{Up: false},
+		Status: &Status{
+			Up:                    false,
+			PrivateDNSToSSHConfig: make(map[string]SSHConfig),
+		},
 	}
 
 	// https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-welcome.html
@@ -1128,7 +1131,10 @@ func (cfg *Config) validateConfig() error {
 	}
 
 	if cfg.Status == nil {
-		cfg.Status = &Status{Up: false}
+		cfg.Status = &Status{
+			Up:                    false,
+			PrivateDNSToSSHConfig: make(map[string]SSHConfig),
+		}
 	}
 	if cfg.Status.ClusterCFNStackYAMLFilePath == "" {
 		cfg.Status.ClusterCFNStackYAMLFilePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".cluster.cfn.yaml"
