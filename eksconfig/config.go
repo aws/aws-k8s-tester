@@ -279,6 +279,17 @@ type Config struct {
 	// add-on cuda-vector-add.
 	AddOnCUDAVectorAdd *AddOnCUDAVectorAdd `json:"add-on-cuda-vector-add,omitempty"`
 
+	// AddOnClusterLoaderLocal defines parameters for EKS cluster
+	// add-on cluster loader local.
+	// It generates loads from the local host machine.
+	// ref. https://github.com/kubernetes/perf-tests/tree/master/clusterloader2
+	AddOnClusterLoaderLocal *AddOnClusterLoaderLocal `json:"add-on-cluster-loader-local,omitempty"`
+	// AddOnClusterLoaderRemote defines parameters for EKS cluster
+	// add-on cluster loader remote.
+	// It generates loads from the remote host machine.
+	// ref. https://github.com/kubernetes/perf-tests/tree/master/clusterloader2
+	AddOnClusterLoaderRemote *AddOnClusterLoaderRemote `json:"add-on-cluster-loader-remote,omitempty"`
+
 	// AddOnHollowNodesLocal defines parameters for EKS cluster
 	// add-on hollow nodes local.
 	// It generates loads from the local host machine.
@@ -298,17 +309,6 @@ type Config struct {
 	// It generates loads from the remote workers (Pod) in the cluster.
 	// ref. https://github.com/kubernetes/perf-tests
 	AddOnStresserRemote *AddOnStresserRemote `json:"add-on-stresser-remote,omitempty"`
-
-	// AddOnClusterLoaderLocal defines parameters for EKS cluster
-	// add-on cluster loader local.
-	// It generates loads from the local host machine.
-	// ref. https://github.com/kubernetes/perf-tests/tree/master/clusterloader2
-	AddOnClusterLoaderLocal *AddOnClusterLoaderLocal `json:"add-on-cluster-loader-local,omitempty"`
-	// AddOnClusterLoaderRemote defines parameters for EKS cluster
-	// add-on cluster loader remote.
-	// It generates loads from the remote host machine.
-	// ref. https://github.com/kubernetes/perf-tests/tree/master/clusterloader2
-	AddOnClusterLoaderRemote *AddOnClusterLoaderRemote `json:"add-on-cluster-loader-remote,omitempty"`
 
 	// AddOnClusterVersionUpgrade defines parameters
 	// for EKS cluster version upgrade add-on.
@@ -787,12 +787,12 @@ func NewDefault() *Config {
 		AddOnJupyterHub:            getDefaultAddOnJupyterHub(),
 		AddOnKubeflow:              getDefaultAddOnKubeflow(),
 		AddOnCUDAVectorAdd:         getDefaultAddOnCUDAVectorAdd(),
+		AddOnClusterLoaderLocal:    getDefaultAddOnClusterLoaderLocal(),
+		AddOnClusterLoaderRemote:   getDefaultAddOnClusterLoaderRemote(),
 		AddOnHollowNodesLocal:      getDefaultAddOnHollowNodesLocal(),
 		AddOnHollowNodesRemote:     getDefaultAddOnHollowNodesRemote(),
 		AddOnStresserLocal:         getDefaultAddOnStresserLocal(),
 		AddOnStresserRemote:        getDefaultAddOnStresserRemote(),
-		AddOnClusterLoaderLocal:    getDefaultAddOnClusterLoaderLocal(),
-		AddOnClusterLoaderRemote:   getDefaultAddOnClusterLoaderRemote(),
 		AddOnClusterVersionUpgrade: getDefaultAddOnClusterVersionUpgrade(),
 
 		// read-only
@@ -946,6 +946,13 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		return fmt.Errorf("validateAddOnCUDAVectorAdd failed [%v]", err)
 	}
 
+	if err := cfg.validateAddOnClusterLoaderLocal(); err != nil {
+		return fmt.Errorf("validateAddOnClusterLoaderLocal failed [%v]", err)
+	}
+	if err := cfg.validateAddOnClusterLoaderRemote(); err != nil {
+		return fmt.Errorf("validateAddOnClusterLoaderRemote failed [%v]", err)
+	}
+
 	if err := cfg.validateAddOnHollowNodesLocal(); err != nil {
 		return fmt.Errorf("validateAddOnHollowNodesLocal failed [%v]", err)
 	}
@@ -958,13 +965,6 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 	if err := cfg.validateAddOnStresserRemote(); err != nil {
 		return fmt.Errorf("validateAddOnStresserRemote failed [%v]", err)
-	}
-
-	if err := cfg.validateAddOnClusterLoaderLocal(); err != nil {
-		return fmt.Errorf("validateAddOnClusterLoaderLocal failed [%v]", err)
-	}
-	if err := cfg.validateAddOnClusterLoaderRemote(); err != nil {
-		return fmt.Errorf("validateAddOnClusterLoaderRemote failed [%v]", err)
 	}
 
 	if err := cfg.validateAddOnClusterVersionUpgrade(); err != nil {

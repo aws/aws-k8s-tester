@@ -401,6 +401,32 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *AddOnCUDAVectorAdd, got %T", vv)
 	}
 
+	if cfg.AddOnClusterLoaderLocal == nil {
+		cfg.AddOnClusterLoaderLocal = &AddOnClusterLoaderLocal{}
+	}
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnClusterLoaderLocal, cfg.AddOnClusterLoaderLocal)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*AddOnClusterLoaderLocal); ok {
+		cfg.AddOnClusterLoaderLocal = av
+	} else {
+		return fmt.Errorf("expected *AddOnClusterLoaderLocal, got %T", vv)
+	}
+
+	if cfg.AddOnClusterLoaderRemote == nil {
+		cfg.AddOnClusterLoaderRemote = &AddOnClusterLoaderRemote{}
+	}
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnClusterLoaderRemote, cfg.AddOnClusterLoaderRemote)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*AddOnClusterLoaderRemote); ok {
+		cfg.AddOnClusterLoaderRemote = av
+	} else {
+		return fmt.Errorf("expected *AddOnClusterLoaderRemote, got %T", vv)
+	}
+
 	if cfg.AddOnHollowNodesLocal == nil {
 		cfg.AddOnHollowNodesLocal = &AddOnHollowNodesLocal{}
 	}
@@ -451,32 +477,6 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		cfg.AddOnStresserRemote = av
 	} else {
 		return fmt.Errorf("expected *AddOnStresserRemote, got %T", vv)
-	}
-
-	if cfg.AddOnClusterLoaderLocal == nil {
-		cfg.AddOnClusterLoaderLocal = &AddOnClusterLoaderLocal{}
-	}
-	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnClusterLoaderLocal, cfg.AddOnClusterLoaderLocal)
-	if err != nil {
-		return err
-	}
-	if av, ok := vv.(*AddOnClusterLoaderLocal); ok {
-		cfg.AddOnClusterLoaderLocal = av
-	} else {
-		return fmt.Errorf("expected *AddOnClusterLoaderLocal, got %T", vv)
-	}
-
-	if cfg.AddOnClusterLoaderRemote == nil {
-		cfg.AddOnClusterLoaderRemote = &AddOnClusterLoaderRemote{}
-	}
-	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnClusterLoaderRemote, cfg.AddOnClusterLoaderRemote)
-	if err != nil {
-		return err
-	}
-	if av, ok := vv.(*AddOnClusterLoaderRemote); ok {
-		cfg.AddOnClusterLoaderRemote = av
-	} else {
-		return fmt.Errorf("expected *AddOnClusterLoaderRemote, got %T", vv)
 	}
 
 	if cfg.AddOnClusterVersionUpgrade == nil {
