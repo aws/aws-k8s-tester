@@ -687,11 +687,10 @@ func (ts *Tester) Up() (err error) {
 			if ts.cfg.Status.Up {
 				fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 				fmt.Printf(ts.color("[light_green]SSH (%q)\n"), ts.cfg.ConfigPath)
-
 				fmt.Println(ts.cfg.SSHCommands())
+
 				fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 				fmt.Printf(ts.color("[light_green]kubectl (%q)\n"), ts.cfg.ConfigPath)
-
 				fmt.Println(ts.cfg.KubectlCommands())
 
 				ts.lg.Info("Up succeeded",
