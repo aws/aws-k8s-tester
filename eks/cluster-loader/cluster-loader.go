@@ -244,7 +244,8 @@ func (ld *loader) Start() (err error) {
 	ld.cfg.Logger.Info("gzipped report dir", zap.String("report-dir", ld.cfg.ReportDir), zap.String("file-path", ld.cfg.ReportTarGzPath), zap.String("file-size", sz))
 
 	// append results in "LogPath"
-	logFile, err := os.OpenFile(ld.cfg.LogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	// "0777" to fix "scp: /var/log/cluster-loader-remote.log: Permission denied"
+	logFile, err := os.OpenFile(ld.cfg.LogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0777)
 	if err != nil {
 		return fmt.Errorf("open(%q): %v", ld.cfg.LogPath, err)
 	}

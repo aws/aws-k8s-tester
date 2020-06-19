@@ -959,9 +959,13 @@ func (ts *tester) checkClusterLoader() (err error) {
 	)
 	if err != nil {
 		os.RemoveAll(ts.cfg.EKSConfig.AddOnClusterLoaderRemote.ReportTarGzPath)
-		return fmt.Errorf("failed to download '/var/log/cluster-loader-remote.tar.gz' from %q (%v)", nodeName, err)
+		ts.cfg.Logger.Warn("failed to download '/var/log/cluster-loader-remote.tar.gz'", zap.Error(err))
+	} else {
+		ts.cfg.Logger.Info("downloaded cluster loader results from remote node",
+			zap.String("tar-gz-path", ts.cfg.EKSConfig.AddOnClusterLoaderRemote.ReportTarGzPath),
+		)
+		fmt.Printf("\nDownloaded '/var/log/cluster-loader-remote.tar.gz' output (%q):\n%s\n", ts.cfg.EKSConfig.AddOnClusterLoaderRemote.ReportTarGzPath, string(out))
 	}
-	fmt.Printf("\nDownloaded '/var/log/cluster-loader-remote.tar.gz' output:\n%s\n", string(out))
 
 	out, err = sh.Download(
 		"/var/log/cluster-loader-remote.log",
@@ -971,16 +975,13 @@ func (ts *tester) checkClusterLoader() (err error) {
 	)
 	if err != nil {
 		os.RemoveAll(ts.cfg.EKSConfig.AddOnClusterLoaderRemote.LogPath)
-		return fmt.Errorf("failed to download '/var/log/cluster-loader-remote.log' from %q (%v)", nodeName, err)
+		ts.cfg.Logger.Warn("failed to download '/var/log/cluster-loader-remote.log'", zap.Error(err))
+	} else {
+		ts.cfg.Logger.Info("downloaded cluster loader results from remote node",
+			zap.String("log-path", ts.cfg.EKSConfig.AddOnClusterLoaderRemote.LogPath),
+		)
+		fmt.Printf("\nDownloaded '/var/log/cluster-loader-remote.log' output (%q):\n%s\n", ts.cfg.EKSConfig.AddOnClusterLoaderRemote.LogPath, string(out))
 	}
-	fmt.Printf("\nDownloaded '/var/log/cluster-loader-remote.tar.gz' output:\n%s\n", string(out))
-
-	ts.cfg.Logger.Info("downloaded cluster loader results from remote node",
-		zap.String("tar-gz-path", ts.cfg.EKSConfig.AddOnClusterLoaderRemote.ReportTarGzPath),
-		zap.String("log-path", ts.cfg.EKSConfig.AddOnClusterLoaderRemote.LogPath),
-	)
 
 	return ts.cfg.EKSConfig.Sync()
 }
-
-// /var/log/cluster-loader-remote.tar.gz
