@@ -783,9 +783,9 @@ func (ts *Tester) Up() (err error) {
 
 	ts.lg.Info("Up started", zap.String("version", version.Version()), zap.String("name", ts.cfg.Name))
 	defer ts.cfg.Sync()
+
 	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 	fmt.Printf(ts.color("[light_green]createS3 (%q)\n"), ts.cfg.ConfigPath)
-
 	if err := catchInterrupt(
 		ts.lg,
 		ts.stopCreationCh,
@@ -795,9 +795,9 @@ func (ts *Tester) Up() (err error) {
 	); err != nil {
 		return err
 	}
+
 	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 	fmt.Printf(ts.color("[light_green]createKeyPair (%q)\n"), ts.cfg.ConfigPath)
-
 	if err := catchInterrupt(
 		ts.lg,
 		ts.stopCreationCh,
@@ -807,9 +807,9 @@ func (ts *Tester) Up() (err error) {
 	); err != nil {
 		return err
 	}
+
 	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 	fmt.Printf(ts.color("[light_green]createCluster (%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-
 	if err := catchInterrupt(
 		ts.lg,
 		ts.stopCreationCh,
@@ -828,9 +828,9 @@ func (ts *Tester) Up() (err error) {
 		if err := ts.cfg.EvaluateCommandRefs(); err != nil {
 			return err
 		}
+
 		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 		fmt.Printf(ts.color("[light_green]runCommand.CommandAfterCreateCluster (%q)\n"), ts.cfg.CommandAfterCreateCluster)
-
 		out, err := runCommand(ts.lg, ts.cfg.CommandAfterCreateCluster, ts.cfg.CommandAfterCreateClusterTimeout)
 		if err != nil {
 			err = ioutil.WriteFile(ts.cfg.CommandAfterCreateClusterOutputPath, []byte(ts.cfg.CommandAfterCreateCluster+"\n\n# output\n"+string(out)+"\n\n# error\n"+err.Error()), 0600)
@@ -853,10 +853,10 @@ func (ts *Tester) Up() (err error) {
 		if ts.ngTester == nil {
 			return errors.New("ts.ngTester == nil when AddOnNodeGroups.Enable == true")
 		}
+
 		// create NG first, so MNG configmap update can be called afterwards
 		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 		fmt.Printf(ts.color("[light_green]ngTester.Create (%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-
 		if err := catchInterrupt(
 			ts.lg,
 			ts.stopCreationCh,
@@ -872,9 +872,9 @@ func (ts *Tester) Up() (err error) {
 		if ts.mngTester == nil {
 			return errors.New("ts.mngTester == nil when AddOnManagedNodeGroups.Enable == true")
 		}
+
 		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 		fmt.Printf(ts.color("[light_green]mngTester.Create (%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-
 		if err := catchInterrupt(
 			ts.lg,
 			ts.stopCreationCh,
@@ -910,7 +910,6 @@ func (ts *Tester) Up() (err error) {
 	if needGPU {
 		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 		fmt.Printf(ts.color("[light_green]gpuTester.InstallNvidiaDriver (%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-
 		if err := catchInterrupt(
 			ts.lg,
 			ts.stopCreationCh,
@@ -921,9 +920,9 @@ func (ts *Tester) Up() (err error) {
 			ts.lg.Warn("failed to install nvidia driver", zap.Error(err))
 			return err
 		}
+
 		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 		fmt.Printf(ts.color("[light_green]gpuTester.CreateNvidiaSMI (%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-
 		if err := catchInterrupt(
 			ts.lg,
 			ts.stopCreationCh,
@@ -939,22 +938,20 @@ func (ts *Tester) Up() (err error) {
 		ts.lg.Warn("failed to upload artifacts to S3", zap.Error(serr))
 	}
 
-	for idx, tss := range ts.testers {
+	for idx, cur := range ts.testers {
 		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-		fmt.Printf(ts.color("[light_green]testers[%02d].Create [cyan]%q (%q, %q)\n"), idx, reflect.TypeOf(tss), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-
+		fmt.Printf(ts.color("[light_green]testers[%02d].Create [cyan]%q (%q, %q)\n"), idx, reflect.TypeOf(cur), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		err := catchInterrupt(
 			ts.lg,
 			ts.stopCreationCh,
 			ts.stopCreationChOnce,
 			ts.osSig,
-			tss.Create,
+			cur.Create,
 		)
 
 		if idx%5 == 0 {
 			fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-			fmt.Printf(ts.color("[light_green]testers[%02d] uploadToS3 [cyan]%q (%q, %q)\n"), idx, reflect.TypeOf(tss), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-
+			fmt.Printf(ts.color("[light_green]testers[%02d] uploadToS3 [cyan]%q (%q, %q)\n"), idx, reflect.TypeOf(cur), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 			if serr := ts.uploadToS3(); serr != nil {
 				ts.lg.Warn("failed to upload artifacts to S3", zap.Error(serr))
 			}
@@ -969,9 +966,9 @@ func (ts *Tester) Up() (err error) {
 		if ts.ngTester == nil {
 			return errors.New("ts.ngTester == nil when AddOnNodeGroups.Enable == true")
 		}
+
 		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 		fmt.Printf(ts.color("[light_green]ngTester.FetchLogs (%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-
 		waitDur := 15 * time.Second
 		ts.lg.Info("sleeping before ngTester.FetchLogs", zap.Duration("wait", waitDur))
 		time.Sleep(waitDur)
@@ -991,13 +988,12 @@ func (ts *Tester) Up() (err error) {
 		if ts.mngTester == nil {
 			return errors.New("ts.mngTester == nil when AddOnManagedNodeGroups.Enable == true")
 		}
+
 		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 		fmt.Printf(ts.color("[light_green]mngTester.FetchLogs (%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-
 		waitDur := 15 * time.Second
 		ts.lg.Info("sleeping before mngTester.FetchLogs", zap.Duration("wait", waitDur))
 		time.Sleep(waitDur)
-
 		if err := catchInterrupt(
 			ts.lg,
 			ts.stopCreationCh,
@@ -1011,28 +1007,27 @@ func (ts *Tester) Up() (err error) {
 
 	if (ts.cfg.IsEnabledAddOnNodeGroups() && ts.cfg.AddOnNodeGroups.Created && ts.cfg.AddOnNodeGroups.FetchLogs) ||
 		(ts.cfg.IsEnabledAddOnManagedNodeGroups() && ts.cfg.AddOnManagedNodeGroups.Created && ts.cfg.AddOnManagedNodeGroups.FetchLogs) {
-		for idx, tss := range ts.testers {
+		for idx, cur := range ts.testers {
 			fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-			fmt.Printf(ts.color("[light_green]testers[%02d].AggregateResults [cyan]%q (%q, %q)\n"), idx, reflect.TypeOf(tss), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-
+			fmt.Printf(ts.color("[light_green]testers[%02d].AggregateResults [cyan]%q (%q, %q)\n"), idx, reflect.TypeOf(cur), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 			err := catchInterrupt(
 				ts.lg,
 				ts.stopCreationCh,
 				ts.stopCreationChOnce,
 				ts.osSig,
-				tss.AggregateResults,
+				cur.AggregateResults,
 			)
 			if err != nil {
 				return err
 			}
 		}
 	}
+
 	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 	fmt.Printf(ts.color("[light_green]clusterTester.CheckHealth (%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-
-	// TODO: investigate why "ts.k8sClient == nil"
 	if ts.k8sClient == nil {
-		ts.lg.Warn("unexpected nil k8s client after cluster creation")
+		// TODO: investigate why "ts.k8sClient == nil"
+		ts.lg.Warn("[TODO] unexpected nil k8s client after cluster creation")
 	}
 	if err := catchInterrupt(
 		ts.lg,
@@ -1048,9 +1043,9 @@ func (ts *Tester) Up() (err error) {
 		if err := ts.cfg.EvaluateCommandRefs(); err != nil {
 			return err
 		}
+
 		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 		fmt.Printf(ts.color("[light_green]runCommand.CommandAfterCreateAddOns (%q)\n"), ts.cfg.CommandAfterCreateAddOns)
-
 		out, err := runCommand(ts.lg, ts.cfg.CommandAfterCreateAddOns, ts.cfg.CommandAfterCreateAddOnsTimeout)
 		if err != nil {
 			err = ioutil.WriteFile(ts.cfg.CommandAfterCreateAddOnsOutputPath, []byte(ts.cfg.CommandAfterCreateAddOns+"\n\n# output\n"+string(out)+"\n\n# error\n"+err.Error()), 0600)
@@ -1071,16 +1066,15 @@ func (ts *Tester) Up() (err error) {
 		if ts.mngTester == nil {
 			return errors.New("ts.mngTester == nil when AddOnManagedNodeGroups.Enable == true")
 		}
-
 		for _, cur := range ts.cfg.AddOnManagedNodeGroups.MNGs {
 			if cur.VersionUpgrade != nil && cur.VersionUpgrade.Enable {
 				upgradeRun = true
 				break
 			}
 		}
+
 		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 		fmt.Printf(ts.color("[light_green]mngTester.UpgradeVersion (%q, upgradeRun %v)\n"), ts.cfg.ConfigPath, upgradeRun)
-
 		if err := catchInterrupt(
 			ts.lg,
 			ts.stopCreationCh,
@@ -1096,13 +1090,12 @@ func (ts *Tester) Up() (err error) {
 		if ts.mngTester == nil {
 			return errors.New("ts.mngTester == nil when AddOnManagedNodeGroups.Enable == true")
 		}
+
 		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 		fmt.Printf(ts.color("[light_green]mngTester.FetchLogs after upgrade (%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-
 		waitDur := 15 * time.Second
 		ts.lg.Info("sleeping before mngTester.FetchLogs", zap.Duration("wait", waitDur))
 		time.Sleep(waitDur)
-
 		if err := catchInterrupt(
 			ts.lg,
 			ts.stopCreationCh,
@@ -1118,9 +1111,9 @@ func (ts *Tester) Up() (err error) {
 		if err := ts.cfg.EvaluateCommandRefs(); err != nil {
 			return err
 		}
+
 		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 		fmt.Printf(ts.color("[light_green]runCommand.CommandAfterCreateAddOns (%q)\n"), ts.cfg.CommandAfterCreateAddOns)
-
 		out, err := runCommand(ts.lg, ts.cfg.CommandAfterCreateAddOns, ts.cfg.CommandAfterCreateAddOnsTimeout)
 		if err != nil {
 			err = ioutil.WriteFile(ts.cfg.CommandAfterCreateAddOnsOutputPath, []byte(ts.cfg.CommandAfterCreateAddOns+"\n\n# output\n"+string(out)+"\n\n# error\n"+err.Error()), 0600)
@@ -1190,7 +1183,6 @@ func (ts *Tester) down() (err error) {
 	var errs []string
 	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 	fmt.Printf(ts.color("[light_blue]deleteKeyPair (%q)\n"), ts.cfg.ConfigPath)
-
 	if err := ts.deleteKeyPair(); err != nil {
 		ts.lg.Warn("failed to delete key pair", zap.Error(err))
 		errs = append(errs, err.Error())
@@ -1199,11 +1191,10 @@ func (ts *Tester) down() (err error) {
 	testersN := len(ts.testers)
 	for idx := range ts.testers {
 		idx = testersN - idx - 1
-		tss := ts.testers[idx]
+		cur := ts.testers[idx]
 		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-		fmt.Printf(ts.color("[light_blue]testers[%02d].Delete [cyan]%q (%q, %q)\n"), idx, reflect.TypeOf(tss), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-
-		if err := tss.Delete(); err != nil {
+		fmt.Printf(ts.color("[light_blue]testers[%02d].Delete [cyan]%q (%q, %q)\n"), idx, reflect.TypeOf(cur), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		if err := cur.Delete(); err != nil {
 			ts.lg.Warn("failed tester.Delete", zap.Error(err))
 			errs = append(errs, err.Error())
 		}
@@ -1237,7 +1228,6 @@ func (ts *Tester) down() (err error) {
 	if ts.cfg.IsEnabledAddOnManagedNodeGroups() && ts.mngTester != nil {
 		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 		fmt.Printf(ts.color("[light_blue]mngTester.Delete (%q)\n"), ts.cfg.ConfigPath)
-
 		if err := ts.mngTester.Delete(); err != nil {
 			ts.lg.Warn("failed mngTester.Delete", zap.Error(err))
 			errs = append(errs, err.Error())
@@ -1251,7 +1241,6 @@ func (ts *Tester) down() (err error) {
 	if ts.cfg.IsEnabledAddOnNodeGroups() && ts.ngTester != nil {
 		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 		fmt.Printf(ts.color("[light_blue]ngTester.Delete (%q)\n"), ts.cfg.ConfigPath)
-
 		if err := ts.ngTester.Delete(); err != nil {
 			ts.lg.Warn("failed ngTester.Delete", zap.Error(err))
 			errs = append(errs, err.Error())
@@ -1261,16 +1250,16 @@ func (ts *Tester) down() (err error) {
 		ts.lg.Info("sleeping before cluster deletion", zap.Duration("wait", waitDur))
 		time.Sleep(waitDur)
 	}
+
 	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 	fmt.Printf(ts.color("[light_blue]clusterTester.Delete (%q)\n"), ts.cfg.ConfigPath)
-
 	if err := ts.clusterTester.Delete(); err != nil {
 		ts.lg.Warn("failed clusterTester.Delete", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
+
 	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 	fmt.Printf(ts.color("[light_blue]deleteS3 (%q)\n"), ts.cfg.ConfigPath)
-
 	if err := ts.deleteS3(); err != nil {
 		ts.lg.Warn("failed deleteS3", zap.Error(err))
 		errs = append(errs, err.Error())
