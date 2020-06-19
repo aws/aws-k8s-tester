@@ -94,7 +94,8 @@ func (ts *tester) Create() (err error) {
 		return err
 	}
 
-	waitDur, retryStart := 5*time.Minute, time.Now()
+	waitDur := 20 * time.Minute * time.Duration(ts.cfg.EKSConfig.AddOnClusterLoaderLocal.Runs)
+	retryStart := time.Now()
 	for time.Now().Sub(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:

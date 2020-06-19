@@ -839,9 +839,10 @@ func (ts *tester) checkClusterLoader() (err error) {
 
 	ts.cfg.Logger.Info("running cluster loader", zap.String("logs-command-pod", cmdLogsPod))
 
-	start, waitDur := time.Now(), 20*time.Minute*time.Duration(ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Runs)
 	interval := 15 * time.Second
 
+	waitDur := 20 * time.Minute * time.Duration(ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Runs)
+	start := time.Now()
 	ready := false
 	for time.Now().Sub(start) < waitDur {
 		ts.cfg.Logger.Info("waiting for cluster loader run", zap.Duration("interval", interval))
