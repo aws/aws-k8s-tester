@@ -230,7 +230,7 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 		cfg.AddOnManagedNodeGroups.LogsDir = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-logs-mngs")
 	}
 	if cfg.AddOnManagedNodeGroups.LogsTarGzPath == "" {
-		cfg.AddOnManagedNodeGroups.LogsTarGzPath = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-logs-ngs.tar.gz")
+		cfg.AddOnManagedNodeGroups.LogsTarGzPath = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-logs-mngs.tar.gz")
 	}
 	if !strings.HasSuffix(cfg.AddOnManagedNodeGroups.LogsTarGzPath, ".tar.gz") {
 		return fmt.Errorf("AddOnManagedNodeGroups.LogsTarGzPath %q must end with .tar.gz", cfg.AddOnManagedNodeGroups.LogsTarGzPath)
