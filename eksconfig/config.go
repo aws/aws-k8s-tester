@@ -1136,6 +1136,9 @@ func (cfg *Config) validateConfig() error {
 			PrivateDNSToSSHConfig: make(map[string]SSHConfig),
 		}
 	}
+	if cfg.Status.ClusterMetricsRawOutputDir == "" {
+		cfg.Status.ClusterMetricsRawOutputDir = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-metrics")
+	}
 	if cfg.Status.ClusterCFNStackYAMLFilePath == "" {
 		cfg.Status.ClusterCFNStackYAMLFilePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".cluster.cfn.yaml"
 	}
