@@ -225,7 +225,7 @@ func (sh *ssh) Run(cmd string, opts ...OpOption) (out []byte, err error) {
 	ret := Op{verbose: false, retriesLeft: 0, retryInterval: time.Duration(0), timeout: 0, envs: make(map[string]string)}
 	ret.applyOpts(opts)
 
-	key := fmt.Sprintf("%s%s", sh.cfg.PublicDNSName, cmd)
+	key := fmt.Sprintf("%s%s-run", sh.cfg.PublicDNSName, cmd)
 	if _, ok := sh.retryCounter[key]; !ok {
 		sh.retryCounter[key] = ret.retriesLeft
 	}
@@ -376,6 +376,11 @@ scp -oStrictHostKeyChecking=no \
 */
 
 func (sh *ssh) Send(localPath, remotePath string, opts ...OpOption) (out []byte, err error) {
+	fi, ferr := os.Stat(localPath)
+	if ferr != nil {
+		return nil, fmt.Errorf("%q does not exist (%v)", localPath, ferr)
+	}
+
 	scpCmd := exec.New()
 	var scpPath string
 	scpPath, err = scpCmd.LookPath("scp")
@@ -389,7 +394,7 @@ func (sh *ssh) Send(localPath, remotePath string, opts ...OpOption) (out []byte,
 	ret := Op{verbose: false, retriesLeft: 0, retryInterval: time.Duration(0), timeout: 0, envs: make(map[string]string)}
 	ret.applyOpts(opts)
 
-	key := fmt.Sprintf("%s%s", sh.cfg.PublicDNSName, localPath)
+	key := fmt.Sprintf("%s%s%s-send", sh.cfg.PublicDNSName, localPath, remotePath)
 	if _, ok := sh.retryCounter[key]; !ok {
 		sh.retryCounter[key] = ret.retriesLeft
 	}
@@ -413,37 +418,7 @@ func (sh *ssh) Send(localPath, remotePath string, opts ...OpOption) (out []byte,
 	}
 	cmd := scpCmd.CommandContext(ctx, scpArgs[0], scpArgs[1:]...)
 	out, err = cmd.CombinedOutput()
-	for i := 0; i < 3; i++ {
-		if err == nil {
-			break
-		}
-		if !strings.Contains(err.Error(), "Process exited with status") {
-			break
-		}
-
-		time.Sleep(2 * time.Second)
-		sh.lg.Warn("retrying SCP for send", zap.String("cmd", strings.Join(scpArgs, " ")), zap.Error(err))
-		out, err = cmd.CombinedOutput()
-	}
 	cancel()
-
-	fi, ferr := os.Stat(localPath)
-	if ferr == nil {
-		if ret.verbose {
-			sh.lg.Info("sent",
-				zap.String("size", humanize.Bytes(uint64(fi.Size()))),
-				zap.String("output", string(out)),
-				zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
-			)
-		}
-	} else {
-		sh.lg.Warn("failed to send",
-			zap.String("output", string(out)),
-			zap.Error(ferr),
-			zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
-		)
-	}
-
 	if err != nil {
 		oerr, ok := err.(*net.OpError)
 		if ok {
@@ -468,6 +443,10 @@ func (sh *ssh) Send(localPath, remotePath string, opts ...OpOption) (out []byte,
 		}
 	}
 	if err == nil {
+		sh.lg.Info("sent",
+			zap.String("size", humanize.Bytes(uint64(fi.Size()))),
+			zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
+		)
 		delete(sh.retryCounter, key)
 	}
 	return out, err
@@ -487,7 +466,7 @@ func (sh *ssh) Download(remotePath, localPath string, opts ...OpOption) (out []b
 	ret := Op{verbose: false, retriesLeft: 0, retryInterval: time.Duration(0), timeout: 0, envs: make(map[string]string)}
 	ret.applyOpts(opts)
 
-	key := fmt.Sprintf("%s%s", sh.cfg.PublicDNSName, localPath)
+	key := fmt.Sprintf("%s%s%s-download", sh.cfg.PublicDNSName, remotePath, localPath)
 	if _, ok := sh.retryCounter[key]; !ok {
 		sh.retryCounter[key] = ret.retriesLeft
 	}
@@ -511,32 +490,15 @@ func (sh *ssh) Download(remotePath, localPath string, opts ...OpOption) (out []b
 	}
 	cmd := scpCmd.CommandContext(ctx, scpArgs[0], scpArgs[1:]...)
 	out, err = cmd.CombinedOutput()
-	for i := 0; i < 3; i++ {
-		if err == nil {
-			break
-		}
-		if strings.Contains(err.Error(), "Process exited with status") {
-			break
-		}
-		if strings.Contains(err.Error(), "Permission denied") {
-			break
-		}
-
-		time.Sleep(2 * time.Second)
-		sh.lg.Warn("retrying SCP command", zap.String("cmd", strings.Join(scpArgs, " ")), zap.Error(err))
-		out, err = cmd.CombinedOutput()
-	}
 	cancel()
 
 	fi, ferr := os.Stat(localPath)
 	if ferr == nil {
-		if ret.verbose {
-			sh.lg.Info("downloaded",
-				zap.String("size", humanize.Bytes(uint64(fi.Size()))),
-				zap.String("output", string(out)),
-				zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
-			)
-		}
+		sh.lg.Info("downloaded",
+			zap.String("size", humanize.Bytes(uint64(fi.Size()))),
+			zap.String("output", string(out)),
+			zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
+		)
 	}
 
 	if err != nil {
