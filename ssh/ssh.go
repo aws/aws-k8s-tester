@@ -515,12 +515,15 @@ func (sh *ssh) Download(remotePath, localPath string, opts ...OpOption) (out []b
 		if err == nil {
 			break
 		}
-		if !strings.Contains(err.Error(), "Process exited with status") {
+		if strings.Contains(err.Error(), "Process exited with status") {
+			break
+		}
+		if strings.Contains(err.Error(), "Permission denied") {
 			break
 		}
 
 		time.Sleep(2 * time.Second)
-		sh.lg.Warn("retrying SCP for download", zap.String("cmd", strings.Join(scpArgs, " ")), zap.Error(err))
+		sh.lg.Warn("retrying SCP command", zap.String("cmd", strings.Join(scpArgs, " ")), zap.Error(err))
 		out, err = cmd.CombinedOutput()
 	}
 	cancel()
@@ -534,20 +537,27 @@ func (sh *ssh) Download(remotePath, localPath string, opts ...OpOption) (out []b
 				zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			)
 		}
-	} else {
-		sh.lg.Warn("failed to download",
-			zap.String("output", string(out)),
-			zap.Error(ferr),
-			zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
-		)
 	}
 
 	if err != nil {
 		oerr, ok := err.(*net.OpError)
 		if ok {
-			sh.lg.Warn("command scp download failed", zap.Bool("op-error-temporary", oerr.Temporary()), zap.Bool("op-error-timeout", oerr.Timeout()), zap.Error(err))
+			sh.lg.Warn("command scp download failed",
+				zap.String("output", string(out)),
+				zap.Bool("op-error-temporary", oerr.Temporary()),
+				zap.Bool("op-error-timeout", oerr.Timeout()),
+				zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
+				zap.String("os-stat-error", fmt.Sprintf("%v", ferr)),
+				zap.Error(err),
+			)
 		} else {
-			sh.lg.Warn("command scp download failed", zap.String("error-type", reflect.TypeOf(err).String()), zap.Error(err))
+			sh.lg.Warn("command scp download failed",
+				zap.String("output", string(out)),
+				zap.String("error-type", reflect.TypeOf(err).String()),
+				zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
+				zap.String("os-stat-error", fmt.Sprintf("%v", ferr)),
+				zap.Error(err),
+			)
 		}
 		if sh.retryCounter[key] > 0 {
 			sh.lg.Warn("retrying scp download", zap.Int("retries", sh.retryCounter[key]))

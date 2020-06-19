@@ -959,7 +959,23 @@ func (ts *tester) checkClusterLoader() (err error) {
 	)
 	if err != nil {
 		os.RemoveAll(ts.cfg.EKSConfig.AddOnClusterLoaderRemote.ReportTarGzPath)
-		ts.cfg.Logger.Warn("failed to download '/var/log/cluster-loader-remote.tar.gz'", zap.Error(err))
+		ts.cfg.Logger.Warn("failed to download '/var/log/cluster-loader-remote.tar.gz'; retrying with 'cat'", zap.Error(err))
+		out, err = sh.Run(
+			"sudo cat /var/log/cluster-loader-remote.tar.gz",
+			ssh.WithVerbose(ts.cfg.EKSConfig.LogLevel == "debug"),
+			ssh.WithRetry(3, 10*time.Second),
+		)
+		if err != nil {
+			ts.cfg.Logger.Warn("failed to cat '/var/log/cluster-loader-remote.tar.gz'", zap.Error(err))
+		} else {
+			err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnClusterLoaderRemote.ReportTarGzPath, out, 0600)
+			if err != nil {
+				ts.cfg.Logger.Warn("failed to write results '/var/log/cluster-loader-remote.tar.gz'", zap.Error(err))
+			} else {
+				fmt.Printf("\nDownloaded '/var/log/cluster-loader-remote.tar.gz' output (%q)\n\n", ts.cfg.EKSConfig.AddOnClusterLoaderRemote.ReportTarGzPath)
+			}
+		}
+
 	} else {
 		ts.cfg.Logger.Info("downloaded cluster loader results from remote node",
 			zap.String("tar-gz-path", ts.cfg.EKSConfig.AddOnClusterLoaderRemote.ReportTarGzPath),
@@ -975,7 +991,23 @@ func (ts *tester) checkClusterLoader() (err error) {
 	)
 	if err != nil {
 		os.RemoveAll(ts.cfg.EKSConfig.AddOnClusterLoaderRemote.LogPath)
-		ts.cfg.Logger.Warn("failed to download '/var/log/cluster-loader-remote.log'", zap.Error(err))
+		ts.cfg.Logger.Warn("failed to download '/var/log/cluster-loader-remote.log'; retrying", zap.Error(err))
+		out, err = sh.Run(
+			"sudo cat /var/log/cluster-loader-remote.log",
+			ssh.WithVerbose(ts.cfg.EKSConfig.LogLevel == "debug"),
+			ssh.WithRetry(3, 10*time.Second),
+		)
+		if err != nil {
+			ts.cfg.Logger.Warn("failed to cat '/var/log/cluster-loader-remote.log'", zap.Error(err))
+		} else {
+			err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnClusterLoaderRemote.LogPath, out, 0600)
+			if err != nil {
+				ts.cfg.Logger.Warn("failed to write results '/var/log/cluster-loader-remote.log'", zap.Error(err))
+			} else {
+				fmt.Printf("\nDownloaded '/var/log/cluster-loader-remote.log' output (%q)\n\n", ts.cfg.EKSConfig.AddOnClusterLoaderRemote.LogPath)
+			}
+		}
+
 	} else {
 		ts.cfg.Logger.Info("downloaded cluster loader results from remote node",
 			zap.String("log-path", ts.cfg.EKSConfig.AddOnClusterLoaderRemote.LogPath),

@@ -136,14 +136,14 @@ func createSecretsFunc(cmd *cobra.Command, args []string) {
 		lg.Info("writing writes results output", zap.String("path", writesPath))
 		err = ioutil.WriteFile(writesPath, []byte(writes.JSON()), 0600)
 		if err != nil {
-			lg.Warn("failed to write write results", zap.Error(err))
+			lg.Warn("failed to write results", zap.Error(err))
 		}
 
 		readsPath := "/var/log/" + secretsReadsOutputNamePrefix + "-" + sfx + "-reads-summary.json"
 		lg.Info("writing reads results output", zap.String("path", readsPath))
 		err = ioutil.WriteFile(readsPath, []byte(reads.JSON()), 0600)
 		if err != nil {
-			lg.Warn("failed to write write results", zap.Error(err))
+			lg.Warn("failed to write results", zap.Error(err))
 		}
 	}
 
