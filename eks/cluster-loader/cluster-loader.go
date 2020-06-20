@@ -267,9 +267,9 @@ func (ld *loader) Start() (err error) {
 			return nil
 		}
 		b, lerr := ioutil.ReadFile(path)
-		if err != nil {
+		if lerr != nil {
 			ld.cfg.Logger.Warn("failed to read cluster loader command output from logs file", zap.Error(lerr))
-			if _, werr := logFile.WriteString(fmt.Sprintf("failed to write %v", err)); werr != nil {
+			if _, werr := logFile.WriteString(fmt.Sprintf("failed to write %v", lerr)); werr != nil {
 				ld.cfg.Logger.Warn("failed to write report to log file", zap.Error(werr))
 				return nil
 			}
