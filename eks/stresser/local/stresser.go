@@ -16,6 +16,7 @@ import (
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
+	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -23,11 +24,11 @@ import (
 // Config defines stresser configuration.
 // ref. https://github.com/kubernetes/perf-tests
 type Config struct {
-	Logger *zap.Logger
-	Stopc  chan struct{}
-
+	Logger    *zap.Logger
+	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
+	S3API     s3iface.S3API
 }
 
 // TODO: use kubemark
@@ -85,6 +86,9 @@ func (ts *tester) Create() (err error) {
 	loader := stresser.New(stresser.Config{
 		Logger:         ts.cfg.Logger,
 		Stopc:          ts.cfg.Stopc,
+		S3API:          ts.cfg.S3API,
+		S3BucketName:   ts.cfg.EKSConfig.S3BucketName,
+		S3DirName:      ts.cfg.EKSConfig.Name,
 		Client:         ts.cfg.K8SClient,
 		ClientTimeout:  ts.cfg.EKSConfig.ClientTimeout,
 		Deadline:       time.Now().Add(ts.cfg.EKSConfig.AddOnStresserLocal.Duration),

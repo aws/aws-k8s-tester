@@ -10,16 +10,25 @@ import (
 
 	"github.com/aws/aws-k8s-tester/eks/stresser"
 	"github.com/aws/aws-k8s-tester/eksconfig"
+	pkg_aws "github.com/aws/aws-k8s-tester/pkg/aws"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
 	"github.com/aws/aws-k8s-tester/pkg/randutil"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
 
 var (
 	stresserKubeConfigPath string
+
+	stresserPartition string
+	stresserRegion    string
+
+	stresserS3BucketName string
+	stresserS3DirName    string
 
 	stresserClients       int
 	stresserClientQPS     float32
@@ -45,6 +54,10 @@ func newCreateStresser() *cobra.Command {
 		Run:   createStresserFunc,
 	}
 	cmd.PersistentFlags().StringVar(&stresserKubeConfigPath, "kubeconfig", "", "kubeconfig path (optional, should be run in-cluster, useful for local testing)")
+	cmd.PersistentFlags().StringVar(&stresserPartition, "partition", "aws", "partition for AWS API")
+	cmd.PersistentFlags().StringVar(&stresserRegion, "region", "us-west-2", "region for AWS API")
+	cmd.PersistentFlags().StringVar(&stresserS3BucketName, "s3-bucket-name", "", "S3 bucket name to upload results")
+	cmd.PersistentFlags().StringVar(&stresserS3DirName, "s3-dir-name", "", "S3 directory name to upload results")
 	cmd.PersistentFlags().IntVar(&stresserClients, "clients", eksconfig.DefaultClients, "Number of clients to create")
 	cmd.PersistentFlags().Float32Var(&stresserClientQPS, "client-qps", eksconfig.DefaultClientQPS, "kubelet client setup for QPS")
 	cmd.PersistentFlags().IntVar(&stresserClientBurst, "client-burst", eksconfig.DefaultClientBurst, "kubelet client setup for burst")
@@ -93,6 +106,25 @@ func createStresserFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
+	awsCfg := &pkg_aws.Config{
+		Logger:    lg,
+		Partition: stresserPartition,
+		Region:    stresserRegion,
+	}
+	awsSession, stsOutput, _, err := pkg_aws.New(awsCfg)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to create AWS session %v\n", err)
+		os.Exit(1)
+	}
+	awsAccountID := aws.StringValue(stsOutput.Account)
+	awsUserID := aws.StringValue(stsOutput.UserId)
+	awsIAMRoleARN := aws.StringValue(stsOutput.Arn)
+	lg.Info("created AWS session",
+		zap.String("was-account-id", awsAccountID),
+		zap.String("was-user-id", awsUserID),
+		zap.String("was-iam-role-arn", awsIAMRoleARN),
+	)
+
 	stopc := make(chan struct{})
 
 	// to randomize results output files
@@ -105,6 +137,7 @@ func createStresserFunc(cmd *cobra.Command, args []string) {
 	loader := stresser.New(stresser.Config{
 		Logger:         lg,
 		Stopc:          stopc,
+		S3API:          s3.New(awsSession),
 		Client:         cli,
 		ClientTimeout:  stresserClientTimeout,
 		Deadline:       time.Now().Add(stresserDuration),

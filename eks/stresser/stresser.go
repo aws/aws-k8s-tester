@@ -7,13 +7,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"path"
+	"path/filepath"
 	"sort"
 	"sync"
 	"time"
 
+	aws_s3 "github.com/aws/aws-k8s-tester/pkg/aws/s3"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/metrics"
 	"github.com/aws/aws-k8s-tester/pkg/randutil"
+	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
@@ -88,6 +92,10 @@ func init() {
 type Config struct {
 	Logger *zap.Logger
 	Stopc  chan struct{}
+
+	S3API        s3iface.S3API
+	S3BucketName string
+	S3DirName    string
 
 	Client        k8s_client.EKS
 	ClientTimeout time.Duration
@@ -170,11 +178,11 @@ func (ld *loader) Stop() {
 
 // GetMetrics locally fetches output from registered metrics.
 // ref. https://pkg.go.dev/github.com/prometheus/client_golang@v1.6.0/prometheus/promhttp?tab=doc#Handler
-func (ld *loader) CollectMetrics() (writes metrics.RequestsSummary, reads metrics.RequestsSummary, err error) {
+func (ts *loader) CollectMetrics() (writes metrics.RequestsSummary, reads metrics.RequestsSummary, err error) {
 	// https://pkg.go.dev/github.com/prometheus/client_golang/prometheus?tab=doc#Gatherer
 	mfs, err := prometheus.DefaultGatherer.Gather()
 	if err != nil {
-		ld.cfg.Logger.Warn("failed to gather prometheus metrics", zap.Error(err))
+		ts.cfg.Logger.Warn("failed to gather prometheus metrics", zap.Error(err))
 		return metrics.RequestsSummary{}, metrics.RequestsSummary{}, err
 	}
 	for _, mf := range mfs {
@@ -208,62 +216,82 @@ func (ld *loader) CollectMetrics() (writes metrics.RequestsSummary, reads metric
 		}
 	}
 
-	ld.cfg.Logger.Info("receiving write latency results")
+	ts.cfg.Logger.Info("receiving write latency results")
 	select {
-	case lats := <-ld.writeLatencies:
-		ld.cfg.Logger.Info("received and sorting write latency results", zap.Int("total-data-points", lats.Len()))
+	case lats := <-ts.writeLatencies:
+		ts.cfg.Logger.Info("received and sorting write latency results", zap.Int("total-data-points", lats.Len()))
 		now := time.Now()
 		sort.Sort(lats)
-		ld.cfg.Logger.Info("sorted write latency results", zap.Int("total-data-points", lats.Len()), zap.String("took", time.Since(now).String()))
+		ts.cfg.Logger.Info("sorted write latency results", zap.Int("total-data-points", lats.Len()), zap.String("took", time.Since(now).String()))
 		writes.LantencyP50 = lats.PickLantencyP50()
 		writes.LantencyP90 = lats.PickLantencyP90()
 		writes.LantencyP99 = lats.PickLantencyP99()
 		writes.LantencyP999 = lats.PickLantencyP999()
 		writes.LantencyP9999 = lats.PickLantencyP9999()
 
-		ld.cfg.Logger.Info("writing latency results in JSON to disk", zap.String("path", ld.cfg.WritesJSONPath))
+		ts.cfg.Logger.Info("writing latency results in JSON to disk", zap.String("path", ts.cfg.WritesJSONPath))
 		wb, err := json.Marshal(lats)
 		if err != nil {
-			ld.cfg.Logger.Warn("failed to encode latency results in JSON", zap.Error(err))
+			ts.cfg.Logger.Warn("failed to encode latency results in JSON", zap.Error(err))
 			return metrics.RequestsSummary{}, metrics.RequestsSummary{}, err
 		}
-		if err = ioutil.WriteFile(ld.cfg.WritesJSONPath, wb, 0600); err != nil {
-			ld.cfg.Logger.Warn("failed to write latency results in JSON to disk", zap.String("path", ld.cfg.WritesJSONPath), zap.Error(err))
+		if err = ioutil.WriteFile(ts.cfg.WritesJSONPath, wb, 0600); err != nil {
+			ts.cfg.Logger.Warn("failed to write latency results in JSON to disk", zap.String("path", ts.cfg.WritesJSONPath), zap.Error(err))
 			return metrics.RequestsSummary{}, metrics.RequestsSummary{}, err
 		}
-		ld.cfg.Logger.Info("wrote latency results in JSON to disk", zap.String("path", ld.cfg.WritesJSONPath))
+		ts.cfg.Logger.Info("wrote latency results in JSON to disk", zap.String("path", ts.cfg.WritesJSONPath))
+
+		if err = aws_s3.Upload(
+			ts.cfg.Logger,
+			ts.cfg.S3API,
+			ts.cfg.S3BucketName,
+			path.Join(ts.cfg.S3DirName, "add-on-stresser-remote", "writes", filepath.Base(ts.cfg.WritesJSONPath)),
+			ts.cfg.WritesJSONPath,
+		); err != nil {
+			return metrics.RequestsSummary{}, metrics.RequestsSummary{}, err
+		}
 
 	case <-time.After(2 * time.Minute):
-		ld.cfg.Logger.Warn("took too long to receive write latency results")
+		ts.cfg.Logger.Warn("took too long to receive write latency results")
 	}
 
-	ld.cfg.Logger.Info("receiving read latency results")
+	ts.cfg.Logger.Info("receiving read latency results")
 	select {
-	case lats := <-ld.readLatencies:
-		ld.cfg.Logger.Info("received and sorting read latency results", zap.Int("total-data-points", lats.Len()))
+	case lats := <-ts.readLatencies:
+		ts.cfg.Logger.Info("received and sorting read latency results", zap.Int("total-data-points", lats.Len()))
 		now := time.Now()
 		sort.Sort(lats)
-		ld.cfg.Logger.Info("sorted read latency results", zap.Int("total-data-points", lats.Len()), zap.String("took", time.Since(now).String()))
+		ts.cfg.Logger.Info("sorted read latency results", zap.Int("total-data-points", lats.Len()), zap.String("took", time.Since(now).String()))
 		reads.LantencyP50 = lats.PickLantencyP50()
 		reads.LantencyP90 = lats.PickLantencyP90()
 		reads.LantencyP99 = lats.PickLantencyP99()
 		reads.LantencyP999 = lats.PickLantencyP999()
 		reads.LantencyP9999 = lats.PickLantencyP9999()
 
-		ld.cfg.Logger.Info("writing latency results in JSON to disk", zap.String("path", ld.cfg.ReadsJSONPath))
+		ts.cfg.Logger.Info("writing latency results in JSON to disk", zap.String("path", ts.cfg.ReadsJSONPath))
 		wb, err := json.Marshal(lats)
 		if err != nil {
-			ld.cfg.Logger.Warn("failed to encode latency results in JSON", zap.Error(err))
+			ts.cfg.Logger.Warn("failed to encode latency results in JSON", zap.Error(err))
 			return metrics.RequestsSummary{}, metrics.RequestsSummary{}, err
 		}
-		if err = ioutil.WriteFile(ld.cfg.ReadsJSONPath, wb, 0600); err != nil {
-			ld.cfg.Logger.Warn("failed to write latency results in JSON to disk", zap.String("path", ld.cfg.ReadsJSONPath), zap.Error(err))
+		if err = ioutil.WriteFile(ts.cfg.ReadsJSONPath, wb, 0600); err != nil {
+			ts.cfg.Logger.Warn("failed to write latency results in JSON to disk", zap.String("path", ts.cfg.ReadsJSONPath), zap.Error(err))
 			return metrics.RequestsSummary{}, metrics.RequestsSummary{}, err
 		}
-		ld.cfg.Logger.Info("wrote latency results in JSON to disk", zap.String("path", ld.cfg.ReadsJSONPath))
+		ts.cfg.Logger.Info("wrote latency results in JSON to disk", zap.String("path", ts.cfg.ReadsJSONPath))
+
+		if err = aws_s3.Upload(
+			ts.cfg.Logger,
+			ts.cfg.S3API,
+			ts.cfg.S3BucketName,
+			path.Join(ts.cfg.S3DirName, "add-on-stresser-remote", "reads", filepath.Base(ts.cfg.ReadsJSONPath)),
+			ts.cfg.ReadsJSONPath,
+		); err != nil {
+			return metrics.RequestsSummary{}, metrics.RequestsSummary{}, err
+		}
 
 	case <-time.After(2 * time.Minute):
-		ld.cfg.Logger.Warn("took too long to receive read latency results")
+		ts.cfg.Logger.Warn("took too long to receive read latency results")
 	}
 
 	return writes, reads, nil

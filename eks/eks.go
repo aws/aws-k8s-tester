@@ -421,7 +421,6 @@ func (ts *Tester) createTesters() (err error) {
 		ASGAPI:    ts.asgAPI,
 		EKSAPI:    ts.eksAPI,
 		SSMAPI:    ts.ssmAPI,
-		S3API:     ts.s3API,
 	})
 	ts.mngTester = mng.New(mng.Config{
 		Logger:    ts.lg,
@@ -433,7 +432,6 @@ func (ts *Tester) createTesters() (err error) {
 		EC2API:    ts.ec2API,
 		ASGAPI:    ts.asgAPI,
 		EKSAPI:    ts.eksAPI,
-		S3API:     ts.s3API,
 	})
 	ts.gpuTester = gpu.New(gpu.Config{
 		Logger:    ts.lg,
@@ -645,12 +643,14 @@ func (ts *Tester) createTesters() (err error) {
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
+			S3API:     ts.s3API,
 		}),
 		stresser_remote.New(stresser_remote.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
+			S3API:     ts.s3API,
 			ECRAPI:    ts.ecrAPI,
 		}),
 		cluster_version_upgrade.New(cluster_version_upgrade.Config{

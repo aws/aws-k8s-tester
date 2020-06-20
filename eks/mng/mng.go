@@ -19,7 +19,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
 	"github.com/aws/aws-sdk-go/service/iam/iamiface"
-	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"go.uber.org/zap"
 )
 
@@ -34,7 +33,6 @@ type Config struct {
 	EC2API    ec2iface.EC2API
 	ASGAPI    autoscalingiface.AutoScalingAPI
 	EKSAPI    eksiface.EKSAPI
-	S3API     s3iface.S3API
 }
 
 // Tester implements EKS "Managed Node Group" for "kubetest2" Deployer.

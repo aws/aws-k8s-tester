@@ -18,6 +18,7 @@ import (
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
 	aws_ecr "github.com/aws/aws-k8s-tester/pkg/aws/ecr"
+	aws_s3 "github.com/aws/aws-k8s-tester/pkg/aws/s3"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/randutil"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
@@ -31,7 +32,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/aws/aws-sdk-go/service/iam/iamiface"
-	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
@@ -208,33 +208,13 @@ func (ts *tester) createS3() (err error) {
 	if ts.cfg.EKSConfig.S3BucketName == "" {
 		return errors.New("empty S3 bucket name for IRSA add-on")
 	}
-	_, err = ts.cfg.S3API.PutObject(&s3.PutObjectInput{
-		Bucket:  aws.String(ts.cfg.EKSConfig.S3BucketName),
-		Key:     aws.String(ts.cfg.EKSConfig.AddOnIRSAFargate.S3Key),
-		Body:    bytes.NewReader(randutil.Bytes(1024)),
-		Expires: aws.Time(time.Now().Add(24 * time.Hour)),
-
-		// https://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html#canned-acl
-		// vs. "public-read"
-		ACL: aws.String("private"),
-
-		Metadata: map[string]*string{
-			"Kind": aws.String("aws-k8s-tester"),
-		},
-	})
-	if err == nil {
-		ts.cfg.Logger.Info("uploaded",
-			zap.String("bucket", ts.cfg.EKSConfig.S3BucketName),
-			zap.String("remote-path", ts.cfg.EKSConfig.AddOnIRSAFargate.S3Key),
-		)
-	} else {
-		ts.cfg.Logger.Warn("failed to upload",
-			zap.String("bucket", ts.cfg.EKSConfig.S3BucketName),
-			zap.String("remote-path", ts.cfg.EKSConfig.AddOnIRSAFargate.S3Key),
-			zap.Error(err),
-		)
-	}
-	return ts.cfg.EKSConfig.Sync()
+	return aws_s3.UploadBody(
+		ts.cfg.Logger,
+		ts.cfg.S3API,
+		ts.cfg.EKSConfig.S3BucketName,
+		ts.cfg.EKSConfig.AddOnIRSAFargate.S3Key,
+		bytes.NewReader(randutil.Bytes(1024)),
+	)
 }
 
 func (ts *tester) createOIDCProvider() error {
