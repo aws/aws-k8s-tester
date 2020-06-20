@@ -448,7 +448,7 @@ func (ts *tester) createASGs() error {
 			tg.UserData += `              /opt/aws/bin/cfn-signal --exit-code $? --stack ${AWS::StackName} --resource ASG --region ${AWS::Region}`
 		}
 		tg.AsgTagData = ""
-		if cur.ClusterAutoScaler != nil && cur.ClusterAutoScaler.Enable {
+		if cur.ClusterAutoscaler != nil && cur.ClusterAutoscaler.Enable {
 			tg.AsgTagData = asgTagDataNG
 		}
 		tpl := template.Must(template.New("TemplateASG").Parse(TemplateASG))

@@ -85,6 +85,10 @@ func (cfg *Config) validateAddOnIRSA() error {
 	if !cfg.IsEnabledAddOnIRSA() {
 		return nil
 	}
+	if cfg.S3BucketName == "" {
+		return errors.New("AddOnIRSA requires S3 bucket but S3BucketName empty")
+	}
+
 	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
 		return errors.New("AddOnIRSA.Enable true but no node group is enabled")
 	}
@@ -104,10 +108,6 @@ func (cfg *Config) validateAddOnIRSA() error {
 	}
 	if cfg.AddOnIRSA.RepositoryImageTag == "" {
 		return errors.New("AddOnIRSA.RepositoryImageTag empty")
-	}
-
-	if cfg.S3BucketName == "" {
-		return errors.New("AddOnIRSA requires S3 bucket but S3BucketName empty")
 	}
 
 	if cfg.AddOnIRSA.RoleName == "" {

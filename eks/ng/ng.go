@@ -72,7 +72,7 @@ func New(cfg Config) Tester {
 		}),
 		logsMu:     new(sync.RWMutex),
 		failedOnce: false,
-		clusterAutoScaler: autoscaler.New(autoscaler.Config{
+		clusterAutoscaler: autoscaler.New(autoscaler.Config{
 			Logger:    cfg.Logger,
 			Stopc:     cfg.Stopc,
 			EKSConfig: cfg.EKSConfig,
@@ -86,7 +86,7 @@ type tester struct {
 	nodeWaiter        wait.NodeWaiter
 	logsMu            *sync.RWMutex
 	failedOnce        bool
-	clusterAutoScaler autoscaler.ClusterAutoscaler
+	clusterAutoscaler autoscaler.ClusterAutoscaler
 }
 
 func (ts *tester) Create() (err error) {
@@ -125,7 +125,7 @@ func (ts *tester) Create() (err error) {
 	if err = ts.createSSM(); err != nil {
 		return err
 	}
-	if err = ts.clusterAutoScaler.Create(); err != nil {
+	if err = ts.clusterAutoscaler.Create(); err != nil {
 		return err
 	}
 

@@ -56,7 +56,9 @@ type AddOnNodeGroups struct {
 	ASGs map[string]ASG `json:"asgs,omitempty"`
 }
 
-type NGClusterAutoScaler struct {
+// NGClusterAutoscaler represents cluster auto-scaler.
+// ref. https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler
+type NGClusterAutoscaler struct {
 	Enable bool `json:"enable"`
 	// Created is true when the resource has been created.
 	// Used for delete operations.
@@ -76,8 +78,10 @@ type ASG struct {
 	// TODO: handle conflicting flag '--cloud-provider aws'
 	// ref. https://github.com/kubernetes/kubernetes/issues/64659
 	KubeletExtraArgs string `json:"kubelet-extra-args"`
-	// clusterautoscaler per nodegroup
-	ClusterAutoScaler *NGClusterAutoScaler `json:"cluster-autoscaler,omitempty"`
+
+	// ClusterAutoscaler is enabled to run cluster auto-scaler per node group.
+	// ref. https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler
+	ClusterAutoscaler *NGClusterAutoscaler `json:"cluster-autoscaler,omitempty"`
 }
 
 // EnvironmentVariablePrefixAddOnNodeGroups is the environment variable prefix used for "eksconfig".
@@ -121,7 +125,7 @@ func getDefaultAddOnNodeGroups(name string) *AddOnNodeGroups {
 					ASGDesiredCapacity:                 1,
 				},
 				KubeletExtraArgs:  "",
-				ClusterAutoScaler: &NGClusterAutoScaler{Enable: false},
+				ClusterAutoscaler: &NGClusterAutoscaler{Enable: false},
 			},
 		},
 	}
@@ -205,13 +209,15 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 		if len(cfg.AddOnNodeGroups.RoleServicePrincipals) > 0 {
 			return fmt.Errorf("AddOnNodeGroups.RoleCreate false; expect empty RoleServicePrincipals but got %q", cfg.AddOnNodeGroups.RoleServicePrincipals)
 		}
+		if cfg.IsEnabledAddOnStresserRemote() {
+			return errors.New("'AddOnStresserRemote.Enable == true' requires 'AddOnNodeGroups.RoleCreate == true' but got 'false'")
+		}
 	}
 
 	names, processed := make(map[string]struct{}), make(map[string]ASG)
 	for k, cur := range cfg.AddOnNodeGroups.ASGs {
 		k = strings.ReplaceAll(k, "GetRef.Name", cfg.Name)
 		cur.Name = strings.ReplaceAll(cur.Name, "GetRef.Name", cfg.Name)
-
 		if cur.Name == "" {
 			return fmt.Errorf("AddOnNodeGroups.ASGs[%q].Name is empty", k)
 		}
@@ -243,8 +249,10 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 			return fmt.Errorf("%q both ImageID and ImageIDSSMParameter are empty", cur.Name)
 		}
 
-		if cur.ClusterAutoScaler != nil && cur.ClusterAutoScaler.Enable && !cfg.AddOnNodeGroups.RoleCreate {
-			return fmt.Errorf("ClusterAutoScaler for ASG %q is enabled, it requires NodeGroup RoleCreate to be enabled", cur.ASG.Name)
+		if !cfg.AddOnNodeGroups.RoleCreate {
+			if cur.ClusterAutoscaler != nil && cur.ClusterAutoscaler.Enable {
+				return fmt.Errorf("'ASGs[%q].ClusterAutoscaler.Enable == true' requires 'AddOnNodeGroups.RoleCreate == true' but got 'false'", cur.ASG.Name)
+			}
 		}
 
 		switch cur.AMIType {
@@ -341,6 +349,9 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 		if cfg.IsEnabledAddOnNLBHelloWorld() && cfg.AddOnNLBHelloWorld.DeploymentReplicas < int32(cur.ASGDesiredCapacity) {
 			cfg.AddOnNLBHelloWorld.DeploymentReplicas = int32(cur.ASGDesiredCapacity)
 		}
+		if cfg.IsEnabledAddOnNLBGuestbook() && cfg.AddOnNLBGuestbook.DeploymentReplicas < int32(cur.ASGDesiredCapacity) {
+			cfg.AddOnNLBGuestbook.DeploymentReplicas = int32(cur.ASGDesiredCapacity)
+		}
 		if cfg.IsEnabledAddOnALB2048() && cfg.AddOnALB2048.DeploymentReplicasALB < int32(cur.ASGDesiredCapacity) {
 			cfg.AddOnALB2048.DeploymentReplicasALB = int32(cur.ASGDesiredCapacity)
 		}
@@ -353,4 +364,19 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 
 	cfg.AddOnNodeGroups.ASGs = processed
 	return nil
+}
+
+func (addOn *AddOnNodeGroups) IsEnabledClusterAutoscaler() bool {
+	if addOn == nil {
+		return false
+	}
+	if len(addOn.ASGs) == 0 {
+		return false
+	}
+	for _, cur := range addOn.ASGs {
+		if cur.ClusterAutoscaler != nil && cur.ClusterAutoscaler.Enable {
+			return true
+		}
+	}
+	return false
 }

@@ -1,11 +1,13 @@
 package mng
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"strings"
+	"text/template"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
@@ -196,6 +198,14 @@ Resources:
             - route53:ChangeResourceRecordSets
             - route53:DeleteHealthCheck
             Resource: "*"
+{{ if ne .S3BucketName "" }}          - Effect: Allow
+            Action:
+            - s3:ListBucket
+            - s3:GetObject
+            - s3:PutObject
+            Resource:
+            - !Join ['', [!Sub 'arn:${AWS::Partition}:s3:::', '{{.S3BucketName}}']]
+            - !Join ['', [!Sub 'arn:${AWS::Partition}:s3:::', '{{.S3BucketName}}', '/', '{{.ClusterName}}', '/*']]{{ end }}
 
 Outputs:
 
@@ -204,6 +214,11 @@ Outputs:
     Description: The node instance role ARN
 
 `
+
+type templateRole struct {
+	S3BucketName string
+	ClusterName  string
+}
 
 func (ts *tester) createRole() error {
 	if !ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleCreate {
@@ -239,9 +254,19 @@ func (ts *tester) createRole() error {
 		return errors.New("cannot create a cluster role with an empty AddOnManagedNodeGroups.RoleName")
 	}
 
-	if err := ioutil.WriteFile(ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleCFNStackYAMLFilePath, []byte(TemplateRole), 0400); err != nil {
+	tr := templateRole{
+		S3BucketName: ts.cfg.EKSConfig.S3BucketName,
+		ClusterName:  ts.cfg.EKSConfig.Name,
+	}
+	tpl := template.Must(template.New("TemplateRole").Parse(TemplateRole))
+	buf := bytes.NewBuffer(nil)
+	if err := tpl.Execute(buf, tr); err != nil {
 		return err
 	}
+	if err := ioutil.WriteFile(ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleCFNStackYAMLFilePath, buf.Bytes(), 0400); err != nil {
+		return err
+	}
+
 	ts.cfg.Logger.Info("creating a new node group role using CFN",
 		zap.String("role-name", ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleName),
 		zap.String("role-cfn-file-path", ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleCFNStackYAMLFilePath),

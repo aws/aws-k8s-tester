@@ -198,7 +198,15 @@ Resources:
             - route53:ChangeResourceRecordSets
             - route53:DeleteHealthCheck
             Resource: "*"
-{{ if ne .ASGPolicy "" }}{{.ASGPolicy}}{{ end }}
+{{ if ne .S3BucketName "" }}          - Effect: Allow
+            Action:
+            - s3:ListBucket
+            - s3:GetObject
+            - s3:PutObject
+            Resource:
+            - !Join ['', [!Sub 'arn:${AWS::Partition}:s3:::', '{{.S3BucketName}}']]
+            - !Join ['', [!Sub 'arn:${AWS::Partition}:s3:::', '{{.S3BucketName}}', '/', '{{.ClusterName}}', '/*']]{{ end }}
+{{ if ne .ASGPolicyData "" }}{{.ASGPolicyData}}{{ end }}
 
 Outputs:
 
@@ -209,7 +217,9 @@ Outputs:
 `
 
 type templateRole struct {
-	ASGPolicy string
+	S3BucketName  string
+	ClusterName   string
+	ASGPolicyData string
 }
 
 const asgPolicyData = `          - Effect: Allow
@@ -221,8 +231,7 @@ const asgPolicyData = `          - Effect: Allow
             - autoscaling:SetDesiredCapacity
             - autoscaling:TerminateInstanceInAutoScalingGroup
             - ec2:DescribeLaunchTemplateVersions
-            Resource: "*"
-`
+            Resource: "*"`
 
 func (ts *tester) createRole() error {
 	if !ts.cfg.EKSConfig.AddOnNodeGroups.RoleCreate {
@@ -257,8 +266,15 @@ func (ts *tester) createRole() error {
 	if ts.cfg.EKSConfig.AddOnNodeGroups.RoleName == "" {
 		return errors.New("cannot create a cluster role with an empty AddOnNodeGroups.RoleName")
 	}
-	tr := templateRole{}
-	tr.ASGPolicy = asgPolicyData
+
+	tr := templateRole{
+		S3BucketName: ts.cfg.EKSConfig.S3BucketName,
+		ClusterName:  ts.cfg.EKSConfig.Name,
+	}
+	if ts.cfg.EKSConfig.AddOnNodeGroups.IsEnabledClusterAutoscaler() {
+		ts.cfg.Logger.Info("adding autoscaling policy for cluster autoscaler")
+		tr.ASGPolicyData = asgPolicyData
+	}
 	tpl := template.Must(template.New("TemplateRole").Parse(TemplateRole))
 	buf := bytes.NewBuffer(nil)
 	if err := tpl.Execute(buf, tr); err != nil {
@@ -267,6 +283,7 @@ func (ts *tester) createRole() error {
 	if err := ioutil.WriteFile(ts.cfg.EKSConfig.AddOnNodeGroups.RoleCFNStackYAMLFilePath, buf.Bytes(), 0400); err != nil {
 		return err
 	}
+
 	ts.cfg.Logger.Info("creating a new NG role using CFN",
 		zap.String("role-name", ts.cfg.EKSConfig.AddOnNodeGroups.RoleName),
 		zap.String("role-cfn-file-path", ts.cfg.EKSConfig.AddOnNodeGroups.RoleCFNStackYAMLFilePath),

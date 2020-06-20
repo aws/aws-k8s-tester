@@ -280,7 +280,7 @@ func startWrites(
 	donec chan struct{},
 	writeLatencies chan<- metrics.Durations,
 ) {
-	lg.Info("starting startWrites")
+	lg.Info("starting writes")
 	ds := make(metrics.Durations, 0, 20000)
 	defer func() {
 		lg.Info("sending write latency results", zap.Int("total-results", len(ds)))
@@ -416,7 +416,7 @@ func startReads(
 	donec chan struct{},
 	readLatencies chan<- metrics.Durations,
 ) {
-	lg.Info("starting startReads", zap.Strings("namespaces", ns))
+	lg.Info("starting reads", zap.Strings("namespaces", ns))
 	ds := make(metrics.Durations, 0, 20000)
 	defer func() {
 		lg.Info("sending read latency results", zap.Int("total-results", len(ds)))

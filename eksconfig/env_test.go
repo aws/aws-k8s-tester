@@ -706,7 +706,7 @@ func TestEnv(t *testing.T) {
 				VolumeSize:           40,
 			},
 			KubeletExtraArgs:  "bbb qq",
-			ClusterAutoScaler: &NGClusterAutoScaler{Enable: false},
+			ClusterAutoscaler: &NGClusterAutoscaler{Enable: false},
 		},
 		gpuName: {
 			ASG: ec2config.ASG{
@@ -721,7 +721,7 @@ func TestEnv(t *testing.T) {
 				VolumeSize:           500,
 			},
 			KubeletExtraArgs:  "aaa aa",
-			ClusterAutoScaler: &NGClusterAutoScaler{Enable: false},
+			ClusterAutoscaler: &NGClusterAutoscaler{Enable: false},
 		},
 	}
 	if !reflect.DeepEqual(cfg.AddOnNodeGroups.ASGs, expectedASGs) {
@@ -1390,7 +1390,7 @@ func TestEnvAddOnNodeGroupsGetRef(t *testing.T) {
 				ASGDesiredCapacity:                 34,
 			},
 			KubeletExtraArgs:  "aaa aa",
-			ClusterAutoScaler: &NGClusterAutoScaler{Enable: true},
+			ClusterAutoscaler: &NGClusterAutoscaler{Enable: true},
 		},
 	}
 	if !reflect.DeepEqual(cfg.AddOnNodeGroups.ASGs, expectedNGs) {

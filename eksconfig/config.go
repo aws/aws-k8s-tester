@@ -313,12 +313,14 @@ type Config struct {
 	// AddOnClusterVersionUpgrade defines parameters
 	// for EKS cluster version upgrade add-on.
 	AddOnClusterVersionUpgrade *AddOnClusterVersionUpgrade `json:"add-on-cluster-version-upgrade,omitempty"`
+
 	// Status represents the current status of AWS resources.
 	// Status is read-only.
 	// Status cannot be configured via environmental variables.
 	Status *Status `json:"status,omitempty" read-only:"true"`
 }
 
+// Colorize prints colorized input, if color output is supported.
 func (c Config) Colorize(input string) string {
 	colorize := colorstring.Colorize{
 		Colors:  colorstring.DefaultColors,
@@ -328,7 +330,9 @@ func (c Config) Colorize(input string) string {
 	return colorize.Color(input)
 }
 
-// Parameters defines parameters for EKS "cluster" creation.
+// Parameters defines EKS "cluster" creation parameters.
+// It's ok to leave any parameters empty.
+// If empty, it will use default values.
 type Parameters struct {
 	// RoleName is the name of cluster role.
 	RoleName string `json:"role-name"`

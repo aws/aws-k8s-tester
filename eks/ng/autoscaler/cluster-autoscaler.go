@@ -22,7 +22,7 @@ import (
 
 // auto discover
 // ref. https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/aws/examples/cluster-autoscaler-autodiscover.yaml
-const ClusterAutoscalerYAML = `
+const clusterAutoscalerYAML = `
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -204,7 +204,7 @@ var caImages = map[string]string{
 
 const (
 	nodeGroupAuotDiscoveryData      = `            - --node-group-auto-discovery=asg:tag=k8s.io/cluster-autoscaler/enabled,k8s.io/cluster-autoscaler/`
-	clusterAutoScalerDeploymentName = "cluster-autoscaler"
+	clusterAutoscalerDeploymentName = "cluster-autoscaler"
 )
 
 type caSpecData struct {
@@ -220,7 +220,7 @@ type Config struct {
 	K8SClient k8s_client.EKS
 }
 
-// ClusterAutoScaler defines cluster autoscaler operation.
+// ClusterAutoscaler defines cluster autoscaler operation.
 type ClusterAutoscaler interface {
 	Create() error
 }
@@ -238,7 +238,7 @@ type tester struct {
 func (ts *tester) Create() error {
 	needInstall := false
 	for _, cur := range ts.cfg.EKSConfig.AddOnNodeGroups.ASGs {
-		if cur.ClusterAutoScaler != nil && cur.ClusterAutoScaler.Enable {
+		if cur.ClusterAutoscaler != nil && cur.ClusterAutoscaler.Enable {
 			needInstall = true
 			break
 		}
@@ -259,7 +259,7 @@ func (ts *tester) installCA() error {
 		return fmt.Errorf("no CA found for %q", ts.cfg.EKSConfig.Parameters.Version)
 	}
 	caData.NodeGroupAutoDiscovery = nodeGroupAuotDiscoveryData + ts.cfg.EKSConfig.Name
-	tpl := template.Must(template.New("TemplateCA").Parse(ClusterAutoscalerYAML))
+	tpl := template.Must(template.New("TemplateCA").Parse(clusterAutoscalerYAML))
 	buf := bytes.NewBuffer(nil)
 	if err := tpl.Execute(buf, caData); err != nil {
 		return err
@@ -324,7 +324,7 @@ func (ts *tester) waitDeploymentCA() error {
 		"--namespace=kube-system",
 		"describe",
 		"deployment",
-		clusterAutoScalerDeploymentName,
+		clusterAutoscalerDeploymentName,
 	).CombinedOutput()
 	cancel()
 	if err != nil {

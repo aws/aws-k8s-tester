@@ -111,6 +111,9 @@ func (cfg *Config) validateAddOnStresserRemote() error {
 	if !cfg.IsEnabledAddOnStresserRemote() {
 		return nil
 	}
+	if cfg.S3BucketName == "" {
+		return errors.New("AddOnStresserRemote requires S3 bucket but S3BucketName empty")
+	}
 
 	if cfg.AddOnStresserRemote.Namespace == "" {
 		cfg.AddOnStresserRemote.Namespace = cfg.Name + "-stresser-remote"

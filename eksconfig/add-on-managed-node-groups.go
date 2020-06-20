@@ -283,6 +283,9 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 		if len(cfg.AddOnManagedNodeGroups.RoleServicePrincipals) > 0 {
 			return fmt.Errorf("AddOnManagedNodeGroups.RoleCreate false; expect empty RoleServicePrincipals but got %q", cfg.AddOnManagedNodeGroups.RoleServicePrincipals)
 		}
+		if cfg.IsEnabledAddOnStresserRemote() {
+			return errors.New("'AddOnStresserRemote.Enable == true' requires 'AddOnManagedNodeGroups.RoleCreate == true' but got 'false'")
+		}
 	}
 
 	names, processed := make(map[string]struct{}), make(map[string]MNG)
@@ -438,6 +441,9 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 
 		if cfg.IsEnabledAddOnNLBHelloWorld() && cfg.AddOnNLBHelloWorld.DeploymentReplicas < int32(cur.ASGDesiredCapacity) {
 			cfg.AddOnNLBHelloWorld.DeploymentReplicas = int32(cur.ASGDesiredCapacity)
+		}
+		if cfg.IsEnabledAddOnNLBGuestbook() && cfg.AddOnNLBGuestbook.DeploymentReplicas < int32(cur.ASGDesiredCapacity) {
+			cfg.AddOnNLBGuestbook.DeploymentReplicas = int32(cur.ASGDesiredCapacity)
 		}
 		if cfg.IsEnabledAddOnALB2048() && cfg.AddOnALB2048.DeploymentReplicasALB < int32(cur.ASGDesiredCapacity) {
 			cfg.AddOnALB2048.DeploymentReplicasALB = int32(cur.ASGDesiredCapacity)
