@@ -21,10 +21,7 @@ func TestCW(t *testing.T) {
 	if err != nil {
 		t.Skip(err)
 	}
-	fpath, err := fileutil.GetTempFilePath()
-	if err != nil {
-		t.Fatal(err)
-	}
+	fpath := fileutil.GetTempFilePath()
 	fpath += ".png"
 
 	cwAPI := cloudwatch.New(ss)

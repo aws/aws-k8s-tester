@@ -5,6 +5,7 @@ package local
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 	"strings"
 	"time"
@@ -12,6 +13,7 @@ import (
 	cluster_loader "github.com/aws/aws-k8s-tester/eks/cluster-loader"
 	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
 	"github.com/aws/aws-k8s-tester/eksconfig"
+	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"go.uber.org/zap"
@@ -46,6 +48,8 @@ func (ts *tester) Create() (err error) {
 		return nil
 	}
 
+	podStartupLatencyTempPath := fileutil.GetTempFilePath()
+
 	ts.cfg.Logger.Info("starting tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
 	ts.loader = cluster_loader.New(cluster_loader.Config{
 		Logger: ts.cfg.Logger,
@@ -53,12 +57,13 @@ func (ts *tester) Create() (err error) {
 
 		KubeConfigPath: ts.cfg.EKSConfig.KubeConfigPath,
 
-		ClusterLoaderPath:        ts.cfg.EKSConfig.AddOnClusterLoaderLocal.ClusterLoaderPath,
-		ClusterLoaderDownloadURL: ts.cfg.EKSConfig.AddOnClusterLoaderLocal.ClusterLoaderDownloadURL,
-		TestConfigPath:           ts.cfg.EKSConfig.AddOnClusterLoaderLocal.TestConfigPath,
-		ReportDir:                ts.cfg.EKSConfig.AddOnClusterLoaderLocal.ReportDir,
-		ReportTarGzPath:          ts.cfg.EKSConfig.AddOnClusterLoaderLocal.ReportTarGzPath,
-		LogPath:                  ts.cfg.EKSConfig.AddOnClusterLoaderLocal.LogPath,
+		ClusterLoaderPath:           ts.cfg.EKSConfig.AddOnClusterLoaderLocal.ClusterLoaderPath,
+		ClusterLoaderDownloadURL:    ts.cfg.EKSConfig.AddOnClusterLoaderLocal.ClusterLoaderDownloadURL,
+		TestConfigPath:              ts.cfg.EKSConfig.AddOnClusterLoaderLocal.TestConfigPath,
+		ReportDir:                   ts.cfg.EKSConfig.AddOnClusterLoaderLocal.ReportDir,
+		ReportTarGzPath:             ts.cfg.EKSConfig.AddOnClusterLoaderLocal.ReportTarGzPath,
+		LogPath:                     ts.cfg.EKSConfig.AddOnClusterLoaderLocal.LogPath,
+		PodStartupLatencyOutputPath: podStartupLatencyTempPath,
 
 		Runs:    ts.cfg.EKSConfig.AddOnClusterLoaderLocal.Runs,
 		Timeout: ts.cfg.EKSConfig.AddOnClusterLoaderLocal.Timeout,
@@ -94,7 +99,13 @@ func (ts *tester) Create() (err error) {
 		return err
 	}
 
-	waitDur := 20 * time.Minute * time.Duration(ts.cfg.EKSConfig.AddOnClusterLoaderLocal.Runs)
+	ts.cfg.EKSConfig.AddOnClusterLoaderLocal.PodStartupLatency, err = cluster_loader.ParsePodStartupLatency(podStartupLatencyTempPath)
+	if err != nil {
+		return fmt.Errorf("failed to read PodStartupLatency %q (%v)", podStartupLatencyTempPath, err)
+	}
+	ts.cfg.EKSConfig.Sync()
+
+	waitDur := 10 * time.Minute
 	retryStart := time.Now()
 	for time.Now().Sub(retryStart) < waitDur {
 		select {

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
+	measurement_util "k8s.io/perf-tests/clusterloader2/pkg/measurement/util"
 )
 
 /*
@@ -97,6 +98,8 @@ type AddOnClusterLoaderRemote struct {
 	CL2EnablePVS              bool `json:"cl2-enable-pvs"`
 	PrometheusScrapeKubeProxy bool `json:"prometheus-scrape-kube-proxy"`
 	EnableSystemPodMetrics    bool `json:"enable-system-pod-metrics"`
+
+	PodStartupLatency measurement_util.PerfData `json:"pod-startup-latency" read-only:"true"`
 }
 
 // EnvironmentVariablePrefixAddOnClusterLoaderRemote is the environment variable prefix used for "eksconfig".

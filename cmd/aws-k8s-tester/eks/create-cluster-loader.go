@@ -22,6 +22,7 @@ var (
 	clusterLoaderReportDir                      string
 	clusterLoaderReportTarGzPath                string
 	clusterLoaderLogsPath                       string
+	clusterLoaderPodStartupLatencyOutputPath    string
 	clusterLoaderRuns                           int
 	clusterLoaderTimeout                        time.Duration
 	clusterLoaderNodes                          int
@@ -50,6 +51,7 @@ func newCreateClusterLoader() *cobra.Command {
 	cmd.PersistentFlags().StringVar(&clusterLoaderReportDir, "report-dir", "", "clusterloader report directory")
 	cmd.PersistentFlags().StringVar(&clusterLoaderReportTarGzPath, "report-tar-gz-path", "", "clusterloader report .tar.gz path")
 	cmd.PersistentFlags().StringVar(&clusterLoaderLogsPath, "logs-path", "", "clusterloader log path")
+	cmd.PersistentFlags().StringVar(&clusterLoaderPodStartupLatencyOutputPath, "pod-startup-latency-output-path", "", "clusterloader pod startup latency output path")
 	cmd.PersistentFlags().IntVar(&clusterLoaderRuns, "runs", 1, "number of clusterloader runs")
 	cmd.PersistentFlags().DurationVar(&clusterLoaderTimeout, "timeout", 30*time.Minute, "clusterloader timeout")
 	cmd.PersistentFlags().IntVar(&clusterLoaderNodes, "nodes", 10, "number of nodes")
@@ -87,12 +89,13 @@ func createClusterLoaderFunc(cmd *cobra.Command, args []string) {
 
 		KubeConfigPath: clusterLoaderKubeConfigPath,
 
-		ClusterLoaderPath:        clusterLoaderPath,
-		ClusterLoaderDownloadURL: "",
-		TestConfigPath:           clusterLoaderTestConfigPath,
-		ReportDir:                clusterLoaderReportDir,
-		ReportTarGzPath:          clusterLoaderReportTarGzPath,
-		LogPath:                  clusterLoaderLogsPath,
+		ClusterLoaderPath:           clusterLoaderPath,
+		ClusterLoaderDownloadURL:    "",
+		TestConfigPath:              clusterLoaderTestConfigPath,
+		ReportDir:                   clusterLoaderReportDir,
+		ReportTarGzPath:             clusterLoaderReportTarGzPath,
+		LogPath:                     clusterLoaderLogsPath,
+		PodStartupLatencyOutputPath: clusterLoaderPodStartupLatencyOutputPath,
 
 		Runs:    clusterLoaderRuns,
 		Timeout: clusterLoaderTimeout,

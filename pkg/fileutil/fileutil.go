@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"syscall"
 	"time"
+
+	"github.com/aws/aws-k8s-tester/pkg/randutil"
 )
 
 // MkTmpDir creates a temp directory.
@@ -52,15 +54,14 @@ func WriteToTempDir(p string, d []byte) (path string, err error) {
 }
 
 // GetTempFilePath creates a file path to a temporary file that does not exist yet.
-func GetTempFilePath() (path string, err error) {
-	var f *os.File
-	f, err = ioutil.TempFile(os.TempDir(), fmt.Sprintf("%X", time.Now().UnixNano()))
+func GetTempFilePath() (path string) {
+	f, err := ioutil.TempFile(os.TempDir(), fmt.Sprintf("%x", time.Now().UnixNano()))
 	if err != nil {
-		return "", err
+		return filepath.Join(os.TempDir(), fmt.Sprintf("%x%s", time.Now().UnixNano(), randutil.String(5)))
 	}
 	path = f.Name()
 	f.Close()
-	return path, nil
+	return path
 }
 
 // Exist returns true if a file or directory exists.

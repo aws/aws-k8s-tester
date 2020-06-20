@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	cluster_loader "github.com/aws/aws-k8s-tester/eks/cluster-loader"
 	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	aws_ecr "github.com/aws/aws-k8s-tester/pkg/aws/ecr"
@@ -487,7 +488,7 @@ func (ts *tester) createDeployment() error {
 	// ref. https://github.com/kubernetes/client-go/blob/master/examples/in-cluster-client-configuration/main.go
 
 	// ref. https://github.com/kubernetes/perf-tests/pull/1295
-	testerCmd := fmt.Sprintf("/aws-k8s-tester eks create cluster-loader --cluster-loader-path=/clusterloader2 --test-config-path=/clusterloader2-test-config.yaml --report-dir=/var/log/cluster-loader-remote --report-tar-gz-path=/var/log/cluster-loader-remote.tar.gz --logs-path=/var/log/cluster-loader-remote.log --runs=%d --timeout=%v --nodes=%d --nodes-per-namespace=%d --pods-per-node=%d --big-group-size=%d --medium-group-size=%d --small-group-size=%d --small-stateful-sets-per-namespace=%d --medium-stateful-sets-per-namespace=%d --cl2-load-test-throughput=%d --cl2-enable-pvs=%v --prometheus-scrape-kube-proxy=%v --enable-system-pod-metrics=%v",
+	testerCmd := fmt.Sprintf("/aws-k8s-tester eks create cluster-loader --cluster-loader-path=/clusterloader2 --test-config-path=/clusterloader2-test-config.yaml --report-dir=/var/log/cluster-loader-remote --report-tar-gz-path=/var/log/cluster-loader-remote.tar.gz --logs-path=/var/log/cluster-loader-remote.log --pod-startup-latency-output-path=/var/log/cluster-loader-remote.pod-startup-latency-output.json --runs=%d --timeout=%v --nodes=%d --nodes-per-namespace=%d --pods-per-node=%d --big-group-size=%d --medium-group-size=%d --small-group-size=%d --small-stateful-sets-per-namespace=%d --medium-stateful-sets-per-namespace=%d --cl2-load-test-throughput=%d --cl2-enable-pvs=%v --prometheus-scrape-kube-proxy=%v --enable-system-pod-metrics=%v",
 		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Runs,
 		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Timeout,
 		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Nodes,
@@ -763,6 +764,26 @@ func (ts *tester) AggregateResults() (err error) {
 							ts.cfg.Logger.Info("AddOnClusterLoaderRemote cluster loader report logs file already exists; skipping copy", zap.String("original-file-path", fpath), zap.String("copy-file-path", ts.cfg.EKSConfig.AddOnClusterLoaderRemote.LogPath))
 						}
 					}
+					if strings.HasSuffix(fpath, "cluster-loader-remote.pod-startup-latency-output.json") {
+						if len(ts.cfg.EKSConfig.AddOnClusterLoaderRemote.PodStartupLatency.DataItems) == 0 {
+							var perr error
+							ts.cfg.EKSConfig.AddOnClusterLoaderRemote.PodStartupLatency, perr = cluster_loader.ParsePodStartupLatency(fpath)
+							if perr != nil {
+								ts.cfg.Logger.Warn("failed to parse PodStartupLatency",
+									zap.String("path", fpath),
+									zap.Error(perr),
+								)
+							} else {
+								ts.cfg.Logger.Info("parsed PodStartupLatency",
+									zap.String("path", fpath),
+									zap.Int("data-items", len(ts.cfg.EKSConfig.AddOnClusterLoaderRemote.PodStartupLatency.DataItems)),
+									zap.Error(perr),
+								)
+							}
+						} else {
+							ts.cfg.Logger.Info("already exists PodStartupLatency; skipping", zap.String("path", fpath))
+						}
+					}
 				}
 			}
 		}
@@ -773,17 +794,45 @@ func (ts *tester) AggregateResults() (err error) {
 			for _, fpaths := range cur.Logs {
 				for _, fpath := range fpaths {
 					if strings.HasSuffix(fpath, "cluster-loader-remote.tar.gz") {
-						if cerr := fileutil.Copy(fpath, ts.cfg.EKSConfig.AddOnClusterLoaderRemote.ReportTarGzPath); cerr != nil {
-							ts.cfg.Logger.Warn("found AddOnClusterLoaderRemote cluster loader report dir .tar.gz file but failed to copy", zap.String("original-file-path", fpath), zap.Error(cerr))
+						if !fileutil.Exist(ts.cfg.EKSConfig.AddOnClusterLoaderRemote.ReportTarGzPath) {
+							if cerr := fileutil.Copy(fpath, ts.cfg.EKSConfig.AddOnClusterLoaderRemote.ReportTarGzPath); cerr != nil {
+								ts.cfg.Logger.Warn("found AddOnClusterLoaderRemote cluster loader report dir .tar.gz file but failed to copy", zap.String("original-file-path", fpath), zap.Error(cerr))
+							} else {
+								ts.cfg.Logger.Info("successfully copied AddOnClusterLoaderRemote cluster loader report dir .tar.gz file", zap.String("original-file-path", fpath), zap.String("copy-file-path", ts.cfg.EKSConfig.AddOnClusterLoaderRemote.LogPath))
+							}
 						} else {
-							ts.cfg.Logger.Info("successfully copied AddOnClusterLoaderRemote cluster loader report dir .tar.gz file", zap.String("original-file-path", fpath), zap.String("copy-file-path", ts.cfg.EKSConfig.AddOnClusterLoaderRemote.LogPath))
+							ts.cfg.Logger.Info("AddOnClusterLoaderRemote cluster loader report dir .tar.gz file already exists; skipping copy", zap.String("original-file-path", fpath), zap.String("copy-file-path", ts.cfg.EKSConfig.AddOnClusterLoaderRemote.ReportTarGzPath))
 						}
 					}
 					if strings.HasSuffix(fpath, "cluster-loader-remote.log") {
-						if cerr := fileutil.CopyAppend(fpath, ts.cfg.EKSConfig.AddOnClusterLoaderRemote.LogPath); cerr != nil {
-							ts.cfg.Logger.Warn("found AddOnClusterLoaderRemote cluster loader logs file but failed to copy", zap.String("original-file-path", fpath), zap.Error(cerr))
+						if !fileutil.Exist(ts.cfg.EKSConfig.AddOnClusterLoaderRemote.LogPath) {
+							if cerr := fileutil.CopyAppend(fpath, ts.cfg.EKSConfig.AddOnClusterLoaderRemote.LogPath); cerr != nil {
+								ts.cfg.Logger.Warn("found AddOnClusterLoaderRemote cluster loader logs file but failed to copy", zap.String("original-file-path", fpath), zap.Error(cerr))
+							} else {
+								ts.cfg.Logger.Info("successfully copied AddOnClusterLoaderRemote cluster loader logs file", zap.String("original-file-path", fpath), zap.String("copy-file-path", ts.cfg.EKSConfig.AddOnClusterLoaderRemote.LogPath))
+							}
 						} else {
-							ts.cfg.Logger.Info("successfully copied AddOnClusterLoaderRemote cluster loader logs file", zap.String("original-file-path", fpath), zap.String("copy-file-path", ts.cfg.EKSConfig.AddOnClusterLoaderRemote.LogPath))
+							ts.cfg.Logger.Info("AddOnClusterLoaderRemote cluster loader report logs file already exists; skipping copy", zap.String("original-file-path", fpath), zap.String("copy-file-path", ts.cfg.EKSConfig.AddOnClusterLoaderRemote.LogPath))
+						}
+					}
+					if strings.HasSuffix(fpath, "cluster-loader-remote.pod-startup-latency-output.json") {
+						if len(ts.cfg.EKSConfig.AddOnClusterLoaderRemote.PodStartupLatency.DataItems) == 0 {
+							var perr error
+							ts.cfg.EKSConfig.AddOnClusterLoaderRemote.PodStartupLatency, perr = cluster_loader.ParsePodStartupLatency(fpath)
+							if perr != nil {
+								ts.cfg.Logger.Warn("failed to parse PodStartupLatency",
+									zap.String("path", fpath),
+									zap.Error(perr),
+								)
+							} else {
+								ts.cfg.Logger.Info("parsed PodStartupLatency",
+									zap.String("path", fpath),
+									zap.Int("data-items", len(ts.cfg.EKSConfig.AddOnClusterLoaderRemote.PodStartupLatency.DataItems)),
+									zap.Error(perr),
+								)
+							}
+						} else {
+							ts.cfg.Logger.Info("already exists PodStartupLatency; skipping", zap.String("path", fpath))
 						}
 					}
 				}
@@ -1019,6 +1068,69 @@ func (ts *tester) checkClusterLoader() (err error) {
 			zap.String("log-path", ts.cfg.EKSConfig.AddOnClusterLoaderRemote.LogPath),
 		)
 		fmt.Printf("\nDownloaded '/var/log/cluster-loader-remote.log' output (%q):\n%s\n", ts.cfg.EKSConfig.AddOnClusterLoaderRemote.LogPath, string(out))
+	}
+
+	podStartupLatencyTempPath := fileutil.GetTempFilePath()
+	out, err = sh.Download(
+		"/var/log/cluster-loader-remote.pod-startup-latency-output.json",
+		podStartupLatencyTempPath,
+		ssh.WithVerbose(ts.cfg.EKSConfig.LogLevel == "debug"),
+		ssh.WithRetry(3, 10*time.Second),
+	)
+	if err != nil {
+		os.RemoveAll(podStartupLatencyTempPath)
+		ts.cfg.Logger.Warn("failed to download '/var/log/cluster-loader-remote.pod-startup-latency-output.json'; retrying", zap.Error(err))
+		out, err = sh.Run(
+			"sudo cat /var/log/cluster-loader-remote.pod-startup-latency-output.json",
+			ssh.WithVerbose(ts.cfg.EKSConfig.LogLevel == "debug"),
+			ssh.WithRetry(3, 10*time.Second),
+		)
+		if err != nil {
+			ts.cfg.Logger.Warn("failed to cat '/var/log/cluster-loader-remote.pod-startup-latency-output.json'", zap.Error(err))
+		} else {
+			err = ioutil.WriteFile(podStartupLatencyTempPath, out, 0600)
+			if err != nil {
+				ts.cfg.Logger.Warn("failed to write results '/var/log/cluster-loader-remote.pod-startup-latency-output.json'", zap.Error(err))
+			} else {
+				ts.cfg.Logger.Info("downloaded cluster loader results from remote node",
+					zap.String("log-path", podStartupLatencyTempPath),
+				)
+				fmt.Printf("\nDownloaded '/var/log/cluster-loader-remote.pod-startup-latency-output.json' output (%q)\n\n", podStartupLatencyTempPath)
+			}
+		}
+
+	} else {
+		ts.cfg.Logger.Info("downloaded cluster loader results from remote node",
+			zap.String("json-path", podStartupLatencyTempPath),
+		)
+		fmt.Printf("\nDownloaded '/var/log/cluster-loader-remote.pod-startup-latency-output.json' output (%q):\n%s\n", podStartupLatencyTempPath, string(out))
+	}
+
+	ts.cfg.EKSConfig.AddOnClusterLoaderRemote.PodStartupLatency, err = cluster_loader.ParsePodStartupLatency(podStartupLatencyTempPath)
+	if err != nil {
+		return fmt.Errorf("failed to read PodStartupLatency %q (%v)", podStartupLatencyTempPath, err)
+	}
+	ts.cfg.EKSConfig.Sync()
+
+	waitDur = 10 * time.Minute
+	retryStart = time.Now()
+	for time.Now().Sub(retryStart) < waitDur {
+		select {
+		case <-ts.cfg.Stopc:
+			ts.cfg.Logger.Warn("health check aborted")
+			return nil
+		case <-time.After(5 * time.Second):
+		}
+		err = ts.cfg.K8SClient.CheckHealth()
+		if err == nil {
+			break
+		}
+		ts.cfg.Logger.Warn("health check failed", zap.Error(err))
+	}
+	if err == nil {
+		ts.cfg.Logger.Info("health check success after load testing")
+	} else {
+		ts.cfg.Logger.Warn("health check failed after load testing", zap.Error(err))
 	}
 
 	return ts.cfg.EKSConfig.Sync()
