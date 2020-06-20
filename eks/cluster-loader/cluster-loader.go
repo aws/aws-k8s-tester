@@ -227,17 +227,22 @@ func (ld *loader) Start() (err error) {
 	case <-time.After(3 * time.Minute):
 		ld.cfg.Logger.Warn("took too long to confirm exit cluster loader command output checks")
 	}
+	if err != nil {
+		ld.cfg.Logger.Warn("failed to run cluster loader", zap.Error(err))
+	} else {
+		ld.cfg.Logger.Info("successfully ran cluster loader")
+	}
 
 	// append results in "LogPath"
 	// "0777" to fix "scp: /var/log/cluster-loader-remote.log: Permission denied"
-	logFile, err := os.OpenFile(ld.cfg.LogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0777)
-	if err != nil {
-		return fmt.Errorf("open(%q): %v", ld.cfg.LogPath, err)
+	logFile, cerr := os.OpenFile(ld.cfg.LogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0777)
+	if cerr != nil {
+		return fmt.Errorf("open(%q): %v", ld.cfg.LogPath, cerr)
 	}
 	defer logFile.Close()
 
 	podStartupLats := make([]measurement_util.PerfData, 0)
-	err = filepath.Walk(ld.cfg.ReportDir, func(path string, info os.FileInfo, ferr error) error {
+	cerr = filepath.Walk(ld.cfg.ReportDir, func(path string, info os.FileInfo, ferr error) error {
 		if ferr != nil {
 			return ferr
 		}
@@ -276,33 +281,36 @@ func (ld *loader) Start() (err error) {
 		}
 		return nil
 	})
+	if cerr != nil {
+		return cerr
+	}
 	podStartupLat := MergePodStartupLatency(podStartupLats...)
 	podStartupLatData, derr := json.Marshal(podStartupLat)
 	if derr != nil {
 		ld.cfg.Logger.Warn("failed to marshal PodStartupLatency", zap.Error(derr))
 		return derr
 	}
-	err = ioutil.WriteFile(ld.cfg.PodStartupLatencyOutputPath, podStartupLatData, 0600)
-	if err != nil {
-		ld.cfg.Logger.Warn("failed to write PodStartupLatency", zap.Error(err))
-		return err
+	cerr = ioutil.WriteFile(ld.cfg.PodStartupLatencyOutputPath, podStartupLatData, 0600)
+	if cerr != nil {
+		ld.cfg.Logger.Warn("failed to write PodStartupLatency", zap.Error(cerr))
+		return cerr
 	}
 
 	ld.cfg.Logger.Info("gzipping report dir", zap.String("report-dir", ld.cfg.ReportDir), zap.String("file-path", ld.cfg.ReportTarGzPath))
-	err = os.RemoveAll(ld.cfg.ReportTarGzPath)
-	if err != nil {
-		ld.cfg.Logger.Warn("failed to remove temp file", zap.Error(err))
-		return err
+	cerr = os.RemoveAll(ld.cfg.ReportTarGzPath)
+	if cerr != nil {
+		ld.cfg.Logger.Warn("failed to remove temp file", zap.Error(cerr))
+		return cerr
 	}
-	err = archiver.Archive([]string{ld.cfg.ReportDir}, ld.cfg.ReportTarGzPath)
-	if err != nil {
-		ld.cfg.Logger.Warn("archive failed", zap.Error(err))
-		return err
+	cerr = archiver.Archive([]string{ld.cfg.ReportDir}, ld.cfg.ReportTarGzPath)
+	if cerr != nil {
+		ld.cfg.Logger.Warn("archive failed", zap.Error(cerr))
+		return cerr
 	}
-	stat, err := os.Stat(ld.cfg.ReportTarGzPath)
-	if err != nil {
-		ld.cfg.Logger.Warn("failed to os stat", zap.Error(err))
-		return err
+	stat, cerr := os.Stat(ld.cfg.ReportTarGzPath)
+	if cerr != nil {
+		ld.cfg.Logger.Warn("failed to os stat", zap.Error(cerr))
+		return cerr
 	}
 	sz := humanize.Bytes(uint64(stat.Size()))
 	ld.cfg.Logger.Info("gzipped report dir", zap.String("report-dir", ld.cfg.ReportDir), zap.String("file-path", ld.cfg.ReportTarGzPath), zap.String("file-size", sz))
