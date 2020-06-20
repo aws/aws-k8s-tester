@@ -634,6 +634,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_CL2_ENABLE_PVS                     | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.CL2EnablePVS                   | bool               |
 | AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_PROMETHEUS_SCRAPE_KUBE_PROXY       | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.PrometheusScrapeKubeProxy      | bool               |
 | AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_ENABLE_SYSTEM_POD_METRICS          | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.EnableSystemPodMetrics         | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_POD_STARTUP_LATENCY                | read-only "true"  | *eksconfig.AddOnClusterLoaderLocal.PodStartupLatency              | util.PerfData      |
 *-----------------------------------------------------------------------------------*-------------------*-------------------------------------------------------------------*--------------------*
 
 
@@ -667,6 +668,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_CL2_ENABLE_PVS                     | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.CL2EnablePVS                   | bool               |
 | AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_PROMETHEUS_SCRAPE_KUBE_PROXY       | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.PrometheusScrapeKubeProxy      | bool               |
 | AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_ENABLE_SYSTEM_POD_METRICS          | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.EnableSystemPodMetrics         | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_POD_STARTUP_LATENCY                | read-only "true"  | *eksconfig.AddOnClusterLoaderRemote.PodStartupLatency              | util.PerfData      |
 *------------------------------------------------------------------------------------*-------------------*--------------------------------------------------------------------*--------------------*
 
 
