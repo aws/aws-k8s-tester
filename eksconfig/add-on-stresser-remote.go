@@ -50,8 +50,6 @@ type AddOnStresserRemote struct {
 	// 0 to list all.
 	ListLimit int64 `json:"list-limit"`
 	// Duration is the duration to run load testing.
-	// The cluster loader waits "one" "Duration" for hollow ones.
-	// And other one for cluster loader.
 	Duration       time.Duration `json:"duration,omitempty"`
 	DurationString string        `json:"duration-string,omitempty" read-only:"true"`
 
