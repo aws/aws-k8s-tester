@@ -972,6 +972,9 @@ func (ts *tester) checkClusterLoader() (err error) {
 			if err != nil {
 				ts.cfg.Logger.Warn("failed to write results '/var/log/cluster-loader-remote.tar.gz'", zap.Error(err))
 			} else {
+				ts.cfg.Logger.Info("downloaded cluster loader results from remote node",
+					zap.String("tar-gz-path", ts.cfg.EKSConfig.AddOnClusterLoaderRemote.ReportTarGzPath),
+				)
 				fmt.Printf("\nDownloaded '/var/log/cluster-loader-remote.tar.gz' output (%q)\n\n", ts.cfg.EKSConfig.AddOnClusterLoaderRemote.ReportTarGzPath)
 			}
 		}
@@ -1004,6 +1007,9 @@ func (ts *tester) checkClusterLoader() (err error) {
 			if err != nil {
 				ts.cfg.Logger.Warn("failed to write results '/var/log/cluster-loader-remote.log'", zap.Error(err))
 			} else {
+				ts.cfg.Logger.Info("downloaded cluster loader results from remote node",
+					zap.String("log-path", ts.cfg.EKSConfig.AddOnClusterLoaderRemote.LogPath),
+				)
 				fmt.Printf("\nDownloaded '/var/log/cluster-loader-remote.log' output (%q)\n\n", ts.cfg.EKSConfig.AddOnClusterLoaderRemote.LogPath)
 			}
 		}

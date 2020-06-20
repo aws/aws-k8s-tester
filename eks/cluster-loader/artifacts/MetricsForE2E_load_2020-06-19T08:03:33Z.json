@@ -1,0 +1,7 @@
+{
+  "APIServerMetrics": {},
+  "ControllerManagerMetrics": null,
+  "KubeletMetrics": {},
+  "SchedulerMetrics": null,
+  "ClusterAutoscalerMetrics": null
+}

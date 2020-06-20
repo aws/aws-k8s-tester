@@ -963,7 +963,7 @@ func (ts *Tester) Up() (err error) {
 			cur.Create,
 		)
 
-		if idx%5 == 0 {
+		if idx%10 == 0 {
 			fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 			fmt.Printf(ts.color("[light_green]clusterTester.CheckHealth (%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 			if ts.k8sClient == nil {

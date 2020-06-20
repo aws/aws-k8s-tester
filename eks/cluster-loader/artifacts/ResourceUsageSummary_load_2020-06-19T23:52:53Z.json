@@ -1,0 +1,450 @@
+{
+  "100": [
+    {
+      "Name": "aws-node-8n7zd/aws-node",
+      "CPU": 0.00252468,
+      "Mem": 53575680
+    },
+    {
+      "Name": "aws-node-bmr5w/aws-node",
+      "CPU": 0.005756809,
+      "Mem": 54874112
+    },
+    {
+      "Name": "aws-node-chvbv/aws-node",
+      "CPU": 0.006705516,
+      "Mem": 54206464
+    },
+    {
+      "Name": "aws-node-l7kw8/aws-node",
+      "CPU": 0.00797775,
+      "Mem": 54558720
+    },
+    {
+      "Name": "aws-node-lqw6f/aws-node",
+      "CPU": 0.003236161,
+      "Mem": 53460992
+    },
+    {
+      "Name": "aws-node-lvg95/aws-node",
+      "CPU": 0.004067604,
+      "Mem": 56332288
+    },
+    {
+      "Name": "aws-node-mdlvp/aws-node",
+      "CPU": 0.006253312,
+      "Mem": 55033856
+    },
+    {
+      "Name": "aws-node-mpzwm/aws-node",
+      "CPU": 0.002151124,
+      "Mem": 52916224
+    },
+    {
+      "Name": "aws-node-mwnn2/aws-node",
+      "CPU": 0.006360098,
+      "Mem": 55656448
+    },
+    {
+      "Name": "aws-node-wllcb/aws-node",
+      "CPU": 0.004417224,
+      "Mem": 54743040
+    },
+    {
+      "Name": "coredns-5c97f79574-859qt/coredns",
+      "CPU": 0.001473997,
+      "Mem": 8388608
+    },
+    {
+      "Name": "coredns-5c97f79574-mbnps/coredns",
+      "CPU": 0.001560015,
+      "Mem": 8359936
+    },
+    {
+      "Name": "kube-proxy-95lhm/kube-proxy",
+      "CPU": 0.043224961,
+      "Mem": 12668928
+    },
+    {
+      "Name": "kube-proxy-9kvgw/kube-proxy",
+      "CPU": 0.001735954,
+      "Mem": 10932224
+    },
+    {
+      "Name": "kube-proxy-b2mvv/kube-proxy",
+      "CPU": 0.033408781,
+      "Mem": 12414976
+    },
+    {
+      "Name": "kube-proxy-dqgm4/kube-proxy",
+      "CPU": 0.061514975,
+      "Mem": 12582912
+    },
+    {
+      "Name": "kube-proxy-f92s5/kube-proxy",
+      "CPU": 0.045912899,
+      "Mem": 13283328
+    },
+    {
+      "Name": "kube-proxy-kqhxf/kube-proxy",
+      "CPU": 0.023700436,
+      "Mem": 13107200
+    },
+    {
+      "Name": "kube-proxy-rtk65/kube-proxy",
+      "CPU": 0.015257991,
+      "Mem": 12558336
+    },
+    {
+      "Name": "kube-proxy-snjdv/kube-proxy",
+      "CPU": 0.018649416,
+      "Mem": 14901248
+    },
+    {
+      "Name": "kube-proxy-wfdzj/kube-proxy",
+      "CPU": 0.004080771,
+      "Mem": 12578816
+    },
+    {
+      "Name": "kube-proxy-wvxfz/kube-proxy",
+      "CPU": 0.028695068,
+      "Mem": 14630912
+    }
+  ],
+  "50": [
+    {
+      "Name": "aws-node-8n7zd/aws-node",
+      "CPU": 0.00252468,
+      "Mem": 53575680
+    },
+    {
+      "Name": "aws-node-bmr5w/aws-node",
+      "CPU": 0.005756809,
+      "Mem": 54874112
+    },
+    {
+      "Name": "aws-node-chvbv/aws-node",
+      "CPU": 0.006705516,
+      "Mem": 54206464
+    },
+    {
+      "Name": "aws-node-l7kw8/aws-node",
+      "CPU": 0.00797775,
+      "Mem": 54558720
+    },
+    {
+      "Name": "aws-node-lqw6f/aws-node",
+      "CPU": 0.003236161,
+      "Mem": 53460992
+    },
+    {
+      "Name": "aws-node-lvg95/aws-node",
+      "CPU": 0.004067604,
+      "Mem": 56332288
+    },
+    {
+      "Name": "aws-node-mdlvp/aws-node",
+      "CPU": 0.006253312,
+      "Mem": 55033856
+    },
+    {
+      "Name": "aws-node-mpzwm/aws-node",
+      "CPU": 0.002151124,
+      "Mem": 52916224
+    },
+    {
+      "Name": "aws-node-mwnn2/aws-node",
+      "CPU": 0.006360098,
+      "Mem": 55656448
+    },
+    {
+      "Name": "aws-node-wllcb/aws-node",
+      "CPU": 0.004417224,
+      "Mem": 54743040
+    },
+    {
+      "Name": "coredns-5c97f79574-859qt/coredns",
+      "CPU": 0.001473997,
+      "Mem": 8388608
+    },
+    {
+      "Name": "coredns-5c97f79574-mbnps/coredns",
+      "CPU": 0.001560015,
+      "Mem": 8359936
+    },
+    {
+      "Name": "kube-proxy-95lhm/kube-proxy",
+      "CPU": 0.043224961,
+      "Mem": 12668928
+    },
+    {
+      "Name": "kube-proxy-9kvgw/kube-proxy",
+      "CPU": 0.001735954,
+      "Mem": 10932224
+    },
+    {
+      "Name": "kube-proxy-b2mvv/kube-proxy",
+      "CPU": 0.033408781,
+      "Mem": 12414976
+    },
+    {
+      "Name": "kube-proxy-dqgm4/kube-proxy",
+      "CPU": 0.061514975,
+      "Mem": 12582912
+    },
+    {
+      "Name": "kube-proxy-f92s5/kube-proxy",
+      "CPU": 0.045912899,
+      "Mem": 13283328
+    },
+    {
+      "Name": "kube-proxy-kqhxf/kube-proxy",
+      "CPU": 0.023700436,
+      "Mem": 13107200
+    },
+    {
+      "Name": "kube-proxy-rtk65/kube-proxy",
+      "CPU": 0.015257991,
+      "Mem": 12558336
+    },
+    {
+      "Name": "kube-proxy-snjdv/kube-proxy",
+      "CPU": 0.018649416,
+      "Mem": 14901248
+    },
+    {
+      "Name": "kube-proxy-wfdzj/kube-proxy",
+      "CPU": 0.004080771,
+      "Mem": 12578816
+    },
+    {
+      "Name": "kube-proxy-wvxfz/kube-proxy",
+      "CPU": 0.028695068,
+      "Mem": 14630912
+    }
+  ],
+  "90": [
+    {
+      "Name": "aws-node-8n7zd/aws-node",
+      "CPU": 0.00252468,
+      "Mem": 53575680
+    },
+    {
+      "Name": "aws-node-bmr5w/aws-node",
+      "CPU": 0.005756809,
+      "Mem": 54874112
+    },
+    {
+      "Name": "aws-node-chvbv/aws-node",
+      "CPU": 0.006705516,
+      "Mem": 54206464
+    },
+    {
+      "Name": "aws-node-l7kw8/aws-node",
+      "CPU": 0.00797775,
+      "Mem": 54558720
+    },
+    {
+      "Name": "aws-node-lqw6f/aws-node",
+      "CPU": 0.003236161,
+      "Mem": 53460992
+    },
+    {
+      "Name": "aws-node-lvg95/aws-node",
+      "CPU": 0.004067604,
+      "Mem": 56332288
+    },
+    {
+      "Name": "aws-node-mdlvp/aws-node",
+      "CPU": 0.006253312,
+      "Mem": 55033856
+    },
+    {
+      "Name": "aws-node-mpzwm/aws-node",
+      "CPU": 0.002151124,
+      "Mem": 52916224
+    },
+    {
+      "Name": "aws-node-mwnn2/aws-node",
+      "CPU": 0.006360098,
+      "Mem": 55656448
+    },
+    {
+      "Name": "aws-node-wllcb/aws-node",
+      "CPU": 0.004417224,
+      "Mem": 54743040
+    },
+    {
+      "Name": "coredns-5c97f79574-859qt/coredns",
+      "CPU": 0.001473997,
+      "Mem": 8388608
+    },
+    {
+      "Name": "coredns-5c97f79574-mbnps/coredns",
+      "CPU": 0.001560015,
+      "Mem": 8359936
+    },
+    {
+      "Name": "kube-proxy-95lhm/kube-proxy",
+      "CPU": 0.043224961,
+      "Mem": 12668928
+    },
+    {
+      "Name": "kube-proxy-9kvgw/kube-proxy",
+      "CPU": 0.001735954,
+      "Mem": 10932224
+    },
+    {
+      "Name": "kube-proxy-b2mvv/kube-proxy",
+      "CPU": 0.033408781,
+      "Mem": 12414976
+    },
+    {
+      "Name": "kube-proxy-dqgm4/kube-proxy",
+      "CPU": 0.061514975,
+      "Mem": 12582912
+    },
+    {
+      "Name": "kube-proxy-f92s5/kube-proxy",
+      "CPU": 0.045912899,
+      "Mem": 13283328
+    },
+    {
+      "Name": "kube-proxy-kqhxf/kube-proxy",
+      "CPU": 0.023700436,
+      "Mem": 13107200
+    },
+    {
+      "Name": "kube-proxy-rtk65/kube-proxy",
+      "CPU": 0.015257991,
+      "Mem": 12558336
+    },
+    {
+      "Name": "kube-proxy-snjdv/kube-proxy",
+      "CPU": 0.018649416,
+      "Mem": 14901248
+    },
+    {
+      "Name": "kube-proxy-wfdzj/kube-proxy",
+      "CPU": 0.004080771,
+      "Mem": 12578816
+    },
+    {
+      "Name": "kube-proxy-wvxfz/kube-proxy",
+      "CPU": 0.028695068,
+      "Mem": 14630912
+    }
+  ],
+  "99": [
+    {
+      "Name": "aws-node-8n7zd/aws-node",
+      "CPU": 0.00252468,
+      "Mem": 53575680
+    },
+    {
+      "Name": "aws-node-bmr5w/aws-node",
+      "CPU": 0.005756809,
+      "Mem": 54874112
+    },
+    {
+      "Name": "aws-node-chvbv/aws-node",
+      "CPU": 0.006705516,
+      "Mem": 54206464
+    },
+    {
+      "Name": "aws-node-l7kw8/aws-node",
+      "CPU": 0.00797775,
+      "Mem": 54558720
+    },
+    {
+      "Name": "aws-node-lqw6f/aws-node",
+      "CPU": 0.003236161,
+      "Mem": 53460992
+    },
+    {
+      "Name": "aws-node-lvg95/aws-node",
+      "CPU": 0.004067604,
+      "Mem": 56332288
+    },
+    {
+      "Name": "aws-node-mdlvp/aws-node",
+      "CPU": 0.006253312,
+      "Mem": 55033856
+    },
+    {
+      "Name": "aws-node-mpzwm/aws-node",
+      "CPU": 0.002151124,
+      "Mem": 52916224
+    },
+    {
+      "Name": "aws-node-mwnn2/aws-node",
+      "CPU": 0.006360098,
+      "Mem": 55656448
+    },
+    {
+      "Name": "aws-node-wllcb/aws-node",
+      "CPU": 0.004417224,
+      "Mem": 54743040
+    },
+    {
+      "Name": "coredns-5c97f79574-859qt/coredns",
+      "CPU": 0.001473997,
+      "Mem": 8388608
+    },
+    {
+      "Name": "coredns-5c97f79574-mbnps/coredns",
+      "CPU": 0.001560015,
+      "Mem": 8359936
+    },
+    {
+      "Name": "kube-proxy-95lhm/kube-proxy",
+      "CPU": 0.043224961,
+      "Mem": 12668928
+    },
+    {
+      "Name": "kube-proxy-9kvgw/kube-proxy",
+      "CPU": 0.001735954,
+      "Mem": 10932224
+    },
+    {
+      "Name": "kube-proxy-b2mvv/kube-proxy",
+      "CPU": 0.033408781,
+      "Mem": 12414976
+    },
+    {
+      "Name": "kube-proxy-dqgm4/kube-proxy",
+      "CPU": 0.061514975,
+      "Mem": 12582912
+    },
+    {
+      "Name": "kube-proxy-f92s5/kube-proxy",
+      "CPU": 0.045912899,
+      "Mem": 13283328
+    },
+    {
+      "Name": "kube-proxy-kqhxf/kube-proxy",
+      "CPU": 0.023700436,
+      "Mem": 13107200
+    },
+    {
+      "Name": "kube-proxy-rtk65/kube-proxy",
+      "CPU": 0.015257991,
+      "Mem": 12558336
+    },
+    {
+      "Name": "kube-proxy-snjdv/kube-proxy",
+      "CPU": 0.018649416,
+      "Mem": 14901248
+    },
+    {
+      "Name": "kube-proxy-wfdzj/kube-proxy",
+      "CPU": 0.004080771,
+      "Mem": 12578816
+    },
+    {
+      "Name": "kube-proxy-wvxfz/kube-proxy",
+      "CPU": 0.028695068,
+      "Mem": 14630912
+    }
+  ]
+}
