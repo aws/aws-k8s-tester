@@ -37,6 +37,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.9...v1.4.0
 - Fix [`eks/cluster-loader` error handling](https://github.com/aws/aws-k8s-tester/commit/4a9d982929c32efbdfad820e0cece67721d53034).
 - Add [S3 access policies to worker node roles](https://github.com/aws/aws-k8s-tester/commit/bcf0b1da501fc9a1bcf1a7691e690e729ee95b59).
 - Improve [`eks/stresser/remote` results fetch](https://github.com/aws/aws-k8s-tester/commit/a982c1b484d8133b113bfa1f22df6698411898b7).
+- Fix [multiple `eks/cluster-loader` runs](https://github.com/aws/aws-k8s-tester/commit/a7d6ebc79d76782d5bbff533183d9baa05bd663e).
 
 ### `eksconfig`
 
