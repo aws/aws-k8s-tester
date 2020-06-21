@@ -21,6 +21,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.9...v1.4.0
 
 ### `eks`
 
+- Add [`eks/tester.Tester.Name` method](https://github.com/aws/aws-k8s-tester/commit/2f8f08595d53f18abe77c47a6f43c6e734127f53).
+- Fix [`eks/stresser` collect metrics](https://github.com/aws/aws-k8s-tester/commit/2f8f08595d53f18abe77c47a6f43c6e734127f53).
 - Clean up [`colorstring` printf](https://github.com/aws/aws-k8s-tester/pull/101).
 - Clean up [polling operation error handling](https://github.com/aws/aws-k8s-tester/commit/26627f14f4dbbcc8dd64d6307ed6e58c0b809f52).
   - Rename [`eks/cluster/version-upgrade.Poll` to `eks/cluster/wait.PollUpdate`](https://github.com/aws/aws-k8s-tester/commit/a6eeea26a7ab3c7069a4278026b56de87707c9b1).
