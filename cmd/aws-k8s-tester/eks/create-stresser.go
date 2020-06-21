@@ -138,6 +138,8 @@ func createStresserFunc(cmd *cobra.Command, args []string) {
 		Logger:         lg,
 		Stopc:          stopc,
 		S3API:          s3.New(awsSession),
+		S3BucketName:   stresserS3BucketName,
+		S3DirName:      stresserS3DirName,
 		Client:         cli,
 		ClientTimeout:  stresserClientTimeout,
 		Deadline:       time.Now().Add(stresserDuration),
