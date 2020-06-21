@@ -120,7 +120,20 @@ E0620 10:48:09.278206     256 clusterloader.go:226] ----------------------------
 
 JUnit report was created: /data/eks-2020062010-exclusiver66-cluster-loader-local-report/junit.xml
 F0620 10:48:09.278371     256 clusterloader.go:329] 1 tests have failed!
+
+
+E0621 01:15:53.003734     415 test_metrics.go:226] TestMetrics: [action gather failed for SchedulingMetrics measurement: unexpected error (code: 0) in ssh connection to master: &errors.errorString{s:"error getting signer for provider : 'GetSigner(...) not implemented for '"}]
+I0621 01:15:53.003760     415 simple_test_executor.go:162] Step "Collecting measurements" ended
+W0621 01:15:53.003766     415 simple_test_executor.go:165] Got errors during step execution: [measurement call TestMetrics - TestMetrics error: [action gather failed for SchedulingMetrics measurement: unexpected error (code: 0) in ssh connection to master: &errors.errorString{s:"error getting signer for provider : 'GetSigner(...) not implemented for '"}]]
+I0621 01:15:53.003789     415 simple_test_executor.go:72] Waiting for the chaos monkey subroutine to end...
+I0621 01:15:53.003795     415 simple_test_executor.go:74] Chaos monkey ended.
+I0621 01:15:53.007928     415 simple_test_executor.go:94]
+{"level":"info","ts":"2020-06-21T01:16:20.231-0700","caller":"cluster-loader/cluster-loader.go:201","msg":"checked cluster loader command output from logs file","total-lines":153}
+I0621 01:15:53.007938     415 probes.go:131] Probe DnsLookupLatency wasn't started, skipping the Dispose() step
+I0621 01:15:53.007977     415 probes.go:131] Probe InClusterNetworkLatency wasn't started, skipping the Dispose() step
 */
+
+const skipErr = `action gather failed for SchedulingMetrics`
 
 // Start runs the cluster loader and waits for its completion.
 func (ts *loader) Start() (err error) {
@@ -215,12 +228,36 @@ func (ts *loader) Start() (err error) {
 			select {
 			case <-ts.rootCtx.Done():
 				return
-			default:
+			case <-time.After(5 * time.Second):
 			}
-			if rerr := ts.run(i, args); rerr != nil {
+
+			rerr := ts.run(i, args)
+			if rerr == nil {
+				ts.cfg.Logger.Info("completed cluster loader", zap.Int("current-run", i), zap.Int("total-runs", ts.cfg.Runs))
+				continue
+			}
+
+			ts.cfg.Logger.Warn("checking cluster loader error from log file", zap.Error(rerr))
+			b, lerr := ioutil.ReadFile(ts.cfg.LogPath)
+			if lerr != nil {
+				ts.cfg.Logger.Warn("failed to read cluster loader command output from logs file", zap.Error(lerr))
 				errc <- rerr
 				return
 			}
+			output := strings.TrimSpace(string(b))
+			lines := strings.Split(output, "\n")
+			linesN := len(lines)
+			if linesN > 15 {
+				output = strings.Join(lines[linesN-15:], "\n")
+			}
+
+			if strings.Contains(output, skipErr) {
+				ts.cfg.Logger.Warn("cluster loader failed but continue", zap.String("skip-error-message", skipErr))
+				continue
+			}
+
+			errc <- rerr
+			return
 		}
 		errc <- nil
 	}()
