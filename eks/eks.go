@@ -13,7 +13,6 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"sync"
 	"syscall"
@@ -790,6 +789,7 @@ func (ts *Tester) Up() (err error) {
 		ts.stopCreationChOnce,
 		ts.osSig,
 		ts.createS3,
+		"createS3",
 	); err != nil {
 		return err
 	}
@@ -802,6 +802,7 @@ func (ts *Tester) Up() (err error) {
 		ts.stopCreationChOnce,
 		ts.osSig,
 		ts.createKeyPair,
+		"createKeyPair",
 	); err != nil {
 		return err
 	}
@@ -814,6 +815,7 @@ func (ts *Tester) Up() (err error) {
 		ts.stopCreationChOnce,
 		ts.osSig,
 		ts.clusterTester.Create,
+		ts.clusterTester.Name(),
 	); err != nil {
 		return err
 	}
@@ -861,6 +863,7 @@ func (ts *Tester) Up() (err error) {
 			ts.stopCreationChOnce,
 			ts.osSig,
 			ts.ngTester.Create,
+			ts.ngTester.Name(),
 		); err != nil {
 			return err
 		}
@@ -879,6 +882,7 @@ func (ts *Tester) Up() (err error) {
 			ts.stopCreationChOnce,
 			ts.osSig,
 			ts.mngTester.Create,
+			ts.mngTester.Name(),
 		); err != nil {
 			return err
 		}
@@ -914,6 +918,7 @@ func (ts *Tester) Up() (err error) {
 			ts.stopCreationChOnce,
 			ts.osSig,
 			ts.gpuTester.InstallNvidiaDriver,
+			ts.gpuTester.Name(),
 		); err != nil {
 			ts.lg.Warn("failed to install nvidia driver", zap.Error(err))
 			return err
@@ -927,6 +932,7 @@ func (ts *Tester) Up() (err error) {
 			ts.stopCreationChOnce,
 			ts.osSig,
 			ts.gpuTester.CreateNvidiaSMI,
+			ts.gpuTester.Name(),
 		); err != nil {
 			ts.lg.Warn("failed to create nvidia-smi", zap.Error(err))
 			return err
@@ -945,6 +951,7 @@ func (ts *Tester) Up() (err error) {
 		ts.stopCreationChOnce,
 		ts.osSig,
 		ts.clusterTester.CheckHealth,
+		ts.clusterTester.Name(),
 	); err != nil {
 		return err
 	}
@@ -954,13 +961,14 @@ func (ts *Tester) Up() (err error) {
 
 	for idx, cur := range ts.testers {
 		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-		fmt.Printf(ts.color("[light_green]testers[%02d].Create [cyan]%q (%q, %q)\n"), idx, reflect.TypeOf(cur), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		fmt.Printf(ts.color("[light_green]testers[%02d].Create [cyan]%q (%q, %q)\n"), idx, cur.Name(), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		err := catchInterrupt(
 			ts.lg,
 			ts.stopCreationCh,
 			ts.stopCreationChOnce,
 			ts.osSig,
 			cur.Create,
+			cur.Name(),
 		)
 
 		if idx%10 == 0 {
@@ -976,12 +984,13 @@ func (ts *Tester) Up() (err error) {
 				ts.stopCreationChOnce,
 				ts.osSig,
 				ts.clusterTester.CheckHealth,
+				ts.clusterTester.Name(),
 			); err != nil {
 				return err
 			}
 
 			fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-			fmt.Printf(ts.color("[light_green]testers[%02d] uploadToS3 [cyan]%q (%q, %q)\n"), idx, reflect.TypeOf(cur), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+			fmt.Printf(ts.color("[light_green]testers[%02d] uploadToS3 [cyan]%q (%q, %q)\n"), idx, cur.Name(), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 			if serr := ts.uploadToS3(); serr != nil {
 				ts.lg.Warn("failed to upload artifacts to S3", zap.Error(serr))
 			}
@@ -1009,6 +1018,7 @@ func (ts *Tester) Up() (err error) {
 			ts.stopCreationChOnce,
 			ts.osSig,
 			ts.ngTester.FetchLogs,
+			ts.ngTester.Name(),
 		); err != nil {
 			return err
 		}
@@ -1030,6 +1040,7 @@ func (ts *Tester) Up() (err error) {
 			ts.stopCreationChOnce,
 			ts.osSig,
 			ts.mngTester.FetchLogs,
+			ts.mngTester.Name(),
 		); err != nil {
 			return err
 		}
@@ -1039,13 +1050,14 @@ func (ts *Tester) Up() (err error) {
 		(ts.cfg.IsEnabledAddOnManagedNodeGroups() && ts.cfg.AddOnManagedNodeGroups.Created && ts.cfg.AddOnManagedNodeGroups.FetchLogs) {
 		for idx, cur := range ts.testers {
 			fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-			fmt.Printf(ts.color("[light_green]testers[%02d].AggregateResults [cyan]%q (%q, %q)\n"), idx, reflect.TypeOf(cur), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+			fmt.Printf(ts.color("[light_green]testers[%02d].AggregateResults [cyan]%q (%q, %q)\n"), idx, cur.Name(), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 			err := catchInterrupt(
 				ts.lg,
 				ts.stopCreationCh,
 				ts.stopCreationChOnce,
 				ts.osSig,
 				cur.AggregateResults,
+				cur.Name(),
 			)
 			if err != nil {
 				return err
@@ -1065,6 +1077,7 @@ func (ts *Tester) Up() (err error) {
 		ts.stopCreationChOnce,
 		ts.osSig,
 		ts.clusterTester.CheckHealth,
+		ts.clusterTester.Name(),
 	); err != nil {
 		return err
 	}
@@ -1111,6 +1124,7 @@ func (ts *Tester) Up() (err error) {
 			ts.stopCreationChOnce,
 			ts.osSig,
 			ts.mngTester.UpgradeVersion,
+			ts.mngTester.Name(),
 		); err != nil {
 			return err
 		}
@@ -1132,6 +1146,7 @@ func (ts *Tester) Up() (err error) {
 			ts.stopCreationChOnce,
 			ts.osSig,
 			ts.mngTester.FetchLogs,
+			ts.mngTester.Name(),
 		); err != nil {
 			return err
 		}
@@ -1223,7 +1238,7 @@ func (ts *Tester) down() (err error) {
 		idx = testersN - idx - 1
 		cur := ts.testers[idx]
 		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-		fmt.Printf(ts.color("[light_blue]testers[%02d].Delete [cyan]%q (%q, %q)\n"), idx, reflect.TypeOf(cur), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		fmt.Printf(ts.color("[light_blue]testers[%02d].Delete [cyan]%q (%q, %q)\n"), idx, cur.Name(), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		if err := cur.Delete(); err != nil {
 			ts.lg.Warn("failed tester.Delete", zap.Error(err))
 			errs = append(errs, err.Error())
@@ -1448,7 +1463,7 @@ func (ts *Tester) ArtifactsDir() string {
 	return ""
 }
 
-func catchInterrupt(lg *zap.Logger, stopc chan struct{}, once *sync.Once, sigc chan os.Signal, run func() error) (err error) {
+func catchInterrupt(lg *zap.Logger, stopc chan struct{}, once *sync.Once, sigc chan os.Signal, run func() error, name string) (err error) {
 	errc := make(chan error)
 	go func() {
 		errc <- run()
@@ -1457,14 +1472,14 @@ func catchInterrupt(lg *zap.Logger, stopc chan struct{}, once *sync.Once, sigc c
 	case _, ok := <-stopc:
 		rerr := <-errc
 		lg.Info("interrupted", zap.Error(rerr))
-		err = fmt.Errorf("stopc returned, stopc open %v, run function returned %v (%v)", ok, rerr, reflect.TypeOf(run))
+		err = fmt.Errorf("stopc returned, stopc open %v, run function returned %v (%q)", ok, rerr, name)
 	case sig := <-sigc:
 		once.Do(func() { close(stopc) })
 		rerr := <-errc
-		err = fmt.Errorf("received os signal %v, closed stopc, run function returned %v (%v)", sig, rerr, reflect.TypeOf(run))
+		err = fmt.Errorf("received os signal %v, closed stopc, run function returned %v (%q)", sig, rerr, name)
 	case err = <-errc:
 		if err != nil {
-			err = fmt.Errorf("run function returned %v (%v)", err, reflect.TypeOf(run))
+			err = fmt.Errorf("run function returned %v (%q)", err, name)
 		}
 	}
 	return err

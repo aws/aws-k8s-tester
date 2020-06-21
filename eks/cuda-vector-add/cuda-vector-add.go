@@ -34,8 +34,12 @@ const (
 	appName = "cuda-vector-add"
 )
 
+var pkgName = reflect.TypeOf(tester{}).PkgPath()
+
+func (ts *tester) Name() string { return pkgName }
+
 func New(cfg Config) eks_tester.Tester {
-	cfg.Logger.Info("creating tester", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	cfg.Logger.Info("creating tester", zap.String("tester", pkgName))
 	return &tester{cfg: cfg}
 }
 
@@ -45,11 +49,11 @@ type tester struct {
 
 func (ts *tester) Create() (err error) {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnCUDAVectorAdd() {
-		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", pkgName))
 		return nil
 	}
 	if ts.cfg.EKSConfig.AddOnCUDAVectorAdd.Created {
-		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", pkgName))
 		return nil
 	}
 
@@ -251,11 +255,11 @@ vector-add       0/1       Completed   0     4s
 
 func (ts *tester) Delete() error {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnCUDAVectorAdd() {
-		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", pkgName))
 		return nil
 	}
 	if !ts.cfg.EKSConfig.AddOnCUDAVectorAdd.Created {
-		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", pkgName))
 		return nil
 	}
 
@@ -305,14 +309,14 @@ func (ts *tester) Delete() error {
 
 func (ts *tester) AggregateResults() error {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnCUDAVectorAdd() {
-		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", pkgName))
 		return nil
 	}
 	if !ts.cfg.EKSConfig.AddOnCUDAVectorAdd.Created {
-		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", pkgName))
 		return nil
 	}
 
-	ts.cfg.Logger.Info("starting tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	ts.cfg.Logger.Info("starting tester.AggregateResults", zap.String("tester", pkgName))
 	return nil
 }

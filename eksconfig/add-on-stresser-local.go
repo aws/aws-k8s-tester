@@ -1,6 +1,7 @@
 package eksconfig
 
 import (
+	"errors"
 	"strings"
 	"time"
 
@@ -83,6 +84,9 @@ func (cfg *Config) validateAddOnStresserLocal() error {
 	if !cfg.IsEnabledAddOnStresserLocal() {
 		return nil
 	}
+	if cfg.S3BucketName == "" {
+		return errors.New("AddOnStresserLocal requires S3 bucket but S3BucketName empty")
+	}
 
 	if cfg.AddOnStresserLocal.Namespace == "" {
 		cfg.AddOnStresserLocal.Namespace = cfg.Name + "-stresser-local"
@@ -94,7 +98,7 @@ func (cfg *Config) validateAddOnStresserLocal() error {
 	cfg.AddOnStresserLocal.DurationString = cfg.AddOnStresserLocal.Duration.String()
 
 	if cfg.AddOnStresserLocal.RequestsWritesJSONPath == "" {
-		cfg.AddOnStresserLocal.RequestsWritesJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-local-requests-writes.csv"
+		cfg.AddOnStresserLocal.RequestsWritesJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-local-requests-writes.json"
 	}
 	if cfg.AddOnStresserLocal.RequestsWritesSummaryJSONPath == "" {
 		cfg.AddOnStresserLocal.RequestsWritesSummaryJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-local-requests-writes-summary.json"
@@ -104,7 +108,7 @@ func (cfg *Config) validateAddOnStresserLocal() error {
 	}
 
 	if cfg.AddOnStresserLocal.RequestsReadsJSONPath == "" {
-		cfg.AddOnStresserLocal.RequestsReadsJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-local-requests-reads.csv"
+		cfg.AddOnStresserLocal.RequestsReadsJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-local-requests-reads.json"
 	}
 	if cfg.AddOnStresserLocal.RequestsReadsSummaryJSONPath == "" {
 		cfg.AddOnStresserLocal.RequestsReadsSummaryJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-local-requests-reads-summary.json"

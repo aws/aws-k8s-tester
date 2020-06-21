@@ -35,9 +35,13 @@ type Config struct {
 	EKSAPI    eksiface.EKSAPI
 }
 
+var pkgName = reflect.TypeOf(tester{}).PkgPath()
+
+func (ts *tester) Name() string { return pkgName }
+
 // New creates a new Upgrader.
 func New(cfg Config) Upgrader {
-	cfg.Logger.Info("creating tester", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	cfg.Logger.Info("creating tester", zap.String("tester", pkgName))
 	return &tester{cfg: cfg}
 }
 
@@ -62,7 +66,7 @@ func (ts *tester) Upgrade(mngName string) (err error) {
 	fmt.Printf(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
 	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_green]MNGs[%q].Upgrade\n"), mngName)
 
-	ts.cfg.Logger.Info("starting tester.Upgrade", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	ts.cfg.Logger.Info("starting tester.Upgrade", zap.String("tester", pkgName))
 	cur.VersionUpgrade.Created = true
 	ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName] = cur
 	cur, _ = ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName]

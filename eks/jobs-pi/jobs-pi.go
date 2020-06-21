@@ -30,9 +30,13 @@ type Config struct {
 	K8SClient k8s_client.EKS
 }
 
+var pkgName = reflect.TypeOf(tester{}).PkgPath()
+
+func (ts *tester) Name() string { return pkgName }
+
 // New creates a new Job tester.
 func New(cfg Config) eks_tester.Tester {
-	cfg.Logger.Info("creating tester", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	cfg.Logger.Info("creating tester", zap.String("tester", pkgName))
 	return &tester{cfg: cfg}
 }
 
@@ -42,15 +46,15 @@ type tester struct {
 
 func (ts *tester) Create() error {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnJobsPi() {
-		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", pkgName))
 		return nil
 	}
 	if ts.cfg.EKSConfig.AddOnJobsPi.Created {
-		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", pkgName))
 		return nil
 	}
 
-	ts.cfg.Logger.Info("starting tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	ts.cfg.Logger.Info("starting tester.Create", zap.String("tester", pkgName))
 	ts.cfg.EKSConfig.AddOnJobsPi.Created = true
 	ts.cfg.EKSConfig.Sync()
 	createStart := time.Now()
@@ -119,15 +123,15 @@ var propagationBackground = metav1.DeletePropagationBackground
 
 func (ts *tester) Delete() error {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnJobsPi() {
-		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", pkgName))
 		return nil
 	}
 	if !ts.cfg.EKSConfig.AddOnJobsPi.Created {
-		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", pkgName))
 		return nil
 	}
 
-	ts.cfg.Logger.Info("starting tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	ts.cfg.Logger.Info("starting tester.Delete", zap.String("tester", pkgName))
 	deleteStart := time.Now()
 	defer func() {
 		deleteEnd := time.Now()
@@ -224,15 +228,15 @@ func (ts *tester) createObject() (batchv1.Job, string, error) {
 
 func (ts *tester) AggregateResults() (err error) {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnJobsPi() {
-		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", pkgName))
 		return nil
 	}
 	if !ts.cfg.EKSConfig.AddOnJobsPi.Created {
-		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", pkgName))
 		return nil
 	}
 
-	ts.cfg.Logger.Info("starting tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	ts.cfg.Logger.Info("starting tester.AggregateResults", zap.String("tester", pkgName))
 	return nil
 }
 

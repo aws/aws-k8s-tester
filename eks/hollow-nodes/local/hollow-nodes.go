@@ -33,8 +33,12 @@ type Config struct {
 	K8SClient k8s_client.EKS
 }
 
+var pkgName = reflect.TypeOf(tester{}).PkgPath()
+
+func (ts *tester) Name() string { return pkgName }
+
 func New(cfg Config) eks_tester.Tester {
-	cfg.Logger.Info("creating tester", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	cfg.Logger.Info("creating tester", zap.String("tester", pkgName))
 	return &tester{cfg: cfg}
 }
 
@@ -45,15 +49,15 @@ type tester struct {
 
 func (ts *tester) Create() (err error) {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnHollowNodesLocal() {
-		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", pkgName))
 		return nil
 	}
 	if ts.cfg.EKSConfig.AddOnHollowNodesLocal.Created {
-		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", pkgName))
 		return nil
 	}
 
-	ts.cfg.Logger.Info("starting tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	ts.cfg.Logger.Info("starting tester.Create", zap.String("tester", pkgName))
 	ts.ng = hollow_nodes.CreateNodeGroup(hollow_nodes.NodeGroupConfig{
 		Logger:         ts.cfg.Logger,
 		Stopc:          ts.cfg.Stopc,
@@ -108,15 +112,15 @@ func (ts *tester) Create() (err error) {
 
 func (ts *tester) Delete() (err error) {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnHollowNodesLocal() {
-		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", pkgName))
 		return nil
 	}
 	if !ts.cfg.EKSConfig.AddOnHollowNodesLocal.Created {
-		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", pkgName))
 		return nil
 	}
 
-	ts.cfg.Logger.Info("starting tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	ts.cfg.Logger.Info("starting tester.Delete", zap.String("tester", pkgName))
 	deleteStart := time.Now()
 	defer func() {
 		deleteEnd := time.Now()
@@ -178,14 +182,14 @@ func (ts *tester) deleteCreatedNodes() error {
 
 func (ts *tester) AggregateResults() (err error) {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnHollowNodesLocal() {
-		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", pkgName))
 		return nil
 	}
 	if !ts.cfg.EKSConfig.AddOnHollowNodesLocal.Created {
-		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", pkgName))
 		return nil
 	}
 
-	ts.cfg.Logger.Info("starting tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	ts.cfg.Logger.Info("starting tester.AggregateResults", zap.String("tester", pkgName))
 	return nil
 }

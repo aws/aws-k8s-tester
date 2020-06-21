@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"reflect"
 	"strings"
 	"time"
@@ -34,8 +33,12 @@ type Config struct {
 // TODO: use kubemark
 // nodelease.NewController, kubemark.GetHollowKubeletConfig
 
+var pkgName = reflect.TypeOf(tester{}).PkgPath()
+
+func (ts *tester) Name() string { return pkgName }
+
 func New(cfg Config) eks_tester.Tester {
-	cfg.Logger.Info("creating tester", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	cfg.Logger.Info("creating tester", zap.String("tester", pkgName))
 	return &tester{cfg: cfg}
 }
 
@@ -45,15 +48,15 @@ type tester struct {
 
 func (ts *tester) Create() (err error) {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnStresserLocal() {
-		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", pkgName))
 		return nil
 	}
 	if ts.cfg.EKSConfig.AddOnStresserLocal.Created {
-		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", pkgName))
 		return nil
 	}
 
-	ts.cfg.Logger.Info("starting tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	ts.cfg.Logger.Info("starting tester.Create", zap.String("tester", pkgName))
 	ts.cfg.EKSConfig.AddOnStresserLocal.Created = true
 	ts.cfg.EKSConfig.Sync()
 	createStart := time.Now()
@@ -84,20 +87,24 @@ func (ts *tester) Create() (err error) {
 	}
 
 	loader := stresser.New(stresser.Config{
-		Logger:         ts.cfg.Logger,
-		Stopc:          ts.cfg.Stopc,
-		S3API:          ts.cfg.S3API,
-		S3BucketName:   ts.cfg.EKSConfig.S3BucketName,
-		S3DirName:      ts.cfg.EKSConfig.Name,
-		Client:         ts.cfg.K8SClient,
-		ClientTimeout:  ts.cfg.EKSConfig.ClientTimeout,
-		Deadline:       time.Now().Add(ts.cfg.EKSConfig.AddOnStresserLocal.Duration),
-		NamespaceWrite: ts.cfg.EKSConfig.AddOnStresserLocal.Namespace,
-		NamespacesRead: ns,
-		ObjectSize:     ts.cfg.EKSConfig.AddOnStresserLocal.ObjectSize,
-		ListLimit:      ts.cfg.EKSConfig.AddOnStresserLocal.ListLimit,
-		WritesJSONPath: ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesJSONPath,
-		ReadsJSONPath:  ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsJSONPath,
+		Logger:                 ts.cfg.Logger,
+		Stopc:                  ts.cfg.Stopc,
+		S3API:                  ts.cfg.S3API,
+		S3BucketName:           ts.cfg.EKSConfig.S3BucketName,
+		S3DirName:              ts.cfg.EKSConfig.Name,
+		Client:                 ts.cfg.K8SClient,
+		ClientTimeout:          ts.cfg.EKSConfig.ClientTimeout,
+		Deadline:               time.Now().Add(ts.cfg.EKSConfig.AddOnStresserLocal.Duration),
+		NamespaceWrite:         ts.cfg.EKSConfig.AddOnStresserLocal.Namespace,
+		NamespacesRead:         ns,
+		ObjectSize:             ts.cfg.EKSConfig.AddOnStresserLocal.ObjectSize,
+		ListLimit:              ts.cfg.EKSConfig.AddOnStresserLocal.ListLimit,
+		WritesJSONPath:         ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesJSONPath,
+		WritesSummaryJSONPath:  ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummaryJSONPath,
+		WritesSummaryTablePath: ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummaryTablePath,
+		ReadsJSONPath:          ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsJSONPath,
+		ReadsSummaryJSONPath:   ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummaryJSONPath,
+		ReadsSummaryTablePath:  ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummaryTablePath,
 	})
 	loader.Start()
 
@@ -109,31 +116,8 @@ func (ts *tester) Create() (err error) {
 		ts.cfg.EKSConfig.Sync()
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to get metrics", zap.Error(err))
-		} else {
-			err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummaryJSONPath, []byte(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummary.JSON()), 0600)
-			if err != nil {
-				ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
-				return err
-			}
-			err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummaryTablePath, []byte(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummary.Table()), 0600)
-			if err != nil {
-				ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
-				return err
-			}
-			fmt.Printf("\n\nAddOnStresserLocal.RequestsWritesSummary:\n%s\n", ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummary.Table())
-			err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummaryJSONPath, []byte(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummary.JSON()), 0600)
-			if err != nil {
-				ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
-				return err
-			}
-			err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummaryTablePath, []byte(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummary.Table()), 0600)
-			if err != nil {
-				ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
-				return err
-			}
-			fmt.Printf("\n\nAddOnStresserLocal.RequestsReadsSummary:\n%s\n", ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummary.Table())
 		}
-		return nil
+		return err
 
 	case <-time.After(ts.cfg.EKSConfig.AddOnStresserLocal.Duration):
 		ts.cfg.Logger.Info("completing load testing", zap.Duration("duration", ts.cfg.EKSConfig.AddOnStresserLocal.Duration))
@@ -142,29 +126,6 @@ func (ts *tester) Create() (err error) {
 		ts.cfg.EKSConfig.Sync()
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to get metrics", zap.Error(err))
-		} else {
-			err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummaryJSONPath, []byte(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummary.JSON()), 0600)
-			if err != nil {
-				ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
-				return err
-			}
-			err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummaryTablePath, []byte(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummary.Table()), 0600)
-			if err != nil {
-				ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
-				return err
-			}
-			fmt.Printf("\n\nAddOnStresserLocal.RequestsWritesSummary:\n%s\n", ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummary.Table())
-			err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummaryJSONPath, []byte(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummary.JSON()), 0600)
-			if err != nil {
-				ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
-				return err
-			}
-			err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummaryTablePath, []byte(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummary.Table()), 0600)
-			if err != nil {
-				ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
-				return err
-			}
-			fmt.Printf("\n\nAddOnStresserLocal.RequestsReadsSummary:\n%s\n", ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummary.Table())
 		}
 
 		select {
@@ -200,15 +161,15 @@ func (ts *tester) Create() (err error) {
 
 func (ts *tester) Delete() error {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnStresserLocal() {
-		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", pkgName))
 		return nil
 	}
 	if !ts.cfg.EKSConfig.AddOnStresserLocal.Created {
-		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+		ts.cfg.Logger.Info("skipping tester.Delete", zap.String("tester", pkgName))
 		return nil
 	}
 
-	ts.cfg.Logger.Info("starting tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	ts.cfg.Logger.Info("starting tester.Delete", zap.String("tester", pkgName))
 	deleteStart := time.Now()
 	defer func() {
 		deleteEnd := time.Now()
@@ -238,14 +199,14 @@ func (ts *tester) Delete() error {
 
 func (ts *tester) AggregateResults() (err error) {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnStresserLocal() {
-		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", pkgName))
 		return nil
 	}
 	if !ts.cfg.EKSConfig.AddOnStresserLocal.Created {
-		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", pkgName))
 		return nil
 	}
 
-	ts.cfg.Logger.Info("starting tester.AggregateResults", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	ts.cfg.Logger.Info("starting tester.AggregateResults", zap.String("tester", pkgName))
 	return nil
 }

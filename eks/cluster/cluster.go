@@ -53,6 +53,8 @@ type Config struct {
 }
 
 type Tester interface {
+	// Name returns the name of the tester.
+	Name() string
 	// Create creates EKS cluster, and waits for completion.
 	Create() error
 	Client() k8s_client.EKS
@@ -62,9 +64,13 @@ type Tester interface {
 	Delete() error
 }
 
+var pkgName = reflect.TypeOf(tester{}).PkgPath()
+
+func (ts *tester) Name() string { return pkgName }
+
 // New creates a new Job tester.
 func New(cfg Config) Tester {
-	cfg.Logger.Info("creating tester", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	cfg.Logger.Info("creating tester", zap.String("tester", pkgName))
 	return &tester{cfg: cfg, checkHealthMu: new(sync.Mutex)}
 }
 
@@ -76,7 +82,7 @@ type tester struct {
 }
 
 func (ts *tester) Create() (err error) {
-	ts.cfg.Logger.Info("starting tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	ts.cfg.Logger.Info("starting tester.Create", zap.String("tester", pkgName))
 
 	if err = ts.createEncryption(); err != nil {
 		return err
@@ -158,7 +164,7 @@ func (ts *tester) checkHealth() (err error) {
 }
 
 func (ts *tester) Delete() error {
-	ts.cfg.Logger.Info("starting tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	ts.cfg.Logger.Info("starting tester.Delete", zap.String("tester", pkgName))
 
 	var errs []string
 

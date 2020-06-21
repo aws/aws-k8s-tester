@@ -108,8 +108,13 @@ type Config struct {
 	ObjectSize int
 	ListLimit  int64
 
-	WritesJSONPath string
-	ReadsJSONPath  string
+	WritesJSONPath         string
+	WritesSummaryJSONPath  string
+	WritesSummaryTablePath string
+
+	ReadsJSONPath         string
+	ReadsSummaryJSONPath  string
+	ReadsSummaryTablePath string
 }
 
 // Loader defines cluster loader operations.
@@ -178,7 +183,7 @@ func (ld *loader) Stop() {
 
 // GetMetrics locally fetches output from registered metrics.
 // ref. https://pkg.go.dev/github.com/prometheus/client_golang@v1.6.0/prometheus/promhttp?tab=doc#Handler
-func (ts *loader) CollectMetrics() (writes metrics.RequestsSummary, reads metrics.RequestsSummary, err error) {
+func (ts *loader) CollectMetrics() (writesSummary metrics.RequestsSummary, readsSummary metrics.RequestsSummary, err error) {
 	// https://pkg.go.dev/github.com/prometheus/client_golang/prometheus?tab=doc#Gatherer
 	mfs, err := prometheus.DefaultGatherer.Gather()
 	if err != nil {
@@ -192,24 +197,24 @@ func (ts *loader) CollectMetrics() (writes metrics.RequestsSummary, reads metric
 		switch *mf.Name {
 		case "stresser_client_write_requests_success_total":
 			gg := mf.Metric[0].GetGauge()
-			writes.SuccessTotal = gg.GetValue()
+			writesSummary.SuccessTotal = gg.GetValue()
 		case "stresser_client_write_requests_failure_total":
 			gg := mf.Metric[0].GetGauge()
-			writes.FailureTotal = gg.GetValue()
+			writesSummary.FailureTotal = gg.GetValue()
 		case "stresser_client_write_request_latency_milliseconds":
-			writes.LatencyHistogram, err = metrics.ParseHistogram("milliseconds", mf.Metric[0].GetHistogram())
+			writesSummary.LatencyHistogram, err = metrics.ParseHistogram("milliseconds", mf.Metric[0].GetHistogram())
 			if err != nil {
 				return metrics.RequestsSummary{}, metrics.RequestsSummary{}, err
 			}
 
 		case "stresser_client_read_requests_success_total":
 			gg := mf.Metric[0].GetGauge()
-			reads.SuccessTotal = gg.GetValue()
+			readsSummary.SuccessTotal = gg.GetValue()
 		case "stresser_client_read_requests_failure_total":
 			gg := mf.Metric[0].GetGauge()
-			reads.FailureTotal = gg.GetValue()
+			readsSummary.FailureTotal = gg.GetValue()
 		case "stresser_client_read_request_latency_milliseconds":
-			reads.LatencyHistogram, err = metrics.ParseHistogram("milliseconds", mf.Metric[0].GetHistogram())
+			readsSummary.LatencyHistogram, err = metrics.ParseHistogram("milliseconds", mf.Metric[0].GetHistogram())
 			if err != nil {
 				return metrics.RequestsSummary{}, metrics.RequestsSummary{}, err
 			}
@@ -218,19 +223,19 @@ func (ts *loader) CollectMetrics() (writes metrics.RequestsSummary, reads metric
 
 	ts.cfg.Logger.Info("receiving write latency results")
 	select {
-	case lats := <-ts.writeLatencies:
-		ts.cfg.Logger.Info("received and sorting write latency results", zap.Int("total-data-points", lats.Len()))
+	case allLats := <-ts.writeLatencies:
+		ts.cfg.Logger.Info("received and sorting write latency results", zap.Int("total-data-points", allLats.Len()))
 		now := time.Now()
-		sort.Sort(lats)
-		ts.cfg.Logger.Info("sorted write latency results", zap.Int("total-data-points", lats.Len()), zap.String("took", time.Since(now).String()))
-		writes.LantencyP50 = lats.PickLantencyP50()
-		writes.LantencyP90 = lats.PickLantencyP90()
-		writes.LantencyP99 = lats.PickLantencyP99()
-		writes.LantencyP999 = lats.PickLantencyP999()
-		writes.LantencyP9999 = lats.PickLantencyP9999()
+		sort.Sort(allLats)
+		ts.cfg.Logger.Info("sorted write latency results", zap.Int("total-data-points", allLats.Len()), zap.String("took", time.Since(now).String()))
+		writesSummary.LantencyP50 = allLats.PickLantencyP50()
+		writesSummary.LantencyP90 = allLats.PickLantencyP90()
+		writesSummary.LantencyP99 = allLats.PickLantencyP99()
+		writesSummary.LantencyP999 = allLats.PickLantencyP999()
+		writesSummary.LantencyP9999 = allLats.PickLantencyP9999()
 
 		ts.cfg.Logger.Info("writing latency results in JSON to disk", zap.String("path", ts.cfg.WritesJSONPath))
-		wb, err := json.Marshal(lats)
+		wb, err := json.Marshal(allLats)
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to encode latency results in JSON", zap.Error(err))
 			return metrics.RequestsSummary{}, metrics.RequestsSummary{}, err
@@ -257,19 +262,19 @@ func (ts *loader) CollectMetrics() (writes metrics.RequestsSummary, reads metric
 
 	ts.cfg.Logger.Info("receiving read latency results")
 	select {
-	case lats := <-ts.readLatencies:
-		ts.cfg.Logger.Info("received and sorting read latency results", zap.Int("total-data-points", lats.Len()))
+	case allLats := <-ts.readLatencies:
+		ts.cfg.Logger.Info("received and sorting read latency results", zap.Int("total-data-points", allLats.Len()))
 		now := time.Now()
-		sort.Sort(lats)
-		ts.cfg.Logger.Info("sorted read latency results", zap.Int("total-data-points", lats.Len()), zap.String("took", time.Since(now).String()))
-		reads.LantencyP50 = lats.PickLantencyP50()
-		reads.LantencyP90 = lats.PickLantencyP90()
-		reads.LantencyP99 = lats.PickLantencyP99()
-		reads.LantencyP999 = lats.PickLantencyP999()
-		reads.LantencyP9999 = lats.PickLantencyP9999()
+		sort.Sort(allLats)
+		ts.cfg.Logger.Info("sorted read latency results", zap.Int("total-data-points", allLats.Len()), zap.String("took", time.Since(now).String()))
+		readsSummary.LantencyP50 = allLats.PickLantencyP50()
+		readsSummary.LantencyP90 = allLats.PickLantencyP90()
+		readsSummary.LantencyP99 = allLats.PickLantencyP99()
+		readsSummary.LantencyP999 = allLats.PickLantencyP999()
+		readsSummary.LantencyP9999 = allLats.PickLantencyP9999()
 
 		ts.cfg.Logger.Info("writing latency results in JSON to disk", zap.String("path", ts.cfg.ReadsJSONPath))
-		wb, err := json.Marshal(lats)
+		wb, err := json.Marshal(allLats)
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to encode latency results in JSON", zap.Error(err))
 			return metrics.RequestsSummary{}, metrics.RequestsSummary{}, err
@@ -294,7 +299,43 @@ func (ts *loader) CollectMetrics() (writes metrics.RequestsSummary, reads metric
 		ts.cfg.Logger.Warn("took too long to receive read latency results")
 	}
 
-	return writes, reads, nil
+	err = ioutil.WriteFile(ts.cfg.WritesSummaryJSONPath, []byte(writesSummary.JSON()), 0600)
+	if err != nil {
+		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
+		return metrics.RequestsSummary{}, metrics.RequestsSummary{}, err
+	}
+	if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.S3BucketName, path.Join(ts.cfg.S3DirName, "add-on-stresser-remote", "writes", filepath.Base(ts.cfg.WritesSummaryJSONPath)), ts.cfg.WritesSummaryJSONPath); err != nil {
+		return metrics.RequestsSummary{}, metrics.RequestsSummary{}, err
+	}
+	err = ioutil.WriteFile(ts.cfg.WritesSummaryTablePath, []byte(writesSummary.Table()), 0600)
+	if err != nil {
+		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
+		return metrics.RequestsSummary{}, metrics.RequestsSummary{}, err
+	}
+	if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.S3BucketName, path.Join(ts.cfg.S3DirName, "add-on-stresser-remote", "writes", filepath.Base(ts.cfg.WritesSummaryTablePath)), ts.cfg.WritesSummaryTablePath); err != nil {
+		return metrics.RequestsSummary{}, metrics.RequestsSummary{}, err
+	}
+	fmt.Printf("\n\nWritesSummaryTable:\n%s\n", writesSummary.Table())
+
+	err = ioutil.WriteFile(ts.cfg.ReadsSummaryJSONPath, []byte(readsSummary.JSON()), 0600)
+	if err != nil {
+		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
+		return metrics.RequestsSummary{}, metrics.RequestsSummary{}, err
+	}
+	if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.S3BucketName, path.Join(ts.cfg.S3DirName, "add-on-stresser-remote", "reads", filepath.Base(ts.cfg.ReadsSummaryJSONPath)), ts.cfg.ReadsSummaryJSONPath); err != nil {
+		return metrics.RequestsSummary{}, metrics.RequestsSummary{}, err
+	}
+	err = ioutil.WriteFile(ts.cfg.ReadsSummaryTablePath, []byte(readsSummary.Table()), 0600)
+	if err != nil {
+		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
+		return metrics.RequestsSummary{}, metrics.RequestsSummary{}, err
+	}
+	if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.S3BucketName, path.Join(ts.cfg.S3DirName, "add-on-stresser-remote", "reads", filepath.Base(ts.cfg.ReadsSummaryTablePath)), ts.cfg.ReadsSummaryTablePath); err != nil {
+		return metrics.RequestsSummary{}, metrics.RequestsSummary{}, err
+	}
+	fmt.Printf("\n\nReadsSummaryTable:\n%s\n", readsSummary.Table())
+
+	return writesSummary, readsSummary, nil
 }
 
 func startWrites(

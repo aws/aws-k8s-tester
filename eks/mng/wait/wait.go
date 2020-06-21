@@ -42,9 +42,13 @@ type Config struct {
 	EKSAPI    eksiface.EKSAPI
 }
 
+var pkgName = reflect.TypeOf(tester{}).PkgPath()
+
+func (ts *tester) Name() string { return pkgName }
+
 // New creates a new node waiter.
 func New(cfg Config) NodeWaiter {
-	cfg.Logger.Info("creating NodeWaiter", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	cfg.Logger.Info("creating NodeWaiter", zap.String("tester", pkgName))
 	return &tester{cfg: cfg}
 }
 

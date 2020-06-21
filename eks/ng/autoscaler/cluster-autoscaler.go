@@ -225,9 +225,13 @@ type ClusterAutoscaler interface {
 	Create() error
 }
 
+var pkgName = reflect.TypeOf(tester{}).PkgPath()
+
+func (ts *tester) Name() string { return pkgName }
+
 // New creates a new cluster autoscaler.
 func New(cfg Config) ClusterAutoscaler {
-	cfg.Logger.Info("creating tester", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	cfg.Logger.Info("creating tester", zap.String("tester", pkgName))
 	return &tester{cfg: cfg}
 }
 

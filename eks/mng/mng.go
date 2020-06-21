@@ -40,6 +40,8 @@ type Config struct {
 // ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
 // ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
 type Tester interface {
+	// Name returns the name of the tester.
+	Name() string
 	// Create creates EKS "Managed Node Group", and waits for completion.
 	Create() error
 	// Delete deletes all EKS "Managed Node Group" resources.
@@ -55,9 +57,13 @@ type Tester interface {
 	DownloadClusterLogs(artifactDir string) error
 }
 
+var pkgName = reflect.TypeOf(tester{}).PkgPath()
+
+func (ts *tester) Name() string { return pkgName }
+
 // New creates a new Job tester.
 func New(cfg Config) Tester {
-	cfg.Logger.Info("creating tester", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	cfg.Logger.Info("creating tester", zap.String("tester", pkgName))
 	return &tester{
 		cfg: cfg,
 		nodeWaiter: wait.New(wait.Config{
@@ -102,7 +108,7 @@ func (ts *tester) Create() (err error) {
 		return errors.New("empty EKSConfig.Parameters.PublicSubnetIDs")
 	}
 
-	ts.cfg.Logger.Info("starting tester.Create", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	ts.cfg.Logger.Info("starting tester.Create", zap.String("tester", pkgName))
 	createStart := time.Now()
 	defer func() {
 		createEnd := time.Now()
@@ -152,7 +158,7 @@ func (ts *tester) Delete() error {
 		return nil
 	}
 
-	ts.cfg.Logger.Info("starting tester.Delete", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	ts.cfg.Logger.Info("starting tester.Delete", zap.String("tester", pkgName))
 	deleteStart := time.Now()
 	defer func() {
 		deleteEnd := time.Now()

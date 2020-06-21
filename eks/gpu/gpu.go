@@ -31,6 +31,8 @@ type Config struct {
 
 // Tester defines GPU tester.
 type Tester interface {
+	// Name returns the name of the tester.
+	Name() string
 	// InstallNvidiaDriver installs the Nvidia device plugin for Kubernetes.
 	// After GPU worker nodes join the cluster, one must apply the Nvidia
 	// device plugin for Kubernetes as a DaemonSet.
@@ -44,9 +46,13 @@ type Tester interface {
 	CreateNvidiaSMI() error
 }
 
+var pkgName = reflect.TypeOf(tester{}).PkgPath()
+
+func (ts *tester) Name() string { return pkgName }
+
 // New creates a new Job tester.
 func New(cfg Config) Tester {
-	cfg.Logger.Info("creating tester", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	cfg.Logger.Info("creating tester", zap.String("tester", pkgName))
 	return &tester{cfg: cfg}
 }
 
@@ -134,7 +140,7 @@ func (ts *tester) InstallNvidiaDriver() (err error) {
 		return nil
 	}
 
-	ts.cfg.Logger.Info("starting tester.InstallNvidiaDriver", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	ts.cfg.Logger.Info("starting tester.InstallNvidiaDriver", zap.String("tester", pkgName))
 	fpath, err := fileutil.WriteTempFile([]byte(nvidiaDriverTemplate))
 	if err != nil {
 		return err
@@ -370,7 +376,7 @@ kubectl logs nvidia-smi
 +-----------------------------------------------------------------------------+
 */
 func (ts *tester) CreateNvidiaSMI() error {
-	ts.cfg.Logger.Info("starting tester.CreateNvidiaSMI", zap.String("tester", reflect.TypeOf(tester{}).PkgPath()))
+	ts.cfg.Logger.Info("starting tester.CreateNvidiaSMI", zap.String("tester", pkgName))
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.K8SClient.
 		KubernetesClientSet().

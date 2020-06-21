@@ -2,7 +2,6 @@ package eks
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/signal"
 	"syscall"
@@ -135,20 +134,24 @@ func createStresserFunc(cmd *cobra.Command, args []string) {
 	sfx := randutil.String(7)
 
 	loader := stresser.New(stresser.Config{
-		Logger:         lg,
-		Stopc:          stopc,
-		S3API:          s3.New(awsSession),
-		S3BucketName:   stresserS3BucketName,
-		S3DirName:      stresserS3DirName,
-		Client:         cli,
-		ClientTimeout:  stresserClientTimeout,
-		Deadline:       time.Now().Add(stresserDuration),
-		NamespaceWrite: stresserNamespaceWrite,
-		NamespacesRead: stresserNamespacesRead,
-		ObjectSize:     stresserObjectSize,
-		ListLimit:      stresserListLimit,
-		WritesJSONPath: "/var/log/" + stresserWritesOutputNamePrefix + "-" + sfx + "-writes.json",
-		ReadsJSONPath:  "/var/log/" + stresserReadsOutputNamePrefix + "-" + sfx + "-reads.json",
+		Logger:                 lg,
+		Stopc:                  stopc,
+		S3API:                  s3.New(awsSession),
+		S3BucketName:           stresserS3BucketName,
+		S3DirName:              stresserS3DirName,
+		Client:                 cli,
+		ClientTimeout:          stresserClientTimeout,
+		Deadline:               time.Now().Add(stresserDuration),
+		NamespaceWrite:         stresserNamespaceWrite,
+		NamespacesRead:         stresserNamespacesRead,
+		ObjectSize:             stresserObjectSize,
+		ListLimit:              stresserListLimit,
+		WritesJSONPath:         "/var/log/" + stresserWritesOutputNamePrefix + "-" + sfx + "-writes.json",
+		WritesSummaryJSONPath:  "/var/log/" + stresserWritesOutputNamePrefix + "-" + sfx + "-writes-summary.json",
+		WritesSummaryTablePath: "/var/log/" + stresserWritesOutputNamePrefix + "-" + sfx + "-writes-summary.txt",
+		ReadsJSONPath:          "/var/log/" + stresserReadsOutputNamePrefix + "-" + sfx + "-reads.json",
+		ReadsSummaryJSONPath:   "/var/log/" + stresserReadsOutputNamePrefix + "-" + sfx + "-reads-summary.json",
+		ReadsSummaryTablePath:  "/var/log/" + stresserReadsOutputNamePrefix + "-" + sfx + "-reads-summary.txt",
 	})
 	loader.Start()
 
@@ -167,23 +170,9 @@ func createStresserFunc(cmd *cobra.Command, args []string) {
 	close(stopc)
 	loader.Stop()
 
-	writes, reads, err := loader.CollectMetrics()
+	_, _, err = loader.CollectMetrics()
 	if err != nil {
 		lg.Warn("failed to get metrics", zap.Error(err))
-	} else {
-		writesPath := "/var/log/" + stresserWritesOutputNamePrefix + "-" + sfx + "-writes-summary.json"
-		lg.Info("writing writes results output", zap.String("path", writesPath))
-		err = ioutil.WriteFile(writesPath, []byte(writes.JSON()), 0600)
-		if err != nil {
-			lg.Warn("failed to write results", zap.Error(err))
-		}
-
-		readsPath := "/var/log/" + stresserReadsOutputNamePrefix + "-" + sfx + "-reads-summary.json"
-		lg.Info("writing reads results output", zap.String("path", readsPath))
-		err = ioutil.WriteFile(readsPath, []byte(reads.JSON()), 0600)
-		if err != nil {
-			lg.Warn("failed to write read results", zap.Error(err))
-		}
 	}
 
 	fmt.Printf("\n*********************************\n")

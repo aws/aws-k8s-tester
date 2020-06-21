@@ -136,7 +136,7 @@ func (cfg *Config) validateAddOnStresserRemote() error {
 	cfg.AddOnStresserRemote.DurationString = cfg.AddOnStresserRemote.Duration.String()
 
 	if cfg.AddOnStresserRemote.RequestsWritesJSONPath == "" {
-		cfg.AddOnStresserRemote.RequestsWritesJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-writes.csv"
+		cfg.AddOnStresserRemote.RequestsWritesJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-writes.json"
 	}
 	if cfg.AddOnStresserRemote.RequestsWritesSummaryJSONPath == "" {
 		cfg.AddOnStresserRemote.RequestsWritesSummaryJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-writes-summary.json"
@@ -146,7 +146,7 @@ func (cfg *Config) validateAddOnStresserRemote() error {
 	}
 
 	if cfg.AddOnStresserRemote.RequestsReadsJSONPath == "" {
-		cfg.AddOnStresserRemote.RequestsReadsJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-reads.csv"
+		cfg.AddOnStresserRemote.RequestsReadsJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-reads.json"
 	}
 	if cfg.AddOnStresserRemote.RequestsReadsSummaryJSONPath == "" {
 		cfg.AddOnStresserRemote.RequestsReadsSummaryJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-reads-summary.json"
