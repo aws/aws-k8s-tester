@@ -796,6 +796,7 @@ func (ts *tester) AggregateResults() (err error) {
 	)
 	if err == nil {
 		ts.cfg.Logger.Info("reading writes results", zap.String("writes-dir", writesDir))
+		cnt := 0
 		err = filepath.Walk(writesDir, func(fpath string, info os.FileInfo, werr error) error {
 			if werr != nil {
 				return werr
@@ -803,7 +804,7 @@ func (ts *tester) AggregateResults() (err error) {
 			if info.IsDir() {
 				return nil
 			}
-
+			cnt++
 			switch {
 			case strings.HasSuffix(fpath, "-writes-summary.json"):
 				b, err := ioutil.ReadFile(fpath)
@@ -838,8 +839,8 @@ func (ts *tester) AggregateResults() (err error) {
 			}
 			return nil
 		})
-		if err != nil {
-			ts.cfg.Logger.Warn("failed to read writes results", zap.Error(err))
+		if err != nil || cnt == 0 {
+			ts.cfg.Logger.Warn("failed to read writes results", zap.Int("file-count", cnt), zap.Error(err))
 			os.RemoveAll(writesDir)
 			writesDir = ""
 		}
@@ -853,6 +854,7 @@ func (ts *tester) AggregateResults() (err error) {
 	)
 	if err == nil {
 		ts.cfg.Logger.Info("reading reads results", zap.String("reads-dir", readsDir))
+		cnt := 0
 		err = filepath.Walk(readsDir, func(fpath string, info os.FileInfo, werr error) error {
 			if werr != nil {
 				return werr
@@ -860,6 +862,7 @@ func (ts *tester) AggregateResults() (err error) {
 			if info.IsDir() {
 				return nil
 			}
+			cnt++
 
 			switch {
 			case strings.HasSuffix(fpath, "-reads-summary.json"):
@@ -895,8 +898,8 @@ func (ts *tester) AggregateResults() (err error) {
 			}
 			return nil
 		})
-		if err != nil {
-			ts.cfg.Logger.Warn("failed to read reads results", zap.Error(err))
+		if err != nil || cnt == 0 {
+			ts.cfg.Logger.Warn("failed to read reads results", zap.Int("file-count", cnt), zap.Error(err))
 			os.RemoveAll(readsDir)
 			readsDir = ""
 		}
