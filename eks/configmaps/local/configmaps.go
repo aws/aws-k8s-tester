@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"path"
 	"reflect"
 	"strings"
 	"time"
@@ -14,16 +15,17 @@ import (
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
+	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"go.uber.org/zap"
 )
 
 // Config defines configmaps local tester configuration.
 type Config struct {
-	Logger *zap.Logger
-	Stopc  chan struct{}
-
+	Logger    *zap.Logger
+	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
+	S3API     s3iface.S3API
 }
 
 var pkgName = reflect.TypeOf(tester{}).PkgPath()
@@ -68,14 +70,19 @@ func (ts *tester) Create() (err error) {
 	}
 
 	loader := config_maps.New(config_maps.Config{
-		Logger:         ts.cfg.Logger,
-		Stopc:          ts.cfg.Stopc,
-		Client:         ts.cfg.K8SClient,
-		ClientTimeout:  ts.cfg.EKSConfig.ClientTimeout,
-		Namespace:      ts.cfg.EKSConfig.AddOnConfigmapsLocal.Namespace,
-		Objects:        ts.cfg.EKSConfig.AddOnConfigmapsLocal.Objects,
-		ObjectSize:     ts.cfg.EKSConfig.AddOnConfigmapsLocal.ObjectSize,
-		WritesJSONPath: ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesJSONPath,
+		Logger:                 ts.cfg.Logger,
+		Stopc:                  ts.cfg.Stopc,
+		S3API:                  ts.cfg.S3API,
+		S3BucketName:           ts.cfg.EKSConfig.S3BucketName,
+		S3DirName:              path.Join(ts.cfg.EKSConfig.Name, "add-on-configmaps-local"),
+		Client:                 ts.cfg.K8SClient,
+		ClientTimeout:          ts.cfg.EKSConfig.ClientTimeout,
+		Namespace:              ts.cfg.EKSConfig.AddOnConfigmapsLocal.Namespace,
+		Objects:                ts.cfg.EKSConfig.AddOnConfigmapsLocal.Objects,
+		ObjectSize:             ts.cfg.EKSConfig.AddOnConfigmapsLocal.ObjectSize,
+		WritesJSONPath:         ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesJSONPath,
+		WritesSummaryJSONPath:  ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesSummaryJSONPath,
+		WritesSummaryTablePath: ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesSummaryTablePath,
 	})
 	loader.Start()
 	loader.Stop()

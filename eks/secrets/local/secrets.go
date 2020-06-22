@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"path"
 	"reflect"
 	"strings"
 	"time"
@@ -14,16 +15,17 @@ import (
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
+	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"go.uber.org/zap"
 )
 
 // Config defines secrets local tester configuration.
 type Config struct {
-	Logger *zap.Logger
-	Stopc  chan struct{}
-
+	Logger    *zap.Logger
+	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
+	S3API     s3iface.S3API
 }
 
 var pkgName = reflect.TypeOf(tester{}).PkgPath()
@@ -68,16 +70,23 @@ func (ts *tester) Create() (err error) {
 	}
 
 	loader := secrets.New(secrets.Config{
-		Logger:         ts.cfg.Logger,
-		Stopc:          ts.cfg.Stopc,
-		Client:         ts.cfg.K8SClient,
-		ClientTimeout:  ts.cfg.EKSConfig.ClientTimeout,
-		Namespace:      ts.cfg.EKSConfig.AddOnSecretsLocal.Namespace,
-		NamePrefix:     ts.cfg.EKSConfig.AddOnSecretsLocal.NamePrefix,
-		Objects:        ts.cfg.EKSConfig.AddOnSecretsLocal.Objects,
-		ObjectSize:     ts.cfg.EKSConfig.AddOnSecretsLocal.ObjectSize,
-		WritesJSONPath: ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesJSONPath,
-		ReadsJSONPath:  ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsJSONPath,
+		Logger:                 ts.cfg.Logger,
+		Stopc:                  ts.cfg.Stopc,
+		S3API:                  ts.cfg.S3API,
+		S3BucketName:           ts.cfg.EKSConfig.S3BucketName,
+		S3DirName:              path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-local"),
+		Client:                 ts.cfg.K8SClient,
+		ClientTimeout:          ts.cfg.EKSConfig.ClientTimeout,
+		Namespace:              ts.cfg.EKSConfig.AddOnSecretsLocal.Namespace,
+		NamePrefix:             ts.cfg.EKSConfig.AddOnSecretsLocal.NamePrefix,
+		Objects:                ts.cfg.EKSConfig.AddOnSecretsLocal.Objects,
+		ObjectSize:             ts.cfg.EKSConfig.AddOnSecretsLocal.ObjectSize,
+		WritesJSONPath:         ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesJSONPath,
+		WritesSummaryJSONPath:  ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummaryJSONPath,
+		WritesSummaryTablePath: ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummaryTablePath,
+		ReadsJSONPath:          ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsJSONPath,
+		ReadsSummaryJSONPath:   ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummaryJSONPath,
+		ReadsSummaryTablePath:  ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummaryTablePath,
 	})
 	loader.Start()
 	loader.Stop()

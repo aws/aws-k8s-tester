@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path"
 	"reflect"
 	"strings"
 	"time"
@@ -91,7 +92,7 @@ func (ts *tester) Create() (err error) {
 		Stopc:                  ts.cfg.Stopc,
 		S3API:                  ts.cfg.S3API,
 		S3BucketName:           ts.cfg.EKSConfig.S3BucketName,
-		S3DirName:              ts.cfg.EKSConfig.Name,
+		S3DirName:              path.Join(ts.cfg.EKSConfig.Name, "add-on-stresser-local"),
 		Client:                 ts.cfg.K8SClient,
 		ClientTimeout:          ts.cfg.EKSConfig.ClientTimeout,
 		Deadline:               time.Now().Add(ts.cfg.EKSConfig.AddOnStresserLocal.Duration),

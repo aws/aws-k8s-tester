@@ -2,7 +2,6 @@ package eks
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/signal"
 	"syscall"
@@ -10,16 +9,24 @@ import (
 
 	config_maps "github.com/aws/aws-k8s-tester/eks/configmaps"
 	"github.com/aws/aws-k8s-tester/eksconfig"
+	pkg_aws "github.com/aws/aws-k8s-tester/pkg/aws"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
 	"github.com/aws/aws-k8s-tester/pkg/randutil"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
 
 var (
 	configmapsKubeConfigPath string
+
+	configmapsPartition    string
+	configmapsRegion       string
+	configmapsS3BucketName string
+	configmapsS3DirName    string
 
 	configmapsClients       int
 	configmapsClientQPS     float32
@@ -42,6 +49,10 @@ func newCreateConfigMaps() *cobra.Command {
 		Run:   createConfigMapsFunc,
 	}
 	cmd.PersistentFlags().StringVar(&configmapsKubeConfigPath, "kubeconfig", "", "kubeconfig path (optional, should be run in-cluster, useful for local testing)")
+	cmd.PersistentFlags().StringVar(&configmapsPartition, "partition", "aws", "partition for AWS API")
+	cmd.PersistentFlags().StringVar(&configmapsRegion, "region", "us-west-2", "region for AWS API")
+	cmd.PersistentFlags().StringVar(&configmapsS3BucketName, "s3-bucket-name", "", "S3 bucket name to upload results")
+	cmd.PersistentFlags().StringVar(&configmapsS3DirName, "s3-dir-name", "", "S3 directory name to upload results")
 	cmd.PersistentFlags().IntVar(&configmapsClients, "clients", eksconfig.DefaultClients, "Number of clients to create")
 	cmd.PersistentFlags().Float32Var(&configmapsClientQPS, "client-qps", eksconfig.DefaultClientQPS, "kubelet client setup for QPS")
 	cmd.PersistentFlags().IntVar(&configmapsClientBurst, "client-burst", eksconfig.DefaultClientBurst, "kubelet client setup for burst")
@@ -74,6 +85,25 @@ func createConfigMapsFunc(cmd *cobra.Command, args []string) {
 		fmt.Fprintf(os.Stderr, "failed to create logger %v\n", err)
 		os.Exit(1)
 	}
+
+	awsCfg := &pkg_aws.Config{
+		Logger:    lg,
+		Partition: configmapsPartition,
+		Region:    configmapsRegion,
+	}
+	awsSession, stsOutput, _, err := pkg_aws.New(awsCfg)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to create AWS session %v\n", err)
+		os.Exit(1)
+	}
+	awsAccountID := aws.StringValue(stsOutput.Account)
+	awsUserID := aws.StringValue(stsOutput.UserId)
+	awsIAMRoleARN := aws.StringValue(stsOutput.Arn)
+	lg.Info("created AWS session",
+		zap.String("aws-account-id", awsAccountID),
+		zap.String("aws-user-id", awsUserID),
+		zap.String("aws-iam-role-arn", awsIAMRoleARN),
+	)
 
 	cli, err := k8s_client.NewEKS(&k8s_client.EKSConfig{
 		Logger:         lg,
@@ -109,29 +139,27 @@ func createConfigMapsFunc(cmd *cobra.Command, args []string) {
 	sfx := randutil.String(7)
 
 	loader := config_maps.New(config_maps.Config{
-		Logger:         lg,
-		Stopc:          stopc,
-		Client:         cli,
-		ClientTimeout:  configmapsClientTimeout,
-		Namespace:      configmapsNamespace,
-		Objects:        configmapsObjects,
-		ObjectSize:     configmapsObjectSize,
-		WritesJSONPath: "/var/log/" + configmapsWritesOutputNamePrefix + "-" + sfx + "-writes.json",
+		Logger:                 lg,
+		Stopc:                  stopc,
+		S3API:                  s3.New(awsSession),
+		S3BucketName:           configmapsS3BucketName,
+		S3DirName:              configmapsS3DirName,
+		Client:                 cli,
+		ClientTimeout:          configmapsClientTimeout,
+		Namespace:              configmapsNamespace,
+		Objects:                configmapsObjects,
+		ObjectSize:             configmapsObjectSize,
+		WritesJSONPath:         "/var/log/" + configmapsWritesOutputNamePrefix + "-" + sfx + "-writes.json",
+		WritesSummaryJSONPath:  "/var/log/" + configmapsWritesOutputNamePrefix + "-" + sfx + "-writes-summary.json",
+		WritesSummaryTablePath: "/var/log/" + configmapsWritesOutputNamePrefix + "-" + sfx + "-writes-summary.txt",
 	})
 	loader.Start()
 	loader.Stop()
 	close(donec)
 
-	writes, err := loader.CollectMetrics()
+	_, err = loader.CollectMetrics()
 	if err != nil {
 		lg.Warn("failed to get metrics", zap.Error(err))
-	} else {
-		writesPath := "/var/log/" + configmapsWritesOutputNamePrefix + "-" + sfx + "-writes-summary.json"
-		lg.Info("writing writes results output", zap.String("path", writesPath))
-		err = ioutil.WriteFile(writesPath, []byte(writes.JSON()), 0600)
-		if err != nil {
-			lg.Warn("failed to write results", zap.Error(err))
-		}
 	}
 
 	fmt.Printf("\n*********************************\n")

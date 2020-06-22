@@ -2,7 +2,6 @@ package eks
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/signal"
 	"syscall"
@@ -10,16 +9,24 @@ import (
 
 	"github.com/aws/aws-k8s-tester/eks/secrets"
 	"github.com/aws/aws-k8s-tester/eksconfig"
+	pkg_aws "github.com/aws/aws-k8s-tester/pkg/aws"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
 	"github.com/aws/aws-k8s-tester/pkg/randutil"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
 
 var (
 	secretsKubeConfigPath string
+
+	secretsPartition    string
+	secretsRegion       string
+	secretsS3BucketName string
+	secretsS3DirName    string
 
 	secretsClients       int
 	secretsClientQPS     float32
@@ -44,6 +51,10 @@ func newCreateSecrets() *cobra.Command {
 		Run:   createSecretsFunc,
 	}
 	cmd.PersistentFlags().StringVar(&secretsKubeConfigPath, "kubeconfig", "", "kubeconfig path (optional, should be run in-cluster, useful for local testing)")
+	cmd.PersistentFlags().StringVar(&secretsPartition, "partition", "aws", "partition for AWS API")
+	cmd.PersistentFlags().StringVar(&secretsRegion, "region", "us-west-2", "region for AWS API")
+	cmd.PersistentFlags().StringVar(&secretsS3BucketName, "s3-bucket-name", "", "S3 bucket name to upload results")
+	cmd.PersistentFlags().StringVar(&secretsS3DirName, "s3-dir-name", "", "S3 directory name to upload results")
 	cmd.PersistentFlags().IntVar(&secretsClients, "clients", eksconfig.DefaultClients, "Number of clients to create")
 	cmd.PersistentFlags().Float32Var(&secretsClientQPS, "client-qps", eksconfig.DefaultClientQPS, "kubelet client setup for QPS")
 	cmd.PersistentFlags().IntVar(&secretsClientBurst, "client-burst", eksconfig.DefaultClientBurst, "kubelet client setup for burst")
@@ -79,6 +90,25 @@ func createSecretsFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
+	awsCfg := &pkg_aws.Config{
+		Logger:    lg,
+		Partition: secretsPartition,
+		Region:    secretsRegion,
+	}
+	awsSession, stsOutput, _, err := pkg_aws.New(awsCfg)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to create AWS session %v\n", err)
+		os.Exit(1)
+	}
+	awsAccountID := aws.StringValue(stsOutput.Account)
+	awsUserID := aws.StringValue(stsOutput.UserId)
+	awsIAMRoleARN := aws.StringValue(stsOutput.Arn)
+	lg.Info("created AWS session",
+		zap.String("aws-account-id", awsAccountID),
+		zap.String("aws-user-id", awsUserID),
+		zap.String("aws-iam-role-arn", awsIAMRoleARN),
+	)
+
 	cli, err := k8s_client.NewEKS(&k8s_client.EKSConfig{
 		Logger:         lg,
 		KubeConfigPath: secretsKubeConfigPath,
@@ -113,38 +143,35 @@ func createSecretsFunc(cmd *cobra.Command, args []string) {
 	sfx := randutil.String(7)
 
 	loader := secrets.New(secrets.Config{
-		Logger:         lg,
-		Stopc:          stopc,
-		Client:         cli,
-		ClientTimeout:  secretsClientTimeout,
-		Namespace:      secretsNamespace,
-		NamePrefix:     secretsNamePrefix,
-		Objects:        secretsObjects,
-		ObjectSize:     secretsObjectSize,
-		WritesJSONPath: "/var/log/" + secretsWritesOutputNamePrefix + "-" + sfx + "-writes.json",
-		ReadsJSONPath:  "/var/log/" + secretsReadsOutputNamePrefix + "-" + sfx + "-reads.json",
+		Logger:                 lg,
+		Stopc:                  stopc,
+		S3API:                  s3.New(awsSession),
+		S3BucketName:           secretsS3BucketName,
+		S3DirName:              secretsS3DirName,
+		Client:                 cli,
+		ClientTimeout:          secretsClientTimeout,
+		Namespace:              secretsNamespace,
+		NamePrefix:             secretsNamePrefix,
+		Objects:                secretsObjects,
+		ObjectSize:             secretsObjectSize,
+		WritesJSONPath:         "/var/log/" + secretsWritesOutputNamePrefix + "-" + sfx + "-writes.json",
+		WritesSummaryJSONPath:  "/var/log/" + secretsWritesOutputNamePrefix + "-" + sfx + "-writes-summary.json",
+		WritesSummaryTablePath: "/var/log/" + secretsWritesOutputNamePrefix + "-" + sfx + "-writes-summary.txt",
+		ReadsJSONPath:          "/var/log/" + secretsReadsOutputNamePrefix + "-" + sfx + "-reads.json",
+		ReadsSummaryJSONPath:   "/var/log/" + secretsReadsOutputNamePrefix + "-" + sfx + "-reads-summary.json",
+		ReadsSummaryTablePath:  "/var/log/" + secretsReadsOutputNamePrefix + "-" + sfx + "-reads-summary.txt",
 	})
 	loader.Start()
 	loader.Stop()
 	close(donec)
 
-	writes, reads, err := loader.CollectMetrics()
 	if err != nil {
 		lg.Warn("failed to get metrics", zap.Error(err))
-	} else {
-		writesPath := "/var/log/" + secretsWritesOutputNamePrefix + "-" + sfx + "-writes-summary.json"
-		lg.Info("writing writes results output", zap.String("path", writesPath))
-		err = ioutil.WriteFile(writesPath, []byte(writes.JSON()), 0600)
-		if err != nil {
-			lg.Warn("failed to write results", zap.Error(err))
-		}
+	}
 
-		readsPath := "/var/log/" + secretsReadsOutputNamePrefix + "-" + sfx + "-reads-summary.json"
-		lg.Info("writing reads results output", zap.String("path", readsPath))
-		err = ioutil.WriteFile(readsPath, []byte(reads.JSON()), 0600)
-		if err != nil {
-			lg.Warn("failed to write results", zap.Error(err))
-		}
+	_, _, err = loader.CollectMetrics()
+	if err != nil {
+		lg.Warn("failed to get metrics", zap.Error(err))
 	}
 
 	fmt.Printf("\n*********************************\n")

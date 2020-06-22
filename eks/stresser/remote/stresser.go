@@ -541,7 +541,7 @@ func (ts *tester) createDeployment() error {
 		ts.cfg.EKSConfig.Partition,
 		ts.cfg.EKSConfig.Region,
 		ts.cfg.EKSConfig.S3BucketName,
-		ts.cfg.EKSConfig.Name,
+		path.Join(ts.cfg.EKSConfig.Name, "add-on-stresser-remote"),
 		ts.cfg.EKSConfig.Clients,
 		ts.cfg.EKSConfig.ClientQPS,
 		ts.cfg.EKSConfig.ClientBurst,
@@ -784,10 +784,8 @@ func (ts *tester) AggregateResults() (err error) {
 		return nil
 	}
 
-	aggSucceed := false
-
 	ts.cfg.Logger.Info("starting tester.AggregateResults", zap.String("tester", pkgName))
-	writes, reads := metrics.RequestsSummary{}, metrics.RequestsSummary{}
+	writesSummary, readsSummary := metrics.RequestsSummary{}, metrics.RequestsSummary{}
 	writeLatencies, readLatencies := make(metrics.Durations, 0, 20000), make(metrics.Durations, 0, 20000)
 
 	writesDir, readsDir := "", ""
@@ -819,12 +817,12 @@ func (ts *tester) AggregateResults() (err error) {
 				if err = json.Unmarshal(b, &r); err != nil {
 					return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
 				}
-				writes.SuccessTotal += r.SuccessTotal
-				writes.FailureTotal += r.FailureTotal
-				if writes.LatencyHistogram == nil || len(writes.LatencyHistogram) == 0 {
-					writes.LatencyHistogram = r.LatencyHistogram
+				writesSummary.SuccessTotal += r.SuccessTotal
+				writesSummary.FailureTotal += r.FailureTotal
+				if writesSummary.LatencyHistogram == nil || len(writesSummary.LatencyHistogram) == 0 {
+					writesSummary.LatencyHistogram = r.LatencyHistogram
 				} else {
-					writes.LatencyHistogram, err = metrics.MergeHistograms(writes.LatencyHistogram, r.LatencyHistogram)
+					writesSummary.LatencyHistogram, err = metrics.MergeHistograms(writesSummary.LatencyHistogram, r.LatencyHistogram)
 					if err != nil {
 						return fmt.Errorf("failed to merge histograms (%v)", err)
 					}
@@ -878,12 +876,12 @@ func (ts *tester) AggregateResults() (err error) {
 				if err = json.Unmarshal(b, &r); err != nil {
 					return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
 				}
-				reads.SuccessTotal += r.SuccessTotal
-				reads.FailureTotal += r.FailureTotal
-				if reads.LatencyHistogram == nil || len(reads.LatencyHistogram) == 0 {
-					reads.LatencyHistogram = r.LatencyHistogram
+				readsSummary.SuccessTotal += r.SuccessTotal
+				readsSummary.FailureTotal += r.FailureTotal
+				if readsSummary.LatencyHistogram == nil || len(readsSummary.LatencyHistogram) == 0 {
+					readsSummary.LatencyHistogram = r.LatencyHistogram
 				} else {
-					reads.LatencyHistogram, err = metrics.MergeHistograms(reads.LatencyHistogram, r.LatencyHistogram)
+					readsSummary.LatencyHistogram, err = metrics.MergeHistograms(readsSummary.LatencyHistogram, r.LatencyHistogram)
 					if err != nil {
 						return fmt.Errorf("failed to merge histograms (%v)", err)
 					}
@@ -909,10 +907,9 @@ func (ts *tester) AggregateResults() (err error) {
 		}
 	}
 
-	aggSucceed = writesDir != "" && readsDir != ""
-
+	aggSucceed := writesDir != "" && readsDir != ""
 	if !aggSucceed {
-		writes, reads = metrics.RequestsSummary{}, metrics.RequestsSummary{}
+		writesSummary, readsSummary = metrics.RequestsSummary{}, metrics.RequestsSummary{}
 		writeLatencies, readLatencies = make(metrics.Durations, 0, 20000), make(metrics.Durations, 0, 20000)
 
 		if ts.cfg.EKSConfig.IsEnabledAddOnNodeGroups() && ts.cfg.EKSConfig.AddOnNodeGroups.FetchLogs {
@@ -931,12 +928,12 @@ func (ts *tester) AggregateResults() (err error) {
 								if err = json.Unmarshal(b, &r); err != nil {
 									return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
 								}
-								writes.SuccessTotal += r.SuccessTotal
-								writes.FailureTotal += r.FailureTotal
-								if writes.LatencyHistogram == nil || len(writes.LatencyHistogram) == 0 {
-									writes.LatencyHistogram = r.LatencyHistogram
+								writesSummary.SuccessTotal += r.SuccessTotal
+								writesSummary.FailureTotal += r.FailureTotal
+								if writesSummary.LatencyHistogram == nil || len(writesSummary.LatencyHistogram) == 0 {
+									writesSummary.LatencyHistogram = r.LatencyHistogram
 								} else {
-									writes.LatencyHistogram, err = metrics.MergeHistograms(writes.LatencyHistogram, r.LatencyHistogram)
+									writesSummary.LatencyHistogram, err = metrics.MergeHistograms(writesSummary.LatencyHistogram, r.LatencyHistogram)
 									if err != nil {
 										return fmt.Errorf("failed to merge histograms (%v)", err)
 									}
@@ -965,12 +962,12 @@ func (ts *tester) AggregateResults() (err error) {
 								if err = json.Unmarshal(b, &r); err != nil {
 									return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
 								}
-								reads.SuccessTotal += r.SuccessTotal
-								reads.FailureTotal += r.FailureTotal
-								if reads.LatencyHistogram == nil || len(reads.LatencyHistogram) == 0 {
-									reads.LatencyHistogram = r.LatencyHistogram
+								readsSummary.SuccessTotal += r.SuccessTotal
+								readsSummary.FailureTotal += r.FailureTotal
+								if readsSummary.LatencyHistogram == nil || len(readsSummary.LatencyHistogram) == 0 {
+									readsSummary.LatencyHistogram = r.LatencyHistogram
 								} else {
-									reads.LatencyHistogram, err = metrics.MergeHistograms(reads.LatencyHistogram, r.LatencyHistogram)
+									readsSummary.LatencyHistogram, err = metrics.MergeHistograms(readsSummary.LatencyHistogram, r.LatencyHistogram)
 									if err != nil {
 										return fmt.Errorf("failed to merge histograms (%v)", err)
 									}
@@ -1008,12 +1005,12 @@ func (ts *tester) AggregateResults() (err error) {
 								if err = json.Unmarshal(b, &r); err != nil {
 									return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
 								}
-								writes.SuccessTotal += r.SuccessTotal
-								writes.FailureTotal += r.FailureTotal
-								if writes.LatencyHistogram == nil || len(writes.LatencyHistogram) == 0 {
-									writes.LatencyHistogram = r.LatencyHistogram
+								writesSummary.SuccessTotal += r.SuccessTotal
+								writesSummary.FailureTotal += r.FailureTotal
+								if writesSummary.LatencyHistogram == nil || len(writesSummary.LatencyHistogram) == 0 {
+									writesSummary.LatencyHistogram = r.LatencyHistogram
 								} else {
-									writes.LatencyHistogram, err = metrics.MergeHistograms(writes.LatencyHistogram, r.LatencyHistogram)
+									writesSummary.LatencyHistogram, err = metrics.MergeHistograms(writesSummary.LatencyHistogram, r.LatencyHistogram)
 									if err != nil {
 										return fmt.Errorf("failed to merge histograms (%v)", err)
 									}
@@ -1042,12 +1039,12 @@ func (ts *tester) AggregateResults() (err error) {
 								if err = json.Unmarshal(b, &r); err != nil {
 									return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
 								}
-								reads.SuccessTotal += r.SuccessTotal
-								reads.FailureTotal += r.FailureTotal
-								if reads.LatencyHistogram == nil || len(reads.LatencyHistogram) == 0 {
-									reads.LatencyHistogram = r.LatencyHistogram
+								readsSummary.SuccessTotal += r.SuccessTotal
+								readsSummary.FailureTotal += r.FailureTotal
+								if readsSummary.LatencyHistogram == nil || len(readsSummary.LatencyHistogram) == 0 {
+									readsSummary.LatencyHistogram = r.LatencyHistogram
 								} else {
-									reads.LatencyHistogram, err = metrics.MergeHistograms(reads.LatencyHistogram, r.LatencyHistogram)
+									readsSummary.LatencyHistogram, err = metrics.MergeHistograms(readsSummary.LatencyHistogram, r.LatencyHistogram)
 									if err != nil {
 										return fmt.Errorf("failed to merge histograms (%v)", err)
 									}
@@ -1075,23 +1072,23 @@ func (ts *tester) AggregateResults() (err error) {
 	ts.cfg.Logger.Info("sorting write latencies")
 	sort.Sort(writeLatencies)
 	ts.cfg.Logger.Info("sorted write latencies", zap.String("took", time.Since(sortStart).String()))
-	writes.LantencyP50 = writeLatencies.PickLantencyP50()
-	writes.LantencyP90 = writeLatencies.PickLantencyP90()
-	writes.LantencyP99 = writeLatencies.PickLantencyP99()
-	writes.LantencyP999 = writeLatencies.PickLantencyP999()
-	writes.LantencyP9999 = writeLatencies.PickLantencyP9999()
-	ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesSummary = writes
+	writesSummary.LantencyP50 = writeLatencies.PickLantencyP50()
+	writesSummary.LantencyP90 = writeLatencies.PickLantencyP90()
+	writesSummary.LantencyP99 = writeLatencies.PickLantencyP99()
+	writesSummary.LantencyP999 = writeLatencies.PickLantencyP999()
+	writesSummary.LantencyP9999 = writeLatencies.PickLantencyP9999()
+	ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesSummary = writesSummary
 
 	sortStart = time.Now()
 	ts.cfg.Logger.Info("sorting read latencies")
 	sort.Sort(readLatencies)
 	ts.cfg.Logger.Info("sorted read latencies", zap.String("took", time.Since(sortStart).String()))
-	reads.LantencyP50 = readLatencies.PickLantencyP50()
-	reads.LantencyP90 = readLatencies.PickLantencyP90()
-	reads.LantencyP99 = readLatencies.PickLantencyP99()
-	reads.LantencyP999 = readLatencies.PickLantencyP999()
-	reads.LantencyP9999 = readLatencies.PickLantencyP9999()
-	ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsSummary = reads
+	readsSummary.LantencyP50 = readLatencies.PickLantencyP50()
+	readsSummary.LantencyP90 = readLatencies.PickLantencyP90()
+	readsSummary.LantencyP99 = readLatencies.PickLantencyP99()
+	readsSummary.LantencyP999 = readLatencies.PickLantencyP999()
+	readsSummary.LantencyP9999 = readLatencies.PickLantencyP9999()
+	ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsSummary = readsSummary
 
 	ts.cfg.EKSConfig.Sync()
 
@@ -1104,15 +1101,15 @@ func (ts *tester) AggregateResults() (err error) {
 		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 		return err
 	}
-	if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesSummaryJSONPath, []byte(writes.JSON()), 0600); err != nil {
+	if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesSummaryJSONPath, []byte(writesSummary.JSON()), 0600); err != nil {
 		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 		return err
 	}
-	if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesSummaryTablePath, []byte(writes.Table()), 0600); err != nil {
+	if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesSummaryTablePath, []byte(writesSummary.Table()), 0600); err != nil {
 		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 		return err
 	}
-	fmt.Printf("\n\nAddOnStresserRemote.RequestsWritesSummary:\n%s\n", writes.Table())
+	fmt.Printf("\n\nAddOnStresserRemote.RequestsWritesSummary:\n%s\n", writesSummary.Table())
 
 	rb, err := json.Marshal(readLatencies)
 	if err != nil {
@@ -1123,15 +1120,15 @@ func (ts *tester) AggregateResults() (err error) {
 		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 		return err
 	}
-	if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsSummaryJSONPath, []byte(reads.JSON()), 0600); err != nil {
+	if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsSummaryJSONPath, []byte(readsSummary.JSON()), 0600); err != nil {
 		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 		return err
 	}
-	if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsSummaryTablePath, []byte(reads.Table()), 0600); err != nil {
+	if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsSummaryTablePath, []byte(readsSummary.Table()), 0600); err != nil {
 		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 		return err
 	}
-	fmt.Printf("\n\nAddOnStresserRemote.RequestsReadsSummary:\n%s\n", reads.Table())
+	fmt.Printf("\n\nAddOnStresserRemote.RequestsReadsSummary:\n%s\n", readsSummary.Table())
 
 	ts.cfg.Logger.Info("aggregated results from Pods")
 	return ts.cfg.EKSConfig.Sync()

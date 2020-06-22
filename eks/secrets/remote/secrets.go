@@ -7,6 +7,9 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
+	"path"
+	"path/filepath"
 	"reflect"
 	"sort"
 	"strings"
@@ -15,11 +18,13 @@ import (
 	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	aws_ecr "github.com/aws/aws-k8s-tester/pkg/aws/ecr"
+	aws_s3 "github.com/aws/aws-k8s-tester/pkg/aws/s3"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/metrics"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
+	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"go.uber.org/zap"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -36,6 +41,7 @@ type Config struct {
 	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
+	S3API     s3iface.S3API
 	ECRAPI    ecriface.ECRAPI
 }
 
@@ -492,7 +498,11 @@ func (ts *tester) createDeployment() error {
 	// do not specify "kubeconfig", and use in-cluster config via "pkg/k8s-client"
 	// otherwise, error "namespaces is forbidden: User "system:node:ip-192-168-84..."
 	// ref. https://github.com/kubernetes/client-go/blob/master/examples/in-cluster-client-configuration/main.go
-	testerCmd := fmt.Sprintf("/aws-k8s-tester eks create secrets --clients=%d --client-qps=%f --client-burst=%d --client-timeout=%s --namespace=%s --name-prefix=%s --objects=%d --object-size=%d --writes-output-name-prefix=%s --reads-output-name-prefix=%s --block=true",
+	testerCmd := fmt.Sprintf("/aws-k8s-tester eks create secrets --partition=%s --region=%s --s3-bucket-name=%s --s3-dir-name=%s --clients=%d --client-qps=%f --client-burst=%d --client-timeout=%s --namespace=%s --name-prefix=%s --objects=%d --object-size=%d --writes-output-name-prefix=%s --reads-output-name-prefix=%s --block=true",
+		ts.cfg.EKSConfig.Partition,
+		ts.cfg.EKSConfig.Region,
+		ts.cfg.EKSConfig.S3BucketName,
+		path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-remote"),
 		ts.cfg.EKSConfig.Clients,
 		ts.cfg.EKSConfig.ClientQPS,
 		ts.cfg.EKSConfig.ClientBurst,
@@ -735,156 +745,282 @@ func (ts *tester) AggregateResults() (err error) {
 	}
 
 	ts.cfg.Logger.Info("starting tester.AggregateResults", zap.String("tester", pkgName))
-	writes, reads := metrics.RequestsSummary{}, metrics.RequestsSummary{}
+	writesSummary, readsSummary := metrics.RequestsSummary{}, metrics.RequestsSummary{}
 	writeLatencies, readLatencies := make(metrics.Durations, 0, 20000), make(metrics.Durations, 0, 20000)
-	if ts.cfg.EKSConfig.IsEnabledAddOnNodeGroups() && ts.cfg.EKSConfig.AddOnNodeGroups.FetchLogs {
-		ts.cfg.Logger.Info("fetching logs from ngs")
-		for _, v := range ts.cfg.EKSConfig.AddOnNodeGroups.ASGs {
-			for _, fpaths := range v.Logs {
-				for _, fpath := range fpaths {
-					if strings.Contains(fpath, ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryOutputNamePrefix) {
-						switch {
-						case strings.HasSuffix(fpath, "-writes-summary.json"):
-							b, err := ioutil.ReadFile(fpath)
-							if err != nil {
-								return fmt.Errorf("failed to open %q (%v)", fpath, err)
-							}
-							var r metrics.RequestsSummary
-							if err = json.Unmarshal(b, &r); err != nil {
-								return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
-							}
-							writes.SuccessTotal += r.SuccessTotal
-							writes.FailureTotal += r.FailureTotal
-							if writes.LatencyHistogram == nil || len(writes.LatencyHistogram) == 0 {
-								writes.LatencyHistogram = r.LatencyHistogram
-							} else {
-								writes.LatencyHistogram, err = metrics.MergeHistograms(writes.LatencyHistogram, r.LatencyHistogram)
-								if err != nil {
-									return fmt.Errorf("failed to merge histograms (%v)", err)
-								}
-							}
 
-						case strings.HasSuffix(fpath, "-writes.json"):
-							b, err := ioutil.ReadFile(fpath)
-							if err != nil {
-								return fmt.Errorf("failed to open %q (%v)", fpath, err)
-							}
-							var r metrics.Durations
-							if err = json.Unmarshal(b, &r); err != nil {
-								return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
-							}
-							writeLatencies = append(writeLatencies, r...)
-						}
+	writesDir, readsDir := "", ""
+
+	writesDir, err = aws_s3.DownloadDir(
+		ts.cfg.Logger,
+		ts.cfg.S3API,
+		ts.cfg.EKSConfig.S3BucketName,
+		path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-remote", "writes"),
+	)
+	if err == nil {
+		ts.cfg.Logger.Info("reading writes results", zap.String("writes-dir", writesDir))
+		cnt := 0
+		err = filepath.Walk(writesDir, func(fpath string, info os.FileInfo, werr error) error {
+			if werr != nil {
+				return werr
+			}
+			if info.IsDir() {
+				return nil
+			}
+			cnt++
+			switch {
+			case strings.HasSuffix(fpath, "-writes-summary.json"):
+				b, err := ioutil.ReadFile(fpath)
+				if err != nil {
+					return fmt.Errorf("failed to open %q (%v)", fpath, err)
+				}
+				var r metrics.RequestsSummary
+				if err = json.Unmarshal(b, &r); err != nil {
+					return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
+				}
+				writesSummary.SuccessTotal += r.SuccessTotal
+				writesSummary.FailureTotal += r.FailureTotal
+				if writesSummary.LatencyHistogram == nil || len(writesSummary.LatencyHistogram) == 0 {
+					writesSummary.LatencyHistogram = r.LatencyHistogram
+				} else {
+					writesSummary.LatencyHistogram, err = metrics.MergeHistograms(writesSummary.LatencyHistogram, r.LatencyHistogram)
+					if err != nil {
+						return fmt.Errorf("failed to merge histograms (%v)", err)
 					}
-					if strings.Contains(fpath, ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryOutputNamePrefix) {
-						switch {
-						case strings.HasSuffix(fpath, "-reads-summary.json"):
-							b, err := ioutil.ReadFile(fpath)
-							if err != nil {
-								return fmt.Errorf("failed to open %q (%v)", fpath, err)
-							}
-							var r metrics.RequestsSummary
-							if err = json.Unmarshal(b, &r); err != nil {
-								return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
-							}
-							reads.SuccessTotal += r.SuccessTotal
-							reads.FailureTotal += r.FailureTotal
-							if reads.LatencyHistogram == nil || len(reads.LatencyHistogram) == 0 {
-								reads.LatencyHistogram = r.LatencyHistogram
-							} else {
-								reads.LatencyHistogram, err = metrics.MergeHistograms(reads.LatencyHistogram, r.LatencyHistogram)
-								if err != nil {
-									return fmt.Errorf("failed to merge histograms (%v)", err)
-								}
-							}
+				}
 
-						case strings.HasSuffix(fpath, "-reads.json"):
-							b, err := ioutil.ReadFile(fpath)
-							if err != nil {
-								return fmt.Errorf("failed to open %q (%v)", fpath, err)
+			case strings.HasSuffix(fpath, "-writes.json"):
+				b, err := ioutil.ReadFile(fpath)
+				if err != nil {
+					return fmt.Errorf("failed to open %q (%v)", fpath, err)
+				}
+				var r metrics.Durations
+				if err = json.Unmarshal(b, &r); err != nil {
+					return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
+				}
+				writeLatencies = append(writeLatencies, r...)
+			}
+			return nil
+		})
+		if err != nil || cnt == 0 {
+			ts.cfg.Logger.Warn("failed to read writes results", zap.Int("file-count", cnt), zap.Error(err))
+			os.RemoveAll(writesDir)
+			writesDir = ""
+		}
+	}
+
+	readsDir, err = aws_s3.DownloadDir(
+		ts.cfg.Logger,
+		ts.cfg.S3API,
+		ts.cfg.EKSConfig.S3BucketName,
+		path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-remote", "reads"),
+	)
+	if err == nil {
+		ts.cfg.Logger.Info("reading reads results", zap.String("reads-dir", readsDir))
+		cnt := 0
+		err = filepath.Walk(readsDir, func(fpath string, info os.FileInfo, werr error) error {
+			if werr != nil {
+				return werr
+			}
+			if info.IsDir() {
+				return nil
+			}
+			cnt++
+
+			switch {
+			case strings.HasSuffix(fpath, "-reads-summary.json"):
+				b, err := ioutil.ReadFile(fpath)
+				if err != nil {
+					return fmt.Errorf("failed to open %q (%v)", fpath, err)
+				}
+				var r metrics.RequestsSummary
+				if err = json.Unmarshal(b, &r); err != nil {
+					return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
+				}
+				readsSummary.SuccessTotal += r.SuccessTotal
+				readsSummary.FailureTotal += r.FailureTotal
+				if readsSummary.LatencyHistogram == nil || len(readsSummary.LatencyHistogram) == 0 {
+					readsSummary.LatencyHistogram = r.LatencyHistogram
+				} else {
+					readsSummary.LatencyHistogram, err = metrics.MergeHistograms(readsSummary.LatencyHistogram, r.LatencyHistogram)
+					if err != nil {
+						return fmt.Errorf("failed to merge histograms (%v)", err)
+					}
+				}
+
+			case strings.HasSuffix(fpath, "-reads.json"):
+				b, err := ioutil.ReadFile(fpath)
+				if err != nil {
+					return fmt.Errorf("failed to open %q (%v)", fpath, err)
+				}
+				var r metrics.Durations
+				if err = json.Unmarshal(b, &r); err != nil {
+					return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
+				}
+				readLatencies = append(readLatencies, r...)
+			}
+			return nil
+		})
+		if err != nil || cnt == 0 {
+			ts.cfg.Logger.Warn("failed to read reads results", zap.Int("file-count", cnt), zap.Error(err))
+			os.RemoveAll(readsDir)
+			readsDir = ""
+		}
+	}
+
+	aggSucceed := writesDir != "" && readsDir != ""
+	if !aggSucceed {
+		writesSummary, readsSummary = metrics.RequestsSummary{}, metrics.RequestsSummary{}
+		writeLatencies, readLatencies = make(metrics.Durations, 0, 20000), make(metrics.Durations, 0, 20000)
+
+		if ts.cfg.EKSConfig.IsEnabledAddOnNodeGroups() && ts.cfg.EKSConfig.AddOnNodeGroups.FetchLogs {
+			ts.cfg.Logger.Info("fetching logs from ngs")
+			for _, v := range ts.cfg.EKSConfig.AddOnNodeGroups.ASGs {
+				for _, fpaths := range v.Logs {
+					for _, fpath := range fpaths {
+						if strings.Contains(fpath, ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryOutputNamePrefix) {
+							switch {
+							case strings.HasSuffix(fpath, "-writes-summary.json"):
+								b, err := ioutil.ReadFile(fpath)
+								if err != nil {
+									return fmt.Errorf("failed to open %q (%v)", fpath, err)
+								}
+								var r metrics.RequestsSummary
+								if err = json.Unmarshal(b, &r); err != nil {
+									return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
+								}
+								writesSummary.SuccessTotal += r.SuccessTotal
+								writesSummary.FailureTotal += r.FailureTotal
+								if writesSummary.LatencyHistogram == nil || len(writesSummary.LatencyHistogram) == 0 {
+									writesSummary.LatencyHistogram = r.LatencyHistogram
+								} else {
+									writesSummary.LatencyHistogram, err = metrics.MergeHistograms(writesSummary.LatencyHistogram, r.LatencyHistogram)
+									if err != nil {
+										return fmt.Errorf("failed to merge histograms (%v)", err)
+									}
+								}
+
+							case strings.HasSuffix(fpath, "-writes.json"):
+								b, err := ioutil.ReadFile(fpath)
+								if err != nil {
+									return fmt.Errorf("failed to open %q (%v)", fpath, err)
+								}
+								var r metrics.Durations
+								if err = json.Unmarshal(b, &r); err != nil {
+									return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
+								}
+								writeLatencies = append(writeLatencies, r...)
 							}
-							var r metrics.Durations
-							if err = json.Unmarshal(b, &r); err != nil {
-								return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
+						}
+						if strings.Contains(fpath, ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryOutputNamePrefix) {
+							switch {
+							case strings.HasSuffix(fpath, "-reads-summary.json"):
+								b, err := ioutil.ReadFile(fpath)
+								if err != nil {
+									return fmt.Errorf("failed to open %q (%v)", fpath, err)
+								}
+								var r metrics.RequestsSummary
+								if err = json.Unmarshal(b, &r); err != nil {
+									return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
+								}
+								readsSummary.SuccessTotal += r.SuccessTotal
+								readsSummary.FailureTotal += r.FailureTotal
+								if readsSummary.LatencyHistogram == nil || len(readsSummary.LatencyHistogram) == 0 {
+									readsSummary.LatencyHistogram = r.LatencyHistogram
+								} else {
+									readsSummary.LatencyHistogram, err = metrics.MergeHistograms(readsSummary.LatencyHistogram, r.LatencyHistogram)
+									if err != nil {
+										return fmt.Errorf("failed to merge histograms (%v)", err)
+									}
+								}
+
+							case strings.HasSuffix(fpath, "-reads.json"):
+								b, err := ioutil.ReadFile(fpath)
+								if err != nil {
+									return fmt.Errorf("failed to open %q (%v)", fpath, err)
+								}
+								var r metrics.Durations
+								if err = json.Unmarshal(b, &r); err != nil {
+									return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
+								}
+								readLatencies = append(readLatencies, r...)
 							}
-							readLatencies = append(readLatencies, r...)
 						}
 					}
 				}
 			}
 		}
-	}
-	if ts.cfg.EKSConfig.IsEnabledAddOnManagedNodeGroups() && ts.cfg.EKSConfig.AddOnManagedNodeGroups.FetchLogs {
-		ts.cfg.Logger.Info("fetching logs from mngs")
-		for _, cur := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
-			for _, fpaths := range cur.Logs {
-				for _, fpath := range fpaths {
-					if strings.Contains(fpath, ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryOutputNamePrefix) {
-						switch {
-						case strings.HasSuffix(fpath, "-writes-summary.json"):
-							b, err := ioutil.ReadFile(fpath)
-							if err != nil {
-								return fmt.Errorf("failed to open %q (%v)", fpath, err)
-							}
-							var r metrics.RequestsSummary
-							if err = json.Unmarshal(b, &r); err != nil {
-								return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
-							}
-							writes.SuccessTotal += r.SuccessTotal
-							writes.FailureTotal += r.FailureTotal
-							if writes.LatencyHistogram == nil || len(writes.LatencyHistogram) == 0 {
-								writes.LatencyHistogram = r.LatencyHistogram
-							} else {
-								writes.LatencyHistogram, err = metrics.MergeHistograms(writes.LatencyHistogram, r.LatencyHistogram)
+		if ts.cfg.EKSConfig.IsEnabledAddOnManagedNodeGroups() && ts.cfg.EKSConfig.AddOnManagedNodeGroups.FetchLogs {
+			ts.cfg.Logger.Info("fetching logs from mngs")
+			for _, cur := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
+				for _, fpaths := range cur.Logs {
+					for _, fpath := range fpaths {
+						if strings.Contains(fpath, ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryOutputNamePrefix) {
+							switch {
+							case strings.HasSuffix(fpath, "-writes-summary.json"):
+								b, err := ioutil.ReadFile(fpath)
 								if err != nil {
-									return fmt.Errorf("failed to merge histograms (%v)", err)
+									return fmt.Errorf("failed to open %q (%v)", fpath, err)
 								}
-							}
+								var r metrics.RequestsSummary
+								if err = json.Unmarshal(b, &r); err != nil {
+									return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
+								}
+								writesSummary.SuccessTotal += r.SuccessTotal
+								writesSummary.FailureTotal += r.FailureTotal
+								if writesSummary.LatencyHistogram == nil || len(writesSummary.LatencyHistogram) == 0 {
+									writesSummary.LatencyHistogram = r.LatencyHistogram
+								} else {
+									writesSummary.LatencyHistogram, err = metrics.MergeHistograms(writesSummary.LatencyHistogram, r.LatencyHistogram)
+									if err != nil {
+										return fmt.Errorf("failed to merge histograms (%v)", err)
+									}
+								}
 
-						case strings.HasSuffix(fpath, "-writes.json"):
-							b, err := ioutil.ReadFile(fpath)
-							if err != nil {
-								return fmt.Errorf("failed to open %q (%v)", fpath, err)
+							case strings.HasSuffix(fpath, "-writes.json"):
+								b, err := ioutil.ReadFile(fpath)
+								if err != nil {
+									return fmt.Errorf("failed to open %q (%v)", fpath, err)
+								}
+								var r metrics.Durations
+								if err = json.Unmarshal(b, &r); err != nil {
+									return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
+								}
+								writeLatencies = append(writeLatencies, r...)
 							}
-							var r metrics.Durations
-							if err = json.Unmarshal(b, &r); err != nil {
-								return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
-							}
-							writeLatencies = append(writeLatencies, r...)
 						}
-					}
-					if strings.Contains(fpath, ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryOutputNamePrefix) {
-						switch {
-						case strings.HasSuffix(fpath, "-reads-summary.json"):
-							b, err := ioutil.ReadFile(fpath)
-							if err != nil {
-								return fmt.Errorf("failed to open %q (%v)", fpath, err)
-							}
-							var r metrics.RequestsSummary
-							if err = json.Unmarshal(b, &r); err != nil {
-								return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
-							}
-							reads.SuccessTotal += r.SuccessTotal
-							reads.FailureTotal += r.FailureTotal
-							if reads.LatencyHistogram == nil || len(reads.LatencyHistogram) == 0 {
-								reads.LatencyHistogram = r.LatencyHistogram
-							} else {
-								reads.LatencyHistogram, err = metrics.MergeHistograms(reads.LatencyHistogram, r.LatencyHistogram)
+						if strings.Contains(fpath, ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryOutputNamePrefix) {
+							switch {
+							case strings.HasSuffix(fpath, "-reads-summary.json"):
+								b, err := ioutil.ReadFile(fpath)
 								if err != nil {
-									return fmt.Errorf("failed to merge histograms (%v)", err)
+									return fmt.Errorf("failed to open %q (%v)", fpath, err)
 								}
-							}
+								var r metrics.RequestsSummary
+								if err = json.Unmarshal(b, &r); err != nil {
+									return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
+								}
+								readsSummary.SuccessTotal += r.SuccessTotal
+								readsSummary.FailureTotal += r.FailureTotal
+								if readsSummary.LatencyHistogram == nil || len(readsSummary.LatencyHistogram) == 0 {
+									readsSummary.LatencyHistogram = r.LatencyHistogram
+								} else {
+									readsSummary.LatencyHistogram, err = metrics.MergeHistograms(readsSummary.LatencyHistogram, r.LatencyHistogram)
+									if err != nil {
+										return fmt.Errorf("failed to merge histograms (%v)", err)
+									}
+								}
 
-						case strings.HasSuffix(fpath, "-reads.json"):
-							b, err := ioutil.ReadFile(fpath)
-							if err != nil {
-								return fmt.Errorf("failed to open %q (%v)", fpath, err)
+							case strings.HasSuffix(fpath, "-reads.json"):
+								b, err := ioutil.ReadFile(fpath)
+								if err != nil {
+									return fmt.Errorf("failed to open %q (%v)", fpath, err)
+								}
+								var r metrics.Durations
+								if err = json.Unmarshal(b, &r); err != nil {
+									return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
+								}
+								readLatencies = append(readLatencies, r...)
 							}
-							var r metrics.Durations
-							if err = json.Unmarshal(b, &r); err != nil {
-								return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
-							}
-							readLatencies = append(readLatencies, r...)
 						}
 					}
 				}
@@ -896,23 +1032,23 @@ func (ts *tester) AggregateResults() (err error) {
 	ts.cfg.Logger.Info("sorting write latencies")
 	sort.Sort(writeLatencies)
 	ts.cfg.Logger.Info("sorted write latencies", zap.String("took", time.Since(sortStart).String()))
-	writes.LantencyP50 = writeLatencies.PickLantencyP50()
-	writes.LantencyP90 = writeLatencies.PickLantencyP90()
-	writes.LantencyP99 = writeLatencies.PickLantencyP99()
-	writes.LantencyP999 = writeLatencies.PickLantencyP999()
-	writes.LantencyP9999 = writeLatencies.PickLantencyP9999()
-	ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummary = writes
+	writesSummary.LantencyP50 = writeLatencies.PickLantencyP50()
+	writesSummary.LantencyP90 = writeLatencies.PickLantencyP90()
+	writesSummary.LantencyP99 = writeLatencies.PickLantencyP99()
+	writesSummary.LantencyP999 = writeLatencies.PickLantencyP999()
+	writesSummary.LantencyP9999 = writeLatencies.PickLantencyP9999()
+	ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummary = writesSummary
 
 	sortStart = time.Now()
 	ts.cfg.Logger.Info("sorting read latencies")
 	sort.Sort(readLatencies)
 	ts.cfg.Logger.Info("sorted read latencies", zap.String("took", time.Since(sortStart).String()))
-	reads.LantencyP50 = readLatencies.PickLantencyP50()
-	reads.LantencyP90 = readLatencies.PickLantencyP90()
-	reads.LantencyP99 = readLatencies.PickLantencyP99()
-	reads.LantencyP999 = readLatencies.PickLantencyP999()
-	reads.LantencyP9999 = readLatencies.PickLantencyP9999()
-	ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummary = reads
+	readsSummary.LantencyP50 = readLatencies.PickLantencyP50()
+	readsSummary.LantencyP90 = readLatencies.PickLantencyP90()
+	readsSummary.LantencyP99 = readLatencies.PickLantencyP99()
+	readsSummary.LantencyP999 = readLatencies.PickLantencyP999()
+	readsSummary.LantencyP9999 = readLatencies.PickLantencyP9999()
+	ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummary = readsSummary
 
 	ts.cfg.EKSConfig.Sync()
 
@@ -925,15 +1061,15 @@ func (ts *tester) AggregateResults() (err error) {
 		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 		return err
 	}
-	if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryJSONPath, []byte(writes.JSON()), 0600); err != nil {
+	if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryJSONPath, []byte(writesSummary.JSON()), 0600); err != nil {
 		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 		return err
 	}
-	if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryTablePath, []byte(writes.Table()), 0600); err != nil {
+	if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryTablePath, []byte(writesSummary.Table()), 0600); err != nil {
 		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 		return err
 	}
-	fmt.Printf("\n\nAddOnSecretsRemote.RequestsWritesSummary:\n%s\n", writes.Table())
+	fmt.Printf("\n\nAddOnSecretsRemote.RequestsWritesSummary:\n%s\n", writesSummary.Table())
 
 	rb, err := json.Marshal(readLatencies)
 	if err != nil {
@@ -944,15 +1080,15 @@ func (ts *tester) AggregateResults() (err error) {
 		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 		return err
 	}
-	if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryJSONPath, []byte(reads.JSON()), 0600); err != nil {
+	if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryJSONPath, []byte(readsSummary.JSON()), 0600); err != nil {
 		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 		return err
 	}
-	if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryTablePath, []byte(reads.Table()), 0600); err != nil {
+	if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryTablePath, []byte(readsSummary.Table()), 0600); err != nil {
 		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 		return err
 	}
-	fmt.Printf("\n\nAddOnSecretsRemote.RequestsReadsSummary:\n%s\n", reads.Table())
+	fmt.Printf("\n\nAddOnSecretsRemote.RequestsReadsSummary:\n%s\n", readsSummary.Table())
 
 	ts.cfg.Logger.Info("aggregated results from Pods")
 	return ts.cfg.EKSConfig.Sync()

@@ -522,12 +522,14 @@ func (ts *Tester) createTesters() (err error) {
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
+			S3API:     ts.s3API,
 		}),
 		csrs_remote.New(csrs_remote.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
+			S3API:     ts.s3API,
 			ECRAPI:    ts.ecrAPI,
 		}),
 		config_maps_local.New(config_maps_local.Config{
@@ -535,12 +537,14 @@ func (ts *Tester) createTesters() (err error) {
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
+			S3API:     ts.s3API,
 		}),
 		config_maps_remote.New(config_maps_remote.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
+			S3API:     ts.s3API,
 			ECRAPI:    ts.ecrAPI,
 		}),
 		secrets_local.New(secrets_local.Config{
@@ -548,12 +552,14 @@ func (ts *Tester) createTesters() (err error) {
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
+			S3API:     ts.s3API,
 		}),
 		secrets_remote.New(secrets_remote.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
+			S3API:     ts.s3API,
 			ECRAPI:    ts.ecrAPI,
 		}),
 		fargate.New(fargate.Config{

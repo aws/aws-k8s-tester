@@ -6,13 +6,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"path"
+	"path/filepath"
 	"sort"
 	"sync"
 	"time"
 
+	aws_s3 "github.com/aws/aws-k8s-tester/pkg/aws/s3"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/metrics"
 	"github.com/aws/aws-k8s-tester/pkg/randutil"
+	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
@@ -59,6 +63,10 @@ type Config struct {
 	Logger *zap.Logger
 	Stopc  chan struct{}
 
+	S3API        s3iface.S3API
+	S3BucketName string
+	S3DirName    string
+
 	Client        k8s_client.EKS
 	ClientTimeout time.Duration
 
@@ -66,14 +74,16 @@ type Config struct {
 	Objects    int
 	ObjectSize int
 
-	WritesJSONPath string
+	WritesJSONPath         string
+	WritesSummaryJSONPath  string
+	WritesSummaryTablePath string
 }
 
 // Loader defines configmap loader operations.
 type Loader interface {
 	Start()
 	Stop()
-	CollectMetrics() (writes metrics.RequestsSummary, err error)
+	CollectMetrics() (writesSummary metrics.RequestsSummary, err error)
 }
 
 type loader struct {
@@ -108,11 +118,11 @@ func (ld *loader) Stop() {
 
 // GetMetrics locally fetches output from registered metrics.
 // ref. https://pkg.go.dev/github.com/prometheus/client_golang@v1.6.0/prometheus/promhttp?tab=doc#Handler
-func (ld *loader) CollectMetrics() (writes metrics.RequestsSummary, err error) {
+func (ts *loader) CollectMetrics() (writesSummary metrics.RequestsSummary, err error) {
 	// https://pkg.go.dev/github.com/prometheus/client_golang/prometheus?tab=doc#Gatherer
 	mfs, err := prometheus.DefaultGatherer.Gather()
 	if err != nil {
-		ld.cfg.Logger.Warn("failed to gather prometheus metrics", zap.Error(err))
+		ts.cfg.Logger.Warn("failed to gather prometheus metrics", zap.Error(err))
 		return metrics.RequestsSummary{}, err
 	}
 	for _, mf := range mfs {
@@ -122,41 +132,66 @@ func (ld *loader) CollectMetrics() (writes metrics.RequestsSummary, err error) {
 		switch *mf.Name {
 		case "configmaps_client_write_requests_success_total":
 			gg := mf.Metric[0].GetGauge()
-			writes.SuccessTotal = gg.GetValue()
+			writesSummary.SuccessTotal = gg.GetValue()
 		case "configmaps_client_write_requests_failure_total":
 			gg := mf.Metric[0].GetGauge()
-			writes.FailureTotal = gg.GetValue()
+			writesSummary.FailureTotal = gg.GetValue()
 		case "configmaps_client_write_request_latency_milliseconds":
-			writes.LatencyHistogram, err = metrics.ParseHistogram("milliseconds", mf.Metric[0].GetHistogram())
+			writesSummary.LatencyHistogram, err = metrics.ParseHistogram("milliseconds", mf.Metric[0].GetHistogram())
 			if err != nil {
 				return metrics.RequestsSummary{}, err
 			}
 		}
 	}
 
-	ld.cfg.Logger.Info("sorting write latency results", zap.Int("total-data-points", ld.writeLatencies.Len()))
+	ts.cfg.Logger.Info("sorting write latency results", zap.Int("total-data-points", ts.writeLatencies.Len()))
 	now := time.Now()
-	sort.Sort(ld.writeLatencies)
-	ld.cfg.Logger.Info("sorted write latency results", zap.Int("total-data-points", ld.writeLatencies.Len()), zap.String("took", time.Since(now).String()))
-	writes.LantencyP50 = ld.writeLatencies.PickLantencyP50()
-	writes.LantencyP90 = ld.writeLatencies.PickLantencyP90()
-	writes.LantencyP99 = ld.writeLatencies.PickLantencyP99()
-	writes.LantencyP999 = ld.writeLatencies.PickLantencyP999()
-	writes.LantencyP9999 = ld.writeLatencies.PickLantencyP9999()
+	sort.Sort(ts.writeLatencies)
+	ts.cfg.Logger.Info("sorted write latency results", zap.Int("total-data-points", ts.writeLatencies.Len()), zap.String("took", time.Since(now).String()))
+	writesSummary.LantencyP50 = ts.writeLatencies.PickLantencyP50()
+	writesSummary.LantencyP90 = ts.writeLatencies.PickLantencyP90()
+	writesSummary.LantencyP99 = ts.writeLatencies.PickLantencyP99()
+	writesSummary.LantencyP999 = ts.writeLatencies.PickLantencyP999()
+	writesSummary.LantencyP9999 = ts.writeLatencies.PickLantencyP9999()
 
-	ld.cfg.Logger.Info("writing latency results in JSON to disk", zap.String("path", ld.cfg.WritesJSONPath))
-	wb, err := json.Marshal(ld.writeLatencies)
+	ts.cfg.Logger.Info("writing latency results in JSON to disk", zap.String("path", ts.cfg.WritesJSONPath))
+	wb, err := json.Marshal(ts.writeLatencies)
 	if err != nil {
-		ld.cfg.Logger.Warn("failed to encode latency results in JSON", zap.Error(err))
+		ts.cfg.Logger.Warn("failed to encode latency results in JSON", zap.Error(err))
 		return metrics.RequestsSummary{}, err
 	}
-	if err = ioutil.WriteFile(ld.cfg.WritesJSONPath, wb, 0600); err != nil {
-		ld.cfg.Logger.Warn("failed to write latency results in JSON to disk", zap.String("path", ld.cfg.WritesJSONPath), zap.Error(err))
+	if err = ioutil.WriteFile(ts.cfg.WritesJSONPath, wb, 0600); err != nil {
+		ts.cfg.Logger.Warn("failed to write latency results in JSON to disk", zap.String("path", ts.cfg.WritesJSONPath), zap.Error(err))
 		return metrics.RequestsSummary{}, err
 	}
-	ld.cfg.Logger.Info("wrote latency results in JSON to disk", zap.String("path", ld.cfg.WritesJSONPath))
+	ts.cfg.Logger.Info("wrote latency results in JSON to disk", zap.String("path", ts.cfg.WritesJSONPath))
+	if err = aws_s3.Upload(
+		ts.cfg.Logger,
+		ts.cfg.S3API,
+		ts.cfg.S3BucketName,
+		path.Join(ts.cfg.S3DirName, "writes", filepath.Base(ts.cfg.WritesJSONPath)),
+		ts.cfg.WritesJSONPath,
+	); err != nil {
+		return metrics.RequestsSummary{}, err
+	}
 
-	return writes, nil
+	if err = ioutil.WriteFile(ts.cfg.WritesSummaryJSONPath, []byte(writesSummary.JSON()), 0600); err != nil {
+		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
+		return metrics.RequestsSummary{}, err
+	}
+	if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.S3BucketName, path.Join(ts.cfg.S3DirName, "writes", filepath.Base(ts.cfg.WritesSummaryJSONPath)), ts.cfg.WritesSummaryJSONPath); err != nil {
+		return metrics.RequestsSummary{}, err
+	}
+	if err = ioutil.WriteFile(ts.cfg.WritesSummaryTablePath, []byte(writesSummary.Table()), 0600); err != nil {
+		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
+		return metrics.RequestsSummary{}, err
+	}
+	if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.S3BucketName, path.Join(ts.cfg.S3DirName, "writes", filepath.Base(ts.cfg.WritesSummaryTablePath)), ts.cfg.WritesSummaryTablePath); err != nil {
+		return metrics.RequestsSummary{}, err
+	}
+	fmt.Printf("\n\nWritesSummaryTable:\n%s\n", writesSummary.Table())
+
+	return writesSummary, nil
 }
 
 func startWrites(lg *zap.Logger, cli *kubernetes.Clientset, timeout time.Duration, namespace string, objects int, objectSize int, stopc chan struct{}, donec chan struct{}) (ds metrics.Durations) {

@@ -23,9 +23,8 @@ import (
 var (
 	stresserKubeConfigPath string
 
-	stresserPartition string
-	stresserRegion    string
-
+	stresserPartition    string
+	stresserRegion       string
 	stresserS3BucketName string
 	stresserS3DirName    string
 
@@ -93,18 +92,6 @@ func createStresserFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	cli, err := k8s_client.NewEKS(&k8s_client.EKSConfig{
-		Logger:         lg,
-		KubeConfigPath: stresserKubeConfigPath,
-		Clients:        stresserClients,
-		ClientQPS:      stresserClientQPS,
-		ClientBurst:    stresserClientBurst,
-	})
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create client %v\n", err)
-		os.Exit(1)
-	}
-
 	awsCfg := &pkg_aws.Config{
 		Logger:    lg,
 		Partition: stresserPartition,
@@ -119,10 +106,22 @@ func createStresserFunc(cmd *cobra.Command, args []string) {
 	awsUserID := aws.StringValue(stsOutput.UserId)
 	awsIAMRoleARN := aws.StringValue(stsOutput.Arn)
 	lg.Info("created AWS session",
-		zap.String("was-account-id", awsAccountID),
-		zap.String("was-user-id", awsUserID),
-		zap.String("was-iam-role-arn", awsIAMRoleARN),
+		zap.String("aws-account-id", awsAccountID),
+		zap.String("aws-user-id", awsUserID),
+		zap.String("aws-iam-role-arn", awsIAMRoleARN),
 	)
+
+	cli, err := k8s_client.NewEKS(&k8s_client.EKSConfig{
+		Logger:         lg,
+		KubeConfigPath: stresserKubeConfigPath,
+		Clients:        stresserClients,
+		ClientQPS:      stresserClientQPS,
+		ClientBurst:    stresserClientBurst,
+	})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to create client %v\n", err)
+		os.Exit(1)
+	}
 
 	stopc := make(chan struct{})
 
