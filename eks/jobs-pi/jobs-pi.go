@@ -168,7 +168,7 @@ func (ts *tester) Delete() error {
 		ts.cfg.EKSConfig.AddOnJobsPi.Namespace,
 		k8s_client.DefaultNamespaceDeletionInterval,
 		k8s_client.DefaultNamespaceDeletionTimeout,
-		k8s_client.WithForceDelete(),
+		k8s_client.WithForceDelete(true),
 	); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete Jobs Pi namespace (%v)", err))
 	}

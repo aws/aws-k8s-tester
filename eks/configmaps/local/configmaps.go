@@ -155,7 +155,7 @@ func (ts *tester) Delete() error {
 		ts.cfg.EKSConfig.AddOnConfigmapsLocal.Namespace,
 		k8s_client.DefaultNamespaceDeletionInterval,
 		k8s_client.DefaultNamespaceDeletionTimeout,
-		k8s_client.WithForceDelete(),
+		k8s_client.WithForceDelete(true),
 	); err != nil {
 		return fmt.Errorf("failed to delete configmaps local tester namespace (%v)", err)
 	}

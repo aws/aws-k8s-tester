@@ -287,8 +287,63 @@ func DeleteBucket(lg *zap.Logger, s3API s3iface.S3API, bucket string) error {
 	return nil
 }
 
+// Download downloads all files from the directory in the S3 bucket.
+func Download(lg *zap.Logger, s3API s3iface.S3API, bucket string, s3Key string, localPath string, opts ...OpOption) (err error) {
+	ret := Op{verbose: false, overwrite: false}
+	ret.applyOpts(opts)
+
+	lg.Info("downloading object", zap.String("s3-key", s3Key))
+	resp, err := s3API.GetObject(&s3.GetObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(s3Key),
+	})
+	if err != nil {
+		lg.Warn("failed to get object", zap.String("s3-key", s3Key), zap.Error(err))
+		return err
+	}
+
+	if err = os.MkdirAll(filepath.Dir(localPath), 0700); err != nil {
+		lg.Warn("failed to mkdir", zap.String("s3-key", s3Key), zap.Error(err))
+		return err
+	}
+	if fileutil.Exist(localPath) {
+		lg.Warn("local file path already exists", zap.String("local-path", localPath))
+		if !ret.overwrite {
+			return fmt.Errorf("local file %q already exists; can't overwrite", localPath)
+		}
+	}
+	f, err := os.OpenFile(localPath, os.O_RDWR|os.O_TRUNC, 0777)
+	if err != nil {
+		f, err = os.Create(localPath)
+		if err != nil {
+			lg.Warn("failed to write file", zap.String("s3-key", s3Key), zap.Error(err))
+			return err
+		}
+	}
+	n, err := io.Copy(f, resp.Body)
+	f.Close()
+	resp.Body.Close()
+	if err != nil {
+		lg.Warn("failed to download object",
+			zap.String("s3-key", s3Key),
+			zap.Error(err),
+		)
+		return err
+	}
+
+	lg.Info("downloaded object",
+		zap.String("s3-key", s3Key),
+		zap.String("object-size", humanize.Bytes(uint64(n))),
+		zap.String("local-path", localPath),
+	)
+	return nil
+}
+
 // DownloadDir downloads all files from the directory in the S3 bucket.
-func DownloadDir(lg *zap.Logger, s3API s3iface.S3API, bucket string, s3Dir string) (targetDir string, err error) {
+func DownloadDir(lg *zap.Logger, s3API s3iface.S3API, bucket string, s3Dir string, opts ...OpOption) (targetDir string, err error) {
+	ret := Op{verbose: false, overwrite: false}
+	ret.applyOpts(opts)
+
 	if s3Dir[len(s3Dir)-1] == '/' {
 		s3Dir = s3Dir[:len(s3Dir)-1]
 	}
@@ -329,41 +384,49 @@ func DownloadDir(lg *zap.Logger, s3API s3iface.S3API, bucket string, s3Dir strin
 	for _, obj := range objects {
 		time.Sleep(300 * time.Millisecond)
 
-		key := aws.StringValue(obj.Key)
+		s3Key := aws.StringValue(obj.Key)
 		lg.Info("downloading object",
-			zap.String("key", key),
-			zap.String("size", humanize.Bytes(uint64(aws.Int64Value(obj.Size)))),
+			zap.String("s3-key", s3Key),
+			zap.String("object-size", humanize.Bytes(uint64(aws.Int64Value(obj.Size)))),
 		)
 		resp, err := s3API.GetObject(&s3.GetObjectInput{
 			Bucket: aws.String(bucket),
 			Key:    obj.Key,
 		})
 		if err != nil {
-			lg.Warn("failed to get object", zap.String("key", key), zap.Error(err))
+			lg.Warn("failed to get object", zap.String("s3-key", s3Key), zap.Error(err))
 			continue
 		}
-		fpath := filepath.Join(targetDir, key)
+		fpath := filepath.Join(targetDir, s3Key)
 		if err = os.MkdirAll(filepath.Dir(fpath), 0700); err != nil {
-			lg.Warn("failed to mkdir", zap.String("key", key), zap.Error(err))
+			lg.Warn("failed to mkdir", zap.String("s3-key", s3Key), zap.Error(err))
 			continue
 		}
 		f, err := os.OpenFile(fpath, os.O_RDWR|os.O_TRUNC, 0777)
 		if err != nil {
 			f, err = os.Create(fpath)
 			if err != nil {
-				lg.Warn("failed to write file", zap.String("key", key), zap.Error(err))
+				lg.Warn("failed to write file", zap.String("s3-key", s3Key), zap.Error(err))
 				continue
 			}
 		}
 		n, err := io.Copy(f, resp.Body)
 		f.Close()
 		resp.Body.Close()
-		lg.Info("downloaded object",
-			zap.String("key", key),
-			zap.String("size", humanize.Bytes(uint64(aws.Int64Value(obj.Size)))),
-			zap.String("copied-size", humanize.Bytes(uint64(n))),
-			zap.Error(err),
-		)
+		if err == nil {
+			lg.Info("downloaded object",
+				zap.String("s3-key", s3Key),
+				zap.String("object-size", humanize.Bytes(uint64(aws.Int64Value(obj.Size)))),
+				zap.String("copied-size", humanize.Bytes(uint64(n))),
+			)
+		} else {
+			lg.Warn("failed to download object",
+				zap.String("s3-key", s3Key),
+				zap.String("object-size", humanize.Bytes(uint64(aws.Int64Value(obj.Size)))),
+				zap.String("copied-size", humanize.Bytes(uint64(n))),
+				zap.Error(err),
+			)
+		}
 	}
 	lg.Info("downloaded directory from bucket",
 		zap.String("s3-bucket", bucket),
@@ -371,4 +434,29 @@ func DownloadDir(lg *zap.Logger, s3API s3iface.S3API, bucket string, s3Dir strin
 		zap.String("target-dir", targetDir),
 	)
 	return targetDir, nil
+}
+
+// Op represents a SSH operation.
+type Op struct {
+	verbose   bool
+	overwrite bool
+}
+
+// OpOption configures archiver operations.
+type OpOption func(*Op)
+
+// WithVerbose configures verbose level in SSH operations.
+func WithVerbose(b bool) OpOption {
+	return func(op *Op) { op.verbose = b }
+}
+
+// WithOverwrite configures overwrites.
+func WithOverwrite(b bool) OpOption {
+	return func(op *Op) { op.overwrite = b }
+}
+
+func (op *Op) applyOpts(opts []OpOption) {
+	for _, opt := range opts {
+		opt(op)
+	}
 }

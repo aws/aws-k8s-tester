@@ -376,6 +376,9 @@ scp -oStrictHostKeyChecking=no \
 */
 
 func (sh *ssh) Send(localPath, remotePath string, opts ...OpOption) (out []byte, err error) {
+	ret := Op{verbose: false, retriesLeft: 0, retryInterval: time.Duration(0), timeout: 0, envs: make(map[string]string)}
+	ret.applyOpts(opts)
+
 	fi, ferr := os.Stat(localPath)
 	if ferr != nil {
 		return nil, fmt.Errorf("%q does not exist (%v)", localPath, ferr)
@@ -390,9 +393,6 @@ func (sh *ssh) Send(localPath, remotePath string, opts ...OpOption) (out []byte,
 	if err = os.Chmod(sh.cfg.KeyPath, 0400); err != nil {
 		return nil, err
 	}
-
-	ret := Op{verbose: false, retriesLeft: 0, retryInterval: time.Duration(0), timeout: 0, envs: make(map[string]string)}
-	ret.applyOpts(opts)
 
 	key := fmt.Sprintf("%s%s%s-send", sh.cfg.PublicDNSName, localPath, remotePath)
 	if _, ok := sh.retryCounter[key]; !ok {
@@ -453,6 +453,9 @@ func (sh *ssh) Send(localPath, remotePath string, opts ...OpOption) (out []byte,
 }
 
 func (sh *ssh) Download(remotePath, localPath string, opts ...OpOption) (out []byte, err error) {
+	ret := Op{verbose: false, retriesLeft: 0, retryInterval: time.Duration(0), timeout: 0, envs: make(map[string]string)}
+	ret.applyOpts(opts)
+
 	scpCmd := exec.New()
 	var scpPath string
 	scpPath, err = scpCmd.LookPath("scp")
@@ -462,9 +465,6 @@ func (sh *ssh) Download(remotePath, localPath string, opts ...OpOption) (out []b
 	if err = os.Chmod(sh.cfg.KeyPath, 0400); err != nil {
 		return nil, err
 	}
-
-	ret := Op{verbose: false, retriesLeft: 0, retryInterval: time.Duration(0), timeout: 0, envs: make(map[string]string)}
-	ret.applyOpts(opts)
 
 	key := fmt.Sprintf("%s%s%s-download", sh.cfg.PublicDNSName, remotePath, localPath)
 	if _, ok := sh.retryCounter[key]; !ok {

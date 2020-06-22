@@ -148,7 +148,7 @@ func (ts *tester) Delete() error {
 				fmt.Printf("\n\n'%s' output:\n\n%s\n\n", getAllCmd, out)
 			}
 		}),
-		k8s_client.WithForceDelete(),
+		k8s_client.WithForceDelete(true),
 	); err != nil {
 		// TODO
 		// errs = append(errs, fmt.Sprintf("failed to delete AppMesh namespace (%v)", err))

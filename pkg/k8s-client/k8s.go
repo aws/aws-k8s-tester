@@ -460,8 +460,8 @@ func WithQueryFunc(f func()) OpOption {
 // WithForceDelete configures force delete.
 // Useful for namespace deletion.
 // ref. https://github.com/kubernetes/kubernetes/issues/60807
-func WithForceDelete() OpOption {
-	return func(op *Op) { op.forceDelete = true }
+func WithForceDelete(forceDelete bool) OpOption {
+	return func(op *Op) { op.forceDelete = forceDelete }
 }
 
 func (op *Op) applyOpts(opts []OpOption) {
