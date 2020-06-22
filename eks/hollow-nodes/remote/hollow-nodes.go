@@ -185,6 +185,7 @@ func (ts *tester) Delete() (err error) {
 		ts.cfg.EKSConfig.AddOnHollowNodesRemote.Namespace,
 		k8s_client.DefaultNamespaceDeletionInterval,
 		k8s_client.DefaultNamespaceDeletionTimeout,
+		k8s_client.WithForceDelete(),
 	); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete hollow nodes namespace (%v)", err))
 	}

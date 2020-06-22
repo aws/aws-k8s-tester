@@ -169,6 +169,7 @@ func (ts *tester) Delete() error {
 		ts.cfg.EKSConfig.AddOnJobsEcho.Namespace,
 		k8s_client.DefaultNamespaceDeletionInterval,
 		k8s_client.DefaultNamespaceDeletionTimeout,
+		k8s_client.WithForceDelete(),
 	); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete Jobs echo namespace (%v)", err))
 	}

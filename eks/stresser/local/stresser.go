@@ -186,6 +186,7 @@ func (ts *tester) Delete() error {
 		ts.cfg.EKSConfig.AddOnStresserLocal.Namespace,
 		k8s_client.DefaultNamespaceDeletionInterval,
 		k8s_client.DefaultNamespaceDeletionTimeout,
+		k8s_client.WithForceDelete(),
 	); err != nil {
 		return fmt.Errorf("failed to delete stresser namespace (%v)", err)
 	}

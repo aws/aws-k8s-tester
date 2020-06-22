@@ -120,6 +120,7 @@ func (ts *tester) Delete() error {
 		ts.cfg.EKSConfig.AddOnWordpress.Namespace,
 		k8s_client.DefaultNamespaceDeletionInterval,
 		k8s_client.DefaultNamespaceDeletionTimeout,
+		k8s_client.WithForceDelete(),
 	); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete Wordpress namespace (%v)", err))
 	}

@@ -215,8 +215,23 @@ func CreateNamespace(lg *zap.Logger, c clientset.Interface, namespace string) er
 	return RetryWithExponentialBackOff(RetryFunction(createFunc, Allow(apierrs.IsAlreadyExists)))
 }
 
-// DeleteNamespace deletes namespace with given name.
-func DeleteNamespace(lg *zap.Logger, c clientset.Interface, namespace string) error {
+// DeleteNamespaceAndWait deletes namespace with given name and waits for its deletion.
+// Default interval is 5-second and default timeout is 10-min.
+func DeleteNamespaceAndWait(
+	lg *zap.Logger,
+	c clientset.Interface,
+	namespace string,
+	interval time.Duration,
+	timeout time.Duration,
+	opts ...OpOption) error {
+	if err := deleteNamespace(lg, c, namespace); err != nil {
+		return err
+	}
+	return waitForDeleteNamespace(lg, c, namespace, interval, timeout, opts...)
+}
+
+// deleteNamespace deletes namespace with given name.
+func deleteNamespace(lg *zap.Logger, c clientset.Interface, namespace string) error {
 	foreground, zero := metav1.DeletePropagationForeground, int64(0)
 	deleteFunc := func() error {
 		lg.Info("deleting namespace", zap.String("namespace", namespace))
@@ -246,20 +261,6 @@ func DeleteNamespace(lg *zap.Logger, c clientset.Interface, namespace string) er
 	return RetryWithExponentialBackOff(RetryFunction(deleteFunc, Allow(apierrs.IsNotFound)))
 }
 
-// DeleteNamespaceAndWait deletes namespace with given name and waits for its deletion.
-// Default interval is 5-second and default timeout is 10-min.
-func DeleteNamespaceAndWait(lg *zap.Logger, c clientset.Interface, namespace string, interval time.Duration, timeout time.Duration, opts ...OpOption) error {
-	if err := DeleteNamespace(lg, c, namespace); err != nil {
-		return err
-	}
-	return waitForDeleteNamespace(lg, c, namespace, interval, timeout, opts...)
-}
-
-// WaitForDeleteNamespace waits untils namespace is terminated.
-func WaitForDeleteNamespace(lg *zap.Logger, c clientset.Interface, namespace string, opts ...OpOption) error {
-	return waitForDeleteNamespace(lg, c, namespace, DefaultNamespaceDeletionInterval, DefaultNamespaceDeletionTimeout, opts...)
-}
-
 func waitForDeleteNamespace(lg *zap.Logger, c clientset.Interface, namespace string, interval time.Duration, timeout time.Duration, opts ...OpOption) error {
 	ret := Op{}
 	ret.applyOpts(opts)
@@ -273,7 +274,8 @@ func waitForDeleteNamespace(lg *zap.Logger, c clientset.Interface, namespace str
 	retryWaitFunc := func() (done bool, err error) {
 		lg.Info("waiting for namespace deletion", zap.String("namespace", namespace))
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		_, err = c.CoreV1().Namespaces().Get(ctx, namespace, metav1.GetOptions{})
+		var ns *apiv1.Namespace
+		ns, err = c.CoreV1().Namespaces().Get(ctx, namespace, metav1.GetOptions{})
 		cancel()
 		if err != nil {
 			if apierrs.IsNotFound(err) {
@@ -290,14 +292,103 @@ func waitForDeleteNamespace(lg *zap.Logger, c clientset.Interface, namespace str
 		}
 		lg.Info("namespace still exists", zap.String("namespace", namespace))
 
-		if ret.f != nil {
-			ret.f()
+		if ret.queryFunc != nil {
+			ret.queryFunc()
+		}
+
+		if ret.forceDelete {
+			finalizers := ns.GetFinalizers()
+			lg.Warn("deleting finalizers in namespace for force-deletion",
+				zap.String("namespace", namespace),
+				zap.Strings("finalizers", finalizers),
+			)
+			ns.SetFinalizers(nil)
+			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+			_, err = c.CoreV1().Namespaces().Update(ctx, ns, metav1.UpdateOptions{})
+			cancel()
+			if err == nil {
+				lg.Info("deleted namespace finalizers",
+					zap.String("namespace", namespace),
+					zap.Strings("finalizers", finalizers),
+				)
+			} else {
+				lg.Warn("failed to delete namespace finalizers",
+					zap.String("namespace", namespace),
+					zap.Strings("finalizers", finalizers),
+					zap.Error(err),
+				)
+			}
 		}
 
 		return false, nil
 	}
 	return wait.PollImmediate(interval, timeout, retryWaitFunc)
 }
+
+/*
+$ kubectl get namespace "myname" -o json \
+	| tr -d "\n" | sed "s/\"finalizers\": \[[^]]\+\]/\"finalizers\": []/" \
+	| kubectl replace --raw /api/v1/namespaces/myname/finalize -f -
+
+$ kubectl get ns eks-2020062119-floralb5826l-stresser-remote -o json
+{
+    "apiVersion": "v1",
+    "kind": "Namespace",
+    "metadata": {
+        "creationTimestamp": "2020-06-22T03:35:15Z",
+        "deletionTimestamp": "2020-06-22T04:13:22Z",
+        "name": "eks-2020062119-floralb5826l-stresser-remote",
+        "resourceVersion": "220505",
+        "selfLink": "/api/v1/namespaces/eks-2020062119-floralb5826l-stresser-remote",
+        "uid": "eefaada7-0b44-4b54-9772-cab450931468"
+    },
+    "spec": {
+        "finalizers": [
+            "kubernetes"
+        ]
+    },
+    "status": {
+        "conditions": [
+            {
+                "lastTransitionTime": "2020-06-22T04:14:35Z",
+                "message": "All resources successfully discovered",
+                "reason": "ResourcesDiscovered",
+                "status": "False",
+                "type": "NamespaceDeletionDiscoveryFailure"
+            },
+            {
+                "lastTransitionTime": "2020-06-22T04:14:35Z",
+                "message": "All legacy kube types successfully parsed",
+                "reason": "ParsedGroupVersions",
+                "status": "False",
+                "type": "NamespaceDeletionGroupVersionParsingFailure"
+            },
+            {
+                "lastTransitionTime": "2020-06-22T04:14:35Z",
+                "message": "Failed to delete all resource types, 1 remaining: Timeout: request did not complete within requested timeout 34s",
+                "reason": "ContentDeletionFailed",
+                "status": "True",
+                "type": "NamespaceDeletionContentFailure"
+            },
+            {
+                "lastTransitionTime": "2020-06-22T04:14:35Z",
+                "message": "All content successfully removed",
+                "reason": "ContentRemoved",
+                "status": "False",
+                "type": "NamespaceContentRemaining"
+            },
+            {
+                "lastTransitionTime": "2020-06-22T04:14:35Z",
+                "message": "All content-preserving finalizers finished",
+                "reason": "ContentHasNoFinalizers",
+                "status": "False",
+                "type": "NamespaceFinalizersRemaining"
+            }
+        ],
+        "phase": "Terminating"
+    }
+}
+*/
 
 // ListNamespaces returns list of existing namespace names.
 func ListNamespaces(c clientset.Interface) ([]apiv1.Namespace, error) {
@@ -354,7 +445,8 @@ func CreateObject(dynamicClient dynamic.Interface, namespace string, name string
 
 // Op represents a SSH operation.
 type Op struct {
-	f func()
+	queryFunc   func()
+	forceDelete bool
 }
 
 // OpOption configures archiver operations.
@@ -362,7 +454,14 @@ type OpOption func(*Op)
 
 // WithQueryFunc configures query function to be called in retry func.
 func WithQueryFunc(f func()) OpOption {
-	return func(op *Op) { op.f = f }
+	return func(op *Op) { op.queryFunc = f }
+}
+
+// WithForceDelete configures force delete.
+// Useful for namespace deletion.
+// ref. https://github.com/kubernetes/kubernetes/issues/60807
+func WithForceDelete() OpOption {
+	return func(op *Op) { op.forceDelete = true }
 }
 
 func (op *Op) applyOpts(opts []OpOption) {
