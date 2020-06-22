@@ -63,6 +63,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.9...v1.4.0
 - Add [`pkg/k8s-client.WithForceDelete` option for `DeleteNamespaceAndWait`](https://github.com/aws/aws-k8s-tester/commit/803ba2d263227adea026fcf1bb5262ebb2abd230).
   - Fix https://github.com/aws/aws-k8s-tester/issues/100.
   - See [`kubernetes/kubernetes#60807`](https://github.com/kubernetes/kubernetes/issues/60807).
+- Add [`pkg/metrics.RequestsSummaryCompare`](https://github.com/aws/aws-k8s-tester/commit/00b7c5c922f77db2243fb8d5c26c0e0f9fd9d484).
 
 ### Dependency
 
