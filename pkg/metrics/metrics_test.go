@@ -3,6 +3,7 @@ package metrics
 import (
 	"fmt"
 	"math"
+	"math/rand"
 	"reflect"
 	"sort"
 	"testing"
@@ -12,21 +13,21 @@ import (
 )
 
 func TestRequestsSummary(t *testing.T) {
-	ds := make(Durations, 20000)
+	ds1 := make(Durations, 20000)
 	for i := 0; i < 20000; i++ {
 		sign := 1
 		if i%2 == 0 {
 			sign = -1
 		}
+		delta := time.Duration(rand.Int63n(500)) * time.Millisecond
 		dur := time.Second + time.Duration(sign*i)*time.Millisecond
 		if dur < 0 {
 			dur = 2 * time.Second
 		}
-		ds[20000-1-i] = dur
+		ds1[20000-1-i] = dur + delta
 	}
-	sort.Sort(ds)
-
-	rs := RequestsSummary{
+	sort.Sort(ds1)
+	rs1 := RequestsSummary{
 		TestID:       time.Now().UTC().Format(time.RFC3339Nano),
 		SuccessTotal: 10,
 		FailureTotal: 10,
@@ -47,14 +48,66 @@ func TestRequestsSummary(t *testing.T) {
 			{Scale: "milliseconds", LowerBound: 2048, UpperBound: 4096, Count: 0},
 			{Scale: "milliseconds", LowerBound: 4096, UpperBound: math.MaxFloat64, Count: 4},
 		}),
-		LantencyP50:   ds.PickLantencyP50(),
-		LantencyP90:   ds.PickLantencyP90(),
-		LantencyP99:   ds.PickLantencyP99(),
-		LantencyP999:  ds.PickLantencyP999(),
-		LantencyP9999: ds.PickLantencyP9999(),
+		LantencyP50:   ds1.PickLantencyP50(),
+		LantencyP90:   ds1.PickLantencyP90(),
+		LantencyP99:   ds1.PickLantencyP99(),
+		LantencyP999:  ds1.PickLantencyP999(),
+		LantencyP9999: ds1.PickLantencyP9999(),
 	}
-	fmt.Println(rs.JSON())
-	fmt.Println(rs.Table())
+	fmt.Println(rs1.JSON())
+	fmt.Println(rs1.Table())
+
+	println()
+	ds2 := make(Durations, 20000)
+	for i := 0; i < 20000; i++ {
+		sign := 1
+		if i%2 == 0 {
+			sign = -1
+		}
+		delta := time.Duration(rand.Int63n(500)) * time.Millisecond
+		dur := time.Second + time.Duration(sign*i)*time.Millisecond
+		if dur < 0 {
+			dur = 2 * time.Second
+		}
+		ds2[20000-1-i] = dur + delta
+	}
+	sort.Sort(ds2)
+	rs2 := RequestsSummary{
+		TestID:       time.Now().UTC().Format(time.RFC3339Nano),
+		SuccessTotal: 10,
+		FailureTotal: 10,
+		LatencyHistogram: HistogramBuckets([]HistogramBucket{
+			{Scale: "milliseconds", LowerBound: 0, UpperBound: 0.5, Count: 0},
+			{Scale: "milliseconds", LowerBound: 0.5, UpperBound: 1, Count: 2},
+			{Scale: "milliseconds", LowerBound: 1, UpperBound: 2, Count: 0},
+			{Scale: "milliseconds", LowerBound: 2, UpperBound: 4, Count: 0},
+			{Scale: "milliseconds", LowerBound: 4, UpperBound: 8, Count: 0},
+			{Scale: "milliseconds", LowerBound: 8, UpperBound: 16, Count: 8},
+			{Scale: "milliseconds", LowerBound: 16, UpperBound: 32, Count: 0},
+			{Scale: "milliseconds", LowerBound: 32, UpperBound: 64, Count: 100},
+			{Scale: "milliseconds", LowerBound: 64, UpperBound: 128, Count: 0},
+			{Scale: "milliseconds", LowerBound: 128, UpperBound: 256, Count: 0},
+			{Scale: "milliseconds", LowerBound: 256, UpperBound: 512, Count: 20},
+			{Scale: "milliseconds", LowerBound: 512, UpperBound: 1024, Count: 0},
+			{Scale: "milliseconds", LowerBound: 1024, UpperBound: 2048, Count: 0},
+			{Scale: "milliseconds", LowerBound: 2048, UpperBound: 4096, Count: 0},
+			{Scale: "milliseconds", LowerBound: 4096, UpperBound: math.MaxFloat64, Count: 4},
+		}),
+		LantencyP50:   ds2.PickLantencyP50(),
+		LantencyP90:   ds2.PickLantencyP90(),
+		LantencyP99:   ds2.PickLantencyP99(),
+		LantencyP999:  ds2.PickLantencyP999(),
+		LantencyP9999: ds2.PickLantencyP9999(),
+	}
+	fmt.Println(rs2.JSON())
+	fmt.Println(rs2.Table())
+
+	println()
+	c, err := CompareRequestsSummary(rs1, rs2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println(c.Table())
 }
 
 func TestMetricsHistogram(t *testing.T) {

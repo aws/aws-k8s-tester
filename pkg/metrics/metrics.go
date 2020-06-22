@@ -14,6 +14,89 @@ import (
 	dto "github.com/prometheus/client_model/go"
 )
 
+// RequestsSummaryCompare compares two "RequestsSummary".
+// Delta is computed with "A" as "before" and with "B" as "after".
+type RequestsSummaryCompare struct {
+	A RequestsSummary `json:"a" read-only:"true"`
+	B RequestsSummary `json:"b" read-only:"true"`
+
+	LantencyP50DeltaPercent   float64 `json:"latency-p50-delta-percent" read-only:"true"`
+	LantencyP90DeltaPercent   float64 `json:"latency-p90-delta-percent" read-only:"true"`
+	LantencyP99DeltaPercent   float64 `json:"latency-p99-delta-percent" read-only:"true"`
+	LantencyP999DeltaPercent  float64 `json:"latency-p99.9-delta-percent" read-only:"true"`
+	LantencyP9999DeltaPercent float64 `json:"latency-p99.99-delta-percent" read-only:"true"`
+}
+
+func (c RequestsSummaryCompare) Table() string {
+	buf := bytes.NewBuffer(nil)
+	tb := tablewriter.NewWriter(buf)
+	tb.SetAutoWrapText(false)
+	tb.SetColWidth(1500)
+	tb.SetCenterSeparator("*")
+	tb.SetAlignment(tablewriter.ALIGN_CENTER)
+	tb.SetCaption(true, "(% delta from 'A' to 'B')")
+	tb.SetHeader([]string{"Percentile", fmt.Sprintf("A %q", c.A.TestID), fmt.Sprintf("B %q", c.B.TestID), "Delta"})
+
+	tb.Append([]string{"50-pct Latency", c.A.LantencyP50.String(), c.B.LantencyP50.String(), toPercent(c.LantencyP50DeltaPercent)})
+	tb.Append([]string{"90-pct Latency", c.A.LantencyP90.String(), c.B.LantencyP90.String(), toPercent(c.LantencyP90DeltaPercent)})
+	tb.Append([]string{"99-pct Latency", c.A.LantencyP99.String(), c.B.LantencyP99.String(), toPercent(c.LantencyP99DeltaPercent)})
+	tb.Append([]string{"99.9-pct Latency", c.A.LantencyP999.String(), c.B.LantencyP999.String(), toPercent(c.LantencyP999DeltaPercent)})
+	tb.Append([]string{"99.99-pct Latency", c.A.LantencyP9999.String(), c.B.LantencyP9999.String(), toPercent(c.LantencyP9999DeltaPercent)})
+
+	tb.Render()
+	return buf.String()
+}
+
+func toPercent(f float64) string {
+	sign := "+"
+	if f < 0.0 {
+		sign = ""
+	}
+	return fmt.Sprintf("%s%.3f %%", sign, f)
+}
+
+// CompareRequestsSummary compares two "RequestsSummary".
+func CompareRequestsSummary(a RequestsSummary, b RequestsSummary) (c RequestsSummaryCompare, err error) {
+	if len(a.LatencyHistogram) != len(b.LatencyHistogram) {
+		return RequestsSummaryCompare{}, fmt.Errorf("len(a.LatencyHistogram) %d != len(b.LatencyHistogram) %d", len(a.LatencyHistogram), len(b.LatencyHistogram))
+	}
+
+	c = RequestsSummaryCompare{
+		A: a,
+		B: b,
+	}
+
+	// e.g. "A" 100, "B" 50 == -50%
+	// e.g. "A" 50, "B" 100 == 100%
+	deltaP50 := float64(b.LantencyP50) - float64(a.LantencyP50)
+	deltaP50 /= float64(a.LantencyP50)
+	deltaP50 *= 100.0
+
+	deltaP90 := float64(b.LantencyP90) - float64(a.LantencyP90)
+	deltaP90 /= float64(a.LantencyP90)
+	deltaP90 *= 100.0
+
+	deltaP99 := float64(b.LantencyP99) - float64(a.LantencyP99)
+	deltaP99 /= float64(a.LantencyP99)
+	deltaP99 *= 100.0
+
+	deltaP999 := float64(b.LantencyP999) - float64(a.LantencyP999)
+	deltaP999 /= float64(a.LantencyP999)
+	deltaP999 *= 100.0
+
+	deltaP9999 := float64(b.LantencyP9999) - float64(a.LantencyP9999)
+	deltaP9999 /= float64(a.LantencyP9999)
+	deltaP9999 *= 100.0
+
+	c.LantencyP50DeltaPercent = deltaP50
+	c.LantencyP90DeltaPercent = deltaP90
+	c.LantencyP99DeltaPercent = deltaP99
+	c.LantencyP999DeltaPercent = deltaP999
+	c.LantencyP9999DeltaPercent = deltaP9999
+
+	return c, nil
+}
+
 // RequestsSummary represents request results.
 type RequestsSummary struct {
 	// TestID is the test ID.
