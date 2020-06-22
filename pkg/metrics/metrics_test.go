@@ -27,6 +27,7 @@ func TestRequestsSummary(t *testing.T) {
 	sort.Sort(ds)
 
 	rs := RequestsSummary{
+		TestID:       time.Now().UTC().Format(time.RFC3339Nano),
 		SuccessTotal: 10,
 		FailureTotal: 10,
 		LatencyHistogram: HistogramBuckets([]HistogramBucket{

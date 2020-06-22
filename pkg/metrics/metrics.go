@@ -16,6 +16,9 @@ import (
 
 // RequestsSummary represents request results.
 type RequestsSummary struct {
+	// TestID is the test ID.
+	TestID string `json:"test-id" read-only:"true"`
+
 	// SuccessTotal is the number of successful client requests.
 	SuccessTotal float64 `json:"success-total" read-only:"true"`
 	// FailureTotal is the number of failed client requests.
@@ -42,11 +45,14 @@ func (rs RequestsSummary) JSON() string {
 
 func (rs RequestsSummary) Table() string {
 	return fmt.Sprintf(`
+TEST ID: %q
+
         TOTAL: %.2f
 SUCCESS TOTAL: %.2f
 FAILURE TOTAL: %.2f
 
 `,
+		rs.TestID,
 		rs.SuccessTotal+rs.FailureTotal,
 		rs.SuccessTotal,
 		rs.FailureTotal,

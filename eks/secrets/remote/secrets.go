@@ -746,7 +746,7 @@ func (ts *tester) AggregateResults() (err error) {
 	}
 
 	ts.cfg.Logger.Info("starting tester.AggregateResults", zap.String("tester", pkgName))
-	writesSummary, readsSummary := metrics.RequestsSummary{}, metrics.RequestsSummary{}
+	writesSummary, readsSummary := metrics.RequestsSummary{TestID: time.Now().UTC().Format(time.RFC3339Nano)}, metrics.RequestsSummary{TestID: time.Now().UTC().Format(time.RFC3339Nano)}
 	writeLatencies, readLatencies := make(metrics.Durations, 0, 20000), make(metrics.Durations, 0, 20000)
 
 	writesDir, readsDir := "", ""
@@ -870,7 +870,7 @@ func (ts *tester) AggregateResults() (err error) {
 
 	aggSucceed := writesDir != "" && readsDir != ""
 	if !aggSucceed {
-		writesSummary, readsSummary = metrics.RequestsSummary{}, metrics.RequestsSummary{}
+		writesSummary, readsSummary = metrics.RequestsSummary{TestID: time.Now().UTC().Format(time.RFC3339Nano)}, metrics.RequestsSummary{TestID: time.Now().UTC().Format(time.RFC3339Nano)}
 		writeLatencies, readLatencies = make(metrics.Durations, 0, 20000), make(metrics.Durations, 0, 20000)
 
 		if ts.cfg.EKSConfig.IsEnabledAddOnNodeGroups() && ts.cfg.EKSConfig.AddOnNodeGroups.FetchLogs {

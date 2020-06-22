@@ -119,6 +119,8 @@ func (ld *loader) Stop() {
 // GetMetrics locally fetches output from registered metrics.
 // ref. https://pkg.go.dev/github.com/prometheus/client_golang@v1.6.0/prometheus/promhttp?tab=doc#Handler
 func (ts *loader) CollectMetrics() (writesSummary metrics.RequestsSummary, err error) {
+	writesSummary = metrics.RequestsSummary{TestID: time.Now().UTC().Format(time.RFC3339Nano)}
+
 	// https://pkg.go.dev/github.com/prometheus/client_golang/prometheus?tab=doc#Gatherer
 	mfs, err := prometheus.DefaultGatherer.Gather()
 	if err != nil {
