@@ -198,7 +198,7 @@ func (ts *tester) Delete() error {
 		errs = append(errs, err.Error())
 	}
 
-	var queryFunc func()
+	var forceDeleteFunc func()
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	ns, err := ts.cfg.K8SClient.
 		KubernetesClientSet().
@@ -231,7 +231,7 @@ func (ts *tester) Delete() error {
 				}
 				replaceCmd := strings.Join(replaceArgs, " ")
 
-				queryFunc = func() {
+				forceDeleteFunc = func() {
 					println()
 					ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 					output, err := exec.New().CommandContext(ctx, replaceArgs[0], replaceArgs[1:]...).CombinedOutput()
@@ -255,9 +255,11 @@ func (ts *tester) Delete() error {
 		k8s_client.DefaultNamespaceDeletionInterval,
 		k8s_client.DefaultNamespaceDeletionTimeout,
 		k8s_client.WithForceDelete(true),
-		k8s_client.WithQueryFunc(queryFunc),
+		k8s_client.WithForceDeleteFunc(forceDeleteFunc),
 	); err != nil {
-		errs = append(errs, fmt.Sprintf("failed to delete stresser namespace (%v)", err))
+		// TODO: error...
+		// errs = append(errs, fmt.Sprintf("failed to delete stresser namespace (%v)", err))
+		ts.cfg.Logger.Warn("failed to delete namespace", zap.Error(err))
 	}
 
 	if len(errs) > 0 {
