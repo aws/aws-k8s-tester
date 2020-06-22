@@ -22,6 +22,7 @@ import (
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	aws_ecr "github.com/aws/aws-k8s-tester/pkg/aws/ecr"
 	aws_s3 "github.com/aws/aws-k8s-tester/pkg/aws/s3"
+	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/metrics"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
@@ -197,6 +198,56 @@ func (ts *tester) Delete() error {
 		errs = append(errs, err.Error())
 	}
 
+	var queryFunc func()
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	ns, err := ts.cfg.K8SClient.
+		KubernetesClientSet().
+		CoreV1().
+		Namespaces().
+		Get(ctx, ts.cfg.EKSConfig.AddOnStresserRemote.Namespace, metav1.GetOptions{})
+	cancel()
+	if err != nil {
+		ts.cfg.Logger.Warn("failed to get namespace", zap.Error(err))
+	} else {
+		ns.SetFinalizers(nil)
+		jb, jerr := json.Marshal(ns)
+		if jerr != nil {
+			ts.cfg.Logger.Warn("failed to marshal JSON", zap.Error(jerr))
+		} else {
+			jpath, err := fileutil.WriteTempFile(jb)
+			if err != nil {
+				ts.cfg.Logger.Warn("failed to write JSON", zap.Error(err))
+			} else {
+				target := fmt.Sprintf("/api/v1/namespaces/%s/finalize", ts.cfg.EKSConfig.AddOnStresserRemote.Namespace)
+				replaceArgs := []string{
+					ts.cfg.EKSConfig.KubectlPath,
+					"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+					"--namespace=" + ts.cfg.EKSConfig.AddOnStresserRemote.Namespace,
+					"replace",
+					"--raw",
+					target,
+					"--force",
+					"--filename=" + jpath,
+				}
+				replaceCmd := strings.Join(replaceArgs, " ")
+
+				queryFunc = func() {
+					println()
+					ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+					output, err := exec.New().CommandContext(ctx, replaceArgs[0], replaceArgs[1:]...).CombinedOutput()
+					cancel()
+					out := strings.TrimSpace(string(output))
+					if err != nil {
+						ts.cfg.Logger.Warn("'kubectl replace' failed", zap.Error(err))
+					} else {
+						fmt.Printf("\n\n'%s' output:\n\n%s\n\n", replaceCmd, out)
+						fmt.Printf("\n\n'%s' JSON:\n\n%s\n\n", jpath, string(jb))
+					}
+				}
+			}
+		}
+	}
+
 	if err := k8s_client.DeleteNamespaceAndWait(
 		ts.cfg.Logger,
 		ts.cfg.K8SClient.KubernetesClientSet(),
@@ -204,6 +255,7 @@ func (ts *tester) Delete() error {
 		k8s_client.DefaultNamespaceDeletionInterval,
 		k8s_client.DefaultNamespaceDeletionTimeout,
 		k8s_client.WithForceDelete(true),
+		k8s_client.WithQueryFunc(queryFunc),
 	); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete stresser namespace (%v)", err))
 	}

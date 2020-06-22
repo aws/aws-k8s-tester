@@ -345,6 +345,10 @@ func waitForDeleteNamespace(lg *zap.Logger, c clientset.Interface, namespace str
 			}
 		}
 
+		if ret.forceDeleteFunc != nil {
+			ret.forceDeleteFunc()
+		}
+
 		return false, nil
 	}
 	return wait.PollImmediate(interval, timeout, retryWaitFunc)
@@ -470,8 +474,9 @@ func CreateObject(dynamicClient dynamic.Interface, namespace string, name string
 
 // Op represents a SSH operation.
 type Op struct {
-	queryFunc   func()
-	forceDelete bool
+	queryFunc       func()
+	forceDelete     bool
+	forceDeleteFunc func()
 }
 
 // OpOption configures archiver operations.
@@ -487,6 +492,13 @@ func WithQueryFunc(f func()) OpOption {
 // ref. https://github.com/kubernetes/kubernetes/issues/60807
 func WithForceDelete(forceDelete bool) OpOption {
 	return func(op *Op) { op.forceDelete = forceDelete }
+}
+
+// WithForceDeleteFunc configures force delete.
+// Useful for namespace deletion.
+// ref. https://github.com/kubernetes/kubernetes/issues/60807
+func WithForceDeleteFunc(forceDeleteFunc func()) OpOption {
+	return func(op *Op) { op.forceDeleteFunc = forceDeleteFunc }
 }
 
 func (op *Op) applyOpts(opts []OpOption) {
