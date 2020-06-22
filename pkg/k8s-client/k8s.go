@@ -331,6 +331,58 @@ func waitForDeleteNamespace(lg *zap.Logger, c clientset.Interface, namespace str
 }
 
 /*
+k8s_client.WithForceDeleteFunc(forceDeleteFunc),
+
+var forceDeleteFunc func()
+ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+ns, err := ts.cfg.K8SClient.
+	KubernetesClientSet().
+	CoreV1().
+	Namespaces().
+	Get(ctx, ts.cfg.EKSConfig.AddOnStresserRemote.Namespace, metav1.GetOptions{})
+cancel()
+if err != nil {
+	ts.cfg.Logger.Warn("failed to get namespace", zap.Error(err))
+} else {
+	ns.SetFinalizers(nil)
+	jb, jerr := json.Marshal(ns)
+	if jerr != nil {
+		ts.cfg.Logger.Warn("failed to marshal JSON", zap.Error(jerr))
+	} else {
+		jpath, err := fileutil.WriteTempFile(jb)
+		if err != nil {
+			ts.cfg.Logger.Warn("failed to write JSON", zap.Error(err))
+		} else {
+			target := fmt.Sprintf("/api/v1/namespaces/%s/finalize", ts.cfg.EKSConfig.AddOnStresserRemote.Namespace)
+			replaceArgs := []string{
+				ts.cfg.EKSConfig.KubectlPath,
+				"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+				"--namespace=" + ts.cfg.EKSConfig.AddOnStresserRemote.Namespace,
+				"replace",
+				"--raw",
+				target,
+				"--force",
+				"--filename=" + jpath,
+			}
+			replaceCmd := strings.Join(replaceArgs, " ")
+
+			forceDeleteFunc = func() {
+				println()
+				ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+				output, err := exec.New().CommandContext(ctx, replaceArgs[0], replaceArgs[1:]...).CombinedOutput()
+				cancel()
+				out := strings.TrimSpace(string(output))
+				if err != nil {
+					ts.cfg.Logger.Warn("'kubectl replace' failed", zap.Error(err))
+				} else {
+					fmt.Printf("\n\n'%s' output:\n\n%s\n\n", replaceCmd, out)
+					fmt.Printf("\n\n'%s' JSON:\n\n%s\n\n", jpath, string(jb))
+				}
+			}
+		}
+	}
+}
+
 $ kubectl get namespace "myname" -o json \
 	| tr -d "\n" | sed "s/\"finalizers\": \[[^]]\+\]/\"finalizers\": []/" \
 	| kubectl replace --raw /api/v1/namespaces/myname/finalize -f -
