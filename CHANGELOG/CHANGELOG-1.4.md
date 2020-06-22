@@ -60,6 +60,9 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.9...v1.4.0
 
 - Add [`pkg/aws/s3`](https://github.com/aws/aws-k8s-tester/commit/a982c1b484d8133b113bfa1f22df6698411898b7).
 - Add [`pkg/k8s-client.EKSConfig.MetricsRawOutputDir` to store `kube-apiserver` `/metrics` output](https://github.com/aws/aws-k8s-tester/commit/9e7985fe8ffc948866e792d0984faafbf4e57c59).
+- Add [`pkg/k8s-client.WithForceDelete` option for `DeleteNamespaceAndWait`](https://github.com/aws/aws-k8s-tester/commit/803ba2d263227adea026fcf1bb5262ebb2abd230).
+  - Fix https://github.com/aws/aws-k8s-tester/issues/100.
+  - See [`kubernetes/kubernetes#60807`](https://github.com/kubernetes/kubernetes/issues/60807).
 
 ### Dependency
 
