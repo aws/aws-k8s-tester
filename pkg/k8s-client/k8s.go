@@ -18,7 +18,6 @@ package k8sclient
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"strings"
 	"time"
@@ -297,8 +296,8 @@ func waitForDeleteNamespace(lg *zap.Logger, c clientset.Interface, namespace str
 			ret.queryFunc()
 		}
 
-		if ret.forceDelete {
-			finalizers := ns.GetFinalizers()
+		finalizers := ns.GetFinalizers()
+		if ret.forceDelete && len(finalizers) > 0 {
 			lg.Warn("deleting namespace finalizers to force-delete",
 				zap.String("namespace", namespace),
 				zap.Strings("finalizers", finalizers),
@@ -315,29 +314,6 @@ func waitForDeleteNamespace(lg *zap.Logger, c clientset.Interface, namespace str
 				)
 			} else {
 				lg.Warn("failed to delete namespace finalizers",
-					zap.String("namespace", namespace),
-					zap.Strings("finalizers", finalizers),
-					zap.Error(err),
-				)
-			}
-
-			// "kubectl replace --raw "/api/v1/namespaces/[NAMESPACE]/finalize" -f ."
-			target := fmt.Sprintf("/api/v1/namespaces/%s/finalize", namespace)
-			ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
-			_, err = c.CoreV1().
-				RESTClient().
-				Delete().
-				RequestURI(target).
-				Do(ctx).
-				Raw()
-			cancel()
-			if err == nil {
-				lg.Info("raw-deleted namespace finalizers",
-					zap.String("namespace", namespace),
-					zap.Strings("finalizers", finalizers),
-				)
-			} else {
-				lg.Warn("failed to raw-delete namespace finalizers",
 					zap.String("namespace", namespace),
 					zap.Strings("finalizers", finalizers),
 					zap.Error(err),
