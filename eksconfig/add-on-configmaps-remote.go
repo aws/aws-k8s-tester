@@ -97,6 +97,10 @@ func (cfg *Config) validateAddOnConfigmapsRemote() error {
 	if !cfg.IsEnabledAddOnConfigmapsRemote() {
 		return nil
 	}
+	if cfg.S3BucketName == "" {
+		return errors.New("AddOnConfigmapsRemote requires S3 bucket but S3BucketName empty")
+	}
+
 	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
 		return errors.New("AddOnConfigmapsRemote.Enable true but no node group is enabled")
 	}

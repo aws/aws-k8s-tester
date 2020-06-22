@@ -80,6 +80,10 @@ func (cfg *Config) validateAddOnCSRsLocal() error {
 	if !cfg.IsEnabledAddOnCSRsLocal() {
 		return nil
 	}
+	if cfg.S3BucketName == "" {
+		return errors.New("AddOnCSRsLocal requires S3 bucket but S3BucketName empty")
+	}
+
 	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
 		return errors.New("AddOnCSRsLocal.Enable true but no node group is enabled")
 	}

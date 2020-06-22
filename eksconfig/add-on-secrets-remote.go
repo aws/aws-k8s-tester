@@ -119,6 +119,10 @@ func (cfg *Config) validateAddOnSecretsRemote() error {
 	if !cfg.IsEnabledAddOnSecretsRemote() {
 		return nil
 	}
+	if cfg.S3BucketName == "" {
+		return errors.New("AddOnSecretsRemote requires S3 bucket but S3BucketName empty")
+	}
+
 	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
 		return errors.New("AddOnSecretsRemote.Enable true but no node group is enabled")
 	}

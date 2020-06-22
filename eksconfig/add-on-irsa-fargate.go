@@ -78,6 +78,10 @@ func (cfg *Config) validateAddOnIRSAFargate() error {
 	if !cfg.IsEnabledAddOnIRSAFargate() {
 		return nil
 	}
+	if cfg.S3BucketName == "" {
+		return errors.New("AddOnIRSAFargate requires S3 bucket but S3BucketName empty")
+	}
+
 	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
 		return errors.New("AddOnIRSAFargate.Enable true but no node group is enabled")
 	}
@@ -97,10 +101,6 @@ func (cfg *Config) validateAddOnIRSAFargate() error {
 	}
 	if cfg.AddOnIRSAFargate.RepositoryImageTag == "" {
 		return errors.New("AddOnIRSAFargate.RepositoryImageTag empty")
-	}
-
-	if cfg.S3BucketName == "" {
-		return errors.New("AddOnIRSAFargate requires S3 bucket but S3BucketName empty")
 	}
 
 	if cfg.AddOnIRSAFargate.RoleName == "" {

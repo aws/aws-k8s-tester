@@ -96,6 +96,10 @@ func (cfg *Config) validateAddOnSecretsLocal() error {
 	if !cfg.IsEnabledAddOnSecretsLocal() {
 		return nil
 	}
+	if cfg.S3BucketName == "" {
+		return errors.New("AddOnSecretsLocal requires S3 bucket but S3BucketName empty")
+	}
+
 	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
 		return errors.New("AddOnSecretsLocal.Enable true but no node group is enabled")
 	}

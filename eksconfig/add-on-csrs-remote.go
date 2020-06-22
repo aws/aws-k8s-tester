@@ -99,6 +99,10 @@ func (cfg *Config) validateAddOnCSRsRemote() error {
 	if !cfg.IsEnabledAddOnCSRsRemote() {
 		return nil
 	}
+	if cfg.S3BucketName == "" {
+		return errors.New("AddOnCSRsRemote requires S3 bucket but S3BucketName empty")
+	}
+
 	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
 		return errors.New("AddOnCSRsRemote.Enable true but no node group is enabled")
 	}

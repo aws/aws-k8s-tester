@@ -77,6 +77,10 @@ func (cfg *Config) validateAddOnConfigmapsLocal() error {
 	if !cfg.IsEnabledAddOnConfigmapsLocal() {
 		return nil
 	}
+	if cfg.S3BucketName == "" {
+		return errors.New("AddOnConfigmapsLocal requires S3 bucket but S3BucketName empty")
+	}
+
 	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
 		return errors.New("AddOnConfigmapsLocal.Enable true but no node group is enabled")
 	}
