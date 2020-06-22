@@ -298,7 +298,7 @@ func waitForDeleteNamespace(lg *zap.Logger, c clientset.Interface, namespace str
 
 		if ret.forceDelete {
 			finalizers := ns.GetFinalizers()
-			lg.Warn("deleting finalizers in namespace for force-deletion",
+			lg.Warn("deleting namespace finalizers to force-delete",
 				zap.String("namespace", namespace),
 				zap.Strings("finalizers", finalizers),
 			)
