@@ -35,6 +35,10 @@ type AddOnConfigmapsLocal struct {
 	// CreatedNames is the list of created "ConfigMap" object names.
 	CreatedNames []string `json:"created-names" read-only:"true"`
 
+	// PrevRequestsWritesSummaryS3Key is the S3 key of previous "RequestsWritesSummary".
+	// Specify the S3 key in the same bucket of "eksconfig.Config.S3BucketName".
+	// Use for regression tests.
+	PrevRequestsWritesSummaryS3Key string `json:"prev-requests-writes-summary-s3-key"`
 	// RequestsWritesJSONPath is the file path to store writes requests in JSON format.
 	RequestsWritesJSONPath string `json:"requests-writes-json-path" read-only:"true"`
 	// RequestsWritesSummary is the writes results.

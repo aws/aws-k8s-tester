@@ -51,6 +51,10 @@ type AddOnSecretsRemote struct {
 	// this must be unique per worker to avoid name conflicts.
 	NamePrefix string `json:"name-prefix"`
 
+	// PrevRequestsWritesSummaryS3Key is the S3 key of previous "RequestsWritesSummary".
+	// Specify the S3 key in the same bucket of "eksconfig.Config.S3BucketName".
+	// Use for regression tests.
+	PrevRequestsWritesSummaryS3Key string `json:"prev-requests-writes-summary-s3-key"`
 	// RequestsWritesJSONPath is the file path to store writes requests in JSON format.
 	RequestsWritesJSONPath string `json:"requests-writes-json-path" read-only:"true"`
 	// RequestsWritesSummary is the writes results.
@@ -60,6 +64,10 @@ type AddOnSecretsRemote struct {
 	// RequestsWritesSummaryTablePath is the file path to store writes requests summary in table format.
 	RequestsWritesSummaryTablePath string `json:"requests-writes-summary-table-path" read-only:"true"`
 
+	// PrevRequestsReadsSummaryS3Key is the S3 key of previous "RequestsReadsSummary".
+	// Specify the S3 key in the same bucket of "eksconfig.Config.S3BucketName".
+	// Use for regression tests.
+	PrevRequestsReadsSummaryS3Key string `json:"prev-requests-reads-summary-s3-key"`
 	// RequestsReadsJSONPath is the file path to store reads requests in JSON format.
 	RequestsReadsJSONPath string `json:"requests-reads-json-path" read-only:"true"`
 	// RequestsReadsSummary is the reads results.
