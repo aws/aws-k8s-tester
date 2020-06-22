@@ -197,12 +197,33 @@ func (ts *tester) Delete() error {
 		errs = append(errs, err.Error())
 	}
 
+	getAllArgs := []string{
+		ts.cfg.EKSConfig.KubectlPath,
+		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+		"--namespace=" + ts.cfg.EKSConfig.AddOnStresserRemote.Namespace,
+		"get",
+		"all",
+	}
+	getAllCmd := strings.Join(getAllArgs, " ")
+
 	if err := k8s_client.DeleteNamespaceAndWait(
 		ts.cfg.Logger,
 		ts.cfg.K8SClient.KubernetesClientSet(),
 		ts.cfg.EKSConfig.AddOnStresserRemote.Namespace,
 		k8s_client.DefaultNamespaceDeletionInterval,
 		k8s_client.DefaultNamespaceDeletionTimeout,
+		k8s_client.WithQueryFunc(func() {
+			println()
+			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			output, err := exec.New().CommandContext(ctx, getAllArgs[0], getAllArgs[1:]...).CombinedOutput()
+			cancel()
+			out := strings.TrimSpace(string(output))
+			if err != nil {
+				ts.cfg.Logger.Warn("'kubectl get all' failed", zap.Error(err))
+			} else {
+				fmt.Printf("\n\n'%s' output:\n\n%s\n\n", getAllCmd, out)
+			}
+		}),
 		k8s_client.WithForceDelete(true),
 	); err != nil {
 		// TODO: error...
