@@ -177,14 +177,7 @@ func (ts *loader) CollectMetrics() (writesSummary metrics.RequestsSummary, err e
 		ts.cfg.Logger.Warn("failed to write latency results in JSON to disk", zap.String("path", ts.cfg.WritesJSONPath), zap.Error(err))
 		return metrics.RequestsSummary{}, err
 	}
-	ts.cfg.Logger.Info("wrote latency results in JSON to disk", zap.String("path", ts.cfg.WritesJSONPath))
-	if err = aws_s3.Upload(
-		ts.cfg.Logger,
-		ts.cfg.S3API,
-		ts.cfg.S3BucketName,
-		path.Join(ts.cfg.S3DirName, "writes", filepath.Base(ts.cfg.WritesJSONPath)),
-		ts.cfg.WritesJSONPath,
-	); err != nil {
+	if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.S3BucketName, path.Join(ts.cfg.S3DirName, "writes", filepath.Base(ts.cfg.WritesJSONPath)), ts.cfg.WritesJSONPath); err != nil {
 		return metrics.RequestsSummary{}, err
 	}
 

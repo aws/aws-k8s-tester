@@ -61,6 +61,7 @@ func GetTempFilePath() (path string) {
 	}
 	path = f.Name()
 	f.Close()
+	os.RemoveAll(path)
 	return path
 }
 

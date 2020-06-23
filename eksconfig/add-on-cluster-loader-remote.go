@@ -125,7 +125,7 @@ func getDefaultAddOnClusterLoaderRemote() *AddOnClusterLoaderRemote {
 		ClusterLoaderPath:        "/tmp/clusterloader2",
 		ClusterLoaderDownloadURL: "https://github.com/aws/aws-k8s-tester/releases/download/v1.3.9/clusterloader2-linux-amd64",
 
-		Runs:               1,
+		Runs:               2,
 		DeploymentReplicas: 1,
 		Timeout:            30 * time.Minute,
 

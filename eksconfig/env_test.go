@@ -486,6 +486,8 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_OBJECT_SIZE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_LIST_LIMIT", "177")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_LIST_LIMIT")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_WRITES_SUMMARY_S3_DIR", "a/b/test")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_WRITES_SUMMARY_S3_DIR")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_WRITES_SUMMARY_OUTPUT_NAME_PREFIX", "stresser-out-pfx")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_WRITES_SUMMARY_OUTPUT_NAME_PREFIX")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_READS_SUMMARY_OUTPUT_NAME_PREFIX", "stresser-out-pfx")
@@ -1271,6 +1273,9 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.AddOnStresserRemote.ListLimit != 177 {
 		t.Fatalf("unexpected cfg.AddOnStresserRemote.ListLimit %v", cfg.AddOnStresserRemote.ListLimit)
+	}
+	if cfg.AddOnStresserRemote.RequestsWritesSummaryS3Dir != "a/b/test" {
+		t.Fatalf("unexpected cfg.AddOnStresserRemote.RequestsWritesSummaryS3Dir %v", cfg.AddOnStresserRemote.RequestsWritesSummaryS3Dir)
 	}
 	if cfg.AddOnStresserRemote.RequestsWritesSummaryOutputNamePrefix != "stresser-out-pfx" {
 		t.Fatalf("unexpected cfg.AddOnStresserRemote.RequestsWritesSummaryOutputNamePrefix %v", cfg.AddOnStresserRemote.RequestsWritesSummaryOutputNamePrefix)

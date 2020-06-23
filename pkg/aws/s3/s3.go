@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"strings"
 	"time"
 
@@ -206,7 +207,8 @@ func UploadBody(
 		zap.String("s3-bucket", bucket),
 		zap.String("remote-path", s3Key),
 	)
-	_, err = s3API.PutObject(&s3.PutObjectInput{
+	var output *s3.PutObjectOutput
+	output, err = s3API.PutObject(&s3.PutObjectInput{
 		Bucket: aws.String(bucket),
 		Key:    aws.String(s3Key),
 
@@ -224,6 +226,7 @@ func UploadBody(
 		lg.Info("uploaded",
 			zap.String("s3-bucket", bucket),
 			zap.String("remote-path", s3Key),
+			zap.String("version-id", aws.StringValue(output.VersionId)),
 		)
 	} else {
 		lg.Warn("failed to upload",
@@ -287,18 +290,91 @@ func DeleteBucket(lg *zap.Logger, s3API s3iface.S3API, bucket string) error {
 	return nil
 }
 
-// Download downloads all files from the directory in the S3 bucket.
-func Download(lg *zap.Logger, s3API s3iface.S3API, bucket string, s3Key string, localPath string, opts ...OpOption) (err error) {
+// ListInDescendingLastModified returns s3 objects which are sorted
+// in "descending" order of last modified timestamps.
+// That is, the first element in the response is of the "most" recent
+// and highest last modified timestamp value.
+func ListInDescendingLastModified(lg *zap.Logger, s3API s3iface.S3API, bucket string, s3KeyPfx string, opts ...OpOption) (s3Objects []*s3.Object, err error) {
 	ret := Op{verbose: false, overwrite: false}
 	ret.applyOpts(opts)
 
-	lg.Info("downloading object", zap.String("s3-key", s3Key))
+	lg.Info("listing objects", zap.String("s3-bucket", bucket), zap.String("s3-key-prefix", s3KeyPfx))
+	s3Objects = make([]*s3.Object, 0)
+	err = s3API.ListObjectsV2Pages(
+		&s3.ListObjectsV2Input{
+			Bucket: aws.String(bucket),
+			Prefix: aws.String(s3KeyPfx),
+		},
+		func(resp *s3.ListObjectsV2Output, lastPage bool) bool {
+			s3Objects = append(s3Objects, resp.Contents...)
+			return true
+		},
+	)
+	if err != nil {
+		lg.Warn("failed to list objects", zap.String("s3-bucket", bucket), zap.String("s3-key-prefix", s3KeyPfx), zap.Error(err))
+		return nil, err
+	}
+
+	// sort in "LastModified" descending order
+	sort.Slice(s3Objects, func(i, j int) bool {
+		t1 := aws.TimeValue(s3Objects[i].LastModified)
+		t2 := aws.TimeValue(s3Objects[j].LastModified)
+		// sort.Interface.Less; index i should sort before the element with index j
+		return t1.After(t2)
+	})
+	lg.Info("listed objects",
+		zap.String("s3-bucket", bucket),
+		zap.String("s3-key-prefix", s3KeyPfx),
+		zap.Int("s3-objects", len(s3Objects)),
+	)
+	return s3Objects, nil
+}
+
+// Exist returns true if the object exists.
+func Exist(lg *zap.Logger, s3API s3iface.S3API, bucket string, s3Key string, opts ...OpOption) (exist bool, err error) {
+	ret := Op{verbose: false, overwrite: false}
+	ret.applyOpts(opts)
+
+	lg.Info("checking object", zap.String("s3-bucket", bucket), zap.String("s3-key", s3Key))
+	resp, err := s3API.HeadObject(&s3.HeadObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(s3Key),
+	})
+	if err != nil {
+		lg.Warn("failed to head object", zap.String("s3-bucket", bucket), zap.String("s3-key", s3Key), zap.Error(err))
+		return false, err
+	}
+	size := humanize.Bytes(uint64(aws.Int64Value(resp.ContentLength)))
+	lg.Info("checked object",
+		zap.String("s3-bucket", bucket),
+		zap.String("s3-key", s3Key),
+		zap.String("size", size),
+	)
+	return true, nil
+}
+
+// Download downloads the file from the S3 bucket.
+func Download(lg *zap.Logger, s3API s3iface.S3API, bucket string, s3Key string, localPath string, opts ...OpOption) (err error) {
+	return download(lg, s3API, bucket, s3Key, localPath)
+}
+
+// DownloadToTempFile downloads the file from the S3 bucket to a temporary file.
+func DownloadToTempFile(lg *zap.Logger, s3API s3iface.S3API, bucket string, s3Key string, opts ...OpOption) (localPath string, err error) {
+	localPath = fileutil.GetTempFilePath()
+	return localPath, download(lg, s3API, bucket, s3Key, localPath)
+}
+
+func download(lg *zap.Logger, s3API s3iface.S3API, bucket string, s3Key string, localPath string, opts ...OpOption) (err error) {
+	ret := Op{verbose: false, overwrite: false}
+	ret.applyOpts(opts)
+
+	lg.Info("downloading object", zap.String("s3-bucket", bucket), zap.String("s3-key", s3Key))
 	resp, err := s3API.GetObject(&s3.GetObjectInput{
 		Bucket: aws.String(bucket),
 		Key:    aws.String(s3Key),
 	})
 	if err != nil {
-		lg.Warn("failed to get object", zap.String("s3-key", s3Key), zap.Error(err))
+		lg.Warn("failed to get object", zap.String("s3-bucket", bucket), zap.String("s3-key", s3Key), zap.Error(err))
 		return err
 	}
 
@@ -316,7 +392,7 @@ func Download(lg *zap.Logger, s3API s3iface.S3API, bucket string, s3Key string, 
 	if err != nil {
 		f, err = os.Create(localPath)
 		if err != nil {
-			lg.Warn("failed to write file", zap.String("s3-key", s3Key), zap.Error(err))
+			lg.Warn("failed to write file", zap.String("s3-bucket", bucket), zap.String("s3-key", s3Key), zap.Error(err))
 			return err
 		}
 	}
@@ -325,6 +401,7 @@ func Download(lg *zap.Logger, s3API s3iface.S3API, bucket string, s3Key string, 
 	resp.Body.Close()
 	if err != nil {
 		lg.Warn("failed to download object",
+			zap.String("s3-bucket", bucket),
 			zap.String("s3-key", s3Key),
 			zap.Error(err),
 		)
@@ -332,6 +409,7 @@ func Download(lg *zap.Logger, s3API s3iface.S3API, bucket string, s3Key string, 
 	}
 
 	lg.Info("downloaded object",
+		zap.String("s3-bucket", bucket),
 		zap.String("s3-key", s3Key),
 		zap.String("object-size", humanize.Bytes(uint64(n))),
 		zap.String("local-path", localPath),

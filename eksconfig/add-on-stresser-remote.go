@@ -2,6 +2,8 @@ package eksconfig
 
 import (
 	"errors"
+	"fmt"
+	"path"
 	"strings"
 	"time"
 
@@ -53,10 +55,6 @@ type AddOnStresserRemote struct {
 	Duration       time.Duration `json:"duration,omitempty"`
 	DurationString string        `json:"duration-string,omitempty" read-only:"true"`
 
-	// PrevRequestsWritesSummaryS3Key is the S3 key of previous "RequestsWritesSummary".
-	// Specify the S3 key in the same bucket of "eksconfig.Config.S3BucketName".
-	// Use for regression tests.
-	PrevRequestsWritesSummaryS3Key string `json:"prev-requests-writes-summary-s3-key"`
 	// RequestsWritesJSONPath is the file path to store writes requests in JSON format.
 	RequestsWritesJSONPath string `json:"requests-writes-json-path" read-only:"true"`
 	// RequestsWritesSummary is the writes results.
@@ -65,11 +63,17 @@ type AddOnStresserRemote struct {
 	RequestsWritesSummaryJSONPath string `json:"requests-writes-summary-json-path" read-only:"true"`
 	// RequestsWritesSummaryTablePath is the file path to store writes requests summary in table format.
 	RequestsWritesSummaryTablePath string `json:"requests-writes-summary-table-path" read-only:"true"`
-
-	// PrevRequestsReadsSummaryS3Key is the S3 key of previous "RequestsReadsSummary".
+	// RequestsWritesSummaryS3Dir is the S3 directory of previous/latest "RequestsWritesSummary".
 	// Specify the S3 key in the same bucket of "eksconfig.Config.S3BucketName".
 	// Use for regression tests.
-	PrevRequestsReadsSummaryS3Key string `json:"prev-requests-reads-summary-s3-key"`
+	RequestsWritesSummaryS3Dir string `json:"requests-writes-summary-s3-dir"`
+	// RequestsWritesSummaryCompare is the comparision results.
+	RequestsWritesSummaryCompare metrics.RequestsSummaryCompare `json:"requests-writes-summary-compare" read-only:"true"`
+	// RequestsWritesSummaryCompareJSONPath is the file path to store writes requests compare summary in JSON format.
+	RequestsWritesSummaryCompareJSONPath string `json:"requests-writes-summary-compare-json-path" read-only:"true"`
+	// RequestsWritesSummaryCompareTablePath is the file path to store writes requests compare summary in table format.
+	RequestsWritesSummaryCompareTablePath string `json:"requests-writes-summary-compare-table-path" read-only:"true"`
+
 	// RequestsReadsJSONPath is the file path to store reads requests in JSON format.
 	RequestsReadsJSONPath string `json:"requests-reads-json-path" read-only:"true"`
 	// RequestsReadsSummary is the reads results.
@@ -78,6 +82,16 @@ type AddOnStresserRemote struct {
 	RequestsReadsSummaryJSONPath string `json:"requests-reads-summary-json-path" read-only:"true"`
 	// RequestsReadsSummaryTablePath is the file path to store reads requests summary in table format.
 	RequestsReadsSummaryTablePath string `json:"requests-reads-summary-table-path" read-only:"true"`
+	// RequestsReadsSummaryS3Dir is the S3 directory of previous/latest "RequestsReadsSummary".
+	// Specify the S3 key in the same bucket of "eksconfig.Config.S3BucketName".
+	// Use for regression tests.
+	RequestsReadsSummaryS3Dir string `json:"requests-reads-summary-s3-dir"`
+	// RequestsReadsSummaryCompare is the comparision results.
+	RequestsReadsSummaryCompare metrics.RequestsSummaryCompare `json:"requests-reads-summary-compare" read-only:"true"`
+	// RequestsReadsSummaryCompareJSONPath is the file path to store reads requests compare summary in JSON format.
+	RequestsReadsSummaryCompareJSONPath string `json:"requests-reads-summary-compare-json-path" read-only:"true"`
+	// RequestsReadsSummaryCompareTablePath is the file path to store reads requests compare summary in table format.
+	RequestsReadsSummaryCompareTablePath string `json:"requests-reads-summary-compare-table-path" read-only:"true"`
 
 	// RequestsWritesSummaryOutputNamePrefix is the output path name in "/var/log" directory, used in remote worker.
 	RequestsWritesSummaryOutputNamePrefix string `json:"requests-writes-summary-output-name-prefix"`
@@ -152,6 +166,15 @@ func (cfg *Config) validateAddOnStresserRemote() error {
 	if cfg.AddOnStresserRemote.RequestsWritesSummaryTablePath == "" {
 		cfg.AddOnStresserRemote.RequestsWritesSummaryTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-writes-summary.txt"
 	}
+	if cfg.AddOnStresserRemote.RequestsWritesSummaryS3Dir == "" {
+		cfg.AddOnStresserRemote.RequestsWritesSummaryS3Dir = path.Join("add-on-stresser-remote", fmt.Sprintf("writes-summary-%s", cfg.Parameters.Version))
+	}
+	if cfg.AddOnStresserRemote.RequestsWritesSummaryCompareJSONPath == "" {
+		cfg.AddOnStresserRemote.RequestsWritesSummaryCompareJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-writes-summary-compare.json"
+	}
+	if cfg.AddOnStresserRemote.RequestsWritesSummaryCompareTablePath == "" {
+		cfg.AddOnStresserRemote.RequestsWritesSummaryCompareTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-writes-summary-compare.txt"
+	}
 
 	if cfg.AddOnStresserRemote.RequestsReadsJSONPath == "" {
 		cfg.AddOnStresserRemote.RequestsReadsJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-reads.json"
@@ -161,6 +184,15 @@ func (cfg *Config) validateAddOnStresserRemote() error {
 	}
 	if cfg.AddOnStresserRemote.RequestsReadsSummaryTablePath == "" {
 		cfg.AddOnStresserRemote.RequestsReadsSummaryTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-reads-summary.txt"
+	}
+	if cfg.AddOnStresserRemote.RequestsReadsSummaryS3Dir == "" {
+		cfg.AddOnStresserRemote.RequestsReadsSummaryS3Dir = path.Join("add-on-stresser-remote", fmt.Sprintf("reads-summary-%s", cfg.Parameters.Version))
+	}
+	if cfg.AddOnStresserRemote.RequestsReadsSummaryCompareJSONPath == "" {
+		cfg.AddOnStresserRemote.RequestsReadsSummaryCompareJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-reads-summary-compare.json"
+	}
+	if cfg.AddOnStresserRemote.RequestsReadsSummaryCompareTablePath == "" {
+		cfg.AddOnStresserRemote.RequestsReadsSummaryCompareTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-reads-summary-compare.txt"
 	}
 
 	if cfg.AddOnStresserRemote.RequestsWritesSummaryOutputNamePrefix == "" {

@@ -3,6 +3,7 @@ package eksconfig
 import (
 	"errors"
 	"fmt"
+	"path"
 	"strings"
 
 	"github.com/aws/aws-k8s-tester/pkg/metrics"
@@ -35,10 +36,6 @@ type AddOnConfigmapsLocal struct {
 	// CreatedNames is the list of created "ConfigMap" object names.
 	CreatedNames []string `json:"created-names" read-only:"true"`
 
-	// PrevRequestsWritesSummaryS3Key is the S3 key of previous "RequestsWritesSummary".
-	// Specify the S3 key in the same bucket of "eksconfig.Config.S3BucketName".
-	// Use for regression tests.
-	PrevRequestsWritesSummaryS3Key string `json:"prev-requests-writes-summary-s3-key"`
 	// RequestsWritesJSONPath is the file path to store writes requests in JSON format.
 	RequestsWritesJSONPath string `json:"requests-writes-json-path" read-only:"true"`
 	// RequestsWritesSummary is the writes results.
@@ -47,6 +44,16 @@ type AddOnConfigmapsLocal struct {
 	RequestsWritesSummaryJSONPath string `json:"requests-writes-summary-json-path" read-only:"true"`
 	// RequestsWritesSummaryTablePath is the file path to store writes requests summary in table format.
 	RequestsWritesSummaryTablePath string `json:"requests-writes-summary-table-path" read-only:"true"`
+	// RequestsWritesSummaryS3Dir is the S3 directory of previous/latest "RequestsWritesSummary".
+	// Specify the S3 key in the same bucket of "eksconfig.Config.S3BucketName".
+	// Use for regression tests.
+	RequestsWritesSummaryS3Dir string `json:"requests-writes-summary-s3-dir"`
+	// RequestsWritesSummaryCompare is the comparision results.
+	RequestsWritesSummaryCompare metrics.RequestsSummaryCompare `json:"requests-writes-summary-compare" read-only:"true"`
+	// RequestsWritesSummaryCompareJSONPath is the file path to store writes requests compare summary in JSON format.
+	RequestsWritesSummaryCompareJSONPath string `json:"requests-writes-summary-compare-json-path" read-only:"true"`
+	// RequestsWritesSummaryCompareTablePath is the file path to store writes requests compare summary in table format.
+	RequestsWritesSummaryCompareTablePath string `json:"requests-writes-summary-compare-table-path" read-only:"true"`
 }
 
 // EnvironmentVariablePrefixAddOnConfigmapsLocal is the environment variable prefix used for "eksconfig".
@@ -110,6 +117,15 @@ func (cfg *Config) validateAddOnConfigmapsLocal() error {
 	}
 	if cfg.AddOnConfigmapsLocal.RequestsWritesSummaryTablePath == "" {
 		cfg.AddOnConfigmapsLocal.RequestsWritesSummaryTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-configmaps-local-requests-writes-summary.txt"
+	}
+	if cfg.AddOnConfigmapsLocal.RequestsWritesSummaryS3Dir == "" {
+		cfg.AddOnConfigmapsLocal.RequestsWritesSummaryS3Dir = path.Join("add-on-configmaps-local", fmt.Sprintf("writes-summary-%s", cfg.Parameters.Version))
+	}
+	if cfg.AddOnConfigmapsLocal.RequestsWritesSummaryCompareJSONPath == "" {
+		cfg.AddOnConfigmapsLocal.RequestsWritesSummaryCompareJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-configmaps-local-requests-writes-summary-compare.json"
+	}
+	if cfg.AddOnConfigmapsLocal.RequestsWritesSummaryCompareTablePath == "" {
+		cfg.AddOnConfigmapsLocal.RequestsWritesSummaryCompareTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-configmaps-local-requests-writes-summary-compare.txt"
 	}
 
 	return nil

@@ -310,6 +310,28 @@ func (ts *Tester) uploadToS3() (err error) {
 				return err
 			}
 		}
+		if fileutil.Exist(ts.cfg.AddOnCSRsLocal.RequestsWritesSummaryCompareJSONPath) {
+			if err = aws_s3.Upload(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "csrs-local-requests-writes-summary-compare.json"),
+				ts.cfg.AddOnCSRsLocal.RequestsWritesSummaryCompareJSONPath,
+			); err != nil {
+				return err
+			}
+		}
+		if fileutil.Exist(ts.cfg.AddOnCSRsLocal.RequestsWritesSummaryCompareTablePath) {
+			if err = aws_s3.Upload(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "csrs-local-requests-writes-summary-compare.txt"),
+				ts.cfg.AddOnCSRsLocal.RequestsWritesSummaryCompareTablePath,
+			); err != nil {
+				return err
+			}
+		}
 	}
 
 	if ts.cfg.IsEnabledAddOnCSRsRemote() {
@@ -342,6 +364,28 @@ func (ts *Tester) uploadToS3() (err error) {
 				ts.cfg.S3BucketName,
 				path.Join(ts.cfg.Name, "csrs-remote-requests-writes-summary.txt"),
 				ts.cfg.AddOnCSRsRemote.RequestsWritesSummaryTablePath,
+			); err != nil {
+				return err
+			}
+		}
+		if fileutil.Exist(ts.cfg.AddOnCSRsRemote.RequestsWritesSummaryCompareJSONPath) {
+			if err = aws_s3.Upload(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "csrs-remote-requests-writes-summary-compare.json"),
+				ts.cfg.AddOnCSRsRemote.RequestsWritesSummaryCompareJSONPath,
+			); err != nil {
+				return err
+			}
+		}
+		if fileutil.Exist(ts.cfg.AddOnCSRsRemote.RequestsWritesSummaryCompareTablePath) {
+			if err = aws_s3.Upload(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "csrs-remote-requests-writes-summary-compare.txt"),
+				ts.cfg.AddOnCSRsRemote.RequestsWritesSummaryCompareTablePath,
 			); err != nil {
 				return err
 			}
@@ -382,6 +426,28 @@ func (ts *Tester) uploadToS3() (err error) {
 				return err
 			}
 		}
+		if fileutil.Exist(ts.cfg.AddOnConfigmapsLocal.RequestsWritesSummaryCompareJSONPath) {
+			if err = aws_s3.Upload(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "configmaps-local-requests-writes-summary-compare.json"),
+				ts.cfg.AddOnConfigmapsLocal.RequestsWritesSummaryCompareJSONPath,
+			); err != nil {
+				return err
+			}
+		}
+		if fileutil.Exist(ts.cfg.AddOnConfigmapsLocal.RequestsWritesSummaryCompareTablePath) {
+			if err = aws_s3.Upload(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "configmaps-local-requests-writes-summary-compare.txt"),
+				ts.cfg.AddOnConfigmapsLocal.RequestsWritesSummaryCompareTablePath,
+			); err != nil {
+				return err
+			}
+		}
 	}
 
 	if ts.cfg.IsEnabledAddOnConfigmapsRemote() {
@@ -414,6 +480,28 @@ func (ts *Tester) uploadToS3() (err error) {
 				ts.cfg.S3BucketName,
 				path.Join(ts.cfg.Name, "configmaps-remote-requests-writes-summary.txt"),
 				ts.cfg.AddOnConfigmapsRemote.RequestsWritesSummaryTablePath,
+			); err != nil {
+				return err
+			}
+		}
+		if fileutil.Exist(ts.cfg.AddOnConfigmapsRemote.RequestsWritesSummaryCompareJSONPath) {
+			if err = aws_s3.Upload(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "configmaps-remote-requests-writes-summary-compare.json"),
+				ts.cfg.AddOnConfigmapsRemote.RequestsWritesSummaryCompareJSONPath,
+			); err != nil {
+				return err
+			}
+		}
+		if fileutil.Exist(ts.cfg.AddOnConfigmapsRemote.RequestsWritesSummaryCompareTablePath) {
+			if err = aws_s3.Upload(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "configmaps-remote-requests-writes-summary-compare.txt"),
+				ts.cfg.AddOnConfigmapsRemote.RequestsWritesSummaryCompareTablePath,
 			); err != nil {
 				return err
 			}
@@ -454,6 +542,28 @@ func (ts *Tester) uploadToS3() (err error) {
 				return err
 			}
 		}
+		if fileutil.Exist(ts.cfg.AddOnSecretsLocal.RequestsWritesSummaryCompareJSONPath) {
+			if err = aws_s3.Upload(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "secrets-local-requests-writes-summary-compare.json"),
+				ts.cfg.AddOnSecretsLocal.RequestsWritesSummaryCompareJSONPath,
+			); err != nil {
+				return err
+			}
+		}
+		if fileutil.Exist(ts.cfg.AddOnSecretsLocal.RequestsWritesSummaryCompareTablePath) {
+			if err = aws_s3.Upload(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "secrets-local-requests-writes-summary-compare.txt"),
+				ts.cfg.AddOnSecretsLocal.RequestsWritesSummaryCompareTablePath,
+			); err != nil {
+				return err
+			}
+		}
 
 		if fileutil.Exist(ts.cfg.AddOnSecretsLocal.RequestsReadsJSONPath) {
 			if err = aws_s3.Upload(
@@ -484,6 +594,28 @@ func (ts *Tester) uploadToS3() (err error) {
 				ts.cfg.S3BucketName,
 				path.Join(ts.cfg.Name, "secrets-local-requests-reads-summary.txt"),
 				ts.cfg.AddOnSecretsLocal.RequestsReadsSummaryTablePath,
+			); err != nil {
+				return err
+			}
+		}
+		if fileutil.Exist(ts.cfg.AddOnSecretsLocal.RequestsReadsSummaryCompareJSONPath) {
+			if err = aws_s3.Upload(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "secrets-local-requests-reads-summary-compare.json"),
+				ts.cfg.AddOnSecretsLocal.RequestsReadsSummaryCompareJSONPath,
+			); err != nil {
+				return err
+			}
+		}
+		if fileutil.Exist(ts.cfg.AddOnSecretsLocal.RequestsReadsSummaryCompareTablePath) {
+			if err = aws_s3.Upload(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "secrets-local-requests-reads-summary-compare.txt"),
+				ts.cfg.AddOnSecretsLocal.RequestsReadsSummaryCompareTablePath,
 			); err != nil {
 				return err
 			}
@@ -524,6 +656,28 @@ func (ts *Tester) uploadToS3() (err error) {
 				return err
 			}
 		}
+		if fileutil.Exist(ts.cfg.AddOnSecretsRemote.RequestsWritesSummaryCompareJSONPath) {
+			if err = aws_s3.Upload(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "secrets-remote-requests-writes-summary-compare.json"),
+				ts.cfg.AddOnSecretsRemote.RequestsWritesSummaryCompareJSONPath,
+			); err != nil {
+				return err
+			}
+		}
+		if fileutil.Exist(ts.cfg.AddOnSecretsRemote.RequestsWritesSummaryCompareTablePath) {
+			if err = aws_s3.Upload(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "secrets-remote-requests-writes-summary-compare.txt"),
+				ts.cfg.AddOnSecretsRemote.RequestsWritesSummaryCompareTablePath,
+			); err != nil {
+				return err
+			}
+		}
 
 		if fileutil.Exist(ts.cfg.AddOnSecretsRemote.RequestsReadsJSONPath) {
 			if err = aws_s3.Upload(
@@ -554,6 +708,28 @@ func (ts *Tester) uploadToS3() (err error) {
 				ts.cfg.S3BucketName,
 				path.Join(ts.cfg.Name, "secrets-remote-requests-reads-summary.txt"),
 				ts.cfg.AddOnSecretsRemote.RequestsReadsSummaryTablePath,
+			); err != nil {
+				return err
+			}
+		}
+		if fileutil.Exist(ts.cfg.AddOnSecretsRemote.RequestsReadsSummaryCompareJSONPath) {
+			if err = aws_s3.Upload(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "secrets-remote-requests-reads-summary-compare.json"),
+				ts.cfg.AddOnSecretsRemote.RequestsReadsSummaryCompareJSONPath,
+			); err != nil {
+				return err
+			}
+		}
+		if fileutil.Exist(ts.cfg.AddOnSecretsRemote.RequestsReadsSummaryCompareTablePath) {
+			if err = aws_s3.Upload(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "secrets-remote-requests-reads-summary-compare.txt"),
+				ts.cfg.AddOnSecretsRemote.RequestsReadsSummaryCompareTablePath,
 			); err != nil {
 				return err
 			}
@@ -686,6 +862,28 @@ func (ts *Tester) uploadToS3() (err error) {
 				return err
 			}
 		}
+		if fileutil.Exist(ts.cfg.AddOnStresserLocal.RequestsWritesSummaryCompareJSONPath) {
+			if err = aws_s3.Upload(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "stresser-local-requests-writes-summary-compare.json"),
+				ts.cfg.AddOnStresserLocal.RequestsWritesSummaryCompareJSONPath,
+			); err != nil {
+				return err
+			}
+		}
+		if fileutil.Exist(ts.cfg.AddOnStresserLocal.RequestsWritesSummaryCompareTablePath) {
+			if err = aws_s3.Upload(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "stresser-local-requests-writes-summary-compare.txt"),
+				ts.cfg.AddOnStresserLocal.RequestsWritesSummaryCompareTablePath,
+			); err != nil {
+				return err
+			}
+		}
 
 		if fileutil.Exist(ts.cfg.AddOnStresserLocal.RequestsReadsJSONPath) {
 			if err = aws_s3.Upload(
@@ -716,6 +914,28 @@ func (ts *Tester) uploadToS3() (err error) {
 				ts.cfg.S3BucketName,
 				path.Join(ts.cfg.Name, "stresser-local-requests-reads-summary.txt"),
 				ts.cfg.AddOnStresserLocal.RequestsReadsSummaryTablePath,
+			); err != nil {
+				return err
+			}
+		}
+		if fileutil.Exist(ts.cfg.AddOnStresserLocal.RequestsReadsSummaryCompareJSONPath) {
+			if err = aws_s3.Upload(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "stresser-local-requests-reads-summary-compare.json"),
+				ts.cfg.AddOnStresserLocal.RequestsReadsSummaryCompareJSONPath,
+			); err != nil {
+				return err
+			}
+		}
+		if fileutil.Exist(ts.cfg.AddOnStresserLocal.RequestsReadsSummaryCompareTablePath) {
+			if err = aws_s3.Upload(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "stresser-local-requests-reads-summary-compare.txt"),
+				ts.cfg.AddOnStresserLocal.RequestsReadsSummaryCompareTablePath,
 			); err != nil {
 				return err
 			}
@@ -756,6 +976,28 @@ func (ts *Tester) uploadToS3() (err error) {
 				return err
 			}
 		}
+		if fileutil.Exist(ts.cfg.AddOnStresserRemote.RequestsWritesSummaryCompareJSONPath) {
+			if err = aws_s3.Upload(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "stresser-remote-requests-writes-summary-compare.json"),
+				ts.cfg.AddOnStresserRemote.RequestsWritesSummaryCompareJSONPath,
+			); err != nil {
+				return err
+			}
+		}
+		if fileutil.Exist(ts.cfg.AddOnStresserRemote.RequestsWritesSummaryCompareTablePath) {
+			if err = aws_s3.Upload(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "stresser-remote-requests-writes-summary-compare.txt"),
+				ts.cfg.AddOnStresserRemote.RequestsWritesSummaryCompareTablePath,
+			); err != nil {
+				return err
+			}
+		}
 
 		if fileutil.Exist(ts.cfg.AddOnStresserRemote.RequestsReadsJSONPath) {
 			if err = aws_s3.Upload(
@@ -786,6 +1028,28 @@ func (ts *Tester) uploadToS3() (err error) {
 				ts.cfg.S3BucketName,
 				path.Join(ts.cfg.Name, "stresser-remote-requests-reads-summary.txt"),
 				ts.cfg.AddOnStresserRemote.RequestsReadsSummaryTablePath,
+			); err != nil {
+				return err
+			}
+		}
+		if fileutil.Exist(ts.cfg.AddOnStresserRemote.RequestsReadsSummaryCompareJSONPath) {
+			if err = aws_s3.Upload(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "stresser-remote-requests-reads-summary-compare.json"),
+				ts.cfg.AddOnStresserRemote.RequestsReadsSummaryCompareJSONPath,
+			); err != nil {
+				return err
+			}
+		}
+		if fileutil.Exist(ts.cfg.AddOnStresserRemote.RequestsReadsSummaryCompareTablePath) {
+			if err = aws_s3.Upload(
+				ts.lg,
+				ts.s3API,
+				ts.cfg.S3BucketName,
+				path.Join(ts.cfg.Name, "stresser-remote-requests-reads-summary-compare.txt"),
+				ts.cfg.AddOnStresserRemote.RequestsReadsSummaryCompareTablePath,
 			); err != nil {
 				return err
 			}

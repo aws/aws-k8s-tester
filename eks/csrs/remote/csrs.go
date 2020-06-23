@@ -24,6 +24,7 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"go.uber.org/zap"
 	appsv1 "k8s.io/api/apps/v1"
@@ -921,16 +922,104 @@ func (ts *tester) AggregateResults() (err error) {
 		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 		return err
 	}
+	if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3BucketName, path.Join(ts.cfg.EKSConfig.Name, "add-on-csrs-remote", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesJSONPath)), ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesJSONPath); err != nil {
+		return err
+	}
 	if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryJSONPath, []byte(writesSummary.JSON()), 0600); err != nil {
 		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
+		return err
+	}
+	if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3BucketName, path.Join(ts.cfg.EKSConfig.Name, "add-on-csrs-remote", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryJSONPath)), ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryJSONPath); err != nil {
 		return err
 	}
 	if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryTablePath, []byte(writesSummary.Table()), 0600); err != nil {
 		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 		return err
 	}
-	fmt.Printf("\n\nAddOnCSRsRemote.RequestsWritesSummary:\n%s\n", writesSummary.Table())
+	if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3BucketName, path.Join(ts.cfg.EKSConfig.Name, "add-on-csrs-remote", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryTablePath)), ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryTablePath); err != nil {
+		return err
+	}
+	fmt.Printf("\n\nRequestsWritesSummary:\n%s\n", writesSummary.Table())
 
-	ts.cfg.Logger.Info("aggregated results from Pods")
+	ts.cfg.Logger.Info("aggregated results from Pods; now comparing previous results")
+	if err = ts.compareResults(); err != nil {
+		return err
+	}
+
 	return ts.cfg.EKSConfig.Sync()
+}
+
+// 1. if previous summary exists, download and compare
+// 2. upload new summary and overwrite the previous s3 key
+func (ts *tester) compareResults() (err error) {
+	tss := time.Now().UTC().Format(time.RFC3339Nano)
+	ts.cfg.Logger.Info("comparing results", zap.String("timestamp", tss))
+
+	s3Objects := make([]*s3.Object, 0)
+	if ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryS3Dir != "" {
+		s3Objects, err = aws_s3.ListInDescendingLastModified(
+			ts.cfg.Logger,
+			ts.cfg.S3API,
+			ts.cfg.EKSConfig.S3BucketName,
+			ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryS3Dir,
+		)
+	}
+	if len(s3Objects) > 0 && err == nil {
+		var localPath string
+		localPath, err = aws_s3.DownloadToTempFile(
+			ts.cfg.Logger,
+			ts.cfg.S3API,
+			ts.cfg.EKSConfig.S3BucketName,
+			aws.StringValue(s3Objects[0].Key),
+		)
+		if err != nil {
+			return fmt.Errorf("failed to download previous writes summary %v", err)
+		}
+		defer os.RemoveAll(localPath)
+		rf, err := os.OpenFile(localPath, os.O_RDONLY, 0444)
+		if err != nil {
+			ts.cfg.Logger.Warn("failed to read a file", zap.Error(err))
+			return err
+		}
+		defer rf.Close()
+		var prev metrics.RequestsSummary
+		if err = json.NewDecoder(rf).Decode(&prev); err != nil {
+			ts.cfg.Logger.Warn("failed to decode a JSON file", zap.Error(err))
+			return err
+		}
+		ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryCompare, err = metrics.CompareRequestsSummary(prev, ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummary)
+		if err != nil {
+			ts.cfg.Logger.Warn("failed to compare results", zap.Error(err))
+			return err
+		}
+		if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryCompareJSONPath, []byte(ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryCompare.JSON()), 0600); err != nil {
+			ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
+			return err
+		}
+		if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3BucketName, path.Join(ts.cfg.EKSConfig.Name, "add-on-stresser-local", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryCompareJSONPath)), ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryCompareJSONPath); err != nil {
+			return err
+		}
+		if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryCompareTablePath, []byte(ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryCompare.Table()), 0600); err != nil {
+			ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
+			return err
+		}
+		if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3BucketName, path.Join(ts.cfg.EKSConfig.Name, "add-on-stresser-local", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryCompareTablePath)), ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryCompareTablePath); err != nil {
+			return err
+		}
+		fmt.Printf("\n\nRequestsWritesSummaryCompare:\n%s\n", ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryCompare.Table())
+	} else {
+		ts.cfg.Logger.Warn("previous writes summary not found; skipping comparison", zap.Error(err))
+	}
+	ts.cfg.Logger.Info("uploading new writes summary to s3 bucket to overwrite the previous")
+	if err = aws_s3.Upload(
+		ts.cfg.Logger,
+		ts.cfg.S3API,
+		ts.cfg.EKSConfig.S3BucketName,
+		path.Join(ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryS3Dir, tss),
+		ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryJSONPath,
+	); err != nil {
+		return err
+	}
+
+	return nil
 }

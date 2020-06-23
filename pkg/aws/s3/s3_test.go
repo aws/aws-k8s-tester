@@ -9,6 +9,7 @@ import (
 
 	pkg_aws "github.com/aws/aws-k8s-tester/pkg/aws"
 	"github.com/aws/aws-k8s-tester/pkg/randutil"
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"go.uber.org/zap"
 )
@@ -35,22 +36,41 @@ func TestS3(t *testing.T) {
 		t.Logf("DeleteBucket: %v", DeleteBucket(lg, s3API, bucket))
 	}()
 
+	s3Key := ""
 	for i := 0; i < 10; i++ {
+		s3Key = filepath.Join(dir, randutil.String(10))
 		if err = UploadBody(
 			lg,
 			s3API,
 			bucket,
-			filepath.Join(dir, randutil.String(10)),
+			s3Key,
 			bytes.NewReader(randutil.Bytes(10)),
 		); err != nil {
 			t.Fatal(err)
 		}
 	}
+	if ok, err := Exist(lg, s3API, bucket, s3Key); !ok || err != nil {
+		t.Fatalf("unexpected ok %v, err %v", ok, err)
+	}
+	localPath, err := DownloadToTempFile(lg, s3API, bucket, s3Key)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(localPath)
+	fmt.Println("localPath:", localPath)
 
 	targetDir, err := DownloadDir(lg, s3API, bucket, dir)
 	fmt.Println("targetDir:", targetDir)
 	defer os.RemoveAll(targetDir)
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	s3Objects, err := ListInDescendingLastModified(lg, s3API, bucket, dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, obj := range s3Objects {
+		fmt.Println(aws.StringValue(obj.Key), aws.TimeValue(obj.LastModified), aws.Int64Value(obj.Size))
 	}
 }

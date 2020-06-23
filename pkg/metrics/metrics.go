@@ -27,6 +27,11 @@ type RequestsSummaryCompare struct {
 	LantencyP9999DeltaPercent float64 `json:"latency-p99.99-delta-percent" read-only:"true"`
 }
 
+func (c RequestsSummaryCompare) JSON() string {
+	b, _ := json.Marshal(c)
+	return string(b)
+}
+
 func (c RequestsSummaryCompare) Table() string {
 	buf := bytes.NewBuffer(nil)
 	tb := tablewriter.NewWriter(buf)
