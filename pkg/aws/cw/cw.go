@@ -2,12 +2,18 @@
 package cw
 
 import (
+	"bytes"
+	"compress/gzip"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"path/filepath"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/cloudwatch"
 	"github.com/aws/aws-sdk-go/service/cloudwatch/cloudwatchiface"
 	"github.com/dustin/go-humanize"
@@ -48,4 +54,66 @@ func GetMetricsImage(lg *zap.Logger, cwAPI cloudwatchiface.CloudWatchAPI, widget
 		zap.String("output-path", outputPath),
 	)
 	return nil
+}
+
+// PutData publishes the list of cloudwatch datums in a batch.
+func PutData(lg *zap.Logger, cwAPI cloudwatchiface.CloudWatchAPI, namespace string, batchSize int, datums ...*cloudwatch.MetricDatum) (err error) {
+	lg.Info("publishing datums",
+		zap.String("namespace", namespace),
+		zap.Int("batch-size", batchSize),
+		zap.Int("datums", len(datums)),
+	)
+	if len(datums) == 0 {
+		return nil
+	}
+	batch := make([]*cloudwatch.MetricDatum, 0, batchSize)
+	for _, cur := range datums {
+		batch = append(batch, cur)
+		if len(batch) == batchSize {
+			lg.Info("sending batch", zap.Int("current-batch", len(batch)))
+			req, _ := cwAPI.PutMetricDataRequest(&cloudwatch.PutMetricDataInput{
+				Namespace:  aws.String(namespace),
+				MetricData: batch,
+			})
+			if req == nil {
+				lg.Info("failed PutMetricDataRequest")
+				return errors.New("failed PutMetricDataRequest")
+			}
+			req.Handlers.Build.PushBack(newCompressPayloadFunc(lg))
+			lg.Info("sent batch", zap.Int("current-batch", len(batch)))
+
+			time.Sleep(500 * time.Millisecond)
+		}
+	}
+
+	lg.Info("sending last batch", zap.Int("last-batch", len(batch)))
+	req, _ := cwAPI.PutMetricDataRequest(&cloudwatch.PutMetricDataInput{
+		Namespace:  aws.String(namespace),
+		MetricData: batch,
+	})
+	if req == nil {
+		lg.Info("failed PutMetricDataRequest")
+		return errors.New("failed PutMetricDataRequest")
+	}
+	req.Handlers.Build.PushBack(newCompressPayloadFunc(lg))
+	lg.Info("sent last batch", zap.Int("last-batch", len(batch)))
+	return nil
+}
+
+func newCompressPayloadFunc(lg *zap.Logger) func(r *request.Request) {
+	compressPayload := func(r *request.Request) {
+		var buf bytes.Buffer
+		zw := gzip.NewWriter(&buf)
+		if _, err := io.Copy(zw, r.GetBody()); err != nil {
+			lg.Warn("failed to copy", zap.Error(err))
+			return
+		}
+		if err := zw.Close(); err != nil {
+			lg.Warn("failed to close", zap.Error(err))
+			return
+		}
+		r.SetBufferBody(buf.Bytes())
+		r.HTTPRequest.Header.Set("Content-Encoding", "gzip")
+	}
+	return compressPayload
 }

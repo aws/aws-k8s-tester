@@ -18,11 +18,14 @@ import (
 	"github.com/aws/aws-k8s-tester/eks/stresser"
 	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
 	"github.com/aws/aws-k8s-tester/eksconfig"
+	"github.com/aws/aws-k8s-tester/pkg/aws/cw"
 	aws_s3 "github.com/aws/aws-k8s-tester/pkg/aws/s3"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/metrics"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/cloudwatch"
+	"github.com/aws/aws-sdk-go/service/cloudwatch/cloudwatchiface"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"go.uber.org/zap"
@@ -37,6 +40,7 @@ type Config struct {
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
 	S3API     s3iface.S3API
+	CWAPI     cloudwatchiface.CloudWatchAPI
 }
 
 // TODO: use kubemark
@@ -147,6 +151,9 @@ func (ts *tester) Create() (err error) {
 	}
 
 	if err = ts.compareResults(); err != nil {
+		return err
+	}
+	if err = ts.publishResults(); err != nil {
 		return err
 	}
 
@@ -365,4 +372,59 @@ func (ts *tester) compareResults() (err error) {
 	}
 
 	return nil
+}
+
+func (ts *tester) publishResults() (err error) {
+	datums := make([]*cloudwatch.MetricDatum, 0)
+	datums = append(datums, &cloudwatch.MetricDatum{
+		MetricName: aws.String("add-on-stresser-local-writes-latency-p50"),
+		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
+		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummary.LantencyP50.Milliseconds())),
+	})
+	datums = append(datums, &cloudwatch.MetricDatum{
+		MetricName: aws.String("add-on-stresser-local-writes-latency-p90"),
+		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
+		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummary.LantencyP90.Milliseconds())),
+	})
+	datums = append(datums, &cloudwatch.MetricDatum{
+		MetricName: aws.String("add-on-stresser-local-writes-latency-p99"),
+		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
+		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummary.LantencyP99.Milliseconds())),
+	})
+	datums = append(datums, &cloudwatch.MetricDatum{
+		MetricName: aws.String("add-on-stresser-local-writes-latency-p999"),
+		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
+		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummary.LantencyP999.Milliseconds())),
+	})
+	datums = append(datums, &cloudwatch.MetricDatum{
+		MetricName: aws.String("add-on-stresser-local-writes-latency-p9999"),
+		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
+		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummary.LantencyP9999.Milliseconds())),
+	})
+	datums = append(datums, &cloudwatch.MetricDatum{
+		MetricName: aws.String("add-on-stresser-local-reads-latency-p50"),
+		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
+		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummary.LantencyP50.Milliseconds())),
+	})
+	datums = append(datums, &cloudwatch.MetricDatum{
+		MetricName: aws.String("add-on-stresser-local-reads-latency-p90"),
+		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
+		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummary.LantencyP90.Milliseconds())),
+	})
+	datums = append(datums, &cloudwatch.MetricDatum{
+		MetricName: aws.String("add-on-stresser-local-reads-latency-p99"),
+		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
+		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummary.LantencyP99.Milliseconds())),
+	})
+	datums = append(datums, &cloudwatch.MetricDatum{
+		MetricName: aws.String("add-on-stresser-local-reads-latency-p999"),
+		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
+		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummary.LantencyP999.Milliseconds())),
+	})
+	datums = append(datums, &cloudwatch.MetricDatum{
+		MetricName: aws.String("add-on-stresser-local-reads-latency-p9999"),
+		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
+		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummary.LantencyP9999.Milliseconds())),
+	})
+	return cw.PutData(ts.cfg.Logger, ts.cfg.CWAPI, ts.cfg.EKSConfig.CWNamespace, 20, datums...)
 }

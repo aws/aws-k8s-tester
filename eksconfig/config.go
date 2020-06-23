@@ -119,6 +119,9 @@ type Config struct {
 	// S3BucketLifecycleExpirationDays is expiration in days for the lifecycle of the object.
 	S3BucketLifecycleExpirationDays int64 `json:"s3-bucket-lifecycle-expiration-days"`
 
+	// CWNamespace is the CloudWatch namespace to put metric datum.
+	CWNamespace string `json:"cw-namespace"`
+
 	// Parameters defines EKS "cluster" creation parameters.
 	// It's ok to leave any parameters empty.
 	// If empty, it will use default values.
@@ -744,6 +747,8 @@ func NewDefault() *Config {
 		S3BucketCreateKeep:              false,
 		S3BucketLifecycleExpirationDays: 0,
 
+		CWNamespace: "aws-k8s-tester-eks",
+
 		Parameters: getDefaultParameters(),
 
 		RemoteAccessKeyCreate: true,
@@ -1132,6 +1137,10 @@ func (cfg *Config) validateConfig() error {
 			cfg.S3BucketLifecycleExpirationDays = 3
 		}
 	case false: // use existing one
+	}
+
+	if cfg.CWNamespace == "" {
+		cfg.CWNamespace = "aws-k8s-tester-eks"
 	}
 
 	if cfg.Status == nil {

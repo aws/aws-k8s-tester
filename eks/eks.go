@@ -70,6 +70,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/autoscaling/autoscalingiface"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/cloudformation/cloudformationiface"
+	"github.com/aws/aws-sdk-go/service/cloudwatch"
+	"github.com/aws/aws-sdk-go/service/cloudwatch/cloudwatchiface"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	"github.com/aws/aws-sdk-go/service/ecr"
@@ -116,6 +118,7 @@ type Tester struct {
 	cfnAPI     cloudformationiface.CloudFormationAPI
 	ec2API     ec2iface.EC2API
 	s3API      s3iface.S3API
+	cwAPI      cloudwatchiface.CloudWatchAPI
 	asgAPI     autoscalingiface.AutoScalingAPI
 	elbv2API   elbv2iface.ELBV2API
 	ecrAPI     ecriface.ECRAPI
@@ -309,6 +312,7 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 	fmt.Println("EC2 API available!")
 
 	ts.s3API = s3.New(ts.awsSession)
+	ts.cwAPI = cloudwatch.New(ts.awsSession)
 	ts.asgAPI = autoscaling.New(ts.awsSession)
 	ts.elbv2API = elbv2.New(ts.awsSession)
 	ts.ecrAPI = ecr.New(ts.awsSession)
@@ -523,6 +527,7 @@ func (ts *Tester) createTesters() (err error) {
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 			S3API:     ts.s3API,
+			CWAPI:     ts.cwAPI,
 		}),
 		csrs_remote.New(csrs_remote.Config{
 			Logger:    ts.lg,
@@ -530,6 +535,7 @@ func (ts *Tester) createTesters() (err error) {
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 			S3API:     ts.s3API,
+			CWAPI:     ts.cwAPI,
 			ECRAPI:    ts.ecrAPI,
 		}),
 		config_maps_local.New(config_maps_local.Config{
@@ -538,6 +544,7 @@ func (ts *Tester) createTesters() (err error) {
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 			S3API:     ts.s3API,
+			CWAPI:     ts.cwAPI,
 		}),
 		config_maps_remote.New(config_maps_remote.Config{
 			Logger:    ts.lg,
@@ -545,6 +552,7 @@ func (ts *Tester) createTesters() (err error) {
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 			S3API:     ts.s3API,
+			CWAPI:     ts.cwAPI,
 			ECRAPI:    ts.ecrAPI,
 		}),
 		secrets_local.New(secrets_local.Config{
@@ -553,6 +561,7 @@ func (ts *Tester) createTesters() (err error) {
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 			S3API:     ts.s3API,
+			CWAPI:     ts.cwAPI,
 		}),
 		secrets_remote.New(secrets_remote.Config{
 			Logger:    ts.lg,
@@ -560,6 +569,7 @@ func (ts *Tester) createTesters() (err error) {
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 			S3API:     ts.s3API,
+			CWAPI:     ts.cwAPI,
 			ECRAPI:    ts.ecrAPI,
 		}),
 		fargate.New(fargate.Config{
@@ -649,6 +659,7 @@ func (ts *Tester) createTesters() (err error) {
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 			S3API:     ts.s3API,
+			CWAPI:     ts.cwAPI,
 		}),
 		stresser_remote.New(stresser_remote.Config{
 			Logger:    ts.lg,
@@ -656,6 +667,7 @@ func (ts *Tester) createTesters() (err error) {
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 			S3API:     ts.s3API,
+			CWAPI:     ts.cwAPI,
 			ECRAPI:    ts.ecrAPI,
 		}),
 		cluster_version_upgrade.New(cluster_version_upgrade.Config{

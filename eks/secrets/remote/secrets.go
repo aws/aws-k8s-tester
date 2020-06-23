@@ -17,13 +17,17 @@ import (
 
 	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
 	"github.com/aws/aws-k8s-tester/eksconfig"
+	"github.com/aws/aws-k8s-tester/pkg/aws/cw"
 	aws_ecr "github.com/aws/aws-k8s-tester/pkg/aws/ecr"
 	aws_s3 "github.com/aws/aws-k8s-tester/pkg/aws/s3"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/metrics"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/cloudwatch"
+	"github.com/aws/aws-sdk-go/service/cloudwatch/cloudwatchiface"
 	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"go.uber.org/zap"
 	appsv1 "k8s.io/api/apps/v1"
@@ -42,6 +46,7 @@ type Config struct {
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
 	S3API     s3iface.S3API
+	CWAPI     cloudwatchiface.CloudWatchAPI
 	ECRAPI    ecriface.ECRAPI
 }
 
@@ -1109,6 +1114,209 @@ func (ts *tester) AggregateResults() (err error) {
 	}
 	fmt.Printf("\n\nRequestsReadsSummary:\n%s\n", readsSummary.Table())
 
-	ts.cfg.Logger.Info("aggregated results from Pods")
+	ts.cfg.Logger.Info("aggregated results from Pods; now comparing previous results")
+	if err = ts.compareResults(); err != nil {
+		return err
+	}
+	if err = ts.publishResults(); err != nil {
+		return err
+	}
+
 	return ts.cfg.EKSConfig.Sync()
+}
+
+// 1. if previous summary exists, download and compare
+// 2. upload new summary and overwrite the previous s3 key
+func (ts *tester) compareResults() (err error) {
+	tss := time.Now().UTC().Format(time.RFC3339Nano)
+	ts.cfg.Logger.Info("comparing results", zap.String("timestamp", tss))
+
+	s3Objects := make([]*s3.Object, 0)
+	if ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryS3Dir != "" {
+		s3Objects, err = aws_s3.ListInDescendingLastModified(
+			ts.cfg.Logger,
+			ts.cfg.S3API,
+			ts.cfg.EKSConfig.S3BucketName,
+			ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryS3Dir,
+		)
+	}
+	if len(s3Objects) > 0 && err == nil {
+		var localPath string
+		localPath, err = aws_s3.DownloadToTempFile(
+			ts.cfg.Logger,
+			ts.cfg.S3API,
+			ts.cfg.EKSConfig.S3BucketName,
+			aws.StringValue(s3Objects[0].Key),
+		)
+		if err != nil {
+			return fmt.Errorf("failed to download previous writes summary %v", err)
+		}
+		defer os.RemoveAll(localPath)
+		rf, err := os.OpenFile(localPath, os.O_RDONLY, 0444)
+		if err != nil {
+			ts.cfg.Logger.Warn("failed to read a file", zap.Error(err))
+			return err
+		}
+		defer rf.Close()
+		var prev metrics.RequestsSummary
+		if err = json.NewDecoder(rf).Decode(&prev); err != nil {
+			ts.cfg.Logger.Warn("failed to decode a JSON file", zap.Error(err))
+			return err
+		}
+		ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryCompare, err = metrics.CompareRequestsSummary(prev, ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummary)
+		if err != nil {
+			ts.cfg.Logger.Warn("failed to compare results", zap.Error(err))
+			return err
+		}
+		if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryCompareJSONPath, []byte(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryCompare.JSON()), 0600); err != nil {
+			ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
+			return err
+		}
+		if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3BucketName, path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-local", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryCompareJSONPath)), ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryCompareJSONPath); err != nil {
+			return err
+		}
+		if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryCompareTablePath, []byte(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryCompare.Table()), 0600); err != nil {
+			ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
+			return err
+		}
+		if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3BucketName, path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-local", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryCompareTablePath)), ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryCompareTablePath); err != nil {
+			return err
+		}
+		fmt.Printf("\n\nRequestsWritesSummaryCompare:\n%s\n", ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryCompare.Table())
+	} else {
+		ts.cfg.Logger.Warn("previous writes summary not found; skipping comparison", zap.Error(err))
+	}
+	ts.cfg.Logger.Info("uploading new writes summary to s3 bucket to overwrite the previous")
+	if err = aws_s3.Upload(
+		ts.cfg.Logger,
+		ts.cfg.S3API,
+		ts.cfg.EKSConfig.S3BucketName,
+		path.Join(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryS3Dir, tss),
+		ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryJSONPath,
+	); err != nil {
+		return err
+	}
+
+	s3Objects = make([]*s3.Object, 0)
+	if ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryS3Dir != "" {
+		s3Objects, err = aws_s3.ListInDescendingLastModified(
+			ts.cfg.Logger,
+			ts.cfg.S3API,
+			ts.cfg.EKSConfig.S3BucketName,
+			ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryS3Dir,
+		)
+	}
+	if len(s3Objects) > 0 && err == nil {
+		var localPath string
+		localPath, err = aws_s3.DownloadToTempFile(
+			ts.cfg.Logger,
+			ts.cfg.S3API,
+			ts.cfg.EKSConfig.S3BucketName,
+			aws.StringValue(s3Objects[0].Key),
+		)
+		if err != nil {
+			return fmt.Errorf("failed to download previous reads summary %v", err)
+		}
+		defer os.RemoveAll(localPath)
+		rf, err := os.OpenFile(localPath, os.O_RDONLY, 0444)
+		if err != nil {
+			ts.cfg.Logger.Warn("failed to read a file", zap.Error(err))
+			return err
+		}
+		defer rf.Close()
+		var prev metrics.RequestsSummary
+		if err = json.NewDecoder(rf).Decode(&prev); err != nil {
+			ts.cfg.Logger.Warn("failed to decode a JSON file", zap.Error(err))
+			return err
+		}
+		ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryCompare, err = metrics.CompareRequestsSummary(prev, ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummary)
+		if err != nil {
+			ts.cfg.Logger.Warn("failed to compare results", zap.Error(err))
+			return err
+		}
+		if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryCompareJSONPath, []byte(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryCompare.JSON()), 0600); err != nil {
+			ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
+			return err
+		}
+		if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3BucketName, path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-local", "reads", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryCompareJSONPath)), ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryCompareJSONPath); err != nil {
+			return err
+		}
+		if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryCompareTablePath, []byte(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryCompare.Table()), 0600); err != nil {
+			ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
+			return err
+		}
+		if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3BucketName, path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-local", "reads", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryCompareTablePath)), ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryCompareTablePath); err != nil {
+			return err
+		}
+		fmt.Printf("\n\nRequestsReadsSummaryCompare:\n%s\n", ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryCompare.Table())
+	} else {
+		ts.cfg.Logger.Warn("previous writes summary not found; skipping comparison", zap.Error(err))
+	}
+	ts.cfg.Logger.Info("uploading new reads summary to s3 bucket to overwrite the previous")
+	if err = aws_s3.Upload(
+		ts.cfg.Logger,
+		ts.cfg.S3API,
+		ts.cfg.EKSConfig.S3BucketName,
+		path.Join(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryS3Dir, tss),
+		ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryJSONPath,
+	); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (ts *tester) publishResults() (err error) {
+	datums := make([]*cloudwatch.MetricDatum, 0)
+	datums = append(datums, &cloudwatch.MetricDatum{
+		MetricName: aws.String("add-on-secrets-remote-writes-latency-p50"),
+		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
+		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummary.LantencyP50.Milliseconds())),
+	})
+	datums = append(datums, &cloudwatch.MetricDatum{
+		MetricName: aws.String("add-on-secrets-remote-writes-latency-p90"),
+		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
+		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummary.LantencyP90.Milliseconds())),
+	})
+	datums = append(datums, &cloudwatch.MetricDatum{
+		MetricName: aws.String("add-on-secrets-remote-writes-latency-p99"),
+		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
+		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummary.LantencyP99.Milliseconds())),
+	})
+	datums = append(datums, &cloudwatch.MetricDatum{
+		MetricName: aws.String("add-on-secrets-remote-writes-latency-p999"),
+		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
+		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummary.LantencyP999.Milliseconds())),
+	})
+	datums = append(datums, &cloudwatch.MetricDatum{
+		MetricName: aws.String("add-on-secrets-remote-writes-latency-p9999"),
+		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
+		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummary.LantencyP9999.Milliseconds())),
+	})
+	datums = append(datums, &cloudwatch.MetricDatum{
+		MetricName: aws.String("add-on-secrets-remote-reads-latency-p50"),
+		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
+		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummary.LantencyP50.Milliseconds())),
+	})
+	datums = append(datums, &cloudwatch.MetricDatum{
+		MetricName: aws.String("add-on-secrets-remote-reads-latency-p90"),
+		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
+		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummary.LantencyP90.Milliseconds())),
+	})
+	datums = append(datums, &cloudwatch.MetricDatum{
+		MetricName: aws.String("add-on-secrets-remote-reads-latency-p99"),
+		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
+		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummary.LantencyP99.Milliseconds())),
+	})
+	datums = append(datums, &cloudwatch.MetricDatum{
+		MetricName: aws.String("add-on-secrets-remote-reads-latency-p999"),
+		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
+		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummary.LantencyP999.Milliseconds())),
+	})
+	datums = append(datums, &cloudwatch.MetricDatum{
+		MetricName: aws.String("add-on-secrets-remote-reads-latency-p9999"),
+		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
+		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummary.LantencyP9999.Milliseconds())),
+	})
+	return cw.PutData(ts.cfg.Logger, ts.cfg.CWAPI, ts.cfg.EKSConfig.CWNamespace, 20, datums...)
 }

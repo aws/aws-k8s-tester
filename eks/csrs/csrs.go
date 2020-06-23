@@ -17,6 +17,7 @@ import (
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/metrics"
 	"github.com/aws/aws-k8s-tester/pkg/randutil"
+	"github.com/aws/aws-sdk-go/service/cloudwatch/cloudwatchiface"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
@@ -67,6 +68,8 @@ type Config struct {
 	S3API        s3iface.S3API
 	S3BucketName string
 	S3DirName    string
+
+	CWAPI cloudwatchiface.CloudWatchAPI
 
 	Client        k8s_client.EKS
 	ClientTimeout time.Duration

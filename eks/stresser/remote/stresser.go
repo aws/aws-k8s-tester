@@ -20,12 +20,15 @@ import (
 
 	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
 	"github.com/aws/aws-k8s-tester/eksconfig"
+	"github.com/aws/aws-k8s-tester/pkg/aws/cw"
 	aws_ecr "github.com/aws/aws-k8s-tester/pkg/aws/ecr"
 	aws_s3 "github.com/aws/aws-k8s-tester/pkg/aws/s3"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/metrics"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/cloudwatch"
+	"github.com/aws/aws-sdk-go/service/cloudwatch/cloudwatchiface"
 	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
@@ -46,6 +49,7 @@ type Config struct {
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
 	S3API     s3iface.S3API
+	CWAPI     cloudwatchiface.CloudWatchAPI
 	ECRAPI    ecriface.ECRAPI
 }
 
@@ -345,7 +349,7 @@ func (ts *tester) createALBRBACClusterRole() error {
 							"secrets",
 							"services",
 							"namespaces",
-							"configmaps",
+							"stresser",
 							"endpoints",
 							"events",
 							"ingresses",
@@ -1177,6 +1181,9 @@ func (ts *tester) AggregateResults() (err error) {
 	if err = ts.compareResults(); err != nil {
 		return err
 	}
+	if err = ts.publishResults(); err != nil {
+		return err
+	}
 
 	return ts.cfg.EKSConfig.Sync()
 }
@@ -1320,4 +1327,59 @@ func (ts *tester) compareResults() (err error) {
 	}
 
 	return nil
+}
+
+func (ts *tester) publishResults() (err error) {
+	datums := make([]*cloudwatch.MetricDatum, 0)
+	datums = append(datums, &cloudwatch.MetricDatum{
+		MetricName: aws.String("add-on-stresser-remote-writes-latency-p50"),
+		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
+		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesSummary.LantencyP50.Milliseconds())),
+	})
+	datums = append(datums, &cloudwatch.MetricDatum{
+		MetricName: aws.String("add-on-stresser-remote-writes-latency-p90"),
+		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
+		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesSummary.LantencyP90.Milliseconds())),
+	})
+	datums = append(datums, &cloudwatch.MetricDatum{
+		MetricName: aws.String("add-on-stresser-remote-writes-latency-p99"),
+		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
+		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesSummary.LantencyP99.Milliseconds())),
+	})
+	datums = append(datums, &cloudwatch.MetricDatum{
+		MetricName: aws.String("add-on-stresser-remote-writes-latency-p999"),
+		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
+		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesSummary.LantencyP999.Milliseconds())),
+	})
+	datums = append(datums, &cloudwatch.MetricDatum{
+		MetricName: aws.String("add-on-stresser-remote-writes-latency-p9999"),
+		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
+		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesSummary.LantencyP9999.Milliseconds())),
+	})
+	datums = append(datums, &cloudwatch.MetricDatum{
+		MetricName: aws.String("add-on-stresser-remote-reads-latency-p50"),
+		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
+		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsSummary.LantencyP50.Milliseconds())),
+	})
+	datums = append(datums, &cloudwatch.MetricDatum{
+		MetricName: aws.String("add-on-stresser-remote-reads-latency-p90"),
+		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
+		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsSummary.LantencyP90.Milliseconds())),
+	})
+	datums = append(datums, &cloudwatch.MetricDatum{
+		MetricName: aws.String("add-on-stresser-remote-reads-latency-p99"),
+		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
+		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsSummary.LantencyP99.Milliseconds())),
+	})
+	datums = append(datums, &cloudwatch.MetricDatum{
+		MetricName: aws.String("add-on-stresser-remote-reads-latency-p999"),
+		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
+		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsSummary.LantencyP999.Milliseconds())),
+	})
+	datums = append(datums, &cloudwatch.MetricDatum{
+		MetricName: aws.String("add-on-stresser-remote-reads-latency-p9999"),
+		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
+		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsSummary.LantencyP9999.Milliseconds())),
+	})
+	return cw.PutData(ts.cfg.Logger, ts.cfg.CWAPI, ts.cfg.EKSConfig.CWNamespace, 20, datums...)
 }
