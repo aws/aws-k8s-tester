@@ -72,6 +72,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_S3_BUCKET_CREATE_KEEP                       | read-only "false" | *eksconfig.Config.S3BucketCreateKeep                     | bool          |
 | AWS_K8S_TESTER_EKS_S3_BUCKET_NAME                              | read-only "false" | *eksconfig.Config.S3BucketName                           | string        |
 | AWS_K8S_TESTER_EKS_S3_BUCKET_LIFECYCLE_EXPIRATION_DAYS         | read-only "false" | *eksconfig.Config.S3BucketLifecycleExpirationDays        | int64         |
+| AWS_K8S_TESTER_EKS_CW_NAMESPACE                                | read-only "false" | *eksconfig.Config.CWNamespace                            | string        |
 | AWS_K8S_TESTER_EKS_REMOTE_ACCESS_KEY_CREATE                    | read-only "false" | *eksconfig.Config.RemoteAccessKeyCreate                  | bool          |
 | AWS_K8S_TESTER_EKS_REMOTE_ACCESS_KEY_NAME                      | read-only "false" | *eksconfig.Config.RemoteAccessKeyName                    | string        |
 | AWS_K8S_TESTER_EKS_REMOTE_ACCESS_PRIVATE_KEY_PATH              | read-only "false" | *eksconfig.Config.RemoteAccessPrivateKeyPath             | string        |
