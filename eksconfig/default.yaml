@@ -23,7 +23,7 @@ log-level: info
 log-outputs:
 - stderr
 - /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.log
-name: eks-2020062217-hellos4mzaaw
+name: eks-2020062218-impressiveob
 on-failure-delete: true
 on-failure-delete-wait-seconds: 120
 parameters:
@@ -41,7 +41,7 @@ parameters:
   role-cfn-stack-yaml-file-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.role.cfn.yaml
   role-create: true
   role-managed-policy-arns: null
-  role-name: eks-2020062217-hellos4mzaaw-role
+  role-name: eks-2020062218-impressiveob-role
   role-service-principals: null
   signing-name: eks
   tags: null
@@ -55,8 +55,8 @@ partition: aws
 region: us-west-2
 remote-access-commands-output-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.ssh.sh
 remote-access-key-create: true
-remote-access-key-name: eks-2020062217-hellos4mzaaw-remote-access-key
-remote-access-private-key-path: /tmp/roadtriput061dc.insecure.key
+remote-access-key-name: eks-2020062218-impressiveob-remote-access-key
+remote-access-private-key-path: /tmp/embarkfu9n5zp20.insecure.key
 s3-bucket-create: false
 s3-bucket-create-keep: false
 s3-bucket-lifecycle-expiration-days: 0
@@ -73,7 +73,7 @@ status:
   cluster-cfn-stack-id: ""
   cluster-cfn-stack-yaml-file-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.cluster.cfn.yaml
   cluster-control-plane-security-group-id: ""
-  cluster-metrics-raw-output-dir: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/eks-2020062217-hellos4mzaaw-metrics
+  cluster-metrics-raw-output-dir: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/eks-2020062218-impressiveob-metrics
   cluster-oidc-issuer-arn: ""
   cluster-oidc-issuer-ca-thumbprint: ""
   cluster-oidc-issuer-host-path: ""

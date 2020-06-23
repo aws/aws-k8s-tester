@@ -2,7 +2,6 @@ package eksconfig
 
 import (
 	"errors"
-	"fmt"
 	"path"
 	"strings"
 	"time"
@@ -129,7 +128,7 @@ func (cfg *Config) validateAddOnStresserLocal() error {
 		cfg.AddOnStresserLocal.RequestsWritesSummaryTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-local-requests-writes-summary.txt"
 	}
 	if cfg.AddOnStresserLocal.RequestsWritesSummaryS3Dir == "" {
-		cfg.AddOnStresserLocal.RequestsWritesSummaryS3Dir = path.Join("add-on-stresser-local", fmt.Sprintf("writes-summary-%s", cfg.Parameters.Version))
+		cfg.AddOnStresserLocal.RequestsWritesSummaryS3Dir = path.Join("add-on-stresser-local", "writes-summary", cfg.Parameters.Version)
 	}
 	if cfg.AddOnStresserLocal.RequestsWritesSummaryCompareJSONPath == "" {
 		cfg.AddOnStresserLocal.RequestsWritesSummaryCompareJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-local-requests-writes-summary-compare.json"
@@ -148,7 +147,7 @@ func (cfg *Config) validateAddOnStresserLocal() error {
 		cfg.AddOnStresserLocal.RequestsReadsSummaryTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-local-requests-reads-summary.txt"
 	}
 	if cfg.AddOnStresserLocal.RequestsReadsSummaryS3Dir == "" {
-		cfg.AddOnStresserLocal.RequestsReadsSummaryS3Dir = path.Join("add-on-stresser-local", fmt.Sprintf("reads-summary-%s", cfg.Parameters.Version))
+		cfg.AddOnStresserLocal.RequestsReadsSummaryS3Dir = path.Join("add-on-stresser-local", "reads-summary", cfg.Parameters.Version)
 	}
 	if cfg.AddOnStresserLocal.RequestsReadsSummaryCompareJSONPath == "" {
 		cfg.AddOnStresserLocal.RequestsReadsSummaryCompareJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-local-requests-reads-summary-compare.json"

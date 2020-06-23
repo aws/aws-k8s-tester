@@ -119,7 +119,7 @@ func (cfg *Config) validateAddOnConfigmapsLocal() error {
 		cfg.AddOnConfigmapsLocal.RequestsWritesSummaryTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-configmaps-local-requests-writes-summary.txt"
 	}
 	if cfg.AddOnConfigmapsLocal.RequestsWritesSummaryS3Dir == "" {
-		cfg.AddOnConfigmapsLocal.RequestsWritesSummaryS3Dir = path.Join("add-on-configmaps-local", fmt.Sprintf("writes-summary-%s", cfg.Parameters.Version))
+		cfg.AddOnConfigmapsLocal.RequestsWritesSummaryS3Dir = path.Join("add-on-configmaps-local", "writes-summary", cfg.Parameters.Version)
 	}
 	if cfg.AddOnConfigmapsLocal.RequestsWritesSummaryCompareJSONPath == "" {
 		cfg.AddOnConfigmapsLocal.RequestsWritesSummaryCompareJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-configmaps-local-requests-writes-summary-compare.json"

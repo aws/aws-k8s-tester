@@ -2,7 +2,6 @@ package eksconfig
 
 import (
 	"errors"
-	"fmt"
 	"path"
 	"strings"
 
@@ -150,7 +149,7 @@ func (cfg *Config) validateAddOnSecretsLocal() error {
 		cfg.AddOnSecretsLocal.RequestsWritesSummaryTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-writes-summary.txt"
 	}
 	if cfg.AddOnSecretsLocal.RequestsWritesSummaryS3Dir == "" {
-		cfg.AddOnSecretsLocal.RequestsWritesSummaryS3Dir = path.Join("add-on-secrets-local", fmt.Sprintf("writes-summary-%s", cfg.Parameters.Version))
+		cfg.AddOnSecretsLocal.RequestsWritesSummaryS3Dir = path.Join("add-on-secrets-local", "writes-summary", cfg.Parameters.Version)
 	}
 	if cfg.AddOnSecretsLocal.RequestsWritesSummaryCompareJSONPath == "" {
 		cfg.AddOnSecretsLocal.RequestsWritesSummaryCompareJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-writes-summary-compare.json"
@@ -169,7 +168,7 @@ func (cfg *Config) validateAddOnSecretsLocal() error {
 		cfg.AddOnSecretsLocal.RequestsReadsSummaryTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-reads-summary.txt"
 	}
 	if cfg.AddOnSecretsLocal.RequestsReadsSummaryS3Dir == "" {
-		cfg.AddOnSecretsLocal.RequestsReadsSummaryS3Dir = path.Join("add-on-secrets-local", fmt.Sprintf("reads-summary-%s", cfg.Parameters.Version))
+		cfg.AddOnSecretsLocal.RequestsReadsSummaryS3Dir = path.Join("add-on-secrets-local", "reads-summary", cfg.Parameters.Version)
 	}
 	if cfg.AddOnSecretsLocal.RequestsReadsSummaryCompareJSONPath == "" {
 		cfg.AddOnSecretsLocal.RequestsReadsSummaryCompareJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-reads-summary-compare.json"

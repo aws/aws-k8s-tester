@@ -122,7 +122,7 @@ func (cfg *Config) validateAddOnCSRsLocal() error {
 		cfg.AddOnCSRsLocal.RequestsWritesSummaryTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-csrs-local-requests-writes-summary.txt"
 	}
 	if cfg.AddOnCSRsLocal.RequestsWritesSummaryS3Dir == "" {
-		cfg.AddOnCSRsLocal.RequestsWritesSummaryS3Dir = path.Join("add-on-csrs-local", fmt.Sprintf("writes-summary-%s", cfg.Parameters.Version))
+		cfg.AddOnCSRsLocal.RequestsWritesSummaryS3Dir = path.Join("add-on-csrs-local", "writes-summary", cfg.Parameters.Version)
 	}
 	if cfg.AddOnCSRsLocal.RequestsWritesSummaryCompareJSONPath == "" {
 		cfg.AddOnCSRsLocal.RequestsWritesSummaryCompareJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-csrs-local-requests-writes-summary-compare.json"

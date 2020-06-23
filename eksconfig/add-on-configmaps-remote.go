@@ -153,7 +153,7 @@ func (cfg *Config) validateAddOnConfigmapsRemote() error {
 		cfg.AddOnConfigmapsRemote.RequestsWritesSummaryTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-configmaps-remote-requests-writes-summary.txt"
 	}
 	if cfg.AddOnConfigmapsRemote.RequestsWritesSummaryS3Dir == "" {
-		cfg.AddOnConfigmapsRemote.RequestsWritesSummaryS3Dir = path.Join("add-on-configmaps-remote", fmt.Sprintf("writes-summary-%s", cfg.Parameters.Version))
+		cfg.AddOnConfigmapsRemote.RequestsWritesSummaryS3Dir = path.Join("add-on-configmaps-remote", "writes-summary", cfg.Parameters.Version)
 	}
 	if cfg.AddOnConfigmapsRemote.RequestsWritesSummaryCompareJSONPath == "" {
 		cfg.AddOnConfigmapsRemote.RequestsWritesSummaryCompareJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-configmaps-remote-requests-writes-summary-compare.json"

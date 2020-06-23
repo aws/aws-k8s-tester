@@ -158,7 +158,7 @@ func (cfg *Config) validateAddOnCSRsRemote() error {
 		cfg.AddOnCSRsRemote.RequestsWritesSummaryTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-csrs-remote-requests-writes-summary.txt"
 	}
 	if cfg.AddOnCSRsRemote.RequestsWritesSummaryS3Dir == "" {
-		cfg.AddOnCSRsRemote.RequestsWritesSummaryS3Dir = path.Join("add-on-csrs-remote", fmt.Sprintf("writes-summary-%s", cfg.Parameters.Version))
+		cfg.AddOnCSRsRemote.RequestsWritesSummaryS3Dir = path.Join("add-on-csrs-remote", "writes-summary", cfg.Parameters.Version)
 	}
 	if cfg.AddOnCSRsRemote.RequestsWritesSummaryCompareJSONPath == "" {
 		cfg.AddOnCSRsRemote.RequestsWritesSummaryCompareJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-csrs-remote-requests-writes-summary-compare.json"

@@ -2,7 +2,6 @@ package eksconfig
 
 import (
 	"errors"
-	"fmt"
 	"path"
 	"strings"
 
@@ -187,7 +186,7 @@ func (cfg *Config) validateAddOnSecretsRemote() error {
 		cfg.AddOnSecretsRemote.RequestsWritesSummaryTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-remote-requests-writes-summary.txt"
 	}
 	if cfg.AddOnSecretsRemote.RequestsWritesSummaryS3Dir == "" {
-		cfg.AddOnSecretsRemote.RequestsWritesSummaryS3Dir = path.Join("add-on-secrets-remote", fmt.Sprintf("writes-summary-%s", cfg.Parameters.Version))
+		cfg.AddOnSecretsRemote.RequestsWritesSummaryS3Dir = path.Join("add-on-secrets-remote", "writes-summary", cfg.Parameters.Version)
 	}
 	if cfg.AddOnSecretsRemote.RequestsWritesSummaryCompareJSONPath == "" {
 		cfg.AddOnSecretsRemote.RequestsWritesSummaryCompareJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-remote-requests-writes-summary-compare.json"
@@ -206,7 +205,7 @@ func (cfg *Config) validateAddOnSecretsRemote() error {
 		cfg.AddOnSecretsRemote.RequestsReadsSummaryTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-remote-requests-reads-summary.txt"
 	}
 	if cfg.AddOnSecretsRemote.RequestsReadsSummaryS3Dir == "" {
-		cfg.AddOnSecretsRemote.RequestsReadsSummaryS3Dir = path.Join("add-on-secrets-remote", fmt.Sprintf("reads-summary-%s", cfg.Parameters.Version))
+		cfg.AddOnSecretsRemote.RequestsReadsSummaryS3Dir = path.Join("add-on-secrets-remote", "reads-summary", cfg.Parameters.Version)
 	}
 	if cfg.AddOnSecretsRemote.RequestsReadsSummaryCompareJSONPath == "" {
 		cfg.AddOnSecretsRemote.RequestsReadsSummaryCompareJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-remote-requests-reads-summary-compare.json"

@@ -2,7 +2,6 @@ package eksconfig
 
 import (
 	"errors"
-	"fmt"
 	"path"
 	"strings"
 	"time"
@@ -167,7 +166,7 @@ func (cfg *Config) validateAddOnStresserRemote() error {
 		cfg.AddOnStresserRemote.RequestsWritesSummaryTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-writes-summary.txt"
 	}
 	if cfg.AddOnStresserRemote.RequestsWritesSummaryS3Dir == "" {
-		cfg.AddOnStresserRemote.RequestsWritesSummaryS3Dir = path.Join("add-on-stresser-remote", fmt.Sprintf("writes-summary-%s", cfg.Parameters.Version))
+		cfg.AddOnStresserRemote.RequestsWritesSummaryS3Dir = path.Join("add-on-stresser-remote", "writes-summary", cfg.Parameters.Version)
 	}
 	if cfg.AddOnStresserRemote.RequestsWritesSummaryCompareJSONPath == "" {
 		cfg.AddOnStresserRemote.RequestsWritesSummaryCompareJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-writes-summary-compare.json"
@@ -186,7 +185,7 @@ func (cfg *Config) validateAddOnStresserRemote() error {
 		cfg.AddOnStresserRemote.RequestsReadsSummaryTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-reads-summary.txt"
 	}
 	if cfg.AddOnStresserRemote.RequestsReadsSummaryS3Dir == "" {
-		cfg.AddOnStresserRemote.RequestsReadsSummaryS3Dir = path.Join("add-on-stresser-remote", fmt.Sprintf("reads-summary-%s", cfg.Parameters.Version))
+		cfg.AddOnStresserRemote.RequestsReadsSummaryS3Dir = path.Join("add-on-stresser-remote", "reads-summary", cfg.Parameters.Version)
 	}
 	if cfg.AddOnStresserRemote.RequestsReadsSummaryCompareJSONPath == "" {
 		cfg.AddOnStresserRemote.RequestsReadsSummaryCompareJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-reads-summary-compare.json"
