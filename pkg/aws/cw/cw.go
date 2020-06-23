@@ -80,7 +80,12 @@ func PutData(lg *zap.Logger, cwAPI cloudwatchiface.CloudWatchAPI, namespace stri
 				return errors.New("failed PutMetricDataRequest")
 			}
 			req.Handlers.Build.PushBack(newCompressPayloadFunc(lg))
-			lg.Info("sent batch", zap.Int("current-batch", len(batch)))
+			err = req.Send()
+			if err == nil {
+				lg.Info("sent batch", zap.Int("current-batch", len(batch)))
+			} else {
+				lg.Warn("failed to send batch", zap.Error(err))
+			}
 
 			time.Sleep(500 * time.Millisecond)
 		}
@@ -96,8 +101,13 @@ func PutData(lg *zap.Logger, cwAPI cloudwatchiface.CloudWatchAPI, namespace stri
 		return errors.New("failed PutMetricDataRequest")
 	}
 	req.Handlers.Build.PushBack(newCompressPayloadFunc(lg))
-	lg.Info("sent last batch", zap.Int("last-batch", len(batch)))
-	return nil
+	err = req.Send()
+	if err == nil {
+		lg.Info("sent batch", zap.Int("last-batch", len(batch)))
+	} else {
+		lg.Warn("failed to send batch", zap.Error(err))
+	}
+	return err
 }
 
 func newCompressPayloadFunc(lg *zap.Logger) func(r *request.Request) {
