@@ -1196,7 +1196,7 @@ func (ts *tester) publishResults() (err error) {
 	tv := aws.Time(time.Now().UTC())
 	datums := make([]*cloudwatch.MetricDatum, 0)
 	for _, item := range ts.cfg.EKSConfig.AddOnClusterLoaderLocal.PodStartupLatency.DataItems {
-		name := "add-on-cluster-loader-local-pod-startup-latency"
+		name := "add-on-cluster-loader-remote-pod-startup-latency"
 		if mv, ok := item.Labels["Metric"]; ok {
 			name += "-" + mv
 		}
