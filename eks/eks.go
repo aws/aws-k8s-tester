@@ -632,12 +632,14 @@ func (ts *Tester) createTesters() (err error) {
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
+			CWAPI:     ts.cwAPI,
 		}),
 		cluster_loader_remote.New(cluster_loader_remote.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
+			CWAPI:     ts.cwAPI,
 			ECRAPI:    ts.ecrAPI,
 		}),
 		hollow_nodes_local.New(hollow_nodes_local.Config{

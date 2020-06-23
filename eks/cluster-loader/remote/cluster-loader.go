@@ -16,12 +16,15 @@ import (
 	cluster_loader "github.com/aws/aws-k8s-tester/eks/cluster-loader"
 	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
 	"github.com/aws/aws-k8s-tester/eksconfig"
+	"github.com/aws/aws-k8s-tester/pkg/aws/cw"
 	aws_ecr "github.com/aws/aws-k8s-tester/pkg/aws/ecr"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-k8s-tester/ssh"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/cloudwatch"
+	"github.com/aws/aws-sdk-go/service/cloudwatch/cloudwatchiface"
 	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
 	"go.uber.org/zap"
 	appsv1 "k8s.io/api/apps/v1"
@@ -38,6 +41,7 @@ type Config struct {
 	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
+	CWAPI     cloudwatchiface.CloudWatchAPI
 	ECRAPI    ecriface.ECRAPI
 }
 
@@ -1117,6 +1121,10 @@ func (ts *tester) checkClusterLoader() (err error) {
 	}
 	ts.cfg.EKSConfig.Sync()
 
+	if err = ts.publishResults(); err != nil {
+		return err
+	}
+
 	waitDur = 10 * time.Minute
 	retryStart = time.Now()
 	for time.Now().Sub(retryStart) < waitDur {
@@ -1139,4 +1147,78 @@ func (ts *tester) checkClusterLoader() (err error) {
 	}
 
 	return ts.cfg.EKSConfig.Sync()
+}
+
+/*
+e.g.
+
+  pod-startup-latency:
+    dataItems:
+    - data:
+        Perc50: 0
+        Perc90: 0
+        Perc99: 250
+      labels:
+        Metric: create_to_schedule
+      unit: ms
+    - data:
+        Perc50: 1000
+        Perc90: 1062.5
+        Perc99: 2062.5
+      labels:
+        Metric: schedule_to_run
+      unit: ms
+    - data:
+        Perc50: 1200.219827375
+        Perc90: 1741.2740193125
+        Perc99: 1992.869426375
+      labels:
+        Metric: run_to_watch
+      unit: ms
+    - data:
+        Perc50: 2289.84256025
+        Perc90: 2848.8128514375
+        Perc99: 3143.05340125
+      labels:
+        Metric: schedule_to_watch
+      unit: ms
+    - data:
+        Perc50: 2297.02802625
+        Perc90: 2861.429472625
+        Perc99: 3156.2773068125
+      labels:
+        Metric: pod_startup
+      unit: ms
+    version: "1.0"
+*/
+
+func (ts *tester) publishResults() (err error) {
+	tv := aws.Time(time.Now().UTC())
+	datums := make([]*cloudwatch.MetricDatum, 0)
+	for _, item := range ts.cfg.EKSConfig.AddOnClusterLoaderLocal.PodStartupLatency.DataItems {
+		name := "add-on-cluster-loader-local-pod-startup-latency"
+		if mv, ok := item.Labels["Metric"]; ok {
+			name += "-" + mv
+		}
+		for k, fv := range item.Data {
+			key := name + "-" + k
+			ts.cfg.Logger.Info("adding", zap.String("key", key), zap.Float64("value", fv))
+			datums = append(datums, &cloudwatch.MetricDatum{
+				Timestamp:  tv,
+				MetricName: aws.String(key),
+				Unit:       toUnit(item.Unit),
+				Value:      aws.Float64(fv),
+			})
+		}
+	}
+	return cw.PutData(ts.cfg.Logger, ts.cfg.CWAPI, ts.cfg.EKSConfig.CWNamespace, 20, datums...)
+}
+
+func toUnit(k string) *string {
+	switch k {
+	case "ms":
+		return aws.String(cloudwatch.StandardUnitMilliseconds)
+	default:
+		return nil
+	}
 }
