@@ -926,21 +926,39 @@ func (ts *tester) AggregateResults() (err error) {
 		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 		return err
 	}
-	if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3BucketName, path.Join(ts.cfg.EKSConfig.Name, "add-on-csrs-remote", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesJSONPath)), ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesJSONPath); err != nil {
+	if err = aws_s3.Upload(
+		ts.cfg.Logger,
+		ts.cfg.S3API,
+		ts.cfg.EKSConfig.S3BucketName,
+		path.Join(ts.cfg.EKSConfig.Name, "add-on-csrs-remote", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesJSONPath)),
+		ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesJSONPath,
+	); err != nil {
 		return err
 	}
 	if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryJSONPath, []byte(writesSummary.JSON()), 0600); err != nil {
 		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 		return err
 	}
-	if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3BucketName, path.Join(ts.cfg.EKSConfig.Name, "add-on-csrs-remote", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryJSONPath)), ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryJSONPath); err != nil {
+	if err = aws_s3.Upload(
+		ts.cfg.Logger,
+		ts.cfg.S3API,
+		ts.cfg.EKSConfig.S3BucketName,
+		path.Join(ts.cfg.EKSConfig.Name, "add-on-csrs-remote", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryJSONPath)),
+		ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryJSONPath,
+	); err != nil {
 		return err
 	}
 	if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryTablePath, []byte(writesSummary.Table()), 0600); err != nil {
 		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 		return err
 	}
-	if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3BucketName, path.Join(ts.cfg.EKSConfig.Name, "add-on-csrs-remote", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryTablePath)), ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryTablePath); err != nil {
+	if err = aws_s3.Upload(
+		ts.cfg.Logger,
+		ts.cfg.S3API,
+		ts.cfg.EKSConfig.S3BucketName,
+		path.Join(ts.cfg.EKSConfig.Name, "add-on-csrs-remote", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryTablePath)),
+		ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryTablePath,
+	); err != nil {
 		return err
 	}
 	fmt.Printf("\n\nRequestsWritesSummary:\n%s\n", writesSummary.Table())
@@ -1003,14 +1021,26 @@ func (ts *tester) compareResults() (err error) {
 			ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 			return err
 		}
-		if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3BucketName, path.Join(ts.cfg.EKSConfig.Name, "add-on-stresser-local", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryCompareJSONPath)), ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryCompareJSONPath); err != nil {
+		if err = aws_s3.Upload(
+			ts.cfg.Logger,
+			ts.cfg.S3API,
+			ts.cfg.EKSConfig.S3BucketName,
+			path.Join(ts.cfg.EKSConfig.Name, "add-on-stresser-local", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryCompareJSONPath)),
+			ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryCompareJSONPath,
+		); err != nil {
 			return err
 		}
 		if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryCompareTablePath, []byte(ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryCompare.Table()), 0600); err != nil {
 			ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 			return err
 		}
-		if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3BucketName, path.Join(ts.cfg.EKSConfig.Name, "add-on-stresser-local", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryCompareTablePath)), ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryCompareTablePath); err != nil {
+		if err = aws_s3.Upload(
+			ts.cfg.Logger,
+			ts.cfg.S3API,
+			ts.cfg.EKSConfig.S3BucketName,
+			path.Join(ts.cfg.EKSConfig.Name, "add-on-stresser-local", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryCompareTablePath)),
+			ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryCompareTablePath,
+		); err != nil {
 			return err
 		}
 		fmt.Printf("\n\nRequestsWritesSummaryCompare:\n%s\n", ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryCompare.Table())

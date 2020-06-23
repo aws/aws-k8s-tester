@@ -280,14 +280,26 @@ func (ts *tester) compareResults() (err error) {
 			ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 			return err
 		}
-		if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3BucketName, path.Join(ts.cfg.EKSConfig.Name, "add-on-stresser-local", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummaryCompareJSONPath)), ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummaryCompareJSONPath); err != nil {
+		if err = aws_s3.Upload(
+			ts.cfg.Logger,
+			ts.cfg.S3API,
+			ts.cfg.EKSConfig.S3BucketName,
+			path.Join(ts.cfg.EKSConfig.Name, "add-on-stresser-local", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummaryCompareJSONPath)),
+			ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummaryCompareJSONPath,
+		); err != nil {
 			return err
 		}
 		if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummaryCompareTablePath, []byte(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummaryCompare.Table()), 0600); err != nil {
 			ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 			return err
 		}
-		if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3BucketName, path.Join(ts.cfg.EKSConfig.Name, "add-on-stresser-local", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummaryCompareTablePath)), ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummaryCompareTablePath); err != nil {
+		if err = aws_s3.Upload(
+			ts.cfg.Logger,
+			ts.cfg.S3API,
+			ts.cfg.EKSConfig.S3BucketName,
+			path.Join(ts.cfg.EKSConfig.Name, "add-on-stresser-local", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummaryCompareTablePath)),
+			ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummaryCompareTablePath,
+		); err != nil {
 			return err
 		}
 		fmt.Printf("\n\nRequestsWritesSummaryCompare:\n%s\n", ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummaryCompare.Table())
@@ -346,14 +358,26 @@ func (ts *tester) compareResults() (err error) {
 			ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 			return err
 		}
-		if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3BucketName, path.Join(ts.cfg.EKSConfig.Name, "add-on-stresser-local", "reads", filepath.Base(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummaryCompareJSONPath)), ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummaryCompareJSONPath); err != nil {
+		if err = aws_s3.Upload(
+			ts.cfg.Logger,
+			ts.cfg.S3API,
+			ts.cfg.EKSConfig.S3BucketName,
+			path.Join(ts.cfg.EKSConfig.Name, "add-on-stresser-local", "reads", filepath.Base(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummaryCompareJSONPath)),
+			ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummaryCompareJSONPath,
+		); err != nil {
 			return err
 		}
 		if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummaryCompareTablePath, []byte(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummaryCompare.Table()), 0600); err != nil {
 			ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 			return err
 		}
-		if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3BucketName, path.Join(ts.cfg.EKSConfig.Name, "add-on-stresser-local", "reads", filepath.Base(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummaryCompareTablePath)), ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummaryCompareTablePath); err != nil {
+		if err = aws_s3.Upload(
+			ts.cfg.Logger,
+			ts.cfg.S3API,
+			ts.cfg.EKSConfig.S3BucketName,
+			path.Join(ts.cfg.EKSConfig.Name, "add-on-stresser-local", "reads", filepath.Base(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummaryCompareTablePath)),
+			ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummaryCompareTablePath,
+		); err != nil {
 			return err
 		}
 		fmt.Printf("\n\nRequestsReadsSummaryCompare:\n%s\n", ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummaryCompare.Table())

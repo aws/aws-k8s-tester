@@ -240,14 +240,26 @@ func (ts *tester) compareResults() (err error) {
 			ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 			return err
 		}
-		if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3BucketName, path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-local", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummaryCompareJSONPath)), ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummaryCompareJSONPath); err != nil {
+		if err = aws_s3.Upload(
+			ts.cfg.Logger,
+			ts.cfg.S3API,
+			ts.cfg.EKSConfig.S3BucketName,
+			path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-local", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummaryCompareJSONPath)),
+			ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummaryCompareJSONPath,
+		); err != nil {
 			return err
 		}
 		if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummaryCompareTablePath, []byte(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummaryCompare.Table()), 0600); err != nil {
 			ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 			return err
 		}
-		if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3BucketName, path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-local", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummaryCompareTablePath)), ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummaryCompareTablePath); err != nil {
+		if err = aws_s3.Upload(
+			ts.cfg.Logger,
+			ts.cfg.S3API,
+			ts.cfg.EKSConfig.S3BucketName,
+			path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-local", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummaryCompareTablePath)),
+			ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummaryCompareTablePath,
+		); err != nil {
 			return err
 		}
 		fmt.Printf("\n\nRequestsWritesSummaryCompare:\n%s\n", ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummaryCompare.Table())
@@ -306,14 +318,26 @@ func (ts *tester) compareResults() (err error) {
 			ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 			return err
 		}
-		if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3BucketName, path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-local", "reads", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummaryCompareJSONPath)), ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummaryCompareJSONPath); err != nil {
+		if err = aws_s3.Upload(
+			ts.cfg.Logger,
+			ts.cfg.S3API,
+			ts.cfg.EKSConfig.S3BucketName,
+			path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-local", "reads", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummaryCompareJSONPath)),
+			ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummaryCompareJSONPath,
+		); err != nil {
 			return err
 		}
 		if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummaryCompareTablePath, []byte(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummaryCompare.Table()), 0600); err != nil {
 			ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 			return err
 		}
-		if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3BucketName, path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-local", "reads", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummaryCompareTablePath)), ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummaryCompareTablePath); err != nil {
+		if err = aws_s3.Upload(
+			ts.cfg.Logger,
+			ts.cfg.S3API,
+			ts.cfg.EKSConfig.S3BucketName,
+			path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-local", "reads", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummaryCompareTablePath)),
+			ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummaryCompareTablePath,
+		); err != nil {
 			return err
 		}
 		fmt.Printf("\n\nRequestsReadsSummaryCompare:\n%s\n", ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummaryCompare.Table())

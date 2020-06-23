@@ -247,7 +247,13 @@ func (ts *loader) CollectMetrics() (writesSummary metrics.RequestsSummary, reads
 			ts.cfg.Logger.Warn("failed to write latency results in JSON to disk", zap.String("path", ts.cfg.WritesJSONPath), zap.Error(err))
 			return metrics.RequestsSummary{}, metrics.RequestsSummary{}, err
 		}
-		if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.S3BucketName, path.Join(ts.cfg.S3DirName, "writes", filepath.Base(ts.cfg.WritesJSONPath)), ts.cfg.WritesJSONPath); err != nil {
+		if err = aws_s3.Upload(
+			ts.cfg.Logger,
+			ts.cfg.S3API,
+			ts.cfg.S3BucketName,
+			path.Join(ts.cfg.S3DirName, "writes", filepath.Base(ts.cfg.WritesJSONPath)),
+			ts.cfg.WritesJSONPath,
+		); err != nil {
 			return metrics.RequestsSummary{}, metrics.RequestsSummary{}, err
 		}
 
@@ -278,7 +284,13 @@ func (ts *loader) CollectMetrics() (writesSummary metrics.RequestsSummary, reads
 			ts.cfg.Logger.Warn("failed to write latency results in JSON to disk", zap.String("path", ts.cfg.ReadsJSONPath), zap.Error(err))
 			return metrics.RequestsSummary{}, metrics.RequestsSummary{}, err
 		}
-		if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.S3BucketName, path.Join(ts.cfg.S3DirName, "reads", filepath.Base(ts.cfg.ReadsJSONPath)), ts.cfg.ReadsJSONPath); err != nil {
+		if err = aws_s3.Upload(
+			ts.cfg.Logger,
+			ts.cfg.S3API,
+			ts.cfg.S3BucketName,
+			path.Join(ts.cfg.S3DirName, "reads", filepath.Base(ts.cfg.ReadsJSONPath)),
+			ts.cfg.ReadsJSONPath,
+		); err != nil {
 			return metrics.RequestsSummary{}, metrics.RequestsSummary{}, err
 		}
 
@@ -290,14 +302,26 @@ func (ts *loader) CollectMetrics() (writesSummary metrics.RequestsSummary, reads
 		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 		return metrics.RequestsSummary{}, metrics.RequestsSummary{}, err
 	}
-	if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.S3BucketName, path.Join(ts.cfg.S3DirName, "writes", filepath.Base(ts.cfg.WritesSummaryJSONPath)), ts.cfg.WritesSummaryJSONPath); err != nil {
+	if err = aws_s3.Upload(
+		ts.cfg.Logger,
+		ts.cfg.S3API,
+		ts.cfg.S3BucketName,
+		path.Join(ts.cfg.S3DirName, "writes", filepath.Base(ts.cfg.WritesSummaryJSONPath)),
+		ts.cfg.WritesSummaryJSONPath,
+	); err != nil {
 		return metrics.RequestsSummary{}, metrics.RequestsSummary{}, err
 	}
 	if err = ioutil.WriteFile(ts.cfg.WritesSummaryTablePath, []byte(writesSummary.Table()), 0600); err != nil {
 		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 		return metrics.RequestsSummary{}, metrics.RequestsSummary{}, err
 	}
-	if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.S3BucketName, path.Join(ts.cfg.S3DirName, "writes", filepath.Base(ts.cfg.WritesSummaryTablePath)), ts.cfg.WritesSummaryTablePath); err != nil {
+	if err = aws_s3.Upload(
+		ts.cfg.Logger,
+		ts.cfg.S3API,
+		ts.cfg.S3BucketName,
+		path.Join(ts.cfg.S3DirName, "writes", filepath.Base(ts.cfg.WritesSummaryTablePath)),
+		ts.cfg.WritesSummaryTablePath,
+	); err != nil {
 		return metrics.RequestsSummary{}, metrics.RequestsSummary{}, err
 	}
 	fmt.Printf("\n\nWritesSummaryTable:\n%s\n", writesSummary.Table())
@@ -306,14 +330,25 @@ func (ts *loader) CollectMetrics() (writesSummary metrics.RequestsSummary, reads
 		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 		return metrics.RequestsSummary{}, metrics.RequestsSummary{}, err
 	}
-	if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.S3BucketName, path.Join(ts.cfg.S3DirName, "reads", filepath.Base(ts.cfg.ReadsSummaryJSONPath)), ts.cfg.ReadsSummaryJSONPath); err != nil {
+	if err = aws_s3.Upload(
+		ts.cfg.Logger,
+		ts.cfg.S3API,
+		ts.cfg.S3BucketName,
+		path.Join(ts.cfg.S3DirName, "reads", filepath.Base(ts.cfg.ReadsSummaryJSONPath)),
+		ts.cfg.ReadsSummaryJSONPath,
+	); err != nil {
 		return metrics.RequestsSummary{}, metrics.RequestsSummary{}, err
 	}
 	if err = ioutil.WriteFile(ts.cfg.ReadsSummaryTablePath, []byte(readsSummary.Table()), 0600); err != nil {
 		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 		return metrics.RequestsSummary{}, metrics.RequestsSummary{}, err
 	}
-	if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.S3BucketName, path.Join(ts.cfg.S3DirName, "reads", filepath.Base(ts.cfg.ReadsSummaryTablePath)), ts.cfg.ReadsSummaryTablePath); err != nil {
+	if err = aws_s3.Upload(
+		ts.cfg.Logger,
+		ts.cfg.S3API,
+		ts.cfg.S3BucketName,
+		path.Join(ts.cfg.S3DirName, "reads", filepath.Base(ts.cfg.ReadsSummaryTablePath)), ts.cfg.ReadsSummaryTablePath,
+	); err != nil {
 		return metrics.RequestsSummary{}, metrics.RequestsSummary{}, err
 	}
 	fmt.Printf("\n\nReadsSummaryTable:\n%s\n", readsSummary.Table())

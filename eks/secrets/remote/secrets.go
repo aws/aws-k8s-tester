@@ -1067,21 +1067,39 @@ func (ts *tester) AggregateResults() (err error) {
 		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 		return err
 	}
-	if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3BucketName, path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-remote", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesJSONPath)), ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesJSONPath); err != nil {
+	if err = aws_s3.Upload(
+		ts.cfg.Logger,
+		ts.cfg.S3API,
+		ts.cfg.EKSConfig.S3BucketName,
+		path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-remote", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesJSONPath)),
+		ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesJSONPath,
+	); err != nil {
 		return err
 	}
 	if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryJSONPath, []byte(writesSummary.JSON()), 0600); err != nil {
 		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 		return err
 	}
-	if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3BucketName, path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-remote", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryJSONPath)), ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryJSONPath); err != nil {
+	if err = aws_s3.Upload(
+		ts.cfg.Logger,
+		ts.cfg.S3API,
+		ts.cfg.EKSConfig.S3BucketName,
+		path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-remote", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryJSONPath)),
+		ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryJSONPath,
+	); err != nil {
 		return err
 	}
 	if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryTablePath, []byte(writesSummary.Table()), 0600); err != nil {
 		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 		return err
 	}
-	if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3BucketName, path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-remote", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryTablePath)), ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryTablePath); err != nil {
+	if err = aws_s3.Upload(
+		ts.cfg.Logger,
+		ts.cfg.S3API,
+		ts.cfg.EKSConfig.S3BucketName,
+		path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-remote", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryTablePath)),
+		ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryTablePath,
+	); err != nil {
 		return err
 	}
 	fmt.Printf("\n\nRequestsWritesSummary:\n%s\n", writesSummary.Table())
@@ -1095,21 +1113,39 @@ func (ts *tester) AggregateResults() (err error) {
 		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 		return err
 	}
-	if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3BucketName, path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-remote", "reads", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsJSONPath)), ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsJSONPath); err != nil {
+	if err = aws_s3.Upload(
+		ts.cfg.Logger,
+		ts.cfg.S3API,
+		ts.cfg.EKSConfig.S3BucketName,
+		path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-remote", "reads", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsJSONPath)),
+		ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsJSONPath,
+	); err != nil {
 		return err
 	}
 	if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryJSONPath, []byte(readsSummary.JSON()), 0600); err != nil {
 		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 		return err
 	}
-	if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3BucketName, path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-remote", "reads", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryJSONPath)), ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryJSONPath); err != nil {
+	if err = aws_s3.Upload(
+		ts.cfg.Logger,
+		ts.cfg.S3API,
+		ts.cfg.EKSConfig.S3BucketName,
+		path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-remote", "reads", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryJSONPath)),
+		ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryJSONPath,
+	); err != nil {
 		return err
 	}
 	if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryTablePath, []byte(readsSummary.Table()), 0600); err != nil {
 		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 		return err
 	}
-	if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3BucketName, path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-remote", "reads", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryTablePath)), ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryTablePath); err != nil {
+	if err = aws_s3.Upload(
+		ts.cfg.Logger,
+		ts.cfg.S3API,
+		ts.cfg.EKSConfig.S3BucketName,
+		path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-remote", "reads", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryTablePath)),
+		ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryTablePath,
+	); err != nil {
 		return err
 	}
 	fmt.Printf("\n\nRequestsReadsSummary:\n%s\n", readsSummary.Table())
@@ -1172,14 +1208,26 @@ func (ts *tester) compareResults() (err error) {
 			ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 			return err
 		}
-		if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3BucketName, path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-local", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryCompareJSONPath)), ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryCompareJSONPath); err != nil {
+		if err = aws_s3.Upload(
+			ts.cfg.Logger,
+			ts.cfg.S3API,
+			ts.cfg.EKSConfig.S3BucketName,
+			path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-local", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryCompareJSONPath)),
+			ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryCompareJSONPath,
+		); err != nil {
 			return err
 		}
 		if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryCompareTablePath, []byte(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryCompare.Table()), 0600); err != nil {
 			ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 			return err
 		}
-		if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3BucketName, path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-local", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryCompareTablePath)), ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryCompareTablePath); err != nil {
+		if err = aws_s3.Upload(
+			ts.cfg.Logger,
+			ts.cfg.S3API,
+			ts.cfg.EKSConfig.S3BucketName,
+			path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-local", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryCompareTablePath)),
+			ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryCompareTablePath,
+		); err != nil {
 			return err
 		}
 		fmt.Printf("\n\nRequestsWritesSummaryCompare:\n%s\n", ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryCompare.Table())
@@ -1238,14 +1286,26 @@ func (ts *tester) compareResults() (err error) {
 			ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 			return err
 		}
-		if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3BucketName, path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-local", "reads", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryCompareJSONPath)), ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryCompareJSONPath); err != nil {
+		if err = aws_s3.Upload(
+			ts.cfg.Logger,
+			ts.cfg.S3API,
+			ts.cfg.EKSConfig.S3BucketName,
+			path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-local", "reads", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryCompareJSONPath)),
+			ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryCompareJSONPath,
+		); err != nil {
 			return err
 		}
 		if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryCompareTablePath, []byte(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryCompare.Table()), 0600); err != nil {
 			ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 			return err
 		}
-		if err = aws_s3.Upload(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3BucketName, path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-local", "reads", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryCompareTablePath)), ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryCompareTablePath); err != nil {
+		if err = aws_s3.Upload(
+			ts.cfg.Logger,
+			ts.cfg.S3API,
+			ts.cfg.EKSConfig.S3BucketName,
+			path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-local", "reads", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryCompareTablePath)),
+			ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryCompareTablePath,
+		); err != nil {
 			return err
 		}
 		fmt.Printf("\n\nRequestsReadsSummaryCompare:\n%s\n", ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryCompare.Table())
