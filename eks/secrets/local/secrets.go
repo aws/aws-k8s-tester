@@ -335,53 +335,64 @@ func (ts *tester) compareResults() (err error) {
 }
 
 func (ts *tester) publishResults() (err error) {
+	tv := aws.Time(time.Now().UTC())
 	datums := make([]*cloudwatch.MetricDatum, 0)
 	datums = append(datums, &cloudwatch.MetricDatum{
+		Timestamp:  tv,
 		MetricName: aws.String("add-on-secrets-local-writes-latency-p50"),
 		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
 		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummary.LantencyP50.Milliseconds())),
 	})
 	datums = append(datums, &cloudwatch.MetricDatum{
+		Timestamp:  tv,
 		MetricName: aws.String("add-on-secrets-local-writes-latency-p90"),
 		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
 		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummary.LantencyP90.Milliseconds())),
 	})
 	datums = append(datums, &cloudwatch.MetricDatum{
+		Timestamp:  tv,
 		MetricName: aws.String("add-on-secrets-local-writes-latency-p99"),
 		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
 		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummary.LantencyP99.Milliseconds())),
 	})
 	datums = append(datums, &cloudwatch.MetricDatum{
+		Timestamp:  tv,
 		MetricName: aws.String("add-on-secrets-local-writes-latency-p999"),
 		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
 		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummary.LantencyP999.Milliseconds())),
 	})
 	datums = append(datums, &cloudwatch.MetricDatum{
+		Timestamp:  tv,
 		MetricName: aws.String("add-on-secrets-local-writes-latency-p9999"),
 		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
 		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummary.LantencyP9999.Milliseconds())),
 	})
 	datums = append(datums, &cloudwatch.MetricDatum{
+		Timestamp:  tv,
 		MetricName: aws.String("add-on-secrets-local-reads-latency-p50"),
 		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
 		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummary.LantencyP50.Milliseconds())),
 	})
 	datums = append(datums, &cloudwatch.MetricDatum{
+		Timestamp:  tv,
 		MetricName: aws.String("add-on-secrets-local-reads-latency-p90"),
 		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
 		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummary.LantencyP90.Milliseconds())),
 	})
 	datums = append(datums, &cloudwatch.MetricDatum{
+		Timestamp:  tv,
 		MetricName: aws.String("add-on-secrets-local-reads-latency-p99"),
 		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
 		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummary.LantencyP99.Milliseconds())),
 	})
 	datums = append(datums, &cloudwatch.MetricDatum{
+		Timestamp:  tv,
 		MetricName: aws.String("add-on-secrets-local-reads-latency-p999"),
 		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
 		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummary.LantencyP999.Milliseconds())),
 	})
 	datums = append(datums, &cloudwatch.MetricDatum{
+		Timestamp:  tv,
 		MetricName: aws.String("add-on-secrets-local-reads-latency-p9999"),
 		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
 		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummary.LantencyP9999.Milliseconds())),

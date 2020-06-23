@@ -375,13 +375,16 @@ func (ts *tester) compareResults() (err error) {
 }
 
 func (ts *tester) publishResults() (err error) {
+	tv := aws.Time(time.Now().UTC())
 	datums := make([]*cloudwatch.MetricDatum, 0)
 	datums = append(datums, &cloudwatch.MetricDatum{
+		Timestamp:  tv,
 		MetricName: aws.String("add-on-stresser-local-writes-latency-p50"),
 		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
 		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummary.LantencyP50.Milliseconds())),
 	})
 	datums = append(datums, &cloudwatch.MetricDatum{
+		Timestamp:  tv,
 		MetricName: aws.String("add-on-stresser-local-writes-latency-p90"),
 		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
 		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummary.LantencyP90.Milliseconds())),
@@ -392,6 +395,7 @@ func (ts *tester) publishResults() (err error) {
 		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummary.LantencyP99.Milliseconds())),
 	})
 	datums = append(datums, &cloudwatch.MetricDatum{
+		Timestamp:  tv,
 		MetricName: aws.String("add-on-stresser-local-writes-latency-p999"),
 		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
 		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummary.LantencyP999.Milliseconds())),
@@ -402,26 +406,31 @@ func (ts *tester) publishResults() (err error) {
 		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummary.LantencyP9999.Milliseconds())),
 	})
 	datums = append(datums, &cloudwatch.MetricDatum{
+		Timestamp:  tv,
 		MetricName: aws.String("add-on-stresser-local-reads-latency-p50"),
 		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
 		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummary.LantencyP50.Milliseconds())),
 	})
 	datums = append(datums, &cloudwatch.MetricDatum{
+		Timestamp:  tv,
 		MetricName: aws.String("add-on-stresser-local-reads-latency-p90"),
 		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
 		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummary.LantencyP90.Milliseconds())),
 	})
 	datums = append(datums, &cloudwatch.MetricDatum{
+		Timestamp:  tv,
 		MetricName: aws.String("add-on-stresser-local-reads-latency-p99"),
 		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
 		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummary.LantencyP99.Milliseconds())),
 	})
 	datums = append(datums, &cloudwatch.MetricDatum{
+		Timestamp:  tv,
 		MetricName: aws.String("add-on-stresser-local-reads-latency-p999"),
 		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
 		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummary.LantencyP999.Milliseconds())),
 	})
 	datums = append(datums, &cloudwatch.MetricDatum{
+		Timestamp:  tv,
 		MetricName: aws.String("add-on-stresser-local-reads-latency-p9999"),
 		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
 		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummary.LantencyP9999.Milliseconds())),

@@ -1032,28 +1032,34 @@ func (ts *tester) compareResults() (err error) {
 }
 
 func (ts *tester) publishResults() (err error) {
+	tv := aws.Time(time.Now().UTC())
 	datums := make([]*cloudwatch.MetricDatum, 0)
 	datums = append(datums, &cloudwatch.MetricDatum{
+		Timestamp:  tv,
 		MetricName: aws.String("add-on-configmaps-remote-writes-latency-p50"),
 		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
 		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsWritesSummary.LantencyP50.Milliseconds())),
 	})
 	datums = append(datums, &cloudwatch.MetricDatum{
+		Timestamp:  tv,
 		MetricName: aws.String("add-on-configmaps-remote-writes-latency-p90"),
 		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
 		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsWritesSummary.LantencyP90.Milliseconds())),
 	})
 	datums = append(datums, &cloudwatch.MetricDatum{
+		Timestamp:  tv,
 		MetricName: aws.String("add-on-configmaps-remote-writes-latency-p99"),
 		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
 		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsWritesSummary.LantencyP99.Milliseconds())),
 	})
 	datums = append(datums, &cloudwatch.MetricDatum{
+		Timestamp:  tv,
 		MetricName: aws.String("add-on-configmaps-remote-writes-latency-p999"),
 		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
 		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsWritesSummary.LantencyP999.Milliseconds())),
 	})
 	datums = append(datums, &cloudwatch.MetricDatum{
+		Timestamp:  tv,
 		MetricName: aws.String("add-on-configmaps-remote-writes-latency-p9999"),
 		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
 		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsWritesSummary.LantencyP9999.Milliseconds())),
