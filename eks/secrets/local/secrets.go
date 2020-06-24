@@ -205,12 +205,12 @@ func (ts *tester) compareResults() (err error) {
 	ts.cfg.Logger.Info("comparing results", zap.String("timestamp", tss))
 
 	s3Objects := make([]*s3.Object, 0)
-	if ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummaryS3Dir != "" {
+	if ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesCompareS3Dir != "" {
 		s3Objects, err = aws_s3.ListInDescendingLastModified(
 			ts.cfg.Logger,
 			ts.cfg.S3API,
 			ts.cfg.EKSConfig.S3BucketName,
-			ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummaryS3Dir,
+			ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesCompareS3Dir,
 		)
 	}
 	if len(s3Objects) > 0 && err == nil {
@@ -236,12 +236,12 @@ func (ts *tester) compareResults() (err error) {
 			ts.cfg.Logger.Warn("failed to decode a JSON file", zap.Error(err))
 			return err
 		}
-		ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummaryCompare, err = metrics.CompareRequestsSummary(prev, ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummary)
+		ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesCompare, err = metrics.CompareRequestsSummary(prev, ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummary)
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to compare results", zap.Error(err))
 			return err
 		}
-		if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummaryCompareJSONPath, []byte(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummaryCompare.JSON()), 0600); err != nil {
+		if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesCompareJSONPath, []byte(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesCompare.JSON()), 0600); err != nil {
 			ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 			return err
 		}
@@ -249,12 +249,12 @@ func (ts *tester) compareResults() (err error) {
 			ts.cfg.Logger,
 			ts.cfg.S3API,
 			ts.cfg.EKSConfig.S3BucketName,
-			path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-local", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummaryCompareJSONPath)),
-			ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummaryCompareJSONPath,
+			path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-local", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesCompareJSONPath)),
+			ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesCompareJSONPath,
 		); err != nil {
 			return err
 		}
-		if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummaryCompareTablePath, []byte(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummaryCompare.Table()), 0600); err != nil {
+		if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesCompareTablePath, []byte(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesCompare.Table()), 0600); err != nil {
 			ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 			return err
 		}
@@ -262,12 +262,12 @@ func (ts *tester) compareResults() (err error) {
 			ts.cfg.Logger,
 			ts.cfg.S3API,
 			ts.cfg.EKSConfig.S3BucketName,
-			path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-local", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummaryCompareTablePath)),
-			ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummaryCompareTablePath,
+			path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-local", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesCompareTablePath)),
+			ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesCompareTablePath,
 		); err != nil {
 			return err
 		}
-		fmt.Printf("\n\nRequestsWritesSummaryCompare:\n%s\n", ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummaryCompare.Table())
+		fmt.Printf("\n\nRequestsWritesCompare:\n%s\n", ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesCompare.Table())
 	} else {
 		ts.cfg.Logger.Warn("previous writes summary not found; skipping comparison", zap.Error(err))
 	}
@@ -276,19 +276,19 @@ func (ts *tester) compareResults() (err error) {
 		ts.cfg.Logger,
 		ts.cfg.S3API,
 		ts.cfg.EKSConfig.S3BucketName,
-		path.Join(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummaryS3Dir, tss),
+		path.Join(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesCompareS3Dir, tss),
 		ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummaryJSONPath,
 	); err != nil {
 		return err
 	}
 
 	s3Objects = make([]*s3.Object, 0)
-	if ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummaryS3Dir != "" {
+	if ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsCompareS3Dir != "" {
 		s3Objects, err = aws_s3.ListInDescendingLastModified(
 			ts.cfg.Logger,
 			ts.cfg.S3API,
 			ts.cfg.EKSConfig.S3BucketName,
-			ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummaryS3Dir,
+			ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsCompareS3Dir,
 		)
 	}
 	if len(s3Objects) > 0 && err == nil {
@@ -314,12 +314,12 @@ func (ts *tester) compareResults() (err error) {
 			ts.cfg.Logger.Warn("failed to decode a JSON file", zap.Error(err))
 			return err
 		}
-		ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummaryCompare, err = metrics.CompareRequestsSummary(prev, ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummary)
+		ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsCompare, err = metrics.CompareRequestsSummary(prev, ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummary)
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to compare results", zap.Error(err))
 			return err
 		}
-		if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummaryCompareJSONPath, []byte(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummaryCompare.JSON()), 0600); err != nil {
+		if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsCompareJSONPath, []byte(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsCompare.JSON()), 0600); err != nil {
 			ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 			return err
 		}
@@ -327,12 +327,12 @@ func (ts *tester) compareResults() (err error) {
 			ts.cfg.Logger,
 			ts.cfg.S3API,
 			ts.cfg.EKSConfig.S3BucketName,
-			ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummaryCompareJSONS3Key,
-			ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummaryCompareJSONPath,
+			ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsCompareJSONS3Key,
+			ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsCompareJSONPath,
 		); err != nil {
 			return err
 		}
-		if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummaryCompareTablePath, []byte(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummaryCompare.Table()), 0600); err != nil {
+		if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsCompareTablePath, []byte(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsCompare.Table()), 0600); err != nil {
 			ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 			return err
 		}
@@ -340,12 +340,12 @@ func (ts *tester) compareResults() (err error) {
 			ts.cfg.Logger,
 			ts.cfg.S3API,
 			ts.cfg.EKSConfig.S3BucketName,
-			ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummaryCompareTableS3Key,
-			ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummaryCompareTablePath,
+			ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsCompareTableS3Key,
+			ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsCompareTablePath,
 		); err != nil {
 			return err
 		}
-		fmt.Printf("\n\nRequestsReadsSummaryCompare:\n%s\n", ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummaryCompare.Table())
+		fmt.Printf("\n\nRequestsReadsCompare:\n%s\n", ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsCompare.Table())
 	} else {
 		ts.cfg.Logger.Warn("previous writes summary not found; skipping comparison", zap.Error(err))
 	}
@@ -354,7 +354,7 @@ func (ts *tester) compareResults() (err error) {
 		ts.cfg.Logger,
 		ts.cfg.S3API,
 		ts.cfg.EKSConfig.S3BucketName,
-		path.Join(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummaryS3Dir, tss),
+		path.Join(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsCompareS3Dir, tss),
 		ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummaryJSONPath,
 	); err != nil {
 		return err

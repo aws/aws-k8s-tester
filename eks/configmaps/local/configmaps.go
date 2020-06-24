@@ -198,12 +198,12 @@ func (ts *tester) compareResults() (err error) {
 	ts.cfg.Logger.Info("comparing results", zap.String("timestamp", tss))
 
 	s3Objects := make([]*s3.Object, 0)
-	if ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesSummaryS3Dir != "" {
+	if ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesCompareS3Dir != "" {
 		s3Objects, err = aws_s3.ListInDescendingLastModified(
 			ts.cfg.Logger,
 			ts.cfg.S3API,
 			ts.cfg.EKSConfig.S3BucketName,
-			ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesSummaryS3Dir,
+			ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesCompareS3Dir,
 		)
 	}
 	if len(s3Objects) > 0 && err == nil {
@@ -229,12 +229,12 @@ func (ts *tester) compareResults() (err error) {
 			ts.cfg.Logger.Warn("failed to decode a JSON file", zap.Error(err))
 			return err
 		}
-		ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesSummaryCompare, err = metrics.CompareRequestsSummary(prev, ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesSummary)
+		ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesCompare, err = metrics.CompareRequestsSummary(prev, ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesSummary)
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to compare results", zap.Error(err))
 			return err
 		}
-		if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesSummaryCompareJSONPath, []byte(ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesSummaryCompare.JSON()), 0600); err != nil {
+		if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesCompareJSONPath, []byte(ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesCompare.JSON()), 0600); err != nil {
 			ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 			return err
 		}
@@ -242,12 +242,12 @@ func (ts *tester) compareResults() (err error) {
 			ts.cfg.Logger,
 			ts.cfg.S3API,
 			ts.cfg.EKSConfig.S3BucketName,
-			path.Join(ts.cfg.EKSConfig.Name, "add-on-configmaps-local", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesSummaryCompareJSONPath)),
-			ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesSummaryCompareJSONPath,
+			path.Join(ts.cfg.EKSConfig.Name, "add-on-configmaps-local", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesCompareJSONPath)),
+			ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesCompareJSONPath,
 		); err != nil {
 			return err
 		}
-		if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesSummaryCompareTablePath, []byte(ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesSummaryCompare.Table()), 0600); err != nil {
+		if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesCompareTablePath, []byte(ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesCompare.Table()), 0600); err != nil {
 			ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 			return err
 		}
@@ -255,12 +255,12 @@ func (ts *tester) compareResults() (err error) {
 			ts.cfg.Logger,
 			ts.cfg.S3API,
 			ts.cfg.EKSConfig.S3BucketName,
-			path.Join(ts.cfg.EKSConfig.Name, "add-on-configmaps-local", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesSummaryCompareTablePath)),
-			ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesSummaryCompareTablePath,
+			path.Join(ts.cfg.EKSConfig.Name, "add-on-configmaps-local", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesCompareTablePath)),
+			ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesCompareTablePath,
 		); err != nil {
 			return err
 		}
-		fmt.Printf("\n\nRequestsWritesSummaryCompare:\n%s\n", ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesSummaryCompare.Table())
+		fmt.Printf("\n\nRequestsWritesCompare:\n%s\n", ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesCompare.Table())
 	} else {
 		ts.cfg.Logger.Warn("previous writes summary not found; skipping comparison", zap.Error(err))
 	}
@@ -269,7 +269,7 @@ func (ts *tester) compareResults() (err error) {
 		ts.cfg.Logger,
 		ts.cfg.S3API,
 		ts.cfg.EKSConfig.S3BucketName,
-		path.Join(ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesSummaryS3Dir, tss),
+		path.Join(ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesCompareS3Dir, tss),
 		ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesSummaryJSONPath,
 	); err != nil {
 		return err

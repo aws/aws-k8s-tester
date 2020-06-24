@@ -1288,12 +1288,12 @@ func (ts *tester) compareResults() (err error) {
 	ts.cfg.Logger.Info("comparing results", zap.String("timestamp", tss))
 
 	s3Objects := make([]*s3.Object, 0)
-	if ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesSummaryS3Dir != "" {
+	if ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesCompareS3Dir != "" {
 		s3Objects, err = aws_s3.ListInDescendingLastModified(
 			ts.cfg.Logger,
 			ts.cfg.S3API,
 			ts.cfg.EKSConfig.S3BucketName,
-			ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesSummaryS3Dir,
+			ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesCompareS3Dir,
 		)
 	}
 	if len(s3Objects) > 0 && err == nil {
@@ -1319,12 +1319,12 @@ func (ts *tester) compareResults() (err error) {
 			ts.cfg.Logger.Warn("failed to decode a JSON file", zap.Error(err))
 			return err
 		}
-		ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesSummaryCompare, err = metrics.CompareRequestsSummary(prev, ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesSummary)
+		ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesCompare, err = metrics.CompareRequestsSummary(prev, ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesSummary)
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to compare results", zap.Error(err))
 			return err
 		}
-		if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesSummaryCompareJSONPath, []byte(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesSummaryCompare.JSON()), 0600); err != nil {
+		if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesCompareJSONPath, []byte(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesCompare.JSON()), 0600); err != nil {
 			ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 			return err
 		}
@@ -1332,12 +1332,12 @@ func (ts *tester) compareResults() (err error) {
 			ts.cfg.Logger,
 			ts.cfg.S3API,
 			ts.cfg.EKSConfig.S3BucketName,
-			ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesSummaryCompareJSONS3Key,
-			ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesSummaryCompareJSONPath,
+			ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesCompareJSONS3Key,
+			ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesCompareJSONPath,
 		); err != nil {
 			return err
 		}
-		if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesSummaryCompareTablePath, []byte(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesSummaryCompare.Table()), 0600); err != nil {
+		if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesCompareTablePath, []byte(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesCompare.Table()), 0600); err != nil {
 			ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 			return err
 		}
@@ -1345,12 +1345,12 @@ func (ts *tester) compareResults() (err error) {
 			ts.cfg.Logger,
 			ts.cfg.S3API,
 			ts.cfg.EKSConfig.S3BucketName,
-			ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesSummaryCompareTableS3Key,
-			ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesSummaryCompareTablePath,
+			ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesCompareTableS3Key,
+			ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesCompareTablePath,
 		); err != nil {
 			return err
 		}
-		fmt.Printf("\n\nRequestsWritesSummaryCompare:\n%s\n", ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesSummaryCompare.Table())
+		fmt.Printf("\n\nRequestsWritesCompare:\n%s\n", ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesCompare.Table())
 	} else {
 		ts.cfg.Logger.Warn("previous writes summary not found; skipping comparison", zap.Error(err))
 	}
@@ -1359,19 +1359,19 @@ func (ts *tester) compareResults() (err error) {
 		ts.cfg.Logger,
 		ts.cfg.S3API,
 		ts.cfg.EKSConfig.S3BucketName,
-		path.Join(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesSummaryS3Dir, tss),
+		path.Join(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesCompareS3Dir, tss),
 		ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesSummaryJSONPath,
 	); err != nil {
 		return err
 	}
 
 	s3Objects = make([]*s3.Object, 0)
-	if ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsSummaryS3Dir != "" {
+	if ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsCompareS3Dir != "" {
 		s3Objects, err = aws_s3.ListInDescendingLastModified(
 			ts.cfg.Logger,
 			ts.cfg.S3API,
 			ts.cfg.EKSConfig.S3BucketName,
-			ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsSummaryS3Dir,
+			ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsCompareS3Dir,
 		)
 	}
 	if len(s3Objects) > 0 && err == nil {
@@ -1397,12 +1397,12 @@ func (ts *tester) compareResults() (err error) {
 			ts.cfg.Logger.Warn("failed to decode a JSON file", zap.Error(err))
 			return err
 		}
-		ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsSummaryCompare, err = metrics.CompareRequestsSummary(prev, ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsSummary)
+		ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsCompare, err = metrics.CompareRequestsSummary(prev, ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsSummary)
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to compare results", zap.Error(err))
 			return err
 		}
-		if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsSummaryCompareJSONPath, []byte(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsSummaryCompare.JSON()), 0600); err != nil {
+		if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsCompareJSONPath, []byte(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsCompare.JSON()), 0600); err != nil {
 			ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 			return err
 		}
@@ -1410,12 +1410,12 @@ func (ts *tester) compareResults() (err error) {
 			ts.cfg.Logger,
 			ts.cfg.S3API,
 			ts.cfg.EKSConfig.S3BucketName,
-			ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsSummaryCompareJSONS3Key,
-			ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsSummaryCompareJSONPath,
+			ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsCompareJSONS3Key,
+			ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsCompareJSONPath,
 		); err != nil {
 			return err
 		}
-		if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsSummaryCompareTablePath, []byte(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsSummaryCompare.Table()), 0600); err != nil {
+		if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsCompareTablePath, []byte(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsCompare.Table()), 0600); err != nil {
 			ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 			return err
 		}
@@ -1423,12 +1423,12 @@ func (ts *tester) compareResults() (err error) {
 			ts.cfg.Logger,
 			ts.cfg.S3API,
 			ts.cfg.EKSConfig.S3BucketName,
-			ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsSummaryCompareTableS3Key,
-			ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsSummaryCompareTablePath,
+			ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsCompareTableS3Key,
+			ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsCompareTablePath,
 		); err != nil {
 			return err
 		}
-		fmt.Printf("\n\nRequestsReadsSummaryCompare:\n%s\n", ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsSummaryCompare.Table())
+		fmt.Printf("\n\nRequestsReadsCompare:\n%s\n", ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsCompare.Table())
 	} else {
 		ts.cfg.Logger.Warn("previous writes summary not found; skipping comparison", zap.Error(err))
 	}
@@ -1437,7 +1437,7 @@ func (ts *tester) compareResults() (err error) {
 		ts.cfg.Logger,
 		ts.cfg.S3API,
 		ts.cfg.EKSConfig.S3BucketName,
-		path.Join(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsSummaryS3Dir, tss),
+		path.Join(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsCompareS3Dir, tss),
 		ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsSummaryJSONPath,
 	); err != nil {
 		return err

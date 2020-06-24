@@ -59,19 +59,19 @@ type AddOnCSRsLocal struct {
 	// RequestsWritesSummaryTablePath is the file path to store writes requests summary in table format.
 	RequestsWritesSummaryTablePath  string `json:"requests-writes-summary-table-path" read-only:"true"`
 	RequestsWritesSummaryTableS3Key string `json:"requests-writes-summary-table-s3-path" read-only:"true"`
-	// RequestsWritesSummaryS3Dir is the S3 directory of previous/latest "RequestsWritesSummary".
+	// RequestsWritesCompareS3Dir is the S3 directory of previous/latest "RequestsWritesSummary".
 	// Specify the S3 key in the same bucket of "eksconfig.Config.S3BucketName".
 	// Use for regression tests. Specify the value not bound to the cluster directory.
 	// Different runs from different clusters reads and writes in this directory.
-	RequestsWritesSummaryS3Dir string `json:"requests-writes-summary-s3-dir"`
-	// RequestsWritesSummaryCompare is the comparision results.
-	RequestsWritesSummaryCompare metrics.RequestsSummaryCompare `json:"requests-writes-summary-compare" read-only:"true"`
-	// RequestsWritesSummaryCompareJSONPath is the file path to store writes requests compare summary in JSON format.
-	RequestsWritesSummaryCompareJSONPath  string `json:"requests-writes-summary-compare-json-path" read-only:"true"`
-	RequestsWritesSummaryCompareJSONS3Key string `json:"requests-writes-summary-compare-json-s3-key" read-only:"true"`
-	// RequestsWritesSummaryCompareTablePath is the file path to store writes requests compare summary in table format.
-	RequestsWritesSummaryCompareTablePath  string `json:"requests-writes-summary-compare-table-path" read-only:"true"`
-	RequestsWritesSummaryCompareTableS3Key string `json:"requests-writes-summary-compare-table-s3-path" read-only:"true"`
+	RequestsWritesCompareS3Dir string `json:"requests-writes-compare-s3-dir"`
+	// RequestsWritesCompare is the comparision results.
+	RequestsWritesCompare metrics.RequestsCompare `json:"requests-writes-compare" read-only:"true"`
+	// RequestsWritesCompareJSONPath is the file path to store writes requests compare summary in JSON format.
+	RequestsWritesCompareJSONPath  string `json:"requests-writes-compare-json-path" read-only:"true"`
+	RequestsWritesCompareJSONS3Key string `json:"requests-writes-compare-json-s3-key" read-only:"true"`
+	// RequestsWritesCompareTablePath is the file path to store writes requests compare summary in table format.
+	RequestsWritesCompareTablePath  string `json:"requests-writes-compare-table-path" read-only:"true"`
+	RequestsWritesCompareTableS3Key string `json:"requests-writes-compare-table-s3-path" read-only:"true"`
 }
 
 // EnvironmentVariablePrefixAddOnCSRsLocal is the environment variable prefix used for "eksconfig".
@@ -157,27 +157,27 @@ func (cfg *Config) validateAddOnCSRsLocal() error {
 			filepath.Base(cfg.AddOnCSRsLocal.RequestsWritesSummaryTablePath),
 		)
 	}
-	if cfg.AddOnCSRsLocal.RequestsWritesSummaryS3Dir == "" {
-		cfg.AddOnCSRsLocal.RequestsWritesSummaryS3Dir = path.Join("add-on-csrs-local", "writes-summary", cfg.Parameters.Version)
+	if cfg.AddOnCSRsLocal.RequestsWritesCompareS3Dir == "" {
+		cfg.AddOnCSRsLocal.RequestsWritesCompareS3Dir = path.Join("add-on-csrs-local", "writes-compare", cfg.Parameters.Version)
 	}
-	if cfg.AddOnCSRsLocal.RequestsWritesSummaryCompareJSONPath == "" {
-		cfg.AddOnCSRsLocal.RequestsWritesSummaryCompareJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-csrs-local-requests-writes-summary-compare.json"
+	if cfg.AddOnCSRsLocal.RequestsWritesCompareJSONPath == "" {
+		cfg.AddOnCSRsLocal.RequestsWritesCompareJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-csrs-local-requests-writes-compare.json"
 	}
-	if cfg.AddOnCSRsLocal.RequestsWritesSummaryCompareJSONS3Key == "" {
-		cfg.AddOnCSRsLocal.RequestsWritesSummaryCompareJSONS3Key = path.Join(
+	if cfg.AddOnCSRsLocal.RequestsWritesCompareJSONS3Key == "" {
+		cfg.AddOnCSRsLocal.RequestsWritesCompareJSONS3Key = path.Join(
 			cfg.AddOnCSRsLocal.S3Dir,
 			"writes-compare",
-			filepath.Base(cfg.AddOnCSRsLocal.RequestsWritesSummaryCompareJSONPath),
+			filepath.Base(cfg.AddOnCSRsLocal.RequestsWritesCompareJSONPath),
 		)
 	}
-	if cfg.AddOnCSRsLocal.RequestsWritesSummaryCompareTablePath == "" {
-		cfg.AddOnCSRsLocal.RequestsWritesSummaryCompareTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-csrs-local-requests-writes-summary-compare.txt"
+	if cfg.AddOnCSRsLocal.RequestsWritesCompareTablePath == "" {
+		cfg.AddOnCSRsLocal.RequestsWritesCompareTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-csrs-local-requests-writes-compare.txt"
 	}
-	if cfg.AddOnCSRsLocal.RequestsWritesSummaryCompareTableS3Key == "" {
-		cfg.AddOnCSRsLocal.RequestsWritesSummaryCompareTableS3Key = path.Join(
+	if cfg.AddOnCSRsLocal.RequestsWritesCompareTableS3Key == "" {
+		cfg.AddOnCSRsLocal.RequestsWritesCompareTableS3Key = path.Join(
 			cfg.AddOnCSRsLocal.S3Dir,
 			"writes-compare",
-			filepath.Base(cfg.AddOnCSRsLocal.RequestsWritesSummaryCompareTablePath),
+			filepath.Base(cfg.AddOnCSRsLocal.RequestsWritesCompareTablePath),
 		)
 	}
 

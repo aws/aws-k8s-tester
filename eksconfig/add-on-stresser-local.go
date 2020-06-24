@@ -53,19 +53,19 @@ type AddOnStresserLocal struct {
 	// RequestsWritesSummaryTablePath is the file path to store writes requests summary in table format.
 	RequestsWritesSummaryTablePath  string `json:"requests-writes-summary-table-path" read-only:"true"`
 	RequestsWritesSummaryTableS3Key string `json:"requests-writes-summary-table-s3-path" read-only:"true"`
-	// RequestsWritesSummaryS3Dir is the S3 directory of previous/latest "RequestsWritesSummary".
+	// RequestsWritesCompareS3Dir is the S3 directory of previous/latest "RequestsWritesSummary".
 	// Specify the S3 key in the same bucket of "eksconfig.Config.S3BucketName".
 	// Use for regression tests. Specify the value not bound to the cluster directory.
 	// Different runs from different clusters reads and writes in this directory.
-	RequestsWritesSummaryS3Dir string `json:"requests-writes-summary-s3-dir"`
-	// RequestsWritesSummaryCompare is the comparision results.
-	RequestsWritesSummaryCompare metrics.RequestsSummaryCompare `json:"requests-writes-summary-compare" read-only:"true"`
-	// RequestsWritesSummaryCompareJSONPath is the file path to store writes requests compare summary in JSON format.
-	RequestsWritesSummaryCompareJSONPath  string `json:"requests-writes-summary-compare-json-path" read-only:"true"`
-	RequestsWritesSummaryCompareJSONS3Key string `json:"requests-writes-summary-compare-json-s3-key" read-only:"true"`
-	// RequestsWritesSummaryCompareTablePath is the file path to store writes requests compare summary in table format.
-	RequestsWritesSummaryCompareTablePath  string `json:"requests-writes-summary-compare-table-path" read-only:"true"`
-	RequestsWritesSummaryCompareTableS3Key string `json:"requests-writes-summary-compare-table-s3-path" read-only:"true"`
+	RequestsWritesCompareS3Dir string `json:"requests-writes-compare-s3-dir"`
+	// RequestsWritesCompare is the comparision results.
+	RequestsWritesCompare metrics.RequestsCompare `json:"requests-writes-compare" read-only:"true"`
+	// RequestsWritesCompareJSONPath is the file path to store writes requests compare summary in JSON format.
+	RequestsWritesCompareJSONPath  string `json:"requests-writes-compare-json-path" read-only:"true"`
+	RequestsWritesCompareJSONS3Key string `json:"requests-writes-compare-json-s3-key" read-only:"true"`
+	// RequestsWritesCompareTablePath is the file path to store writes requests compare summary in table format.
+	RequestsWritesCompareTablePath  string `json:"requests-writes-compare-table-path" read-only:"true"`
+	RequestsWritesCompareTableS3Key string `json:"requests-writes-compare-table-s3-path" read-only:"true"`
 
 	// RequestsReadsRawJSONPath is the file path to store reads requests in JSON format.
 	RequestsReadsRawJSONPath  string `json:"requests-reads-raw-json-path" read-only:"true"`
@@ -78,19 +78,19 @@ type AddOnStresserLocal struct {
 	// RequestsReadsSummaryTablePath is the file path to store reads requests summary in table format.
 	RequestsReadsSummaryTablePath  string `json:"requests-reads-summary-table-path" read-only:"true"`
 	RequestsReadsSummaryTableS3Key string `json:"requests-reads-summary-table-s3-path" read-only:"true"`
-	// RequestsReadsSummaryS3Dir is the S3 directory of previous/latest "RequestsReadsSummary".
+	// RequestsReadsCompareS3Dir is the S3 directory of previous/latest "RequestsReadsSummary".
 	// Specify the S3 key in the same bucket of "eksconfig.Config.S3BucketName".
 	// Use for regression tests. Specify the value not bound to the cluster directory.
 	// Different runs from different clusters reads and writes in this directory.
-	RequestsReadsSummaryS3Dir string `json:"requests-reads-summary-s3-dir"`
-	// RequestsReadsSummaryCompare is the comparision results.
-	RequestsReadsSummaryCompare metrics.RequestsSummaryCompare `json:"requests-reads-summary-compare" read-only:"true"`
-	// RequestsReadsSummaryCompareJSONPath is the file path to store reads requests compare summary in JSON format.
-	RequestsReadsSummaryCompareJSONPath  string `json:"requests-reads-summary-compare-json-path" read-only:"true"`
-	RequestsReadsSummaryCompareJSONS3Key string `json:"requests-reads-summary-compare-json-s3-key" read-only:"true"`
-	// RequestsReadsSummaryCompareTablePath is the file path to store reads requests compare summary in table format.
-	RequestsReadsSummaryCompareTablePath  string `json:"requests-reads-summary-compare-table-path" read-only:"true"`
-	RequestsReadsSummaryCompareTableS3Key string `json:"requests-reads-summary-compare-table-s3-path" read-only:"true"`
+	RequestsReadsCompareS3Dir string `json:"requests-reads-compare-s3-dir"`
+	// RequestsReadsCompare is the comparision results.
+	RequestsReadsCompare metrics.RequestsCompare `json:"requests-reads-compare" read-only:"true"`
+	// RequestsReadsCompareJSONPath is the file path to store reads requests compare summary in JSON format.
+	RequestsReadsCompareJSONPath  string `json:"requests-reads-compare-json-path" read-only:"true"`
+	RequestsReadsCompareJSONS3Key string `json:"requests-reads-compare-json-s3-key" read-only:"true"`
+	// RequestsReadsCompareTablePath is the file path to store reads requests compare summary in table format.
+	RequestsReadsCompareTablePath  string `json:"requests-reads-compare-table-path" read-only:"true"`
+	RequestsReadsCompareTableS3Key string `json:"requests-reads-compare-table-s3-path" read-only:"true"`
 }
 
 // EnvironmentVariablePrefixAddOnStresserLocal is the environment variable prefix used for "eksconfig".
@@ -169,27 +169,27 @@ func (cfg *Config) validateAddOnStresserLocal() error {
 			filepath.Base(cfg.AddOnStresserLocal.RequestsWritesSummaryTablePath),
 		)
 	}
-	if cfg.AddOnStresserLocal.RequestsWritesSummaryS3Dir == "" {
-		cfg.AddOnStresserLocal.RequestsWritesSummaryS3Dir = path.Join("add-on-stresser-local", "writes-summary", cfg.Parameters.Version)
+	if cfg.AddOnStresserLocal.RequestsWritesCompareS3Dir == "" {
+		cfg.AddOnStresserLocal.RequestsWritesCompareS3Dir = path.Join("add-on-stresser-local", "writes-compare", cfg.Parameters.Version)
 	}
-	if cfg.AddOnStresserLocal.RequestsWritesSummaryCompareJSONPath == "" {
-		cfg.AddOnStresserLocal.RequestsWritesSummaryCompareJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-local-requests-writes-summary-compare.json"
+	if cfg.AddOnStresserLocal.RequestsWritesCompareJSONPath == "" {
+		cfg.AddOnStresserLocal.RequestsWritesCompareJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-local-requests-writes-compare.json"
 	}
-	if cfg.AddOnStresserLocal.RequestsWritesSummaryCompareJSONS3Key == "" {
-		cfg.AddOnStresserLocal.RequestsWritesSummaryCompareJSONS3Key = path.Join(
+	if cfg.AddOnStresserLocal.RequestsWritesCompareJSONS3Key == "" {
+		cfg.AddOnStresserLocal.RequestsWritesCompareJSONS3Key = path.Join(
 			cfg.AddOnStresserLocal.S3Dir,
 			"writes-compare",
-			filepath.Base(cfg.AddOnStresserLocal.RequestsWritesSummaryCompareJSONPath),
+			filepath.Base(cfg.AddOnStresserLocal.RequestsWritesCompareJSONPath),
 		)
 	}
-	if cfg.AddOnStresserLocal.RequestsWritesSummaryCompareTablePath == "" {
-		cfg.AddOnStresserLocal.RequestsWritesSummaryCompareTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-local-requests-writes-summary-compare.txt"
+	if cfg.AddOnStresserLocal.RequestsWritesCompareTablePath == "" {
+		cfg.AddOnStresserLocal.RequestsWritesCompareTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-local-requests-writes-compare.txt"
 	}
-	if cfg.AddOnStresserLocal.RequestsWritesSummaryCompareTableS3Key == "" {
-		cfg.AddOnStresserLocal.RequestsWritesSummaryCompareTableS3Key = path.Join(
+	if cfg.AddOnStresserLocal.RequestsWritesCompareTableS3Key == "" {
+		cfg.AddOnStresserLocal.RequestsWritesCompareTableS3Key = path.Join(
 			cfg.AddOnStresserLocal.S3Dir,
 			"writes-compare",
-			filepath.Base(cfg.AddOnStresserLocal.RequestsWritesSummaryCompareTablePath),
+			filepath.Base(cfg.AddOnStresserLocal.RequestsWritesCompareTablePath),
 		)
 	}
 
@@ -223,27 +223,27 @@ func (cfg *Config) validateAddOnStresserLocal() error {
 			filepath.Base(cfg.AddOnStresserLocal.RequestsReadsSummaryTablePath),
 		)
 	}
-	if cfg.AddOnStresserLocal.RequestsReadsSummaryS3Dir == "" {
-		cfg.AddOnStresserLocal.RequestsReadsSummaryS3Dir = path.Join("add-on-stresser-local", "reads-summary", cfg.Parameters.Version)
+	if cfg.AddOnStresserLocal.RequestsReadsCompareS3Dir == "" {
+		cfg.AddOnStresserLocal.RequestsReadsCompareS3Dir = path.Join("add-on-stresser-local", "reads-compare", cfg.Parameters.Version)
 	}
-	if cfg.AddOnStresserLocal.RequestsReadsSummaryCompareJSONPath == "" {
-		cfg.AddOnStresserLocal.RequestsReadsSummaryCompareJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-local-requests-reads-summary-compare.json"
+	if cfg.AddOnStresserLocal.RequestsReadsCompareJSONPath == "" {
+		cfg.AddOnStresserLocal.RequestsReadsCompareJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-local-requests-reads-compare.json"
 	}
-	if cfg.AddOnStresserLocal.RequestsReadsSummaryCompareJSONS3Key == "" {
-		cfg.AddOnStresserLocal.RequestsReadsSummaryCompareJSONS3Key = path.Join(
+	if cfg.AddOnStresserLocal.RequestsReadsCompareJSONS3Key == "" {
+		cfg.AddOnStresserLocal.RequestsReadsCompareJSONS3Key = path.Join(
 			cfg.AddOnStresserLocal.S3Dir,
 			"reads-compare",
-			filepath.Base(cfg.AddOnStresserLocal.RequestsReadsSummaryCompareJSONPath),
+			filepath.Base(cfg.AddOnStresserLocal.RequestsReadsCompareJSONPath),
 		)
 	}
-	if cfg.AddOnStresserLocal.RequestsReadsSummaryCompareTablePath == "" {
-		cfg.AddOnStresserLocal.RequestsReadsSummaryCompareTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-local-requests-reads-summary-compare.txt"
+	if cfg.AddOnStresserLocal.RequestsReadsCompareTablePath == "" {
+		cfg.AddOnStresserLocal.RequestsReadsCompareTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-local-requests-reads-compare.txt"
 	}
-	if cfg.AddOnStresserLocal.RequestsReadsSummaryCompareTableS3Key == "" {
-		cfg.AddOnStresserLocal.RequestsReadsSummaryCompareTableS3Key = path.Join(
+	if cfg.AddOnStresserLocal.RequestsReadsCompareTableS3Key == "" {
+		cfg.AddOnStresserLocal.RequestsReadsCompareTableS3Key = path.Join(
 			cfg.AddOnStresserLocal.S3Dir,
 			"reads-compare",
-			filepath.Base(cfg.AddOnStresserLocal.RequestsReadsSummaryCompareTablePath),
+			filepath.Base(cfg.AddOnStresserLocal.RequestsReadsCompareTablePath),
 		)
 	}
 

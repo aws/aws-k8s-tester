@@ -14,9 +14,9 @@ import (
 	dto "github.com/prometheus/client_model/go"
 )
 
-// RequestsSummaryCompare compares two "RequestsSummary".
+// RequestsCompare compares two "RequestsSummary".
 // Delta is computed with "A" as "before" and with "B" as "after".
-type RequestsSummaryCompare struct {
+type RequestsCompare struct {
 	A RequestsSummary `json:"a" read-only:"true"`
 	B RequestsSummary `json:"b" read-only:"true"`
 
@@ -27,12 +27,12 @@ type RequestsSummaryCompare struct {
 	LantencyP9999DeltaPercent float64 `json:"latency-p99.99-delta-percent" read-only:"true"`
 }
 
-func (c RequestsSummaryCompare) JSON() string {
+func (c RequestsCompare) JSON() string {
 	b, _ := json.Marshal(c)
 	return string(b)
 }
 
-func (c RequestsSummaryCompare) Table() string {
+func (c RequestsCompare) Table() string {
 	buf := bytes.NewBuffer(nil)
 	tb := tablewriter.NewWriter(buf)
 	tb.SetAutoWrapText(false)
@@ -61,12 +61,12 @@ func toPercent(f float64) string {
 }
 
 // CompareRequestsSummary compares two "RequestsSummary".
-func CompareRequestsSummary(a RequestsSummary, b RequestsSummary) (c RequestsSummaryCompare, err error) {
+func CompareRequestsSummary(a RequestsSummary, b RequestsSummary) (c RequestsCompare, err error) {
 	if len(a.LatencyHistogram) != len(b.LatencyHistogram) {
-		return RequestsSummaryCompare{}, fmt.Errorf("len(a.LatencyHistogram) %d != len(b.LatencyHistogram) %d", len(a.LatencyHistogram), len(b.LatencyHistogram))
+		return RequestsCompare{}, fmt.Errorf("len(a.LatencyHistogram) %d != len(b.LatencyHistogram) %d", len(a.LatencyHistogram), len(b.LatencyHistogram))
 	}
 
-	c = RequestsSummaryCompare{
+	c = RequestsCompare{
 		A: a,
 		B: b,
 	}
