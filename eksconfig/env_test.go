@@ -245,6 +245,8 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_INITIAL_REQUEST_CONDITION_TYPE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_OBJECTS", "10000")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_OBJECTS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_RAW_WRITES_COMPARE_S3_DIR", "a/b/c")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_RAW_WRITES_COMPARE_S3_DIR")
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_ENABLE")
@@ -926,6 +928,9 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.AddOnCSRsLocal.Objects != 10000 {
 		t.Fatalf("unexpected cfg.AddOnCSRsLocal.Objects %d", cfg.AddOnCSRsLocal.Objects)
+	}
+	if cfg.AddOnCSRsLocal.RequestsRawWritesCompareS3Dir != "a/b/c" {
+		t.Fatalf("unexpected cfg.AddOnCSRsLocal.RequestsRawWritesCompareS3Dir %q", cfg.AddOnCSRsLocal.RequestsRawWritesCompareS3Dir)
 	}
 
 	if !cfg.AddOnCSRsRemote.Enable {

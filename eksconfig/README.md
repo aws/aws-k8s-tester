@@ -364,7 +364,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_S3_DIR                                        | read-only "false" | *eksconfig.AddOnCSRsLocal.S3Dir                                  | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_RAW_WRITES_JSON_PATH                 | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsRawWritesJSONPath              | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_RAW_WRITES_JSON_S3_KEY               | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsRawWritesJSONS3Key             | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_RAW_WRITES_COMPARE_S3_DIR            | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsRawWritesCompareS3Dir          | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_RAW_WRITES_COMPARE_S3_DIR            | read-only "false" | *eksconfig.AddOnCSRsLocal.RequestsRawWritesCompareS3Dir          | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_RAW_WRITES_COMPARE_ALL_JSON_PATH     | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsRawWritesCompareAllJSONPath    | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_RAW_WRITES_COMPARE_ALL_JSON_S3_KEY   | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsRawWritesCompareAllJSONS3Key   | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_RAW_WRITES_COMPARE_ALL_CSV_PATH      | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsRawWritesCompareAllCSVPath     | string                  |
@@ -374,7 +374,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_SUMMARY_WRITES_JSON_S3_KEY           | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsSummaryWritesJSONS3Key         | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_SUMMARY_WRITES_TABLE_PATH            | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsSummaryWritesTablePath         | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_SUMMARY_WRITES_TABLE_S3_PATH         | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsSummaryWritesTableS3Key        | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE_S3_DIR        | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsSummaryWritesCompareS3Dir      | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE_S3_DIR        | read-only "false" | *eksconfig.AddOnCSRsLocal.RequestsSummaryWritesCompareS3Dir      | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE               | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsSummaryWritesCompare           | metrics.RequestsCompare |
 | AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE_JSON_PATH     | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsSummaryWritesCompareJSONPath   | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE_JSON_S3_KEY   | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsSummaryWritesCompareJSONS3Key  | string                  |
@@ -401,7 +401,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_S3_DIR                                        | read-only "false" | *eksconfig.AddOnCSRsRemote.S3Dir                                  | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_RAW_WRITES_JSON_PATH                 | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsRawWritesJSONPath              | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_RAW_WRITES_JSON_S3_KEY               | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsRawWritesJSONS3Key             | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_RAW_WRITES_COMPARE_S3_DIR            | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsRawWritesCompareS3Dir          | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_RAW_WRITES_COMPARE_S3_DIR            | read-only "false" | *eksconfig.AddOnCSRsRemote.RequestsRawWritesCompareS3Dir          | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_RAW_WRITES_COMPARE_ALL_JSON_PATH     | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsRawWritesCompareAllJSONPath    | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_RAW_WRITES_COMPARE_ALL_JSON_S3_KEY   | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsRawWritesCompareAllJSONS3Key   | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_RAW_WRITES_COMPARE_ALL_CSV_PATH      | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsRawWritesCompareAllCSVPath     | string                  |
@@ -411,7 +411,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_SUMMARY_WRITES_JSON_S3_KEY           | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsSummaryWritesJSONS3Key         | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_SUMMARY_WRITES_TABLE_PATH            | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsSummaryWritesTablePath         | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_SUMMARY_WRITES_TABLE_S3_PATH         | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsSummaryWritesTableS3Key        | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE_S3_DIR        | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsSummaryWritesCompareS3Dir      | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE_S3_DIR        | read-only "false" | *eksconfig.AddOnCSRsRemote.RequestsSummaryWritesCompareS3Dir      | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE               | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsSummaryWritesCompare           | metrics.RequestsCompare |
 | AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE_JSON_PATH     | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsSummaryWritesCompareJSONPath   | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE_JSON_S3_KEY   | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsSummaryWritesCompareJSONS3Key  | string                  |
@@ -434,7 +434,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_S3_DIR                                        | read-only "false" | *eksconfig.AddOnConfigmapsLocal.S3Dir                                  | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_RAW_WRITES_JSON_PATH                 | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsRawWritesJSONPath              | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_RAW_WRITES_JSON_S3_KEY               | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsRawWritesJSONS3Key             | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_RAW_WRITES_COMPARE_S3_DIR            | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsRawWritesCompareS3Dir          | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_RAW_WRITES_COMPARE_S3_DIR            | read-only "false" | *eksconfig.AddOnConfigmapsLocal.RequestsRawWritesCompareS3Dir          | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_RAW_WRITES_COMPARE_ALL_JSON_PATH     | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsRawWritesCompareAllJSONPath    | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_RAW_WRITES_COMPARE_ALL_JSON_S3_KEY   | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsRawWritesCompareAllJSONS3Key   | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_RAW_WRITES_COMPARE_ALL_CSV_PATH      | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsRawWritesCompareAllCSVPath     | string                  |
@@ -444,7 +444,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_SUMMARY_WRITES_JSON_S3_KEY           | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsSummaryWritesJSONS3Key         | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_SUMMARY_WRITES_TABLE_PATH            | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsSummaryWritesTablePath         | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_SUMMARY_WRITES_TABLE_S3_PATH         | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsSummaryWritesTableS3Key        | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE_S3_DIR        | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsSummaryWritesCompareS3Dir      | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE_S3_DIR        | read-only "false" | *eksconfig.AddOnConfigmapsLocal.RequestsSummaryWritesCompareS3Dir      | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE               | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsSummaryWritesCompare           | metrics.RequestsCompare |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE_JSON_PATH     | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsSummaryWritesCompareJSONPath   | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE_JSON_S3_KEY   | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsSummaryWritesCompareJSONS3Key  | string                  |
@@ -472,7 +472,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_S3_DIR                                        | read-only "false" | *eksconfig.AddOnConfigmapsRemote.S3Dir                                  | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_RAW_WRITES_JSON_PATH                 | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsRawWritesJSONPath              | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_RAW_WRITES_JSON_S3_KEY               | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsRawWritesJSONS3Key             | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_RAW_WRITES_COMPARE_S3_DIR            | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsRawWritesCompareS3Dir          | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_RAW_WRITES_COMPARE_S3_DIR            | read-only "false" | *eksconfig.AddOnConfigmapsRemote.RequestsRawWritesCompareS3Dir          | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_RAW_WRITES_COMPARE_ALL_JSON_PATH     | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsRawWritesCompareAllJSONPath    | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_RAW_WRITES_COMPARE_ALL_JSON_S3_KEY   | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsRawWritesCompareAllJSONS3Key   | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_RAW_WRITES_COMPARE_ALL_CSV_PATH      | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsRawWritesCompareAllCSVPath     | string                  |
@@ -482,7 +482,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_SUMMARY_WRITES_JSON_S3_KEY           | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsSummaryWritesJSONS3Key         | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_SUMMARY_WRITES_TABLE_PATH            | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsSummaryWritesTablePath         | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_SUMMARY_WRITES_TABLE_S3_PATH         | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsSummaryWritesTableS3Key        | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE_S3_DIR        | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsSummaryWritesCompareS3Dir      | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE_S3_DIR        | read-only "false" | *eksconfig.AddOnConfigmapsRemote.RequestsSummaryWritesCompareS3Dir      | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE               | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsSummaryWritesCompare           | metrics.RequestsCompare |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE_JSON_PATH     | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsSummaryWritesCompareJSONPath   | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE_JSON_S3_KEY   | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsSummaryWritesCompareJSONS3Key  | string                  |
@@ -505,7 +505,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_S3_DIR                                        | read-only "false" | *eksconfig.AddOnSecretsLocal.S3Dir                                  | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_RAW_WRITES_JSON_PATH                 | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsRawWritesJSONPath              | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_RAW_WRITES_JSON_S3_KEY               | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsRawWritesJSONS3Key             | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_RAW_WRITES_COMPARE_S3_DIR            | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsRawWritesCompareS3Dir          | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_RAW_WRITES_COMPARE_S3_DIR            | read-only "false" | *eksconfig.AddOnSecretsLocal.RequestsRawWritesCompareS3Dir          | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_RAW_WRITES_COMPARE_ALL_JSON_PATH     | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsRawWritesCompareAllJSONPath    | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_RAW_WRITES_COMPARE_ALL_JSON_S3_KEY   | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsRawWritesCompareAllJSONS3Key   | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_RAW_WRITES_COMPARE_ALL_CSV_PATH      | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsRawWritesCompareAllCSVPath     | string                  |
@@ -515,7 +515,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_WRITES_JSON_S3_KEY           | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsSummaryWritesJSONS3Key         | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_WRITES_TABLE_PATH            | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsSummaryWritesTablePath         | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_WRITES_TABLE_S3_PATH         | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsSummaryWritesTableS3Key        | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE_S3_DIR        | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsSummaryWritesCompareS3Dir      | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE_S3_DIR        | read-only "false" | *eksconfig.AddOnSecretsLocal.RequestsSummaryWritesCompareS3Dir      | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE               | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsSummaryWritesCompare           | metrics.RequestsCompare |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE_JSON_PATH     | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsSummaryWritesCompareJSONPath   | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE_JSON_S3_KEY   | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsSummaryWritesCompareJSONS3Key  | string                  |
@@ -523,7 +523,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE_TABLE_S3_PATH | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsSummaryWritesCompareTableS3Key | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_RAW_READS_JSON_PATH                  | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsRawReadsJSONPath               | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_RAW_READS_JSON_S3_KEY                | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsRawReadsJSONS3Key              | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_RAW_READS_COMPARE_S3_DIR             | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsRawReadsCompareS3Dir           | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_RAW_READS_COMPARE_S3_DIR             | read-only "false" | *eksconfig.AddOnSecretsLocal.RequestsRawReadsCompareS3Dir           | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_RAW_READS_COMPARE_ALL_JSON_PATH      | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsRawReadsCompareAllJSONPath     | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_RAW_READS_COMPARE_ALL_JSON_S3_KEY    | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsRawReadsCompareAllJSONS3Key    | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_RAW_READS_COMPARE_ALL_CSV_PATH       | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsRawReadsCompareAllCSVPath      | string                  |
@@ -533,7 +533,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_READS_JSON_S3_KEY            | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsSummaryReadsJSONS3Key          | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_READS_TABLE_PATH             | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsSummaryReadsTablePath          | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_READS_TABLE_S3_PATH          | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsSummaryReadsTableS3Key         | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_READS_COMPARE_S3_DIR         | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsSummaryReadsCompareS3Dir       | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_READS_COMPARE_S3_DIR         | read-only "false" | *eksconfig.AddOnSecretsLocal.RequestsSummaryReadsCompareS3Dir       | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_READS_COMPARE                | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsSummaryReadsCompare            | metrics.RequestsCompare |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_READS_COMPARE_JSON_PATH      | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsSummaryReadsCompareJSONPath    | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_READS_COMPARE_JSON_S3_KEY    | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsSummaryReadsCompareJSONS3Key   | string                  |
@@ -562,7 +562,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_S3_DIR                                        | read-only "false" | *eksconfig.AddOnSecretsRemote.S3Dir                                  | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_RAW_WRITES_JSON_PATH                 | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsRawWritesJSONPath              | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_RAW_WRITES_JSON_S3_KEY               | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsRawWritesJSONS3Key             | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_RAW_WRITES_COMPARE_S3_DIR            | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsRawWritesCompareS3Dir          | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_RAW_WRITES_COMPARE_S3_DIR            | read-only "false" | *eksconfig.AddOnSecretsRemote.RequestsRawWritesCompareS3Dir          | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_RAW_WRITES_COMPARE_ALL_JSON_PATH     | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsRawWritesCompareAllJSONPath    | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_RAW_WRITES_COMPARE_ALL_JSON_S3_KEY   | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsRawWritesCompareAllJSONS3Key   | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_RAW_WRITES_COMPARE_ALL_CSV_PATH      | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsRawWritesCompareAllCSVPath     | string                  |
@@ -572,7 +572,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_WRITES_JSON_S3_KEY           | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsSummaryWritesJSONS3Key         | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_WRITES_TABLE_PATH            | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsSummaryWritesTablePath         | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_WRITES_TABLE_S3_PATH         | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsSummaryWritesTableS3Key        | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE_S3_DIR        | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsSummaryWritesCompareS3Dir      | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE_S3_DIR        | read-only "false" | *eksconfig.AddOnSecretsRemote.RequestsSummaryWritesCompareS3Dir      | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE               | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsSummaryWritesCompare           | metrics.RequestsCompare |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE_JSON_PATH     | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsSummaryWritesCompareJSONPath   | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE_JSON_S3_KEY   | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsSummaryWritesCompareJSONS3Key  | string                  |
@@ -580,7 +580,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE_TABLE_S3_PATH | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsSummaryWritesCompareTableS3Key | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_RAW_READS_JSON_PATH                  | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsRawReadsJSONPath               | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_RAW_READS_JSON_S3_KEY                | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsRawReadsJSONS3Key              | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_RAW_READS_COMPARE_S3_DIR             | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsRawReadsCompareS3Dir           | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_RAW_READS_COMPARE_S3_DIR             | read-only "false" | *eksconfig.AddOnSecretsRemote.RequestsRawReadsCompareS3Dir           | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_RAW_READS_COMPARE_ALL_JSON_PATH      | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsRawReadsCompareAllJSONPath     | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_RAW_READS_COMPARE_ALL_JSON_S3_KEY    | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsRawReadsCompareAllJSONS3Key    | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_RAW_READS_COMPARE_ALL_CSV_PATH       | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsRawReadsCompareAllCSVPath      | string                  |
@@ -590,7 +590,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_READS_JSON_S3_KEY            | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsSummaryReadsJSONS3Key          | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_READS_TABLE_PATH             | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsSummaryReadsTablePath          | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_READS_TABLE_S3_PATH          | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsSummaryReadsTableS3Key         | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_READS_COMPARE_S3_DIR         | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsSummaryReadsCompareS3Dir       | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_READS_COMPARE_S3_DIR         | read-only "false" | *eksconfig.AddOnSecretsRemote.RequestsSummaryReadsCompareS3Dir       | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_READS_COMPARE                | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsSummaryReadsCompare            | metrics.RequestsCompare |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_READS_COMPARE_JSON_PATH      | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsSummaryReadsCompareJSONPath    | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_READS_COMPARE_JSON_S3_KEY    | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsSummaryReadsCompareJSONS3Key   | string                  |
@@ -842,7 +842,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_S3_DIR                                        | read-only "false" | *eksconfig.AddOnStresserLocal.S3Dir                                  | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_RAW_WRITES_JSON_PATH                 | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsRawWritesJSONPath              | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_RAW_WRITES_JSON_S3_KEY               | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsRawWritesJSONS3Key             | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_RAW_WRITES_COMPARE_S3_DIR            | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsRawWritesCompareS3Dir          | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_RAW_WRITES_COMPARE_S3_DIR            | read-only "false" | *eksconfig.AddOnStresserLocal.RequestsRawWritesCompareS3Dir          | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_RAW_WRITES_COMPARE_ALL_JSON_PATH     | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsRawWritesCompareAllJSONPath    | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_RAW_WRITES_COMPARE_ALL_JSON_S3_KEY   | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsRawWritesCompareAllJSONS3Key   | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_RAW_WRITES_COMPARE_ALL_CSV_PATH      | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsRawWritesCompareAllCSVPath     | string                  |
@@ -852,7 +852,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_WRITES_JSON_S3_KEY           | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryWritesJSONS3Key         | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_WRITES_TABLE_PATH            | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryWritesTablePath         | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_WRITES_TABLE_S3_PATH         | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryWritesTableS3Key        | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE_S3_DIR        | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryWritesCompareS3Dir      | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE_S3_DIR        | read-only "false" | *eksconfig.AddOnStresserLocal.RequestsSummaryWritesCompareS3Dir      | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE               | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryWritesCompare           | metrics.RequestsCompare |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE_JSON_PATH     | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryWritesCompareJSONPath   | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE_JSON_S3_KEY   | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryWritesCompareJSONS3Key  | string                  |
@@ -860,7 +860,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE_TABLE_S3_PATH | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryWritesCompareTableS3Key | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_RAW_READS_JSON_PATH                  | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsRawReadsJSONPath               | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_RAW_READS_JSON_S3_KEY                | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsRawReadsJSONS3Key              | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_RAW_READS_COMPARE_S3_DIR             | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsRawReadsCompareS3Dir           | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_RAW_READS_COMPARE_S3_DIR             | read-only "false" | *eksconfig.AddOnStresserLocal.RequestsRawReadsCompareS3Dir           | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_RAW_READS_COMPARE_ALL_JSON_PATH      | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsRawReadsCompareAllJSONPath     | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_RAW_READS_COMPARE_ALL_JSON_S3_KEY    | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsRawReadsCompareAllJSONS3Key    | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_RAW_READS_COMPARE_ALL_CSV_PATH       | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsRawReadsCompareAllCSVPath      | string                  |
@@ -870,7 +870,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_READS_JSON_S3_KEY            | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryReadsJSONS3Key          | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_READS_TABLE_PATH             | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryReadsTablePath          | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_READS_TABLE_S3_PATH          | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryReadsTableS3Key         | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_READS_COMPARE_S3_DIR         | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryReadsCompareS3Dir       | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_READS_COMPARE_S3_DIR         | read-only "false" | *eksconfig.AddOnStresserLocal.RequestsSummaryReadsCompareS3Dir       | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_READS_COMPARE                | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryReadsCompare            | metrics.RequestsCompare |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_READS_COMPARE_JSON_PATH      | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryReadsCompareJSONPath    | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_READS_COMPARE_JSON_S3_KEY    | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryReadsCompareJSONS3Key   | string                  |
@@ -900,7 +900,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_S3_DIR                                        | read-only "false" | *eksconfig.AddOnStresserRemote.S3Dir                                  | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_RAW_WRITES_JSON_PATH                 | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsRawWritesJSONPath              | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_RAW_WRITES_JSON_S3_KEY               | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsRawWritesJSONS3Key             | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_RAW_WRITES_COMPARE_S3_DIR            | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsRawWritesCompareS3Dir          | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_RAW_WRITES_COMPARE_S3_DIR            | read-only "false" | *eksconfig.AddOnStresserRemote.RequestsRawWritesCompareS3Dir          | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_RAW_WRITES_COMPARE_ALL_JSON_PATH     | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsRawWritesCompareAllJSONPath    | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_RAW_WRITES_COMPARE_ALL_JSON_S3_KEY   | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsRawWritesCompareAllJSONS3Key   | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_RAW_WRITES_COMPARE_ALL_CSV_PATH      | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsRawWritesCompareAllCSVPath     | string                  |
@@ -910,7 +910,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_WRITES_JSON_S3_KEY           | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryWritesJSONS3Key         | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_WRITES_TABLE_PATH            | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryWritesTablePath         | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_WRITES_TABLE_S3_PATH         | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryWritesTableS3Key        | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE_S3_DIR        | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryWritesCompareS3Dir      | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE_S3_DIR        | read-only "false" | *eksconfig.AddOnStresserRemote.RequestsSummaryWritesCompareS3Dir      | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE               | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryWritesCompare           | metrics.RequestsCompare |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE_JSON_PATH     | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryWritesCompareJSONPath   | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE_JSON_S3_KEY   | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryWritesCompareJSONS3Key  | string                  |
@@ -918,7 +918,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE_TABLE_S3_PATH | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryWritesCompareTableS3Key | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_RAW_READS_JSON_PATH                  | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsRawReadsJSONPath               | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_RAW_READS_JSON_S3_KEY                | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsRawReadsJSONS3Key              | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_RAW_READS_COMPARE_S3_DIR             | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsRawReadsCompareS3Dir           | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_RAW_READS_COMPARE_S3_DIR             | read-only "false" | *eksconfig.AddOnStresserRemote.RequestsRawReadsCompareS3Dir           | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_RAW_READS_COMPARE_ALL_JSON_PATH      | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsRawReadsCompareAllJSONPath     | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_RAW_READS_COMPARE_ALL_JSON_S3_KEY    | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsRawReadsCompareAllJSONS3Key    | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_RAW_READS_COMPARE_ALL_CSV_PATH       | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsRawReadsCompareAllCSVPath      | string                  |
@@ -928,7 +928,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_READS_JSON_S3_KEY            | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryReadsJSONS3Key          | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_READS_TABLE_PATH             | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryReadsTablePath          | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_READS_TABLE_S3_PATH          | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryReadsTableS3Key         | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_READS_COMPARE_S3_DIR         | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryReadsCompareS3Dir       | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_READS_COMPARE_S3_DIR         | read-only "false" | *eksconfig.AddOnStresserRemote.RequestsSummaryReadsCompareS3Dir       | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_READS_COMPARE                | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryReadsCompare            | metrics.RequestsCompare |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_READS_COMPARE_JSON_PATH      | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryReadsCompareJSONPath    | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_READS_COMPARE_JSON_S3_KEY    | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryReadsCompareJSONS3Key   | string                  |
