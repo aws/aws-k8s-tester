@@ -147,8 +147,8 @@ func getDefaultAddOnSecretsRemote() *AddOnSecretsRemote {
 
 		NamePrefix: "secret" + randutil.String(5),
 
-		RequestsWritesSummaryOutputNamePrefix: "secrets-writes" + randutil.String(10),
-		RequestsReadsSummaryOutputNamePrefix:  "secrets-reads" + randutil.String(10),
+		RequestsWritesSummaryOutputNamePrefix: "secrets-writes-" + randutil.String(10),
+		RequestsReadsSummaryOutputNamePrefix:  "secrets-reads-" + randutil.String(10),
 	}
 }
 
@@ -197,7 +197,7 @@ func (cfg *Config) validateAddOnSecretsRemote() error {
 	}
 
 	if cfg.AddOnSecretsRemote.RequestsWritesRawJSONPath == "" {
-		cfg.AddOnSecretsRemote.RequestsWritesRawJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-remote-requests-writes.csv"
+		cfg.AddOnSecretsRemote.RequestsWritesRawJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-remote-requests-writes-raw.json"
 	}
 	if cfg.AddOnSecretsRemote.RequestsWritesRawJSONS3Key == "" {
 		cfg.AddOnSecretsRemote.RequestsWritesRawJSONS3Key = path.Join(
@@ -235,7 +235,7 @@ func (cfg *Config) validateAddOnSecretsRemote() error {
 	if cfg.AddOnSecretsRemote.RequestsWritesSummaryCompareJSONS3Key == "" {
 		cfg.AddOnSecretsRemote.RequestsWritesSummaryCompareJSONS3Key = path.Join(
 			cfg.AddOnSecretsRemote.S3Dir,
-			"writes-summary-compare",
+			"writes-compare",
 			filepath.Base(cfg.AddOnSecretsRemote.RequestsWritesSummaryCompareJSONPath),
 		)
 	}
@@ -245,13 +245,13 @@ func (cfg *Config) validateAddOnSecretsRemote() error {
 	if cfg.AddOnSecretsRemote.RequestsWritesSummaryCompareTableS3Key == "" {
 		cfg.AddOnSecretsRemote.RequestsWritesSummaryCompareTableS3Key = path.Join(
 			cfg.AddOnSecretsRemote.S3Dir,
-			"writes-summary-compare",
+			"writes-compare",
 			filepath.Base(cfg.AddOnSecretsRemote.RequestsWritesSummaryCompareTablePath),
 		)
 	}
 
 	if cfg.AddOnSecretsRemote.RequestsReadsRawJSONPath == "" {
-		cfg.AddOnSecretsRemote.RequestsReadsRawJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-remote-requests-reads.csv"
+		cfg.AddOnSecretsRemote.RequestsReadsRawJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-remote-requests-reads-raw.json"
 	}
 	if cfg.AddOnSecretsRemote.RequestsReadsRawJSONS3Key == "" {
 		cfg.AddOnSecretsRemote.RequestsReadsRawJSONS3Key = path.Join(
@@ -289,7 +289,7 @@ func (cfg *Config) validateAddOnSecretsRemote() error {
 	if cfg.AddOnSecretsRemote.RequestsReadsSummaryCompareJSONS3Key == "" {
 		cfg.AddOnSecretsRemote.RequestsReadsSummaryCompareJSONS3Key = path.Join(
 			cfg.AddOnSecretsRemote.S3Dir,
-			"reads-summary-compare",
+			"reads-compare",
 			filepath.Base(cfg.AddOnSecretsRemote.RequestsReadsSummaryCompareJSONPath),
 		)
 	}
@@ -299,16 +299,16 @@ func (cfg *Config) validateAddOnSecretsRemote() error {
 	if cfg.AddOnSecretsRemote.RequestsReadsSummaryCompareTableS3Key == "" {
 		cfg.AddOnSecretsRemote.RequestsReadsSummaryCompareTableS3Key = path.Join(
 			cfg.AddOnSecretsRemote.S3Dir,
-			"reads-summary-compare",
+			"reads-compare",
 			filepath.Base(cfg.AddOnSecretsRemote.RequestsReadsSummaryCompareTablePath),
 		)
 	}
 
 	if cfg.AddOnSecretsRemote.RequestsWritesSummaryOutputNamePrefix == "" {
-		cfg.AddOnSecretsRemote.RequestsWritesSummaryOutputNamePrefix = "secrets-writes" + randutil.String(10)
+		cfg.AddOnSecretsRemote.RequestsWritesSummaryOutputNamePrefix = "secrets-writes-" + randutil.String(10)
 	}
 	if cfg.AddOnSecretsRemote.RequestsReadsSummaryOutputNamePrefix == "" {
-		cfg.AddOnSecretsRemote.RequestsReadsSummaryOutputNamePrefix = "secrets-reads" + randutil.String(10)
+		cfg.AddOnSecretsRemote.RequestsReadsSummaryOutputNamePrefix = "secrets-reads-" + randutil.String(10)
 	}
 
 	return nil

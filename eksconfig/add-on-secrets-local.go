@@ -161,7 +161,7 @@ func (cfg *Config) validateAddOnSecretsLocal() error {
 	}
 
 	if cfg.AddOnSecretsLocal.RequestsWritesRawJSONPath == "" {
-		cfg.AddOnSecretsLocal.RequestsWritesRawJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-writes.csv"
+		cfg.AddOnSecretsLocal.RequestsWritesRawJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-writes-raw.json"
 	}
 	if cfg.AddOnSecretsLocal.RequestsWritesRawJSONS3Key == "" {
 		cfg.AddOnSecretsLocal.RequestsWritesRawJSONS3Key = path.Join(
@@ -199,7 +199,7 @@ func (cfg *Config) validateAddOnSecretsLocal() error {
 	if cfg.AddOnSecretsLocal.RequestsWritesSummaryCompareJSONS3Key == "" {
 		cfg.AddOnSecretsLocal.RequestsWritesSummaryCompareJSONS3Key = path.Join(
 			cfg.AddOnSecretsLocal.S3Dir,
-			"writes-summary-compare",
+			"writes-compare",
 			filepath.Base(cfg.AddOnSecretsLocal.RequestsWritesSummaryCompareJSONPath),
 		)
 	}
@@ -209,13 +209,13 @@ func (cfg *Config) validateAddOnSecretsLocal() error {
 	if cfg.AddOnSecretsLocal.RequestsWritesSummaryCompareTableS3Key == "" {
 		cfg.AddOnSecretsLocal.RequestsWritesSummaryCompareTableS3Key = path.Join(
 			cfg.AddOnSecretsLocal.S3Dir,
-			"writes-summary-compare",
+			"writes-compare",
 			filepath.Base(cfg.AddOnSecretsLocal.RequestsWritesSummaryCompareTablePath),
 		)
 	}
 
 	if cfg.AddOnSecretsLocal.RequestsReadsRawJSONPath == "" {
-		cfg.AddOnSecretsLocal.RequestsReadsRawJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-reads.csv"
+		cfg.AddOnSecretsLocal.RequestsReadsRawJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-reads-raw.json"
 	}
 	if cfg.AddOnSecretsLocal.RequestsReadsRawJSONS3Key == "" {
 		cfg.AddOnSecretsLocal.RequestsReadsRawJSONS3Key = path.Join(
@@ -253,7 +253,7 @@ func (cfg *Config) validateAddOnSecretsLocal() error {
 	if cfg.AddOnSecretsLocal.RequestsReadsSummaryCompareJSONS3Key == "" {
 		cfg.AddOnSecretsLocal.RequestsReadsSummaryCompareJSONS3Key = path.Join(
 			cfg.AddOnSecretsLocal.S3Dir,
-			"reads-summary-compare",
+			"reads-compare",
 			filepath.Base(cfg.AddOnSecretsLocal.RequestsReadsSummaryCompareJSONPath),
 		)
 	}
@@ -263,7 +263,7 @@ func (cfg *Config) validateAddOnSecretsLocal() error {
 	if cfg.AddOnSecretsLocal.RequestsReadsSummaryCompareTableS3Key == "" {
 		cfg.AddOnSecretsLocal.RequestsReadsSummaryCompareTableS3Key = path.Join(
 			cfg.AddOnSecretsLocal.S3Dir,
-			"reads-summary-compare",
+			"reads-compare",
 			filepath.Base(cfg.AddOnSecretsLocal.RequestsReadsSummaryCompareTablePath),
 		)
 	}

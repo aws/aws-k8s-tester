@@ -754,18 +754,56 @@ func (ts *tester) AggregateResults() (err error) {
 	writesSummary := metrics.RequestsSummary{TestID: time.Now().UTC().Format(time.RFC3339Nano)}
 	writeLatencies := make(metrics.Durations, 0, 20000)
 
-	writesDir := ""
+	writesDirRaw := ""
+	writesDirSummary := ""
 
-	writesDir, err = aws_s3.DownloadDir(
+	writesDirRaw, err = aws_s3.DownloadDir(
 		ts.cfg.Logger,
 		ts.cfg.S3API,
 		ts.cfg.EKSConfig.S3BucketName,
-		path.Join(ts.cfg.EKSConfig.Name, "add-on-csrs-remote", "writes"),
+		path.Dir(ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesRawJSONS3Key),
 	)
 	if err == nil {
-		ts.cfg.Logger.Info("reading writes results", zap.String("writes-dir", writesDir))
+		ts.cfg.Logger.Info("reading writes results raw", zap.String("writes-dir", writesDirRaw))
 		cnt := 0
-		err = filepath.Walk(writesDir, func(fpath string, info os.FileInfo, werr error) error {
+		err = filepath.Walk(writesDirRaw, func(fpath string, info os.FileInfo, werr error) error {
+			if werr != nil {
+				return werr
+			}
+			if info.IsDir() {
+				return nil
+			}
+			cnt++
+			switch {
+			case strings.HasSuffix(fpath, "-writes-raw.json"):
+				b, err := ioutil.ReadFile(fpath)
+				if err != nil {
+					return fmt.Errorf("failed to open %q (%v)", fpath, err)
+				}
+				var r metrics.Durations
+				if err = json.Unmarshal(b, &r); err != nil {
+					return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
+				}
+				writeLatencies = append(writeLatencies, r...)
+			}
+			return nil
+		})
+		if err != nil || cnt == 0 {
+			ts.cfg.Logger.Warn("failed to read writes results", zap.Int("file-count", cnt), zap.Error(err))
+			os.RemoveAll(writesDirRaw)
+			writesDirRaw = ""
+		}
+	}
+	writesDirSummary, err = aws_s3.DownloadDir(
+		ts.cfg.Logger,
+		ts.cfg.S3API,
+		ts.cfg.EKSConfig.S3BucketName,
+		path.Dir(ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryJSONS3Key),
+	)
+	if err == nil {
+		ts.cfg.Logger.Info("reading writes results summary", zap.String("writes-dir", writesDirSummary))
+		cnt := 0
+		err = filepath.Walk(writesDirSummary, func(fpath string, info os.FileInfo, werr error) error {
 			if werr != nil {
 				return werr
 			}
@@ -793,28 +831,17 @@ func (ts *tester) AggregateResults() (err error) {
 						return fmt.Errorf("failed to merge histograms (%v)", err)
 					}
 				}
-
-			case strings.HasSuffix(fpath, "-writes.json"):
-				b, err := ioutil.ReadFile(fpath)
-				if err != nil {
-					return fmt.Errorf("failed to open %q (%v)", fpath, err)
-				}
-				var r metrics.Durations
-				if err = json.Unmarshal(b, &r); err != nil {
-					return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
-				}
-				writeLatencies = append(writeLatencies, r...)
 			}
 			return nil
 		})
 		if err != nil || cnt == 0 {
 			ts.cfg.Logger.Warn("failed to read writes results", zap.Int("file-count", cnt), zap.Error(err))
-			os.RemoveAll(writesDir)
-			writesDir = ""
+			os.RemoveAll(writesDirSummary)
+			writesDirSummary = ""
 		}
 	}
 
-	aggSucceed := writesDir != ""
+	aggSucceed := writesDirRaw != "" && writesDirSummary != ""
 	if !aggSucceed {
 		writesSummary = metrics.RequestsSummary{TestID: time.Now().UTC().Format(time.RFC3339Nano)}
 		writeLatencies = make(metrics.Durations, 0, 20000)
@@ -826,6 +853,17 @@ func (ts *tester) AggregateResults() (err error) {
 					for _, fpath := range fpaths {
 						if strings.Contains(fpath, ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryOutputNamePrefix) {
 							switch {
+							case strings.HasSuffix(fpath, "-writes-raw.json"):
+								b, err := ioutil.ReadFile(fpath)
+								if err != nil {
+									return fmt.Errorf("failed to open %q (%v)", fpath, err)
+								}
+								var r metrics.Durations
+								if err = json.Unmarshal(b, &r); err != nil {
+									return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
+								}
+								writeLatencies = append(writeLatencies, r...)
+
 							case strings.HasSuffix(fpath, "-writes-summary.json"):
 								b, err := ioutil.ReadFile(fpath)
 								if err != nil {
@@ -845,17 +883,6 @@ func (ts *tester) AggregateResults() (err error) {
 										return fmt.Errorf("failed to merge histograms (%v)", err)
 									}
 								}
-
-							case strings.HasSuffix(fpath, "-writes.json"):
-								b, err := ioutil.ReadFile(fpath)
-								if err != nil {
-									return fmt.Errorf("failed to open %q (%v)", fpath, err)
-								}
-								var r metrics.Durations
-								if err = json.Unmarshal(b, &r); err != nil {
-									return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
-								}
-								writeLatencies = append(writeLatencies, r...)
 							}
 						}
 					}
@@ -869,6 +896,17 @@ func (ts *tester) AggregateResults() (err error) {
 					for _, fpath := range fpaths {
 						if strings.Contains(fpath, ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryOutputNamePrefix) {
 							switch {
+							case strings.HasSuffix(fpath, "-writes-raw.json"):
+								b, err := ioutil.ReadFile(fpath)
+								if err != nil {
+									return fmt.Errorf("failed to open %q (%v)", fpath, err)
+								}
+								var r metrics.Durations
+								if err = json.Unmarshal(b, &r); err != nil {
+									return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
+								}
+								writeLatencies = append(writeLatencies, r...)
+
 							case strings.HasSuffix(fpath, "-writes-summary.json"):
 								b, err := ioutil.ReadFile(fpath)
 								if err != nil {
@@ -888,17 +926,6 @@ func (ts *tester) AggregateResults() (err error) {
 										return fmt.Errorf("failed to merge histograms (%v)", err)
 									}
 								}
-
-							case strings.HasSuffix(fpath, "-writes.json"):
-								b, err := ioutil.ReadFile(fpath)
-								if err != nil {
-									return fmt.Errorf("failed to open %q (%v)", fpath, err)
-								}
-								var r metrics.Durations
-								if err = json.Unmarshal(b, &r); err != nil {
-									return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
-								}
-								writeLatencies = append(writeLatencies, r...)
 							}
 						}
 					}

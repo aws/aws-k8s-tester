@@ -140,7 +140,7 @@ func (cfg *Config) validateAddOnStresserLocal() error {
 	}
 
 	if cfg.AddOnStresserLocal.RequestsWritesRawJSONPath == "" {
-		cfg.AddOnStresserLocal.RequestsWritesRawJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-local-requests-writes.json"
+		cfg.AddOnStresserLocal.RequestsWritesRawJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-local-requests-writes-raw.json"
 	}
 	if cfg.AddOnStresserLocal.RequestsWritesRawJSONS3Key == "" {
 		cfg.AddOnStresserLocal.RequestsWritesRawJSONS3Key = path.Join(
@@ -178,7 +178,7 @@ func (cfg *Config) validateAddOnStresserLocal() error {
 	if cfg.AddOnStresserLocal.RequestsWritesSummaryCompareJSONS3Key == "" {
 		cfg.AddOnStresserLocal.RequestsWritesSummaryCompareJSONS3Key = path.Join(
 			cfg.AddOnStresserLocal.S3Dir,
-			"writes-summary-compare",
+			"writes-compare",
 			filepath.Base(cfg.AddOnStresserLocal.RequestsWritesSummaryCompareJSONPath),
 		)
 	}
@@ -188,13 +188,13 @@ func (cfg *Config) validateAddOnStresserLocal() error {
 	if cfg.AddOnStresserLocal.RequestsWritesSummaryCompareTableS3Key == "" {
 		cfg.AddOnStresserLocal.RequestsWritesSummaryCompareTableS3Key = path.Join(
 			cfg.AddOnStresserLocal.S3Dir,
-			"writes-summary-compare",
+			"writes-compare",
 			filepath.Base(cfg.AddOnStresserLocal.RequestsWritesSummaryCompareTablePath),
 		)
 	}
 
 	if cfg.AddOnStresserLocal.RequestsReadsRawJSONPath == "" {
-		cfg.AddOnStresserLocal.RequestsReadsRawJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-local-requests-reads.json"
+		cfg.AddOnStresserLocal.RequestsReadsRawJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-local-requests-reads-raw.json"
 	}
 	if cfg.AddOnStresserLocal.RequestsReadsRawJSONS3Key == "" {
 		cfg.AddOnStresserLocal.RequestsReadsRawJSONS3Key = path.Join(
@@ -232,7 +232,7 @@ func (cfg *Config) validateAddOnStresserLocal() error {
 	if cfg.AddOnStresserLocal.RequestsReadsSummaryCompareJSONS3Key == "" {
 		cfg.AddOnStresserLocal.RequestsReadsSummaryCompareJSONS3Key = path.Join(
 			cfg.AddOnStresserLocal.S3Dir,
-			"reads-summary-compare",
+			"reads-compare",
 			filepath.Base(cfg.AddOnStresserLocal.RequestsReadsSummaryCompareJSONPath),
 		)
 	}
@@ -242,7 +242,7 @@ func (cfg *Config) validateAddOnStresserLocal() error {
 	if cfg.AddOnStresserLocal.RequestsReadsSummaryCompareTableS3Key == "" {
 		cfg.AddOnStresserLocal.RequestsReadsSummaryCompareTableS3Key = path.Join(
 			cfg.AddOnStresserLocal.S3Dir,
-			"reads-summary-compare",
+			"reads-compare",
 			filepath.Base(cfg.AddOnStresserLocal.RequestsReadsSummaryCompareTablePath),
 		)
 	}

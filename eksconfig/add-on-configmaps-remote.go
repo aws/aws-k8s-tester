@@ -111,7 +111,7 @@ func getDefaultAddOnConfigmapsRemote() *AddOnConfigmapsRemote {
 		// Objects: 1000,
 		// ObjectSize: 300000, // 0.3 MB
 
-		RequestsWritesSummaryOutputNamePrefix: "configmaps-writes" + randutil.String(10),
+		RequestsWritesSummaryOutputNamePrefix: "configmaps-writes-" + randutil.String(10),
 	}
 }
 
@@ -159,7 +159,7 @@ func (cfg *Config) validateAddOnConfigmapsRemote() error {
 	}
 
 	if cfg.AddOnConfigmapsRemote.RequestsWritesRawJSONPath == "" {
-		cfg.AddOnConfigmapsRemote.RequestsWritesRawJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-configmaps-remote-requests-writes.csv"
+		cfg.AddOnConfigmapsRemote.RequestsWritesRawJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-configmaps-remote-requests-writes-raw.json"
 	}
 	if cfg.AddOnConfigmapsRemote.RequestsWritesRawJSONS3Key == "" {
 		cfg.AddOnConfigmapsRemote.RequestsWritesRawJSONS3Key = path.Join(
@@ -197,7 +197,7 @@ func (cfg *Config) validateAddOnConfigmapsRemote() error {
 	if cfg.AddOnConfigmapsRemote.RequestsWritesSummaryCompareJSONS3Key == "" {
 		cfg.AddOnConfigmapsRemote.RequestsWritesSummaryCompareJSONS3Key = path.Join(
 			cfg.AddOnConfigmapsRemote.S3Dir,
-			"writes-summary-compare",
+			"writes-compare",
 			filepath.Base(cfg.AddOnConfigmapsRemote.RequestsWritesSummaryCompareJSONPath),
 		)
 	}
@@ -207,13 +207,13 @@ func (cfg *Config) validateAddOnConfigmapsRemote() error {
 	if cfg.AddOnConfigmapsRemote.RequestsWritesSummaryCompareTableS3Key == "" {
 		cfg.AddOnConfigmapsRemote.RequestsWritesSummaryCompareTableS3Key = path.Join(
 			cfg.AddOnConfigmapsRemote.S3Dir,
-			"writes-summary-compare",
+			"writes-compare",
 			filepath.Base(cfg.AddOnConfigmapsRemote.RequestsWritesSummaryCompareTablePath),
 		)
 	}
 
 	if cfg.AddOnConfigmapsRemote.RequestsWritesSummaryOutputNamePrefix == "" {
-		cfg.AddOnConfigmapsRemote.RequestsWritesSummaryOutputNamePrefix = "configmaps-writes" + randutil.String(10)
+		cfg.AddOnConfigmapsRemote.RequestsWritesSummaryOutputNamePrefix = "configmaps-writes-" + randutil.String(10)
 	}
 
 	return nil

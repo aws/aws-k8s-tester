@@ -113,7 +113,7 @@ func getDefaultAddOnCSRsRemote() *AddOnCSRsRemote {
 		DeploymentReplicas:                    5,
 		Objects:                               10, // 1000 objects generates 5 MB data to etcd
 		InitialRequestConditionType:           "",
-		RequestsWritesSummaryOutputNamePrefix: "csrs-writes" + randutil.String(10),
+		RequestsWritesSummaryOutputNamePrefix: "csrs-writes-" + randutil.String(10),
 	}
 }
 
@@ -164,7 +164,7 @@ func (cfg *Config) validateAddOnCSRsRemote() error {
 	}
 
 	if cfg.AddOnCSRsRemote.RequestsWritesRawJSONPath == "" {
-		cfg.AddOnCSRsRemote.RequestsWritesRawJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-csrs-remote-requests-writes.csv"
+		cfg.AddOnCSRsRemote.RequestsWritesRawJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-csrs-remote-requests-writes-raw.json"
 	}
 	if cfg.AddOnCSRsRemote.RequestsWritesRawJSONS3Key == "" {
 		cfg.AddOnCSRsRemote.RequestsWritesRawJSONS3Key = path.Join(
@@ -202,7 +202,7 @@ func (cfg *Config) validateAddOnCSRsRemote() error {
 	if cfg.AddOnCSRsRemote.RequestsWritesSummaryCompareJSONS3Key == "" {
 		cfg.AddOnCSRsRemote.RequestsWritesSummaryCompareJSONS3Key = path.Join(
 			cfg.AddOnCSRsRemote.S3Dir,
-			"writes-summary-compare",
+			"writes-compare",
 			filepath.Base(cfg.AddOnCSRsRemote.RequestsWritesSummaryCompareJSONPath),
 		)
 	}
@@ -212,13 +212,13 @@ func (cfg *Config) validateAddOnCSRsRemote() error {
 	if cfg.AddOnCSRsRemote.RequestsWritesSummaryCompareTableS3Key == "" {
 		cfg.AddOnCSRsRemote.RequestsWritesSummaryCompareTableS3Key = path.Join(
 			cfg.AddOnCSRsRemote.S3Dir,
-			"writes-summary-compare",
+			"writes-compare",
 			filepath.Base(cfg.AddOnCSRsRemote.RequestsWritesSummaryCompareTablePath),
 		)
 	}
 
 	if cfg.AddOnCSRsRemote.RequestsWritesSummaryOutputNamePrefix == "" {
-		cfg.AddOnCSRsRemote.RequestsWritesSummaryOutputNamePrefix = "csrs-writes" + randutil.String(10)
+		cfg.AddOnCSRsRemote.RequestsWritesSummaryOutputNamePrefix = "csrs-writes-" + randutil.String(10)
 	}
 
 	return nil

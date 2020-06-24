@@ -138,8 +138,8 @@ func getDefaultAddOnStresserRemote() *AddOnStresserRemote {
 		ObjectSize:                            0,
 		ListLimit:                             0,
 		Duration:                              time.Minute,
-		RequestsWritesSummaryOutputNamePrefix: "stresser-writes" + randutil.String(10),
-		RequestsReadsSummaryOutputNamePrefix:  "stresser-reads" + randutil.String(10),
+		RequestsWritesSummaryOutputNamePrefix: "stresser-writes-" + randutil.String(10),
+		RequestsReadsSummaryOutputNamePrefix:  "stresser-reads-" + randutil.String(10),
 	}
 }
 
@@ -178,7 +178,7 @@ func (cfg *Config) validateAddOnStresserRemote() error {
 	}
 
 	if cfg.AddOnStresserRemote.RequestsWritesRawJSONPath == "" {
-		cfg.AddOnStresserRemote.RequestsWritesRawJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-writes.json"
+		cfg.AddOnStresserRemote.RequestsWritesRawJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-writes-raw.json"
 	}
 	if cfg.AddOnStresserRemote.RequestsWritesRawJSONS3Key == "" {
 		cfg.AddOnStresserRemote.RequestsWritesRawJSONS3Key = path.Join(
@@ -216,7 +216,7 @@ func (cfg *Config) validateAddOnStresserRemote() error {
 	if cfg.AddOnStresserRemote.RequestsWritesSummaryCompareJSONS3Key == "" {
 		cfg.AddOnStresserRemote.RequestsWritesSummaryCompareJSONS3Key = path.Join(
 			cfg.AddOnStresserRemote.S3Dir,
-			"writes-summary-compare",
+			"writes-compare",
 			filepath.Base(cfg.AddOnStresserRemote.RequestsWritesSummaryCompareJSONPath),
 		)
 	}
@@ -226,13 +226,13 @@ func (cfg *Config) validateAddOnStresserRemote() error {
 	if cfg.AddOnStresserRemote.RequestsWritesSummaryCompareTableS3Key == "" {
 		cfg.AddOnStresserRemote.RequestsWritesSummaryCompareTableS3Key = path.Join(
 			cfg.AddOnStresserRemote.S3Dir,
-			"writes-summary-compare",
+			"writes-compare",
 			filepath.Base(cfg.AddOnStresserRemote.RequestsWritesSummaryCompareTablePath),
 		)
 	}
 
 	if cfg.AddOnStresserRemote.RequestsReadsRawJSONPath == "" {
-		cfg.AddOnStresserRemote.RequestsReadsRawJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-reads.json"
+		cfg.AddOnStresserRemote.RequestsReadsRawJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-reads-raw.json"
 	}
 	if cfg.AddOnStresserRemote.RequestsReadsRawJSONS3Key == "" {
 		cfg.AddOnStresserRemote.RequestsReadsRawJSONS3Key = path.Join(
@@ -270,7 +270,7 @@ func (cfg *Config) validateAddOnStresserRemote() error {
 	if cfg.AddOnStresserRemote.RequestsReadsSummaryCompareJSONS3Key == "" {
 		cfg.AddOnStresserRemote.RequestsReadsSummaryCompareJSONS3Key = path.Join(
 			cfg.AddOnStresserRemote.S3Dir,
-			"reads-summary-compare",
+			"reads-compare",
 			filepath.Base(cfg.AddOnStresserRemote.RequestsReadsSummaryCompareJSONPath),
 		)
 	}
@@ -280,16 +280,16 @@ func (cfg *Config) validateAddOnStresserRemote() error {
 	if cfg.AddOnStresserRemote.RequestsReadsSummaryCompareTableS3Key == "" {
 		cfg.AddOnStresserRemote.RequestsReadsSummaryCompareTableS3Key = path.Join(
 			cfg.AddOnStresserRemote.S3Dir,
-			"reads-summary-compare",
+			"reads-compare",
 			filepath.Base(cfg.AddOnStresserRemote.RequestsReadsSummaryCompareTablePath),
 		)
 	}
 
 	if cfg.AddOnStresserRemote.RequestsWritesSummaryOutputNamePrefix == "" {
-		cfg.AddOnStresserRemote.RequestsWritesSummaryOutputNamePrefix = "stresser-writes" + randutil.String(10)
+		cfg.AddOnStresserRemote.RequestsWritesSummaryOutputNamePrefix = "stresser-writes-" + randutil.String(10)
 	}
 	if cfg.AddOnStresserRemote.RequestsReadsSummaryOutputNamePrefix == "" {
-		cfg.AddOnStresserRemote.RequestsReadsSummaryOutputNamePrefix = "stresser-reads" + randutil.String(10)
+		cfg.AddOnStresserRemote.RequestsReadsSummaryOutputNamePrefix = "stresser-reads-" + randutil.String(10)
 	}
 
 	return nil

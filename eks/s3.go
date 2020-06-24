@@ -282,7 +282,7 @@ func (ts *Tester) uploadToS3() (err error) {
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "csrs-local-requests-writes.json"),
+				path.Join(ts.cfg.Name, "csrs-local-requests-writes-raw.json"),
 				ts.cfg.AddOnCSRsLocal.RequestsWritesRawJSONPath,
 			); err != nil {
 				return err
@@ -340,7 +340,7 @@ func (ts *Tester) uploadToS3() (err error) {
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "csrs-remote-requests-writes.json"),
+				path.Join(ts.cfg.Name, "csrs-remote-requests-writes-raw.json"),
 				ts.cfg.AddOnCSRsRemote.RequestsWritesRawJSONPath,
 			); err != nil {
 				return err
@@ -398,7 +398,7 @@ func (ts *Tester) uploadToS3() (err error) {
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "configmaps-local-requests-writes.json"),
+				path.Join(ts.cfg.Name, "configmaps-local-requests-writes-raw.json"),
 				ts.cfg.AddOnConfigmapsLocal.RequestsWritesRawJSONPath,
 			); err != nil {
 				return err
@@ -456,7 +456,7 @@ func (ts *Tester) uploadToS3() (err error) {
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "configmaps-remote-requests-writes.json"),
+				path.Join(ts.cfg.Name, "configmaps-remote-requests-writes-raw.json"),
 				ts.cfg.AddOnConfigmapsRemote.RequestsWritesRawJSONPath,
 			); err != nil {
 				return err
@@ -514,7 +514,7 @@ func (ts *Tester) uploadToS3() (err error) {
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "secrets-local-requests-writes.json"),
+				path.Join(ts.cfg.Name, "secrets-local-requests-writes-raw.json"),
 				ts.cfg.AddOnSecretsLocal.RequestsWritesRawJSONPath,
 			); err != nil {
 				return err
@@ -570,7 +570,7 @@ func (ts *Tester) uploadToS3() (err error) {
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "secrets-local-requests-reads.json"),
+				path.Join(ts.cfg.Name, "secrets-local-requests-reads-raw.json"),
 				ts.cfg.AddOnSecretsLocal.RequestsReadsRawJSONPath,
 			); err != nil {
 				return err
@@ -628,7 +628,7 @@ func (ts *Tester) uploadToS3() (err error) {
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "secrets-remote-requests-writes.json"),
+				path.Join(ts.cfg.Name, "secrets-remote-requests-writes-raw.json"),
 				ts.cfg.AddOnSecretsRemote.RequestsWritesRawJSONPath,
 			); err != nil {
 				return err
@@ -684,7 +684,7 @@ func (ts *Tester) uploadToS3() (err error) {
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "secrets-remote-requests-reads.json"),
+				path.Join(ts.cfg.Name, "secrets-remote-requests-reads-raw.json"),
 				ts.cfg.AddOnSecretsRemote.RequestsReadsRawJSONPath,
 			); err != nil {
 				return err
@@ -834,7 +834,7 @@ func (ts *Tester) uploadToS3() (err error) {
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "stresser-local-requests-writes.json"),
+				path.Join(ts.cfg.Name, "stresser-local-requests-writes-raw.json"),
 				ts.cfg.AddOnStresserLocal.RequestsWritesRawJSONPath,
 			); err != nil {
 				return err
@@ -890,7 +890,7 @@ func (ts *Tester) uploadToS3() (err error) {
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "stresser-local-requests-reads.json"),
+				path.Join(ts.cfg.Name, "stresser-local-requests-reads-raw.json"),
 				ts.cfg.AddOnStresserLocal.RequestsReadsRawJSONPath,
 			); err != nil {
 				return err
@@ -948,7 +948,7 @@ func (ts *Tester) uploadToS3() (err error) {
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "stresser-remote-requests-writes.json"),
+				path.Join(ts.cfg.Name, "stresser-remote-requests-writes-raw.json"),
 				ts.cfg.AddOnStresserRemote.RequestsWritesRawJSONPath,
 			); err != nil {
 				return err
@@ -1004,7 +1004,7 @@ func (ts *Tester) uploadToS3() (err error) {
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "stresser-remote-requests-reads.json"),
+				path.Join(ts.cfg.Name, "stresser-remote-requests-reads-raw.json"),
 				ts.cfg.AddOnStresserRemote.RequestsReadsRawJSONPath,
 			); err != nil {
 				return err

@@ -128,7 +128,7 @@ func (cfg *Config) validateAddOnCSRsLocal() error {
 	}
 
 	if cfg.AddOnCSRsLocal.RequestsWritesRawJSONPath == "" {
-		cfg.AddOnCSRsLocal.RequestsWritesRawJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-csrs-local-requests-writes.csv"
+		cfg.AddOnCSRsLocal.RequestsWritesRawJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-csrs-local-requests-writes-raw.json"
 	}
 	if cfg.AddOnCSRsLocal.RequestsWritesRawJSONS3Key == "" {
 		cfg.AddOnCSRsLocal.RequestsWritesRawJSONS3Key = path.Join(
@@ -166,7 +166,7 @@ func (cfg *Config) validateAddOnCSRsLocal() error {
 	if cfg.AddOnCSRsLocal.RequestsWritesSummaryCompareJSONS3Key == "" {
 		cfg.AddOnCSRsLocal.RequestsWritesSummaryCompareJSONS3Key = path.Join(
 			cfg.AddOnCSRsLocal.S3Dir,
-			"writes-summary-compare",
+			"writes-compare",
 			filepath.Base(cfg.AddOnCSRsLocal.RequestsWritesSummaryCompareJSONPath),
 		)
 	}
@@ -176,7 +176,7 @@ func (cfg *Config) validateAddOnCSRsLocal() error {
 	if cfg.AddOnCSRsLocal.RequestsWritesSummaryCompareTableS3Key == "" {
 		cfg.AddOnCSRsLocal.RequestsWritesSummaryCompareTableS3Key = path.Join(
 			cfg.AddOnCSRsLocal.S3Dir,
-			"writes-summary-compare",
+			"writes-compare",
 			filepath.Base(cfg.AddOnCSRsLocal.RequestsWritesSummaryCompareTablePath),
 		)
 	}

@@ -822,18 +822,56 @@ func (ts *tester) AggregateResults() (err error) {
 	writesSummary, readsSummary := metrics.RequestsSummary{TestID: time.Now().UTC().Format(time.RFC3339Nano)}, metrics.RequestsSummary{TestID: time.Now().UTC().Format(time.RFC3339Nano)}
 	writeLatencies, readLatencies := make(metrics.Durations, 0, 20000), make(metrics.Durations, 0, 20000)
 
-	writesDir, readsDir := "", ""
+	writesDirRaw, writesDirSummary := "", ""
+	readsDirRaw, readsDirSummary := "", ""
 
-	writesDir, err = aws_s3.DownloadDir(
+	writesDirRaw, err = aws_s3.DownloadDir(
 		ts.cfg.Logger,
 		ts.cfg.S3API,
 		ts.cfg.EKSConfig.S3BucketName,
-		path.Join(ts.cfg.EKSConfig.Name, "add-on-stresser-remote", "writes"),
+		path.Dir(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesRawJSONS3Key),
 	)
 	if err == nil {
-		ts.cfg.Logger.Info("reading writes results", zap.String("writes-dir", writesDir))
+		ts.cfg.Logger.Info("reading writes results raw", zap.String("writes-dir", writesDirRaw))
 		cnt := 0
-		err = filepath.Walk(writesDir, func(fpath string, info os.FileInfo, werr error) error {
+		err = filepath.Walk(writesDirRaw, func(fpath string, info os.FileInfo, werr error) error {
+			if werr != nil {
+				return werr
+			}
+			if info.IsDir() {
+				return nil
+			}
+			cnt++
+			switch {
+			case strings.HasSuffix(fpath, "-writes-raw.json"):
+				b, err := ioutil.ReadFile(fpath)
+				if err != nil {
+					return fmt.Errorf("failed to open %q (%v)", fpath, err)
+				}
+				var r metrics.Durations
+				if err = json.Unmarshal(b, &r); err != nil {
+					return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
+				}
+				writeLatencies = append(writeLatencies, r...)
+			}
+			return nil
+		})
+		if err != nil || cnt == 0 {
+			ts.cfg.Logger.Warn("failed to read writes results", zap.Int("file-count", cnt), zap.Error(err))
+			os.RemoveAll(writesDirRaw)
+			writesDirRaw = ""
+		}
+	}
+	writesDirSummary, err = aws_s3.DownloadDir(
+		ts.cfg.Logger,
+		ts.cfg.S3API,
+		ts.cfg.EKSConfig.S3BucketName,
+		path.Dir(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesSummaryJSONS3Key),
+	)
+	if err == nil {
+		ts.cfg.Logger.Info("reading writes results summary", zap.String("writes-dir", writesDirSummary))
+		cnt := 0
+		err = filepath.Walk(writesDirSummary, func(fpath string, info os.FileInfo, werr error) error {
 			if werr != nil {
 				return werr
 			}
@@ -861,8 +899,35 @@ func (ts *tester) AggregateResults() (err error) {
 						return fmt.Errorf("failed to merge histograms (%v)", err)
 					}
 				}
+			}
+			return nil
+		})
+		if err != nil || cnt == 0 {
+			ts.cfg.Logger.Warn("failed to read writes results", zap.Int("file-count", cnt), zap.Error(err))
+			os.RemoveAll(writesDirSummary)
+			writesDirSummary = ""
+		}
+	}
 
-			case strings.HasSuffix(fpath, "-writes.json"):
+	readsDirRaw, err = aws_s3.DownloadDir(
+		ts.cfg.Logger,
+		ts.cfg.S3API,
+		ts.cfg.EKSConfig.S3BucketName,
+		path.Dir(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsRawJSONS3Key),
+	)
+	if err == nil {
+		ts.cfg.Logger.Info("reading reads results raw", zap.String("reads-dir", readsDirRaw))
+		cnt := 0
+		err = filepath.Walk(readsDirRaw, func(fpath string, info os.FileInfo, werr error) error {
+			if werr != nil {
+				return werr
+			}
+			if info.IsDir() {
+				return nil
+			}
+			cnt++
+			switch {
+			case strings.HasSuffix(fpath, "-reads-raw.json"):
 				b, err := ioutil.ReadFile(fpath)
 				if err != nil {
 					return fmt.Errorf("failed to open %q (%v)", fpath, err)
@@ -876,22 +941,21 @@ func (ts *tester) AggregateResults() (err error) {
 			return nil
 		})
 		if err != nil || cnt == 0 {
-			ts.cfg.Logger.Warn("failed to read writes results", zap.Int("file-count", cnt), zap.Error(err))
-			os.RemoveAll(writesDir)
-			writesDir = ""
+			ts.cfg.Logger.Warn("failed to read reads results", zap.Int("file-count", cnt), zap.Error(err))
+			os.RemoveAll(readsDirRaw)
+			readsDirRaw = ""
 		}
 	}
-
-	readsDir, err = aws_s3.DownloadDir(
+	readsDirSummary, err = aws_s3.DownloadDir(
 		ts.cfg.Logger,
 		ts.cfg.S3API,
 		ts.cfg.EKSConfig.S3BucketName,
-		path.Join(ts.cfg.EKSConfig.Name, "add-on-stresser-remote", "reads"),
+		path.Dir(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsSummaryJSONS3Key),
 	)
 	if err == nil {
-		ts.cfg.Logger.Info("reading reads results", zap.String("reads-dir", readsDir))
+		ts.cfg.Logger.Info("reading reads results summary", zap.String("reads-dir", readsDirSummary))
 		cnt := 0
-		err = filepath.Walk(readsDir, func(fpath string, info os.FileInfo, werr error) error {
+		err = filepath.Walk(readsDirSummary, func(fpath string, info os.FileInfo, werr error) error {
 			if werr != nil {
 				return werr
 			}
@@ -899,7 +963,6 @@ func (ts *tester) AggregateResults() (err error) {
 				return nil
 			}
 			cnt++
-
 			switch {
 			case strings.HasSuffix(fpath, "-reads-summary.json"):
 				b, err := ioutil.ReadFile(fpath)
@@ -920,28 +983,17 @@ func (ts *tester) AggregateResults() (err error) {
 						return fmt.Errorf("failed to merge histograms (%v)", err)
 					}
 				}
-
-			case strings.HasSuffix(fpath, "-reads.json"):
-				b, err := ioutil.ReadFile(fpath)
-				if err != nil {
-					return fmt.Errorf("failed to open %q (%v)", fpath, err)
-				}
-				var r metrics.Durations
-				if err = json.Unmarshal(b, &r); err != nil {
-					return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
-				}
-				readLatencies = append(readLatencies, r...)
 			}
 			return nil
 		})
 		if err != nil || cnt == 0 {
 			ts.cfg.Logger.Warn("failed to read reads results", zap.Int("file-count", cnt), zap.Error(err))
-			os.RemoveAll(readsDir)
-			readsDir = ""
+			os.RemoveAll(readsDirSummary)
+			readsDirSummary = ""
 		}
 	}
 
-	aggSucceed := writesDir != "" && readsDir != ""
+	aggSucceed := writesDirRaw != "" && writesDirSummary != "" && readsDirRaw != "" && readsDirSummary != ""
 	if !aggSucceed {
 		writesSummary, readsSummary = metrics.RequestsSummary{TestID: time.Now().UTC().Format(time.RFC3339Nano)}, metrics.RequestsSummary{TestID: time.Now().UTC().Format(time.RFC3339Nano)}
 		writeLatencies, readLatencies = make(metrics.Durations, 0, 20000), make(metrics.Durations, 0, 20000)
@@ -953,6 +1005,17 @@ func (ts *tester) AggregateResults() (err error) {
 					for _, fpath := range fpaths {
 						if strings.Contains(fpath, ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesSummaryOutputNamePrefix) {
 							switch {
+							case strings.HasSuffix(fpath, "-writes-raw.json"):
+								b, err := ioutil.ReadFile(fpath)
+								if err != nil {
+									return fmt.Errorf("failed to open %q (%v)", fpath, err)
+								}
+								var r metrics.Durations
+								if err = json.Unmarshal(b, &r); err != nil {
+									return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
+								}
+								writeLatencies = append(writeLatencies, r...)
+
 							case strings.HasSuffix(fpath, "-writes-summary.json"):
 								b, err := ioutil.ReadFile(fpath)
 								if err != nil {
@@ -972,8 +1035,11 @@ func (ts *tester) AggregateResults() (err error) {
 										return fmt.Errorf("failed to merge histograms (%v)", err)
 									}
 								}
-
-							case strings.HasSuffix(fpath, "-writes.json"):
+							}
+						}
+						if strings.Contains(fpath, ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsSummaryOutputNamePrefix) {
+							switch {
+							case strings.HasSuffix(fpath, "-reads-raw.json"):
 								b, err := ioutil.ReadFile(fpath)
 								if err != nil {
 									return fmt.Errorf("failed to open %q (%v)", fpath, err)
@@ -982,11 +1048,8 @@ func (ts *tester) AggregateResults() (err error) {
 								if err = json.Unmarshal(b, &r); err != nil {
 									return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
 								}
-								writeLatencies = append(writeLatencies, r...)
-							}
-						}
-						if strings.Contains(fpath, ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsSummaryOutputNamePrefix) {
-							switch {
+								readLatencies = append(readLatencies, r...)
+
 							case strings.HasSuffix(fpath, "-reads-summary.json"):
 								b, err := ioutil.ReadFile(fpath)
 								if err != nil {
@@ -1006,17 +1069,6 @@ func (ts *tester) AggregateResults() (err error) {
 										return fmt.Errorf("failed to merge histograms (%v)", err)
 									}
 								}
-
-							case strings.HasSuffix(fpath, "-reads.json"):
-								b, err := ioutil.ReadFile(fpath)
-								if err != nil {
-									return fmt.Errorf("failed to open %q (%v)", fpath, err)
-								}
-								var r metrics.Durations
-								if err = json.Unmarshal(b, &r); err != nil {
-									return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
-								}
-								readLatencies = append(readLatencies, r...)
 							}
 						}
 					}
@@ -1030,6 +1082,17 @@ func (ts *tester) AggregateResults() (err error) {
 					for _, fpath := range fpaths {
 						if strings.Contains(fpath, ts.cfg.EKSConfig.AddOnStresserRemote.RequestsWritesSummaryOutputNamePrefix) {
 							switch {
+							case strings.HasSuffix(fpath, "-writes-raw.json"):
+								b, err := ioutil.ReadFile(fpath)
+								if err != nil {
+									return fmt.Errorf("failed to open %q (%v)", fpath, err)
+								}
+								var r metrics.Durations
+								if err = json.Unmarshal(b, &r); err != nil {
+									return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
+								}
+								writeLatencies = append(writeLatencies, r...)
+
 							case strings.HasSuffix(fpath, "-writes-summary.json"):
 								b, err := ioutil.ReadFile(fpath)
 								if err != nil {
@@ -1049,8 +1112,11 @@ func (ts *tester) AggregateResults() (err error) {
 										return fmt.Errorf("failed to merge histograms (%v)", err)
 									}
 								}
-
-							case strings.HasSuffix(fpath, "-writes.json"):
+							}
+						}
+						if strings.Contains(fpath, ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsSummaryOutputNamePrefix) {
+							switch {
+							case strings.HasSuffix(fpath, "-reads-raw.json"):
 								b, err := ioutil.ReadFile(fpath)
 								if err != nil {
 									return fmt.Errorf("failed to open %q (%v)", fpath, err)
@@ -1059,11 +1125,8 @@ func (ts *tester) AggregateResults() (err error) {
 								if err = json.Unmarshal(b, &r); err != nil {
 									return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
 								}
-								writeLatencies = append(writeLatencies, r...)
-							}
-						}
-						if strings.Contains(fpath, ts.cfg.EKSConfig.AddOnStresserRemote.RequestsReadsSummaryOutputNamePrefix) {
-							switch {
+								readLatencies = append(readLatencies, r...)
+
 							case strings.HasSuffix(fpath, "-reads-summary.json"):
 								b, err := ioutil.ReadFile(fpath)
 								if err != nil {
@@ -1083,17 +1146,6 @@ func (ts *tester) AggregateResults() (err error) {
 										return fmt.Errorf("failed to merge histograms (%v)", err)
 									}
 								}
-
-							case strings.HasSuffix(fpath, "-reads.json"):
-								b, err := ioutil.ReadFile(fpath)
-								if err != nil {
-									return fmt.Errorf("failed to open %q (%v)", fpath, err)
-								}
-								var r metrics.Durations
-								if err = json.Unmarshal(b, &r); err != nil {
-									return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
-								}
-								readLatencies = append(readLatencies, r...)
 							}
 						}
 					}

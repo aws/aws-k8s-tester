@@ -125,7 +125,7 @@ func (cfg *Config) validateAddOnConfigmapsLocal() error {
 	}
 
 	if cfg.AddOnConfigmapsLocal.RequestsWritesRawJSONPath == "" {
-		cfg.AddOnConfigmapsLocal.RequestsWritesRawJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-configmaps-local-requests-writes.csv"
+		cfg.AddOnConfigmapsLocal.RequestsWritesRawJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-configmaps-local-requests-writes-raw.json"
 	}
 	if cfg.AddOnConfigmapsLocal.RequestsWritesRawJSONS3Key == "" {
 		cfg.AddOnConfigmapsLocal.RequestsWritesRawJSONS3Key = path.Join(
@@ -163,7 +163,7 @@ func (cfg *Config) validateAddOnConfigmapsLocal() error {
 	if cfg.AddOnConfigmapsLocal.RequestsWritesSummaryCompareJSONS3Key == "" {
 		cfg.AddOnConfigmapsLocal.RequestsWritesSummaryCompareJSONS3Key = path.Join(
 			cfg.AddOnConfigmapsLocal.S3Dir,
-			"writes-summary-compare",
+			"writes-compare",
 			filepath.Base(cfg.AddOnConfigmapsLocal.RequestsWritesSummaryCompareJSONPath),
 		)
 	}
@@ -173,7 +173,7 @@ func (cfg *Config) validateAddOnConfigmapsLocal() error {
 	if cfg.AddOnConfigmapsLocal.RequestsWritesSummaryCompareTableS3Key == "" {
 		cfg.AddOnConfigmapsLocal.RequestsWritesSummaryCompareTableS3Key = path.Join(
 			cfg.AddOnConfigmapsLocal.S3Dir,
-			"writes-summary-compare",
+			"writes-compare",
 			filepath.Base(cfg.AddOnConfigmapsLocal.RequestsWritesSummaryCompareTablePath),
 		)
 	}
