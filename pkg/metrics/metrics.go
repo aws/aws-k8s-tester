@@ -76,22 +76,27 @@ func CompareRequestsSummary(a RequestsSummary, b RequestsSummary) (c RequestsSum
 	deltaP50 := float64(b.LantencyP50) - float64(a.LantencyP50)
 	deltaP50 /= float64(a.LantencyP50)
 	deltaP50 *= 100.0
+	deltaP50 = convertInvalid(deltaP50)
 
 	deltaP90 := float64(b.LantencyP90) - float64(a.LantencyP90)
 	deltaP90 /= float64(a.LantencyP90)
 	deltaP90 *= 100.0
+	deltaP90 = convertInvalid(deltaP90)
 
 	deltaP99 := float64(b.LantencyP99) - float64(a.LantencyP99)
 	deltaP99 /= float64(a.LantencyP99)
 	deltaP99 *= 100.0
+	deltaP99 = convertInvalid(deltaP99)
 
 	deltaP999 := float64(b.LantencyP999) - float64(a.LantencyP999)
 	deltaP999 /= float64(a.LantencyP999)
 	deltaP999 *= 100.0
+	deltaP999 = convertInvalid(deltaP999)
 
 	deltaP9999 := float64(b.LantencyP9999) - float64(a.LantencyP9999)
 	deltaP9999 /= float64(a.LantencyP9999)
 	deltaP9999 *= 100.0
+	deltaP9999 = convertInvalid(deltaP9999)
 
 	c.LantencyP50DeltaPercent = deltaP50
 	c.LantencyP90DeltaPercent = deltaP90
@@ -100,6 +105,20 @@ func CompareRequestsSummary(a RequestsSummary, b RequestsSummary) (c RequestsSum
 	c.LantencyP9999DeltaPercent = deltaP9999
 
 	return c, nil
+}
+
+func convertInvalid(f float64) (v float64) {
+	v = f
+	if math.IsNaN(f) {
+		v = 0
+	}
+	if math.IsInf(f, 1) {
+		v = math.MaxFloat64
+	}
+	if math.IsInf(f, -1) {
+		v = -math.MaxFloat64
+	}
+	return v
 }
 
 // RequestsSummary represents request results.
