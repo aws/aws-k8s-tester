@@ -81,19 +81,21 @@ func (ts *tester) Create() (err error) {
 	}
 
 	loader := config_maps.New(config_maps.Config{
-		Logger:                 ts.cfg.Logger,
-		Stopc:                  ts.cfg.Stopc,
-		S3API:                  ts.cfg.S3API,
-		S3BucketName:           ts.cfg.EKSConfig.S3BucketName,
-		S3DirName:              path.Join(ts.cfg.EKSConfig.Name, "add-on-configmaps-local"),
-		Client:                 ts.cfg.K8SClient,
-		ClientTimeout:          ts.cfg.EKSConfig.ClientTimeout,
-		Namespace:              ts.cfg.EKSConfig.AddOnConfigmapsLocal.Namespace,
-		Objects:                ts.cfg.EKSConfig.AddOnConfigmapsLocal.Objects,
-		ObjectSize:             ts.cfg.EKSConfig.AddOnConfigmapsLocal.ObjectSize,
-		WritesJSONPath:         ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesJSONPath,
-		WritesSummaryJSONPath:  ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesSummaryJSONPath,
-		WritesSummaryTablePath: ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesSummaryTablePath,
+		Logger:                  ts.cfg.Logger,
+		Stopc:                   ts.cfg.Stopc,
+		S3API:                   ts.cfg.S3API,
+		S3BucketName:            ts.cfg.EKSConfig.S3BucketName,
+		Client:                  ts.cfg.K8SClient,
+		ClientTimeout:           ts.cfg.EKSConfig.ClientTimeout,
+		Namespace:               ts.cfg.EKSConfig.AddOnConfigmapsLocal.Namespace,
+		Objects:                 ts.cfg.EKSConfig.AddOnConfigmapsLocal.Objects,
+		ObjectSize:              ts.cfg.EKSConfig.AddOnConfigmapsLocal.ObjectSize,
+		WritesRawJSONPath:       ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesRawJSONPath,
+		WritesRawJSONS3Key:      ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesRawJSONS3Key,
+		WritesSummaryJSONPath:   ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesSummaryJSONPath,
+		WritesSummaryJSONS3Key:  ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesSummaryJSONS3Key,
+		WritesSummaryTablePath:  ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesSummaryTablePath,
+		WritesSummaryTableS3Key: ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsWritesSummaryTableS3Key,
 	})
 	loader.Start()
 	loader.Stop()

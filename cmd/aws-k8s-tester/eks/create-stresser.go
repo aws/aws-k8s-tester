@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -26,7 +27,6 @@ var (
 	stresserPartition    string
 	stresserRegion       string
 	stresserS3BucketName string
-	stresserS3DirName    string
 
 	stresserClients       int
 	stresserClientQPS     float32
@@ -38,6 +38,13 @@ var (
 
 	stresserNamespaceWrite string
 	stresserNamespacesRead []string
+
+	stresserWritesRawJSONS3Dir      string
+	stresserWritesSummaryJSONS3Dir  string
+	stresserWritesSummaryTableS3Dir string
+	stresserReadsRawJSONS3Dir       string
+	stresserReadsSummaryJSONS3Dir   string
+	stresserReadsSummaryTableS3Dir  string
 
 	stresserWritesOutputNamePrefix string
 	stresserReadsOutputNamePrefix  string
@@ -55,7 +62,6 @@ func newCreateStresser() *cobra.Command {
 	cmd.PersistentFlags().StringVar(&stresserPartition, "partition", "aws", "partition for AWS API")
 	cmd.PersistentFlags().StringVar(&stresserRegion, "region", "us-west-2", "region for AWS API")
 	cmd.PersistentFlags().StringVar(&stresserS3BucketName, "s3-bucket-name", "", "S3 bucket name to upload results")
-	cmd.PersistentFlags().StringVar(&stresserS3DirName, "s3-dir-name", "", "S3 directory name to upload results")
 	cmd.PersistentFlags().IntVar(&stresserClients, "clients", eksconfig.DefaultClients, "Number of clients to create")
 	cmd.PersistentFlags().Float32Var(&stresserClientQPS, "client-qps", eksconfig.DefaultClientQPS, "kubelet client setup for QPS")
 	cmd.PersistentFlags().IntVar(&stresserClientBurst, "client-burst", eksconfig.DefaultClientBurst, "kubelet client setup for burst")
@@ -65,6 +71,14 @@ func newCreateStresser() *cobra.Command {
 	cmd.PersistentFlags().DurationVar(&stresserDuration, "duration", 5*time.Minute, "duration to run cluster loader")
 	cmd.PersistentFlags().StringVar(&stresserNamespaceWrite, "namespace-write", "default", "namespaces to send writes")
 	cmd.PersistentFlags().StringSliceVar(&stresserNamespacesRead, "namespaces-read", []string{"default"}, "namespaces to send reads")
+
+	cmd.PersistentFlags().StringVar(&stresserWritesRawJSONS3Dir, "writes-raw-json-s3-dir", "", "s3 directory prefix to upload")
+	cmd.PersistentFlags().StringVar(&stresserWritesSummaryJSONS3Dir, "writes-summary-json-s3-dir", "", "s3 directory prefix to upload")
+	cmd.PersistentFlags().StringVar(&stresserWritesSummaryTableS3Dir, "writes-summary-table-s3-dir", "", "s3 directory prefix to upload")
+	cmd.PersistentFlags().StringVar(&stresserReadsRawJSONS3Dir, "reads-raw-json-s3-dir", "", "s3 directory prefix to upload")
+	cmd.PersistentFlags().StringVar(&stresserReadsSummaryJSONS3Dir, "reads-summary-json-s3-dir", "", "s3 directory prefix to upload")
+	cmd.PersistentFlags().StringVar(&stresserReadsSummaryTableS3Dir, "reads-summary-table-s3-dir", "", "s3 directory prefix to upload")
+
 	cmd.PersistentFlags().StringVar(&stresserWritesOutputNamePrefix, "writes-output-name-prefix", "", "writes results output name prefix in /var/log/")
 	cmd.PersistentFlags().StringVar(&stresserReadsOutputNamePrefix, "reads-output-name-prefix", "", "reads results output name prefix in /var/log/")
 	cmd.PersistentFlags().BoolVar(&stresserBlock, "block", false, "true to block process exit after cluster loader complete")
@@ -133,24 +147,29 @@ func createStresserFunc(cmd *cobra.Command, args []string) {
 	sfx := randutil.String(7)
 
 	loader := stresser.New(stresser.Config{
-		Logger:                 lg,
-		Stopc:                  stopc,
-		S3API:                  s3.New(awsSession),
-		S3BucketName:           stresserS3BucketName,
-		S3DirName:              stresserS3DirName,
-		Client:                 cli,
-		ClientTimeout:          stresserClientTimeout,
-		Deadline:               time.Now().Add(stresserDuration),
-		NamespaceWrite:         stresserNamespaceWrite,
-		NamespacesRead:         stresserNamespacesRead,
-		ObjectSize:             stresserObjectSize,
-		ListLimit:              stresserListLimit,
-		WritesJSONPath:         "/var/log/" + stresserWritesOutputNamePrefix + "-" + sfx + "-writes.json",
-		WritesSummaryJSONPath:  "/var/log/" + stresserWritesOutputNamePrefix + "-" + sfx + "-writes-summary.json",
-		WritesSummaryTablePath: "/var/log/" + stresserWritesOutputNamePrefix + "-" + sfx + "-writes-summary.txt",
-		ReadsJSONPath:          "/var/log/" + stresserReadsOutputNamePrefix + "-" + sfx + "-reads.json",
-		ReadsSummaryJSONPath:   "/var/log/" + stresserReadsOutputNamePrefix + "-" + sfx + "-reads-summary.json",
-		ReadsSummaryTablePath:  "/var/log/" + stresserReadsOutputNamePrefix + "-" + sfx + "-reads-summary.txt",
+		Logger:                  lg,
+		Stopc:                   stopc,
+		S3API:                   s3.New(awsSession),
+		S3BucketName:            stresserS3BucketName,
+		Client:                  cli,
+		ClientTimeout:           stresserClientTimeout,
+		Deadline:                time.Now().Add(stresserDuration),
+		NamespaceWrite:          stresserNamespaceWrite,
+		NamespacesRead:          stresserNamespacesRead,
+		ObjectSize:              stresserObjectSize,
+		ListLimit:               stresserListLimit,
+		WritesRawJSONPath:       "/var/log/" + stresserWritesOutputNamePrefix + "-" + sfx + "-writes.json",
+		WritesRawJSONS3Key:      filepath.Join(stresserWritesRawJSONS3Dir, stresserWritesOutputNamePrefix+"-"+sfx+"-writes.json"),
+		WritesSummaryJSONPath:   "/var/log/" + stresserWritesOutputNamePrefix + "-" + sfx + "-writes-summary.json",
+		WritesSummaryJSONS3Key:  filepath.Join(stresserWritesSummaryJSONS3Dir, stresserWritesOutputNamePrefix+"-"+sfx+"-writes-summary.json"),
+		WritesSummaryTablePath:  "/var/log/" + stresserWritesOutputNamePrefix + "-" + sfx + "-writes-summary.txt",
+		WritesSummaryTableS3Key: filepath.Join(stresserWritesSummaryTableS3Dir, stresserWritesOutputNamePrefix+"-"+sfx+"-writes-summary.txt"),
+		ReadsRawJSONPath:        "/var/log/" + stresserReadsOutputNamePrefix + "-" + sfx + "-reads.json",
+		ReadsRawJSONS3Key:       filepath.Join(stresserReadsRawJSONS3Dir, stresserReadsOutputNamePrefix+"-"+sfx+"-reads.json"),
+		ReadsSummaryJSONPath:    "/var/log/" + stresserReadsOutputNamePrefix + "-" + sfx + "-reads-summary.json",
+		ReadsSummaryJSONS3Key:   filepath.Join(stresserReadsSummaryJSONS3Dir, stresserReadsOutputNamePrefix+"-"+sfx+"-reads-summary.json"),
+		ReadsSummaryTablePath:   "/var/log/" + stresserReadsOutputNamePrefix + "-" + sfx + "-reads-summary.txt",
+		ReadsSummaryTableS3Key:  filepath.Join(stresserReadsSummaryTableS3Dir, stresserReadsOutputNamePrefix+"-"+sfx+"-reads-summary.txt"),
 	})
 	loader.Start()
 

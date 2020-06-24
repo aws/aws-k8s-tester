@@ -277,13 +277,13 @@ func (ts *Tester) uploadToS3() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnCSRsLocal() {
-		if fileutil.Exist(ts.cfg.AddOnCSRsLocal.RequestsWritesJSONPath) {
+		if fileutil.Exist(ts.cfg.AddOnCSRsLocal.RequestsWritesRawJSONPath) {
 			if err = aws_s3.Upload(
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
 				path.Join(ts.cfg.Name, "csrs-local-requests-writes.json"),
-				ts.cfg.AddOnCSRsLocal.RequestsWritesJSONPath,
+				ts.cfg.AddOnCSRsLocal.RequestsWritesRawJSONPath,
 			); err != nil {
 				return err
 			}
@@ -335,13 +335,13 @@ func (ts *Tester) uploadToS3() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnCSRsRemote() {
-		if fileutil.Exist(ts.cfg.AddOnCSRsRemote.RequestsWritesJSONPath) {
+		if fileutil.Exist(ts.cfg.AddOnCSRsRemote.RequestsWritesRawJSONPath) {
 			if err = aws_s3.Upload(
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
 				path.Join(ts.cfg.Name, "csrs-remote-requests-writes.json"),
-				ts.cfg.AddOnCSRsRemote.RequestsWritesJSONPath,
+				ts.cfg.AddOnCSRsRemote.RequestsWritesRawJSONPath,
 			); err != nil {
 				return err
 			}
@@ -393,13 +393,13 @@ func (ts *Tester) uploadToS3() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnConfigmapsLocal() {
-		if fileutil.Exist(ts.cfg.AddOnConfigmapsLocal.RequestsWritesJSONPath) {
+		if fileutil.Exist(ts.cfg.AddOnConfigmapsLocal.RequestsWritesRawJSONPath) {
 			if err = aws_s3.Upload(
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
 				path.Join(ts.cfg.Name, "configmaps-local-requests-writes.json"),
-				ts.cfg.AddOnConfigmapsLocal.RequestsWritesJSONPath,
+				ts.cfg.AddOnConfigmapsLocal.RequestsWritesRawJSONPath,
 			); err != nil {
 				return err
 			}
@@ -451,13 +451,13 @@ func (ts *Tester) uploadToS3() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnConfigmapsRemote() {
-		if fileutil.Exist(ts.cfg.AddOnConfigmapsRemote.RequestsWritesJSONPath) {
+		if fileutil.Exist(ts.cfg.AddOnConfigmapsRemote.RequestsWritesRawJSONPath) {
 			if err = aws_s3.Upload(
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
 				path.Join(ts.cfg.Name, "configmaps-remote-requests-writes.json"),
-				ts.cfg.AddOnConfigmapsRemote.RequestsWritesJSONPath,
+				ts.cfg.AddOnConfigmapsRemote.RequestsWritesRawJSONPath,
 			); err != nil {
 				return err
 			}
@@ -509,13 +509,13 @@ func (ts *Tester) uploadToS3() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnSecretsLocal() {
-		if fileutil.Exist(ts.cfg.AddOnSecretsLocal.RequestsWritesJSONPath) {
+		if fileutil.Exist(ts.cfg.AddOnSecretsLocal.RequestsWritesRawJSONPath) {
 			if err = aws_s3.Upload(
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
 				path.Join(ts.cfg.Name, "secrets-local-requests-writes.json"),
-				ts.cfg.AddOnSecretsLocal.RequestsWritesJSONPath,
+				ts.cfg.AddOnSecretsLocal.RequestsWritesRawJSONPath,
 			); err != nil {
 				return err
 			}
@@ -565,13 +565,13 @@ func (ts *Tester) uploadToS3() (err error) {
 			}
 		}
 
-		if fileutil.Exist(ts.cfg.AddOnSecretsLocal.RequestsReadsJSONPath) {
+		if fileutil.Exist(ts.cfg.AddOnSecretsLocal.RequestsReadsRawJSONPath) {
 			if err = aws_s3.Upload(
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
 				path.Join(ts.cfg.Name, "secrets-local-requests-reads.json"),
-				ts.cfg.AddOnSecretsLocal.RequestsReadsJSONPath,
+				ts.cfg.AddOnSecretsLocal.RequestsReadsRawJSONPath,
 			); err != nil {
 				return err
 			}
@@ -623,13 +623,13 @@ func (ts *Tester) uploadToS3() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnSecretsRemote() {
-		if fileutil.Exist(ts.cfg.AddOnSecretsRemote.RequestsWritesJSONPath) {
+		if fileutil.Exist(ts.cfg.AddOnSecretsRemote.RequestsWritesRawJSONPath) {
 			if err = aws_s3.Upload(
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
 				path.Join(ts.cfg.Name, "secrets-remote-requests-writes.json"),
-				ts.cfg.AddOnSecretsRemote.RequestsWritesJSONPath,
+				ts.cfg.AddOnSecretsRemote.RequestsWritesRawJSONPath,
 			); err != nil {
 				return err
 			}
@@ -679,13 +679,13 @@ func (ts *Tester) uploadToS3() (err error) {
 			}
 		}
 
-		if fileutil.Exist(ts.cfg.AddOnSecretsRemote.RequestsReadsJSONPath) {
+		if fileutil.Exist(ts.cfg.AddOnSecretsRemote.RequestsReadsRawJSONPath) {
 			if err = aws_s3.Upload(
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
 				path.Join(ts.cfg.Name, "secrets-remote-requests-reads.json"),
-				ts.cfg.AddOnSecretsRemote.RequestsReadsJSONPath,
+				ts.cfg.AddOnSecretsRemote.RequestsReadsRawJSONPath,
 			); err != nil {
 				return err
 			}
@@ -829,13 +829,13 @@ func (ts *Tester) uploadToS3() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnStresserLocal() {
-		if fileutil.Exist(ts.cfg.AddOnStresserLocal.RequestsWritesJSONPath) {
+		if fileutil.Exist(ts.cfg.AddOnStresserLocal.RequestsWritesRawJSONPath) {
 			if err = aws_s3.Upload(
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
 				path.Join(ts.cfg.Name, "stresser-local-requests-writes.json"),
-				ts.cfg.AddOnStresserLocal.RequestsWritesJSONPath,
+				ts.cfg.AddOnStresserLocal.RequestsWritesRawJSONPath,
 			); err != nil {
 				return err
 			}
@@ -885,13 +885,13 @@ func (ts *Tester) uploadToS3() (err error) {
 			}
 		}
 
-		if fileutil.Exist(ts.cfg.AddOnStresserLocal.RequestsReadsJSONPath) {
+		if fileutil.Exist(ts.cfg.AddOnStresserLocal.RequestsReadsRawJSONPath) {
 			if err = aws_s3.Upload(
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
 				path.Join(ts.cfg.Name, "stresser-local-requests-reads.json"),
-				ts.cfg.AddOnStresserLocal.RequestsReadsJSONPath,
+				ts.cfg.AddOnStresserLocal.RequestsReadsRawJSONPath,
 			); err != nil {
 				return err
 			}
@@ -943,13 +943,13 @@ func (ts *Tester) uploadToS3() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnStresserRemote() {
-		if fileutil.Exist(ts.cfg.AddOnStresserRemote.RequestsWritesJSONPath) {
+		if fileutil.Exist(ts.cfg.AddOnStresserRemote.RequestsWritesRawJSONPath) {
 			if err = aws_s3.Upload(
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
 				path.Join(ts.cfg.Name, "stresser-remote-requests-writes.json"),
-				ts.cfg.AddOnStresserRemote.RequestsWritesJSONPath,
+				ts.cfg.AddOnStresserRemote.RequestsWritesRawJSONPath,
 			); err != nil {
 				return err
 			}
@@ -999,13 +999,13 @@ func (ts *Tester) uploadToS3() (err error) {
 			}
 		}
 
-		if fileutil.Exist(ts.cfg.AddOnStresserRemote.RequestsReadsJSONPath) {
+		if fileutil.Exist(ts.cfg.AddOnStresserRemote.RequestsReadsRawJSONPath) {
 			if err = aws_s3.Upload(
 				ts.lg,
 				ts.s3API,
 				ts.cfg.S3BucketName,
 				path.Join(ts.cfg.Name, "stresser-remote-requests-reads.json"),
-				ts.cfg.AddOnStresserRemote.RequestsReadsJSONPath,
+				ts.cfg.AddOnStresserRemote.RequestsReadsRawJSONPath,
 			); err != nil {
 				return err
 			}

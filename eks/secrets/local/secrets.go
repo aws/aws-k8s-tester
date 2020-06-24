@@ -81,23 +81,28 @@ func (ts *tester) Create() (err error) {
 	}
 
 	loader := secrets.New(secrets.Config{
-		Logger:                 ts.cfg.Logger,
-		Stopc:                  ts.cfg.Stopc,
-		S3API:                  ts.cfg.S3API,
-		S3BucketName:           ts.cfg.EKSConfig.S3BucketName,
-		S3DirName:              path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-local"),
-		Client:                 ts.cfg.K8SClient,
-		ClientTimeout:          ts.cfg.EKSConfig.ClientTimeout,
-		Namespace:              ts.cfg.EKSConfig.AddOnSecretsLocal.Namespace,
-		NamePrefix:             ts.cfg.EKSConfig.AddOnSecretsLocal.NamePrefix,
-		Objects:                ts.cfg.EKSConfig.AddOnSecretsLocal.Objects,
-		ObjectSize:             ts.cfg.EKSConfig.AddOnSecretsLocal.ObjectSize,
-		WritesJSONPath:         ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesJSONPath,
-		WritesSummaryJSONPath:  ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummaryJSONPath,
-		WritesSummaryTablePath: ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummaryTablePath,
-		ReadsJSONPath:          ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsJSONPath,
-		ReadsSummaryJSONPath:   ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummaryJSONPath,
-		ReadsSummaryTablePath:  ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummaryTablePath,
+		Logger:                  ts.cfg.Logger,
+		Stopc:                   ts.cfg.Stopc,
+		S3API:                   ts.cfg.S3API,
+		S3BucketName:            ts.cfg.EKSConfig.S3BucketName,
+		Client:                  ts.cfg.K8SClient,
+		ClientTimeout:           ts.cfg.EKSConfig.ClientTimeout,
+		Namespace:               ts.cfg.EKSConfig.AddOnSecretsLocal.Namespace,
+		NamePrefix:              ts.cfg.EKSConfig.AddOnSecretsLocal.NamePrefix,
+		Objects:                 ts.cfg.EKSConfig.AddOnSecretsLocal.Objects,
+		ObjectSize:              ts.cfg.EKSConfig.AddOnSecretsLocal.ObjectSize,
+		WritesRawJSONPath:       ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesRawJSONPath,
+		WritesRawJSONS3Key:      ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesRawJSONS3Key,
+		WritesSummaryJSONPath:   ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummaryJSONPath,
+		WritesSummaryJSONS3Key:  ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummaryJSONS3Key,
+		WritesSummaryTablePath:  ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummaryTablePath,
+		WritesSummaryTableS3Key: ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsWritesSummaryTableS3Key,
+		ReadsRawJSONPath:        ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsRawJSONPath,
+		ReadsRawJSONS3Key:       ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsRawJSONS3Key,
+		ReadsSummaryJSONPath:    ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummaryJSONPath,
+		ReadsSummaryJSONS3Key:   ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummaryJSONS3Key,
+		ReadsSummaryTablePath:   ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummaryTablePath,
+		ReadsSummaryTableS3Key:  ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummaryTableS3Key,
 	})
 	loader.Start()
 	loader.Stop()
@@ -322,7 +327,7 @@ func (ts *tester) compareResults() (err error) {
 			ts.cfg.Logger,
 			ts.cfg.S3API,
 			ts.cfg.EKSConfig.S3BucketName,
-			path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-local", "reads", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummaryCompareJSONPath)),
+			ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummaryCompareJSONS3Key,
 			ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummaryCompareJSONPath,
 		); err != nil {
 			return err
@@ -335,7 +340,7 @@ func (ts *tester) compareResults() (err error) {
 			ts.cfg.Logger,
 			ts.cfg.S3API,
 			ts.cfg.EKSConfig.S3BucketName,
-			path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-local", "reads", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummaryCompareTablePath)),
+			ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummaryCompareTableS3Key,
 			ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsReadsSummaryCompareTablePath,
 		); err != nil {
 			return err

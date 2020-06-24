@@ -7,8 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"path"
-	"path/filepath"
 	"sort"
 	"sync"
 	"time"
@@ -67,7 +65,6 @@ type Config struct {
 
 	S3API        s3iface.S3API
 	S3BucketName string
-	S3DirName    string
 
 	CWAPI cloudwatchiface.CloudWatchAPI
 
@@ -88,9 +85,12 @@ type Config struct {
 	//
 	InitialRequestConditionType string
 
-	WritesJSONPath         string
-	WritesSummaryJSONPath  string
-	WritesSummaryTablePath string
+	WritesRawJSONPath       string
+	WritesRawJSONS3Key      string
+	WritesSummaryJSONPath   string
+	WritesSummaryJSONS3Key  string
+	WritesSummaryTablePath  string
+	WritesSummaryTableS3Key string
 }
 
 // Loader defines CSR loader operations.
@@ -170,22 +170,22 @@ func (ts *loader) CollectMetrics() (writesSummary metrics.RequestsSummary, err e
 	writesSummary.LantencyP999 = ts.writeLatencies.PickLantencyP999()
 	writesSummary.LantencyP9999 = ts.writeLatencies.PickLantencyP9999()
 
-	ts.cfg.Logger.Info("writing latency results in JSON to disk", zap.String("path", ts.cfg.WritesJSONPath))
+	ts.cfg.Logger.Info("writing latency results in JSON to disk", zap.String("path", ts.cfg.WritesRawJSONPath))
 	wb, err := json.Marshal(ts.writeLatencies)
 	if err != nil {
 		ts.cfg.Logger.Warn("failed to encode latency results in JSON", zap.Error(err))
 		return metrics.RequestsSummary{}, err
 	}
-	if err = ioutil.WriteFile(ts.cfg.WritesJSONPath, wb, 0600); err != nil {
-		ts.cfg.Logger.Warn("failed to write latency results in JSON to disk", zap.String("path", ts.cfg.WritesJSONPath), zap.Error(err))
+	if err = ioutil.WriteFile(ts.cfg.WritesRawJSONPath, wb, 0600); err != nil {
+		ts.cfg.Logger.Warn("failed to write latency results in JSON to disk", zap.String("path", ts.cfg.WritesRawJSONPath), zap.Error(err))
 		return metrics.RequestsSummary{}, err
 	}
 	if err = aws_s3.Upload(
 		ts.cfg.Logger,
 		ts.cfg.S3API,
 		ts.cfg.S3BucketName,
-		path.Join(ts.cfg.S3DirName, "writes", filepath.Base(ts.cfg.WritesJSONPath)),
-		ts.cfg.WritesJSONPath,
+		ts.cfg.WritesRawJSONS3Key,
+		ts.cfg.WritesRawJSONPath,
 	); err != nil {
 		return metrics.RequestsSummary{}, err
 	}
@@ -198,7 +198,7 @@ func (ts *loader) CollectMetrics() (writesSummary metrics.RequestsSummary, err e
 		ts.cfg.Logger,
 		ts.cfg.S3API,
 		ts.cfg.S3BucketName,
-		path.Join(ts.cfg.S3DirName, "writes", filepath.Base(ts.cfg.WritesSummaryJSONPath)),
+		ts.cfg.WritesSummaryJSONS3Key,
 		ts.cfg.WritesSummaryJSONPath,
 	); err != nil {
 		return metrics.RequestsSummary{}, err
@@ -211,7 +211,7 @@ func (ts *loader) CollectMetrics() (writesSummary metrics.RequestsSummary, err e
 		ts.cfg.Logger,
 		ts.cfg.S3API,
 		ts.cfg.S3BucketName,
-		path.Join(ts.cfg.S3DirName, "writes", filepath.Base(ts.cfg.WritesSummaryTablePath)),
+		ts.cfg.WritesSummaryTableS3Key,
 		ts.cfg.WritesSummaryTablePath,
 	); err != nil {
 		return metrics.RequestsSummary{}, err

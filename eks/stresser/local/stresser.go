@@ -10,7 +10,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
-	"path/filepath"
 	"reflect"
 	"strings"
 	"time"
@@ -100,24 +99,29 @@ func (ts *tester) Create() (err error) {
 	}
 
 	loader := stresser.New(stresser.Config{
-		Logger:                 ts.cfg.Logger,
-		Stopc:                  ts.cfg.Stopc,
-		S3API:                  ts.cfg.S3API,
-		S3BucketName:           ts.cfg.EKSConfig.S3BucketName,
-		S3DirName:              path.Join(ts.cfg.EKSConfig.Name, "add-on-stresser-local"),
-		Client:                 ts.cfg.K8SClient,
-		ClientTimeout:          ts.cfg.EKSConfig.ClientTimeout,
-		Deadline:               time.Now().Add(ts.cfg.EKSConfig.AddOnStresserLocal.Duration),
-		NamespaceWrite:         ts.cfg.EKSConfig.AddOnStresserLocal.Namespace,
-		NamespacesRead:         ns,
-		ObjectSize:             ts.cfg.EKSConfig.AddOnStresserLocal.ObjectSize,
-		ListLimit:              ts.cfg.EKSConfig.AddOnStresserLocal.ListLimit,
-		WritesJSONPath:         ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesJSONPath,
-		WritesSummaryJSONPath:  ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummaryJSONPath,
-		WritesSummaryTablePath: ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummaryTablePath,
-		ReadsJSONPath:          ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsJSONPath,
-		ReadsSummaryJSONPath:   ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummaryJSONPath,
-		ReadsSummaryTablePath:  ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummaryTablePath,
+		Logger:                  ts.cfg.Logger,
+		Stopc:                   ts.cfg.Stopc,
+		S3API:                   ts.cfg.S3API,
+		S3BucketName:            ts.cfg.EKSConfig.S3BucketName,
+		Client:                  ts.cfg.K8SClient,
+		ClientTimeout:           ts.cfg.EKSConfig.ClientTimeout,
+		Deadline:                time.Now().Add(ts.cfg.EKSConfig.AddOnStresserLocal.Duration),
+		NamespaceWrite:          ts.cfg.EKSConfig.AddOnStresserLocal.Namespace,
+		NamespacesRead:          ns,
+		ObjectSize:              ts.cfg.EKSConfig.AddOnStresserLocal.ObjectSize,
+		ListLimit:               ts.cfg.EKSConfig.AddOnStresserLocal.ListLimit,
+		WritesRawJSONPath:       ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesRawJSONPath,
+		WritesRawJSONS3Key:      ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesRawJSONS3Key,
+		WritesSummaryJSONPath:   ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummaryJSONPath,
+		WritesSummaryJSONS3Key:  ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummaryJSONS3Key,
+		WritesSummaryTablePath:  ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummaryTablePath,
+		WritesSummaryTableS3Key: ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummaryTableS3Key,
+		ReadsRawJSONPath:        ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsRawJSONPath,
+		ReadsRawJSONS3Key:       ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsRawJSONS3Key,
+		ReadsSummaryJSONPath:    ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummaryJSONPath,
+		ReadsSummaryJSONS3Key:   ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummaryJSONS3Key,
+		ReadsSummaryTablePath:   ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummaryTablePath,
+		ReadsSummaryTableS3Key:  ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummaryTableS3Key,
 	})
 	loader.Start()
 
@@ -284,7 +288,7 @@ func (ts *tester) compareResults() (err error) {
 			ts.cfg.Logger,
 			ts.cfg.S3API,
 			ts.cfg.EKSConfig.S3BucketName,
-			path.Join(ts.cfg.EKSConfig.Name, "add-on-stresser-local", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummaryCompareJSONPath)),
+			ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummaryCompareJSONS3Key,
 			ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummaryCompareJSONPath,
 		); err != nil {
 			return err
@@ -297,7 +301,7 @@ func (ts *tester) compareResults() (err error) {
 			ts.cfg.Logger,
 			ts.cfg.S3API,
 			ts.cfg.EKSConfig.S3BucketName,
-			path.Join(ts.cfg.EKSConfig.Name, "add-on-stresser-local", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummaryCompareTablePath)),
+			ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummaryCompareTableS3Key,
 			ts.cfg.EKSConfig.AddOnStresserLocal.RequestsWritesSummaryCompareTablePath,
 		); err != nil {
 			return err
@@ -362,7 +366,7 @@ func (ts *tester) compareResults() (err error) {
 			ts.cfg.Logger,
 			ts.cfg.S3API,
 			ts.cfg.EKSConfig.S3BucketName,
-			path.Join(ts.cfg.EKSConfig.Name, "add-on-stresser-local", "reads", filepath.Base(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummaryCompareJSONPath)),
+			ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummaryCompareJSONS3Key,
 			ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummaryCompareJSONPath,
 		); err != nil {
 			return err
@@ -375,7 +379,7 @@ func (ts *tester) compareResults() (err error) {
 			ts.cfg.Logger,
 			ts.cfg.S3API,
 			ts.cfg.EKSConfig.S3BucketName,
-			path.Join(ts.cfg.EKSConfig.Name, "add-on-stresser-local", "reads", filepath.Base(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummaryCompareTablePath)),
+			ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummaryCompareTableS3Key,
 			ts.cfg.EKSConfig.AddOnStresserLocal.RequestsReadsSummaryCompareTablePath,
 		); err != nil {
 			return err

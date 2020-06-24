@@ -298,6 +298,8 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_ENABLE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_NAMESPACE", "hello")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_S3_DIR", "hello-s3")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_S3_DIR")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_OBJECTS", "5")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_OBJECTS")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_OBJECT_SIZE", "10")
@@ -1002,6 +1004,9 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.AddOnSecretsRemote.Namespace != "hello" {
 		t.Fatalf("unexpected cfg.AddOnSecretsRemote.Namespace %q", cfg.AddOnSecretsRemote.Namespace)
+	}
+	if cfg.AddOnSecretsRemote.S3Dir != "hello-s3" {
+		t.Fatalf("unexpected cfg.AddOnSecretsRemote.S3Dir %v", cfg.AddOnSecretsRemote.S3Dir)
 	}
 	if cfg.AddOnSecretsRemote.Objects != 5 {
 		t.Fatalf("unexpected cfg.AddOnSecretsRemote.Objects %v", cfg.AddOnSecretsRemote.Objects)

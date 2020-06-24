@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
-	"path/filepath"
 	"reflect"
 	"strings"
 	"time"
@@ -77,14 +76,16 @@ func (ts *tester) Create() (err error) {
 		Stopc:                       ts.cfg.Stopc,
 		S3API:                       ts.cfg.S3API,
 		S3BucketName:                ts.cfg.EKSConfig.S3BucketName,
-		S3DirName:                   path.Join(ts.cfg.EKSConfig.Name, "add-on-csrs-local"),
 		Client:                      ts.cfg.K8SClient,
 		ClientTimeout:               ts.cfg.EKSConfig.ClientTimeout,
 		Objects:                     ts.cfg.EKSConfig.AddOnCSRsLocal.Objects,
 		InitialRequestConditionType: ts.cfg.EKSConfig.AddOnCSRsLocal.InitialRequestConditionType,
-		WritesJSONPath:              ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesJSONPath,
+		WritesRawJSONPath:           ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesRawJSONPath,
+		WritesRawJSONS3Key:          ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesRawJSONS3Key,
 		WritesSummaryJSONPath:       ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesSummaryJSONPath,
+		WritesSummaryJSONS3Key:      ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesSummaryJSONS3Key,
 		WritesSummaryTablePath:      ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesSummaryTablePath,
+		WritesSummaryTableS3Key:     ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesSummaryTableS3Key,
 	})
 	loader.Start()
 	loader.Stop()
@@ -220,7 +221,7 @@ func (ts *tester) compareResults() (err error) {
 			ts.cfg.Logger,
 			ts.cfg.S3API,
 			ts.cfg.EKSConfig.S3BucketName,
-			path.Join(ts.cfg.EKSConfig.Name, "add-on-csrs-local", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesSummaryCompareJSONPath)),
+			ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesSummaryCompareJSONS3Key,
 			ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesSummaryCompareJSONPath,
 		); err != nil {
 			return err
@@ -233,7 +234,7 @@ func (ts *tester) compareResults() (err error) {
 			ts.cfg.Logger,
 			ts.cfg.S3API,
 			ts.cfg.EKSConfig.S3BucketName,
-			path.Join(ts.cfg.EKSConfig.Name, "add-on-csrs-local", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesSummaryCompareTablePath)),
+			ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesSummaryCompareTableS3Key,
 			ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesSummaryCompareTablePath,
 		); err != nil {
 			return err

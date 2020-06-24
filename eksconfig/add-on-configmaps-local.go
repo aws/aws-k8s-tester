@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/aws/aws-k8s-tester/pkg/metrics"
@@ -36,24 +37,34 @@ type AddOnConfigmapsLocal struct {
 	// CreatedNames is the list of created "ConfigMap" object names.
 	CreatedNames []string `json:"created-names" read-only:"true"`
 
-	// RequestsWritesJSONPath is the file path to store writes requests in JSON format.
-	RequestsWritesJSONPath string `json:"requests-writes-json-path" read-only:"true"`
+	// S3Dir is the S3 directory to store all test results.
+	// It is under the bucket "eksconfig.Config.S3BucketName".
+	S3Dir string `json:"s3-dir"`
+
+	// RequestsWritesRawJSONPath is the file path to store writes requests in JSON format.
+	RequestsWritesRawJSONPath  string `json:"requests-writes-json-path" read-only:"true"`
+	RequestsWritesRawJSONS3Key string `json:"requests-writes-json-s3-key" read-only:"true"`
 	// RequestsWritesSummary is the writes results.
 	RequestsWritesSummary metrics.RequestsSummary `json:"requests-writes-summary,omitempty" read-only:"true"`
 	// RequestsWritesSummaryJSONPath is the file path to store writes requests summary in JSON format.
-	RequestsWritesSummaryJSONPath string `json:"requests-writes-summary-json-path" read-only:"true"`
+	RequestsWritesSummaryJSONPath  string `json:"requests-writes-summary-json-path" read-only:"true"`
+	RequestsWritesSummaryJSONS3Key string `json:"requests-writes-summary-json-s3-key" read-only:"true"`
 	// RequestsWritesSummaryTablePath is the file path to store writes requests summary in table format.
-	RequestsWritesSummaryTablePath string `json:"requests-writes-summary-table-path" read-only:"true"`
+	RequestsWritesSummaryTablePath  string `json:"requests-writes-summary-table-path" read-only:"true"`
+	RequestsWritesSummaryTableS3Key string `json:"requests-writes-summary-table-s3-path" read-only:"true"`
 	// RequestsWritesSummaryS3Dir is the S3 directory of previous/latest "RequestsWritesSummary".
 	// Specify the S3 key in the same bucket of "eksconfig.Config.S3BucketName".
-	// Use for regression tests.
+	// Use for regression tests. Specify the value not bound to the cluster directory.
+	// Different runs from different clusters reads and writes in this directory.
 	RequestsWritesSummaryS3Dir string `json:"requests-writes-summary-s3-dir"`
 	// RequestsWritesSummaryCompare is the comparision results.
 	RequestsWritesSummaryCompare metrics.RequestsSummaryCompare `json:"requests-writes-summary-compare" read-only:"true"`
 	// RequestsWritesSummaryCompareJSONPath is the file path to store writes requests compare summary in JSON format.
-	RequestsWritesSummaryCompareJSONPath string `json:"requests-writes-summary-compare-json-path" read-only:"true"`
+	RequestsWritesSummaryCompareJSONPath  string `json:"requests-writes-summary-compare-json-path" read-only:"true"`
+	RequestsWritesSummaryCompareJSONS3Key string `json:"requests-writes-summary-compare-json-s3-key" read-only:"true"`
 	// RequestsWritesSummaryCompareTablePath is the file path to store writes requests compare summary in table format.
-	RequestsWritesSummaryCompareTablePath string `json:"requests-writes-summary-compare-table-path" read-only:"true"`
+	RequestsWritesSummaryCompareTablePath  string `json:"requests-writes-summary-compare-table-path" read-only:"true"`
+	RequestsWritesSummaryCompareTableS3Key string `json:"requests-writes-summary-compare-table-s3-path" read-only:"true"`
 }
 
 // EnvironmentVariablePrefixAddOnConfigmapsLocal is the environment variable prefix used for "eksconfig".
@@ -109,14 +120,39 @@ func (cfg *Config) validateAddOnConfigmapsLocal() error {
 		return fmt.Errorf("AddOnConfigmapsLocal.ObjectSize limit is 0.9 MB, got %d", cfg.AddOnConfigmapsLocal.ObjectSize)
 	}
 
-	if cfg.AddOnConfigmapsLocal.RequestsWritesJSONPath == "" {
-		cfg.AddOnConfigmapsLocal.RequestsWritesJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-configmaps-local-requests-writes.csv"
+	if cfg.AddOnConfigmapsLocal.S3Dir == "" {
+		cfg.AddOnConfigmapsLocal.S3Dir = path.Join(cfg.Name, "add-on-configmaps-local")
+	}
+
+	if cfg.AddOnConfigmapsLocal.RequestsWritesRawJSONPath == "" {
+		cfg.AddOnConfigmapsLocal.RequestsWritesRawJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-configmaps-local-requests-writes.csv"
+	}
+	if cfg.AddOnConfigmapsLocal.RequestsWritesRawJSONS3Key == "" {
+		cfg.AddOnConfigmapsLocal.RequestsWritesRawJSONS3Key = path.Join(
+			cfg.AddOnConfigmapsLocal.S3Dir,
+			"writes-raw",
+			filepath.Base(cfg.AddOnConfigmapsLocal.RequestsWritesRawJSONPath),
+		)
 	}
 	if cfg.AddOnConfigmapsLocal.RequestsWritesSummaryJSONPath == "" {
 		cfg.AddOnConfigmapsLocal.RequestsWritesSummaryJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-configmaps-local-requests-writes-summary.json"
 	}
+	if cfg.AddOnConfigmapsLocal.RequestsWritesSummaryJSONS3Key == "" {
+		cfg.AddOnConfigmapsLocal.RequestsWritesSummaryJSONS3Key = path.Join(
+			cfg.AddOnConfigmapsLocal.S3Dir,
+			"writes-summary",
+			filepath.Base(cfg.AddOnConfigmapsLocal.RequestsWritesSummaryJSONPath),
+		)
+	}
 	if cfg.AddOnConfigmapsLocal.RequestsWritesSummaryTablePath == "" {
 		cfg.AddOnConfigmapsLocal.RequestsWritesSummaryTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-configmaps-local-requests-writes-summary.txt"
+	}
+	if cfg.AddOnConfigmapsLocal.RequestsWritesSummaryTableS3Key == "" {
+		cfg.AddOnConfigmapsLocal.RequestsWritesSummaryTableS3Key = path.Join(
+			cfg.AddOnConfigmapsLocal.S3Dir,
+			"writes-summary",
+			filepath.Base(cfg.AddOnConfigmapsLocal.RequestsWritesSummaryTablePath),
+		)
 	}
 	if cfg.AddOnConfigmapsLocal.RequestsWritesSummaryS3Dir == "" {
 		cfg.AddOnConfigmapsLocal.RequestsWritesSummaryS3Dir = path.Join("add-on-configmaps-local", "writes-summary", cfg.Parameters.Version)
@@ -124,8 +160,22 @@ func (cfg *Config) validateAddOnConfigmapsLocal() error {
 	if cfg.AddOnConfigmapsLocal.RequestsWritesSummaryCompareJSONPath == "" {
 		cfg.AddOnConfigmapsLocal.RequestsWritesSummaryCompareJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-configmaps-local-requests-writes-summary-compare.json"
 	}
+	if cfg.AddOnConfigmapsLocal.RequestsWritesSummaryCompareJSONS3Key == "" {
+		cfg.AddOnConfigmapsLocal.RequestsWritesSummaryCompareJSONS3Key = path.Join(
+			cfg.AddOnConfigmapsLocal.S3Dir,
+			"writes-summary-compare",
+			filepath.Base(cfg.AddOnConfigmapsLocal.RequestsWritesSummaryCompareJSONPath),
+		)
+	}
 	if cfg.AddOnConfigmapsLocal.RequestsWritesSummaryCompareTablePath == "" {
 		cfg.AddOnConfigmapsLocal.RequestsWritesSummaryCompareTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-configmaps-local-requests-writes-summary-compare.txt"
+	}
+	if cfg.AddOnConfigmapsLocal.RequestsWritesSummaryCompareTableS3Key == "" {
+		cfg.AddOnConfigmapsLocal.RequestsWritesSummaryCompareTableS3Key = path.Join(
+			cfg.AddOnConfigmapsLocal.S3Dir,
+			"writes-summary-compare",
+			filepath.Base(cfg.AddOnConfigmapsLocal.RequestsWritesSummaryCompareTablePath),
+		)
 	}
 
 	return nil

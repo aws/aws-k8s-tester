@@ -504,11 +504,10 @@ func (ts *tester) createDeployment() error {
 	// do not specify "kubeconfig", and use in-cluster config via "pkg/k8s-client"
 	// otherwise, error "namespaces is forbidden: User "system:node:ip-192-168-84..."
 	// ref. https://github.com/kubernetes/client-go/blob/master/examples/in-cluster-client-configuration/main.go
-	testerCmd := fmt.Sprintf("/aws-k8s-tester eks create configmaps --partition=%s --region=%s --s3-bucket-name=%s --s3-dir-name=%s --clients=%d --client-qps=%f --client-burst=%d --client-timeout=%s --namespace=%s --objects=%d --object-size=%d --writes-output-name-prefix=%s --block=true",
+	testerCmd := fmt.Sprintf("/aws-k8s-tester eks create configmaps --partition=%s --region=%s --s3-bucket-name=%s --clients=%d --client-qps=%f --client-burst=%d --client-timeout=%s --namespace=%s --objects=%d --object-size=%d --writes-raw-json-s3-dir=%s --writes-summary-json-s3-dir=%s --writes-summary-table-s3-dir=%s --writes-output-name-prefix=%s --block=true",
 		ts.cfg.EKSConfig.Partition,
 		ts.cfg.EKSConfig.Region,
 		ts.cfg.EKSConfig.S3BucketName,
-		path.Join(ts.cfg.EKSConfig.Name, "add-on-configmaps-remote"),
 		ts.cfg.EKSConfig.Clients,
 		ts.cfg.EKSConfig.ClientQPS,
 		ts.cfg.EKSConfig.ClientBurst,
@@ -516,6 +515,9 @@ func (ts *tester) createDeployment() error {
 		ts.cfg.EKSConfig.AddOnConfigmapsRemote.Namespace,
 		ts.cfg.EKSConfig.AddOnConfigmapsRemote.Objects,
 		ts.cfg.EKSConfig.AddOnConfigmapsRemote.ObjectSize,
+		path.Dir(ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsWritesRawJSONS3Key),
+		path.Dir(ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsWritesSummaryJSONS3Key),
+		path.Dir(ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsWritesSummaryTableS3Key),
 		ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsWritesSummaryOutputNamePrefix,
 	)
 
@@ -922,7 +924,7 @@ func (ts *tester) AggregateResults() (err error) {
 		ts.cfg.Logger.Warn("failed to encode JSON", zap.Error(err))
 		return err
 	}
-	if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsWritesJSONPath, wb, 0600); err != nil {
+	if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsWritesRawJSONPath, wb, 0600); err != nil {
 		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 		return err
 	}
@@ -930,8 +932,8 @@ func (ts *tester) AggregateResults() (err error) {
 		ts.cfg.Logger,
 		ts.cfg.S3API,
 		ts.cfg.EKSConfig.S3BucketName,
-		path.Join(ts.cfg.EKSConfig.Name, "add-on-configmaps-remote", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsWritesJSONPath)),
-		ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsWritesJSONPath,
+		ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsWritesRawJSONS3Key,
+		ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsWritesRawJSONPath,
 	); err != nil {
 		return err
 	}
@@ -943,7 +945,7 @@ func (ts *tester) AggregateResults() (err error) {
 		ts.cfg.Logger,
 		ts.cfg.S3API,
 		ts.cfg.EKSConfig.S3BucketName,
-		path.Join(ts.cfg.EKSConfig.Name, "add-on-configmaps-remote", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsWritesSummaryJSONPath)),
+		ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsWritesSummaryJSONS3Key,
 		ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsWritesSummaryJSONPath,
 	); err != nil {
 		return err
@@ -956,7 +958,7 @@ func (ts *tester) AggregateResults() (err error) {
 		ts.cfg.Logger,
 		ts.cfg.S3API,
 		ts.cfg.EKSConfig.S3BucketName,
-		path.Join(ts.cfg.EKSConfig.Name, "add-on-configmaps-remote", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsWritesSummaryTablePath)),
+		ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsWritesSummaryTableS3Key,
 		ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsWritesSummaryTablePath,
 	); err != nil {
 		return err
@@ -1025,7 +1027,7 @@ func (ts *tester) compareResults() (err error) {
 			ts.cfg.Logger,
 			ts.cfg.S3API,
 			ts.cfg.EKSConfig.S3BucketName,
-			path.Join(ts.cfg.EKSConfig.Name, "add-on-stresser-local", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsWritesSummaryCompareJSONPath)),
+			ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsWritesSummaryCompareJSONS3Key,
 			ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsWritesSummaryCompareJSONPath,
 		); err != nil {
 			return err
@@ -1038,7 +1040,7 @@ func (ts *tester) compareResults() (err error) {
 			ts.cfg.Logger,
 			ts.cfg.S3API,
 			ts.cfg.EKSConfig.S3BucketName,
-			path.Join(ts.cfg.EKSConfig.Name, "add-on-stresser-local", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsWritesSummaryCompareTablePath)),
+			ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsWritesSummaryCompareTableS3Key,
 			ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsWritesSummaryCompareTablePath,
 		); err != nil {
 			return err
@@ -1052,7 +1054,7 @@ func (ts *tester) compareResults() (err error) {
 		ts.cfg.Logger,
 		ts.cfg.S3API,
 		ts.cfg.EKSConfig.S3BucketName,
-		path.Join(ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsWritesSummaryS3Dir, tss),
+		ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsWritesSummaryJSONS3Key,
 		ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsWritesSummaryJSONPath,
 	); err != nil {
 		return err

@@ -504,11 +504,10 @@ func (ts *tester) createDeployment() error {
 	// do not specify "kubeconfig", and use in-cluster config via "pkg/k8s-client"
 	// otherwise, error "namespaces is forbidden: User "system:node:ip-192-168-84..."
 	// ref. https://github.com/kubernetes/client-go/blob/master/examples/in-cluster-client-configuration/main.go
-	testerCmd := fmt.Sprintf("/aws-k8s-tester eks create secrets --partition=%s --region=%s --s3-bucket-name=%s --s3-dir-name=%s --clients=%d --client-qps=%f --client-burst=%d --client-timeout=%s --namespace=%s --name-prefix=%s --objects=%d --object-size=%d --writes-output-name-prefix=%s --reads-output-name-prefix=%s --block=true",
+	testerCmd := fmt.Sprintf("/aws-k8s-tester eks create secrets --partition=%s --region=%s --s3-bucket-name=%s --clients=%d --client-qps=%f --client-burst=%d --client-timeout=%s --namespace=%s --name-prefix=%s --objects=%d --object-size=%d --writes-raw-json-s3-dir=%s --writes-summary-json-s3-dir=%s --writes-summary-table-s3-dir=%s --reads-raw-json-s3-dir=%s --reads-summary-json-s3-dir=%s --reads-summary-table-s3-dir=%s --writes-output-name-prefix=%s --reads-output-name-prefix=%s --block=true",
 		ts.cfg.EKSConfig.Partition,
 		ts.cfg.EKSConfig.Region,
 		ts.cfg.EKSConfig.S3BucketName,
-		path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-remote"),
 		ts.cfg.EKSConfig.Clients,
 		ts.cfg.EKSConfig.ClientQPS,
 		ts.cfg.EKSConfig.ClientBurst,
@@ -517,6 +516,12 @@ func (ts *tester) createDeployment() error {
 		ts.cfg.EKSConfig.AddOnSecretsRemote.NamePrefix,
 		ts.cfg.EKSConfig.AddOnSecretsRemote.Objects,
 		ts.cfg.EKSConfig.AddOnSecretsRemote.ObjectSize,
+		path.Dir(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesRawJSONS3Key),
+		path.Dir(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryJSONS3Key),
+		path.Dir(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryTableS3Key),
+		path.Dir(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsRawJSONS3Key),
+		path.Dir(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryJSONS3Key),
+		path.Dir(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryTableS3Key),
 		ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryOutputNamePrefix,
 		ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryOutputNamePrefix,
 	)
@@ -1063,7 +1068,7 @@ func (ts *tester) AggregateResults() (err error) {
 		ts.cfg.Logger.Warn("failed to encode JSON", zap.Error(err))
 		return err
 	}
-	if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesJSONPath, wb, 0600); err != nil {
+	if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesRawJSONPath, wb, 0600); err != nil {
 		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 		return err
 	}
@@ -1071,8 +1076,8 @@ func (ts *tester) AggregateResults() (err error) {
 		ts.cfg.Logger,
 		ts.cfg.S3API,
 		ts.cfg.EKSConfig.S3BucketName,
-		path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-remote", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesJSONPath)),
-		ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesJSONPath,
+		ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesRawJSONS3Key,
+		ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesRawJSONPath,
 	); err != nil {
 		return err
 	}
@@ -1084,7 +1089,7 @@ func (ts *tester) AggregateResults() (err error) {
 		ts.cfg.Logger,
 		ts.cfg.S3API,
 		ts.cfg.EKSConfig.S3BucketName,
-		path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-remote", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryJSONPath)),
+		ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryJSONS3Key,
 		ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryJSONPath,
 	); err != nil {
 		return err
@@ -1097,7 +1102,7 @@ func (ts *tester) AggregateResults() (err error) {
 		ts.cfg.Logger,
 		ts.cfg.S3API,
 		ts.cfg.EKSConfig.S3BucketName,
-		path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-remote", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryTablePath)),
+		ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryTableS3Key,
 		ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryTablePath,
 	); err != nil {
 		return err
@@ -1109,7 +1114,7 @@ func (ts *tester) AggregateResults() (err error) {
 		ts.cfg.Logger.Warn("failed to encode JSON", zap.Error(err))
 		return err
 	}
-	if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsJSONPath, rb, 0600); err != nil {
+	if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsRawJSONPath, rb, 0600); err != nil {
 		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 		return err
 	}
@@ -1117,8 +1122,8 @@ func (ts *tester) AggregateResults() (err error) {
 		ts.cfg.Logger,
 		ts.cfg.S3API,
 		ts.cfg.EKSConfig.S3BucketName,
-		path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-remote", "reads", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsJSONPath)),
-		ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsJSONPath,
+		ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsRawJSONS3Key,
+		ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsRawJSONPath,
 	); err != nil {
 		return err
 	}
@@ -1130,7 +1135,7 @@ func (ts *tester) AggregateResults() (err error) {
 		ts.cfg.Logger,
 		ts.cfg.S3API,
 		ts.cfg.EKSConfig.S3BucketName,
-		path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-remote", "reads", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryJSONPath)),
+		ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryJSONS3Key,
 		ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryJSONPath,
 	); err != nil {
 		return err
@@ -1143,7 +1148,7 @@ func (ts *tester) AggregateResults() (err error) {
 		ts.cfg.Logger,
 		ts.cfg.S3API,
 		ts.cfg.EKSConfig.S3BucketName,
-		path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-remote", "reads", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryTablePath)),
+		ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryTableS3Key,
 		ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryTablePath,
 	); err != nil {
 		return err
@@ -1212,7 +1217,7 @@ func (ts *tester) compareResults() (err error) {
 			ts.cfg.Logger,
 			ts.cfg.S3API,
 			ts.cfg.EKSConfig.S3BucketName,
-			path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-local", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryCompareJSONPath)),
+			ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryCompareJSONS3Key,
 			ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryCompareJSONPath,
 		); err != nil {
 			return err
@@ -1225,7 +1230,7 @@ func (ts *tester) compareResults() (err error) {
 			ts.cfg.Logger,
 			ts.cfg.S3API,
 			ts.cfg.EKSConfig.S3BucketName,
-			path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-local", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryCompareTablePath)),
+			ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryCompareTableS3Key,
 			ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsWritesSummaryCompareTablePath,
 		); err != nil {
 			return err
@@ -1290,7 +1295,7 @@ func (ts *tester) compareResults() (err error) {
 			ts.cfg.Logger,
 			ts.cfg.S3API,
 			ts.cfg.EKSConfig.S3BucketName,
-			path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-local", "reads", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryCompareJSONPath)),
+			ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryCompareJSONS3Key,
 			ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryCompareJSONPath,
 		); err != nil {
 			return err
@@ -1303,7 +1308,7 @@ func (ts *tester) compareResults() (err error) {
 			ts.cfg.Logger,
 			ts.cfg.S3API,
 			ts.cfg.EKSConfig.S3BucketName,
-			path.Join(ts.cfg.EKSConfig.Name, "add-on-secrets-local", "reads", filepath.Base(ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryCompareTablePath)),
+			ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryCompareTableS3Key,
 			ts.cfg.EKSConfig.AddOnSecretsRemote.RequestsReadsSummaryCompareTablePath,
 		); err != nil {
 			return err

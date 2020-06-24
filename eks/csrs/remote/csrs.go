@@ -505,17 +505,19 @@ func (ts *tester) createDeployment() error {
 	// do not specify "kubeconfig", and use in-cluster config via "pkg/k8s-client"
 	// otherwise, error "namespaces is forbidden: User "system:node:ip-192-168-84..."
 	// ref. https://github.com/kubernetes/client-go/blob/master/examples/in-cluster-client-configuration/main.go
-	testerCmd := fmt.Sprintf("/aws-k8s-tester eks create csrs --partition=%s --region=%s --s3-bucket-name=%s --s3-dir-name=%s --clients=%d --client-qps=%f --client-burst=%d --client-timeout=%s --objects=%d --initial-request-condition-type=%q --writes-output-name-prefix=%s --block=true",
+	testerCmd := fmt.Sprintf("/aws-k8s-tester eks create csrs --partition=%s --region=%s --s3-bucket-name=%s --clients=%d --client-qps=%f --client-burst=%d --client-timeout=%s --objects=%d --initial-request-condition-type=%q --writes-raw-json-s3-dir=%s --writes-summary-json-s3-dir=%s --writes-summary-table-s3-dir=%s --writes-output-name-prefix=%s --block=true",
 		ts.cfg.EKSConfig.Partition,
 		ts.cfg.EKSConfig.Region,
 		ts.cfg.EKSConfig.S3BucketName,
-		path.Join(ts.cfg.EKSConfig.Name, "add-on-csrs-remote"),
 		ts.cfg.EKSConfig.Clients,
 		ts.cfg.EKSConfig.ClientQPS,
 		ts.cfg.EKSConfig.ClientBurst,
 		ts.cfg.EKSConfig.ClientTimeout,
 		ts.cfg.EKSConfig.AddOnCSRsRemote.Objects,
 		ts.cfg.EKSConfig.AddOnCSRsRemote.InitialRequestConditionType,
+		path.Dir(ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesRawJSONS3Key),
+		path.Dir(ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryJSONS3Key),
+		path.Dir(ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryTableS3Key),
 		ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryOutputNamePrefix,
 	)
 
@@ -922,7 +924,7 @@ func (ts *tester) AggregateResults() (err error) {
 		ts.cfg.Logger.Warn("failed to encode JSON", zap.Error(err))
 		return err
 	}
-	if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesJSONPath, wb, 0600); err != nil {
+	if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesRawJSONPath, wb, 0600); err != nil {
 		ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 		return err
 	}
@@ -930,8 +932,8 @@ func (ts *tester) AggregateResults() (err error) {
 		ts.cfg.Logger,
 		ts.cfg.S3API,
 		ts.cfg.EKSConfig.S3BucketName,
-		path.Join(ts.cfg.EKSConfig.Name, "add-on-csrs-remote", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesJSONPath)),
-		ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesJSONPath,
+		ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesRawJSONS3Key,
+		ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesRawJSONPath,
 	); err != nil {
 		return err
 	}
@@ -943,7 +945,7 @@ func (ts *tester) AggregateResults() (err error) {
 		ts.cfg.Logger,
 		ts.cfg.S3API,
 		ts.cfg.EKSConfig.S3BucketName,
-		path.Join(ts.cfg.EKSConfig.Name, "add-on-csrs-remote", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryJSONPath)),
+		ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryJSONS3Key,
 		ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryJSONPath,
 	); err != nil {
 		return err
@@ -956,7 +958,7 @@ func (ts *tester) AggregateResults() (err error) {
 		ts.cfg.Logger,
 		ts.cfg.S3API,
 		ts.cfg.EKSConfig.S3BucketName,
-		path.Join(ts.cfg.EKSConfig.Name, "add-on-csrs-remote", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryTablePath)),
+		ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryTableS3Key,
 		ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryTablePath,
 	); err != nil {
 		return err
@@ -1025,7 +1027,7 @@ func (ts *tester) compareResults() (err error) {
 			ts.cfg.Logger,
 			ts.cfg.S3API,
 			ts.cfg.EKSConfig.S3BucketName,
-			path.Join(ts.cfg.EKSConfig.Name, "add-on-stresser-local", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryCompareJSONPath)),
+			ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryCompareJSONS3Key,
 			ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryCompareJSONPath,
 		); err != nil {
 			return err
@@ -1038,7 +1040,7 @@ func (ts *tester) compareResults() (err error) {
 			ts.cfg.Logger,
 			ts.cfg.S3API,
 			ts.cfg.EKSConfig.S3BucketName,
-			path.Join(ts.cfg.EKSConfig.Name, "add-on-stresser-local", "writes", filepath.Base(ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryCompareTablePath)),
+			ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryCompareTableS3Key,
 			ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryCompareTablePath,
 		); err != nil {
 			return err
@@ -1052,7 +1054,7 @@ func (ts *tester) compareResults() (err error) {
 		ts.cfg.Logger,
 		ts.cfg.S3API,
 		ts.cfg.EKSConfig.S3BucketName,
-		path.Join(ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryS3Dir, tss),
+		ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryJSONS3Key,
 		ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryJSONPath,
 	); err != nil {
 		return err
