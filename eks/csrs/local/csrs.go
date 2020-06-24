@@ -6,9 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"path"
 	"reflect"
+	"sort"
 	"strings"
 	"time"
 
@@ -72,33 +72,34 @@ func (ts *tester) Create() (err error) {
 	}()
 
 	loader := csrs.New(csrs.Config{
-		Logger:                      ts.cfg.Logger,
-		Stopc:                       ts.cfg.Stopc,
-		S3API:                       ts.cfg.S3API,
-		S3BucketName:                ts.cfg.EKSConfig.S3BucketName,
-		Client:                      ts.cfg.K8SClient,
-		ClientTimeout:               ts.cfg.EKSConfig.ClientTimeout,
-		Objects:                     ts.cfg.EKSConfig.AddOnCSRsLocal.Objects,
-		InitialRequestConditionType: ts.cfg.EKSConfig.AddOnCSRsLocal.InitialRequestConditionType,
-		WritesRawJSONPath:           ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesRawJSONPath,
-		WritesRawJSONS3Key:          ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesRawJSONS3Key,
-		WritesSummaryJSONPath:       ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesSummaryJSONPath,
-		WritesSummaryJSONS3Key:      ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesSummaryJSONS3Key,
-		WritesSummaryTablePath:      ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesSummaryTablePath,
-		WritesSummaryTableS3Key:     ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesSummaryTableS3Key,
+		Logger:                          ts.cfg.Logger,
+		Stopc:                           ts.cfg.Stopc,
+		S3API:                           ts.cfg.S3API,
+		S3BucketName:                    ts.cfg.EKSConfig.S3BucketName,
+		Client:                          ts.cfg.K8SClient,
+		ClientTimeout:                   ts.cfg.EKSConfig.ClientTimeout,
+		Objects:                         ts.cfg.EKSConfig.AddOnCSRsLocal.Objects,
+		InitialRequestConditionType:     ts.cfg.EKSConfig.AddOnCSRsLocal.InitialRequestConditionType,
+		RequestsRawWritesJSONPath:       ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsRawWritesJSONPath,
+		RequestsRawWritesJSONS3Key:      ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsRawWritesJSONS3Key,
+		RequestsSummaryWritesJSONPath:   ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsSummaryWritesJSONPath,
+		RequestsSummaryWritesJSONS3Key:  ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsSummaryWritesJSONS3Key,
+		RequestsSummaryWritesTablePath:  ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsSummaryWritesTablePath,
+		RequestsSummaryWritesTableS3Key: ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsSummaryWritesTableS3Key,
 	})
 	loader.Start()
 	loader.Stop()
 
 	ts.cfg.Logger.Info("completing csrs local tester")
-	ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesSummary, err = loader.CollectMetrics()
+	var curWriteLatencies metrics.Durations
+	curWriteLatencies, ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsSummaryWrites, err = loader.CollectMetrics()
 	ts.cfg.EKSConfig.Sync()
 	if err != nil {
 		ts.cfg.Logger.Warn("failed to get metrics", zap.Error(err))
 		return err
 	}
 
-	if err = ts.compareResults(); err != nil {
+	if err = ts.compareResults(curWriteLatencies); err != nil {
 		return err
 	}
 	if err = ts.publishResults(); err != nil {
@@ -172,48 +173,35 @@ func (ts *tester) AggregateResults() (err error) {
 
 // 1. if previous summary exists, download and compare
 // 2. upload new summary and overwrite the previous s3 key
-func (ts *tester) compareResults() (err error) {
+func (ts *tester) compareResults(curWriteLatencies metrics.Durations) (err error) {
 	tss := time.Now().UTC().Format(time.RFC3339Nano)
 	ts.cfg.Logger.Info("comparing results", zap.String("timestamp", tss))
 
 	s3Objects := make([]*s3.Object, 0)
-	if ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesCompareS3Dir != "" {
+	if ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsSummaryWritesCompareS3Dir != "" {
 		s3Objects, err = aws_s3.ListInDescendingLastModified(
 			ts.cfg.Logger,
 			ts.cfg.S3API,
 			ts.cfg.EKSConfig.S3BucketName,
-			ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesCompareS3Dir,
+			path.Clean(ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsSummaryWritesCompareS3Dir)+"/",
 		)
 	}
 	if len(s3Objects) > 0 && err == nil {
-		var localPath string
-		localPath, err = aws_s3.DownloadToTempFile(
-			ts.cfg.Logger,
-			ts.cfg.S3API,
-			ts.cfg.EKSConfig.S3BucketName,
-			aws.StringValue(s3Objects[0].Key),
-		)
+		reqSummaryS3Key := aws.StringValue(s3Objects[0].Key)
+		durRawS3Key := path.Join(ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsRawWritesCompareS3Dir, path.Base(reqSummaryS3Key))
+
+		var prevSummary metrics.RequestsSummary
+		prevSummary, err = metrics.DownloadRequestsSummaryFromS3(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3BucketName, reqSummaryS3Key)
 		if err != nil {
-			return fmt.Errorf("failed to download previous writes summary %v", err)
-		}
-		defer os.RemoveAll(localPath)
-		rf, err := os.OpenFile(localPath, os.O_RDONLY, 0444)
-		if err != nil {
-			ts.cfg.Logger.Warn("failed to read a file", zap.Error(err))
+			ts.cfg.Logger.Warn("failed to download results", zap.Error(err))
 			return err
 		}
-		defer rf.Close()
-		var prev metrics.RequestsSummary
-		if err = json.NewDecoder(rf).Decode(&prev); err != nil {
-			ts.cfg.Logger.Warn("failed to decode a JSON file", zap.Error(err))
-			return err
-		}
-		ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesCompare, err = metrics.CompareRequestsSummary(prev, ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesSummary)
+		ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsSummaryWritesCompare, err = metrics.CompareRequestsSummary(prevSummary, ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsSummaryWrites)
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to compare results", zap.Error(err))
 			return err
 		}
-		if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesCompareJSONPath, []byte(ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesCompare.JSON()), 0600); err != nil {
+		if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsSummaryWritesCompareJSONPath, []byte(ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsSummaryWritesCompare.JSON()), 0600); err != nil {
 			ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 			return err
 		}
@@ -221,12 +209,12 @@ func (ts *tester) compareResults() (err error) {
 			ts.cfg.Logger,
 			ts.cfg.S3API,
 			ts.cfg.EKSConfig.S3BucketName,
-			ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesCompareJSONS3Key,
-			ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesCompareJSONPath,
+			ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsSummaryWritesCompareJSONS3Key,
+			ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsSummaryWritesCompareJSONPath,
 		); err != nil {
 			return err
 		}
-		if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesCompareTablePath, []byte(ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesCompare.Table()), 0600); err != nil {
+		if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsSummaryWritesCompareTablePath, []byte(ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsSummaryWritesCompare.Table()), 0600); err != nil {
 			ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
 			return err
 		}
@@ -234,12 +222,65 @@ func (ts *tester) compareResults() (err error) {
 			ts.cfg.Logger,
 			ts.cfg.S3API,
 			ts.cfg.EKSConfig.S3BucketName,
-			ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesCompareTableS3Key,
-			ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesCompareTablePath,
+			ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsSummaryWritesCompareTableS3Key,
+			ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsSummaryWritesCompareTablePath,
 		); err != nil {
 			return err
 		}
-		fmt.Printf("\n\nRequestsWritesCompare:\n%s\n", ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesCompare.Table())
+		fmt.Printf("\n\nRequestsSummaryWritesCompare:\n%s\n", ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsSummaryWritesCompare.Table())
+
+		var prevDurations metrics.Durations
+		prevDurations, err = metrics.DownloadDurationsFromS3(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3BucketName, durRawS3Key)
+		if err != nil {
+			ts.cfg.Logger.Warn("failed to download results", zap.Error(err))
+			return err
+		}
+		prevDurationsWithLabels := metrics.LabelDurations(prevDurations, prevSummary.TestID)
+		curDurationsWithLabels := metrics.LabelDurations(curWriteLatencies, ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsSummaryWrites.TestID)
+		allDurationsWithLabels := append(prevDurationsWithLabels, curDurationsWithLabels...)
+		sortStart := time.Now()
+		ts.cfg.Logger.Info("sorting before and after durations with label",
+			zap.Int("before-data-points", len(prevDurationsWithLabels)),
+			zap.Int("after-data-points", len(curDurationsWithLabels)),
+			zap.Int("total-points", len(allDurationsWithLabels)),
+		)
+		sort.Sort(allDurationsWithLabels)
+		ts.cfg.Logger.Info("sorted before and after durations with label",
+			zap.Int("before-data-points", len(prevDurationsWithLabels)),
+			zap.Int("after-data-points", len(curDurationsWithLabels)),
+			zap.Int("total-points", len(allDurationsWithLabels)),
+			zap.String("took", time.Since(sortStart).String()),
+		)
+		allDataJSON, err := json.Marshal(allDurationsWithLabels)
+		if err != nil {
+			ts.cfg.Logger.Warn("failed to marshal results", zap.Error(err))
+			return err
+		}
+		if err = ioutil.WriteFile(ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsRawWritesCompareAllJSONPath, []byte(allDataJSON), 0600); err != nil {
+			ts.cfg.Logger.Warn("failed to write file", zap.Error(err))
+			return err
+		}
+		if err = aws_s3.Upload(
+			ts.cfg.Logger,
+			ts.cfg.S3API,
+			ts.cfg.EKSConfig.S3BucketName,
+			ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsRawWritesCompareAllJSONS3Key,
+			ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsRawWritesCompareAllJSONPath,
+		); err != nil {
+			return err
+		}
+		if err = allDurationsWithLabels.CSV(ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsRawWritesCompareAllCSVPath); err != nil {
+			return err
+		}
+		if err = aws_s3.Upload(
+			ts.cfg.Logger,
+			ts.cfg.S3API,
+			ts.cfg.EKSConfig.S3BucketName,
+			ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsRawWritesCompareAllCSVS3Key,
+			ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsRawWritesCompareAllCSVPath,
+		); err != nil {
+			return err
+		}
 	} else {
 		ts.cfg.Logger.Warn("previous writes summary not found; skipping comparison", zap.Error(err))
 	}
@@ -248,8 +289,17 @@ func (ts *tester) compareResults() (err error) {
 		ts.cfg.Logger,
 		ts.cfg.S3API,
 		ts.cfg.EKSConfig.S3BucketName,
-		path.Join(ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesCompareS3Dir, tss),
-		ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesSummaryJSONPath,
+		path.Join(ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsRawWritesCompareS3Dir, tss),
+		ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsRawWritesJSONPath,
+	); err != nil {
+		return err
+	}
+	if err = aws_s3.Upload(
+		ts.cfg.Logger,
+		ts.cfg.S3API,
+		ts.cfg.EKSConfig.S3BucketName,
+		path.Join(ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsSummaryWritesCompareS3Dir, tss),
+		ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsSummaryWritesJSONPath,
 	); err != nil {
 		return err
 	}
@@ -264,31 +314,31 @@ func (ts *tester) publishResults() (err error) {
 		Timestamp:  tv,
 		MetricName: aws.String("add-on-csrs-local-writes-latency-p50"),
 		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
-		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesSummary.LantencyP50.Milliseconds())),
+		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsSummaryWrites.LantencyP50.Milliseconds())),
 	})
 	datums = append(datums, &cloudwatch.MetricDatum{
 		Timestamp:  tv,
 		MetricName: aws.String("add-on-csrs-local-writes-latency-p90"),
 		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
-		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesSummary.LantencyP90.Milliseconds())),
+		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsSummaryWrites.LantencyP90.Milliseconds())),
 	})
 	datums = append(datums, &cloudwatch.MetricDatum{
 		Timestamp:  tv,
 		MetricName: aws.String("add-on-csrs-local-writes-latency-p99"),
 		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
-		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesSummary.LantencyP99.Milliseconds())),
+		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsSummaryWrites.LantencyP99.Milliseconds())),
 	})
 	datums = append(datums, &cloudwatch.MetricDatum{
 		Timestamp:  tv,
 		MetricName: aws.String("add-on-csrs-local-writes-latency-p999"),
 		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
-		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesSummary.LantencyP999.Milliseconds())),
+		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsSummaryWrites.LantencyP999.Milliseconds())),
 	})
 	datums = append(datums, &cloudwatch.MetricDatum{
 		Timestamp:  tv,
 		MetricName: aws.String("add-on-csrs-local-writes-latency-p9999"),
 		Unit:       aws.String(cloudwatch.StandardUnitMilliseconds),
-		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsWritesSummary.LantencyP9999.Milliseconds())),
+		Value:      aws.Float64(float64(ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsSummaryWrites.LantencyP9999.Milliseconds())),
 	})
 	return cw.PutData(ts.cfg.Logger, ts.cfg.CWAPI, ts.cfg.EKSConfig.CWNamespace, 20, datums...)
 }

@@ -37,8 +37,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.2.7...v1.2.8
 
 ### `eksconfig`
 
-- Rename [`RequestsSummaryWrites` to `RequestsWritesSummary*`](https://github.com/aws/aws-k8s-tester/commit/cd80fc0328edc229c7e908f3feb8cd6554d15dd9).
-- Rename [`RequestsSummaryReads` to `RequestsReadsSummary*`](https://github.com/aws/aws-k8s-tester/commit/cd80fc0328edc229c7e908f3feb8cd6554d15dd9).
+- Rename [`RequestsSummaryWrites` to `RequestsSummaryWrites*`](https://github.com/aws/aws-k8s-tester/commit/cd80fc0328edc229c7e908f3feb8cd6554d15dd9).
+- Rename [`RequestsSummaryReads` to `RequestsSummaryReads*`](https://github.com/aws/aws-k8s-tester/commit/cd80fc0328edc229c7e908f3feb8cd6554d15dd9).
 - Add [JSON output fields to save latency data points on disk](https://github.com/aws/aws-k8s-tester/commit/cd80fc0328edc229c7e908f3feb8cd6554d15dd9).
 
 ### `eks`

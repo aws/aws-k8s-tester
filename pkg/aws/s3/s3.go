@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path"
 	"path/filepath"
 	"reflect"
 	"sort"
@@ -164,34 +165,48 @@ func Upload(
 	}
 	defer rf.Close()
 
-	_, err = s3API.PutObject(&s3.PutObjectInput{
-		Bucket: aws.String(bucket),
-		Key:    aws.String(s3Key),
+	for i := 0; i < 5; i++ {
+		_, err = s3API.PutObject(&s3.PutObjectInput{
+			Bucket: aws.String(bucket),
+			Key:    aws.String(s3Key),
 
-		Body: rf,
+			Body: rf,
 
-		// https://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html#canned-acl
-		// vs. "public-read"
-		ACL: aws.String("private"),
+			// https://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html#canned-acl
+			// vs. "public-read"
+			ACL: aws.String("private"),
 
-		Metadata: map[string]*string{
-			"Kind": aws.String("aws-k8s-tester"),
-		},
-	})
-	if err == nil {
-		lg.Info("uploaded",
-			zap.String("s3-bucket", bucket),
-			zap.String("remote-path", s3Key),
-			zap.String("file-size", size),
-		)
-	} else {
+			Metadata: map[string]*string{
+				"Kind": aws.String("aws-k8s-tester"),
+			},
+		})
+		if err == nil {
+			lg.Info("uploaded",
+				zap.String("s3-bucket", bucket),
+				zap.String("remote-path", s3Key),
+				zap.String("file-size", size),
+			)
+			break
+		}
+
 		lg.Warn("failed to upload",
 			zap.String("s3-bucket", bucket),
 			zap.String("remote-path", s3Key),
 			zap.String("file-size", size),
 			zap.Error(err),
+			zap.Bool("error-expired-creds", request.IsErrorExpiredCreds(err)),
+			zap.Bool("error-retriable", request.IsErrorRetryable(err)),
+			zap.Bool("error-throttle", request.IsErrorThrottle(err)),
 		)
+		if request.IsErrorExpiredCreds(err) {
+			break
+		}
+		if !request.IsErrorRetryable(err) && !request.IsErrorThrottle(err) {
+			break
+		}
+		time.Sleep(time.Second * time.Duration(i+5))
 	}
+
 	return err
 }
 
@@ -422,9 +437,7 @@ func DownloadDir(lg *zap.Logger, s3API s3iface.S3API, bucket string, s3Dir strin
 	ret := Op{verbose: false, overwrite: false}
 	ret.applyOpts(opts)
 
-	if s3Dir[len(s3Dir)-1] == '/' {
-		s3Dir = s3Dir[:len(s3Dir)-1]
-	}
+	s3Dir = path.Clean(s3Dir) + "/"
 	dirPfx := "download-s3-bucket-dir-" + bucket + s3Dir
 	dirPfx = strings.Replace(dirPfx, "/", "", -1)
 	lg.Info("creating temp dir", zap.String("dir-prefix", dirPfx))

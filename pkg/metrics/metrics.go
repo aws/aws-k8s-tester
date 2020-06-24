@@ -3,15 +3,20 @@ package metrics
 
 import (
 	"bytes"
+	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
+	"os"
 	"sort"
 	"time"
 
+	aws_s3 "github.com/aws/aws-k8s-tester/pkg/aws/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"github.com/olekukonko/tablewriter"
 	dto "github.com/prometheus/client_model/go"
+	"go.uber.org/zap"
 )
 
 // RequestsCompare compares two "RequestsSummary".
@@ -179,6 +184,135 @@ FAILURE TOTAL: %.2f
 			rs.LantencyP999,
 			rs.LantencyP9999,
 		)
+}
+
+// DurationWithLabel is the duration with label.
+// ref. https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test
+type DurationWithLabel struct {
+	time.Duration
+	Label string
+}
+
+type DurationWithLabels []DurationWithLabel
+
+func (ds DurationWithLabels) Len() int           { return len(ds) }
+func (ds DurationWithLabels) Less(i, j int) bool { return ds[i].Duration < ds[j].Duration }
+func (ds DurationWithLabels) Swap(i, j int)      { ds[i], ds[j] = ds[j], ds[i] }
+
+// PickLantencyP50 returns the latency assuming durations are already sorted.
+func (ds DurationWithLabels) PickLantencyP50() DurationWithLabel {
+	n := len(ds)
+	if n == 0 {
+		return DurationWithLabel{}
+	}
+	if n == 1 {
+		return ds[0]
+	}
+
+	idx := n / 2
+	return ds[idx]
+}
+
+// PickLantencyP90 returns the latency assuming durations are already sorted.
+func (ds DurationWithLabels) PickLantencyP90() DurationWithLabel {
+	n := len(ds)
+	if n == 0 {
+		return DurationWithLabel{}
+	}
+	if n == 1 {
+		return ds[0]
+	}
+
+	idx := n * 90 / 100
+	if idx >= n {
+		return ds[n-1]
+	}
+	return ds[idx]
+}
+
+// PickLantencyP99 returns the latency assuming durations are already sorted.
+func (ds DurationWithLabels) PickLantencyP99() DurationWithLabel {
+	n := len(ds)
+	if n == 0 {
+		return DurationWithLabel{}
+	}
+	if n == 1 {
+		return ds[0]
+	}
+
+	idx := n * 99 / 100
+	if idx >= n {
+		return ds[n-1]
+	}
+	return ds[idx]
+}
+
+// PickLantencyP999 returns the latency assuming durations are already sorted.
+func (ds DurationWithLabels) PickLantencyP999() DurationWithLabel {
+	n := len(ds)
+	if n == 0 {
+		return DurationWithLabel{}
+	}
+	if n == 1 {
+		return ds[0]
+	}
+
+	idx := n * 999 / 1000
+	if idx >= n {
+		return ds[n-1]
+	}
+	return ds[idx]
+}
+
+// PickLantencyP9999 returns the latency assuming durations are already sorted.
+func (ds DurationWithLabels) PickLantencyP9999() DurationWithLabel {
+	n := len(ds)
+	if n == 0 {
+		return DurationWithLabel{}
+	}
+	if n == 1 {
+		return ds[0]
+	}
+
+	idx := n * 9999 / 10000
+	if idx >= n {
+		return ds[n-1]
+	}
+	return ds[idx]
+}
+
+func (ds DurationWithLabels) CSV(path string) error {
+	csvFile, err := os.OpenFile(path, os.O_RDWR|os.O_TRUNC, 0777)
+	if err != nil {
+		csvFile, err = os.Create(path)
+		if err != nil {
+			return err
+		}
+	}
+	defer csvFile.Close()
+
+	csvWriter := csv.NewWriter(csvFile)
+	defer csvWriter.Flush()
+
+	csvWriter.Write([]string{"label", "duration-ms"})
+
+	rows := make([][]string, len(ds))
+	for idx := range ds {
+		rows[idx] = []string{ds[idx].Label, fmt.Sprintf("%d", ds[idx].Milliseconds())}
+	}
+	return csvWriter.WriteAll(rows)
+}
+
+// LabelDurations labels durations.
+func LabelDurations(ds1 Durations, label string) (ds2 DurationWithLabels) {
+	ds2 = make(DurationWithLabels, len(ds1), len(ds1))
+	for idx := range ds1 {
+		ds2[idx] = DurationWithLabel{
+			Duration: ds1[idx],
+			Label:    label,
+		}
+	}
+	return ds2
 }
 
 type Durations []time.Duration
@@ -394,4 +528,60 @@ func (buckets HistogramBuckets) Table() string {
 	}
 	tb.Render()
 	return buf.String()
+}
+
+// DownloaDurationsRFromS3 downloads the file from S3 bucket, and parses "Durations".
+func DownloadDurationsFromS3(lg *zap.Logger, s3API s3iface.S3API, bucketName string, s3Key string) (rs Durations, err error) {
+	var localPath string
+	localPath, err = aws_s3.DownloadToTempFile(
+		lg,
+		s3API,
+		bucketName,
+		s3Key,
+	)
+	if err != nil {
+		return Durations{}, fmt.Errorf("failed to download downloads summary %v", err)
+	}
+	defer os.RemoveAll(localPath)
+
+	rf, err := os.OpenFile(localPath, os.O_RDONLY, 0444)
+	if err != nil {
+		lg.Warn("failed to read a file", zap.Error(err))
+		return Durations{}, err
+	}
+	defer rf.Close()
+
+	if err = json.NewDecoder(rf).Decode(&rs); err != nil {
+		lg.Warn("failed to decode a JSON file", zap.Error(err))
+		return Durations{}, err
+	}
+	return rs, nil
+}
+
+// DownloadRequestsSummaryFromS3 downloads the file from S3 bucket, and parses "RequestsSummary".
+func DownloadRequestsSummaryFromS3(lg *zap.Logger, s3API s3iface.S3API, bucketName string, s3Key string) (rs RequestsSummary, err error) {
+	var localPath string
+	localPath, err = aws_s3.DownloadToTempFile(
+		lg,
+		s3API,
+		bucketName,
+		s3Key,
+	)
+	if err != nil {
+		return RequestsSummary{}, fmt.Errorf("failed to download requests summary %v", err)
+	}
+	defer os.RemoveAll(localPath)
+
+	rf, err := os.OpenFile(localPath, os.O_RDONLY, 0444)
+	if err != nil {
+		lg.Warn("failed to read a file", zap.Error(err))
+		return RequestsSummary{}, err
+	}
+	defer rf.Close()
+
+	if err = json.NewDecoder(rf).Decode(&rs); err != nil {
+		lg.Warn("failed to decode a JSON file", zap.Error(err))
+		return RequestsSummary{}, err
+	}
+	return rs, nil
 }

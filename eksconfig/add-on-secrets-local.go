@@ -44,55 +44,83 @@ type AddOnSecretsLocal struct {
 	// It is under the bucket "eksconfig.Config.S3BucketName".
 	S3Dir string `json:"s3-dir"`
 
-	// RequestsWritesRawJSONPath is the file path to store writes requests in JSON format.
-	RequestsWritesRawJSONPath  string `json:"requests-writes-json-path" read-only:"true"`
-	RequestsWritesRawJSONS3Key string `json:"requests-writes-json-s3-key" read-only:"true"`
-	// RequestsWritesSummary is the writes results.
-	RequestsWritesSummary metrics.RequestsSummary `json:"requests-writes-summary,omitempty" read-only:"true"`
-	// RequestsWritesSummaryJSONPath is the file path to store writes requests summary in JSON format.
-	RequestsWritesSummaryJSONPath  string `json:"requests-writes-summary-json-path" read-only:"true"`
-	RequestsWritesSummaryJSONS3Key string `json:"requests-writes-summary-json-s3-key" read-only:"true"`
-	// RequestsWritesSummaryTablePath is the file path to store writes requests summary in table format.
-	RequestsWritesSummaryTablePath  string `json:"requests-writes-summary-table-path" read-only:"true"`
-	RequestsWritesSummaryTableS3Key string `json:"requests-writes-summary-table-s3-path" read-only:"true"`
-	// RequestsWritesCompareS3Dir is the S3 directory of previous/latest "RequestsWritesSummary".
-	// Specify the S3 key in the same bucket of "eksconfig.Config.S3BucketName".
-	// Use for regression tests. Specify the value not bound to the cluster directory.
-	// Different runs from different clusters reads and writes in this directory.
-	RequestsWritesCompareS3Dir string `json:"requests-writes-compare-s3-dir"`
-	// RequestsWritesCompare is the comparision results.
-	RequestsWritesCompare metrics.RequestsCompare `json:"requests-writes-compare" read-only:"true"`
-	// RequestsWritesCompareJSONPath is the file path to store writes requests compare summary in JSON format.
-	RequestsWritesCompareJSONPath  string `json:"requests-writes-compare-json-path" read-only:"true"`
-	RequestsWritesCompareJSONS3Key string `json:"requests-writes-compare-json-s3-key" read-only:"true"`
-	// RequestsWritesCompareTablePath is the file path to store writes requests compare summary in table format.
-	RequestsWritesCompareTablePath  string `json:"requests-writes-compare-table-path" read-only:"true"`
-	RequestsWritesCompareTableS3Key string `json:"requests-writes-compare-table-s3-path" read-only:"true"`
+	//////////////////////////////////////////////////////////////////////////////
 
-	// RequestsReadsRawJSONPath is the file path to store reads requests in JSON format.
-	RequestsReadsRawJSONPath  string `json:"requests-reads-raw-json-path" read-only:"true"`
-	RequestsReadsRawJSONS3Key string `json:"requests-reads-raw-json-s3-key" read-only:"true"`
-	// RequestsReadsSummary is the reads results.
-	RequestsReadsSummary metrics.RequestsSummary `json:"requests-reads-summary,omitempty" read-only:"true"`
-	// RequestsReadsSummaryJSONPath is the file path to store reads requests summary in JSON format.
-	RequestsReadsSummaryJSONPath  string `json:"requests-reads-summary-json-path" read-only:"true"`
-	RequestsReadsSummaryJSONS3Key string `json:"requests-reads-summary-json-s3-key" read-only:"true"`
-	// RequestsReadsSummaryTablePath is the file path to store reads requests summary in table format.
-	RequestsReadsSummaryTablePath  string `json:"requests-reads-summary-table-path" read-only:"true"`
-	RequestsReadsSummaryTableS3Key string `json:"requests-reads-summary-table-s3-path" read-only:"true"`
-	// RequestsReadsCompareS3Dir is the S3 directory of previous/latest "RequestsReadsSummary".
+	RequestsRawWritesJSONPath  string `json:"requests-raw-writes-json-path" read-only:"true"`
+	RequestsRawWritesJSONS3Key string `json:"requests-raw-writes-json-s3-key" read-only:"true"`
+
+	//////////////////////////////////////////////////////////////////////////////
+
+	// RequestsRawWritesCompareS3Dir is the s3 directory to store raw data points.
+	// Used to comparison results.
+	// ref. https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test
+	RequestsRawWritesCompareS3Dir        string `json:"requests-raw-writes-compare-s3-dir" read-only:"true"`
+	RequestsRawWritesCompareAllJSONPath  string `json:"requests-raw-writes-compare-all-json-path" read-only:"true"`
+	RequestsRawWritesCompareAllJSONS3Key string `json:"requests-raw-writes-compare-all-json-s3-key" read-only:"true"`
+	RequestsRawWritesCompareAllCSVPath   string `json:"requests-raw-writes-compare-all-csv-path" read-only:"true"`
+	RequestsRawWritesCompareAllCSVS3Key  string `json:"requests-raw-writes-compare-all-csv-s3-key" read-only:"true"`
+
+	//////////////////////////////////////////////////////////////////////////////
+
+	// RequestsSummaryWrites is the writes results.
+	RequestsSummaryWrites           metrics.RequestsSummary `json:"requests-summary-writes,omitempty" read-only:"true"`
+	RequestsSummaryWritesJSONPath   string                  `json:"requests-summary-writes-json-path" read-only:"true"`
+	RequestsSummaryWritesJSONS3Key  string                  `json:"requests-summary-writes-json-s3-key" read-only:"true"`
+	RequestsSummaryWritesTablePath  string                  `json:"requests-summary-writes-table-path" read-only:"true"`
+	RequestsSummaryWritesTableS3Key string                  `json:"requests-summary-writes-table-s3-path" read-only:"true"`
+
+	//////////////////////////////////////////////////////////////////////////////
+
+	// RequestsSummaryWritesCompareS3Dir is the S3 directory of previous/latest "RequestsSummary".
 	// Specify the S3 key in the same bucket of "eksconfig.Config.S3BucketName".
 	// Use for regression tests. Specify the value not bound to the cluster directory.
 	// Different runs from different clusters reads and writes in this directory.
-	RequestsReadsCompareS3Dir string `json:"requests-reads-compare-s3-dir"`
-	// RequestsReadsCompare is the comparision results.
-	RequestsReadsCompare metrics.RequestsCompare `json:"requests-reads-compare" read-only:"true"`
-	// RequestsReadsCompareJSONPath is the file path to store reads requests compare summary in JSON format.
-	RequestsReadsCompareJSONPath  string `json:"requests-reads-compare-json-path" read-only:"true"`
-	RequestsReadsCompareJSONS3Key string `json:"requests-reads-compare-json-s3-key" read-only:"true"`
-	// RequestsReadsCompareTablePath is the file path to store reads requests compare summary in table format.
-	RequestsReadsCompareTablePath  string `json:"requests-reads-compare-table-path" read-only:"true"`
-	RequestsReadsCompareTableS3Key string `json:"requests-reads-compare-table-s3-path" read-only:"true"`
+	RequestsSummaryWritesCompareS3Dir      string                  `json:"requests-summary-writes-compare-s3-dir" read-only:"true"`
+	RequestsSummaryWritesCompare           metrics.RequestsCompare `json:"requests-summary-writes-compare" read-only:"true"`
+	RequestsSummaryWritesCompareJSONPath   string                  `json:"requests-summary-writes-compare-json-path" read-only:"true"`
+	RequestsSummaryWritesCompareJSONS3Key  string                  `json:"requests-summary-writes-compare-json-s3-key" read-only:"true"`
+	RequestsSummaryWritesCompareTablePath  string                  `json:"requests-summary-writes-compare-table-path" read-only:"true"`
+	RequestsSummaryWritesCompareTableS3Key string                  `json:"requests-summary-writes-compare-table-s3-path" read-only:"true"`
+
+	//////////////////////////////////////////////////////////////////////////////
+
+	RequestsRawReadsJSONPath  string `json:"requests-raw-reads-json-path" read-only:"true"`
+	RequestsRawReadsJSONS3Key string `json:"requests-raw-reads-json-s3-key" read-only:"true"`
+
+	//////////////////////////////////////////////////////////////////////////////
+
+	// RequestsRawReadsCompareS3Dir is the s3 directory to store raw data points.
+	// Used to comparison results.
+	// ref. https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test
+	RequestsRawReadsCompareS3Dir        string `json:"requests-raw-reads-compare-s3-dir" read-only:"true"`
+	RequestsRawReadsCompareAllJSONPath  string `json:"requests-raw-reads-compare-all-json-path" read-only:"true"`
+	RequestsRawReadsCompareAllJSONS3Key string `json:"requests-raw-reads-compare-all-json-s3-key" read-only:"true"`
+	RequestsRawReadsCompareAllCSVPath   string `json:"requests-raw-reads-compare-all-csv-path" read-only:"true"`
+	RequestsRawReadsCompareAllCSVS3Key  string `json:"requests-raw-reads-compare-all-csv-s3-key" read-only:"true"`
+
+	//////////////////////////////////////////////////////////////////////////////
+
+	// RequestsSummaryReads is the reads results.
+	RequestsSummaryReads           metrics.RequestsSummary `json:"requests-summary-reads,omitempty" read-only:"true"`
+	RequestsSummaryReadsJSONPath   string                  `json:"requests-summary-reads-json-path" read-only:"true"`
+	RequestsSummaryReadsJSONS3Key  string                  `json:"requests-summary-reads-json-s3-key" read-only:"true"`
+	RequestsSummaryReadsTablePath  string                  `json:"requests-summary-reads-table-path" read-only:"true"`
+	RequestsSummaryReadsTableS3Key string                  `json:"requests-summary-reads-table-s3-path" read-only:"true"`
+
+	//////////////////////////////////////////////////////////////////////////////
+
+	// RequestsSummaryReadsCompareS3Dir is the S3 directory of previous/latest "RequestsSummary".
+	// Specify the S3 key in the same bucket of "eksconfig.Config.S3BucketName".
+	// Use for regression tests. Specify the value not bound to the cluster directory.
+	// Different runs from different clusters reads and writes in this directory.
+	RequestsSummaryReadsCompareS3Dir      string                  `json:"requests-summary-reads-compare-s3-dir" read-only:"true"`
+	RequestsSummaryReadsCompare           metrics.RequestsCompare `json:"requests-summary-reads-compare" read-only:"true"`
+	RequestsSummaryReadsCompareJSONPath   string                  `json:"requests-summary-reads-compare-json-path" read-only:"true"`
+	RequestsSummaryReadsCompareJSONS3Key  string                  `json:"requests-summary-reads-compare-json-s3-key" read-only:"true"`
+	RequestsSummaryReadsCompareTablePath  string                  `json:"requests-summary-reads-compare-table-path" read-only:"true"`
+	RequestsSummaryReadsCompareTableS3Key string                  `json:"requests-summary-reads-compare-table-s3-path" read-only:"true"`
+
+	//////////////////////////////////////////////////////////////////////////////
 }
 
 // EnvironmentVariablePrefixAddOnSecretsLocal is the environment variable prefix used for "eksconfig".
@@ -160,113 +188,181 @@ func (cfg *Config) validateAddOnSecretsLocal() error {
 		cfg.AddOnSecretsLocal.S3Dir = path.Join(cfg.Name, "add-on-secrets-local")
 	}
 
-	if cfg.AddOnSecretsLocal.RequestsWritesRawJSONPath == "" {
-		cfg.AddOnSecretsLocal.RequestsWritesRawJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-writes-raw.json"
+	//////////////////////////////////////////////////////////////////////////////
+	if cfg.AddOnSecretsLocal.RequestsRawWritesJSONPath == "" {
+		cfg.AddOnSecretsLocal.RequestsRawWritesJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-writes-raw.json"
 	}
-	if cfg.AddOnSecretsLocal.RequestsWritesRawJSONS3Key == "" {
-		cfg.AddOnSecretsLocal.RequestsWritesRawJSONS3Key = path.Join(
+	if cfg.AddOnSecretsLocal.RequestsRawWritesJSONS3Key == "" {
+		cfg.AddOnSecretsLocal.RequestsRawWritesJSONS3Key = path.Join(
 			cfg.AddOnSecretsLocal.S3Dir,
-			"writes-raw",
-			filepath.Base(cfg.AddOnSecretsLocal.RequestsWritesRawJSONPath),
+			"requests-raw-writes",
+			filepath.Base(cfg.AddOnSecretsLocal.RequestsRawWritesJSONPath),
 		)
 	}
-	if cfg.AddOnSecretsLocal.RequestsWritesSummaryJSONPath == "" {
-		cfg.AddOnSecretsLocal.RequestsWritesSummaryJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-writes-summary.json"
-	}
-	if cfg.AddOnSecretsLocal.RequestsWritesSummaryJSONS3Key == "" {
-		cfg.AddOnSecretsLocal.RequestsWritesSummaryJSONS3Key = path.Join(
-			cfg.AddOnSecretsLocal.S3Dir,
-			"writes-summary",
-			filepath.Base(cfg.AddOnSecretsLocal.RequestsWritesSummaryJSONPath),
-		)
-	}
-	if cfg.AddOnSecretsLocal.RequestsWritesSummaryTablePath == "" {
-		cfg.AddOnSecretsLocal.RequestsWritesSummaryTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-writes-summary.txt"
-	}
-	if cfg.AddOnSecretsLocal.RequestsWritesSummaryTableS3Key == "" {
-		cfg.AddOnSecretsLocal.RequestsWritesSummaryTableS3Key = path.Join(
-			cfg.AddOnSecretsLocal.S3Dir,
-			"writes-summary",
-			filepath.Base(cfg.AddOnSecretsLocal.RequestsWritesSummaryTablePath),
-		)
-	}
-	if cfg.AddOnSecretsLocal.RequestsWritesCompareS3Dir == "" {
-		cfg.AddOnSecretsLocal.RequestsWritesCompareS3Dir = path.Join("add-on-secrets-local", "writes-compare", cfg.Parameters.Version)
-	}
-	if cfg.AddOnSecretsLocal.RequestsWritesCompareJSONPath == "" {
-		cfg.AddOnSecretsLocal.RequestsWritesCompareJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-writes-compare.json"
-	}
-	if cfg.AddOnSecretsLocal.RequestsWritesCompareJSONS3Key == "" {
-		cfg.AddOnSecretsLocal.RequestsWritesCompareJSONS3Key = path.Join(
-			cfg.AddOnSecretsLocal.S3Dir,
-			"writes-compare",
-			filepath.Base(cfg.AddOnSecretsLocal.RequestsWritesCompareJSONPath),
-		)
-	}
-	if cfg.AddOnSecretsLocal.RequestsWritesCompareTablePath == "" {
-		cfg.AddOnSecretsLocal.RequestsWritesCompareTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-writes-compare.txt"
-	}
-	if cfg.AddOnSecretsLocal.RequestsWritesCompareTableS3Key == "" {
-		cfg.AddOnSecretsLocal.RequestsWritesCompareTableS3Key = path.Join(
-			cfg.AddOnSecretsLocal.S3Dir,
-			"writes-compare",
-			filepath.Base(cfg.AddOnSecretsLocal.RequestsWritesCompareTablePath),
-		)
-	}
+	//////////////////////////////////////////////////////////////////////////////
 
-	if cfg.AddOnSecretsLocal.RequestsReadsRawJSONPath == "" {
-		cfg.AddOnSecretsLocal.RequestsReadsRawJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-reads-raw.json"
+	//////////////////////////////////////////////////////////////////////////////
+	if cfg.AddOnSecretsLocal.RequestsRawWritesCompareS3Dir == "" {
+		cfg.AddOnSecretsLocal.RequestsRawWritesCompareS3Dir = path.Join("add-on-secrets-local", "requests-raw-writes-compare", cfg.Parameters.Version)
 	}
-	if cfg.AddOnSecretsLocal.RequestsReadsRawJSONS3Key == "" {
-		cfg.AddOnSecretsLocal.RequestsReadsRawJSONS3Key = path.Join(
+	if cfg.AddOnSecretsLocal.RequestsRawWritesCompareAllJSONPath == "" {
+		cfg.AddOnSecretsLocal.RequestsRawWritesCompareAllJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-raw-writes-compare-all.json"
+	}
+	if cfg.AddOnSecretsLocal.RequestsRawWritesCompareAllJSONS3Key == "" {
+		cfg.AddOnSecretsLocal.RequestsRawWritesCompareAllJSONS3Key = path.Join(
 			cfg.AddOnSecretsLocal.S3Dir,
-			"reads-raw",
-			filepath.Base(cfg.AddOnSecretsLocal.RequestsReadsRawJSONPath),
+			"requests-raw-writes-compare-all",
+			filepath.Base(cfg.AddOnSecretsLocal.RequestsRawWritesCompareAllJSONPath),
 		)
 	}
-	if cfg.AddOnSecretsLocal.RequestsReadsSummaryJSONPath == "" {
-		cfg.AddOnSecretsLocal.RequestsReadsSummaryJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-reads-summary.json"
+	if cfg.AddOnSecretsLocal.RequestsRawWritesCompareAllCSVPath == "" {
+		cfg.AddOnSecretsLocal.RequestsRawWritesCompareAllCSVPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-raw-writes-compare-all.csv"
 	}
-	if cfg.AddOnSecretsLocal.RequestsReadsSummaryJSONS3Key == "" {
-		cfg.AddOnSecretsLocal.RequestsReadsSummaryJSONS3Key = path.Join(
+	if cfg.AddOnSecretsLocal.RequestsRawWritesCompareAllCSVS3Key == "" {
+		cfg.AddOnSecretsLocal.RequestsRawWritesCompareAllCSVS3Key = path.Join(
 			cfg.AddOnSecretsLocal.S3Dir,
-			"reads-summary",
-			filepath.Base(cfg.AddOnSecretsLocal.RequestsReadsSummaryJSONPath),
+			"requests-raw-writes-compare-all",
+			filepath.Base(cfg.AddOnSecretsLocal.RequestsRawWritesCompareAllCSVPath),
 		)
 	}
-	if cfg.AddOnSecretsLocal.RequestsReadsSummaryTablePath == "" {
-		cfg.AddOnSecretsLocal.RequestsReadsSummaryTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-reads-summary.txt"
+	//////////////////////////////////////////////////////////////////////////////
+
+	//////////////////////////////////////////////////////////////////////////////
+	if cfg.AddOnSecretsLocal.RequestsSummaryWritesJSONPath == "" {
+		cfg.AddOnSecretsLocal.RequestsSummaryWritesJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-summary-writes.json"
 	}
-	if cfg.AddOnSecretsLocal.RequestsReadsSummaryTableS3Key == "" {
-		cfg.AddOnSecretsLocal.RequestsReadsSummaryTableS3Key = path.Join(
+	if cfg.AddOnSecretsLocal.RequestsSummaryWritesJSONS3Key == "" {
+		cfg.AddOnSecretsLocal.RequestsSummaryWritesJSONS3Key = path.Join(
 			cfg.AddOnSecretsLocal.S3Dir,
-			"reads-summary",
-			filepath.Base(cfg.AddOnSecretsLocal.RequestsReadsSummaryTablePath),
+			"requests-summary-writes",
+			filepath.Base(cfg.AddOnSecretsLocal.RequestsSummaryWritesJSONPath),
 		)
 	}
-	if cfg.AddOnSecretsLocal.RequestsReadsCompareS3Dir == "" {
-		cfg.AddOnSecretsLocal.RequestsReadsCompareS3Dir = path.Join("add-on-secrets-local", "reads-compare", cfg.Parameters.Version)
+	if cfg.AddOnSecretsLocal.RequestsSummaryWritesTablePath == "" {
+		cfg.AddOnSecretsLocal.RequestsSummaryWritesTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-summary-writes.txt"
 	}
-	if cfg.AddOnSecretsLocal.RequestsReadsCompareJSONPath == "" {
-		cfg.AddOnSecretsLocal.RequestsReadsCompareJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-reads-compare.json"
-	}
-	if cfg.AddOnSecretsLocal.RequestsReadsCompareJSONS3Key == "" {
-		cfg.AddOnSecretsLocal.RequestsReadsCompareJSONS3Key = path.Join(
+	if cfg.AddOnSecretsLocal.RequestsSummaryWritesTableS3Key == "" {
+		cfg.AddOnSecretsLocal.RequestsSummaryWritesTableS3Key = path.Join(
 			cfg.AddOnSecretsLocal.S3Dir,
-			"reads-compare",
-			filepath.Base(cfg.AddOnSecretsLocal.RequestsReadsCompareJSONPath),
+			"requests-summary-writes",
+			filepath.Base(cfg.AddOnSecretsLocal.RequestsSummaryWritesTablePath),
 		)
 	}
-	if cfg.AddOnSecretsLocal.RequestsReadsCompareTablePath == "" {
-		cfg.AddOnSecretsLocal.RequestsReadsCompareTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-reads-compare.txt"
+	//////////////////////////////////////////////////////////////////////////////
+
+	//////////////////////////////////////////////////////////////////////////////
+	if cfg.AddOnSecretsLocal.RequestsSummaryWritesCompareS3Dir == "" {
+		cfg.AddOnSecretsLocal.RequestsSummaryWritesCompareS3Dir = path.Join("add-on-secrets-local", "requests-summary-writes-compare", cfg.Parameters.Version)
 	}
-	if cfg.AddOnSecretsLocal.RequestsReadsCompareTableS3Key == "" {
-		cfg.AddOnSecretsLocal.RequestsReadsCompareTableS3Key = path.Join(
+	if cfg.AddOnSecretsLocal.RequestsSummaryWritesCompareJSONPath == "" {
+		cfg.AddOnSecretsLocal.RequestsSummaryWritesCompareJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-summary-writes-compare.json"
+	}
+	if cfg.AddOnSecretsLocal.RequestsSummaryWritesCompareJSONS3Key == "" {
+		cfg.AddOnSecretsLocal.RequestsSummaryWritesCompareJSONS3Key = path.Join(
 			cfg.AddOnSecretsLocal.S3Dir,
-			"reads-compare",
-			filepath.Base(cfg.AddOnSecretsLocal.RequestsReadsCompareTablePath),
+			"requests-summary-writes-compare",
+			filepath.Base(cfg.AddOnSecretsLocal.RequestsSummaryWritesCompareJSONPath),
 		)
 	}
+	if cfg.AddOnSecretsLocal.RequestsSummaryWritesCompareTablePath == "" {
+		cfg.AddOnSecretsLocal.RequestsSummaryWritesCompareTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-summary-writes-compare.txt"
+	}
+	if cfg.AddOnSecretsLocal.RequestsSummaryWritesCompareTableS3Key == "" {
+		cfg.AddOnSecretsLocal.RequestsSummaryWritesCompareTableS3Key = path.Join(
+			cfg.AddOnSecretsLocal.S3Dir,
+			"requests-summary-writes-compare",
+			filepath.Base(cfg.AddOnSecretsLocal.RequestsSummaryWritesCompareTablePath),
+		)
+	}
+	//////////////////////////////////////////////////////////////////////////////
+
+	//////////////////////////////////////////////////////////////////////////////
+	if cfg.AddOnSecretsLocal.RequestsRawReadsJSONPath == "" {
+		cfg.AddOnSecretsLocal.RequestsRawReadsJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-raw-reads.json"
+	}
+	if cfg.AddOnSecretsLocal.RequestsRawReadsJSONS3Key == "" {
+		cfg.AddOnSecretsLocal.RequestsRawReadsJSONS3Key = path.Join(
+			cfg.AddOnSecretsLocal.S3Dir,
+			"requests-raw-reads",
+			filepath.Base(cfg.AddOnSecretsLocal.RequestsRawReadsJSONPath),
+		)
+	}
+	//////////////////////////////////////////////////////////////////////////////
+
+	//////////////////////////////////////////////////////////////////////////////
+	if cfg.AddOnSecretsLocal.RequestsRawReadsCompareS3Dir == "" {
+		cfg.AddOnSecretsLocal.RequestsRawReadsCompareS3Dir = path.Join("add-on-secrets-local", "requests-raw-reads-compare", cfg.Parameters.Version)
+	}
+	if cfg.AddOnSecretsLocal.RequestsRawReadsCompareAllJSONPath == "" {
+		cfg.AddOnSecretsLocal.RequestsRawReadsCompareAllJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-raw-reads-compare-all.json"
+	}
+	if cfg.AddOnSecretsLocal.RequestsRawReadsCompareAllJSONS3Key == "" {
+		cfg.AddOnSecretsLocal.RequestsRawReadsCompareAllJSONS3Key = path.Join(
+			cfg.AddOnSecretsLocal.S3Dir,
+			"requests-raw-reads-compare-all",
+			filepath.Base(cfg.AddOnSecretsLocal.RequestsRawReadsCompareAllJSONPath),
+		)
+	}
+	if cfg.AddOnSecretsLocal.RequestsRawReadsCompareAllCSVPath == "" {
+		cfg.AddOnSecretsLocal.RequestsRawReadsCompareAllCSVPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-raw-reads-compare-all.csv"
+	}
+	if cfg.AddOnSecretsLocal.RequestsRawReadsCompareAllCSVS3Key == "" {
+		cfg.AddOnSecretsLocal.RequestsRawReadsCompareAllCSVS3Key = path.Join(
+			cfg.AddOnSecretsLocal.S3Dir,
+			"requests-raw-reads-compare-all",
+			filepath.Base(cfg.AddOnSecretsLocal.RequestsRawReadsCompareAllCSVPath),
+		)
+	}
+	//////////////////////////////////////////////////////////////////////////////
+
+	//////////////////////////////////////////////////////////////////////////////
+	if cfg.AddOnSecretsLocal.RequestsSummaryReadsJSONPath == "" {
+		cfg.AddOnSecretsLocal.RequestsSummaryReadsJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-summary-reads.json"
+	}
+	if cfg.AddOnSecretsLocal.RequestsSummaryReadsJSONS3Key == "" {
+		cfg.AddOnSecretsLocal.RequestsSummaryReadsJSONS3Key = path.Join(
+			cfg.AddOnSecretsLocal.S3Dir,
+			"requests-summary-reads",
+			filepath.Base(cfg.AddOnSecretsLocal.RequestsSummaryReadsJSONPath),
+		)
+	}
+	if cfg.AddOnSecretsLocal.RequestsSummaryReadsTablePath == "" {
+		cfg.AddOnSecretsLocal.RequestsSummaryReadsTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-summary-reads.txt"
+	}
+	if cfg.AddOnSecretsLocal.RequestsSummaryReadsTableS3Key == "" {
+		cfg.AddOnSecretsLocal.RequestsSummaryReadsTableS3Key = path.Join(
+			cfg.AddOnSecretsLocal.S3Dir,
+			"requests-summary-reads",
+			filepath.Base(cfg.AddOnSecretsLocal.RequestsSummaryReadsTablePath),
+		)
+	}
+	//////////////////////////////////////////////////////////////////////////////
+
+	//////////////////////////////////////////////////////////////////////////////
+	if cfg.AddOnSecretsLocal.RequestsSummaryReadsCompareS3Dir == "" {
+		cfg.AddOnSecretsLocal.RequestsSummaryReadsCompareS3Dir = path.Join("add-on-secrets-local", "requests-summary-reads-compare", cfg.Parameters.Version)
+	}
+	if cfg.AddOnSecretsLocal.RequestsSummaryReadsCompareJSONPath == "" {
+		cfg.AddOnSecretsLocal.RequestsSummaryReadsCompareJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-summary-reads-compare.json"
+	}
+	if cfg.AddOnSecretsLocal.RequestsSummaryReadsCompareJSONS3Key == "" {
+		cfg.AddOnSecretsLocal.RequestsSummaryReadsCompareJSONS3Key = path.Join(
+			cfg.AddOnSecretsLocal.S3Dir,
+			"requests-summary-reads-compare",
+			filepath.Base(cfg.AddOnSecretsLocal.RequestsSummaryReadsCompareJSONPath),
+		)
+	}
+	if cfg.AddOnSecretsLocal.RequestsSummaryReadsCompareTablePath == "" {
+		cfg.AddOnSecretsLocal.RequestsSummaryReadsCompareTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-summary-reads-compare.txt"
+	}
+	if cfg.AddOnSecretsLocal.RequestsSummaryReadsCompareTableS3Key == "" {
+		cfg.AddOnSecretsLocal.RequestsSummaryReadsCompareTableS3Key = path.Join(
+			cfg.AddOnSecretsLocal.S3Dir,
+			"requests-summary-reads-compare",
+			filepath.Base(cfg.AddOnSecretsLocal.RequestsSummaryReadsCompareTablePath),
+		)
+	}
+	//////////////////////////////////////////////////////////////////////////////
 
 	return nil
 }

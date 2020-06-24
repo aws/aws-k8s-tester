@@ -37,9 +37,9 @@ var (
 
 	configmapsNamespace string
 
-	configmapsWritesRawJSONS3Dir      string
-	configmapsWritesSummaryJSONS3Dir  string
-	configmapsWritesSummaryTableS3Dir string
+	configmapsRequestsRawWritesJSONS3Dir      string
+	configmapsRequestsSummaryWritesJSONS3Dir  string
+	configmapsRequestsSummaryWritesTableS3Dir string
 
 	configmapsWritesOutputNamePrefix string
 
@@ -64,9 +64,9 @@ func newCreateConfigMaps() *cobra.Command {
 	cmd.PersistentFlags().IntVar(&configmapsObjectSize, "object-size", 0, "Size of object per write (0 to disable writes)")
 	cmd.PersistentFlags().StringVar(&configmapsNamespace, "namespace", "default", "namespace to send writes")
 
-	cmd.PersistentFlags().StringVar(&configmapsWritesRawJSONS3Dir, "writes-raw-json-s3-dir", "", "s3 directory prefix to upload")
-	cmd.PersistentFlags().StringVar(&configmapsWritesSummaryJSONS3Dir, "writes-summary-json-s3-dir", "", "s3 directory prefix to upload")
-	cmd.PersistentFlags().StringVar(&configmapsWritesSummaryTableS3Dir, "writes-summary-table-s3-dir", "", "s3 directory prefix to upload")
+	cmd.PersistentFlags().StringVar(&configmapsRequestsRawWritesJSONS3Dir, "requests-raw-writes-json-s3-dir", "", "s3 directory prefix to upload")
+	cmd.PersistentFlags().StringVar(&configmapsRequestsSummaryWritesJSONS3Dir, "requests-summary-writes-json-s3-dir", "", "s3 directory prefix to upload")
+	cmd.PersistentFlags().StringVar(&configmapsRequestsSummaryWritesTableS3Dir, "requests-summary-writes-table-s3-dir", "", "s3 directory prefix to upload")
 
 	cmd.PersistentFlags().StringVar(&configmapsWritesOutputNamePrefix, "writes-output-name-prefix", "", "Write results output name prefix in /var/log/")
 	cmd.PersistentFlags().BoolVar(&configmapsBlock, "block", false, "true to block process exit after cluster loader complete")
@@ -147,27 +147,27 @@ func createConfigMapsFunc(cmd *cobra.Command, args []string) {
 	sfx := randutil.String(7)
 
 	loader := config_maps.New(config_maps.Config{
-		Logger:                  lg,
-		Stopc:                   stopc,
-		S3API:                   s3.New(awsSession),
-		S3BucketName:            configmapsS3BucketName,
-		Client:                  cli,
-		ClientTimeout:           configmapsClientTimeout,
-		Namespace:               configmapsNamespace,
-		Objects:                 configmapsObjects,
-		ObjectSize:              configmapsObjectSize,
-		WritesRawJSONPath:       "/var/log/" + configmapsWritesOutputNamePrefix + "-" + sfx + "-writes-raw.json",
-		WritesRawJSONS3Key:      filepath.Join(configmapsWritesRawJSONS3Dir, configmapsWritesOutputNamePrefix+"-"+sfx+"-writes-raw.json"),
-		WritesSummaryJSONPath:   "/var/log/" + configmapsWritesOutputNamePrefix + "-" + sfx + "-writes-summary.json",
-		WritesSummaryJSONS3Key:  filepath.Join(configmapsWritesSummaryJSONS3Dir, configmapsWritesOutputNamePrefix+"-"+sfx+"-writes-summary.json"),
-		WritesSummaryTablePath:  "/var/log/" + configmapsWritesOutputNamePrefix + "-" + sfx + "-writes-summary.txt",
-		WritesSummaryTableS3Key: filepath.Join(configmapsWritesSummaryTableS3Dir, configmapsWritesOutputNamePrefix+"-"+sfx+"-writes-summary.txt"),
+		Logger:                          lg,
+		Stopc:                           stopc,
+		S3API:                           s3.New(awsSession),
+		S3BucketName:                    configmapsS3BucketName,
+		Client:                          cli,
+		ClientTimeout:                   configmapsClientTimeout,
+		Namespace:                       configmapsNamespace,
+		Objects:                         configmapsObjects,
+		ObjectSize:                      configmapsObjectSize,
+		RequestsRawWritesJSONPath:       "/var/log/" + configmapsWritesOutputNamePrefix + "-" + sfx + "-writes-raw.json",
+		RequestsRawWritesJSONS3Key:      filepath.Join(configmapsRequestsRawWritesJSONS3Dir, configmapsWritesOutputNamePrefix+"-"+sfx+"-writes-raw.json"),
+		RequestsSummaryWritesJSONPath:   "/var/log/" + configmapsWritesOutputNamePrefix + "-" + sfx + "-writes-summary.json",
+		RequestsSummaryWritesJSONS3Key:  filepath.Join(configmapsRequestsSummaryWritesJSONS3Dir, configmapsWritesOutputNamePrefix+"-"+sfx+"-writes-summary.json"),
+		RequestsSummaryWritesTablePath:  "/var/log/" + configmapsWritesOutputNamePrefix + "-" + sfx + "-writes-summary.txt",
+		RequestsSummaryWritesTableS3Key: filepath.Join(configmapsRequestsSummaryWritesTableS3Dir, configmapsWritesOutputNamePrefix+"-"+sfx+"-writes-summary.txt"),
 	})
 	loader.Start()
 	loader.Stop()
 	close(donec)
 
-	_, err = loader.CollectMetrics()
+	_, _, err = loader.CollectMetrics()
 	if err != nil {
 		lg.Warn("failed to get metrics", zap.Error(err))
 	}

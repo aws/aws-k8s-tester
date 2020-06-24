@@ -35,9 +35,9 @@ var (
 	csrsObjects                     int
 	csrsInitialRequestConditionType string
 
-	csrsWritesRawJSONS3Dir      string
-	csrsWritesSummaryJSONS3Dir  string
-	csrsWritesSummaryTableS3Dir string
+	csrsRequestsRawWritesJSONS3Dir      string
+	csrsRequestsSummaryWritesJSONS3Dir  string
+	csrsRequestsSummaryWritesTableS3Dir string
 
 	csrsWritesOutputNamePrefix string
 
@@ -60,9 +60,9 @@ func newCreateCSRs() *cobra.Command {
 	cmd.PersistentFlags().DurationVar(&csrsClientTimeout, "client-timeout", eksconfig.DefaultClientTimeout, "kubelet client timeout")
 	cmd.PersistentFlags().IntVar(&csrsObjects, "objects", 0, "Size of object per write (0 to disable writes)")
 
-	cmd.PersistentFlags().StringVar(&csrsWritesRawJSONS3Dir, "writes-raw-json-s3-dir", "", "s3 directory prefix to upload")
-	cmd.PersistentFlags().StringVar(&csrsWritesSummaryJSONS3Dir, "writes-summary-json-s3-dir", "", "s3 directory prefix to upload")
-	cmd.PersistentFlags().StringVar(&csrsWritesSummaryTableS3Dir, "writes-summary-table-s3-dir", "", "s3 directory prefix to upload")
+	cmd.PersistentFlags().StringVar(&csrsRequestsRawWritesJSONS3Dir, "requests-raw-writes-json-s3-dir", "", "s3 directory prefix to upload")
+	cmd.PersistentFlags().StringVar(&csrsRequestsSummaryWritesJSONS3Dir, "requests-summary-writes-json-s3-dir", "", "s3 directory prefix to upload")
+	cmd.PersistentFlags().StringVar(&csrsRequestsSummaryWritesTableS3Dir, "requests-summary-writes-table-s3-dir", "", "s3 directory prefix to upload")
 
 	cmd.PersistentFlags().StringVar(&csrsInitialRequestConditionType, "initial-request-condition-type", "", "Initial CSR condition type")
 	cmd.PersistentFlags().StringVar(&csrsWritesOutputNamePrefix, "writes-output-name-prefix", "", "Write results output name prefix in /var/log/")
@@ -144,26 +144,26 @@ func createCSRsFunc(cmd *cobra.Command, args []string) {
 	sfx := randutil.String(7)
 
 	loader := csrs.New(csrs.Config{
-		Logger:                      lg,
-		Stopc:                       stopc,
-		S3API:                       s3.New(awsSession),
-		S3BucketName:                csrsS3BucketName,
-		Client:                      cli,
-		ClientTimeout:               csrsClientTimeout,
-		Objects:                     csrsObjects,
-		InitialRequestConditionType: "",
-		WritesRawJSONPath:           "/var/log/" + csrsWritesOutputNamePrefix + "-" + sfx + "-writes-raw.json",
-		WritesRawJSONS3Key:          filepath.Join(csrsWritesRawJSONS3Dir, csrsWritesOutputNamePrefix+"-"+sfx+"-writes-raw.json"),
-		WritesSummaryJSONPath:       "/var/log/" + csrsWritesOutputNamePrefix + "-" + sfx + "-writes-summary.json",
-		WritesSummaryJSONS3Key:      filepath.Join(csrsWritesSummaryJSONS3Dir, csrsWritesOutputNamePrefix+"-"+sfx+"-writes-summary.json"),
-		WritesSummaryTablePath:      "/var/log/" + csrsWritesOutputNamePrefix + "-" + sfx + "-writes-summary.txt",
-		WritesSummaryTableS3Key:     filepath.Join(csrsWritesSummaryTableS3Dir, csrsWritesOutputNamePrefix+"-"+sfx+"-writes-summary.txt"),
+		Logger:                          lg,
+		Stopc:                           stopc,
+		S3API:                           s3.New(awsSession),
+		S3BucketName:                    csrsS3BucketName,
+		Client:                          cli,
+		ClientTimeout:                   csrsClientTimeout,
+		Objects:                         csrsObjects,
+		InitialRequestConditionType:     "",
+		RequestsRawWritesJSONPath:       "/var/log/" + csrsWritesOutputNamePrefix + "-" + sfx + "-writes-raw.json",
+		RequestsRawWritesJSONS3Key:      filepath.Join(csrsRequestsRawWritesJSONS3Dir, csrsWritesOutputNamePrefix+"-"+sfx+"-writes-raw.json"),
+		RequestsSummaryWritesJSONPath:   "/var/log/" + csrsWritesOutputNamePrefix + "-" + sfx + "-writes-summary.json",
+		RequestsSummaryWritesJSONS3Key:  filepath.Join(csrsRequestsSummaryWritesJSONS3Dir, csrsWritesOutputNamePrefix+"-"+sfx+"-writes-summary.json"),
+		RequestsSummaryWritesTablePath:  "/var/log/" + csrsWritesOutputNamePrefix + "-" + sfx + "-writes-summary.txt",
+		RequestsSummaryWritesTableS3Key: filepath.Join(csrsRequestsSummaryWritesTableS3Dir, csrsWritesOutputNamePrefix+"-"+sfx+"-writes-summary.txt"),
 	})
 	loader.Start()
 	loader.Stop()
 	close(donec)
 
-	_, err = loader.CollectMetrics()
+	_, _, err = loader.CollectMetrics()
 	if err != nil {
 		lg.Warn("failed to get metrics", zap.Error(err))
 	}

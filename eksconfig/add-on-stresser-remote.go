@@ -55,64 +55,92 @@ type AddOnStresserRemote struct {
 	Duration       time.Duration `json:"duration,omitempty"`
 	DurationString string        `json:"duration-string,omitempty" read-only:"true"`
 
+	// RequestsSummaryWritesOutputNamePrefix is the output path name in "/var/log" directory, used in remote worker.
+	RequestsSummaryWritesOutputNamePrefix string `json:"requests-summary-writes-output-name-prefix"`
+	// RequestsSummaryReadsOutputNamePrefix is the output path name in "/var/log" directory, used in remote worker.
+	RequestsSummaryReadsOutputNamePrefix string `json:"requests-summary-reads-output-name-prefix"`
+
 	// S3Dir is the S3 directory to store all test results.
 	// It is under the bucket "eksconfig.Config.S3BucketName".
 	S3Dir string `json:"s3-dir"`
 
-	// RequestsWritesRawJSONPath is the file path to store writes requests in JSON format.
-	RequestsWritesRawJSONPath  string `json:"requests-writes-json-path" read-only:"true"`
-	RequestsWritesRawJSONS3Key string `json:"requests-writes-json-s3-key" read-only:"true"`
-	// RequestsWritesSummary is the writes results.
-	RequestsWritesSummary metrics.RequestsSummary `json:"requests-writes-summary,omitempty" read-only:"true"`
-	// RequestsWritesSummaryJSONPath is the file path to store writes requests summary in JSON format.
-	RequestsWritesSummaryJSONPath  string `json:"requests-writes-summary-json-path" read-only:"true"`
-	RequestsWritesSummaryJSONS3Key string `json:"requests-writes-summary-json-s3-key" read-only:"true"`
-	// RequestsWritesSummaryTablePath is the file path to store writes requests summary in table format.
-	RequestsWritesSummaryTablePath  string `json:"requests-writes-summary-table-path" read-only:"true"`
-	RequestsWritesSummaryTableS3Key string `json:"requests-writes-summary-table-s3-path" read-only:"true"`
-	// RequestsWritesCompareS3Dir is the S3 directory of previous/latest "RequestsWritesSummary".
+	//////////////////////////////////////////////////////////////////////////////
+
+	RequestsRawWritesJSONPath  string `json:"requests-raw-writes-json-path" read-only:"true"`
+	RequestsRawWritesJSONS3Key string `json:"requests-raw-writes-json-s3-key" read-only:"true"`
+
+	//////////////////////////////////////////////////////////////////////////////
+
+	// RequestsRawWritesCompareS3Dir is the s3 directory to store raw data points.
+	// Used to comparison results.
+	// ref. https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test
+	RequestsRawWritesCompareS3Dir        string `json:"requests-raw-writes-compare-s3-dir" read-only:"true"`
+	RequestsRawWritesCompareAllJSONPath  string `json:"requests-raw-writes-compare-all-json-path" read-only:"true"`
+	RequestsRawWritesCompareAllJSONS3Key string `json:"requests-raw-writes-compare-all-json-s3-key" read-only:"true"`
+	RequestsRawWritesCompareAllCSVPath   string `json:"requests-raw-writes-compare-all-csv-path" read-only:"true"`
+	RequestsRawWritesCompareAllCSVS3Key  string `json:"requests-raw-writes-compare-all-csv-s3-key" read-only:"true"`
+
+	//////////////////////////////////////////////////////////////////////////////
+
+	// RequestsSummaryWrites is the writes results.
+	RequestsSummaryWrites           metrics.RequestsSummary `json:"requests-summary-writes,omitempty" read-only:"true"`
+	RequestsSummaryWritesJSONPath   string                  `json:"requests-summary-writes-json-path" read-only:"true"`
+	RequestsSummaryWritesJSONS3Key  string                  `json:"requests-summary-writes-json-s3-key" read-only:"true"`
+	RequestsSummaryWritesTablePath  string                  `json:"requests-summary-writes-table-path" read-only:"true"`
+	RequestsSummaryWritesTableS3Key string                  `json:"requests-summary-writes-table-s3-path" read-only:"true"`
+
+	//////////////////////////////////////////////////////////////////////////////
+
+	// RequestsSummaryWritesCompareS3Dir is the S3 directory of previous/latest "RequestsSummary".
 	// Specify the S3 key in the same bucket of "eksconfig.Config.S3BucketName".
 	// Use for regression tests. Specify the value not bound to the cluster directory.
 	// Different runs from different clusters reads and writes in this directory.
-	RequestsWritesCompareS3Dir string `json:"requests-writes-compare-s3-dir"`
-	// RequestsWritesCompare is the comparision results.
-	RequestsWritesCompare metrics.RequestsCompare `json:"requests-writes-compare" read-only:"true"`
-	// RequestsWritesCompareJSONPath is the file path to store writes requests compare summary in JSON format.
-	RequestsWritesCompareJSONPath  string `json:"requests-writes-compare-json-path" read-only:"true"`
-	RequestsWritesCompareJSONS3Key string `json:"requests-writes-compare-json-s3-key" read-only:"true"`
-	// RequestsWritesCompareTablePath is the file path to store writes requests compare summary in table format.
-	RequestsWritesCompareTablePath  string `json:"requests-writes-compare-table-path" read-only:"true"`
-	RequestsWritesCompareTableS3Key string `json:"requests-writes-compare-table-s3-path" read-only:"true"`
+	RequestsSummaryWritesCompareS3Dir      string                  `json:"requests-summary-writes-compare-s3-dir" read-only:"true"`
+	RequestsSummaryWritesCompare           metrics.RequestsCompare `json:"requests-summary-writes-compare" read-only:"true"`
+	RequestsSummaryWritesCompareJSONPath   string                  `json:"requests-summary-writes-compare-json-path" read-only:"true"`
+	RequestsSummaryWritesCompareJSONS3Key  string                  `json:"requests-summary-writes-compare-json-s3-key" read-only:"true"`
+	RequestsSummaryWritesCompareTablePath  string                  `json:"requests-summary-writes-compare-table-path" read-only:"true"`
+	RequestsSummaryWritesCompareTableS3Key string                  `json:"requests-summary-writes-compare-table-s3-path" read-only:"true"`
 
-	// RequestsReadsRawJSONPath is the file path to store reads requests in JSON format.
-	RequestsReadsRawJSONPath  string `json:"requests-reads-raw-json-path" read-only:"true"`
-	RequestsReadsRawJSONS3Key string `json:"requests-reads-raw-json-s3-key" read-only:"true"`
-	// RequestsReadsSummary is the reads results.
-	RequestsReadsSummary metrics.RequestsSummary `json:"requests-reads-summary,omitempty" read-only:"true"`
-	// RequestsReadsSummaryJSONPath is the file path to store reads requests summary in JSON format.
-	RequestsReadsSummaryJSONPath  string `json:"requests-reads-summary-json-path" read-only:"true"`
-	RequestsReadsSummaryJSONS3Key string `json:"requests-reads-summary-json-s3-key" read-only:"true"`
-	// RequestsReadsSummaryTablePath is the file path to store reads requests summary in table format.
-	RequestsReadsSummaryTablePath  string `json:"requests-reads-summary-table-path" read-only:"true"`
-	RequestsReadsSummaryTableS3Key string `json:"requests-reads-summary-table-s3-path" read-only:"true"`
-	// RequestsReadsCompareS3Dir is the S3 directory of previous/latest "RequestsReadsSummary".
+	//////////////////////////////////////////////////////////////////////////////
+
+	RequestsRawReadsJSONPath  string `json:"requests-raw-reads-json-path" read-only:"true"`
+	RequestsRawReadsJSONS3Key string `json:"requests-raw-reads-json-s3-key" read-only:"true"`
+
+	//////////////////////////////////////////////////////////////////////////////
+
+	// RequestsRawReadsCompareS3Dir is the s3 directory to store raw data points.
+	// Used to comparison results.
+	// ref. https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test
+	RequestsRawReadsCompareS3Dir        string `json:"requests-raw-reads-compare-s3-dir" read-only:"true"`
+	RequestsRawReadsCompareAllJSONPath  string `json:"requests-raw-reads-compare-all-json-path" read-only:"true"`
+	RequestsRawReadsCompareAllJSONS3Key string `json:"requests-raw-reads-compare-all-json-s3-key" read-only:"true"`
+	RequestsRawReadsCompareAllCSVPath   string `json:"requests-raw-reads-compare-all-csv-path" read-only:"true"`
+	RequestsRawReadsCompareAllCSVS3Key  string `json:"requests-raw-reads-compare-all-csv-s3-key" read-only:"true"`
+
+	//////////////////////////////////////////////////////////////////////////////
+
+	// RequestsSummaryReads is the reads results.
+	RequestsSummaryReads           metrics.RequestsSummary `json:"requests-summary-reads,omitempty" read-only:"true"`
+	RequestsSummaryReadsJSONPath   string                  `json:"requests-summary-reads-json-path" read-only:"true"`
+	RequestsSummaryReadsJSONS3Key  string                  `json:"requests-summary-reads-json-s3-key" read-only:"true"`
+	RequestsSummaryReadsTablePath  string                  `json:"requests-summary-reads-table-path" read-only:"true"`
+	RequestsSummaryReadsTableS3Key string                  `json:"requests-summary-reads-table-s3-path" read-only:"true"`
+
+	//////////////////////////////////////////////////////////////////////////////
+
+	// RequestsSummaryReadsCompareS3Dir is the S3 directory of previous/latest "RequestsSummary".
 	// Specify the S3 key in the same bucket of "eksconfig.Config.S3BucketName".
 	// Use for regression tests. Specify the value not bound to the cluster directory.
 	// Different runs from different clusters reads and writes in this directory.
-	RequestsReadsCompareS3Dir string `json:"requests-reads-compare-s3-dir"`
-	// RequestsReadsCompare is the comparision results.
-	RequestsReadsCompare metrics.RequestsCompare `json:"requests-reads-compare" read-only:"true"`
-	// RequestsReadsCompareJSONPath is the file path to store reads requests compare summary in JSON format.
-	RequestsReadsCompareJSONPath  string `json:"requests-reads-compare-json-path" read-only:"true"`
-	RequestsReadsCompareJSONS3Key string `json:"requests-reads-compare-json-s3-key" read-only:"true"`
-	// RequestsReadsCompareTablePath is the file path to store reads requests compare summary in table format.
-	RequestsReadsCompareTablePath  string `json:"requests-reads-compare-table-path" read-only:"true"`
-	RequestsReadsCompareTableS3Key string `json:"requests-reads-compare-table-s3-path" read-only:"true"`
+	RequestsSummaryReadsCompareS3Dir      string                  `json:"requests-summary-reads-compare-s3-dir" read-only:"true"`
+	RequestsSummaryReadsCompare           metrics.RequestsCompare `json:"requests-summary-reads-compare" read-only:"true"`
+	RequestsSummaryReadsCompareJSONPath   string                  `json:"requests-summary-reads-compare-json-path" read-only:"true"`
+	RequestsSummaryReadsCompareJSONS3Key  string                  `json:"requests-summary-reads-compare-json-s3-key" read-only:"true"`
+	RequestsSummaryReadsCompareTablePath  string                  `json:"requests-summary-reads-compare-table-path" read-only:"true"`
+	RequestsSummaryReadsCompareTableS3Key string                  `json:"requests-summary-reads-compare-table-s3-path" read-only:"true"`
 
-	// RequestsWritesSummaryOutputNamePrefix is the output path name in "/var/log" directory, used in remote worker.
-	RequestsWritesSummaryOutputNamePrefix string `json:"requests-writes-summary-output-name-prefix"`
-	// RequestsReadsSummaryOutputNamePrefix is the output path name in "/var/log" directory, used in remote worker.
-	RequestsReadsSummaryOutputNamePrefix string `json:"requests-reads-summary-output-name-prefix"`
+	//////////////////////////////////////////////////////////////////////////////
 }
 
 // EnvironmentVariablePrefixAddOnStresserRemote is the environment variable prefix used for "eksconfig".
@@ -138,8 +166,8 @@ func getDefaultAddOnStresserRemote() *AddOnStresserRemote {
 		ObjectSize:                            0,
 		ListLimit:                             0,
 		Duration:                              time.Minute,
-		RequestsWritesSummaryOutputNamePrefix: "stresser-writes-" + randutil.String(10),
-		RequestsReadsSummaryOutputNamePrefix:  "stresser-reads-" + randutil.String(10),
+		RequestsSummaryWritesOutputNamePrefix: "stresser-writes-" + randutil.String(10),
+		RequestsSummaryReadsOutputNamePrefix:  "stresser-reads-" + randutil.String(10),
 	}
 }
 
@@ -173,124 +201,192 @@ func (cfg *Config) validateAddOnStresserRemote() error {
 	}
 	cfg.AddOnStresserRemote.DurationString = cfg.AddOnStresserRemote.Duration.String()
 
+	if cfg.AddOnStresserRemote.RequestsSummaryWritesOutputNamePrefix == "" {
+		cfg.AddOnStresserRemote.RequestsSummaryWritesOutputNamePrefix = "stresser-writes-" + randutil.String(10)
+	}
+	if cfg.AddOnStresserRemote.RequestsSummaryReadsOutputNamePrefix == "" {
+		cfg.AddOnStresserRemote.RequestsSummaryReadsOutputNamePrefix = "stresser-reads-" + randutil.String(10)
+	}
+
 	if cfg.AddOnStresserRemote.S3Dir == "" {
 		cfg.AddOnStresserRemote.S3Dir = path.Join(cfg.Name, "add-on-stresser-remote")
 	}
 
-	if cfg.AddOnStresserRemote.RequestsWritesRawJSONPath == "" {
-		cfg.AddOnStresserRemote.RequestsWritesRawJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-writes-raw.json"
+	//////////////////////////////////////////////////////////////////////////////
+	if cfg.AddOnStresserRemote.RequestsRawWritesJSONPath == "" {
+		cfg.AddOnStresserRemote.RequestsRawWritesJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-writes-raw.json"
 	}
-	if cfg.AddOnStresserRemote.RequestsWritesRawJSONS3Key == "" {
-		cfg.AddOnStresserRemote.RequestsWritesRawJSONS3Key = path.Join(
+	if cfg.AddOnStresserRemote.RequestsRawWritesJSONS3Key == "" {
+		cfg.AddOnStresserRemote.RequestsRawWritesJSONS3Key = path.Join(
 			cfg.AddOnStresserRemote.S3Dir,
-			"writes-raw",
-			filepath.Base(cfg.AddOnStresserRemote.RequestsWritesRawJSONPath),
+			"requests-raw-writes",
+			filepath.Base(cfg.AddOnStresserRemote.RequestsRawWritesJSONPath),
 		)
 	}
-	if cfg.AddOnStresserRemote.RequestsWritesSummaryJSONPath == "" {
-		cfg.AddOnStresserRemote.RequestsWritesSummaryJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-writes-summary.json"
-	}
-	if cfg.AddOnStresserRemote.RequestsWritesSummaryJSONS3Key == "" {
-		cfg.AddOnStresserRemote.RequestsWritesSummaryJSONS3Key = path.Join(
-			cfg.AddOnStresserRemote.S3Dir,
-			"writes-summary",
-			filepath.Base(cfg.AddOnStresserRemote.RequestsWritesSummaryJSONPath),
-		)
-	}
-	if cfg.AddOnStresserRemote.RequestsWritesSummaryTablePath == "" {
-		cfg.AddOnStresserRemote.RequestsWritesSummaryTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-writes-summary.txt"
-	}
-	if cfg.AddOnStresserRemote.RequestsWritesSummaryTableS3Key == "" {
-		cfg.AddOnStresserRemote.RequestsWritesSummaryTableS3Key = path.Join(
-			cfg.AddOnStresserRemote.S3Dir,
-			"writes-summary",
-			filepath.Base(cfg.AddOnStresserRemote.RequestsWritesSummaryTablePath),
-		)
-	}
-	if cfg.AddOnStresserRemote.RequestsWritesCompareS3Dir == "" {
-		cfg.AddOnStresserRemote.RequestsWritesCompareS3Dir = path.Join("add-on-stresser-remote", "writes-compare", cfg.Parameters.Version)
-	}
-	if cfg.AddOnStresserRemote.RequestsWritesCompareJSONPath == "" {
-		cfg.AddOnStresserRemote.RequestsWritesCompareJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-writes-compare.json"
-	}
-	if cfg.AddOnStresserRemote.RequestsWritesCompareJSONS3Key == "" {
-		cfg.AddOnStresserRemote.RequestsWritesCompareJSONS3Key = path.Join(
-			cfg.AddOnStresserRemote.S3Dir,
-			"writes-compare",
-			filepath.Base(cfg.AddOnStresserRemote.RequestsWritesCompareJSONPath),
-		)
-	}
-	if cfg.AddOnStresserRemote.RequestsWritesCompareTablePath == "" {
-		cfg.AddOnStresserRemote.RequestsWritesCompareTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-writes-compare.txt"
-	}
-	if cfg.AddOnStresserRemote.RequestsWritesCompareTableS3Key == "" {
-		cfg.AddOnStresserRemote.RequestsWritesCompareTableS3Key = path.Join(
-			cfg.AddOnStresserRemote.S3Dir,
-			"writes-compare",
-			filepath.Base(cfg.AddOnStresserRemote.RequestsWritesCompareTablePath),
-		)
-	}
+	//////////////////////////////////////////////////////////////////////////////
 
-	if cfg.AddOnStresserRemote.RequestsReadsRawJSONPath == "" {
-		cfg.AddOnStresserRemote.RequestsReadsRawJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-reads-raw.json"
+	//////////////////////////////////////////////////////////////////////////////
+	if cfg.AddOnStresserRemote.RequestsRawWritesCompareS3Dir == "" {
+		cfg.AddOnStresserRemote.RequestsRawWritesCompareS3Dir = path.Join("add-on-stresser-remote", "requests-raw-writes-compare", cfg.Parameters.Version)
 	}
-	if cfg.AddOnStresserRemote.RequestsReadsRawJSONS3Key == "" {
-		cfg.AddOnStresserRemote.RequestsReadsRawJSONS3Key = path.Join(
+	if cfg.AddOnStresserRemote.RequestsRawWritesCompareAllJSONPath == "" {
+		cfg.AddOnStresserRemote.RequestsRawWritesCompareAllJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-raw-writes-compare-all.json"
+	}
+	if cfg.AddOnStresserRemote.RequestsRawWritesCompareAllJSONS3Key == "" {
+		cfg.AddOnStresserRemote.RequestsRawWritesCompareAllJSONS3Key = path.Join(
 			cfg.AddOnStresserRemote.S3Dir,
-			"reads-raw",
-			filepath.Base(cfg.AddOnStresserRemote.RequestsReadsRawJSONPath),
+			"requests-raw-writes-compare-all",
+			filepath.Base(cfg.AddOnStresserRemote.RequestsRawWritesCompareAllJSONPath),
 		)
 	}
-	if cfg.AddOnStresserRemote.RequestsReadsSummaryJSONPath == "" {
-		cfg.AddOnStresserRemote.RequestsReadsSummaryJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-reads-summary.json"
+	if cfg.AddOnStresserRemote.RequestsRawWritesCompareAllCSVPath == "" {
+		cfg.AddOnStresserRemote.RequestsRawWritesCompareAllCSVPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-raw-writes-compare-all.csv"
 	}
-	if cfg.AddOnStresserRemote.RequestsReadsSummaryJSONS3Key == "" {
-		cfg.AddOnStresserRemote.RequestsReadsSummaryJSONS3Key = path.Join(
+	if cfg.AddOnStresserRemote.RequestsRawWritesCompareAllCSVS3Key == "" {
+		cfg.AddOnStresserRemote.RequestsRawWritesCompareAllCSVS3Key = path.Join(
 			cfg.AddOnStresserRemote.S3Dir,
-			"reads-summary",
-			filepath.Base(cfg.AddOnStresserRemote.RequestsReadsSummaryJSONPath),
+			"requests-raw-writes-compare-all",
+			filepath.Base(cfg.AddOnStresserRemote.RequestsRawWritesCompareAllCSVPath),
 		)
 	}
-	if cfg.AddOnStresserRemote.RequestsReadsSummaryTablePath == "" {
-		cfg.AddOnStresserRemote.RequestsReadsSummaryTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-reads-summary.txt"
-	}
-	if cfg.AddOnStresserRemote.RequestsReadsSummaryTableS3Key == "" {
-		cfg.AddOnStresserRemote.RequestsReadsSummaryTableS3Key = path.Join(
-			cfg.AddOnStresserRemote.S3Dir,
-			"reads-summary",
-			filepath.Base(cfg.AddOnStresserRemote.RequestsReadsSummaryTablePath),
-		)
-	}
-	if cfg.AddOnStresserRemote.RequestsReadsCompareS3Dir == "" {
-		cfg.AddOnStresserRemote.RequestsReadsCompareS3Dir = path.Join("add-on-stresser-remote", "reads-compare", cfg.Parameters.Version)
-	}
-	if cfg.AddOnStresserRemote.RequestsReadsCompareJSONPath == "" {
-		cfg.AddOnStresserRemote.RequestsReadsCompareJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-reads-compare.json"
-	}
-	if cfg.AddOnStresserRemote.RequestsReadsCompareJSONS3Key == "" {
-		cfg.AddOnStresserRemote.RequestsReadsCompareJSONS3Key = path.Join(
-			cfg.AddOnStresserRemote.S3Dir,
-			"reads-compare",
-			filepath.Base(cfg.AddOnStresserRemote.RequestsReadsCompareJSONPath),
-		)
-	}
-	if cfg.AddOnStresserRemote.RequestsReadsCompareTablePath == "" {
-		cfg.AddOnStresserRemote.RequestsReadsCompareTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-reads-compare.txt"
-	}
-	if cfg.AddOnStresserRemote.RequestsReadsCompareTableS3Key == "" {
-		cfg.AddOnStresserRemote.RequestsReadsCompareTableS3Key = path.Join(
-			cfg.AddOnStresserRemote.S3Dir,
-			"reads-compare",
-			filepath.Base(cfg.AddOnStresserRemote.RequestsReadsCompareTablePath),
-		)
-	}
+	//////////////////////////////////////////////////////////////////////////////
 
-	if cfg.AddOnStresserRemote.RequestsWritesSummaryOutputNamePrefix == "" {
-		cfg.AddOnStresserRemote.RequestsWritesSummaryOutputNamePrefix = "stresser-writes-" + randutil.String(10)
+	//////////////////////////////////////////////////////////////////////////////
+	if cfg.AddOnStresserRemote.RequestsSummaryWritesJSONPath == "" {
+		cfg.AddOnStresserRemote.RequestsSummaryWritesJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-summary-writes.json"
 	}
-	if cfg.AddOnStresserRemote.RequestsReadsSummaryOutputNamePrefix == "" {
-		cfg.AddOnStresserRemote.RequestsReadsSummaryOutputNamePrefix = "stresser-reads-" + randutil.String(10)
+	if cfg.AddOnStresserRemote.RequestsSummaryWritesJSONS3Key == "" {
+		cfg.AddOnStresserRemote.RequestsSummaryWritesJSONS3Key = path.Join(
+			cfg.AddOnStresserRemote.S3Dir,
+			"requests-summary-writes",
+			filepath.Base(cfg.AddOnStresserRemote.RequestsSummaryWritesJSONPath),
+		)
 	}
+	if cfg.AddOnStresserRemote.RequestsSummaryWritesTablePath == "" {
+		cfg.AddOnStresserRemote.RequestsSummaryWritesTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-summary-writes.txt"
+	}
+	if cfg.AddOnStresserRemote.RequestsSummaryWritesTableS3Key == "" {
+		cfg.AddOnStresserRemote.RequestsSummaryWritesTableS3Key = path.Join(
+			cfg.AddOnStresserRemote.S3Dir,
+			"requests-summary-writes",
+			filepath.Base(cfg.AddOnStresserRemote.RequestsSummaryWritesTablePath),
+		)
+	}
+	//////////////////////////////////////////////////////////////////////////////
+
+	//////////////////////////////////////////////////////////////////////////////
+	if cfg.AddOnStresserRemote.RequestsSummaryWritesCompareS3Dir == "" {
+		cfg.AddOnStresserRemote.RequestsSummaryWritesCompareS3Dir = path.Join("add-on-stresser-remote", "requests-summary-writes-compare", cfg.Parameters.Version)
+	}
+	if cfg.AddOnStresserRemote.RequestsSummaryWritesCompareJSONPath == "" {
+		cfg.AddOnStresserRemote.RequestsSummaryWritesCompareJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-summary-writes-compare.json"
+	}
+	if cfg.AddOnStresserRemote.RequestsSummaryWritesCompareJSONS3Key == "" {
+		cfg.AddOnStresserRemote.RequestsSummaryWritesCompareJSONS3Key = path.Join(
+			cfg.AddOnStresserRemote.S3Dir,
+			"requests-summary-writes-compare",
+			filepath.Base(cfg.AddOnStresserRemote.RequestsSummaryWritesCompareJSONPath),
+		)
+	}
+	if cfg.AddOnStresserRemote.RequestsSummaryWritesCompareTablePath == "" {
+		cfg.AddOnStresserRemote.RequestsSummaryWritesCompareTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-summary-writes-compare.txt"
+	}
+	if cfg.AddOnStresserRemote.RequestsSummaryWritesCompareTableS3Key == "" {
+		cfg.AddOnStresserRemote.RequestsSummaryWritesCompareTableS3Key = path.Join(
+			cfg.AddOnStresserRemote.S3Dir,
+			"requests-summary-writes-compare",
+			filepath.Base(cfg.AddOnStresserRemote.RequestsSummaryWritesCompareTablePath),
+		)
+	}
+	//////////////////////////////////////////////////////////////////////////////
+
+	//////////////////////////////////////////////////////////////////////////////
+	if cfg.AddOnStresserRemote.RequestsRawReadsJSONPath == "" {
+		cfg.AddOnStresserRemote.RequestsRawReadsJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-raw-reads.json"
+	}
+	if cfg.AddOnStresserRemote.RequestsRawReadsJSONS3Key == "" {
+		cfg.AddOnStresserRemote.RequestsRawReadsJSONS3Key = path.Join(
+			cfg.AddOnStresserRemote.S3Dir,
+			"requests-raw-reads",
+			filepath.Base(cfg.AddOnStresserRemote.RequestsRawReadsJSONPath),
+		)
+	}
+	//////////////////////////////////////////////////////////////////////////////
+
+	//////////////////////////////////////////////////////////////////////////////
+	if cfg.AddOnStresserRemote.RequestsRawReadsCompareS3Dir == "" {
+		cfg.AddOnStresserRemote.RequestsRawReadsCompareS3Dir = path.Join("add-on-stresser-remote", "requests-raw-reads-compare", cfg.Parameters.Version)
+	}
+	if cfg.AddOnStresserRemote.RequestsRawReadsCompareAllJSONPath == "" {
+		cfg.AddOnStresserRemote.RequestsRawReadsCompareAllJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-raw-reads-compare-all.json"
+	}
+	if cfg.AddOnStresserRemote.RequestsRawReadsCompareAllJSONS3Key == "" {
+		cfg.AddOnStresserRemote.RequestsRawReadsCompareAllJSONS3Key = path.Join(
+			cfg.AddOnStresserRemote.S3Dir,
+			"requests-raw-reads-compare-all",
+			filepath.Base(cfg.AddOnStresserRemote.RequestsRawReadsCompareAllJSONPath),
+		)
+	}
+	if cfg.AddOnStresserRemote.RequestsRawReadsCompareAllCSVPath == "" {
+		cfg.AddOnStresserRemote.RequestsRawReadsCompareAllCSVPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-raw-reads-compare-all.csv"
+	}
+	if cfg.AddOnStresserRemote.RequestsRawReadsCompareAllCSVS3Key == "" {
+		cfg.AddOnStresserRemote.RequestsRawReadsCompareAllCSVS3Key = path.Join(
+			cfg.AddOnStresserRemote.S3Dir,
+			"requests-raw-reads-compare-all",
+			filepath.Base(cfg.AddOnStresserRemote.RequestsRawReadsCompareAllCSVPath),
+		)
+	}
+	//////////////////////////////////////////////////////////////////////////////
+
+	//////////////////////////////////////////////////////////////////////////////
+	if cfg.AddOnStresserRemote.RequestsSummaryReadsJSONPath == "" {
+		cfg.AddOnStresserRemote.RequestsSummaryReadsJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-summary-reads.json"
+	}
+	if cfg.AddOnStresserRemote.RequestsSummaryReadsJSONS3Key == "" {
+		cfg.AddOnStresserRemote.RequestsSummaryReadsJSONS3Key = path.Join(
+			cfg.AddOnStresserRemote.S3Dir,
+			"requests-summary-reads",
+			filepath.Base(cfg.AddOnStresserRemote.RequestsSummaryReadsJSONPath),
+		)
+	}
+	if cfg.AddOnStresserRemote.RequestsSummaryReadsTablePath == "" {
+		cfg.AddOnStresserRemote.RequestsSummaryReadsTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-summary-reads.txt"
+	}
+	if cfg.AddOnStresserRemote.RequestsSummaryReadsTableS3Key == "" {
+		cfg.AddOnStresserRemote.RequestsSummaryReadsTableS3Key = path.Join(
+			cfg.AddOnStresserRemote.S3Dir,
+			"requests-summary-reads",
+			filepath.Base(cfg.AddOnStresserRemote.RequestsSummaryReadsTablePath),
+		)
+	}
+	//////////////////////////////////////////////////////////////////////////////
+
+	//////////////////////////////////////////////////////////////////////////////
+	if cfg.AddOnStresserRemote.RequestsSummaryReadsCompareS3Dir == "" {
+		cfg.AddOnStresserRemote.RequestsSummaryReadsCompareS3Dir = path.Join("add-on-stresser-remote", "requests-summary-reads-compare", cfg.Parameters.Version)
+	}
+	if cfg.AddOnStresserRemote.RequestsSummaryReadsCompareJSONPath == "" {
+		cfg.AddOnStresserRemote.RequestsSummaryReadsCompareJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-summary-reads-compare.json"
+	}
+	if cfg.AddOnStresserRemote.RequestsSummaryReadsCompareJSONS3Key == "" {
+		cfg.AddOnStresserRemote.RequestsSummaryReadsCompareJSONS3Key = path.Join(
+			cfg.AddOnStresserRemote.S3Dir,
+			"requests-summary-reads-compare",
+			filepath.Base(cfg.AddOnStresserRemote.RequestsSummaryReadsCompareJSONPath),
+		)
+	}
+	if cfg.AddOnStresserRemote.RequestsSummaryReadsCompareTablePath == "" {
+		cfg.AddOnStresserRemote.RequestsSummaryReadsCompareTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-summary-reads-compare.txt"
+	}
+	if cfg.AddOnStresserRemote.RequestsSummaryReadsCompareTableS3Key == "" {
+		cfg.AddOnStresserRemote.RequestsSummaryReadsCompareTableS3Key = path.Join(
+			cfg.AddOnStresserRemote.S3Dir,
+			"requests-summary-reads-compare",
+			filepath.Base(cfg.AddOnStresserRemote.RequestsSummaryReadsCompareTablePath),
+		)
+	}
+	//////////////////////////////////////////////////////////////////////////////
 
 	return nil
 }

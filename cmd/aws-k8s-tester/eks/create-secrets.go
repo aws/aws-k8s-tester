@@ -38,12 +38,12 @@ var (
 	secretsNamespace  string
 	secretsNamePrefix string
 
-	secretsWritesRawJSONS3Dir      string
-	secretsWritesSummaryJSONS3Dir  string
-	secretsWritesSummaryTableS3Dir string
-	secretsReadsRawJSONS3Dir       string
-	secretsReadsSummaryJSONS3Dir   string
-	secretsReadsSummaryTableS3Dir  string
+	secretsRequestsRawWritesJSONS3Dir      string
+	secretsRequestsSummaryWritesJSONS3Dir  string
+	secretsRequestsSummaryWritesTableS3Dir string
+	secretsRequestsRawReadsJSONS3Dir       string
+	secretsRequestsSummaryReadsJSONS3Dir   string
+	secretsRequestsSummaryReadsTableS3Dir  string
 
 	secretsWritesOutputNamePrefix string
 	secretsReadsOutputNamePrefix  string
@@ -70,12 +70,12 @@ func newCreateSecrets() *cobra.Command {
 	cmd.PersistentFlags().StringVar(&secretsNamespace, "namespace", "default", "namespace to send writes")
 	cmd.PersistentFlags().StringVar(&secretsNamePrefix, "name-prefix", "", "prefix of Secret name")
 
-	cmd.PersistentFlags().StringVar(&secretsWritesRawJSONS3Dir, "writes-raw-json-s3-dir", "", "s3 directory prefix to upload")
-	cmd.PersistentFlags().StringVar(&secretsWritesSummaryJSONS3Dir, "writes-summary-json-s3-dir", "", "s3 directory prefix to upload")
-	cmd.PersistentFlags().StringVar(&secretsWritesSummaryTableS3Dir, "writes-summary-table-s3-dir", "", "s3 directory prefix to upload")
-	cmd.PersistentFlags().StringVar(&secretsReadsRawJSONS3Dir, "reads-raw-json-s3-dir", "", "s3 directory prefix to upload")
-	cmd.PersistentFlags().StringVar(&secretsReadsSummaryJSONS3Dir, "reads-summary-json-s3-dir", "", "s3 directory prefix to upload")
-	cmd.PersistentFlags().StringVar(&secretsReadsSummaryTableS3Dir, "reads-summary-table-s3-dir", "", "s3 directory prefix to upload")
+	cmd.PersistentFlags().StringVar(&secretsRequestsRawWritesJSONS3Dir, "requests-raw-writes-json-s3-dir", "", "s3 directory prefix to upload")
+	cmd.PersistentFlags().StringVar(&secretsRequestsSummaryWritesJSONS3Dir, "requests-summary-writes-json-s3-dir", "", "s3 directory prefix to upload")
+	cmd.PersistentFlags().StringVar(&secretsRequestsSummaryWritesTableS3Dir, "requests-summary-writes-table-s3-dir", "", "s3 directory prefix to upload")
+	cmd.PersistentFlags().StringVar(&secretsRequestsRawReadsJSONS3Dir, "requests-raw-reads-json-s3-dir", "", "s3 directory prefix to upload")
+	cmd.PersistentFlags().StringVar(&secretsRequestsSummaryReadsJSONS3Dir, "requests-summary-reads-json-s3-dir", "", "s3 directory prefix to upload")
+	cmd.PersistentFlags().StringVar(&secretsRequestsSummaryReadsTableS3Dir, "requests-summary-reads-table-s3-dir", "", "s3 directory prefix to upload")
 
 	cmd.PersistentFlags().StringVar(&secretsWritesOutputNamePrefix, "writes-output-name-prefix", "", "writes results output name prefix in /var/log/")
 	cmd.PersistentFlags().StringVar(&secretsReadsOutputNamePrefix, "reads-output-name-prefix", "", "reads results output name prefix in /var/log/")
@@ -157,28 +157,28 @@ func createSecretsFunc(cmd *cobra.Command, args []string) {
 	sfx := randutil.String(7)
 
 	loader := secrets.New(secrets.Config{
-		Logger:                  lg,
-		Stopc:                   stopc,
-		S3API:                   s3.New(awsSession),
-		S3BucketName:            secretsS3BucketName,
-		Client:                  cli,
-		ClientTimeout:           secretsClientTimeout,
-		Namespace:               secretsNamespace,
-		NamePrefix:              secretsNamePrefix,
-		Objects:                 secretsObjects,
-		ObjectSize:              secretsObjectSize,
-		WritesRawJSONPath:       "/var/log/" + secretsWritesOutputNamePrefix + "-" + sfx + "-writes-raw.json",
-		WritesRawJSONS3Key:      filepath.Join(secretsWritesRawJSONS3Dir, secretsWritesOutputNamePrefix+"-"+sfx+"-writes-raw.json"),
-		WritesSummaryJSONPath:   "/var/log/" + secretsWritesOutputNamePrefix + "-" + sfx + "-writes-summary.json",
-		WritesSummaryJSONS3Key:  filepath.Join(secretsWritesSummaryJSONS3Dir, secretsWritesOutputNamePrefix+"-"+sfx+"-writes-summary.json"),
-		WritesSummaryTablePath:  "/var/log/" + secretsWritesOutputNamePrefix + "-" + sfx + "-writes-summary.txt",
-		WritesSummaryTableS3Key: filepath.Join(secretsWritesSummaryTableS3Dir, secretsWritesOutputNamePrefix+"-"+sfx+"-writes-summary.txt"),
-		ReadsRawJSONPath:        "/var/log/" + secretsReadsOutputNamePrefix + "-" + sfx + "-reads-raw.json",
-		ReadsRawJSONS3Key:       filepath.Join(secretsReadsRawJSONS3Dir, secretsReadsOutputNamePrefix+"-"+sfx+"-reads-raw.json"),
-		ReadsSummaryJSONPath:    "/var/log/" + secretsReadsOutputNamePrefix + "-" + sfx + "-reads-summary.json",
-		ReadsSummaryJSONS3Key:   filepath.Join(secretsReadsSummaryJSONS3Dir, secretsReadsOutputNamePrefix+"-"+sfx+"-reads-summary.json"),
-		ReadsSummaryTablePath:   "/var/log/" + secretsReadsOutputNamePrefix + "-" + sfx + "-reads-summary.txt",
-		ReadsSummaryTableS3Key:  filepath.Join(secretsReadsSummaryTableS3Dir, secretsReadsOutputNamePrefix+"-"+sfx+"-reads-summary.txt"),
+		Logger:                          lg,
+		Stopc:                           stopc,
+		S3API:                           s3.New(awsSession),
+		S3BucketName:                    secretsS3BucketName,
+		Client:                          cli,
+		ClientTimeout:                   secretsClientTimeout,
+		Namespace:                       secretsNamespace,
+		NamePrefix:                      secretsNamePrefix,
+		Objects:                         secretsObjects,
+		ObjectSize:                      secretsObjectSize,
+		RequestsRawWritesJSONPath:       "/var/log/" + secretsWritesOutputNamePrefix + "-" + sfx + "-writes-raw.json",
+		RequestsRawWritesJSONS3Key:      filepath.Join(secretsRequestsRawWritesJSONS3Dir, secretsWritesOutputNamePrefix+"-"+sfx+"-writes-raw.json"),
+		RequestsSummaryWritesJSONPath:   "/var/log/" + secretsWritesOutputNamePrefix + "-" + sfx + "-writes-summary.json",
+		RequestsSummaryWritesJSONS3Key:  filepath.Join(secretsRequestsSummaryWritesJSONS3Dir, secretsWritesOutputNamePrefix+"-"+sfx+"-writes-summary.json"),
+		RequestsSummaryWritesTablePath:  "/var/log/" + secretsWritesOutputNamePrefix + "-" + sfx + "-writes-summary.txt",
+		RequestsSummaryWritesTableS3Key: filepath.Join(secretsRequestsSummaryWritesTableS3Dir, secretsWritesOutputNamePrefix+"-"+sfx+"-writes-summary.txt"),
+		RequestsRawReadsJSONPath:        "/var/log/" + secretsReadsOutputNamePrefix + "-" + sfx + "-reads-raw.json",
+		RequestsRawReadsJSONS3Key:       filepath.Join(secretsRequestsRawReadsJSONS3Dir, secretsReadsOutputNamePrefix+"-"+sfx+"-reads-raw.json"),
+		RequestsSummaryReadsJSONPath:    "/var/log/" + secretsReadsOutputNamePrefix + "-" + sfx + "-reads-summary.json",
+		RequestsSummaryReadsJSONS3Key:   filepath.Join(secretsRequestsSummaryReadsJSONS3Dir, secretsReadsOutputNamePrefix+"-"+sfx+"-reads-summary.json"),
+		RequestsSummaryReadsTablePath:   "/var/log/" + secretsReadsOutputNamePrefix + "-" + sfx + "-reads-summary.txt",
+		RequestsSummaryReadsTableS3Key:  filepath.Join(secretsRequestsSummaryReadsTableS3Dir, secretsReadsOutputNamePrefix+"-"+sfx+"-reads-summary.txt"),
 	})
 	loader.Start()
 	loader.Stop()
@@ -188,7 +188,7 @@ func createSecretsFunc(cmd *cobra.Command, args []string) {
 		lg.Warn("failed to get metrics", zap.Error(err))
 	}
 
-	_, _, err = loader.CollectMetrics()
+	_, _, _, _, err = loader.CollectMetrics()
 	if err != nil {
 		lg.Warn("failed to get metrics", zap.Error(err))
 	}

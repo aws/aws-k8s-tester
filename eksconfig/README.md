@@ -351,212 +351,252 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 *-------------------------------------------------------------------*-------------------*-----------------------------------------------------*--------------------*
 
 
-*----------------------------------------------------------------------------*-------------------*-----------------------------------------------------------*-------------------------*
-|                           ENVIRONMENTAL VARIABLE                           |     READ ONLY     |                           TYPE                            |         GO TYPE         |
-*----------------------------------------------------------------------------*-------------------*-----------------------------------------------------------*-------------------------*
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_ENABLE                                | read-only "false" | *eksconfig.AddOnCSRsLocal.Enable                          | bool                    |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_CREATED                               | read-only "true"  | *eksconfig.AddOnCSRsLocal.Created                         | bool                    |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_TIME_FRAME_CREATE                     | read-only "true"  | *eksconfig.AddOnCSRsLocal.TimeFrameCreate                 | timeutil.TimeFrame      |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_TIME_FRAME_DELETE                     | read-only "true"  | *eksconfig.AddOnCSRsLocal.TimeFrameDelete                 | timeutil.TimeFrame      |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_OBJECTS                               | read-only "false" | *eksconfig.AddOnCSRsLocal.Objects                         | int                     |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_INITIAL_REQUEST_CONDITION_TYPE        | read-only "false" | *eksconfig.AddOnCSRsLocal.InitialRequestConditionType     | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_CREATED_NAMES                         | read-only "true"  | *eksconfig.AddOnCSRsLocal.CreatedNames                    | []string                |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_S3_DIR                                | read-only "false" | *eksconfig.AddOnCSRsLocal.S3Dir                           | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_WRITES_JSON_PATH             | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsWritesRawJSONPath       | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_WRITES_JSON_S3_KEY           | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsWritesRawJSONS3Key      | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_WRITES_SUMMARY               | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsWritesSummary           | metrics.RequestsSummary |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_WRITES_SUMMARY_JSON_PATH     | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsWritesSummaryJSONPath   | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_WRITES_SUMMARY_JSON_S3_KEY   | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsWritesSummaryJSONS3Key  | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_WRITES_SUMMARY_TABLE_PATH    | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsWritesSummaryTablePath  | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_WRITES_SUMMARY_TABLE_S3_PATH | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsWritesSummaryTableS3Key | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_WRITES_COMPARE_S3_DIR        | read-only "false" | *eksconfig.AddOnCSRsLocal.RequestsWritesCompareS3Dir      | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_WRITES_COMPARE               | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsWritesCompare           | metrics.RequestsCompare |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_WRITES_COMPARE_JSON_PATH     | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsWritesCompareJSONPath   | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_WRITES_COMPARE_JSON_S3_KEY   | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsWritesCompareJSONS3Key  | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_WRITES_COMPARE_TABLE_PATH    | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsWritesCompareTablePath  | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_WRITES_COMPARE_TABLE_S3_PATH | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsWritesCompareTableS3Key | string                  |
-*----------------------------------------------------------------------------*-------------------*-----------------------------------------------------------*-------------------------*
+*------------------------------------------------------------------------------------*-------------------*------------------------------------------------------------------*-------------------------*
+|                               ENVIRONMENTAL VARIABLE                               |     READ ONLY     |                               TYPE                               |         GO TYPE         |
+*------------------------------------------------------------------------------------*-------------------*------------------------------------------------------------------*-------------------------*
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_ENABLE                                        | read-only "false" | *eksconfig.AddOnCSRsLocal.Enable                                 | bool                    |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_CREATED                                       | read-only "true"  | *eksconfig.AddOnCSRsLocal.Created                                | bool                    |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_TIME_FRAME_CREATE                             | read-only "true"  | *eksconfig.AddOnCSRsLocal.TimeFrameCreate                        | timeutil.TimeFrame      |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_TIME_FRAME_DELETE                             | read-only "true"  | *eksconfig.AddOnCSRsLocal.TimeFrameDelete                        | timeutil.TimeFrame      |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_OBJECTS                                       | read-only "false" | *eksconfig.AddOnCSRsLocal.Objects                                | int                     |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_INITIAL_REQUEST_CONDITION_TYPE                | read-only "false" | *eksconfig.AddOnCSRsLocal.InitialRequestConditionType            | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_CREATED_NAMES                                 | read-only "true"  | *eksconfig.AddOnCSRsLocal.CreatedNames                           | []string                |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_S3_DIR                                        | read-only "false" | *eksconfig.AddOnCSRsLocal.S3Dir                                  | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_RAW_WRITES_JSON_PATH                 | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsRawWritesJSONPath              | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_RAW_WRITES_JSON_S3_KEY               | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsRawWritesJSONS3Key             | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_RAW_WRITES_COMPARE_S3_DIR            | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsRawWritesCompareS3Dir          | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_RAW_WRITES_COMPARE_ALL_JSON_PATH     | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsRawWritesCompareAllJSONPath    | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_RAW_WRITES_COMPARE_ALL_JSON_S3_KEY   | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsRawWritesCompareAllJSONS3Key   | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_RAW_WRITES_COMPARE_ALL_CSV_PATH      | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsRawWritesCompareAllCSVPath     | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_RAW_WRITES_COMPARE_ALL_CSV_S3_KEY    | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsRawWritesCompareAllCSVS3Key    | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_SUMMARY_WRITES                       | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsSummaryWrites                  | metrics.RequestsSummary |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_SUMMARY_WRITES_JSON_PATH             | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsSummaryWritesJSONPath          | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_SUMMARY_WRITES_JSON_S3_KEY           | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsSummaryWritesJSONS3Key         | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_SUMMARY_WRITES_TABLE_PATH            | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsSummaryWritesTablePath         | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_SUMMARY_WRITES_TABLE_S3_PATH         | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsSummaryWritesTableS3Key        | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE_S3_DIR        | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsSummaryWritesCompareS3Dir      | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE               | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsSummaryWritesCompare           | metrics.RequestsCompare |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE_JSON_PATH     | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsSummaryWritesCompareJSONPath   | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE_JSON_S3_KEY   | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsSummaryWritesCompareJSONS3Key  | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE_TABLE_PATH    | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsSummaryWritesCompareTablePath  | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE_TABLE_S3_PATH | read-only "true"  | *eksconfig.AddOnCSRsLocal.RequestsSummaryWritesCompareTableS3Key | string                  |
+*------------------------------------------------------------------------------------*-------------------*------------------------------------------------------------------*-------------------------*
 
 
-*----------------------------------------------------------------------------------*-------------------*------------------------------------------------------------------*-------------------------*
-|                              ENVIRONMENTAL VARIABLE                              |     READ ONLY     |                               TYPE                               |         GO TYPE         |
-*----------------------------------------------------------------------------------*-------------------*------------------------------------------------------------------*-------------------------*
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_ENABLE                                     | read-only "false" | *eksconfig.AddOnCSRsRemote.Enable                                | bool                    |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_CREATED                                    | read-only "true"  | *eksconfig.AddOnCSRsRemote.Created                               | bool                    |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_TIME_FRAME_CREATE                          | read-only "true"  | *eksconfig.AddOnCSRsRemote.TimeFrameCreate                       | timeutil.TimeFrame      |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_TIME_FRAME_DELETE                          | read-only "true"  | *eksconfig.AddOnCSRsRemote.TimeFrameDelete                       | timeutil.TimeFrame      |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_NAMESPACE                                  | read-only "false" | *eksconfig.AddOnCSRsRemote.Namespace                             | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REPOSITORY_ACCOUNT_ID                      | read-only "false" | *eksconfig.AddOnCSRsRemote.RepositoryAccountID                   | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REPOSITORY_NAME                            | read-only "false" | *eksconfig.AddOnCSRsRemote.RepositoryName                        | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REPOSITORY_IMAGE_TAG                       | read-only "false" | *eksconfig.AddOnCSRsRemote.RepositoryImageTag                    | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_DEPLOYMENT_REPLICAS                        | read-only "false" | *eksconfig.AddOnCSRsRemote.DeploymentReplicas                    | int32                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_OBJECTS                                    | read-only "false" | *eksconfig.AddOnCSRsRemote.Objects                               | int                     |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_INITIAL_REQUEST_CONDITION_TYPE             | read-only "false" | *eksconfig.AddOnCSRsRemote.InitialRequestConditionType           | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_S3_DIR                                     | read-only "false" | *eksconfig.AddOnCSRsRemote.S3Dir                                 | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_WRITES_JSON_PATH                  | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsWritesRawJSONPath             | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_WRITES_JSON_S3_KEY                | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsWritesRawJSONS3Key            | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_WRITES_SUMMARY                    | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsWritesSummary                 | metrics.RequestsSummary |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_WRITES_SUMMARY_JSON_PATH          | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsWritesSummaryJSONPath         | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_WRITES_SUMMARY_JSON_S3_KEY        | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsWritesSummaryJSONS3Key        | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_WRITES_SUMMARY_TABLE_PATH         | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsWritesSummaryTablePath        | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_WRITES_SUMMARY_TABLE_S3_PATH      | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsWritesSummaryTableS3Key       | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_WRITES_COMPARE_S3_DIR             | read-only "false" | *eksconfig.AddOnCSRsRemote.RequestsWritesCompareS3Dir            | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_WRITES_COMPARE                    | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsWritesCompare                 | metrics.RequestsCompare |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_WRITES_COMPARE_JSON_PATH          | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsWritesCompareJSONPath         | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_WRITES_COMPARE_JSON_S3_KEY        | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsWritesCompareJSONS3Key        | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_WRITES_COMPARE_TABLE_PATH         | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsWritesCompareTablePath        | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_WRITES_COMPARE_TABLE_S3_PATH      | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsWritesCompareTableS3Key       | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_WRITES_SUMMARY_OUTPUT_NAME_PREFIX | read-only "false" | *eksconfig.AddOnCSRsRemote.RequestsWritesSummaryOutputNamePrefix | string                  |
-*----------------------------------------------------------------------------------*-------------------*------------------------------------------------------------------*-------------------------*
+*-------------------------------------------------------------------------------------*-------------------*-------------------------------------------------------------------*-------------------------*
+|                               ENVIRONMENTAL VARIABLE                                |     READ ONLY     |                               TYPE                                |         GO TYPE         |
+*-------------------------------------------------------------------------------------*-------------------*-------------------------------------------------------------------*-------------------------*
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_ENABLE                                        | read-only "false" | *eksconfig.AddOnCSRsRemote.Enable                                 | bool                    |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_CREATED                                       | read-only "true"  | *eksconfig.AddOnCSRsRemote.Created                                | bool                    |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_TIME_FRAME_CREATE                             | read-only "true"  | *eksconfig.AddOnCSRsRemote.TimeFrameCreate                        | timeutil.TimeFrame      |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_TIME_FRAME_DELETE                             | read-only "true"  | *eksconfig.AddOnCSRsRemote.TimeFrameDelete                        | timeutil.TimeFrame      |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_NAMESPACE                                     | read-only "false" | *eksconfig.AddOnCSRsRemote.Namespace                              | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REPOSITORY_ACCOUNT_ID                         | read-only "false" | *eksconfig.AddOnCSRsRemote.RepositoryAccountID                    | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REPOSITORY_NAME                               | read-only "false" | *eksconfig.AddOnCSRsRemote.RepositoryName                         | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REPOSITORY_IMAGE_TAG                          | read-only "false" | *eksconfig.AddOnCSRsRemote.RepositoryImageTag                     | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_DEPLOYMENT_REPLICAS                           | read-only "false" | *eksconfig.AddOnCSRsRemote.DeploymentReplicas                     | int32                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_OBJECTS                                       | read-only "false" | *eksconfig.AddOnCSRsRemote.Objects                                | int                     |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_INITIAL_REQUEST_CONDITION_TYPE                | read-only "false" | *eksconfig.AddOnCSRsRemote.InitialRequestConditionType            | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_SUMMARY_WRITES_OUTPUT_NAME_PREFIX    | read-only "false" | *eksconfig.AddOnCSRsRemote.RequestsSummaryWritesOutputNamePrefix  | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_S3_DIR                                        | read-only "false" | *eksconfig.AddOnCSRsRemote.S3Dir                                  | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_RAW_WRITES_JSON_PATH                 | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsRawWritesJSONPath              | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_RAW_WRITES_JSON_S3_KEY               | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsRawWritesJSONS3Key             | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_RAW_WRITES_COMPARE_S3_DIR            | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsRawWritesCompareS3Dir          | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_RAW_WRITES_COMPARE_ALL_JSON_PATH     | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsRawWritesCompareAllJSONPath    | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_RAW_WRITES_COMPARE_ALL_JSON_S3_KEY   | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsRawWritesCompareAllJSONS3Key   | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_RAW_WRITES_COMPARE_ALL_CSV_PATH      | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsRawWritesCompareAllCSVPath     | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_RAW_WRITES_COMPARE_ALL_CSV_S3_KEY    | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsRawWritesCompareAllCSVS3Key    | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_SUMMARY_WRITES                       | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsSummaryWrites                  | metrics.RequestsSummary |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_SUMMARY_WRITES_JSON_PATH             | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsSummaryWritesJSONPath          | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_SUMMARY_WRITES_JSON_S3_KEY           | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsSummaryWritesJSONS3Key         | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_SUMMARY_WRITES_TABLE_PATH            | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsSummaryWritesTablePath         | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_SUMMARY_WRITES_TABLE_S3_PATH         | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsSummaryWritesTableS3Key        | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE_S3_DIR        | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsSummaryWritesCompareS3Dir      | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE               | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsSummaryWritesCompare           | metrics.RequestsCompare |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE_JSON_PATH     | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsSummaryWritesCompareJSONPath   | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE_JSON_S3_KEY   | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsSummaryWritesCompareJSONS3Key  | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE_TABLE_PATH    | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsSummaryWritesCompareTablePath  | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE_TABLE_S3_PATH | read-only "true"  | *eksconfig.AddOnCSRsRemote.RequestsSummaryWritesCompareTableS3Key | string                  |
+*-------------------------------------------------------------------------------------*-------------------*-------------------------------------------------------------------*-------------------------*
 
 
-*----------------------------------------------------------------------------------*-------------------*-----------------------------------------------------------------*-------------------------*
-|                              ENVIRONMENTAL VARIABLE                              |     READ ONLY     |                              TYPE                               |         GO TYPE         |
-*----------------------------------------------------------------------------------*-------------------*-----------------------------------------------------------------*-------------------------*
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_ENABLE                                | read-only "false" | *eksconfig.AddOnConfigmapsLocal.Enable                          | bool                    |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_CREATED                               | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.Created                         | bool                    |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_TIME_FRAME_CREATE                     | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.TimeFrameCreate                 | timeutil.TimeFrame      |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_TIME_FRAME_DELETE                     | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.TimeFrameDelete                 | timeutil.TimeFrame      |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_NAMESPACE                             | read-only "false" | *eksconfig.AddOnConfigmapsLocal.Namespace                       | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_OBJECTS                               | read-only "false" | *eksconfig.AddOnConfigmapsLocal.Objects                         | int                     |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_OBJECT_SIZE                           | read-only "false" | *eksconfig.AddOnConfigmapsLocal.ObjectSize                      | int                     |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_CREATED_NAMES                         | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.CreatedNames                    | []string                |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_S3_DIR                                | read-only "false" | *eksconfig.AddOnConfigmapsLocal.S3Dir                           | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_WRITES_JSON_PATH             | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsWritesRawJSONPath       | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_WRITES_JSON_S3_KEY           | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsWritesRawJSONS3Key      | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_WRITES_SUMMARY               | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsWritesSummary           | metrics.RequestsSummary |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_WRITES_SUMMARY_JSON_PATH     | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsWritesSummaryJSONPath   | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_WRITES_SUMMARY_JSON_S3_KEY   | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsWritesSummaryJSONS3Key  | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_WRITES_SUMMARY_TABLE_PATH    | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsWritesSummaryTablePath  | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_WRITES_SUMMARY_TABLE_S3_PATH | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsWritesSummaryTableS3Key | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_WRITES_COMPARE_S3_DIR        | read-only "false" | *eksconfig.AddOnConfigmapsLocal.RequestsWritesCompareS3Dir      | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_WRITES_COMPARE               | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsWritesCompare           | metrics.RequestsCompare |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_WRITES_COMPARE_JSON_PATH     | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsWritesCompareJSONPath   | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_WRITES_COMPARE_JSON_S3_KEY   | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsWritesCompareJSONS3Key  | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_WRITES_COMPARE_TABLE_PATH    | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsWritesCompareTablePath  | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_WRITES_COMPARE_TABLE_S3_PATH | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsWritesCompareTableS3Key | string                  |
-*----------------------------------------------------------------------------------*-------------------*-----------------------------------------------------------------*-------------------------*
+*------------------------------------------------------------------------------------------*-------------------*------------------------------------------------------------------------*-------------------------*
+|                                  ENVIRONMENTAL VARIABLE                                  |     READ ONLY     |                                  TYPE                                  |         GO TYPE         |
+*------------------------------------------------------------------------------------------*-------------------*------------------------------------------------------------------------*-------------------------*
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_ENABLE                                        | read-only "false" | *eksconfig.AddOnConfigmapsLocal.Enable                                 | bool                    |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_CREATED                                       | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.Created                                | bool                    |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_TIME_FRAME_CREATE                             | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.TimeFrameCreate                        | timeutil.TimeFrame      |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_TIME_FRAME_DELETE                             | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.TimeFrameDelete                        | timeutil.TimeFrame      |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_NAMESPACE                                     | read-only "false" | *eksconfig.AddOnConfigmapsLocal.Namespace                              | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_OBJECTS                                       | read-only "false" | *eksconfig.AddOnConfigmapsLocal.Objects                                | int                     |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_OBJECT_SIZE                                   | read-only "false" | *eksconfig.AddOnConfigmapsLocal.ObjectSize                             | int                     |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_CREATED_NAMES                                 | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.CreatedNames                           | []string                |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_S3_DIR                                        | read-only "false" | *eksconfig.AddOnConfigmapsLocal.S3Dir                                  | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_RAW_WRITES_JSON_PATH                 | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsRawWritesJSONPath              | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_RAW_WRITES_JSON_S3_KEY               | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsRawWritesJSONS3Key             | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_RAW_WRITES_COMPARE_S3_DIR            | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsRawWritesCompareS3Dir          | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_RAW_WRITES_COMPARE_ALL_JSON_PATH     | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsRawWritesCompareAllJSONPath    | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_RAW_WRITES_COMPARE_ALL_JSON_S3_KEY   | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsRawWritesCompareAllJSONS3Key   | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_RAW_WRITES_COMPARE_ALL_CSV_PATH      | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsRawWritesCompareAllCSVPath     | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_RAW_WRITES_COMPARE_ALL_CSV_S3_KEY    | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsRawWritesCompareAllCSVS3Key    | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_SUMMARY_WRITES                       | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsSummaryWrites                  | metrics.RequestsSummary |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_SUMMARY_WRITES_JSON_PATH             | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsSummaryWritesJSONPath          | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_SUMMARY_WRITES_JSON_S3_KEY           | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsSummaryWritesJSONS3Key         | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_SUMMARY_WRITES_TABLE_PATH            | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsSummaryWritesTablePath         | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_SUMMARY_WRITES_TABLE_S3_PATH         | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsSummaryWritesTableS3Key        | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE_S3_DIR        | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsSummaryWritesCompareS3Dir      | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE               | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsSummaryWritesCompare           | metrics.RequestsCompare |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE_JSON_PATH     | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsSummaryWritesCompareJSONPath   | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE_JSON_S3_KEY   | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsSummaryWritesCompareJSONS3Key  | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE_TABLE_PATH    | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsSummaryWritesCompareTablePath  | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE_TABLE_S3_PATH | read-only "true"  | *eksconfig.AddOnConfigmapsLocal.RequestsSummaryWritesCompareTableS3Key | string                  |
+*------------------------------------------------------------------------------------------*-------------------*------------------------------------------------------------------------*-------------------------*
 
 
-*----------------------------------------------------------------------------------------*-------------------*------------------------------------------------------------------------*-------------------------*
-|                                 ENVIRONMENTAL VARIABLE                                 |     READ ONLY     |                                  TYPE                                  |         GO TYPE         |
-*----------------------------------------------------------------------------------------*-------------------*------------------------------------------------------------------------*-------------------------*
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_ENABLE                                     | read-only "false" | *eksconfig.AddOnConfigmapsRemote.Enable                                | bool                    |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_CREATED                                    | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.Created                               | bool                    |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_TIME_FRAME_CREATE                          | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.TimeFrameCreate                       | timeutil.TimeFrame      |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_TIME_FRAME_DELETE                          | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.TimeFrameDelete                       | timeutil.TimeFrame      |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_NAMESPACE                                  | read-only "false" | *eksconfig.AddOnConfigmapsRemote.Namespace                             | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REPOSITORY_ACCOUNT_ID                      | read-only "false" | *eksconfig.AddOnConfigmapsRemote.RepositoryAccountID                   | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REPOSITORY_NAME                            | read-only "false" | *eksconfig.AddOnConfigmapsRemote.RepositoryName                        | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REPOSITORY_IMAGE_TAG                       | read-only "false" | *eksconfig.AddOnConfigmapsRemote.RepositoryImageTag                    | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_DEPLOYMENT_REPLICAS                        | read-only "false" | *eksconfig.AddOnConfigmapsRemote.DeploymentReplicas                    | int32                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_OBJECTS                                    | read-only "false" | *eksconfig.AddOnConfigmapsRemote.Objects                               | int                     |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_OBJECT_SIZE                                | read-only "false" | *eksconfig.AddOnConfigmapsRemote.ObjectSize                            | int                     |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_CREATED_NAMES                              | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.CreatedNames                          | []string                |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_S3_DIR                                     | read-only "false" | *eksconfig.AddOnConfigmapsRemote.S3Dir                                 | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_WRITES_JSON_PATH                  | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsWritesRawJSONPath             | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_WRITES_JSON_S3_KEY                | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsWritesRawJSONS3Key            | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_WRITES_SUMMARY                    | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsWritesSummary                 | metrics.RequestsSummary |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_WRITES_SUMMARY_JSON_PATH          | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsWritesSummaryJSONPath         | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_WRITES_SUMMARY_JSON_S3_KEY        | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsWritesSummaryJSONS3Key        | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_WRITES_SUMMARY_TABLE_PATH         | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsWritesSummaryTablePath        | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_WRITES_SUMMARY_TABLE_S3_PATH      | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsWritesSummaryTableS3Key       | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_WRITES_COMPARE_S3_DIR             | read-only "false" | *eksconfig.AddOnConfigmapsRemote.RequestsWritesCompareS3Dir            | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_WRITES_COMPARE                    | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsWritesCompare                 | metrics.RequestsCompare |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_WRITES_COMPARE_JSON_PATH          | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsWritesCompareJSONPath         | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_WRITES_COMPARE_JSON_S3_KEY        | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsWritesCompareJSONS3Key        | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_WRITES_COMPARE_TABLE_PATH         | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsWritesCompareTablePath        | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_WRITES_COMPARE_TABLE_S3_PATH      | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsWritesCompareTableS3Key       | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_WRITES_SUMMARY_OUTPUT_NAME_PREFIX | read-only "false" | *eksconfig.AddOnConfigmapsRemote.RequestsWritesSummaryOutputNamePrefix | string                  |
-*----------------------------------------------------------------------------------------*-------------------*------------------------------------------------------------------------*-------------------------*
+*-------------------------------------------------------------------------------------------*-------------------*-------------------------------------------------------------------------*-------------------------*
+|                                  ENVIRONMENTAL VARIABLE                                   |     READ ONLY     |                                  TYPE                                   |         GO TYPE         |
+*-------------------------------------------------------------------------------------------*-------------------*-------------------------------------------------------------------------*-------------------------*
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_ENABLE                                        | read-only "false" | *eksconfig.AddOnConfigmapsRemote.Enable                                 | bool                    |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_CREATED                                       | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.Created                                | bool                    |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_TIME_FRAME_CREATE                             | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.TimeFrameCreate                        | timeutil.TimeFrame      |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_TIME_FRAME_DELETE                             | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.TimeFrameDelete                        | timeutil.TimeFrame      |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_NAMESPACE                                     | read-only "false" | *eksconfig.AddOnConfigmapsRemote.Namespace                              | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REPOSITORY_ACCOUNT_ID                         | read-only "false" | *eksconfig.AddOnConfigmapsRemote.RepositoryAccountID                    | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REPOSITORY_NAME                               | read-only "false" | *eksconfig.AddOnConfigmapsRemote.RepositoryName                         | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REPOSITORY_IMAGE_TAG                          | read-only "false" | *eksconfig.AddOnConfigmapsRemote.RepositoryImageTag                     | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_DEPLOYMENT_REPLICAS                           | read-only "false" | *eksconfig.AddOnConfigmapsRemote.DeploymentReplicas                     | int32                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_OBJECTS                                       | read-only "false" | *eksconfig.AddOnConfigmapsRemote.Objects                                | int                     |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_OBJECT_SIZE                                   | read-only "false" | *eksconfig.AddOnConfigmapsRemote.ObjectSize                             | int                     |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_CREATED_NAMES                                 | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.CreatedNames                           | []string                |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_SUMMARY_WRITES_OUTPUT_NAME_PREFIX    | read-only "false" | *eksconfig.AddOnConfigmapsRemote.RequestsSummaryWritesOutputNamePrefix  | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_S3_DIR                                        | read-only "false" | *eksconfig.AddOnConfigmapsRemote.S3Dir                                  | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_RAW_WRITES_JSON_PATH                 | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsRawWritesJSONPath              | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_RAW_WRITES_JSON_S3_KEY               | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsRawWritesJSONS3Key             | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_RAW_WRITES_COMPARE_S3_DIR            | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsRawWritesCompareS3Dir          | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_RAW_WRITES_COMPARE_ALL_JSON_PATH     | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsRawWritesCompareAllJSONPath    | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_RAW_WRITES_COMPARE_ALL_JSON_S3_KEY   | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsRawWritesCompareAllJSONS3Key   | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_RAW_WRITES_COMPARE_ALL_CSV_PATH      | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsRawWritesCompareAllCSVPath     | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_RAW_WRITES_COMPARE_ALL_CSV_S3_KEY    | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsRawWritesCompareAllCSVS3Key    | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_SUMMARY_WRITES                       | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsSummaryWrites                  | metrics.RequestsSummary |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_SUMMARY_WRITES_JSON_PATH             | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsSummaryWritesJSONPath          | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_SUMMARY_WRITES_JSON_S3_KEY           | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsSummaryWritesJSONS3Key         | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_SUMMARY_WRITES_TABLE_PATH            | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsSummaryWritesTablePath         | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_SUMMARY_WRITES_TABLE_S3_PATH         | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsSummaryWritesTableS3Key        | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE_S3_DIR        | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsSummaryWritesCompareS3Dir      | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE               | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsSummaryWritesCompare           | metrics.RequestsCompare |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE_JSON_PATH     | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsSummaryWritesCompareJSONPath   | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE_JSON_S3_KEY   | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsSummaryWritesCompareJSONS3Key  | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE_TABLE_PATH    | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsSummaryWritesCompareTablePath  | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE_TABLE_S3_PATH | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.RequestsSummaryWritesCompareTableS3Key | string                  |
+*-------------------------------------------------------------------------------------------*-------------------*-------------------------------------------------------------------------*-------------------------*
 
 
-*-------------------------------------------------------------------------------*-------------------*--------------------------------------------------------------*-------------------------*
-|                            ENVIRONMENTAL VARIABLE                             |     READ ONLY     |                             TYPE                             |         GO TYPE         |
-*-------------------------------------------------------------------------------*-------------------*--------------------------------------------------------------*-------------------------*
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_ENABLE                                | read-only "false" | *eksconfig.AddOnSecretsLocal.Enable                          | bool                    |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_CREATED                               | read-only "true"  | *eksconfig.AddOnSecretsLocal.Created                         | bool                    |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_TIME_FRAME_CREATE                     | read-only "true"  | *eksconfig.AddOnSecretsLocal.TimeFrameCreate                 | timeutil.TimeFrame      |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_TIME_FRAME_DELETE                     | read-only "true"  | *eksconfig.AddOnSecretsLocal.TimeFrameDelete                 | timeutil.TimeFrame      |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_NAMESPACE                             | read-only "false" | *eksconfig.AddOnSecretsLocal.Namespace                       | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_OBJECTS                               | read-only "false" | *eksconfig.AddOnSecretsLocal.Objects                         | int                     |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_OBJECT_SIZE                           | read-only "false" | *eksconfig.AddOnSecretsLocal.ObjectSize                      | int                     |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_NAME_PREFIX                           | read-only "false" | *eksconfig.AddOnSecretsLocal.NamePrefix                      | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_S3_DIR                                | read-only "false" | *eksconfig.AddOnSecretsLocal.S3Dir                           | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_WRITES_JSON_PATH             | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsWritesRawJSONPath       | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_WRITES_JSON_S3_KEY           | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsWritesRawJSONS3Key      | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_WRITES_SUMMARY               | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsWritesSummary           | metrics.RequestsSummary |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_WRITES_SUMMARY_JSON_PATH     | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsWritesSummaryJSONPath   | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_WRITES_SUMMARY_JSON_S3_KEY   | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsWritesSummaryJSONS3Key  | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_WRITES_SUMMARY_TABLE_PATH    | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsWritesSummaryTablePath  | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_WRITES_SUMMARY_TABLE_S3_PATH | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsWritesSummaryTableS3Key | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_WRITES_COMPARE_S3_DIR        | read-only "false" | *eksconfig.AddOnSecretsLocal.RequestsWritesCompareS3Dir      | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_WRITES_COMPARE               | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsWritesCompare           | metrics.RequestsCompare |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_WRITES_COMPARE_JSON_PATH     | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsWritesCompareJSONPath   | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_WRITES_COMPARE_JSON_S3_KEY   | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsWritesCompareJSONS3Key  | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_WRITES_COMPARE_TABLE_PATH    | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsWritesCompareTablePath  | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_WRITES_COMPARE_TABLE_S3_PATH | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsWritesCompareTableS3Key | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_READS_RAW_JSON_PATH          | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsReadsRawJSONPath        | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_READS_RAW_JSON_S3_KEY        | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsReadsRawJSONS3Key       | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_READS_SUMMARY                | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsReadsSummary            | metrics.RequestsSummary |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_READS_SUMMARY_JSON_PATH      | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsReadsSummaryJSONPath    | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_READS_SUMMARY_JSON_S3_KEY    | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsReadsSummaryJSONS3Key   | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_READS_SUMMARY_TABLE_PATH     | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsReadsSummaryTablePath   | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_READS_SUMMARY_TABLE_S3_PATH  | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsReadsSummaryTableS3Key  | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_READS_COMPARE_S3_DIR         | read-only "false" | *eksconfig.AddOnSecretsLocal.RequestsReadsCompareS3Dir       | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_READS_COMPARE                | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsReadsCompare            | metrics.RequestsCompare |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_READS_COMPARE_JSON_PATH      | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsReadsCompareJSONPath    | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_READS_COMPARE_JSON_S3_KEY    | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsReadsCompareJSONS3Key   | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_READS_COMPARE_TABLE_PATH     | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsReadsCompareTablePath   | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_READS_COMPARE_TABLE_S3_PATH  | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsReadsCompareTableS3Key  | string                  |
-*-------------------------------------------------------------------------------*-------------------*--------------------------------------------------------------*-------------------------*
+*---------------------------------------------------------------------------------------*-------------------*---------------------------------------------------------------------*-------------------------*
+|                                ENVIRONMENTAL VARIABLE                                 |     READ ONLY     |                                TYPE                                 |         GO TYPE         |
+*---------------------------------------------------------------------------------------*-------------------*---------------------------------------------------------------------*-------------------------*
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_ENABLE                                        | read-only "false" | *eksconfig.AddOnSecretsLocal.Enable                                 | bool                    |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_CREATED                                       | read-only "true"  | *eksconfig.AddOnSecretsLocal.Created                                | bool                    |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_TIME_FRAME_CREATE                             | read-only "true"  | *eksconfig.AddOnSecretsLocal.TimeFrameCreate                        | timeutil.TimeFrame      |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_TIME_FRAME_DELETE                             | read-only "true"  | *eksconfig.AddOnSecretsLocal.TimeFrameDelete                        | timeutil.TimeFrame      |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_NAMESPACE                                     | read-only "false" | *eksconfig.AddOnSecretsLocal.Namespace                              | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_OBJECTS                                       | read-only "false" | *eksconfig.AddOnSecretsLocal.Objects                                | int                     |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_OBJECT_SIZE                                   | read-only "false" | *eksconfig.AddOnSecretsLocal.ObjectSize                             | int                     |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_NAME_PREFIX                                   | read-only "false" | *eksconfig.AddOnSecretsLocal.NamePrefix                             | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_S3_DIR                                        | read-only "false" | *eksconfig.AddOnSecretsLocal.S3Dir                                  | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_RAW_WRITES_JSON_PATH                 | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsRawWritesJSONPath              | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_RAW_WRITES_JSON_S3_KEY               | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsRawWritesJSONS3Key             | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_RAW_WRITES_COMPARE_S3_DIR            | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsRawWritesCompareS3Dir          | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_RAW_WRITES_COMPARE_ALL_JSON_PATH     | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsRawWritesCompareAllJSONPath    | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_RAW_WRITES_COMPARE_ALL_JSON_S3_KEY   | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsRawWritesCompareAllJSONS3Key   | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_RAW_WRITES_COMPARE_ALL_CSV_PATH      | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsRawWritesCompareAllCSVPath     | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_RAW_WRITES_COMPARE_ALL_CSV_S3_KEY    | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsRawWritesCompareAllCSVS3Key    | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_WRITES                       | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsSummaryWrites                  | metrics.RequestsSummary |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_WRITES_JSON_PATH             | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsSummaryWritesJSONPath          | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_WRITES_JSON_S3_KEY           | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsSummaryWritesJSONS3Key         | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_WRITES_TABLE_PATH            | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsSummaryWritesTablePath         | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_WRITES_TABLE_S3_PATH         | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsSummaryWritesTableS3Key        | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE_S3_DIR        | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsSummaryWritesCompareS3Dir      | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE               | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsSummaryWritesCompare           | metrics.RequestsCompare |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE_JSON_PATH     | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsSummaryWritesCompareJSONPath   | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE_JSON_S3_KEY   | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsSummaryWritesCompareJSONS3Key  | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE_TABLE_PATH    | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsSummaryWritesCompareTablePath  | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE_TABLE_S3_PATH | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsSummaryWritesCompareTableS3Key | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_RAW_READS_JSON_PATH                  | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsRawReadsJSONPath               | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_RAW_READS_JSON_S3_KEY                | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsRawReadsJSONS3Key              | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_RAW_READS_COMPARE_S3_DIR             | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsRawReadsCompareS3Dir           | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_RAW_READS_COMPARE_ALL_JSON_PATH      | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsRawReadsCompareAllJSONPath     | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_RAW_READS_COMPARE_ALL_JSON_S3_KEY    | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsRawReadsCompareAllJSONS3Key    | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_RAW_READS_COMPARE_ALL_CSV_PATH       | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsRawReadsCompareAllCSVPath      | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_RAW_READS_COMPARE_ALL_CSV_S3_KEY     | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsRawReadsCompareAllCSVS3Key     | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_READS                        | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsSummaryReads                   | metrics.RequestsSummary |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_READS_JSON_PATH              | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsSummaryReadsJSONPath           | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_READS_JSON_S3_KEY            | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsSummaryReadsJSONS3Key          | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_READS_TABLE_PATH             | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsSummaryReadsTablePath          | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_READS_TABLE_S3_PATH          | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsSummaryReadsTableS3Key         | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_READS_COMPARE_S3_DIR         | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsSummaryReadsCompareS3Dir       | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_READS_COMPARE                | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsSummaryReadsCompare            | metrics.RequestsCompare |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_READS_COMPARE_JSON_PATH      | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsSummaryReadsCompareJSONPath    | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_READS_COMPARE_JSON_S3_KEY    | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsSummaryReadsCompareJSONS3Key   | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_READS_COMPARE_TABLE_PATH     | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsSummaryReadsCompareTablePath   | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_LOCAL_REQUESTS_SUMMARY_READS_COMPARE_TABLE_S3_PATH  | read-only "true"  | *eksconfig.AddOnSecretsLocal.RequestsSummaryReadsCompareTableS3Key  | string                  |
+*---------------------------------------------------------------------------------------*-------------------*---------------------------------------------------------------------*-------------------------*
 
 
-*-------------------------------------------------------------------------------------*-------------------*---------------------------------------------------------------------*-------------------------*
-|                               ENVIRONMENTAL VARIABLE                                |     READ ONLY     |                                TYPE                                 |         GO TYPE         |
-*-------------------------------------------------------------------------------------*-------------------*---------------------------------------------------------------------*-------------------------*
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_ENABLE                                     | read-only "false" | *eksconfig.AddOnSecretsRemote.Enable                                | bool                    |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_CREATED                                    | read-only "true"  | *eksconfig.AddOnSecretsRemote.Created                               | bool                    |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_TIME_FRAME_CREATE                          | read-only "true"  | *eksconfig.AddOnSecretsRemote.TimeFrameCreate                       | timeutil.TimeFrame      |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_TIME_FRAME_DELETE                          | read-only "true"  | *eksconfig.AddOnSecretsRemote.TimeFrameDelete                       | timeutil.TimeFrame      |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_NAMESPACE                                  | read-only "false" | *eksconfig.AddOnSecretsRemote.Namespace                             | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REPOSITORY_ACCOUNT_ID                      | read-only "false" | *eksconfig.AddOnSecretsRemote.RepositoryAccountID                   | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REPOSITORY_NAME                            | read-only "false" | *eksconfig.AddOnSecretsRemote.RepositoryName                        | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REPOSITORY_IMAGE_TAG                       | read-only "false" | *eksconfig.AddOnSecretsRemote.RepositoryImageTag                    | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_DEPLOYMENT_REPLICAS                        | read-only "false" | *eksconfig.AddOnSecretsRemote.DeploymentReplicas                    | int32                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_OBJECTS                                    | read-only "false" | *eksconfig.AddOnSecretsRemote.Objects                               | int                     |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_OBJECT_SIZE                                | read-only "false" | *eksconfig.AddOnSecretsRemote.ObjectSize                            | int                     |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_NAME_PREFIX                                | read-only "false" | *eksconfig.AddOnSecretsRemote.NamePrefix                            | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_S3_DIR                                     | read-only "false" | *eksconfig.AddOnSecretsRemote.S3Dir                                 | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_WRITES_JSON_PATH                  | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsWritesRawJSONPath             | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_WRITES_JSON_S3_KEY                | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsWritesRawJSONS3Key            | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_WRITES_SUMMARY                    | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsWritesSummary                 | metrics.RequestsSummary |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_WRITES_SUMMARY_JSON_PATH          | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsWritesSummaryJSONPath         | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_WRITES_SUMMARY_JSON_S3_KEY        | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsWritesSummaryJSONS3Key        | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_WRITES_SUMMARY_TABLE_PATH         | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsWritesSummaryTablePath        | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_WRITES_SUMMARY_TABLE_S3_PATH      | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsWritesSummaryTableS3Key       | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_WRITES_COMPARE_S3_DIR             | read-only "false" | *eksconfig.AddOnSecretsRemote.RequestsWritesCompareS3Dir            | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_WRITES_COMPARE                    | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsWritesCompare                 | metrics.RequestsCompare |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_WRITES_COMPARE_JSON_PATH          | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsWritesCompareJSONPath         | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_WRITES_COMPARE_JSON_S3_KEY        | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsWritesCompareJSONS3Key        | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_WRITES_COMPARE_TABLE_PATH         | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsWritesCompareTablePath        | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_WRITES_COMPARE_TABLE_S3_PATH      | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsWritesCompareTableS3Key       | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_READS_RAW_JSON_PATH               | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsReadsRawJSONPath              | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_READS_RAW_JSON_S3_KEY             | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsReadsRawJSONS3Key             | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_READS_SUMMARY                     | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsReadsSummary                  | metrics.RequestsSummary |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_READS_SUMMARY_JSON_PATH           | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsReadsSummaryJSONPath          | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_READS_SUMMARY_JSON_S3_KEY         | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsReadsSummaryJSONS3Key         | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_READS_SUMMARY_TABLE_PATH          | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsReadsSummaryTablePath         | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_READS_SUMMARY_TABLE_S3_PATH       | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsReadsSummaryTableS3Key        | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_READS_COMPARE_S3_DIR              | read-only "false" | *eksconfig.AddOnSecretsRemote.RequestsReadsCompareS3Dir             | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_READS_COMPARE                     | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsReadsCompare                  | metrics.RequestsCompare |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_READS_COMPARE_JSON_PATH           | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsReadsCompareJSONPath          | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_READS_COMPARE_JSON_S3_KEY         | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsReadsCompareJSONS3Key         | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_READS_COMPARE_TABLE_PATH          | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsReadsCompareTablePath         | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_READS_COMPARE_TABLE_S3_PATH       | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsReadsCompareTableS3Key        | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_WRITES_SUMMARY_OUTPUT_NAME_PREFIX | read-only "false" | *eksconfig.AddOnSecretsRemote.RequestsWritesSummaryOutputNamePrefix | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_READS_SUMMARY_OUTPUT_NAME_PREFIX  | read-only "false" | *eksconfig.AddOnSecretsRemote.RequestsReadsSummaryOutputNamePrefix  | string                  |
-*-------------------------------------------------------------------------------------*-------------------*---------------------------------------------------------------------*-------------------------*
+*----------------------------------------------------------------------------------------*-------------------*----------------------------------------------------------------------*-------------------------*
+|                                 ENVIRONMENTAL VARIABLE                                 |     READ ONLY     |                                 TYPE                                 |         GO TYPE         |
+*----------------------------------------------------------------------------------------*-------------------*----------------------------------------------------------------------*-------------------------*
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_ENABLE                                        | read-only "false" | *eksconfig.AddOnSecretsRemote.Enable                                 | bool                    |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_CREATED                                       | read-only "true"  | *eksconfig.AddOnSecretsRemote.Created                                | bool                    |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_TIME_FRAME_CREATE                             | read-only "true"  | *eksconfig.AddOnSecretsRemote.TimeFrameCreate                        | timeutil.TimeFrame      |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_TIME_FRAME_DELETE                             | read-only "true"  | *eksconfig.AddOnSecretsRemote.TimeFrameDelete                        | timeutil.TimeFrame      |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_NAMESPACE                                     | read-only "false" | *eksconfig.AddOnSecretsRemote.Namespace                              | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REPOSITORY_ACCOUNT_ID                         | read-only "false" | *eksconfig.AddOnSecretsRemote.RepositoryAccountID                    | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REPOSITORY_NAME                               | read-only "false" | *eksconfig.AddOnSecretsRemote.RepositoryName                         | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REPOSITORY_IMAGE_TAG                          | read-only "false" | *eksconfig.AddOnSecretsRemote.RepositoryImageTag                     | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_DEPLOYMENT_REPLICAS                           | read-only "false" | *eksconfig.AddOnSecretsRemote.DeploymentReplicas                     | int32                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_OBJECTS                                       | read-only "false" | *eksconfig.AddOnSecretsRemote.Objects                                | int                     |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_OBJECT_SIZE                                   | read-only "false" | *eksconfig.AddOnSecretsRemote.ObjectSize                             | int                     |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_NAME_PREFIX                                   | read-only "false" | *eksconfig.AddOnSecretsRemote.NamePrefix                             | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_WRITES_OUTPUT_NAME_PREFIX    | read-only "false" | *eksconfig.AddOnSecretsRemote.RequestsSummaryWritesOutputNamePrefix  | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_READS_OUTPUT_NAME_PREFIX     | read-only "false" | *eksconfig.AddOnSecretsRemote.RequestsSummaryReadsOutputNamePrefix   | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_S3_DIR                                        | read-only "false" | *eksconfig.AddOnSecretsRemote.S3Dir                                  | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_RAW_WRITES_JSON_PATH                 | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsRawWritesJSONPath              | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_RAW_WRITES_JSON_S3_KEY               | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsRawWritesJSONS3Key             | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_RAW_WRITES_COMPARE_S3_DIR            | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsRawWritesCompareS3Dir          | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_RAW_WRITES_COMPARE_ALL_JSON_PATH     | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsRawWritesCompareAllJSONPath    | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_RAW_WRITES_COMPARE_ALL_JSON_S3_KEY   | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsRawWritesCompareAllJSONS3Key   | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_RAW_WRITES_COMPARE_ALL_CSV_PATH      | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsRawWritesCompareAllCSVPath     | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_RAW_WRITES_COMPARE_ALL_CSV_S3_KEY    | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsRawWritesCompareAllCSVS3Key    | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_WRITES                       | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsSummaryWrites                  | metrics.RequestsSummary |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_WRITES_JSON_PATH             | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsSummaryWritesJSONPath          | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_WRITES_JSON_S3_KEY           | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsSummaryWritesJSONS3Key         | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_WRITES_TABLE_PATH            | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsSummaryWritesTablePath         | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_WRITES_TABLE_S3_PATH         | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsSummaryWritesTableS3Key        | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE_S3_DIR        | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsSummaryWritesCompareS3Dir      | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE               | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsSummaryWritesCompare           | metrics.RequestsCompare |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE_JSON_PATH     | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsSummaryWritesCompareJSONPath   | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE_JSON_S3_KEY   | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsSummaryWritesCompareJSONS3Key  | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE_TABLE_PATH    | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsSummaryWritesCompareTablePath  | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE_TABLE_S3_PATH | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsSummaryWritesCompareTableS3Key | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_RAW_READS_JSON_PATH                  | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsRawReadsJSONPath               | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_RAW_READS_JSON_S3_KEY                | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsRawReadsJSONS3Key              | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_RAW_READS_COMPARE_S3_DIR             | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsRawReadsCompareS3Dir           | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_RAW_READS_COMPARE_ALL_JSON_PATH      | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsRawReadsCompareAllJSONPath     | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_RAW_READS_COMPARE_ALL_JSON_S3_KEY    | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsRawReadsCompareAllJSONS3Key    | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_RAW_READS_COMPARE_ALL_CSV_PATH       | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsRawReadsCompareAllCSVPath      | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_RAW_READS_COMPARE_ALL_CSV_S3_KEY     | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsRawReadsCompareAllCSVS3Key     | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_READS                        | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsSummaryReads                   | metrics.RequestsSummary |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_READS_JSON_PATH              | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsSummaryReadsJSONPath           | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_READS_JSON_S3_KEY            | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsSummaryReadsJSONS3Key          | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_READS_TABLE_PATH             | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsSummaryReadsTablePath          | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_READS_TABLE_S3_PATH          | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsSummaryReadsTableS3Key         | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_READS_COMPARE_S3_DIR         | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsSummaryReadsCompareS3Dir       | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_READS_COMPARE                | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsSummaryReadsCompare            | metrics.RequestsCompare |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_READS_COMPARE_JSON_PATH      | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsSummaryReadsCompareJSONPath    | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_READS_COMPARE_JSON_S3_KEY    | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsSummaryReadsCompareJSONS3Key   | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_READS_COMPARE_TABLE_PATH     | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsSummaryReadsCompareTablePath   | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REQUESTS_SUMMARY_READS_COMPARE_TABLE_S3_PATH  | read-only "true"  | *eksconfig.AddOnSecretsRemote.RequestsSummaryReadsCompareTableS3Key  | string                  |
+*----------------------------------------------------------------------------------------*-------------------*----------------------------------------------------------------------*-------------------------*
 
 
 *-----------------------------------------------------------------*-------------------*--------------------------------------------------*--------------------*
@@ -787,94 +827,114 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 *---------------------------------------------------------------------*-------------------*-------------------------------------------------------*--------------------*
 
 
-*--------------------------------------------------------------------------------*-------------------*---------------------------------------------------------------*-------------------------*
-|                             ENVIRONMENTAL VARIABLE                             |     READ ONLY     |                             TYPE                              |         GO TYPE         |
-*--------------------------------------------------------------------------------*-------------------*---------------------------------------------------------------*-------------------------*
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_ENABLE                                | read-only "false" | *eksconfig.AddOnStresserLocal.Enable                          | bool                    |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_CREATED                               | read-only "true"  | *eksconfig.AddOnStresserLocal.Created                         | bool                    |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_TIME_FRAME_CREATE                     | read-only "true"  | *eksconfig.AddOnStresserLocal.TimeFrameCreate                 | timeutil.TimeFrame      |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_TIME_FRAME_DELETE                     | read-only "true"  | *eksconfig.AddOnStresserLocal.TimeFrameDelete                 | timeutil.TimeFrame      |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_NAMESPACE                             | read-only "false" | *eksconfig.AddOnStresserLocal.Namespace                       | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_OBJECT_SIZE                           | read-only "false" | *eksconfig.AddOnStresserLocal.ObjectSize                      | int                     |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_LIST_LIMIT                            | read-only "false" | *eksconfig.AddOnStresserLocal.ListLimit                       | int64                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_DURATION                              | read-only "false" | *eksconfig.AddOnStresserLocal.Duration                        | time.Duration           |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_DURATION_STRING                       | read-only "true"  | *eksconfig.AddOnStresserLocal.DurationString                  | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_S3_DIR                                | read-only "false" | *eksconfig.AddOnStresserLocal.S3Dir                           | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_WRITES_JSON_PATH             | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsWritesRawJSONPath       | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_WRITES_JSON_S3_KEY           | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsWritesRawJSONS3Key      | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_WRITES_SUMMARY               | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsWritesSummary           | metrics.RequestsSummary |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_WRITES_SUMMARY_JSON_PATH     | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsWritesSummaryJSONPath   | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_WRITES_SUMMARY_JSON_S3_KEY   | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsWritesSummaryJSONS3Key  | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_WRITES_SUMMARY_TABLE_PATH    | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsWritesSummaryTablePath  | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_WRITES_SUMMARY_TABLE_S3_PATH | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsWritesSummaryTableS3Key | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_WRITES_COMPARE_S3_DIR        | read-only "false" | *eksconfig.AddOnStresserLocal.RequestsWritesCompareS3Dir      | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_WRITES_COMPARE               | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsWritesCompare           | metrics.RequestsCompare |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_WRITES_COMPARE_JSON_PATH     | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsWritesCompareJSONPath   | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_WRITES_COMPARE_JSON_S3_KEY   | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsWritesCompareJSONS3Key  | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_WRITES_COMPARE_TABLE_PATH    | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsWritesCompareTablePath  | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_WRITES_COMPARE_TABLE_S3_PATH | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsWritesCompareTableS3Key | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_READS_RAW_JSON_PATH          | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsReadsRawJSONPath        | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_READS_RAW_JSON_S3_KEY        | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsReadsRawJSONS3Key       | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_READS_SUMMARY                | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsReadsSummary            | metrics.RequestsSummary |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_READS_SUMMARY_JSON_PATH      | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsReadsSummaryJSONPath    | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_READS_SUMMARY_JSON_S3_KEY    | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsReadsSummaryJSONS3Key   | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_READS_SUMMARY_TABLE_PATH     | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsReadsSummaryTablePath   | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_READS_SUMMARY_TABLE_S3_PATH  | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsReadsSummaryTableS3Key  | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_READS_COMPARE_S3_DIR         | read-only "false" | *eksconfig.AddOnStresserLocal.RequestsReadsCompareS3Dir       | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_READS_COMPARE                | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsReadsCompare            | metrics.RequestsCompare |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_READS_COMPARE_JSON_PATH      | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsReadsCompareJSONPath    | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_READS_COMPARE_JSON_S3_KEY    | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsReadsCompareJSONS3Key   | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_READS_COMPARE_TABLE_PATH     | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsReadsCompareTablePath   | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_READS_COMPARE_TABLE_S3_PATH  | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsReadsCompareTableS3Key  | string                  |
-*--------------------------------------------------------------------------------*-------------------*---------------------------------------------------------------*-------------------------*
+*----------------------------------------------------------------------------------------*-------------------*----------------------------------------------------------------------*-------------------------*
+|                                 ENVIRONMENTAL VARIABLE                                 |     READ ONLY     |                                 TYPE                                 |         GO TYPE         |
+*----------------------------------------------------------------------------------------*-------------------*----------------------------------------------------------------------*-------------------------*
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_ENABLE                                        | read-only "false" | *eksconfig.AddOnStresserLocal.Enable                                 | bool                    |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_CREATED                                       | read-only "true"  | *eksconfig.AddOnStresserLocal.Created                                | bool                    |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_TIME_FRAME_CREATE                             | read-only "true"  | *eksconfig.AddOnStresserLocal.TimeFrameCreate                        | timeutil.TimeFrame      |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_TIME_FRAME_DELETE                             | read-only "true"  | *eksconfig.AddOnStresserLocal.TimeFrameDelete                        | timeutil.TimeFrame      |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_NAMESPACE                                     | read-only "false" | *eksconfig.AddOnStresserLocal.Namespace                              | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_OBJECT_SIZE                                   | read-only "false" | *eksconfig.AddOnStresserLocal.ObjectSize                             | int                     |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_LIST_LIMIT                                    | read-only "false" | *eksconfig.AddOnStresserLocal.ListLimit                              | int64                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_DURATION                                      | read-only "false" | *eksconfig.AddOnStresserLocal.Duration                               | time.Duration           |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_DURATION_STRING                               | read-only "true"  | *eksconfig.AddOnStresserLocal.DurationString                         | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_S3_DIR                                        | read-only "false" | *eksconfig.AddOnStresserLocal.S3Dir                                  | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_RAW_WRITES_JSON_PATH                 | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsRawWritesJSONPath              | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_RAW_WRITES_JSON_S3_KEY               | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsRawWritesJSONS3Key             | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_RAW_WRITES_COMPARE_S3_DIR            | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsRawWritesCompareS3Dir          | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_RAW_WRITES_COMPARE_ALL_JSON_PATH     | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsRawWritesCompareAllJSONPath    | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_RAW_WRITES_COMPARE_ALL_JSON_S3_KEY   | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsRawWritesCompareAllJSONS3Key   | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_RAW_WRITES_COMPARE_ALL_CSV_PATH      | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsRawWritesCompareAllCSVPath     | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_RAW_WRITES_COMPARE_ALL_CSV_S3_KEY    | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsRawWritesCompareAllCSVS3Key    | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_WRITES                       | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryWrites                  | metrics.RequestsSummary |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_WRITES_JSON_PATH             | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryWritesJSONPath          | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_WRITES_JSON_S3_KEY           | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryWritesJSONS3Key         | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_WRITES_TABLE_PATH            | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryWritesTablePath         | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_WRITES_TABLE_S3_PATH         | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryWritesTableS3Key        | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE_S3_DIR        | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryWritesCompareS3Dir      | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE               | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryWritesCompare           | metrics.RequestsCompare |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE_JSON_PATH     | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryWritesCompareJSONPath   | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE_JSON_S3_KEY   | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryWritesCompareJSONS3Key  | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE_TABLE_PATH    | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryWritesCompareTablePath  | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_WRITES_COMPARE_TABLE_S3_PATH | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryWritesCompareTableS3Key | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_RAW_READS_JSON_PATH                  | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsRawReadsJSONPath               | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_RAW_READS_JSON_S3_KEY                | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsRawReadsJSONS3Key              | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_RAW_READS_COMPARE_S3_DIR             | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsRawReadsCompareS3Dir           | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_RAW_READS_COMPARE_ALL_JSON_PATH      | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsRawReadsCompareAllJSONPath     | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_RAW_READS_COMPARE_ALL_JSON_S3_KEY    | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsRawReadsCompareAllJSONS3Key    | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_RAW_READS_COMPARE_ALL_CSV_PATH       | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsRawReadsCompareAllCSVPath      | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_RAW_READS_COMPARE_ALL_CSV_S3_KEY     | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsRawReadsCompareAllCSVS3Key     | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_READS                        | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryReads                   | metrics.RequestsSummary |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_READS_JSON_PATH              | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryReadsJSONPath           | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_READS_JSON_S3_KEY            | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryReadsJSONS3Key          | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_READS_TABLE_PATH             | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryReadsTablePath          | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_READS_TABLE_S3_PATH          | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryReadsTableS3Key         | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_READS_COMPARE_S3_DIR         | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryReadsCompareS3Dir       | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_READS_COMPARE                | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryReadsCompare            | metrics.RequestsCompare |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_READS_COMPARE_JSON_PATH      | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryReadsCompareJSONPath    | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_READS_COMPARE_JSON_S3_KEY    | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryReadsCompareJSONS3Key   | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_READS_COMPARE_TABLE_PATH     | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryReadsCompareTablePath   | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_REQUESTS_SUMMARY_READS_COMPARE_TABLE_S3_PATH  | read-only "true"  | *eksconfig.AddOnStresserLocal.RequestsSummaryReadsCompareTableS3Key  | string                  |
+*----------------------------------------------------------------------------------------*-------------------*----------------------------------------------------------------------*-------------------------*
 
 
-*--------------------------------------------------------------------------------------*-------------------*----------------------------------------------------------------------*-------------------------*
-|                                ENVIRONMENTAL VARIABLE                                |     READ ONLY     |                                 TYPE                                 |         GO TYPE         |
-*--------------------------------------------------------------------------------------*-------------------*----------------------------------------------------------------------*-------------------------*
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_ENABLE                                     | read-only "false" | *eksconfig.AddOnStresserRemote.Enable                                | bool                    |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_CREATED                                    | read-only "true"  | *eksconfig.AddOnStresserRemote.Created                               | bool                    |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_TIME_FRAME_CREATE                          | read-only "true"  | *eksconfig.AddOnStresserRemote.TimeFrameCreate                       | timeutil.TimeFrame      |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_TIME_FRAME_DELETE                          | read-only "true"  | *eksconfig.AddOnStresserRemote.TimeFrameDelete                       | timeutil.TimeFrame      |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_NAMESPACE                                  | read-only "false" | *eksconfig.AddOnStresserRemote.Namespace                             | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REPOSITORY_ACCOUNT_ID                      | read-only "false" | *eksconfig.AddOnStresserRemote.RepositoryAccountID                   | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REPOSITORY_NAME                            | read-only "false" | *eksconfig.AddOnStresserRemote.RepositoryName                        | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REPOSITORY_IMAGE_TAG                       | read-only "false" | *eksconfig.AddOnStresserRemote.RepositoryImageTag                    | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_DEPLOYMENT_REPLICAS                        | read-only "false" | *eksconfig.AddOnStresserRemote.DeploymentReplicas                    | int32                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_OBJECT_SIZE                                | read-only "false" | *eksconfig.AddOnStresserRemote.ObjectSize                            | int                     |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_LIST_LIMIT                                 | read-only "false" | *eksconfig.AddOnStresserRemote.ListLimit                             | int64                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_DURATION                                   | read-only "false" | *eksconfig.AddOnStresserRemote.Duration                              | time.Duration           |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_DURATION_STRING                            | read-only "true"  | *eksconfig.AddOnStresserRemote.DurationString                        | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_S3_DIR                                     | read-only "false" | *eksconfig.AddOnStresserRemote.S3Dir                                 | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_WRITES_JSON_PATH                  | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsWritesRawJSONPath             | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_WRITES_JSON_S3_KEY                | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsWritesRawJSONS3Key            | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_WRITES_SUMMARY                    | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsWritesSummary                 | metrics.RequestsSummary |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_WRITES_SUMMARY_JSON_PATH          | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsWritesSummaryJSONPath         | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_WRITES_SUMMARY_JSON_S3_KEY        | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsWritesSummaryJSONS3Key        | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_WRITES_SUMMARY_TABLE_PATH         | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsWritesSummaryTablePath        | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_WRITES_SUMMARY_TABLE_S3_PATH      | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsWritesSummaryTableS3Key       | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_WRITES_COMPARE_S3_DIR             | read-only "false" | *eksconfig.AddOnStresserRemote.RequestsWritesCompareS3Dir            | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_WRITES_COMPARE                    | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsWritesCompare                 | metrics.RequestsCompare |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_WRITES_COMPARE_JSON_PATH          | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsWritesCompareJSONPath         | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_WRITES_COMPARE_JSON_S3_KEY        | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsWritesCompareJSONS3Key        | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_WRITES_COMPARE_TABLE_PATH         | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsWritesCompareTablePath        | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_WRITES_COMPARE_TABLE_S3_PATH      | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsWritesCompareTableS3Key       | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_READS_RAW_JSON_PATH               | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsReadsRawJSONPath              | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_READS_RAW_JSON_S3_KEY             | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsReadsRawJSONS3Key             | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_READS_SUMMARY                     | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsReadsSummary                  | metrics.RequestsSummary |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_READS_SUMMARY_JSON_PATH           | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsReadsSummaryJSONPath          | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_READS_SUMMARY_JSON_S3_KEY         | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsReadsSummaryJSONS3Key         | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_READS_SUMMARY_TABLE_PATH          | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsReadsSummaryTablePath         | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_READS_SUMMARY_TABLE_S3_PATH       | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsReadsSummaryTableS3Key        | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_READS_COMPARE_S3_DIR              | read-only "false" | *eksconfig.AddOnStresserRemote.RequestsReadsCompareS3Dir             | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_READS_COMPARE                     | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsReadsCompare                  | metrics.RequestsCompare |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_READS_COMPARE_JSON_PATH           | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsReadsCompareJSONPath          | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_READS_COMPARE_JSON_S3_KEY         | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsReadsCompareJSONS3Key         | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_READS_COMPARE_TABLE_PATH          | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsReadsCompareTablePath         | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_READS_COMPARE_TABLE_S3_PATH       | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsReadsCompareTableS3Key        | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_WRITES_SUMMARY_OUTPUT_NAME_PREFIX | read-only "false" | *eksconfig.AddOnStresserRemote.RequestsWritesSummaryOutputNamePrefix | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_READS_SUMMARY_OUTPUT_NAME_PREFIX  | read-only "false" | *eksconfig.AddOnStresserRemote.RequestsReadsSummaryOutputNamePrefix  | string                  |
-*--------------------------------------------------------------------------------------*-------------------*----------------------------------------------------------------------*-------------------------*
+*-----------------------------------------------------------------------------------------*-------------------*-----------------------------------------------------------------------*-------------------------*
+|                                 ENVIRONMENTAL VARIABLE                                  |     READ ONLY     |                                 TYPE                                  |         GO TYPE         |
+*-----------------------------------------------------------------------------------------*-------------------*-----------------------------------------------------------------------*-------------------------*
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_ENABLE                                        | read-only "false" | *eksconfig.AddOnStresserRemote.Enable                                 | bool                    |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_CREATED                                       | read-only "true"  | *eksconfig.AddOnStresserRemote.Created                                | bool                    |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_TIME_FRAME_CREATE                             | read-only "true"  | *eksconfig.AddOnStresserRemote.TimeFrameCreate                        | timeutil.TimeFrame      |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_TIME_FRAME_DELETE                             | read-only "true"  | *eksconfig.AddOnStresserRemote.TimeFrameDelete                        | timeutil.TimeFrame      |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_NAMESPACE                                     | read-only "false" | *eksconfig.AddOnStresserRemote.Namespace                              | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REPOSITORY_ACCOUNT_ID                         | read-only "false" | *eksconfig.AddOnStresserRemote.RepositoryAccountID                    | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REPOSITORY_NAME                               | read-only "false" | *eksconfig.AddOnStresserRemote.RepositoryName                         | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REPOSITORY_IMAGE_TAG                          | read-only "false" | *eksconfig.AddOnStresserRemote.RepositoryImageTag                     | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_DEPLOYMENT_REPLICAS                           | read-only "false" | *eksconfig.AddOnStresserRemote.DeploymentReplicas                     | int32                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_OBJECT_SIZE                                   | read-only "false" | *eksconfig.AddOnStresserRemote.ObjectSize                             | int                     |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_LIST_LIMIT                                    | read-only "false" | *eksconfig.AddOnStresserRemote.ListLimit                              | int64                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_DURATION                                      | read-only "false" | *eksconfig.AddOnStresserRemote.Duration                               | time.Duration           |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_DURATION_STRING                               | read-only "true"  | *eksconfig.AddOnStresserRemote.DurationString                         | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_WRITES_OUTPUT_NAME_PREFIX    | read-only "false" | *eksconfig.AddOnStresserRemote.RequestsSummaryWritesOutputNamePrefix  | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_READS_OUTPUT_NAME_PREFIX     | read-only "false" | *eksconfig.AddOnStresserRemote.RequestsSummaryReadsOutputNamePrefix   | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_S3_DIR                                        | read-only "false" | *eksconfig.AddOnStresserRemote.S3Dir                                  | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_RAW_WRITES_JSON_PATH                 | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsRawWritesJSONPath              | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_RAW_WRITES_JSON_S3_KEY               | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsRawWritesJSONS3Key             | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_RAW_WRITES_COMPARE_S3_DIR            | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsRawWritesCompareS3Dir          | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_RAW_WRITES_COMPARE_ALL_JSON_PATH     | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsRawWritesCompareAllJSONPath    | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_RAW_WRITES_COMPARE_ALL_JSON_S3_KEY   | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsRawWritesCompareAllJSONS3Key   | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_RAW_WRITES_COMPARE_ALL_CSV_PATH      | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsRawWritesCompareAllCSVPath     | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_RAW_WRITES_COMPARE_ALL_CSV_S3_KEY    | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsRawWritesCompareAllCSVS3Key    | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_WRITES                       | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryWrites                  | metrics.RequestsSummary |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_WRITES_JSON_PATH             | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryWritesJSONPath          | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_WRITES_JSON_S3_KEY           | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryWritesJSONS3Key         | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_WRITES_TABLE_PATH            | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryWritesTablePath         | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_WRITES_TABLE_S3_PATH         | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryWritesTableS3Key        | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE_S3_DIR        | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryWritesCompareS3Dir      | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE               | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryWritesCompare           | metrics.RequestsCompare |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE_JSON_PATH     | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryWritesCompareJSONPath   | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE_JSON_S3_KEY   | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryWritesCompareJSONS3Key  | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE_TABLE_PATH    | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryWritesCompareTablePath  | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_WRITES_COMPARE_TABLE_S3_PATH | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryWritesCompareTableS3Key | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_RAW_READS_JSON_PATH                  | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsRawReadsJSONPath               | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_RAW_READS_JSON_S3_KEY                | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsRawReadsJSONS3Key              | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_RAW_READS_COMPARE_S3_DIR             | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsRawReadsCompareS3Dir           | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_RAW_READS_COMPARE_ALL_JSON_PATH      | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsRawReadsCompareAllJSONPath     | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_RAW_READS_COMPARE_ALL_JSON_S3_KEY    | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsRawReadsCompareAllJSONS3Key    | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_RAW_READS_COMPARE_ALL_CSV_PATH       | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsRawReadsCompareAllCSVPath      | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_RAW_READS_COMPARE_ALL_CSV_S3_KEY     | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsRawReadsCompareAllCSVS3Key     | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_READS                        | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryReads                   | metrics.RequestsSummary |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_READS_JSON_PATH              | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryReadsJSONPath           | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_READS_JSON_S3_KEY            | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryReadsJSONS3Key          | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_READS_TABLE_PATH             | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryReadsTablePath          | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_READS_TABLE_S3_PATH          | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryReadsTableS3Key         | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_READS_COMPARE_S3_DIR         | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryReadsCompareS3Dir       | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_READS_COMPARE                | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryReadsCompare            | metrics.RequestsCompare |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_READS_COMPARE_JSON_PATH      | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryReadsCompareJSONPath    | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_READS_COMPARE_JSON_S3_KEY    | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryReadsCompareJSONS3Key   | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_READS_COMPARE_TABLE_PATH     | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryReadsCompareTablePath   | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_READS_COMPARE_TABLE_S3_PATH  | read-only "true"  | *eksconfig.AddOnStresserRemote.RequestsSummaryReadsCompareTableS3Key  | string                  |
+*-----------------------------------------------------------------------------------------*-------------------*-----------------------------------------------------------------------*-------------------------*
 
 
 *---------------------------------------------------------------------*-------------------*-------------------------------------------------------*--------------------*

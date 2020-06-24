@@ -39,12 +39,12 @@ var (
 	stresserNamespaceWrite string
 	stresserNamespacesRead []string
 
-	stresserWritesRawJSONS3Dir      string
-	stresserWritesSummaryJSONS3Dir  string
-	stresserWritesSummaryTableS3Dir string
-	stresserReadsRawJSONS3Dir       string
-	stresserReadsSummaryJSONS3Dir   string
-	stresserReadsSummaryTableS3Dir  string
+	stresserRequestsRawWritesJSONS3Dir      string
+	stresserRequestsSummaryWritesJSONS3Dir  string
+	stresserRequestsSummaryWritesTableS3Dir string
+	stresserRequestsRawReadsJSONS3Dir       string
+	stresserRequestsSummaryReadsJSONS3Dir   string
+	stresserRequestsSummaryReadsTableS3Dir  string
 
 	stresserWritesOutputNamePrefix string
 	stresserReadsOutputNamePrefix  string
@@ -72,12 +72,12 @@ func newCreateStresser() *cobra.Command {
 	cmd.PersistentFlags().StringVar(&stresserNamespaceWrite, "namespace-write", "default", "namespaces to send writes")
 	cmd.PersistentFlags().StringSliceVar(&stresserNamespacesRead, "namespaces-read", []string{"default"}, "namespaces to send reads")
 
-	cmd.PersistentFlags().StringVar(&stresserWritesRawJSONS3Dir, "writes-raw-json-s3-dir", "", "s3 directory prefix to upload")
-	cmd.PersistentFlags().StringVar(&stresserWritesSummaryJSONS3Dir, "writes-summary-json-s3-dir", "", "s3 directory prefix to upload")
-	cmd.PersistentFlags().StringVar(&stresserWritesSummaryTableS3Dir, "writes-summary-table-s3-dir", "", "s3 directory prefix to upload")
-	cmd.PersistentFlags().StringVar(&stresserReadsRawJSONS3Dir, "reads-raw-json-s3-dir", "", "s3 directory prefix to upload")
-	cmd.PersistentFlags().StringVar(&stresserReadsSummaryJSONS3Dir, "reads-summary-json-s3-dir", "", "s3 directory prefix to upload")
-	cmd.PersistentFlags().StringVar(&stresserReadsSummaryTableS3Dir, "reads-summary-table-s3-dir", "", "s3 directory prefix to upload")
+	cmd.PersistentFlags().StringVar(&stresserRequestsRawWritesJSONS3Dir, "requests-raw-writes-json-s3-dir", "", "s3 directory prefix to upload")
+	cmd.PersistentFlags().StringVar(&stresserRequestsSummaryWritesJSONS3Dir, "requests-summary-writes-json-s3-dir", "", "s3 directory prefix to upload")
+	cmd.PersistentFlags().StringVar(&stresserRequestsSummaryWritesTableS3Dir, "requests-summary-writes-table-s3-dir", "", "s3 directory prefix to upload")
+	cmd.PersistentFlags().StringVar(&stresserRequestsRawReadsJSONS3Dir, "requests-raw-reads-json-s3-dir", "", "s3 directory prefix to upload")
+	cmd.PersistentFlags().StringVar(&stresserRequestsSummaryReadsJSONS3Dir, "requests-summary-reads-json-s3-dir", "", "s3 directory prefix to upload")
+	cmd.PersistentFlags().StringVar(&stresserRequestsSummaryReadsTableS3Dir, "requests-summary-reads-table-s3-dir", "", "s3 directory prefix to upload")
 
 	cmd.PersistentFlags().StringVar(&stresserWritesOutputNamePrefix, "writes-output-name-prefix", "", "writes results output name prefix in /var/log/")
 	cmd.PersistentFlags().StringVar(&stresserReadsOutputNamePrefix, "reads-output-name-prefix", "", "reads results output name prefix in /var/log/")
@@ -147,29 +147,29 @@ func createStresserFunc(cmd *cobra.Command, args []string) {
 	sfx := randutil.String(7)
 
 	loader := stresser.New(stresser.Config{
-		Logger:                  lg,
-		Stopc:                   stopc,
-		S3API:                   s3.New(awsSession),
-		S3BucketName:            stresserS3BucketName,
-		Client:                  cli,
-		ClientTimeout:           stresserClientTimeout,
-		Deadline:                time.Now().Add(stresserDuration),
-		NamespaceWrite:          stresserNamespaceWrite,
-		NamespacesRead:          stresserNamespacesRead,
-		ObjectSize:              stresserObjectSize,
-		ListLimit:               stresserListLimit,
-		WritesRawJSONPath:       "/var/log/" + stresserWritesOutputNamePrefix + "-" + sfx + "-writes-raw.json",
-		WritesRawJSONS3Key:      filepath.Join(stresserWritesRawJSONS3Dir, stresserWritesOutputNamePrefix+"-"+sfx+"-writes-raw.json"),
-		WritesSummaryJSONPath:   "/var/log/" + stresserWritesOutputNamePrefix + "-" + sfx + "-writes-summary.json",
-		WritesSummaryJSONS3Key:  filepath.Join(stresserWritesSummaryJSONS3Dir, stresserWritesOutputNamePrefix+"-"+sfx+"-writes-summary.json"),
-		WritesSummaryTablePath:  "/var/log/" + stresserWritesOutputNamePrefix + "-" + sfx + "-writes-summary.txt",
-		WritesSummaryTableS3Key: filepath.Join(stresserWritesSummaryTableS3Dir, stresserWritesOutputNamePrefix+"-"+sfx+"-writes-summary.txt"),
-		ReadsRawJSONPath:        "/var/log/" + stresserReadsOutputNamePrefix + "-" + sfx + "-reads-raw.json",
-		ReadsRawJSONS3Key:       filepath.Join(stresserReadsRawJSONS3Dir, stresserReadsOutputNamePrefix+"-"+sfx+"-reads-raw.json"),
-		ReadsSummaryJSONPath:    "/var/log/" + stresserReadsOutputNamePrefix + "-" + sfx + "-reads-summary.json",
-		ReadsSummaryJSONS3Key:   filepath.Join(stresserReadsSummaryJSONS3Dir, stresserReadsOutputNamePrefix+"-"+sfx+"-reads-summary.json"),
-		ReadsSummaryTablePath:   "/var/log/" + stresserReadsOutputNamePrefix + "-" + sfx + "-reads-summary.txt",
-		ReadsSummaryTableS3Key:  filepath.Join(stresserReadsSummaryTableS3Dir, stresserReadsOutputNamePrefix+"-"+sfx+"-reads-summary.txt"),
+		Logger:                          lg,
+		Stopc:                           stopc,
+		S3API:                           s3.New(awsSession),
+		S3BucketName:                    stresserS3BucketName,
+		Client:                          cli,
+		ClientTimeout:                   stresserClientTimeout,
+		Deadline:                        time.Now().Add(stresserDuration),
+		NamespaceWrite:                  stresserNamespaceWrite,
+		NamespacesRead:                  stresserNamespacesRead,
+		ObjectSize:                      stresserObjectSize,
+		ListLimit:                       stresserListLimit,
+		RequestsRawWritesJSONPath:       "/var/log/" + stresserWritesOutputNamePrefix + "-" + sfx + "-writes-raw.json",
+		RequestsRawWritesJSONS3Key:      filepath.Join(stresserRequestsRawWritesJSONS3Dir, stresserWritesOutputNamePrefix+"-"+sfx+"-writes-raw.json"),
+		RequestsSummaryWritesJSONPath:   "/var/log/" + stresserWritesOutputNamePrefix + "-" + sfx + "-writes-summary.json",
+		RequestsSummaryWritesJSONS3Key:  filepath.Join(stresserRequestsSummaryWritesJSONS3Dir, stresserWritesOutputNamePrefix+"-"+sfx+"-writes-summary.json"),
+		RequestsSummaryWritesTablePath:  "/var/log/" + stresserWritesOutputNamePrefix + "-" + sfx + "-writes-summary.txt",
+		RequestsSummaryWritesTableS3Key: filepath.Join(stresserRequestsSummaryWritesTableS3Dir, stresserWritesOutputNamePrefix+"-"+sfx+"-writes-summary.txt"),
+		RequestsRawReadsJSONPath:        "/var/log/" + stresserReadsOutputNamePrefix + "-" + sfx + "-reads-raw.json",
+		RequestsRawReadsJSONS3Key:       filepath.Join(stresserRequestsRawReadsJSONS3Dir, stresserReadsOutputNamePrefix+"-"+sfx+"-reads-raw.json"),
+		RequestsSummaryReadsJSONPath:    "/var/log/" + stresserReadsOutputNamePrefix + "-" + sfx + "-reads-summary.json",
+		RequestsSummaryReadsJSONS3Key:   filepath.Join(stresserRequestsSummaryReadsJSONS3Dir, stresserReadsOutputNamePrefix+"-"+sfx+"-reads-summary.json"),
+		RequestsSummaryReadsTablePath:   "/var/log/" + stresserReadsOutputNamePrefix + "-" + sfx + "-reads-summary.txt",
+		RequestsSummaryReadsTableS3Key:  filepath.Join(stresserRequestsSummaryReadsTableS3Dir, stresserReadsOutputNamePrefix+"-"+sfx+"-reads-summary.txt"),
 	})
 	loader.Start()
 
@@ -188,7 +188,7 @@ func createStresserFunc(cmd *cobra.Command, args []string) {
 	close(stopc)
 	loader.Stop()
 
-	_, _, err = loader.CollectMetrics()
+	_, _, _, _, err = loader.CollectMetrics()
 	if err != nil {
 		lg.Warn("failed to get metrics", zap.Error(err))
 	}

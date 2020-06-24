@@ -21,6 +21,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.9...v1.4.0
 
 ### `eks`
 
+- Compare [raw data points for regression tests](https://github.com/aws/aws-k8s-tester/commit/).
+  - Used for [Kolmogorov–Smirnov test](https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test).
 - Publish [performance data to CloudWatch](https://github.com/aws/aws-k8s-tester/commit/038fd83e6a180d5a98287b508d243661b23a356a).
 - Add [compare tests for all stressing tests, useful for regression tests](https://github.com/aws/aws-k8s-tester/commit/28939738fd0ca8aeaf512fef43f706472650ab13).
 - Improve [`eks/configmaps`, `eks/csrs`, `eks/secrets` results collect with S3](https://github.com/aws/aws-k8s-tester/commit/a8500fbf1b9218ca587d265daed6a6845b3ebfcb).
@@ -54,7 +56,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.9...v1.4.0
 - Add [`Status.ClusterMetricsRawOutputDir` for `kube-apiserver` `/metrics`](https://github.com/aws/aws-k8s-tester/commit/3ee7554e14f53feae7c5b8ebb1ee4d50b71e0bd7).
 - Record [`PodStartupLatency` in `eksconfig.AddOnClusterLoaderLocal` via `eks/cluster-loader/local`](https://github.com/aws/aws-k8s-tester/commit/8d4cb87b7bd798ad7f1b5d2de22d0deb26c4c75e).
 - Record [`PodStartupLatency` in `eksconfig.AddOnClusterLoaderRemote` via `eks/cluster-loader/remote`](https://github.com/aws/aws-k8s-tester/commit/8d4cb87b7bd798ad7f1b5d2de22d0deb26c4c75e).
-- Add [`RequestsWritesCompareS3Dir` and `RequestsReadsCompareS3Dir`](https://github.com/aws/aws-k8s-tester/commit/e559fae84787e7936fd167cd7da9a893c691e856).
+- Add [`RequestsSummaryWritesCompareS3Dir` and `RequestsSummaryReadsCompareS3Dir`](https://github.com/aws/aws-k8s-tester/commit/e559fae84787e7936fd167cd7da9a893c691e856).
 
 ### `ssh`
 

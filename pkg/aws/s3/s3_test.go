@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"testing"
+	"time"
 
 	pkg_aws "github.com/aws/aws-k8s-tester/pkg/aws"
 	"github.com/aws/aws-k8s-tester/pkg/randutil"
@@ -43,11 +45,22 @@ func TestS3(t *testing.T) {
 			lg,
 			s3API,
 			bucket,
+			filepath.Join(filepath.Clean(dir)+"-raw", randutil.String(10)),
+			bytes.NewReader(randutil.Bytes(10)),
+		); err != nil {
+			t.Fatal(err)
+		}
+		time.Sleep(100 * time.Millisecond)
+		if err = UploadBody(
+			lg,
+			s3API,
+			bucket,
 			s3Key,
 			bytes.NewReader(randutil.Bytes(10)),
 		); err != nil {
 			t.Fatal(err)
 		}
+		time.Sleep(100 * time.Millisecond)
 	}
 	if ok, err := Exist(lg, s3API, bucket, s3Key); !ok || err != nil {
 		t.Fatalf("unexpected ok %v, err %v", ok, err)
@@ -66,7 +79,7 @@ func TestS3(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s3Objects, err := ListInDescendingLastModified(lg, s3API, bucket, dir)
+	s3Objects, err := ListInDescendingLastModified(lg, s3API, bucket, path.Clean(dir)+"/")
 	if err != nil {
 		t.Fatal(err)
 	}

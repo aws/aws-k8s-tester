@@ -58,37 +58,52 @@ type AddOnCSRsRemote struct {
 	//
 	InitialRequestConditionType string `json:"initial-request-condition-type"`
 
+	// RequestsSummaryWritesOutputNamePrefix is the output path name in "/var/log" directory, used in remote worker.
+	RequestsSummaryWritesOutputNamePrefix string `json:"requests-summary-writes-output-name-prefix"`
+
 	// S3Dir is the S3 directory to store all test results.
 	// It is under the bucket "eksconfig.Config.S3BucketName".
 	S3Dir string `json:"s3-dir"`
 
-	// RequestsWritesRawJSONPath is the file path to store writes requests in JSON format.
-	RequestsWritesRawJSONPath  string `json:"requests-writes-json-path" read-only:"true"`
-	RequestsWritesRawJSONS3Key string `json:"requests-writes-json-s3-key" read-only:"true"`
-	// RequestsWritesSummary is the writes results.
-	RequestsWritesSummary metrics.RequestsSummary `json:"requests-writes-summary,omitempty" read-only:"true"`
-	// RequestsWritesSummaryJSONPath is the file path to store writes requests summary in JSON format.
-	RequestsWritesSummaryJSONPath  string `json:"requests-writes-summary-json-path" read-only:"true"`
-	RequestsWritesSummaryJSONS3Key string `json:"requests-writes-summary-json-s3-key" read-only:"true"`
-	// RequestsWritesSummaryTablePath is the file path to store writes requests summary in table format.
-	RequestsWritesSummaryTablePath  string `json:"requests-writes-summary-table-path" read-only:"true"`
-	RequestsWritesSummaryTableS3Key string `json:"requests-writes-summary-table-s3-path" read-only:"true"`
-	// RequestsWritesCompareS3Dir is the S3 directory of previous/latest "RequestsWritesSummary".
+	//////////////////////////////////////////////////////////////////////////////
+
+	RequestsRawWritesJSONPath  string `json:"requests-raw-writes-json-path" read-only:"true"`
+	RequestsRawWritesJSONS3Key string `json:"requests-raw-writes-json-s3-key" read-only:"true"`
+
+	//////////////////////////////////////////////////////////////////////////////
+
+	// RequestsRawWritesCompareS3Dir is the s3 directory to store raw data points.
+	// Used to comparison results.
+	// ref. https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test
+	RequestsRawWritesCompareS3Dir        string `json:"requests-raw-writes-compare-s3-dir" read-only:"true"`
+	RequestsRawWritesCompareAllJSONPath  string `json:"requests-raw-writes-compare-all-json-path" read-only:"true"`
+	RequestsRawWritesCompareAllJSONS3Key string `json:"requests-raw-writes-compare-all-json-s3-key" read-only:"true"`
+	RequestsRawWritesCompareAllCSVPath   string `json:"requests-raw-writes-compare-all-csv-path" read-only:"true"`
+	RequestsRawWritesCompareAllCSVS3Key  string `json:"requests-raw-writes-compare-all-csv-s3-key" read-only:"true"`
+
+	//////////////////////////////////////////////////////////////////////////////
+
+	// RequestsSummaryWrites is the writes results.
+	RequestsSummaryWrites           metrics.RequestsSummary `json:"requests-summary-writes,omitempty" read-only:"true"`
+	RequestsSummaryWritesJSONPath   string                  `json:"requests-summary-writes-json-path" read-only:"true"`
+	RequestsSummaryWritesJSONS3Key  string                  `json:"requests-summary-writes-json-s3-key" read-only:"true"`
+	RequestsSummaryWritesTablePath  string                  `json:"requests-summary-writes-table-path" read-only:"true"`
+	RequestsSummaryWritesTableS3Key string                  `json:"requests-summary-writes-table-s3-path" read-only:"true"`
+
+	//////////////////////////////////////////////////////////////////////////////
+
+	// RequestsSummaryWritesCompareS3Dir is the S3 directory of previous/latest "RequestsSummary".
 	// Specify the S3 key in the same bucket of "eksconfig.Config.S3BucketName".
 	// Use for regression tests. Specify the value not bound to the cluster directory.
 	// Different runs from different clusters reads and writes in this directory.
-	RequestsWritesCompareS3Dir string `json:"requests-writes-compare-s3-dir"`
-	// RequestsWritesCompare is the comparision results.
-	RequestsWritesCompare metrics.RequestsCompare `json:"requests-writes-compare" read-only:"true"`
-	// RequestsWritesCompareJSONPath is the file path to store writes requests compare summary in JSON format.
-	RequestsWritesCompareJSONPath  string `json:"requests-writes-compare-json-path" read-only:"true"`
-	RequestsWritesCompareJSONS3Key string `json:"requests-writes-compare-json-s3-key" read-only:"true"`
-	// RequestsWritesCompareTablePath is the file path to store writes requests compare summary in table format.
-	RequestsWritesCompareTablePath  string `json:"requests-writes-compare-table-path" read-only:"true"`
-	RequestsWritesCompareTableS3Key string `json:"requests-writes-compare-table-s3-path" read-only:"true"`
+	RequestsSummaryWritesCompareS3Dir      string                  `json:"requests-summary-writes-compare-s3-dir" read-only:"true"`
+	RequestsSummaryWritesCompare           metrics.RequestsCompare `json:"requests-summary-writes-compare" read-only:"true"`
+	RequestsSummaryWritesCompareJSONPath   string                  `json:"requests-summary-writes-compare-json-path" read-only:"true"`
+	RequestsSummaryWritesCompareJSONS3Key  string                  `json:"requests-summary-writes-compare-json-s3-key" read-only:"true"`
+	RequestsSummaryWritesCompareTablePath  string                  `json:"requests-summary-writes-compare-table-path" read-only:"true"`
+	RequestsSummaryWritesCompareTableS3Key string                  `json:"requests-summary-writes-compare-table-s3-path" read-only:"true"`
 
-	// RequestsWritesSummaryOutputNamePrefix is the output path name in "/var/log" directory, used in remote worker.
-	RequestsWritesSummaryOutputNamePrefix string `json:"requests-writes-summary-output-name-prefix"`
+	//////////////////////////////////////////////////////////////////////////////
 }
 
 // EnvironmentVariablePrefixAddOnCSRsRemote is the environment variable prefix used for "eksconfig".
@@ -113,7 +128,7 @@ func getDefaultAddOnCSRsRemote() *AddOnCSRsRemote {
 		DeploymentReplicas:                    5,
 		Objects:                               10, // 1000 objects generates 5 MB data to etcd
 		InitialRequestConditionType:           "",
-		RequestsWritesSummaryOutputNamePrefix: "csrs-writes-" + randutil.String(10),
+		RequestsSummaryWritesOutputNamePrefix: "csrs-writes-" + randutil.String(10),
 	}
 }
 
@@ -159,67 +174,101 @@ func (cfg *Config) validateAddOnCSRsRemote() error {
 		return fmt.Errorf("unknown AddOnCSRsRemote.InitialRequestConditionType %q", cfg.AddOnCSRsRemote.InitialRequestConditionType)
 	}
 
+	if cfg.AddOnCSRsRemote.RequestsSummaryWritesOutputNamePrefix == "" {
+		cfg.AddOnCSRsRemote.RequestsSummaryWritesOutputNamePrefix = "csrs-writes-" + randutil.String(10)
+	}
+
 	if cfg.AddOnCSRsRemote.S3Dir == "" {
 		cfg.AddOnCSRsRemote.S3Dir = path.Join(cfg.Name, "add-on-csrs-remote")
 	}
 
-	if cfg.AddOnCSRsRemote.RequestsWritesRawJSONPath == "" {
-		cfg.AddOnCSRsRemote.RequestsWritesRawJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-csrs-remote-requests-writes-raw.json"
+	//////////////////////////////////////////////////////////////////////////////
+	if cfg.AddOnCSRsRemote.RequestsRawWritesJSONPath == "" {
+		cfg.AddOnCSRsRemote.RequestsRawWritesJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-csrs-remote-requests-writes-raw.json"
 	}
-	if cfg.AddOnCSRsRemote.RequestsWritesRawJSONS3Key == "" {
-		cfg.AddOnCSRsRemote.RequestsWritesRawJSONS3Key = path.Join(
+	if cfg.AddOnCSRsRemote.RequestsRawWritesJSONS3Key == "" {
+		cfg.AddOnCSRsRemote.RequestsRawWritesJSONS3Key = path.Join(
 			cfg.AddOnCSRsRemote.S3Dir,
-			"writes-raw",
-			filepath.Base(cfg.AddOnCSRsRemote.RequestsWritesRawJSONPath),
+			"requests-raw-writes",
+			filepath.Base(cfg.AddOnCSRsRemote.RequestsRawWritesJSONPath),
 		)
 	}
-	if cfg.AddOnCSRsRemote.RequestsWritesSummaryJSONPath == "" {
-		cfg.AddOnCSRsRemote.RequestsWritesSummaryJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-csrs-remote-requests-writes-summary.json"
-	}
-	if cfg.AddOnCSRsRemote.RequestsWritesSummaryJSONS3Key == "" {
-		cfg.AddOnCSRsRemote.RequestsWritesSummaryJSONS3Key = path.Join(
-			cfg.AddOnCSRsRemote.S3Dir,
-			"writes-summary",
-			filepath.Base(cfg.AddOnCSRsRemote.RequestsWritesSummaryJSONPath),
-		)
-	}
-	if cfg.AddOnCSRsRemote.RequestsWritesSummaryTablePath == "" {
-		cfg.AddOnCSRsRemote.RequestsWritesSummaryTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-csrs-remote-requests-writes-summary.txt"
-	}
-	if cfg.AddOnCSRsRemote.RequestsWritesSummaryTableS3Key == "" {
-		cfg.AddOnCSRsRemote.RequestsWritesSummaryTableS3Key = path.Join(
-			cfg.AddOnCSRsRemote.S3Dir,
-			"writes-summary",
-			filepath.Base(cfg.AddOnCSRsRemote.RequestsWritesSummaryTablePath),
-		)
-	}
-	if cfg.AddOnCSRsRemote.RequestsWritesCompareS3Dir == "" {
-		cfg.AddOnCSRsRemote.RequestsWritesCompareS3Dir = path.Join("add-on-csrs-remote", "writes-compare", cfg.Parameters.Version)
-	}
-	if cfg.AddOnCSRsRemote.RequestsWritesCompareJSONPath == "" {
-		cfg.AddOnCSRsRemote.RequestsWritesCompareJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-csrs-remote-requests-writes-compare.json"
-	}
-	if cfg.AddOnCSRsRemote.RequestsWritesCompareJSONS3Key == "" {
-		cfg.AddOnCSRsRemote.RequestsWritesCompareJSONS3Key = path.Join(
-			cfg.AddOnCSRsRemote.S3Dir,
-			"writes-compare",
-			filepath.Base(cfg.AddOnCSRsRemote.RequestsWritesCompareJSONPath),
-		)
-	}
-	if cfg.AddOnCSRsRemote.RequestsWritesCompareTablePath == "" {
-		cfg.AddOnCSRsRemote.RequestsWritesCompareTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-csrs-remote-requests-writes-compare.txt"
-	}
-	if cfg.AddOnCSRsRemote.RequestsWritesCompareTableS3Key == "" {
-		cfg.AddOnCSRsRemote.RequestsWritesCompareTableS3Key = path.Join(
-			cfg.AddOnCSRsRemote.S3Dir,
-			"writes-compare",
-			filepath.Base(cfg.AddOnCSRsRemote.RequestsWritesCompareTablePath),
-		)
-	}
+	//////////////////////////////////////////////////////////////////////////////
 
-	if cfg.AddOnCSRsRemote.RequestsWritesSummaryOutputNamePrefix == "" {
-		cfg.AddOnCSRsRemote.RequestsWritesSummaryOutputNamePrefix = "csrs-writes-" + randutil.String(10)
+	//////////////////////////////////////////////////////////////////////////////
+	if cfg.AddOnCSRsRemote.RequestsRawWritesCompareS3Dir == "" {
+		cfg.AddOnCSRsRemote.RequestsRawWritesCompareS3Dir = path.Join("add-on-csrs-remote", "requests-raw-writes-compare", cfg.Parameters.Version)
 	}
+	if cfg.AddOnCSRsRemote.RequestsRawWritesCompareAllJSONPath == "" {
+		cfg.AddOnCSRsRemote.RequestsRawWritesCompareAllJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-csrs-remote-requests-raw-writes-compare-all.json"
+	}
+	if cfg.AddOnCSRsRemote.RequestsRawWritesCompareAllJSONS3Key == "" {
+		cfg.AddOnCSRsRemote.RequestsRawWritesCompareAllJSONS3Key = path.Join(
+			cfg.AddOnCSRsRemote.S3Dir,
+			"requests-raw-writes-compare-all",
+			filepath.Base(cfg.AddOnCSRsRemote.RequestsRawWritesCompareAllJSONPath),
+		)
+	}
+	if cfg.AddOnCSRsRemote.RequestsRawWritesCompareAllCSVPath == "" {
+		cfg.AddOnCSRsRemote.RequestsRawWritesCompareAllCSVPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-csrs-remote-requests-raw-writes-compare-all.csv"
+	}
+	if cfg.AddOnCSRsRemote.RequestsRawWritesCompareAllCSVS3Key == "" {
+		cfg.AddOnCSRsRemote.RequestsRawWritesCompareAllCSVS3Key = path.Join(
+			cfg.AddOnCSRsRemote.S3Dir,
+			"requests-raw-writes-compare-all",
+			filepath.Base(cfg.AddOnCSRsRemote.RequestsRawWritesCompareAllCSVPath),
+		)
+	}
+	//////////////////////////////////////////////////////////////////////////////
+
+	//////////////////////////////////////////////////////////////////////////////
+	if cfg.AddOnCSRsRemote.RequestsSummaryWritesJSONPath == "" {
+		cfg.AddOnCSRsRemote.RequestsSummaryWritesJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-csrs-remote-requests-summary-writes.json"
+	}
+	if cfg.AddOnCSRsRemote.RequestsSummaryWritesJSONS3Key == "" {
+		cfg.AddOnCSRsRemote.RequestsSummaryWritesJSONS3Key = path.Join(
+			cfg.AddOnCSRsRemote.S3Dir,
+			"requests-summary-writes",
+			filepath.Base(cfg.AddOnCSRsRemote.RequestsSummaryWritesJSONPath),
+		)
+	}
+	if cfg.AddOnCSRsRemote.RequestsSummaryWritesTablePath == "" {
+		cfg.AddOnCSRsRemote.RequestsSummaryWritesTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-csrs-remote-requests-summary-writes.txt"
+	}
+	if cfg.AddOnCSRsRemote.RequestsSummaryWritesTableS3Key == "" {
+		cfg.AddOnCSRsRemote.RequestsSummaryWritesTableS3Key = path.Join(
+			cfg.AddOnCSRsRemote.S3Dir,
+			"requests-summary-writes",
+			filepath.Base(cfg.AddOnCSRsRemote.RequestsSummaryWritesTablePath),
+		)
+	}
+	//////////////////////////////////////////////////////////////////////////////
+
+	//////////////////////////////////////////////////////////////////////////////
+	if cfg.AddOnCSRsRemote.RequestsSummaryWritesCompareS3Dir == "" {
+		cfg.AddOnCSRsRemote.RequestsSummaryWritesCompareS3Dir = path.Join("add-on-csrs-remote", "requests-summary-writes-compare", cfg.Parameters.Version)
+	}
+	if cfg.AddOnCSRsRemote.RequestsSummaryWritesCompareJSONPath == "" {
+		cfg.AddOnCSRsRemote.RequestsSummaryWritesCompareJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-csrs-remote-requests-summary-writes-compare.json"
+	}
+	if cfg.AddOnCSRsRemote.RequestsSummaryWritesCompareJSONS3Key == "" {
+		cfg.AddOnCSRsRemote.RequestsSummaryWritesCompareJSONS3Key = path.Join(
+			cfg.AddOnCSRsRemote.S3Dir,
+			"requests-summary-writes-compare",
+			filepath.Base(cfg.AddOnCSRsRemote.RequestsSummaryWritesCompareJSONPath),
+		)
+	}
+	if cfg.AddOnCSRsRemote.RequestsSummaryWritesCompareTablePath == "" {
+		cfg.AddOnCSRsRemote.RequestsSummaryWritesCompareTablePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-csrs-remote-requests-summary-writes-compare.txt"
+	}
+	if cfg.AddOnCSRsRemote.RequestsSummaryWritesCompareTableS3Key == "" {
+		cfg.AddOnCSRsRemote.RequestsSummaryWritesCompareTableS3Key = path.Join(
+			cfg.AddOnCSRsRemote.S3Dir,
+			"requests-summary-writes-compare",
+			filepath.Base(cfg.AddOnCSRsRemote.RequestsSummaryWritesCompareTablePath),
+		)
+	}
+	//////////////////////////////////////////////////////////////////////////////
 
 	return nil
 }
