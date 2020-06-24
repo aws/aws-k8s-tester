@@ -1081,7 +1081,7 @@ func (ts *tester) compareResults() (err error) {
 		ts.cfg.Logger,
 		ts.cfg.S3API,
 		ts.cfg.EKSConfig.S3BucketName,
-		ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryJSONS3Key,
+		path.Join(ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesCompareS3Dir, tss),
 		ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsWritesSummaryJSONPath,
 	); err != nil {
 		return err
