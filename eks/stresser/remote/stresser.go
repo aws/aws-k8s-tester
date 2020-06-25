@@ -833,7 +833,10 @@ func (ts *tester) AggregateResults() (err error) {
 		path.Dir(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsRawWritesJSONS3Key),
 	)
 	if err == nil {
-		ts.cfg.Logger.Info("reading writes results raw", zap.String("writes-dir", writesDirRaw))
+		ts.cfg.Logger.Info("reading writes results raw",
+			zap.String("writes-dir", writesDirRaw),
+			zap.String("s3-dir", path.Dir(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsRawWritesJSONS3Key)),
+		)
 		cnt := 0
 		err = filepath.Walk(writesDirRaw, func(fpath string, info os.FileInfo, werr error) error {
 			if werr != nil {
@@ -870,7 +873,10 @@ func (ts *tester) AggregateResults() (err error) {
 		path.Dir(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsSummaryWritesJSONS3Key),
 	)
 	if err == nil {
-		ts.cfg.Logger.Info("reading writes results summary", zap.String("writes-dir", writesDirSummary))
+		ts.cfg.Logger.Info("reading writes results summary",
+			zap.String("writes-dir", writesDirSummary),
+			zap.String("s3-dir", path.Dir(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsSummaryWritesJSONS3Key)),
+		)
 		cnt := 0
 		err = filepath.Walk(writesDirSummary, func(fpath string, info os.FileInfo, werr error) error {
 			if werr != nil {
@@ -917,7 +923,10 @@ func (ts *tester) AggregateResults() (err error) {
 		path.Dir(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsRawReadsJSONS3Key),
 	)
 	if err == nil {
-		ts.cfg.Logger.Info("reading reads results raw", zap.String("reads-dir", readsDirRaw))
+		ts.cfg.Logger.Info("reading reads results raw",
+			zap.String("reads-dir", readsDirRaw),
+			zap.String("s3-dir", path.Dir(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsRawReadsJSONS3Key)),
+		)
 		cnt := 0
 		err = filepath.Walk(readsDirRaw, func(fpath string, info os.FileInfo, werr error) error {
 			if werr != nil {
@@ -937,7 +946,7 @@ func (ts *tester) AggregateResults() (err error) {
 				if err = json.Unmarshal(b, &r); err != nil {
 					return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
 				}
-				curWriteLatencies = append(curWriteLatencies, r...)
+				curReadLatencies = append(curReadLatencies, r...)
 			}
 			return nil
 		})
@@ -954,7 +963,10 @@ func (ts *tester) AggregateResults() (err error) {
 		path.Dir(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsSummaryReadsJSONS3Key),
 	)
 	if err == nil {
-		ts.cfg.Logger.Info("reading reads results summary", zap.String("reads-dir", readsDirSummary))
+		ts.cfg.Logger.Info("reading reads results summary",
+			zap.String("reads-dir", readsDirSummary),
+			zap.String("s3-dir", path.Dir(ts.cfg.EKSConfig.AddOnStresserRemote.RequestsSummaryReadsJSONS3Key)),
+		)
 		cnt := 0
 		err = filepath.Walk(readsDirSummary, func(fpath string, info os.FileInfo, werr error) error {
 			if werr != nil {
@@ -1156,7 +1168,7 @@ func (ts *tester) AggregateResults() (err error) {
 	}
 
 	sortStart := time.Now()
-	ts.cfg.Logger.Info("sorting write latencies")
+	ts.cfg.Logger.Info("sorting write latencies", zap.Int("data", len(curWriteLatencies)))
 	sort.Sort(curWriteLatencies)
 	ts.cfg.Logger.Info("sorted write latencies", zap.String("took", time.Since(sortStart).String()))
 	writesSummary.LantencyP50 = curWriteLatencies.PickLantencyP50()
@@ -1167,7 +1179,7 @@ func (ts *tester) AggregateResults() (err error) {
 	ts.cfg.EKSConfig.AddOnStresserRemote.RequestsSummaryWrites = writesSummary
 
 	sortStart = time.Now()
-	ts.cfg.Logger.Info("sorting read latencies")
+	ts.cfg.Logger.Info("sorting read latencies", zap.Int("data", len(curReadLatencies)))
 	sort.Sort(curReadLatencies)
 	ts.cfg.Logger.Info("sorted read latencies", zap.String("took", time.Since(sortStart).String()))
 	readsSummary.LantencyP50 = curReadLatencies.PickLantencyP50()
