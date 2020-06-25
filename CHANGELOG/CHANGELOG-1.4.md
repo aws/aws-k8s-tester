@@ -21,12 +21,12 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.9...v1.4.0
 
 ### `ec2`
 
-- Clean up [S3 uploads](https://github.com/aws/aws-k8s-tester/commit/).
+- Clean up [S3 uploads](https://github.com/aws/aws-k8s-tester/commit/d2cd3b516c667f556641216218047ea522b70945).
 - Clean up [`colorstring` printf](https://github.com/aws/aws-k8s-tester/pull/101).
 
 ### `eks`
 
-- Clean up [S3 uploads](https://github.com/aws/aws-k8s-tester/commit/).
+- Clean up [S3 uploads](https://github.com/aws/aws-k8s-tester/commit/d2cd3b516c667f556641216218047ea522b70945).
 - Compare [raw data points for regression tests](https://github.com/aws/aws-k8s-tester/commit/021dc585cc59114fe0a9343c47c111f7f1a25b98).
   - Used for [Kolmogorov–Smirnov test](https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test).
 - Publish [performance data to CloudWatch](https://github.com/aws/aws-k8s-tester/commit/038fd83e6a180d5a98287b508d243661b23a356a).
