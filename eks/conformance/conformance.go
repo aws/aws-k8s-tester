@@ -16,10 +16,12 @@ import (
 
 	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
 	"github.com/aws/aws-k8s-tester/eksconfig"
+	aws_s3 "github.com/aws/aws-k8s-tester/pkg/aws/s3"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/pkg/httputil"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
+	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"github.com/mholt/archiver/v3"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
@@ -33,6 +35,7 @@ type Config struct {
 	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
+	S3API     s3iface.S3API
 }
 
 var pkgName = reflect.TypeOf(tester{}).PkgPath()
@@ -487,6 +490,35 @@ func (ts *tester) checkResults() (err error) {
 	if err = fileutil.Copy(xmlPath, ts.cfg.EKSConfig.AddOnConformance.SonobuoyResultJunitXMLPath); err != nil {
 		return err
 	}
+
+	if err = aws_s3.Upload(
+		ts.cfg.Logger,
+		ts.cfg.S3API,
+		ts.cfg.EKSConfig.S3BucketName,
+		ts.cfg.EKSConfig.AddOnConformance.SonobuoyResultTarGzS3Key,
+		ts.cfg.EKSConfig.AddOnConformance.SonobuoyResultTarGzPath,
+	); err != nil {
+		return err
+	}
+	if err = aws_s3.Upload(
+		ts.cfg.Logger,
+		ts.cfg.S3API,
+		ts.cfg.EKSConfig.S3BucketName,
+		ts.cfg.EKSConfig.AddOnConformance.SonobuoyResultE2eLogS3Key,
+		ts.cfg.EKSConfig.AddOnConformance.SonobuoyResultE2eLogPath,
+	); err != nil {
+		return err
+	}
+	if err = aws_s3.Upload(
+		ts.cfg.Logger,
+		ts.cfg.S3API,
+		ts.cfg.EKSConfig.S3BucketName,
+		ts.cfg.EKSConfig.AddOnConformance.SonobuoyResultJunitXMLS3Key,
+		ts.cfg.EKSConfig.AddOnConformance.SonobuoyResultJunitXMLPath,
+	); err != nil {
+		return err
+	}
+
 	return nil
 }
 

@@ -14,6 +14,7 @@ import (
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/eks/mng/wait"
 	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
+	aws_s3 "github.com/aws/aws-k8s-tester/pkg/aws/s3"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
@@ -297,12 +298,21 @@ func (ts *tester) createASGs() (err error) {
 			}
 			stackInput.TemplateBody = aws.String(buf.String())
 
-			if err = ioutil.WriteFile(cur.MNGCFNStackYAMLFilePath, buf.Bytes(), 0400); err != nil {
+			if err = ioutil.WriteFile(cur.MNGCFNStackYAMLPath, buf.Bytes(), 0400); err != nil {
+				return err
+			}
+			if err = aws_s3.Upload(
+				ts.cfg.Logger,
+				ts.cfg.S3API,
+				ts.cfg.EKSConfig.S3BucketName,
+				cur.MNGCFNStackYAMLS3Key,
+				cur.MNGCFNStackYAMLPath,
+			); err != nil {
 				return err
 			}
 			ts.cfg.Logger.Info("creating a new MNG using CFN",
 				zap.String("mng-name", mngName),
-				zap.String("mng-cfn-file-path", cur.MNGCFNStackYAMLFilePath),
+				zap.String("mng-cfn-file-path", cur.MNGCFNStackYAMLPath),
 			)
 
 			if cur.AMIType != "" {

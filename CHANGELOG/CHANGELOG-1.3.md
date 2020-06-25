@@ -114,10 +114,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.5...v1.3.6
 
 ### `ec2config`
 
-- Add [`Config.RoleCFNStackYAMLFilePath`](https://github.com/aws/aws-k8s-tester/commit/13922f4a0eb9446705a757c816923ae54a03bb41).
-- Add [`Config.VPCCFNStackYAMLFilePath`](https://github.com/aws/aws-k8s-tester/commit/13922f4a0eb9446705a757c816923ae54a03bb41).
-- Add [`ASG.ASGCFNStackYAMLFilePath`](https://github.com/aws/aws-k8s-tester/commit/13922f4a0eb9446705a757c816923ae54a03bb41).
-- Add [`ASG.SSMDocumentCFNStackYAMLFilePath`](https://github.com/aws/aws-k8s-tester/commit/13922f4a0eb9446705a757c816923ae54a03bb41).
+- Add [`Config.RoleCFNStackYAMLPath`](https://github.com/aws/aws-k8s-tester/commit/13922f4a0eb9446705a757c816923ae54a03bb41).
+- Add [`Config.VPCCFNStackYAMLPath`](https://github.com/aws/aws-k8s-tester/commit/13922f4a0eb9446705a757c816923ae54a03bb41).
+- Add [`ASG.ASGCFNStackYAMLPath`](https://github.com/aws/aws-k8s-tester/commit/13922f4a0eb9446705a757c816923ae54a03bb41).
+- Add [`ASG.SSMDocumentCFNStackYAMLPath`](https://github.com/aws/aws-k8s-tester/commit/13922f4a0eb9446705a757c816923ae54a03bb41).
 
 ### `ec2`
 
@@ -125,8 +125,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.5...v1.3.6
 
 ### `eksconfig`
 
-- Add [`Parameters.RoleCFNStackYAMLFilePath`](https://github.com/aws/aws-k8s-tester/commit/db0cb5d39e3b1d9758f31ca4f5425ad9d1f711ce).
-- Add [`Parameters.VPCCFNStackYAMLFilePath`](https://github.com/aws/aws-k8s-tester/commit/db0cb5d39e3b1d9758f31ca4f5425ad9d1f711ce).
+- Add [`Parameters.RoleCFNStackYAMLPath`](https://github.com/aws/aws-k8s-tester/commit/db0cb5d39e3b1d9758f31ca4f5425ad9d1f711ce).
+- Add [`Parameters.VPCCFNStackYAMLPath`](https://github.com/aws/aws-k8s-tester/commit/db0cb5d39e3b1d9758f31ca4f5425ad9d1f711ce).
 - Add [`MNGVersionUpgrade` for managed node group version upgrades](https://github.com/aws/aws-k8s-tester/commit/8d4490b47d089064cf27306a59acaffaed53ab58).
   - Set via `"version-upgrade"` within `MNG` configuration.
   - e.g. `AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS=..."version-upgrade":{"enable":true,"initial-wait-string":"10m","version":"1.17"}...` when `AWS_K8S_TESTER_EKS_PARAMETERS_VERSION=1.16`.

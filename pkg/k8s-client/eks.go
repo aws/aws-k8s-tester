@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -18,11 +19,13 @@ import (
 	"sync"
 	"time"
 
+	aws_s3 "github.com/aws/aws-k8s-tester/pkg/aws/s3"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/pkg/httputil"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"github.com/aws/aws-sdk-go/service/sts"
 	"go.uber.org/zap"
 	"golang.org/x/oauth2"
@@ -82,6 +85,10 @@ type EKSConfig struct {
 
 	// MetricsRawOutputDir is the directory to store all /metrics output.
 	MetricsRawOutputDir string
+
+	S3API                 s3iface.S3API
+	S3BucketName          string
+	S3MetricsRawOutputDir string
 
 	// Clients is the number of kubernetes clients to create.
 	// Default is 1.
@@ -672,21 +679,26 @@ func (e *eks) checkHealth() error {
 				return fmt.Errorf("failed to mkdir %q (%v)", e.cfg.MetricsRawOutputDir, err)
 			}
 		}
-		name := fmt.Sprintf("kube-apiserver-metrics-%s.out", time.Now().UTC().Format(time.RFC3339Nano))
+		name := time.Now().UTC().Format(time.RFC3339Nano)
 		fpath := filepath.Join(e.cfg.MetricsRawOutputDir, name)
 		if err := ioutil.WriteFile(fpath, output, 0777); err != nil {
 			e.cfg.Logger.Warn("failed to write /metrics", zap.String("path", fpath), zap.Error(err))
 			return err
 		}
+		if e.cfg.S3API != nil {
+			if err := aws_s3.Upload(
+				e.cfg.Logger,
+				e.cfg.S3API,
+				e.cfg.S3BucketName,
+				path.Join(e.cfg.S3MetricsRawOutputDir, name),
+				fpath,
+			); err != nil {
+				return err
+			}
+		}
 		e.cfg.Logger.Info("wrote /metrics", zap.String("path", fpath))
 	}
 
-	const (
-		// https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG/CHANGELOG-1.17.md#deprecatedchanged-metrics
-		metricDEKGenSecondsCount      = "apiserver_storage_data_key_generation_duration_seconds_count"
-		metricDEKGenMicroSecondsCount = "apiserver_storage_data_key_generation_latencies_microseconds_count"
-		metricEnvelopeCacheMiss       = "apiserver_storage_envelope_transformation_cache_misses_total"
-	)
 	dekGenCnt, cacheMissCnt := int64(0), int64(0)
 	scanner := bufio.NewScanner(bytes.NewReader(output))
 	for scanner.Scan() {
@@ -746,6 +758,13 @@ func (e *eks) checkHealth() error {
 	e.cfg.Logger.Info("successfully checked health")
 	return nil
 }
+
+const (
+	// https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG/CHANGELOG-1.17.md#deprecatedchanged-metrics
+	metricDEKGenSecondsCount      = "apiserver_storage_data_key_generation_duration_seconds_count"
+	metricDEKGenMicroSecondsCount = "apiserver_storage_data_key_generation_latencies_microseconds_count"
+	metricEnvelopeCacheMiss       = "apiserver_storage_envelope_transformation_cache_misses_total"
+)
 
 // FetchServerVersion fetches the version from kube-apiserver.
 //

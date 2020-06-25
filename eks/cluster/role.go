@@ -10,6 +10,7 @@ import (
 
 	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
 	aws_iam "github.com/aws/aws-k8s-tester/pkg/aws/iam"
+	aws_s3 "github.com/aws/aws-k8s-tester/pkg/aws/s3"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
@@ -209,7 +210,7 @@ Outputs:
 
 func (ts *tester) createClusterRole() error {
 	fmt.Printf(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
-	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_green]createClusterRole (%q)\n"), ts.cfg.EKSConfig.ConfigPath)
+	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_green]createClusterRole [default](%q)\n"), ts.cfg.EKSConfig.ConfigPath)
 
 	if !ts.cfg.EKSConfig.Parameters.RoleCreate {
 		ts.cfg.Logger.Info("Parameters.RoleCreate false; skipping creation")
@@ -233,14 +234,23 @@ func (ts *tester) createClusterRole() error {
 		return errors.New("cannot create a cluster role with an empty Parameters.RoleName")
 	}
 
-	if err := ioutil.WriteFile(ts.cfg.EKSConfig.Parameters.RoleCFNStackYAMLFilePath, []byte(TemplateClusterRole), 0400); err != nil {
+	if err := ioutil.WriteFile(ts.cfg.EKSConfig.Parameters.RoleCFNStackYAMLPath, []byte(TemplateClusterRole), 0400); err != nil {
+		return err
+	}
+	if err := aws_s3.Upload(
+		ts.cfg.Logger,
+		ts.cfg.S3API,
+		ts.cfg.EKSConfig.S3BucketName,
+		ts.cfg.EKSConfig.Parameters.RoleCFNStackYAMLS3Key,
+		ts.cfg.EKSConfig.Parameters.RoleCFNStackYAMLPath,
+	); err != nil {
 		return err
 	}
 	// role ARN is empty, create a default role
 	// otherwise, use the existing one
 	ts.cfg.Logger.Info("creating a new role",
 		zap.String("cluster-role-name", ts.cfg.EKSConfig.Parameters.RoleName),
-		zap.String("cluster-role-cfn-file-path", ts.cfg.EKSConfig.Parameters.RoleCFNStackYAMLFilePath),
+		zap.String("cluster-role-cfn-file-path", ts.cfg.EKSConfig.Parameters.RoleCFNStackYAMLPath),
 	)
 	stackInput := &cloudformation.CreateStackInput{
 		StackName:    aws.String(ts.cfg.EKSConfig.Parameters.RoleName),
@@ -324,7 +334,7 @@ func (ts *tester) createClusterRole() error {
 
 func (ts *tester) deleteClusterRole() error {
 	fmt.Printf(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
-	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_blue]deleteClusterRole (%q)\n"), ts.cfg.EKSConfig.ConfigPath)
+	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_blue]deleteClusterRole [default](%q)\n"), ts.cfg.EKSConfig.ConfigPath)
 
 	if !ts.cfg.EKSConfig.Parameters.RoleCreate {
 		ts.cfg.Logger.Info("Parameters.RoleCreate false; skipping deletion")

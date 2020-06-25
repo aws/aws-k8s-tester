@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/signal"
+	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -360,18 +361,21 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 	// update k8s client if cluster has already been created
 	ts.lg.Info("creating k8s client from previous states if any")
 	kcfg := &k8s_client.EKSConfig{
-		Logger:              ts.lg,
-		Region:              ts.cfg.Region,
-		ClusterName:         ts.cfg.Name,
-		KubeConfigPath:      ts.cfg.KubeConfigPath,
-		KubectlPath:         ts.cfg.KubectlPath,
-		ServerVersion:       ts.cfg.Parameters.Version,
-		EncryptionEnabled:   ts.cfg.Parameters.EncryptionCMKARN != "",
-		MetricsRawOutputDir: ts.cfg.Status.ClusterMetricsRawOutputDir,
-		Clients:             ts.cfg.Clients,
-		ClientQPS:           ts.cfg.ClientQPS,
-		ClientBurst:         ts.cfg.ClientBurst,
-		ClientTimeout:       ts.cfg.ClientTimeout,
+		Logger:                ts.lg,
+		Region:                ts.cfg.Region,
+		ClusterName:           ts.cfg.Name,
+		KubeConfigPath:        ts.cfg.KubeConfigPath,
+		KubectlPath:           ts.cfg.KubectlPath,
+		ServerVersion:         ts.cfg.Parameters.Version,
+		EncryptionEnabled:     ts.cfg.Parameters.EncryptionCMKARN != "",
+		MetricsRawOutputDir:   ts.cfg.Status.ClusterMetricsRawOutputDir,
+		S3API:                 ts.s3API,
+		S3BucketName:          ts.cfg.S3BucketName,
+		S3MetricsRawOutputDir: path.Base(ts.cfg.Status.ClusterMetricsRawOutputDir),
+		Clients:               ts.cfg.Clients,
+		ClientQPS:             ts.cfg.ClientQPS,
+		ClientBurst:           ts.cfg.ClientBurst,
+		ClientTimeout:         ts.cfg.ClientTimeout,
 	}
 	if ts.cfg.IsEnabledAddOnClusterVersionUpgrade() {
 		kcfg.UpgradeServerVersion = ts.cfg.AddOnClusterVersionUpgrade.Version
@@ -405,6 +409,7 @@ func (ts *Tester) createTesters() (err error) {
 		Logger:    ts.lg,
 		Stopc:     ts.stopCreationCh,
 		EKSConfig: ts.cfg,
+		S3API:     ts.s3API,
 		IAMAPI:    ts.iamAPI,
 		KMSAPI:    ts.kmsAPI,
 		CFNAPI:    ts.cfnAPI,
@@ -418,6 +423,7 @@ func (ts *Tester) createTesters() (err error) {
 		Stopc:     ts.stopCreationCh,
 		EKSConfig: ts.cfg,
 		K8SClient: ts.k8sClient,
+		S3API:     ts.s3API,
 		IAMAPI:    ts.iamAPI,
 		CFNAPI:    ts.cfnAPI,
 		EC2API:    ts.ec2API,
@@ -430,6 +436,7 @@ func (ts *Tester) createTesters() (err error) {
 		Stopc:     ts.stopCreationCh,
 		EKSConfig: ts.cfg,
 		K8SClient: ts.k8sClient,
+		S3API:     ts.s3API,
 		IAMAPI:    ts.iamAPI,
 		CFNAPI:    ts.cfnAPI,
 		EC2API:    ts.ec2API,
@@ -455,12 +462,14 @@ func (ts *Tester) createTesters() (err error) {
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
+			S3API:     ts.s3API,
 		}),
 		app_mesh.New(app_mesh.Config{
 			Logger:    ts.lg,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
+			S3API:     ts.s3API,
 			CFNAPI:    ts.cfnAPI,
 		}),
 		csi_ebs.New(csi_ebs.Config{
@@ -577,6 +586,7 @@ func (ts *Tester) createTesters() (err error) {
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
+			S3API:     ts.s3API,
 			IAMAPI:    ts.iamAPI,
 			CFNAPI:    ts.cfnAPI,
 			EKSAPI:    ts.eksAPI,
@@ -587,9 +597,9 @@ func (ts *Tester) createTesters() (err error) {
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
+			S3API:     ts.s3API,
 			CFNAPI:    ts.cfnAPI,
 			IAMAPI:    ts.iamAPI,
-			S3API:     ts.s3API,
 			ECRAPI:    ts.ecrAPI,
 		}),
 		irsa_fargate.New(irsa_fargate.Config{
@@ -597,10 +607,10 @@ func (ts *Tester) createTesters() (err error) {
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
+			S3API:     ts.s3API,
 			IAMAPI:    ts.iamAPI,
 			CFNAPI:    ts.cfnAPI,
 			EKSAPI:    ts.eksAPI,
-			S3API:     ts.s3API,
 			ECRAPI:    ts.ecrAPI,
 		}),
 		wordpress.New(wordpress.Config{
@@ -632,6 +642,7 @@ func (ts *Tester) createTesters() (err error) {
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
+			S3API:     ts.s3API,
 			CWAPI:     ts.cwAPI,
 		}),
 		cluster_loader_remote.New(cluster_loader_remote.Config{
@@ -639,6 +650,7 @@ func (ts *Tester) createTesters() (err error) {
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
+			S3API:     ts.s3API,
 			CWAPI:     ts.cwAPI,
 			ECRAPI:    ts.ecrAPI,
 		}),

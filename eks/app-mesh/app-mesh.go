@@ -14,12 +14,14 @@ import (
 	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
+	aws_s3 "github.com/aws/aws-k8s-tester/pkg/aws/s3"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/cloudformation/cloudformationiface"
+	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/apps/v1"
 	api_errors "k8s.io/apimachinery/pkg/api/errors"
@@ -29,11 +31,11 @@ import (
 
 // Config defines AppMesh configuration.
 type Config struct {
-	Logger *zap.Logger
-	Stopc  chan struct{}
-
+	Logger    *zap.Logger
+	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
+	S3API     s3iface.S3API
 	CFNAPI    cloudformationiface.CloudFormationAPI
 }
 
@@ -229,13 +231,23 @@ func (ts *tester) createPolicy() error {
 		return errors.New("roles not found from node group or managed node group")
 	}
 
-	if err := ioutil.WriteFile(ts.cfg.EKSConfig.AddOnAppMesh.PolicyCFNStackYAMLFilePath, []byte(templatePolicy), 0400); err != nil {
+	if err := ioutil.WriteFile(ts.cfg.EKSConfig.AddOnAppMesh.PolicyCFNStackYAMLPath, []byte(templatePolicy), 0400); err != nil {
 		return err
 	}
+	if err := aws_s3.Upload(
+		ts.cfg.Logger,
+		ts.cfg.S3API,
+		ts.cfg.EKSConfig.S3BucketName,
+		ts.cfg.EKSConfig.AddOnAppMesh.PolicyCFNStackYAMLS3Key,
+		ts.cfg.EKSConfig.AddOnAppMesh.PolicyCFNStackYAMLPath,
+	); err != nil {
+		return err
+	}
+
 	policyName := ts.cfg.EKSConfig.Name + "-appmesh-policy"
 	ts.cfg.Logger.Info("creating app mesh controller policy",
 		zap.String("policy-name", policyName),
-		zap.String("policy-cfn-file-path", ts.cfg.EKSConfig.AddOnAppMesh.PolicyCFNStackYAMLFilePath),
+		zap.String("policy-cfn-file-path", ts.cfg.EKSConfig.AddOnAppMesh.PolicyCFNStackYAMLPath),
 	)
 	stackOutput, err := ts.cfg.CFNAPI.CreateStack(&cloudformation.CreateStackInput{
 		StackName:    aws.String(policyName),

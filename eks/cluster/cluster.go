@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"path"
 	"reflect"
 	"strings"
 	"sync"
@@ -21,6 +22,7 @@ import (
 	"github.com/aws/aws-k8s-tester/eks/cluster/wait"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
+	aws_s3 "github.com/aws/aws-k8s-tester/pkg/aws/s3"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-k8s-tester/version"
@@ -34,6 +36,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/elbv2/elbv2iface"
 	"github.com/aws/aws-sdk-go/service/iam/iamiface"
 	"github.com/aws/aws-sdk-go/service/kms/kmsiface"
+	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"github.com/dustin/go-humanize"
 	"go.uber.org/zap"
 	"k8s.io/utils/exec"
@@ -44,6 +47,7 @@ type Config struct {
 	Logger    *zap.Logger
 	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
+	S3API     s3iface.S3API
 	IAMAPI    iamiface.IAMAPI
 	KMSAPI    kmsiface.KMSAPI
 	CFNAPI    cloudformationiface.CloudFormationAPI
@@ -368,13 +372,22 @@ func (ts *tester) createEKS() (err error) {
 			return err
 		}
 
-		if err := ioutil.WriteFile(ts.cfg.EKSConfig.Status.ClusterCFNStackYAMLFilePath, buf.Bytes(), 0400); err != nil {
+		if err := ioutil.WriteFile(ts.cfg.EKSConfig.Status.ClusterCFNStackYAMLPath, buf.Bytes(), 0400); err != nil {
+			return err
+		}
+		if err := aws_s3.Upload(
+			ts.cfg.Logger,
+			ts.cfg.S3API,
+			ts.cfg.EKSConfig.S3BucketName,
+			ts.cfg.EKSConfig.Status.ClusterCFNStackYAMLS3Key,
+			ts.cfg.EKSConfig.Status.ClusterCFNStackYAMLPath,
+		); err != nil {
 			return err
 		}
 		initialWait = time.Minute
 		ts.cfg.Logger.Info("creating a cluster using CFN",
 			zap.String("name", ts.cfg.EKSConfig.Name),
-			zap.String("cfn-file-path", ts.cfg.EKSConfig.Status.ClusterCFNStackYAMLFilePath),
+			zap.String("cfn-file-path", ts.cfg.EKSConfig.Status.ClusterCFNStackYAMLPath),
 		)
 		stackInput := &cloudformation.CreateStackInput{
 			StackName:    aws.String(ts.cfg.EKSConfig.Name + "-cluster"),
@@ -515,7 +528,7 @@ func (ts *tester) createEKS() (err error) {
 
 func (ts *tester) deleteEKS() error {
 	fmt.Printf(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
-	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_blue]deleteEKS (%q)\n"), ts.cfg.EKSConfig.ConfigPath)
+	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_blue]deleteEKS [default](%q)\n"), ts.cfg.EKSConfig.ConfigPath)
 
 	ts.describeCluster()
 	if ts.cfg.EKSConfig.Status.ClusterStatusCurrent == "" || ts.cfg.EKSConfig.Status.ClusterStatusCurrent == eksconfig.ClusterStatusDELETEDORNOTEXIST {
@@ -781,6 +794,15 @@ func (ts *tester) createClient() (cli k8s_client.EKS, err error) {
 		if err = ioutil.WriteFile(ts.cfg.EKSConfig.KubeConfigPath, buf.Bytes(), 0777); err != nil {
 			return nil, err
 		}
+		if err = aws_s3.Upload(
+			ts.cfg.Logger,
+			ts.cfg.S3API,
+			ts.cfg.EKSConfig.S3BucketName,
+			path.Join(ts.cfg.EKSConfig.Name, "kubeconfig.yaml"),
+			ts.cfg.EKSConfig.KubeConfigPath,
+		); err != nil {
+			return nil, err
+		}
 		ts.cfg.Logger.Info("wrote KUBECONFIG with aws-iam-authenticator", zap.String("kubeconfig-path", ts.cfg.EKSConfig.KubeConfigPath))
 	} else {
 		args := []string{
@@ -796,12 +818,10 @@ func (ts *tester) createClient() (cli k8s_client.EKS, err error) {
 			args = append(args, fmt.Sprintf("--endpoint=%s", ts.cfg.EKSConfig.Parameters.ResolverURL))
 		}
 		cmd := strings.Join(args, " ")
-
 		ts.cfg.Logger.Info("writing KUBECONFIG with 'aws eks update-kubeconfig'",
 			zap.String("kubeconfig-path", ts.cfg.EKSConfig.KubeConfigPath),
 			zap.String("cmd", cmd),
 		)
-
 		retryStart, waitDur := time.Now(), 3*time.Minute
 		var output []byte
 		for time.Now().Sub(retryStart) < waitDur {
@@ -822,6 +842,15 @@ func (ts *tester) createClient() (cli k8s_client.EKS, err error) {
 				continue
 			}
 			ts.cfg.Logger.Info("'aws eks update-kubeconfig' success", zap.String("output", out), zap.String("kubeconfig-path", ts.cfg.EKSConfig.KubeConfigPath))
+			if err = aws_s3.Upload(
+				ts.cfg.Logger,
+				ts.cfg.S3API,
+				ts.cfg.EKSConfig.S3BucketName,
+				path.Join(ts.cfg.EKSConfig.Name, "kubeconfig.yaml"),
+				ts.cfg.EKSConfig.KubeConfigPath,
+			); err != nil {
+				return nil, err
+			}
 			break
 		}
 		if err != nil {
@@ -835,18 +864,21 @@ func (ts *tester) createClient() (cli k8s_client.EKS, err error) {
 
 	ts.cfg.Logger.Info("creating k8s client")
 	kcfg := &k8s_client.EKSConfig{
-		Logger:              ts.cfg.Logger,
-		Region:              ts.cfg.EKSConfig.Region,
-		ClusterName:         ts.cfg.EKSConfig.Name,
-		KubeConfigPath:      ts.cfg.EKSConfig.KubeConfigPath,
-		KubectlPath:         ts.cfg.EKSConfig.KubectlPath,
-		ServerVersion:       ts.cfg.EKSConfig.Parameters.Version,
-		EncryptionEnabled:   ts.cfg.EKSConfig.Parameters.EncryptionCMKARN != "",
-		MetricsRawOutputDir: ts.cfg.EKSConfig.Status.ClusterMetricsRawOutputDir,
-		Clients:             ts.cfg.EKSConfig.Clients,
-		ClientQPS:           ts.cfg.EKSConfig.ClientQPS,
-		ClientBurst:         ts.cfg.EKSConfig.ClientBurst,
-		ClientTimeout:       ts.cfg.EKSConfig.ClientTimeout,
+		Logger:                ts.cfg.Logger,
+		Region:                ts.cfg.EKSConfig.Region,
+		ClusterName:           ts.cfg.EKSConfig.Name,
+		KubeConfigPath:        ts.cfg.EKSConfig.KubeConfigPath,
+		KubectlPath:           ts.cfg.EKSConfig.KubectlPath,
+		ServerVersion:         ts.cfg.EKSConfig.Parameters.Version,
+		EncryptionEnabled:     ts.cfg.EKSConfig.Parameters.EncryptionCMKARN != "",
+		MetricsRawOutputDir:   ts.cfg.EKSConfig.Status.ClusterMetricsRawOutputDir,
+		S3API:                 ts.cfg.S3API,
+		S3BucketName:          ts.cfg.EKSConfig.S3BucketName,
+		S3MetricsRawOutputDir: path.Base(ts.cfg.EKSConfig.Status.ClusterMetricsRawOutputDir),
+		Clients:               ts.cfg.EKSConfig.Clients,
+		ClientQPS:             ts.cfg.EKSConfig.ClientQPS,
+		ClientBurst:           ts.cfg.EKSConfig.ClientBurst,
+		ClientTimeout:         ts.cfg.EKSConfig.ClientTimeout,
 	}
 	if ts.cfg.EKSConfig.IsEnabledAddOnClusterVersionUpgrade() {
 		kcfg.UpgradeServerVersion = ts.cfg.EKSConfig.AddOnClusterVersionUpgrade.Version

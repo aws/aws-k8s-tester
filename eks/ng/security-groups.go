@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
+	aws_s3 "github.com/aws/aws-k8s-tester/pkg/aws/s3"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
@@ -191,12 +192,21 @@ func (ts *tester) createSG() error {
 		return err
 	}
 
-	if err := ioutil.WriteFile(ts.cfg.EKSConfig.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackYAMLFilePath, buf.Bytes(), 0400); err != nil {
+	if err := ioutil.WriteFile(ts.cfg.EKSConfig.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackYAMLPath, buf.Bytes(), 0400); err != nil {
+		return err
+	}
+	if err := aws_s3.Upload(
+		ts.cfg.Logger,
+		ts.cfg.S3API,
+		ts.cfg.EKSConfig.S3BucketName,
+		ts.cfg.EKSConfig.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackYAMLS3Key,
+		ts.cfg.EKSConfig.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackYAMLPath,
+	); err != nil {
 		return err
 	}
 	ts.cfg.Logger.Info("creating a new node group security group using CFN",
 		zap.String("name", ts.cfg.EKSConfig.AddOnNodeGroups.RoleName),
-		zap.String("sg-cfn-file-path", ts.cfg.EKSConfig.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackYAMLFilePath),
+		zap.String("sg-cfn-file-path", ts.cfg.EKSConfig.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackYAMLPath),
 		zap.Int("internet-ingress-from-port", fromPort),
 		zap.Int("internet-ingress-to-port", 32767),
 	)

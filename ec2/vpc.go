@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
+	aws_s3 "github.com/aws/aws-k8s-tester/pkg/aws/s3"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -713,14 +714,23 @@ func (ts *Tester) createVPC() error {
 
 	vpcName := ts.cfg.Name + "-vpc"
 
-	if err := ioutil.WriteFile(ts.cfg.VPCCFNStackYAMLFilePath, []byte(TemplateVPCPublicPrivate), 0400); err != nil {
+	if err := ioutil.WriteFile(ts.cfg.VPCCFNStackYAMLPath, []byte(TemplateVPCPublicPrivate), 0400); err != nil {
+		return err
+	}
+	if err := aws_s3.Upload(
+		ts.lg,
+		ts.s3API,
+		ts.cfg.S3BucketName,
+		ts.cfg.VPCCFNStackYAMLS3Key,
+		ts.cfg.VPCCFNStackYAMLPath,
+	); err != nil {
 		return err
 	}
 	// VPC attributes are empty, create a new VPC
 	// otherwise, use the existing one
 	ts.lg.Info("creating a new VPC",
 		zap.String("vpc-stack-name", vpcName),
-		zap.String("vpc-cfn-file-path", ts.cfg.VPCCFNStackYAMLFilePath),
+		zap.String("vpc-cfn-file-path", ts.cfg.VPCCFNStackYAMLPath),
 	)
 	stackInput := &cloudformation.CreateStackInput{
 		StackName:    aws.String(vpcName),

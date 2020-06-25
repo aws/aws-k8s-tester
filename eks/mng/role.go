@@ -11,7 +11,8 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
-	awsiam "github.com/aws/aws-k8s-tester/pkg/aws/iam"
+	aws_iam "github.com/aws/aws-k8s-tester/pkg/aws/iam"
+	aws_s3 "github.com/aws/aws-k8s-tester/pkg/aws/s3"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
@@ -234,7 +235,7 @@ func (ts *tester) createRole() error {
 			policyARNs = append(policyARNs, "arn:aws:iam::aws:policy/ElasticLoadBalancingFullAccess")
 		}
 		ts.cfg.Logger.Info("EKSConfig.AddOnManagedNodeGroups.RoleCreate false; skipping creation")
-		return awsiam.Validate(
+		return aws_iam.Validate(
 			ts.cfg.Logger,
 			ts.cfg.IAMAPI,
 			ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleName,
@@ -263,13 +264,21 @@ func (ts *tester) createRole() error {
 	if err := tpl.Execute(buf, tr); err != nil {
 		return err
 	}
-	if err := ioutil.WriteFile(ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleCFNStackYAMLFilePath, buf.Bytes(), 0400); err != nil {
+	if err := ioutil.WriteFile(ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleCFNStackYAMLPath, buf.Bytes(), 0400); err != nil {
 		return err
 	}
-
+	if err := aws_s3.Upload(
+		ts.cfg.Logger,
+		ts.cfg.S3API,
+		ts.cfg.EKSConfig.S3BucketName,
+		ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleCFNStackYAMLS3Key,
+		ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleCFNStackYAMLPath,
+	); err != nil {
+		return err
+	}
 	ts.cfg.Logger.Info("creating a new node group role using CFN",
 		zap.String("role-name", ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleName),
-		zap.String("role-cfn-file-path", ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleCFNStackYAMLFilePath),
+		zap.String("role-cfn-file-path", ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleCFNStackYAMLPath),
 	)
 	stackInput := &cloudformation.CreateStackInput{
 		StackName:    aws.String(ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleName),

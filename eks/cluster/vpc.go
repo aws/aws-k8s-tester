@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
+	aws_s3 "github.com/aws/aws-k8s-tester/pkg/aws/s3"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -583,7 +584,7 @@ Outputs:
 
 func (ts *tester) createVPC() error {
 	fmt.Printf(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
-	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_green]createVPC (%q)\n"), ts.cfg.EKSConfig.ConfigPath)
+	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_green]createVPC [default](%q)\n"), ts.cfg.EKSConfig.ConfigPath)
 
 	if ts.cfg.EKSConfig.Parameters.VPCID != "" {
 		ts.cfg.Logger.Info("querying ELBv2", zap.String("vpc-id", ts.cfg.EKSConfig.Parameters.VPCID))
@@ -700,14 +701,23 @@ func (ts *tester) createVPC() error {
 
 	vpcName := ts.cfg.EKSConfig.Name + "-vpc"
 
-	if err := ioutil.WriteFile(ts.cfg.EKSConfig.Parameters.VPCCFNStackYAMLFilePath, []byte(TemplateVPCPublicPrivate), 0400); err != nil {
+	if err := ioutil.WriteFile(ts.cfg.EKSConfig.Parameters.VPCCFNStackYAMLPath, []byte(TemplateVPCPublicPrivate), 0400); err != nil {
+		return err
+	}
+	if err := aws_s3.Upload(
+		ts.cfg.Logger,
+		ts.cfg.S3API,
+		ts.cfg.EKSConfig.S3BucketName,
+		ts.cfg.EKSConfig.Parameters.VPCCFNStackYAMLS3Key,
+		ts.cfg.EKSConfig.Parameters.VPCCFNStackYAMLPath,
+	); err != nil {
 		return err
 	}
 	// VPC attributes are empty, create a new VPC
 	// otherwise, use the existing one
 	ts.cfg.Logger.Info("creating a new VPC",
 		zap.String("vpc-stack-name", vpcName),
-		zap.String("vpc-cfn-file-path", ts.cfg.EKSConfig.Parameters.VPCCFNStackYAMLFilePath),
+		zap.String("vpc-cfn-file-path", ts.cfg.EKSConfig.Parameters.VPCCFNStackYAMLPath),
 	)
 
 	stackInput := &cloudformation.CreateStackInput{
@@ -837,7 +847,7 @@ func (ts *tester) createVPC() error {
 
 func (ts *tester) deleteVPC() error {
 	fmt.Printf(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
-	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_blue]deleteVPC (%q)\n"), ts.cfg.EKSConfig.ConfigPath)
+	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_blue]deleteVPC [default](%q)\n"), ts.cfg.EKSConfig.ConfigPath)
 
 	if !ts.cfg.EKSConfig.Parameters.VPCCreate {
 		ts.cfg.Logger.Info("Parameters.VPCCreate false; skipping deletion")

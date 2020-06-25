@@ -15,7 +15,8 @@ import (
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
 	aws_ecr "github.com/aws/aws-k8s-tester/pkg/aws/ecr"
-	awsiam "github.com/aws/aws-k8s-tester/pkg/aws/iam"
+	aws_iam "github.com/aws/aws-k8s-tester/pkg/aws/iam"
+	aws_s3 "github.com/aws/aws-k8s-tester/pkg/aws/s3"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-k8s-tester/version"
@@ -26,6 +27,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
 	"github.com/aws/aws-sdk-go/service/iam/iamiface"
+	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -38,6 +40,7 @@ type Config struct {
 	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
+	S3API     s3iface.S3API
 	CFNAPI    cloudformationiface.CloudFormationAPI
 	EKSAPI    eksiface.EKSAPI
 	IAMAPI    iamiface.IAMAPI
@@ -229,7 +232,7 @@ Outputs:
 func (ts *tester) createRole() error {
 	if !ts.cfg.EKSConfig.AddOnFargate.RoleCreate {
 		ts.cfg.Logger.Info("EKSConfig.AddOnFargate.RoleCreate false; skipping creation")
-		return awsiam.Validate(
+		return aws_iam.Validate(
 			ts.cfg.Logger,
 			ts.cfg.IAMAPI,
 			ts.cfg.EKSConfig.AddOnFargate.RoleName,
@@ -251,12 +254,21 @@ func (ts *tester) createRole() error {
 		return errors.New("cannot create a cluster role with an empty AddOnFargate.RoleName")
 	}
 
-	if err := ioutil.WriteFile(ts.cfg.EKSConfig.AddOnFargate.RoleCFNStackYAMLFilePath, []byte(TemplateRole), 0400); err != nil {
+	if err := ioutil.WriteFile(ts.cfg.EKSConfig.AddOnFargate.RoleCFNStackYAMLPath, []byte(TemplateRole), 0400); err != nil {
+		return err
+	}
+	if err := aws_s3.Upload(
+		ts.cfg.Logger,
+		ts.cfg.S3API,
+		ts.cfg.EKSConfig.S3BucketName,
+		ts.cfg.EKSConfig.AddOnFargate.RoleCFNStackYAMLS3Key,
+		ts.cfg.EKSConfig.AddOnFargate.RoleCFNStackYAMLPath,
+	); err != nil {
 		return err
 	}
 	ts.cfg.Logger.Info("creating a new Fargate role using CFN",
 		zap.String("role-name", ts.cfg.EKSConfig.AddOnFargate.RoleName),
-		zap.String("role-cfn-file-path", ts.cfg.EKSConfig.AddOnFargate.RoleCFNStackYAMLFilePath),
+		zap.String("role-cfn-file-path", ts.cfg.EKSConfig.AddOnFargate.RoleCFNStackYAMLPath),
 	)
 	stackInput := &cloudformation.CreateStackInput{
 		StackName:    aws.String(ts.cfg.EKSConfig.AddOnFargate.RoleName),

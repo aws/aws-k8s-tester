@@ -78,54 +78,5 @@ func (ts *Tester) uploadToS3() (err error) {
 		}
 	}
 
-	if fileutil.Exist(ts.cfg.RoleCFNStackYAMLFilePath) {
-		if err = aws_s3.Upload(
-			ts.lg,
-			ts.s3API,
-			ts.cfg.S3BucketName,
-			path.Join(ts.cfg.Name, "cfn", "aws-k8s-tester-ec2.role.cfn.yaml"),
-			ts.cfg.RoleCFNStackYAMLFilePath,
-		); err != nil {
-			return err
-		}
-	}
-
-	if fileutil.Exist(ts.cfg.VPCCFNStackYAMLFilePath) {
-		if err = aws_s3.Upload(
-			ts.lg,
-			ts.s3API,
-			ts.cfg.S3BucketName,
-			path.Join(ts.cfg.Name, "cfn", "aws-k8s-tester-ec2.vpc.cfn.yaml"),
-			ts.cfg.VPCCFNStackYAMLFilePath,
-		); err != nil {
-			return err
-		}
-	}
-
-	for _, cur := range ts.cfg.ASGs {
-		if fileutil.Exist(cur.SSMDocumentCFNStackYAMLFilePath) {
-			if err = aws_s3.Upload(
-				ts.lg,
-				ts.s3API,
-				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "cfn", filepath.Base(cur.SSMDocumentCFNStackYAMLFilePath)),
-				cur.SSMDocumentCFNStackYAMLFilePath,
-			); err != nil {
-				return err
-			}
-		}
-		if fileutil.Exist(cur.ASGCFNStackYAMLFilePath) {
-			if err = aws_s3.Upload(
-				ts.lg,
-				ts.s3API,
-				ts.cfg.S3BucketName,
-				path.Join(ts.cfg.Name, "cfn", filepath.Base(cur.ASGCFNStackYAMLFilePath)),
-				cur.ASGCFNStackYAMLFilePath,
-			); err != nil {
-				return err
-			}
-		}
-	}
-
 	return nil
 }

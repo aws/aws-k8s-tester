@@ -14,12 +14,14 @@ import (
 	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/aws/cw"
+	aws_s3 "github.com/aws/aws-k8s-tester/pkg/aws/s3"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudwatch"
 	"github.com/aws/aws-sdk-go/service/cloudwatch/cloudwatchiface"
+	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"go.uber.org/zap"
 )
 
@@ -29,6 +31,7 @@ type Config struct {
 	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
+	S3API     s3iface.S3API
 	CWAPI     cloudwatchiface.CloudWatchAPI
 }
 
@@ -112,6 +115,25 @@ func (ts *tester) Create() (err error) {
 		return fmt.Errorf("failed to read PodStartupLatency %q (%v)", podStartupLatencyTempPath, err)
 	}
 	ts.cfg.EKSConfig.Sync()
+
+	if err = aws_s3.Upload(
+		ts.cfg.Logger,
+		ts.cfg.S3API,
+		ts.cfg.EKSConfig.S3BucketName,
+		ts.cfg.EKSConfig.AddOnClusterLoaderLocal.ReportTarGzS3Key,
+		ts.cfg.EKSConfig.AddOnClusterLoaderLocal.ReportTarGzPath,
+	); err != nil {
+		return err
+	}
+	if err = aws_s3.Upload(
+		ts.cfg.Logger,
+		ts.cfg.S3API,
+		ts.cfg.EKSConfig.S3BucketName,
+		ts.cfg.EKSConfig.AddOnClusterLoaderLocal.LogS3Key,
+		ts.cfg.EKSConfig.AddOnClusterLoaderLocal.LogPath,
+	); err != nil {
+		return err
+	}
 
 	if err = ts.publishResults(); err != nil {
 		return err

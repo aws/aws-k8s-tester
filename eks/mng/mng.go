@@ -19,6 +19,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
 	"github.com/aws/aws-sdk-go/service/iam/iamiface"
+	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"go.uber.org/zap"
 )
 
@@ -28,6 +29,7 @@ type Config struct {
 	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
+	S3API     s3iface.S3API
 	IAMAPI    iamiface.IAMAPI
 	CFNAPI    cloudformationiface.CloudFormationAPI
 	EC2API    ec2iface.EC2API

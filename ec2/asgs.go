@@ -13,6 +13,7 @@ import (
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
 	aws_ec2 "github.com/aws/aws-k8s-tester/pkg/aws/ec2"
+	aws_s3 "github.com/aws/aws-k8s-tester/pkg/aws/s3"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
@@ -405,10 +406,19 @@ func (ts *Tester) createASGs() (err error) {
 		if err = tpl.Execute(buf, tg); err != nil {
 			return err
 		}
-		if err = ioutil.WriteFile(cur.ASGCFNStackYAMLFilePath, buf.Bytes(), 0400); err != nil {
+		if err = ioutil.WriteFile(cur.ASGCFNStackYAMLPath, buf.Bytes(), 0400); err != nil {
 			return err
 		}
-		ts.lg.Info("creating ASG", zap.String("asg-name", asgName), zap.String("asg-cfn-file-path", cur.ASGCFNStackYAMLFilePath))
+		if err = aws_s3.Upload(
+			ts.lg,
+			ts.s3API,
+			ts.cfg.S3BucketName,
+			cur.ASGCFNStackYAMLS3Key,
+			cur.ASGCFNStackYAMLPath,
+		); err != nil {
+			return err
+		}
+		ts.lg.Info("creating ASG", zap.String("asg-name", asgName), zap.String("asg-cfn-file-path", cur.ASGCFNStackYAMLPath))
 		stackInput := &cloudformation.CreateStackInput{
 			StackName:    aws.String(asgName),
 			Capabilities: aws.StringSlice([]string{"CAPABILITY_NAMED_IAM"}),

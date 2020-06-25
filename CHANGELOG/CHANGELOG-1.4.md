@@ -11,16 +11,22 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.9...v1.4.0
 
 - [`ec2-utils --auto-path` now automatically uses the generated cluster name for local file paths, instead of random string](https://github.com/aws/aws-k8s-tester/commit/53b51d38b1aa4e6ea1454cc631c9511dcbe4267a).
 
+### `ec2config`
+
+- Enable [`S3BucketCreate` and `S3BucketCreateKeep` by default, error if no S3 bucket is specified](https://github.com/aws/aws-k8s-tester/commit/7d743b2d3cedb55079c080457ab662c09f6fcd03).
+
 ### `aws-k8s-tester`
 
 - [`aws-k8s-tester --auto-path` now automatically uses the generated cluster name for local file paths, instead of random string](https://github.com/aws/aws-k8s-tester/commit/53b51d38b1aa4e6ea1454cc631c9511dcbe4267a).
 
 ### `ec2`
 
+- Clean up [S3 uploads](https://github.com/aws/aws-k8s-tester/commit/).
 - Clean up [`colorstring` printf](https://github.com/aws/aws-k8s-tester/pull/101).
 
 ### `eks`
 
+- Clean up [S3 uploads](https://github.com/aws/aws-k8s-tester/commit/).
 - Compare [raw data points for regression tests](https://github.com/aws/aws-k8s-tester/commit/021dc585cc59114fe0a9343c47c111f7f1a25b98).
   - Used for [Kolmogorov–Smirnov test](https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test).
 - Publish [performance data to CloudWatch](https://github.com/aws/aws-k8s-tester/commit/038fd83e6a180d5a98287b508d243661b23a356a).
@@ -49,6 +55,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.9...v1.4.0
 
 ### `eksconfig`
 
+- Enable [`S3BucketCreate` and `S3BucketCreateKeep` by default, error if no S3 bucket is specified](https://github.com/aws/aws-k8s-tester/commit/7d743b2d3cedb55079c080457ab662c09f6fcd03).
 - Configure [S3 directory](https://github.com/aws/aws-k8s-tester/commit/53a0169e208b66a00135bf05002c27de2000e9ed).
  - Add [`ClusterAutoscaler` add-on per node-group using `AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS={"GetRef.Name-...":{..."cluster-autoscaler":{"enable":false}...}}`](https://github.com/aws/aws-k8s-tester/pull/99).
 - Fix [typo in `eksconfig.AddOnManagedNodeGroups.LogsTarGzPath`](https://github.com/aws/aws-k8s-tester/commit/7b60047ca4d6fad281db512d4de905a27b80303a).

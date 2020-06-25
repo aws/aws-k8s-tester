@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
+	aws_s3 "github.com/aws/aws-k8s-tester/pkg/aws/s3"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
@@ -221,14 +222,23 @@ func (ts *tester) createSG(name string) error {
 		return err
 	}
 
-	if err := ioutil.WriteFile(cur.RemoteAccessSecurityCFNStackYAMLFilePath, buf.Bytes(), 0400); err != nil {
+	if err := ioutil.WriteFile(cur.RemoteAccessSecurityCFNStackYAMLPath, buf.Bytes(), 0400); err != nil {
+		return err
+	}
+	if err := aws_s3.Upload(
+		ts.cfg.Logger,
+		ts.cfg.S3API,
+		ts.cfg.EKSConfig.S3BucketName,
+		cur.RemoteAccessSecurityCFNStackYAMLS3Key,
+		cur.RemoteAccessSecurityCFNStackYAMLPath,
+	); err != nil {
 		return err
 	}
 	sgID := cur.RemoteAccessSecurityGroupID
 	ts.cfg.Logger.Info("creating ingress/egress security group for mng using CFN",
 		zap.String("mng-name", name),
 		zap.String("security-group-id", sgID),
-		zap.String("security-cfn-stack-file", cur.RemoteAccessSecurityCFNStackYAMLFilePath),
+		zap.String("security-cfn-stack-file", cur.RemoteAccessSecurityCFNStackYAMLPath),
 		zap.Int("internet-ingress-from-port", fromPort),
 		zap.Int("internet-ingress-to-port", 32767),
 	)

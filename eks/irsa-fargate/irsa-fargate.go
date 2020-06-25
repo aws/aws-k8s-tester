@@ -46,10 +46,10 @@ type Config struct {
 	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
+	S3API     s3iface.S3API
 	CFNAPI    cloudformationiface.CloudFormationAPI
 	EKSAPI    eksiface.EKSAPI
 	IAMAPI    iamiface.IAMAPI
-	S3API     s3iface.S3API
 	ECRAPI    ecriface.ECRAPI
 }
 
@@ -379,12 +379,21 @@ func (ts *tester) createRole() error {
 		return err
 	}
 
-	if err := ioutil.WriteFile(ts.cfg.EKSConfig.AddOnIRSAFargate.RoleCFNStackYAMLFilePath, buf.Bytes(), 0400); err != nil {
+	if err := ioutil.WriteFile(ts.cfg.EKSConfig.AddOnIRSAFargate.RoleCFNStackYAMLPath, buf.Bytes(), 0400); err != nil {
+		return err
+	}
+	if err := aws_s3.Upload(
+		ts.cfg.Logger,
+		ts.cfg.S3API,
+		ts.cfg.EKSConfig.S3BucketName,
+		ts.cfg.EKSConfig.AddOnIRSAFargate.RoleCFNStackYAMLS3Key,
+		ts.cfg.EKSConfig.AddOnIRSAFargate.RoleCFNStackYAMLPath,
+	); err != nil {
 		return err
 	}
 	ts.cfg.Logger.Info("creating a new IRSA Fargate role using CFN",
 		zap.String("role-name", ts.cfg.EKSConfig.AddOnIRSAFargate.RoleName),
-		zap.String("role-cfn-file-path", ts.cfg.EKSConfig.AddOnIRSAFargate.RoleCFNStackYAMLFilePath),
+		zap.String("role-cfn-file-path", ts.cfg.EKSConfig.AddOnIRSAFargate.RoleCFNStackYAMLPath),
 	)
 	stackInput := &cloudformation.CreateStackInput{
 		StackName:    aws.String(ts.cfg.EKSConfig.AddOnIRSAFargate.RoleName),

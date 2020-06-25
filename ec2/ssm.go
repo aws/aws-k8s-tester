@@ -9,6 +9,7 @@ import (
 
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
+	aws_s3 "github.com/aws/aws-k8s-tester/pkg/aws/s3"
 	"github.com/aws/aws-k8s-tester/pkg/randutil"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
@@ -110,13 +111,22 @@ func (ts *Tester) createSSMDocument() error {
 			)
 			continue
 		}
-		if err := ioutil.WriteFile(cur.SSMDocumentCFNStackYAMLFilePath, []byte(TemplateSSMDocument), 0400); err != nil {
+		if err := ioutil.WriteFile(cur.SSMDocumentCFNStackYAMLPath, []byte(TemplateSSMDocument), 0400); err != nil {
+			return err
+		}
+		if err := aws_s3.Upload(
+			ts.lg,
+			ts.s3API,
+			ts.cfg.S3BucketName,
+			cur.SSMDocumentCFNStackYAMLS3Key,
+			cur.SSMDocumentCFNStackYAMLPath,
+		); err != nil {
 			return err
 		}
 		ts.lg.Info("creating SSM document",
 			zap.String("asg-name", asgName),
 			zap.String("ssm-document-name", cur.SSMDocumentName),
-			zap.String("ssm-document-cfn-file-path", cur.SSMDocumentCFNStackYAMLFilePath),
+			zap.String("ssm-document-cfn-file-path", cur.SSMDocumentCFNStackYAMLPath),
 		)
 		stackInput := &cloudformation.CreateStackInput{
 			StackName:    aws.String(cur.SSMDocumentCFNStackName),

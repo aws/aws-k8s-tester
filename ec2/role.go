@@ -9,7 +9,8 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
-	awsiam "github.com/aws/aws-k8s-tester/pkg/aws/iam"
+	aws_iam "github.com/aws/aws-k8s-tester/pkg/aws/iam"
+	aws_s3 "github.com/aws/aws-k8s-tester/pkg/aws/s3"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
@@ -67,7 +68,7 @@ Outputs:
 func (ts *Tester) createRole() error {
 	if !ts.cfg.RoleCreate {
 		ts.lg.Info("RoleCreate false; skipping creation")
-		return awsiam.Validate(
+		return aws_iam.Validate(
 			ts.lg,
 			ts.iamAPI,
 			ts.cfg.RoleName,
@@ -90,12 +91,21 @@ func (ts *Tester) createRole() error {
 
 	// role ARN is empty, create a default role
 	// otherwise, use the existing one
-	if err := ioutil.WriteFile(ts.cfg.RoleCFNStackYAMLFilePath, []byte(TemplateRoleBasic), 0400); err != nil {
+	if err := ioutil.WriteFile(ts.cfg.RoleCFNStackYAMLPath, []byte(TemplateRoleBasic), 0400); err != nil {
+		return err
+	}
+	if err := aws_s3.Upload(
+		ts.lg,
+		ts.s3API,
+		ts.cfg.S3BucketName,
+		ts.cfg.RoleCFNStackYAMLS3Key,
+		ts.cfg.RoleCFNStackYAMLPath,
+	); err != nil {
 		return err
 	}
 	ts.lg.Info("creating a new role",
 		zap.String("role-name", ts.cfg.RoleName),
-		zap.String("role-cfn-file-path", ts.cfg.RoleCFNStackYAMLFilePath),
+		zap.String("role-cfn-file-path", ts.cfg.RoleCFNStackYAMLPath),
 	)
 	stackInput := &cloudformation.CreateStackInput{
 		StackName:    aws.String(ts.cfg.RoleName),

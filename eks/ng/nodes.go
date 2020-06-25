@@ -457,12 +457,12 @@ func (ts *tester) createASGs() error {
 			return err
 		}
 
-		if err := ioutil.WriteFile(cur.ASGCFNStackYAMLFilePath, buf.Bytes(), 0400); err != nil {
+		if err := ioutil.WriteFile(cur.ASGCFNStackYAMLPath, buf.Bytes(), 0400); err != nil {
 			return err
 		}
 		ts.cfg.Logger.Info("creating a new NG using CFN",
 			zap.String("asg-name", asgName),
-			zap.String("asg-cfn-file-path", cur.ASGCFNStackYAMLFilePath),
+			zap.String("asg-cfn-file-path", cur.ASGCFNStackYAMLPath),
 		)
 
 		stackInput := &cloudformation.CreateStackInput{

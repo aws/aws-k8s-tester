@@ -18,6 +18,7 @@ import (
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/aws/cw"
 	aws_ecr "github.com/aws/aws-k8s-tester/pkg/aws/ecr"
+	aws_s3 "github.com/aws/aws-k8s-tester/pkg/aws/s3"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
@@ -26,6 +27,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/cloudwatch"
 	"github.com/aws/aws-sdk-go/service/cloudwatch/cloudwatchiface"
 	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
+	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"go.uber.org/zap"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -41,6 +43,7 @@ type Config struct {
 	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
+	S3API     s3iface.S3API
 	CWAPI     cloudwatchiface.CloudWatchAPI
 	ECRAPI    ecriface.ECRAPI
 }
@@ -1120,6 +1123,25 @@ func (ts *tester) checkClusterLoader() (err error) {
 		return fmt.Errorf("failed to read PodStartupLatency %q (%v)", podStartupLatencyTempPath, err)
 	}
 	ts.cfg.EKSConfig.Sync()
+
+	if err = aws_s3.Upload(
+		ts.cfg.Logger,
+		ts.cfg.S3API,
+		ts.cfg.EKSConfig.S3BucketName,
+		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.ReportTarGzS3Key,
+		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.ReportTarGzPath,
+	); err != nil {
+		return err
+	}
+	if err = aws_s3.Upload(
+		ts.cfg.Logger,
+		ts.cfg.S3API,
+		ts.cfg.EKSConfig.S3BucketName,
+		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.LogS3Key,
+		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.LogPath,
+	); err != nil {
+		return err
+	}
 
 	if err = ts.publishResults(); err != nil {
 		return err
