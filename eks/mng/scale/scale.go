@@ -57,7 +57,7 @@ func (ts *tester) Scale(mngName string, update *eksconfig.MNGScaleUpdate) (err e
 	}
 	for i, scaleUpdate := range cur.ScaleUpdates {
 		if scaleUpdate.Created {
-			if i == len(cur.ScaleUpdates) - 1 {
+			if i == len(cur.ScaleUpdates)-1 {
 				ts.cfg.Logger.Info("All updates have been applied for this MNG", zap.String("mng-name", mngName))
 				return nil
 			}
@@ -116,7 +116,7 @@ func (ts *tester) Scale(mngName string, update *eksconfig.MNGScaleUpdate) (err e
 
 // Scales MNG to the next scaling configuration in the array.
 func (ts *tester) scaleMNG(mngName string, update *eksconfig.MNGScaleUpdate) (err error) {
-	cur := ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName] 
+	cur := ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName]
 	nodegroupConfigInput := &aws_eks.UpdateNodegroupConfigInput{
 		ClusterName:   aws.String(ts.cfg.EKSConfig.Name),
 		NodegroupName: aws.String(mngName),
