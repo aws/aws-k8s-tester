@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/e2e/framework/utils"
-
 	log "github.com/cihub/seelog"
 	"github.com/davecgh/go-spew/spew"
 	appsv1 "k8s.io/api/apps/v1"

@@ -5,9 +5,8 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/e2e/framework/utils"
-
 	log "github.com/cihub/seelog"
-	appsv1 "k8s.io/api/apps/v1"
+	apps_v1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
@@ -23,9 +22,9 @@ func NewDaemonSetManager(cs kubernetes.Interface) *DaemonSetManager {
 	}
 }
 
-func (m *DaemonSetManager) WaitDaemonSetReady(ctx context.Context, ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
+func (m *DaemonSetManager) WaitDaemonSetReady(ctx context.Context, ds *apps_v1.DaemonSet) (*apps_v1.DaemonSet, error) {
 	var (
-		observedDS *appsv1.DaemonSet
+		observedDS *apps_v1.DaemonSet
 		err        error
 	)
 	start := time.Now()

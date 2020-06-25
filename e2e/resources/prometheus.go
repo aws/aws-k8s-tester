@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/e2e/framework"
-
 	log "github.com/cihub/seelog"
 	promapi "github.com/prometheus/client_golang/api"
 	promv1 "github.com/prometheus/client_golang/api/prometheus/v1"
