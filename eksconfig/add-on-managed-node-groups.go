@@ -147,8 +147,31 @@ type MNG struct {
 	// Logs maps each instance ID to a list of log file paths fetched via SSH access.
 	Logs map[string][]string `json:"logs" read-only:"true"`
 
+	// ScaleUpdates configures MNG scale update.
+	ScaleUpdates []*MNGScaleUpdate `json:"scale-updates,omitempty"`
+
 	// VersionUpgrade configures MNG version upgarde.
 	VersionUpgrade *MNGVersionUpgrade `json:"version-upgrade,omitempty"`
+}
+
+// MNGScaleUpdate contains the minimum, maximum, and desired node counts for a nodegroup.
+// ref, https://docs.aws.amazon.com/cli/latest/reference/eks/update-nodegroup-config.html
+type MNGScaleUpdate struct {
+	// Created is true when the resource has been created.
+	// Used for delete operations.
+	Created         bool               `json:"created" read-only:"true"`
+	TimeFrameCreate timeutil.TimeFrame `json:"time-frame-create" read-only:"true"`
+	// InitialWait is the wait time before triggering version upgrades.
+	// All managed node group upgrades are triggered after all existing
+	// add-on installation is complete.
+	InitialWait time.Duration `json:"initial-wait"`
+	// InitialWaitString is not empty, then parses duration overwrites "InitialWait".
+	InitialWaitString string `json:"initial-wait-string"`
+
+	// Sizes are the specifications for number of nodes in the mng.
+	MinSize     int64 `json:"min-size,omitempty"`
+	MaxSize     int64 `json:"max-size,omitempty"`
+	DesiredSize int64 `json:"desired-size,omitempty"`
 }
 
 // MNGVersionUpgrade defines parameters

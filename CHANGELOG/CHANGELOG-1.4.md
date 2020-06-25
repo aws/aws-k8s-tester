@@ -53,6 +53,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.9...v1.4.0
 - Fix [multiple `eks/cluster-loader` runs](https://github.com/aws/aws-k8s-tester/commit/a7d6ebc79d76782d5bbff533183d9baa05bd663e).
 - Add [extra namespace force-deletion function to `eks/stresser/remote`](https://github.com/aws/aws-k8s-tester/commit/dc6ef6849a57d2236bc23a0a89413a7b377a211c).
 
+- [`eks/mng/scale` added to scale mngs up and down](https://github.com/aws/aws-k8s-tester/pull/106)
+  - See https://docs.aws.amazon.com/cli/latest/reference/eks/update-nodegroup-config.html
 ### `eksconfig`
 
 - Enable [`S3BucketCreate` and `S3BucketCreateKeep` by default, error if no S3 bucket is specified](https://github.com/aws/aws-k8s-tester/commit/7d743b2d3cedb55079c080457ab662c09f6fcd03).
