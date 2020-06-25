@@ -40,8 +40,6 @@ var (
 	csrsRequestsSummaryWritesTableS3Dir string
 
 	csrsWritesOutputNamePrefix string
-
-	csrsBlock bool
 )
 
 func newCreateCSRs() *cobra.Command {
@@ -66,7 +64,6 @@ func newCreateCSRs() *cobra.Command {
 
 	cmd.PersistentFlags().StringVar(&csrsInitialRequestConditionType, "initial-request-condition-type", "", "Initial CSR condition type")
 	cmd.PersistentFlags().StringVar(&csrsWritesOutputNamePrefix, "writes-output-name-prefix", "", "Write results output name prefix in /var/log/")
-	cmd.PersistentFlags().BoolVar(&csrsBlock, "block", false, "true to block process exit after cluster loader complete")
 	return cmd
 }
 
@@ -170,13 +167,4 @@ func createCSRsFunc(cmd *cobra.Command, args []string) {
 
 	fmt.Printf("\n*********************************\n")
 	fmt.Printf("'aws-k8s-tester eks create csrs' success\n")
-
-	if csrsBlock {
-		lg.Info("waiting for OS signal")
-		select {
-		case sig := <-sigs:
-			lg.Info("received OS signal", zap.String("signal", sig.String()))
-			os.Exit(0)
-		}
-	}
 }

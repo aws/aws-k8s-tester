@@ -48,8 +48,6 @@ var (
 
 	stresserWritesOutputNamePrefix string
 	stresserReadsOutputNamePrefix  string
-
-	stresserBlock bool
 )
 
 func newCreateStresser() *cobra.Command {
@@ -81,7 +79,6 @@ func newCreateStresser() *cobra.Command {
 
 	cmd.PersistentFlags().StringVar(&stresserWritesOutputNamePrefix, "writes-output-name-prefix", "", "writes results output name prefix in /var/log/")
 	cmd.PersistentFlags().StringVar(&stresserReadsOutputNamePrefix, "reads-output-name-prefix", "", "reads results output name prefix in /var/log/")
-	cmd.PersistentFlags().BoolVar(&stresserBlock, "block", false, "true to block process exit after cluster loader complete")
 	return cmd
 }
 
@@ -195,13 +192,4 @@ func createStresserFunc(cmd *cobra.Command, args []string) {
 
 	fmt.Printf("\n*********************************\n")
 	fmt.Printf("'aws-k8s-tester eks create stresser' success\n")
-
-	if stresserBlock {
-		lg.Info("waiting for OS signal")
-		select {
-		case sig := <-sigs:
-			lg.Info("received OS signal", zap.String("signal", sig.String()))
-			os.Exit(0)
-		}
-	}
 }

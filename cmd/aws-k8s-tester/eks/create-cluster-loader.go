@@ -143,6 +143,7 @@ func createClusterLoaderFunc(cmd *cobra.Command, args []string) {
 		loader.Stop()
 	}
 
+	// use Job to run once and complete
 	lg.Info("waiting for OS signal after test completion")
 	select {
 	case sig := <-sigs:

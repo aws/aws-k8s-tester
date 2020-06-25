@@ -42,8 +42,6 @@ var (
 	configmapsRequestsSummaryWritesTableS3Dir string
 
 	configmapsWritesOutputNamePrefix string
-
-	configmapsBlock bool
 )
 
 func newCreateConfigMaps() *cobra.Command {
@@ -69,7 +67,6 @@ func newCreateConfigMaps() *cobra.Command {
 	cmd.PersistentFlags().StringVar(&configmapsRequestsSummaryWritesTableS3Dir, "requests-summary-writes-table-s3-dir", "", "s3 directory prefix to upload")
 
 	cmd.PersistentFlags().StringVar(&configmapsWritesOutputNamePrefix, "writes-output-name-prefix", "", "Write results output name prefix in /var/log/")
-	cmd.PersistentFlags().BoolVar(&configmapsBlock, "block", false, "true to block process exit after cluster loader complete")
 	return cmd
 }
 
@@ -174,13 +171,4 @@ func createConfigMapsFunc(cmd *cobra.Command, args []string) {
 
 	fmt.Printf("\n*********************************\n")
 	fmt.Printf("'aws-k8s-tester eks create configmaps' success\n")
-
-	if configmapsBlock {
-		lg.Info("waiting for OS signal")
-		select {
-		case sig := <-sigs:
-			lg.Info("received OS signal", zap.String("signal", sig.String()))
-			os.Exit(0)
-		}
-	}
 }
