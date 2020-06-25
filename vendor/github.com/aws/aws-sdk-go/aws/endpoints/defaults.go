@@ -6673,6 +6673,25 @@ var awscnPartition = partition{
 				},
 			},
 		},
+		"organizations": service{
+			PartitionEndpoint: "aws-cn-global",
+			IsRegionalized:    boxedFalse,
+
+			Endpoints: endpoints{
+				"aws-cn-global": endpoint{
+					Hostname: "organizations.cn-northwest-1.amazonaws.com.cn",
+					CredentialScope: credentialScope{
+						Region: "cn-northwest-1",
+					},
+				},
+				"fips-aws-cn-global": endpoint{
+					Hostname: "organizations.cn-northwest-1.amazonaws.com.cn",
+					CredentialScope: credentialScope{
+						Region: "cn-northwest-1",
+					},
+				},
+			},
+		},
 		"polly": service{
 
 			Endpoints: endpoints{
@@ -7724,6 +7743,13 @@ var awsusgovPartition = partition{
 						Region: "us-gov-west-1",
 					},
 				},
+				"us-gov-east-1": endpoint{},
+				"us-gov-west-1": endpoint{},
+			},
+		},
+		"kinesisanalytics": service{
+
+			Endpoints: endpoints{
 				"us-gov-east-1": endpoint{},
 				"us-gov-west-1": endpoint{},
 			},
