@@ -27,6 +27,10 @@ type AddOnSecretsRemote struct {
 	TimeFrameCreate timeutil.TimeFrame `json:"time-frame-create" read-only:"true"`
 	TimeFrameDelete timeutil.TimeFrame `json:"time-frame-delete" read-only:"true"`
 
+	// S3Dir is the S3 directory to store all test results.
+	// It is under the bucket "eksconfig.Config.S3BucketName".
+	S3Dir string `json:"s3-dir"`
+
 	// Namespace is the namespace to create objects in.
 	Namespace string `json:"namespace"`
 
@@ -57,10 +61,6 @@ type AddOnSecretsRemote struct {
 	RequestsSummaryWritesOutputNamePrefix string `json:"requests-summary-writes-output-name-prefix"`
 	// RequestsSummaryReadsOutputNamePrefix is the output path name in "/var/log" directory, used in remote worker.
 	RequestsSummaryReadsOutputNamePrefix string `json:"requests-summary-reads-output-name-prefix"`
-
-	// S3Dir is the S3 directory to store all test results.
-	// It is under the bucket "eksconfig.Config.S3BucketName".
-	S3Dir string `json:"s3-dir"`
 
 	//////////////////////////////////////////////////////////////////////////////
 
@@ -184,12 +184,13 @@ func (cfg *Config) validateAddOnSecretsRemote() error {
 	if !cfg.IsEnabledAddOnSecretsRemote() {
 		return nil
 	}
-	if cfg.S3BucketName == "" {
-		return errors.New("AddOnSecretsRemote requires S3 bucket for collecting results but S3BucketName empty")
-	}
 
 	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
 		return errors.New("AddOnSecretsRemote.Enable true but no node group is enabled")
+	}
+
+	if cfg.AddOnSecretsRemote.S3Dir == "" {
+		cfg.AddOnSecretsRemote.S3Dir = path.Join(cfg.Name, "add-on-secrets-remote")
 	}
 
 	if cfg.AddOnSecretsRemote.Namespace == "" {
@@ -225,10 +226,6 @@ func (cfg *Config) validateAddOnSecretsRemote() error {
 	}
 	if cfg.AddOnSecretsRemote.RequestsSummaryReadsOutputNamePrefix == "" {
 		cfg.AddOnSecretsRemote.RequestsSummaryReadsOutputNamePrefix = "secrets-reads-" + randutil.String(10)
-	}
-
-	if cfg.AddOnSecretsRemote.S3Dir == "" {
-		cfg.AddOnSecretsRemote.S3Dir = path.Join(cfg.Name, "add-on-secrets-remote")
 	}
 
 	//////////////////////////////////////////////////////////////////////////////

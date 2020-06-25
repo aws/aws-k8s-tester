@@ -2,7 +2,7 @@ asgs:
   ec2-2020061122-floral05tr4z-asg:
     ami-type: AL2_x86_64
     asg-cfn-stack-id: ""
-    asg-cfn-stack-yaml-file-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/default.asg.cfn.ec2-2020061122-floral05tr4z-asg.yaml
+    asg-cfn-stack-yaml-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/default.asg.cfn.ec2-2020061122-floral05tr4z-asg.yaml
     asg-desired-capacity: 1
     asg-max-size: 1
     asg-min-size: 1
@@ -16,7 +16,7 @@ asgs:
     remote-access-user-name: ec2-user
     ssm-document-cfn-stack-id: ""
     ssm-document-cfn-stack-name: ""
-    ssm-document-cfn-stack-yaml-file-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/default.ssm.cfn.ec2-2020061122-floral05tr4z-asg.yaml
+    ssm-document-cfn-stack-yaml-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/default.ssm.cfn.ec2-2020061122-floral05tr4z-asg.yaml
     ssm-document-command-ids: null
     ssm-document-commands: ""
     ssm-document-create: false
@@ -65,7 +65,7 @@ remote-access-key-name: ec2-2020061122-floral05tr4z-key
 remote-access-private-key-path: /tmp/sea5vsmuds.insecure.key
 role-arn: ""
 role-cfn-stack-id: ""
-role-cfn-stack-yaml-file-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/default.role.cfn.yaml
+role-cfn-stack-yaml-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/default.role.cfn.yaml
 role-create: true
 role-managed-policy-arns: null
 role-name: ec2-2020061122-floral05tr4z-role
@@ -94,6 +94,6 @@ time-frame-delete:
   took-string: ""
 up: false
 vpc-cfn-stack-id: ""
-vpc-cfn-stack-yaml-file-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/default.vpc.cfn.yaml
+vpc-cfn-stack-yaml-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/default.vpc.cfn.yaml
 vpc-create: true
 vpc-id: ""

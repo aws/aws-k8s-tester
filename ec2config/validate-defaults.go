@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -47,8 +48,8 @@ func NewDefault() *Config {
 		OnFailureDeleteWaitSeconds: 120,
 
 		S3BucketName:                    "",
-		S3BucketCreate:                  false,
-		S3BucketCreateKeep:              false,
+		S3BucketCreate:                  true,
+		S3BucketCreateKeep:              true,
 		S3BucketLifecycleExpirationDays: 0,
 
 		RoleCreate:                 true,
@@ -186,10 +187,22 @@ func (cfg *Config) validateConfig() error {
 			cfg.S3BucketLifecycleExpirationDays = 3
 		}
 	case false: // use existing one
+		if cfg.S3BucketName == "" {
+			return errors.New("empty S3BucketName")
+		}
+	}
+	if cfg.S3Dir == "" {
+		cfg.S3Dir = cfg.Name
 	}
 
-	if cfg.RoleCFNStackYAMLFilePath == "" {
-		cfg.RoleCFNStackYAMLFilePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".role.cfn.yaml"
+	if cfg.RoleCFNStackYAMLPath == "" {
+		cfg.RoleCFNStackYAMLPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".role.cfn.yaml"
+	}
+	if cfg.RoleCFNStackYAMLS3Key == "" {
+		cfg.RoleCFNStackYAMLS3Key = path.Join(
+			cfg.S3Dir,
+			filepath.Base(cfg.RoleCFNStackYAMLPath),
+		)
 	}
 	switch cfg.RoleCreate {
 	case true: // need create one, or already created
@@ -237,8 +250,14 @@ func (cfg *Config) validateConfig() error {
 		}
 	}
 
-	if cfg.VPCCFNStackYAMLFilePath == "" {
-		cfg.VPCCFNStackYAMLFilePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".vpc.cfn.yaml"
+	if cfg.VPCCFNStackYAMLPath == "" {
+		cfg.VPCCFNStackYAMLPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".vpc.cfn.yaml"
+	}
+	if cfg.VPCCFNStackYAMLS3Key == "" {
+		cfg.VPCCFNStackYAMLS3Key = path.Join(
+			cfg.S3Dir,
+			filepath.Base(cfg.VPCCFNStackYAMLPath),
+		)
 	}
 	switch cfg.VPCCreate {
 	case true: // need create one, or already created
@@ -336,8 +355,14 @@ func (cfg *Config) validateASGs() error {
 			return fmt.Errorf("ASGs[%q].Name %q is redundant", k, cur.Name)
 		}
 
-		if cur.ASGCFNStackYAMLFilePath == "" {
-			cur.ASGCFNStackYAMLFilePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".asg.cfn." + k + ".yaml"
+		if cur.ASGCFNStackYAMLPath == "" {
+			cur.ASGCFNStackYAMLPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".asg.cfn." + k + ".yaml"
+		}
+		if cur.ASGCFNStackYAMLS3Key == "" {
+			cur.ASGCFNStackYAMLS3Key = path.Join(
+				cfg.S3Dir,
+				filepath.Base(cur.ASGCFNStackYAMLPath),
+			)
 		}
 
 		if len(cur.InstanceTypes) > 4 {
@@ -401,8 +426,14 @@ func (cfg *Config) validateASGs() error {
 			return fmt.Errorf("ASGs[%q].ASGDesiredCapacity %d > ASGMaxLimit %d", k, cur.ASGDesiredCapacity, ASGMaxLimit)
 		}
 
-		if cur.SSMDocumentCFNStackYAMLFilePath == "" {
-			cur.SSMDocumentCFNStackYAMLFilePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".ssm.cfn." + k + ".yaml"
+		if cur.SSMDocumentCFNStackYAMLPath == "" {
+			cur.SSMDocumentCFNStackYAMLPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".ssm.cfn." + k + ".yaml"
+		}
+		if cur.SSMDocumentCFNStackYAMLS3Key == "" {
+			cur.SSMDocumentCFNStackYAMLS3Key = path.Join(
+				cfg.S3Dir,
+				filepath.Base(cur.SSMDocumentCFNStackYAMLPath),
+			)
 		}
 		switch cur.SSMDocumentCreate {
 		case true: // need create one, or already created

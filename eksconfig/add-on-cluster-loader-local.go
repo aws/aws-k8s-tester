@@ -3,6 +3,7 @@ package eksconfig
 import (
 	"errors"
 	"fmt"
+	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -43,6 +44,10 @@ type AddOnClusterLoaderLocal struct {
 	TimeFrameCreate timeutil.TimeFrame `json:"time-frame-create" read-only:"true"`
 	TimeFrameDelete timeutil.TimeFrame `json:"time-frame-delete" read-only:"true"`
 
+	// S3Dir is the S3 directory to store all test results.
+	// It is under the bucket "eksconfig.Config.S3BucketName".
+	S3Dir string `json:"s3-dir"`
+
 	// ClusterLoaderPath is the clusterloader executable binary path.
 	// ref. https://github.com/kubernetes/perf-tests/tree/master/clusterloader2
 	ClusterLoaderPath        string `json:"cluster-loader-path"`
@@ -50,13 +55,17 @@ type AddOnClusterLoaderLocal struct {
 	// TestConfigPath is the clusterloader2 test configuration file.
 	// Set via "--testconfig" flag.
 	TestConfigPath string `json:"test-config-path"`
+
 	// ReportDir is the clusterloader2 test report directory.
 	// Set via "--report-dir" flag.
 	ReportDir string `json:"report-dir"`
+
 	// ReportTarGzPath is the .tar.gz file path for report directory.
-	ReportTarGzPath string `json:"report-tar-gz-path" read-only:"true"`
+	ReportTarGzPath  string `json:"report-tar-gz-path" read-only:"true"`
+	ReportTarGzS3Key string `json:"report-tar-gz-s3-key" read-only:"true"`
 	// LogPath is the log file path to stream clusterloader binary runs.
-	LogPath string `json:"log-path" read-only:"true"`
+	LogPath  string `json:"log-path" read-only:"true"`
+	LogS3Key string `json:"log-s3-key" read-only:"true"`
 
 	// Runs is the number of "clusterloader2" runs back-to-back.
 	Runs int `json:"runs"`
@@ -145,11 +154,27 @@ func (cfg *Config) validateAddOnClusterLoaderLocal() error {
 		return nil
 	}
 
+	if cfg.AddOnClusterLoaderLocal.S3Dir == "" {
+		cfg.AddOnClusterLoaderLocal.S3Dir = path.Join(cfg.Name, "add-on-cluster-loader-local")
+	}
+
 	if cfg.AddOnClusterLoaderLocal.ReportTarGzPath == "" {
 		cfg.AddOnClusterLoaderLocal.ReportTarGzPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-cluster-loader-local.tar.gz"
 	}
+	if cfg.AddOnClusterLoaderLocal.ReportTarGzS3Key == "" {
+		cfg.AddOnClusterLoaderLocal.ReportTarGzS3Key = path.Join(
+			cfg.AddOnClusterLoaderLocal.S3Dir,
+			filepath.Base(cfg.AddOnClusterLoaderLocal.ReportTarGzPath),
+		)
+	}
 	if cfg.AddOnClusterLoaderLocal.LogPath == "" {
 		cfg.AddOnClusterLoaderLocal.LogPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-cluster-loader-local.log"
+	}
+	if cfg.AddOnClusterLoaderLocal.LogS3Key == "" {
+		cfg.AddOnClusterLoaderLocal.LogS3Key = path.Join(
+			cfg.AddOnClusterLoaderLocal.S3Dir,
+			filepath.Base(cfg.AddOnClusterLoaderLocal.LogPath),
+		)
 	}
 
 	if cfg.AddOnClusterLoaderLocal.ClusterLoaderPath == "" && cfg.AddOnClusterLoaderLocal.ClusterLoaderDownloadURL == "" {

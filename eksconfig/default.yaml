@@ -39,7 +39,7 @@ parameters:
   resolver-url: ""
   role-arn: ""
   role-cfn-stack-id: ""
-  role-cfn-stack-yaml-file-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.role.cfn.yaml
+  role-cfn-stack-yaml-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.role.cfn.yaml
   role-create: true
   role-managed-policy-arns: null
   role-name: eks-2020062416-skyorhnlon20-role
@@ -49,7 +49,7 @@ parameters:
   version: "1.16"
   version-value: 1.16
   vpc-cfn-stack-id: ""
-  vpc-cfn-stack-yaml-file-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.vpc.cfn.yaml
+  vpc-cfn-stack-yaml-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.vpc.cfn.yaml
   vpc-create: true
   vpc-id: ""
 partition: aws
@@ -72,7 +72,7 @@ status:
   cluster-ca: ""
   cluster-ca-decoded: ""
   cluster-cfn-stack-id: ""
-  cluster-cfn-stack-yaml-file-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.cluster.cfn.yaml
+  cluster-cfn-stack-yaml-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.cluster.cfn.yaml
   cluster-control-plane-security-group-id: ""
   cluster-metrics-raw-output-dir: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/eks-2020062416-skyorhnlon20-metrics
   cluster-oidc-issuer-arn: ""

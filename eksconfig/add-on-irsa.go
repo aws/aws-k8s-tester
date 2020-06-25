@@ -22,6 +22,10 @@ type AddOnIRSA struct {
 	TimeFrameCreate timeutil.TimeFrame `json:"time-frame-create" read-only:"true"`
 	TimeFrameDelete timeutil.TimeFrame `json:"time-frame-delete" read-only:"true"`
 
+	// S3Dir is the S3 directory to store all test results.
+	// It is under the bucket "eksconfig.Config.S3BucketName".
+	S3Dir string `json:"s3-dir"`
+
 	// Namespace is the namespace to create objects in.
 	Namespace string `json:"namespace"`
 
@@ -41,9 +45,10 @@ type AddOnIRSA struct {
 	RoleARN string `json:"role-arn"`
 	// RoleManagedPolicyARNs is IRSA role managed policy ARNs.
 	// ref. https://aws.amazon.com/blogs/opensource/introducing-fine-grained-iam-roles-service-accounts/
-	RoleManagedPolicyARNs    []string `json:"role-managed-policy-arns"`
-	RoleCFNStackID           string   `json:"role-cfn-stack-id" read-only:"true"`
-	RoleCFNStackYAMLFilePath string   `json:"role-cfn-stack-yaml-file-path" read-only:"true"`
+	RoleManagedPolicyARNs []string `json:"role-managed-policy-arns"`
+	RoleCFNStackID        string   `json:"role-cfn-stack-id" read-only:"true"`
+	RoleCFNStackYAMLPath  string   `json:"role-cfn-stack-yaml-path" read-only:"true"`
+	RoleCFNStackYAMLS3Key string   `json:"role-cfn-stack-yaml-s3-key" read-only:"true"`
 
 	// S3Key is the S3 key to write for IRSA tests.
 	S3Key string `json:"s3-key"`
@@ -85,15 +90,17 @@ func (cfg *Config) validateAddOnIRSA() error {
 	if !cfg.IsEnabledAddOnIRSA() {
 		return nil
 	}
-	if cfg.S3BucketName == "" {
-		return errors.New("AddOnIRSA requires S3 bucket for collecting results but S3BucketName empty")
-	}
 
 	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
 		return errors.New("AddOnIRSA.Enable true but no node group is enabled")
 	}
+
 	if cfg.Parameters.VersionValue < 1.14 {
 		return fmt.Errorf("Version %q not supported for AddOnIRSA", cfg.Parameters.Version)
+	}
+
+	if cfg.AddOnIRSA.S3Dir == "" {
+		cfg.AddOnIRSA.S3Dir = path.Join(cfg.Name, "add-on-irsa")
 	}
 
 	if cfg.AddOnIRSA.Namespace == "" {
@@ -113,8 +120,14 @@ func (cfg *Config) validateAddOnIRSA() error {
 	if cfg.AddOnIRSA.RoleName == "" {
 		cfg.AddOnIRSA.RoleName = cfg.Name + "-add-on-irsa-role"
 	}
-	if cfg.AddOnIRSA.RoleCFNStackYAMLFilePath == "" {
-		cfg.AddOnIRSA.RoleCFNStackYAMLFilePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".add-on-irsa.role.cfn.yaml"
+	if cfg.AddOnIRSA.RoleCFNStackYAMLPath == "" {
+		cfg.AddOnIRSA.RoleCFNStackYAMLPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".add-on-irsa.role.cfn.yaml"
+	}
+	if cfg.AddOnIRSA.RoleCFNStackYAMLS3Key == "" {
+		cfg.AddOnIRSA.RoleCFNStackYAMLS3Key = path.Join(
+			cfg.AddOnIRSA.S3Dir,
+			filepath.Base(cfg.AddOnIRSA.RoleCFNStackYAMLPath),
+		)
 	}
 
 	if cfg.AddOnIRSA.S3Key == "" {

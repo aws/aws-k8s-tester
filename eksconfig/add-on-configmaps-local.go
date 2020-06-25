@@ -26,6 +26,10 @@ type AddOnConfigmapsLocal struct {
 	TimeFrameCreate timeutil.TimeFrame `json:"time-frame-create" read-only:"true"`
 	TimeFrameDelete timeutil.TimeFrame `json:"time-frame-delete" read-only:"true"`
 
+	// S3Dir is the S3 directory to store all test results.
+	// It is under the bucket "eksconfig.Config.S3BucketName".
+	S3Dir string `json:"s3-dir"`
+
 	// Namespace is the namespace to create objects in.
 	Namespace string `json:"namespace"`
 
@@ -36,10 +40,6 @@ type AddOnConfigmapsLocal struct {
 
 	// CreatedNames is the list of created "ConfigMap" object names.
 	CreatedNames []string `json:"created-names" read-only:"true"`
-
-	// S3Dir is the S3 directory to store all test results.
-	// It is under the bucket "eksconfig.Config.S3BucketName".
-	S3Dir string `json:"s3-dir"`
 
 	//////////////////////////////////////////////////////////////////////////////
 
@@ -114,13 +114,15 @@ func (cfg *Config) validateAddOnConfigmapsLocal() error {
 	if !cfg.IsEnabledAddOnConfigmapsLocal() {
 		return nil
 	}
-	if cfg.S3BucketName == "" {
-		return errors.New("AddOnConfigmapsLocal requires S3 bucket for collecting results but S3BucketName empty")
-	}
 
 	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
 		return errors.New("AddOnConfigmapsLocal.Enable true but no node group is enabled")
 	}
+
+	if cfg.AddOnConfigmapsLocal.S3Dir == "" {
+		cfg.AddOnConfigmapsLocal.S3Dir = path.Join(cfg.Name, "add-on-configmaps-local")
+	}
+
 	if cfg.AddOnConfigmapsLocal.Namespace == "" {
 		cfg.AddOnConfigmapsLocal.Namespace = cfg.Name + "-configmaps-local"
 	}
@@ -133,10 +135,6 @@ func (cfg *Config) validateAddOnConfigmapsLocal() error {
 	}
 	if cfg.AddOnConfigmapsLocal.ObjectSize > 900000 {
 		return fmt.Errorf("AddOnConfigmapsLocal.ObjectSize limit is 0.9 MB, got %d", cfg.AddOnConfigmapsLocal.ObjectSize)
-	}
-
-	if cfg.AddOnConfigmapsLocal.S3Dir == "" {
-		cfg.AddOnConfigmapsLocal.S3Dir = path.Join(cfg.Name, "add-on-configmaps-local")
 	}
 
 	//////////////////////////////////////////////////////////////////////////////

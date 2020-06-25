@@ -2,6 +2,8 @@ package eksconfig
 
 import (
 	"errors"
+	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
@@ -18,6 +20,10 @@ type AddOnAppMesh struct {
 	TimeFrameCreate timeutil.TimeFrame `json:"time-frame-create" read-only:"true"`
 	TimeFrameDelete timeutil.TimeFrame `json:"time-frame-delete" read-only:"true"`
 
+	// S3Dir is the S3 directory to store all test results.
+	// It is under the bucket "eksconfig.Config.S3BucketName".
+	S3Dir string `json:"s3-dir"`
+
 	// Namespace is the namespace to create objects in.
 	Namespace string `json:"namespace"`
 
@@ -27,8 +33,9 @@ type AddOnAppMesh struct {
 	InjectorImage string `json:"injector-image"`
 
 	// PolicyCFNStackID is the CFN stack ID for policy.
-	PolicyCFNStackID           string `json:"policy-cfn-stack-id,omitempty" read-only:"true"`
-	PolicyCFNStackYAMLFilePath string `json:"policy-cfn-stack-yaml-file-path" read-only:"true"`
+	PolicyCFNStackID        string `json:"policy-cfn-stack-id,omitempty" read-only:"true"`
+	PolicyCFNStackYAMLPath  string `json:"policy-cfn-stack-yaml-path" read-only:"true"`
+	PolicyCFNStackYAMLS3Key string `json:"policy-cfn-stack-yaml-s3-key" read-only:"true"`
 }
 
 // EnvironmentVariablePrefixAddOnAppMesh is the environment variable prefix used for "eksconfig".
@@ -61,11 +68,22 @@ func (cfg *Config) validateAddOnAppMesh() error {
 		return errors.New("AddOnAppMesh.Enable true but no node group is enabled")
 	}
 
+	if cfg.AddOnAppMesh.S3Dir == "" {
+		cfg.AddOnAppMesh.S3Dir = path.Join(cfg.Name, "add-on-app-mesh")
+	}
+
 	if cfg.AddOnAppMesh.Namespace == "" {
 		cfg.AddOnAppMesh.Namespace = cfg.Name + "-appmesh"
 	}
-	if cfg.AddOnAppMesh.PolicyCFNStackYAMLFilePath == "" {
-		cfg.AddOnAppMesh.PolicyCFNStackYAMLFilePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".add-on-app-mesh.policy.cfn.yaml"
+
+	if cfg.AddOnAppMesh.PolicyCFNStackYAMLPath == "" {
+		cfg.AddOnAppMesh.PolicyCFNStackYAMLPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".add-on-app-mesh.policy.cfn.yaml"
+	}
+	if cfg.AddOnAppMesh.PolicyCFNStackYAMLS3Key == "" {
+		cfg.AddOnAppMesh.PolicyCFNStackYAMLS3Key = path.Join(
+			cfg.AddOnAppMesh.S3Dir,
+			filepath.Base(cfg.AddOnAppMesh.PolicyCFNStackYAMLPath),
+		)
 	}
 
 	return nil

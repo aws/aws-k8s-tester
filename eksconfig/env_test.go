@@ -1379,8 +1379,8 @@ func TestEnvAddOnNodeGroupsGetRef(t *testing.T) {
 	}
 
 	cur1 := cfg.AddOnNodeGroups.ASGs[cfg.Name+"-ng-for-cni"]
-	cur1.ASGCFNStackYAMLFilePath = ""
-	cur1.SSMDocumentCFNStackYAMLFilePath = ""
+	cur1.ASGCFNStackYAMLPath = ""
+	cur1.SSMDocumentCFNStackYAMLPath = ""
 	cfg.AddOnNodeGroups.ASGs[cfg.Name+"-ng-for-cni"] = cur1
 	expectedNGs := map[string]ASG{
 		cfg.Name + "-ng-for-cni": {
@@ -1408,8 +1408,8 @@ func TestEnvAddOnNodeGroupsGetRef(t *testing.T) {
 	}
 
 	cur2 := cfg.AddOnManagedNodeGroups.MNGs[cfg.Name+"-mng-for-cni"]
-	cur2.MNGCFNStackYAMLFilePath = ""
-	cur2.RemoteAccessSecurityCFNStackYAMLFilePath = ""
+	cur2.MNGCFNStackYAMLPath = ""
+	cur2.RemoteAccessSecurityCFNStackYAMLPath = ""
 	cfg.AddOnManagedNodeGroups.MNGs[cfg.Name+"-mng-for-cni"] = cur2
 	expectedMNGs := map[string]MNG{
 		cfg.Name + "-mng-for-cni": {
@@ -1520,8 +1520,8 @@ func TestEnvAddOnManagedNodeGroupsCNI(t *testing.T) {
 		t.Fatalf("unexpected cfg.RemoteAccessPrivateKeyPath %q", cfg.RemoteAccessPrivateKeyPath)
 	}
 	cur := cfg.AddOnManagedNodeGroups.MNGs["test-mng-for-cni"]
-	cur.MNGCFNStackYAMLFilePath = ""
-	cur.RemoteAccessSecurityCFNStackYAMLFilePath = ""
+	cur.MNGCFNStackYAMLPath = ""
+	cur.RemoteAccessSecurityCFNStackYAMLPath = ""
 	cfg.AddOnManagedNodeGroups.MNGs["test-mng-for-cni"] = cur
 	expectedMNGs := map[string]MNG{
 		"test-mng-for-cni": {

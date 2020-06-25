@@ -95,7 +95,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_SERVICE_PRINCIPALS          | read-only "false" | *eksconfig.Parameters.RoleServicePrincipals        | []string          |
 | AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_MANAGED_POLICY_ARNS         | read-only "false" | *eksconfig.Parameters.RoleManagedPolicyARNs        | []string          |
 | AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_CFN_STACK_ID                | read-only "true"  | *eksconfig.Parameters.RoleCFNStackID               | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_CFN_STACK_YAML_FILE_PATH    | read-only "true"  | *eksconfig.Parameters.RoleCFNStackYAMLFilePath     | string            |
+| AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_CFN_STACK_YAML_FILE_PATH    | read-only "true"  | *eksconfig.Parameters.RoleCFNStackYAMLPath     | string            |
 | AWS_K8S_TESTER_EKS_PARAMETERS_TAGS                             | read-only "false" | *eksconfig.Parameters.Tags                         | map[string]string |
 | AWS_K8S_TESTER_EKS_PARAMETERS_REQUEST_HEADER_KEY               | read-only "false" | *eksconfig.Parameters.RequestHeaderKey             | string            |
 | AWS_K8S_TESTER_EKS_PARAMETERS_REQUEST_HEADER_VALUE             | read-only "false" | *eksconfig.Parameters.RequestHeaderValue           | string            |
@@ -104,7 +104,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CREATE                       | read-only "false" | *eksconfig.Parameters.VPCCreate                    | bool              |
 | AWS_K8S_TESTER_EKS_PARAMETERS_VPC_ID                           | read-only "false" | *eksconfig.Parameters.VPCID                        | string            |
 | AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CFN_STACK_ID                 | read-only "true"  | *eksconfig.Parameters.VPCCFNStackID                | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CFN_STACK_YAML_FILE_PATH     | read-only "true"  | *eksconfig.Parameters.VPCCFNStackYAMLFilePath      | string            |
+| AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CFN_STACK_YAML_FILE_PATH     | read-only "true"  | *eksconfig.Parameters.VPCCFNStackYAMLPath      | string            |
 | AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CIDR                         | read-only "false" | *eksconfig.Parameters.VPCCIDR                      | string            |
 | AWS_K8S_TESTER_EKS_PARAMETERS_PUBLIC_SUBNET_CIDR_1             | read-only "false" | *eksconfig.Parameters.PublicSubnetCIDR1            | string            |
 | AWS_K8S_TESTER_EKS_PARAMETERS_PUBLIC_SUBNET_CIDR_2             | read-only "false" | *eksconfig.Parameters.PublicSubnetCIDR2            | string            |
@@ -136,10 +136,10 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_SERVICE_PRINCIPALS                            | read-only "false" | *eksconfig.AddOnNodeGroups.RoleServicePrincipals                      | []string                 |
 | AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_MANAGED_POLICY_ARNS                           | read-only "false" | *eksconfig.AddOnNodeGroups.RoleManagedPolicyARNs                      | []string                 |
 | AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_CFN_STACK_ID                                  | read-only "true"  | *eksconfig.AddOnNodeGroups.RoleCFNStackID                             | string                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_CFN_STACK_YAML_FILE_PATH                      | read-only "true"  | *eksconfig.AddOnNodeGroups.RoleCFNStackYAMLFilePath                   | string                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_CFN_STACK_YAML_FILE_PATH                      | read-only "true"  | *eksconfig.AddOnNodeGroups.RoleCFNStackYAMLPath                   | string                   |
 | AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_NODE_GROUP_SECURITY_GROUP_ID                       | read-only "true"  | *eksconfig.AddOnNodeGroups.NodeGroupSecurityGroupID                   | string                   |
 | AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_NODE_GROUP_SECURITY_GROUP_CFN_STACK_ID             | read-only "true"  | *eksconfig.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackID           | string                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_NODE_GROUP_SECURITY_GROUP_CFN_STACK_YAML_FILE_PATH | read-only "true"  | *eksconfig.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackYAMLFilePath | string                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_NODE_GROUP_SECURITY_GROUP_CFN_STACK_YAML_FILE_PATH | read-only "true"  | *eksconfig.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackYAMLPath | string                   |
 | AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_LOGS_DIR                                           | read-only "false" | *eksconfig.AddOnNodeGroups.LogsDir                                    | string                   |
 | AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_LOGS_TAR_GZ_PATH                                   | read-only "false" | *eksconfig.AddOnNodeGroups.LogsTarGzPath                              | string                   |
 | AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS                                               | read-only "false" | *eksconfig.AddOnNodeGroups.ASGs                                       | map[string]eksconfig.ASG |
@@ -160,7 +160,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_SERVICE_PRINCIPALS       | read-only "false" | *eksconfig.AddOnManagedNodeGroups.RoleServicePrincipals    | []string                 |
 | AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_MANAGED_POLICY_ARNS      | read-only "false" | *eksconfig.AddOnManagedNodeGroups.RoleManagedPolicyARNs    | []string                 |
 | AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_CFN_STACK_ID             | read-only "true"  | *eksconfig.AddOnManagedNodeGroups.RoleCFNStackID           | string                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_CFN_STACK_YAML_FILE_PATH | read-only "true"  | *eksconfig.AddOnManagedNodeGroups.RoleCFNStackYAMLFilePath | string                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_CFN_STACK_YAML_FILE_PATH | read-only "true"  | *eksconfig.AddOnManagedNodeGroups.RoleCFNStackYAMLPath | string                   |
 | AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_REQUEST_HEADER_KEY            | read-only "false" | *eksconfig.AddOnManagedNodeGroups.RequestHeaderKey         | string                   |
 | AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_REQUEST_HEADER_VALUE          | read-only "false" | *eksconfig.AddOnManagedNodeGroups.RequestHeaderValue       | string                   |
 | AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_RESOLVER_URL                  | read-only "false" | *eksconfig.AddOnManagedNodeGroups.ResolverURL              | string                   |
@@ -215,7 +215,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_CONTROLLER_IMAGE                | read-only "false" | *eksconfig.AddOnAppMesh.ControllerImage            | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_INJECTOR_IMAGE                  | read-only "false" | *eksconfig.AddOnAppMesh.InjectorImage              | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_POLICY_CFN_STACK_ID             | read-only "true"  | *eksconfig.AddOnAppMesh.PolicyCFNStackID           | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_POLICY_CFN_STACK_YAML_FILE_PATH | read-only "true"  | *eksconfig.AddOnAppMesh.PolicyCFNStackYAMLFilePath | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_POLICY_CFN_STACK_YAML_FILE_PATH | read-only "true"  | *eksconfig.AddOnAppMesh.PolicyCFNStackYAMLPath | string             |
 *--------------------------------------------------------------------*-------------------*----------------------------------------------------*--------------------*
 
 
@@ -616,7 +616,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_SERVICE_PRINCIPALS       | read-only "false" | *eksconfig.AddOnFargate.RoleServicePrincipals    | []string           |
 | AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_MANAGED_POLICY_ARNS      | read-only "false" | *eksconfig.AddOnFargate.RoleManagedPolicyARNs    | []string           |
 | AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_CFN_STACK_ID             | read-only "true"  | *eksconfig.AddOnFargate.RoleCFNStackID           | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_CFN_STACK_YAML_FILE_PATH | read-only "true"  | *eksconfig.AddOnFargate.RoleCFNStackYAMLFilePath | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_CFN_STACK_YAML_FILE_PATH | read-only "true"  | *eksconfig.AddOnFargate.RoleCFNStackYAMLPath | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_PROFILE_NAME                  | read-only "false" | *eksconfig.AddOnFargate.ProfileName              | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_SECRET_NAME                   | read-only "false" | *eksconfig.AddOnFargate.SecretName               | string             |
 *-----------------------------------------------------------------*-------------------*--------------------------------------------------*--------------------*
@@ -637,7 +637,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_ARN                      | read-only "false" | *eksconfig.AddOnIRSA.RoleARN                  | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_MANAGED_POLICY_ARNS      | read-only "false" | *eksconfig.AddOnIRSA.RoleManagedPolicyARNs    | []string           |
 | AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_CFN_STACK_ID             | read-only "true"  | *eksconfig.AddOnIRSA.RoleCFNStackID           | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_CFN_STACK_YAML_FILE_PATH | read-only "true"  | *eksconfig.AddOnIRSA.RoleCFNStackYAMLFilePath | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_CFN_STACK_YAML_FILE_PATH | read-only "true"  | *eksconfig.AddOnIRSA.RoleCFNStackYAMLPath | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_IRSA_S3_KEY                        | read-only "false" | *eksconfig.AddOnIRSA.S3Key                    | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_IRSA_DEPLOYMENT_REPLICAS           | read-only "false" | *eksconfig.AddOnIRSA.DeploymentReplicas       | int32              |
 | AWS_K8S_TESTER_EKS_ADD_ON_IRSA_DEPLOYMENT_RESULT_PATH        | read-only "false" | *eksconfig.AddOnIRSA.DeploymentResultPath     | string             |
@@ -662,7 +662,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ROLE_SERVICE_PRINCIPALS       | read-only "false" | *eksconfig.AddOnIRSAFargate.RoleServicePrincipals    | []string           |
 | AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ROLE_MANAGED_POLICY_ARNS      | read-only "false" | *eksconfig.AddOnIRSAFargate.RoleManagedPolicyARNs    | []string           |
 | AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ROLE_CFN_STACK_ID             | read-only "true"  | *eksconfig.AddOnIRSAFargate.RoleCFNStackID           | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ROLE_CFN_STACK_YAML_FILE_PATH | read-only "true"  | *eksconfig.AddOnIRSAFargate.RoleCFNStackYAMLFilePath | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ROLE_CFN_STACK_YAML_FILE_PATH | read-only "true"  | *eksconfig.AddOnIRSAFargate.RoleCFNStackYAMLPath | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_S3_KEY                        | read-only "false" | *eksconfig.AddOnIRSAFargate.S3Key                    | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_PROFILE_NAME                  | read-only "false" | *eksconfig.AddOnIRSAFargate.ProfileName              | string             |
 *----------------------------------------------------------------------*-------------------*------------------------------------------------------*--------------------*

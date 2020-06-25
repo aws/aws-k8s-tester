@@ -3,6 +3,8 @@ package eksconfig
 import (
 	"errors"
 	"fmt"
+	"path"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -19,6 +21,10 @@ type AddOnFargate struct {
 	Created         bool               `json:"created" read-only:"true"`
 	TimeFrameCreate timeutil.TimeFrame `json:"time-frame-create" read-only:"true"`
 	TimeFrameDelete timeutil.TimeFrame `json:"time-frame-delete" read-only:"true"`
+
+	// S3Dir is the S3 directory to store all test results.
+	// It is under the bucket "eksconfig.Config.S3BucketName".
+	S3Dir string `json:"s3-dir"`
 
 	// Namespace is the namespace to create objects in.
 	Namespace string `json:"namespace"`
@@ -42,9 +48,10 @@ type AddOnFargate struct {
 	// RoleServicePrincipals is the Fargate role Service Principals
 	RoleServicePrincipals []string `json:"role-service-principals"`
 	// RoleManagedPolicyARNs is Fargate role managed policy ARNs.
-	RoleManagedPolicyARNs    []string `json:"role-managed-policy-arns"`
-	RoleCFNStackID           string   `json:"role-cfn-stack-id" read-only:"true"`
-	RoleCFNStackYAMLFilePath string   `json:"role-cfn-stack-yaml-file-path" read-only:"true"`
+	RoleManagedPolicyARNs []string `json:"role-managed-policy-arns"`
+	RoleCFNStackID        string   `json:"role-cfn-stack-id" read-only:"true"`
+	RoleCFNStackYAMLPath  string   `json:"role-cfn-stack-yaml-path" read-only:"true"`
+	RoleCFNStackYAMLS3Key string   `json:"role-cfn-stack-yaml-s3-key" read-only:"true"`
 
 	// ProfileName is the profile name for Fargate.
 	ProfileName string `json:"profile-name"`
@@ -90,6 +97,10 @@ func (cfg *Config) validateAddOnFargate() error {
 		return fmt.Errorf("Version %q not supported for AddOnFargate", cfg.Parameters.Version)
 	}
 
+	if cfg.AddOnFargate.S3Dir == "" {
+		cfg.AddOnFargate.S3Dir = path.Join(cfg.Name, "add-on-fargate")
+	}
+
 	if cfg.AddOnFargate.Namespace == "" {
 		cfg.AddOnFargate.Namespace = cfg.Name + "-fargate"
 	}
@@ -117,8 +128,14 @@ func (cfg *Config) validateAddOnFargate() error {
 	}
 	cfg.AddOnFargate.SecretName = strings.ToLower(fargateSecretRegex.ReplaceAllString(cfg.AddOnFargate.SecretName, ""))
 
-	if cfg.AddOnFargate.RoleCFNStackYAMLFilePath == "" {
-		cfg.AddOnFargate.RoleCFNStackYAMLFilePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".add-on-fargate.role.cfn.yaml"
+	if cfg.AddOnFargate.RoleCFNStackYAMLPath == "" {
+		cfg.AddOnFargate.RoleCFNStackYAMLPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".add-on-fargate.role.cfn.yaml"
+	}
+	if cfg.AddOnFargate.RoleCFNStackYAMLS3Key == "" {
+		cfg.AddOnFargate.RoleCFNStackYAMLS3Key = path.Join(
+			cfg.AddOnFargate.S3Dir,
+			filepath.Base(cfg.AddOnFargate.RoleCFNStackYAMLPath),
+		)
 	}
 	switch cfg.AddOnFargate.RoleCreate {
 	case true: // need create one, or already created

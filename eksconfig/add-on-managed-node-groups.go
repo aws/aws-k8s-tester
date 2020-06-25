@@ -3,6 +3,7 @@ package eksconfig
 import (
 	"errors"
 	"fmt"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -25,6 +26,10 @@ type AddOnManagedNodeGroups struct {
 	TimeFrameCreate timeutil.TimeFrame `json:"time-frame-create" read-only:"true"`
 	TimeFrameDelete timeutil.TimeFrame `json:"time-frame-delete" read-only:"true"`
 
+	// S3Dir is the S3 directory to store all test results.
+	// It is under the bucket "eksconfig.Config.S3BucketName".
+	S3Dir string `json:"s3-dir"`
+
 	// FetchLogs is true to fetch logs from remote nodes using SSH.
 	FetchLogs bool `json:"fetch-logs"`
 
@@ -39,9 +44,10 @@ type AddOnManagedNodeGroups struct {
 	// RoleServicePrincipals is the node group Service Principals
 	RoleServicePrincipals []string `json:"role-service-principals"`
 	// RoleManagedPolicyARNs is node group managed policy ARNs.
-	RoleManagedPolicyARNs    []string `json:"role-managed-policy-arns"`
-	RoleCFNStackID           string   `json:"role-cfn-stack-id" read-only:"true"`
-	RoleCFNStackYAMLFilePath string   `json:"role-cfn-stack-yaml-file-path" read-only:"true"`
+	RoleManagedPolicyARNs []string `json:"role-managed-policy-arns"`
+	RoleCFNStackID        string   `json:"role-cfn-stack-id" read-only:"true"`
+	RoleCFNStackYAMLPath  string   `json:"role-cfn-stack-yaml-path" read-only:"true"`
+	RoleCFNStackYAMLS3Key string   `json:"role-cfn-stack-yaml-s3-key" read-only:"true"`
 
 	// RequestHeaderKey defines EKS managed node group create cluster request header key.
 	RequestHeaderKey string `json:"request-header-key,omitempty"`
@@ -125,12 +131,14 @@ type MNG struct {
 	PhysicalID string `json:"physical-id" read-only:"true"`
 
 	// MNGCFNStackID is the CloudFormation stack ID for a managed node group.
-	MNGCFNStackID           string `json:"mng-cfn-stack-id" read-only:"true"`
-	MNGCFNStackYAMLFilePath string `json:"mng-cfn-stack-yaml-file-path" read-only:"true"`
+	MNGCFNStackID        string `json:"mng-cfn-stack-id" read-only:"true"`
+	MNGCFNStackYAMLPath  string `json:"mng-cfn-stack-yaml-path" read-only:"true"`
+	MNGCFNStackYAMLS3Key string `json:"mng-cfn-stack-yaml-s3-key" read-only:"true"`
 
 	RemoteAccessSecurityGroupID                      string `json:"remote-access-security-group-id" read-only:"true"`
 	RemoteAccessSecurityGroupIngressEgressCFNStackID string `json:"remote-access-security-group-ingress-egress-cfn-stack-id" read-only:"true"`
-	RemoteAccessSecurityCFNStackYAMLFilePath         string `json:"remote-access-security-group-cfn-stack-yaml-file-path" read-only:"true"`
+	RemoteAccessSecurityCFNStackYAMLPath             string `json:"remote-access-security-group-cfn-stack-yaml-path" read-only:"true"`
+	RemoteAccessSecurityCFNStackYAMLS3Key            string `json:"remote-access-security-group-cfn-stack-yaml-s3-key" read-only:"true"`
 
 	// Status is the current status of EKS "Managed Node Group".
 	Status string `json:"status" read-only:"true"`
@@ -226,6 +234,10 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 		return fmt.Errorf("Version %q not supported for AddOnManagedNodeGroups", cfg.Parameters.Version)
 	}
 
+	if cfg.AddOnManagedNodeGroups.S3Dir == "" {
+		cfg.AddOnManagedNodeGroups.S3Dir = path.Join(cfg.Name, "add-on-managed-node-groups")
+	}
+
 	if cfg.AddOnManagedNodeGroups.LogsDir == "" {
 		cfg.AddOnManagedNodeGroups.LogsDir = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-logs-mngs")
 	}
@@ -236,8 +248,14 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 		return fmt.Errorf("AddOnManagedNodeGroups.LogsTarGzPath %q must end with .tar.gz", cfg.AddOnManagedNodeGroups.LogsTarGzPath)
 	}
 
-	if cfg.AddOnManagedNodeGroups.RoleCFNStackYAMLFilePath == "" {
-		cfg.AddOnManagedNodeGroups.RoleCFNStackYAMLFilePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".add-on-managed-node-groups.role.cfn.yaml"
+	if cfg.AddOnManagedNodeGroups.RoleCFNStackYAMLPath == "" {
+		cfg.AddOnManagedNodeGroups.RoleCFNStackYAMLPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".add-on-managed-node-groups.role.cfn.yaml"
+	}
+	if cfg.AddOnManagedNodeGroups.RoleCFNStackYAMLS3Key == "" {
+		cfg.AddOnManagedNodeGroups.RoleCFNStackYAMLS3Key = path.Join(
+			cfg.AddOnManagedNodeGroups.S3Dir,
+			filepath.Base(cfg.AddOnManagedNodeGroups.RoleCFNStackYAMLPath),
+		)
 	}
 	switch cfg.AddOnManagedNodeGroups.RoleCreate {
 	case true: // need create one, or already created
@@ -376,11 +394,24 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 			cur.RemoteAccessUserName = "ec2-user"
 		}
 
-		if cur.MNGCFNStackYAMLFilePath == "" {
-			cur.MNGCFNStackYAMLFilePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".mng.cfn." + k + ".yaml"
+		if cur.MNGCFNStackYAMLPath == "" {
+			cur.MNGCFNStackYAMLPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".mng.cfn." + k + ".yaml"
 		}
-		if cur.RemoteAccessSecurityCFNStackYAMLFilePath == "" {
-			cur.RemoteAccessSecurityCFNStackYAMLFilePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".mng-sg.cfn." + k + ".yaml"
+		if cur.MNGCFNStackYAMLS3Key == "" {
+			cur.MNGCFNStackYAMLS3Key = path.Join(
+				cfg.AddOnNodeGroups.S3Dir,
+				filepath.Base(cur.MNGCFNStackYAMLPath),
+			)
+		}
+
+		if cur.RemoteAccessSecurityCFNStackYAMLPath == "" {
+			cur.RemoteAccessSecurityCFNStackYAMLPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".mng-sg.cfn." + k + ".yaml"
+		}
+		if cur.RemoteAccessSecurityCFNStackYAMLS3Key == "" {
+			cur.RemoteAccessSecurityCFNStackYAMLS3Key = path.Join(
+				cfg.AddOnNodeGroups.S3Dir,
+				filepath.Base(cur.RemoteAccessSecurityCFNStackYAMLPath),
+			)
 		}
 
 		switch cur.AMIType {

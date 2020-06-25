@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -24,6 +25,10 @@ type AddOnConformance struct {
 	Created         bool               `json:"created" read-only:"true"`
 	TimeFrameCreate timeutil.TimeFrame `json:"time-frame-create" read-only:"true"`
 	TimeFrameDelete timeutil.TimeFrame `json:"time-frame-delete" read-only:"true"`
+
+	// S3Dir is the S3 directory to store all test results.
+	// It is under the bucket "eksconfig.Config.S3BucketName".
+	S3Dir string `json:"s3-dir"`
 
 	// Namespace is the namespace to create objects in.
 	Namespace string `json:"namespace"`
@@ -46,10 +51,13 @@ type AddOnConformance struct {
 	SonobuoyRunMode                 string `json:"sonobuoy-run-mode"`
 	SonobuoyRunKubeConformanceImage string `json:"sonobuoy-run-kube-conformance-image"`
 
-	SonobuoyResultTarGzPath    string `json:"sonobuoy-result-tar-gz-path" read-only:"true"`
-	SonobuoyResultDir          string `json:"sonobuoy-result-dir" read-only:"true"`
-	SonobuoyResultE2eLogPath   string `json:"sonobuoy-result-e2e-log-path" read-only:"true"`
-	SonobuoyResultJunitXMLPath string `json:"sonobuoy-result-junit-xml-path" read-only:"true"`
+	SonobuoyResultTarGzPath     string `json:"sonobuoy-result-tar-gz-path" read-only:"true"`
+	SonobuoyResultTarGzS3Key    string `json:"sonobuoy-result-tar-gz-s3-key" read-only:"true"`
+	SonobuoyResultDir           string `json:"sonobuoy-result-dir" read-only:"true"`
+	SonobuoyResultE2eLogPath    string `json:"sonobuoy-result-e2e-log-path" read-only:"true"`
+	SonobuoyResultE2eLogS3Key   string `json:"sonobuoy-result-e2e-log-s3-key" read-only:"true"`
+	SonobuoyResultJunitXMLPath  string `json:"sonobuoy-result-junit-xml-path" read-only:"true"`
+	SonobuoyResultJunitXMLS3Key string `json:"sonobuoy-result-junit-xml-s3-key" read-only:"true"`
 }
 
 // EnvironmentVariablePrefixAddOnConformance is the environment variable prefix used for "eksconfig".
@@ -122,6 +130,10 @@ func (cfg *Config) validateAddOnConformance() error {
 		return errors.New("AddOnConformance.Enable true with AddOnManagedNodeGroups.Enable true")
 	}
 
+	if cfg.AddOnConformance.S3Dir == "" {
+		cfg.AddOnConformance.S3Dir = path.Join(cfg.Name, "add-on-conformance")
+	}
+
 	if cfg.AddOnConformance.Namespace == "" {
 		cfg.AddOnConformance.Namespace = cfg.Name + "-conformance"
 	}
@@ -162,6 +174,12 @@ func (cfg *Config) validateAddOnConformance() error {
 	if !strings.HasSuffix(cfg.AddOnConformance.SonobuoyResultTarGzPath, ".tar.gz") {
 		return fmt.Errorf("AddOnConformance.SonobuoyResultTarGzPath[%q] must have '.tar.gz' extension", cfg.AddOnConformance.SonobuoyResultTarGzPath)
 	}
+	if cfg.AddOnConformance.SonobuoyResultE2eLogS3Key == "" {
+		cfg.AddOnConformance.SonobuoyResultE2eLogS3Key = path.Join(
+			cfg.AddOnConformance.S3Dir,
+			filepath.Base(cfg.AddOnConformance.SonobuoyResultE2eLogPath),
+		)
+	}
 
 	cfg.AddOnConformance.SonobuoyResultDir = filepath.Join(
 		filepath.Dir(cfg.ConfigPath),
@@ -178,6 +196,12 @@ func (cfg *Config) validateAddOnConformance() error {
 	if !strings.HasSuffix(cfg.AddOnConformance.SonobuoyResultE2eLogPath, ".log") {
 		return fmt.Errorf("AddOnConformance.SonobuoyResultE2eLogPath[%q] must have '.log' extension", cfg.AddOnConformance.SonobuoyResultTarGzPath)
 	}
+	if cfg.AddOnConformance.SonobuoyResultTarGzS3Key == "" {
+		cfg.AddOnConformance.SonobuoyResultTarGzS3Key = path.Join(
+			cfg.AddOnConformance.S3Dir,
+			filepath.Base(cfg.AddOnConformance.SonobuoyResultTarGzPath),
+		)
+	}
 
 	if cfg.AddOnConformance.SonobuoyResultJunitXMLPath == "" {
 		cfg.AddOnConformance.SonobuoyResultJunitXMLPath = filepath.Join(
@@ -188,6 +212,12 @@ func (cfg *Config) validateAddOnConformance() error {
 	}
 	if !strings.HasSuffix(cfg.AddOnConformance.SonobuoyResultJunitXMLPath, ".xml") {
 		return fmt.Errorf("AddOnConformance.SonobuoyResultJunitXMLPath[%q] must have '.xml' extension", cfg.AddOnConformance.SonobuoyResultTarGzPath)
+	}
+	if cfg.AddOnConformance.SonobuoyResultJunitXMLS3Key == "" {
+		cfg.AddOnConformance.SonobuoyResultJunitXMLS3Key = path.Join(
+			cfg.AddOnConformance.S3Dir,
+			filepath.Base(cfg.AddOnConformance.SonobuoyResultJunitXMLPath),
+		)
 	}
 
 	return nil

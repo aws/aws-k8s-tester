@@ -347,9 +347,10 @@ type Parameters struct {
 	// RoleServicePrincipals is the EKS Role Service Principals
 	RoleServicePrincipals []string `json:"role-service-principals"`
 	// RoleManagedPolicyARNs is EKS Role managed policy ARNs.
-	RoleManagedPolicyARNs    []string `json:"role-managed-policy-arns"`
-	RoleCFNStackID           string   `json:"role-cfn-stack-id" read-only:"true"`
-	RoleCFNStackYAMLFilePath string   `json:"role-cfn-stack-yaml-file-path" read-only:"true"`
+	RoleManagedPolicyARNs []string `json:"role-managed-policy-arns"`
+	RoleCFNStackID        string   `json:"role-cfn-stack-id" read-only:"true"`
+	RoleCFNStackYAMLPath  string   `json:"role-cfn-stack-yaml-path" read-only:"true"`
+	RoleCFNStackYAMLS3Key string   `json:"role-cfn-stack-yaml-s3-key" read-only:"true"`
 
 	// Tags defines EKS create cluster tags.
 	Tags map[string]string `json:"tags"`
@@ -369,9 +370,10 @@ type Parameters struct {
 	// VPCID is the VPC ID for cluster creation.
 	// If not empty, VPC is reused and not deleted.
 	// If empty, VPC is created anew and deleted on cluster deletion.
-	VPCID                   string `json:"vpc-id"`
-	VPCCFNStackID           string `json:"vpc-cfn-stack-id" read-only:"true"`
-	VPCCFNStackYAMLFilePath string `json:"vpc-cfn-stack-yaml-file-path" read-only:"true"`
+	VPCID                string `json:"vpc-id"`
+	VPCCFNStackID        string `json:"vpc-cfn-stack-id" read-only:"true"`
+	VPCCFNStackYAMLPath  string `json:"vpc-cfn-stack-yaml-path" read-only:"true"`
+	VPCCFNStackYAMLS3Key string `json:"vpc-cfn-stack-yaml-s3-key" read-only:"true"`
 	// VpcCIDR is the IP range (CIDR notation) for VPC, must be a valid private
 	// (RFC 1918) CIDR range.
 	VPCCIDR string `json:"vpc-cidr,omitempty"`
@@ -743,8 +745,8 @@ func NewDefault() *Config {
 		OnFailureDeleteWaitSeconds: 120,
 
 		S3BucketName:                    "",
-		S3BucketCreate:                  false,
-		S3BucketCreateKeep:              false,
+		S3BucketCreate:                  true,
+		S3BucketCreateKeep:              true,
 		S3BucketLifecycleExpirationDays: 0,
 
 		CWNamespace: "aws-k8s-tester-eks",
@@ -1137,6 +1139,9 @@ func (cfg *Config) validateConfig() error {
 			cfg.S3BucketLifecycleExpirationDays = 3
 		}
 	case false: // use existing one
+		if cfg.S3BucketName == "" {
+			return errors.New("empty S3BucketName")
+		}
 	}
 
 	if cfg.CWNamespace == "" {
@@ -1152,8 +1157,11 @@ func (cfg *Config) validateConfig() error {
 	if cfg.Status.ClusterMetricsRawOutputDir == "" {
 		cfg.Status.ClusterMetricsRawOutputDir = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-metrics")
 	}
-	if cfg.Status.ClusterCFNStackYAMLFilePath == "" {
-		cfg.Status.ClusterCFNStackYAMLFilePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".cluster.cfn.yaml"
+	if cfg.Status.ClusterCFNStackYAMLPath == "" {
+		cfg.Status.ClusterCFNStackYAMLPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".cluster.cfn.yaml"
+	}
+	if cfg.Status.ClusterCFNStackYAMLS3Key == "" {
+		cfg.Status.ClusterCFNStackYAMLS3Key = filepath.Base(cfg.Status.ClusterCFNStackYAMLPath)
 	}
 	return nil
 }
@@ -1168,8 +1176,11 @@ func (cfg *Config) validateParameters() error {
 		return fmt.Errorf("cannot parse Parameters.Version %q (%v)", cfg.Parameters.Version, err)
 	}
 
-	if cfg.Parameters.RoleCFNStackYAMLFilePath == "" {
-		cfg.Parameters.RoleCFNStackYAMLFilePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".role.cfn.yaml"
+	if cfg.Parameters.RoleCFNStackYAMLPath == "" {
+		cfg.Parameters.RoleCFNStackYAMLPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".role.cfn.yaml"
+	}
+	if cfg.Parameters.RoleCFNStackYAMLS3Key == "" {
+		cfg.Parameters.RoleCFNStackYAMLS3Key = filepath.Base(cfg.Parameters.RoleCFNStackYAMLPath)
 	}
 	switch cfg.Parameters.RoleCreate {
 	case true: // need create one, or already created
@@ -1197,8 +1208,11 @@ func (cfg *Config) validateParameters() error {
 		}
 	}
 
-	if cfg.Parameters.VPCCFNStackYAMLFilePath == "" {
-		cfg.Parameters.VPCCFNStackYAMLFilePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".vpc.cfn.yaml"
+	if cfg.Parameters.VPCCFNStackYAMLPath == "" {
+		cfg.Parameters.VPCCFNStackYAMLPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".vpc.cfn.yaml"
+	}
+	if cfg.Parameters.VPCCFNStackYAMLS3Key == "" {
+		cfg.Parameters.VPCCFNStackYAMLS3Key = filepath.Base(cfg.Parameters.VPCCFNStackYAMLPath)
 	}
 	switch cfg.Parameters.VPCCreate {
 	case true: // need create one, or already created

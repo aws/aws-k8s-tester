@@ -27,6 +27,10 @@ type AddOnSecretsLocal struct {
 	TimeFrameCreate timeutil.TimeFrame `json:"time-frame-create" read-only:"true"`
 	TimeFrameDelete timeutil.TimeFrame `json:"time-frame-delete" read-only:"true"`
 
+	// S3Dir is the S3 directory to store all test results.
+	// It is under the bucket "eksconfig.Config.S3BucketName".
+	S3Dir string `json:"s3-dir"`
+
 	// Namespace is the namespace to create objects in.
 	Namespace string `json:"namespace"`
 
@@ -39,10 +43,6 @@ type AddOnSecretsLocal struct {
 	// If multiple Secret loader is running,
 	// this must be unique per worker to avoid name conflicts.
 	NamePrefix string `json:"name-prefix"`
-
-	// S3Dir is the S3 directory to store all test results.
-	// It is under the bucket "eksconfig.Config.S3BucketName".
-	S3Dir string `json:"s3-dir"`
 
 	//////////////////////////////////////////////////////////////////////////////
 
@@ -162,13 +162,15 @@ func (cfg *Config) validateAddOnSecretsLocal() error {
 	if !cfg.IsEnabledAddOnSecretsLocal() {
 		return nil
 	}
-	if cfg.S3BucketName == "" {
-		return errors.New("AddOnSecretsLocal requires S3 bucket for collecting results but S3BucketName empty")
-	}
 
 	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
 		return errors.New("AddOnSecretsLocal.Enable true but no node group is enabled")
 	}
+
+	if cfg.AddOnSecretsLocal.S3Dir == "" {
+		cfg.AddOnSecretsLocal.S3Dir = path.Join(cfg.Name, "add-on-secrets-local")
+	}
+
 	if cfg.AddOnSecretsLocal.Namespace == "" {
 		cfg.AddOnSecretsLocal.Namespace = cfg.Name + "-secrets-local"
 	}
@@ -182,10 +184,6 @@ func (cfg *Config) validateAddOnSecretsLocal() error {
 
 	if cfg.AddOnSecretsLocal.NamePrefix == "" {
 		cfg.AddOnSecretsLocal.NamePrefix = "secret" + randutil.String(5)
-	}
-
-	if cfg.AddOnSecretsLocal.S3Dir == "" {
-		cfg.AddOnSecretsLocal.S3Dir = path.Join(cfg.Name, "add-on-secrets-local")
 	}
 
 	//////////////////////////////////////////////////////////////////////////////

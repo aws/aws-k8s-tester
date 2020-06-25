@@ -3,6 +3,7 @@ package eksconfig
 import (
 	"errors"
 	"fmt"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -23,6 +24,10 @@ type AddOnNodeGroups struct {
 	TimeFrameCreate timeutil.TimeFrame `json:"time-frame-create" read-only:"true"`
 	TimeFrameDelete timeutil.TimeFrame `json:"time-frame-delete" read-only:"true"`
 
+	// S3Dir is the S3 directory to store all test results.
+	// It is under the bucket "eksconfig.Config.S3BucketName".
+	S3Dir string `json:"s3-dir"`
+
 	// FetchLogs is true to fetch logs from remote nodes using SSH.
 	FetchLogs bool `json:"fetch-logs"`
 
@@ -37,14 +42,16 @@ type AddOnNodeGroups struct {
 	// RoleServicePrincipals is the node group Service Principals
 	RoleServicePrincipals []string `json:"role-service-principals"`
 	// RoleManagedPolicyARNs is node groupd policy ARNs.
-	RoleManagedPolicyARNs    []string `json:"role-managed-policy-arns"`
-	RoleCFNStackID           string   `json:"role-cfn-stack-id" read-only:"true"`
-	RoleCFNStackYAMLFilePath string   `json:"role-cfn-stack-yaml-file-path" read-only:"true"`
+	RoleManagedPolicyARNs []string `json:"role-managed-policy-arns"`
+	RoleCFNStackID        string   `json:"role-cfn-stack-id" read-only:"true"`
+	RoleCFNStackYAMLPath  string   `json:"role-cfn-stack-yaml-path" read-only:"true"`
+	RoleCFNStackYAMLS3Key string   `json:"role-cfn-stack-yaml-s3-key" read-only:"true"`
 
 	// NodeGroupSecurityGroupID is the security group ID for the node group.
-	NodeGroupSecurityGroupID                   string `json:"node-group-security-group-id" read-only:"true"`
-	NodeGroupSecurityGroupCFNStackID           string `json:"node-group-security-group-cfn-stack-id" read-only:"true"`
-	NodeGroupSecurityGroupCFNStackYAMLFilePath string `json:"node-group-security-group-cfn-stack-yaml-file-path" read-only:"true"`
+	NodeGroupSecurityGroupID                string `json:"node-group-security-group-id" read-only:"true"`
+	NodeGroupSecurityGroupCFNStackID        string `json:"node-group-security-group-cfn-stack-id" read-only:"true"`
+	NodeGroupSecurityGroupCFNStackYAMLPath  string `json:"node-group-security-group-cfn-stack-yaml-path" read-only:"true"`
+	NodeGroupSecurityGroupCFNStackYAMLS3Key string `json:"node-group-security-group-cfn-stack-yaml-s3-key" read-only:"true"`
 
 	// LogsDir is set to specify the target directory to store all remote log files.
 	// If empty, it stores in the same directory as "ConfigPath".
@@ -148,6 +155,10 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 		return fmt.Errorf("Version %q not supported for AddOnNodeGroups", cfg.Parameters.Version)
 	}
 
+	if cfg.AddOnNodeGroups.S3Dir == "" {
+		cfg.AddOnNodeGroups.S3Dir = path.Join(cfg.Name, "add-on-node-groups")
+	}
+
 	if cfg.AddOnNodeGroups.LogsDir == "" {
 		cfg.AddOnNodeGroups.LogsDir = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-logs-ngs")
 	}
@@ -158,12 +169,24 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 		return fmt.Errorf("AddOnNodeGroups.LogsTarGzPath %q must end with .tar.gz", cfg.AddOnNodeGroups.LogsTarGzPath)
 	}
 
-	if cfg.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackYAMLFilePath == "" {
-		cfg.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackYAMLFilePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".add-on-node-groups.sg.cfn.yaml"
+	if cfg.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackYAMLPath == "" {
+		cfg.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackYAMLPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".add-on-node-groups.sg.cfn.yaml"
+	}
+	if cfg.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackYAMLS3Key == "" {
+		cfg.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackYAMLS3Key = path.Join(
+			cfg.AddOnNodeGroups.S3Dir,
+			filepath.Base(cfg.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackYAMLPath),
+		)
 	}
 
-	if cfg.AddOnNodeGroups.RoleCFNStackYAMLFilePath == "" {
-		cfg.AddOnNodeGroups.RoleCFNStackYAMLFilePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".add-on-node-groups.role.cfn.yaml"
+	if cfg.AddOnNodeGroups.RoleCFNStackYAMLPath == "" {
+		cfg.AddOnNodeGroups.RoleCFNStackYAMLPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".add-on-node-groups.role.cfn.yaml"
+	}
+	if cfg.AddOnNodeGroups.RoleCFNStackYAMLS3Key == "" {
+		cfg.AddOnNodeGroups.RoleCFNStackYAMLS3Key = path.Join(
+			cfg.AddOnNodeGroups.S3Dir,
+			filepath.Base(cfg.AddOnNodeGroups.RoleCFNStackYAMLPath),
+		)
 	}
 	switch cfg.AddOnNodeGroups.RoleCreate {
 	case true: // need create one, or already created
@@ -231,8 +254,14 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 			return fmt.Errorf("AddOnNodeGroups.ASGs[%q].Name %q is redundant", k, cur.Name)
 		}
 
-		if cur.ASGCFNStackYAMLFilePath == "" {
-			cur.ASGCFNStackYAMLFilePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".asg.cfn." + k + ".yaml"
+		if cur.ASGCFNStackYAMLPath == "" {
+			cur.ASGCFNStackYAMLPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".asg.cfn." + k + ".yaml"
+		}
+		if cur.ASGCFNStackYAMLS3Key == "" {
+			cur.ASGCFNStackYAMLS3Key = path.Join(
+				cfg.AddOnNodeGroups.S3Dir,
+				filepath.Base(cur.ASGCFNStackYAMLPath),
+			)
 		}
 
 		if len(cur.InstanceTypes) > 4 {
@@ -325,8 +354,14 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 			return fmt.Errorf("AddOnNodeGroups.ASGs[%q].ASGDesiredCapacity %d > NGMaxLimit %d", k, cur.ASGDesiredCapacity, NGMaxLimit)
 		}
 
-		if cur.SSMDocumentCFNStackYAMLFilePath == "" {
-			cur.SSMDocumentCFNStackYAMLFilePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".ssm.cfn." + k + ".yaml"
+		if cur.SSMDocumentCFNStackYAMLPath == "" {
+			cur.SSMDocumentCFNStackYAMLPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".ssm.cfn." + k + ".yaml"
+		}
+		if cur.SSMDocumentCFNStackYAMLS3Key == "" {
+			cur.SSMDocumentCFNStackYAMLS3Key = path.Join(
+				cfg.AddOnNodeGroups.S3Dir,
+				filepath.Base(cur.SSMDocumentCFNStackYAMLPath),
+			)
 		}
 		switch cur.SSMDocumentCreate {
 		case true: // need create one, or already created

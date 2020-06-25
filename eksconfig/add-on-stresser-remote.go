@@ -27,6 +27,10 @@ type AddOnStresserRemote struct {
 	TimeFrameCreate timeutil.TimeFrame `json:"time-frame-create" read-only:"true"`
 	TimeFrameDelete timeutil.TimeFrame `json:"time-frame-delete" read-only:"true"`
 
+	// S3Dir is the S3 directory to store all test results.
+	// It is under the bucket "eksconfig.Config.S3BucketName".
+	S3Dir string `json:"s3-dir"`
+
 	// Namespace is the namespace to create objects in.
 	Namespace string `json:"namespace"`
 
@@ -59,10 +63,6 @@ type AddOnStresserRemote struct {
 	RequestsSummaryWritesOutputNamePrefix string `json:"requests-summary-writes-output-name-prefix"`
 	// RequestsSummaryReadsOutputNamePrefix is the output path name in "/var/log" directory, used in remote worker.
 	RequestsSummaryReadsOutputNamePrefix string `json:"requests-summary-reads-output-name-prefix"`
-
-	// S3Dir is the S3 directory to store all test results.
-	// It is under the bucket "eksconfig.Config.S3BucketName".
-	S3Dir string `json:"s3-dir"`
 
 	//////////////////////////////////////////////////////////////////////////////
 
@@ -175,8 +175,9 @@ func (cfg *Config) validateAddOnStresserRemote() error {
 	if !cfg.IsEnabledAddOnStresserRemote() {
 		return nil
 	}
-	if cfg.S3BucketName == "" {
-		return errors.New("AddOnStresserRemote requires S3 bucket for collecting results but S3BucketName empty")
+
+	if cfg.AddOnStresserRemote.S3Dir == "" {
+		cfg.AddOnStresserRemote.S3Dir = path.Join(cfg.Name, "add-on-stresser-remote")
 	}
 
 	if cfg.AddOnStresserRemote.Namespace == "" {

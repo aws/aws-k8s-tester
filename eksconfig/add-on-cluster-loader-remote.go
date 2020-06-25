@@ -3,6 +3,8 @@ package eksconfig
 import (
 	"errors"
 	"fmt"
+	"path"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
@@ -42,6 +44,10 @@ type AddOnClusterLoaderRemote struct {
 	TimeFrameCreate timeutil.TimeFrame `json:"time-frame-create" read-only:"true"`
 	TimeFrameDelete timeutil.TimeFrame `json:"time-frame-delete" read-only:"true"`
 
+	// S3Dir is the S3 directory to store all test results.
+	// It is under the bucket "eksconfig.Config.S3BucketName".
+	S3Dir string `json:"s3-dir"`
+
 	// Namespace is the namespace to create objects in.
 	Namespace string `json:"namespace"`
 
@@ -66,9 +72,11 @@ type AddOnClusterLoaderRemote struct {
 
 	// ReportTarGzPath is the .tar.gz file path for report directory.
 	// This is the local path after downloaded from remote nodes.
-	ReportTarGzPath string `json:"report-tar-gz-path" read-only:"true"`
+	ReportTarGzPath  string `json:"report-tar-gz-path" read-only:"true"`
+	ReportTarGzS3Key string `json:"report-tar-gz-s3-key" read-only:"true"`
 	// LogPath is the log file path to stream clusterloader binary runs.
-	LogPath string `json:"log-path" read-only:"true"`
+	LogPath  string `json:"log-path" read-only:"true"`
+	LogS3Key string `json:"log-s3-key" read-only:"true"`
 
 	// Runs is the number of "clusterloader2" runs back-to-back.
 	Runs int `json:"runs"`
@@ -158,6 +166,10 @@ func (cfg *Config) validateAddOnClusterLoaderRemote() error {
 		return nil
 	}
 
+	if cfg.AddOnClusterLoaderRemote.S3Dir == "" {
+		cfg.AddOnClusterLoaderRemote.S3Dir = path.Join(cfg.Name, "add-on-cluster-loader-remote")
+	}
+
 	if cfg.AddOnClusterLoaderRemote.Namespace == "" {
 		cfg.AddOnClusterLoaderRemote.Namespace = cfg.Name + "-cluster-loader-remote"
 	}
@@ -172,11 +184,27 @@ func (cfg *Config) validateAddOnClusterLoaderRemote() error {
 		return errors.New("AddOnClusterLoaderRemote.RepositoryImageTag empty")
 	}
 
+	if cfg.AddOnClusterLoaderRemote.S3Dir == "" {
+		cfg.AddOnClusterLoaderRemote.S3Dir = path.Join(cfg.Name, "add-on-cluster-loader-remote")
+	}
+
 	if cfg.AddOnClusterLoaderRemote.ReportTarGzPath == "" {
 		cfg.AddOnClusterLoaderRemote.ReportTarGzPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-cluster-loader-remote.tar.gz"
 	}
+	if cfg.AddOnClusterLoaderRemote.ReportTarGzS3Key == "" {
+		cfg.AddOnClusterLoaderRemote.ReportTarGzS3Key = path.Join(
+			cfg.AddOnClusterLoaderRemote.S3Dir,
+			filepath.Base(cfg.AddOnClusterLoaderRemote.ReportTarGzPath),
+		)
+	}
 	if cfg.AddOnClusterLoaderRemote.LogPath == "" {
 		cfg.AddOnClusterLoaderRemote.LogPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-cluster-loader-remote.log"
+	}
+	if cfg.AddOnClusterLoaderRemote.LogS3Key == "" {
+		cfg.AddOnClusterLoaderRemote.LogS3Key = path.Join(
+			cfg.AddOnClusterLoaderRemote.S3Dir,
+			filepath.Base(cfg.AddOnClusterLoaderRemote.LogPath),
+		)
 	}
 
 	if cfg.AddOnClusterLoaderRemote.DeploymentReplicas != 1 {

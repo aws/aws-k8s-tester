@@ -1,7 +1,6 @@
 package eksconfig
 
 import (
-	"errors"
 	"path"
 	"path/filepath"
 	"strings"
@@ -25,6 +24,10 @@ type AddOnStresserLocal struct {
 	TimeFrameCreate timeutil.TimeFrame `json:"time-frame-create" read-only:"true"`
 	TimeFrameDelete timeutil.TimeFrame `json:"time-frame-delete" read-only:"true"`
 
+	// S3Dir is the S3 directory to store all test results.
+	// It is under the bucket "eksconfig.Config.S3BucketName".
+	S3Dir string `json:"s3-dir"`
+
 	// Namespace is the namespace to create objects in.
 	Namespace string `json:"namespace"`
 
@@ -37,10 +40,6 @@ type AddOnStresserLocal struct {
 	// Duration is the duration to run load testing.
 	Duration       time.Duration `json:"duration,omitempty"`
 	DurationString string        `json:"duration-string,omitempty" read-only:"true"`
-
-	// S3Dir is the S3 directory to store all test results.
-	// It is under the bucket "eksconfig.Config.S3BucketName".
-	S3Dir string `json:"s3-dir"`
 
 	//////////////////////////////////////////////////////////////////////////////
 
@@ -150,8 +149,9 @@ func (cfg *Config) validateAddOnStresserLocal() error {
 	if !cfg.IsEnabledAddOnStresserLocal() {
 		return nil
 	}
-	if cfg.S3BucketName == "" {
-		return errors.New("AddOnStresserLocal requires S3 bucket for collecting results but S3BucketName empty")
+
+	if cfg.AddOnStresserLocal.S3Dir == "" {
+		cfg.AddOnStresserLocal.S3Dir = path.Join(cfg.Name, "add-on-stresser-local")
 	}
 
 	if cfg.AddOnStresserLocal.Namespace == "" {
@@ -162,10 +162,6 @@ func (cfg *Config) validateAddOnStresserLocal() error {
 		cfg.AddOnStresserLocal.Duration = time.Minute
 	}
 	cfg.AddOnStresserLocal.DurationString = cfg.AddOnStresserLocal.Duration.String()
-
-	if cfg.AddOnStresserLocal.S3Dir == "" {
-		cfg.AddOnStresserLocal.S3Dir = path.Join(cfg.Name, "add-on-stresser-local")
-	}
 
 	//////////////////////////////////////////////////////////////////////////////
 	if cfg.AddOnStresserLocal.RequestsRawWritesJSONPath == "" {

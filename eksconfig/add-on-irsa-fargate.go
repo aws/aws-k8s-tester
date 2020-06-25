@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
@@ -19,6 +20,10 @@ type AddOnIRSAFargate struct {
 	Created         bool               `json:"created" read-only:"true"`
 	TimeFrameCreate timeutil.TimeFrame `json:"time-frame-create" read-only:"true"`
 	TimeFrameDelete timeutil.TimeFrame `json:"time-frame-delete" read-only:"true"`
+
+	// S3Dir is the S3 directory to store all test results.
+	// It is under the bucket "eksconfig.Config.S3BucketName".
+	S3Dir string `json:"s3-dir"`
 
 	// Namespace is the namespace to create objects in.
 	Namespace string `json:"namespace"`
@@ -41,9 +46,10 @@ type AddOnIRSAFargate struct {
 	RoleServicePrincipals []string `json:"role-service-principals"`
 	// RoleManagedPolicyARNs is IRSA role managed policy ARNs.
 	// ref. https://aws.amazon.com/blogs/opensource/introducing-fine-grained-iam-roles-service-accounts/
-	RoleManagedPolicyARNs    []string `json:"role-managed-policy-arns"`
-	RoleCFNStackID           string   `json:"role-cfn-stack-id" read-only:"true"`
-	RoleCFNStackYAMLFilePath string   `json:"role-cfn-stack-yaml-file-path" read-only:"true"`
+	RoleManagedPolicyARNs []string `json:"role-managed-policy-arns"`
+	RoleCFNStackID        string   `json:"role-cfn-stack-id" read-only:"true"`
+	RoleCFNStackYAMLPath  string   `json:"role-cfn-stack-yaml-path" read-only:"true"`
+	RoleCFNStackYAMLS3Key string   `json:"role-cfn-stack-yaml-s3-key" read-only:"true"`
 
 	// S3Key is the S3 key to write for IRSA tests.
 	S3Key string `json:"s3-key"`
@@ -78,15 +84,17 @@ func (cfg *Config) validateAddOnIRSAFargate() error {
 	if !cfg.IsEnabledAddOnIRSAFargate() {
 		return nil
 	}
-	if cfg.S3BucketName == "" {
-		return errors.New("AddOnIRSAFargate requires S3 bucket for collecting results but S3BucketName empty")
-	}
 
 	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
 		return errors.New("AddOnIRSAFargate.Enable true but no node group is enabled")
 	}
+
 	if cfg.Parameters.VersionValue < 1.14 {
 		return fmt.Errorf("Version %q not supported for AddOnIRSAFargate", cfg.Parameters.Version)
+	}
+
+	if cfg.AddOnIRSAFargate.S3Dir == "" {
+		cfg.AddOnIRSAFargate.S3Dir = path.Join(cfg.Name, "add-on-irsa-fargate")
 	}
 
 	if cfg.AddOnIRSAFargate.Namespace == "" {
@@ -106,8 +114,14 @@ func (cfg *Config) validateAddOnIRSAFargate() error {
 	if cfg.AddOnIRSAFargate.RoleName == "" {
 		cfg.AddOnIRSAFargate.RoleName = cfg.Name + "add-on-irsa-fargate-role"
 	}
-	if cfg.AddOnIRSAFargate.RoleCFNStackYAMLFilePath == "" {
-		cfg.AddOnIRSAFargate.RoleCFNStackYAMLFilePath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".add-on-irsa-fargate.role.cfn.yaml"
+	if cfg.AddOnIRSAFargate.RoleCFNStackYAMLPath == "" {
+		cfg.AddOnIRSAFargate.RoleCFNStackYAMLPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".add-on-irsa-fargate.role.cfn.yaml"
+	}
+	if cfg.AddOnIRSAFargate.RoleCFNStackYAMLS3Key == "" {
+		cfg.AddOnIRSAFargate.RoleCFNStackYAMLS3Key = path.Join(
+			cfg.AddOnIRSAFargate.S3Dir,
+			filepath.Base(cfg.AddOnIRSAFargate.RoleCFNStackYAMLPath),
+		)
 	}
 
 	if cfg.AddOnIRSAFargate.S3Key == "" {

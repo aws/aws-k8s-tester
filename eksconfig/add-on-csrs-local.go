@@ -26,6 +26,10 @@ type AddOnCSRsLocal struct {
 	TimeFrameCreate timeutil.TimeFrame `json:"time-frame-create" read-only:"true"`
 	TimeFrameDelete timeutil.TimeFrame `json:"time-frame-delete" read-only:"true"`
 
+	// S3Dir is the S3 directory to store all test results.
+	// It is under the bucket "eksconfig.Config.S3BucketName".
+	S3Dir string `json:"s3-dir"`
+
 	// Objects is the number of "CertificateSigningRequest" objects to create.
 	Objects int `json:"objects"`
 
@@ -43,10 +47,6 @@ type AddOnCSRsLocal struct {
 
 	// CreatedNames is the list of created "CertificateSigningRequest" object names.
 	CreatedNames []string `json:"created-names" read-only:"true"`
-
-	// S3Dir is the S3 directory to store all test results.
-	// It is under the bucket "eksconfig.Config.S3BucketName".
-	S3Dir string `json:"s3-dir"`
 
 	//////////////////////////////////////////////////////////////////////////////
 
@@ -117,12 +117,13 @@ func (cfg *Config) validateAddOnCSRsLocal() error {
 	if !cfg.IsEnabledAddOnCSRsLocal() {
 		return nil
 	}
-	if cfg.S3BucketName == "" {
-		return errors.New("AddOnCSRsLocal requires S3 bucket for collecting results but S3BucketName empty")
-	}
 
 	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
 		return errors.New("AddOnCSRsLocal.Enable true but no node group is enabled")
+	}
+
+	if cfg.AddOnCSRsLocal.S3Dir == "" {
+		cfg.AddOnCSRsLocal.S3Dir = path.Join(cfg.Name, "add-on-csrs-local")
 	}
 
 	if cfg.AddOnCSRsLocal.Objects == 0 {
@@ -136,10 +137,6 @@ func (cfg *Config) validateAddOnCSRsLocal() error {
 	case "Random":
 	default:
 		return fmt.Errorf("unknown AddOnCSRsLocal.InitialRequestConditionType %q", cfg.AddOnCSRsLocal.InitialRequestConditionType)
-	}
-
-	if cfg.AddOnCSRsLocal.S3Dir == "" {
-		cfg.AddOnCSRsLocal.S3Dir = path.Join(cfg.Name, "add-on-csrs-local")
 	}
 
 	//////////////////////////////////////////////////////////////////////////////
