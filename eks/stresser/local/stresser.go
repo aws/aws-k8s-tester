@@ -19,6 +19,7 @@ import (
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/aws/cw"
 	aws_s3 "github.com/aws/aws-k8s-tester/pkg/aws/s3"
+	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/metrics"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
@@ -353,23 +354,27 @@ func (ts *tester) compareResults(curWriteLatencies metrics.Durations, curReadLat
 		ts.cfg.Logger.Warn("previous writes summary not found; skipping comparison", zap.Error(err))
 	}
 	ts.cfg.Logger.Info("uploading new writes summary to s3 bucket to overwrite the previous")
-	if err = aws_s3.Upload(
-		ts.cfg.Logger,
-		ts.cfg.S3API,
-		ts.cfg.EKSConfig.S3BucketName,
-		path.Join(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsRawWritesCompareS3Dir, tss),
-		ts.cfg.EKSConfig.AddOnStresserLocal.RequestsRawWritesJSONPath,
-	); err != nil {
-		return err
+	if fileutil.Exist(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsRawWritesJSONPath) {
+		if err = aws_s3.Upload(
+			ts.cfg.Logger,
+			ts.cfg.S3API,
+			ts.cfg.EKSConfig.S3BucketName,
+			path.Join(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsRawWritesCompareS3Dir, tss),
+			ts.cfg.EKSConfig.AddOnStresserLocal.RequestsRawWritesJSONPath,
+		); err != nil {
+			return err
+		}
 	}
-	if err = aws_s3.Upload(
-		ts.cfg.Logger,
-		ts.cfg.S3API,
-		ts.cfg.EKSConfig.S3BucketName,
-		path.Join(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsSummaryWritesCompareS3Dir, tss),
-		ts.cfg.EKSConfig.AddOnStresserLocal.RequestsSummaryWritesJSONPath,
-	); err != nil {
-		return err
+	if fileutil.Exist(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsSummaryWritesJSONPath) {
+		if err = aws_s3.Upload(
+			ts.cfg.Logger,
+			ts.cfg.S3API,
+			ts.cfg.EKSConfig.S3BucketName,
+			path.Join(ts.cfg.EKSConfig.AddOnStresserLocal.RequestsSummaryWritesCompareS3Dir, tss),
+			ts.cfg.EKSConfig.AddOnStresserLocal.RequestsSummaryWritesJSONPath,
+		); err != nil {
+			return err
+		}
 	}
 
 	s3Objects = make([]*s3.Object, 0)
