@@ -126,7 +126,7 @@ func (ts *tester) Create() (err error) {
 		10*time.Second,
 		3*time.Minute+time.Duration(ts.cfg.EKSConfig.AddOnSecretsRemote.Completes)*30*time.Second,
 		ts.cfg.EKSConfig.AddOnSecretsRemote.Namespace,
-		csrsJobName,
+		secretsJobName,
 		ts.cfg.EKSConfig.AddOnSecretsRemote.Completes,
 	)
 	if err != nil {
