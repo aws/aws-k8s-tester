@@ -116,34 +116,14 @@ func (ts *tester) Create() (err error) {
 		return err
 	}
 
-	if err = ts.compareResults(curWriteLatencies, curReadLatencies); err != nil {
+	if err = ts.checkResults(curWriteLatencies, curReadLatencies); err != nil {
 		return err
 	}
 	if err = ts.publishResults(); err != nil {
 		return err
 	}
 
-	waitDur, retryStart := 5*time.Minute, time.Now()
-	for time.Now().Sub(retryStart) < waitDur {
-		select {
-		case <-ts.cfg.Stopc:
-			ts.cfg.Logger.Warn("health check aborted")
-			return nil
-		case <-time.After(5 * time.Second):
-		}
-		err = ts.cfg.K8SClient.CheckHealth()
-		if err == nil {
-			break
-		}
-		ts.cfg.Logger.Warn("health check failed", zap.Error(err))
-	}
-	ts.cfg.EKSConfig.Sync()
-	if err == nil {
-		ts.cfg.Logger.Info("health check success after secrets local tester")
-	} else {
-		ts.cfg.Logger.Warn("health check failed after secrets local tester", zap.Error(err))
-	}
-	return err
+	return ts.cfg.EKSConfig.Sync()
 }
 
 func (ts *tester) Delete() error {
@@ -185,25 +165,11 @@ func (ts *tester) Delete() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
-func (ts *tester) AggregateResults() (err error) {
-	if !ts.cfg.EKSConfig.IsEnabledAddOnSecretsLocal() {
-		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", pkgName))
-		return nil
-	}
-	if !ts.cfg.EKSConfig.AddOnSecretsLocal.Created {
-		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", pkgName))
-		return nil
-	}
-
-	ts.cfg.Logger.Info("starting tester.AggregateResults", zap.String("tester", pkgName))
-	return nil
-}
-
 // 1. if previous summary exists, download and compare
 // 2. upload new summary and overwrite the previous s3 key
-func (ts *tester) compareResults(curWriteLatencies metrics.Durations, curReadLatencies metrics.Durations) (err error) {
+func (ts *tester) checkResults(curWriteLatencies metrics.Durations, curReadLatencies metrics.Durations) (err error) {
 	tss := time.Now().UTC().Format(time.RFC3339Nano)
-	ts.cfg.Logger.Info("comparing results", zap.String("timestamp", tss))
+	ts.cfg.Logger.Info("checking results", zap.String("timestamp", tss))
 
 	s3Objects := make([]*s3.Object, 0)
 	if ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsSummaryWritesCompareS3Dir != "" {
