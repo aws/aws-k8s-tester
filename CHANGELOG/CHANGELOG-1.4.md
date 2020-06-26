@@ -27,6 +27,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.9...v1.4.0
 
 ### `eks`
 
+- Run [`eks/mng/scale.Scale` after creating add-ons](https://github.com/aws/aws-k8s-tester/commit/dc43773768e58a54ffda2f7d755ab345ceed8a2a).
 - Fix [`eks/mng/scale`](https://github.com/aws/aws-k8s-tester/commit/44014bfb896ccce7344ee414bc14b4dca77c4491).
 - Update [nodes after `eks/mng/scale`](https://github.com/aws/aws-k8s-tester/commit/6fd1e3c533e5e319302fa8170ddda3d45ae04c2d).
 - Remove [`eks/tester.Tester.AggregateResults`](https://github.com/aws/aws-k8s-tester/commit/be028bd4d8430347788adb98636fb7b78da132fe).
