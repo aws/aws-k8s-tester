@@ -141,6 +141,9 @@ func (ts *tester) Create() (err error) {
 		if err = ts.scaler.Scale(mngName); err != nil {
 			return err
 		}
+		if err = ts.nodeWaiter.Wait(mngName, 3); err != nil {
+			return err
+		}
 	}
 
 	ts.cfg.EKSConfig.AddOnManagedNodeGroups.Created = true
