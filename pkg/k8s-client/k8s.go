@@ -619,10 +619,9 @@ func waitForJobCompletes(
 			if !match {
 				continue
 			}
-			if item.Status.Phase != apiv1.PodSucceeded {
-				continue
+			if item.Status.Phase == apiv1.PodSucceeded {
+				podSucceededCnt++
 			}
-			podSucceededCnt++
 		}
 		if podSucceededCnt < target {
 			lg.Warn("polled not succeeded yet",
