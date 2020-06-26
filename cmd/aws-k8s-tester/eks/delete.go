@@ -1,6 +1,7 @@
 package eks
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -47,9 +48,21 @@ func deleteClusterFunc(cmd *cobra.Command, args []string) {
 		fmt.Fprintf(os.Stderr, "failed to read configuration %q (%v)\n", path, err)
 		os.Exit(1)
 	}
-	println()
-	fmt.Println(string(txt))
-	println()
+	fmt.Printf("\n\n%q:\n\n%s\n\n\n", path, string(txt))
+	if cfg.IsEnabledAddOnNodeGroups() {
+		body, err := json.MarshalIndent(cfg.AddOnNodeGroups, "", "    ")
+		if err != nil {
+			panic(err)
+		}
+		fmt.Printf("AddOnNodeGroups:\n\n%s\n\n\n", string(body))
+	}
+	if cfg.IsEnabledAddOnManagedNodeGroups() {
+		body, err := json.MarshalIndent(cfg.AddOnManagedNodeGroups, "", "    ")
+		if err != nil {
+			panic(err)
+		}
+		fmt.Printf("AddOnManagedNodeGroups:\n\n%s\n\n\n", string(body))
+	}
 
 	if enablePrompt {
 		prompt := promptui.Select{
