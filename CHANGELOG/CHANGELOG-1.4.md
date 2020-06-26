@@ -69,6 +69,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.9...v1.4.0
 
 ### `eksconfig`
 
+- `AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_DEPLOYMENT_REPLICAS` is now [`AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_COMPLETES` and `AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_PARALLELS`](https://github.com/aws/aws-k8s-tester/commit/e322c9d80b7c1280a399d1b69ae2dbda4b7ee23e).
+- `AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_DEPLOYMENT_REPLICAS` is now [`AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_COMPLETES` and `AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_PARALLELS`](https://github.com/aws/aws-k8s-tester/commit/e322c9d80b7c1280a399d1b69ae2dbda4b7ee23e).
+- `AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_DEPLOYMENT_REPLICAS` is now [`AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_COMPLETES` and `AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_PARALLELS`](https://github.com/aws/aws-k8s-tester/commit/e322c9d80b7c1280a399d1b69ae2dbda4b7ee23e).
+- `AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_DEPLOYMENT_REPLICAS` is now [`AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_COMPLETES` and `AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_PARALLELS`](https://github.com/aws/aws-k8s-tester/commit/e322c9d80b7c1280a399d1b69ae2dbda4b7ee23e).
 - Use [`Job` for all remote testers](https://github.com/aws/aws-k8s-tester/commit/d8bec1505b6f4d3b1e70b7129278629bff14e321).
 - Enable [`S3BucketCreate` and `S3BucketCreateKeep` by default, error if no S3 bucket is specified](https://github.com/aws/aws-k8s-tester/commit/7d743b2d3cedb55079c080457ab662c09f6fcd03).
 - Configure [S3 directory](https://github.com/aws/aws-k8s-tester/commit/53a0169e208b66a00135bf05002c27de2000e9ed).
