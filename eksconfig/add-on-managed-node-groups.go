@@ -148,7 +148,7 @@ type MNG struct {
 	Logs map[string][]string `json:"logs" read-only:"true"`
 
 	// ScaleUpdates configures MNG scale update.
-	ScaleUpdates []*MNGScaleUpdate `json:"scale-updates,omitempty"`
+	ScaleUpdates []MNGScaleUpdate `json:"scale-updates,omitempty"`
 
 	// VersionUpgrade configures MNG version upgarde.
 	VersionUpgrade *MNGVersionUpgrade `json:"version-upgrade,omitempty"`
@@ -157,6 +157,8 @@ type MNG struct {
 // MNGScaleUpdate contains the minimum, maximum, and desired node counts for a nodegroup.
 // ref, https://docs.aws.amazon.com/cli/latest/reference/eks/update-nodegroup-config.html
 type MNGScaleUpdate struct {
+	// Enable is 'true' to create this add-on.
+	Enable bool `json:"enable"`
 	// Created is true when the resource has been created.
 	// Used for delete operations.
 	Created         bool               `json:"created" read-only:"true"`
@@ -164,14 +166,13 @@ type MNGScaleUpdate struct {
 	// InitialWait is the wait time before triggering version upgrades.
 	// All managed node group upgrades are triggered after all existing
 	// add-on installation is complete.
-	InitialWait time.Duration `json:"initial-wait"`
-	// InitialWaitString is not empty, then parses duration overwrites "InitialWait".
-	InitialWaitString string `json:"initial-wait-string"`
+	InitialWait       time.Duration `json:"initial-wait" read-only:"true"`
+	InitialWaitString string        `json:"initial-wait-string"`
 
-	// Sizes are the specifications for number of nodes in the mng.
-	MinSize     int64 `json:"min-size,omitempty"`
-	MaxSize     int64 `json:"max-size,omitempty"`
-	DesiredSize int64 `json:"desired-size,omitempty"`
+	ID                 string `json:"id"`
+	ASGMinSize         int64  `json:"asg-min-size,omitempty"`
+	ASGMaxSize         int64  `json:"asg-max-size,omitempty"`
+	ASGDesiredCapacity int64  `json:"asg-desired-capacity,omitempty"`
 }
 
 // MNGVersionUpgrade defines parameters
@@ -183,9 +184,8 @@ type MNGVersionUpgrade struct {
 	// InitialWait is the wait time before triggering version upgrades.
 	// All managed node group upgrades are triggered after all existing
 	// add-on installation is complete.
-	InitialWait time.Duration `json:"initial-wait"`
-	// InitialWaitString is not empty, then parses duration overwrites "InitialWait".
-	InitialWaitString string `json:"initial-wait-string"`
+	InitialWait       time.Duration `json:"initial-wait" read-only:"true"`
+	InitialWaitString string        `json:"initial-wait-string"`
 	// Created is true when the resource has been created.
 	// Used for delete operations.
 	Created         bool               `json:"created" read-only:"true"`
@@ -362,6 +362,27 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 				cur.ReleaseVersionValue, err = strconv.ParseFloat(sv, 64)
 				if err != nil {
 					return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q] invalid ReleaseVersion %q (%q, %v)", cur.Name, cur.ReleaseVersion, sv, err)
+				}
+			}
+		}
+
+		if len(cur.ScaleUpdates) > 0 {
+			for idx := range cur.ScaleUpdates {
+				if !cur.ScaleUpdates[idx].Enable {
+					continue
+				}
+				var err error
+				if cur.ScaleUpdates[idx].InitialWaitString != "" {
+					cur.ScaleUpdates[idx].InitialWait, err = time.ParseDuration(cur.ScaleUpdates[idx].InitialWaitString)
+					if err != nil {
+						return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q] invalid cur.ScaleUpdates[%d].InitialWaitString %q (%v)", cur.Name, idx, cur.VersionUpgrade.InitialWaitString, err)
+					}
+				}
+				if cur.ScaleUpdates[idx].ASGDesiredCapacity == 0 {
+					return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q] invalid cur.ScaleUpdates[%d].ASGDesiredCapacity == 0", cur.Name, idx)
+				}
+				if cur.ScaleUpdates[idx].ASGDesiredCapacity < cur.ScaleUpdates[idx].ASGMinSize {
+					return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q] invalid cur.ScaleUpdates[%d].ASGDesiredCapacity %d < ASGMinSize %d", cur.Name, idx, cur.ScaleUpdates[idx].ASGDesiredCapacity, cur.ScaleUpdates[idx].ASGMinSize)
 				}
 			}
 		}

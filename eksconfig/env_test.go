@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/pkg/randutil"
 	"github.com/aws/aws-sdk-go/service/eks"
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -168,7 +169,7 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_RESOLVER_URL")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_SIGNING_NAME", "a")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_SIGNING_NAME")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS", `{"mng-test-name-cpu":{"name":"mng-test-name-cpu","tags":{"cpu":"hello-world"},"remote-access-user-name":"ec2-user","release-version":"","ami-type":"AL2_x86_64","asg-min-size":17,"version-upgrade":{"enable":true,"initial-wait-string":"13m","version":"1.18"},"asg-max-size":99,"asg-desired-capacity":77,"instance-types":["type-cpu-1","type-cpu-2"],"volume-size":40},"mng-test-name-gpu":{"name":"mng-test-name-gpu","remote-access-user-name":"ec2-user","tags":{"gpu":"hello-world"},"release-version":"1.16.8-20200609","ami-type":"AL2_x86_64_GPU","version-upgrade":{"enable":true,"initial-wait-string":"100ms",   "version":"1.17"},"asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34,"instance-types":["type-gpu-1","type-gpu-2"],"volume-size":500}}`)
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS", `{"mng-test-name-cpu":{"name":"mng-test-name-cpu","tags":{"cpu":"hello-world"},"remote-access-user-name":"ec2-user","release-version":"","ami-type":"AL2_x86_64","asg-min-size":17,"scale-updates":[{"enable":true,"asg-min-size":500,"asg-max-size":700,  "asg-desired-capacity":600, "initial-wait-string":"1h33m"}, {"enable":true,"asg-min-size":555,"asg-max-size":755,  "asg-desired-capacity":655, "initial-wait-string":"2h33m", "id":"hello1"}],"version-upgrade":{"enable":true,"initial-wait-string":"13m","version":"1.18"},"asg-max-size":99,"asg-desired-capacity":77,"instance-types":["type-cpu-1","type-cpu-2"],"volume-size":40},"mng-test-name-gpu":{"name":"mng-test-name-gpu","remote-access-user-name":"ec2-user","tags":{"gpu":"hello-world"},"release-version":"1.16.8-20200609","ami-type":"AL2_x86_64_GPU","version-upgrade":{"enable":true,"initial-wait-string":"100ms",   "version":"1.17"},"scale-updates":[{"enable":true,"asg-min-size":500,"asg-max-size":700,  "asg-desired-capacity":600, "initial-wait-string":"1h33m"}, {"enable":true,"asg-min-size":555,"asg-max-size":755,  "asg-desired-capacity":655, "initial-wait-string":"2h33m", "id":"hello2"}],"asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34,"instance-types":["type-gpu-1","type-gpu-2"],"volume-size":500}}`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_LOGS_DIR", "a")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_LOGS_DIR")
@@ -778,6 +779,7 @@ func TestEnv(t *testing.T) {
 	if cfg.AddOnManagedNodeGroups.SigningName != "a" {
 		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.SigningName %q", cfg.AddOnManagedNodeGroups.SigningName)
 	}
+	// ,"scale-updates":[{"enable":true,"asg-min-size":500,"asg-max-size":700,  "asg-desired-capacity":600, "initial-wait-string":"1h33m"}, {"enable":true,"asg-min-size":555,"asg-max-size":755,  "asg-desired-capacity":655, "initial-wait-string":"2h33m"}],
 	cpuName, gpuName = "mng-test-name-cpu", "mng-test-name-gpu"
 	expectedMNGs := map[string]MNG{
 		cpuName: {
@@ -791,6 +793,23 @@ func TestEnv(t *testing.T) {
 			ASGDesiredCapacity:   77,
 			InstanceTypes:        []string{"type-cpu-1", "type-cpu-2"},
 			VolumeSize:           40,
+			ScaleUpdates: []MNGScaleUpdate{
+				{
+					Enable:             true,
+					ASGMinSize:         500,
+					ASGMaxSize:         700,
+					ASGDesiredCapacity: 600,
+					InitialWaitString:  "1h33m",
+				},
+				{
+					ID:                 "hello1",
+					Enable:             true,
+					ASGMinSize:         555,
+					ASGMaxSize:         755,
+					ASGDesiredCapacity: 655,
+					InitialWaitString:  "2h33m",
+				},
+			},
 			VersionUpgrade: &MNGVersionUpgrade{
 				Enable:            true,
 				InitialWaitString: "13m",
@@ -808,6 +827,25 @@ func TestEnv(t *testing.T) {
 			ASGDesiredCapacity:   34,
 			InstanceTypes:        []string{"type-gpu-1", "type-gpu-2"},
 			VolumeSize:           500,
+			ScaleUpdates: []MNGScaleUpdate{
+				{
+					Enable:             true,
+					ASGMinSize:         500,
+					ASGMaxSize:         700,
+					ASGDesiredCapacity: 600,
+					// InitialWait: 2*time.Hour + 33*time.Minute,
+					InitialWaitString: "1h33m",
+				},
+				{
+					ID:                 "hello2",
+					Enable:             true,
+					ASGMinSize:         555,
+					ASGMaxSize:         755,
+					ASGDesiredCapacity: 655,
+					// InitialWait: time.Hour + 33*time.Minute,
+					InitialWaitString: "2h33m",
+				},
+			},
 			VersionUpgrade: &MNGVersionUpgrade{
 				Enable:            true,
 				InitialWaitString: "100ms",
@@ -815,8 +853,8 @@ func TestEnv(t *testing.T) {
 			},
 		},
 	}
-	if !reflect.DeepEqual(cfg.AddOnManagedNodeGroups.MNGs, expectedMNGs) {
-		t.Fatalf("expected cfg.AddOnManagedNodeGroups.MNGs %+v, got %+v", expectedMNGs, cfg.AddOnManagedNodeGroups.MNGs)
+	if diff := cmp.Diff(cfg.AddOnManagedNodeGroups.MNGs, expectedMNGs); diff != "" {
+		t.Fatalf("AddOnManagedNodeGroups.MNGs mismatch (-want +got):\n%s", diff)
 	}
 	if cfg.AddOnManagedNodeGroups.LogsDir != "a" {
 		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.LogsDir %q", cfg.AddOnManagedNodeGroups.LogsDir)

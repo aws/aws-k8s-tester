@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aws/aws-k8s-tester/eks/mng/scale"
 	version_upgrade "github.com/aws/aws-k8s-tester/eks/mng/version-upgrade"
 	"github.com/aws/aws-k8s-tester/eks/mng/wait"
 	"github.com/aws/aws-k8s-tester/eksconfig"
@@ -77,6 +78,12 @@ func New(cfg Config) Tester {
 			ASGAPI:    cfg.ASGAPI,
 			EKSAPI:    cfg.EKSAPI,
 		}),
+		scaler: scale.New(scale.Config{
+			Logger:    cfg.Logger,
+			Stopc:     cfg.Stopc,
+			EKSConfig: cfg.EKSConfig,
+			EKSAPI:    cfg.EKSAPI,
+		}),
 		versionUpgrader: version_upgrade.New(version_upgrade.Config{
 			Logger:    cfg.Logger,
 			Stopc:     cfg.Stopc,
@@ -92,6 +99,7 @@ func New(cfg Config) Tester {
 type tester struct {
 	cfg             Config
 	nodeWaiter      wait.NodeWaiter
+	scaler          scale.Scaler
 	versionUpgrader version_upgrade.Upgrader
 	logsMu          *sync.RWMutex
 	deleteRequested map[string]struct{}
@@ -126,6 +134,11 @@ func (ts *tester) Create() (err error) {
 	}
 	for mngName := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
 		if err = ts.createSG(mngName); err != nil {
+			return err
+		}
+	}
+	for mngName := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
+		if err = ts.scaler.Scale(mngName); err != nil {
 			return err
 		}
 	}
