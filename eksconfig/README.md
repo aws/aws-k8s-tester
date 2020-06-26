@@ -408,7 +408,8 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REPOSITORY_ACCOUNT_ID                         | read-only "false" | *eksconfig.AddOnCSRsRemote.RepositoryAccountID                    | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REPOSITORY_NAME                               | read-only "false" | *eksconfig.AddOnCSRsRemote.RepositoryName                         | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REPOSITORY_IMAGE_TAG                          | read-only "false" | *eksconfig.AddOnCSRsRemote.RepositoryImageTag                     | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_DEPLOYMENT_REPLICAS                           | read-only "false" | *eksconfig.AddOnCSRsRemote.DeploymentReplicas                     | int32                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_COMPLETES                                     | read-only "false" | *eksconfig.AddOnCSRsRemote.Completes                              | int                     |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_PARALLELS                                     | read-only "false" | *eksconfig.AddOnCSRsRemote.Parallels                              | int                     |
 | AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_OBJECTS                                       | read-only "false" | *eksconfig.AddOnCSRsRemote.Objects                                | int                     |
 | AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_INITIAL_REQUEST_CONDITION_TYPE                | read-only "false" | *eksconfig.AddOnCSRsRemote.InitialRequestConditionType            | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REQUESTS_SUMMARY_WRITES_OUTPUT_NAME_PREFIX    | read-only "false" | *eksconfig.AddOnCSRsRemote.RequestsSummaryWritesOutputNamePrefix  | string                  |
@@ -478,7 +479,8 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REPOSITORY_ACCOUNT_ID                         | read-only "false" | *eksconfig.AddOnConfigmapsRemote.RepositoryAccountID                    | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REPOSITORY_NAME                               | read-only "false" | *eksconfig.AddOnConfigmapsRemote.RepositoryName                         | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REPOSITORY_IMAGE_TAG                          | read-only "false" | *eksconfig.AddOnConfigmapsRemote.RepositoryImageTag                     | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_DEPLOYMENT_REPLICAS                           | read-only "false" | *eksconfig.AddOnConfigmapsRemote.DeploymentReplicas                     | int32                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_COMPLETES                                     | read-only "false" | *eksconfig.AddOnConfigmapsRemote.Completes                              | int                     |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_PARALLELS                                     | read-only "false" | *eksconfig.AddOnConfigmapsRemote.Parallels                              | int                     |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_OBJECTS                                       | read-only "false" | *eksconfig.AddOnConfigmapsRemote.Objects                                | int                     |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_OBJECT_SIZE                                   | read-only "false" | *eksconfig.AddOnConfigmapsRemote.ObjectSize                             | int                     |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_CREATED_NAMES                                 | read-only "true"  | *eksconfig.AddOnConfigmapsRemote.CreatedNames                           | []string                |
@@ -567,7 +569,8 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REPOSITORY_ACCOUNT_ID                         | read-only "false" | *eksconfig.AddOnSecretsRemote.RepositoryAccountID                    | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REPOSITORY_NAME                               | read-only "false" | *eksconfig.AddOnSecretsRemote.RepositoryName                         | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REPOSITORY_IMAGE_TAG                          | read-only "false" | *eksconfig.AddOnSecretsRemote.RepositoryImageTag                     | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_DEPLOYMENT_REPLICAS                           | read-only "false" | *eksconfig.AddOnSecretsRemote.DeploymentReplicas                     | int32                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_COMPLETES                                     | read-only "false" | *eksconfig.AddOnSecretsRemote.Completes                              | int                     |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_PARALLELS                                     | read-only "false" | *eksconfig.AddOnSecretsRemote.Parallels                              | int                     |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_OBJECTS                                       | read-only "false" | *eksconfig.AddOnSecretsRemote.Objects                                | int                     |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_OBJECT_SIZE                                   | read-only "false" | *eksconfig.AddOnSecretsRemote.ObjectSize                             | int                     |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_NAME_PREFIX                                   | read-only "false" | *eksconfig.AddOnSecretsRemote.NamePrefix                             | string                  |
@@ -919,7 +922,8 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REPOSITORY_ACCOUNT_ID                         | read-only "false" | *eksconfig.AddOnStresserRemote.RepositoryAccountID                    | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REPOSITORY_NAME                               | read-only "false" | *eksconfig.AddOnStresserRemote.RepositoryName                         | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REPOSITORY_IMAGE_TAG                          | read-only "false" | *eksconfig.AddOnStresserRemote.RepositoryImageTag                     | string                  |
-| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_DEPLOYMENT_REPLICAS                           | read-only "false" | *eksconfig.AddOnStresserRemote.DeploymentReplicas                     | int32                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_COMPLETES                                     | read-only "false" | *eksconfig.AddOnStresserRemote.Completes                              | int                     |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_PARALLELS                                     | read-only "false" | *eksconfig.AddOnStresserRemote.Parallels                              | int                     |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_OBJECT_SIZE                                   | read-only "false" | *eksconfig.AddOnStresserRemote.ObjectSize                             | int                     |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_LIST_LIMIT                                    | read-only "false" | *eksconfig.AddOnStresserRemote.ListLimit                              | int64                   |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_DURATION                                      | read-only "false" | *eksconfig.AddOnStresserRemote.Duration                               | time.Duration           |

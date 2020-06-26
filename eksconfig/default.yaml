@@ -24,7 +24,7 @@ log-level: info
 log-outputs:
 - stderr
 - /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.log
-name: eks-2020062520-maria05zvgxm
+name: eks-2020062523-butterflyev3
 on-failure-delete: true
 on-failure-delete-wait-seconds: 120
 parameters:
@@ -43,7 +43,7 @@ parameters:
   role-cfn-stack-yaml-s3-key: default.role.cfn.yaml
   role-create: true
   role-managed-policy-arns: null
-  role-name: eks-2020062520-maria05zvgxm-role
+  role-name: eks-2020062523-butterflyev3-role
   role-service-principals: null
   signing-name: eks
   tags: null
@@ -58,12 +58,12 @@ partition: aws
 region: us-west-2
 remote-access-commands-output-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.ssh.sh
 remote-access-key-create: true
-remote-access-key-name: eks-2020062520-maria05zvgxm-remote-access-key
-remote-access-private-key-path: /tmp/icyhwea0pm3hjza.insecure.key
+remote-access-key-name: eks-2020062523-butterflyev3-remote-access-key
+remote-access-private-key-path: /tmp/sparklingvyz04x.insecure.key
 s3-bucket-create: true
 s3-bucket-create-keep: true
 s3-bucket-lifecycle-expiration-days: 0
-s3-bucket-name: eks-2020062520-maria05zvgxm-s3-bucket
+s3-bucket-name: eks-2020062523-butterflyev3-s3-bucket
 status:
   aws-account-id: ""
   aws-credential-path: ""
@@ -77,7 +77,7 @@ status:
   cluster-cfn-stack-yaml-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.cluster.cfn.yaml
   cluster-cfn-stack-yaml-s3-key: default.cluster.cfn.yaml
   cluster-control-plane-security-group-id: ""
-  cluster-metrics-raw-output-dir: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/eks-2020062520-maria05zvgxm-metrics
+  cluster-metrics-raw-output-dir: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/eks-2020062523-butterflyev3-metrics
   cluster-oidc-issuer-arn: ""
   cluster-oidc-issuer-ca-thumbprint: ""
   cluster-oidc-issuer-host-path: ""
