@@ -422,7 +422,7 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 		}
 		if cur.MNGCFNStackYAMLS3Key == "" {
 			cur.MNGCFNStackYAMLS3Key = path.Join(
-				cfg.AddOnNodeGroups.S3Dir,
+				cfg.AddOnManagedNodeGroups.S3Dir,
 				filepath.Base(cur.MNGCFNStackYAMLPath),
 			)
 		}
@@ -432,7 +432,7 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 		}
 		if cur.RemoteAccessSecurityCFNStackYAMLS3Key == "" {
 			cur.RemoteAccessSecurityCFNStackYAMLS3Key = path.Join(
-				cfg.AddOnNodeGroups.S3Dir,
+				cfg.AddOnManagedNodeGroups.S3Dir,
 				filepath.Base(cur.RemoteAccessSecurityCFNStackYAMLPath),
 			)
 		}

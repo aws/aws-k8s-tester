@@ -484,8 +484,8 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REPOSITORY_NAME")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REPOSITORY_IMAGE_TAG", "stresser-repo-image-tag")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REPOSITORY_IMAGE_TAG")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_DEPLOYMENT_REPLICAS", "500")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_DEPLOYMENT_REPLICAS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_COMPLETES", "500")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_COMPLETES")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_OBJECT_SIZE", "512")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_OBJECT_SIZE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_LIST_LIMIT", "177")
@@ -1273,8 +1273,8 @@ func TestEnv(t *testing.T) {
 	if cfg.AddOnStresserRemote.RepositoryImageTag != "stresser-repo-image-tag" {
 		t.Fatalf("unexpected cfg.AddOnStresserRemote.RepositoryImageTag %v", cfg.AddOnStresserRemote.RepositoryImageTag)
 	}
-	if cfg.AddOnStresserRemote.DeploymentReplicas != 500 {
-		t.Fatalf("unexpected cfg.AddOnStresserRemote.DeploymentReplicas %v", cfg.AddOnStresserRemote.DeploymentReplicas)
+	if cfg.AddOnStresserRemote.Completes != 500 {
+		t.Fatalf("unexpected cfg.AddOnStresserRemote.Completes %v", cfg.AddOnStresserRemote.Completes)
 	}
 	if cfg.AddOnStresserRemote.ObjectSize != 512 {
 		t.Fatalf("unexpected cfg.AddOnStresserRemote.ObjectSize %v", cfg.AddOnStresserRemote.ObjectSize)
@@ -1380,7 +1380,11 @@ func TestEnvAddOnNodeGroupsGetRef(t *testing.T) {
 
 	cur1 := cfg.AddOnNodeGroups.ASGs[cfg.Name+"-ng-for-cni"]
 	cur1.ASGCFNStackYAMLPath = ""
+	cur1.ASGCFNStackYAMLS3Key = ""
 	cur1.SSMDocumentCFNStackYAMLPath = ""
+	cur1.SSMDocumentCFNStackYAMLS3Key = ""
+	cur1.SSMDocumentCFNStackYAMLPath = ""
+	cur1.SSMDocumentCFNStackYAMLS3Key = ""
 	cfg.AddOnNodeGroups.ASGs[cfg.Name+"-ng-for-cni"] = cur1
 	expectedNGs := map[string]ASG{
 		cfg.Name + "-ng-for-cni": {
@@ -1409,7 +1413,9 @@ func TestEnvAddOnNodeGroupsGetRef(t *testing.T) {
 
 	cur2 := cfg.AddOnManagedNodeGroups.MNGs[cfg.Name+"-mng-for-cni"]
 	cur2.MNGCFNStackYAMLPath = ""
+	cur2.MNGCFNStackYAMLS3Key = ""
 	cur2.RemoteAccessSecurityCFNStackYAMLPath = ""
+	cur2.RemoteAccessSecurityCFNStackYAMLS3Key = ""
 	cfg.AddOnManagedNodeGroups.MNGs[cfg.Name+"-mng-for-cni"] = cur2
 	expectedMNGs := map[string]MNG{
 		cfg.Name + "-mng-for-cni": {
@@ -1521,7 +1527,9 @@ func TestEnvAddOnManagedNodeGroupsCNI(t *testing.T) {
 	}
 	cur := cfg.AddOnManagedNodeGroups.MNGs["test-mng-for-cni"]
 	cur.MNGCFNStackYAMLPath = ""
+	cur.MNGCFNStackYAMLS3Key = ""
 	cur.RemoteAccessSecurityCFNStackYAMLPath = ""
+	cur.RemoteAccessSecurityCFNStackYAMLS3Key = ""
 	cfg.AddOnManagedNodeGroups.MNGs["test-mng-for-cni"] = cur
 	expectedMNGs := map[string]MNG{
 		"test-mng-for-cni": {
