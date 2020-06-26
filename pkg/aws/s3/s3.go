@@ -2,6 +2,8 @@
 package s3
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -366,6 +368,121 @@ func Exist(lg *zap.Logger, s3API s3iface.S3API, bucket string, s3Key string, opt
 		zap.String("size", size),
 	)
 	return true, nil
+}
+
+// HeadObjectStatus represents the S3 object head status.
+type HeadObjectStatus struct {
+	HeadObject *s3.HeadObjectOutput
+	Error      error
+}
+
+func isNotFound(err error) bool {
+	if err == nil {
+		return false
+	}
+	awsErr, ok := err.(awserr.Error)
+	if !ok {
+		return false
+	}
+	return awsErr.Code() == "NotFound"
+}
+
+// PollUntilExist waits until the object exists.
+func PollUntilExist(
+	ctx context.Context,
+	stopc chan struct{},
+	lg *zap.Logger,
+	s3API s3iface.S3API,
+	bucket string,
+	s3Key string,
+	initialWait time.Duration,
+	pollInterval time.Duration,
+) <-chan HeadObjectStatus {
+	now := time.Now()
+
+	lg.Info("polling object",
+		zap.String("s3-bucket", bucket),
+		zap.String("s3-key", s3Key),
+	)
+	ch := make(chan HeadObjectStatus, 10)
+	go func() {
+		// very first poll should be no-wait
+		// in case stack has already reached desired status
+		// wait from second interation
+		interval := time.Duration(0)
+
+		first := true
+		for ctx.Err() == nil {
+			select {
+			case <-ctx.Done():
+				lg.Warn("wait aborted", zap.Error(ctx.Err()))
+				ch <- HeadObjectStatus{HeadObject: nil, Error: ctx.Err()}
+				close(ch)
+				return
+
+			case <-stopc:
+				lg.Warn("wait stopped", zap.Error(ctx.Err()))
+				ch <- HeadObjectStatus{HeadObject: nil, Error: errors.New("wait stopped")}
+				close(ch)
+				return
+
+			case <-time.After(interval):
+				// very first poll should be no-wait
+				// in case stack has already reached desired status
+				// wait from second interation
+				if interval == time.Duration(0) {
+					interval = pollInterval
+				}
+			}
+
+			obj, err := s3API.HeadObject(&s3.HeadObjectInput{
+				Bucket: aws.String(bucket),
+				Key:    aws.String(s3Key),
+			})
+			if err == nil {
+				lg.Info("found object", zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")))
+				ch <- HeadObjectStatus{HeadObject: obj, Error: nil}
+				close(ch)
+				return
+			}
+
+			lg.Warn("object not found; retrying",
+				zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
+				zap.Error(err),
+			)
+			if isNotFound(err) {
+				err = nil
+			}
+			ch <- HeadObjectStatus{HeadObject: nil, Error: err}
+
+			if first {
+				lg.Info("sleeping", zap.Duration("initial-wait", initialWait))
+
+				select {
+				case <-ctx.Done():
+					lg.Warn("wait aborted", zap.Error(ctx.Err()))
+					ch <- HeadObjectStatus{HeadObject: nil, Error: ctx.Err()}
+					close(ch)
+					return
+
+				case <-stopc:
+					lg.Warn("wait stopped", zap.Error(ctx.Err()))
+					ch <- HeadObjectStatus{HeadObject: nil, Error: errors.New("wait stopped")}
+					close(ch)
+					return
+
+				case <-time.After(initialWait):
+				}
+				first = false
+			}
+		}
+
+		lg.Warn("wait aborted", zap.Error(ctx.Err()))
+		ch <- HeadObjectStatus{HeadObject: nil, Error: ctx.Err()}
+		close(ch)
+		return
+	}()
+	return ch
 }
 
 // Download downloads the file from the S3 bucket.

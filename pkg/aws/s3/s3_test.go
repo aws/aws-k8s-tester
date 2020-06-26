@@ -2,6 +2,7 @@ package s3
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"os"
 	"path"
@@ -37,6 +38,18 @@ func TestS3(t *testing.T) {
 		t.Logf("EmptyBucket: %v", EmptyBucket(lg, s3API, bucket))
 		t.Logf("DeleteBucket: %v", DeleteBucket(lg, s3API, bucket))
 	}()
+
+	testKey := randutil.String(30)
+	ch := PollUntilExist(
+		context.Background(),
+		make(chan struct{}),
+		lg,
+		s3API,
+		bucket,
+		testKey,
+		10*time.Second,
+		5*time.Second,
+	)
 
 	s3Key := ""
 	for i := 0; i < 10; i++ {
@@ -85,5 +98,22 @@ func TestS3(t *testing.T) {
 	}
 	for _, obj := range s3Objects {
 		fmt.Println(aws.StringValue(obj.Key), aws.TimeValue(obj.LastModified), aws.Int64Value(obj.Size))
+	}
+
+	if err = UploadBody(
+		lg,
+		s3API,
+		bucket,
+		testKey,
+		bytes.NewReader(randutil.Bytes(10)),
+	); err != nil {
+		t.Fatal(err)
+	}
+	for cur := range ch {
+		if cur.HeadObject == nil {
+			fmt.Println(nil, cur.Error)
+		} else {
+			fmt.Println(aws.Int64Value(cur.HeadObject.ContentLength), cur.Error)
+		}
 	}
 }

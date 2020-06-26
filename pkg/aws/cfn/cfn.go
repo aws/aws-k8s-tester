@@ -31,7 +31,7 @@ func Poll(
 	stackID string,
 	desiredStackStatus string,
 	initialWait time.Duration,
-	wait time.Duration,
+	pollInterval time.Duration,
 ) <-chan StackStatus {
 	now := time.Now()
 
@@ -44,7 +44,7 @@ func Poll(
 		// very first poll should be no-wait
 		// in case stack has already reached desired status
 		// wait from second interation
-		waitDur := time.Duration(0)
+		interval := time.Duration(0)
 
 		prevStatusReason, first := "", true
 		for ctx.Err() == nil {
@@ -61,12 +61,12 @@ func Poll(
 				close(ch)
 				return
 
-			case <-time.After(waitDur):
+			case <-time.After(interval):
 				// very first poll should be no-wait
 				// in case stack has already reached desired status
 				// wait from second interation
-				if waitDur == time.Duration(0) {
-					waitDur = wait
+				if interval == time.Duration(0) {
+					interval = pollInterval
 				}
 			}
 
