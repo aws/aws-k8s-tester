@@ -108,7 +108,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.9...v1.4.0
 
 - Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.32.2`](https://github.com/aws/aws-sdk-go/releases/tag/v1.32.2) to [`v1.32.10`](https://github.com/aws/aws-sdk-go/releases/tag/v1.32.10).
 - Upgrade [`github.com/kubernetes/kubernetes`](https://github.com/kubernetes/kubernetes/releases) from [`v1.18.2`](https://github.com/kubernetes/kubernetes/releases/tag/v1.18.2) to [`v1.18.5`](https://github.com/kubernetes/kubernetes/releases/tag/v1.18.5).
-- Upgrade [`github.com/kubernetes/client-go`](https://github.com/kubernetes/client-go/releases) from [`v0.18.3`](https://github.com/kubernetes/clienthttps://github.com/kubernetes/client-go/releases/tag/v0.18.3) to [`v0.18.5-rc.1`](https://github.com/kubernetes/client-go/releases/tag/v0.18.5-rc.1).
+- Upgrade [`github.com/kubernetes/client-go`](https://github.com/kubernetes/client-go/releases) from [`v0.18.3`](https://github.com/kubernetes/clienthttps://github.com/kubernetes/client-go/releases/tag/v0.18.3) to [`v0.18.6-rc.0`](https://github.com/kubernetes/client-go/releases/tag/v0.18.6-rc.0).
   - See [commit `fc93a579` for all the changes](https://github.com/aws/aws-k8s-tester/commit/fc93a5792c7334fc099e18ad4a4de394f8c2a35c).
 - Add [`k8s.io/perf-tests`](https://github.com/kubernetes/perf-tests/releases).
   - See [`1aea23d3` for commit](https://github.com/aws/aws-k8s-tester/commit/1aea23d3259794307b45d344d3a953238c394efb).
