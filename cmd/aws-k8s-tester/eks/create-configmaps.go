@@ -22,11 +22,11 @@ import (
 )
 
 var (
-	configmapsKubeConfigPath string
-
 	configmapsPartition    string
 	configmapsRegion       string
 	configmapsS3BucketName string
+
+	configmapsKubeConfigPath string
 
 	configmapsClients       int
 	configmapsClientQPS     float32
@@ -50,10 +50,12 @@ func newCreateConfigMaps() *cobra.Command {
 		Short: "Creates cluster loader",
 		Run:   createConfigMapsFunc,
 	}
-	cmd.PersistentFlags().StringVar(&configmapsKubeConfigPath, "kubeconfig", "", "kubeconfig path (optional, should be run in-cluster, useful for local testing)")
+
 	cmd.PersistentFlags().StringVar(&configmapsPartition, "partition", "aws", "partition for AWS API")
 	cmd.PersistentFlags().StringVar(&configmapsRegion, "region", "us-west-2", "region for AWS API")
 	cmd.PersistentFlags().StringVar(&configmapsS3BucketName, "s3-bucket-name", "", "S3 bucket name to upload results")
+
+	cmd.PersistentFlags().StringVar(&configmapsKubeConfigPath, "kubeconfig", "", "kubeconfig path (optional, should be run in-cluster, useful for local testing)")
 	cmd.PersistentFlags().IntVar(&configmapsClients, "clients", eksconfig.DefaultClients, "Number of clients to create")
 	cmd.PersistentFlags().Float32Var(&configmapsClientQPS, "client-qps", eksconfig.DefaultClientQPS, "kubelet client setup for QPS")
 	cmd.PersistentFlags().IntVar(&configmapsClientBurst, "client-burst", eksconfig.DefaultClientBurst, "kubelet client setup for burst")
@@ -144,10 +146,12 @@ func createConfigMapsFunc(cmd *cobra.Command, args []string) {
 	sfx := randutil.String(7)
 
 	loader := config_maps.New(config_maps.Config{
-		Logger:                          lg,
-		Stopc:                           stopc,
-		S3API:                           s3.New(awsSession),
-		S3BucketName:                    configmapsS3BucketName,
+		Logger: lg,
+		Stopc:  stopc,
+
+		S3API:        s3.New(awsSession),
+		S3BucketName: configmapsS3BucketName,
+
 		Client:                          cli,
 		ClientTimeout:                   configmapsClientTimeout,
 		Namespace:                       configmapsNamespace,

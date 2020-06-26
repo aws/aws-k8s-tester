@@ -211,7 +211,6 @@ const (
 	configmapsRBACClusterRoleBindingName  = "configmaps-remote-rbac-role-binding"
 	configmapsKubeConfigConfigMapName     = "configmaps-remote-kubeconfig-configmap"
 	configmapsKubeConfigConfigMapFileName = "configmaps-remote-kubeconfig-configmap.yaml"
-	configmapsDeploymentName              = "configmaps-remote-deployment"
 	configmapsAppName                     = "configmaps-remote-app"
 	configmapsJobName                     = "configmaps-remote-job"
 )
