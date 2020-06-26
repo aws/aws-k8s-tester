@@ -29,13 +29,14 @@ import (
 	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
+	"github.com/dustin/go-humanize"
 	"go.uber.org/zap"
-	appsv1 "k8s.io/api/apps/v1"
+	"gopkg.in/yaml.v2"
+	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	api_errors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/exec"
 )
 
 // Config defines csrs configuration.
@@ -112,42 +113,39 @@ func (ts *tester) Create() (err error) {
 	if err = ts.createConfigMap(); err != nil {
 		return err
 	}
-	if err = ts.createDeployment(); err != nil {
+
+	if err = ts.createJob(); err != nil {
 		return err
 	}
-	if err = ts.waitDeployment(); err != nil {
+	var pods []v1.Pod
+	_, pods, err = k8s_client.WaitForJobCompletes(
+		ts.cfg.Logger,
+		ts.cfg.Stopc,
+		ts.cfg.K8SClient,
+		3*time.Minute,
+		10*time.Second,
+		3*time.Minute+time.Duration(ts.cfg.EKSConfig.AddOnCSRsRemote.Completes)*30*time.Second,
+		ts.cfg.EKSConfig.AddOnCSRsRemote.Namespace,
+		csrsJobName,
+		ts.cfg.EKSConfig.AddOnCSRsRemote.Completes,
+	)
+	if err != nil {
+		return err
+	}
+	println()
+	for _, item := range pods {
+		fmt.Printf("Job Pod %q: %q\n", item.Name, item.Status.Phase)
+	}
+	println()
+
+	if err = ts.checkResults(); err == nil {
+		return err
+	}
+	if err = ts.publishResults(); err != nil {
 		return err
 	}
 
-	select {
-	case <-ts.cfg.Stopc:
-		ts.cfg.Logger.Warn("csrs tester aborted")
-		return errors.New("csrs tester aborted")
-	case <-time.After(15 * time.Second):
-		// wait for results writes
-	}
-
-	waitDur, retryStart := 5*time.Minute, time.Now()
-	for time.Now().Sub(retryStart) < waitDur {
-		select {
-		case <-ts.cfg.Stopc:
-			ts.cfg.Logger.Warn("health check aborted")
-			return nil
-		case <-time.After(5 * time.Second):
-		}
-		err = ts.cfg.K8SClient.CheckHealth()
-		if err == nil {
-			break
-		}
-		ts.cfg.Logger.Warn("health check failed", zap.Error(err))
-	}
-	ts.cfg.EKSConfig.Sync()
-	if err == nil {
-		ts.cfg.Logger.Info("health check success after configmap testing")
-	} else {
-		ts.cfg.Logger.Warn("health check failed after configmap testing", zap.Error(err))
-	}
-	return err
+	return ts.cfg.EKSConfig.Sync()
 }
 
 func (ts *tester) Delete() error {
@@ -170,7 +168,7 @@ func (ts *tester) Delete() error {
 
 	var errs []string
 
-	if err := ts.deleteDeployment(); err != nil {
+	if err := ts.deleteJob(); err != nil {
 		errs = append(errs, err.Error())
 	}
 	time.Sleep(2 * time.Minute)
@@ -213,8 +211,8 @@ const (
 	csrsRBACClusterRoleBindingName  = "csrs-remote-rbac-role-binding"
 	csrsKubeConfigConfigMapName     = "csrs-remote-kubeconfig-configmap"
 	csrsKubeConfigConfigMapFileName = "csrs-remote-kubeconfig-configmap.yaml"
-	csrsDeploymentName              = "csrs-remote-deployment"
 	csrsAppName                     = "csrs-remote-app"
+	csrsJobName                     = "csrs-remote-job"
 )
 
 // ref. https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration
@@ -500,12 +498,36 @@ func (ts *tester) deleteConfigMap() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
-func (ts *tester) createDeployment() error {
+func (ts *tester) createJob() (err error) {
+	obj, b, err := ts.createObject()
+	if err != nil {
+		return err
+	}
+
+	ts.cfg.Logger.Info("creating Job",
+		zap.String("name", csrsJobName),
+		zap.String("object-size", humanize.Bytes(uint64(len(b)))),
+	)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	_, err = ts.cfg.K8SClient.KubernetesClientSet().
+		BatchV1().
+		Jobs(ts.cfg.EKSConfig.AddOnCSRsRemote.Namespace).
+		Create(ctx, &obj, metav1.CreateOptions{})
+	cancel()
+	if err != nil {
+		return fmt.Errorf("failed to create Job (%v)", err)
+	}
+
+	ts.cfg.Logger.Info("created Job")
+	return nil
+}
+
+func (ts *tester) createObject() (batchv1.Job, string, error) {
 	// "/opt/"+csrsKubeConfigConfigMapFileName,
 	// do not specify "kubeconfig", and use in-cluster config via "pkg/k8s-client"
 	// otherwise, error "namespaces is forbidden: User "system:node:ip-192-168-84..."
 	// ref. https://github.com/kubernetes/client-go/blob/master/examples/in-cluster-client-configuration/main.go
-	testerCmd := fmt.Sprintf("/aws-k8s-tester eks create csrs --partition=%s --region=%s --s3-bucket-name=%s --clients=%d --client-qps=%f --client-burst=%d --client-timeout=%s --objects=%d --initial-request-condition-type=%q --requests-raw-writes-json-s3-dir=%s --requests-summary-writes-json-s3-dir=%s --requests-summary-writes-table-s3-dir=%s --writes-output-name-prefix=%s --block=true",
+	testerCmd := fmt.Sprintf("/aws-k8s-tester eks create csrs --partition=%s --region=%s --s3-bucket-name=%s --clients=%d --client-qps=%f --client-burst=%d --client-timeout=%s --objects=%d --initial-request-condition-type=%q --requests-raw-writes-json-s3-dir=%s --requests-summary-writes-json-s3-dir=%s --requests-summary-writes-table-s3-dir=%s --writes-output-name-prefix=%s",
 		ts.cfg.EKSConfig.Partition,
 		ts.cfg.EKSConfig.Region,
 		ts.cfg.EKSConfig.S3BucketName,
@@ -521,236 +543,132 @@ func (ts *tester) createDeployment() error {
 		ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsSummaryWritesOutputNamePrefix,
 	)
 
-	ts.cfg.Logger.Info("creating csrs Deployment", zap.String("image", ts.ecrImage), zap.String("tester-command", testerCmd))
 	dirOrCreate := v1.HostPathDirectoryOrCreate
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	_, err := ts.cfg.K8SClient.KubernetesClientSet().
-		AppsV1().
-		Deployments(ts.cfg.EKSConfig.AddOnCSRsRemote.Namespace).
-		Create(
-			ctx,
-			&appsv1.Deployment{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "apps/v1",
-					Kind:       "Deployment",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      csrsDeploymentName,
-					Namespace: ts.cfg.EKSConfig.AddOnCSRsRemote.Namespace,
-					Labels: map[string]string{
-						"app.kubernetes.io/name": csrsAppName,
+	podSpec := v1.PodTemplateSpec{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels: map[string]string{
+				"app.kubernetes.io/name": csrsAppName,
+			},
+		},
+		Spec: v1.PodSpec{
+			ServiceAccountName: csrsServiceAccountName,
+
+			// TODO: set resource limits
+			Containers: []v1.Container{
+				{
+					Name:            csrsAppName,
+					Image:           ts.ecrImage,
+					ImagePullPolicy: v1.PullAlways,
+
+					Command: []string{
+						"/bin/sh",
+						"-ec",
+						testerCmd,
 					},
-				},
-				Spec: appsv1.DeploymentSpec{
-					Replicas: aws.Int32(ts.cfg.EKSConfig.AddOnCSRsRemote.DeploymentReplicas),
-					Selector: &metav1.LabelSelector{
-						MatchLabels: map[string]string{
-							"app.kubernetes.io/name": csrsAppName,
-						},
+
+					// grant access "/dev/kmsg"
+					SecurityContext: &v1.SecurityContext{
+						Privileged: aws.Bool(true),
 					},
-					Template: v1.PodTemplateSpec{
-						ObjectMeta: metav1.ObjectMeta{
-							Labels: map[string]string{
-								"app.kubernetes.io/name": csrsAppName,
-							},
+
+					// ref. https://kubernetes.io/docs/concepts/cluster-administration/logging/
+					VolumeMounts: []v1.VolumeMount{
+						{ // to execute
+							Name:      csrsKubeConfigConfigMapName,
+							MountPath: "/opt",
 						},
-						Spec: v1.PodSpec{
-							ServiceAccountName: csrsServiceAccountName,
-
-							// TODO: set resource limits
-							Containers: []v1.Container{
-								{
-									Name:            csrsAppName,
-									Image:           ts.ecrImage,
-									ImagePullPolicy: v1.PullAlways,
-
-									Command: []string{
-										"/bin/sh",
-										"-ec",
-										testerCmd,
-									},
-
-									SecurityContext: &v1.SecurityContext{
-										Privileged: aws.Bool(true),
-									},
-
-									// ref. https://kubernetes.io/docs/concepts/cluster-administration/logging/
-									VolumeMounts: []v1.VolumeMount{
-										{ // to execute
-											Name:      csrsKubeConfigConfigMapName,
-											MountPath: "/opt",
-										},
-										{ // to write
-											Name:      "varlog",
-											MountPath: "/var/log",
-											ReadOnly:  false,
-										},
-									},
-								},
-							},
-
-							// ref. https://kubernetes.io/docs/concepts/cluster-administration/logging/
-							Volumes: []v1.Volume{
-								{ // to execute
-									Name: csrsKubeConfigConfigMapName,
-									VolumeSource: v1.VolumeSource{
-										ConfigMap: &v1.ConfigMapVolumeSource{
-											LocalObjectReference: v1.LocalObjectReference{
-												Name: csrsKubeConfigConfigMapName,
-											},
-											DefaultMode: aws.Int32(0777),
-										},
-									},
-								},
-								{ // to write
-									Name: "varlog",
-									VolumeSource: v1.VolumeSource{
-										HostPath: &v1.HostPathVolumeSource{
-											Path: "/var/log",
-											Type: &dirOrCreate,
-										},
-									},
-								},
-							},
-
-							NodeSelector: map[string]string{
-								// do not deploy in fake nodes, obviously
-								"NodeType": "regular",
-							},
+						{ // to write
+							Name:      "varlog",
+							MountPath: "/var/log",
+							ReadOnly:  false,
 						},
 					},
 				},
 			},
-			metav1.CreateOptions{},
-		)
-	cancel()
-	if err != nil {
-		return fmt.Errorf("failed to create csrs Deployment (%v)", err)
+
+			// ref. https://kubernetes.io/docs/concepts/cluster-administration/logging/
+			Volumes: []v1.Volume{
+				{ // to execute
+					Name: csrsKubeConfigConfigMapName,
+					VolumeSource: v1.VolumeSource{
+						ConfigMap: &v1.ConfigMapVolumeSource{
+							LocalObjectReference: v1.LocalObjectReference{
+								Name: csrsKubeConfigConfigMapName,
+							},
+							DefaultMode: aws.Int32(0777),
+						},
+					},
+				},
+				{ // to write
+					Name: "varlog",
+					VolumeSource: v1.VolumeSource{
+						HostPath: &v1.HostPathVolumeSource{
+							Path: "/var/log",
+							Type: &dirOrCreate,
+						},
+					},
+				},
+			},
+
+			NodeSelector: map[string]string{
+				// do not deploy in fake nodes, obviously
+				"NodeType": "regular",
+			},
+		},
 	}
-	return nil
+
+	jobObj := batchv1.Job{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "batch/v1",
+			Kind:       "Job",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      csrsJobName,
+			Namespace: ts.cfg.EKSConfig.AddOnCSRsRemote.Namespace,
+		},
+		Spec: batchv1.JobSpec{
+			Completions: aws.Int32(int32(ts.cfg.EKSConfig.AddOnCSRsRemote.Completes)),
+			Parallelism: aws.Int32(int32(ts.cfg.EKSConfig.AddOnCSRsRemote.Parallels)),
+			Template:    podSpec,
+			// TODO: 'TTLSecondsAfterFinished' is still alpha
+			// https://kubernetes.io/docs/concepts/workloads/controllers/ttlafterfinished/
+		},
+	}
+	b, err := yaml.Marshal(jobObj)
+	return jobObj, string(b), err
 }
 
-func (ts *tester) deleteDeployment() error {
-	ts.cfg.Logger.Info("deleting deployment")
+func (ts *tester) deleteJob() (err error) {
 	foreground := metav1.DeletePropagationForeground
+	ts.cfg.Logger.Info("deleting Job", zap.String("name", csrsJobName))
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	err := ts.cfg.K8SClient.KubernetesClientSet().
-		AppsV1().
-		Deployments(ts.cfg.EKSConfig.AddOnCSRsRemote.Namespace).
+	err = ts.cfg.
+		K8SClient.KubernetesClientSet().
+		BatchV1().
+		Jobs(ts.cfg.EKSConfig.AddOnCSRsRemote.Namespace).
 		Delete(
 			ctx,
-			csrsDeploymentName,
+			csrsJobName,
 			metav1.DeleteOptions{
 				GracePeriodSeconds: aws.Int64(0),
 				PropagationPolicy:  &foreground,
 			},
 		)
 	cancel()
-	if err != nil {
-		return err
+	if err == nil {
+		ts.cfg.Logger.Info("deleted Job", zap.String("name", csrsJobName))
+	} else {
+		ts.cfg.Logger.Warn("failed to delete Job", zap.Error(err))
 	}
-	ts.cfg.Logger.Info("deleted deployment")
-	return ts.cfg.EKSConfig.Sync()
+	return err
 }
 
-func (ts *tester) waitDeployment() error {
-	ts.cfg.Logger.Info("waiting for csrs Deployment")
-	args := []string{
-		ts.cfg.EKSConfig.KubectlPath,
-		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
-		"--namespace=" + ts.cfg.EKSConfig.AddOnCSRsRemote.Namespace,
-		"describe",
-		"deployment",
-		csrsDeploymentName,
-	}
-	cmd := strings.Join(args, " ")
+// 1. if previous summary exists, download and compare
+// 2. upload new summary and overwrite the previous s3 key
+func (ts *tester) checkResults() (err error) {
+	tss := time.Now().UTC().Format(time.RFC3339Nano)
+	ts.cfg.Logger.Info("checking results", zap.String("timestamp", tss))
 
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	output, err := exec.New().CommandContext(ctx, args[0], args[1:]...).CombinedOutput()
-	cancel()
-	if err != nil {
-		return fmt.Errorf("'%s' failed %v", cmd, err)
-	}
-	out := string(output)
-	fmt.Printf("\n\n\"%s\" output:\n%s\n\n", cmd, out)
-
-	ready := false
-	waitDur := 7*time.Minute + time.Duration(ts.cfg.EKSConfig.AddOnCSRsRemote.DeploymentReplicas)*time.Minute
-	retryStart := time.Now()
-	for time.Now().Sub(retryStart) < waitDur {
-		select {
-		case <-ts.cfg.Stopc:
-			return errors.New("check aborted")
-		case <-time.After(15 * time.Second):
-		}
-
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		dresp, err := ts.cfg.K8SClient.KubernetesClientSet().
-			AppsV1().
-			Deployments(ts.cfg.EKSConfig.AddOnCSRsRemote.Namespace).
-			Get(ctx, csrsDeploymentName, metav1.GetOptions{})
-		cancel()
-		if err != nil {
-			return fmt.Errorf("failed to get Deployment (%v)", err)
-		}
-		ts.cfg.Logger.Info("get deployment",
-			zap.Int32("desired-replicas", dresp.Status.Replicas),
-			zap.Int32("available-replicas", dresp.Status.AvailableReplicas),
-			zap.Int32("unavailable-replicas", dresp.Status.UnavailableReplicas),
-			zap.Int32("ready-replicas", dresp.Status.ReadyReplicas),
-		)
-		available := false
-		for _, cond := range dresp.Status.Conditions {
-			ts.cfg.Logger.Info("condition",
-				zap.String("last-updated", cond.LastUpdateTime.String()),
-				zap.String("type", string(cond.Type)),
-				zap.String("status", string(cond.Status)),
-				zap.String("reason", cond.Reason),
-				zap.String("message", cond.Message),
-			)
-			if cond.Status != v1.ConditionTrue {
-				continue
-			}
-			if cond.Type == appsv1.DeploymentAvailable {
-				available = true
-				break
-			}
-		}
-		if available && dresp.Status.AvailableReplicas >= ts.cfg.EKSConfig.AddOnCSRsRemote.DeploymentReplicas {
-			ready = true
-			break
-		}
-
-		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
-		output, err = exec.New().CommandContext(ctx, args[0], args[1:]...).CombinedOutput()
-		cancel()
-		out := string(output)
-		if err != nil {
-			ts.cfg.Logger.Warn("describe failed", zap.String("command", cmd), zap.Error(err))
-		} else {
-			fmt.Printf("\n\n\"%s\" output:\n%s\n\n", cmd, out)
-		}
-	}
-	if !ready {
-		ts.cfg.Logger.Warn("deployment not ready")
-		return errors.New("deployment not ready")
-	}
-
-	ts.cfg.Logger.Info("waited for csrs Deployment")
-	return ts.cfg.EKSConfig.Sync()
-}
-
-func (ts *tester) AggregateResults() (err error) {
-	if !ts.cfg.EKSConfig.IsEnabledAddOnCSRsRemote() {
-		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", pkgName))
-		return nil
-	}
-	if !ts.cfg.EKSConfig.AddOnCSRsRemote.Created {
-		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", pkgName))
-		return nil
-	}
-
-	ts.cfg.Logger.Info("starting tester.AggregateResults", zap.String("tester", pkgName))
 	writesSummary := metrics.RequestsSummary{TestID: time.Now().UTC().Format(time.RFC3339Nano)}
 	curWriteLatencies := make(metrics.Durations, 0, 20000)
 
@@ -841,99 +759,6 @@ func (ts *tester) AggregateResults() (err error) {
 		}
 	}
 
-	aggSucceed := writesDirRaw != "" && writesDirSummary != ""
-	if !aggSucceed {
-		writesSummary = metrics.RequestsSummary{TestID: time.Now().UTC().Format(time.RFC3339Nano)}
-		curWriteLatencies = make(metrics.Durations, 0, 20000)
-
-		if ts.cfg.EKSConfig.IsEnabledAddOnNodeGroups() && ts.cfg.EKSConfig.AddOnNodeGroups.FetchLogs {
-			ts.cfg.Logger.Info("fetching logs from ngs")
-			for _, v := range ts.cfg.EKSConfig.AddOnNodeGroups.ASGs {
-				for _, fpaths := range v.Logs {
-					for _, fpath := range fpaths {
-						if strings.Contains(fpath, ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsSummaryWritesOutputNamePrefix) {
-							switch {
-							case strings.HasSuffix(fpath, "-writes-raw.json"):
-								b, err := ioutil.ReadFile(fpath)
-								if err != nil {
-									return fmt.Errorf("failed to open %q (%v)", fpath, err)
-								}
-								var r metrics.Durations
-								if err = json.Unmarshal(b, &r); err != nil {
-									return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
-								}
-								curWriteLatencies = append(curWriteLatencies, r...)
-
-							case strings.HasSuffix(fpath, "-writes-summary.json"):
-								b, err := ioutil.ReadFile(fpath)
-								if err != nil {
-									return fmt.Errorf("failed to open %q (%v)", fpath, err)
-								}
-								var r metrics.RequestsSummary
-								if err = json.Unmarshal(b, &r); err != nil {
-									return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
-								}
-								writesSummary.SuccessTotal += r.SuccessTotal
-								writesSummary.FailureTotal += r.FailureTotal
-								if writesSummary.LatencyHistogram == nil || len(writesSummary.LatencyHistogram) == 0 {
-									writesSummary.LatencyHistogram = r.LatencyHistogram
-								} else {
-									writesSummary.LatencyHistogram, err = metrics.MergeHistograms(writesSummary.LatencyHistogram, r.LatencyHistogram)
-									if err != nil {
-										return fmt.Errorf("failed to merge histograms (%v)", err)
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-		if ts.cfg.EKSConfig.IsEnabledAddOnManagedNodeGroups() && ts.cfg.EKSConfig.AddOnManagedNodeGroups.FetchLogs {
-			ts.cfg.Logger.Info("fetching logs from mngs")
-			for _, cur := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
-				for _, fpaths := range cur.Logs {
-					for _, fpath := range fpaths {
-						if strings.Contains(fpath, ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsSummaryWritesOutputNamePrefix) {
-							switch {
-							case strings.HasSuffix(fpath, "-writes-raw.json"):
-								b, err := ioutil.ReadFile(fpath)
-								if err != nil {
-									return fmt.Errorf("failed to open %q (%v)", fpath, err)
-								}
-								var r metrics.Durations
-								if err = json.Unmarshal(b, &r); err != nil {
-									return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
-								}
-								curWriteLatencies = append(curWriteLatencies, r...)
-
-							case strings.HasSuffix(fpath, "-writes-summary.json"):
-								b, err := ioutil.ReadFile(fpath)
-								if err != nil {
-									return fmt.Errorf("failed to open %q (%v)", fpath, err)
-								}
-								var r metrics.RequestsSummary
-								if err = json.Unmarshal(b, &r); err != nil {
-									return fmt.Errorf("failed to unmarshal %q (%s, %v)", fpath, string(b), err)
-								}
-								writesSummary.SuccessTotal += r.SuccessTotal
-								writesSummary.FailureTotal += r.FailureTotal
-								if writesSummary.LatencyHistogram == nil || len(writesSummary.LatencyHistogram) == 0 {
-									writesSummary.LatencyHistogram = r.LatencyHistogram
-								} else {
-									writesSummary.LatencyHistogram, err = metrics.MergeHistograms(writesSummary.LatencyHistogram, r.LatencyHistogram)
-									if err != nil {
-										return fmt.Errorf("failed to merge histograms (%v)", err)
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-
 	sortStart := time.Now()
 	ts.cfg.Logger.Info("sorting write latencies")
 	sort.Sort(curWriteLatencies)
@@ -991,23 +816,6 @@ func (ts *tester) AggregateResults() (err error) {
 		return err
 	}
 	fmt.Printf("\n\nRequestsSummaryWrites:\n%s\n", writesSummary.Table())
-
-	ts.cfg.Logger.Info("aggregated results from Pods; now comparing previous results")
-	if err = ts.compareResults(curWriteLatencies); err != nil {
-		return err
-	}
-	if err = ts.publishResults(); err != nil {
-		return err
-	}
-
-	return ts.cfg.EKSConfig.Sync()
-}
-
-// 1. if previous summary exists, download and compare
-// 2. upload new summary and overwrite the previous s3 key
-func (ts *tester) compareResults(curWriteLatencies metrics.Durations) (err error) {
-	tss := time.Now().UTC().Format(time.RFC3339Nano)
-	ts.cfg.Logger.Info("comparing results", zap.String("timestamp", tss))
 
 	s3Objects := make([]*s3.Object, 0)
 	if ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsSummaryWritesCompareS3Dir != "" {
@@ -1136,7 +944,7 @@ func (ts *tester) compareResults(curWriteLatencies metrics.Durations) (err error
 		return err
 	}
 
-	return nil
+	return ts.cfg.EKSConfig.Sync()
 }
 
 func (ts *tester) publishResults() (err error) {
