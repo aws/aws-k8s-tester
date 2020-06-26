@@ -9,7 +9,4 @@ type Tester interface {
 	Create() error
 	// Delete deletes all test objects.
 	Delete() error
-	// AggregateResults aggregates all test results from remote nodes.
-	// Must be called "after" fetching logs and artifacts from remote nodes.
-	AggregateResults() error
 }
