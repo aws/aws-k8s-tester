@@ -538,6 +538,22 @@ func WaitForCronJobCompletes(
 	return cronJob, pods, err
 }
 
+/*
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    kubernetes.io/psp: eks.privileged
+  creationTimestamp: "2020-06-26T21:00:05Z"
+  generateName: cronjob-echo-1593205200-
+  labels:
+    controller-uid: 724164ed-ca62-4468-b7f7-c762dac0ec42
+    job-name: cronjob-echo-1593205200
+  name: cronjob-echo-1593205200-2t2tv
+  namespace: eks-2020062613-rustcerg03pt-cronjob
+
+*/
+
 func waitForJobCompletes(
 	isCronJob bool,
 	lg *zap.Logger,
@@ -564,6 +580,7 @@ func waitForJobCompletes(
 		zap.String("namespace", namespace),
 		zap.String("job-name", jobName),
 		zap.Bool("cron-job", isCronJob),
+		zap.String("initial-wait", initialWait.String()),
 		zap.String("interval", interval.String()),
 		zap.String("timeout", timeout.String()),
 		zap.Int("target", target),
@@ -596,6 +613,7 @@ func waitForJobCompletes(
 			jv, ok := item.Labels["job-name"]
 			match := ok && jv == jobName
 			if !match {
+				// CronJob
 				match = strings.HasPrefix(item.Name, jobName)
 			}
 			if !match {

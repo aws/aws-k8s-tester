@@ -87,7 +87,7 @@ func (ts *tester) Create() (err error) {
 		5*time.Second,
 		3*time.Minute+10*time.Duration(ts.cfg.EKSConfig.AddOnCronJobs.Completes)*time.Second,
 		ts.cfg.EKSConfig.AddOnCronJobs.Namespace,
-		jobName,
+		cronJobName,
 		int(ts.cfg.EKSConfig.AddOnCronJobs.Completes),
 	)
 	if err != nil {
@@ -164,7 +164,6 @@ func (ts *tester) Delete() error {
 }
 
 const (
-	jobName              = "job-echo"
 	cronJobName          = "cronjob-echo"
 	cronJobEchoImageName = "busybox"
 )
@@ -231,7 +230,7 @@ func (ts *tester) createObject() (batch_v1beta1.CronJob, string, error) {
 	}
 	jobSpec := batch_v1beta1.JobTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      jobName,
+			Name:      cronJobName,
 			Namespace: ts.cfg.EKSConfig.AddOnCronJobs.Namespace,
 		},
 		Spec: batch_v1.JobSpec{
