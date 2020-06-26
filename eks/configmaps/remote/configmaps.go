@@ -113,10 +113,10 @@ func (ts *tester) Create() (err error) {
 	if err = ts.createConfigMap(); err != nil {
 		return err
 	}
+
 	if err = ts.createJob(); err != nil {
 		return err
 	}
-
 	var pods []v1.Pod
 	_, pods, err = k8s_client.WaitForJobCompletes(
 		ts.cfg.Logger,
@@ -669,9 +669,8 @@ func (ts *tester) checkResults() (err error) {
 	tss := time.Now().UTC().Format(time.RFC3339Nano)
 	ts.cfg.Logger.Info("checking results", zap.String("timestamp", tss))
 
-	writesSummary := metrics.RequestsSummary{TestID: time.Now().UTC().Format(time.RFC3339Nano)}
+	writesSummary := metrics.RequestsSummary{TestID: tss}
 	curWriteLatencies := make(metrics.Durations, 0, 20000)
-
 	writesDirRaw := ""
 	writesDirSummary := ""
 
@@ -682,7 +681,10 @@ func (ts *tester) checkResults() (err error) {
 		path.Dir(ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsRawWritesJSONS3Key),
 	)
 	if err == nil {
-		ts.cfg.Logger.Info("reading writes results raw", zap.String("writes-dir", writesDirRaw))
+		ts.cfg.Logger.Info("reading writes results raw",
+			zap.String("writes-dir", writesDirRaw),
+			zap.String("s3-dir", path.Dir(ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsRawWritesJSONS3Key)),
+		)
 		cnt := 0
 		err = filepath.Walk(writesDirRaw, func(fpath string, info os.FileInfo, werr error) error {
 			if werr != nil {
@@ -719,7 +721,10 @@ func (ts *tester) checkResults() (err error) {
 		path.Dir(ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsSummaryWritesJSONS3Key),
 	)
 	if err == nil {
-		ts.cfg.Logger.Info("reading writes results summary", zap.String("writes-dir", writesDirSummary))
+		ts.cfg.Logger.Info("reading writes results summary",
+			zap.String("writes-dir", writesDirSummary),
+			zap.String("s3-dir", path.Dir(ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsSummaryWritesJSONS3Key)),
+		)
 		cnt := 0
 		err = filepath.Walk(writesDirSummary, func(fpath string, info os.FileInfo, werr error) error {
 			if werr != nil {
@@ -760,7 +765,7 @@ func (ts *tester) checkResults() (err error) {
 	}
 
 	sortStart := time.Now()
-	ts.cfg.Logger.Info("sorting write latencies")
+	ts.cfg.Logger.Info("sorting write latencies", zap.Int("data", len(curWriteLatencies)))
 	sort.Sort(curWriteLatencies)
 	ts.cfg.Logger.Info("sorted write latencies", zap.String("took", time.Since(sortStart).String()))
 	writesSummary.LantencyP50 = curWriteLatencies.PickLantencyP50()
@@ -944,7 +949,7 @@ func (ts *tester) checkResults() (err error) {
 		return err
 	}
 
-	return nil
+	return ts.cfg.EKSConfig.Sync()
 }
 
 func (ts *tester) publishResults() (err error) {

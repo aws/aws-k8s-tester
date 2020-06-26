@@ -108,10 +108,10 @@ func (ts *tester) Create() (err error) {
 	if err = ts.createConfigMap(); err != nil {
 		return err
 	}
+
 	if err = ts.createJob(); err != nil {
 		return err
 	}
-
 	var pods []v1.Pod
 	_, pods, err = k8s_client.WaitForJobCompletes(
 		ts.cfg.Logger,
