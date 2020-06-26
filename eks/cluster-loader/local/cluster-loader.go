@@ -14,8 +14,6 @@ import (
 	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/aws/cw"
-	aws_s3 "github.com/aws/aws-k8s-tester/pkg/aws/s3"
-	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-sdk-go/aws"
@@ -59,22 +57,26 @@ func (ts *tester) Create() (err error) {
 		return nil
 	}
 
-	podStartupLatencyTempPath := fileutil.GetTempFilePath()
-
 	ts.cfg.Logger.Info("starting tester.Create", zap.String("tester", pkgName))
 	ts.loader = cluster_loader.New(cluster_loader.Config{
 		Logger: ts.cfg.Logger,
 		Stopc:  ts.cfg.Stopc,
 
+		S3API:        ts.cfg.S3API,
+		S3BucketName: ts.cfg.EKSConfig.S3BucketName,
+
 		KubeConfigPath: ts.cfg.EKSConfig.KubeConfigPath,
 
-		ClusterLoaderPath:           ts.cfg.EKSConfig.AddOnClusterLoaderLocal.ClusterLoaderPath,
-		ClusterLoaderDownloadURL:    ts.cfg.EKSConfig.AddOnClusterLoaderLocal.ClusterLoaderDownloadURL,
-		TestConfigPath:              ts.cfg.EKSConfig.AddOnClusterLoaderLocal.TestConfigPath,
-		ReportDir:                   ts.cfg.EKSConfig.AddOnClusterLoaderLocal.ReportDir,
-		ReportTarGzPath:             ts.cfg.EKSConfig.AddOnClusterLoaderLocal.ReportTarGzPath,
-		LogPath:                     ts.cfg.EKSConfig.AddOnClusterLoaderLocal.LogPath,
-		PodStartupLatencyOutputPath: podStartupLatencyTempPath,
+		ClusterLoaderPath:        ts.cfg.EKSConfig.AddOnClusterLoaderLocal.ClusterLoaderPath,
+		ClusterLoaderDownloadURL: ts.cfg.EKSConfig.AddOnClusterLoaderLocal.ClusterLoaderDownloadURL,
+		TestConfigPath:           ts.cfg.EKSConfig.AddOnClusterLoaderLocal.TestConfigPath,
+		ReportDir:                ts.cfg.EKSConfig.AddOnClusterLoaderLocal.ReportDir,
+		ReportTarGzPath:          ts.cfg.EKSConfig.AddOnClusterLoaderLocal.ReportTarGzPath,
+		ReportTarGzS3Key:         ts.cfg.EKSConfig.AddOnClusterLoaderLocal.ReportTarGzS3Key,
+		LogPath:                  ts.cfg.EKSConfig.AddOnClusterLoaderLocal.LogPath,
+		LogS3Key:                 ts.cfg.EKSConfig.AddOnClusterLoaderLocal.LogS3Key,
+		PodStartupLatencyPath:    ts.cfg.EKSConfig.AddOnClusterLoaderLocal.PodStartupLatencyPath,
+		PodStartupLatencyS3Key:   ts.cfg.EKSConfig.AddOnClusterLoaderLocal.PodStartupLatencyS3Key,
 
 		Runs:    ts.cfg.EKSConfig.AddOnClusterLoaderLocal.Runs,
 		Timeout: ts.cfg.EKSConfig.AddOnClusterLoaderLocal.Timeout,
@@ -110,54 +112,14 @@ func (ts *tester) Create() (err error) {
 		return err
 	}
 
-	ts.cfg.EKSConfig.AddOnClusterLoaderLocal.PodStartupLatency, err = cluster_loader.ParsePodStartupLatency(podStartupLatencyTempPath)
+	ts.cfg.EKSConfig.AddOnClusterLoaderLocal.PodStartupLatency, err = cluster_loader.ParsePodStartupLatency(ts.cfg.EKSConfig.AddOnClusterLoaderLocal.PodStartupLatencyPath)
 	if err != nil {
-		return fmt.Errorf("failed to read PodStartupLatency %q (%v)", podStartupLatencyTempPath, err)
+		return fmt.Errorf("failed to read PodStartupLatency %q (%v)", ts.cfg.EKSConfig.AddOnClusterLoaderLocal.PodStartupLatencyPath, err)
 	}
 	ts.cfg.EKSConfig.Sync()
 
-	if err = aws_s3.Upload(
-		ts.cfg.Logger,
-		ts.cfg.S3API,
-		ts.cfg.EKSConfig.S3BucketName,
-		ts.cfg.EKSConfig.AddOnClusterLoaderLocal.ReportTarGzS3Key,
-		ts.cfg.EKSConfig.AddOnClusterLoaderLocal.ReportTarGzPath,
-	); err != nil {
-		return err
-	}
-	if err = aws_s3.Upload(
-		ts.cfg.Logger,
-		ts.cfg.S3API,
-		ts.cfg.EKSConfig.S3BucketName,
-		ts.cfg.EKSConfig.AddOnClusterLoaderLocal.LogS3Key,
-		ts.cfg.EKSConfig.AddOnClusterLoaderLocal.LogPath,
-	); err != nil {
-		return err
-	}
-
 	if err = ts.publishResults(); err != nil {
 		return err
-	}
-
-	waitDur := 10 * time.Minute
-	retryStart := time.Now()
-	for time.Now().Sub(retryStart) < waitDur {
-		select {
-		case <-ts.cfg.Stopc:
-			ts.cfg.Logger.Warn("health check aborted")
-			return nil
-		case <-time.After(5 * time.Second):
-		}
-		err = ts.cfg.K8SClient.CheckHealth()
-		if err == nil {
-			break
-		}
-		ts.cfg.Logger.Warn("health check failed", zap.Error(err))
-	}
-	if err == nil {
-		ts.cfg.Logger.Info("health check success after load testing")
-	} else {
-		ts.cfg.Logger.Warn("health check failed after load testing", zap.Error(err))
 	}
 
 	return ts.cfg.EKSConfig.Sync()
@@ -193,20 +155,6 @@ func (ts *tester) Delete() (err error) {
 
 	ts.cfg.EKSConfig.AddOnClusterLoaderLocal.Created = false
 	return ts.cfg.EKSConfig.Sync()
-}
-
-func (ts *tester) AggregateResults() (err error) {
-	if !ts.cfg.EKSConfig.IsEnabledAddOnClusterLoaderLocal() {
-		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", pkgName))
-		return nil
-	}
-	if !ts.cfg.EKSConfig.AddOnClusterLoaderLocal.Created {
-		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", pkgName))
-		return nil
-	}
-
-	ts.cfg.Logger.Info("starting tester.AggregateResults", zap.String("tester", pkgName))
-	return nil
 }
 
 /*

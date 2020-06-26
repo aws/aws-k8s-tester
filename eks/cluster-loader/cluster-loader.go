@@ -16,8 +16,10 @@ import (
 	"sync"
 	"time"
 
+	aws_s3 "github.com/aws/aws-k8s-tester/pkg/aws/s3"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/pkg/httputil"
+	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"github.com/dustin/go-humanize"
 	"github.com/mholt/archiver/v3"
 	"go.uber.org/zap"
@@ -29,6 +31,9 @@ import (
 type Config struct {
 	Logger *zap.Logger
 	Stopc  chan struct{}
+
+	S3API        s3iface.S3API
+	S3BucketName string
 
 	// KubeConfigPath is the kubeconfig path.
 	// Optional. If empty, uses in-cluster client configuration.
@@ -45,11 +50,14 @@ type Config struct {
 	// Set via "--report-dir" flag.
 	ReportDir string
 	// ReportTarGzPath is the .tar.gz file path for report directory.
-	ReportTarGzPath string
+	ReportTarGzPath  string
+	ReportTarGzS3Key string
 	// LogPath is the log file path to stream clusterloader binary runs.
-	LogPath string
-	// PodStartupLatencyOutputPath is the combined PodStartupLatency output path.
-	PodStartupLatencyOutputPath string
+	LogPath  string
+	LogS3Key string
+	// PodStartupLatencyPath is the combined PodStartupLatency output path.
+	PodStartupLatencyPath  string
+	PodStartupLatencyS3Key string
 
 	// Runs is the number of "clusterloader2" runs back-to-back.
 	Runs    int
@@ -361,9 +369,18 @@ func (ts *loader) Start() (err error) {
 		ts.cfg.Logger.Warn("failed to marshal PodStartupLatency", zap.Error(derr))
 		return derr
 	}
-	if cerr = ioutil.WriteFile(ts.cfg.PodStartupLatencyOutputPath, podStartupLatData, 0600); cerr != nil {
+	if cerr = ioutil.WriteFile(ts.cfg.PodStartupLatencyPath, podStartupLatData, 0600); cerr != nil {
 		ts.cfg.Logger.Warn("failed to write PodStartupLatency", zap.Error(cerr))
 		return cerr
+	}
+	if serr := aws_s3.Upload(
+		ts.cfg.Logger,
+		ts.cfg.S3API,
+		ts.cfg.S3BucketName,
+		ts.cfg.PodStartupLatencyS3Key,
+		ts.cfg.PodStartupLatencyPath,
+	); serr != nil {
+		return serr
 	}
 
 	ts.cfg.Logger.Info("gzipping report dir", zap.String("report-dir", ts.cfg.ReportDir), zap.String("file-path", ts.cfg.ReportTarGzPath))
@@ -382,6 +399,24 @@ func (ts *loader) Start() (err error) {
 	}
 	sz := humanize.Bytes(uint64(stat.Size()))
 	ts.cfg.Logger.Info("gzipped report dir", zap.String("report-dir", ts.cfg.ReportDir), zap.String("file-path", ts.cfg.ReportTarGzPath), zap.String("file-size", sz))
+	if serr := aws_s3.Upload(
+		ts.cfg.Logger,
+		ts.cfg.S3API,
+		ts.cfg.S3BucketName,
+		ts.cfg.ReportTarGzS3Key,
+		ts.cfg.ReportTarGzPath,
+	); serr != nil {
+		return serr
+	}
+	if serr := aws_s3.Upload(
+		ts.cfg.Logger,
+		ts.cfg.S3API,
+		ts.cfg.S3BucketName,
+		ts.cfg.LogS3Key,
+		ts.cfg.LogPath,
+	); serr != nil {
+		return serr
+	}
 
 	if testFinishedCount == ts.cfg.Runs {
 		ts.cfg.Logger.Info("completed expected test runs; overriding error",
