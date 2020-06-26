@@ -555,6 +555,8 @@ func (ts *tester) createObject() (batchv1.Job, string, error) {
 		Spec: v1.PodSpec{
 			ServiceAccountName: clusterLoaderServiceAccountName,
 
+			// spec.template.spec.restartPolicy: Unsupported value: "Always": supported values: "OnFailure", "Never"
+			RestartPolicy: v1.RestartPolicyOnFailure,
 			// TODO: set resource limits
 			Containers: []v1.Container{
 				{

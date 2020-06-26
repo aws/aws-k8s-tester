@@ -533,6 +533,7 @@ func (ts *tester) createALBDeployment() error {
 							},
 						},
 						Spec: v1.PodSpec{
+							RestartPolicy: v1.RestartPolicyAlways,
 							Containers: []v1.Container{
 								{
 									Name:            albIngressControllerDeploymentName,
@@ -701,6 +702,7 @@ func (ts *tester) create2048Deployment() error {
 							},
 						},
 						Spec: v1.PodSpec{
+							RestartPolicy: v1.RestartPolicyAlways,
 							Containers: []v1.Container{
 								{
 									Name:            alb2048AppName,

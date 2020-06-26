@@ -197,6 +197,8 @@ func (ts *tester) createCronJobs() (err error) {
 func (ts *tester) createObject() (batch_v1beta1.CronJob, string, error) {
 	podSpec := v1.PodTemplateSpec{
 		Spec: v1.PodSpec{
+			// spec.template.spec.restartPolicy: Unsupported value: "Always": supported values: "OnFailure", "Never"
+			RestartPolicy: v1.RestartPolicyOnFailure,
 			Containers: []v1.Container{
 				{
 					Name:            cronJobName,
@@ -215,8 +217,6 @@ func (ts *tester) createObject() (batch_v1beta1.CronJob, string, error) {
 					},
 				},
 			},
-			// spec.template.spec.restartPolicy: Unsupported value: "Always": supported values: "OnFailure", "Never"
-			RestartPolicy: v1.RestartPolicyOnFailure,
 
 			Volumes: []v1.Volume{
 				{

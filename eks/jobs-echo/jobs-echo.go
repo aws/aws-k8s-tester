@@ -177,6 +177,8 @@ func (ts *tester) createJob() (err error) {
 func (ts *tester) createObject() (batch1.Job, string, error) {
 	podSpec := v1.PodTemplateSpec{
 		Spec: v1.PodSpec{
+			// spec.template.spec.restartPolicy: Unsupported value: "Always": supported values: "OnFailure", "Never"
+			RestartPolicy: v1.RestartPolicyOnFailure,
 			Containers: []v1.Container{
 				{
 					Name:            jobName,
@@ -195,8 +197,6 @@ func (ts *tester) createObject() (batch1.Job, string, error) {
 					},
 				},
 			},
-			// spec.template.spec.restartPolicy: Unsupported value: "Always": supported values: "OnFailure", "Never"
-			RestartPolicy: v1.RestartPolicyOnFailure,
 
 			Volumes: []v1.Volume{
 				{

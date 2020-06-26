@@ -209,6 +209,7 @@ func (ts *tester) createDeployment() error {
 							},
 						},
 						Spec: v1.PodSpec{
+							RestartPolicy: v1.RestartPolicyAlways,
 							Containers: []v1.Container{
 								{
 									Name:            nlbHelloWorldAppName,

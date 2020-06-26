@@ -745,7 +745,6 @@ func (ts *tester) createDeployment() error {
 
 							// invalid: spec.template.spec.restartPolicy: Unsupported value: \"OnFailure\": supported values: \"Always\")"
 							RestartPolicy: v1.RestartPolicyAlways,
-
 							Containers: []v1.Container{
 								{
 									Name:            irsaDeploymentName,

@@ -889,8 +889,8 @@ func (ts *tester) createPod() error {
 			Namespace: ts.cfg.EKSConfig.AddOnIRSAFargate.Namespace,
 		},
 		Spec: v1.PodSpec{
-			RestartPolicy:      v1.RestartPolicyOnFailure,
 			ServiceAccountName: irsaFargateServiceAccountName,
+			RestartPolicy:      v1.RestartPolicyOnFailure,
 			Containers: []v1.Container{
 				{
 					Name:  irsaFargateContainerName,

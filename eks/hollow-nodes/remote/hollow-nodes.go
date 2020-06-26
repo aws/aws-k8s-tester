@@ -552,6 +552,7 @@ func (ts *tester) createDeployment() error {
 						Spec: v1.PodSpec{
 							ServiceAccountName: hollowNodesServiceAccountName,
 
+							RestartPolicy: v1.RestartPolicyAlways,
 							// TODO: set resource limits
 							Containers: []v1.Container{
 								{

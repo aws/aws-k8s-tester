@@ -271,6 +271,7 @@ func (ts *tester) createDeploymentRedisLeader() error {
 							},
 						},
 						Spec: v1.PodSpec{
+							RestartPolicy: v1.RestartPolicyAlways,
 							Containers: []v1.Container{
 								{
 									Name:            redisLeaderAppName,
@@ -583,6 +584,7 @@ func (ts *tester) createDeploymentRedisFollower() error {
 							},
 						},
 						Spec: v1.PodSpec{
+							RestartPolicy: v1.RestartPolicyAlways,
 							Containers: []v1.Container{
 								{
 									Name:            redisFollowerAppName,
@@ -892,6 +894,7 @@ func (ts *tester) createDeploymentGuestbook() error {
 							},
 						},
 						Spec: v1.PodSpec{
+							RestartPolicy: v1.RestartPolicyAlways,
 							Containers: []v1.Container{
 								{
 									Name:            nlbGuestbookAppName,
