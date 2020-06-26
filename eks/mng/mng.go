@@ -49,6 +49,8 @@ type Tester interface {
 	Create() error
 	// Delete deletes all EKS "Managed Node Group" resources.
 	Delete() error
+	// Scale runs all scale up/down operations.
+	Scale() error
 	// UpgradeVersion upgrades EKS "Managed Node Group" version, and waits for completion.
 	UpgradeVersion() error
 
@@ -137,6 +139,11 @@ func (ts *tester) Create() (err error) {
 			return err
 		}
 	}
+	ts.cfg.EKSConfig.AddOnManagedNodeGroups.Created = true
+	return ts.cfg.EKSConfig.Sync()
+}
+
+func (ts *tester) Scale() (err error) {
 	for mngName := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
 		if err = ts.scaler.Scale(mngName); err != nil {
 			return err
@@ -145,8 +152,6 @@ func (ts *tester) Create() (err error) {
 			return err
 		}
 	}
-
-	ts.cfg.EKSConfig.AddOnManagedNodeGroups.Created = true
 	return ts.cfg.EKSConfig.Sync()
 }
 

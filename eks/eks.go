@@ -1117,20 +1117,44 @@ func (ts *Tester) Up() (err error) {
 		fmt.Printf("\nrunCommand output:\n\n%s\n", string(out))
 	}
 
-	upgradeRun := false
+	logFetchAgain := false
 	if ts.cfg.IsEnabledAddOnManagedNodeGroups() && ts.cfg.AddOnManagedNodeGroups.Created {
 		if ts.mngTester == nil {
 			return errors.New("ts.mngTester == nil when AddOnManagedNodeGroups.Enable == true")
 		}
+	scaleFound:
 		for _, cur := range ts.cfg.AddOnManagedNodeGroups.MNGs {
-			if cur.VersionUpgrade != nil && cur.VersionUpgrade.Enable {
-				upgradeRun = true
-				break
+			for _, up := range cur.ScaleUpdates {
+				if up.Enable {
+					logFetchAgain = true
+					break scaleFound
+				}
+			}
+		}
+		if !logFetchAgain {
+			for _, cur := range ts.cfg.AddOnManagedNodeGroups.MNGs {
+				if cur.VersionUpgrade != nil && cur.VersionUpgrade.Enable {
+					logFetchAgain = true
+					break
+				}
 			}
 		}
 
 		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-		fmt.Printf(ts.color("[light_green]mngTester.UpgradeVersion [default](%q, upgradeRun %v)\n"), ts.cfg.ConfigPath, upgradeRun)
+		fmt.Printf(ts.color("[light_green]mngTester.Scale [default](%q, logFetchAgain %v)\n"), ts.cfg.ConfigPath, logFetchAgain)
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.osSig,
+			ts.mngTester.Scale,
+			ts.mngTester.Name(),
+		); err != nil {
+			return err
+		}
+
+		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Printf(ts.color("[light_green]mngTester.UpgradeVersion [default](%q, logFetchAgain %v)\n"), ts.cfg.ConfigPath, logFetchAgain)
 		if err := catchInterrupt(
 			ts.lg,
 			ts.stopCreationCh,
@@ -1143,7 +1167,7 @@ func (ts *Tester) Up() (err error) {
 		}
 	}
 
-	if upgradeRun && ts.cfg.IsEnabledAddOnManagedNodeGroups() && ts.cfg.AddOnManagedNodeGroups.Created && ts.cfg.AddOnManagedNodeGroups.FetchLogs {
+	if logFetchAgain && ts.cfg.IsEnabledAddOnManagedNodeGroups() && ts.cfg.AddOnManagedNodeGroups.Created && ts.cfg.AddOnManagedNodeGroups.FetchLogs {
 		if ts.mngTester == nil {
 			return errors.New("ts.mngTester == nil when AddOnManagedNodeGroups.Enable == true")
 		}
