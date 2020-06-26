@@ -19,7 +19,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.9...v1.4.0
 
 - [`aws-k8s-tester --auto-path` now automatically uses the generated cluster name for local file paths, instead of random string](https://github.com/aws/aws-k8s-tester/commit/53b51d38b1aa4e6ea1454cc631c9511dcbe4267a).
 - Remove [`--block` flags](https://github.com/aws/aws-k8s-tester/commit/cdf83863700a4fb52a38484b56fedeb7c6b1eb78).
-- Print [JSON body for (managed) node groups](https://github.com/aws/aws-k8s-tester/commit/).
+- Print [JSON body for (managed) node groups](https://github.com/aws/aws-k8s-tester/commit/7810477b7ece0e1609625d53bf56eabaaa9df145).
 
 ### `ec2`
 
