@@ -133,8 +133,8 @@ func (ld *loader) Stop() {
 // GetMetrics locally fetches output from registered metrics.
 // ref. https://pkg.go.dev/github.com/prometheus/client_golang@v1.6.0/prometheus/promhttp?tab=doc#Handler
 func (ts *loader) CollectMetrics() (writeLatencies metrics.Durations, writesSummary metrics.RequestsSummary, err error) {
-	tss := time.Now().UTC().Format(time.RFC3339Nano)
-	writesSummary = metrics.RequestsSummary{TestID: tss}
+	curTS := time.Now().UTC().Format(time.RFC3339Nano)
+	writesSummary = metrics.RequestsSummary{TestID: curTS}
 
 	// https://pkg.go.dev/github.com/prometheus/client_golang/prometheus?tab=doc#Gatherer
 	mfs, err := prometheus.DefaultGatherer.Gather()

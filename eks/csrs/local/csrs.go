@@ -140,8 +140,8 @@ func (ts *tester) Delete() error {
 // 1. if previous summary exists, download and compare
 // 2. upload new summary and overwrite the previous s3 key
 func (ts *tester) checkResults(curWriteLatencies metrics.Durations) (err error) {
-	tss := time.Now().UTC().Format(time.RFC3339Nano)
-	ts.cfg.Logger.Info("checking results", zap.String("timestamp", tss))
+	curTS := time.Now().UTC().Format(time.RFC3339Nano)
+	ts.cfg.Logger.Info("checking results", zap.String("timestamp", curTS))
 
 	s3Objects := make([]*s3.Object, 0)
 	if ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsSummaryWritesCompareS3Dir != "" {
@@ -152,7 +152,8 @@ func (ts *tester) checkResults(curWriteLatencies metrics.Durations) (err error) 
 			path.Clean(ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsSummaryWritesCompareS3Dir)+"/",
 		)
 	}
-	if len(s3Objects) > 0 && err == nil {
+	canCompare := len(s3Objects) > 0 && err == nil
+	if canCompare {
 		reqSummaryS3Key := aws.StringValue(s3Objects[0].Key)
 		durRawS3Key := path.Join(ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsRawWritesCompareS3Dir, path.Base(reqSummaryS3Key))
 
@@ -255,7 +256,7 @@ func (ts *tester) checkResults(curWriteLatencies metrics.Durations) (err error) 
 		ts.cfg.Logger,
 		ts.cfg.S3API,
 		ts.cfg.EKSConfig.S3BucketName,
-		path.Join(ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsRawWritesCompareS3Dir, tss),
+		path.Join(ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsRawWritesCompareS3Dir, curTS),
 		ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsRawWritesJSONPath,
 	); err != nil {
 		return err
@@ -264,7 +265,7 @@ func (ts *tester) checkResults(curWriteLatencies metrics.Durations) (err error) 
 		ts.cfg.Logger,
 		ts.cfg.S3API,
 		ts.cfg.EKSConfig.S3BucketName,
-		path.Join(ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsSummaryWritesCompareS3Dir, tss),
+		path.Join(ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsSummaryWritesCompareS3Dir, curTS),
 		ts.cfg.EKSConfig.AddOnCSRsLocal.RequestsSummaryWritesJSONPath,
 	); err != nil {
 		return err

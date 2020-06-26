@@ -168,8 +168,8 @@ func (ts *tester) Delete() error {
 // 1. if previous summary exists, download and compare
 // 2. upload new summary and overwrite the previous s3 key
 func (ts *tester) checkResults(curWriteLatencies metrics.Durations, curReadLatencies metrics.Durations) (err error) {
-	tss := time.Now().UTC().Format(time.RFC3339Nano)
-	ts.cfg.Logger.Info("checking results", zap.String("timestamp", tss))
+	curTS := time.Now().UTC().Format(time.RFC3339Nano)
+	ts.cfg.Logger.Info("checking results", zap.String("timestamp", curTS))
 
 	s3Objects := make([]*s3.Object, 0)
 	if ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsSummaryWritesCompareS3Dir != "" {
@@ -180,7 +180,8 @@ func (ts *tester) checkResults(curWriteLatencies metrics.Durations, curReadLaten
 			path.Clean(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsSummaryWritesCompareS3Dir)+"/",
 		)
 	}
-	if len(s3Objects) > 0 && err == nil {
+	canCompare := len(s3Objects) > 0 && err == nil
+	if canCompare {
 		reqSummaryS3Key := aws.StringValue(s3Objects[0].Key)
 		durRawS3Key := path.Join(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsRawWritesCompareS3Dir, path.Base(reqSummaryS3Key))
 
@@ -283,7 +284,7 @@ func (ts *tester) checkResults(curWriteLatencies metrics.Durations, curReadLaten
 		ts.cfg.Logger,
 		ts.cfg.S3API,
 		ts.cfg.EKSConfig.S3BucketName,
-		path.Join(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsRawWritesCompareS3Dir, tss),
+		path.Join(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsRawWritesCompareS3Dir, curTS),
 		ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsRawWritesJSONPath,
 	); err != nil {
 		return err
@@ -292,7 +293,7 @@ func (ts *tester) checkResults(curWriteLatencies metrics.Durations, curReadLaten
 		ts.cfg.Logger,
 		ts.cfg.S3API,
 		ts.cfg.EKSConfig.S3BucketName,
-		path.Join(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsSummaryWritesCompareS3Dir, tss),
+		path.Join(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsSummaryWritesCompareS3Dir, curTS),
 		ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsSummaryWritesJSONPath,
 	); err != nil {
 		return err
@@ -307,7 +308,8 @@ func (ts *tester) checkResults(curWriteLatencies metrics.Durations, curReadLaten
 			path.Clean(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsSummaryReadsCompareS3Dir)+"/",
 		)
 	}
-	if len(s3Objects) > 0 && err == nil {
+	canCompare = len(s3Objects) > 0 && err == nil
+	if canCompare {
 		reqSummaryS3Key := aws.StringValue(s3Objects[0].Key)
 		durRawS3Key := path.Join(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsRawReadsCompareS3Dir, path.Base(reqSummaryS3Key))
 
@@ -410,7 +412,7 @@ func (ts *tester) checkResults(curWriteLatencies metrics.Durations, curReadLaten
 		ts.cfg.Logger,
 		ts.cfg.S3API,
 		ts.cfg.EKSConfig.S3BucketName,
-		path.Join(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsRawReadsCompareS3Dir, tss),
+		path.Join(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsRawReadsCompareS3Dir, curTS),
 		ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsRawReadsJSONPath,
 	); err != nil {
 		return err
@@ -419,7 +421,7 @@ func (ts *tester) checkResults(curWriteLatencies metrics.Durations, curReadLaten
 		ts.cfg.Logger,
 		ts.cfg.S3API,
 		ts.cfg.EKSConfig.S3BucketName,
-		path.Join(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsSummaryReadsCompareS3Dir, tss),
+		path.Join(ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsSummaryReadsCompareS3Dir, curTS),
 		ts.cfg.EKSConfig.AddOnSecretsLocal.RequestsSummaryReadsJSONPath,
 	); err != nil {
 		return err
