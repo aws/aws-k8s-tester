@@ -49,6 +49,7 @@ require (
 	github.com/fatih/color v1.9.0 // indirect
 	github.com/go-ini/ini v1.55.0
 	github.com/gofrs/flock v0.7.1
+	github.com/google/go-cmp v0.5.0
 	github.com/manifoldco/promptui v0.7.0
 	github.com/mattn/go-runewidth v0.0.8 // indirect
 	github.com/mholt/archiver/v3 v3.3.0
