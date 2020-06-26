@@ -46,7 +46,7 @@ func (cfg *Config) IsEnabledAddOnJobsPi() bool {
 func getDefaultAddOnJobsPi() *AddOnJobsPi {
 	return &AddOnJobsPi{
 		Enable:    false,
-		Completes: 30,
+		Completes: 10,
 		Parallels: 10,
 	}
 }
@@ -59,7 +59,7 @@ func (cfg *Config) validateAddOnJobsPi() error {
 		return errors.New("AddOnJobsPi.Enable true but no node group is enabled")
 	}
 	if cfg.AddOnJobsPi.Namespace == "" {
-		cfg.AddOnJobsPi.Namespace = cfg.Name + "-job-perl"
+		cfg.AddOnJobsPi.Namespace = cfg.Name + "-jobs-pi"
 	}
 	return nil
 }

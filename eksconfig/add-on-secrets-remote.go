@@ -44,9 +44,16 @@ type AddOnSecretsRemote struct {
 	// e.g. "latest" for image URI "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/aws/aws-k8s-tester:latest"
 	RepositoryImageTag string `json:"repository-image-tag,omitempty"`
 
-	// DeploymentReplicas is the number of replicas to create for workers.
-	// The total number of objects to be created is "DeploymentReplicas" * "Objects".
-	DeploymentReplicas int32 `json:"deployment-replicas,omitempty"`
+	// Completes is the desired number of successfully finished pods.
+	// Write QPS will be client QPS * replicas.
+	// Read QPS will be client QPS * replicas.
+	Completes int `json:"completes"`
+	// Parallels is the the maximum desired number of pods the
+	// job should run at any given time.
+	// Write QPS will be client QPS * replicas.
+	// Read QPS will be client QPS * replicas.
+	Parallels int `json:"parallels"`
+
 	// Objects is the number of "Secret" objects to write/read.
 	Objects int `json:"objects"`
 	// ObjectSize is the "Secret" value size in bytes.
@@ -159,10 +166,11 @@ func (cfg *Config) IsEnabledAddOnSecretsRemote() bool {
 
 func getDefaultAddOnSecretsRemote() *AddOnSecretsRemote {
 	return &AddOnSecretsRemote{
-		Enable:             false,
-		DeploymentReplicas: 5,
-		Objects:            10,
-		ObjectSize:         10 * 1024, // 10 KB
+		Enable:     false,
+		Completes:  5,
+		Parallels:  5,
+		Objects:    10,
+		ObjectSize: 10 * 1024, // 10 KB
 
 		// writes total 100 MB for "Secret" objects,
 		// plus "Pod" objects, writes total 330 MB to etcd
@@ -207,9 +215,6 @@ func (cfg *Config) validateAddOnSecretsRemote() error {
 		return errors.New("AddOnSecretsRemote.RepositoryImageTag empty")
 	}
 
-	if cfg.AddOnSecretsRemote.DeploymentReplicas == 0 {
-		cfg.AddOnSecretsRemote.DeploymentReplicas = 5
-	}
 	if cfg.AddOnSecretsRemote.Objects == 0 {
 		cfg.AddOnSecretsRemote.Objects = 10
 	}

@@ -71,7 +71,7 @@ func (cfg *Config) validateAddOnJobsEcho() error {
 		return errors.New("AddOnJobsEcho.Enable true but no node group is enabled")
 	}
 	if cfg.AddOnJobsEcho.Namespace == "" {
-		cfg.AddOnJobsEcho.Namespace = cfg.Name + "-job-echo"
+		cfg.AddOnJobsEcho.Namespace = cfg.Name + "-jobs-echo"
 	}
 	if cfg.AddOnJobsEcho.EchoSize > 250000 {
 		return fmt.Errorf("echo size limit is 0.25 MB, got %d", cfg.AddOnJobsEcho.EchoSize)

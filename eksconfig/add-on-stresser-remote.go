@@ -44,10 +44,16 @@ type AddOnStresserRemote struct {
 	// e.g. "latest" for image URI "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/aws/aws-k8s-tester:latest"
 	RepositoryImageTag string `json:"repository-image-tag,omitempty"`
 
-	// DeploymentReplicas is the number of replicas to create for workers.
+	// Completes is the desired number of successfully finished pods.
 	// Write QPS will be client QPS * replicas.
 	// Read QPS will be client QPS * replicas.
-	DeploymentReplicas int32 `json:"deployment-replicas,omitempty"`
+	Completes int `json:"completes"`
+	// Parallels is the the maximum desired number of pods the
+	// job should run at any given time.
+	// Write QPS will be client QPS * replicas.
+	// Read QPS will be client QPS * replicas.
+	Parallels int `json:"parallels"`
+
 	// ObjectSize is the value size in bytes for write objects.
 	// If 0, do not write anything.
 	ObjectSize int `json:"object-size"`
@@ -162,7 +168,8 @@ func (cfg *Config) IsEnabledAddOnStresserRemote() bool {
 func getDefaultAddOnStresserRemote() *AddOnStresserRemote {
 	return &AddOnStresserRemote{
 		Enable:                                false,
-		DeploymentReplicas:                    5,
+		Completes:                             5,
+		Parallels:                             5,
 		ObjectSize:                            0,
 		ListLimit:                             0,
 		Duration:                              time.Minute,
@@ -194,9 +201,6 @@ func (cfg *Config) validateAddOnStresserRemote() error {
 		return errors.New("AddOnStresserRemote.RepositoryImageTag empty")
 	}
 
-	if cfg.AddOnStresserRemote.DeploymentReplicas == 0 {
-		cfg.AddOnStresserRemote.DeploymentReplicas = 5
-	}
 	if cfg.AddOnStresserRemote.Duration == time.Duration(0) {
 		cfg.AddOnStresserRemote.Duration = time.Minute
 	}

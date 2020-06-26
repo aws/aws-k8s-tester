@@ -44,9 +44,18 @@ type AddOnConfigmapsRemote struct {
 	// e.g. "latest" for image URI "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/aws/aws-k8s-tester:latest"
 	RepositoryImageTag string `json:"repository-image-tag,omitempty"`
 
-	// DeploymentReplicas is the number of replicas to create for workers.
-	// The total number of objects to be created is "DeploymentReplicas" * "Objects".
-	DeploymentReplicas int32 `json:"deployment-replicas,omitempty"`
+	// Completes is the desired number of successfully finished pods.
+	// Write QPS will be client QPS * replicas.
+	// Read QPS will be client QPS * replicas.
+	// The total number of objects to be created is "Completes" * "Objects".
+	Completes int `json:"completes"`
+	// Parallels is the the maximum desired number of pods the
+	// job should run at any given time.
+	// Write QPS will be client QPS * replicas.
+	// Read QPS will be client QPS * replicas.
+	// The total number of objects to be created is "Completes" * "Objects".
+	Parallels int `json:"parallels"`
+
 	// Objects is the number of "ConfigMap" objects to create.
 	Objects int `json:"objects"`
 	// ObjectSize is the "ConfigMap" value size in bytes.
@@ -117,10 +126,11 @@ func (cfg *Config) IsEnabledAddOnConfigmapsRemote() bool {
 
 func getDefaultAddOnConfigmapsRemote() *AddOnConfigmapsRemote {
 	return &AddOnConfigmapsRemote{
-		Enable:             false,
-		DeploymentReplicas: 5,
-		Objects:            10,
-		ObjectSize:         10 * 1024, // 10 KB
+		Enable:     false,
+		Completes:  5,
+		Parallels:  5,
+		Objects:    10,
+		ObjectSize: 10 * 1024, // 10 KB
 
 		// writes total 300 MB data to etcd
 		// Objects: 1000,
@@ -157,9 +167,6 @@ func (cfg *Config) validateAddOnConfigmapsRemote() error {
 		return errors.New("AddOnConfigmapsRemote.RepositoryImageTag empty")
 	}
 
-	if cfg.AddOnConfigmapsRemote.DeploymentReplicas == 0 {
-		cfg.AddOnConfigmapsRemote.DeploymentReplicas = 5
-	}
 	if cfg.AddOnConfigmapsRemote.Objects == 0 {
 		cfg.AddOnConfigmapsRemote.Objects = 10
 	}

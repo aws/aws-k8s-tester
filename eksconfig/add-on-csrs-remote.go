@@ -44,9 +44,16 @@ type AddOnCSRsRemote struct {
 	// e.g. "latest" for image URI "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/aws/aws-k8s-tester:latest"
 	RepositoryImageTag string `json:"repository-image-tag,omitempty"`
 
-	// DeploymentReplicas is the number of replicas to create for workers.
-	// The total number of objects to be created is "DeploymentReplicas" * "Objects".
-	DeploymentReplicas int32 `json:"deployment-replicas,omitempty"`
+	// Completes is the desired number of successfully finished pods.
+	// Write QPS will be client QPS * replicas.
+	// Read QPS will be client QPS * replicas.
+	Completes int `json:"completes"`
+	// Parallels is the the maximum desired number of pods the
+	// job should run at any given time.
+	// Write QPS will be client QPS * replicas.
+	// Read QPS will be client QPS * replicas.
+	Parallels int `json:"parallels"`
+
 	// Objects is the number of "CertificateSigningRequest" objects to create.
 	Objects int `json:"objects"`
 
@@ -125,7 +132,8 @@ func (cfg *Config) IsEnabledAddOnCSRsRemote() bool {
 func getDefaultAddOnCSRsRemote() *AddOnCSRsRemote {
 	return &AddOnCSRsRemote{
 		Enable:                                false,
-		DeploymentReplicas:                    5,
+		Completes:                             5,
+		Parallels:                             5,
 		Objects:                               10, // 1000 objects generates 5 MB data to etcd
 		InitialRequestConditionType:           "",
 		RequestsSummaryWritesOutputNamePrefix: "csrs-writes-" + randutil.String(10),
@@ -159,9 +167,6 @@ func (cfg *Config) validateAddOnCSRsRemote() error {
 		return errors.New("AddOnCSRsRemote.RepositoryImageTag empty")
 	}
 
-	if cfg.AddOnCSRsRemote.DeploymentReplicas == 0 {
-		cfg.AddOnCSRsRemote.DeploymentReplicas = 5
-	}
 	if cfg.AddOnCSRsRemote.Objects == 0 {
 		cfg.AddOnCSRsRemote.Objects = 10
 	}
