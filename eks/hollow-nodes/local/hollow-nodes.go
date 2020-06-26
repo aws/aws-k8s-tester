@@ -85,27 +85,6 @@ func (ts *tester) Create() (err error) {
 	if err != nil {
 		return err
 	}
-	ts.cfg.EKSConfig.Sync()
-
-	waitDur, retryStart := 5*time.Minute, time.Now()
-	for time.Now().Sub(retryStart) < waitDur {
-		select {
-		case <-ts.cfg.Stopc:
-			ts.cfg.Logger.Warn("health check aborted")
-			return nil
-		case <-time.After(5 * time.Second):
-		}
-		err = ts.cfg.K8SClient.CheckHealth()
-		if err == nil {
-			break
-		}
-		ts.cfg.Logger.Warn("health check failed", zap.Error(err))
-	}
-	if err == nil {
-		ts.cfg.Logger.Info("health check success after load testing")
-	} else {
-		ts.cfg.Logger.Warn("health check failed after load testing", zap.Error(err))
-	}
 
 	return ts.cfg.EKSConfig.Sync()
 }
@@ -177,19 +156,5 @@ func (ts *tester) deleteCreatedNodes() error {
 		return errors.New(strings.Join(errs, ", "))
 	}
 
-	return nil
-}
-
-func (ts *tester) AggregateResults() (err error) {
-	if !ts.cfg.EKSConfig.IsEnabledAddOnHollowNodesLocal() {
-		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", pkgName))
-		return nil
-	}
-	if !ts.cfg.EKSConfig.AddOnHollowNodesLocal.Created {
-		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", pkgName))
-		return nil
-	}
-
-	ts.cfg.Logger.Info("starting tester.AggregateResults", zap.String("tester", pkgName))
 	return nil
 }
