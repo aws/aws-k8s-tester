@@ -173,29 +173,5 @@ func (ts *tester) Upgrade(mngName string) (err error) {
 		return fmt.Errorf("MNGs[%q] update failed %v", mngName, err)
 	}
 
-	ts.cfg.Logger.Info("checking EKS server health after MNG version upgrade")
-	waitDur, retryStart := 5*time.Minute, time.Now()
-	for time.Now().Sub(retryStart) < waitDur {
-		select {
-		case <-ts.cfg.Stopc:
-			ts.cfg.Logger.Warn("health check aborted")
-			return nil
-		case <-time.After(5 * time.Second):
-		}
-		err = ts.cfg.K8SClient.CheckHealth()
-		if err == nil {
-			break
-		}
-		ts.cfg.Logger.Warn("health check failed", zap.Error(err))
-	}
-	if err != nil {
-		ts.cfg.Logger.Warn("health check failed after MNG version upgrade", zap.Error(err))
-		return err
-	}
-
-	ts.cfg.Logger.Info("completed MNG version upgrade",
-		zap.String("from", ts.cfg.EKSConfig.Parameters.Version),
-		zap.String("to", ts.cfg.EKSConfig.AddOnClusterVersionUpgrade.Version),
-	)
-	return nil
+	return ts.cfg.EKSConfig.Sync()
 }

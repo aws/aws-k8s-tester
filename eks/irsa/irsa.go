@@ -134,6 +134,9 @@ func (ts *tester) Create() (err error) {
 	if err = ts.waitOutputLogs(); err != nil {
 		return err
 	}
+	if err = ts.aggregateResults(); err != nil {
+		return err
+	}
 
 	return ts.cfg.EKSConfig.Sync()
 }
@@ -1169,17 +1172,8 @@ func (ts *tester) countSuccess(expects int) (int, error) {
 	return total, ts.cfg.EKSConfig.Sync()
 }
 
-func (ts *tester) AggregateResults() error {
-	if !ts.cfg.EKSConfig.IsEnabledAddOnIRSA() {
-		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", pkgName))
-		return nil
-	}
-	if !ts.cfg.EKSConfig.AddOnIRSA.Created {
-		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", pkgName))
-		return nil
-	}
-
-	ts.cfg.Logger.Info("starting tester.AggregateResults", zap.String("tester", pkgName))
+func (ts *tester) aggregateResults() error {
+	ts.cfg.Logger.Info("starting tester.aggregateResults", zap.String("tester", pkgName))
 	f, err := os.OpenFile(ts.cfg.EKSConfig.AddOnIRSA.DeploymentResultPath, os.O_RDWR|os.O_TRUNC, 0777)
 	if err != nil {
 		f, err = os.Create(ts.cfg.EKSConfig.AddOnIRSA.DeploymentResultPath)

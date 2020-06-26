@@ -46,7 +46,7 @@ type tester struct {
 	cfg Config
 }
 
-func (ts *tester) Create() error {
+func (ts *tester) Create() (err error) {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnCronJobs() {
 		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", pkgName))
 		return nil
@@ -66,62 +66,35 @@ func (ts *tester) Create() error {
 		ts.cfg.EKSConfig.Sync()
 	}()
 
-	if err := k8s_client.CreateNamespace(
+	if err = k8s_client.CreateNamespace(
 		ts.cfg.Logger,
 		ts.cfg.K8SClient.KubernetesClientSet(),
 		ts.cfg.EKSConfig.AddOnCronJobs.Namespace,
 	); err != nil {
 		return err
 	}
-	obj, b, err := ts.createCronJobs()
-	if err != nil {
+
+	if err = ts.createCronJobs(); err != nil {
 		return err
 	}
-	ts.cfg.Logger.Info("creating CronJob",
-		zap.String("name", cronJobName),
-		zap.Int("completes", ts.cfg.EKSConfig.AddOnCronJobs.Completes),
-		zap.Int("parallels", ts.cfg.EKSConfig.AddOnCronJobs.Parallels),
-		zap.String("object-size", humanize.Bytes(uint64(len(b)))),
-	)
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	_, err = ts.cfg.K8SClient.KubernetesClientSet().
-		BatchV1beta1().
-		CronJobs(ts.cfg.EKSConfig.AddOnCronJobs.Namespace).
-		Create(ctx, &obj, metav1.CreateOptions{})
-	cancel()
-	if err != nil {
-		return fmt.Errorf("failed to create CronJob (%v)", err)
-	}
-	ts.cfg.Logger.Info("created CronJob")
 
 	// take about 4-min for 10 cron jobs to trigger
-	select {
-	case <-ts.cfg.Stopc:
-		ts.cfg.Logger.Warn("wait aborted")
-		return nil
-	case <-time.After(2 * time.Minute):
-	}
-
-	waitDur := 3*time.Minute + 10*time.Duration(ts.cfg.EKSConfig.AddOnCronJobs.Completes)*time.Second
-
-	completedJobs, err := waitJobs(
+	_, pods, err := k8s_client.WaitForCronJobCompletes(
 		ts.cfg.Logger,
 		ts.cfg.Stopc,
 		ts.cfg.K8SClient,
-		waitDur,
+		3*time.Minute,
 		5*time.Second,
+		3*time.Minute+10*time.Duration(ts.cfg.EKSConfig.AddOnCronJobs.Completes)*time.Second,
 		ts.cfg.EKSConfig.AddOnCronJobs.Namespace,
-		cronJobName,
+		jobName,
 		int(ts.cfg.EKSConfig.AddOnCronJobs.Completes),
-		v1.PodSucceeded,
 	)
 	if err != nil {
 		return err
 	}
-
 	println()
-	for _, item := range completedJobs {
+	for _, item := range pods {
 		fmt.Printf("CronJob Pod %q: %q\n", item.Name, item.Status.Phase)
 	}
 	println()
@@ -196,7 +169,33 @@ const (
 	cronJobEchoImageName = "busybox"
 )
 
-func (ts *tester) createCronJobs() (batch_v1beta1.CronJob, string, error) {
+func (ts *tester) createCronJobs() (err error) {
+	obj, b, err := ts.createObject()
+	if err != nil {
+		return err
+	}
+
+	ts.cfg.Logger.Info("creating CronJobs",
+		zap.String("name", cronJobName),
+		zap.Int("completes", ts.cfg.EKSConfig.AddOnCronJobs.Completes),
+		zap.Int("parallels", ts.cfg.EKSConfig.AddOnCronJobs.Parallels),
+		zap.String("object-size", humanize.Bytes(uint64(len(b)))),
+	)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	_, err = ts.cfg.K8SClient.KubernetesClientSet().
+		BatchV1beta1().
+		CronJobs(ts.cfg.EKSConfig.AddOnCronJobs.Namespace).
+		Create(ctx, &obj, metav1.CreateOptions{})
+	cancel()
+	if err != nil {
+		return fmt.Errorf("failed to create CronJobs (%v)", err)
+	}
+
+	ts.cfg.Logger.Info("created CronJobs")
+	return nil
+}
+
+func (ts *tester) createObject() (batch_v1beta1.CronJob, string, error) {
 	podSpec := v1.PodTemplateSpec{
 		Spec: v1.PodSpec{
 			Containers: []v1.Container{
@@ -261,87 +260,4 @@ func (ts *tester) createCronJobs() (batch_v1beta1.CronJob, string, error) {
 	}
 	b, err := yaml.Marshal(cronObj)
 	return cronObj, string(b), err
-}
-
-func (ts *tester) AggregateResults() (err error) {
-	if !ts.cfg.EKSConfig.IsEnabledAddOnCronJobs() {
-		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", pkgName))
-		return nil
-	}
-	if !ts.cfg.EKSConfig.AddOnCronJobs.Created {
-		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", pkgName))
-		return nil
-	}
-
-	ts.cfg.Logger.Info("starting tester.AggregateResults", zap.String("tester", pkgName))
-	return nil
-}
-
-// TODO: use field selector, "status.phase!=Running"
-// https://github.com/kubernetes/kubernetes/blob/d379ab2697251334774b7bd6f41b26cf39de470d/pkg/apis/batch/v1/conversion.go#L30-L41
-func waitJobs(
-	lg *zap.Logger,
-	stopc chan struct{},
-	k8sClient k8s_client.EKS,
-	timeout time.Duration,
-	interval time.Duration,
-	namespace string,
-	jobName string,
-	targets int,
-	desiredPodPhase v1.PodPhase,
-) (pods []v1.Pod, err error) {
-	lg.Info("waiting Pod",
-		zap.String("namespace", namespace),
-		zap.String("job-name", jobName),
-	)
-	retryStart := time.Now()
-	for time.Now().Sub(retryStart) < timeout {
-		select {
-		case <-stopc:
-			return nil, errors.New("Pod polling aborted")
-		case <-time.After(interval):
-		}
-
-		pods, err := k8sClient.ListPods(namespace, 150, 5*time.Second)
-		if err != nil {
-			lg.Warn("failed to list Pod", zap.Error(err))
-			continue
-		}
-		if len(pods) == 0 {
-			lg.Warn("got an empty list of Pod",
-				zap.String("namespace", namespace),
-				zap.String("job-name", jobName),
-			)
-			continue
-		}
-
-		count := 0
-		for _, item := range pods {
-			jv, ok := item.Labels["job-name"]
-			match := ok && jv == jobName
-			if !match {
-				match = strings.HasPrefix(item.Name, jobName)
-			}
-			if !match {
-				continue
-			}
-			if item.Status.Phase != desiredPodPhase {
-				continue
-			}
-			count++
-		}
-		if count >= targets {
-			lg.Info("found all targets", zap.Int("target", targets))
-			break
-		}
-
-		lg.Info("polling",
-			zap.String("namespace", namespace),
-			zap.String("job-name", jobName),
-			zap.Int("count", count),
-			zap.Int("target", targets),
-		)
-	}
-
-	return pods, nil
 }

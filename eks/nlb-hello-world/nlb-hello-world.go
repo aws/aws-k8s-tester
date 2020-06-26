@@ -535,17 +535,3 @@ func (ts *tester) deleteService() error {
 	ts.cfg.Logger.Info("deleted NLB hello-world Service", zap.Error(err))
 	return ts.cfg.EKSConfig.Sync()
 }
-
-func (ts *tester) AggregateResults() (err error) {
-	if !ts.cfg.EKSConfig.IsEnabledAddOnNLBHelloWorld() {
-		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", pkgName))
-		return nil
-	}
-	if !ts.cfg.EKSConfig.AddOnNLBHelloWorld.Created {
-		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", pkgName))
-		return nil
-	}
-
-	ts.cfg.Logger.Info("starting tester.AggregateResults", zap.String("tester", pkgName))
-	return nil
-}

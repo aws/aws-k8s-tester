@@ -1239,17 +1239,3 @@ func (ts *tester) deleteServiceGuestbook() error {
 	ts.cfg.Logger.Info("deleted NLB guestbook Service", zap.Error(err))
 	return ts.cfg.EKSConfig.Sync()
 }
-
-func (ts *tester) AggregateResults() (err error) {
-	if !ts.cfg.EKSConfig.IsEnabledAddOnNLBGuestbook() {
-		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", pkgName))
-		return nil
-	}
-	if !ts.cfg.EKSConfig.AddOnNLBGuestbook.Created {
-		ts.cfg.Logger.Info("skipping tester.AggregateResults", zap.String("tester", pkgName))
-		return nil
-	}
-
-	ts.cfg.Logger.Info("starting tester.AggregateResults", zap.String("tester", pkgName))
-	return nil
-}

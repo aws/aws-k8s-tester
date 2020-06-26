@@ -192,24 +192,5 @@ func (ts *tester) scaleMNG(mngName string, update *eksconfig.MNGScaleUpdate) (er
 		return fmt.Errorf("MNGs[%q] scale failed %v", mngName, err)
 	}
 
-	ts.cfg.Logger.Info("checking EKS server health after MNG scaler")
-	waitDur, retryStart := 5*time.Minute, time.Now()
-	for time.Now().Sub(retryStart) < waitDur {
-		select {
-		case <-ts.cfg.Stopc:
-			ts.cfg.Logger.Warn("health check aborted")
-			return nil
-		case <-time.After(5 * time.Second):
-		}
-		err = ts.cfg.K8SClient.CheckHealth()
-		if err == nil {
-			break
-		}
-		ts.cfg.Logger.Warn("health check failed", zap.Error(err))
-	}
-	if err != nil {
-		ts.cfg.Logger.Warn("health check failed after MNG scaler", zap.Error(err))
-		return err
-	}
-	return nil
+	return ts.cfg.EKSConfig.Sync()
 }

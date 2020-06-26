@@ -1078,25 +1078,6 @@ func (ts *Tester) Up() (err error) {
 		}
 	}
 
-	if (ts.cfg.IsEnabledAddOnNodeGroups() && ts.cfg.AddOnNodeGroups.Created && ts.cfg.AddOnNodeGroups.FetchLogs) ||
-		(ts.cfg.IsEnabledAddOnManagedNodeGroups() && ts.cfg.AddOnManagedNodeGroups.Created && ts.cfg.AddOnManagedNodeGroups.FetchLogs) {
-		for idx, cur := range ts.testers {
-			fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-			fmt.Printf(ts.color("[light_green]testers[%02d].AggregateResults [cyan]%q [default](%q, %q)\n"), idx, cur.Name(), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-			err := catchInterrupt(
-				ts.lg,
-				ts.stopCreationCh,
-				ts.stopCreationChOnce,
-				ts.osSig,
-				cur.AggregateResults,
-				cur.Name(),
-			)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
 	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
 	fmt.Printf(ts.color("[light_green]%q.CheckHealth [default](%q, %q)\n"), ts.clusterTester.Name(), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 	if ts.k8sClient == nil {

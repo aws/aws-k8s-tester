@@ -21,7 +21,7 @@ func TestJobs(t *testing.T) {
 			},
 		},
 	}
-	_, b, err := ts.createCronJobs()
+	_, b, err := ts.createObject()
 	if err != nil {
 		t.Fatal(err)
 	}
