@@ -66,6 +66,9 @@ type AddOnClusterLoaderLocal struct {
 	// LogPath is the log file path to stream clusterloader binary runs.
 	LogPath  string `json:"log-path" read-only:"true"`
 	LogS3Key string `json:"log-s3-key" read-only:"true"`
+	// PodStartupLatencyPath is the JSON file path to store pod startup latency.
+	PodStartupLatencyPath  string `json:"pod-startup-latency-path" read-only:"true"`
+	PodStartupLatencyS3Key string `json:"pod-startup-latency-s3-key" read-only:"true"`
 
 	// Runs is the number of "clusterloader2" runs back-to-back.
 	Runs int `json:"runs"`
@@ -174,6 +177,15 @@ func (cfg *Config) validateAddOnClusterLoaderLocal() error {
 		cfg.AddOnClusterLoaderLocal.LogS3Key = path.Join(
 			cfg.AddOnClusterLoaderLocal.S3Dir,
 			filepath.Base(cfg.AddOnClusterLoaderLocal.LogPath),
+		)
+	}
+	if cfg.AddOnClusterLoaderLocal.PodStartupLatencyPath == "" {
+		cfg.AddOnClusterLoaderLocal.PodStartupLatencyPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-cluster-loader-remote.log"
+	}
+	if cfg.AddOnClusterLoaderLocal.PodStartupLatencyS3Key == "" {
+		cfg.AddOnClusterLoaderLocal.PodStartupLatencyS3Key = path.Join(
+			cfg.AddOnClusterLoaderLocal.S3Dir,
+			filepath.Base(cfg.AddOnClusterLoaderLocal.PodStartupLatencyPath),
 		)
 	}
 

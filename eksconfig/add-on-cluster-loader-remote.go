@@ -61,10 +61,6 @@ type AddOnClusterLoaderRemote struct {
 	// e.g. "latest" for image URI "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/aws/aws-k8s-tester:latest"
 	RepositoryImageTag string `json:"repository-image-tag,omitempty"`
 
-	// DeploymentReplicas is the number of "clusterloader2" Pods to run.
-	// For now, only 1 is supported.
-	DeploymentReplicas int32 `json:"deployment-replicas" read-only:"true"`
-
 	// ClusterLoaderPath is the clusterloader executable binary path.
 	// ref. https://github.com/kubernetes/perf-tests/tree/master/clusterloader2
 	ClusterLoaderPath        string `json:"cluster-loader-path"`
@@ -77,6 +73,9 @@ type AddOnClusterLoaderRemote struct {
 	// LogPath is the log file path to stream clusterloader binary runs.
 	LogPath  string `json:"log-path" read-only:"true"`
 	LogS3Key string `json:"log-s3-key" read-only:"true"`
+	// PodStartupLatencyPath is the JSON file path to store pod startup latency.
+	PodStartupLatencyPath  string `json:"pod-startup-latency-path" read-only:"true"`
+	PodStartupLatencyS3Key string `json:"pod-startup-latency-s3-key" read-only:"true"`
 
 	// Runs is the number of "clusterloader2" runs back-to-back.
 	Runs int `json:"runs"`
@@ -133,9 +132,8 @@ func getDefaultAddOnClusterLoaderRemote() *AddOnClusterLoaderRemote {
 		ClusterLoaderPath:        "/tmp/clusterloader2",
 		ClusterLoaderDownloadURL: "https://github.com/aws/aws-k8s-tester/releases/download/v1.3.9/clusterloader2-linux-amd64",
 
-		Runs:               2,
-		DeploymentReplicas: 1,
-		Timeout:            30 * time.Minute,
+		Runs:    2,
+		Timeout: 30 * time.Minute,
 
 		Nodes: 10,
 
@@ -206,9 +204,14 @@ func (cfg *Config) validateAddOnClusterLoaderRemote() error {
 			filepath.Base(cfg.AddOnClusterLoaderRemote.LogPath),
 		)
 	}
-
-	if cfg.AddOnClusterLoaderRemote.DeploymentReplicas != 1 {
-		return fmt.Errorf("unexpected AddOnClusterLoaderRemote.DeploymentReplicas %d", cfg.AddOnClusterLoaderRemote.DeploymentReplicas)
+	if cfg.AddOnClusterLoaderRemote.PodStartupLatencyPath == "" {
+		cfg.AddOnClusterLoaderRemote.PodStartupLatencyPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-cluster-loader-remote.log"
+	}
+	if cfg.AddOnClusterLoaderRemote.PodStartupLatencyS3Key == "" {
+		cfg.AddOnClusterLoaderRemote.PodStartupLatencyS3Key = path.Join(
+			cfg.AddOnClusterLoaderRemote.S3Dir,
+			filepath.Base(cfg.AddOnClusterLoaderRemote.PodStartupLatencyPath),
+		)
 	}
 
 	if cfg.AddOnClusterLoaderRemote.ClusterLoaderPath == "" && cfg.AddOnClusterLoaderRemote.ClusterLoaderDownloadURL == "" {
