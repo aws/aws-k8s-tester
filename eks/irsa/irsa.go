@@ -1080,6 +1080,7 @@ func (ts *tester) checkLogs() error {
 		if !strings.Contains(output, ts.sleepMessage) {
 			continue
 		}
+		f.WriteString(fmt.Sprintf("'%s' from %q:\n\n%s\n\n", logsCmd, nodeName, output))
 
 		cur, ok := ts.cfg.EKSConfig.Status.PrivateDNSToSSHConfig[nodeName]
 		if !ok {
@@ -1121,6 +1122,7 @@ func (ts *tester) checkLogs() error {
 		if !strings.Contains(output, ts.sleepMessage) {
 			continue
 		}
+		f.WriteString(fmt.Sprintf("'%s' from %q:\n\n%s\n\n", outputFilePath, nodeName, output))
 
 		success++
 	}
