@@ -24,7 +24,7 @@ log-level: info
 log-outputs:
 - stderr
 - /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.log
-name: eks-2020062618-fortejexpvlw
+name: eks-2020062621-paper9byvcuv
 on-failure-delete: true
 on-failure-delete-wait-seconds: 120
 parameters:
@@ -40,10 +40,10 @@ parameters:
   role-arn: ""
   role-cfn-stack-id: ""
   role-cfn-stack-yaml-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.role.cfn.yaml
-  role-cfn-stack-yaml-s3-key: eks-2020062618-fortejexpvlw/default.role.cfn.yaml
+  role-cfn-stack-yaml-s3-key: eks-2020062621-paper9byvcuv/default.role.cfn.yaml
   role-create: true
   role-managed-policy-arns: null
-  role-name: eks-2020062618-fortejexpvlw-role
+  role-name: eks-2020062621-paper9byvcuv-role
   role-service-principals: null
   signing-name: eks
   tags: null
@@ -51,19 +51,19 @@ parameters:
   version-value: 1.16
   vpc-cfn-stack-id: ""
   vpc-cfn-stack-yaml-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.vpc.cfn.yaml
-  vpc-cfn-stack-yaml-s3-key: eks-2020062618-fortejexpvlw/default.vpc.cfn.yaml
+  vpc-cfn-stack-yaml-s3-key: eks-2020062621-paper9byvcuv/default.vpc.cfn.yaml
   vpc-create: true
   vpc-id: ""
 partition: aws
 region: us-west-2
 remote-access-commands-output-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.ssh.sh
 remote-access-key-create: true
-remote-access-key-name: eks-2020062618-fortejexpvlw-remote-access-key
-remote-access-private-key-path: /tmp/everest5euegtxf.insecure.key
+remote-access-key-name: eks-2020062621-paper9byvcuv-remote-access-key
+remote-access-private-key-path: /tmp/sparkling371p66.insecure.key
 s3-bucket-create: true
 s3-bucket-create-keep: true
 s3-bucket-lifecycle-expiration-days: 0
-s3-bucket-name: eks-2020062618-fortejexpvlw-s3-bucket
+s3-bucket-name: eks-2020062621-paper9byvcuv-s3-bucket
 status:
   aws-account-id: ""
   aws-credential-path: ""
@@ -75,9 +75,9 @@ status:
   cluster-ca-decoded: ""
   cluster-cfn-stack-id: ""
   cluster-cfn-stack-yaml-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.cluster.cfn.yaml
-  cluster-cfn-stack-yaml-s3-key: eks-2020062618-fortejexpvlw/default.cluster.cfn.yaml
+  cluster-cfn-stack-yaml-s3-key: eks-2020062621-paper9byvcuv/default.cluster.cfn.yaml
   cluster-control-plane-security-group-id: ""
-  cluster-metrics-raw-output-dir: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/eks-2020062618-fortejexpvlw-metrics
+  cluster-metrics-raw-output-dir: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/eks-2020062621-paper9byvcuv-metrics
   cluster-oidc-issuer-arn: ""
   cluster-oidc-issuer-ca-thumbprint: ""
   cluster-oidc-issuer-host-path: ""

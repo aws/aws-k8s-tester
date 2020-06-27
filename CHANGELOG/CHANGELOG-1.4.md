@@ -28,6 +28,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.9...v1.4.0
 
 ### `eks`
 
+- Improve and clean up [`eks/irsa`](https://github.com/aws/aws-k8s-tester/commit/12bf8c74cab92df3877606347cf5748ff8d3b89b).
 - Explicitly [set `RestartPolicy` in all pod objects](https://github.com/aws/aws-k8s-tester/commit/5f133714d33eae57196237f88f17538fc2a4cdde).
 - Run [`eks/mng/scale.Scale` after creating add-ons](https://github.com/aws/aws-k8s-tester/commit/dc43773768e58a54ffda2f7d755ab345ceed8a2a).
 - Fix [`eks/mng/scale`](https://github.com/aws/aws-k8s-tester/commit/44014bfb896ccce7344ee414bc14b4dca77c4491).
