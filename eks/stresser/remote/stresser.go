@@ -132,10 +132,31 @@ func (ts *tester) Create() (err error) {
 		ts.cfg.K8SClient,
 		3*time.Minute,
 		10*time.Second,
-		3*time.Minute+time.Duration(ts.cfg.EKSConfig.AddOnStresserRemote.Completes)*30*time.Second,
+		ts.cfg.EKSConfig.AddOnStresserRemote.Duration+10*time.Minute,
 		ts.cfg.EKSConfig.AddOnStresserRemote.Namespace,
 		stresserJobName,
 		ts.cfg.EKSConfig.AddOnStresserRemote.Completes,
+		k8s_client.WithQueryFunc(func() {
+			argsLogs := []string{
+				ts.cfg.EKSConfig.KubectlPath,
+				"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+				"--namespace=" + ts.cfg.EKSConfig.AddOnStresserRemote.Namespace,
+				"logs",
+				"--selector=job-name=" + stresserJobName,
+				"--tail=10",
+			}
+			cmdLogs := strings.Join(argsLogs, " ")
+
+			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+			output, err := exec.New().CommandContext(ctx, argsLogs[0], argsLogs[1:]...).CombinedOutput()
+			cancel()
+			out := string(output)
+			if err != nil {
+				ts.cfg.Logger.Warn("'kubectl logs' failed", zap.Error(err))
+			}
+			fmt.Printf("\n\n\"%s\":\n%s\n", cmdLogs, out)
+
+		}),
 	)
 	if err != nil {
 		return err
