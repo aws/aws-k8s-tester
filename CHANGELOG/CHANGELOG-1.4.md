@@ -28,6 +28,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.9...v1.4.0
 
 ### `eks`
 
+- Use [multi-writer to pipe stderr logging to log file](https://github.com/aws/aws-k8s-tester/commit/2c2c9e9993e19eb24093570078a1f502febc371b).
 - Run [query function while checking `eks/mng` version upgrades](https://github.com/aws/aws-k8s-tester/commit/4019d6d25990430551f7235e5fc2afebe6f34047).
 - Improve and clean up [`eks/irsa`](https://github.com/aws/aws-k8s-tester/commit/12bf8c74cab92df3877606347cf5748ff8d3b89b).
 - Add [`clusterloader --provider=eks` flag to `eks/cluster-loader`](https://github.com/aws/aws-k8s-tester/commit/dc406f03528902a318dabac10e824c3c06e2dd06).
