@@ -583,7 +583,9 @@ func (ts *tester) createJob() (err error) {
 		return fmt.Errorf("failed to create Job (%v)", err)
 	}
 
-	ts.cfg.Logger.Info("created Job")
+	ts.cfg.Logger.Info("created Job",
+		zap.String("stresser-duration", ts.cfg.EKSConfig.AddOnStresserRemote.Duration.String()),
+	)
 	return nil
 }
 
