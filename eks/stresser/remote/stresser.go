@@ -147,6 +147,8 @@ func (ts *tester) Create() (err error) {
 			}
 			cmdLogs := strings.Join(argsLogs, " ")
 
+			println()
+			ts.cfg.Logger.Info("running query function for remote stresser")
 			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 			output, err := exec.New().CommandContext(ctx, argsLogs[0], argsLogs[1:]...).CombinedOutput()
 			cancel()
@@ -154,8 +156,7 @@ func (ts *tester) Create() (err error) {
 			if err != nil {
 				ts.cfg.Logger.Warn("'kubectl logs' failed", zap.Error(err))
 			}
-			fmt.Printf("\n\n\"%s\":\n%s\n", cmdLogs, out)
-
+			fmt.Printf("\n\"%s\":\n%s\n", cmdLogs, out)
 		}),
 	)
 	if err != nil {
