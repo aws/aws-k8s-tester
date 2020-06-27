@@ -35,7 +35,7 @@ replace (
 	k8s.io/kube-scheduler => k8s.io/kube-scheduler v0.18.6-rc.0
 	k8s.io/kubectl => k8s.io/kubectl v0.18.6-rc.0
 	k8s.io/kubelet => k8s.io/kubelet v0.18.6-rc.0
-	k8s.io/kubernetes => k8s.io/kubernetes v1.18.5-rc.1
+	k8s.io/kubernetes => k8s.io/kubernetes v1.18.6-rc.0
 	k8s.io/legacy-cloud-providers => k8s.io/legacy-cloud-providers v0.18.6-rc.0
 	k8s.io/metrics => k8s.io/metrics v0.18.6-rc.0
 	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.18.6-rc.0
@@ -77,7 +77,7 @@ require (
 	k8s.io/apimachinery v0.18.6-rc.0
 	k8s.io/cli-runtime v0.18.6-rc.0
 	k8s.io/client-go v0.18.6-rc.0
-	k8s.io/kubernetes v1.18.5
+	k8s.io/kubernetes v1.18.6-rc.0
 	k8s.io/perf-tests/clusterloader2 v0.0.0-20200615121956-f3cf096d4378
 	k8s.io/utils v0.0.0-20200324210504-a9aa75ae1b89
 	rsc.io/letsencrypt v0.0.3 // indirect
