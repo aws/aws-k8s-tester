@@ -74,7 +74,7 @@ func (ts *tester) Create() (err error) {
 		return err
 	}
 
-	if err = ts.createCronJobs(); err != nil {
+	if err = ts.createCronJob(); err != nil {
 		return err
 	}
 
@@ -85,7 +85,7 @@ func (ts *tester) Create() (err error) {
 		ts.cfg.K8SClient,
 		3*time.Minute,
 		5*time.Second,
-		3*time.Minute+10*time.Duration(ts.cfg.EKSConfig.AddOnCronJobs.Completes)*time.Second,
+		10*time.Minute+10*time.Duration(ts.cfg.EKSConfig.AddOnCronJobs.Completes)*time.Second,
 		ts.cfg.EKSConfig.AddOnCronJobs.Namespace,
 		cronJobName,
 		int(ts.cfg.EKSConfig.AddOnCronJobs.Completes),
@@ -168,14 +168,15 @@ const (
 	cronJobEchoImageName = "busybox"
 )
 
-func (ts *tester) createCronJobs() (err error) {
+func (ts *tester) createCronJob() (err error) {
 	obj, b, err := ts.createObject()
 	if err != nil {
 		return err
 	}
 
-	ts.cfg.Logger.Info("creating CronJobs",
+	ts.cfg.Logger.Info("creating CronJob",
 		zap.String("name", cronJobName),
+		zap.String("schedule", ts.cfg.EKSConfig.AddOnCronJobs.Schedule),
 		zap.Int("completes", ts.cfg.EKSConfig.AddOnCronJobs.Completes),
 		zap.Int("parallels", ts.cfg.EKSConfig.AddOnCronJobs.Parallels),
 		zap.String("object-size", humanize.Bytes(uint64(len(b)))),
@@ -187,10 +188,10 @@ func (ts *tester) createCronJobs() (err error) {
 		Create(ctx, &obj, metav1.CreateOptions{})
 	cancel()
 	if err != nil {
-		return fmt.Errorf("failed to create CronJobs (%v)", err)
+		return fmt.Errorf("failed to create CronJob (%v)", err)
 	}
 
-	ts.cfg.Logger.Info("created CronJobs")
+	ts.cfg.Logger.Info("created CronJob")
 	return nil
 }
 
