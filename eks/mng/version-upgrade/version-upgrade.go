@@ -117,7 +117,7 @@ func (ts *tester) Upgrade(mngName string) (err error) {
 
 	// takes TODO
 	initialWait := 3 * time.Minute
-	totalWait := 10*time.Minute + 3*time.Minute*time.Duration(cur.ASGDesiredCapacity)
+	totalWait := 30*time.Minute + 3*time.Minute*time.Duration(cur.ASGDesiredCapacity)
 
 	ts.cfg.Logger.Info("sent MNG upgrade request; polling",
 		zap.String("cluster-name", ts.cfg.EKSConfig.Name),
@@ -150,7 +150,7 @@ func (ts *tester) Upgrade(mngName string) (err error) {
 			}
 			for _, node := range nodes {
 				labels := node.GetLabels()
-				if labels["NGName"] != mngName {
+				if labels["MNGName"] != mngName {
 					continue
 				}
 				for _, cond := range node.Status.Conditions {
