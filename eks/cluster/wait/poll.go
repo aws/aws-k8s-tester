@@ -49,11 +49,17 @@ func Poll(
 	clusterName string,
 	desiredClusterStatus string,
 	initialWait time.Duration,
-	wait time.Duration,
-) <-chan ClusterStatus {
+	interval time.Duration,
+	opts ...OpOption) <-chan ClusterStatus {
+
+	ret := Op{}
+	ret.applyOpts(opts)
+
 	lg.Info("polling cluster",
 		zap.String("cluster-name", clusterName),
 		zap.String("desired-status", desiredClusterStatus),
+		zap.String("initial-wait", initialWait.String()),
+		zap.String("interval", interval.String()),
 	)
 
 	now := time.Now()
@@ -85,7 +91,7 @@ func Poll(
 				// in case stack has already reached desired status
 				// wait from second interation
 				if waitDur == time.Duration(0) {
-					waitDur = wait
+					waitDur = interval
 				}
 			}
 
@@ -136,6 +142,10 @@ func Poll(
 				return
 			default:
 				ch <- ClusterStatus{Cluster: cluster, Error: nil}
+			}
+
+			if ret.queryFunc != nil {
+				ret.queryFunc()
 			}
 
 			if first {
@@ -198,12 +208,18 @@ func PollUpdate(
 	requestID string,
 	desiredUpdateStatus string,
 	initialWait time.Duration,
-	wait time.Duration,
-) <-chan UpdateStatus {
+	interval time.Duration,
+	opts ...OpOption) <-chan UpdateStatus {
+
+	ret := Op{}
+	ret.applyOpts(opts)
+
 	lg.Info("polling cluster update",
 		zap.String("cluster-name", clusterName),
 		zap.String("request-id", requestID),
 		zap.String("desired-update-status", desiredUpdateStatus),
+		zap.String("initial-wait", initialWait.String()),
+		zap.String("interval", interval.String()),
 	)
 
 	now := time.Now()
@@ -235,7 +251,7 @@ func PollUpdate(
 				// in case stack has already reached desired status
 				// wait from second interation
 				if waitDur == time.Duration(0) {
-					waitDur = wait
+					waitDur = interval
 				}
 			}
 
@@ -291,6 +307,10 @@ func PollUpdate(
 				ch <- UpdateStatus{Update: update, Error: nil}
 			}
 
+			if ret.queryFunc != nil {
+				ret.queryFunc()
+			}
+
 			if first {
 				lg.Info("sleeping", zap.Duration("initial-wait", initialWait))
 				select {
@@ -316,4 +336,23 @@ func PollUpdate(
 		return
 	}()
 	return ch
+}
+
+// Op represents a MNG operation.
+type Op struct {
+	queryFunc func()
+}
+
+// OpOption configures archiver operations.
+type OpOption func(*Op)
+
+// WithQueryFunc configures query function to be called in retry func.
+func WithQueryFunc(f func()) OpOption {
+	return func(op *Op) { op.queryFunc = f }
+}
+
+func (op *Op) applyOpts(opts []OpOption) {
+	for _, opt := range opts {
+		opt(op)
+	}
 }

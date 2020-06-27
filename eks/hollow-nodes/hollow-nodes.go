@@ -234,7 +234,7 @@ func (ng *nodeGroup) checkNodes() (readyNodes []string, createdNodes []string, e
 				}
 				ng.cfg.Logger.Info("node is ready!",
 					zap.String("name", nodeName),
-					zap.String("type", fmt.Sprintf("%s", cond.Type)),
+					zap.String("status-type", fmt.Sprintf("%s", cond.Type)),
 					zap.String("status", fmt.Sprintf("%s", cond.Status)),
 				)
 				readyNodes = append(readyNodes, nodeName)

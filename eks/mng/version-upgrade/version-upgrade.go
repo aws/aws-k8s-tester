@@ -17,6 +17,7 @@ import (
 	aws_eks "github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
 	"go.uber.org/zap"
+	v1 "k8s.io/api/core/v1"
 )
 
 // Upgrader defines MNG version upgrade interface.
@@ -139,6 +140,33 @@ func (ts *tester) Upgrade(mngName string) (err error) {
 		eks.UpdateStatusSuccessful,
 		initialWait,
 		30*time.Second,
+		wait.WithQueryFunc(func() {
+			println()
+			ts.cfg.Logger.Info("listing nodes while polling mng update status", zap.String("mng-name", mngName))
+			nodes, err := ts.cfg.K8SClient.ListNodes(150, 5*time.Second)
+			if err != nil {
+				ts.cfg.Logger.Warn("failed to list nodes while polling mng update status", zap.Error(err))
+				return
+			}
+			for _, node := range nodes {
+				labels := node.GetLabels()
+				if labels["NGName"] != mngName {
+					continue
+				}
+				for _, cond := range node.Status.Conditions {
+					if cond.Status != v1.ConditionTrue {
+						continue
+					}
+					ts.cfg.Logger.Info("node",
+						zap.String("name", node.GetName()),
+						zap.String("mng-name", mngName),
+						zap.String("status-type", fmt.Sprintf("%s", cond.Type)),
+						zap.String("status", fmt.Sprintf("%s", cond.Status)),
+					)
+					break
+				}
+			}
+		}),
 	)
 	for v := range updateCh {
 		err = v.Error

@@ -804,7 +804,7 @@ func (ts *tester) checkNodes() error {
 				}
 				ts.cfg.Logger.Info("node is ready!",
 					zap.String("name", nodeName),
-					zap.String("type", fmt.Sprintf("%s", cond.Type)),
+					zap.String("status-type", fmt.Sprintf("%s", cond.Type)),
 					zap.String("status", fmt.Sprintf("%s", cond.Status)),
 				)
 				createdNodeNames = append(createdNodeNames, nodeName)

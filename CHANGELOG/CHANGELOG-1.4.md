@@ -28,6 +28,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.9...v1.4.0
 
 ### `eks`
 
+- Run [query function while checking `eks/mng` version upgrades](https://github.com/aws/aws-k8s-tester/commit/).
 - Improve and clean up [`eks/irsa`](https://github.com/aws/aws-k8s-tester/commit/12bf8c74cab92df3877606347cf5748ff8d3b89b).
 - Add [`clusterloader --provider=eks` flag to `eks/cluster-loader`](https://github.com/aws/aws-k8s-tester/commit/dc406f03528902a318dabac10e824c3c06e2dd06).
 - Add [`eks/cluster-loader` `CL2UseHostNetworkPods` support](https://github.com/aws/aws-k8s-tester/commit/23310e17d172491c44158a7d07290e2d172e5fdc).

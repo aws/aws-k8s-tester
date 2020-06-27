@@ -566,6 +566,7 @@ func waitForJobCompletes(
 	jobName string,
 	target int,
 	opts ...OpOption) (job *batchv1.Job, cronJob *batchv1beta1.CronJob, pods []apiv1.Pod, err error) {
+
 	ret := Op{}
 	ret.applyOpts(opts)
 
@@ -707,7 +708,7 @@ func waitForJobCompletes(
 	return job, cronJob, pods, err
 }
 
-// Op represents a SSH operation.
+// Op represents a Kubernetes client operation.
 type Op struct {
 	queryFunc       func()
 	forceDelete     bool

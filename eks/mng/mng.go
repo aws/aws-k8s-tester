@@ -163,9 +163,11 @@ func (ts *tester) UpgradeVersion() (err error) {
 		ts.cfg.Logger.Info("ManagedNodeGroup is not created; skipping upgrade")
 		return nil
 	}
-
-	for _, cur := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
-		if err = ts.versionUpgrader.Upgrade(cur.Name); err != nil {
+	for mngName := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
+		if err = ts.versionUpgrader.Upgrade(mngName); err != nil {
+			return err
+		}
+		if err = ts.nodeWaiter.Wait(mngName, 3); err != nil {
 			return err
 		}
 	}
