@@ -1079,6 +1079,7 @@ func (ts *tester) checkLogs() error {
 			ts.cfg.Logger.Warn("failed to write", zap.Error(err))
 			continue
 		}
+		ts.cfg.Logger.Info("checked pod logs, found matching sleep message", zap.String("pod-name", podName))
 
 		cur, ok := ts.cfg.EKSConfig.Status.PrivateDNSToSSHConfig[nodeName]
 		if !ok {
@@ -1117,13 +1118,14 @@ func (ts *tester) checkLogs() error {
 		sh.Close()
 		output = strings.TrimSpace(string(runOutput))
 		fmt.Printf("\n\n'%s' output (expects %q):\n\n%s\n\n", catCmd, ts.testBody, output)
-		if !strings.Contains(output, ts.sleepMessage) {
+		if !strings.Contains(output, ts.testBody) {
 			continue
 		}
 		if _, err = f.WriteString(fmt.Sprintf("'%s' from %q:\n\n%s\n\n", catCmd, nodeName, output)); err != nil {
 			ts.cfg.Logger.Warn("failed to write", zap.Error(err))
 			continue
 		}
+		ts.cfg.Logger.Info("checked pod output file from node, found matching text body", zap.String("pod-name", podName))
 
 		success++
 	}
