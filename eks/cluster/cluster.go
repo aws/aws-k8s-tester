@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"path"
 	"reflect"
+	"runtime"
 	"strings"
 	"sync"
 	"text/template"
@@ -116,12 +117,25 @@ func (ts *tester) Client() k8s_client.EKS { return ts.k8sClient }
 func (ts *tester) CheckHealth() (err error) {
 	ts.checkHealthMu.Lock()
 	defer ts.checkHealthMu.Unlock()
-	return ts.checkHealth()
+	return ts.checkHealth(getCaller())
 }
 
-func (ts *tester) checkHealth() (err error) {
+func getCaller() string {
+	fpcs := make([]uintptr, 1)
+	n := runtime.Callers(3, fpcs)
+	if n == 0 {
+		return "none"
+	}
+	fun := runtime.FuncForPC(fpcs[0] - 1)
+	if fun == nil {
+		return "none"
+	}
+	return fun.Name()
+}
+
+func (ts *tester) checkHealth(caller string) (err error) {
 	fmt.Printf(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
-	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_green]checkHealth [default](%q)\n"), ts.cfg.EKSConfig.ConfigPath)
+	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_green]checkHealth [default](%q, caller %q)\n"), ts.cfg.EKSConfig.ConfigPath, caller)
 
 	defer func() {
 		if err == nil {
