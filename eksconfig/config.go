@@ -1065,6 +1065,16 @@ func (cfg *Config) validateConfig() error {
 	if len(cfg.LogOutputs) == 1 && (cfg.LogOutputs[0] == "stderr" || cfg.LogOutputs[0] == "stdout") {
 		cfg.LogOutputs = append(cfg.LogOutputs, strings.ReplaceAll(cfg.ConfigPath, ".yaml", "")+".log")
 	}
+	logFilePath := ""
+	for _, fpath := range cfg.LogOutputs {
+		if filepath.Ext(fpath) == ".log" {
+			logFilePath = fpath
+			break
+		}
+	}
+	if logFilePath == "" {
+		return fmt.Errorf("*.log file not found in %q", cfg.LogOutputs)
+	}
 
 	if cfg.KubectlCommandsOutputPath == "" {
 		cfg.KubectlCommandsOutputPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".kubectl.sh"

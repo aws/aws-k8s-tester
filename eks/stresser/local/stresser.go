@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"path"
 	"reflect"
@@ -36,6 +37,7 @@ import (
 // ref. https://github.com/kubernetes/perf-tests
 type Config struct {
 	Logger    *zap.Logger
+	LogWriter io.Writer
 	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
@@ -263,7 +265,7 @@ func (ts *tester) checkResults(curWriteLatencies metrics.Durations, curReadLaten
 		); err != nil {
 			return err
 		}
-		fmt.Printf("\n\nRequestsSummaryWritesCompare:\n%s\n", ts.cfg.EKSConfig.AddOnStresserLocal.RequestsSummaryWritesCompare.Table())
+		fmt.Fprintf(ts.cfg.LogWriter, "\n\nRequestsSummaryWritesCompare:\n%s\n", ts.cfg.EKSConfig.AddOnStresserLocal.RequestsSummaryWritesCompare.Table())
 
 		var prevDurations metrics.Durations
 		prevDurations, err = metrics.DownloadDurationsFromS3(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3BucketName, durRawS3Key)
@@ -395,7 +397,7 @@ func (ts *tester) checkResults(curWriteLatencies metrics.Durations, curReadLaten
 		); err != nil {
 			return err
 		}
-		fmt.Printf("\n\nRequestsSummaryReadsCompare:\n%s\n", ts.cfg.EKSConfig.AddOnStresserLocal.RequestsSummaryReadsCompare.Table())
+		fmt.Fprintf(ts.cfg.LogWriter, "\n\nRequestsSummaryReadsCompare:\n%s\n", ts.cfg.EKSConfig.AddOnStresserLocal.RequestsSummaryReadsCompare.Table())
 
 		var prevDurations metrics.Durations
 		prevDurations, err = metrics.DownloadDurationsFromS3(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3BucketName, durRawS3Key)

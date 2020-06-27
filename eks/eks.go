@@ -9,6 +9,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/signal"
@@ -109,7 +110,10 @@ type Tester struct {
 
 	downMu *sync.Mutex
 
-	lg  *zap.Logger
+	lg        *zap.Logger
+	logWriter io.Writer
+	logFile   *os.File
+
 	cfg *eksconfig.Config
 
 	awsSession *session.Session
@@ -149,13 +153,11 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 		return nil, err
 	}
 
-	lcfg := logutil.AddOutputPaths(logutil.GetDefaultZapLoggerConfig(), cfg.LogOutputs, cfg.LogOutputs)
-	lcfg.Level = zap.NewAtomicLevelAt(logutil.ConvertToZapLevel(cfg.LogLevel))
-	var lg *zap.Logger
-	lg, err = lcfg.Build()
+	lg, logWriter, logFile, err := logutil.NewWithStderrWriter(cfg.LogLevel, cfg.LogOutputs)
 	if err != nil {
 		return nil, err
 	}
+	lg.Info("set up log writer and file", zap.Strings("outputs", cfg.LogOutputs))
 
 	isColor := cfg.LogColor
 	co, cerr := terminal.IsColor()
@@ -174,9 +176,9 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 
 	colorize := cfg.Colorize
 
-	fmt.Printf(colorize("\n\n[yellow]*********************************\n"))
-	fmt.Println("😎 🙏 🚶 ✔️ 👍")
-	fmt.Printf(colorize("[light_green]New %q [default](%q)\n"), cfg.ConfigPath, version.Version())
+	fmt.Fprintf(logWriter, colorize("\n\n[yellow]*********************************\n"))
+	fmt.Fprintln(logWriter, "😎 🙏 🚶 ✔️ 👍")
+	fmt.Fprintf(logWriter, colorize("[light_green]New %q [default](%q)\n"), cfg.ConfigPath, version.Version())
 
 	if err = fileutil.EnsureExecutable(cfg.AWSCLIPath); err != nil {
 		// file may be already executable while the process does not own the file/directory
@@ -279,6 +281,8 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 		osSig:              make(chan os.Signal),
 		downMu:             new(sync.Mutex),
 		lg:                 lg,
+		logWriter:          logWriter,
+		logFile:            logFile,
 		cfg:                cfg,
 	}
 	signal.Notify(ts.osSig, syscall.SIGTERM, syscall.SIGINT)
@@ -310,7 +314,7 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 	if _, err = ts.ec2API.DescribeInstances(&ec2.DescribeInstancesInput{MaxResults: aws.Int64(5)}); err != nil {
 		return nil, fmt.Errorf("failed to describe instances using EC2 API (%v)", err)
 	}
-	fmt.Println("EC2 API available!")
+	fmt.Fprintln(ts.logWriter, "EC2 API available!")
 
 	ts.s3API = s3.New(ts.awsSession)
 	ts.cwAPI = cloudwatch.New(ts.awsSession)
@@ -402,11 +406,12 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 }
 
 func (ts *Tester) createTesters() (err error) {
-	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-	fmt.Printf(ts.color("[light_green]createTesters [default](%q)\n"), ts.cfg.ConfigPath)
+	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Fprintf(ts.logWriter, ts.color("[light_green]createTesters [default](%q)\n"), ts.cfg.ConfigPath)
 
 	ts.clusterTester = cluster.New(cluster.Config{
 		Logger:    ts.lg,
+		LogWriter: ts.logWriter,
 		Stopc:     ts.stopCreationCh,
 		EKSConfig: ts.cfg,
 		S3API:     ts.s3API,
@@ -420,6 +425,7 @@ func (ts *Tester) createTesters() (err error) {
 
 	ts.ngTester = ng.New(ng.Config{
 		Logger:    ts.lg,
+		LogWriter: ts.logWriter,
 		Stopc:     ts.stopCreationCh,
 		EKSConfig: ts.cfg,
 		K8SClient: ts.k8sClient,
@@ -433,6 +439,7 @@ func (ts *Tester) createTesters() (err error) {
 	})
 	ts.mngTester = mng.New(mng.Config{
 		Logger:    ts.lg,
+		LogWriter: ts.logWriter,
 		Stopc:     ts.stopCreationCh,
 		EKSConfig: ts.cfg,
 		K8SClient: ts.k8sClient,
@@ -445,6 +452,7 @@ func (ts *Tester) createTesters() (err error) {
 	})
 	ts.gpuTester = gpu.New(gpu.Config{
 		Logger:    ts.lg,
+		LogWriter: ts.logWriter,
 		Stopc:     ts.stopCreationCh,
 		EKSConfig: ts.cfg,
 		K8SClient: ts.k8sClient,
@@ -453,12 +461,14 @@ func (ts *Tester) createTesters() (err error) {
 	ts.testers = []eks_tester.Tester{
 		metrics_server.New(metrics_server.Config{
 			Logger:    ts.lg,
+			LogWriter: ts.logWriter,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 		}),
 		conformance.New(conformance.Config{
 			Logger:    ts.lg,
+			LogWriter: ts.logWriter,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
@@ -466,6 +476,7 @@ func (ts *Tester) createTesters() (err error) {
 		}),
 		app_mesh.New(app_mesh.Config{
 			Logger:    ts.lg,
+			LogWriter: ts.logWriter,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
@@ -474,24 +485,28 @@ func (ts *Tester) createTesters() (err error) {
 		}),
 		csi_ebs.New(csi_ebs.Config{
 			Logger:    ts.lg,
+			LogWriter: ts.logWriter,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 		}),
 		kubernetes_dashboard.New(kubernetes_dashboard.Config{
 			Logger:    ts.lg,
+			LogWriter: ts.logWriter,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 		}),
 		prometheus_grafana.New(prometheus_grafana.Config{
 			Logger:    ts.lg,
+			LogWriter: ts.logWriter,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 		}),
 		nlb_hello_world.New(nlb_hello_world.Config{
 			Logger:    ts.lg,
+			LogWriter: ts.logWriter,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
@@ -499,6 +514,7 @@ func (ts *Tester) createTesters() (err error) {
 		}),
 		nlb_guestbook.New(nlb_guestbook.Config{
 			Logger:    ts.lg,
+			LogWriter: ts.logWriter,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
@@ -506,6 +522,7 @@ func (ts *Tester) createTesters() (err error) {
 		}),
 		alb_2048.New(alb_2048.Config{
 			Logger:    ts.lg,
+			LogWriter: ts.logWriter,
 			Stopc:     ts.stopCreationCh,
 			CFNAPI:    ts.cfnAPI,
 			EKSConfig: ts.cfg,
@@ -514,24 +531,28 @@ func (ts *Tester) createTesters() (err error) {
 		}),
 		jobs_pi.New(jobs_pi.Config{
 			Logger:    ts.lg,
+			LogWriter: ts.logWriter,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 		}),
 		jobs_echo.New(jobs_echo.Config{
 			Logger:    ts.lg,
+			LogWriter: ts.logWriter,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 		}),
 		cron_jobs.New(cron_jobs.Config{
 			Logger:    ts.lg,
+			LogWriter: ts.logWriter,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 		}),
 		csrs_local.New(csrs_local.Config{
 			Logger:    ts.lg,
+			LogWriter: ts.logWriter,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
@@ -540,6 +561,7 @@ func (ts *Tester) createTesters() (err error) {
 		}),
 		csrs_remote.New(csrs_remote.Config{
 			Logger:    ts.lg,
+			LogWriter: ts.logWriter,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
@@ -549,6 +571,7 @@ func (ts *Tester) createTesters() (err error) {
 		}),
 		config_maps_local.New(config_maps_local.Config{
 			Logger:    ts.lg,
+			LogWriter: ts.logWriter,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
@@ -557,6 +580,7 @@ func (ts *Tester) createTesters() (err error) {
 		}),
 		config_maps_remote.New(config_maps_remote.Config{
 			Logger:    ts.lg,
+			LogWriter: ts.logWriter,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
@@ -566,6 +590,7 @@ func (ts *Tester) createTesters() (err error) {
 		}),
 		secrets_local.New(secrets_local.Config{
 			Logger:    ts.lg,
+			LogWriter: ts.logWriter,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
@@ -574,6 +599,7 @@ func (ts *Tester) createTesters() (err error) {
 		}),
 		secrets_remote.New(secrets_remote.Config{
 			Logger:    ts.lg,
+			LogWriter: ts.logWriter,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
@@ -583,6 +609,7 @@ func (ts *Tester) createTesters() (err error) {
 		}),
 		fargate.New(fargate.Config{
 			Logger:    ts.lg,
+			LogWriter: ts.logWriter,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
@@ -594,6 +621,7 @@ func (ts *Tester) createTesters() (err error) {
 		}),
 		irsa.New(irsa.Config{
 			Logger:    ts.lg,
+			LogWriter: ts.logWriter,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
@@ -604,6 +632,7 @@ func (ts *Tester) createTesters() (err error) {
 		}),
 		irsa_fargate.New(irsa_fargate.Config{
 			Logger:    ts.lg,
+			LogWriter: ts.logWriter,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
@@ -615,30 +644,35 @@ func (ts *Tester) createTesters() (err error) {
 		}),
 		wordpress.New(wordpress.Config{
 			Logger:    ts.lg,
+			LogWriter: ts.logWriter,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 		}),
 		jupyter_hub.New(jupyter_hub.Config{
 			Logger:    ts.lg,
+			LogWriter: ts.logWriter,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 		}),
 		kubeflow.New(kubeflow.Config{
 			Logger:    ts.lg,
+			LogWriter: ts.logWriter,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 		}),
 		cuda_vector_add.New(cuda_vector_add.Config{
 			Logger:    ts.lg,
+			LogWriter: ts.logWriter,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 		}),
 		cluster_loader_local.New(cluster_loader_local.Config{
 			Logger:    ts.lg,
+			LogWriter: ts.logWriter,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
@@ -647,6 +681,7 @@ func (ts *Tester) createTesters() (err error) {
 		}),
 		cluster_loader_remote.New(cluster_loader_remote.Config{
 			Logger:    ts.lg,
+			LogWriter: ts.logWriter,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
@@ -656,12 +691,14 @@ func (ts *Tester) createTesters() (err error) {
 		}),
 		hollow_nodes_local.New(hollow_nodes_local.Config{
 			Logger:    ts.lg,
+			LogWriter: ts.logWriter,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 		}),
 		hollow_nodes_remote.New(hollow_nodes_remote.Config{
 			Logger:    ts.lg,
+			LogWriter: ts.logWriter,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
@@ -669,6 +706,7 @@ func (ts *Tester) createTesters() (err error) {
 		}),
 		stresser_local.New(stresser_local.Config{
 			Logger:    ts.lg,
+			LogWriter: ts.logWriter,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
@@ -677,6 +715,7 @@ func (ts *Tester) createTesters() (err error) {
 		}),
 		stresser_remote.New(stresser_remote.Config{
 			Logger:    ts.lg,
+			LogWriter: ts.logWriter,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
@@ -686,6 +725,7 @@ func (ts *Tester) createTesters() (err error) {
 		}),
 		cluster_version_upgrade.New(cluster_version_upgrade.Config{
 			Logger:    ts.lg,
+			LogWriter: ts.logWriter,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
@@ -699,15 +739,16 @@ func (ts *Tester) createTesters() (err error) {
 // ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Deployer
 // ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Options
 func (ts *Tester) Up() (err error) {
-	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-	fmt.Printf(ts.color("[light_green]UP START [default](%q)\n"), ts.cfg.ConfigPath)
+	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Fprintf(ts.logWriter, ts.color("[light_green]UP START [default](%q)\n"), ts.cfg.ConfigPath)
 
 	now := time.Now()
 
 	defer func() {
-		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-		fmt.Printf(ts.color("[light_green]UP DEFER START [default](%q)\n"), ts.cfg.ConfigPath)
-		fmt.Printf("\n\n# to delete cluster\naws-k8s-tester eks delete cluster --path %s\n\n", ts.cfg.ConfigPath)
+		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprintf(ts.logWriter, ts.color("[light_green]UP DEFER START [default](%q)\n"), ts.cfg.ConfigPath)
+		fmt.Fprintf(ts.logWriter, "\n\n# to delete cluster\naws-k8s-tester eks delete cluster --path %s\n\n", ts.cfg.ConfigPath)
+		ts.logFile.Sync()
 
 		if serr := ts.uploadToS3(); serr != nil {
 			ts.lg.Warn("failed to upload artifacts to S3", zap.Error(serr))
@@ -717,69 +758,71 @@ func (ts *Tester) Up() (err error) {
 
 		if err == nil {
 			if ts.cfg.Status.Up {
-				fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-				fmt.Printf(ts.color("[light_green]SSH [default](%q)\n"), ts.cfg.ConfigPath)
-				fmt.Println(ts.cfg.SSHCommands())
+				fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+				fmt.Fprintf(ts.logWriter, ts.color("[light_green]SSH [default](%q)\n"), ts.cfg.ConfigPath)
+				fmt.Fprintln(ts.logWriter, ts.cfg.SSHCommands())
 
-				fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-				fmt.Printf(ts.color("[light_green]kubectl [default](%q)\n"), ts.cfg.ConfigPath)
-				fmt.Println(ts.cfg.KubectlCommands())
+				fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+				fmt.Fprintf(ts.logWriter, ts.color("[light_green]kubectl [default](%q)\n"), ts.cfg.ConfigPath)
+				fmt.Fprintln(ts.logWriter, ts.cfg.KubectlCommands())
 
 				ts.lg.Info("Up succeeded",
 					zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 				)
 
 				ts.lg.Sugar().Infof("Up.defer end (%s, %s)", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-				fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-				fmt.Printf(ts.color("\n\n💯 😁 👍 :) [light_green]UP SUCCESS\n\n\n"))
+				fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+				fmt.Fprintf(ts.logWriter, ts.color("\n\n💯 😁 👍 :) [light_green]UP SUCCESS\n\n\n"))
 
 			} else {
-				fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-				fmt.Printf(ts.color("\n\n😲 😲 😲  [light_magenta]UP ABORTED ???\n\n\n"))
+				fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+				fmt.Fprintf(ts.logWriter, ts.color("\n\n😲 😲 😲  [light_magenta]UP ABORTED ???\n\n\n"))
 
 			}
-			fmt.Printf("\n\n# to delete cluster\naws-k8s-tester eks delete cluster --path %s\n\n", ts.cfg.ConfigPath)
+			fmt.Fprintf(ts.logWriter, "\n\n# to delete cluster\naws-k8s-tester eks delete cluster --path %s\n\n", ts.cfg.ConfigPath)
+			ts.logFile.Sync()
 			return
 		}
 
 		if !ts.cfg.OnFailureDelete {
 			if ts.cfg.Status.Up {
-				fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-				fmt.Printf(ts.color("[light_green]SSH [default](%q)\n"), ts.cfg.ConfigPath)
-				fmt.Println(ts.cfg.SSHCommands())
+				fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+				fmt.Fprintf(ts.logWriter, ts.color("[light_green]SSH [default](%q)\n"), ts.cfg.ConfigPath)
+				fmt.Fprintln(ts.logWriter, ts.cfg.SSHCommands())
 
-				fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-				fmt.Printf(ts.color("[light_green]kubectl [default](%q)\n"), ts.cfg.ConfigPath)
-				fmt.Println(ts.cfg.KubectlCommands())
+				fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+				fmt.Fprintf(ts.logWriter, ts.color("[light_green]kubectl [default](%q)\n"), ts.cfg.ConfigPath)
+				fmt.Fprintln(ts.logWriter, ts.cfg.KubectlCommands())
 			}
 
 			ts.lg.Warn("Up failed",
 				zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 				zap.Error(err),
 			)
-			fmt.Printf(ts.color("\n\n\n[light_magenta]UP FAIL ERROR:\n\n%v\n\n\n"), err)
-			fmt.Printf("\n\n# to delete cluster\naws-k8s-tester eks delete cluster --path %s\n\n", ts.cfg.ConfigPath)
+			fmt.Fprintf(ts.logWriter, ts.color("\n\n\n[light_magenta]UP FAIL ERROR:\n\n%v\n\n\n"), err)
+			fmt.Fprintf(ts.logWriter, "\n\n# to delete cluster\naws-k8s-tester eks delete cluster --path %s\n\n", ts.cfg.ConfigPath)
 
 			ts.lg.Sugar().Infof("Up.defer end (%s, %s)", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-			fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-			fmt.Printf(ts.color("\n\n🔥 💀 👽 😱 😡 (-_-) [light_magenta]UP FAIL\n\n\n"))
-			fmt.Printf("\n\n# to delete cluster\naws-k8s-tester eks delete cluster --path %s\n\n", ts.cfg.ConfigPath)
+			fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+			fmt.Fprintf(ts.logWriter, ts.color("\n\n🔥 💀 👽 😱 😡 (-_-) [light_magenta]UP FAIL\n\n\n"))
+			fmt.Fprintf(ts.logWriter, "\n\n# to delete cluster\naws-k8s-tester eks delete cluster --path %s\n\n", ts.cfg.ConfigPath)
+			ts.logFile.Sync()
 			return
 		}
 
 		if ts.cfg.Status.Up {
-			fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-			fmt.Printf(ts.color("[light_green]SSH [default](%q)\n"), ts.cfg.ConfigPath)
-			fmt.Println(ts.cfg.SSHCommands())
+			fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+			fmt.Fprintf(ts.logWriter, ts.color("[light_green]SSH [default](%q)\n"), ts.cfg.ConfigPath)
+			fmt.Fprintln(ts.logWriter, ts.cfg.SSHCommands())
 
-			fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-			fmt.Printf(ts.color("[light_green]kubectl [default](%q)\n"), ts.cfg.ConfigPath)
-			fmt.Println(ts.cfg.KubectlCommands())
+			fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+			fmt.Fprintf(ts.logWriter, ts.color("[light_green]kubectl [default](%q)\n"), ts.cfg.ConfigPath)
+			fmt.Fprintln(ts.logWriter, ts.cfg.KubectlCommands())
 		}
-		fmt.Printf(ts.color("\n\n\n[light_magenta]UP FAIL ERROR:\n\n%v\n\n\n"), err)
-		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-		fmt.Printf(ts.color("🔥 💀 👽 😱 😡 (-_-) [light_magenta]UP FAIL\n"))
-		fmt.Printf("\n\n# to delete cluster\naws-k8s-tester eks delete cluster --path %s\n\n", ts.cfg.ConfigPath)
+		fmt.Fprintf(ts.logWriter, ts.color("\n\n\n[light_magenta]UP FAIL ERROR:\n\n%v\n\n\n"), err)
+		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprintf(ts.logWriter, ts.color("🔥 💀 👽 😱 😡 (-_-) [light_magenta]UP FAIL\n"))
+		fmt.Fprintf(ts.logWriter, "\n\n# to delete cluster\naws-k8s-tester eks delete cluster --path %s\n\n", ts.cfg.ConfigPath)
 
 		ts.lg.Warn("Up failed; reverting resource creation",
 			zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
@@ -802,19 +845,20 @@ func (ts *Tester) Up() (err error) {
 		} else {
 			ts.lg.Warn("reverted Up")
 		}
-		fmt.Printf(ts.color("\n\n\n[light_magenta]UP FAIL ERROR:\n\n%v\n\n\n"), err)
-		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-		fmt.Printf(ts.color("\n\n🔥 💀 👽 😱 😡 (-_-) [light_magenta]UP FAIL\n\n\n"))
-		fmt.Printf("\n\n# to delete cluster\naws-k8s-tester eks delete cluster --path %s\n\n", ts.cfg.ConfigPath)
+		fmt.Fprintf(ts.logWriter, ts.color("\n\n\n[light_magenta]UP FAIL ERROR:\n\n%v\n\n\n"), err)
+		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprintf(ts.logWriter, ts.color("\n\n🔥 💀 👽 😱 😡 (-_-) [light_magenta]UP FAIL\n\n\n"))
+		fmt.Fprintf(ts.logWriter, "\n\n# to delete cluster\naws-k8s-tester eks delete cluster --path %s\n\n", ts.cfg.ConfigPath)
 
 		ts.lg.Sugar().Infof("Up.defer end (%s, %s)", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		ts.logFile.Sync()
 	}()
 
 	ts.lg.Info("Up started", zap.String("version", version.Version()), zap.String("name", ts.cfg.Name))
 	defer ts.cfg.Sync()
 
-	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-	fmt.Printf(ts.color("[light_green]createS3 [default](%q)\n"), ts.cfg.ConfigPath)
+	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Fprintf(ts.logWriter, ts.color("[light_green]createS3 [default](%q)\n"), ts.cfg.ConfigPath)
 	if err := catchInterrupt(
 		ts.lg,
 		ts.stopCreationCh,
@@ -826,8 +870,8 @@ func (ts *Tester) Up() (err error) {
 		return err
 	}
 
-	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-	fmt.Printf(ts.color("[light_green]createKeyPair [default](%q)\n"), ts.cfg.ConfigPath)
+	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Fprintf(ts.logWriter, ts.color("[light_green]createKeyPair [default](%q)\n"), ts.cfg.ConfigPath)
 	if err := catchInterrupt(
 		ts.lg,
 		ts.stopCreationCh,
@@ -839,8 +883,8 @@ func (ts *Tester) Up() (err error) {
 		return err
 	}
 
-	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-	fmt.Printf(ts.color("[light_green]createCluster [default](%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Fprintf(ts.logWriter, ts.color("[light_green]createCluster [default](%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 	if err := catchInterrupt(
 		ts.lg,
 		ts.stopCreationCh,
@@ -861,8 +905,8 @@ func (ts *Tester) Up() (err error) {
 			return err
 		}
 
-		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-		fmt.Printf(ts.color("[light_green]runCommand.CommandAfterCreateCluster [default](%q)\n"), ts.cfg.CommandAfterCreateCluster)
+		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprintf(ts.logWriter, ts.color("[light_green]runCommand.CommandAfterCreateCluster [default](%q)\n"), ts.cfg.CommandAfterCreateCluster)
 		out, err := runCommand(ts.lg, ts.cfg.CommandAfterCreateCluster, ts.cfg.CommandAfterCreateClusterTimeout)
 		if err != nil {
 			err = ioutil.WriteFile(ts.cfg.CommandAfterCreateClusterOutputPath, []byte(ts.cfg.CommandAfterCreateCluster+"\n\n# output\n"+string(out)+"\n\n# error\n"+err.Error()), 0600)
@@ -875,7 +919,7 @@ func (ts *Tester) Up() (err error) {
 				return fmt.Errorf("failed to write file %q (%v)", ts.cfg.CommandAfterCreateClusterOutputPath, err)
 			}
 		}
-		fmt.Printf("\nrunCommand output:\n\n%s\n", string(out))
+		fmt.Fprintf(ts.logWriter, "\nrunCommand output:\n\n%s\n", string(out))
 	}
 	if serr := ts.uploadToS3(); serr != nil {
 		ts.lg.Warn("failed to upload artifacts to S3", zap.Error(serr))
@@ -887,8 +931,8 @@ func (ts *Tester) Up() (err error) {
 		}
 
 		// create NG first, so MNG configmap update can be called afterwards
-		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-		fmt.Printf(ts.color("[light_green]ngTester.Create [default](%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprintf(ts.logWriter, ts.color("[light_green]ngTester.Create [default](%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		if err := catchInterrupt(
 			ts.lg,
 			ts.stopCreationCh,
@@ -906,8 +950,8 @@ func (ts *Tester) Up() (err error) {
 			return errors.New("ts.mngTester == nil when AddOnManagedNodeGroups.Enable == true")
 		}
 
-		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-		fmt.Printf(ts.color("[light_green]mngTester.Create [default](%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprintf(ts.logWriter, ts.color("[light_green]mngTester.Create [default](%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		if err := catchInterrupt(
 			ts.lg,
 			ts.stopCreationCh,
@@ -942,8 +986,8 @@ func (ts *Tester) Up() (err error) {
 		}
 	}
 	if needGPU {
-		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-		fmt.Printf(ts.color("[light_green]gpuTester.InstallNvidiaDriver [default](%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprintf(ts.logWriter, ts.color("[light_green]gpuTester.InstallNvidiaDriver [default](%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		if err := catchInterrupt(
 			ts.lg,
 			ts.stopCreationCh,
@@ -956,8 +1000,8 @@ func (ts *Tester) Up() (err error) {
 			return err
 		}
 
-		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-		fmt.Printf(ts.color("[light_green]gpuTester.CreateNvidiaSMI [default](%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprintf(ts.logWriter, ts.color("[light_green]gpuTester.CreateNvidiaSMI [default](%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		if err := catchInterrupt(
 			ts.lg,
 			ts.stopCreationCh,
@@ -971,8 +1015,8 @@ func (ts *Tester) Up() (err error) {
 		}
 	}
 
-	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-	fmt.Printf(ts.color("[light_green]%q.CheckHealth [default](%q, %q)\n"), ts.clusterTester.Name(), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Fprintf(ts.logWriter, ts.color("[light_green]%q.CheckHealth [default](%q, %q)\n"), ts.clusterTester.Name(), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 	if ts.k8sClient == nil {
 		// TODO: investigate why "ts.k8sClient == nil"
 		ts.lg.Warn("[TODO] unexpected nil k8s client after cluster creation")
@@ -992,8 +1036,8 @@ func (ts *Tester) Up() (err error) {
 	}
 
 	for idx, cur := range ts.testers {
-		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-		fmt.Printf(ts.color("[light_green]testers[%02d].Create [cyan]%q [default](%q, %q)\n"), idx, cur.Name(), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprintf(ts.logWriter, ts.color("[light_green]testers[%02d].Create [cyan]%q [default](%q, %q)\n"), idx, cur.Name(), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		err := catchInterrupt(
 			ts.lg,
 			ts.stopCreationCh,
@@ -1004,8 +1048,8 @@ func (ts *Tester) Up() (err error) {
 		)
 
 		if idx%10 == 0 {
-			fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-			fmt.Printf(ts.color("[light_green]testers[%02d] [cyan]%q.CheckHealth [default](%q, %q)\n"), idx, ts.clusterTester.Name(), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+			fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+			fmt.Fprintf(ts.logWriter, ts.color("[light_green]testers[%02d] [cyan]%q.CheckHealth [default](%q, %q)\n"), idx, ts.clusterTester.Name(), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 			if ts.k8sClient == nil {
 				// TODO: investigate why "ts.k8sClient == nil"
 				ts.lg.Warn("[TODO] unexpected nil k8s client after cluster creation")
@@ -1021,8 +1065,8 @@ func (ts *Tester) Up() (err error) {
 				return err
 			}
 
-			fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-			fmt.Printf(ts.color("[light_green]testers[%02d] uploadToS3 [cyan]%q [default](%q, %q)\n"), idx, cur.Name(), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+			fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+			fmt.Fprintf(ts.logWriter, ts.color("[light_green]testers[%02d] uploadToS3 [cyan]%q [default](%q, %q)\n"), idx, cur.Name(), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 			if serr := ts.uploadToS3(); serr != nil {
 				ts.lg.Warn("failed to upload artifacts to S3", zap.Error(serr))
 			}
@@ -1038,8 +1082,8 @@ func (ts *Tester) Up() (err error) {
 			return errors.New("ts.ngTester == nil when AddOnNodeGroups.Enable == true")
 		}
 
-		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-		fmt.Printf(ts.color("[light_green]ngTester.FetchLogs [default](%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprintf(ts.logWriter, ts.color("[light_green]ngTester.FetchLogs [default](%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		waitDur := 15 * time.Second
 		ts.lg.Info("sleeping before ngTester.FetchLogs", zap.Duration("wait", waitDur))
 		time.Sleep(waitDur)
@@ -1061,8 +1105,8 @@ func (ts *Tester) Up() (err error) {
 			return errors.New("ts.mngTester == nil when AddOnManagedNodeGroups.Enable == true")
 		}
 
-		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-		fmt.Printf(ts.color("[light_green]mngTester.FetchLogs [default](%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprintf(ts.logWriter, ts.color("[light_green]mngTester.FetchLogs [default](%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		waitDur := 15 * time.Second
 		ts.lg.Info("sleeping before mngTester.FetchLogs", zap.Duration("wait", waitDur))
 		time.Sleep(waitDur)
@@ -1078,8 +1122,8 @@ func (ts *Tester) Up() (err error) {
 		}
 	}
 
-	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-	fmt.Printf(ts.color("[light_green]%q.CheckHealth [default](%q, %q)\n"), ts.clusterTester.Name(), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Fprintf(ts.logWriter, ts.color("[light_green]%q.CheckHealth [default](%q, %q)\n"), ts.clusterTester.Name(), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 	if ts.k8sClient == nil {
 		// TODO: investigate why "ts.k8sClient == nil"
 		ts.lg.Warn("[TODO] unexpected nil k8s client after cluster creation")
@@ -1100,8 +1144,8 @@ func (ts *Tester) Up() (err error) {
 			return err
 		}
 
-		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-		fmt.Printf(ts.color("[light_green]runCommand.CommandAfterCreateAddOns [default](%q)\n"), ts.cfg.CommandAfterCreateAddOns)
+		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprintf(ts.logWriter, ts.color("[light_green]runCommand.CommandAfterCreateAddOns [default](%q)\n"), ts.cfg.CommandAfterCreateAddOns)
 		out, err := runCommand(ts.lg, ts.cfg.CommandAfterCreateAddOns, ts.cfg.CommandAfterCreateAddOnsTimeout)
 		if err != nil {
 			err = ioutil.WriteFile(ts.cfg.CommandAfterCreateAddOnsOutputPath, []byte(ts.cfg.CommandAfterCreateAddOns+"\n\n# output\n"+string(out)+"\n\n# error\n"+err.Error()), 0600)
@@ -1114,7 +1158,7 @@ func (ts *Tester) Up() (err error) {
 				return fmt.Errorf("failed to write file %q (%v)", ts.cfg.CommandAfterCreateAddOnsOutputPath, err)
 			}
 		}
-		fmt.Printf("\nrunCommand output:\n\n%s\n", string(out))
+		fmt.Fprintf(ts.logWriter, "\nrunCommand output:\n\n%s\n", string(out))
 	}
 
 	logFetchAgain := false
@@ -1140,8 +1184,8 @@ func (ts *Tester) Up() (err error) {
 			}
 		}
 
-		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-		fmt.Printf(ts.color("[light_green]mngTester.Scale [default](%q, logFetchAgain %v)\n"), ts.cfg.ConfigPath, logFetchAgain)
+		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprintf(ts.logWriter, ts.color("[light_green]mngTester.Scale [default](%q, logFetchAgain %v)\n"), ts.cfg.ConfigPath, logFetchAgain)
 		if err := catchInterrupt(
 			ts.lg,
 			ts.stopCreationCh,
@@ -1153,8 +1197,8 @@ func (ts *Tester) Up() (err error) {
 			return err
 		}
 
-		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-		fmt.Printf(ts.color("[light_green]mngTester.UpgradeVersion [default](%q, logFetchAgain %v)\n"), ts.cfg.ConfigPath, logFetchAgain)
+		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprintf(ts.logWriter, ts.color("[light_green]mngTester.UpgradeVersion [default](%q, logFetchAgain %v)\n"), ts.cfg.ConfigPath, logFetchAgain)
 		if err := catchInterrupt(
 			ts.lg,
 			ts.stopCreationCh,
@@ -1172,8 +1216,8 @@ func (ts *Tester) Up() (err error) {
 			return errors.New("ts.mngTester == nil when AddOnManagedNodeGroups.Enable == true")
 		}
 
-		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-		fmt.Printf(ts.color("[light_green]mngTester.FetchLogs after upgrade [default](%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprintf(ts.logWriter, ts.color("[light_green]mngTester.FetchLogs after upgrade [default](%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		waitDur := 15 * time.Second
 		ts.lg.Info("sleeping before mngTester.FetchLogs", zap.Duration("wait", waitDur))
 		time.Sleep(waitDur)
@@ -1194,8 +1238,8 @@ func (ts *Tester) Up() (err error) {
 			return err
 		}
 
-		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-		fmt.Printf(ts.color("[light_green]runCommand.CommandAfterCreateAddOns [default](%q)\n"), ts.cfg.CommandAfterCreateAddOns)
+		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprintf(ts.logWriter, ts.color("[light_green]runCommand.CommandAfterCreateAddOns [default](%q)\n"), ts.cfg.CommandAfterCreateAddOns)
 		out, err := runCommand(ts.lg, ts.cfg.CommandAfterCreateAddOns, ts.cfg.CommandAfterCreateAddOnsTimeout)
 		if err != nil {
 			err = ioutil.WriteFile(ts.cfg.CommandAfterCreateAddOnsOutputPath, []byte(ts.cfg.CommandAfterCreateAddOns+"\n\n# output\n"+string(out)+"\n\n# error\n"+err.Error()), 0600)
@@ -1208,7 +1252,7 @@ func (ts *Tester) Up() (err error) {
 				return fmt.Errorf("failed to write file %q (%v)", ts.cfg.CommandAfterCreateAddOnsOutputPath, err)
 			}
 		}
-		fmt.Printf("\nrunCommand output:\n\n%s\n", string(out))
+		fmt.Fprintf(ts.logWriter, "\nrunCommand output:\n\n%s\n", string(out))
 	}
 
 	return ts.cfg.Sync()
@@ -1224,8 +1268,8 @@ func (ts *Tester) Down() error {
 }
 
 func (ts *Tester) down() (err error) {
-	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-	fmt.Printf(ts.color("[light_blue]DOWN START [default](%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Fprintf(ts.logWriter, ts.color("[light_blue]DOWN START [default](%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 
 	now := time.Now()
 	ts.lg.Warn("starting Down",
@@ -1239,21 +1283,22 @@ func (ts *Tester) down() (err error) {
 	}
 
 	defer func() {
+		ts.logFile.Sync()
 		ts.cfg.Sync()
 
 		if err == nil {
-			fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-			fmt.Printf(ts.color("[light_blue]DOWN DEFER START [default](%q)\n"), ts.cfg.ConfigPath)
-			fmt.Printf(ts.color("\n\n💯 😁 👍 :) [light_blue]DOWN SUCCESS\n\n\n"))
+			fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+			fmt.Fprintf(ts.logWriter, ts.color("[light_blue]DOWN DEFER START [default](%q)\n"), ts.cfg.ConfigPath)
+			fmt.Fprintf(ts.logWriter, ts.color("\n\n💯 😁 👍 :) [light_blue]DOWN SUCCESS\n\n\n"))
 
 			ts.lg.Info("successfully finished Down",
 				zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			)
 
 		} else {
-			fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-			fmt.Printf(ts.color("[light_blue]DOWN DEFER START [default](%q)\n"), ts.cfg.ConfigPath)
-			fmt.Printf(ts.color("🔥 💀 👽 😱 😡 (-_-) [light_magenta]DOWN FAIL\n"))
+			fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+			fmt.Fprintf(ts.logWriter, ts.color("[light_blue]DOWN DEFER START [default](%q)\n"), ts.cfg.ConfigPath)
+			fmt.Fprintf(ts.logWriter, ts.color("🔥 💀 👽 😱 😡 (-_-) [light_magenta]DOWN FAIL\n"))
 
 			ts.lg.Info("failed Down",
 				zap.Error(err),
@@ -1263,8 +1308,8 @@ func (ts *Tester) down() (err error) {
 	}()
 
 	var errs []string
-	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-	fmt.Printf(ts.color("[light_blue]deleteKeyPair [default](%q)\n"), ts.cfg.ConfigPath)
+	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Fprintf(ts.logWriter, ts.color("[light_blue]deleteKeyPair [default](%q)\n"), ts.cfg.ConfigPath)
 	if err := ts.deleteKeyPair(); err != nil {
 		ts.lg.Warn("failed to delete key pair", zap.Error(err))
 		errs = append(errs, err.Error())
@@ -1274,8 +1319,8 @@ func (ts *Tester) down() (err error) {
 	for idx := range ts.testers {
 		idx = testersN - idx - 1
 		cur := ts.testers[idx]
-		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-		fmt.Printf(ts.color("[light_blue]testers[%02d].Delete [cyan]%q [default](%q, %q)\n"), idx, cur.Name(), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprintf(ts.logWriter, ts.color("[light_blue]testers[%02d].Delete [cyan]%q [default](%q, %q)\n"), idx, cur.Name(), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		if err := cur.Delete(); err != nil {
 			ts.lg.Warn("failed tester.Delete", zap.Error(err))
 			errs = append(errs, err.Error())
@@ -1308,8 +1353,8 @@ func (ts *Tester) down() (err error) {
 	// following need to be run in order to resolve delete dependency
 	// e.g. cluster must be deleted before VPC delete
 	if ts.cfg.IsEnabledAddOnManagedNodeGroups() && ts.mngTester != nil {
-		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-		fmt.Printf(ts.color("[light_blue]mngTester.Delete [default](%q)\n"), ts.cfg.ConfigPath)
+		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprintf(ts.logWriter, ts.color("[light_blue]mngTester.Delete [default](%q)\n"), ts.cfg.ConfigPath)
 		if err := ts.mngTester.Delete(); err != nil {
 			ts.lg.Warn("failed mngTester.Delete", zap.Error(err))
 			errs = append(errs, err.Error())
@@ -1321,8 +1366,8 @@ func (ts *Tester) down() (err error) {
 	}
 
 	if ts.cfg.IsEnabledAddOnNodeGroups() && ts.ngTester != nil {
-		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-		fmt.Printf(ts.color("[light_blue]ngTester.Delete [default](%q)\n"), ts.cfg.ConfigPath)
+		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprintf(ts.logWriter, ts.color("[light_blue]ngTester.Delete [default](%q)\n"), ts.cfg.ConfigPath)
 		if err := ts.ngTester.Delete(); err != nil {
 			ts.lg.Warn("failed ngTester.Delete", zap.Error(err))
 			errs = append(errs, err.Error())
@@ -1333,15 +1378,15 @@ func (ts *Tester) down() (err error) {
 		time.Sleep(waitDur)
 	}
 
-	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-	fmt.Printf(ts.color("[light_blue]clusterTester.Delete [default](%q)\n"), ts.cfg.ConfigPath)
+	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Fprintf(ts.logWriter, ts.color("[light_blue]clusterTester.Delete [default](%q)\n"), ts.cfg.ConfigPath)
 	if err := ts.clusterTester.Delete(); err != nil {
 		ts.lg.Warn("failed clusterTester.Delete", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 
-	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-	fmt.Printf(ts.color("[light_blue]deleteS3 [default](%q)\n"), ts.cfg.ConfigPath)
+	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Fprintf(ts.logWriter, ts.color("[light_blue]deleteS3 [default](%q)\n"), ts.cfg.ConfigPath)
 	if err := ts.deleteS3(); err != nil {
 		ts.lg.Warn("failed deleteS3", zap.Error(err))
 		errs = append(errs, err.Error())

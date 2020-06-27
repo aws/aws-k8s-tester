@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"reflect"
 	"strings"
 	"time"
@@ -22,9 +23,9 @@ import (
 
 // Config defines Cuda-Vector-Add configuration.
 type Config struct {
-	Logger *zap.Logger
-	Stopc  chan struct{}
-
+	Logger    *zap.Logger
+	LogWriter io.Writer
+	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
 }
@@ -170,7 +171,7 @@ func (ts *tester) checkPod() error {
 		if err != nil {
 			ts.cfg.Logger.Warn("'kubectl describe' failed", zap.Error(err))
 		}
-		fmt.Printf("\n'%s' output:\n\n%s\n\n", descCmdPods, out)
+		fmt.Fprintf(ts.cfg.LogWriter, "\n'%s' output:\n\n%s\n\n", descCmdPods, out)
 
 		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 		output, err = exec.New().CommandContext(ctx, logArgs[0], logArgs[1:]...).CombinedOutput()
@@ -179,7 +180,7 @@ func (ts *tester) checkPod() error {
 		if err != nil {
 			ts.cfg.Logger.Warn("'kubectl logs' failed", zap.Error(err))
 		}
-		fmt.Printf("\n'%s' output:\n\n%s\n\n", logsCmd, out)
+		fmt.Fprintf(ts.cfg.LogWriter, "\n'%s' output:\n\n%s\n\n", logsCmd, out)
 
 		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 		pout, err := ts.cfg.K8SClient.

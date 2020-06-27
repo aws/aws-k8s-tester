@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"reflect"
 	"strings"
@@ -35,6 +36,7 @@ import (
 // Config defines ALB configuration.
 type Config struct {
 	Logger    *zap.Logger
+	LogWriter io.Writer
 	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	CFNAPI    cloudformationiface.CloudFormationAPI
@@ -609,7 +611,7 @@ func (ts *tester) waitDeploymentALB() error {
 		return fmt.Errorf("'kubectl describe deployment' failed %v", err)
 	}
 	out := string(output)
-	fmt.Printf("\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
+	fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
 
 	ready := false
 	waitDur := 7*time.Minute + time.Duration(ts.cfg.EKSConfig.AddOnALB2048.DeploymentReplicasALB)*time.Minute
@@ -779,7 +781,7 @@ func (ts *tester) waitDeployment2048() error {
 		return fmt.Errorf("'kubectl describe deployment' failed %v", err)
 	}
 	out := string(output)
-	fmt.Printf("\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
+	fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
 
 	ready := false
 	waitDur := 7*time.Minute + time.Duration(ts.cfg.EKSConfig.AddOnALB2048.DeploymentReplicas2048)*time.Minute
@@ -1006,7 +1008,7 @@ func (ts *tester) create2048Ingress() error {
 		if err != nil {
 			ts.cfg.Logger.Warn("'kubectl logs alb' failed", zap.Error(err))
 		}
-		fmt.Printf("\n\n\n\"%s\" output:\n\n%s\n\n", logsCmd, out)
+		fmt.Fprintf(ts.cfg.LogWriter, "\n\n\n\"%s\" output:\n\n%s\n\n", logsCmd, out)
 
 		ts.cfg.Logger.Info("describing ALB service", zap.String("describe-command", descCmd))
 		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
@@ -1016,7 +1018,7 @@ func (ts *tester) create2048Ingress() error {
 			ts.cfg.Logger.Warn("'kubectl describe svc' failed", zap.Error(err))
 		}
 		out = string(descOutput)
-		fmt.Printf("\n\n\n\"%s\" output:\n\n%s\n\n", descCmd, out)
+		fmt.Fprintf(ts.cfg.LogWriter, "\n\n\n\"%s\" output:\n\n%s\n\n", descCmd, out)
 
 		ts.cfg.Logger.Info("querying ALB 2048 Ingress for HTTP endpoint")
 		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
@@ -1084,9 +1086,9 @@ func (ts *tester) create2048Ingress() error {
 		break
 	}
 
-	fmt.Printf("\nALB 2048 ARN: %s\n", ts.cfg.EKSConfig.AddOnALB2048.ALBARN)
-	fmt.Printf("ALB 2048 Name: %s\n", ts.cfg.EKSConfig.AddOnALB2048.ALBName)
-	fmt.Printf("ALB 2048 URL: %s\n\n", ts.cfg.EKSConfig.AddOnALB2048.URL)
+	fmt.Fprintf(ts.cfg.LogWriter, "\nALB 2048 ARN: %s\n", ts.cfg.EKSConfig.AddOnALB2048.ALBARN)
+	fmt.Fprintf(ts.cfg.LogWriter, "ALB 2048 Name: %s\n", ts.cfg.EKSConfig.AddOnALB2048.ALBName)
+	fmt.Fprintf(ts.cfg.LogWriter, "ALB 2048 URL: %s\n\n", ts.cfg.EKSConfig.AddOnALB2048.URL)
 
 	ts.cfg.Logger.Info("waiting before testing ALB 2048 Ingress")
 	time.Sleep(10 * time.Second)
@@ -1107,7 +1109,7 @@ func (ts *tester) create2048Ingress() error {
 			continue
 		}
 		httpOutput := string(out)
-		fmt.Printf("\nALB 2048 Ingress output:\n%s\n", httpOutput)
+		fmt.Fprintf(ts.cfg.LogWriter, "\nALB 2048 Ingress output:\n%s\n", httpOutput)
 
 		if strings.Contains(httpOutput, `2048 tile!`) {
 			ts.cfg.Logger.Info("read ALB 2048 Service; exiting", zap.String("host-name", hostName))
@@ -1118,9 +1120,9 @@ func (ts *tester) create2048Ingress() error {
 		ts.cfg.Logger.Warn("unexpected ALB 2048 Ingress output; retrying")
 	}
 
-	fmt.Printf("\nALB 2048 ARN: %s\n", ts.cfg.EKSConfig.AddOnALB2048.ALBARN)
-	fmt.Printf("ALB 2048 Name: %s\n", ts.cfg.EKSConfig.AddOnALB2048.ALBName)
-	fmt.Printf("ALB 2048 URL: %s\n\n", ts.cfg.EKSConfig.AddOnALB2048.URL)
+	fmt.Fprintf(ts.cfg.LogWriter, "\nALB 2048 ARN: %s\n", ts.cfg.EKSConfig.AddOnALB2048.ALBARN)
+	fmt.Fprintf(ts.cfg.LogWriter, "ALB 2048 Name: %s\n", ts.cfg.EKSConfig.AddOnALB2048.ALBName)
+	fmt.Fprintf(ts.cfg.LogWriter, "ALB 2048 URL: %s\n\n", ts.cfg.EKSConfig.AddOnALB2048.URL)
 
 	if !htmlChecked {
 		return fmt.Errorf("ALB 2048 %q did not return expected HTML output", ts.cfg.EKSConfig.AddOnALB2048.URL)

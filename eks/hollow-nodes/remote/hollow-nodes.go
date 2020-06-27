@@ -13,6 +13,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"reflect"
 	"strings"
@@ -37,6 +38,7 @@ import (
 // Config defines hollow nodes configuration.
 type Config struct {
 	Logger    *zap.Logger
+	LogWriter io.Writer
 	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
@@ -682,7 +684,7 @@ func (ts *tester) waitDeployment() error {
 		return fmt.Errorf("'%s' failed %v", cmd, err)
 	}
 	out := string(output)
-	fmt.Printf("\n\n\"%s\" output:\n%s\n\n", cmd, out)
+	fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"%s\" output:\n%s\n\n", cmd, out)
 
 	ready := false
 	waitDur := 7*time.Minute + time.Duration(ts.cfg.EKSConfig.AddOnHollowNodesRemote.DeploymentReplicas)*time.Minute
@@ -738,7 +740,7 @@ func (ts *tester) waitDeployment() error {
 		if err != nil {
 			ts.cfg.Logger.Warn("describe failed", zap.String("command", cmd), zap.Error(err))
 		} else {
-			fmt.Printf("\n\n\"%s\" output:\n%s\n\n", cmd, out)
+			fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"%s\" output:\n%s\n\n", cmd, out)
 		}
 	}
 	if !ready {
@@ -824,7 +826,7 @@ func (ts *tester) checkNodes() error {
 		if err != nil {
 			ts.cfg.Logger.Warn("'kubectl logs' failed", zap.Error(err))
 		}
-		fmt.Printf("\n\n\"%s\":\n%s\n", cmdLogs, out)
+		fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"%s\":\n%s\n", cmdLogs, out)
 
 		ts.cfg.EKSConfig.AddOnHollowNodesRemote.CreatedNodeNames = createdNodeNames
 		ts.cfg.EKSConfig.Sync()

@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"reflect"
 	"strings"
 	"time"
@@ -26,9 +27,9 @@ import (
 
 // Config defines Dashboard configuration.
 type Config struct {
-	Logger *zap.Logger
-	Stopc  chan struct{}
-
+	Logger    *zap.Logger
+	LogWriter io.Writer
+	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
 }
@@ -310,7 +311,7 @@ func (ts *tester) create() error {
 		output, err = exec.New().CommandContext(ctx, applyArgs[0], applyArgs[1:]...).CombinedOutput()
 		cancel()
 		out := string(output)
-		fmt.Printf("\n\"%s\" output:\n%s\n", applyCmd, out)
+		fmt.Fprintf(ts.cfg.LogWriter, "\n\"%s\" output:\n%s\n", applyCmd, out)
 		if err == nil {
 			break
 		}
@@ -362,7 +363,7 @@ func (ts *tester) waitDeployment() error {
 			continue
 		}
 		out := string(output)
-		fmt.Printf("\n\n\"%s\" output:\n%s\n\n", descCmd, out)
+		fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"%s\" output:\n%s\n\n", descCmd, out)
 
 		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 		dresp, err := ts.cfg.K8SClient.KubernetesClientSet().
@@ -442,7 +443,7 @@ func (ts *tester) waitDeployment() error {
 			continue
 		}
 		out := string(output)
-		fmt.Printf("\n\n\"%s\" output:\n%s\n\n", descCmd, out)
+		fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"%s\" output:\n%s\n\n", descCmd, out)
 
 		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 		output, err = exec.New().CommandContext(ctx, logArgs[0], logArgs[1:]...).CombinedOutput()
@@ -452,12 +453,12 @@ func (ts *tester) waitDeployment() error {
 			continue
 		}
 		out = string(output)
-		fmt.Printf("\n\n\"%s\" output:\n%s\n\n", logsCmd, out)
+		fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"%s\" output:\n%s\n\n", logsCmd, out)
 
 		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 		output, err = exec.New().CommandContext(ctx, topNodeArgs[0], topNodeArgs[1:]...).CombinedOutput()
 		out = string(output)
-		fmt.Printf("\n\n\"%s\" output:\n%s\n\n", topNodeCmd, out)
+		fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"%s\" output:\n%s\n\n", topNodeCmd, out)
 		cancel()
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to run kubectl top node", zap.Error(err))

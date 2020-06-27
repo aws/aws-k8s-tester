@@ -110,7 +110,8 @@ func RepoAdd(lg *zap.Logger, name, url string) error {
 
 // InstallConfig defines helm installation configuration.
 type InstallConfig struct {
-	Logger *zap.Logger
+	Logger    *zap.Logger
+	LogWriter io.Writer
 
 	Stopc   chan struct{}
 	Timeout time.Duration
@@ -273,13 +274,13 @@ func Install(cfg InstallConfig) (err error) {
 				case <-time.After(cfg.QueryInterval):
 				}
 
-				println()
+				fmt.Fprintf(cfg.LogWriter, "\n")
 				cfg.Logger.Info("executing query function")
-				println()
+				fmt.Fprintf(cfg.LogWriter, "\n")
 				cfg.QueryFunc()
-				println()
+				fmt.Fprintf(cfg.LogWriter, "\n")
 				cfg.Logger.Info("executed query function")
-				println()
+				fmt.Fprintf(cfg.LogWriter, "\n")
 			}
 		}()
 	}

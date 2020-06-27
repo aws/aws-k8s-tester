@@ -337,7 +337,7 @@ func (ts *tester) installDashboard() error {
 		).CombinedOutput()
 		cancel()
 		out := string(output)
-		fmt.Printf("\n\"kubectl apply\" dashboard output:\n%s\n", out)
+		fmt.Fprintf(ts.cfg.LogWriter, "\n\"kubectl apply\" dashboard output:\n%s\n", out)
 		if err == nil {
 			break
 		}
@@ -375,7 +375,7 @@ func (ts *tester) waitDeploymentDashboard() error {
 		return fmt.Errorf("'kubectl describe deployment' failed %v", err)
 	}
 	out := string(output)
-	fmt.Printf("\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
+	fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
 
 	ready := false
 	waitDur := 3 * time.Minute

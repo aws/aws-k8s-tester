@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"reflect"
 	"strings"
@@ -37,6 +38,7 @@ import (
 // Config defines "Fargate" configuration.
 type Config struct {
 	Logger    *zap.Logger
+	LogWriter io.Writer
 	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
@@ -651,11 +653,11 @@ func (ts *tester) listPods(ns string) error {
 	if err != nil {
 		return err
 	}
-	println()
+	fmt.Fprintf(ts.cfg.LogWriter, "\n")
 	for _, v := range pods.Items {
-		fmt.Printf("%q Pod using client-go: %q\n", ns, v.Name)
+		fmt.Fprintf(ts.cfg.LogWriter, "%q Pod using client-go: %q\n", ns, v.Name)
 	}
-	println()
+	fmt.Fprintf(ts.cfg.LogWriter, "\n")
 	return nil
 }
 
@@ -702,7 +704,7 @@ func (ts *tester) checkPod() error {
 		if err != nil {
 			ts.cfg.Logger.Warn("'kubectl exec' failed", zap.Error(err))
 		}
-		fmt.Printf("\n'%s' output:\n\n%s\n\n", execCmd, out)
+		fmt.Fprintf(ts.cfg.LogWriter, "\n'%s' output:\n\n%s\n\n", execCmd, out)
 
 		if !strings.Contains(out, secretReadTxt) {
 			ts.cfg.Logger.Warn("unexpected exec output", zap.String("output", out))
@@ -766,7 +768,7 @@ func (ts *tester) checkPod() error {
 		if err != nil {
 			ts.cfg.Logger.Warn("'kubectl describe' failed", zap.Error(err))
 		}
-		fmt.Printf("\n'%s' output:\n\n%s\n\n", descCmdPods, out)
+		fmt.Fprintf(ts.cfg.LogWriter, "\n'%s' output:\n\n%s\n\n", descCmdPods, out)
 
 		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 		output, err = exec.New().CommandContext(ctx, logArgs[0], logArgs[1:]...).CombinedOutput()
@@ -775,7 +777,7 @@ func (ts *tester) checkPod() error {
 		if err != nil {
 			ts.cfg.Logger.Warn("'kubectl logs' failed", zap.Error(err))
 		}
-		fmt.Printf("\n'%s' output:\n\n%s\n\n", logsCmd, out)
+		fmt.Fprintf(ts.cfg.LogWriter, "\n'%s' output:\n\n%s\n\n", logsCmd, out)
 
 		if !strings.Contains(out, secretReadTxt) {
 			ts.cfg.Logger.Warn("unexpected logs output", zap.String("output", out))

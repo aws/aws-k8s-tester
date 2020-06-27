@@ -6,6 +6,7 @@ package local
 import (
 	"errors"
 	"fmt"
+	"io"
 	"reflect"
 	"strings"
 	"time"
@@ -26,6 +27,7 @@ import (
 // Config defines cluster loader configuration.
 type Config struct {
 	Logger    *zap.Logger
+	LogWriter io.Writer
 	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS

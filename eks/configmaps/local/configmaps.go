@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"path"
 	"reflect"
@@ -31,6 +32,7 @@ import (
 // Config defines configmaps local tester configuration.
 type Config struct {
 	Logger    *zap.Logger
+	LogWriter io.Writer
 	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
@@ -214,7 +216,7 @@ func (ts *tester) checkResults(curWriteLatencies metrics.Durations) (err error) 
 		); err != nil {
 			return err
 		}
-		fmt.Printf("\n\nRequestsSummaryWritesCompare:\n%s\n", ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsSummaryWritesCompare.Table())
+		fmt.Fprintf(ts.cfg.LogWriter, "\n\nRequestsSummaryWritesCompare:\n%s\n", ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsSummaryWritesCompare.Table())
 
 		var prevDurations metrics.Durations
 		prevDurations, err = metrics.DownloadDurationsFromS3(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3BucketName, durRawS3Key)

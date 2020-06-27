@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"reflect"
@@ -43,6 +44,7 @@ import (
 // ref. https://aws.amazon.com/blogs/opensource/introducing-fine-grained-iam-roles-service-accounts/
 type Config struct {
 	Logger    *zap.Logger
+	LogWriter io.Writer
 	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
@@ -637,7 +639,7 @@ func (ts *tester) createConfigMap() error {
 		return err
 	}
 	tplTxt := buf.String()
-	fmt.Printf("\nAddOnIRSA ConfigMap:\n%s\n\n", tplTxt)
+	fmt.Fprintf(ts.cfg.LogWriter, "\nAddOnIRSA ConfigMap:\n%s\n\n", tplTxt)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.K8SClient.KubernetesClientSet().
@@ -868,7 +870,7 @@ func (ts *tester) waitDeployment() error {
 		return fmt.Errorf("'kubectl describe deployment' failed %v", err)
 	}
 	out := string(output)
-	fmt.Printf("\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
+	fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
 
 	initialWait := 2*time.Minute + time.Duration(ts.cfg.EKSConfig.AddOnIRSA.DeploymentReplicas)*3*time.Second
 	if initialWait > 10*time.Minute {
@@ -1071,7 +1073,7 @@ func (ts *tester) checkLogs() error {
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to kubectl logs", zap.Error(err))
 		}
-		fmt.Printf("\n\n'%s' output (expects %q):\n\n%s\n\n", logsCmd, ts.sleepMessage, output)
+		fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output (expects %q):\n\n%s\n\n", logsCmd, ts.sleepMessage, output)
 		if !strings.Contains(output, ts.sleepMessage) {
 			continue
 		}
@@ -1117,7 +1119,7 @@ func (ts *tester) checkLogs() error {
 		}
 		sh.Close()
 		output = strings.TrimSpace(string(runOutput))
-		fmt.Printf("\n\n'%s' output (expects %q):\n\n%s\n\n", catCmd, ts.testBody, output)
+		fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output (expects %q):\n\n%s\n\n", catCmd, ts.testBody, output)
 		if !strings.Contains(output, ts.testBody) {
 			continue
 		}

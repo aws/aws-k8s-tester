@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	osexec "os/exec"
 	"path/filepath"
@@ -29,9 +30,9 @@ import (
 // Config defines Kubeflow configuration.
 // ref. https://www.kubeflow.org/docs/aws/deploy/install-kubeflow/
 type Config struct {
-	Logger *zap.Logger
-	Stopc  chan struct{}
-
+	Logger    *zap.Logger
+	LogWriter io.Writer
+	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
 }
@@ -149,7 +150,7 @@ func (ts *tester) downloadInstallKfctl() (err error) {
 	if err != nil {
 		return fmt.Errorf("'kfctl help' failed (output %q, error %v)", out, err)
 	}
-	fmt.Printf("\n'kfctl help' output:\n\n%s\n\n", out)
+	fmt.Fprintf(ts.cfg.LogWriter, "\n'kfctl help' output:\n\n%s\n\n", out)
 
 	ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 	output, err = exec.New().CommandContext(ctx, ts.cfg.EKSConfig.AddOnKubeflow.KfctlPath, "apply", "--help").CombinedOutput()
@@ -158,7 +159,7 @@ func (ts *tester) downloadInstallKfctl() (err error) {
 	if err != nil {
 		return fmt.Errorf("'kfctl apply --help' failed (output %q, error %v)", out, err)
 	}
-	fmt.Printf("\n'kfctl apply --help' output:\n\n%s\n\n", out)
+	fmt.Fprintf(ts.cfg.LogWriter, "\n'kfctl apply --help' output:\n\n%s\n\n", out)
 
 	ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 	output, err = exec.New().CommandContext(ctx, ts.cfg.EKSConfig.AddOnKubeflow.KfctlPath, "version").CombinedOutput()
@@ -167,7 +168,7 @@ func (ts *tester) downloadInstallKfctl() (err error) {
 	if err != nil {
 		return fmt.Errorf("'kfctl version' failed (output %q, error %v)", out, err)
 	}
-	fmt.Printf("\n'kfctl version' output:\n\n%s\n\n", out)
+	fmt.Fprintf(ts.cfg.LogWriter, "\n'kfctl version' output:\n\n%s\n\n", out)
 
 	ts.cfg.Logger.Info(
 		"kfctl version",
@@ -222,7 +223,7 @@ func (ts *tester) writeKfctlConfig() error {
 	}
 	ts.cfg.Logger.Info("wrote kfctl config", zap.String("kfctl-config-path", ts.cfg.EKSConfig.AddOnKubeflow.KfctlConfigPath))
 
-	fmt.Printf("\n\n'kfctl configuration' %q:\n\n%s\n\n", ts.cfg.EKSConfig.AddOnKubeflow.KfctlConfigPath, cfgTxt)
+	fmt.Fprintf(ts.cfg.LogWriter, "\n\n'kfctl configuration' %q:\n\n%s\n\n", ts.cfg.EKSConfig.AddOnKubeflow.KfctlConfigPath, cfgTxt)
 	return nil
 }
 
@@ -664,15 +665,15 @@ func (ts *tester) installKfConfig() error {
 		ts.cfg.Logger.Warn("kfctl apply failed", zap.String("command", strings.Join(args, " ")), zap.Error(err))
 	}
 	out := string(output)
-	fmt.Printf("\n'%s' (env %q) output:\n\n%s\n\n", cmdTxt, cmd.Env, out)
+	fmt.Fprintf(ts.cfg.LogWriter, "\n'%s' (env %q) output:\n\n%s\n\n", cmdTxt, cmd.Env, out)
 
 	if err != nil {
 		// TODO: fix
-		fmt.Printf("kfctl apply failed... try yourself...")
-		fmt.Println("1. install aws-iam-authenticator")
-		fmt.Println("2. install eksctl")
-		fmt.Println("3. run following")
-		fmt.Printf("\n\n%s\n\n%s\n\n", strings.Join(cmd.Env, "\n"), cmdTxt)
+		fmt.Fprintf(ts.cfg.LogWriter, "kfctl apply failed... try yourself...")
+		fmt.Fprintln(ts.cfg.LogWriter, "1. install aws-iam-authenticator")
+		fmt.Fprintln(ts.cfg.LogWriter, "2. install eksctl")
+		fmt.Fprintln(ts.cfg.LogWriter, "3. run following")
+		fmt.Fprintf(ts.cfg.LogWriter, "\n\n%s\n\n%s\n\n", strings.Join(cmd.Env, "\n"), cmdTxt)
 	}
 	return nil
 }

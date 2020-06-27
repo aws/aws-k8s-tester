@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"reflect"
 	"strings"
 	"time"
@@ -22,9 +23,9 @@ import (
 
 // Config defines AWS EBS CSI Driver configuration.
 type Config struct {
-	Logger *zap.Logger
-	Stopc  chan struct{}
-
+	Logger    *zap.Logger
+	LogWriter io.Writer
+	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
 }
@@ -161,6 +162,7 @@ func (ts *tester) createHelmCSI() error {
 
 	return helm.Install(helm.InstallConfig{
 		Logger:         ts.cfg.Logger,
+		LogWriter:      ts.cfg.LogWriter,
 		Stopc:          ts.cfg.Stopc,
 		Timeout:        15 * time.Minute,
 		KubeConfigPath: ts.cfg.EKSConfig.KubeConfigPath,
@@ -173,7 +175,7 @@ func (ts *tester) createHelmCSI() error {
 			ts.cfg.Logger.Info(fmt.Sprintf("[install] "+format, v...))
 		},
 		QueryFunc: func() {
-			println()
+			fmt.Fprintf(ts.cfg.LogWriter, "\n")
 
 			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 			output, err := exec.New().CommandContext(ctx, getAllArgs[0], getAllArgs[1:]...).CombinedOutput()
@@ -182,7 +184,7 @@ func (ts *tester) createHelmCSI() error {
 			if err != nil {
 				ts.cfg.Logger.Warn("'kubectl get all' failed", zap.Error(err))
 			} else {
-				fmt.Printf("\n\n'%s' output:\n\n%s\n\n", getAllCmd, out)
+				fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", getAllCmd, out)
 			}
 
 			ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
@@ -192,7 +194,7 @@ func (ts *tester) createHelmCSI() error {
 			if err != nil {
 				ts.cfg.Logger.Warn("'kubectl describe daemonset' failed", zap.Error(err))
 			} else {
-				fmt.Printf("\n\n'%s' output:\n\n%s\n\n", descCmdDs, out)
+				fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", descCmdDs, out)
 			}
 
 			ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
@@ -202,7 +204,7 @@ func (ts *tester) createHelmCSI() error {
 			if err != nil {
 				ts.cfg.Logger.Warn("'kubectl describe deployment' failed", zap.Error(err))
 			} else {
-				fmt.Printf("\n\n'%s' output:\n\n%s\n\n", descCmdDp, out)
+				fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", descCmdDp, out)
 			}
 
 			ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
@@ -212,7 +214,7 @@ func (ts *tester) createHelmCSI() error {
 			if err != nil {
 				ts.cfg.Logger.Warn("'kubectl describe pods' failed", zap.Error(err))
 			} else {
-				fmt.Printf("\n\n'%s' output:\n\n%s\n\n", descCmdPods, out)
+				fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", descCmdPods, out)
 			}
 
 			ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
@@ -222,7 +224,7 @@ func (ts *tester) createHelmCSI() error {
 			if err != nil {
 				ts.cfg.Logger.Warn("'kubectl logs' failed", zap.Error(err))
 			} else {
-				fmt.Printf("\n\n'%s' output:\n\n%s\n\n", logsCmd, out)
+				fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", logsCmd, out)
 			}
 		},
 		QueryInterval: 30 * time.Second,
@@ -232,6 +234,7 @@ func (ts *tester) createHelmCSI() error {
 func (ts *tester) deleteHelmCSI() error {
 	return helm.Uninstall(helm.InstallConfig{
 		Logger:         ts.cfg.Logger,
+		LogWriter:      ts.cfg.LogWriter,
 		Timeout:        15 * time.Minute,
 		KubeConfigPath: ts.cfg.EKSConfig.KubeConfigPath,
 		Namespace:      "kube-system",

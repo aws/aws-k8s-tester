@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"reflect"
 	"strings"
@@ -31,6 +32,7 @@ import (
 // Config defines NLB configuration.
 type Config struct {
 	Logger    *zap.Logger
+	LogWriter io.Writer
 	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
@@ -281,7 +283,7 @@ func (ts *tester) waitDeployment() error {
 		return fmt.Errorf("'kubectl describe deployment' failed %v", err)
 	}
 	out := string(output)
-	fmt.Printf("\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
+	fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
 
 	ready := false
 	waitDur := 7*time.Minute + time.Duration(ts.cfg.EKSConfig.AddOnNLBHelloWorld.DeploymentReplicas)*time.Minute
@@ -416,7 +418,7 @@ func (ts *tester) createService() error {
 			ts.cfg.Logger.Warn("'kubectl describe svc' failed", zap.String("command", argsCmd), zap.Error(err))
 		} else {
 			out := string(cmdOut)
-			fmt.Printf("\n\n\"%s\" output:\n%s\n\n", argsCmd, out)
+			fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"%s\" output:\n%s\n\n", argsCmd, out)
 		}
 
 		ts.cfg.Logger.Info("querying NLB hello-world Service for HTTP endpoint")
@@ -468,9 +470,9 @@ func (ts *tester) createService() error {
 	ts.cfg.EKSConfig.AddOnNLBHelloWorld.URL = "http://" + hostName
 	ts.cfg.EKSConfig.Sync()
 
-	fmt.Printf("\nNLB hello-world ARN: %s\n", ts.cfg.EKSConfig.AddOnNLBHelloWorld.NLBARN)
-	fmt.Printf("NLB hello-world Name: %s\n", ts.cfg.EKSConfig.AddOnNLBHelloWorld.NLBName)
-	fmt.Printf("NLB hello-world URL: %s\n\n", ts.cfg.EKSConfig.AddOnNLBHelloWorld.URL)
+	fmt.Fprintf(ts.cfg.LogWriter, "\nNLB hello-world ARN: %s\n", ts.cfg.EKSConfig.AddOnNLBHelloWorld.NLBARN)
+	fmt.Fprintf(ts.cfg.LogWriter, "NLB hello-world Name: %s\n", ts.cfg.EKSConfig.AddOnNLBHelloWorld.NLBName)
+	fmt.Fprintf(ts.cfg.LogWriter, "NLB hello-world URL: %s\n\n", ts.cfg.EKSConfig.AddOnNLBHelloWorld.URL)
 
 	ts.cfg.Logger.Info("waiting before testing hello-world Service")
 	time.Sleep(20 * time.Second)
@@ -491,7 +493,7 @@ func (ts *tester) createService() error {
 			continue
 		}
 		httpOutput := string(out)
-		fmt.Printf("\nNLB hello-world Service output:\n%s\n", httpOutput)
+		fmt.Fprintf(ts.cfg.LogWriter, "\nNLB hello-world Service output:\n%s\n", httpOutput)
 
 		if strings.Contains(httpOutput, `<h1>Hello world!</h1>`) {
 			ts.cfg.Logger.Info("read hello-world Service; exiting", zap.String("host-name", hostName))
@@ -502,9 +504,9 @@ func (ts *tester) createService() error {
 		ts.cfg.Logger.Warn("unexpected hello-world Service output; retrying")
 	}
 
-	fmt.Printf("\nNLB hello-world ARN: %s\n", ts.cfg.EKSConfig.AddOnNLBHelloWorld.NLBARN)
-	fmt.Printf("NLB hello-world Name: %s\n", ts.cfg.EKSConfig.AddOnNLBHelloWorld.NLBName)
-	fmt.Printf("NLB hello-world URL: %s\n\n", ts.cfg.EKSConfig.AddOnNLBHelloWorld.URL)
+	fmt.Fprintf(ts.cfg.LogWriter, "\nNLB hello-world ARN: %s\n", ts.cfg.EKSConfig.AddOnNLBHelloWorld.NLBARN)
+	fmt.Fprintf(ts.cfg.LogWriter, "NLB hello-world Name: %s\n", ts.cfg.EKSConfig.AddOnNLBHelloWorld.NLBName)
+	fmt.Fprintf(ts.cfg.LogWriter, "NLB hello-world URL: %s\n\n", ts.cfg.EKSConfig.AddOnNLBHelloWorld.URL)
 
 	if !htmlChecked {
 		return fmt.Errorf("NLB hello-world %q did not return expected HTML output", ts.cfg.EKSConfig.AddOnNLBHelloWorld.URL)

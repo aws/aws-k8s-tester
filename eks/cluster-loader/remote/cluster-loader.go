@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"reflect"
 	"strings"
@@ -38,6 +39,7 @@ import (
 // Config defines cluster loader configuration.
 type Config struct {
 	Logger    *zap.Logger
+	LogWriter io.Writer
 	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
@@ -127,11 +129,11 @@ func (ts *tester) Create() (err error) {
 	if err != nil {
 		return err
 	}
-	println()
+	fmt.Fprintf(ts.cfg.LogWriter, "\n")
 	for _, item := range pods {
-		fmt.Printf("Job Pod %q: %q\n", item.Name, item.Status.Phase)
+		fmt.Fprintf(ts.cfg.LogWriter, "Job Pod %q: %q\n", item.Name, item.Status.Phase)
 	}
-	println()
+	fmt.Fprintf(ts.cfg.LogWriter, "\n")
 
 	if err = ts.checkResults(); err == nil {
 		return err

@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"sort"
 	"sync"
@@ -58,8 +59,10 @@ func init() {
 
 // Config configures configmap loader.
 type Config struct {
-	Logger *zap.Logger
-	Stopc  chan struct{}
+	Logger    *zap.Logger
+	LogWriter io.Writer
+
+	Stopc chan struct{}
 
 	S3API        s3iface.S3API
 	S3BucketName string
@@ -203,7 +206,7 @@ func (ts *loader) CollectMetrics() (writeLatencies metrics.Durations, writesSumm
 	); err != nil {
 		return nil, metrics.RequestsSummary{}, err
 	}
-	fmt.Printf("\n\nSummaryWritesTable:\n%s\n", writesSummary.Table())
+	fmt.Fprintf(ts.cfg.LogWriter, "\n\nSummaryWritesTable:\n%s\n", writesSummary.Table())
 
 	return ts.writeLatencies, writesSummary, nil
 }

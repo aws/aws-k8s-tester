@@ -21,7 +21,7 @@ func (ts *tester) createConfigMap() error {
 		return err
 	}
 	ts.cfg.Logger.Info("applying ConfigMap")
-	fmt.Printf("\naws-auth ConfigMap:\n\n%s\n", body)
+	fmt.Fprintf(ts.cfg.LogWriter, "\naws-auth ConfigMap:\n\n%s\n", body)
 
 	var output []byte
 	// might take several minutes for DNS to propagate
@@ -43,7 +43,7 @@ func (ts *tester) createConfigMap() error {
 		).CombinedOutput()
 		cancel()
 		out := string(output)
-		fmt.Printf("\n\"kubectl apply\" output:\n%s\n", out)
+		fmt.Fprintf(ts.cfg.LogWriter, "\n\"kubectl apply\" output:\n%s\n", out)
 		if err == nil {
 			break
 		}

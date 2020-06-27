@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"reflect"
 	"strings"
@@ -30,9 +31,9 @@ import (
 // Config defines Jupyter Hub configuration.
 // ref. https://zero-to-jupyterhub.readthedocs.io/en/latest/index.html
 type Config struct {
-	Logger *zap.Logger
-	Stopc  chan struct{}
-
+	Logger    *zap.Logger
+	LogWriter io.Writer
+	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
 }
@@ -353,6 +354,7 @@ func (ts *tester) createHelmJupyterHub() error {
 	}
 	return helm.Install(helm.InstallConfig{
 		Logger:         ts.cfg.Logger,
+		LogWriter:      ts.cfg.LogWriter,
 		Stopc:          ts.cfg.Stopc,
 		Timeout:        20 * time.Minute,
 		KubeConfigPath: ts.cfg.EKSConfig.KubeConfigPath,
@@ -369,6 +371,7 @@ func (ts *tester) createHelmJupyterHub() error {
 func (ts *tester) deleteHelmJupyterHub() error {
 	return helm.Uninstall(helm.InstallConfig{
 		Logger:         ts.cfg.Logger,
+		LogWriter:      ts.cfg.LogWriter,
 		Timeout:        20 * time.Minute,
 		KubeConfigPath: ts.cfg.EKSConfig.KubeConfigPath,
 		Namespace:      ts.cfg.EKSConfig.AddOnJupyterHub.Namespace,
@@ -414,7 +417,7 @@ func (ts *tester) waitService() error {
 			ts.cfg.Logger.Warn("'kubectl describe svc' failed", zap.String("command", argsCmd), zap.Error(err))
 		} else {
 			out := string(cmdOut)
-			fmt.Printf("\n\n\"%s\" output:\n%s\n\n", argsCmd, out)
+			fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"%s\" output:\n%s\n\n", argsCmd, out)
 		}
 
 		ts.cfg.Logger.Info("querying JupyterHub service for HTTP endpoint")
@@ -466,9 +469,9 @@ func (ts *tester) waitService() error {
 		ss,
 	)
 
-	fmt.Printf("\nNLB JupyterHub ARN: %s\n", ts.cfg.EKSConfig.AddOnJupyterHub.NLBARN)
-	fmt.Printf("NLB JupyterHub Name: %s\n", ts.cfg.EKSConfig.AddOnJupyterHub.NLBName)
-	fmt.Printf("NLB JupyterHub URL: %s\n\n", ts.cfg.EKSConfig.AddOnJupyterHub.URL)
+	fmt.Fprintf(ts.cfg.LogWriter, "\nNLB JupyterHub ARN: %s\n", ts.cfg.EKSConfig.AddOnJupyterHub.NLBARN)
+	fmt.Fprintf(ts.cfg.LogWriter, "NLB JupyterHub Name: %s\n", ts.cfg.EKSConfig.AddOnJupyterHub.NLBName)
+	fmt.Fprintf(ts.cfg.LogWriter, "NLB JupyterHub URL: %s\n\n", ts.cfg.EKSConfig.AddOnJupyterHub.URL)
 
 	ts.cfg.Logger.Info("waiting before testing JupyterHub Service")
 	time.Sleep(20 * time.Second)
@@ -488,7 +491,7 @@ func (ts *tester) waitService() error {
 			continue
 		}
 		httpOutput := string(out)
-		fmt.Printf("\nNLB JupyterHub Service output:\n%s\n", httpOutput)
+		fmt.Fprintf(ts.cfg.LogWriter, "\nNLB JupyterHub Service output:\n%s\n", httpOutput)
 
 		if strings.Contains(httpOutput, `jupyterhub-logo`) {
 			ts.cfg.Logger.Info(
@@ -501,9 +504,9 @@ func (ts *tester) waitService() error {
 		ts.cfg.Logger.Warn("unexpected JupyterHub Service output; retrying")
 	}
 
-	fmt.Printf("\nNLB JupyterHub ARN: %s\n", ts.cfg.EKSConfig.AddOnJupyterHub.NLBARN)
-	fmt.Printf("NLB JupyterHub Name: %s\n", ts.cfg.EKSConfig.AddOnJupyterHub.NLBName)
-	fmt.Printf("NLB JupyterHub URL: %s\n\n", ts.cfg.EKSConfig.AddOnJupyterHub.URL)
+	fmt.Fprintf(ts.cfg.LogWriter, "\nNLB JupyterHub ARN: %s\n", ts.cfg.EKSConfig.AddOnJupyterHub.NLBARN)
+	fmt.Fprintf(ts.cfg.LogWriter, "NLB JupyterHub Name: %s\n", ts.cfg.EKSConfig.AddOnJupyterHub.NLBName)
+	fmt.Fprintf(ts.cfg.LogWriter, "NLB JupyterHub URL: %s\n\n", ts.cfg.EKSConfig.AddOnJupyterHub.URL)
 
 	return ts.cfg.EKSConfig.Sync()
 }

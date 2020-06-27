@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"reflect"
 	"time"
 
@@ -30,6 +31,7 @@ type Scaler interface {
 // Config defines scaler configuration.
 type Config struct {
 	Logger    *zap.Logger
+	LogWriter io.Writer
 	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	EKSAPI    eksiface.EKSAPI

@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"reflect"
 	"strings"
@@ -33,6 +34,7 @@ import (
 // Config defines NLB configuration.
 type Config struct {
 	Logger    *zap.Logger
+	LogWriter io.Writer
 	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
@@ -344,7 +346,7 @@ func (ts *tester) waitDeploymentRedisLeader() error {
 		return fmt.Errorf("'kubectl describe deployment' failed %v", err)
 	}
 	out := string(output)
-	fmt.Printf("\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
+	fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
 
 	logsArgs := []string{
 		ts.cfg.EKSConfig.KubectlPath,
@@ -373,7 +375,7 @@ func (ts *tester) waitDeploymentRedisLeader() error {
 		if err != nil {
 			ts.cfg.Logger.Warn("'kubectl logs' failed", zap.Error(err))
 		}
-		fmt.Printf("\n\n\n\"%s\" output:\n\n%s\n\n", logsCmd, out)
+		fmt.Fprintf(ts.cfg.LogWriter, "\n\n\n\"%s\" output:\n\n%s\n\n", logsCmd, out)
 
 		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 		dresp, err := ts.cfg.K8SClient.KubernetesClientSet().
@@ -493,7 +495,7 @@ func (ts *tester) createServiceRedisLeader() error {
 			ts.cfg.Logger.Warn("'kubectl describe svc' failed", zap.String("command", argsCmd), zap.Error(err))
 		} else {
 			out := string(cmdOut)
-			fmt.Printf("\n\n\"%s\" output:\n%s\n\n", argsCmd, out)
+			fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"%s\" output:\n%s\n\n", argsCmd, out)
 		}
 
 		ts.cfg.Logger.Info("querying redis leader Service")
@@ -657,7 +659,7 @@ func (ts *tester) waitDeploymentRedisFollower() error {
 		return fmt.Errorf("'kubectl describe deployment' failed %v", err)
 	}
 	out := string(output)
-	fmt.Printf("\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
+	fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
 
 	logsArgs := []string{
 		ts.cfg.EKSConfig.KubectlPath,
@@ -686,7 +688,7 @@ func (ts *tester) waitDeploymentRedisFollower() error {
 		if err != nil {
 			ts.cfg.Logger.Warn("'kubectl logs' failed", zap.Error(err))
 		}
-		fmt.Printf("\n\n\n\"%s\" output:\n\n%s\n\n", logsCmd, out)
+		fmt.Fprintf(ts.cfg.LogWriter, "\n\n\n\"%s\" output:\n\n%s\n\n", logsCmd, out)
 
 		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 		dresp, err := ts.cfg.K8SClient.KubernetesClientSet().
@@ -806,7 +808,7 @@ func (ts *tester) createServiceRedisFollower() error {
 			ts.cfg.Logger.Warn("'kubectl describe svc' failed", zap.String("command", argsCmd), zap.Error(err))
 		} else {
 			out := string(cmdOut)
-			fmt.Printf("\n\n\"%s\" output:\n%s\n\n", argsCmd, out)
+			fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"%s\" output:\n%s\n\n", argsCmd, out)
 		}
 
 		ts.cfg.Logger.Info("querying redis follower Service")
@@ -967,7 +969,7 @@ func (ts *tester) waitDeploymentGuestbook() error {
 		return fmt.Errorf("'kubectl describe deployment' failed %v", err)
 	}
 	out := string(output)
-	fmt.Printf("\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
+	fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
 
 	logsArgs := []string{
 		ts.cfg.EKSConfig.KubectlPath,
@@ -996,7 +998,7 @@ func (ts *tester) waitDeploymentGuestbook() error {
 		if err != nil {
 			ts.cfg.Logger.Warn("'kubectl logs' failed", zap.Error(err))
 		}
-		fmt.Printf("\n\n\n\"%s\" output:\n\n%s\n\n", logsCmd, out)
+		fmt.Fprintf(ts.cfg.LogWriter, "\n\n\n\"%s\" output:\n\n%s\n\n", logsCmd, out)
 
 		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 		dresp, err := ts.cfg.K8SClient.KubernetesClientSet().
@@ -1122,7 +1124,7 @@ func (ts *tester) createServiceGuestbook() error {
 			ts.cfg.Logger.Warn("'kubectl describe svc' failed", zap.String("command", argsCmd), zap.Error(err))
 		} else {
 			out := string(cmdOut)
-			fmt.Printf("\n\n\"%s\" output:\n%s\n\n", argsCmd, out)
+			fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"%s\" output:\n%s\n\n", argsCmd, out)
 		}
 
 		ts.cfg.Logger.Info("querying NLB guestbook Service for HTTP endpoint")
@@ -1174,9 +1176,9 @@ func (ts *tester) createServiceGuestbook() error {
 	ts.cfg.EKSConfig.AddOnNLBGuestbook.URL = "http://" + hostName
 	ts.cfg.EKSConfig.Sync()
 
-	fmt.Printf("\nNLB guestbook ARN: %s\n", ts.cfg.EKSConfig.AddOnNLBGuestbook.NLBARN)
-	fmt.Printf("NLB guestbook Name: %s\n", ts.cfg.EKSConfig.AddOnNLBGuestbook.NLBName)
-	fmt.Printf("NLB guestbook URL: %s\n\n", ts.cfg.EKSConfig.AddOnNLBGuestbook.URL)
+	fmt.Fprintf(ts.cfg.LogWriter, "\nNLB guestbook ARN: %s\n", ts.cfg.EKSConfig.AddOnNLBGuestbook.NLBARN)
+	fmt.Fprintf(ts.cfg.LogWriter, "NLB guestbook Name: %s\n", ts.cfg.EKSConfig.AddOnNLBGuestbook.NLBName)
+	fmt.Fprintf(ts.cfg.LogWriter, "NLB guestbook URL: %s\n\n", ts.cfg.EKSConfig.AddOnNLBGuestbook.URL)
 
 	ts.cfg.Logger.Info("waiting before testing guestbook Service")
 	time.Sleep(20 * time.Second)
@@ -1197,7 +1199,7 @@ func (ts *tester) createServiceGuestbook() error {
 			continue
 		}
 		httpOutput := string(out)
-		fmt.Printf("\nNLB guestbook Service output:\n%s\n", httpOutput)
+		fmt.Fprintf(ts.cfg.LogWriter, "\nNLB guestbook Service output:\n%s\n", httpOutput)
 
 		if strings.Contains(httpOutput, `<h1>Guestbook</h1>`) {
 			ts.cfg.Logger.Info("read guestbook Service; exiting", zap.String("host-name", hostName))
@@ -1208,9 +1210,9 @@ func (ts *tester) createServiceGuestbook() error {
 		ts.cfg.Logger.Warn("unexpected guestbook Service output; retrying")
 	}
 
-	fmt.Printf("\nNLB guestbook ARN: %s\n", ts.cfg.EKSConfig.AddOnNLBGuestbook.NLBARN)
-	fmt.Printf("NLB guestbook Name: %s\n", ts.cfg.EKSConfig.AddOnNLBGuestbook.NLBName)
-	fmt.Printf("NLB guestbook URL: %s\n\n", ts.cfg.EKSConfig.AddOnNLBGuestbook.URL)
+	fmt.Fprintf(ts.cfg.LogWriter, "\nNLB guestbook ARN: %s\n", ts.cfg.EKSConfig.AddOnNLBGuestbook.NLBARN)
+	fmt.Fprintf(ts.cfg.LogWriter, "NLB guestbook Name: %s\n", ts.cfg.EKSConfig.AddOnNLBGuestbook.NLBName)
+	fmt.Fprintf(ts.cfg.LogWriter, "NLB guestbook URL: %s\n\n", ts.cfg.EKSConfig.AddOnNLBGuestbook.URL)
 
 	if !htmlChecked {
 		return fmt.Errorf("NLB hello-world %q did not return expected HTML output", ts.cfg.EKSConfig.AddOnNLBGuestbook.URL)

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path"
@@ -43,6 +44,7 @@ import (
 // ref. https://github.com/kubernetes/perf-tests
 type Config struct {
 	Logger    *zap.Logger
+	LogWriter io.Writer
 	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
@@ -132,11 +134,11 @@ func (ts *tester) Create() (err error) {
 	if err != nil {
 		return err
 	}
-	println()
+	fmt.Fprintf(ts.cfg.LogWriter, "\n")
 	for _, item := range pods {
-		fmt.Printf("Job Pod %q: %q\n", item.Name, item.Status.Phase)
+		fmt.Fprintf(ts.cfg.LogWriter, "Job Pod %q: %q\n", item.Name, item.Status.Phase)
 	}
-	println()
+	fmt.Fprintf(ts.cfg.LogWriter, "\n")
 
 	if err = ts.checkResults(); err == nil {
 		return err
@@ -822,7 +824,7 @@ func (ts *tester) checkResults() (err error) {
 	); err != nil {
 		return err
 	}
-	fmt.Printf("\n\nRequestsSummaryWrites:\n%s\n", writesSummary.Table())
+	fmt.Fprintf(ts.cfg.LogWriter, "\n\nRequestsSummaryWrites:\n%s\n", writesSummary.Table())
 
 	s3Objects := make([]*s3.Object, 0)
 	if ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsSummaryWritesCompareS3Dir != "" {
@@ -875,7 +877,7 @@ func (ts *tester) checkResults() (err error) {
 		); err != nil {
 			return err
 		}
-		fmt.Printf("\n\nRequestsSummaryWritesCompare:\n%s\n", ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsSummaryWritesCompare.Table())
+		fmt.Fprintf(ts.cfg.LogWriter, "\n\nRequestsSummaryWritesCompare:\n%s\n", ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsSummaryWritesCompare.Table())
 
 		var prevDurations metrics.Durations
 		prevDurations, err = metrics.DownloadDurationsFromS3(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3BucketName, durRawS3Key)

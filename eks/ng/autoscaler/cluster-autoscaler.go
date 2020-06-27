@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"reflect"
 	"strings"
 	"text/template"
@@ -215,6 +216,7 @@ type caSpecData struct {
 // Config defines version upgrade configuration.
 type Config struct {
 	Logger    *zap.Logger
+	LogWriter io.Writer
 	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
@@ -298,7 +300,7 @@ func (ts *tester) installCA() error {
 		output, err := exec.New().CommandContext(ctx, applyArgs[0], applyArgs[1:]...).CombinedOutput()
 		cancel()
 		out := string(output)
-		fmt.Printf("\n\n'%s' output:\n\n%s\n\n", applyCmd, out)
+		fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", applyCmd, out)
 		if err == nil {
 			break
 		}
@@ -335,7 +337,7 @@ func (ts *tester) waitDeploymentCA() error {
 		return fmt.Errorf("'kubectl describe deployment' failed %v", err)
 	}
 	out := string(output)
-	fmt.Printf("\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
+	fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
 
 	ready := false
 	waitDur := 3 * time.Minute

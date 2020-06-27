@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -32,6 +33,7 @@ import (
 // Config defines Conformance configuration.
 type Config struct {
 	Logger    *zap.Logger
+	LogWriter io.Writer
 	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
@@ -164,7 +166,7 @@ func (ts *tester) downloadInstallSonobuoy() (err error) {
 	if err != nil {
 		return fmt.Errorf("'sonobuoy help' failed (output %q, error %v)", out, err)
 	}
-	fmt.Printf("\n'sonobuoy help' output:\n\n%s\n\n", out)
+	fmt.Fprintf(ts.cfg.LogWriter, "\n'sonobuoy help' output:\n\n%s\n\n", out)
 
 	ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 	output, err = exec.New().CommandContext(ctx, ts.cfg.EKSConfig.AddOnConformance.SonobuoyPath, "run", "--help").CombinedOutput()
@@ -173,7 +175,7 @@ func (ts *tester) downloadInstallSonobuoy() (err error) {
 	if err != nil {
 		return fmt.Errorf("'sonobuoy run --help' failed (output %q, error %v)", out, err)
 	}
-	fmt.Printf("\n'sonobuoy run --help' output:\n\n%s\n\n", out)
+	fmt.Fprintf(ts.cfg.LogWriter, "\n'sonobuoy run --help' output:\n\n%s\n\n", out)
 
 	ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 	output, err = exec.New().CommandContext(ctx, ts.cfg.EKSConfig.AddOnConformance.SonobuoyPath, "version").CombinedOutput()
@@ -182,7 +184,7 @@ func (ts *tester) downloadInstallSonobuoy() (err error) {
 	if err != nil {
 		return fmt.Errorf("'sonobuoy version' failed (output %q, error %v)", out, err)
 	}
-	fmt.Printf("\n'sonobuoy version' output:\n\n%s\n\n", out)
+	fmt.Fprintf(ts.cfg.LogWriter, "\n'sonobuoy version' output:\n\n%s\n\n", out)
 
 	ts.cfg.Logger.Info(
 		"sonobuoy version",
@@ -219,7 +221,7 @@ func (ts *tester) deleteSonobuoy() (err error) {
 		// TODO: check error
 		ts.cfg.Logger.Warn("failed to delete sonobuoy", zap.String("command", cmd), zap.Error(err))
 	}
-	fmt.Printf("\n'%s' output:\n\n%s\n\n", cmd, out)
+	fmt.Fprintf(ts.cfg.LogWriter, "\n'%s' output:\n\n%s\n\n", cmd, out)
 
 	ts.cfg.Logger.Info("deleted sonobuoy", zap.String("command", cmd))
 	return nil
@@ -258,7 +260,7 @@ func (ts *tester) runSonobuoy() (err error) {
 		// TODO: check error
 		ts.cfg.Logger.Warn("failed to run sonobuoy", zap.String("command", cmd), zap.Error(err))
 	}
-	fmt.Printf("\n'%s' output:\n\n%s\n\n", cmd, out)
+	fmt.Fprintf(ts.cfg.LogWriter, "\n'%s' output:\n\n%s\n\n", cmd, out)
 
 	ts.cfg.Logger.Info("ran sonobuoy", zap.String("mode", ts.cfg.EKSConfig.AddOnConformance.SonobuoyRunMode), zap.String("command", cmd))
 	return nil
@@ -388,7 +390,7 @@ func (ts *tester) checkSonobuoy() (err error) {
 		if linesN > 30 { // tail 30 lines
 			out = strings.Join(lines[linesN-30:], "\n")
 		}
-		fmt.Printf("\n'%s' output (total lines %d, last 30 lines):\n\n%s\n\n", cmdLogs, linesN, out)
+		fmt.Fprintf(ts.cfg.LogWriter, "\n'%s' output (total lines %d, last 30 lines):\n\n%s\n\n", cmdLogs, linesN, out)
 
 		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 		output, err = exec.New().CommandContext(ctx, argsStatus[0], argsStatus[1:]...).CombinedOutput()
@@ -397,7 +399,7 @@ func (ts *tester) checkSonobuoy() (err error) {
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to run sonobuoy status", zap.String("command", cmdStatus), zap.Error(err))
 		}
-		fmt.Printf("\n'%s' output:\n\n%s\n\n", cmdStatus, out)
+		fmt.Fprintf(ts.cfg.LogWriter, "\n'%s' output:\n\n%s\n\n", cmdStatus, out)
 
 		// ref. https://github.com/vmware-tanzu/sonobuoy/blob/master/cmd/sonobuoy/app/status.go
 		if strings.Contains(out, "Sonobuoy has completed. ") ||
@@ -448,7 +450,7 @@ func (ts *tester) checkResults() (err error) {
 			time.Sleep(10 * time.Second)
 			continue
 		}
-		fmt.Printf("\n'%s' output:\n\n%s\n\n", cmdRetrieve, out)
+		fmt.Fprintf(ts.cfg.LogWriter, "\n'%s' output:\n\n%s\n\n", cmdRetrieve, out)
 
 		if err = fileutil.Copy(out, ts.cfg.EKSConfig.AddOnConformance.SonobuoyResultTarGzPath); err != nil {
 			ts.cfg.Logger.Warn("failed to copy sonobuoy retrieve results", zap.Error(err))
@@ -461,6 +463,7 @@ func (ts *tester) checkResults() (err error) {
 
 	err = readResults(
 		ts.cfg.Logger,
+		ts.cfg.LogWriter,
 		ts.cfg.EKSConfig.AddOnConformance.SonobuoyPath,
 		ts.cfg.EKSConfig.AddOnConformance.SonobuoyResultTarGzPath,
 	)
@@ -522,7 +525,7 @@ func (ts *tester) checkResults() (err error) {
 	return nil
 }
 
-func readResults(lg *zap.Logger, sonobuoyPath string, tarGzPath string) error {
+func readResults(lg *zap.Logger, logWriter io.Writer, sonobuoyPath string, tarGzPath string) error {
 	if !fileutil.Exist(tarGzPath) {
 		return fmt.Errorf("AddOnConformance.SonobuoyResultTarGzPath does not exist [%q]", tarGzPath)
 	}
@@ -538,7 +541,7 @@ func readResults(lg *zap.Logger, sonobuoyPath string, tarGzPath string) error {
 		lg.Warn("failed to run sonobuoy results", zap.String("command", cmd), zap.Error(err))
 		return err
 	}
-	fmt.Printf("\n'%s' output:\n\n%s\n\n", cmd, out)
+	fmt.Fprintf(logWriter, "\n'%s' output:\n\n%s\n\n", cmd, out)
 
 	if !strings.Contains(out, "Plugin: e2e\nStatus: passed") {
 		return errors.New("sonobuoy tests failed (expected 'Status: passed')")

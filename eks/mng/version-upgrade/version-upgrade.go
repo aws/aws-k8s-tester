@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"reflect"
 	"time"
 
@@ -30,6 +31,7 @@ type Upgrader interface {
 // Config defines version upgrade configuration.
 type Config struct {
 	Logger    *zap.Logger
+	LogWriter io.Writer
 	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
@@ -141,7 +143,7 @@ func (ts *tester) Upgrade(mngName string) (err error) {
 		initialWait,
 		30*time.Second,
 		wait.WithQueryFunc(func() {
-			println()
+			fmt.Fprintf(ts.cfg.LogWriter, "\n")
 			ts.cfg.Logger.Info("listing nodes while polling mng update status", zap.String("mng-name", mngName))
 			nodes, err := ts.cfg.K8SClient.ListNodes(150, 5*time.Second)
 			if err != nil {

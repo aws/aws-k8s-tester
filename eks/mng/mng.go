@@ -4,6 +4,7 @@ package mng
 import (
 	"errors"
 	"fmt"
+	"io"
 	"reflect"
 	"strings"
 	"sync"
@@ -27,6 +28,7 @@ import (
 // Config defines Managed Node Group configuration.
 type Config struct {
 	Logger    *zap.Logger
+	LogWriter io.Writer
 	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
@@ -73,6 +75,7 @@ func New(cfg Config) Tester {
 		cfg: cfg,
 		nodeWaiter: wait.New(wait.Config{
 			Logger:    cfg.Logger,
+			LogWriter: cfg.LogWriter,
 			Stopc:     cfg.Stopc,
 			EKSConfig: cfg.EKSConfig,
 			K8SClient: cfg.K8SClient,
@@ -82,12 +85,14 @@ func New(cfg Config) Tester {
 		}),
 		scaler: scale.New(scale.Config{
 			Logger:    cfg.Logger,
+			LogWriter: cfg.LogWriter,
 			Stopc:     cfg.Stopc,
 			EKSConfig: cfg.EKSConfig,
 			EKSAPI:    cfg.EKSAPI,
 		}),
 		versionUpgrader: version_upgrade.New(version_upgrade.Config{
 			Logger:    cfg.Logger,
+			LogWriter: cfg.LogWriter,
 			Stopc:     cfg.Stopc,
 			EKSConfig: cfg.EKSConfig,
 			K8SClient: cfg.K8SClient,

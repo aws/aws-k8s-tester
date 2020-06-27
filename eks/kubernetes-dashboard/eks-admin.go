@@ -64,7 +64,7 @@ func (ts *tester) installEKSAdmin() error {
 		).CombinedOutput()
 		cancel()
 		out := string(output)
-		fmt.Printf("\n\"kubectl apply\" eks-admin output:\n%s\n", out)
+		fmt.Fprintf(ts.cfg.LogWriter, "\n\"kubectl apply\" eks-admin output:\n%s\n", out)
 		if err == nil {
 			break
 		}
@@ -118,7 +118,7 @@ func (ts *tester) fetchAuthenticationToken() error {
 	ts.cfg.Logger.Info("fetched authentication token")
 
 	ts.cfg.EKSConfig.AddOnKubernetesDashboard.AuthenticationToken = string(token)
-	fmt.Printf("\n\n\nKubernetes Dashboard Token:\n%s\n\n\n", ts.cfg.EKSConfig.AddOnKubernetesDashboard.AuthenticationToken)
+	fmt.Fprintf(ts.cfg.LogWriter, "\n\n\nKubernetes Dashboard Token:\n%s\n\n\n", ts.cfg.EKSConfig.AddOnKubernetesDashboard.AuthenticationToken)
 
 	return ts.cfg.EKSConfig.Sync()
 }

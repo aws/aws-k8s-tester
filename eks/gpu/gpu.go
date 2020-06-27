@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"reflect"
 	"strings"
 	"time"
@@ -24,6 +25,7 @@ import (
 // Config defines GPU configuration.
 type Config struct {
 	Logger    *zap.Logger
+	LogWriter io.Writer
 	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
@@ -176,7 +178,7 @@ func (ts *tester) InstallNvidiaDriver() (err error) {
 
 		applied = true
 		ts.cfg.Logger.Info("created nvidia GPU driver")
-		fmt.Printf("\n\n'%s' output:\n\n%s\n\n", applyCmd, out)
+		fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", applyCmd, out)
 		break
 	}
 	if !applied {
@@ -472,7 +474,7 @@ func (ts *tester) CreateNvidiaSMI() error {
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to kubectl describe daemonset.apps/nvidia-device-plugin-daemonset", zap.Error(err))
 		}
-		fmt.Printf("\n\n'%s' output:\n\n%s\n\n", descDsCmd, output)
+		fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", descDsCmd, output)
 
 		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 		out, err = exec.New().CommandContext(ctx, descPoArgs[0], descPoArgs[1:]...).CombinedOutput()
@@ -481,7 +483,7 @@ func (ts *tester) CreateNvidiaSMI() error {
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to kubectl describe pod/nvidia-smi", zap.Error(err))
 		}
-		fmt.Printf("\n\n'%s' output:\n\n%s\n\n", descPoCmd, output)
+		fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", descPoCmd, output)
 
 		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 		out, err = exec.New().CommandContext(ctx, logsArgs[0], logsArgs[1:]...).CombinedOutput()
@@ -490,7 +492,7 @@ func (ts *tester) CreateNvidiaSMI() error {
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to kubectl logs", zap.Error(err))
 		}
-		fmt.Printf("\n\n'%s' output:\n\n%s\n\n", logsCmd, output)
+		fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", logsCmd, output)
 
 		if strings.Contains(output, "NVIDIA-SMI") && strings.Contains(output, "GPU-Util") {
 			installed = true

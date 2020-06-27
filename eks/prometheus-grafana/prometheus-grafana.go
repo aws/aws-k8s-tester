@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"reflect"
 	"strings"
@@ -24,9 +25,9 @@ import (
 
 // Config defines Wordpress configuration.
 type Config struct {
-	Logger *zap.Logger
-	Stopc  chan struct{}
-
+	Logger    *zap.Logger
+	LogWriter io.Writer
+	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
 }
@@ -209,6 +210,7 @@ func (ts *tester) createHelmPrometheus() error {
 
 	return helm.Install(helm.InstallConfig{
 		Logger:         ts.cfg.Logger,
+		LogWriter:      ts.cfg.LogWriter,
 		Stopc:          ts.cfg.Stopc,
 		Timeout:        15 * time.Minute,
 		KubeConfigPath: ts.cfg.EKSConfig.KubeConfigPath,
@@ -218,7 +220,7 @@ func (ts *tester) createHelmPrometheus() error {
 		ReleaseName:    chartNamePrometheus,
 		Values:         values,
 		QueryFunc: func() {
-			println()
+			fmt.Fprintf(ts.cfg.LogWriter, "\n")
 
 			// to catch errors
 			// e.g. "Error syncing load balancer: failed to ensure load balancer: TooManyLoadBalancers: Exceeded quota of account 123123"
@@ -229,7 +231,7 @@ func (ts *tester) createHelmPrometheus() error {
 			if err != nil {
 				ts.cfg.Logger.Warn("'kubectl describe service/grafana' failed", zap.Error(err))
 			} else {
-				fmt.Printf("\n\n'%s' output:\n\n%s\n\n", descCmdSvc, out)
+				fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", descCmdSvc, out)
 			}
 		},
 		QueryInterval: 30 * time.Second,
@@ -239,6 +241,7 @@ func (ts *tester) createHelmPrometheus() error {
 func (ts *tester) deleteHelmPrometheus() error {
 	return helm.Uninstall(helm.InstallConfig{
 		Logger:         ts.cfg.Logger,
+		LogWriter:      ts.cfg.LogWriter,
 		Timeout:        15 * time.Minute,
 		KubeConfigPath: ts.cfg.EKSConfig.KubeConfigPath,
 		Namespace:      chartNamespacePrometheus,
@@ -315,6 +318,7 @@ func (ts *tester) createHelmGrafana() error {
 	}
 	return helm.Install(helm.InstallConfig{
 		Logger:         ts.cfg.Logger,
+		LogWriter:      ts.cfg.LogWriter,
 		Stopc:          ts.cfg.Stopc,
 		Timeout:        15 * time.Minute,
 		KubeConfigPath: ts.cfg.EKSConfig.KubeConfigPath,
@@ -331,6 +335,7 @@ func (ts *tester) createHelmGrafana() error {
 func (ts *tester) deleteHelmGrafana() error {
 	return helm.Uninstall(helm.InstallConfig{
 		Logger:         ts.cfg.Logger,
+		LogWriter:      ts.cfg.LogWriter,
 		Timeout:        15 * time.Minute,
 		KubeConfigPath: ts.cfg.EKSConfig.KubeConfigPath,
 		Namespace:      chartNamespaceGrafana,
@@ -376,7 +381,7 @@ func (ts *tester) waitServiceGrafana() error {
 			ts.cfg.Logger.Warn("'kubectl describe svc' failed", zap.String("command", argsCmd), zap.Error(err))
 		} else {
 			out := string(cmdOut)
-			fmt.Printf("\n\n\"%s\" output:\n%s\n\n", argsCmd, out)
+			fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"%s\" output:\n%s\n\n", argsCmd, out)
 		}
 
 		ts.cfg.Logger.Info("querying Grafana service for HTTP endpoint")
@@ -428,11 +433,11 @@ func (ts *tester) waitServiceGrafana() error {
 		ss,
 	)
 
-	fmt.Printf("\nNLB Grafana ARN: %s\n", ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaNLBARN)
-	fmt.Printf("NLB Grafana Name: %s\n", ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaNLBName)
-	fmt.Printf("NLB Grafana URL: %s\n", ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaURL)
-	fmt.Printf("Grafana Admin User Name: %s\n", ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaAdminUserName)
-	fmt.Printf("Grafana Admin Password: %d characters\n\n", len(ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaAdminPassword))
+	fmt.Fprintf(ts.cfg.LogWriter, "\nNLB Grafana ARN: %s\n", ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaNLBARN)
+	fmt.Fprintf(ts.cfg.LogWriter, "NLB Grafana Name: %s\n", ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaNLBName)
+	fmt.Fprintf(ts.cfg.LogWriter, "NLB Grafana URL: %s\n", ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaURL)
+	fmt.Fprintf(ts.cfg.LogWriter, "Grafana Admin User Name: %s\n", ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaAdminUserName)
+	fmt.Fprintf(ts.cfg.LogWriter, "Grafana Admin Password: %d characters\n\n", len(ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaAdminPassword))
 
 	ts.cfg.Logger.Info("waiting before testing Grafana Service")
 	time.Sleep(20 * time.Second)
@@ -452,7 +457,7 @@ func (ts *tester) waitServiceGrafana() error {
 			continue
 		}
 		httpOutput := string(out)
-		fmt.Printf("\nNLB Grafana Service output:\n%s\n", httpOutput)
+		fmt.Fprintf(ts.cfg.LogWriter, "\nNLB Grafana Service output:\n%s\n", httpOutput)
 
 		if strings.Contains(httpOutput, `Loading Grafana`) {
 			ts.cfg.Logger.Info(
@@ -465,11 +470,11 @@ func (ts *tester) waitServiceGrafana() error {
 		ts.cfg.Logger.Warn("unexpected Grafana Service output; retrying")
 	}
 
-	fmt.Printf("\nNLB Grafana ARN: %s\n", ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaNLBARN)
-	fmt.Printf("NLB Grafana Name: %s\n", ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaNLBName)
-	fmt.Printf("NLB Grafana URL: %s\n", ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaURL)
-	fmt.Printf("Grafana Admin User Name: %s\n", ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaAdminUserName)
-	fmt.Printf("Grafana Admin Password: %d characters\n\n", len(ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaAdminPassword))
+	fmt.Fprintf(ts.cfg.LogWriter, "\nNLB Grafana ARN: %s\n", ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaNLBARN)
+	fmt.Fprintf(ts.cfg.LogWriter, "NLB Grafana Name: %s\n", ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaNLBName)
+	fmt.Fprintf(ts.cfg.LogWriter, "NLB Grafana URL: %s\n", ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaURL)
+	fmt.Fprintf(ts.cfg.LogWriter, "Grafana Admin User Name: %s\n", ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaAdminUserName)
+	fmt.Fprintf(ts.cfg.LogWriter, "Grafana Admin Password: %d characters\n\n", len(ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaAdminPassword))
 
 	return ts.cfg.EKSConfig.Sync()
 }

@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -23,9 +24,9 @@ import (
 
 // Config defines Dashboard configuration.
 type Config struct {
-	Logger *zap.Logger
-	Stopc  chan struct{}
-
+	Logger    *zap.Logger
+	LogWriter io.Writer
+	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
 }
@@ -153,7 +154,7 @@ func (ts *tester) startProxy(enable bool) error {
 				continue
 			}
 			httpOutput := string(out)
-			fmt.Printf("\nKubernetes Dashboard proxy output:\n%s\n", httpOutput)
+			fmt.Fprintf(ts.cfg.LogWriter, "\nKubernetes Dashboard proxy output:\n%s\n", httpOutput)
 
 			if strings.Contains(httpOutput, `The Kubernetes Authors`) {
 				ts.cfg.Logger.Info("read Kubernetes Dashboard proxy; exiting")
@@ -164,9 +165,9 @@ func (ts *tester) startProxy(enable bool) error {
 		}
 	}
 
-	fmt.Printf("\nkubectl proxy command:\n%s\n", proxyCmd)
-	fmt.Printf("\nKubernetes Dashboard Token:\n%s\n", ts.cfg.EKSConfig.AddOnKubernetesDashboard.AuthenticationToken)
-	fmt.Printf("\nKubernetes Dashboard URL:\n%s\n\n", ts.cfg.EKSConfig.AddOnKubernetesDashboard.URL)
+	fmt.Fprintf(ts.cfg.LogWriter, "\nkubectl proxy command:\n%s\n", proxyCmd)
+	fmt.Fprintf(ts.cfg.LogWriter, "\nKubernetes Dashboard Token:\n%s\n", ts.cfg.EKSConfig.AddOnKubernetesDashboard.AuthenticationToken)
+	fmt.Fprintf(ts.cfg.LogWriter, "\nKubernetes Dashboard URL:\n%s\n\n", ts.cfg.EKSConfig.AddOnKubernetesDashboard.URL)
 
 	return ts.cfg.EKSConfig.Sync()
 }

@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"reflect"
 	"strings"
@@ -24,9 +25,9 @@ import (
 
 // Config defines Wordpress configuration.
 type Config struct {
-	Logger *zap.Logger
-	Stopc  chan struct{}
-
+	Logger    *zap.Logger
+	LogWriter io.Writer
+	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
 }
@@ -192,6 +193,7 @@ func (ts *tester) createHelmWordpress() error {
 
 	return helm.Install(helm.InstallConfig{
 		Logger:         ts.cfg.Logger,
+		LogWriter:      ts.cfg.LogWriter,
 		Stopc:          ts.cfg.Stopc,
 		Timeout:        15 * time.Minute,
 		KubeConfigPath: ts.cfg.EKSConfig.KubeConfigPath,
@@ -208,6 +210,7 @@ func (ts *tester) createHelmWordpress() error {
 func (ts *tester) deleteHelmWordpress() error {
 	return helm.Uninstall(helm.InstallConfig{
 		Logger:         ts.cfg.Logger,
+		LogWriter:      ts.cfg.LogWriter,
 		Timeout:        15 * time.Minute,
 		KubeConfigPath: ts.cfg.EKSConfig.KubeConfigPath,
 		Namespace:      ts.cfg.EKSConfig.AddOnWordpress.Namespace,
@@ -253,7 +256,7 @@ func (ts *tester) waitService() error {
 			ts.cfg.Logger.Warn("'kubectl describe svc' failed", zap.String("command", argsCmd), zap.Error(err))
 		} else {
 			out := string(cmdOut)
-			fmt.Printf("\n\n\"%s\" output:\n%s\n\n", argsCmd, out)
+			fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"%s\" output:\n%s\n\n", argsCmd, out)
 		}
 
 		ts.cfg.Logger.Info("querying WordPress service for HTTP endpoint")
@@ -305,11 +308,11 @@ func (ts *tester) waitService() error {
 		ss,
 	)
 
-	fmt.Printf("\nNLB WordPress ARN: %s\n", ts.cfg.EKSConfig.AddOnWordpress.NLBARN)
-	fmt.Printf("NLB WordPress Name: %s\n", ts.cfg.EKSConfig.AddOnWordpress.NLBName)
-	fmt.Printf("NLB WordPress URL: %s\n", ts.cfg.EKSConfig.AddOnWordpress.URL)
-	fmt.Printf("WordPress UserName: %s\n", ts.cfg.EKSConfig.AddOnWordpress.UserName)
-	fmt.Printf("WordPress Password: %d characters\n\n", len(ts.cfg.EKSConfig.AddOnWordpress.Password))
+	fmt.Fprintf(ts.cfg.LogWriter, "\nNLB WordPress ARN: %s\n", ts.cfg.EKSConfig.AddOnWordpress.NLBARN)
+	fmt.Fprintf(ts.cfg.LogWriter, "NLB WordPress Name: %s\n", ts.cfg.EKSConfig.AddOnWordpress.NLBName)
+	fmt.Fprintf(ts.cfg.LogWriter, "NLB WordPress URL: %s\n", ts.cfg.EKSConfig.AddOnWordpress.URL)
+	fmt.Fprintf(ts.cfg.LogWriter, "WordPress UserName: %s\n", ts.cfg.EKSConfig.AddOnWordpress.UserName)
+	fmt.Fprintf(ts.cfg.LogWriter, "WordPress Password: %d characters\n\n", len(ts.cfg.EKSConfig.AddOnWordpress.Password))
 
 	ts.cfg.Logger.Info("waiting before testing WordPress Service")
 	time.Sleep(20 * time.Second)
@@ -329,7 +332,7 @@ func (ts *tester) waitService() error {
 			continue
 		}
 		httpOutput := string(out)
-		fmt.Printf("\nNLB WordPress Service output:\n%s\n", httpOutput)
+		fmt.Fprintf(ts.cfg.LogWriter, "\nNLB WordPress Service output:\n%s\n", httpOutput)
 
 		if strings.Contains(httpOutput, `<p>Welcome to WordPress. This is your first post`) {
 			ts.cfg.Logger.Info(
@@ -342,11 +345,11 @@ func (ts *tester) waitService() error {
 		ts.cfg.Logger.Warn("unexpected WordPress Service output; retrying")
 	}
 
-	fmt.Printf("\nNLB WordPress ARN: %s\n", ts.cfg.EKSConfig.AddOnWordpress.NLBARN)
-	fmt.Printf("NLB WordPress Name: %s\n", ts.cfg.EKSConfig.AddOnWordpress.NLBName)
-	fmt.Printf("NLB WordPress URL: %s\n", ts.cfg.EKSConfig.AddOnWordpress.URL)
-	fmt.Printf("WordPress UserName: %s\n", ts.cfg.EKSConfig.AddOnWordpress.UserName)
-	fmt.Printf("WordPress Password: %d characters\n\n", len(ts.cfg.EKSConfig.AddOnWordpress.Password))
+	fmt.Fprintf(ts.cfg.LogWriter, "\nNLB WordPress ARN: %s\n", ts.cfg.EKSConfig.AddOnWordpress.NLBARN)
+	fmt.Fprintf(ts.cfg.LogWriter, "NLB WordPress Name: %s\n", ts.cfg.EKSConfig.AddOnWordpress.NLBName)
+	fmt.Fprintf(ts.cfg.LogWriter, "NLB WordPress URL: %s\n", ts.cfg.EKSConfig.AddOnWordpress.URL)
+	fmt.Fprintf(ts.cfg.LogWriter, "WordPress UserName: %s\n", ts.cfg.EKSConfig.AddOnWordpress.UserName)
+	fmt.Fprintf(ts.cfg.LogWriter, "WordPress Password: %d characters\n\n", len(ts.cfg.EKSConfig.AddOnWordpress.Password))
 
 	return ts.cfg.EKSConfig.Sync()
 }

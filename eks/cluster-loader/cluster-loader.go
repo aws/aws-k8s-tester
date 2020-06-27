@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -29,8 +30,10 @@ import (
 
 // Config configures cluster loader.
 type Config struct {
-	Logger *zap.Logger
-	Stopc  chan struct{}
+	Logger    *zap.Logger
+	LogWriter io.Writer
+
+	Stopc chan struct{}
 
 	S3API        s3iface.S3API
 	S3BucketName string
@@ -225,7 +228,7 @@ func (ts *loader) Start() (err error) {
 			if linesN > 15 {
 				output = strings.Join(lines[linesN-15:], "\n")
 			}
-			fmt.Printf("\n%q output:\n%s\n\n", ts.cfg.LogPath, output)
+			fmt.Fprintf(ts.cfg.LogWriter, "\n%q output:\n%s\n\n", ts.cfg.LogPath, output)
 		}
 	}()
 
@@ -443,74 +446,74 @@ func (ts *loader) Start() (err error) {
 	return runErr
 }
 
-func (ld *loader) Stop() {
-	ld.cfg.Logger.Info("stopping and waiting for cluster loader")
-	ld.donecCloseOnce.Do(func() {
-		close(ld.donec)
+func (ts *loader) Stop() {
+	ts.cfg.Logger.Info("stopping and waiting for cluster loader")
+	ts.donecCloseOnce.Do(func() {
+		close(ts.donec)
 	})
-	ld.cfg.Logger.Info("stopped and waited for cluster loader")
+	ts.cfg.Logger.Info("stopped and waited for cluster loader")
 }
 
-func (ld *loader) downloadClusterLoader() (err error) {
-	ld.cfg.Logger.Info("mkdir", zap.String("clusterloader-path-dir", filepath.Dir(ld.cfg.ClusterLoaderPath)))
-	if err = os.MkdirAll(filepath.Dir(ld.cfg.ClusterLoaderPath), 0700); err != nil {
-		return fmt.Errorf("could not create %q (%v)", filepath.Dir(ld.cfg.ClusterLoaderPath), err)
+func (ts *loader) downloadClusterLoader() (err error) {
+	ts.cfg.Logger.Info("mkdir", zap.String("clusterloader-path-dir", filepath.Dir(ts.cfg.ClusterLoaderPath)))
+	if err = os.MkdirAll(filepath.Dir(ts.cfg.ClusterLoaderPath), 0700); err != nil {
+		return fmt.Errorf("could not create %q (%v)", filepath.Dir(ts.cfg.ClusterLoaderPath), err)
 	}
-	if !fileutil.Exist(ld.cfg.ClusterLoaderPath) {
-		if ld.cfg.ClusterLoaderDownloadURL == "" {
-			return fmt.Errorf("%q does not exist but no download URL", ld.cfg.ClusterLoaderPath)
+	if !fileutil.Exist(ts.cfg.ClusterLoaderPath) {
+		if ts.cfg.ClusterLoaderDownloadURL == "" {
+			return fmt.Errorf("%q does not exist but no download URL", ts.cfg.ClusterLoaderPath)
 		}
-		ld.cfg.ClusterLoaderPath, _ = filepath.Abs(ld.cfg.ClusterLoaderPath)
-		ld.cfg.Logger.Info("downloading clusterloader", zap.String("clusterloader-path", ld.cfg.ClusterLoaderPath))
-		if err = httputil.Download(ld.cfg.Logger, os.Stderr, ld.cfg.ClusterLoaderDownloadURL, ld.cfg.ClusterLoaderPath); err != nil {
+		ts.cfg.ClusterLoaderPath, _ = filepath.Abs(ts.cfg.ClusterLoaderPath)
+		ts.cfg.Logger.Info("downloading clusterloader", zap.String("clusterloader-path", ts.cfg.ClusterLoaderPath))
+		if err = httputil.Download(ts.cfg.Logger, os.Stderr, ts.cfg.ClusterLoaderDownloadURL, ts.cfg.ClusterLoaderPath); err != nil {
 			return err
 		}
 	} else {
-		ld.cfg.Logger.Info("skipping clusterloader download; already exist", zap.String("clusterloader-path", ld.cfg.ClusterLoaderPath))
+		ts.cfg.Logger.Info("skipping clusterloader download; already exist", zap.String("clusterloader-path", ts.cfg.ClusterLoaderPath))
 	}
-	if err = fileutil.EnsureExecutable(ld.cfg.ClusterLoaderPath); err != nil {
+	if err = fileutil.EnsureExecutable(ts.cfg.ClusterLoaderPath); err != nil {
 		// file may be already executable while the process does not own the file/directory
 		// ref. https://github.com/aws/aws-k8s-tester/issues/66
-		ld.cfg.Logger.Warn("failed to ensure executable", zap.Error(err))
+		ts.cfg.Logger.Warn("failed to ensure executable", zap.Error(err))
 		err = nil
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	output, herr := exec.New().CommandContext(
 		ctx,
-		ld.cfg.ClusterLoaderPath,
+		ts.cfg.ClusterLoaderPath,
 		"--help",
 	).CombinedOutput()
 	cancel()
 	out := strings.TrimSpace(string(output))
-	fmt.Printf("'%s --help' output:\n\n%s\n(error: %v)\n\n", ld.cfg.ClusterLoaderPath, out, herr)
+	fmt.Fprintf(ts.cfg.LogWriter, "'%s --help' output:\n\n%s\n(error: %v)\n\n", ts.cfg.ClusterLoaderPath, out, herr)
 	if !strings.Contains(out, "--alsologtostderr") {
 		if err == nil {
-			err = fmt.Errorf("%s --help failed", ld.cfg.ClusterLoaderPath)
+			err = fmt.Errorf("%s --help failed", ts.cfg.ClusterLoaderPath)
 		} else {
-			err = fmt.Errorf("%v; %s --help failed", err, ld.cfg.ClusterLoaderPath)
+			err = fmt.Errorf("%v; %s --help failed", err, ts.cfg.ClusterLoaderPath)
 		}
 	}
 
 	return err
 }
 
-func (ld *loader) writeTestOverrides() (err error) {
+func (ts *loader) writeTestOverrides() (err error) {
 	buf := bytes.NewBuffer(nil)
 	tpl := template.Must(template.New("TemplateTestOverrides").Parse(TemplateTestOverrides))
-	if err := tpl.Execute(buf, ld.cfg); err != nil {
+	if err := tpl.Execute(buf, ts.cfg); err != nil {
 		return err
 	}
 
-	fmt.Printf("test overrides configuration:\n\n%s\n\n", buf.String())
+	fmt.Fprintf(ts.cfg.LogWriter, "test overrides configuration:\n\n%s\n\n", buf.String())
 
-	ld.testOverridesPath, err = fileutil.WriteTempFile(buf.Bytes())
+	ts.testOverridesPath, err = fileutil.WriteTempFile(buf.Bytes())
 	if err != nil {
-		ld.cfg.Logger.Warn("failed to write", zap.Error(err))
+		ts.cfg.Logger.Warn("failed to write", zap.Error(err))
 		return err
 	}
 
-	ld.cfg.Logger.Info("wrote test overrides file", zap.String("path", ld.testOverridesPath))
+	ts.cfg.Logger.Info("wrote test overrides file", zap.String("path", ts.testOverridesPath))
 	return nil
 }
 

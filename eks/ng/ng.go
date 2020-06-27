@@ -3,6 +3,7 @@ package ng
 
 import (
 	"errors"
+	"io"
 	"reflect"
 	"strings"
 	"sync"
@@ -26,6 +27,7 @@ import (
 // Config defines Node Group configuration.
 type Config struct {
 	Logger    *zap.Logger
+	LogWriter io.Writer
 	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
@@ -69,6 +71,7 @@ func New(cfg Config) Tester {
 		cfg: cfg,
 		nodeWaiter: wait.New(wait.Config{
 			Logger:    cfg.Logger,
+			LogWriter: cfg.LogWriter,
 			Stopc:     cfg.Stopc,
 			EKSConfig: cfg.EKSConfig,
 			K8SClient: cfg.K8SClient,
@@ -80,6 +83,7 @@ func New(cfg Config) Tester {
 		failedOnce: false,
 		clusterAutoscaler: autoscaler.New(autoscaler.Config{
 			Logger:    cfg.Logger,
+			LogWriter: cfg.LogWriter,
 			Stopc:     cfg.Stopc,
 			EKSConfig: cfg.EKSConfig,
 			K8SClient: cfg.K8SClient,

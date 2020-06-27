@@ -9,6 +9,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -46,6 +47,7 @@ import (
 // Config defines version upgrade configuration.
 type Config struct {
 	Logger    *zap.Logger
+	LogWriter io.Writer
 	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	S3API     s3iface.S3API
@@ -873,7 +875,7 @@ func (ts *tester) createClient() (cli k8s_client.EKS, err error) {
 		}
 
 		ts.cfg.Logger.Info("ran 'aws eks update-kubeconfig'")
-		fmt.Printf("\n\n'%s' output:\n\n%s\n\n", cmd, strings.TrimSpace(string(output)))
+		fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", cmd, strings.TrimSpace(string(output)))
 	}
 
 	ts.cfg.Logger.Info("creating k8s client")
