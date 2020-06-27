@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -1161,7 +1162,7 @@ func (cfg *Config) validateConfig() error {
 		cfg.Status.ClusterCFNStackYAMLPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".cluster.cfn.yaml"
 	}
 	if cfg.Status.ClusterCFNStackYAMLS3Key == "" {
-		cfg.Status.ClusterCFNStackYAMLS3Key = filepath.Base(cfg.Status.ClusterCFNStackYAMLPath)
+		cfg.Status.ClusterCFNStackYAMLS3Key = path.Join(cfg.Name, path.Base(cfg.Status.ClusterCFNStackYAMLPath))
 	}
 	return nil
 }
@@ -1180,7 +1181,7 @@ func (cfg *Config) validateParameters() error {
 		cfg.Parameters.RoleCFNStackYAMLPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".role.cfn.yaml"
 	}
 	if cfg.Parameters.RoleCFNStackYAMLS3Key == "" {
-		cfg.Parameters.RoleCFNStackYAMLS3Key = filepath.Base(cfg.Parameters.RoleCFNStackYAMLPath)
+		cfg.Parameters.RoleCFNStackYAMLS3Key = path.Join(cfg.Name, path.Base(cfg.Parameters.RoleCFNStackYAMLPath))
 	}
 	switch cfg.Parameters.RoleCreate {
 	case true: // need create one, or already created
@@ -1212,7 +1213,7 @@ func (cfg *Config) validateParameters() error {
 		cfg.Parameters.VPCCFNStackYAMLPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".vpc.cfn.yaml"
 	}
 	if cfg.Parameters.VPCCFNStackYAMLS3Key == "" {
-		cfg.Parameters.VPCCFNStackYAMLS3Key = filepath.Base(cfg.Parameters.VPCCFNStackYAMLPath)
+		cfg.Parameters.VPCCFNStackYAMLS3Key = path.Join(cfg.Name, path.Base(cfg.Parameters.VPCCFNStackYAMLPath))
 	}
 	switch cfg.Parameters.VPCCreate {
 	case true: // need create one, or already created
