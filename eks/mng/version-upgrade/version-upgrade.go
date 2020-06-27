@@ -122,6 +122,7 @@ func (ts *tester) Upgrade(mngName string) (err error) {
 		zap.String("cluster-name", ts.cfg.EKSConfig.Name),
 		zap.String("mng-name", mngName),
 		zap.String("request-id", reqID),
+		zap.Int("asg-desired-capacity", cur.ASGDesiredCapacity),
 		zap.Duration("total-wait", totalWait),
 	)
 
