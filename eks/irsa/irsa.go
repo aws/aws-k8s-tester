@@ -573,44 +573,54 @@ func (ts *tester) deleteServiceAccount() error {
 }
 
 // TemplateConfigMap is the IRSA config map.
+// Do not download to the same file paths.
+// e.g. download failed: s3://aws-k8s-tester-eks-s3-bucket/eks-2020062621-misty8up27dz/irsa-s3-key to var/log/output-configmap.log [Errno 16] Device or resource busy: '/var/log/output-configmap.log.75Caa245' -> '/var/log/output-configmap.log'
+// ${HOSTNAME} is same as Pod name
 const TemplateConfigMap = `
 #!/usr/bin/env bash
 set -e
 aws --version
-printf "\nProjected ServiceAccount token:\n"
+
+printf "\nProjected ServiceAccount token AWS_WEB_IDENTITY_TOKEN_FILE:\n"
 cat $AWS_WEB_IDENTITY_TOKEN_FILE; echo
+
 printf "\nHOSTNAME:\n"
 echo $HOSTNAME
+
 printf "\nAWS_ROLE_ARN: "
 echo $AWS_ROLE_ARN
+
 printf "\n'aws sts get-caller-identity' output:\n"
 aws sts get-caller-identity
-CALLER_ROLE_ARN=$(aws sts get-caller-identity --query Arn --output text)
+
 printf "\n'aws sts get-caller-identity' role ARN:\n"
+CALLER_ROLE_ARN=$(aws sts get-caller-identity --query Arn --output text)
 echo $CALLER_ROLE_ARN
 if [[ $CALLER_ROLE_ARN =~ *{{ .RoleName }}* ]]; then
   echo "Unexpected CALLER_ROLE_ARN: ${CALLER_ROLE_ARN}"
   exit 1
 fi
+
 printf "\nSUCCESS IRSA TEST: CALLER_ROLE_ARN FOUND!\n\n"
-aws s3 cp s3://{{ .S3BucketName }}/{{ .S3Key }} {{ .OutputFilePath }};
+
+aws s3 cp s3://{{ .S3BucketName }}/{{ .S3Key }} /var/log/$HOSTNAME.s3.output;
 printf "\n"
 echo {{ .S3Key }} contents:
-cat {{ .OutputFilePath }};
+cat /var/log/$HOSTNAME.s3.output;
+
 printf "\nSUCCESS IRSA TEST: S3 FILE DOWNLOADED!\n\n"
+
 printf "\n{{ .SleepMessage }}\n\n"
 sleep 86400
+
 printf "\nSUCCESS IRSA TEST: EXITING...\n\n"
 `
 
-const outputFilePath = "/var/log/output-configmap.log"
-
 type configMapTemplate struct {
-	RoleName       string
-	S3BucketName   string
-	S3Key          string
-	OutputFilePath string
-	SleepMessage   string
+	RoleName     string
+	S3BucketName string
+	S3Key        string
+	SleepMessage string
 }
 
 func (ts *tester) createConfigMap() error {
@@ -619,11 +629,10 @@ func (ts *tester) createConfigMap() error {
 	tpl := template.Must(template.New("TemplateConfigMap").Parse(TemplateConfigMap))
 	buf := bytes.NewBuffer(nil)
 	if err := tpl.Execute(buf, configMapTemplate{
-		RoleName:       ts.cfg.EKSConfig.AddOnIRSA.RoleName,
-		S3BucketName:   ts.cfg.EKSConfig.S3BucketName,
-		S3Key:          ts.cfg.EKSConfig.AddOnIRSA.S3Key,
-		OutputFilePath: outputFilePath,
-		SleepMessage:   ts.sleepMessage,
+		RoleName:     ts.cfg.EKSConfig.AddOnIRSA.RoleName,
+		S3BucketName: ts.cfg.EKSConfig.S3BucketName,
+		S3Key:        ts.cfg.EKSConfig.AddOnIRSA.S3Key,
+		SleepMessage: ts.sleepMessage,
 	}); err != nil {
 		return err
 	}
@@ -707,7 +716,6 @@ func (ts *tester) createDeployment() error {
 	tplTxt := buf.String()
 
 	ts.cfg.Logger.Info("creating IRSA Deployment", zap.String("image", ts.ecrImage))
-	fileOrCreate := v1.HostPathFileOrCreate
 	dirOrCreate := v1.HostPathDirectoryOrCreate
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.K8SClient.KubernetesClientSet().
@@ -764,10 +772,6 @@ func (ts *tester) createDeployment() error {
 											MountPath: "/opt",
 										},
 										{ // to write
-											Name:      "output-file",
-											MountPath: outputFilePath,
-										},
-										{ // to write
 											Name:      "varlog",
 											MountPath: "/var/log",
 											ReadOnly:  false,
@@ -786,15 +790,6 @@ func (ts *tester) createDeployment() error {
 												Name: irsaConfigMapName,
 											},
 											DefaultMode: aws.Int32(0777),
-										},
-									},
-								},
-								{ // to write
-									Name: "output-file",
-									VolumeSource: v1.VolumeSource{
-										HostPath: &v1.HostPathVolumeSource{
-											Path: outputFilePath,
-											Type: &fileOrCreate,
 										},
 									},
 								},
@@ -1112,7 +1107,7 @@ func (ts *tester) checkLogs() error {
 			sh.Close()
 			continue
 		}
-		catCmd := "sudo cat " + outputFilePath
+		catCmd := fmt.Sprintf("sudo cat /var/log/%s.s3.output", podName)
 		runOutput, err = sh.Run(catCmd, sshOpt)
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to run SSH command", zap.Error(err))
@@ -1121,11 +1116,11 @@ func (ts *tester) checkLogs() error {
 		}
 		sh.Close()
 		output = strings.TrimSpace(string(runOutput))
-		fmt.Printf("\n\n'%s' output (expects %q):\n\n%s\n\n", outputFilePath, ts.testBody, output)
+		fmt.Printf("\n\n'%s' output (expects %q):\n\n%s\n\n", catCmd, ts.testBody, output)
 		if !strings.Contains(output, ts.sleepMessage) {
 			continue
 		}
-		if _, err = f.WriteString(fmt.Sprintf("'%s' from %q:\n\n%s\n\n", outputFilePath, nodeName, output)); err != nil {
+		if _, err = f.WriteString(fmt.Sprintf("'%s' from %q:\n\n%s\n\n", catCmd, nodeName, output)); err != nil {
 			ts.cfg.Logger.Warn("failed to write", zap.Error(err))
 			continue
 		}
