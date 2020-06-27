@@ -1047,7 +1047,7 @@ func (ts *tester) checkLogs() error {
 			zap.String("pod-name", podName),
 			zap.String("node-name", nodeName),
 		)
-		if !strings.HasPrefix(pod.Name, irsaAppName) {
+		if !strings.HasPrefix(pod.Name, irsaDeploymentName) {
 			continue
 		}
 
