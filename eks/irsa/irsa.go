@@ -8,13 +8,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"reflect"
 	"strings"
 	"text/template"
 	"time"
 
-	"github.com/aws/aws-k8s-tester/ec2config"
 	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
@@ -34,7 +32,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/iam/iamiface"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"go.uber.org/zap"
-	"golang.org/x/time/rate"
 	apps_v1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	api_errors "k8s.io/apimachinery/pkg/api/errors"
@@ -69,6 +66,8 @@ type tester struct {
 	cfg               Config
 	ecrImage          string
 	deploymentCreated time.Time
+	sleepMessage      string
+	testBody          string
 }
 
 func (ts *tester) Create() (err error) {
@@ -107,7 +106,7 @@ func (ts *tester) Create() (err error) {
 	); err != nil {
 		return err
 	}
-	if err = ts.createS3(); err != nil {
+	if err = ts.createS3Object(); err != nil {
 		return err
 	}
 	if err = ts.createOIDCProvider(); err != nil {
@@ -119,25 +118,24 @@ func (ts *tester) Create() (err error) {
 	if err = ts.createServiceAccount(); err != nil {
 		return err
 	}
-	if err = ts.createConfigMaps(); err != nil {
+	if err = ts.createConfigMap(); err != nil {
 		return err
 	}
 	if err = ts.createDeployment(); err != nil {
 		return err
 	}
-	if err = ts.checkPods(); err != nil {
-		return err
-	}
 	if err = ts.waitDeployment(); err != nil {
 		return err
 	}
-	if err = ts.waitOutputLogs(); err != nil {
+	if err = ts.checkPodWebhook(); err != nil {
 		return err
 	}
-	if err = ts.aggregateResults(); err != nil {
+	if err = ts.checkResults(); err != nil {
 		return err
 	}
 
+	ts.cfg.EKSConfig.AddOnIRSA.DeploymentTook = time.Since(ts.deploymentCreated)
+	ts.cfg.EKSConfig.AddOnIRSA.DeploymentTookString = ts.cfg.EKSConfig.AddOnIRSA.DeploymentTook.String()
 	return ts.cfg.EKSConfig.Sync()
 }
 
@@ -209,16 +207,18 @@ func (ts *tester) Delete() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
-func (ts *tester) createS3() (err error) {
+func (ts *tester) createS3Object() (err error) {
 	if ts.cfg.EKSConfig.S3BucketName == "" {
 		return errors.New("empty S3 bucket name for IRSA add-on")
 	}
+	ts.testBody = randutil.String(256)
+	ts.sleepMessage = `SUCCESS IRSA TEST: SLEEPING WITH ` + randutil.String(32)
 	return aws_s3.UploadBody(
 		ts.cfg.Logger,
 		ts.cfg.S3API,
 		ts.cfg.EKSConfig.S3BucketName,
 		ts.cfg.EKSConfig.AddOnIRSA.S3Key,
-		bytes.NewReader(randutil.Bytes(1024)),
+		strings.NewReader(ts.testBody),
 	)
 }
 
@@ -512,6 +512,7 @@ const (
 	irsaConfigMapName      = "irsa-configmap"
 	irsaConfigMapFileName  = "irsa-configmap.bash"
 	irsaDeploymentName     = "irsa-deployment"
+	irsaAppName            = "irsa-app"
 )
 
 func (ts *tester) createServiceAccount() error {
@@ -592,39 +593,42 @@ if [[ $CALLER_ROLE_ARN =~ *{{ .RoleName }}* ]]; then
   exit 1
 fi
 printf "\nSUCCESS IRSA TEST: CALLER_ROLE_ARN FOUND!\n\n"
-aws s3 cp s3://{{ .S3BucketName }}/{{ .S3Key }} /tmp/{{ .S3Key }}
+aws s3 cp s3://{{ .S3BucketName }}/{{ .S3Key }} {{ .OutputFilePath }};
 printf "\n"
 echo {{ .S3Key }} contents:
-cat /tmp/{{ .S3Key }}
+cat {{ .OutputFilePath }};
 printf "\nSUCCESS IRSA TEST: S3 FILE DOWNLOADED!\n\n"
 printf "\n{{ .SleepMessage }}\n\n"
 sleep 86400
 printf "\nSUCCESS IRSA TEST: EXITING...\n\n"
 `
 
-const sleepMsg = `SUCCESS IRSA TEST: SLEEPING...`
+const outputFilePath = "/var/log/output-configmap.log"
 
 type configMapTemplate struct {
-	RoleName     string
-	S3BucketName string
-	S3Key        string
-	SleepMessage string
+	RoleName       string
+	S3BucketName   string
+	S3Key          string
+	OutputFilePath string
+	SleepMessage   string
 }
 
-func (ts *tester) createConfigMaps() error {
-	ts.cfg.Logger.Info("creating config maps", zap.String("name", irsaConfigMapName))
+func (ts *tester) createConfigMap() error {
+	ts.cfg.Logger.Info("creating configmap", zap.String("name", irsaConfigMapName))
 
 	tpl := template.Must(template.New("TemplateConfigMap").Parse(TemplateConfigMap))
 	buf := bytes.NewBuffer(nil)
 	if err := tpl.Execute(buf, configMapTemplate{
-		RoleName:     ts.cfg.EKSConfig.AddOnIRSA.RoleName,
-		S3BucketName: ts.cfg.EKSConfig.S3BucketName,
-		S3Key:        ts.cfg.EKSConfig.AddOnIRSA.S3Key,
-		SleepMessage: sleepMsg,
+		RoleName:       ts.cfg.EKSConfig.AddOnIRSA.RoleName,
+		S3BucketName:   ts.cfg.EKSConfig.S3BucketName,
+		S3Key:          ts.cfg.EKSConfig.AddOnIRSA.S3Key,
+		OutputFilePath: outputFilePath,
+		SleepMessage:   ts.sleepMessage,
 	}); err != nil {
 		return err
 	}
 	tplTxt := buf.String()
+	fmt.Printf("\nAddOnIRSA ConfigMap:\n%s\n\n", tplTxt)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.K8SClient.KubernetesClientSet().
@@ -655,12 +659,12 @@ func (ts *tester) createConfigMaps() error {
 		return err
 	}
 
-	ts.cfg.Logger.Info("created config maps", zap.String("name", irsaConfigMapName))
+	ts.cfg.Logger.Info("created configmap", zap.String("name", irsaConfigMapName))
 	return ts.cfg.EKSConfig.Sync()
 }
 
 func (ts *tester) deleteConfigMaps() error {
-	ts.cfg.Logger.Info("deleting config maps", zap.String("name", irsaConfigMapName))
+	ts.cfg.Logger.Info("deleting configmap", zap.String("name", irsaConfigMapName))
 	foreground := metav1.DeletePropagationForeground
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	err := ts.cfg.K8SClient.KubernetesClientSet().
@@ -679,18 +683,15 @@ func (ts *tester) deleteConfigMaps() error {
 		return err
 	}
 
-	ts.cfg.Logger.Info("deleted config maps", zap.String("name", irsaConfigMapName))
+	ts.cfg.Logger.Info("deleted configmap", zap.String("name", irsaConfigMapName))
 	return ts.cfg.EKSConfig.Sync()
 }
 
-const outputFilePath = "/var/log/output-configmap.log"
-
 // TemplateDeploymentScript is the script to run in Deployment.
-const TemplateDeploymentScript = `printf '\n\n/opt/{{ .ConfigMapScriptFileName }}:\n' >> {{ .OutputFilePath }}; cat /opt/{{ .ConfigMapScriptFileName }} >>{{ .OutputFilePath }};  printf '\n\nexecuting...\n\n' >> {{ .OutputFilePath }}; /opt/{{ .ConfigMapScriptFileName }} 1>>{{ .OutputFilePath }} 2>>{{ .OutputFilePath }};`
+const TemplateDeploymentScript = `printf '\n\nexecuting...\n\n'; /opt/{{ .ConfigMapScriptFileName }};`
 
 type deploymentScriptTemplate struct {
 	ConfigMapScriptFileName string
-	OutputFilePath          string
 }
 
 func (ts *tester) createDeployment() error {
@@ -700,7 +701,6 @@ func (ts *tester) createDeployment() error {
 	buf := bytes.NewBuffer(nil)
 	if err := tpl.Execute(buf, deploymentScriptTemplate{
 		ConfigMapScriptFileName: irsaConfigMapFileName,
-		OutputFilePath:          outputFilePath,
 	}); err != nil {
 		return err
 	}
@@ -724,20 +724,20 @@ func (ts *tester) createDeployment() error {
 					Name:      irsaDeploymentName,
 					Namespace: ts.cfg.EKSConfig.AddOnIRSA.Namespace,
 					Labels: map[string]string{
-						"app.kubernetes.io/name": irsaDeploymentName,
+						"app.kubernetes.io/name": irsaAppName,
 					},
 				},
 				Spec: apps_v1.DeploymentSpec{
 					Replicas: aws.Int32(ts.cfg.EKSConfig.AddOnIRSA.DeploymentReplicas),
 					Selector: &metav1.LabelSelector{
 						MatchLabels: map[string]string{
-							"app.kubernetes.io/name": irsaDeploymentName,
+							"app.kubernetes.io/name": irsaAppName,
 						},
 					},
 					Template: v1.PodTemplateSpec{
 						ObjectMeta: metav1.ObjectMeta{
 							Labels: map[string]string{
-								"app.kubernetes.io/name": irsaDeploymentName,
+								"app.kubernetes.io/name": irsaAppName,
 							},
 						},
 						Spec: v1.PodSpec{
@@ -747,7 +747,7 @@ func (ts *tester) createDeployment() error {
 							RestartPolicy: v1.RestartPolicyAlways,
 							Containers: []v1.Container{
 								{
-									Name:            irsaDeploymentName,
+									Name:            irsaAppName,
 									Image:           ts.ecrImage,
 									ImagePullPolicy: v1.PullIfNotPresent,
 
@@ -811,7 +811,9 @@ func (ts *tester) createDeployment() error {
 
 							NodeSelector: map[string]string{
 								// cannot fetch results from Bottlerocket
-								"AMIType": ec2config.AMITypeAL2X8664,
+								// "AMIType": ec2config.AMITypeAL2X8664,
+								// do not deploy in fake nodes, obviously
+								"NodeType": "regular",
 							},
 						},
 					},
@@ -851,69 +853,6 @@ func (ts *tester) deleteDeployment() error {
 	}
 
 	ts.cfg.Logger.Info("deleted IRSA Deployment", zap.Error(err))
-	return ts.cfg.EKSConfig.Sync()
-}
-
-// https://aws.amazon.com/blogs/opensource/introducing-fine-grained-iam-roles-service-accounts/
-func (ts *tester) checkPods() error {
-	ts.cfg.Logger.Info("waiting for IRSA Pods")
-
-	waitDur := 2 * time.Minute
-	retryStart := time.Now()
-	found := false
-foundBreak:
-	for time.Now().Sub(retryStart) < waitDur {
-		select {
-		case <-ts.cfg.Stopc:
-			return errors.New("check aborted")
-		case <-time.After(5 * time.Second):
-		}
-
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		presp, err := ts.cfg.K8SClient.KubernetesClientSet().
-			CoreV1().
-			Pods(ts.cfg.EKSConfig.AddOnIRSA.Namespace).
-			List(ctx, metav1.ListOptions{})
-		cancel()
-		if err != nil {
-			return fmt.Errorf("failed to get IRSA Pod (%v)", err)
-		}
-		ts.cfg.Logger.Info("listed Pods", zap.Int("items", len(presp.Items)))
-
-		for _, pod := range presp.Items {
-			for _, con := range pod.Spec.Containers {
-				foundARN, foundToken := false, false
-				for _, env := range con.Env {
-					ts.cfg.Logger.Info("env",
-						zap.String("pod", pod.Name),
-						zap.String("key", env.Name),
-						zap.String("value", env.Value),
-					)
-					switch env.Name {
-					case "AWS_ROLE_ARN":
-						if env.Value != ts.cfg.EKSConfig.AddOnIRSA.RoleARN {
-							return fmt.Errorf("%q expected %q, got %q", env.Name, ts.cfg.EKSConfig.AddOnIRSA.RoleARN, env.Value)
-						}
-						ts.cfg.Logger.Info("found injected AWS_ROLE_ARN in Pod", zap.String("pod", pod.Name))
-						foundARN = true
-
-					case "AWS_WEB_IDENTITY_TOKEN_FILE":
-						ts.cfg.Logger.Info("found injected AWS_WEB_IDENTITY_TOKEN_FILE in Pod", zap.String("pod", pod.Name))
-						foundToken = true
-					}
-					if foundARN && foundToken {
-						found = true
-						break foundBreak
-					}
-				}
-			}
-		}
-	}
-	if !found {
-		return errors.New("IRSA admission controller did not work")
-	}
-
-	ts.cfg.Logger.Info("waited for IRSA Pods")
 	return ts.cfg.EKSConfig.Sync()
 }
 
@@ -1003,176 +942,98 @@ func (ts *tester) waitDeployment() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
-func (ts *tester) waitOutputLogs() error {
-	expects := int(ts.cfg.EKSConfig.AddOnIRSA.DeploymentReplicas)
-	ts.cfg.Logger.Info("waiting for IRSA output logs",
-		zap.String("path", outputFilePath),
-		zap.Int("expects", expects),
-	)
+// https://aws.amazon.com/blogs/opensource/introducing-fine-grained-iam-roles-service-accounts/
+func (ts *tester) checkPodWebhook() error {
+	ts.cfg.Logger.Info("checking IRSA Pod spec for webhook")
+	waitDur := 2 * time.Minute
+	retryStart := time.Now()
+	found := false
+foundBreak:
+	for time.Now().Sub(retryStart) < waitDur {
+		select {
+		case <-ts.cfg.Stopc:
+			return errors.New("check aborted")
+		case <-time.After(5 * time.Second):
+		}
 
-	waitDur := 2*time.Minute + time.Duration(ts.cfg.EKSConfig.AddOnIRSA.DeploymentReplicas)*10*time.Second
+		pods, err := ts.cfg.K8SClient.ListPods(ts.cfg.EKSConfig.AddOnIRSA.Namespace, 150, 5*time.Second)
+		if err != nil {
+			ts.cfg.Logger.Warn("failed to list IRSA Pods", zap.Error(err))
+			continue
+		}
+		ts.cfg.Logger.Info("listed Pods", zap.Int("items", len(pods)))
+		for _, pod := range pods {
+			for _, con := range pod.Spec.Containers {
+				foundARN, foundToken := false, false
+				for _, env := range con.Env {
+					ts.cfg.Logger.Info("env",
+						zap.String("pod", pod.Name),
+						zap.String("key", env.Name),
+						zap.String("value", env.Value),
+					)
+					switch env.Name {
+					case "AWS_ROLE_ARN":
+						if env.Value != ts.cfg.EKSConfig.AddOnIRSA.RoleARN {
+							return fmt.Errorf("%q expected %q, got %q", env.Name, ts.cfg.EKSConfig.AddOnIRSA.RoleARN, env.Value)
+						}
+						ts.cfg.Logger.Info("found injected AWS_ROLE_ARN in Pod", zap.String("pod", pod.Name))
+						foundARN = true
+					case "AWS_WEB_IDENTITY_TOKEN_FILE":
+						ts.cfg.Logger.Info("found injected AWS_WEB_IDENTITY_TOKEN_FILE in Pod", zap.String("pod", pod.Name))
+						foundToken = true
+					}
+					if foundARN && foundToken {
+						found = true
+						break foundBreak
+					}
+				}
+			}
+		}
+	}
+	if !found {
+		return errors.New("IRSA admission controller did not work")
+	}
+
+	ts.cfg.Logger.Info("checked IRSA Pod spec for webhook")
+	return ts.cfg.EKSConfig.Sync()
+}
+
+func (ts *tester) checkResults() (err error) {
+	ts.cfg.Logger.Info("checking results")
+	ready := false
+	waitDur := 7*time.Minute + time.Duration(ts.cfg.EKSConfig.AddOnIRSA.DeploymentReplicas)*3*time.Second
 	retryStart := time.Now()
 	for time.Now().Sub(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
 			return errors.New("check aborted")
-		case <-time.After(20 * time.Second):
+		case <-time.After(5 * time.Second):
 		}
-
-		cnt, err := ts.countSuccess(expects)
-		if err != nil {
-			ts.cfg.Logger.Warn("failed to count from remotes", zap.Int("count", cnt), zap.Error(err))
-		} else {
-			ts.cfg.Logger.Info("counting success",
-				zap.Int("expects", expects),
-				zap.Int("current", cnt),
-			)
+		if err = ts.checkLogs(); err != nil {
+			ts.cfg.Logger.Warn("failed to check logs", zap.Error(err))
+			continue
 		}
-		if cnt >= expects {
-			ts.cfg.EKSConfig.AddOnIRSA.DeploymentTook = time.Since(ts.deploymentCreated)
-			ts.cfg.EKSConfig.AddOnIRSA.DeploymentTookString = ts.cfg.EKSConfig.AddOnIRSA.DeploymentTook.String()
-			ts.cfg.EKSConfig.Sync()
-			break
-		}
+		ready = true
+		break
 	}
-
-	ts.cfg.Logger.Info("waited for IRSA output logs")
+	if !ready {
+		return errors.New("failed to check results for IRSA Pod")
+	}
+	ts.cfg.Logger.Info("checked results")
 	return ts.cfg.EKSConfig.Sync()
 }
 
-// TODO: only SSH into the one with IRSA deployment Pod
-func (ts *tester) countSuccess(expects int) (int, error) {
-	sshOpt := ssh.WithVerbose(ts.cfg.EKSConfig.LogLevel == "debug")
-	rateLimiter := rate.NewLimiter(rate.Limit(50), 10)
-	total := 0
-	if ts.cfg.EKSConfig.IsEnabledAddOnNodeGroups() && ts.cfg.EKSConfig.AddOnNodeGroups.FetchLogs {
-		for name, nodeGroup := range ts.cfg.EKSConfig.AddOnNodeGroups.ASGs {
-			if nodeGroup.AMIType == ec2config.AMITypeBottleRocketCPU {
-				ts.cfg.Logger.Warn("skipping bottlerocket log fetch", zap.String("ng-name", name))
-				continue
-			}
-			ts.cfg.Logger.Info("fetching outputs from node group",
-				zap.String("ng-name", name),
-				zap.String("ami-type", nodeGroup.AMIType),
-				zap.Int("nodes", len(nodeGroup.Instances)),
-			)
-
-			for instID, iv := range nodeGroup.Instances {
-				select {
-				case <-ts.cfg.Stopc:
-					ts.cfg.Logger.Warn("exiting fetcher")
-					return 0, nil
-				default:
-				}
-
-				if !rateLimiter.Allow() {
-					ts.cfg.Logger.Debug("waiting for rate limiter before SSH into the machine",
-						zap.String("instance-id", instID),
-					)
-					werr := rateLimiter.Wait(context.Background())
-					ts.cfg.Logger.Debug("waited for rate limiter",
-						zap.Error(werr),
-					)
-				}
-
-				ts.cfg.Logger.Debug("fetching output", zap.String("instance-id", instID))
-				sh, err := ssh.New(ssh.Config{
-					Logger:        ts.cfg.Logger,
-					KeyPath:       ts.cfg.EKSConfig.RemoteAccessPrivateKeyPath,
-					PublicIP:      iv.PublicIP,
-					PublicDNSName: iv.PublicDNSName,
-					UserName:      iv.RemoteAccessUserName,
-				})
-				if err != nil {
-					ts.cfg.Logger.Warn("failed to create SSH", zap.Error(err))
-					continue
-				}
-				if err = sh.Connect(); err != nil {
-					ts.cfg.Logger.Warn("failed to connect to SSH", zap.Error(err))
-					sh.Close()
-					continue
-				}
-				catCmd := "sudo cat " + outputFilePath
-				out, err := sh.Run(catCmd, sshOpt)
-				if err != nil {
-					ts.cfg.Logger.Warn("failed to run SSH command", zap.Error(err))
-					sh.Close()
-					continue
-				}
-				sh.Close()
-
-				total += strings.Count(string(out), sleepMsg)
-				if total >= expects {
-					break
-				}
-			}
-		}
+// 1. check pod logs if configmap run succeeds
+// 2. check node "/var/log" for expected outputs
+func (ts *tester) checkLogs() error {
+	expects := int(ts.cfg.EKSConfig.AddOnIRSA.DeploymentReplicas)
+	ts.cfg.Logger.Info("checking logs from IRSA pods and nodes", zap.Int("expects", expects))
+	pods, err := ts.cfg.K8SClient.ListPods(ts.cfg.EKSConfig.AddOnIRSA.Namespace, 150, 5*time.Second)
+	if err != nil {
+		return err
 	}
-	if total < expects &&
-		ts.cfg.EKSConfig.IsEnabledAddOnManagedNodeGroups() && ts.cfg.EKSConfig.AddOnManagedNodeGroups.FetchLogs {
-		for mngName, cur := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
-			if cur.AMIType == ec2config.AMITypeBottleRocketCPU {
-				ts.cfg.Logger.Warn("skipping bottlerocket log fetch", zap.String("mng-name", mngName))
-				continue
-			}
-			ts.cfg.Logger.Info("fetching outputs from managed node group",
-				zap.String("mng-name", mngName),
-				zap.Int("nodes", len(cur.Instances)),
-			)
 
-			for instID, iv := range cur.Instances {
-				select {
-				case <-ts.cfg.Stopc:
-					ts.cfg.Logger.Warn("exiting fetcher")
-					return 0, nil
-				default:
-				}
-
-				if !rateLimiter.Allow() {
-					ts.cfg.Logger.Debug("waiting for rate limiter before SSH into the machine",
-						zap.String("instance-id", instID),
-					)
-					werr := rateLimiter.Wait(context.Background())
-					ts.cfg.Logger.Debug("waited for rate limiter",
-						zap.Error(werr),
-					)
-				}
-
-				ts.cfg.Logger.Debug("fetching output", zap.String("instance-id", instID))
-				sh, err := ssh.New(ssh.Config{
-					Logger:        ts.cfg.Logger,
-					KeyPath:       ts.cfg.EKSConfig.RemoteAccessPrivateKeyPath,
-					PublicIP:      iv.PublicIP,
-					PublicDNSName: iv.PublicDNSName,
-					UserName:      iv.RemoteAccessUserName,
-				})
-				if err != nil {
-					ts.cfg.Logger.Warn("failed to create SSH", zap.Error(err))
-					continue
-				}
-				if err = sh.Connect(); err != nil {
-					ts.cfg.Logger.Warn("failed to connect to SSH", zap.Error(err))
-					sh.Close()
-					continue
-				}
-				catCmd := "sudo cat " + outputFilePath
-				out, err := sh.Run(catCmd, sshOpt)
-				if err != nil {
-					ts.cfg.Logger.Warn("failed to run SSH command", zap.Error(err))
-					sh.Close()
-					continue
-				}
-				sh.Close()
-
-				total += strings.Count(string(out), sleepMsg)
-			}
-		}
-	}
-	return total, ts.cfg.EKSConfig.Sync()
-}
-
-func (ts *tester) aggregateResults() error {
-	ts.cfg.Logger.Info("starting tester.aggregateResults", zap.String("tester", pkgName))
+	os.RemoveAll(ts.cfg.EKSConfig.AddOnIRSA.DeploymentResultPath)
 	f, err := os.OpenFile(ts.cfg.EKSConfig.AddOnIRSA.DeploymentResultPath, os.O_RDWR|os.O_TRUNC, 0777)
 	if err != nil {
 		f, err = os.Create(ts.cfg.EKSConfig.AddOnIRSA.DeploymentResultPath)
@@ -1182,70 +1043,98 @@ func (ts *tester) aggregateResults() error {
 	}
 	defer f.Close()
 
-	sfx := filepath.Base(outputFilePath)
-	if ts.cfg.EKSConfig.IsEnabledAddOnNodeGroups() && ts.cfg.EKSConfig.AddOnNodeGroups.FetchLogs {
-		ts.cfg.Logger.Info("fetching logs from ngs")
-		for name, v := range ts.cfg.EKSConfig.AddOnNodeGroups.ASGs {
-			if v.AMIType == ec2config.AMITypeBottleRocketCPU {
-				ts.cfg.Logger.Warn("skipping bottlerocket log fetch", zap.String("ng-name", name))
-				continue
-			}
-			for _, fpaths := range v.Logs {
-				for _, fpath := range fpaths {
-					if !strings.HasSuffix(fpath, sfx) {
-						continue
-					}
-					if _, err = f.Write([]byte(fmt.Sprintf("%q contents:\n", fpath))); err != nil {
-						return err
-					}
-					d, err := ioutil.ReadFile(fpath)
-					if err != nil {
-						ts.cfg.Logger.Warn("failed to read file", zap.Error(err))
-						return err
-					}
-					if _, err = f.Write(d); err != nil {
-						ts.cfg.Logger.Warn("failed to write a file", zap.Error(err))
-						return err
-					}
-					if _, err = f.Write([]byte("\n\n\n")); err != nil {
-						return err
-					}
-				}
-			}
+	success := 0
+	sshOpt := ssh.WithVerbose(ts.cfg.EKSConfig.LogLevel == "debug")
+	for _, pod := range pods {
+		podName := pod.Name
+		nodeName := pod.Spec.NodeName
+		ts.cfg.Logger.Info("pod",
+			zap.String("pod-name", podName),
+			zap.String("node-name", nodeName),
+		)
+		if !strings.HasPrefix(pod.Name, irsaAppName) {
+			continue
 		}
+
+		logsArgs := []string{
+			ts.cfg.EKSConfig.KubectlPath,
+			"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+			"--namespace=" + ts.cfg.EKSConfig.AddOnIRSA.Namespace,
+			"logs",
+			"pod/" + podName,
+		}
+		logsCmd := strings.Join(logsArgs, " ")
+		ts.cfg.Logger.Info("checking pod logs",
+			zap.String("pod-name", podName),
+			zap.String("node-name", nodeName),
+			zap.String("logs-command", logsCmd),
+		)
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		runOutput, err := exec.New().CommandContext(ctx, logsArgs[0], logsArgs[1:]...).CombinedOutput()
+		cancel()
+		output := strings.TrimSpace(string(runOutput))
+		if err != nil {
+			ts.cfg.Logger.Warn("failed to kubectl logs", zap.Error(err))
+		}
+		fmt.Printf("\n\n'%s' output (expects %q):\n\n%s\n\n", logsCmd, ts.sleepMessage, output)
+		if !strings.Contains(output, ts.sleepMessage) {
+			continue
+		}
+
+		cur, ok := ts.cfg.EKSConfig.Status.PrivateDNSToSSHConfig[nodeName]
+		if !ok {
+			return fmt.Errorf("node %q unknown", nodeName)
+		}
+		ts.cfg.Logger.Info("checking pod output file from node",
+			zap.String("pod-name", podName),
+			zap.String("node-name", nodeName),
+			zap.String("public-ip", cur.PublicIP),
+			zap.String("public-dns-name", cur.PublicDNSName),
+			zap.String("user-name", cur.UserName),
+		)
+		sh, err := ssh.New(ssh.Config{
+			Logger:        ts.cfg.Logger,
+			KeyPath:       ts.cfg.EKSConfig.RemoteAccessPrivateKeyPath,
+			PublicIP:      cur.PublicIP,
+			PublicDNSName: cur.PublicDNSName,
+			UserName:      cur.UserName,
+		})
+		if err != nil {
+			ts.cfg.Logger.Warn("failed to create SSH", zap.Error(err))
+			continue
+		}
+		if err = sh.Connect(); err != nil {
+			ts.cfg.Logger.Warn("failed to connect to SSH", zap.Error(err))
+			sh.Close()
+			continue
+		}
+		catCmd := "sudo cat " + outputFilePath
+		runOutput, err = sh.Run(catCmd, sshOpt)
+		if err != nil {
+			ts.cfg.Logger.Warn("failed to run SSH command", zap.Error(err))
+			sh.Close()
+			continue
+		}
+		sh.Close()
+		output = strings.TrimSpace(string(runOutput))
+		fmt.Printf("\n\n'%s' output (expects %q):\n\n%s\n\n", outputFilePath, ts.testBody, output)
+		if !strings.Contains(output, ts.sleepMessage) {
+			continue
+		}
+
+		success++
 	}
-	if ts.cfg.EKSConfig.IsEnabledAddOnManagedNodeGroups() && ts.cfg.EKSConfig.AddOnManagedNodeGroups.FetchLogs {
-		ts.cfg.Logger.Info("fetching logs from mngs")
-		for mngName, cur := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
-			if cur.AMIType == ec2config.AMITypeBottleRocketCPU {
-				ts.cfg.Logger.Warn("skipping bottlerocket log fetch", zap.String("mng-name", mngName))
-				continue
-			}
-			for _, fpaths := range cur.Logs {
-				for _, fpath := range fpaths {
-					if !strings.HasSuffix(fpath, sfx) {
-						continue
-					}
-					if _, err = f.Write([]byte(fmt.Sprintf("%q contents:\n", fpath))); err != nil {
-						return err
-					}
-					d, err := ioutil.ReadFile(fpath)
-					if err != nil {
-						ts.cfg.Logger.Warn("failed to read file", zap.Error(err))
-						return err
-					}
-					if _, err = f.Write(d); err != nil {
-						ts.cfg.Logger.Warn("failed to write a file", zap.Error(err))
-						return err
-					}
-					if _, err = f.Write([]byte("\n\n\n")); err != nil {
-						return err
-					}
-				}
-			}
-		}
+	if success < expects {
+		ts.cfg.Logger.Warn("not enough successful pod",
+			zap.Int("success", success),
+			zap.Int("expects", expects),
+		)
+		return errors.New("IRSA Pods are not ready")
 	}
 
-	ts.cfg.Logger.Info("aggregated results from Deployments", zap.String("result-path", ts.cfg.EKSConfig.AddOnIRSA.DeploymentResultPath))
+	ts.cfg.Logger.Info("checked logs from IRSA pods and nodes",
+		zap.Int("success", success),
+		zap.Int("expects", expects),
+	)
 	return ts.cfg.EKSConfig.Sync()
 }
