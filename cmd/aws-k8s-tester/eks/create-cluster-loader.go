@@ -43,6 +43,7 @@ var (
 	clusterLoaderSmallGroupSize                 int
 	clusterLoaderSmallStatefulSetsPerNamespace  int
 	clusterLoaderMediumStatefulSetsPerNamespace int
+	clusterLoaderCL2UseHostNetworkPods          bool
 	clusterLoaderCL2LoadTestThroughput          int
 	clusterLoaderCL2EnablePVS                   bool
 	clusterLoaderPrometheusScrapeKubeProxy      bool
@@ -80,6 +81,7 @@ func newCreateClusterLoader() *cobra.Command {
 	cmd.PersistentFlags().IntVar(&clusterLoaderSmallGroupSize, "small-group-size", 5, "small group size")
 	cmd.PersistentFlags().IntVar(&clusterLoaderSmallStatefulSetsPerNamespace, "small-stateful-sets-per-namespace", 0, "small stateful sets per namespace")
 	cmd.PersistentFlags().IntVar(&clusterLoaderMediumStatefulSetsPerNamespace, "medium-stateful-sets-per-namespace", 0, "medium stateful sets per namespace")
+	cmd.PersistentFlags().BoolVar(&clusterLoaderCL2UseHostNetworkPods, "cl2-use-host-network-pods", false, "clusterloader2 use host network pods to bypass CNI")
 	cmd.PersistentFlags().IntVar(&clusterLoaderCL2LoadTestThroughput, "cl2-load-test-throughput", 20, "clusterloader2 test throughput")
 	cmd.PersistentFlags().BoolVar(&clusterLoaderCL2EnablePVS, "cl2-enable-pvs", false, "'true' to enable CL2 PVS")
 	cmd.PersistentFlags().BoolVar(&clusterLoaderPrometheusScrapeKubeProxy, "prometheus-scrape-kube-proxy", false, "'true' to enable Prometheus scrape kube-proxy")
@@ -157,6 +159,7 @@ func createClusterLoaderFunc(cmd *cobra.Command, args []string) {
 		SmallStatefulSetsPerNamespace:  clusterLoaderSmallStatefulSetsPerNamespace,
 		MediumStatefulSetsPerNamespace: clusterLoaderMediumStatefulSetsPerNamespace,
 
+		CL2UseHostNetworkPods:     clusterLoaderCL2UseHostNetworkPods,
 		CL2LoadTestThroughput:     clusterLoaderCL2LoadTestThroughput,
 		CL2EnablePVS:              clusterLoaderCL2EnablePVS,
 		PrometheusScrapeKubeProxy: clusterLoaderPrometheusScrapeKubeProxy,

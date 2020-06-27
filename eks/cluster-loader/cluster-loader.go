@@ -81,6 +81,7 @@ type Config struct {
 	SmallStatefulSetsPerNamespace  int
 	MediumStatefulSetsPerNamespace int
 
+	CL2UseHostNetworkPods     bool
 	CL2LoadTestThroughput     int
 	CL2EnablePVS              bool
 	PrometheusScrapeKubeProxy bool
@@ -515,6 +516,7 @@ func (ld *loader) writeTestOverrides() (err error) {
 
 // ref. https://github.com/kubernetes/perf-tests/tree/master/clusterloader2/testing/load
 // ref. https://github.com/kubernetes/perf-tests/tree/master/clusterloader2/testing/overrides
+// ref. https://github.com/kubernetes/perf-tests/pull/1345
 const TemplateTestOverrides = `NODES_PER_NAMESPACE: {{ .NodesPerNamespace }}
 PODS_PER_NODE: {{ .PodsPerNode }}
 BIG_GROUP_SIZE: {{ .BigGroupSize }}
@@ -522,6 +524,7 @@ MEDIUM_GROUP_SIZE: {{ .MediumGroupSize }}
 SMALL_GROUP_SIZE: {{ .SmallGroupSize }}
 SMALL_STATEFUL_SETS_PER_NAMESPACE: {{ .SmallStatefulSetsPerNamespace }}
 MEDIUM_STATEFUL_SETS_PER_NAMESPACE: {{ .MediumStatefulSetsPerNamespace }}
+CL2_USE_HOST_NETWORK_PODS: {{ .CL2UseHostNetworkPods }}
 CL2_LOAD_TEST_THROUGHPUT: {{ .CL2LoadTestThroughput }}
 CL2_ENABLE_PVS: {{ .CL2EnablePVS }}
 PROMETHEUS_SCRAPE_KUBE_PROXY: {{ .PrometheusScrapeKubeProxy }}
