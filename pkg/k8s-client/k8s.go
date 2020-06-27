@@ -606,6 +606,9 @@ func waitForJobCompletes(
 		}
 		if len(pods) == 0 {
 			lg.Warn("got an empty list of Pod")
+			if ret.queryFunc != nil {
+				ret.queryFunc()
+			}
 			return false, nil
 		}
 		podSucceededCnt := 0
@@ -634,11 +637,16 @@ func waitForJobCompletes(
 			lg.Warn("polled not succeeded yet",
 				zap.String("namespace", namespace),
 				zap.String("job-name", jobName),
+				zap.Int("total-pods", len(pods)),
 				zap.Int("pod-succeeded-count", podSucceededCnt),
 				zap.Int("target", target),
 			)
+			if ret.queryFunc != nil {
+				ret.queryFunc()
+			}
 			return false, nil
 		}
+
 		lg.Info("polled pods",
 			zap.String("namespace", namespace),
 			zap.String("job-name", jobName),
