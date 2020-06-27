@@ -616,6 +616,13 @@ func waitForJobCompletes(
 				// CronJob
 				match = strings.HasPrefix(item.Name, jobName)
 			}
+			lg.Info("pod",
+				zap.String("job-name", jobName),
+				zap.String("job-name-from-label", jv),
+				zap.String("pod-name", item.Name),
+				zap.String("pod-status-phase", fmt.Sprintf("%v", item.Status.Phase)),
+				zap.Bool("match", match),
+			)
 			if !match {
 				continue
 			}
