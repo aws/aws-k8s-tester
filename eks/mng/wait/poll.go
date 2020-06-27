@@ -46,7 +46,7 @@ func Poll(
 	mngName string,
 	desiredNodeGroupStatus string,
 	initialWait time.Duration,
-	interval time.Duration,
+	pollInterval time.Duration,
 	opts ...OpOption) <-chan ManagedNodeGroupStatus {
 
 	ret := Op{}
@@ -57,7 +57,7 @@ func Poll(
 		zap.String("mng-name", mngName),
 		zap.String("desired-status", desiredNodeGroupStatus),
 		zap.String("initial-wait", initialWait.String()),
-		zap.String("interval", interval.String()),
+		zap.String("poll-interval", pollInterval.String()),
 	)
 
 	now := time.Now()
@@ -89,7 +89,7 @@ func Poll(
 				// in case stack has already reached desired status
 				// wait from second interation
 				if waitDur == time.Duration(0) {
-					waitDur = interval
+					waitDur = pollInterval
 				}
 			}
 

@@ -38,6 +38,8 @@ func Poll(
 	lg.Info("polling stack",
 		zap.String("stack-id", stackID),
 		zap.String("want", desiredStackStatus),
+		zap.String("initial-wait", initialWait.String()),
+		zap.String("poll-interval", pollInterval.String()),
 	)
 	ch := make(chan StackStatus, 10)
 	go func() {

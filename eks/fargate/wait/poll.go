@@ -45,12 +45,14 @@ func Poll(
 	profileName string,
 	desiredStatus string,
 	initialWait time.Duration,
-	wait time.Duration,
+	pollInterval time.Duration,
 ) <-chan FargateProfileStatus {
 	lg.Info("polling fargate profile",
 		zap.String("cluster-name", clusterName),
 		zap.String("profile-name", profileName),
 		zap.String("desired-status", desiredStatus),
+		zap.String("initial-wait", initialWait.String()),
+		zap.String("poll-interval", pollInterval.String()),
 	)
 
 	now := time.Now()
@@ -82,7 +84,7 @@ func Poll(
 				// in case stack has already reached desired status
 				// wait from second interation
 				if waitDur == time.Duration(0) {
-					waitDur = wait
+					waitDur = pollInterval
 				}
 			}
 
