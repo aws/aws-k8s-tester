@@ -173,6 +173,7 @@ func (ts *loader) Start() (err error) {
 		"--testoverrides=" + ts.testOverridesPath,
 		"--report-dir=" + ts.cfg.ReportDir,
 		"--nodes=" + fmt.Sprintf("%d", ts.cfg.Nodes),
+		"--provider=eks",
 	}
 	if ts.cfg.KubeConfigPath == "" {
 		// ref. https://github.com/kubernetes/perf-tests/pull/1295
