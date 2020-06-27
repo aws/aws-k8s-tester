@@ -1080,7 +1080,10 @@ func (ts *tester) checkLogs() error {
 		if !strings.Contains(output, ts.sleepMessage) {
 			continue
 		}
-		f.WriteString(fmt.Sprintf("'%s' from %q:\n\n%s\n\n", logsCmd, nodeName, output))
+		if _, err = f.WriteString(fmt.Sprintf("'%s' from %q:\n\n%s\n\n", logsCmd, nodeName, output)); err != nil {
+			ts.cfg.Logger.Warn("failed to write", zap.Error(err))
+			continue
+		}
 
 		cur, ok := ts.cfg.EKSConfig.Status.PrivateDNSToSSHConfig[nodeName]
 		if !ok {
@@ -1122,7 +1125,10 @@ func (ts *tester) checkLogs() error {
 		if !strings.Contains(output, ts.sleepMessage) {
 			continue
 		}
-		f.WriteString(fmt.Sprintf("'%s' from %q:\n\n%s\n\n", outputFilePath, nodeName, output))
+		if _, err = f.WriteString(fmt.Sprintf("'%s' from %q:\n\n%s\n\n", outputFilePath, nodeName, output)); err != nil {
+			ts.cfg.Logger.Warn("failed to write", zap.Error(err))
+			continue
+		}
 
 		success++
 	}
