@@ -66,8 +66,10 @@ func New(cfg Config) eks_tester.Tester {
 }
 
 type tester struct {
-	cfg      Config
-	ecrImage string
+	cfg          Config
+	ecrImage     string
+	sleepMessage string
+	testBody     string
 }
 
 func (ts *tester) Create() (err error) {
@@ -106,7 +108,7 @@ func (ts *tester) Create() (err error) {
 	); err != nil {
 		return err
 	}
-	if err = ts.createS3(); err != nil {
+	if err = ts.createS3Object(); err != nil {
 		return err
 	}
 	if err = ts.createOIDCProvider(); err != nil {
@@ -211,16 +213,18 @@ func (ts *tester) Delete() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
-func (ts *tester) createS3() (err error) {
+func (ts *tester) createS3Object() (err error) {
 	if ts.cfg.EKSConfig.S3BucketName == "" {
 		return errors.New("empty S3 bucket name for IRSA add-on")
 	}
+	ts.testBody = randutil.String(256)
+	ts.sleepMessage = `SUCCESS IRSA FARGATE TEST: SLEEPING WITH ` + randutil.String(32)
 	return aws_s3.UploadBody(
 		ts.cfg.Logger,
 		ts.cfg.S3API,
 		ts.cfg.EKSConfig.S3BucketName,
 		ts.cfg.EKSConfig.AddOnIRSAFargate.S3Key,
-		bytes.NewReader(randutil.Bytes(1024)),
+		strings.NewReader(ts.testBody),
 	)
 }
 
@@ -600,15 +604,20 @@ const TemplateConfigMap = `
 #!/usr/bin/env bash
 set -e
 aws --version
-printf "\nProjected ServiceAccount token:\n"
+
+printf "\nProjected ServiceAccount token AWS_WEB_IDENTITY_TOKEN_FILE:\n"
 cat $AWS_WEB_IDENTITY_TOKEN_FILE; echo
+
 printf "\nHOSTNAME:\n"
 echo $HOSTNAME
-printf "\nAWS_ROLE_ARN: "
+
+printf "\nAWS_ROLE_ARN:\n"
 echo $AWS_ROLE_ARN
+
 printf "\n'aws sts get-caller-identity' output:\n"
-aws sts get-caller-identity
-CALLER_ROLE_ARN=$(aws sts get-caller-identity --query Arn --output text)
+aws --cli-read-timeout=5 --cli-connect-timeout=5 sts get-caller-identity
+
+CALLER_ROLE_ARN=$(aws --cli-read-timeout=5 --cli-connect-timeout=5 sts get-caller-identity --query Arn --output text)
 printf "\n'aws sts get-caller-identity' role ARN:\n"
 echo $CALLER_ROLE_ARN
 if [[ $CALLER_ROLE_ARN =~ *{{ .RoleName }}* ]]; then
@@ -616,17 +625,19 @@ if [[ $CALLER_ROLE_ARN =~ *{{ .RoleName }}* ]]; then
   exit 1
 fi
 printf "\nSUCCESS IRSA FARGATE TEST: CALLER_ROLE_ARN FOUND!\n\n"
-aws s3 cp s3://{{ .S3BucketName }}/{{ .S3Key }} /tmp/{{ .S3Key }}
+
+aws s3 cp s3://{{ .S3BucketName }}/{{ .S3Key }} /tmp/$HOSTNAME.s3.output;
 printf "\n"
 echo {{ .S3Key }} contents:
-cat /tmp/{{ .S3Key }}
+cat /tmp/$HOSTNAME.s3.output;
 printf "\nSUCCESS IRSA FARGATE TEST: S3 FILE DOWNLOADED!\n\n"
+
 printf "\n{{ .SleepMessage }}\n\n"
 sleep 86400
+
+
 printf "\nSUCCESS IRSA FARGATE TEST: EXITING...\n\n"
 `
-
-const sleepMsg = `SUCCESS IRSA FARGATE TEST: SLEEPING...`
 
 type configMapTemplate struct {
 	RoleName     string
@@ -644,7 +655,7 @@ func (ts *tester) createConfigMap() error {
 		RoleName:     ts.cfg.EKSConfig.AddOnIRSAFargate.RoleName,
 		S3BucketName: ts.cfg.EKSConfig.S3BucketName,
 		S3Key:        ts.cfg.EKSConfig.AddOnIRSAFargate.S3Key,
-		SleepMessage: sleepMsg,
+		SleepMessage: ts.sleepMessage,
 	}); err != nil {
 		return err
 	}
@@ -981,7 +992,9 @@ func (ts *tester) checkResults() (err error) {
 		}
 		if err = ts.checkPodLogs(); err != nil {
 			ts.cfg.Logger.Warn("failed to check pod", zap.Error(err))
-			continue
+			// TODO: "aws sts get-caller-identity" fails with
+			// Could not connect to the endpoint URL: "https://sts.amazonaws.com/"
+			// continue
 		}
 		if err = ts.checkNodeReady(); err != nil {
 			ts.cfg.Logger.Warn("failed to check node", zap.Error(err))
@@ -1060,9 +1073,9 @@ func (ts *tester) checkPodLogs() error {
 		return err
 	}
 	fmt.Fprintf(ts.cfg.LogWriter, "\n'%s' output:\n\n%s\n\n", logsCmd, out)
-	if !strings.Contains(out, sleepMsg) {
+	if !strings.Contains(out, ts.sleepMessage) {
 		ts.cfg.Logger.Warn("unexpected logs output", zap.String("output", out))
-		return fmt.Errorf("unexpected log output %s (expected %q)", out, sleepMsg)
+		return fmt.Errorf("unexpected log output %s (expected %q)", out, ts.sleepMessage)
 	}
 
 	ts.cfg.Logger.Info("succcessfully checked pod logs",

@@ -589,31 +589,30 @@ cat $AWS_WEB_IDENTITY_TOKEN_FILE; echo
 printf "\nHOSTNAME:\n"
 echo $HOSTNAME
 
-printf "\nAWS_ROLE_ARN: "
+printf "\nAWS_ROLE_ARN:\n"
 echo $AWS_ROLE_ARN
 
 printf "\n'aws sts get-caller-identity' output:\n"
-aws sts get-caller-identity
+aws --cli-read-timeout=5 --cli-connect-timeout=5 sts get-caller-identity
 
 printf "\n'aws sts get-caller-identity' role ARN:\n"
-CALLER_ROLE_ARN=$(aws sts get-caller-identity --query Arn --output text)
+CALLER_ROLE_ARN=$(aws --cli-read-timeout=5 --cli-connect-timeout=5 sts get-caller-identity --query Arn --output text)
 echo $CALLER_ROLE_ARN
 if [[ $CALLER_ROLE_ARN =~ *{{ .RoleName }}* ]]; then
   echo "Unexpected CALLER_ROLE_ARN: ${CALLER_ROLE_ARN}"
   exit 1
 fi
-
 printf "\nSUCCESS IRSA TEST: CALLER_ROLE_ARN FOUND!\n\n"
 
 aws s3 cp s3://{{ .S3BucketName }}/{{ .S3Key }} /var/log/$HOSTNAME.s3.output;
 printf "\n"
 echo {{ .S3Key }} contents:
 cat /var/log/$HOSTNAME.s3.output;
-
 printf "\nSUCCESS IRSA TEST: S3 FILE DOWNLOADED!\n\n"
 
 printf "\n{{ .SleepMessage }}\n\n"
 sleep 86400
+
 
 printf "\nSUCCESS IRSA TEST: EXITING...\n\n"
 `
