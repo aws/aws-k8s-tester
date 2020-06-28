@@ -146,8 +146,10 @@ func createConfigMapsFunc(cmd *cobra.Command, args []string) {
 	sfx := randutil.String(7)
 
 	loader := config_maps.New(config_maps.Config{
-		Logger: lg,
-		Stopc:  stopc,
+		Logger:    lg,
+		LogWriter: os.Stderr,
+
+		Stopc: stopc,
 
 		S3API:        s3.New(awsSession),
 		S3BucketName: configmapsS3BucketName,

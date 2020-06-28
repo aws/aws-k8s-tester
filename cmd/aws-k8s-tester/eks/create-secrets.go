@@ -155,6 +155,7 @@ func createSecretsFunc(cmd *cobra.Command, args []string) {
 
 	loader := secrets.New(secrets.Config{
 		Logger:                          lg,
+		LogWriter:                       os.Stderr,
 		Stopc:                           stopc,
 		S3API:                           s3.New(awsSession),
 		S3BucketName:                    secretsS3BucketName,

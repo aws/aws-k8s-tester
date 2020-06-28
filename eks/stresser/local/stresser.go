@@ -103,6 +103,7 @@ func (ts *tester) Create() (err error) {
 
 	loader := stresser.New(stresser.Config{
 		Logger:                          ts.cfg.Logger,
+		LogWriter:                       ts.cfg.LogWriter,
 		Stopc:                           ts.cfg.Stopc,
 		S3API:                           ts.cfg.S3API,
 		S3BucketName:                    ts.cfg.EKSConfig.S3BucketName,

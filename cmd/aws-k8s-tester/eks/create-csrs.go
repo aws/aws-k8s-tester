@@ -142,6 +142,7 @@ func createCSRsFunc(cmd *cobra.Command, args []string) {
 
 	loader := csrs.New(csrs.Config{
 		Logger:                          lg,
+		LogWriter:                       os.Stderr,
 		Stopc:                           stopc,
 		S3API:                           s3.New(awsSession),
 		S3BucketName:                    csrsS3BucketName,

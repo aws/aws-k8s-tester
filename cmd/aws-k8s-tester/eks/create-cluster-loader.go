@@ -124,8 +124,10 @@ func createClusterLoaderFunc(cmd *cobra.Command, args []string) {
 
 	stopc := make(chan struct{})
 	loader := cluster_loader.New(cluster_loader.Config{
-		Logger: lg,
-		Stopc:  stopc,
+		Logger:    lg,
+		LogWriter: os.Stderr,
+
+		Stopc: stopc,
 
 		S3API:        s3.New(awsSession),
 		S3BucketName: clusterLoaderS3BucketName,

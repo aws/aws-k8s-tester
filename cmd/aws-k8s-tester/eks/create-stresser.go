@@ -145,6 +145,7 @@ func createStresserFunc(cmd *cobra.Command, args []string) {
 
 	loader := stresser.New(stresser.Config{
 		Logger:                          lg,
+		LogWriter:                       os.Stderr,
 		Stopc:                           stopc,
 		S3API:                           s3.New(awsSession),
 		S3BucketName:                    stresserS3BucketName,
