@@ -127,10 +127,10 @@ func (ts *tester) Create() (err error) {
 	if err = ts.createPod(); err != nil {
 		return err
 	}
-	if err = ts.checkPod(); err != nil {
+	if err = ts.checkPodWebhook(); err != nil {
 		return err
 	}
-	if err = ts.checkNode(); err != nil {
+	if err = ts.checkResults(); err != nil {
 		return err
 	}
 
@@ -805,60 +805,6 @@ func (ts *tester) deleteProfile() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
-func (ts *tester) checkNode() error {
-	ts.cfg.Logger.Info("checking node")
-
-	desired := 1
-	retryStart, waitDur := time.Now(), 3*time.Minute
-	for time.Now().Sub(retryStart) < waitDur {
-		select {
-		case <-ts.cfg.Stopc:
-			ts.cfg.Logger.Warn("aborted")
-			return nil
-		case <-time.After(5 * time.Second):
-		}
-
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		nodes, err := ts.cfg.K8SClient.KubernetesClientSet().CoreV1().Nodes().List(ctx, metav1.ListOptions{})
-		cancel()
-		if err != nil {
-			ts.cfg.Logger.Warn("get nodes failed", zap.Error(err))
-			continue
-		}
-		items := nodes.Items
-
-		readies := 0
-		for _, node := range items {
-			labels := node.GetLabels()
-			nodeName := node.GetName()
-			ts.cfg.Logger.Info("checking node-info conditions", zap.String("node-name", nodeName), zap.String("labels", fmt.Sprintf("%+v", labels)))
-			for _, cond := range node.Status.Conditions {
-				if cond.Type != v1.NodeReady {
-					continue
-				}
-				ts.cfg.Logger.Info("node info",
-					zap.String("node-name", nodeName),
-					zap.String("type", fmt.Sprintf("%s", cond.Type)),
-					zap.String("status", fmt.Sprintf("%s", cond.Status)),
-				)
-				if cond.Status == v1.ConditionTrue && strings.HasPrefix(nodeName, "fargate-") {
-					readies++
-				}
-			}
-		}
-		ts.cfg.Logger.Info("nodes",
-			zap.Int("current-ready-nodes", readies),
-			zap.Int("desired-ready-nodes", desired),
-		)
-		if readies >= desired {
-			break
-		}
-	}
-
-	ts.cfg.Logger.Info("checked node")
-	return ts.cfg.EKSConfig.Sync()
-}
-
 // TemplatePodScript is the script to run in Deployment.
 const TemplatePodScript = `printf '\n\nexecuting...\n\n'; /opt/{{ .ConfigMapScriptFileName }};`
 
@@ -867,10 +813,6 @@ type podScriptTemplate struct {
 }
 
 func (ts *tester) createPod() error {
-	if err := ts.listPods(ts.cfg.EKSConfig.AddOnIRSAFargate.Namespace); err != nil {
-		ts.cfg.Logger.Warn("listing pods failed", zap.Error(err))
-	}
-
 	tpl := template.Must(template.New("TemplatePodScript").Parse(TemplatePodScript))
 	buf := bytes.NewBuffer(nil)
 	if err := tpl.Execute(buf, podScriptTemplate{
@@ -970,27 +912,92 @@ func (ts *tester) deletePod() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
-func (ts *tester) listPods(ns string) error {
-	pods, err := ts.getPods(ns)
-	if err != nil {
-		return err
+// https://aws.amazon.com/blogs/opensource/introducing-fine-grained-iam-roles-service-accounts/
+func (ts *tester) checkPodWebhook() error {
+	ts.cfg.Logger.Info("checking IRSA Pod spec for webhook")
+	waitDur := 2 * time.Minute
+	retryStart := time.Now()
+	found := false
+foundBreak:
+	for time.Now().Sub(retryStart) < waitDur {
+		select {
+		case <-ts.cfg.Stopc:
+			return errors.New("check aborted")
+		case <-time.After(5 * time.Second):
+		}
+
+		pods, err := ts.cfg.K8SClient.ListPods(ts.cfg.EKSConfig.AddOnIRSAFargate.Namespace, 150, 5*time.Second)
+		if err != nil {
+			ts.cfg.Logger.Warn("failed to list IRSA Pods", zap.Error(err))
+			continue
+		}
+		ts.cfg.Logger.Info("listed Pods", zap.Int("items", len(pods)))
+		for _, pod := range pods {
+			for _, con := range pod.Spec.Containers {
+				foundARN, foundToken := false, false
+				for _, env := range con.Env {
+					ts.cfg.Logger.Info("env",
+						zap.String("pod", pod.Name),
+						zap.String("key", env.Name),
+						zap.String("value", env.Value),
+					)
+					switch env.Name {
+					case "AWS_ROLE_ARN":
+						if env.Value != ts.cfg.EKSConfig.AddOnIRSAFargate.RoleARN {
+							return fmt.Errorf("%q expected %q, got %q", env.Name, ts.cfg.EKSConfig.AddOnIRSAFargate.RoleARN, env.Value)
+						}
+						ts.cfg.Logger.Info("found injected AWS_ROLE_ARN in Pod", zap.String("pod", pod.Name))
+						foundARN = true
+					case "AWS_WEB_IDENTITY_TOKEN_FILE":
+						ts.cfg.Logger.Info("found injected AWS_WEB_IDENTITY_TOKEN_FILE in Pod", zap.String("pod", pod.Name))
+						foundToken = true
+					}
+					if foundARN && foundToken {
+						found = true
+						break foundBreak
+					}
+				}
+			}
+		}
 	}
-	fmt.Fprintf(ts.cfg.LogWriter, "\n")
-	for _, v := range pods.Items {
-		fmt.Fprintf(ts.cfg.LogWriter, "%q Pod using client-go: %q\n", ns, v.Name)
+	if !found {
+		return errors.New("IRSA admission controller did not work")
 	}
-	fmt.Fprintf(ts.cfg.LogWriter, "\n")
-	return nil
+
+	ts.cfg.Logger.Info("checked IRSA Pod spec for webhook")
+	return ts.cfg.EKSConfig.Sync()
 }
 
-func (ts *tester) getPods(ns string) (*v1.PodList, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	ps, err := ts.cfg.K8SClient.KubernetesClientSet().CoreV1().Pods(ns).List(ctx, metav1.ListOptions{})
-	cancel()
-	return ps, err
+func (ts *tester) checkResults() (err error) {
+	ts.cfg.Logger.Info("checking results")
+	ready := false
+	waitDur := 7*time.Minute + time.Duration(ts.cfg.EKSConfig.AddOnIRSA.DeploymentReplicas)*3*time.Second
+	retryStart := time.Now()
+	for time.Now().Sub(retryStart) < waitDur {
+		select {
+		case <-ts.cfg.Stopc:
+			return errors.New("check aborted")
+		case <-time.After(5 * time.Second):
+		}
+		if err = ts.checkPodLogs(); err != nil {
+			ts.cfg.Logger.Warn("failed to check pod", zap.Error(err))
+			continue
+		}
+		if err = ts.checkNodeReady(); err != nil {
+			ts.cfg.Logger.Warn("failed to check node", zap.Error(err))
+			continue
+		}
+		ready = true
+		break
+	}
+	if !ready {
+		return errors.New("failed to check IRSA Fargate Pod")
+	}
+	ts.cfg.Logger.Info("checked results")
+	return ts.cfg.EKSConfig.Sync()
 }
 
-func (ts *tester) checkPod() error {
+func (ts *tester) checkPodLogs() error {
 	descArgsPods := []string{
 		ts.cfg.EKSConfig.KubectlPath,
 		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
@@ -1018,51 +1025,92 @@ func (ts *tester) checkPod() error {
 		zap.String("command-logs", logsCmd),
 	)
 
-	succeeded := false
-	retryStart, waitDur := time.Now(), 3*time.Minute
-	for time.Now().Sub(retryStart) < waitDur {
-		select {
-		case <-ts.cfg.Stopc:
-			ts.cfg.Logger.Warn("aborted")
-			return nil
-		case <-time.After(5 * time.Second):
-		}
-
-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-		output, err := exec.New().CommandContext(ctx, descArgsPods[0], descArgsPods[1:]...).CombinedOutput()
-		cancel()
-		out := string(output)
-		if err != nil {
-			ts.cfg.Logger.Warn("'kubectl describe' failed", zap.Error(err))
-		}
-		fmt.Fprintf(ts.cfg.LogWriter, "\n'%s' output:\n\n%s\n\n", descCmdPods, out)
-
-		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
-		output, err = exec.New().CommandContext(ctx, logArgs[0], logArgs[1:]...).CombinedOutput()
-		cancel()
-		out = string(output)
-		if err != nil {
-			ts.cfg.Logger.Warn("'kubectl logs' failed", zap.Error(err))
-		}
-		fmt.Fprintf(ts.cfg.LogWriter, "\n'%s' output:\n\n%s\n\n", logsCmd, out)
-
-		if !strings.Contains(out, sleepMsg) {
-			ts.cfg.Logger.Warn("unexpected logs output", zap.String("output", out))
-			time.Sleep(5 * time.Second)
-			continue
-		}
-
-		succeeded = true
-		ts.cfg.Logger.Info("succcessfully checked pod logs",
-			zap.String("pod-name", irsaFargatePodName),
-			zap.String("container-name", irsaFargateContainerName),
-		)
-		break
+	pods, err := ts.cfg.K8SClient.ListPods(ts.cfg.EKSConfig.AddOnIRSAFargate.Namespace, 150, 5*time.Second)
+	if err != nil {
+		ts.cfg.Logger.Warn("listing pods failed", zap.Error(err))
+		return err
 	}
-	if !succeeded {
-		// TODO: expected output not found, fail the whole tester
-		ts.cfg.Logger.Warn("failed to find expected output from kubectl logs; fail!", zap.String("expected", sleepMsg))
+	if len(pods) > 0 {
+		ts.cfg.Logger.Info("pods found", zap.Int("pods", len(pods)))
+		fmt.Fprintf(ts.cfg.LogWriter, "\n")
+		for _, pod := range pods {
+			fmt.Fprintf(ts.cfg.LogWriter, "%q Pod using client-go: %q\n", ts.cfg.EKSConfig.AddOnIRSAFargate.Namespace, pod.Name)
+		}
+		fmt.Fprintf(ts.cfg.LogWriter, "\n")
+	} else {
+		ts.cfg.Logger.Info("no pod found")
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	output, err := exec.New().CommandContext(ctx, descArgsPods[0], descArgsPods[1:]...).CombinedOutput()
+	cancel()
+	out := string(output)
+	if err != nil {
+		ts.cfg.Logger.Warn("'kubectl describe' failed", zap.Error(err))
+		return err
+	}
+	fmt.Fprintf(ts.cfg.LogWriter, "\n'%s' output:\n\n%s\n\n", descCmdPods, out)
+
+	ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
+	output, err = exec.New().CommandContext(ctx, logArgs[0], logArgs[1:]...).CombinedOutput()
+	cancel()
+	out = string(output)
+	if err != nil {
+		ts.cfg.Logger.Warn("'kubectl logs' failed", zap.Error(err))
+		return err
+	}
+	fmt.Fprintf(ts.cfg.LogWriter, "\n'%s' output:\n\n%s\n\n", logsCmd, out)
+	if !strings.Contains(out, sleepMsg) {
+		ts.cfg.Logger.Warn("unexpected logs output", zap.String("output", out))
+		return fmt.Errorf("unexpected log output %s (expected %q)", out, sleepMsg)
+	}
+
+	ts.cfg.Logger.Info("succcessfully checked pod logs",
+		zap.String("pod-name", irsaFargatePodName),
+		zap.String("container-name", irsaFargateContainerName),
+	)
 	return ts.cfg.EKSConfig.Sync()
+}
+
+func (ts *tester) checkNodeReady() error {
+	ts.cfg.Logger.Info("checking node readiness")
+
+	desired := 1
+
+	nodes, err := ts.cfg.K8SClient.ListNodes(150, 5*time.Second)
+	if err != nil {
+		ts.cfg.Logger.Warn("get nodes failed", zap.Error(err))
+		return err
+	}
+
+	readies := 0
+	for _, node := range nodes {
+		labels := node.GetLabels()
+		nodeName := node.GetName()
+		ts.cfg.Logger.Info("checking node-info conditions", zap.String("node-name", nodeName), zap.String("labels", fmt.Sprintf("%+v", labels)))
+		for _, cond := range node.Status.Conditions {
+			if cond.Type != v1.NodeReady {
+				continue
+			}
+			ts.cfg.Logger.Info("node info",
+				zap.String("node-name", nodeName),
+				zap.String("type", fmt.Sprintf("%s", cond.Type)),
+				zap.String("status", fmt.Sprintf("%s", cond.Status)),
+			)
+			if cond.Status == v1.ConditionTrue && strings.HasPrefix(nodeName, "fargate-") {
+				readies++
+			}
+		}
+	}
+	ts.cfg.Logger.Info("nodes",
+		zap.Int("current-ready-nodes", readies),
+		zap.Int("desired-ready-nodes", desired),
+	)
+	if readies >= desired {
+		ts.cfg.Logger.Info("checked node readiness", zap.Int("desired", desired), zap.Int("readies", readies))
+		return ts.cfg.EKSConfig.Sync()
+	}
+
+	ts.cfg.Logger.Info("failed to check node readiness", zap.Int("desired", desired), zap.Int("readies", readies))
+	return fmt.Errorf("expected %d ready node(s), got %d node(s)", desired, readies)
 }
