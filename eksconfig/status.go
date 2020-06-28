@@ -63,8 +63,6 @@ type Status struct {
 	ClusterStatusCurrent string `json:"cluster-status-current"`
 	// ClusterStatus represents the status of the cluster.
 	ClusterStatus []ClusterStatus `json:"cluster-status"`
-	// ClusterMetricsRawOutputDir is the directory tostore kube-apiserver /metrics output.
-	ClusterMetricsRawOutputDir string `json:"cluster-metrics-raw-output-dir"`
 
 	// PrivateDNSToSSHConfig maps each worker node's private IP to its public IP,
 	// public DNS, and SSH access user name.

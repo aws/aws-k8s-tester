@@ -1165,9 +1165,6 @@ func (cfg *Config) validateConfig() error {
 			PrivateDNSToSSHConfig: make(map[string]SSHConfig),
 		}
 	}
-	if cfg.Status.ClusterMetricsRawOutputDir == "" {
-		cfg.Status.ClusterMetricsRawOutputDir = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name, "metrics-kube-apiserver")
-	}
 	if cfg.Status.ClusterCFNStackYAMLPath == "" {
 		cfg.Status.ClusterCFNStackYAMLPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".cluster.cfn.yaml"
 	}

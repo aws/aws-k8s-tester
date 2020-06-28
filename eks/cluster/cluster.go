@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"path/filepath"
 	"reflect"
 	"runtime"
 	"strings"
@@ -880,21 +881,21 @@ func (ts *tester) createClient() (cli k8s_client.EKS, err error) {
 
 	ts.cfg.Logger.Info("creating k8s client")
 	kcfg := &k8s_client.EKSConfig{
-		Logger:                ts.cfg.Logger,
-		Region:                ts.cfg.EKSConfig.Region,
-		ClusterName:           ts.cfg.EKSConfig.Name,
-		KubeConfigPath:        ts.cfg.EKSConfig.KubeConfigPath,
-		KubectlPath:           ts.cfg.EKSConfig.KubectlPath,
-		ServerVersion:         ts.cfg.EKSConfig.Parameters.Version,
-		EncryptionEnabled:     ts.cfg.EKSConfig.Parameters.EncryptionCMKARN != "",
-		MetricsRawOutputDir:   ts.cfg.EKSConfig.Status.ClusterMetricsRawOutputDir,
-		S3API:                 ts.cfg.S3API,
-		S3BucketName:          ts.cfg.EKSConfig.S3BucketName,
-		S3MetricsRawOutputDir: path.Base(ts.cfg.EKSConfig.Status.ClusterMetricsRawOutputDir),
-		Clients:               ts.cfg.EKSConfig.Clients,
-		ClientQPS:             ts.cfg.EKSConfig.ClientQPS,
-		ClientBurst:           ts.cfg.EKSConfig.ClientBurst,
-		ClientTimeout:         ts.cfg.EKSConfig.ClientTimeout,
+		Logger:                             ts.cfg.Logger,
+		Region:                             ts.cfg.EKSConfig.Region,
+		ClusterName:                        ts.cfg.EKSConfig.Name,
+		KubeConfigPath:                     ts.cfg.EKSConfig.KubeConfigPath,
+		KubectlPath:                        ts.cfg.EKSConfig.KubectlPath,
+		ServerVersion:                      ts.cfg.EKSConfig.Parameters.Version,
+		EncryptionEnabled:                  ts.cfg.EKSConfig.Parameters.EncryptionCMKARN != "",
+		S3API:                              ts.cfg.S3API,
+		S3BucketName:                       ts.cfg.EKSConfig.S3BucketName,
+		S3MetricsRawOutputDirKubeAPIServer: path.Join(ts.cfg.EKSConfig.Name, "metrics-kube-apiserver"),
+		MetricsRawOutputDirKubeAPIServer:   filepath.Join(filepath.Dir(ts.cfg.EKSConfig.ConfigPath), ts.cfg.EKSConfig.Name+"-metrics-kube-apiserver"),
+		Clients:                            ts.cfg.EKSConfig.Clients,
+		ClientQPS:                          ts.cfg.EKSConfig.ClientQPS,
+		ClientBurst:                        ts.cfg.EKSConfig.ClientBurst,
+		ClientTimeout:                      ts.cfg.EKSConfig.ClientTimeout,
 	}
 	if ts.cfg.EKSConfig.IsEnabledAddOnClusterVersionUpgrade() {
 		kcfg.UpgradeServerVersion = ts.cfg.EKSConfig.AddOnClusterVersionUpgrade.Version

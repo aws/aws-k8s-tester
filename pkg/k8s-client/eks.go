@@ -83,12 +83,10 @@ type EKSConfig struct {
 	// Dir is the directory to store all upgrade/rollback files.
 	Dir string
 
-	// MetricsRawOutputDir is the directory to store all /metrics output.
-	MetricsRawOutputDir string
-
-	S3API                 s3iface.S3API
-	S3BucketName          string
-	S3MetricsRawOutputDir string
+	S3API                              s3iface.S3API
+	S3BucketName                       string
+	S3MetricsRawOutputDirKubeAPIServer string
+	MetricsRawOutputDirKubeAPIServer   string
 
 	// Clients is the number of kubernetes clients to create.
 	// Default is 1.
@@ -672,15 +670,15 @@ func (e *eks) checkHealth() error {
 	if err != nil {
 		return fmt.Errorf("failed to fetch /metrics (%v)", err)
 	}
-	if e.cfg.MetricsRawOutputDir != "" {
-		if !fileutil.Exist(e.cfg.MetricsRawOutputDir) {
-			if err = os.MkdirAll(e.cfg.MetricsRawOutputDir, 0700); err != nil {
-				e.cfg.Logger.Warn("failed to mkdir", zap.String("dir", e.cfg.MetricsRawOutputDir), zap.Error(err))
-				return fmt.Errorf("failed to mkdir %q (%v)", e.cfg.MetricsRawOutputDir, err)
+	if e.cfg.MetricsRawOutputDirKubeAPIServer != "" {
+		if !fileutil.Exist(e.cfg.MetricsRawOutputDirKubeAPIServer) {
+			if err = os.MkdirAll(e.cfg.MetricsRawOutputDirKubeAPIServer, 0700); err != nil {
+				e.cfg.Logger.Warn("failed to mkdir", zap.String("dir", e.cfg.MetricsRawOutputDirKubeAPIServer), zap.Error(err))
+				return fmt.Errorf("failed to mkdir %q (%v)", e.cfg.MetricsRawOutputDirKubeAPIServer, err)
 			}
 		}
 		name := time.Now().UTC().Format(time.RFC3339Nano)
-		fpath := filepath.Join(e.cfg.MetricsRawOutputDir, name)
+		fpath := filepath.Join(e.cfg.MetricsRawOutputDirKubeAPIServer, name)
 		if err := ioutil.WriteFile(fpath, output, 0777); err != nil {
 			e.cfg.Logger.Warn("failed to write /metrics", zap.String("path", fpath), zap.Error(err))
 			return err
@@ -690,7 +688,7 @@ func (e *eks) checkHealth() error {
 				e.cfg.Logger,
 				e.cfg.S3API,
 				e.cfg.S3BucketName,
-				path.Join(e.cfg.S3MetricsRawOutputDir, name),
+				path.Join(e.cfg.S3MetricsRawOutputDirKubeAPIServer, name),
 				fpath,
 			); err != nil {
 				return err

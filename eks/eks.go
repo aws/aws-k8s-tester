@@ -365,21 +365,21 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 	// update k8s client if cluster has already been created
 	ts.lg.Info("creating k8s client from previous states if any")
 	kcfg := &k8s_client.EKSConfig{
-		Logger:                ts.lg,
-		Region:                ts.cfg.Region,
-		ClusterName:           ts.cfg.Name,
-		KubeConfigPath:        ts.cfg.KubeConfigPath,
-		KubectlPath:           ts.cfg.KubectlPath,
-		ServerVersion:         ts.cfg.Parameters.Version,
-		EncryptionEnabled:     ts.cfg.Parameters.EncryptionCMKARN != "",
-		MetricsRawOutputDir:   ts.cfg.Status.ClusterMetricsRawOutputDir,
-		S3API:                 ts.s3API,
-		S3BucketName:          ts.cfg.S3BucketName,
-		S3MetricsRawOutputDir: path.Base(ts.cfg.Status.ClusterMetricsRawOutputDir),
-		Clients:               ts.cfg.Clients,
-		ClientQPS:             ts.cfg.ClientQPS,
-		ClientBurst:           ts.cfg.ClientBurst,
-		ClientTimeout:         ts.cfg.ClientTimeout,
+		Logger:                             ts.lg,
+		Region:                             ts.cfg.Region,
+		ClusterName:                        ts.cfg.Name,
+		KubeConfigPath:                     ts.cfg.KubeConfigPath,
+		KubectlPath:                        ts.cfg.KubectlPath,
+		ServerVersion:                      ts.cfg.Parameters.Version,
+		EncryptionEnabled:                  ts.cfg.Parameters.EncryptionCMKARN != "",
+		S3API:                              ts.s3API,
+		S3BucketName:                       ts.cfg.S3BucketName,
+		S3MetricsRawOutputDirKubeAPIServer: path.Join(ts.cfg.Name, "metrics-kube-apiserver"),
+		MetricsRawOutputDirKubeAPIServer:   filepath.Join(filepath.Dir(ts.cfg.ConfigPath), ts.cfg.Name+"-metrics-kube-apiserver"),
+		Clients:                            ts.cfg.Clients,
+		ClientQPS:                          ts.cfg.ClientQPS,
+		ClientBurst:                        ts.cfg.ClientBurst,
+		ClientTimeout:                      ts.cfg.ClientTimeout,
 	}
 	if ts.cfg.IsEnabledAddOnClusterVersionUpgrade() {
 		kcfg.UpgradeServerVersion = ts.cfg.AddOnClusterVersionUpgrade.Version
