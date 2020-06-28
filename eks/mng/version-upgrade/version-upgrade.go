@@ -118,7 +118,7 @@ func (ts *tester) Upgrade(mngName string) (err error) {
 	}
 
 	// takes TODO
-	initialWait := 3 * time.Minute
+	initialWait := 5 * time.Minute
 	totalWait := time.Hour + 3*time.Minute*time.Duration(cur.ASGDesiredCapacity)
 
 	ts.cfg.Logger.Info("sent MNG upgrade request; polling",
@@ -141,7 +141,7 @@ func (ts *tester) Upgrade(mngName string) (err error) {
 		reqID,
 		eks.UpdateStatusSuccessful,
 		initialWait,
-		30*time.Second,
+		2*time.Minute,
 		wait.WithQueryFunc(func() {
 			fmt.Fprintf(ts.cfg.LogWriter, "\n")
 			ts.cfg.Logger.Info("listing nodes while polling mng update status", zap.String("mng-name", mngName))
