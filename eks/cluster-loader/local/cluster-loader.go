@@ -61,8 +61,10 @@ func (ts *tester) Create() (err error) {
 
 	ts.cfg.Logger.Info("starting tester.Create", zap.String("tester", pkgName))
 	ts.loader = cluster_loader.New(cluster_loader.Config{
-		Logger: ts.cfg.Logger,
-		Stopc:  ts.cfg.Stopc,
+		Logger:    ts.cfg.Logger,
+		LogWriter: ts.cfg.LogWriter,
+
+		Stopc: ts.cfg.Stopc,
 
 		S3API:        ts.cfg.S3API,
 		S3BucketName: ts.cfg.EKSConfig.S3BucketName,
