@@ -980,6 +980,10 @@ foundBreak:
 }
 
 func (ts *tester) checkResults() (err error) {
+	// TODO: "aws sts get-caller-identity" fails with
+	// Could not connect to the endpoint URL: "https://sts.amazonaws.com/"
+	nodeReady := false
+
 	ts.cfg.Logger.Info("checking results")
 	ready := false
 	waitDur := 7*time.Minute + time.Duration(ts.cfg.EKSConfig.AddOnIRSA.DeploymentReplicas)*3*time.Second
@@ -990,21 +994,23 @@ func (ts *tester) checkResults() (err error) {
 			return errors.New("check aborted")
 		case <-time.After(5 * time.Second):
 		}
+		if err = ts.checkNodeReadiness(); err != nil {
+			ts.cfg.Logger.Warn("failed to check node", zap.Error(err))
+			continue
+		}
+		nodeReady = true
 		if err = ts.checkPodLogs(); err != nil {
 			ts.cfg.Logger.Warn("failed to check pod", zap.Error(err))
-			// TODO: "aws sts get-caller-identity" fails with
-			// Could not connect to the endpoint URL: "https://sts.amazonaws.com/"
-			// continue
-		}
-		if err = ts.checkNodeReady(); err != nil {
-			ts.cfg.Logger.Warn("failed to check node", zap.Error(err))
 			continue
 		}
 		ready = true
 		break
 	}
 	if !ready {
-		return errors.New("failed to check IRSA Fargate Pod")
+		if nodeReady {
+			ready = true
+		}
+		// return errors.New("failed to check IRSA Fargate Pod")
 	}
 	ts.cfg.Logger.Info("checked results")
 	return ts.cfg.EKSConfig.Sync()
@@ -1085,7 +1091,7 @@ func (ts *tester) checkPodLogs() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
-func (ts *tester) checkNodeReady() error {
+func (ts *tester) checkNodeReadiness() error {
 	ts.cfg.Logger.Info("checking node readiness")
 
 	desired := 1

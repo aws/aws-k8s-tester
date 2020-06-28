@@ -117,7 +117,7 @@ func (ts *tester) Create() (err error) {
 	if err = ts.checkPod(); err != nil {
 		return err
 	}
-	if err = ts.checkNode(); err != nil {
+	if err = ts.checkNodeReadiness(); err != nil {
 		return err
 	}
 
@@ -800,7 +800,7 @@ func (ts *tester) checkPod() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
-func (ts *tester) checkNode() error {
+func (ts *tester) checkNodeReadiness() error {
 	ts.cfg.Logger.Info("checking node")
 
 	desired := 1
