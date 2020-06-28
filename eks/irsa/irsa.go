@@ -593,7 +593,7 @@ printf "\nAWS_ROLE_ARN:\n"
 echo $AWS_ROLE_ARN
 
 printf "\n'aws sts get-caller-identity' output:\n"
-aws --cli-read-timeout=5 --cli-connect-timeout=5 sts get-caller-identity
+aws --debug --cli-read-timeout=5 --cli-connect-timeout=5 sts get-caller-identity
 
 printf "\n'aws sts get-caller-identity' role ARN:\n"
 CALLER_ROLE_ARN=$(aws --cli-read-timeout=5 --cli-connect-timeout=5 sts get-caller-identity --query Arn --output text)
