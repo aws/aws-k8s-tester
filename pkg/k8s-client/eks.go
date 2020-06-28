@@ -875,6 +875,7 @@ func (e *eks) listNamespaces(batchLimit int64, batchInterval time.Duration) (ns 
 		}
 		time.Sleep(batchInterval)
 	}
+	e.cfg.Logger.Info("listed namespaces", zap.Int("namespaces", len(ns)))
 	return ns, err
 }
 
@@ -906,6 +907,7 @@ func (e *eks) listNodes(batchLimit int64, batchInterval time.Duration) (nodes []
 		}
 		time.Sleep(batchInterval)
 	}
+	e.cfg.Logger.Info("listed nodes", zap.Int("nodes", len(nodes)))
 	return nodes, err
 }
 
@@ -940,6 +942,7 @@ func (e *eks) listCSRs(batchLimit int64, batchInterval time.Duration) (csrs []ce
 		}
 		time.Sleep(batchInterval)
 	}
+	e.cfg.Logger.Info("listed csrs", zap.Int("csrs", len(csrs)))
 	return csrs, err
 }
 
@@ -965,13 +968,14 @@ func (e *eks) listPods(namespace string, batchLimit int64, batchInterval time.Du
 			zap.Int64("remained", remained),
 			zap.String("continue", rs.Continue),
 			zap.Duration("batch-interval", batchInterval),
-			zap.Int("items", len(rs.Items)),
+			zap.Int("pods", len(rs.Items)),
 		)
 		if rs.Continue == "" {
 			break
 		}
 		time.Sleep(batchInterval)
 	}
+	e.cfg.Logger.Info("listed pods", zap.Int("pods", len(pods)))
 	return pods, err
 }
 
@@ -1004,6 +1008,7 @@ func (e *eks) listConfigMaps(namespace string, batchLimit int64, batchInterval t
 		}
 		time.Sleep(batchInterval)
 	}
+	e.cfg.Logger.Info("listed configmaps", zap.Int("configmaps", len(configMaps)))
 	return configMaps, err
 }
 
@@ -1035,6 +1040,7 @@ func (e *eks) listSecrets(namespace string, batchLimit int64, batchInterval time
 		}
 		time.Sleep(batchInterval)
 	}
+	e.cfg.Logger.Info("listed secrets", zap.Int("secrets", len(ss)))
 	return ss, err
 }
 

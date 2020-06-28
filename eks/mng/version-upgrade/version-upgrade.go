@@ -152,7 +152,7 @@ func (ts *tester) Upgrade(mngName string) (err error) {
 			}
 			for _, node := range nodes {
 				labels := node.GetLabels()
-				if labels["MNGName"] != mngName {
+				if labels["NGName"] != mngName {
 					continue
 				}
 				for _, cond := range node.Status.Conditions {
