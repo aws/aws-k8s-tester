@@ -28,6 +28,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.9...v1.4.0
 
 ### `eks`
 
+- Set [timeouts for `"aws sts get-caller-identity"` for `eks/irsa` and `eks/irsa-fargate`](https://github.com/aws/aws-k8s-tester/commit/562dbc864778fee918c1c5ba2ed8d893b2e2c09c).
 - Improve and clean up [all `Poll` functions with contexts](https://github.com/aws/aws-k8s-tester/commit/96ee2b8a9223ad147e06b53b6f627c0886e06094).
 - Add [missing `"configmaps"` to `eks/stresser/remote` RBAC](https://github.com/aws/aws-k8s-tester/commit/7df3fbd3fa815214cf8e01a8722e9ee0e1907456).
 - Clean up [`eks/irsa-fargate`](https://github.com/aws/aws-k8s-tester/commit/8a022ff8a9adf949084a21aaf3821ab80d133613).
