@@ -127,14 +127,16 @@ func (ts *tester) Create() (err error) {
 	if err = ts.createJob(); err != nil {
 		return err
 	}
+	timeout := 15*time.Minute + ts.cfg.EKSConfig.AddOnStresserRemote.Duration
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	var pods []v1.Pod
 	_, pods, err = k8s_client.WaitForJobCompletes(
+		ctx,
 		ts.cfg.Logger,
 		ts.cfg.Stopc,
 		ts.cfg.K8SClient,
-		3*time.Minute,
-		10*time.Second,
-		ts.cfg.EKSConfig.AddOnStresserRemote.Duration+10*time.Minute,
+		time.Minute+ts.cfg.EKSConfig.AddOnStresserRemote.Duration/2,
+		15*time.Second,
 		ts.cfg.EKSConfig.AddOnStresserRemote.Namespace,
 		stresserJobName,
 		ts.cfg.EKSConfig.AddOnStresserRemote.Completes,
@@ -161,6 +163,7 @@ func (ts *tester) Create() (err error) {
 			fmt.Fprintf(ts.cfg.LogWriter, "\n\"%s\":\n%s\n", cmdLogs, out)
 		}),
 	)
+	cancel()
 	if err != nil {
 		return err
 	}

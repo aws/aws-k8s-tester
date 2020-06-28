@@ -135,7 +135,7 @@ func (ts *tester) scaleMNG(mngName string, update eksconfig.MNGScaleUpdate) (err
 		return fmt.Errorf("MNGs[%q] Update.Id empty", mngName)
 	}
 	initialWait := 3 * time.Minute
-	totalWait := 5*time.Minute + 20*time.Second*time.Duration(cur.ASGDesiredCapacity)
+	totalWait := 10*time.Minute + 3*time.Minute*time.Duration(cur.ASGDesiredCapacity)
 	ts.cfg.Logger.Info("sent MNG scaler request; polling",
 		zap.String("cluster-name", ts.cfg.EKSConfig.Name),
 		zap.String("mng-name", mngName),

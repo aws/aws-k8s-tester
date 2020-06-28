@@ -119,7 +119,7 @@ func (ts *tester) Upgrade(mngName string) (err error) {
 
 	// takes TODO
 	initialWait := 3 * time.Minute
-	totalWait := 30*time.Minute + 3*time.Minute*time.Duration(cur.ASGDesiredCapacity)
+	totalWait := time.Hour + 3*time.Minute*time.Duration(cur.ASGDesiredCapacity)
 
 	ts.cfg.Logger.Info("sent MNG upgrade request; polling",
 		zap.String("cluster-name", ts.cfg.EKSConfig.Name),

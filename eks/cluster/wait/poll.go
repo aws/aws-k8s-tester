@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
+	"github.com/aws/aws-k8s-tester/pkg/ctxutil"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/eks"
@@ -60,6 +61,7 @@ func Poll(
 		zap.String("desired-status", desiredClusterStatus),
 		zap.String("initial-wait", initialWait.String()),
 		zap.String("poll-interval", pollInterval.String()),
+		zap.String("ctx-time-left", ctxutil.TimeLeftTillDeadline(ctx)),
 	)
 
 	now := time.Now()
@@ -128,6 +130,7 @@ func Poll(
 				zap.String("cluster-name", clusterName),
 				zap.String("status", currentStatus),
 				zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
+				zap.String("ctx-time-left", ctxutil.TimeLeftTillDeadline(ctx)),
 			)
 			switch currentStatus {
 			case desiredClusterStatus:
@@ -208,7 +211,7 @@ func PollUpdate(
 	requestID string,
 	desiredUpdateStatus string,
 	initialWait time.Duration,
-	interval time.Duration,
+	pollInterval time.Duration,
 	opts ...OpOption) <-chan UpdateStatus {
 
 	ret := Op{}
@@ -219,7 +222,8 @@ func PollUpdate(
 		zap.String("request-id", requestID),
 		zap.String("desired-update-status", desiredUpdateStatus),
 		zap.String("initial-wait", initialWait.String()),
-		zap.String("interval", interval.String()),
+		zap.String("poll-interval", pollInterval.String()),
+		zap.String("ctx-time-left", ctxutil.TimeLeftTillDeadline(ctx)),
 	)
 
 	now := time.Now()
@@ -251,7 +255,7 @@ func PollUpdate(
 				// in case stack has already reached desired status
 				// wait from second interation
 				if waitDur == time.Duration(0) {
-					waitDur = interval
+					waitDur = pollInterval
 				}
 			}
 
@@ -286,6 +290,7 @@ func PollUpdate(
 				zap.String("status", currentStatus),
 				zap.String("update-type", updateType),
 				zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
+				zap.String("ctx-time-left", ctxutil.TimeLeftTillDeadline(ctx)),
 			)
 			switch currentStatus {
 			case desiredUpdateStatus:

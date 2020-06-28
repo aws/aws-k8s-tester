@@ -77,18 +77,21 @@ func (ts *tester) Create() (err error) {
 	if err = ts.createJob(); err != nil {
 		return err
 	}
-
-	_, pods, err := k8s_client.WaitForJobCompletes(
+	timeout := 5*time.Minute + 5*time.Minute*time.Duration(ts.cfg.EKSConfig.AddOnJobsPi.Completes)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	var pods []v1.Pod
+	_, pods, err = k8s_client.WaitForJobCompletes(
+		ctx,
 		ts.cfg.Logger,
 		ts.cfg.Stopc,
 		ts.cfg.K8SClient,
 		2*time.Minute,
 		5*time.Second,
-		3*time.Minute+10*time.Duration(ts.cfg.EKSConfig.AddOnJobsPi.Completes)*time.Second,
 		ts.cfg.EKSConfig.AddOnJobsPi.Namespace,
 		jobName,
 		int(ts.cfg.EKSConfig.AddOnJobsPi.Completes),
 	)
+	cancel()
 	if err != nil {
 		return err
 	}

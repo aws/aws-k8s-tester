@@ -79,19 +79,21 @@ func (ts *tester) Create() (err error) {
 	if err = ts.createCronJob(); err != nil {
 		return err
 	}
-
-	// take about 4-min for 10 cron jobs to trigger
-	_, pods, err := k8s_client.WaitForCronJobCompletes(
+	timeout := 10*time.Minute + 5*time.Minute*time.Duration(ts.cfg.EKSConfig.AddOnCronJobs.Completes)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	var pods []v1.Pod
+	_, pods, err = k8s_client.WaitForCronJobCompletes(
+		ctx,
 		ts.cfg.Logger,
 		ts.cfg.Stopc,
 		ts.cfg.K8SClient,
 		3*time.Minute,
 		5*time.Second,
-		10*time.Minute+10*time.Duration(ts.cfg.EKSConfig.AddOnCronJobs.Completes)*time.Second,
 		ts.cfg.EKSConfig.AddOnCronJobs.Namespace,
 		cronJobName,
 		int(ts.cfg.EKSConfig.AddOnCronJobs.Completes),
 	)
+	cancel()
 	if err != nil {
 		return err
 	}

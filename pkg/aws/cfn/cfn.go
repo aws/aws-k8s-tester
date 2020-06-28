@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aws/aws-k8s-tester/pkg/ctxutil"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/cloudformation/cloudformationiface"
@@ -40,6 +41,7 @@ func Poll(
 		zap.String("want", desiredStackStatus),
 		zap.String("initial-wait", initialWait.String()),
 		zap.String("poll-interval", pollInterval.String()),
+		zap.String("ctx-time-left", ctxutil.TimeLeftTillDeadline(ctx)),
 	)
 	ch := make(chan StackStatus, 10)
 	go func() {
@@ -110,12 +112,13 @@ func Poll(
 				prevStatusReason = currentStatusReason
 			}
 
-			lg.Info("polling",
+			lg.Info("poll",
 				zap.String("name", aws.StringValue(stack.StackName)),
 				zap.String("desired", desiredStackStatus),
 				zap.String("current", currentStatus),
 				zap.String("current-reason", currentStatusReason),
 				zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
+				zap.String("ctx-time-left", ctxutil.TimeLeftTillDeadline(ctx)),
 			)
 
 			if desiredStackStatus != cloudformation.ResourceStatusDeleteComplete &&

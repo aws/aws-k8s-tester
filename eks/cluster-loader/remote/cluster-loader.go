@@ -114,18 +114,21 @@ func (ts *tester) Create() (err error) {
 	if err = ts.createJob(); err != nil {
 		return err
 	}
+	timeout := 5*time.Minute + 5*time.Minute*time.Duration(ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Runs)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	var pods []v1.Pod
 	_, pods, err = k8s_client.WaitForJobCompletes(
+		ctx,
 		ts.cfg.Logger,
 		ts.cfg.Stopc,
 		ts.cfg.K8SClient,
 		2*time.Minute,
 		10*time.Second,
-		3*time.Minute+time.Duration(ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Runs)*2*time.Minute,
 		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.Namespace,
 		clusterLoaderJobName,
 		1,
 	)
+	cancel()
 	if err != nil {
 		return err
 	}

@@ -29,6 +29,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aws/aws-k8s-tester/pkg/ctxutil"
 	"go.uber.org/zap"
 	batchv1 "k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
@@ -224,13 +225,13 @@ func DeleteNamespaceAndWait(
 	lg *zap.Logger,
 	c clientset.Interface,
 	namespace string,
-	interval time.Duration,
+	pollInterval time.Duration,
 	timeout time.Duration,
 	opts ...OpOption) error {
 	if err := deleteNamespace(lg, c, namespace); err != nil {
 		return err
 	}
-	return waitForDeleteNamespace(lg, c, namespace, interval, timeout, opts...)
+	return waitForDeleteNamespace(lg, c, namespace, pollInterval, timeout, opts...)
 }
 
 // deleteNamespace deletes namespace with given name.
@@ -264,12 +265,12 @@ func deleteNamespace(lg *zap.Logger, c clientset.Interface, namespace string) er
 	return RetryWithExponentialBackOff(RetryFunction(deleteFunc, Allow(apierrs.IsNotFound)))
 }
 
-func waitForDeleteNamespace(lg *zap.Logger, c clientset.Interface, namespace string, interval time.Duration, timeout time.Duration, opts ...OpOption) error {
+func waitForDeleteNamespace(lg *zap.Logger, c clientset.Interface, namespace string, pollInterval time.Duration, timeout time.Duration, opts ...OpOption) error {
 	ret := Op{}
 	ret.applyOpts(opts)
 
-	if interval == 0 {
-		interval = DefaultNamespaceDeletionInterval
+	if pollInterval == 0 {
+		pollInterval = DefaultNamespaceDeletionInterval
 	}
 	if timeout == 0 {
 		timeout = DefaultNamespaceDeletionTimeout
@@ -331,7 +332,7 @@ func waitForDeleteNamespace(lg *zap.Logger, c clientset.Interface, namespace str
 
 		return false, nil
 	}
-	return wait.PollImmediate(interval, timeout, retryWaitFunc)
+	return wait.PollImmediate(pollInterval, timeout, retryWaitFunc)
 }
 
 /*
@@ -507,34 +508,34 @@ func CreateObject(dynamicClient dynamic.Interface, namespace string, name string
 // WaitForJobCompletes waits for all Job completion,
 // by counting the number of pods in the namespace.
 func WaitForJobCompletes(
+	ctx context.Context,
 	lg *zap.Logger,
 	stopc chan struct{},
 	k8sClient EKS,
 	initialWait time.Duration,
-	interval time.Duration,
-	timeout time.Duration,
+	pollInterval time.Duration,
 	namespace string,
 	jobName string,
 	target int,
 	opts ...OpOption) (job *batchv1.Job, pods []apiv1.Pod, err error) {
-	job, _, pods, err = waitForJobCompletes(false, lg, stopc, k8sClient, initialWait, interval, timeout, namespace, jobName, target, opts...)
+	job, _, pods, err = waitForJobCompletes(false, ctx, lg, stopc, k8sClient, initialWait, pollInterval, namespace, jobName, target, opts...)
 	return job, pods, err
 }
 
 // WaitForCronJobCompletes waits for all CronJob completion,
 // by counting the number of pods in the namespace.
 func WaitForCronJobCompletes(
+	ctx context.Context,
 	lg *zap.Logger,
 	stopc chan struct{},
 	k8sClient EKS,
 	initialWait time.Duration,
-	interval time.Duration,
-	timeout time.Duration,
+	pollInterval time.Duration,
 	namespace string,
 	jobName string,
 	target int,
 	opts ...OpOption) (cronJob *batchv1beta1.CronJob, pods []apiv1.Pod, err error) {
-	_, cronJob, pods, err = waitForJobCompletes(true, lg, stopc, k8sClient, initialWait, interval, timeout, namespace, jobName, target, opts...)
+	_, cronJob, pods, err = waitForJobCompletes(true, ctx, lg, stopc, k8sClient, initialWait, pollInterval, namespace, jobName, target, opts...)
 	return cronJob, pods, err
 }
 
@@ -556,12 +557,12 @@ metadata:
 
 func waitForJobCompletes(
 	isCronJob bool,
+	ctx context.Context,
 	lg *zap.Logger,
 	stopc chan struct{},
 	k8sClient EKS,
 	initialWait time.Duration,
-	interval time.Duration,
-	timeout time.Duration,
+	pollInterval time.Duration,
 	namespace string,
 	jobName string,
 	target int,
@@ -570,11 +571,8 @@ func waitForJobCompletes(
 	ret := Op{}
 	ret.applyOpts(opts)
 
-	if interval == 0 {
-		interval = DefaultNamespaceDeletionInterval
-	}
-	if timeout == 0 {
-		timeout = DefaultNamespaceDeletionTimeout
+	if pollInterval == 0 {
+		pollInterval = DefaultNamespaceDeletionInterval
 	}
 
 	lg.Info("waiting Job completes",
@@ -582,8 +580,9 @@ func waitForJobCompletes(
 		zap.String("job-name", jobName),
 		zap.Bool("cron-job", isCronJob),
 		zap.String("initial-wait", initialWait.String()),
-		zap.String("interval", interval.String()),
-		zap.String("timeout", timeout.String()),
+		zap.String("poll-interval", pollInterval.String()),
+		zap.String("ctx-duration-left", ctxutil.DurationTillDeadline(ctx).String()),
+		zap.String("ctx-time-left", ctxutil.TimeLeftTillDeadline(ctx)),
 		zap.Int("target", target),
 	)
 	select {
@@ -635,12 +634,13 @@ func waitForJobCompletes(
 			}
 		}
 		if podSucceededCnt < target {
-			lg.Warn("polled not succeeded yet",
+			lg.Warn("poll but not succeeded yet",
 				zap.String("namespace", namespace),
 				zap.String("job-name", jobName),
 				zap.Int("total-pods", len(pods)),
 				zap.Int("pod-succeeded-count", podSucceededCnt),
 				zap.Int("target", target),
+				zap.String("ctx-time-left", ctxutil.TimeLeftTillDeadline(ctx)),
 			)
 			if ret.queryFunc != nil {
 				ret.queryFunc()
@@ -648,11 +648,12 @@ func waitForJobCompletes(
 			return false, nil
 		}
 
-		lg.Info("polled pods",
+		lg.Info("poll pods",
 			zap.String("namespace", namespace),
 			zap.String("job-name", jobName),
 			zap.Int("pod-succeeded-count", podSucceededCnt),
 			zap.Int("target", target),
+			zap.String("ctx-time-left", ctxutil.TimeLeftTillDeadline(ctx)),
 		)
 
 		switch isCronJob {
@@ -704,7 +705,7 @@ func waitForJobCompletes(
 		}
 		return false, nil
 	}
-	err = wait.PollImmediate(interval, timeout, retryWaitFunc)
+	err = wait.PollImmediate(pollInterval, ctxutil.DurationTillDeadline(ctx), retryWaitFunc)
 	return job, cronJob, pods, err
 }
 

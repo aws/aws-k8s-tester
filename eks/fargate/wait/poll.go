@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aws/aws-k8s-tester/pkg/ctxutil"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/eks"
@@ -53,6 +54,7 @@ func Poll(
 		zap.String("desired-status", desiredStatus),
 		zap.String("initial-wait", initialWait.String()),
 		zap.String("poll-interval", pollInterval.String()),
+		zap.String("ctx-time-left", ctxutil.TimeLeftTillDeadline(ctx)),
 	)
 
 	now := time.Now()
@@ -124,6 +126,7 @@ func Poll(
 				zap.String("fargate-name", profileName),
 				zap.String("status", currentStatus),
 				zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
+				zap.String("ctx-time-left", ctxutil.TimeLeftTillDeadline(ctx)),
 			)
 			switch currentStatus {
 			case desiredStatus:
