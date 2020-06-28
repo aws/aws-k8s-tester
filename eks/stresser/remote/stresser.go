@@ -359,6 +359,7 @@ func (ts *tester) createALBRBACClusterRole() error {
 							"*",
 						},
 						Resources: []string{
+							"configmaps",
 							"leases",
 							"nodes",
 							"pods",
