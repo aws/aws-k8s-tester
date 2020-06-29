@@ -3,6 +3,23 @@
 <hr>
 
 
+## [v1.4.1](https://github.com/aws/aws-k8s-tester/releases/tag/v1.4.1) (2020-06)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.0...v1.4.1).
+
+### `eks`
+
+- Handle [`NotFound` errors in delete operations](https://github.com/aws/aws-k8s-tester/commit/2d7b30d58b1fb6b3d90635d9e32824615d972c28).
+
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.32.11`](https://github.com/aws/aws-sdk-go/releases/tag/v1.32.11) to [`v1.32.12`](https://github.com/aws/aws-sdk-go/releases/tag/v1.32.12).
+
+
+
+<hr>
+
+
 ## [v1.4.0](https://github.com/aws/aws-k8s-tester/releases/tag/v1.4.0) (2020-06-29)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.9...v1.4.0).
