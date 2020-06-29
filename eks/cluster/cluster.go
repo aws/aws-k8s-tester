@@ -544,7 +544,7 @@ func (ts *tester) createEKS() (err error) {
 }
 
 func (ts *tester) deleteEKS() error {
-	fmt.Printf(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
+	fmt.Printf(ts.cfg.EKSConfig.Colorize("\n\n\n[yellow]*********************************\n"))
 	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_blue]deleteEKS [default](%q)\n"), ts.cfg.EKSConfig.ConfigPath)
 
 	ts.describeCluster()
