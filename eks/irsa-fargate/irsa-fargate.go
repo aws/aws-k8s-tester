@@ -1080,8 +1080,8 @@ func (ts *tester) checkPodLogs() error {
 	}
 	fmt.Fprintf(ts.cfg.LogWriter, "\n'%s' output:\n\n%s\n\n", logsCmd, out)
 	if !strings.Contains(out, ts.sleepMessage) {
-		ts.cfg.Logger.Warn("unexpected logs output", zap.String("output", out))
-		return fmt.Errorf("unexpected log output %s (expected %q)", out, ts.sleepMessage)
+		ts.cfg.Logger.Warn("unexpected logs output")
+		return fmt.Errorf("unexpected logs output; expected %q", ts.sleepMessage)
 	}
 
 	ts.cfg.Logger.Info("succcessfully checked pod logs",
