@@ -32,7 +32,7 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	api_errors "k8s.io/apimachinery/pkg/api/errors"
+	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -241,7 +241,7 @@ func (ts *tester) createServiceAccount() error {
 			metav1.CreateOptions{},
 		)
 	cancel()
-	if err != nil && !api_errors.IsNotFound(err) {
+	if err != nil && !apierrs.IsNotFound(err) && !strings.Contains(err.Error(), "not found") {
 		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return fmt.Errorf("failed to create cluster loader ServiceAccount (%v)", err)
 	}
@@ -268,7 +268,7 @@ func (ts *tester) deleteServiceAccount() error {
 			},
 		)
 	cancel()
-	if err != nil && !api_errors.IsNotFound(err) {
+	if err != nil && !apierrs.IsNotFound(err) && !strings.Contains(err.Error(), "not found") {
 		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return fmt.Errorf("failed to delete cluster loader ServiceAccount (%v)", err)
 	}
@@ -345,7 +345,7 @@ func (ts *tester) deleteALBRBACClusterRole() error {
 			},
 		)
 	cancel()
-	if err != nil && !api_errors.IsNotFound(err) {
+	if err != nil && !apierrs.IsNotFound(err) && !strings.Contains(err.Error(), "not found") {
 		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return fmt.Errorf("failed to delete cluster loader RBAC ClusterRole (%v)", err)
 	}
@@ -424,7 +424,7 @@ func (ts *tester) deleteALBRBACClusterRoleBinding() error {
 			},
 		)
 	cancel()
-	if err != nil && !api_errors.IsNotFound(err) {
+	if err != nil && !apierrs.IsNotFound(err) && !strings.Contains(err.Error(), "not found") {
 		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return fmt.Errorf("failed to delete cluster loader RBAC ClusterRoleBinding (%v)", err)
 	}
@@ -489,7 +489,7 @@ func (ts *tester) deleteConfigMap() error {
 			},
 		)
 	cancel()
-	if err != nil && !api_errors.IsNotFound(err) {
+	if err != nil && !apierrs.IsNotFound(err) && !strings.Contains(err.Error(), "not found") {
 		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return err
 	}

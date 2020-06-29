@@ -27,7 +27,7 @@ func Test_results(t *testing.T) {
 		t.Skip(err)
 	}
 
-	if err = readResults(zap.NewExample(), s, "test-data/test.tar.gz"); err != nil {
+	if err = readResults(zap.NewExample(), os.Stderr, s, "test-data/test.tar.gz"); err != nil {
 		t.Fatal(err)
 	}
 

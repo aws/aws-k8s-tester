@@ -27,7 +27,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	v1beta1 "k8s.io/api/extensions/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	api_errors "k8s.io/apimachinery/pkg/api/errors"
+	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/exec"
@@ -297,7 +297,7 @@ func (ts *tester) deleteALBServiceAccount() error {
 			},
 		)
 	cancel()
-	if err != nil && !api_errors.IsNotFound(err) {
+	if err != nil && !apierrs.IsNotFound(err) && !strings.Contains(err.Error(), "not found") {
 		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return fmt.Errorf("failed to delete ALB Ingress Controller ServiceAccount (%v)", err)
 	}
@@ -400,7 +400,7 @@ func (ts *tester) deleteALBRBACClusterRole() error {
 			},
 		)
 	cancel()
-	if err != nil && !api_errors.IsNotFound(err) {
+	if err != nil && !apierrs.IsNotFound(err) && !strings.Contains(err.Error(), "not found") {
 		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return fmt.Errorf("failed to delete ALB Ingress Controller RBAC ClusterRole (%v)", err)
 	}
@@ -474,7 +474,7 @@ func (ts *tester) deleteALBRBACClusterRoleBinding() error {
 			},
 		)
 	cancel()
-	if err != nil && !api_errors.IsNotFound(err) {
+	if err != nil && !apierrs.IsNotFound(err) && !strings.Contains(err.Error(), "not found") {
 		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return fmt.Errorf("failed to delete ALB Ingress Controller RBAC ClusterRoleBinding (%v)", err)
 	}
@@ -585,7 +585,7 @@ func (ts *tester) deleteALBDeployment() error {
 			},
 		)
 	cancel()
-	if err != nil && !api_errors.IsNotFound(err) {
+	if err != nil && !apierrs.IsNotFound(err) && !strings.Contains(err.Error(), "not found") {
 		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return fmt.Errorf("failed to delete ALB Ingress Controller Deployment (%v)", err)
 	}
@@ -755,7 +755,7 @@ func (ts *tester) delete2048Deployment() error {
 			},
 		)
 	cancel()
-	if err != nil && !api_errors.IsNotFound(err) {
+	if err != nil && !apierrs.IsNotFound(err) && !strings.Contains(err.Error(), "not found") {
 		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return fmt.Errorf("failed to delete ALB 2048 Deployment (%v)", err)
 	}
@@ -900,7 +900,7 @@ func (ts *tester) delete2048Service() error {
 			},
 		)
 	cancel()
-	if err != nil && !api_errors.IsNotFound(err) {
+	if err != nil && !apierrs.IsNotFound(err) && !strings.Contains(err.Error(), "not found") {
 		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return fmt.Errorf("failed to delete ALB 2048 Service (%v)", err)
 	}
@@ -1148,7 +1148,7 @@ func (ts *tester) delete2048Ingress() error {
 			},
 		)
 	cancel()
-	if err != nil && !api_errors.IsNotFound(err) {
+	if err != nil && !apierrs.IsNotFound(err) && !strings.Contains(err.Error(), "not found") {
 		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return fmt.Errorf("failed to delete ALB 2048 Ingress (%v)", err)
 	}

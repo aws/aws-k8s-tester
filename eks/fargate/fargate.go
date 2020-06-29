@@ -31,6 +31,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
+	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/exec"
 )
@@ -442,7 +443,8 @@ func (ts *tester) deleteSecret() error {
 			},
 		)
 	cancel()
-	if err != nil {
+	if err != nil && !apierrs.IsNotFound(err) && !strings.Contains(err.Error(), "not found") {
+		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return fmt.Errorf("failed to delete Secret %q (%v)", ts.cfg.EKSConfig.AddOnFargate.SecretName, err)
 	}
 	ts.cfg.Logger.Info("deleted Secret", zap.String("name", ts.cfg.EKSConfig.AddOnFargate.SecretName))
@@ -641,7 +643,8 @@ func (ts *tester) deletePod() error {
 			},
 		)
 	cancel()
-	if err != nil {
+	if err != nil && !apierrs.IsNotFound(err) && !strings.Contains(err.Error(), "not found") {
+		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return fmt.Errorf("failed to delete Pod %q (%v)", fargatePodName, err)
 	}
 	ts.cfg.Logger.Info("deleted Pod", zap.String("name", fargatePodName))

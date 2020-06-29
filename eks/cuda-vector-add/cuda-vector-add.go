@@ -16,6 +16,7 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
+	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/exec"
@@ -283,10 +284,11 @@ func (ts *tester) Delete() error {
 			metav1.DeleteOptions{},
 		)
 	cancel()
-	if err != nil {
+	if err != nil && !apierrs.IsNotFound(err) && !strings.Contains(err.Error(), "not found") {
+		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return fmt.Errorf("failed to delete Pod (%v)", err)
 	}
-	ts.cfg.Logger.Info("deleted Pod", zap.String("pod-name", podName))
+	ts.cfg.Logger.Info("deleted Pod", zap.String("pod-name", podName), zap.Error(err))
 
 	if err := k8s_client.DeleteNamespaceAndWait(
 		ts.cfg.Logger,

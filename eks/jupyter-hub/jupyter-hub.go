@@ -23,7 +23,7 @@ import (
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	api_errors "k8s.io/apimachinery/pkg/api/errors"
+	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/exec"
 )
@@ -202,7 +202,7 @@ func (ts *tester) deleteTillerServiceAccount() error {
 			},
 		)
 	cancel()
-	if err != nil && !api_errors.IsNotFound(err) {
+	if err != nil && !apierrs.IsNotFound(err) && !strings.Contains(err.Error(), "not found") {
 		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return fmt.Errorf("failed to delete Tiller ServiceAccount (%v)", err)
 	}
@@ -271,7 +271,7 @@ func (ts *tester) deleteTillerRBACClusterRoleBinding() error {
 			},
 		)
 	cancel()
-	if err != nil && !api_errors.IsNotFound(err) {
+	if err != nil && !apierrs.IsNotFound(err) && !strings.Contains(err.Error(), "not found") {
 		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return fmt.Errorf("failed to delete Tiller RBAC ClusterRoleBinding (%v)", err)
 	}

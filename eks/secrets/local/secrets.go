@@ -27,6 +27,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"go.uber.org/zap"
+	apierrs "k8s.io/apimachinery/pkg/api/errors"
 )
 
 // Config defines secrets local tester configuration.
@@ -156,8 +157,8 @@ func (ts *tester) Delete() error {
 		k8s_client.DefaultNamespaceDeletionInterval,
 		k8s_client.DefaultNamespaceDeletionTimeout,
 		k8s_client.WithForceDelete(true),
-	); err != nil {
-		return fmt.Errorf("failed to delete secrets local tester namespace (%v)", err)
+	); err != nil && !apierrs.IsNotFound(err) && !strings.Contains(err.Error(), "not found") {
+		errs = append(errs, fmt.Sprintf("failed to delete secrets local tester namespace (%v)", err))
 	}
 
 	if len(errs) > 0 {

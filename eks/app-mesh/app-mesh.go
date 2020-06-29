@@ -25,7 +25,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/apps/v1"
-	api_errors "k8s.io/apimachinery/pkg/api/errors"
+	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/exec"
 )
@@ -410,7 +410,7 @@ func (ts *tester) deleteController() (err error) {
 			},
 		)
 	cancel()
-	if err != nil && !api_errors.IsNotFound(err) {
+	if err != nil && !apierrs.IsNotFound(err) && !strings.Contains(err.Error(), "not found") {
 		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 	} else {
 		ts.cfg.Logger.Info("deleted AppMesh controller deployment")
@@ -444,7 +444,7 @@ func (ts *tester) deleteController() (err error) {
 					},
 				)
 			cancel()
-			if err != nil && !api_errors.IsNotFound(err) {
+			if err != nil && !apierrs.IsNotFound(err) && !strings.Contains(err.Error(), "not found") {
 				ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 			} else {
 				ts.cfg.Logger.Info("deleted AppMesh injector replicaset", zap.String("name", name))
@@ -529,7 +529,7 @@ func (ts *tester) deleteInjector() (err error) {
 			},
 		)
 	cancel()
-	if err != nil && !api_errors.IsNotFound(err) {
+	if err != nil && !apierrs.IsNotFound(err) && !strings.Contains(err.Error(), "not found") {
 		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 	} else {
 		ts.cfg.Logger.Info("deleted AppMesh injector Service")
@@ -550,7 +550,7 @@ func (ts *tester) deleteInjector() (err error) {
 			},
 		)
 	cancel()
-	if err != nil && !api_errors.IsNotFound(err) {
+	if err != nil && !apierrs.IsNotFound(err) && !strings.Contains(err.Error(), "not found") {
 		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 	} else {
 		ts.cfg.Logger.Info("deleted AppMesh injector deployment")
@@ -584,7 +584,7 @@ func (ts *tester) deleteInjector() (err error) {
 					},
 				)
 			cancel()
-			if err != nil && !api_errors.IsNotFound(err) {
+			if err != nil && !apierrs.IsNotFound(err) && !strings.Contains(err.Error(), "not found") {
 				ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 			} else {
 				ts.cfg.Logger.Info("deleted AppMesh injector replicaset", zap.String("name", name))

@@ -21,7 +21,7 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-sdk-go/aws"
 	"go.uber.org/zap"
-	api_errors "k8s.io/apimachinery/pkg/api/errors"
+	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -139,7 +139,7 @@ func (ts *tester) deleteCreatedNodes() error {
 			},
 		)
 		cancel()
-		if err != nil && !api_errors.IsNotFound(err) {
+		if err != nil && !apierrs.IsNotFound(err) && !strings.Contains(err.Error(), "not found") {
 			ts.cfg.Logger.Warn("failed to delete node", zap.Int("index", i), zap.String("name", nodeName), zap.Error(err))
 			errs = append(errs, err.Error())
 		} else {
