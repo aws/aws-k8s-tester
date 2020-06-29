@@ -176,9 +176,9 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 
 	colorize := cfg.Colorize
 
-	fmt.Fprintf(logWriter, colorize("\n\n[yellow]*********************************\n"))
+	fmt.Fprintf(logWriter, colorize("\n\n\n[yellow]*********************************\n"))
 	fmt.Fprintln(logWriter, "😎 🙏 🚶 ✔️ 👍")
-	fmt.Fprintf(logWriter, colorize("[light_green]New %q [default](%q)\n"), cfg.ConfigPath, version.Version())
+	fmt.Fprintf(logWriter, colorize("[light_green]New %q [default](%q)\n\n"), cfg.ConfigPath, version.Version())
 
 	if err = fileutil.EnsureExecutable(cfg.AWSCLIPath); err != nil {
 		// file may be already executable while the process does not own the file/directory
