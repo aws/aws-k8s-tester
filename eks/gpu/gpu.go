@@ -170,15 +170,15 @@ func (ts *tester) InstallNvidiaDriver() (err error) {
 		output, err := exec.New().CommandContext(ctx, applyArgs[0], applyArgs[1:]...).CombinedOutput()
 		cancel()
 		out := strings.TrimSpace(string(output))
+		fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", applyCmd, out)
 		if err != nil {
-			ts.cfg.Logger.Warn("failed to create nvidia GPU driver", zap.String("output", out), zap.Error(err))
+			ts.cfg.Logger.Warn("failed to create nvidia GPU driver", zap.Error(err))
 			time.Sleep(5 * time.Second)
 			continue
 		}
 
 		applied = true
 		ts.cfg.Logger.Info("created nvidia GPU driver")
-		fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", applyCmd, out)
 		break
 	}
 	if !applied {

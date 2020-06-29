@@ -851,14 +851,15 @@ func (ts *tester) createClient() (cli k8s_client.EKS, err error) {
 			output, err = exec.New().CommandContext(ctx, args[0], args[1:]...).CombinedOutput()
 			cancel()
 			out := string(output)
+			fmt.Fprintf(ts.cfg.LogWriter, "\n'%s' output:\n\n%s\n\n", cmd, out)
 			if err != nil {
-				ts.cfg.Logger.Warn("'aws eks update-kubeconfig' failed", zap.String("output", out), zap.Error(err))
+				ts.cfg.Logger.Warn("'aws eks update-kubeconfig' failed", zap.Error(err))
 				if !strings.Contains(out, "Cluster status not active") || !strings.Contains(err.Error(), "exit") {
 					return nil, fmt.Errorf("'aws eks update-kubeconfig' failed (output %q, error %v)", out, err)
 				}
 				continue
 			}
-			ts.cfg.Logger.Info("'aws eks update-kubeconfig' success", zap.String("output", out), zap.String("kubeconfig-path", ts.cfg.EKSConfig.KubeConfigPath))
+			ts.cfg.Logger.Info("'aws eks update-kubeconfig' success", zap.String("kubeconfig-path", ts.cfg.EKSConfig.KubeConfigPath))
 			if err = aws_s3.Upload(
 				ts.cfg.Logger,
 				ts.cfg.S3API,
@@ -871,7 +872,7 @@ func (ts *tester) createClient() (cli k8s_client.EKS, err error) {
 			break
 		}
 		if err != nil {
-			ts.cfg.Logger.Warn("failed 'aws eks update-kubeconfig'", zap.String("output", string(output)), zap.Error(err))
+			ts.cfg.Logger.Warn("failed 'aws eks update-kubeconfig'", zap.Error(err))
 			return nil, err
 		}
 

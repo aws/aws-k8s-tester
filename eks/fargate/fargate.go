@@ -707,7 +707,7 @@ func (ts *tester) checkPod() error {
 		fmt.Fprintf(ts.cfg.LogWriter, "\n'%s' output:\n\n%s\n\n", execCmd, out)
 
 		if !strings.Contains(out, secretReadTxt) {
-			ts.cfg.Logger.Warn("unexpected exec output", zap.String("output", out))
+			ts.cfg.Logger.Warn("unexpected exec output")
 			time.Sleep(5 * time.Second)
 			continue
 		}

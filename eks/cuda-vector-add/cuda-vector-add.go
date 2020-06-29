@@ -197,15 +197,13 @@ func (ts *tester) checkPod() error {
 			ts.cfg.Logger.Info("failed to query Pod", zap.String("pod-name", podName), zap.Error(err))
 			continue
 		}
-
 		if pout.Status.Phase != v1.PodSucceeded {
 			ts.cfg.Logger.Warn("unexpected Pod phase", zap.String("pod-name", podName), zap.String("pod-phase", fmt.Sprintf("%v", pout.Status.Phase)))
 			time.Sleep(5 * time.Second)
 			continue
 		}
-
 		if !strings.Contains(out, "Test PASSED") || !strings.Contains(out, "[Vector addition") {
-			ts.cfg.Logger.Warn("unexpected logs output", zap.String("output", out))
+			ts.cfg.Logger.Warn("unexpected logs output")
 			time.Sleep(5 * time.Second)
 			continue
 		}
