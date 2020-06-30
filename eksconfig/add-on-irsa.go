@@ -82,7 +82,7 @@ func (cfg *Config) IsEnabledAddOnIRSA() bool {
 func getDefaultAddOnIRSA() *AddOnIRSA {
 	return &AddOnIRSA{
 		Enable:             false,
-		DeploymentReplicas: 10,
+		DeploymentReplicas: 1,
 	}
 }
 
