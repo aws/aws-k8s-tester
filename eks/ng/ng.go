@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/aws/aws-k8s-tester/eks/ng/autoscaler"
+	"github.com/aws/aws-k8s-tester/eks/autoscaler"
 	"github.com/aws/aws-k8s-tester/eks/ng/wait"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"

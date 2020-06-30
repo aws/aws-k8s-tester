@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aws/aws-k8s-tester/eks/autoscaler"
 	"github.com/aws/aws-k8s-tester/eks/mng/scale"
 	version_upgrade "github.com/aws/aws-k8s-tester/eks/mng/version-upgrade"
 	"github.com/aws/aws-k8s-tester/eks/mng/wait"
@@ -93,18 +94,25 @@ func New(cfg Config) Tester {
 			K8SClient: cfg.K8SClient,
 			EKSAPI:    cfg.EKSAPI,
 		}),
+		clusterAutoscaler: autoscaler.New(autoscaler.Config{
+			Logger:    cfg.Logger,
+			Stopc:     cfg.Stopc,
+			EKSConfig: cfg.EKSConfig,
+			K8SClient: cfg.K8SClient,
+		}),
 		logsMu:          new(sync.RWMutex),
 		deleteRequested: make(map[string]struct{}),
 	}
 }
 
 type tester struct {
-	cfg             Config
-	nodeWaiter      wait.NodeWaiter
-	scaler          scale.Scaler
-	versionUpgrader version_upgrade.Upgrader
-	logsMu          *sync.RWMutex
-	deleteRequested map[string]struct{}
+	cfg               Config
+	nodeWaiter        wait.NodeWaiter
+	scaler            scale.Scaler
+	versionUpgrader   version_upgrade.Upgrader
+	deleteRequested   map[string]struct{}
+	logsMu            *sync.RWMutex
+	clusterAutoscaler autoscaler.ClusterAutoscaler
 }
 
 func (ts *tester) Create() (err error) {
@@ -139,6 +147,11 @@ func (ts *tester) Create() (err error) {
 			return err
 		}
 	}
+
+	if err := ts.clusterAutoscaler.Create(); err != nil {
+		return err
+	}
+
 	ts.cfg.EKSConfig.AddOnManagedNodeGroups.Created = true
 	return ts.cfg.EKSConfig.Sync()
 }
