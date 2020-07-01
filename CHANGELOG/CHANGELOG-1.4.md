@@ -3,13 +3,23 @@
 <hr>
 
 
-## [v1.4.1](https://github.com/aws/aws-k8s-tester/releases/tag/v1.4.1) (2020-06)
+## [v1.4.1](https://github.com/aws/aws-k8s-tester/releases/tag/v1.4.1) (2020-07-01)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.0...v1.4.1).
+
+### `ec2`
+
+- Fix [log fetch, make it work run multiple times](https://github.com/aws/aws-k8s-tester/commit/).
 
 ### `eks`
 
 - Handle [`NotFound` errors in delete operations](https://github.com/aws/aws-k8s-tester/commit/2d7b30d58b1fb6b3d90635d9e32824615d972c28).
+- Fix [log fetch, make it work run multiple times](https://github.com/aws/aws-k8s-tester/commit/fab79e552cc89a749f45e5f5e001b6faaea467ee).
+- Increase [`MNG` update timeouts](https://github.com/aws/aws-k8s-tester/commit/43f826bda28b276aa0cae5d289a71fc3fc77a148).
+
+### `eksconfig`
+
+- Reduce [`AddOnIRSA` default replicas to 1](https://github.com/aws/aws-k8s-tester/pull/112).
 
 ### Dependency
 
