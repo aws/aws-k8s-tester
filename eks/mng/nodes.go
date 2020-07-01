@@ -250,7 +250,7 @@ func (ts *tester) createASGs() (err error) {
 			}
 
 			stackInput := &cloudformation.CreateStackInput{
-				StackName:    aws.String(cur.Name),
+				StackName:    aws.String(fmt.Sprintf("%s-%s", ts.cfg.EKSConfig.Name, cur.Name)),
 				Capabilities: aws.StringSlice([]string{"CAPABILITY_IAM"}),
 				OnFailure:    aws.String(cloudformation.OnFailureDelete),
 				Tags: cfn.NewTags(map[string]string{
