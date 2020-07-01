@@ -75,13 +75,13 @@ func Poll(
 		for ctx.Err() == nil {
 			select {
 			case <-ctx.Done():
-				lg.Warn("wait aborted", zap.Error(ctx.Err()))
+				lg.Warn("wait aborted, ctx done", zap.Error(ctx.Err()))
 				ch <- ManagedNodeGroupStatus{NodeGroupName: mngName, NodeGroup: nil, Error: ctx.Err()}
 				close(ch)
 				return
 
 			case <-stopc:
-				lg.Warn("wait stopped", zap.Error(ctx.Err()))
+				lg.Warn("wait stopped, stopc closed", zap.Error(ctx.Err()))
 				ch <- ManagedNodeGroupStatus{NodeGroupName: mngName, NodeGroup: nil, Error: errors.New("wait stopped")}
 				close(ch)
 				return
@@ -159,22 +159,24 @@ func Poll(
 				lg.Info("sleeping", zap.Duration("initial-wait", initialWait))
 				select {
 				case <-ctx.Done():
-					lg.Warn("wait aborted", zap.Error(ctx.Err()))
+					lg.Warn("wait aborted, ctx done", zap.Error(ctx.Err()))
 					ch <- ManagedNodeGroupStatus{NodeGroupName: mngName, NodeGroup: nil, Error: ctx.Err()}
 					close(ch)
 					return
+
 				case <-stopc:
-					lg.Warn("wait stopped", zap.Error(ctx.Err()))
+					lg.Warn("wait stopped, stopc closed", zap.Error(ctx.Err()))
 					ch <- ManagedNodeGroupStatus{NodeGroupName: mngName, NodeGroup: nil, Error: errors.New("wait stopped")}
 					close(ch)
 					return
+
 				case <-time.After(initialWait):
 				}
 				first = false
 			}
 		}
 
-		lg.Warn("wait aborted", zap.Error(ctx.Err()))
+		lg.Warn("wait aborted, ctx done", zap.Error(ctx.Err()))
 		ch <- ManagedNodeGroupStatus{NodeGroupName: mngName, NodeGroup: nil, Error: ctx.Err()}
 		close(ch)
 		return
@@ -261,13 +263,13 @@ func PollUpdate(
 		for ctx.Err() == nil {
 			select {
 			case <-ctx.Done():
-				lg.Warn("wait aborted", zap.Error(ctx.Err()))
+				lg.Warn("wait aborted, ctx done", zap.Error(ctx.Err()))
 				ch <- UpdateStatus{Update: nil, Error: ctx.Err()}
 				close(ch)
 				return
 
 			case <-stopc:
-				lg.Warn("wait stopped", zap.Error(ctx.Err()))
+				lg.Warn("wait stopped, stopc closed", zap.Error(ctx.Err()))
 				ch <- UpdateStatus{Update: nil, Error: errors.New("wait stopped")}
 				close(ch)
 				return
@@ -344,22 +346,24 @@ func PollUpdate(
 				lg.Info("sleeping", zap.Duration("initial-wait", initialWait))
 				select {
 				case <-ctx.Done():
-					lg.Warn("wait aborted", zap.Error(ctx.Err()))
+					lg.Warn("wait aborted, ctx done", zap.Error(ctx.Err()))
 					ch <- UpdateStatus{Update: nil, Error: ctx.Err()}
 					close(ch)
 					return
+
 				case <-stopc:
-					lg.Warn("wait stopped", zap.Error(ctx.Err()))
+					lg.Warn("wait stopped, stopc closed", zap.Error(ctx.Err()))
 					ch <- UpdateStatus{Update: nil, Error: errors.New("wait stopped")}
 					close(ch)
 					return
+
 				case <-time.After(initialWait):
 				}
 				first = false
 			}
 		}
 
-		lg.Warn("wait aborted", zap.Error(ctx.Err()))
+		lg.Warn("wait aborted, ctx done", zap.Error(ctx.Err()))
 		ch <- UpdateStatus{Update: nil, Error: ctx.Err()}
 		close(ch)
 		return

@@ -75,10 +75,10 @@ func (ts *tester) Scale(mngName string) (err error) {
 			zap.Int("asg-min-size", cur.ASGMinSize),
 			zap.Int("asg-max-size", cur.ASGMaxSize),
 			zap.Int("asg-desired-capacity", cur.ASGDesiredCapacity),
-			zap.String("id", update.ID),
 			zap.Int64("target-min-size", update.ASGMinSize),
 			zap.Int64("target-max-size", update.ASGMaxSize),
 			zap.Int64("target-desired-size", update.ASGDesiredCapacity),
+			zap.String("update-id", update.ID),
 			zap.Duration("initial-wait", update.InitialWait),
 		)
 		select {
@@ -127,18 +127,26 @@ func (ts *tester) scaleMNG(mngName string, update eksconfig.MNGScaleUpdate) (err
 		ts.cfg.Logger.Warn("MNG scaler request failed", zap.String("mng-name", mngName), zap.Error(err))
 		return err
 	}
+
 	reqID := ""
 	if out.Update != nil {
 		reqID = aws.StringValue(out.Update.Id)
 	}
 	if reqID == "" {
-		return fmt.Errorf("MNGs[%q] Update.Id empty", mngName)
+		return fmt.Errorf("MNGs[%q] UpdateNodegroupConfigOutput.Update.Id empty", mngName)
 	}
+
 	initialWait := 3 * time.Minute
-	totalWait := 10*time.Minute + 3*time.Minute*time.Duration(cur.ASGDesiredCapacity)
+	totalWait := time.Hour + 10*time.Minute*time.Duration(update.ASGDesiredCapacity)
 	ts.cfg.Logger.Info("sent MNG scaler request; polling",
 		zap.String("cluster-name", ts.cfg.EKSConfig.Name),
 		zap.String("mng-name", mngName),
+		zap.Int("current-asg-min-size", cur.ASGMinSize),
+		zap.Int("current-asg-desired-capacity", cur.ASGDesiredCapacity),
+		zap.Int("current-asg-max-size", cur.ASGMaxSize),
+		zap.Int64("target-asg-min-size", update.ASGMinSize),
+		zap.Int64("target-asg-desired-capacity", update.ASGDesiredCapacity),
+		zap.Int64("target-asg-max-size", update.ASGMaxSize),
 		zap.String("update-id", update.ID),
 		zap.String("request-id", reqID),
 		zap.Duration("total-wait", totalWait),

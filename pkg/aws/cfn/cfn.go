@@ -54,13 +54,13 @@ func Poll(
 		for ctx.Err() == nil {
 			select {
 			case <-ctx.Done():
-				lg.Warn("wait aborted", zap.Error(ctx.Err()))
+				lg.Warn("wait aborted, ctx done", zap.Error(ctx.Err()))
 				ch <- StackStatus{Stack: nil, Error: ctx.Err()}
 				close(ch)
 				return
 
 			case <-stopc:
-				lg.Warn("wait stopped", zap.Error(ctx.Err()))
+				lg.Warn("wait stopped, stopc closed", zap.Error(ctx.Err()))
 				ch <- StackStatus{Stack: nil, Error: errors.New("wait stopped")}
 				close(ch)
 				return
@@ -161,13 +161,13 @@ func Poll(
 
 				select {
 				case <-ctx.Done():
-					lg.Warn("wait aborted", zap.Error(ctx.Err()))
+					lg.Warn("wait aborted, ctx done", zap.Error(ctx.Err()))
 					ch <- StackStatus{Stack: nil, Error: ctx.Err()}
 					close(ch)
 					return
 
 				case <-stopc:
-					lg.Warn("wait stopped", zap.Error(ctx.Err()))
+					lg.Warn("wait stopped, stopc closed", zap.Error(ctx.Err()))
 					ch <- StackStatus{Stack: nil, Error: errors.New("wait stopped")}
 					close(ch)
 					return
@@ -180,7 +180,7 @@ func Poll(
 			// continue for-loop
 		}
 
-		lg.Warn("wait aborted", zap.Error(ctx.Err()))
+		lg.Warn("wait aborted, ctx done", zap.Error(ctx.Err()))
 		ch <- StackStatus{Stack: nil, Error: ctx.Err()}
 		close(ch)
 		return
