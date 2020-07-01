@@ -16,21 +16,21 @@ clean:
 docker:
 	aws s3 cp --region us-west-2 s3://aws-k8s-tester-public/clusterloader2-linux-amd64 ./_tmp/clusterloader2
 	cp -rf ${HOME}/go/src/k8s.io/perf-tests/clusterloader2/testing/load ./_tmp/clusterloader2-testing-load
-	docker build --network host -t $(AKT_IMG_NAME):$(AKT_TAG) --build-arg AKT_VERSION=$(AKT_TAG) .
-	docker AKT_tag $(AKT_IMG_NAME):$(AKT_TAG) $(ACCOUNT_ID).dkr.ecr.$(REGION).amazonaws.com/$(AKT_IMG_NAME):$(AKT_TAG)
+	docker build --network host -t $(AKT_IMG_NAME):$(AKT_TAG) --build-arg RELEASE_VERSION=$(AKT_TAG) .
+	docker tag $(AKT_IMG_NAME):$(AKT_TAG) $(AKT_AWS_ACCOUNT_ID).dkr.ecr.$(AKT_AWS_REGION).amazonaws.com/$(AKT_IMG_NAME):$(AKT_TAG)
 	docker run --rm -it $(AKT_IMG_NAME):$(AKT_TAG) aws --version
 
 build:
-	./scripts/build.sh
+	RELEASE_VERSION=$(AKT_TAG) ./scripts/build.sh
 
 # Release latest Aws-K8s-Tester to ECR.
-docker-push: build docker
+docker-push: docker
 	eval $$(aws ecr get-login --registry-ids $(AKT_AWS_ACCOUNT_ID) --no-include-email --region $(AKT_AWS_REGION))
 	docker push $(AKT_AWS_ACCOUNT_ID).dkr.ecr.$(AKT_AWS_REGION).amazonaws.com/$(AKT_IMG_NAME):$(AKT_TAG);
 
 # Release latest Aws-K8s-Tester to S3.
 s3-push: build
-	aws s3 cp --region $(AKT_AWS_REGION) $(shell find ./bin | grep aws-k8s-tester | sort | head -1) $(AKT_S3_PATH)
+	aws s3 cp --region $(AKT_AWS_REGION) ./bin/aws-k8s-tester-$(AKT_TAG)-linux-amd64 $(AKT_S3_PATH)
 	aws s3 ls s3://eks-prow/bin/aws-k8s-tester/
 
 release: clean s3-push docker-push
