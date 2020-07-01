@@ -7,6 +7,7 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
@@ -394,24 +395,41 @@ func (ts *Tester) fetchLogs(qps float32, burst int, commandToFileName map[string
 			)
 			continue
 		}
-		mv, ok := ts.cfg.ASGs[data.asgName]
+		cur, ok := ts.cfg.ASGs[data.asgName]
 		if !ok {
-			return fmt.Errorf("EKS Managed Node Group name %q is unknown", data.asgName)
+			return fmt.Errorf("ASG name %q is unknown", data.asgName)
 		}
-		if mv.Logs == nil {
-			mv.Logs = make(map[string][]string)
+		if cur.Logs == nil {
+			cur.Logs = make(map[string][]string)
 		}
-		_, ok = mv.Logs[data.instanceID]
+
+		// existing logs are already written out to disk, merge/list them all
+		var logs []string
+		logs, ok = cur.Logs[data.instanceID]
 		if ok {
-			return fmt.Errorf("EKS Managed Node Group name %q for instance %q logs are redundant", data.asgName, data.instanceID)
+			ts.lg.Warn("ASG already has existing logs; merging",
+				zap.String("asg-name", data.asgName),
+				zap.String("instance-id", data.instanceID),
+			)
 		}
+		all := make(map[string]struct{})
+		for _, v := range logs {
+			all[v] = struct{}{}
+		}
+		for _, v := range data.paths {
+			all[v] = struct{}{}
+		}
+		logs = make([]string, 0, len(all))
+		for k := range all {
+			logs = append(logs, k)
+		}
+		sort.Strings(logs)
+		cur.Logs[data.instanceID] = logs
+		files := len(logs)
 
-		mv.Logs[data.instanceID] = data.paths
-
-		ts.cfg.ASGs[data.asgName] = mv
+		ts.cfg.ASGs[data.asgName] = cur
 		ts.cfg.Sync()
 
-		files := len(data.paths)
 		total += files
 		ts.lg.Info("wrote log files",
 			zap.String("instance-id", data.instanceID),

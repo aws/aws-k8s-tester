@@ -417,7 +417,10 @@ func (ts *tester) fetchLogs(qps float32, burst int) error {
 		var logs []string
 		logs, ok = cur.Logs[data.instanceID]
 		if ok {
-			return fmt.Errorf("EKS Node Group name %q for instance %q logs are redundant", data.asgName, data.instanceID)
+			ts.cfg.Logger.Warn("node group already has existing logs; merging",
+				zap.String("asg-name", data.asgName),
+				zap.String("instance-id", data.instanceID),
+			)
 		}
 		all := make(map[string]struct{})
 		for _, v := range logs {
