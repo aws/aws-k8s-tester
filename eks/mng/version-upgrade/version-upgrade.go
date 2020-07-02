@@ -150,11 +150,13 @@ func (ts *tester) Upgrade(mngName string) (err error) {
 				ts.cfg.Logger.Warn("failed to list nodes while polling mng update status", zap.Error(err))
 				return
 			}
+			cnt := 0
 			for _, node := range nodes {
 				labels := node.GetLabels()
 				if labels["NGName"] != mngName {
 					continue
 				}
+				cnt++
 				for _, cond := range node.Status.Conditions {
 					if cond.Status != v1.ConditionTrue {
 						continue
@@ -168,6 +170,7 @@ func (ts *tester) Upgrade(mngName string) (err error) {
 					break
 				}
 			}
+			ts.cfg.Logger.Info("listed nodes while polling mng update status", zap.String("mng-name", mngName), zap.Int("total-nodes", cnt))
 		}),
 	)
 	for v := range updateCh {
