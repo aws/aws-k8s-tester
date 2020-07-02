@@ -88,6 +88,13 @@ func getDefaultAddOnIRSA() *AddOnIRSA {
 	}
 }
 
+func (cfg *Config) GetAddOnIRSARepositoryRegion() string {
+	if !cfg.IsEnabledAddOnIRSA() {
+		return cfg.Region
+	}
+	return cfg.AddOnIRSA.RepositoryRegion
+}
+
 func (cfg *Config) validateAddOnIRSA() error {
 	if !cfg.IsEnabledAddOnIRSA() {
 		return nil

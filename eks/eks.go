@@ -570,7 +570,7 @@ func (ts *Tester) createTesters() (err error) {
 			K8SClient: ts.k8sClient,
 			S3API:     ts.s3API,
 			CWAPI:     ts.cwAPI,
-			ECRAPI:    ecr.New(ts.awsSession, aws.NewConfig().WithRegion(ts.cfg.AddOnCSRsRemote.RepositoryRegion)),
+			ECRAPI:    ecr.New(ts.awsSession, aws.NewConfig().WithRegion(ts.cfg.GetAddOnCSRsRemoteRepositoryRegion())),
 		}),
 		config_maps_local.New(config_maps_local.Config{
 			Logger:    ts.lg,
@@ -608,7 +608,7 @@ func (ts *Tester) createTesters() (err error) {
 			K8SClient: ts.k8sClient,
 			S3API:     ts.s3API,
 			CWAPI:     ts.cwAPI,
-			ECRAPI:    ecr.New(ts.awsSession, aws.NewConfig().WithRegion(ts.cfg.AddOnSecretsRemote.RepositoryRegion)),
+			ECRAPI:    ecr.New(ts.awsSession, aws.NewConfig().WithRegion(ts.cfg.GetAddOnSecretsRemoteRepositoryRegion())),
 		}),
 		fargate.New(fargate.Config{
 			Logger:    ts.lg,
@@ -620,7 +620,7 @@ func (ts *Tester) createTesters() (err error) {
 			IAMAPI:    ts.iamAPI,
 			CFNAPI:    ts.cfnAPI,
 			EKSAPI:    ts.eksAPI,
-			ECRAPI:    ecr.New(ts.awsSession, aws.NewConfig().WithRegion(ts.cfg.AddOnFargate.RepositoryRegion)),
+			ECRAPI:    ecr.New(ts.awsSession, aws.NewConfig().WithRegion(ts.cfg.GetAddOnFargateRepositoryRegion())),
 		}),
 		irsa.New(irsa.Config{
 			Logger:    ts.lg,
@@ -631,7 +631,7 @@ func (ts *Tester) createTesters() (err error) {
 			S3API:     ts.s3API,
 			CFNAPI:    ts.cfnAPI,
 			IAMAPI:    ts.iamAPI,
-			ECRAPI:    ecr.New(ts.awsSession, aws.NewConfig().WithRegion(ts.cfg.AddOnIRSA.RepositoryRegion)),
+			ECRAPI:    ecr.New(ts.awsSession, aws.NewConfig().WithRegion(ts.cfg.GetAddOnIRSARepositoryRegion())),
 		}),
 		irsa_fargate.New(irsa_fargate.Config{
 			Logger:    ts.lg,
@@ -643,7 +643,7 @@ func (ts *Tester) createTesters() (err error) {
 			IAMAPI:    ts.iamAPI,
 			CFNAPI:    ts.cfnAPI,
 			EKSAPI:    ts.eksAPI,
-			ECRAPI:    ecr.New(ts.awsSession, aws.NewConfig().WithRegion(ts.cfg.AddOnIRSAFargate.RepositoryRegion)),
+			ECRAPI:    ecr.New(ts.awsSession, aws.NewConfig().WithRegion(ts.cfg.GetAddOnIRSAFargateRepositoryRegion())),
 		}),
 		wordpress.New(wordpress.Config{
 			Logger:    ts.lg,
@@ -690,7 +690,7 @@ func (ts *Tester) createTesters() (err error) {
 			K8SClient: ts.k8sClient,
 			S3API:     ts.s3API,
 			CWAPI:     ts.cwAPI,
-			ECRAPI:    ecr.New(ts.awsSession, aws.NewConfig().WithRegion(ts.cfg.AddOnClusterLoaderRemote.RepositoryRegion)),
+			ECRAPI:    ecr.New(ts.awsSession, aws.NewConfig().WithRegion(ts.cfg.GetAddOnClusterLoaderRemoteRepositoryRegion())),
 		}),
 		hollow_nodes_local.New(hollow_nodes_local.Config{
 			Logger:    ts.lg,
@@ -705,7 +705,7 @@ func (ts *Tester) createTesters() (err error) {
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
-			ECRAPI:    ecr.New(ts.awsSession, aws.NewConfig().WithRegion(ts.cfg.AddOnHollowNodesRemote.RepositoryRegion)),
+			ECRAPI:    ecr.New(ts.awsSession, aws.NewConfig().WithRegion(ts.cfg.GetAddOnHollowNodesRemoteRepositoryRegion())),
 		}),
 		stresser_local.New(stresser_local.Config{
 			Logger:    ts.lg,
@@ -724,7 +724,7 @@ func (ts *Tester) createTesters() (err error) {
 			K8SClient: ts.k8sClient,
 			S3API:     ts.s3API,
 			CWAPI:     ts.cwAPI,
-			ECRAPI:    ecr.New(ts.awsSession, aws.NewConfig().WithRegion(ts.cfg.AddOnStresserRemote.RepositoryRegion)),
+			ECRAPI:    ecr.New(ts.awsSession, aws.NewConfig().WithRegion(ts.cfg.GetAddOnStresserRemoteRepositoryRegion())),
 		}),
 		cluster_version_upgrade.New(cluster_version_upgrade.Config{
 			Logger:    ts.lg,

@@ -142,6 +142,13 @@ func getDefaultAddOnCSRsRemote() *AddOnCSRsRemote {
 	}
 }
 
+func (cfg *Config) GetAddOnCSRsRemoteRepositoryRegion() string {
+	if !cfg.IsEnabledAddOnCSRsRemote() {
+		return cfg.Region
+	}
+	return cfg.AddOnCSRsRemote.RepositoryRegion
+}
+
 func (cfg *Config) validateAddOnCSRsRemote() error {
 	if !cfg.IsEnabledAddOnCSRsRemote() {
 		return nil

@@ -142,6 +142,13 @@ func getDefaultAddOnConfigmapsRemote() *AddOnConfigmapsRemote {
 	}
 }
 
+func (cfg *Config) GetAddOnConfigmapsRemoteRepositoryRegion() string {
+	if !cfg.IsEnabledAddOnConfigmapsRemote() {
+		return cfg.Region
+	}
+	return cfg.AddOnConfigmapsRemote.RepositoryRegion
+}
+
 func (cfg *Config) validateAddOnConfigmapsRemote() error {
 	if !cfg.IsEnabledAddOnConfigmapsRemote() {
 		return nil

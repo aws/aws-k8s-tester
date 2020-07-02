@@ -165,6 +165,13 @@ func getDefaultAddOnClusterLoaderRemote() *AddOnClusterLoaderRemote {
 	return cfg
 }
 
+func (cfg *Config) GetAddOnClusterLoaderRemoteRepositoryRegion() string {
+	if !cfg.IsEnabledAddOnClusterLoaderRemote() {
+		return cfg.Region
+	}
+	return cfg.AddOnClusterLoaderRemote.RepositoryRegion
+}
+
 func (cfg *Config) validateAddOnClusterLoaderRemote() error {
 	if !cfg.IsEnabledAddOnClusterLoaderRemote() {
 		return nil

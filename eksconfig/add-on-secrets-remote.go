@@ -190,6 +190,13 @@ func getDefaultAddOnSecretsRemote() *AddOnSecretsRemote {
 	}
 }
 
+func (cfg *Config) GetAddOnSecretsRemoteRepositoryRegion() string {
+	if !cfg.IsEnabledAddOnSecretsRemote() {
+		return cfg.Region
+	}
+	return cfg.AddOnSecretsRemote.RepositoryRegion
+}
+
 func (cfg *Config) validateAddOnSecretsRemote() error {
 	if !cfg.IsEnabledAddOnSecretsRemote() {
 		return nil

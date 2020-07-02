@@ -180,6 +180,13 @@ func getDefaultAddOnStresserRemote() *AddOnStresserRemote {
 	}
 }
 
+func (cfg *Config) GetAddOnStresserRemoteRepositoryRegion() string {
+	if !cfg.IsEnabledAddOnStresserRemote() {
+		return cfg.Region
+	}
+	return cfg.AddOnStresserRemote.RepositoryRegion
+}
+
 func (cfg *Config) validateAddOnStresserRemote() error {
 	if !cfg.IsEnabledAddOnStresserRemote() {
 		return nil

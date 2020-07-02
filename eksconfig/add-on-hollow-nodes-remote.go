@@ -84,6 +84,13 @@ func getDefaultAddOnHollowNodesRemote() *AddOnHollowNodesRemote {
 	}
 }
 
+func (cfg *Config) GetAddOnHollowNodesRemoteRepositoryRegion() string {
+	if !cfg.IsEnabledAddOnHollowNodesRemote() {
+		return cfg.Region
+	}
+	return cfg.AddOnHollowNodesRemote.RepositoryRegion
+}
+
 func (cfg *Config) validateAddOnHollowNodesRemote() error {
 	if !cfg.IsEnabledAddOnHollowNodesRemote() {
 		return nil

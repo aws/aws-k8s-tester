@@ -85,6 +85,13 @@ func getDefaultAddOnFargate() *AddOnFargate {
 	}
 }
 
+func (cfg *Config) GetAddOnFargateRepositoryRegion() string {
+	if !cfg.IsEnabledAddOnFargate() {
+		return cfg.Region
+	}
+	return cfg.AddOnFargate.RepositoryRegion
+}
+
 // only letters and numbers for Secret key names
 var fargateSecretRegex = regexp.MustCompile("[^a-zA-Z0-9]+")
 

@@ -82,6 +82,13 @@ func getDefaultAddOnIRSAFargate() *AddOnIRSAFargate {
 	}
 }
 
+func (cfg *Config) GetAddOnIRSAFargateRepositoryRegion() string {
+	if !cfg.IsEnabledAddOnIRSAFargate() {
+		return cfg.Region
+	}
+	return cfg.AddOnIRSAFargate.RepositoryRegion
+}
+
 func (cfg *Config) validateAddOnIRSAFargate() error {
 	if !cfg.IsEnabledAddOnIRSAFargate() {
 		return nil
