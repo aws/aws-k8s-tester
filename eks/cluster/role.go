@@ -27,7 +27,7 @@ import (
 const TemplateClusterRole = `
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Amazon EKS Cluster Role Basic'
+Description: 'Amazon EKS Cluster Role'
 
 Parameters:
 
@@ -39,7 +39,7 @@ Parameters:
   RoleServicePrincipals:
     Type: CommaDelimitedList
     Default: 'ec2.amazonaws.com,eks.amazonaws.com,eks-fargate-pods.amazonaws.com'
-    Description: EKS Role Service Principals
+    Description: EKS Role Service Principals, use "ec2.amazonaws.com.cn" for China partition.
 
   RoleManagedPolicyARNs:
     Type: CommaDelimitedList

@@ -97,6 +97,7 @@ func (ts *tester) Create() (err error) {
 		ts.cfg.Logger,
 		ts.cfg.ECRAPI,
 		ts.cfg.EKSConfig.AddOnIRSAFargate.RepositoryAccountID,
+		ts.cfg.EKSConfig.AddOnIRSAFargate.RepositoryRegion,
 		ts.cfg.EKSConfig.AddOnIRSAFargate.RepositoryName,
 		ts.cfg.EKSConfig.AddOnIRSAFargate.RepositoryImageTag,
 	); err != nil {

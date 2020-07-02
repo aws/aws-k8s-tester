@@ -37,6 +37,8 @@ type AddOnConfigmapsRemote struct {
 	// RepositoryAccountID is the account ID for tester ECR image.
 	// e.g. "aws/aws-k8s-tester" for "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/aws/aws-k8s-tester"
 	RepositoryAccountID string `json:"repository-account-id,omitempty"`
+	// RepositoryRegion is the ECR repository region to pull from.
+	RepositoryRegion string `json:"repository-region,omitempty"`
 	// RepositoryName is the repositoryName for tester ECR image.
 	// e.g. "aws/aws-k8s-tester" for "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/aws/aws-k8s-tester"
 	RepositoryName string `json:"repository-name,omitempty"`
@@ -159,6 +161,9 @@ func (cfg *Config) validateAddOnConfigmapsRemote() error {
 
 	if cfg.AddOnConfigmapsRemote.RepositoryAccountID == "" {
 		return errors.New("AddOnConfigmapsRemote.RepositoryAccountID empty")
+	}
+	if cfg.AddOnConfigmapsRemote.RepositoryRegion == "" {
+		cfg.AddOnConfigmapsRemote.RepositoryRegion = cfg.Region
 	}
 	if cfg.AddOnConfigmapsRemote.RepositoryName == "" {
 		return errors.New("AddOnConfigmapsRemote.RepositoryName empty")

@@ -37,6 +37,8 @@ type AddOnStresserRemote struct {
 	// RepositoryAccountID is the account ID for tester ECR image.
 	// e.g. "aws/aws-k8s-tester" for "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/aws/aws-k8s-tester"
 	RepositoryAccountID string `json:"repository-account-id,omitempty"`
+	// RepositoryRegion is the ECR repository region to pull from.
+	RepositoryRegion string `json:"repository-region,omitempty"`
 	// RepositoryName is the repositoryName for tester ECR image.
 	// e.g. "aws/aws-k8s-tester" for "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/aws/aws-k8s-tester"
 	RepositoryName string `json:"repository-name,omitempty"`
@@ -193,6 +195,9 @@ func (cfg *Config) validateAddOnStresserRemote() error {
 
 	if cfg.AddOnStresserRemote.RepositoryAccountID == "" {
 		return errors.New("AddOnStresserRemote.RepositoryAccountID empty")
+	}
+	if cfg.AddOnStresserRemote.RepositoryRegion == "" {
+		cfg.AddOnStresserRemote.RepositoryRegion = cfg.Region
 	}
 	if cfg.AddOnStresserRemote.RepositoryName == "" {
 		return errors.New("AddOnStresserRemote.RepositoryName empty")

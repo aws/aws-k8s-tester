@@ -406,6 +406,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_S3_DIR                                        | read-only "false" | *eksconfig.AddOnCSRsRemote.S3Dir                                  | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_NAMESPACE                                     | read-only "false" | *eksconfig.AddOnCSRsRemote.Namespace                              | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REPOSITORY_ACCOUNT_ID                         | read-only "false" | *eksconfig.AddOnCSRsRemote.RepositoryAccountID                    | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REPOSITORY_REGION                             | read-only "false" | *eksconfig.AddOnCSRsRemote.RepositoryRegion                       | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REPOSITORY_NAME                               | read-only "false" | *eksconfig.AddOnCSRsRemote.RepositoryName                         | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REPOSITORY_IMAGE_TAG                          | read-only "false" | *eksconfig.AddOnCSRsRemote.RepositoryImageTag                     | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_COMPLETES                                     | read-only "false" | *eksconfig.AddOnCSRsRemote.Completes                              | int                     |
@@ -477,6 +478,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_S3_DIR                                        | read-only "false" | *eksconfig.AddOnConfigmapsRemote.S3Dir                                  | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_NAMESPACE                                     | read-only "false" | *eksconfig.AddOnConfigmapsRemote.Namespace                              | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REPOSITORY_ACCOUNT_ID                         | read-only "false" | *eksconfig.AddOnConfigmapsRemote.RepositoryAccountID                    | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REPOSITORY_REGION                             | read-only "false" | *eksconfig.AddOnConfigmapsRemote.RepositoryRegion                       | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REPOSITORY_NAME                               | read-only "false" | *eksconfig.AddOnConfigmapsRemote.RepositoryName                         | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_REPOSITORY_IMAGE_TAG                          | read-only "false" | *eksconfig.AddOnConfigmapsRemote.RepositoryImageTag                     | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFIGMAPS_REMOTE_COMPLETES                                     | read-only "false" | *eksconfig.AddOnConfigmapsRemote.Completes                              | int                     |
@@ -567,6 +569,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_S3_DIR                                        | read-only "false" | *eksconfig.AddOnSecretsRemote.S3Dir                                  | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_NAMESPACE                                     | read-only "false" | *eksconfig.AddOnSecretsRemote.Namespace                              | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REPOSITORY_ACCOUNT_ID                         | read-only "false" | *eksconfig.AddOnSecretsRemote.RepositoryAccountID                    | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REPOSITORY_REGION                             | read-only "false" | *eksconfig.AddOnSecretsRemote.RepositoryRegion                       | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REPOSITORY_NAME                               | read-only "false" | *eksconfig.AddOnSecretsRemote.RepositoryName                         | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_REPOSITORY_IMAGE_TAG                          | read-only "false" | *eksconfig.AddOnSecretsRemote.RepositoryImageTag                     | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_SECRETS_REMOTE_COMPLETES                                     | read-only "false" | *eksconfig.AddOnSecretsRemote.Completes                              | int                     |
@@ -625,6 +628,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_S3_DIR                     | read-only "false" | *eksconfig.AddOnFargate.S3Dir                 | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_NAMESPACE                  | read-only "false" | *eksconfig.AddOnFargate.Namespace             | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_REPOSITORY_ACCOUNT_ID      | read-only "false" | *eksconfig.AddOnFargate.RepositoryAccountID   | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_REPOSITORY_REGION          | read-only "false" | *eksconfig.AddOnFargate.RepositoryRegion      | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_REPOSITORY_NAME            | read-only "false" | *eksconfig.AddOnFargate.RepositoryName        | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_REPOSITORY_IMAGE_TAG       | read-only "false" | *eksconfig.AddOnFargate.RepositoryImageTag    | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_FARGATE_ROLE_NAME                  | read-only "false" | *eksconfig.AddOnFargate.RoleName              | string             |
@@ -650,6 +654,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_IRSA_S3_DIR                     | read-only "false" | *eksconfig.AddOnIRSA.S3Dir                 | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_IRSA_NAMESPACE                  | read-only "false" | *eksconfig.AddOnIRSA.Namespace             | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_IRSA_REPOSITORY_ACCOUNT_ID      | read-only "false" | *eksconfig.AddOnIRSA.RepositoryAccountID   | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_REPOSITORY_REGION          | read-only "false" | *eksconfig.AddOnIRSA.RepositoryRegion      | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_IRSA_REPOSITORY_NAME            | read-only "false" | *eksconfig.AddOnIRSA.RepositoryName        | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_IRSA_REPOSITORY_IMAGE_TAG       | read-only "false" | *eksconfig.AddOnIRSA.RepositoryImageTag    | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_NAME                  | read-only "false" | *eksconfig.AddOnIRSA.RoleName              | string             |
@@ -676,6 +681,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_S3_DIR                     | read-only "false" | *eksconfig.AddOnIRSAFargate.S3Dir                 | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_NAMESPACE                  | read-only "false" | *eksconfig.AddOnIRSAFargate.Namespace             | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_REPOSITORY_ACCOUNT_ID      | read-only "false" | *eksconfig.AddOnIRSAFargate.RepositoryAccountID   | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_REPOSITORY_REGION          | read-only "false" | *eksconfig.AddOnIRSAFargate.RepositoryRegion      | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_REPOSITORY_NAME            | read-only "false" | *eksconfig.AddOnIRSAFargate.RepositoryName        | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_REPOSITORY_IMAGE_TAG       | read-only "false" | *eksconfig.AddOnIRSAFargate.RepositoryImageTag    | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_IRSA_FARGATE_ROLE_NAME                  | read-only "false" | *eksconfig.AddOnIRSAFargate.RoleName              | string             |
@@ -795,6 +801,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_S3_DIR                             | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.S3Dir                          | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_NAMESPACE                          | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.Namespace                      | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_ACCOUNT_ID              | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.RepositoryAccountID            | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_REGION                  | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.RepositoryRegion               | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_NAME                    | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.RepositoryName                 | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_IMAGE_TAG               | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.RepositoryImageTag             | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_CLUSTER_LOADER_PATH                | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.ClusterLoaderPath              | string             |
@@ -849,6 +856,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_TIME_FRAME_DELETE     | read-only "true"  | *eksconfig.AddOnHollowNodesRemote.TimeFrameDelete     | timeutil.TimeFrame |
 | AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NAMESPACE             | read-only "false" | *eksconfig.AddOnHollowNodesRemote.Namespace           | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_ACCOUNT_ID | read-only "false" | *eksconfig.AddOnHollowNodesRemote.RepositoryAccountID | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_REGION     | read-only "false" | *eksconfig.AddOnHollowNodesRemote.RepositoryRegion    | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_NAME       | read-only "false" | *eksconfig.AddOnHollowNodesRemote.RepositoryName      | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_IMAGE_TAG  | read-only "false" | *eksconfig.AddOnHollowNodesRemote.RepositoryImageTag  | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_DEPLOYMENT_REPLICAS   | read-only "false" | *eksconfig.AddOnHollowNodesRemote.DeploymentReplicas  | int32              |
@@ -922,6 +930,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_S3_DIR                                        | read-only "false" | *eksconfig.AddOnStresserRemote.S3Dir                                  | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_NAMESPACE                                     | read-only "false" | *eksconfig.AddOnStresserRemote.Namespace                              | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REPOSITORY_ACCOUNT_ID                         | read-only "false" | *eksconfig.AddOnStresserRemote.RepositoryAccountID                    | string                  |
+| AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REPOSITORY_REGION                             | read-only "false" | *eksconfig.AddOnStresserRemote.RepositoryRegion                       | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REPOSITORY_NAME                               | read-only "false" | *eksconfig.AddOnStresserRemote.RepositoryName                         | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REPOSITORY_IMAGE_TAG                          | read-only "false" | *eksconfig.AddOnStresserRemote.RepositoryImageTag                     | string                  |
 | AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_COMPLETES                                     | read-only "false" | *eksconfig.AddOnStresserRemote.Completes                              | int                     |

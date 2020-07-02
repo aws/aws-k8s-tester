@@ -28,7 +28,7 @@ import (
 const TemplateRole = `
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Amazon EKS Cluster Managed Node Group Role'
+Description: 'Amazon EKS Managed Node Group Role'
 
 Parameters:
 
@@ -39,7 +39,7 @@ Parameters:
   RoleServicePrincipals:
     Type: CommaDelimitedList
     Default: 'ec2.amazonaws.com,eks.amazonaws.com'
-    Description: EKS Managed Node Group Service Principals
+    Description: EKS Managed Node Group Service Principals, use "ec2.amazonaws.com.cn" for China partition.
 
   RoleManagedPolicyARNs:
     Type: CommaDelimitedList

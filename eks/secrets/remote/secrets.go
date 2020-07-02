@@ -91,6 +91,7 @@ func (ts *tester) Create() (err error) {
 		ts.cfg.Logger,
 		ts.cfg.ECRAPI,
 		ts.cfg.EKSConfig.AddOnSecretsRemote.RepositoryAccountID,
+		ts.cfg.EKSConfig.AddOnSecretsRemote.RepositoryRegion,
 		ts.cfg.EKSConfig.AddOnSecretsRemote.RepositoryName,
 		ts.cfg.EKSConfig.AddOnSecretsRemote.RepositoryImageTag,
 	); err != nil {

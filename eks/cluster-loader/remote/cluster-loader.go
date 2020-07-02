@@ -86,6 +86,7 @@ func (ts *tester) Create() (err error) {
 		ts.cfg.Logger,
 		ts.cfg.ECRAPI,
 		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.RepositoryAccountID,
+		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.RepositoryRegion,
 		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.RepositoryName,
 		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.RepositoryImageTag,
 	); err != nil {

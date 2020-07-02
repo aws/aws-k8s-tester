@@ -90,6 +90,7 @@ func (ts *tester) Create() (err error) {
 			ts.cfg.Logger,
 			ts.cfg.ECRAPI,
 			ts.cfg.EKSConfig.AddOnFargate.RepositoryAccountID,
+			ts.cfg.EKSConfig.AddOnFargate.RepositoryRegion,
 			ts.cfg.EKSConfig.AddOnFargate.RepositoryName,
 			ts.cfg.EKSConfig.AddOnFargate.RepositoryImageTag,
 		); err != nil {

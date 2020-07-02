@@ -3,6 +3,7 @@ package ecr
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ecr"
@@ -12,8 +13,13 @@ import (
 )
 
 // Check checks if the specified repository exists, and returns the repository URI + ":" + image tag.
-func Check(lg *zap.Logger, svc ecriface.ECRAPI, repoAccountID string, repoName string, imgTag string) (img string, err error) {
-	lg.Info("describing ECR repositories")
+func Check(lg *zap.Logger, svc ecriface.ECRAPI, repoAccountID string, repoRegion string, repoName string, imageTag string) (img string, err error) {
+	lg.Info("describing ECR repositories",
+		zap.String("repo-account-id", repoAccountID),
+		zap.String("repo-region", repoRegion),
+		zap.String("repo-name", repoName),
+		zap.String("image-tag", imageTag),
+	)
 	repoOut, err := svc.DescribeRepositories(&ecr.DescribeRepositoriesInput{
 		RegistryId:      aws.String(repoAccountID),
 		RepositoryNames: aws.StringSlice([]string{repoName}),
@@ -25,26 +31,37 @@ func Check(lg *zap.Logger, svc ecriface.ECRAPI, repoAccountID string, repoName s
 		return "", fmt.Errorf("%q expected 1 ECR repository, got %d", repoName, len(repoOut.Repositories))
 	}
 	repo := repoOut.Repositories[0]
-	arn := aws.StringValue(repo.RepositoryArn)
-	name := aws.StringValue(repo.RepositoryName)
-	uri := aws.StringValue(repo.RepositoryUri)
+	repoARN := aws.StringValue(repo.RepositoryArn)
+	repoName2 := aws.StringValue(repo.RepositoryName)
+	repoURI := aws.StringValue(repo.RepositoryUri)
+	img = repoURI + ":" + imageTag
 	lg.Info(
 		"described ECR repository",
-		zap.String("arn", arn),
-		zap.String("name", name),
-		zap.String("uri", uri),
+		zap.String("repo-arn", repoARN),
+		zap.String("repo-region", repoRegion),
+		zap.String("repo-name", repoName2),
+		zap.String("repo-uri", repoURI),
+		zap.String("img", img),
 	)
-	if name != repoName {
-		return "", fmt.Errorf("unexpected ECR repository name %q", name)
+
+	if repoName2 != repoName {
+		return "", fmt.Errorf("unexpected ECR repository name %q", repoName2)
+	}
+	if !strings.Contains(repoURI, repoRegion) {
+		return "", fmt.Errorf("region %q not found in URI %q", repoRegion, repoURI)
 	}
 
-	lg.Info("describing image", zap.String("image-tag", imgTag))
+	lg.Info("describing images",
+		zap.String("repo-name", repoName),
+		zap.String("repo-uri", repoURI),
+		zap.String("image-tag", imageTag),
+	)
 	imgOut, err := svc.DescribeImages(&ecr.DescribeImagesInput{
 		RegistryId:     aws.String(repoAccountID),
 		RepositoryName: aws.String(repoName),
 		ImageIds: []*ecr.ImageIdentifier{
 			{
-				ImageTag: aws.String(imgTag),
+				ImageTag: aws.String(imageTag),
 			},
 		},
 	})
@@ -53,18 +70,23 @@ func Check(lg *zap.Logger, svc ecriface.ECRAPI, repoAccountID string, repoName s
 		return "", err
 	}
 	if len(imgOut.ImageDetails) == 0 {
-		return "", fmt.Errorf("image tag %q not found", imgTag)
+		return "", fmt.Errorf("image tag %q not found", imageTag)
 	}
-	lg.Info("described images", zap.Int("images", len(imgOut.ImageDetails)))
+	lg.Info("described images",
+		zap.String("repo-name", repoName),
+		zap.String("image-tag", imageTag),
+		zap.Int("images", len(imgOut.ImageDetails)),
+	)
 	for i, img := range imgOut.ImageDetails {
 		lg.Info("found an image",
 			zap.Int("index", i),
-			zap.String("requested-tag", imgTag),
+			zap.String("requested-tag", imageTag),
 			zap.Strings("returned-tags", aws.StringValueSlice(img.ImageTags)),
 			zap.String("digest", aws.StringValue(img.ImageDigest)),
 			zap.String("pushed-at", fmt.Sprintf("%v", aws.TimeValue(img.ImagePushedAt))),
 			zap.String("size", humanize.Bytes(uint64(aws.Int64Value(img.ImageSizeInBytes)))),
 		)
 	}
-	return uri + ":" + imgTag, nil
+
+	return img, nil
 }

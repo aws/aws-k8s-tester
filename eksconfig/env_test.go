@@ -259,6 +259,8 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_OBJECTS")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REPOSITORY_ACCOUNT_ID", "uri")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REPOSITORY_ACCOUNT_ID")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REPOSITORY_REGION", "eu-north-1")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REPOSITORY_REGION")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REPOSITORY_NAME", "csrs-repo-name")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REPOSITORY_NAME")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_REMOTE_REPOSITORY_IMAGE_TAG", "csrs-repo-image-tag")
@@ -985,6 +987,9 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.AddOnCSRsRemote.RepositoryAccountID != "uri" {
 		t.Fatalf("unexpected cfg.AddOnCSRsRemote.RepositoryAccountID %v", cfg.AddOnCSRsRemote.RepositoryAccountID)
+	}
+	if cfg.AddOnCSRsRemote.RepositoryRegion != "eu-north-1" {
+		t.Fatalf("unexpected cfg.AddOnCSRsRemote.RepositoryRegion %v", cfg.AddOnCSRsRemote.RepositoryRegion)
 	}
 	if cfg.AddOnCSRsRemote.RepositoryName != "csrs-repo-name" {
 		t.Fatalf("unexpected cfg.AddOnCSRsRemote.RepositoryName %v", cfg.AddOnCSRsRemote.RepositoryName)

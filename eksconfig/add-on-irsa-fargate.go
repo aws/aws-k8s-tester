@@ -31,6 +31,8 @@ type AddOnIRSAFargate struct {
 	// RepositoryAccountID is the account ID for tester ECR image.
 	// e.g. "aws/aws-k8s-tester" for "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/aws/aws-k8s-tester"
 	RepositoryAccountID string `json:"repository-account-id,omitempty"`
+	// RepositoryRegion is the ECR repository region to pull from.
+	RepositoryRegion string `json:"repository-region,omitempty"`
 	// RepositoryName is the repositoryName for tester ECR image.
 	// e.g. "aws/aws-k8s-tester" for "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/aws/aws-k8s-tester"
 	RepositoryName string `json:"repository-name,omitempty"`
@@ -103,6 +105,9 @@ func (cfg *Config) validateAddOnIRSAFargate() error {
 
 	if cfg.AddOnIRSAFargate.RepositoryAccountID == "" {
 		return errors.New("AddOnIRSAFargate.RepositoryAccountID empty")
+	}
+	if cfg.AddOnIRSAFargate.RepositoryRegion == "" {
+		cfg.AddOnIRSAFargate.RepositoryRegion = cfg.Region
 	}
 	if cfg.AddOnIRSAFargate.RepositoryName == "" {
 		return errors.New("AddOnIRSAFargate.RepositoryName empty")
