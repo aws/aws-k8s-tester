@@ -21,6 +21,18 @@ type AddOnJobsEcho struct {
 	// Namespace is the namespace to create objects in.
 	Namespace string `json:"namespace"`
 
+	// RepositoryBusyboxAccountID is the account ID for tester ECR image.
+	// e.g. "busybox" for "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/busybox"
+	RepositoryBusyboxAccountID string `json:"repository-busybox-account-id,omitempty"`
+	// RepositoryBusyboxRegion is the ECR repository region to pull from.
+	RepositoryBusyboxRegion string `json:"repository-busybox-region,omitempty"`
+	// RepositoryBusyboxName is the repositoryName for tester ECR image.
+	// e.g. "busybox" for "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/busybox"
+	RepositoryBusyboxName string `json:"repository-busybox-name,omitempty"`
+	// RepositoryBusyboxImageTag is the image tag for tester ECR image.
+	// e.g. "latest" for image URI "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/busybox:latest"
+	RepositoryBusyboxImageTag string `json:"repository-busybox-image-tag,omitempty"`
+
 	// Completes is the desired number of successfully finished pods.
 	Completes int `json:"completes"`
 	// Parallels is the the maximum desired number of pods the
@@ -61,6 +73,13 @@ func getDefaultAddOnJobsEcho() *AddOnJobsEcho {
 		// Parallels: 100,
 		// EchoSize: 100 * 1024, // 100 KB
 	}
+}
+
+func (cfg *Config) GetAddOnJobsEchoRepositoryBusyboxRegion() string {
+	if !cfg.IsEnabledAddOnJobsEcho() {
+		return cfg.Region
+	}
+	return cfg.AddOnJobsEcho.RepositoryBusyboxRegion
 }
 
 func (cfg *Config) validateAddOnJobsEcho() error {

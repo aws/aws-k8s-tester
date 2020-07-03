@@ -12,10 +12,12 @@ import (
 
 	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
 	"github.com/aws/aws-k8s-tester/eksconfig"
+	aws_ecr "github.com/aws/aws-k8s-tester/pkg/aws/ecr"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/randutil"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
 	"github.com/dustin/go-humanize"
 	"go.uber.org/zap"
 	batch_v1 "k8s.io/api/batch/v1"
@@ -32,6 +34,7 @@ type Config struct {
 	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
+	ECRAPI    ecriface.ECRAPI
 }
 
 var pkgName = reflect.TypeOf(tester{}).PkgPath()
@@ -41,11 +44,13 @@ func (ts *tester) Name() string { return pkgName }
 // New creates a new Job tester.
 func New(cfg Config) eks_tester.Tester {
 	cfg.Logger.Info("creating tester", zap.String("tester", pkgName))
-	return &tester{cfg: cfg}
+	return &tester{cfg: cfg, busyboxImg: "busybox"}
 }
 
 type tester struct {
 	cfg Config
+
+	busyboxImg string
 }
 
 func (ts *tester) Create() (err error) {
@@ -68,6 +73,21 @@ func (ts *tester) Create() (err error) {
 		ts.cfg.EKSConfig.Sync()
 	}()
 
+	if ts.cfg.EKSConfig.AddOnCronJobs.RepositoryBusyboxAccountID != "" &&
+		ts.cfg.EKSConfig.AddOnCronJobs.RepositoryBusyboxRegion != "" &&
+		ts.cfg.EKSConfig.AddOnCronJobs.RepositoryBusyboxName != "" &&
+		ts.cfg.EKSConfig.AddOnCronJobs.RepositoryBusyboxImageTag != "" {
+		if ts.busyboxImg, err = aws_ecr.Check(
+			ts.cfg.Logger,
+			ts.cfg.ECRAPI,
+			ts.cfg.EKSConfig.AddOnCronJobs.RepositoryBusyboxAccountID,
+			ts.cfg.EKSConfig.AddOnCronJobs.RepositoryBusyboxRegion,
+			ts.cfg.EKSConfig.AddOnCronJobs.RepositoryBusyboxName,
+			ts.cfg.EKSConfig.AddOnCronJobs.RepositoryBusyboxImageTag,
+		); err != nil {
+			return err
+		}
+	}
 	if err = k8s_client.CreateNamespace(
 		ts.cfg.Logger,
 		ts.cfg.K8SClient.KubernetesClientSet(),
@@ -167,10 +187,7 @@ func (ts *tester) Delete() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
-const (
-	cronJobName          = "cronjob-echo"
-	cronJobEchoImageName = "busybox"
-)
+const cronJobName = "cronjob-echo"
 
 func (ts *tester) createCronJob() (err error) {
 	obj, b, err := ts.createObject()
@@ -207,7 +224,7 @@ func (ts *tester) createObject() (batch_v1beta1.CronJob, string, error) {
 			Containers: []v1.Container{
 				{
 					Name:            cronJobName,
-					Image:           cronJobEchoImageName,
+					Image:           ts.busyboxImg,
 					ImagePullPolicy: v1.PullAlways,
 					Command: []string{
 						"/bin/sh",
