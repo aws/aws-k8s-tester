@@ -207,6 +207,7 @@ Resources:
             Resource:
             - !Join ['', [!Sub 'arn:${AWS::Partition}:s3:::', '{{.S3BucketName}}']]
             - !Join ['', [!Sub 'arn:${AWS::Partition}:s3:::', '{{.S3BucketName}}', '/', '{{.ClusterName}}', '/*']]{{ end }}
+{{ if ne .LogsPolicyData "" }}{{.LogsPolicyData}}{{ end }}
 
 Outputs:
 
@@ -217,9 +218,19 @@ Outputs:
 `
 
 type templateRole struct {
-	S3BucketName string
-	ClusterName  string
+	S3BucketName   string
+	ClusterName    string
+	LogsPolicyData string
 }
+
+const logsPolicyData = `          - Effect: Allow
+            Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:DescribeLogGroups
+            - logs:DescribeLogStreams
+            - logs:PutLogEvents
+            Resource: "*"`
 
 func (ts *tester) createRole() error {
 	if !ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleCreate {
@@ -258,6 +269,10 @@ func (ts *tester) createRole() error {
 	tr := templateRole{
 		S3BucketName: ts.cfg.EKSConfig.S3BucketName,
 		ClusterName:  ts.cfg.EKSConfig.Name,
+	}
+	if ts.cfg.EKSConfig.IsEnabledAddOnFluentd() {
+		ts.cfg.Logger.Info("adding cloudwatch policy for fluentd")
+		tr.LogsPolicyData = logsPolicyData
 	}
 	tpl := template.Must(template.New("TemplateRole").Parse(TemplateRole))
 	buf := bytes.NewBuffer(nil)

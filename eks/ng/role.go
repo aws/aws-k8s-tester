@@ -199,6 +199,10 @@ Resources:
             - route53:ChangeResourceRecordSets
             - route53:DeleteHealthCheck
             Resource: "*"
+          - Effect: Allow
+            Action:
+            - cloudwatch:*
+            Resource: "*"
 {{ if ne .S3BucketName "" }}          - Effect: Allow
             Action:
             - s3:ListBucket
@@ -207,6 +211,7 @@ Resources:
             Resource:
             - !Join ['', [!Sub 'arn:${AWS::Partition}:s3:::', '{{.S3BucketName}}']]
             - !Join ['', [!Sub 'arn:${AWS::Partition}:s3:::', '{{.S3BucketName}}', '/', '{{.ClusterName}}', '/*']]{{ end }}
+{{ if ne .LogsPolicyData "" }}{{.LogsPolicyData}}{{ end }}
 {{ if ne .ASGPolicyData "" }}{{.ASGPolicyData}}{{ end }}
 
 Outputs:
@@ -218,10 +223,20 @@ Outputs:
 `
 
 type templateRole struct {
-	S3BucketName  string
-	ClusterName   string
-	ASGPolicyData string
+	S3BucketName   string
+	ClusterName    string
+	LogsPolicyData string
+	ASGPolicyData  string
 }
+
+const logsPolicyData = `          - Effect: Allow
+            Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:DescribeLogGroups
+            - logs:DescribeLogStreams
+            - logs:PutLogEvents
+            Resource: "*"`
 
 const asgPolicyData = `          - Effect: Allow
             Action:
@@ -271,6 +286,10 @@ func (ts *tester) createRole() error {
 	tr := templateRole{
 		S3BucketName: ts.cfg.EKSConfig.S3BucketName,
 		ClusterName:  ts.cfg.EKSConfig.Name,
+	}
+	if ts.cfg.EKSConfig.IsEnabledAddOnFluentd() {
+		ts.cfg.Logger.Info("adding cloudwatch policy for fluentd")
+		tr.LogsPolicyData = logsPolicyData
 	}
 	if ts.cfg.EKSConfig.AddOnNodeGroups.IsEnabledClusterAutoscaler() {
 		ts.cfg.Logger.Info("adding autoscaling policy for cluster autoscaler")
