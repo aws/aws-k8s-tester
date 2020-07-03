@@ -79,6 +79,19 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *AddOnManagedNodeGroups, got %T", vv)
 	}
 
+	if cfg.AddOnFluentd == nil {
+		cfg.AddOnFluentd = &AddOnFluentd{}
+	}
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnFluentd, cfg.AddOnFluentd)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*AddOnFluentd); ok {
+		cfg.AddOnFluentd = av
+	} else {
+		return fmt.Errorf("expected *AddOnFluentd, got %T", vv)
+	}
+
 	if cfg.AddOnMetricsServer == nil {
 		cfg.AddOnMetricsServer = &AddOnMetricsServer{}
 	}
@@ -105,19 +118,6 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *AddOnConformance, got %T", vv)
 	}
 
-	if cfg.AddOnCSIEBS == nil {
-		cfg.AddOnCSIEBS = &AddOnCSIEBS{}
-	}
-	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnCSIEBS, cfg.AddOnCSIEBS)
-	if err != nil {
-		return err
-	}
-	if av, ok := vv.(*AddOnCSIEBS); ok {
-		cfg.AddOnCSIEBS = av
-	} else {
-		return fmt.Errorf("expected *AddOnCSIEBS, got %T", vv)
-	}
-
 	if cfg.AddOnAppMesh == nil {
 		cfg.AddOnAppMesh = &AddOnAppMesh{}
 	}
@@ -129,6 +129,19 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		cfg.AddOnAppMesh = av
 	} else {
 		return fmt.Errorf("expected *AddOnAppMesh, got %T", vv)
+	}
+
+	if cfg.AddOnCSIEBS == nil {
+		cfg.AddOnCSIEBS = &AddOnCSIEBS{}
+	}
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnCSIEBS, cfg.AddOnCSIEBS)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*AddOnCSIEBS); ok {
+		cfg.AddOnCSIEBS = av
+	} else {
+		return fmt.Errorf("expected *AddOnCSIEBS, got %T", vv)
 	}
 
 	if cfg.AddOnNLBHelloWorld == nil {

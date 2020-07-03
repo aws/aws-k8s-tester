@@ -174,6 +174,9 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_LOGS_DIR", "a")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_LOGS_DIR")
 
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_ENABLE")
+
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_ENABLE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_DEPLOYMENT_REPLICAS", "333")
@@ -860,6 +863,10 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.AddOnManagedNodeGroups.LogsDir != "a" {
 		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.LogsDir %q", cfg.AddOnManagedNodeGroups.LogsDir)
+	}
+
+	if !cfg.AddOnFluentd.Enable {
+		t.Fatalf("unexpected cfg.AddOnFluentd.Enable %v", cfg.AddOnFluentd.Enable)
 	}
 
 	if !cfg.AddOnNLBHelloWorld.Enable {

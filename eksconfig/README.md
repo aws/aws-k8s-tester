@@ -1,9 +1,10 @@
 
 ```
-# total 34 add-ons
+# total 35 add-ons
 # set the following *_ENABLE env vars to enable add-ons, rest are set with default values
 AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE=true \
+AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_METRICS_SERVER_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_ENABLE=true \
@@ -176,6 +177,16 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_LOGS_TAR_GZ_PATH           | read-only "false" | *eksconfig.AddOnManagedNodeGroups.LogsTarGzPath         | string                   |
 | AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS                       | read-only "false" | *eksconfig.AddOnManagedNodeGroups.MNGs                  | map[string]eksconfig.MNG |
 *--------------------------------------------------------------------------*-------------------*---------------------------------------------------------*--------------------------*
+
+
+*-----------------------------------------------------*-------------------*-----------------------------------------*--------------------*
+|               ENVIRONMENTAL VARIABLE                |     READ ONLY     |                  TYPE                   |      GO TYPE       |
+*-----------------------------------------------------*-------------------*-----------------------------------------*--------------------*
+| AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_ENABLE            | read-only "false" | *eksconfig.AddOnFluentd.Enable          | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_CREATED           | read-only "true"  | *eksconfig.AddOnFluentd.Created         | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_TIME_FRAME_CREATE | read-only "true"  | *eksconfig.AddOnFluentd.TimeFrameCreate | timeutil.TimeFrame |
+| AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_TIME_FRAME_DELETE | read-only "true"  | *eksconfig.AddOnFluentd.TimeFrameDelete | timeutil.TimeFrame |
+*-----------------------------------------------------*-------------------*-----------------------------------------*--------------------*
 
 
 *------------------------------------------------------------*-------------------*-----------------------------------------------*--------------------*

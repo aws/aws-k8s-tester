@@ -42,6 +42,10 @@ func createDoc() string {
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnFluentd, &eksconfig.AddOnFluentd{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnMetricsServer, &eksconfig.AddOnMetricsServer{}))
 
 	b.WriteByte('\n')

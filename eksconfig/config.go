@@ -193,6 +193,9 @@ type Config struct {
 	TotalNodes       int64 `json:"total-nodes" read-only:"true"`
 	TotalHollowNodes int64 `json:"total-hollow-nodes" read-only:"true"`
 
+	// AddOnFluentd defines parameters for EKS cluster
+	// add-on Fluentd.
+	AddOnFluentd *AddOnFluentd `json:"add-on-fluentd,omitempty"`
 	// AddOnMetricsServer defines parameters for EKS cluster
 	// add-on metrics server.
 	AddOnMetricsServer *AddOnMetricsServer `json:"add-on-metrics-server,omitempty"`
@@ -772,12 +775,16 @@ func NewDefault() *Config {
 		ClientQPS:   DefaultClientQPS,
 		ClientBurst: DefaultClientBurst,
 
-		AddOnNodeGroups:            getDefaultAddOnNodeGroups(name),
-		AddOnManagedNodeGroups:     getDefaultAddOnManagedNodeGroups(name),
-		AddOnMetricsServer:         getDefaultAddOnMetricsServer(),
-		AddOnConformance:           getDefaultAddOnConformance(),
-		AddOnCSIEBS:                getDefaultAddOnCSIEBS(),
+		AddOnNodeGroups:        getDefaultAddOnNodeGroups(name),
+		AddOnManagedNodeGroups: getDefaultAddOnManagedNodeGroups(name),
+
+		AddOnFluentd:       getDefaultAddOnFluentd(),
+		AddOnMetricsServer: getDefaultAddOnMetricsServer(),
+
+		AddOnConformance: getDefaultAddOnConformance(),
+
 		AddOnAppMesh:               getDefaultAddOnAppMesh(),
+		AddOnCSIEBS:                getDefaultAddOnCSIEBS(),
 		AddOnKubernetesDashboard:   getDefaultAddOnKubernetesDashboard(),
 		AddOnPrometheusGrafana:     getDefaultAddOnPrometheusGrafana(),
 		AddOnNLBHelloWorld:         getDefaultAddOnNLBHelloWorld(),
@@ -878,6 +885,13 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 	cfg.TotalHollowNodes = totalHollowNodes
 
+	if err := cfg.validateAddOnFluentd(); err != nil {
+		return fmt.Errorf("validateAddOnFluentd failed [%v]", err)
+	}
+	if err := cfg.validateAddOnMetricsServer(); err != nil {
+		return fmt.Errorf("validateAddOnMetricsServer failed [%v]", err)
+	}
+
 	if err := cfg.validateAddOnConformance(); err != nil {
 		return fmt.Errorf("validateAddOnConformance failed [%v]", err)
 	}
@@ -889,16 +903,12 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		return fmt.Errorf("validateAddOnCSIEBS failed [%v]", err)
 	}
 
-	if err := cfg.validateAddOnMetricsServer(); err != nil {
-		return fmt.Errorf("validateAddOnMetricsServer failed [%v]", err)
-	}
 	if err := cfg.validateAddOnKubernetesDashboard(); err != nil {
 		return fmt.Errorf("validateAddOnKubernetesDashboard failed [%v]", err)
 	}
 	if err := cfg.validateAddOnPrometheusGrafana(); err != nil {
 		return fmt.Errorf("validateAddOnPrometheusGrafana failed [%v]", err)
 	}
-
 	if err := cfg.validateAddOnNLBHelloWorld(); err != nil {
 		return fmt.Errorf("validateAddOnNLBHelloWorld failed [%v]", err)
 	}
