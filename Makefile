@@ -35,3 +35,16 @@ s3-push: build
 	aws s3 ls s3://eks-prow/bin/aws-k8s-tester/
 
 release: clean s3-push docker-push
+
+
+ORIGINAL_BUSYBOX_IMG ?= gcr.io/google-containers/busybox:latest
+BUSYBOX_IMG_NAME ?= busybox
+BUSYBOX_TAG ?= latest
+
+docker-busybox:
+	docker pull $(ORIGINAL_BUSYBOX_IMG)
+	docker tag $(ORIGINAL_BUSYBOX_IMG) $(AKT_AWS_ACCOUNT_ID).dkr.ecr.$(AKT_AWS_REGION).amazonaws.com/$(BUSYBOX_IMG_NAME):$(BUSYBOX_TAG)
+
+docker-push-busybox:
+	eval $$(aws ecr get-login --registry-ids $(AKT_AWS_ACCOUNT_ID) --no-include-email --region $(AKT_AWS_REGION))
+	docker push $(AKT_AWS_ACCOUNT_ID).dkr.ecr.$(AKT_AWS_REGION).amazonaws.com/$(BUSYBOX_IMG_NAME):$(BUSYBOX_TAG);
