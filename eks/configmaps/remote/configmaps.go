@@ -107,10 +107,10 @@ func (ts *tester) Create() (err error) {
 	if err = ts.createServiceAccount(); err != nil {
 		return err
 	}
-	if err = ts.createALBRBACClusterRole(); err != nil {
+	if err = ts.createRBACClusterRole(); err != nil {
 		return err
 	}
-	if err = ts.createALBRBACClusterRoleBinding(); err != nil {
+	if err = ts.createRBACClusterRoleBinding(); err != nil {
 		return err
 	}
 	if err = ts.createConfigMap(); err != nil {
@@ -182,10 +182,10 @@ func (ts *tester) Delete() error {
 	if err := ts.deleteConfigMap(); err != nil {
 		errs = append(errs, err.Error())
 	}
-	if err := ts.deleteALBRBACClusterRoleBinding(); err != nil {
+	if err := ts.deleteRBACClusterRoleBinding(); err != nil {
 		errs = append(errs, err.Error())
 	}
-	if err := ts.deleteALBRBACClusterRole(); err != nil {
+	if err := ts.deleteRBACClusterRole(); err != nil {
 		errs = append(errs, err.Error())
 	}
 	if err := ts.deleteServiceAccount(); err != nil {
@@ -284,7 +284,7 @@ func (ts *tester) deleteServiceAccount() error {
 
 // ref. https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration
 // ref. https://kubernetes.io/docs/reference/access-authn-authz/rbac/
-func (ts *tester) createALBRBACClusterRole() error {
+func (ts *tester) createRBACClusterRole() error {
 	ts.cfg.Logger.Info("creating configmaps RBAC ClusterRole")
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.K8SClient.KubernetesClientSet().
@@ -336,7 +336,7 @@ func (ts *tester) createALBRBACClusterRole() error {
 
 // ref. https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration
 // ref. https://kubernetes.io/docs/reference/access-authn-authz/rbac/
-func (ts *tester) deleteALBRBACClusterRole() error {
+func (ts *tester) deleteRBACClusterRole() error {
 	ts.cfg.Logger.Info("deleting configmaps RBAC ClusterRole")
 	foreground := metav1.DeletePropagationForeground
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
@@ -363,7 +363,7 @@ func (ts *tester) deleteALBRBACClusterRole() error {
 
 // ref. https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration
 // ref. https://kubernetes.io/docs/reference/access-authn-authz/rbac/
-func (ts *tester) createALBRBACClusterRoleBinding() error {
+func (ts *tester) createRBACClusterRoleBinding() error {
 	ts.cfg.Logger.Info("creating configmaps RBAC ClusterRoleBinding")
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.K8SClient.KubernetesClientSet().
@@ -415,7 +415,7 @@ func (ts *tester) createALBRBACClusterRoleBinding() error {
 
 // ref. https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration
 // ref. https://kubernetes.io/docs/reference/access-authn-authz/rbac/
-func (ts *tester) deleteALBRBACClusterRoleBinding() error {
+func (ts *tester) deleteRBACClusterRoleBinding() error {
 	ts.cfg.Logger.Info("deleting configmaps RBAC ClusterRoleBinding")
 	foreground := metav1.DeletePropagationForeground
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
