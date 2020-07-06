@@ -174,6 +174,22 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_LOGS_DIR", "a")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_LOGS_DIR")
 
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CW_AGENT_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CW_AGENT_ENABLE")
+
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_REPOSITORY_BUSYBOX_ACCOUNT_ID", "uri")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_REPOSITORY_BUSYBOX_ACCOUNT_ID")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_REPOSITORY_BUSYBOX_REGION", "eu-north-1")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_REPOSITORY_BUSYBOX_REGION")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_REPOSITORY_BUSYBOX_NAME", "busybox")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_REPOSITORY_BUSYBOX_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_REPOSITORY_BUSYBOX_IMAGE_TAG", "latest2")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_REPOSITORY_BUSYBOX_IMAGE_TAG")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_METADATA_WATCH", "false")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_METADATA_WATCH")
+
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_ENABLE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_DEPLOYMENT_REPLICAS", "333")
@@ -876,6 +892,29 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.AddOnManagedNodeGroups.LogsDir != "a" {
 		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.LogsDir %q", cfg.AddOnManagedNodeGroups.LogsDir)
+	}
+
+	if !cfg.AddOnCWAgent.Enable {
+		t.Fatalf("unexpected cfg.AddOnCWAgent.Enable %v", cfg.AddOnCWAgent.Enable)
+	}
+
+	if !cfg.AddOnFluentd.Enable {
+		t.Fatalf("unexpected cfg.AddOnFluentd.Enable %v", cfg.AddOnFluentd.Enable)
+	}
+	if cfg.AddOnFluentd.RepositoryBusyboxAccountID != "uri" {
+		t.Fatalf("unexpected cfg.AddOnFluentd.RepositoryBusyboxAccountID %v", cfg.AddOnFluentd.RepositoryBusyboxAccountID)
+	}
+	if cfg.AddOnFluentd.RepositoryBusyboxRegion != "eu-north-1" {
+		t.Fatalf("unexpected cfg.AddOnFluentd.RepositoryBusyboxRegion %v", cfg.AddOnFluentd.RepositoryBusyboxRegion)
+	}
+	if cfg.AddOnFluentd.RepositoryBusyboxName != "busybox" {
+		t.Fatalf("unexpected cfg.AddOnFluentd.RepositoryBusyboxName %v", cfg.AddOnFluentd.RepositoryBusyboxName)
+	}
+	if cfg.AddOnFluentd.RepositoryBusyboxImageTag != "latest2" {
+		t.Fatalf("unexpected cfg.AddOnFluentd.RepositoryBusyboxImageTag %v", cfg.AddOnFluentd.RepositoryBusyboxImageTag)
+	}
+	if cfg.AddOnFluentd.MetadataWatch {
+		t.Fatalf("unexpected cfg.AddOnFluentd.MetadataWatch %v", cfg.AddOnFluentd.MetadataWatch)
 	}
 
 	if !cfg.AddOnNLBHelloWorld.Enable {
