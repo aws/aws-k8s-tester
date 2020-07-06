@@ -35,7 +35,9 @@ import (
 	csrs_local "github.com/aws/aws-k8s-tester/eks/csrs/local"
 	csrs_remote "github.com/aws/aws-k8s-tester/eks/csrs/remote"
 	cuda_vector_add "github.com/aws/aws-k8s-tester/eks/cuda-vector-add"
+	cw_agent "github.com/aws/aws-k8s-tester/eks/cw-agent"
 	"github.com/aws/aws-k8s-tester/eks/fargate"
+	"github.com/aws/aws-k8s-tester/eks/fluentd"
 	"github.com/aws/aws-k8s-tester/eks/gpu"
 	hollow_nodes_local "github.com/aws/aws-k8s-tester/eks/hollow-nodes/local"
 	hollow_nodes_remote "github.com/aws/aws-k8s-tester/eks/hollow-nodes/remote"
@@ -462,6 +464,20 @@ func (ts *Tester) createTesters() (err error) {
 	})
 
 	ts.testers = []eks_tester.Tester{
+		cw_agent.New(cw_agent.Config{
+			Logger:    ts.lg,
+			LogWriter: ts.logWriter,
+			Stopc:     ts.stopCreationCh,
+			EKSConfig: ts.cfg,
+		}),
+		fluentd.New(fluentd.Config{
+			Logger:    ts.lg,
+			LogWriter: ts.logWriter,
+			Stopc:     ts.stopCreationCh,
+			EKSConfig: ts.cfg,
+			K8SClient: ts.k8sClient,
+			ECRAPI:    ecr.New(ts.awsSession, aws.NewConfig().WithRegion(ts.cfg.GetAddOnFluentdRepositoryBusyboxRegion())),
+		}),
 		metrics_server.New(metrics_server.Config{
 			Logger:    ts.lg,
 			LogWriter: ts.logWriter,
