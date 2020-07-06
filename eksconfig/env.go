@@ -79,6 +79,32 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *AddOnManagedNodeGroups, got %T", vv)
 	}
 
+	if cfg.AddOnCWAgent == nil {
+		cfg.AddOnCWAgent = &AddOnCWAgent{}
+	}
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnCWAgent, cfg.AddOnCWAgent)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*AddOnCWAgent); ok {
+		cfg.AddOnCWAgent = av
+	} else {
+		return fmt.Errorf("expected *AddOnCWAgent, got %T", vv)
+	}
+
+	if cfg.AddOnFluentd == nil {
+		cfg.AddOnFluentd = &AddOnFluentd{}
+	}
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnFluentd, cfg.AddOnFluentd)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*AddOnFluentd); ok {
+		cfg.AddOnFluentd = av
+	} else {
+		return fmt.Errorf("expected *AddOnFluentd, got %T", vv)
+	}
+
 	if cfg.AddOnMetricsServer == nil {
 		cfg.AddOnMetricsServer = &AddOnMetricsServer{}
 	}

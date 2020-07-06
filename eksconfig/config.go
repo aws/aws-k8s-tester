@@ -193,6 +193,12 @@ type Config struct {
 	TotalNodes       int64 `json:"total-nodes" read-only:"true"`
 	TotalHollowNodes int64 `json:"total-hollow-nodes" read-only:"true"`
 
+	// AddOnCWAgent defines parameters for EKS cluster
+	// add-on Fluentd.
+	AddOnCWAgent *AddOnCWAgent `json:"add-on-cw-agent,omitempty"`
+	// AddOnFluentd defines parameters for EKS cluster
+	// add-on Fluentd.
+	AddOnFluentd *AddOnFluentd `json:"add-on-fluentd,omitempty"`
 	// AddOnMetricsServer defines parameters for EKS cluster
 	// add-on metrics server.
 	AddOnMetricsServer *AddOnMetricsServer `json:"add-on-metrics-server,omitempty"`
@@ -775,6 +781,8 @@ func NewDefault() *Config {
 		AddOnNodeGroups:        getDefaultAddOnNodeGroups(name),
 		AddOnManagedNodeGroups: getDefaultAddOnManagedNodeGroups(name),
 
+		AddOnCWAgent:       getDefaultAddOnCWAgent(),
+		AddOnFluentd:       getDefaultAddOnFluentd(),
 		AddOnMetricsServer: getDefaultAddOnMetricsServer(),
 
 		AddOnConformance: getDefaultAddOnConformance(),
@@ -881,6 +889,12 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 	cfg.TotalHollowNodes = totalHollowNodes
 
+	if err := cfg.validateAddOnCWAgent(); err != nil {
+		return fmt.Errorf("validateAddOnCWAgent failed [%v]", err)
+	}
+	if err := cfg.validateAddOnFluentd(); err != nil {
+		return fmt.Errorf("validateAddOnFluentd failed [%v]", err)
+	}
 	if err := cfg.validateAddOnMetricsServer(); err != nil {
 		return fmt.Errorf("validateAddOnMetricsServer failed [%v]", err)
 	}

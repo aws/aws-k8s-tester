@@ -1,9 +1,11 @@
 
 ```
-# total 34 add-ons
+# total 36 add-ons
 # set the following *_ENABLE env vars to enable add-ons, rest are set with default values
 AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE=true \
+AWS_K8S_TESTER_EKS_ADD_ON_CW_AGENT_ENABLE=true \
+AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_METRICS_SERVER_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_ENABLE=true \
@@ -176,6 +178,40 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_LOGS_TAR_GZ_PATH           | read-only "false" | *eksconfig.AddOnManagedNodeGroups.LogsTarGzPath         | string                   |
 | AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS                       | read-only "false" | *eksconfig.AddOnManagedNodeGroups.MNGs                  | map[string]eksconfig.MNG |
 *--------------------------------------------------------------------------*-------------------*---------------------------------------------------------*--------------------------*
+
+
+*------------------------------------------------------*-------------------*-----------------------------------------*--------------------*
+|                ENVIRONMENTAL VARIABLE                |     READ ONLY     |                  TYPE                   |      GO TYPE       |
+*------------------------------------------------------*-------------------*-----------------------------------------*--------------------*
+| AWS_K8S_TESTER_EKS_ADD_ON_CW_AGENT_ENABLE            | read-only "false" | *eksconfig.AddOnCWAgent.Enable          | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_CW_AGENT_CREATED           | read-only "true"  | *eksconfig.AddOnCWAgent.Created         | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_CW_AGENT_TIME_FRAME_CREATE | read-only "true"  | *eksconfig.AddOnCWAgent.TimeFrameCreate | timeutil.TimeFrame |
+| AWS_K8S_TESTER_EKS_ADD_ON_CW_AGENT_TIME_FRAME_DELETE | read-only "true"  | *eksconfig.AddOnCWAgent.TimeFrameDelete | timeutil.TimeFrame |
+| AWS_K8S_TESTER_EKS_ADD_ON_CW_AGENT_NAMESPACE         | read-only "false" | *eksconfig.AddOnCWAgent.Namespace       | string             |
+*------------------------------------------------------*-------------------*-----------------------------------------*--------------------*
+
+
+*--------------------------------------------------------------------*-------------------*-------------------------------------------------------*--------------------*
+|                       ENVIRONMENTAL VARIABLE                       |     READ ONLY     |                         TYPE                          |      GO TYPE       |
+*--------------------------------------------------------------------*-------------------*-------------------------------------------------------*--------------------*
+| AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_ENABLE                           | read-only "false" | *eksconfig.AddOnFluentd.Enable                        | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_CREATED                          | read-only "true"  | *eksconfig.AddOnFluentd.Created                       | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_TIME_FRAME_CREATE                | read-only "true"  | *eksconfig.AddOnFluentd.TimeFrameCreate               | timeutil.TimeFrame |
+| AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_TIME_FRAME_DELETE                | read-only "true"  | *eksconfig.AddOnFluentd.TimeFrameDelete               | timeutil.TimeFrame |
+| AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_NAMESPACE                        | read-only "false" | *eksconfig.AddOnFluentd.Namespace                     | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_REPOSITORY_BUSYBOX_ACCOUNT_ID    | read-only "false" | *eksconfig.AddOnFluentd.RepositoryBusyboxAccountID    | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_REPOSITORY_BUSYBOX_REGION        | read-only "false" | *eksconfig.AddOnFluentd.RepositoryBusyboxRegion       | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_REPOSITORY_BUSYBOX_NAME          | read-only "false" | *eksconfig.AddOnFluentd.RepositoryBusyboxName         | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_REPOSITORY_BUSYBOX_IMAGE_TAG     | read-only "false" | *eksconfig.AddOnFluentd.RepositoryBusyboxImageTag     | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_THREADS                          | read-only "false" | *eksconfig.AddOnFluentd.Threads                       | int                |
+| AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_METADATA_LOG_LEVEL               | read-only "false" | *eksconfig.AddOnFluentd.MetadataLogLevel              | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_METADATA_CACHE_SIZE              | read-only "false" | *eksconfig.AddOnFluentd.MetadataCacheSize             | int                |
+| AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_METADATA_WATCH                   | read-only "false" | *eksconfig.AddOnFluentd.MetadataWatch                 | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_METADATA_SKIP_LABELS             | read-only "false" | *eksconfig.AddOnFluentd.MetadataSkipLabels            | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_METADATA_SKIP_MASTER_URL         | read-only "false" | *eksconfig.AddOnFluentd.MetadataSkipMasterURL         | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_METADATA_SKIP_CONTAINER_METADATA | read-only "false" | *eksconfig.AddOnFluentd.MetadataSkipContainerMetadata | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_METADATA_SKIP_NAMESPACE_METADATA | read-only "false" | *eksconfig.AddOnFluentd.MetadataSkipNamespaceMetadata | bool               |
+*--------------------------------------------------------------------*-------------------*-------------------------------------------------------*--------------------*
 
 
 *------------------------------------------------------------*-------------------*-----------------------------------------------*--------------------*
