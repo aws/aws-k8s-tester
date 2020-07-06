@@ -13,9 +13,11 @@ import (
 
 	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
 	"github.com/aws/aws-k8s-tester/eksconfig"
+	aws_ecr "github.com/aws/aws-k8s-tester/pkg/aws/ecr"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
 	"go.uber.org/zap"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -33,6 +35,7 @@ type Config struct {
 	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
+	ECRAPI    ecriface.ECRAPI
 }
 
 var pkgName = reflect.TypeOf(tester{}).PkgPath()
@@ -41,11 +44,13 @@ func (ts *tester) Name() string { return pkgName }
 
 func New(cfg Config) eks_tester.Tester {
 	cfg.Logger.Info("creating tester", zap.String("tester", pkgName))
-	return &tester{cfg: cfg}
+	return &tester{cfg: cfg, busyboxImg: "busybox"}
 }
 
 type tester struct {
 	cfg Config
+
+	busyboxImg string
 }
 
 // FluentdImageName is the image name of Fluentd daemon set.
@@ -72,6 +77,21 @@ func (ts *tester) Create() (err error) {
 		ts.cfg.EKSConfig.Sync()
 	}()
 
+	if ts.cfg.EKSConfig.AddOnFluentd.RepositoryBusyboxAccountID != "" &&
+		ts.cfg.EKSConfig.AddOnFluentd.RepositoryBusyboxRegion != "" &&
+		ts.cfg.EKSConfig.AddOnFluentd.RepositoryBusyboxName != "" &&
+		ts.cfg.EKSConfig.AddOnFluentd.RepositoryBusyboxImageTag != "" {
+		if ts.busyboxImg, err = aws_ecr.Check(
+			ts.cfg.Logger,
+			ts.cfg.ECRAPI,
+			ts.cfg.EKSConfig.AddOnFluentd.RepositoryBusyboxAccountID,
+			ts.cfg.EKSConfig.AddOnFluentd.RepositoryBusyboxRegion,
+			ts.cfg.EKSConfig.AddOnFluentd.RepositoryBusyboxName,
+			ts.cfg.EKSConfig.AddOnFluentd.RepositoryBusyboxImageTag,
+		); err != nil {
+			return err
+		}
+	}
 	if err = k8s_client.CreateNamespace(
 		ts.cfg.Logger,
 		ts.cfg.K8SClient.KubernetesClientSet(),
@@ -587,7 +607,7 @@ func (ts *tester) createDaemonSet() (err error) {
 			InitContainers: []v1.Container{
 				{
 					Name:  "copy-fluentd-config",
-					Image: "busybox",
+					Image: ts.busyboxImg,
 					Command: []string{
 						"sh",
 						"-c",

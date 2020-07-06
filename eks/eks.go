@@ -469,6 +469,7 @@ func (ts *Tester) createTesters() (err error) {
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
+			ECRAPI:    ecr.New(ts.awsSession, aws.NewConfig().WithRegion(ts.cfg.GetAddOnFluentdRepositoryBusyboxRegion())),
 		}),
 		metrics_server.New(metrics_server.Config{
 			Logger:    ts.lg,
@@ -553,6 +554,7 @@ func (ts *Tester) createTesters() (err error) {
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
+			ECRAPI:    ecr.New(ts.awsSession, aws.NewConfig().WithRegion(ts.cfg.GetAddOnJobsEchoRepositoryBusyboxRegion())),
 		}),
 		cron_jobs.New(cron_jobs.Config{
 			Logger:    ts.lg,
@@ -560,6 +562,7 @@ func (ts *Tester) createTesters() (err error) {
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
+			ECRAPI:    ecr.New(ts.awsSession, aws.NewConfig().WithRegion(ts.cfg.GetAddOnCronJobsRepositoryBusyboxRegion())),
 		}),
 		csrs_local.New(csrs_local.Config{
 			Logger:    ts.lg,
