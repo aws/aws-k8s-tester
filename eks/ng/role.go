@@ -43,7 +43,7 @@ Parameters:
 
   RoleManagedPolicyARNs:
     Type: CommaDelimitedList
-    Default: 'arn:aws:iam::aws:policy/AmazonEKSServicePolicy,arn:aws:iam::aws:policy/AmazonEKSClusterPolicy,arn:aws:iam::aws:policy/AmazonSSMFullAccess,arn:aws:iam::aws:policy/AmazonS3FullAccess,arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy,arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy,arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly,arn:aws:iam::aws:policy/ElasticLoadBalancingFullAccess,arn:aws:iam::aws:policy/AmazonEKSFargatePodExecutionRolePolicy'
+    Default: 'arn:aws:iam::aws:policy/AmazonEKSServicePolicy,arn:aws:iam::aws:policy/AmazonEKSClusterPolicy,arn:aws:iam::aws:policy/AmazonSSMFullAccess,arn:aws:iam::aws:policy/AmazonS3FullAccess,arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy,arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy,arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly,arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy,arn:aws:iam::aws:policy/ElasticLoadBalancingFullAccess,arn:aws:iam::aws:policy/AmazonEKSFargatePodExecutionRolePolicy'
     Description: EKS Node Group managed policy ARNs
 
 Resources:
@@ -207,6 +207,7 @@ Resources:
             Resource:
             - !Join ['', [!Sub 'arn:${AWS::Partition}:s3:::', '{{.S3BucketName}}']]
             - !Join ['', [!Sub 'arn:${AWS::Partition}:s3:::', '{{.S3BucketName}}', '/', '{{.ClusterName}}', '/*']]{{ end }}
+{{ if ne .LogsPolicyData "" }}{{.LogsPolicyData}}{{ end }}
 {{ if ne .ASGPolicyData "" }}{{.ASGPolicyData}}{{ end }}
 
 Outputs:
@@ -218,10 +219,20 @@ Outputs:
 `
 
 type templateRole struct {
-	S3BucketName  string
-	ClusterName   string
-	ASGPolicyData string
+	S3BucketName   string
+	ClusterName    string
+	LogsPolicyData string
+	ASGPolicyData  string
 }
+
+const logsPolicyData = `          - Effect: Allow
+            Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:DescribeLogGroups
+            - logs:DescribeLogStreams
+            - logs:PutLogEvents
+            Resource: "*"`
 
 const asgPolicyData = `          - Effect: Allow
             Action:
@@ -242,6 +253,12 @@ func (ts *tester) createRole() error {
 			"arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
 			"arn:aws:iam::aws:policy/AmazonSSMFullAccess",
 			"arn:aws:iam::aws:policy/AmazonS3FullAccess",
+		}
+		// otherwise, CW agent "panic: Cannot get pod from kubelet, err: KubeClinet Access Failure"
+		// ref. https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Container-Insights-prerequisites.html
+		if ts.cfg.EKSConfig.IsEnabledAddOnCWAgent() ||
+			ts.cfg.EKSConfig.IsEnabledAddOnFluentd() {
+			policyARNs = append(policyARNs, "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy")
 		}
 		if ts.cfg.EKSConfig.IsEnabledAddOnNLBHelloWorld() ||
 			ts.cfg.EKSConfig.IsEnabledAddOnALB2048() {
@@ -275,6 +292,10 @@ func (ts *tester) createRole() error {
 	if ts.cfg.EKSConfig.AddOnNodeGroups.IsEnabledClusterAutoscaler() {
 		ts.cfg.Logger.Info("adding autoscaling policy for cluster autoscaler")
 		tr.ASGPolicyData = asgPolicyData
+	}
+	if ts.cfg.EKSConfig.IsEnabledAddOnFluentd() {
+		ts.cfg.Logger.Info("adding cloudwatch policy for container insights logs")
+		tr.LogsPolicyData = logsPolicyData
 	}
 	tpl := template.Must(template.New("TemplateRole").Parse(TemplateRole))
 	buf := bytes.NewBuffer(nil)
