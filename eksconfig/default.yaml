@@ -24,7 +24,7 @@ log-level: info
 log-outputs:
 - stderr
 - /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.log
-name: eks-2020070513-coffeepgfv3f
+name: eks-2020070522-autumnt8l4mt
 on-failure-delete: true
 on-failure-delete-wait-seconds: 120
 parameters:
@@ -40,10 +40,10 @@ parameters:
   role-arn: ""
   role-cfn-stack-id: ""
   role-cfn-stack-yaml-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.role.cfn.yaml
-  role-cfn-stack-yaml-s3-key: eks-2020070513-coffeepgfv3f/default.role.cfn.yaml
+  role-cfn-stack-yaml-s3-key: eks-2020070522-autumnt8l4mt/default.role.cfn.yaml
   role-create: true
   role-managed-policy-arns: null
-  role-name: eks-2020070513-coffeepgfv3f-role
+  role-name: eks-2020070522-autumnt8l4mt-role
   role-service-principals: null
   signing-name: eks
   tags: null
@@ -51,19 +51,19 @@ parameters:
   version-value: 1.16
   vpc-cfn-stack-id: ""
   vpc-cfn-stack-yaml-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.vpc.cfn.yaml
-  vpc-cfn-stack-yaml-s3-key: eks-2020070513-coffeepgfv3f/default.vpc.cfn.yaml
+  vpc-cfn-stack-yaml-s3-key: eks-2020070522-autumnt8l4mt/default.vpc.cfn.yaml
   vpc-create: true
   vpc-id: ""
 partition: aws
 region: us-west-2
 remote-access-commands-output-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.ssh.sh
 remote-access-key-create: true
-remote-access-key-name: eks-2020070513-coffeepgfv3f-remote-access-key
-remote-access-private-key-path: /tmp/oscar0ez6simmes.insecure.key
+remote-access-key-name: eks-2020070522-autumnt8l4mt-remote-access-key
+remote-access-private-key-path: /tmp/water61eonc3647.insecure.key
 s3-bucket-create: true
 s3-bucket-create-keep: true
 s3-bucket-lifecycle-expiration-days: 0
-s3-bucket-name: eks-2020070513-coffeepgfv3f-s3-bucket
+s3-bucket-name: eks-2020070522-autumnt8l4mt-s3-bucket
 status:
   aws-account-id: ""
   aws-credential-path: ""
@@ -75,7 +75,7 @@ status:
   cluster-ca-decoded: ""
   cluster-cfn-stack-id: ""
   cluster-cfn-stack-yaml-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.cluster.cfn.yaml
-  cluster-cfn-stack-yaml-s3-key: eks-2020070513-coffeepgfv3f/default.cluster.cfn.yaml
+  cluster-cfn-stack-yaml-s3-key: eks-2020070522-autumnt8l4mt/default.cluster.cfn.yaml
   cluster-control-plane-security-group-id: ""
   cluster-oidc-issuer-arn: ""
   cluster-oidc-issuer-ca-thumbprint: ""

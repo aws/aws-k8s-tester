@@ -176,6 +176,14 @@ func TestEnv(t *testing.T) {
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_REPOSITORY_BUSYBOX_ACCOUNT_ID", "uri")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_REPOSITORY_BUSYBOX_ACCOUNT_ID")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_REPOSITORY_BUSYBOX_REGION", "eu-north-1")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_REPOSITORY_BUSYBOX_REGION")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_REPOSITORY_BUSYBOX_NAME", "busybox")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_REPOSITORY_BUSYBOX_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_REPOSITORY_BUSYBOX_IMAGE_TAG", "latest2")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_REPOSITORY_BUSYBOX_IMAGE_TAG")
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_ENABLE")
@@ -225,6 +233,14 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_PARALLELS")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_ECHO_SIZE", "10000")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_ECHO_SIZE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_REPOSITORY_BUSYBOX_ACCOUNT_ID", "uri")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_REPOSITORY_BUSYBOX_ACCOUNT_ID")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_REPOSITORY_BUSYBOX_REGION", "eu-north-1")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_REPOSITORY_BUSYBOX_REGION")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_REPOSITORY_BUSYBOX_NAME", "busybox")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_REPOSITORY_BUSYBOX_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_REPOSITORY_BUSYBOX_IMAGE_TAG", "latest2")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_REPOSITORY_BUSYBOX_IMAGE_TAG")
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_ENABLE")
@@ -242,6 +258,14 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_FAILED_JOBS_HISTORY_LIMIT")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_ECHO_SIZE", "10000")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_ECHO_SIZE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_REPOSITORY_BUSYBOX_ACCOUNT_ID", "uri")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_REPOSITORY_BUSYBOX_ACCOUNT_ID")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_REPOSITORY_BUSYBOX_REGION", "eu-north-1")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_REPOSITORY_BUSYBOX_REGION")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_REPOSITORY_BUSYBOX_NAME", "busybox")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_REPOSITORY_BUSYBOX_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_REPOSITORY_BUSYBOX_IMAGE_TAG", "latest2")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_REPOSITORY_BUSYBOX_IMAGE_TAG")
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CSRS_LOCAL_ENABLE")
@@ -868,6 +892,18 @@ func TestEnv(t *testing.T) {
 	if !cfg.AddOnFluentd.Enable {
 		t.Fatalf("unexpected cfg.AddOnFluentd.Enable %v", cfg.AddOnFluentd.Enable)
 	}
+	if cfg.AddOnFluentd.RepositoryBusyboxAccountID != "uri" {
+		t.Fatalf("unexpected cfg.AddOnFluentd.RepositoryBusyboxAccountID %v", cfg.AddOnFluentd.RepositoryBusyboxAccountID)
+	}
+	if cfg.AddOnFluentd.RepositoryBusyboxRegion != "eu-north-1" {
+		t.Fatalf("unexpected cfg.AddOnFluentd.RepositoryBusyboxRegion %v", cfg.AddOnFluentd.RepositoryBusyboxRegion)
+	}
+	if cfg.AddOnFluentd.RepositoryBusyboxName != "busybox" {
+		t.Fatalf("unexpected cfg.AddOnFluentd.RepositoryBusyboxName %v", cfg.AddOnFluentd.RepositoryBusyboxName)
+	}
+	if cfg.AddOnFluentd.RepositoryBusyboxImageTag != "latest2" {
+		t.Fatalf("unexpected cfg.AddOnFluentd.RepositoryBusyboxImageTag %v", cfg.AddOnFluentd.RepositoryBusyboxImageTag)
+	}
 
 	if !cfg.AddOnNLBHelloWorld.Enable {
 		t.Fatalf("unexpected cfg.AddOnNLBHelloWorld.Enable %v", cfg.AddOnNLBHelloWorld.Enable)
@@ -941,6 +977,18 @@ func TestEnv(t *testing.T) {
 	if cfg.AddOnJobsEcho.EchoSize != 10000 {
 		t.Fatalf("unexpected cfg.AddOnJobsEcho.EchoSize %v", cfg.AddOnJobsEcho.EchoSize)
 	}
+	if cfg.AddOnJobsEcho.RepositoryBusyboxAccountID != "uri" {
+		t.Fatalf("unexpected cfg.AddOnJobsEcho.RepositoryBusyboxAccountID %v", cfg.AddOnJobsEcho.RepositoryBusyboxAccountID)
+	}
+	if cfg.AddOnJobsEcho.RepositoryBusyboxRegion != "eu-north-1" {
+		t.Fatalf("unexpected cfg.AddOnJobsEcho.RepositoryBusyboxRegion %v", cfg.AddOnJobsEcho.RepositoryBusyboxRegion)
+	}
+	if cfg.AddOnJobsEcho.RepositoryBusyboxName != "busybox" {
+		t.Fatalf("unexpected cfg.AddOnJobsEcho.RepositoryBusyboxName %v", cfg.AddOnJobsEcho.RepositoryBusyboxName)
+	}
+	if cfg.AddOnJobsEcho.RepositoryBusyboxImageTag != "latest2" {
+		t.Fatalf("unexpected cfg.AddOnJobsEcho.RepositoryBusyboxImageTag %v", cfg.AddOnJobsEcho.RepositoryBusyboxImageTag)
+	}
 
 	if !cfg.AddOnCronJobs.Enable {
 		t.Fatalf("unexpected cfg.AddOnCronJobs.Enable %v", cfg.AddOnCronJobs.Enable)
@@ -965,6 +1013,18 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.AddOnCronJobs.EchoSize != 10000 {
 		t.Fatalf("unexpected cfg.AddOnCronJobs.EchoSize %d", cfg.AddOnCronJobs.EchoSize)
+	}
+	if cfg.AddOnCronJobs.RepositoryBusyboxAccountID != "uri" {
+		t.Fatalf("unexpected cfg.AddOnCronJobs.RepositoryBusyboxAccountID %v", cfg.AddOnCronJobs.RepositoryBusyboxAccountID)
+	}
+	if cfg.AddOnCronJobs.RepositoryBusyboxRegion != "eu-north-1" {
+		t.Fatalf("unexpected cfg.AddOnCronJobs.RepositoryBusyboxRegion %v", cfg.AddOnCronJobs.RepositoryBusyboxRegion)
+	}
+	if cfg.AddOnCronJobs.RepositoryBusyboxName != "busybox" {
+		t.Fatalf("unexpected cfg.AddOnCronJobs.RepositoryBusyboxName %v", cfg.AddOnCronJobs.RepositoryBusyboxName)
+	}
+	if cfg.AddOnCronJobs.RepositoryBusyboxImageTag != "latest2" {
+		t.Fatalf("unexpected cfg.AddOnCronJobs.RepositoryBusyboxImageTag %v", cfg.AddOnCronJobs.RepositoryBusyboxImageTag)
 	}
 
 	if !cfg.AddOnCSRsLocal.Enable {

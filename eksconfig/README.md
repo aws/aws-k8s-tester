@@ -179,14 +179,18 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 *--------------------------------------------------------------------------*-------------------*---------------------------------------------------------*--------------------------*
 
 
-*-----------------------------------------------------*-------------------*-----------------------------------------*--------------------*
-|               ENVIRONMENTAL VARIABLE                |     READ ONLY     |                  TYPE                   |      GO TYPE       |
-*-----------------------------------------------------*-------------------*-----------------------------------------*--------------------*
-| AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_ENABLE            | read-only "false" | *eksconfig.AddOnFluentd.Enable          | bool               |
-| AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_CREATED           | read-only "true"  | *eksconfig.AddOnFluentd.Created         | bool               |
-| AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_TIME_FRAME_CREATE | read-only "true"  | *eksconfig.AddOnFluentd.TimeFrameCreate | timeutil.TimeFrame |
-| AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_TIME_FRAME_DELETE | read-only "true"  | *eksconfig.AddOnFluentd.TimeFrameDelete | timeutil.TimeFrame |
-*-----------------------------------------------------*-------------------*-----------------------------------------*--------------------*
+*-----------------------------------------------------------------*-------------------*----------------------------------------------------*--------------------*
+|                     ENVIRONMENTAL VARIABLE                      |     READ ONLY     |                        TYPE                        |      GO TYPE       |
+*-----------------------------------------------------------------*-------------------*----------------------------------------------------*--------------------*
+| AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_ENABLE                        | read-only "false" | *eksconfig.AddOnFluentd.Enable                     | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_CREATED                       | read-only "true"  | *eksconfig.AddOnFluentd.Created                    | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_TIME_FRAME_CREATE             | read-only "true"  | *eksconfig.AddOnFluentd.TimeFrameCreate            | timeutil.TimeFrame |
+| AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_TIME_FRAME_DELETE             | read-only "true"  | *eksconfig.AddOnFluentd.TimeFrameDelete            | timeutil.TimeFrame |
+| AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_REPOSITORY_BUSYBOX_ACCOUNT_ID | read-only "false" | *eksconfig.AddOnFluentd.RepositoryBusyboxAccountID | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_REPOSITORY_BUSYBOX_REGION     | read-only "false" | *eksconfig.AddOnFluentd.RepositoryBusyboxRegion    | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_REPOSITORY_BUSYBOX_NAME       | read-only "false" | *eksconfig.AddOnFluentd.RepositoryBusyboxName      | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_REPOSITORY_BUSYBOX_IMAGE_TAG  | read-only "false" | *eksconfig.AddOnFluentd.RepositoryBusyboxImageTag  | string             |
+*-----------------------------------------------------------------*-------------------*----------------------------------------------------*--------------------*
 
 
 *------------------------------------------------------------*-------------------*-----------------------------------------------*--------------------*
@@ -344,18 +348,22 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 *-----------------------------------------------------*-------------------*----------------------------------------*--------------------*
 
 
-*-------------------------------------------------------*-------------------*------------------------------------------*--------------------*
-|                ENVIRONMENTAL VARIABLE                 |     READ ONLY     |                   TYPE                   |      GO TYPE       |
-*-------------------------------------------------------*-------------------*------------------------------------------*--------------------*
-| AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_ENABLE            | read-only "false" | *eksconfig.AddOnJobsEcho.Enable          | bool               |
-| AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_CREATED           | read-only "true"  | *eksconfig.AddOnJobsEcho.Created         | bool               |
-| AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_TIME_FRAME_CREATE | read-only "true"  | *eksconfig.AddOnJobsEcho.TimeFrameCreate | timeutil.TimeFrame |
-| AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_TIME_FRAME_DELETE | read-only "true"  | *eksconfig.AddOnJobsEcho.TimeFrameDelete | timeutil.TimeFrame |
-| AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_NAMESPACE         | read-only "false" | *eksconfig.AddOnJobsEcho.Namespace       | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_COMPLETES         | read-only "false" | *eksconfig.AddOnJobsEcho.Completes       | int                |
-| AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_PARALLELS         | read-only "false" | *eksconfig.AddOnJobsEcho.Parallels       | int                |
-| AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_ECHO_SIZE         | read-only "false" | *eksconfig.AddOnJobsEcho.EchoSize        | int                |
-*-------------------------------------------------------*-------------------*------------------------------------------*--------------------*
+*-------------------------------------------------------------------*-------------------*-----------------------------------------------------*--------------------*
+|                      ENVIRONMENTAL VARIABLE                       |     READ ONLY     |                        TYPE                         |      GO TYPE       |
+*-------------------------------------------------------------------*-------------------*-----------------------------------------------------*--------------------*
+| AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_ENABLE                        | read-only "false" | *eksconfig.AddOnJobsEcho.Enable                     | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_CREATED                       | read-only "true"  | *eksconfig.AddOnJobsEcho.Created                    | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_TIME_FRAME_CREATE             | read-only "true"  | *eksconfig.AddOnJobsEcho.TimeFrameCreate            | timeutil.TimeFrame |
+| AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_TIME_FRAME_DELETE             | read-only "true"  | *eksconfig.AddOnJobsEcho.TimeFrameDelete            | timeutil.TimeFrame |
+| AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_NAMESPACE                     | read-only "false" | *eksconfig.AddOnJobsEcho.Namespace                  | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_REPOSITORY_BUSYBOX_ACCOUNT_ID | read-only "false" | *eksconfig.AddOnJobsEcho.RepositoryBusyboxAccountID | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_REPOSITORY_BUSYBOX_REGION     | read-only "false" | *eksconfig.AddOnJobsEcho.RepositoryBusyboxRegion    | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_REPOSITORY_BUSYBOX_NAME       | read-only "false" | *eksconfig.AddOnJobsEcho.RepositoryBusyboxName      | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_REPOSITORY_BUSYBOX_IMAGE_TAG  | read-only "false" | *eksconfig.AddOnJobsEcho.RepositoryBusyboxImageTag  | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_COMPLETES                     | read-only "false" | *eksconfig.AddOnJobsEcho.Completes                  | int                |
+| AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_PARALLELS                     | read-only "false" | *eksconfig.AddOnJobsEcho.Parallels                  | int                |
+| AWS_K8S_TESTER_EKS_ADD_ON_JOBS_ECHO_ECHO_SIZE                     | read-only "false" | *eksconfig.AddOnJobsEcho.EchoSize                   | int                |
+*-------------------------------------------------------------------*-------------------*-----------------------------------------------------*--------------------*
 
 
 *-------------------------------------------------------------------*-------------------*-----------------------------------------------------*--------------------*
@@ -366,6 +374,10 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_TIME_FRAME_CREATE             | read-only "true"  | *eksconfig.AddOnCronJobs.TimeFrameCreate            | timeutil.TimeFrame |
 | AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_TIME_FRAME_DELETE             | read-only "true"  | *eksconfig.AddOnCronJobs.TimeFrameDelete            | timeutil.TimeFrame |
 | AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_NAMESPACE                     | read-only "false" | *eksconfig.AddOnCronJobs.Namespace                  | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_REPOSITORY_BUSYBOX_ACCOUNT_ID | read-only "false" | *eksconfig.AddOnCronJobs.RepositoryBusyboxAccountID | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_REPOSITORY_BUSYBOX_REGION     | read-only "false" | *eksconfig.AddOnCronJobs.RepositoryBusyboxRegion    | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_REPOSITORY_BUSYBOX_NAME       | read-only "false" | *eksconfig.AddOnCronJobs.RepositoryBusyboxName      | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_REPOSITORY_BUSYBOX_IMAGE_TAG  | read-only "false" | *eksconfig.AddOnCronJobs.RepositoryBusyboxImageTag  | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_SCHEDULE                      | read-only "false" | *eksconfig.AddOnCronJobs.Schedule                   | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_COMPLETES                     | read-only "false" | *eksconfig.AddOnCronJobs.Completes                  | int                |
 | AWS_K8S_TESTER_EKS_ADD_ON_CRON_JOBS_PARALLELS                     | read-only "false" | *eksconfig.AddOnCronJobs.Parallels                  | int                |
