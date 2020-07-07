@@ -190,6 +190,15 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_METADATA_WATCH", "false")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_METADATA_WATCH")
 
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_PHP_APACHE_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_PHP_APACHE_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_PHP_APACHE_DEPLOYMENT_REPLICAS", "333")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_PHP_APACHE_DEPLOYMENT_REPLICAS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_PHP_APACHE_NAMESPACE", "test-namespace")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_PHP_APACHE_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_PHP_APACHE_DEPLOYMENT_NODE_SELECTOR", `{"a":"b","c":"d"}`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_PHP_APACHE_DEPLOYMENT_NODE_SELECTOR")
+
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_ENABLE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_DEPLOYMENT_REPLICAS", "333")
@@ -915,6 +924,20 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.AddOnFluentd.MetadataWatch {
 		t.Fatalf("unexpected cfg.AddOnFluentd.MetadataWatch %v", cfg.AddOnFluentd.MetadataWatch)
+	}
+
+	if !cfg.AddOnPHPApache.Enable {
+		t.Fatalf("unexpected cfg.AddOnPHPApache.Enable %v", cfg.AddOnPHPApache.Enable)
+	}
+	if cfg.AddOnPHPApache.DeploymentReplicas != 333 {
+		t.Fatalf("unexpected cfg.AddOnPHPApache.DeploymentReplicas %d", cfg.AddOnPHPApache.DeploymentReplicas)
+	}
+	if cfg.AddOnPHPApache.Namespace != "test-namespace" {
+		t.Fatalf("unexpected cfg.AddOnPHPApache.Namespace %q", cfg.AddOnPHPApache.Namespace)
+	}
+	expectedNodeSelectorPHPApache := map[string]string{"a": "b", "c": "d"}
+	if !reflect.DeepEqual(cfg.AddOnPHPApache.DeploymentNodeSelector, expectedNodeSelectorPHPApache) {
+		t.Fatalf("unexpected cfg.AddOnPHPApache.DeploymentNodeSelector %v", cfg.AddOnPHPApache.DeploymentNodeSelector)
 	}
 
 	if !cfg.AddOnNLBHelloWorld.Enable {

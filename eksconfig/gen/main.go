@@ -74,6 +74,10 @@ func createDoc() string {
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnPHPApache, &eksconfig.AddOnPHPApache{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnNLBHelloWorld, &eksconfig.AddOnNLBHelloWorld{}))
 
 	b.WriteByte('\n')

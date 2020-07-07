@@ -157,6 +157,45 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *AddOnCSIEBS, got %T", vv)
 	}
 
+	if cfg.AddOnKubernetesDashboard == nil {
+		cfg.AddOnKubernetesDashboard = &AddOnKubernetesDashboard{}
+	}
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnKubernetesDashboard, cfg.AddOnKubernetesDashboard)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*AddOnKubernetesDashboard); ok {
+		cfg.AddOnKubernetesDashboard = av
+	} else {
+		return fmt.Errorf("expected *AddOnKubernetesDashboard, got %T", vv)
+	}
+
+	if cfg.AddOnPrometheusGrafana == nil {
+		cfg.AddOnPrometheusGrafana = &AddOnPrometheusGrafana{}
+	}
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnPrometheusGrafana, cfg.AddOnPrometheusGrafana)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*AddOnPrometheusGrafana); ok {
+		cfg.AddOnPrometheusGrafana = av
+	} else {
+		return fmt.Errorf("expected *AddOnPrometheusGrafana, got %T", vv)
+	}
+
+	if cfg.AddOnPHPApache == nil {
+		cfg.AddOnPHPApache = &AddOnPHPApache{}
+	}
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnPHPApache, cfg.AddOnPHPApache)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*AddOnPHPApache); ok {
+		cfg.AddOnPHPApache = av
+	} else {
+		return fmt.Errorf("expected *AddOnPHPApache, got %T", vv)
+	}
+
 	if cfg.AddOnNLBHelloWorld == nil {
 		cfg.AddOnNLBHelloWorld = &AddOnNLBHelloWorld{}
 	}
@@ -363,32 +402,6 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		cfg.AddOnWordpress = av
 	} else {
 		return fmt.Errorf("expected *AddOnWordpress, got %T", vv)
-	}
-
-	if cfg.AddOnKubernetesDashboard == nil {
-		cfg.AddOnKubernetesDashboard = &AddOnKubernetesDashboard{}
-	}
-	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnKubernetesDashboard, cfg.AddOnKubernetesDashboard)
-	if err != nil {
-		return err
-	}
-	if av, ok := vv.(*AddOnKubernetesDashboard); ok {
-		cfg.AddOnKubernetesDashboard = av
-	} else {
-		return fmt.Errorf("expected *AddOnKubernetesDashboard, got %T", vv)
-	}
-
-	if cfg.AddOnPrometheusGrafana == nil {
-		cfg.AddOnPrometheusGrafana = &AddOnPrometheusGrafana{}
-	}
-	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnPrometheusGrafana, cfg.AddOnPrometheusGrafana)
-	if err != nil {
-		return err
-	}
-	if av, ok := vv.(*AddOnPrometheusGrafana); ok {
-		cfg.AddOnPrometheusGrafana = av
-	} else {
-		return fmt.Errorf("expected *AddOnPrometheusGrafana, got %T", vv)
 	}
 
 	if cfg.AddOnJupyterHub == nil {

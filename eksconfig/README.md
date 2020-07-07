@@ -1,6 +1,6 @@
 
 ```
-# total 36 add-ons
+# total 37 add-ons
 # set the following *_ENABLE env vars to enable add-ons, rest are set with default values
 AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE=true \
@@ -12,6 +12,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_APP_MESH_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_CSI_EBS_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_ENABLE=true \
+AWS_K8S_TESTER_EKS_ADD_ON_PHP_APACHE_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_NLB_HELLO_WORLD_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_NLB_GUESTBOOK_ENABLE=true \
 AWS_K8S_TESTER_EKS_ADD_ON_ALB_2048_ENABLE=true \
@@ -305,6 +306,19 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_GRAFANA_NLB_NAME        | read-only "true"  | *eksconfig.AddOnPrometheusGrafana.GrafanaNLBName       | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_PROMETHEUS_GRAFANA_GRAFANA_URL             | read-only "true"  | *eksconfig.AddOnPrometheusGrafana.GrafanaURL           | string             |
 *----------------------------------------------------------------------*-------------------*--------------------------------------------------------*--------------------*
+
+
+*---------------------------------------------------------------*-------------------*--------------------------------------------------*--------------------*
+|                    ENVIRONMENTAL VARIABLE                     |     READ ONLY     |                       TYPE                       |      GO TYPE       |
+*---------------------------------------------------------------*-------------------*--------------------------------------------------*--------------------*
+| AWS_K8S_TESTER_EKS_ADD_ON_PHP_APACHE_ENABLE                   | read-only "false" | *eksconfig.AddOnPHPApache.Enable                 | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_PHP_APACHE_CREATED                  | read-only "true"  | *eksconfig.AddOnPHPApache.Created                | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_PHP_APACHE_TIME_FRAME_CREATE        | read-only "true"  | *eksconfig.AddOnPHPApache.TimeFrameCreate        | timeutil.TimeFrame |
+| AWS_K8S_TESTER_EKS_ADD_ON_PHP_APACHE_TIME_FRAME_DELETE        | read-only "true"  | *eksconfig.AddOnPHPApache.TimeFrameDelete        | timeutil.TimeFrame |
+| AWS_K8S_TESTER_EKS_ADD_ON_PHP_APACHE_NAMESPACE                | read-only "false" | *eksconfig.AddOnPHPApache.Namespace              | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_PHP_APACHE_DEPLOYMENT_REPLICAS      | read-only "false" | *eksconfig.AddOnPHPApache.DeploymentReplicas     | int32              |
+| AWS_K8S_TESTER_EKS_ADD_ON_PHP_APACHE_DEPLOYMENT_NODE_SELECTOR | read-only "false" | *eksconfig.AddOnPHPApache.DeploymentNodeSelector | map[string]string  |
+*---------------------------------------------------------------*-------------------*--------------------------------------------------*--------------------*
 
 
 *--------------------------------------------------------------------*-------------------*------------------------------------------------------*--------------------*
