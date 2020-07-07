@@ -13,6 +13,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.0...v1.4.1
 
 ### `eks`
 
+- Add [`eks/cw-agent` and `eks/fluentd`](https://github.com/aws/aws-k8s-tester/pull/119).
+- Add [`eks/php-apache`](https://github.com/aws/aws-k8s-tester/pull/119).
 - Support [ECR repository for `busybox` images to minimize docker hub dependency in `eks/cron-jobs` and `eks/jobs-echo`](https://github.com/aws/aws-k8s-tester/pull/118).
 - Handle [`NotFound` errors in delete operations](https://github.com/aws/aws-k8s-tester/commit/2d7b30d58b1fb6b3d90635d9e32824615d972c28).
 - Fix [log fetch, make it work run multiple times](https://github.com/aws/aws-k8s-tester/commit/fab79e552cc89a749f45e5f5e001b6faaea467ee).
@@ -21,6 +23,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.0...v1.4.1
 
 ### `eksconfig`
 
+- Add [`AddOnCWAgent` and `AddOnFluentd`](https://github.com/aws/aws-k8s-tester/pull/119).
+- Add [`AddOnPHPApache`](https://github.com/aws/aws-k8s-tester/pull/119).
 - Support [ECR repository for `busybox` images to minimize docker hub dependency in `AddOnCronJobs` and `AddOnJobsEcho`](https://github.com/aws/aws-k8s-tester/pull/118).
 - Add [`RepositoryRegion` to all remote testers](https://github.com/aws/aws-k8s-tester/commit/4de5e9763d06475da5ee1e61e935218f32fafb85).
 - Reduce [`AddOnIRSA` default replicas to 1](https://github.com/aws/aws-k8s-tester/pull/112).
@@ -31,7 +35,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.0...v1.4.1
 
 ### Dependency
 
-- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.32.11`](https://github.com/aws/aws-sdk-go/releases/tag/v1.32.11) to [`v1.33.0`](https://github.com/aws/aws-sdk-go/releases/tag/v1.33.0).
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.32.11`](https://github.com/aws/aws-sdk-go/releases/tag/v1.32.11) to [`v1.33.3`](https://github.com/aws/aws-sdk-go/releases/tag/v1.33.3).
 
 
 
