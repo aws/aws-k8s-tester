@@ -13,7 +13,6 @@ package fluentd
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"reflect"
 	"strings"
@@ -44,14 +43,56 @@ func (ts *tester) Name() string { return pkgName }
 
 func New(cfg Config) eks_tester.Tester {
 	cfg.Logger.Info("creating tester", zap.String("tester", pkgName))
-	return &tester{cfg: cfg, busyboxImg: "busybox"}
+	ts := &tester{
+		cfg:        cfg,
+		busyboxImg: "busybox",
+	}
+	ts.creates = []func() error{
+		func() error {
+			return k8s_client.CreateNamespace(ts.cfg.Logger, ts.cfg.K8SClient.KubernetesClientSet(), ts.cfg.EKSConfig.AddOnFluentd.Namespace)
+		},
+		func() error { return ts.createFluentdServiceAccount() },
+		func() error { return ts.createFluentdRBACClusterRole() },
+		func() error { return ts.createFluentdRBACClusterRoleBinding() },
+		func() error { return ts.createFluentdConfigMapClusterInfo() },
+		func() error { return ts.createFluentdConfigMapConfig() },
+		func() error { return ts.createFluentdDaemonSet() },
+		func() error { return ts.checkFluentdPods() },
+	}
+	ts.deletes = []func() error{
+		func() error {
+			// wait some time for delete completion
+			defer time.Sleep(time.Minute)
+			return ts.deleteFluentdDaemonSet()
+		},
+		func() error { return ts.deleteFluentdConfigMapConfig() },
+		func() error { return ts.deleteFluentdRBACClusterRoleBinding() },
+		func() error { return ts.deleteFluentdRBACClusterRole() },
+		func() error { return ts.deleteFluentdServiceAccount() },
+		func() error {
+			return k8s_client.DeleteNamespaceAndWait(
+				ts.cfg.Logger,
+				ts.cfg.K8SClient.KubernetesClientSet(),
+				ts.cfg.EKSConfig.AddOnFluentd.Namespace,
+				k8s_client.DefaultNamespaceDeletionInterval,
+				k8s_client.DefaultNamespaceDeletionTimeout,
+				k8s_client.WithForceDelete(true),
+			)
+		},
+	}
+	return ts
 }
 
 type tester struct {
 	cfg Config
 
 	busyboxImg string
+
+	creates []func() error
+	deletes []func() error
 }
+
+// TODO: add "ShouldCreate/Delete" and dedup redundant code
 
 func (ts *tester) Create() (err error) {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnFluentd() {
@@ -89,37 +130,11 @@ func (ts *tester) Create() (err error) {
 		}
 	}
 
-	if err = k8s_client.CreateNamespace(
-		ts.cfg.Logger,
-		ts.cfg.K8SClient.KubernetesClientSet(),
-		ts.cfg.EKSConfig.AddOnFluentd.Namespace,
-	); err != nil {
-		return err
+	for _, createFunc := range ts.creates {
+		if err = createFunc(); err != nil {
+			return err
+		}
 	}
-
-	// create Fluentd components
-	if err = ts.createFluentdServiceAccount(); err != nil {
-		return err
-	}
-	if err = ts.createFluentdRBACClusterRole(); err != nil {
-		return err
-	}
-	if err = ts.createFluentdRBACClusterRoleBinding(); err != nil {
-		return err
-	}
-	if err = ts.createFluentdConfigMapClusterInfo(); err != nil {
-		return err
-	}
-	if err = ts.createFluentdConfigMapConfig(); err != nil {
-		return err
-	}
-	if err = ts.createFluentdDaemonSet(); err != nil {
-		return err
-	}
-	if err = ts.checkFluentdPods(); err != nil {
-		return err
-	}
-
 	return ts.cfg.EKSConfig.Sync()
 }
 
@@ -142,39 +157,11 @@ func (ts *tester) Delete() error {
 	}()
 
 	var errs []string
-
-	if err := ts.deleteFluentdDaemonSet(); err != nil {
-		errs = append(errs, err.Error())
+	for _, deleteFunc := range ts.deletes {
+		if err := deleteFunc(); err != nil {
+			errs = append(errs, err.Error())
+		}
 	}
-	time.Sleep(time.Minute)
-
-	if err := ts.deleteFluentdConfigMapConfig(); err != nil {
-		errs = append(errs, err.Error())
-	}
-	if err := ts.deleteFluentdConfigMapClusterInfo(); err != nil {
-		errs = append(errs, err.Error())
-	}
-	if err := ts.deleteFluentdRBACClusterRoleBinding(); err != nil {
-		errs = append(errs, err.Error())
-	}
-	if err := ts.deleteFluentdRBACClusterRole(); err != nil {
-		errs = append(errs, err.Error())
-	}
-	if err := ts.deleteFluentdServiceAccount(); err != nil {
-		errs = append(errs, err.Error())
-	}
-
-	if err := k8s_client.DeleteNamespaceAndWait(
-		ts.cfg.Logger,
-		ts.cfg.K8SClient.KubernetesClientSet(),
-		ts.cfg.EKSConfig.AddOnFluentd.Namespace,
-		k8s_client.DefaultNamespaceDeletionInterval,
-		k8s_client.DefaultNamespaceDeletionTimeout,
-		k8s_client.WithForceDelete(true),
-	); err != nil {
-		errs = append(errs, fmt.Sprintf("failed to delete fluentd namespace (%v)", err))
-	}
-
 	if len(errs) > 0 {
 		return errors.New(strings.Join(errs, ", "))
 	}
