@@ -23,6 +23,12 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.0...v1.4.1
 
 ### `eksconfig`
 
+- Set [`AddOnNodeGroups.FetchLogs` to `false` by default](https://github.com/aws/aws-k8s-tester/pull/122), to reduce the test runtime for a large number of worker nodes.
+  - Set `AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_FETCH_LOGS=true` to enable.
+  - To stream pod logs to CloudWatch, set `AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_ENABLE=true`.
+- Set [`AddOnManagedNodeGroups.FetchLogs` to `false` by default](https://github.com/aws/aws-k8s-tester/pull/122), to reduce the test runtime for a large number of worker nodes.
+  - Set `AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_FETCH_LOGS=true` to enable.
+  - To stream pod logs to CloudWatch, set `AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_ENABLE=true`.
 - Add [`AddOnCWAgent` and `AddOnFluentd`](https://github.com/aws/aws-k8s-tester/pull/119).
 - Add [`AddOnPHPApache`](https://github.com/aws/aws-k8s-tester/pull/119).
 - Support [ECR repository for `busybox` images to minimize docker hub dependency in `AddOnCronJobs` and `AddOnJobsEcho`](https://github.com/aws/aws-k8s-tester/pull/118).
