@@ -220,6 +220,9 @@ type Config struct {
 	// add-on Prometheus/Grafana.
 	AddOnPrometheusGrafana *AddOnPrometheusGrafana `json:"add-on-prometheus-grafana,omitempty"`
 
+	// AddOnPHPApache defines parameters for EKS cluster
+	// add-on PHP Apache.
+	AddOnPHPApache *AddOnPHPApache `json:"add-on-php-apache,omitempty"`
 	// AddOnNLBHelloWorld defines parameters for EKS cluster
 	// add-on NLB hello-world service.
 	AddOnNLBHelloWorld *AddOnNLBHelloWorld `json:"add-on-nlb-hello-world,omitempty"`
@@ -791,6 +794,7 @@ func NewDefault() *Config {
 		AddOnCSIEBS:                getDefaultAddOnCSIEBS(),
 		AddOnKubernetesDashboard:   getDefaultAddOnKubernetesDashboard(),
 		AddOnPrometheusGrafana:     getDefaultAddOnPrometheusGrafana(),
+		AddOnPHPApache:             getDefaultAddOnPHPApache(),
 		AddOnNLBHelloWorld:         getDefaultAddOnNLBHelloWorld(),
 		AddOnNLBGuestbook:          getDefaultAddOnNLBGuestbook(),
 		AddOnALB2048:               getDefaultAddOnALB2048(),
@@ -915,6 +919,9 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 	if err := cfg.validateAddOnPrometheusGrafana(); err != nil {
 		return fmt.Errorf("validateAddOnPrometheusGrafana failed [%v]", err)
+	}
+	if err := cfg.validateAddOnPHPApache(); err != nil {
+		return fmt.Errorf("validateAddOnPHPApache failed [%v]", err)
 	}
 	if err := cfg.validateAddOnNLBHelloWorld(); err != nil {
 		return fmt.Errorf("validateAddOnNLBHelloWorld failed [%v]", err)
