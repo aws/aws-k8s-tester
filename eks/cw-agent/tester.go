@@ -39,13 +39,11 @@ func (ts *tester) Name() string { return pkgName }
 
 func New(cfg Config) eks_tester.Tester {
 	cfg.Logger.Info("creating tester", zap.String("tester", pkgName))
-	return &tester{cfg: cfg, busyboxImg: "busybox"}
+	return &tester{cfg: cfg}
 }
 
 type tester struct {
 	cfg Config
-
-	busyboxImg string
 }
 
 func (ts *tester) Create() (err error) {
