@@ -48,6 +48,23 @@ func New(cfg Config) eks_tester.Tester {
 		busyboxImg: "busybox",
 	}
 	ts.creates = []func() error{
+		func() (err error) {
+			if ts.cfg.EKSConfig.AddOnFluentd.RepositoryBusyboxAccountID != "" &&
+				ts.cfg.EKSConfig.AddOnFluentd.RepositoryBusyboxRegion != "" &&
+				ts.cfg.EKSConfig.AddOnFluentd.RepositoryBusyboxName != "" &&
+				ts.cfg.EKSConfig.AddOnFluentd.RepositoryBusyboxImageTag != "" {
+				ts.busyboxImg, err = aws_ecr.Check(
+					ts.cfg.Logger,
+					ts.cfg.ECRAPI,
+					ts.cfg.EKSConfig.AddOnFluentd.RepositoryBusyboxAccountID,
+					ts.cfg.EKSConfig.AddOnFluentd.RepositoryBusyboxRegion,
+					ts.cfg.EKSConfig.AddOnFluentd.RepositoryBusyboxName,
+					ts.cfg.EKSConfig.AddOnFluentd.RepositoryBusyboxImageTag,
+				)
+				return err
+			}
+			return nil
+		},
 		func() error {
 			return k8s_client.CreateNamespace(ts.cfg.Logger, ts.cfg.K8SClient.KubernetesClientSet(), ts.cfg.EKSConfig.AddOnFluentd.Namespace)
 		},
@@ -113,22 +130,6 @@ func (ts *tester) Create() (err error) {
 		ts.cfg.EKSConfig.AddOnFluentd.TimeFrameCreate = timeutil.NewTimeFrame(createStart, createEnd)
 		ts.cfg.EKSConfig.Sync()
 	}()
-
-	if ts.cfg.EKSConfig.AddOnFluentd.RepositoryBusyboxAccountID != "" &&
-		ts.cfg.EKSConfig.AddOnFluentd.RepositoryBusyboxRegion != "" &&
-		ts.cfg.EKSConfig.AddOnFluentd.RepositoryBusyboxName != "" &&
-		ts.cfg.EKSConfig.AddOnFluentd.RepositoryBusyboxImageTag != "" {
-		if ts.busyboxImg, err = aws_ecr.Check(
-			ts.cfg.Logger,
-			ts.cfg.ECRAPI,
-			ts.cfg.EKSConfig.AddOnFluentd.RepositoryBusyboxAccountID,
-			ts.cfg.EKSConfig.AddOnFluentd.RepositoryBusyboxRegion,
-			ts.cfg.EKSConfig.AddOnFluentd.RepositoryBusyboxName,
-			ts.cfg.EKSConfig.AddOnFluentd.RepositoryBusyboxImageTag,
-		); err != nil {
-			return err
-		}
-	}
 
 	for _, createFunc := range ts.creates {
 		if err = createFunc(); err != nil {
