@@ -219,7 +219,7 @@ func (cfg *Config) IsEnabledAddOnManagedNodeGroups() bool {
 func getDefaultAddOnManagedNodeGroups(name string) *AddOnManagedNodeGroups {
 	return &AddOnManagedNodeGroups{
 		Enable:      false,
-		FetchLogs:   true,
+		FetchLogs:   false,
 		SigningName: "eks",
 		RoleCreate:  true,
 		LogsDir:     "", // to be auto-generated
