@@ -110,7 +110,7 @@ func (cfg *Config) IsEnabledAddOnNodeGroups() bool {
 func getDefaultAddOnNodeGroups(name string) *AddOnNodeGroups {
 	return &AddOnNodeGroups{
 		Enable:     false,
-		FetchLogs:  true,
+		FetchLogs:  false,
 		RoleCreate: true,
 		LogsDir:    "", // to be auto-generated
 		ASGs: map[string]ASG{
