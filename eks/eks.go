@@ -53,6 +53,7 @@ import (
 	"github.com/aws/aws-k8s-tester/eks/ng"
 	nlb_guestbook "github.com/aws/aws-k8s-tester/eks/nlb-guestbook"
 	nlb_hello_world "github.com/aws/aws-k8s-tester/eks/nlb-hello-world"
+	php_apache "github.com/aws/aws-k8s-tester/eks/php-apache"
 	prometheus_grafana "github.com/aws/aws-k8s-tester/eks/prometheus-grafana"
 	secrets_local "github.com/aws/aws-k8s-tester/eks/secrets/local"
 	secrets_remote "github.com/aws/aws-k8s-tester/eks/secrets/remote"
@@ -517,6 +518,13 @@ func (ts *Tester) createTesters() (err error) {
 			K8SClient: ts.k8sClient,
 		}),
 		prometheus_grafana.New(prometheus_grafana.Config{
+			Logger:    ts.lg,
+			LogWriter: ts.logWriter,
+			Stopc:     ts.stopCreationCh,
+			EKSConfig: ts.cfg,
+			K8SClient: ts.k8sClient,
+		}),
+		php_apache.New(php_apache.Config{
 			Logger:    ts.lg,
 			LogWriter: ts.logWriter,
 			Stopc:     ts.stopCreationCh,
