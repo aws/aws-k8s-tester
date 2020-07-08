@@ -10,7 +10,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.1...v1.4.2
 
 ### `pkg`
 
-- Pass [`context.Context` and `chan struct{}` to `pkg/aws/ec2.PollUntilRunning`](https://github.com/aws/aws-k8s-tester/commit/).
+- Pass [`context.Context` and `chan struct{}` to `pkg/aws/ec2.PollUntilRunning`](https://github.com/aws/aws-k8s-tester/commit/4916d16c5e9c68f7fae5d11be2ba6df43898a280).
 
 
 <hr>
