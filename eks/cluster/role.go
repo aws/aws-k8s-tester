@@ -19,6 +19,8 @@ import (
 
 // TemplateClusterRole is the CloudFormation template for EKS cluster role.
 //
+// ref. https://amazon-eks.s3.us-west-2.amazonaws.com/cloudformation/2019-09-17/amazon-eks-service-role.yaml
+//
 // e.g.
 //   Error creating load balancer (will retry): failed to ensure load balancer for service eks-*/hello-world-service: Error creating load balancer: "AccessDenied: User: arn:aws:sts::404174646922:assumed-role/eks-*-cluster-role/* is not authorized to perform: ec2:DescribeAccountAttributes\n\tstatus code: 403"
 //

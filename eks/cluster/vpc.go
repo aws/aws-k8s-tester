@@ -67,6 +67,8 @@ Subnet associated with EC2::RouteTable that has EC2::Route to an EC2::NatGateway
 
 // TemplateVPCPublicPrivate is the CloudFormation template for EKS VPC.
 //
+// ref. https://amazon-eks.s3.us-west-2.amazonaws.com/cloudformation/2020-03-23/amazon-eks-vpc-private-subnets.yaml
+//
 // e.g. An error occurred (InvalidParameterException) when calling the CreateFargateProfile operation: Subnet subnet-123 provided in Fargate Profile is not a private subnet
 const TemplateVPCPublicPrivate = `
 ---
