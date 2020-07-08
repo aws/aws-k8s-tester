@@ -1,5 +1,14 @@
 
 
+## [v1.4.2](https://github.com/aws/aws-k8s-tester/releases/tag/v1.4.2) (2020-07)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.1...v1.4.2).
+
+### `eks`
+
+- Fix [instance state polling in `eks/ng` and `eks/mng`](https://github.com/aws/aws-k8s-tester/commit/7ee2e8c2887d2d61e596cff793c591490f681ac3).
+
+
 <hr>
 
 
