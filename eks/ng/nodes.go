@@ -585,7 +585,7 @@ func (ts *tester) createASGs() error {
 		}
 
 		timeStart := time.Now()
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute+5*time.Second*time.Duration(cur.ASGDesiredCapacity))
 		ch := cfn.Poll(
 			ctx,
 			ts.cfg.Stopc,
