@@ -12,8 +12,14 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.1...v1.4.2
 
 - Pass [`context.Context` and `chan struct{}` to `pkg/aws/ec2.PollUntilRunning`](https://github.com/aws/aws-k8s-tester/commit/4916d16c5e9c68f7fae5d11be2ba6df43898a280).
 
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.33.3`](https://github.com/aws/aws-sdk-go/releases/tag/v1.33.3) to [`v1.33.4`](https://github.com/aws/aws-sdk-go/releases/tag/v1.33.4).
+
+
 
 <hr>
+
 
 
 ## [v1.4.1](https://github.com/aws/aws-k8s-tester/releases/tag/v1.4.1) (2020-07-07)
@@ -59,6 +65,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.0...v1.4.1
 
 
 <hr>
+
 
 
 ## [v1.4.0](https://github.com/aws/aws-k8s-tester/releases/tag/v1.4.0) (2020-06-29)
@@ -181,5 +188,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.9...v1.4.0
   - See [`1aea23d3` for commit](https://github.com/aws/aws-k8s-tester/commit/1aea23d3259794307b45d344d3a953238c394efb).
 
 
+
 <hr>
+
 
