@@ -2,8 +2,11 @@
 package ec2
 
 import (
+	"context"
+	"errors"
 	"time"
 
+	"github.com/aws/aws-k8s-tester/pkg/ctxutil"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
@@ -13,7 +16,8 @@ import (
 // PollUntilRunning describes EC2 instances by batch,
 // and waits until all instances are 'running'.
 func PollUntilRunning(
-	timeout time.Duration,
+	ctx context.Context,
+	stopc chan struct{},
 	lg *zap.Logger,
 	ec2API ec2iface.EC2API,
 	instanceIDs ...string) (ec2Instances map[string]*ec2.Instance, err error) {
@@ -25,9 +29,20 @@ func PollUntilRunning(
 		left[id] = struct{}{}
 	}
 
-	lg.Info("polling instance status", zap.Int("target-total", targetN))
-	retryStart := time.Now()
-	for time.Now().Sub(retryStart) < timeout {
+	lg.Info("polling instance status",
+		zap.Int("target-total", targetN),
+		zap.String("ctx-time-left", ctxutil.TimeLeftTillDeadline(ctx)),
+	)
+
+	for ctx.Err() == nil {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-stopc:
+			return nil, errors.New("poll aborted")
+		case <-time.After(10 * time.Second):
+		}
+
 		// batch by 30
 		batch := make([]string, 0, 30)
 		for id := range left {
@@ -71,7 +86,6 @@ func PollUntilRunning(
 		if len(left) == 0 {
 			break
 		}
-		time.Sleep(10 * time.Second)
 	}
 
 	return ec2Instances, err

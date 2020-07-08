@@ -8,6 +8,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.1...v1.4.2
 
 - Fix [instance state polling in `eks/ng` and `eks/mng`](https://github.com/aws/aws-k8s-tester/commit/7ee2e8c2887d2d61e596cff793c591490f681ac3).
 
+### `pkg`
+
+- Pass [`context.Context` and `chan struct{}` to `pkg/aws/ec2.PollUntilRunning`](https://github.com/aws/aws-k8s-tester/commit/).
+
 
 <hr>
 

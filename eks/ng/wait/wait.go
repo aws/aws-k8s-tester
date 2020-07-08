@@ -2,6 +2,7 @@
 package wait
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -108,12 +109,15 @@ func (ts *tester) waitForNodes(asgName string, retriesLeft int) error {
 		zap.Int("instance-ids", len(instanceIDs)),
 		zap.Duration("wait", waitDur),
 	)
+	ctx, cancel := context.WithTimeout(context.Background(), waitDur)
 	ec2Instances, err := aws_ec2.PollUntilRunning(
-		waitDur,
+		ctx,
+		ts.cfg.Stopc,
 		ts.cfg.Logger,
 		ts.cfg.EC2API,
 		instanceIDs...,
 	)
+	cancel()
 	if err != nil {
 		return err
 	}

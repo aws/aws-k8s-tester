@@ -599,15 +599,18 @@ func (ts *Tester) createASGs() (err error) {
 		ts.lg.Info(
 			"describing EC2 instances in ASG",
 			zap.String("asg-name", asgName),
-			zap.Strings("instance-ids", instanceIDs),
+			zap.Int("instance-ids", len(instanceIDs)),
 			zap.Duration("wait", waitDur),
 		)
+		ctx, cancel = context.WithTimeout(context.Background(), waitDur)
 		ec2Instances, err := aws_ec2.PollUntilRunning(
-			waitDur,
+			ctx,
+			ts.stopCreationCh,
 			ts.lg,
 			ts.ec2API,
 			instanceIDs...,
 		)
+		cancel()
 		if err != nil {
 			timeEnd := time.Now()
 			cur.TimeFrameCreate = timeutil.NewTimeFrame(timeStart, timeEnd)
