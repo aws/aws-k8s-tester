@@ -584,8 +584,15 @@ func (ts *tester) createASGs() error {
 			return fmt.Errorf("ASG name %q not found after creation", asgName)
 		}
 
+		waitDur := 30*time.Minute + 5*time.Second*time.Duration(cur.ASGDesiredCapacity)
+		for _, it := range cur.InstanceTypes {
+			if strings.Contains(it, ".metal") { // "i3.metal" takes much longer
+				ts.cfg.Logger.Info("increasing wait time for metal instance", zap.String("instance-type", it))
+				waitDur = time.Hour + time.Minute*time.Duration(cur.ASGDesiredCapacity)
+			}
+		}
 		timeStart := time.Now()
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute+5*time.Second*time.Duration(cur.ASGDesiredCapacity))
+		ctx, cancel := context.WithTimeout(context.Background(), waitDur)
 		ch := cfn.Poll(
 			ctx,
 			ts.cfg.Stopc,
