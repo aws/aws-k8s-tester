@@ -86,14 +86,26 @@ func (ts *tester) waitForNodes(asgName string, retriesLeft int) error {
 	av := aout.AutoScalingGroups[0]
 	instanceIDs := make([]string, 0, len(av.Instances))
 	for _, iv := range av.Instances {
-		instanceIDs = append(instanceIDs, aws.StringValue(iv.InstanceId))
+		lv := aws.StringValue(iv.LifecycleState)
+		switch lv {
+		case autoscaling.LifecycleStatePending,
+			autoscaling.LifecycleStatePendingWait,
+			autoscaling.LifecycleStatePendingProceed,
+			autoscaling.LifecycleStateInService:
+			instanceIDs = append(instanceIDs, aws.StringValue(iv.InstanceId))
+		default:
+			ts.cfg.Logger.Warn("skipping instance due to lifecycle state",
+				zap.String("instance-id", aws.StringValue(iv.InstanceId)),
+				zap.String("lifecycle-state", lv),
+			)
+		}
 	}
 
 	waitDur := 3*time.Minute + time.Duration(5*cur.ASGDesiredCapacity)*time.Second
 	ts.cfg.Logger.Info(
 		"waiting for EC2 instances in ASG",
 		zap.String("asg-name", cur.Name),
-		zap.Strings("instance-ids", instanceIDs),
+		zap.Int("instance-ids", len(instanceIDs)),
 		zap.Duration("wait", waitDur),
 	)
 	ec2Instances, err := aws_ec2.PollUntilRunning(
