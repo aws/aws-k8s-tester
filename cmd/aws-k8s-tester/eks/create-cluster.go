@@ -114,11 +114,11 @@ func createClusterFunc(cmd *cobra.Command, args []string) {
 	}
 
 	if err = tester.Up(); err != nil {
-		fmt.Printf("\n*********************************\n")
-		fmt.Printf("'aws-k8s-tester eks create cluster' fail %v\n", err)
+		fmt.Fprintf(os.Stderr, cfg.Colorize("\n\n\n[yellow]*********************************\n"))
+		fmt.Fprintf(os.Stderr, cfg.Colorize("[default]aws-k8s-tester eks create cluster [light_magenta]FAIL (%v)\n", err))
 		os.Exit(1)
 	}
 
-	fmt.Printf("\n*********************************\n")
-	fmt.Printf("'aws-k8s-tester eks create cluster' success\n")
+	fmt.Fprintf(os.Stderr, cfg.Colorize("\n\n\n[yellow]*********************************\n"))
+	fmt.Fprintf(os.Stderr, cfg.Colorize("[default]aws-k8s-tester eks create cluster [light_green]SUCCESS\n"))
 }
