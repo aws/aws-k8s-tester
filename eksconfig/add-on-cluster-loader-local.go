@@ -125,7 +125,7 @@ func getDefaultAddOnClusterLoaderLocal() *AddOnClusterLoaderLocal {
 		Enable: false,
 
 		ClusterLoaderPath:        "/tmp/clusterloader2",
-		ClusterLoaderDownloadURL: "https://github.com/aws/aws-k8s-tester/releases/download/v1.4.1/clusterloader2-linux-amd64",
+		ClusterLoaderDownloadURL: "https://github.com/aws/aws-k8s-tester/releases/download/v1.4.2/clusterloader2-linux-amd64",
 
 		Runs:    2,
 		Timeout: 30 * time.Minute,
