@@ -10,6 +10,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.1...v1.4.2
 
 ### `eks`
 
+- Fix [`eks/ng` ASG launch template for multiple instance types](https://github.com/aws/aws-k8s-tester/commit/5cb687b5df9240668a331ac14193b2bcedee74f0).
 - Handle [duplicate EC2 key pair creation error](https://github.com/aws/aws-k8s-tester/commit/3dcaaa7c799d2e5fd5b7d42f18533a36fae37178).
 - Wait [`AddOnClusterVersionUpgrade.WaitBeforeUpgrade` before running cluster version upgrades](https://github.com/aws/aws-k8s-tester/commit/a254e0df3e10e59adee30851a692d104d173ec9f).
 - Fix [instance state polling in `eks/ng` and `eks/mng`](https://github.com/aws/aws-k8s-tester/commit/7ee2e8c2887d2d61e596cff793c591490f681ac3).
