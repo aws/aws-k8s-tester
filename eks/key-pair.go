@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/request"
@@ -43,6 +44,11 @@ func (ts *Tester) createKeyPair() (err error) {
 		KeyName: aws.String(ts.cfg.RemoteAccessKeyName),
 	})
 	if err != nil {
+		ev, ok := err.(awserr.Error)
+		if ok && ev.Code() == "InvalidKeyPair.Duplicate" && fileutil.Exist(ts.cfg.RemoteAccessPrivateKeyPath) {
+			ts.lg.Warn("key pair already created, private key locally exists, skipping EC2 key pair creation")
+			return nil
+		}
 		return err
 	}
 	if aws.StringValue(output.KeyName) != ts.cfg.RemoteAccessKeyName {
