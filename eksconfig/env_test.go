@@ -118,6 +118,8 @@ func TestEnv(t *testing.T) {
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_WAIT_BEFORE_UPGRADE", "1h27m")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_WAIT_BEFORE_UPGRADE_UPGRADE_VERSION")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_VERSION", "1.18")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_VERSION")
 
@@ -693,6 +695,9 @@ func TestEnv(t *testing.T) {
 
 	if !cfg.AddOnClusterVersionUpgrade.Enable {
 		t.Fatalf("unexpected AddOnClusterVersionUpgrade.Enable %v", cfg.AddOnClusterVersionUpgrade.Enable)
+	}
+	if cfg.AddOnClusterVersionUpgrade.WaitBeforeUpgrade != time.Hour+27*time.Minute {
+		t.Fatalf("unexpected AddOnClusterVersionUpgrade.WaitBeforeUpgrade %v", cfg.AddOnClusterVersionUpgrade.WaitBeforeUpgrade)
 	}
 	if cfg.AddOnClusterVersionUpgrade.Version != "1.18" {
 		t.Fatalf("unexpected AddOnClusterVersionUpgrade.Version %q", cfg.AddOnClusterVersionUpgrade.Version)

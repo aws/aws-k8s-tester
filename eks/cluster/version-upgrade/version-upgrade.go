@@ -3,6 +3,7 @@ package versionupgrade
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"reflect"
@@ -51,6 +52,15 @@ func (ts *tester) Create() (err error) {
 	if ts.cfg.EKSConfig.AddOnClusterVersionUpgrade.Created {
 		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", pkgName))
 		return nil
+	}
+
+	ts.cfg.Logger.Info("waiting before cluster version upgrade", zap.String("wait-duration", ts.cfg.EKSConfig.AddOnClusterVersionUpgrade.WaitBeforeUpgradeString))
+	select {
+	case <-ts.cfg.Stopc:
+		ts.cfg.Logger.Warn("cluster version upgrade aborted")
+		return errors.New("cluster version upgrade aborted")
+	case <-time.After(ts.cfg.EKSConfig.AddOnClusterVersionUpgrade.WaitBeforeUpgrade):
+		ts.cfg.Logger.Info("waited before cluster version upgrade", zap.String("wait-duration", ts.cfg.EKSConfig.AddOnClusterVersionUpgrade.WaitBeforeUpgradeString))
 	}
 
 	ts.cfg.Logger.Info("starting tester.Create", zap.String("tester", pkgName))

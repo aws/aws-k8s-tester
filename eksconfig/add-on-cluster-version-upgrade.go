@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 )
@@ -17,6 +18,10 @@ type AddOnClusterVersionUpgrade struct {
 	// Used for delete operations.
 	Created         bool               `json:"created" read-only:"true"`
 	TimeFrameCreate timeutil.TimeFrame `json:"time-frame-create" read-only:"true"`
+
+	// WaitBeforeUpgrade is the wait duration before it starts cluster version upgrade.
+	WaitBeforeUpgrade       time.Duration `json:"wait-before-upgrade"`
+	WaitBeforeUpgradeString string        `json:"wait-before-upgrade-string" read-only:"true"`
 
 	// Version is the target version of EKS Kubernetes "cluster".
 	// If empty, set default version.
@@ -42,8 +47,9 @@ func (cfg *Config) IsEnabledAddOnClusterVersionUpgrade() bool {
 
 func getDefaultAddOnClusterVersionUpgrade() *AddOnClusterVersionUpgrade {
 	return &AddOnClusterVersionUpgrade{
-		Enable:  false,
-		Version: "1.17",
+		Enable:            false,
+		Version:           "1.17",
+		WaitBeforeUpgrade: 3 * time.Minute,
 	}
 }
 
@@ -51,6 +57,8 @@ func (cfg *Config) validateAddOnClusterVersionUpgrade() error {
 	if !cfg.IsEnabledAddOnClusterVersionUpgrade() {
 		return nil
 	}
+
+	cfg.AddOnClusterVersionUpgrade.WaitBeforeUpgradeString = cfg.AddOnClusterVersionUpgrade.WaitBeforeUpgrade.String()
 
 	if cfg.AddOnClusterVersionUpgrade.Version == "" {
 		return errors.New("empty AddOnClusterVersionUpgrade.Version")
@@ -60,7 +68,6 @@ func (cfg *Config) validateAddOnClusterVersionUpgrade() error {
 	if err != nil {
 		return fmt.Errorf("cannot parse AddOnClusterVersionUpgrade.Version %q (%v)", cfg.Parameters.Version, err)
 	}
-
 	delta := cfg.AddOnClusterVersionUpgrade.VersionValue - cfg.Parameters.VersionValue
 	if fmt.Sprintf("%.2f", delta) != "0.01" {
 		return fmt.Errorf("AddOnClusterVersionUpgrade only supports one minor version upgrade but got %.2f [invalid: %q -> %q]", delta, cfg.Parameters.Version, cfg.AddOnClusterVersionUpgrade.Version)

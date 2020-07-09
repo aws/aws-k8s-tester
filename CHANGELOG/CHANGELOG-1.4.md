@@ -6,7 +6,13 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.1...v1.4.2
 
 ### `eks`
 
+- Wait [`AddOnClusterVersionUpgrade.WaitBeforeUpgrade` before running cluster version upgrades](https://github.com/aws/aws-k8s-tester/commit/).
 - Fix [instance state polling in `eks/ng` and `eks/mng`](https://github.com/aws/aws-k8s-tester/commit/7ee2e8c2887d2d61e596cff793c591490f681ac3).
+
+### `eksconfig`
+
+- Add [`AddOnClusterVersionUpgrade.WaitBeforeUpgrade`](https://github.com/aws/aws-k8s-tester/commit/).
+  - Set via `AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_WAIT_BEFORE_UPGRADE=5m`.
 
 ### `pkg`
 
