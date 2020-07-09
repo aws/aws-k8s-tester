@@ -250,15 +250,15 @@ Resources:
           - InstanceType: !Select [ 0, !Ref InstanceTypes ]
           - Fn::If:
             - Has2InstanceTypes
-            - !Select [ 1, !Ref InstanceTypes ]
+            - InstanceType: !Select [ 1, !Ref InstanceTypes ]
             - !Ref AWS::NoValue
           - Fn::If:
             - Has3InstanceTypes
-            - !Select [ 2, !Ref InstanceTypes ]
+            - InstanceType: !Select [ 2, !Ref InstanceTypes ]
             - !Ref AWS::NoValue
           - Fn::If:
             - Has4InstanceTypes
-            - !Select [ 3, !Ref InstanceTypes ]
+            - InstanceType: !Select [ 3, !Ref InstanceTypes ]
             - !Ref AWS::NoValue
       HealthCheckType: EC2
       HealthCheckGracePeriod: 300
