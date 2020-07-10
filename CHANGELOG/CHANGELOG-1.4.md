@@ -3,12 +3,18 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.2...v1.4.3).
 
+## `ec2`
+
+- Only [print `SSMCommands` when total nodes are less than 10](https://github.com/aws/aws-k8s-tester/commit/464f1bf0a903f9c1b26c0e408ba1bc274ed94bb4).
+
 ## `eksconfig`
 
 - Fix [`AddOnConformance` `sonobuoy-result/plugins/e2e/results/global/e2e.log` upload path](https://github.com/aws/aws-k8s-tester/commit/718c7dd1533541a23e99f45403a17d06af3ef1b7).
 
 ## `eks`
 
+- Clean up [worker nodes polling outputs](https://github.com/aws/aws-k8s-tester/commit/e6788aff97b996327653d82dd7fb8f15e7e10cf3).
+- Only [print `SSMCommands` when total nodes are less than 10](https://github.com/aws/aws-k8s-tester/commit/464f1bf0a903f9c1b26c0e408ba1bc274ed94bb4).
 - Fix [`eks/conformance` `sonobuoy-result/plugins/e2e/results/global/e2e.log` upload](https://github.com/aws/aws-k8s-tester/commit/718c7dd1533541a23e99f45403a17d06af3ef1b7).
 - Add ["spinner" to all polling functions](https://github.com/aws/aws-k8s-tester/commit/0f8f81969c238c16e59f83e2d4bb6e5f85bdbeac).
 
