@@ -4,10 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"strings"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/pkg/ctxutil"
+	"github.com/aws/aws-k8s-tester/pkg/spinner"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/eks"
@@ -42,6 +44,7 @@ func Poll(
 	ctx context.Context,
 	stopc chan struct{},
 	lg *zap.Logger,
+	logWriter io.Writer,
 	eksAPI eksiface.EKSAPI,
 	clusterName string,
 	mngName string,
@@ -53,6 +56,9 @@ func Poll(
 	ret := Op{}
 	ret.applyOpts(opts)
 
+	now := time.Now()
+	sp := spinner.New("Waiting for Managed Node Group status "+desiredNodeGroupStatus, logWriter)
+
 	lg.Info("polling mng",
 		zap.String("cluster-name", clusterName),
 		zap.String("mng-name", mngName),
@@ -61,8 +67,6 @@ func Poll(
 		zap.String("poll-interval", pollInterval.String()),
 		zap.String("ctx-time-left", ctxutil.TimeLeftTillDeadline(ctx)),
 	)
-
-	now := time.Now()
 
 	ch := make(chan ManagedNodeGroupStatus, 10)
 	go func() {
@@ -157,20 +161,22 @@ func Poll(
 
 			if first {
 				lg.Info("sleeping", zap.Duration("initial-wait", initialWait))
+				sp.Restart()
 				select {
 				case <-ctx.Done():
+					sp.Stop()
 					lg.Warn("wait aborted, ctx done", zap.Error(ctx.Err()))
 					ch <- ManagedNodeGroupStatus{NodeGroupName: mngName, NodeGroup: nil, Error: ctx.Err()}
 					close(ch)
 					return
-
 				case <-stopc:
+					sp.Stop()
 					lg.Warn("wait stopped, stopc closed", zap.Error(ctx.Err()))
 					ch <- ManagedNodeGroupStatus{NodeGroupName: mngName, NodeGroup: nil, Error: errors.New("wait stopped")}
 					close(ch)
 					return
-
 				case <-time.After(initialWait):
+					sp.Stop()
 				}
 				first = false
 			}
@@ -228,6 +234,7 @@ func PollUpdate(
 	ctx context.Context,
 	stopc chan struct{},
 	lg *zap.Logger,
+	logWriter io.Writer,
 	eksAPI eksiface.EKSAPI,
 	clusterName string,
 	mngName string,
@@ -240,6 +247,9 @@ func PollUpdate(
 	ret := Op{}
 	ret.applyOpts(opts)
 
+	now := time.Now()
+	sp := spinner.New("Waiting for Managed Node Group update status "+desiredUpdateStatus, logWriter)
+
 	lg.Info("polling mng update",
 		zap.String("cluster-name", clusterName),
 		zap.String("mng-name", mngName),
@@ -249,8 +259,6 @@ func PollUpdate(
 		zap.String("poll-interval", pollInterval.String()),
 		zap.String("ctx-time-left", ctxutil.TimeLeftTillDeadline(ctx)),
 	)
-
-	now := time.Now()
 
 	ch := make(chan UpdateStatus, 10)
 	go func() {
@@ -344,20 +352,22 @@ func PollUpdate(
 
 			if first {
 				lg.Info("sleeping", zap.Duration("initial-wait", initialWait))
+				sp.Restart()
 				select {
 				case <-ctx.Done():
+					sp.Stop()
 					lg.Warn("wait aborted, ctx done", zap.Error(ctx.Err()))
 					ch <- UpdateStatus{Update: nil, Error: ctx.Err()}
 					close(ch)
 					return
-
 				case <-stopc:
+					sp.Stop()
 					lg.Warn("wait stopped, stopc closed", zap.Error(ctx.Err()))
 					ch <- UpdateStatus{Update: nil, Error: errors.New("wait stopped")}
 					close(ch)
 					return
-
 				case <-time.After(initialWait):
+					sp.Stop()
 				}
 				first = false
 			}

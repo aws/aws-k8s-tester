@@ -458,6 +458,7 @@ func (ts *tester) createEKS() (err error) {
 			ctx,
 			ts.cfg.Stopc,
 			ts.cfg.Logger,
+			ts.cfg.LogWriter,
 			ts.cfg.CFNAPI,
 			ts.cfg.EKSConfig.Status.ClusterCFNStackID,
 			cloudformation.ResourceStatusCreateComplete,
@@ -494,6 +495,7 @@ func (ts *tester) createEKS() (err error) {
 		ctx,
 		ts.cfg.Stopc,
 		ts.cfg.Logger,
+		ts.cfg.LogWriter,
 		ts.cfg.EKSAPI,
 		ts.cfg.EKSConfig.Name,
 		aws_eks.ClusterStatusActive,
@@ -578,6 +580,7 @@ func (ts *tester) deleteEKS() error {
 			ctx,
 			make(chan struct{}), // do not exit on stop
 			ts.cfg.Logger,
+			ts.cfg.LogWriter,
 			ts.cfg.CFNAPI,
 			ts.cfg.EKSConfig.Status.ClusterCFNStackID,
 			cloudformation.ResourceStatusDeleteComplete,
@@ -616,6 +619,7 @@ func (ts *tester) deleteEKS() error {
 			ctx,
 			make(chan struct{}), // do not exit on stop
 			ts.cfg.Logger,
+			ts.cfg.LogWriter,
 			ts.cfg.EKSAPI,
 			ts.cfg.EKSConfig.Name,
 			eksconfig.ClusterStatusDELETEDORNOTEXIST,

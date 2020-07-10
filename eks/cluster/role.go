@@ -299,6 +299,7 @@ func (ts *tester) createClusterRole() error {
 		ctx,
 		ts.cfg.Stopc,
 		ts.cfg.Logger,
+		ts.cfg.LogWriter,
 		ts.cfg.CFNAPI,
 		ts.cfg.EKSConfig.Parameters.RoleCFNStackID,
 		cloudformation.ResourceStatusCreateComplete,
@@ -359,6 +360,7 @@ func (ts *tester) deleteClusterRole() error {
 		ctx,
 		make(chan struct{}), // do not exit on stop
 		ts.cfg.Logger,
+		ts.cfg.LogWriter,
 		ts.cfg.CFNAPI,
 		ts.cfg.EKSConfig.Parameters.RoleCFNStackID,
 		cloudformation.ResourceStatusDeleteComplete,

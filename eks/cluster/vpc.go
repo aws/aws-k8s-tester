@@ -798,6 +798,7 @@ func (ts *tester) createVPC() error {
 		ctx,
 		ts.cfg.Stopc,
 		ts.cfg.Logger,
+		ts.cfg.LogWriter,
 		ts.cfg.CFNAPI,
 		ts.cfg.EKSConfig.Parameters.VPCCFNStackID,
 		cloudformation.ResourceStatusCreateComplete,
@@ -887,6 +888,7 @@ func (ts *tester) deleteVPC() error {
 		ctx,
 		make(chan struct{}), // do not exit on stop
 		ts.cfg.Logger,
+		ts.cfg.LogWriter,
 		ts.cfg.CFNAPI,
 		ts.cfg.EKSConfig.Parameters.VPCCFNStackID,
 		cloudformation.ResourceStatusDeleteComplete,

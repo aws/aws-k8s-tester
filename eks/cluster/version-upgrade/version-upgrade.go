@@ -13,6 +13,7 @@ import (
 	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
+	"github.com/aws/aws-k8s-tester/pkg/spinner"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/eks"
@@ -54,12 +55,16 @@ func (ts *tester) Create() (err error) {
 		return nil
 	}
 
+	sp := spinner.New("Waiting before cluster version upgrade "+ts.cfg.EKSConfig.Name, ts.cfg.LogWriter)
 	ts.cfg.Logger.Info("waiting before cluster version upgrade", zap.String("wait-duration", ts.cfg.EKSConfig.AddOnClusterVersionUpgrade.WaitBeforeUpgradeString))
+	sp.Restart()
 	select {
 	case <-ts.cfg.Stopc:
+		sp.Stop()
 		ts.cfg.Logger.Warn("cluster version upgrade aborted")
 		return errors.New("cluster version upgrade aborted")
 	case <-time.After(ts.cfg.EKSConfig.AddOnClusterVersionUpgrade.WaitBeforeUpgrade):
+		sp.Stop()
 		ts.cfg.Logger.Info("waited before cluster version upgrade", zap.String("wait-duration", ts.cfg.EKSConfig.AddOnClusterVersionUpgrade.WaitBeforeUpgradeString))
 	}
 
@@ -105,6 +110,7 @@ func (ts *tester) Create() (err error) {
 		ctx,
 		ts.cfg.Stopc,
 		ts.cfg.Logger,
+		ts.cfg.LogWriter,
 		ts.cfg.EKSAPI,
 		ts.cfg.EKSConfig.Name,
 		reqID,

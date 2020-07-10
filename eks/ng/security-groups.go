@@ -246,6 +246,7 @@ func (ts *tester) createSG() error {
 		ctx,
 		ts.cfg.Stopc,
 		ts.cfg.Logger,
+		ts.cfg.LogWriter,
 		ts.cfg.CFNAPI,
 		ts.cfg.EKSConfig.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackID,
 		cloudformation.ResourceStatusCreateComplete,
@@ -298,6 +299,7 @@ func (ts *tester) deleteSG() error {
 		ctx,
 		make(chan struct{}), // do not exit on stop
 		ts.cfg.Logger,
+		ts.cfg.LogWriter,
 		ts.cfg.CFNAPI,
 		ts.cfg.EKSConfig.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackID,
 		cloudformation.ResourceStatusDeleteComplete,

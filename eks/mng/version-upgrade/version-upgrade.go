@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-k8s-tester/eks/mng/wait"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
+	"github.com/aws/aws-k8s-tester/pkg/spinner"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/eks"
@@ -83,13 +84,16 @@ func (ts *tester) Upgrade(mngName string) (err error) {
 		ts.cfg.EKSConfig.Sync()
 	}()
 
+	sp := spinner.New("Waiting for before starting MNG upgrade "+mngName, ts.cfg.LogWriter)
 	ts.cfg.Logger.Info("waiting before starting MNG upgrade",
 		zap.String("cluster-name", ts.cfg.EKSConfig.Name),
 		zap.String("mng-name", mngName),
 		zap.Duration("initial-wait", cur.VersionUpgrade.InitialWait),
 	)
+	sp.Restart()
 	select {
 	case <-time.After(cur.VersionUpgrade.InitialWait):
+		sp.Stop()
 		ts.cfg.Logger.Info("waited, starting MNG version upgrade",
 			zap.String("cluster-name", ts.cfg.EKSConfig.Name),
 			zap.String("mng-name", mngName),
@@ -97,6 +101,7 @@ func (ts *tester) Upgrade(mngName string) (err error) {
 			zap.String("target-mng-version", cur.VersionUpgrade.Version),
 		)
 	case <-ts.cfg.Stopc:
+		sp.Stop()
 		ts.cfg.Logger.Warn("MNG version upgrade wait aborted; exiting", zap.String("mng-name", mngName))
 		return errors.New("MNG veresion upgrade wait aborted")
 	}
@@ -135,6 +140,7 @@ func (ts *tester) Upgrade(mngName string) (err error) {
 		ctx,
 		ts.cfg.Stopc,
 		ts.cfg.Logger,
+		ts.cfg.LogWriter,
 		ts.cfg.EKSAPI,
 		ts.cfg.EKSConfig.Name,
 		mngName,
@@ -189,6 +195,7 @@ func (ts *tester) Upgrade(mngName string) (err error) {
 		ctx,
 		ts.cfg.Stopc,
 		ts.cfg.Logger,
+		ts.cfg.LogWriter,
 		ts.cfg.EKSAPI,
 		ts.cfg.EKSConfig.Name,
 		mngName,

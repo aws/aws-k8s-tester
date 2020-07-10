@@ -411,6 +411,10 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 	return ts, nil
 }
 
+func (ts *Tester) LogWriter() io.Writer {
+	return ts.logWriter
+}
+
 func (ts *Tester) createTesters() (err error) {
 	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 	fmt.Fprintf(ts.logWriter, ts.color("[light_green]createTesters [default](%q)\n"), ts.cfg.ConfigPath)

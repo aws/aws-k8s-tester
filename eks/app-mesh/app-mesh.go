@@ -281,6 +281,7 @@ func (ts *tester) createPolicy() error {
 		ctx,
 		ts.cfg.Stopc,
 		ts.cfg.Logger,
+		ts.cfg.LogWriter,
 		ts.cfg.CFNAPI,
 		ts.cfg.EKSConfig.AddOnAppMesh.PolicyCFNStackID,
 		cloudformation.ResourceStatusCreateComplete,
@@ -329,6 +330,7 @@ func (ts *tester) deletePolicy() error {
 		ctx,
 		make(chan struct{}), // do not exit on stop
 		ts.cfg.Logger,
+		ts.cfg.LogWriter,
 		ts.cfg.CFNAPI,
 		ts.cfg.EKSConfig.AddOnAppMesh.PolicyCFNStackID,
 		cloudformation.ResourceStatusDeleteComplete,
