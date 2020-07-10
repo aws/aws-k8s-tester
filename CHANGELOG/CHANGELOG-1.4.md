@@ -22,6 +22,9 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.2...v1.4.3
 
 - Add [`pkg/spinner`](https://github.com/aws/aws-k8s-tester/commit/2d0aa8a696d85914f1081a92a5a40f7f5d6ffbe9).
 - Pass [log writer to `pkg/cfn.Poll` for "spinner"](https://github.com/aws/aws-k8s-tester/commit/2d0aa8a696d85914f1081a92a5a40f7f5d6ffbe9).
+- Increase [list pod batch limit and reduce batch interval for `pkg/k8s-client.WaitForJobCompletes`](https://github.com/aws/aws-k8s-tester/commit/81866ec90463636f970fbee680b703df6fcb15fd).
+- Retry [`pkg/k8s-client.ListPod` when a paginated response is stale](https://github.com/aws/aws-k8s-tester/commit/3097ecf6a6cfb65fee021de883dbad612114c839).
+  - Fix `"The provided continue parameter is too old to display a consistent list result. You can start a new list without the continue parameter, or use the continue token in this response to retrieve the remainder of the results. Continuing with the provided token results in an inconsistent list - objects that were created, modified, or deleted between the time the first chunk was returned and now may show up in the list."`.
 
 ### Dependency
 
