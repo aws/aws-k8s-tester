@@ -23,7 +23,7 @@ func New(suffix string, wr io.Writer) (s Spinner) {
 		wr = os.Stderr
 	}
 	s = Spinner{wr: wr, Spinner: spinner.New(sets, 100*time.Millisecond, spinner.WithWriter(wr))}
-	s.Prefix = "⛵ "
+	s.Prefix = "🏊 🚣 ⛵ "
 	s.Suffix = "  ⚓ " + strings.TrimSpace(suffix)
 	s.FinalMSG = "\n"
 	return s
