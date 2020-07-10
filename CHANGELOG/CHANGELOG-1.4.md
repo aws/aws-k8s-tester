@@ -1,4 +1,32 @@
 
+
+
+<hr>
+
+
+
+## [v1.4.4](https://github.com/aws/aws-k8s-tester/releases/tag/v1.4.4) (2020-07)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.3...v1.4.4).
+
+## `eksconfig`
+
+- Make [EKS 1.17 default version](https://github.com/aws/aws-k8s-tester/commit/d924eb6b082e2fe678717057b138ce1ac964f2d9).
+  - https://github.com/aws/containers-roadmap/issues/697
+
+## `eks`
+
+- Increase [`ListCSRs` batch limit to 1,000](https://github.com/aws/aws-k8s-tester/commit/4965374b15ec09224477f41cc4b1c024601dfb43).
+- Increase [`ListNodes` batch limit to 1,000](https://github.com/aws/aws-k8s-tester/commit/7d36a80c22cfddbed20f75600462a6a396277d8a).
+
+
+
+
+<hr>
+
+
+
+
 ## [v1.4.3](https://github.com/aws/aws-k8s-tester/releases/tag/v1.4.3) (2020-07-10)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.2...v1.4.3).
