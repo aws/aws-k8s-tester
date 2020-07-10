@@ -1,4 +1,31 @@
 
+## [v1.4.3](https://github.com/aws/aws-k8s-tester/releases/tag/v1.4.3) (2020-07-10)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.2...v1.4.3).
+
+## `eksconfig`
+
+- Fix [`AddOnConformance` `sonobuoy-result/plugins/e2e/results/global/e2e.log` upload path](https://github.com/aws/aws-k8s-tester/commit/718c7dd1533541a23e99f45403a17d06af3ef1b7).
+
+## `eks`
+
+- Fix [`eks/conformance` `sonobuoy-result/plugins/e2e/results/global/e2e.log` upload](https://github.com/aws/aws-k8s-tester/commit/718c7dd1533541a23e99f45403a17d06af3ef1b7).
+- Add ["spinner" to all polling functions](https://github.com/aws/aws-k8s-tester/commit/0f8f81969c238c16e59f83e2d4bb6e5f85bdbeac).
+
+## `pkg`
+
+- Add [`pkg/spinner`](https://github.com/aws/aws-k8s-tester/commit/2d0aa8a696d85914f1081a92a5a40f7f5d6ffbe9).
+- Pass [log writer to `pkg/cfn.Poll` for "spinner"](https://github.com/aws/aws-k8s-tester/commit/2d0aa8a696d85914f1081a92a5a40f7f5d6ffbe9).
+
+### Dependency
+
+- Add [`github.com/briandowns/spinner`](https://github.com/briandowns/spinner/releases) [`v1.11.1`](https://github.com/briandowns/spinner/releases/tag/v1.11.1).
+
+
+
+<hr>
+
+
 
 ## [v1.4.2](https://github.com/aws/aws-k8s-tester/releases/tag/v1.4.2) (2020-07-09)
 
