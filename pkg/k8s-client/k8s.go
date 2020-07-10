@@ -599,7 +599,7 @@ func waitForJobCompletes(
 		}
 
 		lg.Info("listing pods to check Job completion")
-		pods, err = k8sClient.ListPods(namespace, 150, 5*time.Second)
+		pods, err = k8sClient.ListPods(namespace, 3000, 3*time.Second)
 		if err != nil {
 			lg.Warn("failed to list Pod", zap.Bool("retriable-error", IsRetryableAPIError(err)), zap.Error(err))
 			return false, err
