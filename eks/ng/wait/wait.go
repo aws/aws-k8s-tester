@@ -150,7 +150,7 @@ func (ts *tester) waitForNodes(asgName string, retriesLeft int) error {
 	// TODO: handle DHCP option domain name
 	ec2PrivateDNS := make(map[string]struct{})
 	for _, v := range cur.Instances {
-		ts.cfg.Logger.Info("found private DNS for an EC2 instance", zap.String("instance-id", v.InstanceID), zap.String("private-dns-name", v.PrivateDNSName))
+		ts.cfg.Logger.Debug("found private DNS for an EC2 instance", zap.String("instance-id", v.InstanceID), zap.String("private-dns-name", v.PrivateDNSName))
 		ec2PrivateDNS[v.PrivateDNSName] = struct{}{}
 		// "ip-192-168-81-186" from "ip-192-168-81-186.my-private-dns"
 		ec2PrivateDNS[strings.Split(v.PrivateDNSName, ".")[0]] = struct{}{}
@@ -187,7 +187,7 @@ func (ts *tester) waitForNodes(asgName string, retriesLeft int) error {
 			// Hostname == my-private-dns (without DHCP option, it's "ip-192-168-81-186.my-private-dns", private DNS, InternalDNS)
 			// InternalDNS == ip-192-168-81-186.my-private-dns
 			// ExternalDNS == ec2-52-38-118-149.us-west-2.compute.amazonaws.com
-			ts.cfg.Logger.Info("checking node address with EC2 Private DNS",
+			ts.cfg.Logger.Debug("checking node address with EC2 Private DNS",
 				zap.String("node-name", nodeName),
 				zap.String("node-info", string(nodeInfo)),
 				zap.String("labels", fmt.Sprintf("%v", labels)),
@@ -195,7 +195,7 @@ func (ts *tester) waitForNodes(asgName string, retriesLeft int) error {
 
 			hostName := ""
 			for _, av := range node.Status.Addresses {
-				ts.cfg.Logger.Info("node status address",
+				ts.cfg.Logger.Debug("node status address",
 					zap.String("node-name", nodeName),
 					zap.String("type", string(av.Type)),
 					zap.String("address", string(av.Address)),
@@ -235,7 +235,7 @@ func (ts *tester) waitForNodes(asgName string, retriesLeft int) error {
 				if cond.Type != v1.NodeReady {
 					continue
 				}
-				ts.cfg.Logger.Info("node is ready!",
+				ts.cfg.Logger.Debug("node is ready!",
 					zap.String("name", nodeName),
 					zap.String("status-type", fmt.Sprintf("%s", cond.Type)),
 					zap.String("status", fmt.Sprintf("%s", cond.Status)),
@@ -244,11 +244,6 @@ func (ts *tester) waitForNodes(asgName string, retriesLeft int) error {
 				break
 			}
 		}
-		ts.cfg.Logger.Info("nodes",
-			zap.Int("current-ready-nodes", readies),
-			zap.Int64("desired-ready-nodes", cur.ASGDesiredCapacity),
-		)
-
 		/*
 			e.g.
 			"/tmp/kubectl-test-v1.16.9 --kubeconfig=/tmp/leegyuho-test-eks.kubeconfig.yaml get csr -o=wide":
@@ -256,19 +251,33 @@ func (ts *tester) waitForNodes(asgName string, retriesLeft int) error {
 			csr-4msk5   58s   system:node:ip-192-168-65-124.us-west-2.compute.internal    Approved,Issued
 			csr-9dbs8   57s   system:node:ip-192-168-208-6.us-west-2.compute.internal     Approved,Issued
 		*/
+		allCSRs := make(map[string]int)
 		output, err := ts.cfg.K8SClient.ListCSRs(150, 5*time.Second)
 		if err != nil {
 			ts.cfg.Logger.Warn("list CSRs failed", zap.Error(err))
 		} else {
 			for _, cv := range output {
-				ts.cfg.Logger.Info("current CSR",
+				k := extractCSRStatus(cv)
+				ts.cfg.Logger.Debug("current CSR",
 					zap.String("name", cv.GetName()),
 					zap.String("requester", cv.Spec.Username),
 					zap.String("status", extractCSRStatus(cv)),
 				)
+				v, ok := allCSRs[k]
+				if !ok {
+					allCSRs[k] = 1
+				} else {
+					allCSRs[k] = v + 1
+				}
 			}
 		}
-
+		ts.cfg.Logger.Info("polling nodes",
+			zap.String("command", ts.cfg.EKSConfig.KubectlCommand()+" get nodes"),
+			zap.String("ng-name", cur.Name),
+			zap.Int("current-ready-nodes", readies),
+			zap.Int64("desired-ready-nodes", cur.ASGDesiredCapacity),
+			zap.String("all-csrs", fmt.Sprintf("%+v", allCSRs)),
+		)
 		if int64(readies) >= cur.ASGDesiredCapacity {
 			ready = true
 			break
