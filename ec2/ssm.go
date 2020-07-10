@@ -169,6 +169,7 @@ func (ts *Tester) createSSMDocument() error {
 			ctx,
 			ts.stopCreationCh,
 			ts.lg,
+			ts.logWriter,
 			ts.cfnAPI,
 			cur.SSMDocumentCFNStackID,
 			cloudformation.ResourceStatusCreateComplete,
@@ -240,6 +241,7 @@ func (ts *Tester) deleteSSMDocument() error {
 			ctx,
 			make(chan struct{}), // do not exit on stop
 			ts.lg,
+			ts.logWriter,
 			ts.cfnAPI,
 			cur.SSMDocumentCFNStackID,
 			cloudformation.ResourceStatusDeleteComplete,

@@ -152,6 +152,7 @@ func (ts *Tester) createRole() error {
 		ctx,
 		ts.stopCreationCh,
 		ts.lg,
+		ts.logWriter,
 		ts.cfnAPI,
 		ts.cfg.RoleCFNStackID,
 		cloudformation.ResourceStatusCreateComplete,
@@ -209,6 +210,7 @@ func (ts *Tester) deleteRole() error {
 		ctx,
 		make(chan struct{}), // do not exit on stop
 		ts.lg,
+		ts.logWriter,
 		ts.cfnAPI,
 		ts.cfg.RoleCFNStackID,
 		cloudformation.ResourceStatusDeleteComplete,

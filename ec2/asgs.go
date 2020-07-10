@@ -532,6 +532,7 @@ func (ts *Tester) createASGs() (err error) {
 			ctx,
 			ts.stopCreationCh,
 			ts.lg,
+			ts.logWriter,
 			ts.cfnAPI,
 			cur.ASGCFNStackID,
 			cloudformation.ResourceStatusCreateComplete,
@@ -677,6 +678,7 @@ func (ts *Tester) deleteASGs() (err error) {
 			ctx,
 			make(chan struct{}), // do not exit on stop
 			ts.lg,
+			ts.logWriter,
 			ts.cfnAPI,
 			cur.ASGCFNStackID,
 			cloudformation.ResourceStatusDeleteComplete,

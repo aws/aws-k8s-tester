@@ -4,6 +4,7 @@ package ec2
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/signal"
 	"strings"
@@ -53,7 +54,10 @@ type Tester struct {
 	downMu *sync.Mutex
 	logsMu *sync.RWMutex
 
-	lg  *zap.Logger
+	lg        *zap.Logger
+	logWriter io.Writer
+	logFile   *os.File
+
 	cfg *ec2config.Config
 
 	awsSession *session.Session
@@ -73,12 +77,11 @@ func New(cfg *ec2config.Config) (*Tester, error) {
 		return nil, err
 	}
 
-	lcfg := logutil.AddOutputPaths(logutil.GetDefaultZapLoggerConfig(), cfg.LogOutputs, cfg.LogOutputs)
-	lcfg.Level = zap.NewAtomicLevelAt(logutil.ConvertToZapLevel(cfg.LogLevel))
-	lg, err := lcfg.Build()
+	lg, logWriter, logFile, err := logutil.NewWithStderrWriter(cfg.LogLevel, cfg.LogOutputs)
 	if err != nil {
 		return nil, err
 	}
+	lg.Info("set up log writer and file", zap.Strings("outputs", cfg.LogOutputs))
 
 	isColor := cfg.LogColor
 	co, cerr := terminal.IsColor()
@@ -95,9 +98,9 @@ func New(cfg *ec2config.Config) (*Tester, error) {
 	cfg.LogColor = isColor
 	cfg.Sync()
 
-	fmt.Printf(cfg.Colorize("\n\n[yellow]*********************************\n"))
-	fmt.Println("😎 🙏 🚶 ✔️ 👍")
-	fmt.Printf(cfg.Colorize("[light_green]New %q [default](%q)\n"), cfg.ConfigPath, version.Version())
+	fmt.Fprintf(logWriter, cfg.Colorize("\n\n[yellow]*********************************\n"))
+	fmt.Fprintln(logWriter, "😎 🙏 🚶 ✔️ 👍")
+	fmt.Fprintf(logWriter, cfg.Colorize("[light_green]New %q [default](%q)\n"), cfg.ConfigPath, version.Version())
 
 	ts := &Tester{
 		color:              cfg.Colorize,
@@ -107,6 +110,8 @@ func New(cfg *ec2config.Config) (*Tester, error) {
 		downMu:             new(sync.Mutex),
 		logsMu:             new(sync.RWMutex),
 		lg:                 lg,
+		logWriter:          logWriter,
+		logFile:            logFile,
 		cfg:                cfg,
 	}
 	signal.Notify(ts.osSig, syscall.SIGTERM, syscall.SIGINT)
@@ -138,7 +143,7 @@ func New(cfg *ec2config.Config) (*Tester, error) {
 	if _, err := ts.ec2API.DescribeInstances(&ec2.DescribeInstancesInput{MaxResults: aws.Int64(5)}); err != nil {
 		return nil, fmt.Errorf("failed to describe instances using EC2 API (%v)", err)
 	}
-	fmt.Println("EC2 API available!")
+	fmt.Fprintln(ts.logWriter, "EC2 API available!")
 
 	ts.s3API = s3.New(ts.awsSession)
 	ts.asgAPI = autoscaling.New(ts.awsSession)
@@ -149,69 +154,72 @@ func New(cfg *ec2config.Config) (*Tester, error) {
 
 // Up should provision a new cluster for testing
 func (ts *Tester) Up() (err error) {
-	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-	fmt.Printf(ts.color("[light_green]UP START [default](%q)\n"), ts.cfg.ConfigPath)
+	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Fprintf(ts.logWriter, ts.color("[light_green]UP START [default](%q)\n"), ts.cfg.ConfigPath)
 
 	now := time.Now()
 
 	defer func() {
-		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-		fmt.Printf(ts.color("[light_green]UP DEFER START [default](%q)\n"), ts.cfg.ConfigPath)
+		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprintf(ts.logWriter, ts.color("[light_green]UP DEFER START [default](%q)\n"), ts.cfg.ConfigPath)
+		ts.logFile.Sync()
 
 		if serr := ts.uploadToS3(); serr != nil {
 			ts.lg.Warn("failed to upload artifacts to S3", zap.Error(serr))
 		}
-		fmt.Printf("\n\n# to delete instances\nec2-utils delete instances --path %s\n\n", ts.cfg.ConfigPath)
+		fmt.Fprintf(ts.logWriter, "\n\n# to delete instances\nec2-utils delete instances --path %s\n\n", ts.cfg.ConfigPath)
 
 		if err == nil {
 			if ts.cfg.Up {
-				fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+				fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 
 				ts.lg.Sugar().Infof("SSH (%s)", ts.cfg.ConfigPath)
-				fmt.Println(ts.cfg.SSHCommands())
+				fmt.Fprintln(ts.logWriter, ts.cfg.SSHCommands())
 
 				ts.lg.Info("Up succeeded",
 					zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 				)
-				fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-				fmt.Printf(ts.color("\n\n💯 😁 👍 :) [light_green]Up success\n\n\n"))
+				fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+				fmt.Fprintf(ts.logWriter, ts.color("\n\n💯 😁 👍 :) [light_green]Up success\n\n\n"))
 
 				ts.lg.Sugar().Infof("Up.defer end (%s)", ts.cfg.ConfigPath)
-				fmt.Printf("\n\n💯 😁 👍 :) Up success\n\n\n")
+				fmt.Fprintf(ts.logWriter, "\n\n💯 😁 👍 :) Up success\n\n\n")
 			} else {
-				fmt.Printf("\n\n😲 😲 aborted Up ???\n\n\n")
+				fmt.Fprintf(ts.logWriter, "\n\n😲 😲 aborted Up ???\n\n\n")
 			}
-			fmt.Printf("\n\n# to delete instances\nec2-utils delete instances --path %s\n\n", ts.cfg.ConfigPath)
+			fmt.Fprintf(ts.logWriter, "\n\n# to delete instances\nec2-utils delete instances --path %s\n\n", ts.cfg.ConfigPath)
+			ts.logFile.Sync()
 			return
 		}
 
 		if !ts.cfg.OnFailureDelete {
 			if ts.cfg.Up {
-				fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+				fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 
 				ts.lg.Sugar().Infof("SSH (%s)", ts.cfg.ConfigPath)
-				fmt.Println(ts.cfg.SSHCommands())
+				fmt.Fprintln(ts.logWriter, ts.cfg.SSHCommands())
 			}
 
 			ts.lg.Warn("Up failed",
 				zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 				zap.Error(err),
 			)
-			fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-			fmt.Printf(ts.color("🔥 💀 👽 😱 😡 (-_-) [light_magenta]UP FAIL\n"))
+			fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+			fmt.Fprintf(ts.logWriter, ts.color("🔥 💀 👽 😱 😡 (-_-) [light_magenta]UP FAIL\n"))
 
-			fmt.Printf("\n\n# to delete instances\nec2-utils delete instances --path %s\n\n", ts.cfg.ConfigPath)
+			fmt.Fprintf(ts.logWriter, "\n\n# to delete instances\nec2-utils delete instances --path %s\n\n", ts.cfg.ConfigPath)
+			ts.logFile.Sync()
 			return
 		}
 
 		if ts.cfg.Up {
-			fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
+			fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 
 			ts.lg.Sugar().Infof("SSH (%s)", ts.cfg.ConfigPath)
-			fmt.Println(ts.cfg.SSHCommands())
+			fmt.Fprintln(ts.logWriter, ts.cfg.SSHCommands())
 		}
-		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-		fmt.Printf(ts.color("🔥 💀 👽 😱 😡 (-_-) [light_magenta]UP FAIL\n"))
+		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprintf(ts.logWriter, ts.color("🔥 💀 👽 😱 😡 (-_-) [light_magenta]UP FAIL\n"))
 
 		ts.lg.Warn("Up failed; reverting resource creation",
 			zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
@@ -234,10 +242,11 @@ func (ts *Tester) Up() (err error) {
 		} else {
 			ts.lg.Warn("reverted Up")
 		}
-		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-		fmt.Printf(ts.color("🔥 💀 👽 😱 😡 (-_-) [light_magenta]UP FAIL\n"))
+		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprintf(ts.logWriter, ts.color("🔥 💀 👽 😱 😡 (-_-) [light_magenta]UP FAIL\n"))
 
-		fmt.Printf("\n\n# to delete instances\nec2-utils delete instances --path %s\n\n", ts.cfg.ConfigPath)
+		fmt.Fprintf(ts.logWriter, "\n\n# to delete instances\nec2-utils delete instances --path %s\n\n", ts.cfg.ConfigPath)
+		ts.logFile.Sync()
 	}()
 
 	ts.lg.Info("Up started",
@@ -245,8 +254,8 @@ func (ts *Tester) Up() (err error) {
 		zap.String("name", ts.cfg.Name),
 	)
 	defer ts.cfg.Sync()
-	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-	fmt.Printf(ts.color("[light_green]createS3 [default](%q)\n"), ts.cfg.ConfigPath)
+	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Fprintf(ts.logWriter, ts.color("[light_green]createS3 [default](%q)\n"), ts.cfg.ConfigPath)
 
 	if err := catchInterrupt(
 		ts.lg,
@@ -257,8 +266,8 @@ func (ts *Tester) Up() (err error) {
 	); err != nil {
 		return err
 	}
-	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-	fmt.Printf(ts.color("[light_green]createRole [default](%q)\n"), ts.cfg.ConfigPath)
+	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Fprintf(ts.logWriter, ts.color("[light_green]createRole [default](%q)\n"), ts.cfg.ConfigPath)
 
 	if err := catchInterrupt(
 		ts.lg,
@@ -269,8 +278,8 @@ func (ts *Tester) Up() (err error) {
 	); err != nil {
 		return err
 	}
-	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-	fmt.Printf(ts.color("[light_green]createVPC [default](%q)\n"), ts.cfg.ConfigPath)
+	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Fprintf(ts.logWriter, ts.color("[light_green]createVPC [default](%q)\n"), ts.cfg.ConfigPath)
 
 	if err := catchInterrupt(
 		ts.lg,
@@ -281,8 +290,8 @@ func (ts *Tester) Up() (err error) {
 	); err != nil {
 		return err
 	}
-	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-	fmt.Printf(ts.color("[light_green]createKeyPair [default](%q)\n"), ts.cfg.ConfigPath)
+	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Fprintf(ts.logWriter, ts.color("[light_green]createKeyPair [default](%q)\n"), ts.cfg.ConfigPath)
 
 	if err := catchInterrupt(
 		ts.lg,
@@ -293,8 +302,8 @@ func (ts *Tester) Up() (err error) {
 	); err != nil {
 		return err
 	}
-	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-	fmt.Printf(ts.color("[light_green]createASGs [default](%q)\n"), ts.cfg.ConfigPath)
+	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Fprintf(ts.logWriter, ts.color("[light_green]createASGs [default](%q)\n"), ts.cfg.ConfigPath)
 
 	if err := catchInterrupt(
 		ts.lg,
@@ -305,8 +314,8 @@ func (ts *Tester) Up() (err error) {
 	); err != nil {
 		return err
 	}
-	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-	fmt.Printf(ts.color("[light_green]createSSM [default](%q)\n"), ts.cfg.ConfigPath)
+	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Fprintf(ts.logWriter, ts.color("[light_green]createSSM [default](%q)\n"), ts.cfg.ConfigPath)
 
 	if err := catchInterrupt(
 		ts.lg,
@@ -319,8 +328,8 @@ func (ts *Tester) Up() (err error) {
 	}
 
 	if ts.cfg.ASGsFetchLogs {
-		fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-		fmt.Printf(ts.color("[light_green]FetchLogs [default](%q)\n"), ts.cfg.ConfigPath)
+		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprintf(ts.logWriter, ts.color("[light_green]FetchLogs [default](%q)\n"), ts.cfg.ConfigPath)
 
 		waitDur := 20 * time.Second
 		ts.lg.Info("sleeping before FetchLogs", zap.Duration("wait", waitDur))
@@ -347,8 +356,8 @@ func (ts *Tester) Down() error {
 }
 
 func (ts *Tester) down() (err error) {
-	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-	fmt.Printf(ts.color("[light_blue]DOWN START [default](%q)\n"), ts.cfg.ConfigPath)
+	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Fprintf(ts.logWriter, ts.color("[light_blue]DOWN START [default](%q)\n"), ts.cfg.ConfigPath)
 
 	now := time.Now()
 	ts.lg.Warn("starting Down",
@@ -361,18 +370,18 @@ func (ts *Tester) down() (err error) {
 	defer func() {
 		ts.cfg.Sync()
 		if err == nil {
-			fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-			fmt.Printf(ts.color("[light_blue]DOWN DEFER START [default](%q)\n"), ts.cfg.ConfigPath)
-			fmt.Printf(ts.color("\n\n💯 😁 👍 :)  [light_blue]DOWN SUCCESS\n\n\n"))
+			fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+			fmt.Fprintf(ts.logWriter, ts.color("[light_blue]DOWN DEFER START [default](%q)\n"), ts.cfg.ConfigPath)
+			fmt.Fprintf(ts.logWriter, ts.color("\n\n💯 😁 👍 :)  [light_blue]DOWN SUCCESS\n\n\n"))
 
 			ts.lg.Info("successfully finished Down",
 				zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 			)
 
 		} else {
-			fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-			fmt.Printf(ts.color("[light_blue]DOWN DEFER START [default](%q)\n"), ts.cfg.ConfigPath)
-			fmt.Printf(ts.color("🔥 💀 👽 😱 😡 (-_-) [light_magenta]DOWN FAIL\n"))
+			fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+			fmt.Fprintf(ts.logWriter, ts.color("[light_blue]DOWN DEFER START [default](%q)\n"), ts.cfg.ConfigPath)
+			fmt.Fprintf(ts.logWriter, ts.color("🔥 💀 👽 😱 😡 (-_-) [light_magenta]DOWN FAIL\n"))
 
 			ts.lg.Info("failed Down",
 				zap.Error(err),
@@ -382,29 +391,29 @@ func (ts *Tester) down() (err error) {
 	}()
 
 	var errs []string
-	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-	fmt.Printf(ts.color("[light_blue]deleteSSM [default](%q)\n"), ts.cfg.ConfigPath)
+	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Fprintf(ts.logWriter, ts.color("[light_blue]deleteSSM [default](%q)\n"), ts.cfg.ConfigPath)
 
 	if err := ts.deleteSSM(); err != nil {
 		ts.lg.Warn("deleteSSM failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
-	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-	fmt.Printf(ts.color("[light_blue]deleteASGs [default](%q)\n"), ts.cfg.ConfigPath)
+	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Fprintf(ts.logWriter, ts.color("[light_blue]deleteASGs [default](%q)\n"), ts.cfg.ConfigPath)
 
 	if err := ts.deleteASGs(); err != nil {
 		ts.lg.Warn("deleteASGs failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
-	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-	fmt.Printf(ts.color("[light_blue]deleteKeyPair [default](%q)\n"), ts.cfg.ConfigPath)
+	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Fprintf(ts.logWriter, ts.color("[light_blue]deleteKeyPair [default](%q)\n"), ts.cfg.ConfigPath)
 
 	if err := ts.deleteKeyPair(); err != nil {
 		ts.lg.Warn("deleteKeyPair failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
-	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-	fmt.Printf(ts.color("[light_blue]deleteRole [default](%q)\n"), ts.cfg.ConfigPath)
+	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Fprintf(ts.logWriter, ts.color("[light_blue]deleteRole [default](%q)\n"), ts.cfg.ConfigPath)
 
 	if err := ts.deleteRole(); err != nil {
 		ts.lg.Warn("deleteRole failed", zap.Error(err))
@@ -416,15 +425,15 @@ func (ts *Tester) down() (err error) {
 		ts.lg.Info("sleeping before VPC deletion", zap.Duration("wait", waitDur))
 		time.Sleep(waitDur)
 	}
-	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-	fmt.Printf(ts.color("[light_blue]deleteVPC [default](%q)\n"), ts.cfg.ConfigPath)
+	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Fprintf(ts.logWriter, ts.color("[light_blue]deleteVPC [default](%q)\n"), ts.cfg.ConfigPath)
 
 	if err := ts.deleteVPC(); err != nil {
 		ts.lg.Warn("deleteVPC failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
-	fmt.Printf(ts.color("\n\n[yellow]*********************************\n"))
-	fmt.Printf(ts.color("[light_blue]deleteS3 [default](%q)\n"), ts.cfg.ConfigPath)
+	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Fprintf(ts.logWriter, ts.color("[light_blue]deleteS3 [default](%q)\n"), ts.cfg.ConfigPath)
 
 	if err := ts.deleteS3(); err != nil {
 		ts.lg.Warn("deleteS3 failed", zap.Error(err))
