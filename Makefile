@@ -32,6 +32,7 @@ docker-push:
 # Release latest Aws-K8s-Tester to S3.
 s3-push: build
 	aws s3 cp --region $(AKT_AWS_REGION) ./bin/aws-k8s-tester-$(AKT_TAG)-linux-amd64 $(AKT_S3_PATH)
+	aws s3 cp --region $(AKT_AWS_REGION) ./bin/aws-k8s-tester-$(AKT_TAG)-linux-amd64 $(AKT_S3_PREFIX)/aws-k8s-tester-latest-linux-amd64
 	aws s3 ls s3://eks-prow/bin/aws-k8s-tester/
 
 release: clean s3-push docker-push
