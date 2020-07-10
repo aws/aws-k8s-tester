@@ -164,23 +164,6 @@ func (cfg *Config) validateAddOnConformance() error {
 		cfg.AddOnConformance.SonobuoyRunKubeConformanceImage = fmt.Sprintf("gcr.io/google-containers/conformance:v%s.0", cfg.Parameters.Version)
 	}
 
-	if cfg.AddOnConformance.SonobuoyResultTarGzPath == "" {
-		cfg.AddOnConformance.SonobuoyResultTarGzPath = filepath.Join(
-			filepath.Dir(cfg.ConfigPath),
-			fmt.Sprintf("%s-sonobuoy-result.tar.gz", cfg.Name),
-		)
-		os.RemoveAll(cfg.AddOnConformance.SonobuoyResultTarGzPath)
-	}
-	if !strings.HasSuffix(cfg.AddOnConformance.SonobuoyResultTarGzPath, ".tar.gz") {
-		return fmt.Errorf("AddOnConformance.SonobuoyResultTarGzPath[%q] must have '.tar.gz' extension", cfg.AddOnConformance.SonobuoyResultTarGzPath)
-	}
-	if cfg.AddOnConformance.SonobuoyResultE2eLogS3Key == "" {
-		cfg.AddOnConformance.SonobuoyResultE2eLogS3Key = path.Join(
-			cfg.AddOnConformance.S3Dir,
-			filepath.Base(cfg.AddOnConformance.SonobuoyResultE2eLogPath),
-		)
-	}
-
 	cfg.AddOnConformance.SonobuoyResultDir = filepath.Join(
 		filepath.Dir(cfg.ConfigPath),
 		fmt.Sprintf("%s-sonobuoy-results", cfg.Name),
@@ -195,6 +178,23 @@ func (cfg *Config) validateAddOnConformance() error {
 	}
 	if !strings.HasSuffix(cfg.AddOnConformance.SonobuoyResultE2eLogPath, ".log") {
 		return fmt.Errorf("AddOnConformance.SonobuoyResultE2eLogPath[%q] must have '.log' extension", cfg.AddOnConformance.SonobuoyResultTarGzPath)
+	}
+	if cfg.AddOnConformance.SonobuoyResultE2eLogS3Key == "" {
+		cfg.AddOnConformance.SonobuoyResultE2eLogS3Key = path.Join(
+			cfg.AddOnConformance.S3Dir,
+			filepath.Base(cfg.AddOnConformance.SonobuoyResultE2eLogPath),
+		)
+	}
+
+	if cfg.AddOnConformance.SonobuoyResultTarGzPath == "" {
+		cfg.AddOnConformance.SonobuoyResultTarGzPath = filepath.Join(
+			filepath.Dir(cfg.ConfigPath),
+			fmt.Sprintf("%s-sonobuoy-result.tar.gz", cfg.Name),
+		)
+		os.RemoveAll(cfg.AddOnConformance.SonobuoyResultTarGzPath)
+	}
+	if !strings.HasSuffix(cfg.AddOnConformance.SonobuoyResultTarGzPath, ".tar.gz") {
+		return fmt.Errorf("AddOnConformance.SonobuoyResultTarGzPath[%q] must have '.tar.gz' extension", cfg.AddOnConformance.SonobuoyResultTarGzPath)
 	}
 	if cfg.AddOnConformance.SonobuoyResultTarGzS3Key == "" {
 		cfg.AddOnConformance.SonobuoyResultTarGzS3Key = path.Join(
