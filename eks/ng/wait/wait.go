@@ -252,7 +252,7 @@ func (ts *tester) waitForNodes(asgName string, retriesLeft int) error {
 			csr-9dbs8   57s   system:node:ip-192-168-208-6.us-west-2.compute.internal     Approved,Issued
 		*/
 		allCSRs := make(map[string]int)
-		output, err := ts.cfg.K8SClient.ListCSRs(150, 5*time.Second)
+		output, err := ts.cfg.K8SClient.ListCSRs(1000, 5*time.Second)
 		if err != nil {
 			ts.cfg.Logger.Warn("list CSRs failed", zap.Error(err))
 		} else {
