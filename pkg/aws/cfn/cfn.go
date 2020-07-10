@@ -5,10 +5,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"strings"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/pkg/ctxutil"
+	"github.com/aws/aws-k8s-tester/pkg/spinner"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/cloudformation/cloudformationiface"
@@ -28,6 +30,7 @@ func Poll(
 	ctx context.Context,
 	stopc chan struct{},
 	lg *zap.Logger,
+	logWriter io.Writer,
 	cfnAPI cloudformationiface.CloudFormationAPI,
 	stackID string,
 	desiredStackStatus string,
@@ -35,6 +38,7 @@ func Poll(
 	pollInterval time.Duration,
 ) <-chan StackStatus {
 	now := time.Now()
+	sp := spinner.New("Waiting for CFN stack "+desiredStackStatus, logWriter)
 
 	lg.Info("polling stack",
 		zap.String("stack-id", stackID),
@@ -158,28 +162,28 @@ func Poll(
 
 			if first {
 				lg.Info("sleeping", zap.Duration("initial-wait", initialWait))
-
+				sp.Restart()
 				select {
 				case <-ctx.Done():
+					sp.Stop()
 					lg.Warn("wait aborted, ctx done", zap.Error(ctx.Err()))
 					ch <- StackStatus{Stack: nil, Error: ctx.Err()}
 					close(ch)
 					return
-
 				case <-stopc:
+					sp.Stop()
 					lg.Warn("wait stopped, stopc closed", zap.Error(ctx.Err()))
 					ch <- StackStatus{Stack: nil, Error: errors.New("wait stopped")}
 					close(ch)
 					return
-
 				case <-time.After(initialWait):
+					sp.Stop()
 				}
 				first = false
 			}
 
 			// continue for-loop
 		}
-
 		lg.Warn("wait aborted, ctx done", zap.Error(ctx.Err()))
 		ch <- StackStatus{Stack: nil, Error: ctx.Err()}
 		close(ch)

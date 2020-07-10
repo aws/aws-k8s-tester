@@ -9,7 +9,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// NewWithStderrWriter creates a new logger with stderr multi writer.
+// NewWithStderrWriter creates a new logger and multi-writer with os.Stderr.
 // The returned file object is the log file.
 // The log file must be specified with extension ".log".
 func NewWithStderrWriter(logLevel string, logOutputs []string) (lg *zap.Logger, wr io.Writer, logFile *os.File, err error) {
