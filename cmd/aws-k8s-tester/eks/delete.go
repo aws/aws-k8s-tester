@@ -74,13 +74,14 @@ func deleteClusterFunc(cmd *cobra.Command, args []string) {
 		fmt.Fprintf(os.Stderr, "failed to create eks deployer %v\n", err)
 		os.Exit(1)
 	}
+	logWriter := tester.LogWriter()
 
 	if err = tester.Down(); err != nil {
-		fmt.Fprintf(os.Stderr, cfg.Colorize("\n\n\n[yellow]*********************************\n"))
-		fmt.Fprintf(os.Stderr, cfg.Colorize(fmt.Sprintf("[default]aws-k8s-tester eks delete cluster [light_magenta]FAIL [default](%v)\n", err)))
+		fmt.Fprintf(logWriter, cfg.Colorize("\n\n\n[yellow]*********************************\n"))
+		fmt.Fprintf(logWriter, cfg.Colorize(fmt.Sprintf("[default]aws-k8s-tester eks delete cluster [light_magenta]FAIL [default](%v)\n", err)))
 		os.Exit(1)
 	}
 
-	fmt.Fprintf(os.Stderr, cfg.Colorize("\n\n\n[yellow]*********************************\n"))
-	fmt.Fprintf(os.Stderr, cfg.Colorize("[default]aws-k8s-tester eks delete cluster [light_green]SUCCESS\n"))
+	fmt.Fprintf(logWriter, cfg.Colorize("\n\n\n[yellow]*********************************\n"))
+	fmt.Fprintf(logWriter, cfg.Colorize("[default]aws-k8s-tester eks delete cluster [light_green]SUCCESS\n"))
 }
