@@ -23,7 +23,8 @@ func New(suffix string, wr io.Writer) (s Spinner) {
 		wr = os.Stderr
 	}
 	s = Spinner{wr: wr, Spinner: spinner.New(sets, 100*time.Millisecond, spinner.WithWriter(wr))}
-	s.Suffix = " " + strings.TrimSpace(suffix)
+	s.Prefix = "⛵ "
+	s.Suffix = "  ⚓ " + strings.TrimSpace(suffix)
 	s.FinalMSG = "\n"
 	return s
 }
@@ -34,7 +35,7 @@ type Spinner struct {
 }
 
 func (s Spinner) Start() {
-	fmt.Fprintf(s.wr, "\n")
+	fmt.Fprintf(s.wr, "\n\n")
 	s.Spinner.Start()
 }
 
