@@ -204,7 +204,7 @@ func (ts *tester) waitForNodes(mngName string, retriesLeft int) error {
 		case <-time.After(5 * time.Second):
 		}
 
-		nodes, err := ts.cfg.K8SClient.ListNodes(150, 5*time.Second)
+		nodes, err := ts.cfg.K8SClient.ListNodes(1000, 5*time.Second)
 		if err != nil {
 			ts.cfg.Logger.Warn("get nodes failed", zap.Error(err))
 			continue

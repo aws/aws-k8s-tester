@@ -151,7 +151,7 @@ func (ts *tester) Upgrade(mngName string) (err error) {
 		wait.WithQueryFunc(func() {
 			fmt.Fprintf(ts.cfg.LogWriter, "\n")
 			ts.cfg.Logger.Info("listing nodes while polling mng update status", zap.String("mng-name", mngName))
-			nodes, err := ts.cfg.K8SClient.ListNodes(150, 5*time.Second)
+			nodes, err := ts.cfg.K8SClient.ListNodes(1000, 5*time.Second)
 			if err != nil {
 				ts.cfg.Logger.Warn("failed to list nodes while polling mng update status", zap.Error(err))
 				return
