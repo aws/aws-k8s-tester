@@ -431,7 +431,7 @@ func getDefaultParameters() *Parameters {
 		RoleCreate:          true,
 		VPCCreate:           true,
 		SigningName:         "eks",
-		Version:             "1.16",
+		Version:             "1.17",
 		EncryptionCMKCreate: true,
 	}
 }
