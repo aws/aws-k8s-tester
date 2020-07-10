@@ -791,10 +791,11 @@ func (ts *Tester) Up() (err error) {
 
 		if err == nil {
 			if ts.cfg.Status.Up {
-				fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
-				fmt.Fprintf(ts.logWriter, ts.color("[light_green]SSH [default](%q)\n"), ts.cfg.ConfigPath)
-				fmt.Fprintln(ts.logWriter, ts.cfg.SSHCommands())
-
+				if ts.cfg.TotalNodes < 10 {
+					fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+					fmt.Fprintf(ts.logWriter, ts.color("[light_green]SSH [default](%q)\n"), ts.cfg.ConfigPath)
+					fmt.Fprintln(ts.logWriter, ts.cfg.SSHCommands())
+				}
 				fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 				fmt.Fprintf(ts.logWriter, ts.color("[light_green]kubectl [default](%q)\n"), ts.cfg.ConfigPath)
 				fmt.Fprintln(ts.logWriter, ts.cfg.KubectlCommands())
@@ -819,10 +820,11 @@ func (ts *Tester) Up() (err error) {
 
 		if !ts.cfg.OnFailureDelete {
 			if ts.cfg.Status.Up {
-				fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
-				fmt.Fprintf(ts.logWriter, ts.color("[light_green]SSH [default](%q)\n"), ts.cfg.ConfigPath)
-				fmt.Fprintln(ts.logWriter, ts.cfg.SSHCommands())
-
+				if ts.cfg.TotalNodes < 10 {
+					fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+					fmt.Fprintf(ts.logWriter, ts.color("[light_green]SSH [default](%q)\n"), ts.cfg.ConfigPath)
+					fmt.Fprintln(ts.logWriter, ts.cfg.SSHCommands())
+				}
 				fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 				fmt.Fprintf(ts.logWriter, ts.color("[light_green]kubectl [default](%q)\n"), ts.cfg.ConfigPath)
 				fmt.Fprintln(ts.logWriter, ts.cfg.KubectlCommands())
@@ -844,10 +846,11 @@ func (ts *Tester) Up() (err error) {
 		}
 
 		if ts.cfg.Status.Up {
-			fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
-			fmt.Fprintf(ts.logWriter, ts.color("[light_green]SSH [default](%q)\n"), ts.cfg.ConfigPath)
-			fmt.Fprintln(ts.logWriter, ts.cfg.SSHCommands())
-
+			if ts.cfg.TotalNodes < 10 {
+				fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+				fmt.Fprintf(ts.logWriter, ts.color("[light_green]SSH [default](%q)\n"), ts.cfg.ConfigPath)
+				fmt.Fprintln(ts.logWriter, ts.cfg.SSHCommands())
+			}
 			fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 			fmt.Fprintf(ts.logWriter, ts.color("[light_green]kubectl [default](%q)\n"), ts.cfg.ConfigPath)
 			fmt.Fprintln(ts.logWriter, ts.cfg.KubectlCommands())

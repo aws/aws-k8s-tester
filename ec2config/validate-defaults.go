@@ -338,6 +338,7 @@ func (cfg *Config) validateASGs() error {
 		return fmt.Errorf("ASGs %d exceeds maximum number of ASGs which is %d", n, ASGsMaxLimit)
 	}
 	names, processed := make(map[string]struct{}), make(map[string]ASG)
+	total := int64(0)
 	for k, cur := range cfg.ASGs {
 		k = strings.ReplaceAll(k, "GetRef.Name", cfg.Name)
 		cur.Name = strings.ReplaceAll(cur.Name, "GetRef.Name", cfg.Name)
@@ -453,10 +454,12 @@ func (cfg *Config) validateASGs() error {
 		case false: // use existing one, or don't run any SSM
 		}
 
+		total += cur.ASGDesiredCapacity
 		processed[k] = cur
 	}
 
 	cfg.ASGs = processed
+	cfg.TotalNodes = total
 	return nil
 }
 

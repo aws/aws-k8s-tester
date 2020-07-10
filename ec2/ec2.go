@@ -171,10 +171,11 @@ func (ts *Tester) Up() (err error) {
 
 		if err == nil {
 			if ts.cfg.Up {
-				fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
-
-				ts.lg.Sugar().Infof("SSH (%s)", ts.cfg.ConfigPath)
-				fmt.Fprintln(ts.logWriter, ts.cfg.SSHCommands())
+				if ts.cfg.TotalNodes < 10 {
+					fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+					fmt.Fprintf(ts.logWriter, ts.color("[light_green]SSH [default](%q)\n"), ts.cfg.ConfigPath)
+					fmt.Fprintln(ts.logWriter, ts.cfg.SSHCommands())
+				}
 
 				ts.lg.Info("Up succeeded",
 					zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
@@ -194,10 +195,11 @@ func (ts *Tester) Up() (err error) {
 
 		if !ts.cfg.OnFailureDelete {
 			if ts.cfg.Up {
-				fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
-
-				ts.lg.Sugar().Infof("SSH (%s)", ts.cfg.ConfigPath)
-				fmt.Fprintln(ts.logWriter, ts.cfg.SSHCommands())
+				if ts.cfg.TotalNodes < 10 {
+					fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+					fmt.Fprintf(ts.logWriter, ts.color("[light_green]SSH [default](%q)\n"), ts.cfg.ConfigPath)
+					fmt.Fprintln(ts.logWriter, ts.cfg.SSHCommands())
+				}
 			}
 
 			ts.lg.Warn("Up failed",
@@ -213,10 +215,11 @@ func (ts *Tester) Up() (err error) {
 		}
 
 		if ts.cfg.Up {
-			fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
-
-			ts.lg.Sugar().Infof("SSH (%s)", ts.cfg.ConfigPath)
-			fmt.Fprintln(ts.logWriter, ts.cfg.SSHCommands())
+			if ts.cfg.TotalNodes < 10 {
+				fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+				fmt.Fprintf(ts.logWriter, ts.color("[light_green]SSH [default](%q)\n"), ts.cfg.ConfigPath)
+				fmt.Fprintln(ts.logWriter, ts.cfg.SSHCommands())
+			}
 		}
 		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 		fmt.Fprintf(ts.logWriter, ts.color("🔥 💀 👽 😱 😡 (-_-) [light_magenta]UP FAIL\n"))
@@ -254,9 +257,9 @@ func (ts *Tester) Up() (err error) {
 		zap.String("name", ts.cfg.Name),
 	)
 	defer ts.cfg.Sync()
+
 	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 	fmt.Fprintf(ts.logWriter, ts.color("[light_green]createS3 [default](%q)\n"), ts.cfg.ConfigPath)
-
 	if err := catchInterrupt(
 		ts.lg,
 		ts.stopCreationCh,
@@ -266,9 +269,9 @@ func (ts *Tester) Up() (err error) {
 	); err != nil {
 		return err
 	}
+
 	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 	fmt.Fprintf(ts.logWriter, ts.color("[light_green]createRole [default](%q)\n"), ts.cfg.ConfigPath)
-
 	if err := catchInterrupt(
 		ts.lg,
 		ts.stopCreationCh,
@@ -278,9 +281,9 @@ func (ts *Tester) Up() (err error) {
 	); err != nil {
 		return err
 	}
+
 	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 	fmt.Fprintf(ts.logWriter, ts.color("[light_green]createVPC [default](%q)\n"), ts.cfg.ConfigPath)
-
 	if err := catchInterrupt(
 		ts.lg,
 		ts.stopCreationCh,
@@ -290,9 +293,9 @@ func (ts *Tester) Up() (err error) {
 	); err != nil {
 		return err
 	}
+
 	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 	fmt.Fprintf(ts.logWriter, ts.color("[light_green]createKeyPair [default](%q)\n"), ts.cfg.ConfigPath)
-
 	if err := catchInterrupt(
 		ts.lg,
 		ts.stopCreationCh,
@@ -302,9 +305,9 @@ func (ts *Tester) Up() (err error) {
 	); err != nil {
 		return err
 	}
+
 	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 	fmt.Fprintf(ts.logWriter, ts.color("[light_green]createASGs [default](%q)\n"), ts.cfg.ConfigPath)
-
 	if err := catchInterrupt(
 		ts.lg,
 		ts.stopCreationCh,
@@ -314,9 +317,9 @@ func (ts *Tester) Up() (err error) {
 	); err != nil {
 		return err
 	}
+
 	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 	fmt.Fprintf(ts.logWriter, ts.color("[light_green]createSSM [default](%q)\n"), ts.cfg.ConfigPath)
-
 	if err := catchInterrupt(
 		ts.lg,
 		ts.stopCreationCh,

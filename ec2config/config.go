@@ -186,6 +186,9 @@ type Config struct {
 	ASGsLogsDir string `json:"asgs-logs-dir,omitempty"`
 	// ASGs is a map from each ASG name to EC2 ASG.
 	ASGs map[string]ASG `json:"asgs"`
+
+	// TotalNodes is the total number of nodes from all ASGs.
+	TotalNodes int64 `json:"total-nodes" read-only:"true"`
 }
 
 func (c Config) Colorize(input string) string {
