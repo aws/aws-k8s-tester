@@ -641,7 +641,7 @@ func (e *eks) checkHealth() error {
 	println()
 
 	fmt.Printf("\n\"kubectl get pods -n=kube-system\" output:\n")
-	pods, err := e.listPods("kube-system", 150, 5*time.Second)
+	pods, err := e.listPods("kube-system", 150, 5*time.Second, 3)
 	if err != nil {
 		return fmt.Errorf("failed to list pods %v", err)
 	}
@@ -947,17 +947,30 @@ func (e *eks) listCSRs(batchLimit int64, batchInterval time.Duration) (csrs []ce
 }
 
 func (e *eks) ListPods(namespace string, batchLimit int64, batchInterval time.Duration) ([]v1.Pod, error) {
-	ns, err := e.listPods(namespace, batchLimit, batchInterval)
+	ns, err := e.listPods(namespace, batchLimit, batchInterval, 5)
 	return ns, err
 }
 
-func (e *eks) listPods(namespace string, batchLimit int64, batchInterval time.Duration) (pods []v1.Pod, err error) {
+func (e *eks) listPods(
+	namespace string,
+	batchLimit int64,
+	batchInterval time.Duration,
+	retryLeft int) (pods []v1.Pod, err error) {
 	rs := &v1.PodList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		rs, err = e.getClient().CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{Limit: batchLimit, Continue: rs.Continue})
 		cancel()
 		if err != nil {
+			if retryLeft > 0 &&
+				!IsRetryableAPIError(err) &&
+				(strings.Contains(err.Error(), "too old to display a consistent") ||
+					strings.Contains(err.Error(), "inconsistent")) {
+				// e.g. The provided continue parameter is too old to display a consistent list result. You can start a new list without the continue parameter, or use the continue token in this response to retrieve the remainder of the results. Continuing with the provided token results in an inconsistent list - objects that were created, modified, or deleted between the time the first chunk was returned and now may show up in the list.
+				e.cfg.Logger.Warn("stale list response, retrying for consistent list", zap.Error(err))
+				time.Sleep(15 * time.Second)
+				return e.listPods(namespace, batchLimit, batchInterval, retryLeft-1)
+			}
 			return nil, err
 		}
 		pods = append(pods, rs.Items...)
