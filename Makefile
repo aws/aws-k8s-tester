@@ -24,14 +24,18 @@ docker:
 build:
 	RELEASE_VERSION=$(AKT_TAG) ./scripts/build.sh
 
-# Release latest Aws-K8s-Tester to ECR.
+# release latest aws-k8s-tester to ECR
 docker-push:
 	eval $$(aws ecr get-login --registry-ids $(AKT_AWS_ACCOUNT_ID) --no-include-email --region $(AKT_AWS_REGION))
 	docker push $(AKT_AWS_ACCOUNT_ID).dkr.ecr.$(AKT_AWS_REGION).amazonaws.com/$(AKT_IMG_NAME):$(AKT_TAG);
 
-# Release latest Aws-K8s-Tester to S3.
+# release latest aws-k8s-tester to S3
 s3-push: build
-	@if [ $(AKT_TAG) -ne "latest" ]; then echo "uploading tagged aws-k8s-tester binary"; aws s3 cp --region $(AKT_AWS_REGION) ./bin/aws-k8s-tester-$(AKT_TAG)-linux-amd64 $(AKT_S3_PATH); else echo "skipping uploading tagged aws-k8s-tester binary"; fi
+ifeq ("$(AKT_TAG)","latest")
+	echo "skipping uploading tagged $(AKT_TAG) aws-k8s-tester binary";
+else
+	echo "uploading tagged $(AKT_TAG) aws-k8s-tester binary"; aws s3 cp --region $(AKT_AWS_REGION) ./bin/aws-k8s-tester-$(AKT_TAG)-linux-amd64 $(AKT_S3_PATH);
+endif
 	aws s3 cp --region $(AKT_AWS_REGION) ./bin/aws-k8s-tester-$(AKT_TAG)-linux-amd64 $(AKT_S3_PREFIX)/aws-k8s-tester-latest-linux-amd64
 	aws s3 ls s3://eks-prow/bin/aws-k8s-tester/
 
