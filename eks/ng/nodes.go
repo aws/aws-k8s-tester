@@ -410,7 +410,7 @@ func (ts *tester) createASGs() error {
               cluster-certificate = "%s"
               api-server = "%s"
               [settings.kubernetes.node-labels]
-              NodeType = "normal"
+              NodeType = "regular"
               AMIType = "%s"
               NGType = "custom"
               NGName = "%s"

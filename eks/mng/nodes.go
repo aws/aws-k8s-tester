@@ -192,7 +192,7 @@ func (ts *tester) createASGs() (err error) {
 					"aws-k8s-tester-version": aws.String(version.ReleaseVersion),
 				},
 				Labels: map[string]*string{
-					"NodeType": aws.String("normal"),
+					"NodeType": aws.String("regular"),
 					"AMIType":  aws.String(cur.AMIType),
 					"NGType":   aws.String("managed"),
 					"NGName":   aws.String(cur.Name),

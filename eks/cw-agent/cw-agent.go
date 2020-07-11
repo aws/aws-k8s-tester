@@ -712,6 +712,14 @@ func (ts *tester) _checkCWAgentPods() error {
 			break
 		}
 		if !ready {
+			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			output, err := exec.New().CommandContext(ctx, descArgsPods[0], descArgsPods[1:]...).CombinedOutput()
+			cancel()
+			outDesc := string(output)
+			if err != nil {
+				ts.cfg.Logger.Warn("'kubectl describe' failed", zap.Error(err))
+			}
+			fmt.Fprintf(ts.cfg.LogWriter, "\n'%s' output:\n\n%s\n\n", descCmdPods, outDesc)
 			ts.cfg.Logger.Warn("pod is not ready yet",
 				zap.Int64("current-ready-pods", readyPods),
 				zap.Int64("target-ready-pods", targetPods),
