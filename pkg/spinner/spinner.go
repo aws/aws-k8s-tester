@@ -44,7 +44,7 @@ func (s Spinner) Restart() {
 	if s.sp != nil {
 		s.sp.Start()
 	} else {
-		fmt.Fprintf(s.wr, s.suffix+"\n")
+		fmt.Fprintf(s.wr, "🏊 🚣 ⛵  ⚓ "+s.suffix+"\n")
 	}
 }
 
