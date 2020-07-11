@@ -750,16 +750,17 @@ func (ts *tester) _checkCWAgentPods() error {
 			}
 			fmt.Fprintf(ts.cfg.LogWriter, "\n'%s' output:\n\n%s\n\n", logsCmd, outLogs)
 		}
-
-		ts.cfg.Logger.Info("checked pod, ready",
-			zap.Int64("current-ready-nodes", readyNodes),
-			zap.Int64("target-ready-nodes", targetNodes),
-			zap.Int64("total-nodes", ts.cfg.EKSConfig.TotalNodes),
-			zap.String("pod-name", pod.Name),
-			zap.String("app-name", appName),
-			zap.String("status-type", statusType),
-			zap.String("status", status),
-		)
+		if readyNodes%100 == 0 {
+			ts.cfg.Logger.Info("checked pod, ready",
+				zap.Int64("current-ready-nodes", readyNodes),
+				zap.Int64("target-ready-nodes", targetNodes),
+				zap.Int64("total-nodes", ts.cfg.EKSConfig.TotalNodes),
+				zap.String("pod-name", pod.Name),
+				zap.String("app-name", appName),
+				zap.String("status-type", statusType),
+				zap.String("status", status),
+			)
+		}
 	}
 	ts.cfg.Logger.Info("checking cw agent pods",
 		zap.Int64("current-ready-nodes", readyNodes),
