@@ -99,6 +99,9 @@ func (ts *tester) Create() (err error) {
 		return err
 	}
 	timeout := 5*time.Minute + 5*time.Minute*time.Duration(ts.cfg.EKSConfig.AddOnJobsEcho.Completes)
+	if timeout > 3*time.Hour {
+		timeout = 3 * time.Hour
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	var pods []v1.Pod
 	_, pods, err = k8s_client.WaitForJobCompletes(

@@ -129,6 +129,9 @@ func (ts *tester) Create() (err error) {
 		return err
 	}
 	timeout := 15*time.Minute + ts.cfg.EKSConfig.AddOnStresserRemote.Duration
+	if timeout > 5*time.Hour {
+		timeout = 5 * time.Hour
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	var pods []v1.Pod
 	_, pods, err = k8s_client.WaitForJobCompletes(
