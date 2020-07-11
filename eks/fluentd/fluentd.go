@@ -1000,7 +1000,7 @@ func (ts *tester) checkFluentdPods() (err error) {
 }
 
 func (ts *tester) _checkFluentdPods() error {
-	pods, err := ts.cfg.K8SClient.ListPods(ts.cfg.EKSConfig.AddOnFluentd.Namespace, 150, 5*time.Second)
+	pods, err := ts.cfg.K8SClient.ListPods(ts.cfg.EKSConfig.AddOnFluentd.Namespace, 1000, 5*time.Second)
 	if err != nil {
 		ts.cfg.Logger.Warn("listing pods failed", zap.Error(err))
 		return err
@@ -1017,15 +1017,15 @@ func (ts *tester) _checkFluentdPods() error {
 		return errors.New("no pod found in " + ts.cfg.EKSConfig.AddOnFluentd.Namespace)
 	}
 
-	targetNodes := int64(1)
+	targetPods := int64(1)
 	if ts.cfg.EKSConfig.TotalNodes > 1 {
-		targetNodes = ts.cfg.EKSConfig.TotalNodes / int64(2)
+		targetPods = ts.cfg.EKSConfig.TotalNodes / int64(2)
 	}
 	ts.cfg.Logger.Info("checking fluentd pods",
+		zap.Int64("target-ready-pods", targetPods),
 		zap.Int64("total-nodes", ts.cfg.EKSConfig.TotalNodes),
-		zap.Int64("target-nodes", targetNodes),
 	)
-	readyNodes := int64(0)
+	readyPods := int64(0)
 	for _, pod := range pods {
 		appName, ok := pod.Labels["app.kubernetes.io/name"]
 		if !ok || appName != fluentdAppName {
@@ -1070,14 +1070,14 @@ func (ts *tester) _checkFluentdPods() error {
 			status = fmt.Sprintf("%s", cond.Status)
 			if cond.Type == v1.PodInitialized || cond.Type == v1.PodReady {
 				ready = true
-				readyNodes++
+				readyPods++
 			}
 			break
 		}
 		if !ready {
 			ts.cfg.Logger.Warn("pod is not ready yet",
-				zap.Int64("current-ready-nodes", readyNodes),
-				zap.Int64("target-ready-nodes", targetNodes),
+				zap.Int64("current-ready-pods", readyPods),
+				zap.Int64("target-ready-pods", targetPods),
 				zap.Int64("total-nodes", ts.cfg.EKSConfig.TotalNodes),
 				zap.String("pod-name", pod.Name),
 				zap.String("app-name", appName),
@@ -1103,7 +1103,7 @@ func (ts *tester) _checkFluentdPods() error {
 			ts.cfg.Logger.Warn("'kubectl logs' failed", zap.Error(err))
 			continue
 		}
-		if readyNodes < 3 { // only logs first 3 nodes
+		if readyPods < 3 { // only logs first 3 nodes
 			fmt.Fprintf(ts.cfg.LogWriter, "\n'%s' output:\n\n%s\n\n", descCmdPods, outDesc)
 			logLines := strings.Split(outLogs, "\n")
 			logLinesN := len(logLines)
@@ -1113,10 +1113,10 @@ func (ts *tester) _checkFluentdPods() error {
 			}
 			fmt.Fprintf(ts.cfg.LogWriter, "\n'%s' output:\n\n%s\n\n", logsCmd, outLogs)
 		}
-		if readyNodes%100 == 0 {
-			ts.cfg.Logger.Info("checked pod, ready",
-				zap.Int64("current-ready-nodes", readyNodes),
-				zap.Int64("target-ready-nodes", targetNodes),
+		if readyPods%100 == 0 {
+			ts.cfg.Logger.Info("found a ready pod",
+				zap.Int64("current-ready-pods", readyPods),
+				zap.Int64("target-ready-pods", targetPods),
 				zap.Int64("total-nodes", ts.cfg.EKSConfig.TotalNodes),
 				zap.String("pod-name", pod.Name),
 				zap.String("app-name", appName),
@@ -1126,11 +1126,11 @@ func (ts *tester) _checkFluentdPods() error {
 		}
 	}
 	ts.cfg.Logger.Info("checking fluentd pods",
-		zap.Int64("current-ready-nodes", readyNodes),
-		zap.Int64("target-ready-nodes", targetNodes),
+		zap.Int64("current-ready-pods", readyPods),
+		zap.Int64("target-ready-pods", targetPods),
 		zap.Int64("total-nodes", ts.cfg.EKSConfig.TotalNodes),
 	)
-	if readyNodes < targetNodes {
+	if readyPods < targetPods {
 		return errors.New("not enough fluentd pods ready")
 	}
 
