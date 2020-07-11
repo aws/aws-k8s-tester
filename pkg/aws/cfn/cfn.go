@@ -38,7 +38,7 @@ func Poll(
 	pollInterval time.Duration,
 ) <-chan StackStatus {
 	now := time.Now()
-	sp := spinner.New("Waiting for CFN stack "+desiredStackStatus, logWriter)
+	sp := spinner.New(logWriter, "Waiting for CFN stack "+desiredStackStatus)
 
 	lg.Info("polling stack",
 		zap.String("stack-id", stackID),

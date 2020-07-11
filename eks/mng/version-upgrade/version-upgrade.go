@@ -84,7 +84,7 @@ func (ts *tester) Upgrade(mngName string) (err error) {
 		ts.cfg.EKSConfig.Sync()
 	}()
 
-	sp := spinner.New("Waiting for before starting MNG upgrade "+mngName, ts.cfg.LogWriter)
+	sp := spinner.New(ts.cfg.LogWriter, "Waiting for before starting MNG upgrade "+mngName)
 	ts.cfg.Logger.Info("waiting before starting MNG upgrade",
 		zap.String("cluster-name", ts.cfg.EKSConfig.Name),
 		zap.String("mng-name", mngName),

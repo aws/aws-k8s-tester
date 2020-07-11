@@ -60,7 +60,7 @@ func Poll(
 	ret.applyOpts(opts)
 
 	now := time.Now()
-	sp := spinner.New("Waiting for cluster status "+desiredClusterStatus, logWriter)
+	sp := spinner.New(logWriter, "Waiting for cluster status "+desiredClusterStatus)
 
 	lg.Info("polling cluster",
 		zap.String("cluster-name", clusterName),

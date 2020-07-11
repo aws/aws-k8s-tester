@@ -53,7 +53,7 @@ func Poll(
 ) <-chan FargateProfileStatus {
 
 	now := time.Now()
-	sp := spinner.New("Waiting for Fargate profile status "+desiredStatus, logWriter)
+	sp := spinner.New(logWriter, "Waiting for Fargate profile status "+desiredStatus)
 
 	lg.Info("polling fargate profile",
 		zap.String("cluster-name", clusterName),

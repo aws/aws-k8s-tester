@@ -57,7 +57,7 @@ func Poll(
 	ret.applyOpts(opts)
 
 	now := time.Now()
-	sp := spinner.New("Waiting for Managed Node Group status "+desiredNodeGroupStatus, logWriter)
+	sp := spinner.New(logWriter, "Waiting for Managed Node Group status "+desiredNodeGroupStatus)
 
 	lg.Info("polling mng",
 		zap.String("cluster-name", clusterName),
@@ -248,7 +248,7 @@ func PollUpdate(
 	ret.applyOpts(opts)
 
 	now := time.Now()
-	sp := spinner.New("Waiting for Managed Node Group update status "+desiredUpdateStatus, logWriter)
+	sp := spinner.New(logWriter, "Waiting for Managed Node Group update status "+desiredUpdateStatus)
 
 	lg.Info("polling mng update",
 		zap.String("cluster-name", clusterName),

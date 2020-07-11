@@ -55,7 +55,7 @@ func (ts *tester) Create() (err error) {
 		return nil
 	}
 
-	sp := spinner.New("Waiting before cluster version upgrade "+ts.cfg.EKSConfig.Name, ts.cfg.LogWriter)
+	sp := spinner.New(ts.cfg.LogWriter, "Waiting before cluster version upgrade "+ts.cfg.EKSConfig.Name)
 	ts.cfg.Logger.Info("waiting before cluster version upgrade", zap.String("wait-duration", ts.cfg.EKSConfig.AddOnClusterVersionUpgrade.WaitBeforeUpgradeString))
 	sp.Restart()
 	select {

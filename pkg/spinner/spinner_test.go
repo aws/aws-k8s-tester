@@ -8,8 +8,8 @@ import (
 )
 
 func TestSpinner(t *testing.T) {
-	s := New("hello", os.Stderr)
-	s.Start()
+	s := New(os.Stderr, "hello")
+	s.Restart()
 	time.Sleep(3 * time.Second)
 	s.Stop()
 	fmt.Println("hello")
