@@ -1087,23 +1087,23 @@ func (ts *tester) _checkFluentdPods() error {
 			continue
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-		output, err := exec.New().CommandContext(ctx, descArgsPods[0], descArgsPods[1:]...).CombinedOutput()
-		cancel()
-		outDesc := string(output)
-		if err != nil {
-			ts.cfg.Logger.Warn("'kubectl describe' failed", zap.Error(err))
-			continue
-		}
-		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
-		output, err = exec.New().CommandContext(ctx, logArgs[0], logArgs[1:]...).CombinedOutput()
-		cancel()
-		outLogs := string(output)
-		if err != nil {
-			ts.cfg.Logger.Warn("'kubectl logs' failed", zap.Error(err))
-			continue
-		}
-		if readyPods < 3 { // only logs first 3 nodes
+		if readyPods < 3 { // only first 3 nodes
+			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			output, err := exec.New().CommandContext(ctx, descArgsPods[0], descArgsPods[1:]...).CombinedOutput()
+			cancel()
+			outDesc := string(output)
+			if err != nil {
+				ts.cfg.Logger.Warn("'kubectl describe' failed", zap.Error(err))
+				continue
+			}
+			ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
+			output, err = exec.New().CommandContext(ctx, logArgs[0], logArgs[1:]...).CombinedOutput()
+			cancel()
+			outLogs := string(output)
+			if err != nil {
+				ts.cfg.Logger.Warn("'kubectl logs' failed", zap.Error(err))
+				continue
+			}
 			fmt.Fprintf(ts.cfg.LogWriter, "\n'%s' output:\n\n%s\n\n", descCmdPods, outDesc)
 			logLines := strings.Split(outLogs, "\n")
 			logLinesN := len(logLines)
