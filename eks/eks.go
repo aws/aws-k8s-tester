@@ -839,7 +839,7 @@ func (ts *Tester) Up() (err error) {
 
 			ts.lg.Sugar().Infof("Up.defer end (%s, %s)", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 			fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
-			fmt.Fprintf(ts.logWriter, ts.color("\n\n🔥 💀 👽 😱 😡 ⛈ (-_-) [light_magenta]UP FAIL\n\n\n"))
+			fmt.Fprintf(ts.logWriter, ts.color("\n\n🔥 💀 👽 😱 😡 ⛈   (-_-) [light_magenta]UP FAIL\n\n\n"))
 			fmt.Fprintf(ts.logWriter, "\n\n# to delete cluster\naws-k8s-tester eks delete cluster --path %s\n\n", ts.cfg.ConfigPath)
 			ts.logFile.Sync()
 			return
@@ -857,7 +857,7 @@ func (ts *Tester) Up() (err error) {
 		}
 		fmt.Fprintf(ts.logWriter, ts.color("\n\n\n[light_magenta]UP FAIL ERROR:\n\n[default]%v\n\n\n"), err)
 		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
-		fmt.Fprintf(ts.logWriter, ts.color("🔥 💀 👽 😱 😡 ⛈ (-_-) [light_magenta]UP FAIL\n"))
+		fmt.Fprintf(ts.logWriter, ts.color("🔥 💀 👽 😱 😡 ⛈   (-_-) [light_magenta]UP FAIL\n"))
 		fmt.Fprintf(ts.logWriter, "\n\n# to delete cluster\naws-k8s-tester eks delete cluster --path %s\n\n", ts.cfg.ConfigPath)
 
 		ts.lg.Warn("Up failed; reverting resource creation",
@@ -883,7 +883,7 @@ func (ts *Tester) Up() (err error) {
 		}
 		fmt.Fprintf(ts.logWriter, ts.color("\n\n\n[light_magenta]UP FAIL ERROR:\n\n[default]%v\n\n\n"), err)
 		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
-		fmt.Fprintf(ts.logWriter, ts.color("\n\n🔥 💀 👽 😱 😡 ⛈ (-_-) [light_magenta]UP FAIL\n\n\n"))
+		fmt.Fprintf(ts.logWriter, ts.color("\n\n🔥 💀 👽 😱 😡 ⛈   (-_-) [light_magenta]UP FAIL\n\n\n"))
 		fmt.Fprintf(ts.logWriter, "\n\n# to delete cluster\naws-k8s-tester eks delete cluster --path %s\n\n", ts.cfg.ConfigPath)
 
 		ts.lg.Sugar().Infof("Up.defer end (%s, %s)", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
@@ -1334,7 +1334,7 @@ func (ts *Tester) down() (err error) {
 		} else {
 			fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 			fmt.Fprintf(ts.logWriter, ts.color("[light_blue]DOWN DEFER START [default](%q)\n"), ts.cfg.ConfigPath)
-			fmt.Fprintf(ts.logWriter, ts.color("🔥 💀 👽 😱 😡 ⛈ (-_-) [light_magenta]DOWN FAIL\n"))
+			fmt.Fprintf(ts.logWriter, ts.color("🔥 💀 👽 😱 😡 ⛈   (-_-) [light_magenta]DOWN FAIL\n"))
 
 			ts.lg.Info("failed Down",
 				zap.Error(err),
