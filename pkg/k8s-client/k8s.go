@@ -519,9 +519,9 @@ func WaitForJobCompletes(
 	pollInterval time.Duration,
 	namespace string,
 	jobName string,
-	target int,
+	targetCompletes int,
 	opts ...OpOption) (job *batchv1.Job, pods []apiv1.Pod, err error) {
-	job, _, pods, err = waitForJobCompletes(false, ctx, lg, logWriter, stopc, k8sClient, initialWait, pollInterval, namespace, jobName, target, opts...)
+	job, _, pods, err = waitForJobCompletes(false, ctx, lg, logWriter, stopc, k8sClient, initialWait, pollInterval, namespace, jobName, targetCompletes, opts...)
 	return job, pods, err
 }
 
@@ -537,9 +537,9 @@ func WaitForCronJobCompletes(
 	pollInterval time.Duration,
 	namespace string,
 	jobName string,
-	target int,
+	targetCompletes int,
 	opts ...OpOption) (cronJob *batchv1beta1.CronJob, pods []apiv1.Pod, err error) {
-	_, cronJob, pods, err = waitForJobCompletes(true, ctx, lg, logWriter, stopc, k8sClient, initialWait, pollInterval, namespace, jobName, target, opts...)
+	_, cronJob, pods, err = waitForJobCompletes(true, ctx, lg, logWriter, stopc, k8sClient, initialWait, pollInterval, namespace, jobName, targetCompletes, opts...)
 	return cronJob, pods, err
 }
 
@@ -570,7 +570,7 @@ func waitForJobCompletes(
 	pollInterval time.Duration,
 	namespace string,
 	jobName string,
-	target int,
+	targetCompletes int,
 	opts ...OpOption) (job *batchv1.Job, cronJob *batchv1beta1.CronJob, pods []apiv1.Pod, err error) {
 
 	ret := Op{}
@@ -589,7 +589,7 @@ func waitForJobCompletes(
 		zap.String("poll-interval", pollInterval.String()),
 		zap.String("ctx-duration-left", ctxutil.DurationTillDeadline(ctx).String()),
 		zap.String("ctx-time-left", ctxutil.TimeLeftTillDeadline(ctx)),
-		zap.Int("target", target),
+		zap.Int("target-completes", targetCompletes),
 	)
 	sp.Restart()
 	select {
@@ -607,7 +607,7 @@ func waitForJobCompletes(
 		default:
 		}
 
-		lg.Info("listing pods to check Job completion")
+		lg.Info("listing job pods to check Job completion")
 		pods, err = k8sClient.ListPods(namespace, 3000, 3*time.Second)
 		if err != nil {
 			lg.Warn("failed to list Pod", zap.Bool("retriable-error", IsRetryableAPIError(err)), zap.Error(err))
@@ -628,12 +628,12 @@ func waitForJobCompletes(
 				// CronJob
 				match = strings.HasPrefix(item.Name, jobName)
 			}
-			lg.Info("pod",
+			lg.Info("job pod",
 				zap.String("job-name", jobName),
 				zap.String("job-name-from-label", jv),
 				zap.String("pod-name", item.Name),
 				zap.String("pod-status-phase", fmt.Sprintf("%v", item.Status.Phase)),
-				zap.Bool("match", match),
+				zap.Bool("label-match", match),
 			)
 			if !match {
 				continue
@@ -642,13 +642,13 @@ func waitForJobCompletes(
 				podSucceededCnt++
 			}
 		}
-		if podSucceededCnt < target {
-			lg.Warn("poll but not succeeded yet",
+		if podSucceededCnt < targetCompletes {
+			lg.Warn("poll job pods but not succeeded yet",
 				zap.String("namespace", namespace),
 				zap.String("job-name", jobName),
 				zap.Int("total-pods", len(pods)),
 				zap.Int("pod-succeeded-count", podSucceededCnt),
-				zap.Int("target", target),
+				zap.Int("target-completes", targetCompletes),
 				zap.String("ctx-time-left", ctxutil.TimeLeftTillDeadline(ctx)),
 			)
 			if ret.queryFunc != nil {
@@ -656,12 +656,11 @@ func waitForJobCompletes(
 			}
 			return false, nil
 		}
-
-		lg.Info("poll pods",
+		lg.Info("job pods",
 			zap.String("namespace", namespace),
 			zap.String("job-name", jobName),
 			zap.Int("pod-succeeded-count", podSucceededCnt),
-			zap.Int("target", target),
+			zap.Int("target-completes", targetCompletes),
 			zap.String("ctx-time-left", ctxutil.TimeLeftTillDeadline(ctx)),
 		)
 

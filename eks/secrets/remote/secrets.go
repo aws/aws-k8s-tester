@@ -132,7 +132,7 @@ func (ts *tester) Create() (err error) {
 		ts.cfg.LogWriter,
 		ts.cfg.Stopc,
 		ts.cfg.K8SClient,
-		3*time.Minute,
+		time.Minute,
 		10*time.Second,
 		ts.cfg.EKSConfig.AddOnSecretsRemote.Namespace,
 		secretsJobName,
