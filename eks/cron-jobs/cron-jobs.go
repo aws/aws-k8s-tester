@@ -108,6 +108,7 @@ func (ts *tester) Create() (err error) {
 	_, pods, err = k8s_client.WaitForCronJobCompletes(
 		ctx,
 		ts.cfg.Logger,
+		ts.cfg.LogWriter,
 		ts.cfg.Stopc,
 		ts.cfg.K8SClient,
 		3*time.Minute,

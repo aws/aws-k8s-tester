@@ -25,11 +25,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"strings"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/pkg/ctxutil"
+	"github.com/aws/aws-k8s-tester/pkg/spinner"
 	"go.uber.org/zap"
 	batchv1 "k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
@@ -510,6 +512,7 @@ func CreateObject(dynamicClient dynamic.Interface, namespace string, name string
 func WaitForJobCompletes(
 	ctx context.Context,
 	lg *zap.Logger,
+	logWriter io.Writer,
 	stopc chan struct{},
 	k8sClient EKS,
 	initialWait time.Duration,
@@ -518,7 +521,7 @@ func WaitForJobCompletes(
 	jobName string,
 	target int,
 	opts ...OpOption) (job *batchv1.Job, pods []apiv1.Pod, err error) {
-	job, _, pods, err = waitForJobCompletes(false, ctx, lg, stopc, k8sClient, initialWait, pollInterval, namespace, jobName, target, opts...)
+	job, _, pods, err = waitForJobCompletes(false, ctx, lg, logWriter, stopc, k8sClient, initialWait, pollInterval, namespace, jobName, target, opts...)
 	return job, pods, err
 }
 
@@ -527,6 +530,7 @@ func WaitForJobCompletes(
 func WaitForCronJobCompletes(
 	ctx context.Context,
 	lg *zap.Logger,
+	logWriter io.Writer,
 	stopc chan struct{},
 	k8sClient EKS,
 	initialWait time.Duration,
@@ -535,7 +539,7 @@ func WaitForCronJobCompletes(
 	jobName string,
 	target int,
 	opts ...OpOption) (cronJob *batchv1beta1.CronJob, pods []apiv1.Pod, err error) {
-	_, cronJob, pods, err = waitForJobCompletes(true, ctx, lg, stopc, k8sClient, initialWait, pollInterval, namespace, jobName, target, opts...)
+	_, cronJob, pods, err = waitForJobCompletes(true, ctx, lg, logWriter, stopc, k8sClient, initialWait, pollInterval, namespace, jobName, target, opts...)
 	return cronJob, pods, err
 }
 
@@ -559,6 +563,7 @@ func waitForJobCompletes(
 	isCronJob bool,
 	ctx context.Context,
 	lg *zap.Logger,
+	logWriter io.Writer,
 	stopc chan struct{},
 	k8sClient EKS,
 	initialWait time.Duration,
@@ -575,6 +580,7 @@ func waitForJobCompletes(
 		pollInterval = DefaultNamespaceDeletionInterval
 	}
 
+	sp := spinner.New(logWriter, "Waiting for Job completes "+jobName)
 	lg.Info("waiting Job completes",
 		zap.String("namespace", namespace),
 		zap.String("job-name", jobName),
@@ -585,10 +591,13 @@ func waitForJobCompletes(
 		zap.String("ctx-time-left", ctxutil.TimeLeftTillDeadline(ctx)),
 		zap.Int("target", target),
 	)
+	sp.Restart()
 	select {
 	case <-stopc:
+		sp.Stop()
 		return nil, nil, nil, errors.New("initial wait aborted")
 	case <-time.After(initialWait):
+		sp.Stop()
 	}
 
 	retryWaitFunc := func() (done bool, err error) {
