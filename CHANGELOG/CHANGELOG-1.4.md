@@ -5,6 +5,20 @@
 
 
 
+## [v1.4.5](https://github.com/aws/aws-k8s-tester/releases/tag/v1.4.5) (2020-07)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.4...v1.4.5).
+
+## `eks`
+
+- Fix [`eks/csrs/remote` job Pod polling](https://github.com/aws/aws-k8s-tester/commit/cd9f9b959606370a895a3768dc63d11a542cb2c4).
+
+
+
+<hr>
+
+
+
 ## [v1.4.4](https://github.com/aws/aws-k8s-tester/releases/tag/v1.4.4) (2020-07-10)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.3...v1.4.4).
