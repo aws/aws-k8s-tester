@@ -626,6 +626,13 @@ aws --debug --cli-read-timeout=5 --cli-connect-timeout=5 sts get-caller-identity
 printf "\n'aws-utils sts' output:\n"
 /aws-utils sts --log-level debug --partition {{.Partition}} --region {{.Region}} || true
 
+printf "\n'aws s3 cp':\n"
+aws s3 cp s3://{{ .S3BucketName }}/{{ .S3Key }} /tmp/$HOSTNAME.s3.output;
+printf "\n"
+echo {{ .S3Key }} contents:
+cat /tmp/$HOSTNAME.s3.output;
+printf "\nSUCCESS IRSA FARGATE TEST: S3 FILE DOWNLOADED!\n\n"
+
 CALLER_ROLE_ARN=$(aws --cli-read-timeout=5 --cli-connect-timeout=5 sts get-caller-identity --query Arn --output text || true)
 printf "\n'aws sts get-caller-identity' role ARN:\n"
 echo $CALLER_ROLE_ARN
@@ -634,12 +641,6 @@ if [[ $CALLER_ROLE_ARN =~ *{{ .RoleName }}* ]]; then
   /aws-utils sts --partition {{.Partition}} --region {{.Region}} --match-contain-role-arn {{ .RoleName }}
 fi
 printf "\nSUCCESS IRSA FARGATE TEST: CALLER_ROLE_ARN FOUND!\n\n"
-
-aws s3 cp s3://{{ .S3BucketName }}/{{ .S3Key }} /tmp/$HOSTNAME.s3.output;
-printf "\n"
-echo {{ .S3Key }} contents:
-cat /tmp/$HOSTNAME.s3.output;
-printf "\nSUCCESS IRSA FARGATE TEST: S3 FILE DOWNLOADED!\n\n"
 
 printf "\n{{ .SleepMessage }}\n\n"
 sleep 86400
