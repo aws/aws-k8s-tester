@@ -33,9 +33,11 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/ctxutil"
 	"github.com/aws/aws-k8s-tester/pkg/spinner"
 	"go.uber.org/zap"
+	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	apiv1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -53,6 +55,8 @@ const (
 	retryBackoffJitter          = 0
 	retryBackoffSteps           = 6
 
+	// DefaultNamespacePollInterval is the default namespace poll interval.
+	DefaultNamespacePollInterval = 15 * time.Second
 	// DefaultNamespaceDeletionInterval is the default namespace deletion interval.
 	DefaultNamespaceDeletionInterval = 15 * time.Second
 	// DefaultNamespaceDeletionTimeout is the default namespace deletion timeout.
@@ -349,16 +353,16 @@ ns, err := ts.cfg.K8SClient.
 	Get(ctx, ts.cfg.EKSConfig.AddOnStresserRemote.Namespace, metav1.GetOptions{})
 cancel()
 if err != nil {
-	ts.cfg.Logger.Warn("failed to get namespace", zap.Error(err))
+	lg.Warn("failed to get namespace", zap.Error(err))
 } else {
 	ns.SetFinalizers(nil)
 	jb, jerr := json.Marshal(ns)
 	if jerr != nil {
-		ts.cfg.Logger.Warn("failed to marshal JSON", zap.Error(jerr))
+		lg.Warn("failed to marshal JSON", zap.Error(jerr))
 	} else {
 		jpath, err := fileutil.WriteTempFile(jb)
 		if err != nil {
-			ts.cfg.Logger.Warn("failed to write JSON", zap.Error(err))
+			lg.Warn("failed to write JSON", zap.Error(err))
 		} else {
 			target := fmt.Sprintf("/api/v1/namespaces/%s/finalize", ts.cfg.EKSConfig.AddOnStresserRemote.Namespace)
 			replaceArgs := []string{
@@ -380,7 +384,7 @@ if err != nil {
 				cancel()
 				out := strings.TrimSpace(string(output))
 				if err != nil {
-					ts.cfg.Logger.Warn("'kubectl replace' failed", zap.Error(err))
+					lg.Warn("'kubectl replace' failed", zap.Error(err))
 				} else {
 					fmt.Printf("\n\n'%s' output:\n\n%s\n\n", replaceCmd, out)
 					fmt.Printf("\n\n'%s' JSON:\n\n%s\n\n", jpath, string(jb))
@@ -556,7 +560,6 @@ metadata:
     job-name: cronjob-echo-1593205200
   name: cronjob-echo-1593205200-2t2tv
   namespace: eks-2020062613-rustcerg03pt-cronjob
-
 */
 
 func waitForJobCompletes(
@@ -572,12 +575,11 @@ func waitForJobCompletes(
 	jobName string,
 	targetCompletes int,
 	opts ...OpOption) (job *batchv1.Job, cronJob *batchv1beta1.CronJob, pods []apiv1.Pod, err error) {
-
 	ret := Op{}
 	ret.applyOpts(opts)
 
 	if pollInterval == 0 {
-		pollInterval = DefaultNamespaceDeletionInterval
+		pollInterval = DefaultNamespacePollInterval
 	}
 
 	sp := spinner.New(logWriter, "Waiting for Job completes "+jobName)
@@ -715,6 +717,104 @@ func waitForJobCompletes(
 	}
 	err = wait.PollImmediate(pollInterval, ctxutil.DurationTillDeadline(ctx), retryWaitFunc)
 	return job, cronJob, pods, err
+}
+
+// WaitForDeploymentCompletes waits till target replicas are ready in the Deployment.
+func WaitForDeploymentCompletes(
+	ctx context.Context,
+	lg *zap.Logger,
+	logWriter io.Writer,
+	stopc chan struct{},
+	k8sClient EKS,
+	initialWait time.Duration,
+	pollInterval time.Duration,
+	namespace string,
+	deploymentName string,
+	targetAvailableReplicas int32,
+	opts ...OpOption) (dp *appsv1.Deployment, err error) {
+	ret := Op{}
+	ret.applyOpts(opts)
+
+	if pollInterval == 0 {
+		pollInterval = DefaultNamespacePollInterval
+	}
+
+	sp := spinner.New(logWriter, "Waiting for Deployment completes "+deploymentName)
+	lg.Info("waiting Deployment completes",
+		zap.String("namespace", namespace),
+		zap.String("job-name", deploymentName),
+		zap.String("initial-wait", initialWait.String()),
+		zap.String("poll-interval", pollInterval.String()),
+		zap.String("ctx-duration-left", ctxutil.DurationTillDeadline(ctx).String()),
+		zap.String("ctx-time-left", ctxutil.TimeLeftTillDeadline(ctx)),
+		zap.Int32("target-available-replicas", targetAvailableReplicas),
+	)
+	sp.Restart()
+	select {
+	case <-stopc:
+		sp.Stop()
+		return nil, errors.New("initial wait aborted")
+	case <-time.After(initialWait):
+		sp.Stop()
+	}
+
+	retryWaitFunc := func() (done bool, err error) {
+		select {
+		case <-stopc:
+			return true, errors.New("wait aborted")
+		default:
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		dp, err = k8sClient.KubernetesClientSet().
+			AppsV1().
+			Deployments(namespace).
+			Get(ctx, deploymentName, metav1.GetOptions{})
+		cancel()
+		if ret.queryFunc != nil {
+			ret.queryFunc()
+		}
+		if err != nil {
+			lg.Warn("failed to get Deployment", zap.Bool("retriable-error", IsRetryableAPIError(err)), zap.Error(err))
+			return false, err
+		}
+
+		var dpCond appsv1.DeploymentCondition
+		for _, cond := range dp.Status.Conditions {
+			if cond.Status != v1.ConditionTrue {
+				continue
+			}
+			dpCond = cond
+			break
+		}
+		lg.Info("fetched Deployment",
+			zap.Int32("desired-replicas", dp.Status.Replicas),
+			zap.Int32("available-replicas", dp.Status.AvailableReplicas),
+			zap.Int32("unavailable-replicas", dp.Status.UnavailableReplicas),
+			zap.Int32("ready-replicas", dp.Status.ReadyReplicas),
+			zap.String("condition-last-updated", dpCond.LastUpdateTime.String()),
+			zap.String("condition-type", string(dpCond.Type)),
+			zap.String("condition-status", string(dpCond.Status)),
+			zap.String("condition-reason", dpCond.Reason),
+			zap.String("condition-message", dpCond.Message),
+		)
+		if dpCond.Type == appsv1.DeploymentReplicaFailure {
+			return true, fmt.Errorf("Deployment %q status %q", deploymentName, dpCond.Type)
+		}
+		if dp.Status.AvailableReplicas >= targetAvailableReplicas {
+			if dpCond.Type == appsv1.DeploymentAvailable {
+				return true, nil
+			}
+			lg.Warn("not all replicas available but more than target replicas; returning",
+				zap.Int32("available", dp.Status.AvailableReplicas),
+				zap.Int32("target", targetAvailableReplicas),
+			)
+			return true, nil
+		}
+		return false, nil
+	}
+	err = wait.PollImmediate(pollInterval, ctxutil.DurationTillDeadline(ctx), retryWaitFunc)
+	return dp, err
 }
 
 // Op represents a Kubernetes client operation.
