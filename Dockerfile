@@ -15,6 +15,7 @@ RUN aws --version
 
 ARG RELEASE_VERSION=latest
 COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/bin/aws-k8s-tester-${RELEASE_VERSION}-linux-amd64 /aws-k8s-tester
+COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/bin/aws-utils-${RELEASE_VERSION}-linux-amd64 /aws-utils
 COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/bin/ec2-utils-${RELEASE_VERSION}-linux-amd64 /ec2-utils
 COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/bin/eks-utils-${RELEASE_VERSION}-linux-amd64 /eks-utils
 COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/bin/etcd-utils-${RELEASE_VERSION}-linux-amd64 /etcd-utils
@@ -26,13 +27,14 @@ COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/_tmp/cl
 COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/_tmp/clusterloader2-testing-load/config.yaml /clusterloader2-test-config.yaml
 COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/_tmp/clusterloader2 /clusterloader2
 RUN rm -rf /go/src/github.com/aws/aws-k8s-tester
-RUN chmod +x /aws-k8s-tester /ec2-utils /eks-utils /etcd-utils /cw-utils /clusterloader2
+RUN chmod +x /aws-k8s-tester /aws-utils /ec2-utils /eks-utils /etcd-utils /cw-utils /clusterloader2
 WORKDIR /
 
 RUN curl -o /kubectl -LO https://storage.googleapis.com/kubernetes-release/release/v1.17.6/bin/linux/amd64/kubectl && chmod +x /kubectl && cp /kubectl /usr/local/bin/kubectl
 RUN ls /
 RUN ls /*.yaml
 RUN aws --version
+RUN /aws-utils version
 RUN /ec2-utils version
 RUN /eks-utils version
 RUN /etcd-utils version
