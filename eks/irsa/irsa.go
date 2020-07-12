@@ -855,90 +855,41 @@ func (ts *tester) deleteDeployment() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
-func (ts *tester) waitDeployment() error {
-	ts.cfg.Logger.Info("waiting for IRSA Deployment")
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	output, err := exec.New().CommandContext(
+func (ts *tester) waitDeployment() (err error) {
+	timeout := 7*time.Minute + time.Duration(ts.cfg.EKSConfig.AddOnIRSA.DeploymentReplicas)*time.Minute
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	_, err = k8s_client.WaitForDeploymentCompletes(
 		ctx,
-		ts.cfg.EKSConfig.KubectlPath,
-		"--kubeconfig="+ts.cfg.EKSConfig.KubeConfigPath,
-		"--namespace="+ts.cfg.EKSConfig.AddOnIRSA.Namespace,
-		"describe",
-		"deployment",
+		ts.cfg.Logger,
+		ts.cfg.LogWriter,
+		ts.cfg.Stopc,
+		ts.cfg.K8SClient,
+		time.Minute,
+		20*time.Second,
+		ts.cfg.EKSConfig.AddOnIRSA.Namespace,
 		irsaDeploymentName,
-	).CombinedOutput()
+		ts.cfg.EKSConfig.AddOnIRSA.DeploymentReplicas,
+		k8s_client.WithQueryFunc(func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			output, err := exec.New().CommandContext(
+				ctx,
+				ts.cfg.EKSConfig.KubectlPath,
+				"--kubeconfig="+ts.cfg.EKSConfig.KubeConfigPath,
+				"--namespace="+ts.cfg.EKSConfig.AddOnIRSA.Namespace,
+				"describe",
+				"deployment",
+				irsaDeploymentName,
+			).CombinedOutput()
+			cancel()
+			if err != nil {
+				ts.cfg.Logger.Warn("'kubectl describe deployment' failed", zap.Error(err))
+			}
+			out := string(output)
+			fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
+		}),
+	)
 	cancel()
-	if err != nil {
-		return fmt.Errorf("'kubectl describe deployment' failed %v", err)
-	}
-	out := string(output)
-	fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
-
-	initialWait := 2*time.Minute + time.Duration(ts.cfg.EKSConfig.AddOnIRSA.DeploymentReplicas)*3*time.Second
-	if initialWait > 10*time.Minute {
-		initialWait = 10 * time.Minute
-	}
-	ts.cfg.Logger.Info("initial waiting", zap.Duration("duration", initialWait))
-	select {
-	case <-ts.cfg.Stopc:
-		return errors.New("check aborted")
-	case <-time.After(initialWait):
-	}
-	ts.cfg.Logger.Info("initial waited", zap.Duration("duration", initialWait))
-
-	ready := false
-	waitDur := 7*time.Minute + time.Duration(ts.cfg.EKSConfig.AddOnIRSA.DeploymentReplicas)*3*time.Second
-	retryStart := time.Now()
-	for time.Now().Sub(retryStart) < waitDur {
-		select {
-		case <-ts.cfg.Stopc:
-			return errors.New("check aborted")
-		case <-time.After(time.Minute):
-		}
-
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		dresp, err := ts.cfg.K8SClient.KubernetesClientSet().
-			AppsV1().
-			Deployments(ts.cfg.EKSConfig.AddOnIRSA.Namespace).
-			Get(ctx, irsaDeploymentName, metav1.GetOptions{})
-		cancel()
-		if err != nil {
-			return fmt.Errorf("failed to get Deployment (%v)", err)
-		}
-		ts.cfg.Logger.Info("get deployment",
-			zap.Int32("desired-replicas", dresp.Status.Replicas),
-			zap.Int32("available-replicas", dresp.Status.AvailableReplicas),
-			zap.Int32("unavailable-replicas", dresp.Status.UnavailableReplicas),
-			zap.Int32("ready-replicas", dresp.Status.ReadyReplicas),
-		)
-		available := false
-		for _, cond := range dresp.Status.Conditions {
-			ts.cfg.Logger.Info("condition",
-				zap.String("last-updated", cond.LastUpdateTime.String()),
-				zap.String("type", string(cond.Type)),
-				zap.String("status", string(cond.Status)),
-				zap.String("reason", cond.Reason),
-				zap.String("message", cond.Message),
-			)
-			if cond.Status != v1.ConditionTrue {
-				continue
-			}
-			if cond.Type == apps_v1.DeploymentAvailable {
-				available = true
-				break
-			}
-		}
-		if available && dresp.Status.AvailableReplicas >= ts.cfg.EKSConfig.AddOnIRSA.DeploymentReplicas {
-			ready = true
-			break
-		}
-	}
-	if !ready {
-		return errors.New("deployment not ready")
-	}
-
-	ts.cfg.Logger.Info("waited for IRSA Deployment")
-	return ts.cfg.EKSConfig.Sync()
+	return err
 }
 
 // https://aws.amazon.com/blogs/opensource/introducing-fine-grained-iam-roles-service-accounts/

@@ -146,6 +146,25 @@ func (ts *tester) Create() (err error) {
 		stresserJobName,
 		ts.cfg.EKSConfig.AddOnStresserRemote.Completes,
 		k8s_client.WithQueryFunc(func() {
+			descArgs := []string{
+				ts.cfg.EKSConfig.KubectlPath,
+				"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+				"--namespace=" + ts.cfg.EKSConfig.AddOnCSRsRemote.Namespace,
+				"describe",
+				"job",
+				stresserJobName,
+			}
+			descCmd := strings.Join(descArgs, " ")
+			ts.cfg.Logger.Info("describing job", zap.String("describe-command", descCmd))
+			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			descOutput, err := exec.New().CommandContext(ctx, descArgs[0], descArgs[1:]...).CombinedOutput()
+			cancel()
+			if err != nil {
+				ts.cfg.Logger.Warn("'kubectl describe job' failed", zap.Error(err))
+			}
+			out := string(descOutput)
+			fmt.Fprintf(ts.cfg.LogWriter, "\n\n\n\"%s\" output:\n\n%s\n\n", descCmd, out)
+
 			argsLogs := []string{
 				ts.cfg.EKSConfig.KubectlPath,
 				"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
@@ -158,10 +177,10 @@ func (ts *tester) Create() (err error) {
 
 			fmt.Fprintf(ts.cfg.LogWriter, "\n")
 			ts.cfg.Logger.Info("running query function for remote stresser")
-			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-			output, err := exec.New().CommandContext(ctx, argsLogs[0], argsLogs[1:]...).CombinedOutput()
+			ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
+			logsOutput, err := exec.New().CommandContext(ctx, argsLogs[0], argsLogs[1:]...).CombinedOutput()
 			cancel()
-			out := string(output)
+			out = string(logsOutput)
 			if err != nil {
 				ts.cfg.Logger.Warn("'kubectl logs' failed", zap.Error(err))
 			}
@@ -651,7 +670,9 @@ func (ts *tester) createObject() (batchv1.Job, string, error) {
 			ServiceAccountName: stresserServiceAccountName,
 
 			// spec.template.spec.restartPolicy: Unsupported value: "Always": supported values: "OnFailure", "Never"
-			RestartPolicy: v1.RestartPolicyOnFailure,
+			// ref. https://github.com/kubernetes/kubernetes/issues/54870
+			RestartPolicy: v1.RestartPolicyNever,
+
 			// TODO: set resource limits
 			Containers: []v1.Container{
 				{

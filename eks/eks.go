@@ -1581,20 +1581,24 @@ func (ts *Tester) ArtifactsDir() string {
 	return ""
 }
 
-func catchInterrupt(lg *zap.Logger, stopc chan struct{}, once *sync.Once, sigc chan os.Signal, run func() error, name string) (err error) {
+func catchInterrupt(lg *zap.Logger, stopc chan struct{}, stopcCloseOnce *sync.Once, osSigCh chan os.Signal, run func() error, name string) (err error) {
 	errc := make(chan error)
 	go func() {
 		errc <- run()
 	}()
+
 	select {
 	case _, ok := <-stopc:
 		rerr := <-errc
-		lg.Info("interrupted", zap.Error(rerr))
+		lg.Info("interrupted; stopc received, errc received", zap.Error(rerr))
 		err = fmt.Errorf("stopc returned, stopc open %v, run function returned %v (%q)", ok, rerr, name)
-	case sig := <-sigc:
-		once.Do(func() { close(stopc) })
+
+	case osSig := <-osSigCh:
+		stopcCloseOnce.Do(func() { close(stopc) })
 		rerr := <-errc
-		err = fmt.Errorf("received os signal %v, closed stopc, run function returned %v (%q)", sig, rerr, name)
+		lg.Info("OS signal received, errc received", zap.String("signal", osSig.String()), zap.Error(rerr))
+		err = fmt.Errorf("received os signal %v, closed stopc, run function returned %v (%q)", osSig, rerr, name)
+
 	case err = <-errc:
 		if err != nil {
 			err = fmt.Errorf("run function returned %v (%q)", err, name)

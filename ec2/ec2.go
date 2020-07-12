@@ -394,30 +394,30 @@ func (ts *Tester) down() (err error) {
 	}()
 
 	var errs []string
+
 	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 	fmt.Fprintf(ts.logWriter, ts.color("[light_blue]deleteSSM [default](%q)\n"), ts.cfg.ConfigPath)
-
 	if err := ts.deleteSSM(); err != nil {
 		ts.lg.Warn("deleteSSM failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
+
 	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 	fmt.Fprintf(ts.logWriter, ts.color("[light_blue]deleteASGs [default](%q)\n"), ts.cfg.ConfigPath)
-
 	if err := ts.deleteASGs(); err != nil {
 		ts.lg.Warn("deleteASGs failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
+
 	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 	fmt.Fprintf(ts.logWriter, ts.color("[light_blue]deleteKeyPair [default](%q)\n"), ts.cfg.ConfigPath)
-
 	if err := ts.deleteKeyPair(); err != nil {
 		ts.lg.Warn("deleteKeyPair failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
+
 	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 	fmt.Fprintf(ts.logWriter, ts.color("[light_blue]deleteRole [default](%q)\n"), ts.cfg.ConfigPath)
-
 	if err := ts.deleteRole(); err != nil {
 		ts.lg.Warn("deleteRole failed", zap.Error(err))
 		errs = append(errs, err.Error())
@@ -428,16 +428,16 @@ func (ts *Tester) down() (err error) {
 		ts.lg.Info("sleeping before VPC deletion", zap.Duration("wait", waitDur))
 		time.Sleep(waitDur)
 	}
+
 	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 	fmt.Fprintf(ts.logWriter, ts.color("[light_blue]deleteVPC [default](%q)\n"), ts.cfg.ConfigPath)
-
 	if err := ts.deleteVPC(); err != nil {
 		ts.lg.Warn("deleteVPC failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
+
 	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 	fmt.Fprintf(ts.logWriter, ts.color("[light_blue]deleteS3 [default](%q)\n"), ts.cfg.ConfigPath)
-
 	if err := ts.deleteS3(); err != nil {
 		ts.lg.Warn("deleteS3 failed", zap.Error(err))
 		errs = append(errs, err.Error())
@@ -449,21 +449,28 @@ func (ts *Tester) down() (err error) {
 	return ts.cfg.Sync()
 }
 
-func catchInterrupt(lg *zap.Logger, stopc chan struct{}, once *sync.Once, sigc chan os.Signal, run func() error) (err error) {
+func catchInterrupt(lg *zap.Logger, stopc chan struct{}, stopcCloseOnce *sync.Once, osSigCh chan os.Signal, run func() error) (err error) {
 	errc := make(chan error)
 	go func() {
 		errc <- run()
 	}()
+
 	select {
-	case <-stopc:
-		lg.Info("interrupting")
-		serr := <-errc
-		lg.Info("interrupted", zap.Error(serr))
-		err = fmt.Errorf("interrupted (run function returned %v)", serr)
-	case sig := <-sigc:
-		once.Do(func() { close(stopc) })
-		err = fmt.Errorf("received os signal %v, closed stopc (interrupted %v)", sig, <-errc)
+	case _, ok := <-stopc:
+		rerr := <-errc
+		lg.Info("interrupted; stopc received, errc received", zap.Error(rerr))
+		err = fmt.Errorf("stopc returned, stopc open %v, run function returned %v", ok, rerr)
+
+	case osSig := <-osSigCh:
+		stopcCloseOnce.Do(func() { close(stopc) })
+		rerr := <-errc
+		lg.Info("OS signal received, errc received", zap.String("signal", osSig.String()), zap.Error(rerr))
+		err = fmt.Errorf("received os signal %v, closed stopc, run function returned %v", osSig, rerr)
+
 	case err = <-errc:
+		if err != nil {
+			err = fmt.Errorf("run function returned %v", err)
+		}
 	}
 	return err
 }

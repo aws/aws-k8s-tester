@@ -15,9 +15,6 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"go.uber.org/zap"
-	appsv1 "k8s.io/api/apps/v1"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/exec"
 )
 
@@ -276,8 +273,8 @@ func (ts *tester) installCA() error {
 		ts.cfg.Logger.Warn("failed to write cluster-autoscaler YAML", zap.Error(err))
 		return err
 	}
-	ts.cfg.Logger.Info("applying cluster-autoscaler YAML", zap.String("path", fpath))
 
+	ts.cfg.Logger.Info("applying cluster-autoscaler YAML", zap.String("path", fpath))
 	var output []byte
 	waitDur := 5 * time.Minute
 	retryStart := time.Now()
@@ -320,76 +317,39 @@ func (ts *tester) installCA() error {
 	return ts.waitDeploymentCA()
 }
 
-func (ts *tester) waitDeploymentCA() error {
-	ts.cfg.Logger.Info("waiting for cluster autoscaler Deployment")
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	output, err := exec.New().CommandContext(
+func (ts *tester) waitDeploymentCA() (err error) {
+	timeout := 7 * time.Minute
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	_, err = k8s_client.WaitForDeploymentCompletes(
 		ctx,
-		ts.cfg.EKSConfig.KubectlPath,
-		"--kubeconfig="+ts.cfg.EKSConfig.KubeConfigPath,
-		"--namespace=kube-system",
-		"describe",
-		"deployment",
+		ts.cfg.Logger,
+		ts.cfg.LogWriter,
+		ts.cfg.Stopc,
+		ts.cfg.K8SClient,
+		time.Minute,
+		20*time.Second,
+		"kube-system",
 		clusterAutoscalerDeploymentName,
-	).CombinedOutput()
+		1,
+		k8s_client.WithQueryFunc(func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			output, err := exec.New().CommandContext(
+				ctx,
+				ts.cfg.EKSConfig.KubectlPath,
+				"--kubeconfig="+ts.cfg.EKSConfig.KubeConfigPath,
+				"--namespace=kube-system",
+				"describe",
+				"deployment",
+				clusterAutoscalerDeploymentName,
+			).CombinedOutput()
+			cancel()
+			if err != nil {
+				ts.cfg.Logger.Warn("'kubectl describe deployment' failed", zap.Error(err))
+			}
+			out := string(output)
+			fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
+		}),
+	)
 	cancel()
-	if err != nil {
-		return fmt.Errorf("'kubectl describe deployment' failed %v", err)
-	}
-	out := string(output)
-	fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
-
-	ready := false
-	waitDur := 3 * time.Minute
-	retryStart := time.Now()
-	for time.Now().Sub(retryStart) < waitDur {
-		select {
-		case <-ts.cfg.Stopc:
-			return errors.New("check aborted")
-		case <-time.After(15 * time.Second):
-		}
-
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		dresp, err := ts.cfg.K8SClient.KubernetesClientSet().
-			AppsV1().
-			Deployments("kube-system").
-			Get(ctx, "cluster-autoscaler", metav1.GetOptions{})
-		cancel()
-		if err != nil {
-			return fmt.Errorf("failed to get Deployment (%v)", err)
-		}
-		ts.cfg.Logger.Info("get deployment",
-			zap.Int32("desired-replicas", dresp.Status.Replicas),
-			zap.Int32("available-replicas", dresp.Status.AvailableReplicas),
-			zap.Int32("unavailable-replicas", dresp.Status.UnavailableReplicas),
-			zap.Int32("ready-replicas", dresp.Status.ReadyReplicas),
-		)
-		available := false
-		for _, cond := range dresp.Status.Conditions {
-			ts.cfg.Logger.Info("condition",
-				zap.String("last-updated", cond.LastUpdateTime.String()),
-				zap.String("type", string(cond.Type)),
-				zap.String("status", string(cond.Status)),
-				zap.String("reason", cond.Reason),
-				zap.String("message", cond.Message),
-			)
-			if cond.Status != v1.ConditionTrue {
-				continue
-			}
-			if cond.Type == appsv1.DeploymentAvailable {
-				available = true
-				break
-			}
-		}
-		if available && dresp.Status.AvailableReplicas >= 1 {
-			ready = true
-			break
-		}
-	}
-	if !ready {
-		return errors.New("Deployment not ready")
-	}
-
-	ts.cfg.Logger.Info("waited for cluster autoscaler Deployment")
-	return ts.cfg.EKSConfig.Sync()
+	return err
 }

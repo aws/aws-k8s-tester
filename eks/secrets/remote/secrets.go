@@ -38,6 +38,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/exec"
 )
 
 // Config defines secrets configuration.
@@ -137,6 +138,26 @@ func (ts *tester) Create() (err error) {
 		ts.cfg.EKSConfig.AddOnSecretsRemote.Namespace,
 		secretsJobName,
 		ts.cfg.EKSConfig.AddOnSecretsRemote.Completes,
+		k8s_client.WithQueryFunc(func() {
+			descArgs := []string{
+				ts.cfg.EKSConfig.KubectlPath,
+				"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+				"--namespace=" + ts.cfg.EKSConfig.AddOnCSRsRemote.Namespace,
+				"describe",
+				"job",
+				secretsJobName,
+			}
+			descCmd := strings.Join(descArgs, " ")
+			ts.cfg.Logger.Info("describing job", zap.String("describe-command", descCmd))
+			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			descOutput, err := exec.New().CommandContext(ctx, descArgs[0], descArgs[1:]...).CombinedOutput()
+			cancel()
+			if err != nil {
+				ts.cfg.Logger.Warn("'kubectl describe job' failed", zap.Error(err))
+			}
+			out := string(descOutput)
+			fmt.Fprintf(ts.cfg.LogWriter, "\n\n\n\"%s\" output:\n\n%s\n\n", descCmd, out)
+		}),
 	)
 	cancel()
 	if err != nil {
@@ -569,7 +590,9 @@ func (ts *tester) createObject() (batchv1.Job, string, error) {
 			ServiceAccountName: secretsServiceAccountName,
 
 			// spec.template.spec.restartPolicy: Unsupported value: "Always": supported values: "OnFailure", "Never"
-			RestartPolicy: v1.RestartPolicyOnFailure,
+			// ref. https://github.com/kubernetes/kubernetes/issues/54870
+			RestartPolicy: v1.RestartPolicyNever,
+
 			// TODO: set resource limits
 			Containers: []v1.Container{
 				{

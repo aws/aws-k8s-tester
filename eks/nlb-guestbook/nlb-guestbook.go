@@ -68,7 +68,7 @@ const (
 	redisFollowerAppName        = "redis-slave"
 	redisFollowerAppImageName   = "k8s.gcr.io/redis-slave:v2" // ref. https://hub.docker.com/_/redis/?tab=tags
 	redisFollowerServiceName    = "redis-slave"
-	redisFollowerRoleName       = "slave" // TODO: change this to "leader"
+	redisFollowerRoleName       = "slave" // TODO: change this to "follower"
 
 	nlbGuestbookDeploymentName = "guestbook"
 	nlbGuestbookAppName        = "guestbook"
@@ -329,100 +329,59 @@ func (ts *tester) deleteDeploymentRedisLeader() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
-func (ts *tester) waitDeploymentRedisLeader() error {
-	ts.cfg.Logger.Info("waiting for redis leader Deployment")
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	output, err := exec.New().CommandContext(
+func (ts *tester) waitDeploymentRedisLeader() (err error) {
+	timeout := 7 * time.Minute
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	_, err = k8s_client.WaitForDeploymentCompletes(
 		ctx,
-		ts.cfg.EKSConfig.KubectlPath,
-		"--kubeconfig="+ts.cfg.EKSConfig.KubeConfigPath,
-		"--namespace="+ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace,
-		"describe",
-		"deployment",
+		ts.cfg.Logger,
+		ts.cfg.LogWriter,
+		ts.cfg.Stopc,
+		ts.cfg.K8SClient,
+		time.Minute,
+		20*time.Second,
+		ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace,
 		redisLeaderDeploymentName,
-	).CombinedOutput()
+		1,
+		k8s_client.WithQueryFunc(func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			output, err := exec.New().CommandContext(
+				ctx,
+				ts.cfg.EKSConfig.KubectlPath,
+				"--kubeconfig="+ts.cfg.EKSConfig.KubeConfigPath,
+				"--namespace="+ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace,
+				"describe",
+				"deployment",
+				redisLeaderDeploymentName,
+			).CombinedOutput()
+			cancel()
+			if err != nil {
+				ts.cfg.Logger.Warn("'kubectl describe deployment' failed", zap.Error(err))
+			}
+			out := string(output)
+			fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
+
+			logsArgs := []string{
+				ts.cfg.EKSConfig.KubectlPath,
+				"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+				"--namespace=" + ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace,
+				"logs",
+				"--selector=app.kubernetes.io/name=" + redisLabelName + ",role=" + redisLeaderRoleName,
+			}
+			logsCmd := strings.Join(logsArgs, " ")
+			ts.cfg.Logger.Info("fetching pod logs", zap.String("logs-command", logsCmd))
+			ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
+			logsOutput, err := exec.New().CommandContext(ctx, logsArgs[0], logsArgs[1:]...).CombinedOutput()
+			cancel()
+			out = string(logsOutput)
+			if err != nil {
+				ts.cfg.Logger.Warn("'kubectl logs' failed", zap.Error(err))
+			}
+			fmt.Fprintf(ts.cfg.LogWriter, "\n\n\n\"%s\" output:\n\n%s\n\n", logsCmd, out)
+		}),
+	)
 	cancel()
-	if err != nil {
-		return fmt.Errorf("'kubectl describe deployment' failed %v", err)
-	}
-	out := string(output)
-	fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
-
-	logsArgs := []string{
-		ts.cfg.EKSConfig.KubectlPath,
-		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
-		"--namespace=" + ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace,
-		"logs",
-		"--selector=app.kubernetes.io/name=" + redisLabelName + ",role=" + redisLeaderRoleName,
-	}
-	logsCmd := strings.Join(logsArgs, " ")
-
-	ready := false
-	waitDur := 7 * time.Minute
-	retryStart := time.Now()
-	for time.Now().Sub(retryStart) < waitDur {
-		select {
-		case <-ts.cfg.Stopc:
-			return errors.New("check aborted")
-		case <-time.After(15 * time.Second):
-		}
-
-		ts.cfg.Logger.Info("fetching pod logs", zap.String("logs-command", logsCmd))
-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-		logsOutput, err := exec.New().CommandContext(ctx, logsArgs[0], logsArgs[1:]...).CombinedOutput()
-		cancel()
-		out := string(logsOutput)
-		if err != nil {
-			ts.cfg.Logger.Warn("'kubectl logs' failed", zap.Error(err))
-		}
-		fmt.Fprintf(ts.cfg.LogWriter, "\n\n\n\"%s\" output:\n\n%s\n\n", logsCmd, out)
-
-		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
-		dresp, err := ts.cfg.K8SClient.KubernetesClientSet().
-			AppsV1().
-			Deployments(ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace).
-			Get(ctx, redisLeaderDeploymentName, metav1.GetOptions{})
-		cancel()
-		if err != nil {
-			return fmt.Errorf("failed to get Deployment (%v)", err)
-		}
-		ts.cfg.Logger.Info("get deployment",
-			zap.Int32("desired-replicas", dresp.Status.Replicas),
-			zap.Int32("available-replicas", dresp.Status.AvailableReplicas),
-			zap.Int32("unavailable-replicas", dresp.Status.UnavailableReplicas),
-			zap.Int32("ready-replicas", dresp.Status.ReadyReplicas),
-		)
-
-		// TODO: remove the pod with "Error: ImagePullBackOff"
-		available := false
-		for _, cond := range dresp.Status.Conditions {
-			ts.cfg.Logger.Info("condition",
-				zap.String("last-updated", cond.LastUpdateTime.String()),
-				zap.String("type", string(cond.Type)),
-				zap.String("status", string(cond.Status)),
-				zap.String("reason", cond.Reason),
-				zap.String("message", cond.Message),
-			)
-			if cond.Status != v1.ConditionTrue {
-				continue
-			}
-			if cond.Type == appsv1.DeploymentAvailable {
-				available = true
-				break
-			}
-		}
-		// TODO: remove this hack and handle "Error: ImagePullBackOff"
-		if available && dresp.Status.AvailableReplicas+1 >= 1 {
-			ready = true
-			break
-		}
-	}
-	if !ready {
-		return errors.New("deployment not ready")
-	}
-
-	ts.cfg.Logger.Info("waited for redis leader Deployment")
-	return ts.cfg.EKSConfig.Sync()
+	return err
 }
 
 func (ts *tester) createServiceRedisLeader() error {
@@ -642,100 +601,59 @@ func (ts *tester) deleteDeploymentRedisFollower() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
-func (ts *tester) waitDeploymentRedisFollower() error {
-	ts.cfg.Logger.Info("waiting for redis follower Deployment")
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	output, err := exec.New().CommandContext(
+func (ts *tester) waitDeploymentRedisFollower() (err error) {
+	timeout := 7 * time.Minute
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	_, err = k8s_client.WaitForDeploymentCompletes(
 		ctx,
-		ts.cfg.EKSConfig.KubectlPath,
-		"--kubeconfig="+ts.cfg.EKSConfig.KubeConfigPath,
-		"--namespace="+ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace,
-		"describe",
-		"deployment",
+		ts.cfg.Logger,
+		ts.cfg.LogWriter,
+		ts.cfg.Stopc,
+		ts.cfg.K8SClient,
+		time.Minute,
+		20*time.Second,
+		ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace,
 		redisFollowerDeploymentName,
-	).CombinedOutput()
+		1,
+		k8s_client.WithQueryFunc(func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			output, err := exec.New().CommandContext(
+				ctx,
+				ts.cfg.EKSConfig.KubectlPath,
+				"--kubeconfig="+ts.cfg.EKSConfig.KubeConfigPath,
+				"--namespace="+ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace,
+				"describe",
+				"deployment",
+				redisFollowerDeploymentName,
+			).CombinedOutput()
+			cancel()
+			if err != nil {
+				ts.cfg.Logger.Warn("'kubectl describe deployment' failed", zap.Error(err))
+			}
+			out := string(output)
+			fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
+
+			logsArgs := []string{
+				ts.cfg.EKSConfig.KubectlPath,
+				"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+				"--namespace=" + ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace,
+				"logs",
+				"--selector=app.kubernetes.io/name=" + redisLabelName + ",role=" + redisFollowerRoleName,
+			}
+			logsCmd := strings.Join(logsArgs, " ")
+			ts.cfg.Logger.Info("fetching pod logs", zap.String("logs-command", logsCmd))
+			ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
+			logsOutput, err := exec.New().CommandContext(ctx, logsArgs[0], logsArgs[1:]...).CombinedOutput()
+			cancel()
+			out = string(logsOutput)
+			if err != nil {
+				ts.cfg.Logger.Warn("'kubectl logs' failed", zap.Error(err))
+			}
+			fmt.Fprintf(ts.cfg.LogWriter, "\n\n\n\"%s\" output:\n\n%s\n\n", logsCmd, out)
+		}),
+	)
 	cancel()
-	if err != nil {
-		return fmt.Errorf("'kubectl describe deployment' failed %v", err)
-	}
-	out := string(output)
-	fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
-
-	logsArgs := []string{
-		ts.cfg.EKSConfig.KubectlPath,
-		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
-		"--namespace=" + ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace,
-		"logs",
-		"--selector=app.kubernetes.io/name=" + redisLabelName + ",role=" + redisLeaderRoleName,
-	}
-	logsCmd := strings.Join(logsArgs, " ")
-
-	ready := false
-	waitDur := 7 * time.Minute
-	retryStart := time.Now()
-	for time.Now().Sub(retryStart) < waitDur {
-		select {
-		case <-ts.cfg.Stopc:
-			return errors.New("check aborted")
-		case <-time.After(15 * time.Second):
-		}
-
-		ts.cfg.Logger.Info("fetching pod logs", zap.String("logs-command", logsCmd))
-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-		logsOutput, err := exec.New().CommandContext(ctx, logsArgs[0], logsArgs[1:]...).CombinedOutput()
-		cancel()
-		out := string(logsOutput)
-		if err != nil {
-			ts.cfg.Logger.Warn("'kubectl logs' failed", zap.Error(err))
-		}
-		fmt.Fprintf(ts.cfg.LogWriter, "\n\n\n\"%s\" output:\n\n%s\n\n", logsCmd, out)
-
-		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
-		dresp, err := ts.cfg.K8SClient.KubernetesClientSet().
-			AppsV1().
-			Deployments(ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace).
-			Get(ctx, redisFollowerDeploymentName, metav1.GetOptions{})
-		cancel()
-		if err != nil {
-			return fmt.Errorf("failed to get Deployment (%v)", err)
-		}
-		ts.cfg.Logger.Info("get deployment",
-			zap.Int32("desired-replicas", dresp.Status.Replicas),
-			zap.Int32("available-replicas", dresp.Status.AvailableReplicas),
-			zap.Int32("unavailable-replicas", dresp.Status.UnavailableReplicas),
-			zap.Int32("ready-replicas", dresp.Status.ReadyReplicas),
-		)
-
-		// TODO: remove the pod with "Error: ImagePullBackOff"
-		available := false
-		for _, cond := range dresp.Status.Conditions {
-			ts.cfg.Logger.Info("condition",
-				zap.String("last-updated", cond.LastUpdateTime.String()),
-				zap.String("type", string(cond.Type)),
-				zap.String("status", string(cond.Status)),
-				zap.String("reason", cond.Reason),
-				zap.String("message", cond.Message),
-			)
-			if cond.Status != v1.ConditionTrue {
-				continue
-			}
-			if cond.Type == appsv1.DeploymentAvailable {
-				available = true
-				break
-			}
-		}
-		// TODO: remove this hack and handle "Error: ImagePullBackOff"
-		if available && dresp.Status.AvailableReplicas >= 2 {
-			ready = true
-			break
-		}
-	}
-	if !ready {
-		return errors.New("deployment not ready")
-	}
-
-	ts.cfg.Logger.Info("waited for redis follower Deployment")
-	return ts.cfg.EKSConfig.Sync()
+	return err
 }
 
 func (ts *tester) createServiceRedisFollower() error {
@@ -952,100 +870,59 @@ func (ts *tester) deleteDeploymentGuestbook() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
-func (ts *tester) waitDeploymentGuestbook() error {
-	ts.cfg.Logger.Info("waiting for NLB guestbook Deployment")
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	output, err := exec.New().CommandContext(
+func (ts *tester) waitDeploymentGuestbook() (err error) {
+	timeout := 7*time.Minute + time.Duration(ts.cfg.EKSConfig.AddOnNLBGuestbook.DeploymentReplicas)*time.Minute
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	_, err = k8s_client.WaitForDeploymentCompletes(
 		ctx,
-		ts.cfg.EKSConfig.KubectlPath,
-		"--kubeconfig="+ts.cfg.EKSConfig.KubeConfigPath,
-		"--namespace="+ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace,
-		"describe",
-		"deployment",
+		ts.cfg.Logger,
+		ts.cfg.LogWriter,
+		ts.cfg.Stopc,
+		ts.cfg.K8SClient,
+		time.Minute,
+		20*time.Second,
+		ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace,
 		nlbGuestbookDeploymentName,
-	).CombinedOutput()
+		ts.cfg.EKSConfig.AddOnNLBGuestbook.DeploymentReplicas,
+		k8s_client.WithQueryFunc(func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			output, err := exec.New().CommandContext(
+				ctx,
+				ts.cfg.EKSConfig.KubectlPath,
+				"--kubeconfig="+ts.cfg.EKSConfig.KubeConfigPath,
+				"--namespace="+ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace,
+				"describe",
+				"deployment",
+				nlbGuestbookDeploymentName,
+			).CombinedOutput()
+			cancel()
+			if err != nil {
+				ts.cfg.Logger.Warn("'kubectl describe deployment' failed", zap.Error(err))
+			}
+			out := string(output)
+			fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
+
+			logsArgs := []string{
+				ts.cfg.EKSConfig.KubectlPath,
+				"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+				"--namespace=" + ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace,
+				"logs",
+				"--selector=app.kubernetes.io/name=" + nlbGuestbookAppName,
+			}
+			logsCmd := strings.Join(logsArgs, " ")
+			ts.cfg.Logger.Info("fetching pod logs", zap.String("logs-command", logsCmd))
+			ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
+			logsOutput, err := exec.New().CommandContext(ctx, logsArgs[0], logsArgs[1:]...).CombinedOutput()
+			cancel()
+			out = string(logsOutput)
+			if err != nil {
+				ts.cfg.Logger.Warn("'kubectl logs' failed", zap.Error(err))
+			}
+			fmt.Fprintf(ts.cfg.LogWriter, "\n\n\n\"%s\" output:\n\n%s\n\n", logsCmd, out)
+		}),
+	)
 	cancel()
-	if err != nil {
-		return fmt.Errorf("'kubectl describe deployment' failed %v", err)
-	}
-	out := string(output)
-	fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
-
-	logsArgs := []string{
-		ts.cfg.EKSConfig.KubectlPath,
-		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
-		"--namespace=" + ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace,
-		"logs",
-		"--selector=app.kubernetes.io/name=" + nlbGuestbookAppName,
-	}
-	logsCmd := strings.Join(logsArgs, " ")
-
-	ready := false
-	waitDur := 7*time.Minute + time.Duration(ts.cfg.EKSConfig.AddOnNLBGuestbook.DeploymentReplicas)*time.Minute
-	retryStart := time.Now()
-	for time.Now().Sub(retryStart) < waitDur {
-		select {
-		case <-ts.cfg.Stopc:
-			return errors.New("check aborted")
-		case <-time.After(15 * time.Second):
-		}
-
-		ts.cfg.Logger.Info("fetching pod logs", zap.String("logs-command", logsCmd))
-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-		logsOutput, err := exec.New().CommandContext(ctx, logsArgs[0], logsArgs[1:]...).CombinedOutput()
-		cancel()
-		out := string(logsOutput)
-		if err != nil {
-			ts.cfg.Logger.Warn("'kubectl logs' failed", zap.Error(err))
-		}
-		fmt.Fprintf(ts.cfg.LogWriter, "\n\n\n\"%s\" output:\n\n%s\n\n", logsCmd, out)
-
-		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
-		dresp, err := ts.cfg.K8SClient.KubernetesClientSet().
-			AppsV1().
-			Deployments(ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace).
-			Get(ctx, nlbGuestbookDeploymentName, metav1.GetOptions{})
-		cancel()
-		if err != nil {
-			return fmt.Errorf("failed to get Deployment (%v)", err)
-		}
-		ts.cfg.Logger.Info("get deployment",
-			zap.Int32("desired-replicas", dresp.Status.Replicas),
-			zap.Int32("available-replicas", dresp.Status.AvailableReplicas),
-			zap.Int32("unavailable-replicas", dresp.Status.UnavailableReplicas),
-			zap.Int32("ready-replicas", dresp.Status.ReadyReplicas),
-		)
-
-		// TODO: remove the pod with "Error: ImagePullBackOff"
-		available := false
-		for _, cond := range dresp.Status.Conditions {
-			ts.cfg.Logger.Info("condition",
-				zap.String("last-updated", cond.LastUpdateTime.String()),
-				zap.String("type", string(cond.Type)),
-				zap.String("status", string(cond.Status)),
-				zap.String("reason", cond.Reason),
-				zap.String("message", cond.Message),
-			)
-			if cond.Status != v1.ConditionTrue {
-				continue
-			}
-			if cond.Type == appsv1.DeploymentAvailable {
-				available = true
-				break
-			}
-		}
-		// TODO: remove this hack and handle "Error: ImagePullBackOff"
-		if available && dresp.Status.AvailableReplicas+1 >= ts.cfg.EKSConfig.AddOnNLBGuestbook.DeploymentReplicas {
-			ready = true
-			break
-		}
-	}
-	if !ready {
-		return errors.New("deployment not ready")
-	}
-
-	ts.cfg.Logger.Info("waited for NLB guestbook Deployment")
-	return ts.cfg.EKSConfig.Sync()
+	return err
 }
 
 func (ts *tester) createServiceGuestbook() error {

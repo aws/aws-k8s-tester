@@ -18,8 +18,6 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-sdk-go/aws"
 	"go.uber.org/zap"
-	appsv1 "k8s.io/api/apps/v1"
-	v1 "k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/exec"
@@ -67,7 +65,13 @@ func (ts *tester) Create() error {
 		ts.cfg.EKSConfig.Sync()
 	}()
 
-	if err := ts.create(); err != nil {
+	if err := ts.createMetricsServer(); err != nil {
+		return err
+	}
+	if err := ts.waitDeployment(); err != nil {
+		return err
+	}
+	if err := ts.checkMetrics(); err != nil {
 		return err
 	}
 
@@ -280,7 +284,7 @@ const (
 )
 
 // ref. https://github.com/kubernetes-sigs/metrics-server
-func (ts *tester) create() error {
+func (ts *tester) createMetricsServer() error {
 	ts.cfg.Logger.Info("writing metrics-server YAML")
 	fpath, err := fileutil.WriteTempFile([]byte(metricsServerYAML))
 	if err != nil {
@@ -328,85 +332,47 @@ func (ts *tester) create() error {
 	}
 
 	ts.cfg.Logger.Info("created metrics-server")
-
-	return ts.waitDeployment()
+	return nil
 }
 
-func (ts *tester) waitDeployment() error {
-	ts.cfg.Logger.Info("waiting for metrics-server Deployment")
-
-	descArgs := []string{
-		ts.cfg.EKSConfig.KubectlPath,
-		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
-		"--namespace=kube-system",
-		"describe",
-		"deployment",
+func (ts *tester) waitDeployment() (err error) {
+	timeout := 7 * time.Minute
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	_, err = k8s_client.WaitForDeploymentCompletes(
+		ctx,
+		ts.cfg.Logger,
+		ts.cfg.LogWriter,
+		ts.cfg.Stopc,
+		ts.cfg.K8SClient,
+		time.Minute,
+		20*time.Second,
+		"kube-system",
 		deploymentName,
-	}
-	descCmd := strings.Join(descArgs, " ")
-
-	ready := false
-	waitDur := 3 * time.Minute
-	retryStart := time.Now()
-	for time.Now().Sub(retryStart) < waitDur {
-		select {
-		case <-ts.cfg.Stopc:
-			return errors.New("check aborted")
-		case <-time.After(15 * time.Second):
-		}
-
-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-		output, err := exec.New().CommandContext(ctx, descArgs[0], descArgs[1:]...).CombinedOutput()
-		cancel()
-		if err != nil {
-			ts.cfg.Logger.Warn("failed to run kubectl describe", zap.Error(err))
-			continue
-		}
-		out := string(output)
-		fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"%s\" output:\n%s\n\n", descCmd, out)
-
-		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
-		dresp, err := ts.cfg.K8SClient.KubernetesClientSet().
-			AppsV1().
-			Deployments("kube-system").
-			Get(ctx, deploymentName, metav1.GetOptions{})
-		cancel()
-		if err != nil {
-			ts.cfg.Logger.Warn("failed to get deployment", zap.Error(err))
-			continue
-		}
-		ts.cfg.Logger.Info("get deployment",
-			zap.Int32("desired-replicas", dresp.Status.Replicas),
-			zap.Int32("available-replicas", dresp.Status.AvailableReplicas),
-			zap.Int32("unavailable-replicas", dresp.Status.UnavailableReplicas),
-			zap.Int32("ready-replicas", dresp.Status.ReadyReplicas),
-		)
-		available := false
-		for _, cond := range dresp.Status.Conditions {
-			ts.cfg.Logger.Info("condition",
-				zap.String("last-updated", cond.LastUpdateTime.String()),
-				zap.String("type", string(cond.Type)),
-				zap.String("status", string(cond.Status)),
-				zap.String("reason", cond.Reason),
-				zap.String("message", cond.Message),
-			)
-			if cond.Status != v1.ConditionTrue {
-				continue
+		1,
+		k8s_client.WithQueryFunc(func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			output, err := exec.New().CommandContext(
+				ctx,
+				ts.cfg.EKSConfig.KubectlPath,
+				"--kubeconfig="+ts.cfg.EKSConfig.KubeConfigPath,
+				"--namespace=kube-system",
+				"describe",
+				"deployment",
+				deploymentName,
+			).CombinedOutput()
+			cancel()
+			if err != nil {
+				ts.cfg.Logger.Warn("'kubectl describe deployment' failed", zap.Error(err))
 			}
-			if cond.Type == appsv1.DeploymentAvailable {
-				available = true
-				break
-			}
-		}
-		if available && dresp.Status.AvailableReplicas >= 1 {
-			ready = true
-			break
-		}
-	}
-	if !ready {
-		return errors.New("deployment not ready")
-	}
+			out := string(output)
+			fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
+		}),
+	)
+	cancel()
+	return err
+}
 
+func (ts *tester) checkMetrics() error {
 	logArgs := []string{
 		ts.cfg.EKSConfig.KubectlPath,
 		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
@@ -427,7 +393,7 @@ func (ts *tester) waitDeployment() error {
 	topNodeCmd := strings.Join(topNodeArgs, " ")
 
 	topNodeReady := false
-	waitDur, retryStart = 30*time.Minute, time.Now()
+	waitDur, retryStart := 30*time.Minute, time.Now()
 	for time.Now().Sub(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
@@ -436,23 +402,13 @@ func (ts *tester) waitDeployment() error {
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-		output, err := exec.New().CommandContext(ctx, descArgs[0], descArgs[1:]...).CombinedOutput()
-		cancel()
-		if err != nil {
-			ts.cfg.Logger.Warn("failed to run kubectl describe", zap.Error(err))
-			continue
-		}
-		out := string(output)
-		fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"%s\" output:\n%s\n\n", descCmd, out)
-
-		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
-		output, err = exec.New().CommandContext(ctx, logArgs[0], logArgs[1:]...).CombinedOutput()
+		output, err := exec.New().CommandContext(ctx, logArgs[0], logArgs[1:]...).CombinedOutput()
 		cancel()
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to run kubectl logs", zap.Error(err))
 			continue
 		}
-		out = string(output)
+		out := string(output)
 		fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"%s\" output:\n%s\n\n", logsCmd, out)
 
 		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
@@ -472,8 +428,6 @@ func (ts *tester) waitDeployment() error {
 	if !topNodeReady {
 		return fmt.Errorf("%q not ready", topNodeCmd)
 	}
-
-	ts.cfg.Logger.Info("waited for metrics-server Deployment")
 	return ts.cfg.EKSConfig.Sync()
 }
 
