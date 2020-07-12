@@ -26,7 +26,7 @@ func init() {
 	cobra.EnablePrefixMatching = true
 }
 
-// NewCommand implements "eks-utils nodes" command.
+// NewCommand implements "cw-utils metrics-image" command.
 func NewCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "metrics-image [OUTPUT-PATH]",
