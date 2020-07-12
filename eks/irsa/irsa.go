@@ -610,13 +610,8 @@ echo {{ .S3Key }} contents:
 cat /var/log/$HOSTNAME.s3.output;
 printf "\nSUCCESS IRSA TEST: S3 FILE DOWNLOADED!\n\n"
 
-printf "\n'aws sts get-caller-identity' role ARN:\n"
-CALLER_ROLE_ARN=$(aws --cli-read-timeout=5 --cli-connect-timeout=5 sts get-caller-identity --query Arn --output text || true)
-echo $CALLER_ROLE_ARN
-if [[ $CALLER_ROLE_ARN =~ *{{ .RoleName }}* ]]; then
-  echo "Unexpected CALLER_ROLE_ARN: ${CALLER_ROLE_ARN}"
-  /aws-utils sts --partition {{.Partition}} --region {{.Region}} --match-contain-role-arn {{ .RoleName }}
-fi
+printf "\n'aws-utils sts' expected role ARN:\n"
+/aws-utils sts --partition {{.Partition}} --region {{.Region}} --match-contain-role-arn {{ .RoleName }}
 printf "\nSUCCESS IRSA TEST: CALLER_ROLE_ARN FOUND!\n\n"
 
 printf "\n{{ .SleepMessage }}\n\n"
@@ -625,6 +620,15 @@ sleep 86400
 
 printf "\nSUCCESS IRSA TEST: EXITING...\n\n"
 `
+
+/*
+CALLER_ROLE_ARN=$(aws --cli-read-timeout=5 --cli-connect-timeout=5 sts get-caller-identity --query Arn --output text || true)
+echo $CALLER_ROLE_ARN
+if [[ $CALLER_ROLE_ARN =~ *{{ .RoleName }}* ]]; then
+  echo "Unexpected CALLER_ROLE_ARN: ${CALLER_ROLE_ARN}"
+  exit 1
+fi
+*/
 
 type configMapTemplate struct {
 	Partition    string
