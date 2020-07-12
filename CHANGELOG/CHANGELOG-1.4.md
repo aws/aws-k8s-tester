@@ -15,6 +15,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.4...v1.4.5
 
 ## `eks`
 
+- Add [more debugging logs to remote testers for failed pods](https://github.com/aws/aws-k8s-tester/commit/a3e1e97f1d92e109c84edeba6e91d09f1e5fcd17).
+- Add [more debugging logs to `eks/irsa`](https://github.com/aws/aws-k8s-tester/commit/a3e1e97f1d92e109c84edeba6e91d09f1e5fcd17).
 - Fix [remote tester job Pod](https://github.com/aws/aws-k8s-tester/commit/0d6e2c9e390b688029cc88d565b249ce79f4e15c).
   - Change pod `RestartPolicy` from `v1.RestartPolicyOnFailure` to `v1.RestartPolicyNever`.
   - ref. https://github.com/kubernetes/kubernetes/issues/54870.
